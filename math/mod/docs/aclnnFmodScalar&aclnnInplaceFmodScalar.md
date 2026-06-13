@@ -456,14 +456,14 @@ int CreateAclTensor(
 
 int main()
 {
-    // 1. （固定写法）device/stream初始化 参考acl API手册
+    // 1.（固定写法）device/stream初始化参考acl API手册
     // 根据自己的实际device填写deviceId
     int32_t deviceId = 0;
     aclrtStream stream;
     auto ret = Init(deviceId, &stream);
     // check根据自己的需要处理
     CHECK_RET(ret == 0, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
-    // 2. 构造输入与输出，需要根据API的接口自定义构造
+    // 2.构造输入与输出，需要根据API的接口自定义构造
     std::vector<int64_t> selfShape = {4, 2};
     std::vector<int64_t> outShape = {4, 2};
     void* selfDeviceAddr = nullptr;
@@ -484,7 +484,7 @@ int main()
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-    // 3. 调用CANN算子库API，需要修改为具体的API
+    // 3.调用CANN算子库API，需要修改为具体的API
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
     // 调用aclnnFmodScalar第一段接口
@@ -500,10 +500,10 @@ int main()
     ret = aclnnFmodScalar(workspaceAddr, workspaceSize, executor, stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnFmodScalar failed. ERROR: %d\n", ret); return ret);
 
-    // 4. （固定写法）同步等待任务执行结束
+    // 4.（固定写法）同步等待任务执行结束
     ret = aclrtSynchronizeStream(stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
-    // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
+    // 5.获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
     auto size = GetShapeSize(outShape);
     std::vector<float> resultData(size, 0);
     ret = aclrtMemcpy(
@@ -514,12 +514,12 @@ int main()
         LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
     }
 
-    // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
+    // 6.释放aclTensor和aclScalar，需要根据具体API的接口定义修改
     aclDestroyTensor(self);
     aclDestroyScalar(other);
     aclDestroyTensor(out);
 
-    // 7. 释放device资源
+    // 7.释放device资源
     aclrtFree(selfDeviceAddr);
     aclrtFree(outDeviceAddr);
     if (workspaceSize > 0) {
@@ -596,14 +596,14 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化 参考acl API手册
+  // 1.（固定写法）device/stream初始化参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
   // check根据自己的需要处理
   CHECK_RET(ret == 0, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
-  // 2. 构造输入与输出，需要根据API的接口自定义构造
+  // 2.构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> selfShape = {4, 2};
   void* selfDeviceAddr = nullptr;
   aclTensor* self = nullptr;
@@ -617,7 +617,7 @@ int main() {
   other = aclCreateScalar(&otherValue, aclDataType::ACL_FLOAT);
   CHECK_RET(other != nullptr, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的API
+  // 3.调用CANN算子库API，需要修改为具体的API
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnInplaceFmodScalar第一段接口
@@ -632,10 +632,10 @@ int main() {
   // 调用aclnnInplaceFmodScalar第二段接口
   ret = aclnnInplaceFmodScalar(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceFmodScalar failed. ERROR: %d\n", ret); return ret);
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
-  // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
+  // 5.获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
   auto size = GetShapeSize(selfShape);
   std::vector<float> resultData(size, 0);
   ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), selfDeviceAddr, size * sizeof(float),
@@ -645,11 +645,11 @@ int main() {
     LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
   }
 
-  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
+  // 6.释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
   aclDestroyScalar(other);
 
-  // 7. 释放device资源
+  // 7.释放device资源
   aclrtFree(selfDeviceAddr);
   if (workspaceSize > 0) {
     aclrtFree(workspaceAddr);

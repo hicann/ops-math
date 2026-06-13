@@ -13,7 +13,7 @@
 
 ## 功能说明
 
-- 算子功能：按元素计算输入张量 x 与 y 的按位右移操作。
+- 算子功能：按元素计算输入张量x与y的按位右移操作。
 
 - 计算公式：
 
@@ -42,21 +42,21 @@ $$
     <tr>
       <td>x</td>
       <td>输入</td>
-      <td>输入 x 是一个 k 维张量，是待进行 right_shift 计算的入参，公式中的 x_i 。</td>
+      <td>输入x是一个k维张量，是待进行right_shift计算的入参，公式中的x_i 。</td>
       <td>INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输入</td>
-      <td>待进行 right_shift 计算的入参，公式中的 y_i 。</td>
+      <td>待进行right_shift计算的入参，公式中的y_i 。</td>
       <td>INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>z</td>
       <td>输出</td>
-      <td>待进行 right_shift 计算的出参，公式中的 z_i 。</td>
+      <td>待进行right_shift计算的出参，公式中的z_i 。</td>
       <td>INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
     </tr>

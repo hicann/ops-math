@@ -55,28 +55,28 @@
  <tr>
     <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">axes</span></td>
     <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">输入</span></td>
-    <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">要缩减的维度。支持 int、list、tuple 或 NoneType。数据类型必须为 int32 或 int64。<br>如果为 None，则缩减所有维度。取值范围为 [-rank(x), rank(x)]。</span></td>
+    <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">要缩减的维度。支持int、list、tuple或NoneType。数据类型必须为int32或int64。<br>如果为None，则缩减所有维度。取值范围为 [-rank(x), rank(x)]。</span></td>
     <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">int32, int64</span></td>
     <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">ND</span></td>
  </tr>
  <tr>
     <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">keep_dims</span></td>
     <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">属性</span></td>
-    <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">可选布尔值，默认为 false。若为 true，则保留长度为 1 的缩减维度；<br>若为 false，则对每个 axis 中的条目，张量的秩减 1。</span></td>
+    <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">可选布尔值，默认为false。若为true，则保留长度为1的缩减维度；<br>若为false，则对每个axis中的条目，张量的秩减1。</span></td>
     <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">bool</span></td>
     <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">ND</span></td>
   </tr>
   <tr>
     <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">noop_with_empty_axes</span></td>
     <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">属性</span></td>
-    <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">可选布尔值，默认为 true。若为 true，当 axes = [] 时不进行缩减；<br> 若为 false，当 axes = [] 时缩减所有维度。</span></td>
+    <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">可选布尔值，默认为true。若为true，当axes = [] 时不进行缩减；<br> 若为false，当axes = [] 时缩减所有维度。</span></td>
     <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">bool</span></td>
     <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">ND</span></td>
   </tr>
   <tr>
     <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">y</span></td>
     <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">输出</span></td>
-    <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">输出张量，与输入张量 x 的类型和格式相同</span></td>
+    <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">输出张量，与输入张量x的类型和格式相同</span></td>
     <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">与输入张量x相同</span></td>
     <td class="tg-22a9"><span style="color:var(--theme-aide-text);background-color:var(--theme-table-header-bg)">ND</span></td>
   </tr> 

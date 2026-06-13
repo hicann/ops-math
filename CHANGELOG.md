@@ -6,9 +6,9 @@
 
 发布日期：2025-12-30
 
-ops-math 首个 Beta 版本 v8.5.0-beta.1 现已发布。
+ops-math首个Beta版本v8.5.0-beta.1现已发布。
 本版本引入了多项新增特性、问题修复及性能改进，目前仍处于测试阶段。
-我们诚挚欢迎社区反馈，以进一步提升 ops-math 的稳定性和功能完备性。
+我们诚挚欢迎社区反馈，以进一步提升ops-math的稳定性和功能完备性。
 使用方式请参阅[官方文档](https://gitcode.com/cann/ops-math/blob/master/README.md)。
 
 ### 🔗 版本地址
@@ -40,11 +40,11 @@ ops-math 首个 Beta 版本 v8.5.0-beta.1 现已发布。
 
 ### 🚀 关键特性
 
-- 【工程能力】math类onnx算子插件支持。([#431](https://gitcode.com/cann/ops-math/pull/431))
-- 【算子实现】在多个类别中新支持算子concat([#573](https://gitcode.com/cann/ops-math/pull/573))、lerp([#519](https://gitcode.com/cann/ops-math/pull/519))、
+-【工程能力】math类onnx算子插件支持。([#431](https://gitcode.com/cann/ops-math/pull/431))
+-【算子实现】在多个类别中新支持算子concat([#573](https://gitcode.com/cann/ops-math/pull/573))、lerp([#519](https://gitcode.com/cann/ops-math/pull/519))、
 drop_out_v3([#539](https://gitcode.com/cann/ops-math/pull/539))等。
-- 【资料优化】新增快速入门指南，优化贡献指南中新算子贡献流程。([#472](https://gitcode.com/cann/ops-math/pull/472))
-- 【易用性提升】kernel编译流程优化，开启info级别日志打屏。([#326](https://gitcode.com/cann/ops-math/pull/326))
+-【资料优化】新增快速入门指南，优化贡献指南中新算子贡献流程。([#472](https://gitcode.com/cann/ops-math/pull/472))
+-【易用性提升】kernel编译流程优化，开启info级别日志打屏。([#326](https://gitcode.com/cann/ops-math/pull/326))
 
 ### 🐛 问题修复
 

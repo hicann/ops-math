@@ -17,13 +17,13 @@
 
 + 接口功能：计算指定维度(dim)的标准差，这个dim可以是单个维度，维度列表或者None。
 + 计算公式：
-  假设 dim 为 $i$，则对该维度进行计算。$N$为该维度的 shape。取 $self_{i}$，求出该维度上的平均值 $\bar{x_{i}}$。
+  假设dim为 $i$，则对该维度进行计算。$N$为该维度的shape。取 $self_{i}$，求出该维度上的平均值 $\bar{x_{i}}$。
   
   $$
   out = \sqrt{\frac{1}{max(0, N - \delta N)}\sum_{j=0}^{N-1}(self_{ij}-\bar{x_{i}})^2}
   $$
   
-  当 `keepdim = true`时，reduce 后保留该维度，且输出 shape 中该维度值为 1；当 `keepdim = false`时，不保留。
+  当`keepdim = true`时，reduce后保留该维度，且输出shape中该维度值为1；当`keepdim = false`时，不保留。
 
 ## 函数原型
 
@@ -87,7 +87,7 @@ aclnnStatus aclnnStd(
       <td>dim（aclIntArray*）</td>
       <td>输入</td>
       <td>公式中的<code>dim</code>。</td>
-      <td>参与计算的维度，取值范围为[-self.dim(), self.dim()-1]，且其中的数据不能相同; 当dim为nullptr或[]时，视为计算所有维度。</td>
+      <td>参与计算的维度，取值范围为[-self.dim(), self.dim()-1]，且其中的数据不能相同；当dim为nullptr或[]时，视为计算所有维度。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -169,7 +169,7 @@ aclnnStatus aclnnStd(
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的 self、out 是空指针时。</td>
+      <td>传入的self、out是空指针时。</td>
     </tr>
     <tr>
       <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
@@ -177,10 +177,10 @@ aclnnStatus aclnnStd(
       <td>self、dim、out数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>dim 数组中的维度超出 self 的维度范围。</td>
+      <td>dim数组中的维度超出self的维度范围。</td>
     </tr>
     <tr>
-      <td>dim 数组中元素重复。</td>
+      <td>dim数组中元素重复。</td>
     </tr>
     <tr>
       <td>out的shape出现如下情况会出错：
@@ -304,13 +304,13 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
-  // 2. 构造输入与输出，需要根据API的接口自定义构造
+  // 2.构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> selfShape = {4, 2};
   std::vector<int64_t> outShape = {2};
   void* selfDeviceAddr = nullptr;
@@ -333,7 +333,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的API名称
+  // 3.调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnStd第一段接口
@@ -348,10 +348,10 @@ int main() {
   // 调用aclnnStd第二段接口
   ret = aclnnStd(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnStd failed. ERROR: %d\n", ret); return ret);
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
-  // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
+  // 5.获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
   auto size = GetShapeSize(outShape);
   std::vector<float> resultData(size, 0);
   ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr,
@@ -361,7 +361,7 @@ int main() {
     LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
   }
 
-  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
+  // 6.释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
   aclDestroyIntArray(dim);
   aclDestroyTensor(out);

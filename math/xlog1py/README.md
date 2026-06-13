@@ -13,7 +13,7 @@
 
 ## 功能说明
 
-- 算子功能：计算 x * log(1 + y)，当 x == 0 时结果为 0。
+- 算子功能：计算x * log(1 + y)，当x == 0时结果为0。
 - 计算公式：
 
 $$
@@ -45,21 +45,21 @@ $$
     <tr>
       <td>x</td>
       <td>输入</td>
-      <td>公式中的 x，乘数因子。shape 需与 y 满足 broadcast 关系。</td>
+      <td>公式中的x，乘数因子。shape需与y满足broadcast关系。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输入</td>
-      <td>公式中的 y，log1p 的自变量。shape 需与 x 满足 broadcast 关系。</td>
+      <td>公式中的y，log1p的自变量。shape需与x满足broadcast关系。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>z</td>
       <td>输出</td>
-      <td>公式中的 z，计算结果。shape 为 x 与 y broadcast 后的最大值 shape。</td>
+      <td>公式中的z，计算结果。shape为x与y broadcast后的最大值shape。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
@@ -67,8 +67,8 @@ $$
 
 ## 约束说明
 
-- 输入 shape 维度最大为 8。
-- 输入 x、y、输出 z 的数据类型必须一致。
+- 输入shape维度最大为8。
+- 输入x、y、输出z的数据类型必须一致。
 
 ## 调用说明
 

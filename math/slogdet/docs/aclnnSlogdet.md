@@ -267,13 +267,13 @@ int CreateAclTensor(
   ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
 
-  // 计算连续tensor的 strides
+  // 计算连续tensor的strides
   std::vector<int64_t> strides(shape.size(), 1);
   for (int64_t i = shape.size() - 2; i >= 0; i--) {
     strides[i] = shape[i + 1] * strides[i + 1];
   }
 
-  // 调用aclCreateTensor接口创建 aclTensor
+  // 调用aclCreateTensor接口创建aclTensor
   *tensor = aclCreateTensor(
       shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
       *deviceAddr);
@@ -296,15 +296,15 @@ aclError CreateInputs(
   std::vector<float> signOutHostData = {0, 0, 0};
   std::vector<float> logOutHostData = {0, 0, 0};
 
-  // 创建 self aclTensor
+  // 创建self aclTensor
   auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_FLOAT, self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 创建 signOut aclTensor
+  // 创建signOut aclTensor
   ret = CreateAclTensor(signOutHostData, signOutShape, signOutDeviceAddr, aclDataType::ACL_FLOAT, signOut);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 创建 logOut aclTensor
+  // 创建logOut aclTensor
   ret = CreateAclTensor(logOutHostData, logOutShape, logOutDeviceAddr, aclDataType::ACL_FLOAT, logOut);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
@@ -318,7 +318,7 @@ aclError ExecOpApi(
 {
   aclOpExecutor* executor;
 
-  // 调用 aclnnSlogdet 第一段接口
+  // 调用aclnnSlogdet第一段接口
   auto ret = aclnnSlogdetGetWorkspaceSize(self, signOut, logOut, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnSlogdetGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
@@ -330,7 +330,7 @@ aclError ExecOpApi(
   }
   *workspaceAddrOut = workspaceAddr;
 
-  // 调用 aclnnSlogdet 第二段接口
+  // 调用aclnnSlogdet第二段接口
   ret = aclnnSlogdet(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnSlogdet failed. ERROR: %d\n", ret); return ret);
 
@@ -338,7 +338,7 @@ aclError ExecOpApi(
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
-  // 拷贝 signOut
+  // 拷贝signOut
   auto sizeSign = GetShapeSize(signOutShape);
   std::vector<float> resultData(sizeSign, 0);
   ret = aclrtMemcpy(
@@ -349,7 +349,7 @@ aclError ExecOpApi(
     LOG_PRINT("signout result[%ld] is: %f\n", i, resultData[i]);
   }
 
-  // 拷贝 logOut
+  // 拷贝logOut
   auto sizeLog = GetShapeSize(logOutShape);
   std::vector<float> logResultData(sizeLog, 0);
   ret = aclrtMemcpy(
@@ -365,13 +365,13 @@ aclError ExecOpApi(
 
 int main()
 {
-  // 1. device/stream 初始化
+  // 1. device/stream初始化
   int32_t deviceId = 0;
   aclrtStream stream;
   auto ret = InitAcl(deviceId, &stream);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 2. 构造输入与输出
+  // 2.构造输入与输出
   std::vector<int64_t> selfShape = {3, 2, 2};
   std::vector<int64_t> signOutShape = {3};
   std::vector<int64_t> logOutShape = {3};
@@ -388,7 +388,7 @@ int main()
       &logOut);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子API
+  // 3.调用CANN算子API
   uint64_t workspaceSize = 0;
   void* workspaceAddr = nullptr;
 
@@ -397,12 +397,12 @@ int main()
       logOutShape, stream);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 6. 释放 aclTensor
+  // 6.释放aclTensor
   aclDestroyTensor(self);
   aclDestroyTensor(signOut);
   aclDestroyTensor(logOut);
 
-  // 7. 释放device资源
+  // 7.释放device资源
   aclrtFree(selfDeviceAddr);
   aclrtFree(signOutDeviceAddr);
   aclrtFree(logOutDeviceAddr);

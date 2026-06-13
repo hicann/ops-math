@@ -15,7 +15,7 @@
 
 - 接口功能：计算一个或多个矩阵的奇异值分解。
 
-  当输入张量的维度大于2时，会将高维张量视为一批矩阵进行处理。对于形状为 (..., M, N) 的输入张量，将倒数第二维之前的维度 (...) 视为批处理维度，对每个(M, N) 矩阵独立进行奇异值分解计算。
+  当输入张量的维度大于2时，会将高维张量视为一批矩阵进行处理。对于形状为(..., M, N)的输入张量，将倒数第二维之前的维度(...)视为批处理维度，对每个(M, N)矩阵独立进行奇异值分解计算。
 
 - 计算公式：
 
@@ -420,7 +420,7 @@ int ProcessAndCleanupSVD(SVDTensors& tensors, SVDWorkspace& workspace) {
   aclDestroyTensor(tensors.sigma);
   aclDestroyTensor(tensors.v);
 
-  // 释放device 资源
+  // 释放device资源
   aclrtFree(tensors.inputDeviceAddr);
   aclrtFree(tensors.uDeviceAddr);
   aclrtFree(tensors.sigmaDeviceAddr);

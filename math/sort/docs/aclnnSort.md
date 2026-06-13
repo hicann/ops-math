@@ -192,7 +192,7 @@ aclnnStatus aclnnSort(
     <tr>
       <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="2">161002</td>
-      <td>self、valuesOut或indicesOut的数据类型不在支持的范围之内, 或shape不相互匹配。</td>
+      <td>self、valuesOut或indicesOut的数据类型不在支持的范围之内,或shape不相互匹配。</td>
     </tr>
     <tr>
       <td>dim的取值不在输入tensor self的维度范围中。</td>
@@ -248,9 +248,9 @@ aclnnStatus aclnnSort(
 - 确定性计算：
   - aclnnSort默认确定性实现。
 
-- self的数据类型不为FLOAT、FLOAT16、BFLOAT16时，tensor size过大可能会导致算子执行超时（aicpu error类型报错，报错 reason=[aicpu timeout]），具体类型最大size（与机器具体剩余内存强相关）限制如下：
-    - INT64 类型：150000000
-    - UINT8、INT8、INT16、INT32 类型：725000000
+- self的数据类型不为FLOAT、FLOAT16、BFLOAT16时，tensor size过大可能会导致算子执行超时（aicpu error类型报错，报错reason=[aicpu timeout]），具体类型最大size（与机器具体剩余内存强相关）限制如下：
+    - INT64类型：150000000
+    - UINT8、INT8、INT16、INT32类型：725000000
 
 ## 调用示例
 
@@ -316,14 +316,14 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
-  // 2. 构造输入与输出，需要根据API的接口自定义构造
+  // 2.构造输入与输出，需要根据API的接口自定义构造
   bool stable = false;
   int64_t dim = 0;
   bool descending = false;
@@ -349,7 +349,7 @@ int main() {
   ret = CreateAclTensor(outIndicesHostData, outIndicesShape, &outIndicesDeviceAddr, aclDataType::ACL_INT64, &outIndices);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3.调用CANN算子库API，需要修改为具体的Api名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnSort第一段接口
@@ -365,11 +365,11 @@ int main() {
   ret = aclnnSort(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnSort failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
-  // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
+  // 5.获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
   auto size = GetShapeSize(outValuesShape);
   std::vector<int64_t> resultData(size, 0);
   ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outValuesDeviceAddr,
@@ -388,12 +388,12 @@ int main() {
     LOG_PRINT("result indices [%ld] is: %ld\n", i, resultData2[i]);
   }
 
-  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
+  // 6.释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
   aclDestroyTensor(outValues);
   aclDestroyTensor(outIndices);
 
-  // 7. 释放device资源，需要根据具体API的接口定义修改
+  // 7.释放device资源，需要根据具体API的接口定义修改
   aclrtFree(selfDeviceAddr);
   aclrtFree(outValuesDeviceAddr);
   aclrtFree(outIndicesDeviceAddr);

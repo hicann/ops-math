@@ -31,15 +31,15 @@
 
 - **参数说明：**
   
-  - self(aclTensor*, 计算输入)：公式中的输入`self`，Device侧的aclTensor。支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)。
+  - self(aclTensor*，计算输入)：公式中的输入`self`，Device侧的aclTensor。支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)。
     - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、BFLOAT16、FLOAT，[数据格式](../../docs/zh/context/数据格式.md)支持ND。
 
-  - mask(aclTensor*, 计算输入)：公式中的`mask`，Device侧的aclTensor，shape需要与self一致。
+  - mask(aclTensor*，计算输入)：公式中的`mask`，Device侧的aclTensor，shape需要与self一致。
     - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持UINT8、INT8、FLOAT16、FLOAT，[数据格式](../../docs/zh/context/数据格式.md)支持ND。
 
-  - scale(float, 计算输入)：进行数据缩放，数据类型支持FLOAT。
+  - scale(float，计算输入)：进行数据缩放，数据类型支持FLOAT。
 
-  - y(aclTensor\*, 计算输出)：公式中的`out`，Device侧的aclTensor，数据类型和shape需要与self一致。支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)。
+  - y(aclTensor\*，计算输出)：公式中的`out`，Device侧的aclTensor，数据类型和shape需要与self一致。支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)。
     - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、BFLOAT16、FLOAT，[数据格式](../../docs/zh/context/数据格式.md)支持ND。
   
 - **返回值：**
@@ -48,9 +48,9 @@
 
   ```text
   第一段接口完成入参校验，出现以下场景时报错：
-  161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self、mask或y是空指针。
-  161002 (ACLNN_ERR_PARAM_INVALID): 1. 输入和输出的数据类型不在支持的范围之内。
-                                    2. 输出y和输入self数据类型不一致。
+  161001 (ACLNN_ERR_PARAM_NULLPTR): 1.传入的self、mask或y是空指针。
+  161002 (ACLNN_ERR_PARAM_INVALID): 1.输入和输出的数据类型不在支持的范围之内。
+                                    2.输出y和输入self数据类型不一致。
                                     3. self、mask和y的shape不一致。
   ```
 
@@ -58,10 +58,10 @@
 
 - **参数说明：**
   
-  * workspace(void\*, 入参)：在Device侧申请的workspace内存地址。
-  * workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnMaskedScaleGetWorkspaceSize获取。
-  * executor(aclOpExecutor\*, 入参)：op执行器，包含了算子计算流程。
-  * stream(aclrtStream, 入参)：指定执行任务的Stream。
+  * workspace(void\*，入参)：在Device侧申请的workspace内存地址。
+  * workspaceSize(uint64_t，入参)：在Device侧申请的workspace大小，由第一段接口aclnnMaskedScaleGetWorkspaceSize获取。
+  * executor(aclOpExecutor\*，入参)：op执行器，包含了算子计算流程。
+  * stream(aclrtStream，入参)：指定执行任务的Stream。
   
 - **返回值：**
 

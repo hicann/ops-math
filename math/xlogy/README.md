@@ -13,13 +13,13 @@
 
 ## 功能说明
 
-- 算子功能：计算 x1 * log(x2)，逐元素运算，支持广播。
+- 算子功能：计算x1 * log(x2)，逐元素运算，支持广播。
 
 - 计算公式：
 
 $$out_i = \begin{cases} 0 & \text{if } x1_i = 0 \\ x1_i \cdot \ln(x2_i) & \text{otherwise} \end{cases}$$
 
-当 x2 为 NaN 时，输出传播 NaN。
+当x2为NaN时，输出传播NaN。
 
 ## 参数说明
 
@@ -42,21 +42,21 @@ $$out_i = \begin{cases} 0 & \text{if } x1_i = 0 \\ x1_i \cdot \ln(x2_i) & \text{
     <tr>
       <td>x1</td>
       <td>输入</td>
-      <td>xlogy 的第一个输入，公式中的 x1_i。</td>
+      <td>xlogy的第一个输入，公式中的x1_i。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>x2</td>
       <td>输入</td>
-      <td>xlogy 的第二个输入，公式中的 x2_i。</td>
+      <td>xlogy的第二个输入，公式中的x2_i。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
-      <td>xlogy 的输出，公式中的 out_i。</td>
+      <td>xlogy的输出，公式中的out_i。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
@@ -64,8 +64,8 @@ $$out_i = \begin{cases} 0 & \text{if } x1_i = 0 \\ x1_i \cdot \ln(x2_i) & \text{
 
 ## 约束说明
 
-- 输入 x1 和 x2 必须具有相同的数据类型。
-- 最大维度数为 8。
+- 输入x1和x2必须具有相同的数据类型。
+- 最大维度数为8。
 
 ## 调用说明
 

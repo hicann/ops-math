@@ -18,10 +18,10 @@
 - 算子功能：进行分段和计算。生成对角线为0的半可分矩阵，且上三角为-inf。
 - 计算公式（以4D输入为例）：
 
-  1. 输入self由（N1,N2,N3,N4）升维成（N1,N2,N3,N4,1）。
-  2. 进行广播得到（N1,N2,N3,N4,N4）。
-  3. 生成（N4,N4）类型为bool的三角矩阵A，上三角为True，下三角为False，对角线为True。
-  4. 用0填充输入self里面与矩阵A中值为True的位置相对应的元素。
+  1.输入self由（N1,N2,N3,N4）升维成（N1,N2,N3,N4,1）。
+  2.进行广播得到（N1,N2,N3,N4,N4）。
+  3.生成（N4,N4）类型为bool的三角矩阵A，上三角为True，下三角为False，对角线为True。
+  4.用0填充输入self里面与矩阵A中值为True的位置相对应的元素。
 
       $$
       self_i=
@@ -30,13 +30,13 @@
       \end{cases}
       $$  
 
-  5. 以self的倒数第二维进行cumsum累加。从维度视角来看的某个元素（其它维度下标不变，当前维度下标依次递增），$selfTemp\_{i}$是输出张量中对应位置的元素。
+  5.以self的倒数第二维进行cumsum累加。从维度视角来看的某个元素（其它维度下标不变，当前维度下标依次递增），$selfTemp\_{i}$是输出张量中对应位置的元素。
 
      $$
      selfTemp_{i} = self_{1} + self_{2} + self_{3} + ...... + self_{i}
      $$
-  6. 生成（N4,N4）类型为bool的三角矩阵B，上三角为True，下三角为False，对角线为False。
-  7. 用-inf填充selfTemp里面与矩阵B中值为True的位置相对应的元素。
+  6.生成（N4,N4）类型为bool的三角矩阵B，上三角为True，下三角为False，对角线为False。
+  7.用-inf填充selfTemp里面与矩阵B中值为True的位置相对应的元素。
 
       $$
       out_i=
@@ -45,7 +45,7 @@
       \end{cases}
       $$  
 
-  8. 计算selfTemp里面每个元素的指数。
+  8.计算selfTemp里面每个元素的指数。
 
       $$
       out_i=e^{selfTemp_i}

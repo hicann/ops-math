@@ -299,7 +299,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -307,7 +307,7 @@ int main() {
   // check根据自己的需要处理
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
-  // 2. 构造输入与输出，需要根据API的接口自定义构造
+  // 2.构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> inputShape = {2, 3};
   std::vector<int64_t> outShape = {3,};
   void* inputDeviceAddr = nullptr;
@@ -334,7 +334,7 @@ int main() {
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // aclnnBatchNormStats接口调用示例
-  // 3. 调用CANN算子库API，需要修改为具体的API名称
+  // 3.调用CANN算子库API，需要修改为具体的API名称
   // 调用aclnnBatchNormStats第一段接口
   ret = aclnnBatchNormStatsGetWorkspaceSize(input, eps, mean, invstd, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnBatchNormStatsGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
@@ -348,11 +348,11 @@ int main() {
   ret = aclnnBatchNormStats(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnBatchNormStats failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
-  // 5. 获取输出的值，将Device侧内存上的结果拷贝至Host侧，需要根据具体API的接口定义修改
+  // 5.获取输出的值，将Device侧内存上的结果拷贝至Host侧，需要根据具体API的接口定义修改
   auto size = GetShapeSize(outShape);
   std::vector<float> meanData(size, 0);
   ret = aclrtMemcpy(meanData.data(), meanData.size() * sizeof(meanData[0]), meanDeviceAddr,
@@ -369,12 +369,12 @@ int main() {
     LOG_PRINT("mean result[%ld] is: %f\n", i, invstdData[i]);
   }
 
-  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
+  // 6.释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   aclDestroyTensor(input);
   aclDestroyTensor(mean);
   aclDestroyTensor(invstd);
 
-  // 7. 释放device资源，需要根据具体API的接口定义修改
+  // 7.释放device资源，需要根据具体API的接口定义修改
   aclrtFree(inputDeviceAddr);
   aclrtFree(meanDeviceAddr);
   aclrtFree(invstdDeviceAddr);

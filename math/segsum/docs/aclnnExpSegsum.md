@@ -18,10 +18,10 @@
 - 接口功能：进行分段和计算。生成对角线为0的半可分矩阵，且上三角为-inf。
 - 计算公式（以4D输入为例）：
 
-  1. 输入self由（N1,N2,N3,N4）升维成（N1,N2,N3,N4,1）。
-  2. 进行广播得到（N1,N2,N3,N4,N4）。
-  3. 生成（N4,N4）类型为bool的三角矩阵A，上三角为True，下三角为False，对角线为True。
-  4. 用0填充输入self里面与矩阵A中值为True的位置相对应的元素。
+  1.输入self由（N1,N2,N3,N4）升维成（N1,N2,N3,N4,1）。
+  2.进行广播得到（N1,N2,N3,N4,N4）。
+  3.生成（N4,N4）类型为bool的三角矩阵A，上三角为True，下三角为False，对角线为True。
+  4.用0填充输入self里面与矩阵A中值为True的位置相对应的元素。
 
       $$
       self_i=
@@ -29,13 +29,13 @@
       \\0, \quad A_i==True
       \end{cases}
       $$
-  5. 以self的倒数第二维进行cumsum累加。从维度视角来看的某个元素（其它维度下标不变，当前维度下标依次递增），$selfTemp\_{i}$是输出张量中对应位置的元素。
+  5.以self的倒数第二维进行cumsum累加。从维度视角来看的某个元素（其它维度下标不变，当前维度下标依次递增），$selfTemp\_{i}$是输出张量中对应位置的元素。
 
       $$
       selfTemp_{i} = self_{1} + self_{2} + self_{3} + ...... + self_{i}
       $$
-  6. 生成（N4,N4）类型为bool的三角矩阵B，上三角为True，下三角为False，对角线为False。
-  7. 用-inf填充selfTemp里面与矩阵B中值为True的位置相对应的元素。
+  6.生成（N4,N4）类型为bool的三角矩阵B，上三角为True，下三角为False，对角线为False。
+  7.用-inf填充selfTemp里面与矩阵B中值为True的位置相对应的元素。
 
      $$
      out_i=
@@ -43,7 +43,7 @@
      \\-inf, \quad B_i==True
      \end{cases}
      $$   
-  8. 计算selfTemp里面每个元素的指数。
+  8.计算selfTemp里面每个元素的指数。
 
      $$
      out_i=e^{selfTemp_i}
@@ -292,7 +292,7 @@ int CreateAclTensor(
 
 int main()
 {
-    // 1. （固定写法）device/stream初始化，参考acl API手册
+    // 1.（固定写法）device/stream初始化，参考acl API手册
     // 根据自己的实际device填写deviceId
     int32_t deviceId = 0;
     aclrtStream stream;
@@ -300,7 +300,7 @@ int main()
     // check根据自己的需要处理
     CHECK_RET(ret == 0, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
-    // 2. 构造输入与输出，需要根据API的接口自定义构造
+    // 2.构造输入与输出，需要根据API的接口自定义构造
     std::vector<int64_t> selfShape = {1, 1, 1, 4};
     std::vector<int64_t> outShape = {1, 1, 1, 4, 4};
     void* selfDeviceAddr = nullptr;
@@ -317,7 +317,7 @@ int main()
     // 创建out aclTensor
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-    // 3. 调用CANN算子库API，需要修改为具体的API
+    // 3.调用CANN算子库API，需要修改为具体的API
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
     // 调用aclnnExpSegsum第一段接口
@@ -332,10 +332,10 @@ int main()
     // 调用aclnnExpSegsum第二段接口
     ret = aclnnExpSegsum(workspaceAddr, workspaceSize, executor, stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnExpSegsum failed. ERROR: %d\n", ret); return ret);
-    // 4. （固定写法）同步等待任务执行结束
+    // 4.（固定写法）同步等待任务执行结束
     ret = aclrtSynchronizeStream(stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
-    // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
+    // 5.获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
     auto size = GetShapeSize(outShape);
     std::vector<float> resultData(size, 0);
     ret = aclrtMemcpy(
@@ -346,11 +346,11 @@ int main()
         LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
     }
 
-    // 6. 释放aclTensor，需要根据具体API的接口定义修改
+    // 6.释放aclTensor，需要根据具体API的接口定义修改
     aclDestroyTensor(self);
     aclDestroyTensor(out);
 
-    // 7. 释放device资源，需要根据具体API的接口定义修改
+    // 7.释放device资源，需要根据具体API的接口定义修改
     aclrtFree(selfDeviceAddr);
     aclrtFree(outDeviceAddr);
     if (workspaceSize > 0) {

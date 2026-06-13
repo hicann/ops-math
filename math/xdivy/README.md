@@ -13,13 +13,13 @@
 
 ## 功能说明
 
-- 算子功能：计算 x / y，当 x == 0 时结果为 0。
+- 算子功能：计算x / y，当x == 0时结果为0。
 
 - 计算公式：
 
-  $out = x / y$，其中当 x = 0 时 out = 0。
+  $out = x / y$，其中当x = 0时out = 0。
 
-- 支持 broadcast：x 和 y 的 shape 需满足 broadcast 关系，输出 shape 为广播后的最大值 shape。
+- 支持broadcast：x和y的shape需满足broadcast关系，输出shape为广播后的最大值shape。
 
 ## 参数说明
 
@@ -42,21 +42,21 @@
     <tr>
       <td>x1</td>
       <td>输入</td>
-      <td>公式中的 x，被除数。shape 需与 x2 满足 broadcast 关系。</td>
+      <td>公式中的x，被除数。shape需与x2满足broadcast关系。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>x2</td>
       <td>输入</td>
-      <td>公式中的 y，除数。shape 需与 x1 满足 broadcast 关系。</td>
+      <td>公式中的y，除数。shape需与x1满足broadcast关系。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
-      <td>公式中的 out，计算结果。shape 为 x1 与 x2 broadcast 后的最大值 shape。</td>
+      <td>公式中的out，计算结果。shape为x1与x2 broadcast后的最大值shape。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
@@ -64,8 +64,8 @@
 
 ## 约束说明
 
-- 输入 shape 维度最大为 8。
-- 输入 x1、x2、输出 y 的数据类型必须一致。
+- 输入shape维度最大为8。
+- 输入x1、x2、输出y的数据类型必须一致。
 
 ## 调用说明
 

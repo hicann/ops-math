@@ -7,23 +7,23 @@
 | 产品 | 是否支持 |
 | :--- | :------: |
 | <term>Ascend 950PR/Ascend 950DT</term> | √ |
-| <term>Atlas A3训练系列产品/Atlas A3推理系列产品</term> | √ |
-| <term>Atlas A2训练系列产品/Atlas A2推理系列产品</term> | √ |
-| <term>Atlas 200I/500 A2推理产品</term> | × |
-| <term>Atlas推理系列产品</term> | × |
-| <term>Atlas训练系列产品</term> | √ |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term> | √ |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> | √ |
+| <term>Atlas 200I/500 A2 推理产品</term> | × |
+| <term>Atlas 推理系列产品</term> | × |
+| <term>Atlas 训练系列产品</term> | √ |
 
 ## 功能说明
 
 - 算子功能：在一个已排序的张量（sortedSequence）中查找给定Tensor值（self）应该插入的位置。返回与self相同大小的张量，其中每个元素表示给定值在原始张量中应该插入的位置。如果self为Scalar类型，请参考文档[aclnnSearchSorteds](./aclnnSearchSorteds.md)。
-- 计算公式：设最内层待检索序列长度为 N，对每个输入元素 x = self<sub>i</sub>：
-  - 当 `right=false` 时，返回左插入点：
+- 计算公式：设最内层待检索序列长度为N，对每个输入元素x = self<sub>i</sub>：
+  - 当`right=false`时，返回左插入点：
 
   $$
   out_i=\min\{j\in[0,N]\mid sortedSequence_j\ge x\}
   $$
 
-  - 当 `right=true` 时，返回右插入点：
+  - 当`right=true`时，返回右插入点：
 
   $$
   out_i=\min\{j\in[0,N]\mid sortedSequence_j>x\}
@@ -89,7 +89,7 @@ aclnnStatus aclnnSearchSorted(
       <td><ul><li>与<code>self</code>数据类型需满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</li><li>公式中的<code>N</code>为<code>sortedSequence</code>最内层长度，<code>sortedSequence<sub>j</sub></code>为最内层第<code>j</code>个元素。</li></ul></td>
       <td>DOUBLE、FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64</td>
       <td>ND</td>
-      <td>不超过 8 维</td>
+      <td>不超过8维</td>
       <td>√</td>
     </tr>
     <tr>
@@ -99,7 +99,7 @@ aclnnStatus aclnnSearchSorted(
       <td><ul><li>与<code>sortedSequence</code>数据类型需满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</li><li>公式中<code>x=self<sub>i</sub></code>，<code>i</code>为<code>self</code>中元素索引。</li></ul></td>
       <td>DOUBLE、FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64</td>
       <td>ND</td>
-      <td>不超过 8 维</td>
+      <td>不超过8维</td>
       <td>√</td>
     </tr>
     <tr>
@@ -126,7 +126,7 @@ aclnnStatus aclnnSearchSorted(
       <td>sorter（aclTensor*）</td>
       <td>输入</td>
       <td>指定<code>sortedSequence</code>元素顺序。</td>
-      <td><ul><li>shape需与<code>sortedSequence</code>一致。</li><li>元素取值范围为[0, 最内层维度dim-1]。</li><li>传入<code>sorter</code>时，公式中的<code>sortedSequence<sub>j</sub></code>按<code>sorter</code>指定顺序取值。</li></ul></td>
+      <td><ul><li>shape需与<code>sortedSequence</code>一致。</li><li>元素取值范围为[0，最内层维度dim-1]。</li><li>传入<code>sorter</code>时，公式中的<code>sortedSequence<sub>j</sub></code>按<code>sorter</code>指定顺序取值。</li></ul></td>
       <td>INT64</td>
       <td>ND</td>
       <td>与sortedSequence一致</td>
@@ -324,7 +324,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化, 参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -332,7 +332,7 @@ int main() {
   // check根据自己的需要处理
   CHECK_RET(ret == 0, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
-  // 2. 构造输入与输出，需要根据API的接口自定义构造
+  // 2.构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> selfShape = {4, 2};
   std::vector<int64_t> sortedSequenceShape = {4, 4};
   std::vector<int64_t> sorterShape = {4, 4};
@@ -364,7 +364,7 @@ int main() {
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   bool outInt32 = false;
   bool right = false;
-  // 3. 调用CANN算子库API，需要修改为具体的API
+  // 3.调用CANN算子库API，需要修改为具体的API
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnSearchSorted第一段接口
@@ -379,10 +379,10 @@ int main() {
   // 调用aclnnSearchSorted第二段接口
   ret = aclnnSearchSorted(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnSearchSorted failed. ERROR: %d\n", ret); return ret);
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
-  // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
+  // 5.获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
   auto size = GetShapeSize(outShape);
   std::vector<int64_t> resultData(size, 0);
   ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, size * sizeof(int64_t),
@@ -392,13 +392,13 @@ int main() {
     LOG_PRINT("result[%ld] is: %ld\n", i, resultData[i]);
   }
 
-  // 6. 释放aclTensor，需要根据具体API的接口定义修改
+  // 6.释放aclTensor，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
   aclDestroyTensor(sortedSequence);
   aclDestroyTensor(sorter);
   aclDestroyTensor(out);
 
-  // 7. 释放device资源，需要根据具体API的接口定义修改
+  // 7.释放device资源，需要根据具体API的接口定义修改
   aclrtFree(sortedSequenceDeviceAddr);
   aclrtFree(sorterDeviceAddr);
   aclrtFree(outDeviceAddr);

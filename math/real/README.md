@@ -13,7 +13,7 @@
 
 ## 功能说明
 
-- 算子功能：返回输入 tensor 每个元素的实部。
+- 算子功能：返回输入tensor每个元素的实部。
 - 计算公式：
 
   $$
@@ -52,20 +52,20 @@
   <tr>
     <td>Tout</td>
     <td>可选属性</td>
-    <td><ul><li>期望的输出 dtype 枚举值。</li><li>默认值为 DT_FLOAT；实际输出类型由 input dtype 推导。</li></ul></td>
+    <td><ul><li>期望的输出dtype枚举值。</li><li>默认值为DT_FLOAT；实际输出类型由input dtype推导。</li></ul></td>
     <td>INT</td>
     <td>-</td>
   </tr>
   <tr>
     <td>output</td>
     <td>输出</td>
-    <td>取实部后的输出张量，公式中的 $output_i$，shape 与 input 一致。</td>
+    <td>取实部后的输出张量，公式中的 $output_i$，shape与input一致。</td>
     <td>FLOAT、FLOAT16</td>
     <td>ND</td>
   </tr>
 </tbody></table>
 
-input / output dtype 对应关系：
+input / output dtype对应关系：
 
 | input | output |
 | :--- | :--- |

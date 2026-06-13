@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-- 接口功能：计算 x * log(1 + y)，当 x == 0 时结果为 0。
+- 接口功能：计算x * log(1 + y)，当x == 0时结果为0。
 
 - 计算公式：
 
@@ -27,8 +27,8 @@ x_i \cdot \log(1 + y_i),          & x_i \neq 0
 \end{cases}
 $$
 
-- x 与 y 支持 broadcast，输出 shape 为广播后的最大值 shape。
-- y 为 NaN 时输出 y 原值。
+- x与y支持broadcast，输出shape为广播后的最大值shape。
+- y为NaN时输出y原值。
 
 ## 函数原型
 
@@ -80,8 +80,8 @@ aclnnStatus aclnnXlog1py(
     <tr>
       <td>x</td>
       <td>输入</td>
-      <td>表示乘数因子，对应公式中 x。</td>
-      <td><ul><li>支持空Tensor。</li><li>数据类型需与 y、z 保持一致。</li><li>shape 需与 y 满足broadcast关系。</li></ul></td>
+      <td>表示乘数因子，对应公式中x。</td>
+      <td><ul><li>支持空Tensor。</li><li>数据类型需与y、z保持一致。</li><li>shape需与y满足broadcast关系。</li></ul></td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
@@ -90,9 +90,9 @@ aclnnStatus aclnnXlog1py(
     <tr>
       <td>y</td>
       <td>输入</td>
-      <td>表示 log1p 的自变量，对应公式中 y。</td>
-      <td><ul><li>支持空Tensor。</li><li>数据类型需与 x 保持一致。</li><li>shape 需与 x 满足broadcast关系。</li></ul></td>
-      <td>数据类型与 x 保持一致。</td>
+      <td>表示log1p的自变量，对应公式中y。</td>
+      <td><ul><li>支持空Tensor。</li><li>数据类型需与x保持一致。</li><li>shape需与x满足broadcast关系。</li></ul></td>
+      <td>数据类型与x保持一致。</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -100,9 +100,9 @@ aclnnStatus aclnnXlog1py(
     <tr>
       <td>z</td>
       <td>输出</td>
-      <td>表示计算结果，对应公式中 z。</td>
-      <td>shape 需为 x 与 y broadcast 后的 shape。</td>
-      <td>数据类型与 x 保持一致。</td>
+      <td>表示计算结果，对应公式中z。</td>
+      <td>shape需为x与y broadcast后的shape。</td>
+      <td>数据类型与x保持一致。</td>
       <td>ND</td>
       <td>1-8</td>
       <td>√</td>
@@ -157,16 +157,16 @@ aclnnStatus aclnnXlog1py(
     <tr>
       <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="4">161002</td>
-      <td>x、y 或 z 的数据类型和数据格式不在支持的范围之内。</td>
+      <td>x、y或z的数据类型和数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>x、y、z 的数据类型不匹配。</td>
+      <td>x、y、z的数据类型不匹配。</td>
     </tr>
     <tr>
-      <td>x、y 或 z 的 shape 维度不在支持的范围之内（最大 8 维）。</td>
+      <td>x、y或z的shape维度不在支持的范围之内（最大8维）。</td>
     </tr>
     <tr>
-      <td>x、y 或 z 使用了私有格式（private format）。</td>
+      <td>x、y或z使用了私有格式（private format）。</td>
     </tr>
   </tbody></table>
 
@@ -216,10 +216,10 @@ aclnnStatus aclnnXlog1py(
 
 - 确定性计算：
   - aclnnXlog1py默认确定性实现。
-- 输入数据类型必须为 FLOAT、FLOAT16 或 BFLOAT16。
-- shape 维度范围为 0-8。
-- 不支持私有格式（private format），仅支持 ND 格式。
-- 输入 x、y，输出 z 的数据类型必须一致。
+- 输入数据类型必须为FLOAT、FLOAT16或BFLOAT16。
+- shape维度范围为0-8。
+- 不支持私有格式（private format），仅支持ND格式。
+- 输入x、y，输出z的数据类型必须一致。
 
 ## 调用示例
 

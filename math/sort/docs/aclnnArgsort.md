@@ -163,7 +163,7 @@ $$
     <tr>
       <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="3">161002</td>
-      <td>self、out的数据类型或数据格式不在支持的范围之内, 或shape不相互匹配。</td>
+      <td>self、out的数据类型或数据格式不在支持的范围之内或shape不相互匹配。</td>
     </tr>
     <tr>
       <td>dim的取值不在 [-N, N-1]的范围中。</td>
@@ -289,14 +289,14 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-    // 1. （固定写法）device/stream初始化，参考acl API手册
+    // 1.（固定写法）device/stream初始化，参考acl API手册
     // 根据自己的实际device填写deviceId
     int32_t deviceId = 0;
     aclrtStream stream;
     auto ret = Init(deviceId, &stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
-    // 2. 构造输入与输出，需要根据API的接口自定义构造
+    // 2.构造输入与输出，需要根据API的接口自定义构造
     int64_t dim = 0;
     bool descending = false;
     std::vector<int64_t> selfShape = {3, 4};
@@ -315,7 +315,7 @@ int main() {
     ret = CreateAclTensor(outIndicesHostData, outIndicesShape, &outIndicesDeviceAddr, aclDataType::ACL_INT64, &outIndices);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-    // 3. 调用CANN算子库API，需要修改为具体的Api名称
+    // 3.调用CANN算子库API，需要修改为具体的Api名称
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
     // 调用aclnnArgsort第一段接口
@@ -331,11 +331,11 @@ int main() {
     ret = aclnnArgsort(workspaceAddr, workspaceSize, executor, stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnArgsort failed. ERROR: %d\n", ret); return ret);
 
-    // 4. （固定写法）同步等待任务执行结束
+    // 4.（固定写法）同步等待任务执行结束
     ret = aclrtSynchronizeStream(stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
-    // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
+    // 5.获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
     auto size2 = GetShapeSize(outIndicesShape);
     std::vector<int64_t> resultData2(size2, 0);
     ret = aclrtMemcpy(resultData2.data(), resultData2.size() * sizeof(resultData2[0]), outIndicesDeviceAddr,
@@ -345,11 +345,11 @@ int main() {
         LOG_PRINT("result indices [%ld] is: %ld\n", i, resultData2[i]);
     }
 
-    // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
+    // 6.释放aclTensor和aclScalar，需要根据具体API的接口定义修改
     aclDestroyTensor(self);
     aclDestroyTensor(outIndices);
 
-     // 7. 释放device 资源
+     // 7.释放device资源
     aclrtFree(selfDeviceAddr);
     aclrtFree(outIndicesDeviceAddr);
     if (workspaceSize > 0) {

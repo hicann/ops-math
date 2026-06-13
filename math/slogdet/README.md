@@ -22,7 +22,7 @@
   logOut = log(abs(det(self)))
   $$
 
-  其中det表示行列式计算，abs表示绝对值计算。 如果$det(self)$的结果是0，则$logOut = -inf$。
+  其中det表示行列式计算，abs表示绝对值计算。如果$det(self)$的结果是0，则$logOut = -inf$。
 
 ## 参数说明
 
@@ -45,21 +45,21 @@
     <tr>
       <td>self</td>
       <td>输入</td>
-      <td>计算公式中的输入 self。</td>
+      <td>计算公式中的输入self。</td>
       <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>logOut</td>
       <td>输出</td>
-      <td>计算公式中的输出 logOut。</td>
+      <td>计算公式中的输出logOut。</td>
       <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>signOut</td>
       <td>输出</td>
-      <td>计算公式中的输出 signOut。</td>
+      <td>计算公式中的输出signOut。</td>
       <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>

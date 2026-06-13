@@ -16,7 +16,7 @@
 ## 功能说明
 
 - 接口功能：返回输入Tensor指定维度的值求得的均值及方差。
-- 计算公式：假设 dim 为 $i$，则对该维度进行计算。$N$为该维度的 shape。取 $self_{i}$，求出该维度上的平均值 $meanOut = \bar{self_{i}}$。
+- 计算公式：假设dim为 $i$，则对该维度进行计算。$N$为该维度的shape。取 $self_{i}$，求出该维度上的平均值 $meanOut = \bar{self_{i}}$。
 
   方差计算公式如下：
 
@@ -24,7 +24,7 @@
   varOut = \frac{1}{max(0, N - correction)}\sum_{j=0}^{N-1}(self_{ij}-\bar{self_{i}})^2
   $$
 
-  当`keepdim = true`时，reduce后保留该维度，且输出 shape 中该维度值为1；当 `keepdim = false`时，不保留该维度。
+  当`keepdim = true`时，reduce后保留该维度，且输出shape中该维度值为1；当`keepdim = false`时，不保留该维度。
   当dim为nullptr或[]时，视为计算所有维度。
 
 ## 函数原型
@@ -314,14 +314,14 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化, 参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
   // check根据自己的需要处理
   CHECK_RET(ret == 0, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
-  // 2. 构造输入与输出，需要根据API的接口自定义构造
+  // 2.构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> selfShape = {2,4};
   std::vector<int64_t> outShape = {2,1};
   void* selfDeviceAddr = nullptr;
@@ -348,7 +348,7 @@ int main() {
   ret = CreateAclTensor(meanHostData, outShape, &meanDeviceAddr, aclDataType::ACL_FLOAT, &mean);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的API
+  // 3.调用CANN算子库API，需要修改为具体的API
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnVarMean第一段接口
@@ -363,10 +363,10 @@ int main() {
   // 调用aclnnVarMean第二段接口
   ret = aclnnVarMean(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnVarMean failed. ERROR: %d\n", ret); return ret);
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
-  // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
+  // 5.获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
   auto size = GetShapeSize(outShape);
   std::vector<float> meanData(size, 0);
   ret = aclrtMemcpy(meanData.data(), meanData.size() * sizeof(meanData[0]), meanDeviceAddr, size * sizeof(float),
@@ -383,13 +383,13 @@ int main() {
     LOG_PRINT("varResult[%ld] is: %f\n", i, varData[i]);
   }
 
-  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
+  // 6.释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
   aclDestroyIntArray(dim);
   aclDestroyTensor(mean);
   aclDestroyTensor(var);
 
-  // 7. 释放device资源，需要根据具体API的接口定义修改
+  // 7.释放device资源，需要根据具体API的接口定义修改
   aclrtFree(selfDeviceAddr);
   aclrtFree(varDeviceAddr);
   aclrtFree(meanDeviceAddr);

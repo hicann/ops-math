@@ -71,8 +71,8 @@
 
 - **参数说明**：
 
-    - cost（aclTensor*，计算输入）：表示成本张量，公式中的`cost`，Device侧的aclTensor。数据类型支持BFLOAT16、FLOAT16、FLOAT。取值需要在[0,1]之间，可以进行归一化处理。 [数据格式](../../../docs/zh/context/数据格式.md)支持ND，输入为二维矩阵且行数不超过10000，列数不超过1024。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
-    - tol (aclScalar*, 入参) ：表示计算Sinkhorn的误差，数据类型支持FLOAT。如果传入空指针，则tol取0.0001。
+    - cost（aclTensor*，计算输入）：表示成本张量，公式中的`cost`，Device侧的aclTensor。数据类型支持BFLOAT16、FLOAT16、FLOAT。取值需要在[0,1]之间，可以进行归一化处理。[数据格式](../../../docs/zh/context/数据格式.md)支持ND，输入为二维矩阵且行数不超过10000，列数不超过1024。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
+    - tol (aclScalar*，入参)：表示计算Sinkhorn的误差，数据类型支持FLOAT。如果传入空指针，则tol取0.0001。
     - p（aclTensor*，计算输出）：表示最优传输张量，公式中的`p`，Device侧的aclTensor。数据类型支持BFLOAT16、FLOAT16、FLOAT。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。shape维度为2。不支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。数据类型和shape与入参`cost`的数据类型和shape一致。
     - workspaceSize（uint64_t\*，出参）：返回用户需要在Device侧申请的workspace大小。
     - executor（aclOpExecutor\**，出参）：返回op执行器，包含了算子计算流程。
@@ -224,14 +224,14 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考AscendCL对外接口列表
+  // 1.（固定写法）device/stream初始化，参考AscendCL对外接口列表
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
-  // 2. 构造输入与输出，需要根据API的接口自定义构造
+  // 2.构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> costShape = {3, 2};
   std::vector<int64_t> pShape = {3, 2};
   void* costDeviceAddr = nullptr;
@@ -256,7 +256,7 @@ int main() {
   tol = aclCreateScalar(&tolValue, aclDataType::ACL_FLOAT);
   CHECK_RET(tol != nullptr, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3.调用CANN算子库API，需要修改为具体的Api名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnSinkhorn第一段接口
@@ -272,11 +272,11 @@ int main() {
   ret = aclnnSinkhorn(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnSinkhorn failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
-  // 5. 获取输出的值，将device侧内存上的结果复制至host侧，需要根据具体API的接口定义修改
+  // 5.获取输出的值，将device侧内存上的结果复制至host侧，需要根据具体API的接口定义修改
   auto size = GetShapeSize(pShape);
   std::vector<float> pData(size, 0);
   ret = aclrtMemcpy(pData.data(), pData.size() * sizeof(pData[0]), pDeviceAddr,
@@ -286,7 +286,7 @@ int main() {
     LOG_PRINT("p result[%ld] is: %e\n", i, pData[i]);
   }
 
-  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
+  // 6.释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   aclDestroyTensor(cost);
   aclDestroyTensor(p);
   aclDestroyScalar(tol);
