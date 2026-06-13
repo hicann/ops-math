@@ -80,7 +80,9 @@ ge::graphStatus PadV3GradReplicationTiling::GetShapeAttrsInfo()
     dimNum_ = xShape->GetStorageShape().GetDimNum();
     OP_CHECK_IF(
         dimNum_ == 0 || dimNum_ > MAX_DIM_NUM,
-        OP_LOGE(context_->GetNodeName(), "Invalid dimNum %u, should be 1~8.", dimNum_), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(),
+            "x", std::to_string(dimNum_).c_str(), "The shape dim of x must be within the range [1, 8]"),
+            return ge::GRAPH_FAILED);
 
     for (size_t i = 0; i < dimNum_; i++) {
         outputShape_[i] = xShape->GetStorageShape().GetDim(i); // padding后的tensor（含padding）
@@ -121,7 +123,9 @@ ge::graphStatus PadV3GradReplicationTiling::GetShapeAttrsInfo()
             dataSize_ = 8;
             break;
         default:
-            OP_LOGE(context_->GetNodeName(), "Unsupported data type %s.", Ops::Base::ToString(paramsDtype_).c_str());
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(),
+                "x", Ops::Base::ToString(paramsDtype_).c_str(),
+                "The dtype of x must be float, float16, bfloat16 or integer types");
             return ge::GRAPH_FAILED;
     }
 
@@ -161,7 +165,9 @@ ge::graphStatus PadV3GradReplicationTiling::GetPaddings()
     const size_t paddingsNum = paddingsTensor->GetShapeSize();
     OP_CHECK_IF(
         paddingsNum != PAIR * dimNum_,
-        OP_LOGE(context_->GetNodeName(), "paddings num %zu should be %zu (2 * dimNum).", paddingsNum, PAIR * dimNum_),
+        OP_LOGE_FOR_INVALID_LISTSIZE(context_->GetNodeName(),
+            "paddings",
+            std::to_string(paddingsNum).c_str(), std::to_string(PAIR * dimNum_).c_str()),
         return ge::GRAPH_FAILED);
 
     ge::DataType paddingsDtype = paddingsTensor->GetDataType();
@@ -173,7 +179,9 @@ ge::graphStatus PadV3GradReplicationTiling::GetPaddings()
             GetPaddingsToShape<int64_t>(paddingsTensor);
             break;
         default:
-            OP_LOGE(context_->GetNodeName(), "Invalid paddings dtype %s.", Ops::Base::ToString(paddingsDtype).c_str());
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(),
+                "paddings", Ops::Base::ToString(paddingsDtype).c_str(),
+                "The dtype of paddings must be int32 or int64");
             return ge::GRAPH_FAILED;
     }
 
