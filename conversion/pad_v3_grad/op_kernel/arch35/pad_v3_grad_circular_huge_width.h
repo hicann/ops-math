@@ -21,7 +21,6 @@
 #include "pad_v3_grad_common.h"
 
 namespace PadV3Grad {
-// constexpr uint32_t BUFFER_NUM = 2;
 using namespace AscendC;
 
 template <typename T>
@@ -476,7 +475,6 @@ private:
             WaitFlag<EVENT>(EVENT_ID0);
         }
     }
-
 }; // 类
 
 } // namespace PadV3Grad

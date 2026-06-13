@@ -85,8 +85,7 @@ private:
     uint32_t vlSize_ = static_cast<uint32_t>(Ops::Base::GetVRegSize() / sizeof(CastType_));
 
 public:
-    __aicore__ inline BatchToSpaceSmallC()
-    {}
+    __aicore__ inline BatchToSpaceSmallC() {}
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const B2SNDSmallCTilingData* tilingData, TPipe* pipe)
     {
@@ -98,7 +97,7 @@ public:
         inUbFactor_ = tilingData->inUbFactor;
         outUbFactor_ = tilingData->outUbFactor;
         ubTotalCount_ = tilingData->ubTotalCount;
-        ubPerCount_ = tilingData->ubPerCount;   
+        ubPerCount_ = tilingData->ubPerCount;
         if (inUbAxis_ == 0 && td_->oriInShape[0] == inUbFactor_) {
             noCut_ = true;
         }
@@ -118,9 +117,10 @@ public:
             outStride_[i] = outShapeSize;
             outShapeSize *= outShape_[i];
             if (outI > BLOCK_DIM_NUM && outI <= MAX_CROP_DIM_NUM * BLOCK_DIM_NUM) {
-                outShapeSize = outShapeSize - (td_->crops[outI - BLOCK_DIM_NUM - 1][0]
-                 + td_->crops[outI - BLOCK_DIM_NUM - 1][1]) * outStride_[i + 1];
-                outStride_[i] = (outStride_[i] > outShapeSize) ? outShapeSize : outStride_[i]; 
+                outShapeSize =
+                    outShapeSize - (td_->crops[outI - BLOCK_DIM_NUM - 1][0] + td_->crops[outI - BLOCK_DIM_NUM - 1][1]) *
+                                       outStride_[i + 1];
+                outStride_[i] = (outStride_[i] > outShapeSize) ? outShapeSize : outStride_[i];
             }
         }
         if (!noCut_) {
@@ -151,9 +151,11 @@ public:
                 uint64_t factor = td_->croppedInShape[i];
                 if ((outIndexs_ & (1 << i)) != 0) {
                     if (i == inUbAxis_ || i == outUbAxis_) {
-                        factor = Ops::Base::CeilDiv(td_->croppedInShape[i], static_cast<uint64_t>(i == inUbAxis_ ? inUbFactor_ : outUbFactor_));
+                        factor = Ops::Base::CeilDiv(
+                            td_->croppedInShape[i], static_cast<uint64_t>(i == inUbAxis_ ? inUbFactor_ : outUbFactor_));
                     }
-                    inIndex_[i] = curIdx % factor * (i == inUbAxis_ ? inUbFactor_ : (i == outUbAxis_ ? outUbFactor_ : 1));
+                    inIndex_[i] =
+                        curIdx % factor * (i == inUbAxis_ ? inUbFactor_ : (i == outUbAxis_ ? outUbFactor_ : 1));
                     curIdx /= factor;
                 } else {
                     inIndex_[i] = 0;
@@ -161,26 +163,30 @@ public:
                 tiledInShape_[i] = CalUbFactor(i);
                 gmStart += (inIndex_[i] + cropIndex_[i]) * srcStride_[i];
             }
-            //计算预截取后还需要crop多少
+            // 计算预截取后还需要crop多少
             for (uint8_t i = 0; i < MAX_CROP_NUM; ++i) {
                 copyMode_[i] = false;
             }
             copyInAxis = 0;
             for (int8_t i = 0; i < BLOCK_DIM_NUM; ++i) {
                 int8_t index1 = i + 1 + BLOCK_DIM_NUM;
-                if (td_->croppedInShape[index1] == 1){
+                if (td_->croppedInShape[index1] == 1) {
                     continue;
                 }
                 uint64_t crop_i0 = td_->crops[i][0] % td_->croppedInShape[i];
                 uint64_t crop_i1 = td_->crops[i][1] % td_->croppedInShape[i];
-                if (inIndex_[index1] == 0){
-                    cropOffset_[i][0] = inIndex_[i] > crop_i0 ? 0 : (inIndex_[i] +
-                     tiledInShape_[i] < crop_i0 ? tiledInShape_[i] : crop_i0 - inIndex_[i]);
+                if (inIndex_[index1] == 0) {
+                    cropOffset_[i][0] =
+                        inIndex_[i] > crop_i0 ?
+                            0 :
+                            (inIndex_[i] + tiledInShape_[i] < crop_i0 ? tiledInShape_[i] : crop_i0 - inIndex_[i]);
                 }
-                if (inIndex_[index1] + tiledInShape_[index1] >= td_->croppedInShape[index1]){
-                    cropOffset_[i][1] = inIndex_[i] + tiledInShape_[i] < td_->croppedInShape[i] - crop_i1 ? 0 :
-                    (inIndex_[i] < td_->croppedInShape[i] - crop_i1 ? inIndex_[i] + tiledInShape_[i]
-                     + crop_i1 - td_->croppedInShape[i] : tiledInShape_[i]); 
+                if (inIndex_[index1] + tiledInShape_[index1] >= td_->croppedInShape[index1]) {
+                    cropOffset_[i][1] = inIndex_[i] + tiledInShape_[i] < td_->croppedInShape[i] - crop_i1 ?
+                                            0 :
+                                            (inIndex_[i] < td_->croppedInShape[i] - crop_i1 ?
+                                                 inIndex_[i] + tiledInShape_[i] + crop_i1 - td_->croppedInShape[i] :
+                                                 tiledInShape_[i]);
                 }
                 if ((i == inUbAxis_ || i == outUbAxis_) && !noCut_) {
                     if ((cropOffset_[i][0] > 0) && cropOffset_[i][0] < tiledInShape_[i]) {
@@ -217,57 +223,58 @@ public:
         int8_t tempIndex = 0;
         for (int8_t i = SHAPE_DIM_NUM - 1; i >= 0; i--) {
             tempFactor = tempFactor * tiledInShape_[i];
-            if ((copyInAxis & (1 << i)) != 0 || i == 0){
-                if (tempIndex == COPYPARAM_IDX){
+            if ((copyInAxis & (1 << i)) != 0 || i == 0) {
+                if (tempIndex == COPYPARAM_IDX) {
                     copyInParams.blockLen = tempFactor * sizeof(T);
                     copyInParams.dstStride = 0;
                     copyInParams.srcStride = (i == 0) ? 0 : (srcStride_[i - 1] - tempFactor) * sizeof(T);
-                } else if (tempIndex == LOOP1PARAM_IDX){
-                    if (tiledInShape_[i] > 1 || i == 0 || tempFactor > 1){
+                } else if (tempIndex == LOOP1PARAM_IDX) {
+                    if (tiledInShape_[i] > 1 || i == 0 || tempFactor > 1) {
                         copyInParams.blockCount = tempFactor;
                         loopParams.loop1SrcStride = (i == 0) ? 0 : srcStride_[i - 1] * sizeof(T);
                         loopParams.loop1DstStride = (i == 0) ? 0 : ubInStride_[i - 1] * sizeof(T);
                     } else {
                         copyInParams.srcStride = (i == 0) ? 0 : srcStride_[i - 1] * sizeof(T) - copyInParams.blockLen;
                     }
-                      
-                } else if (tempIndex == LOOP2PARAM_IDX){
-                    if (tiledInShape_[i] > 1 || i == 0 || tempFactor > 1){
+                } else if (tempIndex == LOOP2PARAM_IDX) {
+                    if (tiledInShape_[i] > 1 || i == 0 || tempFactor > 1) {
                         loopParams.loop1Size = tempFactor;
                         loopParams.loop2SrcStride = (i == 0) ? 0 : srcStride_[i - 1] * sizeof(T);
                         loopParams.loop2DstStride = (i == 0) ? 0 : ubInStride_[i - 1] * sizeof(T);
                     } else {
                         loopParams.loop1SrcStride = (i == 0) ? 0 : srcStride_[i - 1] * sizeof(T);
-                    } 
-                } else if (tempIndex == OUTLOOP1_IDX){
-                    if (tiledInShape_[i] > 1 || i == 0 || tempFactor > 1){
+                    }
+                } else if (tempIndex == OUTLOOP1_IDX) {
+                    if (tiledInShape_[i] > 1 || i == 0 || tempFactor > 1) {
                         loopParams.loop2Size = tempFactor;
                         outSrcStride1 = (i == 0) ? 0 : srcStride_[i - 1];
                         outDstStride1 = (i == 0) ? 0 : ubInStride_[i - 1];
                     } else {
                         loopParams.loop2SrcStride = (i == 0) ? 0 : srcStride_[i - 1] * sizeof(T);
                     }
-                } else if (tempIndex == OUTLOOP2_IDX){
-                    if (tiledInShape_[i] > 1 || i == 0 || tempFactor > 1){
+                } else if (tempIndex == OUTLOOP2_IDX) {
+                    if (tiledInShape_[i] > 1 || i == 0 || tempFactor > 1) {
                         outerLoop1 = tempFactor;
                         outSrcStride2 = (i == 0) ? 0 : srcStride_[i - 1];
                         outDstStride2 = (i == 0) ? 0 : ubInStride_[i - 1];
                     } else {
                         outSrcStride1 = (i == 0) ? 0 : srcStride_[i - 1];
-                    }  
-                } else if (tempIndex == OUTLOOP2_IDX + 1){
+                    }
+                } else if (tempIndex == OUTLOOP2_IDX + 1) {
                     outerLoop2 = tempFactor;
                 }
                 if (tiledInShape_[i] > 1 || tempIndex == COPYPARAM_IDX || tempFactor > 1) {
                     tempIndex = tempIndex + 1;
-                    tempFactor = 1;}
+                    tempFactor = 1;
+                }
             }
         }
-        for (uint64_t a = 0; a < outerLoop2; a++){
-            for (uint64_t b = 0; b < outerLoop1; b++){
+        for (uint64_t a = 0; a < outerLoop2; a++) {
+            for (uint64_t b = 0; b < outerLoop1; b++) {
                 SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
-                DataCopyPad<T, PaddingMode::Compact>(src[a * outDstStride2 + b * outDstStride1],
-                 inputGM_[gmStart + a * outSrcStride2 + b * outSrcStride1], copyInParams, padParams_);
+                DataCopyPad<T, PaddingMode::Compact>(
+                    src[a * outDstStride2 + b * outDstStride1],
+                    inputGM_[gmStart + a * outSrcStride2 + b * outSrcStride1], copyInParams, padParams_);
                 ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
             }
         }
@@ -283,7 +290,7 @@ public:
         uint32_t tiledProcessSize = ubOutStride_[0] * tiledInShape_[indexMap_[0]];
         uint16_t loopNum = (tiledProcessSize + vlSize_ - 1) / vlSize_;
         uint64_t tiledOutShape[SHAPE_DIM_NUM];
-        for (int8_t i = SHAPE_DIM_NUM - 1; i >= 0 ; --i) {
+        for (int8_t i = SHAPE_DIM_NUM - 1; i >= 0; --i) {
             tiledOutShape[i] = tiledInShape_[indexMap_[i]];
         }
         VFProcess(inputAddr, outputAddr, loopNum, tiledProcessSize, tiledOutShape);
@@ -337,17 +344,16 @@ public:
         FloatType_ invStride5;
         FloatType_ invStride6;
         static constexpr MicroAPI::CastTrait castTrait3 = {
-                MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT, MicroAPI::MaskMergeMode::ZEROING,
-                RoundMode::CAST_FLOOR};
+            MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT, MicroAPI::MaskMergeMode::ZEROING,
+            RoundMode::CAST_FLOOR};
         static constexpr MicroAPI::CastTrait castTrait4 = {
-                MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::UNKNOWN, MicroAPI::MaskMergeMode::ZEROING,
-                RoundMode::UNKNOWN};
+            MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::UNKNOWN, MicroAPI::MaskMergeMode::ZEROING,
+            RoundMode::UNKNOWN};
         static constexpr MicroAPI::CastTrait castTrait5 = {
-                MicroAPI::RegLayout::ONE, MicroAPI::SatMode::NO_SAT, MicroAPI::MaskMergeMode::ZEROING,
-                RoundMode::CAST_FLOOR};
+            MicroAPI::RegLayout::ONE, MicroAPI::SatMode::NO_SAT, MicroAPI::MaskMergeMode::ZEROING,
+            RoundMode::CAST_FLOOR};
         static constexpr MicroAPI::CastTrait castTrait6 = {
-                MicroAPI::RegLayout::ONE, MicroAPI::SatMode::UNKNOWN, MicroAPI::MaskMergeMode::ZEROING,
-                RoundMode::UNKNOWN};
+            MicroAPI::RegLayout::ONE, MicroAPI::SatMode::UNKNOWN, MicroAPI::MaskMergeMode::ZEROING, RoundMode::UNKNOWN};
         int16_t k0;
         int16_t k1;
         int16_t k2;
@@ -501,7 +507,9 @@ public:
                     MicroAPI::Muls(floatReg, floatReg, invStride0, mask);
                     MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
                     MicroAPI::Cast<RangeType_, FloatType_, castTrait5>(temReg2, floatReg, mask);
-                    MicroAPI::Select(outIdx0Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg, allMask);
+                    MicroAPI::Select(
+                        outIdx0Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg,
+                        allMask);
                 }
 
                 MicroAPI::Muls(tmpCalReg, outIdx0Reg, outStride0, mask);
@@ -511,15 +519,19 @@ public:
                     MicroAPI::Add(tmpCalReg, tmpModReg, tmpCompareReg, mask);
                     MicroAPI::ShiftRights(outIdx1Reg, tmpCalReg, k1, mask);
                 } else {
-                    MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                    MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(
+                        floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
                     MicroAPI::Muls(floatReg, floatReg, invStride1, mask);
                     MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
                     MicroAPI::Cast<RangeType_, FloatType_, castTrait3>(temReg, floatReg, mask);
-                    MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                    MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(
+                        floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
                     MicroAPI::Muls(floatReg, floatReg, invStride1, mask);
                     MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
                     MicroAPI::Cast<RangeType_, FloatType_, castTrait5>(temReg2, floatReg, mask);
-                    MicroAPI::Select(outIdx1Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg, allMask);
+                    MicroAPI::Select(
+                        outIdx1Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg,
+                        allMask);
                 }
 
                 MicroAPI::Muls(tmpCalReg, outIdx1Reg, outStride1, mask);
@@ -529,15 +541,19 @@ public:
                     MicroAPI::Add(tmpCalReg, tmpModReg, tmpCompareReg, mask);
                     MicroAPI::ShiftRights(outIdx2Reg, tmpCalReg, k2, mask);
                 } else {
-                    MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                    MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(
+                        floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
                     MicroAPI::Muls(floatReg, floatReg, invStride2, mask);
                     MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
                     MicroAPI::Cast<RangeType_, FloatType_, castTrait3>(temReg, floatReg, mask);
-                    MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                    MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(
+                        floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
                     MicroAPI::Muls(floatReg, floatReg, invStride2, mask);
                     MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
                     MicroAPI::Cast<RangeType_, FloatType_, castTrait5>(temReg2, floatReg, mask);
-                    MicroAPI::Select(outIdx2Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg, allMask);
+                    MicroAPI::Select(
+                        outIdx2Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg,
+                        allMask);
                 }
 
                 MicroAPI::Muls(tmpCalReg, outIdx2Reg, outStride2, mask);
@@ -552,15 +568,19 @@ public:
                         MicroAPI::Add(tmpCalReg, tmpModReg, tmpCompareReg, mask);
                         MicroAPI::ShiftRights(outIdx3Reg, tmpCalReg, k3, mask);
                     } else {
-                        MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                        MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(
+                            floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
                         MicroAPI::Muls(floatReg, floatReg, invStride3, mask);
                         MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
                         MicroAPI::Cast<RangeType_, FloatType_, castTrait3>(temReg, floatReg, mask);
-                        MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                        MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(
+                            floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
                         MicroAPI::Muls(floatReg, floatReg, invStride3, mask);
                         MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
                         MicroAPI::Cast<RangeType_, FloatType_, castTrait5>(temReg2, floatReg, mask);
-                        MicroAPI::Select(outIdx3Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg, allMask);
+                        MicroAPI::Select(
+                            outIdx3Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg,
+                            allMask);
                     }
                     MicroAPI::Muls(tmpCalReg, outIdx3Reg, outStride3, mask);
                     MicroAPI::Sub(tmpModReg, tmpModReg, tmpCalReg, mask);
@@ -569,15 +589,19 @@ public:
                         MicroAPI::Add(tmpCalReg, tmpModReg, tmpCompareReg, mask);
                         MicroAPI::ShiftRights(outIdx4Reg, tmpCalReg, k4, mask);
                     } else {
-                        MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                        MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(
+                            floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
                         MicroAPI::Muls(floatReg, floatReg, invStride4, mask);
                         MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
                         MicroAPI::Cast<RangeType_, FloatType_, castTrait3>(temReg, floatReg, mask);
-                        MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                        MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(
+                            floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
                         MicroAPI::Muls(floatReg, floatReg, invStride4, mask);
                         MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
                         MicroAPI::Cast<RangeType_, FloatType_, castTrait5>(temReg2, floatReg, mask);
-                        MicroAPI::Select(outIdx4Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg, allMask);
+                        MicroAPI::Select(
+                            outIdx4Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg,
+                            allMask);
                     }
 
                     MicroAPI::Muls(tmpCalReg, outIdx4Reg, outStride4, mask);
@@ -593,15 +617,19 @@ public:
                         MicroAPI::Add(tmpCalReg, tmpModReg, tmpCompareReg, mask);
                         MicroAPI::ShiftRights(outIdx5Reg, tmpCalReg, k5, mask);
                     } else {
-                        MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                        MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(
+                            floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
                         MicroAPI::Muls(floatReg, floatReg, invStride5, mask);
                         MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
                         MicroAPI::Cast<RangeType_, FloatType_, castTrait3>(temReg, floatReg, mask);
-                        MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                        MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(
+                            floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
                         MicroAPI::Muls(floatReg, floatReg, invStride5, mask);
                         MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
                         MicroAPI::Cast<RangeType_, FloatType_, castTrait5>(temReg2, floatReg, mask);
-                        MicroAPI::Select(outIdx5Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg, allMask);
+                        MicroAPI::Select(
+                            outIdx5Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg,
+                            allMask);
                     }
                     MicroAPI::Muls(tmpCalReg, outIdx5Reg, outStride5, mask);
                     MicroAPI::Sub(tmpModReg, tmpModReg, tmpCalReg, mask);
@@ -610,21 +638,25 @@ public:
                         MicroAPI::Add(tmpCalReg, tmpModReg, tmpCompareReg, mask);
                         MicroAPI::ShiftRights(outIdx6Reg, tmpCalReg, k6, mask);
                     } else {
-                        MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                        MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(
+                            floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
                         MicroAPI::Muls(floatReg, floatReg, invStride6, mask);
                         MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
                         MicroAPI::Cast<RangeType_, FloatType_, castTrait3>(temReg, floatReg, mask);
-                        MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                        MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(
+                            floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
                         MicroAPI::Muls(floatReg, floatReg, invStride6, mask);
                         MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
                         MicroAPI::Cast<RangeType_, FloatType_, castTrait5>(temReg2, floatReg, mask);
-                        MicroAPI::Select(outIdx6Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg, allMask);
+                        MicroAPI::Select(
+                            outIdx6Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg,
+                            allMask);
                     }
 
                     MicroAPI::Muls(tmpCalReg, outIdx6Reg, outStride6, mask);
                     MicroAPI::Sub(outIdx7Reg, tmpModReg, tmpCalReg, mask);
                 }
-         
+
                 for (uint16_t i = 0; i < bs0Axis; ++i) {
                     MicroAPI::Compares(offsetMask, outIdx1Reg, 0, mask);
                     MicroAPI::Adds(tmpModReg, outIdx2Reg, offset0, mask);
@@ -725,8 +757,7 @@ public:
                 }
 
                 // gather
-                MicroAPI::Gather(
-                    (MicroAPI::RegTensor<CastType_>&)dstReg, inputAddr, idxReg, mask);
+                MicroAPI::Gather((MicroAPI::RegTensor<CastType_>&)dstReg, inputAddr, idxReg, mask);
                 outputAddrTmp = outputAddr + loopIdx * vlSize;
                 if constexpr (sizeof(T) == 1) {
                     MicroAPI::Pack(dstRegT, (MicroAPI::RegTensor<CastType_>&)dstReg);
@@ -761,16 +792,21 @@ public:
         int8_t axis2 = 0;
         for (int8_t i = MAX_CROP_DIM_NUM * BLOCK_DIM_NUM + 1; i >= 0; i--) {
             int8_t outI = indexMap_[i];
-            if (outI < BLOCK_DIM_NUM){
-                tempOffset = (inIndex_[outI + BLOCK_DIM_NUM + 1] + cropIndex_[outI + BLOCK_DIM_NUM + 1])
-                 * td_->oriInShape[outI] + inIndex_[outI] + cropIndex_[outI];
-                tempOffset = (tempOffset > td_->crops[outI][0]) ? tempOffset - td_->crops[outI][0] : 
-                    (tempOffset + tiledInShape_[outI] <= td_->crops[outI][0]) ? td_->croppedInShape[outI] - td_->crops[outI][0] % td_->croppedInShape[outI] + inIndex_[outI]: 0;
+            if (outI < BLOCK_DIM_NUM) {
+                tempOffset = (inIndex_[outI + BLOCK_DIM_NUM + 1] + cropIndex_[outI + BLOCK_DIM_NUM + 1]) *
+                                 td_->oriInShape[outI] +
+                             inIndex_[outI] + cropIndex_[outI];
+                tempOffset =
+                    (tempOffset > td_->crops[outI][0]) ?
+                        tempOffset - td_->crops[outI][0] :
+                    (tempOffset + tiledInShape_[outI] <= td_->crops[outI][0]) ?
+                        td_->croppedInShape[outI] - td_->crops[outI][0] % td_->croppedInShape[outI] + inIndex_[outI] :
+                        0;
                 outAddr = outAddr + tempOffset * outStride_[i];
             } else if (outI == BLOCK_DIM_NUM) {
                 outAddr = outAddr + inIndex_[outI] * outStride_[i];
             }
-            if ((outI == outUbAxis_ || outI == inUbAxis_) && !noCut_){
+            if ((outI == outUbAxis_ || outI == inUbAxis_) && !noCut_) {
                 if (axis1 == 0) {
                     axis1 = i;
                 } else {
@@ -782,43 +818,54 @@ public:
         if (indexMap_[axis1] >= BLOCK_DIM_NUM) {
             copyOutParams.blockLen = tiledInShape_[indexMap_[axis1]] * ubOutStride_[axis1] * sizeof(T);
             if (axis1 > 0) {
-                copyOutParams.blockLen = (tiledInShape_[indexMap_[axis1]] * tiledInShape_[indexMap_[axis1 + 1]] - cropOffset_[indexMap_[axis1 + 1]][0] -
-                 cropOffset_[indexMap_[axis1 + 1]][1]) * ubOutStride_[axis1 + 1] * sizeof(T);
+                copyOutParams.blockLen = (tiledInShape_[indexMap_[axis1]] * tiledInShape_[indexMap_[axis1 + 1]] -
+                                          cropOffset_[indexMap_[axis1 + 1]][0] - cropOffset_[indexMap_[axis1 + 1]][1]) *
+                                         ubOutStride_[axis1 + 1] * sizeof(T);
             }
-            copyOutParams.srcStride = axis1 == 0 ? 0 : (ubOutStride_[axis1 - 1] - copyOutParams.blockLen / sizeof(T)) / BLK_ELEMS;
-            copyOutParams.dstStride = axis1 == 0 ? 0 : (outStride_[axis1 - 1] - copyOutParams.blockLen / sizeof(T)) * sizeof(T);
+            copyOutParams.srcStride =
+                axis1 == 0 ? 0 : (ubOutStride_[axis1 - 1] - copyOutParams.blockLen / sizeof(T)) / BLK_ELEMS;
+            copyOutParams.dstStride =
+                axis1 == 0 ? 0 : (outStride_[axis1 - 1] - copyOutParams.blockLen / sizeof(T)) * sizeof(T);
             if (tempAxis > 0) {
                 copyOutParams.dstStride = (outStride_[tempAxis - 1] - copyOutParams.blockLen / sizeof(T)) * sizeof(T);
             }
             if (axis2 == 0) {
-                copyOutParams.blockCount = axis1 == 0 ? 1 : ubOutStride_[0] * tiledInShape_[indexMap_[0]] / ubOutStride_[axis1 - 1];
+                copyOutParams.blockCount =
+                    axis1 == 0 ? 1 : ubOutStride_[0] * tiledInShape_[indexMap_[0]] / ubOutStride_[axis1 - 1];
                 DataCopyPad(outputGM_[outAddr], dst, copyOutParams);
             } else {
                 tempAxis = FindOuterIndex(0, axis2 - 1);
                 int8_t hasFirst = (cropOffset_[indexMap_[axis2]][0] > 0 &&
-                 tiledInShape_[indexMap_[axis2]] > cropOffset_[indexMap_[axis2]][0]) ? 1 : 0;
+                                   tiledInShape_[indexMap_[axis2]] > cropOffset_[indexMap_[axis2]][0]) ?
+                                      1 :
+                                      0;
                 int8_t hasLast = (cropOffset_[indexMap_[axis2]][1] > 0 &&
-                 tiledInShape_[indexMap_[axis2]] > cropOffset_[indexMap_[axis2]][1]) ? 1 : 0;
+                                  tiledInShape_[indexMap_[axis2]] > cropOffset_[indexMap_[axis2]][1]) ?
+                                     1 :
+                                     0;
                 loopParams.loop1SrcStride = ubOutStride_[axis2 - 2] * sizeof(T);
-                loopParams.loop1DstStride = tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis2 - 2] * sizeof(T);
+                loopParams.loop1DstStride =
+                    tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis2 - 2] * sizeof(T);
                 uint64_t tempBlockCount = ubOutStride_[axis2] / ubOutStride_[axis1 - 1];
                 uint64_t tempLoopSize = ubOutStride_[0] * tiledInShape_[indexMap_[0]] / ubOutStride_[axis2 - 2];
                 if (hasFirst) {
-                    copyOutParams.blockCount = (tiledInShape_[indexMap_[axis2]] - cropOffset_[indexMap_[axis2]][0])
-                     * tempBlockCount;
+                    copyOutParams.blockCount =
+                        (tiledInShape_[indexMap_[axis2]] - cropOffset_[indexMap_[axis2]][0]) * tempBlockCount;
                     loopParams.loop1Size = tempLoopSize;
                     SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
                     DataCopyPad(outputGM_[outAddr], dst, copyOutParams);
                     ResetLoopModePara(DataCopyMVType::UB_TO_OUT);
                 }
-                uint64_t inOffset = hasFirst ? ubOutStride_[axis2 - 1]: 0;
-                uint64_t outOffset = hasFirst ? (td_->croppedInShape[indexMap_[axis2]]
-                 - cropOffset_[indexMap_[axis2]][0]) * outStride_[axis2] : 0;
+                uint64_t inOffset = hasFirst ? ubOutStride_[axis2 - 1] : 0;
+                uint64_t outOffset =
+                    hasFirst ?
+                        (td_->croppedInShape[indexMap_[axis2]] - cropOffset_[indexMap_[axis2]][0]) * outStride_[axis2] :
+                        0;
                 if (hasLast) {
                     uint64_t inOffsetL = ubOutStride_[axis2 - 2] - ubOutStride_[axis2 - 1];
                     uint64_t outOffsetL = outOffset + loopParams.loop1Size / tempLoopSize * outStride_[axis2 - 1];
-                    copyOutParams.blockCount = (tiledInShape_[indexMap_[axis2]] - cropOffset_[indexMap_[axis2]][1])
-                     * tempBlockCount;
+                    copyOutParams.blockCount =
+                        (tiledInShape_[indexMap_[axis2]] - cropOffset_[indexMap_[axis2]][1]) * tempBlockCount;
                     loopParams.loop1Size = tempLoopSize;
                     SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
                     DataCopyPad(outputGM_[outAddr + outOffsetL], dst[inOffsetL], copyOutParams);
@@ -828,10 +875,12 @@ public:
                 loopParams.loop1SrcStride = ubOutStride_[axis2 - 1] * sizeof(T);
                 loopParams.loop1DstStride = outStride_[axis2 - 1] * sizeof(T);
                 loopParams.loop1Size = tiledInShape_[indexMap_[axis2 - 1]] -
-                 (cropOffset_[indexMap_[axis2]][0] > 0 ? 1 : 0) - (cropOffset_[indexMap_[axis2]][1] > 0 ? 1 : 0);
+                                       (cropOffset_[indexMap_[axis2]][0] > 0 ? 1 : 0) -
+                                       (cropOffset_[indexMap_[axis2]][1] > 0 ? 1 : 0);
                 loopParams.loop2SrcStride = ubOutStride_[axis2 - 2] * sizeof(T);
-                loopParams.loop2DstStride = tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis2 - 2] * sizeof(T);
-                loopParams.loop2Size = tempLoopSize; 
+                loopParams.loop2DstStride =
+                    tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis2 - 2] * sizeof(T);
+                loopParams.loop2Size = tempLoopSize;
                 SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
                 DataCopyPad(outputGM_[outAddr + outOffset], dst[inOffset], copyOutParams);
                 ResetLoopModePara(DataCopyMVType::UB_TO_OUT);
@@ -843,12 +892,12 @@ public:
             copyOutParams.srcStride = (ubOutStride_[axis1 - 1] - copyOutParams.blockLen / sizeof(T)) / BLK_ELEMS;
             copyOutParams.dstStride = (outStride_[axis1 - 1] - copyOutParams.blockLen / sizeof(T)) * sizeof(T);
             copyOutParams.blockCount = tiledInShape_[indexMap_[axis1 - 1]] - hasFirst - hasLast;
-            copyOutParamsF.blockLen = ubOutStride_[axis1] * (tiledInShape_[indexMap_[axis1]]
-             - cropOffset_[indexMap_[axis1]][0]) * sizeof(T);
+            copyOutParamsF.blockLen =
+                ubOutStride_[axis1] * (tiledInShape_[indexMap_[axis1]] - cropOffset_[indexMap_[axis1]][0]) * sizeof(T);
             copyOutParamsF.srcStride = (ubOutStride_[axis1 - 2] - copyOutParamsF.blockLen / sizeof(T)) / BLK_ELEMS;
             copyOutParamsF.dstStride = (outStride_[axis1 - 2] - copyOutParamsF.blockLen / sizeof(T)) * sizeof(T);
-            copyOutParamsL.blockLen = ubOutStride_[axis1] * (tiledInShape_[indexMap_[axis1]]
-             - cropOffset_[indexMap_[axis1]][1]) * sizeof(T);
+            copyOutParamsL.blockLen =
+                ubOutStride_[axis1] * (tiledInShape_[indexMap_[axis1]] - cropOffset_[indexMap_[axis1]][1]) * sizeof(T);
             copyOutParamsL.srcStride = (ubOutStride_[axis1 - 2] - copyOutParamsL.blockLen / sizeof(T)) / BLK_ELEMS;
             copyOutParamsL.dstStride = (outStride_[axis1 - 2] - copyOutParamsL.blockLen / sizeof(T)) * sizeof(T);
             tempAxis = FindOuterIndex(axis2, axis1 - 1);
@@ -858,13 +907,15 @@ public:
             }
             hasFirst = (hasFirst > 0 && copyOutParamsF.blockLen > 0) ? 1 : 0;
             hasLast = (hasLast > 0 && copyOutParamsL.blockLen > 0) ? 1 : 0;
-            uint64_t inOffset = hasFirst ? ubOutStride_[axis1 - 1]: 0;
-            uint64_t outOffset = hasFirst ? (td_->croppedInShape[indexMap_[axis1]] - cropOffset_[indexMap_[axis1]][0]) * outStride_[axis1] : 0;
+            uint64_t inOffset = hasFirst ? ubOutStride_[axis1 - 1] : 0;
+            uint64_t outOffset = hasFirst ? (td_->croppedInShape[indexMap_[axis1]] - cropOffset_[indexMap_[axis1]][0]) *
+                                                outStride_[axis1] :
+                                            0;
             uint64_t inOffsetL = inOffset + copyOutParams.blockCount * ubOutStride_[axis1 - 1];
             uint64_t outOffsetL = outOffset + copyOutParams.blockCount * outStride_[axis1 - 1];
             const int8_t b0Index = 2;
             if (axis1 - axis2 > OUTLOOP1_IDX && tempAxis >= b0Index) {
-                uint64_t tempFactor = ubOutStride_[b0Index - 1] / ubOutStride_[tempAxis - 1]; 
+                uint64_t tempFactor = ubOutStride_[b0Index - 1] / ubOutStride_[tempAxis - 1];
                 loopParams.loop1SrcStride = ubOutStride_[b0Index - 1] * sizeof(T);
                 loopParams.loop1DstStride = outStride_[b0Index - 1] * sizeof(T);
                 loopParams.loop1Size = ubOutStride_[0] / ubOutStride_[b0Index - 1];
@@ -891,10 +942,13 @@ public:
                 loopParams.loop2DstStride = loopParams.loop1DstStride;
                 loopParams.loop1Size = tempFactor;
                 loopParams.loop1SrcStride = ubOutStride_[axis1 - 2] * sizeof(T);
-                loopParams.loop1DstStride = tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis1 - 2] * sizeof(T);
+                loopParams.loop1DstStride =
+                    tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis1 - 2] * sizeof(T);
                 for (auto a = 0; a < outSize; a++) {
                     SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
-                    DataCopyPad(outputGM_[outAddr + outOffset + a * outDstStride], dst[inOffset + a * outSrcStride], copyOutParams);
+                    DataCopyPad(
+                        outputGM_[outAddr + outOffset + a * outDstStride], dst[inOffset + a * outSrcStride],
+                        copyOutParams);
                     ResetLoopModePara(DataCopyMVType::UB_TO_OUT);
                 }
             } else if (axis2 == 0) {
@@ -904,7 +958,8 @@ public:
                     DataCopyPad(outputGM_[outAddr], dst, copyOutParamsF);
                 }
                 loopParams.loop1SrcStride = ubOutStride_[axis1 - 2] * sizeof(T);
-                loopParams.loop1DstStride = tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis1 - 2] * sizeof(T);
+                loopParams.loop1DstStride =
+                    tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis1 - 2] * sizeof(T);
                 loopParams.loop1Size = tempFactor;
                 SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
                 DataCopyPad(outputGM_[outAddr + outOffset], dst[inOffset], copyOutParams);
@@ -915,9 +970,10 @@ public:
                 }
             } else {
                 int8_t tempAxis2 = FindOuterIndex(0, axis2);
-                uint64_t tempFactor = ubOutStride_[axis2 - 1] / ubOutStride_[axis1 - 2];    
+                uint64_t tempFactor = ubOutStride_[axis2 - 1] / ubOutStride_[axis1 - 2];
                 loopParams.loop1SrcStride = ubOutStride_[axis2 - 1] * sizeof(T);
-                loopParams.loop1DstStride = (tempAxis2 > 0) ? outStride_[tempAxis2 - 1] * sizeof(T) : outStride_[axis2 - 1] * sizeof(T);
+                loopParams.loop1DstStride =
+                    (tempAxis2 > 0) ? outStride_[tempAxis2 - 1] * sizeof(T) : outStride_[axis2 - 1] * sizeof(T);
                 loopParams.loop1Size = ubOutStride_[0] * tiledInShape_[indexMap_[0]] / ubOutStride_[axis2 - 1];
                 SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
                 if (hasFirst) {
@@ -930,10 +986,12 @@ public:
                 }
                 ResetLoopModePara(DataCopyMVType::UB_TO_OUT);
                 loopParams.loop1SrcStride = ubOutStride_[axis1 - 2] * sizeof(T);
-                loopParams.loop1DstStride = tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis1 - 2] * sizeof(T);
+                loopParams.loop1DstStride =
+                    tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis1 - 2] * sizeof(T);
                 loopParams.loop1Size = tempFactor;
                 loopParams.loop2SrcStride = ubOutStride_[axis2 - 1] * sizeof(T);
-                loopParams.loop2DstStride = tempAxis2 > 0 ? outStride_[tempAxis2 - 1] * sizeof(T) : outStride_[axis2 - 1] * sizeof(T);
+                loopParams.loop2DstStride =
+                    tempAxis2 > 0 ? outStride_[tempAxis2 - 1] * sizeof(T) : outStride_[axis2 - 1] * sizeof(T);
                 loopParams.loop2Size = ubOutStride_[0] * tiledInShape_[indexMap_[0]] / ubOutStride_[axis2 - 1];
                 SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
                 DataCopyPad(outputGM_[outAddr + outOffset], dst[inOffset], copyOutParams);
@@ -944,8 +1002,7 @@ public:
     }
 
     // 计算公共外轴
-    __aicore__ inline void GetOuterAxes(
-        uint8_t inUbAxis, uint8_t outUbAxis, uint8_t& outerAxes)
+    __aicore__ inline void GetOuterAxes(uint8_t inUbAxis, uint8_t outUbAxis, uint8_t& outerAxes)
     {
         outerAxes = 0;
         outerAxes |= (1 << inUbAxis);
@@ -963,7 +1020,8 @@ public:
     }
 
     // 计算转置前张量索引和转后张量索引的映射
-    __aicore__ inline void CalIndexMap() {
+    __aicore__ inline void CalIndexMap()
+    {
         uint8_t outputIdx = 0;
         indexMap_[outputIdx++] = BLOCK_DIM_NUM;
         for (uint8_t i = 0; i < BLOCK_DIM_NUM; ++i) {
@@ -976,17 +1034,20 @@ public:
         }
     }
 
-    __aicore__ inline void CalUbStride() {
+    __aicore__ inline void CalUbStride()
+    {
         uint64_t curInStride = 1;
         uint64_t curOutStride = 1;
         uint64_t blockLen = 0;
         for (int8_t i = SHAPE_DIM_NUM - 1; i >= 0; i--) {
             ubInStride_[i] = curInStride;
             ubOutStride_[i] = curOutStride;
-            if (i == 0) {break;}
+            if (i == 0) {
+                break;
+            }
             int8_t outI = indexMap_[i];
             curInStride = curInStride * tiledInShape_[i];
-            if (tiledInShape_[i] != td_->oriInShape[i]){
+            if (tiledInShape_[i] != td_->oriInShape[i]) {
                 copyInAxis |= (1 << i);
                 if (blockLen > 0 && (tiledInShape_[i] > 1 || curInStride > blockLen)) {
                     curInStride = Ops::Base::CeilAlign(curInStride, static_cast<uint64_t>(BLK_ELEMS));
@@ -994,14 +1055,14 @@ public:
                 blockLen = curInStride;
             }
             curOutStride = curOutStride * tiledInShape_[outI];
-            //W/H/D轴需处理crop
+            // W/H/D轴需处理crop
             if (outI > BLOCK_DIM_NUM && outI < SHAPE_DIM_NUM - 1) {
                 int8_t bsI = outI - BLOCK_DIM_NUM - 1;
-                bool flag = (bsI == inUbAxis_ || bsI == outUbAxis_) && !noCut_
-                 && cropOffset_[bsI][1] > 0 && cropOffset_[bsI][1] < tiledInShape_[bsI];
+                bool flag = (bsI == inUbAxis_ || bsI == outUbAxis_) && !noCut_ && cropOffset_[bsI][1] > 0 &&
+                            cropOffset_[bsI][1] < tiledInShape_[bsI];
                 if (!copyMode_[bsI] && !flag) {
-                    uint64_t cropOff = (cropOffset_[bsI][0]
-                    + cropOffset_[bsI][1]) * ubOutStride_[i] / tiledInShape_[indexMap_[i + 1]];
+                    uint64_t cropOff =
+                        (cropOffset_[bsI][0] + cropOffset_[bsI][1]) * ubOutStride_[i] / tiledInShape_[indexMap_[i + 1]];
                     curOutStride = curOutStride > cropOff ? curOutStride - cropOff : 0;
                     ubOutStride_[i] = (ubOutStride_[i] > curOutStride) ? curOutStride : ubOutStride_[i];
                 }
@@ -1012,16 +1073,19 @@ public:
         }
     }
 
-    __aicore__ inline uint32_t CalUbFactor(int8_t index) {
+    __aicore__ inline uint32_t CalUbFactor(int8_t index)
+    {
         uint32_t res = 1;
-        if ((outIndexs_ & (1 << index)) != 0){
+        if ((outIndexs_ & (1 << index)) != 0) {
             if (index == inUbAxis_) {
-                res = inIndex_[index] + inUbFactor_ > td_->croppedInShape[index] ? td_->croppedInShape[index]
-                 - inIndex_[index] : inUbFactor_;
+                res = inIndex_[index] + inUbFactor_ > td_->croppedInShape[index] ?
+                          td_->croppedInShape[index] - inIndex_[index] :
+                          inUbFactor_;
             } else if (index == outUbAxis_) {
-                res = inIndex_[index] + outUbFactor_ > td_->croppedInShape[index] ? td_->croppedInShape[index]
-                 - inIndex_[index] : outUbFactor_;
-            } 
+                res = inIndex_[index] + outUbFactor_ > td_->croppedInShape[index] ?
+                          td_->croppedInShape[index] - inIndex_[index] :
+                          outUbFactor_;
+            }
         } else {
             res = td_->croppedInShape[index];
         }
@@ -1034,14 +1098,15 @@ public:
         for (uint8_t dim = 0; dim < BLOCK_DIM_NUM; ++dim) {
             int8_t pixelDim = BS_PIXEL_MAP[BLOCK_DIM_NUM][dim];
             result[pixelDim] = td_->crops[dim][0] / td_->oriInShape[dim];
-            if (td_->crops[dim][0] / td_->oriInShape[dim] == (td_->oriInShape[pixelDim] *
-                td_->oriInShape[dim] - td_->crops[dim][1] - 1) / td_->oriInShape[dim]) {
+            if (td_->crops[dim][0] / td_->oriInShape[dim] ==
+                (td_->oriInShape[pixelDim] * td_->oriInShape[dim] - td_->crops[dim][1] - 1) / td_->oriInShape[dim]) {
                 result[dim] = td_->crops[dim][0] % td_->oriInShape[dim];
             }
         }
     }
 
-    __aicore__ inline int8_t FindOuterIndex(int8_t axis1, int8_t axis2) {
+    __aicore__ inline int8_t FindOuterIndex(int8_t axis1, int8_t axis2)
+    {
         int8_t res = -1;
         for (int8_t i = axis2 - 1; i > axis1; i--) {
             if (ubOutStride_[i - 1] > ubOutStride_[axis2 - 1]) {

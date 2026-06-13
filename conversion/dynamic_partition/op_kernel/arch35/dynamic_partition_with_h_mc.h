@@ -18,17 +18,16 @@
 
 #include "dynamic_partition_base.h"
 
-namespace DynPart
-{
+namespace DynPart {
 using namespace AscendC;
 
 template <typename T, bool isSingleW = false>
-class DynPartWithHMC : public DynPartBase<T>
-{
+class DynPartWithHMC : public DynPartBase<T> {
 public:
     __aicore__ inline DynPartWithHMC(){};
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR partitions, GM_ADDR y, GM_ADDR yshape, GM_ADDR workspace,
-                                const DynPartTilingData* tilingDataPtr, TPipe* pipeIn);
+    __aicore__ inline void Init(
+        GM_ADDR x, GM_ADDR partitions, GM_ADDR y, GM_ADDR yshape, GM_ADDR workspace,
+        const DynPartTilingData* tilingDataPtr, TPipe* pipeIn);
     __aicore__ inline void Process();
 
 protected:
@@ -38,23 +37,22 @@ protected:
 private:
     __aicore__ inline void InnerProcess4CalcPartCnt(uint32_t ubPartLen, int32_t begPart, int32_t endPart);
 
-
 protected:
     GlobalTensor<uint64_t> ws_;
     GlobalTensor<int32_t> pInGM_;
 
 private:
     const DynPartTilingData* tdPtr_ = nullptr;
-    TQue<QuePosition::VECIN, 1> pR1InQue_;  // calc partition base value for each core
+    TQue<QuePosition::VECIN, 1> pR1InQue_; // calc partition base value for each core
     uint32_t ubPartLen_ = 0;
 };
 
 template <typename T, bool isSingleW>
-__aicore__ inline void DynPartWithHMC<T, isSingleW>::Init(GM_ADDR x, GM_ADDR partitions, GM_ADDR y, GM_ADDR yshape,
-                                                          GM_ADDR workspace, const DynPartTilingData* tilingDataPtr,
-                                                          TPipe* pipeIn)
+__aicore__ inline void DynPartWithHMC<T, isSingleW>::Init(
+    GM_ADDR x, GM_ADDR partitions, GM_ADDR y, GM_ADDR yshape, GM_ADDR workspace, const DynPartTilingData* tilingDataPtr,
+    TPipe* pipeIn)
 {
-    GM_ADDR usrWorkspace = GetUserWorkspace(workspace);  // 获取用户workspace指针
+    GM_ADDR usrWorkspace = GetUserWorkspace(workspace); // 获取用户workspace指针
     if (usrWorkspace == nullptr) {
         return;
     }
@@ -86,8 +84,8 @@ __aicore__ inline void DynPartWithHMC<T, isSingleW>::Process()
             this->SinglePartProcess(this->pBaseQue_, begPart, endPart);
         }
         auto ubPartBase = this->pBaseQue_.template DeQue<uint64_t>();
-        this->RefreshOutputShapes(ubPartBase, NUM_PARTITION_UNIT,
-                                  static_cast<int64_t>(pLpIdx * NUM_PARTITION_UNIT * SHAPE_GAP));
+        this->RefreshOutputShapes(
+            ubPartBase, NUM_PARTITION_UNIT, static_cast<int64_t>(pLpIdx * NUM_PARTITION_UNIT * SHAPE_GAP));
         this->pBaseQue_.FreeTensor(ubPartBase);
     }
     if (partLeft > 0) {
@@ -100,15 +98,15 @@ __aicore__ inline void DynPartWithHMC<T, isSingleW>::Process()
             this->SinglePartProcess(this->pBaseQue_, begPart, endPart);
         }
         auto ubPartBase = this->pBaseQue_.template DeQue<uint64_t>();
-        this->RefreshOutputShapes(ubPartBase, partLeft,
-                                  static_cast<int64_t>(partLpCnt * NUM_PARTITION_UNIT * SHAPE_GAP));
+        this->RefreshOutputShapes(
+            ubPartBase, partLeft, static_cast<int64_t>(partLpCnt * NUM_PARTITION_UNIT * SHAPE_GAP));
         this->pBaseQue_.FreeTensor(ubPartBase);
     }
 }
 
 template <typename T, bool isSingleW>
-__aicore__ inline void DynPartWithHMC<T, isSingleW>::InnerProcess4CalcPartCnt(uint32_t ubPartLen, int32_t begPart,
-                                                                              int32_t endPart)
+__aicore__ inline void DynPartWithHMC<T, isSingleW>::InnerProcess4CalcPartCnt(
+    uint32_t ubPartLen, int32_t begPart, int32_t endPart)
 {
     auto ubPart = pR1InQue_.template DeQue<int32_t>();
     auto ubPartCnt = this->pCntQue_.template DeQue<uint64_t>();
@@ -142,8 +140,8 @@ __aicore__ inline void DynPartWithHMC<T, isSingleW>::InnerProcess4CalcPartCnt(ui
                 MicroAPI::Add(partCnt, partCnt, midPartCnt, vl1Mask);
             }
             // partCnt must be less than max int32_t
-            MicroAPI::DataCopy<int32_t, MicroAPI::StoreDist::DIST_FIRST_ELEMENT_B32>(ptrPartMid + modPartIdx * dFactor,
-                                                                                     partCnt, vl1Mask);
+            MicroAPI::DataCopy<int32_t, MicroAPI::StoreDist::DIST_FIRST_ELEMENT_B32>(
+                ptrPartMid + modPartIdx * dFactor, partCnt, vl1Mask);
         }
     }
     Add(ubPartCnt, ubPartCnt, ubPartBase, this->coreWS_);
@@ -176,8 +174,8 @@ __aicore__ inline void DynPartWithHMC<T, isSingleW>::CalcPartCnt(int32_t begPart
     if (partLeft > 0) {
         auto ubPart = pR1InQue_.template AllocTensor<int32_t>();
         DataCopyExtParams copyParams{1, static_cast<uint32_t>(partLeft * sizeof(int32_t)), 0, 0, 0};
-        DataCopyPad(ubPart, pInGM_[this->blockIdx_ * tdPtr_->hMSize + partLpCnt * ubPartLen_], copyParams,
-                    copyPadParams);
+        DataCopyPad(
+            ubPart, pInGM_[this->blockIdx_ * tdPtr_->hMSize + partLpCnt * ubPartLen_], copyParams, copyPadParams);
         pR1InQue_.EnQue(ubPart);
         InnerProcess4CalcPartCnt(partLeft, begPart, endPart);
     }
@@ -219,6 +217,6 @@ __aicore__ inline void DynPartWithHMC<T, isSingleW>::CalcPartBase(int32_t begPar
     this->bufPoolSync_.Reset();
 }
 
-}  // namespace DynPart
+} // namespace DynPart
 
-#endif  // OP_KERNEL_DYNAMIC_PARTITION_WITH_H_MC_H_
+#endif // OP_KERNEL_DYNAMIC_PARTITION_WITH_H_MC_H_

@@ -54,16 +54,16 @@ constexpr static int32_t MIRROR_BOUNDARY_OFFSET_1 = 1;
 constexpr static int32_t MIRROR_BOUNDARY_OFFSET_2 = 2;
 
 struct PadGradNormalParam {
-    uint32_t padWI;   // grad_y W (padded)
-    uint32_t padWO;   // grad_x W (original)
+    uint32_t padWI; // grad_y W (padded)
+    uint32_t padWO; // grad_x W (original)
     uint32_t padLeft;
     uint32_t padRight;
 };
 
 // 镜像位置列表，最多包含 2 个位置（上镜像和下镜像）
 struct MirrorList {
-    uint32_t mirrors[2];  // 镜像位置数组
-    uint8_t count;        // 有效镜像位置数量
+    uint32_t mirrors[2]; // 镜像位置数组
+    uint8_t count;       // 有效镜像位置数量
 };
 
 // 镜像条件结果，包含上下镜像的有效性和镜像位置
@@ -84,12 +84,12 @@ private:
     // axisNumInUb_ = dimNum_ - ubAxis，决定 UB 内数据的维度结构
     // 注意: 这不决定哪些维度需要处理 padding，所有有 padding 的维度都需要处理
     uint32_t axisNumInUb_{0};
-    static constexpr uint32_t MODE = (modeName == 2) ? 1 : 2;  // modeName=2→reflect(1), otherwise→symmetric(2)
-    GlobalTensor<T> input_;   // grad_y (padded gradient input)
-    GlobalTensor<T> output_;  // grad_x (original gradient output)
+    static constexpr uint32_t MODE = (modeName == 2) ? 1 : 2; // modeName=2→reflect(1), otherwise→symmetric(2)
+    GlobalTensor<T> input_;                                   // grad_y (padded gradient input)
+    GlobalTensor<T> output_;                                  // grad_x (original gradient output)
     TQue<QuePosition::VECIN, 1> inQueue_;
     TQue<QuePosition::VECOUT, 1> outQueue_;
-    TBuf<TPosition::VECCALC> tmpBuf_;  // 用于存储高维镜像累加结果和从 GM 读取的临时数据
+    TBuf<TPosition::VECCALC> tmpBuf_; // 用于存储高维镜像累加结果和从 GM 读取的临时数据
 
     TPipe* pipe_ = nullptr;
     int64_t blockIdx_;
@@ -98,15 +98,15 @@ private:
     uint32_t tmpBufTileSize_{0};
     uint8_t dimNum_{0};
     uint8_t ubAxis_{0};
-    uint16_t modeOffset_{0};  // reflect=0, symmetric=1
+    uint16_t modeOffset_{0}; // reflect=0, symmetric=1
     PadGradNormalParam padParam_;
     const PadV3GradACTilingData* tilingData_ = nullptr;
-    bool has2DPadding{false};  // H 维度是否有 padding (dimNum_ >= 2)
-    bool has3DPadding{false};  // C 维度是否有 padding (dimNum_ >= 3)
-    bool has4DPadding{false};  // N 维度是否有 padding (dimNum_ >= 4)
-    bool has5DPadding{false};  // 第5维是否有 padding (dimNum_ >= 5)
-    uint32_t padWInLength_{0};   // grad_y W aligned
-    uint32_t padWOutLength_{0};  // grad_x W aligned
+    bool has2DPadding{false};   // H 维度是否有 padding (dimNum_ >= 2)
+    bool has3DPadding{false};   // C 维度是否有 padding (dimNum_ >= 3)
+    bool has4DPadding{false};   // N 维度是否有 padding (dimNum_ >= 4)
+    bool has5DPadding{false};   // 第5维是否有 padding (dimNum_ >= 5)
+    uint32_t padWInLength_{0};  // grad_y W aligned
+    uint32_t padWOutLength_{0}; // grad_x W aligned
     // inIndex_[i]: grad_y 中当前块的起始索引
     uint64_t inIndex_[PAD_GRAD_MAX_DIMS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
     // inCopyLen_[i]: 各维度实际拷贝的长度，按 inShape (grad_y) 计算
@@ -149,8 +149,8 @@ public:
         // grad_x W (original) - aligned
         padWOutLength_ = CeilAlign(static_cast<uint32_t>(tilingData_->outShape[dimNum_ - 1]), BLK_ELEMS);
 
-        padParam_.padWI = padWInLength_;   // grad_y W
-        padParam_.padWO = padWOutLength_;  // grad_x W
+        padParam_.padWI = padWInLength_;  // grad_y W
+        padParam_.padWO = padWOutLength_; // grad_x W
         padParam_.padLeft = static_cast<uint32_t>(tilingData_->leftPad[dimNum_ - 1]);
         padParam_.padRight = static_cast<uint32_t>(tilingData_->rightPad[dimNum_ - 1]);
 
@@ -161,25 +161,30 @@ public:
         }
         // 检查 H 维度是否有 padding
         if (dimNum_ >= MIN_DIM_FOR_H_PAD) {
-            has2DPadding = (tilingData_->leftPad[dimNum_ - MIN_DIM_FOR_H_PAD] > 0 ||
-                tilingData_->rightPad[dimNum_ - MIN_DIM_FOR_H_PAD] > 0);
+            has2DPadding =
+                (tilingData_->leftPad[dimNum_ - MIN_DIM_FOR_H_PAD] > 0 ||
+                 tilingData_->rightPad[dimNum_ - MIN_DIM_FOR_H_PAD] > 0);
         }
         // 检查 C 维度是否有 padding
         if (dimNum_ >= MIN_DIM_FOR_C_PAD) {
-            has3DPadding = (tilingData_->leftPad[dimNum_ - MIN_DIM_FOR_C_PAD] > 0 ||
-                tilingData_->rightPad[dimNum_ - MIN_DIM_FOR_C_PAD] > 0);
+            has3DPadding =
+                (tilingData_->leftPad[dimNum_ - MIN_DIM_FOR_C_PAD] > 0 ||
+                 tilingData_->rightPad[dimNum_ - MIN_DIM_FOR_C_PAD] > 0);
         }
         // 检查 N 维度是否有 padding
         if (dimNum_ >= MIN_DIM_FOR_N_PAD) {
-            has4DPadding = (tilingData_->leftPad[dimNum_ - MIN_DIM_FOR_N_PAD] > 0 ||
-                tilingData_->rightPad[dimNum_ - MIN_DIM_FOR_N_PAD] > 0);
+            has4DPadding =
+                (tilingData_->leftPad[dimNum_ - MIN_DIM_FOR_N_PAD] > 0 ||
+                 tilingData_->rightPad[dimNum_ - MIN_DIM_FOR_N_PAD] > 0);
         }
         // 检查第5维是否有 padding
         if (dimNum_ >= MIN_DIM_FOR_D5_PAD) {
-            has5DPadding = (tilingData_->leftPad[dimNum_ - MIN_DIM_FOR_D5_PAD] > 0 ||
-                tilingData_->rightPad[dimNum_ - MIN_DIM_FOR_D5_PAD] > 0);
+            has5DPadding =
+                (tilingData_->leftPad[dimNum_ - MIN_DIM_FOR_D5_PAD] > 0 ||
+                 tilingData_->rightPad[dimNum_ - MIN_DIM_FOR_D5_PAD] > 0);
         }
     }
+
     __aicore__ inline void Process()
     {
         uint64_t ubFactor = tilingData_->ubFactor;
@@ -197,18 +202,18 @@ public:
         for (uint32_t idx = startIdx; idx < endIdx; idx++) {
             uint32_t curIdx = idx;
             for (int8_t i = ubAxis_; i >= 0; i--) {
-                uint64_t factor = tilingData_->outShape[i];  // use outShape (grad_x shape)
+                uint64_t factor = tilingData_->outShape[i]; // use outShape (grad_x shape)
                 if (i == ubAxis_) {
                     factor = CeilDiv(tilingData_->outShape[i], ubFactor);
                 }
                 outIndex_[i] = (i == ubAxis_ ? curIdx % factor * ubFactor : curIdx % factor);
-                inIndex_[i] = outIndex_[i] + tilingData_->leftPad[i];  // corresponding position in grad_y
+                inIndex_[i] = outIndex_[i] + tilingData_->leftPad[i]; // corresponding position in grad_y
                 curIdx = curIdx / factor;
             }
             // 切分轴: 实际拷贝长度 = min(ubFactor, outShape[ubAxis_] - outIndex[ubAxis_])
             inCopyLen_[ubAxis_] = outIndex_[ubAxis_] + ubFactor < tilingData_->outShape[ubAxis_] ?
-                                     ubFactor :
-                                     tilingData_->outShape[ubAxis_] - outIndex_[ubAxis_];
+                                      ubFactor :
+                                      tilingData_->outShape[ubAxis_] - outIndex_[ubAxis_];
             ProcessOneStep();
         }
     }
@@ -223,8 +228,8 @@ private:
         dstLocal = outQueue_.DeQue<T>();
         CopyOut(dstLocal);
         outQueue_.FreeTensor(dstLocal);
-
     }
+
     __aicore__ inline void CopyIn()
     {
         // Calculate input address in grad_y (padded tensor)
@@ -259,8 +264,8 @@ private:
             loopParams.loop1DstStride = tilingData_->inShape[dimNum_ - CONST2] * padParam_.padWI * sizeof(T);
             loopParams.loop2Size = inCopyLen_[dimNum_ - CONST4];
             loopParams.loop2SrcStride = tilingData_->inStride[dimNum_ - CONST4] * sizeof(T);
-            loopParams.loop2DstStride = tilingData_->inShape[dimNum_ - CONST3] * tilingData_->inShape[dimNum_ - CONST2] *
-                                        padParam_.padWI * sizeof(T);
+            loopParams.loop2DstStride = tilingData_->inShape[dimNum_ - CONST3] *
+                                        tilingData_->inShape[dimNum_ - CONST2] * padParam_.padWI * sizeof(T);
             SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
             DataCopyPad(inUbLocal, input_[inAddr], copyInParams, padExtParams);
             ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
@@ -269,6 +274,7 @@ private:
         }
         inQueue_.EnQue(inUbLocal);
     }
+
     // 将 src (inQueue_) 中的数据拷贝/转换到 tmpBuf_
     // 对于 bfloat16_t/half 类型，使用 Cast 转换为 float32 存储
     // 对于 float32 类型，直接使用 Copy
@@ -294,8 +300,8 @@ private:
     __aicore__ inline void GradGatherProcess(const LocalTensor<T>& dst)
     {
         __local_mem__ T* dstAddr = reinterpret_cast<__local_mem__ T*>(dst.GetPhyAddr());
-        const uint32_t outW = tilingData_->outShape[dimNum_ - 1];  // grad_x W
-        const uint32_t inW = tilingData_->inShape[dimNum_ - 1];    // grad_y W
+        const uint32_t outW = tilingData_->outShape[dimNum_ - 1]; // grad_x W
+        const uint32_t inW = tilingData_->inShape[dimNum_ - 1];   // grad_y W
         const uint32_t leftPad = padParam_.padLeft;
         const uint32_t rightPad = padParam_.padRight;
         const uint32_t padWI = padParam_.padWI;
@@ -307,8 +313,8 @@ private:
         // outShape 用于输出侧 (dst 写入的行数)
         const uint32_t dimNNum = (axisNumInUb_ < CONST4) ? 1 : inCopyLen_[dimNum_ - CONST4];
         const uint32_t dimCNum = (axisNumInUb_ < CONST3) ? 1 : inCopyLen_[dimNum_ - CONST3];
-        const uint32_t dimHIn = inCopyLen_[dimNum_ - CONST2];   // inShape[H], src 侧行数
-        const uint32_t dimHOut = tilingData_->outShape[dimNum_ - CONST2];  // outShape[H], dst 侧行数
+        const uint32_t dimHIn = inCopyLen_[dimNum_ - CONST2];             // inShape[H], src 侧行数
+        const uint32_t dimHOut = tilingData_->outShape[dimNum_ - CONST2]; // outShape[H], dst 侧行数
 
         if (axisNumInUb_ == CONST2) {
             // axisNumInUb_=2 时的数据流：
@@ -330,8 +336,7 @@ private:
             // Step 3: W 维度梯度累加
             __local_mem__ PromoteDataT* tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr());
             for (uint32_t h = 0; h < dimHIn; h++) {
-                GradProcessLineFromTmpBuf(dstAddr + h * padWO, tmpAddr + h * padWI,
-                                          outW, inW, leftPad, rightPad);
+                GradProcessLineFromTmpBuf(dstAddr + h * padWO, tmpAddr + h * padWI, outW, inW, leftPad, rightPad);
             }
         } else if (axisNumInUb_ == CONST3) {
             // axisNumInUb_=3: UB 内包含 inCopyLen_[C] × inShape[H] × inShape[W]
@@ -339,7 +344,7 @@ private:
             LocalTensor<PromoteDataT> tmpLocal = tmpBuf_.Get<PromoteDataT>();
             __local_mem__ PromoteDataT* tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr());
             const uint32_t leftPadH = tilingData_->leftPad[dimNum_ - CONST2];
-            const uint32_t sliceSize = dimHIn * padWI;  // 一个 C slice 在 tmpLocal 中的元素数
+            const uint32_t sliceSize = dimHIn * padWI; // 一个 C slice 在 tmpLocal 中的元素数
 
             // Step 1: 一次性 Cast 所有 C slice 数据到 tmpLocal
             CopyToTmpBuf(tmpLocal, dimCNum * dimHIn, padWI);
@@ -355,9 +360,9 @@ private:
             // Step 4: W 维度梯度累加，从 self 行读取，写入 dst
             for (uint32_t c = 0; c < dimCNum; c++) {
                 for (uint32_t h = 0; h < dimHOut; h++) {
-                    GradProcessLineFromTmpBuf(dstAddr + c * padHW + h * padWO,
-                                              tmpAddr + c * sliceSize + (h + leftPadH) * padWI,
-                                              outW, inW, leftPad, rightPad);
+                    GradProcessLineFromTmpBuf(
+                        dstAddr + c * padHW + h * padWO, tmpAddr + c * sliceSize + (h + leftPadH) * padWI, outW, inW,
+                        leftPad, rightPad);
                 }
             }
         } else if (axisNumInUb_ == CONST4) {
@@ -368,7 +373,7 @@ private:
             const uint32_t leftPadH = tilingData_->leftPad[dimNum_ - CONST2];
             const uint32_t leftPadC = tilingData_->leftPad[dimNum_ - CONST3];
             const uint32_t hSliceSize = dimHIn * padWI;       // 一个 H slice (一个 C plane)
-            const uint32_t cSliceSize = dimCNum * hSliceSize;  // 一个 N slice (所有 C planes)
+            const uint32_t cSliceSize = dimCNum * hSliceSize; // 一个 N slice (所有 C planes)
 
             // Step 1: 一次性 Cast 所有 N×C×H 数据到 tmpLocal
             CopyToTmpBuf(tmpLocal, dimNNum * dimCNum * dimHIn, padWI);
@@ -385,8 +390,7 @@ private:
             const uint32_t dimCOut = tilingData_->outShape[dimNum_ - CONST3];
             for (uint32_t n = 0; n < dimNNum; n++) {
                 for (uint32_t c = 0; c < dimCOut; c++) {
-                    AccumulateHMirrorsInPlace(
-                        tmpLocal, n * cSliceSize + (c + leftPadC) * hSliceSize, padWI);
+                    AccumulateHMirrorsInPlace(tmpLocal, n * cSliceSize + (c + leftPadC) * hSliceSize, padWI);
                 }
             }
 
@@ -396,8 +400,8 @@ private:
                     for (uint32_t h = 0; h < dimHOut; h++) {
                         GradProcessLineFromTmpBuf(
                             dstAddr + n * padCHW + c * padHW + h * padWO,
-                            tmpAddr + n * cSliceSize + (c + leftPadC) * hSliceSize + (h + leftPadH) * padWI,
-                            outW, inW, leftPad, rightPad);
+                            tmpAddr + n * cSliceSize + (c + leftPadC) * hSliceSize + (h + leftPadH) * padWI, outW, inW,
+                            leftPad, rightPad);
                     }
                 }
             }
@@ -440,13 +444,12 @@ private:
     }
 
     // 副pad: C×H 组合 — 对每个 mirrorC 位置，处理 H 镜像
-    __aicore__ inline void ProcessCxHSubPad(
-        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
+    __aicore__ inline void ProcessCxHSubPad(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
     {
         const uint32_t globalC = outIndex_[dimNum_ - CONST3];
         MirrorList cList = CollectMirrorPositions(
-            globalC, tilingData_->outShape[dimNum_ - CONST3],
-            tilingData_->leftPad[dimNum_ - CONST3], tilingData_->rightPad[dimNum_ - CONST3]);
+            globalC, tilingData_->outShape[dimNum_ - CONST3], tilingData_->leftPad[dimNum_ - CONST3],
+            tilingData_->rightPad[dimNum_ - CONST3]);
 
         for (uint8_t ci = 0; ci < cList.count; ci++) {
             ProcessCxHCombinedMirror(lineAddr, globalH, cList.mirrors[ci], inW);
@@ -454,13 +457,12 @@ private:
     }
 
     // 副pad: N×H 相关组合 — 对每个 mirrorN 位置，处理 N×H 和 N×C×H
-    __aicore__ inline void ProcessNxHSubPad(
-        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
+    __aicore__ inline void ProcessNxHSubPad(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
     {
         const uint32_t globalN = outIndex_[dimNum_ - CONST4];
         MirrorList nList = CollectMirrorPositions(
-            globalN, tilingData_->outShape[dimNum_ - CONST4],
-            tilingData_->leftPad[dimNum_ - CONST4], tilingData_->rightPad[dimNum_ - CONST4]);
+            globalN, tilingData_->outShape[dimNum_ - CONST4], tilingData_->leftPad[dimNum_ - CONST4],
+            tilingData_->rightPad[dimNum_ - CONST4]);
 
         for (uint8_t ni = 0; ni < nList.count; ni++) {
             // N×H
@@ -478,8 +480,8 @@ private:
     {
         const uint32_t globalC = outIndex_[dimNum_ - CONST3];
         MirrorList cList = CollectMirrorPositions(
-            globalC, tilingData_->outShape[dimNum_ - CONST3],
-            tilingData_->leftPad[dimNum_ - CONST3], tilingData_->rightPad[dimNum_ - CONST3]);
+            globalC, tilingData_->outShape[dimNum_ - CONST3], tilingData_->leftPad[dimNum_ - CONST3],
+            tilingData_->rightPad[dimNum_ - CONST3]);
 
         for (uint8_t ci = 0; ci < cList.count; ci++) {
             ProcessNxCxHCombinedMirror(lineAddr, globalH, mirrorN, cList.mirrors[ci], inW);
@@ -487,13 +489,12 @@ private:
     }
 
     // 副pad: D5×H 相关组合 — 对每个 mirrorD5，处理 D5×H, D5×C×H, D5×N×H, D5×N×C×H
-    __aicore__ inline void ProcessD5xHSubPad(
-        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
+    __aicore__ inline void ProcessD5xHSubPad(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         MirrorList d5List = CollectMirrorPositions(
-            globalD5, tilingData_->outShape[dimNum_ - CONST5],
-            tilingData_->leftPad[dimNum_ - CONST5], tilingData_->rightPad[dimNum_ - CONST5]);
+            globalD5, tilingData_->outShape[dimNum_ - CONST5], tilingData_->leftPad[dimNum_ - CONST5],
+            tilingData_->rightPad[dimNum_ - CONST5]);
 
         for (uint8_t di = 0; di < d5List.count; di++) {
             // D5×H
@@ -513,22 +514,24 @@ private:
     __aicore__ inline void ProcessD5xHCombinedMirror(
         __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorD5, uint32_t inW)
     {
-        if (!has2DPadding) return;
+        if (!has2DPadding) {
+            return;
+        }
 
         const uint32_t leftPadH = tilingData_->leftPad[dimNum_ - CONST2];
         const uint32_t inH = tilingData_->inShape[dimNum_ - CONST2];
         MirrorCondition condH = CalcMirrorCondition(
-            globalH, tilingData_->outShape[dimNum_ - CONST2],
-            leftPadH, tilingData_->rightPad[dimNum_ - CONST2]);
+            globalH, tilingData_->outShape[dimNum_ - CONST2], leftPadH, tilingData_->rightPad[dimNum_ - CONST2]);
 
         if (condH.hasTop && condH.mirrorTop < leftPadH) {
-            CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5,
-                inIndex_[dimNum_ - CONST4], inIndex_[dimNum_ - CONST3], condH.mirrorTop, inW);
+            CopyAndAddMirrorLineFromGMWithD5NC(
+                lineAddr, mirrorD5, inIndex_[dimNum_ - CONST4], inIndex_[dimNum_ - CONST3], condH.mirrorTop, inW);
         }
 
-        if (condH.hasBottom && condH.mirrorBottom >= leftPadH + tilingData_->outShape[dimNum_ - CONST2] && condH.mirrorBottom < inH) {
-            CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5,
-                inIndex_[dimNum_ - CONST4], inIndex_[dimNum_ - CONST3], condH.mirrorBottom, inW);
+        if (condH.hasBottom && condH.mirrorBottom >= leftPadH + tilingData_->outShape[dimNum_ - CONST2] &&
+            condH.mirrorBottom < inH) {
+            CopyAndAddMirrorLineFromGMWithD5NC(
+                lineAddr, mirrorD5, inIndex_[dimNum_ - CONST4], inIndex_[dimNum_ - CONST3], condH.mirrorBottom, inW);
         }
     }
 
@@ -542,19 +545,18 @@ private:
         const uint32_t inH = tilingData_->inShape[dimNum_ - CONST2];
 
         MirrorList cList = CollectMirrorPositions(
-            globalC, tilingData_->outShape[dimNum_ - CONST3],
-            tilingData_->leftPad[dimNum_ - CONST3], tilingData_->rightPad[dimNum_ - CONST3]);
-        MirrorCondition condH = CalcMirrorCondition(
-            globalH, outH, leftPadH, tilingData_->rightPad[dimNum_ - CONST2]);
+            globalC, tilingData_->outShape[dimNum_ - CONST3], tilingData_->leftPad[dimNum_ - CONST3],
+            tilingData_->rightPad[dimNum_ - CONST3]);
+        MirrorCondition condH = CalcMirrorCondition(globalH, outH, leftPadH, tilingData_->rightPad[dimNum_ - CONST2]);
 
         for (uint8_t ci = 0; ci < cList.count; ci++) {
             if (condH.hasTop && condH.mirrorTop < leftPadH) {
-                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5,
-                    inIndex_[dimNum_ - CONST4], cList.mirrors[ci], condH.mirrorTop, inW);
+                CopyAndAddMirrorLineFromGMWithD5NC(
+                    lineAddr, mirrorD5, inIndex_[dimNum_ - CONST4], cList.mirrors[ci], condH.mirrorTop, inW);
             }
             if (condH.hasBottom && condH.mirrorBottom >= leftPadH + outH && condH.mirrorBottom < inH) {
-                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5,
-                    inIndex_[dimNum_ - CONST4], cList.mirrors[ci], condH.mirrorBottom, inW);
+                CopyAndAddMirrorLineFromGMWithD5NC(
+                    lineAddr, mirrorD5, inIndex_[dimNum_ - CONST4], cList.mirrors[ci], condH.mirrorBottom, inW);
             }
         }
     }
@@ -569,20 +571,19 @@ private:
         const uint32_t inH = tilingData_->inShape[dimNum_ - CONST2];
 
         MirrorList nList = CollectMirrorPositions(
-            globalN, tilingData_->outShape[dimNum_ - CONST4],
-            tilingData_->leftPad[dimNum_ - CONST4], tilingData_->rightPad[dimNum_ - CONST4]);
-        MirrorCondition condH = CalcMirrorCondition(
-            globalH, outH, leftPadH, tilingData_->rightPad[dimNum_ - CONST2]);
+            globalN, tilingData_->outShape[dimNum_ - CONST4], tilingData_->leftPad[dimNum_ - CONST4],
+            tilingData_->rightPad[dimNum_ - CONST4]);
+        MirrorCondition condH = CalcMirrorCondition(globalH, outH, leftPadH, tilingData_->rightPad[dimNum_ - CONST2]);
 
         for (uint8_t ni = 0; ni < nList.count; ni++) {
             // D5×N×H
             if (condH.hasTop && condH.mirrorTop < leftPadH) {
-                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5,
-                    nList.mirrors[ni], inIndex_[dimNum_ - CONST3], condH.mirrorTop, inW);
+                CopyAndAddMirrorLineFromGMWithD5NC(
+                    lineAddr, mirrorD5, nList.mirrors[ni], inIndex_[dimNum_ - CONST3], condH.mirrorTop, inW);
             }
             if (condH.hasBottom && condH.mirrorBottom >= leftPadH + outH && condH.mirrorBottom < inH) {
-                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5,
-                    nList.mirrors[ni], inIndex_[dimNum_ - CONST3], condH.mirrorBottom, inW);
+                CopyAndAddMirrorLineFromGMWithD5NC(
+                    lineAddr, mirrorD5, nList.mirrors[ni], inIndex_[dimNum_ - CONST3], condH.mirrorBottom, inW);
             }
             // D5×N×C×H
             if (has3DPadding) {
@@ -601,19 +602,18 @@ private:
         const uint32_t inH = tilingData_->inShape[dimNum_ - CONST2];
 
         MirrorList cList = CollectMirrorPositions(
-            globalC, tilingData_->outShape[dimNum_ - CONST3],
-            tilingData_->leftPad[dimNum_ - CONST3], tilingData_->rightPad[dimNum_ - CONST3]);
-        MirrorCondition condH = CalcMirrorCondition(
-            globalH, outH, leftPadH, tilingData_->rightPad[dimNum_ - CONST2]);
+            globalC, tilingData_->outShape[dimNum_ - CONST3], tilingData_->leftPad[dimNum_ - CONST3],
+            tilingData_->rightPad[dimNum_ - CONST3]);
+        MirrorCondition condH = CalcMirrorCondition(globalH, outH, leftPadH, tilingData_->rightPad[dimNum_ - CONST2]);
 
         for (uint8_t ci = 0; ci < cList.count; ci++) {
             if (condH.hasTop && condH.mirrorTop < leftPadH) {
-                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5,
-                    mirrorN, cList.mirrors[ci], condH.mirrorTop, inW);
+                CopyAndAddMirrorLineFromGMWithD5NC(
+                    lineAddr, mirrorD5, mirrorN, cList.mirrors[ci], condH.mirrorTop, inW);
             }
             if (condH.hasBottom && condH.mirrorBottom >= leftPadH + outH && condH.mirrorBottom < inH) {
-                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5,
-                    mirrorN, cList.mirrors[ci], condH.mirrorBottom, inW);
+                CopyAndAddMirrorLineFromGMWithD5NC(
+                    lineAddr, mirrorD5, mirrorN, cList.mirrors[ci], condH.mirrorBottom, inW);
             }
         }
     }
@@ -627,9 +627,7 @@ private:
         const uint32_t rightPadH = tilingData_->rightPad[dimNum_ - CONST2];
 
         // 上镜像
-        bool hasTopMirror = (modeOffset_ == 0) ?
-            (globalH > 0 && globalH <= leftPadH) :
-            (globalH < leftPadH);
+        bool hasTopMirror = (modeOffset_ == 0) ? (globalH > 0 && globalH <= leftPadH) : (globalH < leftPadH);
         if (hasTopMirror) {
             uint32_t mirrorH = leftPadH - modeOffset_ - globalH;
             // 使用当前高维索引，只改变 H
@@ -638,8 +636,8 @@ private:
 
         // 下镜像
         bool hasBottomMirror = (modeOffset_ == 0) ?
-            (rightPadH > 0 && globalH >= outH - rightPadH - 1 && globalH <= outH - 2) :
-            (rightPadH > 0 && globalH >= outH - rightPadH);
+                                   (rightPadH > 0 && globalH >= outH - rightPadH - 1 && globalH <= outH - 2) :
+                                   (rightPadH > 0 && globalH >= outH - rightPadH);
         if (hasBottomMirror) {
             uint32_t mirrorH = leftPadH + 2 * outH - 2 + modeOffset_ - globalH;
             uint32_t inH = tilingData_->inShape[dimNum_ - CONST2];
@@ -648,8 +646,7 @@ private:
     }
 
     // C 维度镜像处理
-    __aicore__ inline void ProcessCDimMirror(
-        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
+    __aicore__ inline void ProcessCDimMirror(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
     {
         const uint32_t globalC = outIndex_[dimNum_ - CONST3];
         const uint32_t outC = tilingData_->outShape[dimNum_ - CONST3];
@@ -659,9 +656,7 @@ private:
         const uint32_t leftPadH = tilingData_->leftPad[dimNum_ - CONST2];
 
         // C 轴上镜像
-        bool hasTopMirrorC = (modeOffset_ == 0) ?
-            (globalC > 0 && globalC <= leftPadC) :
-            (globalC < leftPadC);
+        bool hasTopMirrorC = (modeOffset_ == 0) ? (globalC > 0 && globalC <= leftPadC) : (globalC < leftPadC);
         if (hasTopMirrorC) {
             uint32_t mirrorC = leftPadC - modeOffset_ - globalC;
             // 从 GM 拷贝 grad_y[..., mirrorC, globalH+leftPadH, :] 并累加
@@ -676,8 +671,8 @@ private:
 
         // C 轴下镜像
         bool hasBottomMirrorC = (modeOffset_ == 0) ?
-            (rightPadC > 0 && globalC >= outC - rightPadC - 1 && globalC <= outC - 2) :
-            (rightPadC > 0 && globalC >= outC - rightPadC);
+                                    (rightPadC > 0 && globalC >= outC - rightPadC - 1 && globalC <= outC - 2) :
+                                    (rightPadC > 0 && globalC >= outC - rightPadC);
         if (hasBottomMirrorC) {
             uint32_t mirrorC = leftPadC + 2 * outC - 2 + modeOffset_ - globalC;
             uint32_t hIdxInGradY = globalH + leftPadH;
@@ -700,9 +695,7 @@ private:
         const uint32_t inH = tilingData_->inShape[dimNum_ - CONST2];
 
         // H 上镜像 × C 镜像
-        bool hasTopMirrorH = (modeOffset_ == 0) ?
-            (globalH > 0 && globalH <= leftPadH) :
-            (globalH < leftPadH);
+        bool hasTopMirrorH = (modeOffset_ == 0) ? (globalH > 0 && globalH <= leftPadH) : (globalH < leftPadH);
         if (hasTopMirrorH) {
             uint32_t mirrorH = leftPadH - modeOffset_ - globalH;
             if (mirrorH < leftPadH) {
@@ -712,8 +705,8 @@ private:
 
         // H 下镜像 × C 镜像
         bool hasBottomMirrorH = (modeOffset_ == 0) ?
-            (rightPadH > 0 && globalH >= outH - rightPadH - 1 && globalH <= outH - 2) :
-            (rightPadH > 0 && globalH >= outH - rightPadH);
+                                    (rightPadH > 0 && globalH >= outH - rightPadH - 1 && globalH <= outH - 2) :
+                                    (rightPadH > 0 && globalH >= outH - rightPadH);
         if (hasBottomMirrorH) {
             uint32_t mirrorH = leftPadH + 2 * outH - 2 + modeOffset_ - globalH;
             if (mirrorH >= leftPadH + outH && mirrorH < inH) {
@@ -726,15 +719,15 @@ private:
     __aicore__ inline void ProcessNxHCombinedMirror(
         __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorN, uint32_t inW)
     {
-        if (!has2DPadding) return;
+        if (!has2DPadding)
+            return;
 
         const uint32_t outH = tilingData_->outShape[dimNum_ - CONST2];
         const uint32_t leftPadH = tilingData_->leftPad[dimNum_ - CONST2];
         const uint32_t rightPadH = tilingData_->rightPad[dimNum_ - CONST2];
         const uint32_t inH = tilingData_->inShape[dimNum_ - CONST2];
 
-        bool hasTopMirrorH = (modeOffset_ == 0) ?
-            (globalH > 0 && globalH <= leftPadH) : (globalH < leftPadH);
+        bool hasTopMirrorH = (modeOffset_ == 0) ? (globalH > 0 && globalH <= leftPadH) : (globalH < leftPadH);
         if (hasTopMirrorH) {
             uint32_t mirrorH = leftPadH - modeOffset_ - globalH;
             if (mirrorH < leftPadH) {
@@ -743,8 +736,8 @@ private:
         }
 
         bool hasBottomMirrorH = (modeOffset_ == 0) ?
-            (rightPadH > 0 && globalH >= outH - rightPadH - 1 && globalH <= outH - 2) :
-            (rightPadH > 0 && globalH >= outH - rightPadH);
+                                    (rightPadH > 0 && globalH >= outH - rightPadH - 1 && globalH <= outH - 2) :
+                                    (rightPadH > 0 && globalH >= outH - rightPadH);
         if (hasBottomMirrorH) {
             uint32_t mirrorH = leftPadH + 2 * outH - 2 + modeOffset_ - globalH;
             if (mirrorH >= leftPadH + outH && mirrorH < inH) {
@@ -764,8 +757,7 @@ private:
         const uint32_t leftPadH = tilingData_->leftPad[dimNum_ - CONST2];
 
         // N×C 上镜像
-        bool hasTopMirrorC = (modeOffset_ == 0) ?
-            (globalC > 0 && globalC <= leftPadC) : (globalC < leftPadC);
+        bool hasTopMirrorC = (modeOffset_ == 0) ? (globalC > 0 && globalC <= leftPadC) : (globalC < leftPadC);
         if (hasTopMirrorC) {
             uint32_t mirrorC = leftPadC - modeOffset_ - globalC;
             uint32_t hIdxInGradY = globalH + leftPadH;
@@ -779,8 +771,8 @@ private:
 
         // N×C 下镜像
         bool hasBottomMirrorC = (modeOffset_ == 0) ?
-            (rightPadC > 0 && globalC >= outC - rightPadC - 1 && globalC <= outC - 2) :
-            (rightPadC > 0 && globalC >= outC - rightPadC);
+                                    (rightPadC > 0 && globalC >= outC - rightPadC - 1 && globalC <= outC - 2) :
+                                    (rightPadC > 0 && globalC >= outC - rightPadC);
         if (hasBottomMirrorC) {
             uint32_t mirrorC = leftPadC + 2 * outC - 2 + modeOffset_ - globalC;
             uint32_t hIdxInGradY = globalH + leftPadH;
@@ -802,8 +794,7 @@ private:
         const uint32_t rightPadH = tilingData_->rightPad[dimNum_ - CONST2];
         const uint32_t inH = tilingData_->inShape[dimNum_ - CONST2];
 
-        bool hasTopMirrorH = (modeOffset_ == 0) ?
-            (globalH > 0 && globalH <= leftPadH) : (globalH < leftPadH);
+        bool hasTopMirrorH = (modeOffset_ == 0) ? (globalH > 0 && globalH <= leftPadH) : (globalH < leftPadH);
         if (hasTopMirrorH) {
             uint32_t mirrorH = leftPadH - modeOffset_ - globalH;
             if (mirrorH < leftPadH) {
@@ -812,8 +803,8 @@ private:
         }
 
         bool hasBottomMirrorH = (modeOffset_ == 0) ?
-            (rightPadH > 0 && globalH >= outH - rightPadH - 1 && globalH <= outH - 2) :
-            (rightPadH > 0 && globalH >= outH - rightPadH);
+                                    (rightPadH > 0 && globalH >= outH - rightPadH - 1 && globalH <= outH - 2) :
+                                    (rightPadH > 0 && globalH >= outH - rightPadH);
         if (hasBottomMirrorH) {
             uint32_t mirrorH = leftPadH + 2 * outH - 2 + modeOffset_ - globalH;
             if (mirrorH >= leftPadH + outH && mirrorH < inH) {
@@ -823,8 +814,7 @@ private:
     }
 
     // 第5维镜像处理 (简化版，只处理单维度镜像)
-    __aicore__ inline void ProcessDim5Mirror(
-        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
+    __aicore__ inline void ProcessDim5Mirror(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         const uint32_t outD5 = tilingData_->outShape[dimNum_ - CONST5];
@@ -833,24 +823,23 @@ private:
         const uint32_t leftPadH = tilingData_->leftPad[dimNum_ - CONST2];
 
         // 第5维上镜像
-        bool hasTopMirrorD5 = (modeOffset_ == 0) ?
-            (globalD5 > 0 && globalD5 <= leftPadD5) : (globalD5 < leftPadD5);
+        bool hasTopMirrorD5 = (modeOffset_ == 0) ? (globalD5 > 0 && globalD5 <= leftPadD5) : (globalD5 < leftPadD5);
         if (hasTopMirrorD5) {
             uint32_t mirrorD5 = leftPadD5 - modeOffset_ - globalD5;
             uint32_t hIdxInGradY = globalH + leftPadH;
-            CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5, inIndex_[dimNum_ - CONST4],
-                                                inIndex_[dimNum_ - CONST3], hIdxInGradY, inW);
+            CopyAndAddMirrorLineFromGMWithD5NC(
+                lineAddr, mirrorD5, inIndex_[dimNum_ - CONST4], inIndex_[dimNum_ - CONST3], hIdxInGradY, inW);
         }
 
         // 第5维下镜像
         bool hasBottomMirrorD5 = (modeOffset_ == 0) ?
-            (rightPadD5 > 0 && globalD5 >= outD5 - rightPadD5 - 1 && globalD5 <= outD5 - 2) :
-            (rightPadD5 > 0 && globalD5 >= outD5 - rightPadD5);
+                                     (rightPadD5 > 0 && globalD5 >= outD5 - rightPadD5 - 1 && globalD5 <= outD5 - 2) :
+                                     (rightPadD5 > 0 && globalD5 >= outD5 - rightPadD5);
         if (hasBottomMirrorD5) {
             uint32_t mirrorD5 = leftPadD5 + 2 * outD5 - 2 + modeOffset_ - globalD5;
             uint32_t hIdxInGradY = globalH + leftPadH;
-            CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5, inIndex_[dimNum_ - CONST4],
-                                                inIndex_[dimNum_ - CONST3], hIdxInGradY, inW);
+            CopyAndAddMirrorLineFromGMWithD5NC(
+                lineAddr, mirrorD5, inIndex_[dimNum_ - CONST4], inIndex_[dimNum_ - CONST3], hIdxInGradY, inW);
         }
     }
 
@@ -907,8 +896,8 @@ private:
 
     // 从 GM 拷贝镜像行，指定第5维、N 和 C 索引
     __aicore__ inline void CopyAndAddMirrorLineFromGMWithD5NC(
-        __local_mem__ PromoteDataT* dstLineAddr, uint32_t d5Idx, 
-        uint32_t nIdx, uint32_t cIdx, uint32_t hIdx, uint32_t inW)
+        __local_mem__ PromoteDataT* dstLineAddr, uint32_t d5Idx, uint32_t nIdx, uint32_t cIdx, uint32_t hIdx,
+        uint32_t inW)
     {
         uint64_t mirrorAddr = 0;
         // 第5维
@@ -950,7 +939,7 @@ private:
     }
     // tmpLocal 内两行 PromoteDataT (float32) 相加: dstLine[i] = dstLine[i] + srcLine[i] + srcLine[j]
     __aicore__ inline void AddLocalUpAndDownLineInTmpBuf(
-        __local_mem__ PromoteDataT* dstLineAddr, __local_mem__ PromoteDataT* srcUpLineAddr, 
+        __local_mem__ PromoteDataT* dstLineAddr, __local_mem__ PromoteDataT* srcUpLineAddr,
         __local_mem__ PromoteDataT* srcDownLineAddr, uint32_t inW)
     {
         constexpr uint32_t VL_ELEMS_FLOAT = VL_SIZE / sizeof(PromoteDataT);
@@ -994,17 +983,14 @@ private:
             return;
         }
 
-        __local_mem__ PromoteDataT* tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr()) + 
-                                              cOffset;
+        __local_mem__ PromoteDataT* tmpAddr =
+            reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr()) + cOffset;
 
         for (uint32_t h = 0; h < outH; h++) {
             __local_mem__ PromoteDataT* selfAddr = tmpAddr + (h + leftPadH) * padWI;
-            bool hasTopMirror = (modeOffset_ == 0) ?
-                (h > 0 && h <= leftPadH) :
-                (h < leftPadH);
-            bool hasBottomMirror = (modeOffset_ == 0) ?
-                (rightPadH > 0 && h >= outH - rightPadH - 1 && h <= outH - 2) :
-                (rightPadH > 0 && h >= outH - rightPadH);
+            bool hasTopMirror = (modeOffset_ == 0) ? (h > 0 && h <= leftPadH) : (h < leftPadH);
+            bool hasBottomMirror = (modeOffset_ == 0) ? (rightPadH > 0 && h >= outH - rightPadH - 1 && h <= outH - 2) :
+                                                        (rightPadH > 0 && h >= outH - rightPadH);
             // 上镜像: padding 行 mirrorH 映射到 self 行 h
             if (hasTopMirror && !hasBottomMirror) {
                 uint32_t mirrorH = leftPadH - modeOffset_ - h;
@@ -1019,10 +1005,9 @@ private:
             if (hasBottomMirror && hasTopMirror) {
                 uint32_t mirrorUpH = leftPadH - modeOffset_ - h;
                 uint32_t mirrorDownH = leftPadH + 2 * outH - 2 + modeOffset_ - h;
-                AddLocalUpAndDownLineInTmpBuf(selfAddr, tmpAddr + mirrorUpH * padWI, 
-                                            tmpAddr + mirrorDownH * padWI, inW);
+                AddLocalUpAndDownLineInTmpBuf(
+                    selfAddr, tmpAddr + mirrorUpH * padWI, tmpAddr + mirrorDownH * padWI, inW);
             }
-
         }
     }
 
@@ -1036,7 +1021,7 @@ private:
         const uint32_t inC = tilingData_->inShape[dimNum_ - CONST3];
         const uint32_t leftPadC = tilingData_->leftPad[dimNum_ - CONST3];
         const uint32_t rightPadC = tilingData_->rightPad[dimNum_ - CONST3];
-        const uint32_t cSliceSize = dimHIn * padWI;  // 一个 C slice 的元素数
+        const uint32_t cSliceSize = dimHIn * padWI; // 一个 C slice 的元素数
 
         if (!has3DPadding) {
             return;
@@ -1047,12 +1032,9 @@ private:
         for (uint32_t c = 0; c < outC; c++) {
             __local_mem__ PromoteDataT* selfAddr = tmpAddr + (c + leftPadC) * cSliceSize;
 
-            bool hasTopMirror = (modeOffset_ == 0) ?
-                (c > 0 && c <= leftPadC) :
-                (c < leftPadC);
-            bool hasBottomMirror = (modeOffset_ == 0) ?
-                (rightPadC > 0 && c >= outC - rightPadC - 1 && c <= outC - 2) :
-                (rightPadC > 0 && c >= outC - rightPadC);
+            bool hasTopMirror = (modeOffset_ == 0) ? (c > 0 && c <= leftPadC) : (c < leftPadC);
+            bool hasBottomMirror = (modeOffset_ == 0) ? (rightPadC > 0 && c >= outC - rightPadC - 1 && c <= outC - 2) :
+                                                        (rightPadC > 0 && c >= outC - rightPadC);
             // C 上镜像: padding C slice mirrorC 映射到 self C slice c
             if (hasTopMirror && !hasBottomMirror) {
                 uint32_t mirrorC = leftPadC - modeOffset_ - c;
@@ -1068,8 +1050,8 @@ private:
             if (hasTopMirror && hasBottomMirror) {
                 uint32_t mirrorUpC = leftPadC - modeOffset_ - c;
                 uint32_t mirrorDownC = leftPadC + 2 * outC - 2 + modeOffset_ - c;
-                AddLocalUpAndDownLineInTmpBuf(selfAddr, tmpAddr + mirrorUpC * cSliceSize, 
-                                                tmpAddr + mirrorDownC * cSliceSize, cSliceSize);
+                AddLocalUpAndDownLineInTmpBuf(
+                    selfAddr, tmpAddr + mirrorUpC * cSliceSize, tmpAddr + mirrorDownC * cSliceSize, cSliceSize);
             }
         }
     }
@@ -1082,8 +1064,8 @@ private:
     {
         const uint32_t globalN = outIndex_[dimNum_ - CONST4];
         MirrorCondition condN = CalcMirrorCondition(
-            globalN, tilingData_->outShape[dimNum_ - CONST4],
-            tilingData_->leftPad[dimNum_ - CONST4], tilingData_->rightPad[dimNum_ - CONST4]);
+            globalN, tilingData_->outShape[dimNum_ - CONST4], tilingData_->leftPad[dimNum_ - CONST4],
+            tilingData_->rightPad[dimNum_ - CONST4]);
 
         // 计算基础 GM 地址 (不含 N 维度)
         uint64_t baseGmAddr = 0;
@@ -1109,11 +1091,11 @@ private:
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         MirrorCondition condD5 = CalcMirrorCondition(
-            globalD5, tilingData_->outShape[dimNum_ - CONST5],
-            tilingData_->leftPad[dimNum_ - CONST5], tilingData_->rightPad[dimNum_ - CONST5]);
+            globalD5, tilingData_->outShape[dimNum_ - CONST5], tilingData_->leftPad[dimNum_ - CONST5],
+            tilingData_->rightPad[dimNum_ - CONST5]);
 
-        uint64_t baseGmAddr = inIndex_[dimNum_ - CONST4] * tilingData_->inStride[dimNum_ - CONST4]
-                            + inIndex_[dimNum_ - CONST3] * tilingData_->inStride[dimNum_ - CONST3];
+        uint64_t baseGmAddr = inIndex_[dimNum_ - CONST4] * tilingData_->inStride[dimNum_ - CONST4] +
+                              inIndex_[dimNum_ - CONST3] * tilingData_->inStride[dimNum_ - CONST3];
 
         if (condD5.hasTop) {
             uint64_t gmAddr = condD5.mirrorTop * tilingData_->inStride[dimNum_ - CONST5] + baseGmAddr;
@@ -1134,18 +1116,18 @@ private:
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
 
         MirrorList nList = CollectMirrorPositions(
-            globalN, tilingData_->outShape[dimNum_ - CONST4],
-            tilingData_->leftPad[dimNum_ - CONST4], tilingData_->rightPad[dimNum_ - CONST4]);
+            globalN, tilingData_->outShape[dimNum_ - CONST4], tilingData_->leftPad[dimNum_ - CONST4],
+            tilingData_->rightPad[dimNum_ - CONST4]);
         MirrorList d5List = CollectMirrorPositions(
-            globalD5, tilingData_->outShape[dimNum_ - CONST5],
-            tilingData_->leftPad[dimNum_ - CONST5], tilingData_->rightPad[dimNum_ - CONST5]);
+            globalD5, tilingData_->outShape[dimNum_ - CONST5], tilingData_->leftPad[dimNum_ - CONST5],
+            tilingData_->rightPad[dimNum_ - CONST5]);
 
         // N×D5 组合
         for (uint8_t ni = 0; ni < nList.count; ni++) {
             for (uint8_t di = 0; di < d5List.count; di++) {
-                uint64_t gmAddr = d5List.mirrors[di] * tilingData_->inStride[dimNum_ - CONST5]
-                                + nList.mirrors[ni] * tilingData_->inStride[dimNum_ - CONST4]
-                                + inIndex_[dimNum_ - CONST3] * tilingData_->inStride[dimNum_ - CONST3];
+                uint64_t gmAddr = d5List.mirrors[di] * tilingData_->inStride[dimNum_ - CONST5] +
+                                  nList.mirrors[ni] * tilingData_->inStride[dimNum_ - CONST4] +
+                                  inIndex_[dimNum_ - CONST3] * tilingData_->inStride[dimNum_ - CONST3];
                 CopyAndAddBlockFromGM(tmpLocal, gmAddr, dimCNum, dimHIn, padWI);
             }
         }
@@ -1158,8 +1140,8 @@ private:
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         MirrorCondition condD5 = CalcMirrorCondition(
-            globalD5, tilingData_->outShape[dimNum_ - CONST5],
-            tilingData_->leftPad[dimNum_ - CONST5], tilingData_->rightPad[dimNum_ - CONST5]);
+            globalD5, tilingData_->outShape[dimNum_ - CONST5], tilingData_->leftPad[dimNum_ - CONST5],
+            tilingData_->rightPad[dimNum_ - CONST5]);
 
         uint64_t baseGmAddr = inIndex_[dimNum_ - CONST4] * tilingData_->inStride[dimNum_ - CONST4];
 
@@ -1177,12 +1159,12 @@ private:
     // ========== axisNumInUb_=4 副pad: N 维度镜像，逐 N slice 读取 dimCNum × dimHIn ==========
 
     __aicore__ inline void ProcessSubPadN_UB4(
-        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t globalN, 
-        uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t globalN, uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI,
+        uint32_t dstOffset)
     {
         MirrorCondition condN = CalcMirrorCondition(
-            globalN, tilingData_->outShape[dimNum_ - CONST4],
-            tilingData_->leftPad[dimNum_ - CONST4], tilingData_->rightPad[dimNum_ - CONST4]);
+            globalN, tilingData_->outShape[dimNum_ - CONST4], tilingData_->leftPad[dimNum_ - CONST4],
+            tilingData_->rightPad[dimNum_ - CONST4]);
 
         // 计算基础 GM 地址 (不含 N 维度)
         uint64_t baseGmAddr = 0;
@@ -1211,21 +1193,21 @@ private:
 
     // 副pad D5×N 组合: mirrorD5 位置的 mirrorN slice
     __aicore__ inline void ProcessSubPadD5xN_UB4(
-        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t mirrorN, 
-        uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t mirrorN, uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI,
+        uint32_t dstOffset)
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         MirrorCondition condD5 = CalcMirrorCondition(
-            globalD5, tilingData_->outShape[dimNum_ - CONST5],
-            tilingData_->leftPad[dimNum_ - CONST5], tilingData_->rightPad[dimNum_ - CONST5]);
+            globalD5, tilingData_->outShape[dimNum_ - CONST5], tilingData_->leftPad[dimNum_ - CONST5],
+            tilingData_->rightPad[dimNum_ - CONST5]);
         if (condD5.hasTop) {
-            uint64_t gmAddr = condD5.mirrorTop * tilingData_->inStride[dimNum_ - CONST5]
-                            + mirrorN * tilingData_->inStride[dimNum_ - CONST4];
+            uint64_t gmAddr = condD5.mirrorTop * tilingData_->inStride[dimNum_ - CONST5] +
+                              mirrorN * tilingData_->inStride[dimNum_ - CONST4];
             CopyAndAddBlockFromGM(tmpLocal[dstOffset], gmAddr, dimCNum, dimHIn, padWI);
         }
         if (condD5.hasBottom) {
-            uint64_t gmAddr = condD5.mirrorBottom * tilingData_->inStride[dimNum_ - CONST5]
-                            + mirrorN * tilingData_->inStride[dimNum_ - CONST4];
+            uint64_t gmAddr = condD5.mirrorBottom * tilingData_->inStride[dimNum_ - CONST5] +
+                              mirrorN * tilingData_->inStride[dimNum_ - CONST4];
             CopyAndAddBlockFromGM(tmpLocal[dstOffset], gmAddr, dimCNum, dimHIn, padWI);
         }
     }
@@ -1235,12 +1217,12 @@ private:
     // 副pad C 镜像: 对单个 C slice，读取 mirrorC 位置的 plane
     // 同时处理 C 镜像位置的高维镜像 (N×C, D5×C, N×D5×C)
     __aicore__ inline void ProcessSubPadC(
-        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t globalC, 
-        uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t globalC, uint32_t dimHIn, uint32_t padWI,
+        uint32_t dstOffset)
     {
         MirrorList cList = CollectMirrorPositions(
-            globalC, tilingData_->outShape[dimNum_ - CONST3],
-            tilingData_->leftPad[dimNum_ - CONST3], tilingData_->rightPad[dimNum_ - CONST3]);
+            globalC, tilingData_->outShape[dimNum_ - CONST3], tilingData_->leftPad[dimNum_ - CONST3],
+            tilingData_->rightPad[dimNum_ - CONST3]);
 
         for (uint8_t ci = 0; ci < cList.count; ci++) {
             uint32_t mirrorC = cList.mirrors[ci];
@@ -1262,13 +1244,13 @@ private:
 
     // 副pad N×C: mirrorN 位置的 mirrorC plane
     __aicore__ inline void ProcessSubPadNxC(
-        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t mirrorC, 
-        uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t mirrorC, uint32_t dimHIn, uint32_t padWI,
+        uint32_t dstOffset)
     {
         const uint32_t globalN = outIndex_[dimNum_ - CONST4];
         MirrorList nList = CollectMirrorPositions(
-            globalN, tilingData_->outShape[dimNum_ - CONST4],
-            tilingData_->leftPad[dimNum_ - CONST4], tilingData_->rightPad[dimNum_ - CONST4]);
+            globalN, tilingData_->outShape[dimNum_ - CONST4], tilingData_->leftPad[dimNum_ - CONST4],
+            tilingData_->rightPad[dimNum_ - CONST4]);
 
         for (uint8_t ni = 0; ni < nList.count; ni++) {
             uint64_t gmAddr = CalcGMAddrWithNC(nList.mirrors[ni], mirrorC);
@@ -1278,13 +1260,13 @@ private:
 
     // 副pad D5×C: mirrorD5 位置的 mirrorC plane
     __aicore__ inline void ProcessSubPadD5xC(
-        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t mirrorC, 
-        uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t mirrorC, uint32_t dimHIn, uint32_t padWI,
+        uint32_t dstOffset)
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         MirrorList d5List = CollectMirrorPositions(
-            globalD5, tilingData_->outShape[dimNum_ - CONST5],
-            tilingData_->leftPad[dimNum_ - CONST5], tilingData_->rightPad[dimNum_ - CONST5]);
+            globalD5, tilingData_->outShape[dimNum_ - CONST5], tilingData_->leftPad[dimNum_ - CONST5],
+            tilingData_->rightPad[dimNum_ - CONST5]);
 
         for (uint8_t di = 0; di < d5List.count; di++) {
             uint64_t gmAddr = CalcGMAddrWithD5NC(d5List.mirrors[di], inIndex_[dimNum_ - CONST4], mirrorC);
@@ -1294,18 +1276,18 @@ private:
 
     // 副pad N×D5×C: mirrorN × mirrorD5 位置的 mirrorC plane
     __aicore__ inline void ProcessSubPadNxD5xC(
-        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t mirrorC, 
-        uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t mirrorC, uint32_t dimHIn, uint32_t padWI,
+        uint32_t dstOffset)
     {
         const uint32_t globalN = outIndex_[dimNum_ - CONST4];
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
 
         MirrorList nList = CollectMirrorPositions(
-            globalN, tilingData_->outShape[dimNum_ - CONST4],
-            tilingData_->leftPad[dimNum_ - CONST4], tilingData_->rightPad[dimNum_ - CONST4]);
+            globalN, tilingData_->outShape[dimNum_ - CONST4], tilingData_->leftPad[dimNum_ - CONST4],
+            tilingData_->rightPad[dimNum_ - CONST4]);
         MirrorList d5List = CollectMirrorPositions(
-            globalD5, tilingData_->outShape[dimNum_ - CONST5],
-            tilingData_->leftPad[dimNum_ - CONST5], tilingData_->rightPad[dimNum_ - CONST5]);
+            globalD5, tilingData_->outShape[dimNum_ - CONST5], tilingData_->leftPad[dimNum_ - CONST5],
+            tilingData_->rightPad[dimNum_ - CONST5]);
 
         // N×D5×C 组合
         for (uint8_t ni = 0; ni < nList.count; ni++) {
@@ -1412,13 +1394,13 @@ private:
 
         MirrorCondition condC = CalcMirrorCondition(globalC, outC, leftPadC, rightPadC);
         if (condC.hasTop) {
-            uint64_t gmAddr = CalcGMAddrWithC(condC.mirrorTop)
-                            + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
+            uint64_t gmAddr =
+                CalcGMAddrWithC(condC.mirrorTop) + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
             CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
         }
         if (condC.hasBottom) {
-            uint64_t gmAddr = CalcGMAddrWithC(condC.mirrorBottom)
-                            + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
+            uint64_t gmAddr =
+                CalcGMAddrWithC(condC.mirrorBottom) + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
             CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
         }
     }
@@ -1434,13 +1416,13 @@ private:
 
         MirrorCondition condN = CalcMirrorCondition(globalN, outN, leftPadN, rightPadN);
         if (condN.hasTop) {
-            uint64_t gmAddr = CalcGMAddrWithNC(condN.mirrorTop, inIndex_[dimNum_ - CONST3])
-                            + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
+            uint64_t gmAddr = CalcGMAddrWithNC(condN.mirrorTop, inIndex_[dimNum_ - CONST3]) +
+                              hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
             CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
         }
         if (condN.hasBottom) {
-            uint64_t gmAddr = CalcGMAddrWithNC(condN.mirrorBottom, inIndex_[dimNum_ - CONST3])
-                            + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
+            uint64_t gmAddr = CalcGMAddrWithNC(condN.mirrorBottom, inIndex_[dimNum_ - CONST3]) +
+                              hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
             CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
         }
     }
@@ -1456,13 +1438,15 @@ private:
 
         MirrorCondition condD5 = CalcMirrorCondition(globalD5, outD5, leftPadD5, rightPadD5);
         if (condD5.hasTop) {
-            uint64_t gmAddr = CalcGMAddrWithD5NC(condD5.mirrorTop, inIndex_[dimNum_ - CONST4], inIndex_[dimNum_ - CONST3])
-                            + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
+            uint64_t gmAddr =
+                CalcGMAddrWithD5NC(condD5.mirrorTop, inIndex_[dimNum_ - CONST4], inIndex_[dimNum_ - CONST3]) +
+                hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
             CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
         }
         if (condD5.hasBottom) {
-            uint64_t gmAddr = CalcGMAddrWithD5NC(condD5.mirrorBottom, inIndex_[dimNum_ - CONST4], inIndex_[dimNum_ - CONST3])
-                            + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
+            uint64_t gmAddr =
+                CalcGMAddrWithD5NC(condD5.mirrorBottom, inIndex_[dimNum_ - CONST4], inIndex_[dimNum_ - CONST3]) +
+                hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
             CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
         }
     }
@@ -1485,8 +1469,8 @@ private:
 
         for (uint8_t ni = 0; ni < nList.count; ni++) {
             for (uint8_t ci = 0; ci < cList.count; ci++) {
-                uint64_t gmAddr = CalcGMAddrWithNC(nList.mirrors[ni], cList.mirrors[ci])
-                                + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
+                uint64_t gmAddr = CalcGMAddrWithNC(nList.mirrors[ni], cList.mirrors[ci]) +
+                                  hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
                 CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
             }
         }
@@ -1510,8 +1494,9 @@ private:
 
         for (uint8_t di = 0; di < d5List.count; di++) {
             for (uint8_t ci = 0; ci < cList.count; ci++) {
-                uint64_t gmAddr = CalcGMAddrWithD5NC(d5List.mirrors[di], inIndex_[dimNum_ - CONST4], cList.mirrors[ci])
-                                + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
+                uint64_t gmAddr =
+                    CalcGMAddrWithD5NC(d5List.mirrors[di], inIndex_[dimNum_ - CONST4], cList.mirrors[ci]) +
+                    hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
                 CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
             }
         }
@@ -1535,8 +1520,9 @@ private:
 
         for (uint8_t di = 0; di < d5List.count; di++) {
             for (uint8_t ni = 0; ni < nList.count; ni++) {
-                uint64_t gmAddr = CalcGMAddrWithD5NC(d5List.mirrors[di], nList.mirrors[ni], inIndex_[dimNum_ - CONST3])
-                                + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
+                uint64_t gmAddr =
+                    CalcGMAddrWithD5NC(d5List.mirrors[di], nList.mirrors[ni], inIndex_[dimNum_ - CONST3]) +
+                    hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
                 CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
             }
         }
@@ -1552,21 +1538,21 @@ private:
 
         // 使用辅助函数收集各维度镜像位置
         MirrorList d5List = CollectMirrorPositions(
-            globalD5, tilingData_->outShape[dimNum_ - CONST5],
-            tilingData_->leftPad[dimNum_ - CONST5], tilingData_->rightPad[dimNum_ - CONST5]);
+            globalD5, tilingData_->outShape[dimNum_ - CONST5], tilingData_->leftPad[dimNum_ - CONST5],
+            tilingData_->rightPad[dimNum_ - CONST5]);
         MirrorList nList = CollectMirrorPositions(
-            globalN, tilingData_->outShape[dimNum_ - CONST4],
-            tilingData_->leftPad[dimNum_ - CONST4], tilingData_->rightPad[dimNum_ - CONST4]);
+            globalN, tilingData_->outShape[dimNum_ - CONST4], tilingData_->leftPad[dimNum_ - CONST4],
+            tilingData_->rightPad[dimNum_ - CONST4]);
         MirrorList cList = CollectMirrorPositions(
-            globalC, tilingData_->outShape[dimNum_ - CONST3],
-            tilingData_->leftPad[dimNum_ - CONST3], tilingData_->rightPad[dimNum_ - CONST3]);
+            globalC, tilingData_->outShape[dimNum_ - CONST3], tilingData_->leftPad[dimNum_ - CONST3],
+            tilingData_->rightPad[dimNum_ - CONST3]);
 
         // 三重循环处理 D5×N×C 组合
         for (uint8_t di = 0; di < d5List.count; di++) {
             for (uint8_t ni = 0; ni < nList.count; ni++) {
                 for (uint8_t ci = 0; ci < cList.count; ci++) {
-                    uint64_t gmAddr = CalcGMAddrWithD5NC(d5List.mirrors[di], nList.mirrors[ni], cList.mirrors[ci])
-                                    + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
+                    uint64_t gmAddr = CalcGMAddrWithD5NC(d5List.mirrors[di], nList.mirrors[ni], cList.mirrors[ci]) +
+                                      hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
                     CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
                 }
             }
@@ -1574,8 +1560,7 @@ private:
     }
 
     __aicore__ inline void GradAccumulateHighDimBulk_UB4(
-        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimNNum, 
-        uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimNNum, uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
     {
         const uint32_t nSliceSize = dimCNum * dimHIn * padWI;
 
@@ -1667,13 +1652,11 @@ private:
             }
         }
         inQueue_.FreeTensor(inUbLocal2);
-
     }
 
     // 将 srcLocal (T 类型) Cast+Add 到 tmpLocal (PromoteDataT 类型)
     // 用于批量 GM 读取后的累加操作
-    __aicore__ inline void AddSrcLocalToTmpLocal(
-        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t totalLen)
+    __aicore__ inline void AddSrcLocalToTmpLocal(const LocalTensor<PromoteDataT>& tmpLocal, uint32_t totalLen)
     {
         LocalTensor<T> inUbLocal = inQueue_.DeQue<T>();
         constexpr uint32_t VL_ELEMS_FLOAT = VL_SIZE / sizeof(PromoteDataT);
@@ -1744,17 +1727,16 @@ private:
     // GM 地址计算: 指定 D5, N, C, H=0
     __aicore__ inline uint64_t CalcGMAddrWithD5NC(uint32_t d5Idx, uint32_t nIdx, uint32_t cIdx)
     {
-        uint64_t addr = d5Idx * tilingData_->inStride[dimNum_ - CONST5]
-                      + nIdx * tilingData_->inStride[dimNum_ - CONST4]
-                      + cIdx * tilingData_->inStride[dimNum_ - CONST3];
+        uint64_t addr = d5Idx * tilingData_->inStride[dimNum_ - CONST5] +
+                        nIdx * tilingData_->inStride[dimNum_ - CONST4] + cIdx * tilingData_->inStride[dimNum_ - CONST3];
         return addr;
     }
 
     // 从 GM 批量读取整块 (dimNNum × dimCNum × dimHIn × padWI) 到 srcLocal，Cast+Add 到 tmpLocal
     // 用于 axisNumInUb_=4 主pad: D5 镜像不改变 N 范围，使用 2-level LoopMode
     __aicore__ inline void CopyAndAddFullBlockFromGM(
-        const LocalTensor<PromoteDataT>& tmpLocal, uint64_t gmBaseAddr, uint32_t dimNNum, 
-        uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint64_t gmBaseAddr, uint32_t dimNNum, uint32_t dimCNum,
+        uint32_t dimHIn, uint32_t padWI)
     {
         LocalTensor<T> inUbLocal = inQueue_.AllocTensor<T>();
 
@@ -1785,8 +1767,8 @@ private:
     // 从 GM 批量读取整块 (dimCNum × dimHIn × padWI) 到 srcLocal，Cast+Add 到 tmpLocal
     // 用于主pad: 高维镜像不改变 C 范围
     __aicore__ inline void CopyAndAddBlockFromGM(
-        const LocalTensor<PromoteDataT>& tmpLocal, uint64_t gmBaseAddr, uint32_t dimCNum, 
-        uint32_t dimHIn, uint32_t padWI)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint64_t gmBaseAddr, uint32_t dimCNum, uint32_t dimHIn,
+        uint32_t padWI)
     {
         LocalTensor<T> inUbLocal = inQueue_.AllocTensor<T>();
 
@@ -1823,7 +1805,7 @@ private:
         uint64_t gmBaseAddr, uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
     {
         LocalTensor<T> inUbLocal = inQueue_.AllocTensor<T>();
-        
+
         uint32_t inW = tilingData_->inShape[dimNum_ - 1];
         DataCopyExtParams copyParams;
         copyParams.blockCount = dimHIn;
@@ -1864,8 +1846,8 @@ private:
     // dstAddr: 输出 grad_x (T 类型)
     // 使用 VF 指令和 gather 进行向量化处理
     __aicore__ inline void GradProcessLineFromTmpBuf(
-        __local_mem__ T* dstAddr, __local_mem__ PromoteDataT* tmpAddr,
-        uint32_t outW, uint32_t inW, uint32_t leftPad, uint32_t rightPad)
+        __local_mem__ T* dstAddr, __local_mem__ PromoteDataT* tmpAddr, uint32_t outW, uint32_t inW, uint32_t leftPad,
+        uint32_t rightPad)
     {
         constexpr uint32_t VL_ELEMS_FLOAT = VL_SIZE / sizeof(PromoteDataT);
         // using IdxType = uint32_t;  // float 对应 uint32_t 索引
@@ -1874,13 +1856,13 @@ private:
         // reflect (modeOffset_=0): w in [1, leftPad], 即 w = 1, 2, ..., leftPad，共 leftPad 个元素
         // symmetric (modeOffset_=1): w in [0, leftPad), 即 w = 0, 1, ..., leftPad-1，共 leftPad 个元素
         uint32_t leftStart = (modeOffset_ == 0) ? 1 : 0;
-        uint32_t leftEnd = (modeOffset_ == 0) ? (leftPad + 1) : leftPad;  // 不包含 leftEnd
+        uint32_t leftEnd = (modeOffset_ == 0) ? (leftPad + 1) : leftPad; // 不包含 leftEnd
 
         // 计算右 pad 有效范围 (需要累加右镜像的输出位置)
         // reflect (modeOffset_=0): w in [outW - rightPad - 1, outW - 2], 共 rightPad 个元素
         // symmetric (modeOffset_=1): w in [outW - rightPad, outW - 1], 共 rightPad 个元素
         uint32_t rightStart = (rightPad > 0) ? ((modeOffset_ == 0) ? (outW - rightPad - 1) : (outW - rightPad)) : outW;
-        uint32_t rightEnd = (rightPad > 0) ? ((modeOffset_ == 0) ? (outW - 1) : outW) : outW;  // 不包含 rightEnd
+        uint32_t rightEnd = (rightPad > 0) ? ((modeOffset_ == 0) ? (outW - 1) : outW) : outW; // 不包含 rightEnd
 
         // ========== 阶段1: 在 tmpAddr 上原地完成左右 pad 的 gather 累加 ==========
 
@@ -1892,8 +1874,10 @@ private:
 
             uint32_t mainMaskLen = VL_ELEMS_FLOAT;
             uint32_t tailMaskLen = leftTailLen;
-            __local_mem__ PromoteDataT* srcStartAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpAddr + leftStart + leftPad);
-            __local_mem__ PromoteDataT* dstStartAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpAddr + leftStart + leftPad);
+            __local_mem__ PromoteDataT* srcStartAddr =
+                reinterpret_cast<__local_mem__ PromoteDataT*>(tmpAddr + leftStart + leftPad);
+            __local_mem__ PromoteDataT* dstStartAddr =
+                reinterpret_cast<__local_mem__ PromoteDataT*>(tmpAddr + leftStart + leftPad);
             __VEC_SCOPE__
             {
                 AscendC::MicroAPI::RegTensor<PromoteDataT> selfReg;
@@ -1946,8 +1930,10 @@ private:
 
             uint32_t mainMaskLen = VL_ELEMS_FLOAT;
             uint32_t tailMaskLen = rightTailLen;
-            __local_mem__ PromoteDataT* srcStartAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpAddr + rightStart + leftPad);
-            __local_mem__ PromoteDataT* dstStartAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpAddr + rightStart + leftPad);
+            __local_mem__ PromoteDataT* srcStartAddr =
+                reinterpret_cast<__local_mem__ PromoteDataT*>(tmpAddr + rightStart + leftPad);
+            __local_mem__ PromoteDataT* dstStartAddr =
+                reinterpret_cast<__local_mem__ PromoteDataT*>(tmpAddr + rightStart + leftPad);
             __VEC_SCOPE__
             {
                 AscendC::MicroAPI::RegTensor<PromoteDataT> selfReg;
@@ -2041,28 +2027,26 @@ private:
     // rightPad: 右/下 padding 大小
     // modeOffset_: 0 表示 reflect 模式，1 表示 symmetric 模式
     __aicore__ inline MirrorCondition CalcMirrorCondition(
-        uint32_t globalPos, uint32_t outDimSize,
-        uint32_t leftPad, uint32_t rightPad)
+        uint32_t globalPos, uint32_t outDimSize, uint32_t leftPad, uint32_t rightPad)
     {
         MirrorCondition cond;
         // 上/左镜像条件
-        cond.hasTop = (modeOffset_ == 0) ?
-            (globalPos > 0 && globalPos <= leftPad) :
-            (globalPos < leftPad);
+        cond.hasTop = (modeOffset_ == 0) ? (globalPos > 0 && globalPos <= leftPad) : (globalPos < leftPad);
         // 下/右镜像条件
         cond.hasBottom = (modeOffset_ == 0) ?
-            (rightPad > 0 && globalPos >= outDimSize - rightPad - MIRROR_BOUNDARY_OFFSET_1 &&
-                globalPos <= outDimSize - MIRROR_BOUNDARY_OFFSET_2) : (rightPad > 0 && globalPos >= outDimSize - rightPad);
+                             (rightPad > 0 && globalPos >= outDimSize - rightPad - MIRROR_BOUNDARY_OFFSET_1 &&
+                              globalPos <= outDimSize - MIRROR_BOUNDARY_OFFSET_2) :
+                             (rightPad > 0 && globalPos >= outDimSize - rightPad);
         // 镜像位置计算
         cond.mirrorTop = leftPad - modeOffset_ - globalPos;
-        cond.mirrorBottom = leftPad + MIRROR_BOUNDARY_OFFSET_2 * outDimSize - MIRROR_BOUNDARY_OFFSET_2 + modeOffset_ - globalPos;
+        cond.mirrorBottom =
+            leftPad + MIRROR_BOUNDARY_OFFSET_2 * outDimSize - MIRROR_BOUNDARY_OFFSET_2 + modeOffset_ - globalPos;
         return cond;
     }
 
     // 收集单维度的所有镜像位置
     __aicore__ inline MirrorList CollectMirrorPositions(
-        uint32_t globalPos, uint32_t outDimSize,
-        uint32_t leftPad, uint32_t rightPad)
+        uint32_t globalPos, uint32_t outDimSize, uint32_t leftPad, uint32_t rightPad)
     {
         MirrorList list;
         list.count = 0;

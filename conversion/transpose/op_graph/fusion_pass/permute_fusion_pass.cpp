@@ -44,8 +44,8 @@ static bool IsTransposeDPlatform()
 {
     PlatformInfo platformInfo;
     OptionalInfo optionalInfo;
-    if (unlikely(PlatformInfoManager::Instance().GetPlatformInfoWithOutSocVersion(
-            platformInfo, optionalInfo) != SUCCESS)) {
+    if (unlikely(
+            PlatformInfoManager::Instance().GetPlatformInfoWithOutSocVersion(platformInfo, optionalInfo) != SUCCESS)) {
         OP_LOGE(kFusionPassName.c_str(), "Get platform_info failed.");
         return false;
     }
@@ -68,10 +68,8 @@ static bool GetPermutePermAttr(const GNode& permuteNode, std::vector<int64_t>& p
 }
 
 static void GetInputsInfo(
-    const std::vector<SubgraphInput>& subgraphInputs,
-    std::vector<Shape>& inputShapes,
-    std::vector<DataType>& inputDtypes,
-    std::vector<Format>& inputFormats)
+    const std::vector<SubgraphInput>& subgraphInputs, std::vector<Shape>& inputShapes,
+    std::vector<DataType>& inputDtypes, std::vector<Format>& inputFormats)
 {
     for (const auto& subgraphInput : subgraphInputs) {
         auto matchNode = subgraphInput.GetAllInputs().at(0);
@@ -115,25 +113,21 @@ static Status InferShape(const GraphUniqPtr& replaceGraph, const std::vector<Sub
 // Helper to build TransposeD using CompliantNodeBuilder (for 310B/310P/910/910B/910_93 platforms)
 // Returns the output EsTensorHolder, or empty if failed.
 static es::EsTensorHolder BuildTransposeDNode(
-    es::EsGraphBuilder& replaceGraphBuilder,
-    GNode inputNode,
-    int32_t inputIndex,
-    const std::vector<int64_t>& permAttr)
+    es::EsGraphBuilder& replaceGraphBuilder, GNode inputNode, int32_t inputIndex, const std::vector<int64_t>& permAttr)
 {
     auto* graph = replaceGraphBuilder.GetCGraphBuilder()->GetGraph();
 
-    auto transposeDNode = es::CompliantNodeBuilder(graph)
-        .OpType("TransposeD")
-        .IrDefInputs({{"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""}})
-        .IrDefOutputs({{"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""}})
-        .IrDefAttrs({
-            {"perm", es::CompliantNodeBuilder::kEsAttrRequired, "ListInt", es::CreateFrom(permAttr)},
-        })
-        .Build();
-
+    auto transposeDNode =
+        es::CompliantNodeBuilder(graph)
+            .OpType("TransposeD")
+            .IrDefInputs({{"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""}})
+            .IrDefOutputs({{"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""}})
+            .IrDefAttrs({
+                {"perm", es::CompliantNodeBuilder::kEsAttrRequired, "ListInt", es::CreateFrom(permAttr)},
+            })
+            .Build();
     // Connect input
-    if (es::AddEdgeAndUpdatePeerDesc(
-            *graph, inputNode, inputIndex, transposeDNode, 0) != GRAPH_SUCCESS) {
+    if (es::AddEdgeAndUpdatePeerDesc(*graph, inputNode, inputIndex, transposeDNode, 0) != GRAPH_SUCCESS) {
         OP_LOGE(kFusionPassName.c_str(), "Failed to add edge for TransposeD input.");
         return es::EsTensorHolder();
     }
@@ -145,38 +139,31 @@ static es::EsTensorHolder BuildTransposeDNode(
 // Helper to build Transpose using CompliantNodeBuilder (for Ascend950 and newer platforms)
 // Returns the output EsTensorHolder, or empty if failed.
 static es::EsTensorHolder BuildTransposeNode(
-    es::EsGraphBuilder& replaceGraphBuilder,
-    GNode inputNode,
-    int32_t inputIndex,
-    const std::vector<int64_t>& permAttr)
+    es::EsGraphBuilder& replaceGraphBuilder, GNode inputNode, int32_t inputIndex, const std::vector<int64_t>& permAttr)
 {
     auto* graph = replaceGraphBuilder.GetCGraphBuilder()->GetGraph();
 
     // Create perm Const node
-    auto permConst = replaceGraphBuilder.CreateConst(
-        permAttr,
-        std::vector<int64_t>{static_cast<int64_t>(permAttr.size())});
+    auto permConst =
+        replaceGraphBuilder.CreateConst(permAttr, std::vector<int64_t>{static_cast<int64_t>(permAttr.size())});
 
     auto transposeNode = es::CompliantNodeBuilder(graph)
-        .OpType("Transpose")
-        .IrDefInputs({
-            {"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
-            {"perm", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
-        })
-        .IrDefOutputs({{"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""}})
-        .Build();
-
+                             .OpType("Transpose")
+                             .IrDefInputs({
+                                 {"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
+                                 {"perm", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
+                             })
+                             .IrDefOutputs({{"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""}})
+                             .Build();
     // Connect x input
-    if (es::AddEdgeAndUpdatePeerDesc(
-            *graph, inputNode, inputIndex, transposeNode, 0) != GRAPH_SUCCESS) {
+    if (es::AddEdgeAndUpdatePeerDesc(*graph, inputNode, inputIndex, transposeNode, 0) != GRAPH_SUCCESS) {
         OP_LOGE(kFusionPassName.c_str(), "Failed to add edge for Transpose x input.");
         return es::EsTensorHolder();
     }
 
     // Connect perm input
     if (es::AddEdgeAndUpdatePeerDesc(
-            *graph, *permConst.GetProducer(), permConst.GetProducerOutIndex(),
-            transposeNode, 1) != GRAPH_SUCCESS) {
+            *graph, *permConst.GetProducer(), permConst.GetProducerOutIndex(), transposeNode, 1) != GRAPH_SUCCESS) {
         OP_LOGE(kFusionPassName.c_str(), "Failed to add edge for Transpose perm input.");
         return es::EsTensorHolder();
     }
@@ -198,14 +185,13 @@ std::vector<PatternUniqPtr> PermuteFusionPass::Patterns()
     // Build Permute node using CompliantNodeBuilder (no ES API for Permute)
     auto* graph = graphBuilder.GetCGraphBuilder()->GetGraph();
     auto permuteNode = es::CompliantNodeBuilder(graph)
-        .OpType("Permute")
-        .IrDefInputs({{"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""}})
-        .IrDefOutputs({{"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""}})
-        .Build();
-
+                           .OpType("Permute")
+                           .IrDefInputs({{"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""}})
+                           .IrDefOutputs({{"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""}})
+                           .Build();
     // Connect input x to Permute node
-    if (es::AddEdgeAndUpdatePeerDesc(
-            *graph, *x.GetProducer(), x.GetProducerOutIndex(), permuteNode, 0) != GRAPH_SUCCESS) {
+    if (es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(), permuteNode, 0) !=
+        GRAPH_SUCCESS) {
         OP_LOGE(kFusionPassName.c_str(), "Failed to add edge in pattern for Permute.");
         return patternGraphs;
     }
@@ -215,7 +201,7 @@ std::vector<PatternUniqPtr> PermuteFusionPass::Patterns()
 
     auto pattern = std::make_unique<Pattern>(std::move(*builtGraph));
     NodeIo nodeIo = {y->GetProducer(), 0};
-    pattern->CaptureTensor(nodeIo);  // Capture the Permute node
+    pattern->CaptureTensor(nodeIo); // Capture the Permute node
     patternGraphs.emplace_back(std::move(pattern));
 
     return patternGraphs;
@@ -279,8 +265,7 @@ GraphUniqPtr PermuteFusionPass::Replacement(const std::unique_ptr<MatchResult>& 
     // perm attribute, which is functionally equivalent.
 
     auto replaceGraphBuilder = es::EsGraphBuilder("replacement");
-    auto xTensor = replaceGraphBuilder.CreateInput(
-        0, "x", inputDtypes[0], inputFormats[0], inDims);
+    auto xTensor = replaceGraphBuilder.CreateInput(0, "x", inputDtypes[0], inputFormats[0], inDims);
 
     if (isTransposeDPlatform) {
         // ========== 310B/310P/910/910B/910_93: use CompliantNodeBuilder to build TransposeD ==========
@@ -293,9 +278,7 @@ GraphUniqPtr PermuteFusionPass::Replacement(const std::unique_ptr<MatchResult>& 
             return nullptr;
         }
 
-        auto replaceGraph = replaceGraphBuilder.BuildAndReset(
-            std::vector<es::EsTensorHolder>{output});
-
+        auto replaceGraph = replaceGraphBuilder.BuildAndReset(std::vector<es::EsTensorHolder>{output});
         if (InferShape(replaceGraph, subgraphInputs) != SUCCESS) {
             OP_LOGE(kFusionPassName.c_str(), "Infershape for replacement (TransposeD) failed.");
             return nullptr;
@@ -312,9 +295,7 @@ GraphUniqPtr PermuteFusionPass::Replacement(const std::unique_ptr<MatchResult>& 
             return nullptr;
         }
 
-        auto replaceGraph = replaceGraphBuilder.BuildAndReset(
-            std::vector<es::EsTensorHolder>{output});
-
+        auto replaceGraph = replaceGraphBuilder.BuildAndReset(std::vector<es::EsTensorHolder>{output});
         if (InferShape(replaceGraph, subgraphInputs) != SUCCESS) {
             OP_LOGE(kFusionPassName.c_str(), "Infershape for replacement (Transpose) failed.");
             return nullptr;

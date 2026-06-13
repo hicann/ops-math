@@ -84,10 +84,7 @@ private:
     constexpr static uint32_t BLK_ELEMS = UB_BLOCK / sizeof(T);
 
 public:
-    __aicore__ inline BatchToSpaceLargeC(TPipe* pipe)
-    {
-        pipe_ = pipe;
-    }
+    __aicore__ inline BatchToSpaceLargeC(TPipe* pipe) { pipe_ = pipe; }
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const B2SNDLargeCTilingData* tilingData)
     {
@@ -527,8 +524,8 @@ private:
         // 左残块拷贝
         if (leftCopyLen > 0) {
             CopySegment(
-                src, outIndex, inIndex, leftCopyLen, ubAddr, curUbFactor, inW_, inC_, outW_, BSW_, instrideBSW, instrideBSH,
-                true, true);
+                src, outIndex, inIndex, leftCopyLen, ubAddr, curUbFactor, inW_, inC_, outW_, BSW_, instrideBSW,
+                instrideBSH, true, true);
         }
 
         // 中间连续段拷贝
@@ -555,7 +552,6 @@ private:
     {
         outStartLen = remainToBoundary(cropStart, blockSize);
         outEndLen = remainToBoundary(cropEnd, blockSize);
-
         if (outStartLen + outEndLen > outLen) {
             if (cropStart % blockSize != 0) {
                 outStartLen = outLen;
@@ -673,10 +669,7 @@ private:
         return (block - (crop % block)) % block;
     }
 
-    __aicore__ inline uint64_t safeSubU64(uint64_t a, uint64_t b)
-    {
-        return (a >= b) ? (a - b) : 0;
-    }
+    __aicore__ inline uint64_t safeSubU64(uint64_t a, uint64_t b) { return (a >= b) ? (a - b) : 0; }
 
     __aicore__ inline void updateOutIndexByCarry(uint64_t* outIndex, uint32_t curUbFactor, uint32_t axis)
     {
