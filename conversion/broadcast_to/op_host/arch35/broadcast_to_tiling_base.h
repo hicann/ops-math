@@ -102,7 +102,7 @@ public:
     ge::graphStatus GetHardwareInfo()
     {
         // use user specify compile info
-        auto compileInfo = reinterpret_cast<const T*>(context_->GetCompileInfo());
+        auto compileInfo = context_->GetCompileInfo<T>();
         OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfo);
         ubSize_ = static_cast<int64_t>(compileInfo->ubSize);
         coreNum_ = static_cast<int64_t>(compileInfo->coreNum);

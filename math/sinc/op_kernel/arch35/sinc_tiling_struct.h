@@ -13,11 +13,9 @@
 
 #include "atvoss/elewise/elewise_base_struct.h"
 
-using namespace Ops::Base;
-
 namespace SincNs {
 struct SincTilingData {
-    EleBaseTilingData baseTiling;
+    Ops::Base::EleBaseTilingData baseTiling;
 };
 } // namespace SincNs
 

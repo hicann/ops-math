@@ -288,6 +288,11 @@ void BroadcastToTilingAscendC::GetUAxisInfo()
         curDim = outShapePtr_->GetDim(size_t(i));
         res *= curDim;
         if (res >= tensorSize_ || curIdx >= maxUbAxisCnt) {
+            OP_CHECK_IF(
+                curDim == 0 || Ops::Base::FloorDiv(res, curDim) == 0,
+                OP_LOGE(
+                    context_->GetNodeName(), "Division by zero in nested division, curDim=%ld, res=%ld", curDim, res),
+                return);
             uAxis_ = size_t(i);
             uLpUnit_ = (tensorSize_ / (res / curDim) > curDim) ? curDim : tensorSize_ / (res / curDim);
             uAxisLen_ = curDim;
@@ -498,6 +503,12 @@ void BroadcastToTilingAscendC::AdjustBrwdSize(int64_t& brwSize, int64_t uAxis)
     int64_t coreCnt = Ops::Base::CeilDiv(brwLeftSize, Ops::Base::CeilDiv(brwLeftSize, coreNum_));
     int64_t uLpCnt = Ops::Base::CeilDiv(brwLeftSize, coreCnt);
     int64_t totalULpCnt = uLpCnt * coreNum_;
+    OP_CHECK_IF(
+        totalULpCnt == 0,
+        OP_LOGE(
+            context_->GetNodeName(), "totalULpCnt must not be zero, got totalULpCnt=%ld, uLpCnt=%ld, coreNum=%ld",
+            totalULpCnt, uLpCnt, coreNum_),
+        return);
     if (uAxis % totalULpCnt == 0) {
         brwSize = uAxis / totalULpCnt;
     }
@@ -554,6 +565,7 @@ void BroadcastToTilingAscendC::CalcTensorSize()
     auto inLastDim = inShapePtr_->GetDim(dimNum - 1);
     auto outLastDim = outShapePtr_->GetDim(dimNum - 1);
     auto aDims = inShapePtr_->GetShapeSize() / inLastDim;
+    OP_CHECK_IF(aDims == 0, OP_LOGE(context_->GetNodeName(), "aDims must not be zero, got %ld", aDims), return);
     auto bDims = outShapePtr_->GetShapeSize() / aDims / outLastDim;
     bool isBrwd = false;
 
@@ -632,6 +644,9 @@ void BroadcastToTilingAscendC::CalcTilingData()
 
 ge::graphStatus BroadcastToTilingAscendC::SetBlockCnt()
 {
+    OP_CHECK_IF(
+        usedCoreCnt_ == 0, OP_LOGE(context_->GetNodeName(), "usedCoreCnt must not be zero, got %ld", usedCoreCnt_),
+        return ge::GRAPH_FAILED);
     int64_t maxMC = coreNum_ / usedCoreCnt_;
     int64_t uLpCnt = Ops::Base::CeilDiv(ntcULen_, uLpUnit_);
     if (usedCoreCnt_ <= coreNum_ / nTwo &&

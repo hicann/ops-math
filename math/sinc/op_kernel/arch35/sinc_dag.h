@@ -21,6 +21,7 @@
 #include "atvoss/util/placeholder.h"
 
 namespace SincOp {
+using namespace Ops::Base;
 using namespace AscendC;
 const int CAST_MODE_NONE = 0;
 const int CAST_MODE_RINT = 1;

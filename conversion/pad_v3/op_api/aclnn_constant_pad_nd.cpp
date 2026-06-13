@@ -51,8 +51,8 @@ static const std::initializer_list<DataType> DTYPE_SUPPORT_FP8_FP4_LIST = {
 
 static const size_t DIM_BOUND = 8;
 static const size_t SIZE_T_TWICE = 2;
-static const int POSITIVE = 1;
-static const int NEGETIVE = 2;
+static const uint32_t POSITIVE = 1;
+static const uint32_t NEGETIVE = 2;
 static const std::string MODE = "constant";
 
 static bool CheckNotNull(const aclTensor* self, const aclIntArray* pad, const aclScalar* value, const aclTensor* out)
@@ -80,7 +80,7 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
     return true;
 }
 
-static bool CheckShape(const aclTensor* self, const aclIntArray* pad, const aclTensor* out, int& signSymbol)
+static bool CheckShape(const aclTensor* self, const aclIntArray* pad, const aclTensor* out, uint32_t& signSymbol)
 {
     size_t selfDim = self->GetViewShape().GetDimNum();
     size_t outDim = out->GetViewShape().GetDimNum();
@@ -172,7 +172,7 @@ static bool Checkformat(const aclTensor* self, const aclTensor* out)
     return true;
 }
 
-static bool CheckPadForFp8(const aclTensor* self, int& signSymbol)
+static bool CheckPadForFp8(const aclTensor* self, uint32_t& signSymbol)
 {
     // self的数据类型为fp8时，pad数组中不能有负数，StridedSlice不支持FLOAT8_E8M0类型
     if (CheckType(self->GetDataType(), DTYPE_SUPPORT_FP8_FP4_LIST) && (signSymbol & NEGETIVE) == NEGETIVE) {
@@ -183,7 +183,7 @@ static bool CheckPadForFp8(const aclTensor* self, int& signSymbol)
 }
 
 static aclnnStatus CheckParams(
-    const aclTensor* self, const aclIntArray* pad, const aclScalar* value, const aclTensor* out, int& signSymbol)
+    const aclTensor* self, const aclIntArray* pad, const aclScalar* value, const aclTensor* out, uint32_t& signSymbol)
 {
     // 1. 检查参数是否为空指针
     CHECK_COND(CheckNotNull(self, pad, value, out), ACLNN_ERR_PARAM_NULLPTR, "CheckNotNull failed!");
@@ -401,7 +401,7 @@ aclnnStatus aclnnConstantPadNdGetWorkspaceSize(
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
-    int signSymbol = 0; // 0代表pad全0或没有元素，1代表有正数，2代表有负数，3代表同时有正数和负数
+    uint32_t signSymbol = 0; // 0代表pad全0或没有元素，1代表有正数，2代表有负数，3代表同时有正数和负数
     // 固定写法，参数检查
     auto ret = CheckParams(self, pad, value, out, signSymbol);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);

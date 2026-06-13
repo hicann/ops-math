@@ -41,8 +41,8 @@ public:
     void ProcessShapeInfo(ShapeInfo& shapeInfo);
 
 private:
-    ParamInfo paramInfo_;
     gert::TilingContext* tilingContext_ = nullptr;
+    ParamInfo paramInfo_{};
     int64_t nchwPerm_[DIM_SIX] = {0, 1, 3, 5, 2, 4};
     int64_t nhwcPerm_[DIM_SIX] = {0, 1, 3, 2, 4, 5};
 };

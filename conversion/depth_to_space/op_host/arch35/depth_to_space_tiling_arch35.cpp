@@ -228,7 +228,7 @@ ge::graphStatus DepthToSpaceTilingForAscendC(
 static ge::graphStatus TilingForDepthToSpace(gert::TilingContext* context)
 {
     OP_LOGD(context->GetNodeName(), "begin to do TilingForDepthToSpace");
-    auto compile_info = reinterpret_cast<const TransposeCompilerInfo*>(context->GetCompileInfo());
+    auto compile_info = context->GetCompileInfo<TransposeCompilerInfo>();
     return DepthToSpaceTilingForAscendC(context, compile_info);
 }
 

@@ -35,6 +35,7 @@ constexpr int64_t INT64_MAX_VALUE = 9223372036854775807;
 constexpr int64_t INT32_MAX_VALUE = 2147483647;
 const uint32_t UINT32_SIGN = 0x80000000;
 const uint16_t UINT16_SIGN = 0x8000;
+constexpr uint32_t TRUNCATE_DIV_SIMT_THREADS = 1024;
 
 namespace TruncDag1 {
 template <class T>
@@ -176,11 +177,11 @@ struct TruncIntPostCompute : public Vec::ElemwiseTernaryOP<T, T, T, T> {
 
 #ifdef __CCE_AICORE__
 template <typename T>
-__simt_vf__ __aicore__
-    LAUNCH_BOUND(1024) inline void TruncDivInt_SIMT(__ubuf__ T* dst, __ubuf__ T* src1, __ubuf__ T* src2, int count)
+__simt_vf__ __aicore__ LAUNCH_BOUND(TRUNCATE_DIV_SIMT_THREADS) inline void TruncDivInt_SIMT(
+    __ubuf__ T* dst, __ubuf__ T* src1, __ubuf__ T* src2, int count)
 {
     for (uint32_t index = static_cast<uint32_t>(threadIdx.x); index < count;
-        index += static_cast<uint32_t>(blockDim.x)) {
+         index += static_cast<uint32_t>(blockDim.x)) {
         bool pos_div_zero = ((src1[index] >= 0) && (src1[index] < INT64_MAX_VALUE) && (src2[index] == 0));
         bool div_zero = (src2[index] == 0);
         if (pos_div_zero) {
@@ -202,7 +203,7 @@ struct TruncDivInt64 : public Vec::ElemwiseBinaryOP<T, T, T> {
         __ubuf__ T* dst_1 = (__ubuf__ T*)dst.GetPhyAddr();
         __ubuf__ T* src1_1 = (__ubuf__ T*)src1.GetPhyAddr();
         __ubuf__ T* src2_1 = (__ubuf__ T*)src2.GetPhyAddr();
-        asc_vf_call<TruncDivInt_SIMT<T>>(dim3(1024), dst_1, src1_1, src2_1, count);
+        asc_vf_call<TruncDivInt_SIMT<T>>(dim3(TRUNCATE_DIV_SIMT_THREADS), dst_1, src1_1, src2_1, count);
 #endif
     }
 };

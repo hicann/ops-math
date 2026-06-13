@@ -23,7 +23,7 @@ namespace optiling {
 constexpr size_t INPUT_INDEX_SHAPE = 1;
 
 static ge::graphStatus Tiling4BroadcastTo(gert::TilingContext* context) {
-  auto compile_info = reinterpret_cast<const BroadcastToCompileInfo*>(context->GetCompileInfo());
+  auto compile_info = context->GetCompileInfo<BroadcastToCompileInfo>();
   OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
   gert::Shape inShape;
   gert::Shape outShape;

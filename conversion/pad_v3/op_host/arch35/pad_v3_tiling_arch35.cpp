@@ -1207,7 +1207,7 @@ ge::graphStatus PadACTiling::Fp4ValidateInShape()
 {
     OP_LOGD(context_, "Start PadACTiling Fp4ValidateInShape.");
     // fp4 输入数据类型时，输入数据的最后一维度shape为偶数
-    if (tilingData_->inShape[dimNum_ - 1] % 2 != 0) {
+    if (tilingData_->inShape[dimNum_ - 1] % HALF_FACTOR != 0) {
         std::string reasonMsg = "When the dtype is fp4, the last axis of input must be an even number.";
         OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
             context_->GetNodeName(), "input", std::to_string(tilingData_->inShape[dimNum_ - 1]).c_str(),
@@ -1223,7 +1223,7 @@ ge::graphStatus PadACTiling::Fp4ValidatePaddings()
     // fp4 输入数据类型，左右pad的最后一维均为偶数
     size_t frontDimNum = paddings_.padFront.GetDimNum();
     int64_t frontValue = paddings_.padFront.GetDim(frontDimNum - 1);
-    if (frontValue % 2 != 0) {
+    if (frontValue % HALF_FACTOR != 0) {
         std::string paramMsg = "the last axis of padFront";
         std::string reasonMsg = "When the dtype is fp4, the last axis of padFront must be an even number.";
         OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
@@ -1233,7 +1233,7 @@ ge::graphStatus PadACTiling::Fp4ValidatePaddings()
 
     size_t backDimNum = paddings_.padBack.GetDimNum();
     int64_t backValue = paddings_.padBack.GetDim(backDimNum - 1);
-    if (backValue % 2 != 0) {
+    if (backValue % HALF_FACTOR != 0) {
         std::string paramMsg = "the last axis of padBack";
         std::string reasonMsg = "When the dtype is fp4, the last axis of padBack must be an even number.";
         OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
@@ -1246,9 +1246,9 @@ ge::graphStatus PadACTiling::Fp4ValidatePaddings()
 void PadACTiling::Fp4TilingData()
 {
     OP_LOGD(context_, "Start PadACTiling Fp4TilingData.");
-    tilingData_->inShape[dimNum_ - 1] /= 2;
-    tilingData_->leftPad[dimNum_ - 1] /= 2;
-    rightPad_[dimNum_ - 1] /= 2;
+    tilingData_->inShape[dimNum_ - 1] /= HALF_FACTOR;
+    tilingData_->leftPad[dimNum_ - 1] /= HALF_FACTOR;
+    rightPad_[dimNum_ - 1] /= HALF_FACTOR;
 }
 
 ge::graphStatus PadACTiling::DoTilingModeEdge()
@@ -1416,7 +1416,7 @@ ge::graphStatus PadACTiling::DoTiling()
 static ge::graphStatus PadV3Tiling(gert::TilingContext* context)
 {
     OP_LOGD(context->GetNodeName(), "PadV3Tiling running begin");
-    const PadV3CompileInfo* compile_info = reinterpret_cast<const PadV3CompileInfo*>(context->GetCompileInfo());
+    const PadV3CompileInfo* compile_info = context->GetCompileInfo<PadV3CompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
     OP_LOGD(context->GetNodeName(), "Tiling4Pad dsl compile_info is Null, running AscendC tiling.");
     PadACTiling tilingObject(context);

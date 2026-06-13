@@ -202,7 +202,7 @@ static ge::graphStatus TilingPrepareForRelatedToTranspose(gert::TilingParseConte
 static ge::graphStatus TilingForSpaceToDepth(gert::TilingContext* context)
 {
     OP_LOGD(context->GetNodeName(), "begin to do TilingForSpaceToDepth");
-    auto compile_info = reinterpret_cast<const TransposeCompilerInfo*>(context->GetCompileInfo());
+    auto compile_info = context->GetCompileInfo<TransposeCompilerInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
     return SpaceToDepthTilingForAscendC(context, compile_info);
 }

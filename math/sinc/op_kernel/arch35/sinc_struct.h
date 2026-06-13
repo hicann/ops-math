@@ -13,10 +13,10 @@
  * \brief
  */
 
-#include "ascendc/host_api/tiling/template_argument.h"
-
 #ifndef CANN_CUSTOM_OPS_SINC_STRUCT_H_
 #define CANN_CUSTOM_OPS_SINC_STRUCT_H_
+
+#include "ascendc/host_api/tiling/template_argument.h"
 
 #define TPL_FP16 1
 #define TPL_BF16 2

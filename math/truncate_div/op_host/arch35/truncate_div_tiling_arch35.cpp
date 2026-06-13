@@ -106,7 +106,7 @@ ge::graphStatus TruncateDivTiling::GetScalarReciprocal(ge::DataType x2DType)
             uint16_t tmpValue = 0;
             success = (GetConstData<uint16_t>(INPUT_IDX_X2, tmpValue) == ge::GRAPH_SUCCESS);
             if (success) {
-                scalarValue = float(*(reinterpret_cast<const fp16_t*>(&tmpValue)));
+                scalarValue = float(fp16_t(tmpValue));
             }
             break;
         }
@@ -114,7 +114,7 @@ ge::graphStatus TruncateDivTiling::GetScalarReciprocal(ge::DataType x2DType)
             uint16_t tmpValue = 0;
             success = (GetConstData<uint16_t>(INPUT_IDX_X2, tmpValue) == ge::GRAPH_SUCCESS);
             if (success) {
-                scalarValue = float(*(reinterpret_cast<const bfloat16*>(&tmpValue)));
+                scalarValue = float(bfloat16(tmpValue, bfloat16::from_bits()));
             }
             break;
         }
@@ -301,7 +301,7 @@ ge::graphStatus TruncateDivTiling::GetPlatformInfo()
 {
     auto platformInfo = context_->GetPlatformInfo();
     if (platformInfo == nullptr) {
-        auto compileInfoPtr = reinterpret_cast<const BroadcastCompileInfo*>(context_->GetCompileInfo());
+        auto compileInfoPtr = context_->GetCompileInfo<BroadcastCompileInfo>();
         OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfoPtr);
         ubSize_ = compileInfoPtr->ubSize;
         OP_LOGD(context_->GetNodeName(), "Get ubSize form compileInfo is: %ld", ubSize_);
@@ -319,7 +319,7 @@ static ge::graphStatus TilingForTruncateDiv(gert::TilingContext* context)
 {
     OP_CHECK_NULL_WITH_CONTEXT(context, context);
 
-    auto compileInfo = reinterpret_cast<const BroadcastCompileInfo*>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<BroadcastCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     OP_LOGD(context, "Enter ascendc TruncateDivTiling");

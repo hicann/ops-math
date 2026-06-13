@@ -79,7 +79,7 @@ public:
             if constexpr (IsSameType<U, fp4x2_e2m1_t>::value || IsSameType<U, fp4x2_e1m2_t>::value) {
                 T padValue = constPad_(0);
                 T low4bit = padValue & 0x0F;
-                constValue_ = low4bit << 4 | low4bit;
+                constValue_ = (low4bit << 4) | low4bit;
             }
         }
 
