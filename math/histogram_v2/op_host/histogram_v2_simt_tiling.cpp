@@ -280,6 +280,7 @@ ge::graphStatus HistogramV2SimtTiling::SetKernelTiling()
 
 void HistogramV2SimtTiling::TilingDataPrint() const
 {
+    OP_LOGD(context_, "tilingKey_: %lu.", context_->GetTilingKey());
     OP_LOGD(context_, "needCoreNum_: %ld.", needCoreNum_);
     OP_LOGD(context_, "totalLength_: %ld.", totalLength_);
     OP_LOGD(context_, "bins_: %ld.", bins_);

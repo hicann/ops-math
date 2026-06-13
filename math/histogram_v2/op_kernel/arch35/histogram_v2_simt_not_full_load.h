@@ -191,6 +191,7 @@ __aicore__ inline void HistogramV2SimtNotFullLoad<X_TYPE, COMPUTE_TYPE, OUT_TYPE
 
     SetAtomicAdd<OUT_TYPE>();
     DataCopyPad(yGm_[ubLoop * ubNumCanUse_], yLocal_, dataCopyExtParamsAdd);
+    SetAtomicNone();
     yQue_.template FreeTensor<OUT_TYPE>(yLocal_);
 }
 } // namespace HistogramV2SIMT

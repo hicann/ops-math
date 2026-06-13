@@ -224,6 +224,7 @@ ge::graphStatus HistogramV2Tiling::SetKernelTiling()
 
 void HistogramV2Tiling::TilingDataPrint() const
 {
+    OP_LOGD(tilingContext, "tilingKey: %lu.", tilingContext->GetTilingKey());
     OP_LOGD(tilingContext, "coreNum: %ld.", coreNum);
     OP_LOGD(tilingContext, "totalLength: %ld.", totalLength);
     OP_LOGD(tilingContext, "bins: %ld.", bins);

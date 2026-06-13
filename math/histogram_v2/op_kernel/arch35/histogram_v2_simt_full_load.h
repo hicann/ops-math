@@ -146,6 +146,7 @@ __aicore__ inline void HistogramV2SimtFullLoad<X_TYPE, COMPUTE_TYPE, OUT_TYPE>::
 
             SetAtomicAdd<OUT_TYPE>();
             DataCopyPad(yGm_, this->yLocal_, dataCopyExtParamsAdd);
+            SetAtomicNone();
         }
 
         this->yQue_.template FreeTensor<OUT_TYPE>(yLocal_);
