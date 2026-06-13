@@ -41,32 +41,51 @@ ge::graphStatus CdistTiling::CheckParams() {
     yShape_ = yShape;
     int64_t dimNum = x1Shape_.GetDimNum();
     OP_CHECK_IF(dimNum < MIN_DIM_LEN,
-                OP_LOGE(tilingContext_->GetNodeName(), "Only supports at least 2D tensors, X1 got: %ld.", dimNum),
+                OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+                    tilingContext_->GetNodeName(), "x1", std::to_string(dimNum).c_str(),
+                    "Input only supports at least 2D tensors"),
                 return ge::GRAPH_FAILED);
     int64_t x2DimNum = x2Shape_.GetDimNum();
-    OP_CHECK_IF(x2DimNum != dimNum,
-                OP_LOGE(tilingContext_->GetNodeName(),
-                        "The dim num of X1 and X2 must be the same. X1 got: %ld, X2 got: %ld.", dimNum, x2DimNum),
-                return ge::GRAPH_FAILED);
+    if (x2DimNum != dimNum) {
+        std::string reasonMsg = "The dim num of x1 and x2 must be the same, x1 got: " +
+                                std::to_string(dimNum) + " ,x2 got: " + std::to_string(x2DimNum);
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+                    tilingContext_->GetNodeName(), "x2", std::to_string(x2DimNum).c_str(),
+                    reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     int64_t yDimNum = yShape_.GetDimNum();
-    OP_CHECK_IF(yDimNum != dimNum,
-        OP_LOGE(tilingContext_->GetNodeName(),
-                "The dim num of input and output must be the same. Input got: %ld, output got: %ld.", dimNum, yDimNum),
-        return ge::GRAPH_FAILED);
+    if (yDimNum != dimNum) {
+        std::string reasonMsg = "The dim num of input and output must be the same, x1 got: " +
+                                std::to_string(dimNum) + " ,y got: " + std::to_string(yDimNum);
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+            tilingContext_->GetNodeName(), "y", std::to_string(yDimNum).c_str(),
+            reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     int64_t M1 = x1Shape_.GetDim(dimNum - 1);
     int64_t M2 = x2Shape_.GetDim(dimNum - 1);
-    OP_CHECK_IF(M1 != M2,
-                OP_LOGE(tilingContext_->GetNodeName(),
-                        "The last dim of X1 and X2 must be the same. X1 got: %ld, X2 got: %ld.", M1, M2),
-                return ge::GRAPH_FAILED);
+    if (M1 != M2) {
+        std::string reasonMsg = "The last dim of x1 and x2 must be the same, x1 got: " +
+                                std::to_string(M1) + " ,x2 got: " + std::to_string(M2);
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+            tilingContext_->GetNodeName(), "x2", std::to_string(M2).c_str(),
+            reasonMsg.c_str());
+            return ge::GRAPH_FAILED;
+    }
     M_ = M1;
     P_ = x1Shape_.GetDim(dimNum - MIN_DIM_LEN);
     R_ = x2Shape_.GetDim(dimNum - MIN_DIM_LEN);
-    OP_CHECK_IF(P_ != yShape_.GetDim(dimNum - MIN_DIM_LEN) || R_ != yShape_.GetDim(dimNum - 1),
-                OP_LOGE(tilingContext_->GetNodeName(),
-                        "The last two dims of output are incorrect. output[-1] got: %ld, output[-2] got: %ld.",
-                        yShape_.GetDim(dimNum - 1), yShape_.GetDim(dimNum - MIN_DIM_LEN)),
-                return ge::GRAPH_FAILED);
+    if (P_ != yShape_.GetDim(dimNum - MIN_DIM_LEN) || R_ != yShape_.GetDim(dimNum - 1)) {
+        std::string reasonMsg = "The last two dims of output are incorrect, output[-1] got: " +
+                                std::to_string(yShape_.GetDim(dimNum - 1)) +
+                                " ,output[-2] got: " + std::to_string(yShape_.GetDim(dimNum - MIN_DIM_LEN));
+        std:: string errDimMsg = "output[-1]: " + std::to_string(yShape_.GetDim(dimNum - 1)) +
+                                 " ,output[-2]: " + std::to_string(yShape_.GetDim(dimNum - MIN_DIM_LEN)); 
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+            tilingContext_->GetNodeName(), "y", errDimMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     auto attrs = tilingContext_->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, attrs);
     tilingData_.p = 2.0f;
@@ -74,9 +93,10 @@ ge::graphStatus CdistTiling::CheckParams() {
         const float* pAttr = attrs->GetAttrPointer<float>(0);
         tilingData_.p = pAttr == nullptr ? 2.0f : *pAttr;
         OP_CHECK_IF(tilingData_.p < 0,
-                    OP_LOGE(tilingContext_->GetNodeName(),
-                            "The attr p needs greater than or equal to 0, but got: %f.", tilingData_.p),
-                    return ge::GRAPH_FAILED);
+            OP_LOGE_WITH_INVALID_ATTR(tilingContext_->GetNodeName(), "p",
+                std::to_string(tilingData_.p).c_str(),
+                "greater than or equal to 0"),
+            return ge::GRAPH_FAILED);
     }
     return ge::GRAPH_SUCCESS;
 }
@@ -92,11 +112,14 @@ ge::graphStatus CdistTiling::MergeBatchAxis() {
         x2B *= x2Shape_.GetDim(i);
         yB *= yShape_.GetDim(i);
     }
-    OP_CHECK_IF(B_ != x2B || B_ != yB,
-                OP_LOGE(tilingContext_->GetNodeName(),
-                        "The batch of input and output must be the same, but X1 got: %ld, X2 got: %ld, Y got: %ld.",
-                        B_, x2B, yB),
-                return ge::GRAPH_FAILED);
+    if (B_ != x2B || B_ != yB) {
+        std::string reasonMsg = "The batch of input and output must be the same, but x1 got: " +
+            std::to_string(B_) + ", x2 got: " + std::to_string(B_) + ", y got: " + std::to_string(yB);
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+            tilingContext_->GetNodeName(), "y", std::to_string(yB).c_str(),
+            reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     return ge::GRAPH_SUCCESS;
 }
 
