@@ -17,7 +17,7 @@ SUPPORTED_SHORT_OPTS="hj:vO:uf:-:"
 
 # 所有支持的长选项
 SUPPORTED_LONG_OPTS=(
-  "help" "ops=" "soc=" "vendor_name=" "debug" "cov" "noexec" "aicpu" "opkernel" "opkernel_aicpu" "jit"
+  "help" "ops=" "soc=" "vendor_name=" "debug" "cov" "noexec" "aicpu" "noaicpu" "opkernel" "opkernel_aicpu" "jit"
   "pkg" "asan" "valgrind" "make_clean" "static" "build-type=" "no_force" "simulator"
   "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "opkernel_aicpu_test"
   "run_example" "genop=" "genop_aicpu=" "experimental" "cann_3rd_lib_path" "mssanitizer" "oom" "onnxplugin" "tfplugin"
@@ -378,6 +378,7 @@ usage() {
   echo "    --soc supported parameters must only in [ascend910b ascend910_93 ascend950 ascend310p ascend910 ascend310b ascend630 ascend610lite ascend031 ascend035 kirinx90 kirin9030 mc62], A3(--soc=ascend910_93)"
   echo "    --vendor_name Specify the custom operator package vendor name, like: --vendor_name=customize, default to custom"
   echo "    --aicpu build aicpu task"
+  echo "    --noaicpu build noaicpu task"
   echo "    --opgraph build opgraph_math.so"
   echo "    --onnxplugin build oponnx_plugin_math.so"
   echo "    --tfplugin build liboptf_plugin_math.so"
@@ -723,6 +724,7 @@ checkopts() {
   ENABLE_SIMULATOR=FALSE
   ENABLE_RULE_LAUNCH=""
   AICPU_ONLY=FALSE
+  DISABLE_AICPU=FALSE
   OP_API_UT=FALSE
   OP_HOST_UT=FALSE
   OP_GRAPH_UT=FALSE
@@ -854,6 +856,7 @@ checkopts() {
         cov) ENABLE_COVERAGE=TRUE ;;
         noexec) ENABLE_UT_EXEC=FALSE ;;
         aicpu) AICPU_ONLY=TRUE ;;
+        noaicpu) DISABLE_AICPU=TRUE ;;
         pkg)
           ENABLE_BINARY=TRUE
           ENABLE_PACKAGE=TRUE
@@ -1056,6 +1059,9 @@ assemble_cmake_args() {
   fi
   if [[ "$ENABLE_OOM" == "TRUE" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DENABLE_OOM=TRUE"
+  fi
+  if [[ "$DISABLE_AICPU" == "TRUE" ]]; then
+    CMAKE_ARGS="$CMAKE_ARGS -DDISABLE_AICPU=TRUE"
   fi
   if [[ "$ENABLE_DUMP_CCE" == "TRUE" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DENABLE_DUMP_CCE=TRUE"
