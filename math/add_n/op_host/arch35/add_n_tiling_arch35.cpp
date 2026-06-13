@@ -99,8 +99,8 @@ ge::graphStatus AddNTiling::GetCompileInfo()
     ubSize_ = compileInfo->ubSize;
     OP_CHECK_IF(
         (coreNum_ <= 0 || ubSize_ <= 0),
-        OP_LOGE(
-            tilingContext->GetNodeName(), "AddN GetCompileInfo Failed, coreNum:%ld, ubSize:%ld.", coreNum_, ubSize_),
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+            tilingContext->GetNodeName(), "coreNum,ubSize", std::to_string(coreNum_)+","+std::to_string(ubSize_),"The values of coreNum,ubSize must be greater than 0"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
