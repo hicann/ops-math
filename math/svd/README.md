@@ -91,4 +91,4 @@ $$
   
   | 调用方式 | 调用样例                                                          | 说明                                                          |
   |--------|---------------------------------------------------------------|-------------------------------------------------------------| 
-  | aclnn调用 | [test_aclnn_svd](./examples/test_aclnn_svd.cpp) | 通过[aclnnScd](./docs/aclnnSvd.md)接口方式调用Svd算子。|  
+  | aclnn调用 | [test_aclnn_svd](./examples/test_aclnn_svd.cpp) | 通过[aclnnSvd](./docs/aclnnSvd.md)接口方式调用Svd算子。|  

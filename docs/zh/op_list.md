@@ -1948,7 +1948,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/triangular_solve/README.md">tria ngular_solve</a></td>
+    <td><a href="../../math/triangular_solve/README.md">triangular_solve</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>

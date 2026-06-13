@@ -94,4 +94,4 @@
 
 | 调用方式 | 样例代码                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_stateless_normal.cpp](./examples/arch35/test_aclnn_stateless_normal.cpp) | 通过[aclnnInplaceNormal]接口方式调用StatelessNormal算子，mean和stdev均为标量。 |
+| aclnn调用 | [test_aclnn_stateless_normal.cpp](./examples/arch35/test_aclnn_stateless_normal.cpp) | 通过[aclnnInplaceNormal](../dsa_random_normal/docs/aclnnInplaceNormal.md)接口方式调用StatelessNormal算子，mean和stdev均为标量。 |
