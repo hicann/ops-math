@@ -47,6 +47,7 @@ function(gen_ophost_symbol)
             -Wl,-Bsymbolic
             runtime
             unified_dlog
+            mmpa
     )
 
   target_link_directories(${OPHOST_NAME} PRIVATE ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64)
@@ -182,6 +183,13 @@ function(gen_opgraph_symbol)
       $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>> 
       $<$<TARGET_EXISTS:opbase_infer_objs>:$<TARGET_OBJECTS:opbase_infer_objs>>
       )
+    add_dependencies(${OPGRAPH_NAME} merge_ops_proto_${PKG_NAME})
+
+    target_sources( 
+ 	    ${OPGRAPH_NAME} 
+ 	    PRIVATE 
+ 	    ${ASCEND_GRAPH_CONF_DST}/ops_proto_math.cpp 
+ 	    )
  	       
     target_link_libraries(
       ${OPGRAPH_NAME}
@@ -189,13 +197,13 @@ function(gen_opgraph_symbol)
               c_sec
               -Wl,--no-as-needed
               register
+              es_math
               -Wl,--as-needed
               -Wl,--whole-archive
               rt2_registry_static
               -Wl,--no-whole-archive
               -Wl,-Bsymbolic
               ge_compiler
-              es_math
       )
  	 
     target_link_directories(${OPGRAPH_NAME} PRIVATE 
@@ -286,7 +294,6 @@ function(gen_cust_proto_symbol)
     unset(GRAPH_SOURCE)
     get_target_property(GRAPH_SOURCE ${GRAPH_PLUGIN_NAME}_obj SOURCES)
     if(GRAPH_SOURCE)
-      # 添加obj依赖es
       gen_es_math_lib_ready_cust()
       add_dependencies(${GRAPH_PLUGIN_NAME}_obj
         build_es_math
@@ -297,6 +304,23 @@ function(gen_cust_proto_symbol)
       )
       set(NEED_LINK_ES ON)
     endif()
+  endif()
+
+  set(NEED_MERGE_PROTO OFF)
+  if(TARGET ${GRAPH_PLUGIN_NAME}_proto_headers)
+    get_target_property(_proto_headers ${GRAPH_PLUGIN_NAME}_proto_headers INTERFACE_SOURCES)
+    if(_proto_headers)
+      set(NEED_MERGE_PROTO ON)
+    endif()
+  endif()
+
+  if(NEED_MERGE_PROTO AND NOT NEED_LINK_ES)
+    merge_graph_headers(TARGET merge_ops_proto_${PKG_NAME}_cust OUT_DIR ${ASCEND_GRAPH_CONF_DST})
+  endif()
+
+  if(NEED_MERGE_PROTO)
+    target_sources(cust_proto PRIVATE ${ASCEND_GRAPH_CONF_DST}/ops_proto_math.cpp)
+    add_dependencies(cust_proto merge_ops_proto_${PKG_NAME}_cust)
   endif()
 
   target_sources(
