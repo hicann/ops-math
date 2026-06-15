@@ -20,7 +20,6 @@
 #include "log/log.h"
 #include "register/tilingdata_base.h"
 #include "../../op_kernel/fill_dag.h"
-#include "graph/utils/type_utils.h"
 
 using namespace ge;
 using namespace FillStruct;
@@ -75,19 +74,23 @@ ge::graphStatus FillCheckType(ge::DataType dtype, const std::initializer_list<ge
     return ge::GRAPH_FAILED;
 }
 
-static bool IsDimsValid(const gert::Tensor *tensor, int inputDimsDType)
+static bool IsDimsValid(const char_t *nodeName, const gert::Tensor *tensor, ge::DataType inputDimsDType)
 {
     if (tensor == nullptr) {
-        OP_LOGE(FILLTILING_OP_NAME, "data tensor for dims is null");
+        OP_LOGE(nodeName, "data tensor for dims is null");
         return false;
     }
     int64_t dimNum = tensor->GetShapeSize();
     if (dimNum < 0) {
-        OP_LOGE(FILLTILING_OP_NAME, "data dimNum for dims cannot be negative value, but got %ld", dimNum);
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(nodeName, "dims(input)",
+            std::to_string(dimNum),
+            "The shape size of dims cannot be negative");
         return false;
     }
     if (inputDimsDType != ge::DT_INT32 && inputDimsDType != ge::DT_INT64) {
-        OP_LOGE(FILLTILING_OP_NAME, "data type for dims is invalid %d", inputDimsDType);
+        OP_LOGE_FOR_INVALID_DTYPE(nodeName, "dims(input)",
+            Ops::Base::ToString(inputDimsDType),
+            "Int32 or Int64");
         return false;
     }
     return true;
@@ -100,7 +103,9 @@ ge::graphStatus FillTiling::CheckInputDims()
     OP_CHECK_NULL_WITH_CONTEXT(context_, dimsStorageShape);
     auto dimsShape = Ops::Base::EnsureNotScalar(dimsStorageShape->GetStorageShape());
     if (dimsShape.GetDimNum() != 1) {
-        OP_LOGE(context_->GetNodeName(), "Dims shape must be [1].");
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "dims(input)",
+            Ops::Base::ToString(dimsShape),
+            "The shape of dims must be [1]");
         return ge::GRAPH_FAILED;
     }
 
@@ -109,7 +114,7 @@ ge::graphStatus FillTiling::CheckInputDims()
     auto dimsDesc = context_->GetInputDesc(FILL_INPUT_DIMS_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, dimsDesc);
     ge::DataType inputDimsDType = dimsDesc->GetDataType();
-    if (!IsDimsValid(tensorDims, inputDimsDType)) {
+    if (!IsDimsValid(context_->GetNodeName(), tensorDims, inputDimsDType)) {
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -126,8 +131,9 @@ ge::graphStatus FillTiling::CheckInputValue()
     OP_CHECK_NULL_WITH_CONTEXT(context_, valueStorageShape);
     auto valueShape = Ops::Base::EnsureNotScalar(valueStorageShape->GetStorageShape());
     if (valueShape.GetShapeSize() != 1) {
-        OP_LOGE(context_->GetNodeName(), "Value shape size must be 1, but got %ld.",
-                                        valueShape.GetShapeSize());
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context_->GetNodeName(), "value(input)",
+            std::to_string(valueShape.GetShapeSize()),
+            "The shape size of value must be 1");
         return ge::GRAPH_FAILED;
     }
 
@@ -136,8 +142,9 @@ ge::graphStatus FillTiling::CheckInputValue()
     OP_CHECK_NULL_WITH_CONTEXT(context_, valueDesc);
     ge::DataType inputValueDType = valueDesc->GetDataType();
     if (FillCheckType(inputValueDType, ASCEND910D_AICORE_INPUTVALUE_DTYPE_SUPPORT_LIST) != ge::GRAPH_SUCCESS) {
-        OP_LOGE(context_->GetNodeName(), "dtype: %s is not supported.",
-            ge::TypeUtils::DataTypeToSerialString(inputValueDType).c_str());
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "value(input)",
+            Ops::Base::ToString(inputValueDType),
+            "Float, Float16, Bool, Int64, Int8, Int32 and BFloat16");
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -169,7 +176,9 @@ ge::graphStatus FillTiling::RunTiling()
     } else if (this->outputDtype_ == ge::DT_INT64) {
         res = elewiseBaseTiling.DoTiling<FillDag<int64_t>::OpDag, false>(tilingData->baseTiling);
     } else {
-        OP_LOGE(context_, "data type check failed. getype: %d", this->outputDtype_);
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "y(output)",
+            Ops::Base::ToString(this->outputDtype_),
+            "Float16, Float, BFloat16, Int8, Bool, Int32 and Int64");
         return ge::GRAPH_FAILED;
     }
 

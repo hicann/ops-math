@@ -43,7 +43,9 @@ ge::graphStatus OnesLikeTiling::SetTilingData()
     } else if (this->outputDtype == ge::DT_UINT8) {
         dType = ONES_LIKE_TPL_UINT8;
     } else {
-        OP_LOGE(tilingContext->GetNodeName(), "self dtype is only support fp16、bf16、fp32、int32、bool、int8、uint8");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y(output)",
+            Ops::Base::ToString(this->outputDtype),
+            "Float16, BFloat16, Float, Int32, Bool, Int8 and Uint8");
         return ge::GRAPH_FAILED;
     }
     schMode = tiling->baseTiling.scheMode;
@@ -143,7 +145,9 @@ ge::graphStatus OnesLikeTiling::RunTiling()
     } else if (this->outputDtype == ge::DT_UINT8) {
         baseTilingResult = elewiseBaseTiling.DoTiling<OnesLikeDAG<uint8_t>::OpDag>(tiling->baseTiling);
     } else {
-        OP_LOGE(tilingContext->GetNodeName(), "output dtype not support");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y(output)",
+            Ops::Base::ToString(this->outputDtype),
+            "Float16, BFloat16, Int8, Float, Bool, Int32 and Uint8");
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(

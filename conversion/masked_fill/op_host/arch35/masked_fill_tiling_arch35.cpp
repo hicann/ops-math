@@ -13,7 +13,6 @@
  * /brief masked_fill_tiling source file
  */
 
-#include <graph/utils/type_utils.h>
 #include "op_host/math_tiling_templates_registry.h"
 #include "log/log.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
@@ -53,8 +52,10 @@ ge::graphStatus MaskedFillTiling::MaskedFillCheckOutputDtype()
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
     ge::DataType outputValueDtype = outputDesc->GetDataType();
 
-    OP_CHECK_IF(inputValueDtype != outputValueDtype,
-        OP_LOGE(context_, "input and output dtype is diff, check failed"),
+    OP_CHECK_IF((inputValueDtype != outputValueDtype),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "value(input) and y(output)",
+            Ops::Base::ToString(inputValueDtype) + " and " + Ops::Base::ToString(outputValueDtype),
+            "The dtypes of value(input) and y(output) must be the same"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -75,16 +76,17 @@ ge::graphStatus MaskedFillTiling::DoOpTiling()
 
     // Check if the mask is of type bool
     if (maskDType != ge::DT_BOOL && maskDType != ge::DT_INT8) {
-        OP_LOGE(context_->GetNodeName(), "Mask dtype must be bool or int8, but got %s.",
-            ge::TypeUtils::DataTypeToSerialString(maskDType).c_str());
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "mask(input)",
+            Ops::Base::ToString(maskDType),
+            "Bool or Int8");
         return ge::GRAPH_FAILED;
     }
 
     // Check if the input and value have the same dtype
     if (inputDType != valueDType) {
-        OP_LOGE(context_->GetNodeName(), "Input dtype[%s] != Value dtype[%s].",
-            ge::TypeUtils::DataTypeToSerialString(inputDType).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(valueDType).c_str());
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x(input) and value(input)",
+            Ops::Base::ToString(inputDType) + " and " + Ops::Base::ToString(valueDType),
+            "The dtypes of x(input) and value(input) must be the same");
         return ge::GRAPH_FAILED;
     }
 
@@ -93,8 +95,9 @@ ge::graphStatus MaskedFillTiling::DoOpTiling()
     OP_CHECK_NULL_WITH_CONTEXT(context_, valueStorageShape);
     auto valueShape = EnsureNotScalar(valueStorageShape->GetStorageShape());
     if (valueShape.GetShapeSize() != 1) {
-        OP_LOGE(context_->GetNodeName(), "Value shape size must be 1, but got %ld.",
-                                        valueShape.GetShapeSize());
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context_->GetNodeName(), "value(input)",
+            std::to_string(valueShape.GetShapeSize()),
+            "The shape size of value(input) must be 1");
         return ge::GRAPH_FAILED;
     }
 
@@ -136,9 +139,9 @@ ge::graphStatus MaskedFillTiling::HandleDataTypes(ge::DataType inputDType)
         brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
-        OP_LOGE(context_->GetNodeName(),
-            "input dtype is only support bool, fp16, bf16, fp32, int8, int32, int64, while got %s!",
-            ge::TypeUtils::DataTypeToSerialString(inputDType).c_str());
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x(input)",
+            Ops::Base::ToString(inputDType),
+            "Bool, Float16, BFloat16, Float, Int8, Int32 and Int64");
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
