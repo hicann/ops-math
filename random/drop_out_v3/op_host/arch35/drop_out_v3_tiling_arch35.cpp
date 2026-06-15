@@ -88,9 +88,13 @@ ge::graphStatus DropOutV3Tiling::UniqueProcess()
 
     auto pTensor = context_->GetRequiredInputTensor(INPUT_IDX_P);
     OP_CHECK_NULL_WITH_CONTEXT(context_, pTensor);
-    OP_CHECK_IF(
-        pTensor->GetShapeSize() <= 0,
-        OP_LOGE(context_->GetNodeName(), "get const shape of prob failed"), return ge::GRAPH_FAILED);
+    if (pTensor->GetShapeSize() <= 0) {
+        std::string valueStr = std::to_string(pTensor->GetShapeSize());
+        std::string reasonMsg = "shape size of prob tensor must be greater than 0";
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
+            context_->GetNodeName(), "shape size of prob tensor", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     auto pDescPtr = context_->GetRequiredInputDesc(INPUT_IDX_P);
     OP_CHECK_NULL_WITH_CONTEXT(context_, pDescPtr);
     float prob = 0.0f;
