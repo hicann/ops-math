@@ -62,9 +62,9 @@ public:
 
     __aicore__ inline void Process()
     {
-        int32_t block_idx = GetBlockIdx();
-        int32_t startIdx = (block_idx < formerCore_) ? (vectorsPerCore_+1)*block_idx : formerCore_ + vectorsPerCore_*block_idx;
-        int32_t count    = (block_idx < formerCore_) ? (vectorsPerCore_+1) : vectorsPerCore_;
+        int32_t blockIdx = GetBlockIdx();
+        int32_t startIdx = (blockIdx < formerCore_) ? (vectorsPerCore_+1)*blockIdx : formerCore_ + vectorsPerCore_*blockIdx;
+        int32_t count    = (blockIdx < formerCore_) ? (vectorsPerCore_+1) : vectorsPerCore_;
 
         if (count <= 0) return;
 
