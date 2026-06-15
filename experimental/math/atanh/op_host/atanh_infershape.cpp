@@ -20,6 +20,7 @@
 
 #include "register/op_impl_registry.h"
 #include "exe_graph/runtime/infer_shape_context.h"
+#include "log/log.h"
 
 using namespace ge;
 
@@ -28,14 +29,10 @@ namespace ops {
 static ge::graphStatus InferShape4Atanh(gert::InferShapeContext* context)
 {
     const gert::Shape* inputShape = context->GetInputShape(0);
-    if (inputShape == nullptr) {
-        return ge::GRAPH_FAILED;
-    }
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputShape);
 
     gert::Shape* outputShape = context->GetOutputShape(0);
-    if (outputShape == nullptr) {
-        return ge::GRAPH_FAILED;
-    }
+    OP_CHECK_NULL_WITH_CONTEXT(context, outputShape);
 
     *outputShape = *inputShape;
     return ge::GRAPH_SUCCESS;
