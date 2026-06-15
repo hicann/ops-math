@@ -66,7 +66,9 @@ static ge::graphStatus DoTiling(
     }
     OP_CHECK_IF(
         (status == ge::GRAPH_FAILED),
-        OP_LOGE(context, "ReduceOp Tiling failed, dtype shoude be in (int8/uint8/bfloat16/float16/float/int32/int64)"),
+        OP_LOGE_FOR_INVALID_DTYPE(
+            context->GetNodeName(), "grad_y", Ops::Base::ToString(opInput.inputDtype).c_str(),
+            "int8/uint8/bfloat16/float16/float/int32/int64"),
         return ge::GRAPH_FAILED);
 
     // set Tiling data
@@ -91,9 +93,11 @@ static ge::graphStatus GetRIGinputParam(gert::TilingContext* context, ReduceOpIn
         return ge::GRAPH_FAILED;
     }
 
-    OP_CHECK_IF(
-        (ReduceOpTmpl::GetInputDtype(context, GRAD_Y_INPUT_IDX, opInput.inputDtype) == ge::GRAPH_FAILED),
-        OP_LOGE(context, "ReduceOp get x input dtype failed"), return ge::GRAPH_FAILED);
+    if (ReduceOpTmpl::GetInputDtype(context, GRAD_Y_INPUT_IDX, opInput.inputDtype) == ge::GRAPH_FAILED) {
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "grad_y",
+            "", "Failed to get input dtype of grad_y");
+        return ge::GRAPH_FAILED;
+    }
 
     opInput.axes.resize(1);
     opInput.axes[0] = 1;
@@ -111,19 +115,25 @@ ge::graphStatus Tiling4GroupedBiasAddGradARA(
     OP_LOGI(context, "entering Tiling4GroupedBiasAddGradARA");
 
     ReduceOpCompileInfo reduceCompileInfo;
-    OP_CHECK_IF(
-        (convertCompileInfo(compileInfo, &reduceCompileInfo, context) == ge::GRAPH_FAILED),
-        OP_LOGE(context, "convert compile info Failed for Reduce template"), return ge::GRAPH_FAILED);
+    if (convertCompileInfo(compileInfo, &reduceCompileInfo, context) == ge::GRAPH_FAILED) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "compileInfo",
+            "", "convert compile info Failed for Reduce template");
+        return ge::GRAPH_FAILED;
+    }
 
     ReduceOpInputParam opInput;
-    OP_CHECK_IF(
-        (GetRIGinputParam(context, opInput) == ge::GRAPH_FAILED), OP_LOGE(context, "ReduceOp get x input param failed"),
-        return ge::GRAPH_FAILED);
+    if (GetRIGinputParam(context, opInput) == ge::GRAPH_FAILED) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "opInput",
+            "", "ReduceOp get input param of grad_y failed");
+        return ge::GRAPH_FAILED;
+    }
 
     groupedBiasAddGradARATilingKey key;
-    OP_CHECK_IF(
-        (DoTiling(context, &reduceCompileInfo, opInput, key.ReduceTiling) == ge::GRAPH_FAILED),
-        OP_LOGE(context, "DoTiling Failed"), return ge::GRAPH_FAILED);
+    if (DoTiling(context, &reduceCompileInfo, opInput, key.ReduceTiling) == ge::GRAPH_FAILED) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "tilingData",
+            "", "DoTiling Failed for GroupedBiasAddGrad ARA");
+        return ge::GRAPH_FAILED;
+    }
 
     key.templateNum = GroupedBiasAddGradTilingModeArch35::IS_REDUCE_T;
 

@@ -339,8 +339,13 @@ ge::graphStatus GroupedBiasAddGradTilingArch35::DoOpTiling()
             return ge::GRAPH_SUCCESS;
         }
         default:
-            OP_LOGE(context_, "Unknown tiling mode: %u", static_cast<uint32_t>(tilingMode_));
+        {
+            std::string modeMsg = std::to_string(static_cast<uint32_t>(tilingMode_));
+            std::string reasonMsg = "Unknown tiling mode, valid modes are CUT_H_MODE, CUT_G_MODE or EMPTY_TENSOR";
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "tilingMode",
+                modeMsg.c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
+        }
     }
 }
 

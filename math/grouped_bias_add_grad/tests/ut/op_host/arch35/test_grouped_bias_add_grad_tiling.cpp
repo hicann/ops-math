@@ -512,3 +512,59 @@ TEST_F(TilingGroupedBiasAddGrad, ascend950_Failed_OutputShapeMismatch)
         64, 253952);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
+
+// ============================================
+// ARA模式 错误路径测试用例（覆盖OP_LOGE_FOR_*整改）
+// ============================================
+
+// 22. ARA模式：grad_y不是3D tensor（2D输入无group_idx），期望报错 OP_LOGE_FOR_INVALID_SHAPEDIM
+TEST_F(TilingGroupedBiasAddGrad, ascend950_ARA_Failed_GradYNot3D)
+{
+    optiling::GroupedBiasAddGradCompileInfoArch35 compileInfo = {253952, 64, 32, 128, 256};
+    gert::TilingContextPara tilingContextPara(
+        "GroupedBiasAddGrad",
+        {
+            {{{10, 32}, {10, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 32}, {1, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
+        64, 253952);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// 23. ARA模式：grad_y为4D tensor（无group_idx），期望报错 OP_LOGE_FOR_INVALID_SHAPEDIM
+TEST_F(TilingGroupedBiasAddGrad, ascend950_ARA_Failed_GradY4D)
+{
+    optiling::GroupedBiasAddGradCompileInfoArch35 compileInfo = {253952, 64, 32, 128, 256};
+    gert::TilingContextPara tilingContextPara(
+        "GroupedBiasAddGrad",
+        {
+            {{{2, 5, 10, 32}, {2, 5, 10, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 32}, {1, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
+        64, 253952);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// 24. RA模式：输出grad_bias维度不为2（1D），期望报错 OP_LOGE_FOR_INVALID_SHAPEDIM
+TEST_F(TilingGroupedBiasAddGrad, ascend950_Failed_OutputShapeDimNot2)
+{
+    optiling::GroupedBiasAddGradCompileInfoArch35 compileInfo = {253952, 64, 32, 128, 256};
+    gert::TilingContextPara tilingContextPara(
+        "GroupedBiasAddGrad",
+        {
+            {{{10, 32}, {10, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{3}, {3}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{96}, {96}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
+        64, 253952);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
