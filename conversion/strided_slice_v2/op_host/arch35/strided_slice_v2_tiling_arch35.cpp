@@ -47,7 +47,9 @@ static bool CheckStride(ops::QuickVector &stride, const gert::TilingContext *con
 
    for (size_t i = 0; i < stride.GetDimNum(); i++) {
        if (stride[i] == 0) {
-           OP_LOGE(OP_NAME, "stride is %ld, it must be non-zero.", stride[i]);
+           OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+               OP_NAME, "stride", "0",
+               "The value of stride cannot be 0.");
            return false;
        }
    }
@@ -133,7 +135,9 @@ static int64_t GetConstIndexValue(const gert::Tensor* tensor, int32_t idx, int64
        }
        value = data[idx];
    } else {
-       OP_LOGE(OP_NAME, "Unsupported data type: %d", static_cast<int>(dataType));
+       OP_LOGE_FOR_INVALID_DTYPE(
+            OP_NAME, "end, begin or stride", ge::TypeUtils::DataTypeToSerialString(dataType).c_str(),
+            "int32 or int64");
        return defaultValue;
    }
 
