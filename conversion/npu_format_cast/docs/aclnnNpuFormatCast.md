@@ -92,7 +92,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>输入</td>
             <td>转换的源Tensor。</td>
             <td>-</td>
-            <td>INT8（2）、UINT8（4）、INT32（3）、UINT32（8）、FLOAT（0）、FLOAT16（1）、BFLOAT16（27）、FLOAT8_E4M3FN<sup>2</sup>（36）、FLOAT4_E2M1<sup>2</sup>（40）、HIFLOAT8<sup>2</sup>（34）</td>
+            <td>INT8（2）、UINT8（4）、INT32（3）、UINT32（8）、FLOAT（0）、FLOAT16（1）、BFLOAT16（27）、FLOAT8_E4M3FN<sup>2</sup>（36）、FLOAT4_E2M1<sup>2</sup>（40）、FLOAT4_E1M2<sup>2</sup>（41）、HIFLOAT8<sup>2</sup>（34）</td>
             <td>ACL_FORMAT_ND（2）、ACL_FORMAT_NZ（29）、ACL_FORMAT_NCL（47）、ACL_FORMAT_NCHW<sup>1</sup>（0）、ACL_FORMAT_NHWC<sup>1</sup>（1）、ACL_FORMAT_HWCN<sup>1</sup>（16）、ACL_FORMAT_NCDHW<sup>1</sup>（30）、ACL_FORMAT_NDHWC<sup>1</sup>（27）、ACL_FORMAT_DHWCN<sup>1</sup>（31）、ACL_FORMAT_NDC1HWC0<sup>1</sup>（32）、ACL_FORMAT_FRACTAL_Z_3D<sup>1</sup>（33）、ACL_FORMAT_NC1HWC0<sup>1</sup>（3）、ACL_FORMAT_FRACTAL_Z<sup>1</sup>（4）。</td>
             <td>2-6</td>
             <td>-</td>
@@ -237,7 +237,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>输入</td>
             <td>输入张量，输入的数据只支持连续的Tensor。</td>
             <td>括号中对应其对应的枚举值。</td>
-            <td>INT8（2）、UINT8（4）、INT32（3）、UINT32（8）、FLOAT（0）、FLOAT16（1）、BFLOAT16（27）、FLOAT8_E4M3FN<sup>2</sup>（36）、FLOAT4_E2M1<sup>2</sup>（40）、HIFLOAT8<sup>2</sup>（34）</td>
+            <td>INT8（2）、UINT8（4）、INT32（3）、UINT32（8）、FLOAT（0）、FLOAT16（1）、BFLOAT16（27）、FLOAT8_E4M3FN<sup>2</sup>（36）、FLOAT4_E2M1<sup>2</sup>（40）、FLOAT4_E1M2<sup>2</sup>（41）、HIFLOAT8<sup>2</sup>（34）</td>
             <td>ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、NCL<sup>2</sup></td>
             <td>2-6</td>
             <td>-</td>
@@ -399,6 +399,7 @@ aclnnStatus aclnnNpuFormatCast(
       | FLOAT8_E4M3FN     | ACL_FORMAT_ND(2) | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT8_E4M3FN(36)   | ACL_FORMAT_FRACTAL_NZ(29) |
       | FLOAT4_E2M1 | ACL_FORMAT_ND(2) | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT8_E4M3FN(36)   | ACL_FORMAT_FRACTAL_NZ(29) |
       | FLOAT4_E2M1 | ACL_FORMAT_ND(2) | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT4_E2M1(40)   | ACL_FORMAT_FRACTAL_NZ(29) |
+      | FLOAT4_E1M2 | ACL_FORMAT_ND(2) | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT4_E1M2(41)   | ACL_FORMAT_FRACTAL_NZ(29) |
       | HIFLOAT8 | ACL_FORMAT_ND(2) | ACL_FORMAT_FRACTAL_NZ(29) | HIFLOAT8(34)   | ACL_FORMAT_FRACTAL_NZ(29) |
       | FLOAT4_E2M1 | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FORMAT_ND(2) | ACL_FLOAT4_E2M1(40) |  ACL_FORMAT_ND(2) |
       | FLOAT4_E2M1 | ACL_FORMAT_FRACTAL_NZ_C0_32(51) | ACL_FORMAT_ND(2) | ACL_FLOAT4_E2M1(40) |  ACL_FORMAT_ND(2) |
@@ -434,6 +435,7 @@ aclnnStatus aclnnNpuFormatCast(
       | FLOAT8_E4M3FN  | FLOAT8_E4M3FN   | ACL_FORMAT_ND(2)  | ACL_FORMAT_FRACTAL_NZ(29)       |
       | FLOAT4_E2M1  | FLOAT4_E2M1       | ACL_FORMAT_ND(2)  | ACL_FORMAT_FRACTAL_NZ_C0_32(51)       |
       | FLOAT4_E2M1  | FLOAT4_E2M1       | ACL_FORMAT_ND(2)  | ACL_FORMAT_FRACTAL_NZ(29)       |
+      | FLOAT4_E1M2  | FLOAT4_E1M2       | ACL_FORMAT_ND(2)  | ACL_FORMAT_FRACTAL_NZ(29)       |
       | HIFLOAT8  | HIFLOAT8             | ACL_FORMAT_ND(2)  | ACL_FORMAT_FRACTAL_NZ(29)       |
       | INT8      | INT8                 | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FORMAT_ND(2)       |
       | INT8      | INT8                 | ACL_FORMAT_FRACTAL_NZ_C0_16(50) | ACL_FORMAT_ND(2)       |
