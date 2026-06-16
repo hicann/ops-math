@@ -7,6 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include <array>
 #include "aclnn_mul.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
@@ -449,6 +450,110 @@ static void MulCheckFormat(const aclTensor* self, const aclTensor* other){
   }
 }
 
+/* 非连续 Mul kernel 的退化场景判定。
+ * 仅当某个输入同时满足以下四点时，非连续 Mul kernel 的访存代价才显著高于"转连续 + dense Mul"，
+ * 此时转连续才稳定收益（阈值经 Ascend950 上板扫描标定：命中即不慢于非连续，各 dtype 无回退）：
+ *   (1) 外层广播倍数大——某维 size==1 而对端 size>1，该输入被重复读 K 次（K >= 阈值）；
+ *   (2) payload 不小——元素数 >= 阈值（过小则 launch-bound，转连续多一个 kernel 反而慢）；
+ *   (3) 内层连续块极短——最内 stride==1 连续块 < 阈值（无可向量化的连续搬运段）；
+ *   (4) gather 跨度大——连续块断裂处 stride >= 阈值（真稀疏散读；过小则近连续，非连续本就快）。
+ * 缺任一条非连续 kernel 更优，保持原路径。注：对 self/other 各判一次取 OR（单边），
+ * 不覆盖"两端各自不达标但联合广播"的冷门场景。
+ */
+constexpr int64_t MUL_NC_BCAST_FACTOR_MIN = 320;  // 广播重复次数下限（上板标定）
+constexpr int64_t MUL_NC_PAYLOAD_MIN = 512;       // payload 元素数下限（<512 launch-bound；按元素覆盖各 dtype）
+constexpr int64_t MUL_NC_CONTIG_RUN_MIN = 32;     // 最内连续块达到该长度即视为可向量化，不强转
+constexpr int64_t MUL_NC_GATHER_STRIDE_MIN = 24;  // gather 断裂处 stride 下限（小于此近连续，非连续更快）
+constexpr size_t MUL_NC_MAX_DIM = 8;              // 张量最大维数（Ascend tensor 上限），用于定容小数组
+
+// 一次遍历得到「最内连续块元素数 run」与「连续性断裂处 stride（gather 跨度）」。
+// 收集 size>1 维并按 stride 升序排列（与维序无关，可正确处理转置）；run 达阈值即饱和封顶，
+// 避免对超大 shape 做无界乘法溢出。gather 为 0 表示全连续/连续块够长（视为非稀疏）。
+struct MulRunGather {
+  int64_t run;
+  int64_t gather;
+};
+static MulRunGather MulInnerRunAndGather(const aclTensor* x) {
+  const auto shape = x->GetViewShape();
+  const size_t n = shape.GetDimNum();
+  std::array<int64_t, MUL_NC_MAX_DIM> strides{};
+  std::array<int64_t, MUL_NC_MAX_DIM> sizes{};
+  size_t m = 0;
+  for (size_t d = 0; d < n && m < MUL_NC_MAX_DIM; ++d) {
+    const int64_t sz = shape.GetDim(d);
+    const int64_t st = x->GetViewStrides()[d];
+    if (sz <= 1 || st == 0) { continue; }  // size-1 与 stride-0(广播)维不参与连续块/gather 计算
+    strides[m] = st;
+    sizes[m] = sz;
+    ++m;
+  }
+  for (size_t i = 1; i < m; ++i) {
+    const int64_t ks = strides[i];
+    const int64_t kz = sizes[i];
+    size_t j = i;
+    while (j > 0 && strides[j - 1] > ks) { strides[j] = strides[j - 1]; sizes[j] = sizes[j - 1]; --j; }
+    strides[j] = ks;
+    sizes[j] = kz;
+  }
+  int64_t run = 1;  // run is also the expected stride of the next contiguous dim
+  for (size_t i = 0; i < m; ++i) {
+    if (strides[i] != run) { return {run, strides[i]}; }  // contiguity breaks here; this stride is the gather span
+    if (run >= MUL_NC_CONTIG_RUN_MIN || sizes[i] >= MUL_NC_CONTIG_RUN_MIN) { return {MUL_NC_CONTIG_RUN_MIN, 0}; }
+    run *= sizes[i];  // guarded above: run<MIN && size<MIN here => product < MIN^2, no overflow
+  }
+  return {run, 0};
+}
+
+// x 相对 y 的广播(重复)倍数：x 某维 size==1 且 y 对齐维 size>1
+static int64_t MulBroadcastFactor(const aclTensor* x, const aclTensor* y) {
+  const auto xs = x->GetViewShape();
+  const auto ys = y->GetViewShape();
+  const size_t xn = xs.GetDimNum();
+  const size_t yn = ys.GetDimNum();
+  const size_t n = xn > yn ? xn : yn;
+  int64_t factor = 1;
+  for (size_t i = 0; i < n; ++i) {
+    const int64_t xd = (i < xn) ? xs.GetDim(xn - 1 - i) : 1;
+    const int64_t yd = (i < yn) ? ys.GetDim(yn - 1 - i) : 1;
+    if (xd == 1 && yd > 1) {
+      if (factor >= MUL_NC_BCAST_FACTOR_MIN || yd >= MUL_NC_BCAST_FACTOR_MIN) { return MUL_NC_BCAST_FACTOR_MIN; }
+      factor *= yd;  // guarded above: factor<MIN && yd<MIN here => product < MIN^2, no overflow
+    }
+  }
+  return factor;
+}
+
+static int64_t MulViewNumel(const aclTensor* x) {
+  const auto shape = x->GetViewShape();
+  int64_t numel = 1;
+  for (size_t i = 0; i < shape.GetDimNum(); ++i) {
+    const int64_t d = shape.GetDim(i);
+    if (numel >= MUL_NC_PAYLOAD_MIN || d >= MUL_NC_PAYLOAD_MIN) { return MUL_NC_PAYLOAD_MIN; }
+    numel *= d;  // guarded above: numel<MIN && d<MIN here => product < MIN^2, no overflow
+  }
+  return numel;
+}
+
+
+// x 是否命中"稀疏广播"退化模式（相对对端 y）：广播倍数大 + payload 大 + 内层连续块短 + gather 跨度大
+static bool MulIsSparseBroadcastOperand(const aclTensor* x, const aclTensor* y) {
+  const MulRunGather rg = MulInnerRunAndGather(x);
+  return MulBroadcastFactor(x, y) >= MUL_NC_BCAST_FACTOR_MIN &&
+         MulViewNumel(x) >= MUL_NC_PAYLOAD_MIN &&
+         rg.run < MUL_NC_CONTIG_RUN_MIN &&
+         rg.gather >= MUL_NC_GATHER_STRIDE_MIN;
+}
+
+// 任一输入命中稀疏广播退化模式时，强制走"转连续 + l0op::Mul"而非非连续 Mul kernel
+static bool MulPreferContiguous(const aclTensor* self, const aclTensor* other) {
+  const bool prefer = MulIsSparseBroadcastOperand(self, other) ||
+                      MulIsSparseBroadcastOperand(other, self);
+  if (prefer) {
+    OP_LOGI("aclnnMul: sparse-broadcast operand detected, route to Contiguous + Mul instead of non-contiguous kernel.");
+  }
+  return prefer;
+}
+
 aclnnStatus aclnnMulGetWorkspaceSize(const aclTensor *self, const aclTensor *other, aclTensor *out,
                                      uint64_t *workspaceSize, aclOpExecutor **executor) {
   L2_DFX_PHASE_1(aclnnMul, DFX_IN(self, other), DFX_OUT(out));
@@ -473,7 +578,11 @@ aclnnStatus aclnnMulGetWorkspaceSize(const aclTensor *self, const aclTensor *oth
   // 判断输入是否符合kernel支持的混合输入类型
   bool isMixDataType = IsMulMixDtypeSupport(self, other);
 
-  bool isSupportNonContiguous = IsRegBase();
+  // 命中稀疏广播退化模式时，非连续 Mul kernel 反而更慢，回退到转连续路径。
+  // preferContiguous 同时作用于下方两个非连续门：mix-dtype 分支经 isSupportNonContiguous，
+  // normal 分支则在其条件里直接 && !preferContiguous（两处需保持一致）。
+  bool preferContiguous = MulPreferContiguous(self, other);
+  bool isSupportNonContiguous = IsRegBase() && !preferContiguous;
   auto selfWithStride = uniqueExecutor.get()->CreateView(
       self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
   CHECK_RET(selfWithStride != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -500,7 +609,8 @@ aclnnStatus aclnnMulGetWorkspaceSize(const aclTensor *self, const aclTensor *oth
     auto promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
 
     // 调用主体计算函数
-    if (self->GetDataType() == promoteType && other->GetDataType() == promoteType && l0op::IsMulSupportNonContiguous(self, other)) {
+    if (self->GetDataType() == promoteType && other->GetDataType() == promoteType &&
+        l0op::IsMulSupportNonContiguous(self, other) && !preferContiguous) {
       resTensor = l0op::Mul(selfWithStride, otherWithStride, uniqueExecutor.get());
     } else {
       // 固定写法，将输入self转换成连续的tensor
