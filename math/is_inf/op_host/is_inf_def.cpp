@@ -44,6 +44,7 @@ public:
             .PrecisionReduceFlag(true)
             .ExtendCfgInfo("opFile.value", "is_inf_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("mc62", aicoreConfig);
 
         OpAICoreConfig config310P;
         config310P.DynamicCompileStaticFlag(true)
