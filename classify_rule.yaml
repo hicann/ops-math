@@ -36,6 +36,7 @@ ops_math:
       - "random/stateless_uniform"
       - "random/stateless_random_normal_v3"
       - "random/stateless_normal"
+      - "random/stateless_random"
   llt:
     ut_check: true
     st_check: false
@@ -529,6 +530,10 @@ VC6@ops-math:
         - ops/ops-math/random/stateless_uniform/
         - ops/ops-math/random/stateless_uniform/op_host/
         - ops/ops-math/random/stateless_uniform/op_kernel/
+        # stateless_random
+        - ops/ops-math/random/stateless_random/
+        - ops/ops-math/random/stateless_random/op_host/
+        - ops/ops-math/random/stateless_random/op_kernel/
         # tril
         - ops/ops-math/conversion/tril/op_host/
         - ops/ops-math/conversion/tril/op_kernel/
@@ -583,6 +588,8 @@ VC6@ops-math:
         - ops/ops-math/random/stateless_random_uniform_v3/tests/
         # stateless_uniform
         - ops/ops-math/random/stateless_uniform/tests/
+        # stateless_random
+        - ops/ops-math/random/stateless_random/tests/
         # triu
         - ops/ops-math/conversion/triu/examples/
         - ops/ops-math/conversion/triu/tests/
@@ -894,6 +901,9 @@ conversion@ops-math:
         - ops/ops-math/random/stateless_uniform/op_api/
         - ops/ops-math/random/stateless_uniform/op_graph/
         - ops/ops-math/random/stateless_uniform/README.md
+        - ops/ops-math/random/stateless_random/op_api/
+        - ops/ops-math/random/stateless_random/op_graph/
+        - ops/ops-math/random/stateless_random/README.md
         - ops/ops-math/random/stateless_randperm/docs/
         - ops/ops-math/random/stateless_randperm/op_api/
         - ops/ops-math/random/stateless_randperm/op_host/stateless_randperm_tiling_for_sort.h
@@ -1018,6 +1028,7 @@ conversion@ops-math:
         - ops/ops-math/random/stateless_random_uniform_v2/examples/
         - ops/ops-math/random/stateless_random_uniform_v3/examples/
         - ops/ops-math/random/stateless_uniform/examples/
+        - ops/ops-math/random/stateless_random/examples/
         - ops/ops-math/random/stateless_normal/examples/
         - ops/ops-math/random/stateless_randperm/examples/
         - ops/ops-math/random/stateless_randperm/tests/
