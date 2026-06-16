@@ -32,6 +32,8 @@ static constexpr double MIN_USED_CORES_RATIO = 0.8;
 static constexpr int64_t MIN_PER_UB_SIZE = 4096;
 // UB内 scatter 操作的最大元素个数
 static constexpr int32_t MAX_UB_SCATTER_ELEMENT_NUM = std::numeric_limits<uint16_t>::max();
+// scatter操作元素数限制的最小数据类型字节数
+static constexpr int32_t MIN_DSIZE_FOR_SCATTER_LIMIT = 2;
 
 // SIMT 常量
 static constexpr int64_t MAX_SHAPE_SIZE_FOR_SIMT = 1024;
@@ -264,7 +266,7 @@ ge::graphStatus MatrixSetDiagTiling::Tiling4CutW()
     isCutW_ = true;
     CalUbFactor();
     OP_CHECK_IF((ubFactor_ == 0U), OP_LOGE(context_, "ubFactor is 0"), return ge::GRAPH_FAILED);
-    if (dSize_ <= 2) {
+    if (dSize_ <= MIN_DSIZE_FOR_SCATTER_LIMIT) {
         ubFactor_ = ubFactor_ < MAX_UB_SCATTER_ELEMENT_NUM ? ubFactor_ : MAX_UB_SCATTER_ELEMENT_NUM;
     }
     // 设置核数
@@ -283,7 +285,7 @@ ge::graphStatus MatrixSetDiagTiling::Tiling4NoCutW()
 {
     CalUbFactor();
     OP_CHECK_IF((ubFactor_ == 0U), OP_LOGE(context_, "ubFactor is 0"), return ge::GRAPH_FAILED);
-    if (dSize_ <= 2) {
+    if (dSize_ <= MIN_DSIZE_FOR_SCATTER_LIMIT) {
         ubFactor_ = ubFactor_ * tailAxisDataSize_ < MAX_UB_SCATTER_ELEMENT_NUM ?
                         ubFactor_ :
                         MAX_UB_SCATTER_ELEMENT_NUM / tailAxisDataSize_;
@@ -381,7 +383,8 @@ ge::graphStatus MatrixSetDiagTiling::Tiling4MatrixSetDiag()
     uint64_t totalTailSize = (AlignBlock(tailAxisDataSize_) + AlignBlock(diagLen_)) * dSize_;
     bufferSize_ = ubSize_ / BUFFER_NUM - vectorSize_;
     OP_LOGI(context_, "bufferSize_ %lu, totalTailSize %lu", bufferSize_, totalTailSize);
-    if (totalTailSize >= bufferSize_ || (dSize_ <= 2 && tailAxisDataSize_ >= MAX_UB_SCATTER_ELEMENT_NUM)) {
+    if (totalTailSize >= bufferSize_ ||
+        (dSize_ <= MIN_DSIZE_FOR_SCATTER_LIMIT && tailAxisDataSize_ >= MAX_UB_SCATTER_ELEMENT_NUM)) {
         return Tiling4CutW();
     } else {
         return Tiling4NoCutW();

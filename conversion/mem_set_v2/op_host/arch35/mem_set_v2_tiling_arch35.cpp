@@ -207,7 +207,7 @@ ge::graphStatus DoTiling(gert::TilingContext* context, uint64_t tilingKey, int64
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     } else {
         OP_LOGD(context->GetNodeName(), "Get compileInfo with tilingParse.");
-        auto compileInfo = reinterpret_cast<const MemSetV2CompileInfo*>(context->GetCompileInfo());
+        auto compileInfo = context->GetCompileInfo<MemSetV2CompileInfo>();
         OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
         ubSize = compileInfo->ubSize;
         coreNum = compileInfo->coreNum;

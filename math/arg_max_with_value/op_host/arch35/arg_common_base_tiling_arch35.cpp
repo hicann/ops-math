@@ -42,6 +42,7 @@ static const uint64_t MAX_SIZE_USING_SINGLE_CORE = static_cast<uint64_t>(4 * 102
 static const uint64_t CUTR_MIN_MOV = static_cast<uint64_t>(4 * 1024);
 static const uint64_t CUTR_MIN_SIZE = 4;
 static const float AR_BLOCK_NUM_FACTOR = 0.85f;
+static constexpr int BF16_BUFFER_MULTIPLIER = 2; // BF16数据类型因float32中间结果所需的缓冲区倍数
 
 ge::graphStatus ArgCommonBaseTiling::Init(const uint64_t& coreNum, const uint64_t& ubSize, const uint64_t& vRegSize)
 {
@@ -774,7 +775,7 @@ void ArgCommonBaseTiling::AddExtraBufferNeed(uint64_t& fixedNeed, int& isBfloatN
 {
     if (ge::DT_BF16 == valueDtype_) {
         fixedNeed += alignSize * DOUBLE_BUFFER_NUM * sizeof(float);
-        isBfloatNum = 2;
+        isBfloatNum = BF16_BUFFER_MULTIPLIER;
     }
     if ((indiceDtypeSize_ != t2Size_) || (indiceDtype_ != ge::DT_INT32 && indiceDtype_ != ge::DT_INT64)) {
         fixedNeed += alignSize * indiceDtypeSize_;

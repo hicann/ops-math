@@ -29,7 +29,7 @@ namespace transdata_asc {
 
 ge::graphStatus TransDataTilingAscendC::GetHardwareInfo()
 {
-    auto compileInfo = reinterpret_cast<const TransDataCompileInfo*>(context_->GetCompileInfo());
+    auto compileInfo = context_->GetCompileInfo<TransDataCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfo);
     coreNum_ = static_cast<uint32_t>(compileInfo->coreNum);
     ubSize_ = compileInfo->ubSize;

@@ -21,10 +21,11 @@
 #include "util/const_util.h"
 #include "util/math_util.h"
 
-namespace optiling
-{
-namespace brcto
-{
+namespace optiling {
+namespace brcto {
+static constexpr int64_t DIM_NUM_THRESHOLD_FOR_R4_SIZE = 5; // 触发尾轴4D尺寸计算的维度数阈值
+static constexpr int64_t TRAILING_DIM_NUM_FOR_R4_SIZE = 4;  // 用于4D尺寸计算的尾轴维度数
+
 ge::graphStatus GetABFlag(const gert::TilingContext* context, const gert::Shape& inShape, const gert::Shape& outShape,
                           std::array<bool, MAX_DIM_NUM>& abInfo)
 {
@@ -571,14 +572,14 @@ void BroadcastToTilingAscendC::CalcTensorSize()
 
     int64_t ubGate = maxTensorSize_ / nTwo / nTwo;
     int64_t r4DimSize = minTensorSize_;
-    if (dimNum > 5) {
-        r4DimSize = CalcDimSize(inShapePtr_, dimNum - 4, dimNum);
+    if (dimNum > DIM_NUM_THRESHOLD_FOR_R4_SIZE) {
+        r4DimSize = CalcDimSize(inShapePtr_, dimNum - TRAILING_DIM_NUM_FOR_R4_SIZE, dimNum);
     }
-     
+
     isDMABrcA_ =
-        (dimNum > 1 && (nTwo * outLastDim <= LAST_DIM_GATE || (outLastDim == LAST_DIM_GATE / nTwo + 1 &&
-                                                               outShapePtr_->GetDim(dimNum - nTwo) <= LAST_DIM_GATE)
-                                                           || ((outLastDim < 8) && (r4DimSize < minTensorSize_))));
+        (dimNum > 1 && (nTwo * outLastDim <= LAST_DIM_GATE ||
+                        (outLastDim == LAST_DIM_GATE / nTwo + 1 && outShapePtr_->GetDim(dimNum - nTwo) <= LAST_DIM_GATE)
+                        || ((outLastDim < LAST_DIM_GATE) && (r4DimSize < minTensorSize_))));
     if ((!abInfo_[dimNum - 1] && outLastDim <= ubGate && !isDMABrcA_) ||
         (abInfo_[dimNum - 1] && outLastDim >= LAST_DIM_GATE)) {  // UB broadcast
         tmpTensorSize = std::min(ubGate, MAX_TENSOR_SIZE);
@@ -769,7 +770,7 @@ ge::graphStatus BroadcastToTilingAscendC::DoTiling()
     return WriteTilingData();
 }
 
-}  // namespace brcto
+} // namespace brcto
 
 ge::graphStatus Tiling4BroadcastToAscendC(gert::TilingContext* context, const gert::Shape* inShapePtr,
                                           const gert::Shape* outShapePtr)
@@ -789,4 +790,4 @@ ge::graphStatus Tiling4BroadcastToAscendC(gert::TilingContext* context, const ge
     return brcToTiling.DoTiling();
 }
 
-}  // namespace optiling
+} // namespace optiling

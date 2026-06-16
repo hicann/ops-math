@@ -680,7 +680,7 @@ static ge::graphStatus TilingForStridedSliceV3(gert::TilingContext* context) {
     ConstructStrideList(context->GetOptionalInputTensor(INDEX_STRIDES), inputDimNum, newAxes,
                         sliceParam.stride_list);
 
-    auto compileInfo = reinterpret_cast<const StridedSliceV3CompileInfo*>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<StridedSliceV3CompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     OP_LOGD(OP_NAME.c_str(), "before make performance, slice params: %s", sliceParam.to_string().c_str());

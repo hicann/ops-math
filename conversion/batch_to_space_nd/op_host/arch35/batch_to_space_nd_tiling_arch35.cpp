@@ -37,6 +37,8 @@ static constexpr std::array VALUE_DATA_TYPE_ALL{
     ge::DT_UINT32, ge::DT_INT64,  ge::DT_UINT64, ge::DT_BF16,      ge::DT_FLOAT16,
     ge::DT_FLOAT,  ge::DT_DOUBLE, ge::DT_BOOL,   ge::DT_COMPLEX32, ge::DT_COMPLEX64,
 };
+// 固定轴数量：batch轴 + remain轴
+static constexpr size_t NUM_FIXED_AXES = 2;
 
 // 大尾轴模板 常量
 // BUFFER分割数量
@@ -56,6 +58,7 @@ static constexpr uint32_t SMALL_C_MAX_BUFFER_SIZE = 64 * 1024U;
 static constexpr uint32_t SMALL_C_MIN_BUFFER_SIZE = 4 * 1024U;
 static constexpr double MIN_USED_CORES_RATIO = 0.6;
 static constexpr int16_t MAX_TILING_TIME = 4;
+static constexpr uint32_t UB_TILE_SIZE_REDUCTION_FACTOR = 2; // 迭代缩减UB tile尺寸的减半因子
 // 每块预留大小
 static constexpr uint32_t SMALL_C_RESERVE_BUFFER_SIZE = 256U;
 // 被压缩的轴数量
@@ -192,15 +195,15 @@ static std::string ArrayToString(const T* v, size_t size)
 
 void BatchToSpaceNDTiling::ShowBaseTilingData()
 {
-    if (unlikely(mergedInput_.rank <= 2)) {
+    if (unlikely(mergedInput_.rank <= NUM_FIXED_AXES)) {
         return;
     }
     // 输入信息
     OP_LOGI(
         context_, "input: x_shape %s, block_shape %s, crops %s, y_shape %s, data type size %d",
         ArrayToString(mergedInput_.inShape, mergedInput_.rank).c_str(),
-        ArrayToString(mergedInput_.blockShape, mergedInput_.rank - 2).c_str(),
-        ArrayToString(*mergedInput_.crops, (mergedInput_.rank - 2) * 2).c_str(),
+        ArrayToString(mergedInput_.blockShape, mergedInput_.rank - NUM_FIXED_AXES).c_str(),
+        ArrayToString(*mergedInput_.crops, (mergedInput_.rank - NUM_FIXED_AXES) * CROPS_DIM_NUM_1).c_str(),
         ArrayToString(mergedInput_.outShape, mergedInput_.rank).c_str(), dSize_);
     // soc 信息
     OP_LOGI(
@@ -228,7 +231,7 @@ void BatchToSpaceNDTiling::ShowSmallCTilingData()
         context_, "tiling data: oriInShape %s, croppedInShape %s, crops %s",
         ArrayToString(tilingData->oriInShape, mergedInput_.rank + blockShapeDimNum_).c_str(),
         ArrayToString(tilingData->croppedInShape, mergedInput_.rank + blockShapeDimNum_).c_str(),
-        ArrayToString(*tilingData->crops, blockShapeDimNum_ * 2).c_str());
+        ArrayToString(*tilingData->crops, blockShapeDimNum_ * CROPS_DIM_NUM_1).c_str());
     OP_LOGI(
         context_, "\t: coreNum %u, inUbAxis %u, outUbAxis %u, inUbFactor %u, outUbFactor %u", tilingData->coreNum,
         tilingData->inUbAxis, tilingData->outUbAxis, tilingData->inUbFactor, tilingData->outUbFactor);
@@ -598,7 +601,7 @@ ge::graphStatus BatchToSpaceNDTiling::Tiling4LargeC()
     // batch 不对齐
     ubFactorAlign[0] = 1;
     // space 对齐 block shape
-    std::copy(mergedInput_.blockShape, mergedInput_.blockShape + mergedInput_.rank - 2, ubFactorAlign.begin() + 1);
+    std::copy(mergedInput_.blockShape, mergedInput_.blockShape + mergedInput_.rank - NUM_FIXED_AXES, ubFactorAlign.begin() + 1);
     // remain shape 对齐 ub block
     ubFactorAlign[mergedInput_.rank - 1] = ubBlockElements_;
 
@@ -666,7 +669,7 @@ void BatchToSpaceNDTiling::SmallCSetInput(B2SNDSmallCTilingData* tilingData)
     tilingData->croppedInShape[rank - 1] = mergedInput_.inShape[mergedInput_.rank - 1];
 
     // crops
-    std::copy(*mergedInput_.crops, (*mergedInput_.crops) + blockShapeDimNum_ * 2, *(tilingData->crops));
+    std::copy(*mergedInput_.crops, (*mergedInput_.crops) + blockShapeDimNum_ * CROPS_DIM_NUM_1, *(tilingData->crops));
 }
 
 std::array<size_t, MAX_EXPAND_RANK> BatchToSpaceNDTiling::SmallCComputeOutputAxisPerm()
@@ -707,7 +710,7 @@ ge::graphStatus BatchToSpaceNDTiling::Tiling4SmallC()
 {
     // tiling key
     mode_ = TPL_MODE_SMALL_C;
-    blockShapeDimNum_ = mergedInput_.rank - 2;
+    blockShapeDimNum_ = mergedInput_.rank - NUM_FIXED_AXES;
 
     // tiling data
     auto tilingData = context_->GetTilingData<B2SNDSmallCTilingData>();
@@ -741,7 +744,7 @@ ge::graphStatus BatchToSpaceNDTiling::Tiling4SmallC()
         if (tempCnt >= MAX_TILING_TIME) {
             break;
         }
-        inputElements = inputElements / 2;
+        inputElements = inputElements / UB_TILE_SIZE_REDUCTION_FACTOR;
         auto tiling1 = DualSideTiling(
             context_, ubBlockElements_, tilingData->croppedInShape, yAxisPerm.data(), xNeedAlignAxis,
             blockShapeDimNum_ + mergedInput_.rank);

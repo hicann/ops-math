@@ -172,7 +172,7 @@ static bool Checkformat(const aclTensor* self, const aclTensor* out)
     return true;
 }
 
-static bool CheckPadForFp8(const aclTensor* self, uint32_t& signSymbol)
+static bool CheckPadForFp8(const aclTensor* self, const uint32_t& signSymbol)
 {
     // self的数据类型为fp8时，pad数组中不能有负数，StridedSlice不支持FLOAT8_E8M0类型
     if (CheckType(self->GetDataType(), DTYPE_SUPPORT_FP8_FP4_LIST) && (signSymbol & NEGETIVE) == NEGETIVE) {

@@ -42,7 +42,7 @@ static void ConstructSliceShape(const gert::StorageShape *storage, gert::Shape &
 }
 
 static bool CheckStride(ops::QuickVector &stride, const gert::TilingContext *context) {
-   auto compileInfo = reinterpret_cast<const StridedSliceV2CompileInfo *>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<StridedSliceV2CompileInfo>();
    OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
    for (size_t i = 0; i < stride.GetDimNum(); i++) {
@@ -474,7 +474,7 @@ ge::graphStatus Tiling4StridedSliceV2(gert::TilingContext *context) {
    OP_LOGI(context->GetNodeName(), "perf slice params: %s", sliceParam.to_string().c_str());
 
    // Infer tiling mode
-   auto compileInfo = reinterpret_cast<const StridedSliceV2CompileInfo *>(context->GetCompileInfo());
+   auto compileInfo = context->GetCompileInfo<StridedSliceV2CompileInfo>();
    OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
    OP_LOGD(context->GetNodeName(), "compile info: %s.", compileInfo->to_string().c_str());
 

@@ -82,6 +82,15 @@ private:
     constexpr static uint32_t BUFFER_NUM = 2;
     constexpr static uint32_t UB_BLOCK = Ops::Base::GetUbBlockSize();
     constexpr static uint32_t BLK_ELEMS = UB_BLOCK / sizeof(T);
+    // Axis offset constants
+    constexpr static uint32_t AXIS_OFFSET_W = 2;       // W轴相对rank末尾的偏移量
+    constexpr static uint32_t AXIS_OFFSET_H = 3;       // H轴相对rank末尾的偏移量
+    constexpr static uint32_t BLOCK_AXIS_OFFSET_H = 2; // H轴在blockShape数组中的偏移量
+    // Threshold/rank constants
+    constexpr static uint32_t MIN_SPATIAL_DIMS = 2;    // 处理H轴所需的最少空间维度数
+    constexpr static uint32_t MIN_RANK_FOR_H_AXIS = 4; // 处理H轴所需的最小tensor rank
+    constexpr static uint32_t RANK_3D = 3;             // 3维tensor的rank值
+    constexpr static uint32_t RANK_5D = 5;             // 5维tensor的rank值
 
 public:
     __aicore__ inline BatchToSpaceLargeC(TPipe* pipe) { pipe_ = pipe; }
@@ -108,12 +117,12 @@ public:
             axisPreProduct_ *= tdPtr_->input.outShape[i];
         }
         tileQueryNumsDim_ = totalCount_ / axisPreProduct_;
-        if (blockShapeSize_ >= 2) {
+        if (blockShapeSize_ >= MIN_SPATIAL_DIMS) {
             // H 轴
-            cropHtop_ = tdPtr_->input.crops[blockShapeSize_ - 2][0];
-            cropHbottom_ = tdPtr_->input.crops[blockShapeSize_ - 2][1];
-            BSH_ = tdPtr_->input.blockShape[blockShapeSize_ - 2];
-            outH_ = tdPtr_->input.outShape[rank_ - 3];
+            cropHtop_ = tdPtr_->input.crops[blockShapeSize_ - BLOCK_AXIS_OFFSET_H][0];
+            cropHbottom_ = tdPtr_->input.crops[blockShapeSize_ - BLOCK_AXIS_OFFSET_H][1];
+            BSH_ = tdPtr_->input.blockShape[blockShapeSize_ - BLOCK_AXIS_OFFSET_H];
+            outH_ = tdPtr_->input.outShape[rank_ - AXIS_OFFSET_H];
 
             CalcBoundaryBlock(cropHtop_, cropHbottom_, BSH_, outH_, headLenH_, tailLenH_, middleLenH_);
 
@@ -137,8 +146,8 @@ public:
             cropLeft_ = tdPtr_->input.crops[blockShapeSize_ - 1][0];
             cropRight_ = tdPtr_->input.crops[blockShapeSize_ - 1][1];
             BSW_ = tdPtr_->input.blockShape[blockShapeSize_ - 1];
-            outW_ = tdPtr_->input.outShape[rank_ - 2];
-            inW_ = tdPtr_->input.inShape[rank_ - 2];
+            outW_ = tdPtr_->input.outShape[rank_ - AXIS_OFFSET_W];
+            inW_ = tdPtr_->input.inShape[rank_ - AXIS_OFFSET_W];
             inC_ = tdPtr_->input.inShape[rank_ - 1];
 
             CalcBoundaryBlock(cropLeft_, cropRight_, BSW_, outW_, leftCopyLen_, rightCopyLen_, middleCopyLen_);
@@ -181,7 +190,7 @@ public:
         uint32_t endIdx = (blockIdx_ + 1L) * perCoreCount_;
         endIdx = endIdx < totalCount_ ? endIdx : totalCount_;
 
-        if ((rank_ == 4 && ubAxis_ == 1) || (rank_ == 5 && ubAxis_ == 2)) {
+        if (ubAxis_ == rank_ - AXIS_OFFSET_H && (rank_ == MIN_RANK_FOR_H_AXIS || rank_ == RANK_5D)) {
             int sum = getTileNumPrefixSum(startIdx);
 
             uint64_t curOutIndex[MAX_INPUT_RANK] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -274,11 +283,11 @@ private:
 
         if (ubAxis_ == rank_ - 1) {
             DoCopyInAxisC(src, outIndex, inIndex, ubAxisInCopyNum, idx);
-        } else if (ubAxis_ == rank_ - 2) {
+        } else if (ubAxis_ == rank_ - AXIS_OFFSET_W) {
             DoCopyInAxisW(src, outIndex, inIndex, ubAxisInCopyNum, idx);
-        } else if (ubAxis_ == rank_ - 3 && rank_ == 3) {
+        } else if (ubAxis_ == rank_ - AXIS_OFFSET_H && rank_ == RANK_3D) {
             DoCopyInAxisN3(src, outIndex, inIndex, ubAxisInCopyNum, idx);
-        } else if (ubAxis_ == rank_ - 3 && rank_ >= 4) { // H轴
+        } else if (ubAxis_ == rank_ - AXIS_OFFSET_H && rank_ >= MIN_RANK_FOR_H_AXIS) { // H轴
             DoCopyInAxisH(src, outIndex, inIndex, ubAxisInCopyNum, idx);
         }
     }
@@ -512,8 +521,8 @@ private:
         if (curUbFactor == 0)
             return;
 
-        uint64_t instrideBSW = instrideBS[rank_ - 2];
-        uint64_t instrideBSH = instrideBS[rank_ - 3];
+        uint64_t instrideBSW = instrideBS[rank_ - AXIS_OFFSET_W];
+        uint64_t instrideBSH = instrideBS[rank_ - AXIS_OFFSET_H];
 
         uint64_t leftCopyLen = leftCopyLen_;
         uint64_t rightCopyLen = rightCopyLen_;
@@ -542,8 +551,8 @@ private:
                 instrideBSH, true, false);
         }
 
-        outIndex[rank_ - 2] = 0;
-        updateOutIndexByCarry(outIndex, curUbFactor, rank_ - 3);
+        outIndex[rank_ - AXIS_OFFSET_W] = 0;
+        updateOutIndexByCarry(outIndex, curUbFactor, rank_ - AXIS_OFFSET_H);
     }
 
     __aicore__ inline void CalcBoundaryBlock(
@@ -692,7 +701,7 @@ private:
             outIndex[i] = 0;
         }
 
-        uint32_t axis = rank_ - 3; // 例如 rank=4 -> axis=1
+        uint32_t axis = rank_ - AXIS_OFFSET_H; // 例如 rank=4 -> axis=1
 
         outIndex[axis] = sum;
 
@@ -774,7 +783,7 @@ private:
         // 更新地址和索引
         if (updateAddr) {
             ubAddr += copyLen * alignedCLength_;
-            outIndex[rank_ - 2] += copyLen;
+            outIndex[rank_ - AXIS_OFFSET_W] += copyLen;
         }
     }
 
@@ -790,14 +799,14 @@ private:
         if (ubAxis_ == rank_ - 1) {
             copyOutParams.blockCount = 1;
             copyOutParams.blockLen = ubAxisOutCopyNum * outStride_[ubAxis_] * sizeof(T);
-        } else if (ubAxis_ == rank_ - 2) {
+        } else if (ubAxis_ == rank_ - AXIS_OFFSET_W) {
             copyOutParams.blockCount = ubAxisOutCopyNum;
             copyOutParams.blockLen = originC_ * sizeof(T);
-        } else if (ubAxis_ == rank_ - 3 && rank_ == 3) {
+        } else if (ubAxis_ == rank_ - AXIS_OFFSET_H && rank_ == RANK_3D) {
             copyOutParams.blockCount = ubAxisOutCopyNum * tdPtr_->input.outShape[ubAxis_ + 1]; // N-Axis*L
             copyOutParams.blockLen = originC_ * sizeof(T);                                     // C
-        } else if (ubAxis_ == rank_ - 3 && rank_ >= 4) {                                       // H轴
-            copyOutParams.blockCount = ubAxisOutCopyNum * tdPtr_->input.outShape[rank_ - 2];
+        } else if (ubAxis_ == rank_ - AXIS_OFFSET_H && rank_ >= MIN_RANK_FOR_H_AXIS) {         // H轴
+            copyOutParams.blockCount = ubAxisOutCopyNum * tdPtr_->input.outShape[rank_ - AXIS_OFFSET_W];
             copyOutParams.blockLen = tdPtr_->input.outShape[rank_ - 1] * sizeof(T);
         }
         DataCopyPad(outputGm_[outAddr], src[0], copyOutParams);
