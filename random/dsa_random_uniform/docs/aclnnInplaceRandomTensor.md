@@ -91,7 +91,7 @@ aclnnStatus aclnnInplaceRandomTensor(
       <td>to</td>
       <td>输入</td>
       <td>进行离散均匀分布取值的右边界。</td>
-      <td>to的值需要在selfRef的数据类型取值范围内。</td>
+      <td>to-1的值需要在selfRef的数据类型取值范围内。</td>
       <td>INT64</td>
       <td>-</td>
       <td>-</td>
@@ -181,7 +181,7 @@ aclnnStatus aclnnInplaceRandomTensor(
       <td>from大于等于to。</td>
     </tr>
     <tr>
-      <td>to超过selfRef数据类型的取值范围。</td>
+      <td>to-1超过selfRef数据类型的取值范围。</td>
     </tr>
   </tbody>
   </table>
@@ -235,7 +235,7 @@ aclnnStatus aclnnInplaceRandomTensor(
   - aclnnInplaceRandomTensor默认确定性实现。
 - <term>Ascend 950PR/Ascend 950DT</term>：
   - offset必须为4的倍数。
-  - from必须小于to，且from/to指定范围不可超出self数据类型的范围。
+  - from必须小于to，且from/to-1指定范围不可超出self数据类型的范围。
 
 ## 调用示例
 

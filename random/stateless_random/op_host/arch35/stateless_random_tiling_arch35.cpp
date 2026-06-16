@@ -145,13 +145,16 @@ ge::graphStatus StatelessRandomTiling::BeforeProcess()
         auto fromData = fromTensor->GetData<int64_t>();
         OP_CHECK_NULL_WITH_CONTEXT(context_, fromData);
         config_.unrollFactor =
-            ((static_cast<uint64_t>(dtypeMax) + 1 - fromData[0]) >= RAND_INT64_THRESHOLD) ? UNROLL_2 : UNROLL_4;
+            ((static_cast<uint64_t>(dtypeMax) + 1 - static_cast<uint64_t>(fromData[0])) >= RAND_INT64_THRESHOLD) ?
+                UNROLL_2 : UNROLL_4;
     } else {
         auto fromData = fromTensor->GetData<int64_t>();
         OP_CHECK_NULL_WITH_CONTEXT(context_, fromData);
         auto toData = toTensor->GetData<int64_t>();
         OP_CHECK_NULL_WITH_CONTEXT(context_, toData);
-        config_.unrollFactor = ((toData[0] - fromData[0]) >= RAND_INT64_THRESHOLD) ? UNROLL_2 : UNROLL_4;
+        config_.unrollFactor =
+            ((static_cast<uint64_t>(toData[0]) - static_cast<uint64_t>(fromData[0])) >= RAND_INT64_THRESHOLD) ?
+                UNROLL_2 : UNROLL_4;
     }
     return ge::GRAPH_SUCCESS;
 }
@@ -184,14 +187,14 @@ ge::graphStatus StatelessRandomTiling::UniqueProcess()
         auto fromData = fromTensor->GetData<int64_t>();
         OP_CHECK_NULL_WITH_CONTEXT(context_, fromData);
         from = fromData[0];
-        range = static_cast<uint64_t>(dtypeMax) + 1 - fromData[0];
+        range = static_cast<uint64_t>(dtypeMax) + 1 - static_cast<uint64_t>(fromData[0]);
     } else {
         auto fromData = fromTensor->GetData<int64_t>();
         OP_CHECK_NULL_WITH_CONTEXT(context_, fromData);
         auto toData = toTensor->GetData<int64_t>();
         OP_CHECK_NULL_WITH_CONTEXT(context_, toData);
         from = fromData[0];
-        range = toData[0] - fromData[0];
+        range = static_cast<uint64_t>(toData[0]) - static_cast<uint64_t>(fromData[0]);
     }
 
     simtTilingData_.from = from;
