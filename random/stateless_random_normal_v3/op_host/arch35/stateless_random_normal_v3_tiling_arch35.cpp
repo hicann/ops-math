@@ -103,8 +103,10 @@ ge::graphStatus StatelessRandomNormalV3Tiling::UniqueProcess()
     if (meanSize == 1) {
         v3KernelMode |= MEAN_SCALAR_FLAG;
     } else if (meanSize != outputSize) {
-        OP_LOGE(context_, "StatelessRandomNormalV3 does not support broadcast for mean, "
-                "mean shapeSize: %ld != output shapeSize: %ld.", meanSize, outputSize);
+        std::string valueStr = std::to_string(meanSize) + " and " + std::to_string(outputSize);
+        std::string reasonMsg = "StatelessRandomNormalV3 does not support broadcast for mean, mean shapeSize must equal output shapeSize or be 1";
+        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(context_->GetNodeName(), "mean shapeSize and output shapeSize",
+            valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -114,8 +116,10 @@ ge::graphStatus StatelessRandomNormalV3Tiling::UniqueProcess()
     if (stdevSize == 1) {
         v3KernelMode |= STDEV_SCALAR_FLAG;
     } else if (stdevSize != outputSize) {
-        OP_LOGE(context_, "StatelessRandomNormalV3 does not support broadcast for stdev, "
-                "stdev shapeSize: %ld != output shapeSize: %ld.", stdevSize, outputSize);
+        std::string valueStr = std::to_string(stdevSize) + " and " + std::to_string(outputSize);
+        std::string reasonMsg = "StatelessRandomNormalV3 does not support broadcast for stdev, stdev shapeSize must equal output shapeSize or be 1";
+        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(context_->GetNodeName(), "stdev shapeSize and output shapeSize",
+            valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
