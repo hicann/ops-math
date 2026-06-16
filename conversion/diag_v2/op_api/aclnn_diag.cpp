@@ -18,7 +18,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "diagv2.h"
 #include "conversion/fill/op_api/fill.h"
-#include "conversion/diag_flat/op_host/op_api/diag_flat.h"
+#include "conversion/diag_flat/op_api/diag_flat.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"

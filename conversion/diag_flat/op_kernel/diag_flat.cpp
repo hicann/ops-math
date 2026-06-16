@@ -12,7 +12,6 @@
  * \file diag_flat.cpp
  * \brief
  */
- 
 #include "diag_flat_nd_to_2d.h"
 #include "diag_flat_nd_to_2d_with_few.h"
 #include "diag_flat_nd_to_2d_b16_more64.h"

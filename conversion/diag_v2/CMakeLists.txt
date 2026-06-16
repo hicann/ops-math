@@ -9,4 +9,9 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-add_all_modules_sources(OPTYPE diag_v2 ACLNNTYPE aclnn_exclude DEPENDENCIES diag_flat)
+set(SUPPORT_COMPUTE_UNIT "ascend310b" "ascend310p" "ascend910" "ascend910_93" "ascend910b" "kirin9030" "kirinx90" "ascend950")
+set(SUPPORT_TILING_DIR   "arch32"    "arch32"    "arch32"   "arch32"      "arch32"    "arch32"    "arch32"   "arch35")
+add_all_modules_sources(OPTYPE diag_v2 ACLNNTYPE aclnn_exclude
+    COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT}
+    TILING_DIR ${SUPPORT_TILING_DIR}
+    DEPENDENCIES diag_flat)

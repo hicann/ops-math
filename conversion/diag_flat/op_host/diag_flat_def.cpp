@@ -40,7 +40,15 @@ public:
         this->Attr("diagonal").AttrType(OPTIONAL).Int(0);
         this->AICore().AddConfig("ascend910b");
         this->AICore().AddConfig("ascend910_93");
-        this->AICore().AddConfig("ascend950");
+
+        OpAICoreConfig config950;
+        config950.DynamicCompileStaticFlag(true)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .PrecisionReduceFlag(true)
+            .ExtendCfgInfo("opFile.value", "diag_flat_apt");
+        this->AICore().AddConfig("ascend950", config950);
 
         OpAICoreConfig config_310p_910;
         config_310p_910.Input("x")
