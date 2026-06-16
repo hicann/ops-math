@@ -701,6 +701,9 @@ __aicore__ inline void Cdist<T>::ProcessNoSplitM(uint32_t bOffset, uint32_t pOff
         offsetX2 = bOffset * R_ * M_ + rOffset * M_;
         offsetY = bOffset * P_ * R_ + pOffset * R_ + rOffset;
         CopyInX2(offsetX2);
+        event_t eventID = static_cast<event_t>(GetTPipePtr()->FetchEventID(AscendC::HardEvent::MTE3_V));
+        AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(eventID);
+        AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(eventID);
         CastXToB32();
         Compute();
         CastY();
