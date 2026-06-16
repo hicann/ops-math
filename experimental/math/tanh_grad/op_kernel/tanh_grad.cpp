@@ -11,18 +11,19 @@
 /*!
  * \file tanh_grad.cpp
  * \brief
-*/
+ */
 
 #include "tanh_grad.h"
 
 template <uint32_t schMode>
 __global__ __aicore__ void tanh_grad(GM_ADDR y, GM_ADDR dy, GM_ADDR dx, GM_ADDR workspace, GM_ADDR tiling)
 {
-     REGISTER_TILING_DEFAULT(TanhGradTilingData);
-     GET_TILING_DATA_WITH_STRUCT(TanhGradTilingData, tilingData, tiling);
-     MyTanhGrad::KernelTanhGrad<DTYPE_Y> op; 
-     op.Init(y, dy, dx, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.finalBigTileNum, 
-             tilingData.finalSmallTileNum, tilingData.tileDataNum, tilingData.smallTailDataNum, 
-             tilingData.bigTailDataNum, tilingData.tailBlockNum);
-     op.Process();                       
+    REGISTER_TILING_DEFAULT(TanhGradTilingData);
+    GET_TILING_DATA_WITH_STRUCT(TanhGradTilingData, tilingData, tiling);
+    MyTanhGrad::KernelTanhGrad<DTYPE_Y> op;
+    op.Init(
+        y, dy, dx, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.finalBigTileNum,
+        tilingData.finalSmallTileNum, tilingData.tileDataNum, tilingData.smallTailDataNum, tilingData.bigTailDataNum,
+        tilingData.tailBlockNum);
+    op.Process();
 }

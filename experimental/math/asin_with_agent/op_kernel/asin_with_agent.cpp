@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
+
 /**
  *
  * NOTE: Portions of this code were AI-generated and have been
@@ -38,11 +38,7 @@
 #include "asin_with_agent_impl.h"
 
 template <typename D_T>
-__global__ __aicore__ void asin_with_agent(
-    GM_ADDR x,
-    GM_ADDR y,
-    GM_ADDR workspace,
-    GM_ADDR tiling)
+__global__ __aicore__ void asin_with_agent(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(AsinWithAgentTilingData);
     GET_TILING_DATA_WITH_STRUCT(AsinWithAgentTilingData, tilingData, tiling);

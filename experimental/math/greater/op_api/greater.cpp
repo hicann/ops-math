@@ -61,9 +61,10 @@ static bool IsAiCoreSupport(const aclTensor* self)
 }
 
 // 判断tensor是否支持非连续
-bool IsGreaterSupportNonContiguous(const aclTensor* self) {
-  bool isSupportNonContiguous = IsRegBase();
-  return isSupportNonContiguous && IsAiCoreSupport(self);
+bool IsGreaterSupportNonContiguous(const aclTensor* self)
+{
+    bool isSupportNonContiguous = IsRegBase();
+    return isSupportNonContiguous && IsAiCoreSupport(self);
 }
 
 // AICORE算子kernel

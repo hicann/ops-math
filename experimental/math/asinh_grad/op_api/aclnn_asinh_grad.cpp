@@ -39,20 +39,11 @@ using namespace op;
 
 // Iteration 3: FP32 + FP16 + BF16
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT,
-    DataType::DT_FLOAT16,
-    DataType::DT_BF16
-};
+    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16};
 
-static bool IsDtypeSupported(DataType dtype)
-{
-    return CheckType(dtype, AICORE_DTYPE_SUPPORT_LIST);
-}
+static bool IsDtypeSupported(DataType dtype) { return CheckType(dtype, AICORE_DTYPE_SUPPORT_LIST); }
 
-static bool HasEmptyTensor(const aclTensor* y, const aclTensor* dy)
-{
-    return y->IsEmpty() || dy->IsEmpty();
-}
+static bool HasEmptyTensor(const aclTensor* y, const aclTensor* dy) { return y->IsEmpty() || dy->IsEmpty(); }
 
 static bool CheckNotNull(const aclTensor* y, const aclTensor* dy, const aclTensor* z)
 {
@@ -69,9 +60,9 @@ static bool CheckDtypeValid(const aclTensor* y, const aclTensor* dy, const aclTe
     OP_CHECK_DTYPE_NOT_MATCH(z, y->GetDataType(), return false);
 
     if (!IsDtypeSupported(y->GetDataType())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AsinhGrad: unsupported dtype=%d. Supported: FLOAT, FLOAT16, BF16.",
-                static_cast<int>(y->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "AsinhGrad: unsupported dtype=%d. Supported: FLOAT, FLOAT16, BF16.",
+            static_cast<int>(y->GetDataType()));
         return false;
     }
     return true;
@@ -84,9 +75,9 @@ static bool CheckFormat(const aclTensor* y, const aclTensor* dy, const aclTensor
     auto formatZ = z->GetStorageFormat();
 
     if (IsPrivateFormat(formatY) || IsPrivateFormat(formatDy) || IsPrivateFormat(formatZ)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AsinhGrad: private format not supported: y=%d, dy=%d, z=%d",
-                static_cast<int>(formatY), static_cast<int>(formatDy), static_cast<int>(formatZ));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "AsinhGrad: private format not supported: y=%d, dy=%d, z=%d",
+            static_cast<int>(formatY), static_cast<int>(formatDy), static_cast<int>(formatZ));
         return false;
     }
     return true;
@@ -100,8 +91,7 @@ static bool CheckShape(const aclTensor* y, const aclTensor* dy, const aclTensor*
 
     // y and dy must have the same shape (no broadcast supported)
     if (y->GetViewShape() != dy->GetViewShape()) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AsinhGrad: y and dy shape mismatch (broadcast not supported)");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "AsinhGrad: y and dy shape mismatch (broadcast not supported)");
         return false;
     }
     OP_CHECK_SHAPE_NOT_EQUAL(z, y, return false);
@@ -115,9 +105,10 @@ static aclnnStatus CheckParams(const aclTensor* y, const aclTensor* dy, const ac
         return ACLNN_ERR_PARAM_NULLPTR;
     }
     if (!CheckDtypeValid(y, dy, z)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "AsinhGrad: dtype check failed: y=%d, dy=%d, z=%d",
-                static_cast<int>(y->GetDataType()), static_cast<int>(dy->GetDataType()),
-                static_cast<int>(z->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "AsinhGrad: dtype check failed: y=%d, dy=%d, z=%d",
+            static_cast<int>(y->GetDataType()), static_cast<int>(dy->GetDataType()),
+            static_cast<int>(z->GetDataType()));
         return ACLNN_ERR_PARAM_INVALID;
     }
     if (!CheckFormat(y, dy, z)) {
@@ -131,11 +122,7 @@ static aclnnStatus CheckParams(const aclTensor* y, const aclTensor* dy, const ac
 }
 
 extern "C" aclnnStatus aclnnAsinhGradGetWorkspaceSize(
-    const aclTensor* y,
-    const aclTensor* dy,
-    aclTensor* z,
-    uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+    const aclTensor* y, const aclTensor* dy, aclTensor* z, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAsinhGrad, DFX_IN(y, dy), DFX_OUT(z));
 
@@ -169,10 +156,7 @@ extern "C" aclnnStatus aclnnAsinhGradGetWorkspaceSize(
 }
 
 extern "C" aclnnStatus aclnnAsinhGrad(
-    void* workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor* executor,
-    aclrtStream stream)
+    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnAsinhGrad);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

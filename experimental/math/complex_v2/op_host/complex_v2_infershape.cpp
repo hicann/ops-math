@@ -22,7 +22,7 @@
 /*!
  * \file complex_v2_infer.cpp
  * \brief
-*/
+ */
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 
@@ -47,10 +47,11 @@ static ge::graphStatus InferShapeComplexV2(gert::InferShapeContext* context)
     auto xShapeSize = xShape->GetDimNum();
     yShape->SetDimNum(xShapeSize);
     for (size_t i = 0; i < xShapeSize; ++i) {
-    int64_t dim = xShape->GetDim(i);
-    if (i == 0) dim *= 2;   // 第 0 维 ×2，其余不变
-    yShape->SetDim(i, dim);
-}
+        int64_t dim = xShape->GetDim(i);
+        if (i == 0)
+            dim *= 2; // 第 0 维 ×2，其余不变
+        yShape->SetDim(i, dim);
+    }
 
     OP_LOGD(context->GetNodeName(), "End to do InferShapeComplexV2");
     return GRAPH_SUCCESS;

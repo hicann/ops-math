@@ -32,10 +32,10 @@
 
 namespace optiling {
 
-using Ops::Base::CeilDiv;
 using Ops::Base::CeilAlign;
-using Ops::Base::FloorDiv;
+using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
@@ -44,7 +44,8 @@ constexpr int64_t MIN_SPLIT_THRESHOLD = 1024;
 
 static const gert::Shape g_vec_1_shape = {1};
 
-static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape) {
+static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape)
+{
     if (in_shape.GetDimNum() == 0) {
         return g_vec_1_shape;
     }
@@ -82,10 +83,10 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
 
     // Shape validation: dy, x, dx must have same shape
     OP_CHECK_IF(
-        dyShape.GetShapeSize() != xShape.GetShapeSize() ||
-            dyShape.GetShapeSize() != dxShape.GetShapeSize(),
-        OP_LOGE(context, "AsinGrad: shape size mismatch: dy=%ld, x=%ld, dx=%ld",
-                dyShape.GetShapeSize(), xShape.GetShapeSize(), dxShape.GetShapeSize()),
+        dyShape.GetShapeSize() != xShape.GetShapeSize() || dyShape.GetShapeSize() != dxShape.GetShapeSize(),
+        OP_LOGE(
+            context, "AsinGrad: shape size mismatch: dy=%ld, x=%ld, dx=%ld", dyShape.GetShapeSize(),
+            xShape.GetShapeSize(), dxShape.GetShapeSize()),
         return ge::GRAPH_FAILED);
 
     totalNum = dyShape.GetShapeSize();
@@ -137,20 +138,17 @@ static ge::graphStatus AsinGradTilingFunc(gert::TilingContext* context)
     uint64_t ubSize;
     int64_t coreNum;
     OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"),
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
         return ge::GRAPH_FAILED);
     // 2. Get shape and attr info
     int64_t totalNum;
     ge::DataType dataType;
     OP_CHECK_IF(
         GetShapeAttrsInfo(context, totalNum, dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeAttrsInfo error"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
     // 3. Get workspace size
     OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"),
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
         return ge::GRAPH_FAILED);
     // Handle empty tensor
     if (totalNum == 0) {
@@ -169,8 +167,7 @@ static ge::graphStatus AsinGradTilingFunc(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
     OP_CHECK_IF(
         memset_s(tiling, sizeof(AsinGradTilingData), 0, sizeof(AsinGradTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     int64_t ubBlockSize = GetUbBlockSize(context);
     tiling->totalNum = totalNum;

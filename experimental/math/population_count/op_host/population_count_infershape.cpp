@@ -51,8 +51,6 @@ static ge::graphStatus InferDataType4PopulationCount(gert::InferDataTypeContext*
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_INFERSHAPE(PopulationCount)
-    .InferShape(InferShape4PopulationCount)
-    .InferDataType(InferDataType4PopulationCount);
+IMPL_OP_INFERSHAPE(PopulationCount).InferShape(InferShape4PopulationCount).InferDataType(InferDataType4PopulationCount);
 
 } // namespace ops

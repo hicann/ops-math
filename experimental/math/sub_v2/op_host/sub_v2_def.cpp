@@ -29,19 +29,19 @@ class SubV2 : public OpDef {
 public:
     explicit SubV2(const char* name) : OpDef(name)
     {
-        this->Input("x1")                                       
-            .ParamType(REQUIRED)                               
-            .DataType({ge::DT_FLOAT, ge::DT_INT32, ge::DT_INT16, ge::DT_FLOAT16, ge::DT_BF16})             
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})             
-            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND}) 
-            .AutoContiguous();                                  
-        this->Input("x2")                                       
+        this->Input("x1")
             .ParamType(REQUIRED)
             .DataType({ge::DT_FLOAT, ge::DT_INT32, ge::DT_INT16, ge::DT_FLOAT16, ge::DT_BF16})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
-        this->Output("y") 
+        this->Input("x2")
+            .ParamType(REQUIRED)
+            .DataType({ge::DT_FLOAT, ge::DT_INT32, ge::DT_INT16, ge::DT_FLOAT16, ge::DT_BF16})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .AutoContiguous();
+        this->Output("y")
             .ParamType(REQUIRED)
             .DataType({ge::DT_FLOAT, ge::DT_INT32, ge::DT_INT16, ge::DT_FLOAT16, ge::DT_BF16})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
@@ -55,9 +55,9 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
-            .ExtendCfgInfo("opFile.value", "sub_v2");   
-        this->AICore().AddConfig("ascend910b", aicoreConfig); 
+            .ExtendCfgInfo("opFile.value", "sub_v2");
+        this->AICore().AddConfig("ascend910b", aicoreConfig);
     }
 };
-OP_ADD(SubV2); 
+OP_ADD(SubV2);
 } // namespace ops

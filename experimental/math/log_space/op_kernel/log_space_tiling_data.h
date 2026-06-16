@@ -21,15 +21,15 @@
 #define _LOG_SPACE_TILING_DATA_H_
 
 struct LogSpaceTilingData {
-    uint64_t totalLen    = 0;   // steps
-    uint32_t coreNum     = 1;   // 参与计算的 AI Core 数
-    uint32_t tileLen     = 0;   // 每个常规核处理的元素数
-    uint32_t tailCoreIdx = 0;   // 处理尾块的核 id
-    uint32_t tailTileLen = 0;   // 尾核处理的元素数
-    uint32_t ubChunk     = 0;   // 单次搬运粒度（fp32 元素数）
-    uint32_t reserved    = 0;   // 对齐占位（保证 float 字段 4B 对齐）
-    float    startF      = 0.0f;
-    float    stepF       = 0.0f; // (end-start)/(steps-1), steps==1 时为 0
-    float    logBase     = 0.0f; // ln(base)
+    uint64_t totalLen = 0;    // steps
+    uint32_t coreNum = 1;     // 参与计算的 AI Core 数
+    uint32_t tileLen = 0;     // 每个常规核处理的元素数
+    uint32_t tailCoreIdx = 0; // 处理尾块的核 id
+    uint32_t tailTileLen = 0; // 尾核处理的元素数
+    uint32_t ubChunk = 0;     // 单次搬运粒度（fp32 元素数）
+    uint32_t reserved = 0;    // 对齐占位（保证 float 字段 4B 对齐）
+    float startF = 0.0f;
+    float stepF = 0.0f;   // (end-start)/(steps-1), steps==1 时为 0
+    float logBase = 0.0f; // ln(base)
 };
 #endif

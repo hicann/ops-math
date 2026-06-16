@@ -47,10 +47,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./sub_v2_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "sub_v2_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "sub_v2_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;
@@ -71,10 +68,8 @@ TEST_F(SubV2Test, test_case_float16_1)
     optiling::SubV2CompileInfo compileInfo = {64, 262144, false};
     gert::TilingContextPara tilingContextPara(
         "SubV2",
-        {
-            {{{128, 64}, {128, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{128, 64}, {128, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND}
-        },
+        {{{{128, 64}, {128, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+         {{{128, 64}, {128, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
         {
             {{{128, 64}, {128, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
         },
@@ -118,11 +113,9 @@ TEST_F(SubV2Test, test_case_float32_1)
     optiling::SubV2CompileInfo compileInfo = {64, 262144, false};
     gert::TilingContextPara tilingContextPara(
         "SubV2",
-        {
-            // 两个输入
-            {{{256, 33}, {256, 33}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{256, 33}, {256, 33}}, ge::DT_FLOAT, ge::FORMAT_ND}
-        },
+        {// 两个输入
+         {{{256, 33}, {256, 33}}, ge::DT_FLOAT, ge::FORMAT_ND},
+         {{{256, 33}, {256, 33}}, ge::DT_FLOAT, ge::FORMAT_ND}},
         {
             // 一个输出
             {{{256, 33}, {256, 33}}, ge::DT_FLOAT, ge::FORMAT_ND},

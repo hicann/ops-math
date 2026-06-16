@@ -31,6 +31,6 @@ __global__ __aicore__ void cast_v2(GM_ADDR x, GM_ADDR z, GM_ADDR workspace, GM_A
     REGISTER_TILING_DEFAULT(CastV2TilingData);
     GET_TILING_DATA_WITH_STRUCT(CastV2TilingData, tilingData, tiling);
     NsCastV2::CastV2<DTYPE_X, DTYPE_Z> op; // 算子kernel实例获取
-    op.Init(x, z, &tilingData);      // 算子kernel实例初始化
-    op.Process();                       // 算子kernel实例执行
+    op.Init(x, z, &tilingData);            // 算子kernel实例初始化
+    op.Process();                          // 算子kernel实例执行
 }

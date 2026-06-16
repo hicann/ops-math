@@ -19,13 +19,13 @@
 using namespace ge;
 using namespace Ops::Base;
 namespace ops {
-    static graphStatus InferDataType4Softsign(gert::InferDataTypeContext* context)
-    {
-        OP_LOGD(context->GetNodeName(), "InferDataType4Softsign enter");
-        auto inputDtype = context->GetInputDataType(0);
-        context->SetOutputDataType(0, inputDtype);
-        OP_LOGD(context->GetNodeName(), "InferDataType4Softsign end");
-        return GRAPH_SUCCESS;
-    }
+static graphStatus InferDataType4Softsign(gert::InferDataTypeContext* context)
+{
+    OP_LOGD(context->GetNodeName(), "InferDataType4Softsign enter");
+    auto inputDtype = context->GetInputDataType(0);
+    context->SetOutputDataType(0, inputDtype);
+    OP_LOGD(context->GetNodeName(), "InferDataType4Softsign end");
+    return GRAPH_SUCCESS;
+}
 IMPL_OP_INFERSHAPE(Softsign).InferShape(InferShape4Elewise).InferDataType(InferDataType4Softsign);
 } // namespace ops

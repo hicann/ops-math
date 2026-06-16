@@ -35,7 +35,7 @@ struct ReduceSumV2TilingData {
     uint32_t smallTailDataNum;
     uint32_t bigTailDataNum;
     uint32_t tailBlockNum;
-    
+
     uint32_t dataTypeId;
     uint32_t rows;
     uint32_t cols;

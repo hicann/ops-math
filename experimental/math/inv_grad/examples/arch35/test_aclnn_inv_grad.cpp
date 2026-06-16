@@ -26,14 +26,14 @@
 #include "acl/acl.h"
 #include "aclnn_inv_grad.h"
 
-#define CHECK_ACL(expr)                                                     \
-    do {                                                                    \
-        auto _ret = (expr);                                                 \
-        if (_ret != ACL_SUCCESS) {                                          \
-            std::cerr << "ACL Error: " << #expr << " returned " << _ret    \
-                      << " at " << __FILE__ << ":" << __LINE__ << std::endl;\
-            goto cleanup;                                                   \
-        }                                                                   \
+#define CHECK_ACL(expr)                                                                                          \
+    do {                                                                                                         \
+        auto _ret = (expr);                                                                                      \
+        if (_ret != ACL_SUCCESS) {                                                                               \
+            std::cerr << "ACL Error: " << #expr << " returned " << _ret << " at " << __FILE__ << ":" << __LINE__ \
+                      << std::endl;                                                                              \
+            goto cleanup;                                                                                        \
+        }                                                                                                        \
     } while (0)
 
 // ============================================================================
@@ -47,8 +47,10 @@ static uint16_t floatToFp16(float val)
     uint32_t sign = (f >> 16) & 0x8000;
     int32_t exp = ((f >> 23) & 0xFF) - 127 + 15;
     uint32_t mant = (f >> 13) & 0x3FF;
-    if (exp <= 0) return static_cast<uint16_t>(sign);
-    if (exp >= 31) return static_cast<uint16_t>(sign | 0x7C00);
+    if (exp <= 0)
+        return static_cast<uint16_t>(sign);
+    if (exp >= 31)
+        return static_cast<uint16_t>(sign | 0x7C00);
     return static_cast<uint16_t>(sign | (exp << 10) | mant);
 }
 
@@ -96,10 +98,7 @@ static float bf16ToFloat(uint16_t b)
 // Golden: dx = -dy * y * y
 // ============================================================================
 
-static float goldenInvGrad(float y, float dy)
-{
-    return -dy * y * y;
-}
+static float goldenInvGrad(float y, float dy) { return -dy * y * y; }
 
 // ============================================================================
 // Precision comparison (rtol/atol style)
@@ -107,8 +106,10 @@ static float goldenInvGrad(float y, float dy)
 
 static bool compareResult(float npuOut, float expected, float atol, float rtol)
 {
-    if (std::isnan(npuOut) && std::isnan(expected)) return true;
-    if (std::isinf(npuOut) && std::isinf(expected) && npuOut == expected) return true;
+    if (std::isnan(npuOut) && std::isnan(expected))
+        return true;
+    if (std::isinf(npuOut) && std::isinf(expected) && npuOut == expected)
+        return true;
     return std::fabs(npuOut - expected) <= atol + rtol * std::fabs(expected);
 }
 
@@ -121,16 +122,10 @@ static constexpr int64_t COLS = 4;
 static constexpr int64_t ELEM_COUNT = ROWS * COLS;
 
 // y = forward output of Inv (y = 1/x)
-static const float INPUT_Y[ELEM_COUNT] = {
-    1.0f, 0.5f, 0.25f, -0.5f,
-    2.0f, -1.0f, 4.0f, -0.25f
-};
+static const float INPUT_Y[ELEM_COUNT] = {1.0f, 0.5f, 0.25f, -0.5f, 2.0f, -1.0f, 4.0f, -0.25f};
 
 // dy = upstream gradient
-static const float INPUT_DY[ELEM_COUNT] = {
-    1.0f, 1.0f, 1.0f, 1.0f,
-    0.5f, -1.0f, 0.1f, 2.0f
-};
+static const float INPUT_DY[ELEM_COUNT] = {1.0f, 1.0f, 1.0f, 1.0f, 0.5f, -1.0f, 0.1f, 2.0f};
 
 // ---------- float32 ----------
 
@@ -144,22 +139,23 @@ static int runFp32(aclrtStream stream)
     aclTensor *yT = nullptr, *dyT = nullptr, *dxT = nullptr;
     int ret = 1;
 
-    CHECK_ACL(aclrtMalloc(&devY,  dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
+    CHECK_ACL(aclrtMalloc(&devY, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
     CHECK_ACL(aclrtMalloc(&devDy, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
     CHECK_ACL(aclrtMalloc(&devDx, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
     CHECK_ACL(aclrtMemset(devDx, dataBytes, 0, dataBytes));
-    CHECK_ACL(aclrtMemcpy(devY,  dataBytes, INPUT_Y,  dataBytes, ACL_MEMCPY_HOST_TO_DEVICE));
+    CHECK_ACL(aclrtMemcpy(devY, dataBytes, INPUT_Y, dataBytes, ACL_MEMCPY_HOST_TO_DEVICE));
     CHECK_ACL(aclrtMemcpy(devDy, dataBytes, INPUT_DY, dataBytes, ACL_MEMCPY_HOST_TO_DEVICE));
 
-    yT  = aclCreateTensor(shape, 2, ACL_FLOAT, strides, 0, ACL_FORMAT_ND, shape, 2, devY);
+    yT = aclCreateTensor(shape, 2, ACL_FLOAT, strides, 0, ACL_FORMAT_ND, shape, 2, devY);
     dyT = aclCreateTensor(shape, 2, ACL_FLOAT, strides, 0, ACL_FORMAT_ND, shape, 2, devDy);
     dxT = aclCreateTensor(shape, 2, ACL_FLOAT, strides, 0, ACL_FORMAT_ND, shape, 2, devDx);
 
     {
         uint64_t wsSize = 0;
-        aclOpExecutor *exec = nullptr;
+        aclOpExecutor* exec = nullptr;
         CHECK_ACL(aclnnInvGradGetWorkspaceSize(yT, dyT, dxT, &wsSize, &exec));
-        if (wsSize > 0) CHECK_ACL(aclrtMalloc(&ws, wsSize, ACL_MEM_MALLOC_HUGE_FIRST));
+        if (wsSize > 0)
+            CHECK_ACL(aclrtMalloc(&ws, wsSize, ACL_MEM_MALLOC_HUGE_FIRST));
         CHECK_ACL(aclnnInvGrad(ws, wsSize, exec, stream));
         CHECK_ACL(aclrtSynchronizeStream(stream));
     }
@@ -170,8 +166,7 @@ static int runFp32(aclrtStream stream)
 
         std::cout << "\n[float32] InvGrad Example (shape: [2,4])" << std::endl;
         std::cout << "-------------------------------------------------------------------------" << std::endl;
-        printf("  %4s | %11s | %11s | %11s | %11s | %9s\n",
-               "Idx", "y", "dy", "NPU dx", "Expected", "Diff");
+        printf("  %4s | %11s | %11s | %11s | %11s | %9s\n", "Idx", "y", "dy", "NPU dx", "Expected", "Diff");
         std::cout << "-------------------------------------------------------------------------" << std::endl;
 
         int pass = 0;
@@ -180,24 +175,30 @@ static int runFp32(aclrtStream stream)
             float diff = std::fabs(hostDx[i] - expected);
             bool ok = compareResult(hostDx[i], expected, 1e-4f, 1e-4f);
             pass += ok ? 1 : 0;
-            printf("  [%d,%d] | %11.5f | %11.5f | %11.5f | %11.5f | %9.2e %s\n",
-                   (int)(i / COLS), (int)(i % COLS),
-                   INPUT_Y[i], INPUT_DY[i], hostDx[i], expected, diff,
-                   ok ? "PASS" : "FAIL");
+            printf(
+                "  [%d,%d] | %11.5f | %11.5f | %11.5f | %11.5f | %9.2e %s\n", (int)(i / COLS), (int)(i % COLS),
+                INPUT_Y[i], INPUT_DY[i], hostDx[i], expected, diff, ok ? "PASS" : "FAIL");
         }
-        std::cout << "Result: " << pass << "/" << ELEM_COUNT
-                  << (pass == ELEM_COUNT ? " -- ALL PASS" : " -- FAILED") << std::endl;
+        std::cout << "Result: " << pass << "/" << ELEM_COUNT << (pass == ELEM_COUNT ? " -- ALL PASS" : " -- FAILED")
+                  << std::endl;
         ret = (pass == ELEM_COUNT) ? 0 : 1;
     }
 
 cleanup:
-    if (yT)  aclDestroyTensor(yT);
-    if (dyT) aclDestroyTensor(dyT);
-    if (dxT) aclDestroyTensor(dxT);
-    if (ws)  aclrtFree(ws);
-    if (devY)  aclrtFree(devY);
-    if (devDy) aclrtFree(devDy);
-    if (devDx) aclrtFree(devDx);
+    if (yT)
+        aclDestroyTensor(yT);
+    if (dyT)
+        aclDestroyTensor(dyT);
+    if (dxT)
+        aclDestroyTensor(dxT);
+    if (ws)
+        aclrtFree(ws);
+    if (devY)
+        aclrtFree(devY);
+    if (devDy)
+        aclrtFree(devDy);
+    if (devDx)
+        aclrtFree(devDx);
     return ret;
 }
 
@@ -211,7 +212,7 @@ static int runFp16(aclrtStream stream)
 
     uint16_t hostY[ELEM_COUNT], hostDy[ELEM_COUNT];
     for (int i = 0; i < ELEM_COUNT; ++i) {
-        hostY[i]  = floatToFp16(INPUT_Y[i]);
+        hostY[i] = floatToFp16(INPUT_Y[i]);
         hostDy[i] = floatToFp16(INPUT_DY[i]);
     }
 
@@ -219,22 +220,23 @@ static int runFp16(aclrtStream stream)
     aclTensor *yT = nullptr, *dyT = nullptr, *dxT = nullptr;
     int ret = 1;
 
-    CHECK_ACL(aclrtMalloc(&devY,  dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
+    CHECK_ACL(aclrtMalloc(&devY, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
     CHECK_ACL(aclrtMalloc(&devDy, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
     CHECK_ACL(aclrtMalloc(&devDx, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
     CHECK_ACL(aclrtMemset(devDx, dataBytes, 0, dataBytes));
-    CHECK_ACL(aclrtMemcpy(devY,  dataBytes, hostY,  dataBytes, ACL_MEMCPY_HOST_TO_DEVICE));
+    CHECK_ACL(aclrtMemcpy(devY, dataBytes, hostY, dataBytes, ACL_MEMCPY_HOST_TO_DEVICE));
     CHECK_ACL(aclrtMemcpy(devDy, dataBytes, hostDy, dataBytes, ACL_MEMCPY_HOST_TO_DEVICE));
 
-    yT  = aclCreateTensor(shape, 2, ACL_FLOAT16, strides, 0, ACL_FORMAT_ND, shape, 2, devY);
+    yT = aclCreateTensor(shape, 2, ACL_FLOAT16, strides, 0, ACL_FORMAT_ND, shape, 2, devY);
     dyT = aclCreateTensor(shape, 2, ACL_FLOAT16, strides, 0, ACL_FORMAT_ND, shape, 2, devDy);
     dxT = aclCreateTensor(shape, 2, ACL_FLOAT16, strides, 0, ACL_FORMAT_ND, shape, 2, devDx);
 
     {
         uint64_t wsSize = 0;
-        aclOpExecutor *exec = nullptr;
+        aclOpExecutor* exec = nullptr;
         CHECK_ACL(aclnnInvGradGetWorkspaceSize(yT, dyT, dxT, &wsSize, &exec));
-        if (wsSize > 0) CHECK_ACL(aclrtMalloc(&ws, wsSize, ACL_MEM_MALLOC_HUGE_FIRST));
+        if (wsSize > 0)
+            CHECK_ACL(aclrtMalloc(&ws, wsSize, ACL_MEM_MALLOC_HUGE_FIRST));
         CHECK_ACL(aclnnInvGrad(ws, wsSize, exec, stream));
         CHECK_ACL(aclrtSynchronizeStream(stream));
     }
@@ -245,37 +247,42 @@ static int runFp16(aclrtStream stream)
 
         std::cout << "\n[float16] InvGrad Example (shape: [2,4])" << std::endl;
         std::cout << "-------------------------------------------------------------------------" << std::endl;
-        printf("  %4s | %11s | %11s | %11s | %11s | %9s\n",
-               "Idx", "y", "dy", "NPU dx", "Expected", "Diff");
+        printf("  %4s | %11s | %11s | %11s | %11s | %9s\n", "Idx", "y", "dy", "NPU dx", "Expected", "Diff");
         std::cout << "-------------------------------------------------------------------------" << std::endl;
 
         int pass = 0;
         for (int i = 0; i < ELEM_COUNT; ++i) {
-            float yVal  = fp16ToFloat(hostY[i]);
+            float yVal = fp16ToFloat(hostY[i]);
             float dyVal = fp16ToFloat(hostDy[i]);
-            float npuOut  = fp16ToFloat(hostDx[i]);
+            float npuOut = fp16ToFloat(hostDx[i]);
             float expected = goldenInvGrad(yVal, dyVal);
             float diff = std::fabs(npuOut - expected);
             bool ok = compareResult(npuOut, expected, 1e-3f, 1e-3f);
             pass += ok ? 1 : 0;
-            printf("  [%d,%d] | %11.5f | %11.5f | %11.5f | %11.5f | %9.2e %s\n",
-                   (int)(i / COLS), (int)(i % COLS),
-                   yVal, dyVal, npuOut, expected, diff,
-                   ok ? "PASS" : "FAIL");
+            printf(
+                "  [%d,%d] | %11.5f | %11.5f | %11.5f | %11.5f | %9.2e %s\n", (int)(i / COLS), (int)(i % COLS), yVal,
+                dyVal, npuOut, expected, diff, ok ? "PASS" : "FAIL");
         }
-        std::cout << "Result: " << pass << "/" << ELEM_COUNT
-                  << (pass == ELEM_COUNT ? " -- ALL PASS" : " -- FAILED") << std::endl;
+        std::cout << "Result: " << pass << "/" << ELEM_COUNT << (pass == ELEM_COUNT ? " -- ALL PASS" : " -- FAILED")
+                  << std::endl;
         ret = (pass == ELEM_COUNT) ? 0 : 1;
     }
 
 cleanup:
-    if (yT)  aclDestroyTensor(yT);
-    if (dyT) aclDestroyTensor(dyT);
-    if (dxT) aclDestroyTensor(dxT);
-    if (ws)  aclrtFree(ws);
-    if (devY)  aclrtFree(devY);
-    if (devDy) aclrtFree(devDy);
-    if (devDx) aclrtFree(devDx);
+    if (yT)
+        aclDestroyTensor(yT);
+    if (dyT)
+        aclDestroyTensor(dyT);
+    if (dxT)
+        aclDestroyTensor(dxT);
+    if (ws)
+        aclrtFree(ws);
+    if (devY)
+        aclrtFree(devY);
+    if (devDy)
+        aclrtFree(devDy);
+    if (devDx)
+        aclrtFree(devDx);
     return ret;
 }
 
@@ -289,7 +296,7 @@ static int runBf16(aclrtStream stream)
 
     uint16_t hostY[ELEM_COUNT], hostDy[ELEM_COUNT];
     for (int i = 0; i < ELEM_COUNT; ++i) {
-        hostY[i]  = floatToBf16(INPUT_Y[i]);
+        hostY[i] = floatToBf16(INPUT_Y[i]);
         hostDy[i] = floatToBf16(INPUT_DY[i]);
     }
 
@@ -297,22 +304,23 @@ static int runBf16(aclrtStream stream)
     aclTensor *yT = nullptr, *dyT = nullptr, *dxT = nullptr;
     int ret = 1;
 
-    CHECK_ACL(aclrtMalloc(&devY,  dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
+    CHECK_ACL(aclrtMalloc(&devY, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
     CHECK_ACL(aclrtMalloc(&devDy, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
     CHECK_ACL(aclrtMalloc(&devDx, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
     CHECK_ACL(aclrtMemset(devDx, dataBytes, 0, dataBytes));
-    CHECK_ACL(aclrtMemcpy(devY,  dataBytes, hostY,  dataBytes, ACL_MEMCPY_HOST_TO_DEVICE));
+    CHECK_ACL(aclrtMemcpy(devY, dataBytes, hostY, dataBytes, ACL_MEMCPY_HOST_TO_DEVICE));
     CHECK_ACL(aclrtMemcpy(devDy, dataBytes, hostDy, dataBytes, ACL_MEMCPY_HOST_TO_DEVICE));
 
-    yT  = aclCreateTensor(shape, 2, ACL_BF16, strides, 0, ACL_FORMAT_ND, shape, 2, devY);
+    yT = aclCreateTensor(shape, 2, ACL_BF16, strides, 0, ACL_FORMAT_ND, shape, 2, devY);
     dyT = aclCreateTensor(shape, 2, ACL_BF16, strides, 0, ACL_FORMAT_ND, shape, 2, devDy);
     dxT = aclCreateTensor(shape, 2, ACL_BF16, strides, 0, ACL_FORMAT_ND, shape, 2, devDx);
 
     {
         uint64_t wsSize = 0;
-        aclOpExecutor *exec = nullptr;
+        aclOpExecutor* exec = nullptr;
         CHECK_ACL(aclnnInvGradGetWorkspaceSize(yT, dyT, dxT, &wsSize, &exec));
-        if (wsSize > 0) CHECK_ACL(aclrtMalloc(&ws, wsSize, ACL_MEM_MALLOC_HUGE_FIRST));
+        if (wsSize > 0)
+            CHECK_ACL(aclrtMalloc(&ws, wsSize, ACL_MEM_MALLOC_HUGE_FIRST));
         CHECK_ACL(aclnnInvGrad(ws, wsSize, exec, stream));
         CHECK_ACL(aclrtSynchronizeStream(stream));
     }
@@ -323,37 +331,42 @@ static int runBf16(aclrtStream stream)
 
         std::cout << "\n[bfloat16] InvGrad Example (shape: [2,4])" << std::endl;
         std::cout << "-------------------------------------------------------------------------" << std::endl;
-        printf("  %4s | %11s | %11s | %11s | %11s | %9s\n",
-               "Idx", "y", "dy", "NPU dx", "Expected", "Diff");
+        printf("  %4s | %11s | %11s | %11s | %11s | %9s\n", "Idx", "y", "dy", "NPU dx", "Expected", "Diff");
         std::cout << "-------------------------------------------------------------------------" << std::endl;
 
         int pass = 0;
         for (int i = 0; i < ELEM_COUNT; ++i) {
-            float yVal  = bf16ToFloat(hostY[i]);
+            float yVal = bf16ToFloat(hostY[i]);
             float dyVal = bf16ToFloat(hostDy[i]);
-            float npuOut  = bf16ToFloat(hostDx[i]);
+            float npuOut = bf16ToFloat(hostDx[i]);
             float expected = goldenInvGrad(yVal, dyVal);
             float diff = std::fabs(npuOut - expected);
             bool ok = compareResult(npuOut, expected, 1e-3f, 1e-3f);
             pass += ok ? 1 : 0;
-            printf("  [%d,%d] | %11.5f | %11.5f | %11.5f | %11.5f | %9.2e %s\n",
-                   (int)(i / COLS), (int)(i % COLS),
-                   yVal, dyVal, npuOut, expected, diff,
-                   ok ? "PASS" : "FAIL");
+            printf(
+                "  [%d,%d] | %11.5f | %11.5f | %11.5f | %11.5f | %9.2e %s\n", (int)(i / COLS), (int)(i % COLS), yVal,
+                dyVal, npuOut, expected, diff, ok ? "PASS" : "FAIL");
         }
-        std::cout << "Result: " << pass << "/" << ELEM_COUNT
-                  << (pass == ELEM_COUNT ? " -- ALL PASS" : " -- FAILED") << std::endl;
+        std::cout << "Result: " << pass << "/" << ELEM_COUNT << (pass == ELEM_COUNT ? " -- ALL PASS" : " -- FAILED")
+                  << std::endl;
         ret = (pass == ELEM_COUNT) ? 0 : 1;
     }
 
 cleanup:
-    if (yT)  aclDestroyTensor(yT);
-    if (dyT) aclDestroyTensor(dyT);
-    if (dxT) aclDestroyTensor(dxT);
-    if (ws)  aclrtFree(ws);
-    if (devY)  aclrtFree(devY);
-    if (devDy) aclrtFree(devDy);
-    if (devDx) aclrtFree(devDx);
+    if (yT)
+        aclDestroyTensor(yT);
+    if (dyT)
+        aclDestroyTensor(dyT);
+    if (dxT)
+        aclDestroyTensor(dxT);
+    if (ws)
+        aclrtFree(ws);
+    if (devY)
+        aclrtFree(devY);
+    if (devDy)
+        aclrtFree(devDy);
+    if (devDx)
+        aclrtFree(devDx);
     return ret;
 }
 
@@ -369,19 +382,20 @@ static int runEmptyTensor(aclrtStream stream)
     aclTensor *yT = nullptr, *dyT = nullptr, *dxT = nullptr;
     int ret = 1;
 
-    CHECK_ACL(aclrtMalloc(&devY,  1, ACL_MEM_MALLOC_HUGE_FIRST));
+    CHECK_ACL(aclrtMalloc(&devY, 1, ACL_MEM_MALLOC_HUGE_FIRST));
     CHECK_ACL(aclrtMalloc(&devDy, 1, ACL_MEM_MALLOC_HUGE_FIRST));
     CHECK_ACL(aclrtMalloc(&devDx, 1, ACL_MEM_MALLOC_HUGE_FIRST));
 
-    yT  = aclCreateTensor(shape, 1, ACL_FLOAT, strides, 0, ACL_FORMAT_ND, shape, 1, devY);
+    yT = aclCreateTensor(shape, 1, ACL_FLOAT, strides, 0, ACL_FORMAT_ND, shape, 1, devY);
     dyT = aclCreateTensor(shape, 1, ACL_FLOAT, strides, 0, ACL_FORMAT_ND, shape, 1, devDy);
     dxT = aclCreateTensor(shape, 1, ACL_FLOAT, strides, 0, ACL_FORMAT_ND, shape, 1, devDx);
 
     {
         uint64_t wsSize = 0;
-        aclOpExecutor *exec = nullptr;
+        aclOpExecutor* exec = nullptr;
         CHECK_ACL(aclnnInvGradGetWorkspaceSize(yT, dyT, dxT, &wsSize, &exec));
-        if (wsSize > 0) CHECK_ACL(aclrtMalloc(&ws, wsSize, ACL_MEM_MALLOC_HUGE_FIRST));
+        if (wsSize > 0)
+            CHECK_ACL(aclrtMalloc(&ws, wsSize, ACL_MEM_MALLOC_HUGE_FIRST));
         CHECK_ACL(aclnnInvGrad(ws, wsSize, exec, stream));
         CHECK_ACL(aclrtSynchronizeStream(stream));
     }
@@ -390,13 +404,20 @@ static int runEmptyTensor(aclrtStream stream)
     ret = 0;
 
 cleanup:
-    if (yT)  aclDestroyTensor(yT);
-    if (dyT) aclDestroyTensor(dyT);
-    if (dxT) aclDestroyTensor(dxT);
-    if (ws)  aclrtFree(ws);
-    if (devY)  aclrtFree(devY);
-    if (devDy) aclrtFree(devDy);
-    if (devDx) aclrtFree(devDx);
+    if (yT)
+        aclDestroyTensor(yT);
+    if (dyT)
+        aclDestroyTensor(dyT);
+    if (dxT)
+        aclDestroyTensor(dxT);
+    if (ws)
+        aclrtFree(ws);
+    if (devY)
+        aclrtFree(devY);
+    if (devDy)
+        aclrtFree(devDy);
+    if (devDx)
+        aclrtFree(devDx);
     return ret;
 }
 
@@ -425,22 +446,23 @@ static int runNonContiguous(aclrtStream stream)
     aclTensor *yT = nullptr, *dyT = nullptr, *dxT = nullptr;
     int ret = 1;
 
-    CHECK_ACL(aclrtMalloc(&devY,  inStorageBytes, ACL_MEM_MALLOC_HUGE_FIRST));
+    CHECK_ACL(aclrtMalloc(&devY, inStorageBytes, ACL_MEM_MALLOC_HUGE_FIRST));
     CHECK_ACL(aclrtMalloc(&devDy, inStorageBytes, ACL_MEM_MALLOC_HUGE_FIRST));
     CHECK_ACL(aclrtMalloc(&devDx, outBytes, ACL_MEM_MALLOC_HUGE_FIRST));
     CHECK_ACL(aclrtMemset(devDx, outBytes, 0, outBytes));
-    CHECK_ACL(aclrtMemcpy(devY,  inStorageBytes, hostY,  inStorageBytes, ACL_MEMCPY_HOST_TO_DEVICE));
+    CHECK_ACL(aclrtMemcpy(devY, inStorageBytes, hostY, inStorageBytes, ACL_MEMCPY_HOST_TO_DEVICE));
     CHECK_ACL(aclrtMemcpy(devDy, inStorageBytes, hostDy, inStorageBytes, ACL_MEMCPY_HOST_TO_DEVICE));
 
-    yT  = aclCreateTensor(shape, 2, ACL_FLOAT, inStrides, 0, ACL_FORMAT_ND, inStorageShape, 2, devY);
+    yT = aclCreateTensor(shape, 2, ACL_FLOAT, inStrides, 0, ACL_FORMAT_ND, inStorageShape, 2, devY);
     dyT = aclCreateTensor(shape, 2, ACL_FLOAT, inStrides, 0, ACL_FORMAT_ND, inStorageShape, 2, devDy);
     dxT = aclCreateTensor(shape, 2, ACL_FLOAT, outStrides, 0, ACL_FORMAT_ND, shape, 2, devDx);
 
     {
         uint64_t wsSize = 0;
-        aclOpExecutor *exec = nullptr;
+        aclOpExecutor* exec = nullptr;
         CHECK_ACL(aclnnInvGradGetWorkspaceSize(yT, dyT, dxT, &wsSize, &exec));
-        if (wsSize > 0) CHECK_ACL(aclrtMalloc(&ws, wsSize, ACL_MEM_MALLOC_HUGE_FIRST));
+        if (wsSize > 0)
+            CHECK_ACL(aclrtMalloc(&ws, wsSize, ACL_MEM_MALLOC_HUGE_FIRST));
         CHECK_ACL(aclnnInvGrad(ws, wsSize, exec, stream));
         CHECK_ACL(aclrtSynchronizeStream(stream));
     }
@@ -451,8 +473,7 @@ static int runNonContiguous(aclrtStream stream)
 
         std::cout << "\n[non-contiguous] InvGrad Example (shape: [2,2], input strides: [4,1])" << std::endl;
         std::cout << "-------------------------------------------------------------------------" << std::endl;
-        printf("  %4s | %11s | %11s | %11s | %11s | %9s\n",
-               "Idx", "y", "dy", "NPU dx", "Expected", "Diff");
+        printf("  %4s | %11s | %11s | %11s | %11s | %9s\n", "Idx", "y", "dy", "NPU dx", "Expected", "Diff");
         std::cout << "-------------------------------------------------------------------------" << std::endl;
 
         int pass = 0;
@@ -467,23 +488,30 @@ static int runNonContiguous(aclrtStream stream)
             float diff = std::fabs(npuOut - expected);
             bool ok = compareResult(npuOut, expected, 1e-4f, 1e-4f);
             pass += ok ? 1 : 0;
-            printf("  [%d,%d] | %11.5f | %11.5f | %11.5f | %11.5f | %9.2e %s\n",
-                   r, c, yVal, dyVal, npuOut, expected, diff,
-                   ok ? "PASS" : "FAIL");
+            printf(
+                "  [%d,%d] | %11.5f | %11.5f | %11.5f | %11.5f | %9.2e %s\n", r, c, yVal, dyVal, npuOut, expected, diff,
+                ok ? "PASS" : "FAIL");
         }
-        std::cout << "Result: " << pass << "/" << elemCount
-                  << (pass == elemCount ? " -- ALL PASS" : " -- FAILED") << std::endl;
+        std::cout << "Result: " << pass << "/" << elemCount << (pass == elemCount ? " -- ALL PASS" : " -- FAILED")
+                  << std::endl;
         ret = (pass == elemCount) ? 0 : 1;
     }
 
 cleanup:
-    if (yT)  aclDestroyTensor(yT);
-    if (dyT) aclDestroyTensor(dyT);
-    if (dxT) aclDestroyTensor(dxT);
-    if (ws)  aclrtFree(ws);
-    if (devY)  aclrtFree(devY);
-    if (devDy) aclrtFree(devDy);
-    if (devDx) aclrtFree(devDx);
+    if (yT)
+        aclDestroyTensor(yT);
+    if (dyT)
+        aclDestroyTensor(dyT);
+    if (dxT)
+        aclDestroyTensor(dxT);
+    if (ws)
+        aclrtFree(ws);
+    if (devY)
+        aclrtFree(devY);
+    if (devDy)
+        aclrtFree(devDy);
+    if (devDx)
+        aclrtFree(devDx);
     return ret;
 }
 

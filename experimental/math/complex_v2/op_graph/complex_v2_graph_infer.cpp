@@ -46,4 +46,3 @@ static ge::graphStatus InferDataTypeComplexV2(gert::InferDataTypeContext* contex
 IMPL_OP(ComplexV2).InferDataType(InferDataTypeComplexV2);
 
 }; // namespace ops
-

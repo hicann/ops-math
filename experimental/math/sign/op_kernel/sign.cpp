@@ -11,12 +11,11 @@
 /*!
  * \file sign.cpp
  * \brief
-*/
+ */
 
 #include "sign.h"
 
-enum class SignTilingKey : uint32_t
-{
+enum class SignTilingKey : uint32_t {
     TILING_KEY_EXAMPLE_FLOAT = 0,
     TILING_KEY_EXAMPLE_HALF = 1,
     TILING_KEY_EXAMPLE_BF16 = 2,
@@ -25,9 +24,12 @@ enum class SignTilingKey : uint32_t
 template <uint32_t schMode>
 __global__ __aicore__ void sign(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
-     REGISTER_TILING_DEFAULT(SignTilingData);
-     GET_TILING_DATA_WITH_STRUCT(SignTilingData, tilingData, tiling);
-     MySign::KernelSign<DTYPE_X> op; 
-     op.Init(x, y,tilingData.smallCoreDataNum,tilingData.bigCoreDataNum, tilingData.finalBigTileNum,tilingData.finalSmallTileNum, tilingData.tileDataNum,tilingData.smallTailDataNum, tilingData.bigTailDataNum,tilingData.tailBlockNum);      // 算子kernel实例初始化
-     op.Process();                       
+    REGISTER_TILING_DEFAULT(SignTilingData);
+    GET_TILING_DATA_WITH_STRUCT(SignTilingData, tilingData, tiling);
+    MySign::KernelSign<DTYPE_X> op;
+    op.Init(
+        x, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.finalBigTileNum,
+        tilingData.finalSmallTileNum, tilingData.tileDataNum, tilingData.smallTailDataNum, tilingData.bigTailDataNum,
+        tilingData.tailBlockNum); // 算子kernel实例初始化
+    op.Process();
 }

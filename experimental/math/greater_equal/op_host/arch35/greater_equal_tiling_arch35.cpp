@@ -25,15 +25,9 @@ using namespace Ops::Base;
 
 constexpr static uint64_t GREATER_EQUAL_COMMON_TILING_PRIORITY = 0;
 
-ge::graphStatus GreaterEqualTiling::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus GreaterEqualTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
-bool GreaterEqualTiling::IsCapable()
-{
-    return true;
-}
+bool GreaterEqualTiling::IsCapable() { return true; }
 
 ge::graphStatus GreaterEqualTiling::DoOpTiling()
 {
@@ -103,30 +97,15 @@ ge::graphStatus GreaterEqualTiling::DoOpTiling()
     return ret;
 }
 
-ge::graphStatus GreaterEqualTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus GreaterEqualTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t GreaterEqualTiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t GreaterEqualTiling::GetTilingKey() const { return tilingKey; }
 
-ge::graphStatus GreaterEqualTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus GreaterEqualTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus GreaterEqualTiling::PostTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus GreaterEqualTiling::PostTiling() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus GreaterEqualTiling::GetPlatformInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus GreaterEqualTiling::GetPlatformInfo() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus TilingForGreaterEqual(gert::TilingContext* context)
 {

@@ -19,11 +19,10 @@
 #include "tiling/platform/platform_ascendc.h"
 #include "../op_kernel/arange_tiling_data.h"
 #include "../op_kernel/arange_tiling_key.h"
-#define DIVIDE_AND_ALIGN(size, split, align) \
-                                    ((((size) / (split)) + ((align)-1)) & ~((align)-1))
+#define DIVIDE_AND_ALIGN(size, split, align) ((((size) / (split)) + ((align) - 1)) & ~((align) - 1))
 
 namespace optiling {
-    
+
 const uint32_t BLOCK_SIZE = 32;
 const uint32_t DTYPE_SIZE2 = 2;
 const uint32_t DTYPE_SIZE4 = 4;
@@ -55,7 +54,7 @@ static ge::graphStatus ArangeTilingFunc(gert::TilingContext* context)
             dtype_size = DTYPE_SIZE8;
             break;
         default:
-            dtype_size = DTYPE_SIZE2; 
+            dtype_size = DTYPE_SIZE2;
             break;
     }
     context->SetTilingKey(tilingkey);
@@ -65,10 +64,11 @@ static ge::graphStatus ArangeTilingFunc(gert::TilingContext* context)
     /*单次api计算大小：将ub 10等份后并按BLOCK_SIZE对齐*/
     uint64_t ub_unit_size = DIVIDE_AND_ALIGN(ub_size, 10, BLOCK_SIZE);
     uint32_t totalNum = totalLength;
-    uint32_t unitNum  = ub_unit_size / dtype_size;
+    uint32_t unitNum = ub_unit_size / dtype_size;
     uint32_t unitLoops = totalNum / unitNum;
     uint32_t tailNum = totalNum - unitNum * unitLoops;
-    if( tailNum > 0 ) unitLoops += 1;
+    if (tailNum > 0)
+        unitLoops += 1;
 
     tiling->dtypeSize = dtype_size;
     tiling->totalNum = totalNum;
@@ -77,13 +77,13 @@ static ge::graphStatus ArangeTilingFunc(gert::TilingContext* context)
     tiling->tailNum = tailNum;
 
     context->SetBlockDim(1);
-    size_t *currentWorkspace = context->GetWorkspaceSizes(1);
+    size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     currentWorkspace[0] = 0;
     return ge::GRAPH_SUCCESS;
 }
 
 static ge::graphStatus TilingParseForArange([[maybe_unused]] gert::TilingParseContext* context)
-{   
+{
     return ge::GRAPH_SUCCESS;
 }
 

@@ -36,22 +36,15 @@ extern "C" {
  * @param executor       [out] Created operator executor.
  */
 ACLNN_API aclnnStatus aclnnApproximateEqualGetWorkspaceSize(
-    const aclTensor* x1,
-    const aclTensor* x2,
-    float            tolerance,
-    aclTensor*       y,
-    uint64_t*        workspaceSize,
-    aclOpExecutor**  executor);
+    const aclTensor* x1, const aclTensor* x2, float tolerance, aclTensor* y, uint64_t* workspaceSize,
+    aclOpExecutor** executor);
 
 /** @brief Second-stage launch of ApproximateEqual. */
-ACLNN_API aclnnStatus aclnnApproximateEqual(
-    void*          workspace,
-    uint64_t       workspaceSize,
-    aclOpExecutor* executor,
-    aclrtStream    stream);
+ACLNN_API aclnnStatus
+aclnnApproximateEqual(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // ACLNN_APPROXIMATE_EQUAL_H_
+#endif // ACLNN_APPROXIMATE_EQUAL_H_

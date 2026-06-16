@@ -9,11 +9,11 @@
  */
 
 /**
-* 我们正常的版权申明，下面是我们的备注
-*
-* NOTE: Portions of this code were AI-generated and have been
-* technically reviewed for functional accuracy and security
-*/
+ * 我们正常的版权申明，下面是我们的备注
+ *
+ * NOTE: Portions of this code were AI-generated and have been
+ * technically reviewed for functional accuracy and security
+ */
 
 /*!
  * \file reduce_nansum_tiling_key.h
@@ -29,27 +29,19 @@
 
 #include "ascendc/host_api/tiling/template_argument.h"
 
-ASCENDC_TPL_ARGS_DECL(ReduceNansum,
-    ASCENDC_TPL_DATATYPE_DECL(D_T_X, C_DT_FLOAT, C_DT_FLOAT16, C_DT_BF16, ASCENDC_TPL_INPUT(0)),
-    ASCENDC_TPL_UINT_DECL(SCH_MODE, 8, ASCENDC_TPL_UI_LIST, 0, 1, 2, 3)
-);
+ASCENDC_TPL_ARGS_DECL(
+    ReduceNansum, ASCENDC_TPL_DATATYPE_DECL(D_T_X, C_DT_FLOAT, C_DT_FLOAT16, C_DT_BF16, ASCENDC_TPL_INPUT(0)),
+    ASCENDC_TPL_UINT_DECL(SCH_MODE, 8, ASCENDC_TPL_UI_LIST, 0, 1, 2, 3));
 
 ASCENDC_TPL_SEL(
     // float + 4 种调度模式
     ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT),
-        ASCENDC_TPL_UINT_SEL(SCH_MODE, ASCENDC_TPL_UI_LIST, 0, 1, 2, 3)
-    ),
+        ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT), ASCENDC_TPL_UINT_SEL(SCH_MODE, ASCENDC_TPL_UI_LIST, 0, 1, 2, 3)),
     // float16 + 4 种调度模式
     ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT16),
-        ASCENDC_TPL_UINT_SEL(SCH_MODE, ASCENDC_TPL_UI_LIST, 0, 1, 2, 3)
-    ),
+        ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT16), ASCENDC_TPL_UINT_SEL(SCH_MODE, ASCENDC_TPL_UI_LIST, 0, 1, 2, 3)),
     // bfloat16 + 4 种调度模式
     ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_BF16),
-        ASCENDC_TPL_UINT_SEL(SCH_MODE, ASCENDC_TPL_UI_LIST, 0, 1, 2, 3)
-    ),
-);
+        ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_BF16), ASCENDC_TPL_UINT_SEL(SCH_MODE, ASCENDC_TPL_UI_LIST, 0, 1, 2, 3)), );
 
 #endif // __REDUCE_NANSUM_TILING_KEY_H__

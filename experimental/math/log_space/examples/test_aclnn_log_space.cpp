@@ -38,18 +38,19 @@
 #include "acl/acl.h"
 #include "aclnn_log_space.h"
 
-#define CHECK_RET(cond, msg, ...)                                 \
-    do {                                                          \
-        if (!(cond)) {                                            \
-            fprintf(stderr, "[ERROR] " msg "\n", ##__VA_ARGS__);  \
-            return 1;                                             \
-        }                                                         \
+#define CHECK_RET(cond, msg, ...)                                \
+    do {                                                         \
+        if (!(cond)) {                                           \
+            fprintf(stderr, "[ERROR] " msg "\n", ##__VA_ARGS__); \
+            return 1;                                            \
+        }                                                        \
     } while (0)
 
 // ---------------- fp16 / bf16 转换（仅用于打印结果） ----------------
-static float Fp16ToFloat(uint16_t h) {
+static float Fp16ToFloat(uint16_t h)
+{
     uint32_t sign = (h >> 15) & 0x1;
-    uint32_t exp  = (h >> 10) & 0x1F;
+    uint32_t exp = (h >> 10) & 0x1F;
     uint32_t mant = h & 0x3FF;
     uint32_t f;
     if (exp == 0) {
@@ -57,7 +58,10 @@ static float Fp16ToFloat(uint16_t h) {
             f = sign << 31;
         } else {
             int e = -1;
-            while ((mant & 0x400) == 0) { mant <<= 1; e -= 1; }
+            while ((mant & 0x400) == 0) {
+                mant <<= 1;
+                e -= 1;
+            }
             mant &= 0x3FF;
             uint32_t fexp = static_cast<uint32_t>(127 + e);
             f = (sign << 31) | (fexp << 23) | (mant << 13);
@@ -73,7 +77,8 @@ static float Fp16ToFloat(uint16_t h) {
     return out;
 }
 
-static float Bf16ToFloat(uint16_t b) {
+static float Bf16ToFloat(uint16_t b)
+{
     uint32_t bits = static_cast<uint32_t>(b) << 16;
     float out;
     std::memcpy(&out, &bits, sizeof(out));
@@ -82,50 +87,51 @@ static float Bf16ToFloat(uint16_t b) {
 
 // ---------------- 单次调用封装 ----------------
 struct ExampleCase {
-    std::string  name;
-    aclDataType  dtype;
-    double       start;
-    double       end;
-    int64_t      steps;
-    double       base;
+    std::string name;
+    aclDataType dtype;
+    double start;
+    double end;
+    int64_t steps;
+    double base;
 };
 
-static int RunOne(const ExampleCase& c, aclrtStream stream) {
+static int RunOne(const ExampleCase& c, aclrtStream stream)
+{
     printf("\n========================================\n");
-    printf("[%s] dtype=%d start=%g end=%g steps=%lld base=%g\n",
-           c.name.c_str(), (int)c.dtype, c.start, c.end, (long long)c.steps, c.base);
+    printf(
+        "[%s] dtype=%d start=%g end=%g steps=%lld base=%g\n", c.name.c_str(), (int)c.dtype, c.start, c.end,
+        (long long)c.steps, c.base);
     printf("========================================\n");
 
     // 1) 构造 start / end aclScalar (ACL_FLOAT)
     float start_f = static_cast<float>(c.start);
-    float end_f   = static_cast<float>(c.end);
+    float end_f = static_cast<float>(c.end);
     aclScalar* startScalar = aclCreateScalar(&start_f, ACL_FLOAT);
-    aclScalar* endScalar   = aclCreateScalar(&end_f,   ACL_FLOAT);
+    aclScalar* endScalar = aclCreateScalar(&end_f, ACL_FLOAT);
     CHECK_RET(startScalar && endScalar, "aclCreateScalar failed");
 
     // 2) 分配 result Device 内存 + 创建 aclTensor
     size_t elem_size = (c.dtype == ACL_FLOAT) ? sizeof(float) : sizeof(uint16_t);
-    int64_t shape[1]   = { c.steps };
-    int64_t strides[1] = { 1 };
+    int64_t shape[1] = {c.steps};
+    int64_t strides[1] = {1};
     size_t buf_size = static_cast<size_t>(c.steps) * elem_size;
-    if (buf_size == 0) buf_size = elem_size;
+    if (buf_size == 0)
+        buf_size = elem_size;
 
     void* result_dev = nullptr;
     aclError ret = aclrtMalloc(&result_dev, buf_size, ACL_MEM_MALLOC_HUGE_FIRST);
     CHECK_RET(ret == ACL_SUCCESS, "aclrtMalloc result failed: %d", ret);
     aclrtMemset(result_dev, buf_size, 0, buf_size);
 
-    aclTensor* resultTensor = aclCreateTensor(
-        shape, 1, c.dtype, strides, 0,
-        aclFormat::ACL_FORMAT_ND, shape, 1, result_dev);
+    aclTensor* resultTensor =
+        aclCreateTensor(shape, 1, c.dtype, strides, 0, aclFormat::ACL_FORMAT_ND, shape, 1, result_dev);
     CHECK_RET(resultTensor != nullptr, "aclCreateTensor failed");
 
     // 3) 调用第一段接口 GetWorkspaceSize
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor = nullptr;
-    ret = aclnnLogSpaceGetWorkspaceSize(
-        startScalar, endScalar, c.steps, c.base, resultTensor,
-        &workspaceSize, &executor);
+    ret =
+        aclnnLogSpaceGetWorkspaceSize(startScalar, endScalar, c.steps, c.base, resultTensor, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, "aclnnLogSpaceGetWorkspaceSize failed: %d", ret);
     printf("  workspaceSize = %llu\n", (unsigned long long)workspaceSize);
 
@@ -145,8 +151,7 @@ static int RunOne(const ExampleCase& c, aclrtStream stream) {
 
     // 6) D2H 拷贝 + 打印
     std::vector<uint8_t> host_buf(buf_size);
-    ret = aclrtMemcpy(host_buf.data(), buf_size, result_dev, buf_size,
-                      ACL_MEMCPY_DEVICE_TO_HOST);
+    ret = aclrtMemcpy(host_buf.data(), buf_size, result_dev, buf_size, ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, "aclrtMemcpy D2H failed: %d", ret);
 
     printf("  result = [");
@@ -164,7 +169,8 @@ static int RunOne(const ExampleCase& c, aclrtStream stream) {
     printf("]\n");
 
     // 7) 资源释放
-    if (workspace) aclrtFree(workspace);
+    if (workspace)
+        aclrtFree(workspace);
     aclDestroyTensor(resultTensor);
     aclrtFree(result_dev);
     aclDestroyScalar(startScalar);
@@ -172,7 +178,8 @@ static int RunOne(const ExampleCase& c, aclrtStream stream) {
     return 0;
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+int main(int /*argc*/, char** /*argv*/)
+{
     printf("LogSpace aclnn invoke example\n");
 
     int32_t deviceId = 0;
@@ -185,14 +192,15 @@ int main(int /*argc*/, char** /*argv*/) {
     CHECK_RET(ret == ACL_SUCCESS, "aclrtCreateStream failed: %d", ret);
 
     std::vector<ExampleCase> cases = {
-        {"Case1_FLOAT",    ACL_FLOAT,    0.0,  2.0, 5, 10.0},
-        {"Case2_FLOAT16",  ACL_FLOAT16, -1.0,  1.0, 5,  2.0},
-        {"Case3_BFLOAT16", ACL_BF16,     0.0,  3.0, 4, 10.0},
+        {"Case1_FLOAT", ACL_FLOAT, 0.0, 2.0, 5, 10.0},
+        {"Case2_FLOAT16", ACL_FLOAT16, -1.0, 1.0, 5, 2.0},
+        {"Case3_BFLOAT16", ACL_BF16, 0.0, 3.0, 4, 10.0},
     };
 
     int failed = 0;
     for (const auto& c : cases) {
-        if (RunOne(c, stream) != 0) failed++;
+        if (RunOne(c, stream) != 0)
+            failed++;
     }
 
     aclrtDestroyStream(stream);

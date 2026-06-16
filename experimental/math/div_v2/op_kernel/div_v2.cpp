@@ -21,7 +21,7 @@
 /*!
  * \file div_v2.cpp
  * \brief
-*/
+ */
 
 #include "div_v2.h"
 
@@ -30,7 +30,7 @@ __global__ __aicore__ void div_v2(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR works
 {
     REGISTER_TILING_DEFAULT(DivV2TilingData);
     GET_TILING_DATA_WITH_STRUCT(DivV2TilingData, tilingData, tiling);
-    NsDivV2::DivV2<DTYPE_X1> op;// 算子kernel实例获取
-    op.Init(x, y, z, &tilingData);// 算子kernel实例初始化
-    op.Process();// 算子kernel实例执行
+    NsDivV2::DivV2<DTYPE_X1> op;   // 算子kernel实例获取
+    op.Init(x, y, z, &tilingData); // 算子kernel实例初始化
+    op.Process();                  // 算子kernel实例执行
 }

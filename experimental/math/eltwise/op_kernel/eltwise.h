@@ -56,31 +56,30 @@ namespace NsEltwise {
 
 constexpr uint32_t MAX_INPUT_NUM = 32;
 
-using AscendC::TPipe;
-using AscendC::TQue;
-using AscendC::TBuf;
-using AscendC::QuePosition;
-using AscendC::GlobalTensor;
-using AscendC::LocalTensor;
-using AscendC::DataCopyParams;
+using AscendC::Add;
+using AscendC::Cast;
 using AscendC::DataCopyPad;
 using AscendC::DataCopyPadParams;
-using AscendC::RoundMode;
+using AscendC::DataCopyParams;
+using AscendC::Duplicate;
 using AscendC::GetBlockIdx;
-using AscendC::Cast;
+using AscendC::GlobalTensor;
+using AscendC::LocalTensor;
+using AscendC::Max;
 using AscendC::Mul;
 using AscendC::Muls;
-using AscendC::Add;
-using AscendC::Max;
-using AscendC::Duplicate;
+using AscendC::QuePosition;
+using AscendC::RoundMode;
+using AscendC::TBuf;
+using AscendC::TPipe;
+using AscendC::TQue;
 
 template <typename T, int MODE>
 class Eltwise {
 public:
     __aicore__ inline Eltwise() {}
 
-    __aicore__ inline void Init(GM_ADDR inputs, GM_ADDR output,
-                                const EltwiseTilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR inputs, GM_ADDR output, const EltwiseTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -91,31 +90,21 @@ private:
     __aicore__ inline void ComputeTile(int64_t gmOffset, int64_t currentNum);
 
     // Mode-specific computation helpers (all operate in fp32)
-    __aicore__ inline void ComputeProductInit(LocalTensor<float>& acc,
-                                              LocalTensor<float>& src,
-                                              int64_t alignedNum);
-    __aicore__ inline void ComputeProductAccum(LocalTensor<float>& acc,
-                                               LocalTensor<float>& src,
-                                               int64_t alignedNum);
-    __aicore__ inline void ComputeSumInit(LocalTensor<float>& acc,
-                                          LocalTensor<float>& src,
-                                          float coeffVal, int64_t alignedNum);
-    __aicore__ inline void ComputeSumAccum(LocalTensor<float>& acc,
-                                           LocalTensor<float>& src,
-                                           float coeffVal, int64_t alignedNum);
-    __aicore__ inline void ComputeMaxInit(LocalTensor<float>& acc,
-                                          LocalTensor<float>& src,
-                                          int64_t alignedNum);
-    __aicore__ inline void ComputeMaxAccum(LocalTensor<float>& acc,
-                                           LocalTensor<float>& src,
-                                           int64_t alignedNum);
+    __aicore__ inline void ComputeProductInit(LocalTensor<float>& acc, LocalTensor<float>& src, int64_t alignedNum);
+    __aicore__ inline void ComputeProductAccum(LocalTensor<float>& acc, LocalTensor<float>& src, int64_t alignedNum);
+    __aicore__ inline void ComputeSumInit(
+        LocalTensor<float>& acc, LocalTensor<float>& src, float coeffVal, int64_t alignedNum);
+    __aicore__ inline void ComputeSumAccum(
+        LocalTensor<float>& acc, LocalTensor<float>& src, float coeffVal, int64_t alignedNum);
+    __aicore__ inline void ComputeMaxInit(LocalTensor<float>& acc, LocalTensor<float>& src, int64_t alignedNum);
+    __aicore__ inline void ComputeMaxAccum(LocalTensor<float>& acc, LocalTensor<float>& src, int64_t alignedNum);
 
 private:
     TPipe pipe_;
     TQue<QuePosition::VECIN, 1> inputQueue_;
     TQue<QuePosition::VECOUT, 1> outputQueue_;
-    TBuf<QuePosition::VECCALC> castBuf_;    // cast buffer (fp32) for non-fp32 dtypes
-    TBuf<QuePosition::VECCALC> accBuf_;     // accumulator buffer (fp32)
+    TBuf<QuePosition::VECCALC> castBuf_; // cast buffer (fp32) for non-fp32 dtypes
+    TBuf<QuePosition::VECCALC> accBuf_;  // accumulator buffer (fp32)
 
     GlobalTensor<T> inputGM_[MAX_INPUT_NUM];
     GlobalTensor<T> outputGM_;
@@ -131,8 +120,7 @@ private:
 // Init
 // =============================================================================
 template <typename T, int MODE>
-__aicore__ inline void Eltwise<T, MODE>::Init(GM_ADDR inputs, GM_ADDR output,
-                                               const EltwiseTilingData* tilingData)
+__aicore__ inline void Eltwise<T, MODE>::Init(GM_ADDR inputs, GM_ADDR output, const EltwiseTilingData* tilingData)
 {
     ubFactor_ = tilingData->ubFactor;
     inputNum_ = tilingData->inputNum;
@@ -182,8 +170,7 @@ __aicore__ inline void Eltwise<T, MODE>::Init(GM_ADDR inputs, GM_ADDR output,
 // CopyIn: GM -> UB (inputQueue)
 // =============================================================================
 template <typename T, int MODE>
-__aicore__ inline void Eltwise<T, MODE>::CopyIn(uint32_t inputIdx, int64_t gmOffset,
-                                                 int64_t currentNum)
+__aicore__ inline void Eltwise<T, MODE>::CopyIn(uint32_t inputIdx, int64_t gmOffset, int64_t currentNum)
 {
     LocalTensor<T> xLocal = inputQueue_.template AllocTensor<T>();
     DataCopyParams copyParams;
@@ -220,7 +207,7 @@ template <typename T, int MODE>
 __aicore__ inline void Eltwise<T, MODE>::ComputeProductInit(
     LocalTensor<float>& acc, LocalTensor<float>& src, int64_t alignedNum)
 {
-// NOTE: Duplicate(0)+Add used as cross-queue tensor copy workaround
+    // NOTE: Duplicate(0)+Add used as cross-queue tensor copy workaround
     Duplicate(acc, 0.0f, static_cast<int32_t>(alignedNum));
     Add(acc, acc, src, static_cast<int32_t>(alignedNum));
 }
@@ -256,7 +243,7 @@ template <typename T, int MODE>
 __aicore__ inline void Eltwise<T, MODE>::ComputeMaxInit(
     LocalTensor<float>& acc, LocalTensor<float>& src, int64_t alignedNum)
 {
-// NOTE: Duplicate(0)+Add used as cross-queue tensor copy workaround
+    // NOTE: Duplicate(0)+Add used as cross-queue tensor copy workaround
     Duplicate(acc, 0.0f, static_cast<int32_t>(alignedNum));
     Add(acc, acc, src, static_cast<int32_t>(alignedNum));
 }
@@ -276,7 +263,7 @@ template <typename T, int MODE>
 __aicore__ inline void Eltwise<T, MODE>::ComputeTile(int64_t gmOffset, int64_t currentNum)
 {
     // Alignment: max of float32 block and T block (32-byte boundary)
-    constexpr int64_t floatBlock = 32 / sizeof(float);  // 8
+    constexpr int64_t floatBlock = 32 / sizeof(float); // 8
     constexpr int64_t typeBlock = 32 / sizeof(T);
     constexpr int64_t alignBlock = (floatBlock > typeBlock) ? floatBlock : typeBlock;
     int64_t alignedNum = ((currentNum + alignBlock - 1) / alignBlock) * alignBlock;

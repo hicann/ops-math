@@ -21,7 +21,7 @@
 /*!
  * \file dot_v2_tiling.cpp
  * \brief
-*/
+ */
 
 #include "log/log.h"
 #include "util/math_util.h"
@@ -32,7 +32,6 @@
 #include "../op_kernel/dot_v2_tiling_key.h"
 
 namespace optiling {
-
 
 constexpr uint32_t BLOCK_SIZE = 32;
 constexpr uint32_t BUFFER_NUM = 2;
@@ -61,7 +60,7 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
     // 如果输入shape 是标量 转换为{1}，否则保持原 shape 不变
     auto inputShapeX = Ops::Base::EnsureNotScalar(inputX->GetStorageShape());
-    
+
     auto inputY = context->GetInputShape(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputY);
     // 如果输入yshape 是标量 转换为{1}，否则保持原 shape 不变
@@ -76,7 +75,7 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
     // 校验维度数一致
     if (inputShapeX.GetDimNum() != inputShapeY.GetDimNum() || outShapeZ.GetDimNum() != 1) {
         shapeMatch = false;
-    }else {
+    } else {
         // 校验每个维度的大小一致
         size_t dimNum = inputShapeX.GetDimNum();
         for (size_t i = 0; i < dimNum; i++) {
@@ -91,10 +90,10 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
     OP_CHECK_IF(
         !shapeMatch,
         OP_LOGE(
-            context, "DotV2: inputx,inputy shape not match! dim num: x=%zu,  y=%zu",
-            inputShapeX.GetDimNum(), inputShapeY.GetDimNum()),
+            context, "DotV2: inputx,inputy shape not match! dim num: x=%zu,  y=%zu", inputShapeX.GetDimNum(),
+            inputShapeY.GetDimNum()),
         return ge::GRAPH_FAILED);
-    
+
     totalIdx = inputX->GetStorageShape().GetShapeSize();
     // dtype校验
     const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_FLOAT16};
@@ -110,7 +109,7 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
 
 static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 {
-    auto ascendcPlatform = platform_ascendc:: PlatformAscendC(context->GetPlatformInfo());
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
     uint32_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
@@ -124,14 +123,16 @@ static ge::graphStatus DotV2TilingFunc(gert::TilingContext* context)
     // 1. platform
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
-    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+        return ge::GRAPH_FAILED);
 
     // 2. shapes & dtype
     int64_t totalIdx = 0;
     ge::DataType dataType;
-    OP_CHECK_IF(GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
+        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     // handle empty input
     if (totalIdx <= 0) {
@@ -143,14 +144,16 @@ static ge::graphStatus DotV2TilingFunc(gert::TilingContext* context)
     }
 
     // 3. workspace
-    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+        return ge::GRAPH_FAILED);
 
     DotV2TilingData* tiling = context->GetTilingData<DotV2TilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(memset_s(tiling, sizeof(DotV2TilingData), 0, sizeof(DotV2TilingData)) != EOK,
-                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
-    
+    OP_CHECK_IF(
+        memset_s(tiling, sizeof(DotV2TilingData), 0, sizeof(DotV2TilingData)) != EOK,
+        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+
     // --- safer numeric types ---
     uint32_t typeLength = 0;
     ge::TypeUtils::GetDataTypeLength(context->GetInputDesc(0)->GetDataType(), typeLength);
@@ -172,18 +175,20 @@ static ge::graphStatus DotV2TilingFunc(gert::TilingContext* context)
 
     // 每个 tile 包含的元素数（至少 1）
     uint32_t tileDataNum = static_cast<uint32_t>((static_cast<uint32_t>(tileBlockNum) * BLOCK_SIZE) / inputBytes);
-    if (tileDataNum == 0U) tileDataNum = 1U;
+    if (tileDataNum == 0U)
+        tileDataNum = 1U;
 
     // 总 block 数（向上取整）
     uint32_t blocksTotal = (inputLengthBytes + BLOCK_SIZE - 1ULL) / BLOCK_SIZE;
     uint32_t coreNum64 = static_cast<uint32_t>(coreNum);
-    if (coreNum64 > blocksTotal){
+    if (coreNum64 > blocksTotal) {
         coreNum64 = blocksTotal;
     }
-    if (coreNum64 == 0ULL) coreNum64 = 1ULL; // 最少 1 core
+    if (coreNum64 == 0ULL)
+        coreNum64 = 1ULL; // 最少 1 core
     uint32_t finalCoreNum = static_cast<uint32_t>(coreNum64);
 
-    uint32_t everyCoreInputBlockNum = blocksTotal / coreNum64; // 基本块数
+    uint32_t everyCoreInputBlockNum = blocksTotal / coreNum64;              // 基本块数
     uint32_t tailBlockNum = static_cast<uint32_t>(blocksTotal % coreNum64); // 前 tailBlockNum 个核是 big-core
 
     // small-core 数量（元素）
@@ -192,7 +197,8 @@ static ge::graphStatus DotV2TilingFunc(gert::TilingContext* context)
 
     uint32_t smallTileNum = static_cast<uint32_t>(everyCoreInputBlockNum / static_cast<uint32_t>(tileBlockNum));
     uint32_t finalSmallTileNum = ((everyCoreInputBlockNum % tileBlockNum) == 0) ? smallTileNum : (smallTileNum + 1);
-    uint32_t smallTailDataNum_i = static_cast<uint32_t>(smallCoreDataNum) - static_cast<uint32_t>(tileDataNum) * static_cast<uint32_t>(smallTileNum);
+    uint32_t smallTailDataNum_i = static_cast<uint32_t>(smallCoreDataNum) -
+                                  static_cast<uint32_t>(tileDataNum) * static_cast<uint32_t>(smallTileNum);
     uint32_t smallTailDataNum = (smallTailDataNum_i <= 0) ? tileDataNum : static_cast<uint32_t>(smallTailDataNum_i);
 
     // big-core（每个多一个 block）
@@ -201,7 +207,8 @@ static ge::graphStatus DotV2TilingFunc(gert::TilingContext* context)
     uint32_t bigCoreDataNum = static_cast<uint32_t>(bigCoreDataNum_u);
     uint32_t bigTileNum = static_cast<uint32_t>(bigEveryCoreBlockNum / static_cast<uint32_t>(tileBlockNum));
     uint32_t finalBigTileNum = ((bigEveryCoreBlockNum % tileBlockNum) == 0) ? bigTileNum : (bigTileNum + 1);
-    uint32_t bigTailDataNum_i = static_cast<uint32_t>(bigCoreDataNum) - static_cast<uint32_t>(tileDataNum) * static_cast<uint32_t>(bigTileNum);
+    uint32_t bigTailDataNum_i =
+        static_cast<uint32_t>(bigCoreDataNum) - static_cast<uint32_t>(tileDataNum) * static_cast<uint32_t>(bigTileNum);
     uint32_t bigTailDataNum = (bigTailDataNum_i <= 0) ? tileDataNum : static_cast<uint32_t>(bigTailDataNum_i);
 
     // write back

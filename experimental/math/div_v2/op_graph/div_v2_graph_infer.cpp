@@ -21,7 +21,7 @@
 /*!
  * \file div_v2_graph_infer.cpp
  * \brief div v2 operater graph infer resource
-  */
+ */
 
 #include "register/op_impl_registry.h"
 #include "log/log.h"

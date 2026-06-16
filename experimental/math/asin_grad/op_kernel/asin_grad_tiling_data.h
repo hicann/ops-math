@@ -22,8 +22,8 @@
 #define _ASIN_GRAD_TILING_DATA_H_
 
 struct AsinGradTilingData {
-    int64_t totalNum = 0;      // Total number of elements (flattened)
-    int64_t blockFactor = 0;   // Number of elements per core
-    int64_t ubFactor = 0;      // Number of elements per UB iteration
+    int64_t totalNum = 0;    // Total number of elements (flattened)
+    int64_t blockFactor = 0; // Number of elements per core
+    int64_t ubFactor = 0;    // Number of elements per UB iteration
 };
 #endif

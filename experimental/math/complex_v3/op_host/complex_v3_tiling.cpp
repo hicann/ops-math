@@ -33,8 +33,8 @@
 namespace optiling {
 
 using Ops::Base::CeilDiv;
-using Ops::Base::FloorDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
@@ -93,14 +93,12 @@ static ge::graphStatus ComplexV3TilingFunc(gert::TilingContext* context)
     uint64_t ubSize;
     int64_t coreNum;
     OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"),
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
         return ge::GRAPH_FAILED);
 
     // 2. Get workspace info
     OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"),
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
         return ge::GRAPH_FAILED);
 
     // 3. Get input shapes
@@ -138,9 +136,8 @@ static ge::graphStatus ComplexV3TilingFunc(gert::TilingContext* context)
         totalLength = realShape.GetShapeSize();
     } else {
         // Broadcast: compute broadcast shape using NumPy rules
-        uint32_t maxDim = std::max(
-            static_cast<uint32_t>(realShape.GetDimNum()),
-            static_cast<uint32_t>(imagShape.GetDimNum()));
+        uint32_t maxDim =
+            std::max(static_cast<uint32_t>(realShape.GetDimNum()), static_cast<uint32_t>(imagShape.GetDimNum()));
         tiling->dimNum = maxDim;
 
         totalLength = 1;
@@ -148,10 +145,8 @@ static ge::graphStatus ComplexV3TilingFunc(gert::TilingContext* context)
         uint32_t imagDims = static_cast<uint32_t>(imagShape.GetDimNum());
 
         for (uint32_t d = 0; d < maxDim; d++) {
-            int64_t realDim = (d < maxDim - realDims) ? 1
-                : realShape.GetDim(d - (maxDim - realDims));
-            int64_t imagDim = (d < maxDim - imagDims) ? 1
-                : imagShape.GetDim(d - (maxDim - imagDims));
+            int64_t realDim = (d < maxDim - realDims) ? 1 : realShape.GetDim(d - (maxDim - realDims));
+            int64_t imagDim = (d < maxDim - imagDims) ? 1 : imagShape.GetDim(d - (maxDim - imagDims));
             tiling->outShape[d] = std::max(realDim, imagDim);
             totalLength *= tiling->outShape[d];
         }
@@ -160,10 +155,12 @@ static ge::graphStatus ComplexV3TilingFunc(gert::TilingContext* context)
         int64_t realAccStride = 1;
         int64_t imagAccStride = 1;
         for (int d = static_cast<int>(maxDim) - 1; d >= 0; d--) {
-            int64_t realDim = (static_cast<uint32_t>(d) < maxDim - realDims) ? 1
-                : realShape.GetDim(d - static_cast<int>(maxDim - realDims));
-            int64_t imagDim = (static_cast<uint32_t>(d) < maxDim - imagDims) ? 1
-                : imagShape.GetDim(d - static_cast<int>(maxDim - imagDims));
+            int64_t realDim = (static_cast<uint32_t>(d) < maxDim - realDims) ?
+                                  1 :
+                                  realShape.GetDim(d - static_cast<int>(maxDim - realDims));
+            int64_t imagDim = (static_cast<uint32_t>(d) < maxDim - imagDims) ?
+                                  1 :
+                                  imagShape.GetDim(d - static_cast<int>(maxDim - imagDims));
 
             tiling->realStride[d] = (realDim == 1) ? 0 : realAccStride;
             tiling->imagStride[d] = (imagDim == 1) ? 0 : imagAccStride;
@@ -182,7 +179,7 @@ static ge::graphStatus ComplexV3TilingFunc(gert::TilingContext* context)
     if (totalLength == 0) {
         tiling->blockFactor = 0;
         tiling->ubFactor = 0;
-        context->SetBlockDim(1);  // Launch at least 1 core (kernel will exit immediately)
+        context->SetBlockDim(1); // Launch at least 1 core (kernel will exit immediately)
         uint32_t dType = static_cast<uint32_t>(dtype);
         ASCENDC_TPL_SEL_PARAM(context, dType, broadcastMode);
         return ge::GRAPH_SUCCESS;
@@ -204,9 +201,7 @@ static ge::graphStatus ComplexV3TilingFunc(gert::TilingContext* context)
         // Double buffer: realBuf/imagBuf/outBuf are doubled (x2)
         // Total coefficient: 4 (single buffer) or 8 (double buffer)
         int64_t bufferCoeff = useDoubleBuffer ? 8 : 4;
-        tiling->ubFactor = FloorAlign(
-            FloorDiv(static_cast<int64_t>(ubSize) / typeSize, bufferCoeff),
-            ubBlockSize);
+        tiling->ubFactor = FloorAlign(FloorDiv(static_cast<int64_t>(ubSize) / typeSize, bufferCoeff), ubBlockSize);
     } else {
         // Broadcast: check if inputs can be fully preloaded into UB
         int64_t realInputElems = tiling->realInputSize;
@@ -217,24 +212,21 @@ static ge::graphStatus ComplexV3TilingFunc(gert::TilingContext* context)
         int64_t preloadBytes = (realBufElems + imagBufElems) * typeSize;
 
         // outBuf: ubFactor*2 elements (interleaved) x BUFFER_NUM(2) queue slots = 4
-        int64_t outBufCoeff = 4;  // 2 (interleave) * 2 (BUFFER_NUM queue depth)
+        int64_t outBufCoeff = 4; // 2 (interleave) * 2 (BUFFER_NUM queue depth)
 
         if (preloadBytes < static_cast<int64_t>(ubSize) / 2) {
             // Full preload mode: inputs fit in <50% of UB
             tiling->preloadMode = 1;
             int64_t remainBytes = static_cast<int64_t>(ubSize) - preloadBytes;
-            tiling->ubFactor = FloorAlign(
-                FloorDiv(remainBytes / typeSize, outBufCoeff),
-                ubBlockSize);
+            tiling->ubFactor = FloorAlign(FloorDiv(remainBytes / typeSize, outBufCoeff), ubBlockSize);
         } else {
             // On-demand mode: inputs too large, use UB only for output + temp buffers
             // Layout: outBuf(ubFactor*2) x2 slots + realTmp(ubFactor) + imagTmp(ubFactor)
             // Total = ubFactor * (4 + 1 + 1) = ubFactor * 6
             tiling->preloadMode = 0;
-            int64_t onDemandCoeff = outBufCoeff + 2;  // +2 for realTmp + imagTmp (each ubFactor elems)
-            tiling->ubFactor = FloorAlign(
-                FloorDiv(static_cast<int64_t>(ubSize) / typeSize, onDemandCoeff),
-                ubBlockSize);
+            int64_t onDemandCoeff = outBufCoeff + 2; // +2 for realTmp + imagTmp (each ubFactor elems)
+            tiling->ubFactor =
+                FloorAlign(FloorDiv(static_cast<int64_t>(ubSize) / typeSize, onDemandCoeff), ubBlockSize);
         }
     }
 
@@ -253,7 +245,7 @@ static ge::graphStatus TilingParseForComplexV3([[maybe_unused]] gert::TilingPars
     return ge::GRAPH_SUCCESS;
 }
 
-struct ComplexV3CompileInfo {};  // Required for graph mode dependency
+struct ComplexV3CompileInfo {}; // Required for graph mode dependency
 
 IMPL_OP_OPTILING(ComplexV3).Tiling(ComplexV3TilingFunc).TilingParse<ComplexV3CompileInfo>(TilingParseForComplexV3);
 

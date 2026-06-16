@@ -22,31 +22,22 @@ __global__ __aicore__ void neg(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR 
 {
     REGISTER_TILING_DEFAULT(NegTilingData);
     GET_TILING_DATA_WITH_STRUCT(NegTilingData, tiling_data, tiling);
-    
-    if(TILING_KEY_IS(1))
-    {
+
+    if (TILING_KEY_IS(1)) {
         TPipe pipe;
         KernelNeg<DTYPE_X, true> op;
-        op.Init(x, y,
-                tiling_data.smallCoreDataNum,                                
-                tiling_data.bigCoreDataNum, tiling_data.bigCoreLoopNum,             
-                tiling_data.smallCoreLoopNum, tiling_data.ubPartDataNum,            
-                tiling_data.smallCoreTailDataNum, tiling_data.bigCoreTailDataNum,   
-                tiling_data.tailBlockNum,
-                &pipe);
+        op.Init(
+            x, y, tiling_data.smallCoreDataNum, tiling_data.bigCoreDataNum, tiling_data.bigCoreLoopNum,
+            tiling_data.smallCoreLoopNum, tiling_data.ubPartDataNum, tiling_data.smallCoreTailDataNum,
+            tiling_data.bigCoreTailDataNum, tiling_data.tailBlockNum, &pipe);
         op.Process();
-    }
-    else if(TILING_KEY_IS(0))
-    {
+    } else if (TILING_KEY_IS(0)) {
         TPipe pipe;
         KernelNeg<DTYPE_X, false> op;
-        op.Init(x, y,
-                tiling_data.smallCoreDataNum,                                
-                tiling_data.bigCoreDataNum, tiling_data.bigCoreLoopNum,             
-                tiling_data.smallCoreLoopNum, tiling_data.ubPartDataNum,            
-                tiling_data.smallCoreTailDataNum, tiling_data.bigCoreTailDataNum,   
-                tiling_data.tailBlockNum,
-                &pipe);
+        op.Init(
+            x, y, tiling_data.smallCoreDataNum, tiling_data.bigCoreDataNum, tiling_data.bigCoreLoopNum,
+            tiling_data.smallCoreLoopNum, tiling_data.ubPartDataNum, tiling_data.smallCoreTailDataNum,
+            tiling_data.bigCoreTailDataNum, tiling_data.tailBlockNum, &pipe);
         op.Process();
     }
 }

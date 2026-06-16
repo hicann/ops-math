@@ -24,8 +24,7 @@
 
 #include "strided_slice.h"
 
-enum class StridedSliceTilingKey : uint32_t
-{
+enum class StridedSliceTilingKey : uint32_t {
     TILING_KEY_EXAMPLE_FLOAT = 0,
     TILING_KEY_EXAMPLE_INT32 = 1,
 };
@@ -36,6 +35,6 @@ __global__ __aicore__ void strided_slice(GM_ADDR x, GM_ADDR z, GM_ADDR workspace
     REGISTER_TILING_DEFAULT(StridedSliceTilingData);
     GET_TILING_DATA_WITH_STRUCT(StridedSliceTilingData, tilingData, tiling);
     NsStridedSlice::StridedSlice<DTYPE_X> op; // 算子kernel实例获取
-    op.Init(x, z, &tilingData);      // 算子kernel实例初始化
-    op.Process();                       // 算子kernel实例执行
+    op.Init(x, z, &tilingData);               // 算子kernel实例初始化
+    op.Process();                             // 算子kernel实例执行
 }

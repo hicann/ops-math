@@ -40,7 +40,7 @@ REG_OP(ClipByValueV2)
     .INPUT(clip_value_min, TensorType::NumberType())
     .INPUT(clip_value_max, TensorType::NumberType())
     .OUTPUT(y, TensorType::NumberType())
-    .OP_END_FACTORY_REG(ClipByValueV2)  
-}
+    .OP_END_FACTORY_REG(ClipByValueV2)
+} // namespace ge
 
 #endif

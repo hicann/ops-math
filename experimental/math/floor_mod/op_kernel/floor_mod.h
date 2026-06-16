@@ -28,7 +28,8 @@ template <typename T>
 class FloorMod {
 public:
     __aicore__ inline FloorMod(){};
-    __aicore__ inline void Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace, const FloorModTilingData* tilingData);
+    __aicore__ inline void Init(
+        GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace, const FloorModTilingData* tilingData);
     __aicore__ inline void Process();
 
     uint8_t bufferNum = 2;
@@ -43,14 +44,13 @@ private:
 
     __aicore__ inline void InitBuffers();
 
-    __aicore__ inline void ComputeInt32(const int32_t calCount, const int32_t alignedCalCount, 
-                                        LocalTensor<T>& dstTensor, LocalTensor<T>& x1Tensor, 
-                                        LocalTensor<T>& x2Tensor, LocalTensor<uint8_t>& sharedTmpBuffer);
+    __aicore__ inline void ComputeInt32(
+        const int32_t calCount, const int32_t alignedCalCount, LocalTensor<T>& dstTensor, LocalTensor<T>& x1Tensor,
+        LocalTensor<T>& x2Tensor, LocalTensor<uint8_t>& sharedTmpBuffer);
 
-    __aicore__ inline void ComputeFPCore(const int32_t calCount, const int32_t alignedCalCount,
-                                         LocalTensor<float>& x1Float, LocalTensor<float>& x2Float,
-                                         LocalTensor<float>& resRem, LocalTensor<float>& resQuot,
-                                         LocalTensor<uint8_t>& sharedTmpBuffer);
+    __aicore__ inline void ComputeFPCore(
+        const int32_t calCount, const int32_t alignedCalCount, LocalTensor<float>& x1Float, LocalTensor<float>& x2Float,
+        LocalTensor<float>& resRem, LocalTensor<float>& resQuot, LocalTensor<uint8_t>& sharedTmpBuffer);
 
     template <typename T1, typename T2>
     __aicore__ inline T1 CeilAlign(T1 a, T2 b)
@@ -70,7 +70,7 @@ private:
     TBuf<TPosition::VECCALC> ResQuotTensorBuff;
     TBuf<TPosition::VECCALC> ResRemTensorBuff;
     TBuf<TPosition::VECCALC> ResultTensorBuff;
-    
+
     // Auxiliary Buffers (Constants & Temps)
     TBuf<TPosition::VECCALC> OneTensorBuff;
     TBuf<TPosition::VECCALC> ZeroTensorBuff;
@@ -86,9 +86,9 @@ private:
     // Int32 High Precision Buffers
     TBuf<TPosition::VECCALC> FP32MaxValidBuff;
     TBuf<TPosition::VECCALC> INT32MaxValidBuff;
-    TBuf<TPosition::VECCALC> SplitQuotInt32Buff; 
-    TBuf<TPosition::VECCALC> SplitRemInt32Buff; 
-    
+    TBuf<TPosition::VECCALC> SplitQuotInt32Buff;
+    TBuf<TPosition::VECCALC> SplitRemInt32Buff;
+
     // Local Tensors (Members to hold handles across functions)
     LocalTensor<float> ResQuotTensor;
     LocalTensor<float> ResRemTensor;
@@ -151,7 +151,7 @@ __aicore__ inline void FloorMod<T>::InitBuffers()
         pipe.InitBuffer(InfTensorBuff, maxDataCount * sizeof(float));
         pipe.InitBuffer(NanTensorBuff, maxDataCount * sizeof(float));
         pipe.InitBuffer(MaskTensorBuff, maxDataCount * sizeof(uint8_t));
-        
+
         if constexpr (std::is_same_v<T, half> || std::is_same_v<T, bfloat16_t>) {
             pipe.InitBuffer(x1TensorFP32Buff, maxDataCount * sizeof(float));
             pipe.InitBuffer(x2TensorFP32Buff, maxDataCount * sizeof(float));
@@ -162,20 +162,20 @@ __aicore__ inline void FloorMod<T>::InitBuffers()
     if constexpr (std::is_same_v<T, int>) {
         pipe.InitBuffer(x1TensorFP32Buff, maxDataCount * sizeof(float));
         pipe.InitBuffer(x2TensorFP32Buff, maxDataCount * sizeof(float));
-        
+
         pipe.InitBuffer(ResQuotTensorBuff, maxDataCount * sizeof(float));
         pipe.InitBuffer(ResRemTensorBuff, maxDataCount * sizeof(float));
 
-        #if defined(HIGH_PRECISION) && HIGH_PRECISION == 1
-            pipe.InitBuffer(FP32MaxValidBuff, maxDataCount * sizeof(float));
-            pipe.InitBuffer(INT32MaxValidBuff, maxDataCount * sizeof(int32_t));
-            pipe.InitBuffer(SplitQuotInt32Buff, maxDataCount * sizeof(int32_t));
-            pipe.InitBuffer(SplitRemInt32Buff, maxDataCount * sizeof(int32_t));
-            
-            pipe.InitBuffer(EpsilonTensorBuff, maxDataCount * sizeof(float));
-            pipe.InitBuffer(ZeroTensorBuff, maxDataCount * sizeof(float)); 
-            pipe.InitBuffer(MaskTensorBuff, maxDataCount * sizeof(uint8_t));
-        #endif
+#if defined(HIGH_PRECISION) && HIGH_PRECISION == 1
+        pipe.InitBuffer(FP32MaxValidBuff, maxDataCount * sizeof(float));
+        pipe.InitBuffer(INT32MaxValidBuff, maxDataCount * sizeof(int32_t));
+        pipe.InitBuffer(SplitQuotInt32Buff, maxDataCount * sizeof(int32_t));
+        pipe.InitBuffer(SplitRemInt32Buff, maxDataCount * sizeof(int32_t));
+
+        pipe.InitBuffer(EpsilonTensorBuff, maxDataCount * sizeof(float));
+        pipe.InitBuffer(ZeroTensorBuff, maxDataCount * sizeof(float));
+        pipe.InitBuffer(MaskTensorBuff, maxDataCount * sizeof(uint8_t));
+#endif
     }
 }
 
@@ -196,17 +196,18 @@ __aicore__ inline void FloorMod<T>::Init(
 
     if (perCoreDataCount < targetMaxData) {
         maxDataCount = perCoreDataCount;
-        bufferNum = 1; 
+        bufferNum = 1;
     } else {
         maxDataCount = targetMaxData;
         bufferNum = 2;
     }
 
     // Align to DATA_BLOCK
-    if (maxDataCount < DATA_BLOCK) maxDataCount = DATA_BLOCK; 
-    maxDataCount = (maxDataCount + DATA_BLOCK - 1 ) / DATA_BLOCK * DATA_BLOCK;
+    if (maxDataCount < DATA_BLOCK)
+        maxDataCount = DATA_BLOCK;
+    maxDataCount = (maxDataCount + DATA_BLOCK - 1) / DATA_BLOCK * DATA_BLOCK;
     actualMaxDataCount = maxDataCount;
-    
+
     // -------------------------------------------------------------
     // Initialize Buffers
     // -------------------------------------------------------------
@@ -229,7 +230,8 @@ __aicore__ inline void FloorMod<T>::ParseTilingData(const FloorModTilingData* ti
             perCoreDataCount += DATA_BLOCK;
             blockOffset = perCoreDataCount * blockIdx;
         } else {
-            blockOffset = ((perCoreDataCount + DATA_BLOCK) * tailCoreNum) + (perCoreDataCount * (blockIdx - tailCoreNum));
+            blockOffset =
+                ((perCoreDataCount + DATA_BLOCK) * tailCoreNum) + (perCoreDataCount * (blockIdx - tailCoreNum));
         }
     }
 
@@ -248,26 +250,25 @@ __aicore__ inline void FloorMod<T>::Process()
 
     // Int32
     if constexpr (std::is_same_v<T, int>) {
-        #if defined(HIGH_PRECISION) && HIGH_PRECISION == 1
-            FP32MaxValidTensor = FP32MaxValidBuff.Get<float>();
-            Duplicate(FP32MaxValidTensor, FP32MaxValid, maxDataCount);
-            
-            INT32MaxValidTensor = INT32MaxValidBuff.Get<int32_t>();
-            Duplicate(INT32MaxValidTensor, INT32MaxValid, maxDataCount);
-            
-            ZeroTensor = ZeroTensorBuff.Get<float>();
-            Duplicate(ZeroTensor, Zero, maxDataCount);
+#if defined(HIGH_PRECISION) && HIGH_PRECISION == 1
+        FP32MaxValidTensor = FP32MaxValidBuff.Get<float>();
+        Duplicate(FP32MaxValidTensor, FP32MaxValid, maxDataCount);
 
-            EpsilonTensor = EpsilonTensorBuff.Get<float>();
-            Duplicate(EpsilonTensor, Epsilon, maxDataCount);
-        #endif
-    }
-    else {
+        INT32MaxValidTensor = INT32MaxValidBuff.Get<int32_t>();
+        Duplicate(INT32MaxValidTensor, INT32MaxValid, maxDataCount);
+
+        ZeroTensor = ZeroTensorBuff.Get<float>();
+        Duplicate(ZeroTensor, Zero, maxDataCount);
+
+        EpsilonTensor = EpsilonTensorBuff.Get<float>();
+        Duplicate(EpsilonTensor, Epsilon, maxDataCount);
+#endif
+    } else {
         OneTensor = OneTensorBuff.Get<float>();
         ZeroTensor = ZeroTensorBuff.Get<float>();
         InfTensor = InfTensorBuff.Get<float>();
         NanTensor = NanTensorBuff.Get<float>();
-        
+
         Duplicate(OneTensor, One, maxDataCount);
         Duplicate(ZeroTensor, Zero, maxDataCount);
         Duplicate(InfTensor, infValue, maxDataCount);
@@ -286,7 +287,7 @@ __aicore__ inline void FloorMod<T>::Process()
     // Process tail block
     if (tailDataCount > 0) {
         CopyIn(actualInOffset, tailDataCount);
-        Compute(tailDataCount); 
+        Compute(tailDataCount);
         CopyOut(actualOutOffset, tailDataCount);
     }
 }
@@ -325,50 +326,50 @@ __aicore__ inline void FloorMod<T>::CopyOut(const uint64_t offset, const int32_t
 }
 
 template <typename T>
-__aicore__ inline void FloorMod<T>::ComputeInt32(const int32_t calCount, const int32_t alignedCalCount, 
-                                                 LocalTensor<T>& dstTensor, LocalTensor<T>& x1Tensor, 
-                                                 LocalTensor<T>& x2Tensor, LocalTensor<uint8_t>& sharedTmpBuffer)
+__aicore__ inline void FloorMod<T>::ComputeInt32(
+    const int32_t calCount, const int32_t alignedCalCount, LocalTensor<T>& dstTensor, LocalTensor<T>& x1Tensor,
+    LocalTensor<T>& x2Tensor, LocalTensor<uint8_t>& sharedTmpBuffer)
 {
-    #if defined(HIGH_PERFORMANCE) && HIGH_PERFORMANCE == 1
+#if defined(HIGH_PERFORMANCE) && HIGH_PERFORMANCE == 1
     x1TensorFP32Tensor = x1TensorFP32Buff.Get<float>();
     x2TensorFP32Tensor = x2TensorFP32Buff.Get<float>();
     ResQuotTensor = ResQuotTensorBuff.Get<float>();
-    ResRemTensor = ResRemTensorBuff.Get<float>(); 
+    ResRemTensor = ResRemTensorBuff.Get<float>();
 
     Cast(x1TensorFP32Tensor, x1Tensor, AscendC::RoundMode::CAST_NONE, calCount);
     Cast(x2TensorFP32Tensor, x2Tensor, AscendC::RoundMode::CAST_NONE, calCount);
-    
+
     Div(ResRemTensor, x1TensorFP32Tensor, x2TensorFP32Tensor, calCount);
     Floor(ResQuotTensor, ResRemTensor, sharedTmpBuffer, calCount);
     Mul(ResQuotTensor, ResQuotTensor, x2TensorFP32Tensor, calCount);
     Sub(ResRemTensor, x1TensorFP32Tensor, ResQuotTensor, calCount);
-    
+
     Cast(dstTensor, ResRemTensor, AscendC::RoundMode::CAST_RINT, calCount);
-    
-    #else 
-    
+
+#else
+
     FP32MaxValidTensor = FP32MaxValidBuff.Get<float>();
     INT32MaxValidTensor = INT32MaxValidBuff.Get<int32_t>();
     EpsilonTensor = EpsilonTensorBuff.Get<float>();
-    
+
     x2TensorFP32Tensor = x2TensorFP32Buff.Get<float>();
     SplitRemInt32Tensor = SplitRemInt32Buff.Get<int32_t>();
     SplitQuotInt32Tensor = SplitQuotInt32Buff.Get<int32_t>();
-    
+
     LocalTensor<float> q1FloatTensor = ResQuotTensorBuff.Get<float>();
     LocalTensor<float> q2FloatTensor = ResRemTensorBuff.Get<float>();
-    LocalTensor<int32_t> q2IntTensor = dstTensor; 
-    
+    LocalTensor<int32_t> q2IntTensor = dstTensor;
+
     Cast(x2TensorFP32Tensor, x2Tensor, AscendC::RoundMode::CAST_NONE, calCount);
     Add(x2TensorFP32Tensor, x2TensorFP32Tensor, EpsilonTensor, calCount);
-    Div(q2FloatTensor, FP32MaxValidTensor, x2TensorFP32Tensor, calCount); 
-    ShiftRight(SplitQuotInt32Tensor, x1Tensor, 24, calCount); 
+    Div(q2FloatTensor, FP32MaxValidTensor, x2TensorFP32Tensor, calCount);
+    ShiftRight(SplitQuotInt32Tensor, x1Tensor, 24, calCount);
     ShiftLeft(SplitRemInt32Tensor, SplitQuotInt32Tensor, 24, calCount);
     Sub(SplitRemInt32Tensor, x1Tensor, SplitRemInt32Tensor, calCount);
     Floor(q2FloatTensor, q2FloatTensor, sharedTmpBuffer, calCount);
     Cast(q2IntTensor, q2FloatTensor, AscendC::RoundMode::CAST_RINT, calCount);
     Mul(q2IntTensor, q2IntTensor, x2Tensor, calCount);
-    Sub(q2IntTensor, INT32MaxValidTensor, q2IntTensor, calCount); 
+    Sub(q2IntTensor, INT32MaxValidTensor, q2IntTensor, calCount);
     Mul(SplitQuotInt32Tensor, SplitQuotInt32Tensor, q2IntTensor, calCount);
     Add(SplitQuotInt32Tensor, SplitQuotInt32Tensor, SplitRemInt32Tensor, calCount);
     Cast(q1FloatTensor, SplitQuotInt32Tensor, AscendC::RoundMode::CAST_NONE, calCount);
@@ -377,14 +378,13 @@ __aicore__ inline void FloorMod<T>::ComputeInt32(const int32_t calCount, const i
     Cast(SplitRemInt32Tensor, q1FloatTensor, AscendC::RoundMode::CAST_RINT, calCount);
     Mul(SplitRemInt32Tensor, SplitRemInt32Tensor, x2Tensor, calCount);
     Sub(dstTensor, SplitQuotInt32Tensor, SplitRemInt32Tensor, calCount);
-    #endif
+#endif
 }
 
 template <typename T>
-__aicore__ inline void FloorMod<T>::ComputeFPCore(const int32_t calCount, const int32_t alignedCalCount,
-                                                  LocalTensor<float>& x1Float, LocalTensor<float>& x2Float,
-                                                  LocalTensor<float>& resRem, LocalTensor<float>& resQuot,
-                                                  LocalTensor<uint8_t>& sharedTmpBuffer)
+__aicore__ inline void FloorMod<T>::ComputeFPCore(
+    const int32_t calCount, const int32_t alignedCalCount, LocalTensor<float>& x1Float, LocalTensor<float>& x2Float,
+    LocalTensor<float>& resRem, LocalTensor<float>& resQuot, LocalTensor<uint8_t>& sharedTmpBuffer)
 {
     Div(resRem, x1Float, x2Float, calCount);
     Floor(resQuot, resRem, sharedTmpBuffer, calCount);
@@ -399,8 +399,8 @@ __aicore__ inline void FloorMod<T>::ComputeFPCore(const int32_t calCount, const 
     Compare(MaskTensor, resQuot, InfTensor, AscendC::CMPMODE::EQ, alignedCalCount);
     Select(resRem, MaskTensor, NanTensor, resRem, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, alignedCalCount);
 
-    Mul(OneTensor, resRem, x2Float, calCount); 
-    Compare(MaskTensor, OneTensor, ZeroTensor, AscendC::CMPMODE::LT, alignedCalCount); 
+    Mul(OneTensor, resRem, x2Float, calCount);
+    Compare(MaskTensor, OneTensor, ZeroTensor, AscendC::CMPMODE::LT, alignedCalCount);
     Add(OneTensor, resRem, x2Float, calCount);
     Select(resRem, MaskTensor, OneTensor, resRem, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, alignedCalCount);
 }
@@ -423,7 +423,7 @@ __aicore__ inline void FloorMod<T>::Compute(const int32_t calCount)
     else {
         ResQuotTensor = ResQuotTensorBuff.Get<float>();
         ResRemTensor = ResRemTensorBuff.Get<float>();
-        
+
         // FP16 (Half) & Bfloat16
         if constexpr (std::is_same_v<T, half> || std::is_same_v<T, bfloat16_t>) {
             x1TensorFP32Tensor = x1TensorFP32Buff.Get<float>();
@@ -432,8 +432,9 @@ __aicore__ inline void FloorMod<T>::Compute(const int32_t calCount)
             Cast(x1TensorFP32Tensor, x1Tensor, AscendC::RoundMode::CAST_NONE, calCount);
             Cast(x2TensorFP32Tensor, x2Tensor, AscendC::RoundMode::CAST_NONE, calCount);
 
-            ComputeFPCore(calCount, alignedCalCount, x1TensorFP32Tensor, x2TensorFP32Tensor, 
-                          ResRemTensor, ResQuotTensor, sharedTmpBuffer);
+            ComputeFPCore(
+                calCount, alignedCalCount, x1TensorFP32Tensor, x2TensorFP32Tensor, ResRemTensor, ResQuotTensor,
+                sharedTmpBuffer);
 
             if constexpr (std::is_same_v<T, half>) {
                 Cast(dstTensor, ResRemTensor, AscendC::RoundMode::CAST_NONE, calCount);
@@ -462,20 +463,20 @@ __aicore__ inline void FloorModKernelImpl(
 
     if constexpr (D_T_X1 == FLOOR_MOD_TPL_INT32 && D_T_X2 == FLOOR_MOD_TPL_INT32 && D_T_Y == FLOOR_MOD_TPL_INT32) {
         FloorModNs::FloorMod<int> op;
-        op.Init(x1,x2,y, userWS, tilingData);
+        op.Init(x1, x2, y, userWS, tilingData);
         op.Process();
     } else if constexpr (D_T_X1 == FLOOR_MOD_TPL_FP16 && D_T_X2 == FLOOR_MOD_TPL_FP16 && D_T_Y == FLOOR_MOD_TPL_FP16) {
         FloorModNs::FloorMod<half> op;
-        op.Init(x1,x2,y, userWS, tilingData);
+        op.Init(x1, x2, y, userWS, tilingData);
         op.Process();
     } else if constexpr (D_T_X1 == FLOOR_MOD_TPL_FP32 && D_T_X2 == FLOOR_MOD_TPL_FP32 && D_T_Y == FLOOR_MOD_TPL_FP32) {
         FloorModNs::FloorMod<float> op;
-        op.Init(x1,x2,y, userWS, tilingData);
+        op.Init(x1, x2, y, userWS, tilingData);
         op.Process();
 #if !(defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
     } else if constexpr (D_T_X1 == FLOOR_MOD_TPL_BF16 && D_T_X2 == FLOOR_MOD_TPL_BF16 && D_T_Y == FLOOR_MOD_TPL_BF16) {
         FloorModNs::FloorMod<bfloat16_t> op;
-        op.Init(x1,x2,y, userWS, tilingData);
+        op.Init(x1, x2, y, userWS, tilingData);
         op.Process();
 #endif
     }

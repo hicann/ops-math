@@ -25,28 +25,28 @@ namespace NsApproximateEqual {
 
 using AscendC::GlobalTensor;
 using AscendC::LocalTensor;
+using AscendC::QuePosition;
+using AscendC::TBuf;
 using AscendC::TPipe;
 using AscendC::TQue;
-using AscendC::TBuf;
-using AscendC::QuePosition;
 
 template <typename T, uint32_t TILING_KEY>
 class KernelApproximateEqual {
     static constexpr int32_t BUFFER_NUM = 2;
 
-    static constexpr bool NEEDS_CAST =
-        std::is_same_v<T, half> || std::is_same_v<T, bfloat16_t>;
+    static constexpr bool NEEDS_CAST = std::is_same_v<T, half> || std::is_same_v<T, bfloat16_t>;
 
 public:
     __aicore__ inline KernelApproximateEqual() = default;
 
-    __aicore__ inline void Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y,
-                                const ApproximateEqualTilingData* tiling)
+    __aicore__ inline void Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, const ApproximateEqualTilingData* tiling)
     {
         const int64_t blockIdx = AscendC::GetBlockIdx();
         const int64_t remainder = tiling->totalNum - tiling->blockFactor * blockIdx;
         blockLength_ = (remainder > tiling->blockFactor) ? tiling->blockFactor : remainder;
-        if (blockLength_ < 0) { blockLength_ = 0; }
+        if (blockLength_ < 0) {
+            blockLength_ = 0;
+        }
         ubLength_ = tiling->ubFactor;
         tolerance_ = tiling->tolerance;
 
@@ -66,13 +66,14 @@ public:
         }
 
         LocalTensor<uint8_t> onesLocal = onesBuf_.Get<uint8_t>();
-        AscendC::Duplicate<uint8_t>(onesLocal, static_cast<uint8_t>(1),
-                                    static_cast<int32_t>(ubLength_));
+        AscendC::Duplicate<uint8_t>(onesLocal, static_cast<uint8_t>(1), static_cast<int32_t>(ubLength_));
     }
 
     __aicore__ inline void Process()
     {
-        if (blockLength_ <= 0) { return; }
+        if (blockLength_ <= 0) {
+            return;
+        }
         const int64_t loopCount = (blockLength_ + ubLength_ - 1) / ubLength_;
         for (int64_t i = 0; i < loopCount; ++i) {
             const int64_t currentNum = (i == loopCount - 1) ? (blockLength_ - ubLength_ * i) : ubLength_;
@@ -108,29 +109,26 @@ private:
         LocalTensor<T> x2Local = inputQueueX2_.template DeQue<T>();
         LocalTensor<uint8_t> yLocal = outputQueueY_.template AllocTensor<uint8_t>();
 
-        LocalTensor<uint8_t> bitmap  = bitmapBuf_.template Get<uint8_t>();
+        LocalTensor<uint8_t> bitmap = bitmapBuf_.template Get<uint8_t>();
         LocalTensor<uint8_t> onesLoc = onesBuf_.template Get<uint8_t>();
 
         if constexpr (std::is_same_v<T, float>) {
             ComputeFp32Body(x1Local, x2Local, bitmap, count, cmpCount);
-            AscendC::Select<uint8_t, uint8_t>(yLocal, bitmap, onesLoc, static_cast<uint8_t>(0),
-                                              AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE,
-                                              static_cast<int32_t>(count));
+            AscendC::Select<uint8_t, uint8_t>(
+                yLocal, bitmap, onesLoc, static_cast<uint8_t>(0), AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE,
+                static_cast<int32_t>(count));
         } else {
             LocalTensor<float> x1f = castBuf1_.template Get<float>();
             LocalTensor<float> x2f = castBuf2_.template Get<float>();
-            AscendC::Cast<float, T>(x1f, x1Local, AscendC::RoundMode::CAST_NONE,
-                                    static_cast<int32_t>(count));
-            AscendC::Cast<float, T>(x2f, x2Local, AscendC::RoundMode::CAST_NONE,
-                                    static_cast<int32_t>(count));
+            AscendC::Cast<float, T>(x1f, x1Local, AscendC::RoundMode::CAST_NONE, static_cast<int32_t>(count));
+            AscendC::Cast<float, T>(x2f, x2Local, AscendC::RoundMode::CAST_NONE, static_cast<int32_t>(count));
             AscendC::Sub<float>(x1f, x1f, x2f, static_cast<int32_t>(count));
             AscendC::Abs<float>(x1f, x1f, static_cast<int32_t>(count));
-            AscendC::CompareScalar<float, uint8_t>(bitmap, x1f, tolerance_,
-                                                   AscendC::CMPMODE::LT,
-                                                   static_cast<int32_t>(cmpCount));
-            AscendC::Select<uint8_t, uint8_t>(yLocal, bitmap, onesLoc, static_cast<uint8_t>(0),
-                                              AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE,
-                                              static_cast<int32_t>(count));
+            AscendC::CompareScalar<float, uint8_t>(
+                bitmap, x1f, tolerance_, AscendC::CMPMODE::LT, static_cast<int32_t>(cmpCount));
+            AscendC::Select<uint8_t, uint8_t>(
+                yLocal, bitmap, onesLoc, static_cast<uint8_t>(0), AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE,
+                static_cast<int32_t>(count));
         }
 
         outputQueueY_.template EnQue<uint8_t>(yLocal);
@@ -138,15 +136,12 @@ private:
         inputQueueX2_.FreeTensor(x2Local);
     }
 
-    __aicore__ inline void ComputeFp32Body(LocalTensor<T>& x1Local,
-                                           LocalTensor<T>& x2Local,
-                                           LocalTensor<uint8_t>& bitmap,
-                                           int64_t count, int64_t cmpCount)
+    __aicore__ inline void ComputeFp32Body(
+        LocalTensor<T>& x1Local, LocalTensor<T>& x2Local, LocalTensor<uint8_t>& bitmap, int64_t count, int64_t cmpCount)
     {
         AscendC::Sub(x1Local, x1Local, x2Local, count);
         AscendC::Abs(x1Local, x1Local, count);
-        AscendC::CompareScalar<T, uint8_t>(bitmap, x1Local, static_cast<T>(tolerance_),
-                                           AscendC::CMPMODE::LT, cmpCount);
+        AscendC::CompareScalar<T, uint8_t>(bitmap, x1Local, static_cast<T>(tolerance_), AscendC::CMPMODE::LT, cmpCount);
     }
 
     __aicore__ inline void CopyOut(int64_t progress, int64_t count)
@@ -180,6 +175,6 @@ private:
     float tolerance_ = 1e-5f;
 };
 
-}  // namespace NsApproximateEqual
+} // namespace NsApproximateEqual
 
-#endif  // APPROXIMATE_EQUAL_KERNEL_H_
+#endif // APPROXIMATE_EQUAL_KERNEL_H_

@@ -9,11 +9,11 @@
  */
 
 /**
-* 我们正常的版权申明，下面是我们的备注
-*
-* NOTE: Portions of this code were AI-generated and have been
-* technically reviewed for functional accuracy and security
-*/
+ * 我们正常的版权申明，下面是我们的备注
+ *
+ * NOTE: Portions of this code were AI-generated and have been
+ * technically reviewed for functional accuracy and security
+ */
 
 /*!
  * \file reduce_nansum_ar_colsplit.h
@@ -63,8 +63,8 @@ private:
     TBuf<QuePosition::VECCALC> tmpBuf;
     TBuf<QuePosition::VECCALC> chunkResultBuf;
     TBuf<QuePosition::VECCALC> globalResultBuf;
-    TBuf<QuePosition::VECCALC> kahanCompBuf;   // Kahan 补偿项
-    TBuf<QuePosition::VECCALC> kahanTmpBuf;    // Kahan 临时缓冲
+    TBuf<QuePosition::VECCALC> kahanCompBuf; // Kahan 补偿项
+    TBuf<QuePosition::VECCALC> kahanTmpBuf;  // Kahan 临时缓冲
     TBuf<QuePosition::VECCALC> castBuf;
 
     GlobalTensor<T> inputGM;
@@ -84,9 +84,9 @@ private:
 
     // AtomicAdd 多核归约参数
     int64_t useAtomicAdd_ = 0;
-    int64_t coreRStart_ = 0;      // 本核处理的 R 起始位置
-    int64_t coreRCount_ = 0;      // 本核处理的 R 数量
-    int64_t coreNumChunks_ = 0;   // 本核的 chunk 数
+    int64_t coreRStart_ = 0;        // 本核处理的 R 起始位置
+    int64_t coreRCount_ = 0;        // 本核处理的 R 数量
+    int64_t coreNumChunks_ = 0;     // 本核的 chunk 数
     int64_t coreLastChunkSize_ = 0; // 本核最后一个 chunk 大小
 
     // 非连续多轴归约参数
@@ -103,12 +103,11 @@ private:
     int64_t reduceDimSizes_[8] = {0};
     int64_t reduceGmStrides_[8] = {0};
     int64_t outerReduceDimCount_ = 0;
-    int64_t innerBlockSize_ = 0;  // innerBlockElems
+    int64_t innerBlockSize_ = 0; // innerBlockElems
 };
 
 template <typename T>
-__aicore__ inline void ReduceNansumArColsplit<T>::Init(GM_ADDR x, GM_ADDR y,
-                                                       const ReduceNansumTilingData* tilingData)
+__aicore__ inline void ReduceNansumArColsplit<T>::Init(GM_ADDR x, GM_ADDR y, const ReduceNansumTilingData* tilingData)
 {
     a1Count_ = tilingData->a1Count;
     rCount_ = tilingData->rCount;
@@ -139,13 +138,15 @@ __aicore__ inline void ReduceNansumArColsplit<T>::Init(GM_ADDR x, GM_ADDR y,
         if (coreRStart_ + coreRCount_ > rCount_) {
             coreRCount_ = rCount_ - coreRStart_;
         }
-        if (coreRCount_ < 0) coreRCount_ = 0;
+        if (coreRCount_ < 0)
+            coreRCount_ = 0;
 
         // 计算本核内的 chunk 参数
         if (coreRCount_ > 0) {
             coreNumChunks_ = (coreRCount_ + rChunkSize_ - 1) / rChunkSize_;
             coreLastChunkSize_ = coreRCount_ - (coreNumChunks_ - 1) * rChunkSize_;
-            if (coreLastChunkSize_ <= 0) coreLastChunkSize_ = rChunkSize_;
+            if (coreLastChunkSize_ <= 0)
+                coreLastChunkSize_ = rChunkSize_;
         } else {
             coreNumChunks_ = 0;
             coreLastChunkSize_ = 0;
@@ -211,7 +212,8 @@ __aicore__ inline void ReduceNansumArColsplit<T>::Init(GM_ADDR x, GM_ADDR y,
     pipe.InitBuffer(outQueueY, 1, 32);
     // maskBuf
     int64_t maskBufSize = ((rLengthAlign_ / 8 + 31) / 32) * 32;
-    if (maskBufSize < 32) maskBufSize = 32;
+    if (maskBufSize < 32)
+        maskBufSize = 32;
     pipe.InitBuffer(maskBuf, maskBufSize);
     pipe.InitBuffer(zeroBuf, rLengthAlign_ * static_cast<int64_t>(sizeof(float)));
     pipe.InitBuffer(cleanBuf, rLengthAlign_ * static_cast<int64_t>(sizeof(float)));
@@ -230,7 +232,8 @@ __aicore__ inline void ReduceNansumArColsplit<T>::Init(GM_ADDR x, GM_ADDR y,
 template <typename T>
 __aicore__ inline void ReduceNansumArColsplit<T>::ProcessOneRowAtomicAdd(int64_t globalRowIdx)
 {
-    if (coreRCount_ <= 0) return;
+    if (coreRCount_ <= 0)
+        return;
 
     LocalTensor<uint8_t> maskLocal = maskBuf.Get<uint8_t>();
     LocalTensor<float> zeroLocal = zeroBuf.Get<float>();
@@ -242,7 +245,6 @@ __aicore__ inline void ReduceNansumArColsplit<T>::ProcessOneRowAtomicAdd(int64_t
     Duplicate(globalResult, static_cast<float>(0.0f), SCALAR_ALIGN);
 
 #endif
-
 
     // 判断是否为非连续多轴归约
     bool isStrided = (copyBlockCount_ > 0);
@@ -272,8 +274,6 @@ __aicore__ inline void ReduceNansumArColsplit<T>::ProcessOneRowAtomicAdd(int64_t
             Duplicate(xLocal, static_cast<T>(0), static_cast<uint32_t>(rLengthAlign_));
         }
 
-
-
         DataCopyParams copyParams;
         if (isStrided) {
             int64_t startBlock = chunkStart / innerBlockSize_;
@@ -295,9 +295,8 @@ __aicore__ inline void ReduceNansumArColsplit<T>::ProcessOneRowAtomicAdd(int64_t
                 copyParams.blockLen = static_cast<uint32_t>(copyBlockLen_);
                 copyParams.srcStride = 0;
                 copyParams.dstStride = 0;
-                DataCopyPad(xLocal[blk * innerBlockSize_],
-                            inputGM[gmRowBase + gmReduceOffset],
-                            copyParams, {false, 0, 0, 0});
+                DataCopyPad(
+                    xLocal[blk * innerBlockSize_], inputGM[gmRowBase + gmReduceOffset], copyParams, {false, 0, 0, 0});
             }
         } else {
             copyParams.blockCount = 1;
@@ -314,7 +313,8 @@ __aicore__ inline void ReduceNansumArColsplit<T>::ProcessOneRowAtomicAdd(int64_t
         uint32_t count = static_cast<uint32_t>(rLengthAlign_);
 
         int64_t maskInt16Count = ((rLengthAlign_ / 8 + 31) / 32) * 32 / 2;
-        if (maskInt16Count < 16) maskInt16Count = 16;
+        if (maskInt16Count < 16)
+            maskInt16Count = 16;
         LocalTensor<int16_t> maskInt16 = maskBuf.Get<int16_t>();
         Duplicate(maskInt16, static_cast<int16_t>(0), static_cast<uint32_t>(maskInt16Count));
 
@@ -334,12 +334,8 @@ __aicore__ inline void ReduceNansumArColsplit<T>::ProcessOneRowAtomicAdd(int64_t
         LocalTensor<float> chunkResult = chunkResultBuf.Get<float>();
         ReduceSum(chunkResult, cleanLocal, tmpLocal, static_cast<uint32_t>(curChunkSize));
 
-
-
         // 简单累加（每核R小，不需要Kahan补偿）
         Add(globalResult, globalResult, chunkResult, SCALAR_ALIGN);
-
-
 
         inQueueX.FreeTensor(xLocal);
     }
@@ -354,8 +350,6 @@ __aicore__ inline void ReduceNansumArColsplit<T>::ProcessOneRowAtomicAdd(int64_t
         LocalTensor<T> yTyped = yOut;
         Cast(yTyped, globalResult, RoundMode::CAST_ROUND, SCALAR_ALIGN);
     }
-
-
 
     outQueueY.EnQue(yOut);
     yOut = outQueueY.template DeQue<T>();
@@ -388,8 +382,6 @@ __aicore__ inline void ReduceNansumArColsplit<T>::ProcessOneRow(int64_t globalRo
     Duplicate(globalResult, static_cast<float>(0.0f), SCALAR_ALIGN);
     Duplicate(kahanComp, static_cast<float>(0.0f), SCALAR_ALIGN);
 
-
-
     // 判断是否为非连续多轴归约
     bool isStrided = (copyBlockCount_ > 0);
     int64_t gmRowBase = 0;
@@ -419,8 +411,6 @@ __aicore__ inline void ReduceNansumArColsplit<T>::ProcessOneRow(int64_t globalRo
             Duplicate(xLocal, static_cast<T>(0), static_cast<uint32_t>(rLengthAlign_));
         }
 
-
-
         DataCopyParams copyParams;
         if (isStrided) {
             // 非连续多轴归约的 chunk 处理：逐块拷贝确保 UB 连续
@@ -445,9 +435,8 @@ __aicore__ inline void ReduceNansumArColsplit<T>::ProcessOneRow(int64_t globalRo
                 copyParams.blockLen = static_cast<uint32_t>(copyBlockLen_);
                 copyParams.srcStride = 0;
                 copyParams.dstStride = 0;
-                DataCopyPad(xLocal[blk * innerBlockSize_],
-                            inputGM[gmRowBase + gmReduceOffset],
-                            copyParams, {false, 0, 0, 0});
+                DataCopyPad(
+                    xLocal[blk * innerBlockSize_], inputGM[gmRowBase + gmReduceOffset], copyParams, {false, 0, 0, 0});
             }
         } else {
             copyParams.blockCount = 1;
@@ -465,7 +454,8 @@ __aicore__ inline void ReduceNansumArColsplit<T>::ProcessOneRow(int64_t globalRo
 
         // 清零 mask
         int64_t maskInt16Count = ((rLengthAlign_ / 8 + 31) / 32) * 32 / 2;
-        if (maskInt16Count < 16) maskInt16Count = 16;
+        if (maskInt16Count < 16)
+            maskInt16Count = 16;
         LocalTensor<int16_t> maskInt16 = maskBuf.Get<int16_t>();
         Duplicate(maskInt16, static_cast<int16_t>(0), static_cast<uint32_t>(maskInt16Count));
 
@@ -486,28 +476,20 @@ __aicore__ inline void ReduceNansumArColsplit<T>::ProcessOneRow(int64_t globalRo
         LocalTensor<float> chunkResult = chunkResultBuf.Get<float>();
         ReduceSum(chunkResult, cleanLocal, tmpLocal, static_cast<uint32_t>(curChunkSize));
 
-
-
         // Kahan 补偿求和：y = chunkResult - comp; t = globalResult + y; comp = (t - globalResult) - y; globalResult = t
         // Step 1: y = chunkResult - kahanComp (补偿后的增量)
         Sub(kahanTmp, chunkResult, kahanComp, SCALAR_ALIGN);
-
 
         // Step 2: t = globalResult + y (新的累加和)
         // 先保存旧 globalResult 到 chunkResult (临时复用)
         DataCopy(chunkResult, globalResult, SCALAR_ALIGN);
 
-
         Add(globalResult, globalResult, kahanTmp, SCALAR_ALIGN);
-
 
         // Step 3: comp = (t - oldGlobalResult) - y = (globalResult - chunkResult) - kahanTmp
         Sub(kahanComp, globalResult, chunkResult, SCALAR_ALIGN);
 
-
         Sub(kahanComp, kahanComp, kahanTmp, SCALAR_ALIGN);
-
-
 
         inQueueX.FreeTensor(xLocal);
     }
@@ -523,8 +505,6 @@ __aicore__ inline void ReduceNansumArColsplit<T>::ProcessOneRow(int64_t globalRo
         LocalTensor<T> yTyped = yOut;
         Cast(yTyped, globalResult, RoundMode::CAST_ROUND, SCALAR_ALIGN);
     }
-
-
 
     outQueueY.EnQue(yOut);
     yOut = outQueueY.template DeQue<T>();
@@ -555,7 +535,6 @@ __aicore__ inline void ReduceNansumArColsplit<T>::Process()
                 Duplicate(yOut, static_cast<T>(0), 8u);
             }
 
-
             outQueueY.EnQue(yOut);
             yOut = outQueueY.template DeQue<T>();
             // 非原子写0（覆盖所有输出元素）
@@ -584,4 +563,3 @@ __aicore__ inline void ReduceNansumArColsplit<T>::Process()
 }
 
 } // namespace NsReduceNansum
-

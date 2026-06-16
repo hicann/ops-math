@@ -30,7 +30,7 @@ class AccumulateNv2V2 {
     static constexpr int32_t BUFFER_NUM = BUFFER_MODE ? 2 : 1;
 
 public:
-    __aicore__ inline AccumulateNv2V2() {};
+    __aicore__ inline AccumulateNv2V2(){};
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const AccumulateNv2V2TilingData* tilingData);
     __aicore__ inline void Process();
@@ -56,8 +56,8 @@ private:
 };
 
 template <typename T, int BUFFER_MODE>
-__aicore__ inline void AccumulateNv2V2<T, BUFFER_MODE>::Init(GM_ADDR x, GM_ADDR y,
-                                                            const AccumulateNv2V2TilingData* tilingData)
+__aicore__ inline void AccumulateNv2V2<T, BUFFER_MODE>::Init(
+    GM_ADDR x, GM_ADDR y, const AccumulateNv2V2TilingData* tilingData)
 {
     int64_t remainderLength = tilingData->totalNum - tilingData->blockFactor * AscendC::GetBlockIdx();
     blockLength_ = (remainderLength > tilingData->blockFactor) ? tilingData->blockFactor : remainderLength;

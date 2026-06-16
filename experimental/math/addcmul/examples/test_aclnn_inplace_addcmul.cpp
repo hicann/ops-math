@@ -120,8 +120,8 @@ int main()
     aclOpExecutor* executor;
     // 调用aclnnInplaceAddcmul第一段接口
     ret = aclnnInplaceAddcmulGetWorkspaceSize(self, tensor1, tensor2, value, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceAddcmulGetWorkspaceSize failed. ERROR: %d\n", ret);
-              return ret);
+    CHECK_RET(
+        ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceAddcmulGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {

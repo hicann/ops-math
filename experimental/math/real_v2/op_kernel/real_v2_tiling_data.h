@@ -22,8 +22,8 @@
 #define _REAL_V2_TILING_DATA_H_
 
 struct RealV2TilingData {
-    int64_t totalOutputNum = 0;  // Total output element count
-    int64_t blockFactor = 0;     // Elements per AI Core
-    int64_t ubFactor = 0;        // Elements per UB iteration
+    int64_t totalOutputNum = 0; // Total output element count
+    int64_t blockFactor = 0;    // Elements per AI Core
+    int64_t ubFactor = 0;       // Elements per UB iteration
 };
 #endif

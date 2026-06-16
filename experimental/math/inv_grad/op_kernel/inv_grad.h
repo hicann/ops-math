@@ -47,27 +47,26 @@
 
 namespace NsInvGrad {
 
-using AscendC::TPipe;
-using AscendC::TQue;
-using AscendC::TBuf;
-using AscendC::QuePosition;
+using AscendC::Cast;
+using AscendC::DataCopyPad;
+using AscendC::DataCopyParams;
+using AscendC::GetBlockIdx;
 using AscendC::GlobalTensor;
 using AscendC::LocalTensor;
-using AscendC::DataCopyParams;
-using AscendC::DataCopyPad;
-using AscendC::RoundMode;
-using AscendC::GetBlockIdx;
-using AscendC::Cast;
 using AscendC::Mul;
 using AscendC::Muls;
+using AscendC::QuePosition;
+using AscendC::RoundMode;
+using AscendC::TBuf;
+using AscendC::TPipe;
+using AscendC::TQue;
 
 template <typename T>
 class InvGrad {
 public:
     __aicore__ inline InvGrad() {}
 
-    __aicore__ inline void Init(GM_ADDR y, GM_ADDR dy, GM_ADDR dx,
-                                const InvGradTilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR y, GM_ADDR dy, GM_ADDR dx, const InvGradTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -76,46 +75,41 @@ private:
     __aicore__ inline void CopyOut(int64_t gmOffset, int64_t currentNum);
 
     // float32 direct path: Mul(yy, y, y) -> Mul(dx, dy, yy) -> Muls(-1)
-    __aicore__ inline void ComputeFloat32(LocalTensor<float>& yLocal,
-                                          LocalTensor<float>& dyLocal,
-                                          LocalTensor<float>& dxLocal,
-                                          int64_t alignedNum);
+    __aicore__ inline void ComputeFloat32(
+        LocalTensor<float>& yLocal, LocalTensor<float>& dyLocal, LocalTensor<float>& dxLocal, int64_t alignedNum);
     // Non-float32 path: Cast(T->f32) -> compute -> Cast(f32->T)
     template <typename SrcT>
-    __aicore__ inline void ComputeWithCast(LocalTensor<SrcT>& yLocal,
-                                           LocalTensor<SrcT>& dyLocal,
-                                           LocalTensor<SrcT>& dxLocal,
-                                           int64_t alignedNum);
+    __aicore__ inline void ComputeWithCast(
+        LocalTensor<SrcT>& yLocal, LocalTensor<SrcT>& dyLocal, LocalTensor<SrcT>& dxLocal, int64_t alignedNum);
 
 private:
     TPipe pipe;
-    TQue<QuePosition::VECIN, 1>  yQueue_;    // input y
-    TQue<QuePosition::VECIN, 1>  dyQueue_;   // input dy
-    TQue<QuePosition::VECOUT, 1> outQueue_;  // output dx
-    TBuf<QuePosition::VECCALC>   tmpBuf1_;   // fp32 scratch 1 (yy / yFloat)
-    TBuf<QuePosition::VECCALC>   tmpBuf2_;   // fp32 scratch 2 (dyFloat)
+    TQue<QuePosition::VECIN, 1> yQueue_;    // input y
+    TQue<QuePosition::VECIN, 1> dyQueue_;   // input dy
+    TQue<QuePosition::VECOUT, 1> outQueue_; // output dx
+    TBuf<QuePosition::VECCALC> tmpBuf1_;    // fp32 scratch 1 (yy / yFloat)
+    TBuf<QuePosition::VECCALC> tmpBuf2_;    // fp32 scratch 2 (dyFloat)
 
     GlobalTensor<T> yGM_;
     GlobalTensor<T> dyGM_;
     GlobalTensor<T> dxGM_;
 
     int64_t blockOffset_ = 0;
-    int64_t blockLen_    = 0;
-    int64_t ubFactor_    = 0;
+    int64_t blockLen_ = 0;
+    int64_t ubFactor_ = 0;
 };
 
 // =============================================================================
 // Init
 // =============================================================================
 template <typename T>
-__aicore__ inline void InvGrad<T>::Init(GM_ADDR y, GM_ADDR dy, GM_ADDR dx,
-                                        const InvGradTilingData* tilingData)
+__aicore__ inline void InvGrad<T>::Init(GM_ADDR y, GM_ADDR dy, GM_ADDR dx, const InvGradTilingData* tilingData)
 {
     ubFactor_ = tilingData->ubFactor;
 
     if (tilingData->totalElements == 0 || tilingData->blockFactor == 0) {
         blockOffset_ = 0;
-        blockLen_    = 0;
+        blockLen_ = 0;
         return;
     }
 
@@ -127,15 +121,15 @@ __aicore__ inline void InvGrad<T>::Init(GM_ADDR y, GM_ADDR dy, GM_ADDR dx,
     }
     blockLen_ = (remaining > tilingData->blockFactor) ? tilingData->blockFactor : remaining;
 
-    yGM_.SetGlobalBuffer ((__gm__ T*)y  + blockOffset_, blockLen_);
+    yGM_.SetGlobalBuffer((__gm__ T*)y + blockOffset_, blockLen_);
     dyGM_.SetGlobalBuffer((__gm__ T*)dy + blockOffset_, blockLen_);
     dxGM_.SetGlobalBuffer((__gm__ T*)dx + blockOffset_, blockLen_);
 
-    pipe.InitBuffer(yQueue_,   1, ubFactor_ * sizeof(T));
-    pipe.InitBuffer(dyQueue_,  1, ubFactor_ * sizeof(T));
+    pipe.InitBuffer(yQueue_, 1, ubFactor_ * sizeof(T));
+    pipe.InitBuffer(dyQueue_, 1, ubFactor_ * sizeof(T));
     pipe.InitBuffer(outQueue_, 1, ubFactor_ * sizeof(T));
-    pipe.InitBuffer(tmpBuf1_,     ubFactor_ * sizeof(float));
-    pipe.InitBuffer(tmpBuf2_,     ubFactor_ * sizeof(float));
+    pipe.InitBuffer(tmpBuf1_, ubFactor_ * sizeof(float));
+    pipe.InitBuffer(tmpBuf2_, ubFactor_ * sizeof(float));
 }
 
 // =============================================================================
@@ -144,14 +138,14 @@ __aicore__ inline void InvGrad<T>::Init(GM_ADDR y, GM_ADDR dy, GM_ADDR dx,
 template <typename T>
 __aicore__ inline void InvGrad<T>::CopyIn(int64_t gmOffset, int64_t currentNum)
 {
-    LocalTensor<T> yLocal  = yQueue_.template AllocTensor<T>();
+    LocalTensor<T> yLocal = yQueue_.template AllocTensor<T>();
     LocalTensor<T> dyLocal = dyQueue_.template AllocTensor<T>();
     DataCopyParams copyParams;
     copyParams.blockCount = 1;
-    copyParams.blockLen   = static_cast<uint16_t>(currentNum * sizeof(T));
-    copyParams.srcStride  = 0;
-    copyParams.dstStride  = 0;
-    DataCopyPad(yLocal,  yGM_[gmOffset],  copyParams, {false, 0, 0, 0});
+    copyParams.blockLen = static_cast<uint16_t>(currentNum * sizeof(T));
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
+    DataCopyPad(yLocal, yGM_[gmOffset], copyParams, {false, 0, 0, 0});
     DataCopyPad(dyLocal, dyGM_[gmOffset], copyParams, {false, 0, 0, 0});
     yQueue_.EnQue(yLocal);
     dyQueue_.EnQue(dyLocal);
@@ -166,9 +160,9 @@ __aicore__ inline void InvGrad<T>::CopyOut(int64_t gmOffset, int64_t currentNum)
     LocalTensor<T> dxLocal = outQueue_.template DeQue<T>();
     DataCopyParams copyParams;
     copyParams.blockCount = 1;
-    copyParams.blockLen   = static_cast<uint16_t>(currentNum * sizeof(T));
-    copyParams.srcStride  = 0;
-    copyParams.dstStride  = 0;
+    copyParams.blockLen = static_cast<uint16_t>(currentNum * sizeof(T));
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
     DataCopyPad(dxGM_[gmOffset], dxLocal, copyParams);
     outQueue_.FreeTensor(dxLocal);
 }
@@ -177,16 +171,14 @@ __aicore__ inline void InvGrad<T>::CopyOut(int64_t gmOffset, int64_t currentNum)
 // ComputeFloat32: Mul(yy, y, y) -> Mul(dx, dy, yy) -> Muls(dx, dx, -1)
 // =============================================================================
 template <typename T>
-__aicore__ inline void InvGrad<T>::ComputeFloat32(LocalTensor<float>& yLocal,
-                                                  LocalTensor<float>& dyLocal,
-                                                  LocalTensor<float>& dxLocal,
-                                                  int64_t alignedNum)
+__aicore__ inline void InvGrad<T>::ComputeFloat32(
+    LocalTensor<float>& yLocal, LocalTensor<float>& dyLocal, LocalTensor<float>& dxLocal, int64_t alignedNum)
 {
     LocalTensor<float> yy = tmpBuf1_.template Get<float>();
-    Mul (yy,      yLocal,  yLocal, static_cast<int32_t>(alignedNum));   // yy = y * y
-    Mul (dxLocal, dyLocal, yy,     static_cast<int32_t>(alignedNum));   // dx = dy * yy
+    Mul(yy, yLocal, yLocal, static_cast<int32_t>(alignedNum));   // yy = y * y
+    Mul(dxLocal, dyLocal, yy, static_cast<int32_t>(alignedNum)); // dx = dy * yy
     Muls(dxLocal, dxLocal, static_cast<float>(-1.0f),
-         static_cast<int32_t>(alignedNum));                             // dx = -dx
+         static_cast<int32_t>(alignedNum)); // dx = -dx
 }
 
 // =============================================================================
@@ -194,26 +186,23 @@ __aicore__ inline void InvGrad<T>::ComputeFloat32(LocalTensor<float>& yLocal,
 // =============================================================================
 template <typename T>
 template <typename SrcT>
-__aicore__ inline void InvGrad<T>::ComputeWithCast(LocalTensor<SrcT>& yLocal,
-                                                   LocalTensor<SrcT>& dyLocal,
-                                                   LocalTensor<SrcT>& dxLocal,
-                                                   int64_t alignedNum)
+__aicore__ inline void InvGrad<T>::ComputeWithCast(
+    LocalTensor<SrcT>& yLocal, LocalTensor<SrcT>& dyLocal, LocalTensor<SrcT>& dxLocal, int64_t alignedNum)
 {
-    LocalTensor<float> yFloat  = tmpBuf1_.template Get<float>();
+    LocalTensor<float> yFloat = tmpBuf1_.template Get<float>();
     LocalTensor<float> dyFloat = tmpBuf2_.template Get<float>();
 
     // Up-cast: half/bf16 -> float32
-    Cast(yFloat,  yLocal,  RoundMode::CAST_NONE, static_cast<uint32_t>(alignedNum));
+    Cast(yFloat, yLocal, RoundMode::CAST_NONE, static_cast<uint32_t>(alignedNum));
     Cast(dyFloat, dyLocal, RoundMode::CAST_NONE, static_cast<uint32_t>(alignedNum));
 
     // fp32 compute:
     //   yFloat = y * y
     //   yFloat = dy * yFloat
     //   yFloat = -yFloat
-    Mul (yFloat, yFloat,  yFloat, static_cast<int32_t>(alignedNum));
-    Mul (yFloat, dyFloat, yFloat, static_cast<int32_t>(alignedNum));
-    Muls(yFloat, yFloat,  static_cast<float>(-1.0f),
-         static_cast<int32_t>(alignedNum));
+    Mul(yFloat, yFloat, yFloat, static_cast<int32_t>(alignedNum));
+    Mul(yFloat, dyFloat, yFloat, static_cast<int32_t>(alignedNum));
+    Muls(yFloat, yFloat, static_cast<float>(-1.0f), static_cast<int32_t>(alignedNum));
 
     // Down-cast: float32 -> half/bf16
     Cast(dxLocal, yFloat, RoundMode::CAST_ROUND, static_cast<uint32_t>(alignedNum));
@@ -225,13 +214,13 @@ __aicore__ inline void InvGrad<T>::ComputeWithCast(LocalTensor<SrcT>& yLocal,
 template <typename T>
 __aicore__ inline void InvGrad<T>::Compute(int64_t currentNum)
 {
-    LocalTensor<T> yLocal  = yQueue_.template DeQue<T>();
+    LocalTensor<T> yLocal = yQueue_.template DeQue<T>();
     LocalTensor<T> dyLocal = dyQueue_.template DeQue<T>();
     LocalTensor<T> dxLocal = outQueue_.template AllocTensor<T>();
 
     // Align count to the max of float-block and T-block
-    constexpr int64_t floatBlock = 32 / sizeof(float);  // 8
-    constexpr int64_t typeBlock  = 32 / sizeof(T);
+    constexpr int64_t floatBlock = 32 / sizeof(float); // 8
+    constexpr int64_t typeBlock = 32 / sizeof(T);
     constexpr int64_t alignBlock = (floatBlock > typeBlock) ? floatBlock : typeBlock;
     int64_t alignedNum = ((currentNum + alignBlock - 1) / alignBlock) * alignBlock;
 
@@ -257,7 +246,7 @@ __aicore__ inline void InvGrad<T>::Process()
     }
     int64_t loopCount = (blockLen_ + ubFactor_ - 1) / ubFactor_;
     for (int64_t i = 0; i < loopCount; ++i) {
-        int64_t gmOffset   = i * ubFactor_;
+        int64_t gmOffset = i * ubFactor_;
         int64_t currentNum = (i == (loopCount - 1)) ? (blockLen_ - gmOffset) : ubFactor_;
         CopyIn(gmOffset, currentNum);
         Compute(currentNum);

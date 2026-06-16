@@ -23,7 +23,6 @@
 
 namespace optiling {
 
-
 const uint32_t BLOCK_SIZE = 32;
 const uint32_t BUFFER_NUM = 2;
 const uint32_t UB_DATA_NUM_BF16 = 9U;
@@ -50,7 +49,8 @@ static ge::graphStatus RsqrtTilingFunc(gert::TilingContext* context)
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     auto coreNum = ascendcPlatform.GetCoreNum();
     auto socVersion = ascendcPlatform.GetSocVersion();
-    if (socVersion != platform_ascendc::SocVersion::ASCEND910B && context->GetInputDesc(0)->GetDataType() == ge::DT_BF16) {
+    if (socVersion != platform_ascendc::SocVersion::ASCEND910B &&
+        context->GetInputDesc(0)->GetDataType() == ge::DT_BF16) {
         OP_LOGE(context, "socVersion error");
         return ge::GRAPH_FAILED;
     }
@@ -62,19 +62,18 @@ static ge::graphStatus RsqrtTilingFunc(gert::TilingContext* context)
     uint64_t inputLength = inputNum * typeLength;
     uint64_t inputBytes = inputLength / inputNum;
 
-    uint64_t ubDataNumber = (context->GetInputDesc(0)->GetDataType() == ge::DT_BF16) ? UB_DATA_NUM_BF16 : UB_DATA_NUM_OTHER;
-    uint64_t tileBlockNum = (ubSize / BLOCK_SIZE ) / ubDataNumber;
+    uint64_t ubDataNumber =
+        (context->GetInputDesc(0)->GetDataType() == ge::DT_BF16) ? UB_DATA_NUM_BF16 : UB_DATA_NUM_OTHER;
+    uint64_t tileBlockNum = (ubSize / BLOCK_SIZE) / ubDataNumber;
     uint64_t tileDataNum = (tileBlockNum * BLOCK_SIZE) / inputBytes;
-    
+
     uint64_t inputLengthAlgin32 = (((inputLength + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE);
 
-    if(tileDataNum >= inputNum)
-    {
-        coreNum=1;
-    }
-    else
-    {
-        coreNum = (coreNum <  (int64_t)(inputLengthAlgin32 / BLOCK_SIZE)) ? coreNum : (int64_t)(inputLengthAlgin32 / BLOCK_SIZE);
+    if (tileDataNum >= inputNum) {
+        coreNum = 1;
+    } else {
+        coreNum = (coreNum < (int64_t)(inputLengthAlgin32 / BLOCK_SIZE)) ? coreNum :
+                                                                           (int64_t)(inputLengthAlgin32 / BLOCK_SIZE);
     }
     OP_CHECK_IF(coreNum == 0, OP_LOGE(context, "coreNum is 0"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(inputBytes == 0, OP_LOGE(context, "inputBytes is 0"), return ge::GRAPH_FAILED);
@@ -94,8 +93,8 @@ static ge::graphStatus RsqrtTilingFunc(gert::TilingContext* context)
     uint64_t bigTileNum = everyCoreInputBlockNum / tileBlockNum;
     uint64_t finalBigTileNum = (everyCoreInputBlockNum % tileBlockNum) == 0 ? bigTileNum : bigTileNum + 1;
     uint64_t bigTailDataNum = bigCoreDataNum - tileDataNum * bigTileNum;
-    bigTailDataNum = bigTailDataNum == 0 ? tileDataNum : bigTailDataNum; 
-    
+    bigTailDataNum = bigTailDataNum == 0 ? tileDataNum : bigTailDataNum;
+
     tiling->smallCoreDataNum = (uint32_t)smallCoreDataNum;
     tiling->bigCoreDataNum = (uint32_t)bigCoreDataNum;
     tiling->tileDataNum = (uint32_t)tileDataNum;
@@ -105,7 +104,7 @@ static ge::graphStatus RsqrtTilingFunc(gert::TilingContext* context)
     tiling->finalBigTileNum = (uint32_t)finalBigTileNum;
     tiling->tailBlockNum = (uint32_t)tailBlockNum;
 
-    size_t *currentWorkspace = context->GetWorkspaceSizes(1);
+    size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     uint32_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
     currentWorkspace[0] = sysWorkspaceSize;
 

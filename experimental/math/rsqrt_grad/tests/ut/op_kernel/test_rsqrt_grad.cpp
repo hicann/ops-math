@@ -42,10 +42,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./rsqrt_grad_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "rsqrt_grad_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "rsqrt_grad_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;

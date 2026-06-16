@@ -45,8 +45,7 @@ static ge::graphStatus CosTilingFunc(gert::TilingContext* context)
     uint32_t dataTypeLength = 0;
     ge::TypeUtils::GetDataTypeLength(context->GetInputDesc(0)->GetDataType(), dataTypeLength);
     uint64_t inputLength = inputDataNum * dataTypeLength;
-    if (coreNum == 0 || BLOCK_SIZE == 0) 
-    {
+    if (coreNum == 0 || BLOCK_SIZE == 0) {
         OP_LOGE(context, "coreNum or BLOCK_SIZE is 0");
         return ge::GRAPH_FAILED;
     }
@@ -60,14 +59,12 @@ static ge::graphStatus CosTilingFunc(gert::TilingContext* context)
     // Input data for 32B alignment
     uint64_t inputLengthAlign32 = (((inputLength + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE);
 
-    if(ubPartDataNum >= inputDataNum)
-    {
-        coreNum=1;
-    }
-    else
-    {
-        // There is at least 32B of data on each core, satisfying several settings for several cores. The maximum number of audits is the actual number of audits
-        coreNum = (coreNum <  inputLengthAlign32 / BLOCK_SIZE) ? coreNum : inputLengthAlign32 / BLOCK_SIZE;
+    if (ubPartDataNum >= inputDataNum) {
+        coreNum = 1;
+    } else {
+        // There is at least 32B of data on each core, satisfying several settings for several cores. The maximum number
+        // of audits is the actual number of audits
+        coreNum = (coreNum < inputLengthAlign32 / BLOCK_SIZE) ? coreNum : inputLengthAlign32 / BLOCK_SIZE;
     }
 
     uint64_t everyCoreInputBlockNum = inputLengthAlign32 / BLOCK_SIZE / coreNum;
@@ -78,21 +75,18 @@ static ge::graphStatus CosTilingFunc(gert::TilingContext* context)
     uint32_t smallCoreLoopNum = smallCoreDataNum / ubPartDataNum;
     smallCoreLoopNum = (everyCoreInputBlockNum % ubPartBlockNum) == 0 ? smallCoreLoopNum : smallCoreLoopNum + 1;
     // Tail block calculation for small chunks of data
-    uint32_t smallCoreTailDataNum = smallCoreDataNum - ubPartDataNum * (smallCoreLoopNum-1);
+    uint32_t smallCoreTailDataNum = smallCoreDataNum - ubPartDataNum * (smallCoreLoopNum - 1);
     smallCoreTailDataNum = smallCoreTailDataNum == 0 ? ubPartDataNum : smallCoreTailDataNum;
 
-    if(0 != tailBlockNum)
-    {
+    if (0 != tailBlockNum) {
         everyCoreInputBlockNum += 1;
         bigCoreDataNum = everyCoreInputBlockNum * BLOCK_SIZE / dataTypeLength;
         bigCoreLoopNum = bigCoreDataNum / ubPartDataNum;
         bigCoreLoopNum = (everyCoreInputBlockNum % ubPartBlockNum) == 0 ? bigCoreLoopNum : bigCoreLoopNum + 1;
-        bigCoreTailDataNum = bigCoreDataNum - ubPartDataNum * (bigCoreLoopNum-1);
+        bigCoreTailDataNum = bigCoreDataNum - ubPartDataNum * (bigCoreLoopNum - 1);
         bigCoreTailDataNum = bigCoreTailDataNum == 0 ? ubPartDataNum : bigCoreTailDataNum;
         context->SetTilingKey(1);
-    }
-    else
-    {
+    } else {
         context->SetTilingKey(0);
     }
 
@@ -106,7 +100,7 @@ static ge::graphStatus CosTilingFunc(gert::TilingContext* context)
     tiling->tailBlockNum = tailBlockNum;
 
     context->SetBlockDim(coreNum);
-    size_t *currentWorkspace = context->GetWorkspaceSizes(1);
+    size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     currentWorkspace[0] = 0;
     return ge::GRAPH_SUCCESS;
 }

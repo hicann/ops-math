@@ -33,12 +33,7 @@
 
 template <typename D_T>
 __global__ __aicore__ void add_mat_mat_elements(
-    GM_ADDR a,
-    GM_ADDR b,
-    GM_ADDR c,
-    GM_ADDR cOut,
-    GM_ADDR workspace,
-    GM_ADDR tiling)
+    GM_ADDR a, GM_ADDR b, GM_ADDR c, GM_ADDR cOut, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(AddMatMatElementsTilingData);
     GET_TILING_DATA_WITH_STRUCT(AddMatMatElementsTilingData, tilingData, tiling);

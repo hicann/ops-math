@@ -21,16 +21,16 @@
 /*!
  * \file ger_v2.cpp
  * \brief
-*/
+ */
 
 #include "ger_v2.h"
 
 template <uint32_t schMode>
-__global__ __aicore__ void ger_v2(GM_ADDR x, GM_ADDR y, GM_ADDR A,GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void ger_v2(GM_ADDR x, GM_ADDR y, GM_ADDR A, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(GerV2TilingData);
     GET_TILING_DATA_WITH_STRUCT(GerV2TilingData, tilingData, tiling);
-    NsGerV2::GerV2<DTYPE_X> op; // 算子kernel实例获取
-    op.Init(x, y, A,z, &tilingData);      // 算子kernel实例初始化
-    op.Process();                       // 算子kernel实例执行
+    NsGerV2::GerV2<DTYPE_X> op;       // 算子kernel实例获取
+    op.Init(x, y, A, z, &tilingData); // 算子kernel实例初始化
+    op.Process();                     // 算子kernel实例执行
 }

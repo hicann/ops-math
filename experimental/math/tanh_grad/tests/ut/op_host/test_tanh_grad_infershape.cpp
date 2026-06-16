@@ -15,15 +15,9 @@
 
 class TanhGradInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "TanhGradInfershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "TanhGradInfershape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "TanhGradInfershape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "TanhGradInfershape TearDown" << std::endl; }
 };
 
 TEST_F(TanhGradInfershape, tanh_grad_infershape_test1)
@@ -31,13 +25,13 @@ TEST_F(TanhGradInfershape, tanh_grad_infershape_test1)
     gert::InfershapeContextPara infershapeContextPara(
         "TanhGrad",
         {
-            {{{3, 4}, {3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND}, 
+            {{{3, 4}, {3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
             {{{3, 4}, {3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         });
-    
+
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {3, 4},
     };

@@ -101,7 +101,7 @@ const aclTensor* FloorDiv(const aclTensor* self, const aclTensor* other, bool is
             op::ToString(other->GetViewShape()).GetString());
         return nullptr;
     }
-    
+
     aclTensor* out;
     if (isScalar || self->GetDataType() == other->GetDataType()) {
         out = executor->AllocTensor(broadcastShape, self->GetDataType());

@@ -36,34 +36,29 @@ static ge::graphStatus NegTilingFunc(gert::TilingContext* context)
     if (dt == ge::DT_INT8) {
         dataTypeLength = 1;
         ubPartNum += 4;
-    }
-    else if (dt == ge::DT_BF16)
-    {
+    } else if (dt == ge::DT_BF16) {
         dataTypeLength = 2;
         ubPartNum += 2;
-    }
-    else if (dt == ge::DT_FLOAT16)
-    {
+    } else if (dt == ge::DT_FLOAT16) {
         dataTypeLength = 2;
-    } 
-    
+    }
+
     uint64_t ubLength = 0;
     uint64_t bigCoreDataNum = 0;
     uint64_t bigCoreLoopNum = 0;
     uint64_t bigCoreTailDataNum = 0;
-    
+
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubLength);
     auto coreNum = ascendcPlatform.GetCoreNum();
-    
+
     // Based on the input length and the number of inputs, the number of bytes of the input data type is obtained
     uint64_t inputDataNum = context->GetInputShape(0)->GetStorageShape().GetShapeSize();
     uint64_t inputLength = inputDataNum * dataTypeLength;
-    if (coreNum == 0 || BLOCK_SIZE == 0) 
-    {
+    if (coreNum == 0 || BLOCK_SIZE == 0) {
         OP_LOGE(context, "coreNum or BLOCK_SIZE is 0");
         return ge::GRAPH_FAILED;
-    } 
+    }
     uint64_t ubPartLength = ubLength / ubPartNum;
     // The number of 32B data blocks that can be used for each data. DOUBLE BUFFER is already counted here
     uint64_t ubPartBlockNum = ubPartLength / BLOCK_SIZE;
@@ -71,43 +66,38 @@ static ge::graphStatus NegTilingFunc(gert::TilingContext* context)
 
     // Input data for 32B alignment
     uint64_t inputLengthAlign32 = (((inputLength + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE);
-    
-    if(ubPartDataNum >= inputDataNum)
-    {
-        coreNum=1;
+
+    if (ubPartDataNum >= inputDataNum) {
+        coreNum = 1;
+    } else {
+        // There is at least 32B of data on each core, satisfying several settings for several cores. The maximum number
+        // of audits is the actual number of audits
+        coreNum = (coreNum < inputLengthAlign32 / BLOCK_SIZE) ? coreNum : inputLengthAlign32 / BLOCK_SIZE;
     }
-    else
-    {
-        // There is at least 32B of data on each core, satisfying several settings for several cores. The maximum number of audits is the actual number of audits
-        coreNum = (coreNum <  inputLengthAlign32 / BLOCK_SIZE) ? coreNum : inputLengthAlign32 / BLOCK_SIZE;
-    }
-    
+
     uint64_t everyCoreInputBlockNum = inputLengthAlign32 / BLOCK_SIZE / coreNum;
     uint64_t tailBlockNum = (inputLengthAlign32 / BLOCK_SIZE) % coreNum;
-    
+
     // Small chunks are calculated and sliced several times using the number of data on each core
     uint64_t smallCoreDataNum = everyCoreInputBlockNum * BLOCK_SIZE / dataTypeLength;
     uint64_t smallCoreLoopNum = smallCoreDataNum / ubPartDataNum;
     smallCoreLoopNum = (everyCoreInputBlockNum % ubPartBlockNum) == 0 ? smallCoreLoopNum : smallCoreLoopNum + 1;
     // Tail block calculation for small chunks of data
-    uint64_t smallCoreTailDataNum = smallCoreDataNum - ubPartDataNum * (smallCoreLoopNum-1);
+    uint64_t smallCoreTailDataNum = smallCoreDataNum - ubPartDataNum * (smallCoreLoopNum - 1);
     smallCoreTailDataNum = smallCoreTailDataNum == 0 ? ubPartDataNum : smallCoreTailDataNum;
 
-    if(0 != tailBlockNum)
-    {
+    if (0 != tailBlockNum) {
         everyCoreInputBlockNum += 1;
         bigCoreDataNum = everyCoreInputBlockNum * BLOCK_SIZE / dataTypeLength;
         bigCoreLoopNum = bigCoreDataNum / ubPartDataNum;
         bigCoreLoopNum = (everyCoreInputBlockNum % ubPartBlockNum) == 0 ? bigCoreLoopNum : bigCoreLoopNum + 1;
-        bigCoreTailDataNum = bigCoreDataNum - ubPartDataNum * (bigCoreLoopNum-1);
+        bigCoreTailDataNum = bigCoreDataNum - ubPartDataNum * (bigCoreLoopNum - 1);
         bigCoreTailDataNum = bigCoreTailDataNum == 0 ? ubPartDataNum : bigCoreTailDataNum;
         context->SetTilingKey(1);
-    }
-    else
-    {
+    } else {
         context->SetTilingKey(0);
     }
-    
+
     tiling->smallCoreDataNum = smallCoreDataNum;
     tiling->bigCoreDataNum = bigCoreDataNum;
     tiling->ubPartDataNum = ubPartDataNum;
@@ -117,8 +107,8 @@ static ge::graphStatus NegTilingFunc(gert::TilingContext* context)
     tiling->bigCoreLoopNum = bigCoreLoopNum;
     tiling->tailBlockNum = tailBlockNum;
 
-    context->SetBlockDim(coreNum);    
-    size_t *currentWorkspace = context->GetWorkspaceSizes(1);
+    context->SetBlockDim(coreNum);
+    size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     currentWorkspace[0] = 0;
     return ge::GRAPH_SUCCESS;
 }

@@ -45,10 +45,10 @@
 
 namespace optiling {
 
-using Ops::Base::CeilDiv;
 using Ops::Base::CeilAlign;
-using Ops::Base::FloorDiv;
+using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
@@ -56,7 +56,8 @@ constexpr int64_t MIN_SPLIT_THRESHOLD = 1024;
 
 static const gert::Shape g_vec_1_shape = {1};
 
-static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape) {
+static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape)
+{
     if (in_shape.GetDimNum() == 0) {
         return g_vec_1_shape;
     }
@@ -93,8 +94,8 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
         inputShapeY.GetShapeSize() != inputShapeDy.GetShapeSize() ||
             inputShapeY.GetShapeSize() != outShapeZ.GetShapeSize(),
         OP_LOGE(
-            context, "AsinhGrad: shape mismatch: y=%ld, dy=%ld, z=%ld",
-            inputShapeY.GetShapeSize(), inputShapeDy.GetShapeSize(), outShapeZ.GetShapeSize()),
+            context, "AsinhGrad: shape mismatch: y=%ld, dy=%ld, z=%ld", inputShapeY.GetShapeSize(),
+            inputShapeDy.GetShapeSize(), outShapeZ.GetShapeSize()),
         return ge::GRAPH_FAILED);
 
     totalIdx = inputShapeY.GetShapeSize();
@@ -113,8 +114,9 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
     // Verify y and dy have same dtype
     auto inputDescDy = context->GetInputDesc(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDescDy);
-    OP_CHECK_IF(inputDescDy->GetDataType() != dataType,
-                OP_LOGE(context, "AsinhGrad: y/dy dtype mismatch"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        inputDescDy->GetDataType() != dataType, OP_LOGE(context, "AsinhGrad: y/dy dtype mismatch"),
+        return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -133,8 +135,7 @@ static ge::graphStatus AsinhGradTilingFunc(gert::TilingContext* context)
     uint64_t ubSize;
     int64_t coreNum;
     OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"),
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
         return ge::GRAPH_FAILED);
 
     // 2. Get shape and dtype info
@@ -142,13 +143,11 @@ static ge::graphStatus AsinhGradTilingFunc(gert::TilingContext* context)
     ge::DataType dataType;
     OP_CHECK_IF(
         GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeAttrsInfo error"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     // 3. Get workspace size
     OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"),
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
         return ge::GRAPH_FAILED);
 
     // 4. Calculate tiling parameters
@@ -187,8 +186,7 @@ static ge::graphStatus AsinhGradTilingFunc(gert::TilingContext* context)
         bufferNum = useDoubleBuffer ? 8 : 7;
     }
     tiling->ubFactor = FloorAlign(
-        FloorDiv(static_cast<int64_t>(ubSize) / static_cast<int64_t>(sizeof(float)), bufferNum),
-        ubBlockSize);
+        FloorDiv(static_cast<int64_t>(ubSize) / static_cast<int64_t>(sizeof(float)), bufferNum), ubBlockSize);
 
     context->SetBlockDim(usedCoreNum);
 

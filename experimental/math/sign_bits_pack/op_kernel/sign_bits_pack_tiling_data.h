@@ -24,8 +24,8 @@ struct SignBitsPackTilingData {
     uint64_t tileDataNum;
     uint64_t smallTailDataNum;
     uint64_t bigTailDataNum;
-    uint64_t tailBlockNum; 
-    uint32_t usedDb; 
+    uint64_t tailBlockNum;
+    uint32_t usedDb;
     uint32_t lastCopyLength;
     uint32_t rightPaddingElemNums;
     uint32_t lastCalcLength;

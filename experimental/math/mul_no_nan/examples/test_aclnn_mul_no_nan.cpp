@@ -34,29 +34,26 @@
 #include "acl/acl.h"
 #include "../op_api/aclnn_mul_no_nan.h"
 
-#define CHECK_ACL(expr)                                                     \
-    do {                                                                    \
-        auto _ret = (expr);                                                 \
-        if (_ret != ACL_SUCCESS) {                                          \
-            std::cerr << "[ERROR] " << #expr << " failed, ret=" << _ret     \
-                      << " at " << __FILE__ << ":" << __LINE__ << std::endl;\
-            return 1;                                                       \
-        }                                                                   \
+#define CHECK_ACL(expr)                                                                                          \
+    do {                                                                                                         \
+        auto _ret = (expr);                                                                                      \
+        if (_ret != ACL_SUCCESS) {                                                                               \
+            std::cerr << "[ERROR] " << #expr << " failed, ret=" << _ret << " at " << __FILE__ << ":" << __LINE__ \
+                      << std::endl;                                                                              \
+            return 1;                                                                                            \
+        }                                                                                                        \
     } while (0)
 
-int CreateAclTensor(const void* hostData, size_t dataSize,
-                    const std::vector<int64_t>& shape,
-                    const std::vector<int64_t>& strides,
-                    void** deviceAddr, aclDataType dataType,
-                    aclTensor** tensor)
+int CreateAclTensor(
+    const void* hostData, size_t dataSize, const std::vector<int64_t>& shape, const std::vector<int64_t>& strides,
+    void** deviceAddr, aclDataType dataType, aclTensor** tensor)
 {
     CHECK_ACL(aclrtMalloc(deviceAddr, dataSize, ACL_MEM_MALLOC_HUGE_FIRST));
-    CHECK_ACL(aclrtMemcpy(*deviceAddr, dataSize, hostData, dataSize,
-                          ACL_MEMCPY_HOST_TO_DEVICE));
+    CHECK_ACL(aclrtMemcpy(*deviceAddr, dataSize, hostData, dataSize, ACL_MEMCPY_HOST_TO_DEVICE));
 
-    *tensor = aclCreateTensor(shape.data(), shape.size(), dataType,
-                              strides.data(), 0, aclFormat::ACL_FORMAT_ND,
-                              shape.data(), shape.size(), *deviceAddr);
+    *tensor = aclCreateTensor(
+        shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
+        *deviceAddr);
     if (*tensor == nullptr) {
         std::cerr << "[ERROR] aclCreateTensor returned nullptr" << std::endl;
         return 1;
@@ -97,70 +94,81 @@ int main()
     bool pass = true;
     int ret = 0;
 
-    if (CreateAclTensor(hostX.data(), dataSize, shape, strides,
-                        &devX, ACL_FLOAT, &tensorX) != 0) {
-        ret = 1; goto cleanup;
+    if (CreateAclTensor(hostX.data(), dataSize, shape, strides, &devX, ACL_FLOAT, &tensorX) != 0) {
+        ret = 1;
+        goto cleanup;
     }
-    if (CreateAclTensor(hostY.data(), dataSize, shape, strides,
-                        &devY, ACL_FLOAT, &tensorY) != 0) {
-        ret = 1; goto cleanup;
+    if (CreateAclTensor(hostY.data(), dataSize, shape, strides, &devY, ACL_FLOAT, &tensorY) != 0) {
+        ret = 1;
+        goto cleanup;
     }
-    if (CreateAclTensor(hostZ.data(), dataSize, shape, strides,
-                        &devZ, ACL_FLOAT, &tensorZ) != 0) {
-        ret = 1; goto cleanup;
+    if (CreateAclTensor(hostZ.data(), dataSize, shape, strides, &devZ, ACL_FLOAT, &tensorZ) != 0) {
+        ret = 1;
+        goto cleanup;
     }
 
-    if (aclnnMulNoNanGetWorkspaceSize(tensorX, tensorY, tensorZ,
-                                       &workspaceSize, &executor) != 0) {
+    if (aclnnMulNoNanGetWorkspaceSize(tensorX, tensorY, tensorZ, &workspaceSize, &executor) != 0) {
         std::cerr << "[ERROR] aclnnMulNoNanGetWorkspaceSize failed" << std::endl;
-        ret = 1; goto cleanup;
+        ret = 1;
+        goto cleanup;
     }
     std::cout << "workspaceSize = " << workspaceSize << std::endl;
 
     if (workspaceSize > 0) {
         if (aclrtMalloc(&workspace, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST) != ACL_SUCCESS) {
             std::cerr << "[ERROR] aclrtMalloc workspace failed" << std::endl;
-            ret = 1; goto cleanup;
+            ret = 1;
+            goto cleanup;
         }
     }
 
     if (aclnnMulNoNan(workspace, workspaceSize, executor, stream) != 0) {
         std::cerr << "[ERROR] aclnnMulNoNan failed" << std::endl;
-        ret = 1; goto cleanup;
+        ret = 1;
+        goto cleanup;
     }
 
     if (aclrtSynchronizeStream(stream) != ACL_SUCCESS) {
         std::cerr << "[ERROR] aclrtSynchronizeStream failed" << std::endl;
-        ret = 1; goto cleanup;
+        ret = 1;
+        goto cleanup;
     }
 
-    if (aclrtMemcpy(hostZ.data(), dataSize, devZ, dataSize,
-                     ACL_MEMCPY_DEVICE_TO_HOST) != ACL_SUCCESS) {
+    if (aclrtMemcpy(hostZ.data(), dataSize, devZ, dataSize, ACL_MEMCPY_DEVICE_TO_HOST) != ACL_SUCCESS) {
         std::cerr << "[ERROR] aclrtMemcpy D2H failed" << std::endl;
-        ret = 1; goto cleanup;
+        ret = 1;
+        goto cleanup;
     }
 
     std::cout << "Results:" << std::endl;
     for (int64_t i = 0; i < numElements; ++i) {
         bool match = (std::fabs(hostZ[i] - expected[i]) < 1e-6f);
-        std::cout << "  z[" << i << "] = " << hostZ[i]
-                  << " (expected " << expected[i] << ")"
+        std::cout << "  z[" << i << "] = " << hostZ[i] << " (expected " << expected[i] << ")"
                   << (match ? "" : "  *** MISMATCH ***") << std::endl;
-        if (!match) pass = false;
+        if (!match)
+            pass = false;
     }
 
     std::cout << "\nVerification: " << (pass ? "PASS" : "FAIL") << std::endl;
-    if (!pass) ret = 1;
+    if (!pass)
+        ret = 1;
 
 cleanup:
-    if (tensorX) aclDestroyTensor(tensorX);
-    if (tensorY) aclDestroyTensor(tensorY);
-    if (tensorZ) aclDestroyTensor(tensorZ);
+    if (tensorX)
+        aclDestroyTensor(tensorX);
+    if (tensorY)
+        aclDestroyTensor(tensorY);
+    if (tensorZ)
+        aclDestroyTensor(tensorZ);
 
-    if (devX) aclrtFree(devX);
-    if (devY) aclrtFree(devY);
-    if (devZ) aclrtFree(devZ);
-    if (workspace) aclrtFree(workspace);
+    if (devX)
+        aclrtFree(devX);
+    if (devY)
+        aclrtFree(devY);
+    if (devZ)
+        aclrtFree(devZ);
+    if (workspace)
+        aclrtFree(workspace);
 
     aclrtDestroyStream(stream);
     aclrtResetDevice(deviceId);

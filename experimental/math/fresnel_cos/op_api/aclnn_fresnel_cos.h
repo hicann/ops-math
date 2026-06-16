@@ -27,20 +27,14 @@ extern "C" {
 /**
  * @brief Compute workspace size for aclnnFresnelCos.
  */
-ACLNN_API aclnnStatus aclnnFresnelCosGetWorkspaceSize(
-    const aclTensor *x,
-    aclTensor *out,
-    uint64_t *workspaceSize,
-    aclOpExecutor **executor);
+ACLNN_API aclnnStatus
+aclnnFresnelCosGetWorkspaceSize(const aclTensor* x, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief Execute FresnelCos computation.
  */
-ACLNN_API aclnnStatus aclnnFresnelCos(
-    void *workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor *executor,
-    aclrtStream stream);
+ACLNN_API aclnnStatus
+aclnnFresnelCos(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 #ifdef __cplusplus
 }

@@ -32,8 +32,7 @@ using namespace op;
 #define ACLNN_MAX_SHAPE_RANK 8
 
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16
-};
+    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16};
 
 static bool CheckNotNull(const aclTensor* self, const aclTensor* out)
 {
@@ -45,11 +44,12 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* out)
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     auto dtype = self->GetDataType();
-    OP_CHECK(CheckType(dtype, AICORE_DTYPE_SUPPORT_LIST),
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                     "Ndtri unsupported dtype: %d. Supported: FLOAT, FLOAT16, BF16.",
-                     static_cast<int>(dtype)),
-             return false);
+    OP_CHECK(
+        CheckType(dtype, AICORE_DTYPE_SUPPORT_LIST),
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Ndtri unsupported dtype: %d. Supported: FLOAT, FLOAT16, BF16.",
+            static_cast<int>(dtype)),
+        return false);
     OP_CHECK_DTYPE_NOT_MATCH(out, dtype, return false);
     return true;
 }
@@ -57,27 +57,21 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 static bool CheckShape(const aclTensor* self, const aclTensor* out)
 {
     OP_CHECK_MAX_DIM(self, ACLNN_MAX_SHAPE_RANK, return false);
-    OP_CHECK_MAX_DIM(out,  ACLNN_MAX_SHAPE_RANK, return false);
+    OP_CHECK_MAX_DIM(out, ACLNN_MAX_SHAPE_RANK, return false);
     OP_CHECK_SHAPE_NOT_EQUAL(out, self, return false);
     return true;
 }
 
 static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
 {
-    CHECK_COND(CheckNotNull(self, out),
-               ACLNN_ERR_PARAM_NULLPTR, "CheckNotNull failed");
-    CHECK_COND(CheckDtypeValid(self, out),
-               ACLNN_ERR_PARAM_INVALID, "CheckDtypeValid failed");
-    CHECK_COND(CheckShape(self, out),
-               ACLNN_ERR_PARAM_INVALID, "CheckShape failed");
+    CHECK_COND(CheckNotNull(self, out), ACLNN_ERR_PARAM_NULLPTR, "CheckNotNull failed");
+    CHECK_COND(CheckDtypeValid(self, out), ACLNN_ERR_PARAM_INVALID, "CheckDtypeValid failed");
+    CHECK_COND(CheckShape(self, out), ACLNN_ERR_PARAM_INVALID, "CheckShape failed");
     return ACLNN_SUCCESS;
 }
 
 extern "C" aclnnStatus aclnnNdtriGetWorkspaceSize(
-    const aclTensor* self,
-    aclTensor* out,
-    uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnNdtri, DFX_IN(self), DFX_OUT(out));
 
@@ -117,9 +111,7 @@ extern "C" aclnnStatus aclnnNdtriGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-extern "C" aclnnStatus aclnnNdtri(
-    void* workspace, uint64_t workspaceSize,
-    aclOpExecutor* executor, aclrtStream stream)
+extern "C" aclnnStatus aclnnNdtri(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnNdtri);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

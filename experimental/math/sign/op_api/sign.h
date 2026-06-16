@@ -14,7 +14,7 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-const aclTensor *Sign(const aclTensor *self, aclOpExecutor *executor);
-}  // namespace l0op
+const aclTensor* Sign(const aclTensor* self, aclOpExecutor* executor);
+} // namespace l0op
 
 #endif

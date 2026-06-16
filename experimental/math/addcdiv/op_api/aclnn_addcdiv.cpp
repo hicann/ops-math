@@ -64,8 +64,7 @@ static op::DataType GetScalarDefaultDtype(const op::DataType input)
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* tensor1, const aclTensor* tensor2)
 {
     auto socVersion = GetCurrentPlatformInfo().GetCurNpuArch();
-    bool is910BSocVersion =
-        (socVersion == NpuArch::DAV_2201 || socVersion == NpuArch::DAV_3510);
+    bool is910BSocVersion = (socVersion == NpuArch::DAV_2201 || socVersion == NpuArch::DAV_3510);
     const std::initializer_list<DataType> DTYPE_SUPPORT_LIST =
         is910BSocVersion ? DTYPE_SUPPORT_LIST_910B : DTYPE_SUPPORT_LIST_910;
 
@@ -210,8 +209,8 @@ aclnnStatus aclnnAddcdivGetWorkspaceSize(
     CHECK_RET(tensor2Casted != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 如果是混合数据类型（self为bf16或float16,且value为float32），则value dtype保持float32类型
-    bool isToFloat = GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 &&
-                     IsMixedDType(self, value) && promoteType != op::DataType::DT_DOUBLE;
+    bool isToFloat = GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && IsMixedDType(self, value) &&
+                     promoteType != op::DataType::DT_DOUBLE;
     auto valueDtype = isToFloat ? op::DataType::DT_FLOAT : promoteType;
     auto valueTensor = uniqueExecutor.get()->ConvertToTensor(value, valueDtype);
     CHECK_RET(valueTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);

@@ -31,10 +31,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./atan2_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "atan2_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "atan2_test TearDown" << std::endl; }
 };
 
 template <typename T1, typename T2>
@@ -50,7 +47,7 @@ TEST_F(Atan2Test, test_case_float16_1)
     system("cd ./atan2_data/ && python3 gen_data.py '(128, 64)' 'float16'");
     uint32_t dataCount = 128 * 64;
     size_t inputByteSize = dataCount * sizeof(half);
-    
+
     std::string x1_fileName = "./atan2_data/float16_input_x1_t_atan2.bin";
     uint8_t* x1 = (uint8_t*)AscendC::GmAlloc(CeilAlign(inputByteSize, 256));
     ReadFile(x1_fileName, inputByteSize, x1, inputByteSize);
@@ -69,15 +66,15 @@ TEST_F(Atan2Test, test_case_float16_1)
     Atan2TilingData* tilingData = reinterpret_cast<Atan2TilingData*>(tiling);
 
     // 将 Tiling 里的块大小强行缩减，避免把 192KB 的 UB 内存撑爆
-    tilingData->smallCoreDataNum = 128;  
+    tilingData->smallCoreDataNum = 128;
     tilingData->bigCoreDataNum = 144;
     tilingData->finalBigTileNum = 1;
     tilingData->finalSmallTileNum = 1;
-    tilingData->tileDataNum = 256;      // <-- 缩小：原为 4080
+    tilingData->tileDataNum = 256; // <-- 缩小：原为 4080
     tilingData->smallTailDataNum = 128;
     tilingData->bigTailDataNum = 144;
     tilingData->tailBlockNum = 0;
-    tilingData->atanTmpSize = 8192;     // <-- 缩小：原为 130560
+    tilingData->atanTmpSize = 8192; // <-- 缩小：原为 130560
 
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     auto func = atan2<ELEMENTWISE_TPL_SCH_MODE_0>;

@@ -22,28 +22,20 @@ using namespace std;
 
 class l2_select_v2_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_select_v2_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "l2_select_v2_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "l2_select_v2_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "l2_select_v2_test TearDown" << endl; }
 };
 
 TEST_F(l2_select_v2_test, case_01_float)
 {
     op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
 
-    auto conditionDesc =
-        TensorDesc({2, 2}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true, false, false, true});
+    auto conditionDesc = TensorDesc({2, 2}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true, false, false, true});
     auto selfDesc =
-        TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{-1.023, 2023.08, 3.14, 10987654321.0});    
-    auto otherDesc =
-        TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{-3.023, 20.09, 5.197, 109.0888});       
-    
+        TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{-1.023, 2023.08, 3.14, 10987654321.0});
+    auto otherDesc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{-3.023, 20.09, 5.197, 109.0888});
+
     auto outDesc = TensorDesc({2, 2}, ACL_BOOL, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnSWhere, INPUT(conditionDesc, selfDesc, otherDesc), OUTPUT(outDesc));

@@ -48,7 +48,7 @@ public:
             .AutoContiguous();
 
         this->Attr("mode").AttrType(REQUIRED).Int(1);         // default SUM
-        this->Attr("coeff").AttrType(OPTIONAL).ListFloat({});  // default empty
+        this->Attr("coeff").AttrType(OPTIONAL).ListFloat({}); // default empty
 
         // Ascend950 (arch35) configuration only
         OpAICoreConfig aicoreConfig950;

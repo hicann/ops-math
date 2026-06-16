@@ -21,7 +21,7 @@
 /*!
  * \file range.cpp
  * \brief
-*/
+ */
 
 #include "register/op_impl_registry.h"
 #include "log/log.h"

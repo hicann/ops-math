@@ -9,11 +9,11 @@
  */
 
 /**
-* 我们正常的版权申明，下面是我们的备注
-*
-* NOTE: Portions of this code were AI-generated and have been
-* technically reviewed for functional accuracy and security
-*/
+ * 我们正常的版权申明，下面是我们的备注
+ *
+ * NOTE: Portions of this code were AI-generated and have been
+ * technically reviewed for functional accuracy and security
+ */
 
 /*!
  * \file cdist_grad_tiling.cpp
@@ -72,12 +72,14 @@ static ge::graphStatus CdistGradTilingFunc(gert::TilingContext* context)
 {
     uint64_t ubSizeU64;
     int64_t coreNum;
-    OP_CHECK_IF(GetPlatformInfo(context, ubSizeU64, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetPlatformInfo(context, ubSizeU64, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+        return ge::GRAPH_FAILED);
     int64_t ubSize = static_cast<int64_t>(ubSizeU64);
 
-    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+        return ge::GRAPH_FAILED);
 
     // Get p attribute (index=0, the only attr)
     const auto* attrs = context->GetAttrs();
@@ -129,8 +131,7 @@ static ge::graphStatus CdistGradTilingFunc(gert::TilingContext* context)
         R = x2Shape.GetDim(0);
     }
 
-    OP_LOGI(context, "CdistGrad Tiling: B=%ld P=%ld R=%ld M=%ld pValue=%.2f pMode=%u",
-            B, P, R, M, pValue, pModeInt);
+    OP_LOGI(context, "CdistGrad Tiling: B=%ld P=%ld R=%ld M=%ld pValue=%.2f pMode=%u", B, P, R, M, pValue, pModeInt);
 
     // Determine dtype and type size
     auto inputDesc = context->GetInputDesc(0);
@@ -146,7 +147,8 @@ static ge::graphStatus CdistGradTilingFunc(gert::TilingContext* context)
 
     // Mask buffer: bit-packed, ceil(mAligned/8) rounded up to 32 bytes
     int64_t maskBufSize = ((mAligned / 8 + 31) / 32) * 32;
-    if (maskBufSize < 32) maskBufSize = 32;
+    if (maskBufSize < 32)
+        maskBufSize = 32;
 
     // tmpReduceBufSize: minimum 4096 bytes
     int64_t tmpReduceBufSize = 4096;
@@ -162,7 +164,8 @@ static ge::graphStatus CdistGradTilingFunc(gert::TilingContext* context)
     // castBuf size = mAligned * sizeof(half), aligned to 32 bytes
     if (isFp16) {
         int64_t castBufBytes = AlignTo32Bytes(mAligned, inputTypeSize) * inputTypeSize;
-        if (castBufBytes < BLOCK_SIZE) castBufBytes = BLOCK_SIZE;
+        if (castBufBytes < BLOCK_SIZE)
+            castBufBytes = BLOCK_SIZE;
         fixedBytes += castBufBytes;
     }
 
@@ -175,13 +178,16 @@ static ge::graphStatus CdistGradTilingFunc(gert::TilingContext* context)
     if (ubSize > fixedBytes) {
         rTile = (ubSize - fixedBytes) / perRowBytes;
     }
-    if (rTile < 1) rTile = 1;
-    if (rTile > R) rTile = R;
+    if (rTile < 1)
+        rTile = 1;
+    if (rTile > R)
+        rTile = R;
 
     // Check if M is too large for UB: even with rTile=1, total buffer must fit in UB
     int64_t minRequiredBytes = fixedBytes + perRowBytes; // minimum: fixed buffers + 1 R-tile row
     if (minRequiredBytes > ubSize) {
-        OP_LOGW(context,
+        OP_LOGW(
+            context,
             "CdistGrad: M=%ld (mAligned=%ld) exceeds UB capacity. "
             "Required %ld bytes > UB %ld bytes. Results may be incorrect.",
             M, mAligned, minRequiredBytes, ubSize);
@@ -193,7 +199,8 @@ static ge::graphStatus CdistGradTilingFunc(gert::TilingContext* context)
     // Number of R chunks
     int64_t numRChunks = CeilDiv(R, rTile);
     int64_t lastRChunkSize = R - (numRChunks - 1) * rTile;
-    if (lastRChunkSize <= 0) lastRChunkSize = rTile;
+    if (lastRChunkSize <= 0)
+        lastRChunkSize = rTile;
 
     // Multi-core split along B*P
     int64_t totalTasks = B * P;
@@ -201,13 +208,15 @@ static ge::graphStatus CdistGradTilingFunc(gert::TilingContext* context)
     int64_t usedCoreNum = CeilDiv(totalTasks, tasksPerCore);
     int64_t tailCoreTasks = totalTasks - (usedCoreNum - 1) * tasksPerCore;
 
-    OP_LOGI(context, "CdistGrad: mAligned=%ld rTile=%ld rTileAligned=%ld numRChunks=%ld usedCoreNum=%ld",
-            mAligned, rTile, rTileAligned, numRChunks, usedCoreNum);
+    OP_LOGI(
+        context, "CdistGrad: mAligned=%ld rTile=%ld rTileAligned=%ld numRChunks=%ld usedCoreNum=%ld", mAligned, rTile,
+        rTileAligned, numRChunks, usedCoreNum);
 
     // Fill TilingData
     CdistGradTilingData* tiling = context->GetTilingData<CdistGradTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(memset_s(tiling, sizeof(CdistGradTilingData), 0, sizeof(CdistGradTilingData)) != EOK,
+    OP_CHECK_IF(
+        memset_s(tiling, sizeof(CdistGradTilingData), 0, sizeof(CdistGradTilingData)) != EOK,
         OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     tiling->batchSize = B;
@@ -245,8 +254,6 @@ static ge::graphStatus TilingParseForCdistGrad([[maybe_unused]] gert::TilingPars
 
 struct CdistGradCompileInfo {};
 
-IMPL_OP_OPTILING(CdistGrad)
-    .Tiling(CdistGradTilingFunc)
-    .TilingParse<CdistGradCompileInfo>(TilingParseForCdistGrad);
+IMPL_OP_OPTILING(CdistGrad).Tiling(CdistGradTilingFunc).TilingParse<CdistGradCompileInfo>(TilingParseForCdistGrad);
 
 } // namespace optiling

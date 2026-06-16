@@ -19,18 +19,19 @@
 #include "opdev/op_executor.h"
 #include "opdev/shape_utils.h"
 
-
 using namespace op;
 
 namespace l0op {
 OP_TYPE_REGISTER(AccumulateNv2);
 
-const aclTensor *AccumulateNv2(const aclTensorList *tensors, aclOpExecutor *executor) {
-  L0_DFX(AccumulateNv2, tensors);
-  auto out = executor->AllocTensor((*tensors)[0]->GetViewShape(), (*tensors)[0]->GetDataType());
-  auto ret = ADD_TO_LAUNCHER_LIST_AICORE(AccumulateNv2, OP_INPUT(tensors), OP_OUTPUT(out));
-  OP_CHECK(ret ==  ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AccumulateNv2AiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-    return nullptr);
-  return out;
+const aclTensor* AccumulateNv2(const aclTensorList* tensors, aclOpExecutor* executor)
+{
+    L0_DFX(AccumulateNv2, tensors);
+    auto out = executor->AllocTensor((*tensors)[0]->GetViewShape(), (*tensors)[0]->GetDataType());
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(AccumulateNv2, OP_INPUT(tensors), OP_OUTPUT(out));
+    OP_CHECK(
+        ret == ACLNN_SUCCESS,
+        OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AccumulateNv2AiCore ADD_TO_LAUNCHER_LIST_AICORE failed."), return nullptr);
+    return out;
 }
-}  // namespace l0op
+} // namespace l0op

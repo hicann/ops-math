@@ -33,14 +33,8 @@ using namespace std;
 
 class l2_cosh_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "Cosh Test Setup" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "Cosh Test TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "Cosh Test Setup" << std::endl; }
+    static void TearDownTestCase() { std::cout << "Cosh Test TearDown" << std::endl; }
 };
 
 // 空tensor

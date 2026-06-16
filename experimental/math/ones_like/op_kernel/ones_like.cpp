@@ -15,8 +15,7 @@
 
 #include "ones_like.h"
 
-enum class OnesLikeTilingKey : uint32_t
-{
+enum class OnesLikeTilingKey : uint32_t {
     TILING_KEY_0 = 0,
 };
 

@@ -21,15 +21,9 @@ using namespace optiling;
 
 class AtanTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "AtanTiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "AtanTiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "AtanTiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "AtanTiling TearDown " << endl; }
 };
 
 TEST_F(AtanTiling, ascend9101_test_tiling_fp16_001)
@@ -45,7 +39,8 @@ TEST_F(AtanTiling, ascend9101_test_tiling_fp16_001)
         },
         &compileInfo);
     uint64_t expectTilingKey = 0;
-    string expectTilingData = "1099511627904 4294967297 1099511627904 6784 "; //test框架是uint64_t读取的，读了2个uint32_t,"128 256 1 1 128 256 6784 0";
+    string expectTilingData = "1099511627904 4294967297 1099511627904 6784 "; // test框架是uint64_t读取的，读了2个uint32_t,"128
+                                                                              // 256 1 1 128 256 6784 0";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

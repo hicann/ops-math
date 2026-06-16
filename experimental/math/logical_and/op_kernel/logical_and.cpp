@@ -18,8 +18,7 @@
 #define DOUBLE_BUFFER_NUM 2
 #define SINGLE_BUFFER_NUM 1
 
-enum class LogicalAndTilingKey : uint32_t
-{
+enum class LogicalAndTilingKey : uint32_t {
     TILING_KEY_DB = 0,
     TILING_KEY_NDB = 1,
 };
@@ -31,16 +30,14 @@ __global__ __aicore__ void logical_and(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADD
     GET_TILING_DATA_WITH_STRUCT(LogicalAndTilingData, tilingData, tiling);
     AscendC::TPipe pipe;
     // 场景1
-    if constexpr (schMode == static_cast<uint32_t>(LogicalAndTilingKey::TILING_KEY_DB))
-    {
+    if constexpr (schMode == static_cast<uint32_t>(LogicalAndTilingKey::TILING_KEY_DB)) {
         MyLogicalAnd::LogicalAnd<DOUBLE_BUFFER_NUM> op; // 算子kernel实例获取
-        op.Init(x1, x2, y, &tilingData, &pipe);      // 算子kernel实例初始化
-        op.Process();                       // 算子kernel实例执行
+        op.Init(x1, x2, y, &tilingData, &pipe);         // 算子kernel实例初始化
+        op.Process();                                   // 算子kernel实例执行
     }
-    if constexpr (schMode == static_cast<uint32_t>(LogicalAndTilingKey::TILING_KEY_NDB))
-    {
+    if constexpr (schMode == static_cast<uint32_t>(LogicalAndTilingKey::TILING_KEY_NDB)) {
         MyLogicalAnd::LogicalAnd<SINGLE_BUFFER_NUM> op; // 算子kernel实例获取
-        op.Init(x1, x2, y, &tilingData, &pipe);        // 算子kernel实例初始化
-        op.Process();                         // 算子kernel实例执行
+        op.Init(x1, x2, y, &tilingData, &pipe);         // 算子kernel实例初始化
+        op.Process();                                   // 算子kernel实例执行
     }
 }

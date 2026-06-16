@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
- /**
+/**
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
  */
@@ -37,8 +37,8 @@
 namespace optiling {
 
 using Ops::Base::CeilDiv;
-using Ops::Base::FloorDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
 
@@ -64,8 +64,7 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus GetShapeInfo(gert::TilingContext* context, int64_t& totalElements,
-                                    ge::DataType& dataType)
+static ge::graphStatus GetShapeInfo(gert::TilingContext* context, int64_t& totalElements, ge::DataType& dataType)
 {
     auto inputSelf = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputSelf);
@@ -75,9 +74,7 @@ static ge::graphStatus GetShapeInfo(gert::TilingContext* context, int64_t& total
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
     dataType = inputDesc->GetDataType();
-    const std::set<ge::DataType> supportedDtype = {
-        ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16
-    };
+    const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
     if (supportedDtype.count(dataType) == 0) {
         OP_LOGE(context, "Inv: unsupported dtype %d", static_cast<int>(dataType));
         return ge::GRAPH_FAILED;
@@ -100,20 +97,20 @@ static ge::graphStatus InvTilingFunc(gert::TilingContext* context)
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
     OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+        return ge::GRAPH_FAILED);
 
     // 2. Get shape info
     int64_t totalElements = 0;
     ge::DataType dataType = ge::DT_FLOAT;
     OP_CHECK_IF(
-        GetShapeInfo(context, totalElements, dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeInfo error"), return ge::GRAPH_FAILED);
+        GetShapeInfo(context, totalElements, dataType) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetShapeInfo error"),
+        return ge::GRAPH_FAILED);
 
     // 3. Get workspace size
     OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+        return ge::GRAPH_FAILED);
 
     // 4. Compute tiling parameters
     InvTilingData* tiling = context->GetTilingData<InvTilingData>();
@@ -123,7 +120,7 @@ static ge::graphStatus InvTilingFunc(gert::TilingContext* context)
         OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     // Determine typeSize based on dtype
-    int64_t typeSize = 4;  // default: sizeof(float)
+    int64_t typeSize = 4; // default: sizeof(float)
     switch (dataType) {
         case ge::DT_FLOAT:
             typeSize = 4;
@@ -139,7 +136,7 @@ static ge::graphStatus InvTilingFunc(gert::TilingContext* context)
             return ge::GRAPH_FAILED;
     }
 
-    int64_t ubBlockSize = 32 / typeSize;  // 32-byte alignment in elements
+    int64_t ubBlockSize = 32 / typeSize; // 32-byte alignment in elements
 
     // Handle empty tensor: set blockDim=1, kernel will early-return
     if (totalElements == 0) {
@@ -161,11 +158,9 @@ static ge::graphStatus InvTilingFunc(gert::TilingContext* context)
     // Unified formula: bytesPerElem = 2 * typeSize + 2 * sizeof(float)
     // ubDivisor = bytesPerElem / typeSize = (2*typeSize + 2*4) / typeSize
     int64_t bytesPerElem = 2 * typeSize + 2 * static_cast<int64_t>(sizeof(float));
-    int64_t ubFactor = FloorAlign(
-        static_cast<int64_t>(ubSize) / bytesPerElem,
-        ubBlockSize);
-    OP_CHECK_IF(ubFactor <= 0, OP_LOGE(context, "Inv: ubFactor is %ld, UB too small", ubFactor),
-                return ge::GRAPH_FAILED);
+    int64_t ubFactor = FloorAlign(static_cast<int64_t>(ubSize) / bytesPerElem, ubBlockSize);
+    OP_CHECK_IF(
+        ubFactor <= 0, OP_LOGE(context, "Inv: ubFactor is %ld, UB too small", ubFactor), return ge::GRAPH_FAILED);
 
     tiling->totalElements = totalElements;
     tiling->blockFactor = blockFactor;

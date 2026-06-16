@@ -14,7 +14,7 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-    const aclTensor *LogicalNot(const aclTensor *self, aclOpExecutor *executor);
+const aclTensor* LogicalNot(const aclTensor* self, aclOpExecutor* executor);
 }
 
 #endif // PTA_NPU_OP_API_INC_LEVEL0_OP_LOGICAL_NOT_OP_H_

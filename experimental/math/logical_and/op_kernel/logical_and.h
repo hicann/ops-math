@@ -29,7 +29,8 @@ class LogicalAnd {
 public:
     __aicore__ inline LogicalAnd(){};
 
-    __aicore__ inline void Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, const LogicalAndTilingData* tilingData, TPipe* pipeIn);
+    __aicore__ inline void Init(
+        GM_ADDR x1, GM_ADDR x2, GM_ADDR y, const LogicalAndTilingData* tilingData, TPipe* pipeIn);
     __aicore__ inline void Process();
 
 private:
@@ -50,29 +51,28 @@ private:
 };
 
 template <uint64_t BUFFER_NUM>
-__aicore__ inline void LogicalAnd<BUFFER_NUM>::Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, const LogicalAndTilingData* tilingData, TPipe* pipeIn)
+__aicore__ inline void LogicalAnd<BUFFER_NUM>::Init(
+    GM_ADDR x1, GM_ADDR x2, GM_ADDR y, const LogicalAndTilingData* tilingData, TPipe* pipeIn)
 {
     ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
     uint32_t coreNum = GetBlockIdx();
     uint32_t globalBufferIndex = tilingData->bigCoreDataNum * GetBlockIdx();
     this->tileDataNum = tilingData->tileDataNum;
     this->pipe = pipeIn;
-    if (coreNum < tilingData->tailBlockNum)
-    {
+    if (coreNum < tilingData->tailBlockNum) {
         this->coreDataNum = tilingData->bigCoreDataNum;
         this->tileNum = tilingData->finalBigTileNum;
         this->tailDataNum = tilingData->bigTailDataNum;
-    }
-    else
-    {
+    } else {
         this->coreDataNum = tilingData->smallCoreDataNum;
         this->tileNum = tilingData->finalSmallTileNum;
         this->tailDataNum = tilingData->smallTailDataNum;
-        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (GetBlockIdx() - tilingData->tailBlockNum);
+        globalBufferIndex -=
+            (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (GetBlockIdx() - tilingData->tailBlockNum);
     }
-    x1Gm.SetGlobalBuffer((__gm__ int8_t *)x1 + globalBufferIndex, this->coreDataNum);
-    x2Gm.SetGlobalBuffer((__gm__ int8_t *)x2 + globalBufferIndex, this->coreDataNum);
-    yGm.SetGlobalBuffer((__gm__ int8_t *)y + globalBufferIndex, this->coreDataNum);
+    x1Gm.SetGlobalBuffer((__gm__ int8_t*)x1 + globalBufferIndex, this->coreDataNum);
+    x2Gm.SetGlobalBuffer((__gm__ int8_t*)x2 + globalBufferIndex, this->coreDataNum);
+    yGm.SetGlobalBuffer((__gm__ int8_t*)y + globalBufferIndex, this->coreDataNum);
     pipe->InitBuffer(queBind, BUFFER_NUM, this->tileDataNum * sizeof(int8_t) * 2);
     pipe->InitBuffer(xCastTmp, this->tileDataNum * sizeof(half));
 }
@@ -100,11 +100,11 @@ __aicore__ inline void LogicalAnd<BUFFER_NUM>::TotalStage(int32_t offset)
     Cast(x2LocalHalf, x2Local, RoundMode::CAST_NONE, this->processDataNum);
     Mul(x1LocalHalf, x1LocalHalf, x2LocalHalf, this->processDataNum);
     Cast(x1Local, x1LocalHalf, RoundMode::CAST_RINT, this->processDataNum);
-    
+
     SetFlag<HardEvent::V_MTE3>(eventIDVToMTE3);
     WaitFlag<HardEvent::V_MTE3>(eventIDVToMTE3);
     DataCopy(yGm[offset], x1Local, this->processDataNum);
-    
+
     queBind.template FreeTensor(x1Local);
 }
 
@@ -114,8 +114,7 @@ __aicore__ inline void LogicalAnd<BUFFER_NUM>::Process()
     int32_t loopCount = this->tileNum - 1;
     this->processDataNum = this->tileDataNum;
     int32_t offset = 0;
-    for (int32_t i = 0; i < loopCount; i++, offset+=this->tileDataNum)
-    {
+    for (int32_t i = 0; i < loopCount; i++, offset += this->tileDataNum) {
         TotalStage(offset);
     }
     this->processDataNum = this->tailDataNum;

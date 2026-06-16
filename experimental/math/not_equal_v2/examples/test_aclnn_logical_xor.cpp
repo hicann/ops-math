@@ -1,12 +1,12 @@
 /**
-  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
-  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
-  * CANN Open Software License Agreement Version 2.0 (the "License").
-  * Please refer to the License for details. You may not use this file except in compliance with the License.
-  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
-  * See LICENSE in the root of the software repository for the full text of the License.
-  */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include <iostream>
 #include <vector>
@@ -25,17 +25,16 @@
         printf(message, ##__VA_ARGS__); \
     } while (0)
 
-int64_t GetShapeSize(const std::vector<int64_t> &shape)
+int64_t GetShapeSize(const std::vector<int64_t>& shape)
 {
     int64_t shapeSize = 1;
-    for (auto i : shape)
-    {
+    for (auto i : shape) {
         shapeSize *= i;
     }
     return shapeSize;
 }
 
-int Init(int32_t deviceId, aclrtStream *stream)
+int Init(int32_t deviceId, aclrtStream* stream)
 {
     // 固定写法，资源初始化
     auto ret = aclInit(nullptr);
@@ -47,9 +46,10 @@ int Init(int32_t deviceId, aclrtStream *stream)
     return 0;
 }
 
-template<typename T>
-int CreateAclTensor(const std::vector<T> &hostData, const std::vector<int64_t> &shape, void **deviceAddr,
-                    aclDataType dataType, aclTensor **tensor)
+template <typename T>
+int CreateAclTensor(
+    const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr, aclDataType dataType,
+    aclTensor** tensor)
 {
     auto size = GetShapeSize(shape) * sizeof(T);
     // 调用aclrtMalloc申请device侧内存
@@ -61,14 +61,14 @@ int CreateAclTensor(const std::vector<T> &hostData, const std::vector<int64_t> &
 
     // 计算连续tensor的strides
     std::vector<int64_t> strides(shape.size(), 1);
-    for (int64_t i = shape.size() - 2; i >= 0; i--)
-    {
+    for (int64_t i = shape.size() - 2; i >= 0; i--) {
         strides[i] = shape[i + 1] * strides[i + 1];
     }
 
     // 调用aclCreateTensor接口创建aclTensor
-    *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND,
-                              shape.data(), shape.size(), *deviceAddr);
+    *tensor = aclCreateTensor(
+        shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
+        *deviceAddr);
     return 0;
 }
 
@@ -84,12 +84,12 @@ int main()
     std::vector<int64_t> selfShape = {4, 2};
     std::vector<int64_t> otherShape = {4, 2};
     std::vector<int64_t> outShape = {4, 2};
-    void *selfDeviceAddr = nullptr;
-    void *otherDeviceAddr = nullptr;
-    void *outDeviceAddr = nullptr;
-    aclTensor *self = nullptr;
-    aclTensor *other = nullptr;
-    aclTensor *out = nullptr;
+    void* selfDeviceAddr = nullptr;
+    void* otherDeviceAddr = nullptr;
+    void* outDeviceAddr = nullptr;
+    aclTensor* self = nullptr;
+    aclTensor* other = nullptr;
+    aclTensor* out = nullptr;
     std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
     std::vector<float> otherHostData = {1, 1, 1, 0, 4, 2, 3, 7};
     std::vector<float> outHostData(8, 0);
@@ -107,14 +107,13 @@ int main()
     // 3. 调用CANN算子库API
     LOG_PRINT("test aclnnLogicalXor\n");
     uint64_t workspaceSize = 0;
-    aclOpExecutor *executor;
+    aclOpExecutor* executor;
     // 调用aclnnLogicalXor第一段接口
     ret = aclnnLogicalXorGetWorkspaceSize(self, other, out, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnLogicalXorGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
-    void *workspaceAddr = nullptr;
-    if (workspaceSize > 0)
-    {
+    void* workspaceAddr = nullptr;
+    if (workspaceSize > 0) {
         ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
         CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
     }
@@ -129,11 +128,11 @@ int main()
     // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧
     auto size = GetShapeSize(outShape);
     std::vector<float> resultData(size, 0);
-    ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr,
-                      size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
+    ret = aclrtMemcpy(
+        resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, size * sizeof(resultData[0]),
+        ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
-    for (int64_t i = 0; i < size; i++)
-    {
+    for (int64_t i = 0; i < size; i++) {
         LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
     }
 
@@ -146,8 +145,7 @@ int main()
     aclrtFree(selfDeviceAddr);
     aclrtFree(otherDeviceAddr);
     aclrtFree(outDeviceAddr);
-    if (workspaceSize > 0)
-    {
+    if (workspaceSize > 0) {
         aclrtFree(workspaceAddr);
     }
     aclrtDestroyStream(stream);

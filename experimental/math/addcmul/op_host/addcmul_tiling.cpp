@@ -44,14 +44,11 @@ static ge::graphStatus AddcmulTilingFunc(gert::TilingContext* context)
     uint64_t inputLength = inputNum * typeLength;
     uint64_t inputBytes = inputLength / inputNum;
     uint64_t valueSize = context->GetInputShape(3)->GetStorageShape().GetShapeSize();
-    if (valueSize == 1)
-    {
+    if (valueSize == 1) {
         context->SetTilingKey(0);
-    }
-    else
-    {
+    } else {
         context->SetTilingKey(1);
-    }  
+    }
     uint64_t ubDataNumber = (context->GetInputDesc(0)->GetDataType() != ge::DT_BF16) ? 4 : 6;
     // The number of 32B data blocks that can be used for each data. DOUBLE BUFFER is already counted here
     uint64_t tileBlockNum = (ubSize / BLOCK_SIZE / BUFFER_NUM) / ubDataNumber;
@@ -59,18 +56,17 @@ static ge::graphStatus AddcmulTilingFunc(gert::TilingContext* context)
 
     // Input data for 32B alignment
     uint64_t inputLengthAlgin32 = (((inputLength + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE);
-    if(tileDataNum >= inputNum)
-    {
-        coreNum=1;
-    }
-    else
-    {
-        // There is at least 32B of data on each core, satisfying several settings for several cores. The maximum number of audits is the actual number of audits
-        coreNum = (coreNum <  inputLengthAlgin32 / BLOCK_SIZE) ? coreNum : inputLengthAlgin32 / BLOCK_SIZE;
+    if (tileDataNum >= inputNum) {
+        coreNum = 1;
+    } else {
+        // There is at least 32B of data on each core, satisfying several settings for several cores. The maximum number
+        // of audits is the actual number of audits
+        coreNum = (coreNum < inputLengthAlgin32 / BLOCK_SIZE) ? coreNum : inputLengthAlgin32 / BLOCK_SIZE;
     }
     OP_CHECK_IF(coreNum == 0, OP_LOGE(context, "coreNum is 0"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(inputBytes == 0, OP_LOGE(context, "inputBytes is 0"), return ge::GRAPH_FAILED);
-    // There is at least 32B of data on each core, satisfying several settings for several cores. The maximum number of audits is the actual number of audits
+    // There is at least 32B of data on each core, satisfying several settings for several cores. The maximum number of
+    // audits is the actual number of audits
     uint64_t everyCoreInputBlockNum = inputLengthAlgin32 / BLOCK_SIZE / coreNum;
     uint64_t tailBlockNum = (inputLengthAlgin32 / BLOCK_SIZE) % coreNum;
 
@@ -108,7 +104,7 @@ static ge::graphStatus AddcmulTilingFunc(gert::TilingContext* context)
     tiling->tailBlockNum = (uint32_t)tailBlockNum;
 
     context->SetBlockDim(coreNum);
-    size_t *currentWorkspace = context->GetWorkspaceSizes(1);
+    size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     currentWorkspace[0] = 0;
     return ge::GRAPH_SUCCESS;
 }

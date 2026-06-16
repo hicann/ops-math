@@ -20,7 +20,7 @@
 /*!
  * \file mul_v2_proto.h
  * \brief
-*/
+ */
 #ifndef OPS_OP_PROTO_INC_MULV2_H_
 #define OPS_OP_PROTO_INC_MULV2_H_
 

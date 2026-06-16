@@ -43,24 +43,21 @@ static ge::graphStatus MulNoNanTilingFunc(gert::TilingContext* context)
         BroadcastBaseTiling<NsMulNoNan::MulNoNanCompute<half>::OpDag> brcTiling(context);
         ret = brcTiling.DoTiling();
         OP_CHECK_IF(
-            ret != ge::GRAPH_SUCCESS,
-            OP_LOGE(context, "MulNoNan: BroadcastBaseTiling DoTiling failed for FP16"),
+            ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "MulNoNan: BroadcastBaseTiling DoTiling failed for FP16"),
             return ret);
         context->SetTilingKey(GET_TPL_TILING_KEY(brcTiling.GetSchMode()));
     } else if (dtype == ge::DT_FLOAT) {
         BroadcastBaseTiling<NsMulNoNan::MulNoNanCompute<float>::OpDag> brcTiling(context);
         ret = brcTiling.DoTiling();
         OP_CHECK_IF(
-            ret != ge::GRAPH_SUCCESS,
-            OP_LOGE(context, "MulNoNan: BroadcastBaseTiling DoTiling failed for FP32"),
+            ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "MulNoNan: BroadcastBaseTiling DoTiling failed for FP32"),
             return ret);
         context->SetTilingKey(GET_TPL_TILING_KEY(brcTiling.GetSchMode()));
     } else if (dtype == ge::DT_BF16) {
         BroadcastBaseTiling<NsMulNoNan::MulNoNanCompute<bfloat16_t>::OpDag> brcTiling(context);
         ret = brcTiling.DoTiling();
         OP_CHECK_IF(
-            ret != ge::GRAPH_SUCCESS,
-            OP_LOGE(context, "MulNoNan: BroadcastBaseTiling DoTiling failed for BF16"),
+            ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "MulNoNan: BroadcastBaseTiling DoTiling failed for BF16"),
             return ret);
         context->SetTilingKey(GET_TPL_TILING_KEY(brcTiling.GetSchMode()));
     } else {
@@ -79,8 +76,6 @@ static ge::graphStatus TilingParseForMulNoNan([[maybe_unused]] gert::TilingParse
 
 struct MulNoNanCompileInfo {};
 
-IMPL_OP_OPTILING(MulNoNan)
-    .Tiling(MulNoNanTilingFunc)
-    .TilingParse<MulNoNanCompileInfo>(TilingParseForMulNoNan);
+IMPL_OP_OPTILING(MulNoNan).Tiling(MulNoNanTilingFunc).TilingParse<MulNoNanCompileInfo>(TilingParseForMulNoNan);
 
-}  // namespace optiling
+} // namespace optiling

@@ -20,7 +20,7 @@
 
 /*!
  * \file select_v3_tiling_data.h
-*/
+ */
 
 #ifndef _ROTARY_POSITION_EMBEDDING_GRAD_TILING_DATA_H_
 #define _ROTARY_POSITION_EMBEDDING_GRAD_TILING_DATA_H_

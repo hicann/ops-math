@@ -35,10 +35,7 @@ using namespace op;
 #define ACLNN_MAX_SHAPE_RANK 8
 
 static const std::initializer_list<op::DataType> ASCEND950_AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT16,
-    DataType::DT_FLOAT,
-    DataType::DT_BF16
-};
+    DataType::DT_FLOAT16, DataType::DT_FLOAT, DataType::DT_BF16};
 
 static bool IsDtypeSupported(DataType dtype)
 {
@@ -52,10 +49,7 @@ static bool IsDtypeSupported(DataType dtype)
     return false;
 }
 
-static bool HasEmptyTensor(const aclTensor* y_grad, const aclTensor* x)
-{
-    return y_grad->IsEmpty() || x->IsEmpty();
-}
+static bool HasEmptyTensor(const aclTensor* y_grad, const aclTensor* x) { return y_grad->IsEmpty() || x->IsEmpty(); }
 
 static bool CheckNotNull(const aclTensor* y_grad, const aclTensor* x, const aclTensor* x_grad)
 {
@@ -72,10 +66,11 @@ static bool CheckDtypeValid(const aclTensor* y_grad, const aclTensor* x, const a
 
     if (!IsDtypeSupported(y_grad->GetDataType())) {
         auto npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AcosGrad: Dtype not supported: dtype=%d, npuArch=%d. "
-                "Supported: FLOAT16, FLOAT32, BF16.",
-                static_cast<int>(y_grad->GetDataType()), static_cast<int>(npuArch));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID,
+            "AcosGrad: Dtype not supported: dtype=%d, npuArch=%d. "
+            "Supported: FLOAT16, FLOAT32, BF16.",
+            static_cast<int>(y_grad->GetDataType()), static_cast<int>(npuArch));
         return false;
     }
     return true;
@@ -84,13 +79,13 @@ static bool CheckDtypeValid(const aclTensor* y_grad, const aclTensor* x, const a
 static bool CheckFormat(const aclTensor* y_grad, const aclTensor* x, const aclTensor* x_grad)
 {
     auto fmtYGrad = y_grad->GetStorageFormat();
-    auto fmtX     = x->GetStorageFormat();
+    auto fmtX = x->GetStorageFormat();
     auto fmtXGrad = x_grad->GetStorageFormat();
 
     if (IsPrivateFormat(fmtYGrad) || IsPrivateFormat(fmtX) || IsPrivateFormat(fmtXGrad)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AcosGrad: Private format not supported: y_grad=%d, x=%d, x_grad=%d",
-                static_cast<int>(fmtYGrad), static_cast<int>(fmtX), static_cast<int>(fmtXGrad));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "AcosGrad: Private format not supported: y_grad=%d, x=%d, x_grad=%d",
+            static_cast<int>(fmtYGrad), static_cast<int>(fmtX), static_cast<int>(fmtXGrad));
         return false;
     }
     return true;
@@ -103,15 +98,14 @@ static bool CheckShape(const aclTensor* y_grad, const aclTensor* x, const aclTen
     OP_CHECK_MAX_DIM(x_grad, ACLNN_MAX_SHAPE_RANK, return false);
 
     auto yGradShape = y_grad->GetViewShape();
-    auto xShape     = x->GetViewShape();
+    auto xShape = x->GetViewShape();
     auto xGradShape = x_grad->GetViewShape();
 
     if (yGradShape != xShape || yGradShape != xGradShape) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AcosGrad: Shape mismatch: y_grad=%s, x=%s, x_grad=%s",
-                op::ToString(yGradShape).GetString(),
-                op::ToString(xShape).GetString(),
-                op::ToString(xGradShape).GetString());
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "AcosGrad: Shape mismatch: y_grad=%s, x=%s, x_grad=%s",
+            op::ToString(yGradShape).GetString(), op::ToString(xShape).GetString(),
+            op::ToString(xGradShape).GetString());
         return false;
     }
     return true;
@@ -124,11 +118,10 @@ static aclnnStatus CheckParams(const aclTensor* y_grad, const aclTensor* x, cons
         return ACLNN_ERR_PARAM_NULLPTR;
     }
     if (!CheckDtypeValid(y_grad, x, x_grad)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AcosGrad: CheckDtypeValid failed: y_grad_dtype=%d, x_dtype=%d, x_grad_dtype=%d",
-                static_cast<int>(y_grad->GetDataType()),
-                static_cast<int>(x->GetDataType()),
-                static_cast<int>(x_grad->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "AcosGrad: CheckDtypeValid failed: y_grad_dtype=%d, x_dtype=%d, x_grad_dtype=%d",
+            static_cast<int>(y_grad->GetDataType()), static_cast<int>(x->GetDataType()),
+            static_cast<int>(x_grad->GetDataType()));
         return ACLNN_ERR_PARAM_INVALID;
     }
     if (!CheckFormat(y_grad, x, x_grad)) {
@@ -143,10 +136,7 @@ static aclnnStatus CheckParams(const aclTensor* y_grad, const aclTensor* x, cons
 }
 
 extern "C" aclnnStatus aclnnAcosGradGetWorkspaceSize(
-    const aclTensor* y_grad,
-    const aclTensor* x,
-    const aclTensor* x_grad,
-    uint64_t* workspaceSize,
+    const aclTensor* y_grad, const aclTensor* x, const aclTensor* x_grad, uint64_t* workspaceSize,
     aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAcosGrad, DFX_IN(y_grad, x), DFX_OUT(x_grad));
@@ -184,10 +174,7 @@ extern "C" aclnnStatus aclnnAcosGradGetWorkspaceSize(
 }
 
 extern "C" aclnnStatus aclnnAcosGrad(
-    void* workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor* executor,
-    aclrtStream stream)
+    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnAcosGrad);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

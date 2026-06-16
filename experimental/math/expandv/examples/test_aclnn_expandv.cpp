@@ -120,8 +120,10 @@ int main()
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建参数的ACL IntArray
-    aclIntArray *aclExpandSections = aclCreateIntArray(expandSections.data(), expandSections.size());
-    if(aclExpandSections == nullptr){LOG_PRINT("aclCreateIntArray for expand sections failed \n");}
+    aclIntArray* aclExpandSections = aclCreateIntArray(expandSections.data(), expandSections.size());
+    if (aclExpandSections == nullptr) {
+        LOG_PRINT("aclCreateIntArray for expand sections failed \n");
+    }
 
     // 3. 调用CANN算子库API
     uint64_t workspaceSize = 0;

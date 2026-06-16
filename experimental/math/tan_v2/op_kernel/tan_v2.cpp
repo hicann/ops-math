@@ -21,7 +21,7 @@
 /*!
  * \file tan_v2.cpp
  * \brief
-*/
+ */
 #include "tan_v2.h"
 
 template <uint32_t schMode>
@@ -29,7 +29,7 @@ __global__ __aicore__ void tan_v2(GM_ADDR x, GM_ADDR z, GM_ADDR workspace, GM_AD
 {
     REGISTER_TILING_DEFAULT(TanV2TilingData);
     GET_TILING_DATA_WITH_STRUCT(TanV2TilingData, tilingData, tiling);
-    NsTanV2::TanV2<DTYPE_X> op; // 算子kernel实例获取
-    op.Init(x, z, workspace,&tilingData);      // 算子kernel实例初始化
-    op.Process();                       // 算子kernel实例执行
+    NsTanV2::TanV2<DTYPE_X> op;            // 算子kernel实例获取
+    op.Init(x, z, workspace, &tilingData); // 算子kernel实例初始化
+    op.Process();                          // 算子kernel实例执行
 }

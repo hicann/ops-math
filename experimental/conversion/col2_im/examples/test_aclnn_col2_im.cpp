@@ -106,7 +106,7 @@ int main()
     // 2. 构造输入与输出，需要根据API的接口自定义构造
     // Col2Im输入: [N, C*kernel_h*kernel_w, L]
     // 示例: batch=1, channels=3, kernel=2x2, L=9
-    
+
     // 参数定义
     int64_t N = 1;
     int64_t C = 3;
@@ -115,36 +115,36 @@ int main()
     int64_t stride = 1;
     int64_t padding = 0;
     int64_t dilation = 1;
-    
+
     // 输出图像尺寸 (目标)
-    int64_t H = 4;  // 输出高度
-    int64_t W = 4;  // 输出宽度
-    
+    int64_t H = 4; // 输出高度
+    int64_t W = 4; // 输出宽度
+
     // 根据输出尺寸计算输入col格式的维度
     int64_t out_H = (H + 2 * padding - dilation * (kernel_h - 1) - 1) / stride + 1;
     int64_t out_W = (W + 2 * padding - dilation * (kernel_w - 1) - 1) / stride + 1;
-    int64_t L = out_H * out_W;  // L = 3 * 3 = 9
-    int64_t input_channels = C * kernel_h * kernel_w;  // 3 * 2 * 2 = 12
-    
+    int64_t L = out_H * out_W;                        // L = 3 * 3 = 9
+    int64_t input_channels = C * kernel_h * kernel_w; // 3 * 2 * 2 = 12
+
     LOG_PRINT("=== Col2Im Test Parameters ===\n");
     LOG_PRINT("Target output image: [%ld, %ld, %ld, %ld] (N, C, H, W)\n", N, C, H, W);
-    LOG_PRINT("Kernel: %ldx%ld, Stride: %ld, Padding: %ld, Dilation: %ld\n", 
-              kernel_h, kernel_w, stride, padding, dilation);
+    LOG_PRINT(
+        "Kernel: %ldx%ld, Stride: %ld, Padding: %ld, Dilation: %ld\n", kernel_h, kernel_w, stride, padding, dilation);
     LOG_PRINT("Input col shape: [%ld, %ld, %ld] (N, C*kh*kw, L)\n", N, input_channels, L);
     LOG_PRINT("out_H=%ld, out_W=%ld, L=%ld\n\n", out_H, out_W, L);
-    
+
     // 创建输入tensor (col格式)
     aclTensor* input = nullptr;
     void* inputDeviceAddr = nullptr;
-    std::vector<int64_t> inputShape = {N, input_channels, L};  // [1, 12, 9]
+    std::vector<int64_t> inputShape = {N, input_channels, L}; // [1, 12, 9]
     int64_t inputSize = GetShapeSize(inputShape);
     std::vector<float> inputHostData(inputSize);
-    
+
     // 为输入数据填充测试值 (使用 Im2Col 的输出作为 Col2Im 的输入)
     for (int64_t i = 0; i < inputSize; i++) {
         inputHostData[i] = static_cast<float>(i % 10);
     }
-    
+
     ret = CreateAclTensor(inputHostData, inputShape, &inputDeviceAddr, aclDataType::ACL_FLOAT, &input);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
@@ -158,7 +158,7 @@ int main()
     // 4. 构造输出tensor (图像格式)
     aclTensor* out = nullptr;
     void* outDeviceAddr = nullptr;
-    std::vector<int64_t> outShape = {N, C, H, W};  // [1, 3, 4, 4]
+    std::vector<int64_t> outShape = {N, C, H, W}; // [1, 3, 4, 4]
     int64_t outSize = GetShapeSize(outShape);
     std::vector<float> outHostData(outSize, 0.0f);
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
@@ -170,8 +170,7 @@ int main()
 
     // 6. 调用aclnnCol2Im第一段接口
     ret = aclnnCol2ImGetWorkspaceSize(
-        input, H, W, kernel_h, kernel_w, stride, padding, dilation, 
-        out, &workspaceSize, &executor);
+        input, H, W, kernel_h, kernel_w, stride, padding, dilation, out, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnCol2ImGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     LOG_PRINT("Workspace size: %lu bytes\n", workspaceSize);

@@ -49,10 +49,10 @@ private:
     __aicore__ inline void Compute(int32_t progress);
 
 private:
-    AscendC::TQue<QuePosition::VECIN, BUFFER_NUM> inputQueueX; 
+    AscendC::TQue<QuePosition::VECIN, BUFFER_NUM> inputQueueX;
     AscendC::GlobalTensor<T> inputGMX;
-    
-    T fillValue_ = (T)0; 
+
+    T fillValue_ = (T)0;
     uint32_t coreDataNum;
     uint32_t tileNum;
     uint32_t tileDataNum;
@@ -64,20 +64,19 @@ template <typename T>
 __aicore__ inline void FillV2<T>::Init(GM_ADDR x, GM_ADDR fill_value, const FillV2TilingData* tilingData, TPipe* pipe)
 {
     uint32_t coreId = AscendC::GetBlockIdx();
-    
+
     AscendC::GlobalTensor<T> valGm;
     valGm.SetGlobalBuffer((__gm__ T*)fill_value, 1);
-    this->fillValue_ = valGm.GetValue(0); 
+    this->fillValue_ = valGm.GetValue(0);
 
     uint32_t globalBufferIndex;
     this->tileDataNum = tilingData->tileDataNum;
-    if (coreId < tilingData->tailBlockNum) { 
+    if (coreId < tilingData->tailBlockNum) {
         this->coreDataNum = tilingData->bigCoreDataNum;
         this->tileNum = tilingData->finalBigTileNum;
         this->tailDataNum = tilingData->bigTailDataNum;
         globalBufferIndex = tilingData->bigCoreDataNum * coreId;
-    }
-    else { 
+    } else {
         this->coreDataNum = tilingData->smallCoreDataNum;
         this->tileNum = tilingData->finalSmallTileNum;
         this->tailDataNum = tilingData->smallTailDataNum;
@@ -86,7 +85,7 @@ __aicore__ inline void FillV2<T>::Init(GM_ADDR x, GM_ADDR fill_value, const Fill
         uint32_t tailBlocks = tilingData->tailBlockNum;
         globalBufferIndex = tailBlocks * bigData + (coreId - tailBlocks) * smallData;
     }
-    
+
     inputGMX.SetGlobalBuffer((__gm__ T*)x + globalBufferIndex, this->coreDataNum);
     pipe->InitBuffer(inputQueueX, BUFFER_NUM, this->tileDataNum * sizeof(T));
 }
@@ -109,7 +108,7 @@ __aicore__ inline void FillV2<T>::Compute(int32_t progress)
 template <typename T>
 __aicore__ inline void FillV2<T>::CopyOut(int32_t progress)
 {
-    AscendC::LocalTensor<T> xLocal = inputQueueX.DeQue<T>(); 
+    AscendC::LocalTensor<T> xLocal = inputQueueX.DeQue<T>();
     AscendC::DataCopy(inputGMX[progress * this->tileDataNum], xLocal, this->processDataNum);
     inputQueueX.FreeTensor(xLocal);
 }
@@ -119,14 +118,14 @@ __aicore__ inline void FillV2<T>::Process()
 {
     int32_t loopCount = this->tileNum;
     this->processDataNum = this->tileDataNum;
-    
+
     for (int32_t i = 0; i < loopCount; i++) {
         if (i == this->tileNum - 1) {
             this->processDataNum = this->tailDataNum;
-        }  
-        CopyIn(i); 
-        Compute(i); 
-        CopyOut(i); 
+        }
+        CopyIn(i);
+        Compute(i);
+        CopyOut(i);
     }
 }
 

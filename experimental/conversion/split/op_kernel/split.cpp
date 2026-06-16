@@ -33,7 +33,7 @@ __global__ __aicore__ void split(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADD
     REGISTER_TILING_DEFAULT(SplitTilingData);
     GET_TILING_DATA_WITH_STRUCT(SplitTilingData, tilingData, tiling);
     AscendC::TPipe tPipe;
-    NsSplit::Split<DTYPE_X> op; // 算子kernel实例获取
-    op.Init(x, y, workspace, &tilingData, &tPipe);      // 算子kernel实例初始化
-    op.Process();                       // 算子kernel实例执行
+    NsSplit::Split<DTYPE_X> op;                    // 算子kernel实例获取
+    op.Init(x, y, workspace, &tilingData, &tPipe); // 算子kernel实例初始化
+    op.Process();                                  // 算子kernel实例执行
 }

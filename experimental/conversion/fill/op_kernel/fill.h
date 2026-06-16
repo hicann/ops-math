@@ -28,13 +28,13 @@ constexpr uint32_t BUFFER_NUM = 1;
 
 template <typename T, bool IsExistBigCore>
 class KernelFill {
-   public:
-    __aicore__ inline KernelFill() {
-    }
-    __aicore__ inline void Init(GM_ADDR dims, GM_ADDR value, GM_ADDR y, uint32_t smallCoreDataNum,
-                                uint32_t bigCoreDataNum, uint32_t bigCoreLoopNum, uint32_t smallCoreLoopNum,
-                                uint32_t ubPartDataNum, uint32_t smallCoreTailDataNum, uint32_t bigCoreTailDataNum,
-                                uint32_t tailBlockNum) {
+public:
+    __aicore__ inline KernelFill() {}
+    __aicore__ inline void Init(
+        GM_ADDR dims, GM_ADDR value, GM_ADDR y, uint32_t smallCoreDataNum, uint32_t bigCoreDataNum,
+        uint32_t bigCoreLoopNum, uint32_t smallCoreLoopNum, uint32_t ubPartDataNum, uint32_t smallCoreTailDataNum,
+        uint32_t bigCoreTailDataNum, uint32_t tailBlockNum)
+    {
         ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
         uint32_t blockIdx = AscendC::GetBlockIdx();
 
@@ -59,8 +59,8 @@ class KernelFill {
             globalBufferIndex = smallCoreDataNum * AscendC::GetBlockIdx();
         }
 
-        this->value = *reinterpret_cast<__gm__ DTYPE_VALUE *>(value);
-        yGm.SetGlobalBuffer((__gm__ DTYPE_Y *)y + globalBufferIndex, this->coreDataNum);
+        this->value = *reinterpret_cast<__gm__ DTYPE_VALUE*>(value);
+        yGm.SetGlobalBuffer((__gm__ DTYPE_Y*)y + globalBufferIndex, this->coreDataNum);
 
         if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, bool>) {
             pipe.InitBuffer(tmpBuf, this->ubPartDataNum * sizeof(half));
@@ -68,7 +68,8 @@ class KernelFill {
 
         pipe.InitBuffer(outQueueOUT, BUFFER_NUM, this->ubPartDataNum * sizeof(DTYPE_Y));
     }
-    __aicore__ inline void Process() {
+    __aicore__ inline void Process()
+    {
         int32_t loopCount = this->tileNum;
         this->processDataNum = this->ubPartDataNum;
         for (int32_t i = 0; i < loopCount - 1; i++) {
@@ -80,8 +81,9 @@ class KernelFill {
         CopyOut(loopCount - 1);
     }
 
-   private:
-    __aicore__ inline void Compute(uint32_t progress) {
+private:
+    __aicore__ inline void Compute(uint32_t progress)
+    {
         if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, bool>) {
             AscendC::LocalTensor<int8_t> outLocal = outQueueOUT.AllocTensor<int8_t>();
             AscendC::LocalTensor<half> tmpLocal = tmpBuf.Get<half>();
@@ -95,13 +97,14 @@ class KernelFill {
         }
     }
 
-    __aicore__ inline void CopyOut(uint32_t progress) {
+    __aicore__ inline void CopyOut(uint32_t progress)
+    {
         AscendC::LocalTensor<DTYPE_VALUE> outLocal = outQueueOUT.DeQue<DTYPE_VALUE>();
         AscendC::DataCopy(yGm[progress * this->ubPartDataNum], outLocal, this->processDataNum);
         outQueueOUT.FreeTensor(outLocal);
     }
 
-   private:
+private:
     AscendC::TPipe pipe;
     AscendC::TQue<AscendC::QuePosition::VECOUT, BUFFER_NUM> outQueueOUT;
     AscendC::GlobalTensor<DTYPE_Y> yGm;
@@ -118,13 +121,13 @@ class KernelFill {
 
 template <bool IsExistBigCore>
 class KernelFill1_INT64 {
-   public:
-    __aicore__ inline KernelFill1_INT64() {
-    }
-    __aicore__ inline void Init(GM_ADDR dims, GM_ADDR values, GM_ADDR y, uint32_t smallCoreDataNum,
-                                uint32_t bigCoreDataNum, uint32_t bigCoreLoopNum, uint32_t smallCoreLoopNum,
-                                uint32_t ubPartDataNum, uint32_t smallCoreTailDataNum, uint32_t bigCoreTailDataNum,
-                                uint32_t tailBlockNum) {
+public:
+    __aicore__ inline KernelFill1_INT64() {}
+    __aicore__ inline void Init(
+        GM_ADDR dims, GM_ADDR values, GM_ADDR y, uint32_t smallCoreDataNum, uint32_t bigCoreDataNum,
+        uint32_t bigCoreLoopNum, uint32_t smallCoreLoopNum, uint32_t ubPartDataNum, uint32_t smallCoreTailDataNum,
+        uint32_t bigCoreTailDataNum, uint32_t tailBlockNum)
+    {
         ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
         uint32_t blockIdx = AscendC::GetBlockIdx();
         uint32_t globalBufferIndex = bigCoreDataNum * AscendC::GetBlockIdx();
@@ -148,15 +151,16 @@ class KernelFill1_INT64 {
             globalBufferIndex = smallCoreDataNum * AscendC::GetBlockIdx();
         }
 
-        xGm.SetGlobalBuffer((__gm__ int32_t *)values, 2);
-        yGm.SetGlobalBuffer((__gm__ int32_t *)y + globalBufferIndex, this->coreDataNum);
+        xGm.SetGlobalBuffer((__gm__ int32_t*)values, 2);
+        yGm.SetGlobalBuffer((__gm__ int32_t*)y + globalBufferIndex, this->coreDataNum);
 
         this->high = xGm.GetValue(1);
         this->low = xGm.GetValue(0);
 
         pipe.InitBuffer(outQueueOUT, BUFFER_NUM, this->ubPartDataNum * sizeof(int32_t));
     }
-    __aicore__ inline void Process() {
+    __aicore__ inline void Process()
+    {
         int32_t loopCount = this->tileNum;
         this->processDataNum = this->ubPartDataNum;
         this->repeatTimes = (this->processDataNum + 63) / 64;
@@ -170,8 +174,9 @@ class KernelFill1_INT64 {
         CopyOut(loopCount - 1);
     }
 
-   private:
-    __aicore__ inline void Compute(uint32_t progress) {
+private:
+    __aicore__ inline void Compute(uint32_t progress)
+    {
         AscendC::LocalTensor<int32_t> outLocal = outQueueOUT.AllocTensor<int32_t>();
 
         uint64_t mask2[2] = {0xAAAAAAAAAAAAAAAA, 0};
@@ -182,7 +187,8 @@ class KernelFill1_INT64 {
 
         outQueueOUT.EnQue<int32_t>(outLocal);
     }
-    __aicore__ inline void CopyOut(uint32_t progress) {
+    __aicore__ inline void CopyOut(uint32_t progress)
+    {
         AscendC::LocalTensor<int32_t> outLocal = outQueueOUT.DeQue<int32_t>();
 
         AscendC::DataCopy(yGm[progress * this->ubPartDataNum], outLocal, this->processDataNum);
@@ -190,7 +196,7 @@ class KernelFill1_INT64 {
         outQueueOUT.FreeTensor(outLocal);
     }
 
-   private:
+private:
     AscendC::TPipe pipe;
     AscendC::TQue<AscendC::QuePosition::VECOUT, BUFFER_NUM> outQueueOUT;
     AscendC::GlobalTensor<int32_t> yGm;

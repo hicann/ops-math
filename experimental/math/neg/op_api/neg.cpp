@@ -28,15 +28,14 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_BF16};
 
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_AFTER_910B = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT32,
-    op::DataType::DT_INT8,  op::DataType::DT_BF16};
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT32, op::DataType::DT_INT8,
+    op::DataType::DT_BF16};
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static inline bool IsAiCoreSupport(DataType inputDtype)
 {
     auto socVersion = GetCurrentPlatformInfo().GetCurNpuArch();
-    if (socVersion == NpuArch::DAV_2201 || socVersion == NpuArch::DAV_3510)
-    {
+    if (socVersion == NpuArch::DAV_2201 || socVersion == NpuArch::DAV_3510) {
         return CheckType(inputDtype, AICORE_DTYPE_SUPPORT_LIST_AFTER_910B);
     }
     return CheckType(inputDtype, AICORE_DTYPE_SUPPORT_LIST);

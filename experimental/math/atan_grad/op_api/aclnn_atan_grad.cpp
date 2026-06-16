@@ -41,12 +41,11 @@ using namespace op;
 #define ACLNN_MAX_SHAPE_RANK 8
 
 static const std::initializer_list<op::DataType> ATAN_GRAD_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT16, DataType::DT_FLOAT, DataType::DT_BF16
-};
+    DataType::DT_FLOAT16, DataType::DT_FLOAT, DataType::DT_BF16};
 
 static bool CheckNotNull(const aclTensor* x, const aclTensor* dy, const aclTensor* dx)
 {
-    OP_CHECK_NULL(x,  return false);
+    OP_CHECK_NULL(x, return false);
     OP_CHECK_NULL(dy, return false);
     OP_CHECK_NULL(dx, return false);
     return true;
@@ -55,13 +54,13 @@ static bool CheckNotNull(const aclTensor* x, const aclTensor* dy, const aclTenso
 static bool CheckDtypeValid(const aclTensor* x, const aclTensor* dy, const aclTensor* dx)
 {
     // x、dy、dx 三者 dtype 必须相同
-    OP_CHECK_DTYPE_NOT_MATCH(dy, x->GetDataType(),  return false);
-    OP_CHECK_DTYPE_NOT_MATCH(dx, x->GetDataType(),  return false);
+    OP_CHECK_DTYPE_NOT_MATCH(dy, x->GetDataType(), return false);
+    OP_CHECK_DTYPE_NOT_MATCH(dx, x->GetDataType(), return false);
 
     if (!CheckType(x->GetDataType(), ATAN_GRAD_DTYPE_SUPPORT_LIST)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AtanGrad: unsupported dtype=%d. Supported: FLOAT16, FLOAT, BF16.",
-                static_cast<int>(x->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "AtanGrad: unsupported dtype=%d. Supported: FLOAT16, FLOAT, BF16.",
+            static_cast<int>(x->GetDataType()));
         return false;
     }
     return true;
@@ -69,14 +68,12 @@ static bool CheckDtypeValid(const aclTensor* x, const aclTensor* dy, const aclTe
 
 static bool CheckFormat(const aclTensor* x, const aclTensor* dy, const aclTensor* dx)
 {
-    if (IsPrivateFormat(x->GetStorageFormat()) ||
-        IsPrivateFormat(dy->GetStorageFormat()) ||
+    if (IsPrivateFormat(x->GetStorageFormat()) || IsPrivateFormat(dy->GetStorageFormat()) ||
         IsPrivateFormat(dx->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AtanGrad: private format not supported: x=%d, dy=%d, dx=%d",
-                static_cast<int>(x->GetStorageFormat()),
-                static_cast<int>(dy->GetStorageFormat()),
-                static_cast<int>(dx->GetStorageFormat()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "AtanGrad: private format not supported: x=%d, dy=%d, dx=%d",
+            static_cast<int>(x->GetStorageFormat()), static_cast<int>(dy->GetStorageFormat()),
+            static_cast<int>(dx->GetStorageFormat()));
         return false;
     }
     return true;
@@ -84,14 +81,13 @@ static bool CheckFormat(const aclTensor* x, const aclTensor* dy, const aclTensor
 
 static bool CheckShape(const aclTensor* x, const aclTensor* dy, const aclTensor* dx)
 {
-    OP_CHECK_MAX_DIM(x,  ACLNN_MAX_SHAPE_RANK, return false);
+    OP_CHECK_MAX_DIM(x, ACLNN_MAX_SHAPE_RANK, return false);
     OP_CHECK_MAX_DIM(dy, ACLNN_MAX_SHAPE_RANK, return false);
     OP_CHECK_MAX_DIM(dx, ACLNN_MAX_SHAPE_RANK, return false);
 
     // x.shape 与 dy.shape 必须完全相同，否则存在 GM 越界访问风险
     if (x->GetViewShape() != dy->GetViewShape()) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AtanGrad: x.shape must equal dy.shape, but got different shapes.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "AtanGrad: x.shape must equal dy.shape, but got different shapes.");
         return false;
     }
     return true;
@@ -114,17 +110,10 @@ static aclnnStatus CheckParams(const aclTensor* x, const aclTensor* dy, const ac
     return ACLNN_SUCCESS;
 }
 
-static bool HasEmptyTensor(const aclTensor* x, const aclTensor* dy)
-{
-    return x->IsEmpty() || dy->IsEmpty();
-}
+static bool HasEmptyTensor(const aclTensor* x, const aclTensor* dy) { return x->IsEmpty() || dy->IsEmpty(); }
 
 extern "C" aclnnStatus aclnnAtanGradGetWorkspaceSize(
-    const aclTensor* x,
-    const aclTensor* dy,
-    const aclTensor* dx,
-    uint64_t*        workspaceSize,
-    aclOpExecutor**  executor)
+    const aclTensor* x, const aclTensor* dy, const aclTensor* dx, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAtanGrad, DFX_IN(x, dy), DFX_OUT(dx));
 
@@ -140,7 +129,7 @@ extern "C" aclnnStatus aclnnAtanGradGetWorkspaceSize(
         return ACLNN_SUCCESS;
     }
 
-    auto xContiguous  = l0op::Contiguous(x,  uniqueExecutor.get());
+    auto xContiguous = l0op::Contiguous(x, uniqueExecutor.get());
     CHECK_RET(xContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     auto dyContiguous = l0op::Contiguous(dy, uniqueExecutor.get());
@@ -158,10 +147,7 @@ extern "C" aclnnStatus aclnnAtanGradGetWorkspaceSize(
 }
 
 extern "C" aclnnStatus aclnnAtanGrad(
-    void*          workspace,
-    uint64_t       workspaceSize,
-    aclOpExecutor* executor,
-    aclrtStream    stream)
+    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnAtanGrad);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

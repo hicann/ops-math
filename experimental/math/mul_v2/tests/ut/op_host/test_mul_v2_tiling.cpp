@@ -28,18 +28,11 @@ using namespace ge;
 
 class MulV2Tiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "mul_v2Tiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "mul_v2Tiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "mul_v2Tiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "mul_v2Tiling TearDown" << std::endl; }
 };
-struct MulV2CompileInfo {
-};
+struct MulV2CompileInfo {};
 // TEST_F(MulV2Tiling, mul_v2_tiling_001)
 // {
 //     int32_t start = 0;
@@ -56,9 +49,8 @@ struct MulV2CompileInfo {
 //             {{{16,16,16,16},{16,16,16,16}}, ge::DT_FLOAT, ge::FORMAT_ND},  //输出y
 //         },
 //         &compileInfo);
-//     uint64_t expectTilingKey = 0;//0：float  1:float16 
+//     uint64_t expectTilingKey = 0;//0：float  1:float16
 //     string expectTilingData = "64 72 1 1 10920 64 72 0 "; //根据形状来计算对应tilingdata的数据
 //     std::vector<size_t> expectWorkspaces = {16 * 1024 * 1024};
 //     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 // }
-

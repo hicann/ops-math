@@ -21,15 +21,9 @@ using namespace std;
 
 class test_aclnn_inplace_GeTensor : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "ge_tensor_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "ge_tensor_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "ge_tensor_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "ge_tensor_test TearDown" << endl; }
 };
 
 TEST_F(test_aclnn_inplace_GeTensor, test_inplace_ge_tensor_normal_support_uint88)
@@ -285,14 +279,16 @@ TEST_F(test_aclnn_inplace_GeTensor, test_inplace_ge_tensor_date_range_f1_1)
     auto tensor_self =
         TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
             .ValueRange(-1, 1)
-            .Value(vector<float>{
-                -6.75468990e-01, 7.37894118e-01, -7.84537017e-01, 9.64608252e-01, 9.09311235e-01, -9.51533616e-01});
+            .Value(
+                vector<float>{
+                    -6.75468990e-01, 7.37894118e-01, -7.84537017e-01, 9.64608252e-01, 9.09311235e-01, -9.51533616e-01});
 
     auto tensor_other =
         TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
             .ValueRange(-1, 1)
-            .Value(vector<float>{
-                -6.75468990e-01, 7.37894118e-01, -7.94537017e-01, 9.64608252e-01, 9.09211235e-01, -9.51533616e-01});
+            .Value(
+                vector<float>{
+                    -6.75468990e-01, 7.37894118e-01, -7.94537017e-01, 9.64608252e-01, 9.09211235e-01, -9.51533616e-01});
 
     auto ut = OP_API_UT(aclnnInplaceGeTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 

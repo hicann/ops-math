@@ -21,7 +21,7 @@
 /*!
  * \file dot_v2_tiling_data.h
  * \brief tiling data struct
-*/
+ */
 
 #ifndef _DOT_V2_TILING_DATA_H_
 #define _DOT_V2_TILING_DATA_H_

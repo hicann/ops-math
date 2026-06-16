@@ -11,7 +11,7 @@
 /*!
  * \file real_div.h
  * \brief
-*/
+ */
 #ifndef REALDIV_H
 #define REALDIV_H
 
@@ -39,9 +39,15 @@ public:
 private:
     __aicore__ inline void CopyInAndCompute(int32_t offset);
     __aicore__ inline void CopyOut(int32_t offset);
-    __aicore__ inline void CopyInAndCompute16B(LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_X>& x2Local, LocalTensor<TYPE_Y>& yLocal, int eventIDMTE2ToV, int offset);
-    __aicore__ inline void CopyInAndComputeInt32(LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_X>& x2Local, LocalTensor<TYPE_Y>& yLocal, int eventIDMTE2ToV, int offset);
-    __aicore__ inline void CopyInAndComputeBool(LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_X>& x2Local, LocalTensor<TYPE_Y>& yLocal, int eventIDMTE2ToV, int offset);
+    __aicore__ inline void CopyInAndCompute16B(
+        LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_X>& x2Local, LocalTensor<TYPE_Y>& yLocal, int eventIDMTE2ToV,
+        int offset);
+    __aicore__ inline void CopyInAndComputeInt32(
+        LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_X>& x2Local, LocalTensor<TYPE_Y>& yLocal, int eventIDMTE2ToV,
+        int offset);
+    __aicore__ inline void CopyInAndComputeBool(
+        LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_X>& x2Local, LocalTensor<TYPE_Y>& yLocal, int eventIDMTE2ToV,
+        int offset);
 
 private:
     TPipe* pipe;
@@ -59,51 +65,49 @@ private:
 };
 
 template <typename TYPE_X, typename TYPE_Y, uint64_t BUFFER_NUM>
-__aicore__ inline void KernelRealDiv<TYPE_X, TYPE_Y, BUFFER_NUM>::Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, const RealDivTilingData* tilingData, TPipe* pipeIn)
+__aicore__ inline void KernelRealDiv<TYPE_X, TYPE_Y, BUFFER_NUM>::Init(
+    GM_ADDR x1, GM_ADDR x2, GM_ADDR y, const RealDivTilingData* tilingData, TPipe* pipeIn)
 {
     ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
     uint32_t coreNum = GetBlockIdx();
     uint32_t globalBufferIndex = tilingData->bigCoreDataNum * GetBlockIdx();
     this->tileDataNum = tilingData->tileDataNum;
     this->pipe = pipeIn;
-    if (coreNum < tilingData->tailBlockNum)
-    {
+    if (coreNum < tilingData->tailBlockNum) {
         this->coreDataNum = tilingData->bigCoreDataNum;
         this->tileNum = tilingData->finalBigTileNum;
         this->tailDataNum = tilingData->bigTailDataNum;
-    }
-    else
-    {
+    } else {
         this->coreDataNum = tilingData->smallCoreDataNum;
         this->tileNum = tilingData->finalSmallTileNum;
         this->tailDataNum = tilingData->smallTailDataNum;
-        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (GetBlockIdx() - tilingData->tailBlockNum);
+        globalBufferIndex -=
+            (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (GetBlockIdx() - tilingData->tailBlockNum);
     }
-    x1Gm.SetGlobalBuffer((__gm__ TYPE_X *)x1 + globalBufferIndex, this->coreDataNum);
-    x2Gm.SetGlobalBuffer((__gm__ TYPE_X *)x2 + globalBufferIndex, this->coreDataNum);
-    yGm.SetGlobalBuffer((__gm__ TYPE_Y *)y + globalBufferIndex, this->coreDataNum);
+    x1Gm.SetGlobalBuffer((__gm__ TYPE_X*)x1 + globalBufferIndex, this->coreDataNum);
+    x2Gm.SetGlobalBuffer((__gm__ TYPE_X*)x2 + globalBufferIndex, this->coreDataNum);
+    yGm.SetGlobalBuffer((__gm__ TYPE_Y*)y + globalBufferIndex, this->coreDataNum);
     pipe->InitBuffer(inQueue, BUFFER_NUM, this->tileDataNum * sizeof(TYPE_X) * 2);
     pipe->InitBuffer(outQueueY, BUFFER_NUM, this->tileDataNum * sizeof(TYPE_Y));
-    if constexpr ( IsSameType<TYPE_X, bfloat16_t>::value)
-    {
+    if constexpr (IsSameType<TYPE_X, bfloat16_t>::value) {
         pipe->InitBuffer(castTmp, this->tileDataNum * sizeof(float));
     }
-    if constexpr ( IsSameType<TYPE_X, half>::value)
-    {
-        #if defined(HIGH_PERFORMANCE) && HIGH_PERFORMANCE == 1
-        #else
-            pipe->InitBuffer(castTmp, this->tileDataNum * sizeof(float));
-        #endif
+    if constexpr (IsSameType<TYPE_X, half>::value) {
+#if defined(HIGH_PERFORMANCE) && HIGH_PERFORMANCE == 1
+#else
+        pipe->InitBuffer(castTmp, this->tileDataNum * sizeof(float));
+#endif
     }
-    if constexpr ( IsSameType<TYPE_X, bool>::value){
+    if constexpr (IsSameType<TYPE_X, bool>::value) {
         pipe->InitBuffer(castTmp, this->tileDataNum * sizeof(float));
         pipe->InitBuffer(halfCastTmp, this->tileDataNum * sizeof(half));
     }
 }
 
 template <typename TYPE_X, typename TYPE_Y, uint64_t BUFFER_NUM>
-__aicore__ inline void KernelRealDiv<TYPE_X, TYPE_Y, BUFFER_NUM>::CopyInAndCompute16B(LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_X>& x2Local,
-                                                                                      LocalTensor<TYPE_Y>& yLocal, int eventIDMTE2ToV, int offset)
+__aicore__ inline void KernelRealDiv<TYPE_X, TYPE_Y, BUFFER_NUM>::CopyInAndCompute16B(
+    LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_X>& x2Local, LocalTensor<TYPE_Y>& yLocal, int eventIDMTE2ToV,
+    int offset)
 {
     LocalTensor<float> x1LocalFp = castTmp.Get<float>();
     LocalTensor<float> x2LocalFp = x1Local.template ReinterpretCast<float>();
@@ -120,8 +124,9 @@ __aicore__ inline void KernelRealDiv<TYPE_X, TYPE_Y, BUFFER_NUM>::CopyInAndCompu
 }
 
 template <typename TYPE_X, typename TYPE_Y, uint64_t BUFFER_NUM>
-__aicore__ inline void KernelRealDiv<TYPE_X, TYPE_Y, BUFFER_NUM>::CopyInAndComputeInt32(LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_X>& x2Local,
-                                                                                      LocalTensor<TYPE_Y>& yLocal, int eventIDMTE2ToV, int offset)
+__aicore__ inline void KernelRealDiv<TYPE_X, TYPE_Y, BUFFER_NUM>::CopyInAndComputeInt32(
+    LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_X>& x2Local, LocalTensor<TYPE_Y>& yLocal, int eventIDMTE2ToV,
+    int offset)
 {
     LocalTensor<float> x1LocalFp = x1Local.template ReinterpretCast<float>();
     LocalTensor<float> x2LocalFp = x2Local.template ReinterpretCast<float>();
@@ -136,10 +141,11 @@ __aicore__ inline void KernelRealDiv<TYPE_X, TYPE_Y, BUFFER_NUM>::CopyInAndCompu
     Div(x1LocalFp, x1LocalFp, x2LocalFp, this->processDataNum);
     Cast(yLocal, x1LocalFp, RoundMode::CAST_TRUNC, this->processDataNum);
 }
-    
+
 template <typename TYPE_X, typename TYPE_Y, uint64_t BUFFER_NUM>
-__aicore__ inline void KernelRealDiv<TYPE_X, TYPE_Y, BUFFER_NUM>::CopyInAndComputeBool(LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_X>& x2Local,
-                                                                                      LocalTensor<TYPE_Y>& yLocal, int eventIDMTE2ToV, int offset)
+__aicore__ inline void KernelRealDiv<TYPE_X, TYPE_Y, BUFFER_NUM>::CopyInAndComputeBool(
+    LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_X>& x2Local, LocalTensor<TYPE_Y>& yLocal, int eventIDMTE2ToV,
+    int offset)
 {
     LocalTensor<half> xLocalHalf = halfCastTmp.Get<half>();
     LocalTensor<float> x2LocalFp = castTmp.Get<float>();
@@ -160,37 +166,28 @@ __aicore__ inline void KernelRealDiv<TYPE_X, TYPE_Y, BUFFER_NUM>::CopyInAndCompu
 
 template <typename TYPE_X, typename TYPE_Y, uint64_t BUFFER_NUM>
 __aicore__ inline void KernelRealDiv<TYPE_X, TYPE_Y, BUFFER_NUM>::CopyInAndCompute(int32_t offset)
-{    
+{
     LocalTensor<TYPE_X> x1Local = inQueue.template AllocTensor<TYPE_X>();
     LocalTensor<TYPE_X> x2Local = x1Local[this->processDataNum];
     LocalTensor<TYPE_Y> yLocal = outQueueY.template AllocTensor<TYPE_Y>();
     int32_t eventIDMTE2ToV = static_cast<int32_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
-    if constexpr ( IsSameType<TYPE_X, bfloat16_t>::value)
-    {
+    if constexpr (IsSameType<TYPE_X, bfloat16_t>::value) {
         CopyInAndCompute16B(x1Local, x2Local, yLocal, eventIDMTE2ToV, offset);
-    }
-    else if constexpr ( IsSameType<TYPE_X, int32_t>::value)
-    {
+    } else if constexpr (IsSameType<TYPE_X, int32_t>::value) {
         CopyInAndComputeInt32(x1Local, x2Local, yLocal, eventIDMTE2ToV, offset);
-    }
-    else if constexpr ( IsSameType<TYPE_X, half>::value)
-    {
-        #if defined(HIGH_PERFORMANCE) && HIGH_PERFORMANCE == 1
-            DataCopy(x1Local, x1Gm[offset], this->processDataNum);
-            DataCopy(x2Local, x2Gm[offset], this->processDataNum);
-            SetFlag<HardEvent::MTE2_V>(eventIDMTE2ToV);
-            WaitFlag<HardEvent::MTE2_V>(eventIDMTE2ToV);
-            Div(yLocal, x1Local, x2Local, this->processDataNum);
-        #else
-            CopyInAndCompute16B(x1Local, x2Local, yLocal, eventIDMTE2ToV, offset);
-        #endif
-    }
-    else if constexpr ( IsSameType<TYPE_X, bool>::value)
-    {
+    } else if constexpr (IsSameType<TYPE_X, half>::value) {
+#if defined(HIGH_PERFORMANCE) && HIGH_PERFORMANCE == 1
+        DataCopy(x1Local, x1Gm[offset], this->processDataNum);
+        DataCopy(x2Local, x2Gm[offset], this->processDataNum);
+        SetFlag<HardEvent::MTE2_V>(eventIDMTE2ToV);
+        WaitFlag<HardEvent::MTE2_V>(eventIDMTE2ToV);
+        Div(yLocal, x1Local, x2Local, this->processDataNum);
+#else
+        CopyInAndCompute16B(x1Local, x2Local, yLocal, eventIDMTE2ToV, offset);
+#endif
+    } else if constexpr (IsSameType<TYPE_X, bool>::value) {
         CopyInAndComputeBool(x1Local, x2Local, yLocal, eventIDMTE2ToV, offset);
-    }
-    else
-    {
+    } else {
         DataCopy(x1Local, x1Gm[offset], this->processDataNum);
         DataCopy(x2Local, x2Gm[offset], this->processDataNum);
         SetFlag<HardEvent::MTE2_V>(eventIDMTE2ToV);
@@ -215,8 +212,7 @@ __aicore__ inline void KernelRealDiv<TYPE_X, TYPE_Y, BUFFER_NUM>::Process()
     int32_t loopCount = this->tileNum - 1;
     this->processDataNum = this->tileDataNum;
     int32_t offset = 0;
-    for (int32_t i = 0; i < loopCount; i++, offset+=this->tileDataNum)
-    {
+    for (int32_t i = 0; i < loopCount; i++, offset += this->tileDataNum) {
         CopyInAndCompute(offset);
         CopyOut(offset);
     }
@@ -225,5 +221,5 @@ __aicore__ inline void KernelRealDiv<TYPE_X, TYPE_Y, BUFFER_NUM>::Process()
     CopyOut(offset);
 }
 
-} // namespace KernelRealDiv
+} // namespace MyRealDiv
 #endif // REALDIV_H

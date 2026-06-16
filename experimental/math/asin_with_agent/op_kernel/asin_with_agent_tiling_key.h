@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
+
 /**
  *
  * NOTE: Portions of this code were AI-generated and have been
@@ -38,13 +38,11 @@
 #include "ascendc/host_api/tiling/template_argument.h"
 
 // 模板参数声明：D_T 为输入 dtype
-ASCENDC_TPL_ARGS_DECL(AsinWithAgent,
-    ASCENDC_TPL_DATATYPE_DECL(D_T, C_DT_FLOAT, C_DT_FLOAT16,
-                               C_DT_DOUBLE, C_DT_INT8, C_DT_INT16,
-                               C_DT_INT32, C_DT_INT64, C_DT_UINT8,
-                               C_DT_BOOL,
-                               ASCENDC_TPL_INPUT(0)),
-);
+ASCENDC_TPL_ARGS_DECL(
+    AsinWithAgent,
+    ASCENDC_TPL_DATATYPE_DECL(
+        D_T, C_DT_FLOAT, C_DT_FLOAT16, C_DT_DOUBLE, C_DT_INT8, C_DT_INT16, C_DT_INT32, C_DT_INT64, C_DT_UINT8,
+        C_DT_BOOL, ASCENDC_TPL_INPUT(0)), );
 
 // 模板实例化声明：枚举所有支持的 dtype
 ASCENDC_TPL_SEL(
@@ -56,7 +54,6 @@ ASCENDC_TPL_SEL(
     ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_INT32)),
     ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_INT64)),
     ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_UINT8)),
-    ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_BOOL)),
-);
+    ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_BOOL)), );
 
 #endif // __ASIN_WITH_AGENT_TILING_KEY_H__

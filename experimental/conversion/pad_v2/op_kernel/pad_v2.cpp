@@ -21,7 +21,7 @@
 /*!
  * \file pad_v2.cpp
  * \brief
-*/
+ */
 #include "pad_v2.h"
 
 template <uint32_t schMode>
@@ -30,6 +30,6 @@ __global__ __aicore__ void pad_v2(GM_ADDR x, GM_ADDR z, GM_ADDR workspace, GM_AD
     REGISTER_TILING_DEFAULT(PadV2TilingData);
     GET_TILING_DATA_WITH_STRUCT(PadV2TilingData, tilingData, tiling);
     NsPadV2::PadV2<DTYPE_X> op;
-    op.Init(x, z, workspace,&tilingData);
+    op.Init(x, z, workspace, &tilingData);
     op.Process();
 }

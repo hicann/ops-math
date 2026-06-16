@@ -30,10 +30,10 @@
 using namespace ge;
 
 namespace ops {
-const size_t startIdx=0;
-const size_t endIdx=1;
-const size_t stepIdx=2;
-const size_t outputIdx=0;
+const size_t startIdx = 0;
+const size_t endIdx = 1;
+const size_t stepIdx = 2;
+const size_t outputIdx = 0;
 
 static ge::graphStatus InferShape(gert::InferShapeContext* context)
 {
@@ -41,16 +41,19 @@ static ge::graphStatus InferShape(gert::InferShapeContext* context)
     auto tensorStart = context->GetInputTensor(startIdx);
     auto tensorEnd = context->GetInputTensor(endIdx);
     auto tensorStep = context->GetInputTensor(stepIdx);
-    OP_CHECK_IF(tensorStart == nullptr || tensorEnd == nullptr || tensorStep == nullptr, OP_LOGE(context, "Fault context,Please Check!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        tensorStart == nullptr || tensorEnd == nullptr || tensorStep == nullptr,
+        OP_LOGE(context, "Fault context,Please Check!"), return ge::GRAPH_FAILED);
 
     float startVal = 0.0f, endVal = 0.0f, stepVal = 1.0f;
     float diff = std::abs(endVal - startVal);
     float stepAbs = std::abs(stepVal);
-    if(stepAbs==0) return ge::GRAPH_FAILED;
+    if (stepAbs == 0)
+        return ge::GRAPH_FAILED;
     int64_t output_length = static_cast<int64_t>(std::ceil(diff / stepAbs));
 
     gert::Shape* y_shape = context->GetOutputShape(outputIdx);
-    OP_CHECK_IF(y_shape==nullptr, OP_LOGE(context, "y_shape is nullptr"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(y_shape == nullptr, OP_LOGE(context, "y_shape is nullptr"), return ge::GRAPH_FAILED);
     y_shape->SetDimNum(1);
     y_shape->SetDim(0, output_length);
 

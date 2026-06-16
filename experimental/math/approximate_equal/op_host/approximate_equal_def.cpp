@@ -56,4 +56,4 @@ public:
 
 OP_ADD(ApproximateEqual);
 
-}  // namespace ops
+} // namespace ops

@@ -11,7 +11,7 @@
 /*!
  * \file cross_tiling.cpp
  * \brief
-*/
+ */
 #include "log/log.h"
 #include "util/math_util.h"
 #include "op_host/tiling_base_util.h"
@@ -22,7 +22,6 @@
 #include "util/platform_util.h"
 
 namespace optiling {
-
 
 const uint32_t WS_SYS_SIZE = 16U * 1024U * 1024U;
 const uint32_t BLOCK_SIZE = 32U;
@@ -48,8 +47,8 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
 }
 
 // 获取属性，shape信息
-static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& totalIdx, ge::DataType& dataType,
-                                         int64_t& intervalNum, int64_t& loopTimes)
+static ge::graphStatus GetShapeAttrsInfo(
+    gert::TilingContext* context, int64_t& totalIdx, ge::DataType& dataType, int64_t& intervalNum, int64_t& loopTimes)
 {
     // 获取输入shape信息
     auto inputX = context->GetInputShape(0);
@@ -66,16 +65,16 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
     // shape校验
     OP_CHECK_IF(
         inputShapeX.GetDimNum() != inputShapeY.GetDimNum() || inputShapeY.GetDimNum() != outShapeZ.GetDimNum(),
-        OP_LOGE(context, "Cross: inputx,inputy,outputz shape should equal"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "Cross: inputx,inputy,outputz shape should equal"), return ge::GRAPH_FAILED);
 
     totalIdx = 1;
-    for(uint32_t i = 0; i < inputShapeX.GetDimNum(); i++) {
+    for (uint32_t i = 0; i < inputShapeX.GetDimNum(); i++) {
         totalIdx *= inputShapeX.GetDim(i);
     }
 
     // dtype校验
-    const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_INT32, ge::DT_INT8, ge::DT_FLOAT16, ge::DT_UINT8, ge::DT_INT16};
+    const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT,   ge::DT_INT32, ge::DT_INT8,
+                                                   ge::DT_FLOAT16, ge::DT_UINT8, ge::DT_INT16};
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
     dataType = inputDesc->GetDataType();
@@ -144,8 +143,9 @@ static ge::graphStatus CrossTilingFunc(gert::TilingContext* context)
     // 1. platform
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
-    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+        return ge::GRAPH_FAILED);
     (void)ubSize;
     (void)coreNum;
 
@@ -154,8 +154,9 @@ static ge::graphStatus CrossTilingFunc(gert::TilingContext* context)
     ge::DataType dataType;
     int64_t intervalNum = 0;
     int64_t loopTimes = 0;
-    OP_CHECK_IF(GetShapeAttrsInfo(context, totalIdx, dataType, intervalNum, loopTimes) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetShapeAttrsInfo(context, totalIdx, dataType, intervalNum, loopTimes) != ge::GRAPH_SUCCESS,
+        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     // handle empty input
     if (totalIdx <= 0) {
@@ -168,14 +169,16 @@ static ge::graphStatus CrossTilingFunc(gert::TilingContext* context)
     }
 
     // 3. workspace
-    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+        return ge::GRAPH_FAILED);
 
     // 4. tiling data
     CrossTilingData* tiling = context->GetTilingData<CrossTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(memset_s(tiling, sizeof(CrossTilingData), 0, sizeof(CrossTilingData)) != EOK,
-                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        memset_s(tiling, sizeof(CrossTilingData), 0, sizeof(CrossTilingData)) != EOK,
+        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     uint32_t typeLength = 0;
     ge::TypeUtils::GetDataTypeLength(dataType, typeLength);
@@ -261,13 +264,13 @@ static ge::graphStatus CrossTilingFunc(gert::TilingContext* context)
         context->SetTilingKey(tilingKey);
     } else if (dataType == ge::DT_FLOAT16) {
         tilingKey = GET_TPL_TILING_KEY(ELEMENTWISE_TPL_SCH_MODE_3);
-        context->SetTilingKey(tilingKey);        
+        context->SetTilingKey(tilingKey);
     } else if (dataType == ge::DT_UINT8) {
         tilingKey = GET_TPL_TILING_KEY(ELEMENTWISE_TPL_SCH_MODE_4);
-        context->SetTilingKey(tilingKey);        
+        context->SetTilingKey(tilingKey);
     } else if (dataType == ge::DT_INT16) {
         tilingKey = GET_TPL_TILING_KEY(ELEMENTWISE_TPL_SCH_MODE_5);
-        context->SetTilingKey(tilingKey);        
+        context->SetTilingKey(tilingKey);
     } else {
         OP_LOGE(context, "get dtype error");
         return ge::GRAPH_FAILED;

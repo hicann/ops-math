@@ -27,39 +27,33 @@ using namespace AscendC;
 constexpr int32_t BUFFER_NUM = 2;
 constexpr int16_t Shift = 8;
 
-template <typename TYPE_X, typename TYPE_Y ,bool IsExistBigCore>
+template <typename TYPE_X, typename TYPE_Y, bool IsExistBigCore>
 class Reciprocal {
     using T = TYPE_X;
+
 public:
     __aicore__ inline Reciprocal() {}
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y,  uint64_t smallCoreDataNum,
-                                uint64_t bigCoreDataNum, uint64_t bigCoreLoopNum, 
-                                uint64_t smallCoreLoopNum, uint64_t ubPartDataNum, 
-                                uint64_t smallCoreTailDataNum, uint64_t bigCoreTailDataNum, 
-                                uint64_t tailBlockNum) 
+    __aicore__ inline void Init(
+        GM_ADDR x, GM_ADDR y, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t bigCoreLoopNum,
+        uint64_t smallCoreLoopNum, uint64_t ubPartDataNum, uint64_t smallCoreTailDataNum, uint64_t bigCoreTailDataNum,
+        uint64_t tailBlockNum)
     {
         ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
         uint64_t coreNum = GetBlockIdx();
         uint64_t globalBufferIndex = bigCoreDataNum * GetBlockIdx();
         this->ubPartDataNum = ubPartDataNum;
-        if constexpr (IsExistBigCore) 
-        {
-            if (coreNum < tailBlockNum) 
-            { 
+        if constexpr (IsExistBigCore) {
+            if (coreNum < tailBlockNum) {
                 this->coreDataNum = bigCoreDataNum;
                 this->tileNum = bigCoreLoopNum;
                 this->tailDataNum = bigCoreTailDataNum;
-            }
-            else 
-            { 
+            } else {
                 this->coreDataNum = smallCoreDataNum;
                 this->tileNum = smallCoreLoopNum;
                 this->tailDataNum = smallCoreTailDataNum;
                 globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (GetBlockIdx() - tailBlockNum);
             }
-        }
-        else
-        {
+        } else {
             this->coreDataNum = smallCoreDataNum;
             this->tileNum = smallCoreLoopNum;
             this->tailDataNum = smallCoreTailDataNum;
@@ -69,8 +63,7 @@ public:
         yGm.SetGlobalBuffer((__gm__ TYPE_Y*)y + globalBufferIndex, this->coreDataNum);
         pipe.InitBuffer(inQueueX, BUFFER_NUM, this->ubPartDataNum * sizeof(TYPE_X));
         pipe.InitBuffer(outQueueY, BUFFER_NUM, this->ubPartDataNum * sizeof(TYPE_Y));
-        if constexpr (std::is_same_v<DTYPE_X, bfloat16_t>) 
-        {
+        if constexpr (std::is_same_v<DTYPE_X, bfloat16_t>) {
             pipe.InitBuffer(tmp1, this->ubPartDataNum * sizeof(float));
             pipe.InitBuffer(tmp2, this->ubPartDataNum * sizeof(float));
         }
@@ -79,17 +72,17 @@ public:
     {
         int32_t loopCount = this->tileNum;
         this->processDataNum = this->ubPartDataNum;
-        for (int32_t i = 0; i < loopCount-1; i++) 
-        {
+        for (int32_t i = 0; i < loopCount - 1; i++) {
             CopyIn(i);
             Compute(i);
             CopyOut(i);
         }
         this->processDataNum = this->tailDataNum;
-        CopyIn(loopCount-1);
-        Compute(loopCount-1);
-        CopyOut(loopCount-1);
+        CopyIn(loopCount - 1);
+        Compute(loopCount - 1);
+        CopyOut(loopCount - 1);
     }
+
 private:
     __aicore__ inline void CopyIn(int32_t progress)
     {
@@ -101,18 +94,13 @@ private:
     {
         LocalTensor<TYPE_X> xLocal = inQueueX.DeQue<TYPE_X>();
         LocalTensor<TYPE_Y> yLocal = outQueueY.AllocTensor<TYPE_Y>();
-        if constexpr ( std::is_same_v< DTYPE_X, float32_t>)
-        {   
+        if constexpr (std::is_same_v<DTYPE_X, float32_t>) {
             Duplicate(yLocal, 1.0f, this->processDataNum);
             Div(yLocal, yLocal, xLocal, this->processDataNum);
-        }
-        else if constexpr ( std::is_same_v< DTYPE_X, float16_t>)
-        {   
+        } else if constexpr (std::is_same_v<DTYPE_X, float16_t>) {
             Duplicate(yLocal, static_cast<half>(1.0f), this->processDataNum);
             Div(yLocal, yLocal, xLocal, this->processDataNum);
-        }
-        else
-        {   
+        } else {
             LocalTensor<float> p1 = tmp1.Get<float>();
             LocalTensor<float> p2 = tmp2.Get<float>();
             Cast(p1, xLocal, RoundMode::CAST_NONE, this->processDataNum);
@@ -129,6 +117,7 @@ private:
         DataCopy(yGm[progress * this->ubPartDataNum], yLocal, this->processDataNum);
         outQueueY.FreeTensor(yLocal);
     }
+
 private:
     TPipe pipe;
     TQue<QuePosition::VECIN, BUFFER_NUM> inQueueX;

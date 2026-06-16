@@ -42,8 +42,16 @@ namespace ge {
 *Compatible with the TensorFlow operator Log1pV2.
 */
 REG_OP(Log1pV2)
-    .INPUT(x1, TensorType({DT_FLOAT, DT_FLOAT16,}))
-    .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16,}))
+    .INPUT(
+        x1, TensorType({
+                DT_FLOAT,
+                DT_FLOAT16,
+            }))
+    .OUTPUT(
+        y, TensorType({
+               DT_FLOAT,
+               DT_FLOAT16,
+           }))
     .OP_END_FACTORY_REG(Log1pV2)
 
 } // namespace ge

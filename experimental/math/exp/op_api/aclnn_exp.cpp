@@ -117,7 +117,7 @@ static aclnnStatus GetWorkspaceSizeCommon(
         return ACLNN_SUCCESS;
     }
     // 检查Format
-    if(self->GetStorageFormat() != Format::FORMAT_ND){
+    if (self->GetStorageFormat() != Format::FORMAT_ND) {
         OP_LOGW("Format only support ND");
     }
     // 固定写法，将输入self转换成连续的Tensor
@@ -166,7 +166,7 @@ aclnnStatus aclnnInplaceExpGetWorkspaceSize(aclTensor* selfRef, uint64_t* worksp
     L2_DFX_PHASE_1(aclnnInplaceExp, DFX_IN(selfRef), DFX_OUT(selfRef));
     auto ret = CheckInplaceParamsExp(selfRef);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
-    
+
     return GetWorkspaceSizeCommon(selfRef, selfRef, workspaceSize, executor);
 }
 

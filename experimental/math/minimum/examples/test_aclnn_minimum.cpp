@@ -109,14 +109,14 @@ int main()
     aclTensor* selfX = nullptr;
     void* selfXDeviceAddr = nullptr;
     std::vector<int64_t> selfXShape = {24, 7, 9};
-    std::vector<float> selfXHostData(1512,7);
+    std::vector<float> selfXHostData(1512, 7);
     ret = CreateAclTensor(selfXHostData, selfXShape, &selfXDeviceAddr, aclDataType::ACL_FLOAT, &selfX);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     aclTensor* selfY = nullptr;
     void* selfYDeviceAddr = nullptr;
     std::vector<int64_t> selfYShape = {24, 7, 9};
-    std::vector<float> selfYHostData(1512,1);
+    std::vector<float> selfYHostData(1512, 1);
     ret = CreateAclTensor(selfYHostData, selfYShape, &selfYDeviceAddr, aclDataType::ACL_FLOAT, &selfY);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
@@ -132,12 +132,14 @@ int main()
     aclOpExecutor* executor;
 
     LOG_PRINT("Before GetWorkspaceSize: selfX=%p, selfY=%p, out=%p\n", (void*)selfX, (void*)selfY, (void*)out);
-    LOG_PRINT("Before GetWorkspaceSize: selfXDeviceAddr=%p, selfYDeviceAddr=%p, outDeviceAddr=%p\n",
-          selfXDeviceAddr, selfYDeviceAddr, outDeviceAddr);
+    LOG_PRINT(
+        "Before GetWorkspaceSize: selfXDeviceAddr=%p, selfYDeviceAddr=%p, outDeviceAddr=%p\n", selfXDeviceAddr,
+        selfYDeviceAddr, outDeviceAddr);
     // 4. 调用aclnnMinimum第一段接口
     ret = aclnnMinimumGetWorkspaceSize(selfX, selfY, out, &workspaceSize, &executor);
-    LOG_PRINT("aclnnMinimumGetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n",
-          ret, (unsigned long long)workspaceSize, (void*)executor);
+    LOG_PRINT(
+        "aclnnMinimumGetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n", ret,
+        (unsigned long long)workspaceSize, (void*)executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnMinimumGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 根据第一段接口计算出的workspaceSize申请device内存

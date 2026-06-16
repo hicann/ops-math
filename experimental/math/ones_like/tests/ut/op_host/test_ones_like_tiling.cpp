@@ -21,15 +21,9 @@ using namespace optiling;
 
 class OnesLikeTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "OnesLikeTiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "OnesLikeTiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "OnesLikeTiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "OnesLikeTiling TearDown " << endl; }
 };
 
 TEST_F(OnesLikeTiling, ascend910B_test_tiling_fp16_001)

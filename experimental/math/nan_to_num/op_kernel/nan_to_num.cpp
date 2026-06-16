@@ -21,7 +21,9 @@ __global__ __aicore__ void nan_to_num(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, G
     REGISTER_TILING_DEFAULT(NanToNumTilingData);
     GET_TILING_DATA_WITH_STRUCT(NanToNumTilingData, tilingData, tiling);
     NsNanToNum::KernelNanToNum<DTYPE_X> op; // 算子kernel实例获取
-    op.Init(x, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.finalBigTileNum, tilingData.finalSmallTileNum, tilingData.tileDataNum,
-       tilingData.smallTailDataNum, tilingData.bigTailDataNum, tilingData.tailBlockNum, tilingData.nan, tilingData.posinf, tilingData.neginf);
+    op.Init(
+        x, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.finalBigTileNum,
+        tilingData.finalSmallTileNum, tilingData.tileDataNum, tilingData.smallTailDataNum, tilingData.bigTailDataNum,
+        tilingData.tailBlockNum, tilingData.nan, tilingData.posinf, tilingData.neginf);
     op.Process();
 }

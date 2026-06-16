@@ -9,11 +9,11 @@
  */
 
 /**
-* 我们正常的版权申明，下面是我们的备注
-*
-* NOTE: Portions of this code were AI-generated and have been
-* technically reviewed for functional accuracy and security
-*/
+ * 我们正常的版权申明，下面是我们的备注
+ *
+ * NOTE: Portions of this code were AI-generated and have been
+ * technically reviewed for functional accuracy and security
+ */
 
 #include "cdist_grad.h"
 #include "opdev/aicpu/aicpu_task.h"
@@ -51,13 +51,12 @@ static inline bool IsAiCoreSupport(
 
 // AICORE算子kernel
 static inline const aclTensor* CdistGradAiCore(
-    const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist, float p,
-    aclTensor* out, aclOpExecutor* executor)
+    const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist, float p, aclTensor* out,
+    aclOpExecutor* executor)
 {
     L0_DFX(CdistGradAiCore, x1, x2, out);
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore CdistGrad算子加入任务队列
-    auto ret =
-        ADD_TO_LAUNCHER_LIST_AICORE(CdistGrad, OP_INPUT(grad, x1, x2, cdist), OP_OUTPUT(out), OP_ATTR(p));
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(CdistGrad, OP_INPUT(grad, x1, x2, cdist), OP_OUTPUT(out), OP_ATTR(p));
     OP_CHECK(
         ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "CdistGradAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
         return nullptr);

@@ -11,7 +11,7 @@
 /*!
  * \file test_aclnn_bitwise_and_tensor.cpp
  * \brief
-*/
+ */
 #include <vector>
 #include <array>
 #include "gtest/gtest.h"
@@ -24,15 +24,9 @@
 
 class l2_bitwise_and_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_bitwise_and_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "l2_bitwise_and_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "l2_bitwise_and_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "l2_bitwise_and_test TearDown" << endl; }
 };
 
 TEST_F(l2_bitwise_and_test, case_01_int16)

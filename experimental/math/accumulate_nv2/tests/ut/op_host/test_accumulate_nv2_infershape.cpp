@@ -12,24 +12,17 @@
  * \file accumulate_nv2.cpp
  * \brief
  */
- 
+
 #include <gtest/gtest.h>
 #include <iostream>
 #include "infershape_context_faker.h"
 #include "base/registry/op_impl_space_registry_v2.h"
 
-class AccumulateNv2 : public testing::Test
-{
+class AccumulateNv2 : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AccumulateNv2 SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "AccumulateNv2 SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "AccumulateNv2 TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "AccumulateNv2 TearDown" << std::endl; }
 };
 
 static std::vector<int64_t> ToVector(const gert::Shape& shape)
@@ -44,30 +37,29 @@ static std::vector<int64_t> ToVector(const gert::Shape& shape)
 
 static void ExeTestCase(
     std::vector<std::vector<int64_t> > expectResults,
-    const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
-    const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
-    gert::StorageShape& outStorageShape,
-    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
+    const std::vector<gert::StorageShape>& inputShapes, // 存储所有输入StorageShape参数
+    const std::vector<ge::DataType>& dtypes,            // 存储所有DataType参数
+    gert::StorageShape& outStorageShape, ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
 {
     // 从vector中取出对应参数（保持原顺序）
     const auto& xStorageShape = inputShapes[0];
-    
+
     ge::DataType input1Dtype = dtypes[0];
     ge::DataType outputDtype = dtypes[1];
 
     /* make infershape context */
-    std::vector<gert::Tensor *> inputTensors = {
-        (gert::Tensor *)&xStorageShape,
+    std::vector<gert::Tensor*> inputTensors = {
+        (gert::Tensor*)&xStorageShape,
     };
-    std::vector<gert::StorageShape *> outputShapes = {&outStorageShape};
+    std::vector<gert::StorageShape*> outputShapes = {&outStorageShape};
     auto contextHolder = gert::InferShapeContextFaker()
-        .SetOpType("AccumulateNv2")
-        .NodeIoNum(1, 1)
-        .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .InputTensors(inputTensors)
-        .OutputShapes(outputShapes)
-        .Build();
+                             .SetOpType("AccumulateNv2")
+                             .NodeIoNum(1, 1)
+                             .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .InputTensors(inputTensors)
+                             .OutputShapes(outputShapes)
+                             .Build();
 
     /* get infershape func */
     auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
@@ -85,11 +77,11 @@ TEST_F(AccumulateNv2, AccumulateNv2_infershape_case_0)
 {
     // 用vector存储同类型参数（顺序与原参数列表一致）
     std::vector<gert::StorageShape> inputShapes = {
-        {{2, 100, 4}, {2, 100, 4}},                  // x_shape
+        {{2, 100, 4}, {2, 100, 4}}, // x_shape
     };
     std::vector<ge::DataType> dtypes = {
-        ge::DT_FLOAT,  // input1Dtype
-        ge::DT_FLOAT   // outputDtype
+        ge::DT_FLOAT, // input1Dtype
+        ge::DT_FLOAT  // outputDtype
     };
 
     std::vector<int64_t> expectResult = {2, 100, 4};

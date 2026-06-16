@@ -178,8 +178,8 @@ TEST_F(l2_linalg_cross_test, case_1D_tensor)
 // check 3D tensor
 TEST_F(l2_linalg_cross_test, case_3D_tensor)
 {
-    auto self_tensor_desc = TensorDesc({1,1,3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto other_tensor_desc = TensorDesc({1,1,3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto self_tensor_desc = TensorDesc({1, 1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto other_tensor_desc = TensorDesc({1, 1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc(self_tensor_desc).Precision(0.1, 0.1);
     int64_t dim = 2;
 
@@ -193,8 +193,8 @@ TEST_F(l2_linalg_cross_test, case_3D_tensor)
 // check 4D tensor
 TEST_F(l2_linalg_cross_test, case_4D_tensor)
 {
-    auto self_tensor_desc = TensorDesc({1,1,1,3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto other_tensor_desc = TensorDesc({1,1,1,3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto self_tensor_desc = TensorDesc({1, 1, 1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto other_tensor_desc = TensorDesc({1, 1, 1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc(self_tensor_desc).Precision(0.1, 0.1);
     int64_t dim = 3;
 
@@ -208,8 +208,8 @@ TEST_F(l2_linalg_cross_test, case_4D_tensor)
 // check 5D tensor
 TEST_F(l2_linalg_cross_test, case_5D_tensor)
 {
-    auto self_tensor_desc = TensorDesc({1,1,1,1,3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto other_tensor_desc = TensorDesc({1,1,1,1,3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto self_tensor_desc = TensorDesc({1, 1, 1, 1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto other_tensor_desc = TensorDesc({1, 1, 1, 1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc(self_tensor_desc).Precision(0.1, 0.1);
     int64_t dim = 4;
 
@@ -223,8 +223,8 @@ TEST_F(l2_linalg_cross_test, case_5D_tensor)
 // check 8D tensor
 TEST_F(l2_linalg_cross_test, case_8D_tensor)
 {
-    auto self_tensor_desc = TensorDesc({1,1,1,1,1,1,1,3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto other_tensor_desc = TensorDesc({1,1,1,1,1,1,1,3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto self_tensor_desc = TensorDesc({1, 1, 1, 1, 1, 1, 1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto other_tensor_desc = TensorDesc({1, 1, 1, 1, 1, 1, 1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc(self_tensor_desc).Precision(0.1, 0.1);
     int64_t dim = 7;
 
@@ -366,9 +366,9 @@ TEST_F(l2_linalg_cross_test, case_invalid_shape_5)
 // CheckShapeBroadcast
 TEST_F(l2_linalg_cross_test, case_self_expand_dim_broadcast)
 {
-    auto self_tensor_desc = TensorDesc({1,1,3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto other_tensor_desc = TensorDesc({1,1,1,3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto out_tensor_desc = TensorDesc({1,1,1,3}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.1, 0.1);
+    auto self_tensor_desc = TensorDesc({1, 1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto other_tensor_desc = TensorDesc({1, 1, 1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto out_tensor_desc = TensorDesc({1, 1, 1, 3}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.1, 0.1);
     int64_t dim = 2;
 
     auto ut = OP_API_UT(aclnnLinalgCross, INPUT(self_tensor_desc, other_tensor_desc, dim), OUTPUT(out_tensor_desc));
@@ -381,9 +381,9 @@ TEST_F(l2_linalg_cross_test, case_self_expand_dim_broadcast)
 // CheckShapeBroadcast
 TEST_F(l2_linalg_cross_test, case_other_expand_dim_broadcast)
 {
-    auto self_tensor_desc = TensorDesc({1,1,1,3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto other_tensor_desc = TensorDesc({1,1,3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto out_tensor_desc = TensorDesc({1,1,1,3}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.1, 0.1);
+    auto self_tensor_desc = TensorDesc({1, 1, 1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto other_tensor_desc = TensorDesc({1, 1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto out_tensor_desc = TensorDesc({1, 1, 1, 3}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.1, 0.1);
     int64_t dim = 3;
 
     auto ut = OP_API_UT(aclnnLinalgCross, INPUT(self_tensor_desc, other_tensor_desc, dim), OUTPUT(out_tensor_desc));
@@ -396,9 +396,9 @@ TEST_F(l2_linalg_cross_test, case_other_expand_dim_broadcast)
 // CheckShapeBroadcast
 TEST_F(l2_linalg_cross_test, case_self_expand_dim_other_expand_shape_broadcast)
 {
-    auto self_tensor_desc = TensorDesc({1,3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto other_tensor_desc = TensorDesc({1,3,1}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto out_tensor_desc = TensorDesc({1,3,3}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.1, 0.1);
+    auto self_tensor_desc = TensorDesc({1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto other_tensor_desc = TensorDesc({1, 3, 1}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto out_tensor_desc = TensorDesc({1, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.1, 0.1);
     int64_t dim = 1;
 
     auto ut = OP_API_UT(aclnnLinalgCross, INPUT(self_tensor_desc, other_tensor_desc, dim), OUTPUT(out_tensor_desc));
@@ -456,7 +456,8 @@ TEST_F(l2_linalg_cross_test, case_contiguous_float)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(l2_linalg_cross_test, case_ascend910B_bf16_1) {
+TEST_F(l2_linalg_cross_test, case_ascend910B_bf16_1)
+{
     auto self_tensor_desc = TensorDesc({5, 3}, ACL_BF16, ACL_FORMAT_ND).ValueRange(0, 1);
     auto other_tensor_desc = TensorDesc({5, 3}, ACL_BF16, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc(self_tensor_desc).Precision(0.0001, 0.0001);

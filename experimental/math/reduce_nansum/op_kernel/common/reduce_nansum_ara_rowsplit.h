@@ -9,11 +9,11 @@
  */
 
 /**
-* 我们正常的版权申明，下面是我们的备注
-*
-* NOTE: Portions of this code were AI-generated and have been
-* technically reviewed for functional accuracy and security
-*/
+ * 我们正常的版权申明，下面是我们的备注
+ *
+ * NOTE: Portions of this code were AI-generated and have been
+ * technically reviewed for functional accuracy and security
+ */
 
 /*!
  * \file reduce_nansum_ara_rowsplit.h
@@ -84,9 +84,9 @@ private:
 
     // AtomicAdd 多核归约参数
     int64_t useAtomicAdd_ = 0;
-    int64_t coreRStart_ = 0;      // 本核处理的 R 起始位置
-    int64_t coreRCount_ = 0;      // 本核处理的 R 数量
-    int64_t coreNumChunks_ = 0;   // 本核的 chunk 数
+    int64_t coreRStart_ = 0;        // 本核处理的 R 起始位置
+    int64_t coreRCount_ = 0;        // 本核处理的 R 数量
+    int64_t coreNumChunks_ = 0;     // 本核的 chunk 数
     int64_t coreLastChunkSize_ = 0; // 本核最后一个 chunk 大小
 
     // 非连续多轴归约参数（ARA strided）
@@ -105,8 +105,7 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void ReduceNansumAraRowsplit<T>::Init(GM_ADDR x, GM_ADDR y,
-                                                         const ReduceNansumTilingData* tilingData)
+__aicore__ inline void ReduceNansumAraRowsplit<T>::Init(GM_ADDR x, GM_ADDR y, const ReduceNansumTilingData* tilingData)
 {
     a1Count_ = tilingData->a1Count;
     rCount_ = tilingData->rCount;
@@ -140,12 +139,14 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::Init(GM_ADDR x, GM_ADDR y,
         if (coreRStart_ + coreRCount_ > rCount_) {
             coreRCount_ = rCount_ - coreRStart_;
         }
-        if (coreRCount_ < 0) coreRCount_ = 0;
+        if (coreRCount_ < 0)
+            coreRCount_ = 0;
 
         if (coreRCount_ > 0) {
             coreNumChunks_ = (coreRCount_ + rChunkSize_ - 1) / rChunkSize_;
             coreLastChunkSize_ = coreRCount_ - (coreNumChunks_ - 1) * rChunkSize_;
-            if (coreLastChunkSize_ <= 0) coreLastChunkSize_ = rChunkSize_;
+            if (coreLastChunkSize_ <= 0)
+                coreLastChunkSize_ = rChunkSize_;
         } else {
             coreNumChunks_ = 0;
             coreLastChunkSize_ = 0;
@@ -213,7 +214,8 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::Init(GM_ADDR x, GM_ADDR y,
     // maskBuf
     int64_t totalMaskElements = rChunkSize_ * alignedCols_;
     int64_t maskBufSize = ((totalMaskElements / 8 + 31) / 32) * 32;
-    if (maskBufSize < 32) maskBufSize = 32;
+    if (maskBufSize < 32)
+        maskBufSize = 32;
     pipe.InitBuffer(maskBuf, maskBufSize);
 
     pipe.InitBuffer(zeroBuf, alignedCols_ * static_cast<int64_t>(sizeof(float)));
@@ -230,7 +232,8 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::Init(GM_ADDR x, GM_ADDR y,
 template <typename T>
 __aicore__ inline void ReduceNansumAraRowsplit<T>::ProcessOneTileAtomicAdd(int64_t a1Idx, int64_t a0OuterIdx)
 {
-    if (coreRCount_ <= 0) return;
+    if (coreRCount_ <= 0)
+        return;
 
     int64_t a0Start = a0OuterIdx * tileA0Len_;
     int64_t curA0Len = tileA0Len_;
@@ -243,7 +246,6 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::ProcessOneTileAtomicAdd(int64
     Duplicate(globalResult, static_cast<float>(0.0f), static_cast<uint32_t>(alignedCols_));
 
 #endif
-
 
     for (int64_t chunkIdx = 0; chunkIdx < coreNumChunks_; chunkIdx++) {
         int64_t rStart = coreRStart_ + chunkIdx * rChunkSize_;
@@ -258,8 +260,6 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::ProcessOneTileAtomicAdd(int64
         } else {
             Duplicate(xLocal, static_cast<T>(0), static_cast<uint32_t>(rChunkSize_ * alignedCols_));
         }
-
-
 
         DataCopyParams copyInParams;
         int64_t blockLenBytes = curA0Len * static_cast<int64_t>(sizeof(T));
@@ -288,7 +288,8 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::ProcessOneTileAtomicAdd(int64
                 int64_t blkIdx = rPos / innerRowsPerBlock_;
                 int64_t rowInBlk = rPos % innerRowsPerBlock_;
                 int64_t rowsThisBlk = innerRowsPerBlock_ - rowInBlk;
-                if (rowsThisBlk > rRemain) rowsThisBlk = rRemain;
+                if (rowsThisBlk > rRemain)
+                    rowsThisBlk = rRemain;
 
                 int64_t gmReduceOffset = 0;
                 int64_t blkRemaining = blkIdx;
@@ -305,11 +306,12 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::ProcessOneTileAtomicAdd(int64
                 copyInParams.dstStride = static_cast<uint32_t>(dstGapBytes / 32);
 
                 if (usePadding) {
-                    DataCopyPad(xLocal[ubRowWritten * alignedCols_], inputGM[gmBlockBase], copyInParams,
+                    DataCopyPad(
+                        xLocal[ubRowWritten * alignedCols_], inputGM[gmBlockBase], copyInParams,
                         {true, static_cast<uint8_t>(0), static_cast<uint8_t>(rightPadElems), 0});
                 } else {
-                    DataCopyPad(xLocal[ubRowWritten * alignedCols_], inputGM[gmBlockBase], copyInParams,
-                        {false, 0, 0, 0});
+                    DataCopyPad(
+                        xLocal[ubRowWritten * alignedCols_], inputGM[gmBlockBase], copyInParams, {false, 0, 0, 0});
                 }
 
                 ubRowWritten += rowsThisBlk;
@@ -327,11 +329,11 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::ProcessOneTileAtomicAdd(int64
 
             int64_t gmOffset = a1Idx * rCount_ * originalA0_ + rStart * originalA0_ + a0Start;
             if (usePadding) {
-                DataCopyPad(xLocal, inputGM[gmOffset], copyInParams,
+                DataCopyPad(
+                    xLocal, inputGM[gmOffset], copyInParams,
                     {true, static_cast<uint8_t>(0), static_cast<uint8_t>(rightPadElems), 0});
             } else {
-                DataCopyPad(xLocal, inputGM[gmOffset], copyInParams,
-                    {false, 0, 0, 0});
+                DataCopyPad(xLocal, inputGM[gmOffset], copyInParams, {false, 0, 0, 0});
             }
         }
 
@@ -347,7 +349,8 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::ProcessOneTileAtomicAdd(int64
 
         int64_t totalMaskElements = rChunkSize_ * alignedCols_;
         int64_t maskInt16Count = ((totalMaskElements / 8 + 31) / 32) * 32 / 2;
-        if (maskInt16Count < 16) maskInt16Count = 16;
+        if (maskInt16Count < 16)
+            maskInt16Count = 16;
         LocalTensor<int16_t> maskInt16 = maskBuf.Get<int16_t>();
         Duplicate(maskInt16, static_cast<int16_t>(0), static_cast<uint32_t>(maskInt16Count));
 
@@ -374,18 +377,8 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::ProcessOneTileAtomicAdd(int64
         LocalTensor<uint8_t> tmpUint8 = tmpBuf.Get<uint8_t>();
         ReduceSum<float, AscendC::Pattern::Reduce::RA>(chunkResult, cleanLocal, tmpUint8, srcShape, true);
 
-
-
-
-
-
         // 跨 chunk 累加
         Add(globalResult, globalResult, chunkResult, static_cast<uint32_t>(alignedCols_));
-
-
-
-
-
 
         outQueueY.FreeTensor(yLocal);
         inQueueX.FreeTensor(xLocal);
@@ -400,8 +393,6 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::ProcessOneTileAtomicAdd(int64
     } else {
         Cast(yOut, globalResult, RoundMode::CAST_ROUND, static_cast<uint32_t>(alignedCols_));
     }
-
-
 
     outQueueY.EnQue(yOut);
     yOut = outQueueY.template DeQue<T>();
@@ -434,8 +425,6 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::ProcessOneTile(int64_t a1Idx,
     LocalTensor<float> globalResult = globalResultBuf.Get<float>();
     Duplicate(globalResult, static_cast<float>(0.0f), static_cast<uint32_t>(alignedCols_));
 
-
-
     for (int64_t chunkIdx = 0; chunkIdx < numChunks_; chunkIdx++) {
         int64_t rStart = chunkIdx * rChunkSize_;
         int64_t curRCount = (chunkIdx == numChunks_ - 1) ? lastChunkSize_ : rChunkSize_;
@@ -449,8 +438,6 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::ProcessOneTile(int64_t a1Idx,
         } else {
             Duplicate(xLocal, static_cast<T>(0), static_cast<uint32_t>(rChunkSize_ * alignedCols_));
         }
-
-
 
         DataCopyParams copyInParams;
         int64_t blockLenBytes = curA0Len * static_cast<int64_t>(sizeof(T));
@@ -480,7 +467,8 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::ProcessOneTile(int64_t a1Idx,
                 int64_t blkIdx = rPos / innerRowsPerBlock_;
                 int64_t rowInBlk = rPos % innerRowsPerBlock_;
                 int64_t rowsThisBlk = innerRowsPerBlock_ - rowInBlk;
-                if (rowsThisBlk > rRemain) rowsThisBlk = rRemain;
+                if (rowsThisBlk > rRemain)
+                    rowsThisBlk = rRemain;
 
                 // 通过外层归约维度坐标计算正确的 GM 偏移
                 int64_t gmReduceOffset = 0;
@@ -498,11 +486,12 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::ProcessOneTile(int64_t a1Idx,
                 copyInParams.dstStride = static_cast<uint32_t>(dstGapBytes / 32);
 
                 if (usePadding) {
-                    DataCopyPad(xLocal[ubRowWritten * alignedCols_], inputGM[gmBlockBase], copyInParams,
+                    DataCopyPad(
+                        xLocal[ubRowWritten * alignedCols_], inputGM[gmBlockBase], copyInParams,
                         {true, static_cast<uint8_t>(0), static_cast<uint8_t>(rightPadElems), 0});
                 } else {
-                    DataCopyPad(xLocal[ubRowWritten * alignedCols_], inputGM[gmBlockBase], copyInParams,
-                        {false, 0, 0, 0});
+                    DataCopyPad(
+                        xLocal[ubRowWritten * alignedCols_], inputGM[gmBlockBase], copyInParams, {false, 0, 0, 0});
                 }
 
                 ubRowWritten += rowsThisBlk;
@@ -520,11 +509,11 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::ProcessOneTile(int64_t a1Idx,
 
             int64_t gmOffset = a1Idx * rCount_ * originalA0_ + rStart * originalA0_ + a0Start;
             if (usePadding) {
-                DataCopyPad(xLocal, inputGM[gmOffset], copyInParams,
+                DataCopyPad(
+                    xLocal, inputGM[gmOffset], copyInParams,
                     {true, static_cast<uint8_t>(0), static_cast<uint8_t>(rightPadElems), 0});
             } else {
-                DataCopyPad(xLocal, inputGM[gmOffset], copyInParams,
-                    {false, 0, 0, 0});
+                DataCopyPad(xLocal, inputGM[gmOffset], copyInParams, {false, 0, 0, 0});
             }
         }
 
@@ -541,7 +530,8 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::ProcessOneTile(int64_t a1Idx,
         // 清零 mask
         int64_t totalMaskElements = rChunkSize_ * alignedCols_;
         int64_t maskInt16Count = ((totalMaskElements / 8 + 31) / 32) * 32 / 2;
-        if (maskInt16Count < 16) maskInt16Count = 16;
+        if (maskInt16Count < 16)
+            maskInt16Count = 16;
         LocalTensor<int16_t> maskInt16 = maskBuf.Get<int16_t>();
         Duplicate(maskInt16, static_cast<int16_t>(0), static_cast<uint32_t>(maskInt16Count));
 
@@ -569,18 +559,8 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::ProcessOneTile(int64_t a1Idx,
         LocalTensor<uint8_t> tmpUint8 = tmpBuf.Get<uint8_t>();
         ReduceSum<float, AscendC::Pattern::Reduce::RA>(chunkResult, cleanLocal, tmpUint8, srcShape, true);
 
-
-
-
-
-
         // 跨 chunk 累加
         Add(globalResult, globalResult, chunkResult, static_cast<uint32_t>(alignedCols_));
-
-
-
-
-
 
         outQueueY.FreeTensor(yLocal);
         inQueueX.FreeTensor(xLocal);
@@ -596,8 +576,6 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::ProcessOneTile(int64_t a1Idx,
         // Cast fp32 -> 原始类型
         Cast(yOut, globalResult, RoundMode::CAST_ROUND, static_cast<uint32_t>(alignedCols_));
     }
-
-
 
     outQueueY.EnQue(yOut);
     yOut = outQueueY.template DeQue<T>();
@@ -629,7 +607,6 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::Process()
             } else {
                 Duplicate(yOut, static_cast<T>(0), static_cast<uint32_t>(alignedCols_));
             }
-
 
             outQueueY.EnQue(yOut);
             yOut = outQueueY.template DeQue<T>();
@@ -672,4 +649,3 @@ __aicore__ inline void ReduceNansumAraRowsplit<T>::Process()
 }
 
 } // namespace NsReduceNansum
-

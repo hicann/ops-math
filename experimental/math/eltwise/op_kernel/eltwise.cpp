@@ -26,9 +26,7 @@
 #include "eltwise.h"
 
 template <typename D_T, int MODE>
-__global__ __aicore__ void eltwise(
-    GM_ADDR inputs, GM_ADDR output,
-    GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void eltwise(GM_ADDR inputs, GM_ADDR output, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(EltwiseTilingData);
     GET_TILING_DATA_WITH_STRUCT(EltwiseTilingData, tilingData, tiling);

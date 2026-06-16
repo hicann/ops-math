@@ -22,24 +22,17 @@ using namespace std;
 
 class l2_atan_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_atan_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "l2_atan_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "l2_atan_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "l2_atan_test TearDown" << endl; }
 };
 
 TEST_F(l2_atan_test, case_01_float)
 {
     op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
 
-    auto xDesc =
-        TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{-1.0, 0.0, 0.5, 1.0});    
-    
+    auto xDesc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{-1.0, 0.0, 0.5, 1.0});
+
     auto outDesc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnAtan, INPUT(xDesc), OUTPUT(outDesc));

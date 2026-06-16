@@ -25,15 +25,9 @@ using namespace ge;
 
 class AcosTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AcosTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "AcosTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "AcosTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "AcosTiling TearDown" << std::endl; }
 };
 
 TEST_F(AcosTiling, acos_tiling_001)

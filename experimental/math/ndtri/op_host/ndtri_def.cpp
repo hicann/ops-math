@@ -52,7 +52,7 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
-            .ExtendCfgInfo("opFile.value", "ndtri");  // 对应 kernel 入口文件名 op_kernel/ndtri.cpp
+            .ExtendCfgInfo("opFile.value", "ndtri"); // 对应 kernel 入口文件名 op_kernel/ndtri.cpp
         this->AICore().AddConfig("ascend950", aiCoreConfig);
     }
 };

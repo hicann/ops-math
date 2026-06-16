@@ -21,7 +21,7 @@
 /*!
  * \file cosh.cpp
  * \brief
-*/
+ */
 
 #include "cosh.h"
 
@@ -30,7 +30,7 @@ __global__ __aicore__ void cosh(GM_ADDR x, GM_ADDR z, GM_ADDR workspace, GM_ADDR
 {
     REGISTER_TILING_DEFAULT(CoshTilingData);
     GET_TILING_DATA_WITH_STRUCT(CoshTilingData, tilingData, tiling);
-    NsCosh::Cosh<DTYPE_X> op; 
-    op.Init(x, z, &tilingData);     
-    op.Process();              
+    NsCosh::Cosh<DTYPE_X> op;
+    op.Init(x, z, &tilingData);
+    op.Process();
 }

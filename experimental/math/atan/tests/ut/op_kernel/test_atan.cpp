@@ -37,10 +37,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./atan_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "atan_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "atan_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;
@@ -75,7 +72,7 @@ TEST_F(AtanTest, test_case_float16_1)
 
     AtanTilingData* tilingData = reinterpret_cast<AtanTilingData*>(tiling);
 
-    tilingData->smallCoreDataNum = 128;  
+    tilingData->smallCoreDataNum = 128;
     tilingData->bigCoreDataNum = 256;
     tilingData->finalBigTileNum = 1;
     tilingData->finalSmallTileNum = 1;
@@ -97,4 +94,4 @@ TEST_F(AtanTest, test_case_float16_1)
     AscendC::GmFree((void*)tiling);
 
     system("cd ./atan_data/ && python3 compare_data.py 'float16'");
-}   
+}

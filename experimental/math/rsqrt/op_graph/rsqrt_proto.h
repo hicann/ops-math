@@ -43,4 +43,3 @@ REG_OP(Rsqrt)
 } // namespace ge
 
 #endif // OPS_OP_PROTO_INC_RSQRT_H_
-

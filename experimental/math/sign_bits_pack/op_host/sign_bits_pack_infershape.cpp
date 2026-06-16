@@ -11,7 +11,7 @@
 /*!
  * \file sign_bits_pack_infershape.cpp
  * \brief
-*/
+ */
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 
@@ -35,26 +35,25 @@ static ge::graphStatus InferShapeSignBitsPack(gert::InferShapeContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
 
     const size_t inputSize = xShape->GetDimNum() > 0 ? static_cast<size_t>(xShape->GetDim(0)) : 0;
-    
+
     if (inputSize == 0) {
         OP_LOGE(context->GetNodeName(), "Input shape has 0 elements");
         return ge::GRAPH_FAILED;
     }
     // 计算输出元素个数：每8个输入元素的符号位打包为1个字节
     // const size_t outputSize = (inputSize + PACKING_FACTOR - 1) / PACKING_FACTOR;
-    size_t outputSize = (inputSize + PACKING_FACTOR - 1) / PACKING_FACTOR *  PACKING_FACTOR;
-    
+    size_t outputSize = (inputSize + PACKING_FACTOR - 1) / PACKING_FACTOR * PACKING_FACTOR;
+
     // 设置输出形状为一维
     std::vector<int64_t> outputShapeVec = {static_cast<int64_t>(outputSize)};
     gert::Shape outputShape;
     outputShape.SetDimNum(1);
-    outputShape.SetDim(0, static_cast<int64_t>(outputSize));    
+    outputShape.SetDim(0, static_cast<int64_t>(outputSize));
     *yShape = outputShape;
-    OP_LOGD(context->GetNodeName(), "Input shape size: %zu, Output shape size: %zu", 
-            inputSize, outputSize);
+    OP_LOGD(context->GetNodeName(), "Input shape size: %zu, Output shape size: %zu", inputSize, outputSize);
     OP_LOGD(context->GetNodeName(), "End to do InferShapeSignBitsPack");
     return GRAPH_SUCCESS;
 }
 
 IMPL_OP_INFERSHAPE(SignBitsPack).InferShape(InferShapeSignBitsPack);
-}
+} // namespace ops

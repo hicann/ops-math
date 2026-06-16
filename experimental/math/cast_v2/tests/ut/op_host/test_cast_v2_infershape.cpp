@@ -24,15 +24,9 @@
 
 class CastV2Infershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "CastV2Infershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "CastV2Infershape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "CastV2Infershape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "CastV2Infershape TearDown" << std::endl; }
 };
 
 TEST_F(CastV2Infershape, cast_v2_infershape_test1)

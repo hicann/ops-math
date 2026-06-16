@@ -18,8 +18,7 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-const aclTensor *AccumulateNv2(const aclTensorList *tensors, aclOpExecutor *executor);
+const aclTensor* AccumulateNv2(const aclTensorList* tensors, aclOpExecutor* executor);
 }
 
-#endif  // OP_API_INC_LEVEL0_OP_ACCUMULATE_NV2_H_
-
+#endif // OP_API_INC_LEVEL0_OP_ACCUMULATE_NV2_H_

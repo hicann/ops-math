@@ -67,8 +67,8 @@ private:
     GlobalTensor<T> xGm_;
     GlobalTensor<T> yGm_;
 
-    int64_t blockLength_ = 0;  // 当前核处理的元素数量
-    int64_t ubFactor_    = 0;  // 每次 UB 循环处理的元素数量
+    int64_t blockLength_ = 0; // 当前核处理的元素数量
+    int64_t ubFactor_ = 0;    // 每次 UB 循环处理的元素数量
 };
 
 template <typename T, int BUFFER_MODE>
@@ -102,9 +102,9 @@ __aicore__ inline void KernelAcosh<T, BUFFER_MODE>::CopyIn(int64_t progress, int
     AscendC::LocalTensor<T> xLocal = inputQueue_.template AllocTensor<T>();
     AscendC::DataCopyParams copyParams;
     copyParams.blockCount = 1;
-    copyParams.blockLen   = currentNum * sizeof(T);
-    copyParams.srcStride  = 0;
-    copyParams.dstStride  = 0;
+    copyParams.blockLen = currentNum * sizeof(T);
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
     AscendC::DataCopyPad(xLocal, xGm_[progress * ubFactor_], copyParams, {false, 0, 0, 0});
     inputQueue_.EnQue(xLocal);
 }
@@ -145,9 +145,9 @@ __aicore__ inline void KernelAcosh<T, BUFFER_MODE>::CopyOut(int64_t progress, in
     AscendC::LocalTensor<T> yLocal = outputQueue_.template DeQue<T>();
     AscendC::DataCopyParams copyParams;
     copyParams.blockCount = 1;
-    copyParams.blockLen   = currentNum * sizeof(T);
-    copyParams.srcStride  = 0;
-    copyParams.dstStride  = 0;
+    copyParams.blockLen = currentNum * sizeof(T);
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
     AscendC::DataCopyPad(yGm_[progress * ubFactor_], yLocal, copyParams);
     outputQueue_.FreeTensor(yLocal);
 }

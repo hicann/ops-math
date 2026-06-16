@@ -40,8 +40,8 @@ class KernelAddMatMatElements {
 public:
     __aicore__ inline KernelAddMatMatElements() {}
 
-    __aicore__ inline void Init(GM_ADDR a, GM_ADDR b, GM_ADDR c, GM_ADDR cOut,
-                                 const AddMatMatElementsTilingData& tilingData);
+    __aicore__ inline void Init(
+        GM_ADDR a, GM_ADDR b, GM_ADDR c, GM_ADDR cOut, const AddMatMatElementsTilingData& tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -73,10 +73,10 @@ private:
     GlobalTensor<T> gmCOut;
 
     // Tiling 参数
-    uint32_t blockLength_;      // 本 Core 负责的总元素数
-    uint32_t tileLength_;       // 每次 UB 处理的元素数
-    float    alphaVal_;         // alpha 标量（float 存储）
-    float    betaVal_;          // beta 标量（float 存储）
+    uint32_t blockLength_; // 本 Core 负责的总元素数
+    uint32_t tileLength_;  // 每次 UB 处理的元素数
+    float alphaVal_;       // alpha 标量（float 存储）
+    float betaVal_;        // beta 标量（float 存储）
 
     // bf16 路径额外中间 buffer（通过 pipe 分配，使用 FIXME 注释标记迭代三优化点）
     // 迭代一：直接静态分配，无复用优化
@@ -88,8 +88,7 @@ private:
 
 template <typename T>
 __aicore__ inline void KernelAddMatMatElements<T>::Init(
-    GM_ADDR a, GM_ADDR b, GM_ADDR c, GM_ADDR cOut,
-    const AddMatMatElementsTilingData& tilingData)
+    GM_ADDR a, GM_ADDR b, GM_ADDR c, GM_ADDR cOut, const AddMatMatElementsTilingData& tilingData)
 {
     uint32_t blockIdx = static_cast<uint32_t>(AscendC::GetBlockIdx());
 
@@ -103,8 +102,8 @@ __aicore__ inline void KernelAddMatMatElements<T>::Init(
         blockLength_ = tilingData.lastBlockLength;
     }
     tileLength_ = tilingData.tileLength;
-    alphaVal_   = tilingData.alphaVal;
-    betaVal_    = tilingData.betaVal;
+    alphaVal_ = tilingData.alphaVal;
+    betaVal_ = tilingData.betaVal;
 
     // 设置 GM buffer（从本 Core 负责的偏移处开始）
     gmA.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(a) + offset, blockLength_);
@@ -120,9 +119,9 @@ __aicore__ inline void KernelAddMatMatElements<T>::Init(
 
     // bf16 路径：额外分配 float 中间 buffer
     if constexpr (std::is_same_v<T, bfloat16_t>) {
-        pipe.InitBuffer(floatBufA,   tileLength_ * sizeof(float));
-        pipe.InitBuffer(floatBufB,   tileLength_ * sizeof(float));
-        pipe.InitBuffer(floatBufC,   tileLength_ * sizeof(float));
+        pipe.InitBuffer(floatBufA, tileLength_ * sizeof(float));
+        pipe.InitBuffer(floatBufB, tileLength_ * sizeof(float));
+        pipe.InitBuffer(floatBufC, tileLength_ * sizeof(float));
         pipe.InitBuffer(floatBufTmp, tileLength_ * sizeof(float));
     }
 }
@@ -139,9 +138,9 @@ __aicore__ inline void KernelAddMatMatElements<T>::CopyIn(uint32_t progress, uin
     // ISSUE-006 修复：tileLength <= TILE_LENGTH_FP16=1024，sizeof(T) <= 4，
     // 最大字节数 = 1024*4 = 4096 << UINT16_MAX=65535；静态断言对编译时常量兜底验证
     static_assert(sizeof(T) <= 4U, "element size must be <= 4 bytes");
-    copyParams.blockLen   = static_cast<uint16_t>(currentLen * sizeof(T));
-    copyParams.srcStride  = 0;
-    copyParams.dstStride  = 0;
+    copyParams.blockLen = static_cast<uint16_t>(currentLen * sizeof(T));
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
 
     DataCopyPadParams padParams{false, 0, 0, 0};
 
@@ -166,9 +165,9 @@ __aicore__ inline void KernelAddMatMatElements<T>::ComputeDirect(uint32_t curren
     //   3. c_scaled = beta * c
     //   4. c_out = c_scaled + tmp
 
-    LocalTensor<T> aLocal   = inputQueueA.DeQue<T>();
-    LocalTensor<T> bLocal   = inputQueueB.DeQue<T>();
-    LocalTensor<T> cLocal   = inputQueueC.DeQue<T>();
+    LocalTensor<T> aLocal = inputQueueA.DeQue<T>();
+    LocalTensor<T> bLocal = inputQueueB.DeQue<T>();
+    LocalTensor<T> cLocal = inputQueueC.DeQue<T>();
     LocalTensor<T> outLocal = outputQueueOut.AllocTensor<T>();
 
     // step1: tmp = a * b  （复用 outLocal 作为 tmpBuf）
@@ -205,14 +204,14 @@ __aicore__ inline void KernelAddMatMatElements<T>::ComputeBf16(uint32_t currentL
     //   7. floatOut = floatC + tmpFloat
     //   8. outBf16 = Cast(floatOut, float→bf16)
 
-    LocalTensor<T>     aLocal   = inputQueueA.DeQue<T>();
-    LocalTensor<T>     bLocal   = inputQueueB.DeQue<T>();
-    LocalTensor<T>     cLocal   = inputQueueC.DeQue<T>();
-    LocalTensor<T>     outLocal = outputQueueOut.AllocTensor<T>();
+    LocalTensor<T> aLocal = inputQueueA.DeQue<T>();
+    LocalTensor<T> bLocal = inputQueueB.DeQue<T>();
+    LocalTensor<T> cLocal = inputQueueC.DeQue<T>();
+    LocalTensor<T> outLocal = outputQueueOut.AllocTensor<T>();
 
-    LocalTensor<float> floatA   = floatBufA.Get<float>();
-    LocalTensor<float> floatB   = floatBufB.Get<float>();
-    LocalTensor<float> floatC   = floatBufC.Get<float>();
+    LocalTensor<float> floatA = floatBufA.Get<float>();
+    LocalTensor<float> floatB = floatBufB.Get<float>();
+    LocalTensor<float> floatC = floatBufC.Get<float>();
     LocalTensor<float> floatTmp = floatBufTmp.Get<float>();
 
     // step1-3: Cast bf16 → float
@@ -262,9 +261,9 @@ __aicore__ inline void KernelAddMatMatElements<T>::CopyOut(uint32_t progress, ui
     // ISSUE-006 修复：tileLength <= TILE_LENGTH_FP16=1024，sizeof(T) <= 4，
     // 最大字节数 = 1024*4 = 4096 << UINT16_MAX=65535；静态断言对编译时常量兜底验证
     static_assert(sizeof(T) <= 4U, "element size must be <= 4 bytes");
-    copyParams.blockLen   = static_cast<uint16_t>(currentLen * sizeof(T));
-    copyParams.srcStride  = 0;
-    copyParams.dstStride  = 0;
+    copyParams.blockLen = static_cast<uint16_t>(currentLen * sizeof(T));
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
 
     // ISSUE-002 修复：gmOffset 使用 int64_t，防止大 Tensor 时偏移溢出（TOPN-8）
     int64_t gmOffset = static_cast<int64_t>(progress) * static_cast<int64_t>(tileLength_);
@@ -294,6 +293,6 @@ __aicore__ inline void KernelAddMatMatElements<T>::Process()
     }
 }
 
-}  // namespace NsAddMatMatElements
+} // namespace NsAddMatMatElements
 
-#endif  // ADD_MAT_MAT_ELEMENTS_H_
+#endif // ADD_MAT_MAT_ELEMENTS_H_

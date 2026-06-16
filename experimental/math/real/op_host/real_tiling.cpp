@@ -163,13 +163,9 @@ static ge::graphStatus CalcRealTilingParam(
 
 class RealMemBaseTilingClass : public TilingBaseClass {
 public:
-    explicit RealMemBaseTilingClass(gert::TilingContext* context) : TilingBaseClass(context)
-    {}
+    explicit RealMemBaseTilingClass(gert::TilingContext* context) : TilingBaseClass(context) {}
 
-    void Reset(gert::TilingContext* context) override
-    {
-        TilingBaseClass::Reset(context);
-    }
+    void Reset(gert::TilingContext* context) override { TilingBaseClass::Reset(context); }
 
 protected:
     ge::graphStatus GetPlatformInfo() override
@@ -193,34 +189,19 @@ protected:
         return ge::GRAPH_SUCCESS;
     }
 
-    ge::graphStatus GetWorkspaceSize() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus GetWorkspaceSize() override { return ge::GRAPH_SUCCESS; }
 
-    ge::graphStatus DoLibApiTiling() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus DoLibApiTiling() override { return ge::GRAPH_SUCCESS; }
 
-    bool IsCapable() override
-    {
-        return (!Ops::Base::IsRegbaseSocVersion(context_));
-    }
+    bool IsCapable() override { return (!Ops::Base::IsRegbaseSocVersion(context_)); }
 
     ge::graphStatus DoOpTiling() override;
 
     ge::graphStatus PostTiling() override;
 
-    ge::graphStatus GetShapeAttrsInfo() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus GetShapeAttrsInfo() override { return ge::GRAPH_SUCCESS; }
 
-    uint64_t GetTilingKey() const override
-    {
-        return context_->GetTilingKey();
-    }
+    uint64_t GetTilingKey() const override { return context_->GetTilingKey(); }
 
     NpuArch npuArch_;
     RealTilingParam tilingParam_;

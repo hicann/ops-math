@@ -22,7 +22,6 @@
 
 namespace optiling {
 
-
 constexpr int32_t BUFFER_NUM = 2;
 static const int64_t MULTI_CORE_SHAPE_SIZE_LIMIT = 2048; // 2k x 8字节 * OP_COEXISTING_NUM小于192k
 static const uint32_t OP_CALC_TENSOR_NUM = 6;            // 算子计算过程中需要用到6个float临时计算Tensor数量

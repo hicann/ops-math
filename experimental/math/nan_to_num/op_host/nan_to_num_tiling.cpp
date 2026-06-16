@@ -24,7 +24,6 @@
 
 namespace optiling {
 
-
 #define UB_NUM_BF16 9U
 #define UB_NUM_OTHER 5U
 #define BLOCK_SIZE 256U
@@ -81,8 +80,7 @@ static ge::graphStatus GetShapeAttrsInfo(
         return ge::GRAPH_FAILED;
     }
     inputBytes = inputLength / inputNum;
-    uint64_t ubDataNumber =
-        (context->GetInputDesc(0)->GetDataType() == ge::DT_BF16) ? UB_NUM_BF16 : UB_NUM_OTHER;
+    uint64_t ubDataNumber = (context->GetInputDesc(0)->GetDataType() == ge::DT_BF16) ? UB_NUM_BF16 : UB_NUM_OTHER;
     if (ubDataNumber == 0 || BLOCK_SIZE == 0) {
         OP_LOGE(context, "ubDataNumber or BLOCK_SIZE is 0");
         return ge::GRAPH_FAILED;
@@ -98,9 +96,10 @@ static ge::graphStatus GetShapeAttrsInfo(
 }
 
 static ge::graphStatus CalculateCoreBlockNums(
-    gert::TilingContext* context, uint64_t inputLengthAlgin, int64_t coreNum, uint64_t tileBlockNum, uint64_t inputBytes,
-    uint64_t tileDataNum, uint64_t& smallCoreDataNum, uint64_t& bigCoreDataNum, uint64_t& smallTailDataNum, uint64_t& bigTailDataNum, 
-    uint64_t& finalSmallTileNum, uint64_t& finalBigTileNum, uint64_t& tailBlockNum)
+    gert::TilingContext* context, uint64_t inputLengthAlgin, int64_t coreNum, uint64_t tileBlockNum,
+    uint64_t inputBytes, uint64_t tileDataNum, uint64_t& smallCoreDataNum, uint64_t& bigCoreDataNum,
+    uint64_t& smallTailDataNum, uint64_t& bigTailDataNum, uint64_t& finalSmallTileNum, uint64_t& finalBigTileNum,
+    uint64_t& tailBlockNum)
 {
     if (0 == BLOCK_SIZE || 0 == coreNum || 0 == tileBlockNum || 0 == inputBytes) {
         OP_LOGE(context, "BLOCK_SIZE or coreNum or tileBlockNum or inputBytes is 0");
@@ -150,10 +149,12 @@ static ge::graphStatus NanToNumTilingFunc(gert::TilingContext* context)
     if (tileDataNum >= inputNum) {
         coreNum = 1;
     } else {
-        coreNum = (static_cast<uint64_t>(coreNum) < inputLengthAlgin / BLOCK_SIZE) ? coreNum : inputLengthAlgin / BLOCK_SIZE;
+        coreNum =
+            (static_cast<uint64_t>(coreNum) < inputLengthAlgin / BLOCK_SIZE) ? coreNum : inputLengthAlgin / BLOCK_SIZE;
     }
     // 计算每个core处理的数据块数
-    uint64_t smallCoreDataNum, bigCoreDataNum, smallTailDataNum, bigTailDataNum, finalSmallTileNum, finalBigTileNum, tailBlockNum;
+    uint64_t smallCoreDataNum, bigCoreDataNum, smallTailDataNum, bigTailDataNum, finalSmallTileNum, finalBigTileNum,
+        tailBlockNum;
     ret = CalculateCoreBlockNums(
         context, inputLengthAlgin, coreNum, tileBlockNum, inputBytes, tileDataNum, smallCoreDataNum, bigCoreDataNum,
         smallTailDataNum, bigTailDataNum, finalSmallTileNum, finalBigTileNum, tailBlockNum);
@@ -175,7 +176,7 @@ static ge::graphStatus NanToNumTilingFunc(gert::TilingContext* context)
     if (attrs) {
         const float* attrS1 = attrs->GetFloat(0);
         const float* attrS2 = attrs->GetFloat(1);
-        const float* attrS3 = attrs->GetFloat(2); 
+        const float* attrS3 = attrs->GetFloat(2);
         if (attrS1 != nullptr) {
             nan = *attrS1;
         }
@@ -200,7 +201,7 @@ static ge::graphStatus NanToNumTilingFunc(gert::TilingContext* context)
     }
     tiling->nan = nan;
     tiling->posinf = posinf;
-    tiling->neginf = neginf;    
+    tiling->neginf = neginf;
 
     context->SetBlockDim(coreNum);
 

@@ -11,14 +11,14 @@
 #include "arch35/trilu_simt.h"
 
 enum class TriluTilingKey : uint32_t {
-    TILING_KEY_FLOAT   = 0,
+    TILING_KEY_FLOAT = 0,
     TILING_KEY_FLOAT16 = 1,
-    TILING_KEY_INT32   = 2,
-    TILING_KEY_INT64   = 3,
-    TILING_KEY_INT8    = 4,
-    TILING_KEY_INT16   = 5,
-    TILING_KEY_UINT8   = 6,
-    TILING_KEY_UINT16  = 7,
+    TILING_KEY_INT32 = 2,
+    TILING_KEY_INT64 = 3,
+    TILING_KEY_INT8 = 4,
+    TILING_KEY_INT16 = 5,
+    TILING_KEY_UINT8 = 6,
+    TILING_KEY_UINT16 = 7,
 };
 
 template <uint32_t schMode>

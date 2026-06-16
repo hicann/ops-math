@@ -13,7 +13,7 @@
  * technically reviewed for functional accuracy and security
  */
 
- /**
+/**
  * \file test_aclnn_tan.cpp
  * \brief Tan 算子 aclnn 调用示例（FP32）
  *
@@ -59,8 +59,9 @@ int Init(int32_t deviceId, aclrtStream* stream)
 }
 
 template <typename T>
-int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr,
-                    aclDataType dataType, aclTensor** tensor)
+int CreateAclTensor(
+    const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr, aclDataType dataType,
+    aclTensor** tensor)
 {
     auto size = GetShapeSize(shape) * sizeof(T);
     auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -73,8 +74,9 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
         strides[i] = shape[i + 1] * strides[i + 1];
     }
 
-    *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0,
-                              aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), *deviceAddr);
+    *tensor = aclCreateTensor(
+        shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
+        *deviceAddr);
     return 0;
 }
 
@@ -108,31 +110,27 @@ int main()
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
     ret = aclnnTanGetWorkspaceSize(x, out, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("aclnnTanGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnTanGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
         ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-        CHECK_RET(ret == ACL_SUCCESS,
-                  LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
+        CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
     }
 
     ret = aclnnTan(workspaceAddr, workspaceSize, executor, stream);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("aclnnTan failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnTan failed. ERROR: %d\n", ret); return ret);
 
     // 4. 同步
     ret = aclrtSynchronizeStream(stream);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
     // 5. 拷贝回 host 并比对
     std::vector<float> resultData(totalSize, 0.0f);
-    ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(float),
-                      outDeviceAddr, totalSize * sizeof(float), ACL_MEMCPY_DEVICE_TO_HOST);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
+    ret = aclrtMemcpy(
+        resultData.data(), resultData.size() * sizeof(float), outDeviceAddr, totalSize * sizeof(float),
+        ACL_MEMCPY_DEVICE_TO_HOST);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
 
     int failCount = 0;
     const float atol = 1e-4f;
@@ -142,9 +140,11 @@ int main()
         float gold = std::tan(xHostData[i]);
         float diff = std::fabs(resultData[i] - gold);
         bool ok = diff <= (atol + rtol * std::fabs(gold));
-        LOG_PRINT("[%ld] x=%8.4f  out=%10.6f  gold=%10.6f  diff=%.2e %s\n",
-                  i, xHostData[i], resultData[i], gold, diff, ok ? "OK" : "FAIL");
-        if (!ok) failCount++;
+        LOG_PRINT(
+            "[%ld] x=%8.4f  out=%10.6f  gold=%10.6f  diff=%.2e %s\n", i, xHostData[i], resultData[i], gold, diff,
+            ok ? "OK" : "FAIL");
+        if (!ok)
+            failCount++;
     }
 
     // 6. 释放资源
@@ -152,7 +152,8 @@ int main()
     aclDestroyTensor(out);
     aclrtFree(xDeviceAddr);
     aclrtFree(outDeviceAddr);
-    if (workspaceSize > 0) aclrtFree(workspaceAddr);
+    if (workspaceSize > 0)
+        aclrtFree(workspaceAddr);
     aclrtDestroyStream(stream);
     aclrtResetDevice(deviceId);
     aclFinalize();

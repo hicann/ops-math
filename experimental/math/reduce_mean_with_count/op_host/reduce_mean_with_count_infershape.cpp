@@ -31,8 +31,7 @@ using ops_reduce_mean_with_count::IsReduceDim;
 using ops_reduce_mean_with_count::NormalizeAxes;
 
 static void BuildOutputDims(
-    const gert::Shape* inputShape, const std::vector<int64_t>& axes, bool keepdim,
-    std::vector<int64_t>& outDims)
+    const gert::Shape* inputShape, const std::vector<int64_t>& axes, bool keepdim, std::vector<int64_t>& outDims)
 {
     int64_t rank = static_cast<int64_t>(inputShape->GetDimNum());
     for (int64_t d = 0; d < rank; d++) {
@@ -46,8 +45,7 @@ static void BuildOutputDims(
     }
 }
 
-static void ApplyOutputShape(
-    gert::Shape* meanShape, gert::Shape* countShape, const std::vector<int64_t>& outDims)
+static void ApplyOutputShape(gert::Shape* meanShape, gert::Shape* countShape, const std::vector<int64_t>& outDims)
 {
     meanShape->SetDimNum(outDims.size());
     countShape->SetDimNum(outDims.size());

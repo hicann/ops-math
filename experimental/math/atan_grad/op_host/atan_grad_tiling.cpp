@@ -36,10 +36,10 @@
 
 namespace optiling {
 
-using Ops::Base::CeilDiv;
 using Ops::Base::CeilAlign;
-using Ops::Base::FloorDiv;
+using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 // 双缓冲触发阈值：元素数量超过此值时启用双缓冲
@@ -67,8 +67,7 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus GetShapeAttrsInfo(
-    gert::TilingContext* context, int64_t& totalNum, ge::DataType& dataType)
+static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& totalNum, ge::DataType& dataType)
 {
     auto inputX = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
@@ -91,7 +90,7 @@ static ge::graphStatus SetWorkspace(gert::TilingContext* context)
 {
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
-    currentWorkspace[0] = 0;  // 逐元素算子无需额外 workspace
+    currentWorkspace[0] = 0; // 逐元素算子无需额外 workspace
     return ge::GRAPH_SUCCESS;
 }
 
@@ -99,13 +98,13 @@ static ge::graphStatus AtanGradTilingFunc(gert::TilingContext* context)
 {
     // 1. 获取平台信息
     uint64_t ubSize;
-    int64_t  coreNum;
+    int64_t coreNum;
     OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+        return ge::GRAPH_FAILED);
 
     // 2. 获取 shape / dtype
-    int64_t     totalNum;
+    int64_t totalNum;
     ge::DataType dataType = ge::DT_FLOAT;
     OP_CHECK_IF(
         GetShapeAttrsInfo(context, totalNum, dataType) != ge::GRAPH_SUCCESS,
@@ -117,8 +116,7 @@ static ge::graphStatus AtanGradTilingFunc(gert::TilingContext* context)
     }
     // 3. 设置 workspace
     OP_CHECK_IF(
-        SetWorkspace(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "SetWorkspace error"), return ge::GRAPH_FAILED);
+        SetWorkspace(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "SetWorkspace error"), return ge::GRAPH_FAILED);
 
     // 4. 填写 TilingData
     AtanGradTilingData* tiling = context->GetTilingData<AtanGradTilingData>();
@@ -130,7 +128,7 @@ static ge::graphStatus AtanGradTilingFunc(gert::TilingContext* context)
     // DMA 最小对齐粒度（32B / sizeof(T)）
     int64_t ubBlockSize = Ops::Base::GetUbBlockSize(context);
 
-    tiling->totalNum    = totalNum;
+    tiling->totalNum = totalNum;
     tiling->blockFactor = CeilAlign(CeilDiv(totalNum, coreNum), ubBlockSize);
     int64_t usedCoreNum = CeilDiv(totalNum, tiling->blockFactor);
 
@@ -148,9 +146,7 @@ static ge::graphStatus AtanGradTilingFunc(gert::TilingContext* context)
         bufferNum = useDoubleBuffer ? 10 : 7;
     }
 
-    tiling->ubFactor = FloorAlign(
-        FloorDiv(static_cast<int64_t>(ubSize) / typeSize, bufferNum),
-        ubBlockSize);
+    tiling->ubFactor = FloorAlign(FloorDiv(static_cast<int64_t>(ubSize) / typeSize, bufferNum), ubBlockSize);
 
     // ubFactor 最小为 ubBlockSize（否则无法正常 CopyIn）
     if (tiling->ubFactor < ubBlockSize) {

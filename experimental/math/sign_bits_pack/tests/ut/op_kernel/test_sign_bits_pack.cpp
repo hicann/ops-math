@@ -42,10 +42,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./sign_bits_pack_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "sign_bits_pack_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "sign_bits_pack_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;
@@ -58,7 +55,7 @@ const std::string SignBitsPackTest::dataPath = rootPath + "math/sign_bits_pack/t
 template <typename T1, typename T2>
 inline T1 CeilAlign(T1 a, T2 b)
 {
-    if ( b == 0 )
+    if (b == 0)
         return 0;
     return (a + b - 1) / b * b;
 }
@@ -95,7 +92,7 @@ TEST_F(SignBitsPackTest, test_case_float_1)
 
     auto KernelSignBitsPack = [](GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling) {
         ::sign_bits_pack<0>(x, y, workspace, tiling);
-    };    
+    };
 
     ICPU_SET_TILING_KEY(0);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);

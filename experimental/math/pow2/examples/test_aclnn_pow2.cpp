@@ -68,7 +68,8 @@ int CreateAclTensor(
     return 0;
 }
 
-int testFp32(){
+int testFp32()
+{
     LOG_PRINT("Test for Fp32\n");
     // 1. （固定写法）device/stream初始化，参考acl API手册
     // 根据自己的实际device填写deviceId
@@ -89,7 +90,7 @@ int testFp32(){
     std::vector<float> selfHostData = {99, -1, -2, 0};
     std::vector<float> exponentHostData = {0, 1, 2, 0};
     std::vector<float> outHostData = {0, 0, 0, 0};
-    for(int i = 4; i < 10240; i++){
+    for (int i = 4; i < 10240; i++) {
         selfHostData.push_back(i);
         exponentHostData.push_back(2);
         outHostData.push_back(0);
@@ -109,8 +110,7 @@ int testFp32(){
     aclOpExecutor* executor;
     // 调用aclnnPow2第一段接口
     ret = aclnnPow2GetWorkspaceSize(self, exponent, out, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPow2GetWorkspaceSize failed. ERROR: %d\n", ret);
-              return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPow2GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
@@ -152,7 +152,8 @@ int testFp32(){
     aclFinalize();
 }
 
-int testUint8(){
+int testUint8()
+{
     LOG_PRINT("Test for UINT8\n");
     int32_t deviceId = 0;
     aclrtStream stream;
@@ -171,7 +172,7 @@ int testUint8(){
     std::vector<uint8_t> selfHostData = {99, 1, 0, 0};
     std::vector<uint8_t> exponentHostData = {0, 1, 2, 0};
     std::vector<uint8_t> outHostData = {0, 0, 0, 0};
-    for(int i = 4; i < 102400; i++){
+    for (int i = 4; i < 102400; i++) {
         selfHostData.push_back(3);
         exponentHostData.push_back(2);
         outHostData.push_back(0);
@@ -191,8 +192,7 @@ int testUint8(){
     aclOpExecutor* executor;
     // 调用aclnnPow2第一段接口
     ret = aclnnPow2GetWorkspaceSize(self, exponent, out, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPow2GetWorkspaceSize failed. ERROR: %d\n", ret);
-              return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPow2GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
@@ -235,7 +235,8 @@ int testUint8(){
     return 0;
 }
 
-int testInt8(){
+int testInt8()
+{
     LOG_PRINT("Test for INT8\n");
     int32_t deviceId = 0;
     aclrtStream stream;
@@ -254,7 +255,7 @@ int testInt8(){
     std::vector<int8_t> selfHostData = {99, -1, -2, 0};
     std::vector<int8_t> exponentHostData = {0, 1, 2, 0};
     std::vector<int8_t> outHostData = {0, 0, 0, 0};
-    for(int i = 4; i < 102400; i++){
+    for (int i = 4; i < 102400; i++) {
         selfHostData.push_back(3);
         exponentHostData.push_back(2);
         outHostData.push_back(0);
@@ -274,8 +275,7 @@ int testInt8(){
     aclOpExecutor* executor;
     // 调用aclnnPow2第一段接口
     ret = aclnnPow2GetWorkspaceSize(self, exponent, out, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPow2GetWorkspaceSize failed. ERROR: %d\n", ret);
-              return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPow2GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
@@ -318,7 +318,8 @@ int testInt8(){
     return 0;
 }
 
-int testInt16(){
+int testInt16()
+{
     LOG_PRINT("Test for INT16\n");
     int32_t deviceId = 0;
     aclrtStream stream;
@@ -352,8 +353,7 @@ int testInt16(){
     aclOpExecutor* executor;
     // 调用aclnnPow2第一段接口
     ret = aclnnPow2GetWorkspaceSize(self, exponent, out, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPow2GetWorkspaceSize failed. ERROR: %d\n", ret);
-              return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPow2GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
@@ -396,7 +396,8 @@ int testInt16(){
     return 0;
 }
 
-int testInt32(){
+int testInt32()
+{
     LOG_PRINT("Test for INT32\n");
     int32_t deviceId = 0;
     aclrtStream stream;
@@ -415,7 +416,7 @@ int testInt32(){
     std::vector<int32_t> selfHostData = {99, -1, -2, 0};
     std::vector<int32_t> exponentHostData = {0, 1, 2, 0};
     std::vector<int32_t> outHostData = {0, 0, 0, 0};
-    for(int i = 4; i < 10240; i++){
+    for (int i = 4; i < 10240; i++) {
         selfHostData.push_back(i);
         exponentHostData.push_back(2);
         outHostData.push_back(0);
@@ -435,8 +436,7 @@ int testInt32(){
     aclOpExecutor* executor;
     // 调用aclnnPow2第一段接口
     ret = aclnnPow2GetWorkspaceSize(self, exponent, out, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPow2GetWorkspaceSize failed. ERROR: %d\n", ret);
-              return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPow2GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
@@ -479,14 +479,15 @@ int testInt32(){
     return 0;
 }
 
-int testInt8UInt8(){
+int testInt8UInt8()
+{
     LOG_PRINT("Test for testInt8UInt8\n");
-    const aclDataType dataTypeX1 = ACL_INT8;             // 数据类型：float
-    const aclDataType dataTypeX2 = ACL_UINT8;  
-    const aclDataType dataTypeY = ACL_INT16;  
+    const aclDataType dataTypeX1 = ACL_INT8; // 数据类型：float
+    const aclDataType dataTypeX2 = ACL_UINT8;
+    const aclDataType dataTypeY = ACL_INT16;
     using DataX1 = int8_t;
-    using DataX2 = uint8_t; 
-    using DataY = int16_t;    
+    using DataX2 = uint8_t;
+    using DataY = int16_t;
     int32_t deviceId = 0;
     aclrtStream stream;
     auto ret = Init(deviceId, &stream);
@@ -504,7 +505,7 @@ int testInt8UInt8(){
     std::vector<DataX1> selfHostData = {99, -1, -2, 0};
     std::vector<DataX2> exponentHostData = {0, 1, 2, 0};
     std::vector<DataY> outHostData = {0, 0, 0, 0};
-    for(int i = 4; i < 20; i++){
+    for (int i = 4; i < 20; i++) {
         selfHostData.push_back(i);
         exponentHostData.push_back(2);
         outHostData.push_back(0);
@@ -524,8 +525,7 @@ int testInt8UInt8(){
     aclOpExecutor* executor;
     // 调用aclnnPow2第一段接口
     ret = aclnnPow2GetWorkspaceSize(self, exponent, out, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPow2GetWorkspaceSize failed. ERROR: %d\n", ret);
-              return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPow2GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
@@ -568,14 +568,15 @@ int testInt8UInt8(){
     return 0;
 }
 
-int testInt8Fp32(){
+int testInt8Fp32()
+{
     LOG_PRINT("Test for testInt8Fp32\n");
-    const aclDataType dataTypeX1 = ACL_INT8;             // 数据类型：float
-    const aclDataType dataTypeX2 = ACL_FLOAT;  
-    const aclDataType dataTypeY = ACL_FLOAT;  
+    const aclDataType dataTypeX1 = ACL_INT8; // 数据类型：float
+    const aclDataType dataTypeX2 = ACL_FLOAT;
+    const aclDataType dataTypeY = ACL_FLOAT;
     using DataX1 = int8_t;
-    using DataX2 = float; 
-    using DataY = float;    
+    using DataX2 = float;
+    using DataY = float;
     int32_t deviceId = 0;
     aclrtStream stream;
     auto ret = Init(deviceId, &stream);
@@ -593,7 +594,7 @@ int testInt8Fp32(){
     std::vector<DataX1> selfHostData = {99, -1, -2, 0};
     std::vector<DataX2> exponentHostData = {0, 1, 2, 0};
     std::vector<DataY> outHostData = {0, 0, 0, 0};
-    for(int i = 4; i < 32; i++){
+    for (int i = 4; i < 32; i++) {
         selfHostData.push_back(i);
         exponentHostData.push_back(2);
         outHostData.push_back(0);
@@ -613,8 +614,7 @@ int testInt8Fp32(){
     aclOpExecutor* executor;
     // 调用aclnnPow2第一段接口
     ret = aclnnPow2GetWorkspaceSize(self, exponent, out, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPow2GetWorkspaceSize failed. ERROR: %d\n", ret);
-              return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPow2GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
@@ -637,8 +637,8 @@ int testInt8Fp32(){
         ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
     for (int64_t i = 0; i < 5; i++) {
-            LOG_PRINT("aclnnPow2 result[%ld] is: %f\n", i, resultData[i]);
-        }
+        LOG_PRINT("aclnnPow2 result[%ld] is: %f\n", i, resultData[i]);
+    }
     // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
     aclDestroyTensor(self);
     aclDestroyTensor(exponent);
@@ -657,7 +657,8 @@ int testInt8Fp32(){
     return 0;
 }
 
-int testBroadcast(){
+int testBroadcast()
+{
     LOG_PRINT("Test for Broadcast\n");
     // 1. （固定写法）device/stream初始化，参考acl API手册
     // 根据自己的实际device填写deviceId
@@ -666,8 +667,8 @@ int testBroadcast(){
     auto ret = Init(deviceId, &stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
     // 2. 构造输入与输出，需要根据API的接口自定义构造
-    std::vector<int64_t> selfShape = {2 , 1 ,9};
-    std::vector<int64_t> exponentShape = {1 ,4 ,1};
+    std::vector<int64_t> selfShape = {2, 1, 9};
+    std::vector<int64_t> exponentShape = {1, 4, 1};
     std::vector<int64_t> outShape = {2, 4, 9};
     void* selfDeviceAddr = nullptr;
     void* exponentDeviceAddr = nullptr;
@@ -677,8 +678,8 @@ int testBroadcast(){
     aclTensor* out = nullptr;
     std::vector<float> selfHostData = {2, 1, -2, 0};
     std::vector<float> exponentHostData = {0, 1, 2, 0};
-    std::vector<float> outHostData (72, 0);
-    for(int i = 4; i < 18; i++){
+    std::vector<float> outHostData(72, 0);
+    for (int i = 4; i < 18; i++) {
         selfHostData.push_back(i);
     }
     // 创建self aclTensor
@@ -696,8 +697,7 @@ int testBroadcast(){
     aclOpExecutor* executor;
     // 调用aclnnPow2第一段接口
     ret = aclnnPow2GetWorkspaceSize(self, exponent, out, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPow2GetWorkspaceSize failed. ERROR: %d\n", ret);
-              return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPow2GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {

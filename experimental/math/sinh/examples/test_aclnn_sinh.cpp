@@ -107,14 +107,14 @@ int main()
     // 2. 构造输入与输出，需要根据API的接口自定义构造
     aclTensor* selfX = nullptr;
     void* selfXDeviceAddr = nullptr;
-    std::vector<int64_t> selfXShape = {4,8};
+    std::vector<int64_t> selfXShape = {4, 8};
     std::vector<float> selfXHostData(32, 1);
     ret = CreateAclTensor(selfXHostData, selfXShape, &selfXDeviceAddr, aclDataType::ACL_FLOAT, &selfX);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     aclTensor* out = nullptr;
     void* outDeviceAddr = nullptr;
-    std::vector<int64_t> outShape = {4,8};
+    std::vector<int64_t> outShape = {4, 8};
     std::vector<float> outHostData(32, 1);
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -127,10 +127,9 @@ int main()
     ret = aclnnSinhGetWorkspaceSize(selfX, out, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnSinhGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     if (ret != ACL_SUCCESS) {
-        const char* errMsg = aclGetRecentErrMsg();          // ← 关键一行
+        const char* errMsg = aclGetRecentErrMsg(); // ← 关键一行
         LOG_PRINT("[ERROR] aclnnCeilV2GetWorkspaceSize failed, ret = %d\n", ret);
-        LOG_PRINT("        recent AscendCL msg: %s\n",
-                  errMsg ? errMsg : "no additional message");
+        LOG_PRINT("        recent AscendCL msg: %s\n", errMsg ? errMsg : "no additional message");
         return ret;
     }
     // 根据第一段接口计算出的workspaceSize申请device内存

@@ -114,13 +114,11 @@ __aicore__ inline void OnesLike<T>::Process()
 
     uint32_t offset = 0;
     for (uint32_t i = 0; i < tileNum_ - 1; i++) {
-        Sync(V, MTE3)
-        CopyOut(yLocal, offset, tileLength_);
+        Sync(V, MTE3) CopyOut(yLocal, offset, tileLength_);
         offset += tileLength_;
     }
     if (lastTileLength_ > 0) {
-        Sync(V, MTE3)
-        CopyOut(yLocal, offset, lastTileLength_);
+        Sync(V, MTE3) CopyOut(yLocal, offset, lastTileLength_);
     }
 }
 

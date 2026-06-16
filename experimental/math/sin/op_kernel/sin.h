@@ -27,23 +27,15 @@ using namespace AscendC;
 constexpr int32_t BUFFER_NUM = 2;
 
 template <class T, class ComputeStrategy>
-class KernelSin
-{
+class KernelSin {
 public:
     __aicore__ inline KernelSin() {}
 
     template <bool IsExistBigCore>
-    __aicore__ inline void Init(GM_ADDR x,
-                                GM_ADDR y,
-                                uint32_t smallCoreDataNum,
-                                uint32_t bigCoreDataNum,
-                                uint32_t bigCoreLoopNum,
-                                uint32_t smallCoreLoopNum,
-                                uint32_t ubPartDataNum,
-                                uint32_t smallCoreTailDataNum,
-                                uint32_t bigCoreTailDataNum,
-                                uint32_t tailBlockNum,
-                                AscendC::TPipe* pipe)
+    __aicore__ inline void Init(
+        GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum, uint32_t bigCoreDataNum, uint32_t bigCoreLoopNum,
+        uint32_t smallCoreLoopNum, uint32_t ubPartDataNum, uint32_t smallCoreTailDataNum, uint32_t bigCoreTailDataNum,
+        uint32_t tailBlockNum, AscendC::TPipe* pipe)
     {
         ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
         uint32_t coreNum = AscendC::GetBlockIdx();
@@ -143,8 +135,8 @@ private:
         }
     }
 
-    __aicore__ inline void PostReleaseCastEnQue(AscendC::LocalTensor<float>& xLocal,
-                                                AscendC::LocalTensor<float>& yLocal)
+    __aicore__ inline void PostReleaseCastEnQue(
+        AscendC::LocalTensor<float>& xLocal, AscendC::LocalTensor<float>& yLocal)
     {
         if constexpr (std::is_same_v<T, float>) {
             outQueueY.EnQue(yLocal);
@@ -172,8 +164,7 @@ private:
     ComputeStrategy strategy;
 };
 
-class HighPerfStrategy
-{
+class HighPerfStrategy {
 public:
     __aicore__ inline HighPerfStrategy() {}
 
@@ -185,9 +176,8 @@ public:
         pipe->InitBuffer(tmpBuf4, tileDataNum * sizeof(float));
     }
 
-    __aicore__ inline void ComputeImpl(AscendC::LocalTensor<float>& xLocal,
-                                       AscendC::LocalTensor<float>& yLocal,
-                                       uint32_t processDataNum);
+    __aicore__ inline void ComputeImpl(
+        AscendC::LocalTensor<float>& xLocal, AscendC::LocalTensor<float>& yLocal, uint32_t processDataNum);
 
 private:
     AscendC::TBuf<AscendC::QuePosition::VECCALC> tmpBuf1, tmpBuf2, tmpBuf3, tmpBuf4;
@@ -205,9 +195,8 @@ constexpr float pi_1 = -8.9071691e-06f;
 constexpr float pi_2 = -1.74122761e-09f;
 constexpr float pi_3 = 1.24467439e-13f;
 
-__aicore__ inline void HighPerfStrategy::ComputeImpl(AscendC::LocalTensor<float>& xLocal,
-                                                     AscendC::LocalTensor<float>& yLocal,
-                                                     uint32_t processDataNum)
+__aicore__ inline void HighPerfStrategy::ComputeImpl(
+    AscendC::LocalTensor<float>& xLocal, AscendC::LocalTensor<float>& yLocal, uint32_t processDataNum)
 {
     AscendC::LocalTensor<float> tmpTensor1 = tmpBuf1.Get<float>();
     AscendC::LocalTensor<float> tmpTensor2 = tmpBuf2.Get<float>();
@@ -300,8 +289,7 @@ __aicore__ inline void HighPerfStrategy::ComputeImpl(AscendC::LocalTensor<float>
     AscendC::Maxs(res_maxs, res_mins, -1.0f, processDataNum);
 }
 
-class HighPrecStrategy
-{
+class HighPrecStrategy {
 public:
     __aicore__ inline HighPrecStrategy() {}
 
@@ -313,9 +301,8 @@ public:
         pipe->InitBuffer(tmpBuf4, tileDataNum * sizeof(float));
     }
 
-    __aicore__ inline void ComputeImpl(AscendC::LocalTensor<float>& xLocal,
-                                       AscendC::LocalTensor<float>& yLocal,
-                                       uint32_t processDataNum);
+    __aicore__ inline void ComputeImpl(
+        AscendC::LocalTensor<float>& xLocal, AscendC::LocalTensor<float>& yLocal, uint32_t processDataNum);
 
 private:
     AscendC::TBuf<AscendC::QuePosition::VECCALC> tmpBuf1, tmpBuf2, tmpBuf3, tmpBuf4;
@@ -344,9 +331,8 @@ constexpr float CCOEF_3 = -0.00138867637746099294692f;
 constexpr float CCOEF_2 = 0.0416666233237390631894f;
 constexpr float CCOEF_1 = -0.499999997251031003120f;
 
-__aicore__ inline void HighPrecStrategy::ComputeImpl(AscendC::LocalTensor<float>& xLocal,
-                                                     AscendC::LocalTensor<float>& yLocal,
-                                                     uint32_t processDataNum)
+__aicore__ inline void HighPrecStrategy::ComputeImpl(
+    AscendC::LocalTensor<float>& xLocal, AscendC::LocalTensor<float>& yLocal, uint32_t processDataNum)
 {
     AscendC::LocalTensor<float> tmpTensor1 = tmpBuf1.Get<float>();
     AscendC::LocalTensor<float> tmpTensor2 = tmpBuf2.Get<float>();

@@ -21,13 +21,13 @@
 /*!
  * \file range.cpp
  * \brief
-*/
+ */
 #include "register/op_def_registry.h"
 
 namespace ops {
-    class Range : public OpDef {
-    public:
-     explicit Range(const char* name) : OpDef(name)
+class Range : public OpDef {
+public:
+    explicit Range(const char* name) : OpDef(name)
     {
         this->Input("start")
             .ValueDepend(REQUIRED)
@@ -47,10 +47,7 @@ namespace ops {
             .DataType({ge::DT_FLOAT})
             .Format({ge::FORMAT_ND})
             .AutoContiguous();
-        this->Output("z")
-            .ParamType(REQUIRED)
-            .DataType({ge::DT_FLOAT})
-            .FormatList({ge::FORMAT_ND});
+        this->Output("z").ParamType(REQUIRED).DataType({ge::DT_FLOAT}).FormatList({ge::FORMAT_ND});
 
         OpAICoreConfig aicoreConfig;
         aicoreConfig.DynamicCompileStaticFlag(true)
@@ -59,11 +56,10 @@ namespace ops {
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
-            .ExtendCfgInfo("opFile.value", "range");   
+            .ExtendCfgInfo("opFile.value", "range");
         this->AICore().AddConfig("ascend910b", aicoreConfig);
-
     }
-    };
-    
-    OP_ADD(Range);
-    } // namespace ops
+};
+
+OP_ADD(Range);
+} // namespace ops

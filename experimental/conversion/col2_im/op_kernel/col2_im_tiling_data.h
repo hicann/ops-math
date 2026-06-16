@@ -26,7 +26,7 @@
 #ifndef __COL_2_IM_TILLING_DATA_H__
 #define __COL_2_IM_TILLING_DATA_H__
 
-constexpr int32_t MAX_USE_CORE_NUM = 32;  // 设置合理的最大核数
+constexpr int32_t MAX_USE_CORE_NUM = 32; // 设置合理的最大核数
 
 struct Col2ImTilingData {
     // ========== 基础维度参数 ==========
@@ -34,24 +34,24 @@ struct Col2ImTilingData {
     int32_t C;
     int32_t H;
     int32_t W;
-    
+
     // ========== 卷积参数 ==========
     int32_t kernel_h;
     int32_t kernel_w;
     int32_t stride_val;
     int32_t padding_val;
     int32_t dilation_val;
-    
+
     // ========== 输入列格式维度 ==========
     int32_t input_channels; // C * kH * kW
     int32_t L;              // out_H * out_W
     int32_t out_H;
     int32_t out_W;
-    
+
     // ========== 元素数量 ==========
     uint64_t input_elements;  // 输入col元素总数
     uint64_t output_elements; // 输出图像元素总数
-    
+
     // ========== 核间划分信息（移除数组，改为计算参数） ==========
     uint32_t total_output_pixels; // N*C*H*W
     int32_t base_pixels_per_core; // 每个core的基础像素数
@@ -60,8 +60,8 @@ struct Col2ImTilingData {
     // ========== 核内划分信息（移除数组） ==========
     int32_t tile_pixel_num;    // 每个tile处理的像素数
     int32_t aligned_tile_size; // 对齐后的tile大小
-    
+
     // ========== 向量化参数 ==========
-    uint32_t vec_elements;     // 向量长度（如8/16/32）
+    uint32_t vec_elements; // 向量长度（如8/16/32）
 };
 #endif

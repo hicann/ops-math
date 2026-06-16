@@ -23,6 +23,6 @@ namespace optiling {
 
 ge::graphStatus AddMatMatElementsTilingFunc(gert::TilingContext* context);
 
-}  // namespace optiling
+} // namespace optiling
 
-#endif  // ADD_MAT_MAT_ELEMENTS_TILING_H_
+#endif // ADD_MAT_MAT_ELEMENTS_TILING_H_

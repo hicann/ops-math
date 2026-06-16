@@ -49,12 +49,13 @@ private:
     __aicore__ inline uint64_t GetBroadcastIndexEff(uint64_t linearIdx);
     __aicore__ inline void CopyOut(uint64_t progress);
     __aicore__ inline void Compute(uint64_t progress);
+
 private:
     TPipe pipe;
     TQue<QuePosition::VECOUT, BUFFER_NUM> outQueue;
     GlobalTensor<T> xGm;
     GlobalTensor<T> yGm;
-    
+
     uint64_t coreDataNum;
     uint64_t tileNum;
     uint64_t tileDataNum;
@@ -73,7 +74,7 @@ private:
 template <typename T>
 __aicore__ inline void Expandv<T>::Init(GM_ADDR x, GM_ADDR y, ExpandvTilingData* tilingData)
 {
-     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
+    ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
     uint64_t coreIdx = GetBlockIdx();
     this->globalBufferIndex = tilingData->bigCoreDataNum * coreIdx;
     this->tileDataNum = tilingData->tileDataNum;
@@ -82,23 +83,24 @@ __aicore__ inline void Expandv<T>::Init(GM_ADDR x, GM_ADDR y, ExpandvTilingData*
     const uint64_t* inShapeArr = tilingData->inShapeArr;
     const uint64_t* outShapeArr = tilingData->outShapeArr;
     for (int i = 0; i < MAX_DIM_DEFAULT; ++i) {
-            this->inShape[i]   = tilingData->inShapeArr[i];
-            this->outShape[i]  = tilingData->outShapeArr[i];
-            this->inStride[i]  = tilingData->inStrideArr[i];
-            this->outStride[i] = tilingData->outStrideArr[i];
+        this->inShape[i] = tilingData->inShapeArr[i];
+        this->outShape[i] = tilingData->outShapeArr[i];
+        this->inStride[i] = tilingData->inStrideArr[i];
+        this->outStride[i] = tilingData->outStrideArr[i];
     }
     for (int i = 0; i < this->in_rank; ++i) {
-            this->strideX1[i] = (inShape[i] == 1) ? 0 : inStride[i];
-    }    
+        this->strideX1[i] = (inShape[i] == 1) ? 0 : inStride[i];
+    }
     if (coreIdx < tilingData->tailBlockNum) {
-        this->coreDataNum = tilingData->bigCoreDataNum;//（单位：元素数）
+        this->coreDataNum = tilingData->bigCoreDataNum; // （单位：元素数）
         this->tileNum = tilingData->finalBigTileNum;
         this->tailDataNum = tilingData->bigTailDataNum;
     } else {
         this->coreDataNum = tilingData->smallCoreDataNum;
         this->tileNum = tilingData->finalSmallTileNum;
         this->tailDataNum = tilingData->smallTailDataNum;
-        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (coreIdx - tilingData->tailBlockNum);
+        globalBufferIndex -=
+            (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (coreIdx - tilingData->tailBlockNum);
     }
     xGm.SetGlobalBuffer((__gm__ T*)x);
     yGm.SetGlobalBuffer((__gm__ T*)y + this->globalBufferIndex, this->coreDataNum);
@@ -112,10 +114,10 @@ __aicore__ inline uint64_t Expandv<T>::GetBroadcastIndexEff(uint64_t linearIdx)
     uint64_t tmp = linearIdx;
     // 从高维对齐输入维度
     for (int i = 0; i < in_rank; ++i) {
-        int out_d = out_rank - in_rank + i;  // 输出维度对齐输入维度
+        int out_d = out_rank - in_rank + i; // 输出维度对齐输入维度
         uint64_t coord = tmp / outStride[out_d];
         tmp %= outStride[out_d];
-        idxX += coord * strideX1[i];  // strideX1[i] = 0 if inShape[i]==1
+        idxX += coord * strideX1[i]; // strideX1[i] = 0 if inShape[i]==1
     }
     return idxX;
 }

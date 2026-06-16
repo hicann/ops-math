@@ -21,7 +21,7 @@
 /*!
  * \file sinh_proto.h
  * \brief
-*/
+ */
 #ifndef OPS_OP_PROTO_INC_SINH_H_
 #define OPS_OP_PROTO_INC_SINH_H_
 
@@ -31,15 +31,15 @@
 namespace ge {
 
 /**
-*@brief Returns element-wise hyperbolic sine of "x".
-*@par Inputs:
-*One input, including:
-* @li x: A ND Tensor. Must be one of the following types: float32,float16.\n
-*@par Outputs:
-*y: A ND Tensor. Has the same dtype as "x".\n
-*@par Third-party framework compatibility
-*Compatible with the TensorFlow operator Sinh.
-*/
+ *@brief Returns element-wise hyperbolic sine of "x".
+ *@par Inputs:
+ *One input, including:
+ * @li x: A ND Tensor. Must be one of the following types: float32,float16.\n
+ *@par Outputs:
+ *y: A ND Tensor. Has the same dtype as "x".\n
+ *@par Third-party framework compatibility
+ *Compatible with the TensorFlow operator Sinh.
+ */
 REG_OP(Sinh)
     .INPUT(x, TensorType({DT_FLOAT, DT_FLOAT16}))
     .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16}))

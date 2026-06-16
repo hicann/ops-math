@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
- /**
+/**
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
  */
@@ -22,9 +22,9 @@
 #define OPS_MATH_INV_TILING_DATA_H_
 
 struct InvTilingData {
-    int64_t totalElements = 0;   // Total number of elements (flattened)
-    int64_t blockFactor = 0;     // Number of elements per AI Core
-    int64_t ubFactor = 0;        // Number of elements per UB iteration
+    int64_t totalElements = 0; // Total number of elements (flattened)
+    int64_t blockFactor = 0;   // Number of elements per AI Core
+    int64_t ubFactor = 0;      // Number of elements per UB iteration
 };
 
 #endif // OPS_MATH_INV_TILING_DATA_H_

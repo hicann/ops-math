@@ -41,11 +41,7 @@ extern "C" {
  * @return aclnnStatus
  */
 ACLNN_API aclnnStatus aclnnAsinhGradGetWorkspaceSize(
-    const aclTensor *y,
-    const aclTensor *dy,
-    aclTensor *z,
-    uint64_t *workspaceSize,
-    aclOpExecutor **executor);
+    const aclTensor* y, const aclTensor* dy, aclTensor* z, uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief Execute AsinhGrad computation
@@ -55,11 +51,8 @@ ACLNN_API aclnnStatus aclnnAsinhGradGetWorkspaceSize(
  * @param stream [in] ACL stream
  * @return aclnnStatus
  */
-ACLNN_API aclnnStatus aclnnAsinhGrad(
-    void *workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor *executor,
-    aclrtStream stream);
+ACLNN_API aclnnStatus
+aclnnAsinhGrad(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 #ifdef __cplusplus
 }

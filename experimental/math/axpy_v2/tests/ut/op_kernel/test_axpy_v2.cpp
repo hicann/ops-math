@@ -35,10 +35,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./axpy_v2_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "axpy_v2_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "axpy_v2_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;

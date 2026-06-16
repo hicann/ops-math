@@ -43,7 +43,7 @@ static ge::graphStatus InferShapeTraceV2(gert::InferShapeContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
 
     // Trace 算子输出为标量
-    yShape->SetDimNum(1); 
+    yShape->SetDimNum(1);
     yShape->SetDim(0, 1);
 
     OP_LOGD(context->GetNodeName(), "End to do InferShapeTraceV2");

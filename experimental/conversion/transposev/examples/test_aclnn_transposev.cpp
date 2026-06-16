@@ -112,7 +112,7 @@ int main()
     // 2. 构造输入与输出，需要根据API的接口自定义构造
     aclTensor* selfX = nullptr;
     void* selfXDeviceAddr = nullptr;
-    std::vector<int64_t> selfXShape = {10,11,12};
+    std::vector<int64_t> selfXShape = {10, 11, 12};
     std::vector<DataType> selfXHostData(1320, 1);
     ret = CreateAclTensor(selfXHostData, selfXShape, &selfXDeviceAddr, aclDataType::ACL_BOOL, &selfX);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -120,13 +120,13 @@ int main()
     aclTensor* selfY = nullptr;
     void* selfYDeviceAddr = nullptr;
     std::vector<int64_t> selfYShape = {3};
-    std::vector<int64_t> selfYHostData = {1,0,2};
+    std::vector<int64_t> selfYHostData = {1, 0, 2};
     ret = CreateAclTensor(selfYHostData, selfYShape, &selfYDeviceAddr, aclDataType::ACL_INT64, &selfY);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     aclTensor* out = nullptr;
     void* outDeviceAddr = nullptr;
-    std::vector<int64_t> outShape = {10,11,12};
+    std::vector<int64_t> outShape = {10, 11, 12};
     std::vector<DataType> outHostData(1320, 0);
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_BOOL, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -134,11 +134,14 @@ int main()
     // 3. 调用CANN算子库API，需要修改为具体的Api名称
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
-    LOG_PRINT("aclnnTransposevGetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n",777, (unsigned long long)workspaceSize, (void*)executor);
+    LOG_PRINT(
+        "aclnnTransposevGetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n", 777,
+        (unsigned long long)workspaceSize, (void*)executor);
     // 4. 调用aclnnTransposev第一段接口
     ret = aclnnTransposevGetWorkspaceSize(selfX, selfY, out, &workspaceSize, &executor);
-    LOG_PRINT("aclnnTransposevGetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n",
-          ret, (unsigned long long)workspaceSize, (void*)executor);
+    LOG_PRINT(
+        "aclnnTransposevGetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n", ret,
+        (unsigned long long)workspaceSize, (void*)executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnTransposevGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 根据第一段接口计算出的workspaceSize申请device内存

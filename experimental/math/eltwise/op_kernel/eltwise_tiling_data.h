@@ -24,11 +24,11 @@
 #define ELTWISE_TILING_DATA_H
 
 struct EltwiseTilingData {
-    int64_t totalNum = 0;       // Total number of elements (flattened)
-    int64_t blockFactor = 0;    // Number of elements per AI Core
-    int64_t ubFactor = 0;       // Number of elements per UB iteration (aligned)
-    uint32_t inputNum = 0;      // Actual number of input tensors [1, 32]
-    float coeff[32] = {0.0f};   // Weighted coefficients array (mode=1 SUM only), 128 bytes
+    int64_t totalNum = 0;     // Total number of elements (flattened)
+    int64_t blockFactor = 0;  // Number of elements per AI Core
+    int64_t ubFactor = 0;     // Number of elements per UB iteration (aligned)
+    uint32_t inputNum = 0;    // Actual number of input tensors [1, 32]
+    float coeff[32] = {0.0f}; // Weighted coefficients array (mode=1 SUM only), 128 bytes
 };
 
 #endif // ELTWISE_TILING_DATA_H

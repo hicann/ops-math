@@ -33,5 +33,4 @@ static ge::graphStatus InferDataTypeSin(gert::InferDataTypeContext* context)
 
 IMPL_OP(Sin).InferDataType(InferDataTypeSin);
 
-};
-
+}; // namespace ops

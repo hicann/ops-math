@@ -40,7 +40,6 @@ private:
     __aicore__ inline void CopyOutLast(int32_t progress);
 
 private:
-    
     TQue<QuePosition::VECIN, 1> inQueueIN;
     TQue<QuePosition::VECOUT, 1> outQueueOUT;
     GlobalTensor<T> xGm;
@@ -57,7 +56,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void KernelSignBitsPack<T>::Init(GM_ADDR x, GM_ADDR y, const SignBitsPackTilingData* tilingData, TPipe* pipeIn)
+__aicore__ inline void KernelSignBitsPack<T>::Init(
+    GM_ADDR x, GM_ADDR y, const SignBitsPackTilingData* tilingData, TPipe* pipeIn)
 {
     uint64_t coreId = AscendC::GetBlockIdx();
     uint64_t globalBufferIndex = tilingData->bigCoreDataNum * AscendC::GetBlockIdx();
@@ -70,16 +70,17 @@ __aicore__ inline void KernelSignBitsPack<T>::Init(GM_ADDR x, GM_ADDR y, const S
         this->coreDataNum = tilingData->smallCoreDataNum;
         this->tileNum = tilingData->finalSmallTileNum;
         this->tailDataNum = tilingData->smallTailDataNum;
-        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (AscendC::GetBlockIdx() - tilingData->tailBlockNum);
+        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) *
+                             (AscendC::GetBlockIdx() - tilingData->tailBlockNum);
     }
-    
+
     this->rightPaddingElemNums = tilingData->rightPaddingElemNums;
     this->lastCopyLength = tilingData->lastCopyLength;
     this->lastCalcLength = tilingData->lastCalcLength;
     this->bufferNum = 1;
     if (static_cast<int32_t>(tilingData->usedDb) == 1) {
         this->bufferNum = 2;
-    }  
+    }
     xGm.SetGlobalBuffer((__gm__ T*)x + globalBufferIndex, this->coreDataNum);
     yGm.SetGlobalBuffer((__gm__ uint8_t*)y + globalBufferIndex / 8, this->coreDataNum / 8);
     pipeIn->InitBuffer(inQueueIN, this->bufferNum, this->tileDataNum * sizeof(T));
@@ -101,23 +102,23 @@ __aicore__ inline void KernelSignBitsPack<T>::CopyInLast(int32_t progress)
 {
     AscendC::LocalTensor<T> xLocal = inQueueIN.AllocTensor<T>();
 
-    AscendC::DataCopyExtParams copyParams{1, static_cast<uint32_t>(this->lastCopyLength * sizeof(T)), 0, 0, 0}; 
+    AscendC::DataCopyExtParams copyParams{1, static_cast<uint32_t>(this->lastCopyLength * sizeof(T)), 0, 0, 0};
     AscendC::DataCopyPadExtParams<T> padParams{true, 0, static_cast<uint8_t>(this->rightPaddingElemNums), (T)(-1)};
-    AscendC::DataCopyPad(xLocal, xGm[progress * this->tileDataNum], copyParams, padParams); 
+    AscendC::DataCopyPad(xLocal, xGm[progress * this->tileDataNum], copyParams, padParams);
 
     inQueueIN.EnQue(xLocal);
 }
-
 
 template <typename T>
 __aicore__ inline void KernelSignBitsPack<T>::CopyOut(int32_t progress)
 {
     AscendC::LocalTensor<uint8_t> yLocal = outQueueOUT.DeQue<uint8_t>();
 
-    AscendC::DataCopyExtParams copyParams{1, static_cast<uint32_t>((this->processDataNum / 8) * sizeof(uint8_t)), 0, 0, 0};
-    AscendC::DataCopyPad(yGm[progress * this->tileDataNum / 8], yLocal, copyParams); 
+    AscendC::DataCopyExtParams copyParams{
+        1, static_cast<uint32_t>((this->processDataNum / 8) * sizeof(uint8_t)), 0, 0, 0};
+    AscendC::DataCopyPad(yGm[progress * this->tileDataNum / 8], yLocal, copyParams);
 
-    outQueueOUT.FreeTensor(yLocal);    
+    outQueueOUT.FreeTensor(yLocal);
 }
 
 template <typename T>
@@ -125,8 +126,9 @@ __aicore__ inline void KernelSignBitsPack<T>::CopyOutLast(int32_t progress)
 {
     AscendC::LocalTensor<uint8_t> yLocal = outQueueOUT.DeQue<uint8_t>();
 
-    AscendC::DataCopyExtParams copyParams{1, static_cast<uint32_t>(this->lastCopyLength / 8* sizeof(uint8_t)), 0, 0, 0};
-    AscendC::DataCopyPad(yGm[progress * this->tileDataNum / 8], yLocal, copyParams); 
+    AscendC::DataCopyExtParams copyParams{
+        1, static_cast<uint32_t>(this->lastCopyLength / 8 * sizeof(uint8_t)), 0, 0, 0};
+    AscendC::DataCopyPad(yGm[progress * this->tileDataNum / 8], yLocal, copyParams);
 
     outQueueOUT.FreeTensor(yLocal);
 }
@@ -136,7 +138,7 @@ __aicore__ inline void KernelSignBitsPack<T>::Compute(int32_t progress)
 {
     LocalTensor<T> xLocal = inQueueIN.DeQue<T>();
     LocalTensor<uint8_t> yLocal = outQueueOUT.AllocTensor<uint8_t>();
-    
+
     CompareScalar(yLocal, xLocal, (T)(0), CMPMODE::GE, this->processDataNum);
 
     outQueueOUT.EnQue(yLocal);
@@ -158,13 +160,11 @@ __aicore__ inline void KernelSignBitsPack<T>::Process()
     {
         this->processDataNum = this->lastCalcLength;
         CopyInLast(loopCount - 1);
-    }
-    else
-    {
+    } else {
         this->processDataNum = this->tailDataNum;
         CopyIn(loopCount - 1);
     }
-    
+
     Compute(loopCount - 1);
     CopyOut(loopCount - 1);
 }

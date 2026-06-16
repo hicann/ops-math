@@ -47,11 +47,7 @@ extern "C" {
  * @return aclnnStatus 状态码
  */
 ACLNN_API aclnnStatus aclnnAtanGradGetWorkspaceSize(
-    const aclTensor* x,
-    const aclTensor* dy,
-    const aclTensor* dx,
-    uint64_t*        workspaceSize,
-    aclOpExecutor**  executor);
+    const aclTensor* x, const aclTensor* dy, const aclTensor* dx, uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief 执行 AtanGrad 算子计算
@@ -61,11 +57,8 @@ ACLNN_API aclnnStatus aclnnAtanGradGetWorkspaceSize(
  * @param stream        [in] ACL 流
  * @return aclnnStatus 状态码
  */
-ACLNN_API aclnnStatus aclnnAtanGrad(
-    void*          workspace,
-    uint64_t       workspaceSize,
-    aclOpExecutor* executor,
-    aclrtStream    stream);
+ACLNN_API aclnnStatus
+aclnnAtanGrad(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 #ifdef __cplusplus
 }

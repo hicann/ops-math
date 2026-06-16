@@ -59,19 +59,11 @@ extern "C" {
 #endif
 
 aclnnStatus aclnnReduceMeanWithCountGetWorkspaceSize(
-    const aclTensor *input,
-    const aclIntArray *axis,
-    bool keepdim,
-    aclTensor *meanResult,
-    aclTensor *countResult,
-    uint64_t *workspaceSize,
-    aclOpExecutor **executor);
+    const aclTensor* input, const aclIntArray* axis, bool keepdim, aclTensor* meanResult, aclTensor* countResult,
+    uint64_t* workspaceSize, aclOpExecutor** executor);
 
 aclnnStatus aclnnReduceMeanWithCount(
-    void *workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor *executor,
-    aclrtStream stream);
+    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 #ifdef __cplusplus
 }
@@ -80,32 +72,32 @@ aclnnStatus aclnnReduceMeanWithCount(
 // ============================================================
 // Error checking macros
 // ============================================================
-#define CHECK_ACL(expr)                                                       \
-    do {                                                                      \
-        auto _ret = (expr);                                                   \
-        if (_ret != 0) {                                                      \
-            printf("[ERROR] %s:%d  %s  returned %d\n",                        \
-                   __FILE__, __LINE__, #expr, static_cast<int>(_ret));        \
-            return -1;                                                        \
-        }                                                                     \
+#define CHECK_ACL(expr)                                                                                    \
+    do {                                                                                                   \
+        auto _ret = (expr);                                                                                \
+        if (_ret != 0) {                                                                                   \
+            printf("[ERROR] %s:%d  %s  returned %d\n", __FILE__, __LINE__, #expr, static_cast<int>(_ret)); \
+            return -1;                                                                                     \
+        }                                                                                                  \
     } while (0)
 
-#define CHECK_ACLNN(expr)                                                     \
-    do {                                                                      \
-        aclnnStatus _ret = (expr);                                            \
-        if (_ret != 0) {                                                      \
-            const char* _emsg = aclGetRecentErrMsg();                         \
-            printf("[ERROR] %s:%d  %s  returned %d\n",                        \
-                   __FILE__, __LINE__, #expr, static_cast<int>(_ret));        \
-            if (_emsg) printf("[ERROR_DETAIL] %s\n", _emsg);                  \
-            return -1;                                                        \
-        }                                                                     \
+#define CHECK_ACLNN(expr)                                                                                  \
+    do {                                                                                                   \
+        aclnnStatus _ret = (expr);                                                                         \
+        if (_ret != 0) {                                                                                   \
+            const char* _emsg = aclGetRecentErrMsg();                                                      \
+            printf("[ERROR] %s:%d  %s  returned %d\n", __FILE__, __LINE__, #expr, static_cast<int>(_ret)); \
+            if (_emsg)                                                                                     \
+                printf("[ERROR_DETAIL] %s\n", _emsg);                                                      \
+            return -1;                                                                                     \
+        }                                                                                                  \
     } while (0)
 
 // ============================================================
 // Utility: compute contiguous strides from shape
 // ============================================================
-static std::vector<int64_t> ComputeStrides(const std::vector<int64_t>& shape) {
+static std::vector<int64_t> ComputeStrides(const std::vector<int64_t>& shape)
+{
     std::vector<int64_t> strides(shape.size(), 1);
     for (int i = static_cast<int>(shape.size()) - 2; i >= 0; --i) {
         strides[i] = strides[i + 1] * shape[i + 1];
@@ -113,9 +105,11 @@ static std::vector<int64_t> ComputeStrides(const std::vector<int64_t>& shape) {
     return strides;
 }
 
-static int64_t NumElements(const std::vector<int64_t>& shape) {
+static int64_t NumElements(const std::vector<int64_t>& shape)
+{
     int64_t n = 1;
-    for (auto s : shape) n *= s;
+    for (auto s : shape)
+        n *= s;
     return n;
 }
 
@@ -123,31 +117,30 @@ static int64_t NumElements(const std::vector<int64_t>& shape) {
 // Utility: compute output shape
 // ============================================================
 static std::vector<int64_t> ComputeOutputShape(
-    const std::vector<int64_t>& inputShape,
-    const std::vector<int64_t>& axis,
-    bool keepdim)
+    const std::vector<int64_t>& inputShape, const std::vector<int64_t>& axis, bool keepdim)
 {
     int rank = static_cast<int>(inputShape.size());
     std::vector<int> normalizedAxes;
     if (axis.empty()) {
-        for (int i = 0; i < rank; ++i) normalizedAxes.push_back(i);
+        for (int i = 0; i < rank; ++i)
+            normalizedAxes.push_back(i);
     } else {
         for (auto a : axis) {
             int na = static_cast<int>(a);
-            if (na < 0) na += rank;
+            if (na < 0)
+                na += rank;
             normalizedAxes.push_back(na);
         }
     }
     std::sort(normalizedAxes.begin(), normalizedAxes.end());
-    normalizedAxes.erase(std::unique(normalizedAxes.begin(), normalizedAxes.end()),
-                         normalizedAxes.end());
+    normalizedAxes.erase(std::unique(normalizedAxes.begin(), normalizedAxes.end()), normalizedAxes.end());
 
     std::vector<int64_t> outShape;
     for (int i = 0; i < rank; ++i) {
-        bool isReduceAxis = std::find(normalizedAxes.begin(), normalizedAxes.end(), i)
-                            != normalizedAxes.end();
+        bool isReduceAxis = std::find(normalizedAxes.begin(), normalizedAxes.end(), i) != normalizedAxes.end();
         if (isReduceAxis) {
-            if (keepdim) outShape.push_back(1);
+            if (keepdim)
+                outShape.push_back(1);
         } else {
             outShape.push_back(inputShape[i]);
         }
@@ -159,26 +152,24 @@ static std::vector<int64_t> ComputeOutputShape(
 // CPU Golden: compute expected mean and count
 // ============================================================
 static void CpuGoldenReduceMeanWithCount(
-    const float* input,
-    const std::vector<int64_t>& inputShape,
-    const std::vector<int64_t>& axis,
-    float* goldenMean,
+    const float* input, const std::vector<int64_t>& inputShape, const std::vector<int64_t>& axis, float* goldenMean,
     int64_t* goldenCount)
 {
     int rank = static_cast<int>(inputShape.size());
     std::vector<int> normalizedAxes;
     if (axis.empty()) {
-        for (int i = 0; i < rank; ++i) normalizedAxes.push_back(i);
+        for (int i = 0; i < rank; ++i)
+            normalizedAxes.push_back(i);
     } else {
         for (auto a : axis) {
             int na = static_cast<int>(a);
-            if (na < 0) na += rank;
+            if (na < 0)
+                na += rank;
             normalizedAxes.push_back(na);
         }
     }
     std::sort(normalizedAxes.begin(), normalizedAxes.end());
-    normalizedAxes.erase(std::unique(normalizedAxes.begin(), normalizedAxes.end()),
-                         normalizedAxes.end());
+    normalizedAxes.erase(std::unique(normalizedAxes.begin(), normalizedAxes.end()), normalizedAxes.end());
 
     // Compute count = product of reduce-axis sizes
     int64_t count = 1;
@@ -189,8 +180,7 @@ static void CpuGoldenReduceMeanWithCount(
     // Output shape (keepdim=true for indexing)
     std::vector<int64_t> outShapeKeep(rank);
     for (int i = 0; i < rank; ++i) {
-        bool isReduce = std::find(normalizedAxes.begin(), normalizedAxes.end(), i)
-                        != normalizedAxes.end();
+        bool isReduce = std::find(normalizedAxes.begin(), normalizedAxes.end(), i) != normalizedAxes.end();
         outShapeKeep[i] = isReduce ? 1 : inputShape[i];
     }
 
@@ -214,8 +204,7 @@ static void CpuGoldenReduceMeanWithCount(
 
         int64_t outFlat = 0;
         for (int d = 0; d < rank; ++d) {
-            bool isReduce = std::find(normalizedAxes.begin(), normalizedAxes.end(), d)
-                            != normalizedAxes.end();
+            bool isReduce = std::find(normalizedAxes.begin(), normalizedAxes.end(), d) != normalizedAxes.end();
             int64_t idx = isReduce ? 0 : indices[d];
             outFlat += idx * outStrides[d];
         }
@@ -232,10 +221,10 @@ static void CpuGoldenReduceMeanWithCount(
 // Precision check: MERE / MARE
 // ============================================================
 static bool CheckPrecision(
-    const float* actual, const float* golden, int64_t count,
-    double mereThreshold, double mareThreshold)
+    const float* actual, const float* golden, int64_t count, double mereThreshold, double mareThreshold)
 {
-    if (count == 0) return true;
+    if (count == 0)
+        return true;
 
     double sumRelErr = 0.0;
     double maxRelErr = 0.0;
@@ -253,8 +242,7 @@ static bool CheckPrecision(
         }
         if (std::isinf(g)) {
             if (!std::isinf(a) || std::signbit(a) != std::signbit(g)) {
-                printf("  [FAIL] Index %ld: golden=%f, actual=%f (inf mismatch)\n",
-                       (long)i, g, a);
+                printf("  [FAIL] Index %ld: golden=%f, actual=%f (inf mismatch)\n", (long)i, g, a);
                 return false;
             }
             continue;
@@ -262,7 +250,8 @@ static bool CheckPrecision(
 
         double relErr = std::abs(a - g) / (std::abs(g) + 1e-7);
         sumRelErr += relErr;
-        if (relErr > maxRelErr) maxRelErr = relErr;
+        if (relErr > maxRelErr)
+            maxRelErr = relErr;
     }
 
     double mere = sumRelErr / static_cast<double>(count);
@@ -284,11 +273,12 @@ static bool CheckPrecision(
 // FP32 <-> FP16 / BF16 software conversions (IEEE-754)
 // Avoid dependency on compiler-specific _Float16 / __bf16 intrinsics.
 // ============================================================
-static uint16_t FloatToFp16(float f) {
+static uint16_t FloatToFp16(float f)
+{
     uint32_t x;
     std::memcpy(&x, &f, sizeof(x));
     uint32_t sign = (x >> 16) & 0x8000u;
-    int32_t  exp  = static_cast<int32_t>((x >> 23) & 0xFFu) - 127 + 15;
+    int32_t exp = static_cast<int32_t>((x >> 23) & 0xFFu) - 127 + 15;
     uint32_t mant = x & 0x007FFFFFu;
 
     if (((x >> 23) & 0xFFu) == 0xFFu) {
@@ -319,15 +309,17 @@ static uint16_t FloatToFp16(float f) {
         if (halfMant == 0x400u) { // mantissa overflow -> bump exponent
             halfMant = 0;
             exp += 1;
-            if (exp >= 0x1F) return static_cast<uint16_t>(sign | 0x7C00u);
+            if (exp >= 0x1F)
+                return static_cast<uint16_t>(sign | 0x7C00u);
         }
     }
     return static_cast<uint16_t>(sign | (static_cast<uint32_t>(exp) << 10) | halfMant);
 }
 
-static float Fp16ToFloat(uint16_t h) {
+static float Fp16ToFloat(uint16_t h)
+{
     uint32_t sign = (h & 0x8000u) << 16;
-    uint32_t exp  = (h >> 10) & 0x1Fu;
+    uint32_t exp = (h >> 10) & 0x1Fu;
     uint32_t mant = h & 0x3FFu;
     uint32_t out;
     if (exp == 0) {
@@ -335,7 +327,10 @@ static float Fp16ToFloat(uint16_t h) {
             out = sign;
         } else {
             // Subnormal -> normalize
-            while ((mant & 0x400u) == 0) { mant <<= 1; exp--; }
+            while ((mant & 0x400u) == 0) {
+                mant <<= 1;
+                exp--;
+            }
             exp += 1;
             mant &= 0x3FFu;
             out = sign | ((exp + 127 - 15) << 23) | (mant << 13);
@@ -350,7 +345,8 @@ static float Fp16ToFloat(uint16_t h) {
     return f;
 }
 
-static uint16_t FloatToBf16(float f) {
+static uint16_t FloatToBf16(float f)
+{
     uint32_t x;
     std::memcpy(&x, &f, sizeof(x));
     // Round-to-nearest-even
@@ -360,7 +356,8 @@ static uint16_t FloatToBf16(float f) {
     return static_cast<uint16_t>(x >> 16);
 }
 
-static float Bf16ToFloat(uint16_t b) {
+static float Bf16ToFloat(uint16_t b)
+{
     uint32_t x = static_cast<uint32_t>(b) << 16;
     float f;
     std::memcpy(&f, &x, sizeof(f));
@@ -371,14 +368,8 @@ static float Bf16ToFloat(uint16_t b) {
 // Main
 // ============================================================
 static int RunTestCase(
-    aclDataType inputDtype,
-    const char* dtypeName,
-    const std::vector<int64_t>& inputShape,
-    const std::vector<int64_t>& axis,
-    bool keepdim,
-    double mereThreshold,
-    double mareThreshold,
-    bool& outPass)
+    aclDataType inputDtype, const char* dtypeName, const std::vector<int64_t>& inputShape,
+    const std::vector<int64_t>& axis, bool keepdim, double mereThreshold, double mareThreshold, bool& outPass)
 {
     printf("\n============================================================\n");
     printf("  Running test case: dtype=%s\n", dtypeName);
@@ -388,12 +379,16 @@ static int RunTestCase(
     int64_t inputCount = NumElements(inputShape);
     int64_t outputCount = outputShape.empty() ? 1 : NumElements(outputShape);
 
-    printf("  Input shape: ["); for (size_t i = 0; i < inputShape.size(); ++i) {
+    printf("  Input shape: [");
+    for (size_t i = 0; i < inputShape.size(); ++i) {
         printf("%ld%s", (long)inputShape[i], i + 1 == inputShape.size() ? "" : ", ");
-    } printf("]  (%ld elements)\n", (long)inputCount);
-    printf("  Axis: ["); for (size_t i = 0; i < axis.size(); ++i) {
+    }
+    printf("]  (%ld elements)\n", (long)inputCount);
+    printf("  Axis: [");
+    for (size_t i = 0; i < axis.size(); ++i) {
         printf("%ld%s", (long)axis[i], i + 1 == axis.size() ? "" : ", ");
-    } printf("]\n");
+    }
+    printf("]\n");
     printf("  Keepdim: %s\n", keepdim ? "true" : "false");
     printf("  Output element count: %ld\n", (long)outputCount);
 
@@ -424,21 +419,21 @@ static int RunTestCase(
     int64_t outCountKeep = outShapeKeep.empty() ? 1 : NumElements(outShapeKeep);
     std::vector<float> goldenMean(outCountKeep);
     std::vector<int64_t> goldenCount(outCountKeep);
-    CpuGoldenReduceMeanWithCount(hostInputF32.data(), inputShape, axis,
-                                  goldenMean.data(), goldenCount.data());
+    CpuGoldenReduceMeanWithCount(hostInputF32.data(), inputShape, axis, goldenMean.data(), goldenCount.data());
 
     // Pack host input into the target dtype buffer
     size_t elemBytes = (inputDtype == ACL_FLOAT) ? sizeof(float) : sizeof(uint16_t);
     std::vector<uint8_t> hostInputBytes(static_cast<size_t>(inputCount) * elemBytes);
     if (inputDtype == ACL_FLOAT) {
-        std::memcpy(hostInputBytes.data(), hostInputF32.data(),
-                    static_cast<size_t>(inputCount) * sizeof(float));
+        std::memcpy(hostInputBytes.data(), hostInputF32.data(), static_cast<size_t>(inputCount) * sizeof(float));
     } else if (inputDtype == ACL_FLOAT16) {
         auto* dst = reinterpret_cast<uint16_t*>(hostInputBytes.data());
-        for (int64_t i = 0; i < inputCount; ++i) dst[i] = FloatToFp16(hostInputF32[i]);
+        for (int64_t i = 0; i < inputCount; ++i)
+            dst[i] = FloatToFp16(hostInputF32[i]);
     } else { // ACL_BF16
         auto* dst = reinterpret_cast<uint16_t*>(hostInputBytes.data());
-        for (int64_t i = 0; i < inputCount; ++i) dst[i] = FloatToBf16(hostInputF32[i]);
+        for (int64_t i = 0; i < inputCount; ++i)
+            dst[i] = FloatToBf16(hostInputF32[i]);
     }
 
     // Device allocations
@@ -454,42 +449,31 @@ static int RunTestCase(
     CHECK_ACL(aclrtMalloc(&devMean, meanBytes, ACL_MEM_MALLOC_HUGE_FIRST));
     CHECK_ACL(aclrtMalloc(&devCount, countBytes, ACL_MEM_MALLOC_HUGE_FIRST));
 
-    CHECK_ACL(aclrtMemcpy(devInput, inputBytes, hostInputBytes.data(), inputBytes,
-                          ACL_MEMCPY_HOST_TO_DEVICE));
+    CHECK_ACL(aclrtMemcpy(devInput, inputBytes, hostInputBytes.data(), inputBytes, ACL_MEMCPY_HOST_TO_DEVICE));
     CHECK_ACL(aclrtMemset(devMean, meanBytes, 0, meanBytes));
     CHECK_ACL(aclrtMemset(devCount, countBytes, 0, countBytes));
 
     // Tensors
     std::vector<int64_t> inputStrides = ComputeStrides(inputShape);
     aclTensor* inputTensor = aclCreateTensor(
-        inputShape.data(), inputShape.size(),
-        inputDtype,
-        inputStrides.data(), 0,
-        ACL_FORMAT_ND,
-        inputShape.data(), inputShape.size(),
-        devInput);
+        inputShape.data(), inputShape.size(), inputDtype, inputStrides.data(), 0, ACL_FORMAT_ND, inputShape.data(),
+        inputShape.size(), devInput);
 
     std::vector<int64_t> outputStrides = ComputeStrides(outputShape);
     std::vector<int64_t> outputStorageShape = outputShape;
-    if (outputStorageShape.empty()) outputStorageShape.push_back(1);
+    if (outputStorageShape.empty())
+        outputStorageShape.push_back(1);
     std::vector<int64_t> outputStridesForCreate = outputStrides;
-    if (outputStridesForCreate.empty()) outputStridesForCreate.push_back(1);
+    if (outputStridesForCreate.empty())
+        outputStridesForCreate.push_back(1);
 
     aclTensor* meanTensor = aclCreateTensor(
-        outputShape.data(), outputShape.size(),
-        inputDtype,
-        outputStridesForCreate.data(), 0,
-        ACL_FORMAT_ND,
-        outputStorageShape.data(), outputStorageShape.size(),
-        devMean);
+        outputShape.data(), outputShape.size(), inputDtype, outputStridesForCreate.data(), 0, ACL_FORMAT_ND,
+        outputStorageShape.data(), outputStorageShape.size(), devMean);
 
     aclTensor* countTensor = aclCreateTensor(
-        outputShape.data(), outputShape.size(),
-        ACL_INT64,
-        outputStridesForCreate.data(), 0,
-        ACL_FORMAT_ND,
-        outputStorageShape.data(), outputStorageShape.size(),
-        devCount);
+        outputShape.data(), outputShape.size(), ACL_INT64, outputStridesForCreate.data(), 0, ACL_FORMAT_ND,
+        outputStorageShape.data(), outputStorageShape.size(), devCount);
 
     aclIntArray* axisArr = aclCreateIntArray(axis.data(), axis.size());
 
@@ -500,9 +484,7 @@ static int RunTestCase(
     aclOpExecutor* executor = nullptr;
     printf("  Calling aclnnReduceMeanWithCountGetWorkspaceSize...\n");
     CHECK_ACLNN(aclnnReduceMeanWithCountGetWorkspaceSize(
-        inputTensor, axisArr, keepdim,
-        meanTensor, countTensor,
-        &workspaceSize, &executor));
+        inputTensor, axisArr, keepdim, meanTensor, countTensor, &workspaceSize, &executor));
     printf("  WorkspaceSize: %lu bytes\n", (unsigned long)workspaceSize);
 
     void* workspace = nullptr;
@@ -518,32 +500,29 @@ static int RunTestCase(
     // Pull device output back and decode to FP32 for comparison
     std::vector<uint8_t> hostMeanBytes(meanBytes);
     std::vector<int64_t> hostCount(outputCount);
-    CHECK_ACL(aclrtMemcpy(hostMeanBytes.data(), meanBytes, devMean, meanBytes,
-                          ACL_MEMCPY_DEVICE_TO_HOST));
-    CHECK_ACL(aclrtMemcpy(hostCount.data(), countBytes, devCount, countBytes,
-                          ACL_MEMCPY_DEVICE_TO_HOST));
+    CHECK_ACL(aclrtMemcpy(hostMeanBytes.data(), meanBytes, devMean, meanBytes, ACL_MEMCPY_DEVICE_TO_HOST));
+    CHECK_ACL(aclrtMemcpy(hostCount.data(), countBytes, devCount, countBytes, ACL_MEMCPY_DEVICE_TO_HOST));
 
     std::vector<float> hostMean(outputCount);
     if (inputDtype == ACL_FLOAT) {
-        std::memcpy(hostMean.data(), hostMeanBytes.data(),
-                    static_cast<size_t>(outputCount) * sizeof(float));
+        std::memcpy(hostMean.data(), hostMeanBytes.data(), static_cast<size_t>(outputCount) * sizeof(float));
     } else if (inputDtype == ACL_FLOAT16) {
         auto* src = reinterpret_cast<const uint16_t*>(hostMeanBytes.data());
-        for (int64_t i = 0; i < outputCount; ++i) hostMean[i] = Fp16ToFloat(src[i]);
+        for (int64_t i = 0; i < outputCount; ++i)
+            hostMean[i] = Fp16ToFloat(src[i]);
     } else { // ACL_BF16
         auto* src = reinterpret_cast<const uint16_t*>(hostMeanBytes.data());
-        for (int64_t i = 0; i < outputCount; ++i) hostMean[i] = Bf16ToFloat(src[i]);
+        for (int64_t i = 0; i < outputCount; ++i)
+            hostMean[i] = Bf16ToFloat(src[i]);
     }
 
     printf("  --- Precision Check (%s) ---\n", dtypeName);
-    bool precPass = CheckPrecision(hostMean.data(), goldenMean.data(), outputCount,
-                                    mereThreshold, mareThreshold);
+    bool precPass = CheckPrecision(hostMean.data(), goldenMean.data(), outputCount, mereThreshold, mareThreshold);
 
     bool countPass = true;
     for (int64_t i = 0; i < outputCount; ++i) {
         if (hostCount[i] != goldenCount[i]) {
-            printf("  [FAIL] count[%ld] actual=%ld golden=%ld\n",
-                   (long)i, (long)hostCount[i], (long)goldenCount[i]);
+            printf("  [FAIL] count[%ld] actual=%ld golden=%ld\n", (long)i, (long)hostCount[i], (long)goldenCount[i]);
             countPass = false;
         }
     }
@@ -553,7 +532,8 @@ static int RunTestCase(
     printf("  Case result (%s): %s\n", dtypeName, outPass ? "PASS" : "FAIL");
 
     // Cleanup
-    if (workspace) aclrtFree(workspace);
+    if (workspace)
+        aclrtFree(workspace);
     aclrtDestroyStream(stream);
     aclDestroyTensor(inputTensor);
     aclDestroyTensor(meanTensor);
@@ -565,7 +545,8 @@ static int RunTestCase(
     return 0;
 }
 
-int main() {
+int main()
+{
     printf("============================================================\n");
     printf("  aclnnReduceMeanWithCount ACLNN Example (FP32/FP16/BF16)\n");
     printf("============================================================\n");
@@ -586,17 +567,29 @@ int main() {
     bool passFp32 = false, passFp16 = false, passBf16 = false;
 
     int rc = 0;
-    rc = RunTestCase(ACL_FLOAT, "FLOAT32", inputShape, axis, keepdim,
-                     std::pow(2.0, -13.0), 10.0 * std::pow(2.0, -13.0), passFp32);
-    if (rc) { aclrtResetDevice(deviceId); aclFinalize(); return rc; }
+    rc = RunTestCase(
+        ACL_FLOAT, "FLOAT32", inputShape, axis, keepdim, std::pow(2.0, -13.0), 10.0 * std::pow(2.0, -13.0), passFp32);
+    if (rc) {
+        aclrtResetDevice(deviceId);
+        aclFinalize();
+        return rc;
+    }
 
-    rc = RunTestCase(ACL_FLOAT16, "FLOAT16", inputShape, axis, keepdim,
-                     std::pow(2.0, -10.0), 10.0 * std::pow(2.0, -10.0), passFp16);
-    if (rc) { aclrtResetDevice(deviceId); aclFinalize(); return rc; }
+    rc = RunTestCase(
+        ACL_FLOAT16, "FLOAT16", inputShape, axis, keepdim, std::pow(2.0, -10.0), 10.0 * std::pow(2.0, -10.0), passFp16);
+    if (rc) {
+        aclrtResetDevice(deviceId);
+        aclFinalize();
+        return rc;
+    }
 
-    rc = RunTestCase(ACL_BF16, "BFLOAT16", inputShape, axis, keepdim,
-                     std::pow(2.0, -7.0), 10.0 * std::pow(2.0, -7.0), passBf16);
-    if (rc) { aclrtResetDevice(deviceId); aclFinalize(); return rc; }
+    rc = RunTestCase(
+        ACL_BF16, "BFLOAT16", inputShape, axis, keepdim, std::pow(2.0, -7.0), 10.0 * std::pow(2.0, -7.0), passBf16);
+    if (rc) {
+        aclrtResetDevice(deviceId);
+        aclFinalize();
+        return rc;
+    }
 
     bool overall = passFp32 && passFp16 && passBf16;
     printf("\n============================================================\n");

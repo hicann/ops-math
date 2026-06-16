@@ -9,11 +9,11 @@
  */
 
 /**
-* 我们正常的版权申明，下面是我们的备注
-*
-* NOTE: Portions of this code were AI-generated and have been
-* technically reviewed for functional accuracy and security
-*/
+ * 我们正常的版权申明，下面是我们的备注
+ *
+ * NOTE: Portions of this code were AI-generated and have been
+ * technically reviewed for functional accuracy and security
+ */
 
 /*!
  * \file cdist_grad_arch32.cpp
@@ -28,9 +28,8 @@
 #include "common/cdist_grad.h"
 
 template <typename D_T, int P_MODE, int SCH_MODE>
-__global__ __aicore__ void cdist_grad(GM_ADDR gradOutput, GM_ADDR x1, GM_ADDR x2,
-                                       GM_ADDR cdistResult, GM_ADDR gradX1,
-                                       GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void cdist_grad(
+    GM_ADDR gradOutput, GM_ADDR x1, GM_ADDR x2, GM_ADDR cdistResult, GM_ADDR gradX1, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(CdistGradTilingData);
     GET_TILING_DATA_WITH_STRUCT(CdistGradTilingData, tilingData, tiling);

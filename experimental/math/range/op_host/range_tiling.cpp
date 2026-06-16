@@ -31,40 +31,42 @@
 #include "../op_kernel/range_tiling_key.h"
 
 namespace optiling {
-const size_t startIdx=0;
-const size_t endIdx=1;
-const size_t stepIdx=2;
+const size_t startIdx = 0;
+const size_t endIdx = 1;
+const size_t stepIdx = 2;
 struct RangeCompileInfo {};
 const uint32_t BLOCK_SIZE = 32;
-const uint32_t BUFFER_NUM = 2;                                                       
+const uint32_t BUFFER_NUM = 2;
 const uint32_t UB_BLOCK_NUM = 100;
 const uint32_t MAX_AVAILABLE_UB_BLOCK_NUM = UB_BLOCK_NUM / BUFFER_NUM * BUFFER_NUM;
-static ge::graphStatus CheckNull(uint32_t num){
-    if(num==0){
+static ge::graphStatus CheckNull(uint32_t num)
+{
+    if (num == 0) {
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus TilingParamsCalc(uint32_t length, uint32_t alignNum, uint32_t& tileNum,
-                                        uint32_t& tileLength, uint32_t& lastTileLength)
+static ge::graphStatus TilingParamsCalc(
+    uint32_t length, uint32_t alignNum, uint32_t& tileNum, uint32_t& tileLength, uint32_t& lastTileLength)
 {
     uint32_t maxPerCoreElem = alignNum * MAX_AVAILABLE_UB_BLOCK_NUM;
     CheckNull(maxPerCoreElem);
     tileNum = length / maxPerCoreElem;
     if ((length % maxPerCoreElem == 0U) || (tileNum == 0U)) {
         if (tileNum == 0U) {
-            if(alignNum==0) {
+            if (alignNum == 0) {
                 return ge::GRAPH_FAILED;
             }
             tileNum = (length + alignNum - 1) / alignNum;
         }
         if (length < maxPerCoreElem) {
-            if(alignNum==0)return ge::GRAPH_FAILED;
+            if (alignNum == 0)
+                return ge::GRAPH_FAILED;
             uint32_t blockCount = (length + alignNum - 1) / alignNum;
             blockCount = (blockCount + BUFFER_NUM - 1) / BUFFER_NUM * BUFFER_NUM;
             tileLength = blockCount * alignNum;
-            if(alignNum==0) {
+            if (alignNum == 0) {
                 return ge::GRAPH_FAILED;
             }
             lastTileLength = (tileNum == 1) ? length : (length % alignNum == 0 ? alignNum : length % alignNum);
@@ -84,8 +86,10 @@ static ge::graphStatus GetInputVal(const gert::Tensor* tensor, ge::DataType type
 {
     switch (type) {
         case ge::DT_FLOAT:
-            OP_CHECK_IF(tensor->GetData<float>()==nullptr, OP_LOGE("Range", "NULL Input,Please Check!"), return ge::GRAPH_FAILED);
-            val=*tensor->GetData<float>();
+            OP_CHECK_IF(
+                tensor->GetData<float>() == nullptr, OP_LOGE("Range", "NULL Input,Please Check!"),
+                return ge::GRAPH_FAILED);
+            val = *tensor->GetData<float>();
             break;
         default:
             return ge::GRAPH_FAILED;
@@ -139,7 +143,7 @@ static ge::graphStatus RangeTilingFunc(gert::TilingContext* context)
     }
 
     uint64_t ubSize;
-    uint32_t dataTypeSize = 4; //输出float
+    uint32_t dataTypeSize = 4; // 输出float
     uint32_t alignNum = BLOCK_SIZE / dataTypeSize;
     auto platformInfo = context->GetPlatformInfo();
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
@@ -147,7 +151,8 @@ static ge::graphStatus RangeTilingFunc(gert::TilingContext* context)
     auto coreNum = ascendcPlatform.GetCoreNum();
 
     RangeTilingData* tiling = context->GetTilingData<RangeTilingData>();
-    OP_CHECK_IF(memset_s(tiling, sizeof(RangeTilingData), 0, sizeof(RangeTilingData)) != EOK,
+    OP_CHECK_IF(
+        memset_s(tiling, sizeof(RangeTilingData), 0, sizeof(RangeTilingData)) != EOK,
         OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     auto tensorStart = context->GetInputTensor(startIdx);
@@ -156,7 +161,7 @@ static ge::graphStatus RangeTilingFunc(gert::TilingContext* context)
     if (tensorStart == nullptr || tensorEnd == nullptr || tensorStep == nullptr) {
         return ge::GRAPH_FAILED;
     }
-    
+
     float startVal = 0.0f, endVal = 0.0f, stepVal = 1.0f;
     const auto inputDataType_1 = context->GetInputDesc(startIdx)->GetDataType();
     const auto inputDataType_2 = context->GetInputDesc(endIdx)->GetDataType();
@@ -172,10 +177,11 @@ static ge::graphStatus RangeTilingFunc(gert::TilingContext* context)
     CheckNull(stepAbs);
     CheckNull(alignNum);
     int64_t totalLength = static_cast<int64_t>(std::ceil(diff / stepAbs));
-    uint32_t totalLengthAligned = (totalLength % alignNum == 0U) ? totalLength : ((totalLength + alignNum - 1) / alignNum) * alignNum;
+    uint32_t totalLengthAligned =
+        (totalLength % alignNum == 0U) ? totalLength : ((totalLength + alignNum - 1) / alignNum) * alignNum;
 
     ComputeTiling(totalLengthAligned, alignNum, coreNum, tiling);
-   
+
     tiling->dataTypeStart = inputDataType_1;
     tiling->dataTypeEnd = inputDataType_2;
     tiling->dataTypeStep = inputDataType_3;
@@ -183,19 +189,19 @@ static ge::graphStatus RangeTilingFunc(gert::TilingContext* context)
     tiling->totalLengthAligned = totalLengthAligned;
     context->SetBlockDim(coreNum);
 
-    size_t *currentWorkspace = context->GetWorkspaceSizes(1);
+    size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     if (currentWorkspace == nullptr) {
         return ge::GRAPH_FAILED;
     }
     currentWorkspace[0] = 0;
 
     uint64_t tilingKey = GET_TPL_TILING_KEY(inputDataType_1, inputDataType_2, inputDataType_3);
-    OP_CHECK_IF(context->SetTilingKey(tilingKey) != ge::GRAPH_SUCCESS,
-            OP_LOGE(context, "SetTilingKey failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        context->SetTilingKey(tilingKey) != ge::GRAPH_SUCCESS, OP_LOGE(context, "SetTilingKey failed"),
+        return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }
-
 
 static ge::graphStatus TilingParseForRange([[maybe_unused]] gert::TilingParseContext* context)
 {
@@ -205,6 +211,6 @@ static ge::graphStatus TilingParseForRange([[maybe_unused]] gert::TilingParseCon
 // tiling注册入口
 IMPL_OP_OPTILING(Range)
     .Tiling(RangeTilingFunc)
-    .TilingInputsDataDependency({0,1,2})
+    .TilingInputsDataDependency({0, 1, 2})
     .TilingParse<RangeCompileInfo>(TilingParseForRange);
 } // namespace optiling

@@ -1,4 +1,4 @@
- /**
+/**
  * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
@@ -7,8 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
- /**
+
+/**
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
  */
@@ -22,8 +22,8 @@
 namespace optiling {
 
 using Ops::Base::CeilDiv;
-using Ops::Base::FloorDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
@@ -87,8 +87,7 @@ static ge::graphStatus AcosV2TilingFunc(gert::TilingContext* context)
     uint64_t ubSize;
     int64_t coreNum;
     OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"),
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
         return ge::GRAPH_FAILED);
 
     // 2. Get shape and dtype info
@@ -96,13 +95,11 @@ static ge::graphStatus AcosV2TilingFunc(gert::TilingContext* context)
     ge::DataType dataType;
     OP_CHECK_IF(
         GetShapeAttrsInfo(context, totalLength, dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeAttrsInfo error"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     // 3. Get workspace size
     OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"),
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
         return ge::GRAPH_FAILED);
 
     // 4. Compute tiling parameters
@@ -110,8 +107,7 @@ static ge::graphStatus AcosV2TilingFunc(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
     OP_CHECK_IF(
         memset_s(tiling, sizeof(AcosV2TilingData), 0, sizeof(AcosV2TilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     tiling->totalLength = static_cast<uint32_t>(totalLength);
 
@@ -124,7 +120,7 @@ static ge::graphStatus AcosV2TilingFunc(gert::TilingContext* context)
     if (totalLength <= 0) {
         tiling->blockFactor = 0;
         tiling->blockTailFactor = 0;
-        tiling->tileLength = 1;  // safe non-zero value for kernel loop guard
+        tiling->tileLength = 1; // safe non-zero value for kernel loop guard
 
         context->SetBlockDim(1);
 
@@ -166,14 +162,14 @@ static ge::graphStatus AcosV2TilingFunc(gert::TilingContext* context)
 
     if (dataType == ge::DT_FLOAT) {
         // fp32: inQueue double-buf (2*4) + outQueue double-buf (2*4) + Acos API temp (4*4) = 32
-        bytesPerElement = static_cast<int64_t>(2 * DOUBLE_BUFFER * 4 + 4 * 4);  // 32
+        bytesPerElement = static_cast<int64_t>(2 * DOUBLE_BUFFER * 4 + 4 * 4); // 32
     } else if (dataType == ge::DT_FLOAT16) {
         // fp16: inQueue double-buf (2*2) + outQueue double-buf (2*2) +
         //       castBuf(4) + acosBuf(4) + Acos API temp on fp32 (4*4) = 32
-        bytesPerElement = static_cast<int64_t>(2 * DOUBLE_BUFFER * 2 + 2 * 4 + 4 * 4);  // 32
+        bytesPerElement = static_cast<int64_t>(2 * DOUBLE_BUFFER * 2 + 2 * 4 + 4 * 4); // 32
     } else {
         // bf16: same memory layout as fp16 (cast to fp32 for Acos)
-        bytesPerElement = static_cast<int64_t>(2 * DOUBLE_BUFFER * 2 + 2 * 4 + 4 * 4);  // 32
+        bytesPerElement = static_cast<int64_t>(2 * DOUBLE_BUFFER * 2 + 2 * 4 + 4 * 4); // 32
     }
 
     int64_t tileLength = FloorAlign(FloorDiv(ubCanUse, bytesPerElement), ubBlockSize);

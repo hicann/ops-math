@@ -21,7 +21,7 @@
 /*!
  * \file ger_v2_infer.cpp
  * \brief
-*/
+ */
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 
@@ -52,8 +52,8 @@ static ge::graphStatus InferShapeGerV2(gert::InferShapeContext* context)
     auto xSize = xShape->GetDim(IDX_0);
     auto ySize = yShape->GetDim(IDX_0);
     outShape->SetDimNum(OUT_DIMS);
-    outShape->SetDim(OUT_DIM_0,xSize);
-    outShape->SetDim(OUT_DIM_1,ySize);
+    outShape->SetDim(OUT_DIM_0, xSize);
+    outShape->SetDim(OUT_DIM_1, ySize);
 
     OP_LOGD(context->GetNodeName(), "End to do InferShapeGerV2");
     return GRAPH_SUCCESS;

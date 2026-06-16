@@ -26,13 +26,9 @@ using namespace op;
 #define ACLNN_MAX_SHAPE_RANK 8
 
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16
-};
+    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16};
 
-static bool IsDtypeSupported(DataType dtype)
-{
-    return CheckType(dtype, AICORE_DTYPE_SUPPORT_LIST);
-}
+static bool IsDtypeSupported(DataType dtype) { return CheckType(dtype, AICORE_DTYPE_SUPPORT_LIST); }
 
 static bool CheckNotNull(const aclTensor* x, const aclTensor* out)
 {
@@ -44,11 +40,12 @@ static bool CheckNotNull(const aclTensor* x, const aclTensor* out)
 static bool CheckDtypeValid(const aclTensor* x, const aclTensor* out)
 {
     OP_CHECK_DTYPE_NOT_MATCH(out, x->GetDataType(), return false);
-    OP_CHECK(IsDtypeSupported(x->GetDataType()),
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                     "FresnelCos dtype not supported: %d. Only FLOAT, FLOAT16, BFLOAT16.",
-                     static_cast<int>(x->GetDataType())),
-             return false);
+    OP_CHECK(
+        IsDtypeSupported(x->GetDataType()),
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "FresnelCos dtype not supported: %d. Only FLOAT, FLOAT16, BFLOAT16.",
+            static_cast<int>(x->GetDataType())),
+        return false);
     return true;
 }
 
@@ -56,27 +53,24 @@ static bool CheckShape(const aclTensor* x, const aclTensor* out)
 {
     OP_CHECK_MAX_DIM(x, ACLNN_MAX_SHAPE_RANK, return false);
     OP_CHECK_MAX_DIM(out, ACLNN_MAX_SHAPE_RANK, return false);
-    OP_CHECK(x->GetViewShape() == out->GetViewShape(),
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "FresnelCos: x and out shape must match."),
-             return false);
+    OP_CHECK(
+        x->GetViewShape() == out->GetViewShape(),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "FresnelCos: x and out shape must match."), return false);
     return true;
 }
 
 static aclnnStatus CheckParams(const aclTensor* x, const aclTensor* out)
 {
     CHECK_COND(CheckNotNull(x, out), ACLNN_ERR_PARAM_NULLPTR, "CheckNotNull failed");
-    CHECK_COND(CheckDtypeValid(x, out), ACLNN_ERR_PARAM_INVALID,
-               "CheckDtypeValid failed: x_dtype=%d, out_dtype=%d",
-               static_cast<int>(x->GetDataType()),
-               static_cast<int>(out->GetDataType()));
-    CHECK_COND(CheckShape(x, out), ACLNN_ERR_PARAM_INVALID,
-               "CheckShape failed");
+    CHECK_COND(
+        CheckDtypeValid(x, out), ACLNN_ERR_PARAM_INVALID, "CheckDtypeValid failed: x_dtype=%d, out_dtype=%d",
+        static_cast<int>(x->GetDataType()), static_cast<int>(out->GetDataType()));
+    CHECK_COND(CheckShape(x, out), ACLNN_ERR_PARAM_INVALID, "CheckShape failed");
     return ACLNN_SUCCESS;
 }
 
 extern "C" aclnnStatus aclnnFresnelCosGetWorkspaceSize(
-    const aclTensor* x, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+    const aclTensor* x, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnFresnelCos, DFX_IN(x), DFX_OUT(out));
 
@@ -107,8 +101,7 @@ extern "C" aclnnStatus aclnnFresnelCosGetWorkspaceSize(
 }
 
 extern "C" aclnnStatus aclnnFresnelCos(
-    void* workspace, uint64_t workspaceSize,
-    aclOpExecutor* executor, aclrtStream stream)
+    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnFresnelCos);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

@@ -34,4 +34,4 @@ static ge::graphStatus InferDataTypeSqrt(gert::InferDataTypeContext* context)
 
 IMPL_OP(Sqrt).InferDataType(InferDataTypeSqrt);
 
-};
+}; // namespace ops

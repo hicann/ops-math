@@ -58,10 +58,9 @@ void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr)
         ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
     for (int64_t i = 0; i < size; i++) {
-        LOG_PRINT("mean result[%ld] is: %d\n", i, resultData[i]);       // int
+        LOG_PRINT("mean result[%ld] is: %d\n", i, resultData[i]); // int
     }
 }
-
 
 int Init(int32_t deviceId, aclrtStream* stream)
 {
@@ -128,14 +127,14 @@ int main()
 
     aclTensor* selfA = nullptr;
     void* selfADeviceAddr = nullptr;
-    std::vector<int64_t> selfAShape = {8,3};
+    std::vector<int64_t> selfAShape = {8, 3};
     std::vector<DataType> selfAHostData(24, 1);
     ret = CreateAclTensor(selfAHostData, selfAShape, &selfADeviceAddr, aclDataType::ACL_INT16, &selfA);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     aclTensor* out = nullptr;
     void* outDeviceAddr = nullptr;
-    std::vector<int64_t> outShape = {8,3};
+    std::vector<int64_t> outShape = {8, 3};
     std::vector<DataType> outHostData(24, 0);
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_INT16, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -144,18 +143,22 @@ int main()
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
 
-    LOG_PRINT("Before GetWorkspaceSize: selfX=%p, selfY=%p,selfA=%p, out=%p\n", (void*)selfX, (void*)selfY,(void*)selfA, (void*)out);
-    LOG_PRINT("Before GetWorkspaceSize: selfXDeviceAddr=%p, selfYDeviceAddr=%p,selfADeviceAddr=%p, outDeviceAddr=%p\n",
-          selfXDeviceAddr, selfYDeviceAddr,selfADeviceAddr, outDeviceAddr);
+    LOG_PRINT(
+        "Before GetWorkspaceSize: selfX=%p, selfY=%p,selfA=%p, out=%p\n", (void*)selfX, (void*)selfY, (void*)selfA,
+        (void*)out);
+    LOG_PRINT(
+        "Before GetWorkspaceSize: selfXDeviceAddr=%p, selfYDeviceAddr=%p,selfADeviceAddr=%p, outDeviceAddr=%p\n",
+        selfXDeviceAddr, selfYDeviceAddr, selfADeviceAddr, outDeviceAddr);
     // 4. 调用aclnnAddExample第一段接口
-    
-    ret = aclnnGerV2GetWorkspaceSize(selfX, selfY,selfA,alpha, out, &workspaceSize, &executor);
-    LOG_PRINT("aclnnGerV2GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n",
-          ret, (unsigned long long)workspaceSize, (void*)executor);
-    
-    CHECK_RET(ret == ACL_SUCCESS,
-        LOG_PRINT("aclnnGerV2GetWorkspaceSize failed. ERROR: %d (%s)\n",
-                  ret, AscendErrStr().c_str());
+
+    ret = aclnnGerV2GetWorkspaceSize(selfX, selfY, selfA, alpha, out, &workspaceSize, &executor);
+    LOG_PRINT(
+        "aclnnGerV2GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n", ret,
+        (unsigned long long)workspaceSize, (void*)executor);
+
+    CHECK_RET(
+        ret == ACL_SUCCESS,
+        LOG_PRINT("aclnnGerV2GetWorkspaceSize failed. ERROR: %d (%s)\n", ret, AscendErrStr().c_str());
         return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
@@ -173,7 +176,7 @@ int main()
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
     // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
-    
+
     PrintOutResult(outShape, &outDeviceAddr);
 
     // 7. 释放aclTensor，需要根据具体API的接口定义修改

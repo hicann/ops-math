@@ -13,7 +13,6 @@
  * technically reviewed for functional accuracy and security
  */
 
-
 #include "aclnn_approximate_equal.h"
 #include "approximate_equal.h"
 
@@ -38,10 +37,7 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
     DataType::DT_BF16,
 };
 
-static bool IsDtypeSupported(DataType dtype)
-{
-    return CheckType(dtype, AICORE_DTYPE_SUPPORT_LIST);
-}
+static bool IsDtypeSupported(DataType dtype) { return CheckType(dtype, AICORE_DTYPE_SUPPORT_LIST); }
 
 static bool CheckNotNull(const aclTensor* x1, const aclTensor* x2, const aclTensor* y)
 {
@@ -55,21 +51,21 @@ static bool CheckDtypeValid(const aclTensor* x1, const aclTensor* x2, const aclT
 {
     // x1 dtype must be supported; x2 must match x1; y must be BOOL.
     if (!IsDtypeSupported(x1->GetDataType())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "ApproximateEqual: unsupported x1 dtype=%d (allowed: FLOAT / FLOAT16 / BF16).",
-                static_cast<int>(x1->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "ApproximateEqual: unsupported x1 dtype=%d (allowed: FLOAT / FLOAT16 / BF16).",
+            static_cast<int>(x1->GetDataType()));
         return false;
     }
     if (x1->GetDataType() != x2->GetDataType()) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "ApproximateEqual: x1 dtype (%d) != x2 dtype (%d).",
-                static_cast<int>(x1->GetDataType()), static_cast<int>(x2->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "ApproximateEqual: x1 dtype (%d) != x2 dtype (%d).",
+            static_cast<int>(x1->GetDataType()), static_cast<int>(x2->GetDataType()));
         return false;
     }
     if (y->GetDataType() != DataType::DT_BOOL) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "ApproximateEqual: y dtype must be BOOL, got %d.",
-                static_cast<int>(y->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "ApproximateEqual: y dtype must be BOOL, got %d.",
+            static_cast<int>(y->GetDataType()));
         return false;
     }
     return true;
@@ -77,8 +73,7 @@ static bool CheckDtypeValid(const aclTensor* x1, const aclTensor* x2, const aclT
 
 static bool CheckFormat(const aclTensor* x1, const aclTensor* x2, const aclTensor* y)
 {
-    if (IsPrivateFormat(x1->GetStorageFormat()) ||
-        IsPrivateFormat(x2->GetStorageFormat()) ||
+    if (IsPrivateFormat(x1->GetStorageFormat()) || IsPrivateFormat(x2->GetStorageFormat()) ||
         IsPrivateFormat(y->GetStorageFormat())) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "ApproximateEqual: private formats not supported.");
         return false;
@@ -101,8 +96,8 @@ static bool CheckShape(const aclTensor* x1, const aclTensor* x2, const aclTensor
 static bool CheckTolerance(float tolerance)
 {
     if (std::isnan(tolerance) || std::isinf(tolerance) || tolerance < 0.0f) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "ApproximateEqual: tolerance=%f is illegal (must be finite and >=0).", tolerance);
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "ApproximateEqual: tolerance=%f is illegal (must be finite and >=0).", tolerance);
         return false;
     }
     return true;
@@ -113,20 +108,16 @@ static aclnnStatus CheckParams(const aclTensor* x1, const aclTensor* x2, const a
     if (!CheckNotNull(x1, x2, y)) {
         return ACLNN_ERR_PARAM_NULLPTR;
     }
-    if (!CheckDtypeValid(x1, x2, y) || !CheckFormat(x1, x2, y) ||
-        !CheckShape(x1, x2, y) || !CheckTolerance(tolerance)) {
+    if (!CheckDtypeValid(x1, x2, y) || !CheckFormat(x1, x2, y) || !CheckShape(x1, x2, y) ||
+        !CheckTolerance(tolerance)) {
         return ACLNN_ERR_PARAM_INVALID;
     }
     return ACLNN_SUCCESS;
 }
 
 extern "C" aclnnStatus aclnnApproximateEqualGetWorkspaceSize(
-    const aclTensor* x1,
-    const aclTensor* x2,
-    float            tolerance,
-    aclTensor*       y,
-    uint64_t*        workspaceSize,
-    aclOpExecutor**  executor)
+    const aclTensor* x1, const aclTensor* x2, float tolerance, aclTensor* y, uint64_t* workspaceSize,
+    aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnApproximateEqual, DFX_IN(x1, x2, tolerance), DFX_OUT(y));
 
@@ -148,8 +139,7 @@ extern "C" aclnnStatus aclnnApproximateEqualGetWorkspaceSize(
     auto x2Contiguous = l0op::Contiguous(x2, uniqueExecutor.get());
     CHECK_RET(x2Contiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    const aclTensor* opResult =
-        l0op::ApproximateEqual(x1Contiguous, x2Contiguous, tolerance, uniqueExecutor.get());
+    const aclTensor* opResult = l0op::ApproximateEqual(x1Contiguous, x2Contiguous, tolerance, uniqueExecutor.get());
     CHECK_RET(opResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     auto viewCopyResult = l0op::ViewCopy(opResult, y, uniqueExecutor.get());
@@ -161,10 +151,7 @@ extern "C" aclnnStatus aclnnApproximateEqualGetWorkspaceSize(
 }
 
 extern "C" aclnnStatus aclnnApproximateEqual(
-    void*          workspace,
-    uint64_t       workspaceSize,
-    aclOpExecutor* executor,
-    aclrtStream    stream)
+    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnApproximateEqual);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

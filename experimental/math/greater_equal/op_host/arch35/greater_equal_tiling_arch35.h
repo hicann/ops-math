@@ -22,8 +22,7 @@ using Ops::Base::TilingBaseClass;
 
 class GreaterEqualTiling : public TilingBaseClass {
 public:
-    explicit GreaterEqualTiling(gert::TilingContext* context) : TilingBaseClass(context)
-    {}
+    explicit GreaterEqualTiling(gert::TilingContext* context) : TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;

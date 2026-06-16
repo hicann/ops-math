@@ -26,7 +26,8 @@
 
 using namespace std;
 
-extern "C" __global__ __aicore__ void select_v2(GM_ADDR c, GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
+extern "C" __global__ __aicore__ void select_v2(
+    GM_ADDR c, GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
 
 class SelectV2Test : public testing::Test {
 protected:
@@ -37,10 +38,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./select_v2_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "select_v2_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "select_v2_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;

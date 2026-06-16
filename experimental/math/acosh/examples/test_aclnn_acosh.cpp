@@ -57,8 +57,8 @@ int Init(int32_t deviceId, aclrtStream* stream)
 
 template <typename T>
 int CreateAclTensor(
-    const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr,
-    aclDataType dataType, aclTensor** tensor)
+    const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr, aclDataType dataType,
+    aclTensor** tensor)
 {
     auto size = GetShapeSize(shape) * sizeof(T);
     auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -72,8 +72,8 @@ int CreateAclTensor(
     }
 
     *tensor = aclCreateTensor(
-        shape.data(), shape.size(), dataType, strides.data(), 0,
-        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), *deviceAddr);
+        shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
+        *deviceAddr);
     return 0;
 }
 
@@ -84,8 +84,10 @@ uint16_t FloatToFp16(float f)
     uint16_t sign = (x >> 31) & 0x1;
     int32_t exp = ((x >> 23) & 0xff) - 127 + 15;
     uint32_t mantissa = x & 0x7fffff;
-    if (exp <= 0) return sign << 15;
-    if (exp >= 31) return (sign << 15) | (0x1f << 10);
+    if (exp <= 0)
+        return sign << 15;
+    if (exp >= 31)
+        return (sign << 15) | (0x1f << 10);
     return (sign << 15) | (exp << 10) | (mantissa >> 13);
 }
 
@@ -95,13 +97,15 @@ float Fp16ToFloat(uint16_t h)
     uint32_t exp = (h >> 10) & 0x1f;
     uint32_t mantissa = h & 0x3ff;
     if (exp == 0) {
-        if (mantissa == 0) return sign ? -0.0f : 0.0f;
+        if (mantissa == 0)
+            return sign ? -0.0f : 0.0f;
         // denormal
         float val = mantissa / 1024.0f / 1024.0f;
         return sign ? -val : val;
     }
     if (exp == 31) {
-        if (mantissa == 0) return sign ? -INFINITY : INFINITY;
+        if (mantissa == 0)
+            return sign ? -INFINITY : INFINITY;
         return NAN;
     }
     float val = (1.0f + mantissa / 1024.0f) * std::pow(2.0f, (int)exp - 15);
@@ -124,7 +128,7 @@ int main()
     std::vector<float> selfHostDataFloat(totalNum);
     std::vector<float> expectedResult(totalNum);
     for (int64_t i = 0; i < totalNum; i++) {
-        float val = 1.0f + (float)i / totalNum * 9.0f;  // [1.0, 10.0)
+        float val = 1.0f + (float)i / totalNum * 9.0f; // [1.0, 10.0)
         selfHostDataFloat[i] = val;
         selfHostDataFp16[i] = FloatToFp16(val);
         expectedResult[i] = std::acosh(val);
@@ -147,8 +151,7 @@ int main()
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor = nullptr;
     ret = aclnnAcoshGetWorkspaceSize(selfTensor, outTensor, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("aclnnAcoshGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAcoshGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
@@ -166,8 +169,7 @@ int main()
     // 拷贝结果到 host
     std::vector<uint16_t> resultFp16(totalNum, 0);
     ret = aclrtMemcpy(
-        resultFp16.data(), totalNum * sizeof(uint16_t),
-        outDeviceAddr, totalNum * sizeof(uint16_t),
+        resultFp16.data(), totalNum * sizeof(uint16_t), outDeviceAddr, totalNum * sizeof(uint16_t),
         ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result failed. ERROR: %d\n", ret); return ret);
 
@@ -186,8 +188,9 @@ int main()
         } else if (absDiff <= 1e-3f || relDiff <= 1e-3f) {
             passCount++;
         } else {
-            LOG_PRINT("FAIL[%ld]: input=%.4f, expected=%.4f, result=%.4f, absDiff=%.6f, relDiff=%.6f\n",
-                      i, selfHostDataFloat[i], expected, result, absDiff, relDiff);
+            LOG_PRINT(
+                "FAIL[%ld]: input=%.4f, expected=%.4f, result=%.4f, absDiff=%.6f, relDiff=%.6f\n", i,
+                selfHostDataFloat[i], expected, result, absDiff, relDiff);
         }
     }
 

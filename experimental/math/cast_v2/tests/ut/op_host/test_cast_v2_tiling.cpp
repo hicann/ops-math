@@ -31,15 +31,9 @@ using namespace optiling;
 
 class CastV2Tiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "CastV2Tiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "CastV2Tiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "CastV2Tiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "CastV2Tiling TearDown " << endl; }
 };
 
 // TEST_F(CastV2Tiling, ascend9101_test_tiling_i32_f32_001)

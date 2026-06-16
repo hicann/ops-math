@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
+
 /**
  *
  * NOTE: Portions of this code were AI-generated and have been
@@ -39,25 +39,37 @@ public:
         this->Input("x")
             .ParamType(REQUIRED)
             .DataType({
-                ge::DT_FLOAT,    // fp32  - TilingKey=0（Group A）
-                ge::DT_FLOAT16,  // fp16  - TilingKey=1（Group A）
-                ge::DT_DOUBLE,   // fp64  - TilingKey=2（Group B，op_api 层 Host 端转换）
-                ge::DT_INT8,     // int8  - TilingKey=3（Group C）
-                ge::DT_INT16,    // int16 - TilingKey=4（Group C）
-                ge::DT_INT32,    // int32 - TilingKey=5（Group C）
-                ge::DT_INT64,    // int64 - TilingKey=6（Group C）
-                ge::DT_UINT8,    // uint8 - TilingKey=7（Group C）
-                ge::DT_BOOL,     // bool  - TilingKey=8（Group C）
+                ge::DT_FLOAT,   // fp32  - TilingKey=0（Group A）
+                ge::DT_FLOAT16, // fp16  - TilingKey=1（Group A）
+                ge::DT_DOUBLE,  // fp64  - TilingKey=2（Group B，op_api 层 Host 端转换）
+                ge::DT_INT8,    // int8  - TilingKey=3（Group C）
+                ge::DT_INT16,   // int16 - TilingKey=4（Group C）
+                ge::DT_INT32,   // int32 - TilingKey=5（Group C）
+                ge::DT_INT64,   // int64 - TilingKey=6（Group C）
+                ge::DT_UINT8,   // uint8 - TilingKey=7（Group C）
+                ge::DT_BOOL,    // bool  - TilingKey=8（Group C）
             })
             .Format({
-                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
             })
             .UnknownShapeFormat({
-                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
             })
             .AutoContiguous();
 
@@ -66,25 +78,37 @@ public:
         this->Output("y")
             .ParamType(REQUIRED)
             .DataType({
-                ge::DT_FLOAT,    // 对应 fp32 输入
-                ge::DT_FLOAT16,  // 对应 fp16 输入
-                ge::DT_DOUBLE,   // 对应 fp64 输入（DOUBLE 输出 DOUBLE）
-                ge::DT_FLOAT,    // 对应 int8 输入（输出 fp32）
-                ge::DT_FLOAT,    // 对应 int16 输入（输出 fp32）
-                ge::DT_FLOAT,    // 对应 int32 输入（输出 fp32）
-                ge::DT_FLOAT,    // 对应 int64 输入（输出 fp32）
-                ge::DT_FLOAT,    // 对应 uint8 输入（输出 fp32）
-                ge::DT_FLOAT,    // 对应 bool 输入（输出 fp32）
+                ge::DT_FLOAT,   // 对应 fp32 输入
+                ge::DT_FLOAT16, // 对应 fp16 输入
+                ge::DT_DOUBLE,  // 对应 fp64 输入（DOUBLE 输出 DOUBLE）
+                ge::DT_FLOAT,   // 对应 int8 输入（输出 fp32）
+                ge::DT_FLOAT,   // 对应 int16 输入（输出 fp32）
+                ge::DT_FLOAT,   // 对应 int32 输入（输出 fp32）
+                ge::DT_FLOAT,   // 对应 int64 输入（输出 fp32）
+                ge::DT_FLOAT,   // 对应 uint8 输入（输出 fp32）
+                ge::DT_FLOAT,   // 对应 bool 输入（输出 fp32）
             })
             .Format({
-                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
             })
             .UnknownShapeFormat({
-                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
+                ge::FORMAT_ND,
             })
             .AutoContiguous();
 
@@ -98,7 +122,6 @@ public:
             .PrecisionReduceFlag(true)
             .ExtendCfgInfo("opFile.value", "asin_with_agent");
         this->AICore().AddConfig("ascend910b", aicoreConfig910B);
-
     }
 };
 OP_ADD(AsinWithAgent);

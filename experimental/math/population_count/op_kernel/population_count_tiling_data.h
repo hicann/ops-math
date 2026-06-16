@@ -24,8 +24,8 @@
 #define POPULATION_COUNT_TILING_DATA_H_
 
 struct PopulationCountTilingData {
-    int64_t totalNum    = 0;   // Total element count of x
-    int64_t blockFactor = 0;   // Element count per AI core (aligned to ubBlockSize)
-    int64_t ubFactor    = 0;   // Element count per UB-loop tile
+    int64_t totalNum = 0;    // Total element count of x
+    int64_t blockFactor = 0; // Element count per AI core (aligned to ubBlockSize)
+    int64_t ubFactor = 0;    // Element count per UB-loop tile
 };
 #endif // POPULATION_COUNT_TILING_DATA_H_

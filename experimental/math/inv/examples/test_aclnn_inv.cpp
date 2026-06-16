@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
- /**
+/**
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
  */
@@ -27,14 +27,14 @@
 #include "acl/acl.h"
 #include "aclnn_inv.h"
 
-#define CHECK_ACL(expr)                                                     \
-    do {                                                                    \
-        auto _ret = (expr);                                                 \
-        if (_ret != ACL_SUCCESS) {                                          \
-            std::cerr << "ACL Error: " << #expr << " returned " << _ret    \
-                      << " at " << __FILE__ << ":" << __LINE__ << std::endl;\
-            goto cleanup;                                                   \
-        }                                                                   \
+#define CHECK_ACL(expr)                                                                                          \
+    do {                                                                                                         \
+        auto _ret = (expr);                                                                                      \
+        if (_ret != ACL_SUCCESS) {                                                                               \
+            std::cerr << "ACL Error: " << #expr << " returned " << _ret << " at " << __FILE__ << ":" << __LINE__ \
+                      << std::endl;                                                                              \
+            goto cleanup;                                                                                        \
+        }                                                                                                        \
     } while (0)
 
 // ============================================================================
@@ -48,8 +48,10 @@ static uint16_t floatToFp16(float val)
     uint32_t sign = (f >> 16) & 0x8000;
     int32_t exp = ((f >> 23) & 0xFF) - 127 + 15;
     uint32_t mant = (f >> 13) & 0x3FF;
-    if (exp <= 0) return static_cast<uint16_t>(sign);
-    if (exp >= 31) return static_cast<uint16_t>(sign | 0x7C00);
+    if (exp <= 0)
+        return static_cast<uint16_t>(sign);
+    if (exp >= 31)
+        return static_cast<uint16_t>(sign | 0x7C00);
     return static_cast<uint16_t>(sign | (exp << 10) | mant);
 }
 
@@ -101,16 +103,15 @@ static constexpr int64_t ROWS = 3;
 static constexpr int64_t COLS = 5;
 static constexpr int64_t ELEM_COUNT = ROWS * COLS;
 
-static const float INPUT_DATA[ELEM_COUNT] = {
-    -100.0f, -4.0f,   -1.0f,   -0.5f,   -0.01f,
-      0.01f,  0.25f,    0.5f,    1.0f,     2.0f,
-      4.0f,  10.0f,   100.0f, 1000.0f,   -0.001f
-};
+static const float INPUT_DATA[ELEM_COUNT] = {-100.0f, -4.0f, -1.0f, -0.5f, -0.01f, 0.01f,   0.25f,  0.5f,
+                                             1.0f,    2.0f,  4.0f,  10.0f, 100.0f, 1000.0f, -0.001f};
 
 static bool compareResult(float npuOut, float expected, float atol, float rtol)
 {
-    if (std::isnan(npuOut) && std::isnan(expected)) return true;
-    if (std::isinf(npuOut) && std::isinf(expected) && npuOut == expected) return true;
+    if (std::isnan(npuOut) && std::isnan(expected))
+        return true;
+    if (std::isinf(npuOut) && std::isinf(expected) && npuOut == expected)
+        return true;
     return std::fabs(npuOut - expected) <= atol + rtol * std::fabs(expected);
 }
 
@@ -132,13 +133,14 @@ static int runFp32(aclrtStream stream)
     CHECK_ACL(aclrtMemcpy(devIn, dataBytes, INPUT_DATA, dataBytes, ACL_MEMCPY_HOST_TO_DEVICE));
 
     selfT = aclCreateTensor(shape, 2, ACL_FLOAT, strides, 0, ACL_FORMAT_ND, shape, 2, devIn);
-    outT  = aclCreateTensor(shape, 2, ACL_FLOAT, strides, 0, ACL_FORMAT_ND, shape, 2, devOut);
+    outT = aclCreateTensor(shape, 2, ACL_FLOAT, strides, 0, ACL_FORMAT_ND, shape, 2, devOut);
 
     {
         uint64_t wsSize = 0;
-        aclOpExecutor *exec = nullptr;
+        aclOpExecutor* exec = nullptr;
         CHECK_ACL(aclnnInvGetWorkspaceSize(selfT, outT, &wsSize, &exec));
-        if (wsSize > 0) CHECK_ACL(aclrtMalloc(&ws, wsSize, ACL_MEM_MALLOC_HUGE_FIRST));
+        if (wsSize > 0)
+            CHECK_ACL(aclrtMalloc(&ws, wsSize, ACL_MEM_MALLOC_HUGE_FIRST));
         CHECK_ACL(aclnnInv(ws, wsSize, exec, stream));
         CHECK_ACL(aclrtSynchronizeStream(stream));
     }
@@ -158,20 +160,26 @@ static int runFp32(aclrtStream stream)
             float diff = std::fabs(hostOut[i] - expected);
             bool ok = compareResult(hostOut[i], expected, 1e-4f, 1e-4f);
             pass += ok ? 1 : 0;
-            printf("  [%d,%d] | %11.5f | %11.5f | %11.5f | %9.2e %s\n",
-                   (int)(i / COLS), (int)(i % COLS), INPUT_DATA[i], hostOut[i], expected, diff,
-                   ok ? "PASS" : "FAIL");
+            printf(
+                "  [%d,%d] | %11.5f | %11.5f | %11.5f | %9.2e %s\n", (int)(i / COLS), (int)(i % COLS), INPUT_DATA[i],
+                hostOut[i], expected, diff, ok ? "PASS" : "FAIL");
         }
-        std::cout << "Result: " << pass << "/" << ELEM_COUNT << (pass == ELEM_COUNT ? " -- ALL PASS" : " -- FAILED") << std::endl;
+        std::cout << "Result: " << pass << "/" << ELEM_COUNT << (pass == ELEM_COUNT ? " -- ALL PASS" : " -- FAILED")
+                  << std::endl;
         ret = (pass == ELEM_COUNT) ? 0 : 1;
     }
 
 cleanup:
-    if (selfT) aclDestroyTensor(selfT);
-    if (outT) aclDestroyTensor(outT);
-    if (ws) aclrtFree(ws);
-    if (devIn) aclrtFree(devIn);
-    if (devOut) aclrtFree(devOut);
+    if (selfT)
+        aclDestroyTensor(selfT);
+    if (outT)
+        aclDestroyTensor(outT);
+    if (ws)
+        aclrtFree(ws);
+    if (devIn)
+        aclrtFree(devIn);
+    if (devOut)
+        aclrtFree(devOut);
     return ret;
 }
 
@@ -184,7 +192,8 @@ static int runFp16(aclrtStream stream)
     const size_t dataBytes = ELEM_COUNT * sizeof(uint16_t);
 
     uint16_t hostIn[ELEM_COUNT];
-    for (int i = 0; i < ELEM_COUNT; ++i) hostIn[i] = floatToFp16(INPUT_DATA[i]);
+    for (int i = 0; i < ELEM_COUNT; ++i)
+        hostIn[i] = floatToFp16(INPUT_DATA[i]);
 
     void *devIn = nullptr, *devOut = nullptr, *ws = nullptr;
     aclTensor *selfT = nullptr, *outT = nullptr;
@@ -196,13 +205,14 @@ static int runFp16(aclrtStream stream)
     CHECK_ACL(aclrtMemcpy(devIn, dataBytes, hostIn, dataBytes, ACL_MEMCPY_HOST_TO_DEVICE));
 
     selfT = aclCreateTensor(shape, 2, ACL_FLOAT16, strides, 0, ACL_FORMAT_ND, shape, 2, devIn);
-    outT  = aclCreateTensor(shape, 2, ACL_FLOAT16, strides, 0, ACL_FORMAT_ND, shape, 2, devOut);
+    outT = aclCreateTensor(shape, 2, ACL_FLOAT16, strides, 0, ACL_FORMAT_ND, shape, 2, devOut);
 
     {
         uint64_t wsSize = 0;
-        aclOpExecutor *exec = nullptr;
+        aclOpExecutor* exec = nullptr;
         CHECK_ACL(aclnnInvGetWorkspaceSize(selfT, outT, &wsSize, &exec));
-        if (wsSize > 0) CHECK_ACL(aclrtMalloc(&ws, wsSize, ACL_MEM_MALLOC_HUGE_FIRST));
+        if (wsSize > 0)
+            CHECK_ACL(aclrtMalloc(&ws, wsSize, ACL_MEM_MALLOC_HUGE_FIRST));
         CHECK_ACL(aclnnInv(ws, wsSize, exec, stream));
         CHECK_ACL(aclrtSynchronizeStream(stream));
     }
@@ -224,20 +234,26 @@ static int runFp16(aclrtStream stream)
             float diff = std::fabs(npuOut - expected);
             bool ok = compareResult(npuOut, expected, 1e-3f, 1e-3f);
             pass += ok ? 1 : 0;
-            printf("  [%d,%d] | %11.5f | %11.5f | %11.5f | %9.2e %s\n",
-                   (int)(i / COLS), (int)(i % COLS), x, npuOut, expected, diff,
-                   ok ? "PASS" : "FAIL");
+            printf(
+                "  [%d,%d] | %11.5f | %11.5f | %11.5f | %9.2e %s\n", (int)(i / COLS), (int)(i % COLS), x, npuOut,
+                expected, diff, ok ? "PASS" : "FAIL");
         }
-        std::cout << "Result: " << pass << "/" << ELEM_COUNT << (pass == ELEM_COUNT ? " -- ALL PASS" : " -- FAILED") << std::endl;
+        std::cout << "Result: " << pass << "/" << ELEM_COUNT << (pass == ELEM_COUNT ? " -- ALL PASS" : " -- FAILED")
+                  << std::endl;
         ret = (pass == ELEM_COUNT) ? 0 : 1;
     }
 
 cleanup:
-    if (selfT) aclDestroyTensor(selfT);
-    if (outT) aclDestroyTensor(outT);
-    if (ws) aclrtFree(ws);
-    if (devIn) aclrtFree(devIn);
-    if (devOut) aclrtFree(devOut);
+    if (selfT)
+        aclDestroyTensor(selfT);
+    if (outT)
+        aclDestroyTensor(outT);
+    if (ws)
+        aclrtFree(ws);
+    if (devIn)
+        aclrtFree(devIn);
+    if (devOut)
+        aclrtFree(devOut);
     return ret;
 }
 
@@ -250,7 +266,8 @@ static int runBf16(aclrtStream stream)
     const size_t dataBytes = ELEM_COUNT * sizeof(uint16_t);
 
     uint16_t hostIn[ELEM_COUNT];
-    for (int i = 0; i < ELEM_COUNT; ++i) hostIn[i] = floatToBf16(INPUT_DATA[i]);
+    for (int i = 0; i < ELEM_COUNT; ++i)
+        hostIn[i] = floatToBf16(INPUT_DATA[i]);
 
     void *devIn = nullptr, *devOut = nullptr, *ws = nullptr;
     aclTensor *selfT = nullptr, *outT = nullptr;
@@ -262,13 +279,14 @@ static int runBf16(aclrtStream stream)
     CHECK_ACL(aclrtMemcpy(devIn, dataBytes, hostIn, dataBytes, ACL_MEMCPY_HOST_TO_DEVICE));
 
     selfT = aclCreateTensor(shape, 2, ACL_BF16, strides, 0, ACL_FORMAT_ND, shape, 2, devIn);
-    outT  = aclCreateTensor(shape, 2, ACL_BF16, strides, 0, ACL_FORMAT_ND, shape, 2, devOut);
+    outT = aclCreateTensor(shape, 2, ACL_BF16, strides, 0, ACL_FORMAT_ND, shape, 2, devOut);
 
     {
         uint64_t wsSize = 0;
-        aclOpExecutor *exec = nullptr;
+        aclOpExecutor* exec = nullptr;
         CHECK_ACL(aclnnInvGetWorkspaceSize(selfT, outT, &wsSize, &exec));
-        if (wsSize > 0) CHECK_ACL(aclrtMalloc(&ws, wsSize, ACL_MEM_MALLOC_HUGE_FIRST));
+        if (wsSize > 0)
+            CHECK_ACL(aclrtMalloc(&ws, wsSize, ACL_MEM_MALLOC_HUGE_FIRST));
         CHECK_ACL(aclnnInv(ws, wsSize, exec, stream));
         CHECK_ACL(aclrtSynchronizeStream(stream));
     }
@@ -290,20 +308,26 @@ static int runBf16(aclrtStream stream)
             float diff = std::fabs(npuOut - expected);
             bool ok = compareResult(npuOut, expected, 1e-3f, 1e-3f);
             pass += ok ? 1 : 0;
-            printf("  [%d,%d] | %11.5f | %11.5f | %11.5f | %9.2e %s\n",
-                   (int)(i / COLS), (int)(i % COLS), x, npuOut, expected, diff,
-                   ok ? "PASS" : "FAIL");
+            printf(
+                "  [%d,%d] | %11.5f | %11.5f | %11.5f | %9.2e %s\n", (int)(i / COLS), (int)(i % COLS), x, npuOut,
+                expected, diff, ok ? "PASS" : "FAIL");
         }
-        std::cout << "Result: " << pass << "/" << ELEM_COUNT << (pass == ELEM_COUNT ? " -- ALL PASS" : " -- FAILED") << std::endl;
+        std::cout << "Result: " << pass << "/" << ELEM_COUNT << (pass == ELEM_COUNT ? " -- ALL PASS" : " -- FAILED")
+                  << std::endl;
         ret = (pass == ELEM_COUNT) ? 0 : 1;
     }
 
 cleanup:
-    if (selfT) aclDestroyTensor(selfT);
-    if (outT) aclDestroyTensor(outT);
-    if (ws) aclrtFree(ws);
-    if (devIn) aclrtFree(devIn);
-    if (devOut) aclrtFree(devOut);
+    if (selfT)
+        aclDestroyTensor(selfT);
+    if (outT)
+        aclDestroyTensor(outT);
+    if (ws)
+        aclrtFree(ws);
+    if (devIn)
+        aclrtFree(devIn);
+    if (devOut)
+        aclrtFree(devOut);
     return ret;
 }
 
@@ -315,9 +339,18 @@ int main()
 {
     aclrtStream stream = nullptr;
 
-    if (aclInit(nullptr) != ACL_SUCCESS) { std::cerr << "aclInit failed" << std::endl; return 1; }
-    if (aclrtSetDevice(0) != ACL_SUCCESS) { std::cerr << "aclrtSetDevice failed" << std::endl; return 1; }
-    if (aclrtCreateStream(&stream) != ACL_SUCCESS) { std::cerr << "aclrtCreateStream failed" << std::endl; return 1; }
+    if (aclInit(nullptr) != ACL_SUCCESS) {
+        std::cerr << "aclInit failed" << std::endl;
+        return 1;
+    }
+    if (aclrtSetDevice(0) != ACL_SUCCESS) {
+        std::cerr << "aclrtSetDevice failed" << std::endl;
+        return 1;
+    }
+    if (aclrtCreateStream(&stream) != ACL_SUCCESS) {
+        std::cerr << "aclrtCreateStream failed" << std::endl;
+        return 1;
+    }
 
     int failures = 0;
     failures += runFp32(stream);

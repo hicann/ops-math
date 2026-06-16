@@ -25,15 +25,9 @@ using namespace std;
 
 class l2_remainder_tensor_tensor_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "remainder_tensor_tensor_test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "remainder_tensor_tensor_test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "remainder_tensor_tensor_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "remainder_tensor_tensor_test TearDown" << std::endl; }
 
     void test_run(
         vector<int64_t> selfDims, aclDataType selfDtype, aclFormat selfFormat, vector<int64_t> selfRange,

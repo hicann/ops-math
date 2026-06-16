@@ -11,12 +11,11 @@
 /*!
  * \file erf.cpp
  * \brief
-*/
+ */
 
 #include "erf.h"
 
-enum class ErfTilingKey : uint32_t
-{
+enum class ErfTilingKey : uint32_t {
     TILING_KEY_EXAMPLE_ZERO = 0,
     TILING_KEY_EXAMPLE_ONE = 1,
 };
@@ -26,17 +25,18 @@ __global__ __aicore__ void erf(GM_ADDR self, GM_ADDR out, GM_ADDR workspace, GM_
     REGISTER_TILING_DEFAULT(ErfTilingData);
     GET_TILING_DATA_WITH_STRUCT(ErfTilingData, tilingData, tiling);
     AscendC::TPipe pipe;
-    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY); 
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     if constexpr (schMode == static_cast<uint32_t>(ErfTilingKey::TILING_KEY_EXAMPLE_ONE)) {
-        MyErf::KernelErf<DTYPE_SELF,DTYPE_OUT> op; 
-        op.Init(self, out,
-                tilingData.bigCoreDataNum, tilingData.finalBigTileNum, tilingData.tileDataNum, tilingData.bigTailDataNum, 
-                tilingData.smallCoreDataNum, tilingData.finalSmallTileNum, tilingData.smallTailDataNum, 
-                &pipe);      // 算子kernel实例初始化
+        MyErf::KernelErf<DTYPE_SELF, DTYPE_OUT> op;
+        op.Init(
+            self, out, tilingData.bigCoreDataNum, tilingData.finalBigTileNum, tilingData.tileDataNum,
+            tilingData.bigTailDataNum, tilingData.smallCoreDataNum, tilingData.finalSmallTileNum,
+            tilingData.smallTailDataNum,
+            &pipe);   // 算子kernel实例初始化
         op.Process(); // 算子kernel实例执行
     }
     if constexpr (schMode == static_cast<uint32_t>(ErfTilingKey::TILING_KEY_EXAMPLE_ZERO)) {
-        MyErf::KernelErf_single_core<DTYPE_SELF,DTYPE_OUT> op; 
+        MyErf::KernelErf_single_core<DTYPE_SELF, DTYPE_OUT> op;
         op.Init(self, out, tilingData.tileDataNum, tilingData.bigTailDataNum, &pipe);
     }
 }

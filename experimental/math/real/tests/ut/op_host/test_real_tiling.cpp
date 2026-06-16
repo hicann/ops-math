@@ -15,18 +15,15 @@
 #include "tiling_case_executor.h"
 
 class RealTiling : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "RealTiling SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() { std::cout << "RealTiling SetUp" << std::endl; }
 
-  static void TearDownTestCase() {
-    std::cout << "RealTiling TearDown" << std::endl;
-  }
+    static void TearDownTestCase() { std::cout << "RealTiling TearDown" << std::endl; }
 };
 
 // Test case for complex32 -> float16
-TEST_F(RealTiling, test_real_complex32) {
+TEST_F(RealTiling, test_real_complex32)
+{
     RealCompileInfo compileInfo = {8, 262144};
     gert::TilingContextPara tilingContextPara(
         "Real",
@@ -47,7 +44,8 @@ TEST_F(RealTiling, test_real_complex32) {
 }
 
 // Test case for complex64 -> float
-TEST_F(RealTiling, test_real_complex64) {
+TEST_F(RealTiling, test_real_complex64)
+{
     RealCompileInfo compileInfo = {8, 262144};
     gert::TilingContextPara tilingContextPara(
         "Real",
@@ -65,7 +63,8 @@ TEST_F(RealTiling, test_real_complex64) {
 }
 
 // Test case for float16 -> float16 (identity)
-TEST_F(RealTiling, test_real_float16) {
+TEST_F(RealTiling, test_real_float16)
+{
     RealCompileInfo compileInfo = {8, 262144};
     gert::TilingContextPara tilingContextPara(
         "Real",
@@ -86,7 +85,8 @@ TEST_F(RealTiling, test_real_float16) {
 }
 
 // Test case for float -> float (identity)
-TEST_F(RealTiling, test_real_float) {
+TEST_F(RealTiling, test_real_float)
+{
     RealCompileInfo compileInfo = {8, 262144};
     gert::TilingContextPara tilingContextPara(
         "Real",
@@ -107,7 +107,8 @@ TEST_F(RealTiling, test_real_float) {
 }
 
 // Test case with larger shape (multi-core scenario)
-TEST_F(RealTiling, test_real_complex64_large) {
+TEST_F(RealTiling, test_real_complex64_large)
+{
     RealCompileInfo compileInfo = {8, 262144};
     gert::TilingContextPara tilingContextPara(
         "Real",
@@ -128,7 +129,8 @@ TEST_F(RealTiling, test_real_complex64_large) {
 }
 
 // Test case for small shape (< 32B aligned, single core)
-TEST_F(RealTiling, test_real_complex32_small) {
+TEST_F(RealTiling, test_real_complex32_small)
+{
     RealCompileInfo compileInfo = {8, 262144};
     gert::TilingContextPara tilingContextPara(
         "Real",

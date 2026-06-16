@@ -71,8 +71,8 @@ private:
 
 private:
     TPipe pipe;
-    TQue<QuePosition::VECIN, BUFFER_NUM>  inputQueueX;
-    TQue<QuePosition::VECIN, BUFFER_NUM>  inputQueueDy;
+    TQue<QuePosition::VECIN, BUFFER_NUM> inputQueueX;
+    TQue<QuePosition::VECIN, BUFFER_NUM> inputQueueDy;
     TQue<QuePosition::VECOUT, BUFFER_NUM> outputQueueDx;
 
     // 中间计算临时 buffer（非流水，TBuf）
@@ -88,37 +88,37 @@ private:
     GlobalTensor<T> outputGMDx;
 
     int64_t blockLength_ = 0;
-    int64_t ubLength_    = 0;
+    int64_t ubLength_ = 0;
 };
 
 template <typename T, int BUFFER_MODE>
 __aicore__ inline void AtanGrad<T, BUFFER_MODE>::Init(
     GM_ADDR x, GM_ADDR dy, GM_ADDR dx, const AtanGradTilingData* tilingData)
 {
-    int64_t blockIdx    = AscendC::GetBlockIdx();
+    int64_t blockIdx = AscendC::GetBlockIdx();
     int64_t remainderLength = tilingData->totalNum - tilingData->blockFactor * blockIdx;
     blockLength_ = (remainderLength > tilingData->blockFactor) ? tilingData->blockFactor : remainderLength;
-    ubLength_    = tilingData->ubFactor;
+    ubLength_ = tilingData->ubFactor;
 
-    inputGMX.SetGlobalBuffer((__gm__ T*)x   + tilingData->blockFactor * blockIdx, blockLength_);
+    inputGMX.SetGlobalBuffer((__gm__ T*)x + tilingData->blockFactor * blockIdx, blockLength_);
     inputGMDy.SetGlobalBuffer((__gm__ T*)dy + tilingData->blockFactor * blockIdx, blockLength_);
     outputGMDx.SetGlobalBuffer((__gm__ T*)dx + tilingData->blockFactor * blockIdx, blockLength_);
 
-    pipe.InitBuffer(inputQueueX,   BUFFER_NUM, ubLength_ * sizeof(T));
-    pipe.InitBuffer(inputQueueDy,  BUFFER_NUM, ubLength_ * sizeof(T));
+    pipe.InitBuffer(inputQueueX, BUFFER_NUM, ubLength_ * sizeof(T));
+    pipe.InitBuffer(inputQueueDy, BUFFER_NUM, ubLength_ * sizeof(T));
     pipe.InitBuffer(outputQueueDx, BUFFER_NUM, ubLength_ * sizeof(T));
 
     if constexpr (std::is_same_v<T, float>) {
         // fp32 路径：1 个 tmp TBuf（Div 方案不需要额外 buffer）
         pipe.InitBuffer(tmpBuf, ubLength_ * sizeof(float));
         // xFp32Buf/dyFp32Buf/dxFp32Buf 在 fp32 路径不使用，初始化为 0 大小避免未初始化读
-        pipe.InitBuffer(xFp32Buf,  0);
+        pipe.InitBuffer(xFp32Buf, 0);
         pipe.InitBuffer(dyFp32Buf, 0);
         pipe.InitBuffer(dxFp32Buf, 0);
     } else {
         // fp16 / bf16 升精度路径：4 个 fp32 TBuf（xFp32, dyFp32, tmp, dxFp32）
-        pipe.InitBuffer(tmpBuf,    ubLength_ * sizeof(float));
-        pipe.InitBuffer(xFp32Buf,  ubLength_ * sizeof(float));
+        pipe.InitBuffer(tmpBuf, ubLength_ * sizeof(float));
+        pipe.InitBuffer(xFp32Buf, ubLength_ * sizeof(float));
         pipe.InitBuffer(dyFp32Buf, ubLength_ * sizeof(float));
         pipe.InitBuffer(dxFp32Buf, ubLength_ * sizeof(float));
     }
@@ -127,19 +127,19 @@ __aicore__ inline void AtanGrad<T, BUFFER_MODE>::Init(
 template <typename T, int BUFFER_MODE>
 __aicore__ inline void AtanGrad<T, BUFFER_MODE>::CopyIn(int64_t progress, int64_t currentNum)
 {
-    LocalTensor<T> xLocal  = inputQueueX.template AllocTensor<T>();
+    LocalTensor<T> xLocal = inputQueueX.template AllocTensor<T>();
     LocalTensor<T> dyLocal = inputQueueDy.template AllocTensor<T>();
 
     // 使用 DataCopyExtParams（blockLen 为 uint32_t，支持大于 65535 字节的搬运）
     // DataCopyParams.blockLen 仅为 uint16_t（最大 65535），当 ubFactor*sizeof(T) > 65535 时会溢出
     DataCopyExtParams copyParams;
     copyParams.blockCount = 1;
-    copyParams.blockLen   = static_cast<uint32_t>(currentNum * sizeof(T));
-    copyParams.srcStride  = 0;
-    copyParams.dstStride  = 0;
-    copyParams.rsv        = 0;
+    copyParams.blockLen = static_cast<uint32_t>(currentNum * sizeof(T));
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
+    copyParams.rsv = 0;
 
-    DataCopyPad(xLocal,  inputGMX[progress  * ubLength_], copyParams, {false, 0, 0, static_cast<T>(0)});
+    DataCopyPad(xLocal, inputGMX[progress * ubLength_], copyParams, {false, 0, 0, static_cast<T>(0)});
     DataCopyPad(dyLocal, inputGMDy[progress * ubLength_], copyParams, {false, 0, 0, static_cast<T>(0)});
 
     inputQueueX.EnQue(xLocal);
@@ -154,10 +154,10 @@ __aicore__ inline void AtanGrad<T, BUFFER_MODE>::CopyOut(int64_t progress, int64
     // 使用 DataCopyExtParams（blockLen 为 uint32_t，支持大于 65535 字节的搬运）
     DataCopyExtParams copyParams;
     copyParams.blockCount = 1;
-    copyParams.blockLen   = static_cast<uint32_t>(currentNum * sizeof(T));
-    copyParams.srcStride  = 0;
-    copyParams.dstStride  = 0;
-    copyParams.rsv        = 0;
+    copyParams.blockLen = static_cast<uint32_t>(currentNum * sizeof(T));
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
+    copyParams.rsv = 0;
 
     DataCopyPad(outputGMDx[progress * ubLength_], dxLocal, copyParams);
     outputQueueDx.FreeTensor(dxLocal);
@@ -167,10 +167,10 @@ __aicore__ inline void AtanGrad<T, BUFFER_MODE>::CopyOut(int64_t progress, int64
 template <typename T, int BUFFER_MODE>
 __aicore__ inline void AtanGrad<T, BUFFER_MODE>::Compute(int64_t currentNum)
 {
-    LocalTensor<T> xLocal  = inputQueueX.template DeQue<T>();
+    LocalTensor<T> xLocal = inputQueueX.template DeQue<T>();
     LocalTensor<T> dyLocal = inputQueueDy.template DeQue<T>();
     LocalTensor<T> dxLocal = outputQueueDx.template AllocTensor<T>();
-    LocalTensor<T> tmp     = tmpBuf.template Get<T>();
+    LocalTensor<T> tmp = tmpBuf.template Get<T>();
 
     // 步骤一：tmp = x * x
     Mul(tmp, xLocal, xLocal, static_cast<uint64_t>(currentNum));
@@ -189,26 +189,26 @@ __aicore__ inline void AtanGrad<T, BUFFER_MODE>::Compute(int64_t currentNum)
 template <typename T, int BUFFER_MODE>
 __aicore__ inline void AtanGrad<T, BUFFER_MODE>::ComputeUpcast(int64_t currentNum)
 {
-    LocalTensor<T> xLocal  = inputQueueX.template DeQue<T>();
+    LocalTensor<T> xLocal = inputQueueX.template DeQue<T>();
     LocalTensor<T> dyLocal = inputQueueDy.template DeQue<T>();
     LocalTensor<T> dxLocal = outputQueueDx.template AllocTensor<T>();
 
-    LocalTensor<float> xFp32  = xFp32Buf.template Get<float>();
+    LocalTensor<float> xFp32 = xFp32Buf.template Get<float>();
     LocalTensor<float> dyFp32 = dyFp32Buf.template Get<float>();
-    LocalTensor<float> tmp    = tmpBuf.template Get<float>();
+    LocalTensor<float> tmp = tmpBuf.template Get<float>();
     LocalTensor<float> dxFp32 = dxFp32Buf.template Get<float>();
 
     uint64_t count = static_cast<uint64_t>(currentNum);
 
     // T -> fp32 升精度（fp16/bf16 均用 CAST_NONE，避免舍入误差）
-    Cast(xFp32,  xLocal,  RoundMode::CAST_NONE, count);
+    Cast(xFp32, xLocal, RoundMode::CAST_NONE, count);
     Cast(dyFp32, dyLocal, RoundMode::CAST_NONE, count);
 
     // 四步计算（fp32 精度）
-    Mul(tmp, xFp32, xFp32, count);                   // tmp = x*x
-    Adds(tmp, tmp, 1.0f, count);                      // tmp = 1 + x*x
+    Mul(tmp, xFp32, xFp32, count); // tmp = x*x
+    Adds(tmp, tmp, 1.0f, count);   // tmp = 1 + x*x
     // 使用 Div 确保精度，避免 Reciprocal+Mul 的累积误差
-    Div(dxFp32, dyFp32, tmp, count);                  // dxFp32 = dy / (1+x*x)
+    Div(dxFp32, dyFp32, tmp, count); // dxFp32 = dy / (1+x*x)
 
     // fp32 -> T 降精度（CAST_RINT 银行家舍入）
     Cast(dxLocal, dxFp32, RoundMode::CAST_RINT, count);

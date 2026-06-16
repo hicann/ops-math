@@ -26,7 +26,8 @@
 
 using namespace std;
 
-extern "C" __global__ __aicore__ void floor_div(GM_ADDR c, GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
+extern "C" __global__ __aicore__ void floor_div(
+    GM_ADDR c, GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
 
 class FloorDivTest : public testing::Test {
 protected:
@@ -38,10 +39,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./floor_div_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "floor_div_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "floor_div_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;

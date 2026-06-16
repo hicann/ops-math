@@ -9,11 +9,11 @@
  */
 
 /**
-* 我们正常的版权申明，下面是我们的备注
-*
-* NOTE: Portions of this code were AI-generated and have been
-* technically reviewed for functional accuracy and security
-*/
+ * 我们正常的版权申明，下面是我们的备注
+ *
+ * NOTE: Portions of this code were AI-generated and have been
+ * technically reviewed for functional accuracy and security
+ */
 
 /*!
  * \file reduce_nansum_ar_fullload.h
@@ -62,7 +62,7 @@ private:
     TBuf<QuePosition::VECCALC> zeroBuf;
     TBuf<QuePosition::VECCALC> cleanBuf;
     TBuf<QuePosition::VECCALC> tmpBuf;
-    TBuf<QuePosition::VECCALC> castBuf;  // fp16/bf16 -> fp32 转换
+    TBuf<QuePosition::VECCALC> castBuf; // fp16/bf16 -> fp32 转换
 
     GlobalTensor<T> inputGM;
     GlobalTensor<T> outputGM;
@@ -89,12 +89,11 @@ private:
     int64_t reduceDimCount_ = 0;
     int64_t reduceDimSizes_[8] = {0};
     int64_t reduceGmStrides_[8] = {0};
-    int64_t outerReduceDimCount_ = 0;  // 外层归约维度数
+    int64_t outerReduceDimCount_ = 0; // 外层归约维度数
 };
 
 template <typename T>
-__aicore__ inline void ReduceNansumArFullload<T>::Init(GM_ADDR x, GM_ADDR y,
-                                                        const ReduceNansumTilingData* tilingData)
+__aicore__ inline void ReduceNansumArFullload<T>::Init(GM_ADDR x, GM_ADDR y, const ReduceNansumTilingData* tilingData)
 {
     a1Count_ = tilingData->a1Count;
     rCount_ = tilingData->rCount;
@@ -154,7 +153,7 @@ __aicore__ inline void ReduceNansumArFullload<T>::Init(GM_ADDR x, GM_ADDR y,
         for (int64_t d = 0; d < reduceDimCount_; d++) {
             maxGmOffset += (reduceDimSizes_[d] - 1) * reduceGmStrides_[d];
         }
-        maxGmOffset += 1;  // A0=1 for AR template
+        maxGmOffset += 1; // A0=1 for AR template
         inputGmSize = maxGmOffset;
     }
     inputGM.SetGlobalBuffer((__gm__ T*)x, inputGmSize);
@@ -169,7 +168,8 @@ __aicore__ inline void ReduceNansumArFullload<T>::Init(GM_ADDR x, GM_ADDR y,
         int64_t computeTypeSize = static_cast<int64_t>(sizeof(float));
         // 对齐到 256 字节（Compare API 要求）
         int64_t alignedElems = ((innerBlockElems * computeTypeSize + 255) / 256) * 256 / computeTypeSize;
-        if (alignedElems < 64) alignedElems = 64;  // 最小 64 个 fp32 元素
+        if (alignedElems < 64)
+            alignedElems = 64; // 最小 64 个 fp32 元素
         ubBlockElems = alignedElems;
     }
 
@@ -206,11 +206,7 @@ __aicore__ inline void ReduceNansumArFullload<T>::CopyIn(int64_t rowIdx)
         Duplicate(xLocal, static_cast<T>(0), static_cast<uint32_t>(rLengthAlign_));
     }
 
-
-
 #endif
-
-
 
     DataCopyParams copyParams;
     // 连续行：标准 copy（非连续走 ProcessStridedRow）
@@ -239,7 +235,8 @@ __aicore__ inline void ReduceNansumArFullload<T>::Compute(int64_t rowIdx)
 
     // Step 0: 清零 mask buffer
     int64_t maskInt16Count = ((rLengthAlign_ / 8 + 31) / 32) * 32 / 2;
-    if (maskInt16Count < 16) maskInt16Count = 16;
+    if (maskInt16Count < 16)
+        maskInt16Count = 16;
     LocalTensor<int16_t> maskInt16 = maskBuf.Get<int16_t>();
     Duplicate(maskInt16, static_cast<int16_t>(0), static_cast<uint32_t>(maskInt16Count));
 
@@ -301,15 +298,14 @@ __aicore__ inline void ReduceNansumArFullload<T>::ProcessStridedRow(int64_t glob
     // 计算对齐后的块大小（与 Init 中一致）
     int64_t computeTypeSize = static_cast<int64_t>(sizeof(float));
     int64_t alignedElems = ((innerBlockElems * computeTypeSize + 255) / 256) * 256 / computeTypeSize;
-    if (alignedElems < 64) alignedElems = 64;
+    if (alignedElems < 64)
+        alignedElems = 64;
 
     // 全局累加器（复用 outQueueY 的 buffer）
     LocalTensor<T> yLocal = outQueueY.template AllocTensor<T>();
     LocalTensor<float> yFloat = yLocal.template ReinterpretCast<float>();
     constexpr uint32_t SCALAR_ALIGN = 8;
     Duplicate(yFloat, static_cast<float>(0.0f), SCALAR_ALIGN);
-
-
 
     for (int64_t blk = 0; blk < copyBlockCount_; blk++) {
         // 通过外层归约维度坐标计算正确的 GM 偏移
@@ -329,8 +325,6 @@ __aicore__ inline void ReduceNansumArFullload<T>::ProcessStridedRow(int64_t glob
         } else {
             Duplicate(xLocal, static_cast<T>(0), static_cast<uint32_t>(alignedElems));
         }
-
-
 
         DataCopyParams copyParams;
         copyParams.blockCount = 1;
@@ -352,7 +346,8 @@ __aicore__ inline void ReduceNansumArFullload<T>::ProcessStridedRow(int64_t glob
 
         // 清零 mask
         int64_t maskInt16Count = ((alignedElems / 8 + 31) / 32) * 32 / 2;
-        if (maskInt16Count < 16) maskInt16Count = 16;
+        if (maskInt16Count < 16)
+            maskInt16Count = 16;
         LocalTensor<int16_t> maskInt16 = maskBuf.Get<int16_t>();
         Duplicate(maskInt16, static_cast<int16_t>(0), static_cast<uint32_t>(maskInt16Count));
         Duplicate(zeroLocal, static_cast<float>(0.0f), count);
@@ -372,12 +367,8 @@ __aicore__ inline void ReduceNansumArFullload<T>::ProcessStridedRow(int64_t glob
         LocalTensor<float> blockResult = zeroBuf.Get<float>();
         ReduceSum(blockResult, cleanLocal, tmpLocal, static_cast<uint32_t>(innerBlockElems));
 
-
-
         // 累加到全局结果
         Add(yFloat, yFloat, blockResult, SCALAR_ALIGN);
-
-
 
         inQueueX.FreeTensor(xLocal);
     }
@@ -387,14 +378,10 @@ __aicore__ inline void ReduceNansumArFullload<T>::ProcessStridedRow(int64_t glob
         LocalTensor<float> tmpResult = zeroBuf.Get<float>();
         Duplicate(tmpResult, static_cast<float>(0.0f), SCALAR_ALIGN);
 
-
         DataCopy(tmpResult, yFloat, SCALAR_ALIGN);
-
 
         LocalTensor<T> yTyped = yLocal;
         Cast(yTyped, tmpResult, RoundMode::CAST_ROUND, SCALAR_ALIGN);
-
-
     }
 
     // CopyOut
@@ -430,4 +417,3 @@ __aicore__ inline void ReduceNansumArFullload<T>::Process()
 }
 
 } // namespace NsReduceNansum
-

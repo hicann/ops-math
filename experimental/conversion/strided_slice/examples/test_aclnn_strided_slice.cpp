@@ -52,7 +52,7 @@ void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr)
     for (int64_t i = 0; i < 120; i++) {
         LOG_PRINT("mean result[%ld] is: %d\n", i, resultData[i]);
     }
-}                                                                                                                                                                                                                    
+}
 int Init(int32_t deviceId, aclrtStream* stream)
 {
     // 固定写法，初始化
@@ -101,9 +101,9 @@ int main()
     aclTensor* selfX = nullptr;
     void* selfXDeviceAddr = nullptr;
     std::vector<int64_t> selfXShape = {40};
-    std::vector<int32_t> selfXHostData={
-        1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,
-        21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,
+    std::vector<int32_t> selfXHostData = {
+        1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+        21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
     };
     ret = CreateAclTensor(selfXHostData, selfXShape, &selfXDeviceAddr, aclDataType::ACL_INT32, &selfX);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -117,14 +117,15 @@ int main()
     // 3. 调用CANN算子库API，需要修改为具体的Api名称
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
-    int64_t start1 =0;
+    int64_t start1 = 0;
     int64_t start2 = 2;
     int64_t end1 = 1;
     int64_t end2 = 39;
     int64_t stride1 = 1;
     int64_t stride2 = 3;
     // 4. 调用aclnnStridedSlice第一段接口
-    ret = aclnnStridedSliceGetWorkspaceSize(selfX,start1,start2,end1,end2,stride1,stride2,out, &workspaceSize, &executor);
+    ret = aclnnStridedSliceGetWorkspaceSize(
+        selfX, start1, start2, end1, end2, stride1, stride2, out, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnStridedSliceGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 根据第一段接口计算出的workspaceSize申请device内存

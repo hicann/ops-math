@@ -36,10 +36,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./real_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "real_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "real_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;
@@ -88,12 +85,12 @@ TEST_F(RealTest, test_case_complex32)
     tilingData->bigCoreDataNum = 0;
     tilingData->bigCoreLoopNum = 0;
     tilingData->bigCoreTailDataNum = 0;
-    tilingData->tilingKey = 1;  // COMPLEX32_MODE
-    tilingData->useNonInplace = 1;  // 32 elements: 32*2*2=128 < 256, non-inplace
+    tilingData->tilingKey = 1;     // COMPLEX32_MODE
+    tilingData->useNonInplace = 1; // 32 elements: 32*2*2=128 < 256, non-inplace
 
     ICPU_SET_TILING_KEY(tilingData->tilingKey);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
-    using RealFuncType = void(*)(GM_ADDR, GM_ADDR, GM_ADDR, GM_ADDR);
+    using RealFuncType = void (*)(GM_ADDR, GM_ADDR, GM_ADDR, GM_ADDR);
     RealFuncType func = reinterpret_cast<RealFuncType>(::real);
     ICPU_RUN_KF(func, blockDim, x, y, workspace, (uint8_t*)(tilingData));
 
@@ -141,11 +138,11 @@ TEST_F(RealTest, test_case_complex64)
     tilingData->bigCoreDataNum = 0;
     tilingData->bigCoreLoopNum = 0;
     tilingData->bigCoreTailDataNum = 0;
-    tilingData->tilingKey = 2;  // COMPLEX64_MODE
+    tilingData->tilingKey = 2; // COMPLEX64_MODE
 
     ICPU_SET_TILING_KEY(tilingData->tilingKey);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
-    using RealFuncType = void(*)(GM_ADDR, GM_ADDR, GM_ADDR, GM_ADDR);
+    using RealFuncType = void (*)(GM_ADDR, GM_ADDR, GM_ADDR, GM_ADDR);
     RealFuncType func = reinterpret_cast<RealFuncType>(::real);
     ICPU_RUN_KF(func, blockDim, x, y, workspace, (uint8_t*)(tilingData));
 
@@ -193,11 +190,11 @@ TEST_F(RealTest, test_case_float16)
     tilingData->bigCoreDataNum = 0;
     tilingData->bigCoreLoopNum = 0;
     tilingData->bigCoreTailDataNum = 0;
-    tilingData->tilingKey = 4;  // FLOAT16_MODE
+    tilingData->tilingKey = 4; // FLOAT16_MODE
 
     ICPU_SET_TILING_KEY(tilingData->tilingKey);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
-    using RealFuncType = void(*)(GM_ADDR, GM_ADDR, GM_ADDR, GM_ADDR);
+    using RealFuncType = void (*)(GM_ADDR, GM_ADDR, GM_ADDR, GM_ADDR);
     RealFuncType func = reinterpret_cast<RealFuncType>(::real);
     ICPU_RUN_KF(func, blockDim, x, y, workspace, (uint8_t*)(tilingData));
 
@@ -245,11 +242,11 @@ TEST_F(RealTest, test_case_float32)
     tilingData->bigCoreDataNum = 0;
     tilingData->bigCoreLoopNum = 0;
     tilingData->bigCoreTailDataNum = 0;
-    tilingData->tilingKey = 5;  // FLOAT_MODE
+    tilingData->tilingKey = 5; // FLOAT_MODE
 
     ICPU_SET_TILING_KEY(tilingData->tilingKey);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
-    using RealFuncType = void(*)(GM_ADDR, GM_ADDR, GM_ADDR, GM_ADDR);
+    using RealFuncType = void (*)(GM_ADDR, GM_ADDR, GM_ADDR, GM_ADDR);
     RealFuncType func = reinterpret_cast<RealFuncType>(::real);
     ICPU_RUN_KF(func, blockDim, x, y, workspace, (uint8_t*)(tilingData));
 

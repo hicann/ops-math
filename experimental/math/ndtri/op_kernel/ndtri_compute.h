@@ -53,11 +53,8 @@ using namespace AscendC;
 //   详见 docs/performance-report.md §4A（性能优化迭代）。
 // ---------------------------------------------------------------
 __aicore__ inline void PolEvl(
-    const LocalTensor<float>& dst,
-    const LocalTensor<float>& x,
-    const float* coefs, int n,
-    const LocalTensor<float>& scratch,
-    int32_t len)
+    const LocalTensor<float>& dst, const LocalTensor<float>& x, const float* coefs, int n,
+    const LocalTensor<float>& scratch, int32_t len)
 {
     // dst = coefs[0]（最高次）
     Duplicate(dst, coefs[0], len);
@@ -76,11 +73,8 @@ __aicore__ inline void PolEvl(
 // （FMA 自动融合同 PolEvl。）
 // ---------------------------------------------------------------
 __aicore__ inline void PlEvl(
-    const LocalTensor<float>& dst,
-    const LocalTensor<float>& x,
-    const float* coefs, int n,
-    const LocalTensor<float>& scratch,
-    int32_t len)
+    const LocalTensor<float>& dst, const LocalTensor<float>& x, const float* coefs, int n,
+    const LocalTensor<float>& scratch, int32_t len)
 {
     // dst = 1.0（隐式 x^n 项系数）
     Duplicate(dst, 1.0f, len);
@@ -96,17 +90,12 @@ __aicore__ inline void PlEvl(
 //   - scratch    : Horner 内部 scratch
 // ---------------------------------------------------------------
 __aicore__ inline void PolEvlPlEvl(
-    const LocalTensor<float>& dst,
-    const LocalTensor<float>& x,
-    const float* coefsP, int nP,
-    const float* coefsQ, int nQ,
-    const LocalTensor<float>& tmpP,
-    const LocalTensor<float>& tmpQ,
-    const LocalTensor<float>& scratch,
+    const LocalTensor<float>& dst, const LocalTensor<float>& x, const float* coefsP, int nP, const float* coefsQ,
+    int nQ, const LocalTensor<float>& tmpP, const LocalTensor<float>& tmpQ, const LocalTensor<float>& scratch,
     int32_t len)
 {
     PolEvl(tmpP, x, coefsP, nP, scratch, len);
-    PlEvl (tmpQ, x, coefsQ, nQ, scratch, len);
+    PlEvl(tmpQ, x, coefsQ, nQ, scratch, len);
     Div(dst, tmpP, tmpQ, len);
 }
 
@@ -126,14 +115,9 @@ __aicore__ inline void PolEvlPlEvl(
 //   - scratch : Horner scratch
 // ---------------------------------------------------------------
 __aicore__ inline void CalP0(
-    const LocalTensor<float>& y,
-    const LocalTensor<float>& p,
-    const LocalTensor<float>& tmpPm,
-    const LocalTensor<float>& tmpZ,
-    const LocalTensor<float>& tmpP,
-    const LocalTensor<float>& tmpQ,
-    const LocalTensor<float>& scratch,
-    int32_t len)
+    const LocalTensor<float>& y, const LocalTensor<float>& p, const LocalTensor<float>& tmpPm,
+    const LocalTensor<float>& tmpZ, const LocalTensor<float>& tmpP, const LocalTensor<float>& tmpQ,
+    const LocalTensor<float>& scratch, int32_t len)
 {
     // pm = p - 0.5
     Adds(tmpPm, p, -0.5f, len);
@@ -170,11 +154,8 @@ __aicore__ inline void CalP0(
 //   - tmp  : 工作 buffer
 // ---------------------------------------------------------------
 __aicore__ inline void CalSub(
-    const LocalTensor<float>& x0,
-    const LocalTensor<float>& xOut,
-    const LocalTensor<float>& q,
-    const LocalTensor<float>& tmp,
-    int32_t len)
+    const LocalTensor<float>& x0, const LocalTensor<float>& xOut, const LocalTensor<float>& q,
+    const LocalTensor<float>& tmp, int32_t len)
 {
     // tmp = ln(q)
     Ln(tmp, q, len);
@@ -212,16 +193,9 @@ __aicore__ inline void CalSub(
 // 由 Kernel 层的 lenAligned 保证。
 // ---------------------------------------------------------------
 __aicore__ inline void CalP12(
-    const LocalTensor<float>& corr,
-    const LocalTensor<float>& x,
-    const LocalTensor<float>& tmpZ,
-    const LocalTensor<float>& tmpR1,
-    const LocalTensor<float>& tmpR2,
-    const LocalTensor<float>& tmpP,
-    const LocalTensor<float>& tmpQ,
-    const LocalTensor<float>& scratch,
-    const LocalTensor<uint8_t>& maskX,
-    int32_t len)
+    const LocalTensor<float>& corr, const LocalTensor<float>& x, const LocalTensor<float>& tmpZ,
+    const LocalTensor<float>& tmpR1, const LocalTensor<float>& tmpR2, const LocalTensor<float>& tmpP,
+    const LocalTensor<float>& tmpQ, const LocalTensor<float>& scratch, const LocalTensor<uint8_t>& maskX, int32_t len)
 {
     // z = 1 / x  =>  tmpZ = 1.0, tmpZ /= x
     Duplicate(tmpZ, 1.0f, len);
@@ -237,8 +211,7 @@ __aicore__ inline void CalP12(
     CompareScalar(maskX, x, NDTRI_X_BOUNDARY, CMPMODE::LT, len);
 
     // corr_raw = select(mask, r1, r2)
-    Select(corr, maskX, tmpR1, tmpR2,
-           SELMODE::VSEL_TENSOR_TENSOR_MODE, len);
+    Select(corr, maskX, tmpR1, tmpR2, SELMODE::VSEL_TENSOR_TENSOR_MODE, len);
 
     // corr = z * corr_raw
     Mul(corr, corr, tmpZ, len);
@@ -265,28 +238,22 @@ __aicore__ inline void CalP12(
 //   - maskX     : uint8 scratch mask
 // ---------------------------------------------------------------
 __aicore__ inline void CalTail(
-    const LocalTensor<float>& yTail,
-    const LocalTensor<float>& pSafe,
-    const LocalTensor<uint8_t>& maskNeg,
-    const LocalTensor<float>& tmpQ,
-    const LocalTensor<float>& tmpX,
-    const LocalTensor<float>& tmpX0,
+    const LocalTensor<float>& yTail, const LocalTensor<float>& pSafe, const LocalTensor<uint8_t>& maskNeg,
+    const LocalTensor<float>& tmpQ, const LocalTensor<float>& tmpX, const LocalTensor<float>& tmpX0,
     const LocalTensor<float>& tmpCorr,
-    const LocalTensor<float>& tmp1,  // cal_sub 的 tmp / cal_p12 的 tmpZ
-    const LocalTensor<float>& tmp2,  // cal_p12 的 tmpR1
-    const LocalTensor<float>& tmp3,  // cal_p12 的 tmpR2
-    const LocalTensor<float>& tmp4,  // cal_p12 的 tmpP
-    const LocalTensor<float>& tmp5,  // cal_p12 的 tmpQ / cal_p12 的 scratch
-    const LocalTensor<uint8_t>& maskX,
-    int32_t len)
+    const LocalTensor<float>& tmp1, // cal_sub 的 tmp / cal_p12 的 tmpZ
+    const LocalTensor<float>& tmp2, // cal_p12 的 tmpR1
+    const LocalTensor<float>& tmp3, // cal_p12 的 tmpR2
+    const LocalTensor<float>& tmp4, // cal_p12 的 tmpP
+    const LocalTensor<float>& tmp5, // cal_p12 的 tmpQ / cal_p12 的 scratch
+    const LocalTensor<uint8_t>& maskX, int32_t len)
 {
     // Step 1: q = select(maskNeg, 1 - pSafe, pSafe)
     //   oneMinusP = 1 - pSafe
     Muls(tmpQ, pSafe, -1.0f, len);
     Adds(tmpQ, tmpQ, 1.0f, len);
     // Select: maskNeg=1 -> tmpQ (1-pSafe), maskNeg=0 -> pSafe
-    Select(tmpQ, maskNeg, tmpQ, pSafe,
-           SELMODE::VSEL_TENSOR_TENSOR_MODE, len);
+    Select(tmpQ, maskNeg, tmpQ, pSafe, SELMODE::VSEL_TENSOR_TENSOR_MODE, len);
 
     // Step 2: x = sqrt(-2 ln q)，x0 = x - ln(x)/x
     //   CalSub 使用 tmp1 作为工作 buffer
@@ -295,14 +262,14 @@ __aicore__ inline void CalTail(
     // Step 3: corr = cal_p12(x)
     //   CalP12 内部 Horner 需要 tmpP / tmpQ / scratch：复用 tmp4 / tmp5 / tmpQ
     //   注意：tmpQ 在此时已经不再需要（q 在 Step 2 中已经消费）
-    CalP12(tmpCorr, tmpX,
-           /*tmpZ  */tmp1,
-           /*tmpR1 */tmp2,
-           /*tmpR2 */tmp3,
-           /*tmpP  */tmp4,
-           /*tmpQ  */tmp5,
-           /*scratch*/tmpQ,
-           maskX, len);
+    CalP12(
+        tmpCorr, tmpX,
+        /*tmpZ  */ tmp1,
+        /*tmpR1 */ tmp2,
+        /*tmpR2 */ tmp3,
+        /*tmpP  */ tmp4,
+        /*tmpQ  */ tmp5,
+        /*scratch*/ tmpQ, maskX, len);
 
     // Step 4: base = x0 - corr
     Sub(tmpX0, tmpX0, tmpCorr, len);
@@ -310,12 +277,11 @@ __aicore__ inline void CalTail(
     // Step 5: sign：
     //   - p <  0.5 (maskNeg=0)  -> y_tail = -base
     //   - p >= 0.5 (maskNeg=1)  -> y_tail = +base
-    Muls(tmpCorr, tmpX0, -1.0f, len);  // -base 存 tmpCorr
+    Muls(tmpCorr, tmpX0, -1.0f, len); // -base 存 tmpCorr
     // Select: maskNeg=1 -> +base, maskNeg=0 -> -base
-    Select(yTail, maskNeg, tmpX0, tmpCorr,
-           SELMODE::VSEL_TENSOR_TENSOR_MODE, len);
+    Select(yTail, maskNeg, tmpX0, tmpCorr, SELMODE::VSEL_TENSOR_TENSOR_MODE, len);
 }
 
 } // namespace NsNdtri
 
-#endif  // NDTRI_COMPUTE_H_
+#endif // NDTRI_COMPUTE_H_

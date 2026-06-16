@@ -44,4 +44,4 @@ static ge::graphStatus InferShapeTanhGrad(gert::InferShapeContext* context)
 }
 
 IMPL_OP_INFERSHAPE(TanhGrad).InferShape(InferShapeTanhGrad);
-}
+} // namespace ops

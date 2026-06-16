@@ -24,8 +24,8 @@
 
 namespace l0op {
 
-const aclTensor* LogSpace(float startF, float endF, int64_t steps, float baseF,
-                          const aclTensor* result, aclOpExecutor* executor);
+const aclTensor* LogSpace(
+    float startF, float endF, int64_t steps, float baseF, const aclTensor* result, aclOpExecutor* executor);
 
 } // namespace l0op
 

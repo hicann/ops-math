@@ -28,20 +28,18 @@ public:
             .DataType({ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
 
-        this->AICore()
-            .AddConfig("ascend910b");
+        this->AICore().AddConfig("ascend910b");
 
         OpAICoreConfig config310p;
         config310p.Input("x")
-                  .ParamType(REQUIRED)
-                  .DataType({ge::DT_FLOAT16, ge::DT_FLOAT})
-                  .Format({ge::FORMAT_ND, ge::FORMAT_ND});
+            .ParamType(REQUIRED)
+            .DataType({ge::DT_FLOAT16, ge::DT_FLOAT})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND});
         config310p.Output("y")
-                  .ParamType(REQUIRED)
-                  .DataType({ge::DT_FLOAT16, ge::DT_FLOAT})
-                  .Format({ge::FORMAT_ND, ge::FORMAT_ND});
-        this->AICore()
-            .AddConfig("ascend310p", config310p);
+            .ParamType(REQUIRED)
+            .DataType({ge::DT_FLOAT16, ge::DT_FLOAT})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND});
+        this->AICore().AddConfig("ascend310p", config310p);
     }
 };
 OP_ADD(Sin); // 添加算子信息库

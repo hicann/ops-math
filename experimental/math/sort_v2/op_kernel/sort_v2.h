@@ -45,7 +45,8 @@ class SortV2 {
 public:
     __aicore__ inline SortV2(){};
 
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR index, GM_ADDR y, GM_ADDR dstIndex, const SortV2TilingData* tilingData);
+    __aicore__ inline void Init(
+        GM_ADDR x, GM_ADDR index, GM_ADDR y, GM_ADDR dstIndex, const SortV2TilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -65,22 +66,22 @@ private:
     AscendC::GlobalTensor<uint32_t> indexGm;
     AscendC::GlobalTensor<T> yGm;
     AscendC::GlobalTensor<uint32_t> dstIndexGm;
-    uint32_t coreDataNum   = 0;
-    uint32_t tileNum       = 0;
-    uint32_t tileDataNum   = 0;
-    uint32_t processDataNum= 0;
-    uint32_t axis     = 0;
-    bool     descending = false;
+    uint32_t coreDataNum = 0;
+    uint32_t tileNum = 0;
+    uint32_t tileDataNum = 0;
+    uint32_t processDataNum = 0;
+    uint32_t axis = 0;
+    bool descending = false;
     uint32_t dimH = 1;
     uint32_t dimW = 1;
-    uint32_t sliceLen      = 0;
-    uint32_t realSortLen   = 0;
-    uint32_t concatRepeat  = 0;
-    uint32_t sortRepeat    = 0;
+    uint32_t sliceLen = 0;
+    uint32_t realSortLen = 0;
+    uint32_t concatRepeat = 0;
+    uint32_t sortRepeat = 0;
     uint32_t extractRepeat = 0;
-    uint32_t inBufferSize  = 0;
+    uint32_t inBufferSize = 0;
     uint32_t outBufferSize = 0;
-    uint32_t calcBufferSize= 0;
+    uint32_t calcBufferSize = 0;
     uint32_t tmpBufferSize = 0;
     uint32_t concatTmpBytes = 0;
     uint32_t align8 = 0;
@@ -89,43 +90,47 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void SortV2<T>::Init(GM_ADDR x, GM_ADDR index, GM_ADDR y, GM_ADDR dstIndex, const SortV2TilingData* tilingData)
+__aicore__ inline void SortV2<T>::Init(
+    GM_ADDR x, GM_ADDR index, GM_ADDR y, GM_ADDR dstIndex, const SortV2TilingData* tilingData)
 {
     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
-    const uint32_t coreIdx      = AscendC::GetBlockIdx();
+    const uint32_t coreIdx = AscendC::GetBlockIdx();
     const uint32_t validCoreNum = tilingData->startBlockIdx;
     if (coreIdx >= validCoreNum) {
         coreDataNum = 0;
         return;
     }
-    const uint32_t smallCoreNum     = tilingData->smallCoreNum;
-    const uint32_t bigCoreNum       = tilingData->bigCoreNum;
-    const uint32_t bigCoreDataNum   = tilingData->bigCoreDataNum;
+    const uint32_t smallCoreNum = tilingData->smallCoreNum;
+    const uint32_t bigCoreNum = tilingData->bigCoreNum;
+    const uint32_t bigCoreDataNum = tilingData->bigCoreDataNum;
     const uint32_t smallCoreDataNum = tilingData->smallCoreDataNum;
 
-    axis        = tilingData->axis;
-    descending  = tilingData->descending;
-    dimH        = tilingData->dimH;
-    dimW        = tilingData->dimW;
-    sliceLen    = tilingData->sliceLen;
+    axis = tilingData->axis;
+    descending = tilingData->descending;
+    dimH = tilingData->dimH;
+    dimW = tilingData->dimW;
+    sliceLen = tilingData->sliceLen;
     realSortLen = tilingData->realSortLen;
-    align8      = tilingData->align8;
-    dupCount    = tilingData->dupCount;
-    padLen      = tilingData->padLen;
-    
+    align8 = tilingData->align8;
+    dupCount = tilingData->dupCount;
+    padLen = tilingData->padLen;
+
     // 计算当前核心的起始地址偏移
     uint32_t bigBefore = coreIdx < bigCoreNum ? coreIdx : bigCoreNum;
     uint32_t smallBefore = coreIdx > bigCoreNum ? (coreIdx - bigCoreNum) : 0;
     uint32_t startSlice = bigBefore * bigCoreDataNum + smallBefore * smallCoreDataNum;
-    uint32_t coreDataStart = (axis == 0) ? startSlice        // 列排序时列号就是元素偏移
-                                        : startSlice * dimW; // 行排序时整行连续
+    uint32_t coreDataStart = (axis == 0) ? startSlice // 列排序时列号就是元素偏移
+                                           :
+                                           startSlice * dimW; // 行排序时整行连续
     // 计算当前核心的数据量
     if (coreIdx < bigCoreNum) {
         coreDataNum = bigCoreDataNum;
     } else {
         coreDataNum = smallCoreDataNum;
     }
-    if (coreDataNum == 0) {return;}
+    if (coreDataNum == 0) {
+        return;
+    }
 
     // 计算临时缓存
     concatRepeat = realSortLen / ELEMENT_16;
@@ -145,12 +150,12 @@ __aicore__ inline void SortV2<T>::Init(GM_ADDR x, GM_ADDR index, GM_ADDR y, GM_A
     yGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(y) + coreDataStart, remainElem);
     dstIndexGm.SetGlobalBuffer(reinterpret_cast<__gm__ uint32_t*>(dstIndex) + coreDataStart, remainElem);
 
-    pipe.InitBuffer(inQueueX,  BUFFER_NUM, inBufferSize);
+    pipe.InitBuffer(inQueueX, BUFFER_NUM, inBufferSize);
     pipe.InitBuffer(outQueueY, 1, outBufferSize);
     pipe.InitBuffer(dstIndexQ, 1, realSortLen * sizeof(uint32_t));
-    pipe.InitBuffer(calcQ,     1, calcBufferSize * sizeof(T));
-    pipe.InitBuffer(tmpQ,      1, tmpBufferSize * sizeof(T));
-    pipe.InitBuffer(concatQ,   1, tmpBufferSize * sizeof(T));
+    pipe.InitBuffer(calcQ, 1, calcBufferSize * sizeof(T));
+    pipe.InitBuffer(tmpQ, 1, tmpBufferSize * sizeof(T));
+    pipe.InitBuffer(concatQ, 1, tmpBufferSize * sizeof(T));
 }
 
 template <typename T>
@@ -163,24 +168,36 @@ __aicore__ inline void SortV2<T>::CopyIn(int32_t tileIndex)
         AscendC::Duplicate(xLocal, padVal, realSortLen);
         uint32_t idxPadVal = descending ? static_cast<uint32_t>(-FLT_MAX) : static_cast<uint32_t>(FLT_MAX);
         AscendC::Duplicate(indexLocal, idxPadVal, realSortLen);
-        AscendC::DataCopyExtParams copyParams1{static_cast<uint16_t>(dimH), static_cast<uint32_t>(sizeof(T)), static_cast<uint32_t>((dimW - 1) * sizeof(T)), 0, 0};
+        AscendC::DataCopyExtParams copyParams1{
+            static_cast<uint16_t>(dimH), static_cast<uint32_t>(sizeof(T)),
+            static_cast<uint32_t>((dimW - 1) * sizeof(T)), 0, 0};
         AscendC::DataCopyPadExtParams<T> padParams1{false, 0, 0, static_cast<T>(0)};
         AscendC::DataCopyPad(xLocal, xGm[tileIndex], copyParams1, padParams1);
-        AscendC::DataCopyExtParams copyParams2{static_cast<uint16_t>(dimH), static_cast<uint32_t>(sizeof(uint32_t)), static_cast<uint32_t>((dimW - 1) * sizeof(uint32_t)), 0, 0};
+        AscendC::DataCopyExtParams copyParams2{
+            static_cast<uint16_t>(dimH), static_cast<uint32_t>(sizeof(uint32_t)),
+            static_cast<uint32_t>((dimW - 1) * sizeof(uint32_t)), 0, 0};
         AscendC::DataCopyPadExtParams<uint32_t> padParams2{false, 0, 0, 0};
         AscendC::DataCopyPad(indexLocal, indexGm[tileIndex], copyParams2, padParams2);
     } else {
-        AscendC::DataCopyExtParams copyParams1{static_cast<uint16_t>(1), static_cast<uint32_t>(this->dimW * sizeof(T)), 0, 0, 0};
-        AscendC::DataCopyPadExtParams<T> padParams1{true, 0, static_cast<uint8_t>(padLen), descending ? static_cast<T>(-FLT_MAX) : static_cast<T>(FLT_MAX)};
+        AscendC::DataCopyExtParams copyParams1{
+            static_cast<uint16_t>(1), static_cast<uint32_t>(this->dimW * sizeof(T)), 0, 0, 0};
+        AscendC::DataCopyPadExtParams<T> padParams1{
+            true, 0, static_cast<uint8_t>(padLen), descending ? static_cast<T>(-FLT_MAX) : static_cast<T>(FLT_MAX)};
         AscendC::DataCopyPad(xLocal, xGm[tileIndex * tileDataNum], copyParams1, padParams1);
         if (dupCount > 0) {
-            AscendC::Duplicate(xLocal[align8], descending ? static_cast<T>(-FLT_MAX) : static_cast<T>(FLT_MAX), dupCount);
+            AscendC::Duplicate(
+                xLocal[align8], descending ? static_cast<T>(-FLT_MAX) : static_cast<T>(FLT_MAX), dupCount);
         }
-        AscendC::DataCopyExtParams copyParams2{static_cast<uint16_t>(1), static_cast<uint32_t>(this->dimW * sizeof(uint32_t)), 0, 0, 0};
-        AscendC::DataCopyPadExtParams<uint32_t> padParams2{true, 0, static_cast<uint8_t>(padLen), descending ? static_cast<uint32_t>(-FLT_MAX) : static_cast<uint32_t>(FLT_MAX)};
+        AscendC::DataCopyExtParams copyParams2{
+            static_cast<uint16_t>(1), static_cast<uint32_t>(this->dimW * sizeof(uint32_t)), 0, 0, 0};
+        AscendC::DataCopyPadExtParams<uint32_t> padParams2{
+            true, 0, static_cast<uint8_t>(padLen),
+            descending ? static_cast<uint32_t>(-FLT_MAX) : static_cast<uint32_t>(FLT_MAX)};
         AscendC::DataCopyPad(indexLocal, indexGm[tileIndex * tileDataNum], copyParams2, padParams2);
         if (dupCount > 0) {
-            AscendC::Duplicate(indexLocal[align8], descending ? static_cast<uint32_t>(-FLT_MAX) : static_cast<uint32_t>(FLT_MAX), dupCount);
+            AscendC::Duplicate(
+                indexLocal[align8], descending ? static_cast<uint32_t>(-FLT_MAX) : static_cast<uint32_t>(FLT_MAX),
+                dupCount);
         }
     }
     inQueueX.EnQue(xLocal);
@@ -192,15 +209,21 @@ __aicore__ inline void SortV2<T>::CopyOut(int32_t tileIndex)
 {
     AscendC::LocalTensor<T> yLocal = outQueueY.DeQue<T>();
     AscendC::LocalTensor<uint32_t> dstIndexLocal = dstIndexQ.DeQue<uint32_t>();
-    if(axis == 0){
-        AscendC::DataCopyExtParams copyParams1{static_cast<uint16_t>(dimH), static_cast<uint32_t>(sizeof(T)), 0, static_cast<uint32_t>((dimW - 1) * sizeof(T)), 0};
+    if (axis == 0) {
+        AscendC::DataCopyExtParams copyParams1{
+            static_cast<uint16_t>(dimH), static_cast<uint32_t>(sizeof(T)), 0,
+            static_cast<uint32_t>((dimW - 1) * sizeof(T)), 0};
         AscendC::DataCopyPad(yGm[tileIndex], yLocal, copyParams1);
-        AscendC::DataCopyExtParams copyParams2{static_cast<uint16_t>(dimH), static_cast<uint32_t>(sizeof(uint32_t)), 0, static_cast<uint32_t>((dimW - 1) * sizeof(uint32_t)), 0};
+        AscendC::DataCopyExtParams copyParams2{
+            static_cast<uint16_t>(dimH), static_cast<uint32_t>(sizeof(uint32_t)), 0,
+            static_cast<uint32_t>((dimW - 1) * sizeof(uint32_t)), 0};
         AscendC::DataCopyPad(dstIndexGm[tileIndex], dstIndexLocal, copyParams2);
-    }else if(axis == 1){
-        AscendC::DataCopyExtParams copyParams1{static_cast<uint16_t>(1), static_cast<uint32_t>(sliceLen * sizeof(T)), 0, 0, 0};
+    } else if (axis == 1) {
+        AscendC::DataCopyExtParams copyParams1{
+            static_cast<uint16_t>(1), static_cast<uint32_t>(sliceLen * sizeof(T)), 0, 0, 0};
         AscendC::DataCopyPad(yGm[tileIndex * this->tileDataNum], yLocal, copyParams1);
-        AscendC::DataCopyExtParams copyParams2{static_cast<uint16_t>(1), static_cast<uint32_t>(sliceLen * sizeof(uint32_t)), 0, 0, 0};
+        AscendC::DataCopyExtParams copyParams2{
+            static_cast<uint16_t>(1), static_cast<uint32_t>(sliceLen * sizeof(uint32_t)), 0, 0, 0};
         AscendC::DataCopyPad(dstIndexGm[tileIndex * this->tileDataNum], dstIndexLocal, copyParams2);
     }
     outQueueY.FreeTensor(yLocal);
@@ -210,12 +233,12 @@ __aicore__ inline void SortV2<T>::CopyOut(int32_t tileIndex)
 template <typename T>
 __aicore__ inline void SortV2<T>::Compute(int32_t tileIndex)
 {
-    AscendC::LocalTensor<T> xLocal               = inQueueX.DeQue<T>();
-    AscendC::LocalTensor<uint32_t> indexLocal    = inQueueX.DeQue<uint32_t>();
-    AscendC::LocalTensor<T> sortedLocal          = calcQ.AllocTensor<T>();
-    AscendC::LocalTensor<T> concatTmpLocal       = concatQ.AllocTensor<T>();
-    AscendC::LocalTensor<T> sortTmpLocal         = tmpQ.AllocTensor<T>();
-    AscendC::LocalTensor<T> yLocal               = outQueueY.AllocTensor<T>();
+    AscendC::LocalTensor<T> xLocal = inQueueX.DeQue<T>();
+    AscendC::LocalTensor<uint32_t> indexLocal = inQueueX.DeQue<uint32_t>();
+    AscendC::LocalTensor<T> sortedLocal = calcQ.AllocTensor<T>();
+    AscendC::LocalTensor<T> concatTmpLocal = concatQ.AllocTensor<T>();
+    AscendC::LocalTensor<T> sortTmpLocal = tmpQ.AllocTensor<T>();
+    AscendC::LocalTensor<T> yLocal = outQueueY.AllocTensor<T>();
     AscendC::LocalTensor<uint32_t> dstIndexLocal = dstIndexQ.AllocTensor<uint32_t>();
     AscendC::LocalTensor<T> concatLocal;
     AscendC::Concat(concatLocal, xLocal, concatTmpLocal, concatRepeat);

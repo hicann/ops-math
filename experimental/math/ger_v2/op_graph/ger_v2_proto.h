@@ -21,7 +21,7 @@
 /*!
  * \file ger_v2_proto.h
  * \brief
-*/
+ */
 #ifndef OPS_OP_PROTO_INC_GERV2_H_
 #define OPS_OP_PROTO_INC_GERV2_H_
 
@@ -30,12 +30,11 @@
 
 namespace ge {
 
-
 REG_OP(GerV2)
-    .INPUT(x, TensorType({DT_FLOAT, DT_FLOAT16,DT_INT32, DT_INT16}))
-    .INPUT(y, TensorType({DT_FLOAT, DT_FLOAT16,DT_INT32, DT_INT16}))
-    .INPUT(A, TensorType({DT_FLOAT, DT_FLOAT16,DT_INT32, DT_INT16}))
-    .OUTPUT(z, TensorType({DT_FLOAT, DT_FLOAT16,DT_INT32, DT_INT16}))
+    .INPUT(x, TensorType({DT_FLOAT, DT_FLOAT16, DT_INT32, DT_INT16}))
+    .INPUT(y, TensorType({DT_FLOAT, DT_FLOAT16, DT_INT32, DT_INT16}))
+    .INPUT(A, TensorType({DT_FLOAT, DT_FLOAT16, DT_INT32, DT_INT16}))
+    .OUTPUT(z, TensorType({DT_FLOAT, DT_FLOAT16, DT_INT32, DT_INT16}))
     .ATTR(alpha, Float, 1.0)
     .OP_END_FACTORY_REG(GerV2)
 

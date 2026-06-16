@@ -21,12 +21,11 @@
 /*!
  * \file add_v2.cpp
  * \brief
-*/
+ */
 
 #include "add_v2.h"
 
-enum class AddV2TilingKey : uint32_t
-{
+enum class AddV2TilingKey : uint32_t {
     TILING_KEY_EXAMPLE_FLOAT = 0,
     TILING_KEY_EXAMPLE_INT32 = 1,
     TILING_KEY_EXAMPLE_INT16 = 2,
@@ -39,23 +38,20 @@ __global__ __aicore__ void add_v2(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR works
     REGISTER_TILING_DEFAULT(AddV2TilingData);
     GET_TILING_DATA_WITH_STRUCT(AddV2TilingData, tilingData, tiling);
     if constexpr (schMode == static_cast<uint32_t>(AddV2TilingKey::TILING_KEY_EXAMPLE_FLOAT)) {
-        NsAddV2::AddV2<float> op; // 算子kernel实例获取
-        op.Init(x, y, z, &tilingData);      // 算子kernel实例初始化
-        op.Process();                       // 算子kernel实例执行
-    }
-    else if constexpr (schMode == static_cast<uint32_t>(AddV2TilingKey::TILING_KEY_EXAMPLE_INT32)) {
-        NsAddV2::AddV2<int32_t> op; // 算子kernel实例获取
-        op.Init(x, y, z, &tilingData);        // 算子kernel实例初始化
-        op.Process();                         // 算子kernel实例执行
-    }
-    else if constexpr (schMode == static_cast<uint32_t>(AddV2TilingKey::TILING_KEY_EXAMPLE_INT16)) {
-        NsAddV2::AddV2<int16_t> op; // 算子kernel实例获取
-        op.Init(x, y, z, &tilingData);      // 算子kernel实例初始化
-        op.Process();                       // 算子kernel实例执行
-    }
-    else if constexpr (schMode == static_cast<uint32_t>(AddV2TilingKey::TILING_KEY_EXAMPLE_HALF)) {
-        NsAddV2::AddV2<half> op; // 算子kernel实例获取
-        op.Init(x, y, z, &tilingData);        // 算子kernel实例初始化
-        op.Process();                         // 算子kernel实例执行
+        NsAddV2::AddV2<float> op;      // 算子kernel实例获取
+        op.Init(x, y, z, &tilingData); // 算子kernel实例初始化
+        op.Process();                  // 算子kernel实例执行
+    } else if constexpr (schMode == static_cast<uint32_t>(AddV2TilingKey::TILING_KEY_EXAMPLE_INT32)) {
+        NsAddV2::AddV2<int32_t> op;    // 算子kernel实例获取
+        op.Init(x, y, z, &tilingData); // 算子kernel实例初始化
+        op.Process();                  // 算子kernel实例执行
+    } else if constexpr (schMode == static_cast<uint32_t>(AddV2TilingKey::TILING_KEY_EXAMPLE_INT16)) {
+        NsAddV2::AddV2<int16_t> op;    // 算子kernel实例获取
+        op.Init(x, y, z, &tilingData); // 算子kernel实例初始化
+        op.Process();                  // 算子kernel实例执行
+    } else if constexpr (schMode == static_cast<uint32_t>(AddV2TilingKey::TILING_KEY_EXAMPLE_HALF)) {
+        NsAddV2::AddV2<half> op;       // 算子kernel实例获取
+        op.Init(x, y, z, &tilingData); // 算子kernel实例初始化
+        op.Process();                  // 算子kernel实例执行
     }
 }

@@ -60,8 +60,9 @@ int Init(int32_t deviceId, aclrtStream* stream)
 }
 
 template <typename T>
-int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr,
-                    aclDataType dataType, aclTensor** tensor)
+int CreateAclTensor(
+    const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr, aclDataType dataType,
+    aclTensor** tensor)
 {
     auto size = GetShapeSize(shape) * sizeof(T);
     auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -74,8 +75,9 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
         strides[i] = shape[i + 1] * strides[i + 1];
     }
 
-    *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0,
-                              aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), *deviceAddr);
+    *tensor = aclCreateTensor(
+        shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
+        *deviceAddr);
     return 0;
 }
 
@@ -115,32 +117,28 @@ int main()
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
     ret = aclnnLogAddExpGetWorkspaceSize(x, y, out, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("aclnnLogAddExpGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnLogAddExpGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
         ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-        CHECK_RET(ret == ACL_SUCCESS,
-                  LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
+        CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
     }
 
     // 4. 调用 aclnnLogAddExp 第二段接口
     ret = aclnnLogAddExp(workspaceAddr, workspaceSize, executor, stream);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("aclnnLogAddExp failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnLogAddExp failed. ERROR: %d\n", ret); return ret);
 
     // 5. 同步等待任务执行结束
     ret = aclrtSynchronizeStream(stream);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
     // 6. 拷贝输出回 host
     std::vector<float> resultData(totalSize, 0.0f);
-    ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(float),
-                      outDeviceAddr, totalSize * sizeof(float), ACL_MEMCPY_DEVICE_TO_HOST);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
+    ret = aclrtMemcpy(
+        resultData.data(), resultData.size() * sizeof(float), outDeviceAddr, totalSize * sizeof(float),
+        ACL_MEMCPY_DEVICE_TO_HOST);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
 
     // 7. 与 CPU golden 比对（FP32 atol=1e-4, rtol=1e-4）
     int failCount = 0;
@@ -151,8 +149,9 @@ int main()
         float gold = LogAddExpGolden(xHostData[i], yHostData[i]);
         float diff = std::fabs(resultData[i] - gold);
         bool ok = diff <= (atol + rtol * std::fabs(gold));
-        LOG_PRINT("[%ld] x=%8.4f y=%8.4f out=%10.6f gold=%10.6f diff=%.2e %s\n",
-                  i, xHostData[i], yHostData[i], resultData[i], gold, diff, ok ? "OK" : "FAIL");
+        LOG_PRINT(
+            "[%ld] x=%8.4f y=%8.4f out=%10.6f gold=%10.6f diff=%.2e %s\n", i, xHostData[i], yHostData[i], resultData[i],
+            gold, diff, ok ? "OK" : "FAIL");
         if (!ok) {
             failCount++;
         }

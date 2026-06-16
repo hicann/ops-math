@@ -51,7 +51,7 @@ private:
 
 private:
     AscendC::TPipe pipe;
-    AscendC::TQue<AscendC::QuePosition::VECIN,  BUFFER_NUM> inQueueX;
+    AscendC::TQue<AscendC::QuePosition::VECIN, BUFFER_NUM> inQueueX;
     AscendC::TQue<AscendC::QuePosition::VECOUT, BUFFER_NUM> outQueueZ;
     AscendC::GlobalTensor<TYPE_X> xGm;
     AscendC::GlobalTensor<TYPE_Z> zGm;
@@ -66,7 +66,7 @@ private:
 };
 
 template <typename TYPE_X, typename TYPE_Z>
-__aicore__ inline void CastV2<TYPE_X,TYPE_Z>::Init(GM_ADDR x, GM_ADDR z, const CastV2TilingData* tilingData)
+__aicore__ inline void CastV2<TYPE_X, TYPE_Z>::Init(GM_ADDR x, GM_ADDR z, const CastV2TilingData* tilingData)
 {
     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
     uint32_t coreNum = AscendC::GetBlockIdx();
@@ -74,16 +74,16 @@ __aicore__ inline void CastV2<TYPE_X,TYPE_Z>::Init(GM_ADDR x, GM_ADDR z, const C
     this->globalBufferIndex = tilingData->bigCoreDataNum * AscendC::GetBlockIdx();
     this->tileDataNum = tilingData->tileDataNum;
     this->mainCoreNum = tilingData->tailBlockNum;
-    if (coreNum < this->mainCoreNum) { 
+    if (coreNum < this->mainCoreNum) {
         this->coreDataNum = tilingData->bigCoreDataNum;
         this->tileNum = tilingData->finalBigTileNum;
         this->tailDataNum = tilingData->bigTailDataNum;
-    }
-    else { 
+    } else {
         this->coreDataNum = tilingData->smallCoreDataNum;
         this->tileNum = tilingData->finalSmallTileNum;
         this->tailDataNum = tilingData->smallTailDataNum;
-        this->globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (AscendC::GetBlockIdx() - this->mainCoreNum);
+        this->globalBufferIndex -=
+            (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (AscendC::GetBlockIdx() - this->mainCoreNum);
     }
     xGm.SetGlobalBuffer((__gm__ TYPE_X*)x + globalBufferIndex, this->coreDataNum);
     zGm.SetGlobalBuffer((__gm__ TYPE_Z*)z + globalBufferIndex, this->coreDataNum);
@@ -92,7 +92,7 @@ __aicore__ inline void CastV2<TYPE_X,TYPE_Z>::Init(GM_ADDR x, GM_ADDR z, const C
 }
 
 template <typename TYPE_X, typename TYPE_Z>
-__aicore__ inline void CastV2<TYPE_X,TYPE_Z>::CopyIn(int32_t progress)
+__aicore__ inline void CastV2<TYPE_X, TYPE_Z>::CopyIn(int32_t progress)
 {
     AscendC::LocalTensor<TYPE_X> xLocal = inQueueX.AllocTensor<TYPE_X>();
     AscendC::DataCopy(xLocal, xGm[progress * this->tileDataNum], this->processDataNum);
@@ -100,7 +100,7 @@ __aicore__ inline void CastV2<TYPE_X,TYPE_Z>::CopyIn(int32_t progress)
 }
 
 template <typename TYPE_X, typename TYPE_Z>
-__aicore__ inline void CastV2<TYPE_X,TYPE_Z>::CopyOut(int32_t progress)
+__aicore__ inline void CastV2<TYPE_X, TYPE_Z>::CopyOut(int32_t progress)
 {
     AscendC::LocalTensor<TYPE_Z> zLocal = outQueueZ.DeQue<TYPE_Z>();
     AscendC::DataCopy(zGm[progress * this->tileDataNum], zLocal, this->processDataNum);
@@ -108,34 +108,34 @@ __aicore__ inline void CastV2<TYPE_X,TYPE_Z>::CopyOut(int32_t progress)
 }
 
 template <typename TYPE_X, typename TYPE_Z>
-__aicore__ inline void CastV2<TYPE_X,TYPE_Z>::Compute(int32_t progress)
+__aicore__ inline void CastV2<TYPE_X, TYPE_Z>::Compute(int32_t progress)
 {
     AscendC::LocalTensor<TYPE_X> xLocal = inQueueX.DeQue<TYPE_X>();
     AscendC::LocalTensor<TYPE_Z> zLocal = outQueueZ.AllocTensor<TYPE_Z>();
-    if constexpr (std::is_same_v<TYPE_X, int32_t> &&std::is_same_v<TYPE_Z, half>) {
+    if constexpr (std::is_same_v<TYPE_X, int32_t> && std::is_same_v<TYPE_Z, half>) {
         half scale = 1.0f;
         AscendC::SetDeqScale(scale);
-        AscendC::Cast(zLocal, xLocal, AscendC::RoundMode::CAST_NONE,this->processDataNum);
+        AscendC::Cast(zLocal, xLocal, AscendC::RoundMode::CAST_NONE, this->processDataNum);
     } else {
-        AscendC::Cast(zLocal, xLocal, AscendC::RoundMode::CAST_NONE,this->processDataNum);
+        AscendC::Cast(zLocal, xLocal, AscendC::RoundMode::CAST_NONE, this->processDataNum);
     }
     outQueueZ.EnQue<TYPE_Z>(zLocal);
     inQueueX.FreeTensor(xLocal);
 }
 
 template <typename TYPE_X, typename TYPE_Z>
-__aicore__ inline void CastV2<TYPE_X,TYPE_Z>::Process()
+__aicore__ inline void CastV2<TYPE_X, TYPE_Z>::Process()
 {
     int32_t loopCount = this->tileNum;
-        this->processDataNum = this->tileDataNum;
-        for (int32_t i = 0; i < loopCount; i++) {
-            if (i == this->tileNum - 1) {
-              this->processDataNum = this->tailDataNum;
-            }
-            CopyIn(i);
-            Compute(i);
-            CopyOut(i);
+    this->processDataNum = this->tileDataNum;
+    for (int32_t i = 0; i < loopCount; i++) {
+        if (i == this->tileNum - 1) {
+            this->processDataNum = this->tailDataNum;
         }
+        CopyIn(i);
+        Compute(i);
+        CopyOut(i);
+    }
 }
 
 } // namespace NsCastV2

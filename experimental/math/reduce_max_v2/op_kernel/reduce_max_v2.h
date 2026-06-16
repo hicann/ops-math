@@ -31,7 +31,7 @@
 #include "reduce_max_v2_tiling_data.h"
 #include "reduce_max_v2_tiling_key.h"
 
-namespace NsReduceMaxV2{
+namespace NsReduceMaxV2 {
 
 using namespace AscendC;
 
@@ -39,17 +39,17 @@ constexpr int32_t BUFFER_NUM = 2;
 constexpr int32_t DATA_CACHE_CLEAN_NEED = 64;
 constexpr int32_t SLOT_STRIDE = DATA_CACHE_CLEAN_NEED / sizeof(float);
 template <typename T>
-class ReduceMaxV2{
+class ReduceMaxV2 {
 public:
     __aicore__ inline ReduceMaxV2(){};
 
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR z,GM_ADDR workspace,const ReduceMaxV2TilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR z, GM_ADDR workspace, const ReduceMaxV2TilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
     __aicore__ inline void InitTilingParam(const ReduceMaxV2TilingData* tilingData);
     __aicore__ inline void CopyIn(int32_t progress);
-    __aicore__ inline void CollectAxes(LocalTensor<float> localMax,uint32_t nums);
+    __aicore__ inline void CollectAxes(LocalTensor<float> localMax, uint32_t nums);
 
     __aicore__ inline void ReduceMaxV2Axes0();
     __aicore__ inline void ReduceMaxV2Axes1();
@@ -58,7 +58,7 @@ private:
 private:
     AscendC::TPipe pipe;
     AscendC::TQue<AscendC::QuePosition::VECIN, BUFFER_NUM> inQueueInput;
-    
+
     AscendC::GlobalTensor<T> xGm;
     AscendC::GlobalTensor<T> zGm;
     AscendC::GlobalTensor<float> workGm;
@@ -85,7 +85,8 @@ private:
     uint32_t keepdims;
 };
 template <typename T>
-__aicore__ inline void ReduceMaxV2<T>::InitTilingParam(const ReduceMaxV2TilingData* tilingData){
+__aicore__ inline void ReduceMaxV2<T>::InitTilingParam(const ReduceMaxV2TilingData* tilingData)
+{
     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
     uint32_t coreIdx = AscendC::GetBlockIdx();
     this->blockIdx = coreIdx;
@@ -96,56 +97,61 @@ __aicore__ inline void ReduceMaxV2<T>::InitTilingParam(const ReduceMaxV2TilingDa
     this->rows = tilingData->rows;
     this->cols = tilingData->cols;
     this->keyType = tilingData->dataTypeId;
-    if(coreIdx < tilingData->tailBlockNum){
+    if (coreIdx < tilingData->tailBlockNum) {
         this->coreDataNum = tilingData->bigCoreDataNum;
         this->tileNum = tilingData->finalBigTileNum;
         this->tailDataNum = tilingData->bigTailDataNum;
-    }else{
+    } else {
         this->coreDataNum = tilingData->smallCoreDataNum;
         this->tileNum = tilingData->finalSmallTileNum;
         this->tailDataNum = tilingData->smallTailDataNum;
-        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (coreIdx - tilingData->tailBlockNum);
+        globalBufferIndex -=
+            (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (coreIdx - tilingData->tailBlockNum);
     }
     this->globalOffset = globalBufferIndex;
 }
 template <typename T>
-__aicore__ inline void ReduceMaxV2<T>::Init(GM_ADDR x, GM_ADDR z,GM_ADDR workspace, const ReduceMaxV2TilingData* tilingData)
+__aicore__ inline void ReduceMaxV2<T>::Init(
+    GM_ADDR x, GM_ADDR z, GM_ADDR workspace, const ReduceMaxV2TilingData* tilingData)
 {
     InitTilingParam(tilingData);
     uint32_t totalElements = this->rows * this->cols;
-    if(this->globalOffset >= totalElements){
+    if (this->globalOffset >= totalElements) {
         this->coreDataNum = 0;
         xGm.SetGlobalBuffer((__gm__ T*)x, 0);
-    }else{
+    } else {
         uint32_t available = totalElements - this->globalOffset;
         uint32_t bindLen = (available < this->coreDataNum) ? available : this->coreDataNum;
         xGm.SetGlobalBuffer((__gm__ T*)x + this->globalOffset, bindLen);
         this->coreDataNum = bindLen;
     }
     uint32_t outputSize = 0;
-    if(axes == 0) outputSize = this->cols;
-    else if(axes == 1) outputSize = this->rows;
-    else outputSize = 1;
+    if (axes == 0)
+        outputSize = this->cols;
+    else if (axes == 1)
+        outputSize = this->rows;
+    else
+        outputSize = 1;
     zGm.SetGlobalBuffer((__gm__ T*)z, outputSize);
     uint32_t workGmSize = 0;
-    if(axes == 0){
+    if (axes == 0) {
         workGmSize = this->cols * SLOT_STRIDE;
-    }else if(axes == 1){
-        workGmSize = this->rows * SLOT_STRIDE; 
-    }else{
+    } else if (axes == 1) {
+        workGmSize = this->rows * SLOT_STRIDE;
+    } else {
         workGmSize = 1 * SLOT_STRIDE;
     }
-    workGm.SetGlobalBuffer((__gm__ float*)workspace , workGmSize);
-    if(AscendC::GetBlockIdx() == 0){
+    workGm.SetGlobalBuffer((__gm__ float*)workspace, workGmSize);
+    if (AscendC::GetBlockIdx() == 0) {
         AscendC::InitGlobalMemory(workGm, workGmSize, -std::numeric_limits<float>::infinity());
     }
     pipe.InitBuffer(inQueueInput, BUFFER_NUM, this->tileDataNum * sizeof(T));
     pipe.InitBuffer(tmpFloat, tileDataNum * sizeof(float));
     pipe.InitBuffer(tmpBase, 64 * sizeof(float));
     pipe.InitBuffer(tmpBuffer, workGmSize * sizeof(float));
-    if(axes == 0){
+    if (axes == 0) {
         pipe.InitBuffer(colMax, this->cols * sizeof(float));
-    }else if(axes == 1){
+    } else if (axes == 1) {
         pipe.InitBuffer(rowMax, this->rows * sizeof(float));
     }
 }
@@ -162,22 +168,23 @@ __aicore__ inline void ReduceMaxV2<T>::CopyIn(int32_t progress)
 template <typename T>
 __aicore__ inline void ReduceMaxV2<T>::Process()
 {
-    if(this->axes == 0){
+    if (this->axes == 0) {
         ReduceMaxV2Axes0();
-    }else if(this->axes == 1){
+    } else if (this->axes == 1) {
         ReduceMaxV2Axes1();
-    }else{
+    } else {
         ReduceMaxV2AxesAll();
     }
 }
 
 template <typename T>
-__aicore__ inline void ReduceMaxV2<T>::CollectAxes(LocalTensor<float> localMax,uint32_t nums){
+__aicore__ inline void ReduceMaxV2<T>::CollectAxes(LocalTensor<float> localMax, uint32_t nums)
+{
     AscendC::LocalTensor<float> tmpBuf = tmpBuffer.Get<float>();
     uint32_t totalWorkSize = nums * SLOT_STRIDE;
-    
+
     AscendC::Duplicate(tmpBuf, -std::numeric_limits<float>::infinity(), totalWorkSize);
-    for(uint32_t c = 0; c < nums; ++c){
+    for (uint32_t c = 0; c < nums; ++c) {
         tmpBuf.SetValue(c * SLOT_STRIDE, localMax.GetValue(c));
     }
     AscendC::SetAtomicMax<float>();
@@ -185,123 +192,127 @@ __aicore__ inline void ReduceMaxV2<T>::CollectAxes(LocalTensor<float> localMax,u
     AscendC::SetAtomicNone();
     AscendC::SyncAll();
 
-    if(this->blockIdx == 0){
+    if (this->blockIdx == 0) {
         AscendC::DataCopy(tmpBuf, workGm, totalWorkSize);
-        for(uint32_t c = 0; c < nums; ++c){
+        for (uint32_t c = 0; c < nums; ++c) {
             zGm.SetValue(c, static_cast<T>(tmpBuf.GetValue(c * SLOT_STRIDE)));
         }
     }
 }
 template <typename T>
-__aicore__ inline void ReduceMaxV2<T>::ReduceMaxV2Axes0(){
+__aicore__ inline void ReduceMaxV2<T>::ReduceMaxV2Axes0()
+{
     AscendC::SyncAll();
     const uint32_t totalElements = this->rows * this->cols;
     AscendC::LocalTensor<float> localMax = colMax.Get<float>();
-    for(uint32_t c = 0; c < this->cols; ++c){
+    for (uint32_t c = 0; c < this->cols; ++c) {
         localMax.SetValue(c, -std::numeric_limits<float>::infinity());
     }
-    for(uint32_t t = 0; t < this->tileNum; ++t){
+    for (uint32_t t = 0; t < this->tileNum; ++t) {
         uint32_t curTileLen = (t == this->tileNum - 1) ? this->tailDataNum : this->tileDataNum;
 
         CopyIn(t);
         AscendC::LocalTensor<T> tileLocal = inQueueInput.DeQue<T>();
         AscendC::LocalTensor<float> tileFloat = tmpFloat.Get<float>();
 
-        if(keyType == 1){ 
+        if (keyType == 1) {
             AscendC::Cast(tileFloat, tileLocal, AscendC::RoundMode::CAST_NONE, curTileLen);
-        }else{
-            for(uint32_t i = 0; i < curTileLen; ++i){
+        } else {
+            for (uint32_t i = 0; i < curTileLen; ++i) {
                 tileFloat.SetValue(i, tileLocal.GetValue(i));
             }
         }
 
-        for(uint32_t i = 0; i < curTileLen; ++i){
+        for (uint32_t i = 0; i < curTileLen; ++i) {
             uint32_t globalIdx = this->globalOffset + t * this->tileDataNum + i;
-            if(globalIdx >= totalElements){ 
+            if (globalIdx >= totalElements) {
                 continue;
             }
             uint32_t rowIdx = globalIdx / this->cols;
             uint32_t colIdx = globalIdx % this->cols;
-            if(colIdx < this->cols){
+            if (colIdx < this->cols) {
                 float prev = localMax.GetValue(colIdx);
-                float curv = tileFloat.GetValue(i);  
-                if(prev < curv) 
+                float curv = tileFloat.GetValue(i);
+                if (prev < curv)
                     localMax.SetValue(colIdx, curv);
             }
         }
         inQueueInput.FreeTensor(tileLocal);
     }
     uint32_t nums = this->cols;
-    CollectAxes(localMax,nums);
+    CollectAxes(localMax, nums);
 }
 template <typename T>
-__aicore__ inline void ReduceMaxV2<T>::ReduceMaxV2Axes1(){
+__aicore__ inline void ReduceMaxV2<T>::ReduceMaxV2Axes1()
+{
     AscendC::SyncAll();
     const uint32_t totalElements = this->rows * this->cols;
 
     AscendC::LocalTensor<float> localMax = rowMax.Get<float>();
-    for(uint32_t r = 0; r < this->rows; ++r){
+    for (uint32_t r = 0; r < this->rows; ++r) {
         localMax.SetValue(r, -std::numeric_limits<float>::infinity());
     }
-    for(uint32_t t = 0; t < this->tileNum; ++t){
+    for (uint32_t t = 0; t < this->tileNum; ++t) {
         uint32_t curTileLen = (t == this->tileNum - 1) ? this->tailDataNum : this->tileDataNum;
 
         CopyIn(t);
         AscendC::LocalTensor<T> tileLocal = inQueueInput.DeQue<T>();
         AscendC::LocalTensor<float> tileFloat = tmpFloat.Get<float>();
-        if(keyType == 1){
+        if (keyType == 1) {
             AscendC::Cast(tileFloat, tileLocal, AscendC::RoundMode::CAST_NONE, curTileLen);
-        }else{ 
-            for(uint32_t i = 0; i < curTileLen; ++i){
+        } else {
+            for (uint32_t i = 0; i < curTileLen; ++i) {
                 tileFloat.SetValue(i, tileLocal.GetValue(i));
             }
         }
-        for(uint32_t i = 0; i < curTileLen; ++i){
-                uint32_t globalIdx = this->globalOffset + t * this->tileDataNum + i;
-                if(globalIdx >= totalElements){
-                    continue;
-                }
-                uint32_t rowIdx = globalIdx / this->cols;
-                uint32_t colIdx = globalIdx % this->cols;
-                if(rowIdx < this->rows){
-                    float prev = localMax.GetValue(rowIdx);
-                    float curv = tileFloat.GetValue(i);  
-                    if(prev < curv) 
-                        localMax.SetValue(rowIdx, curv);
-                }
+        for (uint32_t i = 0; i < curTileLen; ++i) {
+            uint32_t globalIdx = this->globalOffset + t * this->tileDataNum + i;
+            if (globalIdx >= totalElements) {
+                continue;
             }
-    
+            uint32_t rowIdx = globalIdx / this->cols;
+            uint32_t colIdx = globalIdx % this->cols;
+            if (rowIdx < this->rows) {
+                float prev = localMax.GetValue(rowIdx);
+                float curv = tileFloat.GetValue(i);
+                if (prev < curv)
+                    localMax.SetValue(rowIdx, curv);
+            }
+        }
+
         inQueueInput.FreeTensor(tileLocal);
     }
     uint32_t nums = this->rows;
-    CollectAxes(localMax,nums);
+    CollectAxes(localMax, nums);
 }
 template <typename T>
-__aicore__ inline void ReduceMaxV2<T>::ReduceMaxV2AxesAll(){
+__aicore__ inline void ReduceMaxV2<T>::ReduceMaxV2AxesAll()
+{
     const uint32_t loopCount = this->tileNum;
     AscendC::LocalTensor<float> localMax = tmpBase.Get<float>();
     float initVal = -std::numeric_limits<float>::infinity();
     localMax.SetValue(0, initVal);
-    for(uint32_t t = 0; t < loopCount; ++t){
+    for (uint32_t t = 0; t < loopCount; ++t) {
         uint32_t curTileLen = (t == loopCount - 1) ? this->tailDataNum : this->tileDataNum;
         CopyIn(t);
         AscendC::LocalTensor<T> tileLocal = inQueueInput.DeQue<T>();
         AscendC::LocalTensor<float> tileFloat = tmpFloat.Get<float>();
-        if(keyType == 1){ 
+        if (keyType == 1) {
             AscendC::Cast(tileFloat, tileLocal, AscendC::RoundMode::CAST_NONE, curTileLen);
-        }else{
-            for(uint32_t i = 0; i < curTileLen; ++i){
+        } else {
+            for (uint32_t i = 0; i < curTileLen; ++i) {
                 tileFloat.SetValue(i, tileLocal.GetValue(i));
             }
         }
         float tileMax = -std::numeric_limits<float>::infinity();
-        for(uint32_t i = 0; i < curTileLen; ++i){
+        for (uint32_t i = 0; i < curTileLen; ++i) {
             float curv = tileFloat.GetValue(i);
-            if(curv > tileMax) tileMax = curv;
+            if (curv > tileMax)
+                tileMax = curv;
         }
-        if(localMax.GetValue(0) < tileMax)
+        if (localMax.GetValue(0) < tileMax)
             localMax.SetValue(0, tileMax);
-        
+
         inQueueInput.FreeTensor(tileLocal);
     }
     AscendC::LocalTensor<float> tmpBuf = tmpBuffer.Get<float>();
@@ -310,12 +321,13 @@ __aicore__ inline void ReduceMaxV2<T>::ReduceMaxV2AxesAll(){
     AscendC::SetAtomicMax<float>();
     AscendC::DataCopy(workGm[0], tmpBuf, 8);
     AscendC::SetAtomicNone();
-    AscendC::DataCacheCleanAndInvalid<float, AscendC::CacheLine::SINGLE_CACHE_LINE, AscendC::DcciDst::CACHELINE_OUT>(workGm[0]);
+    AscendC::DataCacheCleanAndInvalid<float, AscendC::CacheLine::SINGLE_CACHE_LINE, AscendC::DcciDst::CACHELINE_OUT>(
+        workGm[0]);
     AscendC::SyncAll();
     float globalMax = workGm.GetValue(0);
-    if(this->blockIdx == 0){
+    if (this->blockIdx == 0) {
         zGm.SetValue(0, static_cast<T>(globalMax));
     }
 }
 } // namespace NsReduceMaxV2
-#endif// ReduceMaxV2_H
+#endif // ReduceMaxV2_H

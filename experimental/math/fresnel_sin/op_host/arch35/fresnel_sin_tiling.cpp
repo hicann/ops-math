@@ -22,18 +22,19 @@
 
 namespace optiling {
 
-using Ops::Base::CeilDiv;
 using Ops::Base::CeilAlign;
-using Ops::Base::FloorDiv;
+using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
-constexpr uint32_t TILE_LENGTH = 4096;    // elements per tile (DB chunk)
-constexpr uint32_t MIN_TILE    = 64;      // Compare/Select 256B align -> 64 fp32
+constexpr uint32_t TILE_LENGTH = 4096; // elements per tile (DB chunk)
+constexpr uint32_t MIN_TILE = 64;      // Compare/Select 256B align -> 64 fp32
 
 static const gert::Shape g_vec_1_shape = {1};
 
-static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape) {
+static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape)
+{
     if (in_shape.GetDimNum() == 0) {
         return g_vec_1_shape;
     }
@@ -52,8 +53,7 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus GetShapeAttrsInfo(
-    gert::TilingContext* context, int64_t& totalIdx, ge::DataType& dataType)
+static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& totalIdx, ge::DataType& dataType)
 {
     auto inputX = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
@@ -65,8 +65,7 @@ static ge::graphStatus GetShapeAttrsInfo(
 
     OP_CHECK_IF(
         inputShapeX.GetShapeSize() != outShapeY.GetShapeSize(),
-        OP_LOGE(context, "FresnelSin: input and output shape size mismatch"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "FresnelSin: input and output shape size mismatch"), return ge::GRAPH_FAILED);
 
     totalIdx = inputShapeX.GetShapeSize();
 
@@ -76,8 +75,7 @@ static ge::graphStatus GetShapeAttrsInfo(
     dataType = inputDesc->GetDataType();
     OP_CHECK_IF(
         supportedDtype.count(dataType) == 0,
-        OP_LOGE(context, "FresnelSin: invalid dtype %d", static_cast<int>(dataType)),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "FresnelSin: invalid dtype %d", static_cast<int>(dataType)), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -98,8 +96,8 @@ static ge::graphStatus FresnelSinTilingFunc(gert::TilingContext* context)
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
     OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+        return ge::GRAPH_FAILED);
 
     int64_t totalIdx = 0;
     ge::DataType dataType = ge::DT_FLOAT;
@@ -108,8 +106,8 @@ static ge::graphStatus FresnelSinTilingFunc(gert::TilingContext* context)
         OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+        return ge::GRAPH_FAILED);
 
     FresnelSinTilingData* tiling = context->GetTilingData<FresnelSinTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
@@ -122,9 +120,11 @@ static ge::graphStatus FresnelSinTilingFunc(gert::TilingContext* context)
 
     // Effective core count: do not exceed ceil(totalIdx / MIN_TILE)
     int64_t maxCoreByTask = (totalIdx + MIN_TILE - 1) / MIN_TILE;
-    if (maxCoreByTask < 1) maxCoreByTask = 1;
+    if (maxCoreByTask < 1)
+        maxCoreByTask = 1;
     int64_t usedCoreNum = std::min(coreNum, maxCoreByTask);
-    if (usedCoreNum < 1) usedCoreNum = 1;
+    if (usedCoreNum < 1)
+        usedCoreNum = 1;
 
     int64_t baseLen = CeilAlign(CeilDiv(totalIdx, usedCoreNum), ubBlockSize);
     // Guard against divide-by-zero: empty tensor (totalIdx==0) or alignment producing baseLen==0
@@ -133,16 +133,18 @@ static ge::graphStatus FresnelSinTilingFunc(gert::TilingContext* context)
     }
     // Recompute core count from aligned baseLen
     usedCoreNum = (totalIdx + baseLen - 1) / baseLen;
-    if (usedCoreNum < 1) usedCoreNum = 1;
+    if (usedCoreNum < 1)
+        usedCoreNum = 1;
     int64_t tailLen = totalIdx - baseLen * (usedCoreNum - 1);
-    if (tailLen < 0) tailLen = 0;
+    if (tailLen < 0)
+        tailLen = 0;
 
     tiling->totalLength = static_cast<uint64_t>(totalIdx);
-    tiling->blockNum    = static_cast<uint32_t>(usedCoreNum);
-    tiling->baseLength  = static_cast<uint32_t>(baseLen);
-    tiling->tailLength  = static_cast<uint32_t>(tailLen);
-    tiling->tileLength  = TILE_LENGTH;
-    tiling->tileNum     = static_cast<uint32_t>((baseLen + TILE_LENGTH - 1) / TILE_LENGTH);
+    tiling->blockNum = static_cast<uint32_t>(usedCoreNum);
+    tiling->baseLength = static_cast<uint32_t>(baseLen);
+    tiling->tailLength = static_cast<uint32_t>(tailLen);
+    tiling->tileLength = TILE_LENGTH;
+    tiling->tileNum = static_cast<uint32_t>((baseLen + TILE_LENGTH - 1) / TILE_LENGTH);
     tiling->tailTileLen = static_cast<uint32_t>(baseLen % TILE_LENGTH);
 
     context->SetBlockDim(static_cast<uint32_t>(usedCoreNum));
@@ -168,8 +170,6 @@ static ge::graphStatus TilingParseForFresnelSin([[maybe_unused]] gert::TilingPar
 
 struct FresnelSinCompileInfo {};
 
-IMPL_OP_OPTILING(FresnelSin)
-    .Tiling(FresnelSinTilingFunc)
-    .TilingParse<FresnelSinCompileInfo>(TilingParseForFresnelSin);
+IMPL_OP_OPTILING(FresnelSin).Tiling(FresnelSinTilingFunc).TilingParse<FresnelSinCompileInfo>(TilingParseForFresnelSin);
 
 } // namespace optiling

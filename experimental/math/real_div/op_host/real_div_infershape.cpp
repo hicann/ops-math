@@ -11,7 +11,7 @@
 /*!
  * \file real_div_infer.cpp
  * \brief
-*/
+ */
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 
@@ -39,4 +39,4 @@ static ge::graphStatus InferShapeRealDiv(gert::InferShapeContext* context)
 }
 
 IMPL_OP_INFERSHAPE(RealDiv).InferShape(InferShapeRealDiv);
-}
+} // namespace ops

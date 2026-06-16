@@ -22,7 +22,7 @@
 /*!
  * \file invert_v2_proto.h
  * \brief
-*/
+ */
 #ifndef OPS_OP_PROTO_INC_INVERTV2_H_
 #define OPS_OP_PROTO_INC_INVERTV2_H_
 
@@ -43,8 +43,8 @@ namespace ge {
 *Compatible with the TensorFlow operator InvertV2.
 */
 REG_OP(InvertV2)
-    .INPUT(x1, TensorType({DT_INT16,DT_UINT16}))
-    .OUTPUT(y, TensorType({DT_INT16,DT_UINT16}))
+    .INPUT(x1, TensorType({DT_INT16, DT_UINT16}))
+    .OUTPUT(y, TensorType({DT_INT16, DT_UINT16}))
     .OP_END_FACTORY_REG(InvertV2)
 
 } // namespace ge

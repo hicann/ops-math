@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
+
 /**
  *
  * NOTE: Portions of this code were AI-generated and have been
@@ -111,8 +111,7 @@ static ge::graphStatus AsinhV2TilingFunc(gert::TilingContext* context)
     uint32_t typeSize = (dataType == ge::DT_FLOAT16) ? 2U : 4U;
     int64_t tmpBufSize = static_cast<int64_t>(ubSize / 4);
     OP_CHECK_IF(
-        tmpBufSize <= 0, OP_LOGE(context, "AsinhV2: tmpBufSize is invalid: %ld", tmpBufSize),
-        return ge::GRAPH_FAILED);
+        tmpBufSize <= 0, OP_LOGE(context, "AsinhV2: tmpBufSize is invalid: %ld", tmpBufSize), return ge::GRAPH_FAILED);
 
     // 5. 计算 ubFactor
     // UB 布局：input(BUFFER_NUM份) + output(BUFFER_NUM份) + tmpBuf(1份)
@@ -164,8 +163,6 @@ static ge::graphStatus TilingParseForAsinhV2([[maybe_unused]] gert::TilingParseC
 
 struct AsinhV2CompileInfo {}; // 入图场景依赖
 
-IMPL_OP_OPTILING(AsinhV2)
-    .Tiling(AsinhV2TilingFunc)
-    .TilingParse<AsinhV2CompileInfo>(TilingParseForAsinhV2);
+IMPL_OP_OPTILING(AsinhV2).Tiling(AsinhV2TilingFunc).TilingParse<AsinhV2CompileInfo>(TilingParseForAsinhV2);
 
 } // namespace optiling

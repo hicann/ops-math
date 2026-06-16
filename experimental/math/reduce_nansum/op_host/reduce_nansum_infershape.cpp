@@ -9,11 +9,11 @@
  */
 
 /**
-* 我们正常的版权申明，下面是我们的备注
-*
-* NOTE: Portions of this code were AI-generated and have been
-* technically reviewed for functional accuracy and security
-*/
+ * 我们正常的版权申明，下面是我们的备注
+ *
+ * NOTE: Portions of this code were AI-generated and have been
+ * technically reviewed for functional accuracy and security
+ */
 
 /*!
  * \file reduce_nansum_infershape.cpp
@@ -142,8 +142,6 @@ static ge::graphStatus InferShape4ReduceNansum(gert::InferShapeContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_INFERSHAPE(ReduceNansum)
-    .InferShape(InferShape4ReduceNansum)
-    .InputsDataDependency({1});
+IMPL_OP_INFERSHAPE(ReduceNansum).InferShape(InferShape4ReduceNansum).InputsDataDependency({1});
 
 } // namespace ops

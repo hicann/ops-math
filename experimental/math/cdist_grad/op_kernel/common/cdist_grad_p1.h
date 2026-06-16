@@ -9,11 +9,11 @@
  */
 
 /**
-* 我们正常的版权申明，下面是我们的备注
-*
-* NOTE: Portions of this code were AI-generated and have been
-* technically reviewed for functional accuracy and security
-*/
+ * 我们正常的版权申明，下面是我们的备注
+ *
+ * NOTE: Portions of this code were AI-generated and have been
+ * technically reviewed for functional accuracy and security
+ */
 
 /*!
  * \file cdist_grad_p1.h
@@ -44,9 +44,9 @@ class CdistGradP1 {
 public:
     __aicore__ inline CdistGradP1() {}
 
-    __aicore__ inline void Init(GM_ADDR gradOutput, GM_ADDR x1, GM_ADDR x2,
-                                 GM_ADDR cdistResult, GM_ADDR gradX1,
-                                 const CdistGradTilingData* tilingData);
+    __aicore__ inline void Init(
+        GM_ADDR gradOutput, GM_ADDR x1, GM_ADDR x2, GM_ADDR cdistResult, GM_ADDR gradX1,
+        const CdistGradTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -105,9 +105,9 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void CdistGradP1<T>::Init(GM_ADDR gradOutput, GM_ADDR x1, GM_ADDR x2,
-                                              GM_ADDR cdistResult, GM_ADDR gradX1,
-                                              const CdistGradTilingData* tilingData)
+__aicore__ inline void CdistGradP1<T>::Init(
+    GM_ADDR gradOutput, GM_ADDR x1, GM_ADDR x2, GM_ADDR cdistResult, GM_ADDR gradX1,
+    const CdistGradTilingData* tilingData)
 {
     batchSize_ = tilingData->batchSize;
     pSize_ = tilingData->pSize;
@@ -161,7 +161,8 @@ __aicore__ inline void CdistGradP1<T>::Init(GM_ADDR gradOutput, GM_ADDR x1, GM_A
     // Cast buffer for fp16 (mAligned * sizeof(half))
     if constexpr (IS_FP16) {
         int64_t castBytes = mAligned_ * static_cast<int64_t>(sizeof(half));
-        if (castBytes < 32) castBytes = 32;
+        if (castBytes < 32)
+            castBytes = 32;
         pipe.InitBuffer(castBuf, castBytes);
     }
 
@@ -260,7 +261,8 @@ __aicore__ inline void CdistGradP1<T>::CopyInRChunk(int64_t b, int64_t i, int64_
         int64_t dstOffset = 0;
         while (remaining > 0) {
             int64_t batchLen = remaining;
-            if (batchLen > castCapacity) batchLen = castCapacity;
+            if (batchLen > castCapacity)
+                batchLen = castCapacity;
             Duplicate(castLocal, static_cast<half>(0), static_cast<uint32_t>(castCapacity));
             PipeBarrier<PIPE_ALL>();
             DataCopyParams gParams;
@@ -272,7 +274,8 @@ __aicore__ inline void CdistGradP1<T>::CopyInRChunk(int64_t b, int64_t i, int64_
             PipeBarrier<PIPE_ALL>();
             // Cast batch to fp32 in gradChunk at dstOffset
             int64_t castCount = ((batchLen + 7) / 8) * 8; // align to 8 for Cast
-            if (castCount > castCapacity) castCount = castCapacity;
+            if (castCount > castCapacity)
+                castCount = castCapacity;
             Cast(gradChunk[dstOffset], castLocal, RoundMode::CAST_NONE, static_cast<uint32_t>(castCount));
             PipeBarrier<PIPE_ALL>();
             remaining -= batchLen;
@@ -342,9 +345,9 @@ __aicore__ inline void CdistGradP1<T>::ComputeForJ(int64_t j)
     PipeBarrier<PIPE_ALL>();
 
     // sign(diff) via arithmetic: sign(x) = x / (|x| + epsilon)
-    Abs(tmp, diff, count);                      // tmp = |diff|
-    Adds(tmp, tmp, 1e-12f, count);              // tmp = |diff| + epsilon
-    Div(localGrad, diff, tmp, count);           // localGrad = diff / (|diff| + eps) ~ sign(diff)
+    Abs(tmp, diff, count);            // tmp = |diff|
+    Adds(tmp, tmp, 1e-12f, count);    // tmp = |diff| + epsilon
+    Div(localGrad, diff, tmp, count); // localGrad = diff / (|diff| + eps) ~ sign(diff)
     PipeBarrier<PIPE_ALL>();
 
     // weighted = grad_output[j] * local_grad

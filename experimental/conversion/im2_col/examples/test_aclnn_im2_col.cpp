@@ -36,7 +36,7 @@
     } while (0)
 
 // 常量定义
-constexpr int64_t MAX_TEST_VALUE = 10;  // 用于测试数据生成的模数
+constexpr int64_t MAX_TEST_VALUE = 10; // 用于测试数据生成的模数
 
 int64_t GetShapeSize(const std::vector<int64_t>& shape)
 {
@@ -111,15 +111,15 @@ int main()
     // 示例: batch=1, channels=3, height=4, width=4
     aclTensor* input = nullptr;
     void* inputDeviceAddr = nullptr;
-    std::vector<int64_t> inputShape = {1, 3, 4, 4};  // [N, C, H, W]
+    std::vector<int64_t> inputShape = {1, 3, 4, 4}; // [N, C, H, W]
     int64_t inputSize = GetShapeSize(inputShape);
-    
+
     // 为输入数据填充测试值，使用命名常量替代魔法数字
     std::vector<float> inputHostData(inputSize, 1.0f);
     for (int64_t i = 0; i < inputSize; i++) {
         inputHostData[i] = static_cast<float>(i % MAX_TEST_VALUE);
     }
-    
+
     ret = CreateAclTensor(inputHostData, inputShape, &inputDeviceAddr, aclDataType::ACL_FLOAT, &input);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
@@ -132,18 +132,18 @@ int main()
     int32_t pad_w = 0;
     int32_t dilation_h = 1;
     int32_t dilation_w = 1;
-    
+
     // 计算输出shape
     int64_t N = inputShape[0];
     int64_t C = inputShape[1];
     int64_t H = inputShape[2];
     int64_t W = inputShape[3];
-    
+
     int64_t out_H = (H + 2 * pad_h - dilation_h * (kernel_h - 1) - 1) / stride_h + 1;
     int64_t out_W = (W + 2 * pad_w - dilation_w * (kernel_w - 1) - 1) / stride_w + 1;
     int64_t output_channels = C * kernel_h * kernel_w;
     int64_t L = out_H * out_W;
-    
+
     LOG_PRINT("Input shape: [%ld, %ld, %ld, %ld]\n", N, C, H, W);
     LOG_PRINT("Kernel: %ldx%ld, Stride: %ld, Padding: %ld\n", kernel_h, kernel_w, stride, padding);
     LOG_PRINT("Output shape: [%ld, %ld, %ld] (N, C*kh*kw, L)\n", N, output_channels, L);
@@ -153,7 +153,7 @@ int main()
     void* outDeviceAddr = nullptr;
     std::vector<int64_t> outShape = {N, output_channels, L};
     int64_t outSize = GetShapeSize(outShape);
-    
+
     // 使用计算出的输出大小初始化输出数据
     std::vector<float> outHostData(outSize, 1.0f);
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
@@ -164,12 +164,12 @@ int main()
     aclOpExecutor* executor;
 
     LOG_PRINT("Before GetWorkspaceSize: input=%p, out=%p\n", (void*)input, (void*)out);
-    LOG_PRINT("Before GetWorkspaceSize: inputDeviceAddr=%p, outDeviceAddr=%p\n",
-          inputDeviceAddr, outDeviceAddr);
+    LOG_PRINT("Before GetWorkspaceSize: inputDeviceAddr=%p, outDeviceAddr=%p\n", inputDeviceAddr, outDeviceAddr);
 
     // 6. 调用aclnnIm2Col第一段接口
     ret = aclnnIm2ColGetWorkspaceSize(
-        inputX, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w, dilation_h, dilation_w, out, &workspaceSize, &executor);
+        inputX, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w, dilation_h, dilation_w, out, &workspaceSize,
+        &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnIm2ColGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 根据第一段接口计算出的workspaceSize申请device内存

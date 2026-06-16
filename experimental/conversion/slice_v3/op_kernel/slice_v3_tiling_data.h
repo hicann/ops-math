@@ -26,15 +26,15 @@
 #ifndef __SLICE_V3_TILLING_DATA_H__
 #define __SLICE_V3_TILLING_DATA_H__
 
-constexpr uint32_t MAX_DIM = 8; 
+constexpr uint32_t MAX_DIM = 8;
 struct SliceV3TilingData {
-    int64_t dim; 
-    int64_t begin[MAX_DIM]; 
-    int64_t inputCumShape[MAX_DIM]; 
-    int64_t outputCumShape[MAX_DIM]; 
-    int64_t lastDimSize; 
+    int64_t dim;
+    int64_t begin[MAX_DIM];
+    int64_t inputCumShape[MAX_DIM];
+    int64_t outputCumShape[MAX_DIM];
+    int64_t lastDimSize;
     int64_t tileDataNum;
-    int64_t outerLoopNum; 
-    int64_t tailCoreNum; 
+    int64_t outerLoopNum;
+    int64_t tailCoreNum;
 };
 #endif

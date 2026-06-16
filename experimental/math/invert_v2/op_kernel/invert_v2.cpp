@@ -22,15 +22,15 @@
 /*!
  * \file invert_v2.cpp
  * \brief
-*/
+ */
 #include "invert_v2.h"
 
 template <uint32_t schMode>
-__global__ __aicore__ void invert_v2(GM_ADDR x,  GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void invert_v2(GM_ADDR x, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(InvertV2TilingData);
     GET_TILING_DATA_WITH_STRUCT(InvertV2TilingData, tilingData, tiling);
-    NsInvertV2::InvertV2<DTYPE_X> op; // 算子kernel实例获取
-    op.Init(x,  z, workspace,&tilingData);      // 算子kernel实例初始化
-    op.Process();                       // 算子kernel实例执行
+    NsInvertV2::InvertV2<DTYPE_X> op;      // 算子kernel实例获取
+    op.Init(x, z, workspace, &tilingData); // 算子kernel实例初始化
+    op.Process();                          // 算子kernel实例执行
 }

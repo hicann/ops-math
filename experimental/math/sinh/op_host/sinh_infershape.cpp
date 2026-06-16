@@ -21,7 +21,7 @@
 /*!
  * \file sinh_infer.cpp
  * \brief
-*/
+ */
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 
@@ -43,7 +43,7 @@ static ge::graphStatus InferShapeSinh(gert::InferShapeContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
 
     // 填充输出shape大小
-   *yShape = *xShape;
+    *yShape = *xShape;
 
     OP_LOGD(context->GetNodeName(), "End to do InferShapeSinh");
     return GRAPH_SUCCESS;

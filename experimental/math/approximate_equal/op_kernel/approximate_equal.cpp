@@ -16,8 +16,7 @@
 #include "approximate_equal_kernel.h"
 
 template <typename D_T_X>
-__global__ __aicore__ void approximate_equal(GM_ADDR x1, GM_ADDR x2, GM_ADDR y,
-                                             GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void approximate_equal(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(ApproximateEqualTilingData);
     GET_TILING_DATA_WITH_STRUCT(ApproximateEqualTilingData, tilingData, tiling);

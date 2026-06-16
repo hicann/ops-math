@@ -49,7 +49,7 @@ public:
             .DynamicRankSupportFlag(true)
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
-            .PrecisionReduceFlag(false)  // Bit-exact: no precision loss allowed
+            .PrecisionReduceFlag(false) // Bit-exact: no precision loss allowed
             .ExtendCfgInfo("opFile.value", "complex_v3");
         this->AICore().AddConfig("ascend910b", aicoreConfig);
         this->AICore().AddConfig("ascend950", aicoreConfig);

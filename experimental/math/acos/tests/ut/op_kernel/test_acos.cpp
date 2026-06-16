@@ -35,10 +35,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./acos_data/");
     }
-    static void TearDownTestCase()
-    {
-        cout << "AcosTest TearDown\n" << endl;
-    }
+    static void TearDownTestCase() { cout << "AcosTest TearDown\n" << endl; }
 
 private:
     const static std::string rootPath;

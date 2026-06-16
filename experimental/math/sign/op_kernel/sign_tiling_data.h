@@ -11,10 +11,10 @@
 /*!
  * \file sign_tiling_data.h
  * \brief tiling data struct
-*/
+ */
 #ifndef SIGN_TILING_DATA_H_
 #define SIGN_TILING_DATA_H_
-struct SignTilingData{
+struct SignTilingData {
     uint64_t smallCoreDataNum;
     uint64_t bigCoreDataNum;
     uint64_t finalBigTileNum;
@@ -23,5 +23,5 @@ struct SignTilingData{
     uint64_t smallTailDataNum;
     uint64_t bigTailDataNum;
     uint64_t tailBlockNum;
-} ;
+};
 #endif

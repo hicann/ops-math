@@ -85,10 +85,10 @@ int main()
     aclTensor* self = nullptr;
     aclTensor* other = nullptr;
     aclTensor* out = nullptr;
-    std::vector<float> selfHostData = { 7.0f, -7.0f,  0.0f,  1.0f };
-    std::vector<float> otherHostData  = { 2.0f,  2.0f,  3.0f,  0.0f };   // 第4个除零
-    std::vector<float> outHostData = { 0.0f,  0.0f,  0.0f,  0.0f };
-    std::vector<float> expectData = { 3.5f, 3.5f, 0.f,  0.0f};
+    std::vector<float> selfHostData = {7.0f, -7.0f, 0.0f, 1.0f};
+    std::vector<float> otherHostData = {2.0f, 2.0f, 3.0f, 0.0f}; // 第4个除零
+    std::vector<float> outHostData = {0.0f, 0.0f, 0.0f, 0.0f};
+    std::vector<float> expectData = {3.5f, 3.5f, 0.f, 0.0f};
     // 期望: 3.5, -3.5, 0, +INF
     // 创建self aclTensor
     ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
@@ -105,8 +105,7 @@ int main()
     aclOpExecutor* executor;
     // 调用aclnnRealDiv第一段接口
     ret = aclnnRealDivGetWorkspaceSize(self, other, out, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnRealDivGetWorkspaceSize failed. ERROR: %d\n", ret);
-              return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnRealDivGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
@@ -146,6 +145,6 @@ int main()
     aclrtDestroyStream(stream);
     aclrtResetDevice(deviceId);
     aclFinalize();
-    
+
     return 0;
 }

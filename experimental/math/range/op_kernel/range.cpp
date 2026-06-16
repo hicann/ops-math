@@ -21,21 +21,19 @@
 /*!
  * \file range.cpp
  * \brief
-*/
+ */
 
 #include "range.h"
-template<uint32_t TYPE_START,uint32_t TYPE_END ,uint32_t TYPE_STEP>
- __global__ __aicore__ void range(GM_ADDR start, GM_ADDR end, GM_ADDR step, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling) {
-
+template <uint32_t TYPE_START, uint32_t TYPE_END, uint32_t TYPE_STEP>
+__global__ __aicore__ void range(GM_ADDR start, GM_ADDR end, GM_ADDR step, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
+{
     REGISTER_TILING_DEFAULT(RangeTilingData);
     GET_TILING_DATA_WITH_STRUCT(RangeTilingData, tilingData, tiling);
-    NsRange::Range<float,float,float> op;
-    op.Init(start, end, step, z, tilingData.totalLength,
-            tilingData.blockLength, tilingData.tileNum,
-            tilingData.lastTileLength, tilingData.formerLength,
-            tilingData.formerTileNum, tilingData.formerLastTileLength,
-            tilingData.formerNum, tilingData.tailLength,
-            tilingData.tailTileNum, tilingData.tailLastTileLength,
-            tilingData.isEvenCore);
+    NsRange::Range<float, float, float> op;
+    op.Init(
+        start, end, step, z, tilingData.totalLength, tilingData.blockLength, tilingData.tileNum,
+        tilingData.lastTileLength, tilingData.formerLength, tilingData.formerTileNum, tilingData.formerLastTileLength,
+        tilingData.formerNum, tilingData.tailLength, tilingData.tailTileNum, tilingData.tailLastTileLength,
+        tilingData.isEvenCore);
     op.Process();
 }

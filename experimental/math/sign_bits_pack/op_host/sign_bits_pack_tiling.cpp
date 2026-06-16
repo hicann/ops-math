@@ -24,13 +24,12 @@
 
 namespace optiling {
 
-
 constexpr uint32_t BUFFER_NUM = 2;
 constexpr uint32_t UB_ALIGN = 32;
 constexpr uint32_t REPEAT_ALIGN = 256;
 constexpr uint32_t GM_ALIGN = 512;
-constexpr uint32_t RESERVED_UB_SIZE = 0; // 有些api需要预留ub空间
-constexpr uint32_t MAX_TILEDATA = 18 * 1024;  // 最大可以到
+constexpr uint32_t RESERVED_UB_SIZE = 0;     // 有些api需要预留ub空间
+constexpr uint32_t MAX_TILEDATA = 18 * 1024; // 最大可以到
 
 struct SignBitsPackCompileInfo {};
 
@@ -66,16 +65,17 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus CalcAndSetTilingData(uint64_t inputNum, uint32_t typeLength, int64_t realCoreNum, SignBitsPackTilingData* tiling, gert::TilingContext* context)
+static ge::graphStatus CalcAndSetTilingData(
+    uint64_t inputNum, uint32_t typeLength, int64_t realCoreNum, SignBitsPackTilingData* tiling,
+    gert::TilingContext* context)
 {
     OP_CHECK_IF(context == nullptr, OP_LOGE(context, "context is nullptr"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(typeLength == 0, OP_LOGE(context, "typeLength is zero"), return ge::GRAPH_FAILED);
     uint64_t elemsPerGmBlock = (GM_ALIGN / typeLength);
     uint64_t inputLengthAlgin512 = (inputNum + elemsPerGmBlock - 1) / elemsPerGmBlock * elemsPerGmBlock;
-    
+
     uint64_t tileDataNum = MAX_TILEDATA;
-    if(typeLength == 2)
-    {
+    if (typeLength == 2) {
         tileDataNum = 2 * MAX_TILEDATA;
     }
     int64_t needCoreNum = (inputLengthAlgin512 + tileDataNum * BUFFER_NUM - 1) / (tileDataNum * BUFFER_NUM);
@@ -123,7 +123,7 @@ static ge::graphStatus CalcAndSetTilingData(uint64_t inputNum, uint32_t typeLeng
     tiling->lastCopyLength = lastCopyLength;
     tiling->rightPaddingElemNums = rightPaddingElemNums;
     tiling->lastCalcLength = lastCalcLength;
-    context->SetBlockDim(coreNum);    
+    context->SetBlockDim(coreNum);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -142,8 +142,7 @@ static ge::graphStatus SignBitsPackTilingFunc(gert::TilingContext* context)
     ge::TypeUtils::GetDataTypeLength(context->GetInputDesc(0)->GetDataType(), typeLength);
     CalcAndSetTilingData(inputNum, typeLength, realCoreNum, tiling, context);
     ret = GetWorkspaceSize(context);
-    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
     uint64_t tilingKey = 0;
     tilingKey = GET_TPL_TILING_KEY(ELEMENTWISE_TPL_SCH_MODE_0);
     context->SetTilingKey(tilingKey);
@@ -151,5 +150,7 @@ static ge::graphStatus SignBitsPackTilingFunc(gert::TilingContext* context)
 }
 
 // tiling注册入口.
-IMPL_OP_OPTILING(SignBitsPack).Tiling(SignBitsPackTilingFunc).TilingParse<SignBitsPackCompileInfo>(TilingParseForSignBitsPack);
+IMPL_OP_OPTILING(SignBitsPack)
+    .Tiling(SignBitsPackTilingFunc)
+    .TilingParse<SignBitsPackCompileInfo>(TilingParseForSignBitsPack);
 } // namespace optiling

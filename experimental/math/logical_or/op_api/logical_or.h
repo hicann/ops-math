@@ -9,12 +9,12 @@
  */
 #ifndef PTA_NPU_OP_API_INC_LEVEL0_OP_LogicalOr_OP_H_
 #define PTA_NPU_OP_API_INC_LEVEL0_OP_LogicalOr_OP_H_
- 
+
 #include "opdev/op_executor.h"
 
 namespace l0op {
-const aclTensor *LogicalOr(const aclTensor *self, const aclTensor *other, aclOpExecutor *executor);
- 
+const aclTensor* LogicalOr(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor);
+
 }
 
 #endif // PTA_NPU_OP_API_INC_LEVEL0_OP_LogicalOr_OP_H_

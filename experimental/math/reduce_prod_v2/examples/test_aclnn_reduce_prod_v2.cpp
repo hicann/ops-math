@@ -98,15 +98,15 @@ int main()
 
     aclTensor* selfX = nullptr;
     void* selfXDeviceAddr = nullptr;
-    
+
     aclTensor* out = nullptr;
     void* outDeviceAddr = nullptr;
-    int32_t axes=1;
+    int32_t axes = 1;
     std::vector<int64_t> selfXShape = {2048, 8};
     int64_t selfXNum = GetShapeSize(selfXShape);
     std::vector<float> selfXHostData(selfXNum, 0.99999);
     std::vector<int64_t> outShape = {2048, 1};
-    std::vector<float> outHostData(1, -1.0);   
+    std::vector<float> outHostData(1, -1.0);
 
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -116,7 +116,7 @@ int main()
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
     int32_t keepdims = 1;
-    ret = aclnnReduceProdV2GetWorkspaceSize(selfX,axes, keepdims, out, &workspaceSize, &executor);
+    ret = aclnnReduceProdV2GetWorkspaceSize(selfX, axes, keepdims, out, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnReduceProdV2GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     void* workspaceAddr = nullptr;
     if (workspaceSize > static_cast<uint64_t>(0)) {

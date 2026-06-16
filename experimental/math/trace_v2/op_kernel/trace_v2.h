@@ -52,7 +52,7 @@ private:
 private:
     TPipe pipe;
     AscendC::TQue<AscendC::TPosition::VECIN, BUFFER_NUM> inQueueX;
-    AscendC::TQue<AscendC::TPosition::VECIN, BUFFER_NUM> tmpQueue; 
+    AscendC::TQue<AscendC::TPosition::VECIN, BUFFER_NUM> tmpQueue;
     AscendC::TQue<AscendC::TPosition::VECOUT, BUFFER_NUM> outQueueY;
     AscendC::GlobalTensor<T> xGm;
     AscendC::GlobalTensor<T> yGm;
@@ -61,16 +61,16 @@ private:
     TBuf<QuePosition::VECCALC> tmpBuf2;
 
     TraceV2TilingData tiling;
-    uint64_t rowLength;          
-    uint64_t columnLength;        
-    uint64_t diagLen;             
-    uint64_t fullBlockLength;    
-    uint64_t tailBlockLength;      
-    uint64_t fullBlockNum;        
-    uint64_t tailBlockNum;          
-    uint64_t typeSize;             
-    uint64_t matrixOrder;           
-    uint64_t blockIdx;              
+    uint64_t rowLength;
+    uint64_t columnLength;
+    uint64_t diagLen;
+    uint64_t fullBlockLength;
+    uint64_t tailBlockLength;
+    uint64_t fullBlockNum;
+    uint64_t tailBlockNum;
+    uint64_t typeSize;
+    uint64_t matrixOrder;
+    uint64_t blockIdx;
 };
 
 template <typename T>
@@ -79,9 +79,12 @@ __aicore__ inline void TraceV2<T>::Init(GM_ADDR x, GM_ADDR y, const TraceV2Tilin
     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
     this->tiling = *tilingData;
     this->blockIdx = AscendC::GetBlockIdx();
-    matrixOrder = (this->blockIdx >= tilingData->fullBlockNum) ? tilingData->tailBlockLength : tilingData->fullBlockLength;
-    if (matrixOrder == 0) {return;}
-    xGm.SetGlobalBuffer((__gm__ T*)x, tilingData->rowLength * tilingData->columnLength );
+    matrixOrder =
+        (this->blockIdx >= tilingData->fullBlockNum) ? tilingData->tailBlockLength : tilingData->fullBlockLength;
+    if (matrixOrder == 0) {
+        return;
+    }
+    xGm.SetGlobalBuffer((__gm__ T*)x, tilingData->rowLength * tilingData->columnLength);
     yGm.SetGlobalBuffer((__gm__ T*)y, 1);
     uint32_t bufSize = matrixOrder * sizeof(T);
     uint32_t alignSize = 32;
@@ -89,7 +92,7 @@ __aicore__ inline void TraceV2<T>::Init(GM_ADDR x, GM_ADDR y, const TraceV2Tilin
     pipe.InitBuffer(inQueueX, BUFFER_NUM, allocSize);
     pipe.InitBuffer(tmpQueue, BUFFER_NUM, allocSize);
     pipe.InitBuffer(outQueueY, BUFFER_NUM, allocSize);
-    if constexpr (AscendC::Std::is_same<T, int32_t>::value || AscendC::Std::is_same<T, int16_t>::value){
+    if constexpr (AscendC::Std::is_same<T, int32_t>::value || AscendC::Std::is_same<T, int16_t>::value) {
         pipe.InitBuffer(tmpBuf0, allocSize);
         pipe.InitBuffer(tmpBuf1, allocSize);
         pipe.InitBuffer(tmpBuf2, sizeof(float));
@@ -104,17 +107,14 @@ __aicore__ inline void TraceV2<T>::CopyIn()
     if (AscendC::GetBlockIdx() < tiling.fullBlockNum) {
         diagStart = (uint64_t)AscendC::GetBlockIdx() * tiling.fullBlockLength;
     } else {
-        diagStart = tiling.fullBlockNum * tiling.fullBlockLength + 
+        diagStart = tiling.fullBlockNum * tiling.fullBlockLength +
                     ((uint64_t)AscendC::GetBlockIdx() - tiling.fullBlockNum) * tiling.tailBlockLength;
     }
     uint64_t globalOffset = diagStart * (tiling.columnLength + 1);
     AscendC::DataCopyExtParams copyParams{
-        static_cast<uint16_t>(matrixOrder),   
-        static_cast<uint32_t>(sizeof(T)), 
-        static_cast<uint32_t>((tiling.columnLength) * sizeof(T)),
-        0,
-        0};
-    AscendC::DataCopyPadExtParams<T> padParams{true, 0, 0, 0}; 
+        static_cast<uint16_t>(matrixOrder), static_cast<uint32_t>(sizeof(T)),
+        static_cast<uint32_t>((tiling.columnLength) * sizeof(T)), 0, 0};
+    AscendC::DataCopyPadExtParams<T> padParams{true, 0, 0, 0};
     AscendC::DataCopyPad(xLocal, xGm[globalOffset], copyParams, padParams);
     inQueueX.EnQue(xLocal);
 }
@@ -134,8 +134,8 @@ __aicore__ inline void TraceV2<T>::CopyOut()
 template <typename T>
 __aicore__ inline void TraceV2<T>::Compute()
 {
-    AscendC::LocalTensor<T> xLocal    = inQueueX.DeQue<T>();
-    AscendC::LocalTensor<T> yLocal    = outQueueY.AllocTensor<T>();
+    AscendC::LocalTensor<T> xLocal = inQueueX.DeQue<T>();
+    AscendC::LocalTensor<T> yLocal = outQueueY.AllocTensor<T>();
     AscendC::LocalTensor<T> workLocal = tmpQueue.AllocTensor<T>();
     AscendC::ReduceSum<T>(yLocal, xLocal, workLocal, matrixOrder);
     outQueueY.EnQue<T>(yLocal);

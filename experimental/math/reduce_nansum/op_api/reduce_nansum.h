@@ -9,11 +9,11 @@
  */
 
 /**
-* 我们正常的版权申明，下面是我们的备注
-*
-* NOTE: Portions of this code were AI-generated and have been
-* technically reviewed for functional accuracy and security
-*/
+ * 我们正常的版权申明，下面是我们的备注
+ *
+ * NOTE: Portions of this code were AI-generated and have been
+ * technically reviewed for functional accuracy and security
+ */
 
 #ifndef OP_API_OP_API_COMMON_INC_LEVEL0_OP_REDUCE_NANSUM_H_
 #define OP_API_OP_API_COMMON_INC_LEVEL0_OP_REDUCE_NANSUM_H_

@@ -30,7 +30,7 @@ __global__ __aicore__ void sub_v2(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR works
 {
     REGISTER_TILING_DEFAULT(SubV2TilingData);
     GET_TILING_DATA_WITH_STRUCT(SubV2TilingData, tilingData, tiling);
-    NsSubV2::SubV2<DTYPE_X1> op; 
-    op.Init(x, y, z, &tilingData);     
-    op.Process();                      
+    NsSubV2::SubV2<DTYPE_X1> op;
+    op.Init(x, y, z, &tilingData);
+    op.Process();
 }

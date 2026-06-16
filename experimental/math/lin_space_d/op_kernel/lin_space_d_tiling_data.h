@@ -26,13 +26,13 @@
 #define _ROTARY_POSITION_EMBEDDING_GRAD_TILING_DATA_H_
 
 struct LinSpaceDTilingData {
-    uint32_t totalLength;   
+    uint32_t totalLength;
     uint32_t formerNum;
-    uint32_t formerLength;        
-    uint32_t formerTileNum;  
+    uint32_t formerLength;
+    uint32_t formerTileNum;
     uint32_t formerLastTileLength;
-    uint32_t tailLength;          
+    uint32_t tailLength;
     uint32_t tailTileNum;
-    uint32_t tailLastTileLength; 
+    uint32_t tailLastTileLength;
 };
 #endif // _ROTARY_POSITION_EMBEDDING_GRAD_TILING_DATA_H_

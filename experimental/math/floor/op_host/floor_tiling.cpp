@@ -23,7 +23,6 @@
 
 namespace optiling {
 
-
 constexpr uint32_t BLOCK_SIZE = 512U;
 constexpr uint32_t UB_DATA_NUM_FLOAT = 4U;
 constexpr uint32_t UB_DATA_NUM_OTHER = 6U;
@@ -80,14 +79,15 @@ static ge::graphStatus GetShapeAttrsInfo(
 
     uint64_t ubDataNumber =
         (context->GetInputDesc(0)->GetDataType() == ge::DT_FLOAT) ? UB_DATA_NUM_FLOAT : UB_DATA_NUM_OTHER;
-    
-    OP_CHECK_IF(BLOCK_SIZE == 0 || ubDataNumber == 0, 
-                OP_LOGE(context, "BLOCK_SIZE or ubDataNumber is 0"), return ge::GRAPH_FAILED);
+
+    OP_CHECK_IF(
+        BLOCK_SIZE == 0 || ubDataNumber == 0, OP_LOGE(context, "BLOCK_SIZE or ubDataNumber is 0"),
+        return ge::GRAPH_FAILED);
     tileBlockNum = (ubSize / BLOCK_SIZE) / ubDataNumber;
 
     OP_CHECK_IF(inputBytes == 0, OP_LOGE(context, "inputBytes is 0"), return ge::GRAPH_FAILED);
     tileDataNum = (tileBlockNum * BLOCK_SIZE) / inputBytes;
-    
+
     inputLengthAlgin = (((inputLength + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE);
     return ge::GRAPH_SUCCESS;
 }
@@ -97,14 +97,17 @@ static ge::graphStatus CalculateCoreBlockNums(
     uint64_t inputBytes, uint64_t tileDataNum, FloorTilingData* tiling)
 {
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(BLOCK_SIZE == 0 || coreNum <= 0 || tileBlockNum == 0 || inputBytes == 0,
-        OP_LOGE(context, "invalid params: coreNum %ld, tileBlockNum %lu, inputBytes %lu", coreNum, tileBlockNum, inputBytes),
+    OP_CHECK_IF(
+        BLOCK_SIZE == 0 || coreNum <= 0 || tileBlockNum == 0 || inputBytes == 0,
+        OP_LOGE(
+            context, "invalid params: coreNum %ld, tileBlockNum %lu, inputBytes %lu", coreNum, tileBlockNum,
+            inputBytes),
         return ge::GRAPH_FAILED);
 
     uint64_t everyCoreInputBlockNum = inputLengthAlgin / BLOCK_SIZE / coreNum;
     tiling->tailBlockNum = (inputLengthAlgin / BLOCK_SIZE) % coreNum;
     tiling->smallCoreDataNum = everyCoreInputBlockNum * BLOCK_SIZE / inputBytes;
-    
+
     uint64_t smallTileNum = everyCoreInputBlockNum / tileBlockNum;
     tiling->finalSmallTileNum = (everyCoreInputBlockNum % tileBlockNum) == 0 ? smallTileNum : smallTileNum + 1;
     tiling->smallTailDataNum = tiling->smallCoreDataNum - (tileDataNum * smallTileNum);
@@ -128,12 +131,12 @@ static ge::graphStatus FloorTilingFunc(gert::TilingContext* context)
     OP_CHECK_IF(
         memset_s(tiling, sizeof(FloorTilingData), 0, sizeof(FloorTilingData)) != EOK,
         OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
-    
+
     uint64_t ubSize;
     int64_t coreNum;
     ge::graphStatus ret = GetPlatformInfo(context, ubSize, coreNum);
     OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
-    
+
     uint64_t inputNum, inputBytes, tileBlockNum, tileDataNum, inputLengthAlgin;
     ret = GetShapeAttrsInfo(context, ubSize, inputNum, inputBytes, tileBlockNum, tileDataNum, inputLengthAlgin);
     OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
@@ -144,7 +147,7 @@ static ge::graphStatus FloorTilingFunc(gert::TilingContext* context)
         coreNum = 1;
     } else {
         uint64_t maxAllowedCores = inputNum / minElemPerCore;
-        if (static_cast<uint64_t>(coreNum) > maxAllowedCores) {   
+        if (static_cast<uint64_t>(coreNum) > maxAllowedCores) {
             coreNum = static_cast<int64_t>(maxAllowedCores);
         }
 
@@ -156,13 +159,13 @@ static ge::graphStatus FloorTilingFunc(gert::TilingContext* context)
 
     ret = CalculateCoreBlockNums(context, inputLengthAlgin, coreNum, tileBlockNum, inputBytes, tileDataNum, tiling);
     OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "CalculateCoreBlockNums error"), return ge::GRAPH_FAILED);
-    
+
     tiling->tileDataNum = static_cast<uint64_t>(tileDataNum);
-    
+
     OP_CHECK_IF(
         GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
         return ge::GRAPH_FAILED);
-        
+
     uint64_t tilingKey = 0;
     tilingKey = GET_TPL_TILING_KEY(0);
     context->SetTilingKey(tilingKey);

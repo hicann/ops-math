@@ -18,18 +18,19 @@
 #include <vector>
 
 #define CHECK_RET(cond, return_expr) \
-  do {                               \
-    if (!(cond)) {                   \
-      return_expr;                   \
-    }                                \
-  } while (0)
+    do {                             \
+        if (!(cond)) {               \
+            return_expr;             \
+        }                            \
+    } while (0)
 
-#define LOG_PRINT(message, ...)     \
-  do {                              \
-    printf(message, ##__VA_ARGS__); \
-  } while (0)
+#define LOG_PRINT(message, ...)         \
+    do {                                \
+        printf(message, ##__VA_ARGS__); \
+    } while (0)
 
-int64_t GetShapeSize(const std::vector<int64_t>& shape) {
+int64_t GetShapeSize(const std::vector<int64_t>& shape)
+{
     int64_t shape_size = 1;
     for (auto i : shape) {
         shape_size *= i;
@@ -37,7 +38,8 @@ int64_t GetShapeSize(const std::vector<int64_t>& shape) {
     return shape_size;
 }
 
-int Init(int32_t deviceId, aclrtStream* stream) {
+int Init(int32_t deviceId, aclrtStream* stream)
+{
     // 固定写法，资源初始化
     auto ret = aclInit(nullptr);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclInit failed. ERROR: %d\n", ret); return ret);
@@ -49,8 +51,10 @@ int Init(int32_t deviceId, aclrtStream* stream) {
 }
 
 template <typename T>
-int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr,
-                    aclDataType dataType, aclTensor** tensor) {
+int CreateAclTensor(
+    const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr, aclDataType dataType,
+    aclTensor** tensor)
+{
     auto size = GetShapeSize(shape) * sizeof(T);
     // 调用aclrtMalloc申请device侧内存
     auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -59,20 +63,22 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
     // 调用aclrtMemcpy将host侧数据拷贝到device侧内存上
     ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
-    
+
     // 计算连续tensor的strides
     std::vector<int64_t> strides(shape.size(), 1);
     for (int64_t i = shape.size() - 2; i >= 0; i--) {
         strides[i] = shape[i + 1] * strides[i + 1];
     }
-    
+
     // 调用aclCreateTensor接口创建aclTensor
-    *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND,
-                              shape.data(), shape.size(), *deviceAddr);
+    *tensor = aclCreateTensor(
+        shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
+        *deviceAddr);
     return 0;
 }
 
-int main() {
+int main()
+{
     // 1. 固定写法，device/stream初始化, 参考acl API手册
     // 根据自己的实际device填写deviceId
     int32_t deviceId = 0;
@@ -88,20 +94,20 @@ int main() {
     void* outDeviceAddr = nullptr;
     aclTensor* self = nullptr;
     aclTensor* out = nullptr;
-    
+
     std::vector<int> selfHostData = {0, 1, 0, 2, 0, 3, 4, 0, 0};
-    std::vector<int> outHostData ={0, 0, 0, 0, 0, 0, 0, 0, 0};
-    
+    std::vector<int> outHostData = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+
     // 创建self aclTensor
     ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_INT32, &self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建out aclTensor
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_INT32, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-    
+
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
-    
+
     // aclnnLogicalNot接口调用示例
     // 3. 调用aclnnLogicalNot第一段接口
     ret = aclnnLogicalNotGetWorkspaceSize(self, out, &workspaceSize, &executor);
@@ -121,18 +127,20 @@ int main() {
     // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
     auto size = GetShapeSize(outShape);
     std::vector<int> resultData(size, 0);
-    ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, 
-                      size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
+    ret = aclrtMemcpy(
+        resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, size * sizeof(resultData[0]),
+        ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
-    
+
     for (int64_t i = 0; i < size; i++) {
         LOG_PRINT("result[%ld] is: %d\n", i, resultData[i]);
     }
-    
+
     // aclnnInplaceLogicalNot接口调用示例
     // step3. 调用aclnnInplaceLogicalNot第一段接口
     ret = aclnnInplaceLogicalNotGetWorkspaceSize(self, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceLogicalNotGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(
+        ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceLogicalNotGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     if (workspaceSize > 0) {
         ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -145,27 +153,28 @@ int main() {
     ret = aclrtSynchronizeStream(stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
     // step5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
-    ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), selfDeviceAddr, 
-                      size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
+    ret = aclrtMemcpy(
+        resultData.data(), resultData.size() * sizeof(resultData[0]), selfDeviceAddr, size * sizeof(resultData[0]),
+        ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
-    
+
     for (int64_t i = 0; i < size; i++) {
         LOG_PRINT("result[%ld] is: %d\n", i, resultData[i]);
     }
-    
+
     // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
     aclDestroyTensor(self);
     aclDestroyTensor(out);
-    
+
     // 7. 释放device 资源
     aclrtFree(selfDeviceAddr);
     aclrtFree(outDeviceAddr);
     if (workspaceSize > 0) {
-      aclrtFree(workspaceAddr);
+        aclrtFree(workspaceAddr);
     }
     aclrtDestroyStream(stream);
     aclrtResetDevice(deviceId);
     aclFinalize();
-    
+
     return 0;
 }

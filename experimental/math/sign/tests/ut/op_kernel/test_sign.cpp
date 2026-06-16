@@ -37,10 +37,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./sign_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "sign_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "sign_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;

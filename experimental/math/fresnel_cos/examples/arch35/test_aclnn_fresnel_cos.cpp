@@ -35,8 +35,7 @@ int64_t GetShapeSize(const std::vector<int64_t>& shape)
     return shapeSize;
 }
 
-void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr,
-                    const std::vector<float>& xHostData)
+void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr, const std::vector<float>& xHostData)
 {
     auto size = GetShapeSize(shape);
     std::vector<float> resultData(size, 0);
@@ -46,8 +45,7 @@ void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr,
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
     int64_t showCount = std::min<int64_t>(size, 16);
     for (int64_t i = 0; i < showCount; i++) {
-        LOG_PRINT("fresnel_cos input[%ld] = %f, output C(x)[%ld] = %f\n",
-                  i, xHostData[i], i, resultData[i]);
+        LOG_PRINT("fresnel_cos input[%ld] = %f, output C(x)[%ld] = %f\n", i, xHostData[i], i, resultData[i]);
     }
     if (size > showCount) {
         LOG_PRINT("... (only first %ld of %ld elements shown)\n", showCount, size);
@@ -103,10 +101,10 @@ int main()
     void* xDeviceAddr = nullptr;
     std::vector<int64_t> xShape = {16};
     std::vector<float> xHostData = {
-        0.0f, 0.5f, 1.0f, 1.5f,            // 小值区间
-        2.0f, 5.0f, 10.0f, 100.0f,         // 渐近展开区间
-        -0.5f, -1.5f, -5.0f, -100.0f,      // 负数对称性
-        40000.0f, -40000.0f, 1e-6f, 1e6f,  // 极限区间
+        0.0f,     0.5f,      1.0f,  1.5f,    // 小值区间
+        2.0f,     5.0f,      10.0f, 100.0f,  // 渐近展开区间
+        -0.5f,    -1.5f,     -5.0f, -100.0f, // 负数对称性
+        40000.0f, -40000.0f, 1e-6f, 1e6f,    // 极限区间
     };
     ret = CreateAclTensor(xHostData, xShape, &xDeviceAddr, aclDataType::ACL_FLOAT, &x);
     CHECK_RET(ret == ACL_SUCCESS, return ret);

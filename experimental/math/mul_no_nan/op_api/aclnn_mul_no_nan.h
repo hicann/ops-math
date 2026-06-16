@@ -42,11 +42,7 @@ extern "C" {
  * @return aclnnStatus
  */
 ACLNN_API aclnnStatus aclnnMulNoNanGetWorkspaceSize(
-    const aclTensor *x,
-    const aclTensor *y,
-    const aclTensor *z,
-    uint64_t *workspaceSize,
-    aclOpExecutor **executor);
+    const aclTensor* x, const aclTensor* y, const aclTensor* z, uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief Execute MulNoNan computation
@@ -56,11 +52,8 @@ ACLNN_API aclnnStatus aclnnMulNoNanGetWorkspaceSize(
  * @param stream [in] ACL stream
  * @return aclnnStatus
  */
-ACLNN_API aclnnStatus aclnnMulNoNan(
-    void *workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor *executor,
-    aclrtStream stream);
+ACLNN_API aclnnStatus
+aclnnMulNoNan(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 #ifdef __cplusplus
 }

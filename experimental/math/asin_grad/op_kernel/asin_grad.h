@@ -51,10 +51,9 @@ class AsinGrad {
     static constexpr bool NEED_CAST = !std::is_same_v<StorageT, ComputeT>;
 
 public:
-    __aicore__ inline AsinGrad() {};
+    __aicore__ inline AsinGrad(){};
 
-    __aicore__ inline void Init(GM_ADDR dy, GM_ADDR x, GM_ADDR dx,
-                                const AsinGradTilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR dy, GM_ADDR x, GM_ADDR dx, const AsinGradTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -128,8 +127,7 @@ __aicore__ inline void AsinGrad<StorageT, ComputeT, BUFFER_MODE>::Init(
 }
 
 template <typename StorageT, typename ComputeT, int BUFFER_MODE>
-__aicore__ inline void AsinGrad<StorageT, ComputeT, BUFFER_MODE>::CopyIn(
-    int64_t progress, int64_t currentNum)
+__aicore__ inline void AsinGrad<StorageT, ComputeT, BUFFER_MODE>::CopyIn(int64_t progress, int64_t currentNum)
 {
     AscendC::LocalTensor<StorageT> dyLocal = dyInQueue.template AllocTensor<StorageT>();
     AscendC::LocalTensor<StorageT> xLocal = xInQueue.template AllocTensor<StorageT>();
@@ -148,8 +146,7 @@ __aicore__ inline void AsinGrad<StorageT, ComputeT, BUFFER_MODE>::CopyIn(
 }
 
 template <typename StorageT, typename ComputeT, int BUFFER_MODE>
-__aicore__ inline void AsinGrad<StorageT, ComputeT, BUFFER_MODE>::CopyOut(
-    int64_t progress, int64_t currentNum)
+__aicore__ inline void AsinGrad<StorageT, ComputeT, BUFFER_MODE>::CopyOut(int64_t progress, int64_t currentNum)
 {
     AscendC::LocalTensor<StorageT> dxLocal = dxOutQueue.template DeQue<StorageT>();
 

@@ -21,15 +21,9 @@ using namespace optiling;
 
 class RoundTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "RoundTiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "RoundTiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "RoundTiling TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "RoundTiling TearDown" << endl; }
 };
 
 TEST_F(RoundTiling, ascend910b_test_tiling_fp16_001)

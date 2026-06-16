@@ -62,15 +62,15 @@ private:
 
     GlobalTensor<T> outGM_;
 
-    uint64_t totalLen_   = 0;
-    uint32_t coreNum_    = 1;
-    uint32_t tileLen_    = 0;
+    uint64_t totalLen_ = 0;
+    uint32_t coreNum_ = 1;
+    uint32_t tileLen_ = 0;
     uint32_t tailCoreIdx_ = 0;
     uint32_t tailTileLen_ = 0;
-    uint32_t ubChunk_    = 0;
-    float    startF_     = 0.0f;
-    float    stepF_      = 0.0f;
-    float    logBase_    = 0.0f;
+    uint32_t ubChunk_ = 0;
+    float startF_ = 0.0f;
+    float stepF_ = 0.0f;
+    float logBase_ = 0.0f;
 
     int64_t idxStart_ = 0;
     int64_t blockLen_ = 0;
@@ -79,15 +79,15 @@ private:
 template <typename T, int MODE>
 __aicore__ inline void LogSpace<T, MODE>::Init(GM_ADDR result, const LogSpaceTilingData* tilingData)
 {
-    totalLen_    = tilingData->totalLen;
-    coreNum_     = tilingData->coreNum;
-    tileLen_     = tilingData->tileLen;
+    totalLen_ = tilingData->totalLen;
+    coreNum_ = tilingData->coreNum;
+    tileLen_ = tilingData->tileLen;
     tailCoreIdx_ = tilingData->tailCoreIdx;
     tailTileLen_ = tilingData->tailTileLen;
-    ubChunk_     = tilingData->ubChunk;
-    startF_      = tilingData->startF;
-    stepF_       = tilingData->stepF;
-    logBase_     = tilingData->logBase;
+    ubChunk_ = tilingData->ubChunk;
+    startF_ = tilingData->startF;
+    stepF_ = tilingData->stepF;
+    logBase_ = tilingData->logBase;
 
     const int64_t blockIdx = static_cast<int64_t>(AscendC::GetBlockIdx());
     idxStart_ = blockIdx * static_cast<int64_t>(tileLen_);
@@ -168,7 +168,8 @@ __aicore__ inline void LogSpace<T, MODE>::ProcessNormal()
     int64_t processed = 0;
     while (processed < blockLen_) {
         int64_t cur = blockLen_ - processed;
-        if (cur > chunk) cur = chunk;
+        if (cur > chunk)
+            cur = chunk;
         ComputeChunk(processed, cur);
         processed += cur;
     }

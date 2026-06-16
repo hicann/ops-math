@@ -31,7 +31,6 @@ struct PackV2TilingData {
     uint64_t tailBlockNum;
     uint64_t inputDataNum;
 
-
     // tensor shape
     uint32_t totalLengthx;
     uint32_t totalLengthy;

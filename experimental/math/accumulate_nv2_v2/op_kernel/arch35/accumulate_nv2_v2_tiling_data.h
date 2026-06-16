@@ -17,9 +17,9 @@
 #define _ACCUMULATE_NV2_V2_TILING_DATA_H_
 
 struct AccumulateNv2V2TilingData {
-    int64_t totalNum = 0;      // 总元素数量
-    int64_t blockFactor = 0;   // 每个核处理的元素数量
-    int64_t ubFactor = 0;      // 每次 UB 循环处理的元素数量
-    int32_t inputNum = 0;      // 输入 tensor 个数 N（1~16）
+    int64_t totalNum = 0;    // 总元素数量
+    int64_t blockFactor = 0; // 每个核处理的元素数量
+    int64_t ubFactor = 0;    // 每次 UB 循环处理的元素数量
+    int32_t inputNum = 0;    // 输入 tensor 个数 N（1~16）
 };
 #endif

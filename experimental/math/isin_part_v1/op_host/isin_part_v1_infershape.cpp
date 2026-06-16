@@ -27,8 +27,7 @@ static ge::graphStatus GetNumValue(const gert::Tensor* numTensor, int32_t& eleme
     if (tensorDataType == ge::DT_INT32) {
         const int32_t* constDataPtr = numTensor->GetData<int32_t>();
         elementsNum = (*constDataPtr);
-    } 
-    else {
+    } else {
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -37,7 +36,7 @@ static ge::graphStatus GetNumValue(const gert::Tensor* numTensor, int32_t& eleme
 static ge::graphStatus InferShapeIsinPartV1(gert::InferShapeContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Begin to do InferShapeIsinPartV1");
-    
+
     auto numTensor = context->GetInputTensor(IDX_IN_NUM);
     OP_CHECK_NULL_WITH_CONTEXT(context, numTensor);
     auto outShape = context->GetOutputShape(IDX_OUT_OUTPUT);
@@ -49,8 +48,8 @@ static ge::graphStatus InferShapeIsinPartV1(gert::InferShapeContext* context)
         OP_LOGE(context->GetNodeName(), "the dtype of num only support int64_t, infershape failed!");
         return ge::GRAPH_FAILED;
     }
-    outShape->SetDimNum(1);         
-    outShape->SetDim(0, elementsNum); 
+    outShape->SetDimNum(1);
+    outShape->SetDim(0, elementsNum);
 
     OP_LOGD(context->GetNodeName(), "End to do InferShapeIsinPartV1");
     return ge::GRAPH_SUCCESS;

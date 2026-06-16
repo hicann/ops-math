@@ -34,8 +34,7 @@ using namespace op;
 constexpr int64_t ACLNN_MAX_SHAPE_RANK = 8;
 // Acosh 支持 Ascend950
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT16, DataType::DT_FLOAT, DataType::DT_BF16
-};
+    DataType::DT_FLOAT16, DataType::DT_FLOAT, DataType::DT_BF16};
 
 static bool IsDtypeSupported(DataType dtype)
 {
@@ -61,10 +60,11 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 
     if (!IsDtypeSupported(self->GetDataType())) {
         auto npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "Acosh dtype not supported: dtype=%d, npuArch=%d. "
-                "Supported: FLOAT16, FLOAT, BF16 (Ascend950).",
-                static_cast<int>(self->GetDataType()), static_cast<int>(npuArch));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID,
+            "Acosh dtype not supported: dtype=%d, npuArch=%d. "
+            "Supported: FLOAT16, FLOAT, BF16 (Ascend950).",
+            static_cast<int>(self->GetDataType()), static_cast<int>(npuArch));
         return false;
     }
     return true;
@@ -73,10 +73,9 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 static bool CheckFormat(const aclTensor* self, const aclTensor* out)
 {
     if (IsPrivateFormat(self->GetStorageFormat()) || IsPrivateFormat(out->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "Acosh: private format not supported: self=%d, out=%d",
-                static_cast<int>(self->GetStorageFormat()),
-                static_cast<int>(out->GetStorageFormat()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Acosh: private format not supported: self=%d, out=%d",
+            static_cast<int>(self->GetStorageFormat()), static_cast<int>(out->GetStorageFormat()));
         return false;
     }
     return true;
@@ -96,8 +95,9 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
         return ACLNN_ERR_PARAM_NULLPTR;
     }
     if (!CheckDtypeValid(self, out)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Acosh: CheckDtypeValid failed: self_dtype=%d, out_dtype=%d",
-                static_cast<int>(self->GetDataType()), static_cast<int>(out->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Acosh: CheckDtypeValid failed: self_dtype=%d, out_dtype=%d",
+            static_cast<int>(self->GetDataType()), static_cast<int>(out->GetDataType()));
         return ACLNN_ERR_PARAM_INVALID;
     }
     if (!CheckFormat(self, out)) {
@@ -105,8 +105,9 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
         return ACLNN_ERR_PARAM_INVALID;
     }
     if (!CheckShape(self, out)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Acosh: CheckShape failed: self_dim=%zu, out_dim=%zu",
-                self->GetViewShape().GetDimNum(), out->GetViewShape().GetDimNum());
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Acosh: CheckShape failed: self_dim=%zu, out_dim=%zu",
+            self->GetViewShape().GetDimNum(), out->GetViewShape().GetDimNum());
         return ACLNN_ERR_PARAM_INVALID;
     }
     return ACLNN_SUCCESS;
@@ -116,10 +117,7 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
  * @brief 第一段接口：计算 workspace 大小
  */
 extern "C" aclnnStatus aclnnAcoshGetWorkspaceSize(
-    const aclTensor* self,
-    const aclTensor* out,
-    uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+    const aclTensor* self, const aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAcosh, DFX_IN(self), DFX_OUT(out));
 
@@ -153,11 +151,7 @@ extern "C" aclnnStatus aclnnAcoshGetWorkspaceSize(
 /**
  * @brief 第二段接口：执行计算
  */
-extern "C" aclnnStatus aclnnAcosh(
-    void* workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor* executor,
-    aclrtStream stream)
+extern "C" aclnnStatus aclnnAcosh(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnAcosh);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

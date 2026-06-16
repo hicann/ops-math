@@ -9,11 +9,11 @@
  */
 
 /**
-* 我们正常的版权申明，下面是我们的备注
-*
-* NOTE: Portions of this code were AI-generated and have been
-* technically reviewed for functional accuracy and security
-*/
+ * 我们正常的版权申明，下面是我们的备注
+ *
+ * NOTE: Portions of this code were AI-generated and have been
+ * technically reviewed for functional accuracy and security
+ */
 
 /*!
  * \file reduce_nansum_tiling.cpp
@@ -60,7 +60,8 @@ static const gert::Shape g_vec_1_shape = {1};
 
 static inline const gert::Shape EnsureNotScalar(const gert::Shape& inShape)
 {
-    if (inShape.GetDimNum() == 0) return g_vec_1_shape;
+    if (inShape.GetDimNum() == 0)
+        return g_vec_1_shape;
     return inShape;
 }
 
@@ -103,7 +104,8 @@ static inline int64_t ComputeReduceTmpBufSize(int64_t totalElements)
     int64_t perBlock = BLOCK_SIZE / static_cast<int64_t>(sizeof(float));
     int64_t repeats = CeilDiv(totalElements, perRepeat);
     int64_t tmpBufSize = CeilDiv(repeats, perBlock) * perBlock * static_cast<int64_t>(sizeof(float));
-    if (tmpBufSize < static_cast<int64_t>(MIN_TMP_BUF_SIZE)) tmpBufSize = static_cast<int64_t>(MIN_TMP_BUF_SIZE);
+    if (tmpBufSize < static_cast<int64_t>(MIN_TMP_BUF_SIZE))
+        tmpBufSize = static_cast<int64_t>(MIN_TMP_BUF_SIZE);
     return tmpBufSize;
 }
 
@@ -118,8 +120,9 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 // ============================================================================
 // axes 参数解析：从 Tensor 输入读取，规范化负索引、排序去重
 // ============================================================================
-static void ParseDimAttr(gert::TilingContext* context, const gert::Shape& inputShapeX,
-                         int64_t dimArr[], int64_t& dimCount, bool& isFullReduce)
+static void ParseDimAttr(
+    gert::TilingContext* context, const gert::Shape& inputShapeX, int64_t dimArr[], int64_t& dimCount,
+    bool& isFullReduce)
 {
     int64_t rank = static_cast<int64_t>(inputShapeX.GetDimNum());
     dimCount = 0;
@@ -146,27 +149,32 @@ static void ParseDimAttr(gert::TilingContext* context, const gert::Shape& inputS
     // 规范化负索引
     if (axesDtype == ge::DT_INT64) {
         const int64_t* data = axesTensor->GetData<int64_t>();
-        if (data == nullptr) return;
+        if (data == nullptr)
+            return;
         for (int64_t i = 0; i < listSize && dimCount < MAX_DIM; i++) {
             int64_t d = data[i];
-            if (d < 0) d += rank;
+            if (d < 0)
+                d += rank;
             if (d >= 0 && d < rank) {
                 dimArr[dimCount++] = d;
             }
         }
     } else {
         const int32_t* data = axesTensor->GetData<int32_t>();
-        if (data == nullptr) return;
+        if (data == nullptr)
+            return;
         for (int64_t i = 0; i < listSize && dimCount < MAX_DIM; i++) {
             int64_t d = static_cast<int64_t>(data[i]);
-            if (d < 0) d += rank;
+            if (d < 0)
+                d += rank;
             if (d >= 0 && d < rank) {
                 dimArr[dimCount++] = d;
             }
         }
     }
 
-    if (dimCount == 0) return;
+    if (dimCount == 0)
+        return;
 
     // 排序
     for (int64_t i = 0; i < dimCount - 1; i++) {
@@ -202,11 +210,11 @@ static void ParseDimAttr(gert::TilingContext* context, const gert::Shape& inputS
 // 对于非连续归约轴（如 dim=[0,2]），输出 strided copy 参数
 // ============================================================================
 struct StridedCopyInfo {
-    bool isStrided = false;        // 是否为非连续多轴归约
-    int64_t blockCount = 0;        // 每行由多少个块组成
-    int64_t innerBlockSize = 0;    // 每个块的大小（元素数）
-    int64_t gapBetweenBlocks = 0;  // 块之间的 GM 间距（元素数）
-    int64_t outputStride = 0;      // 输出元素之间的步长（元素数）- 仅单非归约维度
+    bool isStrided = false;       // 是否为非连续多轴归约
+    int64_t blockCount = 0;       // 每行由多少个块组成
+    int64_t innerBlockSize = 0;   // 每个块的大小（元素数）
+    int64_t gapBetweenBlocks = 0; // 块之间的 GM 间距（元素数）
+    int64_t outputStride = 0;     // 输出元素之间的步长（元素数）- 仅单非归约维度
     // 非归约维度信息（用于正确计算每行的 GM 偏移）
     int64_t nonReduceDimCount = 0;
     int64_t nonReduceDimSizes[MAX_DIM] = {0};
@@ -217,10 +225,9 @@ struct StridedCopyInfo {
     int64_t reduceGmStrides[MAX_DIM] = {0};
 };
 
-static void Compute3DAbstraction(const gert::Shape& inputShapeX,
-                                 const int64_t dimArr[], int64_t dimCount, bool isFullReduce,
-                                 int64_t& a1Count, int64_t& rCount, int64_t& a0Count,
-                                 StridedCopyInfo& stridedInfo)
+static void Compute3DAbstraction(
+    const gert::Shape& inputShapeX, const int64_t dimArr[], int64_t dimCount, bool isFullReduce, int64_t& a1Count,
+    int64_t& rCount, int64_t& a0Count, StridedCopyInfo& stridedInfo)
 {
     int64_t rank = static_cast<int64_t>(inputShapeX.GetDimNum());
     a1Count = 1;
@@ -358,7 +365,7 @@ static void Compute3DAbstraction(const gert::Shape& inputShapeX,
         stridedInfo.blockCount = blockCount;
         stridedInfo.innerBlockSize = innerBlockSize;
         stridedInfo.gapBetweenBlocks = gmStrideElements;
-        stridedInfo.outputStride = 0;  // ARA 模板不使用此参数
+        stridedInfo.outputStride = 0; // ARA 模板不使用此参数
 
     } else {
         // ===== 子情况A：无 trailing non-reduce dims → AR 模板 =====
@@ -462,7 +469,8 @@ static int64_t ComputeArFullloadThreshold(int64_t ubSize, [[maybe_unused]] int64
     if (threshold > AR_FULLLOAD_THRESHOLD_MAX) {
         threshold = AR_FULLLOAD_THRESHOLD_MAX;
     }
-    if (threshold < 1) threshold = 1;
+    if (threshold < 1)
+        threshold = 1;
     return threshold;
 }
 
@@ -487,21 +495,23 @@ static int64_t ComputeAraRMax(int64_t ubSize, int64_t a0TileBase, bool isMixedPr
     int64_t denominator = a0TileBase * bytesPerRowPerCol;
     int64_t rMax = (ubSize - overhead) / denominator;
 
-    if (rMax > ARA_R_MAX_UPPER) rMax = ARA_R_MAX_UPPER;
-    if (rMax < 1) rMax = 1;
+    if (rMax > ARA_R_MAX_UPPER)
+        rMax = ARA_R_MAX_UPPER;
+    if (rMax < 1)
+        rMax = 1;
     return rMax;
 }
 
 // ============================================================================
 // ARA tileA0Len 计算（三约束取最小，dtype-aware）
 // ============================================================================
-static int64_t ComputeTileA0Len(int64_t ubSize, int64_t A0, int64_t R, [[maybe_unused]] int64_t A1,
-                                int64_t a0TileBase, [[maybe_unused]] int64_t coreNum, bool isMixedPrecision)
+static int64_t ComputeTileA0Len(
+    int64_t ubSize, int64_t A0, int64_t R, [[maybe_unused]] int64_t A1, int64_t a0TileBase,
+    [[maybe_unused]] int64_t coreNum, bool isMixedPrecision)
 {
     int64_t overhead = a0TileBase * 12 * static_cast<int64_t>(sizeof(float)) + 4096;
-    int64_t bytesPerRowPerCol = isMixedPrecision ?
-        12 * static_cast<int64_t>(sizeof(float)) :
-        10 * static_cast<int64_t>(sizeof(float));
+    int64_t bytesPerRowPerCol =
+        isMixedPrecision ? 12 * static_cast<int64_t>(sizeof(float)) : 10 * static_cast<int64_t>(sizeof(float));
     int64_t ubPerTileBase = R * a0TileBase * bytesPerRowPerCol;
 
     // 约束1: UB 容量限制
@@ -509,7 +519,8 @@ static int64_t ComputeTileA0Len(int64_t ubSize, int64_t A0, int64_t R, [[maybe_u
     if (ubPerTileBase > 0) {
         factorMax = (ubSize - overhead) / ubPerTileBase;
     }
-    if (factorMax < 1) factorMax = 1;
+    if (factorMax < 1)
+        factorMax = 1;
 
     // 约束2: A0 维度限制
     int64_t a0FactorMax = CeilDiv(A0, a0TileBase);
@@ -519,37 +530,42 @@ static int64_t ComputeTileA0Len(int64_t ubSize, int64_t A0, int64_t R, [[maybe_u
 
     // 取最小值
     int64_t a0Inner = factorMax;
-    if (a0Inner > a0FactorMax) a0Inner = a0FactorMax;
-    if (a0Inner < 1) a0Inner = 1;
+    if (a0Inner > a0FactorMax)
+        a0Inner = a0FactorMax;
+    if (a0Inner < 1)
+        a0Inner = 1;
 
     int64_t tileA0Len = a0Inner * a0TileBase;
-    if (tileA0Len > A0) tileA0Len = A0;
+    if (tileA0Len > A0)
+        tileA0Len = A0;
     return tileA0Len;
 }
 
 // ============================================================================
 // AR-ColSplit chunk 参数计算
 // ============================================================================
-static void ComputeArColSplitParams(int64_t rCount, int64_t fullLoadThreshold,
-                                    int64_t& rChunkSize, int64_t& numChunks, int64_t& lastChunkSize)
+static void ComputeArColSplitParams(
+    int64_t rCount, int64_t fullLoadThreshold, int64_t& rChunkSize, int64_t& numChunks, int64_t& lastChunkSize)
 {
     // chunk size 取全载阈值（保证每个 chunk 能放进 UB）
     rChunkSize = fullLoadThreshold;
     numChunks = CeilDiv(rCount, rChunkSize);
     lastChunkSize = rCount - (numChunks - 1) * rChunkSize;
-    if (lastChunkSize <= 0) lastChunkSize = rChunkSize;
+    if (lastChunkSize <= 0)
+        lastChunkSize = rChunkSize;
 }
 
 // ============================================================================
 // ARA-RowSplit chunk 参数计算
 // ============================================================================
-static void ComputeAraRowSplitParams(int64_t rCount, int64_t rMax,
-                                     int64_t& rChunkSize, int64_t& numChunks, int64_t& lastChunkSize)
+static void ComputeAraRowSplitParams(
+    int64_t rCount, int64_t rMax, int64_t& rChunkSize, int64_t& numChunks, int64_t& lastChunkSize)
 {
     rChunkSize = rMax;
     numChunks = CeilDiv(rCount, rChunkSize);
     lastChunkSize = rCount - (numChunks - 1) * rChunkSize;
-    if (lastChunkSize <= 0) lastChunkSize = rChunkSize;
+    if (lastChunkSize <= 0)
+        lastChunkSize = rChunkSize;
 }
 
 // ============================================================================
@@ -559,8 +575,9 @@ static ge::graphStatus ReduceNansumTilingFunc(gert::TilingContext* context)
 {
     uint64_t ubSizeU64;
     int64_t coreNum;
-    OP_CHECK_IF(GetPlatformInfo(context, ubSizeU64, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetPlatformInfo(context, ubSizeU64, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+        return ge::GRAPH_FAILED);
     int64_t ubSize = static_cast<int64_t>(ubSizeU64);
 
     auto inputX = context->GetInputShape(0);
@@ -587,15 +604,18 @@ static ge::graphStatus ReduceNansumTilingFunc(gert::TilingContext* context)
     int64_t dimCount = 0;
     ParseDimAttr(context, inputShapeX, dimArr, dimCount, isFullReduce);
 
-    OP_LOGI(context, "ReduceNansum Tiling: rank=%ld dimCount=%ld isFullReduce=%d totalElements=%ld",
-            rank, dimCount, (int)isFullReduce, totalElements);
+    OP_LOGI(
+        context, "ReduceNansum Tiling: rank=%ld dimCount=%ld isFullReduce=%d totalElements=%ld", rank, dimCount,
+        (int)isFullReduce, totalElements);
 
-    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+        return ge::GRAPH_FAILED);
 
     ReduceNansumTilingData* tiling = context->GetTilingData<ReduceNansumTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(memset_s(tiling, sizeof(ReduceNansumTilingData), 0, sizeof(ReduceNansumTilingData)) != EOK,
+    OP_CHECK_IF(
+        memset_s(tiling, sizeof(ReduceNansumTilingData), 0, sizeof(ReduceNansumTilingData)) != EOK,
         OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     // ================================================================
@@ -603,11 +623,11 @@ static ge::graphStatus ReduceNansumTilingFunc(gert::TilingContext* context)
     // ================================================================
     int64_t a1Count = 1, rCount = 1, a0Count = 1;
     StridedCopyInfo stridedInfo;
-    Compute3DAbstraction(inputShapeX, dimArr, dimCount, isFullReduce,
-                         a1Count, rCount, a0Count, stridedInfo);
+    Compute3DAbstraction(inputShapeX, dimArr, dimCount, isFullReduce, a1Count, rCount, a0Count, stridedInfo);
 
-    OP_LOGI(context, "ReduceNansum 3D: A1=%ld R=%ld A0=%ld strided=%d",
-            a1Count, rCount, a0Count, (int)stridedInfo.isStrided);
+    OP_LOGI(
+        context, "ReduceNansum 3D: A1=%ld R=%ld A0=%ld strided=%d", a1Count, rCount, a0Count,
+        (int)stridedInfo.isStrided);
 
     // 迭代三：dtype-aware tiling
     int64_t typeSize;
@@ -624,7 +644,7 @@ static ge::graphStatus ReduceNansumTilingFunc(gert::TilingContext* context)
     // ================================================================
     // Step 3: 分支选择 + Tiling 参数计算
     // ================================================================
-    uint32_t schMode = SCH_AR_FULLLOAD;  // 默认
+    uint32_t schMode = SCH_AR_FULLLOAD; // 默认
     int64_t rLengthAlign = 0;
     int64_t alignedCols = 0;
     int64_t tileA0Len = 0;
@@ -642,8 +662,9 @@ static ge::graphStatus ReduceNansumTilingFunc(gert::TilingContext* context)
     if (a0Count == 1) {
         // ========== AR 模板（A0=1）==========
         int64_t fullLoadThreshold = ComputeArFullloadThreshold(ubSize, typeSize, isMixedPrecision);
-        OP_LOGI(context, "AR branch: fullLoadThreshold=%ld rCount=%ld dtype=%d mixed=%d",
-                fullLoadThreshold, rCount, (int)dataType, (int)isMixedPrecision);
+        OP_LOGI(
+            context, "AR branch: fullLoadThreshold=%ld rCount=%ld dtype=%d mixed=%d", fullLoadThreshold, rCount,
+            (int)dataType, (int)isMixedPrecision);
 
         // Compare API 要求元素数 * sizeof(type) 是 256 字节对齐
         // 对于混合精度：需要同时满足 fp32 对齐（用于 ReduceSum/Select）和原始 dtype 对齐（用于 Compare）
@@ -652,12 +673,15 @@ static ge::graphStatus ReduceNansumTilingFunc(gert::TilingContext* context)
         rLengthAlign = AlignTo256Bytes(rCount, computeTypeSize);
         if (isMixedPrecision) {
             int64_t rLengthAlignInput = AlignTo256Bytes(rCount, typeSize);
-            if (rLengthAlignInput > rLengthAlign) rLengthAlign = rLengthAlignInput;
+            if (rLengthAlignInput > rLengthAlign)
+                rLengthAlign = rLengthAlignInput;
         }
-        int64_t minVecElements = static_cast<int64_t>(VECTOR_REG_WIDTH) / typeSize;  // 按输入类型计算最小元素数
+        int64_t minVecElements = static_cast<int64_t>(VECTOR_REG_WIDTH) / typeSize; // 按输入类型计算最小元素数
         int64_t minVecElementsFp32 = static_cast<int64_t>(VECTOR_REG_WIDTH) / computeTypeSize;
-        if (rLengthAlign < minVecElements) rLengthAlign = minVecElements;
-        if (rLengthAlign < minVecElementsFp32) rLengthAlign = minVecElementsFp32;
+        if (rLengthAlign < minVecElements)
+            rLengthAlign = minVecElements;
+        if (rLengthAlign < minVecElementsFp32)
+            rLengthAlign = minVecElementsFp32;
 
         if (rCount <= fullLoadThreshold) {
             // AR-全载
@@ -672,10 +696,13 @@ static ge::graphStatus ReduceNansumTilingFunc(gert::TilingContext* context)
             rLengthAlign = AlignTo256Bytes(rChunkSize, computeTypeSize);
             if (isMixedPrecision) {
                 int64_t rLengthAlignInput = AlignTo256Bytes(rChunkSize, typeSize);
-                if (rLengthAlignInput > rLengthAlign) rLengthAlign = rLengthAlignInput;
+                if (rLengthAlignInput > rLengthAlign)
+                    rLengthAlign = rLengthAlignInput;
             }
-            if (rLengthAlign < minVecElements) rLengthAlign = minVecElements;
-            if (rLengthAlign < minVecElementsFp32) rLengthAlign = minVecElementsFp32;
+            if (rLengthAlign < minVecElements)
+                rLengthAlign = minVecElements;
+            if (rLengthAlign < minVecElementsFp32)
+                rLengthAlign = minVecElementsFp32;
 
             tmpBufSize = ComputeReduceTmpBufSize(rChunkSize);
         }
@@ -691,14 +718,17 @@ static ge::graphStatus ReduceNansumTilingFunc(gert::TilingContext* context)
             // 每核至少处理 fullLoadThreshold 个 R 元素（即1个chunk）
             int64_t maxCores = CeilDiv(rCount, fullLoadThreshold);
             usedCoreNum = coreNum;
-            if (usedCoreNum > maxCores) usedCoreNum = maxCores;
-            if (usedCoreNum < 1) usedCoreNum = 1;
+            if (usedCoreNum > maxCores)
+                usedCoreNum = maxCores;
+            if (usedCoreNum < 1)
+                usedCoreNum = 1;
             int64_t rPerCoreVal = CeilDiv(rCount, usedCoreNum);
             // 对齐到 fullLoadThreshold（确保每核的 R 是 chunk 的整数倍）
             rPerCoreVal = CeilDiv(rPerCoreVal, fullLoadThreshold) * fullLoadThreshold;
             // 重新计算实际使用核数
             usedCoreNum = CeilDiv(rCount, rPerCoreVal);
-            if (usedCoreNum < 1) usedCoreNum = 1;
+            if (usedCoreNum < 1)
+                usedCoreNum = 1;
             // 多核切分不再按 A1 行切，而是每核处理1行（A1=1）
             tilesPerCore = 1;
             tailCoreTiles = 1;
@@ -723,12 +753,15 @@ static ge::graphStatus ReduceNansumTilingFunc(gert::TilingContext* context)
         alignedCols = AlignTo256Bytes(tileA0Len, computeTypeSize);
         if (isMixedPrecision) {
             int64_t alignedColsInput = AlignTo256Bytes(tileA0Len, typeSize);
-            if (alignedColsInput > alignedCols) alignedCols = alignedColsInput;
+            if (alignedColsInput > alignedCols)
+                alignedCols = alignedColsInput;
         }
         int64_t minVecElements = static_cast<int64_t>(VECTOR_REG_WIDTH) / typeSize;
         int64_t minVecElementsFp32 = static_cast<int64_t>(VECTOR_REG_WIDTH) / computeTypeSize;
-        if (alignedCols < minVecElements) alignedCols = minVecElements;
-        if (alignedCols < minVecElementsFp32) alignedCols = minVecElementsFp32;
+        if (alignedCols < minVecElements)
+            alignedCols = minVecElements;
+        if (alignedCols < minVecElementsFp32)
+            alignedCols = minVecElementsFp32;
 
         // 使用实际 alignedCols 重新计算 rMax（确保 UB 容量正确估算）
         int64_t rMax = ComputeAraRMax(ubSize, alignedCols, isMixedPrecision);
@@ -736,8 +769,9 @@ static ge::graphStatus ReduceNansumTilingFunc(gert::TilingContext* context)
         // a0Outer: A0 方向的 tile 数
         a0Outer = CeilDiv(a0Count, tileA0Len);
 
-        OP_LOGI(context, "ARA branch: rMax=%ld tileA0Len=%ld alignedCols=%ld a0Outer=%ld",
-                rMax, tileA0Len, alignedCols, a0Outer);
+        OP_LOGI(
+            context, "ARA branch: rMax=%ld tileA0Len=%ld alignedCols=%ld a0Outer=%ld", rMax, tileA0Len, alignedCols,
+            a0Outer);
 
         if (rCount <= rMax) {
             // ARA-全载
@@ -762,14 +796,17 @@ static ge::graphStatus ReduceNansumTilingFunc(gert::TilingContext* context)
             // 每核至少处理 rMax 个 R 元素（即1个chunk）
             int64_t maxCores = CeilDiv(rCount, rMax);
             usedCoreNum = coreNum;
-            if (usedCoreNum > maxCores) usedCoreNum = maxCores;
-            if (usedCoreNum < 1) usedCoreNum = 1;
+            if (usedCoreNum > maxCores)
+                usedCoreNum = maxCores;
+            if (usedCoreNum < 1)
+                usedCoreNum = 1;
             int64_t rPerCoreVal = CeilDiv(rCount, usedCoreNum);
             // 对齐到 rMax（确保每核的 R 是 chunk 的整数倍）
             rPerCoreVal = CeilDiv(rPerCoreVal, rMax) * rMax;
             // 重新计算实际使用核数
             usedCoreNum = CeilDiv(rCount, rPerCoreVal);
-            if (usedCoreNum < 1) usedCoreNum = 1;
+            if (usedCoreNum < 1)
+                usedCoreNum = 1;
             // 每核处理1个tile（A1=1, a0Outer=1）
             tilesPerCore = 1;
             tailCoreTiles = 1;
@@ -780,8 +817,9 @@ static ge::graphStatus ReduceNansumTilingFunc(gert::TilingContext* context)
         }
     }
 
-    OP_LOGI(context, "ReduceNansum schMode=%u usedCoreNum=%ld tilesPerCore=%ld tailCoreTiles=%ld useAtomicAdd=%ld",
-            schMode, usedCoreNum, tilesPerCore, tailCoreTiles, tiling->useAtomicAdd);
+    OP_LOGI(
+        context, "ReduceNansum schMode=%u usedCoreNum=%ld tilesPerCore=%ld tailCoreTiles=%ld useAtomicAdd=%ld", schMode,
+        usedCoreNum, tilesPerCore, tailCoreTiles, tiling->useAtomicAdd);
 
     // ================================================================
     // Step 4: 填充 TilingData
@@ -823,9 +861,11 @@ static ge::graphStatus ReduceNansumTilingFunc(gert::TilingContext* context)
             tiling->reduceGmStrides[i] = stridedInfo.reduceGmStrides[i];
         }
 
-        OP_LOGI(context, "Strided copy: blockCount=%ld blockLen=%ld srcStride=%ld outputStride=%ld nrDimCount=%ld rdDimCount=%ld",
-                tiling->copyBlockCount, tiling->copyBlockLen, tiling->copySrcStride, tiling->outputStride,
-                tiling->nonReduceDimCount, tiling->reduceDimCount);
+        OP_LOGI(
+            context,
+            "Strided copy: blockCount=%ld blockLen=%ld srcStride=%ld outputStride=%ld nrDimCount=%ld rdDimCount=%ld",
+            tiling->copyBlockCount, tiling->copyBlockLen, tiling->copySrcStride, tiling->outputStride,
+            tiling->nonReduceDimCount, tiling->reduceDimCount);
     }
 
     context->SetBlockDim(usedCoreNum);

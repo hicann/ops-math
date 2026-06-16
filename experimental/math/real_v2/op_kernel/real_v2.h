@@ -43,7 +43,7 @@ class RealV2Op {
     static constexpr int32_t BUFFER_NUM = 1;
 
 public:
-    __aicore__ inline RealV2Op() {};
+    __aicore__ inline RealV2Op(){};
 
     __aicore__ inline void Init(GM_ADDR self, GM_ADDR out, GM_ADDR workspace, const RealV2TilingData* tilingData);
     __aicore__ inline void Process();
@@ -58,7 +58,7 @@ private:
     TPipe pipe;
     TQue<QuePosition::VECIN, BUFFER_NUM> inputQueue;
     TQue<QuePosition::VECOUT, BUFFER_NUM> outputQueue;
-    TBuf<QuePosition::VECCALC> passBuf;   // Used for passthrough direct copy
+    TBuf<QuePosition::VECCALC> passBuf; // Used for passthrough direct copy
     TBuf<QuePosition::VECCALC> offsetBuf;
 
     GlobalTensor<T> inputGM;
@@ -96,8 +96,8 @@ __aicore__ inline void RealV2Op<T, IS_COMPLEX>::Init(
         pipe.InitBuffer(passBuf, ubLength_ * sizeof(T));
     } else {
         // Complex extraction: input GM contains interleaved [real, imag] pairs as T elements.
-        inputGM.SetGlobalBuffer((__gm__ T*)self + tilingData->blockFactor * AscendC::GetBlockIdx() * 2,
-                                blockLength_ * 2);
+        inputGM.SetGlobalBuffer(
+            (__gm__ T*)self + tilingData->blockFactor * AscendC::GetBlockIdx() * 2, blockLength_ * 2);
         outputGM.SetGlobalBuffer((__gm__ T*)out + tilingData->blockFactor * AscendC::GetBlockIdx(), blockLength_);
 
         // Input buffer: holds complex data (2x output elements)
@@ -124,8 +124,8 @@ __aicore__ inline void RealV2Op<T, IS_COMPLEX>::CopyIn(int64_t progress, int64_t
         copyParams.srcStride = 0;
         copyParams.dstStride = 0;
         copyParams.rsv = 0;
-        AscendC::DataCopyPad(local, inputGM[progress * ubLength_], copyParams,
-                             AscendC::DataCopyPadExtParams<T>{false, 0, 0, 0});
+        AscendC::DataCopyPad(
+            local, inputGM[progress * ubLength_], copyParams, AscendC::DataCopyPadExtParams<T>{false, 0, 0, 0});
         // Wait for MTE2 to complete before MTE3 writes out
         AscendC::PipeBarrier<PIPE_ALL>();
     } else {
@@ -137,8 +137,8 @@ __aicore__ inline void RealV2Op<T, IS_COMPLEX>::CopyIn(int64_t progress, int64_t
         copyParams.srcStride = 0;
         copyParams.dstStride = 0;
         copyParams.rsv = 0;
-        AscendC::DataCopyPad(inLocal, inputGM[progress * ubLength_ * 2], copyParams,
-                             AscendC::DataCopyPadExtParams<T>{false, 0, 0, 0});
+        AscendC::DataCopyPad(
+            inLocal, inputGM[progress * ubLength_ * 2], copyParams, AscendC::DataCopyPadExtParams<T>{false, 0, 0, 0});
         inputQueue.EnQue(inLocal);
     }
 }
@@ -156,8 +156,7 @@ __aicore__ inline void RealV2Op<T, IS_COMPLEX>::Compute(int64_t currentNum)
 
         // offsetBuf contains byte offsets: [0, 2*sizeof(T), 4*sizeof(T), ...]
         AscendC::LocalTensor<uint32_t> offsetLocal = offsetBuf.Get<uint32_t>();
-        AscendC::Gather(outLocal, inLocal, offsetLocal, (uint32_t)0,
-                        static_cast<uint32_t>(currentNum));
+        AscendC::Gather(outLocal, inLocal, offsetLocal, (uint32_t)0, static_cast<uint32_t>(currentNum));
 
         outputQueue.template EnQue<T>(outLocal);
         inputQueue.FreeTensor(inLocal);

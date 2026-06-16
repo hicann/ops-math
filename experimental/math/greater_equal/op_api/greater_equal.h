@@ -15,9 +15,9 @@
 
 namespace l0op {
 
-const aclTensor *GreaterEqual(const aclTensor *self, const aclTensor *other, aclOpExecutor *executor);
+const aclTensor* GreaterEqual(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor);
 
-bool IsGreaterEqualSupportNonContiguous(const aclTensor *self);
+bool IsGreaterEqualSupportNonContiguous(const aclTensor* self);
 
 } // namespace l0op
 

@@ -1,4 +1,4 @@
- /**
+/**
  * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
@@ -7,16 +7,15 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
- /**
+
+/**
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
  */
 
 #include "acos_v2.h"
 
-enum class AcosV2TilingKey : uint32_t
-{
+enum class AcosV2TilingKey : uint32_t {
     TILING_KEY_FP32 = 0,
     TILING_KEY_FP16 = 1,
     TILING_KEY_BF16 = 2,

@@ -21,8 +21,7 @@
 #include "./arch35/acos_grad.h"
 
 template <typename D_T>
-__global__ __aicore__ void acos_grad(GM_ADDR yGrad, GM_ADDR x, GM_ADDR xGrad,
-                                      GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void acos_grad(GM_ADDR yGrad, GM_ADDR x, GM_ADDR xGrad, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(AcosGradTilingData);
     GET_TILING_DATA_WITH_STRUCT(AcosGradTilingData, tilingData, tiling);

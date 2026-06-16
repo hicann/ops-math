@@ -32,7 +32,6 @@
 
 namespace optiling {
 
-
 // 常量定义
 const uint32_t BLOCK_SIZE = 32;
 const uint32_t MIN_TILE_SIZE = 16;
@@ -65,7 +64,7 @@ constexpr size_t EXPECTED_DIM_NUM = 3;
 struct Col2ImCustomCompileInfo {};
 
 // 内联工具函数
-static inline uint32_t AlignUp(uint32_t a, uint32_t b) 
+static inline uint32_t AlignUp(uint32_t a, uint32_t b)
 {
     if (b == 0) {
         return a;
@@ -80,34 +79,33 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
     if (platformInfoPtr == nullptr) {
         return ge::GRAPH_FAILED;
     }
-    
+
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
     coreNum = ascendcPlatform.GetCoreNumAiv();
 
     if (coreNum == 0) {
         return ge::GRAPH_FAILED;
     }
-    
+
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     if (ubSize == 0) {
         return ge::GRAPH_FAILED;
     }
-    
+
     return ge::GRAPH_SUCCESS;
 }
 
 // 获取输入Shape信息
-static ge::graphStatus GetInputShapeInfo(gert::TilingContext* context, 
-                                        int64_t& N, int64_t& inputChannels, int64_t& L)
+static ge::graphStatus GetInputShapeInfo(gert::TilingContext* context, int64_t& N, int64_t& inputChannels, int64_t& L)
 {
     auto inputShape = context->GetInputShape(0);
     if (inputShape == nullptr) {
         return ge::GRAPH_FAILED;
     }
-    
+
     auto shape = Ops::Base::EnsureNotScalar(inputShape->GetStorageShape());
     auto dimNum = shape.GetDimNum();
-    
+
     if (dimNum != EXPECTED_DIM_NUM) {
         return ge::GRAPH_FAILED;
     }
@@ -115,81 +113,76 @@ static ge::graphStatus GetInputShapeInfo(gert::TilingContext* context,
     N = shape.GetDim(DIM_N);
     inputChannels = shape.GetDim(DIM_CHANNELS);
     L = shape.GetDim(DIM_L);
-    
+
     if (N <= 0 || inputChannels <= 0 || L <= 0) {
         return ge::GRAPH_FAILED;
     }
-    
+
     return ge::GRAPH_SUCCESS;
 }
 
 // 获取卷积属性参数
-static ge::graphStatus GetConvAttrs(gert::TilingContext* context,
-                                   int32_t& H, int32_t& W,
-                                   int32_t& kernelH, int32_t& kernelW,
-                                   int32_t& stride, int32_t& padding, int32_t& dilation)
+static ge::graphStatus GetConvAttrs(
+    gert::TilingContext* context, int32_t& H, int32_t& W, int32_t& kernelH, int32_t& kernelW, int32_t& stride,
+    int32_t& padding, int32_t& dilation)
 {
     auto attrPtr = context->GetAttrs();
     if (attrPtr == nullptr) {
         return ge::GRAPH_FAILED;
     }
-    
+
     // 必需参数：输出尺寸
     if (attrPtr->GetInt(ATTR_OUTPUT_H)) {
         H = static_cast<int32_t>(*(attrPtr->GetInt(ATTR_OUTPUT_H)));
     } else {
         return ge::GRAPH_FAILED;
     }
-    
+
     if (attrPtr->GetInt(ATTR_OUTPUT_W)) {
         W = static_cast<int32_t>(*(attrPtr->GetInt(ATTR_OUTPUT_W)));
     } else {
         return ge::GRAPH_FAILED;
     }
-    
+
     // 可选参数：使用默认值
-    kernelH = attrPtr->GetInt(ATTR_KERNEL_H) ? 
-              static_cast<int32_t>(*(attrPtr->GetInt(ATTR_KERNEL_H))) : DEFAULT_KERNEL_SIZE;
-    kernelW = attrPtr->GetInt(ATTR_KERNEL_W) ? 
-              static_cast<int32_t>(*(attrPtr->GetInt(ATTR_KERNEL_W))) : DEFAULT_KERNEL_SIZE;
-    stride = attrPtr->GetInt(ATTR_STRIDE) ? 
-             static_cast<int32_t>(*(attrPtr->GetInt(ATTR_STRIDE))) : DEFAULT_STRIDE;
-    padding = attrPtr->GetInt(ATTR_PADDING) ? 
-              static_cast<int32_t>(*(attrPtr->GetInt(ATTR_PADDING))) : DEFAULT_PADDING;
-    dilation = attrPtr->GetInt(ATTR_DILATION) ? 
-               static_cast<int32_t>(*(attrPtr->GetInt(ATTR_DILATION))) : DEFAULT_DILATION;
-    
+    kernelH =
+        attrPtr->GetInt(ATTR_KERNEL_H) ? static_cast<int32_t>(*(attrPtr->GetInt(ATTR_KERNEL_H))) : DEFAULT_KERNEL_SIZE;
+    kernelW =
+        attrPtr->GetInt(ATTR_KERNEL_W) ? static_cast<int32_t>(*(attrPtr->GetInt(ATTR_KERNEL_W))) : DEFAULT_KERNEL_SIZE;
+    stride = attrPtr->GetInt(ATTR_STRIDE) ? static_cast<int32_t>(*(attrPtr->GetInt(ATTR_STRIDE))) : DEFAULT_STRIDE;
+    padding = attrPtr->GetInt(ATTR_PADDING) ? static_cast<int32_t>(*(attrPtr->GetInt(ATTR_PADDING))) : DEFAULT_PADDING;
+    dilation =
+        attrPtr->GetInt(ATTR_DILATION) ? static_cast<int32_t>(*(attrPtr->GetInt(ATTR_DILATION))) : DEFAULT_DILATION;
+
     if (H <= 0 || W <= 0 || kernelH <= 0 || kernelW <= 0 || stride <= 0 || dilation <= 0) {
         return ge::GRAPH_FAILED;
     }
-    
+
     return ge::GRAPH_SUCCESS;
 }
 
 // 验证输入维度和计算输出通道数
-static ge::graphStatus ValidateAndComputeChannels(int64_t inputChannels,
-                                                  int32_t kernelH, int32_t kernelW,
-                                                  int32_t& C)
+static ge::graphStatus ValidateAndComputeChannels(int64_t inputChannels, int32_t kernelH, int32_t kernelW, int32_t& C)
 {
     int32_t kernelSize = kernelH * kernelW;
-    
+
     if (inputChannels % kernelSize != 0) {
         return ge::GRAPH_FAILED;
     }
-    
+
     C = inputChannels / kernelSize;
-    
+
     if (C <= 0) {
         return ge::GRAPH_FAILED;
     }
-    
+
     return ge::GRAPH_SUCCESS;
 }
 
 // 计算输出特征图尺寸
-static void ComputeOutputFeatureSize(int32_t H, int32_t W, int32_t kernelH, int32_t kernelW,
-                                    int32_t stride, int32_t padding, int32_t dilation,
-                                    int32_t& outH, int32_t& outW)
+static void ComputeOutputFeatureSize(
+    int32_t H, int32_t W, int32_t kernelH, int32_t kernelW, int32_t stride, int32_t padding, int32_t dilation,
+    int32_t& outH, int32_t& outW)
 {
     outH = (H + 2 * padding - dilation * (kernelH - 1) - 1) / stride + 1;
     outW = (W + 2 * padding - dilation * (kernelW - 1) - 1) / stride + 1;
@@ -199,18 +192,18 @@ static void ComputeOutputFeatureSize(int32_t H, int32_t W, int32_t kernelH, int3
 static ge::graphStatus GetDataTypeSize(gert::TilingContext* context, uint32_t& typeSize)
 {
     const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_FLOAT16};
-    
+
     auto inputDesc = context->GetInputDesc(0);
     if (inputDesc == nullptr) {
         return ge::GRAPH_FAILED;
     }
-    
+
     ge::DataType dataType = inputDesc->GetDataType();
-    
+
     if (supportedDtype.count(dataType) == 0) {
         return ge::GRAPH_FAILED;
     }
-    
+
     switch (dataType) {
         case ge::DT_FLOAT:
             typeSize = 4;
@@ -221,7 +214,7 @@ static ge::graphStatus GetDataTypeSize(gert::TilingContext* context, uint32_t& t
         default:
             return ge::GRAPH_FAILED;
     }
-    
+
     return ge::GRAPH_SUCCESS;
 }
 
@@ -229,45 +222,43 @@ static ge::graphStatus GetDataTypeSize(gert::TilingContext* context, uint32_t& t
 static uint32_t EstimateUBUsage(int32_t pixelNum, int32_t kernelH, int32_t kernelW, uint32_t typeSize)
 {
     uint32_t colDataPerPixel = kernelH * kernelW * typeSize;
-    
+
     uint32_t outputBytes = AlignUp(pixelNum * typeSize, BLOCK_SIZE);
     uint32_t inputBytes = AlignUp(pixelNum * colDataPerPixel, BLOCK_SIZE);
     uint32_t tempBytes = AlignUp(pixelNum * typeSize, BLOCK_SIZE);
-    
+
     return BUFFER_NUM * outputBytes + inputBytes + tempBytes;
 }
 
 // 计算核内tile大小
-static ge::graphStatus CalculateIntraCoreTileSize(int64_t coreNum, 
-                                                  uint64_t totalPixels,
-                                                  int32_t kernelH, int32_t kernelW,
-                                                  uint64_t ubSize, uint32_t typeSize,
-                                                  int32_t& tilePixelNum)
+static ge::graphStatus CalculateIntraCoreTileSize(
+    int64_t coreNum, uint64_t totalPixels, int32_t kernelH, int32_t kernelW, uint64_t ubSize, uint32_t typeSize,
+    int32_t& tilePixelNum)
 {
     int32_t basePixelsPerCore = totalPixels / coreNum;
     int32_t bigCoreNum = totalPixels % coreNum;
     int32_t maxPixelsPerCore = basePixelsPerCore + (bigCoreNum > 0 ? 1 : 0);
-    
+
     tilePixelNum = MIN_TILE_SIZE;
-    
+
     uint64_t ubThreshold = ubSize * UB_USAGE_THRESHOLD / 100;
-    
+
     // 动态调整tile大小
-    while (tilePixelNum * 2 <= maxPixelsPerCore && 
+    while (tilePixelNum * 2 <= maxPixelsPerCore &&
            EstimateUBUsage(tilePixelNum * 2, kernelH, kernelW, typeSize) <= ubThreshold) {
         tilePixelNum *= 2;
     }
-    
+
     if (tilePixelNum <= 0) {
         return ge::GRAPH_FAILED;
     }
-    
+
     return ge::GRAPH_SUCCESS;
 }
 
 // 计算向量化对齐参数
-static void ComputeVectorAlignment(uint32_t typeSize, int32_t tilePixelNum,
-                                   uint32_t& vecElements, int32_t& alignedTileSize)
+static void ComputeVectorAlignment(
+    uint32_t typeSize, int32_t tilePixelNum, uint32_t& vecElements, int32_t& alignedTileSize)
 {
     vecElements = BITS_PER_VECTOR / (typeSize * BITS_PER_BYTE);
     alignedTileSize = ((tilePixelNum + vecElements - 1) / vecElements) * vecElements;
@@ -277,17 +268,15 @@ static void ComputeVectorAlignment(uint32_t typeSize, int32_t tilePixelNum,
 static ge::graphStatus SetTilingKey(gert::TilingContext* context, ge::DataType dataType)
 {
     uint64_t tilingKey = 0;
-    
+
     if (dataType == ge::DT_FLOAT) {
         tilingKey = GET_TPL_TILING_KEY(ELEMENTWISE_TPL_SCH_MODE_0);
-    } 
-    else if (dataType == ge::DT_FLOAT16) {
+    } else if (dataType == ge::DT_FLOAT16) {
         tilingKey = GET_TPL_TILING_KEY(ELEMENTWISE_TPL_SCH_MODE_1);
-    }
-    else {
+    } else {
         return ge::GRAPH_FAILED;
     }
-    
+
     context->SetTilingKey(tilingKey);
     return ge::GRAPH_SUCCESS;
 }
@@ -356,8 +345,8 @@ static ge::graphStatus Col2ImCustomTilingFunc(gert::TilingContext* context)
 
     // 9. 计算核内tile大小
     int32_t tilePixelNum;
-    if (CalculateIntraCoreTileSize(coreNum, totalPixels, kernelH, kernelW, 
-                                   ubSize, typeSize, tilePixelNum) != ge::GRAPH_SUCCESS) {
+    if (CalculateIntraCoreTileSize(coreNum, totalPixels, kernelH, kernelW, ubSize, typeSize, tilePixelNum) !=
+        ge::GRAPH_SUCCESS) {
         return ge::GRAPH_FAILED;
     }
 
@@ -376,7 +365,7 @@ static ge::graphStatus Col2ImCustomTilingFunc(gert::TilingContext* context)
     if (tiling == nullptr) {
         return ge::GRAPH_FAILED;
     }
-    
+
     if (memset_s(tiling, sizeof(Col2ImTilingData), 0, sizeof(Col2ImTilingData)) != EOK) {
         return ge::GRAPH_FAILED;
     }
@@ -431,6 +420,8 @@ static ge::graphStatus TilingParseForCol2ImCustom([[maybe_unused]] gert::TilingP
 }
 
 // Tiling注册
-IMPL_OP_OPTILING(Col2ImCustom).Tiling(Col2ImCustomTilingFunc).TilingParse<Col2ImCustomCompileInfo>(TilingParseForCol2ImCustom);
+IMPL_OP_OPTILING(Col2ImCustom)
+    .Tiling(Col2ImCustomTilingFunc)
+    .TilingParse<Col2ImCustomCompileInfo>(TilingParseForCol2ImCustom);
 
 } // namespace optiling

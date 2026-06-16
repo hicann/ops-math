@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
+
 /**
  *
  * NOTE: Portions of this code were AI-generated and have been
@@ -59,25 +59,19 @@ using namespace AscendC;
 // ============================================================================
 template <typename T>
 __aicore__ inline void ComputeGroupA(
-    LocalTensor<T>& dst,
-    LocalTensor<T>& src,
-    LocalTensor<float>& f1,
-    LocalTensor<float>& f2,
-    LocalTensor<float>& f3,
-    LocalTensor<float>& f4,
-    LocalTensor<float>& f5,
-    uint32_t count)
+    LocalTensor<T>& dst, LocalTensor<T>& src, LocalTensor<float>& f1, LocalTensor<float>& f2, LocalTensor<float>& f3,
+    LocalTensor<float>& f4, LocalTensor<float>& f5, uint32_t count)
 {
     constexpr float THRESHOLD = 0.7071067811865476f;
     constexpr float PI_OVER_2 = 1.5707963267948966f;
-    constexpr float c17 = 2027025.0f   / 185794560.0f;  // = 0.010910928
-    constexpr float c15 = 135135.0f    / 9676800.0f;    // = 0.013969844
-    constexpr float c13 = 10395.0f     / 599040.0f;     // = 0.017352916
-    constexpr float c11 = 945.0f       / 42240.0f;      // = 0.022372159
-    constexpr float c9  = 105.0f       / 3456.0f;       // = 0.030381944
-    constexpr float c7  = 15.0f        / 336.0f;        // = 0.044642857
-    constexpr float c5  = 3.0f         / 40.0f;         // = 0.075
-    constexpr float c3  = 1.0f         / 6.0f;          // = 0.166666667
+    constexpr float c17 = 2027025.0f / 185794560.0f; // = 0.010910928
+    constexpr float c15 = 135135.0f / 9676800.0f;    // = 0.013969844
+    constexpr float c13 = 10395.0f / 599040.0f;      // = 0.017352916
+    constexpr float c11 = 945.0f / 42240.0f;         // = 0.022372159
+    constexpr float c9 = 105.0f / 3456.0f;           // = 0.030381944
+    constexpr float c7 = 15.0f / 336.0f;             // = 0.044642857
+    constexpr float c5 = 3.0f / 40.0f;               // = 0.075
+    constexpr float c3 = 1.0f / 6.0f;                // = 0.166666667
 
     // ---- 获取 xf 到 f1 ----
     if constexpr (std::is_same<T, half>::value) {
@@ -93,43 +87,59 @@ __aicore__ inline void ComputeGroupA(
     // Horner: poly in f3, scratch in f5 (for Mul result)
     // 9-term polynomial (up to x^17) for accuracy < 1e-4 at x=0.7071
     Muls(f3, f2, 0.0f, count);
-    Adds(f3, f3, c17, count);                              // f3 = c17
-    Mul(f5, f2, f3, count); Adds(f3, f5, c15, count);
-    Mul(f5, f2, f3, count); Adds(f3, f5, c13, count);
-    Mul(f5, f2, f3, count); Adds(f3, f5, c11, count);
-    Mul(f5, f2, f3, count); Adds(f3, f5, c9,  count);
-    Mul(f5, f2, f3, count); Adds(f3, f5, c7,  count);
-    Mul(f5, f2, f3, count); Adds(f3, f5, c5,  count);
-    Mul(f5, f2, f3, count); Adds(f3, f5, c3,  count);
-    Mul(f5, f2, f3, count); Adds(f3, f5, 1.0f, count);    // f3 = 1 + x²*...
-    Mul(f4, f1, f3, count);                                // f4 = xf * poly(x) = r_small
+    Adds(f3, f3, c17, count); // f3 = c17
+    Mul(f5, f2, f3, count);
+    Adds(f3, f5, c15, count);
+    Mul(f5, f2, f3, count);
+    Adds(f3, f5, c13, count);
+    Mul(f5, f2, f3, count);
+    Adds(f3, f5, c11, count);
+    Mul(f5, f2, f3, count);
+    Adds(f3, f5, c9, count);
+    Mul(f5, f2, f3, count);
+    Adds(f3, f5, c7, count);
+    Mul(f5, f2, f3, count);
+    Adds(f3, f5, c5, count);
+    Mul(f5, f2, f3, count);
+    Adds(f3, f5, c3, count);
+    Mul(f5, f2, f3, count);
+    Adds(f3, f5, 1.0f, count); // f3 = 1 + x²*...
+    Mul(f4, f1, f3, count);    // f4 = xf * poly(x) = r_small
 
     // ---- Part 2: y = sqrt(1 - x²) ----
     // Overwrite f2 (x² no longer needed)
     // Note: NO Maxs clamp here → for |x|>1.0: 1-x²<0 → Sqrt gives NaN (correct behavior)
     Muls(f2, f2, -1.0f, count);
     Adds(f2, f2, 1.0f, count);
-    Sqrt(f2, f2, count);              // f2 = y [or NaN for |x|>1]
+    Sqrt(f2, f2, count); // f2 = y [or NaN for |x|>1]
     PipeBarrier<PIPE_V>();
 
     // ---- Part 3: r_y = arcsin_taylor(y) ----
     // Save y from f2 to f3 (overwrite stale poly(x), keeping r_small safe in f4)
-    Adds(f3, f2, 0.0f, count);        // f3 = y
+    Adds(f3, f2, 0.0f, count); // f3 = y
     // f2 = y²
-    Mul(f2, f3, f3, count);            // f2 = y²  (dst=f2 ≠ src=f3: safe)
+    Mul(f2, f3, f3, count); // f2 = y²  (dst=f2 ≠ src=f3: safe)
     // Horner for arcsin(y): poly in f5, scratch in f1 (overwrite xf; reload later)
     // 9-term polynomial for accuracy near threshold
     Muls(f5, f2, 0.0f, count);
     Adds(f5, f5, c17, count);
-    Mul(f1, f2, f5, count); Adds(f5, f1, c15, count);
-    Mul(f1, f2, f5, count); Adds(f5, f1, c13, count);
-    Mul(f1, f2, f5, count); Adds(f5, f1, c11, count);
-    Mul(f1, f2, f5, count); Adds(f5, f1, c9, count);
-    Mul(f1, f2, f5, count); Adds(f5, f1, c7, count);
-    Mul(f1, f2, f5, count); Adds(f5, f1, c5, count);
-    Mul(f1, f2, f5, count); Adds(f5, f1, c3, count);
-    Mul(f1, f2, f5, count); Adds(f5, f1, 1.0f, count);    // f5 = 1 + y²*...
-    Mul(f1, f3, f5, count);            // f1 = y * poly(y) = r_y (dst=f1 ≠ src0=f3, src1=f5)
+    Mul(f1, f2, f5, count);
+    Adds(f5, f1, c15, count);
+    Mul(f1, f2, f5, count);
+    Adds(f5, f1, c13, count);
+    Mul(f1, f2, f5, count);
+    Adds(f5, f1, c11, count);
+    Mul(f1, f2, f5, count);
+    Adds(f5, f1, c9, count);
+    Mul(f1, f2, f5, count);
+    Adds(f5, f1, c7, count);
+    Mul(f1, f2, f5, count);
+    Adds(f5, f1, c5, count);
+    Mul(f1, f2, f5, count);
+    Adds(f5, f1, c3, count);
+    Mul(f1, f2, f5, count);
+    Adds(f5, f1, 1.0f, count); // f5 = 1 + y²*...
+    Mul(f1, f3, f5, count);    // f1 = y * poly(y) = r_y (dst=f1 ≠ src0=f3, src1=f5)
 
     // ---- Part 4: r_large = sign(xf) * (π/2 - r_y) ----
     // f5 = π/2 - r_y
@@ -146,22 +156,22 @@ __aicore__ inline void ComputeGroupA(
     Abs(f2, f3, count);
     // f1 = (π/2 - r_y) * xf  (dst=f1 ≠ src0=f5, src1=f3: no aliasing)
     Mul(f1, f5, f3, count);
-    Maxs(f2, f2, 1e-6f, count);        // avoid div by zero
-    Div(f5, f1, f2, count);            // f5 = sign(xf) * (π/2 - r_y) = r_large
+    Maxs(f2, f2, 1e-6f, count); // avoid div by zero
+    Div(f5, f1, f2, count);     // f5 = sign(xf) * (π/2 - r_y) = r_large
     PipeBarrier<PIPE_V>();
 
     // ---- Part 5: blend r_small(f4) and r_large(f5) using float mask ----
     // mask_float = 0.0 if |xf| < threshold, 1.0 if |xf| >= threshold
     // Computed via steep step: max(min((|xf|-threshold)*1e30, 1.0), 0.0)
-    Abs(f2, f3, count);                   // f2 = |xf|
-    Adds(f2, f2, -THRESHOLD, count);      // f2 = |xf| - threshold
-    Muls(f2, f2, 1.0e30f, count);         // steep multiply
-    Maxs(f2, f2, 0.0f, count);            // clamp to [0, +inf)
-    Mins(f2, f2, 1.0f, count);            // clamp to [0, 1] → 0 for small x, 1 for large x
+    Abs(f2, f3, count);              // f2 = |xf|
+    Adds(f2, f2, -THRESHOLD, count); // f2 = |xf| - threshold
+    Muls(f2, f2, 1.0e30f, count);    // steep multiply
+    Maxs(f2, f2, 0.0f, count);       // clamp to [0, +inf)
+    Mins(f2, f2, 1.0f, count);       // clamp to [0, 1] → 0 for small x, 1 for large x
     // result = r_small + mask*(r_large - r_small)
-    Sub(f1, f5, f4, count);               // f1 = r_large - r_small
-    Mul(f3, f2, f1, count);               // f3 = mask * (r_large - r_small)
-    Add(f2, f4, f3, count);               // f2 = r_small + mask*(r_large-r_small) = result
+    Sub(f1, f5, f4, count); // f1 = r_large - r_small
+    Mul(f3, f2, f1, count); // f3 = mask * (r_large - r_small)
+    Add(f2, f4, f3, count); // f2 = r_small + mask*(r_large-r_small) = result
 
     // ---- Part 6: write back dst ----
     if constexpr (std::is_same<T, float>::value) {
@@ -176,14 +186,8 @@ __aicore__ inline void ComputeGroupA(
 // Group B（TilingKey=2）：DOUBLE 路径 → 与 Group A fp32 相同
 // ============================================================================
 __aicore__ inline void ComputeGroupB(
-    LocalTensor<float>& dst,
-    LocalTensor<float>& src,
-    LocalTensor<float>& f1,
-    LocalTensor<float>& f2,
-    LocalTensor<float>& f3,
-    LocalTensor<float>& f4,
-    LocalTensor<float>& f5,
-    uint32_t count)
+    LocalTensor<float>& dst, LocalTensor<float>& src, LocalTensor<float>& f1, LocalTensor<float>& f2,
+    LocalTensor<float>& f3, LocalTensor<float>& f4, LocalTensor<float>& f5, uint32_t count)
 {
     ComputeGroupA<float>(dst, src, f1, f2, f3, f4, f5, count);
 }
@@ -193,12 +197,8 @@ __aicore__ inline void ComputeGroupB(
 // ============================================================================
 
 __aicore__ inline void ComputeGroupC_Int8(
-    LocalTensor<float>& dst,
-    LocalTensor<int8_t>& src,
-    LocalTensor<half>& halfBuf,
-    LocalTensor<float>& floatCastBuf,
-    LocalTensor<uint8_t>& tmpBuf,
-    uint32_t count)
+    LocalTensor<float>& dst, LocalTensor<int8_t>& src, LocalTensor<half>& halfBuf, LocalTensor<float>& floatCastBuf,
+    LocalTensor<uint8_t>& tmpBuf, uint32_t count)
 {
     AscendC::Cast(halfBuf, src, RoundMode::CAST_NONE, count);
     PipeBarrier<PIPE_V>();
@@ -208,10 +208,7 @@ __aicore__ inline void ComputeGroupC_Int8(
 }
 
 __aicore__ inline void ComputeGroupC_Int16(
-    LocalTensor<float>& dst,
-    LocalTensor<int16_t>& src,
-    LocalTensor<float>& castBuf,
-    LocalTensor<uint8_t>& tmpBuf,
+    LocalTensor<float>& dst, LocalTensor<int16_t>& src, LocalTensor<float>& castBuf, LocalTensor<uint8_t>& tmpBuf,
     uint32_t count)
 {
     AscendC::Cast(castBuf, src, RoundMode::CAST_NONE, count);
@@ -220,10 +217,7 @@ __aicore__ inline void ComputeGroupC_Int16(
 }
 
 __aicore__ inline void ComputeGroupC_Int32(
-    LocalTensor<float>& dst,
-    LocalTensor<int32_t>& src,
-    LocalTensor<float>& castBuf,
-    LocalTensor<uint8_t>& tmpBuf,
+    LocalTensor<float>& dst, LocalTensor<int32_t>& src, LocalTensor<float>& castBuf, LocalTensor<uint8_t>& tmpBuf,
     uint32_t count)
 {
     AscendC::Cast(castBuf, src, RoundMode::CAST_NONE, count);
@@ -232,12 +226,8 @@ __aicore__ inline void ComputeGroupC_Int32(
 }
 
 __aicore__ inline void ComputeGroupC_Int64(
-    LocalTensor<float>& dst,
-    LocalTensor<int64_t>& src,
-    LocalTensor<int32_t>& i32Buf,
-    LocalTensor<float>& floatCastBuf,
-    LocalTensor<uint8_t>& tmpBuf,
-    uint32_t count)
+    LocalTensor<float>& dst, LocalTensor<int64_t>& src, LocalTensor<int32_t>& i32Buf, LocalTensor<float>& floatCastBuf,
+    LocalTensor<uint8_t>& tmpBuf, uint32_t count)
 {
     AscendC::Cast(i32Buf, src, RoundMode::CAST_NONE, count);
     PipeBarrier<PIPE_V>();
@@ -247,12 +237,8 @@ __aicore__ inline void ComputeGroupC_Int64(
 }
 
 __aicore__ inline void ComputeGroupC_Uint8(
-    LocalTensor<float>& dst,
-    LocalTensor<uint8_t>& src,
-    LocalTensor<half>& halfBuf,
-    LocalTensor<float>& floatCastBuf,
-    LocalTensor<uint8_t>& tmpBuf,
-    uint32_t count)
+    LocalTensor<float>& dst, LocalTensor<uint8_t>& src, LocalTensor<half>& halfBuf, LocalTensor<float>& floatCastBuf,
+    LocalTensor<uint8_t>& tmpBuf, uint32_t count)
 {
     AscendC::Cast(halfBuf, src, RoundMode::CAST_NONE, count);
     PipeBarrier<PIPE_V>();
@@ -262,12 +248,8 @@ __aicore__ inline void ComputeGroupC_Uint8(
 }
 
 __aicore__ inline void ComputeGroupC_Bool(
-    LocalTensor<float>& dst,
-    LocalTensor<bool>& src,
-    LocalTensor<half>& halfBuf,
-    LocalTensor<float>& floatCastBuf,
-    LocalTensor<uint8_t>& tmpBuf,
-    uint32_t count)
+    LocalTensor<float>& dst, LocalTensor<bool>& src, LocalTensor<half>& halfBuf, LocalTensor<float>& floatCastBuf,
+    LocalTensor<uint8_t>& tmpBuf, uint32_t count)
 {
     LocalTensor<uint8_t> srcU8 = src.template ReinterpretCast<uint8_t>();
     AscendC::Cast(halfBuf, srcU8, RoundMode::CAST_NONE, count);
@@ -281,13 +263,33 @@ __aicore__ inline void ComputeGroupC_Bool(
 // 输出类型 trait
 // ============================================================================
 template <typename D_T>
-struct OutputTypeOf { using type = D_T; };
-template <> struct OutputTypeOf<int8_t>   { using type = float; };
-template <> struct OutputTypeOf<int16_t>  { using type = float; };
-template <> struct OutputTypeOf<int32_t>  { using type = float; };
-template <> struct OutputTypeOf<int64_t>  { using type = float; };
-template <> struct OutputTypeOf<uint8_t>  { using type = float; };
-template <> struct OutputTypeOf<bool>     { using type = float; };
+struct OutputTypeOf {
+    using type = D_T;
+};
+template <>
+struct OutputTypeOf<int8_t> {
+    using type = float;
+};
+template <>
+struct OutputTypeOf<int16_t> {
+    using type = float;
+};
+template <>
+struct OutputTypeOf<int32_t> {
+    using type = float;
+};
+template <>
+struct OutputTypeOf<int64_t> {
+    using type = float;
+};
+template <>
+struct OutputTypeOf<uint8_t> {
+    using type = float;
+};
+template <>
+struct OutputTypeOf<bool> {
+    using type = float;
+};
 
 // ============================================================================
 // AsinWithAgent Kernel 主类（arch32）
@@ -307,11 +309,7 @@ class AsinWithAgent {
 public:
     __aicore__ inline AsinWithAgent() {}
 
-    __aicore__ inline void Init(
-        GM_ADDR x,
-        GM_ADDR y,
-        GM_ADDR workspace,
-        const AsinWithAgentTilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, const AsinWithAgentTilingData* tilingData);
 
     __aicore__ inline void Process();
 
@@ -321,15 +319,12 @@ private:
     __aicore__ inline void CopyOut(int64_t tileIdx, int64_t currentLen);
 
     template <typename T = D_T>
-    __aicore__ inline void ComputeImpl(
-        LocalTensor<O_T>& dst,
-        LocalTensor<T>& src,
-        uint32_t count);
+    __aicore__ inline void ComputeImpl(LocalTensor<O_T>& dst, LocalTensor<T>& src, uint32_t count);
 
 private:
     TPipe pipe;
 
-    TQue<QuePosition::VECIN,  BUFFER_NUM> inputQueue;
+    TQue<QuePosition::VECIN, BUFFER_NUM> inputQueue;
     TQue<QuePosition::VECOUT, BUFFER_NUM> outputQueue;
 
     // tmpBuf：Group A = 5 float sub-buffers; Group C = Asin API tmpBuf
@@ -343,54 +338,50 @@ private:
     GlobalTensor<D_T> inputGM;
     GlobalTensor<O_T> outputGM;
 
-    int64_t  blockOffset_;
-    int64_t  blockLength_;
-    int64_t  tileLength_;
-    int64_t  loopCount_;
-    int64_t  tailTileLength_;
+    int64_t blockOffset_;
+    int64_t blockLength_;
+    int64_t tileLength_;
+    int64_t loopCount_;
+    int64_t tailTileLength_;
     uint32_t tmpBufferSize_;
     uint32_t midBufferSize_;
-    int64_t  tileStep_;
+    int64_t tileStep_;
 };
 
 template <typename D_T>
 __aicore__ inline void AsinWithAgent<D_T>::Init(
-    GM_ADDR x,
-    GM_ADDR y,
-    GM_ADDR workspace,
-    const AsinWithAgentTilingData* tilingData)
+    GM_ADDR x, GM_ADDR y, GM_ADDR workspace, const AsinWithAgentTilingData* tilingData)
 {
     uint32_t totalLength = tilingData->totalLength;
     uint32_t usedCoreNum = tilingData->usedCoreNum;
     uint32_t perCoreBase = (usedCoreNum > 0) ? (totalLength / usedCoreNum) : 0;
-    uint32_t remainder   = (usedCoreNum > 0) ? (totalLength % usedCoreNum) : 0;
-    uint32_t blockIdx    = static_cast<uint32_t>(GetBlockIdx());
+    uint32_t remainder = (usedCoreNum > 0) ? (totalLength % usedCoreNum) : 0;
+    uint32_t blockIdx = static_cast<uint32_t>(GetBlockIdx());
 
     if (blockIdx < remainder) {
         blockOffset_ = static_cast<int64_t>(blockIdx * (perCoreBase + 1));
         blockLength_ = static_cast<int64_t>(perCoreBase + 1);
     } else {
-        blockOffset_ = static_cast<int64_t>(remainder * (perCoreBase + 1) +
-                                             (blockIdx - remainder) * perCoreBase);
+        blockOffset_ = static_cast<int64_t>(remainder * (perCoreBase + 1) + (blockIdx - remainder) * perCoreBase);
         blockLength_ = static_cast<int64_t>(perCoreBase);
     }
 
-    tileLength_    = static_cast<int64_t>(tilingData->tileLength);
+    tileLength_ = static_cast<int64_t>(tilingData->tileLength);
     tmpBufferSize_ = tilingData->tmpBufferSize;
     midBufferSize_ = tilingData->midBufferSize;
 
     if (blockLength_ > 0 && tileLength_ > 0) {
-        loopCount_      = blockLength_ / tileLength_;
+        loopCount_ = blockLength_ / tileLength_;
         tailTileLength_ = blockLength_ % tileLength_;
     } else {
-        loopCount_      = 0;
+        loopCount_ = 0;
         tailTileLength_ = 0;
     }
 
     inputGM.SetGlobalBuffer((__gm__ D_T*)x + blockOffset_, blockLength_);
     outputGM.SetGlobalBuffer((__gm__ O_T*)y + blockOffset_, blockLength_);
 
-    pipe.InitBuffer(inputQueue,  BUFFER_NUM, tileLength_ * sizeof(D_T));
+    pipe.InitBuffer(inputQueue, BUFFER_NUM, tileLength_ * sizeof(D_T));
     pipe.InitBuffer(outputQueue, BUFFER_NUM, tileLength_ * sizeof(O_T));
 
     if (tmpBufferSize_ > 0) {
@@ -412,19 +403,16 @@ __aicore__ inline void AsinWithAgent<D_T>::CopyIn(int64_t tileIdx, int64_t curre
     LocalTensor<D_T> xLocal = inputQueue.template AllocTensor<D_T>();
     AscendC::DataCopyParams copyParams;
     copyParams.blockCount = 1;
-    copyParams.blockLen   = static_cast<uint16_t>(currentLen * sizeof(D_T));
-    copyParams.srcStride  = 0;
-    copyParams.dstStride  = 0;
+    copyParams.blockLen = static_cast<uint16_t>(currentLen * sizeof(D_T));
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
     AscendC::DataCopyPad(xLocal, inputGM[tileIdx * tileLength_], copyParams, {false, 0, 0, 0});
     inputQueue.EnQue(xLocal);
 }
 
 template <typename D_T>
 template <typename T>
-__aicore__ inline void AsinWithAgent<D_T>::ComputeImpl(
-    LocalTensor<O_T>& dst,
-    LocalTensor<T>& src,
-    uint32_t count)
+__aicore__ inline void AsinWithAgent<D_T>::ComputeImpl(LocalTensor<O_T>& dst, LocalTensor<T>& src, uint32_t count)
 {
     bool ping = (tileStep_ % 2 == 0);
 
@@ -448,10 +436,10 @@ __aicore__ inline void AsinWithAgent<D_T>::ComputeImpl(
         LocalTensor<uint8_t> tmpBuf = ping ? tmpBufPing.Get<uint8_t>() : tmpBufPong.Get<uint8_t>();
 
         if constexpr (std::is_same<T, int8_t>::value) {
-            LocalTensor<half>  halfBuf      = ping ? midBufPing.Get<half>() : midBufPong.Get<half>();
-            LocalTensor<float> floatCastBuf = ping
-                ? midBufPing.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U]
-                : midBufPong.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U];
+            LocalTensor<half> halfBuf = ping ? midBufPing.Get<half>() : midBufPong.Get<half>();
+            LocalTensor<float> floatCastBuf =
+                ping ? midBufPing.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U] :
+                       midBufPong.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U];
             ComputeGroupC_Int8(dst, src, halfBuf, floatCastBuf, tmpBuf, count);
         } else if constexpr (std::is_same<T, int16_t>::value) {
             LocalTensor<float> castBuf = ping ? midBufPing.Get<float>() : midBufPong.Get<float>();
@@ -460,20 +448,20 @@ __aicore__ inline void AsinWithAgent<D_T>::ComputeImpl(
             LocalTensor<float> castBuf = ping ? midBufPing.Get<float>() : midBufPong.Get<float>();
             ComputeGroupC_Int32(dst, src, castBuf, tmpBuf, count);
         } else if constexpr (std::is_same<T, int64_t>::value) {
-            LocalTensor<int32_t> i32Buf      = ping ? midBufPing.Get<int32_t>() : midBufPong.Get<int32_t>();
-            LocalTensor<float>   floatCastBuf = ping ? midBufPing.Get<float>()   : midBufPong.Get<float>();
+            LocalTensor<int32_t> i32Buf = ping ? midBufPing.Get<int32_t>() : midBufPong.Get<int32_t>();
+            LocalTensor<float> floatCastBuf = ping ? midBufPing.Get<float>() : midBufPong.Get<float>();
             ComputeGroupC_Int64(dst, src, i32Buf, floatCastBuf, tmpBuf, count);
         } else if constexpr (std::is_same<T, uint8_t>::value) {
-            LocalTensor<half>  halfBuf      = ping ? midBufPing.Get<half>() : midBufPong.Get<half>();
-            LocalTensor<float> floatCastBuf = ping
-                ? midBufPing.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U]
-                : midBufPong.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U];
+            LocalTensor<half> halfBuf = ping ? midBufPing.Get<half>() : midBufPong.Get<half>();
+            LocalTensor<float> floatCastBuf =
+                ping ? midBufPing.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U] :
+                       midBufPong.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U];
             ComputeGroupC_Uint8(dst, src, halfBuf, floatCastBuf, tmpBuf, count);
         } else if constexpr (std::is_same<T, bool>::value) {
-            LocalTensor<half>  halfBuf      = ping ? midBufPing.Get<half>() : midBufPong.Get<half>();
-            LocalTensor<float> floatCastBuf = ping
-                ? midBufPing.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U]
-                : midBufPong.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U];
+            LocalTensor<half> halfBuf = ping ? midBufPing.Get<half>() : midBufPong.Get<half>();
+            LocalTensor<float> floatCastBuf =
+                ping ? midBufPing.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U] :
+                       midBufPong.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U];
             ComputeGroupC_Bool(dst, src, halfBuf, floatCastBuf, tmpBuf, count);
         }
     }
@@ -498,9 +486,9 @@ __aicore__ inline void AsinWithAgent<D_T>::CopyOut(int64_t tileIdx, int64_t curr
     LocalTensor<O_T> yLocal = outputQueue.template DeQue<O_T>();
     AscendC::DataCopyParams copyParams;
     copyParams.blockCount = 1;
-    copyParams.blockLen   = static_cast<uint16_t>(currentLen * sizeof(O_T));
-    copyParams.srcStride  = 0;
-    copyParams.dstStride  = 0;
+    copyParams.blockLen = static_cast<uint16_t>(currentLen * sizeof(O_T));
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
     AscendC::DataCopyPad(outputGM[tileIdx * tileLength_], yLocal, copyParams);
     outputQueue.FreeTensor(yLocal);
 }

@@ -38,8 +38,7 @@ static ge::graphStatus GetNumValue(const gert::Tensor* numTensor, int64_t& numVa
     if (tensorDataType == ge::DT_INT64) {
         const int64_t* constDataPtr = numTensor->GetData<int64_t>();
         numValue = (*constDataPtr);
-    } 
-    else {
+    } else {
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -60,8 +59,8 @@ static ge::graphStatus InferShapeLinSpaceD(gert::InferShapeContext* context)
         OP_LOGE(context->GetNodeName(), "the dtype of num only support int64_t, infershape failed!");
         return ge::GRAPH_FAILED;
     }
-    outShape->SetDimNum(1);         
-    outShape->SetDim(0, numValue); 
+    outShape->SetDimNum(1);
+    outShape->SetDim(0, numValue);
 
     OP_LOGD(context->GetNodeName(), "End to do InferShapeLinSpaceD");
     return ge::GRAPH_SUCCESS;

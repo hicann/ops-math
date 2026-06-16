@@ -25,9 +25,8 @@
 #include "reduce_mean_with_count.h"
 
 template <typename D_T_X, int REDUCE_MODE>
-__global__ __aicore__ void reduce_mean_with_count(GM_ADDR input, GM_ADDR meanResult,
-                                                   GM_ADDR countResult, GM_ADDR workspace,
-                                                   GM_ADDR tiling)
+__global__ __aicore__ void reduce_mean_with_count(
+    GM_ADDR input, GM_ADDR meanResult, GM_ADDR countResult, GM_ADDR workspace, GM_ADDR tiling)
 {
     ENABLE_PRINTF();
     REGISTER_TILING_DEFAULT(ReduceMeanWithCountTilingData);

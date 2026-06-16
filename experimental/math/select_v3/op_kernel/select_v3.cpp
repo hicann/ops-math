@@ -20,29 +20,27 @@
 
 /*!
  * \file select_v3.cpp
-*/
+ */
 
 #include "select_v3.h"
 
-enum class SelectV3TilingKey : uint32_t
-{
+enum class SelectV3TilingKey : uint32_t {
     TILING_KEY_EXAMPLE_FLOAT = 0,
     TILING_KEY_EXAMPLE_HALF = 1,
 };
 
 template <uint32_t schMode>
-__global__ __aicore__ void select_v3(GM_ADDR x, GM_ADDR y,GM_ADDR b,GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void select_v3(GM_ADDR x, GM_ADDR y, GM_ADDR b, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(SelectV3TilingData);
     GET_TILING_DATA_WITH_STRUCT(SelectV3TilingData, tilingData, tiling);
     if constexpr (schMode == static_cast<uint32_t>(SelectV3TilingKey::TILING_KEY_EXAMPLE_FLOAT)) {
-        NsSelectV3::SelectV3<float> op; // 算子kernel实例获取
-        op.Init(x, y, b,z, &tilingData);      // 算子kernel实例初始化
-        op.Process();                       // 算子kernel实例执行
-    }
-    else if constexpr (schMode == static_cast<uint32_t>(SelectV3TilingKey::TILING_KEY_EXAMPLE_HALF)) {
-        NsSelectV3::SelectV3<half> op; // 算子kernel实例获取
-        op.Init(x, y,b, z, &tilingData);        // 算子kernel实例初始化
-        op.Process();                         // 算子kernel实例执行
+        NsSelectV3::SelectV3<float> op;   // 算子kernel实例获取
+        op.Init(x, y, b, z, &tilingData); // 算子kernel实例初始化
+        op.Process();                     // 算子kernel实例执行
+    } else if constexpr (schMode == static_cast<uint32_t>(SelectV3TilingKey::TILING_KEY_EXAMPLE_HALF)) {
+        NsSelectV3::SelectV3<half> op;    // 算子kernel实例获取
+        op.Init(x, y, b, z, &tilingData); // 算子kernel实例初始化
+        op.Process();                     // 算子kernel实例执行
     }
 }

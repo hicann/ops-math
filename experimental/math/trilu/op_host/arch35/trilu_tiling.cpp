@@ -18,7 +18,6 @@
 
 namespace optiling {
 
-
 constexpr uint32_t WS_SYS_SIZE = 0U;
 constexpr uint32_t DCACHE_SIZE = 128 * 1024;
 constexpr int64_t MIN_PER_CORE_ELEMENTS = 1024;
@@ -38,9 +37,9 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus GetShapeAndAttrsInfo(gert::TilingContext* context,
-    int64_t& totalElements, int64_t& h, int64_t& w,
-    int64_t& diagonal, int64_t& upper, ge::DataType& dataType)
+static ge::graphStatus GetShapeAndAttrsInfo(
+    gert::TilingContext* context, int64_t& totalElements, int64_t& h, int64_t& w, int64_t& diagonal, int64_t& upper,
+    ge::DataType& dataType)
 {
     auto inputShape = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputShape);
@@ -68,10 +67,8 @@ static ge::graphStatus GetShapeAndAttrsInfo(gert::TilingContext* context,
     OP_CHECK_NULL_WITH_CONTEXT(context, upperPtr);
     upper = *upperPtr;
 
-    const std::set<ge::DataType> supportedDtype = {
-        ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT32, ge::DT_INT64,
-        ge::DT_INT8, ge::DT_INT16, ge::DT_UINT8, ge::DT_UINT16
-    };
+    const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT32, ge::DT_INT64,
+                                                   ge::DT_INT8,  ge::DT_INT16,   ge::DT_UINT8, ge::DT_UINT16};
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
     dataType = inputDesc->GetDataType();
@@ -93,28 +90,29 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 static ge::graphStatus GetTilingKeyByDtype(gert::TilingContext* context, ge::DataType dataType, uint64_t& tilingKey)
 {
     static const std::map<ge::DataType, int64_t> dtypeModeMap = {
-        {ge::DT_FLOAT,   TRILU_TPL_SCH_MODE_0},   {ge::DT_FLOAT16, TRILU_TPL_SCH_MODE_1},
-        {ge::DT_INT32,   TRILU_TPL_SCH_MODE_2},   {ge::DT_INT64,   TRILU_TPL_SCH_MODE_3},
-        {ge::DT_INT8,    TRILU_TPL_SCH_MODE_4},   {ge::DT_INT16,   TRILU_TPL_SCH_MODE_5},
-        {ge::DT_UINT8,   TRILU_TPL_SCH_MODE_6},   {ge::DT_UINT16,  TRILU_TPL_SCH_MODE_7},
+        {ge::DT_FLOAT, TRILU_TPL_SCH_MODE_0}, {ge::DT_FLOAT16, TRILU_TPL_SCH_MODE_1},
+        {ge::DT_INT32, TRILU_TPL_SCH_MODE_2}, {ge::DT_INT64, TRILU_TPL_SCH_MODE_3},
+        {ge::DT_INT8, TRILU_TPL_SCH_MODE_4},  {ge::DT_INT16, TRILU_TPL_SCH_MODE_5},
+        {ge::DT_UINT8, TRILU_TPL_SCH_MODE_6}, {ge::DT_UINT16, TRILU_TPL_SCH_MODE_7},
     };
     auto it = dtypeModeMap.find(dataType);
-    OP_CHECK_IF(it == dtypeModeMap.end(),
+    OP_CHECK_IF(
+        it == dtypeModeMap.end(),
         OP_LOGE(context, "Trilu: unsupported dtype %d for tiling key", static_cast<int>(dataType)),
         return ge::GRAPH_FAILED);
     tilingKey = GET_TPL_TILING_KEY(static_cast<uint64_t>(it->second));
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus CalcTilingParams(gert::TilingContext* context, int64_t totalElements,
-    int64_t coreNum, uint64_t ubSize, int64_t diagonal, int64_t upper, int64_t h, int64_t w)
+static ge::graphStatus CalcTilingParams(
+    gert::TilingContext* context, int64_t totalElements, int64_t coreNum, uint64_t ubSize, int64_t diagonal,
+    int64_t upper, int64_t h, int64_t w)
 {
     TriluTilingData* tiling = context->GetTilingData<TriluTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
     OP_CHECK_IF(
         memset_s(tiling, sizeof(TriluTilingData), 0, sizeof(TriluTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     tiling->totalElements = totalElements;
 
@@ -144,8 +142,7 @@ static ge::graphStatus TriluTilingFunc(gert::TilingContext* context)
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
     OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"),
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
         return ge::GRAPH_FAILED);
 
     int64_t totalElements = 0;
@@ -156,24 +153,20 @@ static ge::graphStatus TriluTilingFunc(gert::TilingContext* context)
     ge::DataType dataType;
     OP_CHECK_IF(
         GetShapeAndAttrsInfo(context, totalElements, h, w, diagonal, upper, dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeAndAttrsInfo error"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "GetShapeAndAttrsInfo error"), return ge::GRAPH_FAILED);
 
     OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"),
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
         return ge::GRAPH_FAILED);
 
     OP_CHECK_IF(
         CalcTilingParams(context, totalElements, coreNum, ubSize, diagonal, upper, h, w) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "CalcTilingParams error"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "CalcTilingParams error"), return ge::GRAPH_FAILED);
 
     uint64_t tilingKey = 0;
     OP_CHECK_IF(
         GetTilingKeyByDtype(context, dataType, tilingKey) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetTilingKeyByDtype error"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "GetTilingKeyByDtype error"), return ge::GRAPH_FAILED);
     context->SetTilingKey(tilingKey);
 
     return ge::GRAPH_SUCCESS;

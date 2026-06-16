@@ -44,4 +44,3 @@ static ge::graphStatus InferDataTypeGerV2(gert::InferDataTypeContext* context)
 IMPL_OP(GerV2).InferDataType(InferDataTypeGerV2);
 
 }; // namespace ops
-

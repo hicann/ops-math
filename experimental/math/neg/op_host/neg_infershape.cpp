@@ -21,8 +21,8 @@ namespace ops {
 
 static ge::graphStatus InferShapeNeg(gert::InferShapeContext* context)
 {
-    const gert::Shape *x1_shape = context->GetInputShape(0);
-    gert::Shape *y_shape = context->GetOutputShape(0);
+    const gert::Shape* x1_shape = context->GetInputShape(0);
+    gert::Shape* y_shape = context->GetOutputShape(0);
     *y_shape = *x1_shape;
     return GRAPH_SUCCESS;
 }

@@ -25,24 +25,24 @@ using namespace MySelectV2;
 
 #define __aicore__
 #ifdef __NPU_TILING__
-inline[aicore] void InitTilingData(const __gm__ uint8_t *tiling, SelectV2TilingData *constData)
+inline[aicore] void InitTilingData(const __gm__ uint8_t* tiling, SelectV2TilingData* constData)
 {
-    const __gm__ uint32_t *src = (const __gm__ uint32_t *)tiling;
-    uint32_t *dst = (uint32_t *)constData;
+    const __gm__ uint32_t* src = (const __gm__ uint32_t*)tiling;
+    uint32_t* dst = (uint32_t*)constData;
     for (size_t i = 0; i < sizeof(SelectV2TilingData) / 4; i++) {
         *(dst + i) = *(src + i);
     }
 }
 #else
-inline void InitTilingData(uint8_t *tiling, SelectV2TilingData *constData)
+inline void InitTilingData(uint8_t* tiling, SelectV2TilingData* constData)
 {
     memcpy(constData, tiling, sizeof(SelectV2TilingData));
 }
 #endif // __NPU_TILING__
 
 #define CONVERT_TILING_DATA(tilingStruct, tilingDataPointer, tilingPointer) \
-    __ubuf__ tilingStruct *tilingDataPointer =                              \
-        reinterpret_cast<__ubuf__ tilingStruct *>((__ubuf__ uint8_t *)(tilingPointer));
+    __ubuf__ tilingStruct* tilingDataPointer =                              \
+        reinterpret_cast<__ubuf__ tilingStruct*>((__ubuf__ uint8_t*)(tilingPointer));
 
 #define INIT_TILING_DATA(tilingStruct, tilingDataPointer, tilingPointer) \
     CONVERT_TILING_DATA(tilingStruct, tilingDataPointer, tilingPointer);
@@ -52,7 +52,7 @@ inline void InitTilingData(uint8_t *tiling, SelectV2TilingData *constData)
     InitTilingData(tilingArg, &tilingData)
 
 #define GET_TILING_DATA(tilingData, tilingArg) \
-    SelectV2TilingData tilingData;    \
+    SelectV2TilingData tilingData;             \
     InitTilingData(tilingArg, &tilingData)
 
 #endif // _SELECT_V2_TILING_H_

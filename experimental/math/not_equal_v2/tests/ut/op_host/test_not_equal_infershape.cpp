@@ -15,15 +15,9 @@
 
 class NotEqualV2InferShape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "NotEqualV2InferShape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "NotEqualV2InferShape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "NotEqualV2InferShape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "NotEqualV2InferShape TearDown" << std::endl; }
 };
 
 TEST_F(NotEqualV2InferShape, not_equal_v2_infershape_same_shape)

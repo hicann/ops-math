@@ -24,8 +24,8 @@
  */
 #include "register/op_impl_registry.h"
 #include "log/log.h"
-using gert::Shape;
 using gert::InferShapeContext;
+using gert::Shape;
 
 // using namespace ge;
 

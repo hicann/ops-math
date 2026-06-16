@@ -23,17 +23,17 @@ namespace NsIsinPartV1 {
 
 using namespace AscendC;
 constexpr int32_t BUFFER_NUM = 1;
-constexpr uint32_t OUT_ELEMENTS_SIZE = 1 << 15;  // 输出参数占用空间 32KB
+constexpr uint32_t OUT_ELEMENTS_SIZE = 1 << 15; // 输出参数占用空间 32KB
 constexpr uint32_t IN_ELEMENTS_SIZE = 1 << 16;  // 输入参数占用UB的空间64KB
 
-template<typename T>
+template <typename T>
 class GmInCache {
 public:
     __aicore__ inline GmInCache() {}
     // 构造函数：直接传入已分配的 UB 缓存
-    __aicore__ inline void Init(GlobalTensor<T>& gm,
-                               TQue<QuePosition::VECIN, BUFFER_NUM>& q, 
-                               uint32_t totalSize, uint32_t cacheSize) {
+    __aicore__ inline void Init(
+        GlobalTensor<T>& gm, TQue<QuePosition::VECIN, BUFFER_NUM>& q, uint32_t totalSize, uint32_t cacheSize)
+    {
         this->gmTensor = gm;
         this->queue = q;
         this->totalSize = totalSize;
@@ -46,7 +46,8 @@ public:
         localTensor = queue.DeQue<T>();
     }
 
-    __aicore__ inline T operator[](uint32_t idx) {
+    __aicore__ inline T operator[](uint32_t idx)
+    {
         // 判断索引是否在当前缓存范围内
         if (!isInCache(idx)) {
             startIdx = (idx / cacheSize) * cacheSize;
@@ -58,14 +59,14 @@ public:
         return localTensor.GetValue(localOffset);
     }
 
-    __aicore__ inline void CopyIn() const {
+    __aicore__ inline void CopyIn() const
+    {
         uint32_t num = (startIdx + cacheSize <= totalSize) ? cacheSize : (totalSize - startIdx);
         DataCopyExtParams copyParams{1, static_cast<uint32_t>(num * sizeof(T)), 0, 0, 0};
         DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
 
         DataCopyPad(localTensor, gmTensor[startIdx], copyParams, padParams);
     }
-    
 
 private:
     uint32_t startIdx = 0;
@@ -74,20 +75,17 @@ private:
     TQue<QuePosition::VECIN, BUFFER_NUM> queue;
     GlobalTensor<T> gmTensor;
     LocalTensor<T> localTensor;
-    __aicore__ bool inline isInCache(uint32_t idx) const
-    {
-        return (idx >= startIdx && idx < startIdx + cacheSize);
-    }
+    __aicore__ bool inline isInCache(uint32_t idx) const { return (idx >= startIdx && idx < startIdx + cacheSize); }
 };
 
-template<typename T>
+template <typename T>
 class GmOutCache {
 public:
     __aicore__ inline GmOutCache() {}
     // 构造函数：直接传入已分配的 UB 缓存
-    __aicore__ inline void Init(GlobalTensor<T>& gm,
-                               TQue<QuePosition::VECOUT, BUFFER_NUM>& q, 
-                               uint32_t totalSize, uint32_t cacheSize) {
+    __aicore__ inline void Init(
+        GlobalTensor<T>& gm, TQue<QuePosition::VECOUT, BUFFER_NUM>& q, uint32_t totalSize, uint32_t cacheSize)
+    {
         this->gmTensor = gm;
         this->queue = q;
         this->totalSize = totalSize;
@@ -99,7 +97,8 @@ public:
     }
 
     // 为 int8_t 类型做特殊处理
-    __aicore__ inline void DuplicateForUB(LocalTensor<T> src, uint32_t elementsNum) {
+    __aicore__ inline void DuplicateForUB(LocalTensor<T> src, uint32_t elementsNum)
+    {
         if constexpr (std::is_same_v<T, std::int8_t>) {
             int32_t count = elementsNum / sizeof(int16_t);
             LocalTensor<int16_t> dstLocal = src.template ReinterpretCast<int16_t>();
@@ -137,7 +136,6 @@ public:
         DataCopyPad(gmTensor[startIdx], localTensor, copyParams);
         SetAtomicNone();
     }
-    
 
 private:
     uint32_t startIdx = 0;
@@ -146,17 +144,15 @@ private:
     TQue<QuePosition::VECOUT, BUFFER_NUM> queue;
     GlobalTensor<T> gmTensor;
     LocalTensor<T> localTensor;
-    __aicore__ bool inline isInCache(uint32_t idx) const
-    {
-        return (idx >= startIdx && idx < startIdx + cacheSize);
-    }
+    __aicore__ bool inline isInCache(uint32_t idx) const { return (idx >= startIdx && idx < startIdx + cacheSize); }
 };
 
 template <typename T>
 class IsinPartV1 {
 public:
     __aicore__ inline IsinPartV1(){};
-    __aicore__ inline void Init(GM_ADDR value, GM_ADDR index, GM_ADDR elementsNum, GM_ADDR z, const IsinPartV1TilingData* tilingData);
+    __aicore__ inline void Init(
+        GM_ADDR value, GM_ADDR index, GM_ADDR elementsNum, GM_ADDR z, const IsinPartV1TilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -185,7 +181,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void IsinPartV1<T>::Init(GM_ADDR value, GM_ADDR index, GM_ADDR elementsNumAddr, GM_ADDR z, const IsinPartV1TilingData* tilingData)
+__aicore__ inline void IsinPartV1<T>::Init(
+    GM_ADDR value, GM_ADDR index, GM_ADDR elementsNumAddr, GM_ADDR z, const IsinPartV1TilingData* tilingData)
 {
     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
     uint32_t coreNum = AscendC::GetBlockIdx();
@@ -198,13 +195,13 @@ __aicore__ inline void IsinPartV1<T>::Init(GM_ADDR value, GM_ADDR index, GM_ADDR
     this->totalLength = tilingData->totalLength;
     this->blockLength = totalLength / AscendC::GetBlockNum();
     this->blockStart = this->blockLength * AscendC::GetBlockIdx();
-    this->blockEnd = (AscendC::GetBlockIdx() != AscendC::GetBlockNum() - 1)
-                    ? this->blockLength * (AscendC::GetBlockIdx() + 1)
-                    : totalLength;
+    this->blockEnd = (AscendC::GetBlockIdx() != AscendC::GetBlockNum() - 1) ?
+                         this->blockLength * (AscendC::GetBlockIdx() + 1) :
+                         totalLength;
 
-    valueGm.SetGlobalBuffer((__gm__ T *)value, totalLength);
-    indexGm.SetGlobalBuffer((__gm__ int32_t *)index, totalLength);
-    zGm.SetGlobalBuffer((__gm__ int8_t *)z, elementsNum);
+    valueGm.SetGlobalBuffer((__gm__ T*)value, totalLength);
+    indexGm.SetGlobalBuffer((__gm__ int32_t*)index, totalLength);
+    zGm.SetGlobalBuffer((__gm__ int8_t*)z, elementsNum);
     pipe.InitBuffer(inQueueValue, BUFFER_NUM, IN_ELEMENTS_SIZE);
     pipe.InitBuffer(inQueueIndex, BUFFER_NUM, IN_ELEMENTS_SIZE);
     pipe.InitBuffer(outQueueZ, BUFFER_NUM, OUT_ELEMENTS_SIZE * sizeof(int8_t));
@@ -213,9 +210,9 @@ __aicore__ inline void IsinPartV1<T>::Init(GM_ADDR value, GM_ADDR index, GM_ADDR
 template <typename T>
 __aicore__ inline void IsinPartV1<T>::GMout(int32_t start, int32_t end)
 {
-    for(int i = start; i <= end; i++) {
+    for (int i = start; i <= end; i++) {
         auto v = indexGmCache[i];
-        if(v < elementsNum) {
+        if (v < elementsNum) {
             zGmCache.SetValue(v, 1);
         }
     }
@@ -230,16 +227,17 @@ __aicore__ inline void IsinPartV1<T>::CopyIn()
     zGmCache.Init(zGm, outQueueZ, elementsNum, OUT_ELEMENTS_SIZE);
 
     // modify blockStart
-    if(this->blockStart) {
-        T startValue = valueGmCache[this->blockStart-1];
-        while(startValue == valueGmCache[this->blockStart] && this->blockStart != this->blockEnd)
+    if (this->blockStart) {
+        T startValue = valueGmCache[this->blockStart - 1];
+        while (startValue == valueGmCache[this->blockStart] && this->blockStart != this->blockEnd)
             this->blockStart++;
     }
 
     // modify blockEnd
-    if(this->blockEnd != totalLength && this->blockStart != this->blockEnd) {
-        T endValue = valueGmCache[this->blockEnd-1];
-        while(endValue == valueGmCache[this->blockEnd]) this->blockEnd++;
+    if (this->blockEnd != totalLength && this->blockStart != this->blockEnd) {
+        T endValue = valueGmCache[this->blockEnd - 1];
+        while (endValue == valueGmCache[this->blockEnd])
+            this->blockEnd++;
     }
     // 区间[blockStart, blockEnd)，左闭右开
     this->blockLength = this->blockEnd - this->blockStart;
@@ -252,12 +250,9 @@ __aicore__ inline void IsinPartV1<T>::Compute()
     int8_t gmOutTriggered = 0;
     int8_t oneceTriggered = 0; // 有一次触发
     for (int j = blockStart; j < blockEnd; ++j) {
-        if (indexGmCache[j] >= elementsNum 
-            && indexGmCache[pre] < elementsNum
-            && !gmOutTriggered
-            && valueGmCache[j] == valueGmCache[pre]
-        ) {
-            GMout(pre, j-1);
+        if (indexGmCache[j] >= elementsNum && indexGmCache[pre] < elementsNum && !gmOutTriggered &&
+            valueGmCache[j] == valueGmCache[pre]) {
+            GMout(pre, j - 1);
             gmOutTriggered = 1;
             oneceTriggered = 1;
         } else if (j > pre && valueGmCache[j] != valueGmCache[pre]) {
@@ -274,7 +269,7 @@ template <typename T>
 __aicore__ inline void IsinPartV1<T>::Process()
 {
     CopyIn();
-    if(blockEnd > blockStart) {
+    if (blockEnd > blockStart) {
         Compute();
     }
 }

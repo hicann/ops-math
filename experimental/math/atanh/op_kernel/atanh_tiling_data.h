@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
+
 /**
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
@@ -17,9 +17,9 @@
 #define _ATANH_TILING_DATA_H_
 
 struct AtanhTilingData {
-    int64_t totalNum = 0;     // 总元素数量
-    int64_t blockFactor = 0;  // 每个核处理的元素数量
-    int64_t ubFactor = 0;     // 每次 UB 循环处理的元素数量
+    int64_t totalNum = 0;    // 总元素数量
+    int64_t blockFactor = 0; // 每个核处理的元素数量
+    int64_t ubFactor = 0;    // 每次 UB 循环处理的元素数量
 };
 
 #endif

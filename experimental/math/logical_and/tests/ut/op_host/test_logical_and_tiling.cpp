@@ -21,15 +21,9 @@ using namespace optiling;
 
 class LogicalAndTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "LogicalAndTiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "LogicalAndTiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "LogicalAndTiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "LogicalAndTiling TearDown " << endl; }
 };
 
 TEST_F(LogicalAndTiling, ascend9101_test_tiling_bool_001)

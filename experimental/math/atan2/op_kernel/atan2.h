@@ -26,18 +26,16 @@ using namespace AscendC;
 
 constexpr int32_t BUFFER_NUM = 2;
 
-constexpr float CONST_PI        = 3.14159265358979323846f;
+constexpr float CONST_PI = 3.14159265358979323846f;
 constexpr float CONST_PI_BY_TWO = 1.57079632679489661923f;
-constexpr float EPSILON         = 1e-37f;
-
+constexpr float EPSILON = 1e-37f;
 
 template <typename T>
 class Atan2 {
 public:
     __aicore__ inline Atan2(){};
 
-    __aicore__ inline void Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y,
-                                const Atan2TilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, const Atan2TilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -47,8 +45,8 @@ private:
 
 private:
     TPipe pipe;
-    TQue<QuePosition::VECIN,  BUFFER_NUM> inputQueueX1;  // y arg of atan2(y,x)
-    TQue<QuePosition::VECIN,  BUFFER_NUM> inputQueueX2;  // x arg
+    TQue<QuePosition::VECIN, BUFFER_NUM> inputQueueX1; // y arg of atan2(y,x)
+    TQue<QuePosition::VECIN, BUFFER_NUM> inputQueueX2; // x arg
     TQue<QuePosition::VECOUT, BUFFER_NUM> outputQueueY;
     // float32 scratch buffers
     TBuf<QuePosition::VECCALC> tmpBuf0, tmpBuf1, tmpBuf2, tmpBuf3, tmpBuf4;
@@ -64,29 +62,28 @@ private:
     uint32_t tileDataNum = 0;
     uint32_t tailDataNum = 0;
     uint32_t processDataNum = 0;
-    uint32_t atanTmpSize = 0;   // byte size of atanTmpBuf per tile, from tiling
+    uint32_t atanTmpSize = 0; // byte size of atanTmpBuf per tile, from tiling
 };
 
 // ── Init ───────────────────────────────────────────────────────────────────
 
 template <typename T>
-__aicore__ inline void Atan2<T>::Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y,
-                                       const Atan2TilingData* tilingData)
+__aicore__ inline void Atan2<T>::Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, const Atan2TilingData* tilingData)
 {
     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
     uint32_t coreIdx = AscendC::GetBlockIdx();
     uint32_t globalBufferIndex = tilingData->bigCoreDataNum * coreIdx;
 
-    this->tileDataNum  = tilingData->tileDataNum;
-    this->atanTmpSize  = tilingData->atanTmpSize;
+    this->tileDataNum = tilingData->tileDataNum;
+    this->atanTmpSize = tilingData->atanTmpSize;
 
     if (coreIdx < (uint32_t)tilingData->tailBlockNum) {
         this->coreDataNum = tilingData->bigCoreDataNum;
-        this->tileNum     = tilingData->finalBigTileNum;
+        this->tileNum = tilingData->finalBigTileNum;
         this->tailDataNum = tilingData->bigTailDataNum;
     } else {
         this->coreDataNum = tilingData->smallCoreDataNum;
-        this->tileNum     = tilingData->finalSmallTileNum;
+        this->tileNum = tilingData->finalSmallTileNum;
         this->tailDataNum = tilingData->smallTailDataNum;
         globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) *
                              (coreIdx - (uint32_t)tilingData->tailBlockNum);
@@ -94,7 +91,7 @@ __aicore__ inline void Atan2<T>::Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y,
 
     inputGMX1.SetGlobalBuffer((__gm__ T*)x1 + globalBufferIndex, this->coreDataNum);
     inputGMX2.SetGlobalBuffer((__gm__ T*)x2 + globalBufferIndex, this->coreDataNum);
-    outputGMY.SetGlobalBuffer( (__gm__ T*)y  + globalBufferIndex, this->coreDataNum);
+    outputGMY.SetGlobalBuffer((__gm__ T*)y + globalBufferIndex, this->coreDataNum);
 
     pipe.InitBuffer(inputQueueX1, BUFFER_NUM, this->tileDataNum * sizeof(T));
     pipe.InitBuffer(inputQueueX2, BUFFER_NUM, this->tileDataNum * sizeof(T));
@@ -141,22 +138,21 @@ __aicore__ inline void Atan2<T>::CopyOut(int32_t progress)
 template <typename T>
 __aicore__ inline void Atan2<T>::Compute(int32_t progress)
 {
-    LocalTensor<T>     yLocal   = inputQueueX1.DeQue<T>();
-    LocalTensor<T>     xLocal   = inputQueueX2.DeQue<T>();
-    LocalTensor<T>     outLocal = outputQueueY.AllocTensor<T>();
+    LocalTensor<T> yLocal = inputQueueX1.DeQue<T>();
+    LocalTensor<T> xLocal = inputQueueX2.DeQue<T>();
+    LocalTensor<T> outLocal = outputQueueY.AllocTensor<T>();
 
-    LocalTensor<float>   tmp0 = tmpBuf0.Get<float>();
-    LocalTensor<float>   tmp1 = tmpBuf1.Get<float>();
-    LocalTensor<float>   tmp2 = tmpBuf2.Get<float>();
-    LocalTensor<float>   tmp3 = tmpBuf3.Get<float>();
-    LocalTensor<float>   tmp4 = tmpBuf4.Get<float>();
+    LocalTensor<float> tmp0 = tmpBuf0.Get<float>();
+    LocalTensor<float> tmp1 = tmpBuf1.Get<float>();
+    LocalTensor<float> tmp2 = tmpBuf2.Get<float>();
+    LocalTensor<float> tmp3 = tmpBuf3.Get<float>();
+    LocalTensor<float> tmp4 = tmpBuf4.Get<float>();
     LocalTensor<uint8_t> atanTmp = atanTmpBuf.Get<uint8_t>();
 
     uint32_t n = this->processDataNum;
 
     // ── Step 1: cast inputs to float32 → tmp0(yF), tmp1(xF) ──────────────
-    if constexpr (AscendC::Std::is_same<T, half>::value ||
-                  AscendC::Std::is_same<T, bfloat16_t>::value) {
+    if constexpr (AscendC::Std::is_same<T, half>::value || AscendC::Std::is_same<T, bfloat16_t>::value) {
         AscendC::Cast(tmp0, yLocal, RoundMode::CAST_NONE, n);
         AscendC::Cast(tmp1, xLocal, RoundMode::CAST_NONE, n);
     } else {
@@ -169,28 +165,28 @@ __aicore__ inline void Atan2<T>::Compute(int32_t progress)
     // ── Step 2: ind_xlt0 = (x<0)?1:0 → tmp2 ─────────────────────────────
     // neg_x = min(xF, 0)  → 0 when x≥0, negative when x<0
     // tmp2 = |neg_x| / (|neg_x| + ε)  → 1 when x<0, 0 when x≥0
-    AscendC::Mins(tmp2, tmp1, 0.0f, n);      // tmp2 = min(xF, 0)
-    AscendC::Abs(tmp2, tmp2, n);             // tmp2 = |min(xF,0)|
-    AscendC::Adds(tmp3, tmp2, EPSILON, n);   // tmp3 = |min(xF,0)| + ε (borrow tmp3 momentarily)
-    AscendC::Div(tmp2, tmp2, tmp3, n);       // tmp2 = ind_xlt0 ∈ [0,1]
+    AscendC::Mins(tmp2, tmp1, 0.0f, n);    // tmp2 = min(xF, 0)
+    AscendC::Abs(tmp2, tmp2, n);           // tmp2 = |min(xF,0)|
+    AscendC::Adds(tmp3, tmp2, EPSILON, n); // tmp3 = |min(xF,0)| + ε (borrow tmp3 momentarily)
+    AscendC::Div(tmp2, tmp2, tmp3, n);     // tmp2 = ind_xlt0 ∈ [0,1]
 
     // ── Step 3: sign_y = yF/(|yF|+ε) → tmp3 ─────────────────────────────
-    AscendC::Abs(tmp3, tmp0, n);             // tmp3 = |yF|
-    AscendC::Adds(tmp3, tmp3, EPSILON, n);   // tmp3 = |yF| + ε
-    AscendC::Div(tmp3, tmp0, tmp3, n);       // tmp3 = sign_y ∈ (-1,+1]
+    AscendC::Abs(tmp3, tmp0, n);           // tmp3 = |yF|
+    AscendC::Adds(tmp3, tmp3, EPSILON, n); // tmp3 = |yF| + ε
+    AscendC::Div(tmp3, tmp0, tmp3, n);     // tmp3 = sign_y ∈ (-1,+1]
 
     // ── Step 4: base_atan = Atan(|yF/xF|) → tmp4 ─────────────────────────
     // Use tmp0 as scratch for |yF/xF| (yF is no longer needed after step 3)
-    AscendC::Div(tmp0, tmp0, tmp1, n);       // tmp0 = yF/xF  (±Inf when xF=0; handled by blend)
-    AscendC::Abs(tmp0, tmp0, n);             // tmp0 = |yF/xF| ≥ 0
+    AscendC::Div(tmp0, tmp0, tmp1, n); // tmp0 = yF/xF  (±Inf when xF=0; handled by blend)
+    AscendC::Abs(tmp0, tmp0, n);       // tmp0 = |yF/xF| ≥ 0
     // Atan: dst(tmp4) ≠ src(tmp0), sharedTmpBuffer = atanTmp
-    AscendC::Atan(tmp4, tmp0, atanTmp, n);   // tmp4 = Atan(|yF/xF|) ∈ [0, π/2]
+    AscendC::Atan(tmp4, tmp0, atanTmp, n); // tmp4 = Atan(|yF/xF|) ∈ [0, π/2]
 
     // ── Step 5: blend_xne0 = |xF|/(|xF|+ε) → tmp1 ───────────────────────
     // xF is in tmp1; compute |xF| in-place
-    AscendC::Abs(tmp1, tmp1, n);             // tmp1 = |xF|
-    AscendC::Adds(tmp0, tmp1, EPSILON, n);   // tmp0 = |xF| + ε
-    AscendC::Div(tmp1, tmp1, tmp0, n);       // tmp1 = blend_xne0
+    AscendC::Abs(tmp1, tmp1, n);           // tmp1 = |xF|
+    AscendC::Adds(tmp0, tmp1, EPSILON, n); // tmp0 = |xF| + ε
+    AscendC::Div(tmp1, tmp1, tmp0, n);     // tmp1 = blend_xne0
 
     // ── Step 6: unsigned_out accumulation → tmp0 ──────────────────────────
     // Correct formula: unsigned_out = sign_x_soft * blend*(base_atan − π/2) + π/2
@@ -202,19 +198,18 @@ __aicore__ inline void Atan2<T>::Compute(int32_t progress)
     //   x=0 (blend=0): π/2                                                  ✓
     //
     // tmp1=blend_xne0, tmp2=ind_xlt0, tmp4=base_atan
-    AscendC::Muls(tmp0, tmp2, -2.0f, n);             // tmp0 = −2*ind_xlt0
-    AscendC::Adds(tmp0, tmp0, 1.0f, n);              // tmp0 = sign_x_soft = 1−2*ind_xlt0
-    AscendC::Adds(tmp2, tmp4, -CONST_PI_BY_TWO, n);  // tmp2 = base_atan − π/2
-    AscendC::Mul(tmp2, tmp1, tmp2, n);               // tmp2 = blend*(base_atan−π/2)
-    AscendC::Mul(tmp0, tmp0, tmp2, n);               // tmp0 = sign_x_soft*blend*(base_atan−π/2)
-    AscendC::Adds(tmp0, tmp0, CONST_PI_BY_TWO, n);   // tmp0 = unsigned_out
+    AscendC::Muls(tmp0, tmp2, -2.0f, n);            // tmp0 = −2*ind_xlt0
+    AscendC::Adds(tmp0, tmp0, 1.0f, n);             // tmp0 = sign_x_soft = 1−2*ind_xlt0
+    AscendC::Adds(tmp2, tmp4, -CONST_PI_BY_TWO, n); // tmp2 = base_atan − π/2
+    AscendC::Mul(tmp2, tmp1, tmp2, n);              // tmp2 = blend*(base_atan−π/2)
+    AscendC::Mul(tmp0, tmp0, tmp2, n);              // tmp0 = sign_x_soft*blend*(base_atan−π/2)
+    AscendC::Adds(tmp0, tmp0, CONST_PI_BY_TWO, n);  // tmp0 = unsigned_out
 
     // ── Step 7: out = sign_y * unsigned_out → tmp0 ────────────────────────
     AscendC::Mul(tmp0, tmp3, tmp0, n);
 
     // ── Step 8: cast float32 result back to T → outLocal ─────────────────
-    if constexpr (AscendC::Std::is_same<T, half>::value ||
-                  AscendC::Std::is_same<T, bfloat16_t>::value) {
+    if constexpr (AscendC::Std::is_same<T, half>::value || AscendC::Std::is_same<T, bfloat16_t>::value) {
         AscendC::Cast(outLocal, tmp0, RoundMode::CAST_ROUND, n);
     } else {
         AscendC::Adds(outLocal.template ReinterpretCast<float>(), tmp0, 0.0f, n);

@@ -41,7 +41,8 @@ class MaximumV2 {
 public:
     __aicore__ inline MaximumV2(){};
 
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR workspace, const MaximumV2TilingData* tilingData);
+    __aicore__ inline void Init(
+        GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR workspace, const MaximumV2TilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -68,32 +69,33 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void MaximumV2<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR workspace, const MaximumV2TilingData* tilingData)
+__aicore__ inline void MaximumV2<T>::Init(
+    GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR workspace, const MaximumV2TilingData* tilingData)
 {
-        ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
-        uint32_t coreNum = AscendC::GetBlockIdx();
-        uint32_t globalBufferIndex = tilingData->bigCoreDataNum * AscendC::GetBlockIdx();
-        this->tileDataNum = tilingData->tileDataNum;
-        if (coreNum < tilingData->tailBlockNum) { 
-          this->coreDataNum = tilingData->bigCoreDataNum;
-          this->tileNum = tilingData->finalBigTileNum;
-          this->tailDataNum = tilingData->bigTailDataNum;
-        }
-        else { 
-          this->coreDataNum = tilingData->smallCoreDataNum;
-          this->tileNum = tilingData->finalSmallTileNum;
-          this->tailDataNum = tilingData->smallTailDataNum;
-          globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (AscendC::GetBlockIdx() - tilingData->tailBlockNum);
-        }
-        inputGMX.SetGlobalBuffer((__gm__ T*)x + globalBufferIndex, this->coreDataNum);
-        inputGMY.SetGlobalBuffer((__gm__ T*)y + globalBufferIndex, this->coreDataNum);
-        outputGMZ.SetGlobalBuffer((__gm__ T*)z + globalBufferIndex, this->coreDataNum);
-        pipe.InitBuffer(inputQueueX, BUFFER_NUM, this->tileDataNum * sizeof(T));
-        pipe.InitBuffer(inputQueueY, BUFFER_NUM, this->tileDataNum * sizeof(T));
-        pipe.InitBuffer(outputQueueZ, BUFFER_NUM, this->tileDataNum * sizeof(T));
-        pipe.InitBuffer(tmpBuf0, this->tileDataNum * sizeof(T));
-        pipe.InitBuffer(tmpBuf1,  this->tileDataNum * sizeof(T));
+    ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
+    uint32_t coreNum = AscendC::GetBlockIdx();
+    uint32_t globalBufferIndex = tilingData->bigCoreDataNum * AscendC::GetBlockIdx();
+    this->tileDataNum = tilingData->tileDataNum;
+    if (coreNum < tilingData->tailBlockNum) {
+        this->coreDataNum = tilingData->bigCoreDataNum;
+        this->tileNum = tilingData->finalBigTileNum;
+        this->tailDataNum = tilingData->bigTailDataNum;
+    } else {
+        this->coreDataNum = tilingData->smallCoreDataNum;
+        this->tileNum = tilingData->finalSmallTileNum;
+        this->tailDataNum = tilingData->smallTailDataNum;
+        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) *
+                             (AscendC::GetBlockIdx() - tilingData->tailBlockNum);
     }
+    inputGMX.SetGlobalBuffer((__gm__ T*)x + globalBufferIndex, this->coreDataNum);
+    inputGMY.SetGlobalBuffer((__gm__ T*)y + globalBufferIndex, this->coreDataNum);
+    outputGMZ.SetGlobalBuffer((__gm__ T*)z + globalBufferIndex, this->coreDataNum);
+    pipe.InitBuffer(inputQueueX, BUFFER_NUM, this->tileDataNum * sizeof(T));
+    pipe.InitBuffer(inputQueueY, BUFFER_NUM, this->tileDataNum * sizeof(T));
+    pipe.InitBuffer(outputQueueZ, BUFFER_NUM, this->tileDataNum * sizeof(T));
+    pipe.InitBuffer(tmpBuf0, this->tileDataNum * sizeof(T));
+    pipe.InitBuffer(tmpBuf1, this->tileDataNum * sizeof(T));
+}
 
 template <typename T>
 __aicore__ inline void MaximumV2<T>::CopyIn(int32_t progress)
@@ -128,20 +130,18 @@ __aicore__ inline void MaximumV2<T>::Compute(int32_t progress)
         AscendC::Cast(tmpY, yLocal, AscendC::RoundMode::CAST_NONE, this->processDataNum);
         AscendC::Max(tmpX, tmpX, tmpY, this->processDataNum);
         AscendC::Cast(zLocal, tmpX, AscendC::RoundMode::CAST_RINT, this->processDataNum);
-    }
-    else if constexpr (std::is_same_v<T, int8_t>) {
+    } else if constexpr (std::is_same_v<T, int8_t>) {
         auto tmpX = tmpBuf0.Get<half>();
         auto tmpY = tmpBuf1.Get<half>();
         AscendC::Cast(tmpX, xLocal, AscendC::RoundMode::CAST_NONE, this->processDataNum);
         AscendC::Cast(tmpY, yLocal, AscendC::RoundMode::CAST_NONE, this->processDataNum);
         AscendC::Max(tmpX, tmpX, tmpY, this->processDataNum);
         AscendC::Cast(zLocal, tmpX, AscendC::RoundMode::CAST_RINT, this->processDataNum);
-    }
-    else {
+    } else {
         /* float/half/int16/int32 等直接 Max */
         AscendC::Max(zLocal, xLocal, yLocal, this->processDataNum);
     }
-    
+
     outputQueueZ.EnQue<T>(zLocal);
     inputQueueX.FreeTensor(xLocal);
     inputQueueY.FreeTensor(yLocal);

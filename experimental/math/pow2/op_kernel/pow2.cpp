@@ -22,6 +22,6 @@ __global__ __aicore__ void pow2(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR works
     REGISTER_TILING_DEFAULT(Pow2TilingData);
     GET_TILING_DATA_WITH_STRUCT(Pow2TilingData, tilingData, tiling);
     NsPow2::Pow2<DTYPE_X1, DTYPE_X2, DTYPE_Y> op; // 算子kernel实例获取
-    op.Init(x1, x2, y, &tilingData);      // 算子kernel实例初始化
-    op.Process();                       // 算子kernel实例执行
+    op.Init(x1, x2, y, &tilingData);              // 算子kernel实例初始化
+    op.Process();                                 // 算子kernel实例执行
 }

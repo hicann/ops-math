@@ -21,37 +21,21 @@ public:
     explicit Split(const char* name) : OpDef(name)
     {
         // 输入参数说明
-        this->Input("x")                                       // 输入x1定义
-            .ParamType(REQUIRED)                                // 必选输入
-            .DataType({
-                ge::DT_FLOAT, ge::DT_INT32                
-                })
-            .Format({
-                ge::FORMAT_ND, ge::FORMAT_ND
-                })
-            .UnknownShapeFormat({
-                ge::FORMAT_ND, ge::FORMAT_ND
-                })
-            .AutoContiguous();                                  // 内存自动连续化
-        this->Output("y") // 输出y定义
+        this->Input("x")         // 输入x1定义
+            .ParamType(REQUIRED) // 必选输入
+            .DataType({ge::DT_FLOAT, ge::DT_INT32})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND})
+            .AutoContiguous(); // 内存自动连续化
+        this->Output("y")      // 输出y定义
             .ParamType(DYNAMIC)
-            .DataType({
-                ge::DT_FLOAT, ge::DT_INT32                
-                })
-            .Format({
-                ge::FORMAT_ND, ge::FORMAT_ND
-                })
-            .UnknownShapeFormat({
-                ge::FORMAT_ND, ge::FORMAT_ND
-                })
+            .DataType({ge::DT_FLOAT, ge::DT_INT32})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
-            
-        this->Attr("indices_or_sections")
-            .AttrType(REQUIRED)
-            .ListInt({2});
-        this->Attr("axis")
-            .AttrType(REQUIRED)
-            .Int(0);
+
+        this->Attr("indices_or_sections").AttrType(REQUIRED).ListInt({2});
+        this->Attr("axis").AttrType(REQUIRED).Int(0);
 
         this->AICore().AddConfig("ascend910b");
     }

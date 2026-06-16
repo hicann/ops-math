@@ -37,11 +37,8 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./tanh_grad_data/");
     }
-    
-    static void TearDownTestCase()
-    {
-        std::cout << "tanh_grad_test TearDown" << std::endl;
-    }
+
+    static void TearDownTestCase() { std::cout << "tanh_grad_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;
@@ -64,7 +61,7 @@ inline T1 CeilAlign(T1 a, T2 b)
 TEST_F(TanhGradTest, test_case_float32)
 {
     optiling::TanhGradCompileInfo compileInfo = {64, 262144, false};
-    
+
     gert::TilingContextPara tilingContextPara(
         "TanhGrad",
         {
@@ -75,14 +72,14 @@ TEST_F(TanhGradTest, test_case_float32)
             {{{256, 33}, {256, 33}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         &compileInfo);
-    
+
     TilingInfo tilingInfo;
     auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_EQ(tilingRet, true);
 
     // 生成测试数据
     system("cd ./tanh_grad_data/ && python3 gen_data.py '(256, 33)' 'float32'");
-    
+
     uint32_t dataCount = 256 * 33;
     size_t byteSize = dataCount * sizeof(float);
 
@@ -101,11 +98,11 @@ TEST_F(TanhGradTest, test_case_float32)
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(tilingInfo.workspaceSizes[0]);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingInfo.tilingDataSize);
     std::memcpy(tiling, tilingInfo.tilingData.get(), tilingInfo.tilingDataSize);
-    
+
     // 设置 tiling key 并运行核函数
     ICPU_SET_TILING_KEY(tilingInfo.tilingKey);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
-    
+
     // 注意参数顺序: dy, y, dx, workspace, tiling
     ICPU_RUN_KF(tanh_grad, tilingInfo.blockNum, dy, y, dx, workspace, tiling);
 

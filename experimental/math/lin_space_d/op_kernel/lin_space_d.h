@@ -33,17 +33,17 @@
 namespace NsLinSpaceD {
 using namespace AscendC;
 
-template <typename TStart, typename TEnd> 
+template <typename TStart, typename TEnd>
 class LinSpaceD {
 public:
-    __aicore__ inline LinSpaceD() {};
+    __aicore__ inline LinSpaceD(){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, const LinSpaceDTilingData* tilingData);
     __aicore__ inline void Process();
 
-    constexpr static uint8_t FLOAT_DATA_TYPE_SIZE = 4;                                 
-    constexpr static uint8_t BLOCK_SIZE = 32;                                         
-    constexpr static uint8_t TILE_ELEM_NUM = BLOCK_SIZE / FLOAT_DATA_TYPE_SIZE;             // float的Tile元素数（8）
-    constexpr static uint8_t BUFFER_NUM = 2;                                                // 双缓冲
+    constexpr static uint8_t FLOAT_DATA_TYPE_SIZE = 4;
+    constexpr static uint8_t BLOCK_SIZE = 32;
+    constexpr static uint8_t TILE_ELEM_NUM = BLOCK_SIZE / FLOAT_DATA_TYPE_SIZE; // float的Tile元素数（8）
+    constexpr static uint8_t BUFFER_NUM = 2;                                    // 双缓冲
 
 private:
     __aicore__ inline void ParseTilingData(const LinSpaceDTilingData* tilingData);
@@ -55,7 +55,7 @@ private:
     TBuf<QuePosition::VECCALC> tmpHalf, tmpFloat;
     TBuf<QuePosition::VECCALC> tmpStart, tmpEnd;
     TQue<TPosition::VECOUT, BUFFER_NUM> outQueueZ;
-    GlobalTensor<float> zGm;  
+    GlobalTensor<float> zGm;
     GlobalTensor<TStart> startGm;
     GlobalTensor<TEnd> endGm;
     uint32_t currentBlockLength;
@@ -69,8 +69,9 @@ private:
     TEnd end;
 };
 
-template <typename TStart, typename TEnd> 
-__aicore__ inline void LinSpaceD<TStart, TEnd>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, const LinSpaceDTilingData* tilingData)
+template <typename TStart, typename TEnd>
+__aicore__ inline void LinSpaceD<TStart, TEnd>::Init(
+    GM_ADDR x, GM_ADDR y, GM_ADDR z, const LinSpaceDTilingData* tilingData)
 {
     startGm.SetGlobalBuffer((__gm__ TStart*)x, 1);
     endGm.SetGlobalBuffer((__gm__ TEnd*)y, 1);
@@ -78,16 +79,16 @@ __aicore__ inline void LinSpaceD<TStart, TEnd>::Init(GM_ADDR x, GM_ADDR y, GM_AD
     this->end = endGm.GetValue(0);
 
     ParseTilingData(tilingData);
-   
+
     zGm.SetGlobalBuffer(reinterpret_cast<__gm__ float*>(z) + this->blockOffset, this->currentBlockLength);
     pipe.InitBuffer(outQueueZ, BUFFER_NUM, TILE_ELEM_NUM * sizeof(float));
     pipe.InitBuffer(tmpHalf, sizeof(half));
-    pipe.InitBuffer(tmpFloat, sizeof(float));     
+    pipe.InitBuffer(tmpFloat, sizeof(float));
     pipe.InitBuffer(tmpStart, sizeof(TStart));
-    pipe.InitBuffer(tmpEnd, sizeof(TEnd));     
+    pipe.InitBuffer(tmpEnd, sizeof(TEnd));
 }
 
-template <typename TStart, typename TEnd> 
+template <typename TStart, typename TEnd>
 __aicore__ inline void LinSpaceD<TStart, TEnd>::Process()
 {
     if constexpr (Std::is_same<TStart, bfloat16_t>::value) {
@@ -104,7 +105,7 @@ __aicore__ inline void LinSpaceD<TStart, TEnd>::Process()
         this->startF = this->start;
     } else {
         this->startF = static_cast<float>(this->start);
-    }   
+    }
     if constexpr (Std::is_same<TEnd, bfloat16_t>::value) {
         this->endF = ToFloat(this->end);
     } else if constexpr (Std::is_same<TEnd, uint8_t>::value) {
@@ -119,16 +120,16 @@ __aicore__ inline void LinSpaceD<TStart, TEnd>::Process()
         this->endF = this->end;
     } else {
         this->endF = static_cast<float>(this->end);
-    }  
-    if (this->origSize == 1) 
-    {
+    }
+    if (this->origSize == 1) {
         uint32_t coreId = GetBlockIdx();
-        if(coreId >= 1) return;
+        if (coreId >= 1)
+            return;
         LocalTensor<float> tileOutput = outQueueZ.AllocTensor<float>();
         Duplicate<float>(tileOutput, startF, TILE_ELEM_NUM);
         outQueueZ.EnQue(tileOutput);
         CopyOut(0);
-    } else{
+    } else {
         this->step = (endF - startF) / (origSize - 1);
         for (int32_t tileIdx = 0; tileIdx < tileNum; tileIdx++) {
             Compute(tileIdx);
@@ -137,51 +138,48 @@ __aicore__ inline void LinSpaceD<TStart, TEnd>::Process()
     }
 }
 
-template <typename TStart, typename TEnd> 
+template <typename TStart, typename TEnd>
 __aicore__ inline void LinSpaceD<TStart, TEnd>::ParseTilingData(const LinSpaceDTilingData* tilingData)
 {
     uint32_t coreId = GetBlockIdx();
-    this->currentBlockLength = 0; 
+    this->currentBlockLength = 0;
 
-    if (coreId < tilingData->formerNum) 
-    {
+    if (coreId < tilingData->formerNum) {
         this->blockLength = tilingData->formerLength;
         this->tileNum = tilingData->formerTileNum;
         this->lastTileLength = tilingData->formerLastTileLength;
         this->blockOffset = tilingData->formerLength * coreId;
         this->currentBlockLength = tilingData->formerLength;
-    } 
-    else 
-    {
+    } else {
         this->blockLength = tilingData->tailLength;
         this->tileNum = tilingData->tailTileNum;
         this->lastTileLength = tilingData->tailLastTileLength;
-        this->blockOffset = tilingData->formerLength * tilingData->formerNum + tilingData->tailLength * (coreId - tilingData->formerNum);
+        this->blockOffset = tilingData->formerLength * tilingData->formerNum +
+                            tilingData->tailLength * (coreId - tilingData->formerNum);
         this->currentBlockLength = tilingData->tailLength;
-    }    
+    }
     this->origSize = tilingData->totalLength;
 }
 
-template <typename TStart, typename TEnd> 
+template <typename TStart, typename TEnd>
 __aicore__ inline void LinSpaceD<TStart, TEnd>::Compute(int32_t tileIdx)
 {
     LocalTensor<float> tileOutput = outQueueZ.AllocTensor<float>();
-    int32_t tileElemNum = TILE_ELEM_NUM;  // 8
+    int32_t tileElemNum = TILE_ELEM_NUM; // 8
     int32_t tileGlobalStart = blockOffset + tileIdx * tileElemNum;
     float firstValue = startF + step * static_cast<float>(tileGlobalStart);
     AscendC::ArithProgression<float>(tileOutput, firstValue, step, tileElemNum);
     outQueueZ.EnQue(tileOutput);
 }
 
-template <typename TStart, typename TEnd> 
+template <typename TStart, typename TEnd>
 __aicore__ inline void LinSpaceD<TStart, TEnd>::CopyOut(int32_t tileIdx)
 {
     LocalTensor<float> zLocal = outQueueZ.DeQue<float>();
-    int32_t copyElemNum;                         
+    int32_t copyElemNum;
     if (tileIdx == tileNum - 1) {
         copyElemNum = lastTileLength;
-    }
-    else {
+    } else {
         copyElemNum = TILE_ELEM_NUM;
     }
 

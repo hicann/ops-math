@@ -22,26 +22,18 @@ using namespace std;
 
 class l2_logical_and_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_logical_and_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "l2_logical_and_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "l2_logical_and_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "l2_logical_and_test TearDown" << endl; }
 };
 
 TEST_F(l2_logical_and_test, case_01_bool)
 {
     op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
 
-    auto selfDesc =
-        TensorDesc({2, 2}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true, true, false, false});    
-    auto otherDesc =
-        TensorDesc({2, 2}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true, false, true, false});       
-    
+    auto selfDesc = TensorDesc({2, 2}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true, true, false, false});
+    auto otherDesc = TensorDesc({2, 2}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true, false, true, false});
+
     auto outDesc = TensorDesc({2, 2}, ACL_BOOL, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnLogicalAnd, INPUT(selfDesc, otherDesc), OUTPUT(outDesc));

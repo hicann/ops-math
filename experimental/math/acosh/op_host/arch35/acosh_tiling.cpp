@@ -33,8 +33,8 @@
 namespace optiling {
 
 using Ops::Base::CeilDiv;
-using Ops::Base::FloorDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 // Elementwise 算子无需系统 workspace
@@ -102,8 +102,7 @@ static ge::graphStatus AcoshTilingFunc(gert::TilingContext* context)
     uint64_t ubSize;
     int64_t coreNum;
     OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"),
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
         return ge::GRAPH_FAILED);
 
     // 2. 获取 shape/dtype 信息
@@ -111,8 +110,7 @@ static ge::graphStatus AcoshTilingFunc(gert::TilingContext* context)
     ge::DataType dataType;
     OP_CHECK_IF(
         GetShapeAttrsInfo(context, totalNum, dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeAttrsInfo error"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     // 3. 空 Tensor 快速返回
     if (totalNum == 0) {
@@ -120,8 +118,7 @@ static ge::graphStatus AcoshTilingFunc(gert::TilingContext* context)
         OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
         OP_CHECK_IF(
             memset_s(tiling, sizeof(AcoshTilingData), 0, sizeof(AcoshTilingData)) != EOK,
-            OP_LOGE(context, "set tiling data error"),
-            return ge::GRAPH_FAILED);
+            OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
         context->SetBlockDim(1);
         uint32_t dTypeX = static_cast<uint32_t>(dataType);
         uint64_t useDoubleBuffer = 0;
@@ -132,8 +129,7 @@ static ge::graphStatus AcoshTilingFunc(gert::TilingContext* context)
 
     // 4. 设置 workspace
     OP_CHECK_IF(
-        SetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "SetWorkspaceSize error"),
+        SetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "SetWorkspaceSize error"),
         return ge::GRAPH_FAILED);
 
     // 5. 填充 TilingData
@@ -141,8 +137,7 @@ static ge::graphStatus AcoshTilingFunc(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
     OP_CHECK_IF(
         memset_s(tiling, sizeof(AcoshTilingData), 0, sizeof(AcoshTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     // 多核切分
     tiling->totalNum = totalNum;
@@ -154,7 +149,7 @@ static ge::graphStatus AcoshTilingFunc(gert::TilingContext* context)
     uint64_t useDoubleBuffer = (totalNum > MIN_SPLIT_THRESHOLD) ? 1 : 0;
 
     // 按 dtype 计算元素占用字节数
-    int64_t typeSize = (dataType == ge::DT_FLOAT) ? 4 : 2;  // fp32=4B; fp16/bf16=2B
+    int64_t typeSize = (dataType == ge::DT_FLOAT) ? 4 : 2; // fp32=4B; fp16/bf16=2B
 
     // fp16/bf16 路径均走 Cast 回退（fp16/bf16 -> fp32 -> Acosh -> fp32 -> fp16/bf16）
     // 需要 fp32 中转缓冲，保守方案按 3 buffer（单缓冲）或 6 buffer（双缓冲）计算
@@ -169,8 +164,7 @@ static ge::graphStatus AcoshTilingFunc(gert::TilingContext* context)
         // fp16 和 bf16 均走 Cast 路径，ubFactor 基于 fp32 字节数计算，确保中转缓冲能放下
         bufferNum = useDoubleBuffer ? 6 : 3;
         tiling->ubFactor = FloorAlign(
-            FloorDiv(static_cast<int64_t>(ubSize / 4), bufferNum),
-            static_cast<int64_t>(GetUbBlockSize(context)));
+            FloorDiv(static_cast<int64_t>(ubSize / 4), bufferNum), static_cast<int64_t>(GetUbBlockSize(context)));
     }
 
     // ubFactor 不能为 0

@@ -23,7 +23,6 @@
 
 namespace optiling {
 
-
 struct DiagPartCompileInfo {};
 
 static ge::graphStatus TilingParseForDiagPart([[maybe_unused]] gert::TilingParseContext* context)
@@ -69,8 +68,7 @@ static ge::graphStatus Tiling4DiagPart(gert::TilingContext* context)
     auto inputDesc = context->GetInputDesc(0);
     ge::DataType dtype = inputDesc->GetDataType();
     // Convert ge::DataType to tiling dtype value
-    uint32_t tilingDtype =
-        (dtype == ge::DT_INT32) ? 3 : (dtype == ge::DT_FLOAT16) ? 1 : 0;
+    uint32_t tilingDtype = (dtype == ge::DT_INT32) ? 3 : (dtype == ge::DT_FLOAT16) ? 1 : 0;
 
     uint64_t sideLength = 1;
     uint64_t halfDimNum = xDimNum / 2;

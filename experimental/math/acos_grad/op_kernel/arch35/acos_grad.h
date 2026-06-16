@@ -46,8 +46,7 @@ class KernelAcosGrad {
 public:
     __aicore__ inline KernelAcosGrad() {}
 
-    __aicore__ inline void Init(GM_ADDR yGrad, GM_ADDR x, GM_ADDR xGrad,
-                                 const AcosGradTilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR yGrad, GM_ADDR x, GM_ADDR xGrad, const AcosGradTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -59,8 +58,8 @@ private:
 private:
     TPipe pipe_;
 
-    TQue<TPosition::VECIN, BUFFER_NUM>  inQueueYGrad_;
-    TQue<TPosition::VECIN, BUFFER_NUM>  inQueueX_;
+    TQue<TPosition::VECIN, BUFFER_NUM> inQueueYGrad_;
+    TQue<TPosition::VECIN, BUFFER_NUM> inQueueX_;
     TQue<TPosition::VECOUT, BUFFER_NUM> outQueueXGrad_;
 
     TBuf<TPosition::VECCALC> yGradF32Buf_;
@@ -68,28 +67,27 @@ private:
     TBuf<TPosition::VECCALC> tmpF32ABuf_;
     TBuf<TPosition::VECCALC> tmpF32BBuf_;
 
-    GlobalTensor<T>     yGradGm_;
-    GlobalTensor<T>     xGm_;
-    GlobalTensor<T>     xGradGm_;
+    GlobalTensor<T> yGradGm_;
+    GlobalTensor<T> xGm_;
+    GlobalTensor<T> xGradGm_;
 
-    uint32_t blockIdx_    = 0;
+    uint32_t blockIdx_ = 0;
     uint32_t blockFormer_ = 0;
-    uint32_t ubFormer_    = 0;
-    int64_t  blockOffset_ = 0;
+    uint32_t ubFormer_ = 0;
+    int64_t blockOffset_ = 0;
     uint32_t blockLength_ = 0;
 };
 
 template <typename T>
 __aicore__ inline void KernelAcosGrad<T>::Init(
-    GM_ADDR yGrad, GM_ADDR x, GM_ADDR xGrad,
-    const AcosGradTilingData* tilingData)
+    GM_ADDR yGrad, GM_ADDR x, GM_ADDR xGrad, const AcosGradTilingData* tilingData)
 {
-    blockIdx_    = GetBlockIdx();
+    blockIdx_ = GetBlockIdx();
     blockFormer_ = tilingData->blockFormer;
-    ubFormer_    = tilingData->ubFormer;
+    ubFormer_ = tilingData->ubFormer;
 
     uint64_t totalLength = tilingData->totalLength;
-    uint64_t start       = static_cast<uint64_t>(blockIdx_) * blockFormer_;
+    uint64_t start = static_cast<uint64_t>(blockIdx_) * blockFormer_;
 
     if (start >= totalLength) {
         blockLength_ = 0;
@@ -97,36 +95,34 @@ __aicore__ inline void KernelAcosGrad<T>::Init(
     }
 
     uint64_t remaining = totalLength - start;
-    blockLength_       = static_cast<uint32_t>((remaining < blockFormer_) ? remaining : blockFormer_);
-    blockOffset_       = static_cast<int64_t>(start);
+    blockLength_ = static_cast<uint32_t>((remaining < blockFormer_) ? remaining : blockFormer_);
+    blockOffset_ = static_cast<int64_t>(start);
 
     yGradGm_.SetGlobalBuffer((__gm__ T*)yGrad + blockOffset_, blockLength_);
     xGm_.SetGlobalBuffer((__gm__ T*)x + blockOffset_, blockLength_);
     xGradGm_.SetGlobalBuffer((__gm__ T*)xGrad + blockOffset_, blockLength_);
 
-    pipe_.InitBuffer(inQueueYGrad_,  BUFFER_NUM, ubFormer_ * sizeof(T));
-    pipe_.InitBuffer(inQueueX_,      BUFFER_NUM, ubFormer_ * sizeof(T));
+    pipe_.InitBuffer(inQueueYGrad_, BUFFER_NUM, ubFormer_ * sizeof(T));
+    pipe_.InitBuffer(inQueueX_, BUFFER_NUM, ubFormer_ * sizeof(T));
     pipe_.InitBuffer(outQueueXGrad_, BUFFER_NUM, ubFormer_ * sizeof(T));
 
-    pipe_.InitBuffer(yGradF32Buf_,  ubFormer_ * sizeof(float));
-    pipe_.InitBuffer(xF32Buf_,      ubFormer_ * sizeof(float));
-    pipe_.InitBuffer(tmpF32ABuf_,   ubFormer_ * sizeof(float));
-    pipe_.InitBuffer(tmpF32BBuf_,   ubFormer_ * sizeof(float));
+    pipe_.InitBuffer(yGradF32Buf_, ubFormer_ * sizeof(float));
+    pipe_.InitBuffer(xF32Buf_, ubFormer_ * sizeof(float));
+    pipe_.InitBuffer(tmpF32ABuf_, ubFormer_ * sizeof(float));
+    pipe_.InitBuffer(tmpF32BBuf_, ubFormer_ * sizeof(float));
 }
 
 template <typename T>
 __aicore__ inline void KernelAcosGrad<T>::CopyIn(int64_t progress, uint32_t currentNum)
 {
     LocalTensor<T> yGradLocal = inQueueYGrad_.template AllocTensor<T>();
-    LocalTensor<T> xLocal     = inQueueX_.template AllocTensor<T>();
+    LocalTensor<T> xLocal = inQueueX_.template AllocTensor<T>();
 
     AscendC::DataCopyExtParams copyParams{1, static_cast<uint32_t>(currentNum * sizeof(T)), 0, 0, 0};
     AscendC::DataCopyPadExtParams<T> padParams{false, 0, 0, T(0)};
 
-    DataCopyPad(yGradLocal, yGradGm_[progress * static_cast<int64_t>(ubFormer_)],
-                copyParams, padParams);
-    DataCopyPad(xLocal, xGm_[progress * static_cast<int64_t>(ubFormer_)],
-                copyParams, padParams);
+    DataCopyPad(yGradLocal, yGradGm_[progress * static_cast<int64_t>(ubFormer_)], copyParams, padParams);
+    DataCopyPad(xLocal, xGm_[progress * static_cast<int64_t>(ubFormer_)], copyParams, padParams);
 
     inQueueYGrad_.EnQue(yGradLocal);
     inQueueX_.EnQue(xLocal);
@@ -136,13 +132,13 @@ template <typename T>
 __aicore__ inline void KernelAcosGrad<T>::Compute(uint32_t currentNum)
 {
     LocalTensor<T> yGradLocal = inQueueYGrad_.template DeQue<T>();
-    LocalTensor<T> xLocal     = inQueueX_.template DeQue<T>();
+    LocalTensor<T> xLocal = inQueueX_.template DeQue<T>();
     LocalTensor<T> xGradLocal = outQueueXGrad_.template AllocTensor<T>();
 
     LocalTensor<float> yGradF32 = yGradF32Buf_.Get<float>();
-    LocalTensor<float> xF32     = xF32Buf_.Get<float>();
-    LocalTensor<float> tmpF32A  = tmpF32ABuf_.Get<float>();
-    LocalTensor<float> tmpF32B  = tmpF32BBuf_.Get<float>();
+    LocalTensor<float> xF32 = xF32Buf_.Get<float>();
+    LocalTensor<float> tmpF32A = tmpF32ABuf_.Get<float>();
+    LocalTensor<float> tmpF32B = tmpF32BBuf_.Get<float>();
 
     Cast(yGradF32, yGradLocal, RoundMode::CAST_NONE, currentNum);
     PipeBarrier<PIPE_V>();
@@ -222,8 +218,7 @@ class KernelAcosGrad<float> {
 public:
     __aicore__ inline KernelAcosGrad() {}
 
-    __aicore__ inline void Init(GM_ADDR yGrad, GM_ADDR x, GM_ADDR xGrad,
-                                 const AcosGradTilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR yGrad, GM_ADDR x, GM_ADDR xGrad, const AcosGradTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -235,8 +230,8 @@ private:
 private:
     TPipe pipe_;
 
-    TQue<TPosition::VECIN, BUFFER_NUM>  inQueueYGrad_;
-    TQue<TPosition::VECIN, BUFFER_NUM>  inQueueX_;
+    TQue<TPosition::VECIN, BUFFER_NUM> inQueueYGrad_;
+    TQue<TPosition::VECIN, BUFFER_NUM> inQueueX_;
     TQue<TPosition::VECOUT, BUFFER_NUM> outQueueXGrad_;
 
     TQue<TPosition::VECCALC, TMP_BUFFER_NUM> tmpQueue1_;
@@ -246,23 +241,22 @@ private:
     GlobalTensor<float> xGm_;
     GlobalTensor<float> xGradGm_;
 
-    uint32_t blockIdx_    = 0;
+    uint32_t blockIdx_ = 0;
     uint32_t blockFormer_ = 0;
-    uint32_t ubFormer_    = 0;
-    int64_t  blockOffset_ = 0;
+    uint32_t ubFormer_ = 0;
+    int64_t blockOffset_ = 0;
     uint32_t blockLength_ = 0;
 };
 
 __aicore__ inline void KernelAcosGrad<float>::Init(
-    GM_ADDR yGrad, GM_ADDR x, GM_ADDR xGrad,
-    const AcosGradTilingData* tilingData)
+    GM_ADDR yGrad, GM_ADDR x, GM_ADDR xGrad, const AcosGradTilingData* tilingData)
 {
-    blockIdx_    = GetBlockIdx();
+    blockIdx_ = GetBlockIdx();
     blockFormer_ = tilingData->blockFormer;
-    ubFormer_    = tilingData->ubFormer;
+    ubFormer_ = tilingData->ubFormer;
 
     uint64_t totalLength = tilingData->totalLength;
-    uint64_t start       = static_cast<uint64_t>(blockIdx_) * blockFormer_;
+    uint64_t start = static_cast<uint64_t>(blockIdx_) * blockFormer_;
 
     if (start >= totalLength) {
         blockLength_ = 0;
@@ -270,32 +264,30 @@ __aicore__ inline void KernelAcosGrad<float>::Init(
     }
 
     uint64_t remaining = totalLength - start;
-    blockLength_       = static_cast<uint32_t>((remaining < blockFormer_) ? remaining : blockFormer_);
-    blockOffset_       = static_cast<int64_t>(start);
+    blockLength_ = static_cast<uint32_t>((remaining < blockFormer_) ? remaining : blockFormer_);
+    blockOffset_ = static_cast<int64_t>(start);
 
     yGradGm_.SetGlobalBuffer((__gm__ float*)yGrad + blockOffset_, blockLength_);
     xGm_.SetGlobalBuffer((__gm__ float*)x + blockOffset_, blockLength_);
     xGradGm_.SetGlobalBuffer((__gm__ float*)xGrad + blockOffset_, blockLength_);
 
-    pipe_.InitBuffer(inQueueYGrad_,  BUFFER_NUM, ubFormer_ * sizeof(float));
-    pipe_.InitBuffer(inQueueX_,      BUFFER_NUM, ubFormer_ * sizeof(float));
+    pipe_.InitBuffer(inQueueYGrad_, BUFFER_NUM, ubFormer_ * sizeof(float));
+    pipe_.InitBuffer(inQueueX_, BUFFER_NUM, ubFormer_ * sizeof(float));
     pipe_.InitBuffer(outQueueXGrad_, BUFFER_NUM, ubFormer_ * sizeof(float));
-    pipe_.InitBuffer(tmpQueue1_,     TMP_BUFFER_NUM, ubFormer_ * sizeof(float));
-    pipe_.InitBuffer(tmpQueue2_,     TMP_BUFFER_NUM, ubFormer_ * sizeof(float));
+    pipe_.InitBuffer(tmpQueue1_, TMP_BUFFER_NUM, ubFormer_ * sizeof(float));
+    pipe_.InitBuffer(tmpQueue2_, TMP_BUFFER_NUM, ubFormer_ * sizeof(float));
 }
 
 __aicore__ inline void KernelAcosGrad<float>::CopyIn(int64_t progress, uint32_t currentNum)
 {
     LocalTensor<float> yGradLocal = inQueueYGrad_.template AllocTensor<float>();
-    LocalTensor<float> xLocal     = inQueueX_.template AllocTensor<float>();
+    LocalTensor<float> xLocal = inQueueX_.template AllocTensor<float>();
 
     AscendC::DataCopyExtParams copyParams{1, static_cast<uint32_t>(currentNum * sizeof(float)), 0, 0, 0};
     AscendC::DataCopyPadExtParams<float> padParams{false, 0, 0, 0.0f};
 
-    DataCopyPad(yGradLocal, yGradGm_[progress * static_cast<int64_t>(ubFormer_)],
-                copyParams, padParams);
-    DataCopyPad(xLocal, xGm_[progress * static_cast<int64_t>(ubFormer_)],
-                copyParams, padParams);
+    DataCopyPad(yGradLocal, yGradGm_[progress * static_cast<int64_t>(ubFormer_)], copyParams, padParams);
+    DataCopyPad(xLocal, xGm_[progress * static_cast<int64_t>(ubFormer_)], copyParams, padParams);
 
     inQueueYGrad_.EnQue(yGradLocal);
     inQueueX_.EnQue(xLocal);
@@ -304,7 +296,7 @@ __aicore__ inline void KernelAcosGrad<float>::CopyIn(int64_t progress, uint32_t 
 __aicore__ inline void KernelAcosGrad<float>::Compute(uint32_t currentNum)
 {
     LocalTensor<float> yGradLocal = inQueueYGrad_.template DeQue<float>();
-    LocalTensor<float> xLocal     = inQueueX_.template DeQue<float>();
+    LocalTensor<float> xLocal = inQueueX_.template DeQue<float>();
     LocalTensor<float> xGradLocal = outQueueXGrad_.template AllocTensor<float>();
 
     LocalTensor<float> tmpA = tmpQueue1_.template AllocTensor<float>();

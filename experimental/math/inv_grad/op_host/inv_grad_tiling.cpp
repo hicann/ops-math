@@ -71,8 +71,7 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus GetShapeInfo(gert::TilingContext* context, int64_t& totalElements,
-                                    ge::DataType& dataType)
+static ge::graphStatus GetShapeInfo(gert::TilingContext* context, int64_t& totalElements, ge::DataType& dataType)
 {
     // ----- y (input 0) -----
     auto yStorage = context->GetInputShape(0);
@@ -84,9 +83,7 @@ static ge::graphStatus GetShapeInfo(gert::TilingContext* context, int64_t& total
     OP_CHECK_NULL_WITH_CONTEXT(context, yDesc);
     dataType = yDesc->GetDataType();
 
-    const std::set<ge::DataType> supportedDtype = {
-        ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16
-    };
+    const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
     if (supportedDtype.count(dataType) == 0) {
         OP_LOGE(context, "InvGrad: unsupported y dtype %d", static_cast<int>(dataType));
         return ge::GRAPH_FAILED;
@@ -103,21 +100,20 @@ static ge::graphStatus GetShapeInfo(gert::TilingContext* context, int64_t& total
 
     // dtype must match
     if (dyDataType != dataType) {
-        OP_LOGE(context, "InvGrad: y dtype %d != dy dtype %d",
-                static_cast<int>(dataType), static_cast<int>(dyDataType));
+        OP_LOGE(
+            context, "InvGrad: y dtype %d != dy dtype %d", static_cast<int>(dataType), static_cast<int>(dyDataType));
         return ge::GRAPH_FAILED;
     }
 
     // shape must match exactly (no broadcast)
     if (dyShape.GetDimNum() != yShape.GetDimNum()) {
-        OP_LOGE(context, "InvGrad: y.dimNum %zu != dy.dimNum %zu",
-                yShape.GetDimNum(), dyShape.GetDimNum());
+        OP_LOGE(context, "InvGrad: y.dimNum %zu != dy.dimNum %zu", yShape.GetDimNum(), dyShape.GetDimNum());
         return ge::GRAPH_FAILED;
     }
     for (size_t i = 0; i < yShape.GetDimNum(); ++i) {
         if (yShape.GetDim(i) != dyShape.GetDim(i)) {
-            OP_LOGE(context, "InvGrad: y.shape[%zu] %ld != dy.shape[%zu] %ld",
-                    i, yShape.GetDim(i), i, dyShape.GetDim(i));
+            OP_LOGE(
+                context, "InvGrad: y.shape[%zu] %ld != dy.shape[%zu] %ld", i, yShape.GetDim(i), i, dyShape.GetDim(i));
             return ge::GRAPH_FAILED;
         }
     }
@@ -139,20 +135,20 @@ static ge::graphStatus InvGradTilingFunc(gert::TilingContext* context)
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
     OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+        return ge::GRAPH_FAILED);
 
     // 2. Get shape info + y/dy equality check
     int64_t totalElements = 0;
     ge::DataType dataType = ge::DT_FLOAT;
     OP_CHECK_IF(
-        GetShapeInfo(context, totalElements, dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeInfo error"), return ge::GRAPH_FAILED);
+        GetShapeInfo(context, totalElements, dataType) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetShapeInfo error"),
+        return ge::GRAPH_FAILED);
 
     // 3. Get workspace size (no extra workspace required)
     OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+        return ge::GRAPH_FAILED);
 
     // 4. Compute tiling parameters
     InvGradTilingData* tiling = context->GetTilingData<InvGradTilingData>();
@@ -178,7 +174,7 @@ static ge::graphStatus InvGradTilingFunc(gert::TilingContext* context)
             return ge::GRAPH_FAILED;
     }
 
-    int64_t ubBlockSize = 32 / typeSize;  // 32-byte alignment in elements
+    int64_t ubBlockSize = 32 / typeSize; // 32-byte alignment in elements
 
     // Empty tensor: set blockDim=1, kernel will early return
     if (totalElements == 0) {
@@ -200,15 +196,12 @@ static ge::graphStatus InvGradTilingFunc(gert::TilingContext* context)
     //   bytesPerElem = 3 * typeSize + 2 * sizeof(float)
     int64_t bytesPerElem = 3 * typeSize + 2 * static_cast<int64_t>(sizeof(float));
     int64_t maxElementsPerCopy = static_cast<int64_t>(UINT16_MAX) / typeSize;
-    int64_t ubFactor = FloorAlign(
-        static_cast<int64_t>(ubSize) / bytesPerElem,
-        ubBlockSize);
+    int64_t ubFactor = FloorAlign(static_cast<int64_t>(ubSize) / bytesPerElem, ubBlockSize);
     if (ubFactor > maxElementsPerCopy) {
         ubFactor = FloorAlign(maxElementsPerCopy, ubBlockSize);
     }
-    OP_CHECK_IF(ubFactor <= 0,
-        OP_LOGE(context, "InvGrad: ubFactor is %ld, UB too small", ubFactor),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        ubFactor <= 0, OP_LOGE(context, "InvGrad: ubFactor is %ld, UB too small", ubFactor), return ge::GRAPH_FAILED);
 
     tiling->totalElements = totalElements;
     tiling->blockFactor = blockFactor;

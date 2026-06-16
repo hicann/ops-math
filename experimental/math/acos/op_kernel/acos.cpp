@@ -20,7 +20,7 @@ __global__ __aicore__ void acos(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR
 {
     REGISTER_TILING_DEFAULT(AcosTilingData);
     GET_TILING_DATA_WITH_STRUCT(AcosTilingData, tilingData, tiling);
-    NsAcos::Acos<D_T_X> op; // 算子kernel实例获取
-    op.Init(x, y, &tilingData);      // 算子kernel实例初始化
-    op.Process();                       // 算子kernel实例执行
+    NsAcos::Acos<D_T_X> op;     // 算子kernel实例获取
+    op.Init(x, y, &tilingData); // 算子kernel实例初始化
+    op.Process();               // 算子kernel实例执行
 }

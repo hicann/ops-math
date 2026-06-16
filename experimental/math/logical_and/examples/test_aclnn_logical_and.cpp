@@ -85,10 +85,10 @@ int main()
     aclTensor* self = nullptr;
     aclTensor* other = nullptr;
     aclTensor* out = nullptr;
-    std::vector<bool> selfHostData = { true, true, false, false };
-    std::vector<bool> otherHostData  = { true, false, true, false };
-    std::vector<bool> outHostData = { false, false, false, false };
-    std::vector<bool> expectData = { true, false, false, false};
+    std::vector<bool> selfHostData = {true, true, false, false};
+    std::vector<bool> otherHostData = {true, false, true, false};
+    std::vector<bool> outHostData = {false, false, false, false};
+    std::vector<bool> expectData = {true, false, false, false};
     // 创建self aclTensor
     ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_BOOL, &self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -104,8 +104,7 @@ int main()
     aclOpExecutor* executor;
     // 调用aclnnLogicalAnd第一段接口
     ret = aclnnLogicalAndGetWorkspaceSize(self, other, out, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnLogicalAndGetWorkspaceSize failed. ERROR: %d\n", ret);
-              return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnLogicalAndGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
@@ -149,6 +148,6 @@ int main()
     aclrtDestroyStream(stream);
     aclrtResetDevice(deviceId);
     aclFinalize();
-    
+
     return 0;
 }

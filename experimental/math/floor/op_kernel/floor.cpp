@@ -14,8 +14,7 @@
  */
 #include "floor.h"
 
-enum class FloorTilingKey : uint32_t
-{
+enum class FloorTilingKey : uint32_t {
     TILING_KEY_EXAMPLE_FLOAT = 0,
     TILING_KEY_EXAMPLE_OTHER = 1,
 };

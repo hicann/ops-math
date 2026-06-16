@@ -30,7 +30,7 @@ __global__ __aicore__ void trace_v2(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_
 {
     REGISTER_TILING_DEFAULT(TraceV2TilingData);
     GET_TILING_DATA_WITH_STRUCT(TraceV2TilingData, tilingData, tiling);
-    NsTraceV2::TraceV2<DTYPE_X> op; 
-    op.Init(x, y, &tilingData);     
-    op.Process();                      
+    NsTraceV2::TraceV2<DTYPE_X> op;
+    op.Init(x, y, &tilingData);
+    op.Process();
 }

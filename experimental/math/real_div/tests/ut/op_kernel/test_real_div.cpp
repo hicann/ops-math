@@ -35,10 +35,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./real_div_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "real_div_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "real_div_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;
@@ -56,7 +53,7 @@ inline T1 CeilAlign(T1 a, T2 b)
 
 TEST_F(RealDivTest, test_case_float16_1)
 {
-    system("pwd");  
+    system("pwd");
     system("ls -la real_div_data 2>/dev/null || echo 'real_div_data not found'");
 
     uint32_t blockDim = 1;

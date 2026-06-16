@@ -21,15 +21,9 @@ using namespace optiling;
 
 class SignTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "SignTiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "SignTiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "SignTiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "SignTiling TearDown " << endl; }
 };
 
 // TEST_F(SignTiling, ascend9101_test_tiling_fp16_001)

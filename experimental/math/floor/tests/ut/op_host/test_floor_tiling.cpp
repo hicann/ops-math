@@ -29,15 +29,9 @@ using namespace optiling;
 
 class FloorTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "FloorTilingTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "FloorTilingTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "FloorTilingTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "FloorTilingTest TearDown" << std::endl; }
 };
 
 TEST_F(FloorTilingTest, floor_test_fp32_001)
@@ -93,4 +87,3 @@ TEST_F(FloorTilingTest, floor_test_bf16_003)
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
-

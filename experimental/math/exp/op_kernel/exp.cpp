@@ -15,8 +15,7 @@
 
 #include "exp.h"
 
-enum class ExpTilingKey : uint32_t
-{
+enum class ExpTilingKey : uint32_t {
     TILING_KEY_EXAMPLE_FLOAT = 0,
     TILING_KEY_EXAMPLE_INT32 = 1,
 };
@@ -27,24 +26,21 @@ __global__ __aicore__ void exp(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR 
     REGISTER_TILING_DEFAULT(ExpTilingData);
     GET_TILING_DATA_WITH_STRUCT(ExpTilingData, tilingData, tiling);
 
-    if(TILING_KEY_IS(1))
-    {
+    if (TILING_KEY_IS(1)) {
         NsExp::Exp<DTYPE_X, DTYPE_Y, true> op;
-        op.Init(x, y, tilingData.smallCoreDataNum,
-                tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
-                tilingData.smallCoreLoopNum, tilingData.ubPartDataNum,
-                tilingData.smallCoreTailDataNum, tilingData.bigCoreTailDataNum,
-                tilingData.tailBlockNum, tilingData.base, tilingData.scale, tilingData.shift);
+        op.Init(
+            x, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
+            tilingData.smallCoreLoopNum, tilingData.ubPartDataNum, tilingData.smallCoreTailDataNum,
+            tilingData.bigCoreTailDataNum, tilingData.tailBlockNum, tilingData.base, tilingData.scale,
+            tilingData.shift);
         op.Process();
-    }
-    else if(TILING_KEY_IS(0))
-    {
+    } else if (TILING_KEY_IS(0)) {
         NsExp::Exp<DTYPE_X, DTYPE_Y, false> op;
-        op.Init(x, y, tilingData.smallCoreDataNum,
-              tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
-              tilingData.smallCoreLoopNum, tilingData.ubPartDataNum,
-              tilingData.smallCoreTailDataNum, tilingData.bigCoreTailDataNum,
-              tilingData.tailBlockNum, tilingData.base, tilingData.scale, tilingData.shift);
+        op.Init(
+            x, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
+            tilingData.smallCoreLoopNum, tilingData.ubPartDataNum, tilingData.smallCoreTailDataNum,
+            tilingData.bigCoreTailDataNum, tilingData.tailBlockNum, tilingData.base, tilingData.scale,
+            tilingData.shift);
         op.Process();
     }
 }

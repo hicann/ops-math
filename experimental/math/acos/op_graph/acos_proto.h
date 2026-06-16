@@ -17,8 +17,7 @@
 
 #include "graph/operator_reg.h"
 
-namespace ge
-{
+namespace ge {
 /**
 *@brief Computes acos of x element-wise.
 
@@ -37,8 +36,8 @@ namespace ge
 REG_OP(Acos)
     .INPUT(x, "T")
     .OUTPUT(y, "T")
-    .DATATYPE(T, TensorType({DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE,
-                             DT_INT32, DT_INT64, DT_COMPLEX64, DT_COMPLEX128}))
+    .DATATYPE(
+        T, TensorType({DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_INT32, DT_INT64, DT_COMPLEX64, DT_COMPLEX128}))
     .OP_END_FACTORY_REG(Acos)
 } // namespace ge
 #endif // ACOS_PROTO_H_

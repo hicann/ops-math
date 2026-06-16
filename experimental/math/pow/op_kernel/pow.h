@@ -11,7 +11,7 @@
 /*!
  * \file pow.h
  * \brief
-*/
+ */
 #ifndef POW_H
 #define POW_H
 
@@ -44,12 +44,20 @@ private:
     __aicore__ inline void CopyIn(int32_t progress);
     __aicore__ inline void CopyOut(int32_t progress);
     __aicore__ inline void Compute(int32_t progress);
-    __aicore__ inline void PowCompute(LocalTensor<float> &xLocal, LocalTensor<float> &expLocal, LocalTensor<float> &yLocal, LocalTensor<uint8_t> &mask);
-    __aicore__ inline void PowComputeUint8(LocalTensor<float> &xLocal, LocalTensor<float> &expLocal, LocalTensor<float> &yLocal, LocalTensor<uint8_t> &mask);
-    __aicore__ inline void ComputeFor16(LocalTensor<TYPE_X> &xLocal, LocalTensor<TYPE_X> &expLocal, LocalTensor<TYPE_Y> &yLocal);
-    __aicore__ inline void ComputeForInt32(LocalTensor<TYPE_X> &xLocal, LocalTensor<TYPE_X> &expLocal, LocalTensor<TYPE_Y> &yLocal);
-    __aicore__ inline void ComputeForUInt8(LocalTensor<TYPE_X> &xLocal, LocalTensor<TYPE_X> &expLocal, LocalTensor<TYPE_Y> &yLocal);
-    __aicore__ inline void ComputeForInt8(LocalTensor<TYPE_X> &xLocal, LocalTensor<TYPE_X> &expLocal, LocalTensor<TYPE_Y> &yLocal);
+    __aicore__ inline void PowCompute(
+        LocalTensor<float>& xLocal, LocalTensor<float>& expLocal, LocalTensor<float>& yLocal,
+        LocalTensor<uint8_t>& mask);
+    __aicore__ inline void PowComputeUint8(
+        LocalTensor<float>& xLocal, LocalTensor<float>& expLocal, LocalTensor<float>& yLocal,
+        LocalTensor<uint8_t>& mask);
+    __aicore__ inline void ComputeFor16(
+        LocalTensor<TYPE_X>& xLocal, LocalTensor<TYPE_X>& expLocal, LocalTensor<TYPE_Y>& yLocal);
+    __aicore__ inline void ComputeForInt32(
+        LocalTensor<TYPE_X>& xLocal, LocalTensor<TYPE_X>& expLocal, LocalTensor<TYPE_Y>& yLocal);
+    __aicore__ inline void ComputeForUInt8(
+        LocalTensor<TYPE_X>& xLocal, LocalTensor<TYPE_X>& expLocal, LocalTensor<TYPE_Y>& yLocal);
+    __aicore__ inline void ComputeForInt8(
+        LocalTensor<TYPE_X>& xLocal, LocalTensor<TYPE_X>& expLocal, LocalTensor<TYPE_Y>& yLocal);
 
 private:
     TPipe pipe;
@@ -73,7 +81,8 @@ private:
 };
 
 template <typename TYPE_X, typename TYPE_Y>
-__aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::Init(GM_ADDR x, GM_ADDR exponent, GM_ADDR y, const PowTilingData* tilingData)
+__aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::Init(
+    GM_ADDR x, GM_ADDR exponent, GM_ADDR y, const PowTilingData* tilingData)
 {
     ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
     uint32_t coreNum = GetBlockIdx();
@@ -87,11 +96,12 @@ __aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::Init(GM_ADDR x, GM_ADDR expone
         this->coreDataNum = tilingData->smallCoreDataNum;
         this->tileNum = tilingData->finalSmallTileNum;
         this->tailDataNum = tilingData->smallTailDataNum;
-        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (GetBlockIdx() - tilingData->tailBlockNum);
+        globalBufferIndex -=
+            (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (GetBlockIdx() - tilingData->tailBlockNum);
     }
-    xGm.SetGlobalBuffer((__gm__ TYPE_X *)x + globalBufferIndex, this->coreDataNum);
-    expGm.SetGlobalBuffer((__gm__ TYPE_X *)exponent + globalBufferIndex, this->coreDataNum);
-    yGm.SetGlobalBuffer((__gm__ TYPE_Y *)y + globalBufferIndex, this->coreDataNum);
+    xGm.SetGlobalBuffer((__gm__ TYPE_X*)x + globalBufferIndex, this->coreDataNum);
+    expGm.SetGlobalBuffer((__gm__ TYPE_X*)exponent + globalBufferIndex, this->coreDataNum);
+    yGm.SetGlobalBuffer((__gm__ TYPE_Y*)y + globalBufferIndex, this->coreDataNum);
     pipe.InitBuffer(inQueue, BUFFER_NUM, this->tileDataNum * sizeof(TYPE_X) * 2);
     pipe.InitBuffer(outQueueY, BUFFER_NUM, this->tileDataNum * sizeof(TYPE_Y));
     pipe.InitBuffer(absTmp, this->tileDataNum * sizeof(float));
@@ -102,7 +112,7 @@ __aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::Init(GM_ADDR x, GM_ADDR expone
         pipe.InitBuffer(xCastTmp, this->tileDataNum * sizeof(float));
         pipe.InitBuffer(expCastTmp, this->tileDataNum * sizeof(float));
 
-        if constexpr ( IsSameType<TYPE_X, uint8_t>::value || IsSameType<TYPE_X, int8_t>::value) {
+        if constexpr (IsSameType<TYPE_X, uint8_t>::value || IsSameType<TYPE_X, int8_t>::value) {
             pipe.InitBuffer(tranCastTmp, this->tileDataNum * sizeof(half));
             pipe.InitBuffer(yCastTmp, this->tileDataNum * sizeof(float));
         } else {
@@ -129,13 +139,13 @@ __aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::CopyOut(int32_t progress)
 }
 
 template <typename TYPE_X, typename TYPE_Y>
-__aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::PowCompute(LocalTensor<float> &xLocal, LocalTensor<float> &expLocal,
-                                                            LocalTensor<float> &yLocal, LocalTensor<uint8_t> &mask)
+__aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::PowCompute(
+    LocalTensor<float>& xLocal, LocalTensor<float>& expLocal, LocalTensor<float>& yLocal, LocalTensor<uint8_t>& mask)
 {
     LocalTensor<float> p1 = absTmp.Get<float>();
     LocalTensor<float> zeros = zeroTmp.Get<float>();
-    LocalTensor<float> &scalars = zeros;
-    LocalTensor<float> &ones = expLocal;
+    LocalTensor<float>& scalars = zeros;
+    LocalTensor<float>& ones = expLocal;
     Duplicate(scalars, 2.0f, this->processDataNum);
     Abs(p1, xLocal, this->processDataNum);
     PipeBarrier<PIPE_V>();
@@ -154,7 +164,7 @@ __aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::PowCompute(LocalTensor<float> 
     Mul(zeros, zeros, scalars, this->processDataNum);
     PipeBarrier<PIPE_V>();
     Sub(p1, p1, zeros, this->processDataNum);
-    
+
     PipeBarrier<PIPE_V>();
     Muls(p1, p1, -2.0f, this->processDataNum);
     PipeBarrier<PIPE_V>();
@@ -180,12 +190,12 @@ __aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::PowCompute(LocalTensor<float> 
 }
 
 template <typename TYPE_X, typename TYPE_Y>
-__aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::PowComputeUint8(LocalTensor<float> &xLocal, LocalTensor<float> &expLocal,
-                                                                    LocalTensor<float> &yLocal, LocalTensor<uint8_t> &mask)
+__aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::PowComputeUint8(
+    LocalTensor<float>& xLocal, LocalTensor<float>& expLocal, LocalTensor<float>& yLocal, LocalTensor<uint8_t>& mask)
 {
     LocalTensor<float> p1 = absTmp.Get<float>();
     LocalTensor<float> zeros = zeroTmp.Get<float>();
-    LocalTensor<float> &ones = expLocal;
+    LocalTensor<float>& ones = expLocal;
     Ln(p1, xLocal, this->processDataNum);
     PipeBarrier<PIPE_V>();
     Mul(p1, p1, expLocal, this->processDataNum);
@@ -197,15 +207,15 @@ __aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::PowComputeUint8(LocalTensor<fl
     Duplicate(ones, 1.0f, this->processDataNum);
     PipeBarrier<PIPE_V>();
     Select(p1, mask, ones, zeros, SELMODE::VSEL_TENSOR_TENSOR_MODE, this->processDataNum);
-    
+
     CompareScalar(mask, xLocal, 0.f, CMPMODE::EQ, this->processDataNum); // x等于0的部分
     PipeBarrier<PIPE_V>();
     Select(yLocal, mask, p1, yLocal, SELMODE::VSEL_TENSOR_TENSOR_MODE, this->processDataNum);
 }
 
 template <typename TYPE_X, typename TYPE_Y>
-__aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::ComputeFor16(LocalTensor<TYPE_X> &xLocal, LocalTensor<TYPE_X> &expLocal,
-                                                                LocalTensor<TYPE_Y> &yLocal)
+__aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::ComputeFor16(
+    LocalTensor<TYPE_X>& xLocal, LocalTensor<TYPE_X>& expLocal, LocalTensor<TYPE_Y>& yLocal)
 {
     LocalTensor<float> xLocalFp = xCastTmp.Get<float>();
     LocalTensor<float> expLocalFp = expCastTmp.Get<float>();
@@ -220,8 +230,8 @@ __aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::ComputeFor16(LocalTensor<TYPE_
 }
 
 template <typename TYPE_X, typename TYPE_Y>
-__aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::ComputeForInt32(LocalTensor<TYPE_X> &xLocal, LocalTensor<TYPE_X> &expLocal,
-                                                                LocalTensor<TYPE_Y> &yLocal)
+__aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::ComputeForInt32(
+    LocalTensor<TYPE_X>& xLocal, LocalTensor<TYPE_X>& expLocal, LocalTensor<TYPE_Y>& yLocal)
 {
     LocalTensor<float> xLocalFp = xLocal.template ReinterpretCast<float>();
     LocalTensor<float> expLocalFp = expLocal.template ReinterpretCast<float>();
@@ -236,8 +246,8 @@ __aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::ComputeForInt32(LocalTensor<TY
 }
 
 template <typename TYPE_X, typename TYPE_Y>
-__aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::ComputeForInt8(LocalTensor<TYPE_X> &xLocal, LocalTensor<TYPE_X> &expLocal,
-                                                                LocalTensor<TYPE_Y> &yLocal)
+__aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::ComputeForInt8(
+    LocalTensor<TYPE_X>& xLocal, LocalTensor<TYPE_X>& expLocal, LocalTensor<TYPE_Y>& yLocal)
 {
     LocalTensor<float> xLocalFp = xCastTmp.Get<float>();
     LocalTensor<float> expLocalFp = expCastTmp.Get<float>();
@@ -260,8 +270,8 @@ __aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::ComputeForInt8(LocalTensor<TYP
 }
 
 template <typename TYPE_X, typename TYPE_Y>
-__aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::ComputeForUInt8(LocalTensor<TYPE_X> &xLocal, LocalTensor<TYPE_X> &expLocal,
-                                                                LocalTensor<TYPE_Y> &yLocal)
+__aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::ComputeForUInt8(
+    LocalTensor<TYPE_X>& xLocal, LocalTensor<TYPE_X>& expLocal, LocalTensor<TYPE_Y>& yLocal)
 {
     LocalTensor<float> xLocalFp = xCastTmp.Get<float>();
     LocalTensor<float> expLocalFp = expCastTmp.Get<float>();
@@ -288,20 +298,21 @@ __aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::Compute(int32_t progress)
     LocalTensor<TYPE_X> xLocal = inQueue.DeQue<TYPE_X>();
     LocalTensor<TYPE_X> expLocal = xLocal[this->processDataNum];
     LocalTensor<TYPE_Y> yLocal = outQueueY.AllocTensor<TYPE_Y>();
-    if constexpr ( IsSameType<TYPE_X, half>::value || IsSameType<TYPE_X, bfloat16_t>::value
-                     || IsSameType<TYPE_X, int16_t>::value) {
+    if constexpr (
+        IsSameType<TYPE_X, half>::value || IsSameType<TYPE_X, bfloat16_t>::value ||
+        IsSameType<TYPE_X, int16_t>::value) {
         ComputeFor16(xLocal, expLocal, yLocal);
     }
     if constexpr (IsSameType<TYPE_X, int32_t>::value) {
         ComputeForInt32(xLocal, expLocal, yLocal);
     }
-    if constexpr ( IsSameType<TYPE_X, uint8_t>::value) {
+    if constexpr (IsSameType<TYPE_X, uint8_t>::value) {
         ComputeForUInt8(xLocal, expLocal, yLocal);
     }
-    if constexpr ( IsSameType<TYPE_X, int8_t>::value) {
+    if constexpr (IsSameType<TYPE_X, int8_t>::value) {
         ComputeForInt8(xLocal, expLocal, yLocal);
     }
-    if constexpr ( IsSameType<TYPE_X, float32_t>::value) {
+    if constexpr (IsSameType<TYPE_X, float32_t>::value) {
         LocalTensor<uint8_t> mask = maskTmp.Get<uint8_t>();
         PowCompute(xLocal, expLocal, yLocal, mask);
     }
@@ -314,16 +325,16 @@ __aicore__ inline void KernelPow<TYPE_X, TYPE_Y>::Process()
 {
     int32_t loopCount = this->tileNum;
     this->processDataNum = this->tileDataNum;
-    for (int32_t i = 0; i < loopCount-1; i++) {
+    for (int32_t i = 0; i < loopCount - 1; i++) {
         CopyIn(i);
         Compute(i);
         CopyOut(i);
     }
     this->processDataNum = this->tailDataNum;
-    CopyIn(loopCount-1);
-    Compute(loopCount-1);
-    CopyOut(loopCount-1);
+    CopyIn(loopCount - 1);
+    Compute(loopCount - 1);
+    CopyOut(loopCount - 1);
 }
 
-} // namespace KernelPow
+} // namespace MyPow
 #endif // POW_H

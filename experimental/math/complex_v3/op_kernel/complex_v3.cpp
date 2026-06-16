@@ -24,8 +24,7 @@
 #include "complex_v3.h"
 
 template <typename D_T, int BROADCAST_MODE>
-__global__ __aicore__ void complex_v3(GM_ADDR real, GM_ADDR imag, GM_ADDR out,
-                                   GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void complex_v3(GM_ADDR real, GM_ADDR imag, GM_ADDR out, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(ComplexV3TilingData);
     GET_TILING_DATA_WITH_STRUCT(ComplexV3TilingData, tilingData, tiling);

@@ -27,11 +27,8 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./col2_im_data/");
     }
-    
-    static void TearDownTestCase()
-    {
-        std::cout << "col2im_custom_test TearDown" << std::endl;
-    }
+
+    static void TearDownTestCase() { std::cout << "col2im_custom_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;
@@ -53,7 +50,7 @@ TEST_F(Col2ImCustomTest, test_case_float16_basic)
     // 输入: [1, 4, 9] -> 输出: [1, 1, 4, 4]
     // kernel=2x2, stride=1, padding=0, dilation=1
     optiling::Col2ImCustomCompileInfo compileInfo = {};
-    
+
     gert::TilingContextPara tilingContextPara(
         "Col2ImCustom",
         {
@@ -65,33 +62,31 @@ TEST_F(Col2ImCustomTest, test_case_float16_basic)
             {{{1, 1, 4, 4}, {1, 1, 4, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
         },
         &compileInfo);
-    
+
     // 设置属性: output_h, output_w, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w, dilation_h, dilation_w
-    tilingContextPara.AddAttrs(
-        {4, 4, 2, 2, 1, 1, 0, 0, 1, 1}
-    );
-    
+    tilingContextPara.AddAttrs({4, 4, 2, 2, 1, 1, 0, 0, 1, 1});
+
     TilingInfo tilingInfo;
     auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_EQ(tilingRet, true);
 
     // 生成测试数据
     system("cd ./col2_im_data/ && python3 gen_data.py '(1, 4, 9)' 'float16' 4 4 2 2 1 1 0 0 1 1");
-    
-    uint32_t inputDataCount = 1 * 4 * 9;  // N * (C*kH*kW) * L
-    uint32_t outputDataCount = 1 * 1 * 4 * 4;  // N * C * H * W
-    
+
+    uint32_t inputDataCount = 1 * 4 * 9;      // N * (C*kH*kW) * L
+    uint32_t outputDataCount = 1 * 1 * 4 * 4; // N * C * H * W
+
     size_t inputByteSize = inputDataCount * sizeof(half);
     size_t outputByteSize = outputDataCount * sizeof(half);
-    
+
     std::string fileName = "./col2_im_data/float16_input_col.bin";
     uint8_t* col = (uint8_t*)AscendC::GmAlloc(CeilAlign(inputByteSize, 32));
     ReadFile(fileName, inputByteSize, col, inputByteSize);
-    
+
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(CeilAlign(outputByteSize, 32));
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(tilingInfo.workspaceSizes[0]);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingInfo.tilingDataSize);
-    
+
     std::memcpy(tiling, tilingInfo.tilingData.get(), tilingInfo.tilingDataSize);
     ICPU_SET_TILING_KEY(tilingInfo.tilingKey);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
@@ -114,7 +109,7 @@ TEST_F(Col2ImCustomTest, test_case_float32_stride)
     // 输入: [1, 12, 4] -> 输出: [1, 3, 5, 5]
     // kernel=2x2, stride=2, padding=0, dilation=1
     optiling::Col2ImCustomCompileInfo compileInfo = {};
-    
+
     gert::TilingContextPara tilingContextPara(
         "Col2ImCustom",
         {
@@ -126,32 +121,30 @@ TEST_F(Col2ImCustomTest, test_case_float32_stride)
             {{{1, 3, 5, 5}, {1, 3, 5, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         &compileInfo);
-    
+
     // 设置属性: stride=2
-    tilingContextPara.AddAttrs(
-        {5, 5, 2, 2, 2, 2, 0, 0, 1, 1}
-    );
-    
+    tilingContextPara.AddAttrs({5, 5, 2, 2, 2, 2, 0, 0, 1, 1});
+
     TilingInfo tilingInfo;
     auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_EQ(tilingRet, true);
 
     system("cd ./col2_im_data/ && python3 gen_data.py '(1, 12, 4)' 'float32' 5 5 2 2 2 2 0 0 1 1");
-    
+
     uint32_t inputDataCount = 1 * 12 * 4;
     uint32_t outputDataCount = 1 * 3 * 5 * 5;
-    
+
     size_t inputByteSize = inputDataCount * sizeof(float);
     size_t outputByteSize = outputDataCount * sizeof(float);
-    
+
     std::string fileName = "./col2_im_data/float32_input_col.bin";
     uint8_t* col = (uint8_t*)AscendC::GmAlloc(CeilAlign(inputByteSize, 32));
     ReadFile(fileName, inputByteSize, col, inputByteSize);
-    
+
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(CeilAlign(outputByteSize, 32));
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(tilingInfo.workspaceSizes[0]);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingInfo.tilingDataSize);
-    
+
     std::memcpy(tiling, tilingInfo.tilingData.get(), tilingInfo.tilingDataSize);
     ICPU_SET_TILING_KEY(tilingInfo.tilingKey);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
@@ -174,7 +167,7 @@ TEST_F(Col2ImCustomTest, test_case_float16_padding)
     // 输入: [2, 8, 16] -> 输出: [2, 2, 6, 6]
     // kernel=2x2, stride=1, padding=1, dilation=1
     optiling::Col2ImCustomCompileInfo compileInfo = {};
-    
+
     gert::TilingContextPara tilingContextPara(
         "Col2ImCustom",
         {
@@ -186,32 +179,30 @@ TEST_F(Col2ImCustomTest, test_case_float16_padding)
             {{{2, 2, 6, 6}, {2, 2, 6, 6}}, ge::DT_FLOAT16, ge::FORMAT_ND},
         },
         &compileInfo);
-    
+
     // 设置属性: padding=1
-    tilingContextPara.AddAttrs(
-        {6, 6, 2, 2, 1, 1, 1, 1, 1, 1}
-    );
-    
+    tilingContextPara.AddAttrs({6, 6, 2, 2, 1, 1, 1, 1, 1, 1});
+
     TilingInfo tilingInfo;
     auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_EQ(tilingRet, true);
 
     system("cd ./col2_im_data/ && python3 gen_data.py '(2, 8, 16)' 'float16' 6 6 2 2 1 1 1 1 1 1");
-    
+
     uint32_t inputDataCount = 2 * 8 * 16;
     uint32_t outputDataCount = 2 * 2 * 6 * 6;
-    
+
     size_t inputByteSize = inputDataCount * sizeof(half);
     size_t outputByteSize = outputDataCount * sizeof(half);
-    
+
     std::string fileName = "./col2_im_data/float16_input_col.bin";
     uint8_t* col = (uint8_t*)AscendC::GmAlloc(CeilAlign(inputByteSize, 32));
     ReadFile(fileName, inputByteSize, col, inputByteSize);
-    
+
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(CeilAlign(outputByteSize, 32));
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(tilingInfo.workspaceSizes[0]);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingInfo.tilingDataSize);
-    
+
     std::memcpy(tiling, tilingInfo.tilingData.get(), tilingInfo.tilingDataSize);
     ICPU_SET_TILING_KEY(tilingInfo.tilingKey);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
@@ -234,7 +225,7 @@ TEST_F(Col2ImCustomTest, test_case_float32_dilation)
     // 输入: [1, 4, 4] -> 输出: [1, 1, 6, 6]
     // kernel=2x2, stride=1, padding=0, dilation=2
     optiling::Col2ImCustomCompileInfo compileInfo = {};
-    
+
     gert::TilingContextPara tilingContextPara(
         "Col2ImCustom",
         {
@@ -246,32 +237,30 @@ TEST_F(Col2ImCustomTest, test_case_float32_dilation)
             {{{1, 1, 6, 6}, {1, 1, 6, 6}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         &compileInfo);
-    
+
     // 设置属性: dilation=2
-    tilingContextPara.AddAttrs(
-        {6, 6, 2, 2, 1, 1, 0, 0, 2, 2}
-    );
-    
+    tilingContextPara.AddAttrs({6, 6, 2, 2, 1, 1, 0, 0, 2, 2});
+
     TilingInfo tilingInfo;
     auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_EQ(tilingRet, true);
 
     system("cd ./col2_im_data/ && python3 gen_data.py '(1, 4, 4)' 'float32' 6 6 2 2 1 1 0 0 2 2");
-    
+
     uint32_t inputDataCount = 1 * 4 * 4;
     uint32_t outputDataCount = 1 * 1 * 6 * 6;
-    
+
     size_t inputByteSize = inputDataCount * sizeof(float);
     size_t outputByteSize = outputDataCount * sizeof(float);
-    
+
     std::string fileName = "./col2_im_data/float32_input_col.bin";
     uint8_t* col = (uint8_t*)AscendC::GmAlloc(CeilAlign(inputByteSize, 32));
     ReadFile(fileName, inputByteSize, col, inputByteSize);
-    
+
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(CeilAlign(outputByteSize, 32));
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(tilingInfo.workspaceSizes[0]);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingInfo.tilingDataSize);
-    
+
     std::memcpy(tiling, tilingInfo.tilingData.get(), tilingInfo.tilingDataSize);
     ICPU_SET_TILING_KEY(tilingInfo.tilingKey);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
@@ -294,7 +283,7 @@ TEST_F(Col2ImCustomTest, test_case_float16_large)
     // 输入: [4, 36, 225] -> 输出: [4, 9, 32, 32]
     // kernel=2x2, stride=2, padding=1, dilation=1
     optiling::Col2ImCustomCompileInfo compileInfo = {};
-    
+
     gert::TilingContextPara tilingContextPara(
         "Col2ImCustom",
         {
@@ -306,31 +295,29 @@ TEST_F(Col2ImCustomTest, test_case_float16_large)
             {{{4, 9, 32, 32}, {4, 9, 32, 32}}, ge::DT_FLOAT16, ge::FORMAT_ND},
         },
         &compileInfo);
-    
-    tilingContextPara.AddAttrs(
-        {32, 32, 2, 2, 2, 2, 1, 1, 1, 1}
-    );
-    
+
+    tilingContextPara.AddAttrs({32, 32, 2, 2, 2, 2, 1, 1, 1, 1});
+
     TilingInfo tilingInfo;
     auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_EQ(tilingRet, true);
 
     system("cd ./col2_im_data/ && python3 gen_data.py '(4, 36, 225)' 'float16' 32 32 2 2 2 2 1 1 1 1");
-    
+
     uint32_t inputDataCount = 4 * 36 * 225;
     uint32_t outputDataCount = 4 * 9 * 32 * 32;
-    
+
     size_t inputByteSize = inputDataCount * sizeof(half);
     size_t outputByteSize = outputDataCount * sizeof(half);
-    
+
     std::string fileName = "./col2_im_data/float16_input_col.bin";
     uint8_t* col = (uint8_t*)AscendC::GmAlloc(CeilAlign(inputByteSize, 32));
     ReadFile(fileName, inputByteSize, col, inputByteSize);
-    
+
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(CeilAlign(outputByteSize, 32));
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(tilingInfo.workspaceSizes[0]);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingInfo.tilingDataSize);
-    
+
     std::memcpy(tiling, tilingInfo.tilingData.get(), tilingInfo.tilingDataSize);
     ICPU_SET_TILING_KEY(tilingInfo.tilingKey);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);

@@ -21,7 +21,9 @@ __global__ __aicore__ void rsqrt_grad(GM_ADDR y, GM_ADDR dy, GM_ADDR z, GM_ADDR 
     REGISTER_TILING_DEFAULT(RsqrtGradTilingData);
     GET_TILING_DATA_WITH_STRUCT(RsqrtGradTilingData, tilingData, tiling);
     NsRsqrtGrad::KernelRsqrtGrad<DTYPE_Y> op; // 算子kernel实例获取
-    op.Init(y, dy, z, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.finalBigTileNum, tilingData.finalSmallTileNum, tilingData.tileDataNum,
-       tilingData.smallTailDataNum, tilingData.bigTailDataNum, tilingData.tailBlockNum, tilingData.bufferOpen);
+    op.Init(
+        y, dy, z, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.finalBigTileNum,
+        tilingData.finalSmallTileNum, tilingData.tileDataNum, tilingData.smallTailDataNum, tilingData.bigTailDataNum,
+        tilingData.tailBlockNum, tilingData.bufferOpen);
     op.Process();
 }

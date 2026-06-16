@@ -1,17 +1,17 @@
 /**
-* Copyright (c) 2026 Huawei Technologies Co., Ltd.
-* This program is free software, you can redistribute it and/or modify it under the terms and conditions of
-* CANN Open Software License Agreement Version 2.0 (the "License").
-* Please refer to the License for details. You may not use this file except in compliance with the License.
-* THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-* INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
-* See LICENSE in the root of the software repository for the full text of the License.
-*/
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
-* \file asinh.h
-* \brief
-*/
+ * \file asinh.h
+ * \brief
+ */
 #ifndef ASINH_H
 #define ASINH_H
 
@@ -32,8 +32,8 @@ public:
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const AsinhTilingData* tilingData);
     __aicore__ inline void Process();
 
-    inline static constexpr T taylorCoefficients[] = {1.0, -1.0 / 6, 3.0 / 40, -5.0 / 112,
-                                                     35.0 / 1152, -63.0 / 2816, 231.0 / 13312, -143.0 / 10240};
+    inline static constexpr T taylorCoefficients[] = {1.0,         -1.0 / 6,     3.0 / 40,      -5.0 / 112,
+                                                      35.0 / 1152, -63.0 / 2816, 231.0 / 13312, -143.0 / 10240};
     inline static constexpr T Boudry = 0.70710678118654752440084436210485;
     inline static constexpr int32_t ELEMTENT_ALIGN = 256 / sizeof(T); /* 和BUFFER_ALIGN的大小保持一致 */
 
@@ -49,11 +49,11 @@ private:
     TQue<QuePosition::VECOUT, BUFFER_NUM> outputQueueY; // 占用BUFFER_NUM个tileBufferLen_内存
     GlobalTensor<T> inputGMX;
     GlobalTensor<T> outputGMY;
-    TBuf<TPosition::VECCALC> outputTempBuf;             // 占用1个tileBufferLen_内存
-    TBuf<TPosition::VECCALC> xPowTempBuf;               // 占用1个tileBufferLen_内存
-    TBuf<TPosition::VECCALC> calcTempBuf;               // 占用1个tileBufferLen_内存
-    TBuf<TPosition::VECCALC> xBoudryMarkMask;           // 占用1/8（转换成bit使用 BYTE_TO_BIT）个tileBufferLen_内存
-    TBuf<TPosition::VECCALC> xSignMask;                 // 占用1/8（转换成bit使用 BYTE_TO_BIT）个tileBufferLen_内存
+    TBuf<TPosition::VECCALC> outputTempBuf;   // 占用1个tileBufferLen_内存
+    TBuf<TPosition::VECCALC> xPowTempBuf;     // 占用1个tileBufferLen_内存
+    TBuf<TPosition::VECCALC> calcTempBuf;     // 占用1个tileBufferLen_内存
+    TBuf<TPosition::VECCALC> xBoudryMarkMask; // 占用1/8（转换成bit使用 BYTE_TO_BIT）个tileBufferLen_内存
+    TBuf<TPosition::VECCALC> xSignMask;       // 占用1/8（转换成bit使用 BYTE_TO_BIT）个tileBufferLen_内存
 
     uint64_t loopCount_ = 0;
     uint64_t blockLength_ = 0;
@@ -72,7 +72,8 @@ __aicore__ inline void Asinh<T>::Init(GM_ADDR x, GM_ADDR y, const AsinhTilingDat
         loopCount_ = tilingData->tailCoreLoopCount;
         tileBufferLen_ = tilingData->tailCoreFormerDataNum;
         tailTileLen_ = tilingData->tailCoreTailDataNum;
-        offset = tilingData->formerCoreNum * tilingData->formerCoreDataNum + (blockIdx_ - tilingData->formerCoreNum) * blockLength_;
+        offset = tilingData->formerCoreNum * tilingData->formerCoreDataNum +
+                 (blockIdx_ - tilingData->formerCoreNum) * blockLength_;
     } else {
         blockLength_ = tilingData->formerCoreDataNum;
         loopCount_ = tilingData->formerCoreLoopCount;
@@ -123,9 +124,9 @@ __aicore__ inline void Asinh<T>::ComputeArcSinh(LocalTensor<T> yLocal, LocalTens
 {
     /* 按照泰勒公式计算arcsin(x) = C*x + C*x^3 + C*x^5 + C*x^7 + C*x^9 + C*x^11 + C*x^13 + C*x^15 .....
         其中C为泰勒系数，参考常量taylorCoefficients，注意xLocal后续计算还需要所以不能修改 */
-    LocalTensor<T> xPowTempTensor = xPowTempBuf.Get<T>(); //保存x幂的计算结果
-    LocalTensor<T> calcTempTensor = calcTempBuf.Get<T>(); //保存每个泰勒展开项结果
-    
+    LocalTensor<T> xPowTempTensor = xPowTempBuf.Get<T>(); // 保存x幂的计算结果
+    LocalTensor<T> calcTempTensor = calcTempBuf.Get<T>(); // 保存每个泰勒展开项结果
+
     /* 泰勒公式的第一个C*x */
     DataCopy(xPowTempTensor, xLocal, tileLength);
     DataCopy(yLocal, xLocal, tileLength);
@@ -156,7 +157,7 @@ __aicore__ inline void Asinh<T>::Compute(uint64_t progress, uint64_t tileLength)
 
     // 小于Boudry的按照泰勒展开公式直接计算放到yLocal中
     DataCopy(outputTempTensor, xLocal, tileLength); /* 先保存xLocal下来*/
-    ComputeArcSinh(yLocal, xLocal, tileLength); /* 注意，里面已经将X改成X^2 */
+    ComputeArcSinh(yLocal, xLocal, tileLength);     /* 注意，里面已经将X改成X^2 */
 
     // 大于Boudry按照arcsinh(x) = ln(x + sqrt(x^2+1))计算放到outputTempTensor中
     Adds(xLocal, xLocal, (T)1.0, tileLength);
@@ -185,7 +186,7 @@ __aicore__ inline void Asinh<T>::Process()
     }
     CopyIn(loopCount_ - 1, tailTileLen_);
     // 计算的时候必须保证tensor大小是256字节整数倍
- 	Compute(loopCount_ - 1, (tailTileLen_ + ELEMTENT_ALIGN - 1) / ELEMTENT_ALIGN * ELEMTENT_ALIGN);
+    Compute(loopCount_ - 1, (tailTileLen_ + ELEMTENT_ALIGN - 1) / ELEMTENT_ALIGN * ELEMTENT_ALIGN);
     CopyOut(loopCount_ - 1, tailTileLen_);
 }
 

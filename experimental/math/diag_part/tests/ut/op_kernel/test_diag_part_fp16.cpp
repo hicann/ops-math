@@ -44,10 +44,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./diag_part_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "diag_part_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "diag_part_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;
@@ -115,12 +112,6 @@ static void RunDiagPartTest(uint32_t sideLen)
     system("cd ./diag_part_data/ && python3 compare_data.py 'float16'");
 }
 
-TEST_F(DiagPartTest, test_case_4x4)
-{
-    RunDiagPartTest(4);
-}
+TEST_F(DiagPartTest, test_case_4x4) { RunDiagPartTest(4); }
 
-TEST_F(DiagPartTest, test_case_8x8)
-{
-    RunDiagPartTest(8);
-}
+TEST_F(DiagPartTest, test_case_8x8) { RunDiagPartTest(8); }

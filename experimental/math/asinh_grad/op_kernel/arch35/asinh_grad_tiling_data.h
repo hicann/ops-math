@@ -22,8 +22,8 @@
 #define _ASINH_GRAD_TILING_DATA_H_
 
 struct AsinhGradTilingData {
-    int64_t totalNum = 0;     // total number of elements
-    int64_t blockFactor = 0;  // number of elements per AI Core
-    int64_t ubFactor = 0;     // number of elements per UB iteration
+    int64_t totalNum = 0;    // total number of elements
+    int64_t blockFactor = 0; // number of elements per AI Core
+    int64_t ubFactor = 0;    // number of elements per UB iteration
 };
 #endif

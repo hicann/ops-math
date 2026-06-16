@@ -21,15 +21,9 @@ using namespace optiling;
 
 class FloorDivTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "FloorDivTiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "FloorDivTiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "FloorDivTiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "FloorDivTiling TearDown " << endl; }
 };
 
 TEST_F(FloorDivTiling, ascend9101_test_tiling_fp16_001)

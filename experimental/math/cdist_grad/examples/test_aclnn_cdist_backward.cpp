@@ -9,11 +9,11 @@
  */
 
 /**
-* 我们正常的版权申明，下面是我们的备注
-*
-* NOTE: Portions of this code were AI-generated and have been
-* technically reviewed for functional accuracy and security
-*/
+ * 我们正常的版权申明，下面是我们的备注
+ *
+ * NOTE: Portions of this code were AI-generated and have been
+ * technically reviewed for functional accuracy and security
+ */
 
 #include <iostream>
 #include <vector>
@@ -32,7 +32,7 @@
         printf(message, ##__VA_ARGS__); \
     } while (0)
 
-int64_t GetShapeSize(const std::vector<int64_t> &shape)
+int64_t GetShapeSize(const std::vector<int64_t>& shape)
 {
     int64_t shapeSize = 1;
     for (auto i : shape) {
@@ -41,7 +41,7 @@ int64_t GetShapeSize(const std::vector<int64_t> &shape)
     return shapeSize;
 }
 
-int Init(int32_t deviceId, aclrtStream *stream)
+int Init(int32_t deviceId, aclrtStream* stream)
 {
     // 固定写法，资源初始化
     auto ret = aclInit(nullptr);
@@ -54,8 +54,9 @@ int Init(int32_t deviceId, aclrtStream *stream)
 }
 
 template <typename T>
-int CreateAclTensor(const std::vector<T> &hostData, const std::vector<int64_t> &shape, void **deviceAddr,
-    aclDataType dataType, aclTensor **tensor)
+int CreateAclTensor(
+    const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr, aclDataType dataType,
+    aclTensor** tensor)
 {
     auto size = GetShapeSize(shape) * sizeof(T);
     // 调用aclrtMalloc申请device侧内存
@@ -72,14 +73,8 @@ int CreateAclTensor(const std::vector<T> &hostData, const std::vector<int64_t> &
     }
 
     // 调用aclCreateTensor接口创建aclTensor
-    *tensor = aclCreateTensor(shape.data(),
-        shape.size(),
-        dataType,
-        strides.data(),
-        0,
-        aclFormat::ACL_FORMAT_ND,
-        shape.data(),
-        shape.size(),
+    *tensor = aclCreateTensor(
+        shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
         *deviceAddr);
     return 0;
 }
@@ -92,23 +87,23 @@ int main()
     aclrtStream stream;
     auto ret = Init(deviceId, &stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
-    int B=5, P=7, Q=9, M=11;
+    int B = 5, P = 7, Q = 9, M = 11;
     // 2. 构造输入与输出，需要根据API的接口自定义构造
     std::vector<int64_t> gradShape = {B, P, Q};
     std::vector<int64_t> x1Shape = {B, P, M};
     std::vector<int64_t> x2Shape = {B, Q, M};
     std::vector<int64_t> cdistShape = {B, P, Q};
     std::vector<int64_t> outShape = {B, P, M};
-    void *gradDeviceAddr = nullptr;
-    void *x1DeviceAddr = nullptr;
-    void *x2DeviceAddr = nullptr;
-    void *cdistDeviceAddr = nullptr;
-    void *outDeviceAddr = nullptr;
-    aclTensor *grad = nullptr;
-    aclTensor *x1 = nullptr;
-    aclTensor *x2 = nullptr;
-    aclTensor *cdist = nullptr;
-    aclTensor *out = nullptr;
+    void* gradDeviceAddr = nullptr;
+    void* x1DeviceAddr = nullptr;
+    void* x2DeviceAddr = nullptr;
+    void* cdistDeviceAddr = nullptr;
+    void* outDeviceAddr = nullptr;
+    aclTensor* grad = nullptr;
+    aclTensor* x1 = nullptr;
+    aclTensor* x2 = nullptr;
+    aclTensor* cdist = nullptr;
+    aclTensor* out = nullptr;
     float p = 0.5;
     std::vector<float> gradHostData(B * P * Q, 1);
     std::vector<float> x1HostData(B * P * M, 2);
@@ -137,12 +132,12 @@ int main()
 
     // 3. 调用CANN算子库API，需要修改为具体的Api名称
     uint64_t workspaceSize = 0;
-    aclOpExecutor *executor;
+    aclOpExecutor* executor;
     // 调用aclnnCdistBackward第一段接口
     ret = aclnnCdistBackwardGetWorkspaceSize(grad, x1, x2, cdist, p, out, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnCdistBackwardGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
-    void *workspaceAddr = nullptr;
+    void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
         ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
         CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
@@ -158,10 +153,8 @@ int main()
     // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
     auto size = GetShapeSize(outShape);
     std::vector<float> resultData(size, 0);
-    ret = aclrtMemcpy(resultData.data(),
-        resultData.size() * sizeof(resultData[0]),
-        outDeviceAddr,
-        size * sizeof(resultData[0]),
+    ret = aclrtMemcpy(
+        resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, size * sizeof(resultData[0]),
         ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
     for (int64_t i = 0; i < 10; i++) {

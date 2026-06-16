@@ -81,8 +81,7 @@ private:
 };
 
 template <typename T, int BUFFER_MODE>
-__aicore__ inline void CoshV2Op<T, BUFFER_MODE>::Init(GM_ADDR self, GM_ADDR out,
-                                                     const CoshV2TilingData* tilingData)
+__aicore__ inline void CoshV2Op<T, BUFFER_MODE>::Init(GM_ADDR self, GM_ADDR out, const CoshV2TilingData* tilingData)
 {
     int64_t remainderLength = tilingData->totalNum - tilingData->blockFactor * AscendC::GetBlockIdx();
     blockLength_ = (remainderLength > tilingData->blockFactor) ? tilingData->blockFactor : remainderLength;

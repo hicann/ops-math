@@ -25,24 +25,24 @@ using namespace MyOnesLike;
 
 #define __aicore__
 #ifdef __NPU_TILING__
-inline[aicore] void InitTilingData(const __gm__ uint8_t *tiling, OnesLikeTilingData *constData)
+inline[aicore] void InitTilingData(const __gm__ uint8_t* tiling, OnesLikeTilingData* constData)
 {
-    const __gm__ uint32_t *src = (const __gm__ uint32_t *)tiling;
-    uint32_t *dst = (uint32_t *)constData;
+    const __gm__ uint32_t* src = (const __gm__ uint32_t*)tiling;
+    uint32_t* dst = (uint32_t*)constData;
     for (size_t i = 0; i < sizeof(OnesLikeTilingData) / 4; i++) {
         *(dst + i) = *(src + i);
     }
 }
 #else
-inline void InitTilingData(uint8_t *tiling, OnesLikeTilingData *constData)
+inline void InitTilingData(uint8_t* tiling, OnesLikeTilingData* constData)
 {
     memcpy(constData, tiling, sizeof(OnesLikeTilingData));
 }
 #endif // __NPU_TILING__
 
 #define CONVERT_TILING_DATA(tilingStruct, tilingDataPointer, tilingPointer) \
-    __ubuf__ tilingStruct *tilingDataPointer =                              \
-        reinterpret_cast<__ubuf__ tilingStruct *>((__ubuf__ uint8_t *)(tilingPointer));
+    __ubuf__ tilingStruct* tilingDataPointer =                              \
+        reinterpret_cast<__ubuf__ tilingStruct*>((__ubuf__ uint8_t*)(tilingPointer));
 
 #define INIT_TILING_DATA(tilingStruct, tilingDataPointer, tilingPointer) \
     CONVERT_TILING_DATA(tilingStruct, tilingDataPointer, tilingPointer);
@@ -52,7 +52,7 @@ inline void InitTilingData(uint8_t *tiling, OnesLikeTilingData *constData)
     InitTilingData(tilingArg, &tilingData)
 
 #define GET_TILING_DATA(tilingData, tilingArg) \
-    OnesLikeTilingData tilingData;    \
+    OnesLikeTilingData tilingData;             \
     InitTilingData(tilingArg, &tilingData)
 
 #endif // _ONES_LIKE_TILING_H_

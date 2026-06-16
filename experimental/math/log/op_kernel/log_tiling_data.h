@@ -17,16 +17,16 @@
 #define __LOG_TILLING_DATA_H__
 
 struct LogTilingData {
-  uint64_t smallCoreDataNum;
-  uint64_t bigCoreDataNum;
-  uint64_t ubPartDataNum;
-  uint64_t smallCoreTailDataNum;
-  uint64_t bigCoreTailDataNum;
-  uint64_t smallCoreLoopNum;
-  uint64_t bigCoreLoopNum;
-  uint64_t tailBlockNum;
-  float base;
-  float scale;
-  float shift;
+    uint64_t smallCoreDataNum;
+    uint64_t bigCoreDataNum;
+    uint64_t ubPartDataNum;
+    uint64_t smallCoreTailDataNum;
+    uint64_t bigCoreTailDataNum;
+    uint64_t smallCoreLoopNum;
+    uint64_t bigCoreLoopNum;
+    uint64_t tailBlockNum;
+    float base;
+    float scale;
+    float shift;
 };
 #endif

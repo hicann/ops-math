@@ -22,7 +22,6 @@
 
 namespace optiling {
 
-
 static uint32_t BLOCK_SIZE = 32;
 const uint32_t WS_SYS_SIZE = 0;
 const uint32_t DATA_NUM_32B = 3;

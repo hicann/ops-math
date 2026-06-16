@@ -46,8 +46,7 @@ class AsinhGrad {
 public:
     __aicore__ inline AsinhGrad() {}
 
-    __aicore__ inline void Init(GM_ADDR y, GM_ADDR dy, GM_ADDR z,
-                                const AsinhGradTilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR y, GM_ADDR dy, GM_ADDR z, const AsinhGradTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -77,8 +76,7 @@ private:
 
 template <typename T, int BUFFER_MODE>
 __aicore__ inline void AsinhGrad<T, BUFFER_MODE>::Init(
-    GM_ADDR y, GM_ADDR dy, GM_ADDR z,
-    const AsinhGradTilingData* tilingData)
+    GM_ADDR y, GM_ADDR dy, GM_ADDR z, const AsinhGradTilingData* tilingData)
 {
     int64_t remainder = tilingData->totalNum - tilingData->blockFactor * GetBlockIdx();
     blockLength_ = (remainder > tilingData->blockFactor) ? tilingData->blockFactor : remainder;
@@ -108,8 +106,7 @@ __aicore__ inline void AsinhGrad<T, BUFFER_MODE>::Init(
 }
 
 template <typename T, int BUFFER_MODE>
-__aicore__ inline void AsinhGrad<T, BUFFER_MODE>::CopyIn(
-    int64_t progress, int64_t currentNum)
+__aicore__ inline void AsinhGrad<T, BUFFER_MODE>::CopyIn(int64_t progress, int64_t currentNum)
 {
     LocalTensor<T> yL = inQueY.template AllocTensor<T>();
     LocalTensor<T> dyL = inQueDy.template AllocTensor<T>();
@@ -147,12 +144,12 @@ __aicore__ inline void AsinhGrad<T, BUFFER_MODE>::Compute(int64_t currentNum)
         Cast(dyFp32, dyL, RoundMode::CAST_NONE, currentNum);
 
         // Step 2: z = 2 * dy * exp(y) / (exp(2y) + 1) in FP32 domain
-        Exp(expY, yFp32, currentNum);                    // expY = e^y
-        Mul(exp2Y, expY, expY, currentNum);              // exp2Y = e^{2y} = (e^y)^2
-        Adds(exp2Y, exp2Y, 1.0f, currentNum);            // exp2Y = e^{2y} + 1
-        Mul(zFp32, dyFp32, expY, currentNum);            // zFp32 = dy * e^y
-        Div(zFp32, zFp32, exp2Y, currentNum);            // zFp32 = (dy * e^y) / (e^{2y} + 1)
-        Muls(zFp32, zFp32, 2.0f, currentNum);            // zFp32 = 2 * (...)
+        Exp(expY, yFp32, currentNum);         // expY = e^y
+        Mul(exp2Y, expY, expY, currentNum);   // exp2Y = e^{2y} = (e^y)^2
+        Adds(exp2Y, exp2Y, 1.0f, currentNum); // exp2Y = e^{2y} + 1
+        Mul(zFp32, dyFp32, expY, currentNum); // zFp32 = dy * e^y
+        Div(zFp32, zFp32, exp2Y, currentNum); // zFp32 = (dy * e^y) / (e^{2y} + 1)
+        Muls(zFp32, zFp32, 2.0f, currentNum); // zFp32 = 2 * (...)
 
         // Step 3: Cast FP32 -> target dtype (CAST_RINT = banker's rounding)
         Cast(zL, zFp32, RoundMode::CAST_RINT, currentNum);
@@ -161,12 +158,12 @@ __aicore__ inline void AsinhGrad<T, BUFFER_MODE>::Compute(int64_t currentNum)
         LocalTensor<float> expY = tmpExpY_.Get<float>();
         LocalTensor<float> exp2Y = tmpExp2Y_.Get<float>();
 
-        Exp(expY, yL, currentNum);                       // expY = e^y
-        Mul(exp2Y, expY, expY, currentNum);              // exp2Y = e^{2y} = (e^y)^2
-        Adds(exp2Y, exp2Y, 1.0f, currentNum);            // exp2Y = e^{2y} + 1
-        Mul(zL, dyL, expY, currentNum);                  // zL = dy * e^y
-        Div(zL, zL, exp2Y, currentNum);                  // zL = (dy * e^y) / (e^{2y} + 1)
-        Muls(zL, zL, 2.0f, currentNum);                  // zL = 2 * (...)
+        Exp(expY, yL, currentNum);            // expY = e^y
+        Mul(exp2Y, expY, expY, currentNum);   // exp2Y = e^{2y} = (e^y)^2
+        Adds(exp2Y, exp2Y, 1.0f, currentNum); // exp2Y = e^{2y} + 1
+        Mul(zL, dyL, expY, currentNum);       // zL = dy * e^y
+        Div(zL, zL, exp2Y, currentNum);       // zL = (dy * e^y) / (e^{2y} + 1)
+        Muls(zL, zL, 2.0f, currentNum);       // zL = 2 * (...)
     }
 
     outQueZ.template EnQue<T>(zL);
@@ -175,8 +172,7 @@ __aicore__ inline void AsinhGrad<T, BUFFER_MODE>::Compute(int64_t currentNum)
 }
 
 template <typename T, int BUFFER_MODE>
-__aicore__ inline void AsinhGrad<T, BUFFER_MODE>::CopyOut(
-    int64_t progress, int64_t currentNum)
+__aicore__ inline void AsinhGrad<T, BUFFER_MODE>::CopyOut(int64_t progress, int64_t currentNum)
 {
     LocalTensor<T> zL = outQueZ.template DeQue<T>();
 

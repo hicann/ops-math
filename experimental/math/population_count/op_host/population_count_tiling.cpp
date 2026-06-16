@@ -34,10 +34,10 @@
 
 namespace optiling {
 
-using Ops::Base::CeilDiv;
 using Ops::Base::CeilAlign;
-using Ops::Base::FloorDiv;
+using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
@@ -50,7 +50,8 @@ constexpr int64_t PER_ELEM_BYTES_DOUBLE = 8; // Double buffer: in(2B)*2 + tmp(2B
 
 static const gert::Shape g_vec_1_shape = {1};
 
-static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape) {
+static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape)
+{
     if (in_shape.GetDimNum() == 0) {
         return g_vec_1_shape;
     }
@@ -81,10 +82,10 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
     dataType = inputDesc->GetDataType();
-    OP_CHECK_IF(supportedDtype.count(dataType) == 0,
-                OP_LOGE(context, "PopulationCount: invalid input dtype %d (must be INT16/UINT16)",
-                        static_cast<int>(dataType)),
-                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        supportedDtype.count(dataType) == 0,
+        OP_LOGE(context, "PopulationCount: invalid input dtype %d (must be INT16/UINT16)", static_cast<int>(dataType)),
+        return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -102,8 +103,7 @@ static ge::graphStatus PopulationCountTilingFunc(gert::TilingContext* context)
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
     OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"),
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
         return ge::GRAPH_FAILED);
 
     // 2. Shape / dtype
@@ -111,8 +111,7 @@ static ge::graphStatus PopulationCountTilingFunc(gert::TilingContext* context)
     ge::DataType dataType = ge::DT_UNDEFINED;
     OP_CHECK_IF(
         GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeAttrsInfo error"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     // 3. Empty tensor fast-path (short-circuit BEFORE GetWorkspaceSize and blockFactor division).
     //    Kernel guards with totalNum==0 check; here we only need to:
@@ -125,11 +124,10 @@ static ge::graphStatus PopulationCountTilingFunc(gert::TilingContext* context)
         OP_CHECK_NULL_WITH_CONTEXT(context, emptyTiling);
         OP_CHECK_IF(
             memset_s(emptyTiling, sizeof(PopulationCountTilingData), 0, sizeof(PopulationCountTilingData)) != EOK,
-            OP_LOGE(context, "memset tiling data error (empty tensor)"),
-            return ge::GRAPH_FAILED);
-        emptyTiling->totalNum    = 0;
+            OP_LOGE(context, "memset tiling data error (empty tensor)"), return ge::GRAPH_FAILED);
+        emptyTiling->totalNum = 0;
         emptyTiling->blockFactor = 0;
-        emptyTiling->ubFactor    = 0;
+        emptyTiling->ubFactor = 0;
 
         size_t* emptyWorkspace = context->GetWorkspaceSizes(1);
         OP_CHECK_NULL_WITH_CONTEXT(context, emptyWorkspace);
@@ -144,8 +142,7 @@ static ge::graphStatus PopulationCountTilingFunc(gert::TilingContext* context)
 
     // 4. Workspace
     OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"),
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
         return ge::GRAPH_FAILED);
 
     // 5. TilingData
@@ -153,8 +150,7 @@ static ge::graphStatus PopulationCountTilingFunc(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
     OP_CHECK_IF(
         memset_s(tiling, sizeof(PopulationCountTilingData), 0, sizeof(PopulationCountTilingData)) != EOK,
-        OP_LOGE(context, "memset tiling data error"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "memset tiling data error"), return ge::GRAPH_FAILED);
 
     tiling->totalNum = totalIdx;
 

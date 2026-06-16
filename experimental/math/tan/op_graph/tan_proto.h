@@ -13,7 +13,6 @@
  * technically reviewed for functional accuracy and security
  */
 
- 
 /**
  * \file tan_proto.h
  * \brief Tan operator graph-mode (GE IR) proto registration

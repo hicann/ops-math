@@ -41,19 +41,20 @@
         }                            \
     } while (0)
 
-#define CHECK_ACL(expr)                                              \
-    do {                                                             \
-        auto _ret = (expr);                                          \
-        if (_ret != ACL_SUCCESS) {                                   \
-            LOG_PRINT("[ERROR] %s failed, ret = %d", #expr, _ret);   \
-            return _ret;                                             \
-        }                                                            \
+#define CHECK_ACL(expr)                                            \
+    do {                                                           \
+        auto _ret = (expr);                                        \
+        if (_ret != ACL_SUCCESS) {                                 \
+            LOG_PRINT("[ERROR] %s failed, ret = %d", #expr, _ret); \
+            return _ret;                                           \
+        }                                                          \
     } while (0)
 
 // ---------------------------------------------------------------------------
 // Utility: compute contiguous strides from shape
 // ---------------------------------------------------------------------------
-std::vector<int64_t> ComputeStrides(const std::vector<int64_t>& shape) {
+std::vector<int64_t> ComputeStrides(const std::vector<int64_t>& shape)
+{
     std::vector<int64_t> strides(shape.size(), 1);
     for (int64_t i = static_cast<int64_t>(shape.size()) - 2; i >= 0; --i) {
         strides[i] = shape[i + 1] * strides[i + 1];
@@ -64,21 +65,21 @@ std::vector<int64_t> ComputeStrides(const std::vector<int64_t>& shape) {
 // ---------------------------------------------------------------------------
 // Utility: total number of elements
 // ---------------------------------------------------------------------------
-int64_t GetNumElements(const std::vector<int64_t>& shape) {
+int64_t GetNumElements(const std::vector<int64_t>& shape)
+{
     int64_t n = 1;
-    for (auto d : shape) n *= d;
+    for (auto d : shape)
+        n *= d;
     return n;
 }
 
 // ---------------------------------------------------------------------------
 // Create an aclTensor backed by device memory, copying hostData to device
 // ---------------------------------------------------------------------------
-int CreateAclTensor(const void* hostData,
-                    size_t byteSize,
-                    const std::vector<int64_t>& shape,
-                    aclDataType dtype,
-                    void** deviceAddr,
-                    aclTensor** tensor) {
+int CreateAclTensor(
+    const void* hostData, size_t byteSize, const std::vector<int64_t>& shape, aclDataType dtype, void** deviceAddr,
+    aclTensor** tensor)
+{
     auto ret = aclrtMalloc(deviceAddr, byteSize, ACL_MEM_MALLOC_HUGE_FIRST);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
@@ -86,16 +87,17 @@ int CreateAclTensor(const void* hostData,
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     auto strides = ComputeStrides(shape);
-    *tensor = aclCreateTensor(shape.data(), shape.size(), dtype, strides.data(),
-                              0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
-                              *deviceAddr);
+    *tensor = aclCreateTensor(
+        shape.data(), shape.size(), dtype, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
+        *deviceAddr);
     return ACL_SUCCESS;
 }
 
 // ---------------------------------------------------------------------------
 // CPU golden: dx = dy / sqrt(1 - x*x)   (double precision intermediate)
 // ---------------------------------------------------------------------------
-void ComputeGolden(const float* dy, const float* x, float* dx, size_t n) {
+void ComputeGolden(const float* dy, const float* x, float* dx, size_t n)
+{
     for (size_t i = 0; i < n; ++i) {
         double xd = static_cast<double>(x[i]);
         double dyd = static_cast<double>(dy[i]);
@@ -106,8 +108,9 @@ void ComputeGolden(const float* dy, const float* x, float* dx, size_t n) {
 // ---------------------------------------------------------------------------
 // Verify: MERE / MARE check (threshold = 2^-13 for fp32)
 // ---------------------------------------------------------------------------
-bool VerifyResults(const float* golden, const float* actual, size_t n) {
-    const double threshold = 1.220703125e-4;  // 2^-13
+bool VerifyResults(const float* golden, const float* actual, size_t n)
+{
+    const double threshold = 1.220703125e-4; // 2^-13
     double mere_sum = 0.0;
     double mare = 0.0;
     size_t finite_count = 0;
@@ -133,7 +136,8 @@ bool VerifyResults(const float* golden, const float* actual, size_t n) {
 
         double rel_err = std::abs(a - g) / (std::abs(g) + 1e-7);
         mere_sum += rel_err;
-        if (rel_err > mare) mare = rel_err;
+        if (rel_err > mare)
+            mare = rel_err;
         finite_count++;
     }
 
@@ -146,8 +150,8 @@ bool VerifyResults(const float* golden, const float* actual, size_t n) {
     bool pass = (mere < threshold) && (mare < 10.0 * threshold);
 
     if (pass) {
-        LOG_PRINT("[PASS] MERE=%.2e, MARE=%.2e (threshold=%.2e, %zu finite elems)",
-                  mere, mare, threshold, finite_count);
+        LOG_PRINT(
+            "[PASS] MERE=%.2e, MARE=%.2e (threshold=%.2e, %zu finite elems)", mere, mare, threshold, finite_count);
     } else {
         LOG_PRINT("[FAIL] MERE=%.2e, MARE=%.2e (threshold=%.2e)", mere, mare, threshold);
     }
@@ -157,7 +161,8 @@ bool VerifyResults(const float* golden, const float* actual, size_t n) {
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
-int main() {
+int main()
+{
     LOG_PRINT("========================================");
     LOG_PRINT("AsinGrad ACLNN Call Example (fp32)");
     LOG_PRINT("========================================");
@@ -179,8 +184,8 @@ int main() {
     std::vector<float> x_host(numel);
     for (int64_t i = 0; i < numel; ++i) {
         float t = static_cast<float>(i) / static_cast<float>(numel - 1);
-        dy_host[i] = -1.0f + 2.0f * t;           // [-1, 1]
-        x_host[i]  = -0.9f + 1.8f * t;           // [-0.9, 0.9]
+        dy_host[i] = -1.0f + 2.0f * t; // [-1, 1]
+        x_host[i] = -0.9f + 1.8f * t;  // [-0.9, 0.9]
     }
 
     // Output buffer (zeros)
@@ -188,22 +193,21 @@ int main() {
 
     // ----- 3. Create aclTensors (host -> device) -----
     void* dy_dev = nullptr;
-    void* x_dev  = nullptr;
+    void* x_dev = nullptr;
     void* dx_dev = nullptr;
     aclTensor* dy_tensor = nullptr;
-    aclTensor* x_tensor  = nullptr;
+    aclTensor* x_tensor = nullptr;
     aclTensor* dx_tensor = nullptr;
 
     CHECK_ACL(CreateAclTensor(dy_host.data(), byteSize, shape, ACL_FLOAT, &dy_dev, &dy_tensor));
-    CHECK_ACL(CreateAclTensor(x_host.data(),  byteSize, shape, ACL_FLOAT, &x_dev,  &x_tensor));
+    CHECK_ACL(CreateAclTensor(x_host.data(), byteSize, shape, ACL_FLOAT, &x_dev, &x_tensor));
     CHECK_ACL(CreateAclTensor(dx_host.data(), byteSize, shape, ACL_FLOAT, &dx_dev, &dx_tensor));
 
     // ----- 4. Phase 1: GetWorkspaceSize -----
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor = nullptr;
 
-    auto ret = aclnnAsinGradGetWorkspaceSize(dy_tensor, x_tensor, dx_tensor,
-                                              &workspaceSize, &executor);
+    auto ret = aclnnAsinGradGetWorkspaceSize(dy_tensor, x_tensor, dx_tensor, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("[ERROR] GetWorkspaceSize failed: %d", ret); return 1);
     LOG_PRINT("workspaceSize = %lu", workspaceSize);
 
@@ -243,10 +247,14 @@ int main() {
 
     // ----- 9. Cleanup -----
     aclrtDestroyStream(stream);
-    if (workspace) aclrtFree(workspace);
-    aclDestroyTensor(dy_tensor); aclrtFree(dy_dev);
-    aclDestroyTensor(x_tensor);  aclrtFree(x_dev);
-    aclDestroyTensor(dx_tensor); aclrtFree(dx_dev);
+    if (workspace)
+        aclrtFree(workspace);
+    aclDestroyTensor(dy_tensor);
+    aclrtFree(dy_dev);
+    aclDestroyTensor(x_tensor);
+    aclrtFree(x_dev);
+    aclDestroyTensor(dx_tensor);
+    aclrtFree(dx_dev);
     aclrtResetDevice(deviceId);
     aclFinalize();
 

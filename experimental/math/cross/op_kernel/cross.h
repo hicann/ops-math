@@ -1,12 +1,12 @@
 /**
-* Copyright (c) 2026 Huawei Technologies Co., Ltd.
-* This program is free software, you can redistribute it and/or modify it under the terms and conditions of
-* CANN Open Software License Agreement Version 2.0 (the "License").
-* Please refer to the License for details. You may not use this file except in compliance with the License.
-* THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-* INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
-* See LICENSE in the root of the software repository for the full text of the License.
-*/
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file cross.h
@@ -233,14 +233,12 @@ __aicore__ inline void Cross<T>::CopyIn(int64_t baseIdx, int64_t count)
         DataCopyPad(
             x1Local[alignedCount], inputGMX[baseIdx + this->intervalNum + alignedCount], copyInParams, padInParams);
         DataCopyPad(
-            x2Local[alignedCount], inputGMX[baseIdx + 2 * this->intervalNum + alignedCount], copyInParams,
-            padInParams);
+            x2Local[alignedCount], inputGMX[baseIdx + 2 * this->intervalNum + alignedCount], copyInParams, padInParams);
         DataCopyPad(y0Local[alignedCount], inputGMY[baseIdx + alignedCount], copyInParams, padInParams);
         DataCopyPad(
             y1Local[alignedCount], inputGMY[baseIdx + this->intervalNum + alignedCount], copyInParams, padInParams);
         DataCopyPad(
-            y2Local[alignedCount], inputGMY[baseIdx + 2 * this->intervalNum + alignedCount], copyInParams,
-            padInParams);
+            y2Local[alignedCount], inputGMY[baseIdx + 2 * this->intervalNum + alignedCount], copyInParams, padInParams);
     }
     x0Queue.EnQue(x0Local);
     x1Queue.EnQue(x1Local);
@@ -336,8 +334,8 @@ __aicore__ inline void Cross<T>::Compute(int64_t count)
         LocalTensor<float> y0Fp32 = tmpBuf3.Get<float>();
         LocalTensor<float> y1Fp32 = tmpBuf4.Get<float>();
         LocalTensor<float> y2Fp32 = tmpBuf5.Get<float>();
-        LocalTensor<float> tmpA   = tmpBuf6.Get<float>();
-        LocalTensor<float> tmpB   = tmpBuf7.Get<float>();
+        LocalTensor<float> tmpA = tmpBuf6.Get<float>();
+        LocalTensor<float> tmpB = tmpBuf7.Get<float>();
 
         AscendC::Cast(x0Fp32, x0Local, AscendC::RoundMode::CAST_NONE, count);
         AscendC::Cast(x1Fp32, x1Local, AscendC::RoundMode::CAST_NONE, count);
@@ -447,8 +445,7 @@ __aicore__ inline void Cross<T>::CopyOut(int64_t baseIdx, int64_t count)
     }
 
     if (tailCount > 0) {
-        DataCopyExtParams copyOutParams{
-            1, static_cast<uint32_t>(tailCount * static_cast<int64_t>(sizeof(T))), 0, 0, 0};
+        DataCopyExtParams copyOutParams{1, static_cast<uint32_t>(tailCount * static_cast<int64_t>(sizeof(T))), 0, 0, 0};
         DataCopyPad(outputGMZ[baseIdx + alignedCount], z0Local[alignedCount], copyOutParams);
         DataCopyPad(outputGMZ[baseIdx + this->intervalNum + alignedCount], z1Local[alignedCount], copyOutParams);
         DataCopyPad(outputGMZ[baseIdx + 2 * this->intervalNum + alignedCount], z2Local[alignedCount], copyOutParams);

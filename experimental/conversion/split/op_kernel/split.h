@@ -36,8 +36,8 @@ namespace NsSplit {
 using namespace AscendC;
 
 constexpr int32_t BUFFER_NUM = 2;
-constexpr uint32_t INDICES_LIMIT = 10; 
-constexpr uint32_t DIM_LIMIT = 8; 
+constexpr uint32_t INDICES_LIMIT = 10;
+constexpr uint32_t DIM_LIMIT = 8;
 
 template <typename T>
 class Split {
@@ -83,19 +83,20 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void Split<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, SplitTilingData* tilingData, TPipe* pipe_)
+__aicore__ inline void Split<T>::Init(
+    GM_ADDR x, GM_ADDR y, GM_ADDR workspace, SplitTilingData* tilingData, TPipe* pipe_)
 {
     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
     pipe = pipe_;
     uint32_t coreIdx = GetBlockIdx();
-    this-> globalBufferIndex = tilingData->bigCoreDataNum * coreIdx;
+    this->globalBufferIndex = tilingData->bigCoreDataNum * coreIdx;
     this->tileDataNum = tilingData->tileDataNum;
     this->blockSize = tilingData->blockSize;
     this->srcdim = tilingData->srcdim;
     this->totalNums = tilingData->totalNums;
     this->unit = tilingData->unit;
     this->indices_len = tilingData->indices_len;
-    this->ybase = y;//标记tensorlist起始地址
+    this->ybase = y; // 标记tensorlist起始地址
     this->axis = tilingData->axis;
     this->isEven = tilingData->isEven;
     for (int i = 0; i < INDICES_LIMIT; ++i) {
@@ -107,22 +108,22 @@ __aicore__ inline void Split<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, S
         this->shape[i] = tilingData->shape[i];
     }
     if (coreIdx < tilingData->tailBlockNum) {
-        this->coreDataNum = tilingData->bigCoreDataNum;//（单位：元素数）
+        this->coreDataNum = tilingData->bigCoreDataNum; // （单位：元素数）
         this->tileNum = tilingData->finalBigTileNum;
         this->tailDataNum = tilingData->bigTailDataNum;
     } else {
         this->coreDataNum = tilingData->smallCoreDataNum;
         this->tileNum = tilingData->finalSmallTileNum;
         this->tailDataNum = tilingData->smallTailDataNum;
-        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (coreIdx - tilingData->tailBlockNum);
+        globalBufferIndex -=
+            (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (coreIdx - tilingData->tailBlockNum);
     }
-    xGm.SetGlobalBuffer((__gm__ T*)x );
+    xGm.SetGlobalBuffer((__gm__ T*)x);
     workGm.SetGlobalBuffer((__gm__ T*)workspace);
     // 分配本地缓冲区（双缓冲）
     pipe->InitBuffer(outQueue, BUFFER_NUM, this->tileDataNum * sizeof(T));
     pipe->InitBuffer(WorkBuf, this->tileDataNum * sizeof(T));
 }
-
 
 template <typename T>
 __aicore__ inline void Split<T>::CopyWorkIn(int32_t progress)
@@ -142,7 +143,7 @@ __aicore__ inline void Split<T>::CopyWorkIn(int32_t progress)
 template <typename T>
 __aicore__ inline void Split<T>::CopyOutIsEven(int32_t progress)
 {
-    LocalTensor<T> yLocal = outQueue.DeQue<T>();  
+    LocalTensor<T> yLocal = outQueue.DeQue<T>();
     uint32_t tileStart = globalBufferIndex + static_cast<uint32_t>(progress) * tileDataNum;
     uint32_t remaining = processDataNum;
 
@@ -177,7 +178,7 @@ __aicore__ inline void Split<T>::CopyOutIsEven(int32_t progress)
 template <typename T>
 __aicore__ inline void Split<T>::CopyOutNotEven(int32_t progress)
 {
-    LocalTensor<T> yLocal = outQueue.DeQue<T>();  
+    LocalTensor<T> yLocal = outQueue.DeQue<T>();
     uint32_t tileStart = globalBufferIndex + static_cast<uint32_t>(progress) * tileDataNum;
     uint32_t remaining = processDataNum;
 
@@ -185,7 +186,8 @@ __aicore__ inline void Split<T>::CopyOutNotEven(int32_t progress)
     uint32_t acc = 0;
     while (outIdx <= indices_len) {
         uint32_t len = splitLen[outIdx];
-        if (tileStart < acc + len) break;
+        if (tileStart < acc + len)
+            break;
         acc += len;
         ++outIdx;
     }
@@ -213,7 +215,6 @@ __aicore__ inline void Split<T>::CopyOutNotEven(int32_t progress)
     outQueue.FreeTensor(yLocal);
 }
 
-
 template <typename T>
 __aicore__ inline void Split<T>::Compute(int32_t progress)
 {
@@ -222,8 +223,8 @@ __aicore__ inline void Split<T>::Compute(int32_t progress)
     for (uint32_t i = 0; i < processDataNum; ++i) {
         uint32_t globalIdx = linearBase + i;
         if (globalIdx >= totalNums) {
-            break;// 防越界
-        } 
+            break; // 防越界
+        }
         uint32_t relIdx = globalIdx;
         uint32_t InOffset = 0;
 
@@ -235,7 +236,7 @@ __aicore__ inline void Split<T>::Compute(int32_t progress)
             sliceIdx = relIdx / sliceLen;
             localIndex = relIdx % sliceLen;
             InOffset = CalIndexEven(shape, srcdim, axis, section, localIndex, sliceIdx, unit);
-        }else{
+        } else {
             uint32_t acc = 0;
             bool found = false;
             for (uint32_t s = 0; s <= indices_len; ++s) {
@@ -255,7 +256,8 @@ __aicore__ inline void Split<T>::Compute(int32_t progress)
                 sliceIdx = indices_len; // 最后一个 slice
                 localIndex = 0;
             }
-            InOffset = CalIndexByIndices(shape, srcdim, axis, indices_or_sections, indices_len, localIndex, sliceIdx, unit);
+            InOffset =
+                CalIndexByIndices(shape, srcdim, axis, indices_or_sections, indices_len, localIndex, sliceIdx, unit);
         }
         T origalValue = xGm.GetValue(InOffset);
         workLocal.SetValue(i, origalValue);

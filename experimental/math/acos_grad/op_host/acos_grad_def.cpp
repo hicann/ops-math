@@ -25,10 +25,8 @@ class AcosGrad : public OpDef {
 public:
     explicit AcosGrad(const char* name) : OpDef(name)
     {
-        const std::vector<ge::DataType> AcosGradXDataType = {
-        ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16};
-        const std::vector<ge::Format> AcosGradXFormat = {
-        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+        const std::vector<ge::DataType> AcosGradXDataType = {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16};
+        const std::vector<ge::Format> AcosGradXFormat = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
 
         this->Input("y_grad")
             .ParamType(REQUIRED)

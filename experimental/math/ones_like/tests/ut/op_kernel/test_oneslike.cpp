@@ -37,10 +37,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./ones_like_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "ones_like_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "ones_like_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;
@@ -83,7 +80,6 @@ TEST_F(OnesLikeTest, test_case_float16_1)
     tiling->tailTileLength = 8192;
     tiling->tailTileNum = 1;
     tiling->tailLastTileLength = 8192;
-
 
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     auto func = ones_like<ELEMENTWISE_TPL_SCH_MODE_0>;

@@ -22,10 +22,9 @@
 
 namespace optiling {
 
-
 #define BLOCK_SIZE 32U
 #define UB_DATA_NUM_UINT8 16U // 对应DT_FLOAT, DT_INT32, DT_UINT32类型的ub分块数量
-#define UB_DATA_NUM_OTHER 8U // 对应DT_FLOAT16, DT_BFLOAT16, DT_INT16, DT_UINT16其他数据类型的ub分块数量
+#define UB_DATA_NUM_OTHER 8U  // 对应DT_FLOAT16, DT_BFLOAT16, DT_INT16, DT_UINT16其他数据类型的ub分块数量
 constexpr uint32_t BUFFER_NUM = 2;
 constexpr uint32_t WS_SYS_SIZE = 0;
 constexpr uint32_t RESERVED_UB_SIZE = 8 * 1024; // ub固定预留8k
@@ -75,8 +74,7 @@ static ge::graphStatus GetShapeAttrsInfo(
         return ge::GRAPH_FAILED;
     }
     inputBytes = inputLength / inputNum;
-    uint64_t ubDataNumber =
-        (typeLength == sizeof(uint8_t)) ? UB_DATA_NUM_UINT8 : UB_DATA_NUM_OTHER;
+    uint64_t ubDataNumber = (typeLength == sizeof(uint8_t)) ? UB_DATA_NUM_UINT8 : UB_DATA_NUM_OTHER;
     tileBlockNum = (ubSize / BLOCK_SIZE) / ubDataNumber;
     if (inputBytes == 0) {
         return ge::GRAPH_FAILED;

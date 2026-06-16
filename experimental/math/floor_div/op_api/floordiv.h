@@ -14,8 +14,8 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-  const aclTensor* FloorDiv(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor);
-  const aclTensor* FloorDiv(const aclTensor* self, const aclTensor* other, bool isScalar, aclOpExecutor* executor);
-}
+const aclTensor* FloorDiv(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor);
+const aclTensor* FloorDiv(const aclTensor* self, const aclTensor* other, bool isScalar, aclOpExecutor* executor);
+} // namespace l0op
 
 #endif // PTA_NPU_OP_API_INC_LEVEL0_OP_FLOOR_DIV_OP_H_

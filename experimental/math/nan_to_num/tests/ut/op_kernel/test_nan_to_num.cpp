@@ -42,10 +42,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./nan_to_num_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "nan_to_num_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "nan_to_num_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;

@@ -24,12 +24,12 @@
 
 namespace optiling {
 
-//SINGLE_BUFFER
+// SINGLE_BUFFER
 #define UB_NUM_INT32_ONE 1U
 #define UB_NUM_FLOAT_ONE 3U
 #define UB_NUM_INT8_ONE 22U
 #define UB_NUM_FLOAT16_BF16_ONE 7U
-//DOUBLE_BUFFER
+// DOUBLE_BUFFER
 #define UB_NUM_INT32_TWO 2U
 #define UB_NUM_FLOAT_TWO 6U
 #define UB_NUM_INT8_TWO 24U
@@ -46,7 +46,8 @@ static ge::graphStatus TilingParseForRsqrtGrad([[maybe_unused]] gert::TilingPars
 }
 
 // 获取平台信息如ubSize, coreNum
-static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& ubSize, int64_t& coreNum, uint64_t& BLOCK_SIZE)
+static ge::graphStatus GetPlatformInfo(
+    gert::TilingContext* context, uint64_t& ubSize, int64_t& coreNum, uint64_t& BLOCK_SIZE)
 {
     OP_CHECK_IF(context == nullptr, OP_LOGE(context, "context is nullptr"), return ge::GRAPH_FAILED);
     // 获取ubsize coreNum
@@ -73,11 +74,10 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 }
 
 static ge::graphStatus GetShapeAttrsInfo(
-    gert::TilingContext* context, uint64_t BLOCK_SIZE, uint64_t ubSize, int64_t coreNum, uint64_t& bufferOpen, uint64_t& inputNum, uint64_t& inputBytes, uint64_t& tileBlockNum,
-    uint64_t& tileDataNum, uint64_t& inputLengthAlgin)
+    gert::TilingContext* context, uint64_t BLOCK_SIZE, uint64_t ubSize, int64_t coreNum, uint64_t& bufferOpen,
+    uint64_t& inputNum, uint64_t& inputBytes, uint64_t& tileBlockNum, uint64_t& tileDataNum, uint64_t& inputLengthAlgin)
 {
-    OP_CHECK_IF(
-        context == nullptr, OP_LOGE(context, "context is nullptr"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(context == nullptr, OP_LOGE(context, "context is nullptr"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         context->GetInputShape(0) == nullptr, OP_LOGE(context, "context->GetInputShape(0) is nullptr"),
         return ge::GRAPH_FAILED);
@@ -92,7 +92,7 @@ static ge::graphStatus GetShapeAttrsInfo(
     inputBytes = inputLength / inputNum;
     uint64_t ubDataNumber = 0U;
     inputLengthAlgin = (((inputLength + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE);
-    //buffer 是否开启，每个核上对齐后的数据量小于ub空间时不开启，默认开启
+    // buffer 是否开启，每个核上对齐后的数据量小于ub空间时不开启，默认开启
     bufferOpen = 1;
     if (UB_NUM_INT8_ONE == 0 || UB_NUM_FLOAT16_BF16_ONE == 0) {
         OP_LOGE(context, "UB_NUM_INT8_ONE or UB_NUM_FLOAT16_BF16_ONE is 0");
@@ -107,28 +107,30 @@ static ge::graphStatus GetShapeAttrsInfo(
             bufferOpen = 0;
             ubDataNumber = UB_NUM_INT8_ONE;
         } else {
-            ubDataNumber = UB_NUM_INT8_TWO;   
+            ubDataNumber = UB_NUM_INT8_TWO;
         }
-    } else if ((context->GetInputDesc(0)->GetDataType() == ge::DT_BF16) || (context->GetInputDesc(0)->GetDataType() == ge::DT_FLOAT16)) {
+    } else if (
+        (context->GetInputDesc(0)->GetDataType() == ge::DT_BF16) ||
+        (context->GetInputDesc(0)->GetDataType() == ge::DT_FLOAT16)) {
         if (inputLengthAlgin < coreNum * (((ubSize / BLOCK_SIZE) * BLOCK_SIZE) / UB_NUM_FLOAT16_BF16_ONE)) {
             bufferOpen = 0;
             ubDataNumber = UB_NUM_FLOAT16_BF16_ONE;
         } else {
-            ubDataNumber = UB_NUM_FLOAT16_BF16_TWO;   
+            ubDataNumber = UB_NUM_FLOAT16_BF16_TWO;
         }
     } else if (context->GetInputDesc(0)->GetDataType() == ge::DT_INT32) {
         if (inputLengthAlgin < coreNum * (((ubSize / BLOCK_SIZE) * BLOCK_SIZE) / UB_NUM_INT32_ONE)) {
             bufferOpen = 0;
             ubDataNumber = UB_NUM_INT32_ONE;
         } else {
-            ubDataNumber = UB_NUM_INT32_TWO;   
+            ubDataNumber = UB_NUM_INT32_TWO;
         }
     } else {
         if (inputLengthAlgin < coreNum * (((ubSize / BLOCK_SIZE) * BLOCK_SIZE) / UB_NUM_FLOAT_ONE)) {
             bufferOpen = 0;
             ubDataNumber = UB_NUM_FLOAT_ONE;
         } else {
-            ubDataNumber = UB_NUM_FLOAT_TWO;   
+            ubDataNumber = UB_NUM_FLOAT_TWO;
         }
     }
     if (ubDataNumber == 0 || inputBytes == 0) {
@@ -141,9 +143,10 @@ static ge::graphStatus GetShapeAttrsInfo(
 }
 
 static ge::graphStatus CalculateCoreBlockNums(
-    gert::TilingContext* context, uint64_t BLOCK_SIZE, uint64_t inputLengthAlgin, int64_t coreNum, uint64_t tileBlockNum, uint64_t inputBytes,
-    uint64_t tileDataNum, uint64_t& smallCoreDataNum, uint64_t& bigCoreDataNum, uint64_t& smallTailDataNum, uint64_t& bigTailDataNum, 
-    uint64_t& finalSmallTileNum, uint64_t& finalBigTileNum, uint64_t& tailBlockNum)
+    gert::TilingContext* context, uint64_t BLOCK_SIZE, uint64_t inputLengthAlgin, int64_t coreNum,
+    uint64_t tileBlockNum, uint64_t inputBytes, uint64_t tileDataNum, uint64_t& smallCoreDataNum,
+    uint64_t& bigCoreDataNum, uint64_t& smallTailDataNum, uint64_t& bigTailDataNum, uint64_t& finalSmallTileNum,
+    uint64_t& finalBigTileNum, uint64_t& tailBlockNum)
 {
     if (0 == BLOCK_SIZE || 0 == coreNum || 0 == tileBlockNum || 0 == inputBytes) {
         OP_LOGE(context, "BLOCK_SIZE or coreNum or tileBlockNum or inputBytes is 0");
@@ -178,7 +181,9 @@ static ge::graphStatus RsqrtGradTilingFunc(gert::TilingContext* context)
     OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
     // 2、获取shape、属性信息
     uint64_t inputNum, inputBytes, tileBlockNum, tileDataNum, inputLengthAlgin;
-    ret = GetShapeAttrsInfo(context, BLOCK_SIZE, ubSize, coreNum, bufferOpen, inputNum, inputBytes, tileBlockNum, tileDataNum, inputLengthAlgin);
+    ret = GetShapeAttrsInfo(
+        context, BLOCK_SIZE, ubSize, coreNum, bufferOpen, inputNum, inputBytes, tileBlockNum, tileDataNum,
+        inputLengthAlgin);
     OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
     // 3、获取WorkspaceSize信息
     OP_CHECK_IF(
@@ -194,13 +199,15 @@ static ge::graphStatus RsqrtGradTilingFunc(gert::TilingContext* context)
     if (tileDataNum >= inputNum) {
         coreNum = 1;
     } else {
-        coreNum = (static_cast<uint64_t>(coreNum) < inputLengthAlgin / BLOCK_SIZE) ? coreNum : inputLengthAlgin / BLOCK_SIZE;
+        coreNum =
+            (static_cast<uint64_t>(coreNum) < inputLengthAlgin / BLOCK_SIZE) ? coreNum : inputLengthAlgin / BLOCK_SIZE;
     }
     // 计算每个core处理的数据块数
-    uint64_t smallCoreDataNum, bigCoreDataNum, smallTailDataNum, bigTailDataNum, finalSmallTileNum, finalBigTileNum, tailBlockNum;
+    uint64_t smallCoreDataNum, bigCoreDataNum, smallTailDataNum, bigTailDataNum, finalSmallTileNum, finalBigTileNum,
+        tailBlockNum;
     ret = CalculateCoreBlockNums(
-        context, BLOCK_SIZE, inputLengthAlgin, coreNum, tileBlockNum, inputBytes, tileDataNum, smallCoreDataNum, bigCoreDataNum,
-        smallTailDataNum, bigTailDataNum, finalSmallTileNum, finalBigTileNum, tailBlockNum);
+        context, BLOCK_SIZE, inputLengthAlgin, coreNum, tileBlockNum, inputBytes, tileDataNum, smallCoreDataNum,
+        bigCoreDataNum, smallTailDataNum, bigTailDataNum, finalSmallTileNum, finalBigTileNum, tailBlockNum);
     OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "CalculateCoreBlockNums error"), return ge::GRAPH_FAILED);
     // 设置tiling数据
     tiling->smallCoreDataNum = static_cast<uint64_t>(smallCoreDataNum);
@@ -210,7 +217,7 @@ static ge::graphStatus RsqrtGradTilingFunc(gert::TilingContext* context)
     tiling->bigTailDataNum = static_cast<uint64_t>(bigTailDataNum);
     tiling->finalSmallTileNum = static_cast<uint64_t>(finalSmallTileNum);
     tiling->finalBigTileNum = static_cast<uint64_t>(finalBigTileNum);
-    tiling->tailBlockNum = static_cast<uint64_t>(tailBlockNum);  
+    tiling->tailBlockNum = static_cast<uint64_t>(tailBlockNum);
 
     tiling->bufferOpen = static_cast<uint64_t>(bufferOpen);
 

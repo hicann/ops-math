@@ -21,7 +21,7 @@
 /*!
  * \file pad_v2.cpp
  * \brief
-*/
+ */
 #include "register/op_def_registry.h"
 
 namespace ops {
@@ -29,50 +29,31 @@ class PadV2 : public OpDef {
 public:
     explicit PadV2(const char* name) : OpDef(name)
     {
-        this->Input("x")                                       // 输入x定义
-            .ParamType(REQUIRED)                                // 必选输入
-            .DataType({ge::DT_FLOAT,  ge::DT_FLOAT16,  ge::DT_INT16,  ge::DT_INT32})             // 支持数据类型
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})             // 支持format格式
-            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND}) // 未确定大小shape对应format格式
-            .AutoContiguous();                                  // 内存自动连续化
-        this->Output("y") // 输出y定义
+        this->Input("x")                                                          // 输入x定义
+            .ParamType(REQUIRED)                                                  // 必选输入
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT16, ge::DT_INT32}) // 支持数据类型
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND}) // 支持format格式
+            .UnknownShapeFormat(
+                {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND}) // 未确定大小shape对应format格式
+            .AutoContiguous();                                                // 内存自动连续化
+        this->Output("y")                                                     // 输出y定义
             .ParamType(REQUIRED)
-            .DataType({ge::DT_FLOAT,  ge::DT_FLOAT16,  ge::DT_INT16,  ge::DT_INT32}) 
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})  
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT16, ge::DT_INT32})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
 
-        this->Attr("mode")
-            .AttrType(OPTIONAL)
-            .Int();
-        this->Attr("value")
-            .AttrType(OPTIONAL)
-            .Int();
-        this->Attr("pad0")
-            .AttrType(OPTIONAL)
-            .Int();
-        this->Attr("pad1")
-            .AttrType(OPTIONAL)
-            .Int();
-        this->Attr("pad2")
-            .AttrType(OPTIONAL)
-            .Int();
-        this->Attr("pad3")
-            .AttrType(OPTIONAL)
-            .Int();
-        this->Attr("pad4")
-            .AttrType(OPTIONAL)
-            .Int();
-        this->Attr("pad5")
-            .AttrType(OPTIONAL)
-            .Int();
-        this->Attr("pad6")
-            .AttrType(OPTIONAL)
-            .Int();
-        this->Attr("pad7")
-            .AttrType(OPTIONAL)
-            .Int();
-            
+        this->Attr("mode").AttrType(OPTIONAL).Int();
+        this->Attr("value").AttrType(OPTIONAL).Int();
+        this->Attr("pad0").AttrType(OPTIONAL).Int();
+        this->Attr("pad1").AttrType(OPTIONAL).Int();
+        this->Attr("pad2").AttrType(OPTIONAL).Int();
+        this->Attr("pad3").AttrType(OPTIONAL).Int();
+        this->Attr("pad4").AttrType(OPTIONAL).Int();
+        this->Attr("pad5").AttrType(OPTIONAL).Int();
+        this->Attr("pad6").AttrType(OPTIONAL).Int();
+        this->Attr("pad7").AttrType(OPTIONAL).Int();
+
         OpAICoreConfig aicoreConfig;
         aicoreConfig.DynamicCompileStaticFlag(true)
             .DynamicFormatFlag(false)
@@ -80,7 +61,7 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
-            .ExtendCfgInfo("opFile.value", "pad_v2");    // 这里制定的值会对应到kernel入口文件名.cpp
+            .ExtendCfgInfo("opFile.value", "pad_v2");         // 这里制定的值会对应到kernel入口文件名.cpp
         this->AICore().AddConfig("ascend910b", aicoreConfig); // 其他的soc版本补充部分配置项
     }
 };

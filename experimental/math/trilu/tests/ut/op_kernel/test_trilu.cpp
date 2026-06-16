@@ -33,14 +33,8 @@ inline T1 CeilAlign(T1 a, T2 b)
 
 class TriluKernelTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "TriluKernelTest SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "TriluKernelTest TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "TriluKernelTest SetUp" << std::endl; }
+    static void TearDownTestCase() { std::cout << "TriluKernelTest TearDown" << std::endl; }
 };
 
 TEST_F(TriluKernelTest, test_case_triu_int32)

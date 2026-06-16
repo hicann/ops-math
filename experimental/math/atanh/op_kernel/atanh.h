@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
+
 /**
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
@@ -42,7 +42,7 @@ class Atanh {
     static constexpr int32_t BUFFER_NUM = BUFFER_MODE ? 2 : 1;
 
 public:
-    __aicore__ inline Atanh() {};
+    __aicore__ inline Atanh(){};
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const AtanhTilingData* tilingData);
     __aicore__ inline void Process();
@@ -58,7 +58,7 @@ private:
     TQue<QuePosition::VECOUT, BUFFER_NUM> outputQueueY;
     TBuf<QuePosition::VECCALC> tmpBuf1;
     TBuf<QuePosition::VECCALC> tmpBuf2;
-    TBuf<QuePosition::VECCALC> castBuf;  // bf16 专用：Cast 到 float32 的中间缓冲
+    TBuf<QuePosition::VECCALC> castBuf; // bf16 专用：Cast 到 float32 的中间缓冲
 
     GlobalTensor<T> inputGMX;
     GlobalTensor<T> outputGMY;

@@ -43,9 +43,7 @@ public:
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
 
-        this->AICore()
-            .AddConfig("ascend910b") 
-            .AddConfig("ascend310b"); 
+        this->AICore().AddConfig("ascend910b").AddConfig("ascend310b");
     }
 };
 OP_ADD(Arange); // 添加算子信息库

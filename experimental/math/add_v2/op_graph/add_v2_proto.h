@@ -21,7 +21,7 @@
 /*!
  * \file add_v2_proto.h
  * \brief
-*/
+ */
 #ifndef OPS_OP_PROTO_INC_ADDV2_H_
 #define OPS_OP_PROTO_INC_ADDV2_H_
 
@@ -43,9 +43,9 @@ namespace ge {
 *Compatible with the TensorFlow operator AddV2.
 */
 REG_OP(AddV2)
-    .INPUT(x1, TensorType({DT_FLOAT, DT_FLOAT16,DT_INT16,DT_INT32}))
-    .INPUT(x2, TensorType({DT_FLOAT, DT_FLOAT16,DT_INT16,DT_INT32}))
-    .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16,DT_INT16,DT_INT32}))
+    .INPUT(x1, TensorType({DT_FLOAT, DT_FLOAT16, DT_INT16, DT_INT32}))
+    .INPUT(x2, TensorType({DT_FLOAT, DT_FLOAT16, DT_INT16, DT_INT32}))
+    .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16, DT_INT16, DT_INT32}))
     .OP_END_FACTORY_REG(AddV2)
 
 } // namespace ge

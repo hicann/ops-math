@@ -22,24 +22,17 @@ using namespace std;
 
 class l2_tanh_grad_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_tanh_grad_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "l2_tanh_grad_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "l2_tanh_grad_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "l2_tanh_grad_test TearDown" << endl; }
 };
 
 TEST_F(l2_tanh_grad_test, case_01_float)
 {
     op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
 
-    auto gradOutputDesc =
-        TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{0.5f, 1.0f, 1.5f, 2.0f});
-    
+    auto gradOutputDesc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{0.5f, 1.0f, 1.5f, 2.0f});
+
     auto outputDesc =
         TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{0.0f, 0.7616f, 0.9640f, 0.9951f});
 

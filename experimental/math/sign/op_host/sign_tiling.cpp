@@ -22,9 +22,8 @@
 
 namespace optiling {
 
-
 #define BLOCK_SIZE 32U
-#define UB_DATA_NUM_BF16 9U // 对应DT_BF16类型的ub分块数量
+#define UB_DATA_NUM_BF16 9U  // 对应DT_BF16类型的ub分块数量
 #define UB_DATA_NUM_OTHER 5U // 对应其他数据类型的ub分块数量
 struct SignCompileInfo {};
 
@@ -68,19 +67,13 @@ static ge::graphStatus GetShapeAttrsInfo(
     uint32_t typeLength = 0;
     ge::TypeUtils::GetDataTypeLength(context->GetInputDesc(0)->GetDataType(), typeLength);
     uint64_t inputLength = inputNum * typeLength;
-    OP_CHECK_IF(
-        inputNum == 0, OP_LOGE(context, "inputNum is 0"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputNum == 0, OP_LOGE(context, "inputNum is 0"), return ge::GRAPH_FAILED);
     inputBytes = inputLength / inputNum;
     uint64_t ubDataNumber =
         (context->GetInputDesc(0)->GetDataType() == ge::DT_BF16) ? UB_DATA_NUM_BF16 : UB_DATA_NUM_OTHER;
     tileBlockNum = (ubSize / BLOCK_SIZE) / ubDataNumber;
-    OP_CHECK_IF(
-        inputBytes == 0, OP_LOGE(context, "inputBytes is 0"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        tileBlockNum == 0, OP_LOGE(context, "tileBlockNum is 0"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputBytes == 0, OP_LOGE(context, "inputBytes is 0"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(tileBlockNum == 0, OP_LOGE(context, "tileBlockNum is 0"), return ge::GRAPH_FAILED);
     tileDataNum = (tileBlockNum * BLOCK_SIZE) / inputBytes;
     inputLengthAlgin32 = (((inputLength + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE);
     return ge::GRAPH_SUCCESS;

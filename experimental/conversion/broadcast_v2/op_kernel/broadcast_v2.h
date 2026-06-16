@@ -68,7 +68,7 @@ private:
     uint32_t num;
     uint32_t bLength;
     uint32_t isReuseSource;
-    uint32_t sLength;   
+    uint32_t sLength;
 };
 
 template <typename T>
@@ -112,12 +112,12 @@ __aicore__ inline void BroadcastV2<T>::Init(GM_ADDR x, GM_ADDR y, const Broadcas
 
     inputGMX.SetGlobalBuffer((__gm__ T*)x + inGlobalBufferIndex, this->coreDataNum);
     outputGMY.SetGlobalBuffer((__gm__ T*)y + outGlobalBufferIndex, outCoreDataNum);
-    
+
     if (this->tileDataNum > 0) {
         pipe.InitBuffer(inputQueueX, BUFFER_NUM, this->tileDataNum * sizeof(T));
         pipe.InitBuffer(outputQueueY, BUFFER_NUM, this->tileDataNum * this->num * sizeof(T));
     }
-    
+
     if (this->tmpSize > 0) {
         pipe.InitBuffer(tmpBuffer, this->tmpSize);
     }
@@ -127,9 +127,9 @@ template <typename T>
 __aicore__ inline void BroadcastV2<T>::CopyIn(int32_t progress)
 {
     AscendC::LocalTensor<T> xLocal = inputQueueX.AllocTensor<T>();
-    AscendC::DataCopyExtParams copyParams{1, static_cast<uint32_t>(this->processDataNum * sizeof(T)), 0, 0, 0}; 
+    AscendC::DataCopyExtParams copyParams{1, static_cast<uint32_t>(this->processDataNum * sizeof(T)), 0, 0, 0};
     AscendC::DataCopyPadExtParams<T> padParams{true, 0, 0, 0};
-    AscendC::DataCopyPad(xLocal, inputGMX[progress * this->tileDataNum], copyParams, padParams); 
+    AscendC::DataCopyPad(xLocal, inputGMX[progress * this->tileDataNum], copyParams, padParams);
     inputQueueX.EnQue(xLocal);
 }
 
@@ -140,8 +140,8 @@ __aicore__ inline void BroadcastV2<T>::CopyOut(int32_t progress)
     uint32_t outOffset = progress * this->tileDataNum * this->num;
     uint32_t outLength = this->processDataNum * this->num;
     AscendC::DataCopyExtParams copyParams{1, static_cast<uint32_t>(outLength * sizeof(T)), 0, 0, 0};
-    AscendC::DataCopyPad(outputGMY[outOffset], yLocal, copyParams); 
-    outputQueueY.FreeTensor(yLocal); 
+    AscendC::DataCopyPad(outputGMY[outOffset], yLocal, copyParams);
+    outputQueueY.FreeTensor(yLocal);
 }
 
 template <typename T>
@@ -153,22 +153,20 @@ __aicore__ inline void BroadcastV2<T>::Compute(int32_t progress)
     uint32_t rowsThisTile = (this->dim == 2 && sLen > 0) ? (this->processDataNum / sLen) : 0;
     bool hasTmp = (this->tmpSize > 0);
     uint32_t alignUnitElems = 32u / sizeof(T);
-    if (alignUnitElems == 0) alignUnitElems = 1;
+    if (alignUnitElems == 0)
+        alignUnitElems = 1;
     bool useHw = false;
     if (this->dim == 1) {
         uint32_t outLen = this->processDataNum * this->num;
-        useHw = ((this->processDataNum % alignUnitElems) == 0) &&
-                ((outLen % alignUnitElems) == 0);
-    } else { 
+        useHw = ((this->processDataNum % alignUnitElems) == 0) && ((outLen % alignUnitElems) == 0);
+    } else {
         if (this->axis == 0) {
             uint32_t outRows = rowsThisTile * this->num;
-            useHw = ((sLen % alignUnitElems) == 0) &&
-                    ((rowsThisTile % alignUnitElems) == 0) &&
+            useHw = ((sLen % alignUnitElems) == 0) && ((rowsThisTile % alignUnitElems) == 0) &&
                     ((outRows % alignUnitElems) == 0);
-        } else { 
+        } else {
             uint32_t outCols = sLen * this->num;
-            useHw = ((this->bLength % alignUnitElems) == 0) &&
-                    ((rowsThisTile % alignUnitElems) == 0) &&
+            useHw = ((this->bLength % alignUnitElems) == 0) && ((rowsThisTile % alignUnitElems) == 0) &&
                     ((outCols % alignUnitElems) == 0);
         }
     }
@@ -246,7 +244,7 @@ template <typename T>
 __aicore__ inline void BroadcastV2<T>::Process()
 {
     int32_t loopCount = this->tileNum;
-    if (loopCount == 0) { 
+    if (loopCount == 0) {
         return;
     }
     this->processDataNum = this->tileDataNum;

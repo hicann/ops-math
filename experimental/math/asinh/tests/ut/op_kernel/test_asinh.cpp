@@ -35,10 +35,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./asinh_data/");
     }
-    static void TearDownTestCase()
-    {
-        cout << "AsinhTest TearDown\n" << endl;
-    }
+    static void TearDownTestCase() { cout << "AsinhTest TearDown\n" << endl; }
 
 private:
     const static std::string rootPath;
@@ -73,7 +70,7 @@ TEST_F(AsinhTest, test_case_0)
     tilingDatafromBin->tailCoreDataNum = 13926;
     tilingDatafromBin->formerCoreLoopCount = 3;
     tilingDatafromBin->formerCoreFormerDataNum = 6144; // 测试发现CPU上做Select选择的时候如果单片数据超过256字节会出错
-    tilingDatafromBin->formerCoreTailDataNum = 1639; // 测试发现CPU上做Select选择的时候如果单片数据超过256字节会出错
+    tilingDatafromBin->formerCoreTailDataNum = 1639;   // 测试发现CPU上做Select选择的时候如果单片数据超过256字节会出错
     tilingDatafromBin->tailCoreLoopCount = 3;
     tilingDatafromBin->tailCoreFormerDataNum = 6144;
     tilingDatafromBin->tailCoreTailDataNum = 1638;

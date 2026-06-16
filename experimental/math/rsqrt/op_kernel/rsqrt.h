@@ -27,41 +27,36 @@ using namespace AscendC;
 constexpr int32_t BUFFER_NUM = 2;
 
 template <typename TYPE_X>
-class KernelRsqrt
-{
+class KernelRsqrt {
     using T = TYPE_X;
+
 public:
     __aicore__ inline KernelRsqrt() {}
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum,
-                                uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
-                                uint32_t finalSmallTileNum, uint32_t tileDataNum,
-                                uint32_t smallTailDataNum, uint32_t bigTailDataNum,
-                                uint32_t tailBlockNum)
+    __aicore__ inline void Init(
+        GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum, uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
+        uint32_t finalSmallTileNum, uint32_t tileDataNum, uint32_t smallTailDataNum, uint32_t bigTailDataNum,
+        uint32_t tailBlockNum)
     {
         ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
         uint32_t blockIdx = GetBlockIdx();
         uint32_t globalBufferIndex = bigCoreDataNum * GetBlockIdx();
         this->tileDataNum = tileDataNum;
-        if (blockIdx < tailBlockNum)
-        {
+        if (blockIdx < tailBlockNum) {
             this->coreDataNum = bigCoreDataNum;
             this->tileNum = finalBigTileNum;
             this->tailDataNum = bigTailDataNum;
-        }
-        else
-        {
+        } else {
             this->coreDataNum = smallCoreDataNum;
             this->tileNum = finalSmallTileNum;
             this->tailDataNum = smallTailDataNum;
             globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (GetBlockIdx() - tailBlockNum);
         }
-        xGm.SetGlobalBuffer((__gm__ TYPE_X *)x + globalBufferIndex, this->coreDataNum);
-        yGm.SetGlobalBuffer((__gm__ TYPE_X *)y + globalBufferIndex, this->coreDataNum);
+        xGm.SetGlobalBuffer((__gm__ TYPE_X*)x + globalBufferIndex, this->coreDataNum);
+        yGm.SetGlobalBuffer((__gm__ TYPE_X*)y + globalBufferIndex, this->coreDataNum);
 
         pipe.InitBuffer(inQueueX, BUFFER_NUM, this->tileDataNum * sizeof(TYPE_X));
         pipe.InitBuffer(outQueueY, BUFFER_NUM, this->tileDataNum * sizeof(TYPE_X));
-        if constexpr (!std::is_same_v<T, float32_t>)
-        {
+        if constexpr (!std::is_same_v<T, float32_t>) {
             pipe.InitBuffer(tmp1, this->tileDataNum * sizeof(float));
             pipe.InitBuffer(tmp2, this->tileDataNum * sizeof(float));
         }
@@ -70,18 +65,17 @@ public:
     {
         int32_t loopCount = this->tileNum;
         this->processDataNum = this->tileDataNum;
-       
-        for (int32_t i = 0; i < loopCount-1; i++)
-        {
+
+        for (int32_t i = 0; i < loopCount - 1; i++) {
             CopyIn(i);
             Compute(i);
             CopyOut(i);
         }
         this->processDataNum = this->tailDataNum;
 
-        CopyIn(loopCount-1);
-        Compute(loopCount-1);
-        CopyOut(loopCount-1);
+        CopyIn(loopCount - 1);
+        Compute(loopCount - 1);
+        CopyOut(loopCount - 1);
     }
 
 private:
@@ -96,8 +90,7 @@ private:
     {
         LocalTensor<TYPE_X> xLocal = inQueueX.DeQue<TYPE_X>();
         LocalTensor<TYPE_X> yLocal = outQueueY.AllocTensor<TYPE_X>();
-        if constexpr ( !std::is_same_v<T, float32_t>)
-        {
+        if constexpr (!std::is_same_v<T, float32_t>) {
             LocalTensor<float> p1 = tmp1.Get<float>();
             LocalTensor<float> p2 = tmp2.Get<float>();
             Cast(p1, xLocal, RoundMode::CAST_NONE, this->processDataNum);
@@ -105,9 +98,7 @@ private:
             Sqrt(p1, p1, this->processDataNum);
             Div(p1, p2, p1, this->processDataNum);
             Cast(yLocal, p1, RoundMode::CAST_RINT, this->processDataNum);
-        }
-        else
-        {
+        } else {
             Duplicate<float>(yLocal, 1.0f, this->processDataNum);
             Sqrt(xLocal, xLocal, this->processDataNum);
             Div(yLocal, yLocal, xLocal, this->processDataNum);

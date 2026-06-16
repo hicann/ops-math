@@ -33,7 +33,6 @@
 
 namespace optiling {
 
-
 const uint32_t BLOCK_SIZE = 32;
 const uint32_t ALIGN = 8;
 constexpr uint32_t WS_SYS_SIZE = 512U;
@@ -76,7 +75,7 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
 
 static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 {
-    auto ascendcPlatform = platform_ascendc:: PlatformAscendC(context->GetPlatformInfo());
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
     uint32_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
@@ -87,9 +86,9 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 static ge::graphStatus CalculateCoreNum(gert::TilingContext* context, SortV2TilingData* tiling, int64_t coreNum)
 {
     // 获取输入Shape
-    const auto *storageShape = context->GetInputShape(0);
+    const auto* storageShape = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, storageShape);
-    const gert::Shape &shape = storageShape->GetStorageShape();
+    const gert::Shape& shape = storageShape->GetStorageShape();
     const uint32_t rank = shape.GetDimNum();
     OP_CHECK_IF(rank > 2, OP_LOGE(context, "rank must be <= 2"), return ge::GRAPH_FAILED);
     const uint32_t dimH = rank > 0 ? shape.GetDim(0) : 1;
@@ -101,17 +100,21 @@ static ge::graphStatus CalculateCoreNum(gert::TilingContext* context, SortV2Tili
     auto attrs = context->GetAttrs();
     if (attrs) {
         const int64_t* axisPtr = attrs->GetInt(0);
-        if (axisPtr) {axis = static_cast<int32_t>(*axisPtr);}
+        if (axisPtr) {
+            axis = static_cast<int32_t>(*axisPtr);
+        }
         const bool* descPtr = attrs->GetBool(1);
-        if (descPtr) {descending = *descPtr;}
+        if (descPtr) {
+            descending = *descPtr;
+        }
     }
     // 检查指定维度是否在规定范围
     if (axis < -1 * static_cast<int32_t>(rank) || axis >= static_cast<int32_t>(rank)) {
         OP_LOGE(context, "axis value is out of range");
         return ge::GRAPH_FAILED;
     }
-    if (axis < 0) { 
-        axis += static_cast<int32_t>(rank); 
+    if (axis < 0) {
+        axis += static_cast<int32_t>(rank);
     }
     // 定义大小核分配参数以及填充参数
     const uint32_t sliceLen = dims[axis];
@@ -124,8 +127,8 @@ static ge::graphStatus CalculateCoreNum(gert::TilingContext* context, SortV2Tili
     const uint32_t bigCoreNum = workCoreNum - smallCoreNum;
     const uint32_t smallCoreDataNum = sliceLen / workCoreNum;
     const uint32_t bigCoreDataNum = smallCoreDataNum + (sliceLen % workCoreNum == 0 ? 0 : 1);
-    const uint32_t realSortLen  = ((sliceLen + BLOCK_SIZE -1 ) / BLOCK_SIZE) * BLOCK_SIZE;
-    const uint32_t align8  = ((sliceLen + ALIGN - 1) / ALIGN) * ALIGN;
+    const uint32_t realSortLen = ((sliceLen + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE;
+    const uint32_t align8 = ((sliceLen + ALIGN - 1) / ALIGN) * ALIGN;
     const uint32_t padLen = align8 - sliceLen;
     const uint32_t dupCount = BLOCK_SIZE - align8 % BLOCK_SIZE;
 
@@ -153,14 +156,16 @@ static ge::graphStatus SortV2TilingFunc(gert::TilingContext* context)
     // 1. platform
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
-    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+        return ge::GRAPH_FAILED);
 
     // 2. shapes & dtype
     int64_t totalIdx = 0;
     ge::DataType dataType;
-    OP_CHECK_IF(GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
+        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     // handle empty input
     if (totalIdx <= 0) {
@@ -179,19 +184,22 @@ static ge::graphStatus SortV2TilingFunc(gert::TilingContext* context)
         OP_LOGE(context, "typeLength is 0");
         return ge::GRAPH_FAILED;
     }
-    
+
     // 3. workspace
-    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+        return ge::GRAPH_FAILED);
 
     SortV2TilingData* tiling = context->GetTilingData<SortV2TilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(memset_s(tiling, sizeof(SortV2TilingData), 0, sizeof(SortV2TilingData)) != EOK,
-                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        memset_s(tiling, sizeof(SortV2TilingData), 0, sizeof(SortV2TilingData)) != EOK,
+        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     // 4. CoreNum & Tiling Calculation
-    OP_CHECK_IF(CalculateCoreNum(context, tiling, coreNum) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "CalculateCoreNum error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        CalculateCoreNum(context, tiling, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "CalculateCoreNum error"),
+        return ge::GRAPH_FAILED);
     context->GetRawTilingData()->SetDataSize(sizeof(SortV2TilingData));
 
     return ge::GRAPH_SUCCESS;

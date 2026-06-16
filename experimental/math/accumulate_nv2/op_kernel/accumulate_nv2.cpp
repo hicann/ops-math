@@ -18,8 +18,7 @@
 #define DOUBLE_BUFFER_NUM 2
 #define SINGLE_BUFFER_NUM 1
 
-enum class AccumulateNv2TilingKey : uint32_t
-{
+enum class AccumulateNv2TilingKey : uint32_t {
     TILING_KEY_ONE_INPUT = 0,
     TILING_KEY_INPUTS = 1,
 };
@@ -31,22 +30,20 @@ __global__ __aicore__ void accumulate_nv2(GM_ADDR x, GM_ADDR y, GM_ADDR workspac
     GET_TILING_DATA_WITH_STRUCT(AccumulateNv2TilingData, tilingData, tiling);
     AscendC::TPipe pipe;
     // 场景1
-    if constexpr (schMode == static_cast<uint32_t>(AccumulateNv2TilingKey::TILING_KEY_ONE_INPUT) || schMode == static_cast<uint32_t>(AccumulateNv2TilingKey::TILING_KEY_INPUTS))
-    {
-        if constexpr ( AscendC::IsSameType<DTYPE_X, int8_t>::value || AscendC::IsSameType<DTYPE_X, uint8_t>::value)
-        {
+    if constexpr (
+        schMode == static_cast<uint32_t>(AccumulateNv2TilingKey::TILING_KEY_ONE_INPUT) ||
+        schMode == static_cast<uint32_t>(AccumulateNv2TilingKey::TILING_KEY_INPUTS)) {
+        if constexpr (AscendC::IsSameType<DTYPE_X, int8_t>::value || AscendC::IsSameType<DTYPE_X, uint8_t>::value) {
             MyAccumulateNv2::AccumulateNv2<DTYPE_X, half> op;
             op.Init(x, y, &tilingData, &pipe);
             op.Process();
         }
-        if constexpr ( AscendC::IsSameType<DTYPE_X, half>::value)
-        {
+        if constexpr (AscendC::IsSameType<DTYPE_X, half>::value) {
             MyAccumulateNv2::AccumulateNv2<DTYPE_X, float> op;
             op.Init(x, y, &tilingData, &pipe);
             op.Process();
         }
-        if constexpr ( AscendC::IsSameType<DTYPE_X, float>::value || AscendC::IsSameType<DTYPE_X, int32_t>::value)
-        {
+        if constexpr (AscendC::IsSameType<DTYPE_X, float>::value || AscendC::IsSameType<DTYPE_X, int32_t>::value) {
             MyAccumulateNv2::AccumulateNv2<DTYPE_X, DTYPE_X> op;
             op.Init(x, y, &tilingData, &pipe);
             op.Process();

@@ -12,7 +12,7 @@
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
  */
- 
+
 /*!
  * \file complex_v3_infershape.cpp
  * \brief ComplexV3 operator shape inference implementation
@@ -50,13 +50,11 @@ static ge::graphStatus InferShape4ComplexV3(gert::InferShapeContext* context)
     outShape->SetDimNum(outDims);
 
     for (size_t i = 0; i < outDims; i++) {
-        int64_t realDim = (i < outDims - realDims) ? 1
-            : realShape->GetDim(i - (outDims - realDims));
-        int64_t imagDim = (i < outDims - imagDims) ? 1
-            : imagShape->GetDim(i - (outDims - imagDims));
+        int64_t realDim = (i < outDims - realDims) ? 1 : realShape->GetDim(i - (outDims - realDims));
+        int64_t imagDim = (i < outDims - imagDims) ? 1 : imagShape->GetDim(i - (outDims - imagDims));
 
         if (realDim != imagDim && realDim != 1 && imagDim != 1) {
-            return ge::GRAPH_FAILED;  // Does not satisfy broadcast condition
+            return ge::GRAPH_FAILED; // Does not satisfy broadcast condition
         }
         outShape->SetDim(i, std::max(realDim, imagDim));
     }

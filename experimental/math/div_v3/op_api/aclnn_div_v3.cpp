@@ -36,8 +36,7 @@ extern "C" {
 #define ACLNN_MAX_SHAPE_RANK 8
 
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT, DataType::DT_FLOAT16,
-    DataType::DT_BF16, DataType::DT_INT32, DataType::DT_INT16};
+    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16, DataType::DT_INT32, DataType::DT_INT16};
 
 static bool CheckNotNull(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
@@ -50,18 +49,17 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* other, const ac
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
     if (!CheckType(self->GetDataType(), DTYPE_SUPPORT_LIST)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "self dtype %s not in support list.", op::ToString(self->GetDataType()).GetString());
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "self dtype %s not in support list.",
+            op::ToString(self->GetDataType()).GetString());
         return false;
     }
     if (self->GetDataType() != other->GetDataType()) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "self and other must have same dtype.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self and other must have same dtype.");
         return false;
     }
     if (self->GetDataType() != out->GetDataType()) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "input and output must have same dtype.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "input and output must have same dtype.");
         return false;
     }
     return true;
@@ -70,8 +68,7 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const
 static bool CheckModeValid(int64_t mode)
 {
     if (mode < 0 || mode > 2) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "mode must be 0 (RealDiv), 1 (TruncDiv), or 2 (FloorDiv), but got %ld.", mode);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "mode must be 0 (RealDiv), 1 (TruncDiv), or 2 (FloorDiv), but got %ld.", mode);
         return false;
     }
     return true;
@@ -88,17 +85,15 @@ static bool CheckBroadcastShape(const aclTensor* self, const aclTensor* other, c
     BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape);
 
     if (broadcastShape != out->GetViewShape()) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "broadcast shape %s != out shape %s.",
-                op::ToString(broadcastShape).GetString(),
-                op::ToString(out->GetViewShape()).GetString());
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "broadcast shape %s != out shape %s.", op::ToString(broadcastShape).GetString(),
+            op::ToString(out->GetViewShape()).GetString());
         return false;
     }
     return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other,
-                                int64_t mode, const aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, int64_t mode, const aclTensor* out)
 {
     CHECK_RET(CheckNotNull(self, other, out), ACLNN_ERR_PARAM_NULLPTR);
     CHECK_RET(CheckDtypeValid(self, other, out), ACLNN_ERR_PARAM_INVALID);
@@ -122,8 +117,8 @@ static aclIntArray* GetShapeAsIntArray(const aclTensor* tensor, aclOpExecutor* e
 }
 
 aclnnStatus aclnnDivV3GetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, int64_t mode,
-    aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+    const aclTensor* self, const aclTensor* other, int64_t mode, aclTensor* out, uint64_t* workspaceSize,
+    aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnDivV3, DFX_IN(self, other), DFX_OUT(out));
 
@@ -171,8 +166,7 @@ aclnnStatus aclnnDivV3GetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnDivV3(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnDivV3(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnDivV3);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

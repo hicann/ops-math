@@ -21,15 +21,9 @@ using namespace optiling;
 
 class NanToNumTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "NanToNumTiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "NanToNumTiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "NanToNumTiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "NanToNumTiling TearDown " << endl; }
 };
 
 TEST_F(NanToNumTiling, ascend910_test_tiling_FLOAT_001)

@@ -21,7 +21,7 @@
 /*!
  * \file dot_v2.cpp
  * \brief
-*/
+ */
 
 #include "dot_v2.h"
 
@@ -30,7 +30,7 @@ __global__ __aicore__ void dot_v2(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR works
 {
     REGISTER_TILING_DEFAULT(DotV2TilingData);
     GET_TILING_DATA_WITH_STRUCT(DotV2TilingData, tilingData, tiling);
-    NsDotV2::DotV2<DTYPE_X1> op; // 算子kernel实例获取
-    op.Init(x, y, z,workspace,&tilingData);      // 算子kernel实例初始化
-    op.Process();                       // 算子kernel实例执行
+    NsDotV2::DotV2<DTYPE_X1> op;              // 算子kernel实例获取
+    op.Init(x, y, z, workspace, &tilingData); // 算子kernel实例初始化
+    op.Process();                             // 算子kernel实例执行
 }

@@ -32,7 +32,7 @@ struct Im2ColTilingData {
     uint32_t C;
     uint32_t H;
     uint32_t W;
-    
+
     // 卷积参数
     int32_t kernel_h;
     int32_t kernel_w;
@@ -42,13 +42,13 @@ struct Im2ColTilingData {
     int32_t pad_w;
     int32_t dilation_h;
     int32_t dilation_w;
-    
+
     // 输出维度
     uint32_t out_H;
     uint32_t out_W;
     uint32_t L;
     uint32_t output_channels;
-    
+
     // 核心Tiling参数
     uint32_t input_elements;
     uint32_t output_elements;

@@ -9,11 +9,11 @@
  */
 
 /**
-* 我们正常的版权申明，下面是我们的备注
-*
-* NOTE: Portions of this code were AI-generated and have been
-* technically reviewed for functional accuracy and security
-*/
+ * 我们正常的版权申明，下面是我们的备注
+ *
+ * NOTE: Portions of this code were AI-generated and have been
+ * technically reviewed for functional accuracy and security
+ */
 
 /*!
  * \file cdist_grad_infershape.cpp
@@ -50,7 +50,6 @@ static ge::graphStatus InferShape4CdistGrad(gert::InferShapeContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_INFERSHAPE(CdistGrad)
-    .InferShape(InferShape4CdistGrad);
+IMPL_OP_INFERSHAPE(CdistGrad).InferShape(InferShape4CdistGrad);
 
 } // namespace ops

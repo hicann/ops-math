@@ -14,7 +14,7 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-const aclTensor *SignBitsUnpack(const aclTensor *self, int64_t size, op::DataType dtype, aclOpExecutor *executor);
-}  // namespace l0op
+const aclTensor* SignBitsUnpack(const aclTensor* self, int64_t size, op::DataType dtype, aclOpExecutor* executor);
+} // namespace l0op
 
-#endif  // OP_API_INC_LEVEL0_SIGN_BITS_UNPACK_H_
+#endif // OP_API_INC_LEVEL0_SIGN_BITS_UNPACK_H_

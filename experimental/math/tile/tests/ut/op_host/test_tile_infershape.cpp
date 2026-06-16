@@ -15,15 +15,9 @@
 
 class TileInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "TileInfershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "TileInfershape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "TileInfershape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "TileInfershape TearDown" << std::endl; }
 };
 
 TEST_F(TileInfershape, tile_infershape_2d_dynamic)

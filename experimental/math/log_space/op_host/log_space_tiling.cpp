@@ -33,20 +33,20 @@
 
 namespace optiling {
 
-using Ops::Base::CeilDiv;
 using Ops::Base::CeilAlign;
-using Ops::Base::FloorDiv;
+using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
-constexpr int64_t MIN_PER_CORE = 64;    // 每个核最少处理元素数，小于该值则缩减核数
+constexpr int64_t MIN_PER_CORE = 64;     // 每个核最少处理元素数，小于该值则缩减核数
 constexpr int64_t UB_CHUNK_ELEMS = 2048; // 单次搬运粒度（fp32 元素数）
 
 // 属性索引常量（与 op_host/log_space_def.cpp / op_host/log_space_infershape.cpp 对齐）
 constexpr int ATTR_IDX_START = 0;
-constexpr int ATTR_IDX_END   = 1;
+constexpr int ATTR_IDX_END = 1;
 constexpr int ATTR_IDX_STEPS = 2;
-constexpr int ATTR_IDX_BASE  = 3;
+constexpr int ATTR_IDX_BASE = 3;
 
 // MODE 枚举（必须与 log_space_tiling_key.h 一致）
 constexpr uint32_t MODE_NORMAL = 0;
@@ -77,57 +77,58 @@ static ge::graphStatus LogSpaceTilingFunc(gert::TilingContext* context)
     // 1. 平台信息
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
-    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+        return ge::GRAPH_FAILED);
 
     // 2. 属性
     auto attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
     const float* startPtr = attrs->GetAttrPointer<float>(ATTR_IDX_START);
-    const float* endPtr   = attrs->GetAttrPointer<float>(ATTR_IDX_END);
+    const float* endPtr = attrs->GetAttrPointer<float>(ATTR_IDX_END);
     const int64_t* stepsPtr = attrs->GetAttrPointer<int64_t>(ATTR_IDX_STEPS);
-    const float* basePtr  = attrs->GetAttrPointer<float>(ATTR_IDX_BASE);
+    const float* basePtr = attrs->GetAttrPointer<float>(ATTR_IDX_BASE);
     OP_CHECK_NULL_WITH_CONTEXT(context, startPtr);
     OP_CHECK_NULL_WITH_CONTEXT(context, endPtr);
     OP_CHECK_NULL_WITH_CONTEXT(context, stepsPtr);
     OP_CHECK_NULL_WITH_CONTEXT(context, basePtr);
 
     const float startF = *startPtr;
-    const float endF   = *endPtr;
+    const float endF = *endPtr;
     const int64_t steps = *stepsPtr;
-    const float baseF  = *basePtr;
+    const float baseF = *basePtr;
 
-    OP_CHECK_IF(steps < 0, OP_LOGE(context, "steps must be >= 0, got %ld", steps),
+    OP_CHECK_IF(steps < 0, OP_LOGE(context, "steps must be >= 0, got %ld", steps), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        steps > static_cast<int64_t>(std::numeric_limits<uint32_t>::max()),
+        OP_LOGE(context, "steps must be <= UINT32_MAX (%u), got %ld", std::numeric_limits<uint32_t>::max(), steps),
         return ge::GRAPH_FAILED);
-    OP_CHECK_IF(steps > static_cast<int64_t>(std::numeric_limits<uint32_t>::max()),
-        OP_LOGE(context, "steps must be <= UINT32_MAX (%u), got %ld",
-                std::numeric_limits<uint32_t>::max(), steps),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(baseF <= 0.0f, OP_LOGE(context, "base must be > 0, got %f", baseF),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(baseF <= 0.0f, OP_LOGE(context, "base must be > 0, got %f", baseF), return ge::GRAPH_FAILED);
 
     // 3. 输出 dtype
     auto outDesc = context->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, outDesc);
     ge::DataType dtype = outDesc->GetDataType();
-    OP_CHECK_IF(dtype != ge::DT_FLOAT && dtype != ge::DT_FLOAT16 && dtype != ge::DT_BF16,
-        OP_LOGE(context, "unsupported dtype %d", static_cast<int>(dtype)),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        dtype != ge::DT_FLOAT && dtype != ge::DT_FLOAT16 && dtype != ge::DT_BF16,
+        OP_LOGE(context, "unsupported dtype %d", static_cast<int>(dtype)), return ge::GRAPH_FAILED);
 
     // 4. 工作空间
-    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+        return ge::GRAPH_FAILED);
 
     // 5. 填充 TilingData
     LogSpaceTilingData* tiling = context->GetTilingData<LogSpaceTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(memset_s(tiling, sizeof(LogSpaceTilingData), 0, sizeof(LogSpaceTilingData)) != EOK,
+    OP_CHECK_IF(
+        memset_s(tiling, sizeof(LogSpaceTilingData), 0, sizeof(LogSpaceTilingData)) != EOK,
         OP_LOGE(context, "memset tiling data failed"), return ge::GRAPH_FAILED);
 
     tiling->totalLen = static_cast<uint64_t>(steps);
-    tiling->startF   = startF;
-    tiling->logBase  = std::log(baseF);
-    tiling->ubChunk  = static_cast<uint32_t>(UB_CHUNK_ELEMS);
+    tiling->startF = startF;
+    tiling->logBase = std::log(baseF);
+    tiling->ubChunk = static_cast<uint32_t>(UB_CHUNK_ELEMS);
 
     uint32_t mode = MODE_NORMAL;
     int64_t usedCoreNum = 1;
@@ -151,7 +152,8 @@ static ge::graphStatus LogSpaceTilingFunc(gert::TilingContext* context)
         // steps >= 2: 常规多步生成
         int64_t maxCores = CeilDiv(steps, MIN_PER_CORE);
         int64_t useCores = (maxCores < coreNum) ? maxCores : coreNum;
-        if (useCores < 1) useCores = 1;
+        if (useCores < 1)
+            useCores = 1;
         int64_t tileLen = steps / useCores;
         int64_t tailLen = steps - tileLen * (useCores - 1);
 

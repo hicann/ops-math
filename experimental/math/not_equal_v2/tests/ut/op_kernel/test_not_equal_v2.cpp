@@ -15,20 +15,14 @@
 
 using TestUtDefaultTilingStruct = NotEqualTilingData;
 
-constexpr int min(int in1, int in2)
-{
-    return std::min(in1, in2);
-}
+constexpr int min(int in1, int in2) { return std::min(in1, in2); }
 
 #include "../../../op_kernel/not_equal_v2.cpp"
 
-void *GmAllocAlign(size_t size)
-{
-    return GmAlloc(size + 31 >> 5 << 5);
-}
+void* GmAllocAlign(size_t size) { return GmAlloc(size + 31 >> 5 << 5); }
 
-template<typename T>
-constexpr const char *GetTorchType()
+template <typename T>
+constexpr const char* GetTorchType()
 {
     if constexpr (std::is_same_v<T, half>)
         return "float16";
@@ -48,26 +42,19 @@ constexpr const char *GetTorchType()
         static_assert(!std::is_same_v<T, T>);
 }
 
-template<typename... Args>
-int ExecuteCommand(const char *path, Args... args)
+template <typename... Args>
+int ExecuteCommand(const char* path, Args... args)
 {
     std::string command = path;
     ((command = command + " '" + args + "'"), ...);
     return std::system(command.c_str());
 }
 
-class not_equal_test : public testing::Test
-{
+class not_equal_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "not_equal_test SetUp\n" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "not_equal_test SetUp\n" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "not_equal_test TearDown\n" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "not_equal_test TearDown\n" << std::endl; }
 };
 
 TEST_F(not_equal_test, test_case_0)
@@ -85,7 +72,7 @@ TEST_F(not_equal_test, test_case_0)
     auto workspace = static_cast<GM_ADDR>(GmAllocAlign(workspace_size));
     auto tiling = static_cast<GM_ADDR>(GmAllocAlign(tiling_size));
 
-    auto tiling_data = reinterpret_cast<NotEqualTilingData *>(tiling);
+    auto tiling_data = reinterpret_cast<NotEqualTilingData*>(tiling);
     tiling_data->size = 94000;
 
     ICPU_SET_TILING_KEY(0);

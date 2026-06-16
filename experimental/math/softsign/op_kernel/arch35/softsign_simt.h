@@ -27,10 +27,11 @@ using namespace AscendC;
 constexpr uint32_t THREAD_NUM = 512;
 
 template <typename T>
-__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void OpSoftsignSimt(int64_t perCoreElements,
-                                                                             __gm__ T *input, __gm__ T *output)
+__simt_vf__ __aicore__
+LAUNCH_BOUND(THREAD_NUM) inline void OpSoftsignSimt(int64_t perCoreElements, __gm__ T* input, __gm__ T* output)
 {
-    for (uint64_t index = static_cast<uint64_t>(AscendC::Simt::GetThreadIdx()); index < static_cast<uint64_t>(perCoreElements);
+    for (uint64_t index = static_cast<uint64_t>(AscendC::Simt::GetThreadIdx());
+         index < static_cast<uint64_t>(perCoreElements);
          index += static_cast<uint32_t>(AscendC::Simt::GetThreadNum())) {
         uint64_t globalIndex = static_cast<uint64_t>(AscendC::Simt::GetBlockIdx() * perCoreElements) + index;
         T val = input[globalIndex];
@@ -41,11 +42,11 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void OpSoftsignSimt(int64
 }
 
 template <typename T>
-__aicore__ inline void Process(GM_ADDR input, GM_ADDR output, const SoftsignTilingData *tilingData)
+__aicore__ inline void Process(GM_ADDR input, GM_ADDR output, const SoftsignTilingData* tilingData)
 {
     int64_t perCoreElements = tilingData->perCoreElements;
-    __gm__ T *inputGm = (__gm__ T *)input;
-    __gm__ T *outputGm = (__gm__ T *)output;
+    __gm__ T* inputGm = (__gm__ T*)input;
+    __gm__ T* outputGm = (__gm__ T*)output;
     AscendC::Simt::VF_CALL<OpSoftsignSimt<T>>(AscendC::Simt::Dim3(THREAD_NUM), perCoreElements, inputGm, outputGm);
 }
 

@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
+
 /**
  *
  * NOTE: Portions of this code were AI-generated and have been
@@ -44,24 +44,27 @@ OP_TYPE_REGISTER(AsinWithAgent);
 
 // 迭代二：激活全部 9 种 dtype
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT,    // TilingKey=0（Group A fp32）
-    DataType::DT_FLOAT16,  // TilingKey=1（Group A fp16）
-    DataType::DT_DOUBLE,   // TilingKey=2（Group B DOUBLE，L2层 Host 端转换）
-    DataType::DT_INT8,     // TilingKey=3（Group C INT8）
-    DataType::DT_INT16,    // TilingKey=4（Group C INT16）
-    DataType::DT_INT32,    // TilingKey=5（Group C INT32）
-    DataType::DT_INT64,    // TilingKey=6（Group C INT64）
-    DataType::DT_UINT8,    // TilingKey=7（Group C UINT8）
-    DataType::DT_BOOL,     // TilingKey=8（Group C BOOL）
+    DataType::DT_FLOAT,   // TilingKey=0（Group A fp32）
+    DataType::DT_FLOAT16, // TilingKey=1（Group A fp16）
+    DataType::DT_DOUBLE,  // TilingKey=2（Group B DOUBLE，L2层 Host 端转换）
+    DataType::DT_INT8,    // TilingKey=3（Group C INT8）
+    DataType::DT_INT16,   // TilingKey=4（Group C INT16）
+    DataType::DT_INT32,   // TilingKey=5（Group C INT32）
+    DataType::DT_INT64,   // TilingKey=6（Group C INT64）
+    DataType::DT_UINT8,   // TilingKey=7（Group C UINT8）
+    DataType::DT_BOOL,    // TilingKey=8（Group C BOOL）
 };
 
 // 判断输入 dtype 的输出 dtype
 static op::DataType GetOutputDtype(op::DataType inputDtype)
 {
     switch (inputDtype) {
-        case DataType::DT_FLOAT:   return DataType::DT_FLOAT;
-        case DataType::DT_FLOAT16: return DataType::DT_FLOAT16;
-        case DataType::DT_DOUBLE:  return DataType::DT_DOUBLE;
+        case DataType::DT_FLOAT:
+            return DataType::DT_FLOAT;
+        case DataType::DT_FLOAT16:
+            return DataType::DT_FLOAT16;
+        case DataType::DT_DOUBLE:
+            return DataType::DT_DOUBLE;
         // 整数/BOOL 类型输出 FLOAT32
         case DataType::DT_INT8:
         case DataType::DT_INT16:
@@ -75,10 +78,7 @@ static op::DataType GetOutputDtype(op::DataType inputDtype)
     }
 }
 
-static bool IsAiCoreSupport(const aclTensor* x)
-{
-    return CheckType(x->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
-}
+static bool IsAiCoreSupport(const aclTensor* x) { return CheckType(x->GetDataType(), AICORE_DTYPE_SUPPORT_LIST); }
 
 static bool AsinWithAgentInferShape(const op::Shape& xShape, op::Shape& outShape)
 {
@@ -86,19 +86,12 @@ static bool AsinWithAgentInferShape(const op::Shape& xShape, op::Shape& outShape
     return true;
 }
 
-static const aclTensor* AsinWithAgentAiCore(
-    const aclTensor* x,
-    const aclTensor* out,
-    aclOpExecutor* executor)
+static const aclTensor* AsinWithAgentAiCore(const aclTensor* x, const aclTensor* out, aclOpExecutor* executor)
 {
     L0_DFX(AsinWithAgentAiCore, x, out);
 
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(AsinWithAgent,
-        OP_INPUT(x), OP_OUTPUT(out));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS,
-        OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AsinWithAgentAiCore failed."),
-        return nullptr);
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(AsinWithAgent, OP_INPUT(x), OP_OUTPUT(out));
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AsinWithAgentAiCore failed."), return nullptr);
     return out;
 }
 
@@ -122,9 +115,7 @@ const aclTensor* AsinWithAgent(const aclTensor* x, aclOpExecutor* executor)
     }
 
     if (!IsAiCoreSupport(x)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AsinWithAgent not supported: dtype=%d.",
-                static_cast<int>(x->GetDataType()));
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "AsinWithAgent not supported: dtype=%d.", static_cast<int>(x->GetDataType()));
         return nullptr;
     }
 

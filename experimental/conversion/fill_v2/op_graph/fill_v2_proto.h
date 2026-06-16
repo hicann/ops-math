@@ -44,7 +44,7 @@ namespace ge {
 REG_OP(FillV2)
     .INPUT(x, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT16, DT_INT32}))
     .INPUT(fill_value, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT16, DT_INT32}))
-    .OUTPUT(x, TensorType({DT_FLOAT, DT_FLOAT16,  DT_BF16, DT_INT16, DT_INT32}))
+    .OUTPUT(x, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT16, DT_INT32}))
     .OP_END_FACTORY_REG(FillV2)
 
 } // namespace ge

@@ -41,14 +41,8 @@ extern "C" __global__ __aicore__ void mul_v2(GM_ADDR x, GM_ADDR y, GM_ADDR gelu,
 
 class mul_v2_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "mul_v2_test SetUp\n" << endl;
-    }
-    static void TearDownTestCase()
-    {
-        cout << "mul_v2_test TearDown\n" << endl;
-    }
+    static void SetUpTestCase() { cout << "mul_v2_test SetUp\n" << endl; }
+    static void TearDownTestCase() { cout << "mul_v2_test TearDown\n" << endl; }
 };
 
 TEST_F(mul_v2_test, test_case_101)

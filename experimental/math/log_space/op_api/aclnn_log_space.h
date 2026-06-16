@@ -41,19 +41,11 @@ extern "C" {
  * @param executor [out]
  */
 ACLNN_API aclnnStatus aclnnLogSpaceGetWorkspaceSize(
-    const aclScalar *start,
-    const aclScalar *end,
-    int64_t steps,
-    double base,
-    const aclTensor *result,
-    uint64_t *workspaceSize,
-    aclOpExecutor **executor);
+    const aclScalar* start, const aclScalar* end, int64_t steps, double base, const aclTensor* result,
+    uint64_t* workspaceSize, aclOpExecutor** executor);
 
-ACLNN_API aclnnStatus aclnnLogSpace(
-    void *workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor *executor,
-    aclrtStream stream);
+ACLNN_API aclnnStatus
+aclnnLogSpace(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 #ifdef __cplusplus
 }

@@ -31,10 +31,9 @@ constexpr int32_t DEPTH_NUM = 1;
 namespace RealNs {
 
 template <typename S, typename T>
-class RealKernel
-{
+class RealKernel {
 public:
-    __aicore__ inline RealKernel() {};
+    __aicore__ inline RealKernel(){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const RealTilingData* __restrict tilingData, TPipe* pipeIn);
     __aicore__ inline void Process();
 
@@ -49,15 +48,15 @@ private:
     TPipe* pipe_;
     TQue<QuePosition::VECIN, DEPTH_NUM> inQueue;
     TQue<QuePosition::VECOUT, DEPTH_NUM> outQueue;
-    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, DEPTH_NUM> ioQueue;  // For pure copy
+    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, DEPTH_NUM> ioQueue; // For pure copy
     GlobalTensor<T> xGm;
     GlobalTensor<T> yGm;
     uint32_t blockIdx_ = 0;
-    uint64_t blockLength = 0;     // uint64_t to prevent overflow for large tensors
-    uint64_t blockOffset = 0;     // uint64_t to prevent overflow for large tensors
-    uint32_t perOfCore = 0;       // Bounded by UB size, uint32_t is sufficient
-    uint32_t loopOfCore = 0;      // Number of loops, uint32_t is sufficient
-    uint32_t tailOfCore = 0;      // Bounded by UB size, uint32_t is sufficient
+    uint64_t blockLength = 0; // uint64_t to prevent overflow for large tensors
+    uint64_t blockOffset = 0; // uint64_t to prevent overflow for large tensors
+    uint32_t perOfCore = 0;   // Bounded by UB size, uint32_t is sufficient
+    uint32_t loopOfCore = 0;  // Number of loops, uint32_t is sufficient
+    uint32_t tailOfCore = 0;  // Bounded by UB size, uint32_t is sufficient
     uint32_t useNonInplace_ = 0;
 };
 
@@ -88,7 +87,8 @@ __aicore__ inline void RealKernel<S, T>::ExtractRealPartNonInplace(
 }
 
 template <typename S, typename T>
-__aicore__ inline void RealKernel<S, T>::Init(GM_ADDR x, GM_ADDR y, const RealTilingData* __restrict tilingData, TPipe* pipeIn)
+__aicore__ inline void RealKernel<S, T>::Init(
+    GM_ADDR x, GM_ADDR y, const RealTilingData* __restrict tilingData, TPipe* pipeIn)
 {
     pipe_ = pipeIn;
     blockIdx_ = GetBlockIdx();
@@ -110,8 +110,8 @@ __aicore__ inline void RealKernel<S, T>::Init(GM_ADDR x, GM_ADDR y, const RealTi
         // Adjust offset: subtract over-counted data from big cores
         if (tilingData->bigCoreDataNum > 0) {
             globalOffset -= (static_cast<uint64_t>(tilingData->bigCoreDataNum) -
-                static_cast<uint64_t>(tilingData->smallCoreDataNum)) *
-                (blockIdx_ - static_cast<uint64_t>(tilingData->tailBlockNum));
+                             static_cast<uint64_t>(tilingData->smallCoreDataNum)) *
+                            (blockIdx_ - static_cast<uint64_t>(tilingData->tailBlockNum));
         }
     }
 
@@ -166,8 +166,8 @@ __aicore__ inline void RealKernel<S, T>::ProcessComplexTiling()
 
         ExtractRealPart(input, curLen);
         DataCopyExtParams copyOut{
-            static_cast<uint16_t>(1), static_cast<uint32_t>(curLen * sizeof(T)),
-            static_cast<uint32_t>(0), static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
+            static_cast<uint16_t>(1), static_cast<uint32_t>(curLen * sizeof(T)), static_cast<uint32_t>(0),
+            static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
         DataCopyPad(yGm[currentOffset], input, copyOut);
         inQueue.FreeTensor(input);
 
@@ -191,8 +191,8 @@ __aicore__ inline void RealKernel<S, T>::ProcessComplexNonInplace()
         // DMA in: read complex data
         LocalTensor<T> xLocal = inQueue.AllocTensor<T>();
         DataCopyExtParams copyIn{
-            static_cast<uint16_t>(1), static_cast<uint32_t>(complexTileLen * sizeof(T)),
-            static_cast<uint32_t>(0), static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
+            static_cast<uint16_t>(1), static_cast<uint32_t>(complexTileLen * sizeof(T)), static_cast<uint32_t>(0),
+            static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
         DataCopyPad(xLocal, xGm[currentOffset * COMPLEX_COEFFICIENT], copyIn, padParams);
         inQueue.EnQue(xLocal);
 
@@ -206,8 +206,8 @@ __aicore__ inline void RealKernel<S, T>::ProcessComplexNonInplace()
         // DMA out: write real data
         LocalTensor<T> output = outQueue.DeQue<T>();
         DataCopyExtParams copyOut{
-            static_cast<uint16_t>(1), static_cast<uint32_t>(curLen * sizeof(T)),
-            static_cast<uint32_t>(0), static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
+            static_cast<uint16_t>(1), static_cast<uint32_t>(curLen * sizeof(T)), static_cast<uint32_t>(0),
+            static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
         DataCopyPad(yGm[currentOffset], output, copyOut);
         outQueue.FreeTensor(output);
 
@@ -227,8 +227,8 @@ __aicore__ inline void RealKernel<S, T>::ProcessRealIdentity()
     uint32_t firstTileLen = (loopOfCore > 1) ? perOfCore : tailOfCore;
     LocalTensor<T> firstBuf = ioQueue.AllocTensor<T>();
     DataCopyExtParams copyFirstIn{
-        static_cast<uint16_t>(1), static_cast<uint32_t>(firstTileLen * sizeof(T)),
-        static_cast<uint32_t>(0), static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
+        static_cast<uint16_t>(1), static_cast<uint32_t>(firstTileLen * sizeof(T)), static_cast<uint32_t>(0),
+        static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
     DataCopyPad(firstBuf, xGm[0], copyFirstIn, padParams);
     ioQueue.EnQue(firstBuf);
 
@@ -243,16 +243,16 @@ __aicore__ inline void RealKernel<S, T>::ProcessRealIdentity()
             uint32_t nextLen = (loopIdx + 1 < loopOfCore - 1) ? perOfCore : tailOfCore;
             LocalTensor<T> nextBuf = ioQueue.AllocTensor<T>();
             DataCopyExtParams copyNextIn{
-                static_cast<uint16_t>(1), static_cast<uint32_t>(nextLen * sizeof(T)),
-                static_cast<uint32_t>(0), static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
+                static_cast<uint16_t>(1), static_cast<uint32_t>(nextLen * sizeof(T)), static_cast<uint32_t>(0),
+                static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
             DataCopyPad(nextBuf, xGm[currentOffset + curLen], copyNextIn, padParams);
             ioQueue.EnQue(nextBuf);
         }
 
         // DMA out: copy to yGm
         DataCopyExtParams copyOut{
-            static_cast<uint16_t>(1), static_cast<uint32_t>(curLen * sizeof(T)),
-            static_cast<uint32_t>(0), static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
+            static_cast<uint16_t>(1), static_cast<uint32_t>(curLen * sizeof(T)), static_cast<uint32_t>(0),
+            static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
         DataCopyPad(yGm[currentOffset], input, copyOut);
         ioQueue.FreeTensor(input);
 

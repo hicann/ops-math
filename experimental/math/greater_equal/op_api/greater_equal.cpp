@@ -40,7 +40,7 @@ static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT64, op::DataType::DT_UINT64, op::DataType::DT_BOOL};
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
-static bool IsAiCoreSupport(const aclTensor *self)
+static bool IsAiCoreSupport(const aclTensor* self)
 {
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     if (IsRegBase(npuArch)) {
@@ -52,14 +52,14 @@ static bool IsAiCoreSupport(const aclTensor *self)
     return op::CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
 }
 
-bool IsGreaterEqualSupportNonContiguous(const aclTensor *self)
+bool IsGreaterEqualSupportNonContiguous(const aclTensor* self)
 {
     bool isSupportNonContiguous = IsRegBase();
     return isSupportNonContiguous && IsAiCoreSupport(self);
 }
 
-static const aclTensor *GreaterEqualAiCore(
-    const aclTensor *self, const aclTensor *other, aclTensor *out, aclOpExecutor *executor)
+static const aclTensor* GreaterEqualAiCore(
+    const aclTensor* self, const aclTensor* other, aclTensor* out, aclOpExecutor* executor)
 {
     L0_DFX(GreaterEqualAiCore, self, other, out);
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(GreaterEqual, OP_INPUT(self, other), OP_OUTPUT(out));
@@ -69,19 +69,19 @@ static const aclTensor *GreaterEqualAiCore(
     return out;
 }
 
-static const aclTensor *GreaterEqualAiCpu(
-    const aclTensor *self, const aclTensor *other, aclTensor *out, aclOpExecutor *executor)
+static const aclTensor* GreaterEqualAiCpu(
+    const aclTensor* self, const aclTensor* other, aclTensor* out, aclOpExecutor* executor)
 {
     L0_DFX(GreaterEqualAiCpu, self, other, out);
     static internal::AicpuTaskSpace space("GreaterEqual");
     auto ret = ADD_TO_LAUNCHER_LIST_AICPU(GreaterEqual, OP_ATTR_NAMES(), OP_INPUT(self, other), OP_OUTPUT(out));
     OP_CHECK(
-        ret == ACLNN_SUCCESS,
-        OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "GreaterEqualAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."), return nullptr);
+        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "GreaterEqualAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
+        return nullptr);
     return out;
 }
 
-const aclTensor *GreaterEqual(const aclTensor *self, const aclTensor *other, aclOpExecutor *executor)
+const aclTensor* GreaterEqual(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor)
 {
     L0_DFX(GreaterEqual, self, other);
 

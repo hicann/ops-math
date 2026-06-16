@@ -133,8 +133,9 @@ int Init(int32_t deviceId, aclrtStream* stream)
 }
 
 template <typename T>
-int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr,
-                    aclDataType dataType, aclTensor** tensor)
+int CreateAclTensor(
+    const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr, aclDataType dataType,
+    aclTensor** tensor)
 {
     auto size = GetShapeSize(shape) * sizeof(T);
     auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -147,18 +148,23 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
         strides[i] = shape[i + 1] * strides[i + 1];
     }
 
-    *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND,
-                              shape.data(), shape.size(), *deviceAddr);
+    *tensor = aclCreateTensor(
+        shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
+        *deviceAddr);
     return 0;
 }
 
 static const char* DtypeName(aclDataType dtype)
 {
     switch (dtype) {
-        case ACL_FLOAT16: return "FP16";
-        case ACL_FLOAT:   return "FP32";
-        case ACL_BF16:    return "BF16";
-        default:          return "UNKNOWN";
+        case ACL_FLOAT16:
+            return "FP16";
+        case ACL_FLOAT:
+            return "FP32";
+        case ACL_BF16:
+            return "BF16";
+        default:
+            return "UNKNOWN";
     }
 }
 
@@ -185,10 +191,16 @@ int RunTestFP32(aclrtStream stream)
     }
 
     float alphaVal = 2.0f;
-    float betaVal  = 0.5f;
+    float betaVal = 0.5f;
 
-    void* devA = nullptr; void* devB = nullptr; void* devC = nullptr; void* devOut = nullptr;
-    aclTensor* tA = nullptr; aclTensor* tB = nullptr; aclTensor* tC = nullptr; aclTensor* tOut = nullptr;
+    void* devA = nullptr;
+    void* devB = nullptr;
+    void* devC = nullptr;
+    void* devOut = nullptr;
+    aclTensor* tA = nullptr;
+    aclTensor* tB = nullptr;
+    aclTensor* tC = nullptr;
+    aclTensor* tOut = nullptr;
 
     auto ret = CreateAclTensor(aHost, shape, &devA, ACL_FLOAT, &tA);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -200,13 +212,12 @@ int RunTestFP32(aclrtStream stream)
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     aclScalar* sAlpha = aclCreateScalar(&alphaVal, ACL_FLOAT);
-    aclScalar* sBeta  = aclCreateScalar(&betaVal,  ACL_FLOAT);
+    aclScalar* sBeta = aclCreateScalar(&betaVal, ACL_FLOAT);
 
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor = nullptr;
     ret = aclnnAddMatMatElementsGetWorkspaceSize(tA, tB, tC, sAlpha, sBeta, tOut, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("  GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("  GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     void* wsAddr = nullptr;
     if (workspaceSize > 0) {
@@ -219,8 +230,8 @@ int RunTestFP32(aclrtStream stream)
     ret = aclrtSynchronizeStream(stream);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-    ret = aclrtMemcpy(cOutHost.data(), numElements * sizeof(float), devOut,
-                      numElements * sizeof(float), ACL_MEMCPY_DEVICE_TO_HOST);
+    ret = aclrtMemcpy(
+        cOutHost.data(), numElements * sizeof(float), devOut, numElements * sizeof(float), ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     // 精度验证
@@ -228,7 +239,8 @@ int RunTestFP32(aclrtStream stream)
     for (int64_t i = 0; i < numElements; ++i) {
         float golden = cHost[i] * betaVal + alphaVal * aHost[i] * bHost[i];
         double err = std::abs(static_cast<double>(cOutHost[i]) - static_cast<double>(golden));
-        if (err > maxErr) maxErr = err;
+        if (err > maxErr)
+            maxErr = err;
     }
     bool pass = (maxErr < 1e-5);
     LOG_PRINT("  max_abs_err = %.6e, %s\n", maxErr, pass ? "PASS" : "FAIL");
@@ -237,10 +249,18 @@ int RunTestFP32(aclrtStream stream)
         LOG_PRINT("  [%ld] actual=%.6f golden=%.6f\n", i, cOutHost[i], golden);
     }
 
-    aclDestroyTensor(tA); aclDestroyTensor(tB); aclDestroyTensor(tC); aclDestroyTensor(tOut);
-    aclDestroyScalar(sAlpha); aclDestroyScalar(sBeta);
-    aclrtFree(devA); aclrtFree(devB); aclrtFree(devC); aclrtFree(devOut);
-    if (wsAddr) aclrtFree(wsAddr);
+    aclDestroyTensor(tA);
+    aclDestroyTensor(tB);
+    aclDestroyTensor(tC);
+    aclDestroyTensor(tOut);
+    aclDestroyScalar(sAlpha);
+    aclDestroyScalar(sBeta);
+    aclrtFree(devA);
+    aclrtFree(devB);
+    aclrtFree(devC);
+    aclrtFree(devOut);
+    if (wsAddr)
+        aclrtFree(wsAddr);
 
     return pass ? 0 : 1;
 }
@@ -268,22 +288,28 @@ int RunTestFP16(aclrtStream stream)
     std::vector<float> cFloat(numElements);
 
     for (int64_t i = 0; i < numElements; ++i) {
-        float av = static_cast<float>(i % 8 + 1);    // 1~8，避免 FP16 溢出
+        float av = static_cast<float>(i % 8 + 1); // 1~8，避免 FP16 溢出
         float bv = 1.0f / static_cast<float>(i % 8 + 1);
         float cv = static_cast<float>(i % 4) * 0.25f;
         aHost[i] = FloatToFp16(av);
         bHost[i] = FloatToFp16(bv);
         cHost[i] = FloatToFp16(cv);
-        aFloat[i] = Fp16ToFloat(aHost[i]);  // 用量化后的值作 golden
+        aFloat[i] = Fp16ToFloat(aHost[i]); // 用量化后的值作 golden
         bFloat[i] = Fp16ToFloat(bHost[i]);
         cFloat[i] = Fp16ToFloat(cHost[i]);
     }
 
     float alphaVal = 2.0f;
-    float betaVal  = 0.5f;
+    float betaVal = 0.5f;
 
-    void* devA = nullptr; void* devB = nullptr; void* devC = nullptr; void* devOut = nullptr;
-    aclTensor* tA = nullptr; aclTensor* tB = nullptr; aclTensor* tC = nullptr; aclTensor* tOut = nullptr;
+    void* devA = nullptr;
+    void* devB = nullptr;
+    void* devC = nullptr;
+    void* devOut = nullptr;
+    aclTensor* tA = nullptr;
+    aclTensor* tB = nullptr;
+    aclTensor* tC = nullptr;
+    aclTensor* tOut = nullptr;
 
     auto ret = CreateAclTensor(aHost, shape, &devA, ACL_FLOAT16, &tA);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -295,13 +321,12 @@ int RunTestFP16(aclrtStream stream)
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     aclScalar* sAlpha = aclCreateScalar(&alphaVal, ACL_FLOAT);
-    aclScalar* sBeta  = aclCreateScalar(&betaVal,  ACL_FLOAT);
+    aclScalar* sBeta = aclCreateScalar(&betaVal, ACL_FLOAT);
 
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor = nullptr;
     ret = aclnnAddMatMatElementsGetWorkspaceSize(tA, tB, tC, sAlpha, sBeta, tOut, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("  GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("  GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     void* wsAddr = nullptr;
     if (workspaceSize > 0) {
@@ -314,8 +339,9 @@ int RunTestFP16(aclrtStream stream)
     ret = aclrtSynchronizeStream(stream);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-    ret = aclrtMemcpy(cOutHost.data(), numElements * sizeof(uint16_t), devOut,
-                      numElements * sizeof(uint16_t), ACL_MEMCPY_DEVICE_TO_HOST);
+    ret = aclrtMemcpy(
+        cOutHost.data(), numElements * sizeof(uint16_t), devOut, numElements * sizeof(uint16_t),
+        ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     // 精度验证（FP16 容差 rtol=1e-3）
@@ -324,7 +350,8 @@ int RunTestFP16(aclrtStream stream)
         float actual = Fp16ToFloat(cOutHost[i]);
         float golden = cFloat[i] * betaVal + alphaVal * aFloat[i] * bFloat[i];
         double relErr = std::abs(static_cast<double>(actual - golden)) / (std::abs(golden) + 1e-7);
-        if (relErr > maxRelErr) maxRelErr = relErr;
+        if (relErr > maxRelErr)
+            maxRelErr = relErr;
     }
     bool pass = (maxRelErr < 1e-2);
     LOG_PRINT("  max_rel_err = %.6e, %s\n", maxRelErr, pass ? "PASS" : "FAIL");
@@ -334,10 +361,18 @@ int RunTestFP16(aclrtStream stream)
         LOG_PRINT("  [%ld] actual=%.6f golden=%.6f\n", i, actual, golden);
     }
 
-    aclDestroyTensor(tA); aclDestroyTensor(tB); aclDestroyTensor(tC); aclDestroyTensor(tOut);
-    aclDestroyScalar(sAlpha); aclDestroyScalar(sBeta);
-    aclrtFree(devA); aclrtFree(devB); aclrtFree(devC); aclrtFree(devOut);
-    if (wsAddr) aclrtFree(wsAddr);
+    aclDestroyTensor(tA);
+    aclDestroyTensor(tB);
+    aclDestroyTensor(tC);
+    aclDestroyTensor(tOut);
+    aclDestroyScalar(sAlpha);
+    aclDestroyScalar(sBeta);
+    aclrtFree(devA);
+    aclrtFree(devB);
+    aclrtFree(devC);
+    aclrtFree(devOut);
+    if (wsAddr)
+        aclrtFree(wsAddr);
 
     return pass ? 0 : 1;
 }
@@ -375,10 +410,16 @@ int RunTestBF16(aclrtStream stream)
     }
 
     float alphaVal = 2.0f;
-    float betaVal  = 0.5f;
+    float betaVal = 0.5f;
 
-    void* devA = nullptr; void* devB = nullptr; void* devC = nullptr; void* devOut = nullptr;
-    aclTensor* tA = nullptr; aclTensor* tB = nullptr; aclTensor* tC = nullptr; aclTensor* tOut = nullptr;
+    void* devA = nullptr;
+    void* devB = nullptr;
+    void* devC = nullptr;
+    void* devOut = nullptr;
+    aclTensor* tA = nullptr;
+    aclTensor* tB = nullptr;
+    aclTensor* tC = nullptr;
+    aclTensor* tOut = nullptr;
 
     auto ret = CreateAclTensor(aHost, shape, &devA, ACL_BF16, &tA);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -390,13 +431,12 @@ int RunTestBF16(aclrtStream stream)
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     aclScalar* sAlpha = aclCreateScalar(&alphaVal, ACL_FLOAT);
-    aclScalar* sBeta  = aclCreateScalar(&betaVal,  ACL_FLOAT);
+    aclScalar* sBeta = aclCreateScalar(&betaVal, ACL_FLOAT);
 
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor = nullptr;
     ret = aclnnAddMatMatElementsGetWorkspaceSize(tA, tB, tC, sAlpha, sBeta, tOut, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("  GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("  GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     void* wsAddr = nullptr;
     if (workspaceSize > 0) {
@@ -409,8 +449,9 @@ int RunTestBF16(aclrtStream stream)
     ret = aclrtSynchronizeStream(stream);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-    ret = aclrtMemcpy(cOutHost.data(), numElements * sizeof(uint16_t), devOut,
-                      numElements * sizeof(uint16_t), ACL_MEMCPY_DEVICE_TO_HOST);
+    ret = aclrtMemcpy(
+        cOutHost.data(), numElements * sizeof(uint16_t), devOut, numElements * sizeof(uint16_t),
+        ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     // 精度验证（BF16 容差 rtol=1e-2）
@@ -419,7 +460,8 @@ int RunTestBF16(aclrtStream stream)
         float actual = Bf16ToFloat(cOutHost[i]);
         float golden = cFloat[i] * betaVal + alphaVal * aFloat[i] * bFloat[i];
         double relErr = std::abs(static_cast<double>(actual - golden)) / (std::abs(golden) + 1e-7);
-        if (relErr > maxRelErr) maxRelErr = relErr;
+        if (relErr > maxRelErr)
+            maxRelErr = relErr;
     }
     bool pass = (maxRelErr < 1e-2);
     LOG_PRINT("  max_rel_err = %.6e, %s\n", maxRelErr, pass ? "PASS" : "FAIL");
@@ -429,10 +471,18 @@ int RunTestBF16(aclrtStream stream)
         LOG_PRINT("  [%ld] actual=%.6f golden=%.6f\n", i, actual, golden);
     }
 
-    aclDestroyTensor(tA); aclDestroyTensor(tB); aclDestroyTensor(tC); aclDestroyTensor(tOut);
-    aclDestroyScalar(sAlpha); aclDestroyScalar(sBeta);
-    aclrtFree(devA); aclrtFree(devB); aclrtFree(devC); aclrtFree(devOut);
-    if (wsAddr) aclrtFree(wsAddr);
+    aclDestroyTensor(tA);
+    aclDestroyTensor(tB);
+    aclDestroyTensor(tC);
+    aclDestroyTensor(tOut);
+    aclDestroyScalar(sAlpha);
+    aclDestroyScalar(sBeta);
+    aclrtFree(devA);
+    aclrtFree(devB);
+    aclrtFree(devC);
+    aclrtFree(devOut);
+    if (wsAddr)
+        aclrtFree(wsAddr);
 
     return pass ? 0 : 1;
 }

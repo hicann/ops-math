@@ -77,7 +77,8 @@ static ge::graphStatus InferShape4MulNoNan(gert::InferShapeContext* context)
         } else if (yDim == 1) {
             outDim = xDim;
         } else {
-            OP_LOGE(context,
+            OP_LOGE(
+                context,
                 "MulNoNan InferShape: shapes are not broadcast-compatible at dim %zu "
                 "(from right): x_dim=%ld, y_dim=%ld",
                 i, xDim, yDim);

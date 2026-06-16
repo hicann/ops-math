@@ -15,8 +15,7 @@
 
 namespace l0op {
 
-const aclTensor* DivV3(const aclTensor* self, const aclTensor* other,
-                       int64_t mode, aclOpExecutor* executor);
+const aclTensor* DivV3(const aclTensor* self, const aclTensor* other, int64_t mode, aclOpExecutor* executor);
 
 } // namespace l0op
 

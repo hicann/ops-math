@@ -11,21 +11,23 @@
 /*!
  * \file sqrt.cpp
  * \brief
-*/
+ */
 
 #include "sqrt.h"
 
-enum class SqrtTilingKey : uint32_t
-{
+enum class SqrtTilingKey : uint32_t {
     TILING_KEY_EXAMPLE_FLOAT = 0,
     TILING_KEY_EXAMPLE_OTHER = 1,
 };
 template <uint32_t schMode>
 __global__ __aicore__ void sqrt(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
-     REGISTER_TILING_DEFAULT(SqrtTilingData);
-     GET_TILING_DATA_WITH_STRUCT(SqrtTilingData, tilingData, tiling);
-     MySqrt::KernelSqrt<DTYPE_X,DTYPE_Y> op; 
-     op.Init(x, y,tilingData.smallCoreDataNum,tilingData.bigCoreDataNum, tilingData.finalBigTileNum,tilingData.finalSmallTileNum, tilingData.tileDataNum,tilingData.smallTailDataNum, tilingData.bigTailDataNum,tilingData.tailBlockNum);      // 算子kernel实例初始化
-     op.Process();                       
+    REGISTER_TILING_DEFAULT(SqrtTilingData);
+    GET_TILING_DATA_WITH_STRUCT(SqrtTilingData, tilingData, tiling);
+    MySqrt::KernelSqrt<DTYPE_X, DTYPE_Y> op;
+    op.Init(
+        x, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.finalBigTileNum,
+        tilingData.finalSmallTileNum, tilingData.tileDataNum, tilingData.smallTailDataNum, tilingData.bigTailDataNum,
+        tilingData.tailBlockNum); // 算子kernel实例初始化
+    op.Process();
 }

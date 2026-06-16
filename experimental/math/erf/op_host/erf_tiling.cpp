@@ -24,13 +24,12 @@
 
 namespace optiling {
 
-
 constexpr uint32_t BLOCK_SIZE = 32U;
 constexpr uint32_t BUFFER_NUM = 2;
 constexpr uint32_t WS_SYS_SIZE = 0;
 constexpr uint32_t INDEXZERO = 0;
 constexpr uint32_t DB_TILING_MIN_NUM = 262144; // 开启DoubleBuffer的最小输入shape
-constexpr uint32_t UB_DATA_NUM_DB = 6144; // 开启DoubleBuffer，单次UB可容纳的数据量
+constexpr uint32_t UB_DATA_NUM_DB = 6144;      // 开启DoubleBuffer，单次UB可容纳的数据量
 constexpr uint32_t UB_DATA_NUM_NDB_MAX = 6656; // 不开启DoubleBuffer，单次UB可容纳的最大数据量
 constexpr uint32_t UB_DATA_NUM_NDB_HIGH = 4096;
 constexpr uint32_t UB_DATA_NUM_NDB_MEDIUM = 2048;
@@ -41,9 +40,8 @@ constexpr uint32_t UB_DATA_NUM_NDB_THRESHOLD_TWO = 1024 * 20;
 constexpr uint32_t UB_DATA_NUM_NDB_THRESHOLD_THREE = 2048 * 30;
 constexpr uint32_t UB_DATA_NUM_NDB_THRESHOLD_FOUR = 4096 * 30;
 
-
 constexpr uint32_t GM_ALIGN_NUM = 512; // 为了提高GM的搬运效率，对GM数据采取512字节对齐
-constexpr uint32_t REPEAT_NUM = 256; 
+constexpr uint32_t REPEAT_NUM = 256;
 struct ErfCompileInfo {};
 
 static ge::graphStatus TilingParseForErf([[maybe_unused]] gert::TilingParseContext* context)
@@ -76,8 +74,7 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus GetShapeAttrsInfo(
-    gert::TilingContext* context, uint64_t& inputNum, uint64_t& inputBytes)
+static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, uint64_t& inputNum, uint64_t& inputBytes)
 {
     OP_CHECK_IF(
         context == nullptr || context->GetInputShape(INDEXZERO) == nullptr, OP_LOGE(context, "context is nullptr"),
@@ -97,28 +94,27 @@ static ge::graphStatus GetShapeAttrsInfo(
 
 static ge::graphStatus CalculateTilingDataNoDB(
     uint64_t inputNum, int64_t aivCoreNum, uint64_t inputBytes, uint64_t elemsPer512, uint64_t inputNumAlign256,
-    uint64_t& tileDataNum, int64_t& coreNum, 
-    uint64_t& bigCoreDataNum, uint64_t& finalBigTileNum, uint64_t& bigTailDataNum)
+    uint64_t& tileDataNum, int64_t& coreNum, uint64_t& bigCoreDataNum, uint64_t& finalBigTileNum,
+    uint64_t& bigTailDataNum)
 {
-    if (0 == BLOCK_SIZE || 0 == inputNum || 0 == aivCoreNum || 0 == inputBytes || 0 == UB_DATA_NUM_NDB_MAX || 0 == elemsPer512 || 0 == inputNumAlign256) {
+    if (0 == BLOCK_SIZE || 0 == inputNum || 0 == aivCoreNum || 0 == inputBytes || 0 == UB_DATA_NUM_NDB_MAX ||
+        0 == elemsPer512 || 0 == inputNumAlign256) {
         return ge::GRAPH_FAILED;
     }
-    constexpr std::array<std::pair<uint32_t, uint32_t>, 5> thresholdMap = {{
-        {UB_DATA_NUM_NDB_THRESHOLD_ONE, UB_DATA_NUM_NDB_MIN},
-        {UB_DATA_NUM_NDB_THRESHOLD_TWO, UB_DATA_NUM_NDB_LOW},
-        {UB_DATA_NUM_NDB_THRESHOLD_THREE, UB_DATA_NUM_NDB_MEDIUM},
-        {UB_DATA_NUM_NDB_THRESHOLD_FOUR, UB_DATA_NUM_NDB_HIGH},
-        {UINT32_MAX, UB_DATA_NUM_NDB_MAX} 
-    }};
+    constexpr std::array<std::pair<uint32_t, uint32_t>, 5> thresholdMap = {
+        {{UB_DATA_NUM_NDB_THRESHOLD_ONE, UB_DATA_NUM_NDB_MIN},
+         {UB_DATA_NUM_NDB_THRESHOLD_TWO, UB_DATA_NUM_NDB_LOW},
+         {UB_DATA_NUM_NDB_THRESHOLD_THREE, UB_DATA_NUM_NDB_MEDIUM},
+         {UB_DATA_NUM_NDB_THRESHOLD_FOUR, UB_DATA_NUM_NDB_HIGH},
+         {UINT32_MAX, UB_DATA_NUM_NDB_MAX}}};
 
-    auto it = std::find_if(thresholdMap.begin(), thresholdMap.end(),
-        [inputNum](const auto& pair) { return inputNum <= pair.first; });
+    auto it = std::find_if(
+        thresholdMap.begin(), thresholdMap.end(), [inputNum](const auto& pair) { return inputNum <= pair.first; });
     uint32_t suggestedTileDataNum = it->second;
-     
+
     tileDataNum = suggestedTileDataNum;
     tileDataNum = (tileDataNum + elemsPer512 - 1) / elemsPer512 * elemsPer512;
-    if (0 == tileDataNum)
-    {
+    if (0 == tileDataNum) {
         return ge::GRAPH_FAILED;
     }
     coreNum = (inputNum + tileDataNum - 1) / tileDataNum;
@@ -133,11 +129,11 @@ static ge::graphStatus CalculateTilingDataNoDB(
 
 static ge::graphStatus CalculateTilingDataWithDB(
     uint64_t inputNum, int64_t aivCoreNum, uint64_t inputBytes, uint64_t elemsPer512, uint64_t inputNumAlign256,
-    uint64_t& tileDataNum, int64_t& coreNum, 
-    uint64_t& bigCoreDataNum, uint64_t& smallTailDataNum, uint64_t& bigTailDataNum,
-    uint64_t& smallCoreDataNum, uint64_t& finalSmallTileNum, uint64_t& finalBigTileNum)
+    uint64_t& tileDataNum, int64_t& coreNum, uint64_t& bigCoreDataNum, uint64_t& smallTailDataNum,
+    uint64_t& bigTailDataNum, uint64_t& smallCoreDataNum, uint64_t& finalSmallTileNum, uint64_t& finalBigTileNum)
 {
-    if (0 == BLOCK_SIZE || 0 == inputNum || 0 == aivCoreNum || 0 == inputBytes || 0 == UB_DATA_NUM_DB || 0 == elemsPer512 || 0 == inputNumAlign256) {
+    if (0 == BLOCK_SIZE || 0 == inputNum || 0 == aivCoreNum || 0 == inputBytes || 0 == UB_DATA_NUM_DB ||
+        0 == elemsPer512 || 0 == inputNumAlign256) {
         return ge::GRAPH_FAILED;
     }
 
@@ -145,27 +141,24 @@ static ge::graphStatus CalculateTilingDataWithDB(
     uint64_t tileDataNum_db = tileDataNum * BUFFER_NUM;
     if (0 == tileDataNum_db || 0 == tileDataNum) {
         return ge::GRAPH_FAILED;
-    }    
+    }
     coreNum = (inputNum + tileDataNum_db - 1) / tileDataNum_db;
     coreNum = (coreNum > aivCoreNum) ? aivCoreNum : coreNum;
 
-    if (0 == coreNum)
-    {
+    if (0 == coreNum) {
         return ge::GRAPH_FAILED;
     }
     bigCoreDataNum = (inputNum + coreNum - 1) / coreNum;
     bigCoreDataNum = (bigCoreDataNum + elemsPer512 - 1) / elemsPer512 * elemsPer512;
     finalBigTileNum = (bigCoreDataNum + tileDataNum - 1) / tileDataNum;
-    if (((finalBigTileNum - 1) * tileDataNum) > bigCoreDataNum)
-    {
+    if (((finalBigTileNum - 1) * tileDataNum) > bigCoreDataNum) {
         finalBigTileNum = finalBigTileNum - 1;
     }
     bigTailDataNum = bigCoreDataNum - (finalBigTileNum - 1) * tileDataNum;
 
     smallCoreDataNum = inputNumAlign256 - (coreNum - 1) * bigCoreDataNum;
     finalSmallTileNum = (smallCoreDataNum + tileDataNum - 1) / tileDataNum;
-    if (((finalSmallTileNum - 1) * tileDataNum) > smallCoreDataNum)
-    {
+    if (((finalSmallTileNum - 1) * tileDataNum) > smallCoreDataNum) {
         finalSmallTileNum = finalSmallTileNum - 1;
     }
     smallTailDataNum = smallCoreDataNum - (finalSmallTileNum - 1) * tileDataNum;
@@ -189,7 +182,7 @@ static ge::graphStatus ErfTilingFunc(gert::TilingContext* context)
     int64_t coreNum = aivCoreNum;
 
     uint64_t inputNum = 0;
-    uint64_t inputBytes = 0; 
+    uint64_t inputBytes = 0;
     uint64_t tileDataNum = 0;
     uint64_t finalBigTileNum = 0;
     uint64_t finalSmallTileNum = 0;
@@ -208,27 +201,28 @@ static ge::graphStatus ErfTilingFunc(gert::TilingContext* context)
     // 为了提高小输入Shape数据的性能，设计2个kernel。
     // ELEMENTWISE_TPL_SCH_MODE_0：对应处理不超过262144数据的kernel，不开启double buffer，尽量减少scale开销；
     // ELEMENTWISE_TPL_SCH_MODE_1：对应处理超过262144数据的kernel，开启double buffer，尽量使用aicore的计算能力；
-    OP_CHECK_IF(0 == GM_ALIGN_NUM || 0 == REPEAT_NUM || 0 == inputBytes, OP_LOGE(context, "parma error"), return ge::GRAPH_FAILED);
-    uint64_t elemsPer512 =  GM_ALIGN_NUM / inputBytes; 
-    uint64_t elemsPerRepeat =  REPEAT_NUM / inputBytes;
+    OP_CHECK_IF(
+        0 == GM_ALIGN_NUM || 0 == REPEAT_NUM || 0 == inputBytes, OP_LOGE(context, "parma error"),
+        return ge::GRAPH_FAILED);
+    uint64_t elemsPer512 = GM_ALIGN_NUM / inputBytes;
+    uint64_t elemsPerRepeat = REPEAT_NUM / inputBytes;
     OP_CHECK_IF(0 == elemsPerRepeat, OP_LOGE(context, "elemsPerRepeat is error"), return ge::GRAPH_FAILED);
     uint64_t inputNumAlign256 = (inputNum + elemsPerRepeat - 1) / elemsPerRepeat * elemsPerRepeat;
-    if (inputNum <= DB_TILING_MIN_NUM) // 
+    if (inputNum <= DB_TILING_MIN_NUM) //
     {
         uint32_t tilingKey = GET_TPL_TILING_KEY(ELEMENTWISE_TPL_SCH_MODE_0);
-        context->SetTilingKey(tilingKey);  
+        context->SetTilingKey(tilingKey);
 
-        CalculateTilingDataNoDB(inputNum, aivCoreNum, inputBytes, elemsPer512, inputNumAlign256,
-        tileDataNum, coreNum, bigCoreDataNum, finalBigTileNum, bigTailDataNum);    
-    }
-    else
-    {
+        CalculateTilingDataNoDB(
+            inputNum, aivCoreNum, inputBytes, elemsPer512, inputNumAlign256, tileDataNum, coreNum, bigCoreDataNum,
+            finalBigTileNum, bigTailDataNum);
+    } else {
         uint32_t tilingKey = GET_TPL_TILING_KEY(ELEMENTWISE_TPL_SCH_MODE_1);
-        context->SetTilingKey(tilingKey);  
-        
-        CalculateTilingDataWithDB(inputNum, aivCoreNum, inputBytes, elemsPer512, inputNumAlign256,
-                                  tileDataNum, coreNum, bigCoreDataNum, smallTailDataNum, bigTailDataNum,
-                                  smallCoreDataNum, finalSmallTileNum, finalBigTileNum);
+        context->SetTilingKey(tilingKey);
+
+        CalculateTilingDataWithDB(
+            inputNum, aivCoreNum, inputBytes, elemsPer512, inputNumAlign256, tileDataNum, coreNum, bigCoreDataNum,
+            smallTailDataNum, bigTailDataNum, smallCoreDataNum, finalSmallTileNum, finalBigTileNum);
     }
 
     tiling->smallCoreDataNum = smallCoreDataNum;

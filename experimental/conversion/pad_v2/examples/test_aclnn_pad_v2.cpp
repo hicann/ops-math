@@ -106,14 +106,14 @@ int main()
     // 2. 构造输入与输出，需要根据API的接口自定义构造
     aclTensor* selfX = nullptr;
     void* selfXDeviceAddr = nullptr;
-    std::vector<int64_t> selfXShape = {2,3,4,5};
+    std::vector<int64_t> selfXShape = {2, 3, 4, 5};
     std::vector<int16_t> selfXHostData(120, 2);
     ret = CreateAclTensor(selfXHostData, selfXShape, &selfXDeviceAddr, aclDataType::ACL_INT16, &selfX);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     aclTensor* out = nullptr;
     void* outDeviceAddr = nullptr;
-    std::vector<int64_t> outShape = {4,5,6,7};
+    std::vector<int64_t> outShape = {4, 5, 6, 7};
     std::vector<int16_t> outHostData(840, 1);
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_INT16, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -133,7 +133,8 @@ int main()
     aclOpExecutor* executor;
 
     // 4. 调用aclnnPadV2第一段接口
-    ret = aclnnPadV2GetWorkspaceSize(selfX, mode,value, pad0,pad1,pad2,pad3,pad4,pad5,pad6,pad7,out, &workspaceSize, &executor);
+    ret = aclnnPadV2GetWorkspaceSize(
+        selfX, mode, value, pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7, out, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPadV2GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 根据第一段接口计算出的workspaceSize申请device内存

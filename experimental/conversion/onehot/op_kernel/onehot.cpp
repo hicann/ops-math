@@ -25,7 +25,6 @@
 
 #include "onehot.h"
 
-
 template <uint32_t schMode>
 __global__ __aicore__ void onehot(GM_ADDR x, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
 {
@@ -33,6 +32,6 @@ __global__ __aicore__ void onehot(GM_ADDR x, GM_ADDR z, GM_ADDR workspace, GM_AD
     GET_TILING_DATA_WITH_STRUCT(OnehotTilingData, tilingData, tiling);
 
     NsOnehot::Onehot<DTYPE_X> op; // 算子kernel实例获取
-    op.Init(x, z, &tilingData);      // 算子kernel实例初始化
+    op.Init(x, z, &tilingData);   // 算子kernel实例初始化
     op.Process();
 }

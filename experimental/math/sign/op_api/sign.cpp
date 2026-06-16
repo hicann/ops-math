@@ -28,39 +28,44 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT32, op::DataType::DT_BF16};
 
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_910D = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT32, op::DataType::DT_BF16, op::DataType::DT_INT64};
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT32, op::DataType::DT_BF16,
+    op::DataType::DT_INT64};
 
-static bool IsAiCoreSupport(const aclTensor *self) { 
-  if (IsRegBase()){
-    return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_910D);
-  }
-  return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST); 
+static bool IsAiCoreSupport(const aclTensor* self)
+{
+    if (IsRegBase()) {
+        return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_910D);
+    }
+    return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
 }
 
-static const aclTensor *SignAiCore(const aclTensor *self, aclTensor *result, aclOpExecutor *executor) {
-  L0_DFX(SignAiCore, self, result);
+static const aclTensor* SignAiCore(const aclTensor* self, aclTensor* result, aclOpExecutor* executor)
+{
+    L0_DFX(SignAiCore, self, result);
 
-  auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(Sign, OP_INPUT(self), OP_OUTPUT(result));
-  OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
-                                       "Sign ADD_TO_LAUNCHER_LIST_AICORE failed.");
-  return result;
+    auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(Sign, OP_INPUT(self), OP_OUTPUT(result));
+    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
+        retAicore != ACLNN_SUCCESS, return nullptr, "Sign ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    return result;
 }
 
-static const aclTensor *SignAiCpu(const aclTensor *self, aclTensor *result, aclOpExecutor *executor) {
-  L0_DFX(SignAiCpu, self, result);
+static const aclTensor* SignAiCpu(const aclTensor* self, aclTensor* result, aclOpExecutor* executor)
+{
+    L0_DFX(SignAiCpu, self, result);
 
-  static internal::AicpuTaskSpace space("Sign", ge::DEPEND_IN_SHAPE, true);
-  auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Sign, OP_ATTR_NAMES(), OP_INPUT(self), OP_OUTPUT(result));
-  CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
-  return result;
+    static internal::AicpuTaskSpace space("Sign", ge::DEPEND_IN_SHAPE, true);
+    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Sign, OP_ATTR_NAMES(), OP_INPUT(self), OP_OUTPUT(result));
+    CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
+    return result;
 }
 
-const aclTensor *Sign(const aclTensor *self, aclOpExecutor *executor) {
-  auto result = executor->AllocTensor(self->GetViewShape(), self->GetDataType());
-  if (IsAiCoreSupport(self)) {
-    return SignAiCore(self, result, executor);
-  } else {
-    return SignAiCpu(self, result, executor);
-  }
+const aclTensor* Sign(const aclTensor* self, aclOpExecutor* executor)
+{
+    auto result = executor->AllocTensor(self->GetViewShape(), self->GetDataType());
+    if (IsAiCoreSupport(self)) {
+        return SignAiCore(self, result, executor);
+    } else {
+        return SignAiCpu(self, result, executor);
+    }
 }
-}  // namespace l0op
+} // namespace l0op

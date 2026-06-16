@@ -18,7 +18,6 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
@@ -62,10 +61,9 @@ void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr)
         ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
     for (int64_t i = 0; i < size; i++) {
-        LOG_PRINT("mean result[%ld] is: %f\n", i, resultData[i]);       // float
+        LOG_PRINT("mean result[%ld] is: %f\n", i, resultData[i]); // float
     }
 }
-
 
 int Init(int32_t deviceId, aclrtStream* stream)
 {
@@ -135,7 +133,7 @@ int main()
     void* selfBDeviceAddr = nullptr;
     std::vector<int64_t> selfBShape = {15};
     // std::vector<int8_t> selfBHostData(15, 0);
-    std::vector<int8_t> selfBHostData={1,1,1,0,1,1,1,1,0,1,1,1,1,1,1};
+    std::vector<int8_t> selfBHostData = {1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1};
     ret = CreateAclTensor(selfBHostData, selfBShape, &selfBDeviceAddr, aclDataType::ACL_INT8, &selfB);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
@@ -146,27 +144,26 @@ int main()
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-    
-
     // 3. 调用CANN算子库API，需要修改为具体的Api名称
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
 
-    LOG_PRINT("Before GetWorkspaceSize: selfX=%p, selfY=%p,selfB=%p, out=%p\n", (void*)selfX, (void*)selfY,(void*)selfB, (void*)out);
-    LOG_PRINT("Before GetWorkspaceSize: selfXDeviceAddr=%p, selfYDeviceAddr=%p,selfBDeviceAddr=%p, outDeviceAddr=%p\n",
-          selfXDeviceAddr, selfYDeviceAddr,selfBDeviceAddr, outDeviceAddr);
+    LOG_PRINT(
+        "Before GetWorkspaceSize: selfX=%p, selfY=%p,selfB=%p, out=%p\n", (void*)selfX, (void*)selfY, (void*)selfB,
+        (void*)out);
+    LOG_PRINT(
+        "Before GetWorkspaceSize: selfXDeviceAddr=%p, selfYDeviceAddr=%p,selfBDeviceAddr=%p, outDeviceAddr=%p\n",
+        selfXDeviceAddr, selfYDeviceAddr, selfBDeviceAddr, outDeviceAddr);
     // 4. 调用aclnnAddExample第一段接口
-    
 
+    ret = aclnnSelectV3GetWorkspaceSize(selfX, selfY, selfB, out, &workspaceSize, &executor);
+    LOG_PRINT(
+        "aclnnSelectV3GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n", ret,
+        (unsigned long long)workspaceSize, (void*)executor);
 
-
-    ret = aclnnSelectV3GetWorkspaceSize(selfX, selfY,selfB, out, &workspaceSize, &executor);
-    LOG_PRINT("aclnnSelectV3GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n",
-          ret, (unsigned long long)workspaceSize, (void*)executor);
-    
-    CHECK_RET(ret == ACL_SUCCESS,
-        LOG_PRINT("aclnnSelectV3GetWorkspaceSize failed. ERROR: %d (%s)\n",
-                  ret, AscendErrStr().c_str());
+    CHECK_RET(
+        ret == ACL_SUCCESS,
+        LOG_PRINT("aclnnSelectV3GetWorkspaceSize failed. ERROR: %d (%s)\n", ret, AscendErrStr().c_str());
         return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
@@ -184,7 +181,7 @@ int main()
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
     // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
-    
+
     PrintOutResult(outShape, &outDeviceAddr);
 
     // 7. 释放aclTensor，需要根据具体API的接口定义修改

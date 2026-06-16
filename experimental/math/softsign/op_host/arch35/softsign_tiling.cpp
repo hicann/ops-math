@@ -23,7 +23,6 @@
 
 namespace optiling {
 
-
 constexpr uint32_t WS_SYS_SIZE = 0U;
 constexpr uint32_t DCACHE_SIZE = 128 * 1024;
 

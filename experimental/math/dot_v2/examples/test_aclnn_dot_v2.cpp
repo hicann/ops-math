@@ -131,12 +131,14 @@ int main()
     aclOpExecutor* executor;
 
     LOG_PRINT("Before GetWorkspaceSize: selfX=%p, selfY=%p, out=%p\n", (void*)selfX, (void*)selfY, (void*)out);
-    LOG_PRINT("Before GetWorkspaceSize: selfXDeviceAddr=%p, selfYDeviceAddr=%p, outDeviceAddr=%p\n",
-          selfXDeviceAddr, selfYDeviceAddr, outDeviceAddr);
+    LOG_PRINT(
+        "Before GetWorkspaceSize: selfXDeviceAddr=%p, selfYDeviceAddr=%p, outDeviceAddr=%p\n", selfXDeviceAddr,
+        selfYDeviceAddr, outDeviceAddr);
     // 4. 调用aclnnDotV2第一段接口
     ret = aclnnDotV2GetWorkspaceSize(selfX, selfY, out, &workspaceSize, &executor);
-    LOG_PRINT("aclnnDotV2GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n",
-          ret, (unsigned long long)workspaceSize, (void*)executor);
+    LOG_PRINT(
+        "aclnnDotV2GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n", ret,
+        (unsigned long long)workspaceSize, (void*)executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnDotV2GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 根据第一段接口计算出的workspaceSize申请device内存

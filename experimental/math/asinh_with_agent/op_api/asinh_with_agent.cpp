@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
+
 /**
  *
  * NOTE: Portions of this code were AI-generated and have been
@@ -36,14 +36,9 @@ namespace l0op {
 OP_TYPE_REGISTER(AsinhWithAgent);
 
 // Kernel 侧原生支持的 dtype（float16 / float32）
-static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT16, DataType::DT_FLOAT
-};
+static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {DataType::DT_FLOAT16, DataType::DT_FLOAT};
 
-static bool IsAiCoreSupport(const aclTensor* x)
-{
-    return CheckType(x->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
-}
+static bool IsAiCoreSupport(const aclTensor* x) { return CheckType(x->GetDataType(), AICORE_DTYPE_SUPPORT_LIST); }
 
 static bool AsinhWithAgentInferShape(const op::Shape& xShape, op::Shape& outShape)
 {
@@ -51,18 +46,12 @@ static bool AsinhWithAgentInferShape(const op::Shape& xShape, op::Shape& outShap
     return true;
 }
 
-static const aclTensor* AsinhWithAgentAiCore(const aclTensor* x,
-                                              const aclTensor* out,
-                                              aclOpExecutor* executor)
+static const aclTensor* AsinhWithAgentAiCore(const aclTensor* x, const aclTensor* out, aclOpExecutor* executor)
 {
     L0_DFX(AsinhWithAgentAiCore, x, out);
 
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(AsinhWithAgent,
-        OP_INPUT(x), OP_OUTPUT(out));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS,
-        OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AsinhWithAgentAiCore failed."),
-        return nullptr);
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(AsinhWithAgent, OP_INPUT(x), OP_OUTPUT(out));
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AsinhWithAgentAiCore failed."), return nullptr);
     return out;
 }
 
@@ -86,10 +75,11 @@ const aclTensor* AsinhWithAgent(const aclTensor* x, aclOpExecutor* executor)
     }
 
     if (!IsAiCoreSupport(x)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AsinhWithAgent: dtype %d not supported by AiCore. "
-                "Expected float16 or float32.",
-                static_cast<int>(x->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID,
+            "AsinhWithAgent: dtype %d not supported by AiCore. "
+            "Expected float16 or float32.",
+            static_cast<int>(x->GetDataType()));
         return nullptr;
     }
 

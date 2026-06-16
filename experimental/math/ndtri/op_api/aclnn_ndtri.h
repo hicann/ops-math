@@ -43,20 +43,13 @@ extern "C" {
  * @param executor      [out] 算子执行器
  * @return aclnnStatus 状态码
  */
-ACLNN_API aclnnStatus aclnnNdtriGetWorkspaceSize(
-    const aclTensor* self,
-    aclTensor* out,
-    uint64_t* workspaceSize,
-    aclOpExecutor** executor);
+ACLNN_API aclnnStatus
+aclnnNdtriGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief 执行 Ndtri 算子计算。
  */
-ACLNN_API aclnnStatus aclnnNdtri(
-    void* workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor* executor,
-    aclrtStream stream);
+ACLNN_API aclnnStatus aclnnNdtri(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 #ifdef __cplusplus
 }

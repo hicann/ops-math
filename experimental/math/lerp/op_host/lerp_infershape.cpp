@@ -34,4 +34,4 @@ static ge::graphStatus InferShapeLerp(gert::InferShapeContext* context)
 }
 
 IMPL_OP_INFERSHAPE(Lerp).InferShape(InferShapeLerp);
-}
+} // namespace ops

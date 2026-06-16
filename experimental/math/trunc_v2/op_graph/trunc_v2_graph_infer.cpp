@@ -26,22 +26,21 @@
 #include "log/log.h"
 
 namespace ops {
-    using namespace ge;
-    
-    static constexpr int64_t IDX_0 = 0;
-    
-    static ge::graphStatus InferDataTypeTruncV2(gert::InferDataTypeContext* context)
-    {
-        OP_LOGD(context->GetNodeName(), "Begin to do InferDataTypeTruncV2");
-    
-        ge::DataType Dtype = context->GetInputDataType(IDX_0);
-        context->SetOutputDataType(IDX_0, Dtype);
-    
-        OP_LOGD(context->GetNodeName(), "End to do InferDataTypeTruncV2");
-        return GRAPH_SUCCESS;
-    }
-    
-    IMPL_OP(TruncV2).InferDataType(InferDataTypeTruncV2);
-    
-    }; // namespace ops
-    
+using namespace ge;
+
+static constexpr int64_t IDX_0 = 0;
+
+static ge::graphStatus InferDataTypeTruncV2(gert::InferDataTypeContext* context)
+{
+    OP_LOGD(context->GetNodeName(), "Begin to do InferDataTypeTruncV2");
+
+    ge::DataType Dtype = context->GetInputDataType(IDX_0);
+    context->SetOutputDataType(IDX_0, Dtype);
+
+    OP_LOGD(context->GetNodeName(), "End to do InferDataTypeTruncV2");
+    return GRAPH_SUCCESS;
+}
+
+IMPL_OP(TruncV2).InferDataType(InferDataTypeTruncV2);
+
+}; // namespace ops

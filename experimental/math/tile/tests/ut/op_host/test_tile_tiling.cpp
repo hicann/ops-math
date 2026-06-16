@@ -19,15 +19,9 @@
 
 class TileTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "TileTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "TileTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "TileTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "TileTiling TearDown" << std::endl; }
 };
 
 TEST_F(TileTiling, tile_tiling_2d_float32)

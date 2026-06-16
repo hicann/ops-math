@@ -11,7 +11,7 @@
 /*!
  * \file test_aclnn_nan_to_num.cpp
  * \brief
-*/
+ */
 #include <vector>
 #include <array>
 #include "gtest/gtest.h"
@@ -24,15 +24,9 @@
 
 class l2_nan_to_num_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_nan_to_num_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "l2_nan_to_num_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "l2_nan_to_num_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "l2_nan_to_num_test TearDown" << endl; }
 };
 
 TEST_F(l2_nan_to_num_test, case_01_float)

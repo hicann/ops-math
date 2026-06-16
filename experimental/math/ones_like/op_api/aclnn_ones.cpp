@@ -52,8 +52,7 @@ static bool CheckDtypeValid(const aclTensor* self)
     // 检查self的数据类型是否在支持列表内
     bool isAscend910BSocVersion =
         (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-         IsRegBase());
+         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase());
     const std::initializer_list<op::DataType> CURRENT_DTYPE_SUPPORT_LIST =
         isAscend910BSocVersion ? ASCEND910B_DTYPE_SUPPORT_LIST : ASCEND910_DTYPE_SUPPORT_LIST;
 

@@ -21,7 +21,7 @@
 /*!
  * \file maximum_v2_proto.h
  * \brief
-*/
+ */
 #ifndef OPS_OP_PROTO_INC_MAXIMUMV2_H_
 #define OPS_OP_PROTO_INC_MAXIMUMV2_H_
 
@@ -44,9 +44,9 @@ namespace ge {
 */
 REG_OP(MaximumV2)
 
-    .INPUT(x1, TensorType({DT_FLOAT, DT_FLOAT16,DT_INT32,DT_INT16}))
-    .INPUT(x2, TensorType({DT_FLOAT, DT_FLOAT16,DT_INT32,DT_INT16}))
-    .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16,DT_INT32,DT_INT16}))
+    .INPUT(x1, TensorType({DT_FLOAT, DT_FLOAT16, DT_INT32, DT_INT16}))
+    .INPUT(x2, TensorType({DT_FLOAT, DT_FLOAT16, DT_INT32, DT_INT16}))
+    .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16, DT_INT32, DT_INT16}))
     .OP_END_FACTORY_REG(MaximumV2)
 
 } // namespace ge

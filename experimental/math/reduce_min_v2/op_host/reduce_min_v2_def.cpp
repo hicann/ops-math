@@ -25,35 +25,35 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-    class ReduceMinV2 : public OpDef {
-    public:
-        explicit ReduceMinV2(const char* name) : OpDef(name)
-        {
-            this->Input("x")
-                .ParamType(REQUIRED)
-                .DataType({ge::DT_FLOAT, ge::DT_FLOAT16})
-                .Format({ge::FORMAT_ND, ge::FORMAT_ND})             
-                .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND})
-                .AutoContiguous();
-            this->Output("y")
-                .ParamType(REQUIRED)
-                .DataType({ge::DT_FLOAT, ge::DT_FLOAT16})
-                .Format({ge::FORMAT_ND, ge::FORMAT_ND})
-                .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND})
-                .AutoContiguous();
-            this->Attr("axes").AttrType(OPTIONAL).Int();
-            this->Attr("keepdims").AttrType(OPTIONAL).Int();
+class ReduceMinV2 : public OpDef {
+public:
+    explicit ReduceMinV2(const char* name) : OpDef(name)
+    {
+        this->Input("x")
+            .ParamType(REQUIRED)
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT16})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND})
+            .AutoContiguous();
+        this->Output("y")
+            .ParamType(REQUIRED)
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT16})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND})
+            .AutoContiguous();
+        this->Attr("axes").AttrType(OPTIONAL).Int();
+        this->Attr("keepdims").AttrType(OPTIONAL).Int();
 
-            OpAICoreConfig aicoreConfig;
-            aicoreConfig.DynamicCompileStaticFlag(true)
-                .DynamicFormatFlag(false)
-                .DynamicRankSupportFlag(true)
-                .DynamicShapeSupportFlag(true)
-                .NeedCheckSupportFlag(false)
-                .PrecisionReduceFlag(true)
-                .ExtendCfgInfo("opFile.value", "reduce_min_v2");
-            this->AICore().AddConfig("ascend910b", aicoreConfig);
-        }
-    };
-    OP_ADD(ReduceMinV2);
+        OpAICoreConfig aicoreConfig;
+        aicoreConfig.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .PrecisionReduceFlag(true)
+            .ExtendCfgInfo("opFile.value", "reduce_min_v2");
+        this->AICore().AddConfig("ascend910b", aicoreConfig);
+    }
+};
+OP_ADD(ReduceMinV2);
 } // namespace ops

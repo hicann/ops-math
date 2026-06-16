@@ -9,11 +9,11 @@
  */
 
 /**
-* 我们正常的版权申明，下面是我们的备注
-*
-* NOTE: Portions of this code were AI-generated and have been
-* technically reviewed for functional accuracy and security
-*/
+ * 我们正常的版权申明，下面是我们的备注
+ *
+ * NOTE: Portions of this code were AI-generated and have been
+ * technically reviewed for functional accuracy and security
+ */
 
 /*!
  * \file reduce_nansum_ara_fullload.h
@@ -86,12 +86,11 @@ private:
     int64_t reduceDimCount_ = 0;
     int64_t reduceDimSizes_[8] = {0};
     int64_t reduceGmStrides_[8] = {0};
-    int64_t innerRowsPerBlock_ = 0;  // 最内层连续归约组包含的行数
+    int64_t innerRowsPerBlock_ = 0; // 最内层连续归约组包含的行数
 };
 
 template <typename T>
-__aicore__ inline void ReduceNansumAraFullload<T>::Init(GM_ADDR x, GM_ADDR y,
-                                                         const ReduceNansumTilingData* tilingData)
+__aicore__ inline void ReduceNansumAraFullload<T>::Init(GM_ADDR x, GM_ADDR y, const ReduceNansumTilingData* tilingData)
 {
     a1Count_ = tilingData->a1Count;
     rCount_ = tilingData->rCount;
@@ -146,7 +145,7 @@ __aicore__ inline void ReduceNansumAraFullload<T>::Init(GM_ADDR x, GM_ADDR y,
         for (int64_t d = 0; d < reduceDimCount_; d++) {
             maxGmOffset += (reduceDimSizes_[d] - 1) * reduceGmStrides_[d];
         }
-        maxGmOffset += a0Count_;  // 最内层 A0 个元素
+        maxGmOffset += a0Count_; // 最内层 A0 个元素
         inputGmSize = maxGmOffset;
     }
     inputGM.SetGlobalBuffer((__gm__ T*)x, inputGmSize);
@@ -161,7 +160,8 @@ __aicore__ inline void ReduceNansumAraFullload<T>::Init(GM_ADDR x, GM_ADDR y,
     // maskBuf
     int64_t totalMaskElements = rCount_ * alignedCols_;
     int64_t maskBufSize = ((totalMaskElements / 8 + 31) / 32) * 32;
-    if (maskBufSize < 32) maskBufSize = 32;
+    if (maskBufSize < 32)
+        maskBufSize = 32;
     pipe.InitBuffer(maskBuf, maskBufSize);
 
     pipe.InitBuffer(zeroBuf, alignedCols_ * static_cast<int64_t>(sizeof(float)));
@@ -194,7 +194,6 @@ __aicore__ inline void ReduceNansumAraFullload<T>::ProcessOneTile(int64_t a1Idx,
     }
 
 #endif
-
 
     if (copyBlockCount_ > 0) {
         // 非连续多轴归约: strided CopyIn
@@ -252,11 +251,11 @@ __aicore__ inline void ReduceNansumAraFullload<T>::ProcessOneTile(int64_t a1Idx,
             copyInParams.dstStride = static_cast<uint32_t>(dstGapBytes / 32);
 
             if (usePadding) {
-                DataCopyPad(xLocal[ubRowStart * alignedCols_], inputGM[gmBlockBase], copyInParams,
+                DataCopyPad(
+                    xLocal[ubRowStart * alignedCols_], inputGM[gmBlockBase], copyInParams,
                     {true, static_cast<uint8_t>(0), static_cast<uint8_t>(rightPadElems), 0});
             } else {
-                DataCopyPad(xLocal[ubRowStart * alignedCols_], inputGM[gmBlockBase], copyInParams,
-                    {false, 0, 0, 0});
+                DataCopyPad(xLocal[ubRowStart * alignedCols_], inputGM[gmBlockBase], copyInParams, {false, 0, 0, 0});
             }
         }
     } else {
@@ -277,11 +276,11 @@ __aicore__ inline void ReduceNansumAraFullload<T>::ProcessOneTile(int64_t a1Idx,
 
         int64_t gmOffset = a1Idx * rCount_ * originalA0_ + a0Start;
         if (usePadding) {
-            DataCopyPad(xLocal, inputGM[gmOffset], copyInParams,
+            DataCopyPad(
+                xLocal, inputGM[gmOffset], copyInParams,
                 {true, static_cast<uint8_t>(0), static_cast<uint8_t>(rightPadElems), 0});
         } else {
-            DataCopyPad(xLocal, inputGM[gmOffset], copyInParams,
-                {false, 0, 0, 0});
+            DataCopyPad(xLocal, inputGM[gmOffset], copyInParams, {false, 0, 0, 0});
         }
     }
 
@@ -298,7 +297,8 @@ __aicore__ inline void ReduceNansumAraFullload<T>::ProcessOneTile(int64_t a1Idx,
     // 清零 mask
     int64_t totalMaskElements = rCount_ * alignedCols_;
     int64_t maskInt16Count = ((totalMaskElements / 8 + 31) / 32) * 32 / 2;
-    if (maskInt16Count < 16) maskInt16Count = 16;
+    if (maskInt16Count < 16)
+        maskInt16Count = 16;
     LocalTensor<int16_t> maskInt16 = maskBuf.Get<int16_t>();
     Duplicate(maskInt16, static_cast<int16_t>(0), static_cast<uint32_t>(maskInt16Count));
 
@@ -330,16 +330,9 @@ __aicore__ inline void ReduceNansumAraFullload<T>::ProcessOneTile(int64_t a1Idx,
     LocalTensor<uint8_t> tmpUint8 = tmpBuf.Get<uint8_t>();
     ReduceSum<float, AscendC::Pattern::Reduce::RA>(dstFloat, cleanLocal, tmpUint8, srcShape, true);
 
-
-
-
-
-
     if constexpr (!IS_FP32) {
         LocalTensor<T> yTyped = yLocal;
         Cast(yTyped, dstFloat, RoundMode::CAST_ROUND, static_cast<uint32_t>(alignedCols_));
-
-
     }
 
     // ========== CopyOut ==========
@@ -371,4 +364,3 @@ __aicore__ inline void ReduceNansumAraFullload<T>::Process()
 }
 
 } // namespace NsReduceNansum
-

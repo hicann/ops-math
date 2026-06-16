@@ -26,7 +26,8 @@
 #include "sort_v2.h"
 
 template <uint32_t schMode>
-__global__ __aicore__ void sort_v2(GM_ADDR x, GM_ADDR index, GM_ADDR y, GM_ADDR dstIndex, GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void sort_v2(
+    GM_ADDR x, GM_ADDR index, GM_ADDR y, GM_ADDR dstIndex, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(SortV2TilingData);
     GET_TILING_DATA_WITH_STRUCT(SortV2TilingData, tilingData, tiling);

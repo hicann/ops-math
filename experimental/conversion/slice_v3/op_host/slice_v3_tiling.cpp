@@ -33,13 +33,15 @@
 namespace optiling {
 constexpr uint32_t WS_SYS_SIZE = 512U;
 constexpr uint32_t RESERVED_BYTES = 512U;
-static void ComputeCumShape(const std::vector<int64_t>& shape, int64_t* cumShape) {
+static void ComputeCumShape(const std::vector<int64_t>& shape, int64_t* cumShape)
+{
     int n = shape.size();
-    if (n == 0) return;
-    
-    cumShape[n - 1] = 1; 
+    if (n == 0)
+        return;
+
+    cumShape[n - 1] = 1;
     for (int i = n - 2; i >= 0; i--) {
-        cumShape[i] = cumShape[i + 1] * shape[i + 1]; 
+        cumShape[i] = cumShape[i + 1] * shape[i + 1];
     }
 }
 
@@ -48,7 +50,7 @@ const uint32_t BLOCK_SIZE = 32;
 
 static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 {
-    auto ascendcPlatform = platform_ascendc:: PlatformAscendC(context->GetPlatformInfo());
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
     uint32_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
@@ -61,9 +63,8 @@ static ge::graphStatus GetShapeAttrsInfo(const gert::TilingContext* context, int
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
     totalIdx = inputX->GetStorageShape().GetShapeSize();
     // dtype校验
-    const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_INT32,    
-                ge::DT_FLOAT16, ge::DT_INT16,
-                ge::DT_BF16,ge::DT_INT8, ge::DT_UINT8};
+    const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_INT32, ge::DT_FLOAT16, ge::DT_INT16,
+                                                   ge::DT_BF16,  ge::DT_INT8,  ge::DT_UINT8};
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
     dataType = inputDesc->GetDataType();
@@ -91,8 +92,7 @@ static ge::graphStatus SliceV3TilingFunc(gert::TilingContext* context)
 
     // ------------- workspace 校验 -------------
     OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"),
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
         return ge::GRAPH_FAILED);
 
     // ------------- 输入信息：维度、dataType -------------
@@ -111,17 +111,17 @@ static ge::graphStatus SliceV3TilingFunc(gert::TilingContext* context)
 
     // ------------- begin / size Tensor -------------
     auto beginTensor = context->GetInputTensor(1);
-    auto sizeTensor  = context->GetInputTensor(2);
+    auto sizeTensor = context->GetInputTensor(2);
 
     const int64_t* beginPtr = beginTensor->GetData<int64_t>();
-    const int64_t* sizePtr  = sizeTensor->GetData<int64_t>();
+    const int64_t* sizePtr = sizeTensor->GetData<int64_t>();
 
     std::vector<int64_t> begin(dim);
     std::vector<int64_t> size(dim);
 
     for (uint32_t i = 0; i < dim; ++i) {
         begin[i] = beginPtr[i];
-        size[i]  = sizePtr[i];
+        size[i] = sizePtr[i];
         tiling->begin[i] = begin[i];
     }
     // ------------- 计算输入、输出 Shape cumShape -------------
@@ -150,8 +150,9 @@ static ge::graphStatus SliceV3TilingFunc(gert::TilingContext* context)
 
     // ------------- 核分配 -------------
     uint32_t useCoreNum = std::min((uint32_t)std::max<int64_t>(totalBlocks, 1), coreNum);
-    if (totalBlocks == 0) useCoreNum = 1;
-    
+    if (totalBlocks == 0)
+        useCoreNum = 1;
+
     if (useCoreNum == 0) {
         OP_LOGE(context, "useCoreNum cannot be zero");
         return ge::GRAPH_FAILED;
@@ -161,12 +162,11 @@ static ge::graphStatus SliceV3TilingFunc(gert::TilingContext* context)
     // ------------- UB 切 tile 大小 -------------
     uint64_t availUb = (ubSize * 9 / 10) / 2; // 可用 UB 空间：使用 90% 作为安全余量，并预留一半用于双缓冲，避免 UB 溢出
     uint32_t alignNum = BLOCK_SIZE / typeLen;
-    if (alignNum == 0) alignNum = 1;
+    if (alignNum == 0)
+        alignNum = 1;
 
     uint32_t maxTile = static_cast<uint32_t>(availUb / typeLen);
-    uint32_t alignedMaxTile = (maxTile >= alignNum)
-                                ? (maxTile & (~(alignNum - 1)))
-                                : maxTile;
+    uint32_t alignedMaxTile = (maxTile >= alignNum) ? (maxTile & (~(alignNum - 1))) : maxTile;
 
     if (alignedMaxTile == 0)
         alignedMaxTile = alignNum;
@@ -180,14 +180,14 @@ static ge::graphStatus SliceV3TilingFunc(gert::TilingContext* context)
 
     // ------------- 写入 tiling data -------------
     tiling->outerLoopNum = totalBlocks / useCoreNum;
-    tiling->tailCoreNum  = totalBlocks % useCoreNum;
-    tiling->tileDataNum  = tileDataNum;
-    tiling->lastDimSize  = lastDim;
+    tiling->tailCoreNum = totalBlocks % useCoreNum;
+    tiling->tileDataNum = tileDataNum;
+    tiling->lastDimSize = lastDim;
 
     return ge::GRAPH_SUCCESS;
 }
 static ge::graphStatus TilingParseForSliceV3([[maybe_unused]] gert::TilingParseContext* context)
-{   
+{
     return ge::GRAPH_SUCCESS;
 }
 

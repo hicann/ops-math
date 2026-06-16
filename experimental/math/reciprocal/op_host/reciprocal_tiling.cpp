@@ -36,57 +36,51 @@ static ge::graphStatus ReciprocalTilingFunc(gert::TilingContext* context)
     uint64_t bigCoreDataNum = 0;
     uint64_t bigCoreLoopNum = 0;
     uint64_t bigCoreTailDataNum = 0;
-    
+
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubLength);
     auto coreNum = ascendcPlatform.GetCoreNum();
-    
+
     uint64_t inputDataNum = context->GetInputShape(0)->GetStorageShape().GetShapeSize();
     uint32_t dataTypeLength = 0;
     ge::TypeUtils::GetDataTypeLength(context->GetInputDesc(0)->GetDataType(), dataTypeLength);
     uint64_t inputLength = inputDataNum * dataTypeLength;
     auto dt = context->GetInputTensor(0)->GetDataType();
-    uint64_t ubPartNum = (dt == ge:: DT_BF16 ) ? 4 : 2;
+    uint64_t ubPartNum = (dt == ge::DT_BF16) ? 4 : 2;
     uint64_t ubPartLength = ubLength / ubPartNum / BUFFER_NUM;
     uint64_t ubPartBlockNum = ubPartLength / BLOCK_SIZE;
     uint64_t ubPartDataNum = (ubPartBlockNum * BLOCK_SIZE) / dataTypeLength;
 
     uint64_t inputLengthAlign32 = (((inputLength + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE);
-    
-    if(ubPartDataNum >= inputDataNum)
-    {
-        coreNum=1;
+
+    if (ubPartDataNum >= inputDataNum) {
+        coreNum = 1;
+    } else {
+        coreNum = (coreNum < inputLengthAlign32 / BLOCK_SIZE) ? coreNum : inputLengthAlign32 / BLOCK_SIZE;
     }
-    else
-    {
-        coreNum = (coreNum <  inputLengthAlign32 / BLOCK_SIZE) ? coreNum : inputLengthAlign32 / BLOCK_SIZE;
-    }
-    if(BLOCK_SIZE == 0 || coreNum == 0){
-		return ge::GRAPH_FAILED;
+    if (BLOCK_SIZE == 0 || coreNum == 0) {
+        return ge::GRAPH_FAILED;
     }
     uint64_t everyCoreInputBlockNum = inputLengthAlign32 / BLOCK_SIZE / coreNum;
     uint64_t tailBlockNum = (inputLengthAlign32 / BLOCK_SIZE) % coreNum;
     uint64_t smallCoreDataNum = everyCoreInputBlockNum * BLOCK_SIZE / dataTypeLength;
     uint64_t smallCoreLoopNum = smallCoreDataNum / ubPartDataNum;
     smallCoreLoopNum = (everyCoreInputBlockNum % ubPartBlockNum) == 0 ? smallCoreLoopNum : smallCoreLoopNum + 1;
-    uint64_t smallCoreTailDataNum = smallCoreDataNum - ubPartDataNum * (smallCoreLoopNum-1);
+    uint64_t smallCoreTailDataNum = smallCoreDataNum - ubPartDataNum * (smallCoreLoopNum - 1);
     smallCoreTailDataNum = smallCoreTailDataNum == 0 ? ubPartDataNum : smallCoreTailDataNum;
 
-    if(0 != tailBlockNum)
-    {
+    if (0 != tailBlockNum) {
         everyCoreInputBlockNum += 1;
         bigCoreDataNum = everyCoreInputBlockNum * BLOCK_SIZE / dataTypeLength;
         bigCoreLoopNum = bigCoreDataNum / ubPartDataNum;
         bigCoreLoopNum = (everyCoreInputBlockNum % ubPartBlockNum) == 0 ? bigCoreLoopNum : bigCoreLoopNum + 1;
-        bigCoreTailDataNum = bigCoreDataNum - ubPartDataNum * (bigCoreLoopNum-1);
+        bigCoreTailDataNum = bigCoreDataNum - ubPartDataNum * (bigCoreLoopNum - 1);
         bigCoreTailDataNum = bigCoreTailDataNum == 0 ? ubPartDataNum : bigCoreTailDataNum;
         context->SetTilingKey(1);
-    }
-    else
-    {
+    } else {
         context->SetTilingKey(0);
     }
-    
+
     tiling->smallCoreDataNum = smallCoreDataNum;
     tiling->bigCoreDataNum = bigCoreDataNum;
     tiling->ubPartDataNum = ubPartDataNum;
@@ -97,7 +91,7 @@ static ge::graphStatus ReciprocalTilingFunc(gert::TilingContext* context)
     tiling->tailBlockNum = tailBlockNum;
     context->SetBlockDim(coreNum);
 
-    size_t *currentWorkspace = context->GetWorkspaceSizes(1);
+    size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     currentWorkspace[0] = 0;
     return ge::GRAPH_SUCCESS;
 }

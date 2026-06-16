@@ -21,7 +21,7 @@
 /*!
  * \file sinh_tiling_data.h
  * \brief tiling data struct
-*/
+ */
 #ifndef _SINH_TILING_DATA_H_
 #define _SINH_TILING_DATA_H_
 

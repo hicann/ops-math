@@ -97,7 +97,7 @@ int main()
     void* valueDeviceAddr = nullptr;
     aclTensor* selfRef = nullptr;
     aclTensor* value = nullptr;
-    std::vector<int16_t> selfRefHostData (8184,0);
+    std::vector<int16_t> selfRefHostData(8184, 0);
     std::vector<int16_t> valueHostData = {1};
     // 创建selfRef aclTensor
     ret = CreateAclTensor(selfRefHostData, selfRefShape, &selfRefDeviceAddr, aclDataType::ACL_INT16, &selfRef);
@@ -111,8 +111,7 @@ int main()
     aclOpExecutor* executor;
     // 调用aclnnInplaceFillTensor第一段接口
     ret = aclnnFillV2GetWorkspaceSize(selfRef, value, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnFillV2GetWorkspaceSize failed. ERROR: %d\n", ret);
-              return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnFillV2GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > static_cast<uint64_t>(0)) {
@@ -153,4 +152,3 @@ int main()
     aclFinalize();
     return 0;
 }
- 

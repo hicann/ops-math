@@ -35,12 +35,10 @@ public:
             .DataType({ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT16, ge::DT_INT32})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-            .AutoContiguous();                                  // 内存自动连续化
-        
+            .AutoContiguous(); // 内存自动连续化
+
         /* ...此处补充其他输入输出参数说明 */
-        this->Attr("diagonal")
-            .AttrType(OPTIONAL)
-            .Int();
+        this->Attr("diagonal").AttrType(OPTIONAL).Int();
 
         // 输出参数说明
         this->Output("y")

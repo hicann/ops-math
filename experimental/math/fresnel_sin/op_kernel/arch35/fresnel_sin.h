@@ -44,79 +44,31 @@ using namespace AscendC;
 // (descending-power order, matching Cephes polevl convention, same as CN/CD).
 // SN has 6 terms (polevl(t, sn, 5)); SD has an implicit leading 1.0 prepended
 // to emulate Cephes p1evl(t, sd, 6), yielding 7 total entries (degree 6 monic).
-static constexpr float SN[6] = {
-    -2.99181919401019853726E3f,
-     7.08840045257738576863E5f,
-    -6.29741486205862506537E7f,
-     2.54890880573376359104E9f,
-    -4.42979518059697779103E10f,
-     3.18016297876567817986E11f
-};
-static constexpr float SD[7] = {
-     1.00000000000000000000E0f,   // monic leading term
-     2.81376268889994315696E2f,
-     4.55847810806532581675E4f,
-     5.17343888770096400730E6f,
-     4.19320245898111231129E8f,
-     2.24411795645340920940E10f,
-     6.07366389490084639049E11f
-};
-static constexpr float FN[10] = {
-     3.76329711269987889006E-20f,
-     1.34283276233062758925E-16f,
-     1.72010743268161828879E-13f,
-     1.02304514164907233465E-10f,
-     3.05568983790257605827E-8f,
-     4.63613749287867322088E-6f,
-     3.45017939782574027900E-4f,
-     1.15220955073585758835E-2f,
-     1.43407919780758885261E-1f,
-     4.21543555043677546506E-1f
-};
-static constexpr float FD[11] = {
-     1.25443237090011264384E-20f,
-     4.52001434074129701496E-17f,
-     5.88754533621578410010E-14f,
-     3.60140029589371370404E-11f,
-     1.12699224763999035261E-8f,
-     1.84627567348930545870E-6f,
-     1.55934409164153020873E-4f,
-     6.44051526508858611005E-3f,
-     1.16888925859191382142E-1f,
-     7.51586398353378947175E-1f,
-     1.00000000000000000000E0f
-};
-static constexpr float GN[11] = {
-     1.86958710162783235106E-22f,
-     8.36354435630677421531E-19f,
-     1.37555460633261799868E-15f,
-     1.08268041139020870318E-12f,
-     4.45344415861750144738E-10f,
-     9.82852443688422223854E-8f,
-     1.15138826111884280931E-5f,
-     6.84079380915393090172E-4f,
-     1.87648584092575249293E-2f,
-     1.97102833525523411709E-1f,
-     5.04442073643383265887E-1f
-};
-static constexpr float GD[12] = {
-     1.86958710162783236342E-22f,
-     8.39158816283118707363E-19f,
-     1.38796531259578871258E-15f,
-     1.10273215066240270757E-12f,
-     4.60680728146520428211E-10f,
-     1.04314589657571990585E-7f,
-     1.27545075667729118702E-5f,
-     8.14679107184306179049E-4f,
-     2.53603741420338795122E-2f,
-     3.37748989120019970451E-1f,
-     1.47495759925128324529E0f,
-     1.00000000000000000000E0f
-};
+static constexpr float SN[6] = {-2.99181919401019853726E3f, 7.08840045257738576863E5f,   -6.29741486205862506537E7f,
+                                2.54890880573376359104E9f,  -4.42979518059697779103E10f, 3.18016297876567817986E11f};
+static constexpr float SD[7] = {1.00000000000000000000E0f, // monic leading term
+                                2.81376268889994315696E2f, 4.55847810806532581675E4f,  5.17343888770096400730E6f,
+                                4.19320245898111231129E8f, 2.24411795645340920940E10f, 6.07366389490084639049E11f};
+static constexpr float FN[10] = {3.76329711269987889006E-20f, 1.34283276233062758925E-16f, 1.72010743268161828879E-13f,
+                                 1.02304514164907233465E-10f, 3.05568983790257605827E-8f,  4.63613749287867322088E-6f,
+                                 3.45017939782574027900E-4f,  1.15220955073585758835E-2f,  1.43407919780758885261E-1f,
+                                 4.21543555043677546506E-1f};
+static constexpr float FD[11] = {1.25443237090011264384E-20f, 4.52001434074129701496E-17f, 5.88754533621578410010E-14f,
+                                 3.60140029589371370404E-11f, 1.12699224763999035261E-8f,  1.84627567348930545870E-6f,
+                                 1.55934409164153020873E-4f,  6.44051526508858611005E-3f,  1.16888925859191382142E-1f,
+                                 7.51586398353378947175E-1f,  1.00000000000000000000E0f};
+static constexpr float GN[11] = {1.86958710162783235106E-22f, 8.36354435630677421531E-19f, 1.37555460633261799868E-15f,
+                                 1.08268041139020870318E-12f, 4.45344415861750144738E-10f, 9.82852443688422223854E-8f,
+                                 1.15138826111884280931E-5f,  6.84079380915393090172E-4f,  1.87648584092575249293E-2f,
+                                 1.97102833525523411709E-1f,  5.04442073643383265887E-1f};
+static constexpr float GD[12] = {1.86958710162783236342E-22f, 8.39158816283118707363E-19f, 1.38796531259578871258E-15f,
+                                 1.10273215066240270757E-12f, 4.60680728146520428211E-10f, 1.04314589657571990585E-7f,
+                                 1.27545075667729118702E-5f,  8.14679107184306179049E-4f,  2.53603741420338795122E-2f,
+                                 3.37748989120019970451E-1f,  1.47495759925128324529E0f,   1.00000000000000000000E0f};
 
-static constexpr float PI_VAL       = 3.14159265358979323846f;
-static constexpr float PI_HALF      = 1.57079632679489661923f;
-static constexpr float PI_SQ        = 9.86960440108935861883f;
+static constexpr float PI_VAL = 3.14159265358979323846f;
+static constexpr float PI_HALF = 1.57079632679489661923f;
+static constexpr float PI_SQ = 9.86960440108935861883f;
 // Threshold on x^2 (NOT |x|): x^2 < 2.5625 selects the small branch, i.e. |x| < ~1.6.
 static constexpr float SMALL_THRESH = 2.5625f;
 // Use GE for clamp so x = 36974 (exact fp32) maps to ±0.5 per scipy golden.
@@ -146,13 +98,12 @@ private:
     __aicore__ inline void CopyOut(int64_t progress, int64_t curLen);
 
     __aicore__ inline void HornerEval(
-        const LocalTensor<float>& dst,
-        const LocalTensor<float>& src,
-        const float* coeffs, int32_t numCoeffs, int64_t n);
+        const LocalTensor<float>& dst, const LocalTensor<float>& src, const float* coeffs, int32_t numCoeffs,
+        int64_t n);
 
 private:
     TPipe pipe_;
-    TQue<QuePosition::VECIN, BUFFER_NUM>  inQueX_;
+    TQue<QuePosition::VECIN, BUFFER_NUM> inQueX_;
     TQue<QuePosition::VECOUT, BUFFER_NUM> outQueY_;
 
     TBuf<TPosition::VECCALC> xF32Buf_;
@@ -171,7 +122,7 @@ private:
     GlobalTensor<T> gmY_;
 
     int64_t blockLength_ = 0;
-    int64_t tileLength_  = 0;
+    int64_t tileLength_ = 0;
 };
 
 // ============================================================================
@@ -197,19 +148,19 @@ __aicore__ inline void KernelFresnelSin<T, TILING_KEY>::Init(
     gmX_.SetGlobalBuffer((__gm__ T*)x + coreOffset, blockLength_);
     gmY_.SetGlobalBuffer((__gm__ T*)y + coreOffset, blockLength_);
 
-    pipe_.InitBuffer(inQueX_,  BUFFER_NUM, tileLength_ * static_cast<int64_t>(sizeof(T)));
+    pipe_.InitBuffer(inQueX_, BUFFER_NUM, tileLength_ * static_cast<int64_t>(sizeof(T)));
     pipe_.InitBuffer(outQueY_, BUFFER_NUM, tileLength_ * static_cast<int64_t>(sizeof(T)));
 
     int64_t f32BufSize = tileLength_ * static_cast<int64_t>(sizeof(float));
-    pipe_.InitBuffer(xF32Buf_,    f32BufSize);
-    pipe_.InitBuffer(absXBuf_,    f32BufSize);
-    pipe_.InitBuffer(x2Buf_,      f32BufSize);
+    pipe_.InitBuffer(xF32Buf_, f32BufSize);
+    pipe_.InitBuffer(absXBuf_, f32BufSize);
+    pipe_.InitBuffer(x2Buf_, f32BufSize);
     pipe_.InitBuffer(polyNumBuf_, f32BufSize);
     pipe_.InitBuffer(polyDenBuf_, f32BufSize);
-    pipe_.InitBuffer(phaseBuf_,   f32BufSize);
-    pipe_.InitBuffer(sinBuf_,     f32BufSize);
-    pipe_.InitBuffer(cosBuf_,     f32BufSize);
-    pipe_.InitBuffer(resultBuf_,  f32BufSize);
+    pipe_.InitBuffer(phaseBuf_, f32BufSize);
+    pipe_.InitBuffer(sinBuf_, f32BufSize);
+    pipe_.InitBuffer(cosBuf_, f32BufSize);
+    pipe_.InitBuffer(resultBuf_, f32BufSize);
 
     // Compare 指令对 mask 区域的访问按 256B 块进行，要求 mask buffer 字节数
     // 按 256B 对齐，否则可能读到未初始化字节导致比较结果异常。
@@ -274,9 +225,7 @@ __aicore__ inline void KernelFresnelSin<T, TILING_KEY>::CopyOut(int64_t progress
 // ============================================================================
 template <typename T, uint32_t TILING_KEY>
 __aicore__ inline void KernelFresnelSin<T, TILING_KEY>::HornerEval(
-    const LocalTensor<float>& dst,
-    const LocalTensor<float>& src,
-    const float* coeffs, int32_t numCoeffs, int64_t n)
+    const LocalTensor<float>& dst, const LocalTensor<float>& src, const float* coeffs, int32_t numCoeffs, int64_t n)
 {
     Duplicate(dst, coeffs[0], n);
     for (int32_t i = 1; i < numCoeffs; i++) {
@@ -309,15 +258,15 @@ __aicore__ inline void KernelFresnelSin<T, TILING_KEY>::Compute(int64_t curLen)
     LocalTensor<T> xLocal = inQueX_.template DeQue<T>();
     LocalTensor<T> yLocal = outQueY_.template AllocTensor<T>();
 
-    LocalTensor<float> xF32    = xF32Buf_.template Get<float>();
-    LocalTensor<float> absX    = absXBuf_.template Get<float>();
-    LocalTensor<float> x2      = x2Buf_.template Get<float>();
+    LocalTensor<float> xF32 = xF32Buf_.template Get<float>();
+    LocalTensor<float> absX = absXBuf_.template Get<float>();
+    LocalTensor<float> x2 = x2Buf_.template Get<float>();
     LocalTensor<float> polyNum = polyNumBuf_.template Get<float>();
     LocalTensor<float> polyDen = polyDenBuf_.template Get<float>();
-    LocalTensor<float> phase   = phaseBuf_.template Get<float>();
-    LocalTensor<float> sinRes  = sinBuf_.template Get<float>();
-    LocalTensor<float> cosRes  = cosBuf_.template Get<float>();
-    LocalTensor<float> result  = resultBuf_.template Get<float>();
+    LocalTensor<float> phase = phaseBuf_.template Get<float>();
+    LocalTensor<float> sinRes = sinBuf_.template Get<float>();
+    LocalTensor<float> cosRes = cosBuf_.template Get<float>();
+    LocalTensor<float> result = resultBuf_.template Get<float>();
     LocalTensor<uint8_t> maskSmall = maskBuf1_.template Get<uint8_t>();
     LocalTensor<uint8_t> maskClamp = maskBuf2_.template Get<uint8_t>();
 
@@ -348,7 +297,7 @@ __aicore__ inline void KernelFresnelSin<T, TILING_KEY>::Compute(int64_t curLen)
     // Rebuild saturated signed xF32 = sign(originalX) * absX.
     Muls(phase, absX, -1.0f, calcLen);
     {
-        LocalTensor<uint8_t> maskNeg = maskBuf1_.template Get<uint8_t>();  // reuse
+        LocalTensor<uint8_t> maskNeg = maskBuf1_.template Get<uint8_t>(); // reuse
         Duplicate(result, 0.0f, cmpCount);
         Compare(maskNeg, xF32, result, CMPMODE::LT, cmpCount);
         Select(xF32, maskNeg, phase, absX, SELMODE::VSEL_TENSOR_TENSOR_MODE, calcLen);
@@ -359,37 +308,37 @@ __aicore__ inline void KernelFresnelSin<T, TILING_KEY>::Compute(int64_t curLen)
 
     // === SMALL branch (in |x| domain): small = |x|^3 * P_S(x^4) / Q_S(x^4) ===
     // Diff vs FresnelCos: multiplier is |x|^3 (= |x|*x^2) instead of x.
-    Mul(polyNum, x2, x2, calcLen);                 // polyNum = x^4
-    HornerEval(phase, polyNum, SN, 6, calcLen);    // phase = P_S(x^4)
-    Mul(phase, phase, x2, calcLen);                // phase = x^2 * P_S
-    Mul(phase, phase, absX, calcLen);              // phase = |x|^3 * P_S  (sign applied later)
-    HornerEval(polyDen, polyNum, SD, 7, calcLen);  // polyDen = Q_S(x^4) (monic, 7 terms)
-    Div(phase, phase, polyDen, calcLen);           // phase = small branch value on |x|
+    Mul(polyNum, x2, x2, calcLen);                // polyNum = x^4
+    HornerEval(phase, polyNum, SN, 6, calcLen);   // phase = P_S(x^4)
+    Mul(phase, phase, x2, calcLen);               // phase = x^2 * P_S
+    Mul(phase, phase, absX, calcLen);             // phase = |x|^3 * P_S  (sign applied later)
+    HornerEval(polyDen, polyNum, SD, 7, calcLen); // polyDen = Q_S(x^4) (monic, 7 terms)
+    Div(phase, phase, polyDen, calcLen);          // phase = small branch value on |x|
 
     // === LARGE branch (in |x| domain) ===
     // u = 1/(pi^2 * x^4)
-    Muls(polyNum, polyNum, PI_SQ, calcLen);        // polyNum = pi^2 * x^4
-    Reciprocal(polyNum, polyNum, calcLen);         // polyNum = u
+    Muls(polyNum, polyNum, PI_SQ, calcLen); // polyNum = pi^2 * x^4
+    Reciprocal(polyNum, polyNum, calcLen);  // polyNum = u
 
     // f(u) = 1 - u * P9(u)/Q10(u)
     HornerEval(sinRes, polyNum, FN, 10, calcLen);
     HornerEval(cosRes, polyNum, FD, 11, calcLen);
-    Div(sinRes, sinRes, cosRes, calcLen);          // sinRes = P9/Q10
-    Mul(sinRes, sinRes, polyNum, calcLen);         // sinRes = u*P9/Q10
+    Div(sinRes, sinRes, cosRes, calcLen);  // sinRes = P9/Q10
+    Mul(sinRes, sinRes, polyNum, calcLen); // sinRes = u*P9/Q10
     Duplicate(cosRes, 1.0f, calcLen);
-    Sub(sinRes, cosRes, sinRes, calcLen);          // sinRes = f(u)
+    Sub(sinRes, cosRes, sinRes, calcLen); // sinRes = f(u)
 
     // g(u) = t * P10(u)/Q11(u),  t = 1/(pi*x^2)
     HornerEval(cosRes, polyNum, GN, 11, calcLen);
     HornerEval(polyDen, polyNum, GD, 12, calcLen);
-    Div(cosRes, cosRes, polyDen, calcLen);         // cosRes = P10/Q11
-    Muls(polyDen, x2, PI_VAL, calcLen);            // polyDen = pi*x^2
+    Div(cosRes, cosRes, polyDen, calcLen); // cosRes = P10/Q11
+    Muls(polyDen, x2, PI_VAL, calcLen);    // polyDen = pi*x^2
     // Epsilon guard against div-by-zero (x=0 routed to small branch but Inf
     // residues can contaminate downstream Vec ops via FMA/Select). See
     // matching pattern in FresnelCos. 1e-30f is safely below any real input.
     Adds(polyDen, polyDen, 1e-30f, calcLen);
-    Reciprocal(polyDen, polyDen, calcLen);         // polyDen = t
-    Mul(cosRes, cosRes, polyDen, calcLen);         // cosRes = g(u)
+    Reciprocal(polyDen, polyDen, calcLen); // polyDen = t
+    Mul(cosRes, cosRes, polyDen, calcLen); // cosRes = g(u)
 
     // phase = (pi/2) * (x^2 mod 4) via Cody-Waite reduction
     Muls(polyNum, x2, 0.25f, calcLen);
@@ -399,23 +348,23 @@ __aicore__ inline void KernelFresnelSin<T, TILING_KEY>::Compute(int64_t curLen)
     Muls(polyNum, polyNum, PI_HALF, calcLen);
 
     // Default Sin/Cos (POLYNOMIAL_APPROXIMATION) on reduced phase
-    Sin<float>(result, polyNum, calcLen);          // result = sin(phase)
-    Cos<float>(polyDen, polyNum, calcLen);         // polyDen = cos(phase)
+    Sin<float>(result, polyNum, calcLen);  // result = sin(phase)
+    Cos<float>(polyDen, polyNum, calcLen); // polyDen = cos(phase)
 
     // === FresnelSin large branch combination (DIFF vs FresnelCos) ===
     // large = 0.5 - (f*cos + g*sin) / (pi*|x|)
-    Mul(polyNum, sinRes, polyDen, calcLen);        // polyNum = f * cos(phase)
-    Mul(result,  cosRes, result,   calcLen);       // result  = g * sin(phase)
-    Add(polyNum, polyNum, result, calcLen);        // polyNum = f*cos + g*sin
+    Mul(polyNum, sinRes, polyDen, calcLen); // polyNum = f * cos(phase)
+    Mul(result, cosRes, result, calcLen);   // result  = g * sin(phase)
+    Add(polyNum, polyNum, result, calcLen); // polyNum = f*cos + g*sin
 
     Muls(result, absX, PI_VAL, calcLen);
     Adds(result, result, 1e-30f, calcLen);
-    Reciprocal(result, result, calcLen);           // result = 1/(pi*|x|)
-    Mul(polyNum, polyNum, result, calcLen);        // polyNum = (f*cos+g*sin)/(pi*|x|)
+    Reciprocal(result, result, calcLen);    // result = 1/(pi*|x|)
+    Mul(polyNum, polyNum, result, calcLen); // polyNum = (f*cos+g*sin)/(pi*|x|)
 
     // 0.5 - polyNum
     Muls(polyNum, polyNum, -1.0f, calcLen);
-    Adds(polyNum, polyNum, 0.5f, calcLen);         // polyNum = large branch value on |x|
+    Adds(polyNum, polyNum, 0.5f, calcLen); // polyNum = large branch value on |x|
 
     Mins(polyNum, polyNum, 1.0f, calcLen);
     Maxs(polyNum, polyNum, -1.0f, calcLen);

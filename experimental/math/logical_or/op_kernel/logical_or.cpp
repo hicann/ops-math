@@ -15,8 +15,7 @@
 
 #include "logical_or.h"
 
-enum class LogicalOrTilingKey : uint32_t
-{
+enum class LogicalOrTilingKey : uint32_t {
     TILING_KEY_EXAMPLE_FLOAT = 0,
     TILING_KEY_EXAMPLE_INT32 = 1,
 };
@@ -26,22 +25,19 @@ __global__ __aicore__ void logical_or(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR
 {
     REGISTER_TILING_DEFAULT(LogicalOrTilingData);
     GET_TILING_DATA_WITH_STRUCT(LogicalOrTilingData, tilingData, tiling);
-    if(TILING_KEY_IS(1)) {
+    if (TILING_KEY_IS(1)) {
         NsLogicalOr::LogicalOr<true> op;
-        op.Init(x1, x2, y, tilingData.smallCoreDataNum,
-                tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
-                tilingData.smallCoreLoopNum, tilingData.ubPartDataNum,
-                tilingData.smallCoreTailDataNum, tilingData.bigCoreTailDataNum,
-                tilingData.tailBlockNum);
+        op.Init(
+            x1, x2, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
+            tilingData.smallCoreLoopNum, tilingData.ubPartDataNum, tilingData.smallCoreTailDataNum,
+            tilingData.bigCoreTailDataNum, tilingData.tailBlockNum);
         op.Process();
-    } else if(TILING_KEY_IS(0)) {
+    } else if (TILING_KEY_IS(0)) {
         NsLogicalOr::LogicalOr<false> op;
-        op.Init(x1, x2, y, tilingData.smallCoreDataNum,
-                tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
-                tilingData.smallCoreLoopNum, tilingData.ubPartDataNum,
-                tilingData.smallCoreTailDataNum, tilingData.bigCoreTailDataNum,
-                tilingData.tailBlockNum);
+        op.Init(
+            x1, x2, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
+            tilingData.smallCoreLoopNum, tilingData.ubPartDataNum, tilingData.smallCoreTailDataNum,
+            tilingData.bigCoreTailDataNum, tilingData.tailBlockNum);
         op.Process();
     }
 }
-

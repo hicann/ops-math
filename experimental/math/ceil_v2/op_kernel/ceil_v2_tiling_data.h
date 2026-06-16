@@ -21,7 +21,7 @@
 /*!
  * \file ceil_v2_tiling_data.h
  * \brief tiling data struct
-*/
+ */
 #ifndef _CEIL_V2_TILING_DATA_H_
 #define _CEIL_V2_TILING_DATA_H_
 

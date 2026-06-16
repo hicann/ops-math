@@ -26,8 +26,8 @@
 extern "C" {
 #endif
 
-ACLNN_API aclnnStatus aclnnSumV2GetWorkspaceSize(const aclTensorList* tensors, aclTensor* out, uint64_t* workspaceSize,
-                                               aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnSumV2GetWorkspaceSize(
+    const aclTensorList* tensors, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor);
 
 ACLNN_API aclnnStatus aclnnSumV2(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
@@ -35,4 +35,4 @@ ACLNN_API aclnnStatus aclnnSumV2(void* workspace, uint64_t workspaceSize, aclOpE
 }
 #endif
 
-#endif  // OP_API_INC_SUM_V2_H_
+#endif // OP_API_INC_SUM_V2_H_

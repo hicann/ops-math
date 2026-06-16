@@ -32,20 +32,20 @@
 using namespace std;
 
 // 声明核函数
-extern "C" __global__ __aicore__ void lin_space_d(GM_ADDR start, GM_ADDR stop, GM_ADDR output, GM_ADDR workspace, GM_ADDR tiling);
+extern "C" __global__ __aicore__ void lin_space_d(
+    GM_ADDR start, GM_ADDR stop, GM_ADDR output, GM_ADDR workspace, GM_ADDR tiling);
 
 class LinSpaceDTest : public testing::Test {
 protected:
-    static void SetUpTestCase() {
+    static void SetUpTestCase()
+    {
         std::cout << "LinSpaceDTest SetUp" << std::endl;
         // 复制测试数据目录
         const string cmd = "cp -rf " + dataPath + " ./";
         system(cmd.c_str());
         system("chmod -R 755 ./lin_space_d_data/");
     }
-    static void TearDownTestCase() {
-        std::cout << "LinSpaceDTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "LinSpaceDTest TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;
@@ -57,22 +57,24 @@ const std::string LinSpaceDTest::dataPath = rootPath + "math/lin_space_d/tests/u
 
 // 对齐内存分配大小（32字节对齐）
 template <typename T1, typename T2>
-inline T1 CeilAlign(T1 a, T2 b) {
+inline T1 CeilAlign(T1 a, T2 b)
+{
     return (a + b - 1) / b * b;
 }
 
 // 测试float32类型输入（start=0, stop=10, num=5）
-TEST_F(LinSpaceDTest, test_case_float32) {
+TEST_F(LinSpaceDTest, test_case_float32)
+{
     optiling::LinSpaceDCompileInfo compileInfo;
     gert::TilingContextPara tilingContextPara(
         "LinSpaceD",
         {
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},  // start
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},  // stop
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND}   // num=5
+            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND}, // start
+            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND}, // stop
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND}  // num=5
         },
         {
-            {{{5}, {5}}, ge::DT_FLOAT, ge::FORMAT_ND}   // 输出形状[5]
+            {{{5}, {5}}, ge::DT_FLOAT, ge::FORMAT_ND} // 输出形状[5]
         },
         &compileInfo);
     TilingInfo tilingInfo;
@@ -81,7 +83,7 @@ TEST_F(LinSpaceDTest, test_case_float32) {
 
     // 生成输入数据和黄金数据（start=0, stop=10, num=5）
     system("cd ./lin_space_d_data/ && python3 gen_data.py 0 10 5 'float32'");
-    
+
     // 读取输入数据（start和stop各1个元素，float32）
     size_t startStopSize = sizeof(float);
     uint8_t* start = (uint8_t*)AscendC::GmAlloc(CeilAlign(startStopSize, 32));
@@ -118,17 +120,18 @@ TEST_F(LinSpaceDTest, test_case_float32) {
 }
 
 // 测试int32类型输入（start=2, stop=10, num=4）
-TEST_F(LinSpaceDTest, test_case_int32) {
+TEST_F(LinSpaceDTest, test_case_int32)
+{
     optiling::LinSpaceDCompileInfo compileInfo;
     gert::TilingContextPara tilingContextPara(
         "LinSpaceD",
         {
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},  // start=2
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},  // stop=10
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND}   // num=4
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND}, // start=2
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND}, // stop=10
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND}  // num=4
         },
         {
-            {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND}   // 输出[2,4,6,8]
+            {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND} // 输出[2,4,6,8]
         },
         &compileInfo);
     TilingInfo tilingInfo;
@@ -136,7 +139,7 @@ TEST_F(LinSpaceDTest, test_case_int32) {
     EXPECT_EQ(tilingRet, true);
 
     system("cd ./lin_space_d_data/ && python3 gen_data.py 2 10 4 'int32'");
-    
+
     // 读取输入和分配内存（流程同float32测试）
     size_t startStopSize = sizeof(int32_t);
     uint8_t* start = (uint8_t*)AscendC::GmAlloc(CeilAlign(startStopSize, 32));

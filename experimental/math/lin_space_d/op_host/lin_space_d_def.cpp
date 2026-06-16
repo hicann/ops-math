@@ -31,12 +31,14 @@ public:
     {
         this->Input("start")
             .ParamType(REQUIRED)
-            .DataTypeList({ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT8, ge::DT_INT16, ge::DT_INT32, ge::DT_UINT8, ge::DT_BF16})
+            .DataTypeList(
+                {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT8, ge::DT_INT16, ge::DT_INT32, ge::DT_UINT8, ge::DT_BF16})
             .FormatList({ge::FORMAT_ND})
             .AutoContiguous();
         this->Input("end")
             .ParamType(REQUIRED)
-            .DataTypeList({ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT8, ge::DT_INT16, ge::DT_INT32, ge::DT_UINT8, ge::DT_BF16})
+            .DataTypeList(
+                {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT8, ge::DT_INT16, ge::DT_INT32, ge::DT_UINT8, ge::DT_BF16})
             .FormatList({ge::FORMAT_ND})
             .AutoContiguous();
         this->Input("num")
@@ -45,10 +47,7 @@ public:
             .DataTypeList({ge::DT_INT64})
             .FormatList({ge::FORMAT_ND})
             .AutoContiguous();
-        this->Output("z")
-            .ParamType(REQUIRED)
-            .DataTypeList({ge::DT_FLOAT})
-            .FormatList({ge::FORMAT_ND});
+        this->Output("z").ParamType(REQUIRED).DataTypeList({ge::DT_FLOAT}).FormatList({ge::FORMAT_ND});
 
         OpAICoreConfig aicoreConfig;
         aicoreConfig.DynamicCompileStaticFlag(true)
@@ -57,11 +56,12 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
-            .ExtendCfgInfo("opFile.value", "lin_space_d");   
-        this->AICore().AddConfig("ascend910b", aicoreConfig)
-                      .AddConfig("ascend310p", aicoreConfig)
-                      .AddConfig("ascend910", aicoreConfig)
-                      .AddConfig("ascend310b", aicoreConfig);
+            .ExtendCfgInfo("opFile.value", "lin_space_d");
+        this->AICore()
+            .AddConfig("ascend910b", aicoreConfig)
+            .AddConfig("ascend310p", aicoreConfig)
+            .AddConfig("ascend910", aicoreConfig)
+            .AddConfig("ascend310b", aicoreConfig);
     }
 };
 OP_ADD(LinSpaceD);

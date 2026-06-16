@@ -11,11 +11,11 @@
 /*!
  * \file erf_tiling_data.h
  * \brief tiling data struct
-*/
+ */
 #ifndef _ERF_TILING_DATA_H_
 #define _ERF_TILING_DATA_H_
 
-struct ErfTilingData{
+struct ErfTilingData {
     uint64_t smallCoreDataNum;
     uint64_t bigCoreDataNum;
     uint32_t finalBigTileNum;
@@ -23,6 +23,6 @@ struct ErfTilingData{
     uint32_t tileDataNum;
     uint32_t smallTailDataNum;
     uint32_t bigTailDataNum;
-} ;
+};
 
 #endif // _ERF_TILING_DATA_H_

@@ -42,16 +42,26 @@ namespace ge {
 * Type must be the same as `x`. \n
 
 *@par Outputs:
-*z: A Tensor. The output tensor with the same shape and type as `x`, where elements at positions specified by `mask` (True) are replaced with `value`. \n
+*z: A Tensor. The output tensor with the same shape and type as `x`, where elements at positions specified by `mask`
+(True) are replaced with `value`. \n
 
 *@par Third-party framework compatibility
 * Compatible with the PyTorch operator masked_fill and TensorFlow operator where.
 */
 REG_OP(MaskedFill)
-    .INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_UINT8, DT_UINT16, DT_UINT32, DT_UINT64, DT_INT8, DT_INT16, DT_INT32, DT_INT64, DT_BF16}))
+    .INPUT(
+        x, TensorType(
+               {DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_UINT8, DT_UINT16, DT_UINT32, DT_UINT64, DT_INT8, DT_INT16, DT_INT32,
+                DT_INT64, DT_BF16}))
     .INPUT(mask, TensorType({DT_BOOL}))
-    .INPUT(value, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_UINT8, DT_UINT16, DT_UINT32, DT_UINT64, DT_INT8, DT_INT16, DT_INT32, DT_INT64, DT_BF16}))
-    .OUTPUT(z, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_UINT8, DT_UINT16, DT_UINT32, DT_UINT64, DT_INT8, DT_INT16, DT_INT32, DT_INT64, DT_BF16}))
+    .INPUT(
+        value, TensorType(
+                   {DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_UINT8, DT_UINT16, DT_UINT32, DT_UINT64, DT_INT8, DT_INT16,
+                    DT_INT32, DT_INT64, DT_BF16}))
+    .OUTPUT(
+        z, TensorType(
+               {DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_UINT8, DT_UINT16, DT_UINT32, DT_UINT64, DT_INT8, DT_INT16, DT_INT32,
+                DT_INT64, DT_BF16}))
     .OP_END_FACTORY_REG(MaskedFill)
 
 } // namespace ge

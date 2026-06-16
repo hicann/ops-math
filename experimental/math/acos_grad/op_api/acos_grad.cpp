@@ -32,10 +32,7 @@ namespace l0op {
 OP_TYPE_REGISTER(AcosGrad);
 
 static const std::initializer_list<op::DataType> ASCEND950_AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT16,
-    DataType::DT_FLOAT,
-    DataType::DT_BF16
-};
+    DataType::DT_FLOAT16, DataType::DT_FLOAT, DataType::DT_BF16};
 
 static bool IsAiCoreSupport(const aclTensor* y_grad, const aclTensor* x)
 {
@@ -54,26 +51,22 @@ static bool IsAiCoreSupport(const aclTensor* y_grad, const aclTensor* x)
 static bool AcosGradInferShape(const op::Shape& yGradShape, const op::Shape& xShape, op::Shape& outShape)
 {
     if (yGradShape != xShape) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AcosGrad: Shape mismatch: y_grad=%s, x=%s",
-                op::ToString(yGradShape).GetString(), op::ToString(xShape).GetString());
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "AcosGrad: Shape mismatch: y_grad=%s, x=%s", op::ToString(yGradShape).GetString(),
+            op::ToString(xShape).GetString());
         return false;
     }
     outShape = yGradShape;
     return true;
 }
 
-static const aclTensor* AcosGradAiCore(const aclTensor* y_grad, const aclTensor* x,
-                                         const aclTensor* x_grad, aclOpExecutor* executor)
+static const aclTensor* AcosGradAiCore(
+    const aclTensor* y_grad, const aclTensor* x, const aclTensor* x_grad, aclOpExecutor* executor)
 {
     L0_DFX(AcosGradAiCore, y_grad, x, x_grad);
 
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(AcosGrad,
-        OP_INPUT(y_grad, x), OP_OUTPUT(x_grad));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS,
-        OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AcosGradAiCore failed."),
-        return nullptr);
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(AcosGrad, OP_INPUT(y_grad, x), OP_OUTPUT(x_grad));
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AcosGradAiCore failed."), return nullptr);
     return x_grad;
 }
 
@@ -88,10 +81,11 @@ const aclTensor* AcosGrad(const aclTensor* y_grad, const aclTensor* x, aclOpExec
     }
 
     if (!IsAiCoreSupport(y_grad, x)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AcosGrad not supported: dtype y_grad=%d, x=%d. "
-                "Supported dtypes: FLOAT16, FLOAT32, BF16.",
-                static_cast<int>(y_grad->GetDataType()), static_cast<int>(x->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID,
+            "AcosGrad not supported: dtype y_grad=%d, x=%d. "
+            "Supported dtypes: FLOAT16, FLOAT32, BF16.",
+            static_cast<int>(y_grad->GetDataType()), static_cast<int>(x->GetDataType()));
         return nullptr;
     }
 

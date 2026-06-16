@@ -9,11 +9,11 @@
  */
 
 /**
-* 我们正常的版权申明，下面是我们的备注
-*
-* NOTE: Portions of this code were AI-generated and have been
-* technically reviewed for functional accuracy and security
-*/
+ * 我们正常的版权申明，下面是我们的备注
+ *
+ * NOTE: Portions of this code were AI-generated and have been
+ * technically reviewed for functional accuracy and security
+ */
 
 /*!
  * \file aclnn_cdist_backward.h
@@ -45,8 +45,8 @@ extern "C" {
  * @return aclnnStatus: 返回状态码。
  */
 ACLNN_API aclnnStatus aclnnCdistBackwardGetWorkspaceSize(
-    const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist, float p,
-    aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor);
+    const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist, float p, aclTensor* out,
+    uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief aclnnCdistBackward的第二段接口，用于执行计算。

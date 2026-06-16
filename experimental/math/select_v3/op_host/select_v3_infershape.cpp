@@ -20,7 +20,7 @@
 
 /*!
  * \file select_v3_infer.cpp
-*/
+ */
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 

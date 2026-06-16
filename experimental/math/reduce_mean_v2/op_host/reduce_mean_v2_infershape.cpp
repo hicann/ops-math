@@ -43,9 +43,9 @@ static ge::graphStatus InferShapeReduceMeanV2(gert::InferShapeContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
 
     auto attrs = context->GetAttrs();
-    int32_t axes = -1;  // 默认值
+    int32_t axes = -1; // 默认值
     int32_t keepdims = 1;
-    if(attrs != nullptr) {
+    if (attrs != nullptr) {
         if (attrs->GetInt(0)) {
             axes = *(attrs->GetInt(0));
         }
@@ -54,30 +54,29 @@ static ge::graphStatus InferShapeReduceMeanV2(gert::InferShapeContext* context)
         }
     }
     auto xShapeSize = xShape->GetDimNum();
-    if(keepdims == 1) {
+    if (keepdims == 1) {
         yShape->SetDimNum(xShapeSize);
-        if(axes == -1){
-            for(size_t i = 0; i < xShapeSize; i++){
+        if (axes == -1) {
+            for (size_t i = 0; i < xShapeSize; i++) {
                 yShape->SetDim(i, 1);
             }
-        }else{
+        } else {
             yShape->SetDim(axes, 1);
-            if(axes == 0){
+            if (axes == 0) {
                 yShape->SetDim(1, xShape->GetDim(1));
-            }
-            else{
-                yShape->SetDim(0,xShape->GetDim(0));
+            } else {
+                yShape->SetDim(0, xShape->GetDim(0));
             }
         }
-    }else{
+    } else {
         yShape->SetDimNum(1);
-        if(axes == 0){
+        if (axes == 0) {
             yShape->SetDim(0, xShape->GetDim(1));
-        }else if(axes == 1){
-            yShape->SetDim(0,xShape->GetDim(0));
-        }else{
-            yShape->SetDim(0,1);
-        } 
+        } else if (axes == 1) {
+            yShape->SetDim(0, xShape->GetDim(0));
+        } else {
+            yShape->SetDim(0, 1);
+        }
     }
     OP_LOGD(context->GetNodeName(), "End to do InferShapeReduceMeanV2");
     return Ops::Base::InferShape4Reduce(context);

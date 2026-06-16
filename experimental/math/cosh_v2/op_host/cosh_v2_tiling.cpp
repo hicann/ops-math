@@ -39,8 +39,8 @@
 namespace optiling {
 
 using Ops::Base::CeilDiv;
-using Ops::Base::FloorDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
@@ -76,7 +76,8 @@ static ge::graphStatus CoshV2TilingFunc(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, inputShape);
     auto storageShape = EnsureNotScalar(inputShape->GetStorageShape());
     int64_t totalNum = storageShape.GetShapeSize();
-    if (totalNum == 0) totalNum = 1;
+    if (totalNum == 0)
+        totalNum = 1;
 
     // 3. Workspace
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
@@ -111,13 +112,11 @@ static ge::graphStatus CoshV2TilingFunc(gert::TilingContext* context)
         bufferNum = useDoubleBuffer ? 8 : 4;
     } else {
         // fp16 and bf16: compute in float, need castBuf
-        computeTypeSize = 4;  // compute in float
+        computeTypeSize = 4; // compute in float
         bufferNum = useDoubleBuffer ? 10 : 5;
     }
 
-    tiling->ubFactor = FloorAlign(
-        FloorDiv(static_cast<int64_t>(ubSize) / computeTypeSize, bufferNum),
-        ubBlockSize);
+    tiling->ubFactor = FloorAlign(FloorDiv(static_cast<int64_t>(ubSize) / computeTypeSize, bufferNum), ubBlockSize);
 
     context->SetBlockDim(usedCoreNum);
 

@@ -58,11 +58,11 @@ static ge::graphStatus InferShapeExpandv(gert::InferShapeContext* context)
     const int64_t inRank = xShape->GetDimNum();
     const int64_t outRank = shape_list->GetSize();
     // 从后往前对齐广播
-    int64_t inIdx  = inRank  - 1;
+    int64_t inIdx = inRank - 1;
     int64_t outIdx = outRank - 1;
 
     while (inIdx >= 0 && outIdx >= 0) {
-        int64_t in_dim  = xShape->GetDim(inIdx);
+        int64_t in_dim = xShape->GetDim(inIdx);
         int64_t out_dim = shape[outIdx];
         // 只有 in_dim == out_dim 或 in_dim == 1 才能广播
         if (!(in_dim == out_dim || in_dim == 1)) {

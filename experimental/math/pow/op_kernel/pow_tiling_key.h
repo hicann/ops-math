@@ -11,7 +11,7 @@
 /*!
  * \file pow_tiling_key.h
  * \brief pow tiling key declare
-*/
+ */
 #ifndef POW_TILING_KEY_H
 #define POW_TILING_KEY_H
 
@@ -26,8 +26,6 @@ ASCENDC_TPL_ARGS_DECL(
 
 ASCENDC_TPL_SEL(
     ASCENDC_TPL_ARGS_SEL(
-    ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST,ELEMENTWISE_TPL_SCH_MODE_0,ELEMENTWISE_TPL_SCH_MODE_1)
-    ),
-);
+        ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST, ELEMENTWISE_TPL_SCH_MODE_0, ELEMENTWISE_TPL_SCH_MODE_1)), );
 
 #endif

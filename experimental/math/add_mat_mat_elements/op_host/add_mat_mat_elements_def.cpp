@@ -57,14 +57,10 @@ public:
             .AutoContiguous();
 
         // 标量 alpha：缩放系数，作为 float Attr 传入（不参与 kernel binary key 计算）
-        this->Attr("alpha")
-            .AttrType(REQUIRED)
-            .Float();
+        this->Attr("alpha").AttrType(REQUIRED).Float();
 
         // 标量 beta：缩放系数，作为 float Attr 传入（不参与 kernel binary key 计算）
-        this->Attr("beta")
-            .AttrType(REQUIRED)
-            .Float();
+        this->Attr("beta").AttrType(REQUIRED).Float();
 
         // 输出 tensor cOut：计算结果，shape 与 a/b/c 相同
         this->Output("c_out")
@@ -90,4 +86,4 @@ public:
 
 OP_ADD(AddMatMatElements);
 
-}  // namespace ops
+} // namespace ops

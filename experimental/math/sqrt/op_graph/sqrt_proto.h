@@ -11,7 +11,7 @@
 /*!
  * \file sqrt_proto.h
  * \brief
-*/
+ */
 
 #ifndef OP_PROTO_SQRT_PROTO_H_
 #define OP_PROTO_SQRT_PROTO_H_

@@ -29,7 +29,8 @@
 using namespace ge;
 
 namespace ops {
-static ge::graphStatus InferShapeReduceProdV2(gert::InferShapeContext* context){
+static ge::graphStatus InferShapeReduceProdV2(gert::InferShapeContext* context)
+{
     return Ops::Base::InferShape4Reduce(context);
 }
 IMPL_OP_INFERSHAPE(ReduceProdV2).InferShape(InferShapeReduceProdV2);

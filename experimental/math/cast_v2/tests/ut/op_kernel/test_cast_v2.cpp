@@ -38,10 +38,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./cast_v2_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "cast_v2_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "cast_v2_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;
@@ -100,4 +97,3 @@ TEST_F(CastV2Test, test_case_float16_1)
 
     system("cd ./cast_v2_data/ && python3 compare_data.py 'float16' 'float'");
 }
-

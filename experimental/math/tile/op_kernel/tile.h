@@ -557,8 +557,7 @@ __aicore__ inline int32_t GatherBuildRowsU8(
 template <typename T>
 class TileOpImpl {
 public:
-    __aicore__ inline TileOpImpl()
-    {}
+    __aicore__ inline TileOpImpl() {}
 
     template <uint32_t schMode = 0>
     __aicore__ inline void Init(GM_ADDR inputGm, GM_ADDR outputGm, const TileTilingData* tilingPtr, TPipe* pipeIn);

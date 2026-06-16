@@ -20,15 +20,9 @@ using namespace ge;
 
 class test_greater_equal_tiling_arch35 : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "test_greater_equal_tiling_arch35 SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "test_greater_equal_tiling_arch35 SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "test_greater_equal_tiling_arch35 TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "test_greater_equal_tiling_arch35 TearDown" << std::endl; }
 };
 
 TEST_F(test_greater_equal_tiling_arch35, greater_equal_test_tiling_float)

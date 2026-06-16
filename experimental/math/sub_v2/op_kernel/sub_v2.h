@@ -70,40 +70,40 @@ private:
 template <typename T>
 __aicore__ inline void SubV2<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, const SubV2TilingData* tilingData)
 {
-        ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
-        uint32_t coreNum = AscendC::GetBlockIdx();
-        uint32_t globalBufferIndex = tilingData->bigCoreDataNum * AscendC::GetBlockIdx();
-        this->tileDataNum = tilingData->tileDataNum;
-        if (coreNum < tilingData->tailBlockNum) { 
-          this->coreDataNum = tilingData->bigCoreDataNum;
-          this->tileNum = tilingData->finalBigTileNum;
-          this->tailDataNum = tilingData->bigTailDataNum;
-        }
-        else { 
-          this->coreDataNum = tilingData->smallCoreDataNum;
-          this->tileNum = tilingData->finalSmallTileNum;
-          this->tailDataNum = tilingData->smallTailDataNum;
-          globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (AscendC::GetBlockIdx() - tilingData->tailBlockNum);
-        }
-        inputGMX.SetGlobalBuffer((__gm__ T*)x + globalBufferIndex, this->coreDataNum);
-        inputGMY.SetGlobalBuffer((__gm__ T*)y + globalBufferIndex, this->coreDataNum);
-        outputGMZ.SetGlobalBuffer((__gm__ T*)z + globalBufferIndex, this->coreDataNum);
-        pipe.InitBuffer(inputQueueX, BUFFER_NUM, this->tileDataNum * sizeof(T));
-        pipe.InitBuffer(inputQueueY, BUFFER_NUM, this->tileDataNum * sizeof(T));
-        pipe.InitBuffer(outputQueueZ, BUFFER_NUM, this->tileDataNum * sizeof(T));
-        pipe.InitBuffer(tmpBuf0, this->tileDataNum * sizeof(float));
-        pipe.InitBuffer(tmpBuf1, this->tileDataNum * sizeof(float));
+    ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
+    uint32_t coreNum = AscendC::GetBlockIdx();
+    uint32_t globalBufferIndex = tilingData->bigCoreDataNum * AscendC::GetBlockIdx();
+    this->tileDataNum = tilingData->tileDataNum;
+    if (coreNum < tilingData->tailBlockNum) {
+        this->coreDataNum = tilingData->bigCoreDataNum;
+        this->tileNum = tilingData->finalBigTileNum;
+        this->tailDataNum = tilingData->bigTailDataNum;
+    } else {
+        this->coreDataNum = tilingData->smallCoreDataNum;
+        this->tileNum = tilingData->finalSmallTileNum;
+        this->tailDataNum = tilingData->smallTailDataNum;
+        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) *
+                             (AscendC::GetBlockIdx() - tilingData->tailBlockNum);
     }
+    inputGMX.SetGlobalBuffer((__gm__ T*)x + globalBufferIndex, this->coreDataNum);
+    inputGMY.SetGlobalBuffer((__gm__ T*)y + globalBufferIndex, this->coreDataNum);
+    outputGMZ.SetGlobalBuffer((__gm__ T*)z + globalBufferIndex, this->coreDataNum);
+    pipe.InitBuffer(inputQueueX, BUFFER_NUM, this->tileDataNum * sizeof(T));
+    pipe.InitBuffer(inputQueueY, BUFFER_NUM, this->tileDataNum * sizeof(T));
+    pipe.InitBuffer(outputQueueZ, BUFFER_NUM, this->tileDataNum * sizeof(T));
+    pipe.InitBuffer(tmpBuf0, this->tileDataNum * sizeof(float));
+    pipe.InitBuffer(tmpBuf1, this->tileDataNum * sizeof(float));
+}
 
 template <typename T>
 __aicore__ inline void SubV2<T>::CopyIn(int32_t progress)
 {
     AscendC::LocalTensor<T> xLocal = inputQueueX.AllocTensor<T>();
     AscendC::LocalTensor<T> yLocal = inputQueueY.AllocTensor<T>();
-    AscendC::DataCopyExtParams copyParams{1, static_cast<uint32_t>(this->processDataNum * sizeof(T)), 0, 0, 0}; 
+    AscendC::DataCopyExtParams copyParams{1, static_cast<uint32_t>(this->processDataNum * sizeof(T)), 0, 0, 0};
     AscendC::DataCopyPadExtParams<T> padParams{true, 0, 0, 0};
-    AscendC::DataCopyPad(xLocal, inputGMX[progress * this->tileDataNum], copyParams, padParams); 
-    AscendC::DataCopyPad(yLocal, inputGMY[progress * this->tileDataNum], copyParams, padParams); 
+    AscendC::DataCopyPad(xLocal, inputGMX[progress * this->tileDataNum], copyParams, padParams);
+    AscendC::DataCopyPad(yLocal, inputGMY[progress * this->tileDataNum], copyParams, padParams);
     inputQueueX.EnQue(xLocal);
     inputQueueY.EnQue(yLocal);
 }
@@ -113,7 +113,7 @@ __aicore__ inline void SubV2<T>::CopyOut(int32_t progress)
 {
     AscendC::LocalTensor<T> zLocal = outputQueueZ.DeQue<T>();
     AscendC::DataCopyExtParams copyParams{1, static_cast<uint32_t>(this->processDataNum * sizeof(T)), 0, 0, 0};
-    AscendC::DataCopyPad(outputGMZ[progress * this->tileDataNum], zLocal, copyParams); 
+    AscendC::DataCopyPad(outputGMZ[progress * this->tileDataNum], zLocal, copyParams);
     outputQueueZ.FreeTensor(zLocal);
 }
 
@@ -125,14 +125,14 @@ __aicore__ inline void SubV2<T>::Compute(int32_t progress)
     AscendC::LocalTensor<T> zLocal = outputQueueZ.AllocTensor<T>();
     if constexpr (AscendC::Std::is_same<T, bfloat16_t>::value) {
         AscendC::LocalTensor<float> tmp0 = tmpBuf0.Get<float>();
-        AscendC::LocalTensor<float> tmp1 = tmpBuf1.Get<float>(); 
+        AscendC::LocalTensor<float> tmp1 = tmpBuf1.Get<float>();
         AscendC::Cast(tmp0, xLocal, AscendC::RoundMode::CAST_NONE, this->processDataNum);
         AscendC::Cast(tmp1, yLocal, AscendC::RoundMode::CAST_NONE, this->processDataNum);
         PipeBarrier<PIPE_V>();
         AscendC::Sub(tmp1, tmp0, tmp1, this->processDataNum);
         PipeBarrier<PIPE_V>();
-        AscendC::Cast(zLocal, tmp1,AscendC::RoundMode::CAST_FLOOR, this->processDataNum);
-    }else{
+        AscendC::Cast(zLocal, tmp1, AscendC::RoundMode::CAST_FLOOR, this->processDataNum);
+    } else {
         AscendC::Sub(zLocal, xLocal, yLocal, this->processDataNum);
     }
     outputQueueZ.EnQue<T>(zLocal);

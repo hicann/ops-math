@@ -30,34 +30,34 @@ public:
     explicit Expandv(const char* name) : OpDef(name)
     {
         // 输入参数说明
-        this->Input("x")                                       // 输入x1定义
-            .ParamType(REQUIRED)                                // 必选输入
-            .DataType({
-                 ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16, ge::DT_INT8, ge::DT_UINT8, 
-                ge::DT_BOOL, ge::DT_INT16, ge::DT_UINT16, ge::DT_INT32, ge::DT_UINT32 
-            })             // 支持数据类型
-            .Format({ ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})             // 支持format格式
-            .UnknownShapeFormat({ ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND}) // 未确定大小shape对应format格式
-            .AutoContiguous();                                  // 内存自动连续
+        this->Input("x")         // 输入x1定义
+            .ParamType(REQUIRED) // 必选输入
+            .DataType(
+                {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16, ge::DT_INT8, ge::DT_UINT8, ge::DT_BOOL, ge::DT_INT16,
+                 ge::DT_UINT16, ge::DT_INT32, ge::DT_UINT32}) // 支持数据类型
+            .Format(
+                {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND}) // 支持format格式
+            .UnknownShapeFormat(
+                {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND}) // 未确定大小shape对应format格式
+            .AutoContiguous();                                                // 内存自动连续
 
         // 输出参数说明
         this->Output("y") // 输出y定义
             .ParamType(REQUIRED)
-            .DataType({
-                 ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16, ge::DT_INT8, ge::DT_UINT8, 
-                ge::DT_BOOL, ge::DT_INT16, ge::DT_UINT16, ge::DT_INT32, ge::DT_UINT32 
-            })
-            .Format({ ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-            .UnknownShapeFormat({ ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .DataType(
+                {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16, ge::DT_INT8, ge::DT_UINT8, ge::DT_BOOL, ge::DT_INT16,
+                 ge::DT_UINT16, ge::DT_INT32, ge::DT_UINT32})
+            .Format(
+                {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat(
+                {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
-        
-        this->Attr("shape")
-            .AttrType(REQUIRED)
-            .ListInt({2});
+
+        this->Attr("shape").AttrType(REQUIRED).ListInt({2});
 
         this->AICore().AddConfig("ascend910b");
     }

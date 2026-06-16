@@ -7,15 +7,15 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #ifndef OP_API_INC_LEVEL0_CLIPBYVALUE_H_
 #define OP_API_INC_LEVEL0_CLIPBYVALUE_H_
 
 #include "opdev/op_executor.h"
 
 namespace l0op {
-const aclTensor *ClipByValueV2(
-    const aclTensor *self, const aclTensor *clipValueMin, const aclTensor *clipValueMax, aclOpExecutor *executor);
-}  // namespace l0op
+const aclTensor* ClipByValueV2(
+    const aclTensor* self, const aclTensor* clipValueMin, const aclTensor* clipValueMax, aclOpExecutor* executor);
+} // namespace l0op
 
-#endif  // OP_API_INC_LEVEL0_CLIPBYVALUE_H_
+#endif // OP_API_INC_LEVEL0_CLIPBYVALUE_H_

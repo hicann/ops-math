@@ -37,8 +37,8 @@ static ge::graphStatus LessTilingFunc(gert::TilingContext* context)
     uint32_t bigCoreDataNum = 0;
     uint32_t bigCoreLoopNum = 0;
     uint32_t bigCoreTailDataNum = 0;
-    uint32_t bigprocessDataNumComputes=0;
-    uint32_t tailbigprocessDataNumComputes=0;
+    uint32_t bigprocessDataNumComputes = 0;
+    uint32_t tailbigprocessDataNumComputes = 0;
 
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubLength);
@@ -49,77 +49,71 @@ static ge::graphStatus LessTilingFunc(gert::TilingContext* context)
     auto dataType = context->GetInputDesc(0)->GetDataType();
     ge::TypeUtils::GetDataTypeLength(dataType, dataTypeLength);
 
-    if (coreNum == 0 || BLOCK_SIZE == 0) 
-    {
+    if (coreNum == 0 || BLOCK_SIZE == 0) {
         return ge::GRAPH_FAILED;
     }
     uint32_t ubPartNum = 5;
     if (dataType == ge::DT_INT8 || dataType == ge::DT_UINT8) {
-        ubLength = ubLength - 1024 * 8 - 256 * 6;//8k 预留空间 1k 计算对齐256字节 
+        ubLength = ubLength - 1024 * 8 - 256 * 6; // 8k 预留空间 1k 计算对齐256字节
         ubPartNum = NUM_1;
         context->SetTilingKey(0);
-    }
-    else if (dataType == ge::DT_FLOAT) {
-        ubLength = ubLength - 1024 * 8 - 256 * 7;//8k 预留空间 1k 计算对齐256字节 
+    } else if (dataType == ge::DT_FLOAT) {
+        ubLength = ubLength - 1024 * 8 - 256 * 7; // 8k 预留空间 1k 计算对齐256字节
         context->SetTilingKey(1);
-    }
-    else if (dataType == ge::DT_FLOAT16) {
-        ubLength = ubLength - 1024 * 8 - 256 * 6;//8k 预留空间 1k 计算对齐256字节 
-    }
-    else if (dataType == ge::DT_BF16) {
-         ubPartNum = NUM_1;
-         ubLength = ubLength - 1024 * 8 - 256 * 10;//8k 预留空间 1k 计算对齐256字节 
-         context->SetTilingKey(1);
-    }
-    else if (dataType == ge::DT_INT32) {
+    } else if (dataType == ge::DT_FLOAT16) {
+        ubLength = ubLength - 1024 * 8 - 256 * 6; // 8k 预留空间 1k 计算对齐256字节
+    } else if (dataType == ge::DT_BF16) {
+        ubPartNum = NUM_1;
+        ubLength = ubLength - 1024 * 8 - 256 * 10; // 8k 预留空间 1k 计算对齐256字节
+        context->SetTilingKey(1);
+    } else if (dataType == ge::DT_INT32) {
         ubPartNum = NUM_2;
-        ubLength = ubLength - 1024 * 8 - 256 * 7;//8k 预留空间 1k 计算对齐256字节 
+        ubLength = ubLength - 1024 * 8 - 256 * 7; // 8k 预留空间 1k 计算对齐256字节
         context->SetTilingKey(1);
-    }
-    else if (dataType == ge::DT_INT64) {
+    } else if (dataType == ge::DT_INT64) {
         ubPartNum = NUM_3;
         context->SetTilingKey(1);
     }
-    
+
     ubLength = ubLength / dataTypeLength;
     uint32_t ubPartLength = ubLength / ubPartNum;
     uint32_t ubPartBlockNum = ubPartLength / BLOCK_SIZE;
     uint32_t ubPartDataNum = ubPartBlockNum * BLOCK_SIZE;
     uint32_t inputLengthAlign32 = (((inputDataNum + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE);
-    
-    if(ubPartDataNum >= inputDataNum)
-    {
-        coreNum=1;
+
+    if (ubPartDataNum >= inputDataNum) {
+        coreNum = 1;
+    } else {
+        coreNum = (coreNum < inputLengthAlign32 / BLOCK_SIZE) ? coreNum : inputLengthAlign32 / BLOCK_SIZE;
     }
-    else
-    {
-        coreNum = (coreNum <  inputLengthAlign32 / BLOCK_SIZE) ? coreNum : inputLengthAlign32 / BLOCK_SIZE;
-    }
-    
+
     uint32_t everyCoreInputBlockNum = inputLengthAlign32 / BLOCK_SIZE / coreNum;
     uint32_t tailBlockNum = (inputLengthAlign32 / BLOCK_SIZE) % coreNum;
-    
+
     // Small chunks are calculated and sliced several times using the number of data on each core
-    uint32_t smallCoreDataNum = everyCoreInputBlockNum * BLOCK_SIZE ;
+    uint32_t smallCoreDataNum = everyCoreInputBlockNum * BLOCK_SIZE;
     uint32_t smallCoreLoopNum = smallCoreDataNum / ubPartDataNum;
     smallCoreLoopNum = (everyCoreInputBlockNum % ubPartBlockNum) == 0 ? smallCoreLoopNum : smallCoreLoopNum + 1;
     // Tail block calculation for small chunks of data
     uint32_t smallCoreTailDataNum = smallCoreDataNum - ubPartDataNum * (smallCoreDataNum / ubPartDataNum);
     smallCoreTailDataNum = smallCoreTailDataNum == 0 ? ubPartDataNum : smallCoreTailDataNum;
-    uint32_t smallprocessDataNumComputes= (((ubPartDataNum * dataTypeLength + 256 - 1) / 256) * 256) / dataTypeLength;//计算函数 256字节对齐
-    uint32_t tailsmallprocessDataNumComputes= (((smallCoreTailDataNum * dataTypeLength + 256 - 1) / 256) * 256) / dataTypeLength;//尾块计算函数 256字节对齐
-    
+    uint32_t smallprocessDataNumComputes =
+        (((ubPartDataNum * dataTypeLength + 256 - 1) / 256) * 256) / dataTypeLength; // 计算函数 256字节对齐
+    uint32_t tailsmallprocessDataNumComputes =
+        (((smallCoreTailDataNum * dataTypeLength + 256 - 1) / 256) * 256) / dataTypeLength; // 尾块计算函数 256字节对齐
+
     uint32_t isTailBlock = 0;
-    if(0 != tailBlockNum)
-    {
+    if (0 != tailBlockNum) {
         everyCoreInputBlockNum += 1;
-        bigCoreDataNum = everyCoreInputBlockNum * BLOCK_SIZE ;
+        bigCoreDataNum = everyCoreInputBlockNum * BLOCK_SIZE;
         bigCoreLoopNum = bigCoreDataNum / ubPartDataNum;
         bigCoreLoopNum = (everyCoreInputBlockNum % ubPartBlockNum) == 0 ? bigCoreLoopNum : bigCoreLoopNum + 1;
         bigCoreTailDataNum = bigCoreDataNum - ubPartDataNum * (bigCoreDataNum / ubPartDataNum);
         bigCoreTailDataNum = bigCoreTailDataNum == 0 ? ubPartDataNum : bigCoreTailDataNum;
-        bigprocessDataNumComputes= (((ubPartDataNum * dataTypeLength + 256 - 1) / 256) * 256) / dataTypeLength;//计算函数 256字节对齐
-        tailbigprocessDataNumComputes= (((bigCoreTailDataNum * dataTypeLength + 256 - 1) / 256) * 256) / dataTypeLength;//尾块计算函数 256字节对齐
+        bigprocessDataNumComputes =
+            (((ubPartDataNum * dataTypeLength + 256 - 1) / 256) * 256) / dataTypeLength; // 计算函数 256字节对齐
+        tailbigprocessDataNumComputes = (((bigCoreTailDataNum * dataTypeLength + 256 - 1) / 256) * 256) /
+                                        dataTypeLength; // 尾块计算函数 256字节对齐
         isTailBlock = 1;
     }
 
@@ -139,7 +133,7 @@ static ge::graphStatus LessTilingFunc(gert::TilingContext* context)
     context->SetBlockDim(coreNum);
 
     size_t systemWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
-    size_t *currentWorkspace = context->GetWorkspaceSizes(1);
+    size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     currentWorkspace[0] = systemWorkspaceSize;
     return ge::GRAPH_SUCCESS;
 }
@@ -150,5 +144,4 @@ static ge::graphStatus TilingParseForLess([[maybe_unused]] gert::TilingParseCont
 }
 
 IMPL_OP_OPTILING(Less).Tiling(LessTilingFunc).TilingParse<LessCompileInfo>(TilingParseForLess);
-}
-
+} // namespace optiling

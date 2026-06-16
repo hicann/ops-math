@@ -74,9 +74,7 @@ class Ndtri {
 public:
     __aicore__ inline Ndtri() = default;
 
-    __aicore__ inline void Init(
-        GM_ADDR self, GM_ADDR out,
-        const NdtriTilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR self, GM_ADDR out, const NdtriTilingData* tilingData);
 
     __aicore__ inline void Process();
 
@@ -87,24 +85,18 @@ private:
 
     // 构造三个 mask：tail / neg / special
     __aicore__ inline void BuildMasks(
-        const LocalTensor<float>& p,
-        const LocalTensor<uint8_t>& maskTail,
-        const LocalTensor<uint8_t>& maskNeg,
-        const LocalTensor<uint8_t>& maskSpecial,
-        const LocalTensor<float>& scratch,
-        int32_t len);
+        const LocalTensor<float>& p, const LocalTensor<uint8_t>& maskTail, const LocalTensor<uint8_t>& maskNeg,
+        const LocalTensor<uint8_t>& maskSpecial, const LocalTensor<float>& scratch, int32_t len);
 
     // 构造 y_special：p==0 -> -inf, p==1 -> +inf, otherwise -> NaN
     __aicore__ inline void BuildSpecialY(
-        const LocalTensor<float>& ySpecial,
-        const LocalTensor<float>& p,
-        const LocalTensor<float>& scratch,
+        const LocalTensor<float>& ySpecial, const LocalTensor<float>& p, const LocalTensor<float>& scratch,
         int32_t len);
 
 private:
     TPipe pipe;
 
-    TQue<QuePosition::VECIN,  BUFFER_NUM> inQueSelf;
+    TQue<QuePosition::VECIN, BUFFER_NUM> inQueSelf;
     TQue<QuePosition::VECOUT, BUFFER_NUM> outQueY;
 
     // fp32 域：p / y（所有 dtype 统一使用，FP32 路径通过 Cast(CAST_NONE) 等价搬运）
@@ -121,14 +113,14 @@ private:
     TBuf<TPosition::VECCALC> tmpBuf6;
     TBuf<TPosition::VECCALC> tmpBuf7;
     TBuf<TPosition::VECCALC> tmpBuf8;
-    TBuf<TPosition::VECCALC> tmpBuf9;   // CalTail tmp4（避免与 q 别名）
-    TBuf<TPosition::VECCALC> tmpBuf10;  // CalTail tmp5（避免与 x 别名）
+    TBuf<TPosition::VECCALC> tmpBuf9;  // CalTail tmp4（避免与 q 别名）
+    TBuf<TPosition::VECCALC> tmpBuf10; // CalTail tmp5（避免与 x 别名）
 
     // mask buffer（uint8）
     TBuf<TPosition::VECCALC> maskBuf0;
     TBuf<TPosition::VECCALC> maskBuf1;
     TBuf<TPosition::VECCALC> maskBuf2;
-    TBuf<TPosition::VECCALC> maskBuf3;  // scratch mask for cal_p12 / BuildSpecialY
+    TBuf<TPosition::VECCALC> maskBuf3; // scratch mask for cal_p12 / BuildSpecialY
 
     GlobalTensor<T> selfGm;
     GlobalTensor<T> outGm;
@@ -141,14 +133,11 @@ private:
 // Init
 // ---------------------------------------------------------------
 template <typename T, int K_ALIGN>
-__aicore__ inline void Ndtri<T, K_ALIGN>::Init(
-    GM_ADDR self, GM_ADDR out,
-    const NdtriTilingData* tilingData)
+__aicore__ inline void Ndtri<T, K_ALIGN>::Init(GM_ADDR self, GM_ADDR out, const NdtriTilingData* tilingData)
 {
     int64_t blockIdx = AscendC::GetBlockIdx();
     int64_t remainderLength = tilingData->totalNum - tilingData->blockFactor * blockIdx;
-    blockLength_ = (remainderLength > tilingData->blockFactor) ?
-                   tilingData->blockFactor : remainderLength;
+    blockLength_ = (remainderLength > tilingData->blockFactor) ? tilingData->blockFactor : remainderLength;
     if (blockLength_ < 0) {
         blockLength_ = 0;
     }
@@ -163,7 +152,7 @@ __aicore__ inline void Ndtri<T, K_ALIGN>::Init(
 
     // InQue / OutQue（DB）
     pipe.InitBuffer(inQueSelf, BUFFER_NUM, ubLength_ * sizeof(T));
-    pipe.InitBuffer(outQueY,   BUFFER_NUM, ubLength_ * sizeof(T));
+    pipe.InitBuffer(outQueY, BUFFER_NUM, ubLength_ * sizeof(T));
 
     // fp32 域 p / y buffer（独立分配，保证 fp16/bf16 Cast 链路有足够空间）
     pipe.InitBuffer(pBuf, ubLength_ * sizeof(float));
@@ -201,8 +190,7 @@ __aicore__ inline void Ndtri<T, K_ALIGN>::Process()
     }
     int64_t loopCount = (blockLength_ + ubLength_ - 1) / ubLength_;
     for (int64_t i = 0; i < loopCount; ++i) {
-        int64_t currentNum = (i == loopCount - 1) ?
-                             (blockLength_ - ubLength_ * i) : ubLength_;
+        int64_t currentNum = (i == loopCount - 1) ? (blockLength_ - ubLength_ * i) : ubLength_;
         CopyIn(i, currentNum);
         Compute(currentNum);
         CopyOut(i, currentNum);
@@ -217,8 +205,7 @@ template <typename T, int K_ALIGN>
 __aicore__ inline void Ndtri<T, K_ALIGN>::CopyIn(int64_t progress, int64_t currentNum)
 {
     LocalTensor<T> inLocal = inQueSelf.template AllocTensor<T>();
-    DataCopyExtParams copyParams{
-        1, static_cast<uint32_t>(currentNum * sizeof(T)), 0, 0, 0};
+    DataCopyExtParams copyParams{1, static_cast<uint32_t>(currentNum * sizeof(T)), 0, 0, 0};
     DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
     int64_t gmOffset = progress * ubLength_;
     DataCopyPad(inLocal, selfGm[gmOffset], copyParams, padParams);
@@ -241,18 +228,13 @@ __aicore__ inline void Ndtri<T, K_ALIGN>::CopyIn(int64_t progress, int64_t curre
 // ---------------------------------------------------------------
 template <typename T, int K_ALIGN>
 __aicore__ inline void Ndtri<T, K_ALIGN>::BuildMasks(
-    const LocalTensor<float>& p,
-    const LocalTensor<uint8_t>& maskTail,
-    const LocalTensor<uint8_t>& maskNeg,
-    const LocalTensor<uint8_t>& maskSpecial,
-    const LocalTensor<float>& scratch,
-    int32_t len)
+    const LocalTensor<float>& p, const LocalTensor<uint8_t>& maskTail, const LocalTensor<uint8_t>& maskNeg,
+    const LocalTensor<uint8_t>& maskSpecial, const LocalTensor<float>& scratch, int32_t len)
 {
     // maskTail = (|p - 0.5| >= 0.5 - VAL_SUB)
     Adds(scratch, p, -0.5f, len);
     Abs(scratch, scratch, len);
-    CompareScalar(maskTail, scratch,
-                  0.5f - NDTRI_VAL_SUB, CMPMODE::GE, len);
+    CompareScalar(maskTail, scratch, 0.5f - NDTRI_VAL_SUB, CMPMODE::GE, len);
 
     // maskSpecial：由 3 个条件组合：
     //   c1 = (p <= 0)
@@ -272,9 +254,14 @@ __aicore__ inline void Ndtri<T, K_ALIGN>::BuildMasks(
     constexpr uint32_t POS_INF_BITS_U = 0x7F800000U;
     float negInf, posInf;
     {
-        union { uint32_t u; float f; } cvt;
-        cvt.u = NEG_INF_BITS_U; negInf = cvt.f;
-        cvt.u = POS_INF_BITS_U; posInf = cvt.f;
+        union {
+            uint32_t u;
+            float f;
+        } cvt;
+        cvt.u = NEG_INF_BITS_U;
+        negInf = cvt.f;
+        cvt.u = POS_INF_BITS_U;
+        posInf = cvt.f;
     }
 
     // maskSpecial = (p <= 0)
@@ -303,10 +290,7 @@ __aicore__ inline void Ndtri<T, K_ALIGN>::BuildMasks(
 // ---------------------------------------------------------------
 template <typename T, int K_ALIGN>
 __aicore__ inline void Ndtri<T, K_ALIGN>::BuildSpecialY(
-    const LocalTensor<float>& ySpecial,
-    const LocalTensor<float>& p,
-    const LocalTensor<float>& scratch,
-    int32_t len)
+    const LocalTensor<float>& ySpecial, const LocalTensor<float>& p, const LocalTensor<float>& scratch, int32_t len)
 {
     constexpr uint32_t NAN_BITS = 0x7FC00000U;
     constexpr uint32_t POS_INF_BITS = 0x7F800000U;
@@ -314,10 +298,16 @@ __aicore__ inline void Ndtri<T, K_ALIGN>::BuildSpecialY(
 
     float nanVal, posInf, negInf;
     {
-        union { uint32_t u; float f; } cvt;
-        cvt.u = NAN_BITS; nanVal = cvt.f;
-        cvt.u = POS_INF_BITS; posInf = cvt.f;
-        cvt.u = NEG_INF_BITS; negInf = cvt.f;
+        union {
+            uint32_t u;
+            float f;
+        } cvt;
+        cvt.u = NAN_BITS;
+        nanVal = cvt.f;
+        cvt.u = POS_INF_BITS;
+        posInf = cvt.f;
+        cvt.u = NEG_INF_BITS;
+        negInf = cvt.f;
     }
 
     // ISSUE-001：调用者传入的 len 由 Compute 层已对齐到 256B（64 元素）。
@@ -331,14 +321,12 @@ __aicore__ inline void Ndtri<T, K_ALIGN>::BuildSpecialY(
     // p == 0 -> -inf
     CompareScalar(maskEq, p, 0.0f, CMPMODE::EQ, len);
     Duplicate(scratch, negInf, len);
-    Select(ySpecial, maskEq, scratch, ySpecial,
-           SELMODE::VSEL_TENSOR_TENSOR_MODE, len);
+    Select(ySpecial, maskEq, scratch, ySpecial, SELMODE::VSEL_TENSOR_TENSOR_MODE, len);
 
     // p == 1 -> +inf
     CompareScalar(maskEq, p, 1.0f, CMPMODE::EQ, len);
     Duplicate(scratch, posInf, len);
-    Select(ySpecial, maskEq, scratch, ySpecial,
-           SELMODE::VSEL_TENSOR_TENSOR_MODE, len);
+    Select(ySpecial, maskEq, scratch, ySpecial, SELMODE::VSEL_TENSOR_TENSOR_MODE, len);
 }
 
 // ---------------------------------------------------------------
@@ -347,7 +335,7 @@ __aicore__ inline void Ndtri<T, K_ALIGN>::BuildSpecialY(
 template <typename T, int K_ALIGN>
 __aicore__ inline void Ndtri<T, K_ALIGN>::Compute(int64_t currentNum)
 {
-    LocalTensor<T> inLocal  = inQueSelf.template DeQue<T>();
+    LocalTensor<T> inLocal = inQueSelf.template DeQue<T>();
     LocalTensor<T> outLocal = outQueY.template AllocTensor<T>();
     int32_t len = static_cast<int32_t>(currentNum);
     // ISSUE-001：Compare/CompareScalar API 对 count 所占空间要求 256B 对齐
@@ -389,18 +377,18 @@ __aicore__ inline void Ndtri<T, K_ALIGN>::Compute(int64_t currentNum)
     }
 
     // Buffer 别名
-    LocalTensor<float> tmpPm    = tmpBuf0.Get<float>();
-    LocalTensor<float> tmpZ     = tmpBuf1.Get<float>();
-    LocalTensor<float> tmpP     = tmpBuf2.Get<float>();
-    LocalTensor<float> tmpQ     = tmpBuf3.Get<float>();
-    LocalTensor<float> scratch  = tmpBuf4.Get<float>();
-    LocalTensor<float> pSafe    = tmpBuf5.Get<float>();
-    LocalTensor<float> yCenter  = tmpBuf6.Get<float>();
-    LocalTensor<float> yTail    = tmpBuf7.Get<float>();
+    LocalTensor<float> tmpPm = tmpBuf0.Get<float>();
+    LocalTensor<float> tmpZ = tmpBuf1.Get<float>();
+    LocalTensor<float> tmpP = tmpBuf2.Get<float>();
+    LocalTensor<float> tmpQ = tmpBuf3.Get<float>();
+    LocalTensor<float> scratch = tmpBuf4.Get<float>();
+    LocalTensor<float> pSafe = tmpBuf5.Get<float>();
+    LocalTensor<float> yCenter = tmpBuf6.Get<float>();
+    LocalTensor<float> yTail = tmpBuf7.Get<float>();
     LocalTensor<float> ySpecial = tmpBuf8.Get<float>();
 
-    LocalTensor<uint8_t> maskTail    = maskBuf0.Get<uint8_t>();
-    LocalTensor<uint8_t> maskNeg     = maskBuf1.Get<uint8_t>();
+    LocalTensor<uint8_t> maskTail = maskBuf0.Get<uint8_t>();
+    LocalTensor<uint8_t> maskNeg = maskBuf1.Get<uint8_t>();
     LocalTensor<uint8_t> maskSpecial = maskBuf2.Get<uint8_t>();
 
     // ISSUE-001：后续所有 Vector 计算统一使用 lenAligned 长度运行。
@@ -430,30 +418,28 @@ __aicore__ inline void Ndtri<T, K_ALIGN>::Compute(int64_t currentNum)
     //     tmp3     = yCenter  (tmpBuf6)  [随后会被 Step 4 覆盖]
     //     tmp4     = tmpBuf9
     //     tmp5     = tmpBuf10
-    CalTail(yTail, pSafe, maskNeg,
-            /*tmpQ   */tmpPm,
-            /*tmpX   */tmpZ,
-            /*tmpX0  */tmpP,
-            /*tmpCorr*/tmpQ,
-            /*tmp1   */scratch,
-            /*tmp2   */ySpecial,
-            /*tmp3   */yCenter,
-            /*tmp4   */tmpBuf9.Get<float>(),
-            /*tmp5   */tmpBuf10.Get<float>(),
-            /*maskX  */maskBuf3.Get<uint8_t>(),
-            lenAligned);
+    CalTail(
+        yTail, pSafe, maskNeg,
+        /*tmpQ   */ tmpPm,
+        /*tmpX   */ tmpZ,
+        /*tmpX0  */ tmpP,
+        /*tmpCorr*/ tmpQ,
+        /*tmp1   */ scratch,
+        /*tmp2   */ ySpecial,
+        /*tmp3   */ yCenter,
+        /*tmp4   */ tmpBuf9.Get<float>(),
+        /*tmp5   */ tmpBuf10.Get<float>(),
+        /*maskX  */ maskBuf3.Get<uint8_t>(), lenAligned);
 
     // Step 4: 计算 yCenter（覆盖 yCenter 暂借值）
     CalP0(yCenter, pSafe, tmpPm, tmpZ, tmpP, tmpQ, scratch, lenAligned);
 
     // Step 5: y = select(maskTail, yTail, yCenter)
-    Select(y, maskTail, yTail, yCenter,
-           SELMODE::VSEL_TENSOR_TENSOR_MODE, lenAligned);
+    Select(y, maskTail, yTail, yCenter, SELMODE::VSEL_TENSOR_TENSOR_MODE, lenAligned);
 
     // Step 6: y = select(maskSpecial, ySpecial, y)
     BuildSpecialY(ySpecial, p, scratch, lenAligned);
-    Select(y, maskSpecial, ySpecial, y,
-           SELMODE::VSEL_TENSOR_TENSOR_MODE, lenAligned);
+    Select(y, maskSpecial, ySpecial, y, SELMODE::VSEL_TENSOR_TENSOR_MODE, lenAligned);
 
     // Step 7: 输出 Cast → T
     //   - FP32: Adds(outLocal_fp32, y, 0.0f) 等价 Copy（只处理前 len 位置，
@@ -479,8 +465,7 @@ template <typename T, int K_ALIGN>
 __aicore__ inline void Ndtri<T, K_ALIGN>::CopyOut(int64_t progress, int64_t currentNum)
 {
     LocalTensor<T> outLocal = outQueY.template DeQue<T>();
-    DataCopyExtParams copyParams{
-        1, static_cast<uint32_t>(currentNum * sizeof(T)), 0, 0, 0};
+    DataCopyExtParams copyParams{1, static_cast<uint32_t>(currentNum * sizeof(T)), 0, 0, 0};
     int64_t gmOffset = progress * ubLength_;
     DataCopyPad(outGm[gmOffset], outLocal, copyParams);
     outQueY.FreeTensor(outLocal);

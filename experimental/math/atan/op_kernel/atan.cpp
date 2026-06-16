@@ -20,7 +20,7 @@ __global__ __aicore__ void atan(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR
 {
     REGISTER_TILING_DEFAULT(AtanTilingData);
     GET_TILING_DATA_WITH_STRUCT(AtanTilingData, tilingData, tiling);
-    NsAtan::Atan<DTYPE_X> op; 
-    op.Init(x, y,&tilingData);      // 算子kernel实例初始化
-    op.Process();                       
-} 
+    NsAtan::Atan<DTYPE_X> op;
+    op.Init(x, y, &tilingData); // 算子kernel实例初始化
+    op.Process();
+}

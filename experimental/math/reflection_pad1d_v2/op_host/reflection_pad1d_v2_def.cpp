@@ -32,7 +32,7 @@ public:
         this->Input("x")
             .ParamType(REQUIRED)
             .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16})
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});  
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
 
         this->Input("paddings")
             .ParamType(REQUIRED)
@@ -52,7 +52,7 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
-            .ExtendCfgInfo("opFile.value", "reflection_pad1d_v2");  
+            .ExtendCfgInfo("opFile.value", "reflection_pad1d_v2");
         this->AICore()
             .AddConfig("ascend910b", aicoreConfig)
             .AddConfig("ascend910", aicoreConfig)
@@ -61,4 +61,4 @@ public:
     }
 };
 OP_ADD(ReflectionPad1dV2);
-}
+} // namespace ops

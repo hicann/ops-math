@@ -28,11 +28,7 @@
 #include "ndtri_kernel.h"
 
 template <typename D_T, int K_ALIGN>
-__global__ __aicore__ void ndtri(
-    GM_ADDR self,
-    GM_ADDR out,
-    GM_ADDR workspace,
-    GM_ADDR tiling)
+__global__ __aicore__ void ndtri(GM_ADDR self, GM_ADDR out, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(NdtriTilingData);
     GET_TILING_DATA_WITH_STRUCT(NdtriTilingData, tilingData, tiling);

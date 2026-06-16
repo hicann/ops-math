@@ -21,12 +21,11 @@
 /*!
  * \file trunc_v2.cpp
  * \brief
-*/
+ */
 
 #include "trunc_v2.h"
 
-enum class TruncV2TilingKey : uint32_t
-{
+enum class TruncV2TilingKey : uint32_t {
     TILING_KEY_EXAMPLE_FLOAT = 0,
     TILING_KEY_EXAMPLE_HALF = 1,
 };
@@ -38,13 +37,13 @@ __global__ __aicore__ void trunc_v2(GM_ADDR x, GM_ADDR z, GM_ADDR workspace, GM_
     GET_TILING_DATA_WITH_STRUCT(TruncV2TilingData, tilingData, tiling);
     if constexpr (schMode == static_cast<uint32_t>(TruncV2TilingKey::TILING_KEY_EXAMPLE_FLOAT)) {
         NsTruncV2::TruncV2<float> op; // 算子kernel实例获取
-        op.Init(x,  z, &tilingData);      // 算子kernel实例初始化
-        op.Process();                       // 算子kernel实例执行
+        op.Init(x, z, &tilingData);   // 算子kernel实例初始化
+        op.Process();                 // 算子kernel实例执行
     }
-    
+
     else if constexpr (schMode == static_cast<uint32_t>(TruncV2TilingKey::TILING_KEY_EXAMPLE_HALF)) {
         NsTruncV2::TruncV2<half> op; // 算子kernel实例获取
-        op.Init(x,  z, &tilingData);        // 算子kernel实例初始化
-        op.Process();                         // 算子kernel实例执行
+        op.Init(x, z, &tilingData);  // 算子kernel实例初始化
+        op.Process();                // 算子kernel实例执行
     }
 }

@@ -52,7 +52,7 @@ static inline bool CheckNotNull(const aclTensor* self, const aclTensor* value)
 static inline bool CheckDtypeValid(const aclTensor* self)
 {
     // 获取芯片类型,判断是1971还是1980
-    bool is910bSocVersion = 
+    bool is910bSocVersion =
         (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201 ||
          GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510);
     const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_CURRENT =

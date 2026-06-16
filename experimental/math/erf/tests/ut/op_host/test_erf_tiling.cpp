@@ -23,15 +23,9 @@ const std::string EXPECT_TILING_DATA_TEST2 = "16384 16384 12884901891 1759218605
 
 class ErfTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "ErfTiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "ErfTiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "ErfTiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "ErfTiling TearDown " << endl; }
 };
 
 TEST_F(ErfTiling, ascend9101_test_tiling_fp16_001)

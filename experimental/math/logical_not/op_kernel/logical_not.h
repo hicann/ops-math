@@ -32,11 +32,10 @@ template <typename TYPE_X, typename TYPE_Y, bool IsExistBigCore>
 class LogicalNot {
 public:
     __aicore__ inline LogicalNot() {}
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum,
-                                uint32_t bigCoreDataNum, uint32_t bigCoreLoopNum,
-                                uint32_t smallCoreLoopNum, uint32_t ubPartDataNum,
-                                uint32_t smallCoreTailDataNum, uint32_t bigCoreTailDataNum,
-                                uint32_t tailBlockNum)
+    __aicore__ inline void Init(
+        GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum, uint32_t bigCoreDataNum, uint32_t bigCoreLoopNum,
+        uint32_t smallCoreLoopNum, uint32_t ubPartDataNum, uint32_t smallCoreTailDataNum, uint32_t bigCoreTailDataNum,
+        uint32_t tailBlockNum)
     {
         ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
         uint32_t blockIdx = AscendC::GetBlockIdx();
@@ -60,8 +59,8 @@ public:
             globalBufferIndex = smallCoreDataNum * AscendC::GetBlockIdx();
         }
 
-        xGm.SetGlobalBuffer((__gm__ TYPE_X *)x + globalBufferIndex, this->coreDataNum);
-        yGm.SetGlobalBuffer((__gm__ TYPE_Y *)y + globalBufferIndex, this->coreDataNum);
+        xGm.SetGlobalBuffer((__gm__ TYPE_X*)x + globalBufferIndex, this->coreDataNum);
+        yGm.SetGlobalBuffer((__gm__ TYPE_Y*)y + globalBufferIndex, this->coreDataNum);
         pipe.InitBuffer(inQueueX, BUFFER_NUM, this->ubPartDataNum * sizeof(TYPE_X));
         pipe.InitBuffer(tmp1, this->ubPartDataNum * sizeof(half));
         pipe.InitBuffer(outQueueY, BUFFER_NUM, this->ubPartDataNum * sizeof(TYPE_Y));
@@ -125,5 +124,5 @@ private:
     uint32_t tailDataNum = 0;
     uint32_t processDataNum = 0;
 };
-}
+} // namespace NsLogicalNot
 #endif

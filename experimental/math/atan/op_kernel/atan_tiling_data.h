@@ -13,18 +13,17 @@
  * \brief tiling data struct
  */
 
- #ifndef ROTARY_POSITION_EMBEDDING_GRAD_TILING_DATA_H
- #define ROTARY_POSITION_EMBEDDING_GRAD_TILING_DATA_H
- 
- struct AtanTilingData {
-    uint32_t smallCoreDataNum; 
-    uint32_t bigCoreDataNum;   
-    uint32_t finalBigTileNum;   
-    uint32_t finalSmallTileNum; 
-    uint32_t smallTailDataNum;  
-    uint32_t bigTailDataNum;    
-    uint32_t tileDataNum;       
-    uint32_t tailBlockNum;     
- };
- #endif
- 
+#ifndef ROTARY_POSITION_EMBEDDING_GRAD_TILING_DATA_H
+#define ROTARY_POSITION_EMBEDDING_GRAD_TILING_DATA_H
+
+struct AtanTilingData {
+    uint32_t smallCoreDataNum;
+    uint32_t bigCoreDataNum;
+    uint32_t finalBigTileNum;
+    uint32_t finalSmallTileNum;
+    uint32_t smallTailDataNum;
+    uint32_t bigTailDataNum;
+    uint32_t tileDataNum;
+    uint32_t tailBlockNum;
+};
+#endif

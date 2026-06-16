@@ -15,13 +15,13 @@
 #define _FRESNEL_SIN_TILING_DATA_H_
 
 struct FresnelSinTilingData {
-    uint64_t totalLength = 0;   // total number of elements
-    uint32_t blockNum    = 0;   // actual AI Core count (dynamic)
-    uint32_t baseLength  = 0;   // elements per core (first blockNum-1 cores)
-    uint32_t tailLength  = 0;   // elements for the tail core
-    uint32_t tileLength  = 0;   // elements per tile (Double Buffer chunk)
-    uint32_t tileNum     = 0;   // number of main-loop tiles per core
-    uint32_t tailTileLen = 0;   // tail tile elements within a core (< tileLength)
+    uint64_t totalLength = 0; // total number of elements
+    uint32_t blockNum = 0;    // actual AI Core count (dynamic)
+    uint32_t baseLength = 0;  // elements per core (first blockNum-1 cores)
+    uint32_t tailLength = 0;  // elements for the tail core
+    uint32_t tileLength = 0;  // elements per tile (Double Buffer chunk)
+    uint32_t tileNum = 0;     // number of main-loop tiles per core
+    uint32_t tailTileLen = 0; // tail tile elements within a core (< tileLength)
 };
 
 #endif // _FRESNEL_SIN_TILING_DATA_H_

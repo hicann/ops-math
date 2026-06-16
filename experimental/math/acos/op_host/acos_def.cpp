@@ -19,8 +19,8 @@ class Acos : public OpDef {
 public:
     explicit Acos(const char* name) : OpDef(name)
     {
-        this->Input("x")                                           // 输入x定义
-            .ParamType(REQUIRED)                                   // 必选输入
+        this->Input("x")         // 输入x定义
+            .ParamType(REQUIRED) // 必选输入
             .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})

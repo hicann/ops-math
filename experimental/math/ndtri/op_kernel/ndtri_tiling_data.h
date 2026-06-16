@@ -21,9 +21,9 @@
 #define NDTRI_TILING_DATA_H_
 
 struct NdtriTilingData {
-    int64_t totalNum = 0;     // self 元素总数
-    int64_t blockFactor = 0;  // 每核主体处理元素数（按 alignElem 向上对齐）
-    int64_t ubFactor = 0;     // 单次 UB 循环处理元素数（对齐 256）
+    int64_t totalNum = 0;    // self 元素总数
+    int64_t blockFactor = 0; // 每核主体处理元素数（按 alignElem 向上对齐）
+    int64_t ubFactor = 0;    // 单次 UB 循环处理元素数（对齐 256）
 };
 
-#endif  // NDTRI_TILING_DATA_H_
+#endif // NDTRI_TILING_DATA_H_

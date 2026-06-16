@@ -242,8 +242,8 @@ aclnnStatus aclnnAddcmulGetWorkspaceSize(
     CHECK_COND(tensor2_casted != nullptr, ACLNN_ERR_INNER_NULLPTR, "cast tensor2 failed!");
 
     // 如果是混合数据类型（self为bf16或float16,且value为float32），则value dtype保持float32类型
-    bool isToFloat = GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 &&
-                     IsMixedDType(self, value) && promoteType != op::DataType::DT_DOUBLE;
+    bool isToFloat = GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && IsMixedDType(self, value) &&
+                     promoteType != op::DataType::DT_DOUBLE;
     auto valueDtype = isToFloat ? op::DataType::DT_FLOAT : promoteType;
     auto valueTensor = uniqueExecutor.get()->ConvertToTensor(value, valueDtype);
 

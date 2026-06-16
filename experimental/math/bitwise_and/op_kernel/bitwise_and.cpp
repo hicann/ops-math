@@ -21,8 +21,10 @@ __global__ __aicore__ void bitwise_and(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADD
     REGISTER_TILING_DEFAULT(BitwiseAndTilingData);
     GET_TILING_DATA_WITH_STRUCT(BitwiseAndTilingData, tilingData, tiling);
     NsBitwiseAnd::KernelBitwiseAnd<DTYPE_X1> op; // 算子kernel实例获取
-    op.Init(x1, x2, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.finalBigTileNum, tilingData.finalSmallTileNum, tilingData.tileDataNum,
-       tilingData.smallTailDataNum, tilingData.bigTailDataNum, tilingData.tailBlockNum, tilingData.tmpTileDataNum, tilingData.tmpSmallTailDataNum,
-       tilingData.tmpBigTailDataNum);
+    op.Init(
+        x1, x2, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.finalBigTileNum,
+        tilingData.finalSmallTileNum, tilingData.tileDataNum, tilingData.smallTailDataNum, tilingData.bigTailDataNum,
+        tilingData.tailBlockNum, tilingData.tmpTileDataNum, tilingData.tmpSmallTailDataNum,
+        tilingData.tmpBigTailDataNum);
     op.Process();
 }

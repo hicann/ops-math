@@ -52,16 +52,16 @@ private:
     AscendC::GlobalTensor<T> yGm;
 
     EyeV2TilingData tiling;
-    uint64_t rowLength;             // 矩阵行数
-    uint64_t columnLength;          // 矩阵列数
-    uint64_t diagLen;               // 对角线长度
-    uint64_t fullBlockLength;       // 每个核处理的对角线长度（向上取整）
-    uint64_t tailBlockLength;       // 每个核处理的对角线长度（向下取整）
-    uint64_t fullBlockNum;          // 处理大核的核数
-    uint64_t tailBlockNum;          // 处理小核的核数
-    uint64_t typeSize;              // 每个元素的字节数
-    uint64_t matrixOrder;           // 当前核处理的矩阵阶数
-    uint64_t blockIdx;              // 当前核索引
+    uint64_t rowLength;       // 矩阵行数
+    uint64_t columnLength;    // 矩阵列数
+    uint64_t diagLen;         // 对角线长度
+    uint64_t fullBlockLength; // 每个核处理的对角线长度（向上取整）
+    uint64_t tailBlockLength; // 每个核处理的对角线长度（向下取整）
+    uint64_t fullBlockNum;    // 处理大核的核数
+    uint64_t tailBlockNum;    // 处理小核的核数
+    uint64_t typeSize;        // 每个元素的字节数
+    uint64_t matrixOrder;     // 当前核处理的矩阵阶数
+    uint64_t blockIdx;        // 当前核索引
 };
 
 template <typename T>
@@ -70,9 +70,12 @@ __aicore__ inline void EyeV2<T>::Init(GM_ADDR x, GM_ADDR y, const EyeV2TilingDat
     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
     this->tiling = *tilingData;
     this->blockIdx = AscendC::GetBlockIdx();
-    matrixOrder = (this->blockIdx >= tilingData->fullBlockNum) ? tilingData->tailBlockLength : tilingData->fullBlockLength;
-    if (matrixOrder == 0) {return;}
-    yGm.SetGlobalBuffer((__gm__ T*)y, tilingData->rowLength * tilingData->columnLength );
+    matrixOrder =
+        (this->blockIdx >= tilingData->fullBlockNum) ? tilingData->tailBlockLength : tilingData->fullBlockLength;
+    if (matrixOrder == 0) {
+        return;
+    }
+    yGm.SetGlobalBuffer((__gm__ T*)y, tilingData->rowLength * tilingData->columnLength);
     uint32_t bufSize = matrixOrder * sizeof(T);
     uint32_t alignSize = 32;
     uint32_t allocSize = (bufSize + alignSize - 1) / alignSize * alignSize;
@@ -83,23 +86,22 @@ template <typename T>
 __aicore__ inline void EyeV2<T>::CopyOut()
 {
     AscendC::LocalTensor<T> yLocal = outQueueY.DeQue<T>();
-        if (matrixOrder == 0) {
-            outQueueY.FreeTensor(yLocal);
-            return;
-        }
-        uint64_t idx = this->blockIdx;
-        uint64_t diagStart =
-            (idx < tiling.fullBlockNum)
-                ? static_cast<uint64_t>(idx) * tiling.fullBlockLength
-                : static_cast<uint64_t>(tiling.fullBlockNum) * tiling.fullBlockLength +
-                  static_cast<uint64_t>(idx - tiling.fullBlockNum) * tiling.tailBlockLength;
-        uint64_t globalOffset = diagStart * tiling.columnLength + (static_cast<int64_t>(diagStart));
-        AscendC::DataCopyExtParams copyParams{static_cast<uint16_t>(1), static_cast<uint32_t>(sizeof(T)), 0, 0, 0};
-        for (uint64_t i = 0; i < matrixOrder; ++i) {
-            uint64_t dst = globalOffset + static_cast<uint64_t>(i * (tiling.columnLength + 1));
-            AscendC::DataCopyPad(yGm[dst], yLocal, copyParams);
-        }
+    if (matrixOrder == 0) {
         outQueueY.FreeTensor(yLocal);
+        return;
+    }
+    uint64_t idx = this->blockIdx;
+    uint64_t diagStart = (idx < tiling.fullBlockNum) ?
+                             static_cast<uint64_t>(idx) * tiling.fullBlockLength :
+                             static_cast<uint64_t>(tiling.fullBlockNum) * tiling.fullBlockLength +
+                                 static_cast<uint64_t>(idx - tiling.fullBlockNum) * tiling.tailBlockLength;
+    uint64_t globalOffset = diagStart * tiling.columnLength + (static_cast<int64_t>(diagStart));
+    AscendC::DataCopyExtParams copyParams{static_cast<uint16_t>(1), static_cast<uint32_t>(sizeof(T)), 0, 0, 0};
+    for (uint64_t i = 0; i < matrixOrder; ++i) {
+        uint64_t dst = globalOffset + static_cast<uint64_t>(i * (tiling.columnLength + 1));
+        AscendC::DataCopyPad(yGm[dst], yLocal, copyParams);
+    }
+    outQueueY.FreeTensor(yLocal);
 }
 
 template <typename T>

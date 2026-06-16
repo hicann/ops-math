@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
+
 /**
  *
  * NOTE: Portions of this code were AI-generated and have been
@@ -21,27 +21,27 @@
 #include "../op_api/aclnn_asinh_v2.h"
 
 #define CHECK_RET(cond, return_expr) \
-  do {                               \
-    if (!(cond)) {                   \
-      return_expr;                   \
-    }                                \
-  } while (0)
+    do {                             \
+        if (!(cond)) {               \
+            return_expr;             \
+        }                            \
+    } while (0)
 
-#define LOG_PRINT(message, ...)     \
-  do {                              \
-    printf(message, ##__VA_ARGS__); \
-  } while (0)
+#define LOG_PRINT(message, ...)         \
+    do {                                \
+        printf(message, ##__VA_ARGS__); \
+    } while (0)
 
-int64_t GetShapeSize(const std::vector<int64_t>& shape) 
+int64_t GetShapeSize(const std::vector<int64_t>& shape)
 {
     int64_t shapeSize = 1;
     for (auto i : shape) {
-    shapeSize *= i;
+        shapeSize *= i;
     }
     return shapeSize;
 }
 
-int Init(int32_t deviceId, aclrtStream* stream) 
+int Init(int32_t deviceId, aclrtStream* stream)
 {
     // 固定写法，资源初始化
     auto ret = aclInit(nullptr);
@@ -57,8 +57,9 @@ int Init(int32_t deviceId, aclrtStream* stream)
 }
 
 template <typename T>
-int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr,
-                    aclDataType dataType, aclTensor** tensor) 
+int CreateAclTensor(
+    const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr, aclDataType dataType,
+    aclTensor** tensor)
 {
     auto size = GetShapeSize(shape) * sizeof(T);
     // 调用aclrtMalloc申请device侧内存
@@ -76,12 +77,13 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
     }
 
     // 调用aclCreateTensor接口创建aclTensor
-    *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND,
-                            shape.data(), shape.size(), *deviceAddr);
+    *tensor = aclCreateTensor(
+        shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
+        *deviceAddr);
     return 0;
 }
 
-int main() 
+int main()
 {
     // 1. （固定写法）device/stream初始化，参考acl API手册
     int32_t deviceId = 0;
@@ -98,15 +100,14 @@ int main()
     aclTensor* out = nullptr;
 
     /* 构造输入数据，基于等价类 */
-    std::vector<float> selfHostData = {
-        -INFINITY,  -12,        -1.000001, -1.00001,    -1.0001,    -1.001,     -1.01,  -1.0,
-        -0.99999,   -0.9999,    -0.999,    -0.99,       -0.9,       -0.8,       -0.71,  -0.705,  
-        -0.7,       -0.65,      -0.6,      -0.5,        -0.4,       -0.3,       -0.2,   -0.1,
-        -0.01,      -0.001,     -0.0001,   -0.00001,    -0.000001,  -0.0000001,
-        0,          NAN,        0.0000001, 0.000001,    0.00001,    0.0001,     0.01,   0.1,
-        0.2,        0.3,        0.4,       0.5,         0.5,        0.6,        0.65,   0.7,
-        0.705,      0.71,       0.8,       0.9,         0.99,       0.999,      0.9999, 0.99999,
-        1,          1.01,       1.001,     1.0001,      1.00001,    1.000001,   12,     INFINITY};
+    std::vector<float> selfHostData = {-INFINITY, -12,      -1.000001, -1.00001, -1.0001,   -1.001,     -1.01, -1.0,
+                                       -0.99999,  -0.9999,  -0.999,    -0.99,    -0.9,      -0.8,       -0.71, -0.705,
+                                       -0.7,      -0.65,    -0.6,      -0.5,     -0.4,      -0.3,       -0.2,  -0.1,
+                                       -0.01,     -0.001,   -0.0001,   -0.00001, -0.000001, -0.0000001, 0,     NAN,
+                                       0.0000001, 0.000001, 0.00001,   0.0001,   0.01,      0.1,        0.2,   0.3,
+                                       0.4,       0.5,      0.5,       0.6,      0.65,      0.7,        0.705, 0.71,
+                                       0.8,       0.9,      0.99,      0.999,    0.9999,    0.99999,    1,     1.01,
+                                       1.001,     1.0001,   1.00001,   1.000001, 12,        INFINITY};
     /* 输出数据，初始化成0，后续会被 */
     std::vector<float> outHostData(selfHostData.size(), 0.0);
 

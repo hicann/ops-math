@@ -138,8 +138,8 @@ int main()
         const char* errMsg = aclGetRecentErrMsg();
         LOG_PRINT("[ERROR] aclnnReflectionPad1dV2GetWorkspaceSize failed: %s", errMsg ? errMsg : "nullptr");
     }
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnReflectionPad1dV2GetWorkspaceSize failed. ERROR: %d\n", ret);
-              return ret);
+    CHECK_RET(
+        ret == ACL_SUCCESS, LOG_PRINT("aclnnReflectionPad1dV2GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
@@ -169,7 +169,7 @@ int main()
     aclDestroyTensor(selfRef);
     aclDestroyTensor(padding);
     aclDestroyTensor(out);
-    aclDestroyIntArray(paddingArray); 
+    aclDestroyIntArray(paddingArray);
 
     // 7. 释放device 资源
     aclrtFree(selfRefDeviceAddr);

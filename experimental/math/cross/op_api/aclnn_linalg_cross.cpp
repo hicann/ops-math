@@ -24,15 +24,15 @@ extern "C" {
 
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT,      op::DataType::DT_FLOAT16,    op::DataType::DT_DOUBLE,  op::DataType::DT_INT8,
-    op::DataType::DT_INT16,      op::DataType::DT_INT32,      op::DataType::DT_INT64,   op::DataType::DT_COMPLEX64,
+    op::DataType::DT_FLOAT,      op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE, op::DataType::DT_INT8,
+    op::DataType::DT_INT16,      op::DataType::DT_INT32,   op::DataType::DT_INT64,  op::DataType::DT_COMPLEX64,
     op::DataType::DT_COMPLEX128, op::DataType::DT_UINT8};
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_910B = {
-    op::DataType::DT_FLOAT,      op::DataType::DT_FLOAT16,    op::DataType::DT_DOUBLE,  op::DataType::DT_INT8,
-    op::DataType::DT_INT16,      op::DataType::DT_INT32,      op::DataType::DT_INT64,   op::DataType::DT_COMPLEX64,
-    op::DataType::DT_COMPLEX128, op::DataType::DT_UINT8, op::DataType::DT_BF16};
+    op::DataType::DT_FLOAT,      op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE, op::DataType::DT_INT8,
+    op::DataType::DT_INT16,      op::DataType::DT_INT32,   op::DataType::DT_INT64,  op::DataType::DT_COMPLEX64,
+    op::DataType::DT_COMPLEX128, op::DataType::DT_UINT8,   op::DataType::DT_BF16};
 
-inline static bool CheckNotNull(const aclTensor *self, const aclTensor *other, const aclTensor *out)
+inline static bool CheckNotNull(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(other, return false);
@@ -40,7 +40,7 @@ inline static bool CheckNotNull(const aclTensor *self, const aclTensor *other, c
     return true;
 }
 
-static bool CheckDtypeValid(const aclTensor *self, const aclTensor *other, const aclTensor *out)
+static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
     // 检查self的数据类型是否在linalg cross算子的支持列表内
     if (op::GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201 ||
@@ -56,7 +56,7 @@ static bool CheckDtypeValid(const aclTensor *self, const aclTensor *other, const
     return true;
 }
 
-static bool CheckShape(const aclTensor *self, const aclTensor *other, const aclTensor *out)
+static bool CheckShape(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
     // 所有tensor的维度必须小于 MAX_SUPPORT_DIMS_NUMS
     OP_CHECK_MAX_DIM(self, MAX_SUPPORT_DIMS_NUMS, return false);
@@ -65,7 +65,7 @@ static bool CheckShape(const aclTensor *self, const aclTensor *other, const aclT
     return true;
 }
 
-static bool CheckBroadcastShape(const aclTensor *self, const aclTensor *other, const aclTensor *out)
+static bool CheckBroadcastShape(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
     // self和other必须符合broadcast关系
     OP_CHECK_BROADCAST(self, other, return false);
@@ -74,7 +74,8 @@ static bool CheckBroadcastShape(const aclTensor *self, const aclTensor *other, c
 
     // self和other的broadcast shape必须与out的shape一致
     if (broadcastShape != out->GetViewShape()) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID,
             "expected consistent tensor shape for the broadcast shape and out, but got %s and %s respectively.",
             op::ToString(broadcastShape).GetString(), op::ToString(out->GetViewShape()).GetString());
         return false;
@@ -83,13 +84,13 @@ static bool CheckBroadcastShape(const aclTensor *self, const aclTensor *other, c
     return true;
 }
 
-static bool CheckDim(const aclTensor *self, int64_t dim)
+static bool CheckDim(const aclTensor* self, int64_t dim)
 {
     // dim的值必须在[-self的维度数量，self的维度数量-1]范围内
     auto dimSize = static_cast<int64_t>(self->GetViewShape().GetDimNum());
     if (dim >= dimSize || dim < -1 * dimSize) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-            "Dimension out of range(expected to be in range of [%ld, %ld], but got %ld.",
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Dimension out of range(expected to be in range of [%ld, %ld], but got %ld.",
             -1 * dimSize, dimSize - 1, dim);
         return false;
     }
@@ -97,8 +98,7 @@ static bool CheckDim(const aclTensor *self, int64_t dim)
     return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor *self, const aclTensor *other, int64_t dim,
-    const aclTensor *out)
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, int64_t dim, const aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, other, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -123,14 +123,15 @@ inline static aclTensor* BroadcastTensor(const op::Shape dstShape, const aclTens
 {
     auto dstTensor = executor->AllocTensor(dstShape, src->GetDataType());
     op::FVector<int64_t, op::MAX_DIM_NUM> broadcastDims = op::ToShapeVector(dstShape);
-    auto shape = executor->ConvertToTensor(broadcastDims.data(), broadcastDims.size(),
-        static_cast<op::DataType>(ACL_INT64));
+    auto shape =
+        executor->ConvertToTensor(broadcastDims.data(), broadcastDims.size(), static_cast<op::DataType>(ACL_INT64));
     auto result = l0op::BroadcastTo(src, dstTensor, shape, executor);
     return const_cast<aclTensor*>(result);
 }
 
-static aclnnStatus ExecLinalgCrossGetWorkspaceSize(const aclTensor *self, const aclTensor *other,
-    int64_t dim, aclTensor *out,  uint64_t *workspaceSize, aclOpExecutor **executor)
+static aclnnStatus ExecLinalgCrossGetWorkspaceSize(
+    const aclTensor* self, const aclTensor* other, int64_t dim, aclTensor* out, uint64_t* workspaceSize,
+    aclOpExecutor** executor)
 {
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -155,8 +156,8 @@ static aclnnStatus ExecLinalgCrossGetWorkspaceSize(const aclTensor *self, const 
     auto otherContiguous = l0op::Contiguous(other, uniqueExecutor.get());
     CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    const aclTensor *selfBroadCast = selfContiguous;
-    const aclTensor *otherBroadCast = otherContiguous;
+    const aclTensor* selfBroadCast = selfContiguous;
+    const aclTensor* otherBroadCast = otherContiguous;
 
     // 声明内部dimInner
     auto dimInner = dim;
@@ -219,17 +220,17 @@ static aclnnStatus ExecLinalgCrossGetWorkspaceSize(const aclTensor *self, const 
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnLinalgCrossGetWorkspaceSize(const aclTensor *self, const aclTensor *other, int64_t dim,
-    aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)
+aclnnStatus aclnnLinalgCrossGetWorkspaceSize(
+    const aclTensor* self, const aclTensor* other, int64_t dim, aclTensor* out, uint64_t* workspaceSize,
+    aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
-    
+
     L2_DFX_PHASE_1(aclnnLinalgCross, DFX_IN(self, other, dim), DFX_OUT(out));
     return ExecLinalgCrossGetWorkspaceSize(self, other, dim, out, workspaceSize, executor);
 }
 
-aclnnStatus aclnnLinalgCross(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor,
-    aclrtStream stream)
+aclnnStatus aclnnLinalgCross(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     // 固定写法，调用框架能力，完成计算
     L2_DFX_PHASE_2(aclnnLinalgCross);

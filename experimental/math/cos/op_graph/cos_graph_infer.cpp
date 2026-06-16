@@ -18,7 +18,7 @@ using namespace ge;
 
 namespace ops {
 
-static ge::graphStatus InferDataType(gert::InferDataTypeContext *context)
+static ge::graphStatus InferDataType(gert::InferDataTypeContext* context)
 {
     const auto inputDataType = context->GetInputDataType(0);
     context->SetOutputDataType(0, inputDataType);

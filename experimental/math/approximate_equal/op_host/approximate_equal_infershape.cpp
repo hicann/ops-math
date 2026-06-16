@@ -25,10 +25,14 @@ namespace ops {
 static ge::graphStatus InferShape4ApproximateEqual(gert::InferShapeContext* context)
 {
     const gert::Shape* inputShape = context->GetInputShape(0);
-    if (inputShape == nullptr) { return ge::GRAPH_FAILED; }
+    if (inputShape == nullptr) {
+        return ge::GRAPH_FAILED;
+    }
 
     gert::Shape* outputShape = context->GetOutputShape(0);
-    if (outputShape == nullptr) { return ge::GRAPH_FAILED; }
+    if (outputShape == nullptr) {
+        return ge::GRAPH_FAILED;
+    }
 
     *outputShape = *inputShape;
     return ge::GRAPH_SUCCESS;
@@ -43,10 +47,14 @@ static ge::graphStatus InferDataType4ApproximateEqual(gert::InferDataTypeContext
 static ge::graphStatus InferShapeRange4ApproximateEqual(gert::InferShapeRangeContext* context)
 {
     const gert::Range<gert::Shape>* xRange = context->GetInputShapeRange(0);
-    if (xRange == nullptr) { return ge::GRAPH_FAILED; }
+    if (xRange == nullptr) {
+        return ge::GRAPH_FAILED;
+    }
 
     gert::Range<gert::Shape>* yRange = context->GetOutputShapeRange(0);
-    if (yRange == nullptr) { return ge::GRAPH_FAILED; }
+    if (yRange == nullptr) {
+        return ge::GRAPH_FAILED;
+    }
 
     *yRange = *xRange;
     return ge::GRAPH_SUCCESS;
@@ -57,4 +65,4 @@ IMPL_OP_INFERSHAPE(ApproximateEqual)
     .InferDataType(InferDataType4ApproximateEqual)
     .InferShapeRange(InferShapeRange4ApproximateEqual);
 
-}  // namespace ops
+} // namespace ops

@@ -33,11 +33,10 @@
 namespace NsReflectionPad1dV2 {
 using namespace AscendC;
 
-constexpr uint32_t BUFFER_NUM = 2;   
+constexpr uint32_t BUFFER_NUM = 2;
 
 template <typename T>
-class ReflectionPad1dV2
-{
+class ReflectionPad1dV2 {
 public:
     __aicore__ inline ReflectionPad1dV2() {}
 
@@ -52,21 +51,21 @@ private:
 
 private:
     TPipe pipe;
-    TQue<QuePosition::VECIN, BUFFER_NUM> inQueueX;   
-    TQue<QuePosition::VECOUT, BUFFER_NUM> outQueueY; 
-    GlobalTensor<T> xGm;   
-    GlobalTensor<T> yGm;    
+    TQue<QuePosition::VECIN, BUFFER_NUM> inQueueX;
+    TQue<QuePosition::VECOUT, BUFFER_NUM> outQueueY;
+    GlobalTensor<T> xGm;
+    GlobalTensor<T> yGm;
 
     uint32_t left = 0;      // 左填充量
     uint32_t right = 0;     // 右填充量
-    uint32_t wSize = 0;    // 目标W维度大小
+    uint32_t wSize = 0;     // 目标W维度大小
     uint32_t outWSize = 0;  // 输出W维度大小
-    uint32_t alignWSize;     // 目标维度32字节对齐后大小
-    uint32_t alignOutWSize;  // 输出目标维度对齐后大小
+    uint32_t alignWSize;    // 目标维度32字节对齐后大小
+    uint32_t alignOutWSize; // 输出目标维度对齐后大小
 
-    uint32_t startNC = 0;   // 起始N×C索引
-    uint32_t endNC = 0;     // 结束N×C索引
-    uint32_t blockIdx = 0;  // 当前核索引
+    uint32_t startNC = 0;  // 起始N×C索引
+    uint32_t endNC = 0;    // 结束N×C索引
+    uint32_t blockIdx = 0; // 当前核索引
 };
 
 template <typename T>
@@ -76,10 +75,11 @@ __aicore__ inline void ReflectionPad1dV2<T>::Init(GM_ADDR x, GM_ADDR y, const Re
 
     // 绑定GM内存
     const uint32_t currentTaskCount = this->endNC - this->startNC;
-    xGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x) + this->startNC * this->wSize, currentTaskCount * this->wSize); 
-    yGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(y) + this->startNC * this->outWSize, currentTaskCount * this->outWSize);    
+    xGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x) + this->startNC * this->wSize, currentTaskCount * this->wSize);
+    yGm.SetGlobalBuffer(
+        reinterpret_cast<__gm__ T*>(y) + this->startNC * this->outWSize, currentTaskCount * this->outWSize);
 
-    pipe.InitBuffer(inQueueX, BUFFER_NUM, this->alignWSize * sizeof(T)); 
+    pipe.InitBuffer(inQueueX, BUFFER_NUM, this->alignWSize * sizeof(T));
     pipe.InitBuffer(outQueueY, BUFFER_NUM, this->outWSize * sizeof(T));
 }
 
@@ -110,9 +110,9 @@ __aicore__ inline void ReflectionPad1dV2<T>::ParseTilingData(const ReflectionPad
     if (this->blockIdx < tilingData->tailNC) {
         this->startNC = this->blockIdx * (tilingData->ncPerCore + 1);
         this->endNC = this->startNC + (tilingData->ncPerCore + 1);
-    } 
-    else {
-        this->startNC = tilingData->tailNC * (tilingData->ncPerCore + 1) + (this->blockIdx - tilingData->tailNC) * tilingData->ncPerCore;
+    } else {
+        this->startNC = tilingData->tailNC * (tilingData->ncPerCore + 1) +
+                        (this->blockIdx - tilingData->tailNC) * tilingData->ncPerCore;
         this->endNC = this->startNC + tilingData->ncPerCore;
     }
 }

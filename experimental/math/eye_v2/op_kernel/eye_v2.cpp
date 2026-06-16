@@ -30,7 +30,7 @@ __global__ __aicore__ void eye_v2(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_AD
 {
     REGISTER_TILING_DEFAULT(EyeV2TilingData);
     GET_TILING_DATA_WITH_STRUCT(EyeV2TilingData, tilingData, tiling);
-    NsEyeV2::EyeV2<DTYPE_Y> op; 
-    op.Init(x, y, &tilingData);     
-    op.Process();                      
+    NsEyeV2::EyeV2<DTYPE_Y> op;
+    op.Init(x, y, &tilingData);
+    op.Process();
 }

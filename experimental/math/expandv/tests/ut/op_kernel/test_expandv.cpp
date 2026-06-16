@@ -12,15 +12,15 @@
  * \file test_expandv.cpp
  * \brief
  */
-#define DTYPE_X1 float  //修改数据类型
-#include "../../../op_kernel/expandv.cpp"  
+#define DTYPE_X1 float // 修改数据类型
+#include "../../../op_kernel/expandv.cpp"
 #include "expandv_tiling.h"
 #include <array>
 #include <vector>
 #include <iostream>
 #include <string>
 #include <cstdint>
-#include <cstdlib>  
+#include <cstdlib>
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
 #include "data_utils.h"
@@ -37,10 +37,8 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./expandv_data/");
     }
-    static void TearDownTestCase()
-    {
-        cout << "ExpandvTest TearDown\n" << endl;
-    }
+    static void TearDownTestCase() { cout << "ExpandvTest TearDown\n" << endl; }
+
 private:
     const static std::string rootPath;
     const static std::string dataPath;
@@ -143,12 +141,7 @@ TEST_F(ExpandvTest, test_case_3d_shape)
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
 
     // 8. 执行kernel
-    ICPU_RUN_KF(expandv<0>,
-        blockDim,
-        x,
-        z,
-        workspace,
-        (uint8_t *)(tilingDatafromBin));
+    ICPU_RUN_KF(expandv<0>, blockDim, x, z, workspace, (uint8_t*)(tilingDatafromBin));
 
     // 9. 保存输出数据
     std::string fileNameZ = "./expandv_data/" + dtype_str + "_output_expandv.bin";

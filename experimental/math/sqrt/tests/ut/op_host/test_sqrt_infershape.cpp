@@ -15,15 +15,9 @@
 
 class SqrtInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "SqrtInfershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "SqrtInfershape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "SqrtInfershape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "SqrtInfershape TearDown" << std::endl; }
 };
 
 TEST_F(SqrtInfershape, sqrt_infershape_test1)

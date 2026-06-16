@@ -107,10 +107,8 @@ int main()
     aclTensor* selfX = nullptr;
     void* selfXDeviceAddr = nullptr;
     std::vector<int64_t> selfXShape = {16, 1};
-    std::vector<DataType> selfXHostData = {1.0, 2.0, 3.0, 4.0,
-                                          5.0, 6.0, 7.0, 8.0,
-                                          9.0, 10.0,11.0,12.0,
-                                          13.0,14.0,15.0,16.0};
+    std::vector<DataType> selfXHostData = {1.0, 2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
+                                           9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0};
     ret = CreateAclTensor(selfXHostData, selfXShape, &selfXDeviceAddr, aclDataType::ACL_FLOAT, &selfX);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
@@ -118,7 +116,7 @@ int main()
     const int64_t bufferMode = 0;
     const int64_t dim = 2;
     const int64_t isReuseSource = 0;
-    const int64_t axis = 1; 
+    const int64_t axis = 1;
     const int64_t num = 8;
     aclTensor* out = nullptr;
     void* outDeviceAddr = nullptr;
@@ -132,12 +130,13 @@ int main()
     aclOpExecutor* executor;
 
     LOG_PRINT("Before GetWorkspaceSize: selfX=%p, out=%p\n", (void*)selfX, (void*)out);
-    LOG_PRINT("Before GetWorkspaceSize: selfXDeviceAddr=%p, outDeviceAddr=%p\n",
-          selfXDeviceAddr, outDeviceAddr);
+    LOG_PRINT("Before GetWorkspaceSize: selfXDeviceAddr=%p, outDeviceAddr=%p\n", selfXDeviceAddr, outDeviceAddr);
     // 4. 调用aclnnBroadcastV2第一段接口
-    ret = aclnnBroadcastV2GetWorkspaceSize(selfX, bufferMode, dim, isReuseSource, axis, num, out, &workspaceSize, &executor);
-    LOG_PRINT("aclnnBroadcastV2GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n",
-          ret, (unsigned long long)workspaceSize, (void*)executor);
+    ret = aclnnBroadcastV2GetWorkspaceSize(
+        selfX, bufferMode, dim, isReuseSource, axis, num, out, &workspaceSize, &executor);
+    LOG_PRINT(
+        "aclnnBroadcastV2GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n", ret,
+        (unsigned long long)workspaceSize, (void*)executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnBroadcastV2GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 根据第一段接口计算出的workspaceSize申请device内存

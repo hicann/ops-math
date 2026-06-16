@@ -15,15 +15,9 @@
 
 class GreaterEqualInferShape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "GreaterEqualInferShape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "GreaterEqualInferShape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "GreaterEqualInferShape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "GreaterEqualInferShape TearDown" << std::endl; }
 };
 
 TEST_F(GreaterEqualInferShape, greater_equal_infershape_case_0)

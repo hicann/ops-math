@@ -25,42 +25,35 @@ namespace l0op {
 OP_TYPE_REGISTER(FresnelCos);
 
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16
-};
+    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16};
 
 static bool IsAiCoreSupport(const aclTensor* x)
 {
     auto npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
-    OP_CHECK(npuArch == NpuArch::DAV_3510,
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                     "FresnelCos only supports Ascend950 (DAV_3510): npuArch=%d",
-                     static_cast<int>(npuArch)),
-             return false);
-    OP_CHECK(CheckType(x->GetDataType(), AICORE_DTYPE_SUPPORT_LIST),
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                     "FresnelCos dtype not supported: %d",
-                     static_cast<int>(x->GetDataType())),
-             return false);
+    OP_CHECK(
+        npuArch == NpuArch::DAV_3510,
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "FresnelCos only supports Ascend950 (DAV_3510): npuArch=%d",
+            static_cast<int>(npuArch)),
+        return false);
+    OP_CHECK(
+        CheckType(x->GetDataType(), AICORE_DTYPE_SUPPORT_LIST),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "FresnelCos dtype not supported: %d", static_cast<int>(x->GetDataType())),
+        return false);
     return true;
 }
 
-static const aclTensor* FresnelCosAiCore(
-    const aclTensor* x, const aclTensor* out, aclOpExecutor* executor)
+static const aclTensor* FresnelCosAiCore(const aclTensor* x, const aclTensor* out, aclOpExecutor* executor)
 {
     L0_DFX(FresnelCosAiCore, x, out);
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(FresnelCos,
-        OP_INPUT(x), OP_OUTPUT(out));
-    OP_CHECK(ret == ACLNN_SUCCESS,
-             OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "FresnelCosAiCore failed."),
-             return nullptr);
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(FresnelCos, OP_INPUT(x), OP_OUTPUT(out));
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "FresnelCosAiCore failed."), return nullptr);
     return out;
 }
 
 const aclTensor* FresnelCos(const aclTensor* x, aclOpExecutor* executor)
 {
-    OP_CHECK(IsAiCoreSupport(x),
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "IsAiCoreSupport check failed."),
-             return nullptr);
+    OP_CHECK(IsAiCoreSupport(x), OP_LOGE(ACLNN_ERR_PARAM_INVALID, "IsAiCoreSupport check failed."), return nullptr);
 
     auto out = executor->AllocTensor(x->GetViewShape(), x->GetDataType());
     return FresnelCosAiCore(x, out, executor);

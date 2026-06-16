@@ -20,11 +20,8 @@
 
 namespace l0op {
 
-const aclTensor* ApproximateEqual(const aclTensor* x1,
-                                  const aclTensor* x2,
-                                  float            tolerance,
-                                  aclOpExecutor*   executor);
+const aclTensor* ApproximateEqual(const aclTensor* x1, const aclTensor* x2, float tolerance, aclOpExecutor* executor);
 
-}  // namespace l0op
+} // namespace l0op
 
-#endif  // OP_API_INC_LEVEL0_APPROXIMATE_EQUAL_H_
+#endif // OP_API_INC_LEVEL0_APPROXIMATE_EQUAL_H_

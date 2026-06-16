@@ -31,10 +31,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./tile_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "TileTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "TileTest TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;

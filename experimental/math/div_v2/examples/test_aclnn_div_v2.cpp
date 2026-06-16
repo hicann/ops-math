@@ -55,7 +55,7 @@ void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr)
         ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
     for (int64_t i = 0; i < 32; i++) {
-        LOG_PRINT("mean result[%ld] is: %f\n", i, resultData[i]);       // float
+        LOG_PRINT("mean result[%ld] is: %f\n", i, resultData[i]); // float
     }
 }
 
@@ -108,21 +108,21 @@ int main()
     // 2. 构造输入与输出，需要根据API的接口自定义构造
     aclTensor* selfX = nullptr;
     void* selfXDeviceAddr = nullptr;
-    std::vector<int64_t> selfXShape = {10,200};
+    std::vector<int64_t> selfXShape = {10, 200};
     std::vector<DataType> selfXHostData(2000, 8);
     ret = CreateAclTensor(selfXHostData, selfXShape, &selfXDeviceAddr, aclDataType::ACL_FLOAT, &selfX);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     aclTensor* selfY = nullptr;
     void* selfYDeviceAddr = nullptr;
-    std::vector<int64_t> selfYShape = {10,200};
+    std::vector<int64_t> selfYShape = {10, 200};
     std::vector<DataType> selfYHostData(2000, 2);
     ret = CreateAclTensor(selfYHostData, selfYShape, &selfYDeviceAddr, aclDataType::ACL_FLOAT, &selfY);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     aclTensor* out = nullptr;
     void* outDeviceAddr = nullptr;
-    std::vector<int64_t> outShape = {10,200};
+    std::vector<int64_t> outShape = {10, 200};
     std::vector<DataType> outHostData(2000, 0);
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -132,12 +132,14 @@ int main()
     aclOpExecutor* executor;
 
     LOG_PRINT("Before GetWorkspaceSize: selfX=%p, selfY=%p, out=%p\n", (void*)selfX, (void*)selfY, (void*)out);
-    LOG_PRINT("Before GetWorkspaceSize: selfXDeviceAddr=%p, selfYDeviceAddr=%p, outDeviceAddr=%p\n",
-          selfXDeviceAddr, selfYDeviceAddr, outDeviceAddr);
+    LOG_PRINT(
+        "Before GetWorkspaceSize: selfXDeviceAddr=%p, selfYDeviceAddr=%p, outDeviceAddr=%p\n", selfXDeviceAddr,
+        selfYDeviceAddr, outDeviceAddr);
     // 4. 调用aclnn第一段接口
     ret = aclnnDivV2GetWorkspaceSize(selfX, selfY, out, &workspaceSize, &executor);
-    LOG_PRINT("aclnnDivV2GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n",
-          ret, (unsigned long long)workspaceSize, (void*)executor);
+    LOG_PRINT(
+        "aclnnDivV2GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n", ret,
+        (unsigned long long)workspaceSize, (void*)executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnDivV2ExampleGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 根据第一段接口计算出的workspaceSize申请device内存

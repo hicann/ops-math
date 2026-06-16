@@ -61,7 +61,7 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
     totalIdx = inputX->GetStorageShape().GetShapeSize();
     // dtype校验
-    const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT,ge::DT_FLOAT16};
+    const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_FLOAT16};
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
     dataType = inputDesc->GetDataType();
@@ -74,7 +74,7 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
 
 static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 {
-    auto ascendcPlatform = platform_ascendc:: PlatformAscendC(context->GetPlatformInfo());
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
     uint32_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
@@ -88,48 +88,52 @@ static ge::graphStatus TraceV2TilingFunc(gert::TilingContext* context)
     // 1. platform
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
-    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+        return ge::GRAPH_FAILED);
 
     // 2. shapes & dtype
     int64_t totalIdx = 0;
     ge::DataType dataType;
-    OP_CHECK_IF(GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
+        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     // 3. workspace
-    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+        return ge::GRAPH_FAILED);
 
     TraceV2TilingData* tiling = context->GetTilingData<TraceV2TilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(memset_s(tiling, sizeof(TraceV2TilingData), 0, sizeof(TraceV2TilingData)) != EOK,
-                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        memset_s(tiling, sizeof(TraceV2TilingData), 0, sizeof(TraceV2TilingData)) != EOK,
+        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
-    // 获取输入张量形状和数据类型      
+    // 获取输入张量形状和数据类型
     uint32_t typeLength = 0;
-    ge::TypeUtils::GetDataTypeLength(context->GetInputDesc(0)->GetDataType(), typeLength);  
+    ge::TypeUtils::GetDataTypeLength(context->GetInputDesc(0)->GetDataType(), typeLength);
     if (typeLength == 0) {
         OP_LOGE(context, "typeLength is 0");
         return ge::GRAPH_FAILED;
-    } 
-    uint64_t typeSize = static_cast<uint64_t>(typeLength);                                        
-    uint64_t alignNum = BLOCK_SIZE / typeSize; 
+    }
+    uint64_t typeSize = static_cast<uint64_t>(typeLength);
+    uint64_t alignNum = BLOCK_SIZE / typeSize;
     // 获取矩阵行列大小
     const auto inputShape = context->GetInputShape(0);
     if (inputShape->GetStorageShape().GetDimNum() < 2) {
         OP_LOGE(context, "Input shape must be at least 2D");
         return ge::GRAPH_FAILED;
     }
-    uint64_t rowLength     = inputShape->GetStorageShape().GetDim(0);
-    uint64_t columnLength  = inputShape->GetStorageShape().GetDim(1);
+    uint64_t rowLength = inputShape->GetStorageShape().GetDim(0);
+    uint64_t columnLength = inputShape->GetStorageShape().GetDim(1);
     uint64_t diagLen = (rowLength < columnLength) ? rowLength : columnLength;
     // 核间-计算每个核处理的对角线长度
-    uint64_t usableCoreNum = (diagLen == 0) ? 1U
-                         : std::min<uint64_t>(static_cast<uint64_t>(coreNum), static_cast<uint64_t>(diagLen));
+    uint64_t usableCoreNum =
+        (diagLen == 0) ? 1U : std::min<uint64_t>(static_cast<uint64_t>(coreNum), static_cast<uint64_t>(diagLen));
     uint64_t tailBlockLength = diagLen / usableCoreNum;
     uint64_t fullBlockNum = diagLen % usableCoreNum;
-    uint64_t tailBlockNum = usableCoreNum - fullBlockNum; 
+    uint64_t tailBlockNum = usableCoreNum - fullBlockNum;
     uint64_t fullBlockLength = tailBlockLength + 1;
 
     // 填充tiling数据

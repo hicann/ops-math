@@ -31,7 +31,7 @@ __global__ __aicore__ void fill_v2(GM_ADDR x, GM_ADDR fill_value, GM_ADDR x_out,
     GET_TILING_DATA_WITH_STRUCT(FillV2TilingData, tilingData, tiling);
 
     AscendC::TPipe pipe;
-    NsFillV2::FillV2<DTYPE_X> op; 
-    op.Init(x, fill_value, &tilingData, &pipe);    
-    op.Process();                       
+    NsFillV2::FillV2<DTYPE_X> op;
+    op.Init(x, fill_value, &tilingData, &pipe);
+    op.Process();
 }

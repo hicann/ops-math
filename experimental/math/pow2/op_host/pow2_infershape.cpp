@@ -25,12 +25,12 @@ static constexpr int64_t IDX_1 = 1;
 
 static ge::graphStatus InferShapePow2(gert::InferShapeContext* context)
 {
-   OP_LOGD(context->GetNodeName(), "Begin to do InferShape");
+    OP_LOGD(context->GetNodeName(), "Begin to do InferShape");
 
     // get input shapes
     const gert::Shape* x1Shape = context->GetInputShape(IDX_0);
     OP_CHECK_NULL_WITH_CONTEXT(context, x1Shape);
-    
+
     const gert::Shape* x2Shape = context->GetInputShape(IDX_1);
     OP_CHECK_NULL_WITH_CONTEXT(context, x2Shape);
 

@@ -22,17 +22,12 @@ namespace NsTrilu {
 using namespace AscendC;
 
 template <typename T>
-__simt_vf__ __aicore__ LAUNCH_BOUND(512)
-inline void OpTriluSimt(int64_t totalElements, int64_t diagonal, int32_t upper,
-                        int64_t h, int64_t w, __gm__ T* x, __gm__ T* y)
+__simt_vf__ __aicore__ LAUNCH_BOUND(512) inline void OpTriluSimt(
+    int64_t totalElements, int64_t diagonal, int32_t upper, int64_t h, int64_t w, __gm__ T* x, __gm__ T* y)
 {
     int64_t matrixSize = h * w;
-    for (uint64_t index = static_cast<uint64_t>(
-             blockIdx.x * blockDim.x
-             + threadIdx.x);
-         index < static_cast<uint64_t>(totalElements);
-         index += static_cast<uint64_t>(
-             blockDim.x * gridDim.x)) {
+    for (uint64_t index = static_cast<uint64_t>(blockIdx.x * blockDim.x + threadIdx.x);
+         index < static_cast<uint64_t>(totalElements); index += static_cast<uint64_t>(blockDim.x * gridDim.x)) {
         int64_t matrixOffset = static_cast<int64_t>(index) % matrixSize;
         int64_t row = matrixOffset / w;
         int64_t col = matrixOffset % w;
@@ -49,10 +44,7 @@ __aicore__ inline void Process(GM_ADDR x, GM_ADDR y, const TriluTilingData* tili
     __gm__ T* x_gm = (__gm__ T*)x;
     __gm__ T* y_gm = (__gm__ T*)y;
     asc_vf_call<OpTriluSimt<T>>(
-        dim3(512), totalElements,
-        tilingData->diagonal, tilingData->upper,
-        tilingData->h, tilingData->w,
-        x_gm, y_gm);
+        dim3(512), totalElements, tilingData->diagonal, tilingData->upper, tilingData->h, tilingData->w, x_gm, y_gm);
 }
 
 } // namespace NsTrilu

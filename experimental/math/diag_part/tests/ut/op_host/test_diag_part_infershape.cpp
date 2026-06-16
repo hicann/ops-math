@@ -15,15 +15,9 @@
 
 class DiagPartInferShape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "DiagPart InferShape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "DiagPart InferShape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "DiagPart InferShape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "DiagPart InferShape TearDown" << std::endl; }
 };
 
 // Test 2D -> 1D

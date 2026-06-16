@@ -34,4 +34,4 @@ public:
     }
 };
 OP_ADD(LogicalNot);
-}
+} // namespace ops

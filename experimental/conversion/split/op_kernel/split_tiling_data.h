@@ -38,12 +38,12 @@ struct SplitTilingData {
     uint32_t blockSize{0};
     // ===== Split 语义 =====
     int64_t axis{0};
-    bool isEven{0};//判断是否是均分
-    uint32_t indices_len{0};//切分数量
-    uint32_t splitLen[11]{0};//切片长度
+    bool isEven{0};           // 判断是否是均分
+    uint32_t indices_len{0};  // 切分数量
+    uint32_t splitLen[11]{0}; // 切片长度
     // ===== Shape / 参数 =====
-    uint32_t shape[8]{0};//输入张量的形状信息
-    uint32_t indices_or_sections[10]{0};//支持数组形式的切分参数
+    uint32_t shape[8]{0};                // 输入张量的形状信息
+    uint32_t indices_or_sections[10]{0}; // 支持数组形式的切分参数
     // ===== 辅助 =====
     uint32_t unit{0};
     uint32_t totalNums{0};

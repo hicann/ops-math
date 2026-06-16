@@ -27,50 +27,37 @@ using namespace AscendC;
 constexpr int32_t BUFFER_NUM = 2;
 
 template <typename T, bool IsExistBigCore>
-class KernelNeg
-{
+class KernelNeg {
 public:
     __aicore__ inline KernelNeg() {}
     __aicore__ inline void Init(
-        GM_ADDR src_gm, 
-        GM_ADDR dst_gm,
-        uint32_t smallCoreDataNum,
-        uint32_t bigCoreDataNum, uint32_t bigCoreLoopNum, 
-        uint32_t smallCoreLoopNum, uint32_t ubPartDataNum, 
-        uint32_t smallCoreTailDataNum, uint32_t bigCoreTailDataNum, 
-        uint32_t tailBlockNum,
-        TPipe* pipeIn
-        )
+        GM_ADDR src_gm, GM_ADDR dst_gm, uint32_t smallCoreDataNum, uint32_t bigCoreDataNum, uint32_t bigCoreLoopNum,
+        uint32_t smallCoreLoopNum, uint32_t ubPartDataNum, uint32_t smallCoreTailDataNum, uint32_t bigCoreTailDataNum,
+        uint32_t tailBlockNum, TPipe* pipeIn)
     {
         ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
         uint32_t coreNum = AscendC::GetBlockIdx();
         uint32_t globalBufferIndex = bigCoreDataNum * AscendC::GetBlockIdx();
         this->ubPartDataNum = ubPartDataNum;
-        if constexpr (IsExistBigCore) 
-        {
-          if (coreNum < tailBlockNum) 
-          { 
-            this->coreDataNum = bigCoreDataNum;
-            this->tileNum = bigCoreLoopNum;
-            this->tailDataNum = bigCoreTailDataNum;
-          }
-          else 
-          { 
+        if constexpr (IsExistBigCore) {
+            if (coreNum < tailBlockNum) {
+                this->coreDataNum = bigCoreDataNum;
+                this->tileNum = bigCoreLoopNum;
+                this->tailDataNum = bigCoreTailDataNum;
+            } else {
+                this->coreDataNum = smallCoreDataNum;
+                this->tileNum = smallCoreLoopNum;
+                this->tailDataNum = smallCoreTailDataNum;
+                globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (AscendC::GetBlockIdx() - tailBlockNum);
+            }
+        } else {
             this->coreDataNum = smallCoreDataNum;
             this->tileNum = smallCoreLoopNum;
             this->tailDataNum = smallCoreTailDataNum;
-            globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (AscendC::GetBlockIdx() - tailBlockNum);
-          }
+            globalBufferIndex = smallCoreDataNum * AscendC::GetBlockIdx();
         }
-        else
-        {
-          this->coreDataNum = smallCoreDataNum;
-          this->tileNum = smallCoreLoopNum;
-          this->tailDataNum = smallCoreTailDataNum;
-          globalBufferIndex = smallCoreDataNum * AscendC::GetBlockIdx();
-        }
-        src_global.SetGlobalBuffer((__gm__ T *)src_gm + globalBufferIndex, this->coreDataNum);
-        dst_global.SetGlobalBuffer((__gm__ T *)dst_gm + globalBufferIndex, this->coreDataNum);
+        src_global.SetGlobalBuffer((__gm__ T*)src_gm + globalBufferIndex, this->coreDataNum);
+        dst_global.SetGlobalBuffer((__gm__ T*)dst_gm + globalBufferIndex, this->coreDataNum);
         pipe = pipeIn;
         pipe->InitBuffer(inQueueX, BUFFER_NUM, this->ubPartDataNum * sizeof(T));
         pipe->InitBuffer(outQueue, BUFFER_NUM, this->ubPartDataNum * sizeof(T));
@@ -83,16 +70,15 @@ public:
     {
         int32_t loopCount = this->tileNum;
         this->processDataNum = this->ubPartDataNum;
-        for (int32_t i = 0; i < loopCount-1; i++) 
-        {
+        for (int32_t i = 0; i < loopCount - 1; i++) {
             CopyIn(i);
             Compute(i);
             CopyOut(i);
         }
         this->processDataNum = this->tailDataNum;
-        CopyIn(loopCount-1);
-        Compute(loopCount-1);
-        CopyOut(loopCount-1);
+        CopyIn(loopCount - 1);
+        Compute(loopCount - 1);
+        CopyOut(loopCount - 1);
     }
 
 private:
@@ -106,15 +92,14 @@ private:
     {
         LocalTensor<T> dstLocal = outQueue.AllocTensor<T>();
         LocalTensor<T> srcLocal = inQueueX.DeQue<T>();
-        if constexpr (std::is_same_v<T, int32_t>){
+        if constexpr (std::is_same_v<T, int32_t>) {
             Duplicate(dstLocal, T(-1), this->processDataNum);
             Mul(dstLocal, srcLocal, dstLocal, this->processDataNum);
-        }
-        else if constexpr (std::is_same_v<T, int8_t>){
+        } else if constexpr (std::is_same_v<T, int8_t>) {
             LocalTensor<half> tmp = QueueTmp.Get<half>();
             Cast(tmp, srcLocal, RoundMode::CAST_NONE, this->processDataNum);
             Muls(tmp, tmp, half(-1), this->processDataNum);
-            //移位操作实现溢出处理
+            // 移位操作实现溢出处理
             LocalTensor<int16_t> tmp2 = QueueTmp2.Get<int16_t>();
             Cast(tmp2, tmp, RoundMode::CAST_RINT, this->processDataNum); // float16 -> int16
             // 处理溢出 (模拟 int8 计算的行为)
@@ -126,20 +111,19 @@ private:
             Cast(dstLocal, tmp, RoundMode::CAST_NONE, this->processDataNum);
             QueueTmp2.FreeTensor(tmp2);
             QueueTmp.FreeTensor(tmp);
-        }
-        else if constexpr (std::is_same_v<T, float> || std::is_same_v<T, half>) {
+        } else if constexpr (std::is_same_v<T, float> || std::is_same_v<T, half>) {
             Muls(dstLocal, srcLocal, T(-1), this->processDataNum);
         }
-        //Muls不支持bfloat16类型
-        else{
+        // Muls不支持bfloat16类型
+        else {
             LocalTensor<float> tmp1 = QueueTmp.Get<float>();
             Cast(tmp1, srcLocal, RoundMode::CAST_NONE, this->processDataNum);
             Muls(tmp1, tmp1, float(-1), this->processDataNum);
             Cast(dstLocal, tmp1, RoundMode::CAST_RINT, this->processDataNum);
             QueueTmp.FreeTensor(tmp1);
-        }       
+        }
         outQueue.EnQue<T>(dstLocal);
-        inQueueX.FreeTensor(srcLocal);   
+        inQueueX.FreeTensor(srcLocal);
     }
 
     __aicore__ inline void CopyOut(uint32_t process)

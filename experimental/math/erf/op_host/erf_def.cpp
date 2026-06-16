@@ -11,7 +11,7 @@
 /*!
  * \file erf.cpp
  * \brief
-*/
+ */
 #include "register/op_def_registry.h"
 
 namespace ops {

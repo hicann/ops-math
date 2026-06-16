@@ -21,7 +21,7 @@
 /*!
  * \file dot_v2.h
  * \brief
-*/
+ */
 #ifndef DOT_V2_H
 #define DOT_V2_H
 
@@ -41,7 +41,7 @@ class DotV2 {
 public:
     __aicore__ inline DotV2(){};
 
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR z,GM_ADDR workspace, const DotV2TilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR workspace, const DotV2TilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -54,15 +54,15 @@ private:
     TQue<QuePosition::VECIN, BUFFER_NUM> inputQueueX;
     TQue<QuePosition::VECIN, BUFFER_NUM> inputQueueY;
     TQue<QuePosition::VECOUT, BUFFER_NUM> outputQueueZ;
-    TQue<TPosition::VECIN, BUFFER_NUM> tmpQueue; 
-    
+    TQue<TPosition::VECIN, BUFFER_NUM> tmpQueue;
+
     TBuf<TPosition::VECCALC> tmpBuf0;
 
     GlobalTensor<T> inputGMX;
     GlobalTensor<T> inputGMY;
     GlobalTensor<T> outputGMZ;
     GlobalTensor<T> workGM;
-    
+
     uint32_t coreDataNum;
     uint32_t tileNum;
     uint32_t tileDataNum;
@@ -72,27 +72,28 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void DotV2<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR workspace,const DotV2TilingData* tilingData)
+__aicore__ inline void DotV2<T>::Init(
+    GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR workspace, const DotV2TilingData* tilingData)
 {
     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
     uint32_t coreNum = AscendC::GetBlockIdx();
     uint32_t globalBufferIndex = tilingData->bigCoreDataNum * AscendC::GetBlockIdx();
     this->tileDataNum = tilingData->tileDataNum;
-    if (coreNum < tilingData->tailBlockNum) { 
+    if (coreNum < tilingData->tailBlockNum) {
         this->coreDataNum = tilingData->bigCoreDataNum;
         this->tileNum = tilingData->finalBigTileNum;
         this->tailDataNum = tilingData->bigTailDataNum;
-    }
-    else { 
+    } else {
         this->coreDataNum = tilingData->smallCoreDataNum;
         this->tileNum = tilingData->finalSmallTileNum;
         this->tailDataNum = tilingData->smallTailDataNum;
-        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (AscendC::GetBlockIdx() - tilingData->tailBlockNum);
+        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) *
+                             (AscendC::GetBlockIdx() - tilingData->tailBlockNum);
     }
     inputGMX.SetGlobalBuffer((__gm__ T*)x + globalBufferIndex, this->coreDataNum);
     inputGMY.SetGlobalBuffer((__gm__ T*)y + globalBufferIndex, this->coreDataNum);
     outputGMZ.SetGlobalBuffer((__gm__ T*)z, 1);
-    this->workGmSize =  tilingData->workGmSize; //dataCopy最少的元素数
+    this->workGmSize = tilingData->workGmSize; // dataCopy最少的元素数
     workGM.SetGlobalBuffer((__gm__ T*)workspace, this->workGmSize);
     if (AscendC::GetBlockIdx() == 0) {
         AscendC::InitGlobalMemory(workGM, workGmSize, (T)0.0);
@@ -137,7 +138,7 @@ __aicore__ inline void DotV2<T>::Compute(int32_t progress, AscendC::LocalTensor<
     AscendC::Duplicate(zLocal, T(0.0f), this->processDataNum);
     AscendC::Mul(xLocal, xLocal, yLocal, this->processDataNum);
     PipeBarrier<PIPE_V>();
-    AscendC::ReduceSum(zLocal, xLocal,sharedTmpBuffer, this->processDataNum);
+    AscendC::ReduceSum(zLocal, xLocal, sharedTmpBuffer, this->processDataNum);
     PipeBarrier<PIPE_V>();
     T val = zLocal.GetValue(0);
     T accum = tmpTensor0.GetValue(0);
@@ -161,11 +162,11 @@ __aicore__ inline void DotV2<T>::Process()
             this->processDataNum = this->tailDataNum;
         }
         CopyIn(i);
-        Compute(i,tmpTensor0);
+        Compute(i, tmpTensor0);
     }
     CopyOut(tmpTensor0);
-    if(AscendC::GetBlockIdx() == 0){
-        outputGMZ.SetValue(0,workGM.GetValue(0));
+    if (AscendC::GetBlockIdx() == 0) {
+        outputGMZ.SetValue(0, workGM.GetValue(0));
     }
 }
 } // namespace NsDotV2

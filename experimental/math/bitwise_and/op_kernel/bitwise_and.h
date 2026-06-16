@@ -33,9 +33,10 @@ class KernelBitwiseAnd {
 public:
     __aicore__ inline KernelBitwiseAnd(){};
 
-    __aicore__ inline void Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t finalBigTileNum,
-        uint64_t finalSmallTileNum, uint64_t tileDataNum, uint64_t smallTailDataNum, uint64_t bigTailDataNum, uint64_t tailBlockNum,
-        uint64_t tmpTileDataNum, uint64_t tmpSmallTailDataNum, uint64_t tmpBigTailDataNum);
+    __aicore__ inline void Init(
+        GM_ADDR x1, GM_ADDR x2, GM_ADDR y, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t finalBigTileNum,
+        uint64_t finalSmallTileNum, uint64_t tileDataNum, uint64_t smallTailDataNum, uint64_t bigTailDataNum,
+        uint64_t tailBlockNum, uint64_t tmpTileDataNum, uint64_t tmpSmallTailDataNum, uint64_t tmpBigTailDataNum);
     __aicore__ inline void Process();
 
 private:
@@ -58,9 +59,10 @@ private:
 };
 
 template <typename TYPE_X1>
-__aicore__ inline void KernelBitwiseAnd<TYPE_X1>::Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t finalBigTileNum,
-    uint64_t finalSmallTileNum, uint64_t tileDataNum, uint64_t smallTailDataNum, uint64_t bigTailDataNum, uint64_t tailBlockNum, uint64_t tmpTileDataNum,
-    uint64_t tmpSmallTailDataNum, uint64_t tmpBigTailDataNum)
+__aicore__ inline void KernelBitwiseAnd<TYPE_X1>::Init(
+    GM_ADDR x1, GM_ADDR x2, GM_ADDR y, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t finalBigTileNum,
+    uint64_t finalSmallTileNum, uint64_t tileDataNum, uint64_t smallTailDataNum, uint64_t bigTailDataNum,
+    uint64_t tailBlockNum, uint64_t tmpTileDataNum, uint64_t tmpSmallTailDataNum, uint64_t tmpBigTailDataNum)
 {
     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
     uint64_t coreId = AscendC::GetBlockIdx();
@@ -79,9 +81,9 @@ __aicore__ inline void KernelBitwiseAnd<TYPE_X1>::Init(GM_ADDR x1, GM_ADDR x2, G
         this->tmpTailDataNum = tmpSmallTailDataNum;
         globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (coreId - tailBlockNum);
     }
-    x1Gm.SetGlobalBuffer((__gm__ TYPE_X1 *)x1 + globalBufferIndex, this->coreDataNum);
-    x2Gm.SetGlobalBuffer((__gm__ TYPE_X1 *)x2 + globalBufferIndex, this->coreDataNum);
-    yGm.SetGlobalBuffer((__gm__ TYPE_X1 *)y + globalBufferIndex, this->coreDataNum);
+    x1Gm.SetGlobalBuffer((__gm__ TYPE_X1*)x1 + globalBufferIndex, this->coreDataNum);
+    x2Gm.SetGlobalBuffer((__gm__ TYPE_X1*)x2 + globalBufferIndex, this->coreDataNum);
+    yGm.SetGlobalBuffer((__gm__ TYPE_X1*)y + globalBufferIndex, this->coreDataNum);
 
     pipe.InitBuffer(inQueueX1, BUFFER_NUM, this->tileDataNum * sizeof(TYPE_X1));
     pipe.InitBuffer(inQueueX2, BUFFER_NUM, this->tileDataNum * sizeof(TYPE_X1));
@@ -118,7 +120,9 @@ __aicore__ inline void KernelBitwiseAnd<TYPE_X1>::Compute(int32_t progress)
         outQueueY.EnQue<TYPE_X1>(yLocal);
     } else {
         AscendC::LocalTensor<int16_t> yLocal = outQueueY.AllocTensor<int16_t>();
-        AscendC::And(yLocal, x1Local.template ReinterpretCast<int16_t>(), x2Local.template ReinterpretCast<int16_t>(), this->tmpProcessDataNum);
+        AscendC::And(
+            yLocal, x1Local.template ReinterpretCast<int16_t>(), x2Local.template ReinterpretCast<int16_t>(),
+            this->tmpProcessDataNum);
         outQueueY.EnQue<int16_t>(yLocal);
     }
     inQueueX1.FreeTensor(x1Local);

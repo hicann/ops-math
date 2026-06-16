@@ -11,7 +11,7 @@
 /*!
  * \file test_aclnn_sign_bits_pack.cpp
  * \brief
-*/
+ */
 #include <vector>
 #include <array>
 #include "gtest/gtest.h"
@@ -24,22 +24,17 @@
 
 class l2_sign_bits_pack_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_sign_bits_pack_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "l2_sign_bits_pack_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "l2_sign_bits_pack_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "l2_sign_bits_pack_test TearDown" << endl; }
 };
 
 TEST_F(l2_sign_bits_pack_test, case_01_float)
 {
     op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
 
-    auto selfDesc = TensorDesc({14}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{5, 4, 3, 2, 0, -1, -2, 4, 3, 2, 1, 0, -1, -2});
+    auto selfDesc =
+        TensorDesc({14}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{5, 4, 3, 2, 0, -1, -2, 4, 3, 2, 1, 0, -1, -2});
     int64_t size = 2;
     auto outDesc = TensorDesc({2, 1}, ACL_UINT8, ACL_FORMAT_ND);
 

@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
+
 /**
  *
  * NOTE: Portions of this code were AI-generated and have been
@@ -45,11 +45,8 @@ extern "C" {
  * @param executor     [out] 返回算子执行器
  * @return aclnnStatus 状态码
  */
-ACLNN_API aclnnStatus aclnnAsinWithAgentGetWorkspaceSize(
-    const aclTensor* x,
-    aclTensor* y,
-    uint64_t* workspaceSize,
-    aclOpExecutor** executor);
+ACLNN_API aclnnStatus
+aclnnAsinWithAgentGetWorkspaceSize(const aclTensor* x, aclTensor* y, uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief 执行 AsinWithAgent 算子计算
@@ -60,11 +57,8 @@ ACLNN_API aclnnStatus aclnnAsinWithAgentGetWorkspaceSize(
  * @param stream        [in] ACL 流
  * @return aclnnStatus 状态码
  */
-ACLNN_API aclnnStatus aclnnAsinWithAgent(
-    void* workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor* executor,
-    aclrtStream stream);
+ACLNN_API aclnnStatus
+aclnnAsinWithAgent(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 #ifdef __cplusplus
 }

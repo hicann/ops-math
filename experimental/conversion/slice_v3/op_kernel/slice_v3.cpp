@@ -24,12 +24,13 @@
 #include "slice_v3.h"
 
 template <uint32_t schMode>
-__global__ __aicore__ void slice_v3(GM_ADDR x, GM_ADDR begin, GM_ADDR size, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void slice_v3(
+    GM_ADDR x, GM_ADDR begin, GM_ADDR size, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(SliceV3TilingData);
     GET_TILING_DATA_WITH_STRUCT(SliceV3TilingData, tilingData, tiling);
     AscendC::TPipe pipe;
-    NsSliceV3::SliceV3<DTYPE_X> op; 
-    op.Init(x, y,  &tilingData, &pipe);      
-    op.Process();  
+    NsSliceV3::SliceV3<DTYPE_X> op;
+    op.Init(x, y, &tilingData, &pipe);
+    op.Process();
 }

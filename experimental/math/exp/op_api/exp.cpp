@@ -69,11 +69,11 @@ static inline const aclTensor* ExpAiCpu(const aclTensor* self, aclTensor* out, a
     // Exp是算子的OpType，self是算子的输入，out是算子的输出
     aclnnStatus ret = ACL_ERROR_INVALID_PARAM;
     if (self->GetDataType() != ge::DataType::DT_COMPLEX64) {
-      static internal::AicpuTaskSpace space("Exp", ge::DEPEND_IN_SHAPE, true);
-      ret = ADD_TO_LAUNCHER_LIST_AICPU(Exp, OP_ATTR_NAMES(), OP_INPUT(self), OP_OUTPUT(out)); 
+        static internal::AicpuTaskSpace space("Exp", ge::DEPEND_IN_SHAPE, true);
+        ret = ADD_TO_LAUNCHER_LIST_AICPU(Exp, OP_ATTR_NAMES(), OP_INPUT(self), OP_OUTPUT(out));
     } else {
-      static internal::AicpuTaskSpace space("Exp", ge::DEPEND_IN_SHAPE, false);
-      ret = ADD_TO_LAUNCHER_LIST_AICPU(Exp, OP_ATTR_NAMES(), OP_INPUT(self), OP_OUTPUT(out));
+        static internal::AicpuTaskSpace space("Exp", ge::DEPEND_IN_SHAPE, false);
+        ret = ADD_TO_LAUNCHER_LIST_AICPU(Exp, OP_ATTR_NAMES(), OP_INPUT(self), OP_OUTPUT(out));
     }
     OP_CHECK(
         ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ExpAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),

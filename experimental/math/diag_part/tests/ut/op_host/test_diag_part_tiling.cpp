@@ -21,15 +21,9 @@ using namespace optiling;
 
 class DiagPartTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "DiagPartTiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "DiagPartTiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "DiagPartTiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "DiagPartTiling TearDown " << endl; }
 };
 
 TEST_F(DiagPartTiling, ascend910b_test_tiling_FLOAT16_001)
@@ -44,14 +38,7 @@ TEST_F(DiagPartTiling, ascend910b_test_tiling_FLOAT16_001)
     std::vector<TD> inputDescs{inputDesc};
     std::vector<TD> outputDescs{outputDesc};
 
-    gert::TilingContextPara tilingContextPara(
-        "DiagPart",
-        inputDescs,
-        outputDescs,
-        &compileInfo,
-        40,
-        196608,
-        4096);
+    gert::TilingContextPara tilingContextPara("DiagPart", inputDescs, outputDescs, &compileInfo, 40, 196608, 4096);
     // GET_TPL_TILING_KEY(schMode=0, dtype=FLOAT16=1): schMode index=0, dtype index=1 in [0,1,3] -> key = 0 | (1<<1) = 2
     uint64_t expectTilingKey = 2;
     // sideLength=4, dtype=1(float16), realCoreNum=1, numPerCore=16, tailNum=4, blockSize=0
@@ -71,14 +58,7 @@ TEST_F(DiagPartTiling, ascend910b_test_tiling_FLOAT32_001)
     std::vector<TD> inputDescs{inputDesc};
     std::vector<TD> outputDescs{outputDesc};
 
-    gert::TilingContextPara tilingContextPara(
-        "DiagPart",
-        inputDescs,
-        outputDescs,
-        &compileInfo,
-        40,
-        196608,
-        4096);
+    gert::TilingContextPara tilingContextPara("DiagPart", inputDescs, outputDescs, &compileInfo, 40, 196608, 4096);
     // GET_TPL_TILING_KEY(schMode=0, dtype=FLOAT=0): schMode index=0, dtype index=0 in [0,1,3] -> key = 0
     uint64_t expectTilingKey = 0;
     // sideLength=4, dtype=0(float32), realCoreNum=1, numPerCore=8, tailNum=4, blockSize=0
@@ -98,14 +78,7 @@ TEST_F(DiagPartTiling, ascend910b_test_tiling_INT32_001)
     std::vector<TD> inputDescs{inputDesc};
     std::vector<TD> outputDescs{outputDesc};
 
-    gert::TilingContextPara tilingContextPara(
-        "DiagPart",
-        inputDescs,
-        outputDescs,
-        &compileInfo,
-        40,
-        196608,
-        4096);
+    gert::TilingContextPara tilingContextPara("DiagPart", inputDescs, outputDescs, &compileInfo, 40, 196608, 4096);
     // GET_TPL_TILING_KEY(schMode=0, dtype=INT32=3): schMode index=0, dtype index=2 in [0,1,3] -> key = 0 | (2<<1) = 4
     uint64_t expectTilingKey = 4;
     // sideLength=4, dtype=3(int32), realCoreNum=1, numPerCore=8, tailNum=4, blockSize=0
@@ -113,4 +86,3 @@ TEST_F(DiagPartTiling, ascend910b_test_tiling_INT32_001)
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
-

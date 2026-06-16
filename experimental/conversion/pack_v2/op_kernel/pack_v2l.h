@@ -69,98 +69,91 @@ private:
 template <typename T>
 __aicore__ inline void PackV2L<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, const PackV2TilingData* tilingData)
 {
-        this->tiling = *tilingData;
-        uint64_t coreNum = AscendC::GetBlockIdx();
-        uint64_t globalBufferIndex = tiling.bigCoreDataNum * AscendC::GetBlockIdx();
-        this->total = tiling.inputDataNum;
-        this->ubPartDataNum = tiling.ubPartDataNum;
-        if (tiling.tailBlockNum!=0) 
-        {
-          if (coreNum < tiling.tailBlockNum) 
-          { 
+    this->tiling = *tilingData;
+    uint64_t coreNum = AscendC::GetBlockIdx();
+    uint64_t globalBufferIndex = tiling.bigCoreDataNum * AscendC::GetBlockIdx();
+    this->total = tiling.inputDataNum;
+    this->ubPartDataNum = tiling.ubPartDataNum;
+    if (tiling.tailBlockNum != 0) {
+        if (coreNum < tiling.tailBlockNum) {
             this->coreDataNum = tiling.bigCoreDataNum;
             this->tileNum = tiling.bigCoreLoopNum;
             this->tailDataNum = tiling.bigCoreTailDataNum;
-          }
-          else 
-          { 
+        } else {
             this->coreDataNum = tiling.smallCoreDataNum;
             this->tileNum = tiling.smallCoreLoopNum;
             this->tailDataNum = tiling.smallCoreTailDataNum;
-            globalBufferIndex -= (tiling.bigCoreDataNum - tiling.smallCoreDataNum) * (AscendC::GetBlockIdx() - tiling.tailBlockNum);
-          }
+            globalBufferIndex -=
+                (tiling.bigCoreDataNum - tiling.smallCoreDataNum) * (AscendC::GetBlockIdx() - tiling.tailBlockNum);
         }
-        else
-        {
-          this->coreDataNum = tiling.smallCoreDataNum;
-          this->tileNum = tiling.smallCoreLoopNum;
-          this->tailDataNum = tiling.smallCoreTailDataNum;
-          globalBufferIndex = tiling.smallCoreDataNum * AscendC::GetBlockIdx();
-        }
-          
-        xGm.SetGlobalBuffer((__gm__ float *)x + globalBufferIndex, this->coreDataNum);
-        yGm.SetGlobalBuffer((__gm__ float *)y + globalBufferIndex, this->coreDataNum);
-        zGm.SetGlobalBuffer((__gm__ float *)z + globalBufferIndex*2, this->coreDataNum*2);
-
-        pipe.InitBuffer(inQueueX, BUFFER_NUM, this->ubPartDataNum * sizeof(float));
-        pipe.InitBuffer(inQueueY, BUFFER_NUM, this->ubPartDataNum * sizeof(float));
-        pipe.InitBuffer(outQueueZ, BUFFER_NUM, this->ubPartDataNum * sizeof(float)*2);
+    } else {
+        this->coreDataNum = tiling.smallCoreDataNum;
+        this->tileNum = tiling.smallCoreLoopNum;
+        this->tailDataNum = tiling.smallCoreTailDataNum;
+        globalBufferIndex = tiling.smallCoreDataNum * AscendC::GetBlockIdx();
     }
+
+    xGm.SetGlobalBuffer((__gm__ float*)x + globalBufferIndex, this->coreDataNum);
+    yGm.SetGlobalBuffer((__gm__ float*)y + globalBufferIndex, this->coreDataNum);
+    zGm.SetGlobalBuffer((__gm__ float*)z + globalBufferIndex * 2, this->coreDataNum * 2);
+
+    pipe.InitBuffer(inQueueX, BUFFER_NUM, this->ubPartDataNum * sizeof(float));
+    pipe.InitBuffer(inQueueY, BUFFER_NUM, this->ubPartDataNum * sizeof(float));
+    pipe.InitBuffer(outQueueZ, BUFFER_NUM, this->ubPartDataNum * sizeof(float) * 2);
+}
 
 template <typename T>
 __aicore__ inline void PackV2L<T>::CopyIn(int32_t progress)
 {
-        AscendC::LocalTensor<float> xLocal = inQueueX.AllocTensor<float>();
-        AscendC::LocalTensor<float> yLocal = inQueueY.AllocTensor<float>();
+    AscendC::LocalTensor<float> xLocal = inQueueX.AllocTensor<float>();
+    AscendC::LocalTensor<float> yLocal = inQueueY.AllocTensor<float>();
 
-        AscendC::DataCopy(xLocal, xGm[progress * this->processDataNum], this->processDataNum);
-        AscendC::DataCopy(yLocal, yGm[progress * this->processDataNum], this->processDataNum);
+    AscendC::DataCopy(xLocal, xGm[progress * this->processDataNum], this->processDataNum);
+    AscendC::DataCopy(yLocal, yGm[progress * this->processDataNum], this->processDataNum);
 
-        inQueueX.EnQue(xLocal);
-        inQueueY.EnQue(yLocal);
+    inQueueX.EnQue(xLocal);
+    inQueueY.EnQue(yLocal);
 }
 template <typename T>
 __aicore__ inline void PackV2L<T>::Compute(int32_t progress)
 {
-        AscendC::LocalTensor<float> xLocal = inQueueX.DeQue<float>();
-        AscendC::LocalTensor<float> yLocal = inQueueY.DeQue<float>();
-        AscendC::LocalTensor<float> zLocal = outQueueZ.AllocTensor<float>();
+    AscendC::LocalTensor<float> xLocal = inQueueX.DeQue<float>();
+    AscendC::LocalTensor<float> yLocal = inQueueY.DeQue<float>();
+    AscendC::LocalTensor<float> zLocal = outQueueZ.AllocTensor<float>();
 
-        for (int i = 0; i < this->processDataNum; i++) {
-            float real = xLocal.GetValue(i);
-            float imag = yLocal.GetValue(i);
-            zLocal.SetValue(2 * i, real);     
-            zLocal.SetValue(2 * i + 1, imag); 
-        }
-     
-        outQueueZ.EnQue<float>(zLocal);
-        inQueueX.FreeTensor(xLocal);
-        inQueueY.FreeTensor(yLocal);
+    for (int i = 0; i < this->processDataNum; i++) {
+        float real = xLocal.GetValue(i);
+        float imag = yLocal.GetValue(i);
+        zLocal.SetValue(2 * i, real);
+        zLocal.SetValue(2 * i + 1, imag);
+    }
+
+    outQueueZ.EnQue<float>(zLocal);
+    inQueueX.FreeTensor(xLocal);
+    inQueueY.FreeTensor(yLocal);
 }
 template <typename T>
 __aicore__ inline void PackV2L<T>::CopyOut(int32_t progress)
 {
     AscendC::LocalTensor<float> zLocal = outQueueZ.DeQue<float>();
-    AscendC::DataCopy(zGm[progress * this->ubPartDataNum*2], zLocal, this->processDataNum*2);
+    AscendC::DataCopy(zGm[progress * this->ubPartDataNum * 2], zLocal, this->processDataNum * 2);
     outQueueZ.FreeTensor(zLocal);
 }
-
 
 template <typename T>
 __aicore__ inline void PackV2L<T>::Process()
 {
-        int32_t loopCount = this->tileNum;
-        this->processDataNum = this->ubPartDataNum;
-        for (int32_t i = 0; i < loopCount-1; i++) 
-        {
-            CopyIn(i);
-            Compute(i);
-            CopyOut(i);
-        }
-        this->processDataNum = this->tailDataNum;
-        CopyIn(loopCount-1);
-        Compute(loopCount-1);
-        CopyOut(loopCount-1);
+    int32_t loopCount = this->tileNum;
+    this->processDataNum = this->ubPartDataNum;
+    for (int32_t i = 0; i < loopCount - 1; i++) {
+        CopyIn(i);
+        Compute(i);
+        CopyOut(i);
+    }
+    this->processDataNum = this->tailDataNum;
+    CopyIn(loopCount - 1);
+    Compute(loopCount - 1);
+    CopyOut(loopCount - 1);
 }
 } // namespace NsPackV2L
 #endif // PackV2L_H

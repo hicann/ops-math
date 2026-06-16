@@ -20,8 +20,7 @@
 
 #include "tan.h"
 
-enum class TanTilingKey : uint32_t
-{
+enum class TanTilingKey : uint32_t {
     TILING_KEY_FLOAT32 = 0,
     TILING_KEY_FLOAT16 = 1,
 };

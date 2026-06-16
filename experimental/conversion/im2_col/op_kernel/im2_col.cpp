@@ -25,8 +25,7 @@
 
 #include "im2_col.h"
 
-enum class Im2ColTilingKey : uint32_t
-{
+enum class Im2ColTilingKey : uint32_t {
     TILING_KEY_EXAMPLE_FLOAT = 0,
     TILING_KEY_EXAMPLE_FLOAT16 = 1,
 };
@@ -38,12 +37,12 @@ __global__ __aicore__ void im2_col(GM_ADDR x, GM_ADDR z, GM_ADDR workspace, GM_A
     GET_TILING_DATA_WITH_STRUCT(Im2ColTilingData, tilingData, tiling);
     if constexpr (schMode == static_cast<uint32_t>(Im2ColTilingKey::TILING_KEY_EXAMPLE_FLOAT)) {
         NsIm2Col::Im2Col<float> op; // 算子kernel实例获取
-        op.Init(x, z, tilingData);      // 算子kernel实例初始化
-        op.Process();                       // 算子kernel实例执行
+        op.Init(x, z, tilingData);  // 算子kernel实例初始化
+        op.Process();               // 算子kernel实例执行
     }
     if constexpr (schMode == static_cast<uint32_t>(Im2ColTilingKey::TILING_KEY_EXAMPLE_FLOAT16)) {
         NsIm2Col::Im2Col<half> op; // 算子kernel实例获取
-        op.Init(x, z, tilingData);        // 算子kernel实例初始化
-        op.Process();                         // 算子kernel实例执行
+        op.Init(x, z, tilingData); // 算子kernel实例初始化
+        op.Process();              // 算子kernel实例执行
     }
 }

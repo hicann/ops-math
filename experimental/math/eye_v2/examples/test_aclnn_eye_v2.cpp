@@ -53,7 +53,7 @@ void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr)
         ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
     for (int64_t i = 0; i < size; i++) {
-        LOG_PRINT("mean result[%ld] is: %f\n", i, resultData[i]);       // float
+        LOG_PRINT("mean result[%ld] is: %f\n", i, resultData[i]); // float
     }
 }
 
@@ -104,7 +104,7 @@ int main()
     // Create dummy input x
     aclTensor* x = nullptr;
     void* xDeviceAddr = nullptr;
-    std::vector<int64_t> xShape = {1}; // Dummy shape
+    std::vector<int64_t> xShape = {1};     // Dummy shape
     std::vector<DataType> xHostData = {0}; // Dummy data
     ret = CreateAclTensor(xHostData, xShape, &xDeviceAddr, aclDataType::ACL_FLOAT, &x);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -112,7 +112,7 @@ int main()
     // 2. 构造输出，需要根据API的接口自定义构造
     aclTensor* out = nullptr;
     void* outDeviceAddr = nullptr;
-    std::vector<int64_t> outShape = {4,4};
+    std::vector<int64_t> outShape = {4, 4};
     std::vector<DataType> outHostData(16, 0);
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -127,8 +127,9 @@ int main()
     int32_t rows = 4;
     int32_t cols = 4;
     ret = aclnnEyeV2GetWorkspaceSize(x, rows, cols, out, &workspaceSize, &executor);
-    LOG_PRINT("aclnnEyeV2GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n",
-          ret, (unsigned long long)workspaceSize, (void*)executor);
+    LOG_PRINT(
+        "aclnnEyeV2GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n", ret,
+        (unsigned long long)workspaceSize, (void*)executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnEyeV2GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 根据第一段接口计算出的workspaceSize申请device内存

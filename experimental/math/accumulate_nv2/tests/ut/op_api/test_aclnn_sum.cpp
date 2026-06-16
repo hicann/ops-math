@@ -22,15 +22,9 @@ using namespace std;
 
 class l2_sum_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_sum_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "l2_sum_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "l2_sum_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "l2_sum_test TearDown" << endl; }
 };
 
 TEST_F(l2_sum_test, case_01_float)
@@ -38,10 +32,9 @@ TEST_F(l2_sum_test, case_01_float)
     op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
 
     auto selfDesc =
-        TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{-1.023, 2023.08, 3.14, 10987654321.0});    
-    auto otherDesc =
-        TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{-3.023, 20.09, 5.197, 109.0888});       
-    
+        TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{-1.023, 2023.08, 3.14, 10987654321.0});
+    auto otherDesc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{-3.023, 20.09, 5.197, 109.0888});
+
     auto outDesc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
 
     std::vector<TensorDesc> tmp{selfDesc, otherDesc};

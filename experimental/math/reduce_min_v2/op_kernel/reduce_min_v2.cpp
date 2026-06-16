@@ -21,7 +21,7 @@
 /*!
  * \file reduce_min_v2.cpp
  * \brief
-*/
+ */
 #include "reduce_min_v2.h"
 
 template <uint32_t schMode>
@@ -29,7 +29,7 @@ __global__ __aicore__ void reduce_min_v2(GM_ADDR x, GM_ADDR z, GM_ADDR workspace
 {
     REGISTER_TILING_DEFAULT(ReduceMinV2TilingData);
     GET_TILING_DATA_WITH_STRUCT(ReduceMinV2TilingData, tilingData, tiling);
-    NsReduceMinV2::ReduceMinV2<DTYPE_X> op; 
-    op.Init(x, z,workspace, &tilingData);
+    NsReduceMinV2::ReduceMinV2<DTYPE_X> op;
+    op.Init(x, z, workspace, &tilingData);
     op.Process();
 }

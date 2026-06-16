@@ -47,20 +47,24 @@
         }                            \
     } while (0)
 
-#define LOG_PRINT(message, ...)     \
-    do {                            \
+#define LOG_PRINT(message, ...)         \
+    do {                                \
         printf(message, ##__VA_ARGS__); \
     } while (0)
 
-int64_t GetShapeSize(const std::vector<int64_t>& shape) {
+int64_t GetShapeSize(const std::vector<int64_t>& shape)
+{
     int64_t size = 1;
-    for (auto dim : shape) size *= dim;
+    for (auto dim : shape)
+        size *= dim;
     return size;
 }
 
 template <typename T>
-int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape,
-                    void** deviceAddr, aclDataType dataType, aclTensor** tensor) {
+int CreateAclTensor(
+    const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr, aclDataType dataType,
+    aclTensor** tensor)
+{
     auto size = GetShapeSize(shape) * sizeof(T);
     auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMalloc failed. ERROR: %d\n", ret); return ret);
@@ -72,12 +76,14 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
         strides[i] = shape[i + 1] * strides[i + 1];
     }
 
-    *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(),
-                              0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), *deviceAddr);
+    *tensor = aclCreateTensor(
+        shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
+        *deviceAddr);
     return 0;
 }
 
-int main() {
+int main()
+{
     // 1. 初始化 ACL 资源
     int32_t deviceId = 0;
     aclrtStream stream;
@@ -97,8 +103,7 @@ int main() {
     std::vector<std::vector<float>> hostInputs = {
         {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f},
         {0.5f, 1.5f, 2.5f, 3.5f, 4.5f, 5.5f, 6.5f, 7.5f},
-        {0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f}
-    };
+        {0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f}};
     // 期望输出: {1.6, 3.7, 5.8, 7.9, 10.0, 12.1, 14.2, 16.3}
 
     std::vector<void*> inputDevs(N, nullptr);
@@ -141,8 +146,8 @@ int main() {
 
     // 5. 获取输出结果
     std::vector<float> result(numElements);
-    ret = aclrtMemcpy(result.data(), numElements * sizeof(float), outDevAddr,
-                      numElements * sizeof(float), ACL_MEMCPY_DEVICE_TO_HOST);
+    ret = aclrtMemcpy(
+        result.data(), numElements * sizeof(float), outDevAddr, numElements * sizeof(float), ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("D2H copy failed. ERROR: %d\n", ret); return 1);
 
     LOG_PRINT("\nAccumulateNv2V2 result (N=%d, shape=[2,4], float32):\n", N);
@@ -151,7 +156,8 @@ int main() {
     }
 
     // 6. 释放资源
-    if (workspace) aclrtFree(workspace);
+    if (workspace)
+        aclrtFree(workspace);
     aclDestroyTensor(outTensor);
     aclrtFree(outDevAddr);
     aclDestroyTensorList(tensorList);

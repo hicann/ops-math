@@ -54,8 +54,8 @@ int64_t GetShapeSize(const std::vector<int64_t>& shape)
 
 template <typename T>
 int CreateAclTensor(
-    const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr,
-    aclDataType dataType, aclTensor** tensor)
+    const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr, aclDataType dataType,
+    aclTensor** tensor)
 {
     auto size = GetShapeSize(shape) * sizeof(T);
     auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -69,8 +69,8 @@ int CreateAclTensor(
     }
 
     *tensor = aclCreateTensor(
-        shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND,
-        shape.data(), shape.size(), *deviceAddr);
+        shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
+        *deviceAddr);
     return 0;
 }
 
@@ -85,8 +85,9 @@ int Init(int32_t deviceId, aclrtStream* stream)
     return 0;
 }
 
-void PrintResult(const std::vector<int64_t>& shape, void* deviceAddr,
-                 const std::vector<float>& yData, const std::vector<float>& dyData)
+void PrintResult(
+    const std::vector<int64_t>& shape, void* deviceAddr, const std::vector<float>& yData,
+    const std::vector<float>& dyData)
 {
     auto size = GetShapeSize(shape);
     std::vector<float> resultData(size, 0);
@@ -98,8 +99,9 @@ void PrintResult(const std::vector<int64_t>& shape, void* deviceAddr,
     LOG_PRINT("AsinhGrad results (z = dy / cosh(y)):\n");
     for (int64_t i = 0; i < size; i++) {
         float expected = dyData[i] / std::cosh(yData[i]);
-        LOG_PRINT("  y[%ld]=%.4f, dy[%ld]=%.4f => z[%ld]=%.6f (expected=%.6f)\n",
-                  i, yData[i], i, dyData[i], i, resultData[i], expected);
+        LOG_PRINT(
+            "  y[%ld]=%.4f, dy[%ld]=%.4f => z[%ld]=%.6f (expected=%.6f)\n", i, yData[i], i, dyData[i], i, resultData[i],
+            expected);
     }
 }
 
@@ -142,8 +144,7 @@ int main()
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor = nullptr;
     ret = aclnnAsinhGradGetWorkspaceSize(y, dy, z, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("aclnnAsinhGradGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAsinhGradGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 4. 申请 workspace（如果需要）
     void* workspaceAddr = nullptr;

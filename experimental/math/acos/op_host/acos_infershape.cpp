@@ -14,11 +14,12 @@
 
 using namespace ge;
 namespace ops {
-static ge::graphStatus InferShapeForAcos(gert::InferShapeContext *context) {
-  OP_LOGI("Begin InferShapeForAcos");
-  return Ops::Base::InferShape4Elewise(context);
+static ge::graphStatus InferShapeForAcos(gert::InferShapeContext* context)
+{
+    OP_LOGI("Begin InferShapeForAcos");
+    return Ops::Base::InferShape4Elewise(context);
 }
 
 IMPL_OP_INFERSHAPE(Acos).InferShape(InferShapeForAcos);
-}
+} // namespace ops
 // namespace ops

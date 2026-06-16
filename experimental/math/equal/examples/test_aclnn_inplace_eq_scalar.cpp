@@ -103,8 +103,8 @@ aclError ExecOpApi(
     aclOpExecutor* executor;
 
     auto ret = aclnnInplaceEqScalarGetWorkspaceSize(self, other, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceEqScalarGetWorkspaceSize failed. ERROR: %d\n", ret);
-              return ret);
+    CHECK_RET(
+        ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceEqScalarGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // workspace 分配
     void* workspaceAddr = nullptr;

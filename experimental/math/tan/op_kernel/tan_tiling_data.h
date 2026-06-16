@@ -22,9 +22,9 @@
 #define _TAN_TILING_DATA_H_
 
 struct TanTilingData {
-    int64_t totalNum = 0;      // Total number of elements
-    int64_t blockFactor = 0;   // Number of elements per AI Core
-    int64_t ubFactor = 0;      // Number of elements per UB loop iteration
+    int64_t totalNum = 0;    // Total number of elements
+    int64_t blockFactor = 0; // Number of elements per AI Core
+    int64_t ubFactor = 0;    // Number of elements per UB loop iteration
 };
 
 #endif

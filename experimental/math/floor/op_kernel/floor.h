@@ -73,7 +73,8 @@ __aicore__ inline void MyFloor::KernelFloor<TYPE_X>::Init(GM_ADDR x, GM_ADDR y, 
         coreDataNum = tilingData.smallCoreDataNum;
         this->tileNum = tilingData.finalSmallTileNum;
         this->tailDataNum = tilingData.smallTailDataNum;
-        globalBufferIndex -= (tilingData.bigCoreDataNum - tilingData.smallCoreDataNum) * (coreId - tilingData.tailBlockNum);
+        globalBufferIndex -=
+            (tilingData.bigCoreDataNum - tilingData.smallCoreDataNum) * (coreId - tilingData.tailBlockNum);
     }
 
     xGm.SetGlobalBuffer((__gm__ TYPE_X*)x + globalBufferIndex, coreDataNum);
@@ -142,7 +143,7 @@ __aicore__ inline void MyFloor::KernelFloor<TYPE_X>::Process()
     this->processDataNum = this->tailDataNum;
     CopyIn(loopCount - 1);
     Compute(loopCount - 1);
-    CopyOut(loopCount - 1); 
+    CopyOut(loopCount - 1);
 }
 } // namespace MyFloor
 #endif // FLOOR_H

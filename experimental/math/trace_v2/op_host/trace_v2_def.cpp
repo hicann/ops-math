@@ -29,19 +29,19 @@ class TraceV2 : public OpDef {
 public:
     explicit TraceV2(const char* name) : OpDef(name)
     {
-        this->Input("x")                                       
-            .ParamType(REQUIRED)                               
-            .DataType({ge::DT_FLOAT, ge::DT_FLOAT16})             
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND})             
-            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND}) 
-            .AutoContiguous();                                  
-        this->Output("y") 
+        this->Input("x")
             .ParamType(REQUIRED)
             .DataType({ge::DT_FLOAT, ge::DT_FLOAT16})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND})
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
-            
+        this->Output("y")
+            .ParamType(REQUIRED)
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT16})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND})
+            .AutoContiguous();
+
         OpAICoreConfig aicoreConfig;
         aicoreConfig.DynamicCompileStaticFlag(true)
             .DynamicFormatFlag(false)
@@ -49,8 +49,8 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
-            .ExtendCfgInfo("opFile.value", "trace_v2");    
-        this->AICore().AddConfig("ascend910b", aicoreConfig); 
+            .ExtendCfgInfo("opFile.value", "trace_v2");
+        this->AICore().AddConfig("ascend910b", aicoreConfig);
     }
 };
 OP_ADD(TraceV2); // 添加算子信息库

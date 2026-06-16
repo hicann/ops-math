@@ -31,40 +31,40 @@ namespace ops {
 
 static ge::graphStatus InferShapeSliceV3(gert::InferShapeContext* context)
 {
-    const gert::Shape* xShape = context->GetInputShape(0); 
+    const gert::Shape* xShape = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
-    
-    uint32_t dim = xShape->GetDimNum(); 
 
-    const gert::Tensor* sizeTensor = context->GetInputTensor(2); 
+    uint32_t dim = xShape->GetDimNum();
+
+    const gert::Tensor* sizeTensor = context->GetInputTensor(2);
     OP_CHECK_NULL_WITH_CONTEXT(context, sizeTensor);
-    
+
     // 校验 sizeTensor 的 shape
     const gert::Shape* sizeShape = context->GetInputShape(2);
     OP_CHECK_NULL_WITH_CONTEXT(context, sizeShape);
-    
+
     // 1. 必须是一维张量
     if (sizeShape->GetDimNum() != 1) {
         OP_LOGE(context, "sizeTensor must be 1-D, got %zu-D", sizeShape->GetDimNum());
         return GRAPH_FAILED;
     }
-    
+
     // 2. 长度必须等于 dim
     int64_t sizeLength = sizeShape->GetDim(0);
     if (sizeLength < 0 || static_cast<uint32_t>(sizeLength) != dim) {
         OP_LOGE(context, "sizeTensor length must be %u, got %ld", dim, sizeLength);
         return GRAPH_FAILED;
     }
-    
+
     const int64_t* sizeData = sizeTensor->GetData<int64_t>();
     OP_CHECK_NULL_WITH_CONTEXT(context, sizeData);
-    
+
     gert::Shape yShape;
     yShape.SetDimNum(dim);
 
     for (uint32_t i = 0; i < dim; ++i) {
         int64_t outputDim = sizeData[i];
-        yShape.SetDim(i, outputDim); 
+        yShape.SetDim(i, outputDim);
     }
 
     *context->GetOutputShape(0) = yShape;

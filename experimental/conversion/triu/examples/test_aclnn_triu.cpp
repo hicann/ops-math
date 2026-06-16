@@ -55,7 +55,7 @@ void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr)
         LOG_PRINT("mean result[%ld] is: %d\n", i, resultData[i]);
     }
 }
-                                                                                                                                                                                                                            
+
 int Init(int32_t deviceId, aclrtStream* stream)
 {
     // 固定写法，初始化
@@ -104,14 +104,14 @@ int main()
     // 2. 构造输入与输出，需要根据API的接口自定义构造
     aclTensor* selfX = nullptr;
     void* selfXDeviceAddr = nullptr;
-    std::vector<int64_t> selfXShape = {2,2,2};
+    std::vector<int64_t> selfXShape = {2, 2, 2};
     std::vector<int32_t> selfXHostData(8, 1);
     ret = CreateAclTensor(selfXHostData, selfXShape, &selfXDeviceAddr, aclDataType::ACL_INT32, &selfX);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     aclTensor* out = nullptr;
     void* outDeviceAddr = nullptr;
-    std::vector<int64_t> outShape = {2,2,2};
+    std::vector<int64_t> outShape = {2, 2, 2};
     std::vector<int32_t> outHostData(8, 5);
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_INT32, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -120,9 +120,9 @@ int main()
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
 
-    int32_t diagonal=0;
+    int32_t diagonal = 0;
     // 4. 调用aclnnTriu第一段接口
-    ret = aclnnTriuGetWorkspaceSize(selfX,diagonal, out, &workspaceSize, &executor);
+    ret = aclnnTriuGetWorkspaceSize(selfX, diagonal, out, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnTriuGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 根据第一段接口计算出的workspaceSize申请device内存

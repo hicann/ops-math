@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
- /**
+/**
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
  */
@@ -28,21 +28,12 @@
 
 #include "ascendc/host_api/tiling/template_argument.h"
 
-ASCENDC_TPL_ARGS_DECL(Inv,
-    ASCENDC_TPL_DATATYPE_DECL(D_T_SELF, C_DT_FLOAT, C_DT_FLOAT16, C_DT_BF16,
-                              ASCENDC_TPL_INPUT(0))
-);
+ASCENDC_TPL_ARGS_DECL(
+    Inv, ASCENDC_TPL_DATATYPE_DECL(D_T_SELF, C_DT_FLOAT, C_DT_FLOAT16, C_DT_BF16, ASCENDC_TPL_INPUT(0)));
 
 ASCENDC_TPL_SEL(
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T_SELF, C_DT_FLOAT)
-    ),
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T_SELF, C_DT_FLOAT16)
-    ),
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T_SELF, C_DT_BF16)
-    ),
-);
+    ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T_SELF, C_DT_FLOAT)),
+    ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T_SELF, C_DT_FLOAT16)),
+    ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T_SELF, C_DT_BF16)), );
 
 #endif // __INV_TILING_KEY_H__

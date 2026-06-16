@@ -36,8 +36,10 @@ class KernelRsqrtGrad {
 public:
     __aicore__ inline KernelRsqrtGrad(){};
 
-    __aicore__ inline void Init(GM_ADDR y, GM_ADDR dy, GM_ADDR z, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t finalBigTileNum,
-        uint64_t finalSmallTileNum, uint64_t tileDataNum, uint64_t smallTailDataNum, uint64_t bigTailDataNum, uint64_t tailBlockNum, uint64_t bufferOpen);
+    __aicore__ inline void Init(
+        GM_ADDR y, GM_ADDR dy, GM_ADDR z, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t finalBigTileNum,
+        uint64_t finalSmallTileNum, uint64_t tileDataNum, uint64_t smallTailDataNum, uint64_t bigTailDataNum,
+        uint64_t tailBlockNum, uint64_t bufferOpen);
     __aicore__ inline void Process();
 
 private:
@@ -60,8 +62,10 @@ private:
 };
 
 template <typename TYPE_Y>
-__aicore__ inline void KernelRsqrtGrad<TYPE_Y>::Init(GM_ADDR y, GM_ADDR dy, GM_ADDR z, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t finalBigTileNum,
-    uint64_t finalSmallTileNum, uint64_t tileDataNum, uint64_t smallTailDataNum, uint64_t bigTailDataNum, uint64_t tailBlockNum, uint64_t bufferOpen)
+__aicore__ inline void KernelRsqrtGrad<TYPE_Y>::Init(
+    GM_ADDR y, GM_ADDR dy, GM_ADDR z, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t finalBigTileNum,
+    uint64_t finalSmallTileNum, uint64_t tileDataNum, uint64_t smallTailDataNum, uint64_t bigTailDataNum,
+    uint64_t tailBlockNum, uint64_t bufferOpen)
 {
     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
     uint64_t coreId = AscendC::GetBlockIdx();
@@ -81,9 +85,9 @@ __aicore__ inline void KernelRsqrtGrad<TYPE_Y>::Init(GM_ADDR y, GM_ADDR dy, GM_A
         this->tailDataNum = smallTailDataNum;
         globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (coreId - tailBlockNum);
     }
-    yGm.SetGlobalBuffer((__gm__ TYPE_Y *)y + globalBufferIndex, this->coreDataNum);
-    dyGm.SetGlobalBuffer((__gm__ TYPE_Y *)dy + globalBufferIndex, this->coreDataNum);
-    zGm.SetGlobalBuffer((__gm__ TYPE_Y *)z + globalBufferIndex, this->coreDataNum);
+    yGm.SetGlobalBuffer((__gm__ TYPE_Y*)y + globalBufferIndex, this->coreDataNum);
+    dyGm.SetGlobalBuffer((__gm__ TYPE_Y*)dy + globalBufferIndex, this->coreDataNum);
+    zGm.SetGlobalBuffer((__gm__ TYPE_Y*)z + globalBufferIndex, this->coreDataNum);
     if constexpr (!std::is_same_v<TYPE_Y, int32_t>) {
         pipe.InitBuffer(inQueueY, BUFFER_NUM, this->tileDataNum * sizeof(TYPE_Y));
         pipe.InitBuffer(inQueueDY, BUFFER_NUM, this->tileDataNum * sizeof(TYPE_Y));
@@ -98,7 +102,7 @@ __aicore__ inline void KernelRsqrtGrad<TYPE_Y>::Init(GM_ADDR y, GM_ADDR dy, GM_A
         pipe.InitBuffer(tmpQueue4, this->tileDataNum * sizeof(int32_t));
     } else if constexpr (std::is_same_v<TYPE_Y, half> || std::is_same_v<TYPE_Y, bfloat16_t>) {
         pipe.InitBuffer(tmpQueue0, this->tileDataNum * sizeof(float));
-        pipe.InitBuffer(tmpQueue1, this->tileDataNum * sizeof(float));        
+        pipe.InitBuffer(tmpQueue1, this->tileDataNum * sizeof(float));
     }
 }
 
@@ -123,7 +127,7 @@ __aicore__ inline void KernelRsqrtGrad<TYPE_Y>::CopyOut(int32_t progress)
 
 template <typename TYPE_Y>
 __aicore__ inline void KernelRsqrtGrad<TYPE_Y>::Compute(int32_t progress)
-{    
+{
     if constexpr (std::is_same_v<TYPE_Y, float>) {
         AscendC::LocalTensor<float> yLocal = inQueueY.DeQue<float>();
         AscendC::LocalTensor<float> dyLocal = inQueueDY.DeQue<float>();
@@ -156,7 +160,7 @@ __aicore__ inline void KernelRsqrtGrad<TYPE_Y>::Compute(int32_t progress)
         inQueueY.FreeTensor(yLocal);
         inQueueDY.FreeTensor(dyLocal);
     } else {
-        //int8类型处理分支
+        // int8类型处理分支
         AscendC::LocalTensor<int8_t> yLocal = inQueueY.DeQue<int8_t>();
         AscendC::LocalTensor<int8_t> dyLocal = inQueueDY.DeQue<int8_t>();
         AscendC::LocalTensor<int8_t> zLocal = outQueueZ.AllocTensor<int8_t>();
@@ -177,21 +181,21 @@ __aicore__ inline void KernelRsqrtGrad<TYPE_Y>::Compute(int32_t progress)
         AscendC::Cast(tmp3Local, tmp2Local, AscendC::RoundMode::CAST_TRUNC, this->processDataNum);
         AscendC::Duplicate(tmp4Local, static_cast<int32_t>(255), this->processDataNum);
         AscendC::And(tmp3Local, tmp3Local, tmp4Local, this->processDataNum);
-        AscendC::Cast(tmp1Local, tmp3Local, AscendC::RoundMode::CAST_NONE, this->processDataNum); 
-        //uint8_int8_overflow_proc 
+        AscendC::Cast(tmp1Local, tmp3Local, AscendC::RoundMode::CAST_NONE, this->processDataNum);
+        // uint8_int8_overflow_proc
         AscendC::Adds(tmp2Local, tmp1Local, static_cast<float>(128.0), this->processDataNum);
-        //tensormodint  tmpscalar=1/256=0.00390625 
+        // tensormodint  tmpscalar=1/256=0.00390625
         AscendC::Muls(tmp2Local, tmp2Local, static_cast<float>(0.00390625), this->processDataNum);
         AscendC::Cast(tmp4Local, tmp2Local, AscendC::RoundMode::CAST_FLOOR, this->processDataNum);
-        AscendC::Duplicate(tmp3Local, static_cast<int32_t>(128), this->processDataNum); 
+        AscendC::Duplicate(tmp3Local, static_cast<int32_t>(128), this->processDataNum);
         AscendC::Mul(tmp4Local, tmp4Local, tmp3Local, this->processDataNum);
-        AscendC::Cast(tmp2Local, tmp4Local, AscendC::RoundMode::CAST_NONE, this->processDataNum);        
+        AscendC::Cast(tmp2Local, tmp4Local, AscendC::RoundMode::CAST_NONE, this->processDataNum);
         AscendC::Sub(tmp2Local, tmp1Local, tmp2Local, this->processDataNum);
-        //tensormodint end 
+        // tensormodint end
         AscendC::Adds(tmp2Local, tmp2Local, static_cast<float>(-128.0), this->processDataNum);
         AscendC::Cast(tmp0Local, tmp2Local, AscendC::RoundMode::CAST_NONE, this->processDataNum);
         AscendC::Cast(zLocal, tmp0Local, AscendC::RoundMode::CAST_TRUNC, this->processDataNum);
-        //uint8_int8_overflow_proc end
+        // uint8_int8_overflow_proc end
         outQueueZ.EnQue<int8_t>(zLocal);
         inQueueY.FreeTensor(yLocal);
         inQueueDY.FreeTensor(dyLocal);

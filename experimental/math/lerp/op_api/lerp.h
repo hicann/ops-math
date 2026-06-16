@@ -21,4 +21,4 @@ namespace l0op {
 const aclTensor* Lerp(const aclTensor* self, const aclTensor* other, const aclTensor* weight, aclOpExecutor* executor);
 }
 
-#endif  // OP_API_INC_LEVEL0_OP_LERP_OP_H_
+#endif // OP_API_INC_LEVEL0_OP_LERP_OP_H_

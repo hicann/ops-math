@@ -27,10 +27,7 @@ OP_TYPE_REGISTER(AddMatMatElements);
 
 // Ascend950（DAV_3510）支持的 dtype
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT16,
-    DataType::DT_FLOAT,
-    DataType::DT_BF16
-};
+    DataType::DT_FLOAT16, DataType::DT_FLOAT, DataType::DT_BF16};
 
 static bool IsAiCoreSupport(const aclTensor* a)
 {
@@ -50,22 +47,13 @@ static bool AddMatMatElementsInferShape(const op::Shape& aShape, op::Shape& outS
 }
 
 static const aclTensor* AddMatMatElementsAiCore(
-    const aclTensor* a,
-    const aclTensor* b,
-    const aclTensor* c,
-    float            alpha,
-    float            beta,
-    const aclTensor* out,
-    aclOpExecutor*   executor)
+    const aclTensor* a, const aclTensor* b, const aclTensor* c, float alpha, float beta, const aclTensor* out,
+    aclOpExecutor* executor)
 {
     L0_DFX(AddMatMatElementsAiCore, a, b, c, out);
 
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(AddMatMatElements,
-        OP_INPUT(a, b, c), OP_OUTPUT(out), OP_ATTR(alpha, beta));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS,
-        OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AddMatMatElementsAiCore failed."),
-        return nullptr);
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(AddMatMatElements, OP_INPUT(a, b, c), OP_OUTPUT(out), OP_ATTR(alpha, beta));
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AddMatMatElementsAiCore failed."), return nullptr);
     return out;
 }
 
@@ -79,12 +67,7 @@ static const aclTensor* AddMatMatElementsAiCore(
  *   4. AiCore      - 调用 Kernel
  */
 const aclTensor* AddMatMatElements(
-    const aclTensor* a,
-    const aclTensor* b,
-    const aclTensor* c,
-    float            alpha,
-    float            beta,
-    aclOpExecutor*   executor)
+    const aclTensor* a, const aclTensor* b, const aclTensor* c, float alpha, float beta, aclOpExecutor* executor)
 {
     Shape outShape;
     if (!AddMatMatElementsInferShape(a->GetViewShape(), outShape)) {
@@ -93,9 +76,9 @@ const aclTensor* AddMatMatElements(
     }
 
     if (!IsAiCoreSupport(a)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AddMatMatElements: AiCore not supported for dtype=%d.",
-                static_cast<int>(a->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "AddMatMatElements: AiCore not supported for dtype=%d.",
+            static_cast<int>(a->GetDataType()));
         return nullptr;
     }
 
@@ -108,4 +91,4 @@ const aclTensor* AddMatMatElements(
     return AddMatMatElementsAiCore(a, b, c, alpha, beta, out, executor);
 }
 
-}  // namespace l0op
+} // namespace l0op

@@ -37,41 +37,36 @@ static bool IsAiCoreSupport(const aclTensor* x1, const aclTensor* x2)
            CheckType(x2->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
 }
 
-static const aclTensor* ApproximateEqualAiCore(const aclTensor* x1,
-                                               const aclTensor* x2,
-                                               const aclTensor* out,
-                                               float             tolerance,
-                                               aclOpExecutor*    executor)
+static const aclTensor* ApproximateEqualAiCore(
+    const aclTensor* x1, const aclTensor* x2, const aclTensor* out, float tolerance, aclOpExecutor* executor)
 {
     L0_DFX(ApproximateEqualAiCore, x1, x2, out, tolerance);
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(ApproximateEqual,
-        OP_INPUT(x1, x2), OP_OUTPUT(out), OP_ATTR(tolerance));
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(ApproximateEqual, OP_INPUT(x1, x2), OP_OUTPUT(out), OP_ATTR(tolerance));
     OP_CHECK(
-        ret == ACLNN_SUCCESS,
-        OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ApproximateEqualAiCore launch failed."),
+        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ApproximateEqualAiCore launch failed."),
         return nullptr);
     return out;
 }
 
-const aclTensor* ApproximateEqual(const aclTensor* x1,
-                                  const aclTensor* x2,
-                                  float             tolerance,
-                                  aclOpExecutor*    executor)
+const aclTensor* ApproximateEqual(const aclTensor* x1, const aclTensor* x2, float tolerance, aclOpExecutor* executor)
 {
     // y shape equals x1 shape (no broadcast).
     Shape outShape = x1->GetViewShape();
 
     if (!IsAiCoreSupport(x1, x2)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "ApproximateEqual not supported: x1 dtype=%d, x2 dtype=%d (allowed: FLOAT / FLOAT16 / BF16).",
-                static_cast<int>(x1->GetDataType()), static_cast<int>(x2->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID,
+            "ApproximateEqual not supported: x1 dtype=%d, x2 dtype=%d (allowed: FLOAT / FLOAT16 / BF16).",
+            static_cast<int>(x1->GetDataType()), static_cast<int>(x2->GetDataType()));
         return nullptr;
     }
 
     const aclTensor* out = executor->AllocTensor(outShape, DataType::DT_BOOL);
-    if (out == nullptr) { return nullptr; }
+    if (out == nullptr) {
+        return nullptr;
+    }
 
     return ApproximateEqualAiCore(x1, x2, out, tolerance, executor);
 }
 
-}  // namespace l0op
+} // namespace l0op

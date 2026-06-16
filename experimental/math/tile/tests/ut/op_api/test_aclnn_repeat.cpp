@@ -25,15 +25,9 @@
 
 class l2_repeat_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_repeat_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "l2_repeat_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "l2_repeat_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "l2_repeat_test TearDown" << endl; }
 };
 
 TEST_F(l2_repeat_test, case_01_float_2d)

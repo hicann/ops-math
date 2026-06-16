@@ -28,25 +28,25 @@
 using namespace ge;
 
 namespace ops {
-    static constexpr int64_t IDX_0 = 0;
-    
-    static ge::graphStatus InferShapeSquareV2(gert::InferShapeContext* context)
-    {
-        OP_LOGD(context->GetNodeName(), "Begin to do InferShapeSquareV2");
-    
-        // get input shapes
-        const gert::Shape* xShape = context->GetInputShape(IDX_0);
-        OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
-    
-        // get output shapes
-        gert::Shape* zShape = context->GetOutputShape(IDX_0);
-        OP_CHECK_NULL_WITH_CONTEXT(context, zShape);
-    
-        *zShape = *xShape;
-    
-        OP_LOGD(context->GetNodeName(), "End to do InferShapeSquareV2");
-        return GRAPH_SUCCESS;
-    }
-    
-    IMPL_OP_INFERSHAPE(SquareV2).InferShape(InferShapeSquareV2);
-    } // namespace ops
+static constexpr int64_t IDX_0 = 0;
+
+static ge::graphStatus InferShapeSquareV2(gert::InferShapeContext* context)
+{
+    OP_LOGD(context->GetNodeName(), "Begin to do InferShapeSquareV2");
+
+    // get input shapes
+    const gert::Shape* xShape = context->GetInputShape(IDX_0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
+
+    // get output shapes
+    gert::Shape* zShape = context->GetOutputShape(IDX_0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, zShape);
+
+    *zShape = *xShape;
+
+    OP_LOGD(context->GetNodeName(), "End to do InferShapeSquareV2");
+    return GRAPH_SUCCESS;
+}
+
+IMPL_OP_INFERSHAPE(SquareV2).InferShape(InferShapeSquareV2);
+} // namespace ops

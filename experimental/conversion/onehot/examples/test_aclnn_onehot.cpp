@@ -109,16 +109,16 @@ int main()
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     aclTensor* out = nullptr;
     void* outDeviceAddr = nullptr;
-    std::vector<int64_t> outShape = {72, 123,47};
+    std::vector<int64_t> outShape = {72, 123, 47};
     std::vector<int32_t> outHostData(416232, 1);
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_INT32, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 3. 调用CANN算子库API，需要修改为具体的Api名称
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
-    int32_t depth=47;
+    int32_t depth = 47;
     // 4. 调用aclnnOnehot第一段接口
-    ret = aclnnOnehotGetWorkspaceSize(selfX,depth, out, &workspaceSize, &executor);
+    ret = aclnnOnehotGetWorkspaceSize(selfX, depth, out, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnOnehotGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 根据第一段接口计算出的workspaceSize申请device内存

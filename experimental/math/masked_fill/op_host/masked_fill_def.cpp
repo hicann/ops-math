@@ -31,21 +31,30 @@ public:
     {
         this->Input("x")
             .ParamType(REQUIRED)
-            .DataType({ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_DOUBLE, ge::DT_UINT8, ge::DT_UINT16, ge::DT_UINT32, ge::DT_UINT64, ge::DT_INT8, ge::DT_INT16, ge::DT_INT32, ge::DT_INT64})
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
-        this->Input("mask")
-            .ParamType(REQUIRED)
-            .DataTypeList({ge::DT_BOOL})
-            .FormatList({ge::FORMAT_ND});
+            .DataType(
+                {ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_DOUBLE, ge::DT_UINT8, ge::DT_UINT16, ge::DT_UINT32,
+                 ge::DT_UINT64, ge::DT_INT8, ge::DT_INT16, ge::DT_INT32, ge::DT_INT64})
+            .Format(
+                {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
+        this->Input("mask").ParamType(REQUIRED).DataTypeList({ge::DT_BOOL}).FormatList({ge::FORMAT_ND});
         this->Input("value")
             .Scalar()
             .ParamType(REQUIRED)
-            .DataType({ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_DOUBLE, ge::DT_UINT8, ge::DT_UINT16, ge::DT_UINT32, ge::DT_UINT64, ge::DT_INT8, ge::DT_INT16, ge::DT_INT32, ge::DT_INT64})
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
+            .DataType(
+                {ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_DOUBLE, ge::DT_UINT8, ge::DT_UINT16, ge::DT_UINT32,
+                 ge::DT_UINT64, ge::DT_INT8, ge::DT_INT16, ge::DT_INT32, ge::DT_INT64})
+            .Format(
+                {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
         this->Output("z")
             .ParamType(REQUIRED)
-            .DataType({ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_DOUBLE, ge::DT_UINT8, ge::DT_UINT16, ge::DT_UINT32, ge::DT_UINT64, ge::DT_INT8, ge::DT_INT16, ge::DT_INT32, ge::DT_INT64})
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
+            .DataType(
+                {ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_DOUBLE, ge::DT_UINT8, ge::DT_UINT16, ge::DT_UINT32,
+                 ge::DT_UINT64, ge::DT_INT8, ge::DT_INT16, ge::DT_INT32, ge::DT_INT64})
+            .Format(
+                {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
 
         OpAICoreConfig aicoreConfig;
         aicoreConfig.DynamicCompileStaticFlag(true)
@@ -54,12 +63,13 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
-            .ExtendCfgInfo("opFile.value", "masked_fill");    // 这里制定的值会对应到kernel入口文件名.cpp
-        this->AICore().AddConfig("ascend910b", aicoreConfig)
-                      .AddConfig("ascend910", aicoreConfig)
-                      .AddConfig("ascend310b", aicoreConfig)
-                      .AddConfig("ascend310p", aicoreConfig); 
+            .ExtendCfgInfo("opFile.value", "masked_fill"); // 这里制定的值会对应到kernel入口文件名.cpp
+        this->AICore()
+            .AddConfig("ascend910b", aicoreConfig)
+            .AddConfig("ascend910", aicoreConfig)
+            .AddConfig("ascend310b", aicoreConfig)
+            .AddConfig("ascend310p", aicoreConfig);
     }
 };
 OP_ADD(MaskedFill);
-}
+} // namespace ops

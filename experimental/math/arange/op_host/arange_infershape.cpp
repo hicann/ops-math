@@ -23,7 +23,7 @@ static ge::graphStatus InferShapeArange(gert::InferShapeContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Begin to do InferShapeArange");
 
-    gert::Shape *y_shape = context->GetOutputShape(0);
+    gert::Shape* y_shape = context->GetOutputShape(0);
     y_shape->SetDimNum(1);
     y_shape->SetDim(0, -1);
 

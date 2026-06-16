@@ -39,8 +39,7 @@ constexpr uint32_t BLOCK_SIZE = 32;
 template <typename TYPE_X>
 class KernelEqual {
 public:
-    __aicore__ inline KernelEqual()
-    {}
+    __aicore__ inline KernelEqual() {}
     __aicore__ inline void Init(
         GM_ADDR x1, GM_ADDR x2, GM_ADDR y, uint32_t smallCoreDataNum, uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
         uint32_t finalSmallTileNum, uint32_t tileDataNum, uint32_t smallTailDataNum, uint32_t bigTailDataNum,

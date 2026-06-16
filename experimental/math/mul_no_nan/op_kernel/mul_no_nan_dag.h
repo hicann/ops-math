@@ -24,7 +24,8 @@
  * x (GM) -> CopyInBrc --------\
  *                              -> Mul(x, y) -> mulResult -----\
  * y (GM) -> CopyInBrc --------/                                 \
- *                    |                                           -> Select(mask, mulResult, 0_scalar) -> CopyOut -> z (GM)
+ *                    |                                           -> Select(mask, mulResult, 0_scalar) -> CopyOut -> z
+ * (GM)
  *                    +-> Compare(y, 0, NE) -> mask (bit=1:y!=0) /
  */
 
@@ -79,4 +80,4 @@ struct MulNoNanCompute {
 
 } // namespace NsMulNoNan
 
-#endif  // MUL_NO_NAN_DAG_H
+#endif // MUL_NO_NAN_DAG_H

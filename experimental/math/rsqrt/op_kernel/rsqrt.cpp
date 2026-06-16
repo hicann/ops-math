@@ -23,11 +23,10 @@ __global__ __aicore__ void rsqrt(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADD
     REGISTER_TILING_DEFAULT(RsqrtTilingData);
     GET_TILING_DATA_WITH_STRUCT(RsqrtTilingData, tiling_data, tiling);
 
-    KernelRsqrt<DTYPE_X>  op;
-    op.Init(x, y,tiling_data.smallCoreDataNum, 
-        tiling_data.bigCoreDataNum, tiling_data.finalBigTileNum, 
-        tiling_data.finalSmallTileNum, tiling_data.tileDataNum, 
-        tiling_data.smallTailDataNum, tiling_data.bigTailDataNum, 
-        tiling_data.tailBlockNum);  
+    KernelRsqrt<DTYPE_X> op;
+    op.Init(
+        x, y, tiling_data.smallCoreDataNum, tiling_data.bigCoreDataNum, tiling_data.finalBigTileNum,
+        tiling_data.finalSmallTileNum, tiling_data.tileDataNum, tiling_data.smallTailDataNum,
+        tiling_data.bigTailDataNum, tiling_data.tailBlockNum);
     op.Process();
 }

@@ -45,10 +45,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./bitwise_and_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "bitwise_and_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "bitwise_and_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;

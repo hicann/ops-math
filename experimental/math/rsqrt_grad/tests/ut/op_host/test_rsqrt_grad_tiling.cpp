@@ -21,15 +21,9 @@ using namespace optiling;
 
 class RsqrtGradTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "RsqrtGradTiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "RsqrtGradTiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "RsqrtGradTiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "RsqrtGradTiling TearDown " << endl; }
 };
 
 TEST_F(RsqrtGradTiling, ascend910_test_tiling_FLOAT_001)

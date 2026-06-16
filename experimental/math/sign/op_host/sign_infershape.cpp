@@ -11,7 +11,7 @@
 /*!
  * \file sign_infershape.cpp
  * \brief
-*/
+ */
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 
@@ -39,4 +39,4 @@ static ge::graphStatus InferShapeSign(gert::InferShapeContext* context)
 }
 
 IMPL_OP_INFERSHAPE(Sign).InferShape(InferShapeSign);
-}
+} // namespace ops

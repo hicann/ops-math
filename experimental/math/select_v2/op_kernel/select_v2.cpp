@@ -11,21 +11,24 @@
 /*!
  * \file select_v2.cpp
  * \brief
-*/
+ */
 
 #include "select_v2.h"
 
-enum class SelectV2TilingKey : uint32_t
-{
+enum class SelectV2TilingKey : uint32_t {
     TILING_KEY_EXAMPLE_FLOAT = 0,
     TILING_KEY_EXAMPLE_OTHER = 1,
 };
 template <uint32_t schMode>
-__global__ __aicore__ void select_v2(GM_ADDR condition, GM_ADDR self, GM_ADDR other, GM_ADDR out, GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void select_v2(
+    GM_ADDR condition, GM_ADDR self, GM_ADDR other, GM_ADDR out, GM_ADDR workspace, GM_ADDR tiling)
 {
-     REGISTER_TILING_DEFAULT(SelectV2TilingData);
-     GET_TILING_DATA_WITH_STRUCT(SelectV2TilingData, tilingData, tiling);
-     MySelectV2::KernelSelectV2<DTYPE_SELF, DTYPE_OUT> op; 
-     op.Init(condition, self, other, out, tilingData.smallCoreDataNum,tilingData.bigCoreDataNum, tilingData.finalBigTileNum,tilingData.finalSmallTileNum, tilingData.tileDataNum,tilingData.smallTailDataNum, tilingData.bigTailDataNum,tilingData.tailBlockNum);      // 算子kernel实例初始化
-     op.Process();                       
+    REGISTER_TILING_DEFAULT(SelectV2TilingData);
+    GET_TILING_DATA_WITH_STRUCT(SelectV2TilingData, tilingData, tiling);
+    MySelectV2::KernelSelectV2<DTYPE_SELF, DTYPE_OUT> op;
+    op.Init(
+        condition, self, other, out, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.finalBigTileNum,
+        tilingData.finalSmallTileNum, tilingData.tileDataNum, tilingData.smallTailDataNum, tilingData.bigTailDataNum,
+        tilingData.tailBlockNum); // 算子kernel实例初始化
+    op.Process();
 }

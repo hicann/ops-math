@@ -22,13 +22,17 @@ __global__ __aicore__ void sign_bits_unpack(GM_ADDR self, GM_ADDR out, GM_ADDR w
     GET_TILING_DATA_WITH_STRUCT(SignBitsUnpackTilingData, tilingData, tiling);
     if (TILING_KEY_IS(1)) {
         NsSignBitsUnpack::KernelSignBitsUnpack<half> op; // 算子kernel实例获取
-        op.Init(self, out, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.finalBigTileNum, tilingData.finalSmallTileNum, tilingData.tileDataNum,
-           tilingData.smallTailDataNum, tilingData.bigTailDataNum, tilingData.tailBlockNum, tilingData.bufferOpen);
+        op.Init(
+            self, out, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.finalBigTileNum,
+            tilingData.finalSmallTileNum, tilingData.tileDataNum, tilingData.smallTailDataNum,
+            tilingData.bigTailDataNum, tilingData.tailBlockNum, tilingData.bufferOpen);
         op.Process();
     } else {
         NsSignBitsUnpack::KernelSignBitsUnpack<float> op; // 算子kernel实例获取
-        op.Init(self, out, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.finalBigTileNum, tilingData.finalSmallTileNum, tilingData.tileDataNum,
-            tilingData.smallTailDataNum, tilingData.bigTailDataNum, tilingData.tailBlockNum, tilingData.bufferOpen);
+        op.Init(
+            self, out, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.finalBigTileNum,
+            tilingData.finalSmallTileNum, tilingData.tileDataNum, tilingData.smallTailDataNum,
+            tilingData.bigTailDataNum, tilingData.tailBlockNum, tilingData.bufferOpen);
         op.Process();
     }
 }

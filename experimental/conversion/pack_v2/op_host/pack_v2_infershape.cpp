@@ -21,7 +21,7 @@
 /*!
  * \file pack_v2_infer.cpp
  * \brief
-*/
+ */
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 
@@ -52,7 +52,7 @@ static ge::graphStatus InferShapePackV2(gert::InferShapeContext* context)
         }
         yShape->SetDim(i, dim);
     }
-    
+
     OP_LOGD(context->GetNodeName(), "End to do InferShapePackV2");
     return GRAPH_SUCCESS;
 }

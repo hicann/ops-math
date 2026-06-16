@@ -18,27 +18,25 @@
 using namespace NsAddcdiv;
 
 template <uint32_t schMode>
-__global__ __aicore__ void addcdiv(GM_ADDR input_data, GM_ADDR x1, GM_ADDR x2, GM_ADDR value, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void addcdiv(
+    GM_ADDR input_data, GM_ADDR x1, GM_ADDR x2, GM_ADDR value, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(AddcdivTilingData);
     GET_TILING_DATA_WITH_STRUCT(AddcdivTilingData, tiling_data, tiling);
 
-    if(TILING_KEY_IS(0)){
+    if (TILING_KEY_IS(0)) {
         KernelAddcdiv<DTYPE_X1> op;
-        op.Init(input_data, x1, x2, value, y, tiling_data.smallCoreDataNum,
-                tiling_data.bigCoreDataNum, tiling_data.finalBigTileNum,
-                tiling_data.finalSmallTileNum, tiling_data.tileDataNum,
-                tiling_data.smallTailDataNum, tiling_data.bigTailDataNum,
-                tiling_data.tailBlockNum);
+        op.Init(
+            input_data, x1, x2, value, y, tiling_data.smallCoreDataNum, tiling_data.bigCoreDataNum,
+            tiling_data.finalBigTileNum, tiling_data.finalSmallTileNum, tiling_data.tileDataNum,
+            tiling_data.smallTailDataNum, tiling_data.bigTailDataNum, tiling_data.tailBlockNum);
         op.Process();
-    }
-    else if(TILING_KEY_IS(1)){
+    } else if (TILING_KEY_IS(1)) {
         KernelAddcdivTensor<DTYPE_X1> op;
-        op.Init(input_data, x1, x2, value, y, tiling_data.smallCoreDataNum,
-                tiling_data.bigCoreDataNum, tiling_data.finalBigTileNum,
-                tiling_data.finalSmallTileNum, tiling_data.tileDataNum,
-                tiling_data.smallTailDataNum, tiling_data.bigTailDataNum,
-                tiling_data.tailBlockNum);
+        op.Init(
+            input_data, x1, x2, value, y, tiling_data.smallCoreDataNum, tiling_data.bigCoreDataNum,
+            tiling_data.finalBigTileNum, tiling_data.finalSmallTileNum, tiling_data.tileDataNum,
+            tiling_data.smallTailDataNum, tiling_data.bigTailDataNum, tiling_data.tailBlockNum);
         op.Process();
     }
 }

@@ -31,11 +31,11 @@ public:
     {
         this->Input("x1")                                       // 输入x1定义
             .ParamType(REQUIRED)                                // 必选输入
-            .DataType({ge::DT_FLOAT, ge::DT_FLOAT16})             // 支持数据类型
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT16})           // 支持数据类型
             .Format({ge::FORMAT_ND, ge::FORMAT_ND})             // 支持format格式
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND}) // 未确定大小shape对应format格式
             .AutoContiguous();                                  // 内存自动连续化
-        this->Output("y") // 输出y定义
+        this->Output("y")                                       // 输出y定义
             .ParamType(REQUIRED)
             .DataType({ge::DT_FLOAT, ge::DT_FLOAT16})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND})
@@ -49,7 +49,7 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
-            .ExtendCfgInfo("opFile.value", "log1p_v2");    // 这里制定的值会对应到kernel入口文件名.cpp
+            .ExtendCfgInfo("opFile.value", "log1p_v2");       // 这里制定的值会对应到kernel入口文件名.cpp
         this->AICore().AddConfig("ascend910b", aicoreConfig); // 其他的soc版本补充部分配置项
     }
 };

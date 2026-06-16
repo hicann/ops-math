@@ -22,10 +22,10 @@
 
 namespace optiling {
 
-using Ops::Base::CeilDiv;
 using Ops::Base::CeilAlign;
-using Ops::Base::FloorDiv;
+using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
@@ -33,7 +33,8 @@ constexpr int64_t MIN_SPLIT_THRESHOLD = 1024;
 
 static const gert::Shape g_vec_1_shape = {1};
 
-static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape) {
+static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape)
+{
     if (in_shape.GetDimNum() == 0) {
         return g_vec_1_shape;
     }
@@ -43,12 +44,18 @@ static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape) {
 static inline int64_t GetDtypeSize(ge::DataType dataType)
 {
     switch (dataType) {
-        case ge::DT_FLOAT: return 4;
-        case ge::DT_FLOAT16: return 2;
-        case ge::DT_INT32: return 4;
-        case ge::DT_INT8: return 1;
-        case ge::DT_UINT8: return 1;
-        default: return 4;
+        case ge::DT_FLOAT:
+            return 4;
+        case ge::DT_FLOAT16:
+            return 2;
+        case ge::DT_INT32:
+            return 4;
+        case ge::DT_INT8:
+            return 1;
+        case ge::DT_UINT8:
+            return 1;
+        default:
+            return 4;
     }
 }
 
@@ -87,8 +94,7 @@ static ge::graphStatus AccumulateNv2V2TilingFunc(gert::TilingContext* context)
     uint64_t ubSize;
     int64_t coreNum;
     OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"),
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
         return ge::GRAPH_FAILED);
 
     // 2. 获取动态输入个数 N (通过 REQUIRED_ATTR N 或 ComputeNodeInputNum)
@@ -108,8 +114,7 @@ static ge::graphStatus AccumulateNv2V2TilingFunc(gert::TilingContext* context)
 
     // 5. 获取 workspace
     OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"),
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
         return ge::GRAPH_FAILED);
 
     // 6. 多核切分
@@ -123,9 +128,7 @@ static ge::graphStatus AccumulateNv2V2TilingFunc(gert::TilingContext* context)
     // Use double buffer for large tensors
     uint64_t useDoubleBuffer = (totalNum > MIN_SPLIT_THRESHOLD) ? 1 : 0;
     int64_t bufferNum = useDoubleBuffer ? 6 : 3;
-    int64_t ubFactor = FloorAlign(
-        FloorDiv(static_cast<int64_t>(usableUbSize) / typeSize, bufferNum),
-        ubBlockSize);
+    int64_t ubFactor = FloorAlign(FloorDiv(static_cast<int64_t>(usableUbSize) / typeSize, bufferNum), ubBlockSize);
 
     // 8. 填充 TilingData
     AccumulateNv2V2TilingData* tiling = context->GetTilingData<AccumulateNv2V2TilingData>();

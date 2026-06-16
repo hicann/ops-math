@@ -11,10 +11,10 @@
 /*!
  * \file tanh_grad_tiling_data.h
  * \brief tiling data struct
-*/
+ */
 #ifndef TANH_GRAD_TILING_DATA_H_
 #define TANH_GRAD_TILING_DATA_H_
-struct TanhGradTilingData{
+struct TanhGradTilingData {
     uint64_t smallCoreDataNum;  // 小核（小任务）处理的数据量
     uint64_t bigCoreDataNum;    // 大核（大任务）处理的数据量
     uint64_t finalBigTileNum;   // 大核的 tile 数量
@@ -23,5 +23,5 @@ struct TanhGradTilingData{
     uint64_t smallTailDataNum;  // 小核尾部剩余数据量
     uint64_t bigTailDataNum;    // 大核尾部剩余数据量
     uint64_t tailBlockNum;      // 处理尾部数据的核心数
-} ;
+};
 #endif

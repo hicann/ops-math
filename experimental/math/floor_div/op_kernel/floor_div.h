@@ -22,8 +22,8 @@
 
 namespace NsFloorDiv {
 
-using namespace AscendC;    
-    
+using namespace AscendC;
+
 constexpr int32_t BUFFER_NUM = 2;
 template <typename T, typename V>
 class FloorDiv {
@@ -62,16 +62,16 @@ __aicore__ inline void FloorDiv<T, V>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, con
     uint32_t coreNum = AscendC::GetBlockIdx();
     uint32_t globalBufferIndex = tilingData->bigCoreDataNum * AscendC::GetBlockIdx();
     this->tileDataNum = tilingData->tileDataNum;
-    if (coreNum < tilingData->tailBlockNum) { 
-      this->coreDataNum = tilingData->bigCoreDataNum;
-      this->tileNum = tilingData->finalBigTileNum;
-      this->tailDataNum = tilingData->bigTailDataNum;
-    }
-    else { 
-      this->coreDataNum = tilingData->smallCoreDataNum;
-      this->tileNum = tilingData->finalSmallTileNum;
-      this->tailDataNum = tilingData->smallTailDataNum;
-      globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (AscendC::GetBlockIdx() - tilingData->tailBlockNum);
+    if (coreNum < tilingData->tailBlockNum) {
+        this->coreDataNum = tilingData->bigCoreDataNum;
+        this->tileNum = tilingData->finalBigTileNum;
+        this->tailDataNum = tilingData->bigTailDataNum;
+    } else {
+        this->coreDataNum = tilingData->smallCoreDataNum;
+        this->tileNum = tilingData->finalSmallTileNum;
+        this->tailDataNum = tilingData->smallTailDataNum;
+        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) *
+                             (AscendC::GetBlockIdx() - tilingData->tailBlockNum);
     }
     inputGMX.SetGlobalBuffer((__gm__ T*)x + globalBufferIndex, this->coreDataNum);
     inputGMY.SetGlobalBuffer((__gm__ T*)y + globalBufferIndex, this->coreDataNum);
@@ -117,8 +117,8 @@ __aicore__ inline void FloorDiv<T, V>::Compute(int32_t progress)
     if constexpr (std::is_same_v<T, float>) { // Float32
         AscendC::Div(xLocal, xLocal, yLocal, this->processDataNum);
         AscendC::Floor(zLocal, xLocal, this->processDataNum);
-    } else if constexpr (std::is_same_v<DTYPE_X1, int8_t> || std::is_same_v<DTYPE_X1, uint8_t>){ // 处理int8和uint8分支
-        AscendC::LocalTensor<V> xHalf = tmp0.Get<V>(); // 转换为V类型
+    } else if constexpr (std::is_same_v<DTYPE_X1, int8_t> || std::is_same_v<DTYPE_X1, uint8_t>) { // 处理int8和uint8分支
+        AscendC::LocalTensor<V> xHalf = tmp0.Get<V>();                                            // 转换为V类型
         AscendC::LocalTensor<V> yHalf = tmp1.Get<V>();
 
         AscendC::LocalTensor<float> xFloat = tmp2.Get<float>(); // 转换为float类型
@@ -134,12 +134,11 @@ __aicore__ inline void FloorDiv<T, V>::Compute(int32_t progress)
         // 进行floorDiv计算
         AscendC::Div(xFloat, xFloat, yFloat, this->processDataNum);
         AscendC::Floor(yFloat, xFloat, this->processDataNum);
-        
+
         // 转回float->half->int8/uint8
         AscendC::Cast(yHalf, yFloat, AscendC::RoundMode::CAST_FLOOR, this->processDataNum);
         AscendC::Cast(zLocal, yHalf, AscendC::RoundMode::CAST_FLOOR, this->processDataNum);
     } else {
-        
         AscendC::LocalTensor<V> xFloat = tmp0.Get<V>(); // 转换为V类型，可能为half或float
         AscendC::LocalTensor<V> yFloat = tmp1.Get<V>();
 
@@ -167,9 +166,9 @@ __aicore__ inline void FloorDiv<T, V>::Process()
         CopyOut(i);
     }
     this->processDataNum = this->tailDataNum;
-    CopyIn(loopCount-1);
-    Compute(loopCount-1);
-    CopyOut(loopCount-1);
+    CopyIn(loopCount - 1);
+    Compute(loopCount - 1);
+    CopyOut(loopCount - 1);
 }
 } // namespace NsFloorDiv
 #endif // FloorDiv_H

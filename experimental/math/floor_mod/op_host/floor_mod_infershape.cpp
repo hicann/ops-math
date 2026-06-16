@@ -11,7 +11,7 @@
 /*!
  * \file floor_mod_infer.cpp
  * \brief
-*/
+ */
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 
@@ -23,7 +23,7 @@ static constexpr int64_t IDX_0 = 0;
 static ge::graphStatus InferShape4FloorMod(gert::InferShapeContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Begin to do InferShape4FloorMod");
-    
+
     // get input shapes
     const gert::Shape* xShape = context->GetInputShape(IDX_0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
@@ -39,4 +39,4 @@ static ge::graphStatus InferShape4FloorMod(gert::InferShapeContext* context)
 }
 
 IMPL_OP_INFERSHAPE(FloorMod).InferShape(InferShape4FloorMod);
-}
+} // namespace ops

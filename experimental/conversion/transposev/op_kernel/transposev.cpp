@@ -34,7 +34,7 @@ __global__ __aicore__ void transposev(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR w
 {
     REGISTER_TILING_DEFAULT(TransposevTilingData);
     GET_TILING_DATA_WITH_STRUCT(TransposevTilingData, tilingData, tiling);
-    NsTransposev::Transposev<DTYPE_X, DTYPE_PERM> op; 
-    op.Init(x, y, z, &tilingData);      
-    op.Process();                       
+    NsTransposev::Transposev<DTYPE_X, DTYPE_PERM> op;
+    op.Init(x, y, z, &tilingData);
+    op.Process();
 }

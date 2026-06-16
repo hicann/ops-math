@@ -21,7 +21,7 @@
 /*!
  * \file cosh.h
  * \brief
-*/
+ */
 #ifndef COSH_H
 #define COSH_H
 
@@ -66,27 +66,26 @@ private:
 template <typename T>
 __aicore__ inline void Cosh<T>::Init(GM_ADDR x, GM_ADDR z, const CoshTilingData* tilingData)
 {
-        ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
-        uint32_t coreNum = AscendC::GetBlockIdx();
-        uint32_t globalBufferIndex = tilingData->bigCoreDataNum * AscendC::GetBlockIdx();
-        this->tileDataNum = tilingData->tileDataNum;
-        if (coreNum < tilingData->tailBlockNum) { 
-          this->coreDataNum = tilingData->bigCoreDataNum;
-          this->tileNum = tilingData->finalBigTileNum;
-          this->tailDataNum = tilingData->bigTailDataNum;
-        }
-        else { 
-          this->coreDataNum = tilingData->smallCoreDataNum;
-          this->tileNum = tilingData->finalSmallTileNum;
-          this->tailDataNum = tilingData->smallTailDataNum;
-          globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (AscendC::GetBlockIdx() - tilingData->tailBlockNum);
-        }
-        inputGMX.SetGlobalBuffer((__gm__ T*)x + globalBufferIndex, this->coreDataNum);
-        outputGMZ.SetGlobalBuffer((__gm__ T*)z + globalBufferIndex, this->coreDataNum);
-        pipe.InitBuffer(inputQueueX, BUFFER_NUM, this->tileDataNum * sizeof(T));
-        pipe.InitBuffer(outputQueueZ, BUFFER_NUM, this->tileDataNum * sizeof(T));
-
+    ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
+    uint32_t coreNum = AscendC::GetBlockIdx();
+    uint32_t globalBufferIndex = tilingData->bigCoreDataNum * AscendC::GetBlockIdx();
+    this->tileDataNum = tilingData->tileDataNum;
+    if (coreNum < tilingData->tailBlockNum) {
+        this->coreDataNum = tilingData->bigCoreDataNum;
+        this->tileNum = tilingData->finalBigTileNum;
+        this->tailDataNum = tilingData->bigTailDataNum;
+    } else {
+        this->coreDataNum = tilingData->smallCoreDataNum;
+        this->tileNum = tilingData->finalSmallTileNum;
+        this->tailDataNum = tilingData->smallTailDataNum;
+        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) *
+                             (AscendC::GetBlockIdx() - tilingData->tailBlockNum);
     }
+    inputGMX.SetGlobalBuffer((__gm__ T*)x + globalBufferIndex, this->coreDataNum);
+    outputGMZ.SetGlobalBuffer((__gm__ T*)z + globalBufferIndex, this->coreDataNum);
+    pipe.InitBuffer(inputQueueX, BUFFER_NUM, this->tileDataNum * sizeof(T));
+    pipe.InitBuffer(outputQueueZ, BUFFER_NUM, this->tileDataNum * sizeof(T));
+}
 
 template <typename T>
 __aicore__ inline void Cosh<T>::CopyIn(int32_t progress)
@@ -109,7 +108,7 @@ __aicore__ inline void Cosh<T>::Compute(int32_t progress)
 {
     AscendC::LocalTensor<T> xLocal = inputQueueX.DeQue<T>();
     AscendC::LocalTensor<T> zLocal = outputQueueZ.AllocTensor<T>();
-    T scalar = 0.5;     // cosh(x) = (exp(x) + exp(-x)) / 2，scalar用作除以2
+    T scalar = 0.5; // cosh(x) = (exp(x) + exp(-x)) / 2，scalar用作除以2
     AscendC::Exp(xLocal, xLocal, this->processDataNum);
     PipeBarrier<PIPE_V>();
     AscendC::Reciprocal(zLocal, xLocal, this->processDataNum);

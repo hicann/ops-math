@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
- /**
+/**
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
  */
@@ -44,20 +44,20 @@
 
 namespace NsInv {
 
-using AscendC::TPipe;
-using AscendC::TQue;
-using AscendC::TBuf;
-using AscendC::QuePosition;
-using AscendC::GlobalTensor;
-using AscendC::LocalTensor;
-using AscendC::DataCopyParams;
+using AscendC::Cast;
 using AscendC::DataCopyPad;
 using AscendC::DataCopyPadParams;
-using AscendC::RoundMode;
-using AscendC::GetBlockIdx;
-using AscendC::Cast;
-using AscendC::Duplicate;
+using AscendC::DataCopyParams;
 using AscendC::Div;
+using AscendC::Duplicate;
+using AscendC::GetBlockIdx;
+using AscendC::GlobalTensor;
+using AscendC::LocalTensor;
+using AscendC::QuePosition;
+using AscendC::RoundMode;
+using AscendC::TBuf;
+using AscendC::TPipe;
+using AscendC::TQue;
 
 template <typename T>
 class Inv {
@@ -73,22 +73,18 @@ private:
     __aicore__ inline void CopyOut(int64_t gmOffset, int64_t currentNum);
 
     // float32 direct path: Div(ones, x)
-    __aicore__ inline void ComputeFloat32(LocalTensor<float>& xLocal,
-                                           LocalTensor<float>& yLocal,
-                                           int64_t alignedNum);
+    __aicore__ inline void ComputeFloat32(LocalTensor<float>& xLocal, LocalTensor<float>& yLocal, int64_t alignedNum);
     // Non-float32: Cast -> Div -> Cast
     template <typename SrcT>
-    __aicore__ inline void ComputeWithCast(LocalTensor<SrcT>& xLocal,
-                                            LocalTensor<SrcT>& yLocal,
-                                            int64_t currentNum,
-                                            int64_t alignedNum);
+    __aicore__ inline void ComputeWithCast(
+        LocalTensor<SrcT>& xLocal, LocalTensor<SrcT>& yLocal, int64_t currentNum, int64_t alignedNum);
 
 private:
     TPipe pipe;
     TQue<QuePosition::VECIN, 1> inputQueue;
     TQue<QuePosition::VECOUT, 1> outputQueue;
-    TBuf<QuePosition::VECCALC> tmpBuf1_;    // xFloat32 intermediate / Div result
-    TBuf<QuePosition::VECCALC> tmpBuf2_;    // ones vector
+    TBuf<QuePosition::VECCALC> tmpBuf1_; // xFloat32 intermediate / Div result
+    TBuf<QuePosition::VECCALC> tmpBuf2_; // ones vector
 
     GlobalTensor<T> selfGM_;
     GlobalTensor<T> outGM_;
@@ -165,9 +161,8 @@ __aicore__ inline void Inv<T>::CopyOut(int64_t gmOffset, int64_t currentNum)
 // ComputeFloat32: Direct Div(1.0, x) for float32
 // =============================================================================
 template <typename T>
-__aicore__ inline void Inv<T>::ComputeFloat32(LocalTensor<float>& xLocal,
-                                               LocalTensor<float>& yLocal,
-                                               int64_t alignedNum)
+__aicore__ inline void Inv<T>::ComputeFloat32(
+    LocalTensor<float>& xLocal, LocalTensor<float>& yLocal, int64_t alignedNum)
 {
     LocalTensor<float> ones = tmpBuf2_.template Get<float>();
     Duplicate(ones, 1.0f, static_cast<int32_t>(alignedNum));
@@ -179,10 +174,8 @@ __aicore__ inline void Inv<T>::ComputeFloat32(LocalTensor<float>& xLocal,
 // =============================================================================
 template <typename T>
 template <typename SrcT>
-__aicore__ inline void Inv<T>::ComputeWithCast(LocalTensor<SrcT>& xLocal,
-                                                LocalTensor<SrcT>& yLocal,
-                                                int64_t currentNum,
-                                                int64_t alignedNum)
+__aicore__ inline void Inv<T>::ComputeWithCast(
+    LocalTensor<SrcT>& xLocal, LocalTensor<SrcT>& yLocal, int64_t currentNum, int64_t alignedNum)
 {
     LocalTensor<float> xFloat = tmpBuf1_.template Get<float>();
     LocalTensor<float> ones = tmpBuf2_.template Get<float>();
@@ -208,7 +201,7 @@ __aicore__ inline void Inv<T>::Compute(int64_t currentNum)
     LocalTensor<T> yLocal = outputQueue.template AllocTensor<T>();
 
     // Align to max of float32 block and T block (32-byte boundary)
-    constexpr int64_t floatBlock = 32 / sizeof(float);  // 8
+    constexpr int64_t floatBlock = 32 / sizeof(float); // 8
     constexpr int64_t typeBlock = 32 / sizeof(T);
     constexpr int64_t alignBlock = (floatBlock > typeBlock) ? floatBlock : typeBlock;
     int64_t alignedNum = ((currentNum + alignBlock - 1) / alignBlock) * alignBlock;

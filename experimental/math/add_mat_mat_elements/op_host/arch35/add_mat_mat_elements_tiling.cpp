@@ -40,15 +40,15 @@
 namespace optiling {
 
 // fp16/bf16：32B = 16 元素（每元素 2B）
-constexpr uint32_t ALIGN_ELEMS_FP16  = 16U;
+constexpr uint32_t ALIGN_ELEMS_FP16 = 16U;
 // fp32：32B = 8 元素（每元素 4B）
-constexpr uint32_t ALIGN_ELEMS_FP32  = 8U;
+constexpr uint32_t ALIGN_ELEMS_FP32 = 8U;
 // 迭代一 fp16 默认 tileLength（UB 使用量 = 10T*2 = 20KB，远小于 184KB）
-constexpr uint32_t TILE_LENGTH_FP16  = 1024U;
+constexpr uint32_t TILE_LENGTH_FP16 = 1024U;
 // 迭代一 fp32 默认 tileLength（UB 使用量 = 10T*4 = 20KB）
-constexpr uint32_t TILE_LENGTH_FP32  = 512U;
+constexpr uint32_t TILE_LENGTH_FP32 = 512U;
 // 迭代一 bf16 默认 tileLength（UB 使用量 = 22T = 11.5KB，含 float 中间 buffer）
-constexpr uint32_t TILE_LENGTH_BF16  = 512U;
+constexpr uint32_t TILE_LENGTH_BF16 = 512U;
 
 // 从 TilingContext 中安全提取 float Attr 值
 // alpha/beta 通过 op_def 的 Attr 定义，由框架注入到 RuntimeAttrs 中
@@ -75,8 +75,7 @@ struct BlockCalcResult {
 };
 
 // 从 context 中获取输入的 dtype 和 totalLength
-static ge::graphStatus GetDtypeAndTotalLength(gert::TilingContext* context,
-    ge::DataType& dtype, uint64_t& totalLength)
+static ge::graphStatus GetDtypeAndTotalLength(gert::TilingContext* context, ge::DataType& dtype, uint64_t& totalLength)
 {
     const gert::StorageShape* inputShape = context->GetInputShape(0);
     if (inputShape == nullptr) {
@@ -93,9 +92,7 @@ static ge::graphStatus GetDtypeAndTotalLength(gert::TilingContext* context,
     // ISSUE-004 修复：GetShapeSize() 返回 int64_t，需检查非负再强转
     int64_t shapeSizeRaw = inputShape->GetStorageShape().GetShapeSize();
     if (shapeSizeRaw < 0) {
-        OP_LOGE(context,
-                "AddMatMatElements: GetShapeSize() returned negative value %" PRId64,
-                shapeSizeRaw);
+        OP_LOGE(context, "AddMatMatElements: GetShapeSize() returned negative value %" PRId64, shapeSizeRaw);
         return ge::GRAPH_FAILED;
     }
     totalLength = static_cast<uint64_t>(shapeSizeRaw);
@@ -120,8 +117,8 @@ static ge::graphStatus GetPlatformCoreNum(gert::TilingContext* context, int64_t&
 }
 
 // 根据 dtype 和 Core 数计算分块参数（blockLength/usedCoreNum/lastBlockLength/tileLength）
-static ge::graphStatus CalcBlockDistribution(gert::TilingContext* context,
-    uint64_t totalLength, int64_t coreNum, ge::DataType dtype, BlockCalcResult& result)
+static ge::graphStatus CalcBlockDistribution(
+    gert::TilingContext* context, uint64_t totalLength, int64_t coreNum, ge::DataType dtype, BlockCalcResult& result)
 {
     uint32_t alignElems = ALIGN_ELEMS_FP16;
     uint32_t defaultTileLength = TILE_LENGTH_FP16;
@@ -129,18 +126,15 @@ static ge::graphStatus CalcBlockDistribution(gert::TilingContext* context,
         alignElems = ALIGN_ELEMS_FP32;
         defaultTileLength = TILE_LENGTH_FP32;
     } else if (dtype == ge::DT_BF16) {
-        alignElems = ALIGN_ELEMS_FP16;  // bf16 也是 2B
+        alignElems = ALIGN_ELEMS_FP16; // bf16 也是 2B
         defaultTileLength = TILE_LENGTH_BF16;
     }
 
     // 计算 blockLength（每 Core 负责的元素数，向上对齐到 alignElems 的整数倍）
-    uint64_t blockLengthRaw = (totalLength + static_cast<uint64_t>(coreNum) - 1) /
-                               static_cast<uint64_t>(coreNum);
-    uint64_t blockLengthAligned =
-        ((blockLengthRaw + alignElems - 1) / alignElems) * alignElems;
+    uint64_t blockLengthRaw = (totalLength + static_cast<uint64_t>(coreNum) - 1) / static_cast<uint64_t>(coreNum);
+    uint64_t blockLengthAligned = ((blockLengthRaw + alignElems - 1) / alignElems) * alignElems;
 
-    uint32_t usedCoreNum = static_cast<uint32_t>(
-        (totalLength + blockLengthAligned - 1) / blockLengthAligned);
+    uint32_t usedCoreNum = static_cast<uint32_t>((totalLength + blockLengthAligned - 1) / blockLengthAligned);
 
     // 计算最后一个 Core 的元素数
     uint64_t lastBlockLengthRaw = totalLength;
@@ -150,13 +144,11 @@ static ge::graphStatus CalcBlockDistribution(gert::TilingContext* context,
 
     // ISSUE-001 修复：uint32_t 溢出检查，防止大 Tensor（>42.9 亿元素）时静默截断
     if (blockLengthAligned > static_cast<uint64_t>(UINT32_MAX)) {
-        OP_LOGE(context, "AddMatMatElements: blockLength=%" PRIu64 " overflows uint32_t",
-                blockLengthAligned);
+        OP_LOGE(context, "AddMatMatElements: blockLength=%" PRIu64 " overflows uint32_t", blockLengthAligned);
         return ge::GRAPH_FAILED;
     }
     if (lastBlockLengthRaw > static_cast<uint64_t>(UINT32_MAX)) {
-        OP_LOGE(context, "AddMatMatElements: lastBlockLength=%" PRIu64 " overflows uint32_t",
-                lastBlockLengthRaw);
+        OP_LOGE(context, "AddMatMatElements: lastBlockLength=%" PRIu64 " overflows uint32_t", lastBlockLengthRaw);
         return ge::GRAPH_FAILED;
     }
 
@@ -202,7 +194,7 @@ ge::graphStatus AddMatMatElementsTilingFunc(gert::TilingContext* context)
 
     // 4. 获取 alpha/beta Attr 值（索引 0 → alpha，索引 1 → beta）
     float alphaVal = GetAttrAsFloat(context, 0);
-    float betaVal  = GetAttrAsFloat(context, 1);
+    float betaVal = GetAttrAsFloat(context, 1);
 
     // 5. 设置 workspace（本算子逐元素计算无需额外 workspace）
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
@@ -219,13 +211,13 @@ ge::graphStatus AddMatMatElementsTilingFunc(gert::TilingContext* context)
         OP_LOGE(context, "AddMatMatElements: GetTilingData returned nullptr");
         return ge::GRAPH_FAILED;
     }
-    tiling->totalLength     = totalLength;
-    tiling->tileLength      = blockResult.tileLength;
-    tiling->blockNum        = blockResult.usedCoreNum;
-    tiling->blockLength     = blockResult.blockLength;
+    tiling->totalLength = totalLength;
+    tiling->tileLength = blockResult.tileLength;
+    tiling->blockNum = blockResult.usedCoreNum;
+    tiling->blockLength = blockResult.blockLength;
     tiling->lastBlockLength = blockResult.lastBlockLength;
-    tiling->alphaVal        = alphaVal;
-    tiling->betaVal         = betaVal;
+    tiling->alphaVal = alphaVal;
+    tiling->betaVal = betaVal;
 
     // 8. 设置实际使用的 Core 数
     context->SetBlockDim(blockResult.usedCoreNum);
@@ -233,16 +225,15 @@ ge::graphStatus AddMatMatElementsTilingFunc(gert::TilingContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus TilingParseForAddMatMatElements(
-    [[maybe_unused]] gert::TilingParseContext* context)
+static ge::graphStatus TilingParseForAddMatMatElements([[maybe_unused]] gert::TilingParseContext* context)
 {
     return ge::GRAPH_SUCCESS;
 }
 
-struct AddMatMatElementsCompileInfo {};  // 必须定义，入图场景依赖
+struct AddMatMatElementsCompileInfo {}; // 必须定义，入图场景依赖
 
 IMPL_OP_OPTILING(AddMatMatElements)
     .Tiling(AddMatMatElementsTilingFunc)
     .TilingParse<AddMatMatElementsCompileInfo>(TilingParseForAddMatMatElements);
 
-}  // namespace optiling
+} // namespace optiling

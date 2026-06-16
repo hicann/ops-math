@@ -33,10 +33,7 @@ static const std::initializer_list<op::DataType> UNCHANGED_DTYPE_LIST = {
     op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
-static bool IsAiCoreSupport(const aclTensor* self)
-{
-    return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
-}
+static bool IsAiCoreSupport(const aclTensor* self) { return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST); }
 
 // AICORE算子kernel, base属性：对数的底数
 static const aclTensor* LogAiCore(

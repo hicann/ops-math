@@ -125,7 +125,7 @@ int main()
     // 3. Create output tensor (complex64, shape [2, 2], underlying memory = 2*numElements floats)
     aclTensor* outTensor = nullptr;
     void* outDeviceAddr = nullptr;
-    int64_t outBytes = numElements * 2 * sizeof(float);  // complex64 = 2 floats per element
+    int64_t outBytes = numElements * 2 * sizeof(float); // complex64 = 2 floats per element
     ret = aclrtMalloc(&outDeviceAddr, outBytes, ACL_MEM_MALLOC_HUGE_FIRST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMalloc for output failed. ERROR: %d\n", ret); return ret);
     ret = aclrtMemset(outDeviceAddr, outBytes, 0, outBytes);
@@ -143,10 +143,10 @@ int main()
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
     ret = aclnnComplexV3GetWorkspaceSize(realTensor, imagTensor, outTensor, &workspaceSize, &executor);
-    LOG_PRINT("aclnnComplexV3GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n",
-              ret, (unsigned long long)workspaceSize, (void*)executor);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("aclnnComplexV3GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+    LOG_PRINT(
+        "aclnnComplexV3GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n", ret,
+        (unsigned long long)workspaceSize, (void*)executor);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnComplexV3GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // Allocate workspace if needed
     void* workspaceAddr = nullptr;

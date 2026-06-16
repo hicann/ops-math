@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
+
 /**
  *
  * NOTE: Portions of this code were AI-generated and have been
@@ -23,10 +23,10 @@
 #define ASINH_WITH_AGENT_TILING_DATA_H
 
 struct AsinhWithAgentTilingData {
-    int64_t totalNum    = 0;   // 输入总元素数量
-    int64_t blockFactor = 0;   // 每个 AI Core 处理的元素数量
-    int64_t ubFactor    = 0;   // 每次 UB 循环处理的元素数量
-    int64_t tmpBufSize  = 0;   // sharedTmpBuffer 大小（字节），由 GetAsinhMaxMinTmpSize 计算
+    int64_t totalNum = 0;    // 输入总元素数量
+    int64_t blockFactor = 0; // 每个 AI Core 处理的元素数量
+    int64_t ubFactor = 0;    // 每次 UB 循环处理的元素数量
+    int64_t tmpBufSize = 0;  // sharedTmpBuffer 大小（字节），由 GetAsinhMaxMinTmpSize 计算
 };
 
 #endif // ASINH_WITH_AGENT_TILING_DATA_H

@@ -11,7 +11,7 @@
 /*!
  * \file cross.cpp
  * \brief
-*/
+ */
 
 #include "register/op_def_registry.h"
 

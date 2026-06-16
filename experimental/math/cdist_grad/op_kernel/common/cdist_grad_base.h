@@ -9,11 +9,11 @@
  */
 
 /**
-* 我们正常的版权申明，下面是我们的备注
-*
-* NOTE: Portions of this code were AI-generated and have been
-* technically reviewed for functional accuracy and security
-*/
+ * 我们正常的版权申明，下面是我们的备注
+ *
+ * NOTE: Portions of this code were AI-generated and have been
+ * technically reviewed for functional accuracy and security
+ */
 
 /*!
  * \file cdist_grad_base.h
@@ -40,9 +40,9 @@ class CdistGradBase {
 public:
     __aicore__ inline CdistGradBase() {}
 
-    __aicore__ inline void Init(GM_ADDR gradOutput, GM_ADDR x1, GM_ADDR x2,
-                                 GM_ADDR cdistResult, GM_ADDR gradX1,
-                                 const CdistGradTilingData* tilingData);
+    __aicore__ inline void Init(
+        GM_ADDR gradOutput, GM_ADDR x1, GM_ADDR x2, GM_ADDR cdistResult, GM_ADDR gradX1,
+        const CdistGradTilingData* tilingData);
     __aicore__ inline void Process();
 
 protected:
@@ -105,9 +105,9 @@ protected:
 };
 
 template <typename T>
-__aicore__ inline void CdistGradBase<T>::Init(GM_ADDR gradOutput, GM_ADDR x1, GM_ADDR x2,
-                                                GM_ADDR cdistResult, GM_ADDR gradX1,
-                                                const CdistGradTilingData* tilingData)
+__aicore__ inline void CdistGradBase<T>::Init(
+    GM_ADDR gradOutput, GM_ADDR x1, GM_ADDR x2, GM_ADDR cdistResult, GM_ADDR gradX1,
+    const CdistGradTilingData* tilingData)
 {
     batchSize_ = tilingData->batchSize;
     pSize_ = tilingData->pSize;
@@ -165,7 +165,8 @@ __aicore__ inline void CdistGradBase<T>::Init(GM_ADDR gradOutput, GM_ADDR x1, GM
     // Cast buffer for fp16
     if constexpr (IS_FP16) {
         int64_t castBytes = mAligned_ * static_cast<int64_t>(sizeof(half));
-        if (castBytes < 32) castBytes = 32;
+        if (castBytes < 32)
+            castBytes = 32;
         pipe.InitBuffer(castBuf, castBytes);
     }
 
@@ -255,7 +256,8 @@ __aicore__ inline void CdistGradBase<T>::CopyInRChunk(int64_t b, int64_t i, int6
         int64_t dstOffset = 0;
         while (remaining > 0) {
             int64_t batchLen = remaining;
-            if (batchLen > castCapacity) batchLen = castCapacity;
+            if (batchLen > castCapacity)
+                batchLen = castCapacity;
             Duplicate(castLocal, static_cast<half>(0), static_cast<uint32_t>(castCapacity));
             PipeBarrier<PIPE_ALL>();
             DataCopyParams gParams;
@@ -266,7 +268,8 @@ __aicore__ inline void CdistGradBase<T>::CopyInRChunk(int64_t b, int64_t i, int6
             DataCopyPad(castLocal, gradOutputGM[gradGmBase + srcOffset], gParams, {false, 0, 0, 0});
             PipeBarrier<PIPE_ALL>();
             int64_t castCount = ((batchLen + 7) / 8) * 8;
-            if (castCount > castCapacity) castCount = castCapacity;
+            if (castCount > castCapacity)
+                castCount = castCapacity;
             Cast(gradChunk[dstOffset], castLocal, RoundMode::CAST_NONE, static_cast<uint32_t>(castCount));
             PipeBarrier<PIPE_ALL>();
             remaining -= batchLen;
@@ -297,7 +300,8 @@ __aicore__ inline void CdistGradBase<T>::CopyInRChunk(int64_t b, int64_t i, int6
         int64_t dstOffset = 0;
         while (remaining > 0) {
             int64_t batchLen = remaining;
-            if (batchLen > castCapacity) batchLen = castCapacity;
+            if (batchLen > castCapacity)
+                batchLen = castCapacity;
             Duplicate(castLocal, static_cast<half>(0), static_cast<uint32_t>(castCapacity));
             PipeBarrier<PIPE_ALL>();
             DataCopyParams dParams;
@@ -308,7 +312,8 @@ __aicore__ inline void CdistGradBase<T>::CopyInRChunk(int64_t b, int64_t i, int6
             DataCopyPad(castLocal, cdistResultGM[distGmBase + srcOffset], dParams, {false, 0, 0, 0});
             PipeBarrier<PIPE_ALL>();
             int64_t castCount = ((batchLen + 7) / 8) * 8;
-            if (castCount > castCapacity) castCount = castCapacity;
+            if (castCount > castCapacity)
+                castCount = castCapacity;
             Cast(distChunk[dstOffset], castLocal, RoundMode::CAST_NONE, static_cast<uint32_t>(castCount));
             PipeBarrier<PIPE_ALL>();
             remaining -= batchLen;

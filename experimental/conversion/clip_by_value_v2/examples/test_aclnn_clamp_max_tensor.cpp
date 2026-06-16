@@ -145,8 +145,8 @@ int main()
     aclOpExecutor* executor;
     // 调用aclnnClampMaxTensor第一段接口
     ret = aclnnClampMaxTensorGetWorkspaceSize(self, max, out, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnClampMaxTensorGetWorkspaceSize failed. ERROR: %d\n", ret);
-              return ret);
+    CHECK_RET(
+        ret == ACL_SUCCESS, LOG_PRINT("aclnnClampMaxTensorGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {

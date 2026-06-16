@@ -32,7 +32,8 @@ static ge::graphStatus LogicalNotTilingFunc(gert::TilingContext* context)
 {
     LogicalNotTilingData* tiling = context->GetTilingData<LogicalNotTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(memset_s(tiling, sizeof(LogicalNotTilingData), 0, sizeof(LogicalNotTilingData)) != EOK,
+    OP_CHECK_IF(
+        memset_s(tiling, sizeof(LogicalNotTilingData), 0, sizeof(LogicalNotTilingData)) != EOK,
         OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
     uint64_t ubLength = 0;
     uint32_t bigCoreDataNum = 0;
@@ -66,7 +67,8 @@ static ge::graphStatus LogicalNotTilingFunc(gert::TilingContext* context)
     if (ubPartDataNum >= inputDataNum) {
         coreNum = 1;
     } else {
-        // There is at least 32B of data on each core, satisfying several settings for several cores. The maximum number of audits is the actual number of audits
+        // There is at least 32B of data on each core, satisfying several settings for several cores. The maximum number
+        // of audits is the actual number of audits
         coreNum = (coreNum < inputLengthAlign32 / BLOCK_SIZE) ? coreNum : inputLengthAlign32 / BLOCK_SIZE;
     }
 
@@ -103,7 +105,7 @@ static ge::graphStatus LogicalNotTilingFunc(gert::TilingContext* context)
     tiling->tailBlockNum = tailBlockNum;
     context->SetBlockDim(coreNum);
 
-    size_t *currentWorkspace = context->GetWorkspaceSizes(1);
+    size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     currentWorkspace[0] = 0;
     return ge::GRAPH_SUCCESS;
 }
@@ -114,4 +116,4 @@ static ge::graphStatus TilingParseForLogicalNot([[maybe_unused]] gert::TilingPar
 }
 
 IMPL_OP_OPTILING(LogicalNot).Tiling(LogicalNotTilingFunc).TilingParse<LogicalNotCompileInfo>(TilingParseForLogicalNot);
-}
+} // namespace optiling

@@ -1,17 +1,17 @@
 /**
-* Copyright (c) 2026 Huawei Technologies Co., Ltd.
-* This program is free software, you can redistribute it and/or modify it under the terms and conditions of
-* CANN Open Software License Agreement Version 2.0 (the "License").
-* Please refer to the License for details. You may not use this file except in compliance with the License.
-* THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-* INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
-* See LICENSE in the root of the software repository for the full text of the License.
-*/
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
-* \file asinh_tiling.cpp
-* \brief
-*/
+ * \file asinh_tiling.cpp
+ * \brief
+ */
 
 #include "log/log.h"
 #include "util/math_util.h"
@@ -22,10 +22,10 @@
 
 namespace optiling {
 
-
 constexpr int32_t BUFFER_NUM = 2;
 static const int64_t MULTI_CORE_SHAPE_SIZE_LIMIT = 2048; // 2k x 8字节 * OP_COEXISTING_NUM小于192k
-static const uint32_t OP_COEXISTING_NUM = 8;             // 算子计算过程中需要用到的Tensor内存数量（基于Asinh类中TQue+TBuf占用的空间来的）
+static const uint32_t OP_COEXISTING_NUM =
+    8; // 算子计算过程中需要用到的Tensor内存数量（基于Asinh类中TQue+TBuf占用的空间来的）
 constexpr uint32_t g_dataSize[] = {4, 2, 1, 4, 1, 2, 2, 8, 4, 1, 4}; // 数据类型占用字节数，数组下标参考ge::DataType
 static const uint32_t BUFFER_ALIGN = 256;                            // kernel侧计算的时候必须用256字节对齐
 const uint32_t WS_SYS_SIZE = 16U * 1024U * 1024U;
@@ -69,7 +69,7 @@ static void CalcTilingData(
     uint64_t tileBufferLen = ubSize / (g_dataSize[dtype_x] * OP_COEXISTING_NUM);
     // tileBufferLen必须保证占用字节数是256整数倍
     uint64_t align_len = BUFFER_ALIGN / g_dataSize[dtype_x];
- 	tileBufferLen = (tileBufferLen + align_len - 1) / align_len * align_len;
+    tileBufferLen = (tileBufferLen + align_len - 1) / align_len * align_len;
 
     if (totalLength <= MULTI_CORE_SHAPE_SIZE_LIMIT) { /* 数据量小用单核即可 */
         tiling.formerCoreNum = 1;

@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
+
 /**
  *
  * NOTE: Portions of this code were AI-generated and have been
@@ -62,34 +62,33 @@ private:
 
 private:
     TPipe pipe;
-    TQue<QuePosition::VECIN,   BUFFER_NUM> inputQueue;
-    TQue<QuePosition::VECOUT,  BUFFER_NUM> outputQueue;
-    TQue<QuePosition::VECCALC, 1>          tmpQueue;  // sharedTmpBuffer for Asinh
+    TQue<QuePosition::VECIN, BUFFER_NUM> inputQueue;
+    TQue<QuePosition::VECOUT, BUFFER_NUM> outputQueue;
+    TQue<QuePosition::VECCALC, 1> tmpQueue; // sharedTmpBuffer for Asinh
 
     GlobalTensor<T> inputGM;
     GlobalTensor<T> outputGM;
 
     int64_t blockLength_ = 0;
-    int64_t ubFactor_    = 0;
-    int64_t tmpBufSize_  = 0;
+    int64_t ubFactor_ = 0;
+    int64_t tmpBufSize_ = 0;
 };
 
 template <typename T, int BUFFER_MODE>
-__aicore__ inline void AsinhWithAgent<T, BUFFER_MODE>::Init(
-    GM_ADDR x, GM_ADDR y, const AsinhWithAgentTilingData* td)
+__aicore__ inline void AsinhWithAgent<T, BUFFER_MODE>::Init(GM_ADDR x, GM_ADDR y, const AsinhWithAgentTilingData* td)
 {
-    int64_t offset    = td->blockFactor * AscendC::GetBlockIdx();
+    int64_t offset = td->blockFactor * AscendC::GetBlockIdx();
     int64_t remaining = td->totalNum - offset;
     blockLength_ = (remaining > td->blockFactor) ? td->blockFactor : remaining;
-    ubFactor_    = td->ubFactor;
-    tmpBufSize_  = td->tmpBufSize;
+    ubFactor_ = td->ubFactor;
+    tmpBufSize_ = td->tmpBufSize;
 
     inputGM.SetGlobalBuffer((__gm__ T*)x + offset, blockLength_);
     outputGM.SetGlobalBuffer((__gm__ T*)y + offset, blockLength_);
 
-    pipe.InitBuffer(inputQueue,  BUFFER_NUM, (uint32_t)(ubFactor_ * sizeof(T)));
+    pipe.InitBuffer(inputQueue, BUFFER_NUM, (uint32_t)(ubFactor_ * sizeof(T)));
     pipe.InitBuffer(outputQueue, BUFFER_NUM, (uint32_t)(ubFactor_ * sizeof(T)));
-    pipe.InitBuffer(tmpQueue,    1,           (uint32_t)tmpBufSize_);
+    pipe.InitBuffer(tmpQueue, 1, (uint32_t)tmpBufSize_);
 }
 
 template <typename T, int BUFFER_MODE>
@@ -105,8 +104,8 @@ __aicore__ inline void AsinhWithAgent<T, BUFFER_MODE>::CopyIn(int64_t progress, 
 template <typename T, int BUFFER_MODE>
 __aicore__ inline void AsinhWithAgent<T, BUFFER_MODE>::Compute(int64_t currentNum)
 {
-    LocalTensor<T>       xLocal = inputQueue.template DeQue<T>();
-    LocalTensor<T>       yLocal = outputQueue.template AllocTensor<T>();
+    LocalTensor<T> xLocal = inputQueue.template DeQue<T>();
+    LocalTensor<T> yLocal = outputQueue.template AllocTensor<T>();
     LocalTensor<uint8_t> tmpBuf = tmpQueue.AllocTensor<uint8_t>();
 
     AscendC::Asinh(yLocal, xLocal, tmpBuf, (uint32_t)currentNum);
@@ -130,8 +129,7 @@ __aicore__ inline void AsinhWithAgent<T, BUFFER_MODE>::Process()
 {
     int64_t loopCount = (blockLength_ + ubFactor_ - 1) / ubFactor_;
     for (int64_t i = 0; i < loopCount; i++) {
-        int64_t currentNum = (i < loopCount - 1) ? ubFactor_
-                                                  : (blockLength_ - i * ubFactor_);
+        int64_t currentNum = (i < loopCount - 1) ? ubFactor_ : (blockLength_ - i * ubFactor_);
         CopyIn(i, currentNum);
         Compute(currentNum);
         CopyOut(i, currentNum);

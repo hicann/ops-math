@@ -23,13 +23,13 @@
 
 struct MaskedFillTilingData {
     uint32_t xSize;
-    uint32_t maskSize;        
-    uint32_t sShape[128];  
+    uint32_t maskSize;
+    uint32_t sShape[128];
     uint32_t maskShape[128];
-    uint32_t xNumShapes;          
+    uint32_t xNumShapes;
     uint32_t maskNumShapes;
 
-    uint32_t formerNum; 
+    uint32_t formerNum;
     uint32_t formerLength;
     uint32_t formerTileNum;
     uint32_t formerTileLength;
@@ -39,7 +39,8 @@ struct MaskedFillTilingData {
     uint32_t tailTileLength;
     uint32_t tailLastTileLength;
 
-    void Init() {
+    void Init()
+    {
         xSize = 0;
         maskSize = 0;
         xNumShapes = 0;
@@ -57,7 +58,7 @@ struct MaskedFillTilingData {
 
         // 依次赋值
         int count = 128;
-        for(int i = 0; i < count; i++) {
+        for (int i = 0; i < count; i++) {
             sShape[i] = 0;
             maskShape[i] = 0;
         }

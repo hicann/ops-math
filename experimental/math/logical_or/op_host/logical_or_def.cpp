@@ -19,18 +19,9 @@ class LogicalOr : public OpDef {
 public:
     explicit LogicalOr(const char* name) : OpDef(name)
     {
-        this->Input("x1")
-            .ParamType(REQUIRED)
-            .DataType({ge::DT_BOOL})
-            .Format({ge::FORMAT_ND});
-        this->Input("x2")
-            .ParamType(REQUIRED)
-            .DataType({ge::DT_BOOL})
-            .Format({ge::FORMAT_ND});
-        this->Output("y")
-            .ParamType(REQUIRED)
-            .DataType({ge::DT_BOOL})
-            .Format({ge::FORMAT_ND});
+        this->Input("x1").ParamType(REQUIRED).DataType({ge::DT_BOOL}).Format({ge::FORMAT_ND});
+        this->Input("x2").ParamType(REQUIRED).DataType({ge::DT_BOOL}).Format({ge::FORMAT_ND});
+        this->Output("y").ParamType(REQUIRED).DataType({ge::DT_BOOL}).Format({ge::FORMAT_ND});
         this->AICore().AddConfig("ascend910b");
     }
 };

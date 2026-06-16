@@ -112,7 +112,7 @@ int main()
     std::vector<float> selfEndHostData(1, endValue);
     ret = CreateAclTensor(selfEndHostData, selfEndShape, &selfEndDeviceAddr, aclDataType::ACL_FLOAT, &selfEnd);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-    
+
     aclTensor* selfNum = nullptr;
     void* selfNumDeviceAddr = nullptr;
     std::vector<int64_t> selfNumShape = {1};
@@ -121,14 +121,14 @@ int main()
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     const std::vector<int64_t> numVec = {numValue};
     aclIntArray* numArray = aclCreateIntArray(numVec.data(), numVec.size());
-    
+
     aclTensor* out = nullptr;
     void* outDeviceAddr = nullptr;
     std::vector<int64_t> outShape = {numValue};
     std::vector<float> outHostData(numValue, 0);
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-    
+
     // 3. 调用CANN算子库API，需要修改为具体的Api名称
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
@@ -163,9 +163,9 @@ int main()
     aclDestroyTensor(selfStart);
     aclDestroyTensor(selfEnd);
     aclDestroyTensor(selfNum);
-    aclDestroyIntArray(numArray); 
+    aclDestroyIntArray(numArray);
     aclDestroyTensor(out);
-    
+
     // 8. 释放device资源
     aclrtFree(selfStartDeviceAddr);
     aclrtFree(selfEndDeviceAddr);

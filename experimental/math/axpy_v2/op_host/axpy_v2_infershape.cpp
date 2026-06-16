@@ -19,7 +19,7 @@ using namespace ge;
 
 namespace ops {
 constexpr int32_t IDX_0 = 0;
-    
+
 static ge::graphStatus InferShapeAxpyV2(gert::InferShapeContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Begin to do InferShapeAxpyV2");

@@ -33,10 +33,7 @@ namespace l0op {
 OP_TYPE_REGISTER(AsinhGrad);
 
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT,
-    DataType::DT_FLOAT16,
-    DataType::DT_BF16
-};
+    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16};
 
 static bool IsAiCoreSupport(const aclTensor* y, const aclTensor* dy)
 {
@@ -51,17 +48,13 @@ static bool AsinhGradInferShape(const op::Shape& yShape, const op::Shape& /*dySh
     return true;
 }
 
-static const aclTensor* AsinhGradAiCore(const aclTensor* y, const aclTensor* dy,
-                                         const aclTensor* out, aclOpExecutor* executor)
+static const aclTensor* AsinhGradAiCore(
+    const aclTensor* y, const aclTensor* dy, const aclTensor* out, aclOpExecutor* executor)
 {
     L0_DFX(AsinhGradAiCore, y, dy, out);
 
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(AsinhGrad,
-        OP_INPUT(y, dy), OP_OUTPUT(out));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS,
-        OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AsinhGradAiCore failed."),
-        return nullptr);
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(AsinhGrad, OP_INPUT(y, dy), OP_OUTPUT(out));
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AsinhGradAiCore failed."), return nullptr);
     return out;
 }
 
@@ -76,9 +69,9 @@ const aclTensor* AsinhGrad(const aclTensor* y, const aclTensor* dy, aclOpExecuto
     }
 
     if (!IsAiCoreSupport(y, dy)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AsinhGrad: dtype not supported: y=%d, dy=%d.",
-                static_cast<int>(y->GetDataType()), static_cast<int>(dy->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "AsinhGrad: dtype not supported: y=%d, dy=%d.", static_cast<int>(y->GetDataType()),
+            static_cast<int>(dy->GetDataType()));
         return nullptr;
     }
 

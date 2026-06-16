@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
+
 /**
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
@@ -28,8 +28,8 @@
 namespace optiling {
 
 using Ops::Base::CeilDiv;
-using Ops::Base::FloorDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
@@ -38,7 +38,8 @@ constexpr int64_t MIN_SPLIT_THRESHOLD = 1024;
 
 static const gert::Shape g_vec_1_shape = {1};
 
-static inline const gert::Shape EnsureNotScalar(const gert::Shape& inShape) {
+static inline const gert::Shape EnsureNotScalar(const gert::Shape& inShape)
+{
     if (inShape.GetDimNum() == 0) {
         return g_vec_1_shape;
     }
@@ -68,8 +69,9 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
 
     OP_CHECK_IF(
         inputShapeX.GetShapeSize() != outShapeY.GetShapeSize(),
-        OP_LOGE(context, "Atanh: input and output shape size mismatch: x=%ld, y=%ld",
-            inputShapeX.GetShapeSize(), outShapeY.GetShapeSize()),
+        OP_LOGE(
+            context, "Atanh: input and output shape size mismatch: x=%ld, y=%ld", inputShapeX.GetShapeSize(),
+            outShapeY.GetShapeSize()),
         return ge::GRAPH_FAILED);
 
     totalIdx = inputShapeX.GetShapeSize();
@@ -99,8 +101,8 @@ static ge::graphStatus AtanhTilingFunc(gert::TilingContext* context)
     uint64_t ubSize;
     int64_t coreNum;
     OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+        return ge::GRAPH_FAILED);
 
     // 2. 获取shape、属性信息
     int64_t totalIdx;
@@ -111,8 +113,8 @@ static ge::graphStatus AtanhTilingFunc(gert::TilingContext* context)
 
     // 3. 获取Workspace
     OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+        return ge::GRAPH_FAILED);
 
     // 4. 设置tiling信息
     AtanhTilingData* tiling = context->GetTilingData<AtanhTilingData>();
@@ -138,15 +140,13 @@ static ge::graphStatus AtanhTilingFunc(gert::TilingContext* context)
         // 单缓冲: 1*2 + 1*2 + 3*4 = 16 bytes/element
         // 双缓冲: 2*2 + 2*2 + 3*4 = 20 bytes/element
         int64_t bytesPerElement = useDoubleBuffer ? 20 : 16;
-        tiling->ubFactor = FloorAlign(
-            static_cast<int64_t>(ubSize) / bytesPerElement, ubBlockSize);
+        tiling->ubFactor = FloorAlign(static_cast<int64_t>(ubSize) / bytesPerElement, ubBlockSize);
     } else {
         // float/half: 1 input + 1 output + 2 temp, 全部同类型
         // 双缓冲: 2*input + 2*output + 2*temp = 6
         // 单缓冲: 1*input + 1*output + 2*temp = 4
         int64_t bufferNum = useDoubleBuffer ? 6 : 4;
-        tiling->ubFactor = FloorAlign(
-            FloorDiv((static_cast<int64_t>(ubSize) / typeSize), bufferNum), ubBlockSize);
+        tiling->ubFactor = FloorAlign(FloorDiv((static_cast<int64_t>(ubSize) / typeSize), bufferNum), ubBlockSize);
     }
 
     context->SetBlockDim(usedCoreNum);

@@ -21,15 +21,9 @@ using namespace optiling;
 
 class BitwiseAndTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "BitwiseAndTiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "BitwiseAndTiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "BitwiseAndTiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "BitwiseAndTiling TearDown " << endl; }
 };
 
 TEST_F(BitwiseAndTiling, ascend910b_test_tiling_INT16_001)

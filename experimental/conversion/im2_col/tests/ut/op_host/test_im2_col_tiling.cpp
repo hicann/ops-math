@@ -22,15 +22,9 @@ using namespace optiling;
 
 class Im2ColTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "Im2ColTiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "Im2ColTiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "Im2ColTiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "Im2ColTiling TearDown " << endl; }
 };
 
 // TEST_F(Im2ColTiling, ascend9101_test_tiling_fp16_001)
@@ -46,7 +40,7 @@ protected:
 //         },
 //         &compileInfo);
 //     uint64_t expectTilingKey = 0;
-//     string expectTilingData = "9 10 23 1971 4 3 2 2 0 0 1 1 10 985 9850 120 4079970 10638000 10638000 265950 0 2048 2048";
-//     std::vector<size_t> expectWorkspaces = {16777728};
-//     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+//     string expectTilingData = "9 10 23 1971 4 3 2 2 0 0 1 1 10 985 9850 120 4079970 10638000 10638000 265950 0 2048
+//     2048"; std::vector<size_t> expectWorkspaces = {16777728}; ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS,
+//     expectTilingKey, expectTilingData, expectWorkspaces);
 // }

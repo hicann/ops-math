@@ -26,4 +26,4 @@ struct ApproximateEqualTilingData {
     uint32_t reserved = 0;
 };
 
-#endif  // APPROXIMATE_EQUAL_TILING_DATA_H_
+#endif // APPROXIMATE_EQUAL_TILING_DATA_H_

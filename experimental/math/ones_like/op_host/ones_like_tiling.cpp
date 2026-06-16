@@ -29,7 +29,6 @@
 #define UB_USAGE_DIV (2)
 namespace optiling {
 
-
 struct OnesLikeCompileInfo {};
 
 // 获取平台信息如ubSize, coreNum

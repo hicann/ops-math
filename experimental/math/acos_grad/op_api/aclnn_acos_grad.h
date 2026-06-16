@@ -32,17 +32,11 @@ extern "C" {
 #endif
 
 ACLNN_API aclnnStatus aclnnAcosGradGetWorkspaceSize(
-    const aclTensor* y_grad,
-    const aclTensor* x,
-    const aclTensor* x_grad,
-    uint64_t* workspaceSize,
+    const aclTensor* y_grad, const aclTensor* x, const aclTensor* x_grad, uint64_t* workspaceSize,
     aclOpExecutor** executor);
 
-ACLNN_API aclnnStatus aclnnAcosGrad(
-    void* workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor* executor,
-    aclrtStream stream);
+ACLNN_API aclnnStatus
+aclnnAcosGrad(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 #ifdef __cplusplus
 }

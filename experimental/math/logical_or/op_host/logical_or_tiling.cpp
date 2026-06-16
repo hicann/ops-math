@@ -25,7 +25,7 @@
 namespace optiling {
 
 const uint32_t BLOCK_SIZE = 32;
-const uint32_t BUFFER_NUM = 2; //添加双缓冲常量
+const uint32_t BUFFER_NUM = 2; // 添加双缓冲常量
 
 struct LogicalOrCompileInfo {};
 
@@ -41,7 +41,7 @@ static ge::graphStatus LogicalOrTilingFunc(gert::TilingContext* context)
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubLength);
     auto coreNum = ascendcPlatform.GetCoreNum();
-    
+
     // Based on the input length and the number of inputs, the number of bytes of the input data type is obtained
     uint32_t inputDataNum = context->GetInputShape(0)->GetStorageShape().GetShapeSize();
     uint32_t dataTypeLength = 1;
@@ -51,7 +51,7 @@ static ge::graphStatus LogicalOrTilingFunc(gert::TilingContext* context)
         OP_LOGE(context, "coreNum or BLOCK_SIZE is 0");
         return ge::GRAPH_FAILED;
     }
-    
+
     // There are a total of 3 shared UB spaces in the input and output. If it's int8, there are 2 more TBUFs
     uint32_t ubPartNum = (dataTypeLength == 1) ? 5 : 3;
     uint32_t ubPartLength = ubLength / ubPartNum / BUFFER_NUM;
@@ -61,37 +61,38 @@ static ge::graphStatus LogicalOrTilingFunc(gert::TilingContext* context)
 
     // Input data for 32B alignment
     uint32_t inputLengthAlign32 = (((inputLength + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE);
-    
-    if(ubPartDataNum >= inputDataNum) {
-        coreNum=1;
+
+    if (ubPartDataNum >= inputDataNum) {
+        coreNum = 1;
     } else {
-        // There is at least 32B of data on each core, satisfying several settings for several cores. The maximum number of audits is the actual number of audits
-        coreNum = (coreNum <  inputLengthAlign32 / BLOCK_SIZE) ? coreNum : inputLengthAlign32 / BLOCK_SIZE;
+        // There is at least 32B of data on each core, satisfying several settings for several cores. The maximum number
+        // of audits is the actual number of audits
+        coreNum = (coreNum < inputLengthAlign32 / BLOCK_SIZE) ? coreNum : inputLengthAlign32 / BLOCK_SIZE;
     }
-    
+
     uint32_t everyCoreInputBlockNum = inputLengthAlign32 / BLOCK_SIZE / coreNum;
     uint32_t tailBlockNum = (inputLengthAlign32 / BLOCK_SIZE) % coreNum;
-    
+
     // Small chunks are calculated and sliced several times using the number of data on each core
     uint32_t smallCoreDataNum = everyCoreInputBlockNum * BLOCK_SIZE / dataTypeLength;
     uint32_t smallCoreLoopNum = smallCoreDataNum / ubPartDataNum;
     smallCoreLoopNum = (everyCoreInputBlockNum % ubPartBlockNum) == 0 ? smallCoreLoopNum : smallCoreLoopNum + 1;
     // Tail block calculation for small chunks of data
-    uint32_t smallCoreTailDataNum = smallCoreDataNum - ubPartDataNum * (smallCoreLoopNum-1);
+    uint32_t smallCoreTailDataNum = smallCoreDataNum - ubPartDataNum * (smallCoreLoopNum - 1);
     smallCoreTailDataNum = smallCoreTailDataNum == 0 ? ubPartDataNum : smallCoreTailDataNum;
 
-    if(0 != tailBlockNum) {
+    if (0 != tailBlockNum) {
         everyCoreInputBlockNum += 1;
         bigCoreDataNum = everyCoreInputBlockNum * BLOCK_SIZE / dataTypeLength;
         bigCoreLoopNum = bigCoreDataNum / ubPartDataNum;
         bigCoreLoopNum = (everyCoreInputBlockNum % ubPartBlockNum) == 0 ? bigCoreLoopNum : bigCoreLoopNum + 1;
-        bigCoreTailDataNum = bigCoreDataNum - ubPartDataNum * (bigCoreLoopNum-1);
+        bigCoreTailDataNum = bigCoreDataNum - ubPartDataNum * (bigCoreLoopNum - 1);
         bigCoreTailDataNum = bigCoreTailDataNum == 0 ? ubPartDataNum : bigCoreTailDataNum;
         context->SetTilingKey(1);
     } else {
         context->SetTilingKey(0);
     }
-    
+
     tiling->smallCoreDataNum = smallCoreDataNum;
     tiling->bigCoreDataNum = bigCoreDataNum;
     tiling->ubPartDataNum = ubPartDataNum;
@@ -102,7 +103,7 @@ static ge::graphStatus LogicalOrTilingFunc(gert::TilingContext* context)
     tiling->tailBlockNum = tailBlockNum;
     context->SetBlockDim(coreNum);
 
-    size_t *currentWorkspace = context->GetWorkspaceSizes(1);
+    size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     currentWorkspace[0] = 0;
     return ge::GRAPH_SUCCESS;
 }
@@ -115,4 +116,3 @@ static ge::graphStatus TilingParseForLogicalOr([[maybe_unused]] gert::TilingPars
 // tiling注册入口.
 IMPL_OP_OPTILING(LogicalOr).Tiling(LogicalOrTilingFunc).TilingParse<LogicalOrCompileInfo>(TilingParseForLogicalOr);
 } // namespace optiling
-

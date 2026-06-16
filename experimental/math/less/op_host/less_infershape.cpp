@@ -25,8 +25,8 @@ static ge::graphStatus InferShapeLess(gert::InferShapeContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Begin to do InferShapeLess");
 
-    const gert::Shape *x1_shape = context->GetInputShape(0);
-    gert::Shape *y_shape = context->GetOutputShape(0);
+    const gert::Shape* x1_shape = context->GetInputShape(0);
+    gert::Shape* y_shape = context->GetOutputShape(0);
     *y_shape = *x1_shape;
 
     OP_LOGD(context->GetNodeName(), "End to do InferShapeLess");
@@ -34,4 +34,4 @@ static ge::graphStatus InferShapeLess(gert::InferShapeContext* context)
 }
 
 IMPL_OP_INFERSHAPE(Less).InferShape(InferShapeLess);
-}
+} // namespace ops

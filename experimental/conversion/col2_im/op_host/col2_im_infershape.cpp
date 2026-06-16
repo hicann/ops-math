@@ -59,7 +59,7 @@ static constexpr int32_t DEFAULT_KERNEL_W = 2;
 static constexpr int32_t ZERO_VALUE = 0;
 static constexpr int32_t POSITIVE_THRESHOLD = 0;
 
-static ge::graphStatus InferShapeCol2Im(gert::InferShapeContext *context)
+static ge::graphStatus InferShapeCol2Im(gert::InferShapeContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Begin to do InferShapeCol2Im");
 
@@ -69,14 +69,14 @@ static ge::graphStatus InferShapeCol2Im(gert::InferShapeContext *context)
     }
 
     // get input shapes
-    const gert::Shape *InputShape = context->GetInputShape(INPUT_TENSOR_INDEX);
+    const gert::Shape* InputShape = context->GetInputShape(INPUT_TENSOR_INDEX);
     if (InputShape == nullptr) {
         OP_LOGE(context->GetNodeName(), "Failed: input shape is nullptr");
         return ge::GRAPH_FAILED;
     }
 
     // get output shapes
-    gert::Shape *OutputShape = context->GetOutputShape(OUTPUT_TENSOR_INDEX);
+    gert::Shape* OutputShape = context->GetOutputShape(OUTPUT_TENSOR_INDEX);
     if (OutputShape == nullptr) {
         OP_LOGE(context->GetNodeName(), "Failed: output shape is nullptr");
         return ge::GRAPH_FAILED;
@@ -84,15 +84,15 @@ static ge::graphStatus InferShapeCol2Im(gert::InferShapeContext *context)
 
     // 输入: [N, C*kH*kW, L]
     if (InputShape->GetDimNum() != REQUIRED_INPUT_DIMS) {
-        OP_LOGE(context->GetNodeName(), 
-                "Failed: input shape must be %dD, but got %zuD",
-                REQUIRED_INPUT_DIMS, InputShape->GetDimNum());
+        OP_LOGE(
+            context->GetNodeName(), "Failed: input shape must be %dD, but got %zuD", REQUIRED_INPUT_DIMS,
+            InputShape->GetDimNum());
         return ge::GRAPH_FAILED;
     }
 
     int32_t N = InputShape->GetDim(BATCH_DIM_INDEX);
     int32_t input_channels = InputShape->GetDim(CHANNEL_DIM_INDEX);
-    
+
     // 获取输出尺寸和卷积参数
     int32_t H = ZERO_VALUE;
     int32_t W = ZERO_VALUE;
@@ -116,29 +116,27 @@ static ge::graphStatus InferShapeCol2Im(gert::InferShapeContext *context)
     }
 
     int32_t kernel_size = kernel_h * kernel_w;
-    
+
     // 检查输入通道数是否能被kernel_size整除
     if (kernel_size == ZERO_VALUE) {
-        OP_LOGE(context->GetNodeName(), 
-                "Failed: kernel size cannot be zero (kernel_h=%d, kernel_w=%d)", 
-                kernel_h, kernel_w);
+        OP_LOGE(
+            context->GetNodeName(), "Failed: kernel size cannot be zero (kernel_h=%d, kernel_w=%d)", kernel_h,
+            kernel_w);
         return ge::GRAPH_FAILED;
     }
-    
+
     if (input_channels % kernel_size != ZERO_VALUE) {
-        OP_LOGE(context->GetNodeName(), 
-                "Failed: input channels (%d) must be divisible by kernel size (%d)", 
-                input_channels, kernel_size);
+        OP_LOGE(
+            context->GetNodeName(), "Failed: input channels (%d) must be divisible by kernel size (%d)", input_channels,
+            kernel_size);
         return ge::GRAPH_FAILED;
     }
-    
+
     int32_t C = input_channels / kernel_size;
 
     // 检查输出尺寸是否有效
     if (H <= POSITIVE_THRESHOLD || W <= POSITIVE_THRESHOLD) {
-        OP_LOGE(context->GetNodeName(), 
-                "Failed: output height (%d) and width (%d) must be positive", 
-                H, W);
+        OP_LOGE(context->GetNodeName(), "Failed: output height (%d) and width (%d) must be positive", H, W);
         return ge::GRAPH_FAILED;
     }
 
@@ -146,9 +144,9 @@ static ge::graphStatus InferShapeCol2Im(gert::InferShapeContext *context)
     int32_t L = InputShape->GetDim(LENGTH_DIM_INDEX);
     int32_t expected_L = H * W;
     if (L != expected_L) {
-        OP_LOGE(context->GetNodeName(), 
-                "Failed: input third dimension (%d) must equal H*W (%d*%d=%d)", 
-                L, H, W, expected_L);
+        OP_LOGE(
+            context->GetNodeName(), "Failed: input third dimension (%d) must equal H*W (%d*%d=%d)", L, H, W,
+            expected_L);
         return ge::GRAPH_FAILED;
     }
 

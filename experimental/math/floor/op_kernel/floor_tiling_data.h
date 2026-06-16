@@ -14,7 +14,7 @@
  */
 #ifndef FLOOR_TILING_DATA_H_
 #define FLOOR_TILING_DATA_H_
-struct FloorTilingData{
+struct FloorTilingData {
     uint64_t smallCoreDataNum;
     uint64_t bigCoreDataNum;
     uint64_t finalBigTileNum;
@@ -23,5 +23,5 @@ struct FloorTilingData{
     uint64_t smallTailDataNum;
     uint64_t bigTailDataNum;
     uint64_t tailBlockNum;
-} ;
+};
 #endif

@@ -55,17 +55,16 @@ __aicore__ inline RoundMode GetCastDownRoundMode()
 template <typename T, int REDUCE_MODE>
 class ReduceMeanWithCount {
     // Double buffer for AR full-load and ARA full-load; single buffer for AR col-split
-    static constexpr int32_t BUFFER_NUM =
-        (REDUCE_MODE == REDUCE_MODE_AR_COLSPLIT) ? 1 : 2;
+    static constexpr int32_t BUFFER_NUM = (REDUCE_MODE == REDUCE_MODE_AR_COLSPLIT) ? 1 : 2;
 
     // Whether T requires precision-promotion for ReduceSum (FP16/BF16 -> FP32)
     static constexpr bool NEED_CAST = !std::is_same_v<T, float>;
 
 public:
-    __aicore__ inline ReduceMeanWithCount() {};
+    __aicore__ inline ReduceMeanWithCount(){};
 
-    __aicore__ inline void Init(GM_ADDR input, GM_ADDR meanResult, GM_ADDR countResult,
-                                 const ReduceMeanWithCountTilingData* tilingData);
+    __aicore__ inline void Init(
+        GM_ADDR input, GM_ADDR meanResult, GM_ADDR countResult, const ReduceMeanWithCountTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -112,9 +111,9 @@ private:
     // Derived parameters (common)
     uint64_t myStartTile_;
     uint64_t myTileCount_;
-    uint64_t myStartRow_;      // alias to myStartTile_
-    uint64_t myRowCount_;      // alias to myTileCount_
-    uint64_t rLengthAlign_;    // rLength aligned to element boundary of T
+    uint64_t myStartRow_;   // alias to myStartTile_
+    uint64_t myRowCount_;   // alias to myTileCount_
+    uint64_t rLengthAlign_; // rLength aligned to element boundary of T
 
     // Temporary buffer for ReduceSum
     TBuf<QuePosition::VECCALC> tmpBuf_;
@@ -131,8 +130,7 @@ private:
 // ============================================================================
 template <typename T, int REDUCE_MODE>
 __aicore__ inline void ReduceMeanWithCount<T, REDUCE_MODE>::Init(
-    GM_ADDR input, GM_ADDR meanResult, GM_ADDR countResult,
-    const ReduceMeanWithCountTilingData* tilingData)
+    GM_ADDR input, GM_ADDR meanResult, GM_ADDR countResult, const ReduceMeanWithCountTilingData* tilingData)
 {
     a1Length_ = tilingData->a1Length;
     rLength_ = tilingData->rLength;
@@ -152,7 +150,7 @@ __aicore__ inline void ReduceMeanWithCount<T, REDUCE_MODE>::Init(
     rLengthAlign_ = ((rLength_ + elemPerBlock - 1) / elemPerBlock) * elemPerBlock;
 
     // FP32 alignment of rLength (used for FP16/BF16 cast/reducesum buffers)
-    constexpr uint32_t elemPerBlockFP32 = 32 / sizeof(float);  // 8
+    constexpr uint32_t elemPerBlockFP32 = 32 / sizeof(float); // 8
     uint64_t rLengthAlignFP32 = ((rLength_ + elemPerBlockFP32 - 1) / elemPerBlockFP32) * elemPerBlockFP32;
 
     uint32_t blockIdx = GetBlockIdx();
@@ -353,7 +351,7 @@ __aicore__ inline void ReduceMeanWithCount<T, REDUCE_MODE>::ProcessARColSplit()
 
     for (uint64_t row = 0; row < myRowCount_; row++) {
         uint64_t globalRow = myStartRow_ + row;
-        float globalSum = 0.0f;  // FP32 accumulation across chunks (overflow-safe)
+        float globalSum = 0.0f; // FP32 accumulation across chunks (overflow-safe)
 
         for (uint64_t c = 0; c < numChunks; c++) {
             uint64_t colStart = c * chunkR_;

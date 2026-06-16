@@ -11,12 +11,11 @@
 /*!
  * \file pow.cpp
  * \brief
-*/
+ */
 
 #include "pow.h"
 
-enum class PowTilingKey : uint32_t
-{
+enum class PowTilingKey : uint32_t {
     TILING_KEY_EXAMPLE_FLOAT = 0,
     TILING_KEY_EXAMPLE_OTHER = 1,
 };
@@ -25,7 +24,7 @@ __global__ __aicore__ void pow(GM_ADDR x, GM_ADDR exponent, GM_ADDR y, GM_ADDR w
 {
     REGISTER_TILING_DEFAULT(PowTilingData);
     GET_TILING_DATA_WITH_STRUCT(PowTilingData, tilingData, tiling);
-    MyPow::KernelPow<DTYPE_X,DTYPE_Y> op; 
-    op.Init(x, exponent, y, &tilingData);      // 算子kernel实例初始化
+    MyPow::KernelPow<DTYPE_X, DTYPE_Y> op;
+    op.Init(x, exponent, y, &tilingData); // 算子kernel实例初始化
     op.Process();
 }

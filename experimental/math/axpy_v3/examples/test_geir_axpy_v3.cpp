@@ -17,7 +17,7 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  */
- 
+
 #include <iostream>
 #include <fstream>
 #include <string.h>
@@ -47,62 +47,66 @@ using namespace ge;
 using std::map;
 using std::string;
 using std::vector;
-#define ADD_INPUT(intputIndex, intputName, intputDtype, inputShape,value)                                         \
-    vector<int64_t> placeholder##intputIndex##_shape = inputShape;                                          \
-    auto placeholder##intputIndex = op::Data("placeholder" + intputIndex).set_attr_index(0);                \
-    TensorDesc placeholder##intputIndex##_desc =                                                            \
-        TensorDesc(ge::Shape(placeholder##intputIndex##_shape), FORMAT_ND, intputDtype);                    \
-    placeholder##intputIndex##_desc.SetPlacement(ge::kPlacementHost);                                       \
-    placeholder##intputIndex##_desc.SetFormat(FORMAT_ND);                                                   \
-    Tensor tensor_placeholder##intputIndex;                                                                 \
+#define ADD_INPUT(intputIndex, intputName, intputDtype, inputShape, value)                                      \
+    vector<int64_t> placeholder##intputIndex##_shape = inputShape;                                              \
+    auto placeholder##intputIndex = op::Data("placeholder" + intputIndex).set_attr_index(0);                    \
+    TensorDesc placeholder##intputIndex##_desc =                                                                \
+        TensorDesc(ge::Shape(placeholder##intputIndex##_shape), FORMAT_ND, intputDtype);                        \
+    placeholder##intputIndex##_desc.SetPlacement(ge::kPlacementHost);                                           \
+    placeholder##intputIndex##_desc.SetFormat(FORMAT_ND);                                                       \
+    Tensor tensor_placeholder##intputIndex;                                                                     \
     if (intputDtype == DT_FLOAT || intputDtype == DT_FLOAT16) {                                                 \
-        ret = GenOnesDataFloat32(placeholder##intputIndex##_shape, tensor_placeholder##intputIndex, \
-                          placeholder##intputIndex##_desc, static_cast<float>(value)); \
-    } else if(intputDtype == DT_INT32 || intputDtype == DT_INT16){                                                                       \
-        ret = GenOnesData(placeholder##intputIndex##_shape, tensor_placeholder##intputIndex, \
-                         placeholder##intputIndex##_desc, intputDtype, static_cast<int>(value)); \
-    }                                                                                                \
-    if (ret != SUCCESS) {                                                                                   \
-        printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                      \
-        return FAILED;                                                                                      \
-    }                                                                                                       \
-    placeholder##intputIndex.update_input_desc_x(placeholder##intputIndex##_desc);                          \
-    input.push_back(tensor_placeholder##intputIndex);                                                       \
-    graph.AddOp(placeholder##intputIndex);                                                                  \
-    add1.set_input_##intputName(placeholder##intputIndex);                                                  \
+        ret = GenOnesDataFloat32(                                                                               \
+            placeholder##intputIndex##_shape, tensor_placeholder##intputIndex, placeholder##intputIndex##_desc, \
+            static_cast<float>(value));                                                                         \
+    } else if (intputDtype == DT_INT32 || intputDtype == DT_INT16) {                                            \
+        ret = GenOnesData(                                                                                      \
+            placeholder##intputIndex##_shape, tensor_placeholder##intputIndex, placeholder##intputIndex##_desc, \
+            intputDtype, static_cast<int>(value));                                                              \
+    }                                                                                                           \
+    if (ret != SUCCESS) {                                                                                       \
+        printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                          \
+        return FAILED;                                                                                          \
+    }                                                                                                           \
+    placeholder##intputIndex.update_input_desc_x(placeholder##intputIndex##_desc);                              \
+    input.push_back(tensor_placeholder##intputIndex);                                                           \
+    graph.AddOp(placeholder##intputIndex);                                                                      \
+    add1.set_input_##intputName(placeholder##intputIndex);                                                      \
     inputs.push_back(placeholder##intputIndex);
 
-#define ADD_CONST_INPUT(intputIndex, intputName, intputDtype, inputShape,value)                                   \
-    vector<int64_t> placeholder##intputIndex##_shape = inputShape;                                          \
-    auto placeholder##intputIndex = op::Const("placeholder" + intputIndex);                                 \
-    TensorDesc placeholder##intputIndex##_desc =                                                            \
-        TensorDesc(ge::Shape(placeholder##intputIndex##_shape), FORMAT_ND, intputDtype);                    \
-    placeholder##intputIndex##_desc.SetPlacement(ge::kPlacementHost);                                       \
-    placeholder##intputIndex##_desc.SetFormat(FORMAT_ND);                                                   \
-    Tensor tensor_placeholder##intputIndex;                                                             \
+#define ADD_CONST_INPUT(intputIndex, intputName, intputDtype, inputShape, value)                                \
+    vector<int64_t> placeholder##intputIndex##_shape = inputShape;                                              \
+    auto placeholder##intputIndex = op::Const("placeholder" + intputIndex);                                     \
+    TensorDesc placeholder##intputIndex##_desc =                                                                \
+        TensorDesc(ge::Shape(placeholder##intputIndex##_shape), FORMAT_ND, intputDtype);                        \
+    placeholder##intputIndex##_desc.SetPlacement(ge::kPlacementHost);                                           \
+    placeholder##intputIndex##_desc.SetFormat(FORMAT_ND);                                                       \
+    Tensor tensor_placeholder##intputIndex;                                                                     \
     if (intputDtype == DT_FLOAT || intputDtype == DT_FLOAT16) {                                                 \
-        ret = GenOnesDataFloat32(placeholder##intputIndex##_shape, tensor_placeholder##intputIndex, \
-                          placeholder##intputIndex##_desc, static_cast<float>(value)); \
-    } else if(intputDtype == DT_INT32 || intputDtype == DT_INT16){                                 \
-        ret = GenOnesData(placeholder##intputIndex##_shape, tensor_placeholder##intputIndex, \
-                         placeholder##intputIndex##_desc, intputDtype, static_cast<int>(value)); \
-    }                                                                                                 \
-    if (ret != SUCCESS) {                                                                                   \
-        printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                      \
-        return FAILED;                                                                                      \
-    }                                                                                                       \
-    placeholder##intputIndex.SetAttr("value", tensor_placeholder##intputIndex);                             \
-    placeholder##intputIndex.update_output_desc_y(placeholder##intputIndex##_desc);                         \
-    graph.AddOp(placeholder##intputIndex);                                                                  \
-    add1.set_input_##intputName(placeholder##intputIndex);                                                  \
-    add1.update_input_desc_##intputName(placeholder##intputIndex##_desc);                                   \
+        ret = GenOnesDataFloat32(                                                                               \
+            placeholder##intputIndex##_shape, tensor_placeholder##intputIndex, placeholder##intputIndex##_desc, \
+            static_cast<float>(value));                                                                         \
+    } else if (intputDtype == DT_INT32 || intputDtype == DT_INT16) {                                            \
+        ret = GenOnesData(                                                                                      \
+            placeholder##intputIndex##_shape, tensor_placeholder##intputIndex, placeholder##intputIndex##_desc, \
+            intputDtype, static_cast<int>(value));                                                              \
+    }                                                                                                           \
+    if (ret != SUCCESS) {                                                                                       \
+        printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                          \
+        return FAILED;                                                                                          \
+    }                                                                                                           \
+    placeholder##intputIndex.SetAttr("value", tensor_placeholder##intputIndex);                                 \
+    placeholder##intputIndex.update_output_desc_y(placeholder##intputIndex##_desc);                             \
+    graph.AddOp(placeholder##intputIndex);                                                                      \
+    add1.set_input_##intputName(placeholder##intputIndex);                                                      \
+    add1.update_input_desc_##intputName(placeholder##intputIndex##_desc);                                       \
     inputs.push_back(placeholder##intputIndex);
 
 #define ADD_OUTPUT(outputIndex, outputName, outputDtype, outputShape)                                       \
     TensorDesc outputName##outputIndex##_desc = TensorDesc(ge::Shape(outputShape), FORMAT_ND, outputDtype); \
     add1.update_output_desc_##outputName(outputName##outputIndex##_desc);
-    //新加
-    #define LOG_PRINT(message, ...)         \
+// 新加
+#define LOG_PRINT(message, ...)         \
     do {                                \
         printf(message, ##__VA_ARGS__); \
     } while (0)
@@ -183,8 +187,8 @@ int CreateOppInGraph(
     auto add1 = op::AxpyV3("add1");
     add1.set_attr_a(7.0f);
     std::vector<int64_t> xShape = {32, 4, 4, 4};
-    ADD_INPUT(1, x1, inDtype, xShape,4);
-    ADD_INPUT(2, x2, inDtype, xShape,2);
+    ADD_INPUT(1, x1, inDtype, xShape, 4);
+    ADD_INPUT(2, x2, inDtype, xShape, 2);
 
     ADD_OUTPUT(1, y, inDtype, xShape);
 
@@ -213,7 +217,7 @@ int main(int argc, char* argv[])
 
     std::cout << argv[1] << std::endl;
     char* endptr;
-    //修改类型
+    // 修改类型
     DataType inDtype = DT_FLOAT;
 
     std::cout << inDtype << std::endl;
@@ -282,7 +286,7 @@ int main(int argc, char* argv[])
         std::cout << "this is " << i << "th output, output shape size =" << output_shape << std::endl;
         uint32_t data_size = output_shape * GetDataTypeSize(output[i].GetTensorDesc().GetDataType());
         WriteDataToFile((const char*)output_file.c_str(), data_size, output_data_i);
-        //新加3行打印
+        // 新加3行打印
         float* result = (float*)output_data_i;
         // int32_t* result = (int32_t*)output_data_i;
         for (int64_t j = 0; j < 8; j++) {

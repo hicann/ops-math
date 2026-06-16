@@ -23,26 +23,26 @@
 
 struct ReduceMeanWithCountTilingData {
     // ---- Merged axis shape parameters ----
-    uint64_t a1Length;         // A1 dimension size (outer preserved axis product)
-    uint64_t rLength;          // R dimension size (reduction axis product)
-    uint64_t a0Length;         // A0 dimension size (inner preserved axis product), 1 for AR mode
+    uint64_t a1Length; // A1 dimension size (outer preserved axis product)
+    uint64_t rLength;  // R dimension size (reduction axis product)
+    uint64_t a0Length; // A0 dimension size (inner preserved axis product), 1 for AR mode
 
     // ---- Multi-core split parameters ----
-    int32_t usedCoreNum;       // Actual number of cores used
-    uint64_t tilesPerCore;     // Number of tiles per core (first usedCoreNum-1 cores)
-    uint64_t tailCoreTiles;    // Number of tiles for tail core
+    int32_t usedCoreNum;    // Actual number of cores used
+    uint64_t tilesPerCore;  // Number of tiles per core (first usedCoreNum-1 cores)
+    uint64_t tailCoreTiles; // Number of tiles for tail core
 
     // ---- UB split parameters ----
-    uint64_t tileA0Len;        // ARA mode: length along A0 per tile
-    uint64_t chunkR;           // AR split-load mode: R columns per chunk
+    uint64_t tileA0Len; // ARA mode: length along A0 per tile
+    uint64_t chunkR;    // AR split-load mode: R columns per chunk
 
     // ---- Compute parameters ----
-    float invCount;            // 1.0f / countResult, for Muls to compute mean
-    int64_t countResult;       // Number of elements participating in reduction
-    uint64_t tmpBufSize;       // ReduceSum sharedTmpBuffer size (bytes)
+    float invCount;      // 1.0f / countResult, for Muls to compute mean
+    int64_t countResult; // Number of elements participating in reduction
+    uint64_t tmpBufSize; // ReduceSum sharedTmpBuffer size (bytes)
 
     // ---- Output info ----
-    uint64_t outputLength;     // Total elements in mean_result output
+    uint64_t outputLength; // Total elements in mean_result output
 };
 
 #endif // _REDUCE_MEAN_WITH_COUNT_TILING_DATA_H_

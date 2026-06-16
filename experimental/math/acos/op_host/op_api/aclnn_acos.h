@@ -33,8 +33,8 @@ extern "C" {
  * @param [out]  executor         返回op执行器，包含了算子计算流程。
  * @return       aclnnStatus      返回状态码
  */
-ACLNN_API aclnnStatus aclnnAcosGetWorkspaceSize(const aclTensor* input, aclTensor* out, uint64_t* workspaceSize,
-                                                aclOpExecutor** executor);
+ACLNN_API aclnnStatus
+aclnnAcosGetWorkspaceSize(const aclTensor* input, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief aclnnAcos的第二段接口，用于执行计算。
@@ -57,8 +57,8 @@ graph LR
  * @param [in] executor: op执行器，包含了算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnAcos(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
-                                const aclrtStream stream);
+ACLNN_API aclnnStatus
+aclnnAcos(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream);
 
 /**
  * @brief aclnnInplaceAcos的第一段接口，根据具体的计算流程，计算workspace大小。
@@ -75,8 +75,8 @@ ACLNN_API aclnnStatus aclnnAcos(void* workspace, uint64_t workspaceSize, aclOpEx
  * @param [out]  executor         返回op执行器，包含了算子计算流程。
  * @return       aclnnStatus      返回状态码
  */
-ACLNN_API aclnnStatus aclnnInplaceAcosGetWorkspaceSize(aclTensor* inputRef, uint64_t* workspaceSize,
-                                                       aclOpExecutor** executor);
+ACLNN_API aclnnStatus
+aclnnInplaceAcosGetWorkspaceSize(aclTensor* inputRef, uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief: aclnnInplaceAcos的第二段接口，用于执行计算
@@ -88,8 +88,8 @@ ACLNN_API aclnnStatus aclnnInplaceAcosGetWorkspaceSize(aclTensor* inputRef, uint
  * @param [in] executor: op执行器，包含了算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnInplaceAcos(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
-                                       const aclrtStream stream);
+ACLNN_API aclnnStatus
+aclnnInplaceAcos(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream);
 #ifdef __cplusplus
 }
 #endif

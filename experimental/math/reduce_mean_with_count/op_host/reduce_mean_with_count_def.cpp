@@ -45,13 +45,9 @@ public:
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
 
-        this->Attr("axis")
-            .AttrType(OPTIONAL)
-            .ListInt({});
+        this->Attr("axis").AttrType(OPTIONAL).ListInt({});
 
-        this->Attr("keepdim")
-            .AttrType(OPTIONAL)
-            .Bool(false);
+        this->Attr("keepdim").AttrType(OPTIONAL).Bool(false);
 
         OpAICoreConfig aiCoreConfig;
         aiCoreConfig.DynamicCompileStaticFlag(true)

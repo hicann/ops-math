@@ -31,12 +31,13 @@ using namespace AscendC;
 
 template <typename T>
 class KernelSignBitsUnpack {
-
 public:
     __aicore__ inline KernelSignBitsUnpack(){};
 
-    __aicore__ inline void Init(GM_ADDR self, GM_ADDR out, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t finalBigTileNum,
-        uint64_t finalSmallTileNum, uint64_t tileDataNum, uint64_t smallTailDataNum, uint64_t bigTailDataNum, uint64_t tailBlockNum, uint64_t bufferOpen);
+    __aicore__ inline void Init(
+        GM_ADDR self, GM_ADDR out, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t finalBigTileNum,
+        uint64_t finalSmallTileNum, uint64_t tileDataNum, uint64_t smallTailDataNum, uint64_t bigTailDataNum,
+        uint64_t tailBlockNum, uint64_t bufferOpen);
     __aicore__ inline void Process();
 
 private:
@@ -62,8 +63,10 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void KernelSignBitsUnpack<T>::Init(GM_ADDR self, GM_ADDR out, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t finalBigTileNum,
-        uint64_t finalSmallTileNum, uint64_t tileDataNum, uint64_t smallTailDataNum, uint64_t bigTailDataNum, uint64_t tailBlockNum, uint64_t bufferOpen)
+__aicore__ inline void KernelSignBitsUnpack<T>::Init(
+    GM_ADDR self, GM_ADDR out, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t finalBigTileNum,
+    uint64_t finalSmallTileNum, uint64_t tileDataNum, uint64_t smallTailDataNum, uint64_t bigTailDataNum,
+    uint64_t tailBlockNum, uint64_t bufferOpen)
 {
     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
     uint64_t coreId = AscendC::GetBlockIdx();
@@ -120,16 +123,22 @@ __aicore__ inline void KernelSignBitsUnpack<T>::Compute(int64_t progress)
         AscendC::LocalTensor<float> outLocal = outQueueOut.template AllocTensor<float>();
         AscendC::LocalTensor<half> tmp0Local = tmpQueue0.AllocTensor<half>();
         AscendC::Duplicate(outLocal, static_cast<float>(1.0), this->processDataNumOut);
-        AscendC::Select(outLocal, selfLocal, outLocal, static_cast<float>(-1.0), AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE, this->processDataNumOut);
+        AscendC::Select(
+            outLocal, selfLocal, outLocal, static_cast<float>(-1.0), AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE,
+            this->processDataNumOut);
         outQueueOut.template EnQue<float>(outLocal);
         inQueueSelf.FreeTensor(selfLocal);
     } else {
         AscendC::LocalTensor<uint8_t> selfLocal = inQueueSelf.template DeQue<uint8_t>();
         AscendC::LocalTensor<half> outLocal = outQueueOut.template AllocTensor<half>();
         AscendC::Duplicate(outLocal, static_cast<half>(1.0), this->processDataNumOut);
-        //数据对齐
-        AscendC::Select(outLocal, selfLocal, outLocal, static_cast<half>(1.0), AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE, this->processDataNumOut);
-        AscendC::Select(outLocal, selfLocal, outLocal, static_cast<half>(-1.0), AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE, this->processDataNumOut);
+        // 数据对齐
+        AscendC::Select(
+            outLocal, selfLocal, outLocal, static_cast<half>(1.0), AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE,
+            this->processDataNumOut);
+        AscendC::Select(
+            outLocal, selfLocal, outLocal, static_cast<half>(-1.0), AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE,
+            this->processDataNumOut);
         outQueueOut.template EnQue<half>(outLocal);
         inQueueSelf.FreeTensor(selfLocal);
     }

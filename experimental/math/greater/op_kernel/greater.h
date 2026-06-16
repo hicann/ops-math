@@ -36,74 +36,72 @@ constexpr float MAX_F32 = 0.0f;
 template <typename TYPE_X1, typename TYPE_X2, typename TYPE_Y, bool IsExistBigCore>
 class Greater {
     using T = TYPE_X1;
+
 public:
     __aicore__ inline Greater() {}
-    __aicore__ inline void Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, uint64_t smallCoreDataNum,
-                                uint64_t bigCoreDataNum, uint64_t bigCoreLoopNum, 
-                                uint64_t smallCoreLoopNum, uint64_t ubPartDataNum, 
-                                uint64_t smallCoreTailDataNum, uint64_t bigCoreTailDataNum, 
-                                uint64_t tailBlockNum) 
+    __aicore__ inline void Init(
+        GM_ADDR x1, GM_ADDR x2, GM_ADDR y, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t bigCoreLoopNum,
+        uint64_t smallCoreLoopNum, uint64_t ubPartDataNum, uint64_t smallCoreTailDataNum, uint64_t bigCoreTailDataNum,
+        uint64_t tailBlockNum)
     {
         ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
         uint64_t coreNum = AscendC::GetBlockIdx();
         uint64_t globalBufferIndex = bigCoreDataNum * AscendC::GetBlockIdx();
         this->ubPartDataNum = ubPartDataNum;
-        
+
         if constexpr (IsExistBigCore) {
-            if (coreNum < tailBlockNum) { 
+            if (coreNum < tailBlockNum) {
                 this->coreDataNum = bigCoreDataNum;
                 this->tileNum = bigCoreLoopNum;
                 this->tailDataNum = bigCoreTailDataNum;
-            }
-            else { 
+            } else {
                 this->coreDataNum = smallCoreDataNum;
                 this->tileNum = smallCoreLoopNum;
                 this->tailDataNum = smallCoreTailDataNum;
                 globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (AscendC::GetBlockIdx() - tailBlockNum);
             }
-        }
-        else {
+        } else {
             this->coreDataNum = smallCoreDataNum;
             this->tileNum = smallCoreLoopNum;
             this->tailDataNum = smallCoreTailDataNum;
             globalBufferIndex = smallCoreDataNum * AscendC::GetBlockIdx();
         }
-          
+
         x1Gm.SetGlobalBuffer((__gm__ TYPE_X1*)x1 + globalBufferIndex, this->coreDataNum);
         x2Gm.SetGlobalBuffer((__gm__ TYPE_X2*)x2 + globalBufferIndex, this->coreDataNum);
         yGm.SetGlobalBuffer((__gm__ int8_t*)y + globalBufferIndex, this->coreDataNum);
         pipe.InitBuffer(inQueueX1, BUFFER_NUM, this->ubPartDataNum * sizeof(TYPE_X1));
         pipe.InitBuffer(inQueueX2, BUFFER_NUM, this->ubPartDataNum * sizeof(TYPE_X2));
         pipe.InitBuffer(outQueueY, BUFFER_NUM, this->ubPartDataNum * sizeof(int8_t));
-        if(std::is_same_v<TYPE_X1, float>) {
+        if (std::is_same_v<TYPE_X1, float>) {
             pipe.InitBuffer(calc_buf_1, this->ubPartDataNum * sizeof(half));
-        } else if(std::is_same_v<TYPE_X1, int8_t> || std::is_same_v<TYPE_X1, uint8_t>) {
+        } else if (std::is_same_v<TYPE_X1, int8_t> || std::is_same_v<TYPE_X1, uint8_t>) {
             pipe.InitBuffer(calc_buf_1, this->ubPartDataNum * sizeof(half));
             pipe.InitBuffer(calc_buf_2, this->ubPartDataNum * sizeof(half));
-        } else if(std::is_same_v<TYPE_X1, int32_t>) {
+        } else if (std::is_same_v<TYPE_X1, int32_t>) {
             pipe.InitBuffer(calc_buf_1, this->ubPartDataNum * sizeof(half));
             pipe.InitBuffer(calc_buf_2, this->ubPartDataNum * sizeof(float));
             pipe.InitBuffer(calc_buf_3, this->ubPartDataNum * sizeof(float));
-        } else if(std::is_same_v<TYPE_X1, int64_t>) {
+        } else if (std::is_same_v<TYPE_X1, int64_t>) {
             pipe.InitBuffer(calc_buf_1, this->ubPartDataNum * sizeof(float));
             pipe.InitBuffer(calc_buf_2, this->ubPartDataNum * sizeof(float));
             pipe.InitBuffer(calc_buf_3, this->ubPartDataNum * sizeof(half));
         }
     }
-    
+
     __aicore__ inline void Process()
     {
         int32_t loopCount = this->tileNum;
         this->processDataNum = this->ubPartDataNum;
-        for (int32_t i = 0; i < loopCount-1; i++) {
+        for (int32_t i = 0; i < loopCount - 1; i++) {
             CopyIn(i);
             Compute(i);
             CopyOut(i);
         }
         this->processDataNum = this->tailDataNum;
-        CopyIn(loopCount-1);
-        Compute(loopCount-1);
-        CopyOut(loopCount-1);
+        CopyIn(loopCount - 1);
+        Compute(loopCount - 1);
+        CopyOut(loopCount - 1);
     }
 
 private:
@@ -116,7 +114,7 @@ private:
         inQueueX1.EnQue(x1Local);
         inQueueX2.EnQue(x2Local);
     }
-    
+
     __aicore__ inline void Compute(int32_t progress)
     {
         if constexpr (std::is_same_v<TYPE_X1, half> || std::is_same_v<TYPE_X1, bfloat16_t>) {
@@ -133,8 +131,7 @@ private:
             outQueueY.EnQue<int8_t>(yLocal);
             inQueueX1.FreeTensor(x1Local);
             inQueueX2.FreeTensor(x2Local);
-        }
-        else if constexpr (std::is_same_v<TYPE_X1, float>) {
+        } else if constexpr (std::is_same_v<TYPE_X1, float>) {
             AscendC::LocalTensor<TYPE_X1> x1Local = inQueueX1.DeQue<TYPE_X1>();
             AscendC::LocalTensor<TYPE_X2> x2Local = inQueueX2.DeQue<TYPE_X2>();
             AscendC::LocalTensor<int8_t> yLocal = outQueueY.AllocTensor<int8_t>();
@@ -148,8 +145,7 @@ private:
             outQueueY.EnQue<int8_t>(yLocal);
             inQueueX1.FreeTensor(x1Local);
             inQueueX2.FreeTensor(x2Local);
-        }
-        else if constexpr (std::is_same_v<TYPE_X1, int8_t> || std::is_same_v<TYPE_X1, uint8_t>) {
+        } else if constexpr (std::is_same_v<TYPE_X1, int8_t> || std::is_same_v<TYPE_X1, uint8_t>) {
             AscendC::LocalTensor<TYPE_X1> x1Local = inQueueX1.DeQue<TYPE_X1>();
             AscendC::LocalTensor<TYPE_X2> x2Local = inQueueX2.DeQue<TYPE_X2>();
             AscendC::LocalTensor<int8_t> yLocal = outQueueY.AllocTensor<int8_t>();
@@ -164,8 +160,7 @@ private:
             outQueueY.EnQue<int8_t>(yLocal);
             inQueueX1.FreeTensor(x1Local);
             inQueueX2.FreeTensor(x2Local);
-        }
-        else if constexpr (std::is_same_v<TYPE_X1, int32_t>) {
+        } else if constexpr (std::is_same_v<TYPE_X1, int32_t>) {
             AscendC::LocalTensor<TYPE_X1> x1Local = inQueueX1.DeQue<TYPE_X1>();
             AscendC::LocalTensor<TYPE_X2> x2Local = inQueueX2.DeQue<TYPE_X2>();
             AscendC::LocalTensor<int8_t> yLocal = outQueueY.AllocTensor<int8_t>();
@@ -183,7 +178,7 @@ private:
             outQueueY.EnQue<int8_t>(yLocal);
             inQueueX1.FreeTensor(x1Local);
             inQueueX2.FreeTensor(x2Local);
-        } else if(std::is_same_v<TYPE_X1, int64_t>) {
+        } else if (std::is_same_v<TYPE_X1, int64_t>) {
             AscendC::LocalTensor<TYPE_X1> x1Local = inQueueX1.DeQue<TYPE_X1>();
             AscendC::LocalTensor<TYPE_X2> x2Local = inQueueX2.DeQue<TYPE_X2>();
             AscendC::LocalTensor<int8_t> yLocal = outQueueY.AllocTensor<int8_t>();
@@ -205,14 +200,14 @@ private:
             inQueueX2.FreeTensor(x2Local);
         }
     }
-    
+
     __aicore__ inline void CopyOut(int32_t progress)
     {
         AscendC::LocalTensor<int8_t> yLocal = outQueueY.DeQue<int8_t>();
         AscendC::DataCopy(yGm[progress * this->ubPartDataNum], yLocal, this->processDataNum);
         outQueueY.FreeTensor(yLocal);
     }
-    
+
 private:
     AscendC::TPipe pipe;
     AscendC::TQue<AscendC::QuePosition::VECIN, BUFFER_NUM> inQueueX1;

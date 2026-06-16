@@ -35,10 +35,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./accumulate_nv2_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "accumulate_nv2_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "accumulate_nv2_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;
@@ -56,7 +53,7 @@ inline T1 CeilAlign(T1 a, T2 b)
 
 TEST_F(AccumulateNv2Test, test_case_float32_1)
 {
-    system("pwd");  
+    system("pwd");
     system("ls -la accumulate_nv2_data 2>/dev/null || echo 'accumulate_nv2_data not found'");
 
     uint32_t blockDim = 1;
@@ -94,7 +91,7 @@ TEST_F(AccumulateNv2Test, test_case_float32_1)
     const int tensor_count = 2;
     // 布局：[Offset_Bytes, TensorAddr_0, TensorAddr_1, ...]
     // 需要 1 个头 + 2 个地址
-    size_t count_total = 1 + tensor_count; 
+    size_t count_total = 1 + tensor_count;
     size_t byte_size = count_total * sizeof(uint64_t);
 
     uint64_t* h_data = (uint64_t*)malloc(byte_size);
@@ -102,7 +99,7 @@ TEST_F(AccumulateNv2Test, test_case_float32_1)
     // 第一步：填入偏移量 (Offset)
     // 解释：GetTensorAddr 读取 *dataAddr 作为字节偏移，右移 3 位变成元素个数偏移
     // 我们希望 tensorPtr 指向第二个元素 (index 1)，所以字节偏移应该是 sizeof(uint64_t) = 8
-    h_data[0] = (uint64_t)sizeof(uint64_t); 
+    h_data[0] = (uint64_t)sizeof(uint64_t);
 
     // 第二步：填入真实的 Tensor 地址
     h_data[1] = (uint64_t)(uintptr_t)x1;

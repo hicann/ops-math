@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
+
 /**
  *
  * NOTE: Portions of this code were AI-generated and have been
@@ -57,8 +57,8 @@
 namespace optiling {
 
 using Ops::Base::CeilDiv;
-using Ops::Base::FloorDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 // 系统 workspace 大小（当前算子不需要额外 workspace）
@@ -73,7 +73,8 @@ constexpr uint32_t ALIGNMENT_BYTES = 32U;
 
 static const gert::Shape g_vec_1_shape = {1};
 
-static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape) {
+static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape)
+{
     if (in_shape.GetDimNum() == 0) {
         return g_vec_1_shape;
     }
@@ -96,16 +97,26 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
 static uint32_t ComputeTilingKey(ge::DataType dtype)
 {
     switch (dtype) {
-        case ge::DT_FLOAT:   return 0;
-        case ge::DT_FLOAT16: return 1;
-        case ge::DT_DOUBLE:  return 2;
-        case ge::DT_INT8:    return 3;
-        case ge::DT_INT16:   return 4;
-        case ge::DT_INT32:   return 5;
-        case ge::DT_INT64:   return 6;
-        case ge::DT_UINT8:   return 7;
-        case ge::DT_BOOL:    return 8;
-        default:             return UINT32_MAX;
+        case ge::DT_FLOAT:
+            return 0;
+        case ge::DT_FLOAT16:
+            return 1;
+        case ge::DT_DOUBLE:
+            return 2;
+        case ge::DT_INT8:
+            return 3;
+        case ge::DT_INT16:
+            return 4;
+        case ge::DT_INT32:
+            return 5;
+        case ge::DT_INT64:
+            return 6;
+        case ge::DT_UINT8:
+            return 7;
+        case ge::DT_BOOL:
+            return 8;
+        default:
+            return UINT32_MAX;
     }
 }
 
@@ -113,11 +124,7 @@ static uint32_t ComputeTilingKey(ge::DataType dtype)
 //   perElemBytes：每元素占用的 UB 字节数（双缓冲已算入）
 //   alignElem：对齐单位（元素数）
 //   tmpTotalUB：tmpBuf Ping + Pong 总字节数
-static uint32_t ComputeTileLength(
-    uint64_t ubSize,
-    uint32_t perElemBytes,
-    uint32_t alignElem,
-    uint32_t tmpTotalUB)
+static uint32_t ComputeTileLength(uint64_t ubSize, uint32_t perElemBytes, uint32_t alignElem, uint32_t tmpTotalUB)
 {
     uint64_t availUB = (ubSize > UB_RESERVED_BYTES) ? (ubSize - UB_RESERVED_BYTES) : 0;
 
@@ -126,8 +133,8 @@ static uint32_t ComputeTileLength(
     }
 
     uint64_t rawTileLen = (availUB - tmpTotalUB) / perElemBytes;
-    uint32_t tileLen = static_cast<uint32_t>(
-        FloorAlign(static_cast<int64_t>(rawTileLen), static_cast<int64_t>(alignElem)));
+    uint32_t tileLen =
+        static_cast<uint32_t>(FloorAlign(static_cast<int64_t>(rawTileLen), static_cast<int64_t>(alignElem)));
     if (tileLen == 0) {
         tileLen = alignElem;
     }
@@ -149,8 +156,7 @@ static ge::graphStatus AsinWithAgentTilingFunc(gert::TilingContext* context)
     uint64_t ubSize;
     int64_t coreNum;
     OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"),
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
         return ge::GRAPH_FAILED);
 
     // 2. 获取输入形状和 dtype
@@ -164,13 +170,13 @@ static ge::graphStatus AsinWithAgentTilingFunc(gert::TilingContext* context)
     ge::DataType dataType = inputDesc->GetDataType();
 
     uint32_t tilingKey = ComputeTilingKey(dataType);
-    OP_CHECK_IF(tilingKey == UINT32_MAX, OP_LOGE(context, "Unsupported dtype: %d", static_cast<int>(dataType)),
-                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        tilingKey == UINT32_MAX, OP_LOGE(context, "Unsupported dtype: %d", static_cast<int>(dataType)),
+        return ge::GRAPH_FAILED);
 
     // 3. 设置 workspace
     OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"),
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
         return ge::GRAPH_FAILED);
 
     // 4. 获取 TilingData 指针
@@ -178,8 +184,7 @@ static ge::graphStatus AsinWithAgentTilingFunc(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
     OP_CHECK_IF(
         memset_s(tiling, sizeof(AsinWithAgentTilingData), 0, sizeof(AsinWithAgentTilingData)) != EOK,
-        OP_LOGE(context, "memset tiling data error"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "memset tiling data error"), return ge::GRAPH_FAILED);
 
     // 上限校验：totalLength 超过 UINT32_MAX 时截断，拒绝处理
     if (totalLength > static_cast<int64_t>(UINT32_MAX)) {
@@ -189,13 +194,13 @@ static ge::graphStatus AsinWithAgentTilingFunc(gert::TilingContext* context)
 
     // 空 tensor 处理
     if (totalLength == 0) {
-        tiling->totalLength   = 0;
-        tiling->tileLength    = 8;
-        tiling->loopCount     = 0;
+        tiling->totalLength = 0;
+        tiling->tileLength = 8;
+        tiling->loopCount = 0;
         tiling->tailTileLength = 0;
-        tiling->usedCoreNum   = 1;
+        tiling->usedCoreNum = 1;
         tiling->tmpBufferSize = 0;
-        tiling->tilingKey     = tilingKey;
+        tiling->tilingKey = tilingKey;
         tiling->midBufferSize = 0;
         context->SetBlockDim(1);
         uint32_t dTypeVal = static_cast<uint32_t>(dataType);
@@ -204,12 +209,12 @@ static ge::graphStatus AsinWithAgentTilingFunc(gert::TilingContext* context)
     }
 
     // 5. 多核切分
-    uint32_t usedCoreNum  = static_cast<uint32_t>(std::min(coreNum, totalLength));
+    uint32_t usedCoreNum = static_cast<uint32_t>(std::min(coreNum, totalLength));
     uint32_t perCoreLength = static_cast<uint32_t>(totalLength / usedCoreNum);
 
     // 6. 按 dtype 分支计算 tmpBufferSize / tileLength / midBufferSize
     uint32_t tmpBufferSize = 0;
-    uint32_t tileLength    = 8;
+    uint32_t tileLength = 8;
     uint32_t midBufferSize = 0;
 
     // Group A 改用手动泰勒展开，不再调用 Asin 高阶 API，tmpBufferSize 按 tileLength 固定计算
@@ -244,38 +249,39 @@ static ge::graphStatus AsinWithAgentTilingFunc(gert::TilingContext* context)
             // midBuf 包含 halfBuf(2B/elem) + floatCastBuf(4B/elem)：共 6B/elem
             // 性能优化：使用最小 seed（alignElem=32）以最大化 tileLength
             tmpBufferSize = 0;
-            uint32_t perElem = 2 * (1 + 2 + 4 + 4);  // 22B/elem
+            uint32_t perElem = 2 * (1 + 2 + 4 + 4); // 22B/elem
             tileLength = ComputeTileLength(ubSize, perElem, ALIGNMENT_BYTES / 1, 0);
-            midBufferSize = tileLength * (sizeof(uint16_t) + sizeof(float));  // half(2B) + float(4B) = 6B/elem
+            midBufferSize = tileLength * (sizeof(uint16_t) + sizeof(float)); // half(2B) + float(4B) = 6B/elem
             break;
         }
         case 4: {
             // Group C INT16: srcBuf=2B + castBuf(float)=4B + dstBuf=4B，双缓冲 = 2×10=20B/elem
             // alignElem = 32/2 = 16
             tmpBufferSize = 0;
-            uint32_t perElem = 2 * (2 + 4 + 4);  // 20B/elem（src=2B + castBuf=4B + dst=4B）
+            uint32_t perElem = 2 * (2 + 4 + 4); // 20B/elem（src=2B + castBuf=4B + dst=4B）
             tileLength = ComputeTileLength(ubSize, perElem, ALIGNMENT_BYTES / 2, 0);
-            midBufferSize = tileLength * sizeof(float);  // float castBuf，用于 Cast 中间结果
+            midBufferSize = tileLength * sizeof(float); // float castBuf，用于 Cast 中间结果
             break;
         }
         case 5: {
             // Group C INT32: srcBuf=4B + castBuf(float)=4B + dstBuf=4B，双缓冲 = 2×12=24B/elem
             // alignElem = 32/4 = 8
             tmpBufferSize = 0;
-            uint32_t perElem = 2 * (4 + 4 + 4);  // 24B/elem（src=4B + castBuf=4B + dst=4B）
+            uint32_t perElem = 2 * (4 + 4 + 4); // 24B/elem（src=4B + castBuf=4B + dst=4B）
             tileLength = ComputeTileLength(ubSize, perElem, ALIGNMENT_BYTES / 4, 0);
-            midBufferSize = tileLength * sizeof(float);  // float castBuf，避免 Asin src==dst
+            midBufferSize = tileLength * sizeof(float); // float castBuf，避免 Asin src==dst
             break;
         }
         case 6: {
             // Group C INT64: srcBuf=8B + i32Buf=4B + dstBuf=4B，双缓冲 = 2×16=32B/elem
             // alignElem = 32/8 = 4（以 srcBuf int64 对齐）
             tmpBufferSize = 0;
-            uint32_t perElem = 2 * (8 + 4 + 4);  // 32B/elem
+            uint32_t perElem = 2 * (8 + 4 + 4); // 32B/elem
             tileLength = ComputeTileLength(ubSize, perElem, ALIGNMENT_BYTES / 8, 0);
             // 确保 tileLength >= 4（int64 对齐最小值）
-            if (tileLength < 4) tileLength = 4;
-            midBufferSize = tileLength * sizeof(int32_t);  // int32 中间 buffer
+            if (tileLength < 4)
+                tileLength = 4;
+            midBufferSize = tileLength * sizeof(int32_t); // int32 中间 buffer
             break;
         }
         case 7:
@@ -283,9 +289,9 @@ static ge::graphStatus AsinWithAgentTilingFunc(gert::TilingContext* context)
             // Group C UINT8/BOOL: srcBuf=1B + halfBuf=2B + floatCastBuf=4B + dstBuf=4B，双缓冲 = 22B/elem
             // midBuf 包含 halfBuf(2B/elem) + floatCastBuf(4B/elem)：共 6B/elem
             tmpBufferSize = 0;
-            uint32_t perElem = 2 * (1 + 2 + 4 + 4);  // 22B/elem
+            uint32_t perElem = 2 * (1 + 2 + 4 + 4); // 22B/elem
             tileLength = ComputeTileLength(ubSize, perElem, ALIGNMENT_BYTES / 1, 0);
-            midBufferSize = tileLength * (sizeof(uint16_t) + sizeof(float));  // half(2B) + float(4B) = 6B/elem
+            midBufferSize = tileLength * (sizeof(uint16_t) + sizeof(float)); // half(2B) + float(4B) = 6B/elem
             break;
         }
         default:
@@ -294,18 +300,18 @@ static ge::graphStatus AsinWithAgentTilingFunc(gert::TilingContext* context)
     }
 
     // 7. 计算 per-core 的 loopCount 和 tailTileLength
-    uint32_t loopCount      = (perCoreLength > 0) ? (perCoreLength / tileLength) : 0;
+    uint32_t loopCount = (perCoreLength > 0) ? (perCoreLength / tileLength) : 0;
     uint32_t tailTileLength = (perCoreLength > 0) ? (perCoreLength % tileLength) : 0;
 
     // 8. 填写 TilingData
-    tiling->totalLength    = static_cast<uint32_t>(totalLength);
-    tiling->tileLength     = tileLength;
-    tiling->loopCount      = loopCount;
+    tiling->totalLength = static_cast<uint32_t>(totalLength);
+    tiling->tileLength = tileLength;
+    tiling->loopCount = loopCount;
     tiling->tailTileLength = tailTileLength;
-    tiling->usedCoreNum    = usedCoreNum;
-    tiling->tmpBufferSize  = tmpBufferSize;
-    tiling->tilingKey      = tilingKey;
-    tiling->midBufferSize  = midBufferSize;
+    tiling->usedCoreNum = usedCoreNum;
+    tiling->tmpBufferSize = tmpBufferSize;
+    tiling->tilingKey = tilingKey;
+    tiling->midBufferSize = midBufferSize;
 
     context->SetBlockDim(usedCoreNum);
 

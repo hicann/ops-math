@@ -16,12 +16,13 @@
 #include "isin_part_v1.h"
 
 template <uint32_t schMode>
-__global__ __aicore__ void isin_part_v1(GM_ADDR value, GM_ADDR index, GM_ADDR elementsNum, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void isin_part_v1(
+    GM_ADDR value, GM_ADDR index, GM_ADDR elementsNum, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(IsinPartV1TilingData);
     GET_TILING_DATA_WITH_STRUCT(IsinPartV1TilingData, tilingData, tiling);
 
-    NsIsinPartV1::IsinPartV1<DTYPE_VALUE> op; // 算子kernel实例获取
-    op.Init(value, index, elementsNum, z, &tilingData);      // 算子kernel实例初始化
+    NsIsinPartV1::IsinPartV1<DTYPE_VALUE> op;           // 算子kernel实例获取
+    op.Init(value, index, elementsNum, z, &tilingData); // 算子kernel实例初始化
     op.Process();
 }

@@ -21,28 +21,23 @@ __global__ __aicore__ void less(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR works
     REGISTER_TILING_DEFAULT(LessTilingData);
     GET_TILING_DATA_WITH_STRUCT(LessTilingData, tilingData, tiling);
 
-    if(tilingData.isTailBlock == 1)
-    {
+    if (tilingData.isTailBlock == 1) {
         NsLess::Less<DTYPE_X1, DTYPE_X2, DTYPE_Y, true> op;
-        op.Init(x1, x2, y, tilingData.smallCoreDataNum,
-                tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
-                tilingData.smallCoreLoopNum, tilingData.ubPartDataNum,
-                tilingData.smallCoreTailDataNum, tilingData.bigCoreTailDataNum,
-                tilingData.tailBlockNum, tilingData.bigprocessDataNumComputes,
-                tilingData.smallprocessDataNumComputes, tilingData.tailbigprocessDataNumComputes,
-                tilingData.tailsmallprocessDataNumComputes);
+        op.Init(
+            x1, x2, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
+            tilingData.smallCoreLoopNum, tilingData.ubPartDataNum, tilingData.smallCoreTailDataNum,
+            tilingData.bigCoreTailDataNum, tilingData.tailBlockNum, tilingData.bigprocessDataNumComputes,
+            tilingData.smallprocessDataNumComputes, tilingData.tailbigprocessDataNumComputes,
+            tilingData.tailsmallprocessDataNumComputes);
         op.Process();
-    }
-    else 
-    {
+    } else {
         NsLess::Less<DTYPE_X1, DTYPE_X2, DTYPE_Y, false> op;
-        op.Init(x1, x2, y, tilingData.smallCoreDataNum,
-                tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
-                tilingData.smallCoreLoopNum, tilingData.ubPartDataNum,
-                tilingData.smallCoreTailDataNum, tilingData.bigCoreTailDataNum,
-                tilingData.tailBlockNum, tilingData.bigprocessDataNumComputes,
-                tilingData.smallprocessDataNumComputes, tilingData.tailbigprocessDataNumComputes,
-                tilingData.tailsmallprocessDataNumComputes);
+        op.Init(
+            x1, x2, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
+            tilingData.smallCoreLoopNum, tilingData.ubPartDataNum, tilingData.smallCoreTailDataNum,
+            tilingData.bigCoreTailDataNum, tilingData.tailBlockNum, tilingData.bigprocessDataNumComputes,
+            tilingData.smallprocessDataNumComputes, tilingData.tailbigprocessDataNumComputes,
+            tilingData.tailsmallprocessDataNumComputes);
         op.Process();
     }
 }

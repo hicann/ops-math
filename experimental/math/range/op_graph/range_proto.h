@@ -21,7 +21,7 @@
 /*!
  * \file range.cpp
  * \brief
-*/
+ */
 
 #ifndef OPS_OP_PROTO_INC_RANGE_OPS_H_
 #define OPS_OP_PROTO_INC_RANGE_OPS_H_

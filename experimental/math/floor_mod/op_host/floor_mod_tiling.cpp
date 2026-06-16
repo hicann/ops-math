@@ -29,53 +29,55 @@ using namespace ge;
 namespace FloorModNs {
 
 class FloorModTiling {
- public:
+public:
     constexpr static int64_t MINIMUM_ELEMENT_PER_CORE = 1024;
-    
+
     constexpr static int64_t DATA_BLOCK = 64;
     constexpr static int64_t RESERVERD_UB_SIZE = 1024;
-    
-    template<typename T>
-    static void FloorModCommonTiling(T x, FloorModTilingData& tilingData, uint32_t coreNum, uint64_t ubSize, uint32_t ubDivider) {
-      if (ubDivider == 0) {
-          return;
-      }
 
-      int64_t elementCount = 1;
+    template <typename T>
+    static void FloorModCommonTiling(
+        T x, FloorModTilingData& tilingData, uint32_t coreNum, uint64_t ubSize, uint32_t ubDivider)
+    {
+        if (ubDivider == 0) {
+            return;
+        }
 
-      for(uint16_t i = 0; i < TilingUtils::GetDimNum(x); i++) {
-        elementCount *= TilingUtils::GetDim(x, i);
-      }
+        int64_t elementCount = 1;
 
-      uint32_t blockDim = (elementCount + MINIMUM_ELEMENT_PER_CORE - 1) / MINIMUM_ELEMENT_PER_CORE;
-      
-      if (blockDim > coreNum) {
-        blockDim = coreNum;
-      }
-      if (blockDim == 0) {
-        blockDim = 1;
-      }
+        for (uint16_t i = 0; i < TilingUtils::GetDimNum(x); i++) {
+            elementCount *= TilingUtils::GetDim(x, i);
+        }
 
-      uint32_t dataBlockSize = DATA_BLOCK;
-      uint32_t usableUbSize = uint32_t(ubSize - RESERVERD_UB_SIZE - sizeof(FloorModTilingData)) / ubDivider;
-      usableUbSize = usableUbSize / dataBlockSize * dataBlockSize;
+        uint32_t blockDim = (elementCount + MINIMUM_ELEMENT_PER_CORE - 1) / MINIMUM_ELEMENT_PER_CORE;
 
-      uint64_t perCoreDataCount = elementCount / blockDim;
-      perCoreDataCount = perCoreDataCount / DATA_BLOCK * DATA_BLOCK;
-      
-      uint64_t tempTailDataCount = elementCount - perCoreDataCount * blockDim;
-      uint64_t tailDataCoreNum = 0;
-      uint64_t lastCoreDataCount = 0;
+        if (blockDim > coreNum) {
+            blockDim = coreNum;
+        }
+        if (blockDim == 0) {
+            blockDim = 1;
+        }
 
-      tailDataCoreNum = tempTailDataCount / DATA_BLOCK; 
-      lastCoreDataCount = perCoreDataCount + tempTailDataCount % DATA_BLOCK;
+        uint32_t dataBlockSize = DATA_BLOCK;
+        uint32_t usableUbSize = uint32_t(ubSize - RESERVERD_UB_SIZE - sizeof(FloorModTilingData)) / ubDivider;
+        usableUbSize = usableUbSize / dataBlockSize * dataBlockSize;
 
-      tilingData.usableUbSize = usableUbSize;
-      tilingData.needCoreNum = blockDim;
-      tilingData.totalDataCount = elementCount;
-      tilingData.perCoreDataCount = perCoreDataCount;
-      tilingData.tailDataCoreNum = tailDataCoreNum;
-      tilingData.lastCoreDataCount = lastCoreDataCount;
+        uint64_t perCoreDataCount = elementCount / blockDim;
+        perCoreDataCount = perCoreDataCount / DATA_BLOCK * DATA_BLOCK;
+
+        uint64_t tempTailDataCount = elementCount - perCoreDataCount * blockDim;
+        uint64_t tailDataCoreNum = 0;
+        uint64_t lastCoreDataCount = 0;
+
+        tailDataCoreNum = tempTailDataCount / DATA_BLOCK;
+        lastCoreDataCount = perCoreDataCount + tempTailDataCount % DATA_BLOCK;
+
+        tilingData.usableUbSize = usableUbSize;
+        tilingData.needCoreNum = blockDim;
+        tilingData.totalDataCount = elementCount;
+        tilingData.perCoreDataCount = perCoreDataCount;
+        tilingData.tailDataCoreNum = tailDataCoreNum;
+        tilingData.lastCoreDataCount = lastCoreDataCount;
     }
 };
 
@@ -117,7 +119,8 @@ static ge::graphStatus TilingPrepare4FloorModTiling(gert::TilingParseContext* co
     return ge::GRAPH_SUCCESS;
 }
 
-static void SetTilingKeyParams(ge::DataType dtype, uint32_t& dTypeX1, uint32_t& dTypeX2, uint32_t& dTypeY, uint32_t& ubDivider)
+static void SetTilingKeyParams(
+    ge::DataType dtype, uint32_t& dTypeX1, uint32_t& dTypeX2, uint32_t& dTypeY, uint32_t& ubDivider)
 {
     if (dtype == ge::DataType::DT_FLOAT) {
         dTypeX1 = FLOOR_MOD_TPL_FP32;
@@ -149,7 +152,8 @@ static void SetTilingKeyParams(ge::DataType dtype, uint32_t& dTypeX1, uint32_t& 
 
 static ge::graphStatus FloorModTilingForGe(gert::TilingContext* tilingContext)
 {
-    OP_CHECK_IF(tilingContext == nullptr, OP_LOGE("FloorModTiling", "tiling context is nullptr"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        tilingContext == nullptr, OP_LOGE("FloorModTiling", "tiling context is nullptr"), return ge::GRAPH_FAILED);
     OP_LOGD(tilingContext, "Entering FloorModTilingForGe");
     auto compileInfo = reinterpret_cast<const FloorModCompileInfo*>(tilingContext->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, compileInfo);
@@ -160,24 +164,19 @@ static ge::graphStatus FloorModTilingForGe(gert::TilingContext* tilingContext)
     OP_CHECK_IF(shape == nullptr, OP_LOGE(tilingContext, "InputShape == nullptr"), return ge::GRAPH_FAILED);
 
     FloorModNs::FloorModTilingData* tilingData = tilingContext->GetTilingData<FloorModNs::FloorModTilingData>();
-    
+
     uint32_t D_T_X1, D_T_X2, D_T_Y, ubDivider;
     ge::DataType dtype_x = tilingContext->GetInputDesc(0)->GetDataType();
-    
+
     SetTilingKeyParams(dtype_x, D_T_X1, D_T_X2, D_T_Y, ubDivider);
 
     FloorModNs::FloorModTiling::FloorModCommonTiling<gert::Shape>(
-        shape->GetStorageShape(), 
-        *tilingData, 
-        compileInfo->totalCoreNum, 
-        compileInfo->ubSize, 
-        ubDivider
-    );
+        shape->GetStorageShape(), *tilingData, compileInfo->totalCoreNum, compileInfo->ubSize, ubDivider);
 
     tilingContext->SetBlockDim(tilingData->needCoreNum);
-    
+
     const uint64_t tilingKey = GET_TPL_TILING_KEY(D_T_X1, D_T_X2, D_T_Y);
-    
+
     tilingContext->SetTilingKey(tilingKey);
     size_t* workspaces = tilingContext->GetWorkspaceSizes(1);
     if (workspaces != nullptr) {

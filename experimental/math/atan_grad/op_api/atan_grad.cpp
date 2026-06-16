@@ -39,12 +39,11 @@ namespace l0op {
 OP_TYPE_REGISTER(AtanGrad);
 
 static const std::initializer_list<op::DataType> ATAN_GRAD_AICORE_DTYPE_LIST = {
-    DataType::DT_FLOAT16, DataType::DT_FLOAT, DataType::DT_BF16
-};
+    DataType::DT_FLOAT16, DataType::DT_FLOAT, DataType::DT_BF16};
 
 static bool IsAiCoreSupport(const aclTensor* x, const aclTensor* dy)
 {
-    return CheckType(x->GetDataType(),  ATAN_GRAD_AICORE_DTYPE_LIST) &&
+    return CheckType(x->GetDataType(), ATAN_GRAD_AICORE_DTYPE_LIST) &&
            CheckType(dy->GetDataType(), ATAN_GRAD_AICORE_DTYPE_LIST);
 }
 
@@ -59,12 +58,8 @@ static const aclTensor* AtanGradAiCore(
 {
     L0_DFX(AtanGradAiCore, x, dy, out);
 
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(AtanGrad,
-        OP_INPUT(x, dy), OP_OUTPUT(out));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS,
-        OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AtanGradAiCore failed."),
-        return nullptr);
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(AtanGrad, OP_INPUT(x, dy), OP_OUTPUT(out));
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AtanGradAiCore failed."), return nullptr);
     return out;
 }
 
@@ -77,9 +72,9 @@ const aclTensor* AtanGrad(const aclTensor* x, const aclTensor* dy, aclOpExecutor
     }
 
     if (!IsAiCoreSupport(x, dy)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AtanGrad: unsupported dtype x=%d, dy=%d. Supported: FLOAT16, FLOAT, BF16.",
-                static_cast<int>(x->GetDataType()), static_cast<int>(dy->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "AtanGrad: unsupported dtype x=%d, dy=%d. Supported: FLOAT16, FLOAT, BF16.",
+            static_cast<int>(x->GetDataType()), static_cast<int>(dy->GetDataType()));
         return nullptr;
     }
 

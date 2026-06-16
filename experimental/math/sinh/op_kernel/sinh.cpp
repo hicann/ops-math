@@ -21,7 +21,7 @@
 /*!
  * \file sinh.cpp
  * \brief
-*/
+ */
 
 #include "sinh.h"
 
@@ -31,6 +31,6 @@ __global__ __aicore__ void sinh(GM_ADDR x, GM_ADDR z, GM_ADDR workspace, GM_ADDR
     REGISTER_TILING_DEFAULT(SinhTilingData);
     GET_TILING_DATA_WITH_STRUCT(SinhTilingData, tilingData, tiling);
     NsSinh::Sinh<DTYPE_X> op;
-    op.Init(x,z, &tilingData);
+    op.Init(x, z, &tilingData);
     op.Process();
 }

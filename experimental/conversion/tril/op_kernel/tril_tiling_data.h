@@ -28,16 +28,16 @@
 
 struct TrilTilingData {
     uint32_t totalLengthAligned;
-    int32_t  matrixNum;
-    int32_t  matrixSize;
-    int32_t  rowLength;
-    int32_t  columnLength;
-    int32_t  diagVal;
-    int32_t  loopCnt;
+    int32_t matrixNum;
+    int32_t matrixSize;
+    int32_t rowLength;
+    int32_t columnLength;
+    int32_t diagVal;
+    int32_t loopCnt;
     uint32_t fullTileLength;
     uint32_t lastTileLength;
-    int32_t  fullCnt;
-    int32_t  lastCnt;
+    int32_t fullCnt;
+    int32_t lastCnt;
     uint32_t alignNum;
     uint32_t typeSize;
     // 扩展其他tilling参数

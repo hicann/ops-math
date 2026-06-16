@@ -21,20 +21,20 @@
 /*!
  * \file ger_v2_tiling_data.h
  * \brief tiling data struct
-*/
+ */
 
 #ifndef _ROTARY_POSITION_EMBEDDING_GRAD_TILING_DATA_H_
 #define _ROTARY_POSITION_EMBEDDING_GRAD_TILING_DATA_H_
 
 struct GerV2TilingData {
-    int64_t smallCoreRows;  //小核负责的行数
-    int64_t bigCoreRows;    //大核负责的行数
-    int64_t tailRowNum;   //尾行的数量，大核数量  
-    int64_t tileNums;        //一行分为几个tile
-    int64_t tileDataNum;    //一次计算的数据个数
-    int64_t tailTileDataNum;    //最后一次计算的数据个数
-    int64_t m;  //矩阵行数
-    int64_t n;  //矩阵列数
-    float alpha;    //参数
+    int64_t smallCoreRows;   // 小核负责的行数
+    int64_t bigCoreRows;     // 大核负责的行数
+    int64_t tailRowNum;      // 尾行的数量，大核数量
+    int64_t tileNums;        // 一行分为几个tile
+    int64_t tileDataNum;     // 一次计算的数据个数
+    int64_t tailTileDataNum; // 最后一次计算的数据个数
+    int64_t m;               // 矩阵行数
+    int64_t n;               // 矩阵列数
+    float alpha;             // 参数
 };
 #endif

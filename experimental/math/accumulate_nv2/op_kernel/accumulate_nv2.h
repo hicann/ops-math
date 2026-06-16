@@ -40,44 +40,26 @@ private:
     __aicore__ inline void TotalStage32B(int32_t offset);
     __aicore__ inline __gm__ TYPE_X* GetTensorAddr(uint16_t index);
 
-    __aicore__ inline void HandleNumOne32B(int32_t offset,
-                                           LocalTensor<TYPE_X>& yLocal,
-                                           LocalTensor<TYPE_X>& xLocal,
-                                           int32_t eventIDMTE2ToV);
-    __aicore__ inline void InitFirstTwo32B(int32_t offset,
-                                           LocalTensor<TYPE_X>& yLocal,
-                                           LocalTensor<TYPE_X>& xLocal,
-                                           int32_t eventIDMTE2ToV);
-    __aicore__ inline void LoadAndAddOne32B(int32_t offset,
-                                            int idx,
-                                            LocalTensor<TYPE_X>& xLocal,
-                                            LocalTensor<TYPE_X>& yLocal,
-                                            int32_t eventIDVToMTE2,
-                                            int32_t eventIDMTE2ToV);
+    __aicore__ inline void HandleNumOne32B(
+        int32_t offset, LocalTensor<TYPE_X>& yLocal, LocalTensor<TYPE_X>& xLocal, int32_t eventIDMTE2ToV);
+    __aicore__ inline void InitFirstTwo32B(
+        int32_t offset, LocalTensor<TYPE_X>& yLocal, LocalTensor<TYPE_X>& xLocal, int32_t eventIDMTE2ToV);
+    __aicore__ inline void LoadAndAddOne32B(
+        int32_t offset, int idx, LocalTensor<TYPE_X>& xLocal, LocalTensor<TYPE_X>& yLocal, int32_t eventIDVToMTE2,
+        int32_t eventIDMTE2ToV);
 
-    __aicore__ inline void HandleNumOneN32B(int32_t offset,
-                                          LocalTensor<TYPE_X>& x1Local,
-                                          LocalTensor<TYPE_C>& xCast,
-                                          LocalTensor<TYPE_C>& yCast,
-                                          int32_t eventIDMTE2ToV);
-    __aicore__ inline void InitFirstTwoN32B(int32_t offset,
-                                          LocalTensor<TYPE_X>& x2Local,
-                                          LocalTensor<TYPE_X>& x3Local,
-                                          LocalTensor<TYPE_C>& xCast,
-                                          LocalTensor<TYPE_C>& yCast,
-                                          int32_t eventIDMTE2ToV);
-    __aicore__ inline void HandleThirdN32B(int32_t offset,
-                                         LocalTensor<TYPE_X>& x1Local,
-                                         LocalTensor<TYPE_C>& xCast,
-                                         LocalTensor<TYPE_C>& yCast,
-                                         int32_t eventIDMTE2ToV);
-    __aicore__ inline void LoadCastAndAddOneN32B(int32_t offset,
-                                               int idx,
-                                               LocalTensor<TYPE_X>& x1Local,
-                                               LocalTensor<TYPE_C>& xCast,
-                                               LocalTensor<TYPE_C>& yCast,
-                                               int32_t eventIDVToMTE2,
-                                               int32_t eventIDMTE2ToV);
+    __aicore__ inline void HandleNumOneN32B(
+        int32_t offset, LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_C>& xCast, LocalTensor<TYPE_C>& yCast,
+        int32_t eventIDMTE2ToV);
+    __aicore__ inline void InitFirstTwoN32B(
+        int32_t offset, LocalTensor<TYPE_X>& x2Local, LocalTensor<TYPE_X>& x3Local, LocalTensor<TYPE_C>& xCast,
+        LocalTensor<TYPE_C>& yCast, int32_t eventIDMTE2ToV);
+    __aicore__ inline void HandleThirdN32B(
+        int32_t offset, LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_C>& xCast, LocalTensor<TYPE_C>& yCast,
+        int32_t eventIDMTE2ToV);
+    __aicore__ inline void LoadCastAndAddOneN32B(
+        int32_t offset, int idx, LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_C>& xCast, LocalTensor<TYPE_C>& yCast,
+        int32_t eventIDVToMTE2, int32_t eventIDMTE2ToV);
 
 private:
     TPipe* pipe;
@@ -97,7 +79,8 @@ private:
 };
 
 template <typename TYPE_X, typename TYPE_C>
-__aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::Init(GM_ADDR x, GM_ADDR y, const AccumulateNv2TilingData* tilingData, TPipe* pipeIn)
+__aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::Init(
+    GM_ADDR x, GM_ADDR y, const AccumulateNv2TilingData* tilingData, TPipe* pipeIn)
 {
     ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
     uint32_t coreNum = GetBlockIdx();
@@ -105,37 +88,30 @@ __aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::Init(GM_ADDR x, GM_ADDR y,
     this->tileDataNum = tilingData->tileDataNum;
     this->pipe = pipeIn;
     this->tensorListPtr = x;
-    if (coreNum < tilingData->tailBlockNum)
-    {
+    if (coreNum < tilingData->tailBlockNum) {
         this->coreDataNum = tilingData->bigCoreDataNum;
         this->tileNum = tilingData->finalBigTileNum;
         this->tailDataNum = tilingData->bigTailDataNum;
-    }
-    else
-    {
+    } else {
         this->coreDataNum = tilingData->smallCoreDataNum;
         this->tileNum = tilingData->finalSmallTileNum;
         this->tailDataNum = tilingData->smallTailDataNum;
-        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (GetBlockIdx() - tilingData->tailBlockNum);
+        globalBufferIndex -=
+            (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (GetBlockIdx() - tilingData->tailBlockNum);
     }
     this->num = tilingData->num;
-    yGm.SetGlobalBuffer((__gm__ TYPE_X *)y + globalBufferIndex, this->coreDataNum);
+    yGm.SetGlobalBuffer((__gm__ TYPE_X*)y + globalBufferIndex, this->coreDataNum);
     __gm__ uint64_t* dataAddr = reinterpret_cast<__gm__ uint64_t*>(tensorListPtr);
     uint64_t tensorPtrOffset = *dataAddr; // The offset of the data address from the first address.
     // Moving 3 bits to the right means dividing by sizeof(uint64 t).
     tensorPtr = dataAddr + (tensorPtrOffset >> 3);
-    if constexpr ( IsSameType<TYPE_X, int8_t>::value || IsSameType<TYPE_X, uint8_t>::value)
-    { // cast to half
+    if constexpr (IsSameType<TYPE_X, int8_t>::value || IsSameType<TYPE_X, uint8_t>::value) { // cast to half
         pipe->InitBuffer(queBind, 1, this->tileDataNum * sizeof(TYPE_X) * 3);
         pipe->InitBuffer(castTmp, this->tileDataNum * sizeof(half));
-    }
-    else if constexpr ( IsSameType<TYPE_X, half>::value)
-    { // cast to fp32
+    } else if constexpr (IsSameType<TYPE_X, half>::value) { // cast to fp32
         pipe->InitBuffer(queBind, 1, this->tileDataNum * sizeof(TYPE_X) * 3);
         pipe->InitBuffer(castTmp, this->tileDataNum * sizeof(float));
-    }
-    else
-    { // int32 and float32
+    } else { // int32 and float32
         pipe->InitBuffer(queBind, 1, this->tileDataNum * sizeof(TYPE_X) * 2);
     }
 }
@@ -146,8 +122,7 @@ __aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::Process()
     int32_t loopCount = this->tileNum - 1;
     this->processDataNum = this->tileDataNum;
     int32_t offset = 0;
-    for (int32_t i = 0; i < loopCount; i++, offset+=this->tileDataNum)
-    {
+    for (int32_t i = 0; i < loopCount; i++, offset += this->tileDataNum) {
         TotalStage(offset);
     }
     this->processDataNum = this->tailDataNum;
@@ -157,12 +132,11 @@ __aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::Process()
 template <typename TYPE_X, typename TYPE_C>
 __aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::TotalStage(int32_t offset)
 {
-    if constexpr ( IsSameType<TYPE_X, int8_t>::value || IsSameType<TYPE_X, uint8_t>::value || IsSameType<TYPE_X, half>::value)
-    { // cast to TYPE_C
+    if constexpr (
+        IsSameType<TYPE_X, int8_t>::value || IsSameType<TYPE_X, uint8_t>::value ||
+        IsSameType<TYPE_X, half>::value) { // cast to TYPE_C
         TotalStageN32B(offset);
-    }
-    else if constexpr ( IsSameType<TYPE_X, float>::value || IsSameType<TYPE_X, int32_t>::value)
-    { // int32 and float32
+    } else if constexpr (IsSameType<TYPE_X, float>::value || IsSameType<TYPE_X, int32_t>::value) { // int32 and float32
         TotalStage32B(offset);
     }
 }
@@ -200,10 +174,8 @@ __aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::TotalStage32B(int32_t offs
 }
 
 template <typename TYPE_X, typename TYPE_C>
-__aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::HandleNumOne32B(int32_t offset,
-                                                              LocalTensor<TYPE_X>& yLocal,
-                                                              LocalTensor<TYPE_X>& xLocal,
-                                                              int32_t eventIDMTE2ToV)
+__aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::HandleNumOne32B(
+    int32_t offset, LocalTensor<TYPE_X>& yLocal, LocalTensor<TYPE_X>& xLocal, int32_t eventIDMTE2ToV)
 {
     xGm.SetGlobalBuffer(GetTensorAddr(0) + globalBufferIndex);
     DataCopy(xLocal, xGm[offset], this->processDataNum);
@@ -214,10 +186,8 @@ __aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::HandleNumOne32B(int32_t of
 }
 
 template <typename TYPE_X, typename TYPE_C>
-__aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::InitFirstTwo32B(int32_t offset,
-                                                              LocalTensor<TYPE_X>& yLocal,
-                                                              LocalTensor<TYPE_X>& xLocal,
-                                                              int32_t eventIDMTE2ToV)
+__aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::InitFirstTwo32B(
+    int32_t offset, LocalTensor<TYPE_X>& yLocal, LocalTensor<TYPE_X>& xLocal, int32_t eventIDMTE2ToV)
 {
     x1Gm.SetGlobalBuffer(GetTensorAddr(0) + globalBufferIndex);
     x2Gm.SetGlobalBuffer(GetTensorAddr(1) + globalBufferIndex);
@@ -229,12 +199,9 @@ __aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::InitFirstTwo32B(int32_t of
 }
 
 template <typename TYPE_X, typename TYPE_C>
-__aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::LoadAndAddOne32B(int32_t offset,
-                                                               int idx,
-                                                               LocalTensor<TYPE_X>& xLocal,
-                                                               LocalTensor<TYPE_X>& yLocal,
-                                                               int32_t eventIDVToMTE2,
-                                                               int32_t eventIDMTE2ToV)
+__aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::LoadAndAddOne32B(
+    int32_t offset, int idx, LocalTensor<TYPE_X>& xLocal, LocalTensor<TYPE_X>& yLocal, int32_t eventIDVToMTE2,
+    int32_t eventIDMTE2ToV)
 {
     xGm.SetGlobalBuffer(GetTensorAddr(idx) + globalBufferIndex);
     SetFlag<HardEvent::V_MTE2>(eventIDVToMTE2);
@@ -280,11 +247,9 @@ __aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::TotalStageN32B(int32_t off
 }
 
 template <typename TYPE_X, typename TYPE_C>
-__aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::HandleNumOneN32B(int32_t offset,
-                                                             LocalTensor<TYPE_X>& x1Local,
-                                                             LocalTensor<TYPE_C>& xCast,
-                                                             LocalTensor<TYPE_C>& yCast,
-                                                             int32_t eventIDMTE2ToV)
+__aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::HandleNumOneN32B(
+    int32_t offset, LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_C>& xCast, LocalTensor<TYPE_C>& yCast,
+    int32_t eventIDMTE2ToV)
 {
     xGm.SetGlobalBuffer(GetTensorAddr(0) + globalBufferIndex);
     DataCopy(x1Local, xGm[offset], this->processDataNum);
@@ -296,12 +261,9 @@ __aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::HandleNumOneN32B(int32_t o
 }
 
 template <typename TYPE_X, typename TYPE_C>
-__aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::InitFirstTwoN32B(int32_t offset,
-                                                             LocalTensor<TYPE_X>& x2Local,
-                                                             LocalTensor<TYPE_X>& x3Local,
-                                                             LocalTensor<TYPE_C>& xCast,
-                                                             LocalTensor<TYPE_C>& yCast,
-                                                             int32_t eventIDMTE2ToV)
+__aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::InitFirstTwoN32B(
+    int32_t offset, LocalTensor<TYPE_X>& x2Local, LocalTensor<TYPE_X>& x3Local, LocalTensor<TYPE_C>& xCast,
+    LocalTensor<TYPE_C>& yCast, int32_t eventIDMTE2ToV)
 {
     x1Gm.SetGlobalBuffer(GetTensorAddr(0) + globalBufferIndex);
     x2Gm.SetGlobalBuffer(GetTensorAddr(1) + globalBufferIndex);
@@ -317,11 +279,9 @@ __aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::InitFirstTwoN32B(int32_t o
 }
 
 template <typename TYPE_X, typename TYPE_C>
-__aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::HandleThirdN32B(int32_t offset,
-                                                            LocalTensor<TYPE_X>& x1Local,
-                                                            LocalTensor<TYPE_C>& xCast,
-                                                            LocalTensor<TYPE_C>& yCast,
-                                                            int32_t eventIDMTE2ToV)
+__aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::HandleThirdN32B(
+    int32_t offset, LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_C>& xCast, LocalTensor<TYPE_C>& yCast,
+    int32_t eventIDMTE2ToV)
 {
     xGm.SetGlobalBuffer(GetTensorAddr(2) + globalBufferIndex);
     DataCopy(x1Local, xGm[offset], this->processDataNum);
@@ -332,13 +292,9 @@ __aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::HandleThirdN32B(int32_t of
 }
 
 template <typename TYPE_X, typename TYPE_C>
-__aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::LoadCastAndAddOneN32B(int32_t offset,
-                                                                  int idx,
-                                                                  LocalTensor<TYPE_X>& x1Local,
-                                                                  LocalTensor<TYPE_C>& xCast,
-                                                                  LocalTensor<TYPE_C>& yCast,
-                                                                  int32_t eventIDVToMTE2,
-                                                                  int32_t eventIDMTE2ToV)
+__aicore__ inline void AccumulateNv2<TYPE_X, TYPE_C>::LoadCastAndAddOneN32B(
+    int32_t offset, int idx, LocalTensor<TYPE_X>& x1Local, LocalTensor<TYPE_C>& xCast, LocalTensor<TYPE_C>& yCast,
+    int32_t eventIDVToMTE2, int32_t eventIDMTE2ToV)
 {
     xGm.SetGlobalBuffer(GetTensorAddr(idx) + globalBufferIndex);
     SetFlag<HardEvent::V_MTE2>(eventIDVToMTE2);

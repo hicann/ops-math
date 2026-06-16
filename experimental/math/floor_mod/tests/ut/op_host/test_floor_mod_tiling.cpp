@@ -23,21 +23,15 @@ using namespace optiling;
 
 class FloorModTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "FloorModTilingTest SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "FloorModTilingTest SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "FloorModTilingTest TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "FloorModTilingTest TearDown " << endl; }
 };
 
 TEST_F(FloorModTilingTest, test_tiling_fp16_basic)
 {
     optiling::FloorModCompileInfo compileInfo = {20, 192 * 1024, false};
-    
+
     gert::TilingContextPara tilingContextPara(
         "FloorMod",
         {
@@ -52,11 +46,11 @@ TEST_F(FloorModTilingTest, test_tiling_fp16_basic)
         &compileInfo);
 
     // Tiling Key
-    uint64_t expectTilingKey = 1315860; 
-    
+    uint64_t expectTilingKey = 1315860;
+
     // 预期 Tiling Data
-    string expectTilingData = "34359742592 8192 1024 0 1024 "; 
-    
+    string expectTilingData = "34359742592 8192 1024 0 1024 ";
+
     // 预期 Workspace 大小
     std::vector<size_t> expectWorkspaces = {32 * 1024 * 1024};
 

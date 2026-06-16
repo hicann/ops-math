@@ -20,7 +20,7 @@
 /*!
  * \file pack_v2.cpp
  * \brief
-*/
+ */
 
 #include "register/op_def_registry.h"
 
@@ -29,13 +29,13 @@ class PackV2 : public OpDef {
 public:
     explicit PackV2(const char* name) : OpDef(name)
     {
-        this->Input("x")                                       // 输入x1定义
-            .ParamType(REQUIRED)                                // 必选输入
+        this->Input("x")         // 输入x1定义
+            .ParamType(REQUIRED) // 必选输入
             .DataType({ge::DT_FLOAT, ge::DT_INT32, ge::DT_INT16, ge::DT_FLOAT16})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-            .AutoContiguous();                                  // 内存自动连续化
-        this->Input("y")                                       // 输入x2定义
+            .AutoContiguous(); // 内存自动连续化
+        this->Input("y")       // 输入x2定义
             .ParamType(REQUIRED)
             .DataType({ge::DT_FLOAT, ge::DT_INT32, ge::DT_INT16, ge::DT_FLOAT16})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
@@ -48,10 +48,8 @@ public:
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
 
-        this->Attr("d")
-            .AttrType(OPTIONAL)
-            .Int(0);
-            
+        this->Attr("d").AttrType(OPTIONAL).Int(0);
+
         OpAICoreConfig aicoreConfig;
         aicoreConfig.DynamicCompileStaticFlag(true)
             .DynamicFormatFlag(false)
@@ -59,7 +57,7 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
-            .ExtendCfgInfo("opFile.value", "pack_v2");    // 这里制定的值会对应到kernel入口文件名.cpp
+            .ExtendCfgInfo("opFile.value", "pack_v2");        // 这里制定的值会对应到kernel入口文件名.cpp
         this->AICore().AddConfig("ascend910b", aicoreConfig); // 其他的soc版本补充部分配置项
     }
 };

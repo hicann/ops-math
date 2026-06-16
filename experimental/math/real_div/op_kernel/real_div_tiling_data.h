@@ -11,12 +11,12 @@
 /*!
  * \file real_div_tiling_data.h
  * \brief tiling data struct
-*/
+ */
 
 #ifndef _REAL_DIV_TILING_DATA_H_
 #define _REAL_DIV_TILING_DATA_H_
 
-struct RealDivTilingData{
+struct RealDivTilingData {
     uint64_t smallCoreDataNum;
     uint64_t bigCoreDataNum;
     uint64_t finalBigTileNum;
@@ -26,6 +26,6 @@ struct RealDivTilingData{
     uint64_t bigTailDataNum;
     uint64_t tailBlockNum;
     uint64_t bufferNum;
-} ;
+};
 
 #endif

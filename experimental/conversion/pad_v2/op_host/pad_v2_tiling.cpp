@@ -21,14 +21,13 @@
 /*!
  * \file pad_v2_tiling.cpp
  * \brief
-*/
+ */
 #include "log/log.h"
 #include "util/math_util.h"
 #include "register/op_impl_registry.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "../op_kernel/pad_v2_tiling_data.h"
 #include "../op_kernel/pad_v2_tiling_key.h"
-
 
 namespace optiling {
 
@@ -37,7 +36,8 @@ constexpr uint32_t BUFFER_NUM = 2;
 constexpr uint32_t BLOCK_DIM = 8;
 constexpr uint32_t WS_SYS_SIZE = 512U;
 constexpr uint32_t RESERVED_BYTES = 512U;
-static inline uint64_t AlignUp(uint64_t x, uint64_t a) {
+static inline uint64_t AlignUp(uint64_t x, uint64_t a)
+{
     if (a == 0) {
         return x;
     }
@@ -68,7 +68,7 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
     totalIdx = inputX->GetStorageShape().GetShapeSize();
     // dtype校验
-    const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT,ge::DT_FLOAT16,ge::DT_INT16,ge::DT_INT32};
+    const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT16, ge::DT_INT32};
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
     dataType = inputDesc->GetDataType();
@@ -81,7 +81,7 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
 
 static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 {
-    auto ascendcPlatform = platform_ascendc:: PlatformAscendC(context->GetPlatformInfo());
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
     uint32_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
@@ -96,14 +96,16 @@ static ge::graphStatus PadV2TilingFunc(gert::TilingContext* context)
     // 1. platform
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
-    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+        return ge::GRAPH_FAILED);
 
     // 2. shapes & dtype
     int64_t totalIdx = 0;
     ge::DataType dataType;
-    OP_CHECK_IF(GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
+        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     // handle empty input
     if (totalIdx <= 0) {
@@ -116,98 +118,100 @@ static ge::graphStatus PadV2TilingFunc(gert::TilingContext* context)
     }
 
     // 3. workspace
-    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+        return ge::GRAPH_FAILED);
 
-    // 4. tiling data       
+    // 4. tiling data
     PadV2TilingData* tiling = context->GetTilingData<PadV2TilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(memset_s(tiling, sizeof(PadV2TilingData), 0, sizeof(PadV2TilingData)) != EOK,
-                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        memset_s(tiling, sizeof(PadV2TilingData), 0, sizeof(PadV2TilingData)) != EOK,
+        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     // --- safer numeric types ---
-     const auto xShape = context->GetInputTensor(0)->GetOriginShape();
+    const auto xShape = context->GetInputTensor(0)->GetOriginShape();
     const auto inputDataType = context->GetInputTensor(0)->GetDataType();
     context->SetBlockDim(BLOCK_DIM);
     auto attrs = context->GetAttrs();
-    int32_t mode = 0;  // 默认值
+    int32_t mode = 0; // 默认值
     if (attrs) {
-        const int64_t* attrA = attrs->GetInt(0);  
+        const int64_t* attrA = attrs->GetInt(0);
         if (attrA != nullptr) {
             mode = *attrA;
         }
     }
-    int32_t value = 0;  // 默认值
+    int32_t value = 0; // 默认值
     if (attrs) {
-        const int64_t* attrA = attrs->GetInt(1);  
+        const int64_t* attrA = attrs->GetInt(1);
         if (attrA != nullptr) {
             value = *attrA;
         }
     }
-    int32_t pad[8]={0};
-    for(int i=0;i<8;i++){
+    int32_t pad[8] = {0};
+    for (int i = 0; i < 8; i++) {
         if (attrs) {
-        const int64_t* attrA = attrs->GetInt(i+2);  
-        if (attrA != nullptr) {
-            pad[i] = *attrA;
-        }
+            const int64_t* attrA = attrs->GetInt(i + 2);
+            if (attrA != nullptr) {
+                pad[i] = *attrA;
+            }
         }
     }
 
     uint32_t typeSize = sizeof(float);
     switch (inputDataType) {
-        case ge::DT_FLOAT16: 
-            typeSize = sizeof(uint16_t); 
+        case ge::DT_FLOAT16:
+            typeSize = sizeof(uint16_t);
             break;
-        case ge::DT_FLOAT:   
-            typeSize = sizeof(float);    
+        case ge::DT_FLOAT:
+            typeSize = sizeof(float);
             break;
-        case ge::DT_INT32:   
-            typeSize = sizeof(int32_t);  
+        case ge::DT_INT32:
+            typeSize = sizeof(int32_t);
             break;
-        case ge::DT_INT16:   
-            typeSize = sizeof(int16_t);  
+        case ge::DT_INT16:
+            typeSize = sizeof(int16_t);
             break;
         default:
             // 不支持的数据类型
-        return ge::GRAPH_FAILED;
-        }
-     //第一个输入 ->得到输入的形状 -> 每个维度相乘
+            return ge::GRAPH_FAILED;
+    }
+    // 第一个输入 ->得到输入的形状 -> 每个维度相乘
     uint32_t totalLengthx = context->GetInputShape(0)->GetOriginShape().GetShapeSize();
     int32_t dimNum = xShape.GetDimNum();
     std::vector<int> dimarr(dimNum, 0);
 
-    //四维存储
-    for(int i=0;i<dimNum;i++){//x的每个维度的数量
+    // 四维存储
+    for (int i = 0; i < dimNum; i++) { // x的每个维度的数量
         dimarr[i] = xShape.GetDim(i);
     }
-    //z的每个维度的数量
+    // z的每个维度的数量
     std::vector<int> dimarrz(dimNum, 0);
-    for(int i=0;i<dimNum;i++){
-        dimarrz[i] = dimarr[i]+pad[2*i]+pad[2*i+1];
+    for (int i = 0; i < dimNum; i++) {
+        dimarrz[i] = dimarr[i] + pad[2 * i] + pad[2 * i + 1];
     }
-    uint32_t rows =1;
-    for(int i=0;i<dimNum-1;i++){
-        rows = rows*dimarr[i];
+    uint32_t rows = 1;
+    for (int i = 0; i < dimNum - 1; i++) {
+        rows = rows * dimarr[i];
     }
-    uint32_t rowz =1;
-    for(int i=0;i<dimNum-1;i++){
-        rowz = rowz*dimarrz[i];
+    uint32_t rowz = 1;
+    for (int i = 0; i < dimNum - 1; i++) {
+        rowz = rowz * dimarrz[i];
     }
-    //第一次求和的空间大小--除开选择的维度其余的相乘
+    // 第一次求和的空间大小--除开选择的维度其余的相乘
     uint32_t sumspace = totalLengthx;
-    //核间划分
-    uint32_t big_core_num = rowz % BLOCK_DIM; 
-    uint32_t small_core_num=BLOCK_DIM - big_core_num;
-    uint32_t small_tile_length = rowz/BLOCK_DIM; //小核分到的行数
-    uint32_t big_tile_length = rowz/BLOCK_DIM + 1; //大核分到的行数
+    // 核间划分
+    uint32_t big_core_num = rowz % BLOCK_DIM;
+    uint32_t small_core_num = BLOCK_DIM - big_core_num;
+    uint32_t small_tile_length = rowz / BLOCK_DIM;   // 小核分到的行数
+    uint32_t big_tile_length = rowz / BLOCK_DIM + 1; // 大核分到的行数
 
-    //核内划分
+    // 核内划分
     int64_t core_tile_x1 = 1; // 对行维度进行划分
-    //ub内的数据划分-- 考虑temp就是第一次循环需要求和的数量 
+    // ub内的数据划分-- 考虑temp就是第一次循环需要求和的数量
     auto FitsUB = [&](int64_t tile_x1) -> bool {
-        uint64_t xBytes  = AlignUp((uint64_t)tile_x1  * dimarrz[dimNum-1] * typeSize, BLOCK_SIZE);
-        uint64_t temp = AlignUp((uint64_t)tile_x1  * dimarrz[dimNum-1] * typeSize, BLOCK_SIZE);
+        uint64_t xBytes = AlignUp((uint64_t)tile_x1 * dimarrz[dimNum - 1] * typeSize, BLOCK_SIZE);
+        uint64_t temp = AlignUp((uint64_t)tile_x1 * dimarrz[dimNum - 1] * typeSize, BLOCK_SIZE);
         uint64_t total = BUFFER_NUM * (xBytes + temp);
         // 预留 5% 余量
         return total <= (ubSize * 95 / 100);
@@ -224,18 +228,18 @@ static ge::graphStatus PadV2TilingFunc(gert::TilingContext* context)
         return ge::GRAPH_FAILED;
     }
 
-    uint32_t small_tile_times = small_tile_length/core_tile_x1; 
-    uint32_t big_tile_times = big_tile_length / core_tile_x1; 
-    uint32_t small_tail_num= small_tile_length % core_tile_x1;
-    uint32_t big_tail_num= big_tile_length % core_tile_x1;
-    if(small_tail_num!=0){
-        small_tile_times ++;
-    }else{
+    uint32_t small_tile_times = small_tile_length / core_tile_x1;
+    uint32_t big_tile_times = big_tile_length / core_tile_x1;
+    uint32_t small_tail_num = small_tile_length % core_tile_x1;
+    uint32_t big_tail_num = big_tile_length % core_tile_x1;
+    if (small_tail_num != 0) {
+        small_tile_times++;
+    } else {
         small_tail_num = core_tile_x1;
     }
-    if(big_tail_num!=0){
-        big_tile_times ++;
-    }else{
+    if (big_tail_num != 0) {
+        big_tile_times++;
+    } else {
         big_tail_num = core_tile_x1;
     }
 
@@ -249,47 +253,47 @@ static ge::graphStatus PadV2TilingFunc(gert::TilingContext* context)
         orign_bias[i] = 1;
     }
 
-    int32_t acc_pad   = 1;
-    int32_t acc_orig  = 1;
+    int32_t acc_pad = 1;
+    int32_t acc_orig = 1;
     // 计算 bias
     for (int i = dimNum - 2; i >= 0; --i) {
-        bias[i]       *= acc_pad;
+        bias[i] *= acc_pad;
         orign_bias[i] *= acc_orig;
-        acc_pad  *= dimarrz[i];
+        acc_pad *= dimarrz[i];
         acc_orig *= dimarr[i];
     }
-    
-    int32_t lpad=pad[(dimNum-1) *2];
-    int32_t rpad=pad[(dimNum-1) *2 + 1];
-    int32_t xlastdim=dimarr[dimNum-1];
 
-    tiling->small_tile_times  = small_tile_times;
-    tiling->big_tile_times    = big_tile_times;
-    tiling->small_tail_num    = small_tail_num;
-    tiling->big_tail_num      = big_tail_num;
-    tiling->totalLengthx      = totalLengthx;
-    tiling->big_core_num      = big_core_num;
-    tiling->small_core_num    = small_core_num;
+    int32_t lpad = pad[(dimNum - 1) * 2];
+    int32_t rpad = pad[(dimNum - 1) * 2 + 1];
+    int32_t xlastdim = dimarr[dimNum - 1];
+
+    tiling->small_tile_times = small_tile_times;
+    tiling->big_tile_times = big_tile_times;
+    tiling->small_tail_num = small_tail_num;
+    tiling->big_tail_num = big_tail_num;
+    tiling->totalLengthx = totalLengthx;
+    tiling->big_core_num = big_core_num;
+    tiling->small_core_num = small_core_num;
     tiling->small_tile_length = small_tile_length;
-    tiling->big_tile_length   = big_tile_length;
-    tiling->core_tile_x1      = core_tile_x1;
+    tiling->big_tile_length = big_tile_length;
+    tiling->core_tile_x1 = core_tile_x1;
     tiling->dimNum = dimNum;
-    tiling->mode      = mode;
+    tiling->mode = mode;
 
     for (int i = 0; i < dimNum; ++i) {
-        tiling->dimarr[i]  = dimarr[i];
+        tiling->dimarr[i] = dimarr[i];
         tiling->dimarrz[i] = dimarrz[i];
-        tiling->bias[i]        = bias[i];
-        tiling->orign_bias[i]  = orign_bias[i];  
+        tiling->bias[i] = bias[i];
+        tiling->orign_bias[i] = orign_bias[i];
     }
     for (uint32_t i = 0; i < BLOCK_DIM; ++i) {
         tiling->pad[i] = pad[i];
     }
     tiling->sumspace = sumspace;
-    tiling->rowz     = rowz;
-    tiling->lpad     = lpad;
-    tiling->rpad     = rpad;
-    tiling->value    = value;
+    tiling->rowz = rowz;
+    tiling->lpad = lpad;
+    tiling->rpad = rpad;
+    tiling->value = value;
     tiling->xlastdim = xlastdim;
     return ge::GRAPH_SUCCESS;
 }

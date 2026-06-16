@@ -23,44 +23,51 @@ OP_TYPE_REGISTER(Acos);
 
 static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST = {DataType::DT_FLOAT, DataType::DT_FLOAT16};
 
-static const std::initializer_list<DataType> AICORE_910B_DTYPE_SUPPORT_LIST = {DataType::DT_FLOAT,
-                                                                                DataType::DT_FLOAT16,
-                                                                                DataType::DT_BF16};
+static const std::initializer_list<DataType> AICORE_910B_DTYPE_SUPPORT_LIST = {
+    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16};
 // 根据芯片类型、dtype判断算子是否支持走aicore
-static inline bool IsAiCoreSupport(DataType inputDtype) {
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
-    return CheckType(inputDtype, AICORE_910B_DTYPE_SUPPORT_LIST);
-  }
-  return CheckType(inputDtype, AICORE_DTYPE_SUPPORT_LIST);
+static inline bool IsAiCoreSupport(DataType inputDtype)
+{
+    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+        return CheckType(inputDtype, AICORE_910B_DTYPE_SUPPORT_LIST);
+    }
+    return CheckType(inputDtype, AICORE_DTYPE_SUPPORT_LIST);
 }
 
 // AICORE算子kernel
-static inline const aclTensor* AcosAiCore(const aclTensor* input, aclTensor* output, aclOpExecutor* executor) {
-  L0_DFX(AcosAiCore, input, output);
-  // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore Acos算子加入任务队列
-  auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Acos, OP_INPUT(input), OP_OUTPUT(output));
-  OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AcosAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."), return nullptr);
-  return output;
+static inline const aclTensor* AcosAiCore(const aclTensor* input, aclTensor* output, aclOpExecutor* executor)
+{
+    L0_DFX(AcosAiCore, input, output);
+    // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore Acos算子加入任务队列
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Acos, OP_INPUT(input), OP_OUTPUT(output));
+    OP_CHECK(
+        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AcosAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
+        return nullptr);
+    return output;
 }
 
 // AICPU算子kernel
-static inline const aclTensor* AcosAiCpu(const aclTensor* input, aclTensor* output, aclOpExecutor* executor) {
-  L0_DFX(AcosAiCpu, input, output);
-  // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将AiCpu Acos算子加入任务队列
-  static internal::AicpuTaskSpace space("Acos");
-  auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Acos, OP_ATTR_NAMES(), OP_INPUT(input), OP_OUTPUT(output));
-  OP_CHECK(ret ==  ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AcosAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."), return nullptr);
-  return output;
+static inline const aclTensor* AcosAiCpu(const aclTensor* input, aclTensor* output, aclOpExecutor* executor)
+{
+    L0_DFX(AcosAiCpu, input, output);
+    // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将AiCpu Acos算子加入任务队列
+    static internal::AicpuTaskSpace space("Acos");
+    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Acos, OP_ATTR_NAMES(), OP_INPUT(input), OP_OUTPUT(output));
+    OP_CHECK(
+        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AcosAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
+        return nullptr);
+    return output;
 }
 
-const aclTensor* Acos(const aclTensor* input, aclOpExecutor* executor) {
-  auto output = executor->AllocTensor(input->GetViewShape(), input->GetDataType());
+const aclTensor* Acos(const aclTensor* input, aclOpExecutor* executor)
+{
+    auto output = executor->AllocTensor(input->GetViewShape(), input->GetDataType());
 
-  if (IsAiCoreSupport(input->GetDataType())) {
-    return AcosAiCore(input, output, executor);
-  } else {
-    return AcosAiCpu(input, output, executor);
-  }
+    if (IsAiCoreSupport(input->GetDataType())) {
+        return AcosAiCore(input, output, executor);
+    } else {
+        return AcosAiCpu(input, output, executor);
+    }
 }
-}  // namespace l0op
+} // namespace l0op

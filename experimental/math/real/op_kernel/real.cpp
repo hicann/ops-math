@@ -32,19 +32,19 @@ extern "C" __global__ __aicore__ void real(GM_ADDR x, GM_ADDR y, GM_ADDR workspa
 
     TPipe pipe;
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-    if (TILING_KEY_IS(COMPLEX32_MODE)) {  // COMPLEX32_MODE
+    if (TILING_KEY_IS(COMPLEX32_MODE)) { // COMPLEX32_MODE
         RealKernel<int32_t, half> op;
         op.Init(x, y, &realTilingData, &pipe);
         op.Process();
-    } else if (TILING_KEY_IS(COMPLEX64_MODE)) {  // COMPLEX64_MODE
+    } else if (TILING_KEY_IS(COMPLEX64_MODE)) { // COMPLEX64_MODE
         RealKernel<int64_t, float> op;
         op.Init(x, y, &realTilingData, &pipe);
         op.Process();
-    } else if (TILING_KEY_IS(FLOAT16_MODE)) {  // FLOAT16_MODE
+    } else if (TILING_KEY_IS(FLOAT16_MODE)) { // FLOAT16_MODE
         RealKernel<half, half> op;
         op.Init(x, y, &realTilingData, &pipe);
         op.Process();
-    } else if (TILING_KEY_IS(FLOAT_MODE)) {  // FLOAT_MODE
+    } else if (TILING_KEY_IS(FLOAT_MODE)) { // FLOAT_MODE
         RealKernel<float, float> op;
         op.Init(x, y, &realTilingData, &pipe);
         op.Process();

@@ -25,8 +25,7 @@
 #include "arch35/asinh_grad.h"
 
 template <typename D_T_Y, int BUFFER_MODE>
-__global__ __aicore__ void asinh_grad(GM_ADDR y, GM_ADDR dy, GM_ADDR z,
-                                      GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void asinh_grad(GM_ADDR y, GM_ADDR dy, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(AsinhGradTilingData);
     GET_TILING_DATA_WITH_STRUCT(AsinhGradTilingData, tilingData, tiling);

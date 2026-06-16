@@ -46,14 +46,8 @@ extern "C" {
  * @return aclnnStatus 状态码
  */
 ACLNN_API aclnnStatus aclnnAddMatMatElementsGetWorkspaceSize(
-    const aclTensor*  a,
-    const aclTensor*  b,
-    const aclTensor*  c,
-    const aclScalar*  alpha,
-    const aclScalar*  beta,
-    aclTensor*        cOut,
-    uint64_t*         workspaceSize,
-    aclOpExecutor**   executor);
+    const aclTensor* a, const aclTensor* b, const aclTensor* c, const aclScalar* alpha, const aclScalar* beta,
+    aclTensor* cOut, uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief 执行 AddMatMatElements 算子计算
@@ -64,14 +58,11 @@ ACLNN_API aclnnStatus aclnnAddMatMatElementsGetWorkspaceSize(
  * @param stream         [in] ACL 流
  * @return aclnnStatus 状态码
  */
-ACLNN_API aclnnStatus aclnnAddMatMatElements(
-    void*           workspace,
-    uint64_t        workspaceSize,
-    aclOpExecutor*  executor,
-    aclrtStream     stream);
+ACLNN_API aclnnStatus
+aclnnAddMatMatElements(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // ACLNN_ADD_MAT_MAT_ELEMENTS_H_
+#endif // ACLNN_ADD_MAT_MAT_ELEMENTS_H_

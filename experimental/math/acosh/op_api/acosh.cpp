@@ -28,8 +28,7 @@ namespace l0op {
 OP_TYPE_REGISTER(Acosh);
 
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT16, DataType::DT_FLOAT, DataType::DT_BF16
-};
+    DataType::DT_FLOAT16, DataType::DT_FLOAT, DataType::DT_BF16};
 
 static bool IsAiCoreSupport(const aclTensor* self)
 {
@@ -51,12 +50,8 @@ static const aclTensor* AcoshAiCore(const aclTensor* self, const aclTensor* out,
 {
     L0_DFX(AcoshAiCore, self, out);
 
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Acosh,
-        OP_INPUT(self), OP_OUTPUT(out));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS,
-        OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AcoshAiCore failed."),
-        return nullptr);
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Acosh, OP_INPUT(self), OP_OUTPUT(out));
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AcoshAiCore failed."), return nullptr);
     return out;
 }
 
@@ -73,10 +68,11 @@ const aclTensor* Acosh(const aclTensor* self, aclOpExecutor* executor)
     }
 
     if (!IsAiCoreSupport(self)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "Acosh not supported: dtype=%d. "
-                "Supported dtypes: FLOAT16, FLOAT, BF16 (Ascend950).",
-                static_cast<int>(self->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID,
+            "Acosh not supported: dtype=%d. "
+            "Supported dtypes: FLOAT16, FLOAT, BF16 (Ascend950).",
+            static_cast<int>(self->GetDataType()));
         return nullptr;
     }
 

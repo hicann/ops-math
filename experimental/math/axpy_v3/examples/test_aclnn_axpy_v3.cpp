@@ -23,20 +23,25 @@
 #include "acl/acl.h"
 #include "aclnn_axpy_v3.h"
 
-using DataType = uint16_t;  // uin16_t for float16
+using DataType = uint16_t; // uin16_t for float16
 
-uint16_t FloatToFp16(float val) {
+uint16_t FloatToFp16(float val)
+{
     uint32_t f = *(uint32_t*)&val;
-    if ((f & 0x7fffffff) == 0) return (uint16_t)(f >> 16); 
+    if ((f & 0x7fffffff) == 0)
+        return (uint16_t)(f >> 16);
     return ((f >> 16) & 0x8000) | ((((f & 0x7f800000) - 0x38000000) >> 13) & 0x7c00) | ((f >> 13) & 0x03ff);
 }
 
-float Fp16ToFloat(uint16_t val) {
+float Fp16ToFloat(uint16_t val)
+{
     uint32_t sign = (val & 0x8000) << 16;
     uint32_t exp = (val >> 10) & 0x1f;
     uint32_t mant = val & 0x3ff;
-    if (exp == 0) return 0.0f; 
-    if (exp == 31) return 0.0f; 
+    if (exp == 0)
+        return 0.0f;
+    if (exp == 31)
+        return 0.0f;
     uint32_t f = sign | ((exp + 127 - 15) << 23) | (mant << 13);
     return *(float*)&f;
 }
@@ -71,7 +76,7 @@ void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr)
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
     for (int64_t i = 0; i < size; i++) {
         // LOG_PRINT("mean result[%ld] is: %f\n", i, resultData[i]);       // float
-        LOG_PRINT("mean result[%ld] is: %f\n", i, Fp16ToFloat(resultData[i]));      // float16
+        LOG_PRINT("mean result[%ld] is: %f\n", i, Fp16ToFloat(resultData[i])); // float16
     }
 }
 
@@ -152,14 +157,16 @@ int main()
     aclOpExecutor* executor;
 
     LOG_PRINT("Before GetWorkspaceSize: selfX=%p, selfY=%p, out=%p\n", (void*)selfX, (void*)selfY, (void*)out);
-    LOG_PRINT("Before GetWorkspaceSize: selfXDeviceAddr=%p, selfYDeviceAddr=%p, outDeviceAddr=%p\n",
-          selfXDeviceAddr, selfYDeviceAddr, outDeviceAddr);
+    LOG_PRINT(
+        "Before GetWorkspaceSize: selfXDeviceAddr=%p, selfYDeviceAddr=%p, outDeviceAddr=%p\n", selfXDeviceAddr,
+        selfYDeviceAddr, outDeviceAddr);
     // 4. 调用aclnnAxpyV3第一段接口
 
     // 新增标量属性
     ret = aclnnAxpyV3GetWorkspaceSize(selfX, selfY, alpha, out, &workspaceSize, &executor);
-    LOG_PRINT("aclnnAxpyV3GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n",
-          ret, (unsigned long long)workspaceSize, (void*)executor);
+    LOG_PRINT(
+        "aclnnAxpyV3GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n", ret,
+        (unsigned long long)workspaceSize, (void*)executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAxpyV3ExampleGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 根据第一段接口计算出的workspaceSize申请device内存

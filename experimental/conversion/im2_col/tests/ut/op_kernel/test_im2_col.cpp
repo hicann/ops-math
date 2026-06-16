@@ -3,10 +3,10 @@
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  */
 
- /*!
-  * \file test_im2col.cpp
-  * \brief
-  */
+/*!
+ * \file test_im2col.cpp
+ * \brief
+ */
 
 #include <array>
 #include <vector>
@@ -21,11 +21,7 @@
 
 using namespace std;
 
-extern "C" __global__ __aicore__ void im2col(
-    GM_ADDR x,
-    GM_ADDR y,
-    GM_ADDR workspace,
-    GM_ADDR tiling);
+extern "C" __global__ __aicore__ void im2col(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
 
 class Im2ColTest : public testing::Test {
 protected:
@@ -37,10 +33,7 @@ protected:
         system("chmod -R 755 ./im2col_data/");
     }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "im2col_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "im2col_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;
@@ -48,8 +41,7 @@ private:
 };
 
 const std::string Im2ColTest::rootPath = "../../../../";
-const std::string Im2ColTest::dataPath =
-    rootPath + "nn/im2col/tests/ut/op_kernel/im2col_data";
+const std::string Im2ColTest::dataPath = rootPath + "nn/im2col/tests/ut/op_kernel/im2col_data";
 
 template <typename T1, typename T2>
 inline T1 CeilAlign(T1 a, T2 b)
@@ -63,8 +55,7 @@ TEST_F(Im2ColTest, test_case_float16_1)
     optiling::Im2ColCompileInfo compileInfo = {
         64,     // blockDim
         262144, // ubSize
-        false
-    };
+        false};
 
     gert::TilingContextPara tilingContextPara(
         "Im2Col",
@@ -93,32 +84,21 @@ TEST_F(Im2ColTest, test_case_float16_1)
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(CeilAlign(inputByteSize, 32));
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(CeilAlign(outputByteSize, 32));
 
-    ReadFile("./im2col_data/float16_input_im2col.bin",
-             inputByteSize, x, inputByteSize);
+    ReadFile("./im2col_data/float16_input_im2col.bin", inputByteSize, x, inputByteSize);
 
-    uint8_t* workspace =
-        (uint8_t*)AscendC::GmAlloc(tilingInfo.workspaceSizes[0]);
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(tilingInfo.workspaceSizes[0]);
 
-    uint8_t* tiling =
-        (uint8_t*)AscendC::GmAlloc(tilingInfo.tilingDataSize);
+    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingInfo.tilingDataSize);
 
-    std::memcpy(tiling,
-                tilingInfo.tilingData.get(),
-                tilingInfo.tilingDataSize);
+    std::memcpy(tiling, tilingInfo.tilingData.get(), tilingInfo.tilingDataSize);
 
     /* ---------------- run kernel ---------------- */
     ICPU_SET_TILING_KEY(tilingInfo.tilingKey);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
-    ICPU_RUN_KF(im2col,
-                tilingInfo.blockNum,
-                x,
-                y,
-                workspace,
-                tiling);
+    ICPU_RUN_KF(im2col, tilingInfo.blockNum, x, y, workspace, tiling);
 
     /* ---------------- dump & check ---------------- */
-    WriteFile("./im2col_data/float16_output_im2col.bin",
-              y, outputByteSize);
+    WriteFile("./im2col_data/float16_output_im2col.bin", y, outputByteSize);
 
     AscendC::GmFree(x);
     AscendC::GmFree(y);
@@ -130,11 +110,7 @@ TEST_F(Im2ColTest, test_case_float16_1)
 
 TEST_F(Im2ColTest, test_case_float32_1)
 {
-    optiling::Im2ColCompileInfo compileInfo = {
-        64,
-        262144,
-        false
-    };
+    optiling::Im2ColCompileInfo compileInfo = {64, 262144, false};
 
     gert::TilingContextPara tilingContextPara(
         "Im2Col",
@@ -161,30 +137,19 @@ TEST_F(Im2ColTest, test_case_float32_1)
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(CeilAlign(inputByteSize, 32));
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(CeilAlign(outputByteSize, 32));
 
-    ReadFile("./im2col_data/float32_input_im2col.bin",
-             inputByteSize, x, inputByteSize);
+    ReadFile("./im2col_data/float32_input_im2col.bin", inputByteSize, x, inputByteSize);
 
-    uint8_t* workspace =
-        (uint8_t*)AscendC::GmAlloc(tilingInfo.workspaceSizes[0]);
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(tilingInfo.workspaceSizes[0]);
 
-    uint8_t* tiling =
-        (uint8_t*)AscendC::GmAlloc(tilingInfo.tilingDataSize);
+    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingInfo.tilingDataSize);
 
-    std::memcpy(tiling,
-                tilingInfo.tilingData.get(),
-                tilingInfo.tilingDataSize);
+    std::memcpy(tiling, tilingInfo.tilingData.get(), tilingInfo.tilingDataSize);
 
     ICPU_SET_TILING_KEY(tilingInfo.tilingKey);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
-    ICPU_RUN_KF(im2col,
-                tilingInfo.blockNum,
-                x,
-                y,
-                workspace,
-                tiling);
+    ICPU_RUN_KF(im2col, tilingInfo.blockNum, x, y, workspace, tiling);
 
-    WriteFile("./im2col_data/float32_output_im2col.bin",
-              y, outputByteSize);
+    WriteFile("./im2col_data/float32_output_im2col.bin", y, outputByteSize);
 
     AscendC::GmFree(x);
     AscendC::GmFree(y);

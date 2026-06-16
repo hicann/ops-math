@@ -29,39 +29,41 @@ using namespace std;
 using namespace NsMaskedFill;
 
 // 声明核函数
-extern "C" __global__ __aicore__ void masked_fill(GM_ADDR x, GM_ADDR mask, GM_ADDR value, GM_ADDR output, GM_ADDR workspace, GM_ADDR tiling);
+extern "C" __global__ __aicore__ void masked_fill(
+    GM_ADDR x, GM_ADDR mask, GM_ADDR value, GM_ADDR output, GM_ADDR workspace, GM_ADDR tiling);
 
 class MaskedFillKernelTest : public testing::Test {
 protected:
-    static void SetUpTestCase() {
+    static void SetUpTestCase()
+    {
         // 复制测试数据目录
         system("cp -rf ./data ./masked_fill_data");
         system("chmod -R 755 ./masked_fill_data");
     }
-    static void TearDownTestCase() {
-        system("rm -rf ./masked_fill_data");
-    }
+    static void TearDownTestCase() { system("rm -rf ./masked_fill_data"); }
 
     // 内存对齐（32字节）
     template <typename T>
-    size_t AlignSize(size_t size) {
+    size_t AlignSize(size_t size)
+    {
         return (size + 31) / 32 * 32;
     }
 };
 
 // 测试1：float32类型，mask全为true（所有元素填充为value）
-TEST_F(MaskedFillKernelTest, float32_mask_all_true) {
+TEST_F(MaskedFillKernelTest, float32_mask_all_true)
+{
     // 1. 分块配置
     MaskedFillCompileInfo compile_info;
     gert::TilingContextPara tiling_para(
         "MaskedFill",
         {
-            {{{2, 3}, {2, 3}}, DT_FLOAT, FORMAT_ND},  // x: (2,3)
-            {{{2, 3}, {2, 3}}, DT_BOOL, FORMAT_ND},   // mask: (2,3)（全true）
-            {{{}, {}}, DT_FLOAT, FORMAT_ND}           // value: 10.0
+            {{{2, 3}, {2, 3}}, DT_FLOAT, FORMAT_ND}, // x: (2,3)
+            {{{2, 3}, {2, 3}}, DT_BOOL, FORMAT_ND},  // mask: (2,3)（全true）
+            {{{}, {}}, DT_FLOAT, FORMAT_ND}          // value: 10.0
         },
         {
-            {{{2, 3}, {2, 3}}, DT_FLOAT, FORMAT_ND}   // 输出：(2,3)
+            {{{2, 3}, {2, 3}}, DT_FLOAT, FORMAT_ND} // 输出：(2,3)
         },
         &compile_info);
     TilingInfo tiling_info;
@@ -97,7 +99,7 @@ TEST_F(MaskedFillKernelTest, float32_mask_all_true) {
     // 6. 保存输出并比较
     WriteFile("./masked_fill_data/float32_output.bin", output, output_size);
     int ret = system("cd ./masked_fill_data && python3 compare_data.py float32");
-    ASSERT_EQ(ret, 0);  // 比较成功返回0
+    ASSERT_EQ(ret, 0); // 比较成功返回0
 
     // 7. 释放内存
     AscendC::GmFree(x);
@@ -109,18 +111,19 @@ TEST_F(MaskedFillKernelTest, float32_mask_all_true) {
 }
 
 // 测试2：int32类型，mask全为false（输出与x一致）
-TEST_F(MaskedFillKernelTest, int32_mask_all_false) {
+TEST_F(MaskedFillKernelTest, int32_mask_all_false)
+{
     // 分块配置
     MaskedFillCompileInfo compile_info;
     gert::TilingContextPara tiling_para(
         "MaskedFill",
         {
-            {{{3}, {3}}, DT_INT32, FORMAT_ND},  // x: (3)
-            {{{3}, {3}}, DT_BOOL, FORMAT_ND},   // mask: (3)（全false）
-            {{{}, {}}, DT_INT32, FORMAT_ND}     // value: 100
+            {{{3}, {3}}, DT_INT32, FORMAT_ND}, // x: (3)
+            {{{3}, {3}}, DT_BOOL, FORMAT_ND},  // mask: (3)（全false）
+            {{{}, {}}, DT_INT32, FORMAT_ND}    // value: 100
         },
         {
-            {{{3}, {3}}, DT_INT32, FORMAT_ND}   // 输出：(3)
+            {{{3}, {3}}, DT_INT32, FORMAT_ND} // 输出：(3)
         },
         &compile_info);
     TilingInfo tiling_info;
@@ -168,18 +171,19 @@ TEST_F(MaskedFillKernelTest, int32_mask_all_false) {
 }
 
 // 测试3：bfloat16类型，mask部分true（广播场景：mask(1,3) → x(2,3)）
-TEST_F(MaskedFillKernelTest, bfloat16_broadcast_mask) {
+TEST_F(MaskedFillKernelTest, bfloat16_broadcast_mask)
+{
     // 分块配置
     MaskedFillCompileInfo compile_info;
     gert::TilingContextPara tiling_para(
         "MaskedFill",
         {
-            {{{2, 3}, {2, 3}}, DT_BF16, FORMAT_ND},  // x: (2,3)
-            {{{1, 3}, {1, 3}}, DT_BOOL, FORMAT_ND},  // mask: (1,3)（广播）
-            {{{}, {}}, DT_BF16, FORMAT_ND}           // value: 5.0（bfloat16）
+            {{{2, 3}, {2, 3}}, DT_BF16, FORMAT_ND}, // x: (2,3)
+            {{{1, 3}, {1, 3}}, DT_BOOL, FORMAT_ND}, // mask: (1,3)（广播）
+            {{{}, {}}, DT_BF16, FORMAT_ND}          // value: 5.0（bfloat16）
         },
         {
-            {{{2, 3}, {2, 3}}, DT_BF16, FORMAT_ND}   // 输出：(2,3)
+            {{{2, 3}, {2, 3}}, DT_BF16, FORMAT_ND} // 输出：(2,3)
         },
         &compile_info);
     TilingInfo tiling_info;

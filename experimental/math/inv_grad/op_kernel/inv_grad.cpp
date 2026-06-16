@@ -26,8 +26,7 @@
 #include "inv_grad.h"
 
 template <typename D_T_Y>
-__global__ __aicore__ void inv_grad(GM_ADDR y, GM_ADDR dy, GM_ADDR dx,
-                                    GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void inv_grad(GM_ADDR y, GM_ADDR dy, GM_ADDR dx, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(InvGradTilingData);
     GET_TILING_DATA_WITH_STRUCT(InvGradTilingData, tilingData, tiling);

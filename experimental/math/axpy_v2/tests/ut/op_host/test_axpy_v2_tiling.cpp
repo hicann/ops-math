@@ -21,15 +21,9 @@ using namespace optiling;
 
 class AxpyV2Tiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "AxpyV2Tiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "AxpyV2Tiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "AxpyV2Tiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "AxpyV2Tiling TearDown " << endl; }
 };
 
 TEST_F(AxpyV2Tiling, ascend9101_test_tiling_fp16_001)

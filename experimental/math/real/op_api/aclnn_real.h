@@ -44,8 +44,8 @@ extern "C" {
  * @param [out] executor: 返回op执行器，包括算子计算流程
  * @return aclnnStatus: 返回状态码
  */
-ACLNN_API aclnnStatus aclnnRealGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
-                                                aclOpExecutor** executor);
+ACLNN_API aclnnStatus
+aclnnRealGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief aclnnReal的第二段接口，用于执行计算。
@@ -61,4 +61,4 @@ ACLNN_API aclnnStatus aclnnReal(void* workspace, uint64_t workspaceSize, aclOpEx
 }
 #endif
 
-#endif  // OP_API_INC_LEVEL2_ACLNN_REAL_H_
+#endif // OP_API_INC_LEVEL2_ACLNN_REAL_H_

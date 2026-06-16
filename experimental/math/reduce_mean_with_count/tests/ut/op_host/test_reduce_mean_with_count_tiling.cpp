@@ -15,7 +15,7 @@ static const std::string OP_NAME = "ReduceMeanWithCount";
 
 // Platform parameters for Ascend950
 static const uint64_t MAX_AIV_NUM = 40;
-static const uint64_t UB_SIZE = 393216;  // 384KB typical for Ascend950
+static const uint64_t UB_SIZE = 393216; // 384KB typical for Ascend950
 static const uint64_t TILING_DATA_MAX_SIZE = 4096;
 
 struct ReduceMeanWithCountCompileInfo {
@@ -40,14 +40,9 @@ static gert::StorageShape MakeStorageShape(const std::vector<int64_t>& dims)
 // Helper: create TilingContextPara for ReduceMeanWithCount
 // ============================================================================
 static gert::TilingContextPara MakeTilingCtx(
-    const std::vector<int64_t>& inputShape,
-    ge::DataType dtype,
-    const std::vector<int64_t>& meanOutShape,
-    const std::vector<int64_t>& countOutShape,
-    const std::vector<int64_t>& axis,
-    bool keepdim,
-    uint64_t coreNum = MAX_AIV_NUM,
-    uint64_t ubSize = UB_SIZE)
+    const std::vector<int64_t>& inputShape, ge::DataType dtype, const std::vector<int64_t>& meanOutShape,
+    const std::vector<int64_t>& countOutShape, const std::vector<int64_t>& axis, bool keepdim,
+    uint64_t coreNum = MAX_AIV_NUM, uint64_t ubSize = UB_SIZE)
 {
     gert::StorageShape inSS = MakeStorageShape(inputShape);
     gert::StorageShape meanSS = MakeStorageShape(meanOutShape);
@@ -65,14 +60,14 @@ static gert::TilingContextPara MakeTilingCtx(
         {"keepdim", Ops::Math::AnyValue::CreateFrom<bool>(keepdim)},
     };
     return gert::TilingContextPara(
-        OP_NAME, inputs, outputs, attrs, &compileInfo,
-        coreNum, ubSize, TILING_DATA_MAX_SIZE);
+        OP_NAME, inputs, outputs, attrs, &compileInfo, coreNum, ubSize, TILING_DATA_MAX_SIZE);
 }
 
 // ============================================================================
 // Helper: extract ReduceMeanWithCountTilingData from raw tiling bytes
 // ============================================================================
-static ReduceMeanWithCountTilingData ExtractTilingData(const TilingInfo& info) {
+static ReduceMeanWithCountTilingData ExtractTilingData(const TilingInfo& info)
+{
     ReduceMeanWithCountTilingData td;
     EXPECT_GE(info.tilingDataSize, sizeof(ReduceMeanWithCountTilingData));
     std::memcpy(&td, info.tilingData.get(), sizeof(ReduceMeanWithCountTilingData));
@@ -84,15 +79,9 @@ static ReduceMeanWithCountTilingData ExtractTilingData(const TilingInfo& info) {
 // ============================================================================
 class ReduceMeanWithCountTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "ReduceMeanWithCountTilingTest SetUp." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "ReduceMeanWithCountTilingTest SetUp." << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "ReduceMeanWithCountTilingTest TearDown." << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "ReduceMeanWithCountTilingTest TearDown." << std::endl; }
 };
 
 // ============================================================================
@@ -102,8 +91,7 @@ protected:
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk0_fp32_single_axis_last_dim)
 {
-    auto ctx = MakeTilingCtx(
-        {10, 64}, ge::DT_FLOAT, {10}, {10}, {1}, false);
+    auto ctx = MakeTilingCtx({10, 64}, ge::DT_FLOAT, {10}, {10}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -125,8 +113,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk0_fp32_single_axis_last_dim)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk0_fp32_all_axis_reduction)
 {
-    auto ctx = MakeTilingCtx(
-        {2, 3, 4}, ge::DT_FLOAT, {}, {}, {}, false);
+    auto ctx = MakeTilingCtx({2, 3, 4}, ge::DT_FLOAT, {}, {}, {}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -152,8 +139,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk0_fp32_all_axis_reduction)
 // Replaced with: input: [8, 64], axis=[1], keepdim=false (pure AR)
 TEST_F(ReduceMeanWithCountTilingTest, tk0_fp32_reduce_last_dim)
 {
-    auto ctx = MakeTilingCtx(
-        {8, 64}, ge::DT_FLOAT, {8}, {8}, {1}, false);
+    auto ctx = MakeTilingCtx({8, 64}, ge::DT_FLOAT, {8}, {8}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -178,8 +164,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk0_fp32_reduce_last_dim)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk0_fp16_consecutive_reduce_dims)
 {
-    auto ctx = MakeTilingCtx(
-        {4, 3, 5}, ge::DT_FLOAT16, {4}, {4}, {1, 2}, false);
+    auto ctx = MakeTilingCtx({4, 3, 5}, ge::DT_FLOAT16, {4}, {4}, {1, 2}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -200,8 +185,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk0_fp16_consecutive_reduce_dims)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk0_fp32_multicore_split)
 {
-    auto ctx = MakeTilingCtx(
-        {100, 32}, ge::DT_FLOAT, {100}, {100}, {1}, false);
+    auto ctx = MakeTilingCtx({100, 32}, ge::DT_FLOAT, {100}, {100}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -224,8 +208,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk0_fp32_multicore_split)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, axis_merging_skip_size1_dims)
 {
-    auto ctx = MakeTilingCtx(
-        {4, 1, 8}, ge::DT_FLOAT, {4, 1}, {4, 1}, {2}, false);
+    auto ctx = MakeTilingCtx({4, 1, 8}, ge::DT_FLOAT, {4, 1}, {4, 1}, {2}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -244,8 +227,7 @@ TEST_F(ReduceMeanWithCountTilingTest, axis_merging_skip_size1_dims)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, axis_merging_adjacent_same_type)
 {
-    auto ctx = MakeTilingCtx(
-        {2, 3, 4, 5}, ge::DT_FLOAT, {2, 3}, {2, 3}, {2, 3}, false);
+    auto ctx = MakeTilingCtx({2, 3, 4, 5}, ge::DT_FLOAT, {2, 3}, {2, 3}, {2, 3}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -263,8 +245,7 @@ TEST_F(ReduceMeanWithCountTilingTest, axis_merging_adjacent_same_type)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, count_result_and_inv_count)
 {
-    auto ctx = MakeTilingCtx(
-        {5, 7}, ge::DT_FLOAT, {5}, {5}, {1}, false);
+    auto ctx = MakeTilingCtx({5, 7}, ge::DT_FLOAT, {5}, {5}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -281,8 +262,7 @@ TEST_F(ReduceMeanWithCountTilingTest, count_result_and_inv_count)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, ara_mode_reduce_middle_axis)
 {
-    auto ctx = MakeTilingCtx(
-        {4, 6, 8}, ge::DT_FLOAT, {4, 8}, {4, 8}, {1}, false);
+    auto ctx = MakeTilingCtx({4, 6, 8}, ge::DT_FLOAT, {4, 8}, {4, 8}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -300,8 +280,7 @@ TEST_F(ReduceMeanWithCountTilingTest, ara_mode_reduce_middle_axis)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, keepdim_true_output_length)
 {
-    auto ctx = MakeTilingCtx(
-        {4, 8}, ge::DT_FLOAT, {4, 1}, {4, 1}, {1}, true);
+    auto ctx = MakeTilingCtx({4, 8}, ge::DT_FLOAT, {4, 1}, {4, 1}, {1}, true);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -319,8 +298,7 @@ TEST_F(ReduceMeanWithCountTilingTest, keepdim_true_output_length)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, bf16_dtype_tiling)
 {
-    auto ctx = MakeTilingCtx(
-        {10, 32}, ge::DT_BF16, {10}, {10}, {1}, false);
+    auto ctx = MakeTilingCtx({10, 32}, ge::DT_BF16, {10}, {10}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -338,8 +316,7 @@ TEST_F(ReduceMeanWithCountTilingTest, bf16_dtype_tiling)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, single_element)
 {
-    auto ctx = MakeTilingCtx(
-        {1}, ge::DT_FLOAT, {}, {}, {0}, false);
+    auto ctx = MakeTilingCtx({1}, ge::DT_FLOAT, {}, {}, {0}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -355,8 +332,7 @@ TEST_F(ReduceMeanWithCountTilingTest, single_element)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, negative_axis_tiling)
 {
-    auto ctx = MakeTilingCtx(
-        {4, 8}, ge::DT_FLOAT, {4}, {4}, {-1}, false);
+    auto ctx = MakeTilingCtx({4, 8}, ge::DT_FLOAT, {4}, {4}, {-1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -372,8 +348,7 @@ TEST_F(ReduceMeanWithCountTilingTest, negative_axis_tiling)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tmp_buf_size_nonzero)
 {
-    auto ctx = MakeTilingCtx(
-        {8, 64}, ge::DT_FLOAT, {8}, {8}, {1}, false);
+    auto ctx = MakeTilingCtx({8, 64}, ge::DT_FLOAT, {8}, {8}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -386,8 +361,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tmp_buf_size_nonzero)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, workspace_is_set)
 {
-    auto ctx = MakeTilingCtx(
-        {8, 64}, ge::DT_FLOAT, {8}, {8}, {1}, false);
+    auto ctx = MakeTilingCtx({8, 64}, ge::DT_FLOAT, {8}, {8}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -416,8 +390,7 @@ TEST_F(ReduceMeanWithCountTilingTest, workspace_is_set)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk1_fp32_large_r_colsplit)
 {
-    auto ctx = MakeTilingCtx(
-        {2, 100000}, ge::DT_FLOAT, {2}, {2}, {1}, false);
+    auto ctx = MakeTilingCtx({2, 100000}, ge::DT_FLOAT, {2}, {2}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -426,8 +399,8 @@ TEST_F(ReduceMeanWithCountTilingTest, tk1_fp32_large_r_colsplit)
     EXPECT_EQ(td.rLength, 100000UL);
     EXPECT_EQ(td.a0Length, 1UL);
     // Must be col-split mode
-    EXPECT_GT(td.chunkR, 0UL);         // chunkR > 0 indicates col-split
-    EXPECT_LT(td.chunkR, td.rLength);  // chunkR < rLength (split happened)
+    EXPECT_GT(td.chunkR, 0UL);        // chunkR > 0 indicates col-split
+    EXPECT_LT(td.chunkR, td.rLength); // chunkR < rLength (split happened)
     // chunkR must be 8-aligned (FP32 elemPerBlock)
     EXPECT_EQ(td.chunkR % 8, 0UL);
     EXPECT_EQ(td.countResult, 100000);
@@ -444,8 +417,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk1_fp32_large_r_colsplit)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk1_fp32_chunkr_precise_value)
 {
-    auto ctx = MakeTilingCtx(
-        {1, 100000}, ge::DT_FLOAT, {1}, {1}, {1}, false);
+    auto ctx = MakeTilingCtx({1, 100000}, ge::DT_FLOAT, {1}, {1}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -454,7 +426,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk1_fp32_chunkr_precise_value)
     EXPECT_EQ(td.chunkR, 96720UL);
     EXPECT_EQ(td.rLength, 100000UL);
     EXPECT_EQ(td.a0Length, 1UL);
-    EXPECT_EQ(td.chunkR % 8, 0UL);  // 8-aligned for FP32
+    EXPECT_EQ(td.chunkR % 8, 0UL); // 8-aligned for FP32
     EXPECT_LT(td.chunkR, td.rLength);
     // tmpBufSize should be dynamically computed, not hardcoded 4096
     EXPECT_EQ(td.tmpBufSize, 6304UL);
@@ -469,8 +441,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk1_fp32_chunkr_precise_value)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk1_fp32_numchunks_calculation)
 {
-    auto ctx = MakeTilingCtx(
-        {1, 200000}, ge::DT_FLOAT, {1}, {1}, {1}, false);
+    auto ctx = MakeTilingCtx({1, 200000}, ge::DT_FLOAT, {1}, {1}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -495,8 +466,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk1_fp32_numchunks_calculation)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk1_fp16_colsplit)
 {
-    auto ctx = MakeTilingCtx(
-        {3, 200000}, ge::DT_FLOAT16, {3}, {3}, {1}, false);
+    auto ctx = MakeTilingCtx({3, 200000}, ge::DT_FLOAT16, {3}, {3}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -517,8 +487,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk1_fp16_colsplit)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk1_fp32_colsplit_multicore)
 {
-    auto ctx = MakeTilingCtx(
-        {80, 100000}, ge::DT_FLOAT, {80}, {80}, {1}, false);
+    auto ctx = MakeTilingCtx({80, 100000}, ge::DT_FLOAT, {80}, {80}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -543,8 +512,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk1_fp32_boundary_fullload)
     // R=48632 => ubNeeded = 2*48632*4 + 64 + 4096 = 389216 + 4160 = 393216 (exactly fits)
     // Actually let's compute: 2*48632*4 = 389056, 389056 + 64 + 4096 = 393216
     // Wait: 48632 * 8 = 389056, + 64 + 4096 = 393216 = ubSize => fits
-    auto ctx = MakeTilingCtx(
-        {1, 48632}, ge::DT_FLOAT, {1}, {1}, {1}, false);
+    auto ctx = MakeTilingCtx({1, 48632}, ge::DT_FLOAT, {1}, {1}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -558,8 +526,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk1_fp32_boundary_colsplit)
 {
     // R=48640 (next 8-aligned value) => rLengthAlign = 48640
     // ubNeeded = 2*48640*4 + 64 + 4096 = 389120 + 4160 = 393280 > 393216
-    auto ctx = MakeTilingCtx(
-        {1, 48640}, ge::DT_FLOAT, {1}, {1}, {1}, false);
+    auto ctx = MakeTilingCtx({1, 48640}, ge::DT_FLOAT, {1}, {1}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -577,8 +544,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk1_fp32_boundary_colsplit)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk1_multiaxis_merge_to_colsplit)
 {
-    auto ctx = MakeTilingCtx(
-        {4, 500, 200}, ge::DT_FLOAT, {4}, {4}, {1, 2}, false);
+    auto ctx = MakeTilingCtx({4, 500, 200}, ge::DT_FLOAT, {4}, {4}, {1, 2}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -606,8 +572,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk1_multiaxis_merge_to_colsplit)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk2_fp32_basic_ara_tiling)
 {
-    auto ctx = MakeTilingCtx(
-        {4, 6, 8}, ge::DT_FLOAT, {4, 8}, {4, 8}, {1}, false);
+    auto ctx = MakeTilingCtx({4, 6, 8}, ge::DT_FLOAT, {4, 8}, {4, 8}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -615,8 +580,8 @@ TEST_F(ReduceMeanWithCountTilingTest, tk2_fp32_basic_ara_tiling)
     EXPECT_EQ(td.a1Length, 4UL);
     EXPECT_EQ(td.rLength, 6UL);
     EXPECT_EQ(td.a0Length, 8UL);
-    EXPECT_EQ(td.tileA0Len, 8UL);     // a0 fits entirely
-    EXPECT_EQ(td.chunkR, 0UL);        // Not AR col-split
+    EXPECT_EQ(td.tileA0Len, 8UL); // a0 fits entirely
+    EXPECT_EQ(td.chunkR, 0UL);    // Not AR col-split
     EXPECT_EQ(td.countResult, 6);
     EXPECT_FLOAT_EQ(td.invCount, 1.0f / 6.0f);
 }
@@ -638,8 +603,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk2_fp32_basic_ara_tiling)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk2_fp32_a0outer_is_1_when_fits)
 {
-    auto ctx = MakeTilingCtx(
-        {2, 10, 128}, ge::DT_FLOAT, {2, 128}, {2, 128}, {1}, false);
+    auto ctx = MakeTilingCtx({2, 10, 128}, ge::DT_FLOAT, {2, 128}, {2, 128}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -670,8 +634,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk2_fp32_a0outer_is_1_when_fits)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk2_fp32_a0_tiling_needed)
 {
-    auto ctx = MakeTilingCtx(
-        {2, 1000, 4096}, ge::DT_FLOAT, {2, 4096}, {2, 4096}, {1}, false);
+    auto ctx = MakeTilingCtx({2, 1000, 4096}, ge::DT_FLOAT, {2, 4096}, {2, 4096}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -713,8 +676,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk2_fp32_a0_tiling_needed)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk2_fp32_alignedcols_non_aligned_a0)
 {
-    auto ctx = MakeTilingCtx(
-        {3, 8, 10}, ge::DT_FLOAT, {3, 10}, {3, 10}, {1}, false);
+    auto ctx = MakeTilingCtx({3, 8, 10}, ge::DT_FLOAT, {3, 10}, {3, 10}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -744,8 +706,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk2_fp32_alignedcols_non_aligned_a0)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk2_fp16_a0tilebase)
 {
-    auto ctx = MakeTilingCtx(
-        {4, 6, 24}, ge::DT_FLOAT16, {4, 24}, {4, 24}, {1}, false);
+    auto ctx = MakeTilingCtx({4, 6, 24}, ge::DT_FLOAT16, {4, 24}, {4, 24}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -770,8 +731,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk2_fp16_a0tilebase)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk2_fp32_multicore_tiling)
 {
-    auto ctx = MakeTilingCtx(
-        {8, 4, 256}, ge::DT_FLOAT, {8, 256}, {8, 256}, {1}, false);
+    auto ctx = MakeTilingCtx({8, 4, 256}, ge::DT_FLOAT, {8, 256}, {8, 256}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -795,8 +755,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk2_fp32_multicore_tiling)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, scene_non_innermost_axis_is_ara)
 {
-    auto ctx = MakeTilingCtx(
-        {4, 6, 8}, ge::DT_FLOAT, {6, 8}, {6, 8}, {0}, false);
+    auto ctx = MakeTilingCtx({4, 6, 8}, ge::DT_FLOAT, {6, 8}, {6, 8}, {0}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -816,8 +775,7 @@ TEST_F(ReduceMeanWithCountTilingTest, scene_non_innermost_axis_is_ara)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, scene_middle_axes_reduce_ara)
 {
-    auto ctx = MakeTilingCtx(
-        {3, 5, 7, 4}, ge::DT_FLOAT, {3, 4}, {3, 4}, {1, 2}, false);
+    auto ctx = MakeTilingCtx({3, 5, 7, 4}, ge::DT_FLOAT, {3, 4}, {3, 4}, {1, 2}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -840,8 +798,7 @@ TEST_F(ReduceMeanWithCountTilingTest, scene_middle_axes_reduce_ara)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, scene_complex_multiaxis_rar_path)
 {
-    auto ctx = MakeTilingCtx(
-        {2, 3, 4, 5, 6}, ge::DT_FLOAT, {3, 5}, {3, 5}, {0, 2, 4}, false);
+    auto ctx = MakeTilingCtx({2, 3, 4, 5, 6}, ge::DT_FLOAT, {3, 5}, {3, 5}, {0, 2, 4}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -863,8 +820,7 @@ TEST_F(ReduceMeanWithCountTilingTest, scene_complex_multiaxis_rar_path)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, scene_pure_reduce_large_r)
 {
-    auto ctx = MakeTilingCtx(
-        {100000}, ge::DT_FLOAT, {}, {}, {0}, false);
+    auto ctx = MakeTilingCtx({100000}, ge::DT_FLOAT, {}, {}, {0}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -883,8 +839,7 @@ TEST_F(ReduceMeanWithCountTilingTest, scene_pure_reduce_large_r)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk0_fullload_medium_r)
 {
-    auto ctx = MakeTilingCtx(
-        {10, 1024}, ge::DT_FLOAT, {10}, {10}, {1}, false);
+    auto ctx = MakeTilingCtx({10, 1024}, ge::DT_FLOAT, {10}, {10}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -903,8 +858,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk0_fullload_medium_r)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk2_ara_keepdim_true)
 {
-    auto ctx = MakeTilingCtx(
-        {4, 6, 8}, ge::DT_FLOAT, {4, 1, 8}, {4, 1, 8}, {1}, true);
+    auto ctx = MakeTilingCtx({4, 6, 8}, ge::DT_FLOAT, {4, 1, 8}, {4, 1, 8}, {1}, true);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -924,8 +878,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk2_ara_keepdim_true)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk1_bf16_colsplit)
 {
-    auto ctx = MakeTilingCtx(
-        {2, 200000}, ge::DT_BF16, {2}, {2}, {1}, false);
+    auto ctx = MakeTilingCtx({2, 200000}, ge::DT_BF16, {2}, {2}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -951,8 +904,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk1_bf16_colsplit)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk2_ara_size1_a1_removed)
 {
-    auto ctx = MakeTilingCtx(
-        {1, 4, 8}, ge::DT_FLOAT, {1, 8}, {1, 8}, {1}, false);
+    auto ctx = MakeTilingCtx({1, 4, 8}, ge::DT_FLOAT, {1, 8}, {1, 8}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -985,8 +937,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk2_ara_size1_a1_removed)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk3_fp16_ar_fullload_small)
 {
-    auto ctx = MakeTilingCtx(
-        {10, 32}, ge::DT_FLOAT16, {10}, {10}, {1}, false);
+    auto ctx = MakeTilingCtx({10, 32}, ge::DT_FLOAT16, {10}, {10}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -994,8 +945,8 @@ TEST_F(ReduceMeanWithCountTilingTest, tk3_fp16_ar_fullload_small)
     EXPECT_EQ(td.a1Length, 10UL);
     EXPECT_EQ(td.rLength, 32UL);
     EXPECT_EQ(td.a0Length, 1UL);
-    EXPECT_EQ(td.chunkR, 0UL);           // Full-load
-    EXPECT_EQ(td.tmpBufSize, 4096UL);    // Dynamic tmpBufSize (minimum floor)
+    EXPECT_EQ(td.chunkR, 0UL);        // Full-load
+    EXPECT_EQ(td.tmpBufSize, 4096UL); // Dynamic tmpBufSize (minimum floor)
     EXPECT_EQ(td.countResult, 32);
     EXPECT_FLOAT_EQ(td.invCount, 1.0f / 32.0f);
     EXPECT_EQ(td.outputLength, 10UL);
@@ -1010,8 +961,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk3_fp16_ar_fullload_small)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk3_fp16_ar_fullload_medium)
 {
-    auto ctx = MakeTilingCtx(
-        {4, 1024}, ge::DT_FLOAT16, {4}, {4}, {1}, false);
+    auto ctx = MakeTilingCtx({4, 1024}, ge::DT_FLOAT16, {4}, {4}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1032,13 +982,12 @@ TEST_F(ReduceMeanWithCountTilingTest, tk3_fp16_ar_fullload_medium)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk3_fp16_boundary_fullload)
 {
-    auto ctx = MakeTilingCtx(
-        {1, 45056}, ge::DT_FLOAT16, {1}, {1}, {1}, false);
+    auto ctx = MakeTilingCtx({1, 45056}, ge::DT_FLOAT16, {1}, {1}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
     auto td = ExtractTilingData(info);
-    EXPECT_EQ(td.chunkR, 0UL);  // Full-load
+    EXPECT_EQ(td.chunkR, 0UL); // Full-load
     EXPECT_EQ(td.rLength, 45056UL);
 }
 
@@ -1048,8 +997,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk3_fp16_boundary_fullload)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk4_fp16_boundary_colsplit)
 {
-    auto ctx = MakeTilingCtx(
-        {1, 49152}, ge::DT_FLOAT16, {1}, {1}, {1}, false);
+    auto ctx = MakeTilingCtx({1, 49152}, ge::DT_FLOAT16, {1}, {1}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1070,8 +1018,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk4_fp16_boundary_colsplit)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk4_fp16_colsplit_precise)
 {
-    auto ctx = MakeTilingCtx(
-        {3, 200000}, ge::DT_FLOAT16, {3}, {3}, {1}, false);
+    auto ctx = MakeTilingCtx({3, 200000}, ge::DT_FLOAT16, {3}, {3}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1079,8 +1026,8 @@ TEST_F(ReduceMeanWithCountTilingTest, tk4_fp16_colsplit_precise)
     EXPECT_EQ(td.a1Length, 3UL);
     EXPECT_EQ(td.rLength, 200000UL);
     EXPECT_EQ(td.a0Length, 1UL);
-    EXPECT_EQ(td.chunkR, 64800UL);         // Precise value
-    EXPECT_EQ(td.chunkR % 16, 0UL);        // 16-aligned for FP16
+    EXPECT_EQ(td.chunkR, 64800UL);  // Precise value
+    EXPECT_EQ(td.chunkR % 16, 0UL); // 16-aligned for FP16
     EXPECT_LT(td.chunkR, td.rLength);
     // tmpBufSize dynamically > 4096 (for large chunkR, cast path)
     EXPECT_EQ(td.tmpBufSize, 4320UL);
@@ -1093,8 +1040,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk4_fp16_colsplit_precise)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk4_fp16_colsplit_multicore)
 {
-    auto ctx = MakeTilingCtx(
-        {40, 200000}, ge::DT_FLOAT16, {40}, {40}, {1}, false);
+    auto ctx = MakeTilingCtx({40, 200000}, ge::DT_FLOAT16, {40}, {40}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1116,8 +1062,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk4_fp16_colsplit_multicore)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk5_fp16_ara_fullload)
 {
-    auto ctx = MakeTilingCtx(
-        {4, 6, 24}, ge::DT_FLOAT16, {4, 24}, {4, 24}, {1}, false);
+    auto ctx = MakeTilingCtx({4, 6, 24}, ge::DT_FLOAT16, {4, 24}, {4, 24}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1125,7 +1070,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk5_fp16_ara_fullload)
     EXPECT_EQ(td.a1Length, 4UL);
     EXPECT_EQ(td.rLength, 6UL);
     EXPECT_EQ(td.a0Length, 24UL);
-    EXPECT_EQ(td.tileA0Len, 16UL);       // FP16 a0TileBase=16
+    EXPECT_EQ(td.tileA0Len, 16UL); // FP16 a0TileBase=16
     EXPECT_EQ(td.chunkR, 0UL);
     EXPECT_EQ(td.countResult, 6);
 }
@@ -1137,8 +1082,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk5_fp16_ara_fullload)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk5_fp16_ara_large_a0_fits)
 {
-    auto ctx = MakeTilingCtx(
-        {2, 100, 256}, ge::DT_FLOAT16, {2, 256}, {2, 256}, {1}, false);
+    auto ctx = MakeTilingCtx({2, 100, 256}, ge::DT_FLOAT16, {2, 256}, {2, 256}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1146,7 +1090,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk5_fp16_ara_large_a0_fits)
     EXPECT_EQ(td.a1Length, 2UL);
     EXPECT_EQ(td.rLength, 100UL);
     EXPECT_EQ(td.a0Length, 256UL);
-    EXPECT_EQ(td.tileA0Len, 256UL);     // All fits
+    EXPECT_EQ(td.tileA0Len, 256UL); // All fits
     uint64_t a0Outer = (td.a0Length + td.tileA0Len - 1) / td.tileA0Len;
     EXPECT_EQ(a0Outer, 1UL);
 }
@@ -1160,8 +1104,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk5_fp16_ara_large_a0_fits)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk5_fp16_ara_a0_tiling)
 {
-    auto ctx = MakeTilingCtx(
-        {2, 1000, 4096}, ge::DT_FLOAT16, {2, 4096}, {2, 4096}, {1}, false);
+    auto ctx = MakeTilingCtx({2, 1000, 4096}, ge::DT_FLOAT16, {2, 4096}, {2, 4096}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1170,7 +1113,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk5_fp16_ara_a0_tiling)
     EXPECT_EQ(td.rLength, 1000UL);
     EXPECT_EQ(td.a0Length, 4096UL);
     EXPECT_EQ(td.tileA0Len, 48UL);
-    EXPECT_EQ(td.tileA0Len % 16, 0UL);   // FP16 a0TileBase=16
+    EXPECT_EQ(td.tileA0Len % 16, 0UL); // FP16 a0TileBase=16
     uint64_t a0Outer = (td.a0Length + td.tileA0Len - 1) / td.tileA0Len;
     EXPECT_EQ(a0Outer, 86UL);
 }
@@ -1182,8 +1125,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk5_fp16_ara_a0_tiling)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk5_fp16_ara_keepdim_true)
 {
-    auto ctx = MakeTilingCtx(
-        {4, 6, 24}, ge::DT_FLOAT16, {4, 1, 24}, {4, 1, 24}, {1}, true);
+    auto ctx = MakeTilingCtx({4, 6, 24}, ge::DT_FLOAT16, {4, 1, 24}, {4, 1, 24}, {1}, true);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1201,8 +1143,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk5_fp16_ara_keepdim_true)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk6_bf16_ar_fullload_small)
 {
-    auto ctx = MakeTilingCtx(
-        {10, 32}, ge::DT_BF16, {10}, {10}, {1}, false);
+    auto ctx = MakeTilingCtx({10, 32}, ge::DT_BF16, {10}, {10}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1221,8 +1162,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk6_bf16_ar_fullload_small)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk6_bf16_ar_fullload_medium)
 {
-    auto ctx = MakeTilingCtx(
-        {4, 1024}, ge::DT_BF16, {4}, {4}, {1}, false);
+    auto ctx = MakeTilingCtx({4, 1024}, ge::DT_BF16, {4}, {4}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1240,8 +1180,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk6_bf16_ar_fullload_medium)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk7_bf16_colsplit_precise)
 {
-    auto ctx = MakeTilingCtx(
-        {2, 200000}, ge::DT_BF16, {2}, {2}, {1}, false);
+    auto ctx = MakeTilingCtx({2, 200000}, ge::DT_BF16, {2}, {2}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1250,7 +1189,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk7_bf16_colsplit_precise)
     EXPECT_EQ(td.rLength, 200000UL);
     EXPECT_EQ(td.a0Length, 1UL);
     EXPECT_EQ(td.chunkR, 64800UL);
-    EXPECT_EQ(td.chunkR % 16, 0UL);      // 16-aligned BF16
+    EXPECT_EQ(td.chunkR % 16, 0UL); // 16-aligned BF16
     EXPECT_EQ(td.tmpBufSize, 4320UL);
     EXPECT_EQ(td.countResult, 200000);
 }
@@ -1261,8 +1200,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk7_bf16_colsplit_precise)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk7_bf16_colsplit_multicore)
 {
-    auto ctx = MakeTilingCtx(
-        {80, 100000}, ge::DT_BF16, {80}, {80}, {1}, false);
+    auto ctx = MakeTilingCtx({80, 100000}, ge::DT_BF16, {80}, {80}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1281,8 +1219,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk7_bf16_colsplit_multicore)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk8_bf16_ara_fullload)
 {
-    auto ctx = MakeTilingCtx(
-        {4, 6, 24}, ge::DT_BF16, {4, 24}, {4, 24}, {1}, false);
+    auto ctx = MakeTilingCtx({4, 6, 24}, ge::DT_BF16, {4, 24}, {4, 24}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1300,8 +1237,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk8_bf16_ara_fullload)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk8_bf16_ara_a0_tiling)
 {
-    auto ctx = MakeTilingCtx(
-        {2, 1000, 4096}, ge::DT_BF16, {2, 4096}, {2, 4096}, {1}, false);
+    auto ctx = MakeTilingCtx({2, 1000, 4096}, ge::DT_BF16, {2, 4096}, {2, 4096}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1320,8 +1256,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk8_bf16_ara_a0_tiling)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tk8_bf16_ara_multicore)
 {
-    auto ctx = MakeTilingCtx(
-        {16, 8, 128}, ge::DT_BF16, {16, 128}, {16, 128}, {1}, false);
+    auto ctx = MakeTilingCtx({16, 8, 128}, ge::DT_BF16, {16, 128}, {16, 128}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1342,8 +1277,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tk8_bf16_ara_multicore)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tmp_buf_size_small_r_floor)
 {
-    auto ctx = MakeTilingCtx(
-        {8, 16}, ge::DT_FLOAT, {8}, {8}, {1}, false);
+    auto ctx = MakeTilingCtx({8, 16}, ge::DT_FLOAT, {8}, {8}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1358,16 +1292,14 @@ TEST_F(ReduceMeanWithCountTilingTest, tmp_buf_size_small_r_floor)
 TEST_F(ReduceMeanWithCountTilingTest, tmp_buf_size_grows_with_chunk)
 {
     // Small-R full-load case: tmp=4096
-    auto ctxSmall = MakeTilingCtx(
-        {1, 256}, ge::DT_FLOAT, {1}, {1}, {1}, false);
+    auto ctxSmall = MakeTilingCtx({1, 256}, ge::DT_FLOAT, {1}, {1}, {1}, false);
     TilingInfo infoSmall;
     ASSERT_TRUE(ExecuteTiling(ctxSmall, infoSmall));
     auto tdSmall = ExtractTilingData(infoSmall);
     EXPECT_EQ(tdSmall.tmpBufSize, 4096UL);
 
     // Large col-split case: tmp should grow beyond 4096 since chunkR >= ~96720
-    auto ctxLarge = MakeTilingCtx(
-        {1, 100000}, ge::DT_FLOAT, {1}, {1}, {1}, false);
+    auto ctxLarge = MakeTilingCtx({1, 100000}, ge::DT_FLOAT, {1}, {1}, {1}, false);
     TilingInfo infoLarge;
     ASSERT_TRUE(ExecuteTiling(ctxLarge, infoLarge));
     auto tdLarge = ExtractTilingData(infoLarge);
@@ -1382,8 +1314,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tmp_buf_size_grows_with_chunk)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, tmp_buf_size_fp16_uses_fp32_count)
 {
-    auto ctx = MakeTilingCtx(
-        {1, 100000}, ge::DT_FLOAT16, {1}, {1}, {1}, false);
+    auto ctx = MakeTilingCtx({1, 100000}, ge::DT_FLOAT16, {1}, {1}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1399,8 +1330,7 @@ TEST_F(ReduceMeanWithCountTilingTest, tmp_buf_size_fp16_uses_fp32_count)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, fp16_ub_accounting_castbuf_counted)
 {
-    auto ctx = MakeTilingCtx(
-        {1, 40960}, ge::DT_FLOAT16, {1}, {1}, {1}, false);
+    auto ctx = MakeTilingCtx({1, 40960}, ge::DT_FLOAT16, {1}, {1}, {1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1416,8 +1346,7 @@ TEST_F(ReduceMeanWithCountTilingTest, fp16_ub_accounting_castbuf_counted)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, axis_merging_rank1_fp16)
 {
-    auto ctx = MakeTilingCtx(
-        {5}, ge::DT_FLOAT16, {}, {}, {}, false);
+    auto ctx = MakeTilingCtx({5}, ge::DT_FLOAT16, {}, {}, {}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1434,8 +1363,7 @@ TEST_F(ReduceMeanWithCountTilingTest, axis_merging_rank1_fp16)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, axis_merging_rank1_bf16)
 {
-    auto ctx = MakeTilingCtx(
-        {100}, ge::DT_BF16, {}, {}, {0}, false);
+    auto ctx = MakeTilingCtx({100}, ge::DT_BF16, {}, {}, {0}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1456,8 +1384,7 @@ TEST_F(ReduceMeanWithCountTilingTest, axis_merging_rank1_bf16)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, axis_merging_bf16_with_size1)
 {
-    auto ctx = MakeTilingCtx(
-        {1, 8, 1, 16}, ge::DT_BF16, {1, 1}, {1, 1}, {1, 3}, false);
+    auto ctx = MakeTilingCtx({1, 8, 1, 16}, ge::DT_BF16, {1, 1}, {1, 1}, {1, 3}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1474,8 +1401,7 @@ TEST_F(ReduceMeanWithCountTilingTest, axis_merging_bf16_with_size1)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, negative_axis_fp16)
 {
-    auto ctx = MakeTilingCtx(
-        {4, 8}, ge::DT_FLOAT16, {4}, {4}, {-1}, false);
+    auto ctx = MakeTilingCtx({4, 8}, ge::DT_FLOAT16, {4}, {4}, {-1}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1492,8 +1418,7 @@ TEST_F(ReduceMeanWithCountTilingTest, negative_axis_fp16)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, single_element_fp16)
 {
-    auto ctx = MakeTilingCtx(
-        {1}, ge::DT_FLOAT16, {}, {}, {0}, false);
+    auto ctx = MakeTilingCtx({1}, ge::DT_FLOAT16, {}, {}, {0}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1505,8 +1430,7 @@ TEST_F(ReduceMeanWithCountTilingTest, single_element_fp16)
 
 TEST_F(ReduceMeanWithCountTilingTest, single_element_bf16)
 {
-    auto ctx = MakeTilingCtx(
-        {1}, ge::DT_BF16, {}, {}, {0}, false);
+    auto ctx = MakeTilingCtx({1}, ge::DT_BF16, {}, {}, {0}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1523,8 +1447,7 @@ TEST_F(ReduceMeanWithCountTilingTest, single_element_bf16)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, axis_merging_bf16_4d_ara)
 {
-    auto ctx = MakeTilingCtx(
-        {2, 3, 4, 5}, ge::DT_BF16, {2, 5}, {2, 5}, {1, 2}, false);
+    auto ctx = MakeTilingCtx({2, 3, 4, 5}, ge::DT_BF16, {2, 5}, {2, 5}, {1, 2}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1542,8 +1465,7 @@ TEST_F(ReduceMeanWithCountTilingTest, axis_merging_bf16_4d_ara)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, fp16_all_axis_reduction)
 {
-    auto ctx = MakeTilingCtx(
-        {2, 3, 4}, ge::DT_FLOAT16, {}, {}, {}, false);
+    auto ctx = MakeTilingCtx({2, 3, 4}, ge::DT_FLOAT16, {}, {}, {}, false);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1561,8 +1483,7 @@ TEST_F(ReduceMeanWithCountTilingTest, fp16_all_axis_reduction)
 // ============================================================================
 TEST_F(ReduceMeanWithCountTilingTest, bf16_all_axis_keepdim_true)
 {
-    auto ctx = MakeTilingCtx(
-        {2, 3, 4}, ge::DT_BF16, {1, 1, 1}, {1, 1, 1}, {}, true);
+    auto ctx = MakeTilingCtx({2, 3, 4}, ge::DT_BF16, {1, 1, 1}, {1, 1, 1}, {}, true);
     TilingInfo info;
     ASSERT_TRUE(ExecuteTiling(ctx, info));
 
@@ -1619,7 +1540,7 @@ TEST_F(ReduceMeanWithCountTilingTest, sanity_all_dtype_AR_modes)
         auto tdFull = ExtractTilingData(infoFull);
         EXPECT_EQ(tdFull.a1Length, 8UL);
         EXPECT_EQ(tdFull.rLength, 64UL);
-        EXPECT_EQ(tdFull.chunkR, 0UL);     // Full-load
+        EXPECT_EQ(tdFull.chunkR, 0UL); // Full-load
         EXPECT_GT(tdFull.usedCoreNum, 0);
 
         // AR col-split

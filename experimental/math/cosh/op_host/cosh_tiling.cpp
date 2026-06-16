@@ -21,7 +21,7 @@
 /*!
  * \file cosh_tiling.cpp
  * \brief
-*/
+ */
 #include "log/log.h"
 #include "util/math_util.h"
 #include "util/platform_util.h"
@@ -42,7 +42,7 @@ struct PlatformInfo {
     int64_t coreNum{0};
     uint32_t blockSize{0};
 };
-}
+} // namespace
 
 // 获取平台信息如ubSize, coreNum
 static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, PlatformInfo& platformInfo)
@@ -84,7 +84,7 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
 
 static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 {
-    auto ascendcPlatform = platform_ascendc:: PlatformAscendC(context->GetPlatformInfo());
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
     uint32_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
@@ -92,20 +92,20 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus CalculateCoreNum(gert::TilingContext* context, CoshTilingData* tiling,
-    const PlatformInfo& platformInfo, int64_t totalIdx)
+static ge::graphStatus CalculateCoreNum(
+    gert::TilingContext* context, CoshTilingData* tiling, const PlatformInfo& platformInfo, int64_t totalIdx)
 {
     auto coreNum = platformInfo.coreNum;
     auto blockSize = platformInfo.blockSize;
     auto ubSize = platformInfo.ubSize;
-// --- safer numeric types ---
+    // --- safer numeric types ---
     uint32_t typeLength = 0;
     ge::TypeUtils::GetDataTypeLength(context->GetInputDesc(0)->GetDataType(), typeLength);
     if (typeLength == 0) {
         OP_LOGE(context, "typeLength is 0");
         return ge::GRAPH_FAILED;
     }
-    
+
     uint64_t inputBytes = static_cast<uint64_t>(typeLength);
     uint64_t inputLengthBytes = static_cast<uint64_t>(totalIdx) * inputBytes;
 
@@ -131,11 +131,11 @@ static ge::graphStatus CalculateCoreNum(gert::TilingContext* context, CoshTiling
         coreNum64 = blocksTotal;
     }
     if (coreNum64 == 0ULL) {
-        coreNum64 = 1ULL; 
+        coreNum64 = 1ULL;
     }
     uint32_t finalCoreNum = static_cast<uint32_t>(coreNum64);
 
-    uint64_t everyCoreInputBlockNum = blocksTotal / coreNum64; // 基本块数
+    uint64_t everyCoreInputBlockNum = blocksTotal / coreNum64;              // 基本块数
     uint32_t tailBlockNum = static_cast<uint32_t>(blocksTotal % coreNum64); // 前 tailBlockNum 个核是 big-core
 
     // small-core 数量（元素）
@@ -144,7 +144,8 @@ static ge::graphStatus CalculateCoreNum(gert::TilingContext* context, CoshTiling
 
     uint32_t smallTileNum = static_cast<uint32_t>(everyCoreInputBlockNum / static_cast<uint64_t>(tileBlockNum));
     uint32_t finalSmallTileNum = ((everyCoreInputBlockNum % tileBlockNum) == 0) ? smallTileNum : (smallTileNum + 1);
-    int64_t smallTailDataNum_i = static_cast<int64_t>(smallCoreDataNum) - static_cast<int64_t>(tileDataNum) * static_cast<int64_t>(smallTileNum);
+    int64_t smallTailDataNum_i =
+        static_cast<int64_t>(smallCoreDataNum) - static_cast<int64_t>(tileDataNum) * static_cast<int64_t>(smallTileNum);
     uint32_t smallTailDataNum = (smallTailDataNum_i <= 0) ? tileDataNum : static_cast<uint32_t>(smallTailDataNum_i);
 
     // big-core（每个多一个 block）
@@ -153,7 +154,8 @@ static ge::graphStatus CalculateCoreNum(gert::TilingContext* context, CoshTiling
     uint32_t bigCoreDataNum = static_cast<uint32_t>(bigCoreDataNum_u);
     uint32_t bigTileNum = static_cast<uint32_t>(bigEveryCoreBlockNum / static_cast<uint64_t>(tileBlockNum));
     uint32_t finalBigTileNum = ((bigEveryCoreBlockNum % tileBlockNum) == 0) ? bigTileNum : (bigTileNum + 1);
-    int64_t bigTailDataNum_i = static_cast<int64_t>(bigCoreDataNum) - static_cast<int64_t>(tileDataNum) * static_cast<int64_t>(bigTileNum);
+    int64_t bigTailDataNum_i =
+        static_cast<int64_t>(bigCoreDataNum) - static_cast<int64_t>(tileDataNum) * static_cast<int64_t>(bigTileNum);
     uint32_t bigTailDataNum = (bigTailDataNum_i <= 0) ? tileDataNum : static_cast<uint32_t>(bigTailDataNum_i);
 
     // write back
@@ -174,14 +176,16 @@ static ge::graphStatus CoshTilingFunc(gert::TilingContext* context)
 {
     // 1. platform
     PlatformInfo platformInfo;
-    OP_CHECK_IF(GetPlatformInfo(context, platformInfo) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetPlatformInfo(context, platformInfo) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+        return ge::GRAPH_FAILED);
 
     // 2. shapes & dtype
     int64_t totalIdx = 0;
     ge::DataType dataType = ge::DT_FLOAT;
-    OP_CHECK_IF(GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
+        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     // handle empty input
     if (totalIdx <= 0) {
@@ -195,22 +199,24 @@ static ge::graphStatus CoshTilingFunc(gert::TilingContext* context)
     }
 
     // 3. workspace
-    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+        return ge::GRAPH_FAILED);
 
     CoshTilingData* tiling = context->GetTilingData<CoshTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(memset_s(tiling, sizeof(CoshTilingData), 0, sizeof(CoshTilingData)) != EOK,
-                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        memset_s(tiling, sizeof(CoshTilingData), 0, sizeof(CoshTilingData)) != EOK,
+        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     // 4. CoreNum & Tiling Calculation
-    OP_CHECK_IF(CalculateCoreNum(context, tiling, platformInfo, totalIdx) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "CalculateCoreNum error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        CalculateCoreNum(context, tiling, platformInfo, totalIdx) != ge::GRAPH_SUCCESS,
+        OP_LOGE(context, "CalculateCoreNum error"), return ge::GRAPH_FAILED);
     context->GetRawTilingData()->SetDataSize(sizeof(CoshTilingData));
 
     return ge::GRAPH_SUCCESS;
 }
-
 
 static ge::graphStatus TilingParseForCosh([[maybe_unused]] gert::TilingParseContext* context)
 {

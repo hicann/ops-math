@@ -49,19 +49,20 @@
 // Helpers
 // ---------------------------------------------------------------------------
 
-#define CHECK_ACL(expr, msg)                                          \
-    do {                                                              \
-        auto _ret = (expr);                                           \
-        if (_ret != ACL_SUCCESS) {                                    \
-            printf("[FAIL] %s — ACL error %d\n", (msg), (int)_ret);  \
-            return -1;                                                \
-        }                                                             \
+#define CHECK_ACL(expr, msg)                                        \
+    do {                                                            \
+        auto _ret = (expr);                                         \
+        if (_ret != ACL_SUCCESS) {                                  \
+            printf("[FAIL] %s — ACL error %d\n", (msg), (int)_ret); \
+            return -1;                                              \
+        }                                                           \
     } while (0)
 
 static int64_t ShapeSize(const std::vector<int64_t>& s)
 {
     int64_t n = 1;
-    for (auto d : s) n *= d;
+    for (auto d : s)
+        n *= d;
     return n;
 }
 
@@ -73,8 +74,10 @@ static uint16_t FloatToHalf(float v)
     uint16_t sign = (bits >> 16) & 0x8000;
     int32_t exp = ((bits >> 23) & 0xFF) - 127 + 15;
     uint32_t mant = bits & 0x7FFFFF;
-    if (exp <= 0) return sign;
-    if (exp >= 31) return sign | 0x7C00;
+    if (exp <= 0)
+        return sign;
+    if (exp >= 31)
+        return sign | 0x7C00;
     return sign | (uint16_t)(exp << 10) | (uint16_t)(mant >> 13);
 }
 
@@ -84,23 +87,32 @@ static float HalfToFloat(uint16_t h)
     uint32_t exp = (h >> 10) & 0x1F;
     uint32_t mant = h & 0x03FF;
     if (exp == 0) {
-        if (mant == 0) { float r; uint32_t b = sign; std::memcpy(&r, &b, 4); return r; }
-        while (!(mant & 0x0400)) { mant <<= 1; exp--; }
-        exp++; mant &= ~0x0400;
+        if (mant == 0) {
+            float r;
+            uint32_t b = sign;
+            std::memcpy(&r, &b, 4);
+            return r;
+        }
+        while (!(mant & 0x0400)) {
+            mant <<= 1;
+            exp--;
+        }
+        exp++;
+        mant &= ~0x0400;
     } else if (exp == 31) {
         uint32_t b = sign | 0x7F800000 | (mant << 13);
-        float r; std::memcpy(&r, &b, 4); return r;
+        float r;
+        std::memcpy(&r, &b, 4);
+        return r;
     }
     uint32_t bits = sign | ((exp + 127 - 15) << 23) | (mant << 13);
-    float r; std::memcpy(&r, &bits, 4);
+    float r;
+    std::memcpy(&r, &bits, 4);
     return r;
 }
 
 // Standard normal CDF: Phi(z) = 0.5 * (1 + erf(z / sqrt(2)))
-static float NormalCdf(float z)
-{
-    return 0.5f * (1.0f + std::erf(z / std::sqrt(2.0f)));
-}
+static float NormalCdf(float z) { return 0.5f * (1.0f + std::erf(z / std::sqrt(2.0f))); }
 
 // ---------------------------------------------------------------------------
 // Single test case runner
@@ -110,7 +122,7 @@ struct TestCase {
     std::string name;
     std::vector<int64_t> shape;
     aclDataType dtype;
-    float atol;  // absolute tolerance for roundtrip Phi(ndtri(p)) - p
+    float atol; // absolute tolerance for roundtrip Phi(ndtri(p)) - p
 };
 
 static int RunTestCase(aclrtStream stream, const TestCase& tc, const std::vector<float>& values)
@@ -149,12 +161,12 @@ static int RunTestCase(aclrtStream stream, const TestCase& tc, const std::vector
     for (int64_t i = (int64_t)tc.shape.size() - 2; i >= 0; i--)
         strides[i] = tc.shape[i + 1] * strides[i + 1];
 
-    aclTensor* xT = aclCreateTensor(tc.shape.data(), tc.shape.size(), tc.dtype,
-                                     strides.data(), 0, ACL_FORMAT_ND,
-                                     tc.shape.data(), tc.shape.size(), xDev);
-    aclTensor* outT = aclCreateTensor(tc.shape.data(), tc.shape.size(), tc.dtype,
-                                       strides.data(), 0, ACL_FORMAT_ND,
-                                       tc.shape.data(), tc.shape.size(), outDev);
+    aclTensor* xT = aclCreateTensor(
+        tc.shape.data(), tc.shape.size(), tc.dtype, strides.data(), 0, ACL_FORMAT_ND, tc.shape.data(), tc.shape.size(),
+        xDev);
+    aclTensor* outT = aclCreateTensor(
+        tc.shape.data(), tc.shape.size(), tc.dtype, strides.data(), 0, ACL_FORMAT_ND, tc.shape.data(), tc.shape.size(),
+        outDev);
 
     // Two-stage aclnn call
     uint64_t wsSize = 0;
@@ -186,11 +198,13 @@ static int RunTestCase(aclrtStream stream, const TestCase& tc, const std::vector
         }
         float roundtrip = NormalCdf(npuVal);
         float diff = std::fabs(roundtrip - xFloat[i]);
-        if (diff > maxDiff) maxDiff = diff;
+        if (diff > maxDiff)
+            maxDiff = diff;
         if (diff > tc.atol) {
             if (failCount < 5) {
-                printf("    p=%.6f  ndtri=%.6f  Phi(ndtri)=%.6f  diff=%.2e > atol=%.2e\n",
-                       xFloat[i], npuVal, roundtrip, diff, tc.atol);
+                printf(
+                    "    p=%.6f  ndtri=%.6f  Phi(ndtri)=%.6f  diff=%.2e > atol=%.2e\n", xFloat[i], npuVal, roundtrip,
+                    diff, tc.atol);
             }
             failCount++;
         }
@@ -201,15 +215,14 @@ static int RunTestCase(aclrtStream stream, const TestCase& tc, const std::vector
     aclDestroyTensor(outT);
     aclrtFree(xDev);
     aclrtFree(outDev);
-    if (wsSize > 0) aclrtFree(wsAddr);
+    if (wsSize > 0)
+        aclrtFree(wsAddr);
 
     if (failCount > 0) {
-        printf("  [FAIL] %s — %d/%ld failures, max_diff=%.2e\n",
-               tc.name.c_str(), failCount, (long)n, maxDiff);
+        printf("  [FAIL] %s — %d/%ld failures, max_diff=%.2e\n", tc.name.c_str(), failCount, (long)n, maxDiff);
         return -1;
     }
-    printf("  [PASS] %s — %ld elems, max_diff=%.2e\n",
-           tc.name.c_str(), (long)n, maxDiff);
+    printf("  [PASS] %s — %ld elems, max_diff=%.2e\n", tc.name.c_str(), (long)n, maxDiff);
     return 0;
 }
 
@@ -220,11 +233,7 @@ static int RunTestCase(aclrtStream stream, const TestCase& tc, const std::vector
 // Fixed probabilities covering boundary/tail/center regions of (0, 1)
 static std::vector<float> FixedValues()
 {
-    return {
-        0.001f, 0.01f, 0.05f, 0.1f, 0.2f, 0.3f, 0.4f,
-        0.5f,
-        0.6f,   0.7f,  0.8f,  0.9f, 0.95f, 0.99f, 0.999f
-    };
+    return {0.001f, 0.01f, 0.05f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 0.95f, 0.99f, 0.999f};
 }
 
 // Random probabilities uniformly in (0.001, 0.999) — avoid 0/1 singularities
@@ -233,7 +242,8 @@ static std::vector<float> RandomValues(int64_t n, uint32_t seed = 42)
     std::mt19937 gen(seed);
     std::uniform_real_distribution<float> dist(0.001f, 0.999f);
     std::vector<float> v(n);
-    for (auto& x : v) x = dist(gen);
+    for (auto& x : v)
+        x = dist(gen);
     return v;
 }
 
@@ -258,31 +268,36 @@ int main()
         TestCase tc{"fp32_fixed_15vals", {15}, ACL_FLOAT, 1e-4f};
         auto vals = FixedValues();
         totalTests++;
-        if (RunTestCase(stream, tc, vals) == 0) passedTests++;
+        if (RunTestCase(stream, tc, vals) == 0)
+            passedTests++;
     }
     {
         TestCase tc{"fp32_shape_3x5", {3, 5}, ACL_FLOAT, 1e-4f};
         auto vals = FixedValues();
         totalTests++;
-        if (RunTestCase(stream, tc, vals) == 0) passedTests++;
+        if (RunTestCase(stream, tc, vals) == 0)
+            passedTests++;
     }
     {
         TestCase tc{"fp32_shape_1024", {1024}, ACL_FLOAT, 1e-4f};
         auto vals = RandomValues(1024);
         totalTests++;
-        if (RunTestCase(stream, tc, vals) == 0) passedTests++;
+        if (RunTestCase(stream, tc, vals) == 0)
+            passedTests++;
     }
     {
         TestCase tc{"fp32_shape_32x32", {32, 32}, ACL_FLOAT, 1e-4f};
         auto vals = RandomValues(32 * 32);
         totalTests++;
-        if (RunTestCase(stream, tc, vals) == 0) passedTests++;
+        if (RunTestCase(stream, tc, vals) == 0)
+            passedTests++;
     }
     {
         TestCase tc{"fp32_shape_100000", {100000}, ACL_FLOAT, 1e-4f};
         auto vals = RandomValues(100000);
         totalTests++;
-        if (RunTestCase(stream, tc, vals) == 0) passedTests++;
+        if (RunTestCase(stream, tc, vals) == 0)
+            passedTests++;
     }
 
     // --- float16 tests ---
@@ -291,25 +306,29 @@ int main()
         TestCase tc{"fp16_fixed_15vals", {15}, ACL_FLOAT16, 5e-2f};
         auto vals = FixedValues();
         totalTests++;
-        if (RunTestCase(stream, tc, vals) == 0) passedTests++;
+        if (RunTestCase(stream, tc, vals) == 0)
+            passedTests++;
     }
     {
         TestCase tc{"fp16_shape_7", {7}, ACL_FLOAT16, 5e-2f};
         auto vals = FixedValues();
         totalTests++;
-        if (RunTestCase(stream, tc, vals) == 0) passedTests++;
+        if (RunTestCase(stream, tc, vals) == 0)
+            passedTests++;
     }
     {
         TestCase tc{"fp16_shape_1024", {1024}, ACL_FLOAT16, 5e-2f};
         auto vals = RandomValues(1024, 123);
         totalTests++;
-        if (RunTestCase(stream, tc, vals) == 0) passedTests++;
+        if (RunTestCase(stream, tc, vals) == 0)
+            passedTests++;
     }
     {
         TestCase tc{"fp16_shape_100000", {100000}, ACL_FLOAT16, 5e-2f};
         auto vals = RandomValues(100000, 456);
         totalTests++;
-        if (RunTestCase(stream, tc, vals) == 0) passedTests++;
+        if (RunTestCase(stream, tc, vals) == 0)
+            passedTests++;
     }
 
     printf("\n===== Summary: %d/%d passed =====\n", passedTests, totalTests);

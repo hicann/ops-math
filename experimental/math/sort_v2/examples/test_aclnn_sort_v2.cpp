@@ -53,7 +53,7 @@ void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr)
         ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
     for (int64_t i = 0; i < size; i++) {
-        LOG_PRINT("mean result[%ld] is: %f\n", i, resultData[i]);       // float
+        LOG_PRINT("mean result[%ld] is: %f\n", i, resultData[i]); // float
         // LOG_PRINT("mean result[%ld] is: %d\n", i, resultData[i]);       // int
     }
 }
@@ -140,15 +140,19 @@ int main()
     // 3. 调用CANN算子库API，需要修改为具体的Api名称
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
-    LOG_PRINT("Before GetWorkspaceSize: selfX=%p, index=%p, selfY=%p, dstIndex=%p\n", (void*)selfX, (void*)index, (void*)selfY, (void*)dstIndex);
-    LOG_PRINT("Before GetWorkspaceSize: selfXDeviceAddr=%p, indexDeviceAddr=%p, selfYDeviceAddr=%p, dstIndexDeviceAddr=%p\n",
-          selfXDeviceAddr, indexDeviceAddr, selfYDeviceAddr, dstIndexDeviceAddr);
+    LOG_PRINT(
+        "Before GetWorkspaceSize: selfX=%p, index=%p, selfY=%p, dstIndex=%p\n", (void*)selfX, (void*)index,
+        (void*)selfY, (void*)dstIndex);
+    LOG_PRINT(
+        "Before GetWorkspaceSize: selfXDeviceAddr=%p, indexDeviceAddr=%p, selfYDeviceAddr=%p, dstIndexDeviceAddr=%p\n",
+        selfXDeviceAddr, indexDeviceAddr, selfYDeviceAddr, dstIndexDeviceAddr);
     // 4. 调用aclnnSortV2第一段接口
-    int32_t axis = 1;          // 按行排序
-    bool descending = false;   // 升序排序
+    int32_t axis = 1;        // 按行排序
+    bool descending = false; // 升序排序
     ret = aclnnSortV2GetWorkspaceSize(selfX, index, selfY, axis, descending, dstIndex, &workspaceSize, &executor);
-    LOG_PRINT("aclnnSortV2GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n",
-          ret, (unsigned long long)workspaceSize, (void*)executor);
+    LOG_PRINT(
+        "aclnnSortV2GetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n", ret,
+        (unsigned long long)workspaceSize, (void*)executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnSortV2GetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 根据第一段接口计算出的workspaceSize申请device内存

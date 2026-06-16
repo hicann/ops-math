@@ -33,10 +33,10 @@
 
 namespace optiling {
 
-using Ops::Base::CeilDiv;
 using Ops::Base::CeilAlign;
-using Ops::Base::FloorDiv;
+using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
@@ -123,8 +123,7 @@ static ge::graphStatus RealV2TilingFunc(gert::TilingContext* context)
     uint64_t ubSize;
     int64_t coreNum;
     OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"),
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
         return ge::GRAPH_FAILED);
 
     // 2. Get input shape and dtype
@@ -138,13 +137,11 @@ static ge::graphStatus RealV2TilingFunc(gert::TilingContext* context)
     DtypeInfo dtypeInfo;
     OP_CHECK_IF(
         GetDtypeInfo(context, inputDesc->GetDataType(), dtypeInfo) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetDtypeInfo error"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "GetDtypeInfo error"), return ge::GRAPH_FAILED);
 
     // 3. Get workspace size
     OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"),
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
         return ge::GRAPH_FAILED);
 
     // 4. Compute tiling parameters
@@ -152,8 +149,7 @@ static ge::graphStatus RealV2TilingFunc(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
     OP_CHECK_IF(
         memset_s(tiling, sizeof(RealV2TilingData), 0, sizeof(RealV2TilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     int64_t ubBlockSize = Ops::Base::GetUbBlockSize(context);
     int64_t totalOutputNum = inputShape.GetShapeSize();
@@ -168,8 +164,8 @@ static ge::graphStatus RealV2TilingFunc(gert::TilingContext* context)
 
     tiling->totalOutputNum = totalOutputNum;
     tiling->blockFactor = CeilAlign(CeilDiv(totalOutputNum, coreNum), ubBlockSize);
-    tiling->ubFactor = ComputeUbFactor(dtypeInfo.isComplex, dtypeInfo.typeSize,
-                                       static_cast<int64_t>(ubSize), ubBlockSize);
+    tiling->ubFactor =
+        ComputeUbFactor(dtypeInfo.isComplex, dtypeInfo.typeSize, static_cast<int64_t>(ubSize), ubBlockSize);
 
     context->SetBlockDim(CeilDiv(totalOutputNum, tiling->blockFactor));
 

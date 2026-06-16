@@ -21,15 +21,9 @@ using namespace optiling;
 
 class SignBitsUnpackTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "SignBitsUnpackTiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "SignBitsUnpackTiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "SignBitsUnpackTiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "SignBitsUnpackTiling TearDown " << endl; }
 };
 
 TEST_F(SignBitsUnpackTiling, ascend9101_test_tiling_FLOAT_001)

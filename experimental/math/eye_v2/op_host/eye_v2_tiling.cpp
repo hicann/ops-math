@@ -40,7 +40,8 @@ constexpr uint32_t WS_SYS_SIZE = 512U;
 struct EyeV2CompileInfo {};
 
 // 获取平台信息如ubSize, coreNum
-static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& ubSize, int64_t& coreNum, uint32_t& blockSize)
+static ge::graphStatus GetPlatformInfo(
+    gert::TilingContext* context, uint64_t& ubSize, int64_t& coreNum, uint32_t& blockSize)
 {
     // 获取ubsize coreNum
     fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
@@ -72,7 +73,7 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, ge::DataT
 
 static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 {
-    auto ascendcPlatform = platform_ascendc:: PlatformAscendC(context->GetPlatformInfo());
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
     uint32_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
@@ -80,9 +81,10 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus CalculateCoreNum(gert::TilingContext* context, EyeV2TilingData* tiling, int64_t coreNum, uint32_t blockSize)
+static ge::graphStatus CalculateCoreNum(
+    gert::TilingContext* context, EyeV2TilingData* tiling, int64_t coreNum, uint32_t blockSize)
 {
-    // 获取输入张量形状和数据类型      
+    // 获取输入张量形状和数据类型
     uint32_t typeLength = 0;
     auto outputDesc = context->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, outputDesc);
@@ -90,27 +92,31 @@ static ge::graphStatus CalculateCoreNum(gert::TilingContext* context, EyeV2Tilin
     if (typeLength == 0) {
         OP_LOGE(context, "typeLength is 0");
         return ge::GRAPH_FAILED;
-    } 
+    }
     // 读取属性rows, cols
     int32_t rows = 0;
     int32_t cols = 0;
     auto attrs = context->GetAttrs();
     if (attrs) {
         const int64_t* rowsPtr = attrs->GetInt(0);
-        if (rowsPtr) {rows = static_cast<int32_t>(*rowsPtr);}
+        if (rowsPtr) {
+            rows = static_cast<int32_t>(*rowsPtr);
+        }
         const int64_t* colsPtr = attrs->GetInt(1);
-        if (colsPtr) {cols = static_cast<int32_t>(*colsPtr);}
+        if (colsPtr) {
+            cols = static_cast<int32_t>(*colsPtr);
+        }
     }
     uint64_t inputBytes = static_cast<uint64_t>(typeLength);
-    uint64_t typeSize = inputBytes;                                         
+    uint64_t typeSize = inputBytes;
     uint64_t alignNum = blockSize / typeSize;
     // 核间-计算每个核处理的对角线长度
     uint64_t diagLen = std::min<uint64_t>(static_cast<uint64_t>(rows), static_cast<uint64_t>(cols));
-    uint64_t usableCoreNum = (diagLen == 0) ? 1U
-                         : std::min<uint64_t>(static_cast<uint64_t>(coreNum), static_cast<uint64_t>(diagLen));
+    uint64_t usableCoreNum =
+        (diagLen == 0) ? 1U : std::min<uint64_t>(static_cast<uint64_t>(coreNum), static_cast<uint64_t>(diagLen));
     uint64_t tailBlockLength = diagLen / usableCoreNum;
     uint64_t fullBlockNum = diagLen % usableCoreNum;
-    uint64_t tailBlockNum = usableCoreNum - fullBlockNum; 
+    uint64_t tailBlockNum = usableCoreNum - fullBlockNum;
     uint64_t fullBlockLength = tailBlockLength + 1;
 
     tiling->typeSize = typeSize;
@@ -134,28 +140,33 @@ static ge::graphStatus EyeV2TilingFunc(gert::TilingContext* context)
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
     uint32_t blockSize = 0;
-    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum, blockSize) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetPlatformInfo(context, ubSize, coreNum, blockSize) != ge::GRAPH_SUCCESS,
+        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     // 2. shapes & dtype
     ge::DataType dataType;
-    OP_CHECK_IF(GetShapeAttrsInfo(context, dataType) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetShapeAttrsInfo(context, dataType) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetShapeAttrsInfo error"),
+        return ge::GRAPH_FAILED);
 
     // 3. workspace
-    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+        return ge::GRAPH_FAILED);
 
     EyeV2TilingData* tiling = context->GetTilingData<EyeV2TilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(memset_s(tiling, sizeof(EyeV2TilingData), 0, sizeof(EyeV2TilingData)) != EOK,
-                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        memset_s(tiling, sizeof(EyeV2TilingData), 0, sizeof(EyeV2TilingData)) != EOK,
+        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     // 4. CoreNum & Tiling Calculation
-    OP_CHECK_IF(CalculateCoreNum(context, tiling, coreNum, blockSize) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "CalculateCoreNum error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        CalculateCoreNum(context, tiling, coreNum, blockSize) != ge::GRAPH_SUCCESS,
+        OP_LOGE(context, "CalculateCoreNum error"), return ge::GRAPH_FAILED);
     context->GetRawTilingData()->SetDataSize(sizeof(EyeV2TilingData));
-    
+
     return ge::GRAPH_SUCCESS;
 }
 

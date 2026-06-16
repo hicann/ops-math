@@ -36,18 +36,13 @@ using namespace op;
 
 // 支持的 dtype 列表（Ascend950 / DAV_3510）
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT16,
-    DataType::DT_FLOAT,
-    DataType::DT_BF16
-};
+    DataType::DT_FLOAT16, DataType::DT_FLOAT, DataType::DT_BF16};
 
-static bool IsDtypeSupported(DataType dtype)
-{
-    return CheckType(dtype, AICORE_DTYPE_SUPPORT_LIST);
-}
+static bool IsDtypeSupported(DataType dtype) { return CheckType(dtype, AICORE_DTYPE_SUPPORT_LIST); }
 
-static bool CheckNotNull(const aclTensor* a, const aclTensor* b, const aclTensor* c,
-                          const aclScalar* alpha, const aclScalar* beta, const aclTensor* cOut)
+static bool CheckNotNull(
+    const aclTensor* a, const aclTensor* b, const aclTensor* c, const aclScalar* alpha, const aclScalar* beta,
+    const aclTensor* cOut)
 {
     OP_CHECK_NULL(a, return false);
     OP_CHECK_NULL(b, return false);
@@ -58,8 +53,7 @@ static bool CheckNotNull(const aclTensor* a, const aclTensor* b, const aclTensor
     return true;
 }
 
-static bool CheckDtypeValid(const aclTensor* a, const aclTensor* b, const aclTensor* c,
-                              const aclTensor* cOut)
+static bool CheckDtypeValid(const aclTensor* a, const aclTensor* b, const aclTensor* c, const aclTensor* cOut)
 {
     // 所有 tensor 的 dtype 必须一致
     OP_CHECK_DTYPE_NOT_MATCH(a, b->GetDataType(), return false);
@@ -67,31 +61,27 @@ static bool CheckDtypeValid(const aclTensor* a, const aclTensor* b, const aclTen
     OP_CHECK_DTYPE_NOT_MATCH(a, cOut->GetDataType(), return false);
 
     if (!IsDtypeSupported(a->GetDataType())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AddMatMatElements: unsupported dtype=%d. "
-                "Supported: FLOAT16, FLOAT, BF16.",
-                static_cast<int>(a->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID,
+            "AddMatMatElements: unsupported dtype=%d. "
+            "Supported: FLOAT16, FLOAT, BF16.",
+            static_cast<int>(a->GetDataType()));
         return false;
     }
     return true;
 }
 
-static bool CheckFormat(const aclTensor* a, const aclTensor* b, const aclTensor* c,
-                         const aclTensor* cOut)
+static bool CheckFormat(const aclTensor* a, const aclTensor* b, const aclTensor* c, const aclTensor* cOut)
 {
-    if (IsPrivateFormat(a->GetStorageFormat()) ||
-        IsPrivateFormat(b->GetStorageFormat()) ||
-        IsPrivateFormat(c->GetStorageFormat()) ||
-        IsPrivateFormat(cOut->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AddMatMatElements: private format not supported.");
+    if (IsPrivateFormat(a->GetStorageFormat()) || IsPrivateFormat(b->GetStorageFormat()) ||
+        IsPrivateFormat(c->GetStorageFormat()) || IsPrivateFormat(cOut->GetStorageFormat())) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "AddMatMatElements: private format not supported.");
         return false;
     }
     return true;
 }
 
-static bool CheckShape(const aclTensor* a, const aclTensor* b, const aclTensor* c,
-                        const aclTensor* cOut)
+static bool CheckShape(const aclTensor* a, const aclTensor* b, const aclTensor* c, const aclTensor* cOut)
 {
     OP_CHECK_MAX_DIM(a, ACLNN_MAX_SHAPE_RANK, return false);
     OP_CHECK_MAX_DIM(b, ACLNN_MAX_SHAPE_RANK, return false);
@@ -106,8 +96,9 @@ static bool CheckShape(const aclTensor* a, const aclTensor* b, const aclTensor* 
     return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor* a, const aclTensor* b, const aclTensor* c,
-                                const aclScalar* alpha, const aclScalar* beta, const aclTensor* cOut)
+static aclnnStatus CheckParams(
+    const aclTensor* a, const aclTensor* b, const aclTensor* c, const aclScalar* alpha, const aclScalar* beta,
+    const aclTensor* cOut)
 {
     if (!CheckNotNull(a, b, c, alpha, beta, cOut)) {
         OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "AddMatMatElements: CheckNotNull failed");
@@ -132,21 +123,14 @@ static aclnnStatus CheckParams(const aclTensor* a, const aclTensor* b, const acl
  * @brief 第一段接口：计算 workspace 大小
  */
 extern "C" aclnnStatus aclnnAddMatMatElementsGetWorkspaceSize(
-    const aclTensor*  a,
-    const aclTensor*  b,
-    const aclTensor*  c,
-    const aclScalar*  alpha,
-    const aclScalar*  beta,
-    aclTensor*        cOut,
-    uint64_t*         workspaceSize,
-    aclOpExecutor**   executor)
+    const aclTensor* a, const aclTensor* b, const aclTensor* c, const aclScalar* alpha, const aclScalar* beta,
+    aclTensor* cOut, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAddMatMatElements, DFX_IN(a, b, c), DFX_OUT(cOut));
 
     // ISSUE-003 修复：输出指针解引用前必须判空
     if (workspaceSize == nullptr || executor == nullptr) {
-        OP_LOGE(ACLNN_ERR_PARAM_NULLPTR,
-                "AddMatMatElements: workspaceSize or executor is nullptr");
+        OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "AddMatMatElements: workspaceSize or executor is nullptr");
         return ACLNN_ERR_PARAM_NULLPTR;
     }
 
@@ -191,10 +175,7 @@ extern "C" aclnnStatus aclnnAddMatMatElementsGetWorkspaceSize(
  * @brief 第二段接口：执行计算
  */
 extern "C" aclnnStatus aclnnAddMatMatElements(
-    void*           workspace,
-    uint64_t        workspaceSize,
-    aclOpExecutor*  executor,
-    aclrtStream     stream)
+    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnAddMatMatElements);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

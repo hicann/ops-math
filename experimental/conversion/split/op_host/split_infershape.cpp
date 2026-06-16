@@ -27,7 +27,7 @@
 
 using namespace ge;
 
-namespace ops  {
+namespace ops {
 constexpr size_t GMM_INDEX_IN_X = 0;
 constexpr size_t GMM_INDEX_IN_INDICES = 1;
 constexpr size_t GMM_INDEX_OUT_Y = 0;
@@ -42,7 +42,8 @@ struct SplitSetOutputParams {
     int64_t indicesOrSections[INDICES_LIMIT];
     int64_t axis;
 };
-static ge::graphStatus UpdateShapeY(gert::InferShapeContext* context, size_t idxY, const std::vector<int64_t>& yDims) {
+static ge::graphStatus UpdateShapeY(gert::InferShapeContext* context, size_t idxY, const std::vector<int64_t>& yDims)
+{
     gert::Shape* yShape = context->GetOutputShape(idxY);
     OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
     yShape->SetDimNum(yDims.size());
@@ -51,12 +52,10 @@ static ge::graphStatus UpdateShapeY(gert::InferShapeContext* context, size_t idx
     }
     return GRAPH_SUCCESS;
 }
-static ge::graphStatus ComputeSplitGroups(gert::InferShapeContext* context,
-                                          int64_t xAxisLen,
-                                          int64_t* indicesOrSections,
-                                          bool& isUniformSplit,
-                                          int64_t& groupNum,
-                                          int64_t& splitSize) {
+static ge::graphStatus ComputeSplitGroups(
+    gert::InferShapeContext* context, int64_t xAxisLen, int64_t* indicesOrSections, bool& isUniformSplit,
+    int64_t& groupNum, int64_t& splitSize)
+{
     isUniformSplit = true;
     groupNum = 0;
     splitSize = 0;
@@ -75,9 +74,9 @@ static ge::graphStatus ComputeSplitGroups(gert::InferShapeContext* context,
             return GRAPH_FAILED;
         }
         if (xAxisLen % groupNum != 0) {
-            OP_LOGE(context->GetNodeName(),
-                    "When splitting uniformly, xAxisLen %ld must be divisible by groupNum %ld.",
-                    xAxisLen, groupNum);
+            OP_LOGE(
+                context->GetNodeName(), "When splitting uniformly, xAxisLen %ld must be divisible by groupNum %ld.",
+                xAxisLen, groupNum);
             return GRAPH_FAILED;
         }
         splitSize = xAxisLen / groupNum;
@@ -95,8 +94,8 @@ static ge::graphStatus ComputeSplitGroups(gert::InferShapeContext* context,
     return GRAPH_SUCCESS;
 }
 
-static ge::graphStatus UpdateMultipleShapeYNorm(gert::InferShapeContext* context,
-                                                int64_t* indicesOrSections) {
+static ge::graphStatus UpdateMultipleShapeYNorm(gert::InferShapeContext* context, int64_t* indicesOrSections)
+{
     const gert::Shape* xShape = context->GetDynamicInputShape(GMM_INDEX_IN_X, 0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
     int64_t xAxisLen = 1;
@@ -107,9 +106,9 @@ static ge::graphStatus UpdateMultipleShapeYNorm(gert::InferShapeContext* context
     bool isUniformSplit = true;
     int64_t splitSize = 0;
 
-    OP_CHECK_IF(ComputeSplitGroups(context, xAxisLen, indicesOrSections, isUniformSplit, groupNum, splitSize) != GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "ComputeSplitGroups failed."),
-                return GRAPH_FAILED);
+    OP_CHECK_IF(
+        ComputeSplitGroups(context, xAxisLen, indicesOrSections, isUniformSplit, groupNum, splitSize) != GRAPH_SUCCESS,
+        OP_LOGE(context->GetNodeName(), "ComputeSplitGroups failed."), return GRAPH_FAILED);
 
     int64_t preOffset = 0;
     for (int idx = 0; idx < groupNum; ++idx) {
@@ -126,15 +125,15 @@ static ge::graphStatus UpdateMultipleShapeYNorm(gert::InferShapeContext* context
         }
         std::vector<int64_t> yDims;
         yDims.push_back(currentSize);
-        OP_CHECK_IF(UpdateShapeY(context, GMM_INDEX_OUT_Y + idx, yDims) != GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "Failed to update shape of y[%d].", idx),
-                return GRAPH_FAILED);
+        OP_CHECK_IF(
+            UpdateShapeY(context, GMM_INDEX_OUT_Y + idx, yDims) != GRAPH_SUCCESS,
+            OP_LOGE(context->GetNodeName(), "Failed to update shape of y[%d].", idx), return GRAPH_FAILED);
     }
     return GRAPH_SUCCESS;
 }
 
-static ge::graphStatus UpdateMultipleShapeY(gert::InferShapeContext* context, 
-                                            int64_t* indicesOrSections, int64_t axis) {                         
+static ge::graphStatus UpdateMultipleShapeY(gert::InferShapeContext* context, int64_t* indicesOrSections, int64_t axis)
+{
     const gert::Shape* xShape = context->GetDynamicInputShape(GMM_INDEX_IN_X, 0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
     int64_t xAxisLen = xShape->GetDim(axis);
@@ -142,9 +141,9 @@ static ge::graphStatus UpdateMultipleShapeY(gert::InferShapeContext* context,
     bool isUniformSplit = true;
     int64_t splitSize = 0;
 
-    OP_CHECK_IF(ComputeSplitGroups(context, xAxisLen, indicesOrSections, isUniformSplit, groupNum, splitSize) != GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "ComputeSplitGroups failed."),
-                return GRAPH_FAILED);
+    OP_CHECK_IF(
+        ComputeSplitGroups(context, xAxisLen, indicesOrSections, isUniformSplit, groupNum, splitSize) != GRAPH_SUCCESS,
+        OP_LOGE(context->GetNodeName(), "ComputeSplitGroups failed."), return GRAPH_FAILED);
 
     int64_t preOffset = 0;
     for (int idx = 0; idx < groupNum; ++idx) {
@@ -167,48 +166,50 @@ static ge::graphStatus UpdateMultipleShapeY(gert::InferShapeContext* context,
                 yDims.push_back(xShape->GetDim(i));
             }
         }
-        OP_CHECK_IF(UpdateShapeY(context, GMM_INDEX_OUT_Y + idx, yDims) != GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "Failed to update shape of y[%d].", idx),
-                return GRAPH_FAILED);
+        OP_CHECK_IF(
+            UpdateShapeY(context, GMM_INDEX_OUT_Y + idx, yDims) != GRAPH_SUCCESS,
+            OP_LOGE(context->GetNodeName(), "Failed to update shape of y[%d].", idx), return GRAPH_FAILED);
     }
     return GRAPH_SUCCESS;
 }
-static ge::graphStatus XSingleYSeparatedNorm(gert::InferShapeContext* context,
-                                        int64_t* indicesOrSections) {
-    OP_CHECK_IF(UpdateMultipleShapeYNorm(context,  indicesOrSections) != GRAPH_SUCCESS,
-            OP_LOGE(context->GetNodeName(), "Failed to update shape of y."),
-            return GRAPH_FAILED);
+static ge::graphStatus XSingleYSeparatedNorm(gert::InferShapeContext* context, int64_t* indicesOrSections)
+{
+    OP_CHECK_IF(
+        UpdateMultipleShapeYNorm(context, indicesOrSections) != GRAPH_SUCCESS,
+        OP_LOGE(context->GetNodeName(), "Failed to update shape of y."), return GRAPH_FAILED);
     return GRAPH_SUCCESS;
 }
-static ge::graphStatus XSingleYSeparated(gert::InferShapeContext* context,
-                                        int64_t* indicesOrSections, int64_t axis) {
-
-    OP_CHECK_IF(UpdateMultipleShapeY(context,  indicesOrSections, axis) != GRAPH_SUCCESS,
-            OP_LOGE(context->GetNodeName(), "Failed to update shape of y."),
-            return GRAPH_FAILED);
+static ge::graphStatus XSingleYSeparated(gert::InferShapeContext* context, int64_t* indicesOrSections, int64_t axis)
+{
+    OP_CHECK_IF(
+        UpdateMultipleShapeY(context, indicesOrSections, axis) != GRAPH_SUCCESS,
+        OP_LOGE(context->GetNodeName(), "Failed to update shape of y."), return GRAPH_FAILED);
     return GRAPH_SUCCESS;
 }
-static ge::graphStatus SplitSetOutputShape(gert::InferShapeContext* context,
-                                        const SplitSetOutputParams& outputParams) {
+static ge::graphStatus SplitSetOutputShape(gert::InferShapeContext* context, const SplitSetOutputParams& outputParams)
+{
     int64_t indicesOrSections[INDICES_LIMIT];
-    for(int i = 0; i < INDICES_LIMIT; i ++){
+    for (int i = 0; i < INDICES_LIMIT; i++) {
         indicesOrSections[i] = outputParams.indicesOrSections[i];
     }
     int64_t axis = outputParams.axis;
-    if(axis == (int64_t)GMM_NORM_AXIS) {
-        OP_CHECK_IF(XSingleYSeparatedNorm(context, indicesOrSections) != GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "Failed to update shape of y."), return GRAPH_FAILED);
+    if (axis == (int64_t)GMM_NORM_AXIS) {
+        OP_CHECK_IF(
+            XSingleYSeparatedNorm(context, indicesOrSections) != GRAPH_SUCCESS,
+            OP_LOGE(context->GetNodeName(), "Failed to update shape of y."), return GRAPH_FAILED);
     } else {
-        OP_CHECK_IF(XSingleYSeparated(context,  indicesOrSections, axis ) != GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "Failed to update shape of y."), return GRAPH_FAILED);
+        OP_CHECK_IF(
+            XSingleYSeparated(context, indicesOrSections, axis) != GRAPH_SUCCESS,
+            OP_LOGE(context->GetNodeName(), "Failed to update shape of y."), return GRAPH_FAILED);
     }
     return GRAPH_SUCCESS;
 }
-static ge::graphStatus InferShapeSplit(gert::InferShapeContext* context) {
+static ge::graphStatus InferShapeSplit(gert::InferShapeContext* context)
+{
     auto attrs = context->GetAttrs();
     int64_t axis = -1; // 默认值
     int64_t* src_indices = nullptr;
-    if(attrs) {
+    if (attrs) {
         const int64_t* src_indices_const = nullptr;
         if (attrs->GetInt(ATTRPOS0) != nullptr) {
             src_indices_const = attrs->GetInt(ATTRPOS0);
@@ -220,15 +221,16 @@ static ge::graphStatus InferShapeSplit(gert::InferShapeContext* context) {
     }
     SplitSetOutputParams outputParams;
     uint32_t len = sizeof(outputParams.indicesOrSections) / sizeof(outputParams.indicesOrSections[0]);
-    for(uint32_t i = 0; i < len ; i ++){
+    for (uint32_t i = 0; i < len; i++) {
         outputParams.indicesOrSections[i] = src_indices[i];
     }
     outputParams.axis = axis;
-    
-    OP_CHECK_IF(SplitSetOutputShape(context, outputParams) != GRAPH_SUCCESS,
-            OP_LOGE(context->GetNodeName(), "SplitSetOutputShape failed"), return GRAPH_FAILED);
+
+    OP_CHECK_IF(
+        SplitSetOutputShape(context, outputParams) != GRAPH_SUCCESS,
+        OP_LOGE(context->GetNodeName(), "SplitSetOutputShape failed"), return GRAPH_FAILED);
     return GRAPH_SUCCESS;
 }
 
 IMPL_OP_INFERSHAPE(Split).InferShape(InferShapeSplit);
-}
+} // namespace ops

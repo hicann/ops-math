@@ -25,8 +25,7 @@
 #include "atan_grad.h"
 
 template <typename D_T_X, int BUFFER_MODE>
-__global__ __aicore__ void atan_grad(
-    GM_ADDR x, GM_ADDR dy, GM_ADDR dx, GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void atan_grad(GM_ADDR x, GM_ADDR dy, GM_ADDR dx, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(AtanGradTilingData);
     GET_TILING_DATA_WITH_STRUCT(AtanGradTilingData, tilingData, tiling);

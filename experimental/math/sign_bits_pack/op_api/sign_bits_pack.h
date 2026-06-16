@@ -13,7 +13,7 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-const aclTensor *SignBitsPack(const aclTensor *self, int64_t size, aclOpExecutor *executor);
+const aclTensor* SignBitsPack(const aclTensor* self, int64_t size, aclOpExecutor* executor);
 }
 
 #endif // OP_API_INC_LEVEL0_SIGNBITSPACK_H_OP

@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
+
 /**
  *
  * NOTE: Portions of this code were AI-generated and have been
@@ -52,24 +52,27 @@ using namespace op;
 
 // 迭代二：激活全部 9 种 dtype
 static const std::initializer_list<op::DataType> SUPPORTED_INPUT_DTYPES = {
-    DataType::DT_FLOAT,    // TilingKey=0
-    DataType::DT_FLOAT16,  // TilingKey=1
-    DataType::DT_DOUBLE,   // TilingKey=2（Host 端转换）
-    DataType::DT_INT8,     // TilingKey=3
-    DataType::DT_INT16,    // TilingKey=4
-    DataType::DT_INT32,    // TilingKey=5
-    DataType::DT_INT64,    // TilingKey=6
-    DataType::DT_UINT8,    // TilingKey=7
-    DataType::DT_BOOL,     // TilingKey=8
+    DataType::DT_FLOAT,   // TilingKey=0
+    DataType::DT_FLOAT16, // TilingKey=1
+    DataType::DT_DOUBLE,  // TilingKey=2（Host 端转换）
+    DataType::DT_INT8,    // TilingKey=3
+    DataType::DT_INT16,   // TilingKey=4
+    DataType::DT_INT32,   // TilingKey=5
+    DataType::DT_INT64,   // TilingKey=6
+    DataType::DT_UINT8,   // TilingKey=7
+    DataType::DT_BOOL,    // TilingKey=8
 };
 
 // 计算输出 dtype（整数/BOOL 输入 -> FLOAT32 输出）
 static op::DataType GetExpectedOutputDtype(op::DataType inputDtype)
 {
     switch (inputDtype) {
-        case DataType::DT_FLOAT:   return DataType::DT_FLOAT;
-        case DataType::DT_FLOAT16: return DataType::DT_FLOAT16;
-        case DataType::DT_DOUBLE:  return DataType::DT_DOUBLE;
+        case DataType::DT_FLOAT:
+            return DataType::DT_FLOAT;
+        case DataType::DT_FLOAT16:
+            return DataType::DT_FLOAT16;
+        case DataType::DT_DOUBLE:
+            return DataType::DT_DOUBLE;
         case DataType::DT_INT8:
         case DataType::DT_INT16:
         case DataType::DT_INT32:
@@ -92,17 +95,14 @@ static bool CheckNotNull(const aclTensor* x, const aclTensor* y)
 static bool CheckDtypeValid(const aclTensor* x, const aclTensor* y)
 {
     if (!CheckType(x->GetDataType(), SUPPORTED_INPUT_DTYPES)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "Input dtype not supported: dtype=%d.",
-                static_cast<int>(x->GetDataType()));
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input dtype not supported: dtype=%d.", static_cast<int>(x->GetDataType()));
         return false;
     }
     op::DataType expectedOutDtype = GetExpectedOutputDtype(x->GetDataType());
     if (y->GetDataType() != expectedOutDtype) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "Output dtype mismatch: expected=%d, actual=%d",
-                static_cast<int>(expectedOutDtype),
-                static_cast<int>(y->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Output dtype mismatch: expected=%d, actual=%d",
+            static_cast<int>(expectedOutDtype), static_cast<int>(y->GetDataType()));
         return false;
     }
     return true;
@@ -113,9 +113,9 @@ static bool CheckFormat(const aclTensor* x, const aclTensor* y)
     auto formatX = x->GetStorageFormat();
     auto formatY = y->GetStorageFormat();
     if (IsPrivateFormat(formatX) || IsPrivateFormat(formatY)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "Private format not supported: x=%d, y=%d",
-                static_cast<int>(formatX), static_cast<int>(formatY));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Private format not supported: x=%d, y=%d", static_cast<int>(formatX),
+            static_cast<int>(formatY));
         return false;
     }
     return true;
@@ -129,8 +129,7 @@ static bool CheckShape(const aclTensor* x, const aclTensor* y)
     // 校验总元素数不超过 UINT32_MAX，避免 Tiling 侧 int64_t->uint32_t 截断
     int64_t numElem = x->GetViewShape().GetShapeSize();
     if (numElem > static_cast<int64_t>(UINT32_MAX)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "Total element count exceeds UINT32_MAX.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Total element count exceeds UINT32_MAX.");
         return false;
     }
     return true;
@@ -168,10 +167,7 @@ static aclnnStatus CheckParams(const aclTensor* x, const aclTensor* y)
  * 9. GetWorkspaceSize() - 获取 workspace 大小
  */
 extern "C" aclnnStatus aclnnAsinWithAgentGetWorkspaceSize(
-    const aclTensor* x,
-    aclTensor* y,
-    uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+    const aclTensor* x, aclTensor* y, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAsinWithAgent, DFX_IN(x), DFX_OUT(y));
 
@@ -227,10 +223,7 @@ extern "C" aclnnStatus aclnnAsinWithAgentGetWorkspaceSize(
  * @brief 第二段接口：执行计算
  */
 extern "C" aclnnStatus aclnnAsinWithAgent(
-    void* workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor* executor,
-    aclrtStream stream)
+    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnAsinWithAgent);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

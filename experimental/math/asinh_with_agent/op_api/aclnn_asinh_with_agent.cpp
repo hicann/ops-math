@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
+
 /**
  *
  * NOTE: Portions of this code were AI-generated and have been
@@ -50,16 +50,8 @@ using namespace op;
 // 支持的输入 dtype（L2层）
 // float16 / float32：直接路径；int8/int16/int32/int64/uint8/bool/double：Cast 路径（→ float32）
 static const std::initializer_list<op::DataType> SUPPORTED_INPUT_DTYPE_LIST = {
-    DataType::DT_FLOAT16,
-    DataType::DT_FLOAT,
-    DataType::DT_INT8,
-    DataType::DT_INT16,
-    DataType::DT_INT32,
-    DataType::DT_INT64,
-    DataType::DT_UINT8,
-    DataType::DT_BOOL,
-    DataType::DT_DOUBLE
-};
+    DataType::DT_FLOAT16, DataType::DT_FLOAT, DataType::DT_INT8, DataType::DT_INT16, DataType::DT_INT32,
+    DataType::DT_INT64,   DataType::DT_UINT8, DataType::DT_BOOL, DataType::DT_DOUBLE};
 
 // 需要 Cast 到 float32 的 dtype（所有非float16/float32 类型）
 static bool NeedsCastToFloat32(DataType dtype)
@@ -69,10 +61,7 @@ static bool NeedsCastToFloat32(DataType dtype)
            dtype == DataType::DT_DOUBLE;
 }
 
-static bool IsDtypeSupported(DataType dtype)
-{
-    return CheckType(dtype, SUPPORTED_INPUT_DTYPE_LIST);
-}
+static bool IsDtypeSupported(DataType dtype) { return CheckType(dtype, SUPPORTED_INPUT_DTYPE_LIST); }
 
 // 根据输入 dtype 推导期望的输出 dtype
 // float16 -> float16; float32 -> float32; int8/int32/bool/double -> float32
@@ -94,10 +83,11 @@ static bool CheckNotNull(const aclTensor* x, const aclTensor* out)
 static bool CheckDtypeValid(const aclTensor* x, const aclTensor* out)
 {
     if (!IsDtypeSupported(x->GetDataType())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AsinhWithAgent: input dtype %d not supported. "
-                "Supported: FLOAT16, FLOAT, INT8, INT16, INT32, INT64, UINT8, BOOL, DOUBLE.",
-                static_cast<int>(x->GetDataType()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID,
+            "AsinhWithAgent: input dtype %d not supported. "
+            "Supported: FLOAT16, FLOAT, INT8, INT16, INT32, INT64, UINT8, BOOL, DOUBLE.",
+            static_cast<int>(x->GetDataType()));
         return false;
     }
     // 输出 dtype 校验：与 GetExpectedOutputDtype 一致
@@ -109,10 +99,9 @@ static bool CheckDtypeValid(const aclTensor* x, const aclTensor* out)
 static bool CheckFormat(const aclTensor* x, const aclTensor* out)
 {
     if (IsPrivateFormat(x->GetStorageFormat()) || IsPrivateFormat(out->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "AsinhWithAgent: private format not supported: x=%d, out=%d",
-                static_cast<int>(x->GetStorageFormat()),
-                static_cast<int>(out->GetStorageFormat()));
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "AsinhWithAgent: private format not supported: x=%d, out=%d",
+            static_cast<int>(x->GetStorageFormat()), static_cast<int>(out->GetStorageFormat()));
         return false;
     }
     return true;
@@ -120,7 +109,7 @@ static bool CheckFormat(const aclTensor* x, const aclTensor* out)
 
 static bool CheckShape(const aclTensor* x, const aclTensor* out)
 {
-    OP_CHECK_MAX_DIM(x,   ACLNN_MAX_SHAPE_RANK, return false);
+    OP_CHECK_MAX_DIM(x, ACLNN_MAX_SHAPE_RANK, return false);
     OP_CHECK_MAX_DIM(out, ACLNN_MAX_SHAPE_RANK, return false);
     return true;
 }
@@ -157,10 +146,7 @@ static aclnnStatus CheckParams(const aclTensor* x, const aclTensor* out)
  * 7. GetWorkspaceSize()  - 获取 workspace 大小
  */
 extern "C" aclnnStatus aclnnAsinhWithAgentGetWorkspaceSize(
-    const aclTensor* x,
-    const aclTensor* out,
-    uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+    const aclTensor* x, const aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAsinhWithAgent, DFX_IN(x), DFX_OUT(out));
 
@@ -202,10 +188,7 @@ extern "C" aclnnStatus aclnnAsinhWithAgentGetWorkspaceSize(
  * @brief 第二段接口：执行计算
  */
 extern "C" aclnnStatus aclnnAsinhWithAgent(
-    void* workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor* executor,
-    aclrtStream stream)
+    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnAsinhWithAgent);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

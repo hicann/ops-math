@@ -19,6 +19,6 @@ const aclTensor* Greater(const aclTensor* self, const aclTensor* other, aclOpExe
 
 // 判断tensor是否支持非连续
 bool IsGreaterSupportNonContiguous(const aclTensor* self);
-}
+} // namespace l0op
 
 #endif // PTA_NPU_OP_API_INC_LEVEL0_OP_GTTENSOR_OP_H_

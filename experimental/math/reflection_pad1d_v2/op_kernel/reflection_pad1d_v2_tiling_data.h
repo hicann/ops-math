@@ -18,7 +18,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  */
 
- /*!
+/*!
  * \file reflection_pad1d_v2_tiling_data.h
  * \brief
  */
@@ -27,8 +27,8 @@
 
 struct ReflectionPad1dV2TilingData {
     uint32_t wSize;
-    uint32_t alignWSize;        
-    uint32_t padLeft;  
+    uint32_t alignWSize;
+    uint32_t padLeft;
     uint32_t padRight;
     uint32_t blockNum;
     uint32_t ncPerCore;

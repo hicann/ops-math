@@ -25,15 +25,9 @@ using namespace ge;
 
 class AsinhTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AsinhTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "AsinhTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "AsinhTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "AsinhTiling TearDown" << std::endl; }
 };
 
 TEST_F(AsinhTiling, asinh_tiling_001)
@@ -49,8 +43,8 @@ TEST_F(AsinhTiling, asinh_tiling_001)
             {{{8, 8}, {8, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         &compileInfo,
-        40,               //Mock cube Core Num， vector core固定64
-        196608 + 256      //Mock ubsize = 192k 供UT使用,获取的时候系统会自动减掉256
+        40,          // Mock cube Core Num， vector core固定64
+        196608 + 256 // Mock ubsize = 192k 供UT使用,获取的时候系统会自动减掉256
     );
     uint64_t expectTilingKey = 0;
     string expectTilingData = "1 0 64 0 1 64 64 0 0 0 ";
@@ -71,8 +65,8 @@ TEST_F(AsinhTiling, asinh_tiling_002)
             {{{8, 2048}, {8, 2048}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         &compileInfo,
-        40,             //Mock cube Core Num， vector core固定64
-        196608 + 256    //Mock ubsize = 192k 供UT使用,获取的时候系统会自动减掉256
+        40,          // Mock cube Core Num， vector core固定64
+        196608 + 256 // Mock ubsize = 192k 供UT使用,获取的时候系统会自动减掉256
     );
     uint64_t expectTilingKey = 0;
     string expectTilingData = "24 16 410 409 1 410 410 1 409 409 ";
@@ -93,8 +87,8 @@ TEST_F(AsinhTiling, asinh_tiling_003)
             {{{1023, 2047}, {1023, 2047}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         &compileInfo,
-        40,             //Mock cube Core Num
-        196608 + 256    //Mock ubsize = 192k 供UT使用,获取的时候系统会自动减掉256   
+        40,          // Mock cube Core Num
+        196608 + 256 // Mock ubsize = 192k 供UT使用,获取的时候系统会自动减掉256
     );
     uint64_t expectTilingKey = 0;
     string expectTilingData = "1 39 52353 52352 9 6144 3201 9 6144 3200 ";

@@ -67,23 +67,22 @@ static ge::graphStatus LogTilingFunc(gert::TilingContext* context)
 
     // 32B对齐处理
     uint64_t inputLengthAlign32 = (((inputLength + blockSize - 1) / blockSize) * blockSize);
-   
+
     // 核心数分配逻辑
     if (ubPartDataNum >= inputDataNum) {
         coreNum = 1;
     } else {
-        coreNum = (coreNum <  inputLengthAlign32 / blockSize) ? coreNum : inputLengthAlign32 / blockSize;
+        coreNum = (coreNum < inputLengthAlign32 / blockSize) ? coreNum : inputLengthAlign32 / blockSize;
     }
-    
+
     // 计算核心数据分配
     uint64_t everyCoreInputBlockNum = inputLengthAlign32 / blockSize / coreNum;
     uint64_t tailBlockNum = (inputLengthAlign32 / blockSize) % coreNum;
-    
+
     // 小核数据计算
     uint64_t smallCoreDataNum = everyCoreInputBlockNum * blockSize / dataTypeLength;
     uint64_t smallCoreLoopNum = smallCoreDataNum / ubPartDataNum;
-    smallCoreLoopNum = (everyCoreInputBlockNum % ubPartBlockNum) == 0 
-                     ? smallCoreLoopNum : smallCoreLoopNum + 1;
+    smallCoreLoopNum = (everyCoreInputBlockNum % ubPartBlockNum) == 0 ? smallCoreLoopNum : smallCoreLoopNum + 1;
     uint64_t smallCoreTailDataNum = smallCoreDataNum - ubPartDataNum * (smallCoreLoopNum - 1);
     smallCoreTailDataNum = (smallCoreTailDataNum == 0) ? ubPartDataNum : smallCoreTailDataNum;
 
@@ -93,8 +92,7 @@ static ge::graphStatus LogTilingFunc(gert::TilingContext* context)
         everyCoreInputBlockNum += 1;
         bigCoreDataNum = everyCoreInputBlockNum * blockSize / dataTypeLength;
         bigCoreLoopNum = bigCoreDataNum / ubPartDataNum;
-        bigCoreLoopNum = (everyCoreInputBlockNum % ubPartBlockNum) == 0 
-                       ? bigCoreLoopNum : bigCoreLoopNum + 1;
+        bigCoreLoopNum = (everyCoreInputBlockNum % ubPartBlockNum) == 0 ? bigCoreLoopNum : bigCoreLoopNum + 1;
         bigCoreTailDataNum = bigCoreDataNum - ubPartDataNum * (bigCoreLoopNum - 1);
         bigCoreTailDataNum = (bigCoreTailDataNum == 0) ? ubPartDataNum : bigCoreTailDataNum;
         tilingKey = GET_TPL_TILING_KEY(ELEMENTWISE_TPL_SCH_MODE_1);
@@ -132,24 +130,24 @@ static ge::graphStatus LogTilingFunc(gert::TilingContext* context)
     } else {
         tiling->base = 1.0f;
     }
-    
+
     const float* scale = attrs->GetAttrPointer<float>(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, scale);
     tiling->scale = *scale;
-    
+
     const float* shift = attrs->GetAttrPointer<float>(2);
     OP_CHECK_NULL_WITH_CONTEXT(context, shift);
     tiling->shift = *shift;
 
     uint32_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
-    size_t *currentWorkspace = context->GetWorkspaceSizes(1);
+    size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     currentWorkspace[0] = sysWorkspaceSize;
-    
+
     return ge::GRAPH_SUCCESS;
 }
 
 static ge::graphStatus TilingParseForLog([[maybe_unused]] gert::TilingParseContext* context)
-{   
+{
     return ge::GRAPH_SUCCESS;
 }
 

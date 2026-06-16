@@ -1,4 +1,4 @@
- /**
+/**
  * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
@@ -7,8 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 	 
- /**
+
+/**
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
  */
@@ -22,8 +22,7 @@
 #define ACOS_MODE_BF16 2
 
 ASCENDC_TPL_ARGS_DECL(
-    AcosV2,
-    ASCENDC_TPL_UINT_DECL(CALC_MODE, 2, ASCENDC_TPL_UI_LIST, ACOS_MODE_FP32, ACOS_MODE_FP16, ACOS_MODE_BF16));
+    AcosV2, ASCENDC_TPL_UINT_DECL(CALC_MODE, 2, ASCENDC_TPL_UI_LIST, ACOS_MODE_FP32, ACOS_MODE_FP16, ACOS_MODE_BF16));
 
 ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(
     ASCENDC_TPL_UINT_SEL(CALC_MODE, ASCENDC_TPL_UI_LIST, ACOS_MODE_FP32, ACOS_MODE_FP16, ACOS_MODE_BF16)));

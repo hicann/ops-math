@@ -11,8 +11,8 @@
 /*!
  * \file select_v2_tiling_data.h
  * \brief tiling data struct
-*/
-struct SelectV2TilingData{
+ */
+struct SelectV2TilingData {
     uint64_t smallCoreDataNum;
     uint64_t bigCoreDataNum;
     uint64_t finalBigTileNum;
@@ -21,4 +21,4 @@ struct SelectV2TilingData{
     uint64_t smallTailDataNum;
     uint64_t bigTailDataNum;
     uint64_t tailBlockNum;
-} ;
+};

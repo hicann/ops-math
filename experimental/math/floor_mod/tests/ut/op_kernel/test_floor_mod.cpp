@@ -39,7 +39,7 @@ protected:
     static void SetUpTestCase()
     {
         std::cout << "floor_mod_test SetUp" << std::endl;
-        
+
         std::string fullPath = __FILE__;
         size_t lastSlash = fullPath.find_last_of("/");
         if (lastSlash != std::string::npos) {
@@ -48,11 +48,8 @@ protected:
             srcDir = ".";
         }
     }
-    
-    static void TearDownTestCase()
-    {
-        std::cout << "floor_mod_test TearDown" << std::endl;
-    }
+
+    static void TearDownTestCase() { std::cout << "floor_mod_test TearDown" << std::endl; }
 };
 
 std::string FloorModTest::srcDir = "";
@@ -71,16 +68,16 @@ inline T1 CeilAlign(T1 a, T2 b)
 TEST_F(FloorModTest, test_case_float16_1)
 {
     uint32_t blockDim = 1;
-    
+
     std::string shape_str = "(32, 32)";
     uint32_t dataCount = 32 * 32;
-    
+
     std::string scriptPath = srcDir + "/floor_mod_data/gen_data.py";
-    
+
     std::string cmd = "python3 " + scriptPath + " '" + shape_str + "' 'float16'";
     int gen_ret = system(cmd.c_str());
     EXPECT_EQ(gen_ret, 0) << "Failed to generate data using script: " << scriptPath;
-    
+
     size_t inputByteSize = dataCount * sizeof(half);
     size_t outputByteSize = dataCount * sizeof(half);
 
@@ -96,22 +93,22 @@ TEST_F(FloorModTest, test_case_float16_1)
     ReadFile(x2_fileName, inputByteSize, x2, inputByteSize);
 
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(WORKSPACE_SIZE);
-    
+
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(sizeof(FloorModTilingData));
     FloorModTilingData* tilingData = reinterpret_cast<FloorModTilingData*>(tiling);
 
     // 配置 Tiling 数据
-    tilingData->usableUbSize = USABLE_UB_SIZE; 
+    tilingData->usableUbSize = USABLE_UB_SIZE;
     tilingData->needCoreNum = 1;
     tilingData->totalDataCount = dataCount;
     tilingData->perCoreDataCount = dataCount;
-    tilingData->tailDataCoreNum = 0; 
+    tilingData->tailDataCoreNum = 0;
     tilingData->lastCoreDataCount = dataCount;
 
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
-    
+
     auto func = floor_mod<TEST_FP16, TEST_FP16, TEST_FP16>;
-    
+
     ICPU_RUN_KF(func, blockDim, x1, x2, y, workspace, tiling);
 
     std::string out_fileName = "float16_output_y.bin";

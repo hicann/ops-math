@@ -45,13 +45,12 @@ using namespace AscendC;
 
 template <typename T, int BROADCAST_MODE>
 class ComplexV3 {
-    static constexpr int32_t BUFFER_NUM = 2;  // Double buffer
+    static constexpr int32_t BUFFER_NUM = 2; // Double buffer
 
 public:
-    __aicore__ inline ComplexV3() {};
+    __aicore__ inline ComplexV3(){};
 
-    __aicore__ inline void Init(GM_ADDR real, GM_ADDR imag, GM_ADDR out,
-                                const ComplexV3TilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR real, GM_ADDR imag, GM_ADDR out, const ComplexV3TilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -94,8 +93,7 @@ private:
 // =============================================================================
 template <typename T, int BROADCAST_MODE>
 __aicore__ inline void ComplexV3<T, BROADCAST_MODE>::Init(
-    GM_ADDR real, GM_ADDR imag, GM_ADDR out,
-    const ComplexV3TilingData* tilingData)
+    GM_ADDR real, GM_ADDR imag, GM_ADDR out, const ComplexV3TilingData* tilingData)
 {
     tilingData_ = tilingData;
     int64_t offset = tilingData->blockFactor * AscendC::GetBlockIdx();
@@ -145,8 +143,7 @@ __aicore__ inline void ComplexV3<T, BROADCAST_MODE>::Init(
 // CopyIn - No broadcast: copy contiguous data from GM to UB
 // =============================================================================
 template <typename T, int BROADCAST_MODE>
-__aicore__ inline void ComplexV3<T, BROADCAST_MODE>::CopyIn(
-    int64_t progress, int64_t currentNum)
+__aicore__ inline void ComplexV3<T, BROADCAST_MODE>::CopyIn(int64_t progress, int64_t currentNum)
 {
     LocalTensor<T> realLocal = realQueue.template AllocTensor<T>();
     LocalTensor<T> imagLocal = imagQueue.template AllocTensor<T>();
@@ -172,8 +169,7 @@ __aicore__ inline void ComplexV3<T, BROADCAST_MODE>::CopyIn(
 //   4x loop unrolling for throughput
 // =============================================================================
 template <typename T, int BROADCAST_MODE>
-__aicore__ inline void ComplexV3<T, BROADCAST_MODE>::Interleave(
-    int64_t currentNum)
+__aicore__ inline void ComplexV3<T, BROADCAST_MODE>::Interleave(int64_t currentNum)
 {
     LocalTensor<T> realLocal = realQueue.template DeQue<T>();
     LocalTensor<T> imagLocal = imagQueue.template DeQue<T>();
@@ -244,8 +240,7 @@ __aicore__ inline void ComplexV3<T, BROADCAST_MODE>::Interleave(
 // CopyOut - Copy interleaved data from UB to GM
 // =============================================================================
 template <typename T, int BROADCAST_MODE>
-__aicore__ inline void ComplexV3<T, BROADCAST_MODE>::CopyOut(
-    int64_t progress, int64_t currentNum)
+__aicore__ inline void ComplexV3<T, BROADCAST_MODE>::CopyOut(int64_t progress, int64_t currentNum)
 {
     LocalTensor<T> outLocal = outQueue.template DeQue<T>();
 
@@ -269,7 +264,7 @@ __aicore__ inline void ComplexV3<T, BROADCAST_MODE>::ProcessBroadcastPreload()
     // Bulk copy real and imag inputs from GM to UB (one-time preload)
     // Note: DataCopyPad blockLen is limited to 65535 bytes per transfer.
     // For large inputs, split into multiple transfers.
-    constexpr uint32_t MAX_BLOCK_LEN = 65504;  // Safe limit (32-byte aligned, < 65535)
+    constexpr uint32_t MAX_BLOCK_LEN = 65504; // Safe limit (32-byte aligned, < 65535)
     int64_t realSize = tilingData_->realInputSize;
     int64_t imagSize = tilingData_->imagInputSize;
 
@@ -279,7 +274,8 @@ __aicore__ inline void ComplexV3<T, BROADCAST_MODE>::ProcessBroadcastPreload()
         int64_t copied = 0;
         while (copied < totalBytes) {
             int64_t chunkBytes = totalBytes - copied;
-            if (chunkBytes > MAX_BLOCK_LEN) chunkBytes = MAX_BLOCK_LEN;
+            if (chunkBytes > MAX_BLOCK_LEN)
+                chunkBytes = MAX_BLOCK_LEN;
             DataCopyParams p;
             p.blockCount = 1;
             p.blockLen = static_cast<uint32_t>(chunkBytes);
@@ -297,7 +293,8 @@ __aicore__ inline void ComplexV3<T, BROADCAST_MODE>::ProcessBroadcastPreload()
         int64_t copied = 0;
         while (copied < totalBytes) {
             int64_t chunkBytes = totalBytes - copied;
-            if (chunkBytes > MAX_BLOCK_LEN) chunkBytes = MAX_BLOCK_LEN;
+            if (chunkBytes > MAX_BLOCK_LEN)
+                chunkBytes = MAX_BLOCK_LEN;
             DataCopyParams p;
             p.blockCount = 1;
             p.blockLen = static_cast<uint32_t>(chunkBytes);
@@ -316,8 +313,7 @@ __aicore__ inline void ComplexV3<T, BROADCAST_MODE>::ProcessBroadcastPreload()
     int64_t loopCount = (blockLength_ + ubLength_ - 1) / ubLength_;
 
     for (int64_t loop = 0; loop < loopCount; loop++) {
-        int64_t currentNum = (loop == loopCount - 1)
-            ? (blockLength_ - ubLength_ * loop) : ubLength_;
+        int64_t currentNum = (loop == loopCount - 1) ? (blockLength_ - ubLength_ * loop) : ubLength_;
 
         LocalTensor<T> outLocal = outQueue.template AllocTensor<T>();
 
@@ -374,8 +370,7 @@ __aicore__ inline void ComplexV3<T, BROADCAST_MODE>::ProcessBroadcastOnDemand()
 
     for (int64_t loop = 0; loop < loopCount; loop++) {
         int64_t chunkStart = loop * ubLength_;
-        int64_t currentNum = (loop == loopCount - 1)
-            ? (blockLength_ - chunkStart) : ubLength_;
+        int64_t currentNum = (loop == loopCount - 1) ? (blockLength_ - chunkStart) : ubLength_;
 
         // Phase 1: Scan to find input index ranges for this output chunk
         int64_t realMin = tilingData_->realInputSize;
@@ -397,10 +392,14 @@ __aicore__ inline void ComplexV3<T, BROADCAST_MODE>::ProcessBroadcastOnDemand()
                 realIdx += coord * tilingData_->realStride[d];
                 imagIdx += coord * tilingData_->imagStride[d];
             }
-            if (realIdx < realMin) realMin = realIdx;
-            if (realIdx > realMax) realMax = realIdx;
-            if (imagIdx < imagMin) imagMin = imagIdx;
-            if (imagIdx > imagMax) imagMax = imagIdx;
+            if (realIdx < realMin)
+                realMin = realIdx;
+            if (realIdx > realMax)
+                realMax = realIdx;
+            if (imagIdx < imagMin)
+                imagMin = imagIdx;
+            if (imagIdx > imagMax)
+                imagMax = imagIdx;
         }
 
         int64_t realRangeLen = realMax - realMin + 1;
@@ -518,8 +517,7 @@ __aicore__ inline void ComplexV3<T, BROADCAST_MODE>::Process()
     if constexpr (BROADCAST_MODE == 0) {
         int64_t loopCount = (blockLength_ + ubLength_ - 1) / ubLength_;
         for (int64_t i = 0; i < loopCount; i++) {
-            int64_t currentNum = (i == loopCount - 1)
-                ? (blockLength_ - ubLength_ * i) : ubLength_;
+            int64_t currentNum = (i == loopCount - 1) ? (blockLength_ - ubLength_ * i) : ubLength_;
             CopyIn(i, currentNum);
             Interleave(currentNum);
             CopyOut(i, currentNum);

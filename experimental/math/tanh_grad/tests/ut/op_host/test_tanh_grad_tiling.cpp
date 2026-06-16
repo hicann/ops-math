@@ -21,15 +21,9 @@ using namespace optiling;
 
 class TanhGradTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "TanhGradTiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "TanhGradTiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "TanhGradTiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "TanhGradTiling TearDown " << endl; }
 };
 
 TEST_F(TanhGradTiling, ascend9101_test_tiling_fp16_001)
@@ -45,7 +39,7 @@ TEST_F(TanhGradTiling, ascend9101_test_tiling_fp16_001)
             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
         },
         &compileInfo);
-    
+
     uint64_t expectTilingKey = 0;
     string expectTilingData = "128 144 1 1 8176 128 144 0 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -65,7 +59,7 @@ TEST_F(TanhGradTiling, ascend9101_test_tiling_bf16_002)
             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
         },
         &compileInfo);
-    
+
     uint64_t expectTilingKey = 0;
     string expectTilingData = "128 144 1 1 8176 128 144 0 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -85,7 +79,7 @@ TEST_F(TanhGradTiling, ascend9101_test_tiling_fp32_003)
             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         &compileInfo);
-    
+
     uint64_t expectTilingKey = 0;
     string expectTilingData = "128 136 1 1 6544 128 136 0 ";
     std::vector<size_t> expectWorkspaces = {16777216};

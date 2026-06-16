@@ -21,15 +21,9 @@ using namespace optiling;
 
 class CrossTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "CrossTiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "CrossTiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "CrossTiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "CrossTiling TearDown " << endl; }
 };
 
 TEST_F(CrossTiling, ascend9101_test_tiling_fp16_001)
@@ -44,10 +38,7 @@ TEST_F(CrossTiling, ascend9101_test_tiling_fp16_001)
         {
             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
         },
-        {
-            gert::TilingContextPara::OpAttr("dim", Ops::Math::AnyValue::CreateFrom<int64_t>(1))
-        },
-        &compileInfo);
+        {gert::TilingContextPara::OpAttr("dim", Ops::Math::AnyValue::CreateFrom<int64_t>(1))}, &compileInfo);
     uint64_t expectTilingKey = 3;
     string expectTilingData = "0 0 0 0 128 0 0 0 128 21 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -66,10 +57,7 @@ TEST_F(CrossTiling, ascend9101_test_tiling_fp32_001)
         {
             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {
-            gert::TilingContextPara::OpAttr("dim", Ops::Math::AnyValue::CreateFrom<int64_t>(1))
-        },
-        &compileInfo);
+        {gert::TilingContextPara::OpAttr("dim", Ops::Math::AnyValue::CreateFrom<int64_t>(1))}, &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "0 0 0 0 128 0 0 0 128 21 ";
     std::vector<size_t> expectWorkspaces = {16777216};

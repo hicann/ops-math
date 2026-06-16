@@ -42,10 +42,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./sign_bits_unpack_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "sign_bits_unpack_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "sign_bits_unpack_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;
@@ -53,7 +50,8 @@ private:
 };
 
 const std::string SignBitsUnpackTest::rootPath = "../../../../experimental/";
-const std::string SignBitsUnpackTest::dataPath = rootPath + "math/sign_bits_unpack/tests/ut/op_kernel/sign_bits_unpack_data";
+const std::string SignBitsUnpackTest::dataPath =
+    rootPath + "math/sign_bits_unpack/tests/ut/op_kernel/sign_bits_unpack_data";
 
 template <typename T1, typename T2>
 inline T1 CeilAlign(T1 a, T2 b)

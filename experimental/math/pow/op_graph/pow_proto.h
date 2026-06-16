@@ -11,7 +11,7 @@
 /*!
  * \file pow_proto.h
  * \brief
-*/
+ */
 
 #ifndef OP_PROTO_POW_PROTO_H_
 #define OP_PROTO_POW_PROTO_H_
@@ -37,8 +37,7 @@ namespace ge {
 * @li The output tensor y must have the same shape as the broadcast result of x and exponent.
 * @li If x is integer type and exponent is negative, the behavior is undefined (consistent with PyTorch).
 */
-#define POW_TYPES \
-  DT_BF16, DT_FLOAT, DT_FLOAT16, DT_INT8, DT_UINT8, DT_INT16, DT_INT32
+#define POW_TYPES DT_BF16, DT_FLOAT, DT_FLOAT16, DT_INT8, DT_UINT8, DT_INT16, DT_INT32
 
 REG_OP(Pow)
     .INPUT(x, TensorType({POW_TYPES}))

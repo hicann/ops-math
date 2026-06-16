@@ -22,7 +22,7 @@
 /*!
  * \file complex_v2_tiling_data.h
  * \brief tiling data struct
-*/
+ */
 #ifndef _ROTARY_POSITION_EMBEDDING_GRAD_TILING_DATA_H_
 #define _ROTARY_POSITION_EMBEDDING_GRAD_TILING_DATA_H_
 

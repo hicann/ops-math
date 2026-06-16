@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
- /**
+/**
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
  */
@@ -51,22 +51,22 @@ static ge::graphStatus ErfInvTilingFunc(gert::TilingContext* context)
 
     // Pivot distribution: first 'pivot' cores get (baseElems + 1) elements
     uint32_t baseElems = elems32 / usedCoreNum;
-    uint32_t pivot     = elems32 % usedCoreNum;
+    uint32_t pivot = elems32 % usedCoreNum;
 
     // Tiling strategy: 4096 float elements per tile (16 KB per fp32 queue — matches DMA burst).
     // UB usage (fp32, depth=2 queues):
     //   2 × 2 × 4096 × 4 (queues, 64 KB) + 7 × 4096 × 4 (float scratch, 112 KB) + ~544 (mask)
     //   ≈ 176 KB, fits in 192 KB UB on ascend910b / 910_93 / 950 (16 KB margin).
-    uint32_t tileSize   = 4096;
-    uint32_t maxElems   = baseElems + (pivot > 0 ? 1 : 0);
+    uint32_t tileSize = 4096;
+    uint32_t maxElems = baseElems + (pivot > 0 ? 1 : 0);
     uint32_t innerLoops = (maxElems + tileSize - 1) / tileSize;
 
     // Fill TilingData via GetTilingData (C++ POD, direct assignment)
     ErfInvTilingData* tiling = context->GetTilingData<ErfInvTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    tiling->baseElems  = baseElems;
-    tiling->pivot      = pivot;
-    tiling->tileSize   = tileSize;
+    tiling->baseElems = baseElems;
+    tiling->pivot = pivot;
+    tiling->tileSize = tileSize;
     tiling->innerLoops = innerLoops;
 
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);

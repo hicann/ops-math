@@ -30,9 +30,9 @@ namespace ops {
 
 // 属性索引常量（与 op_host/log_space_def.cpp / op_host/log_space_tiling.cpp 对齐）
 constexpr int ATTR_IDX_START = 0;
-constexpr int ATTR_IDX_END   = 1;
+constexpr int ATTR_IDX_END = 1;
 constexpr int ATTR_IDX_STEPS = 2;
-constexpr int ATTR_IDX_BASE  = 3;
+constexpr int ATTR_IDX_BASE = 3;
 
 static ge::graphStatus InferShape4LogSpace(gert::InferShapeContext* context)
 {
@@ -43,9 +43,7 @@ static ge::graphStatus InferShape4LogSpace(gert::InferShapeContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, stepsPtr);
     int64_t steps = *stepsPtr;
     // 与 Tiling 对齐：steps<0 直接返回 GRAPH_FAILED（aclnn 入口已做同等校验，此为图模式保险）
-    OP_CHECK_IF(steps < 0,
-        OP_LOGE(context, "steps must be >= 0, got %ld", steps),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(steps < 0, OP_LOGE(context, "steps must be >= 0, got %ld", steps), return ge::GRAPH_FAILED);
 
     gert::Shape* outputShape = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, outputShape);

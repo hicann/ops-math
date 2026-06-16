@@ -34,18 +34,18 @@
 
 namespace optiling {
 
-using Ops::Base::CeilDiv;
 using Ops::Base::CeilAlign;
-using Ops::Base::FloorDiv;
+using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using ops_reduce_mean_with_count::IsReduceDim;
 using ops_reduce_mean_with_count::NormalizeAxes;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
-constexpr uint32_t MIN_OUT_BUF_SIZE = 32;    // Minimum 32 bytes for output buffer
-constexpr uint32_t TMP_BUF_DEFAULT = 4096;   // Default tmpBuf size for ReduceSum
+constexpr uint32_t MIN_OUT_BUF_SIZE = 32;  // Minimum 32 bytes for output buffer
+constexpr uint32_t TMP_BUF_DEFAULT = 4096; // Default tmpBuf size for ReduceSum
 constexpr uint32_t ALIGN_32B = 32;
-constexpr uint32_t BLOCK_BYTES = 256;        // Repeat block size for ReduceSum tree
+constexpr uint32_t BLOCK_BYTES = 256; // Repeat block size for ReduceSum tree
 constexpr uint32_t FP32_BYTES = 4;
 constexpr uint32_t FP16_BYTES = 2;
 constexpr int CHUNK_REFINE_ITERS = 4;
@@ -114,7 +114,7 @@ static uint64_t ComputeReduceBufSize(uint64_t count, uint32_t typeSize)
     if (typeSize == 0) {
         return TMP_BUF_DEFAULT;
     }
-    uint64_t oneRepeatMaxElem = BLOCK_BYTES / typeSize;  // 64 for FP32, 128 for FP16
+    uint64_t oneRepeatMaxElem = BLOCK_BYTES / typeSize; // 64 for FP32, 128 for FP16
     if (oneRepeatMaxElem == 0) {
         return TMP_BUF_DEFAULT;
     }
@@ -195,8 +195,7 @@ static std::vector<std::pair<char, int64_t>> MergeAxes(
 // ============================================================================
 // Determine scene (A1/R/A0 lengths) from merged groups
 // ============================================================================
-static void DetermineSceneSingle(
-    const std::vector<std::pair<char, int64_t>>& merged, ShapeLayout& layout)
+static void DetermineSceneSingle(const std::vector<std::pair<char, int64_t>>& merged, ShapeLayout& layout)
 {
     if (merged[0].first == 'R') {
         layout.rLength = merged[0].second;
@@ -205,8 +204,7 @@ static void DetermineSceneSingle(
     }
 }
 
-static void DetermineScenePair(
-    const std::vector<std::pair<char, int64_t>>& merged, ShapeLayout& layout)
+static void DetermineScenePair(const std::vector<std::pair<char, int64_t>>& merged, ShapeLayout& layout)
 {
     if (merged[0].first == 'A' && merged[1].first == 'R') {
         layout.a1Length = merged[0].second;
@@ -221,8 +219,7 @@ static void DetermineScenePair(
 }
 
 static void AbsorbTrailing(
-    const std::vector<std::pair<char, int64_t>>& merged, size_t startIdx,
-    uint64_t& rLen, uint64_t& a0Len)
+    const std::vector<std::pair<char, int64_t>>& merged, size_t startIdx, uint64_t& rLen, uint64_t& a0Len)
 {
     for (size_t i = startIdx; i < merged.size(); i++) {
         if (merged[i].first == 'R') {
@@ -233,8 +230,7 @@ static void AbsorbTrailing(
     }
 }
 
-static void DetermineSceneTripleOrMore(
-    const std::vector<std::pair<char, int64_t>>& merged, ShapeLayout& layout)
+static void DetermineSceneTripleOrMore(const std::vector<std::pair<char, int64_t>>& merged, ShapeLayout& layout)
 {
     if (merged[0].first == 'A' && merged[1].first == 'R' && merged[2].first == 'A') {
         layout.a1Length = merged[0].second;
@@ -285,14 +281,11 @@ static AlignInfo ComputeAlignInfo(ge::DataType dataType, uint64_t rLength)
     }
     info.needCast = (info.typeSize != FP32_BYTES);
     info.elemPerBlock = ALIGN_32B / info.typeSize;
-    info.rLengthAlign = CeilAlign(static_cast<int64_t>(rLength),
-                                  static_cast<int64_t>(info.elemPerBlock));
+    info.rLengthAlign = CeilAlign(static_cast<int64_t>(rLength), static_cast<int64_t>(info.elemPerBlock));
     constexpr uint32_t elemPerBlockFP32 = ALIGN_32B / sizeof(float);
-    info.rLengthAlignFP32 = CeilAlign(static_cast<int64_t>(rLength),
-                                      static_cast<int64_t>(elemPerBlockFP32));
+    info.rLengthAlignFP32 = CeilAlign(static_cast<int64_t>(rLength), static_cast<int64_t>(elemPerBlockFP32));
     info.tmpBufSize = ComputeReduceBufSize(
-        info.needCast ? info.rLengthAlignFP32 : info.rLengthAlign,
-        static_cast<uint32_t>(sizeof(float)));
+        info.needCast ? info.rLengthAlignFP32 : info.rLengthAlign, static_cast<uint32_t>(sizeof(float)));
     return info;
 }
 
@@ -300,23 +293,19 @@ static AlignInfo ComputeAlignInfo(ge::DataType dataType, uint64_t rLength)
 // AR col-split chunk refinement
 // ============================================================================
 static void RefineChunkR(
-    uint64_t rLength, uint64_t ubSize, const AlignInfo& info,
-    uint64_t& chunkR, uint64_t& tmpBufSize)
+    uint64_t rLength, uint64_t ubSize, const AlignInfo& info, uint64_t& chunkR, uint64_t& tmpBufSize)
 {
     constexpr uint32_t elemPerBlockFP32 = ALIGN_32B / sizeof(float);
     chunkR = rLength;
     for (int iter = 0; iter < CHUNK_REFINE_ITERS; iter++) {
-        uint64_t chunkRAlignFP32 = CeilAlign(static_cast<int64_t>(chunkR),
-                                             static_cast<int64_t>(elemPerBlockFP32));
-        tmpBufSize = ComputeReduceBufSize(info.needCast ? chunkRAlignFP32 : chunkR,
-                                          static_cast<uint32_t>(sizeof(float)));
-        uint64_t fixedOverhead = MIN_OUT_BUF_SIZE + tmpBufSize
-                               + (info.needCast ? MIN_OUT_BUF_SIZE : 0);
+        uint64_t chunkRAlignFP32 = CeilAlign(static_cast<int64_t>(chunkR), static_cast<int64_t>(elemPerBlockFP32));
+        tmpBufSize =
+            ComputeReduceBufSize(info.needCast ? chunkRAlignFP32 : chunkR, static_cast<uint32_t>(sizeof(float)));
+        uint64_t fixedOverhead = MIN_OUT_BUF_SIZE + tmpBufSize + (info.needCast ? MIN_OUT_BUF_SIZE : 0);
         uint64_t perElemBytes = info.typeSize + (info.needCast ? sizeof(float) : 0);
         uint64_t avail = (ubSize > fixedOverhead) ? (ubSize - fixedOverhead) : 0;
         uint64_t newChunkR = (perElemBytes == 0) ? info.elemPerBlock : (avail / perElemBytes);
-        newChunkR = FloorAlign(static_cast<int64_t>(newChunkR),
-                               static_cast<int64_t>(info.elemPerBlock));
+        newChunkR = FloorAlign(static_cast<int64_t>(newChunkR), static_cast<int64_t>(info.elemPerBlock));
         if (newChunkR == 0) {
             newChunkR = info.elemPerBlock;
         }
@@ -329,18 +318,16 @@ static void RefineChunkR(
         }
         chunkR = newChunkR;
     }
-    uint64_t chunkRAlignFP32Final = CeilAlign(static_cast<int64_t>(chunkR),
-                                              static_cast<int64_t>(elemPerBlockFP32));
-    tmpBufSize = ComputeReduceBufSize(info.needCast ? chunkRAlignFP32Final : chunkR,
-                                      static_cast<uint32_t>(sizeof(float)));
+    uint64_t chunkRAlignFP32Final = CeilAlign(static_cast<int64_t>(chunkR), static_cast<int64_t>(elemPerBlockFP32));
+    tmpBufSize =
+        ComputeReduceBufSize(info.needCast ? chunkRAlignFP32Final : chunkR, static_cast<uint32_t>(sizeof(float)));
 }
 
 // ============================================================================
 // AR mode scheduling
 // ============================================================================
 static void PlanArMode(
-    const ShapeLayout& layout, uint64_t ubSize, int64_t coreNum,
-    AlignInfo& info, ScheduleInfo& sched)
+    const ShapeLayout& layout, uint64_t ubSize, int64_t coreNum, AlignInfo& info, ScheduleInfo& sched)
 {
     uint64_t inBufFull = 2 * info.rLengthAlign * info.typeSize;
     uint64_t outBufFull = 2 * MIN_OUT_BUF_SIZE;
@@ -359,8 +346,8 @@ static void PlanArMode(
     if (rowsPerCore == 0) {
         rowsPerCore = 1;
     }
-    sched.usedCoreNum = static_cast<int32_t>(CeilDiv(
-        static_cast<int64_t>(layout.a1Length), static_cast<int64_t>(rowsPerCore)));
+    sched.usedCoreNum =
+        static_cast<int32_t>(CeilDiv(static_cast<int64_t>(layout.a1Length), static_cast<int64_t>(rowsPerCore)));
     sched.tilesPerCore = rowsPerCore;
     sched.tailCoreTiles = layout.a1Length - sched.tilesPerCore * (sched.usedCoreNum - 1);
 }
@@ -368,8 +355,7 @@ static void PlanArMode(
 // ============================================================================
 // ARA mode: find best tileA0
 // ============================================================================
-static uint64_t FindBestTileA0(
-    const ShapeLayout& layout, uint64_t ubSize, const AlignInfo& info, uint32_t a0TileBase)
+static uint64_t FindBestTileA0(const ShapeLayout& layout, uint64_t ubSize, const AlignInfo& info, uint32_t a0TileBase)
 {
     uint64_t bestTileA0 = a0TileBase;
     for (uint64_t candidate = a0TileBase; candidate <= layout.a0Length; candidate += a0TileBase) {
@@ -381,15 +367,13 @@ static uint64_t FindBestTileA0(
         uint64_t outBufElemBytes = ((alignedCols * info.typeSize + ALIGN_32B - 1) / ALIGN_32B) * ALIGN_32B;
         uint64_t outBufSize = 2ULL * outBufElemBytes;
         uint64_t castBufSize = info.needCast ? (layout.rLength * alignedCols * sizeof(float)) : 0;
-        uint64_t fp32ResBufSize = info.needCast
-            ? (((alignedCols * sizeof(float) + ALIGN_32B - 1) / ALIGN_32B) * ALIGN_32B)
-            : 0;
+        uint64_t fp32ResBufSize =
+            info.needCast ? (((alignedCols * sizeof(float) + ALIGN_32B - 1) / ALIGN_32B) * ALIGN_32B) : 0;
 
         uint64_t minCountElems = (candidate < 4) ? 4 : candidate;
         uint64_t countBufSize = ((minCountElems * sizeof(int64_t) + ALIGN_32B - 1) / ALIGN_32B) * ALIGN_32B;
 
-        uint64_t totalUB = inBufSize + outBufSize + info.tmpBufSize
-                         + castBufSize + fp32ResBufSize + countBufSize;
+        uint64_t totalUB = inBufSize + outBufSize + info.tmpBufSize + castBufSize + fp32ResBufSize + countBufSize;
         if (totalUB <= ubSize) {
             bestTileA0 = candidate;
         } else {
@@ -400,8 +384,7 @@ static uint64_t FindBestTileA0(
 }
 
 static void PlanAraMode(
-    const ShapeLayout& layout, uint64_t ubSize, int64_t coreNum,
-    const AlignInfo& info, ScheduleInfo& sched)
+    const ShapeLayout& layout, uint64_t ubSize, int64_t coreNum, const AlignInfo& info, ScheduleInfo& sched)
 {
     sched.reduceMode = REDUCE_MODE_ARA_FULLLOAD;
     uint32_t a0TileBase = ALIGN_32B / info.typeSize;
@@ -418,15 +401,14 @@ static void PlanAraMode(
         sched.tileA0Len = a0TileBase;
     }
 
-    uint64_t a0Outer = CeilDiv(static_cast<int64_t>(layout.a0Length),
-                               static_cast<int64_t>(sched.tileA0Len));
+    uint64_t a0Outer = CeilDiv(static_cast<int64_t>(layout.a0Length), static_cast<int64_t>(sched.tileA0Len));
     uint64_t totalTiles = layout.a1Length * a0Outer;
     sched.tilesPerCore = CeilDiv(static_cast<int64_t>(totalTiles), coreNum);
     if (sched.tilesPerCore == 0) {
         sched.tilesPerCore = 1;
     }
-    sched.usedCoreNum = static_cast<int32_t>(CeilDiv(
-        static_cast<int64_t>(totalTiles), static_cast<int64_t>(sched.tilesPerCore)));
+    sched.usedCoreNum =
+        static_cast<int32_t>(CeilDiv(static_cast<int64_t>(totalTiles), static_cast<int64_t>(sched.tilesPerCore)));
     sched.tailCoreTiles = totalTiles - sched.tilesPerCore * (sched.usedCoreNum - 1);
 }
 
@@ -434,8 +416,8 @@ static void PlanAraMode(
 // Write out TilingData
 // ============================================================================
 static ge::graphStatus FillTilingData(
-    gert::TilingContext* context, const ShapeLayout& layout, const AlignInfo& info,
-    const ScheduleInfo& sched, float invCount, int64_t countResult, int64_t outputLength)
+    gert::TilingContext* context, const ShapeLayout& layout, const AlignInfo& info, const ScheduleInfo& sched,
+    float invCount, int64_t countResult, int64_t outputLength)
 {
     ReduceMeanWithCountTilingData* tiling = context->GetTilingData<ReduceMeanWithCountTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
@@ -497,8 +479,8 @@ static ge::graphStatus ParseInputs(gert::TilingContext* context, ParsedInputs& p
     for (size_t a = 0; a < parsed.axes.size(); a++) {
         parsed.countResult *= parsed.shapeDims[parsed.axes[a]];
     }
-    OP_CHECK_IF(parsed.countResult == 0,
-        OP_LOGE(context, "reduce count is 0 (empty tensor on reduce axis is not supported)"),
+    OP_CHECK_IF(
+        parsed.countResult == 0, OP_LOGE(context, "reduce count is 0 (empty tensor on reduce axis is not supported)"),
         return ge::GRAPH_FAILED);
     parsed.invCount = 1.0f / static_cast<float>(parsed.countResult);
 
@@ -509,8 +491,8 @@ static ge::graphStatus ParseInputs(gert::TilingContext* context, ParsedInputs& p
 }
 
 static void PlanSchedule(
-    const ParsedInputs& parsed, uint64_t ubSize, int64_t coreNum,
-    ShapeLayout& layout, AlignInfo& info, ScheduleInfo& sched)
+    const ParsedInputs& parsed, uint64_t ubSize, int64_t coreNum, ShapeLayout& layout, AlignInfo& info,
+    ScheduleInfo& sched)
 {
     auto finalMerged = MergeAxes(parsed.shapeDims, parsed.axes);
     layout = DetermineScene(finalMerged);
@@ -529,10 +511,12 @@ static ge::graphStatus ReduceMeanWithCountTilingFunc(gert::TilingContext* contex
 {
     uint64_t ubSize;
     int64_t coreNum;
-    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+        return ge::GRAPH_FAILED);
 
     ParsedInputs parsed;
     auto parseSt = ParseInputs(context, parsed);
@@ -545,8 +529,7 @@ static ge::graphStatus ReduceMeanWithCountTilingFunc(gert::TilingContext* contex
     ScheduleInfo sched;
     PlanSchedule(parsed, ubSize, coreNum, layout, info, sched);
 
-    auto st = FillTilingData(context, layout, info, sched, parsed.invCount,
-                             parsed.countResult, parsed.outputLength);
+    auto st = FillTilingData(context, layout, info, sched, parsed.invCount, parsed.countResult, parsed.outputLength);
     if (st != ge::GRAPH_SUCCESS) {
         return st;
     }

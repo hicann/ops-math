@@ -27,15 +27,15 @@
 #define _ROTARY_POSITION_EMBEDDING_GRAD_TILING_DATA_H_
 
 struct TraceV2TilingData {
-    uint64_t alignNum;              // 对齐数
-    uint64_t typeSize;              // 数据类型大小
-    uint64_t matrixOrder;           // 矩阵存储顺序 0-行优先 1-列优先
-    uint64_t rowLength;             // 矩阵行数
-    uint64_t columnLength;          // 矩阵列数
-    uint64_t diagLen;               // 对角线长度
-    uint64_t fullBlockLength;       // 每个核处理的对角线长度（向上取整）
-    uint64_t tailBlockLength;       // 每个核处理的对角线长度（向下取整）
-    uint64_t fullBlockNum;          // 处理满块的核数量
-    uint64_t tailBlockNum;          // 处理尾块的核数量
+    uint64_t alignNum;        // 对齐数
+    uint64_t typeSize;        // 数据类型大小
+    uint64_t matrixOrder;     // 矩阵存储顺序 0-行优先 1-列优先
+    uint64_t rowLength;       // 矩阵行数
+    uint64_t columnLength;    // 矩阵列数
+    uint64_t diagLen;         // 对角线长度
+    uint64_t fullBlockLength; // 每个核处理的对角线长度（向上取整）
+    uint64_t tailBlockLength; // 每个核处理的对角线长度（向下取整）
+    uint64_t fullBlockNum;    // 处理满块的核数量
+    uint64_t tailBlockNum;    // 处理尾块的核数量
 };
 #endif

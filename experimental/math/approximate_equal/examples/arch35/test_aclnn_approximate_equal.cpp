@@ -13,7 +13,6 @@
  * technically reviewed for functional accuracy and security
  */
 
-
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -24,27 +23,27 @@
 
 #define LOG_PRINT(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)
 
-#define CHECK_ACL(expr)                                                          \
-    do {                                                                         \
-        aclError _err = (expr);                                                  \
-        if (_err != ACL_SUCCESS) {                                               \
-            LOG_PRINT("[FAIL] %s returned %d at %s:%d", #expr, _err,             \
-                      __FILE__, __LINE__);                                       \
-            return _err;                                                         \
-        }                                                                        \
+#define CHECK_ACL(expr)                                                                   \
+    do {                                                                                  \
+        aclError _err = (expr);                                                           \
+        if (_err != ACL_SUCCESS) {                                                        \
+            LOG_PRINT("[FAIL] %s returned %d at %s:%d", #expr, _err, __FILE__, __LINE__); \
+            return _err;                                                                  \
+        }                                                                                 \
     } while (0)
 
-#define CHECK_RET(expr, ret_val)                                                 \
-    do {                                                                         \
-        if (!(expr)) {                                                           \
-            LOG_PRINT("[FAIL] %s at %s:%d", #expr, __FILE__, __LINE__);          \
-            return (ret_val);                                                    \
-        }                                                                        \
+#define CHECK_RET(expr, ret_val)                                        \
+    do {                                                                \
+        if (!(expr)) {                                                  \
+            LOG_PRINT("[FAIL] %s at %s:%d", #expr, __FILE__, __LINE__); \
+            return (ret_val);                                           \
+        }                                                               \
     } while (0)
 
 static std::vector<int64_t> ComputeStrides(const std::vector<int64_t>& shape)
 {
-    if (shape.empty()) return {};
+    if (shape.empty())
+        return {};
     std::vector<int64_t> strides(shape.size(), 1);
     for (int i = static_cast<int>(shape.size()) - 2; i >= 0; --i) {
         strides[i] = shape[i + 1] * strides[i + 1];
@@ -53,28 +52,26 @@ static std::vector<int64_t> ComputeStrides(const std::vector<int64_t>& shape)
 }
 
 template <typename T>
-static int CreateAclTensor(const std::vector<T>& host_data,
-                           const std::vector<int64_t>& shape,
-                           aclDataType dtype,
-                           void** device_addr,
-                           aclTensor** tensor)
+static int CreateAclTensor(
+    const std::vector<T>& host_data, const std::vector<int64_t>& shape, aclDataType dtype, void** device_addr,
+    aclTensor** tensor)
 {
     int64_t elem = 1;
-    for (auto d : shape) elem *= d;
+    for (auto d : shape)
+        elem *= d;
     size_t bytes = static_cast<size_t>(elem) * sizeof(T);
-    if (bytes == 0) bytes = sizeof(T);
+    if (bytes == 0)
+        bytes = sizeof(T);
 
     CHECK_ACL(aclrtMalloc(device_addr, bytes, ACL_MEM_MALLOC_HUGE_FIRST));
     if (!host_data.empty()) {
-        CHECK_ACL(aclrtMemcpy(*device_addr, bytes, host_data.data(),
-                              host_data.size() * sizeof(T),
-                              ACL_MEMCPY_HOST_TO_DEVICE));
+        CHECK_ACL(aclrtMemcpy(
+            *device_addr, bytes, host_data.data(), host_data.size() * sizeof(T), ACL_MEMCPY_HOST_TO_DEVICE));
     }
     auto strides = ComputeStrides(shape);
-    *tensor = aclCreateTensor(shape.data(), shape.size(), dtype,
-                              strides.empty() ? nullptr : strides.data(),
-                              0, aclFormat::ACL_FORMAT_ND,
-                              shape.data(), shape.size(), *device_addr);
+    *tensor = aclCreateTensor(
+        shape.data(), shape.size(), dtype, strides.empty() ? nullptr : strides.data(), 0, aclFormat::ACL_FORMAT_ND,
+        shape.data(), shape.size(), *device_addr);
     CHECK_RET(*tensor != nullptr, ACL_ERROR_INVALID_PARAM);
     return ACL_SUCCESS;
 }
@@ -97,10 +94,8 @@ int main()
     const std::vector<int64_t> shape = {8};
     const float tolerance = 1e-5f;
 
-    std::vector<float> x1_host = {1.0f, 2.0f, 3.0f, 4.0f,
-                                  5.0f, 6.0f, 7.0f, 8.0f};
-    std::vector<float> x2_host = {1.0f, 2.1f, 3.0f, 4.5f,
-                                  5.0f, 6.0f, 7.0f, 9.0f};
+    std::vector<float> x1_host = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f};
+    std::vector<float> x2_host = {1.0f, 2.1f, 3.0f, 4.5f, 5.0f, 6.0f, 7.0f, 9.0f};
     std::vector<uint8_t> y_host(shape[0], 0);
 
     // 预期结果（|x1-x2| < 1e-5）
@@ -111,14 +106,14 @@ int main()
     // ------------------------------------------------------------------------
     void* x1_dev = nullptr;
     void* x2_dev = nullptr;
-    void* y_dev  = nullptr;
+    void* y_dev = nullptr;
     aclTensor* x1_t = nullptr;
     aclTensor* x2_t = nullptr;
-    aclTensor* y_t  = nullptr;
+    aclTensor* y_t = nullptr;
 
     CHECK_ACL(CreateAclTensor(x1_host, shape, ACL_FLOAT, &x1_dev, &x1_t));
     CHECK_ACL(CreateAclTensor(x2_host, shape, ACL_FLOAT, &x2_dev, &x2_t));
-    CHECK_ACL(CreateAclTensor(y_host,  shape, ACL_BOOL,  &y_dev,  &y_t));
+    CHECK_ACL(CreateAclTensor(y_host, shape, ACL_BOOL, &y_dev, &y_t));
 
     // ------------------------------------------------------------------------
     // 两段式接口：GetWorkspaceSize -> launch
@@ -126,11 +121,9 @@ int main()
     uint64_t ws_size = 0;
     aclOpExecutor* executor = nullptr;
 
-    auto ret = aclnnApproximateEqualGetWorkspaceSize(
-        x1_t, x2_t, tolerance, y_t, &ws_size, &executor);
+    auto ret = aclnnApproximateEqualGetWorkspaceSize(x1_t, x2_t, tolerance, y_t, &ws_size, &executor);
     CHECK_RET(ret == ACL_SUCCESS, ret);
-    LOG_PRINT("GetWorkspaceSize OK, workspaceSize = %llu",
-              static_cast<unsigned long long>(ws_size));
+    LOG_PRINT("GetWorkspaceSize OK, workspaceSize = %llu", static_cast<unsigned long long>(ws_size));
 
     void* workspace = nullptr;
     if (ws_size > 0) {
@@ -146,15 +139,11 @@ int main()
     // 读回 & 比对 & 打印
     // ------------------------------------------------------------------------
     std::vector<uint8_t> y_out(shape[0], 0);
-    CHECK_ACL(aclrtMemcpy(y_out.data(), y_out.size(),
-                          y_dev, y_out.size(),
-                          ACL_MEMCPY_DEVICE_TO_HOST));
+    CHECK_ACL(aclrtMemcpy(y_out.data(), y_out.size(), y_dev, y_out.size(), ACL_MEMCPY_DEVICE_TO_HOST));
 
     LOG_PRINT("NPU 输出 y = [");
     for (size_t i = 0; i < y_out.size(); ++i) {
-        LOG_PRINT("  [%zu] x1=%.5f x2=%.5f => %s", i,
-                  x1_host[i], x2_host[i],
-                  (y_out[i] != 0) ? "true" : "false");
+        LOG_PRINT("  [%zu] x1=%.5f x2=%.5f => %s", i, x1_host[i], x2_host[i], (y_out[i] != 0) ? "true" : "false");
     }
     LOG_PRINT("]");
 
@@ -162,8 +151,7 @@ int main()
     for (size_t i = 0; i < expected.size(); ++i) {
         uint8_t a = (y_out[i] != 0) ? 1 : 0;
         if (a != expected[i]) {
-            LOG_PRINT("不匹配 [%zu] expected=%u got=%u",
-                      i, (unsigned)expected[i], (unsigned)a);
+            LOG_PRINT("不匹配 [%zu] expected=%u got=%u", i, (unsigned)expected[i], (unsigned)a);
             ok = false;
         }
     }
@@ -171,7 +159,8 @@ int main()
     // ------------------------------------------------------------------------
     // 清理
     // ------------------------------------------------------------------------
-    if (workspace) aclrtFree(workspace);
+    if (workspace)
+        aclrtFree(workspace);
     aclDestroyTensor(x1_t);
     aclDestroyTensor(x2_t);
     aclDestroyTensor(y_t);

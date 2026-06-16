@@ -25,8 +25,10 @@ constexpr int32_t kMaxTensorDims = 8;
 //---------------------------------------
 // 计算 strides
 //---------------------------------------
-__aicore__ inline void ComputeStrides(const uint32_t shape[], uint32_t dim, uint32_t strides[]) {
-    if (dim == 0) return;
+__aicore__ inline void ComputeStrides(const uint32_t shape[], uint32_t dim, uint32_t strides[])
+{
+    if (dim == 0)
+        return;
     strides[dim - 1] = 1;
     for (int32_t i = static_cast<int32_t>(dim) - 2; i >= 0; --i) {
         strides[i] = strides[i + 1] * shape[i + 1];
@@ -43,31 +45,41 @@ __aicore__ inline void ComputeStrides(const uint32_t shape[], uint32_t dim, uint
 // localIndex: slice 内局部索引
 // sliceIdx: 当前 slice 序号
 // unit: axis 外元素乘积
-__aicore__ inline bool NormalizeAxis(const uint32_t srcdim, const int64_t &axis_in, uint32_t &axis_out) {
-    if (srcdim == 0) return false;
+__aicore__ inline bool NormalizeAxis(const uint32_t srcdim, const int64_t& axis_in, uint32_t& axis_out)
+{
+    if (srcdim == 0)
+        return false;
     axis_out = static_cast<uint32_t>(axis_in);
     return axis_out < srcdim;
 }
 
-__aicore__ inline uint32_t CalIndexEven(const uint32_t srcShape[], uint32_t srcdim,
-                                        int64_t axis_in, uint32_t sections,
-                                        uint32_t localIndex, uint32_t sliceIdx,
-                                        uint32_t unit) {
-    if (srcdim == 0 || sections == 0) return 0;
-    if (unit == 0) return 0;
-    if (axis_in < 0) return localIndex;
+__aicore__ inline uint32_t CalIndexEven(
+    const uint32_t srcShape[], uint32_t srcdim, int64_t axis_in, uint32_t sections, uint32_t localIndex,
+    uint32_t sliceIdx, uint32_t unit)
+{
+    if (srcdim == 0 || sections == 0)
+        return 0;
+    if (unit == 0)
+        return 0;
+    if (axis_in < 0)
+        return localIndex;
 
     uint32_t axis = 0;
-    if (!NormalizeAxis(srcdim, axis_in, axis)) return 0;
+    if (!NormalizeAxis(srcdim, axis_in, axis))
+        return 0;
 
     uint32_t axisLen = srcShape[axis];
-    if (axisLen == 0) return 0;
+    if (axisLen == 0)
+        return 0;
 
-    if (axisLen % sections != 0) return 0;
+    if (axisLen % sections != 0)
+        return 0;
     uint32_t sliceLen = axisLen / sections;
 
-    if (sliceIdx >= sections) return 0;
-    if (localIndex >= sliceLen * unit) return 0;
+    if (sliceIdx >= sections)
+        return 0;
+    if (localIndex >= sliceLen * unit)
+        return 0;
 
     const uint32_t sliceStart = sliceIdx * sliceLen;
 
@@ -110,27 +122,33 @@ __aicore__ inline uint32_t CalIndexEven(const uint32_t srcShape[], uint32_t srcd
 // localIndex: 当前 slice 内局部索引
 // sliceIdx: slice 序号（0~indices_len）
 // unit: axis 外元素乘积
-__aicore__ inline uint32_t CalIndexByIndices(const uint32_t srcShape[], uint32_t srcdim,
-                                             int64_t axis_in, const uint32_t indices[],
-                                             uint32_t indices_len,
-                                             uint32_t localIndex, uint32_t sliceIdx,
-                                             uint32_t unit) {
-    if (srcdim == 0) return 0;
-    if (sliceIdx > indices_len) return 0;
-    if (unit == 0) return 0;
-    if (axis_in < 0) return localIndex;
+__aicore__ inline uint32_t CalIndexByIndices(
+    const uint32_t srcShape[], uint32_t srcdim, int64_t axis_in, const uint32_t indices[], uint32_t indices_len,
+    uint32_t localIndex, uint32_t sliceIdx, uint32_t unit)
+{
+    if (srcdim == 0)
+        return 0;
+    if (sliceIdx > indices_len)
+        return 0;
+    if (unit == 0)
+        return 0;
+    if (axis_in < 0)
+        return localIndex;
 
     uint32_t axis = 0;
-    if (!NormalizeAxis(srcdim, axis_in, axis)) return 0;
+    if (!NormalizeAxis(srcdim, axis_in, axis))
+        return 0;
 
     uint32_t axisLen = srcShape[axis];
-    if (axisLen == 0) return 0;
+    if (axisLen == 0)
+        return 0;
 
     // 计算 slice 长度
     uint32_t start = (sliceIdx == 0) ? 0 : indices[sliceIdx - 1];
     uint32_t end = (sliceIdx == indices_len) ? axisLen : indices[sliceIdx];
     uint32_t sliceLen = end - start;
-    if (localIndex >= sliceLen * unit) return 0;
+    if (localIndex >= sliceLen * unit)
+        return 0;
 
     // 构造 slice shape
     uint32_t outShape[kMaxTensorDims];
@@ -165,7 +183,8 @@ __aicore__ inline uint32_t CalIndexByIndices(const uint32_t srcShape[], uint32_t
 // - index：要获取的tensor在tensorlist中的索引
 // - tensorPtr：tensorlist本身的地址
 template <typename T>
-__aicore__ inline __gm__ T* GetTensorAddr(uint16_t index, GM_ADDR tensorPtr) {
+__aicore__ inline __gm__ T* GetTensorAddr(uint16_t index, GM_ADDR tensorPtr)
+{
     __gm__ uint64_t* dataAddr = reinterpret_cast<__gm__ uint64_t*>(tensorPtr);
     uint64_t tensorPtrOffset = *dataAddr;
     __gm__ uint64_t* retPtr = dataAddr + (tensorPtrOffset >> 3);
@@ -173,11 +192,12 @@ __aicore__ inline __gm__ T* GetTensorAddr(uint16_t index, GM_ADDR tensorPtr) {
 }
 
 template <typename T>
-__aicore__ inline void CopyOutRange(AscendC::LocalTensor<T> src, uint32_t srcOffset,
-                                    AscendC::GlobalTensor<T> dst, uint32_t dstOffset, 
-                                    uint32_t count, const uint32_t blockSize)
+__aicore__ inline void CopyOutRange(
+    AscendC::LocalTensor<T> src, uint32_t srcOffset, AscendC::GlobalTensor<T> dst, uint32_t dstOffset, uint32_t count,
+    const uint32_t blockSize)
 {
-    if (count == 0) return;
+    if (count == 0)
+        return;
     const uint64_t totalByte = static_cast<uint64_t>(count) * sizeof(T);
     uint64_t st = reinterpret_cast<uint64_t>(src[srcOffset].GetPhyAddr());
     uint64_t en = st + totalByte;

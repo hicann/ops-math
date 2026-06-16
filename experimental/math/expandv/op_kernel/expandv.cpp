@@ -25,8 +25,7 @@
 
 #include "expandv.h"
 
-enum class ExpandvTilingKey : uint32_t
-{
+enum class ExpandvTilingKey : uint32_t {
     TILING_KEY_EXAMPLE_FLOAT = 0,
     TILING_KEY_EXAMPLE_INT32 = 1,
     TILING_KEY_EXAMPLE_FLOAT16 = 2,
@@ -46,52 +45,52 @@ __global__ __aicore__ void expandv(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_A
     GET_TILING_DATA_WITH_STRUCT(ExpandvTilingData, tilingData, tiling);
     if constexpr (schMode == static_cast<uint32_t>(ExpandvTilingKey::TILING_KEY_EXAMPLE_FLOAT)) {
         NsExpandv::Expandv<float> op; // 算子kernel实例获取
-        op.Init(x, y, &tilingData);      // 算子kernel实例初始化
-        op.Process();                       // 算子kernel实例执行
+        op.Init(x, y, &tilingData);   // 算子kernel实例初始化
+        op.Process();                 // 算子kernel实例执行
     }
     if constexpr (schMode == static_cast<uint32_t>(ExpandvTilingKey::TILING_KEY_EXAMPLE_INT32)) {
-        NsExpandv::Expandv<int32_t> op; 
-        op.Init(x, y, &tilingData);      
-        op.Process();                     
+        NsExpandv::Expandv<int32_t> op;
+        op.Init(x, y, &tilingData);
+        op.Process();
     }
     if constexpr (schMode == static_cast<uint32_t>(ExpandvTilingKey::TILING_KEY_EXAMPLE_FLOAT16)) {
-        NsExpandv::Expandv<half> op; 
-        op.Init(x, y, &tilingData);      
-        op.Process();                     
+        NsExpandv::Expandv<half> op;
+        op.Init(x, y, &tilingData);
+        op.Process();
     }
     if constexpr (schMode == static_cast<uint32_t>(ExpandvTilingKey::TILING_KEY_EXAMPLE_BF16)) {
-        NsExpandv::Expandv<bfloat16_t> op; 
-        op.Init(x, y, &tilingData);      
+        NsExpandv::Expandv<bfloat16_t> op;
+        op.Init(x, y, &tilingData);
         op.Process();
     }
     if constexpr (schMode == static_cast<uint32_t>(ExpandvTilingKey::TILING_KEY_EXAMPLE_INT8)) {
-        NsExpandv::Expandv<int8_t> op; 
-        op.Init(x, y, &tilingData);      
-        op.Process();                     
+        NsExpandv::Expandv<int8_t> op;
+        op.Init(x, y, &tilingData);
+        op.Process();
     }
     if constexpr (schMode == static_cast<uint32_t>(ExpandvTilingKey::TILING_KEY_EXAMPLE_UINT8)) {
-        NsExpandv::Expandv<uint8_t> op; 
-        op.Init(x, y, &tilingData);      
+        NsExpandv::Expandv<uint8_t> op;
+        op.Init(x, y, &tilingData);
         op.Process();
     }
     if constexpr (schMode == static_cast<uint32_t>(ExpandvTilingKey::TILING_KEY_EXAMPLE_BOOL)) {
-        NsExpandv::Expandv<bool> op; 
-        op.Init(x, y, &tilingData);      
-        op.Process();                     
+        NsExpandv::Expandv<bool> op;
+        op.Init(x, y, &tilingData);
+        op.Process();
     }
     if constexpr (schMode == static_cast<uint32_t>(ExpandvTilingKey::TILING_KEY_EXAMPLE_INT16)) {
-        NsExpandv::Expandv<int16_t> op; 
-        op.Init(x, y, &tilingData);      
-        op.Process();                     
+        NsExpandv::Expandv<int16_t> op;
+        op.Init(x, y, &tilingData);
+        op.Process();
     }
     if constexpr (schMode == static_cast<uint32_t>(ExpandvTilingKey::TILING_KEY_EXAMPLE_UINT16)) {
-        NsExpandv::Expandv<uint16_t> op; 
-        op.Init(x, y, &tilingData);      
+        NsExpandv::Expandv<uint16_t> op;
+        op.Init(x, y, &tilingData);
         op.Process();
     }
     if constexpr (schMode == static_cast<uint32_t>(ExpandvTilingKey::TILING_KEY_EXAMPLE_UINT32)) {
-        NsExpandv::Expandv<uint32_t> op; 
-        op.Init(x, y, &tilingData);      
-        op.Process();                     
+        NsExpandv::Expandv<uint32_t> op;
+        op.Init(x, y, &tilingData);
+        op.Process();
     }
 }

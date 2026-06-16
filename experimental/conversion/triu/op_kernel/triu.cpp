@@ -24,8 +24,7 @@
  */
 
 #include "triu.h"
-enum class AddExampleTilingKey : uint32_t
-{
+enum class AddExampleTilingKey : uint32_t {
     TILING_KEY_NaivePath = 1,
     TILING_KEY_SheerDup = 2,
     TILING_KEY_SheerZero = 3,
@@ -37,23 +36,23 @@ __global__ __aicore__ void triu(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR
     REGISTER_TILING_DEFAULT(TriuTilingData);
     GET_TILING_DATA_WITH_STRUCT(TriuTilingData, tilingData, tiling);
     if constexpr (schMode == static_cast<uint32_t>(AddExampleTilingKey::TILING_KEY_NaivePath)) {
-        NsTriu::Triu<DTYPE_X> op; // 算子kernel实例获取
-        op.Init(x, y, &tilingData,1);      // 算子kernel实例初始化
-        op.Process();                       // 算子kernel实例执行
+        NsTriu::Triu<DTYPE_X> op;      // 算子kernel实例获取
+        op.Init(x, y, &tilingData, 1); // 算子kernel实例初始化
+        op.Process();                  // 算子kernel实例执行
     }
     if constexpr (schMode == static_cast<uint32_t>(AddExampleTilingKey::TILING_KEY_SheerDup)) {
-        NsTriu::Triu<DTYPE_X> op; // 算子kernel实例获取
-        op.Init(x, y, &tilingData,2);        // 算子kernel实例初始化
-        op.Process();                         // 算子kernel实例执行
+        NsTriu::Triu<DTYPE_X> op;      // 算子kernel实例获取
+        op.Init(x, y, &tilingData, 2); // 算子kernel实例初始化
+        op.Process();                  // 算子kernel实例执行
     }
     if constexpr (schMode == static_cast<uint32_t>(AddExampleTilingKey::TILING_KEY_SheerZero)) {
-        NsTriu::Triu<DTYPE_X> op; // 算子kernel实例获取
-        op.Init(x, y, &tilingData,3);        // 算子kernel实例初始化
-        op.Process();                         // 算子kernel实例执行
+        NsTriu::Triu<DTYPE_X> op;      // 算子kernel实例获取
+        op.Init(x, y, &tilingData, 3); // 算子kernel实例初始化
+        op.Process();                  // 算子kernel实例执行
     }
     if constexpr (schMode == static_cast<uint32_t>(AddExampleTilingKey::TILING_KEY_FastPath)) {
-        NsTriu::Triu<DTYPE_X> op; // 算子kernel实例获取
-        op.Init(x, y, &tilingData,4);        // 算子kernel实例初始化
-        op.Process();                         // 算子kernel实例执行
+        NsTriu::Triu<DTYPE_X> op;      // 算子kernel实例获取
+        op.Init(x, y, &tilingData, 4); // 算子kernel实例初始化
+        op.Process();                  // 算子kernel实例执行
     }
 }

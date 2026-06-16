@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
- /**
+/**
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
  */
@@ -20,11 +20,8 @@
 
 #define ERF_INV_SCH_MODE_DEFAULT 0
 
-ASCENDC_TPL_ARGS_DECL(
-    ErfInv,
-    ASCENDC_TPL_UINT_DECL(schMode, 1, ASCENDC_TPL_UI_LIST, ERF_INV_SCH_MODE_DEFAULT));
+ASCENDC_TPL_ARGS_DECL(ErfInv, ASCENDC_TPL_UINT_DECL(schMode, 1, ASCENDC_TPL_UI_LIST, ERF_INV_SCH_MODE_DEFAULT));
 
-ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(
-    ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST, ERF_INV_SCH_MODE_DEFAULT)));
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST, ERF_INV_SCH_MODE_DEFAULT)));
 
 #endif

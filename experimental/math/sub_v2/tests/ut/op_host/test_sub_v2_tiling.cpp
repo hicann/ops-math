@@ -31,15 +31,9 @@ using namespace optiling;
 
 class SubV2Tiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "SubV2Tiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "SubV2Tiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "SubV2Tiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "SubV2Tiling TearDown " << endl; }
 };
 
 TEST_F(SubV2Tiling, ascend9101_test_tiling_fp32_003)
@@ -47,10 +41,8 @@ TEST_F(SubV2Tiling, ascend9101_test_tiling_fp32_003)
     optiling::SubV2CompileInfo compileInfo = {64, 262144, true};
     gert::TilingContextPara tilingContextPara(
         "SubV2",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND}
-        },
+        {{{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+         {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND}},
         {
             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
@@ -66,10 +58,8 @@ TEST_F(SubV2Tiling, ascend9101_test_tiling_int32_004)
     optiling::SubV2CompileInfo compileInfo = {64, 262144, true};
     gert::TilingContextPara tilingContextPara(
         "SubV2",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND}
-        },
+        {{{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
+         {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND}},
         {
             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
         },
@@ -85,10 +75,8 @@ TEST_F(SubV2Tiling, ascend9101_test_tiling_int16_002)
     optiling::SubV2CompileInfo compileInfo = {64, 262144, true};
     gert::TilingContextPara tilingContextPara(
         "SubV2",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT16, ge::FORMAT_ND},
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT16, ge::FORMAT_ND}
-        },
+        {{{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT16, ge::FORMAT_ND},
+         {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT16, ge::FORMAT_ND}},
         {
             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT16, ge::FORMAT_ND},
         },
@@ -104,10 +92,8 @@ TEST_F(SubV2Tiling, ascend9101_test_tiling_fp16_001)
     optiling::SubV2CompileInfo compileInfo = {64, 262144, true};
     gert::TilingContextPara tilingContextPara(
         "SubV2",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND}
-        },
+        {{{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+         {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
         {
             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
         },

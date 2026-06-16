@@ -49,9 +49,9 @@ static ge::graphStatus FillTilingFunc(gert::TilingContext* context)
     // Based on the input length and the number of inputs, the number of bytes of
     // the input data type is obtained
     uint32_t inputDataNum = 1;
-    const gert::StorageShape *x1_shape = context->GetInputShape(0);
-    const gert::Tensor *dimsTensor = context->GetInputTensor(0);
-    const int64_t *dimsData = dimsTensor->GetData<int64_t>();
+    const gert::StorageShape* x1_shape = context->GetInputShape(0);
+    const gert::Tensor* dimsTensor = context->GetInputTensor(0);
+    const int64_t* dimsData = dimsTensor->GetData<int64_t>();
     auto x1_dim = x1_shape->GetStorageShape().GetDim(0);
     for (int i = 0; i < x1_dim; i++) {
         inputDataNum *= dimsData[i];
@@ -123,7 +123,7 @@ static ge::graphStatus FillTilingFunc(gert::TilingContext* context)
     tiling->tailBlockNum = tailBlockNum;
 
     context->SetBlockDim(coreNum);
-    size_t *currentWorkspace = context->GetWorkspaceSizes(1);
+    size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     currentWorkspace[0] = 0;
     return ge::GRAPH_SUCCESS;
 }

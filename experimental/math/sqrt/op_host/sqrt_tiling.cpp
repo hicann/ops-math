@@ -22,7 +22,6 @@
 
 namespace optiling {
 
-
 #define BLOCK_SIZE 32U
 #define UB_DATA_NUM_FLOAT 4U // 对应DT_FLOAT类型的ub分块数量
 #define UB_DATA_NUM_OTHER 6U // 对应其他数据类型的ub分块数量

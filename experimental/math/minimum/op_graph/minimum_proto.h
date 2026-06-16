@@ -21,7 +21,7 @@
 /*!
  * \file minimum_proto.h
  * \brief
-*/
+ */
 #ifndef OPS_OP_PROTO_INC_MINIMUM_H_
 #define OPS_OP_PROTO_INC_MINIMUM_H_
 
@@ -44,9 +44,9 @@ namespace ge {
 */
 REG_OP(Minimum)
 
-    .INPUT(x1, TensorType({DT_FLOAT, DT_FLOAT16,DT_INT32,DT_INT16,DT_BF16,DT_INT8}))
-    .INPUT(x2, TensorType({DT_FLOAT, DT_FLOAT16,DT_INT32,DT_INT16,DT_BF16,DT_INT8}))
-    .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16,DT_INT32,DT_INT16,DT_BF16,DT_INT8}))
+    .INPUT(x1, TensorType({DT_FLOAT, DT_FLOAT16, DT_INT32, DT_INT16, DT_BF16, DT_INT8}))
+    .INPUT(x2, TensorType({DT_FLOAT, DT_FLOAT16, DT_INT32, DT_INT16, DT_BF16, DT_INT8}))
+    .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16, DT_INT32, DT_INT16, DT_BF16, DT_INT8}))
     .OP_END_FACTORY_REG(Minimum)
 
 } // namespace ge

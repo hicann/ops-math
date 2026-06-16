@@ -26,16 +26,15 @@ using namespace AscendC;
 
 constexpr int32_t BUFFER_NUM = 2;
 
-template <typename TYPE_X, typename TYPE_Y,bool IsExistBigCore>
+template <typename TYPE_X, typename TYPE_Y, bool IsExistBigCore>
 class LogKernel {
 public:
     __aicore__ inline LogKernel(){};
 
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, uint64_t smallCoreDataNum,
-                                uint64_t bigCoreDataNum, uint64_t bigCoreLoopNum, 
-                                uint64_t smallCoreLoopNum, uint64_t ubPartDataNum, 
-                                uint64_t smallCoreTailDataNum, uint64_t bigCoreTailDataNum, 
-                                uint64_t tailBlockNum, float base, float scale, float shift);
+    __aicore__ inline void Init(
+        GM_ADDR x, GM_ADDR y, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t bigCoreLoopNum,
+        uint64_t smallCoreLoopNum, uint64_t ubPartDataNum, uint64_t smallCoreTailDataNum, uint64_t bigCoreTailDataNum,
+        uint64_t tailBlockNum, float base, float scale, float shift);
     __aicore__ inline void Process();
 
 private:
@@ -60,62 +59,55 @@ private:
     float scale = 0.0;
 };
 
-template <typename TYPE_X, typename TYPE_Y,bool IsExistBigCore>
-__aicore__ inline void LogKernel<TYPE_X, TYPE_Y, IsExistBigCore>::Init(GM_ADDR x, GM_ADDR y, uint64_t smallCoreDataNum,
-                                uint64_t bigCoreDataNum, uint64_t bigCoreLoopNum, 
-                                uint64_t smallCoreLoopNum, uint64_t ubPartDataNum, 
-                                uint64_t smallCoreTailDataNum, uint64_t bigCoreTailDataNum, 
-                                uint64_t tailBlockNum, float base, float scale, float shift)
+template <typename TYPE_X, typename TYPE_Y, bool IsExistBigCore>
+__aicore__ inline void LogKernel<TYPE_X, TYPE_Y, IsExistBigCore>::Init(
+    GM_ADDR x, GM_ADDR y, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t bigCoreLoopNum,
+    uint64_t smallCoreLoopNum, uint64_t ubPartDataNum, uint64_t smallCoreTailDataNum, uint64_t bigCoreTailDataNum,
+    uint64_t tailBlockNum, float base, float scale, float shift)
 {
     ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
     uint64_t blockIdx = GetBlockIdx();
     uint64_t globalBufferIndex = bigCoreDataNum * GetBlockIdx();
     this->ubPartDataNum = ubPartDataNum;
-    
-    if constexpr (IsExistBigCore) 
-    {
-        if (blockIdx < tailBlockNum)
-        { 
+
+    if constexpr (IsExistBigCore) {
+        if (blockIdx < tailBlockNum) {
             this->coreDataNum = bigCoreDataNum;
             this->tileNum = bigCoreLoopNum;
             this->tailDataNum = bigCoreTailDataNum;
-        }
-        else 
-        { 
+        } else {
             this->coreDataNum = smallCoreDataNum;
             this->tileNum = smallCoreLoopNum;
             this->tailDataNum = smallCoreTailDataNum;
             globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (AscendC::GetBlockIdx() - tailBlockNum);
         }
-    }
-    else
-    {
+    } else {
         this->coreDataNum = smallCoreDataNum;
         this->tileNum = smallCoreLoopNum;
         this->tailDataNum = smallCoreTailDataNum;
         globalBufferIndex = smallCoreDataNum * AscendC::GetBlockIdx();
     }
-    
+
     // 设置log算子特有属性
     this->base = base;
     this->shift = shift;
     this->scale = scale;
-    
+
     // 初始化全局内存
-    xGm.SetGlobalBuffer((__gm__ DTYPE_X *)x + globalBufferIndex, this->coreDataNum);
-    yGm.SetGlobalBuffer((__gm__ DTYPE_Y *)y + globalBufferIndex, this->coreDataNum);
-    
+    xGm.SetGlobalBuffer((__gm__ DTYPE_X*)x + globalBufferIndex, this->coreDataNum);
+    yGm.SetGlobalBuffer((__gm__ DTYPE_Y*)y + globalBufferIndex, this->coreDataNum);
+
     // 初始化管道和缓冲区
     pipe.InitBuffer(inQueueX, BUFFER_NUM, this->ubPartDataNum * sizeof(DTYPE_X));
     pipe.InitBuffer(outQueueY, BUFFER_NUM, this->ubPartDataNum * sizeof(DTYPE_Y));
-    
+
     // 为浮点转换准备缓冲区
     if constexpr (std::is_same_v<DTYPE_X, bfloat16_t>) {
         pipe.InitBuffer(calcBuf1, this->ubPartDataNum * sizeof(float));
     }
 }
 
-template <typename TYPE_X, typename TYPE_Y,bool IsExistBigCore>
+template <typename TYPE_X, typename TYPE_Y, bool IsExistBigCore>
 __aicore__ inline void LogKernel<TYPE_X, TYPE_Y, IsExistBigCore>::CopyIn(int32_t progress)
 {
     LocalTensor<TYPE_X> xLocal = inQueueX.AllocTensor<TYPE_X>();
@@ -123,7 +115,7 @@ __aicore__ inline void LogKernel<TYPE_X, TYPE_Y, IsExistBigCore>::CopyIn(int32_t
     inQueueX.EnQue(xLocal);
 }
 
-template <typename TYPE_X, typename TYPE_Y,bool IsExistBigCore>
+template <typename TYPE_X, typename TYPE_Y, bool IsExistBigCore>
 __aicore__ inline void LogKernel<TYPE_X, TYPE_Y, IsExistBigCore>::CopyOut(int32_t progress)
 {
     LocalTensor<TYPE_Y> yLocal = outQueueY.DeQue<TYPE_Y>();
@@ -131,7 +123,7 @@ __aicore__ inline void LogKernel<TYPE_X, TYPE_Y, IsExistBigCore>::CopyOut(int32_
     outQueueY.FreeTensor(yLocal);
 }
 
-template <typename TYPE_X, typename TYPE_Y,bool IsExistBigCore>
+template <typename TYPE_X, typename TYPE_Y, bool IsExistBigCore>
 __aicore__ inline void LogKernel<TYPE_X, TYPE_Y, IsExistBigCore>::Compute(int32_t progress)
 {
     LocalTensor<TYPE_X> xLocal = inQueueX.DeQue<TYPE_X>();
@@ -154,27 +146,27 @@ __aicore__ inline void LogKernel<TYPE_X, TYPE_Y, IsExistBigCore>::Compute(int32_
         Muls(xLocalFp32, xLocalFp32, this->base, this->processDataNum);
         Cast(yLocal, xLocalFp32, RoundMode::CAST_RINT, this->processDataNum);
     }
-    
+
     outQueueY.EnQue<TYPE_Y>(yLocal);
     inQueueX.FreeTensor(xLocal);
 }
 
-template <typename TYPE_X, typename TYPE_Y,bool IsExistBigCore>
+template <typename TYPE_X, typename TYPE_Y, bool IsExistBigCore>
 __aicore__ inline void LogKernel<TYPE_X, TYPE_Y, IsExistBigCore>::Process()
 {
     int32_t loopCount = this->tileNum;
     this->processDataNum = this->ubPartDataNum;
     // 处理完整数据块
-    for (int32_t i = 0; i < loopCount-1; i++) {
+    for (int32_t i = 0; i < loopCount - 1; i++) {
         // 流水线处理
         CopyIn(i);
         Compute(i);
         CopyOut(i);
     }
     this->processDataNum = this->tailDataNum;
-    CopyIn(loopCount-1);
-    Compute(loopCount-1);
-    CopyOut(loopCount-1);
+    CopyIn(loopCount - 1);
+    Compute(loopCount - 1);
+    CopyOut(loopCount - 1);
 }
 
 } // namespace NsLog

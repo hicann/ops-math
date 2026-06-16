@@ -24,18 +24,20 @@ namespace l0op {
 OP_TYPE_REGISTER(LogicalNot);
 
 // AICORE算子kernel
-static const aclTensor *LogicalNotAiCore(const aclTensor *self, aclTensor *out, aclOpExecutor *executor) {
+static const aclTensor* LogicalNotAiCore(const aclTensor* self, aclTensor* out, aclOpExecutor* executor)
+{
     L0_DFX(LogicalNotAiCore, self, out);
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将Aicore LogicalNot算子加入任务队列
     // LogicalNot是算子的OpType，self是算子的输入，out是算子的输出
     auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(LogicalNot, OP_INPUT(self), OP_OUTPUT(out));
-    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
-                                         "LogicalNot ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
+        retAicore != ACLNN_SUCCESS, return nullptr, "LogicalNot ADD_TO_LAUNCHER_LIST_AICORE failed.");
     return out;
 }
 
-const aclTensor *LogicalNot(const aclTensor *self, aclOpExecutor *executor) {
+const aclTensor* LogicalNot(const aclTensor* self, aclOpExecutor* executor)
+{
     auto logicalNotOut = executor->AllocTensor(self->GetViewShape(), self->GetDataType());
     return LogicalNotAiCore(self, logicalNotOut, executor);
 }
-}  // namespace l0op
+} // namespace l0op

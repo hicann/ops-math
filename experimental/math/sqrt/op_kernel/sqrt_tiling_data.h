@@ -11,10 +11,10 @@
 /*!
  * \file sqrt_tiling_data.h
  * \brief tiling data struct
-*/
+ */
 #ifndef SQRT_TILING_DATA_H_
 #define SQRT_TILING_DATA_H_
-struct SqrtTilingData{
+struct SqrtTilingData {
     uint64_t smallCoreDataNum;
     uint64_t bigCoreDataNum;
     uint64_t finalBigTileNum;
@@ -23,5 +23,5 @@ struct SqrtTilingData{
     uint64_t smallTailDataNum;
     uint64_t bigTailDataNum;
     uint64_t tailBlockNum;
-} ;
+};
 #endif

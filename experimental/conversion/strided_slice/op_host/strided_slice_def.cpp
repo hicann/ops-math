@@ -28,66 +28,44 @@ public:
     explicit StridedSlice(const char* name) : OpDef(name)
     {
         // 输入参数说明
-        this->Input("x")                                       // 输入x1定义
-            .DataType({ ge::DT_FLOAT, ge::DT_INT32, ge::DT_UINT32, ge::DT_INT64,         
-                ge::DT_UINT64,ge::DT_FLOAT16, ge::DT_INT16, ge::DT_UINT16, 
-                ge::DT_BF16,ge::DT_INT8, ge::DT_UINT8, ge::DT_BOOL,
-                ge::DT_FLOAT, ge::DT_INT32, ge::DT_UINT32, ge::DT_INT64,         
-                ge::DT_UINT64,ge::DT_FLOAT16, ge::DT_INT16, ge::DT_UINT16, 
-                ge::DT_BF16,ge::DT_INT8, ge::DT_UINT8, ge::DT_BOOL})
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND})
-            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND})
-            .AutoContiguous();                                  // 内存自动连续化
+        this->Input("x") // 输入x1定义
+            .DataType({ge::DT_FLOAT, ge::DT_INT32,  ge::DT_UINT32, ge::DT_INT64, ge::DT_UINT64, ge::DT_FLOAT16,
+                       ge::DT_INT16, ge::DT_UINT16, ge::DT_BF16,   ge::DT_INT8,  ge::DT_UINT8,  ge::DT_BOOL,
+                       ge::DT_FLOAT, ge::DT_INT32,  ge::DT_UINT32, ge::DT_INT64, ge::DT_UINT64, ge::DT_FLOAT16,
+                       ge::DT_INT16, ge::DT_UINT16, ge::DT_BF16,   ge::DT_INT8,  ge::DT_UINT8,  ge::DT_BOOL})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .AutoContiguous(); // 内存自动连续化
         /* ...此处补充其他输入输出参数说明 */
-        this->Attr("start1")
-            .AttrType(OPTIONAL)
-            .Int();
-        this->Attr("start2")
-            .AttrType(OPTIONAL)
-            .Int();
-        this->Attr("end1")
-            .AttrType(OPTIONAL)
-            .Int();
-        this->Attr("end2")
-            .AttrType(OPTIONAL)
-            .Int();
-        this->Attr("stride1")
-            .AttrType(OPTIONAL)
-            .Int();
-        this->Attr("stride2")
-            .AttrType(OPTIONAL)
-            .Int();
+        this->Attr("start1").AttrType(OPTIONAL).Int();
+        this->Attr("start2").AttrType(OPTIONAL).Int();
+        this->Attr("end1").AttrType(OPTIONAL).Int();
+        this->Attr("end2").AttrType(OPTIONAL).Int();
+        this->Attr("stride1").AttrType(OPTIONAL).Int();
+        this->Attr("stride2").AttrType(OPTIONAL).Int();
         // 输出参数说明
         this->Output("z") // 输出y定义
             .ParamType(REQUIRED)
-            .DataType({ ge::DT_FLOAT, ge::DT_INT32, ge::DT_UINT32, ge::DT_INT64,         
-                ge::DT_UINT64,ge::DT_FLOAT16, ge::DT_INT16, ge::DT_UINT16, 
-                ge::DT_BF16,ge::DT_INT8, ge::DT_UINT8, ge::DT_BOOL,
-                ge::DT_FLOAT, ge::DT_INT32, ge::DT_UINT32, ge::DT_INT64,         
-                ge::DT_UINT64,ge::DT_FLOAT16, ge::DT_INT16, ge::DT_UINT16, 
-                ge::DT_BF16,ge::DT_INT8, ge::DT_UINT8, ge::DT_BOOL})
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND})
-            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND,
-                ge::FORMAT_ND, ge::FORMAT_ND,ge::FORMAT_ND, ge::FORMAT_ND})
+            .DataType({ge::DT_FLOAT, ge::DT_INT32,  ge::DT_UINT32, ge::DT_INT64, ge::DT_UINT64, ge::DT_FLOAT16,
+                       ge::DT_INT16, ge::DT_UINT16, ge::DT_BF16,   ge::DT_INT8,  ge::DT_UINT8,  ge::DT_BOOL,
+                       ge::DT_FLOAT, ge::DT_INT32,  ge::DT_UINT32, ge::DT_INT64, ge::DT_UINT64, ge::DT_FLOAT16,
+                       ge::DT_INT16, ge::DT_UINT16, ge::DT_BF16,   ge::DT_INT8,  ge::DT_UINT8,  ge::DT_BOOL})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
         OpAICoreConfig aicoreConfig;
         aicoreConfig.DynamicCompileStaticFlag(true)

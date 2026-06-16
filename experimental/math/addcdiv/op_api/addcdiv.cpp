@@ -33,8 +33,7 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_910B 
 static bool IsAiCoreSupport(const aclTensor* self)
 {
     auto socVersion = GetCurrentPlatformInfo().GetCurNpuArch();
-    bool is910BSocVersion =
-        (socVersion == NpuArch::DAV_2201 || socVersion == NpuArch::DAV_3510);
+    bool is910BSocVersion = (socVersion == NpuArch::DAV_2201 || socVersion == NpuArch::DAV_3510);
     const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST =
         is910BSocVersion ? AICORE_DTYPE_SUPPORT_LIST_910B : AICORE_DTYPE_SUPPORT_LIST_910;
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);

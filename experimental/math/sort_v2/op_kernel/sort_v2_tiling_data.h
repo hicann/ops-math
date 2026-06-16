@@ -37,8 +37,8 @@ struct SortV2TilingData {
     uint32_t sliceLen;
     uint32_t realSortLen;
     uint32_t align8;
-    uint32_t padLen; 
-    uint32_t dupCount; 
+    uint32_t padLen;
+    uint32_t dupCount;
     uint32_t startBlockIdx;
     bool descending;
 };

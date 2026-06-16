@@ -11,7 +11,7 @@
 /*!
  * \file cross_infershape.cpp
  * \brief
-*/
+ */
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 
@@ -39,4 +39,4 @@ static ge::graphStatus InferShapeCross(gert::InferShapeContext* context)
 }
 
 IMPL_OP_INFERSHAPE(Cross).InferShape(InferShapeCross);
-}
+} // namespace ops

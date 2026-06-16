@@ -20,10 +20,10 @@ public:
     explicit Log(const char* name) : OpDef(name)
     {
         // 输入参数说明
-        this->Input("x")                                       // 输入x1定义
-            .ParamType(REQUIRED)                                // 必选输入
-            .DataType({ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT})             // 支持数据类型
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})             // 支持format格式
+        this->Input("x")                                                        // 输入x1定义
+            .ParamType(REQUIRED)                                                // 必选输入
+            .DataType({ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT})              // 支持数据类型
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})              // 支持format格式
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND}); // 未确定大小shape对应format格式;
         // 输出参数说明
         this->Output("y") // 输出y定义

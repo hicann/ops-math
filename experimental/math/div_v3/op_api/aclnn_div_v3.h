@@ -49,14 +49,13 @@ extern "C" {
  * @return aclnnStatus: 返回状态码
  */
 ACLNN_API aclnnStatus aclnnDivV3GetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, int64_t mode,
-    aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor);
+    const aclTensor* self, const aclTensor* other, int64_t mode, aclTensor* out, uint64_t* workspaceSize,
+    aclOpExecutor** executor);
 
 /**
  * @brief aclnnDivV3 第二段接口，执行计算
  */
-ACLNN_API aclnnStatus aclnnDivV3(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnDivV3(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 #ifdef __cplusplus
 }

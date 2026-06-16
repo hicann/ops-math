@@ -35,10 +35,9 @@ constexpr int32_t MODE_FLOOR_DIV = 2;
 template <typename T>
 class DivV3 {
 public:
-    __aicore__ inline DivV3() {};
+    __aicore__ inline DivV3(){};
 
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR z,
-                                const DivV3TilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, const DivV3TilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -46,12 +45,8 @@ private:
     __aicore__ inline void CopyOut(int32_t progress);
     __aicore__ inline void Compute(int32_t progress);
 
-    __aicore__ inline void ComputeFloat(LocalTensor<T>& xLocal,
-                                        LocalTensor<T>& yLocal,
-                                        LocalTensor<T>& zLocal);
-    __aicore__ inline void ComputeNeedCast(LocalTensor<T>& xLocal,
-                                           LocalTensor<T>& yLocal,
-                                           LocalTensor<T>& zLocal);
+    __aicore__ inline void ComputeFloat(LocalTensor<T>& xLocal, LocalTensor<T>& yLocal, LocalTensor<T>& zLocal);
+    __aicore__ inline void ComputeNeedCast(LocalTensor<T>& xLocal, LocalTensor<T>& yLocal, LocalTensor<T>& zLocal);
 
 private:
     TPipe pipe;
@@ -75,8 +70,7 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void DivV3<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR z,
-                                      const DivV3TilingData* tilingData)
+__aicore__ inline void DivV3<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, const DivV3TilingData* tilingData)
 {
     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
     uint32_t blockIdx = AscendC::GetBlockIdx();
@@ -92,8 +86,8 @@ __aicore__ inline void DivV3<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR z,
         this->coreDataNum = tilingData->smallCoreDataNum;
         this->tileNum = tilingData->finalSmallTileNum;
         this->tailDataNum = tilingData->smallTailDataNum;
-        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) *
-                             (blockIdx - tilingData->tailBlockNum);
+        globalBufferIndex -=
+            (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (blockIdx - tilingData->tailBlockNum);
     }
 
     inputGMX.SetGlobalBuffer((__gm__ T*)x + globalBufferIndex, this->coreDataNum);
@@ -142,9 +136,7 @@ __aicore__ inline void DivV3<T>::CopyOut(int32_t progress)
 
 // float32 path: compute directly without type conversion
 template <typename T>
-__aicore__ inline void DivV3<T>::ComputeFloat(LocalTensor<T>& xLocal,
-                                              LocalTensor<T>& yLocal,
-                                              LocalTensor<T>& zLocal)
+__aicore__ inline void DivV3<T>::ComputeFloat(LocalTensor<T>& xLocal, LocalTensor<T>& yLocal, LocalTensor<T>& zLocal)
 {
     Div(zLocal, xLocal, yLocal, this->processDataNum);
 
@@ -160,9 +152,7 @@ __aicore__ inline void DivV3<T>::ComputeFloat(LocalTensor<T>& xLocal,
 
 // non-float path: cast to float32, compute, cast back
 template <typename T>
-__aicore__ inline void DivV3<T>::ComputeNeedCast(LocalTensor<T>& xLocal,
-                                                 LocalTensor<T>& yLocal,
-                                                 LocalTensor<T>& zLocal)
+__aicore__ inline void DivV3<T>::ComputeNeedCast(LocalTensor<T>& xLocal, LocalTensor<T>& yLocal, LocalTensor<T>& zLocal)
 {
     LocalTensor<float> tmp0 = tmpBuf0.Get<float>();
     LocalTensor<float> tmp1 = tmpBuf1.Get<float>();

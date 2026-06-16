@@ -62,8 +62,7 @@ uint32_t GetDataTypeSize(DataType dt)
     return 4;
 }
 
-int32_t GenOnesDataFloat32(vector<int64_t> shapes, Tensor& inputTensor,
-                           TensorDesc& inputTensorDesc, float value)
+int32_t GenOnesDataFloat32(vector<int64_t> shapes, Tensor& inputTensor, TensorDesc& inputTensorDesc, float value)
 {
     inputTensorDesc.SetRealDimCnt(shapes.size());
     size_t size = 1;
@@ -92,8 +91,8 @@ int32_t WriteDataToFile(string binFile, uint64_t dataSize, uint8_t* inputData)
 }
 
 int CreateOppInGraph(
-    DataType inDtype, std::vector<ge::Tensor>& input,
-    std::vector<Operator>& inputs, std::vector<Operator>& outputs, Graph& graph)
+    DataType inDtype, std::vector<ge::Tensor>& input, std::vector<Operator>& inputs, std::vector<Operator>& outputs,
+    Graph& graph)
 {
     Status ret = SUCCESS;
     std::vector<int64_t> xShape = {4, 256};
@@ -146,8 +145,7 @@ int main(int argc, char* argv[])
     std::vector<ge::Tensor> input;
 
     printf("%s - INFO - Start to initialize ge\n", GetTime().c_str());
-    std::map<AscendString, AscendString> globalOptions = {
-        {"ge.exec.deviceId", "0"}, {"ge.graphRunMode", "1"}};
+    std::map<AscendString, AscendString> globalOptions = {{"ge.exec.deviceId", "0"}, {"ge.graphRunMode", "1"}};
     Status ret = ge::GEInitialize(globalOptions);
     if (ret != SUCCESS) {
         printf("%s - INFO - Initialize ge failed\n", GetTime().c_str());

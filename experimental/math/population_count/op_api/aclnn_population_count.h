@@ -39,19 +39,13 @@ extern "C" {
  * @param executor [out]
  */
 ACLNN_API aclnnStatus aclnnPopulationCountGetWorkspaceSize(
-    const aclTensor* x,
-    const aclTensor* y,
-    uint64_t*        workspaceSize,
-    aclOpExecutor**  executor);
+    const aclTensor* x, const aclTensor* y, uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief Execute PopulationCount.
  */
-ACLNN_API aclnnStatus aclnnPopulationCount(
-    void*          workspace,
-    uint64_t       workspaceSize,
-    aclOpExecutor* executor,
-    aclrtStream    stream);
+ACLNN_API aclnnStatus
+aclnnPopulationCount(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 #ifdef __cplusplus
 }

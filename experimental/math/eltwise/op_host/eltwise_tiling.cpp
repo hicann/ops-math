@@ -40,8 +40,8 @@
 namespace optiling {
 
 using Ops::Base::CeilDiv;
-using Ops::Base::FloorDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
 constexpr uint32_t MAX_INPUT_NUM = 32;
@@ -69,7 +69,7 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
     }
     // Ascend950 fallback values
     constexpr int64_t FALLBACK_CORE_NUM = 40;
-    constexpr uint64_t FALLBACK_UB_SIZE = 253952;  // 248 KB
+    constexpr uint64_t FALLBACK_UB_SIZE = 253952; // 248 KB
     if (coreNum == 0) {
         OP_LOGW(context, "Eltwise: failed to get core num, using fallback %ld", FALLBACK_CORE_NUM);
         coreNum = FALLBACK_CORE_NUM;
@@ -95,15 +95,15 @@ static ge::graphStatus EltwiseTilingFunc(gert::TilingContext* context)
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
     OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+        return ge::GRAPH_FAILED);
 
     // 2. Get input info (DYNAMIC_INPUT: actual count via compute node info)
     auto computeNodeInfo = context->GetComputeNodeInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, computeNodeInfo);
     uint32_t inputNum = static_cast<uint32_t>(computeNodeInfo->GetInputsNum());
-    OP_CHECK_IF(inputNum == 0 || inputNum > 32,
-        OP_LOGE(context, "Eltwise: invalid inputNum %u", inputNum),
+    OP_CHECK_IF(
+        inputNum == 0 || inputNum > 32, OP_LOGE(context, "Eltwise: invalid inputNum %u", inputNum),
         return ge::GRAPH_FAILED);
 
     auto inputDesc = context->GetInputDesc(0);
@@ -114,26 +114,24 @@ static ge::graphStatus EltwiseTilingFunc(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, inputShape0);
     auto shape = EnsureNotScalar(inputShape0->GetStorageShape());
     int64_t totalNum = shape.GetShapeSize();
-    OP_CHECK_IF(totalNum < 0,
-        OP_LOGE(context, "Eltwise: invalid totalNum %ld (negative shape)", totalNum),
+    OP_CHECK_IF(
+        totalNum < 0, OP_LOGE(context, "Eltwise: invalid totalNum %ld (negative shape)", totalNum),
         return ge::GRAPH_FAILED);
 
     // 3. Get mode attribute
     const auto* attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
-    int64_t mode = 1;  // default SUM
-    const int64_t* modePtr = attrs->GetAttrPointer<int64_t>(0);  // "mode" is first attr
+    int64_t mode = 1;                                           // default SUM
+    const int64_t* modePtr = attrs->GetAttrPointer<int64_t>(0); // "mode" is first attr
     if (modePtr != nullptr) {
         mode = *modePtr;
     }
-    OP_CHECK_IF(mode < 0 || mode > 2,
-        OP_LOGE(context, "Eltwise: invalid mode %ld", mode),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(mode < 0 || mode > 2, OP_LOGE(context, "Eltwise: invalid mode %ld", mode), return ge::GRAPH_FAILED);
 
     // 4. Get workspace
     OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+        return ge::GRAPH_FAILED);
 
     // 5. Compute tiling parameters
     EltwiseTilingData* tiling = context->GetTilingData<EltwiseTilingData>();
@@ -159,7 +157,7 @@ static ge::graphStatus EltwiseTilingFunc(gert::TilingContext* context)
             return ge::GRAPH_FAILED;
     }
 
-    int64_t ubBlockSize = 32 / typeSize;  // 32-byte alignment in elements
+    int64_t ubBlockSize = 32 / typeSize; // 32-byte alignment in elements
 
     // Handle empty tensor
     if (totalNum == 0) {
@@ -181,7 +179,7 @@ static ge::graphStatus EltwiseTilingFunc(gert::TilingContext* context)
 
     // UB split
     // Reserve system overhead for TPipe internal management (queues, barriers, etc.)
-    constexpr int64_t UB_SYS_OVERHEAD = 2048;  // 2 KB
+    constexpr int64_t UB_SYS_OVERHEAD = 2048; // 2 KB
     int64_t availUbSize = static_cast<int64_t>(ubSize) - UB_SYS_OVERHEAD;
     if (availUbSize < 0) {
         availUbSize = static_cast<int64_t>(ubSize);
@@ -190,15 +188,13 @@ static ge::graphStatus EltwiseTilingFunc(gert::TilingContext* context)
     int64_t bytesPerElem;
     if (dtype == ge::DT_FLOAT) {
         // FP32: inputBuf + accBuf + outputBuf = 3 * sizeof(float)
-        bytesPerElem = 3 * static_cast<int64_t>(sizeof(float));  // 12
+        bytesPerElem = 3 * static_cast<int64_t>(sizeof(float)); // 12
     } else {
         // FP16/BF16: inputBuf(T) + castBuf(fp32) + accBuf(fp32) + outputBuf(T)
-        bytesPerElem = 2 * typeSize + 2 * static_cast<int64_t>(sizeof(float));  // 12
+        bytesPerElem = 2 * typeSize + 2 * static_cast<int64_t>(sizeof(float)); // 12
     }
 
-    int64_t ubFactor = FloorAlign(
-        availUbSize / bytesPerElem,
-        ubBlockSize);
+    int64_t ubFactor = FloorAlign(availUbSize / bytesPerElem, ubBlockSize);
 
     // Cap ubFactor so that (ubFactor * typeSize) fits in uint16_t.
     // DataCopyParams.blockLen is uint16_t (max 65535).  The kernel uses
@@ -211,9 +207,8 @@ static ge::graphStatus EltwiseTilingFunc(gert::TilingContext* context)
         ubFactor = maxUbFactor;
     }
 
-    OP_CHECK_IF(ubFactor <= 0,
-        OP_LOGE(context, "Eltwise: ubFactor=%ld, UB too small", ubFactor),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        ubFactor <= 0, OP_LOGE(context, "Eltwise: ubFactor=%ld, UB too small", ubFactor), return ge::GRAPH_FAILED);
 
     tiling->totalNum = totalNum;
     tiling->blockFactor = blockFactor;

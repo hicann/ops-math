@@ -21,51 +21,32 @@
 /*!
  * \file range.cpp
  * \brief
-*/
+ */
 #ifndef __RANGE_TILING_KEY_H__
 #define __RANGE_TILING_KEY_H__
 
 #include "ascendc/host_api/tiling/template_argument.h"
 
-
-#define RANGE_TPL_FP32    0      // float32
-
+#define RANGE_TPL_FP32 0 // float32
 
 ASCENDC_TPL_ARGS_DECL(
-    Range, 
+    Range, ASCENDC_TPL_DTYPE_DECL(TYPE_START, RANGE_TPL_FP32),
     ASCENDC_TPL_DTYPE_DECL(
-        TYPE_START,  
-        RANGE_TPL_FP32
-    ),
-    ASCENDC_TPL_DTYPE_DECL(
-        TYPE_END,
-        RANGE_TPL_FP32
+        TYPE_END, RANGE_TPL_FP32
 
-    ),
-    ASCENDC_TPL_DTYPE_DECL(
-        TYPE_STEP,
-        RANGE_TPL_FP32
-
-    )
-
-);
-
-ASCENDC_TPL_SEL(
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DTYPE_SEL(
-            TYPE_START,
-            RANGE_TPL_FP32
         ),
-        ASCENDC_TPL_DTYPE_SEL(
-            TYPE_END,
-            RANGE_TPL_FP32
-        ),
-        ASCENDC_TPL_DTYPE_SEL(
-            TYPE_STEP,
-            RANGE_TPL_FP32
-    
+    ASCENDC_TPL_DTYPE_DECL(
+        TYPE_STEP, RANGE_TPL_FP32
+
         )
-    )
+
 );
+
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(
+    ASCENDC_TPL_DTYPE_SEL(TYPE_START, RANGE_TPL_FP32), ASCENDC_TPL_DTYPE_SEL(TYPE_END, RANGE_TPL_FP32),
+    ASCENDC_TPL_DTYPE_SEL(
+        TYPE_STEP, RANGE_TPL_FP32
+
+        )));
 
 #endif // __RANGE_TILING_KEY_H__

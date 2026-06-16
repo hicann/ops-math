@@ -11,7 +11,7 @@
 /*!
  * \file sqrt.cpp
  * \brief
-*/
+ */
 #include "register/op_def_registry.h"
 
 namespace ops {
@@ -37,9 +37,8 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
-            .ExtendCfgInfo("opFile.value", "sqrt_apt");    
-        this->AICore().AddConfig("ascend910b")
-                    .AddConfig("ascend310b");
+            .ExtendCfgInfo("opFile.value", "sqrt_apt");
+        this->AICore().AddConfig("ascend910b").AddConfig("ascend310b");
     }
 };
 OP_ADD(Sqrt); // 添加算子信息库

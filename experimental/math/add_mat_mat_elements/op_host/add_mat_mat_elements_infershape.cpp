@@ -41,4 +41,4 @@ static ge::graphStatus InferShape4AddMatMatElements(gert::InferShapeContext* con
 
 IMPL_OP_INFERSHAPE(AddMatMatElements).InferShape(InferShape4AddMatMatElements);
 
-}  // namespace ops
+} // namespace ops

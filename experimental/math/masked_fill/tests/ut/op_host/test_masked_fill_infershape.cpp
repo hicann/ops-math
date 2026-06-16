@@ -31,65 +31,70 @@ protected:
 };
 
 // 测试1：输入x为标量（形状{}），输出形状与x一致
-TEST_F(MaskedFillInfershapeTest, scalar_input) {
+TEST_F(MaskedFillInfershapeTest, scalar_input)
+{
     gert::InfershapeContextPara para(
         "MaskedFill",
         {
-            {{{}, {}}, DT_FLOAT, FORMAT_ND},  // x: 标量
-            {{{}, {}}, DT_BOOL, FORMAT_ND},   // mask: 标量（与x同形）
-            {{{}, {}}, DT_FLOAT, FORMAT_ND}   // value: 标量
+            {{{}, {}}, DT_FLOAT, FORMAT_ND}, // x: 标量
+            {{{}, {}}, DT_BOOL, FORMAT_ND},  // mask: 标量（与x同形）
+            {{{}, {}}, DT_FLOAT, FORMAT_ND}  // value: 标量
         },
         {
-            {{{}, {}}, DT_FLOAT, FORMAT_ND}   // 输出：预期标量
+            {{{}, {}}, DT_FLOAT, FORMAT_ND} // 输出：预期标量
         });
     std::vector<std::vector<int64_t>> expect_shape = {{}};
     ExecuteTestCase(para, GRAPH_SUCCESS, expect_shape);
 }
 
 // 测试2：输入x为1D张量（形状(5)），输出形状与x一致
-TEST_F(MaskedFillInfershapeTest, 1d_input) {
+TEST_F(MaskedFillInfershapeTest, 1d_input)
+{
     gert::InfershapeContextPara para(
         "MaskedFill",
         {
-            {{{5}, {5}}, DT_INT32, FORMAT_ND},  // x: (5)
-            {{{5}, {5}}, DT_BOOL, FORMAT_ND},   // mask: (5)（与x同形）
-            {{{}, {}}, DT_INT32, FORMAT_ND}     // value: 标量
+            {{{5}, {5}}, DT_INT32, FORMAT_ND}, // x: (5)
+            {{{5}, {5}}, DT_BOOL, FORMAT_ND},  // mask: (5)（与x同形）
+            {{{}, {}}, DT_INT32, FORMAT_ND}    // value: 标量
         },
         {
-            {{{5}, {5}}, DT_INT32, FORMAT_ND}   // 输出：预期(5)
+            {{{5}, {5}}, DT_INT32, FORMAT_ND} // 输出：预期(5)
         });
     std::vector<std::vector<int64_t>> expect_shape = {{5}};
     ExecuteTestCase(para, GRAPH_SUCCESS, expect_shape);
 }
 
 // 测试3：输入x为2D张量（形状(2,3)），输出形状与x一致
-TEST_F(MaskedFillInfershapeTest, 2d_input) {
+TEST_F(MaskedFillInfershapeTest, 2d_input)
+{
     gert::InfershapeContextPara para(
         "MaskedFill",
         {
-            {{{2, 3}, {2, 3}}, DT_BF16, FORMAT_ND},  // x: (2,3)
-            {{{2, 3}, {2, 3}}, DT_BOOL, FORMAT_ND},   // mask: (2,3)（与x同形）
-            {{{}, {}}, DT_BF16, FORMAT_ND}            // value: 标量
+            {{{2, 3}, {2, 3}}, DT_BF16, FORMAT_ND}, // x: (2,3)
+            {{{2, 3}, {2, 3}}, DT_BOOL, FORMAT_ND}, // mask: (2,3)（与x同形）
+            {{{}, {}}, DT_BF16, FORMAT_ND}          // value: 标量
         },
         {
-            {{{2, 3}, {2, 3}}, DT_BF16, FORMAT_ND}    // 输出：预期(2,3)
+            {{{2, 3}, {2, 3}}, DT_BF16, FORMAT_ND} // 输出：预期(2,3)
         });
     std::vector<std::vector<int64_t>> expect_shape = {{2, 3}};
     ExecuteTestCase(para, GRAPH_SUCCESS, expect_shape);
 }
 
 // 测试4：输入x为3D张量（形状(4,2,3)），输出形状与x一致
-TEST_F(MaskedFillInfershapeTest, 3d_input) {
+TEST_F(MaskedFillInfershapeTest, 3d_input)
+{
     gert::InfershapeContextPara para(
         "MaskedFill",
         {
-            {{{4, 2, 3}, {4, 2, 3}}, DT_UINT8, FORMAT_ND},  // x: (4,2,3)
-            {{{4, 2, 3}}, DT_BOOL, FORMAT_ND},              // mask: (4,2,3)（与x同形）
-            {{{}, {}}, DT_UINT8, FORMAT_ND}                 // value: 标量
+            {{{4, 2, 3}, {4, 2, 3}}, DT_UINT8, FORMAT_ND}, // x: (4,2,3)
+            {{{4, 2, 3}}, DT_BOOL, FORMAT_ND},             // mask: (4,2,3)（与x同形）
+            {{{}, {}}, DT_UINT8, FORMAT_ND}                // value: 标量
         },
         {
-            {{{4, 2, 3}, {4, 2, 3}}, DT_UINT8, FORMAT_ND}   // 输出：预期(4,2,3)
+            {{{4, 2, 3}, {4, 2, 3}}, DT_UINT8, FORMAT_ND} // 输出：预期(4,2,3)
         });
     std::vector<std::vector<int64_t>> expect_shape = {{4, 2, 3}};
     ExecuteTestCase(para, GRAPH_SUCCESS, expect_shape);
-}s
+}
+s

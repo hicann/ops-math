@@ -17,24 +17,15 @@ using OpAttr = gert::InfershapeContextPara::OpAttr;
 
 class Im2ColInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "Im2ColInfershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "Im2ColInfershape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "Im2ColInfershape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "Im2ColInfershape TearDown" << std::endl; }
 };
 
 // 辅助函数：计算Im2Col输出形状
 static std::vector<int64_t> CalcIm2ColOutputShape(
-    const std::vector<int64_t>& input_shape,
-    int64_t kernel_h, int64_t kernel_w,
-    int64_t stride_h, int64_t stride_w,
-    int64_t pad_h, int64_t pad_w,
-    int64_t dilation_h, int64_t dilation_w)
+    const std::vector<int64_t>& input_shape, int64_t kernel_h, int64_t kernel_w, int64_t stride_h, int64_t stride_w,
+    int64_t pad_h, int64_t pad_w, int64_t dilation_h, int64_t dilation_w)
 {
     // 输入形状解析
     int64_t H, W, C, N;
@@ -85,20 +76,20 @@ TEST_F(Im2ColInfershape, im2col_4d_default_params)
         },
         // 属性参数：kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w, dilation_h, dilation_w
         {
-            OpAttr("kernel_h", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),  // kernel_h
-            OpAttr("kernel_w", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),  // kernel_w
-            OpAttr("stride_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // stride_h
-            OpAttr("stride_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // stride_w
-            OpAttr("pad_h", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),  // pad_h
-            OpAttr("pad_w", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),  // pad_w
-            OpAttr("dilation_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // dilation_h
-            OpAttr("dilation_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // dilation_w
+            OpAttr("kernel_h", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),   // kernel_h
+            OpAttr("kernel_w", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),   // kernel_w
+            OpAttr("stride_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),   // stride_h
+            OpAttr("stride_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),   // stride_w
+            OpAttr("pad_h", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),      // pad_h
+            OpAttr("pad_w", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),      // pad_w
+            OpAttr("dilation_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)), // dilation_h
+            OpAttr("dilation_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)), // dilation_w
         });
 
     std::vector<int64_t> input_shape = {2, 3, 4, 4};
     auto expected_shape = CalcIm2ColOutputShape(input_shape, 2, 2, 1, 1, 0, 0, 1, 1);
-    
-    std::vector<std::vector<int64_t>> expectOutputShape = { expected_shape };
+
+    std::vector<std::vector<int64_t>> expectOutputShape = {expected_shape};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
@@ -114,20 +105,20 @@ TEST_F(Im2ColInfershape, im2col_4d_with_padding)
             {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
         },
         {
-            OpAttr("kernel_h", Ops::Math::AnyValue::CreateFrom<int64_t>(3)),  // kernel_h
-            OpAttr("kernel_w", Ops::Math::AnyValue::CreateFrom<int64_t>(3)),  // kernel_w
-            OpAttr("stride_h", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),  // stride_h
-            OpAttr("stride_w", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),  // stride_w
-            OpAttr("pad_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // pad_h
-            OpAttr("pad_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // pad_w
-            OpAttr("dilation_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // dilation_h
-            OpAttr("dilation_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // dilation_w
+            OpAttr("kernel_h", Ops::Math::AnyValue::CreateFrom<int64_t>(3)),   // kernel_h
+            OpAttr("kernel_w", Ops::Math::AnyValue::CreateFrom<int64_t>(3)),   // kernel_w
+            OpAttr("stride_h", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),   // stride_h
+            OpAttr("stride_w", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),   // stride_w
+            OpAttr("pad_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),      // pad_h
+            OpAttr("pad_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),      // pad_w
+            OpAttr("dilation_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)), // dilation_h
+            OpAttr("dilation_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)), // dilation_w
         });
 
     std::vector<int64_t> input_shape = {1, 16, 28, 28};
     auto expected_shape = CalcIm2ColOutputShape(input_shape, 3, 3, 2, 2, 1, 1, 1, 1);
-    
-    std::vector<std::vector<int64_t>> expectOutputShape = { expected_shape };
+
+    std::vector<std::vector<int64_t>> expectOutputShape = {expected_shape};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
@@ -143,20 +134,20 @@ TEST_F(Im2ColInfershape, im2col_3d_with_dilation)
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         {
-            OpAttr("kernel_h", Ops::Math::AnyValue::CreateFrom<int64_t>(3)),  // kernel_h
-            OpAttr("kernel_w", Ops::Math::AnyValue::CreateFrom<int64_t>(3)),  // kernel_w
-            OpAttr("stride_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // stride_h
-            OpAttr("stride_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // stride_w
-            OpAttr("pad_h", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),  // pad_h
-            OpAttr("pad_w", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),  // pad_w
-            OpAttr("dilation_h", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),  // dilation_h
-            OpAttr("dilation_w", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),  // dilation_w
+            OpAttr("kernel_h", Ops::Math::AnyValue::CreateFrom<int64_t>(3)),   // kernel_h
+            OpAttr("kernel_w", Ops::Math::AnyValue::CreateFrom<int64_t>(3)),   // kernel_w
+            OpAttr("stride_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),   // stride_h
+            OpAttr("stride_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),   // stride_w
+            OpAttr("pad_h", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),      // pad_h
+            OpAttr("pad_w", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),      // pad_w
+            OpAttr("dilation_h", Ops::Math::AnyValue::CreateFrom<int64_t>(2)), // dilation_h
+            OpAttr("dilation_w", Ops::Math::AnyValue::CreateFrom<int64_t>(2)), // dilation_w
         });
 
     std::vector<int64_t> input_shape = {8, 32, 32};
     auto expected_shape = CalcIm2ColOutputShape(input_shape, 3, 3, 1, 1, 2, 2, 2, 2);
-    
-    std::vector<std::vector<int64_t>> expectOutputShape = { expected_shape };
+
+    std::vector<std::vector<int64_t>> expectOutputShape = {expected_shape};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
@@ -172,20 +163,20 @@ TEST_F(Im2ColInfershape, im2col_2d_single_image)
             {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
         },
         {
-            OpAttr("kernel_h", Ops::Math::AnyValue::CreateFrom<int64_t>(5)),  // kernel_h
-            OpAttr("kernel_w", Ops::Math::AnyValue::CreateFrom<int64_t>(5)),  // kernel_w
-            OpAttr("stride_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // stride_h
-            OpAttr("stride_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // stride_w
-            OpAttr("pad_h", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),  // pad_h
-            OpAttr("pad_w", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),  // pad_w
-            OpAttr("dilation_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // dilation_h
-            OpAttr("dilation_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // dilation_w
+            OpAttr("kernel_h", Ops::Math::AnyValue::CreateFrom<int64_t>(5)),   // kernel_h
+            OpAttr("kernel_w", Ops::Math::AnyValue::CreateFrom<int64_t>(5)),   // kernel_w
+            OpAttr("stride_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),   // stride_h
+            OpAttr("stride_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),   // stride_w
+            OpAttr("pad_h", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),      // pad_h
+            OpAttr("pad_w", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),      // pad_w
+            OpAttr("dilation_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)), // dilation_h
+            OpAttr("dilation_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)), // dilation_w
         });
 
     std::vector<int64_t> input_shape = {64, 64};
     auto expected_shape = CalcIm2ColOutputShape(input_shape, 5, 5, 1, 1, 0, 0, 1, 1);
-    
-    std::vector<std::vector<int64_t>> expectOutputShape = { expected_shape };
+
+    std::vector<std::vector<int64_t>> expectOutputShape = {expected_shape};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
@@ -201,20 +192,20 @@ TEST_F(Im2ColInfershape, im2col_large_batch)
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         {
-            OpAttr("kernel_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // kernel_h
-            OpAttr("kernel_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // kernel_w
-            OpAttr("stride_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // stride_h
-            OpAttr("stride_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // stride_w
-            OpAttr("pad_h", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),  // pad_h
-            OpAttr("pad_w", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),  // pad_w
-            OpAttr("dilation_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // dilation_h
-            OpAttr("dilation_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // dilation_w
+            OpAttr("kernel_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),   // kernel_h
+            OpAttr("kernel_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),   // kernel_w
+            OpAttr("stride_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),   // stride_h
+            OpAttr("stride_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),   // stride_w
+            OpAttr("pad_h", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),      // pad_h
+            OpAttr("pad_w", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),      // pad_w
+            OpAttr("dilation_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)), // dilation_h
+            OpAttr("dilation_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)), // dilation_w
         });
 
     std::vector<int64_t> input_shape = {32, 256, 56, 56};
     auto expected_shape = CalcIm2ColOutputShape(input_shape, 1, 1, 1, 1, 0, 0, 1, 1);
-    
-    std::vector<std::vector<int64_t>> expectOutputShape = { expected_shape };
+
+    std::vector<std::vector<int64_t>> expectOutputShape = {expected_shape};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
@@ -253,25 +244,25 @@ TEST_F(Im2ColInfershape, im2col_invalid_dimension)
     gert::InfershapeContextPara infershapeContextPara(
         "Im2Col",
         {
-            {{{10}, {10}}, ge::DT_FLOAT, ge::FORMAT_ND},  // 只有1D，应该失败
+            {{{10}, {10}}, ge::DT_FLOAT, ge::FORMAT_ND}, // 只有1D，应该失败
         },
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         {
-            OpAttr("kernel_h", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),  // kernel_h
-            OpAttr("kernel_w", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),  // kernel_w
-            OpAttr("stride_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // stride_h
-            OpAttr("stride_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // stride_w
-            OpAttr("pad_h", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),  // pad_h
-            OpAttr("pad_w", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),  // pad_w
-            OpAttr("dilation_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // dilation_h
-            OpAttr("dilation_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // dilation_w
+            OpAttr("kernel_h", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),   // kernel_h
+            OpAttr("kernel_w", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),   // kernel_w
+            OpAttr("stride_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),   // stride_h
+            OpAttr("stride_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),   // stride_w
+            OpAttr("pad_h", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),      // pad_h
+            OpAttr("pad_w", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),      // pad_w
+            OpAttr("dilation_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)), // dilation_h
+            OpAttr("dilation_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)), // dilation_w
         });
 
     // 期望推断失败
     std::vector<std::vector<int64_t>> expectOutputShape = {
-        {}  // 空形状表示失败
+        {} // 空形状表示失败
     };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
 }
@@ -290,20 +281,20 @@ TEST_F(Im2ColInfershape, im2col_different_dtypes)
                 {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
             },
             {
-                OpAttr("kernel_h", Ops::Math::AnyValue::CreateFrom<int64_t>(3)),  // kernel_h
-                OpAttr("kernel_w", Ops::Math::AnyValue::CreateFrom<int64_t>(3)),  // kernel_w
-                OpAttr("stride_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // stride_h
-                OpAttr("stride_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // stride_w
-                OpAttr("pad_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // pad_h
-                OpAttr("pad_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // pad_w
-                OpAttr("dilation_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // dilation_h
-                OpAttr("dilation_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // dilation_w
+                OpAttr("kernel_h", Ops::Math::AnyValue::CreateFrom<int64_t>(3)),   // kernel_h
+                OpAttr("kernel_w", Ops::Math::AnyValue::CreateFrom<int64_t>(3)),   // kernel_w
+                OpAttr("stride_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),   // stride_h
+                OpAttr("stride_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),   // stride_w
+                OpAttr("pad_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),      // pad_h
+                OpAttr("pad_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),      // pad_w
+                OpAttr("dilation_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)), // dilation_h
+                OpAttr("dilation_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)), // dilation_w
             });
 
         std::vector<int64_t> input_shape = {4, 8, 16, 16};
         auto expected_shape = CalcIm2ColOutputShape(input_shape, 3, 3, 1, 1, 1, 1, 1, 1);
-        
-        std::vector<std::vector<int64_t>> expectOutputShape = { expected_shape };
+
+        std::vector<std::vector<int64_t>> expectOutputShape = {expected_shape};
         ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
     }
 
@@ -318,20 +309,20 @@ TEST_F(Im2ColInfershape, im2col_different_dtypes)
                 {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
             },
             {
-                OpAttr("kernel_h", Ops::Math::AnyValue::CreateFrom<int64_t>(3)),  // kernel_h
-                OpAttr("kernel_w", Ops::Math::AnyValue::CreateFrom<int64_t>(3)),  // kernel_w
-                OpAttr("stride_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // stride_h
-                OpAttr("stride_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // stride_w
-                OpAttr("pad_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // pad_h
-                OpAttr("pad_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // pad_w
-                OpAttr("dilation_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // dilation_h
-                OpAttr("dilation_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),  // dilation_w
+                OpAttr("kernel_h", Ops::Math::AnyValue::CreateFrom<int64_t>(3)),   // kernel_h
+                OpAttr("kernel_w", Ops::Math::AnyValue::CreateFrom<int64_t>(3)),   // kernel_w
+                OpAttr("stride_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),   // stride_h
+                OpAttr("stride_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),   // stride_w
+                OpAttr("pad_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),      // pad_h
+                OpAttr("pad_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),      // pad_w
+                OpAttr("dilation_h", Ops::Math::AnyValue::CreateFrom<int64_t>(1)), // dilation_h
+                OpAttr("dilation_w", Ops::Math::AnyValue::CreateFrom<int64_t>(1)), // dilation_w
             });
 
         std::vector<int64_t> input_shape = {4, 8, 16, 16};
         auto expected_shape = CalcIm2ColOutputShape(input_shape, 3, 3, 1, 1, 1, 1, 1, 1);
-        
-        std::vector<std::vector<int64_t>> expectOutputShape = { expected_shape };
+
+        std::vector<std::vector<int64_t>> expectOutputShape = {expected_shape};
         ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
     }
 }

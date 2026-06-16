@@ -21,15 +21,9 @@ using namespace optiling;
 
 class RealDivTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "RealDivTiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "RealDivTiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "RealDivTiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "RealDivTiling TearDown " << endl; }
 };
 
 TEST_F(RealDivTiling, ascend910b_test_tiling_fp16_001)

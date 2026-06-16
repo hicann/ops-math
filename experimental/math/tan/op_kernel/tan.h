@@ -43,7 +43,7 @@ constexpr int32_t BUFFER_NUM = 2;
 template <typename T>
 class Tan {
 public:
-    __aicore__ inline Tan() {};
+    __aicore__ inline Tan(){};
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const TanTilingData* tilingData);
     __aicore__ inline void Process();
@@ -57,8 +57,8 @@ private:
     TPipe pipe;
     TQue<QuePosition::VECIN, BUFFER_NUM> inputQueue;
     TQue<QuePosition::VECOUT, BUFFER_NUM> outputQueue;
-    TBuf<QuePosition::VECCALC> tmpBuf1;  // stores sin(x) intermediate result
-    TBuf<QuePosition::VECCALC> tmpBuf2;  // stores cos(x) intermediate result
+    TBuf<QuePosition::VECCALC> tmpBuf1; // stores sin(x) intermediate result
+    TBuf<QuePosition::VECCALC> tmpBuf2; // stores cos(x) intermediate result
 
     GlobalTensor<T> inputGM;
     GlobalTensor<T> outputGM;

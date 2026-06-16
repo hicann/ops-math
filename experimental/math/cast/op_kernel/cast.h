@@ -32,8 +32,7 @@ constexpr int16_t CONST_1 = 1;
 constexpr half HALF_ONE = 1.0;
 
 template <typename TYPE_X, typename TYPE_Y>
-class BaseKernelCast
-{
+class BaseKernelCast {
 public:
     __aicore__ inline BaseKernelCast() {}
 
@@ -52,7 +51,7 @@ protected:
     }
 
 protected:
-    TPipe *pipe;
+    TPipe* pipe;
     TQue<QuePosition::VECIN, BUFFER_NUM> inQueueX;
     TQue<QuePosition::VECOUT, BUFFER_NUM> outQueueY;
     GlobalTensor<TYPE_X> xGm;
@@ -65,8 +64,7 @@ protected:
 };
 
 template <typename TYPE_X, typename TYPE_Y>
-class KernelCast0TBuf : public BaseKernelCast<TYPE_X, TYPE_Y>
-{
+class KernelCast0TBuf : public BaseKernelCast<TYPE_X, TYPE_Y> {
     /*
     无临时变量
     half -> float
@@ -93,40 +91,35 @@ class KernelCast0TBuf : public BaseKernelCast<TYPE_X, TYPE_Y>
     */
 public:
     __aicore__ inline KernelCast0TBuf() {}
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum,
-                                uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
-                                uint32_t finalSmallTileNum, uint32_t tileDataNum,
-                                uint32_t smallTailDataNum, uint32_t bigTailDataNum,
-                                uint32_t tailBlockNum, TPipe *pipeIn)
+    __aicore__ inline void Init(
+        GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum, uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
+        uint32_t finalSmallTileNum, uint32_t tileDataNum, uint32_t smallTailDataNum, uint32_t bigTailDataNum,
+        uint32_t tailBlockNum, TPipe* pipeIn)
     {
         this->pipe = pipeIn;
         ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
         uint32_t coreNum = GetBlockIdx();
         uint32_t globalBufferIndex = bigCoreDataNum * GetBlockIdx();
         this->tileDataNum = tileDataNum;
-        if (coreNum < tailBlockNum)
-        {
+        if (coreNum < tailBlockNum) {
             this->coreDataNum = bigCoreDataNum;
             this->tileNum = finalBigTileNum;
             this->tailDataNum = bigTailDataNum;
-        }
-        else
-        {
+        } else {
             this->coreDataNum = smallCoreDataNum;
             this->tileNum = finalSmallTileNum;
             this->tailDataNum = smallTailDataNum;
             globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (GetBlockIdx() - tailBlockNum);
         }
-        this->xGm.SetGlobalBuffer((__gm__ TYPE_X *)x + globalBufferIndex, this->coreDataNum);
-        this->yGm.SetGlobalBuffer((__gm__ TYPE_Y *)y + globalBufferIndex, this->coreDataNum);
+        this->xGm.SetGlobalBuffer((__gm__ TYPE_X*)x + globalBufferIndex, this->coreDataNum);
+        this->yGm.SetGlobalBuffer((__gm__ TYPE_Y*)y + globalBufferIndex, this->coreDataNum);
         BufferInit();
     }
     __aicore__ inline void Process()
     {
         int32_t loopCount = this->tileNum;
         this->processDataNum = this->tileDataNum;
-        for (int32_t i = 0; i < loopCount - 1; i++)
-        {
+        for (int32_t i = 0; i < loopCount - 1; i++) {
             this->CopyIn(i);
             Compute(i);
             this->CopyOut(i);
@@ -147,42 +140,35 @@ private:
     {
         LocalTensor<TYPE_X> xLocal = this->inQueueX.template DeQue<TYPE_X>();
         LocalTensor<TYPE_Y> yLocal = this->outQueueY.template AllocTensor<TYPE_Y>();
-        if constexpr ((std::is_same_v<DTYPE_X, half> && std::is_same_v<DTYPE_Y, int32_t>) ||
-                      (std::is_same_v<DTYPE_X, half> && std::is_same_v<DTYPE_Y, int16_t>) ||
-                      (std::is_same_v<DTYPE_X, float> && std::is_same_v<DTYPE_Y, int32_t>) ||
-                      (std::is_same_v<DTYPE_X, float> && std::is_same_v<DTYPE_Y, int16_t>) ||
-                      (std::is_same_v<DTYPE_X, float> && std::is_same_v<DTYPE_Y, int64_t>) ||
-                      (std::is_same_v<DTYPE_X, bfloat16_t> && std::is_same_v<DTYPE_Y, int32_t>))
-        {
+        if constexpr (
+            (std::is_same_v<DTYPE_X, half> && std::is_same_v<DTYPE_Y, int32_t>) ||
+            (std::is_same_v<DTYPE_X, half> && std::is_same_v<DTYPE_Y, int16_t>) ||
+            (std::is_same_v<DTYPE_X, float> && std::is_same_v<DTYPE_Y, int32_t>) ||
+            (std::is_same_v<DTYPE_X, float> && std::is_same_v<DTYPE_Y, int16_t>) ||
+            (std::is_same_v<DTYPE_X, float> && std::is_same_v<DTYPE_Y, int64_t>) ||
+            (std::is_same_v<DTYPE_X, bfloat16_t> && std::is_same_v<DTYPE_Y, int32_t>)) {
             Cast(yLocal, xLocal, RoundMode::CAST_TRUNC, this->processDataNum);
-        }
-        else if constexpr ((std::is_same_v<DTYPE_X, int64_t> && std::is_same_v<DTYPE_Y, float>))
-        {
+        } else if constexpr ((std::is_same_v<DTYPE_X, int64_t> && std::is_same_v<DTYPE_Y, float>)) {
             Cast(yLocal, xLocal, RoundMode::CAST_ROUND, this->processDataNum);
-        }
-        else if constexpr ((std::is_same_v<DTYPE_X, half> && std::is_same_v<DTYPE_Y, bool>))
-        {
+        } else if constexpr ((std::is_same_v<DTYPE_X, half> && std::is_same_v<DTYPE_Y, bool>)) {
             Abs(xLocal, xLocal, this->processDataNum);
             Mins(xLocal, xLocal, HALF_ONE, this->processDataNum);
             Cast(yLocal, xLocal, RoundMode::CAST_CEIL, this->processDataNum);
-        }
-        else if constexpr ((std::is_same_v<DTYPE_X, half> && std::is_same_v<DTYPE_Y, float>) ||
-                           (std::is_same_v<DTYPE_X, float> && std::is_same_v<DTYPE_Y, half>) ||
-                           (std::is_same_v<DTYPE_X, int32_t> && std::is_same_v<DTYPE_Y, int16_t>) ||
-                           (std::is_same_v<DTYPE_X, int32_t> && std::is_same_v<DTYPE_Y, int64_t>) ||
-                           (std::is_same_v<DTYPE_X, int32_t> && std::is_same_v<DTYPE_Y, float>) ||
-                           (std::is_same_v<DTYPE_X, int8_t> && std::is_same_v<DTYPE_Y, half>) ||
-                           (std::is_same_v<DTYPE_X, uint8_t> && std::is_same_v<DTYPE_Y, half>) ||
-                           (std::is_same_v<DTYPE_X, bool> && std::is_same_v<DTYPE_Y, half>) ||
-                           (std::is_same_v<DTYPE_X, int64_t> && std::is_same_v<DTYPE_Y, int32_t>) ||
-                           (std::is_same_v<DTYPE_X, bfloat16_t> && std::is_same_v<DTYPE_Y, float>) ||
-                           (std::is_same_v<DTYPE_X, int16_t> && std::is_same_v<DTYPE_Y, half>) ||
-                           (std::is_same_v<DTYPE_X, int16_t> && std::is_same_v<DTYPE_Y, float>))
-        {
+        } else if constexpr (
+            (std::is_same_v<DTYPE_X, half> && std::is_same_v<DTYPE_Y, float>) ||
+            (std::is_same_v<DTYPE_X, float> && std::is_same_v<DTYPE_Y, half>) ||
+            (std::is_same_v<DTYPE_X, int32_t> && std::is_same_v<DTYPE_Y, int16_t>) ||
+            (std::is_same_v<DTYPE_X, int32_t> && std::is_same_v<DTYPE_Y, int64_t>) ||
+            (std::is_same_v<DTYPE_X, int32_t> && std::is_same_v<DTYPE_Y, float>) ||
+            (std::is_same_v<DTYPE_X, int8_t> && std::is_same_v<DTYPE_Y, half>) ||
+            (std::is_same_v<DTYPE_X, uint8_t> && std::is_same_v<DTYPE_Y, half>) ||
+            (std::is_same_v<DTYPE_X, bool> && std::is_same_v<DTYPE_Y, half>) ||
+            (std::is_same_v<DTYPE_X, int64_t> && std::is_same_v<DTYPE_Y, int32_t>) ||
+            (std::is_same_v<DTYPE_X, bfloat16_t> && std::is_same_v<DTYPE_Y, float>) ||
+            (std::is_same_v<DTYPE_X, int16_t> && std::is_same_v<DTYPE_Y, half>) ||
+            (std::is_same_v<DTYPE_X, int16_t> && std::is_same_v<DTYPE_Y, float>)) {
             Cast(yLocal, xLocal, RoundMode::CAST_NONE, this->processDataNum);
-        }
-        else if constexpr ((std::is_same_v<DTYPE_X, float> && std::is_same_v<DTYPE_Y, bfloat16_t>))
-        {
+        } else if constexpr ((std::is_same_v<DTYPE_X, float> && std::is_same_v<DTYPE_Y, bfloat16_t>)) {
             Cast(yLocal, xLocal, RoundMode::CAST_RINT, this->processDataNum);
         }
         this->outQueueY.template EnQue<TYPE_Y>(yLocal);
@@ -191,8 +177,7 @@ private:
 };
 
 template <typename TYPE_X, typename TYPE_Y>
-class KernelCast1TBuf4B : public BaseKernelCast<TYPE_X, TYPE_Y>
-{
+class KernelCast1TBuf4B : public BaseKernelCast<TYPE_X, TYPE_Y> {
     /*
     1个4Bytes的临时变量
     half -> float ->(RINT) bfloat16
@@ -207,40 +192,35 @@ class KernelCast1TBuf4B : public BaseKernelCast<TYPE_X, TYPE_Y>
     */
 public:
     __aicore__ inline KernelCast1TBuf4B() {}
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum,
-                                uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
-                                uint32_t finalSmallTileNum, uint32_t tileDataNum,
-                                uint32_t smallTailDataNum, uint32_t bigTailDataNum,
-                                uint32_t tailBlockNum, TPipe *pipeIn)
+    __aicore__ inline void Init(
+        GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum, uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
+        uint32_t finalSmallTileNum, uint32_t tileDataNum, uint32_t smallTailDataNum, uint32_t bigTailDataNum,
+        uint32_t tailBlockNum, TPipe* pipeIn)
     {
         this->pipe = pipeIn;
         ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
         uint32_t coreNum = GetBlockIdx();
         uint32_t globalBufferIndex = bigCoreDataNum * GetBlockIdx();
         this->tileDataNum = tileDataNum;
-        if (coreNum < tailBlockNum)
-        {
+        if (coreNum < tailBlockNum) {
             this->coreDataNum = bigCoreDataNum;
             this->tileNum = finalBigTileNum;
             this->tailDataNum = bigTailDataNum;
-        }
-        else
-        {
+        } else {
             this->coreDataNum = smallCoreDataNum;
             this->tileNum = finalSmallTileNum;
             this->tailDataNum = smallTailDataNum;
             globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (GetBlockIdx() - tailBlockNum);
         }
-        this->xGm.SetGlobalBuffer((__gm__ TYPE_X *)x + globalBufferIndex, this->coreDataNum);
-        this->yGm.SetGlobalBuffer((__gm__ TYPE_Y *)y + globalBufferIndex, this->coreDataNum);
+        this->xGm.SetGlobalBuffer((__gm__ TYPE_X*)x + globalBufferIndex, this->coreDataNum);
+        this->yGm.SetGlobalBuffer((__gm__ TYPE_Y*)y + globalBufferIndex, this->coreDataNum);
         BufferInit();
     }
     __aicore__ inline void Process()
     {
         int32_t loopCount = this->tileNum;
         this->processDataNum = this->tileDataNum;
-        for (int32_t i = 0; i < loopCount - 1; i++)
-        {
+        for (int32_t i = 0; i < loopCount - 1; i++) {
             this->CopyIn(i);
             Compute(i);
             this->CopyOut(i);
@@ -262,45 +242,35 @@ private:
     {
         LocalTensor<TYPE_X> xLocal = this->inQueueX.template DeQue<TYPE_X>();
         LocalTensor<TYPE_Y> yLocal = this->outQueueY.template AllocTensor<TYPE_Y>();
-        if constexpr ((std::is_same_v<DTYPE_X, half> && std::is_same_v<DTYPE_Y, bfloat16_t>) ||
-                      (std::is_same_v<DTYPE_X, int32_t> && std::is_same_v<DTYPE_Y, bfloat16_t>) ||
-                      (std::is_same_v<DTYPE_X, int32_t> && std::is_same_v<DTYPE_Y, half>) ||
-                      (std::is_same_v<DTYPE_X, bfloat16_t> && std::is_same_v<DTYPE_Y, half>))
-        {
+        if constexpr (
+            (std::is_same_v<DTYPE_X, half> && std::is_same_v<DTYPE_Y, bfloat16_t>) ||
+            (std::is_same_v<DTYPE_X, int32_t> && std::is_same_v<DTYPE_Y, bfloat16_t>) ||
+            (std::is_same_v<DTYPE_X, int32_t> && std::is_same_v<DTYPE_Y, half>) ||
+            (std::is_same_v<DTYPE_X, bfloat16_t> && std::is_same_v<DTYPE_Y, half>)) {
             LocalTensor<float> tmp1 = tmp4Bytes1.Get<float>();
             Cast(tmp1, xLocal, RoundMode::CAST_NONE, this->processDataNum);
-            if constexpr (std::is_same_v<DTYPE_Y, half>)
-            {
+            if constexpr (std::is_same_v<DTYPE_Y, half>) {
                 Cast(yLocal, tmp1, RoundMode::CAST_NONE, this->processDataNum);
-            }
-            else if constexpr (std::is_same_v<DTYPE_Y, bfloat16_t>)
-            {
+            } else if constexpr (std::is_same_v<DTYPE_Y, bfloat16_t>) {
                 Cast(yLocal, tmp1, RoundMode::CAST_RINT, this->processDataNum);
             }
-        }
-        else if constexpr ((std::is_same_v<DTYPE_X, int64_t> && std::is_same_v<DTYPE_Y, half>) ||
-                           (std::is_same_v<DTYPE_X, int64_t> && std::is_same_v<DTYPE_Y, bfloat16_t>))
-        {
+        } else if constexpr (
+            (std::is_same_v<DTYPE_X, int64_t> && std::is_same_v<DTYPE_Y, half>) ||
+            (std::is_same_v<DTYPE_X, int64_t> && std::is_same_v<DTYPE_Y, bfloat16_t>)) {
             LocalTensor<float> tmp1 = tmp4Bytes1.Get<float>();
             Cast(tmp1, xLocal, RoundMode::CAST_ROUND, this->processDataNum);
-            if constexpr (std::is_same_v<DTYPE_Y, half>)
-            {
+            if constexpr (std::is_same_v<DTYPE_Y, half>) {
                 Cast(yLocal, tmp1, RoundMode::CAST_NONE, this->processDataNum);
-            }
-            else if constexpr (std::is_same_v<DTYPE_Y, bfloat16_t>)
-            {
+            } else if constexpr (std::is_same_v<DTYPE_Y, bfloat16_t>) {
                 Cast(yLocal, tmp1, RoundMode::CAST_RINT, this->processDataNum);
             }
-        }
-        else if constexpr ((std::is_same_v<DTYPE_X, int64_t> && std::is_same_v<DTYPE_Y, int16_t>))
-        {
+        } else if constexpr ((std::is_same_v<DTYPE_X, int64_t> && std::is_same_v<DTYPE_Y, int16_t>)) {
             LocalTensor<int32_t> tmp1 = tmp4Bytes1.Get<int32_t>();
             Cast(tmp1, xLocal, RoundMode::CAST_NONE, this->processDataNum);
             Cast(yLocal, tmp1, RoundMode::CAST_NONE, this->processDataNum);
-        }
-        else if constexpr ((std::is_same_v<DTYPE_X, int16_t> && std::is_same_v<DTYPE_Y, int32_t>) ||
-                           (std::is_same_v<DTYPE_X, int16_t> && std::is_same_v<DTYPE_Y, int64_t>))
-        {
+        } else if constexpr (
+            (std::is_same_v<DTYPE_X, int16_t> && std::is_same_v<DTYPE_Y, int32_t>) ||
+            (std::is_same_v<DTYPE_X, int16_t> && std::is_same_v<DTYPE_Y, int64_t>)) {
             LocalTensor<float> tmp1 = tmp4Bytes1.Get<float>();
             Cast(tmp1, xLocal, RoundMode::CAST_NONE, this->processDataNum);
             Cast(yLocal, tmp1, RoundMode::CAST_ROUND, this->processDataNum);
@@ -314,8 +284,7 @@ private:
 };
 
 template <typename TYPE_X, typename TYPE_Y>
-class KernelCast2TBuf2B : public BaseKernelCast<TYPE_X, TYPE_Y>
-{
+class KernelCast2TBuf2B : public BaseKernelCast<TYPE_X, TYPE_Y> {
     /*
     2个2Bytes的临时变量
     half -> int8
@@ -327,40 +296,35 @@ class KernelCast2TBuf2B : public BaseKernelCast<TYPE_X, TYPE_Y>
     */
 public:
     __aicore__ inline KernelCast2TBuf2B() {}
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum,
-                                uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
-                                uint32_t finalSmallTileNum, uint32_t tileDataNum,
-                                uint32_t smallTailDataNum, uint32_t bigTailDataNum,
-                                uint32_t tailBlockNum, TPipe *pipeIn)
+    __aicore__ inline void Init(
+        GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum, uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
+        uint32_t finalSmallTileNum, uint32_t tileDataNum, uint32_t smallTailDataNum, uint32_t bigTailDataNum,
+        uint32_t tailBlockNum, TPipe* pipeIn)
     {
         this->pipe = pipeIn;
         ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
         uint32_t coreNum = GetBlockIdx();
         uint32_t globalBufferIndex = bigCoreDataNum * GetBlockIdx();
         this->tileDataNum = tileDataNum;
-        if (coreNum < tailBlockNum)
-        {
+        if (coreNum < tailBlockNum) {
             this->coreDataNum = bigCoreDataNum;
             this->tileNum = finalBigTileNum;
             this->tailDataNum = bigTailDataNum;
-        }
-        else
-        {
+        } else {
             this->coreDataNum = smallCoreDataNum;
             this->tileNum = finalSmallTileNum;
             this->tailDataNum = smallTailDataNum;
             globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (GetBlockIdx() - tailBlockNum);
         }
-        this->xGm.SetGlobalBuffer((__gm__ TYPE_X *)x + globalBufferIndex, this->coreDataNum);
-        this->yGm.SetGlobalBuffer((__gm__ TYPE_Y *)y + globalBufferIndex, this->coreDataNum);
+        this->xGm.SetGlobalBuffer((__gm__ TYPE_X*)x + globalBufferIndex, this->coreDataNum);
+        this->yGm.SetGlobalBuffer((__gm__ TYPE_Y*)y + globalBufferIndex, this->coreDataNum);
         BufferInit();
     }
     __aicore__ inline void Process()
     {
         int32_t loopCount = this->tileNum;
         this->processDataNum = this->tileDataNum;
-        for (int32_t i = 0; i < loopCount - 1; i++)
-        {
+        for (int32_t i = 0; i < loopCount - 1; i++) {
             this->CopyIn(i);
             Compute(i);
             this->CopyOut(i);
@@ -383,25 +347,22 @@ private:
     {
         LocalTensor<TYPE_X> xLocal = this->inQueueX.template DeQue<TYPE_X>();
         LocalTensor<TYPE_Y> yLocal = this->outQueueY.template AllocTensor<TYPE_Y>();
-        if constexpr ((std::is_same_v<DTYPE_X, half> && std::is_same_v<DTYPE_Y, int8_t>) ||
-                      (std::is_same_v<DTYPE_X, half> && std::is_same_v<DTYPE_Y, uint8_t>))
-        {
+        if constexpr (
+            (std::is_same_v<DTYPE_X, half> && std::is_same_v<DTYPE_Y, int8_t>) ||
+            (std::is_same_v<DTYPE_X, half> && std::is_same_v<DTYPE_Y, uint8_t>)) {
             LocalTensor<int16_t> tmp1 = tmp2Bytes1.Get<int16_t>();
             LocalTensor<int16_t> tmp2 = tmp2Bytes2.Get<int16_t>();
             Cast(tmp1, xLocal, RoundMode::CAST_TRUNC, this->processDataNum);
             Duplicate(tmp2, CONST_255, this->processDataNum);
             And(tmp1, tmp1, tmp2, this->processDataNum);
-            if constexpr (std::is_same_v<DTYPE_Y, int8_t>)
-            {
+            if constexpr (std::is_same_v<DTYPE_Y, int8_t>) {
                 Adds(tmp1, tmp1, CONST_128, this->processDataNum);
                 And(tmp1, tmp1, tmp2, this->processDataNum);
                 Adds(tmp1, tmp1, CONST_NE128, this->processDataNum);
             }
             Cast(xLocal, tmp1, RoundMode::CAST_NONE, this->processDataNum);
             Cast(yLocal, xLocal, RoundMode::CAST_NONE, this->processDataNum);
-        }
-        else if constexpr ((std::is_same_v<DTYPE_X, float> && std::is_same_v<DTYPE_Y, bool>))
-        {
+        } else if constexpr ((std::is_same_v<DTYPE_X, float> && std::is_same_v<DTYPE_Y, bool>)) {
             LocalTensor<int16_t> tmp1 = tmp2Bytes1.Get<int16_t>();
             LocalTensor<half> tmp2 = tmp2Bytes2.Get<half>();
             Abs(xLocal, xLocal, this->processDataNum);
@@ -409,9 +370,7 @@ private:
             Mins(tmp1, tmp1, CONST_1, this->processDataNum);
             Cast(tmp2, tmp1, RoundMode::CAST_NONE, this->processDataNum);
             Cast(yLocal, tmp2, RoundMode::CAST_NONE, this->processDataNum);
-        }
-        else if constexpr ((std::is_same_v<DTYPE_X, int32_t> && std::is_same_v<DTYPE_Y, bool>))
-        {
+        } else if constexpr ((std::is_same_v<DTYPE_X, int32_t> && std::is_same_v<DTYPE_Y, bool>)) {
             LocalTensor<int16_t> tmp1 = tmp2Bytes1.Get<int16_t>();
             LocalTensor<half> tmp2 = tmp2Bytes2.Get<half>();
             Cast(tmp1, xLocal, RoundMode::CAST_NONE, this->processDataNum);
@@ -419,16 +378,14 @@ private:
             Abs(tmp2, tmp2, this->processDataNum);
             Mins(tmp2, tmp2, HALF_ONE, this->processDataNum);
             Cast(yLocal, tmp2, RoundMode::CAST_NONE, this->processDataNum);
-        }
-        else if constexpr ((std::is_same_v<DTYPE_X, int16_t> && std::is_same_v<DTYPE_Y, int8_t>) ||
-                           (std::is_same_v<DTYPE_X, int16_t> && std::is_same_v<DTYPE_Y, uint8_t>))
-        {
+        } else if constexpr (
+            (std::is_same_v<DTYPE_X, int16_t> && std::is_same_v<DTYPE_Y, int8_t>) ||
+            (std::is_same_v<DTYPE_X, int16_t> && std::is_same_v<DTYPE_Y, uint8_t>)) {
             LocalTensor<int16_t> tmp1 = tmp2Bytes1.Get<int16_t>();
             LocalTensor<half> tmp2 = tmp2Bytes2.Get<half>();
             Duplicate(tmp1, CONST_255, this->processDataNum);
             And(xLocal, xLocal, tmp1, this->processDataNum);
-            if constexpr (std::is_same_v<DTYPE_Y, int8_t>)
-            {
+            if constexpr (std::is_same_v<DTYPE_Y, int8_t>) {
                 Adds(xLocal, xLocal, CONST_128, this->processDataNum);
                 And(xLocal, xLocal, tmp1, this->processDataNum);
                 Adds(xLocal, xLocal, CONST_NE128, this->processDataNum);
@@ -446,8 +403,7 @@ private:
 };
 
 template <typename TYPE_X, typename TYPE_Y>
-class KernelCast3TBuf2B : public BaseKernelCast<TYPE_X, TYPE_Y>
-{
+class KernelCast3TBuf2B : public BaseKernelCast<TYPE_X, TYPE_Y> {
     /*
     3个2Bytes的临时变量
     float -> int8
@@ -457,40 +413,35 @@ class KernelCast3TBuf2B : public BaseKernelCast<TYPE_X, TYPE_Y>
     */
 public:
     __aicore__ inline KernelCast3TBuf2B() {}
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum,
-                                uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
-                                uint32_t finalSmallTileNum, uint32_t tileDataNum,
-                                uint32_t smallTailDataNum, uint32_t bigTailDataNum,
-                                uint32_t tailBlockNum, TPipe *pipeIn)
+    __aicore__ inline void Init(
+        GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum, uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
+        uint32_t finalSmallTileNum, uint32_t tileDataNum, uint32_t smallTailDataNum, uint32_t bigTailDataNum,
+        uint32_t tailBlockNum, TPipe* pipeIn)
     {
         this->pipe = pipeIn;
         ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
         uint32_t coreNum = GetBlockIdx();
         uint32_t globalBufferIndex = bigCoreDataNum * GetBlockIdx();
         this->tileDataNum = tileDataNum;
-        if (coreNum < tailBlockNum)
-        {
+        if (coreNum < tailBlockNum) {
             this->coreDataNum = bigCoreDataNum;
             this->tileNum = finalBigTileNum;
             this->tailDataNum = bigTailDataNum;
-        }
-        else
-        {
+        } else {
             this->coreDataNum = smallCoreDataNum;
             this->tileNum = finalSmallTileNum;
             this->tailDataNum = smallTailDataNum;
             globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (GetBlockIdx() - tailBlockNum);
         }
-        this->xGm.SetGlobalBuffer((__gm__ TYPE_X *)x + globalBufferIndex, this->coreDataNum);
-        this->yGm.SetGlobalBuffer((__gm__ TYPE_Y *)y + globalBufferIndex, this->coreDataNum);
+        this->xGm.SetGlobalBuffer((__gm__ TYPE_X*)x + globalBufferIndex, this->coreDataNum);
+        this->yGm.SetGlobalBuffer((__gm__ TYPE_Y*)y + globalBufferIndex, this->coreDataNum);
         BufferInit();
     }
     __aicore__ inline void Process()
     {
         int32_t loopCount = this->tileNum;
         this->processDataNum = this->tileDataNum;
-        for (int32_t i = 0; i < loopCount - 1; i++)
-        {
+        for (int32_t i = 0; i < loopCount - 1; i++) {
             this->CopyIn(i);
             Compute(i);
             this->CopyOut(i);
@@ -514,26 +465,22 @@ private:
     {
         LocalTensor<TYPE_X> xLocal = this->inQueueX.template DeQue<TYPE_X>();
         LocalTensor<TYPE_Y> yLocal = this->outQueueY.template AllocTensor<TYPE_Y>();
-        if constexpr ((std::is_same_v<DTYPE_X, float> && std::is_same_v<DTYPE_Y, int8_t>) ||
-                      (std::is_same_v<DTYPE_X, float> && std::is_same_v<DTYPE_Y, uint8_t>) ||
-                      (std::is_same_v<DTYPE_X, int32_t> && std::is_same_v<DTYPE_Y, int8_t>) ||
-                      (std::is_same_v<DTYPE_X, int32_t> && std::is_same_v<DTYPE_Y, uint8_t>))
-        {
+        if constexpr (
+            (std::is_same_v<DTYPE_X, float> && std::is_same_v<DTYPE_Y, int8_t>) ||
+            (std::is_same_v<DTYPE_X, float> && std::is_same_v<DTYPE_Y, uint8_t>) ||
+            (std::is_same_v<DTYPE_X, int32_t> && std::is_same_v<DTYPE_Y, int8_t>) ||
+            (std::is_same_v<DTYPE_X, int32_t> && std::is_same_v<DTYPE_Y, uint8_t>)) {
             LocalTensor<int16_t> tmp1 = tmp2Bytes1.Get<int16_t>();
             LocalTensor<int16_t> tmp2 = tmp2Bytes2.Get<int16_t>();
             LocalTensor<half> tmp3 = tmp2Bytes3.Get<half>();
-            if constexpr (std::is_same_v<DTYPE_X, float>)
-            {
+            if constexpr (std::is_same_v<DTYPE_X, float>) {
                 Cast(tmp1, xLocal, RoundMode::CAST_TRUNC, this->processDataNum);
-            }
-            else if constexpr (std::is_same_v<DTYPE_X, int32_t>)
-            {
+            } else if constexpr (std::is_same_v<DTYPE_X, int32_t>) {
                 Cast(tmp1, xLocal, RoundMode::CAST_NONE, this->processDataNum);
             }
             Duplicate(tmp2, CONST_255, this->processDataNum);
             And(tmp1, tmp1, tmp2, this->processDataNum);
-            if constexpr (std::is_same_v<DTYPE_Y, int8_t>)
-            {
+            if constexpr (std::is_same_v<DTYPE_Y, int8_t>) {
                 Adds(tmp1, tmp1, CONST_128, this->processDataNum);
                 And(tmp1, tmp1, tmp2, this->processDataNum);
                 Adds(tmp1, tmp1, CONST_NE128, this->processDataNum);
@@ -552,8 +499,7 @@ private:
 };
 
 template <typename TYPE_X, typename TYPE_Y>
-class KernelCast1TBuf2B : public BaseKernelCast<TYPE_X, TYPE_Y>
-{
+class KernelCast1TBuf2B : public BaseKernelCast<TYPE_X, TYPE_Y> {
     /*
     1个2Bytes的临时变量
     int8/uint8/bool -> float
@@ -563,40 +509,35 @@ class KernelCast1TBuf2B : public BaseKernelCast<TYPE_X, TYPE_Y>
     */
 public:
     __aicore__ inline KernelCast1TBuf2B() {}
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum,
-                                uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
-                                uint32_t finalSmallTileNum, uint32_t tileDataNum,
-                                uint32_t smallTailDataNum, uint32_t bigTailDataNum,
-                                uint32_t tailBlockNum, TPipe *pipeIn)
+    __aicore__ inline void Init(
+        GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum, uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
+        uint32_t finalSmallTileNum, uint32_t tileDataNum, uint32_t smallTailDataNum, uint32_t bigTailDataNum,
+        uint32_t tailBlockNum, TPipe* pipeIn)
     {
         this->pipe = pipeIn;
         ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
         uint32_t coreNum = GetBlockIdx();
         uint32_t globalBufferIndex = bigCoreDataNum * GetBlockIdx();
         this->tileDataNum = tileDataNum;
-        if (coreNum < tailBlockNum)
-        {
+        if (coreNum < tailBlockNum) {
             this->coreDataNum = bigCoreDataNum;
             this->tileNum = finalBigTileNum;
             this->tailDataNum = bigTailDataNum;
-        }
-        else
-        {
+        } else {
             this->coreDataNum = smallCoreDataNum;
             this->tileNum = finalSmallTileNum;
             this->tailDataNum = smallTailDataNum;
             globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (GetBlockIdx() - tailBlockNum);
         }
-        this->xGm.SetGlobalBuffer((__gm__ TYPE_X *)x + globalBufferIndex, this->coreDataNum);
-        this->yGm.SetGlobalBuffer((__gm__ TYPE_Y *)y + globalBufferIndex, this->coreDataNum);
+        this->xGm.SetGlobalBuffer((__gm__ TYPE_X*)x + globalBufferIndex, this->coreDataNum);
+        this->yGm.SetGlobalBuffer((__gm__ TYPE_Y*)y + globalBufferIndex, this->coreDataNum);
         BufferInit();
     }
     __aicore__ inline void Process()
     {
         int32_t loopCount = this->tileNum;
         this->processDataNum = this->tileDataNum;
-        for (int32_t i = 0; i < loopCount - 1; i++)
-        {
+        for (int32_t i = 0; i < loopCount - 1; i++) {
             this->CopyIn(i);
             Compute(i);
             this->CopyOut(i);
@@ -618,29 +559,26 @@ private:
     {
         LocalTensor<TYPE_X> xLocal = this->inQueueX.template DeQue<TYPE_X>();
         LocalTensor<TYPE_Y> yLocal = this->outQueueY.template AllocTensor<TYPE_Y>();
-        if constexpr ((std::is_same_v<DTYPE_X, int8_t> && std::is_same_v<DTYPE_Y, float>) ||
-                      (std::is_same_v<DTYPE_X, uint8_t> && std::is_same_v<DTYPE_Y, float>) ||
-                      (std::is_same_v<DTYPE_X, bool> && std::is_same_v<DTYPE_Y, float>) ||
-                      (std::is_same_v<DTYPE_X, int8_t> && std::is_same_v<DTYPE_Y, int32_t>) ||
-                      (std::is_same_v<DTYPE_X, uint8_t> && std::is_same_v<DTYPE_Y, int32_t>) ||
-                      (std::is_same_v<DTYPE_X, bool> && std::is_same_v<DTYPE_Y, int32_t>) ||
-                      (std::is_same_v<DTYPE_X, int8_t> && std::is_same_v<DTYPE_Y, int16_t>) ||
-                      (std::is_same_v<DTYPE_X, uint8_t> && std::is_same_v<DTYPE_Y, int16_t>) ||
-                      (std::is_same_v<DTYPE_X, bool> && std::is_same_v<DTYPE_Y, uint8_t>))
-        {
+        if constexpr (
+            (std::is_same_v<DTYPE_X, int8_t> && std::is_same_v<DTYPE_Y, float>) ||
+            (std::is_same_v<DTYPE_X, uint8_t> && std::is_same_v<DTYPE_Y, float>) ||
+            (std::is_same_v<DTYPE_X, bool> && std::is_same_v<DTYPE_Y, float>) ||
+            (std::is_same_v<DTYPE_X, int8_t> && std::is_same_v<DTYPE_Y, int32_t>) ||
+            (std::is_same_v<DTYPE_X, uint8_t> && std::is_same_v<DTYPE_Y, int32_t>) ||
+            (std::is_same_v<DTYPE_X, bool> && std::is_same_v<DTYPE_Y, int32_t>) ||
+            (std::is_same_v<DTYPE_X, int8_t> && std::is_same_v<DTYPE_Y, int16_t>) ||
+            (std::is_same_v<DTYPE_X, uint8_t> && std::is_same_v<DTYPE_Y, int16_t>) ||
+            (std::is_same_v<DTYPE_X, bool> && std::is_same_v<DTYPE_Y, uint8_t>)) {
             LocalTensor<half> tmp1 = tmp2Bytes1.Get<half>();
             Cast(tmp1, xLocal, RoundMode::CAST_NONE, this->processDataNum);
-            if constexpr (std::is_same_v<DTYPE_Y, int32_t> || std::is_same_v<DTYPE_Y, int16_t> || std::is_same_v<DTYPE_Y, uint8_t>)
-            {
+            if constexpr (
+                std::is_same_v<DTYPE_Y, int32_t> || std::is_same_v<DTYPE_Y, int16_t> ||
+                std::is_same_v<DTYPE_Y, uint8_t>) {
                 Cast(yLocal, tmp1, RoundMode::CAST_TRUNC, this->processDataNum);
-            }
-            else
-            {
+            } else {
                 Cast(yLocal, tmp1, RoundMode::CAST_NONE, this->processDataNum);
             }
-        }
-        else if constexpr ((std::is_same_v<DTYPE_X, int8_t> && std::is_same_v<DTYPE_Y, bool>))
-        {
+        } else if constexpr ((std::is_same_v<DTYPE_X, int8_t> && std::is_same_v<DTYPE_Y, bool>)) {
             LocalTensor<half> tmp1 = tmp2Bytes1.Get<half>();
             Cast(tmp1, xLocal, RoundMode::CAST_NONE, this->processDataNum);
             Abs(tmp1, tmp1, this->processDataNum);
@@ -656,8 +594,7 @@ private:
 };
 
 template <typename TYPE_X, typename TYPE_Y>
-class KernelCast1TBuf2B1TBuf4B : public BaseKernelCast<TYPE_X, TYPE_Y>
-{
+class KernelCast1TBuf2B1TBuf4B : public BaseKernelCast<TYPE_X, TYPE_Y> {
     /*
     1个2Bytes,1个4Bytes的临时变量
     int8/uint8/bool -> half ->(TRUNC) int32 -> int64
@@ -667,40 +604,35 @@ class KernelCast1TBuf2B1TBuf4B : public BaseKernelCast<TYPE_X, TYPE_Y>
     */
 public:
     __aicore__ inline KernelCast1TBuf2B1TBuf4B() {}
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum,
-                                uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
-                                uint32_t finalSmallTileNum, uint32_t tileDataNum,
-                                uint32_t smallTailDataNum, uint32_t bigTailDataNum,
-                                uint32_t tailBlockNum, TPipe *pipeIn)
+    __aicore__ inline void Init(
+        GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum, uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
+        uint32_t finalSmallTileNum, uint32_t tileDataNum, uint32_t smallTailDataNum, uint32_t bigTailDataNum,
+        uint32_t tailBlockNum, TPipe* pipeIn)
     {
         this->pipe = pipeIn;
         ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
         uint32_t coreNum = GetBlockIdx();
         uint32_t globalBufferIndex = bigCoreDataNum * GetBlockIdx();
         this->tileDataNum = tileDataNum;
-        if (coreNum < tailBlockNum)
-        {
+        if (coreNum < tailBlockNum) {
             this->coreDataNum = bigCoreDataNum;
             this->tileNum = finalBigTileNum;
             this->tailDataNum = bigTailDataNum;
-        }
-        else
-        {
+        } else {
             this->coreDataNum = smallCoreDataNum;
             this->tileNum = finalSmallTileNum;
             this->tailDataNum = smallTailDataNum;
             globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (GetBlockIdx() - tailBlockNum);
         }
-        this->xGm.SetGlobalBuffer((__gm__ TYPE_X *)x + globalBufferIndex, this->coreDataNum);
-        this->yGm.SetGlobalBuffer((__gm__ TYPE_Y *)y + globalBufferIndex, this->coreDataNum);
+        this->xGm.SetGlobalBuffer((__gm__ TYPE_X*)x + globalBufferIndex, this->coreDataNum);
+        this->yGm.SetGlobalBuffer((__gm__ TYPE_Y*)y + globalBufferIndex, this->coreDataNum);
         BufferInit();
     }
     __aicore__ inline void Process()
     {
         int32_t loopCount = this->tileNum;
         this->processDataNum = this->tileDataNum;
-        for (int32_t i = 0; i < loopCount - 1; i++)
-        {
+        for (int32_t i = 0; i < loopCount - 1; i++) {
             this->CopyIn(i);
             Compute(i);
             this->CopyOut(i);
@@ -723,37 +655,32 @@ private:
     {
         LocalTensor<TYPE_X> xLocal = this->inQueueX.template DeQue<TYPE_X>();
         LocalTensor<TYPE_Y> yLocal = this->outQueueY.template AllocTensor<TYPE_Y>();
-        if constexpr ((std::is_same_v<DTYPE_X, int8_t> && std::is_same_v<DTYPE_Y, int64_t>) ||
-                      (std::is_same_v<DTYPE_X, uint8_t> && std::is_same_v<DTYPE_Y, int64_t>) ||
-                      (std::is_same_v<DTYPE_X, bool> && std::is_same_v<DTYPE_Y, int64_t>))
-        {
+        if constexpr (
+            (std::is_same_v<DTYPE_X, int8_t> && std::is_same_v<DTYPE_Y, int64_t>) ||
+            (std::is_same_v<DTYPE_X, uint8_t> && std::is_same_v<DTYPE_Y, int64_t>) ||
+            (std::is_same_v<DTYPE_X, bool> && std::is_same_v<DTYPE_Y, int64_t>)) {
             LocalTensor<half> tmp1 = tmp2Bytes1.Get<half>();
             LocalTensor<int32_t> tmp2 = tmp4Bytes1.Get<int32_t>();
             Cast(tmp1, xLocal, RoundMode::CAST_NONE, this->processDataNum);
             Cast(tmp2, tmp1, RoundMode::CAST_TRUNC, this->processDataNum);
             Cast(yLocal, tmp2, RoundMode::CAST_NONE, this->processDataNum);
-        }
-        else if constexpr ((std::is_same_v<DTYPE_X, int8_t> && std::is_same_v<DTYPE_Y, bfloat16_t>) ||
-                           (std::is_same_v<DTYPE_X, uint8_t> && std::is_same_v<DTYPE_Y, bfloat16_t>) ||
-                           (std::is_same_v<DTYPE_X, bool> && std::is_same_v<DTYPE_Y, bfloat16_t>))
-        {
+        } else if constexpr (
+            (std::is_same_v<DTYPE_X, int8_t> && std::is_same_v<DTYPE_Y, bfloat16_t>) ||
+            (std::is_same_v<DTYPE_X, uint8_t> && std::is_same_v<DTYPE_Y, bfloat16_t>) ||
+            (std::is_same_v<DTYPE_X, bool> && std::is_same_v<DTYPE_Y, bfloat16_t>)) {
             LocalTensor<half> tmp1 = tmp2Bytes1.Get<half>();
             LocalTensor<float> tmp2 = tmp4Bytes1.Get<float>();
             Cast(tmp1, xLocal, RoundMode::CAST_NONE, this->processDataNum);
             Cast(tmp2, tmp1, RoundMode::CAST_NONE, this->processDataNum);
             Cast(yLocal, tmp2, RoundMode::CAST_RINT, this->processDataNum);
-        }
-        else if constexpr ((std::is_same_v<DTYPE_X, int64_t> && std::is_same_v<DTYPE_Y, bool>) ||
-                           (std::is_same_v<DTYPE_X, bfloat16_t> && std::is_same_v<DTYPE_Y, bool>))
-        {
+        } else if constexpr (
+            (std::is_same_v<DTYPE_X, int64_t> && std::is_same_v<DTYPE_Y, bool>) ||
+            (std::is_same_v<DTYPE_X, bfloat16_t> && std::is_same_v<DTYPE_Y, bool>)) {
             LocalTensor<half> tmp1 = tmp2Bytes1.Get<half>();
             LocalTensor<float> tmp2 = tmp4Bytes1.Get<float>();
-            if constexpr (std::is_same_v<DTYPE_X, int64_t>)
-            {
+            if constexpr (std::is_same_v<DTYPE_X, int64_t>) {
                 Cast(tmp2, xLocal, RoundMode::CAST_ROUND, this->processDataNum);
-            }
-            else if constexpr (std::is_same_v<DTYPE_X, bfloat16_t>)
-            {
+            } else if constexpr (std::is_same_v<DTYPE_X, bfloat16_t>) {
                 Cast(tmp2, xLocal, RoundMode::CAST_NONE, this->processDataNum);
             }
             Cast(tmp1, tmp2, RoundMode::CAST_CEIL, this->processDataNum);
@@ -771,8 +698,7 @@ private:
 };
 
 template <typename TYPE_X, typename TYPE_Y>
-class KernelCast3TBuf2B1TBuf4B : public BaseKernelCast<TYPE_X, TYPE_Y>
-{
+class KernelCast3TBuf2B1TBuf4B : public BaseKernelCast<TYPE_X, TYPE_Y> {
     /*
     3个2Bytes,1个4Bytes的临时变量
     int64 -> int8
@@ -782,40 +708,35 @@ class KernelCast3TBuf2B1TBuf4B : public BaseKernelCast<TYPE_X, TYPE_Y>
     */
 public:
     __aicore__ inline KernelCast3TBuf2B1TBuf4B() {}
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum,
-                                uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
-                                uint32_t finalSmallTileNum, uint32_t tileDataNum,
-                                uint32_t smallTailDataNum, uint32_t bigTailDataNum,
-                                uint32_t tailBlockNum, TPipe *pipeIn)
+    __aicore__ inline void Init(
+        GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum, uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
+        uint32_t finalSmallTileNum, uint32_t tileDataNum, uint32_t smallTailDataNum, uint32_t bigTailDataNum,
+        uint32_t tailBlockNum, TPipe* pipeIn)
     {
         this->pipe = pipeIn;
         ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
         uint32_t coreNum = GetBlockIdx();
         uint32_t globalBufferIndex = bigCoreDataNum * GetBlockIdx();
         this->tileDataNum = tileDataNum;
-        if (coreNum < tailBlockNum)
-        {
+        if (coreNum < tailBlockNum) {
             this->coreDataNum = bigCoreDataNum;
             this->tileNum = finalBigTileNum;
             this->tailDataNum = bigTailDataNum;
-        }
-        else
-        {
+        } else {
             this->coreDataNum = smallCoreDataNum;
             this->tileNum = finalSmallTileNum;
             this->tailDataNum = smallTailDataNum;
             globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (GetBlockIdx() - tailBlockNum);
         }
-        this->xGm.SetGlobalBuffer((__gm__ TYPE_X *)x + globalBufferIndex, this->coreDataNum);
-        this->yGm.SetGlobalBuffer((__gm__ TYPE_Y *)y + globalBufferIndex, this->coreDataNum);
+        this->xGm.SetGlobalBuffer((__gm__ TYPE_X*)x + globalBufferIndex, this->coreDataNum);
+        this->yGm.SetGlobalBuffer((__gm__ TYPE_Y*)y + globalBufferIndex, this->coreDataNum);
         BufferInit();
     }
     __aicore__ inline void Process()
     {
         int32_t loopCount = this->tileNum;
         this->processDataNum = this->tileDataNum;
-        for (int32_t i = 0; i < loopCount - 1; i++)
-        {
+        for (int32_t i = 0; i < loopCount - 1; i++) {
             this->CopyIn(i);
             Compute(i);
             this->CopyOut(i);
@@ -840,28 +761,24 @@ private:
     {
         LocalTensor<TYPE_X> xLocal = this->inQueueX.template DeQue<TYPE_X>();
         LocalTensor<TYPE_Y> yLocal = this->outQueueY.template AllocTensor<TYPE_Y>();
-        if constexpr ((std::is_same_v<DTYPE_X, int64_t> && std::is_same_v<DTYPE_Y, int8_t>) ||
-                      (std::is_same_v<DTYPE_X, int64_t> && std::is_same_v<DTYPE_Y, uint8_t>) ||
-                      (std::is_same_v<DTYPE_X, bfloat16_t> && std::is_same_v<DTYPE_Y, int8_t>) ||
-                      (std::is_same_v<DTYPE_X, bfloat16_t> && std::is_same_v<DTYPE_Y, uint8_t>))
-        {
+        if constexpr (
+            (std::is_same_v<DTYPE_X, int64_t> && std::is_same_v<DTYPE_Y, int8_t>) ||
+            (std::is_same_v<DTYPE_X, int64_t> && std::is_same_v<DTYPE_Y, uint8_t>) ||
+            (std::is_same_v<DTYPE_X, bfloat16_t> && std::is_same_v<DTYPE_Y, int8_t>) ||
+            (std::is_same_v<DTYPE_X, bfloat16_t> && std::is_same_v<DTYPE_Y, uint8_t>)) {
             LocalTensor<int16_t> tmp1 = tmp2Bytes1.Get<int16_t>();
             LocalTensor<int16_t> tmp2 = tmp2Bytes2.Get<int16_t>();
             LocalTensor<half> tmp3 = tmp2Bytes3.Get<half>();
             LocalTensor<int32_t> tmp4 = tmp4Bytes1.Get<int32_t>();
-            if constexpr (std::is_same_v<DTYPE_X, int64_t>)
-            {
+            if constexpr (std::is_same_v<DTYPE_X, int64_t>) {
                 Cast(tmp4, xLocal, RoundMode::CAST_NONE, this->processDataNum);
-            }
-            else if constexpr (std::is_same_v<DTYPE_X, bfloat16_t>)
-            {
+            } else if constexpr (std::is_same_v<DTYPE_X, bfloat16_t>) {
                 Cast(tmp4, xLocal, RoundMode::CAST_TRUNC, this->processDataNum);
             }
             Cast(tmp1, tmp4, RoundMode::CAST_NONE, this->processDataNum);
             Duplicate(tmp2, CONST_255, this->processDataNum);
             And(tmp1, tmp1, tmp2, this->processDataNum);
-            if constexpr (std::is_same_v<DTYPE_Y, int8_t>)
-            {
+            if constexpr (std::is_same_v<DTYPE_Y, int8_t>) {
                 Adds(tmp1, tmp1, CONST_128, this->processDataNum);
                 And(tmp1, tmp1, tmp2, this->processDataNum);
                 Adds(tmp1, tmp1, CONST_NE128, this->processDataNum);
@@ -880,8 +797,7 @@ private:
     TBuf<QuePosition::VECCALC> tmp4Bytes1;
 };
 
-class KernelCastTQueBind
-{
+class KernelCastTQueBind {
     /*
     使用TQueBind直接传输8bit的数据类型
     bool -> int8/uint8
@@ -890,40 +806,35 @@ class KernelCastTQueBind
     */
 public:
     __aicore__ inline KernelCastTQueBind() {}
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum,
-                                uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
-                                uint32_t finalSmallTileNum, uint32_t tileDataNum,
-                                uint32_t smallTailDataNum, uint32_t bigTailDataNum,
-                                uint32_t tailBlockNum, TPipe *pipeIn)
+    __aicore__ inline void Init(
+        GM_ADDR x, GM_ADDR y, uint32_t smallCoreDataNum, uint32_t bigCoreDataNum, uint32_t finalBigTileNum,
+        uint32_t finalSmallTileNum, uint32_t tileDataNum, uint32_t smallTailDataNum, uint32_t bigTailDataNum,
+        uint32_t tailBlockNum, TPipe* pipeIn)
     {
         pipe = pipeIn;
         ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
         uint32_t coreNum = GetBlockIdx();
         uint32_t globalBufferIndex = bigCoreDataNum * GetBlockIdx();
         this->tileDataNum = tileDataNum;
-        if (coreNum < tailBlockNum)
-        {
+        if (coreNum < tailBlockNum) {
             this->coreDataNum = bigCoreDataNum;
             this->tileNum = finalBigTileNum;
             this->tailDataNum = bigTailDataNum;
-        }
-        else
-        {
+        } else {
             this->coreDataNum = smallCoreDataNum;
             this->tileNum = finalSmallTileNum;
             this->tailDataNum = smallTailDataNum;
             globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (GetBlockIdx() - tailBlockNum);
         }
-        xGm.SetGlobalBuffer((__gm__ uint8_t *)x + globalBufferIndex, this->coreDataNum);
-        yGm.SetGlobalBuffer((__gm__ uint8_t *)y + globalBufferIndex, this->coreDataNum);
+        xGm.SetGlobalBuffer((__gm__ uint8_t*)x + globalBufferIndex, this->coreDataNum);
+        yGm.SetGlobalBuffer((__gm__ uint8_t*)y + globalBufferIndex, this->coreDataNum);
         pipe->InitBuffer(queBind, BUFFER_NUM, this->tileDataNum * sizeof(uint8_t));
     }
     __aicore__ inline void Process()
     {
         int32_t loopCount = this->tileNum;
         this->processDataNum = this->tileDataNum;
-        for (int32_t i = 0; i < loopCount - 1; i++)
-        {
+        for (int32_t i = 0; i < loopCount - 1; i++) {
             auto bindLocal = queBind.AllocTensor<uint8_t>();
             DataCopy(bindLocal, xGm[i * this->tileDataNum], this->processDataNum);
             queBind.EnQue(bindLocal);
@@ -941,7 +852,7 @@ public:
     }
 
 private:
-    TPipe *pipe;
+    TPipe* pipe;
     TQueBind<TPosition::VECIN, TPosition::VECOUT, BUFFER_NUM> queBind;
     GlobalTensor<uint8_t> xGm;
     GlobalTensor<uint8_t> yGm;

@@ -44,8 +44,7 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_COMPLEX = {
 
 static const std::initializer_list<DataType>& GetDtypeSupportList(SocVersion socVersion)
 {
-    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-    IsRegBase()) {
+    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 || IsRegBase()) {
         return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
     } else if (socVersion == SocVersion::ASCEND910) {
         return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
@@ -141,10 +140,7 @@ static inline DataType PromoteTypeScalar(const op::DataType selfDtype, const op:
 }
 
 // 得到tensor的维度数
-static inline int64_t GetTensorDimNum(const aclTensor* self)
-{
-    return (int64_t)(self->GetViewShape().GetDimNum());
-}
+static inline int64_t GetTensorDimNum(const aclTensor* self) { return (int64_t)(self->GetViewShape().GetDimNum()); }
 
 // Tensor self, Tensor other 检查参数是否为空指针
 static aclnnStatus CheckNotNullTensorTensor(const aclTensor* self, const aclTensor* other, const aclTensor* out)
@@ -505,12 +501,11 @@ static aclnnStatus SetWorkspaceAndRelease(
 
 // 提取RunRemainderProcessAndRelease逻辑，消除else分支重复
 static aclnnStatus RunRemainderProcessAndRelease(
-    const aclTensor* self, const aclTensor* other, const aclTensor* out,
-    UniqueExecutor& uniqueExecutor, uint64_t* workspaceSize, aclOpExecutor** executor)
+    const aclTensor* self, const aclTensor* other, const aclTensor* out, UniqueExecutor& uniqueExecutor,
+    uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     bool needUnsqueeze = (GetTensorDimNum(out) == 0);
-    auto remainderRes =
-        RemainderMainProcess(self, other, out, needUnsqueeze, uniqueExecutor.get());
+    auto remainderRes = RemainderMainProcess(self, other, out, needUnsqueeze, uniqueExecutor.get());
     CHECK_RET(remainderRes == ACLNN_SUCCESS, remainderRes);
 
     return SetWorkspaceAndRelease(uniqueExecutor, workspaceSize, executor);
@@ -649,8 +644,7 @@ aclnnStatus aclnnRemainderScalarTensorGetWorkspaceSize(
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }
-    if (IsRegBase() &&
-        PromoteTypeScalarV35(other->GetDataType(), self->GetDataType()) != op::DataType::DT_DOUBLE) {
+    if (IsRegBase() && PromoteTypeScalarV35(other->GetDataType(), self->GetDataType()) != op::DataType::DT_DOUBLE) {
         auto castDtype = PromoteTypeScalarV35(other->GetDataType(), self->GetDataType());
         auto otherContiguous = l0op::Contiguous(other, uniqueExecutor.get());
         CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);

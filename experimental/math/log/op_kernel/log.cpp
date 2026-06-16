@@ -15,8 +15,7 @@
 
 #include "log.h"
 
-enum class LogTilingKey : uint32_t
-{
+enum class LogTilingKey : uint32_t {
     TILING_KEY_EXAMPLE_BIGCORE = 0,
     TILING_KEY_EXAMPLE_SMALLCORE = 1,
 };
@@ -30,34 +29,22 @@ __global__ __aicore__ void log(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR 
     // 场景1
     if constexpr (schMode == static_cast<uint32_t>(LogTilingKey::TILING_KEY_EXAMPLE_BIGCORE)) {
         NsLog::LogKernel<DTYPE_X, DTYPE_Y, schMode> op; // 算子kernel实例获取
-        op.Init(x, y, tilingData.smallCoreDataNum,           \
-                tilingData.bigCoreDataNum,                   \
-                tilingData.bigCoreLoopNum,                   \
-                tilingData.smallCoreLoopNum,                 \
-                tilingData.ubPartDataNum,                    \
-                tilingData.smallCoreTailDataNum,             \
-                tilingData.bigCoreTailDataNum,               \
-                tilingData.tailBlockNum,                     \
-                tilingData.base,                             \
-                tilingData.scale,                            \
-                tilingData.shift);      // 算子kernel实例初始化
-        op.Process();                       // 算子kernel实例执行
+        op.Init(
+            x, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
+            tilingData.smallCoreLoopNum, tilingData.ubPartDataNum, tilingData.smallCoreTailDataNum,
+            tilingData.bigCoreTailDataNum, tilingData.tailBlockNum, tilingData.base, tilingData.scale,
+            tilingData.shift); // 算子kernel实例初始化
+        op.Process();          // 算子kernel实例执行
     }
 
     // 场景2
     if constexpr (schMode == static_cast<uint32_t>(LogTilingKey::TILING_KEY_EXAMPLE_SMALLCORE)) {
         NsLog::LogKernel<DTYPE_X, DTYPE_Y, schMode> op; // 算子kernel实例获取
-        op.Init(x, y, tilingData.smallCoreDataNum,           \
-                tilingData.bigCoreDataNum,                   \
-                tilingData.bigCoreLoopNum,                   \
-                tilingData.smallCoreLoopNum,                 \
-                tilingData.ubPartDataNum,                    \
-                tilingData.smallCoreTailDataNum,             \
-                tilingData.bigCoreTailDataNum,               \
-                tilingData.tailBlockNum,                     \
-                tilingData.base,                             \
-                tilingData.scale,                            \
-                tilingData.shift);        // 算子kernel实例初始化
-        op.Process();                         // 算子kernel实例执行
+        op.Init(
+            x, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
+            tilingData.smallCoreLoopNum, tilingData.ubPartDataNum, tilingData.smallCoreTailDataNum,
+            tilingData.bigCoreTailDataNum, tilingData.tailBlockNum, tilingData.base, tilingData.scale,
+            tilingData.shift); // 算子kernel实例初始化
+        op.Process();          // 算子kernel实例执行
     }
 }

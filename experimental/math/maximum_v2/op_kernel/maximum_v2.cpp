@@ -21,7 +21,7 @@
 /*!
  * \file maximum_v2.cpp
  * \brief
-*/
+ */
 
 #include "maximum_v2.h"
 
@@ -30,7 +30,7 @@ __global__ __aicore__ void maximum_v2(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR w
 {
     REGISTER_TILING_DEFAULT(MaximumV2TilingData);
     GET_TILING_DATA_WITH_STRUCT(MaximumV2TilingData, tilingData, tiling);
-    NsMaximumV2::MaximumV2<DTYPE_X1> op; // 算子kernel实例获取
-    op.Init(x, y, z,workspace, &tilingData);      // 算子kernel实例初始化
-    op.Process();                       // 算子kernel实例执行
+    NsMaximumV2::MaximumV2<DTYPE_X1> op;      // 算子kernel实例获取
+    op.Init(x, y, z, workspace, &tilingData); // 算子kernel实例初始化
+    op.Process();                             // 算子kernel实例执行
 }

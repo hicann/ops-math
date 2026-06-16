@@ -21,7 +21,7 @@
 /*!
  * \file trunc_v2_proto.h
  * \brief
-*/
+ */
 #ifndef OPS_OP_PROTO_INC_DIV_H_
 #define OPS_OP_PROTO_INC_DIV_H_
 
@@ -33,7 +33,7 @@ namespace ge {
 *@brief Returns element-wise nearest integer not further from zero than "x".
 
 *@par Inputs:
-x: A ND Tensor of type float16 or float32. 
+x: A ND Tensor of type float16 or float32.
 *@par Outputs:
 *y: A ND Tensor. Has the same dtype as "x".
 *@par Third-party framework compatibility

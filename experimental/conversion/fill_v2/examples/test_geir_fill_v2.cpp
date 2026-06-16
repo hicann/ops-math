@@ -180,9 +180,9 @@ int CreateOppInGraph(
     // 自定义代码：添加单算子定义到图中
     auto add1 = op::FillV2("add1");
     std::vector<int64_t> xShape = {4, 4};
-    //std::vector<int64_t> valueShape = {1};
+    // std::vector<int64_t> valueShape = {1};
     ADD_INPUT(1, x, inDtype, xShape);
-    //ADD_INPUT(2, fill_value, inDtype, valueShape);
+    // ADD_INPUT(2, fill_value, inDtype, valueShape);
     ADD_OUTPUT(1, x, inDtype, xShape);
 
     outputs.push_back(add1);

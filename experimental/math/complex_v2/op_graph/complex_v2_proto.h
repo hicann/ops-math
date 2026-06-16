@@ -22,7 +22,7 @@
 /*!
  * \file complex_v2_proto.h
  * \brief
-*/
+ */
 #ifndef OPS_OP_PROTO_INC_COMPLEXV2_H_
 #define OPS_OP_PROTO_INC_COMPLEXV2_H_
 
@@ -44,9 +44,9 @@ namespace ge {
 *Compatible with the TensorFlow operator ComplexV2.
 */
 REG_OP(ComplexV2)
-    .INPUT(x1, TensorType({DT_FLOAT,DT_FLOAT16}))
-    .INPUT(x2, TensorType({DT_FLOAT,DT_FLOAT16}))
-    .OUTPUT(y, TensorType({DT_FLOAT,DT_FLOAT16}))
+    .INPUT(x1, TensorType({DT_FLOAT, DT_FLOAT16}))
+    .INPUT(x2, TensorType({DT_FLOAT, DT_FLOAT16}))
+    .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16}))
     .OP_END_FACTORY_REG(ComplexV2)
 
 } // namespace ge

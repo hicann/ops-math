@@ -36,11 +36,8 @@ extern "C" {
  * @param [out] executor       返回 op 执行器，供第二段接口使用。
  * @return aclnnStatus         执行状态码：成功返回 ACLNN_SUCCESS，否则返回相应错误码。
  */
-ACLNN_API aclnnStatus aclnnFresnelSinGetWorkspaceSize(
-    const aclTensor *x,
-    aclTensor *out,
-    uint64_t *workspaceSize,
-    aclOpExecutor **executor);
+ACLNN_API aclnnStatus
+aclnnFresnelSinGetWorkspaceSize(const aclTensor* x, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief 执行 aclnnFresnelSin 算子计算（两段式接口第二段）。
@@ -51,11 +48,8 @@ ACLNN_API aclnnStatus aclnnFresnelSinGetWorkspaceSize(
  * @param [in] stream         指定执行的 acl stream。
  * @return aclnnStatus        执行状态码：成功返回 ACLNN_SUCCESS，否则返回相应错误码。
  */
-ACLNN_API aclnnStatus aclnnFresnelSin(
-    void *workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor *executor,
-    aclrtStream stream);
+ACLNN_API aclnnStatus
+aclnnFresnelSin(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 #ifdef __cplusplus
 }

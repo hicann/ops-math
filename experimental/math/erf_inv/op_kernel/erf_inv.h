@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
- /**
+/**
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
  */
@@ -36,9 +36,9 @@ public:
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const ErfInvTilingData* tilingData, TPipe* pipePtr)
     {
         this->pipe = pipePtr;
-        uint32_t baseElems  = tilingData->baseElems;
-        uint32_t pivot      = tilingData->pivot;
-        this->tileSize   = tilingData->tileSize;
+        uint32_t baseElems = tilingData->baseElems;
+        uint32_t pivot = tilingData->pivot;
+        this->tileSize = tilingData->tileSize;
 
         // Pivot distribution
         uint32_t blockId = GetBlockIdx();
@@ -56,7 +56,7 @@ public:
 
         // Float32 compute buffers: Cast block alignment for safety
         uint32_t castAligned = ((tileSize + 15u) / 16u) * 16u * sizeof(float);
-        uint32_t padAligned  = ((tileSize * sizeof(float) + 31u) / 32u) * 32u;
+        uint32_t padAligned = ((tileSize * sizeof(float) + 31u) / 32u) * 32u;
         uint32_t f32Bytes = (castAligned > padAligned) ? castAligned : padAligned;
 
         pipe->InitBuffer(xFloatBuf, f32Bytes);
@@ -94,8 +94,7 @@ private:
     //     no rounding is needed. CAST_RINT was tested on ascend910_93 and produced
     //     garbage for all fp16 shapes, so we explicitly choose CAST_NONE.
     template <typename U>
-    __aicore__ inline void CastInput(LocalTensor<float>& dst,
-                                      LocalTensor<U>& src, uint32_t count)
+    __aicore__ inline void CastInput(LocalTensor<float>& dst, LocalTensor<U>& src, uint32_t count)
     {
         if constexpr (std::is_same_v<U, float>) {
             Adds(dst, src, 0.0f, count);
@@ -108,8 +107,7 @@ private:
     //   - T == float: Adds(·, 0.0f) as a reliable UB-to-UB copy (see CastInput).
     //   - T == half:  CAST_ROUND (IEEE round-to-nearest-even on narrowing).
     template <typename U>
-    __aicore__ inline void CastOutput(LocalTensor<U>& dst,
-                                       LocalTensor<float>& src, uint32_t count)
+    __aicore__ inline void CastOutput(LocalTensor<U>& dst, LocalTensor<float>& src, uint32_t count)
     {
         if constexpr (std::is_same_v<U, float>) {
             Adds(dst, src, 0.0f, count);
@@ -123,10 +121,8 @@ private:
     // muls/adds. Caller provides the *shifted* input in x; result must be a
     // separate tensor from x (not in-place).
     template <size_t N>
-    __aicore__ inline void HornerEval(const LocalTensor<float>& result,
-                                       const LocalTensor<float>& x,
-                                       const float (&coeffs)[N],
-                                       uint32_t count)
+    __aicore__ inline void HornerEval(
+        const LocalTensor<float>& result, const LocalTensor<float>& x, const float (&coeffs)[N], uint32_t count)
     {
         Duplicate(result, coeffs[0], count);
         for (size_t i = 1; i < N; i++) {
@@ -187,22 +183,18 @@ private:
 
         // Region 1 (w ≤ 5): r1 = P1(w - 2.5), degree-8 Horner polynomial.
         // Coefficients from Mike Giles (2012), "Approximating the erfinv function".
-        constexpr float REGION1_COEFFS[] = {
-             2.81022636e-08f,  3.43273939e-07f, -3.52338770e-06f, -4.39150654e-06f,
-             2.18580870e-04f, -1.25372503e-03f, -4.17768164e-03f,  2.46640727e-01f,
-             1.50140941e+00f
-        };
-        Adds(tmpLocal, wLocal, -2.5f, count);        // shifted input
+        constexpr float REGION1_COEFFS[] = {2.81022636e-08f,  3.43273939e-07f, -3.52338770e-06f,
+                                            -4.39150654e-06f, 2.18580870e-04f, -1.25372503e-03f,
+                                            -4.17768164e-03f, 2.46640727e-01f, 1.50140941e+00f};
+        Adds(tmpLocal, wLocal, -2.5f, count); // shifted input
         HornerEval(r1Local, tmpLocal, REGION1_COEFFS, count);
 
         // Region 2 (w > 5): r2 = P2(sqrt(w) - 3.0), degree-8 Horner polynomial.
-        constexpr float REGION2_COEFFS[] = {
-            -2.00214257e-04f,  1.00950558e-04f,  1.34934322e-03f, -3.67342844e-03f,
-             5.73950773e-03f, -7.62246130e-03f,  9.43887047e-03f,  1.00167406e+00f,
-             2.83297682e+00f
-        };
+        constexpr float REGION2_COEFFS[] = {-2.00214257e-04f, 1.00950558e-04f, 1.34934322e-03f,
+                                            -3.67342844e-03f, 5.73950773e-03f, -7.62246130e-03f,
+                                            9.43887047e-03f,  1.00167406e+00f, 2.83297682e+00f};
         Sqrt(r2Local, wLocal, count);
-        Adds(tmpLocal, r2Local, -3.0f, count);       // shifted input
+        Adds(tmpLocal, r2Local, -3.0f, count); // shifted input
         HornerEval(r2Local, tmpLocal, REGION2_COEFFS, count);
 
         // ========== Blend regions: out = (w > 5.0) ? r2 : r1 ==========

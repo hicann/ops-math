@@ -21,15 +21,9 @@ using namespace optiling;
 
 class SqrtTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "SqrtTiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "SqrtTiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "SqrtTiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "SqrtTiling TearDown " << endl; }
 };
 
 TEST_F(SqrtTiling, ascend9101_test_tiling_fp16_001)

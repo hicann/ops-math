@@ -130,7 +130,7 @@ __aicore__ inline void KernelTanhGrad<TYPE_Y>::Compute(int32_t progress)
 
     if constexpr (std::is_same_v<TYPE_Y, float32_t>) {
         // float32类型直接计算
-        AscendC::Mul(dxLocal, yLocal, yLocal, this->processDataNum); // y²
+        AscendC::Mul(dxLocal, yLocal, yLocal, this->processDataNum);   // y²
         AscendC::Muls(dxLocal, dxLocal, -1.0f, this->processDataNum);  // -y²
         AscendC::Adds(dxLocal, dxLocal, 1.0f, this->processDataNum);   // 1 - y²
         AscendC::Mul(dxLocal, dxLocal, dyLocal, this->processDataNum); // dy * (1 - y²)
@@ -140,12 +140,12 @@ __aicore__ inline void KernelTanhGrad<TYPE_Y>::Compute(int32_t progress)
         AscendC::LocalTensor<float> yFloat = tmp1.Get<float>();
         AscendC::LocalTensor<float> dyFloat = tmp2.Get<float>();
         AscendC::LocalTensor<float> dxFloat = tmp3.Get<float>();
-        
+
         // 转换为float32进行计算
         AscendC::Cast(yFloat, yLocal, AscendC::RoundMode::CAST_NONE, this->processDataNum);
         AscendC::Cast(dyFloat, dyLocal, AscendC::RoundMode::CAST_NONE, this->processDataNum);
 
-        AscendC::Mul(dxFloat, yFloat, yFloat, this->processDataNum);  // y²
+        AscendC::Mul(dxFloat, yFloat, yFloat, this->processDataNum);   // y²
         AscendC::Muls(dxFloat, dxFloat, -1.0f, this->processDataNum);  // -y²
         AscendC::Adds(dxFloat, dxFloat, 1.0f, this->processDataNum);   // 1 - y²
         AscendC::Mul(dxFloat, dxFloat, dyFloat, this->processDataNum); // dy * (1 - y²)

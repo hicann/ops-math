@@ -21,7 +21,7 @@
 /*!
  * \file ger_v2_tiling.cpp
  * \brief
-*/
+ */
 
 #include "log/log.h"
 #include "util/math_util.h"
@@ -38,10 +38,10 @@ const uint32_t BUFFER_NUM = 2;
 
 const uint32_t WS_SYS_SIZE = 16U * 1024U * 1024U;
 
-const int32_t DIM_X = 1;   // 期望 x 的维度
-const int32_t DIM_Y = 1;   // 期望 y 的维度
-const int32_t DIM_A = 2;   // 期望 A 的维度
-const int32_t DIM_Z = 2;   // 期望 Z 的维度
+const int32_t DIM_X = 1; // 期望 x 的维度
+const int32_t DIM_Y = 1; // 期望 y 的维度
+const int32_t DIM_A = 2; // 期望 A 的维度
+const int32_t DIM_Z = 2; // 期望 Z 的维度
 
 static constexpr int32_t IDX_0 = 0;
 static constexpr int32_t IDX_1 = 1;
@@ -71,7 +71,7 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
 }
 
 // 获取属性，shape信息
-static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context,int64_t& m,int64_t& n, ge::DataType& dataType)
+static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& m, int64_t& n, ge::DataType& dataType)
 {
     // 获取输入shape信息
     auto inputX = context->GetInputShape(0);
@@ -94,23 +94,18 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context,int64_t& m
     // shape校验
     // ===== Step 1: rank 校验（必须先做，避免 GetDim 越界）=====
     OP_CHECK_IF(
-        inputShapeX.GetDimNum() != DIM_X ||
-        inputShapeY.GetDimNum() != DIM_Y ||
-        inputShapeA.GetDimNum() != DIM_A ||
-        outputShapeZ.GetDimNum() != DIM_Z,
+        inputShapeX.GetDimNum() != DIM_X || inputShapeY.GetDimNum() != DIM_Y || inputShapeA.GetDimNum() != DIM_A ||
+            outputShapeZ.GetDimNum() != DIM_Z,
         OP_LOGE(
             context,
             "Ger: rank mismatch. "
             "x(rank=%zu), y(rank=%zu), A(rank=%zu), Z(rank=%zu)",
-            inputShapeX.GetDimNum(),
-            inputShapeY.GetDimNum(),
-            inputShapeA.GetDimNum(),
-            outputShapeZ.GetDimNum()),
+            inputShapeX.GetDimNum(), inputShapeY.GetDimNum(), inputShapeA.GetDimNum(), outputShapeZ.GetDimNum()),
         return ge::GRAPH_FAILED);
 
     // ===== Step 2: rank 已验证安全，可以 GetDim =====
-    m = inputShapeX.GetDim(IDX_0);   // x 长度
-    n = inputShapeY.GetDim(IDX_0);   // y 长度
+    m = inputShapeX.GetDim(IDX_0); // x 长度
+    n = inputShapeY.GetDim(IDX_0); // y 长度
 
     auto A_dim0 = inputShapeA.GetDim(IDX_0);
     auto A_dim1 = inputShapeA.GetDim(IDX_1);
@@ -120,22 +115,19 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context,int64_t& m
 
     // ===== Step 3: shape 大小校验 =====
     OP_CHECK_IF(
-        A_dim0 != m || A_dim1 != n ||
-        Z_dim0 != m || Z_dim1 != n,
+        A_dim0 != m || A_dim1 != n || Z_dim0 != m || Z_dim1 != n,
         OP_LOGE(
             context,
             "Ger: shape check failed. "
             "x(rank=%zu, m=%ld), y(rank=%zu, n=%ld), "
             "A(rank=%zu, [%ld,%ld]), Z(rank=%zu, [%ld,%ld]) | "
             "expected x(1-D), y(1-D), A/Z(2-D [m,n]).",
-            inputShapeX.GetDimNum(), m,
-            inputShapeY.GetDimNum(), n,
-            inputShapeA.GetDimNum(), A_dim0, A_dim1,
+            inputShapeX.GetDimNum(), m, inputShapeY.GetDimNum(), n, inputShapeA.GetDimNum(), A_dim0, A_dim1,
             outputShapeZ.GetDimNum(), Z_dim0, Z_dim1),
         return ge::GRAPH_FAILED);
 
     // dtype校验
-    const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_FLOAT16,ge::DT_INT32, ge::DT_INT16};
+    const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT32, ge::DT_INT16};
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
     dataType = inputDesc->GetDataType();
@@ -160,35 +152,39 @@ static ge::graphStatus GerV2TilingFunc(gert::TilingContext* context)
 {
     // 1. platform
     uint64_t ubSize = 0;
-    uint32_t  coreNum = 0;
-    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+    uint32_t coreNum = 0;
+    OP_CHECK_IF(
+        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+        return ge::GRAPH_FAILED);
 
     // 2. shapes & dtype
-    
-    int64_t m=0;
-    int64_t n=0;
+
+    int64_t m = 0;
+    int64_t n = 0;
     ge::DataType dataType;
-    OP_CHECK_IF(GetShapeAttrsInfo(context,m,n, dataType) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetShapeAttrsInfo(context, m, n, dataType) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetShapeAttrsInfo error"),
+        return ge::GRAPH_FAILED);
 
     // 3. workspace
-    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+        return ge::GRAPH_FAILED);
 
     GerV2TilingData* tiling = context->GetTilingData<GerV2TilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(memset_s(tiling, sizeof(GerV2TilingData), 0, sizeof(GerV2TilingData)) != EOK,
-                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        memset_s(tiling, sizeof(GerV2TilingData), 0, sizeof(GerV2TilingData)) != EOK,
+        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     auto attrs = context->GetAttrs();
-    float alpha = 1.0f;  // fallback
+    float alpha = 1.0f; // fallback
     if (attrs) {
-        const float* attrA = attrs->GetFloat(0);  // 只有一个属性，索引 0
+        const float* attrA = attrs->GetFloat(0); // 只有一个属性，索引 0
         if (attrA != nullptr) {
             alpha = *attrA;
         }
-    }    
+    }
 
     // --- safer numeric types ---
     uint32_t typeLength = 0;
@@ -197,30 +193,31 @@ static ge::graphStatus GerV2TilingFunc(gert::TilingContext* context)
         OP_LOGE(context, "typeLength is 0");
         return ge::GRAPH_FAILED;
     }
-    uint64_t inputBytes = static_cast<uint64_t>(typeLength);    //数据类型长度
-    uint32_t ubDataNumber =5U;
+    uint64_t inputBytes = static_cast<uint64_t>(typeLength); // 数据类型长度
+    uint32_t ubDataNumber = 5U;
 
-    uint32_t tileDataNum=ubSize/BUFFER_NUM/ubDataNumber/inputBytes;
-    if (tileDataNum == 0U) tileDataNum = 1U;
-    int64_t tileNums=n/static_cast<int64_t>(tileDataNum);   //一行分为几个tile
-    int64_t tailTileDataNum=n%static_cast<int64_t>(tileDataNum);
-    tileNums=(tailTileDataNum==0)?tileNums:tileNums+1;
-    tailTileDataNum=(tailTileDataNum==0)?tileDataNum:tailTileDataNum;
-    
-    coreNum = (static_cast<uint32_t>(m) < coreNum) ? static_cast<uint32_t>(m) : coreNum;//调用aicore数量
-    int64_t smallCoreRows=m/static_cast<int64_t>(coreNum);
-    int64_t tailRowNum=m%static_cast<int64_t>(coreNum);   //大核数量
-    int64_t bigCoreRows=smallCoreRows+1;
+    uint32_t tileDataNum = ubSize / BUFFER_NUM / ubDataNumber / inputBytes;
+    if (tileDataNum == 0U)
+        tileDataNum = 1U;
+    int64_t tileNums = n / static_cast<int64_t>(tileDataNum); // 一行分为几个tile
+    int64_t tailTileDataNum = n % static_cast<int64_t>(tileDataNum);
+    tileNums = (tailTileDataNum == 0) ? tileNums : tileNums + 1;
+    tailTileDataNum = (tailTileDataNum == 0) ? tileDataNum : tailTileDataNum;
 
-    tiling->smallCoreRows=smallCoreRows;
-    tiling->bigCoreRows=bigCoreRows;
-    tiling->tailRowNum=tailRowNum;
-    tiling->tileNums=tileNums;
-    tiling->tileDataNum=tileDataNum;
-    tiling->tailTileDataNum=tailTileDataNum;
-    tiling->m=m;
-    tiling->n=n;
-    tiling->alpha=alpha;
+    coreNum = (static_cast<uint32_t>(m) < coreNum) ? static_cast<uint32_t>(m) : coreNum; // 调用aicore数量
+    int64_t smallCoreRows = m / static_cast<int64_t>(coreNum);
+    int64_t tailRowNum = m % static_cast<int64_t>(coreNum); // 大核数量
+    int64_t bigCoreRows = smallCoreRows + 1;
+
+    tiling->smallCoreRows = smallCoreRows;
+    tiling->bigCoreRows = bigCoreRows;
+    tiling->tailRowNum = tailRowNum;
+    tiling->tileNums = tileNums;
+    tiling->tileDataNum = tileDataNum;
+    tiling->tailTileDataNum = tailTileDataNum;
+    tiling->m = m;
+    tiling->n = n;
+    tiling->alpha = alpha;
 
     context->SetBlockDim(coreNum);
 

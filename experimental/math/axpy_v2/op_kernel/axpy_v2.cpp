@@ -15,8 +15,7 @@
 
 #include "axpy_v2.h"
 
-enum class AxpyV2TilingKey : uint32_t
-{
+enum class AxpyV2TilingKey : uint32_t {
     TILING_KEY_EXAMPLE_DB = 0,
     TILING_KEY_EXAMPLE_NDB = 1,
 };
@@ -27,16 +26,14 @@ __global__ __aicore__ void axpy_v2(GM_ADDR x1, GM_ADDR x2, GM_ADDR alpha, GM_ADD
     REGISTER_TILING_DEFAULT(AxpyV2TilingData);
     GET_TILING_DATA_WITH_STRUCT(AxpyV2TilingData, tilingData, tiling);
     AscendC::TPipe pipe;
-    if constexpr (schMode == static_cast<uint32_t>(AxpyV2TilingKey::TILING_KEY_EXAMPLE_DB))
-    {
+    if constexpr (schMode == static_cast<uint32_t>(AxpyV2TilingKey::TILING_KEY_EXAMPLE_DB)) {
         NsAxpyV2::AxpyV2<DTYPE_X1, DTYPE_X2, DTYPE_ALPHA, DTYPE_Y, 2> op; // 算子kernel实例获取
-        op.Init(x1, x2, alpha, y, &tilingData, &pipe);      // 算子kernel实例初始化
-        op.Process();                       // 算子kernel实例执行
+        op.Init(x1, x2, alpha, y, &tilingData, &pipe);                    // 算子kernel实例初始化
+        op.Process();                                                     // 算子kernel实例执行
     }
-    if constexpr (schMode == static_cast<uint32_t>(AxpyV2TilingKey::TILING_KEY_EXAMPLE_NDB))
-    {
+    if constexpr (schMode == static_cast<uint32_t>(AxpyV2TilingKey::TILING_KEY_EXAMPLE_NDB)) {
         NsAxpyV2::AxpyV2<DTYPE_X1, DTYPE_X2, DTYPE_ALPHA, DTYPE_Y, 1> op; // 算子kernel实例获取
-        op.Init(x1, x2, alpha, y, &tilingData, &pipe);      // 算子kernel实例初始化
-        op.Process();                       // 算子kernel实例执行
+        op.Init(x1, x2, alpha, y, &tilingData, &pipe);                    // 算子kernel实例初始化
+        op.Process();                                                     // 算子kernel实例执行
     }
 }

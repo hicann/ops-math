@@ -33,14 +33,12 @@ protected:
     static void SetUpTestCase()
     {
         std::cout << "erf_test SetUp" << std::endl;
-        const string cmd = "cp -rf " + dataPath + " ./";   
+        const string cmd = "cp -rf " + dataPath + " ./";
         system(cmd.c_str());
         system("chmod -R 755 ./erf_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "erf_test TearDown" << std::endl;
-    }   
+    static void TearDownTestCase() { std::cout << "erf_test TearDown" << std::endl; }
+
 private:
     const static std::string rootPath;
     const static std::string dataPath;
@@ -54,15 +52,15 @@ inline T1 CeilAlign(T1 a, T2 b)
 {
     if (b == 0) {
         return a;
-    }    
+    }
     return (a + b - 1) / b * b;
 }
 
 TEST_F(ErfTest, test_case_float32_1)
 {
-    system("pwd");  
+    system("pwd");
     system("ls -la erf_data 2>/dev/null || echo 'erf_data not found'");
-    
+
     uint32_t blockDim = 1;
     system("cd ./erf_data/ && python3 gen_data.py '(1024)' 'float32'");
     uint32_t dataCount = INPUT_DATA_NUM;
@@ -83,7 +81,7 @@ TEST_F(ErfTest, test_case_float32_1)
 
     ErfTilingData* tilingData = reinterpret_cast<ErfTilingData*>(tiling);
 
-    tilingData->smallCoreDataNum = 0 ;
+    tilingData->smallCoreDataNum = 0;
     tilingData->bigCoreDataNum = INPUT_DATA_NUM;
     tilingData->finalBigTileNum = 1;
     tilingData->finalSmallTileNum = 0;

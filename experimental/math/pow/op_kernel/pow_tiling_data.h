@@ -11,11 +11,11 @@
 /*!
  * \file pow_tiling_data.h
  * \brief tiling data struct
-*/
+ */
 #ifndef POW_TILING_DATA_H_
 #define POW_TILING_DATA_H_
 
-struct PowTilingData{
+struct PowTilingData {
     uint32_t smallCoreDataNum;
     uint32_t bigCoreDataNum;
     uint32_t finalBigTileNum;
@@ -24,6 +24,6 @@ struct PowTilingData{
     uint32_t smallTailDataNum;
     uint32_t bigTailDataNum;
     uint32_t tailBlockNum;
-} ;
+};
 
 #endif

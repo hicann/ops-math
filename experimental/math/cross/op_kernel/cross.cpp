@@ -11,11 +11,10 @@
 /*!
  * \file cross.cpp
  * \brief
-*/
+ */
 #include "cross.h"
 
-enum class CrossTilingKey : uint32_t
-{
+enum class CrossTilingKey : uint32_t {
     TILING_KEY_EXAMPLE_FLOAT = 0,
     TILING_KEY_EXAMPLE_INT32 = 1,
     TILING_KEY_EXAMPLE_INT8 = 2,
@@ -33,28 +32,23 @@ __global__ __aicore__ void cross(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR worksp
         NsCross::Cross<float> op;
         op.Init(x, y, z, &tilingData);
         op.Process();
-    }
-    else if constexpr (schMode == static_cast<uint32_t>(CrossTilingKey::TILING_KEY_EXAMPLE_INT32)) {
+    } else if constexpr (schMode == static_cast<uint32_t>(CrossTilingKey::TILING_KEY_EXAMPLE_INT32)) {
         NsCross::Cross<int32_t> op;
         op.Init(x, y, z, &tilingData);
         op.Process();
-    }
-    else if constexpr (schMode == static_cast<uint32_t>(CrossTilingKey::TILING_KEY_EXAMPLE_INT8)) {
+    } else if constexpr (schMode == static_cast<uint32_t>(CrossTilingKey::TILING_KEY_EXAMPLE_INT8)) {
         NsCross::Cross<int8_t> op;
         op.Init(x, y, z, &tilingData);
         op.Process();
-    }
-    else if constexpr (schMode == static_cast<uint32_t>(CrossTilingKey::TILING_KEY_EXAMPLE_HALF)) {
+    } else if constexpr (schMode == static_cast<uint32_t>(CrossTilingKey::TILING_KEY_EXAMPLE_HALF)) {
         NsCross::Cross<half> op;
         op.Init(x, y, z, &tilingData);
         op.Process();
-    }
-    else if constexpr (schMode == static_cast<uint32_t>(CrossTilingKey::TILING_KEY_EXAMPLE_UINT8)) {
+    } else if constexpr (schMode == static_cast<uint32_t>(CrossTilingKey::TILING_KEY_EXAMPLE_UINT8)) {
         NsCross::Cross<uint8_t> op;
         op.Init(x, y, z, &tilingData);
         op.Process();
-    }
-    else if constexpr (schMode == static_cast<uint32_t>(CrossTilingKey::TILING_KEY_EXAMPLE_INT16)) {
+    } else if constexpr (schMode == static_cast<uint32_t>(CrossTilingKey::TILING_KEY_EXAMPLE_INT16)) {
         NsCross::Cross<int16_t> op;
         op.Init(x, y, z, &tilingData);
         op.Process();

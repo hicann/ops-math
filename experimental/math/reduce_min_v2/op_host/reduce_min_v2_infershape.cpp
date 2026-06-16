@@ -28,60 +28,59 @@
 using namespace ge;
 
 namespace ops {
-    static constexpr int64_t IDX_0 = 0;
+static constexpr int64_t IDX_0 = 0;
 
-    static ge::graphStatus InferShapeReduceMinV2(gert::InferShapeContext* context)
-    {
-        OP_LOGD(context->GetNodeName(), "Begin to do InferShapeReduceMinV2");
+static ge::graphStatus InferShapeReduceMinV2(gert::InferShapeContext* context)
+{
+    OP_LOGD(context->GetNodeName(), "Begin to do InferShapeReduceMinV2");
 
-        // get input shapes
-        const gert::Shape* xShape = context->GetInputShape(IDX_0);
-        OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
+    // get input shapes
+    const gert::Shape* xShape = context->GetInputShape(IDX_0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
 
-        // get output shapes
-        gert::Shape* yShape = context->GetOutputShape(IDX_0);
-        OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
-        
-        auto attrs = context->GetAttrs();
-        int32_t axes = -1;  // 默认值
-        int32_t keepdims = 1;
-        if(attrs != nullptr) {
-            if (attrs->GetInt(0)) {
-                axes = *(attrs->GetInt(0));
-            }
-            if (attrs->GetInt(1)) {
-                keepdims = *(attrs->GetInt(1));
-            }
+    // get output shapes
+    gert::Shape* yShape = context->GetOutputShape(IDX_0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
+
+    auto attrs = context->GetAttrs();
+    int32_t axes = -1; // 默认值
+    int32_t keepdims = 1;
+    if (attrs != nullptr) {
+        if (attrs->GetInt(0)) {
+            axes = *(attrs->GetInt(0));
         }
-        auto xShapeSize = xShape->GetDimNum();
-        if(keepdims == 1) {
-            yShape->SetDimNum(xShapeSize);
-            if(axes == -1){
-                for(size_t i = 0; i < xShapeSize; i++){
-                    yShape->SetDim(i, 1);
-                }
-            }else{
-                yShape->SetDim(axes, 1);
-                if(axes == 0){
-                    yShape->SetDim(1, xShape->GetDim(1));
-                }
-                else{
-                    yShape->SetDim(0,xShape->GetDim(0));
-                }
-            }
-        }else{
-            yShape->SetDimNum(1);
-            if(axes == 0){
-                yShape->SetDim(0, xShape->GetDim(1));
-            }else if(axes == 1){
-                yShape->SetDim(0,xShape->GetDim(0));
-            }else{
-                yShape->SetDim(0,1);
-            } 
+        if (attrs->GetInt(1)) {
+            keepdims = *(attrs->GetInt(1));
         }
-        OP_LOGD(context->GetNodeName(), "End to do InferShapeReduceMinV2");
-        return GRAPH_SUCCESS;
     }
+    auto xShapeSize = xShape->GetDimNum();
+    if (keepdims == 1) {
+        yShape->SetDimNum(xShapeSize);
+        if (axes == -1) {
+            for (size_t i = 0; i < xShapeSize; i++) {
+                yShape->SetDim(i, 1);
+            }
+        } else {
+            yShape->SetDim(axes, 1);
+            if (axes == 0) {
+                yShape->SetDim(1, xShape->GetDim(1));
+            } else {
+                yShape->SetDim(0, xShape->GetDim(0));
+            }
+        }
+    } else {
+        yShape->SetDimNum(1);
+        if (axes == 0) {
+            yShape->SetDim(0, xShape->GetDim(1));
+        } else if (axes == 1) {
+            yShape->SetDim(0, xShape->GetDim(0));
+        } else {
+            yShape->SetDim(0, 1);
+        }
+    }
+    OP_LOGD(context->GetNodeName(), "End to do InferShapeReduceMinV2");
+    return GRAPH_SUCCESS;
+}
 
-    IMPL_OP_INFERSHAPE(ReduceMinV2).InferShape(InferShapeReduceMinV2);
+IMPL_OP_INFERSHAPE(ReduceMinV2).InferShape(InferShapeReduceMinV2);
 } // namespace ops

@@ -21,7 +21,7 @@
 /*!
  * \file add_v2.h
  * \brief
-*/
+ */
 #ifndef ADDV2_H
 #define ADDV2_H
 
@@ -68,28 +68,28 @@ private:
 template <typename T>
 __aicore__ inline void AddV2<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, const AddV2TilingData* tilingData)
 {
-        ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
-        uint32_t coreNum = AscendC::GetBlockIdx();
-        uint32_t globalBufferIndex = tilingData->bigCoreDataNum * AscendC::GetBlockIdx();
-        this->tileDataNum = tilingData->tileDataNum;
-        if (coreNum < tilingData->tailBlockNum) { 
-          this->coreDataNum = tilingData->bigCoreDataNum;
-          this->tileNum = tilingData->finalBigTileNum;
-          this->tailDataNum = tilingData->bigTailDataNum;
-        }
-        else { 
-          this->coreDataNum = tilingData->smallCoreDataNum;
-          this->tileNum = tilingData->finalSmallTileNum;
-          this->tailDataNum = tilingData->smallTailDataNum;
-          globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (AscendC::GetBlockIdx() - tilingData->tailBlockNum);
-        }
-        inputGMX.SetGlobalBuffer((__gm__ T*)x + globalBufferIndex, this->coreDataNum);
-        inputGMY.SetGlobalBuffer((__gm__ T*)y + globalBufferIndex, this->coreDataNum);
-        outputGMZ.SetGlobalBuffer((__gm__ T*)z + globalBufferIndex, this->coreDataNum);
-        pipe.InitBuffer(inputQueueX, BUFFER_NUM, this->tileDataNum * sizeof(T));
-        pipe.InitBuffer(inputQueueY, BUFFER_NUM, this->tileDataNum * sizeof(T));
-        pipe.InitBuffer(outputQueueZ, BUFFER_NUM, this->tileDataNum * sizeof(T));
+    ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
+    uint32_t coreNum = AscendC::GetBlockIdx();
+    uint32_t globalBufferIndex = tilingData->bigCoreDataNum * AscendC::GetBlockIdx();
+    this->tileDataNum = tilingData->tileDataNum;
+    if (coreNum < tilingData->tailBlockNum) {
+        this->coreDataNum = tilingData->bigCoreDataNum;
+        this->tileNum = tilingData->finalBigTileNum;
+        this->tailDataNum = tilingData->bigTailDataNum;
+    } else {
+        this->coreDataNum = tilingData->smallCoreDataNum;
+        this->tileNum = tilingData->finalSmallTileNum;
+        this->tailDataNum = tilingData->smallTailDataNum;
+        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) *
+                             (AscendC::GetBlockIdx() - tilingData->tailBlockNum);
     }
+    inputGMX.SetGlobalBuffer((__gm__ T*)x + globalBufferIndex, this->coreDataNum);
+    inputGMY.SetGlobalBuffer((__gm__ T*)y + globalBufferIndex, this->coreDataNum);
+    outputGMZ.SetGlobalBuffer((__gm__ T*)z + globalBufferIndex, this->coreDataNum);
+    pipe.InitBuffer(inputQueueX, BUFFER_NUM, this->tileDataNum * sizeof(T));
+    pipe.InitBuffer(inputQueueY, BUFFER_NUM, this->tileDataNum * sizeof(T));
+    pipe.InitBuffer(outputQueueZ, BUFFER_NUM, this->tileDataNum * sizeof(T));
+}
 
 template <typename T>
 __aicore__ inline void AddV2<T>::CopyIn(int32_t progress)

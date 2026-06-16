@@ -9,11 +9,11 @@
  */
 
 /**
-* 我们正常的版权申明，下面是我们的备注
-*
-* NOTE: Portions of this code were AI-generated and have been
-* technically reviewed for functional accuracy and security
-*/
+ * 我们正常的版权申明，下面是我们的备注
+ *
+ * NOTE: Portions of this code were AI-generated and have been
+ * technically reviewed for functional accuracy and security
+ */
 
 /*!
  * \file aclnn_cdist_backward.cpp
@@ -130,7 +130,9 @@ static bool CheckShape(
 
     for (size_t i = 0; i < dimNum; i++) {
         if (cdistShape[i] != broadcastShape[i]) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "cdist[%lu] : %ld should be equal to %ld .", i, cdistShape[i], broadcastShape[i]);
+            OP_LOGE(
+                ACLNN_ERR_PARAM_INVALID, "cdist[%lu] : %ld should be equal to %ld .", i, cdistShape[i],
+                broadcastShape[i]);
             return false;
         }
     }
@@ -162,8 +164,8 @@ static aclnnStatus CheckParams(
 }
 
 aclnnStatus aclnnCdistBackwardGetWorkspaceSize(
-    const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist, float p,
-    aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+    const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist, float p, aclTensor* out,
+    uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
     L2_DFX_PHASE_1(aclnnCdistBackward, DFX_IN(grad, x1, x2, cdist, p), DFX_OUT(out));
@@ -188,12 +190,12 @@ aclnnStatus aclnnCdistBackwardGetWorkspaceSize(
     auto x2Contiguous = l0op::Contiguous(x2, uniqueExecutor.get());
     auto cdistContiguous = l0op::Contiguous(cdist, uniqueExecutor.get());
     CHECK_RET(
-        gradContiguous != nullptr && x1Contiguous != nullptr && x2Contiguous != nullptr &&
-            cdistContiguous != nullptr,
+        gradContiguous != nullptr && x1Contiguous != nullptr && x2Contiguous != nullptr && cdistContiguous != nullptr,
         ACLNN_ERR_INNER_NULLPTR);
-    
+
     SocVersion socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    bool needCast = x1 -> GetDataType() == op::DataType::DT_BF16 && (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93);
+    bool needCast = x1->GetDataType() == op::DataType::DT_BF16 &&
+                    (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93);
 
     if (needCast) {
         gradContiguous = l0op::Cast(gradContiguous, op::DataType::DT_FLOAT, uniqueExecutor.get());
@@ -221,8 +223,7 @@ aclnnStatus aclnnCdistBackwardGetWorkspaceSize(
     auto x1Broadcast = l0op::BroadcastTo(x1UnsqueezeNd, broadcastShapeArray, uniqueExecutor.get());
     auto x2Broadcast = l0op::BroadcastTo(x2UnsqueezeNd, broadcastShapeArray, uniqueExecutor.get());
     auto cdistBroadcast = l0op::BroadcastTo(cdistUnsqueezeNd, broadcastShapeArray, uniqueExecutor.get());
-    auto result =
-        l0op::CdistGrad(gradBroadcast, x1Broadcast, x2Broadcast, cdistBroadcast, p, uniqueExecutor.get());
+    auto result = l0op::CdistGrad(gradBroadcast, x1Broadcast, x2Broadcast, cdistBroadcast, p, uniqueExecutor.get());
     CHECK_RET(result != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     if (needCast) {

@@ -29,30 +29,31 @@
 
 namespace ge {
 /**
-*@brief Performs reflection padding on the input tensor according to the specified padding sizes.
-*
-* Mirror padding (also known as reflection padding) fills the edges of the input tensor by reflecting 
-* the values from the tensor's boundary along each dimension, as specified by the `paddings` tensor. 
-* Unlike constant padding, the filled values are derived from the input tensor itself in a mirrored manner.
-*
-*@par Inputs:
-* Two inputs, including:
-*@li x: A Tensor. The input tensor to be padded. 
-* Type must be one of the following types: float16 (DT_FLOAT16), float32 (DT_FLOAT), bfloat16 (DT_BF16).
-*@li paddings: A Tensor. Specifies the padding size for each dimension of the input tensor. 
-* The shape of `paddings` must be [num_dims, 2], where `num_dims` is the rank of input `x`. 
-* Each row [pad_left, pad_right] indicates the number of elements to pad on the left (before) and right (after) 
-* the corresponding dimension of `x`. Type must be one of the following types: float16 (DT_FLOAT16), float32 (DT_FLOAT), bfloat16 (DT_BF16). \n
-*
-*@par Outputs:
-*y: A Tensor. The padded output tensor with the same data type as input `x`. 
-* The shape of `y` is determined by the input shape plus the padding sizes: 
-* for each dimension i, output_shape[i] = input_shape[i] + paddings[i][0] + paddings[i][1]. \n
-*
-*@par Third-party framework compatibility
-* Compatible with PyTorch operator `torch.nn.functional.pad` (mode='reflect') / `torch.nn.ReflectionPad*`, 
-* and TensorFlow operator `tf.pad` (mode='REFLECT') / `tf.raw_ops.ReflectionPad1dV2`.
-*/
+ *@brief Performs reflection padding on the input tensor according to the specified padding sizes.
+ *
+ * Mirror padding (also known as reflection padding) fills the edges of the input tensor by reflecting
+ * the values from the tensor's boundary along each dimension, as specified by the `paddings` tensor.
+ * Unlike constant padding, the filled values are derived from the input tensor itself in a mirrored manner.
+ *
+ *@par Inputs:
+ * Two inputs, including:
+ *@li x: A Tensor. The input tensor to be padded.
+ * Type must be one of the following types: float16 (DT_FLOAT16), float32 (DT_FLOAT), bfloat16 (DT_BF16).
+ *@li paddings: A Tensor. Specifies the padding size for each dimension of the input tensor.
+ * The shape of `paddings` must be [num_dims, 2], where `num_dims` is the rank of input `x`.
+ * Each row [pad_left, pad_right] indicates the number of elements to pad on the left (before) and right (after)
+ * the corresponding dimension of `x`. Type must be one of the following types: float16 (DT_FLOAT16), float32
+ * (DT_FLOAT), bfloat16 (DT_BF16). \n
+ *
+ *@par Outputs:
+ *y: A Tensor. The padded output tensor with the same data type as input `x`.
+ * The shape of `y` is determined by the input shape plus the padding sizes:
+ * for each dimension i, output_shape[i] = input_shape[i] + paddings[i][0] + paddings[i][1]. \n
+ *
+ *@par Third-party framework compatibility
+ * Compatible with PyTorch operator `torch.nn.functional.pad` (mode='reflect') / `torch.nn.ReflectionPad*`,
+ * and TensorFlow operator `tf.pad` (mode='REFLECT') / `tf.raw_ops.ReflectionPad1dV2`.
+ */
 REG_OP(ReflectionPad1dV2)
     .INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16}))
     .INPUT(paddings, TensorType({DT_INT64}))

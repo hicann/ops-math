@@ -22,31 +22,25 @@
 /*!
  * \file invert_v2_tiling_key.h
  * \brief invert_v2 tiling key declare
-*/
+ */
 #ifndef __INVERTV2_TILING_KEY_H__
 #define __INVERTV2_TILING_KEY_H__
 
 #include "ascendc/host_api/tiling/template_argument.h"
 
-
 #define ELEMENTWISE_TPL_SCH_MODE_1 1
 #define ELEMENTWISE_TPL_SCH_MODE_2 2
 
+ASCENDC_TPL_ARGS_DECL(
+    InvertV2,
+    ASCENDC_TPL_UINT_DECL(
+        schMode, 1, ASCENDC_TPL_UI_LIST,
 
-ASCENDC_TPL_ARGS_DECL(InvertV2,
-    ASCENDC_TPL_UINT_DECL(schMode, 1, 
-    ASCENDC_TPL_UI_LIST, 
+        ELEMENTWISE_TPL_SCH_MODE_1, ELEMENTWISE_TPL_SCH_MODE_2, ), );
 
-    ELEMENTWISE_TPL_SCH_MODE_1,
-    ELEMENTWISE_TPL_SCH_MODE_2, 
-),);
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(
+    schMode, ASCENDC_TPL_UI_LIST,
 
-ASCENDC_TPL_SEL(
-    ASCENDC_TPL_ARGS_SEL(
-    ASCENDC_TPL_UINT_SEL(schMode, 
-    ASCENDC_TPL_UI_LIST, 
-
-    ELEMENTWISE_TPL_SCH_MODE_1,
-    ELEMENTWISE_TPL_SCH_MODE_2)));
+    ELEMENTWISE_TPL_SCH_MODE_1, ELEMENTWISE_TPL_SCH_MODE_2)));
 
 #endif

@@ -21,15 +21,9 @@ using namespace optiling;
 
 class SelectV2Tiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "SelectV2Tiling SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "SelectV2Tiling SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "SelectV2Tiling TearDown " << endl;
-    }
+    static void TearDownTestCase() { cout << "SelectV2Tiling TearDown " << endl; }
 };
 
 TEST_F(SelectV2Tiling, ascend9101_test_tiling_fp16_001)

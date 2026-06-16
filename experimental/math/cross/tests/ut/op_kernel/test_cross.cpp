@@ -26,7 +26,8 @@
 
 using namespace std;
 
-extern "C" __global__ __aicore__ void cross(GM_ADDR c, GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
+extern "C" __global__ __aicore__ void cross(
+    GM_ADDR c, GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
 
 class CrossTest : public testing::Test {
 protected:
@@ -38,10 +39,7 @@ protected:
         system(cmd.c_str());
         system("chmod -R 755 ./cross_data/");
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "cross_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "cross_test TearDown" << std::endl; }
 
 private:
     const static std::string rootPath;

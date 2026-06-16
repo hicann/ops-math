@@ -105,8 +105,8 @@ aclError ExecOpApi(
 
     // 获取 workspace 大小
     auto ret = aclnnInplaceEqTensorGetWorkspaceSize(self, other, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceEqTensorGetWorkspaceSize failed. ERROR: %d\n", ret);
-              return ret);
+    CHECK_RET(
+        ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceEqTensorGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 分配 workspace
     void* workspaceAddr = nullptr;

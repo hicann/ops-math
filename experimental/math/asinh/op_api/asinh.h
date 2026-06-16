@@ -13,7 +13,7 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-const aclTensor *Asinh(const aclTensor *input, aclOpExecutor *executor);
+const aclTensor* Asinh(const aclTensor* input, aclOpExecutor* executor);
 }
 
 #endif

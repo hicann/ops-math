@@ -22,7 +22,7 @@
 /*!
  * \file invert_v2.h
  * \brief
-*/
+ */
 #ifndef INVERT_H
 #define INVERT_H
 
@@ -42,7 +42,7 @@ template <typename T>
 class InvertV2 {
 public:
     __aicore__ inline InvertV2(){};
-    __aicore__ inline void Init(GM_ADDR x,  GM_ADDR z, GM_ADDR workspace,const InvertV2TilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR z, GM_ADDR workspace, const InvertV2TilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -65,28 +65,28 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void InvertV2<T>::Init(GM_ADDR x,  GM_ADDR z, GM_ADDR workspace,const InvertV2TilingData* tilingData)
+__aicore__ inline void InvertV2<T>::Init(GM_ADDR x, GM_ADDR z, GM_ADDR workspace, const InvertV2TilingData* tilingData)
 {
-        ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
-        uint32_t coreNum = AscendC::GetBlockIdx();
-        uint32_t globalBufferIndex = tilingData->bigCoreDataNum * AscendC::GetBlockIdx();
-        this->tileDataNum = tilingData->tileDataNum;
-        if (coreNum < tilingData->tailBlockNum) { 
-          this->coreDataNum = tilingData->bigCoreDataNum;
-          this->tileNum = tilingData->finalBigTileNum;
-          this->tailDataNum = tilingData->bigTailDataNum;
-        }
-        else { 
-          this->coreDataNum = tilingData->smallCoreDataNum;
-          this->tileNum = tilingData->finalSmallTileNum;
-          this->tailDataNum = tilingData->smallTailDataNum;
-          globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (AscendC::GetBlockIdx() - tilingData->tailBlockNum);
-        }
-        inputGMX.SetGlobalBuffer((__gm__ T*)x + globalBufferIndex, this->coreDataNum);
-        outputGMZ.SetGlobalBuffer((__gm__ T*)z + globalBufferIndex, this->coreDataNum);
-        pipe.InitBuffer(inputQueueX, BUFFER_NUM, this->tileDataNum * sizeof(T));
-        pipe.InitBuffer(outputQueueZ, BUFFER_NUM, this->tileDataNum * sizeof(T));
+    ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
+    uint32_t coreNum = AscendC::GetBlockIdx();
+    uint32_t globalBufferIndex = tilingData->bigCoreDataNum * AscendC::GetBlockIdx();
+    this->tileDataNum = tilingData->tileDataNum;
+    if (coreNum < tilingData->tailBlockNum) {
+        this->coreDataNum = tilingData->bigCoreDataNum;
+        this->tileNum = tilingData->finalBigTileNum;
+        this->tailDataNum = tilingData->bigTailDataNum;
+    } else {
+        this->coreDataNum = tilingData->smallCoreDataNum;
+        this->tileNum = tilingData->finalSmallTileNum;
+        this->tailDataNum = tilingData->smallTailDataNum;
+        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) *
+                             (AscendC::GetBlockIdx() - tilingData->tailBlockNum);
     }
+    inputGMX.SetGlobalBuffer((__gm__ T*)x + globalBufferIndex, this->coreDataNum);
+    outputGMZ.SetGlobalBuffer((__gm__ T*)z + globalBufferIndex, this->coreDataNum);
+    pipe.InitBuffer(inputQueueX, BUFFER_NUM, this->tileDataNum * sizeof(T));
+    pipe.InitBuffer(outputQueueZ, BUFFER_NUM, this->tileDataNum * sizeof(T));
+}
 
 template <typename T>
 __aicore__ inline void InvertV2<T>::CopyIn(int32_t progress)
@@ -111,7 +111,7 @@ __aicore__ inline void InvertV2<T>::Compute(int32_t progress)
     AscendC::LocalTensor<T> zLocal = outputQueueZ.AllocTensor<T>();
 
     AscendC::Not(zLocal, xLocal, this->processDataNum);
-    
+
     outputQueueZ.EnQue<T>(zLocal);
     inputQueueX.FreeTensor(xLocal);
 }

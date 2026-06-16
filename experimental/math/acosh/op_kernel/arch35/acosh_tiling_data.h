@@ -17,9 +17,9 @@
 #define _ACOSH_TILING_DATA_H_
 
 struct AcoshTilingData {
-    int64_t totalNum   = 0;  // 总元素数量
+    int64_t totalNum = 0;    // 总元素数量
     int64_t blockFactor = 0; // 每个 AI Core 处理的元素数量（多核切分粒度）
-    int64_t ubFactor   = 0;  // 每次 UB 循环处理的元素数量（UB 切分粒度）
+    int64_t ubFactor = 0;    // 每次 UB 循环处理的元素数量（UB 切分粒度）
 };
 
 #endif // _ACOSH_TILING_DATA_H_

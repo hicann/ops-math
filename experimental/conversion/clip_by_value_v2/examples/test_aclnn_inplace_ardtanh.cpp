@@ -150,8 +150,8 @@ int main()
     aclOpExecutor* inplaceExecutor;
     ret =
         aclnnInplaceHardtanhGetWorkspaceSize(self, clipValueMin, clipValueMax, &inplaceWorkspaceSize, &inplaceExecutor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceHardtanhGetWorkspaceSize failed. ERROR: %d\n", ret);
-              return ret);
+    CHECK_RET(
+        ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceHardtanhGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* inplaceWorkspaceAddr = nullptr;
     if (inplaceWorkspaceSize > 0) {

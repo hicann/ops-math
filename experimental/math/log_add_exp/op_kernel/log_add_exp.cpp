@@ -20,8 +20,7 @@
 
 #include "log_add_exp.h"
 
-enum class LogAddExpTilingKey : uint32_t
-{
+enum class LogAddExpTilingKey : uint32_t {
     TILING_KEY_FP32 = 0,
     TILING_KEY_FP16 = 1,
     TILING_KEY_BF16 = 2,

@@ -22,7 +22,6 @@
 
 namespace optiling {
 
-
 #define BLOCK_SIZE 256U
 #define DATA_NUM_32B 3U
 #define DATA_NUM_16B 6U
@@ -62,8 +61,8 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 }
 
 static ge::graphStatus GetShapeAttrsInfo(
-    gert::TilingContext* context, uint64_t ubSize, int64_t coreNum, uint64_t& inputNum, uint64_t& inputBytes, uint64_t& tileBlockNum,
-    uint64_t& tileDataNum, uint64_t& inputLengthAlgin32, uint64_t& bufferNum)
+    gert::TilingContext* context, uint64_t ubSize, int64_t coreNum, uint64_t& inputNum, uint64_t& inputBytes,
+    uint64_t& tileBlockNum, uint64_t& tileDataNum, uint64_t& inputLengthAlgin32, uint64_t& bufferNum)
 {
     OP_CHECK_IF(
         context == nullptr || context->GetInputShape(0) == nullptr, OP_LOGE(context, "context is nullptr"),
@@ -78,8 +77,7 @@ static ge::graphStatus GetShapeAttrsInfo(
     inputBytes = inputLength / inputNum;
     auto dataType = context->GetInputDesc(0)->GetDataType();
     uint64_t ubDataNumber = DATA_NUM_32B;
-    if (dataType == ge::DT_BF16 || dataType == ge::DT_FLOAT16)
-    {
+    if (dataType == ge::DT_BF16 || dataType == ge::DT_FLOAT16) {
         ubDataNumber = DATA_NUM_16B;
     }
     inputLengthAlgin32 = (((inputLength + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE);
@@ -145,15 +143,17 @@ static ge::graphStatus AxpyV2TilingFunc(gert::TilingContext* context)
     OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
     // 获取输入数据信息
     uint64_t inputNum, inputBytes, tileBlockNum, tileDataNum, inputLengthAlgin32, bufferNum;
-    ret = GetShapeAttrsInfo(context, ubSize, coreNum, inputNum, inputBytes, tileBlockNum, tileDataNum, inputLengthAlgin32, bufferNum);
+    ret = GetShapeAttrsInfo(
+        context, ubSize, coreNum, inputNum, inputBytes, tileBlockNum, tileDataNum, inputLengthAlgin32, bufferNum);
     OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     // 计算coreNum
     uint64_t calcCoreNum = inputNum / TILE_SPLIT_NUM;
 
-    if (inputNum % TILE_SPLIT_NUM) calcCoreNum = calcCoreNum + 1;
+    if (inputNum % TILE_SPLIT_NUM)
+        calcCoreNum = calcCoreNum + 1;
     coreNum = (calcCoreNum < static_cast<uint64_t>(coreNum)) ? calcCoreNum : coreNum;
-    
+
     // 计算每个core处理的数据块数
     uint64_t smallCoreDataNum, bigCoreDataNum, smallTailDataNum, bigTailDataNum;
     uint64_t finalSmallTileNum, finalBigTileNum, tailBlockNum;
@@ -176,12 +176,9 @@ static ge::graphStatus AxpyV2TilingFunc(gert::TilingContext* context)
         GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
         return ge::GRAPH_FAILED);
     uint64_t tilingKey = 0;
-    if(bufferNum == DOUBLE_BUFFER_NUM)
-    {
+    if (bufferNum == DOUBLE_BUFFER_NUM) {
         tilingKey = GET_TPL_TILING_KEY(ELEMENTWISE_TPL_SCH_MODE_0);
-    }
-    else
-    {
+    } else {
         tilingKey = GET_TPL_TILING_KEY(ELEMENTWISE_TPL_SCH_MODE_1);
     }
     context->SetTilingKey(tilingKey);

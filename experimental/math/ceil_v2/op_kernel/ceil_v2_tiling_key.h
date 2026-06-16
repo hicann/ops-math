@@ -21,7 +21,7 @@
 /*!
  * \file ceil_v2_tiling_key.h
  * \brief ceil_v2 tiling key declare
-*/
+ */
 
 #ifndef __CEILV2_TILING_KEY_H__
 #define __CEILV2_TILING_KEY_H__

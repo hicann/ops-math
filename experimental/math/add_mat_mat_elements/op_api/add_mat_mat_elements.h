@@ -35,13 +35,8 @@ namespace l0op {
  * @return const aclTensor* 输出 tensor（失败返回 nullptr）
  */
 const aclTensor* AddMatMatElements(
-    const aclTensor* a,
-    const aclTensor* b,
-    const aclTensor* c,
-    float            alpha,
-    float            beta,
-    aclOpExecutor*   executor);
+    const aclTensor* a, const aclTensor* b, const aclTensor* c, float alpha, float beta, aclOpExecutor* executor);
 
-}  // namespace l0op
+} // namespace l0op
 
-#endif  // OP_API_INC_LEVEL0_ADD_MAT_MAT_ELEMENTS_H_
+#endif // OP_API_INC_LEVEL0_ADD_MAT_MAT_ELEMENTS_H_

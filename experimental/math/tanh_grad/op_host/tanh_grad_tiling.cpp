@@ -23,7 +23,6 @@
 
 namespace optiling {
 
-
 #define UB_DATA_NUM_FLOAT 10U // 对应DT_FLOAT类型的ub分块数量
 #define UB_DATA_NUM_OTHER 16U // 对应DT_FLOAT16, DT_BF16类型的ub分块数量
 constexpr uint32_t BUFFER_NUM = 2;
@@ -61,33 +60,32 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 }
 
 static ge::graphStatus GetShapeAttrsInfo(
-    gert::TilingContext* context, uint64_t ubSize, uint64_t blockSize, 
-    uint64_t& inputNum, uint64_t& inputBytes, uint64_t& tileBlockNum,
-    uint64_t& tileDataNum, uint64_t& inputLengthAlginBlock)
+    gert::TilingContext* context, uint64_t ubSize, uint64_t blockSize, uint64_t& inputNum, uint64_t& inputBytes,
+    uint64_t& tileBlockNum, uint64_t& tileDataNum, uint64_t& inputLengthAlginBlock)
 {
     OP_CHECK_IF(
         context == nullptr || context->GetInputShape(0) == nullptr, OP_LOGE(context, "context is nullptr"),
         return ge::GRAPH_FAILED);
-    
+
     // 检查 blockSize 的有效性
     OP_CHECK_IF(blockSize == 0, OP_LOGE(context, "blockSize is 0"), return ge::GRAPH_FAILED);
-    
+
     inputNum = context->GetInputShape(0)->GetStorageShape().GetShapeSize();
     uint32_t typeLength = 0;
     ge::TypeUtils::GetDataTypeLength(context->GetInputDesc(0)->GetDataType(), typeLength);
-    inputBytes = typeLength;  // 修改：直接使用 typeLength 而不是 inputLength/inputNum
+    inputBytes = typeLength; // 修改：直接使用 typeLength 而不是 inputLength/inputNum
     OP_CHECK_IF(inputBytes == 0, OP_LOGE(context, "inputBytes is 0"), return ge::GRAPH_FAILED);
-    
+
     if (inputNum == 0) {
         return ge::GRAPH_FAILED;
     }
-    
+
     uint64_t ubDataNumber =
         (context->GetInputDesc(0)->GetDataType() == ge::DT_FLOAT) ? UB_DATA_NUM_FLOAT : UB_DATA_NUM_OTHER;
-    
+
     // 检查 ubDataNumber 不为 0
     OP_CHECK_IF(ubDataNumber == 0, OP_LOGE(context, "ubDataNumber is 0"), return ge::GRAPH_FAILED);
-    
+
     // 计算 tileBlockNum，确保不为 0
     uint64_t blockPerUb = ubSize / blockSize;
     tileBlockNum = blockPerUb / ubDataNumber;
@@ -95,7 +93,7 @@ static ge::graphStatus GetShapeAttrsInfo(
     if (tileBlockNum == 0) {
         tileBlockNum = 1;
     }
-    
+
     // 计算 tileDataNum
     uint64_t blockBytes = tileBlockNum * blockSize;
     tileDataNum = blockBytes / inputBytes;
@@ -103,39 +101,38 @@ static ge::graphStatus GetShapeAttrsInfo(
     if (tileDataNum == 0) {
         tileDataNum = 1;
     }
-    
+
     // 计算输入数据总字节数
     uint64_t inputLength = inputNum * inputBytes;
-    
+
     // 计算对齐长度，确保 blockSize 不为 0
     inputLengthAlginBlock = ((inputLength + blockSize - 1) / blockSize) * blockSize;
-    
+
     return ge::GRAPH_SUCCESS;
 }
 
 static ge::graphStatus CalculateCoreBlockNums(
-    uint64_t inputLengthAlginBlock, int64_t coreNum, uint64_t tileBlockNum, 
-    uint64_t inputBytes, uint64_t tileDataNum, uint64_t blockSize,
-    uint64_t& smallCoreDataNum, uint64_t& bigCoreDataNum, uint64_t& smallTailDataNum, uint64_t& bigTailDataNum,
-    uint64_t& finalSmallTileNum, uint64_t& finalBigTileNum, uint64_t& tailBlockNum)
+    uint64_t inputLengthAlginBlock, int64_t coreNum, uint64_t tileBlockNum, uint64_t inputBytes, uint64_t tileDataNum,
+    uint64_t blockSize, uint64_t& smallCoreDataNum, uint64_t& bigCoreDataNum, uint64_t& smallTailDataNum,
+    uint64_t& bigTailDataNum, uint64_t& finalSmallTileNum, uint64_t& finalBigTileNum, uint64_t& tailBlockNum)
 {
     // 检查参数有效性
     if (blockSize == 0 || coreNum == 0 || tileBlockNum == 0 || inputBytes == 0) {
         return ge::GRAPH_FAILED;
     }
-    
+
     // 检查 tileDataNum 不为 0
     if (tileDataNum == 0) {
         tileDataNum = 1;
     }
-    
+
     // 计算总块数
     uint64_t totalBlocks = inputLengthAlginBlock / blockSize;
-    
+
     // 计算每个核心的基础块数和尾块数
     uint64_t baseBlocksPerCore = totalBlocks / coreNum;
     tailBlockNum = totalBlocks % coreNum;
-    
+
     // 计算小核心数据
     if (baseBlocksPerCore > 0) {
         smallCoreDataNum = baseBlocksPerCore * blockSize / inputBytes;
@@ -143,7 +140,7 @@ static ge::graphStatus CalculateCoreBlockNums(
         if (smallCoreDataNum == 0) {
             smallCoreDataNum = 1;
         }
-        
+
         uint64_t smallTileNum = baseBlocksPerCore / tileBlockNum;
         if (tileBlockNum > 0) {
             finalSmallTileNum = (baseBlocksPerCore % tileBlockNum) == 0 ? smallTileNum : smallTileNum + 1;
@@ -160,7 +157,7 @@ static ge::graphStatus CalculateCoreBlockNums(
         smallTailDataNum = 0;
         finalSmallTileNum = 0;
     }
-    
+
     // 计算大核心数据（处理额外一个块的核心）
     if (baseBlocksPerCore + 1 > 0) {
         bigCoreDataNum = (baseBlocksPerCore + 1) * blockSize / inputBytes;
@@ -168,7 +165,7 @@ static ge::graphStatus CalculateCoreBlockNums(
         if (bigCoreDataNum == 0) {
             bigCoreDataNum = 1;
         }
-        
+
         uint64_t bigTileNum = (baseBlocksPerCore + 1) / tileBlockNum;
         if (tileBlockNum > 0) {
             finalBigTileNum = ((baseBlocksPerCore + 1) % tileBlockNum) == 0 ? bigTileNum : bigTileNum + 1;
@@ -185,7 +182,7 @@ static ge::graphStatus CalculateCoreBlockNums(
         bigTailDataNum = 0;
         finalBigTileNum = 0;
     }
-    
+
     return ge::GRAPH_SUCCESS;
 }
 
@@ -196,39 +193,40 @@ static ge::graphStatus TanhGradTilingFunc(gert::TilingContext* context)
     OP_CHECK_IF(
         memset_s(tiling, sizeof(TanhGradTilingData), 0, sizeof(TanhGradTilingData)) != EOK,
         OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
-    
+
     // 获取平台运行信息
     uint64_t ubSize;
     int64_t coreNum;
     ge::graphStatus ret = GetPlatformInfo(context, ubSize, coreNum);
     OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
-    
+
     // 动态获取 blockSize
     uint64_t blockSize = Ops::Base::GetUbBlockSize(context);
     OP_CHECK_IF(blockSize == 0, OP_LOGE(context, "GetUbBlockSize returned 0"), return ge::GRAPH_FAILED);
-    
+
     // 获取输入数据信息，传入动态获取的 blockSize
     uint64_t inputNum, inputBytes, tileBlockNum, tileDataNum, inputLengthAlginBlock;
-    ret = GetShapeAttrsInfo(context, ubSize, blockSize, inputNum, inputBytes, tileBlockNum, tileDataNum, inputLengthAlginBlock);
+    ret = GetShapeAttrsInfo(
+        context, ubSize, blockSize, inputNum, inputBytes, tileBlockNum, tileDataNum, inputLengthAlginBlock);
     OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     // 计算coreNum，使用动态获取的 blockSize
     if (tileDataNum >= inputNum) {
         coreNum = 1;
     } else {
-        coreNum = (static_cast<uint64_t>(coreNum) < inputLengthAlginBlock / blockSize) ? 
-                  coreNum : inputLengthAlginBlock / blockSize;
+        coreNum = (static_cast<uint64_t>(coreNum) < inputLengthAlginBlock / blockSize) ?
+                      coreNum :
+                      inputLengthAlginBlock / blockSize;
     }
-    
+
     // 计算每个core处理的数据块数，传入动态获取的 blockSize
     uint64_t smallCoreDataNum, bigCoreDataNum, smallTailDataNum, bigTailDataNum;
     uint64_t finalSmallTileNum, finalBigTileNum, tailBlockNum;
     ret = CalculateCoreBlockNums(
-        inputLengthAlginBlock, coreNum, tileBlockNum, inputBytes, tileDataNum, blockSize,
-        smallCoreDataNum, bigCoreDataNum, smallTailDataNum, bigTailDataNum,
-        finalSmallTileNum, finalBigTileNum, tailBlockNum);
+        inputLengthAlginBlock, coreNum, tileBlockNum, inputBytes, tileDataNum, blockSize, smallCoreDataNum,
+        bigCoreDataNum, smallTailDataNum, bigTailDataNum, finalSmallTileNum, finalBigTileNum, tailBlockNum);
     OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "CalculateCoreBlockNums error"), return ge::GRAPH_FAILED);
-    
+
     // 设置tiling数据
     tiling->smallCoreDataNum = static_cast<uint64_t>(smallCoreDataNum);
     tiling->bigCoreDataNum = static_cast<uint64_t>(bigCoreDataNum);
@@ -238,12 +236,12 @@ static ge::graphStatus TanhGradTilingFunc(gert::TilingContext* context)
     tiling->finalSmallTileNum = static_cast<uint64_t>(finalSmallTileNum);
     tiling->finalBigTileNum = static_cast<uint64_t>(finalBigTileNum);
     tiling->tailBlockNum = static_cast<uint64_t>(tailBlockNum);
-    
+
     // 计算workspace大小
     OP_CHECK_IF(
         GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
         return ge::GRAPH_FAILED);
-    
+
     uint64_t tilingKey = 0;
     tilingKey = GET_TPL_TILING_KEY(0);
     context->SetTilingKey(tilingKey);

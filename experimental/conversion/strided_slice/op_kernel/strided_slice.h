@@ -49,18 +49,19 @@ private:
     __aicore__ inline void CopyIn(int32_t tile_idx);
     __aicore__ inline void CopyOut(int32_t tile_idx);
     __aicore__ inline uint32_t CalcCoreOutRows(uint32_t core_start, uint32_t core_end);
-     __aicore__ inline uint32_t CalcPreCoreOutTotal(uint32_t current_core_id, uint32_t total_core_num);
+    __aicore__ inline uint32_t CalcPreCoreOutTotal(uint32_t current_core_id, uint32_t total_core_num);
     __aicore__ inline void InitTileArrays();
+
 private:
     AscendC::TPipe pipe;
     AscendC::TQueBind<TPosition::VECIN, TPosition::VECOUT, BUFFER_NUM> inQueueX;
     AscendC::GlobalTensor<T> xGm;
     AscendC::GlobalTensor<T> zGm;
-    uint32_t tile_start_rows[MAX_TILE_NUM];                         
-    uint32_t tile_end_rows[MAX_TILE_NUM];                         
-    uint32_t tile_out_rows[MAX_TILE_NUM];                         
-    uint32_t tile_out_start_indices[MAX_TILE_NUM];                 
-    uint32_t tile_in_row_offsets[MAX_TILE_NUM][MAX_TILE_OUT_ROWS]; 
+    uint32_t tile_start_rows[MAX_TILE_NUM];
+    uint32_t tile_end_rows[MAX_TILE_NUM];
+    uint32_t tile_out_rows[MAX_TILE_NUM];
+    uint32_t tile_out_start_indices[MAX_TILE_NUM];
+    uint32_t tile_in_row_offsets[MAX_TILE_NUM][MAX_TILE_OUT_ROWS];
     uint32_t cols;
     uint32_t rows;
     uint32_t tileRows;
@@ -86,9 +87,9 @@ __aicore__ inline void StridedSlice<T>::Init(GM_ADDR x, GM_ADDR z, const Strided
 {
     uint32_t coreId = AscendC::GetBlockIdx();
     uint32_t totalCoreNum = AscendC::GetBlockNum();
-    this->cols = tilingData->cols; 
+    this->cols = tilingData->cols;
     this->rows = tilingData->rows;
-    this->tileRows = tilingData->tileRows; 
+    this->tileRows = tilingData->tileRows;
     this->baseRowsPerCore = tilingData->baseRowsPerCore;
     this->bigTotalRows = tilingData->bigTotalRows;
     this->tailRows = tilingData->tailRows;
@@ -102,18 +103,17 @@ __aicore__ inline void StridedSlice<T>::Init(GM_ADDR x, GM_ADDR z, const Strided
     uint32_t globalBufferIndex = bigTotalRows * this->cols * coreId;
     this->tileDataNum = tileRows * this->cols;
     uint32_t coreRows;
-    if (coreId < tailRows) { 
-      coreRows = bigTotalRows;
-      this->tileNum = tilingData->finalBigTileNum;
-      this->core_start_row = coreId * bigTotalRows;
-      this->tileTailRows = tilingData->bigTailRows;
-    }
-    else { 
-      coreRows = baseRowsPerCore;
-      this->tileNum = tilingData->finalSmallTileNum;
-      this->core_start_row = tailRows * bigTotalRows + (coreId - tailRows) * baseRowsPerCore;
-      globalBufferIndex -= (bigTotalRows - baseRowsPerCore) * this->cols * (coreId - tailRows);
-      this->tileTailRows = tilingData->smallTailRows;
+    if (coreId < tailRows) {
+        coreRows = bigTotalRows;
+        this->tileNum = tilingData->finalBigTileNum;
+        this->core_start_row = coreId * bigTotalRows;
+        this->tileTailRows = tilingData->bigTailRows;
+    } else {
+        coreRows = baseRowsPerCore;
+        this->tileNum = tilingData->finalSmallTileNum;
+        this->core_start_row = tailRows * bigTotalRows + (coreId - tailRows) * baseRowsPerCore;
+        globalBufferIndex -= (bigTotalRows - baseRowsPerCore) * this->cols * (coreId - tailRows);
+        this->tileTailRows = tilingData->smallTailRows;
     }
     this->core_last_row = this->core_start_row + coreRows - 1;
     uint32_t coreOutRows = CalcCoreOutRows(core_start_row, core_last_row);
@@ -121,19 +121,23 @@ __aicore__ inline void StridedSlice<T>::Init(GM_ADDR x, GM_ADDR z, const Strided
     uint32_t core_out_offset = CalcPreCoreOutTotal(coreId, totalCoreNum);
     InitTileArrays();
 
-    xGm.SetGlobalBuffer((__gm__ T*)x + globalBufferIndex, coreRows*this->cols);
-    zGm.SetGlobalBuffer((__gm__ T*)z+core_out_offset,core_out_count);
-    pipe.InitBuffer(inQueueX, BUFFER_NUM, this->tileDataNum*(32/sizeof(T)) * sizeof(T));
+    xGm.SetGlobalBuffer((__gm__ T*)x + globalBufferIndex, coreRows * this->cols);
+    zGm.SetGlobalBuffer((__gm__ T*)z + core_out_offset, core_out_count);
+    pipe.InitBuffer(inQueueX, BUFFER_NUM, this->tileDataNum * (32 / sizeof(T)) * sizeof(T));
 }
 
 template <typename T>
 __aicore__ inline void StridedSlice<T>::CopyIn(int32_t tile_idx)
 {
     AscendC::LocalTensor<T> xLocal = inQueueX.AllocTensor<T>();
-    AscendC::DataCopyExtParams copyParams{static_cast<uint16_t>(this->outNum_cols), static_cast<uint32_t>(sizeof(T)), static_cast<uint32_t>((this->stride2-1)*sizeof(T)), 0,0};
-    AscendC::DataCopyPadExtParams<T> padParams{true, 0, static_cast<uint8_t>((32/sizeof(T))-1), 0};
-    for(int i=0;i<this->tileRows;i++){
-        AscendC::DataCopyPad(xLocal[i*this->outNum_cols*(32/sizeof(T))], xGm[tile_idx*this->tileDataNum+i*this->cols+this->start2],copyParams,padParams);
+    AscendC::DataCopyExtParams copyParams{
+        static_cast<uint16_t>(this->outNum_cols), static_cast<uint32_t>(sizeof(T)),
+        static_cast<uint32_t>((this->stride2 - 1) * sizeof(T)), 0, 0};
+    AscendC::DataCopyPadExtParams<T> padParams{true, 0, static_cast<uint8_t>((32 / sizeof(T)) - 1), 0};
+    for (int i = 0; i < this->tileRows; i++) {
+        AscendC::DataCopyPad(
+            xLocal[i * this->outNum_cols * (32 / sizeof(T))],
+            xGm[tile_idx * this->tileDataNum + i * this->cols + this->start2], copyParams, padParams);
     }
     inQueueX.EnQue(xLocal);
     AscendC::SyncAll();
@@ -150,9 +154,10 @@ __aicore__ inline void StridedSlice<T>::CopyOut(int32_t tile_idx)
         inQueueX.FreeTensor(xLocal);
         return;
     }
-    AscendC::DataCopyExtParams copyParams{static_cast<uint16_t>(this->outNum_cols), static_cast<uint32_t>(sizeof(T)), 0, 0, 0}; 
+    AscendC::DataCopyExtParams copyParams{
+        static_cast<uint16_t>(this->outNum_cols), static_cast<uint32_t>(sizeof(T)), 0, 0, 0};
     for (uint32_t out_row_idx = 0; out_row_idx < tile_out_row_cnt; out_row_idx++) {
-        uint32_t local_in_offset = tile_in_row_offsets[tile_idx][out_row_idx] * this->outNum_cols*(32/sizeof(T));
+        uint32_t local_in_offset = tile_in_row_offsets[tile_idx][out_row_idx] * this->outNum_cols * (32 / sizeof(T));
         uint32_t core_global_out_row = tile_out_start + out_row_idx;
         uint32_t global_out_offset = core_global_out_row * this->outNum_cols;
         AscendC::DataCopyPad(zGm[global_out_offset], xLocal[local_in_offset], copyParams);
@@ -164,7 +169,7 @@ template <typename T>
 __aicore__ inline uint32_t StridedSlice<T>::CalcCoreOutRows(uint32_t core_start, uint32_t core_end)
 {
     const uint32_t slice_start = this->start1;
-    const uint32_t slice_end = this->end1 - 1;  
+    const uint32_t slice_end = this->end1 - 1;
     if (core_start > slice_end || core_end < slice_start) {
         return 0;
     }
@@ -181,9 +186,9 @@ __aicore__ inline uint32_t StridedSlice<T>::CalcPreCoreOutTotal(uint32_t current
     uint32_t pre_total = 0;
     for (uint32_t pre_core_id = 0; pre_core_id < current_core_id; pre_core_id++) {
         uint32_t pre_core_rows = (pre_core_id < tailRows) ? bigTotalRows : baseRowsPerCore;
-        uint32_t pre_core_start = (pre_core_id < tailRows) ? 
-            (pre_core_id * bigTotalRows) : 
-            (tailRows * bigTotalRows + (pre_core_id - tailRows) * baseRowsPerCore);
+        uint32_t pre_core_start = (pre_core_id < tailRows) ?
+                                      (pre_core_id * bigTotalRows) :
+                                      (tailRows * bigTotalRows + (pre_core_id - tailRows) * baseRowsPerCore);
         uint32_t pre_core_end = pre_core_start + pre_core_rows - 1;
         uint32_t pre_core_out_rows = CalcCoreOutRows(pre_core_start, pre_core_end);
         pre_total += pre_core_out_rows * this->outNum_cols;

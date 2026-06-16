@@ -33,16 +33,16 @@
 namespace NsMaskedFill {
 using namespace AscendC;
 
-constexpr uint32_t BUFFER_NUM = 2;   
-constexpr uint32_t ALIGN_BYTES = 32; 
+constexpr uint32_t BUFFER_NUM = 2;
+constexpr uint32_t ALIGN_BYTES = 32;
 
 template <typename T>
-class MaskedFill
-{
+class MaskedFill {
 public:
     __aicore__ inline MaskedFill() {}
 
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR mask, GM_ADDR valueT, GM_ADDR z, const MaskedFillTilingData* tilingData);
+    __aicore__ inline void Init(
+        GM_ADDR x, GM_ADDR mask, GM_ADDR valueT, GM_ADDR z, const MaskedFillTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -55,40 +55,41 @@ private:
     __aicore__ inline void CopyOut(uint32_t tileIdx);
 
 private:
-    TPipe pipe;                               
-    TQue<TPosition::VECIN, BUFFER_NUM> inQueueX, inQueueM; 
-    TQue<TPosition::VECOUT, BUFFER_NUM> outQueueZ;       
-    GlobalTensor<T> xGm;   
-    GlobalTensor<bool> maskGm;                
-    GlobalTensor<T> valueGm;                               
-    GlobalTensor<T> zGm;                                         
+    TPipe pipe;
+    TQue<TPosition::VECIN, BUFFER_NUM> inQueueX, inQueueM;
+    TQue<TPosition::VECOUT, BUFFER_NUM> outQueueZ;
+    GlobalTensor<T> xGm;
+    GlobalTensor<bool> maskGm;
+    GlobalTensor<T> valueGm;
+    GlobalTensor<T> zGm;
 
     // -------------------------- 广播变量 ------------------------------
-    uint32_t size;                    // x总元素数
-    uint32_t shape[128];              // x原始shape
-    uint32_t numshapes;               // x维度数
-    uint32_t osize;                   // mask总元素数
-    uint32_t oshape[128];             // mask原始shape
-    uint32_t onumshapes;              // mask维度数
-    uint32_t dimOffsetXList[128];     // x的维度偏移表
-    uint32_t dimOffsetMaskList[128];  // mask的维度偏移表
-    int32_t alignStart;               // 广播对齐起始维度
+    uint32_t size;                   // x总元素数
+    uint32_t shape[128];             // x原始shape
+    uint32_t numshapes;              // x维度数
+    uint32_t osize;                  // mask总元素数
+    uint32_t oshape[128];            // mask原始shape
+    uint32_t onumshapes;             // mask维度数
+    uint32_t dimOffsetXList[128];    // x的维度偏移表
+    uint32_t dimOffsetMaskList[128]; // mask的维度偏移表
+    int32_t alignStart;              // 广播对齐起始维度
 
     // -------------------------- 分片变量 ------------------------------
-    uint32_t tileNum;                 // 当前Core的Tile总数
-    uint32_t alignNum_x;              // x的对齐元素数
-    uint32_t tileLength_x;            // x的常规Tile长度（对齐后）
-    uint32_t lastTileLength_x;        // x的尾Tile长度（对齐后）
-    uint32_t gmStartIdx;              // 当前Core的GM起始索引
-    uint32_t localValidElem;          // 当前Core的有效元素数
+    uint32_t tileNum;          // 当前Core的Tile总数
+    uint32_t alignNum_x;       // x的对齐元素数
+    uint32_t tileLength_x;     // x的常规Tile长度（对齐后）
+    uint32_t lastTileLength_x; // x的尾Tile长度（对齐后）
+    uint32_t gmStartIdx;       // 当前Core的GM起始索引
+    uint32_t localValidElem;   // 当前Core的有效元素数
 
     // -------------------------- 缓存变量 ------------------------------
-    uint32_t xCopyCountCache[BUFFER_NUM] = {0U};  // x拷贝数缓存
-    T value;                                      // 填充
+    uint32_t xCopyCountCache[BUFFER_NUM] = {0U}; // x拷贝数缓存
+    T value;                                     // 填充
 };
 
 template <typename T>
-__aicore__ inline void MaskedFill<T>::Init(GM_ADDR x, GM_ADDR mask, GM_ADDR valueT, GM_ADDR z, const MaskedFillTilingData* tilingData)
+__aicore__ inline void MaskedFill<T>::Init(
+    GM_ADDR x, GM_ADDR mask, GM_ADDR valueT, GM_ADDR z, const MaskedFillTilingData* tilingData)
 {
     valueGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(valueT), 1);
     this->value = valueGm.GetValue(0);
@@ -107,11 +108,12 @@ __aicore__ inline void MaskedFill<T>::Init(GM_ADDR x, GM_ADDR mask, GM_ADDR valu
 template <typename T>
 __aicore__ inline void MaskedFill<T>::Process()
 {
-    if (this->localValidElem == 0U || this->tileNum == 0U) return;
+    if (this->localValidElem == 0U || this->tileNum == 0U)
+        return;
     for (uint32_t i = 0U; i < this->tileNum; i++) {
-        CopyIn(i);  
-        Compute(i);  
-        CopyOut(i); 
+        CopyIn(i);
+        Compute(i);
+        CopyOut(i);
     }
 }
 
@@ -119,8 +121,8 @@ template <typename T>
 __aicore__ inline void MaskedFill<T>::ParseTilingData(const MaskedFillTilingData* tilingData)
 {
     this->alignNum_x = ALIGN_BYTES / sizeof(T);
-    this->size = tilingData->xSize;      
-    this->osize = tilingData->maskSize;    
+    this->size = tilingData->xSize;
+    this->osize = tilingData->maskSize;
     this->numshapes = tilingData->xNumShapes;
     this->onumshapes = tilingData->maskNumShapes;
     for (uint32_t i = 0; i < this->numshapes; i++) {
@@ -154,10 +156,10 @@ __aicore__ inline void MaskedFill<T>::ParseTilingData(const MaskedFillTilingData
         this->tileNum = tilingData->formerTileNum;
         this->tileLength_x = tilingData->formerTileLength;
         this->lastTileLength_x = tilingData->formerLastTileLength;
-    } 
-    else {
+    } else {
         blockTotalElemAligned = tilingData->tailLength;
-        gmStartIdx = tilingData->formerLength * tilingData->formerNum + blockTotalElemAligned * (blockIdx - tilingData->formerNum);
+        gmStartIdx = tilingData->formerLength * tilingData->formerNum +
+                     blockTotalElemAligned * (blockIdx - tilingData->formerNum);
         this->tileNum = tilingData->tailTileNum;
         this->tileLength_x = tilingData->tailTileLength;
         this->lastTileLength_x = tilingData->tailLastTileLength;
@@ -168,8 +170,9 @@ __aicore__ inline void MaskedFill<T>::ParseTilingData(const MaskedFillTilingData
         this->localValidElem = 0U;
         return;
     }
-    this->localValidElem = (this->gmStartIdx + blockTotalElemAligned > tilingData->xSize) ? 
-                            (tilingData->xSize - this->gmStartIdx) : blockTotalElemAligned;
+    this->localValidElem = (this->gmStartIdx + blockTotalElemAligned > tilingData->xSize) ?
+                               (tilingData->xSize - this->gmStartIdx) :
+                               blockTotalElemAligned;
 }
 
 template <typename T>
@@ -184,7 +187,7 @@ __aicore__ inline uint32_t MaskedFill<T>::MapXGlobalIdxToMaskGlobalIdx(uint32_t 
 
     uint32_t maskIndice[128] = {0};
     for (int32_t i = 0; i < this->onumshapes; i++) {
-        int32_t xDimIdx = this->alignStart + i; 
+        int32_t xDimIdx = this->alignStart + i;
         uint32_t maskDimSize = this->oshape[i];
 
         maskIndice[i] = (maskDimSize == 1) ? 0 : xIndice[xDimIdx];
@@ -211,7 +214,6 @@ __aicore__ inline uint32_t MaskedFill<T>::GetCopyCount(uint32_t tileIdx)
     uint32_t maxValid = this->localValidElem - offsetInCore;
 
     return (maxValid <= 0U) ? 0U : ((tileLen <= maxValid) ? tileLen : AlignUp(maxValid, this->alignNum_x));
-
 }
 
 template <typename T>
@@ -248,7 +250,8 @@ __aicore__ inline void MaskedFill<T>::Compute(uint32_t tileIdx)
 {
     uint32_t offsetInCore = tileIdx * this->tileLength_x;
     uint32_t bufIdx = tileIdx % BUFFER_NUM;
-    if (offsetInCore >= this->localValidElem) return;
+    if (offsetInCore >= this->localValidElem)
+        return;
 
     LocalTensor<T> xLocal = inQueueX.DeQue<T>();
     LocalTensor<bool> maskLocal = inQueueM.DeQue<bool>();
@@ -259,25 +262,24 @@ __aicore__ inline void MaskedFill<T>::Compute(uint32_t tileIdx)
     uint32_t computeCount = Std::min(xCopyCount, maxValid);
 
     // 只支持half/float
-    // AscendC::Select(zLocal, maskLocal, xLocal, static_cast<float>(this->value), AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE, computeCount);
+    // AscendC::Select(zLocal, maskLocal, xLocal, static_cast<float>(this->value),
+    // AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE, computeCount);
 
-    for (int32_t i = computeCount - 1; i >= 0; i--)
-    {
+    for (int32_t i = computeCount - 1; i >= 0; i--) {
         // int16_t/uint16_t/half/int32_t/uint32_t/float/bfloat16_t 适用Duplicate接口
-        if constexpr (Std::is_same<T, bfloat16_t>::value || Std::is_same<T, float>::value ||
-                      Std::is_same<T, uint32_t>::value || Std::is_same<T, int32_t>::value ||
-                      Std::is_same<T, half>::value || Std::is_same<T, uint16_t>::value ||
-                      Std::is_same<T, int16_t>::value) {
+        if constexpr (
+            Std::is_same<T, bfloat16_t>::value || Std::is_same<T, float>::value || Std::is_same<T, uint32_t>::value ||
+            Std::is_same<T, int32_t>::value || Std::is_same<T, half>::value || Std::is_same<T, uint16_t>::value ||
+            Std::is_same<T, int16_t>::value) {
             Duplicate<T>(zLocal, maskLocal.GetValue(i) ? this->value : xLocal.GetValue(i), i + 1);
-        }
-        else {
+        } else {
             zLocal.SetValue(i, maskLocal.GetValue(i) ? this->value : xLocal.GetValue(i));
         }
     }
 
     outQueueZ.EnQue(zLocal);
     inQueueX.FreeTensor(xLocal);
-    inQueueM.FreeTensor(maskLocal);    
+    inQueueM.FreeTensor(maskLocal);
 }
 
 template <typename T>
@@ -285,7 +287,8 @@ __aicore__ inline void MaskedFill<T>::CopyOut(uint32_t tileIdx)
 {
     uint32_t offsetInCore = tileIdx * this->tileLength_x;
     uint32_t bufIdx = tileIdx % BUFFER_NUM;
-    if (offsetInCore >= this->localValidElem) return;
+    if (offsetInCore >= this->localValidElem)
+        return;
 
     LocalTensor<T> zLocal = outQueueZ.DeQue<T>();
     uint32_t copyCount = GetCopyCount(tileIdx);

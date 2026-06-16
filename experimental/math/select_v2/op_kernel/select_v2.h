@@ -33,9 +33,9 @@ public:
     __aicore__ inline KernelSelectV2(){};
 
     __aicore__ inline void Init(
-        GM_ADDR condition, GM_ADDR self, GM_ADDR other, GM_ADDR out, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t finalBigTileNum,
-        uint64_t finalSmallTileNum, uint64_t tileDataNum, uint64_t smallTailDataNum, uint64_t bigTailDataNum,
-        uint64_t tailBlockNuma);
+        GM_ADDR condition, GM_ADDR self, GM_ADDR other, GM_ADDR out, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum,
+        uint64_t finalBigTileNum, uint64_t finalSmallTileNum, uint64_t tileDataNum, uint64_t smallTailDataNum,
+        uint64_t bigTailDataNum, uint64_t tailBlockNuma);
     __aicore__ inline void Process();
 
 private:
@@ -61,9 +61,9 @@ private:
 
 template <typename TYPE_X, typename TYPE_Y>
 __aicore__ inline void KernelSelectV2<TYPE_X, TYPE_Y>::Init(
-    GM_ADDR condition, GM_ADDR self, GM_ADDR other, GM_ADDR out, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum, uint64_t finalBigTileNum,
-    uint64_t finalSmallTileNum, uint64_t tileDataNum, uint64_t smallTailDataNum, uint64_t bigTailDataNum,
-    uint64_t tailBlockNum)
+    GM_ADDR condition, GM_ADDR self, GM_ADDR other, GM_ADDR out, uint64_t smallCoreDataNum, uint64_t bigCoreDataNum,
+    uint64_t finalBigTileNum, uint64_t finalSmallTileNum, uint64_t tileDataNum, uint64_t smallTailDataNum,
+    uint64_t bigTailDataNum, uint64_t tailBlockNum)
 {
     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
     uint64_t coreId = AscendC::GetBlockIdx();
@@ -93,7 +93,8 @@ __aicore__ inline void KernelSelectV2<TYPE_X, TYPE_Y>::Init(
 
     pipe.InitBuffer(fp16Buf, tileDataNumAlign256 * sizeof(half));
 
-    if constexpr((std::is_same_v<TYPE_Y, uint8_t>) || (std::is_same_v<TYPE_Y, int8_t>) || (std::is_same_v<TYPE_Y, bool>) ){
+    if constexpr (
+        (std::is_same_v<TYPE_Y, uint8_t>) || (std::is_same_v<TYPE_Y, int8_t>) || (std::is_same_v<TYPE_Y, bool>)) {
         pipe.InitBuffer(tmpBuf, this->tileDataNum * sizeof(half));
     }
 }
@@ -126,35 +127,40 @@ __aicore__ inline void KernelSelectV2<TYPE_X, TYPE_Y>::Compute(int32_t progress)
     AscendC::LocalTensor<uint8_t> condLocal = inQueueC.DeQue<uint8_t>();
 
     AscendC::LocalTensor<half> cond_fp16Local = fp16Buf.Get<half>();
-    
+
     AscendC::Cast(cond_fp16Local, condLocal, AscendC::RoundMode::CAST_NONE, this->processDataNum);
     uint32_t compareCnt = (this->processDataNum + 127) / 128 * 128;
     AscendC::CompareScalar(condLocal, cond_fp16Local, (half)(0.0), AscendC::CMPMODE::NE, compareCnt);
 
-    if constexpr ((std::is_same_v<TYPE_Y, float>) || (std::is_same_v<TYPE_Y, uint32_t>) || (std::is_same_v<TYPE_Y, int32_t>)) {
+    if constexpr (
+        (std::is_same_v<TYPE_Y, float>) || (std::is_same_v<TYPE_Y, uint32_t>) || (std::is_same_v<TYPE_Y, int32_t>)) {
         AscendC::LocalTensor<float> xLocal = inQueueX.DeQue<float>();
         AscendC::LocalTensor<float> selfLocal = xLocal;
         AscendC::LocalTensor<float> otherLocal = xLocal[this->tileDataNum];
         AscendC::LocalTensor<float> yLocal = outQueueY.AllocTensor<float>();
-        AscendC::Select(yLocal.ReinterpretCast<float>(), condLocal, selfLocal.ReinterpretCast<float>(), otherLocal.ReinterpretCast<float>(), 
-                        AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, this->processDataNum);
+        AscendC::Select(
+            yLocal.ReinterpretCast<float>(), condLocal, selfLocal.ReinterpretCast<float>(),
+            otherLocal.ReinterpretCast<float>(), AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, this->processDataNum);
         outQueueY.EnQue<float>(yLocal);
         inQueueC.FreeTensor(condLocal);
-        inQueueX.FreeTensor(xLocal);                          
-    } 
-    if constexpr ((std::is_same_v<TYPE_Y, half>) || (std::is_same_v<TYPE_Y, bfloat16_t>) 
-                    || (std::is_same_v<TYPE_Y, uint16_t>) || (std::is_same_v<TYPE_Y, int16_t>)) {
+        inQueueX.FreeTensor(xLocal);
+    }
+    if constexpr (
+        (std::is_same_v<TYPE_Y, half>) || (std::is_same_v<TYPE_Y, bfloat16_t>) || (std::is_same_v<TYPE_Y, uint16_t>) ||
+        (std::is_same_v<TYPE_Y, int16_t>)) {
         AscendC::LocalTensor<half> xLocal = inQueueX.DeQue<half>();
         AscendC::LocalTensor<half> selfLocal = xLocal;
         AscendC::LocalTensor<half> otherLocal = xLocal[this->tileDataNum];
         AscendC::LocalTensor<half> yLocal = outQueueY.AllocTensor<half>();
-        AscendC::Select(yLocal.ReinterpretCast<half>(), condLocal, selfLocal.ReinterpretCast<half>(), otherLocal.ReinterpretCast<half>(), 
-                        AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, this->processDataNum); 
+        AscendC::Select(
+            yLocal.ReinterpretCast<half>(), condLocal, selfLocal.ReinterpretCast<half>(),
+            otherLocal.ReinterpretCast<half>(), AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, this->processDataNum);
         outQueueY.EnQue<half>(yLocal);
         inQueueC.FreeTensor(condLocal);
-        inQueueX.FreeTensor(xLocal);                        
+        inQueueX.FreeTensor(xLocal);
     }
-    if constexpr ((std::is_same_v<TYPE_Y, uint8_t>) || (std::is_same_v<TYPE_Y, int8_t>) || (std::is_same_v<TYPE_Y, bool>)) {
+    if constexpr (
+        (std::is_same_v<TYPE_Y, uint8_t>) || (std::is_same_v<TYPE_Y, int8_t>) || (std::is_same_v<TYPE_Y, bool>)) {
         AscendC::LocalTensor<int8_t> xLocal = inQueueX.DeQue<int8_t>();
         AscendC::LocalTensor<int8_t> selfLocal = xLocal;
         AscendC::LocalTensor<int8_t> otherLocal = xLocal[this->tileDataNum];
@@ -162,14 +168,14 @@ __aicore__ inline void KernelSelectV2<TYPE_X, TYPE_Y>::Compute(int32_t progress)
         AscendC::LocalTensor<half> tmp = tmpBuf.Get<half>();
         AscendC::LocalTensor<half> p1 = tmp;
         AscendC::LocalTensor<half> p2 = tmp[this->tileDataNum];
-        AscendC::Cast(p1, selfLocal.ReinterpretCast<int8_t>(), AscendC::RoundMode::CAST_NONE, this->processDataNum); 
-        AscendC::Cast(p2, otherLocal.ReinterpretCast<int8_t>(), AscendC::RoundMode::CAST_NONE, this->processDataNum); 
-        AscendC::Select(p1, condLocal, p1, p2, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, this->processDataNum);    
-        AscendC::Cast(yLocal.ReinterpretCast<int8_t>(), p1, AscendC::RoundMode::CAST_NONE, this->processDataNum); 
+        AscendC::Cast(p1, selfLocal.ReinterpretCast<int8_t>(), AscendC::RoundMode::CAST_NONE, this->processDataNum);
+        AscendC::Cast(p2, otherLocal.ReinterpretCast<int8_t>(), AscendC::RoundMode::CAST_NONE, this->processDataNum);
+        AscendC::Select(p1, condLocal, p1, p2, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, this->processDataNum);
+        AscendC::Cast(yLocal.ReinterpretCast<int8_t>(), p1, AscendC::RoundMode::CAST_NONE, this->processDataNum);
         outQueueY.EnQue<int8_t>(yLocal);
         inQueueC.FreeTensor(condLocal);
         inQueueX.FreeTensor(xLocal);
-    }    
+    }
 }
 
 template <typename TYPE_X, typename TYPE_Y>
@@ -190,5 +196,5 @@ __aicore__ inline void KernelSelectV2<TYPE_X, TYPE_Y>::Process()
     CopyOut(loopCount - 1);
 }
 
-} // namespace Myselect_v2
+} // namespace MySelectV2
 #endif // SELECTV2_H

@@ -21,15 +21,9 @@ using namespace optiling;
 
 class TriluTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "TriluTilingTest SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "TriluTilingTest SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "TriluTilingTest TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "TriluTilingTest TearDown" << endl; }
 };
 
 TEST_F(TriluTilingTest, ascend950_test_tiling_FLOAT_001)
@@ -38,12 +32,10 @@ TEST_F(TriluTilingTest, ascend950_test_tiling_FLOAT_001)
     gert::TilingContextPara tilingContextPara(
         "Trilu",
         {
-            gert::TilingContextPara::TensorDescription(
-                gert::StorageShape({4, 4}, {4, 4}), ge::DT_FLOAT, ge::FORMAT_ND),
+            gert::TilingContextPara::TensorDescription(gert::StorageShape({4, 4}, {4, 4}), ge::DT_FLOAT, ge::FORMAT_ND),
         },
         {
-            gert::TilingContextPara::TensorDescription(
-                gert::StorageShape({4, 4}, {4, 4}), ge::DT_FLOAT, ge::FORMAT_ND),
+            gert::TilingContextPara::TensorDescription(gert::StorageShape({4, 4}, {4, 4}), ge::DT_FLOAT, ge::FORMAT_ND),
         },
         {
             gert::TilingContextPara::OpAttr("diagonal", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
@@ -61,12 +53,10 @@ TEST_F(TriluTilingTest, ascend950_test_tiling_INT32_002)
     gert::TilingContextPara tilingContextPara(
         "Trilu",
         {
-            gert::TilingContextPara::TensorDescription(
-                gert::StorageShape({3, 5}, {3, 5}), ge::DT_INT32, ge::FORMAT_ND),
+            gert::TilingContextPara::TensorDescription(gert::StorageShape({3, 5}, {3, 5}), ge::DT_INT32, ge::FORMAT_ND),
         },
         {
-            gert::TilingContextPara::TensorDescription(
-                gert::StorageShape({3, 5}, {3, 5}), ge::DT_INT32, ge::FORMAT_ND),
+            gert::TilingContextPara::TensorDescription(gert::StorageShape({3, 5}, {3, 5}), ge::DT_INT32, ge::FORMAT_ND),
         },
         {
             gert::TilingContextPara::OpAttr("diagonal", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),

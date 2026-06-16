@@ -15,8 +15,7 @@
 
 #include "greater.h"
 
-enum class GreaterTilingKey : uint32_t
-{
+enum class GreaterTilingKey : uint32_t {
     TILING_KEY_EXAMPLE_FLOAT = 0,
     TILING_KEY_EXAMPLE_INT32 = 1,
 };
@@ -27,22 +26,19 @@ __global__ __aicore__ void greater(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR wo
     REGISTER_TILING_DEFAULT(GreaterTilingData);
     GET_TILING_DATA_WITH_STRUCT(GreaterTilingData, tilingData, tiling);
 
-    if(TILING_KEY_IS(1)) {
+    if (TILING_KEY_IS(1)) {
         NsGreater::Greater<DTYPE_X1, DTYPE_X2, DTYPE_Y, true> op;
-        op.Init(x1, x2, y, tilingData.smallCoreDataNum,
-                tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
-                tilingData.smallCoreLoopNum, tilingData.ubPartDataNum,
-                tilingData.smallCoreTailDataNum, tilingData.bigCoreTailDataNum,
-                tilingData.tailBlockNum);
+        op.Init(
+            x1, x2, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
+            tilingData.smallCoreLoopNum, tilingData.ubPartDataNum, tilingData.smallCoreTailDataNum,
+            tilingData.bigCoreTailDataNum, tilingData.tailBlockNum);
         op.Process();
-    }
-    else if(TILING_KEY_IS(0)) {
+    } else if (TILING_KEY_IS(0)) {
         NsGreater::Greater<DTYPE_X1, DTYPE_X2, DTYPE_Y, false> op;
-        op.Init(x1, x2, y, tilingData.smallCoreDataNum,
-                tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
-                tilingData.smallCoreLoopNum, tilingData.ubPartDataNum,
-                tilingData.smallCoreTailDataNum, tilingData.bigCoreTailDataNum,
-                tilingData.tailBlockNum);
+        op.Init(
+            x1, x2, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
+            tilingData.smallCoreLoopNum, tilingData.ubPartDataNum, tilingData.smallCoreTailDataNum,
+            tilingData.bigCoreTailDataNum, tilingData.tailBlockNum);
         op.Process();
     }
 }

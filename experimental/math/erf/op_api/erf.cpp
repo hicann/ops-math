@@ -21,10 +21,7 @@ OP_TYPE_REGISTER(Erf);
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
-static bool IsAiCoreSupport(const aclTensor* self)
-{
-    return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
-}
+static bool IsAiCoreSupport(const aclTensor* self) { return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST); }
 
 static const aclTensor* ErfAiCore(const aclTensor* self, aclTensor* out, aclOpExecutor* executor)
 {

@@ -32,29 +32,15 @@ __global__ __aicore__ void cos(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR 
     KernelCos<DTYPE_X, ComputeStrategy> op;
     AscendC::TPipe pipe;
     if (TILING_KEY_IS(1)) {
-        op.Init<true>(x,
-                      y,
-                      tiling_data.smallCoreDataNum,
-                      tiling_data.bigCoreDataNum,
-                      tiling_data.bigCoreLoopNum,
-                      tiling_data.smallCoreLoopNum,
-                      tiling_data.ubPartDataNum,
-                      tiling_data.smallCoreTailDataNum,
-                      tiling_data.bigCoreTailDataNum,
-                      tiling_data.tailBlockNum,
-                      &pipe);
+        op.Init<true>(
+            x, y, tiling_data.smallCoreDataNum, tiling_data.bigCoreDataNum, tiling_data.bigCoreLoopNum,
+            tiling_data.smallCoreLoopNum, tiling_data.ubPartDataNum, tiling_data.smallCoreTailDataNum,
+            tiling_data.bigCoreTailDataNum, tiling_data.tailBlockNum, &pipe);
     } else if (TILING_KEY_IS(0)) {
-        op.Init<false>(x,
-                       y,
-                       tiling_data.smallCoreDataNum,
-                       tiling_data.bigCoreDataNum,
-                       tiling_data.bigCoreLoopNum,
-                       tiling_data.smallCoreLoopNum,
-                       tiling_data.ubPartDataNum,
-                       tiling_data.smallCoreTailDataNum,
-                       tiling_data.bigCoreTailDataNum,
-                       tiling_data.tailBlockNum,
-                       &pipe);
+        op.Init<false>(
+            x, y, tiling_data.smallCoreDataNum, tiling_data.bigCoreDataNum, tiling_data.bigCoreLoopNum,
+            tiling_data.smallCoreLoopNum, tiling_data.ubPartDataNum, tiling_data.smallCoreTailDataNum,
+            tiling_data.bigCoreTailDataNum, tiling_data.tailBlockNum, &pipe);
     }
     op.Process();
 }

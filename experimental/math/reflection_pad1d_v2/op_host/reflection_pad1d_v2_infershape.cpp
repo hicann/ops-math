@@ -29,8 +29,8 @@ using namespace ge;
 
 namespace ops {
 constexpr size_t IDX_IN_PADDING = 1;
-constexpr size_t PAD_W_FRONT_INDEX = 0;             // W前填充（padLeft）
-constexpr size_t PAD_W_BACK_INDEX = 1;              // W后填充（padRight）
+constexpr size_t PAD_W_FRONT_INDEX = 0; // W前填充（padLeft）
+constexpr size_t PAD_W_BACK_INDEX = 1;  // W后填充（padRight）
 static ge::graphStatus InferShapeReflectionPad1dV2(gert::InferShapeContext* context)
 {
     if (context == nullptr) {
@@ -38,41 +38,41 @@ static ge::graphStatus InferShapeReflectionPad1dV2(gert::InferShapeContext* cont
     }
 
     // 获取输入形状
-    const gert::Shape* inputShape = context->GetInputShape(0);  // 输入x的形状
+    const gert::Shape* inputShape = context->GetInputShape(0); // 输入x的形状
     if (inputShape == nullptr) {
         return ge::GRAPH_FAILED;
     }
     uint32_t inputDim = static_cast<uint32_t>(inputShape->GetDimNum());
-    if (inputDim < 1 || inputDim > 3) {  // 限制输入维度为1D~3D
+    if (inputDim < 1 || inputDim > 3) { // 限制输入维度为1D~3D
         return ge::GRAPH_FAILED;
     }
 
     // 获取paddings参数
-    const auto paddingTensor = context->GetInputTensor(1);  // 输入paddings的张量
+    const auto paddingTensor = context->GetInputTensor(1); // 输入paddings的张量
     if (paddingTensor == nullptr) {
         return ge::GRAPH_FAILED;
     }
     const gert::Shape* padShape = context->GetInputShape(1);
     if (padShape == nullptr || padShape->GetDimNum() != 1 || padShape->GetDim(0) != 2) {
-        return ge::GRAPH_FAILED; 
+        return ge::GRAPH_FAILED;
     }
 
     ge::DataType padDtype = paddingTensor->GetDataType();
     uint32_t padLeft = 0, padRight = 0;
     if (padDtype == ge::DT_INT32) {
         const int32_t* padData = paddingTensor->GetData<int32_t>();
-        if (padData == nullptr) return ge::GRAPH_FAILED;
-        padLeft = static_cast<uint32_t>(padData[PAD_W_FRONT_INDEX]); 
-        padRight = static_cast<uint32_t>(padData[PAD_W_BACK_INDEX]); 
-    } 
-    else if (padDtype == ge::DT_INT64) {
-        const int64_t* padData = paddingTensor->GetData<int64_t>();
-        if (padData == nullptr) return ge::GRAPH_FAILED;
+        if (padData == nullptr)
+            return ge::GRAPH_FAILED;
         padLeft = static_cast<uint32_t>(padData[PAD_W_FRONT_INDEX]);
         padRight = static_cast<uint32_t>(padData[PAD_W_BACK_INDEX]);
-    } 
-    else {
-        return ge::GRAPH_FAILED;  // 仅支持int32/int64类型paddings
+    } else if (padDtype == ge::DT_INT64) {
+        const int64_t* padData = paddingTensor->GetData<int64_t>();
+        if (padData == nullptr)
+            return ge::GRAPH_FAILED;
+        padLeft = static_cast<uint32_t>(padData[PAD_W_FRONT_INDEX]);
+        padRight = static_cast<uint32_t>(padData[PAD_W_BACK_INDEX]);
+    } else {
+        return ge::GRAPH_FAILED; // 仅支持int32/int64类型paddings
     }
 
     if (padLeft > static_cast<uint32_t>(INT32_MAX) || padRight > static_cast<uint32_t>(INT32_MAX)) {
@@ -84,15 +84,15 @@ static ge::graphStatus InferShapeReflectionPad1dV2(gert::InferShapeContext* cont
     if (outputShape == nullptr) {
         return ge::GRAPH_FAILED;
     }
-    *outputShape = *inputShape; 
-    uint32_t wDimIndex = static_cast<uint32_t>(inputShape->GetDimNum() - 1);  
+    *outputShape = *inputShape;
+    uint32_t wDimIndex = static_cast<uint32_t>(inputShape->GetDimNum() - 1);
     uint32_t inWSize = static_cast<uint32_t>(inputShape->GetDim(wDimIndex));
-    
+
     if (static_cast<uint64_t>(inWSize) + padLeft + padRight > static_cast<uint64_t>(UINT32_MAX)) {
         return ge::GRAPH_FAILED;
     }
     uint32_t outWSize = inWSize + padLeft + padRight;
-    outputShape->SetDim(wDimIndex, outWSize);  
+    outputShape->SetDim(wDimIndex, outWSize);
 
     return ge::GRAPH_SUCCESS;
 }

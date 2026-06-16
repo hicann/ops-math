@@ -13,13 +13,14 @@
 
 using namespace ge;
 namespace ops {
-static ge::graphStatus InferDataTypeForAcos(gert::InferDataTypeContext* context) {
-  OP_LOGI("Begin InferDataTypeForAcos");
-  const ge::DataType xDataType = context->GetInputDataType(0);
-  context->SetOutputDataType(0, xDataType);
-  return ge::GRAPH_SUCCESS;
+static ge::graphStatus InferDataTypeForAcos(gert::InferDataTypeContext* context)
+{
+    OP_LOGI("Begin InferDataTypeForAcos");
+    const ge::DataType xDataType = context->GetInputDataType(0);
+    context->SetOutputDataType(0, xDataType);
+    return ge::GRAPH_SUCCESS;
 }
 
 IMPL_OP(Acos).InferDataType(InferDataTypeForAcos);
-}
+} // namespace ops
 // namespace ops

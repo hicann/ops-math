@@ -15,14 +15,14 @@
 
 #include "arange.h"
 
-enum class ArangeTilingKey : uint32_t
-{
+enum class ArangeTilingKey : uint32_t {
     TILING_KEY_EXAMPLE_OTHER = 0,
     TILING_KEY_EXAMPLE_FLOAT = 1,
 };
 
 template <uint32_t schMode>
-__global__ __aicore__ void arange(GM_ADDR start, GM_ADDR end, GM_ADDR step, GM_ADDR out, GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void arange(
+    GM_ADDR start, GM_ADDR end, GM_ADDR step, GM_ADDR out, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(ArangeTilingData);
     GET_TILING_DATA_WITH_STRUCT(ArangeTilingData, tilingData, tiling);
@@ -30,12 +30,9 @@ __global__ __aicore__ void arange(GM_ADDR start, GM_ADDR end, GM_ADDR step, GM_A
     // 场景1
     if constexpr (schMode == static_cast<uint32_t>(ArangeTilingKey::TILING_KEY_EXAMPLE_OTHER)) {
         NsArange::KernelArange_Cast<DTYPE_START, DTYPE_STEP, DTYPE_OUT> op;
-    
-        op.Init(start, end, step, out,
-            tilingData.totalNum,
-            tilingData.unitNum,
-            tilingData.unitLoops,
-            tilingData.tailNum);
+
+        op.Init(
+            start, end, step, out, tilingData.totalNum, tilingData.unitNum, tilingData.unitLoops, tilingData.tailNum);
 
         op.Process();
     }
@@ -43,12 +40,9 @@ __global__ __aicore__ void arange(GM_ADDR start, GM_ADDR end, GM_ADDR step, GM_A
     // 场景2
     if constexpr (schMode == static_cast<uint32_t>(ArangeTilingKey::TILING_KEY_EXAMPLE_FLOAT)) {
         NsArange::KernelArange<float, float, float> op;
-    
-        op.Init(start, end, step, out,
-            tilingData.totalNum,
-            tilingData.unitNum,
-            tilingData.unitLoops,
-            tilingData.tailNum);
+
+        op.Init(
+            start, end, step, out, tilingData.totalNum, tilingData.unitNum, tilingData.unitLoops, tilingData.tailNum);
 
         op.Process();
     }

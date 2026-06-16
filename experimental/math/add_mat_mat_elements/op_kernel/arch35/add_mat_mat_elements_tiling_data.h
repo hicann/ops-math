@@ -19,13 +19,13 @@
 #define ADD_MAT_MAT_ELEMENTS_TILING_DATA_H_
 
 struct AddMatMatElementsTilingData {
-    uint64_t totalLength;      // 总元素数（= a/b/c 所有维度之积）
-    uint32_t tileLength;       // 单次 UB 处理的元素数（满足32B对齐）
-    uint32_t blockNum;         // 实际使用的 AI Core 数
-    uint32_t blockLength;      // 每个 Core 负责的元素数
-    uint32_t lastBlockLength;  // 最后一个 Core 的元素数（可能 < blockLength）
-    float    alphaVal;         // alpha 标量值（统一以 float 存储，Kernel 内按需转换）
-    float    betaVal;          // beta 标量值（统一以 float 存储）
+    uint64_t totalLength;     // 总元素数（= a/b/c 所有维度之积）
+    uint32_t tileLength;      // 单次 UB 处理的元素数（满足32B对齐）
+    uint32_t blockNum;        // 实际使用的 AI Core 数
+    uint32_t blockLength;     // 每个 Core 负责的元素数
+    uint32_t lastBlockLength; // 最后一个 Core 的元素数（可能 < blockLength）
+    float alphaVal;           // alpha 标量值（统一以 float 存储，Kernel 内按需转换）
+    float betaVal;            // beta 标量值（统一以 float 存储）
 };
 
-#endif  // ADD_MAT_MAT_ELEMENTS_TILING_DATA_H_
+#endif // ADD_MAT_MAT_ELEMENTS_TILING_DATA_H_

@@ -37,7 +37,7 @@ static ge::graphStatus InferShapeEyeV2(gert::InferShapeContext* context)
     // get input shapes
     const gert::Shape* xShape = context->GetInputShape(IDX_0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
-    
+
     // get output shapes
     gert::Shape* yShape = context->GetOutputShape(IDX_0);
     OP_CHECK_NULL_WITH_CONTEXT(context, yShape);

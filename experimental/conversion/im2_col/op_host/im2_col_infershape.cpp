@@ -30,50 +30,50 @@ using namespace ge;
 namespace ops {
 // 常量定义，用于替换魔法数字
 namespace {
-    constexpr int32_t DEFAULT_KERNEL_H = 2;
-    constexpr int32_t DEFAULT_KERNEL_W = 2;
-    constexpr int32_t DEFAULT_STRIDE_H = 1;
-    constexpr int32_t DEFAULT_STRIDE_W = 1;
-    constexpr int32_t DEFAULT_PAD_H = 0;
-    constexpr int32_t DEFAULT_PAD_W = 0;
-    constexpr int32_t DEFAULT_DILATION_H = 1;
-    constexpr int32_t DEFAULT_DILATION_W = 1;
-    
-    constexpr int32_t MIN_DIM_NUM = 2;
-    constexpr int32_t TENSOR_DIM_NUM_2D = 2;
-    constexpr int32_t TENSOR_DIM_NUM_3D = 3;
-    constexpr int32_t TENSOR_DIM_NUM_4D = 4;
-    
-    constexpr int32_t BATCH_DIM_INDEX = 0;
-    constexpr int32_t CHANNEL_DIM_INDEX = 1;
-    constexpr int32_t HEIGHT_DIM_INDEX_OFFSET = -2;  // 倒数第二维
-    constexpr int32_t WIDTH_DIM_INDEX_OFFSET = -1;   // 最后一维
-    
-    constexpr int32_t SINGLE_BATCH_VALUE = 1;
-    constexpr int32_t PADDING_MULTIPLIER = 2;
-    constexpr int32_t STRIDE_OFFSET = 1;  // 公式中的 +1
-    
-    constexpr size_t KERNEL_H_ATTR_INDEX = 0;
-    constexpr size_t KERNEL_W_ATTR_INDEX = 1;
-    constexpr size_t STRIDE_VAL_ATTR_INDEX = 2;
-    constexpr size_t PADDING_VAL_ATTR_INDEX = 3;
-    
-    constexpr size_t OUTPUT_DIM_COUNT_3D = 3;  // 输出形状维度数
-}
+constexpr int32_t DEFAULT_KERNEL_H = 2;
+constexpr int32_t DEFAULT_KERNEL_W = 2;
+constexpr int32_t DEFAULT_STRIDE_H = 1;
+constexpr int32_t DEFAULT_STRIDE_W = 1;
+constexpr int32_t DEFAULT_PAD_H = 0;
+constexpr int32_t DEFAULT_PAD_W = 0;
+constexpr int32_t DEFAULT_DILATION_H = 1;
+constexpr int32_t DEFAULT_DILATION_W = 1;
 
-static ge::graphStatus InferShapeIm2Col(gert::InferShapeContext *context)
+constexpr int32_t MIN_DIM_NUM = 2;
+constexpr int32_t TENSOR_DIM_NUM_2D = 2;
+constexpr int32_t TENSOR_DIM_NUM_3D = 3;
+constexpr int32_t TENSOR_DIM_NUM_4D = 4;
+
+constexpr int32_t BATCH_DIM_INDEX = 0;
+constexpr int32_t CHANNEL_DIM_INDEX = 1;
+constexpr int32_t HEIGHT_DIM_INDEX_OFFSET = -2; // 倒数第二维
+constexpr int32_t WIDTH_DIM_INDEX_OFFSET = -1;  // 最后一维
+
+constexpr int32_t SINGLE_BATCH_VALUE = 1;
+constexpr int32_t PADDING_MULTIPLIER = 2;
+constexpr int32_t STRIDE_OFFSET = 1; // 公式中的 +1
+
+constexpr size_t KERNEL_H_ATTR_INDEX = 0;
+constexpr size_t KERNEL_W_ATTR_INDEX = 1;
+constexpr size_t STRIDE_VAL_ATTR_INDEX = 2;
+constexpr size_t PADDING_VAL_ATTR_INDEX = 3;
+
+constexpr size_t OUTPUT_DIM_COUNT_3D = 3; // 输出形状维度数
+} // namespace
+
+static ge::graphStatus InferShapeIm2Col(gert::InferShapeContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Begin to do InferShapeIm2Col");
 
     // get input shapes
-    const gert::Shape *InputShape = context->GetInputShape(0);
+    const gert::Shape* InputShape = context->GetInputShape(0);
     if (InputShape == nullptr) {
         OP_LOGE(context->GetNodeName(), "InputShape is nullptr");
         return ge::GRAPH_FAILED;
     }
 
     // get output shapes
-    gert::Shape *OutputShape = context->GetOutputShape(0);
+    gert::Shape* OutputShape = context->GetOutputShape(0);
     if (OutputShape == nullptr) {
         OP_LOGE(context->GetNodeName(), "OutputShape is nullptr");
         return ge::GRAPH_FAILED;
@@ -101,7 +101,6 @@ static ge::graphStatus InferShapeIm2Col(gert::InferShapeContext *context)
         const int64_t* dilation_h_ptr = attrPtr->GetInt(6);
         const int64_t* dilation_w_ptr = attrPtr->GetInt(7);
 
-        
         if (kernel_h_ptr != nullptr) {
             kernel_h = static_cast<int32_t>(*kernel_h_ptr);
         }
@@ -131,15 +130,15 @@ static ge::graphStatus InferShapeIm2Col(gert::InferShapeContext *context)
     // 解析输入形状
     auto dimNum = InputShape->GetDimNum();
     if (dimNum < MIN_DIM_NUM) {
-        OP_LOGE(context->GetNodeName(), "Input dimension number %zu is less than minimum required %d",
-                dimNum, MIN_DIM_NUM);
+        OP_LOGE(
+            context->GetNodeName(), "Input dimension number %zu is less than minimum required %d", dimNum, MIN_DIM_NUM);
         return ge::GRAPH_FAILED;
     }
 
     // 获取输入张量的空间维度
     int32_t H = InputShape->GetDim(dimNum + HEIGHT_DIM_INDEX_OFFSET);
     int32_t W = InputShape->GetDim(dimNum + WIDTH_DIM_INDEX_OFFSET);
-    
+
     // 获取通道数（对于2D输入，通道数为1）
     int32_t C = SINGLE_BATCH_VALUE;
     if (dimNum >= TENSOR_DIM_NUM_4D) {
@@ -150,33 +149,33 @@ static ge::graphStatus InferShapeIm2Col(gert::InferShapeContext *context)
     int32_t out_H = (H + 2 * pad_h - dilation_h * (kernel_h - 1) - 1) / stride_h + 1;
     int32_t out_W = (W + 2 * pad_w - dilation_w * (kernel_w - 1) - 1) / stride_w + 1;
     int32_t L = out_H * out_W;
-    
+
     // 计算输出通道数 = 输入通道数 × 卷积核高度 × 卷积核宽度
     int32_t output_channels = C * kernel_h * kernel_w;
 
     // 设置输出形状 [N, C*kH*kW, L]
     std::vector<int64_t> outputDims;
-    
+
     if (dimNum == TENSOR_DIM_NUM_4D) {
         // 4D输入：[N, C, H, W] -> [N, C*kH*kW, L]
         outputDims = {
-            InputShape->GetDim(BATCH_DIM_INDEX),  // N
-            static_cast<int64_t>(output_channels),  // C*kH*kW
-            static_cast<int64_t>(L)                  // L
+            InputShape->GetDim(BATCH_DIM_INDEX),   // N
+            static_cast<int64_t>(output_channels), // C*kH*kW
+            static_cast<int64_t>(L)                // L
         };
     } else if (dimNum == TENSOR_DIM_NUM_3D) {
         // 3D输入：[C, H, W] -> [1, C*kH*kW, L]
         outputDims = {
-            InputShape->GetDim(BATCH_DIM_INDEX),  // 这里实际上取的是C，但作为批处理维度
-            static_cast<int64_t>(output_channels),  // C*kH*kW
-            static_cast<int64_t>(L)                  // L
+            InputShape->GetDim(BATCH_DIM_INDEX),   // 这里实际上取的是C，但作为批处理维度
+            static_cast<int64_t>(output_channels), // C*kH*kW
+            static_cast<int64_t>(L)                // L
         };
     } else { // dimNum == TENSOR_DIM_NUM_2D
         // 2D输入：[H, W] -> [1, 1*kH*kW, L]
         outputDims = {
-            static_cast<int64_t>(SINGLE_BATCH_VALUE),  // N=1
-            static_cast<int64_t>(output_channels),     // 1*kH*kW
-            static_cast<int64_t>(L)                     // L
+            static_cast<int64_t>(SINGLE_BATCH_VALUE), // N=1
+            static_cast<int64_t>(output_channels),    // 1*kH*kW
+            static_cast<int64_t>(L)                   // L
         };
     }
 

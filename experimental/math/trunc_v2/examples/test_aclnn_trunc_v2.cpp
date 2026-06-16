@@ -106,14 +106,14 @@ int main()
     // 2. 构造输入与输出，需要根据API的接口自定义构造
     aclTensor* selfX = nullptr;
     void* selfXDeviceAddr = nullptr;
-    std::vector<int64_t> selfXShape = {2,2,2,2};
+    std::vector<int64_t> selfXShape = {2, 2, 2, 2};
     std::vector<float> selfXHostData(16, 4.8f);
     ret = CreateAclTensor(selfXHostData, selfXShape, &selfXDeviceAddr, aclDataType::ACL_FLOAT, &selfX);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     aclTensor* out = nullptr;
     void* outDeviceAddr = nullptr;
-    std::vector<int64_t> outShape = {2,2,2,2};
+    std::vector<int64_t> outShape = {2, 2, 2, 2};
     std::vector<float> outHostData(16, 0);
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -125,10 +125,9 @@ int main()
     // 4. 调用aclnnTruncV2第一段接口
     ret = aclnnTruncV2GetWorkspaceSize(selfX, out, &workspaceSize, &executor);
     if (ret != ACL_SUCCESS) {
-        const char* errMsg = aclGetRecentErrMsg();          // ← 关键一行
+        const char* errMsg = aclGetRecentErrMsg(); // ← 关键一行
         LOG_PRINT("[ERROR] aclnnTruncV2GetWorkspaceSize failed, ret = %d\n", ret);
-        LOG_PRINT("        recent AscendCL msg: %s\n",
-                  errMsg ? errMsg : "no additional message");
+        LOG_PRINT("        recent AscendCL msg: %s\n", errMsg ? errMsg : "no additional message");
         return ret;
     }
     // 根据第一段接口计算出的workspaceSize申请device内存

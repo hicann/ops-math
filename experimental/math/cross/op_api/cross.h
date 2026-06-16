@@ -14,8 +14,7 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-const aclTensor *Cross(const aclTensor *self, const aclTensor *other, int64_t dim,
-    aclOpExecutor *executor);
+const aclTensor* Cross(const aclTensor* self, const aclTensor* other, int64_t dim, aclOpExecutor* executor);
 }
 
 #endif // PTA_NPU_OP_API_INC_LEVEL0_OP_CROSS_OP_H_

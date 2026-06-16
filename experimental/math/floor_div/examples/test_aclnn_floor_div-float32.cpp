@@ -45,8 +45,8 @@ void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr)
         ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
     for (int64_t i = 0; i < size; i++) {
-         LOG_PRINT("mean result[%ld] is: ", i);
-         std::cout << (int)resultData[i] << std::endl;
+        LOG_PRINT("mean result[%ld] is: ", i);
+        std::cout << (int)resultData[i] << std::endl;
     }
 }
 
@@ -95,11 +95,12 @@ int main()
     aclTensor* selfX = nullptr;
     void* selfXDeviceAddr = nullptr;
     std::vector<int64_t> selfXShape = {49, 1, 256, 20480};
-    
+
     int num__ = 1;
-    for(int i = 0; i < selfXShape.size(); i++) num__ *= selfXShape[i];
+    for (int i = 0; i < selfXShape.size(); i++)
+        num__ *= selfXShape[i];
     std::vector<DataType> selfXHostData(num__);
-    for(int i = 0; i < selfXHostData.size(); i++) {
+    for (int i = 0; i < selfXHostData.size(); i++) {
         selfXHostData[i] = (DataType)i;
     }
     ret = CreateAclTensor(selfXHostData, selfXShape, &selfXDeviceAddr, ACL_TYPE, &selfX);
@@ -124,13 +125,16 @@ int main()
     aclOpExecutor* executor;
 
     LOG_PRINT("Before GetWorkspaceSize: selfX=%p, selfY=%p, out=%p\n", (void*)selfX, (void*)selfY, (void*)out);
-    LOG_PRINT("Before GetWorkspaceSize: selfXDeviceAddr=%p, selfYDeviceAddr=%p, outDeviceAddr=%p\n",
-          selfXDeviceAddr, selfYDeviceAddr, outDeviceAddr);
+    LOG_PRINT(
+        "Before GetWorkspaceSize: selfXDeviceAddr=%p, selfYDeviceAddr=%p, outDeviceAddr=%p\n", selfXDeviceAddr,
+        selfYDeviceAddr, outDeviceAddr);
 
     ret = aclnnFloorDivGetWorkspaceSize(selfX, selfY, out, &workspaceSize, &executor);
-    LOG_PRINT("aclnnFloorDivGetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n",
-          ret, (unsigned long long)workspaceSize, (void*)executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnFloorDivExampleGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+    LOG_PRINT(
+        "aclnnFloorDivGetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n", ret,
+        (unsigned long long)workspaceSize, (void*)executor);
+    CHECK_RET(
+        ret == ACL_SUCCESS, LOG_PRINT("aclnnFloorDivExampleGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     void* workspaceAddr = nullptr;
     if (workspaceSize > static_cast<uint64_t>(0)) {

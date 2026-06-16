@@ -3,18 +3,11 @@
 #include "infershape_context_faker.h"
 #include "infershape_case_executor.h"
 
-class ReduceMeanWithCountInfershape : public testing::Test
-{
+class ReduceMeanWithCountInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "ReduceMeanWithCountInfershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "ReduceMeanWithCountInfershape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "ReduceMeanWithCountInfershape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "ReduceMeanWithCountInfershape TearDown" << std::endl; }
 };
 
 // ============================================================================
@@ -39,10 +32,7 @@ static gert::StorageShape MakeStorageShape(const std::vector<int64_t>& dims)
 //   Attrs: axis (ListInt, index 0), keepdim (Bool, index 1)
 // ============================================================================
 static gert::InfershapeContextPara MakeCtx(
-    const std::vector<int64_t>& inputDims,
-    ge::DataType dtype,
-    const std::vector<int64_t>& axis,
-    bool keepdim)
+    const std::vector<int64_t>& inputDims, ge::DataType dtype, const std::vector<int64_t>& axis, bool keepdim)
 {
     gert::StorageShape inShape = MakeStorageShape(inputDims);
     std::vector<gert::InfershapeContextPara::TensorDescription> inputs = {
@@ -70,8 +60,8 @@ TEST_F(ReduceMeanWithCountInfershape, single_axis_keepdim_false)
 {
     auto ctx = MakeCtx({4, 6, 8}, ge::DT_FLOAT, {1}, false);
     std::vector<std::vector<int64_t>> expectOutputShape = {
-        {4, 8},  // mean_result
-        {4, 8},  // count_result
+        {4, 8}, // mean_result
+        {4, 8}, // count_result
     };
     ExecuteTestCase(ctx, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -126,7 +116,7 @@ TEST_F(ReduceMeanWithCountInfershape, all_axis_keepdim_false)
 {
     auto ctx = MakeCtx({2, 3, 4}, ge::DT_FLOAT, {}, false);
     std::vector<std::vector<int64_t>> expectOutputShape = {
-        {},  // scalar
+        {}, // scalar
         {},
     };
     ExecuteTestCase(ctx, ge::GRAPH_SUCCESS, expectOutputShape);

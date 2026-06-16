@@ -15,8 +15,7 @@
 
 #include "logical_not.h"
 
-enum class LogicalNotTilingKey : uint32_t
-{
+enum class LogicalNotTilingKey : uint32_t {
     TILING_KEY_EXAMPLE_FLOAT = 0,
     TILING_KEY_EXAMPLE_INT32 = 1,
 };
@@ -27,24 +26,19 @@ __global__ __aicore__ void logical_not(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, 
     REGISTER_TILING_DEFAULT(LogicalNotTilingData);
     GET_TILING_DATA_WITH_STRUCT(LogicalNotTilingData, tilingData, tiling);
 
-    if (TILING_KEY_IS(1))
-    {
+    if (TILING_KEY_IS(1)) {
         NsLogicalNot::LogicalNot<int8_t, int8_t, true> op;
-        op.Init(x, y, tilingData.smallCoreDataNum,
-                tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
-                tilingData.smallCoreLoopNum, tilingData.ubPartDataNum,
-                tilingData.smallCoreTailDataNum, tilingData.bigCoreTailDataNum,
-                tilingData.tailBlockNum);
+        op.Init(
+            x, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
+            tilingData.smallCoreLoopNum, tilingData.ubPartDataNum, tilingData.smallCoreTailDataNum,
+            tilingData.bigCoreTailDataNum, tilingData.tailBlockNum);
         op.Process();
-    }
-    else if (TILING_KEY_IS(0))
-    {
+    } else if (TILING_KEY_IS(0)) {
         NsLogicalNot::LogicalNot<int8_t, int8_t, false> op;
-        op.Init(x, y, tilingData.smallCoreDataNum,
-                tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
-                tilingData.smallCoreLoopNum, tilingData.ubPartDataNum,
-                tilingData.smallCoreTailDataNum, tilingData.bigCoreTailDataNum,
-                tilingData.tailBlockNum);
+        op.Init(
+            x, y, tilingData.smallCoreDataNum, tilingData.bigCoreDataNum, tilingData.bigCoreLoopNum,
+            tilingData.smallCoreLoopNum, tilingData.ubPartDataNum, tilingData.smallCoreTailDataNum,
+            tilingData.bigCoreTailDataNum, tilingData.tailBlockNum);
         op.Process();
     }
 }
