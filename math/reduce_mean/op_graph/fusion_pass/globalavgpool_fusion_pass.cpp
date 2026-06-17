@@ -13,6 +13,7 @@
 #include "platform/platform_info.h"
 #include "ge/ge_utils.h"
 #include "log/log.h"
+#include "version/ge-compiler_version.h"
 #include "globalavgpool_fusion_pass.h"
 
 using namespace ge;
@@ -21,6 +22,17 @@ using namespace fusion;
 
 namespace ops {
 
+// D1 scenario: uses kCompatibleInherited stage (9.0.0+).
+// Strategy: compile-time macro guard + runtime version check + overall silence.
+#if GE_COMPILER_VERSION_NUM >= 90000000
+
+// Weak declare aclsysGetVersionNum to avoid hard link dependency on libascendcl.
+// At runtime: if GE >= 9.0.0, symbol resolves normally; if GE 8.5.0, pointer is NULL.
+extern "C" {
+__attribute__((weak))
+int32_t aclsysGetVersionNum(char* pkgName, int32_t* versionNum);
+}
+
 const std::string FUSION_PASS_NAME = "GlobalavgpoolPass";
 const int64_t CAPTURE_TENSOR_IDX_INPUT = 0;
 
@@ -28,6 +40,68 @@ const int64_t CAPTURE_TENSOR_IDX_INPUT = 0;
 const int64_t INPUT_X_DIM_THREE = 3;
 const int64_t INPUT_X_NUM_FOUR = 4;
 const int64_t INPUT_X_NUM_FIVE = 5;
+
+namespace {
+CustomPassStage GetGlobalavgpoolPassStage()
+{
+    int32_t version = 0;
+    if (aclsysGetVersionNum) {
+        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+    }
+    if (version >= 90000000) {
+        return CustomPassStage::kCompatibleInherited;
+    }
+    return CustomPassStage::kBeforeInferShape;  // fallback to old stage for 8.5.0
+}
+}  // anonymous namespace
+
+static void GetInputsInfo(
+    const std::vector<SubgraphInput>& subGraphInputs, std::vector<Shape>& inputShapes,
+    std::vector<DataType>& inputDtypes, std::vector<Format>& inputFormats)
+{
+    for (const auto& subGraphInput : subGraphInputs) {
+        auto matchNode = subGraphInput.GetAllInputs().at(0);
+        TensorDesc tensorDesc;
+        // matchNode.node是GlobalAveragePool节点，matchNode.index是输出索引（0）
+        // 我们需要获取GlobalAveragePool的输入描述（索引0）
+        auto status = matchNode.node.GetInputDesc(0, tensorDesc);
+        if (status != GRAPH_SUCCESS) {
+            OP_LOGE("GlobalavgpoolPass", "Failed to get input desc from GlobalAveragePool node, status: %u", status);
+            // 如果失败，尝试获取输出描述
+            status = matchNode.node.GetOutputDesc(matchNode.index, tensorDesc);
+            if (status != GRAPH_SUCCESS) {
+                OP_LOGE("GlobalavgpoolPass", "Failed to get output desc from GlobalAveragePool node, status: %u", status);
+                // 使用默认值
+                tensorDesc.SetDataType(DT_FLOAT);
+                tensorDesc.SetFormat(FORMAT_ND);
+                // 使用合理的默认形状
+                Shape defaultShape({1, 1, 1});  // 3D默认形状
+                tensorDesc.SetShape(defaultShape);
+            }
+        }
+        inputShapes.emplace_back(tensorDesc.GetShape());
+        inputDtypes.emplace_back(tensorDesc.GetDataType());
+        inputFormats.emplace_back(tensorDesc.GetFormat());
+    }
+}
+
+static Status InferShape(const GraphUniqPtr& replaceGraph, const std::vector<SubgraphInput>& subGraphInputs)
+{
+    std::vector<Shape> inputShapes;
+    for (const auto& subGraphInput : subGraphInputs) {
+        auto matchNode = subGraphInput.GetAllInputs().at(0);
+        TensorDesc tensorDesc;
+        // matchNode.node是GlobalAveragePool节点，matchNode.index是输出索引（0）
+        // 我们需要获取GlobalAveragePool的输入描述（索引0）
+        if (matchNode.node.GetInputDesc(0, tensorDesc) != GRAPH_SUCCESS) {
+            OP_LOGE_WITHOUT_REPORT("GlobalavgpoolPass", "Failed to get input desc from GlobalAveragePool node in InferShape");
+            // 如果失败，尝试获取输出描述
+            matchNode.node.GetOutputDesc(matchNode.index, tensorDesc);
+        }
+        inputShapes.emplace_back(tensorDesc.GetShape());
+    }
+    return GeUtils::InferShape(*replaceGraph, inputShapes);
+}
 
 std::vector<PatternUniqPtr> GlobalavgpoolPass::Patterns()
 {
@@ -81,6 +155,16 @@ bool GlobalavgpoolPass::MeetRequirements(const std::unique_ptr<MatchResult>& mat
 {
     OP_LOGD(FUSION_PASS_NAME.c_str(), "=== Enter MeetRequirements for GlobalavgpoolPass ===");
     
+    // Runtime version check: on GE 8.5.0, return false to no-op.
+    int32_t version = 0;
+    if (aclsysGetVersionNum) {
+        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+    }
+    if (version < 90000000) {
+        OP_LOGD(FUSION_PASS_NAME.c_str(), "GE runtime version %d < 90000000, skip pass.", version);
+        return false;
+    }
+
     // 获取匹配的节点
     NodeIo matchedNode;
     auto status = match_result->GetCapturedTensor(CAPTURE_TENSOR_IDX_INPUT, matchedNode);
@@ -201,53 +285,8 @@ GraphUniqPtr GlobalavgpoolPass::Replacement(const std::unique_ptr<MatchResult>& 
     return replaceGraph;
 }
 
-static void GetInputsInfo(
-    const std::vector<SubgraphInput>& subGraphInputs, std::vector<Shape>& inputShapes,
-    std::vector<DataType>& inputDtypes, std::vector<Format>& inputFormats)
-{
-    for (const auto& subGraphInput : subGraphInputs) {
-        auto matchNode = subGraphInput.GetAllInputs().at(0);
-        TensorDesc tensorDesc;
-        // matchNode.node是GlobalAveragePool节点，matchNode.index是输出索引（0）
-        // 我们需要获取GlobalAveragePool的输入描述（索引0）
-        auto status = matchNode.node.GetInputDesc(0, tensorDesc);
-        if (status != GRAPH_SUCCESS) {
-            OP_LOGE("GlobalavgpoolPass", "Failed to get input desc from GlobalAveragePool node, status: %u", status);
-            // 如果失败，尝试获取输出描述
-            status = matchNode.node.GetOutputDesc(matchNode.index, tensorDesc);
-            if (status != GRAPH_SUCCESS) {
-                OP_LOGE("GlobalavgpoolPass", "Failed to get output desc from GlobalAveragePool node, status: %u", status);
-                // 使用默认值
-                tensorDesc.SetDataType(DT_FLOAT);
-                tensorDesc.SetFormat(FORMAT_ND);
-                // 使用合理的默认形状
-                Shape defaultShape({1, 1, 1});  // 3D默认形状
-                tensorDesc.SetShape(defaultShape);
-            }
-        }
-        inputShapes.emplace_back(tensorDesc.GetShape());
-        inputDtypes.emplace_back(tensorDesc.GetDataType());
-        inputFormats.emplace_back(tensorDesc.GetFormat());
-    }
-}
+REG_FUSION_PASS(GlobalavgpoolPass).Stage(GetGlobalavgpoolPassStage());
 
-static Status InferShape(const GraphUniqPtr& replaceGraph, const std::vector<SubgraphInput>& subGraphInputs)
-{
-    std::vector<Shape> inputShapes;
-    for (const auto& subGraphInput : subGraphInputs) {
-        auto matchNode = subGraphInput.GetAllInputs().at(0);
-        TensorDesc tensorDesc;
-        // matchNode.node是GlobalAveragePool节点，matchNode.index是输出索引（0）
-        // 我们需要获取GlobalAveragePool的输入描述（索引0）
-        if (matchNode.node.GetInputDesc(0, tensorDesc) != GRAPH_SUCCESS) {
-            OP_LOGE_WITHOUT_REPORT("GlobalavgpoolPass", "Failed to get input desc from GlobalAveragePool node in InferShape");
-            // 如果失败，尝试获取输出描述
-            matchNode.node.GetOutputDesc(matchNode.index, tensorDesc);
-        }
-        inputShapes.emplace_back(tensorDesc.GetShape());
-    }
-    return GeUtils::InferShape(*replaceGraph, inputShapes);
-}
+#endif  // GE_COMPILER_VERSION_NUM >= 90000000
 
-REG_FUSION_PASS(GlobalavgpoolPass).Stage(CustomPassStage::kCompatibleInherited);
 } // namespace ops

@@ -14,6 +14,7 @@
 #include "platform/platform_infos_def.h"
 #include "platform/platform_info.h"
 #include "ge/es_graph_builder.h"
+#include "version/ge-compiler_version.h"
 // #include "es_math_ops.h"  // 暂时注释掉，可能不需要
 #include "../../../op_graph/fusion_pass/globalavgpool_fusion_pass.h"
 #include "register/register_custom_pass.h"
@@ -404,6 +405,79 @@ TEST_F(GlobalavgpoolPassTest, fusion_success_950)
             node.GetAttr("noop_with_empty_axes", noop_with_empty_axes);
             EXPECT_TRUE(keep_dims);
             EXPECT_TRUE(noop_with_empty_axes);
+            break;
+        }
+    }
+    EXPECT_TRUE(findReduceMean);
+}
+
+// ==================== Compatibility tests ====================
+
+// Verify that the pass compiles and the version guard is active.
+TEST_F(GlobalavgpoolPassTest, compileTimeVersionGuard)
+{
+    EXPECT_GE(GE_COMPILER_VERSION_NUM, 90000000);
+}
+
+// Verify that the pass can be instantiated and returns patterns.
+TEST_F(GlobalavgpoolPassTest, passInstantiationTest)
+{
+    ops::GlobalavgpoolPass pass;
+    auto patterns = pass.Patterns();
+    EXPECT_GT(patterns.size(), 0);
+}
+
+// Verify the pass works correctly with the kCompatibleInherited stage mechanism.
+TEST_F(GlobalavgpoolPassTest, compatibleInheritedStageTest)
+{
+    std::vector<int64_t> dimsX{2, 3, 4};
+    Shape shapeX(dimsX);
+
+    auto graphBuilder = es::EsGraphBuilder("compat_stage_test");
+    auto x = graphBuilder.CreateInput(0, "x", DT_FLOAT, FORMAT_ND, shapeX.GetDims());
+
+    TensorDesc xOutputDesc;
+    x.GetProducer()->GetOutputDesc(0, xOutputDesc);
+    xOutputDesc.SetDataType(DT_FLOAT);
+    xOutputDesc.SetShape(shapeX);
+    x.GetProducer()->UpdateOutputDesc(0, xOutputDesc);
+
+    auto* graph = graphBuilder.GetCGraphBuilder()->GetGraph();
+    auto globalAvgPool = es::CompliantNodeBuilder(graph)
+        .OpType("GlobalAveragePool")
+        .Name("global_avg_pool")
+        .IrDefInputs({{"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""}})
+        .IrDefOutputs({{"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""}})
+        .Build();
+
+    if (es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(),
+        globalAvgPool, 0) != GRAPH_SUCCESS) {
+        FAIL() << "Failed to add edge in test";
+    }
+
+    TensorDesc poolInputDesc;
+    globalAvgPool.GetInputDesc(0, poolInputDesc);
+    poolInputDesc.SetDataType(DT_FLOAT);
+    poolInputDesc.SetShape(shapeX);
+    globalAvgPool.UpdateInputDesc(0, poolInputDesc);
+
+    auto y = graphBuilder.GetCGraphBuilder()->GetTensorHolderFromNode(globalAvgPool, 0);
+
+    std::vector<ge::es::EsTensorHolder> outputs;
+    outputs.push_back(ge::es::EsTensorHolder(y));
+    std::shared_ptr<Graph> graphPtr = graphBuilder.BuildAndReset(outputs);
+
+    CustomPassContext passContext;
+    ops::GlobalavgpoolPass pass;
+    Status status = pass.Run(graphPtr, passContext);
+    EXPECT_EQ(status, SUCCESS);
+
+    bool findReduceMean = false;
+    for (auto node : graphPtr->GetAllNodes()) {
+        AscendString type;
+        node.GetType(type);
+        if (type == "ReduceMean") {
+            findReduceMean = true;
             break;
         }
     }

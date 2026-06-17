@@ -13,6 +13,7 @@
 #include "platform/platform_info.h"
 #include "ge/ge_utils.h"
 #include "log/log.h"
+#include "version/ge-compiler_version.h"
 #include "reduce_mean_with_cast_fusion_pass.h"
 
 using namespace ge;
@@ -21,8 +22,63 @@ using namespace fusion;
 
 namespace ops {
 
+// The ReduceMeanWithCastFusionPass uses the new ES framework (es::EsGraphBuilder,
+// es::CompliantNodeBuilder, PatternFusionPass) introduced in GE 9.0.0.
+// D1 scenario: uses kCompatibleInherited stage (9.0.0+).
+// Strategy: compile-time macro guard + runtime version check + overall silence.
+#if GE_COMPILER_VERSION_NUM >= 90000000
+
+// Weak declare aclsysGetVersionNum to avoid hard link dependency on libascendcl.
+// At runtime: if GE >= 9.0.0, symbol resolves normally; if GE 8.5.0, pointer is NULL.
+extern "C" {
+__attribute__((weak))
+int32_t aclsysGetVersionNum(char* pkgName, int32_t* versionNum);
+}
+
 const std::string kPassName = "ReduceMeanWithCastFusionPass";
 const int64_t kCaptureTensorIdx = 0;
+
+namespace {
+CustomPassStage GetReduceMeanWithCastPassStage()
+{
+    int32_t version = 0;
+    if (aclsysGetVersionNum) {
+        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+    }
+    if (version >= 90000000) {
+        return CustomPassStage::kCompatibleInherited;
+    }
+    return CustomPassStage::kBeforeInferShape;  // fallback to old stage for 8.5.0
+}
+}  // anonymous namespace
+
+static void GetInputsInfo(
+    const std::vector<SubgraphInput>& subgraphInputs, std::vector<Shape>& inputShapes,
+    std::vector<DataType>& inputDtypes, std::vector<Format>& inputFormats)
+{
+    for (const auto& subgraphInput : subgraphInputs) {
+        auto matchNode = subgraphInput.GetAllInputs().at(0);
+        TensorDesc tensorDesc;
+        matchNode.node.GetInputDesc(matchNode.index, tensorDesc);
+        inputShapes.emplace_back(tensorDesc.GetShape());
+        inputDtypes.emplace_back(tensorDesc.GetDataType());
+        inputFormats.emplace_back(tensorDesc.GetFormat());
+    }
+}
+
+static Status InferShape(const GraphUniqPtr& replaceGraph,
+    const std::vector<SubgraphInput>& subgraphInputs)
+{
+    OP_LOGD(kPassName.c_str(), "Begin InferShape for replacement.");
+    std::vector<Shape> inputShapes;
+    for (const auto& subgraphInput : subgraphInputs) {
+        auto matchNode = subgraphInput.GetAllInputs().at(0);
+        TensorDesc tensorDesc;
+        matchNode.node.GetInputDesc(matchNode.index, tensorDesc);
+        inputShapes.emplace_back(tensorDesc.GetShape());
+    }
+    return GeUtils::InferShape(*replaceGraph, inputShapes);
+}
 
 std::vector<PatternUniqPtr> ReduceMeanWithCastFusionPass::Patterns()
 {
@@ -83,6 +139,16 @@ std::vector<PatternUniqPtr> ReduceMeanWithCastFusionPass::Patterns()
 bool ReduceMeanWithCastFusionPass::MeetRequirements(const std::unique_ptr<MatchResult>& matchResult)
 {
     OP_LOGD(kPassName.c_str(), "Enter MeetRequirements for ReduceMeanWithCastFusionPass");
+
+    // Runtime version check: on GE 8.5.0, return false to no-op.
+    int32_t version = 0;
+    if (aclsysGetVersionNum) {
+        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+    }
+    if (version < 90000000) {
+        OP_LOGD(kPassName.c_str(), "GE runtime version %d < 90000000, skip pass.", version);
+        return false;
+    }
 
     // Get captured tensor to verify the match is valid
     NodeIo matchedNodeIo;
@@ -239,34 +305,8 @@ GraphUniqPtr ReduceMeanWithCastFusionPass::Replacement(const std::unique_ptr<Mat
     return replaceGraph;
 }
 
-static void GetInputsInfo(
-    const std::vector<SubgraphInput>& subgraphInputs, std::vector<Shape>& inputShapes,
-    std::vector<DataType>& inputDtypes, std::vector<Format>& inputFormats)
-{
-    for (const auto& subgraphInput : subgraphInputs) {
-        auto matchNode = subgraphInput.GetAllInputs().at(0);
-        TensorDesc tensorDesc;
-        matchNode.node.GetInputDesc(matchNode.index, tensorDesc);
-        inputShapes.emplace_back(tensorDesc.GetShape());
-        inputDtypes.emplace_back(tensorDesc.GetDataType());
-        inputFormats.emplace_back(tensorDesc.GetFormat());
-    }
-}
+REG_FUSION_PASS(ReduceMeanWithCastFusionPass).Stage(GetReduceMeanWithCastPassStage());
 
-static Status InferShape(const GraphUniqPtr& replaceGraph,
-    const std::vector<SubgraphInput>& subgraphInputs)
-{
-    OP_LOGD(kPassName.c_str(), "Begin InferShape for replacement.");
-    std::vector<Shape> inputShapes;
-    for (const auto& subgraphInput : subgraphInputs) {
-        auto matchNode = subgraphInput.GetAllInputs().at(0);
-        TensorDesc tensorDesc;
-        matchNode.node.GetInputDesc(matchNode.index, tensorDesc);
-        inputShapes.emplace_back(tensorDesc.GetShape());
-    }
-    return GeUtils::InferShape(*replaceGraph, inputShapes);
-}
-
-REG_FUSION_PASS(ReduceMeanWithCastFusionPass).Stage(CustomPassStage::kCompatibleInherited);
+#endif  // GE_COMPILER_VERSION_NUM >= 90000000
 
 } // namespace ops

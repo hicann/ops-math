@@ -26,9 +26,5 @@ protected:
     std::unique_ptr<Graph> Replacement(const std::unique_ptr<MatchResult>& match_result) override;
 };
 
-static void GetInputsInfo(const std::vector<SubgraphInput>& subGraphInputs, std::vector<Shape>& inputShapes,
-    std::vector<DataType>& inputDtypes, std::vector<Format>& inputFormats);
-static Status InferShape(const GraphUniqPtr& replaceGraph, const std::vector<SubgraphInput>& subGraphInputs);
-
 } //namespace ops
 #endif // MATH_GLOBALAVGPOOL_FUSION_PASS_H

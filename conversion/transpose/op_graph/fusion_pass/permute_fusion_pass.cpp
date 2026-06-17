@@ -25,6 +25,7 @@
 #include "platform/platform_info.h"
 #include "ge/ge_utils.h"
 #include "log/log.h"
+#include "version/ge-compiler_version.h"
 #include "permute_fusion_pass.h"
 
 using namespace ge;
@@ -33,8 +34,35 @@ using namespace ge::fusion;
 
 namespace ops {
 
+// The PermuteFusionPass uses the new ES framework (es::EsGraphBuilder,
+// es::CompliantNodeBuilder, PatternFusionPass) introduced in GE 9.0.0.
+// D1 scenario: uses kCompatibleInherited stage (9.0.0+).
+// Strategy: compile-time macro guard + runtime version check + overall silence.
+#if GE_COMPILER_VERSION_NUM >= 90000000
+
+// Weak declare aclsysGetVersionNum to avoid hard link dependency on libascendcl.
+// At runtime: if GE >= 9.0.0, symbol resolves normally; if GE 8.5.0, pointer is NULL.
+extern "C" {
+__attribute__((weak))
+int32_t aclsysGetVersionNum(char* pkgName, int32_t* versionNum);
+}
+
 const std::string kFusionPassName = "PermuteFusionPass";
 const int64_t kCapturePermuteIdx = 0L;
+
+namespace {
+CustomPassStage GetPermutePassStage()
+{
+    int32_t version = 0;
+    if (aclsysGetVersionNum) {
+        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+    }
+    if (version >= 90000000) {
+        return CustomPassStage::kCompatibleInherited;
+    }
+    return CustomPassStage::kBeforeInferShape;  // fallback to old stage for 8.5.0
+}
+}  // anonymous namespace
 
 // Platforms that use TransposeD (perm as attr); all others use Transpose (perm as input)
 const std::set<std::string> kTransposeDPlatformList = {
@@ -211,6 +239,16 @@ bool PermuteFusionPass::MeetRequirements(const std::unique_ptr<MatchResult>& mat
 {
     OP_LOGD(kFusionPassName.c_str(), "Enter MeetRequirements for PermuteFusionPass.");
 
+    // Runtime version check: on GE 8.5.0, return false to no-op.
+    int32_t version = 0;
+    if (aclsysGetVersionNum) {
+        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+    }
+    if (version < 90000000) {
+        OP_LOGD(kFusionPassName.c_str(), "GE runtime version %d < 90000000, skip pass.", version);
+        return false;
+    }
+
     NodeIo permuteNodeIo;
     if (unlikely(matchResult->GetCapturedTensor(kCapturePermuteIdx, permuteNodeIo) != SUCCESS)) {
         OP_LOGE(kFusionPassName.c_str(), "Failed to get captured tensor.");
@@ -304,6 +342,8 @@ GraphUniqPtr PermuteFusionPass::Replacement(const std::unique_ptr<MatchResult>& 
     }
 }
 
-REG_FUSION_PASS(PermuteFusionPass).Stage(CustomPassStage::kCompatibleInherited);
+REG_FUSION_PASS(PermuteFusionPass).Stage(GetPermutePassStage());
+
+#endif  // GE_COMPILER_VERSION_NUM >= 90000000
 
 } // namespace ops
