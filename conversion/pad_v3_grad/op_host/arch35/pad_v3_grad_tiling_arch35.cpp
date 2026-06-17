@@ -311,7 +311,7 @@ void PadV3GradACTiling::CalculateTilingKeyMirror()
             cutMode_ = TPL_SIMD_BIG;
             bufferSize_ =
                 GetSizeOfBlockAlign(ubSize_ / (CONST2 * dtypeBytes_ + CONST4 * FP32_SIZE) - alignNum, alignNum);
-            ubAxis_ = dimNum_ - 1;
+            ubAxis_ = static_cast<uint8_t>(static_cast<int8_t>(dimNum_) - 1);
             ubFactor_ = tilingData_->inShape[dimNum_ - 1];
             outTileSize_ = bufferSize_;
             return TilingInfoTune();

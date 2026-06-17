@@ -391,7 +391,7 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForAr()
         blkFactor_ = static_cast<uint64_t>(1);
         blkTailFactor_ = static_cast<uint64_t>(0);
     } else {
-        realCoreNum_ = coreNum_;
+        realCoreNum_ = (coreNum_ <= 0) ? 1 : coreNum_;
         blkFactor_ = tilingData_.get_aSize() / realCoreNum_;
         blkTailFactor_ = tilingData_.get_aSize() % realCoreNum_;
     }
@@ -719,7 +719,7 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForCopyOnly()
         blkFactor_ = static_cast<uint64_t>(1);
         blkTailFactor_ = static_cast<uint64_t>(0);
     } else {
-        realCoreNum_ = coreNum_;
+        realCoreNum_ = (coreNum_ <= 0) ? 1 : coreNum_;
         blkFactor_ = sumSize / realCoreNum_;
         blkTailFactor_ = sumSize % realCoreNum_;
     }

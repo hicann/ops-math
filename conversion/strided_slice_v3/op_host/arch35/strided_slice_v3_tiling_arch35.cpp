@@ -245,10 +245,9 @@ static int64_t GetTilingMode4StridesLargerThanOne(const SliceParameters& paramet
         int64_t multiTimes = dtypeSize / DTYPE_SIZE_FP16 > 1 ? dtypeSize / DTYPE_SIZE_FP16 : 1;
         int64_t vconvUbSize = alignUbSize * multiTimes / 2;
         int64_t multiBlockElement = blockElement * multiTimes;
-        int64_t vconvColumn = dtypeSize % DTYPE_SIZE_FP16 == 0 ?
-            VNCHWCONV_COLUMNS_FP16 : VNCHWCONV_COLUMNS_INT8;
-        int64_t maxRowsInUb = vconvUbSize / vconvColumn / Ops::Base::CeilAlign(inputInner *
-            output32bytesAlignRows, multiBlockElement) * output32bytesAlignRows;
+        int64_t vconvColumn = dtypeSize % DTYPE_SIZE_FP16 == 0 ? VNCHWCONV_COLUMNS_FP16 : VNCHWCONV_COLUMNS_INT8;
+        int64_t alignColSize = Ops::Base::CeilAlign(inputInner * output32bytesAlignRows, multiBlockElement);
+        int64_t maxRowsInUb = Ops::Base::FloorDiv(vconvUbSize / vconvColumn, alignColSize) * output32bytesAlignRows;
         bool isValidLen = outputInner - multiTimes > 0;
         int64_t validLen = (outputInner - multiTimes) * lastStride + multiTimes;
         int64_t dstStride = (lastStride - 1) * multiTimes;

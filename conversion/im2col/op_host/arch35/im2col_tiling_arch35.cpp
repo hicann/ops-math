@@ -75,7 +75,7 @@ private:
     int32_t gatherVRegElements_{0};
 
     // tiling key param
-    ge::Format inputFormat_;
+    ge::Format inputFormat_{ge::FORMAT_ND};
     bool isSIMT_{false};
     bool isPadding_{false};
     bool isBigShape_{false};
@@ -83,7 +83,7 @@ private:
 
     // 输入参数
     int32_t dSize_{0};
-    Im2ColInputInfo input_;
+    Im2ColInputInfo input_{};
 
     // 中间计算结果
     // 卷积核影响HW
@@ -427,7 +427,7 @@ std::tuple<int32_t, int32_t> Im2ColTiling::NCHWCalcBufSize(int32_t validBufSize)
     double ratio = static_cast<double>(tmpOutBufSize) / (tmpInBufSize + tmpOutBufSize);
     OP_LOGD(context_, "The ratio of the output buffer size to total size is %f", ratio);
     // 分配 buffsize
-    tmpOutBufSize = validBufSize * ratio;
+    tmpOutBufSize = static_cast<int64_t>(validBufSize * ratio);
     // 向下对齐 vector length
     tmpOutBufSize = Ops::Base::FloorAlign(tmpOutBufSize, static_cast<int64_t>(vRegSize_));
     tmpInBufSize = validBufSize - tmpOutBufSize;
@@ -466,7 +466,7 @@ bool Im2ColTiling::NCHWTryFullLoad(int32_t validBufSize)
 
     // 输入输出大小是否满足全载条件
     int64_t allNeedSize = inHWNeedSize + outHWNeedSize;
-    if (allNeedSize > validBufSize) {
+    if (allNeedSize <= 0 || allNeedSize > validBufSize) {
         return false;
     }
     // 输入1个补pad后的HW的元素个数不能超出gather索引大小

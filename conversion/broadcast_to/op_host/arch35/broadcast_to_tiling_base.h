@@ -120,7 +120,9 @@ public:
             return ge::GRAPH_FAILED;
         }
 
-        auto dtype = context_->GetInputDesc(0)->GetDataType();
+        auto inputDesc = context_->GetInputDesc(0);
+        OP_CHECK_NULL_WITH_CONTEXT(context_, inputDesc);
+        auto dtype = inputDesc->GetDataType();
         dtypeSize_ = GetSizeByDataType(dtype);
         OP_LOGI(context_->GetNodeName(), "The ub size is: %ld", ubSize_);
 

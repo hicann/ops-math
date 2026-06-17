@@ -1223,7 +1223,7 @@ ge::graphStatus PadACTiling::Fp4ValidatePaddings()
     // fp4 输入数据类型，左右pad的最后一维均为偶数
     size_t frontDimNum = paddings_.padFront.GetDimNum();
     int64_t frontValue = paddings_.padFront.GetDim(frontDimNum - 1);
-    if (frontValue % HALF_FACTOR != 0) {
+    if (frontValue % static_cast<int64_t>(HALF_FACTOR) != 0) {
         std::string paramMsg = "the last axis of padFront";
         std::string reasonMsg = "When the dtype is fp4, the last axis of padFront must be an even number.";
         OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
@@ -1233,7 +1233,7 @@ ge::graphStatus PadACTiling::Fp4ValidatePaddings()
 
     size_t backDimNum = paddings_.padBack.GetDimNum();
     int64_t backValue = paddings_.padBack.GetDim(backDimNum - 1);
-    if (backValue % HALF_FACTOR != 0) {
+    if (backValue % static_cast<int64_t>(HALF_FACTOR) != 0) {
         std::string paramMsg = "the last axis of padBack";
         std::string reasonMsg = "When the dtype is fp4, the last axis of padBack must be an even number.";
         OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(

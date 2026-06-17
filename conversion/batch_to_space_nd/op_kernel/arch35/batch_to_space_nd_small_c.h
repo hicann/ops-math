@@ -27,6 +27,9 @@ using namespace Ops::Base;
 template <typename T, uint8_t BLOCK_DIM_NUM>
 class BatchToSpaceSmallC {
 private:
+    constexpr static uint32_t LOG_OFFSET[]{1, 2, 4, 8, 16};
+    constexpr static uint16_t LOG_OFFSET_NUM = static_cast<uint16_t>(sizeof(LOG_OFFSET) / sizeof(LOG_OFFSET[0]));
+
     constexpr static uint32_t BUFFER_NUM = 2;
     constexpr static uint32_t BLK_ELEMS = Ops::Base::GetUbBlockSize() / sizeof(T);
     constexpr static uint32_t SUB_BASE = uint32_t(4294967296);
@@ -1123,11 +1126,10 @@ public:
     __aicore__ inline uint32_t CeilLog2(uint32_t input)
     {
         input--;
-        input |= input >> 1;
-        input |= input >> 2;
-        input |= input >> 4;
-        input |= input >> 8;
-        input |= input >> 16;
+        #pragma unroll
+        for (uint16_t i=0; i < LOG_OFFSET_NUM; ++i) {
+            input |= input >> LOG_OFFSET[i];
+        }
         input++;
         uint32_t res = 0;
         while (input >>= 1) {

@@ -458,7 +458,7 @@ private:
                 wSize);
             uint64_t ubInOffset = W * alignC_;
             W += ubWInCopyNum;
-            Conver2InIndex(loopOutIndex, inIndex);
+            Conver2InIndex(static_cast<uint64_t*>(loopOutIndex), inIndex);
             uint64_t inAddr = 0;
             for (uint8_t i = 0; i < rank_; i++) {
                 inAddr += inIndex[i] * inStride_[i];

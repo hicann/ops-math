@@ -69,7 +69,7 @@ private:
 
     // 输入参数
     int32_t dSize_{0};
-    MatrixSetDiagTilingData* tilingData_;
+    MatrixSetDiagTilingData* tilingData_{nullptr};
 
     // tiling context
     gert::TilingContext* context_;
@@ -205,7 +205,7 @@ ge::graphStatus MatrixSetDiagTiling::ParamCheck()
     xColNum_ = inputShapeVal.GetDim(dimNum_ - 1);
     xRowNum_ = inputShapeVal.GetDim(dimNum_ - 2);
     tailAxisDataSize_ = xColNum_ * xRowNum_;
-    diagLen_ = diagShapeVal.GetDim(diagDimNum_ - 1);
+    diagLen_ = diagShapeVal.GetDim(static_cast<size_t>(diagDimNum_ - 1));
     OP_CHECK_IF(
         diagLen_ != std::min(xColNum_, xRowNum_),
         OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
@@ -243,7 +243,7 @@ void MatrixSetDiagTiling::CalUbFactor()
         }
     } else {
         uint64_t totalTailSize = (tailAxisDataSize_ + diagLen_) * dSize_;
-        ubFactor_ = validBufSize >= totalTailSize ? validBufSize / totalTailSize : 1;
+        ubFactor_ = validBufSize >= totalTailSize ? Ops::Base::FloorDiv(validBufSize, totalTailSize) : 1;
     }
 }
 
