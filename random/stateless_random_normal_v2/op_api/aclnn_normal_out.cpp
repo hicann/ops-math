@@ -39,6 +39,14 @@ static constexpr size_t MAX_DIM_LEN = 8;
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_BF16, op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_DOUBLE};
 
+// 表示mean,std的数据类型是Tensor还是Scalar
+enum class ScalarMode {
+    TensorTensor,
+    TensorScalar,
+    ScalarTensor,
+    ScalarScalar
+};
+
 /* 查看TensorFloat的Dtype和Shape */
 static bool CheckTensorAndFloatDtype(const aclTensor* mean, const aclTensor* out)
 {
@@ -204,19 +212,12 @@ static aclnnStatus CheckTensorAndTensorParams(const aclTensor* mean, const aclTe
 aclnnStatus CommonLogicGeneralNormal(
     const aclTensor* mean, const aclTensor* std, int64_t seed, int64_t offset, aclTensor* self, aclTensor* out,
     UniqueExecutor& uniqueExecutor, uint64_t* workspaceSize, aclOpExecutor** executor,
-    bool isScalarMode = false)
+    ScalarMode scalarMode = ScalarMode::TensorTensor)
 {
     const aclTensor* addOut = nullptr;
 
     if(GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && self->GetDataType() != DataType::DT_DOUBLE){
-        if (isScalarMode) {
-            // V4 标量路径：对标 PyTorch normal_(scalar_mean, scalar_std) 单步 FMA
-            // Kernel 以 fp32 生成 N(0,1)，L2 层 fp32 Mul+Add，最后 Cast 到目标 dtype
-            auto selfFloat = (self->GetDataType() != DataType::DT_FLOAT)
-                ? l0op::Cast(self, DataType::DT_FLOAT, uniqueExecutor.get())
-                : self;
-            CHECK_RET(selfFloat != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
+        if (scalarMode == ScalarMode::TensorTensor || scalarMode == ScalarMode::ScalarTensor) {
             FVector<float> zeroMeanVector = {0.0f};
             auto zeroMeanTensor = uniqueExecutor.get()->ConvertToTensor(
                 zeroMeanVector.data(), zeroMeanVector.size(), op::DataType::DT_FLOAT);
@@ -224,48 +225,30 @@ aclnnStatus CommonLogicGeneralNormal(
             auto oneStdTensor = uniqueExecutor.get()->ConvertToTensor(
                 oneStdVector.data(), oneStdVector.size(), op::DataType::DT_FLOAT);
 
-            auto outDims = op::ToShapeVector(out->GetViewShape());
-            auto outShapeArray = uniqueExecutor.get()->AllocIntArray(outDims.data(), outDims.size());
-            zeroMeanTensor = l0op::BroadcastTo(zeroMeanTensor, outShapeArray, uniqueExecutor.get());
-            oneStdTensor = l0op::BroadcastTo(oneStdTensor, outShapeArray, uniqueExecutor.get());
-
             auto normalOut = l0op::StatelessNormal(
-                selfFloat, seed, offset, zeroMeanTensor, oneStdTensor, uniqueExecutor.get());
+                self, seed, offset, zeroMeanTensor, oneStdTensor, uniqueExecutor.get());
             CHECK_RET(normalOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-            auto mulOut = l0op::Mul(normalOut, std, uniqueExecutor.get());
+            auto mulOut = l0op::MulInplace(std, normalOut, uniqueExecutor.get());
             CHECK_RET(mulOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-            addOut = l0op::Add(mulOut, mean, uniqueExecutor.get());
-        } else {
-            // V4 Tensor 路径：kernel 以目标 dtype 输出并做三步舍入对齐 GPU tensor 路径
-            const aclTensor* selfForKernel = self;
-            auto meanCasted = l0op::Cast(mean, DataType::DT_FLOAT, uniqueExecutor.get());
-            CHECK_RET(meanCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
-            auto stdCasted = l0op::Cast(std, DataType::DT_FLOAT, uniqueExecutor.get());
-            CHECK_RET(stdCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-            bool selfNeedBcast = selfForKernel->GetViewShape() != out->GetViewShape();
-            bool meanNeedBcast = meanCasted->GetViewShape() != out->GetViewShape();
-            bool stdNeedBcast = stdCasted->GetViewShape() != out->GetViewShape();
-            if (selfNeedBcast || meanNeedBcast || stdNeedBcast) {
-                op::FVector<int64_t, op::MAX_DIM_NUM> outDims = op::ToShapeVector(out->GetViewShape());
-                auto outShapeArray = uniqueExecutor.get()->AllocIntArray(outDims.data(), outDims.size());
-                CHECK_RET(outShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-                if (selfNeedBcast) {
-                    selfForKernel = l0op::BroadcastTo(selfForKernel, outShapeArray, uniqueExecutor.get());
-                    CHECK_RET(selfForKernel != nullptr, ACLNN_ERR_INNER_NULLPTR);
-                }
-                if (meanNeedBcast) {
-                    meanCasted = l0op::BroadcastTo(meanCasted, outShapeArray, uniqueExecutor.get());
-                    CHECK_RET(meanCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
-                }
-                if (stdNeedBcast) {
-                    stdCasted = l0op::BroadcastTo(stdCasted, outShapeArray, uniqueExecutor.get());
-                    CHECK_RET(stdCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
-                }
+            // ScalarTensor 模式下，mean的类型一定为f32，mulout数据类型可为f16\f32\bf16，但mean是scalar, 故不能用AddInplace
+            if (scalarMode == ScalarMode::ScalarTensor) {
+                addOut = l0op::Add(mulOut, mean, uniqueExecutor.get());
+            } else {
+                addOut = l0op::AddInplace(mean, mulOut, uniqueExecutor.get());
             }
-            addOut = l0op::StatelessNormal(selfForKernel, seed, offset, meanCasted, stdCasted, uniqueExecutor.get());
+        } else if (scalarMode == ScalarMode::TensorScalar) {
+            FVector<float> zeroMeanVector = {0.0f};
+            auto zeroMeanTensor = uniqueExecutor.get()->ConvertToTensor(
+                zeroMeanVector.data(), zeroMeanVector.size(), op::DataType::DT_FLOAT);
+
+            auto normalOut = l0op::StatelessNormal(
+                self, seed, offset, zeroMeanTensor, std, uniqueExecutor.get());
+            CHECK_RET(normalOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+            addOut = l0op::AddInplace(mean, normalOut, uniqueExecutor.get());
+        } else {
+            addOut = l0op::StatelessNormal(self, seed, offset, mean, std, uniqueExecutor.get());
         }
     }
     else{
@@ -363,7 +346,7 @@ aclnnStatus aclnnNormalTensorTensorGetWorkspaceSize(
     // 拷贝mean副本
     auto self = const_cast<aclTensor*>(meanCasted);
     return CommonLogicGeneralNormal(
-        meanCasted, stdCasted, seed, offset, self, out, uniqueExecutor, workspaceSize, executor);
+        meanCasted, stdCasted, seed, offset, self, out, uniqueExecutor, workspaceSize, executor, ScalarMode::TensorTensor);
 }
 
 // normal.Tensor_float_out
@@ -403,7 +386,7 @@ aclnnStatus aclnnNormalTensorFloatGetWorkspaceSize(
     // 拷贝mean副本
     auto self = const_cast<aclTensor*>(out);
     return CommonLogicGeneralNormal(
-        meanContiguous, stdContiguous, seed, offset, self, out, uniqueExecutor, workspaceSize, executor);
+        meanContiguous, stdContiguous, seed, offset, self, out, uniqueExecutor, workspaceSize, executor, ScalarMode::TensorScalar);
 }
 
 // normal.float_Tensor_out
@@ -443,7 +426,7 @@ aclnnStatus aclnnNormalFloatTensorGetWorkspaceSize(
     // 拷贝std副本
     auto self = const_cast<aclTensor*>(stdContiguous);
     return CommonLogicGeneralNormal(
-        meanContiguous, stdContiguous, seed, offset, self, out, uniqueExecutor, workspaceSize, executor);
+        meanContiguous, stdContiguous, seed, offset, self, out, uniqueExecutor, workspaceSize, executor, ScalarMode::ScalarTensor);
 }
 
 // normal.float_float_out
@@ -484,7 +467,7 @@ aclnnStatus aclnnNormalFloatFloatGetWorkspaceSize(
     auto self = const_cast<aclTensor*>(out);
     return CommonLogicGeneralNormal(
         meanContiguous, stdContiguous, seed, offset, self, out, uniqueExecutor, workspaceSize, executor,
-        true);
+        ScalarMode::ScalarScalar);
 }
 
 aclnnStatus aclnnNormalTensorTensor(

@@ -81,36 +81,6 @@ StatelessNormalTiling::StatelessNormalTiling(gert::TilingContext* ctx)
 
 ge::graphStatus StatelessNormalTiling::UniqueProcess()
 {
-    // L2 层已将 Size=1 的 mean/stdev 广播到 output shape，kernel 只需 BothTensor 路径
-
-    auto outputShape = context_->GetOutputShape(OUTPUT_IDX_Y);
-    OP_CHECK_NULL_WITH_CONTEXT(context_, outputShape);
-    int64_t outputSize = outputShape->GetStorageShape().GetShapeSize();
-
-    // 校验 mean/stdev shape 与 output 一致（L2 已完成广播）
-    auto meanTensor = context_->GetInputTensor(INPUT_IDX_MEAN);
-    OP_CHECK_NULL_WITH_CONTEXT(context_, meanTensor);
-    int64_t meanSize = meanTensor->GetShapeSize();
-    if (meanSize != outputSize) {
-        std::string valueStr = std::to_string(meanSize) + " and " + std::to_string(outputSize);
-        std::string reasonMsg = "StatelessNormal requires mean shapeSize == output shapeSize";
-        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(context_->GetNodeName(), "input mean", valueStr.c_str(), reasonMsg.c_str());
-        return ge::GRAPH_FAILED;
-    }
-
-    auto stdevTensor = context_->GetInputTensor(INPUT_IDX_STDEV);
-    OP_CHECK_NULL_WITH_CONTEXT(context_, stdevTensor);
-    int64_t stdevSize = stdevTensor->GetShapeSize();
-    if (stdevSize != outputSize) {
-        std::string valueStr = std::to_string(stdevSize) + " and " + std::to_string(outputSize);
-        std::string reasonMsg = "StatelessNormal requires stdev shapeSize == output shapeSize";
-        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(context_->GetNodeName(), "input stdev", valueStr.c_str(), reasonMsg.c_str());
-        return ge::GRAPH_FAILED;
-    }
-
-    // SplitUntil32Bit + totalThreads/counterOffset/kernelOffset 全部由基类 enableSplitBlocks 自动完成
-    // tilingKey 使用基类默认值 100（与 V3 一致），不再设置
-
     return ge::GRAPH_SUCCESS;
 }
 

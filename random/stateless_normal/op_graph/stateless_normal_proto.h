@@ -28,8 +28,8 @@ namespace ge {
 * @li shape: 1-D. The shape of the output tensor. Must be one of the following types: int64.
 * @li seed: 0-D. Seed for the Philox4x32-10 RNG algorithm. Must be one of the following types: int64.
 * @li offset: 0-D. Offset for the Philox4x32-10 RNG algorithm. Must be one of the following types: int64.
-* @li mean: Scalar or tensor. Mean of the normal distribution. Must be one of the following types: float, float16, bfloat16.
-* @li std: Scalar or tensor. Standard deviation of the normal distribution. Must be one of the following types: float, float16, bfloat16. \n
+* @li mean: Scalar or tensor. Mean of the normal distribution. Must be one of the following types: float, float16, bfloat16. Only the 0th element is used for calculation if a tensor is input.
+* @li std: Scalar or tensor. Standard deviation of the normal distribution. Must be one of the following types: float, float16, bfloat16. Only the 0th element is used for calculation if a tensor is input. \n
 
 * @par Attributes:
 * dtype: Output data type. Must be one of the following types: float16, bfloat16, float32.
