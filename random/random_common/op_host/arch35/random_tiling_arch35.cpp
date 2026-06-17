@@ -152,6 +152,7 @@ ge::graphStatus CalcExecutionPoliciesForBlocks(RandomUnifiedSimtTilingDataStruct
     if (simtTilingData.splitBlockCount > 1) {
         int64_t totalNumel = simtTilingData.outputSize;
         int64_t grid = (totalNumel + SIMT_THREAD_GROUP_SIZE - 1) / SIMT_THREAD_GROUP_SIZE;
+        grid = std::max(grid, 1L); // 空tensor场景grid至少为1，避免除0
         int64_t blocksPerAic = MAX_THREADS_PER_AIC / SIMT_THREAD_GROUP_SIZE;
         grid = (AIC_CLUSTER_COUNT * blocksPerAic < grid) ? AIC_CLUSTER_COUNT * blocksPerAic : grid;
 
@@ -167,6 +168,7 @@ ge::graphStatus CalcExecutionPoliciesForBlocks(RandomUnifiedSimtTilingDataStruct
         int64_t numel = simtTilingData.splitBlocks[i].numel;
 
         int64_t grid = (numel + SIMT_THREAD_GROUP_SIZE - 1) / SIMT_THREAD_GROUP_SIZE;
+        grid = std::max(grid, 1L); // 空tensor场景grid至少为1，避免除0
         int64_t blocksPerAic = MAX_THREADS_PER_AIC / SIMT_THREAD_GROUP_SIZE;
         grid = (AIC_CLUSTER_COUNT * blocksPerAic < grid) ? AIC_CLUSTER_COUNT * blocksPerAic : grid;
 
@@ -409,7 +411,7 @@ ge::graphStatus RandomTilingArch35::DoSimtBlockTiling()
     int64_t avgPerCore = Ops::Base::CeilDiv(simtTilingData_.outputSize, totalCoreNum_);
     int64_t numOfPerCore = Ops::Base::CeilAlign(avgPerCore, config_.coreAlignSize);
     int64_t usedCoreNum = Ops::Base::CeilDiv(simtTilingData_.outputSize, numOfPerCore);
-    simtTilingData_.usedCoreNum = std::min(totalCoreNum_, usedCoreNum);
+    simtTilingData_.usedCoreNum = std::max(1L, std::min(totalCoreNum_, usedCoreNum)); // 空tensor至少开1核
     return ge::GRAPH_SUCCESS;
 }
 
@@ -510,6 +512,7 @@ ge::graphStatus RandomTilingArch35::DoBlockTiling()
         (tilingData_.normalCoreProNum + config_.coreAlignSize - 1) / config_.coreAlignSize * config_.coreAlignSize;
     tilingData_.normalCoreProNum = std::max(tilingData_.normalCoreProNum, MIN_CORE_PRO);
     tilingData_.usedCoreNum = Ops::Base::CeilDiv(tilingData_.outputSize, tilingData_.normalCoreProNum);
+    tilingData_.usedCoreNum = std::max(1L, tilingData_.usedCoreNum); // 空tensor至少开1核
     tilingData_.tailCoreProNum = tilingData_.outputSize - tilingData_.normalCoreProNum * (tilingData_.usedCoreNum - 1);
     return ge::GRAPH_SUCCESS;
 }
