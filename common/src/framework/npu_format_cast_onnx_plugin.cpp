@@ -25,16 +25,13 @@ static Status ParseParamsNpuFormatCast(const Message* op_src, ge::Operator& op_d
 }
 
 REGISTER_CUSTOM_OP("Identity")
-  .FrameworkType(ONNX)
-  .OriginOpType({ge::AscendString("npu::1::NPUFormatCast"),
-                 ge::AscendString("ai.onnx::11::NPUFormatCast"),
-                 ge::AscendString("ai.onnx::12::NPUFormatCast"),
-                 ge::AscendString("ai.onnx::13::NPUFormatCast"),
-                 ge::AscendString("ai.onnx::14::NPUFormatCast"),
-                 ge::AscendString("ai.onnx::15::NPUFormatCast"),
-                 ge::AscendString("ai.onnx::16::NPUFormatCast"),
-                 ge::AscendString("ai.onnx::17::NPUFormatCast"),
-                 ge::AscendString("ai.onnx::18::NPUFormatCast")})
-  .ParseParamsFn(ParseParamsNpuFormatCast)
-  .ImplyType(ImplyType::TVM);
-} // domi
+    .FrameworkType(ONNX)
+    .OriginOpType(
+        {ge::AscendString("npu::1::NPUFormatCast"), ge::AscendString("ai.onnx::11::NPUFormatCast"),
+         ge::AscendString("ai.onnx::12::NPUFormatCast"), ge::AscendString("ai.onnx::13::NPUFormatCast"),
+         ge::AscendString("ai.onnx::14::NPUFormatCast"), ge::AscendString("ai.onnx::15::NPUFormatCast"),
+         ge::AscendString("ai.onnx::16::NPUFormatCast"), ge::AscendString("ai.onnx::17::NPUFormatCast"),
+         ge::AscendString("ai.onnx::18::NPUFormatCast")})
+    .ParseParamsFn(ParseParamsNpuFormatCast)
+    .ImplyType(ImplyType::TVM);
+} // namespace domi

@@ -44,14 +44,11 @@ static Status ParseParamSplitToSequence(const Message* op_src, ge::Operator& op_
 
 REGISTER_CUSTOM_OP("SplitToSequence")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::11::SplitToSequence"),
-                   ge::AscendString("ai.onnx::12::SplitToSequence"),
-                   ge::AscendString("ai.onnx::13::SplitToSequence"),
-                   ge::AscendString("ai.onnx::14::SplitToSequence"),
-                   ge::AscendString("ai.onnx::15::SplitToSequence"),
-                   ge::AscendString("ai.onnx::16::SplitToSequence"),
-                   ge::AscendString("ai.onnx::17::SplitToSequence"),
-                   ge::AscendString("ai.onnx::18::SplitToSequence")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::11::SplitToSequence"), ge::AscendString("ai.onnx::12::SplitToSequence"),
+         ge::AscendString("ai.onnx::13::SplitToSequence"), ge::AscendString("ai.onnx::14::SplitToSequence"),
+         ge::AscendString("ai.onnx::15::SplitToSequence"), ge::AscendString("ai.onnx::16::SplitToSequence"),
+         ge::AscendString("ai.onnx::17::SplitToSequence"), ge::AscendString("ai.onnx::18::SplitToSequence")})
     .ParseParamsFn(ParseParamSplitToSequence)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

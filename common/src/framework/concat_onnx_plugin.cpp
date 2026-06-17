@@ -107,18 +107,14 @@ static Status ParseOpToGraphConcat(const ge::Operator& op, Graph& graph)
 
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::8::Concat"),
-                   ge::AscendString("ai.onnx::9::Concat"),
-                   ge::AscendString("ai.onnx::10::Concat"),
-                   ge::AscendString("ai.onnx::11::Concat"),
-                   ge::AscendString("ai.onnx::12::Concat"),
-                   ge::AscendString("ai.onnx::13::Concat"),
-                   ge::AscendString("ai.onnx::14::Concat"),
-                   ge::AscendString("ai.onnx::15::Concat"),
-                   ge::AscendString("ai.onnx::16::Concat"),
-                   ge::AscendString("ai.onnx::17::Concat"),
-                   ge::AscendString("ai.onnx::18::Concat")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::8::Concat"), ge::AscendString("ai.onnx::9::Concat"),
+         ge::AscendString("ai.onnx::10::Concat"), ge::AscendString("ai.onnx::11::Concat"),
+         ge::AscendString("ai.onnx::12::Concat"), ge::AscendString("ai.onnx::13::Concat"),
+         ge::AscendString("ai.onnx::14::Concat"), ge::AscendString("ai.onnx::15::Concat"),
+         ge::AscendString("ai.onnx::16::Concat"), ge::AscendString("ai.onnx::17::Concat"),
+         ge::AscendString("ai.onnx::18::Concat")})
     .ParseParamsFn(ParseParamsConcatCall)
     .ParseOpToGraphFn(ParseOpToGraphConcat)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

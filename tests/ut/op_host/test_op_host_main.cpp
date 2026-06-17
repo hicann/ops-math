@@ -17,8 +17,7 @@ using namespace std;
 
 class OpHostUtEnvironment : public testing::Environment {
 public:
-    OpHostUtEnvironment(char** argv) : argv_(argv)
-    {}
+    OpHostUtEnvironment(char** argv) : argv_(argv) {}
     virtual void SetUp()
     {
         cout << "Global Environment SetpUp." << endl;
@@ -47,10 +46,7 @@ public:
         gert::DefaultOpImplSpaceRegistryV2::GetInstance().SetSpaceRegistry(opImplSpaceRegistryV2);
     }
 
-    virtual void TearDown()
-    {
-        cout << "Global Environment TearDown" << endl;
-    }
+    virtual void TearDown() { cout << "Global Environment TearDown" << endl; }
 
 private:
     char** argv_;

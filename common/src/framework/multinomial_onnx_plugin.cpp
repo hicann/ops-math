@@ -85,19 +85,15 @@ static Status ParseOpToGraphMultinomial(const ge::Operator& op, Graph& graph)
 }
 
 REGISTER_CUSTOM_OP("PartitionedCall")
-  .FrameworkType(ONNX)
-  .OriginOpType({ge::AscendString("ai.onnx::8::Multinomial"),
-                 ge::AscendString("ai.onnx::9::Multinomial"),
-                 ge::AscendString("ai.onnx::10::Multinomial"),
-                 ge::AscendString("ai.onnx::11::Multinomial"),
-                 ge::AscendString("ai.onnx::12::Multinomial"),
-                 ge::AscendString("ai.onnx::13::Multinomial"),
-                 ge::AscendString("ai.onnx::14::Multinomial"),
-                 ge::AscendString("ai.onnx::15::Multinomial"),
-                 ge::AscendString("ai.onnx::16::Multinomial"),
-                 ge::AscendString("ai.onnx::17::Multinomial"),
-                 ge::AscendString("ai.onnx::18::Multinomial")})
-  .ParseParamsFn(ParseParamsMultinomialCall)
-  .ParseOpToGraphFn(ParseOpToGraphMultinomial)
-  .ImplyType(ImplyType::TVM);
-}  // namespace domi
+    .FrameworkType(ONNX)
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::8::Multinomial"), ge::AscendString("ai.onnx::9::Multinomial"),
+         ge::AscendString("ai.onnx::10::Multinomial"), ge::AscendString("ai.onnx::11::Multinomial"),
+         ge::AscendString("ai.onnx::12::Multinomial"), ge::AscendString("ai.onnx::13::Multinomial"),
+         ge::AscendString("ai.onnx::14::Multinomial"), ge::AscendString("ai.onnx::15::Multinomial"),
+         ge::AscendString("ai.onnx::16::Multinomial"), ge::AscendString("ai.onnx::17::Multinomial"),
+         ge::AscendString("ai.onnx::18::Multinomial")})
+    .ParseParamsFn(ParseParamsMultinomialCall)
+    .ParseOpToGraphFn(ParseOpToGraphMultinomial)
+    .ImplyType(ImplyType::TVM);
+} // namespace domi

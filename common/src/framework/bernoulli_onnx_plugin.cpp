@@ -85,10 +85,11 @@ static Status ParseOpToGraphBernoulli(const Operator& op, Graph& graph)
 
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString(ge::AscendString("ai.onnx::15::Bernoulli")),
-                   ge::AscendString(ge::AscendString("ai.onnx::16::Bernoulli")),
-                   ge::AscendString(ge::AscendString("ai.onnx::17::Bernoulli")),
-                   ge::AscendString(ge::AscendString("ai.onnx::18::Bernoulli"))})
+    .OriginOpType(
+        {ge::AscendString(ge::AscendString("ai.onnx::15::Bernoulli")),
+         ge::AscendString(ge::AscendString("ai.onnx::16::Bernoulli")),
+         ge::AscendString(ge::AscendString("ai.onnx::17::Bernoulli")),
+         ge::AscendString(ge::AscendString("ai.onnx::18::Bernoulli"))})
     .ParseParamsByOperatorFn(ParseParamsBernoulli)
     .ParseOpToGraphFn(ParseOpToGraphBernoulli)
     .ImplyType(ImplyType::TVM);

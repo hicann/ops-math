@@ -49,17 +49,13 @@ static Status ParseParamsDepthToSpace(const Message* op_src, ge::Operator& op_de
 // register DepthToSpace op info to GE
 REGISTER_CUSTOM_OP("DepthToSpace")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::8::DepthToSpace"),
-                   ge::AscendString("ai.onnx::9::DepthToSpace"),
-                   ge::AscendString("ai.onnx::10::DepthToSpace"),
-                   ge::AscendString("ai.onnx::11::DepthToSpace"),
-                   ge::AscendString("ai.onnx::12::DepthToSpace"),
-                   ge::AscendString("ai.onnx::13::DepthToSpace"),
-                   ge::AscendString("ai.onnx::14::DepthToSpace"),
-                   ge::AscendString("ai.onnx::15::DepthToSpace"),
-                   ge::AscendString("ai.onnx::16::DepthToSpace"),
-                   ge::AscendString("ai.onnx::17::DepthToSpace"),
-                   ge::AscendString("ai.onnx::18::DepthToSpace")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::8::DepthToSpace"), ge::AscendString("ai.onnx::9::DepthToSpace"),
+         ge::AscendString("ai.onnx::10::DepthToSpace"), ge::AscendString("ai.onnx::11::DepthToSpace"),
+         ge::AscendString("ai.onnx::12::DepthToSpace"), ge::AscendString("ai.onnx::13::DepthToSpace"),
+         ge::AscendString("ai.onnx::14::DepthToSpace"), ge::AscendString("ai.onnx::15::DepthToSpace"),
+         ge::AscendString("ai.onnx::16::DepthToSpace"), ge::AscendString("ai.onnx::17::DepthToSpace"),
+         ge::AscendString("ai.onnx::18::DepthToSpace")})
     .ParseParamsFn(ParseParamsDepthToSpace)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

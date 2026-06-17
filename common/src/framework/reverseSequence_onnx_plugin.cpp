@@ -42,16 +42,13 @@ static Status ParseParamsReverseSequence(const Message* op_src, ge::Operator& op
 }
 // register ReverseSequence op info to GE
 REGISTER_CUSTOM_OP("ReverseSequence")
-  .FrameworkType(ONNX)
-  .OriginOpType({ge::AscendString("ai.onnx::10::ReverseSequence"),
-                 ge::AscendString("ai.onnx::11::ReverseSequence"),
-                 ge::AscendString("ai.onnx::12::ReverseSequence"),
-                 ge::AscendString("ai.onnx::13::ReverseSequence"),
-                 ge::AscendString("ai.onnx::14::ReverseSequence"),
-                 ge::AscendString("ai.onnx::15::ReverseSequence"),
-                 ge::AscendString("ai.onnx::16::ReverseSequence"),
-                 ge::AscendString("ai.onnx::17::ReverseSequence"),
-                 ge::AscendString("ai.onnx::18::ReverseSequence")})
-  .ParseParamsFn(ParseParamsReverseSequence)
-  .ImplyType(ImplyType::TVM);
-}  // namespace domi
+    .FrameworkType(ONNX)
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::10::ReverseSequence"), ge::AscendString("ai.onnx::11::ReverseSequence"),
+         ge::AscendString("ai.onnx::12::ReverseSequence"), ge::AscendString("ai.onnx::13::ReverseSequence"),
+         ge::AscendString("ai.onnx::14::ReverseSequence"), ge::AscendString("ai.onnx::15::ReverseSequence"),
+         ge::AscendString("ai.onnx::16::ReverseSequence"), ge::AscendString("ai.onnx::17::ReverseSequence"),
+         ge::AscendString("ai.onnx::18::ReverseSequence")})
+    .ParseParamsFn(ParseParamsReverseSequence)
+    .ImplyType(ImplyType::TVM);
+} // namespace domi

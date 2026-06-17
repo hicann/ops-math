@@ -25,16 +25,13 @@ static Status ParseParamsNpuRotaryMul(const Message* op_src, ge::Operator& op_de
 }
 
 REGISTER_CUSTOM_OP("RotaryMul")
-  .FrameworkType(ONNX)
-  .OriginOpType({ge::AscendString("npu::1::NPURotaryMul"),
-                 ge::AscendString("ai.onnx::11::NPURotaryMul"),
-                 ge::AscendString("ai.onnx::12::NPURotaryMul"),
-                 ge::AscendString("ai.onnx::13::NPURotaryMul"),
-                 ge::AscendString("ai.onnx::14::NPURotaryMul"),
-                 ge::AscendString("ai.onnx::15::NPURotaryMul"),
-                 ge::AscendString("ai.onnx::16::NPURotaryMul"),
-                 ge::AscendString("ai.onnx::17::NPURotaryMul"),
-                 ge::AscendString("ai.onnx::18::NPURotaryMul")})
-  .ParseParamsFn(ParseParamsNpuRotaryMul)
-  .ImplyType(ImplyType::TVM);
-} // domi
+    .FrameworkType(ONNX)
+    .OriginOpType(
+        {ge::AscendString("npu::1::NPURotaryMul"), ge::AscendString("ai.onnx::11::NPURotaryMul"),
+         ge::AscendString("ai.onnx::12::NPURotaryMul"), ge::AscendString("ai.onnx::13::NPURotaryMul"),
+         ge::AscendString("ai.onnx::14::NPURotaryMul"), ge::AscendString("ai.onnx::15::NPURotaryMul"),
+         ge::AscendString("ai.onnx::16::NPURotaryMul"), ge::AscendString("ai.onnx::17::NPURotaryMul"),
+         ge::AscendString("ai.onnx::18::NPURotaryMul")})
+    .ParseParamsFn(ParseParamsNpuRotaryMul)
+    .ImplyType(ImplyType::TVM);
+} // namespace domi

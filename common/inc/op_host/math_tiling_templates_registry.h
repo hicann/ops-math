@@ -36,8 +36,7 @@ using TilingClassCase = std::unique_ptr<Ops::Base::TilingBaseClass> (*)(gert::Ti
 
 class TilingCases {
 public:
-    explicit TilingCases(std::string op_type) : op_type_(std::move(op_type))
-    {}
+    explicit TilingCases(std::string op_type) : op_type_(std::move(op_type)) {}
 
     template <typename T>
     void AddTiling(int32_t priority)
@@ -50,10 +49,7 @@ public:
             OP_LOGE(op_type_, "Register op tiling func failed, please check the class name."), return);
     }
 
-    const std::map<int32_t, TilingClassCase>& GetTilingCases()
-    {
-        return cases_;
-    }
+    const std::map<int32_t, TilingClassCase>& GetTilingCases() { return cases_; }
 
 private:
     std::map<int32_t, TilingClassCase> cases_;
@@ -186,8 +182,7 @@ private:
 
 class RegisterNew {
 public:
-    explicit RegisterNew(std::string op_type) : op_type_(std::move(op_type))
-    {}
+    explicit RegisterNew(std::string op_type) : op_type_(std::move(op_type)) {}
 
     template <typename T>
     RegisterNew& tiling(int32_t priority, int32_t soc_version)
@@ -299,8 +294,7 @@ private:
 
 class Register {
 public:
-    explicit Register(std::string op_type) : op_type_(std::move(op_type))
-    {}
+    explicit Register(std::string op_type) : op_type_(std::move(op_type)) {}
 
     template <typename T>
     Register& tiling(int32_t priority)

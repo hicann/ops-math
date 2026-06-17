@@ -73,19 +73,15 @@ static Status ParseOpToGraphMean(const ge::Operator& op, Graph& graph)
 }
 
 REGISTER_CUSTOM_OP("PartitionedCall")
-  .FrameworkType(ONNX)
-  .OriginOpType({ge::AscendString("ai.onnx::8::Mean"),
-                 ge::AscendString("ai.onnx::9::Mean"),
-                 ge::AscendString("ai.onnx::10::Mean"),
-                 ge::AscendString("ai.onnx::11::Mean"),
-                 ge::AscendString("ai.onnx::12::Mean"),
-                 ge::AscendString("ai.onnx::13::Mean"),
-                 ge::AscendString("ai.onnx::14::Mean"),
-                 ge::AscendString("ai.onnx::15::Mean"),
-                 ge::AscendString("ai.onnx::16::Mean"),
-                 ge::AscendString("ai.onnx::17::Mean"),
-                 ge::AscendString("ai.onnx::18::Mean")})
-  .ParseParamsFn(ParseParamsMean)
-  .ParseOpToGraphFn(ParseOpToGraphMean)
-  .ImplyType(ImplyType::TVM);
-}  // namespace domi
+    .FrameworkType(ONNX)
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::8::Mean"), ge::AscendString("ai.onnx::9::Mean"),
+         ge::AscendString("ai.onnx::10::Mean"), ge::AscendString("ai.onnx::11::Mean"),
+         ge::AscendString("ai.onnx::12::Mean"), ge::AscendString("ai.onnx::13::Mean"),
+         ge::AscendString("ai.onnx::14::Mean"), ge::AscendString("ai.onnx::15::Mean"),
+         ge::AscendString("ai.onnx::16::Mean"), ge::AscendString("ai.onnx::17::Mean"),
+         ge::AscendString("ai.onnx::18::Mean")})
+    .ParseParamsFn(ParseParamsMean)
+    .ParseOpToGraphFn(ParseOpToGraphMean)
+    .ImplyType(ImplyType::TVM);
+} // namespace domi

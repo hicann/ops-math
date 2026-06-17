@@ -116,7 +116,7 @@ namespace op {
     const std::initializer_list<op::DataType>& l1, const std::initializer_list<op::DataType>& l2)
 {
     auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
-    if(curArch == NpuArch::DAV_2201 || IsRegBase(curArch)) {
+    if (curArch == NpuArch::DAV_2201 || IsRegBase(curArch)) {
         return l1;
     } else {
         return l2;

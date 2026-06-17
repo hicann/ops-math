@@ -29,4 +29,4 @@ static ge::graphStatus InferDataTypeAddExampleCApi(gert::InferDataTypeContext* c
 
 IMPL_OP(AddExampleCApi).InferDataType(InferDataTypeAddExampleCApi);
 
-};
+}; // namespace ops

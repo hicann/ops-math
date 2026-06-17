@@ -93,14 +93,11 @@ static Status ParseParamsDeformableOffsets(const Message* op_src, ge::Operator& 
 // register DeformableOffsets op info to GE
 REGISTER_CUSTOM_OP("DeformableOffsets")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::9::DeformableOffsets"),
-                   ge::AscendString("ai.onnx::10::DeformableOffsets"),
-                   ge::AscendString("ai.onnx::11::DeformableOffsets"),
-                   ge::AscendString("ai.onnx::12::DeformableOffsets"),
-                   ge::AscendString("ai.onnx::13::DeformableOffsets"),
-                   ge::AscendString("ai.onnx::14::DeformableOffsets"),
-                   ge::AscendString("ai.onnx::15::DeformableOffsets"),
-                   ge::AscendString("ai.onnx::16::DeformableOffsets")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::9::DeformableOffsets"), ge::AscendString("ai.onnx::10::DeformableOffsets"),
+         ge::AscendString("ai.onnx::11::DeformableOffsets"), ge::AscendString("ai.onnx::12::DeformableOffsets"),
+         ge::AscendString("ai.onnx::13::DeformableOffsets"), ge::AscendString("ai.onnx::14::DeformableOffsets"),
+         ge::AscendString("ai.onnx::15::DeformableOffsets"), ge::AscendString("ai.onnx::16::DeformableOffsets")})
     .ParseParamsFn(ParseParamsDeformableOffsets)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

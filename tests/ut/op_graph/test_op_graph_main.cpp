@@ -16,17 +16,10 @@ using namespace std;
 
 class OpGraphUtEnvironment : public testing::Environment {
 public:
-    OpGraphUtEnvironment()
-    {}
-    virtual void SetUp()
-    {
-        cout << "Global Environment SetpUp." << endl;
-    }
+    OpGraphUtEnvironment() {}
+    virtual void SetUp() { cout << "Global Environment SetpUp." << endl; }
 
-    virtual void TearDown()
-    {
-        cout << "Global Environment TearDown" << endl;
-    }
+    virtual void TearDown() { cout << "Global Environment TearDown" << endl; }
 };
 
 int main(int argc, char** argv)

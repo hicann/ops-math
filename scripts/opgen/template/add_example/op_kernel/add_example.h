@@ -31,7 +31,7 @@ class AddExample {
 public:
     __aicore__ inline AddExample(){};
 
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const AddExampleTilingData* tilingData/*参数列表*/);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const AddExampleTilingData* tilingData /*参数列表*/);
     __aicore__ inline void Process(/*参数列表*/);
 
 private:
@@ -46,30 +46,26 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void AddExample<T>::Init(GM_ADDR x, GM_ADDR y, const AddExampleTilingData* tilingData/*参数列表*/)
-{
-}
+__aicore__ inline void AddExample<T>::Init(GM_ADDR x, GM_ADDR y, const AddExampleTilingData* tilingData /*参数列表*/)
+{}
 
 template <typename T>
 __aicore__ inline void AddExample<T>::CopyIn(/*参数列表*/)
-{
-}
+{}
 
 template <typename T>
 __aicore__ inline void AddExample<T>::CopyOut(/*参数列表*/)
-{
-}
+{}
 
 template <typename T>
 __aicore__ inline void AddExample<T>::Compute(/*参数列表*/)
-{
-}
+{}
 
 template <typename T>
 __aicore__ inline void AddExample<T>::Process()
 {
     int32_t loopExample = 5;
-    for (int32_t i = 0; i < loopExample/*循环次数*/; i++) {
+    for (int32_t i = 0; i < loopExample /*循环次数*/; i++) {
         CopyIn(/*参数列表*/);
         Compute(/*参数列表*/);
         CopyOut(/*参数列表*/);

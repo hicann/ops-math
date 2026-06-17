@@ -20,56 +20,59 @@
 
 class TilingUtils {
 public:
-  template <typename T>
-  static std::vector<int64_t> GetShape(T x) {
+    template <typename T>
+    static std::vector<int64_t> GetShape(T x)
+    {
 #if defined(TORCH_MODE)
-    if constexpr (std::is_same_v<T, at::Tensor>) {
-      return x.sizes().vec();
-    } else {
-      throw std::runtime_error("Unsupported template type: only at::Tensor is supported when using bisheng");
-    }
+        if constexpr (std::is_same_v<T, at::Tensor>) {
+            return x.sizes().vec();
+        } else {
+            throw std::runtime_error("Unsupported template type: only at::Tensor is supported when using bisheng");
+        }
 #else
-    if constexpr (std::is_same_v<T, gert::Shape>) {
-      return x.GetDims();
-    } else {
-      throw std::runtime_error("Unsupported template type: only gert::Shape is supported");
-    }
+        if constexpr (std::is_same_v<T, gert::Shape>) {
+            return x.GetDims();
+        } else {
+            throw std::runtime_error("Unsupported template type: only gert::Shape is supported");
+        }
 #endif
-  }
+    }
 
-  template <typename T>
-  static int64_t GetDimNum(T x) {
+    template <typename T>
+    static int64_t GetDimNum(T x)
+    {
 #if defined(TORCH_MODE)
-    if constexpr (std::is_same_v<T, at::Tensor>) {
-      return x.dim();
-    } else {
-      throw std::runtime_error("Unsupported template type: only at::Tensor is supported when using bisheng");
-    }
+        if constexpr (std::is_same_v<T, at::Tensor>) {
+            return x.dim();
+        } else {
+            throw std::runtime_error("Unsupported template type: only at::Tensor is supported when using bisheng");
+        }
 #else
-    if constexpr (std::is_same_v<T, gert::Shape>) {
-      return x.GetDimNum();
-    } else {
-      throw std::runtime_error("Unsupported template type: only gert::Shape is supported");
-    }
+        if constexpr (std::is_same_v<T, gert::Shape>) {
+            return x.GetDimNum();
+        } else {
+            throw std::runtime_error("Unsupported template type: only gert::Shape is supported");
+        }
 #endif
-  }
+    }
 
-  template <typename T>
-  static int64_t GetDim(T x, int64_t i) {
+    template <typename T>
+    static int64_t GetDim(T x, int64_t i)
+    {
 #if defined(TORCH_MODE)
-    if constexpr (std::is_same_v<T, at::Tensor>) {
-      return x.size(i);
-    } else {
-      throw std::runtime_error("Unsupported template type: only at::Tensor is supported when using bisheng");
-    }
+        if constexpr (std::is_same_v<T, at::Tensor>) {
+            return x.size(i);
+        } else {
+            throw std::runtime_error("Unsupported template type: only at::Tensor is supported when using bisheng");
+        }
 #else
-    if constexpr (std::is_same_v<T, gert::Shape>) {
-      return x.GetDim(i);
-    } else {
-      throw std::runtime_error("Unsupported template type: only gert::Shape is supported");
-    }
+        if constexpr (std::is_same_v<T, gert::Shape>) {
+            return x.GetDim(i);
+        } else {
+            throw std::runtime_error("Unsupported template type: only gert::Shape is supported");
+        }
 #endif
-  }
+    }
 };
 
 #endif // TILING_UTILS_H

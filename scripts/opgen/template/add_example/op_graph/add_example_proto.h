@@ -30,13 +30,9 @@ namespace ge {
 *Compatible with the TensorFlow operator Add.
 */
 REG_OP(AddExample)
-    .INPUT(
-        x1, TensorType(
-                { DT_FLOAT, DT_INT32}))
+    .INPUT(x1, TensorType({DT_FLOAT, DT_INT32}))
     /* ...此处补充其他输入输出参数说明 */
-    .OUTPUT(
-        y, TensorType(
-               {DT_FLOAT, DT_INT32}))
+    .OUTPUT(y, TensorType({DT_FLOAT, DT_INT32}))
     .OP_END_FACTORY_REG(AddExample)
 } // namespace ge
 #endif // ADD_EXAMPLE_PROTO_H_

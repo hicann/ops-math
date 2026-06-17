@@ -64,18 +64,14 @@ static Status ParseParamsPhonySplit(const Message* op_src, ge::Operator& op_dest
 }
 
 REGISTER_CUSTOM_OP("PhonySplit")
-  .FrameworkType(ONNX)
-  .OriginOpType({ge::AscendString("ai.onnx::8::PhonySplit"),
-                 ge::AscendString("ai.onnx::9::PhonySplit"),
-                 ge::AscendString("ai.onnx::10::PhonySplit"),
-                 ge::AscendString("ai.onnx::11::PhonySplit"),
-                 ge::AscendString("ai.onnx::12::PhonySplit"),
-                 ge::AscendString("ai.onnx::13::PhonySplit"),
-                 ge::AscendString("ai.onnx::14::PhonySplit"),
-                 ge::AscendString("ai.onnx::15::PhonySplit"),
-                 ge::AscendString("ai.onnx::16::PhonySplit"),
-                 ge::AscendString("ai.onnx::17::PhonySplit"),
-                 ge::AscendString("ai.onnx::18::PhonySplit")})
-  .ParseParamsFn(ParseParamsPhonySplit)
-  .ImplyType(ImplyType::TVM);
-}  // namespace domi
+    .FrameworkType(ONNX)
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::8::PhonySplit"), ge::AscendString("ai.onnx::9::PhonySplit"),
+         ge::AscendString("ai.onnx::10::PhonySplit"), ge::AscendString("ai.onnx::11::PhonySplit"),
+         ge::AscendString("ai.onnx::12::PhonySplit"), ge::AscendString("ai.onnx::13::PhonySplit"),
+         ge::AscendString("ai.onnx::14::PhonySplit"), ge::AscendString("ai.onnx::15::PhonySplit"),
+         ge::AscendString("ai.onnx::16::PhonySplit"), ge::AscendString("ai.onnx::17::PhonySplit"),
+         ge::AscendString("ai.onnx::18::PhonySplit")})
+    .ParseParamsFn(ParseParamsPhonySplit)
+    .ImplyType(ImplyType::TVM);
+} // namespace domi

@@ -94,16 +94,13 @@ static Status ParseOpToGraphCorr(const ge::Operator& op, ge::Graph& graph)
 // tbe Correlation -> onnx Corr
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::8::Corr"),
-                   ge::AscendString("ai.onnx::9::Corr"),
-                   ge::AscendString("ai.onnx::10::Corr"),
-                   ge::AscendString("ai.onnx::11::Corr"),
-                   ge::AscendString("ai.onnx::12::Corr"),
-                   ge::AscendString("ai.onnx::13::Corr"),
-                   ge::AscendString("ai.onnx::14::Corr"),
-                   ge::AscendString("ai.onnx::15::Corr"),
-                   ge::AscendString("ai.onnx::16::Corr")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::8::Corr"), ge::AscendString("ai.onnx::9::Corr"),
+         ge::AscendString("ai.onnx::10::Corr"), ge::AscendString("ai.onnx::11::Corr"),
+         ge::AscendString("ai.onnx::12::Corr"), ge::AscendString("ai.onnx::13::Corr"),
+         ge::AscendString("ai.onnx::14::Corr"), ge::AscendString("ai.onnx::15::Corr"),
+         ge::AscendString("ai.onnx::16::Corr")})
     .ParseParamsFn(ParseOnnxParamsCorr)
     .ParseOpToGraphFn(ParseOpToGraphCorr)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

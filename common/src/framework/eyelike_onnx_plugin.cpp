@@ -88,8 +88,11 @@ static Status ParseOpToGraphEyeLike(const ge::Operator& op, Graph& graph)
 
     auto shape_op = op::Shape((ori_name + "_shape").c_str()).set_input_x(data0).set_attr_dtype(ge::DT_INT32);
     auto const_op_split = op::Const((ori_name + "_const3").c_str()).set_attr_value(scalar_split_dim);
-    auto split_op = op::Split((ori_name + "_split").c_str()).create_dynamic_output_y(2).set_input_x(shape_op)
-                        .set_input_split_dim(const_op_split).set_attr_num_split(2);
+    auto split_op = op::Split((ori_name + "_split").c_str())
+                        .create_dynamic_output_y(2)
+                        .set_input_x(shape_op)
+                        .set_input_split_dim(const_op_split)
+                        .set_attr_num_split(2);
 
     auto add_op = op::Adds((ori_name + "_add").c_str()).set_input_x(split_op, 0).set_attr_value(k);
     auto const_op2 = op::Const((ori_name + "_const2").c_str()).set_attr_value(scalar_fill);
@@ -101,8 +104,11 @@ static Status ParseOpToGraphEyeLike(const ge::Operator& op, Graph& graph)
 
     auto const_op1 = op::Const((ori_name + "_const1").c_str()).set_attr_value(scalar_pad);
     auto maxtrix_op = op::MatrixDiagV2((ori_name + "_matrix_diagv2").c_str())
-                          .set_input_diagonal(cast_op).set_input_k(const_op).set_input_num_rows(squeeze_op)
-                          .set_input_num_cols(squeeze_op1).set_input_padding_value(const_op1);
+                          .set_input_diagonal(cast_op)
+                          .set_input_k(const_op)
+                          .set_input_num_rows(squeeze_op)
+                          .set_input_num_cols(squeeze_op1)
+                          .set_input_padding_value(const_op1);
 
     auto input_desc1 = maxtrix_op.GetInputDesc(2);
     std::vector<int64_t> dims;
@@ -116,19 +122,15 @@ static Status ParseOpToGraphEyeLike(const ge::Operator& op, Graph& graph)
 }
 // register ROIAlign op info to GE
 REGISTER_CUSTOM_OP("PartitionedCall")
-  .FrameworkType(ONNX)
-  .OriginOpType({ge::AscendString("ai.onnx::8::EyeLike"),
-                 ge::AscendString("ai.onnx::9::EyeLike"),
-                 ge::AscendString("ai.onnx::10::EyeLike"),
-                 ge::AscendString("ai.onnx::11::EyeLike"),
-                 ge::AscendString("ai.onnx::12::EyeLike"),
-                 ge::AscendString("ai.onnx::13::EyeLike"),
-                 ge::AscendString("ai.onnx::14::EyeLike"),
-                 ge::AscendString("ai.onnx::15::EyeLike"),
-                 ge::AscendString("ai.onnx::16::EyeLike"),
-                 ge::AscendString("ai.onnx::17::EyeLike"),
-                 ge::AscendString("ai.onnx::18::EyeLike")})
-  .ParseParamsFn(ParseParamsEyeLike)
-  .ParseOpToGraphFn(ParseOpToGraphEyeLike)
-  .ImplyType(ImplyType::TVM);
-}  // namespace domi
+    .FrameworkType(ONNX)
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::8::EyeLike"), ge::AscendString("ai.onnx::9::EyeLike"),
+         ge::AscendString("ai.onnx::10::EyeLike"), ge::AscendString("ai.onnx::11::EyeLike"),
+         ge::AscendString("ai.onnx::12::EyeLike"), ge::AscendString("ai.onnx::13::EyeLike"),
+         ge::AscendString("ai.onnx::14::EyeLike"), ge::AscendString("ai.onnx::15::EyeLike"),
+         ge::AscendString("ai.onnx::16::EyeLike"), ge::AscendString("ai.onnx::17::EyeLike"),
+         ge::AscendString("ai.onnx::18::EyeLike")})
+    .ParseParamsFn(ParseParamsEyeLike)
+    .ParseOpToGraphFn(ParseOpToGraphEyeLike)
+    .ImplyType(ImplyType::TVM);
+} // namespace domi

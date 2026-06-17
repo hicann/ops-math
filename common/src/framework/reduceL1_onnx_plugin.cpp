@@ -45,16 +45,12 @@ static Status ParseParamsReduceL1(const Message* op_src, ge::Operator& op_dest)
 // register ReduceMean op info to GE
 REGISTER_CUSTOM_OP("LpNormV2")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::8::ReduceL1"),
-                   ge::AscendString("ai.onnx::9::ReduceL1"),
-                   ge::AscendString("ai.onnx::10::ReduceL1"),
-                   ge::AscendString("ai.onnx::11::ReduceL1"),
-                   ge::AscendString("ai.onnx::12::ReduceL1"),
-                   ge::AscendString("ai.onnx::13::ReduceL1"),
-                   ge::AscendString("ai.onnx::14::ReduceL1"),
-                   ge::AscendString("ai.onnx::15::ReduceL1"),
-                   ge::AscendString("ai.onnx::16::ReduceL1"),
-                   ge::AscendString("ai.onnx::17::ReduceL1")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::8::ReduceL1"), ge::AscendString("ai.onnx::9::ReduceL1"),
+         ge::AscendString("ai.onnx::10::ReduceL1"), ge::AscendString("ai.onnx::11::ReduceL1"),
+         ge::AscendString("ai.onnx::12::ReduceL1"), ge::AscendString("ai.onnx::13::ReduceL1"),
+         ge::AscendString("ai.onnx::14::ReduceL1"), ge::AscendString("ai.onnx::15::ReduceL1"),
+         ge::AscendString("ai.onnx::16::ReduceL1"), ge::AscendString("ai.onnx::17::ReduceL1")})
     .ParseParamsFn(ParseParamsReduceL1)
     .ImplyType(ImplyType::TVM);
-}
+} // namespace domi

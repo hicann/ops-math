@@ -116,23 +116,20 @@ static Status ParseOpToGraphSlice(const ge::Operator& op, Graph& graph)
 
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType(std::vector<ge::AscendString>{ge::AscendString("ai.onnx::8::Slice"),
-                   ge::AscendString("ai.onnx::9::Slice")})
+    .OriginOpType(
+        std::vector<ge::AscendString>{ge::AscendString("ai.onnx::8::Slice"), ge::AscendString("ai.onnx::9::Slice")})
     .ParseParamsFn(ParseParamSliceCall)
     .ParseOpToGraphFn(ParseOpToGraphSlice)
     .ImplyType(ImplyType::TVM);
 
 REGISTER_CUSTOM_OP("StridedSliceV2")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::11::Slice"),
-                   ge::AscendString("ai.onnx::10::Slice"),
-                   ge::AscendString("ai.onnx::12::Slice"),
-                   ge::AscendString("ai.onnx::13::Slice"),
-                   ge::AscendString("ai.onnx::14::Slice"),
-                   ge::AscendString("ai.onnx::15::Slice"),
-                   ge::AscendString("ai.onnx::16::Slice"),
-                   ge::AscendString("ai.onnx::17::Slice"),
-                   ge::AscendString("ai.onnx::18::Slice")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::11::Slice"), ge::AscendString("ai.onnx::10::Slice"),
+         ge::AscendString("ai.onnx::12::Slice"), ge::AscendString("ai.onnx::13::Slice"),
+         ge::AscendString("ai.onnx::14::Slice"), ge::AscendString("ai.onnx::15::Slice"),
+         ge::AscendString("ai.onnx::16::Slice"), ge::AscendString("ai.onnx::17::Slice"),
+         ge::AscendString("ai.onnx::18::Slice")})
     .ParseParamsFn(ParseParamSlice)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

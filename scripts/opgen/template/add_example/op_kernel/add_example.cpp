@@ -15,8 +15,7 @@
 
 #include "add_example.h"
 
-enum class AddExampleTilingKey : uint32_t
-{
+enum class AddExampleTilingKey : uint32_t {
     TILING_KEY_EXAMPLE_FLOAT = 0,
     TILING_KEY_EXAMPLE_INT32 = 1,
 };
@@ -30,14 +29,14 @@ __global__ __aicore__ void add_example(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, 
     // 场景1
     if constexpr (schMode == static_cast<uint32_t>(AddExampleTilingKey::TILING_KEY_EXAMPLE_FLOAT)) {
         NsAddExample::AddExample<float> op; // 算子kernel实例获取
-        op.Init(x, y, &tilingData);      // 算子kernel实例初始化
+        op.Init(x, y, &tilingData);         // 算子kernel实例初始化
         op.Process();                       // 算子kernel实例执行
     }
 
     // 场景2
     if constexpr (schMode == static_cast<uint32_t>(AddExampleTilingKey::TILING_KEY_EXAMPLE_INT32)) {
         NsAddExample::AddExample<int32_t> op; // 算子kernel实例获取
-        op.Init(x, y, &tilingData);        // 算子kernel实例初始化
+        op.Init(x, y, &tilingData);           // 算子kernel实例初始化
         op.Process();                         // 算子kernel实例执行
     }
 }

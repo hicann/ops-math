@@ -28,10 +28,9 @@ static Status ParseParamsSpaceToDepth(const Message* op_src, ge::Operator& op_de
     }
     if (blocksize_val <= 0) {
         OP_LOGE(
-            GetOpName(op_dest).c_str(),
-            "Because input tensor shape is [N,C,H,W] and "
-            "output tensor shape is [N, C*blocksize*blocksize, H/blocksize, W/blocksize],"
-            "attr blocksize must be INT.");
+            GetOpName(op_dest).c_str(), "Because input tensor shape is [N,C,H,W] and "
+                                        "output tensor shape is [N, C*blocksize*blocksize, H/blocksize, W/blocksize],"
+                                        "attr blocksize must be INT.");
         return FAILED;
     }
 
@@ -48,18 +47,14 @@ static Status ParseParamsSpaceToDepth(const Message* op_src, ge::Operator& op_de
 }
 
 REGISTER_CUSTOM_OP("SpaceToDepth")
-  .FrameworkType(ONNX)
-  .OriginOpType({ge::AscendString("ai.onnx::8::SpaceToDepth"),
-                 ge::AscendString("ai.onnx::9::SpaceToDepth"),
-                 ge::AscendString("ai.onnx::10::SpaceToDepth"),
-                 ge::AscendString("ai.onnx::11::SpaceToDepth"),
-                 ge::AscendString("ai.onnx::12::SpaceToDepth"),
-                 ge::AscendString("ai.onnx::13::SpaceToDepth"),
-                 ge::AscendString("ai.onnx::14::SpaceToDepth"),
-                 ge::AscendString("ai.onnx::15::SpaceToDepth"),
-                 ge::AscendString("ai.onnx::16::SpaceToDepth"),
-                 ge::AscendString("ai.onnx::17::SpaceToDepth"),
-                 ge::AscendString("ai.onnx::18::SpaceToDepth")})
-  .ParseParamsFn(ParseParamsSpaceToDepth)
-  .ImplyType(ImplyType::TVM);
-}  // namespace domi
+    .FrameworkType(ONNX)
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::8::SpaceToDepth"), ge::AscendString("ai.onnx::9::SpaceToDepth"),
+         ge::AscendString("ai.onnx::10::SpaceToDepth"), ge::AscendString("ai.onnx::11::SpaceToDepth"),
+         ge::AscendString("ai.onnx::12::SpaceToDepth"), ge::AscendString("ai.onnx::13::SpaceToDepth"),
+         ge::AscendString("ai.onnx::14::SpaceToDepth"), ge::AscendString("ai.onnx::15::SpaceToDepth"),
+         ge::AscendString("ai.onnx::16::SpaceToDepth"), ge::AscendString("ai.onnx::17::SpaceToDepth"),
+         ge::AscendString("ai.onnx::18::SpaceToDepth")})
+    .ParseParamsFn(ParseParamsSpaceToDepth)
+    .ImplyType(ImplyType::TVM);
+} // namespace domi

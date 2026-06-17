@@ -125,8 +125,10 @@ Status SingleSizeParse(const ge::Operator& op, const SplitNewProp& prop, ge::Ope
     auto input_x_0 = op::Data((prop.ori_name + "_x").c_str()).set_attr_index(0);
     if (prop.num_outputs == 0 && size_splits.empty()) {
         split_op = op::Split((prop.ori_name + "_Split").c_str())
-                       .create_dynamic_output_y(prop.num_split).set_input_x(input_x_0)
-                       .set_input_split_dim(const_split_dim_2).set_attr_num_split(prop.num_split);
+                       .create_dynamic_output_y(prop.num_split)
+                       .set_input_x(input_x_0)
+                       .set_input_split_dim(const_split_dim_2)
+                       .set_attr_num_split(prop.num_split);
     } else {
         ge::Tensor size_splits_tensor;
         if (size_splits.empty()) {
@@ -149,8 +151,10 @@ Status SingleSizeParse(const ge::Operator& op, const SplitNewProp& prop, ge::Ope
         auto const_size_splits = op::Const((prop.ori_name + "_size_splits").c_str()).set_attr_value(size_splits_tensor);
         split_op = op::SplitV((prop.ori_name + "_SplitV").c_str())
                        .create_dynamic_output_y(prop.num_split)
-                       .set_input_x(input_x_0).set_input_size_splits(const_size_splits)
-                       .set_input_split_dim(const_split_dim_2).set_attr_num_split(prop.num_split);
+                       .set_input_x(input_x_0)
+                       .set_input_size_splits(const_size_splits)
+                       .set_input_split_dim(const_split_dim_2)
+                       .set_attr_num_split(prop.num_split);
     }
     std::vector<std::size_t> idx;
     for (std::size_t i = 0; i < (std::size_t)prop.num_split; i++) {
@@ -202,19 +206,15 @@ static Status ParseOpToGraphSplitNew(const ge::Operator& op, Graph& graph)
 }
 
 REGISTER_CUSTOM_OP("PartitionedCall")
-  .FrameworkType(ONNX)
-  .OriginOpType({ge::AscendString("ai.onnx::8::Split"),
-                 ge::AscendString("ai.onnx::9::Split"),
-                 ge::AscendString("ai.onnx::10::Split"),
-                 ge::AscendString("ai.onnx::11::Split"),
-                 ge::AscendString("ai.onnx::12::Split"),
-                 ge::AscendString("ai.onnx::13::Split"),
-                 ge::AscendString("ai.onnx::14::Split"),
-                 ge::AscendString("ai.onnx::15::Split"),
-                 ge::AscendString("ai.onnx::16::Split"),
-                 ge::AscendString("ai.onnx::17::Split"),
-                 ge::AscendString("ai.onnx::18::Split")})
-  .ParseParamsFn(ParseParamsSplitNew)
-  .ParseOpToGraphFn(ParseOpToGraphSplitNew)
-  .ImplyType(ImplyType::TVM);
-}  // namespace domi
+    .FrameworkType(ONNX)
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::8::Split"), ge::AscendString("ai.onnx::9::Split"),
+         ge::AscendString("ai.onnx::10::Split"), ge::AscendString("ai.onnx::11::Split"),
+         ge::AscendString("ai.onnx::12::Split"), ge::AscendString("ai.onnx::13::Split"),
+         ge::AscendString("ai.onnx::14::Split"), ge::AscendString("ai.onnx::15::Split"),
+         ge::AscendString("ai.onnx::16::Split"), ge::AscendString("ai.onnx::17::Split"),
+         ge::AscendString("ai.onnx::18::Split")})
+    .ParseParamsFn(ParseParamsSplitNew)
+    .ParseOpToGraphFn(ParseOpToGraphSplitNew)
+    .ImplyType(ImplyType::TVM);
+} // namespace domi

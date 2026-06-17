@@ -181,23 +181,20 @@ static Status ParseOpToGraphClipV11(const Operator& op, Graph& graph)
 // register Clip op info to GE
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::8::Clip"),
-                   ge::AscendString("ai.onnx::9::Clip"),
-                   ge::AscendString("ai.onnx::10::Clip")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::8::Clip"), ge::AscendString("ai.onnx::9::Clip"),
+         ge::AscendString("ai.onnx::10::Clip")})
     .ParseParamsFn(ParseParamsClipV9)
     .ParseOpToGraphFn(ParseOpToGraphClipV9)
     .ImplyType(ImplyType::TVM);
 
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::11::Clip"),
-                   ge::AscendString("ai.onnx::12::Clip"),
-                   ge::AscendString("ai.onnx::13::Clip"),
-                   ge::AscendString("ai.onnx::14::Clip"),
-                   ge::AscendString("ai.onnx::15::Clip"),
-                   ge::AscendString("ai.onnx::16::Clip"),
-                   ge::AscendString("ai.onnx::17::Clip"),
-                   ge::AscendString("ai.onnx::18::Clip")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::11::Clip"), ge::AscendString("ai.onnx::12::Clip"),
+         ge::AscendString("ai.onnx::13::Clip"), ge::AscendString("ai.onnx::14::Clip"),
+         ge::AscendString("ai.onnx::15::Clip"), ge::AscendString("ai.onnx::16::Clip"),
+         ge::AscendString("ai.onnx::17::Clip"), ge::AscendString("ai.onnx::18::Clip")})
     .ParseParamsFn(ParseParamsClipV11)
     .ParseOpToGraphFn(ParseOpToGraphClipV11)
     .ImplyType(ImplyType::TVM);

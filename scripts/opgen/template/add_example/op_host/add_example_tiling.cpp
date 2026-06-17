@@ -25,13 +25,10 @@ namespace optiling {
 struct AddExampleCompileInfo {};
 
 // tiling 分发入口
-static ge::graphStatus AddExampleTilingFunc([[maybe_unused]] gert::TilingContext* context)
-{
-    return ge::GRAPH_SUCCESS;
-}
+static ge::graphStatus AddExampleTilingFunc([[maybe_unused]] gert::TilingContext* context) { return ge::GRAPH_SUCCESS; }
 
 static ge::graphStatus TilingParseForAddExample([[maybe_unused]] gert::TilingParseContext* context)
-{   
+{
     // AscendC 算子可以直接返回SUCCESS提升性能，硬件信息可在运行时获取
     return ge::GRAPH_SUCCESS;
 }

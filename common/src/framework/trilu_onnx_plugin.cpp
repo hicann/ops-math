@@ -81,12 +81,11 @@ static Status ParseOpToGraphTrilu(const ge::Operator& op_dest, ge::Graph& graph)
 
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::14::Trilu"),
-                   ge::AscendString("ai.onnx::15::Trilu"),
-                   ge::AscendString("ai.onnx::16::Trilu"),
-                   ge::AscendString("ai.onnx::17::Trilu"),
-                   ge::AscendString("ai.onnx::18::Trilu")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::14::Trilu"), ge::AscendString("ai.onnx::15::Trilu"),
+         ge::AscendString("ai.onnx::16::Trilu"), ge::AscendString("ai.onnx::17::Trilu"),
+         ge::AscendString("ai.onnx::18::Trilu")})
     .ParseParamsFn(ParseParamsTrilu)
     .ParseOpToGraphFn(ParseOpToGraphTrilu)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

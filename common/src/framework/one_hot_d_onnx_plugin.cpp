@@ -107,16 +107,13 @@ static Status ParseOpToGraphOneHot(const ge::Operator& op, ge::Graph& graph)
 
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::11::NPUOneHot"),
-                   ge::AscendString("ai.onnx::12::NPUOneHot"),
-                   ge::AscendString("ai.onnx::13::NPUOneHot"),
-                   ge::AscendString("ai.onnx::14::NPUOneHot"),
-                   ge::AscendString("ai.onnx::15::NPUOneHot"),
-                   ge::AscendString("ai.onnx::16::NPUOneHot"),
-                   ge::AscendString("ai.onnx::17::NPUOneHot"),
-                   ge::AscendString("ai.onnx::18::NPUOneHot"),
-                   ge::AscendString("npu::1::NPUOneHot")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::11::NPUOneHot"), ge::AscendString("ai.onnx::12::NPUOneHot"),
+         ge::AscendString("ai.onnx::13::NPUOneHot"), ge::AscendString("ai.onnx::14::NPUOneHot"),
+         ge::AscendString("ai.onnx::15::NPUOneHot"), ge::AscendString("ai.onnx::16::NPUOneHot"),
+         ge::AscendString("ai.onnx::17::NPUOneHot"), ge::AscendString("ai.onnx::18::NPUOneHot"),
+         ge::AscendString("npu::1::NPUOneHot")})
     .ParseParamsFn(ParseParamsNpuOneHot)
     .ParseOpToGraphFn(ParseOpToGraphOneHot)
     .ImplyType(ImplyType::TVM);
-}  // domi
+} // namespace domi

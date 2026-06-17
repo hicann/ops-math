@@ -14,19 +14,15 @@
 #include "cpu_kernel.h"
 
 namespace aicpu {
-__attribute__((weak)) bool RegistCpuKernelV2(const std::string &type, const KERNEL_CREATOR_FUN &fun);
+__attribute__((weak)) bool RegistCpuKernelV2(const std::string& type, const KERNEL_CREATOR_FUN& fun);
 } // namespace aicpu
 
 #if defined(OPS_MATH_AICPU_HOST_KERNEL)
-#define OPS_MATH_REGISTER_CPU_KERNELV2(type, clazz)                                             \
-    static std::shared_ptr<aicpu::CpuKernel> Creator_##type##_Kernel()                          \
-    {                                                                                           \
-        return aicpu::MakeShared<clazz>();                                                      \
-    }                                                                                           \
-    static bool g_##type##_Kernel_Creator __attribute__((unused)) =                             \
-        ((&::aicpu::RegistCpuKernelV2) != nullptr)                                              \
-            ? ::aicpu::RegistCpuKernelV2((type), Creator_##type##_Kernel)                       \
-            : ::aicpu::RegistCpuKernel((type), Creator_##type##_Kernel)
+#define OPS_MATH_REGISTER_CPU_KERNELV2(type, clazz)                                                                \
+    static std::shared_ptr<aicpu::CpuKernel> Creator_##type##_Kernel() { return aicpu::MakeShared<clazz>(); }      \
+    static bool g_##type##_Kernel_Creator __attribute__((unused)) =                                                \
+        ((&::aicpu::RegistCpuKernelV2) != nullptr) ? ::aicpu::RegistCpuKernelV2((type), Creator_##type##_Kernel) : \
+                                                     ::aicpu::RegistCpuKernel((type), Creator_##type##_Kernel)
 #else
 #define OPS_MATH_REGISTER_CPU_KERNELV2(type, clazz) REGISTER_CPU_KERNEL(type, clazz)
 #endif

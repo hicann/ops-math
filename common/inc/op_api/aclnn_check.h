@@ -152,26 +152,26 @@ inline bool IsReduceNonContiguousSupport(const aclTensor* x, const aclIntArray* 
     bool allReduceAxisIsDimOne{true};
     uint64_t size = 0;
     aclGetIntArraySize(dims, &size);
-    if (size == 0) {    // 空dim按allReudce处理
- 	    for (size_t i = 0; i < viewShape.GetDimNum(); i++) {
- 	        if (viewShape.GetDim(i) != 1) {
- 	            allReduceAxisIsDimOne = false;
- 	            break;
- 	        }
- 	    }
- 	} else {
- 	    for (size_t i = 0; i < size; i++) {
- 	        int64_t dim = (*dims)[i];
- 	        if (dim < 0) {
- 	            dim = dim + viewShape.GetDimNum();
- 	        }
- 	        if (viewShape.GetDim(dim) != 1) {
- 	            allReduceAxisIsDimOne = false;
- 	            break;
- 	        }
- 	    }
- 	}
-    if (allReduceAxisIsDimOne) {    // 不支持非连续的纯搬运
+    if (size == 0) { // 空dim按allReudce处理
+        for (size_t i = 0; i < viewShape.GetDimNum(); i++) {
+            if (viewShape.GetDim(i) != 1) {
+                allReduceAxisIsDimOne = false;
+                break;
+            }
+        }
+    } else {
+        for (size_t i = 0; i < size; i++) {
+            int64_t dim = (*dims)[i];
+            if (dim < 0) {
+                dim = dim + viewShape.GetDimNum();
+            }
+            if (viewShape.GetDim(dim) != 1) {
+                allReduceAxisIsDimOne = false;
+                break;
+            }
+        }
+    }
+    if (allReduceAxisIsDimOne) { // 不支持非连续的纯搬运
         OP_LOGD("NonContiguous not Support tensorMoving");
         return false;
     }

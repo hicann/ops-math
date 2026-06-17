@@ -63,17 +63,13 @@ static Status ParseParamsPhonyConcat(const Message* op_src, ge::Operator& op_des
 
 REGISTER_CUSTOM_OP("PhonyConcat")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::8::PhonyConcat"),
-                   ge::AscendString("ai.onnx::9::PhonyConcat"),
-                   ge::AscendString("ai.onnx::10::PhonyConcat"),
-                   ge::AscendString("ai.onnx::11::PhonyConcat"),
-                   ge::AscendString("ai.onnx::12::PhonyConcat"),
-                   ge::AscendString("ai.onnx::13::PhonyConcat"),
-                   ge::AscendString("ai.onnx::14::PhonyConcat"),
-                   ge::AscendString("ai.onnx::15::PhonyConcat"),
-                   ge::AscendString("ai.onnx::16::PhonyConcat"),
-                   ge::AscendString("ai.onnx::17::PhonyConcat"),
-                   ge::AscendString("ai.onnx::18::PhonyConcat")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::8::PhonyConcat"), ge::AscendString("ai.onnx::9::PhonyConcat"),
+         ge::AscendString("ai.onnx::10::PhonyConcat"), ge::AscendString("ai.onnx::11::PhonyConcat"),
+         ge::AscendString("ai.onnx::12::PhonyConcat"), ge::AscendString("ai.onnx::13::PhonyConcat"),
+         ge::AscendString("ai.onnx::14::PhonyConcat"), ge::AscendString("ai.onnx::15::PhonyConcat"),
+         ge::AscendString("ai.onnx::16::PhonyConcat"), ge::AscendString("ai.onnx::17::PhonyConcat"),
+         ge::AscendString("ai.onnx::18::PhonyConcat")})
     .ParseParamsFn(ParseParamsPhonyConcat)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

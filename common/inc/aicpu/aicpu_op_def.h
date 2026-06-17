@@ -30,7 +30,7 @@ const std::string DEFAULT_SUB_TYPE_OF_INFERSHAPE_3 = "3";
 const std::string DEFAULT_SUB_TYPE_OF_INFERSHAPE_4 = "4";
 
 template <typename TOpDef>
-inline void ApplyMathAicpuDefaultCfg(TOpDef &opDef)
+inline void ApplyMathAicpuDefaultCfg(TOpDef& opDef)
 {
     opDef.AICPU().OpKernelLib(AICPU_OP_KERNEL_LIB.c_str());
     opDef.AICPU().KernelSo(MATH_AICPU_KERNEL_SO.c_str());

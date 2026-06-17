@@ -37,17 +37,13 @@ static Status parseParamsRepeatWithPad(const Message* op_src, ge::Operator& op_d
 // register RepeatWithPad op info to GE
 REGISTER_CUSTOM_OP("RepeatWithPad")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::8::RepeatWithPad"),
-                   ge::AscendString("ai.onnx::9::RepeatWithPad"),
-                   ge::AscendString("ai.onnx::10::RepeatWithPad"),
-                   ge::AscendString("ai.onnx::11::RepeatWithPad"),
-                   ge::AscendString("ai.onnx::12::RepeatWithPad"),
-                   ge::AscendString("ai.onnx::13::RepeatWithPad"),
-                   ge::AscendString("ai.onnx::14::RepeatWithPad"),
-                   ge::AscendString("ai.onnx::15::RepeatWithPad"),
-                   ge::AscendString("ai.onnx::16::RepeatWithPad"),
-                   ge::AscendString("ai.onnx::17::RepeatWithPad"),
-                   ge::AscendString("ai.onnx::18::RepeatWithPad")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::8::RepeatWithPad"), ge::AscendString("ai.onnx::9::RepeatWithPad"),
+         ge::AscendString("ai.onnx::10::RepeatWithPad"), ge::AscendString("ai.onnx::11::RepeatWithPad"),
+         ge::AscendString("ai.onnx::12::RepeatWithPad"), ge::AscendString("ai.onnx::13::RepeatWithPad"),
+         ge::AscendString("ai.onnx::14::RepeatWithPad"), ge::AscendString("ai.onnx::15::RepeatWithPad"),
+         ge::AscendString("ai.onnx::16::RepeatWithPad"), ge::AscendString("ai.onnx::17::RepeatWithPad"),
+         ge::AscendString("ai.onnx::18::RepeatWithPad")})
     .ParseParamsFn(parseParamsRepeatWithPad)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

@@ -29,142 +29,128 @@ static Status ParseParamsSequenceConstruct(const Message* op_src, ge::Operator& 
 // register SequenceConstruct op info to GE
 REGISTER_CUSTOM_OP("SequenceConstruct")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::11::SequenceConstruct"),
-                   ge::AscendString("ai.onnx::12::SequenceConstruct"),
-                   ge::AscendString("ai.onnx::13::SequenceConstruct"),
-                   ge::AscendString("ai.onnx::14::SequenceConstruct"),
-                   ge::AscendString("ai.onnx::15::SequenceConstruct"),
-                   ge::AscendString("ai.onnx::16::SequenceConstruct"),
-                   ge::AscendString("ai.onnx::17::SequenceConstruct"),
-                   ge::AscendString("ai.onnx::18::SequenceConstruct")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::11::SequenceConstruct"), ge::AscendString("ai.onnx::12::SequenceConstruct"),
+         ge::AscendString("ai.onnx::13::SequenceConstruct"), ge::AscendString("ai.onnx::14::SequenceConstruct"),
+         ge::AscendString("ai.onnx::15::SequenceConstruct"), ge::AscendString("ai.onnx::16::SequenceConstruct"),
+         ge::AscendString("ai.onnx::17::SequenceConstruct"), ge::AscendString("ai.onnx::18::SequenceConstruct")})
     .ParseParamsFn(ParseParamsSequenceConstruct)
     .ImplyType(ImplyType::AI_CPU);
 
-static Status ParseParamsSequenceInsert(const Message* op_src, ge::Operator& op_dest) {
-  const ge::onnx::NodeProto* node = dynamic_cast<const ge::onnx::NodeProto*>(op_src);
-  if (node == nullptr) {
-    OP_LOGE(GetOpName(op_dest).c_str(), "Dynamic cast op_src to NodeProto failed.");
-    return FAILED;
-  }
-  op_dest.SetAttr("original_type", "ai.onnx::11::SequenceInsert");
-  op_dest.SetAttr("name", node->name());
-  return SUCCESS;
+static Status ParseParamsSequenceInsert(const Message* op_src, ge::Operator& op_dest)
+{
+    const ge::onnx::NodeProto* node = dynamic_cast<const ge::onnx::NodeProto*>(op_src);
+    if (node == nullptr) {
+        OP_LOGE(GetOpName(op_dest).c_str(), "Dynamic cast op_src to NodeProto failed.");
+        return FAILED;
+    }
+    op_dest.SetAttr("original_type", "ai.onnx::11::SequenceInsert");
+    op_dest.SetAttr("name", node->name());
+    return SUCCESS;
 }
 
 // register SequenceInsert op info to GE
 REGISTER_CUSTOM_OP("SequenceInsert")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::11::SequenceInsert"),
-                   ge::AscendString("ai.onnx::12::SequenceInsert"),
-                   ge::AscendString("ai.onnx::13::SequenceInsert"),
-                   ge::AscendString("ai.onnx::14::SequenceInsert"),
-                   ge::AscendString("ai.onnx::15::SequenceInsert"),
-                   ge::AscendString("ai.onnx::16::SequenceInsert"),
-                   ge::AscendString("ai.onnx::17::SequenceInsert"),
-                   ge::AscendString("ai.onnx::18::SequenceInsert")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::11::SequenceInsert"), ge::AscendString("ai.onnx::12::SequenceInsert"),
+         ge::AscendString("ai.onnx::13::SequenceInsert"), ge::AscendString("ai.onnx::14::SequenceInsert"),
+         ge::AscendString("ai.onnx::15::SequenceInsert"), ge::AscendString("ai.onnx::16::SequenceInsert"),
+         ge::AscendString("ai.onnx::17::SequenceInsert"), ge::AscendString("ai.onnx::18::SequenceInsert")})
     .ParseParamsFn(ParseParamsSequenceInsert)
     .ImplyType(ImplyType::AI_CPU);
 
-static Status ParseParamsSequenceErase(const Message* op_src, ge::Operator& op_dest) {
-  const ge::onnx::NodeProto* node = dynamic_cast<const ge::onnx::NodeProto*>(op_src);
-  if (node == nullptr) {
-    OP_LOGE(GetOpName(op_dest).c_str(), "Dynamic cast op_src to NodeProto failed.");
-    return FAILED;
-  }
-  op_dest.SetAttr("original_type", "ai.onnx::11::SequenceErase");
-  op_dest.SetAttr("name", node->name());
-  return SUCCESS;
+static Status ParseParamsSequenceErase(const Message* op_src, ge::Operator& op_dest)
+{
+    const ge::onnx::NodeProto* node = dynamic_cast<const ge::onnx::NodeProto*>(op_src);
+    if (node == nullptr) {
+        OP_LOGE(GetOpName(op_dest).c_str(), "Dynamic cast op_src to NodeProto failed.");
+        return FAILED;
+    }
+    op_dest.SetAttr("original_type", "ai.onnx::11::SequenceErase");
+    op_dest.SetAttr("name", node->name());
+    return SUCCESS;
 }
 
 // register SequenceErase op info to GE
 REGISTER_CUSTOM_OP("SequenceErase")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::11::SequenceErase"),
-                   ge::AscendString("ai.onnx::12::SequenceErase"),
-                   ge::AscendString("ai.onnx::13::SequenceErase"),
-                   ge::AscendString("ai.onnx::14::SequenceErase"),
-                   ge::AscendString("ai.onnx::15::SequenceErase"),
-                   ge::AscendString("ai.onnx::16::SequenceErase"),
-                   ge::AscendString("ai.onnx::17::SequenceErase"),
-                   ge::AscendString("ai.onnx::18::SequenceErase")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::11::SequenceErase"), ge::AscendString("ai.onnx::12::SequenceErase"),
+         ge::AscendString("ai.onnx::13::SequenceErase"), ge::AscendString("ai.onnx::14::SequenceErase"),
+         ge::AscendString("ai.onnx::15::SequenceErase"), ge::AscendString("ai.onnx::16::SequenceErase"),
+         ge::AscendString("ai.onnx::17::SequenceErase"), ge::AscendString("ai.onnx::18::SequenceErase")})
     .ParseParamsFn(ParseParamsSequenceErase)
     .ImplyType(ImplyType::AI_CPU);
 
 static Status ParseParamsSequenceEmpty(const Message* op_src, ge::Operator& op_dest)
 {
-  const ge::onnx::NodeProto* node = dynamic_cast<const ge::onnx::NodeProto*>(op_src);
-  if (node == nullptr) {
-      OP_LOGE("SequenceEmpty", "Dynamic cast op_src to NodeProto failed.");
-      return FAILED;
-  }
-  op_dest.SetAttr("original_type", "ai.onnx::11::SequenceEmpty");
+    const ge::onnx::NodeProto* node = dynamic_cast<const ge::onnx::NodeProto*>(op_src);
+    if (node == nullptr) {
+        OP_LOGE("SequenceEmpty", "Dynamic cast op_src to NodeProto failed.");
+        return FAILED;
+    }
+    op_dest.SetAttr("original_type", "ai.onnx::11::SequenceEmpty");
 
-  op_dest.SetAttr("name", node->name());
-  return SUCCESS;
+    op_dest.SetAttr("name", node->name());
+    return SUCCESS;
 }
 
 REGISTER_CUSTOM_OP("SequenceEmpty")
-  .FrameworkType(ONNX)
-  .OriginOpType({ge::AscendString("ai.onnx::11::SequenceEmpty"),
-                 ge::AscendString("ai.onnx::12::SequenceEmpty"),
-                 ge::AscendString("ai.onnx::13::SequenceEmpty"),
-                 ge::AscendString("ai.onnx::14::SequenceEmpty"),
-                 ge::AscendString("ai.onnx::15::SequenceEmpty"),
-                 ge::AscendString("ai.onnx::16::SequenceEmpty"),
-                 ge::AscendString("ai.onnx::17::SequenceEmpty"),
-                 ge::AscendString("ai.onnx::18::SequenceEmpty")})
-  .ParseParamsFn(ParseParamsSequenceEmpty)
-  .ImplyType(ImplyType::AI_CPU);
+    .FrameworkType(ONNX)
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::11::SequenceEmpty"), ge::AscendString("ai.onnx::12::SequenceEmpty"),
+         ge::AscendString("ai.onnx::13::SequenceEmpty"), ge::AscendString("ai.onnx::14::SequenceEmpty"),
+         ge::AscendString("ai.onnx::15::SequenceEmpty"), ge::AscendString("ai.onnx::16::SequenceEmpty"),
+         ge::AscendString("ai.onnx::17::SequenceEmpty"), ge::AscendString("ai.onnx::18::SequenceEmpty")})
+    .ParseParamsFn(ParseParamsSequenceEmpty)
+    .ImplyType(ImplyType::AI_CPU);
 
-static Status ParseParamsSequenceAt(const Message* op_src, ge::Operator& op_dest) {
-  const ge::onnx::NodeProto* node = dynamic_cast<const ge::onnx::NodeProto*>(op_src);
-  if (node == nullptr) {
-    OP_LOGE(GetOpName(op_dest).c_str(), "Dynamic cast op_src to NodeProto failed.");
-    return FAILED;
-  }
-  op_dest.SetAttr("original_type", "ai.onnx::11::SequenceAt");
-  op_dest.SetAttr("name", node->name());
-  return SUCCESS;
+static Status ParseParamsSequenceAt(const Message* op_src, ge::Operator& op_dest)
+{
+    const ge::onnx::NodeProto* node = dynamic_cast<const ge::onnx::NodeProto*>(op_src);
+    if (node == nullptr) {
+        OP_LOGE(GetOpName(op_dest).c_str(), "Dynamic cast op_src to NodeProto failed.");
+        return FAILED;
+    }
+    op_dest.SetAttr("original_type", "ai.onnx::11::SequenceAt");
+    op_dest.SetAttr("name", node->name());
+    return SUCCESS;
 }
 
 // register SequenceAt op info to GE
 REGISTER_CUSTOM_OP("SequenceAt")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::11::SequenceAt"),
-                   ge::AscendString("ai.onnx::12::SequenceAt"),
-                   ge::AscendString("ai.onnx::13::SequenceAt"),
-                   ge::AscendString("ai.onnx::14::SequenceAt"),
-                   ge::AscendString("ai.onnx::15::SequenceAt"),
-                   ge::AscendString("ai.onnx::16::SequenceAt"),
-                   ge::AscendString("ai.onnx::17::SequenceAt"),
-                   ge::AscendString("ai.onnx::18::SequenceAt")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::11::SequenceAt"), ge::AscendString("ai.onnx::12::SequenceAt"),
+         ge::AscendString("ai.onnx::13::SequenceAt"), ge::AscendString("ai.onnx::14::SequenceAt"),
+         ge::AscendString("ai.onnx::15::SequenceAt"), ge::AscendString("ai.onnx::16::SequenceAt"),
+         ge::AscendString("ai.onnx::17::SequenceAt"), ge::AscendString("ai.onnx::18::SequenceAt")})
     .ParseParamsFn(ParseParamsSequenceAt)
     .ImplyType(ImplyType::AI_CPU);
 
-static Status ParseParamsSequenceLength(const Message* op_src, ge::Operator& op_dest) {
-  const ge::onnx::NodeProto* node = dynamic_cast<const ge::onnx::NodeProto*>(op_src);
-  if (node == nullptr) {
-    ge::AscendString op_name;
-    (void)op_dest.GetName(op_name);
-    OP_LOGE(op_name.GetString(), "Dynamic cast op_src to NodeProto failed.");
-    return FAILED;
-  }
-  op_dest.SetAttr("original_type", "ai.onnx::11::SequenceLength");
-  op_dest.SetAttr("name", node->name());
-  return SUCCESS;
+static Status ParseParamsSequenceLength(const Message* op_src, ge::Operator& op_dest)
+{
+    const ge::onnx::NodeProto* node = dynamic_cast<const ge::onnx::NodeProto*>(op_src);
+    if (node == nullptr) {
+        ge::AscendString op_name;
+        (void)op_dest.GetName(op_name);
+        OP_LOGE(op_name.GetString(), "Dynamic cast op_src to NodeProto failed.");
+        return FAILED;
+    }
+    op_dest.SetAttr("original_type", "ai.onnx::11::SequenceLength");
+    op_dest.SetAttr("name", node->name());
+    return SUCCESS;
 }
 
 // register SequenceLength op info to GE
 REGISTER_CUSTOM_OP("SequenceLength")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::11::SequenceLength"),
-                   ge::AscendString("ai.onnx::12::SequenceLength"),
-                   ge::AscendString("ai.onnx::13::SequenceLength"),
-                   ge::AscendString("ai.onnx::14::SequenceLength"),
-                   ge::AscendString("ai.onnx::15::SequenceLength"),
-                   ge::AscendString("ai.onnx::16::SequenceLength"),
-                   ge::AscendString("ai.onnx::17::SequenceLength"),
-                   ge::AscendString("ai.onnx::18::SequenceLength")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::11::SequenceLength"), ge::AscendString("ai.onnx::12::SequenceLength"),
+         ge::AscendString("ai.onnx::13::SequenceLength"), ge::AscendString("ai.onnx::14::SequenceLength"),
+         ge::AscendString("ai.onnx::15::SequenceLength"), ge::AscendString("ai.onnx::16::SequenceLength"),
+         ge::AscendString("ai.onnx::17::SequenceLength"), ge::AscendString("ai.onnx::18::SequenceLength")})
     .ParseParamsFn(ParseParamsSequenceLength)
     .ImplyType(ImplyType::AI_CPU);
-}  // namespace domi
+} // namespace domi

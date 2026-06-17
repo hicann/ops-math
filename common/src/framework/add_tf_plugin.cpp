@@ -16,4 +16,4 @@ REGISTER_CUSTOM_OP("Add")
     .OriginOpType("Add")
     .ParseParamsByOperatorFn(AutoMappingByOpFn)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

@@ -41,4 +41,3 @@ REG_OP(AddExampleAicpu)
 } // namespace ge
 
 #endif // OPS_OP_PROTO_INC_AddEXAMPLE_H_
-

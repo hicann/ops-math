@@ -44,19 +44,14 @@ static Status parse_params_reduce_sum_square(const Message* op_src, ge::Operator
 
 // register ReduceSumSquare op info to GE
 REGISTER_CUSTOM_OP("SquareSumV1")
-  .FrameworkType(ONNX)
-  .OriginOpType({ge::AscendString("ai.onnx::1::ReduceSumSquare"),
-                 ge::AscendString("ai.onnx::8::ReduceSumSquare"),
-                 ge::AscendString("ai.onnx::9::ReduceSumSquare"),
-                 ge::AscendString("ai.onnx::10::ReduceSumSquare"),
-                 ge::AscendString("ai.onnx::11::ReduceSumSquare"),
-                 ge::AscendString("ai.onnx::12::ReduceSumSquare"),
-                 ge::AscendString("ai.onnx::13::ReduceSumSquare"),
-                 ge::AscendString("ai.onnx::14::ReduceSumSquare"),
-                 ge::AscendString("ai.onnx::15::ReduceSumSquare"),
-                 ge::AscendString("ai.onnx::16::ReduceSumSquare"),
-                 ge::AscendString("ai.onnx::17::ReduceSumSquare"),
-                 ge::AscendString("ai.onnx::18::ReduceSumSquare")})
-  .ParseParamsFn(parse_params_reduce_sum_square)
-  .ImplyType(ImplyType::TVM);
-}  // namespace domi
+    .FrameworkType(ONNX)
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::1::ReduceSumSquare"), ge::AscendString("ai.onnx::8::ReduceSumSquare"),
+         ge::AscendString("ai.onnx::9::ReduceSumSquare"), ge::AscendString("ai.onnx::10::ReduceSumSquare"),
+         ge::AscendString("ai.onnx::11::ReduceSumSquare"), ge::AscendString("ai.onnx::12::ReduceSumSquare"),
+         ge::AscendString("ai.onnx::13::ReduceSumSquare"), ge::AscendString("ai.onnx::14::ReduceSumSquare"),
+         ge::AscendString("ai.onnx::15::ReduceSumSquare"), ge::AscendString("ai.onnx::16::ReduceSumSquare"),
+         ge::AscendString("ai.onnx::17::ReduceSumSquare"), ge::AscendString("ai.onnx::18::ReduceSumSquare")})
+    .ParseParamsFn(parse_params_reduce_sum_square)
+    .ImplyType(ImplyType::TVM);
+} // namespace domi

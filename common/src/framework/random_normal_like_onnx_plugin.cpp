@@ -109,18 +109,14 @@ static Status ParseOpToGraphRandomNormalLike(const ge::Operator& op, ge::Graph& 
 // register Addcmul op info to GE
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::8::RandomNormalLike"),
-                   ge::AscendString("ai.onnx::9::RandomNormalLike"),
-                   ge::AscendString("ai.onnx::10::RandomNormalLike"),
-                   ge::AscendString("ai.onnx::11::RandomNormalLike"),
-                   ge::AscendString("ai.onnx::12::RandomNormalLike"),
-                   ge::AscendString("ai.onnx::13::RandomNormalLike"),
-                   ge::AscendString("ai.onnx::14::RandomNormalLike"),
-                   ge::AscendString("ai.onnx::15::RandomNormalLike"),
-                   ge::AscendString("ai.onnx::16::RandomNormalLike"),
-                   ge::AscendString("ai.onnx::17::RandomNormalLike"),
-                   ge::AscendString("ai.onnx::18::RandomNormalLike")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::8::RandomNormalLike"), ge::AscendString("ai.onnx::9::RandomNormalLike"),
+         ge::AscendString("ai.onnx::10::RandomNormalLike"), ge::AscendString("ai.onnx::11::RandomNormalLike"),
+         ge::AscendString("ai.onnx::12::RandomNormalLike"), ge::AscendString("ai.onnx::13::RandomNormalLike"),
+         ge::AscendString("ai.onnx::14::RandomNormalLike"), ge::AscendString("ai.onnx::15::RandomNormalLike"),
+         ge::AscendString("ai.onnx::16::RandomNormalLike"), ge::AscendString("ai.onnx::17::RandomNormalLike"),
+         ge::AscendString("ai.onnx::18::RandomNormalLike")})
     .ParseParamsFn(ParseParamsRandomNormalLike)
     .ParseOpToGraphFn(ParseOpToGraphRandomNormalLike)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

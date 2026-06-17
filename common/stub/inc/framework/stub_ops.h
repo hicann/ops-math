@@ -43,24 +43,24 @@ REG_OP(Data)
     .ATTR(index, Int, 0)
     .OP_END_FACTORY_REG(Data)
 
-/**
-*@brief Creates a constant tensor from a tensor-like object. This operator is used for inference.
-Operator Const has the same definition as operator Constant. \n
+    /**
+    *@brief Creates a constant tensor from a tensor-like object. This operator is used for inference.
+    Operator Const has the same definition as operator Constant. \n
 
-*@par Attributes:
-*value: Required. The value and type of the resulting tensor, and no restrictions on type. \n
+    *@par Attributes:
+    *value: Required. The value and type of the resulting tensor, and no restrictions on type. \n
 
-*@par Outputs:
-*y: A constant tensor. \n
+    *@par Outputs:
+    *y: A constant tensor. \n
 
-*@par Third-party framework compatibility
-*Compatible with the TensorFlow operator Const.
-*/
-REG_OP(Const)
+    *@par Third-party framework compatibility
+    *Compatible with the TensorFlow operator Const.
+    */
+    REG_OP(Const)
     .OUTPUT(y, TensorType::ALL())
     .ATTR(value, Tensor, Tensor())
     .OP_END_FACTORY_REG(Const)
 
-}  // namespace ge
+} // namespace ge
 
-#endif  // MATH_COMMON_STUB_OPS_H
+#endif // MATH_COMMON_STUB_OPS_H

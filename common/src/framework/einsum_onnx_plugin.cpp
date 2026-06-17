@@ -38,17 +38,13 @@ static Status ParseParamsEinsum(const Message* op_src, ge::Operator& op_dest)
 // register Einsum op info to GE
 REGISTER_CUSTOM_OP("Einsum")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::8::Einsum"),
-                   ge::AscendString("ai.onnx::9::Einsum"),
-                   ge::AscendString("ai.onnx::10::Einsum"),
-                   ge::AscendString("ai.onnx::11::Einsum"),
-                   ge::AscendString("ai.onnx::12::Einsum"),
-                   ge::AscendString("ai.onnx::13::Einsum"),
-                   ge::AscendString("ai.onnx::14::Einsum"),
-                   ge::AscendString("ai.onnx::15::Einsum"),
-                   ge::AscendString("ai.onnx::16::Einsum"),
-                   ge::AscendString("ai.onnx::17::Einsum"),
-                   ge::AscendString("ai.onnx::18::Einsum")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::8::Einsum"), ge::AscendString("ai.onnx::9::Einsum"),
+         ge::AscendString("ai.onnx::10::Einsum"), ge::AscendString("ai.onnx::11::Einsum"),
+         ge::AscendString("ai.onnx::12::Einsum"), ge::AscendString("ai.onnx::13::Einsum"),
+         ge::AscendString("ai.onnx::14::Einsum"), ge::AscendString("ai.onnx::15::Einsum"),
+         ge::AscendString("ai.onnx::16::Einsum"), ge::AscendString("ai.onnx::17::Einsum"),
+         ge::AscendString("ai.onnx::18::Einsum")})
     .ParseParamsFn(ParseParamsEinsum)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

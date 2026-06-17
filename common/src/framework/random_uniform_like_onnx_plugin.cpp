@@ -110,18 +110,14 @@ static Status ParseOpToGraphRandomUniformLike(const ge::Operator& op, ge::Graph&
 // register Addcmul op info to GE
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::8::RandomUniformLike"),
-                   ge::AscendString("ai.onnx::9::RandomUniformLike"),
-                   ge::AscendString("ai.onnx::10::RandomUniformLike"),
-                   ge::AscendString("ai.onnx::11::RandomUniformLike"),
-                   ge::AscendString("ai.onnx::12::RandomUniformLike"),
-                   ge::AscendString("ai.onnx::13::RandomUniformLike"),
-                   ge::AscendString("ai.onnx::14::RandomUniformLike"),
-                   ge::AscendString("ai.onnx::15::RandomUniformLike"),
-                   ge::AscendString("ai.onnx::16::RandomUniformLike"),
-                   ge::AscendString("ai.onnx::17::RandomUniformLike"),
-                   ge::AscendString("ai.onnx::18::RandomUniformLike")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::8::RandomUniformLike"), ge::AscendString("ai.onnx::9::RandomUniformLike"),
+         ge::AscendString("ai.onnx::10::RandomUniformLike"), ge::AscendString("ai.onnx::11::RandomUniformLike"),
+         ge::AscendString("ai.onnx::12::RandomUniformLike"), ge::AscendString("ai.onnx::13::RandomUniformLike"),
+         ge::AscendString("ai.onnx::14::RandomUniformLike"), ge::AscendString("ai.onnx::15::RandomUniformLike"),
+         ge::AscendString("ai.onnx::16::RandomUniformLike"), ge::AscendString("ai.onnx::17::RandomUniformLike"),
+         ge::AscendString("ai.onnx::18::RandomUniformLike")})
     .ParseParamsFn(ParseParamsRandomUniformLike)
     .ParseOpToGraphFn(ParseOpToGraphRandomUniformLike)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

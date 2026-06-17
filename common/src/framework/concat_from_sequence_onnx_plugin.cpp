@@ -45,14 +45,11 @@ static Status ParseParamConcatFromSequence(const Message* op_src, ge::Operator& 
 
 REGISTER_CUSTOM_OP("ConcatFromSequence")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::11::ConcatFromSequence"),
-                   ge::AscendString("ai.onnx::12::ConcatFromSequence"),
-                   ge::AscendString("ai.onnx::13::ConcatFromSequence"),
-                   ge::AscendString("ai.onnx::14::ConcatFromSequence"),
-                   ge::AscendString("ai.onnx::15::ConcatFromSequence"),
-                   ge::AscendString("ai.onnx::16::ConcatFromSequence"),
-                   ge::AscendString("ai.onnx::17::ConcatFromSequence"),
-                   ge::AscendString("ai.onnx::18::ConcatFromSequence")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::11::ConcatFromSequence"), ge::AscendString("ai.onnx::12::ConcatFromSequence"),
+         ge::AscendString("ai.onnx::13::ConcatFromSequence"), ge::AscendString("ai.onnx::14::ConcatFromSequence"),
+         ge::AscendString("ai.onnx::15::ConcatFromSequence"), ge::AscendString("ai.onnx::16::ConcatFromSequence"),
+         ge::AscendString("ai.onnx::17::ConcatFromSequence"), ge::AscendString("ai.onnx::18::ConcatFromSequence")})
     .ParseParamsFn(ParseParamConcatFromSequence)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

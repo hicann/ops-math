@@ -39,8 +39,9 @@ int64_t GetShapeSize(const std::vector<int64_t>& shape)
     return shapeSize;
 }
 
-void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr,
-                    const std::vector<float>& selfXHostData, const std::vector<float>& selfYHostData)
+void PrintOutResult(
+    std::vector<int64_t>& shape, void** deviceAddr, const std::vector<float>& selfXHostData,
+    const std::vector<float>& selfYHostData)
 {
     auto size = GetShapeSize(shape);
     std::vector<float> resultData(size, 0);
@@ -50,7 +51,9 @@ void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr,
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
     LOG_PRINT("Print the first %u groups of data: \n", PRINT_LENGTH);
     for (int64_t i = 0; i < PRINT_LENGTH; i++) {
-        LOG_PRINT("add_example first input[%ld] is: %f, second input[%ld] is: %f, result[%ld] is: %f\n", i, selfXHostData[i], i, selfYHostData[i], i, resultData[i]);
+        LOG_PRINT(
+            "add_example first input[%ld] is: %f, second input[%ld] is: %f, result[%ld] is: %f\n", i, selfXHostData[i],
+            i, selfYHostData[i], i, resultData[i]);
     }
 }
 
@@ -120,10 +123,7 @@ int main()
     const uint32_t seed = 42;
     std::mt19937 gen(seed);
     std::uniform_int_distribution<int> dist(-1024, 1024);
-    std::generate(selfYHostData.begin(), selfYHostData.end(), [&dist, &gen]() {
-        return dist(gen);
-    });
-    
+    std::generate(selfYHostData.begin(), selfYHostData.end(), [&dist, &gen]() { return dist(gen); });
 
     ret = CreateAclTensor(selfYHostData, selfYShape, &selfYDeviceAddr, aclDataType::ACL_FLOAT, &selfY);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
