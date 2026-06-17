@@ -30,11 +30,12 @@ const float FP32_ZERO_015 = 0.0157396831;
 const float FP32_ZERO_NEG_052 = -0.0523039624;
 const float FP32_ZERO_133 = 0.133152977;
 const float FP32_ZERO_NEG_333 = -0.333327681;
-const float FP32_TWENTY = 20.0;
 const float FP32_TWO = 2.0;
 const float FP32_ONE = 1.0;
-const float FP32_NEG_ONE = -1.0;
-const float FP32_ZERO_55 = 0.55;
+const float FP32_ZERO_NEG_TWO = -2.0;
+const float FP32_ZERO_6 = 0.60000002384185791016;
+const float FP32_SAT_BOUND = 9.010913848876953125;
+const uint32_t FP32_SIGN_MASK = 0x80000000;
 
 #ifdef __CCE_AICORE__
 constexpr static AscendC::MicroAPI::CastTrait castTrait0 = { AscendC::MicroAPI::RegLayout::ZERO,
@@ -62,12 +63,18 @@ struct TanhCustom : public Vec::ElemwiseUnaryOP<T, T> {
         MicroAPI::RegTensor<float, MicroAPI::RegTraitNumOne> vregOutput;
         MicroAPI::RegTensor<float, MicroAPI::RegTraitNumOne> vregValue1;
         MicroAPI::RegTensor<float, MicroAPI::RegTraitNumOne> vregValue2;
+        MicroAPI::RegTensor<float, MicroAPI::RegTraitNumOne> vregOne;
+        MicroAPI::RegTensor<uint32_t, MicroAPI::RegTraitNumOne> vregSign;
+        MicroAPI::RegTensor<uint32_t, MicroAPI::RegTraitNumOne> vregSignMask;
         MicroAPI::MaskReg mask;
         MicroAPI::MaskReg cmpMaskReg;
+        MicroAPI::MaskReg satMaskReg;
         if constexpr(std::is_same_v<T, float>) {
             __VEC_SCOPE__ {
                 MicroAPI::Duplicate(vregValue1, FP32_ZERO_133);
                 MicroAPI::Duplicate(vregValue2, FP32_ZERO_NEG_333);
+                MicroAPI::Duplicate(vregOne, FP32_ONE);
+                MicroAPI::Duplicate(vregSignMask, FP32_SIGN_MASK);
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                     mask = MicroAPI::UpdateMask<float, MicroAPI::RegTraitNumOne>(count);
                     // OpCopyIn
@@ -82,15 +89,21 @@ struct TanhCustom : public Vec::ElemwiseUnaryOP<T, T> {
                     MicroAPI::FusedMulDstAdd(vregOutput, vregInput, vregInput, mask);
 
                     MicroAPI::Abs(vregInputAbs, vregInput, mask);
-                    MicroAPI::Mins(vregInput, vregInput, FP32_TWENTY, mask);
-                    MicroAPI::Muls(vregInput, vregInput, FP32_TWO, mask);
-                    MicroAPI::Exp(vregInput, vregInput, mask);
-                    MicroAPI::Adds(vregInputMid, vregInput, FP32_NEG_ONE, mask);
-                    MicroAPI::Adds(vregInputSqr, vregInput, FP32_ONE, mask);
-                    MicroAPI::Div(vregInputMid, vregInputMid, vregInputSqr, mask);
+                    MicroAPI::Muls(vregInputMid, vregInputAbs, FP32_TWO, mask);
+                    MicroAPI::Exp(vregInputMid, vregInputMid, mask);
+                    MicroAPI::Adds(vregInputMid, vregInputMid, FP32_ONE, mask);
+                    MicroAPI::Div(vregInputMid, vregOne, vregInputMid, mask);
+                    MicroAPI::Muls(vregInputMid, vregInputMid, FP32_ZERO_NEG_TWO, mask);
+                    MicroAPI::Adds(vregInputMid, vregInputMid, FP32_ONE, mask);
+                    MicroAPI::CompareScalar<float, CMPMODE::GE>(satMaskReg, vregInputAbs, FP32_SAT_BOUND, mask);
+                    MicroAPI::Select(vregInputMid, vregOne, vregInputMid, satMaskReg);
 
-                    MicroAPI::CompareScalar<float, CMPMODE::LT>(cmpMaskReg, vregInputAbs, FP32_ZERO_55, mask);
-                    MicroAPI::Select(vregOutput, vregOutput, vregInputMid, cmpMaskReg);
+                    MicroAPI::And(vregSign, vregSignMask, (MicroAPI::RegTensor<uint32_t, MicroAPI::RegTraitNumOne>&)vregInput, mask);
+                    MicroAPI::Or((MicroAPI::RegTensor<uint32_t, MicroAPI::RegTraitNumOne>&)vregInputMid,
+                        (MicroAPI::RegTensor<uint32_t, MicroAPI::RegTraitNumOne>&)vregInputMid, vregSign, mask);
+
+                    MicroAPI::CompareScalar<float, CMPMODE::GE>(cmpMaskReg, vregInputAbs, FP32_ZERO_6, mask);
+                    MicroAPI::Select(vregOutput, vregInputMid, vregOutput, cmpMaskReg);
                     // OpCopyOut
                     MicroAPI::DataCopy<T, MicroAPI::StoreDist::DIST_NORM_B32>((__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
                 }
@@ -101,6 +114,8 @@ struct TanhCustom : public Vec::ElemwiseUnaryOP<T, T> {
             __VEC_SCOPE__ {
                 MicroAPI::Duplicate(vregValue1, FP32_ZERO_133);
                 MicroAPI::Duplicate(vregValue2, FP32_ZERO_NEG_333);
+                MicroAPI::Duplicate(vregOne, FP32_ONE);
+                MicroAPI::Duplicate(vregSignMask, FP32_SIGN_MASK);
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                     mask = MicroAPI::UpdateMask<float, MicroAPI::RegTraitNumOne>(count);
                     // OpCopyIn
@@ -116,15 +131,21 @@ struct TanhCustom : public Vec::ElemwiseUnaryOP<T, T> {
                     MicroAPI::FusedMulDstAdd(vregOutput, vregInput, vregInput, mask);
 
                     MicroAPI::Abs(vregInputAbs, vregInput, mask);
-                    MicroAPI::Mins(vregInput, vregInput, FP32_TWENTY, mask);
-                    MicroAPI::Muls(vregInput, vregInput, FP32_TWO, mask);
-                    MicroAPI::Exp(vregInput, vregInput, mask);
-                    MicroAPI::Adds(vregInputMid, vregInput, FP32_NEG_ONE, mask);
-                    MicroAPI::Adds(vregInputSqr, vregInput, FP32_ONE, mask);
-                    MicroAPI::Div(vregInputMid, vregInputMid, vregInputSqr, mask);
+                    MicroAPI::Muls(vregInputMid, vregInputAbs, FP32_TWO, mask);
+                    MicroAPI::Exp(vregInputMid, vregInputMid, mask);
+                    MicroAPI::Adds(vregInputMid, vregInputMid, FP32_ONE, mask);
+                    MicroAPI::Div(vregInputMid, vregOne, vregInputMid, mask);
+                    MicroAPI::Muls(vregInputMid, vregInputMid, FP32_ZERO_NEG_TWO, mask);
+                    MicroAPI::Adds(vregInputMid, vregInputMid, FP32_ONE, mask);
+                    MicroAPI::CompareScalar<float, CMPMODE::GE>(satMaskReg, vregInputAbs, FP32_SAT_BOUND, mask);
+                    MicroAPI::Select(vregInputMid, vregOne, vregInputMid, satMaskReg);
 
-                    MicroAPI::CompareScalar<float, CMPMODE::LT>(cmpMaskReg, vregInputAbs, FP32_ZERO_55, mask);
-                    MicroAPI::Select(vregOutput, vregOutput, vregInputMid, cmpMaskReg);
+                    MicroAPI::And(vregSign, vregSignMask, (MicroAPI::RegTensor<uint32_t, MicroAPI::RegTraitNumOne>&)vregInput, mask);
+                    MicroAPI::Or((MicroAPI::RegTensor<uint32_t, MicroAPI::RegTraitNumOne>&)vregInputMid,
+                        (MicroAPI::RegTensor<uint32_t, MicroAPI::RegTraitNumOne>&)vregInputMid, vregSign, mask);
+
+                    MicroAPI::CompareScalar<float, CMPMODE::GE>(cmpMaskReg, vregInputAbs, FP32_ZERO_6, mask);
+                    MicroAPI::Select(vregOutput, vregInputMid, vregOutput, cmpMaskReg);
 
                     MicroAPI::Cast<T, float, castTrait1>(vregOutput16, vregOutput, mask);
                     // OpCopyOut
