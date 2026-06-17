@@ -17,6 +17,7 @@
 #include "ge/compliant_node_builder.h"
 #include "es_math_ops.h"
 #include "log/log.h"
+#include "version/ge-compiler_version.h"
 #include "../../../op_graph/fusion_pass/permute_fusion_pass.h"
 
 using namespace std;
@@ -279,4 +280,75 @@ TEST_F(PermuteFusionPassTest, nonTransposeDPlatformUsesTranspose)
     // Should produce Transpose, not TransposeD
     EXPECT_TRUE(HasNodeType(resultGraph, "Transpose"));
     EXPECT_FALSE(HasNodeType(resultGraph, "TransposeD"));
+}
+
+// ==================== Compatibility tests ====================
+
+// Verify that the pass compiles and the version guard is active.
+// GE_COMPILER_VERSION_NUM must be >= 90000000 for the pass to be enabled.
+TEST_F(PermuteFusionPassTest, compileTimeVersionGuard)
+{
+    // If this test compiles and runs, the GE_COMPILER_VERSION_NUM >= 90000000
+    // guard is satisfied (otherwise the pass class wouldn't be defined).
+    EXPECT_GE(GE_COMPILER_VERSION_NUM, 90000000);
+}
+
+// Verify that the pass can be instantiated and returns patterns
+// (validates that the #if GE_COMPILER_VERSION_NUM >= 90000000 guard
+// enables the pass at current compiler version).
+TEST_F(PermuteFusionPassTest, passInstantiationTest)
+{
+    PermuteFusionPass pass;
+    auto patterns = pass.Patterns();
+    EXPECT_GT(patterns.size(), 0);
+}
+
+// Verify the pass works correctly with the kCompatibleInherited stage.
+// This confirms the stage compatibility mechanism is functional on all platforms.
+TEST_F(PermuteFusionPassTest, compatibleInheritedStageTest910)
+{
+    // Ascend910_93: Permute -> TransposeD via kCompatibleInherited stage
+    SetPlatform("Ascend910_93");
+
+    auto resultGraph = BuildPermuteGraphAndRunPass(
+        std::vector<int64_t>{4, 3, 2, 1},
+        std::vector<int64_t>{0, 2, 3, 1});
+
+    // Verify the pass correctly replaced Permute with TransposeD
+    EXPECT_TRUE(HasNodeType(resultGraph, "TransposeD"));
+    EXPECT_FALSE(HasNodeType(resultGraph, "Transpose"));
+    EXPECT_FALSE(HasNodeType(resultGraph, "Permute"));
+}
+
+// Verify the pass works with kCompatibleInherited stage on Ascend950 (new platform).
+TEST_F(PermuteFusionPassTest, compatibleInheritedStageTest950)
+{
+    SetPlatform("Ascend950");
+
+    auto resultGraph = BuildPermuteGraphAndRunPass(
+        std::vector<int64_t>{4, 3, 2, 1},
+        std::vector<int64_t>{0, 2, 3, 1});
+
+    // Verify the pass correctly replaced Permute with Transpose on new platforms
+    EXPECT_TRUE(HasNodeType(resultGraph, "Transpose"));
+    EXPECT_FALSE(HasNodeType(resultGraph, "TransposeD"));
+    EXPECT_FALSE(HasNodeType(resultGraph, "Permute"));
+}
+
+// Verify the pass works with kCompatibleInherited stage on multiple platforms
+TEST_F(PermuteFusionPassTest, compatibleInheritedStageMultiPlatform)
+{
+    // Test on Ascend910_93 (TransposeD platform)
+    SetPlatform("Ascend910_93");
+    auto graph910 = BuildPermuteGraphAndRunPass(
+        std::vector<int64_t>{8, 16},
+        std::vector<int64_t>{1, 0});
+    EXPECT_TRUE(HasNodeType(graph910, "TransposeD"));
+
+    // Test on Ascend950 (Transpose platform)
+    SetPlatform("Ascend950");
+    auto graph950 = BuildPermuteGraphAndRunPass(
+        std::vector<int64_t>{8, 16},
+        std::vector<int64_t>{1, 0});
+    EXPECT_TRUE(HasNodeType(graph950, "Transpose"));
 }

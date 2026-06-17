@@ -26,9 +26,5 @@ protected:
     std::unique_ptr<Graph> Replacement(const std::unique_ptr<MatchResult>& matchResult) override;
 };
 
-static void GetInputsInfo(const std::vector<SubgraphInput>& subgraphInputs, std::vector<Shape>& inputShapes,
-    std::vector<DataType>& inputDtypes, std::vector<Format>& inputFormats);
-static Status InferShape(const GraphUniqPtr& replaceGraph, const std::vector<SubgraphInput>& subgraphInputs);
-
 } // namespace ops
 #endif // MATH_REDUCE_MEAN_WITH_CAST_FUSION_PASS_H
