@@ -32,7 +32,7 @@ constexpr int TRUNCATE_DIV_CAST_MODE_NONE = 0;
 constexpr int TRUNCATE_DIV_CAST_MODE_RINT = 1;
 constexpr int8_t SAT_POS = 60;
 constexpr int64_t INT64_MAX_VALUE = 9223372036854775807;
-constexpr int64_t INT32_MAX_VALUE = 2147483647;
+constexpr int64_t UINT32_MAX_VALUE = 4294967295;
 const uint32_t UINT32_SIGN = 0x80000000;
 const uint16_t UINT16_SIGN = 0x8000;
 constexpr uint32_t TRUNCATE_DIV_SIMT_THREADS = 1024;
@@ -185,7 +185,7 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(TRUNCATE_DIV_SIMT_THREADS) inline void Trunc
         bool pos_div_zero = ((src1[index] >= 0) && (src1[index] < INT64_MAX_VALUE) && (src2[index] == 0));
         bool div_zero = (src2[index] == 0);
         if (pos_div_zero) {
-            dst[index] = INT32_MAX_VALUE;
+            dst[index] = UINT32_MAX_VALUE;
         } else if (div_zero) {
             dst[index] = -1;
         } else {

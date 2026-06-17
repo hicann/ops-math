@@ -27,7 +27,7 @@ namespace ge {
  * @par Inputs:
  * Two inputs, including:
  * @li x1: A ND Tensor. Must be one of the following types:
- *    bfloat16, float16, float32, double, int8, uint8, uint16, int16, int32, int64, complex64, complex128. The format can be ND.
+ *    bfloat16, float16, float32, double, int8, uint8, uint16, int16, int32, int64. The format can be ND.
  * @li x2: A ND Tensor. Has the same dtype and format as input "x1". \n
 
  * @par Outputs:
@@ -39,16 +39,13 @@ namespace ge {
 REG_OP(TruncateDiv)
     .INPUT(
         x1, TensorType(
-                {DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT8, DT_UINT8, DT_INT32, DT_DOUBLE, DT_UINT16, DT_INT16, DT_INT64,
-                 DT_COMPLEX64, DT_COMPLEX128}))
+                {DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT8, DT_UINT8, DT_INT32, DT_DOUBLE, DT_UINT16, DT_INT16, DT_INT64}))
     .INPUT(
         x2, TensorType(
-                {DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT8, DT_UINT8, DT_INT32, DT_DOUBLE, DT_UINT16, DT_INT16, DT_INT64,
-                 DT_COMPLEX64, DT_COMPLEX128}))
+                {DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT8, DT_UINT8, DT_INT32, DT_DOUBLE, DT_UINT16, DT_INT16, DT_INT64}))
     .OUTPUT(
         y, TensorType(
-               {DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT8, DT_UINT8, DT_INT32, DT_DOUBLE, DT_UINT16, DT_INT16, DT_INT64,
-                DT_COMPLEX64, DT_COMPLEX128}))
+                {DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT8, DT_UINT8, DT_INT32, DT_DOUBLE, DT_UINT16, DT_INT16, DT_INT64}))
     .OP_END_FACTORY_REG(TruncateDiv)
 
 } // namespace ge
