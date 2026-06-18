@@ -48,21 +48,21 @@
       <td>x1</td>
       <td>输入</td>
       <td>公式中的被除数。</td>
-      <td>FLOAT16、FLOAT、INT32、UINT8、INT8、INT64、INT16</td>
+      <td>BFLOAT16、FLOAT16、FLOAT、INT32、UINT8、INT8、INT64、INT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>x2</td>
       <td>输入</td>
       <td>公式中的除数。</td>
-      <td>FLOAT16、FLOAT、INT32、UINT8、INT8、INT64、INT16</td>
+      <td>BFLOAT16、FLOAT16、FLOAT、INT32、UINT8、INT8、INT64、INT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
       <td>公式中的out，截断除法结果。</td>
-      <td>FLOAT16、FLOAT、INT32、UINT8、INT8、INT64、INT16</td>
+      <td>BFLOAT16、FLOAT16、FLOAT、INT32、UINT8、INT8、INT64、INT16</td>
       <td>ND</td>
     </tr>
   </tbody></table>
