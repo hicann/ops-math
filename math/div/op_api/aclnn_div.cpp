@@ -265,6 +265,10 @@ static inline op::DataType InferDivsModeDtype(
         promoteType = DataType::DT_FLOAT;
     }
 
+    if (mode == MODE_TRUNC_DIV && (promoteType == DataType::DT_BF16 || promoteType == DataType::DT_FLOAT16) && IsRegBase(npuArch)) {
+        promoteType = DataType::DT_FLOAT;
+    }
+
     if (promoteType == DataType::DT_COMPLEX32) {
         promoteType = DataType::DT_COMPLEX64;
     }
