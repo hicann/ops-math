@@ -57,6 +57,7 @@ public:
     constexpr static uint32_t MAX_REPEAT_TIME = 255;
     constexpr static uint32_t MAX_REPEAT_TIME_ELEM = MAX_REPEAT_TIME * VL_ELEM;
     constexpr static uint32_t MAX_FOLD = 8; // 双向折叠场景下，最大折叠次数为8
+    constexpr static uint32_t kMinMultiFoldCount = 1;
 
 public:
     __aicore__ inline void BaseInit(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, const TwowaySklanskyInitData& initData);
@@ -70,7 +71,7 @@ private:
     __aicore__ inline void CalcAddFactorIndex();
     __aicore__ inline void SetCopyParam(
         int32_t iter, uint32_t rCountReal, uint32_t& ubOffset, int64_t& gmOffset, DataCopyExtParams& dataCopyParams);
-    __aicore__ inline void VfNoAlignCopyOut(uint32_t dirtyDataNum);
+    __aicore__ inline void VfNoAlignCopyOut(uint32_t dirtyDataNum, uint32_t actualNum);
     __aicore__ inline void Compute();
     __aicore__ inline void FirstSkalansky();
     __aicore__ inline void VfFirstAdd(uint16_t startOffset, uint16_t addCircle, uint16_t addCount, uint16_t addOffset);
@@ -270,7 +271,7 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::Compute(
 }
 
 template <typename DataType, typename PromoteDataType>
-__aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfNoAlignCopyOut(uint32_t dirtyDataNum)
+__aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfNoAlignCopyOut(uint32_t dirtyDataNum, uint32_t actualNum)
 {
     __ubuf__ DataType* outputPtr = (__ubuf__ DataType*)outputLocal_.GetPhyAddr();
     __ubuf__ DataType* outNoAlignPtr = (__ubuf__ DataType*)outNoAlignBuffer_.GetPhyAddr();
@@ -286,7 +287,7 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfNoAlig
     }
     DataCopyExtParams dataCopyNoAlignParams;
     dataCopyNoAlignParams.blockCount = 1;
-    dataCopyNoAlignParams.blockLen = BLOCK_SIZE;
+    dataCopyNoAlignParams.blockLen = actualNum * sizeof(DataType);
     dataCopyNoAlignParams.srcStride = 0;
     dataCopyNoAlignParams.dstStride = 0;
 
@@ -306,18 +307,22 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::BaseCopy
         Cast(outputLocal_, secondfoldBuffer_, RoundMode::CAST_RINT, processData_.rFoldCount * foldOneElem_);
     }
     uint32_t ubOffset = 0;
+    uint32_t dirtyDataNum = 0;
+    uint32_t mixDataLen = BLOCK_SIZE / sizeof(DataType);
     DataCopyExtParams dataCopyParams;
     dataCopyParams.blockCount = 1;
     dataCopyParams.blockLen = processData_.ubFactorN * processData_.ubFactorR * sizeof(DataType);
     dataCopyParams.srcStride = 0;
     dataCopyParams.dstStride = 0;
     if (processData_.isReverse) {
-        uint32_t dirtyDataNum =
-            processData_.ubFactorN * (processData_.rFoldCount * processData_.rFoldAfterSize - processData_.ubFactorR);
+        if (processData_.rFoldCount > kMinMultiFoldCount) {
+            dirtyDataNum =
+                processData_.ubFactorN * (processData_.rFoldCount * processData_.rFoldAfterSize - processData_.ubFactorR);
+        }
         if (dirtyDataNum > 0) {
-            VfNoAlignCopyOut(dirtyDataNum);
-            uint32_t mixDataLen = BLOCK_SIZE / sizeof(DataType);
             uint32_t remainder = dirtyDataNum % mixDataLen;
+            VfNoAlignCopyOut(dirtyDataNum, mixDataLen - remainder);
+            
             uint32_t effectiveDataHead = dirtyDataNum + (mixDataLen - remainder);
             outputOffset_ = outputOffset_ + (mixDataLen - remainder); // 调整输出起始位置到对齐
             ubOffset = effectiveDataHead;
@@ -388,7 +393,9 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfGather
     int32_t nSize = processData_.ubFactorN;
     int32_t reverseFlag = reverseFlag_;
     uint32_t dstOffset = 0;
-    uint32_t dstBaseOffset = processData_.isReverse ? processData_.rFoldCount * foldOneElem_ - numAlignBlock_ : 0;
+    uint32_t baseOffset = processData_.rFoldCount * foldOneElem_ < numAlignBlock_ ? 0:
+        processData_.rFoldCount * foldOneElem_ - numAlignBlock_;
+    uint32_t dstBaseOffset = processData_.isReverse ? baseOffset : 0;
     uint32_t num = foldOneElem_;
     uint32_t numAlignBlock = numAlignBlock_;
     uint16_t times = CeilDivision(num, VL_ELEM);
