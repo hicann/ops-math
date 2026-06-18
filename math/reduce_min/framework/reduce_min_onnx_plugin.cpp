@@ -17,20 +17,6 @@ using ge::Operator;
 namespace domi {
 using NodeProto = ge::onnx::NodeProto;
 
-static Status GetInputTensorDimNum(const Operator& data_op, int64_t& dim_num)
-{
-    ge::TensorDesc input_desc = data_op.GetInputDesc(0);
-    auto shape = input_desc.GetShape();
-    if (shape.GetDimNum() <= 0) {
-        OP_LOGE("GetInputTensorDimNum", "Get input shape is invalid.");
-        return FAILED;
-    }
-
-    dim_num = shape.GetDimNum();
-    OP_LOGI(GetOpName(data_op).c_str(), "GetInputTensorDimNum is: %ld", dim_num);
-    return SUCCESS;
-}
-
 static Status ParseParamsReduceMin(const Message* op_src, ge::Operator& op_dest)
 {
     const NodeProto* node = dynamic_cast<const NodeProto*>(op_src);
@@ -65,6 +51,7 @@ static Status ParseParamsReduceMin(const Message* op_src, ge::Operator& op_dest)
     op_dest.SetAttr("name", node->name());
     op_dest.SetAttr("axes", tensor);
     op_dest.SetAttr("keep_dims", keep_dims);
+    op_dest.SetAttr("noop_with_empty_axes", 0);
     const int input = 2;
     const int output = 1;
     op_dest.DynamicInputRegister("x", input);
@@ -90,24 +77,6 @@ static Status ParseOpToGraphReduceMin(const ge::Operator& op, Graph& graph)
         return FAILED;
     }
 
-    if (axes.GetSize() == 0) {
-        int64_t input_dim_num = 0;
-        if (GetInputTensorDimNum(op, input_dim_num) != SUCCESS) {
-            OP_LOGE(GetOpName(op).c_str(), "Failed to get input tensor dimensions");
-            return FAILED;
-        }
-        std::vector<int64_t> v_axes;
-        for (int64_t i = 0; i < input_dim_num; ++i) {
-            v_axes.push_back(i);
-        }
-        int num = v_axes.size();
-        std::vector<int64_t> dims = {};
-        if (num != 0) {
-            dims.push_back(num);
-        }
-        axes = Vec2Tensor(v_axes, dims, ge::DT_INT64);
-    }
-
     auto data1 = op::Const((ori_name + "_data1").c_str()).set_attr_value(axes);
     auto reducemin = op::ReduceMin((ori_name + "_ReduceMin").c_str()).set_input_x(data0).set_input_axes(data1);
 
@@ -117,6 +86,13 @@ static Status ParseOpToGraphReduceMin(const ge::Operator& op, Graph& graph)
         return FAILED;
     }
     reducemin.set_attr_keep_dims(keep_dims);
+
+    int noop_with_empty_axes = 0;
+    if (op.GetAttr("noop_with_empty_axes", noop_with_empty_axes) != SUCCESS) {
+        OP_LOGE(GetOpName(op).c_str(), "get noop_with_empty_axes from op failed");
+        return FAILED;
+    }
+    reducemin.set_attr_noop_with_empty_axes(noop_with_empty_axes);
 
     std::vector<ge::Operator> inputs{data0};
     std::vector<std::pair<ge::Operator, std::vector<size_t> > > outputs;
@@ -145,6 +121,14 @@ static Status ParseParamsReduceMin13(const Message* op_src, ge::Operator& op_des
             noop_with_empty_axes = attr.i();
         }
     }
+
+    // opset 13+: axes changed from attribute to input.
+    // When input_size == 1, there is no axes input; store an empty axes tensor
+    // so ParseOpToGraph can retrieve it via GetAttr and pass to Const.
+    std::vector<int> axes = {};
+    std::vector<int64_t> dims = {0};
+    ge::Tensor axes_tensor = Vec2Tensor(axes, dims, ge::DT_INT32, ge::FORMAT_NCHW);
+    op_dest.SetAttr("axes", axes_tensor);
 
     op_dest.SetAttr("name", node->name());
     op_dest.SetAttr("input_size", input_size);
@@ -195,31 +179,20 @@ static Status ParseOpToGraphReduceMin13(const Operator& op, Graph& graph)
     }
     auto data0 = op::Data((prop.ori_name + "_data0").c_str()).set_attr_index(0);
     int num_input = 2;
-    if (prop.input_num == 1 && prop.empty_axes == 0) {
-        int64_t input_dim_num = 0;
-        if (GetInputTensorDimNum(op, input_dim_num) != SUCCESS) {
-            OP_LOGE(GetOpName(op).c_str(), "Failed to get input tensor dimensions");
+    if (prop.input_num == 1) {
+        ge::Tensor axes;
+        if (op.GetAttr("axes", axes) != SUCCESS) {
+            OP_LOGE(GetOpName(op).c_str(), "get axes from op failed");
             return FAILED;
         }
-
-        std::vector<int64_t> v_axes;
-        for (int64_t i = 0; i < input_dim_num; ++i) {
-            v_axes.push_back(i);
-        }
-        ge::TensorDesc tensorDesc;
-        std::vector<int64_t> dims = {input_dim_num};
-        ge::Shape shape(dims);
-        tensorDesc.SetShape(shape);
-        tensorDesc.SetDataType(DT_INT64);
-        ge::Tensor tensor(tensorDesc, reinterpret_cast<uint8_t*>(v_axes.data()), v_axes.size() * sizeof(int64_t));
-        auto axes = op::Const((prop.ori_name + "_axes").c_str()).set_attr_value(tensor);
-        std::vector<Operator> inputs{data0, axes};
-        std::vector<std::pair<Operator, std::vector<size_t> > > output_indexs;
+        auto data1 = op::Const((prop.ori_name + "_data1").c_str()).set_attr_value(axes);
         auto reducemin = op::ReduceMin((prop.ori_name + "_ReduceMin").c_str())
                              .set_input_x(data0)
-                             .set_input_axes(axes)
+                             .set_input_axes(data1)
                              .set_attr_keep_dims(prop.keep_dims)
                              .set_attr_noop_with_empty_axes(prop.empty_axes);
+        std::vector<Operator> inputs{data0};
+        std::vector<std::pair<Operator, std::vector<size_t> > > output_indexs;
         output_indexs.emplace_back(reducemin, vector<std::size_t>{0});
         graph.SetInputs(inputs).SetOutputs(output_indexs);
     } else if (prop.input_num == num_input) {
