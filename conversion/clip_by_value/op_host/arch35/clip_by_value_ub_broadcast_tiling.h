@@ -79,7 +79,7 @@ protected:
 private:
     uint64_t GetOpKey(
         ge::DataType xDataType, ge::DataType clipValueMinDtype, ge::DataType clipValueMaxDtype, ge::DataType yDataType);
-    std::map<uint64_t, Ops::Base::BroadcastComputeParams> GetComputeMap(uint64_t opKey);
+    std::map<uint64_t, Ops::Base::BroadcastComputeParams> GetComputeMap(uint64_t keyData);
 
     ge::graphStatus DoBroadcastTiling(
         const Ops::Base::BroadcastTilingParams& broadcastTilingParams,

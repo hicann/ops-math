@@ -128,7 +128,6 @@ ge::graphStatus ClipByValueTilingSingleDim::CheckDtypesAndGetSize()
     auto yDesc = context_->GetOutputDesc(ClipByValueSigDim::OUTPUT_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, yDesc);
     auto yDtype = yDesc->GetDataType();
-
     if (xDtype != minDtype || xDtype != maxDtype || xDtype != yDtype) {
         std::string dtypeMsg = ge::TypeUtils::DataTypeToSerialString(xDtype) + ", " +
                                ge::TypeUtils::DataTypeToSerialString(minDtype) + ", " +
