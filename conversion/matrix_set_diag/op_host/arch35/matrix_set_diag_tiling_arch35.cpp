@@ -21,9 +21,13 @@
 #include "exe_graph/runtime/runtime_attrs.h"
 
 namespace optiling {
-// NCHW 常量
+// 公共常量
 // BUFFER分割数量
 static constexpr uint32_t BUFFER_NUM = 2;
+// UB对齐预留块数
+static constexpr uint32_t RESERVED_ALIGN_BLOCK_COUNT = 2;
+static constexpr uint32_t COL_DIM_OFFSET = 1; // 列维度（-1轴）距shape末尾的偏移量
+static constexpr uint32_t ROW_DIM_OFFSET = 2; // 行维度（-2轴）距shape末尾的偏移量
 
 static constexpr uint8_t MIN_INPUT_DIMNUM = 2;
 static constexpr uint8_t MAX_INPUT_DIMNUM = 8;
@@ -202,8 +206,8 @@ ge::graphStatus MatrixSetDiagTiling::ParamCheck()
             "diagonal dim num must equal input dim num minus 1"),
         return ge::GRAPH_FAILED);
 
-    xColNum_ = inputShapeVal.GetDim(dimNum_ - 1);
-    xRowNum_ = inputShapeVal.GetDim(dimNum_ - 2);
+    xColNum_ = inputShapeVal.GetDim(dimNum_ - COL_DIM_OFFSET);
+    xRowNum_ = inputShapeVal.GetDim(dimNum_ - ROW_DIM_OFFSET);
     tailAxisDataSize_ = xColNum_ * xRowNum_;
     diagLen_ = diagShapeVal.GetDim(static_cast<size_t>(diagDimNum_ - 1));
     OP_CHECK_IF(
@@ -229,7 +233,7 @@ ge::graphStatus MatrixSetDiagTiling::ParamCheck()
 
 void MatrixSetDiagTiling::CalUbFactor()
 {
-    uint64_t validBufSize = bufferSize_ - ubBlockSize_ * 2;
+    uint64_t validBufSize = bufferSize_ - ubBlockSize_ * RESERVED_ALIGN_BLOCK_COUNT;
     if (isCutW_) {
         if (xColNum_ * dSize_ >= bufferSize_) {
             ubFactor_ = validBufSize / dSize_;
