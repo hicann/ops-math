@@ -133,7 +133,9 @@ ge::graphStatus ZerosLikeTiling::RunTiling()
                 break;
         }
     } else {
-        OP_LOGE(tilingContext->GetNodeName(), "output dtype not support");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y(output)",
+            Ops::Base::ToString(this->outputDtype),
+            "Float4_E1M2, Float4_E2M1, Bool, Int8, Uint8, Float8_E5M2, Float8_E4M3FN, Hifloat8, Float16, BFloat16, Float, Int32 and Int64");
         return ge::GRAPH_FAILED;
     }
 
