@@ -48,7 +48,7 @@ aclrtStream    stream)
     <col style="width: 188px">
     <col style="width: 323px">
     <col style="width: 120px">
-    <col style="width: 133px">
+    <col style="width: 166px">
     <col style="width: 146px">
     </colgroup>
     <thead>
@@ -80,7 +80,8 @@ aclrtStream    stream)
         <td>数据类型与self一致。</td>
         <td>FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
         <td>ND</td>
-        <td>(1)</td>
+        <td>keep_dims = true : (1,)
+        keep_dims = false : ( )</td>
         <td>√</td>
       </tr>
       <tr>
