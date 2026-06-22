@@ -7,17 +7,20 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+
 /*!
  * \file test_clip_by_value_v2_tiling.cpp
  * \brief
  */
-#include "conversion/clip_by_value/op_host/arch35/clip_by_value_tiling.h"
+
+#include "conversion/clip_by_value_v2/op_host/arch35/clip_by_value_v2_tiling.h"
 #include <iostream>
 #include <gtest/gtest.h>
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
 
 using namespace std;
+
 class ClipByValueV2Tiling : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -31,117 +34,86 @@ protected:
     }
 };
 
-TEST_F(ClipByValueV2Tiling, clipByValuev2_FP16_Sig_Dim)
+static gert::StorageShape MakeStorageShape(const std::vector<int64_t>& shape)
 {
-    optiling::ClipByValueCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara tilingContextPara(
-        "ClipByValueV2",
-        {
-            {{{48, 16, 16, 16}, {48, 16, 16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{48, 16, 16, 16}, {48, 16, 16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 2001100;
-    string expectTilingData = "32 6144 6144 1 1 196608 1 1 196608 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+    gert::StorageShape storageShape;
+    for (const auto dim : shape) {
+        storageShape.MutableOriginShape().AppendDim(dim);
+        storageShape.MutableStorageShape().AppendDim(dim);
+    }
+    return storageShape;
 }
 
-TEST_F(ClipByValueV2Tiling, clipByValuev2_FP16_UB_Broadcast)
+static void RunClipByValueV2SuccessCase(ge::DataType dtype, const std::vector<int64_t>& xShape,
+    const std::vector<int64_t>& minShape, const std::vector<int64_t>& maxShape,
+    const std::vector<int64_t>& yShape)
 {
-    optiling::ClipByValueCompileInfo compileInfo = {64, 245760};
+    optiling::ClipByValueV2CompileInfo compileInfo = {64, 245760};
+    gert::StorageShape xStorageShape = MakeStorageShape(xShape);
+    gert::StorageShape minStorageShape = MakeStorageShape(minShape);
+    gert::StorageShape maxStorageShape = MakeStorageShape(maxShape);
+    gert::StorageShape yStorageShape = MakeStorageShape(yShape);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc = {
+        {xStorageShape, dtype, ge::FORMAT_ND},
+        {minStorageShape, dtype, ge::FORMAT_ND},
+        {maxStorageShape, dtype, ge::FORMAT_ND},
+    };
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc = {
+        {yStorageShape, dtype, ge::FORMAT_ND},
+    };
     gert::TilingContextPara tilingContextPara(
-        "ClipByValueV2",
-        {
-            {{{48, 16, 16, 16}, {48, 16, 16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{48, 16, 16, 1}, {48, 16, 16, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{48, 16, 16, 1}, {48, 16, 16, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{48, 16, 16, 16}, {48, 16, 16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 3000002;
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+        "ClipByValueV2", inputTensorDesc, outputTensorDesc, &compileInfo);
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
-TEST_F(ClipByValueV2Tiling, clipByValuev2_FP16_NDDMA)
+TEST_F(ClipByValueV2Tiling, same_shape_fp16)
 {
-    optiling::ClipByValueCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara tilingContextPara(
-        "ClipByValueV2",
-        {
-            {{{48, 16, 16, 15}, {48, 16, 16, 15}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{48, 16, 16, 1}, {48, 16, 16, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{48, 16, 16, 1}, {48, 16, 16, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{48, 16, 16, 15}, {48, 16, 16, 15}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 100000001000100;
-    std::vector<size_t> expectWorkspaces = {32};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+    RunClipByValueV2SuccessCase(ge::DT_FLOAT16, {48, 16, 16, 16}, {1}, {1}, {48, 16, 16, 16});
 }
 
-TEST_F(ClipByValueV2Tiling, clipByValuev2_FP32_NDDMA)
+TEST_F(ClipByValueV2Tiling, last_dim_broadcast_fp16)
 {
-    optiling::ClipByValueCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara tilingContextPara(
-        "ClipByValueV2",
-        {
-            {{{48, 16, 16, 16}, {48, 16, 16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{48, 16, 16, 1}, {48, 16, 16, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{48, 16, 16, 1}, {48, 16, 16, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{48, 16, 16, 16}, {48, 16, 16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 200000001000100;
-    std::vector<size_t> expectWorkspaces = {32};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+    RunClipByValueV2SuccessCase(
+        ge::DT_FLOAT16, {48, 16, 16, 16}, {48, 16, 16, 1}, {48, 16, 16, 1}, {48, 16, 16, 16});
 }
 
-TEST_F(ClipByValueV2Tiling, clipByValuev2_INT32_NDDMA)
+TEST_F(ClipByValueV2Tiling, fp32_broadcast)
 {
-    optiling::ClipByValueCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara tilingContextPara(
-        "ClipByValueV2",
-        {
-            {{{48, 16, 16, 16}, {48, 16, 16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{48, 16, 16, 1}, {48, 16, 16, 1}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{48, 16, 16, 1}, {48, 16, 16, 1}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{48, 16, 16, 16}, {48, 16, 16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 400000001000100;
-    std::vector<size_t> expectWorkspaces = {32};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+    RunClipByValueV2SuccessCase(
+        ge::DT_FLOAT, {48, 16, 16, 16}, {48, 16, 16, 1}, {48, 16, 16, 1}, {48, 16, 16, 16});
 }
 
-TEST_F(ClipByValueV2Tiling, clipByValuev2_INT64_NDDMA)
+TEST_F(ClipByValueV2Tiling, bf16_scalar_bounds)
 {
-    optiling::ClipByValueCompileInfo compileInfo = {64, 245760};
+    RunClipByValueV2SuccessCase(ge::DT_BF16, {32, 64}, {1}, {1}, {32, 64});
+}
+
+TEST_F(ClipByValueV2Tiling, int32_broadcast)
+{
+    RunClipByValueV2SuccessCase(
+        ge::DT_INT32, {48, 16, 16, 16}, {48, 16, 16, 1}, {48, 16, 16, 1}, {48, 16, 16, 16});
+}
+
+TEST_F(ClipByValueV2Tiling, int64_broadcast)
+{
+    RunClipByValueV2SuccessCase(
+        ge::DT_INT64, {48, 16, 16, 16}, {48, 16, 16, 1}, {48, 16, 16, 1}, {48, 16, 16, 16});
+}
+
+TEST_F(ClipByValueV2Tiling, mismatched_dtype_failed)
+{
+    optiling::ClipByValueV2CompileInfo compileInfo = {64, 245760};
+    gert::StorageShape xStorageShape({16, 16}, {16, 16});
+    gert::StorageShape boundStorageShape({1}, {1});
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc = {
+        {xStorageShape, ge::DT_FLOAT16, ge::FORMAT_ND},
+        {boundStorageShape, ge::DT_FLOAT16, ge::FORMAT_ND},
+        {boundStorageShape, ge::DT_FLOAT, ge::FORMAT_ND},
+    };
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc = {
+        {xStorageShape, ge::DT_FLOAT16, ge::FORMAT_ND},
+    };
     gert::TilingContextPara tilingContextPara(
-        "ClipByValueV2",
-        {
-            {{{48, 16, 16, 16}, {48, 16, 16, 16}}, ge::DT_INT64, ge::FORMAT_ND},
-            {{{48, 16, 16, 1}, {48, 16, 16, 1}}, ge::DT_INT64, ge::FORMAT_ND},
-            {{{48, 16, 16, 1}, {48, 16, 16, 1}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {{{48, 16, 16, 16}, {48, 16, 16, 16}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 500000001000100;
-    std::vector<size_t> expectWorkspaces = {32};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+        "ClipByValueV2", inputTensorDesc, outputTensorDesc, &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }

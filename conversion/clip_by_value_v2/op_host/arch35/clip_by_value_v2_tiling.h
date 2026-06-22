@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -9,25 +9,25 @@
  */
 
 /*!
- * \file clip_by_value_tiling.h
- * \brief clip_by_value tiling head file
+ * \file clip_by_value_v2_tiling.h
+ * \brief clip_by_value_v2 tiling head file
  */
 
-#ifndef OPS_MATH_CONVERSION_CLIP_BY_VALUE_TILING_H
-#define OPS_MATH_CONVERSION_CLIP_BY_VALUE_TILING_H
+#ifndef OPS_MATH_CONVERSION_CLIP_BY_VALUE_V2_TILING_H
+#define OPS_MATH_CONVERSION_CLIP_BY_VALUE_V2_TILING_H
 
 #include "op_host/tiling_base_class.h"
 
 namespace optiling {
 
-struct ClipByValueCompileInfo {
+struct ClipByValueV2CompileInfo {
     uint64_t coreNum;
     uint64_t ubSize;
 };
 
-class ClipByValueTiling : public Ops::Base::TilingBaseClass {
+class ClipByValueV2Tiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit ClipByValueTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
+    explicit ClipByValueV2Tiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:
@@ -49,4 +49,4 @@ private:
 
 } // namespace optiling
 
-#endif // OPS_MATH_CONVERSION_CLIP_BY_VALUE_TILING_H
+#endif // OPS_MATH_CONVERSION_CLIP_BY_VALUE_V2_TILING_H

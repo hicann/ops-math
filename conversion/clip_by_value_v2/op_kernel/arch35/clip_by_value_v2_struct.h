@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -9,16 +9,17 @@
  */
 
 /*!
- * \file clip_by_value_v2_single_dim_tiling.cpp
- * \brief
+ * \file clip_by_value_v2_struct.h
+ * \brief clip_by_value_v2 struct
  */
-#include "op_host/math_tiling_templates_registry.h"
-#include "conversion/clip_by_value/op_host/arch35/clip_by_value_tiling.h"
-#include "conversion/clip_by_value/op_host/arch35/clip_by_value_single_dim_tiling.h"
 
-using namespace ge;
-namespace optiling {
-static constexpr uint64_t CLIP_BY_VALUE_SINGLE_DIM_TILING_PRIORITY = 1;
-REGISTER_OPS_TILING_TEMPLATE(ClipByValueV2, ClipByValueTilingSingleDim, CLIP_BY_VALUE_SINGLE_DIM_TILING_PRIORITY);
+#ifndef CLIP_BY_VALUE_V2_STRUCT_H_
+#define CLIP_BY_VALUE_V2_STRUCT_H_
 
-} // namespace optiling
+#include "atvoss/broadcast/broadcast_base_struct.h"
+
+ASCENDC_TPL_ARGS_DECL(ClipByValueV2, BRC_TEMP_SCH_MODE_KEY_DECL(schMode));
+
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(BRC_TEMP_SCH_MODE_KEY_SEL(schMode)));
+
+#endif // CLIP_BY_VALUE_V2_STRUCT_H_
