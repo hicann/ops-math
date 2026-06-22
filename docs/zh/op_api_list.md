@@ -56,10 +56,10 @@
 | [aclnnArgMin](../../math/arg_min/docs/aclnnArgMin.md)           | 返回tensor中指定轴的最小值索引，并保存到out中。              | 默认确定性实现| 默认确定性实现|
 | [aclnnArgsort](../../math/sort/docs/aclnnArgsort.md)           | 将输入tensor中的元素根据某个维度进行升序/降序排序，返回对应的index值。              | 默认确定性实现| 默认确定性实现  |
 | [aclnnAsin&aclnnInplaceAsin](../../math/asin/docs/aclnnAsin&aclnnInplaceAsin.md) | 对输入矩阵的每个元素进行反正弦操作后输出。                   | 默认确定性实现| 默认确定性实现 |
-| [aclnnAsinh&aclnnInplaceAsinh](../../math/asinh/docs/aclnnAsinh&aclnnInplaceAsinh.md) | 对输入Tensor中的每个元素进行反双曲正弦操作后输出。           | 默认确定性实现| 默认确定性实现 |
+| [aclnnAsinh&aclnnInplaceAsinh](../../math/asinh/docs/aclnnAsinh&aclnnInplaceAsinh.md) | 对输入Tensor中的每个元素进行反双曲正弦操作后输出。           | 默认确定性实现| - |
 | [aclnnAtan&aclnnInplaceAtan](../../math/atan/docs/aclnnAtan&aclnnInplaceAtan.md) | 对输入矩阵的每个元素进行反正切操作后输出。                   | 默认确定性实现| 默认确定性实现|
 | [aclnnAtan2&aclnnInplaceAtan2](../../math/atan2/docs/aclnnAtan2&aclnnInplaceAtan2.md) | 对输入张量self和other进行逐元素的反正切运算。                | 默认确定性实现| 默认确定性实现  |
-| [aclnnAtanh&aclnnInplaceAtanh](../../math/atanh/docs/aclnnAtanh&aclnnInplaceAtanh.md) | 对输入Tensor中的每个元素进行反双曲正切操作后输出。           | 默认确定性实现| 默认确定性实现 |
+| [aclnnAtanh&aclnnInplaceAtanh](../../math/atanh/docs/aclnnAtanh&aclnnInplaceAtanh.md) | 对输入Tensor中的每个元素进行反双曲正切操作后输出。           | 默认确定性实现| - |
 | [aclnnBatchNormStats](../../math/reduce_std_with_mean/docs/aclnnBatchNormStats.md) | 计算单卡输入数据的均值和标准差的倒数。                       | 默认确定性实现| 默认确定性实现|
 | [aclnnBernoulli&aclnnInplaceBernoulli](../../random/stateless_bernoulli/docs/aclnnBernoulli&aclnnInplaceBernoulli.md) | 从伯努利分布中提取二进制随机数（0或1），prob为生成二进制随机数的概率，输入的张量用于指定shape。  | 默认确定性实现|  默认确定性实现 |
 | [aclnnBernoulliTensor&aclnnInplaceBernoulliTensor](../../random/stateless_bernoulli/docs/aclnnBernoulliTensor&aclnnInplaceBernoulliTensor.md) | 从伯努利分布中提取二进制随机数（0或1），prob为生成二进制随机数的概率，输入的张量用于指定shape。   | 默认确定性实现| 默认确定性实现 |
@@ -96,7 +96,7 @@
 | [aclnnComplex](../../math/complex/docs/aclnnComplex.md)         | 输入两个Shape和Dtype一致的Tensor：real和imag。               | 默认确定性实现| 默认确定性实现 |
 | [aclnnConfusionTranspose](../../conversion/confusion_transpose_d/docs/aclnnConfusionTranspose.md) | 融合reshape和transpose运算。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnConstantPadNd](../../conversion/pad_v3/docs/aclnnConstantPadNd.md) | 对输入的张量self，以pad参数为基准进行数据填充，填充值为value。 | 默认确定性实现| 默认确定性实现|
-| [aclnnCos&aclnnInplaceCos](../../math/cos/docs/aclnnCos&aclnnInplaceCos.md) | 对输入矩阵的每个元素进行余弦操作后输出。                     | 默认确定性实现| 默认确定性实现|
+| [aclnnCos&aclnnInplaceCos](../../math/cos/docs/aclnnCos&aclnnInplaceCos.md) | 对输入矩阵的每个元素进行余弦操作后输出。                     | 默认确定性实现| - |
 | [aclnnCosh&aclnnInplaceCosh](../../math/cosh/docs/aclnnCosh&aclnnInplaceCosh.md) | 双曲函数，根据公式返回一个新的tensor。结果的形状与输入tensor相同。 | 默认确定性实现| 默认确定性实现|
 | [aclnnCummax](../../math/cummax/docs/aclnnCummax.md)            | 计算self中的累积最大值，并返回最大值以及对应的索引。         | 默认确定性实现| - |
 | [aclnnCummin](../../math/cummin/docs/aclnnCummin.md)            | 计算self中的累积最小值，并返回最小值以及对应的索引。         | 默认确定性实现| 默认确定性实现  |
@@ -104,7 +104,7 @@
 | [aclnnCumsum](../../math/cumsum/docs/aclnnCumsum.md)            | 对输入张量self的元素，按照指定维度dim依次进行累加，并将结果保存到输出张量out中。 | 默认确定性实现| 默认确定性实现|
 | [aclnnCumsumV2](../../math/cumsum/docs/aclnnCumsumV2.md)        | 对输入张量self的元素，按照指定维度dim依次进行累加，并将结果保存到输出张量out中。 | 默认确定性实现| 默认确定性实现|
 | [aclnnDiag](../../conversion/diag_v2/docs/aclnnDiag.md) | 如果输入是向量（一维向量），则返回二维矩阵张量，其中input元素为对角线;如果输入是二维张量，则输出一维向量，取值为diagonal指定的输入矩阵的对角线元素。 | 默认确定性实现|  默认确定性实现 |
-| [aclnnDiagFlat](../../conversion/diag_flat/docs/aclnnDiagFlat.md) | 生成对角线张量。如果输入self为一维张量，则返回二维张量，self里元素为对角线值；如果输入self是二维及以上张量，则先进行扁平化（化简为一维张量），再转化为第一种场景处理。 | 默认确定性实现| 默认确定性实现|
+| [aclnnDiagFlat](../../conversion/diag_flat/docs/aclnnDiagFlat.md) | 生成对角线张量。如果输入self为一维张量，则返回二维张量，self里元素为对角线值；如果输入self是二维及以上张量，则先进行扁平化（化简为一维张量），再转化为第一种场景处理。 | 默认确定性实现| - |
 | [aclnnDigamma](../../math/digamma/docs/aclnnDigamma.md) | 为输入张量的每一个元素进行digamma数学运算。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnDiv&aclnnInplaceDiv](../../math/div/docs/aclnnDiv&aclnnInplaceDiv.md) | 完成除法计算。                                               | 默认确定性实现| 默认确定性实现 |
 | [aclnnDivMod&aclnnInplaceDivMod](../../math/div/docs/aclnnDivMod&aclnnInplaceDivMod.md) | 完成除法计算，并根据mode参数选择舍入操作。    | 默认确定性实现| 默认确定性实现 |
@@ -298,10 +298,10 @@
 | [aclnnStack](../../conversion/pack/docs/aclnnStack.md)          | 沿着新维度连接张量序列。                                     | 默认确定性实现| 默认确定性实现  |
 | [aclnnStd](../../math/reduce_std_v2/docs/aclnnStd.md)           | 计算指定维度(dim)的标准差，这个dim可以是单个维度，维度列表或者None。 | 默认确定性实现| 默认确定性实现|
 | [aclnnStdMeanCorrection](../../math/reduce_std_with_mean/docs/aclnnStdMeanCorrection.md) | 计算样本标准差和均值。                                       | 默认确定性实现| 默认确定性实现|
-| [aclnnStridedSliceAssignV2](../../conversion/strided_slice_assign_v2/docs/aclnnStridedSliceAssignV2.md) | StridedSliceAssign是一种张量切片赋值操作，它可以将张量inputValue的内容，赋值给目标张量varRef中的指定位置。 | 默认确定性实现| 默认确定性实现|
+| [aclnnStridedSliceAssignV2](../../conversion/strided_slice_assign_v2/docs/aclnnStridedSliceAssignV2.md) | StridedSliceAssign是一种张量切片赋值操作，它可以将张量inputValue的内容，赋值给目标张量varRef中的指定位置。 | 默认确定性实现| - |
 | [aclnnSub&aclnnInplaceSub](../../math/sub/docs/aclnnSub&aclnnInplaceSub.md) | 完成减法计算，被减数按alpha进行缩放。                        | 默认确定性实现| 默认确定性实现 |
 | [aclnnSubs&aclnnInplaceSubs](../../math/sub/docs/aclnnSubs&aclnnInplaceSubs.md) | 完成减法计算，被减数按alpha进行缩放。                        | 默认确定性实现| 默认确定性实现 |
-| [aclnnSum](../../math/accumulate_nv2/docs/aclnnSum.md)          | 返回输入tensors列表中每个输入tensor依次做add求和。           | 默认确定性实现| 默认确定性实现 |
+| [aclnnSum](../../math/accumulate_nv2/docs/aclnnSum.md)          | 返回输入tensors列表中每个输入tensor依次做add求和。           | 默认确定性实现| - |
 | [aclnnSvd](../../math/svd/docs/aclnnSvd.md)          | 计算一个或多个矩阵的奇异值分解。           | 默认确定性实现| 默认确定性实现 |
 | [aclnnSWhere](../../math/select/docs/aclnnSWhere.md)            | 根据条件选取self或other中元素并返回（支持广播）。            | 默认确定性实现| 默认确定性实现 |
 | [aclnnTan&aclnnInplaceTan](../../math/tan/docs/aclnnTan&aclnnInplaceTan.md) | 它计算输入张量self中每个元素的正切值，并将结果存储在输出张量out中。 | 默认确定性实现| 默认确定性实现 |
