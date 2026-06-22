@@ -53,9 +53,9 @@ __simt_vf__ LAUNCH_BOUND(THREAD_DIM) void SimtCompute(
             const int64_t curr_idx = idx + j * N;
             const X curr_val = xGm[curr_idx];
 
-            const bool is_smaller = (curr_val <= minVal);
-            minVal = is_smaller ? curr_val : minVal;
-            minIdx = is_smaller ? static_cast<ARGMIN>(j) : minIdx;
+            bool is_not_smaller = (minVal < curr_val);
+            minVal = is_not_smaller ? minVal : curr_val;
+ 	        minIdx = is_not_smaller ? minIdx : static_cast<ARGMIN>(j);
 
             yGm[curr_idx] = minVal;
             argminGm[curr_idx] = minIdx;
