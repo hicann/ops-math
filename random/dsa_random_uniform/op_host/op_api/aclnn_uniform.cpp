@@ -167,14 +167,18 @@ static const aclTensor* uniformTensorDavidPath(
     uint64_t offset, double from, double to, aclOpExecutor* executor)
 {
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfRef->GetDataType() != DataType::DT_DOUBLE) {
-        // V4: offsetTensor + offset → resultAddOut，直接作为 INT64 传入
+        auto seedInt64 = l0op::Cast(seedTensor, op::DataType::DT_INT64, executor);
+        CHECK_RET(seedInt64 != nullptr, nullptr);
+        auto offsetInt64 = l0op::Cast(offsetTensor, op::DataType::DT_INT64, executor);
+        CHECK_RET(offsetInt64 != nullptr, nullptr);
+
         FVector<int64_t> offsetVector{static_cast<int64_t>(offset)};
         auto tmpTensor = executor->ConvertToTensor(offsetVector.data(), offsetVector.size(), op::DataType::DT_INT64);
-        auto resultAddOut = l0op::Add(offsetTensor, tmpTensor, executor);
+        auto resultAddOut = l0op::Add(offsetInt64, tmpTensor, executor);
         CHECK_RET(resultAddOut != nullptr, nullptr);
 
         return l0op::StatelessUniform(
-            selfRef, seedTensor, resultAddOut, from, to, executor);
+            selfRef, seedInt64, resultAddOut, from, to, executor);
     } else {
         // V2 路径：保持原有 [0, offset] concat 逻辑
         FVector<int64_t> offsetVector{0, static_cast<int64_t>(offset)};
