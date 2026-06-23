@@ -178,6 +178,7 @@ VC1@ops-math:
         - ops/ops-math/math/square/
         - ops/ops-math/math/tanh/
         - ops/ops-math/math/trunc/
+        - ops/ops-math/math/abs/
       opensource_style: null
       kernel_style: null
     unrelease:
@@ -240,6 +241,8 @@ VC1@ops-math:
         - ops/ops-math/math/tanh/tests/
         - ops/ops-math/math/trunc/examples/
         - ops/ops-math/math/trunc/tests/
+        - ops/ops-math/math/abs/examples/
+        - ops/ops-math/math/abs/tests/
       non_delivery: null
       open_source: null
 
@@ -267,7 +270,6 @@ VC2@ops-math:
   src:
     release:
       style:
-        - ops/ops-math/conversion/as_strided/
         - ops/ops-math/conversion/batch_to_space_nd/op_graph/
         - ops/ops-math/conversion/batch_to_space_nd/op_host/
         - ops/ops-math/conversion/batch_to_space_nd/op_kernel/
@@ -276,18 +278,15 @@ VC2@ops-math:
         - ops/ops-math/conversion/circular_pad_grad/
         - ops/ops-math/conversion/circular_pad/
         - ops/ops-math/conversion/depth_to_space/
-        - ops/ops-math/conversion/dynamic_partition/
         - ops/ops-math/conversion/fill/
         - ops/ops-math/conversion/fills/
         - ops/ops-math/conversion/im2col/
-        - ops/ops-math/conversion/masked_fill/
         - ops/ops-math/conversion/masked_select_v3/
         - ops/ops-math/conversion/matrix_diag/
         - ops/ops-math/conversion/matrix_set_diag/op_graph/
         - ops/ops-math/conversion/matrix_set_diag/op_host/
         - ops/ops-math/conversion/matrix_set_diag/op_kernel/
         - ops/ops-math/conversion/mem_set_v2/
-        - ops/ops-math/conversion/mem_set/
         - ops/ops-math/conversion/mirror_pad/
         - ops/ops-math/conversion/pad_v2/
         - ops/ops-math/conversion/pad_v3_grad_replicate/
@@ -299,10 +298,6 @@ VC2@ops-math:
         - ops/ops-math/conversion/roll/
         - ops/ops-math/conversion/slice/
         - ops/ops-math/conversion/space_to_depth/
-        - ops/ops-math/conversion/split_v/op_graph/
-        - ops/ops-math/conversion/split_v/op_host/
-        - ops/ops-math/conversion/split_v/op_kernel/
-        - ops/ops-math/conversion/split/
         - ops/ops-math/conversion/strided_slice_v2/op_host/
         - ops/ops-math/conversion/strided_slice_v2/op_kernel/
         - ops/ops-math/conversion/strided_slice_v3/op_host/
@@ -314,18 +309,13 @@ VC2@ops-math:
         - ops/ops-math/conversion/trans_data/op_kernel/
         - ops/ops-math/conversion/transpose_v2/
         - ops/ops-math/conversion/transpose/
-        - ops/ops-math/conversion/unpack/op_graph/
-        - ops/ops-math/conversion/unpack/op_host/
-        - ops/ops-math/conversion/unpack/op_kernel/
         - ops/ops-math/conversion/zeros_like/
-        - ops/ops-math/math/addr/
         - ops/ops-math/math/arg_max_v2/
         - ops/ops-math/math/arg_max_with_value/
         - ops/ops-math/math/arg_min_with_value/
         - ops/ops-math/math/arg_min/
         - ops/ops-math/math/bias_add_grad/
         - ops/ops-math/math/cdist/
-        - ops/ops-math/math/cumsum/
         - ops/ops-math/math/diag_part/
         - ops/ops-math/math/dot/
         - ops/ops-math/math/grouped_bias_add_grad/
@@ -343,8 +333,6 @@ VC2@ops-math:
       kernel_style: null
     unrelease:
       test_code:
-        - ops/ops-math/conversion/as_strided/examples/
-        - ops/ops-math/conversion/as_strided/tests/
         - ops/ops-math/conversion/batch_to_space_nd/examples/
         - ops/ops-math/conversion/batch_to_space_nd/tests/
         - ops/ops-math/conversion/broadcast_to/examples/*.cpp
@@ -355,16 +343,12 @@ VC2@ops-math:
         - ops/ops-math/conversion/circular_pad/tests/**/*.cpp
         - ops/ops-math/conversion/depth_to_space/examples/*.cpp
         - ops/ops-math/conversion/depth_to_space/tests/**/*.cpp
-        - ops/ops-math/conversion/dynamic_partition/examples/
-        - ops/ops-math/conversion/dynamic_partition/tests/
         - ops/ops-math/conversion/fill/examples/
         - ops/ops-math/conversion/fill/tests/
         - ops/ops-math/conversion/fills/examples/
         - ops/ops-math/conversion/fills/tests/
         - ops/ops-math/conversion/im2col/examples/*.cpp
         - ops/ops-math/conversion/im2col/tests/**/*.cpp
-        - ops/ops-math/conversion/masked_fill/examples/
-        - ops/ops-math/conversion/masked_fill/tests/
         - ops/ops-math/conversion/masked_select_v3/examples/
         - ops/ops-math/conversion/masked_select_v3/tests/
         - ops/ops-math/conversion/matrix_diag/examples/
@@ -373,8 +357,6 @@ VC2@ops-math:
         - ops/ops-math/conversion/matrix_set_diag/tests/
         - ops/ops-math/conversion/mem_set_v2/examples/*.cpp
         - ops/ops-math/conversion/mem_set_v2/tests/**/*.cpp
-        - ops/ops-math/conversion/mem_set/examples/
-        - ops/ops-math/conversion/mem_set/tests/
         - ops/ops-math/conversion/mirror_pad/examples/
         - ops/ops-math/conversion/mirror_pad/tests/
         - ops/ops-math/conversion/pad_v2/examples/
@@ -397,10 +379,6 @@ VC2@ops-math:
         - ops/ops-math/conversion/slice/tests/
         - ops/ops-math/conversion/space_to_depth/examples/
         - ops/ops-math/conversion/space_to_depth/tests/
-        - ops/ops-math/conversion/split_v/examples/
-        - ops/ops-math/conversion/split_v/tests/
-        - ops/ops-math/conversion/split/examples/
-        - ops/ops-math/conversion/split/tests/
         - ops/ops-math/conversion/strided_slice_v2/examples/*.cpp
         - ops/ops-math/conversion/strided_slice_v2/tests/**/*.cpp
         - ops/ops-math/conversion/strided_slice_v3/examples/*.cpp
@@ -413,12 +391,8 @@ VC2@ops-math:
         - ops/ops-math/conversion/transpose_v2/tests/**/*.cpp
         - ops/ops-math/conversion/transpose/examples/
         - ops/ops-math/conversion/transpose/tests/
-        - ops/ops-math/conversion/unpack/examples/
-        - ops/ops-math/conversion/unpack/tests/
         - ops/ops-math/conversion/zeros_like/examples/
         - ops/ops-math/conversion/zeros_like/tests/
-        - ops/ops-math/math/addr/examples/
-        - ops/ops-math/math/addr/tests/
         - ops/ops-math/math/arg_max_v2/examples/
         - ops/ops-math/math/arg_max_v2/tests/
         - ops/ops-math/math/arg_max_with_value/examples/
@@ -431,8 +405,6 @@ VC2@ops-math:
         - ops/ops-math/math/bias_add_grad/tests/
         - ops/ops-math/math/cdist/examples/
         - ops/ops-math/math/cdist/tests/
-        - ops/ops-math/math/cumsum/examples/
-        - ops/ops-math/math/cumsum/tests/
         - ops/ops-math/math/diag_part/examples/
         - ops/ops-math/math/diag_part/tests/
         - ops/ops-math/math/dot/examples/
@@ -466,13 +438,150 @@ VC3@ops-math:
   src:
     release:
       style:
-        - ops/ops-math/math/abs/
+        # cumsum
+        - ops/ops-math/math/cumsum/op_host/arch35/
+        - ops/ops-math/math/cumsum/op_kernel/arch35/
+        # addr
+        - ops/ops-math/math/addr/op_host/arch35/
+        - ops/ops-math/math/addr/op_kernel/arch35/
+        # adds
+        - ops/ops-math/math/adds/op_host/arch35/
+        - ops/ops-math/math/adds/op_kernel/arch35/
+        # asin
+        - ops/ops-math/math/asin/op_host/arch35/
+        - ops/ops-math/math/asin/op_kernel/arch35/
+        # eye
+        - ops/ops-math/math/eye/op_host/arch35/
+        - ops/ops-math/math/eye/op_kernel/arch35/
+        # power
+        - ops/ops-math/math/power/op_host/arch35/
+        - ops/ops-math/math/power/op_kernel/arch35/
+        # concat_v2
+        - ops/ops-math/conversion/concat_v2/op_host/arch35/
+        # masked_fill
+        - ops/ops-math/conversion/masked_fill/op_host/arch35/
+        - ops/ops-math/conversion/masked_fill/op_kernel/arch35/
+        # dynamic_partition
+        - ops/ops-math/conversion/dynamic_partition/op_host/arch35/
+        - ops/ops-math/conversion/dynamic_partition/op_kernel/arch35/
+        # as_strided
+        - ops/ops-math/conversion/as_strided/op_host/arch35/
+        - ops/ops-math/conversion/as_strided/op_kernel/arch35/
+        # split
+        - ops/ops-math/conversion/split/op_host/arch35/
+        - ops/ops-math/conversion/split/op_kernel/arch35/
+        # split_v
+        - ops/ops-math/conversion/split_v/op_host/arch35/
+        - ops/ops-math/conversion/split_v/op_kernel/arch35/
+        # unpack
+        - ops/ops-math/conversion/unpack/op_host/arch35/
+        # view_copy
+        - ops/ops-math/conversion/view_copy/op_host/arch35/
+        - ops/ops-math/conversion/view_copy/op_kernel/arch35/
+        # assign
+        - ops/ops-math/conversion/assign/op_host/arch35/
+        - ops/ops-math/conversion/assign/op_kernel/arch35/
+        # concat
+        - ops/ops-math/conversion/concat/op_host/arch35/
+        - ops/ops-math/conversion/concat/op_kernel/arch35/
+        # concat_d
+        - ops/ops-math/conversion/concat_d/op_host/arch35/
+        # pack
+        - ops/ops-math/conversion/pack/op_host/arch35/
+        # strided_slice_grad
+        - ops/ops-math/conversion/strided_slice_grad/op_host/arch35/
+        - ops/ops-math/conversion/strided_slice_grad/op_kernel/arch35/
+        # triu
+        - ops/ops-math/conversion/triu/op_host/arch35/
+        - ops/ops-math/conversion/triu/op_kernel/arch35/
+        # tril
+        - ops/ops-math/conversion/tril/op_host/arch35/
+        # tensor_move
+        - ops/ops-math/conversion/tensor_move/op_host/arch35/
+        - ops/ops-math/conversion/tensor_move/op_kernel/arch35/
+        # mem_set
+        - ops/ops-math/conversion/mem_set/op_host/arch35/
+        - ops/ops-math/conversion/mem_set/op_kernel/arch35/
       opensource_style: null
       kernel_style: null
     unrelease:
       test_code:
-        - ops/ops-math/math/abs/examples/
-        - ops/ops-math/math/abs/tests/
+        # cumsum
+        - ops/ops-math/math/cumsum/examples/
+        - ops/ops-math/math/cumsum/tests/
+        - ops/ops-math/math/cumsum/op_kernel_aicpu/
+        # addr
+        - ops/ops-math/math/addr/examples/
+        - ops/ops-math/math/addr/tests/
+        # adds
+        - ops/ops-math/math/adds/examples/
+        - ops/ops-math/math/adds/tests/
+        # asin
+        - ops/ops-math/math/asin/examples/
+        - ops/ops-math/math/asin/tests/
+        - ops/ops-math/math/asin/op_kernel_aicpu/
+        # eye
+        - ops/ops-math/math/eye/examples/
+        - ops/ops-math/math/eye/tests/
+        # power
+        - ops/ops-math/math/power/tests/
+        # concat_v2
+        - ops/ops-math/conversion/concat_v2/examples/
+        - ops/ops-math/conversion/concat_v2/tests/
+        - ops/ops-math/conversion/concat_v2/op_kernel_aicpu/
+        # masked_fill
+        - ops/ops-math/conversion/masked_fill/examples/
+        - ops/ops-math/conversion/masked_fill/tests/
+        # dynamic_partition
+        - ops/ops-math/conversion/dynamic_partition/examples/
+        - ops/ops-math/conversion/dynamic_partition/tests/
+        # as_strided
+        - ops/ops-math/conversion/as_strided/examples/
+        - ops/ops-math/conversion/as_strided/tests/
+        # split
+        - ops/ops-math/conversion/split/examples/
+        - ops/ops-math/conversion/split/tests/
+        # split_v
+        - ops/ops-math/conversion/split_v/examples/
+        - ops/ops-math/conversion/split_v/tests/
+        - ops/ops-math/conversion/split_v/op_kernel_aicpu/
+        # unpack
+        - ops/ops-math/conversion/unpack/examples/
+        - ops/ops-math/conversion/unpack/tests/
+        - ops/ops-math/conversion/unpack/op_kernel_aicpu/
+        # view_copy
+        - ops/ops-math/conversion/view_copy/examples/
+        - ops/ops-math/conversion/view_copy/tests/**/*.cpp
+        - ops/ops-math/conversion/view_copy/tests/**/*.py
+        # concat
+        - ops/ops-math/conversion/concat/tests/
+        - ops/ops-math/conversion/concat/examples/*.cpp
+        # concat_d
+        - ops/ops-math/conversion/concat_d/examples/
+        - ops/ops-math/conversion/concat_d/tests/
+        # pack
+        - ops/ops-math/conversion/pack/examples/
+        - ops/ops-math/conversion/pack/tests/
+        # triu
+        - ops/ops-math/conversion/triu/examples/
+        - ops/ops-math/conversion/triu/tests/
+        # tril
+        - ops/ops-math/conversion/tril/examples/
+        - ops/ops-math/conversion/tril/tests/
+        # mem_set
+        - ops/ops-math/conversion/mem_set/examples/
+        - ops/ops-math/conversion/mem_set/tests/
+        # assign
+        - ops/ops-math/conversion/assign/examples/*.cpp
+        - ops/ops-math/conversion/assign/tests/**/*.cpp
+        # stroded_slice_grad
+        - ops/ops-math/conversion/strided_slice_grad/examples/*.cpp
+        - ops/ops-math/conversion/strided_slice_grad/tests/**/*.cpp
+        - ops/ops-math/conversion/strided_slice_grad/tests/**/*.h
+        # tensor_move
+        - ops/ops-math/conversion/tensor_move/examples/*.cpp
+        - ops/ops-math/conversion/tensor_move/tests/**/*.cpp
+        - ops/ops-math/conversion/tensor_move/tests/**/*.h
       non_delivery: null
       open_source: null
 
@@ -519,9 +628,6 @@ VC6@ops-math:
         # stateless_random_uniform_v2
         - ops/ops-math/random/stateless_random_uniform_v2/op_host/
         - ops/ops-math/random/stateless_random_uniform_v2/op_kernel/
-        # strided_slice_grad
-        - ops/ops-math/conversion/strided_slice_grad/op_host/
-        - ops/ops-math/conversion/strided_slice_grad/op_kernel/
         # stateless_random_uniform_v3
         - ops/ops-math/random/stateless_random_uniform_v3/
         - ops/ops-math/random/stateless_random_uniform_v3/op_host/
@@ -534,28 +640,6 @@ VC6@ops-math:
         - ops/ops-math/random/stateless_random/
         - ops/ops-math/random/stateless_random/op_host/
         - ops/ops-math/random/stateless_random/op_kernel/
-        # tril
-        - ops/ops-math/conversion/tril/op_host/
-        - ops/ops-math/conversion/tril/op_kernel/
-        # triu
-        - ops/ops-math/conversion/triu/op_host/
-        - ops/ops-math/conversion/triu/op_kernel/
-        - ops/ops-math/conversion/triu/op_graph/fusion_pass/
-        # pack
-        - ops/ops-math/conversion/pack/op_host/
-        - ops/ops-math/conversion/pack/op_kernel/
-        # concat_d
-        - ops/ops-math/conversion/concat_d/CMakeLists.txt
-        - ops/ops-math/conversion/concat_d/op_host/
-        - ops/ops-math/conversion/concat_d/op_kernel/
-        # concat_v2
-        - ops/ops-math/conversion/concat_v2/CMakeLists.txt
-        - ops/ops-math/conversion/concat_v2/op_host/
-        - ops/ops-math/conversion/concat_v2/op_kernel/
-        # concat
-        - ops/ops-math/conversion/concat/CMakeLists.txt
-        - ops/ops-math/conversion/concat/op_host/
-        - ops/ops-math/conversion/concat/op_kernel/
       opensource_style: null
       kernel_style: null
     unrelease:
@@ -581,29 +665,12 @@ VC6@ops-math:
         - ops/ops-math/random/stateless_normal/tests/
         # stateless_random_uniform_v2
         - ops/ops-math/random/stateless_random_uniform_v2/tests/
-        # tril
-        - ops/ops-math/conversion/tril/examples/
-        - ops/ops-math/conversion/tril/tests/
         # stateless_random_uniform_v3
         - ops/ops-math/random/stateless_random_uniform_v3/tests/
         # stateless_uniform
         - ops/ops-math/random/stateless_uniform/tests/
         # stateless_random
         - ops/ops-math/random/stateless_random/tests/
-        # triu
-        - ops/ops-math/conversion/triu/examples/
-        - ops/ops-math/conversion/triu/tests/
-        # pack
-        - ops/ops-math/conversion/pack/examples/
-        - ops/ops-math/conversion/pack/tests/
-        # concat
-        - ops/ops-math/conversion/concat/tests/
-        # concat_d
-        - ops/ops-math/conversion/concat_d/examples/
-        - ops/ops-math/conversion/concat_d/tests/
-        # concat_v2
-        - ops/ops-math/conversion/concat_v2/examples/
-        - ops/ops-math/conversion/concat_v2/tests/
       non_delivery: null
       open_source: null
 
@@ -621,13 +688,11 @@ VC7@ops-math:
 VC8@ops-math:
   src:
     release:
-      style:
-        - ops/ops-math/conversion/view_copy/op_host/
+      style: null
       opensource_style: null
       kernel_style: null
     unrelease:
-      test_code:
-        - ops/ops-math/conversion/view_copy/examples/
+      test_code: null
       non_delivery: null
       open_source: null
 
