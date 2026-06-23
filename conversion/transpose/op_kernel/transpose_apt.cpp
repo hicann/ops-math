@@ -21,6 +21,7 @@
 #include "arch35/transpose_tensor_move.h"
 #include "arch35/transpose_with_gather.h"
 #include "arch35/transpose_transdata_5hd.h"
+#include "arch35/transpose_transdata_5hd_021.h"
 
 #define TENSOR_MOVE 10000
 #define SMALL_SHAPE 10001
@@ -30,6 +31,7 @@
 #define BIG_DIM 10005
 #define GATHER_TRANSPOSE 10006
 #define VCONV_TRANSPOSE 10007
+#define VCONV_021_TRANSPOSE 10008
 
 using namespace Transpose;
 
@@ -211,11 +213,29 @@ extern "C" __aicore__ inline void TransposeGatherProcess(
     }
 }
 
-extern "C"  __aicore__ inline void TransposeVconvProcess(
+extern "C" __aicore__ inline void TransposeVconvProcess(
     GM_ADDR x, GM_ADDR y, const TransposeVCONVTilingData* tilingData, TPipe* pipe)
 {
     if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
         Transpose::KernelTransDataTo5HD<int16_t> op;
+        op.Init(x, y, tilingData, pipe);
+        op.Process();
+    }
+}
+
+extern "C" __aicore__ inline void Transpose021VconvProcess(
+    GM_ADDR x, GM_ADDR y, const Transpose021VCONVTilingData* tilingData, TPipe* pipe)
+{
+    if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
+        Transpose::KernelTransDataTo5HD021<int8_t> op;
+        op.Init(x, y, tilingData, pipe);
+        op.Process();
+    } else if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
+        Transpose::KernelTransDataTo5HD021<int16_t> op;
+        op.Init(x, y, tilingData, pipe);
+        op.Process();
+    } else if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
+        Transpose::KernelTransDataTo5HD021<int32_t> op;
         op.Init(x, y, tilingData, pipe);
         op.Process();
     }
@@ -249,5 +269,8 @@ extern "C" __global__ __aicore__ void transpose(GM_ADDR x, GM_ADDR perm, GM_ADDR
     } else if (TILING_KEY_IS(VCONV_TRANSPOSE)) {
         GET_TILING_DATA_WITH_STRUCT(TransposeVCONVTilingData, tilingData, tiling);
         TransposeVconvProcess(x, y, &tilingData, &pipe);
+    } else if (TILING_KEY_IS(VCONV_021_TRANSPOSE)) {
+        GET_TILING_DATA_WITH_STRUCT(Transpose021VCONVTilingData, tilingData, tiling);
+        Transpose021VconvProcess(x, y, &tilingData, &pipe);
     }
 }

@@ -19,6 +19,7 @@
 #include "transpose_tiling_arch35.h"
 #include "transpose_tiling_with_gather_arch35.h"
 #include "transpose_tiling_with_nchwconv_arch35.h"
+#include "transpose_tiling_with_021vconv_arch35.h"
 #include "common/inc/op_host/math_log.h"
 
 namespace optiling {
@@ -127,6 +128,17 @@ ge::graphStatus TransposeNddmaTiling::TryVCONVTiling()
             OP_CHECK_IF(
                 vconvTiling.DoTiling() == ge::GRAPH_SUCCESS,
                 OP_LOGD(tilingContext_->GetNodeName(), "Do convTiling done"), return ge::GRAPH_SUCCESS);
+        }
+        if (shapeInfo_.reducedPerm[0] == 0 && shapeInfo_.reducedPerm[1] == 2 && shapeInfo_.reducedPerm[2] == 1 && shapeInfo_.dim == DIM_THREE // 021 transpose
+            && (shapeInfo_.eleLenInBytes == B8_BYTES || shapeInfo_.eleLenInBytes == B16_BYTES || shapeInfo_.eleLenInBytes == B32_BYTES) // support B8、B16、B32
+            && shapeInfo_.reducedInShape[1] > DIM_EIGHT && shapeInfo_.reducedInShape[2] > DIM_EIGHT // not support very little W or H
+            && shapeInfo_.totalVolumeActual * shapeInfo_.eleLenInBytes >= SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102_021 // shape size bigger than 7w
+            ) {
+            Transpose021WithVCONV::PlatInfo platInfo{coreNum_, ubSize_};
+            Transpose021WithVCONV::Transpose021VCONVTiling vconv021Tiling(tilingContext_, platInfo, shapeInfo_);
+            OP_CHECK_IF(
+                vconv021Tiling.DoTiling() == ge::GRAPH_SUCCESS,
+                OP_LOGD(tilingContext_->GetNodeName(), "Do 021 convTiling done"), return ge::GRAPH_SUCCESS);
         }
     }
     return ge::GRAPH_FAILED;
@@ -578,6 +590,13 @@ void TransposeNddmaTiling::EntryTilingTemplate()
         // just tensor move
         tilingKey_ = static_cast<int64_t>(SplitMode::TENSOR_MOVE);
         return;
+    }
+    
+    auto platformInfo = tilingContext_->GetPlatformInfo();
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    auto arch = ascendcPlatform.GetCurNpuArch();
+    if (arch == NpuArch::DAV_5102 && !shapeInfo_.isLastAxisTranspose) {
+        SMALL_SHAPE_BYTES_THRES_HOLD = SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102_NLAST;
     }
     if (shapeInfo_.totalVolumeActual * shapeInfo_.eleLenInBytes >= SMALL_SHAPE_BYTES_THRES_HOLD) {
         if (!shapeInfo_.isLastAxisTranspose &&

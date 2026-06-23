@@ -60,6 +60,8 @@ constexpr int64_t DIM_FIVE = 5;
 constexpr int64_t DIM_SIX = 6;
 constexpr int64_t DIM_EIGHT = 8;
 constexpr int64_t SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102 = 1000000;
+constexpr int64_t SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102_NLAST = 400000;
+constexpr int64_t SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102_021 = 70000;
 BEGIN_TILING_DATA_DEF(TransposeOpTilingData)
 TILING_DATA_FIELD_DEF(int64_t, permSize);
 TILING_DATA_FIELD_DEF(int64_t, inCutIndex);
@@ -115,7 +117,8 @@ enum class SplitMode : int64_t
     BIG_DIM = 10005,          // dim bigger than 5 and last transpose
     GATHER_TRANSPOSE = 10006, // transpose with gather
     VCONV_TRANSPOSE = 10007,
-    NDDMA_BASE = 90000        // nddma base key and not a real used key
+    VCONV_021_TRANSPOSE = 10008,
+    NDDMA_BASE = 90000 // nddma base key and not a real used key
 };
 
 struct SplitInfo {
@@ -155,7 +158,7 @@ ge::graphStatus TilingPrepareTransposeForAscendC(gert::TilingParseContext* conte
 
 class TransposeNddmaTiling {
 public:
-    explicit TransposeNddmaTiling(gert::TilingContext* context) : tilingContext_(context){};
+    explicit TransposeNddmaTiling(gert::TilingContext* context) : tilingContext_(context) {};
     ge::graphStatus Init(const int64_t& coreNum, const int64_t& ubSize);
     ge::graphStatus RunTranposelTiling();
     ge::graphStatus TilingForReleatedTranspose(
@@ -197,7 +200,8 @@ private:
     void FindSplitFactorByMultiplesNLast(
         int64_t currentSplitIndex, int64_t currentInShapeDim, int64_t remainingTotalElment, int64_t coreNumMultiples);
     void CheckInUbFactorValid(
-    int64_t& currentSplitIndex, int64_t& currentInShapeDim, int64_t& remainingTotalElment, int64_t& coreNumMultiples, int64_t* solvedTotalElment);
+        int64_t& currentSplitIndex, int64_t& currentInShapeDim, int64_t& remainingTotalElment,
+        int64_t& coreNumMultiples, int64_t* solvedTotalElment);
     void DoSplitUBBigDim();
     void NDDMADimExpand();
     void GetInUbShapeInfo();

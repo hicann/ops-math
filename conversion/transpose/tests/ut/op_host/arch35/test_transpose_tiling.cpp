@@ -19,6 +19,7 @@
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
 #include "../../../../op_host/arch35/transpose_tiling_with_gather_arch35.h"
+#include "../../../../op_host/arch35/transpose_tiling_with_021vconv_arch35.h"
 
 using namespace ge;
 // using namespace ut_util;
@@ -54,4 +55,229 @@ TEST_F(TransposeTiling, transpose_tiling_01)
         "4294967297 16557351567361 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(TransposeTiling, transpose_021vconv_float32_rconv)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 40;
+    compileInfo.ubSize = 196608;
+
+    int64_t perm_value[3] = {0, 2, 1};
+    gert::TilingContextPara::TensorDescription x({{2, 16, 8}, {2, 16, 8}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{2, 8, 16}, {2, 8, 16}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    if (success && tilingInfo.tilingKey == 10008) {
+        optiling::Transpose021WithVCONV::Transpose021VCONVTilingData tilingData(tilingInfo.tilingData.get());
+        EXPECT_EQ(tilingData.get_HLen(), 16);
+        EXPECT_EQ(tilingData.get_WLen(), 8);
+        EXPECT_EQ(tilingData.get_UseRConv(), true);
+        EXPECT_EQ(tilingData.get_HAlignBlockElem(), 16);
+        EXPECT_EQ(tilingData.get_WAlignBlockElem(), 8);
+        std::vector<size_t> expectWorkspaces = {16777216};
+        ASSERT_EQ(tilingInfo.workspaceSizes.size(), expectWorkspaces.size());
+        for (size_t i = 0; i < expectWorkspaces.size(); i++) {
+            EXPECT_EQ(tilingInfo.workspaceSizes[i], expectWorkspaces[i]);
+        }
+    }
+}
+
+TEST_F(TransposeTiling, transpose_021vconv_float32_rconv_aligned_w)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 40;
+    compileInfo.ubSize = 196608;
+
+    int64_t perm_value[3] = {0, 2, 1};
+    gert::TilingContextPara::TensorDescription x({{1, 32, 24}, {1, 32, 24}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{1, 24, 32}, {1, 24, 32}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    if (success && tilingInfo.tilingKey == 10008) {
+        optiling::Transpose021WithVCONV::Transpose021VCONVTilingData tilingData(tilingInfo.tilingData.get());
+        EXPECT_EQ(tilingData.get_HLen(), 32);
+        EXPECT_EQ(tilingData.get_WLen(), 24);
+        EXPECT_EQ(tilingData.get_UseRConv(), true);
+        EXPECT_EQ(tilingData.get_HAlignBlockElem(), 32);
+        EXPECT_EQ(tilingData.get_WAlignBlockElem(), 24);
+    }
+}
+
+TEST_F(TransposeTiling, transpose_021vconv_float32_cconv)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 40;
+    compileInfo.ubSize = 196608;
+
+    int64_t perm_value[3] = {0, 2, 1};
+    gert::TilingContextPara::TensorDescription x({{1, 8, 32}, {1, 8, 32}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{1, 32, 8}, {1, 32, 8}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    if (success && tilingInfo.tilingKey == 10008) {
+        optiling::Transpose021WithVCONV::Transpose021VCONVTilingData tilingData(tilingInfo.tilingData.get());
+        EXPECT_EQ(tilingData.get_HLen(), 8);
+        EXPECT_EQ(tilingData.get_WLen(), 32);
+        EXPECT_EQ(tilingData.get_UseRConv(), false);
+        EXPECT_EQ(tilingData.get_HAlignBlockElem(), 16);
+        EXPECT_EQ(tilingData.get_WAlignBlockElem(), 32);
+    }
+}
+
+TEST_F(TransposeTiling, transpose_021vconv_int32_rconv)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 40;
+    compileInfo.ubSize = 196608;
+
+    int64_t perm_value[3] = {0, 2, 1};
+    gert::TilingContextPara::TensorDescription x({{2, 16, 16}, {2, 16, 16}}, ge::DT_INT32, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{2, 16, 16}, {2, 16, 16}}, ge::DT_INT32, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    if (success && tilingInfo.tilingKey == 10008) {
+        optiling::Transpose021WithVCONV::Transpose021VCONVTilingData tilingData(tilingInfo.tilingData.get());
+        EXPECT_EQ(tilingData.get_HLen(), 16);
+        EXPECT_EQ(tilingData.get_WLen(), 16);
+        EXPECT_EQ(tilingData.get_UseRConv(), true);
+        EXPECT_EQ(tilingData.get_HAlignBlockElem(), 16);
+        EXPECT_EQ(tilingData.get_WAlignBlockElem(), 16);
+    }
+}
+
+TEST_F(TransposeTiling, transpose_021vconv_int8_rconv)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 40;
+    compileInfo.ubSize = 196608;
+
+    int64_t perm_value[3] = {0, 2, 1};
+    gert::TilingContextPara::TensorDescription x({{2, 32, 32}, {2, 32, 32}}, ge::DT_INT8, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{2, 32, 32}, {2, 32, 32}}, ge::DT_INT8, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    if (success && tilingInfo.tilingKey == 10008) {
+        optiling::Transpose021WithVCONV::Transpose021VCONVTilingData tilingData(tilingInfo.tilingData.get());
+        EXPECT_EQ(tilingData.get_HLen(), 32);
+        EXPECT_EQ(tilingData.get_WLen(), 32);
+        EXPECT_EQ(tilingData.get_UseRConv(), true);
+        EXPECT_EQ(tilingData.get_HAlignBlockElem(), 32);
+        EXPECT_EQ(tilingData.get_WAlignBlockElem(), 32);
+    }
+}
+
+TEST_F(TransposeTiling, transpose_021vconv_uint8_rconv)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 40;
+    compileInfo.ubSize = 196608;
+
+    int64_t perm_value[3] = {0, 2, 1};
+    gert::TilingContextPara::TensorDescription x({{1, 64, 32}, {1, 64, 32}}, ge::DT_UINT8, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{1, 32, 64}, {1, 32, 64}}, ge::DT_UINT8, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    if (success && tilingInfo.tilingKey == 10008) {
+        optiling::Transpose021WithVCONV::Transpose021VCONVTilingData tilingData(tilingInfo.tilingData.get());
+        EXPECT_EQ(tilingData.get_HLen(), 64);
+        EXPECT_EQ(tilingData.get_WLen(), 32);
+        EXPECT_EQ(tilingData.get_UseRConv(), true);
+        EXPECT_EQ(tilingData.get_HAlignBlockElem(), 64);
+        EXPECT_EQ(tilingData.get_WAlignBlockElem(), 32);
+    }
+}
+
+TEST_F(TransposeTiling, transpose_021vconv_int8_cconv_fallback)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 40;
+    compileInfo.ubSize = 196608;
+
+    int64_t perm_value[3] = {0, 2, 1};
+    gert::TilingContextPara::TensorDescription x({{1, 16, 32}, {1, 16, 32}}, ge::DT_INT8, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{1, 32, 16}, {1, 32, 16}}, ge::DT_INT8, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    if (success) {
+        EXPECT_NE(tilingInfo.tilingKey, 10008);
+    }
+}
+
+TEST_F(TransposeTiling, transpose_021vconv_int8_cconv_hlen16_wlen128)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 40;
+    compileInfo.ubSize = 196608;
+
+    int64_t perm_value[3] = {0, 2, 1};
+    gert::TilingContextPara::TensorDescription x({{128, 16, 128}, {128, 16, 128}}, ge::DT_INT8, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{128, 128, 16}, {128, 128, 16}}, ge::DT_INT8, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    if (success && tilingInfo.tilingKey == 10008) {
+        optiling::Transpose021WithVCONV::Transpose021VCONVTilingData tilingData(tilingInfo.tilingData.get());
+        EXPECT_EQ(tilingData.get_HLen(), 16);
+        EXPECT_EQ(tilingData.get_WLen(), 128);
+        EXPECT_EQ(tilingData.get_UseRConv(), false);
+        EXPECT_EQ(tilingData.get_HAlignBlockElem(), 32);
+        EXPECT_EQ(tilingData.get_WAlignBlockElem(), 128);
+    }
+}
+
+TEST_F(TransposeTiling, transpose_021vconv_int8_cconv_hlen16_wlen64)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 40;
+    compileInfo.ubSize = 196608;
+
+    int64_t perm_value[3] = {0, 2, 1};
+    gert::TilingContextPara::TensorDescription x({{1600, 16, 64}, {1600, 16, 64}}, ge::DT_INT8, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{1600, 64, 16}, {1600, 64, 16}}, ge::DT_INT8, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    if (success && tilingInfo.tilingKey == 10008) {
+        optiling::Transpose021WithVCONV::Transpose021VCONVTilingData tilingData(tilingInfo.tilingData.get());
+        EXPECT_EQ(tilingData.get_HLen(), 16);
+        EXPECT_EQ(tilingData.get_WLen(), 64);
+        EXPECT_EQ(tilingData.get_UseRConv(), false);
+        EXPECT_EQ(tilingData.get_HAlignBlockElem(), 32);
+        EXPECT_EQ(tilingData.get_WAlignBlockElem(), 64);
+    }
 }
