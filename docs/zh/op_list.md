@@ -2278,6 +2278,16 @@
   </tr>
   <tr>
     <td>conversion</td>
+    <td><a href="../../conversion/clip_by_norm_no_div_sum/README.md">clip_by_norm_no_div_sum</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>对4个支持广播的输入张量执行ClipByNormNoDivSum运算。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
     <td><a href="../../conversion/clip_by_value/README.md">clip_by_value</a></td>
     <td>√</td>
     <td>√</td>
