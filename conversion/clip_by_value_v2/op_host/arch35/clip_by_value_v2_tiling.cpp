@@ -72,7 +72,6 @@ ge::graphStatus ClipByValueV2Tiling::DoOpTiling()
     auto yDesc = context_->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, yDesc);
     ge::DataType yDtype = yDesc->GetDataType();
-
     if (!CheckDtype(xDtype, minDtype, maxDtype, yDtype)) {
         return ge::GRAPH_FAILED;
     }
