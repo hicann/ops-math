@@ -97,7 +97,7 @@
 | [aclnnConfusionTranspose](../../conversion/confusion_transpose_d/docs/aclnnConfusionTranspose.md) | 融合reshape和transpose运算。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnConstantPadNd](../../conversion/pad_v3/docs/aclnnConstantPadNd.md) | 对输入的张量self，以pad参数为基准进行数据填充，填充值为value。 | 默认确定性实现| 默认确定性实现|
 | [aclnnCos&aclnnInplaceCos](../../math/cos/docs/aclnnCos&aclnnInplaceCos.md) | 对输入矩阵的每个元素进行余弦操作后输出。                     | 默认确定性实现| - |
-| [aclnnCosh&aclnnInplaceCosh](../../math/cosh/docs/aclnnCosh&aclnnInplaceCosh.md) | 双曲函数，根据公式返回一个新的tensor。结果的形状与输入tensor相同。 | 默认确定性实现| 默认确定性实现|
+| [aclnnCosh&aclnnInplaceCosh](../../math/cosh/docs/aclnnCosh&aclnnInplaceCosh.md) | 双曲函数，根据公式返回一个新的tensor。结果的形状与输入tensor相同。 | 默认确定性实现| - |
 | [aclnnCummax](../../math/cummax/docs/aclnnCummax.md)            | 计算self中的累积最大值，并返回最大值以及对应的索引。         | 默认确定性实现| - |
 | [aclnnCummin](../../math/cummin/docs/aclnnCummin.md)            | 计算self中的累积最小值，并返回最小值以及对应的索引。         | 默认确定性实现| 默认确定性实现  |
 | [aclnnCumprod&aclnnInplaceCumprod](../../math/cumprod/docs/aclnnCumprod&aclnnInplaceCumprod.md) | 新增aclnnCumprod接口，cumprod函数用于计算输入张量在指定维度上的累积乘积。 | 默认确定性实现| - |
