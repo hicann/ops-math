@@ -315,9 +315,10 @@ static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, cons
     bool outDtypeToFloat = IsRegBase() && mode == MODE_REAL_DIV &&
                            (promoteType == op::DataType::DT_INT32 || promoteType == op::DataType::DT_BOOL);
     auto computeDtype = outDtypeToFloat ? op::DataType::DT_FLOAT : promoteType;
-    if (GetCurrentPlatformInfo().GetCurNpuArch() < NpuArch::DAV_3510) {
-        OP_CHECK_RESULT_DTYPE_CAST_FAILED(computeDtype, y->GetDataType(), return false);
+    if (GetCurrentPlatformInfo().GetCurNpuArch() >= NpuArch::DAV_3510 && mode == MODE_TRUNC_DIV) {
+        return true;
     }
+    OP_CHECK_RESULT_DTYPE_CAST_FAILED(computeDtype, y->GetDataType(), return false);
     return true;
 }
 
@@ -575,16 +576,19 @@ static bool CheckPromoteTypeScalar(const aclTensor* self, const aclScalar* other
                 op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
             return false;
         }
+        if (GetCurrentPlatformInfo().GetCurNpuArch() >= NpuArch::DAV_3510 && mode == MODE_TRUNC_DIV) {
+            return true;
+        }
         // 检查推导后的数据类型能否转换为输出的数据类型
         if (mode == MODE_REAL_DIV && (promoteType == op::DataType::DT_INT32 || promoteType == op::DataType::DT_BOOL)) {
             OP_CHECK_RESULT_DTYPE_CAST_FAILED(op::DataType::DT_FLOAT, y->GetDataType(), return false);
+        } else {
+            OP_CHECK_RESULT_DTYPE_CAST_FAILED(promoteType, y->GetDataType(), return false);
         }
         return true;
     }
     // 检查self的数据类型能否转换为输出的数据类型
-    if (GetCurrentPlatformInfo().GetCurNpuArch() < NpuArch::DAV_3510) {
-        OP_CHECK_RESULT_DTYPE_CAST_FAILED(self->GetDataType(), y->GetDataType(), return false);
-    }
+    OP_CHECK_RESULT_DTYPE_CAST_FAILED(self->GetDataType(), y->GetDataType(), return false);
     return true;
 }
 
