@@ -182,7 +182,6 @@ std::unique_ptr<Graph> CastlikeFusionPass::Replacement(const std::unique_ptr<Mat
     (void)rY;
 
     auto replaceGraph = replaceGraphBuilder.BuildAndReset(std::vector<ge::es::EsTensorHolder>{rOutput});
-
     // Infer shape
     if (InferShape(replaceGraph, subgraphInputs) != SUCCESS) {
         OP_LOGE(kPassName.c_str(), "InferShape for replacement failed.");
