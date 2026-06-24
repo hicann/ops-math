@@ -38,7 +38,8 @@ namespace ops {
 // es::CompliantNodeBuilder, PatternFusionPass) introduced in GE 9.0.0.
 // D1 scenario: uses kCompatibleInherited stage (9.0.0+).
 // Strategy: compile-time macro guard + runtime version check + overall silence.
-#if GE_COMPILER_VERSION_NUM >= 90000000
+#define GE_COMPILER_VERSION_900 90000000
+#if GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
 
 // Weak declare aclsysGetVersionNum to avoid hard link dependency on libascendcl.
 // At runtime: if GE >= 9.0.0, symbol resolves normally; if GE 8.5.0, pointer is NULL.
@@ -54,10 +55,11 @@ namespace {
 CustomPassStage GetPermutePassStage()
 {
     int32_t version = 0;
+    char pkgName[] = "ge_compiler";
     if (aclsysGetVersionNum) {
-        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+        aclsysGetVersionNum(pkgName, &version);
     }
-    if (version >= 90000000) {
+    if (version >= GE_COMPILER_VERSION_900) {
         return CustomPassStage::kCompatibleInherited;
     }
     return CustomPassStage::kBeforeInferShape;  // fallback to old stage for 8.5.0
@@ -244,7 +246,7 @@ bool PermuteFusionPass::MeetRequirements(const std::unique_ptr<MatchResult>& mat
     if (aclsysGetVersionNum) {
         aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
     }
-    if (version < 90000000) {
+    if (version < GE_COMPILER_VERSION_900) {
         OP_LOGD(kFusionPassName.c_str(), "GE runtime version %d < 90000000, skip pass.", version);
         return false;
     }
@@ -344,6 +346,6 @@ GraphUniqPtr PermuteFusionPass::Replacement(const std::unique_ptr<MatchResult>& 
 
 REG_FUSION_PASS(PermuteFusionPass).Stage(GetPermutePassStage());
 
-#endif  // GE_COMPILER_VERSION_NUM >= 90000000
+#endif  // GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
 
 } // namespace ops
