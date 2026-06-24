@@ -27,6 +27,9 @@ using namespace Ops::Base;
 template <typename T, uint8_t BLOCK_DIM_NUM>
 class BatchToSpaceSmallC {
 private:
+    constexpr static uint32_t LOG_OFFSET[]{1, 2, 4, 8, 16};
+    constexpr static uint16_t LOG_OFFSET_NUM = static_cast<uint16_t>(sizeof(LOG_OFFSET) / sizeof(LOG_OFFSET[0]));
+
     constexpr static uint32_t BUFFER_NUM = 2;
     constexpr static uint32_t BLK_ELEMS = Ops::Base::GetUbBlockSize() / sizeof(T);
     constexpr static uint32_t SUB_BASE = uint32_t(4294967296);
@@ -44,8 +47,10 @@ private:
     constexpr static uint8_t RIGHT_CROP = 1;
     constexpr static uint8_t TWO_DIMENSION = 2;
     constexpr static uint8_t THIRD_DIMENSION = 3;
+    constexpr static uint8_t OUTER_STRIDE_AXIS_OFFSET = 2; // 外层stride的轴偏移量(跨2级轴获取stride)
     constexpr static int8_t BS_PIXEL_MAP[4][3] = {{-1, -1, -1}, {2, -1, -1}, {3, 4, -1}, {4, 5, 6}};
     constexpr static uint8_t SHAPE_DIM_NUM = MAX_CROP_DIM_NUM * BLOCK_DIM_NUM + N_C_NUM;
+    constexpr static uint32_t UINT64_PROCESS_FACTOR = 2; // uint64类型数据处理时元素计数翻倍因子
     const B2SNDSmallCTilingData* td_ = nullptr;
     GlobalTensor<T> inputGM_;
     GlobalTensor<T> outputGM_;
@@ -304,7 +309,7 @@ public:
     {
         __ubuf__ T* outputAddrTmp = outputAddr;
         if constexpr (sizeof(T) == sizeof(uint64_t)) {
-            tiledProcessSize *= 2;
+            tiledProcessSize *= UINT64_PROCESS_FACTOR;
         }
         uint32_t vlSize = vlSize_;
         uint64_t offset0 = cropOffset_[0][0];
@@ -843,11 +848,12 @@ public:
                                   tiledInShape_[indexMap_[axis2]] > cropOffset_[indexMap_[axis2]][1]) ?
                                      1 :
                                      0;
-                loopParams.loop1SrcStride = ubOutStride_[axis2 - 2] * sizeof(T);
+                loopParams.loop1SrcStride = ubOutStride_[axis2 - OUTER_STRIDE_AXIS_OFFSET] * sizeof(T);
                 loopParams.loop1DstStride =
-                    tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis2 - 2] * sizeof(T);
+                    tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis2 - OUTER_STRIDE_AXIS_OFFSET] * sizeof(T);
                 uint64_t tempBlockCount = ubOutStride_[axis2] / ubOutStride_[axis1 - 1];
-                uint64_t tempLoopSize = ubOutStride_[0] * tiledInShape_[indexMap_[0]] / ubOutStride_[axis2 - 2];
+                uint64_t tempLoopSize =
+                    ubOutStride_[0] * tiledInShape_[indexMap_[0]] / ubOutStride_[axis2 - OUTER_STRIDE_AXIS_OFFSET];
                 if (hasFirst) {
                     copyOutParams.blockCount =
                         (tiledInShape_[indexMap_[axis2]] - cropOffset_[indexMap_[axis2]][0]) * tempBlockCount;
@@ -862,7 +868,7 @@ public:
                         (td_->croppedInShape[indexMap_[axis2]] - cropOffset_[indexMap_[axis2]][0]) * outStride_[axis2] :
                         0;
                 if (hasLast) {
-                    uint64_t inOffsetL = ubOutStride_[axis2 - 2] - ubOutStride_[axis2 - 1];
+                    uint64_t inOffsetL = ubOutStride_[axis2 - OUTER_STRIDE_AXIS_OFFSET] - ubOutStride_[axis2 - 1];
                     uint64_t outOffsetL = outOffset + loopParams.loop1Size / tempLoopSize * outStride_[axis2 - 1];
                     copyOutParams.blockCount =
                         (tiledInShape_[indexMap_[axis2]] - cropOffset_[indexMap_[axis2]][1]) * tempBlockCount;
@@ -877,9 +883,9 @@ public:
                 loopParams.loop1Size = tiledInShape_[indexMap_[axis2 - 1]] -
                                        (cropOffset_[indexMap_[axis2]][0] > 0 ? 1 : 0) -
                                        (cropOffset_[indexMap_[axis2]][1] > 0 ? 1 : 0);
-                loopParams.loop2SrcStride = ubOutStride_[axis2 - 2] * sizeof(T);
+                loopParams.loop2SrcStride = ubOutStride_[axis2 - OUTER_STRIDE_AXIS_OFFSET] * sizeof(T);
                 loopParams.loop2DstStride =
-                    tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis2 - 2] * sizeof(T);
+                    tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis2 - OUTER_STRIDE_AXIS_OFFSET] * sizeof(T);
                 loopParams.loop2Size = tempLoopSize;
                 SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
                 DataCopyPad(outputGM_[outAddr + outOffset], dst[inOffset], copyOutParams);
@@ -894,12 +900,12 @@ public:
             copyOutParams.blockCount = tiledInShape_[indexMap_[axis1 - 1]] - hasFirst - hasLast;
             copyOutParamsF.blockLen =
                 ubOutStride_[axis1] * (tiledInShape_[indexMap_[axis1]] - cropOffset_[indexMap_[axis1]][0]) * sizeof(T);
-            copyOutParamsF.srcStride = (ubOutStride_[axis1 - 2] - copyOutParamsF.blockLen / sizeof(T)) / BLK_ELEMS;
-            copyOutParamsF.dstStride = (outStride_[axis1 - 2] - copyOutParamsF.blockLen / sizeof(T)) * sizeof(T);
+            copyOutParamsF.srcStride = (ubOutStride_[axis1 - OUTER_STRIDE_AXIS_OFFSET] - copyOutParamsF.blockLen / sizeof(T)) / BLK_ELEMS;
+            copyOutParamsF.dstStride = (outStride_[axis1 - OUTER_STRIDE_AXIS_OFFSET] - copyOutParamsF.blockLen / sizeof(T)) * sizeof(T);
             copyOutParamsL.blockLen =
                 ubOutStride_[axis1] * (tiledInShape_[indexMap_[axis1]] - cropOffset_[indexMap_[axis1]][1]) * sizeof(T);
-            copyOutParamsL.srcStride = (ubOutStride_[axis1 - 2] - copyOutParamsL.blockLen / sizeof(T)) / BLK_ELEMS;
-            copyOutParamsL.dstStride = (outStride_[axis1 - 2] - copyOutParamsL.blockLen / sizeof(T)) * sizeof(T);
+            copyOutParamsL.srcStride = (ubOutStride_[axis1 - OUTER_STRIDE_AXIS_OFFSET] - copyOutParamsL.blockLen / sizeof(T)) / BLK_ELEMS;
+            copyOutParamsL.dstStride = (outStride_[axis1 - OUTER_STRIDE_AXIS_OFFSET] - copyOutParamsL.blockLen / sizeof(T)) * sizeof(T);
             tempAxis = FindOuterIndex(axis2, axis1 - 1);
             if (tempAxis > 0) {
                 copyOutParamsF.dstStride = (outStride_[tempAxis - 1] - copyOutParamsF.blockLen / sizeof(T)) * sizeof(T);
@@ -941,9 +947,9 @@ public:
                 loopParams.loop2SrcStride = loopParams.loop1SrcStride;
                 loopParams.loop2DstStride = loopParams.loop1DstStride;
                 loopParams.loop1Size = tempFactor;
-                loopParams.loop1SrcStride = ubOutStride_[axis1 - 2] * sizeof(T);
+                loopParams.loop1SrcStride = ubOutStride_[axis1 - OUTER_STRIDE_AXIS_OFFSET] * sizeof(T);
                 loopParams.loop1DstStride =
-                    tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis1 - 2] * sizeof(T);
+                    tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis1 - OUTER_STRIDE_AXIS_OFFSET] * sizeof(T);
                 for (auto a = 0; a < outSize; a++) {
                     SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
                     DataCopyPad(
@@ -952,14 +958,15 @@ public:
                     ResetLoopModePara(DataCopyMVType::UB_TO_OUT);
                 }
             } else if (axis2 == 0) {
-                uint64_t tempFactor = ubOutStride_[0] * tiledInShape_[indexMap_[0]] / ubOutStride_[axis1 - 2];
+                uint64_t tempFactor =
+                    ubOutStride_[0] * tiledInShape_[indexMap_[0]] / ubOutStride_[axis1 - OUTER_STRIDE_AXIS_OFFSET];
                 if (hasFirst) {
                     copyOutParamsF.blockCount = copyOutParamsF.blockCount * tempFactor;
                     DataCopyPad(outputGM_[outAddr], dst, copyOutParamsF);
                 }
-                loopParams.loop1SrcStride = ubOutStride_[axis1 - 2] * sizeof(T);
-                loopParams.loop1DstStride =
-                    tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis1 - 2] * sizeof(T);
+                loopParams.loop1SrcStride = ubOutStride_[axis1 - OUTER_STRIDE_AXIS_OFFSET] * sizeof(T);
+                loopParams.loop1DstStride = tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) :
+                                                           outStride_[axis1 - OUTER_STRIDE_AXIS_OFFSET] * sizeof(T);
                 loopParams.loop1Size = tempFactor;
                 SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
                 DataCopyPad(outputGM_[outAddr + outOffset], dst[inOffset], copyOutParams);
@@ -970,7 +977,7 @@ public:
                 }
             } else {
                 int8_t tempAxis2 = FindOuterIndex(0, axis2);
-                uint64_t tempFactor = ubOutStride_[axis2 - 1] / ubOutStride_[axis1 - 2];
+                uint64_t tempFactor = ubOutStride_[axis2 - 1] / ubOutStride_[axis1 - OUTER_STRIDE_AXIS_OFFSET];
                 loopParams.loop1SrcStride = ubOutStride_[axis2 - 1] * sizeof(T);
                 loopParams.loop1DstStride =
                     (tempAxis2 > 0) ? outStride_[tempAxis2 - 1] * sizeof(T) : outStride_[axis2 - 1] * sizeof(T);
@@ -985,9 +992,9 @@ public:
                     DataCopyPad(outputGM_[outAddr + outOffsetL], dst[inOffsetL], copyOutParamsL);
                 }
                 ResetLoopModePara(DataCopyMVType::UB_TO_OUT);
-                loopParams.loop1SrcStride = ubOutStride_[axis1 - 2] * sizeof(T);
-                loopParams.loop1DstStride =
-                    tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) : outStride_[axis1 - 2] * sizeof(T);
+                loopParams.loop1SrcStride = ubOutStride_[axis1 - OUTER_STRIDE_AXIS_OFFSET] * sizeof(T);
+                loopParams.loop1DstStride = tempAxis > 0 ? outStride_[tempAxis - 1] * sizeof(T) :
+                                                           outStride_[axis1 - OUTER_STRIDE_AXIS_OFFSET] * sizeof(T);
                 loopParams.loop1Size = tempFactor;
                 loopParams.loop2SrcStride = ubOutStride_[axis2 - 1] * sizeof(T);
                 loopParams.loop2DstStride =
@@ -1093,7 +1100,7 @@ public:
     }
 
     // 计算输入shape截取数据后的偏移
-    __aicore__ inline void CalcCropIndex(uint64_t result[8])
+    __aicore__ inline void CalcCropIndex(uint64_t result[MAX_DIMS_NUM])
     {
         for (uint8_t dim = 0; dim < BLOCK_DIM_NUM; ++dim) {
             int8_t pixelDim = BS_PIXEL_MAP[BLOCK_DIM_NUM][dim];
@@ -1122,11 +1129,10 @@ public:
     __aicore__ inline uint32_t CeilLog2(uint32_t input)
     {
         input--;
-        input |= input >> 1;
-        input |= input >> 2;
-        input |= input >> 4;
-        input |= input >> 8;
-        input |= input >> 16;
+        #pragma unroll
+        for (uint16_t i=0; i < LOG_OFFSET_NUM; ++i) {
+            input |= input >> LOG_OFFSET[i];
+        }
         input++;
         uint32_t res = 0;
         while (input >>= 1) {

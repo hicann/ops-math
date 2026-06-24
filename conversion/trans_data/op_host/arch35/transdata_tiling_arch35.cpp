@@ -29,7 +29,7 @@ namespace transdata_asc {
 
 ge::graphStatus TransDataTilingAscendC::GetHardwareInfo()
 {
-    auto compileInfo = reinterpret_cast<const TransDataCompileInfo*>(context_->GetCompileInfo());
+    auto compileInfo = context_->GetCompileInfo<TransDataCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfo);
     coreNum_ = static_cast<uint32_t>(compileInfo->coreNum);
     ubSize_ = compileInfo->ubSize;
@@ -141,10 +141,10 @@ bool TransDataTilingAscendC::CalcNzToNdShapeSize()
     outShape_ = Ops::Base::EnsureNotScalar(yStorage->GetStorageShape());
 
     OP_CHECK_IF(
-        inShape_.GetDimNum() < (int64_t)nFour,
-        OP_LOGE(context_->GetNodeName(), "The input shape dim is less than 4!"), return false);
+        inShape_.GetDimNum() < nFour, OP_LOGE(context_->GetNodeName(), "The input shape dim is less than 4!"),
+        return false);
     OP_CHECK_IF(
-        inShape_.GetDimNum() - outShape_.GetDimNum() != (int64_t)nTwo,
+        inShape_.GetDimNum() != outShape_.GetDimNum() + nTwo,
         OP_LOGE(context_->GetNodeName(), "The input dim must be 2 higher than the output dim."), return false);
 
     auto inputDimCnt = inShape_.GetDimNum();

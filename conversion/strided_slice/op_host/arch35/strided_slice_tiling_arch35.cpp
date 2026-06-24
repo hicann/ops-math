@@ -211,7 +211,7 @@ void StrideSliceTiling::CalcBlockSplitInfo()
     // 说明整个shape都很小，blk不切最后一根轴
     if (blkIndex_ == static_cast<int64_t>(-1)) {
         blkIndex_ = static_cast<int64_t>(dimNum_ - 1);
-        blkFactor_ = outputShape.GetDim(dimNum_ - 1);
+        blkFactor_ = outputShape.GetDim(static_cast<size_t>(dimNum_ - 1));
     }
 
     blkTailFactor_ = outputShape.GetDim(blkIndex_) % blkFactor_;

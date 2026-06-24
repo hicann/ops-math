@@ -26,6 +26,11 @@ using namespace AscendC;
 template <typename T>
 class KernelPadV3GradCircularHugeWidth {
 private:
+    constexpr static size_t DIM_IDX_4 = 4U;
+    constexpr static size_t GM_ADDR_IDX_CENTER = 0U;
+    constexpr static size_t GM_ADDR_IDX_LEFT = 1U;
+    constexpr static size_t GM_ADDR_IDX_RIGHT = 2U;
+
     uint32_t inResStart_;
     uint32_t inSrcStart_;
 
@@ -199,7 +204,7 @@ private:
         } else {
             leftUbStartIdx_ = (outIndex_[ubAxis_] < leftStartOnInner_) ? (leftStartOnInner_ - outIndex_[ubAxis_]) : 0;
             leftUbAddLen_ = dataLen_ - leftUbStartIdx_;
-            inIdxCnt[4].inGmIdx[1] = outIndex_[ubAxis_] + leftUbStartIdx_ - leftStartOnInner_;
+            inIdxCnt[DIM_IDX_4].inGmIdx[GM_ADDR_IDX_LEFT] = outIndex_[ubAxis_] + leftUbStartIdx_ - leftStartOnInner_;
         }
 
         if (tilingData_->rightPad[ubAxis_] == 0 || outIndex_[ubAxis_] >= tilingData_->rightPad[ubAxis_]) {
@@ -208,14 +213,14 @@ private:
             rightUbAddLen_ = (outIndex_[ubAxis_] + dataLen_ <= tilingData_->rightPad[ubAxis_]) ?
                                  dataLen_ :
                                  tilingData_->rightPad[ubAxis_] - outIndex_[ubAxis_];
-            inIdxCnt[4].inGmIdx[2] =
+            inIdxCnt[DIM_IDX_4].inGmIdx[GM_ADDR_IDX_RIGHT] =
                 outIndex_[ubAxis_] + tilingData_->leftPad[ubAxis_] + tilingData_->outShape[ubAxis_];
             // 当前块的右pad在输入中的索引
         }
 
         for (uint8_t i = 0; i < dimNum_ - 1; ++i) {
             // self
-            inIdxCnt[i].inGmIdx[0] = inIndex_[i] * tilingData_->inStride[i];
+            inIdxCnt[i].inGmIdx[GM_ADDR_IDX_CENTER] = inIndex_[i] * tilingData_->inStride[i];
             // left
             if (tilingData_->leftPad[i] != 0 && outIndex_[i] >= tilingData_->outShape[i] - tilingData_->leftPad[i]) {
                 inIdxCnt[i].inGmIdx[inIdxCnt[i].cnt++] =
@@ -315,7 +320,7 @@ private:
         __ubuf__ T* srcAddr, __ubuf__ CalType* resAddr, LocalTensor<T> src, uint32_t idx, uint64_t a3Offset,
         IdxAndTimes* inIdxCnt)
     {
-        uint64_t inLeftAddr = a3Offset + inIdxCnt[4].inGmIdx[1];
+        uint64_t inLeftAddr = a3Offset + inIdxCnt[DIM_IDX_4].inGmIdx[GM_ADDR_IDX_LEFT];
         copyInParams_.blockLen = leftUbAddLen_ * sizeof(T);
 
         uint16_t leftMainTimes = leftUbAddLen_ / oneRepeatSize_;
@@ -390,7 +395,7 @@ private:
         __ubuf__ T* srcAddr, __ubuf__ CalType* resAddr, LocalTensor<T> src, uint32_t idx, uint64_t a3Offset,
         IdxAndTimes* inIdxCnt)
     {
-        uint64_t inRightAddr = a3Offset + inIdxCnt[4].inGmIdx[2];
+        uint64_t inRightAddr = a3Offset + inIdxCnt[DIM_IDX_4].inGmIdx[GM_ADDR_IDX_RIGHT];
         copyInParams_.blockLen = rightUbAddLen_ * sizeof(T);
 
         uint16_t rightMainTimes = CeilDiv(rightUbAddLen_, oneRepeatSize_);

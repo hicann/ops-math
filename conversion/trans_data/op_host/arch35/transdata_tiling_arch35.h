@@ -34,7 +34,7 @@ TILING_DATA_FIELD_DEF(int64_t, c0);
 TILING_DATA_FIELD_DEF(int64_t, h);
 TILING_DATA_FIELD_DEF(int64_t, n);
 TILING_DATA_FIELD_DEF(int64_t, c);
-TILING_DATA_FIELD_DEF(int64_t, tNum);  // thread number
+TILING_DATA_FIELD_DEF(int64_t, tNum); // thread number
 END_TILING_DATA_DEF;
 
 BEGIN_TILING_DATA_DEF(TransDataNzToNdTilingData)
@@ -74,7 +74,7 @@ constexpr int64_t SIMT_RSV_SIZE = 128 * 1024L;
 
 class TransDataTilingAscendC {
 public:
-    explicit TransDataTilingAscendC(gert::TilingContext* context) : context_(context){};
+    explicit TransDataTilingAscendC(gert::TilingContext* context) : context_(context) {};
     ge::graphStatus DoTiling();
     ge::graphStatus DoNz2NdTiling();
     ge::graphStatus GetHardwareInfo();
@@ -102,27 +102,27 @@ private:
     TransDataNzToNdTilingData tilingNzToNdData_;
     gert::Shape inShape_;
     gert::Shape outShape_;
-    ge::Format dstFormat_;
-    size_t dtypeSize_;
-    ge::DataType srcDtype_;
+    ge::Format dstFormat_{ge::FORMAT_MD};
+    size_t dtypeSize_{0};
+    ge::DataType srcDtype_{ge::DT_UNDEFINED};
 
     uint32_t coreNum_{1};
-    uint32_t bNum_;
-    int64_t ubSize_;
-    int64_t blockSize_;
+    uint32_t bNum_{0};
+    int64_t ubSize_{0};
+    int64_t blockSize_{0};
     int64_t tilingKey_{TILING_MODE_SIMT};
 
-    int64_t expectC0_;
-    int64_t c0_;
-    int64_t h_;
-    int64_t n_;
-    int64_t c_;
-    int64_t c1_;
-    int64_t n0_;
-    int64_t n1_;
-    int64_t tNum_;
+    int64_t expectC0_{0};
+    int64_t c0_{0};
+    int64_t h_{0};
+    int64_t n_{0};
+    int64_t c_{0};
+    int64_t c1_{0};
+    int64_t n0_{0};
+    int64_t n1_{0};
+    int64_t tNum_{0};
 };
-}  // namespace transdata_asc
+} // namespace transdata_asc
 
-}  // namespace optiling
-#endif  // OPS_MATH_CONVERSION_TRANSDATA_TILING_ARCH35_H_
+} // namespace optiling
+#endif // OPS_MATH_CONVERSION_TRANSDATA_TILING_ARCH35_H_

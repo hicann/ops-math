@@ -21,9 +21,13 @@
 #include "exe_graph/runtime/runtime_attrs.h"
 
 namespace optiling {
-// NCHW 常量
+// 公共常量
 // BUFFER分割数量
 static constexpr uint32_t BUFFER_NUM = 2;
+// UB对齐预留块数
+static constexpr uint32_t RESERVED_ALIGN_BLOCK_COUNT = 2;
+static constexpr uint32_t COL_DIM_OFFSET = 1; // 列维度（-1轴）距shape末尾的偏移量
+static constexpr uint32_t ROW_DIM_OFFSET = 2; // 行维度（-2轴）距shape末尾的偏移量
 
 static constexpr uint8_t MIN_INPUT_DIMNUM = 2;
 static constexpr uint8_t MAX_INPUT_DIMNUM = 8;
@@ -32,6 +36,8 @@ static constexpr double MIN_USED_CORES_RATIO = 0.8;
 static constexpr int64_t MIN_PER_UB_SIZE = 4096;
 // UB内 scatter 操作的最大元素个数
 static constexpr int32_t MAX_UB_SCATTER_ELEMENT_NUM = std::numeric_limits<uint16_t>::max();
+// scatter操作元素数限制的最小数据类型字节数
+static constexpr int32_t MIN_DSIZE_FOR_SCATTER_LIMIT = 2;
 
 // SIMT 常量
 static constexpr int64_t MAX_SHAPE_SIZE_FOR_SIMT = 1024;
@@ -67,7 +73,7 @@ private:
 
     // 输入参数
     int32_t dSize_{0};
-    MatrixSetDiagTilingData* tilingData_;
+    MatrixSetDiagTilingData* tilingData_{nullptr};
 
     // tiling context
     gert::TilingContext* context_;
@@ -200,10 +206,10 @@ ge::graphStatus MatrixSetDiagTiling::ParamCheck()
             "diagonal dim num must equal input dim num minus 1"),
         return ge::GRAPH_FAILED);
 
-    xColNum_ = inputShapeVal.GetDim(dimNum_ - 1);
-    xRowNum_ = inputShapeVal.GetDim(dimNum_ - 2);
+    xColNum_ = inputShapeVal.GetDim(dimNum_ - COL_DIM_OFFSET);
+    xRowNum_ = inputShapeVal.GetDim(dimNum_ - ROW_DIM_OFFSET);
     tailAxisDataSize_ = xColNum_ * xRowNum_;
-    diagLen_ = diagShapeVal.GetDim(diagDimNum_ - 1);
+    diagLen_ = diagShapeVal.GetDim(static_cast<size_t>(diagDimNum_ - 1));
     OP_CHECK_IF(
         diagLen_ != std::min(xColNum_, xRowNum_),
         OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
@@ -227,7 +233,7 @@ ge::graphStatus MatrixSetDiagTiling::ParamCheck()
 
 void MatrixSetDiagTiling::CalUbFactor()
 {
-    uint64_t validBufSize = bufferSize_ - ubBlockSize_ * 2;
+    uint64_t validBufSize = bufferSize_ - ubBlockSize_ * RESERVED_ALIGN_BLOCK_COUNT;
     if (isCutW_) {
         if (xColNum_ * dSize_ >= bufferSize_) {
             ubFactor_ = validBufSize / dSize_;
@@ -241,7 +247,7 @@ void MatrixSetDiagTiling::CalUbFactor()
         }
     } else {
         uint64_t totalTailSize = (tailAxisDataSize_ + diagLen_) * dSize_;
-        ubFactor_ = validBufSize >= totalTailSize ? validBufSize / totalTailSize : 1;
+        ubFactor_ = validBufSize >= totalTailSize ? Ops::Base::FloorDiv(validBufSize, totalTailSize) : 1;
     }
 }
 
@@ -264,7 +270,7 @@ ge::graphStatus MatrixSetDiagTiling::Tiling4CutW()
     isCutW_ = true;
     CalUbFactor();
     OP_CHECK_IF((ubFactor_ == 0U), OP_LOGE(context_, "ubFactor is 0"), return ge::GRAPH_FAILED);
-    if (dSize_ <= 2) {
+    if (dSize_ <= MIN_DSIZE_FOR_SCATTER_LIMIT) {
         ubFactor_ = ubFactor_ < MAX_UB_SCATTER_ELEMENT_NUM ? ubFactor_ : MAX_UB_SCATTER_ELEMENT_NUM;
     }
     // 设置核数
@@ -283,7 +289,7 @@ ge::graphStatus MatrixSetDiagTiling::Tiling4NoCutW()
 {
     CalUbFactor();
     OP_CHECK_IF((ubFactor_ == 0U), OP_LOGE(context_, "ubFactor is 0"), return ge::GRAPH_FAILED);
-    if (dSize_ <= 2) {
+    if (dSize_ <= MIN_DSIZE_FOR_SCATTER_LIMIT) {
         ubFactor_ = ubFactor_ * tailAxisDataSize_ < MAX_UB_SCATTER_ELEMENT_NUM ?
                         ubFactor_ :
                         MAX_UB_SCATTER_ELEMENT_NUM / tailAxisDataSize_;
@@ -381,7 +387,8 @@ ge::graphStatus MatrixSetDiagTiling::Tiling4MatrixSetDiag()
     uint64_t totalTailSize = (AlignBlock(tailAxisDataSize_) + AlignBlock(diagLen_)) * dSize_;
     bufferSize_ = ubSize_ / BUFFER_NUM - vectorSize_;
     OP_LOGI(context_, "bufferSize_ %lu, totalTailSize %lu", bufferSize_, totalTailSize);
-    if (totalTailSize >= bufferSize_ || (dSize_ <= 2 && tailAxisDataSize_ >= MAX_UB_SCATTER_ELEMENT_NUM)) {
+    if (totalTailSize >= bufferSize_ ||
+        (dSize_ <= MIN_DSIZE_FOR_SCATTER_LIMIT && tailAxisDataSize_ >= MAX_UB_SCATTER_ELEMENT_NUM)) {
         return Tiling4CutW();
     } else {
         return Tiling4NoCutW();

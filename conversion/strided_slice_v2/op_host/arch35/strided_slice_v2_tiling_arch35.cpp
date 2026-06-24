@@ -14,6 +14,7 @@
 */
 #include "strided_slice_v2_tiling_arch35.h"
 #include <numeric>
+#include "common/inc/op_host/math_log.h"
 
 namespace {
 const std::string OP_NAME = "StridedSliceV2";
@@ -42,7 +43,7 @@ static void ConstructSliceShape(const gert::StorageShape *storage, gert::Shape &
 }
 
 static bool CheckStride(ops::QuickVector &stride, const gert::TilingContext *context) {
-   auto compileInfo = reinterpret_cast<const StridedSliceV2CompileInfo *>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<StridedSliceV2CompileInfo>();
    OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
    for (size_t i = 0; i < stride.GetDimNum(); i++) {
@@ -405,6 +406,15 @@ ge::graphStatus StrideSliceV2TilingForAscendC(gert::TilingContext* context, int6
    return tilingObject.RunStrideSliceTiling();
 }
 
+static ge::graphStatus GetMaskValue(
+    gert::TilingContext* context, const gert::RuntimeAttrs* attrs, size_t attrIndex, uint64_t& maskValue)
+{
+    const int64_t* mask = attrs->GetAttrPointer<int64_t>(attrIndex);
+    OP_CHECK_NULL_WITH_CONTEXT(context, mask);
+    maskValue = static_cast<uint64_t>(*mask);
+    return ge::GRAPH_SUCCESS;
+}
+
 ge::graphStatus Tiling4StridedSliceV2(gert::TilingContext *context) {
    SliceParametersRuntime2 sliceParam;
    if (ConstructSliceParam(context, sliceParam) != ge::GRAPH_SUCCESS) {
@@ -415,21 +425,12 @@ ge::graphStatus Tiling4StridedSliceV2(gert::TilingContext *context) {
    auto attrs = context->GetAttrs();
    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
 
-   uint64_t beginValue, endValue, ellipsisValue, newAxisValue, shrinkAxisValue;
-
-#define GET_MASK_VALUE(index, mask_name) \
-    do { \
-        const int64_t* mask_##mask_name = attrs->GetAttrPointer<int64_t>(index); \
-        OP_CHECK_NULL_WITH_CONTEXT(context, mask_##mask_name); \
-        mask_name##Value = static_cast<uint64_t>(*mask_##mask_name); \
-    } while(0)
-
-    GET_MASK_VALUE(IDX_MASK_BEGIN, begin);
-    GET_MASK_VALUE(IDX_MASK_END, end);
-    GET_MASK_VALUE(IDX_MASK_ELLIPSIS, ellipsis);
-    GET_MASK_VALUE(IDX_MASK_NEW_AXIS, newAxis);
-    GET_MASK_VALUE(IDX_MASK_SHRINK_AXIS, shrinkAxis);
-#undef GET_MASK_VALUE
+   uint64_t beginValue{0}, endValue{0}, ellipsisValue{0}, newAxisValue{0}, shrinkAxisValue{0};
+   CHECK_RET_SUCC(GetMaskValue(context, attrs, IDX_MASK_BEGIN, beginValue));
+   CHECK_RET_SUCC(GetMaskValue(context, attrs, IDX_MASK_END, endValue));
+   CHECK_RET_SUCC(GetMaskValue(context, attrs, IDX_MASK_ELLIPSIS, ellipsisValue));
+   CHECK_RET_SUCC(GetMaskValue(context, attrs, IDX_MASK_NEW_AXIS, newAxisValue));
+   CHECK_RET_SUCC(GetMaskValue(context, attrs, IDX_MASK_SHRINK_AXIS, shrinkAxisValue));
 
    // Infer shape
    const gert::StorageShape *xStorage = context->GetInputShape(INDEX_X);
@@ -470,7 +471,7 @@ ge::graphStatus Tiling4StridedSliceV2(gert::TilingContext *context) {
    OP_LOGI(context->GetNodeName(), "perf slice params: %s", sliceParam.to_string().c_str());
 
    // Infer tiling mode
-   auto compileInfo = reinterpret_cast<const StridedSliceV2CompileInfo *>(context->GetCompileInfo());
+   auto compileInfo = context->GetCompileInfo<StridedSliceV2CompileInfo>();
    OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
    OP_LOGD(context->GetNodeName(), "compile info: %s.", compileInfo->to_string().c_str());
 
