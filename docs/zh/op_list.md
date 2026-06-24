@@ -568,6 +568,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/data_compare/README.md">data_compare</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>逐元素比较两个相同shape和dtype的输入张量，统计差异超出容差范围的元素总个数。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/diag_part/README.md">diag_part</a></td>
     <td>√</td>
     <td>√</td>
