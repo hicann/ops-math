@@ -229,6 +229,10 @@ ge::graphStatus AngleV2Tiling::Init()
     auto xShape = inputShape0->GetStorageShape();
     totalLength = xShape.GetShapeSize();
     OP_LOGD(tilingContext, "totalLength %ld.", totalLength);
+    if (xShape.GetDimNum() > 8){
+        OP_LOGW(tilingContext, "AngleV2 only support tensor with dim num <= 8, but input dim num is %zu.",
+            xShape.GetDimNum());
+    }
 
     auto platformInfo = tilingContext->GetPlatformInfo();
     if (platformInfo == nullptr) {
