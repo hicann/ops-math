@@ -27,10 +27,10 @@ using namespace AscendC;
 constexpr int32_t POLAR_THREAD_DIM = 1024;
 
 struct PolarStridePara {
-    int32_t ms[POLAR_MAX_DIM];
-    int32_t absS[POLAR_MAX_DIM];
-    int32_t angleS[POLAR_MAX_DIM];
-    int32_t yS[POLAR_MAX_DIM];
+    int64_t ms[POLAR_MAX_DIM];
+    int64_t absS[POLAR_MAX_DIM];
+    int64_t angleS[POLAR_MAX_DIM];
+    int64_t yS[POLAR_MAX_DIM];
 };
 
 template <typename T>
@@ -63,9 +63,9 @@ public:
     __aicore__ inline void Process()
     {
         int32_t blockIdx = static_cast<int32_t>(GetBlockIdx());
-        int32_t startIdx = (blockIdx < formerCore_) ? (elementsPerCore_ + 1) * blockIdx
+        int64_t startIdx = (blockIdx < formerCore_) ? (elementsPerCore_ + 1) * blockIdx
                                                      : formerCore_ + elementsPerCore_ * blockIdx;
-        int32_t count = (blockIdx < formerCore_) ? (elementsPerCore_ + 1) : elementsPerCore_;
+        int64_t count = (blockIdx < formerCore_) ? (elementsPerCore_ + 1) : elementsPerCore_;
 
         if (count <= 0) return;
 
@@ -83,19 +83,19 @@ private:
     __simt_vf__ LAUNCH_BOUND(POLAR_THREAD_DIM)
     static void SimtPolarCompute(
         __gm__ U* absGm, __gm__ U* angleGm, __gm__ U* yGm,
-        int32_t startIdx, int32_t count, int32_t dimNum, PolarStridePara para)
+        int64_t startIdx, int64_t count, int64_t dimNum, PolarStridePara para)
     {
-        const int32_t idx = threadIdx.x;
-        const int32_t step = blockDim.x;
-        int32_t i = idx;
+        const int64_t idx = threadIdx.x;
+        const int64_t step = blockDim.x;
+        int64_t i = idx;
         while (i < count) {
-            int32_t v = startIdx + i;
-            int32_t absBase = 0;
-            int32_t angleBase = 0;
-            int32_t yBase = 0;
-            int32_t vv = v;
-            for (int32_t d = 0; d < dimNum; d++) {
-                int32_t c = vv / para.ms[d];
+            int64_t v = startIdx + i;
+            int64_t absBase = 0;
+            int64_t angleBase = 0;
+            int64_t yBase = 0;
+            int64_t vv = v;
+            for (int64_t d = 0; d < dimNum; d++) {
+                int64_t c = vv / para.ms[d];
                 vv -= c * para.ms[d];
                 absBase += c * para.absS[d];
                 angleBase += c * para.angleS[d];
@@ -113,11 +113,11 @@ private:
     GlobalTensor<T> absGm_;
     GlobalTensor<T> angleGm_;
     GlobalTensor<T> yGm_;
-    int32_t totalElements_{0};
-    int32_t elementsPerCore_{0};
-    int32_t coreNum_{0};
-    int32_t formerCore_{0};
-    int32_t dimNum_{0};
+    int64_t totalElements_{0};
+    int64_t elementsPerCore_{0};
+    int64_t coreNum_{0};
+    int64_t formerCore_{0};
+    int64_t dimNum_{0};
     PolarStridePara para_;
 };
 
