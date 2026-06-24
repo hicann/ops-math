@@ -20,6 +20,7 @@
 #include "register/op_impl_registry.h"
 #include "exe_graph/runtime/infer_shape_context.h"
 #include "op_common/log/log.h"
+#include "op_host/util/shape_util.h"
 
 using namespace ge;
 
@@ -44,6 +45,12 @@ static ge::graphStatus InferShape4TileWithAxis(gert::InferShapeContext* context)
 
     // 获取输入 rank
     int64_t rank = input_shape->GetDimNum();
+
+    // unknown rank 处理: input rank 未知时 output 也设未知
+    if (Ops::Base::IsUnknownRank(*input_shape)) {
+        Ops::Base::SetUnknownRank(*output_shape);
+        return ge::GRAPH_SUCCESS;
+    }
 
     // 空 tensor 检查
     if (rank == 0) {

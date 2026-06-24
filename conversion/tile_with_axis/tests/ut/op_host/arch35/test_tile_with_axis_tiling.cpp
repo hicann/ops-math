@@ -103,7 +103,7 @@ TEST(TileWithAxisTiling, ubAxis0_cut_outerDim_fp16)
     EXPECT_EQ(td->totalCount, static_cast<uint64_t>(7));
     EXPECT_EQ(info.blockNum, static_cast<size_t>(7));
     // workspace: 0
-    EXPECT_EQ(info.workspaceSizes.size(), static_cast<size_t>(1));
+    ASSERT_EQ(info.workspaceSizes.size(), static_cast<size_t>(1));
     EXPECT_EQ(info.workspaceSizes[0], static_cast<int64_t>(0));
 }
 

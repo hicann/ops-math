@@ -59,26 +59,6 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t* u
 }
 
 // ============================================================================
-// Helper: Get sizeof for dtype
-// ============================================================================
-static int64_t GetDtypeSize(ge::DataType dataType)
-{
-    switch (dataType) {
-        case ge::DT_FLOAT16:
-        case ge::DT_BF16:
-            return 2;
-        case ge::DT_FLOAT:
-        case ge::DT_INT32:
-            return 4;
-        case ge::DT_INT8:
-        case ge::DT_UINT8:
-            return 1;
-        default:
-            return 4;
-    }
-}
-
-// ============================================================================
 // Helper: Compute workspace size
 // ============================================================================
 static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
@@ -93,7 +73,7 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 // Helper: Handle scalar (rank=0) input
 // ============================================================================
 static ge::graphStatus HandleScalarInput(gert::TilingContext* context, int64_t tiles,
-                                         uint64_t ubSize, ge::DataType dataType)
+                                         uint64_t ubSize)
 {
     TileWithAxisTilingData* tiling = context->GetTilingData<TileWithAxisTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
@@ -110,7 +90,7 @@ static ge::graphStatus HandleScalarInput(gert::TilingContext* context, int64_t t
     tiling->tiles = tiles;
     tiling->rowLength = 1;
     context->SetBlockDim(1);
-    ASCENDC_TPL_SEL_PARAM(context, static_cast<uint32_t>(dataType), static_cast<uint32_t>(0));
+    ASCENDC_TPL_SEL_PARAM(context, static_cast<uint32_t>(0));
     OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
@@ -288,7 +268,7 @@ static ge::graphStatus TileWithAxisTilingFunc(gert::TilingContext* context)
 
     // 3. 标量输入特殊处理
     if (rank == 0) {
-        return HandleScalarInput(context, tiles, ubSize, dataType);
+        return HandleScalarInput(context, tiles, ubSize);
     }
 
     // 4. 校验并归一化 axis
@@ -315,7 +295,9 @@ static ge::graphStatus TileWithAxisTilingFunc(gert::TilingContext* context)
         OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     // 7. UB 切分
-    int64_t bufferSizeElements = (static_cast<int64_t>(ubSize) / 2) / GetDtypeSize(dataType);
+    int64_t dtypeSize = static_cast<int64_t>(ge::GetSizeByDataType(dataType));
+    OP_CHECK_IF(dtypeSize <= 0, OP_LOGE(context, "unsupported dtype, GetSizeByDataType returned %ld", dtypeSize), return ge::GRAPH_FAILED);
+    int64_t bufferSizeElements = (static_cast<int64_t>(ubSize) / 2) / dtypeSize;
     int64_t rowOutElements = tiles * rowLength;
 
     int64_t ubFactor0 = (rowOutElements > 0) ? std::min(outerDim, bufferSizeElements / rowOutElements) : 0;

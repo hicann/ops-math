@@ -99,9 +99,9 @@ public:
 
             UpdateLayoutByIdx(idx);
             CopyIn(ubBuf, bufOffset);
-            InsertSync(HardEvent::MTE2_MTE3);
+            InsertSync<HardEvent::MTE2_MTE3>();
             CopyOut(ubBuf, bufOffset);
-            InsertSync(HardEvent::MTE3_MTE2);
+            InsertSync<HardEvent::MTE3_MTE2>();
         }
     }
 
@@ -155,128 +155,135 @@ private:
     // ================================================================
     __aicore__ inline void InitNddmaParams()
     {
+        if constexpr (UB_AXIS > 1) {
+            return;  // UB_AXIS=2 不使用 NDDMA
+        }
+        // ---- 公共部分 ----
+        nddmaBlockLen_ = rowInLength_;
+        nddmaRepeat_   = td_->ubFactor;  // UB_AXIS=1 默认值
+        nddmaLoopInfo_.loopSrcStride[0] = 1;
+        nddmaLoopInfo_.loopSrcStride[1] = 0;
+        nddmaLoopInfo_.loopSrcStride[2] = 0;
+        nddmaLoopInfo_.loopDstStride[0] = 1;
+        nddmaLoopInfo_.loopDstStride[1] = nddmaBlockLen_;
+        nddmaLoopInfo_.loopDstStride[2] = 0;
+        nddmaLoopInfo_.loopSize[0] = nddmaBlockLen_;
+        nddmaLoopInfo_.loopSize[1] = nddmaRepeat_;
+        nddmaLoopInfo_.loopSize[2] = 1;
+        nddmaLoopInfo_.loopLpSize[0] = 0; nddmaLoopInfo_.loopLpSize[1] = 0; nddmaLoopInfo_.loopLpSize[2] = 0;
+        nddmaLoopInfo_.loopRpSize[0] = 0; nddmaLoopInfo_.loopRpSize[1] = 0; nddmaLoopInfo_.loopRpSize[2] = 0;
+        // ---- UB_AXIS=0 覆盖 dim2 参数（注意 loopSize[1] 需同步 nddmaRepeat_）----
         if constexpr (UB_AXIS == 0) {
-            nddmaBlockLen_ = rowInLength_;
             nddmaRepeat_   = td_->tiles;
-            nddmaLoopInfo_.loopSrcStride[0] = 1;
-            nddmaLoopInfo_.loopSrcStride[1] = 0;
             nddmaLoopInfo_.loopSrcStride[2] = nddmaBlockLen_;
-            nddmaLoopInfo_.loopDstStride[0] = 1;
-            nddmaLoopInfo_.loopDstStride[1] = nddmaBlockLen_;
             nddmaLoopInfo_.loopDstStride[2] = nddmaBlockLen_ * nddmaRepeat_;
-            nddmaLoopInfo_.loopSize[0] = nddmaBlockLen_;
-            nddmaLoopInfo_.loopSize[1] = nddmaRepeat_;
+            nddmaLoopInfo_.loopSize[1] = nddmaRepeat_;  // 同步为 tiles
             nddmaLoopInfo_.loopSize[2] = td_->ubFactor;
-            nddmaLoopInfo_.loopLpSize[0] = 0; nddmaLoopInfo_.loopLpSize[1] = 0; nddmaLoopInfo_.loopLpSize[2] = 0;
-            nddmaLoopInfo_.loopRpSize[0] = 0; nddmaLoopInfo_.loopRpSize[1] = 0; nddmaLoopInfo_.loopRpSize[2] = 0;
-        } else if constexpr (UB_AXIS == 1) {
-            nddmaBlockLen_ = rowInLength_;
-            nddmaRepeat_   = td_->ubFactor;
-            nddmaLoopInfo_.loopSrcStride[0] = 1;
-            nddmaLoopInfo_.loopSrcStride[1] = 0;
-            nddmaLoopInfo_.loopSrcStride[2] = 0;
-            nddmaLoopInfo_.loopDstStride[0] = 1;
-            nddmaLoopInfo_.loopDstStride[1] = nddmaBlockLen_;
-            nddmaLoopInfo_.loopDstStride[2] = 0;
-            nddmaLoopInfo_.loopSize[0] = nddmaBlockLen_;
-            nddmaLoopInfo_.loopSize[1] = nddmaRepeat_;
-            nddmaLoopInfo_.loopSize[2] = 1;
-            nddmaLoopInfo_.loopLpSize[0] = 0; nddmaLoopInfo_.loopLpSize[1] = 0; nddmaLoopInfo_.loopLpSize[2] = 0;
-            nddmaLoopInfo_.loopRpSize[0] = 0; nddmaLoopInfo_.loopRpSize[1] = 0; nddmaLoopInfo_.loopRpSize[2] = 0;
         }
     }
 
     // ================================================================
-    // UpdateLayoutByIdx: 按 Block 索引更新 GM 偏移
+    // UpdateLayoutByIdx: 派发到对应 axis 的子函数
     // ================================================================
     __aicore__ inline void UpdateLayoutByIdx(uint64_t blockIdx)
     {
         if constexpr (UB_AXIS == 0) {
-            // ---- 切 outerDim (outShape=[outerDim,tiles,rowLength]) ----
-            int64_t outerStart = static_cast<int64_t>(td_->ubFactor) * static_cast<int64_t>(blockIdx);
-            int64_t outerCount = min(
-                static_cast<int64_t>(td_->ubFactor),
-                td_->outShape[0] - outerStart);
-
-            layout_.axes[0].inStart  = outerStart;
-            layout_.axes[0].outStart = outerStart;
-            layout_.axes[0].length   = outerCount;
-            layout_.axes[1].length   = td_->outShape[1];  // tiles
-            layout_.axes[2].length   = td_->outShape[2];  // rowLength
-
-            layout_.inOffset   = outerStart * layout_.axes[0].inStride;
-            layout_.outOffset  = outerStart * layout_.axes[0].outStride;
-
-            ubLen_      = outerCount * rowOutLength_;
-            outGmBase_  = layout_.outOffset;
-            inGmBase_   = layout_.inOffset;
-
+            UpdateLayoutAxis0(blockIdx);
         } else if constexpr (UB_AXIS == 1) {
-            // ---- 切 tiles (outShape=[outerDim,tiles,rowLength]) ----
-            int64_t tileBlocksPerOuter = CeilDiv(
-                td_->outShape[1], static_cast<int64_t>(td_->ubFactor));
-            int64_t outerIdx  = static_cast<int64_t>(blockIdx) / tileBlocksPerOuter;
-            int64_t tileStart = static_cast<int64_t>(td_->ubFactor)
-                              * (static_cast<int64_t>(blockIdx) % tileBlocksPerOuter);
-            int64_t tileCount = min(
-                static_cast<int64_t>(td_->ubFactor),
-                td_->outShape[1] - tileStart);
-
-            layout_.axes[0].inStart  = outerIdx;
-            layout_.axes[0].outStart = outerIdx;
-            layout_.axes[0].length   = 1;
-            layout_.axes[1].outStart = tileStart;
-            layout_.axes[1].length   = tileCount;
-            layout_.axes[2].length   = td_->outShape[2];  // rowLength
-
-            layout_.outOffset = outerIdx  * layout_.axes[0].outStride
-                              + tileStart * layout_.axes[1].outStride;
-
-            // 输入: 中间维恒为 1, tile 维 = 0
-            layout_.inOffset = outerIdx * layout_.axes[0].inStride;
-
-            ubLen_      = tileCount * td_->outShape[2];
-            outGmBase_  = layout_.outOffset;
-            inGmBase_   = layout_.inOffset;
-
+            UpdateLayoutAxis1(blockIdx);
         } else {
-            // UB_AXIS == 2
-            // ---- 切 rowLength (outShape=[outerDim,tiles,rowLength]) ----
-            // 每 block = 1 outer 行 x 1 tile x ubFactor 个连续元素
-            int64_t rowBlocksPerTile = CeilDiv(
-                td_->outShape[2], static_cast<int64_t>(td_->ubFactor));
-            int64_t blocksPerOuter  = td_->outShape[1] * rowBlocksPerTile;
-            int64_t outerIdx    = static_cast<int64_t>(blockIdx) / blocksPerOuter;
-            int64_t remainder   = static_cast<int64_t>(blockIdx) % blocksPerOuter;
-            int64_t tileIdx     = remainder / rowBlocksPerTile;
-            int64_t innerBlock  = remainder % rowBlocksPerTile;
-            int64_t innerStart  = static_cast<int64_t>(td_->ubFactor) * innerBlock;
-            int64_t innerCount  = min(
-                static_cast<int64_t>(td_->ubFactor),
-                td_->outShape[2] - innerStart);
-
-            // 输入: 中间维=1 (tile=0)
-            layout_.axes[0].inStart  = outerIdx;
-            layout_.axes[0].outStart = outerIdx;
-            layout_.axes[0].length   = 1;
-            layout_.axes[1].outStart = tileIdx;
-            layout_.axes[1].inStart  = 0;            // 输入中间维=1
-            layout_.axes[1].length   = 1;            // 仅 1 个 tile
-            layout_.axes[2].inStart  = innerStart;
-            layout_.axes[2].outStart = innerStart;
-            layout_.axes[2].length   = innerCount;
-
-            layout_.inOffset  = outerIdx   * layout_.axes[0].inStride
-                              + innerStart * layout_.axes[2].inStride;
-            layout_.outOffset = outerIdx   * layout_.axes[0].outStride
-                              + tileIdx    * layout_.axes[1].outStride
-                              + innerStart * layout_.axes[2].outStride;
-
-            ubLen_      = innerCount;
-            outGmBase_  = layout_.outOffset;
-            inGmBase_   = layout_.inOffset;
-            // ubAxis=2: CopyIn/CopyOut 均为 DataCopyPad blockCount=1
+            UpdateLayoutAxis2(blockIdx);
         }
+    }
+
+    // ---- 切 outerDim (outShape=[outerDim,tiles,rowLength]) ----
+    __aicore__ inline void UpdateLayoutAxis0(uint64_t blockIdx)
+    {
+        int64_t outerStart = static_cast<int64_t>(td_->ubFactor) * static_cast<int64_t>(blockIdx);
+        int64_t outerCount = min(
+            static_cast<int64_t>(td_->ubFactor),
+            td_->outShape[0] - outerStart);
+
+        layout_.axes[0].inStart  = outerStart;
+        layout_.axes[0].outStart = outerStart;
+        layout_.axes[0].length   = outerCount;
+        layout_.axes[1].length   = td_->outShape[1];  // tiles
+        layout_.axes[2].length   = td_->outShape[2];  // rowLength
+
+        layout_.inOffset   = outerStart * layout_.axes[0].inStride;
+        layout_.outOffset  = outerStart * layout_.axes[0].outStride;
+
+        ubLen_      = outerCount * rowOutLength_;
+        outGmBase_  = layout_.outOffset;
+        inGmBase_   = layout_.inOffset;
+    }
+
+    // ---- 切 tiles (outShape=[outerDim,tiles,rowLength]) ----
+    __aicore__ inline void UpdateLayoutAxis1(uint64_t blockIdx)
+    {
+        int64_t tileBlocksPerOuter = CeilDiv(
+            td_->outShape[1], static_cast<int64_t>(td_->ubFactor));
+        int64_t outerIdx  = static_cast<int64_t>(blockIdx) / tileBlocksPerOuter;
+        int64_t tileStart = static_cast<int64_t>(td_->ubFactor)
+                          * (static_cast<int64_t>(blockIdx) % tileBlocksPerOuter);
+        int64_t tileCount = min(
+            static_cast<int64_t>(td_->ubFactor),
+            td_->outShape[1] - tileStart);
+
+        layout_.axes[0].inStart  = outerIdx;
+        layout_.axes[0].outStart = outerIdx;
+        layout_.axes[0].length   = 1;
+        layout_.axes[1].outStart = tileStart;
+        layout_.axes[1].length   = tileCount;
+        layout_.axes[2].length   = td_->outShape[2];  // rowLength
+
+        layout_.outOffset = outerIdx  * layout_.axes[0].outStride
+                          + tileStart * layout_.axes[1].outStride;
+
+        // 输入: 中间维恒为 1, tile 维 = 0
+        layout_.inOffset = outerIdx * layout_.axes[0].inStride;
+
+        ubLen_      = tileCount * td_->outShape[2];
+        outGmBase_  = layout_.outOffset;
+        inGmBase_   = layout_.inOffset;
+    }
+
+    // ---- 切 rowLength (outShape=[outerDim,tiles,rowLength])
+    //      每 block = 1 outer 行 x 1 tile x ubFactor 个连续元素 ----
+    __aicore__ inline void UpdateLayoutAxis2(uint64_t blockIdx)
+    {
+        int64_t rowBlocksPerTile = CeilDiv(
+            td_->outShape[2], static_cast<int64_t>(td_->ubFactor));
+        int64_t blocksPerOuter  = td_->outShape[1] * rowBlocksPerTile;
+        int64_t outerIdx    = static_cast<int64_t>(blockIdx) / blocksPerOuter;
+        int64_t remainder   = static_cast<int64_t>(blockIdx) % blocksPerOuter;
+        int64_t tileIdx     = remainder / rowBlocksPerTile;
+        int64_t innerBlock  = remainder % rowBlocksPerTile;
+        int64_t innerStart  = static_cast<int64_t>(td_->ubFactor) * innerBlock;
+        int64_t innerCount  = min(
+            static_cast<int64_t>(td_->ubFactor),
+            td_->outShape[2] - innerStart);
+
+        // 输入: 中间维=1 (tile=0)
+        layout_.axes[0].inStart  = outerIdx;
+        layout_.axes[0].outStart = outerIdx;
+        layout_.axes[0].length   = 1;
+        layout_.axes[1].outStart = tileIdx;
+        layout_.axes[1].inStart  = 0;            // 输入中间维=1
+        layout_.axes[1].length   = 1;            // 仅 1 个 tile
+        layout_.axes[2].inStart  = innerStart;
+        layout_.axes[2].outStart = innerStart;
+        layout_.axes[2].length   = innerCount;
+
+        layout_.inOffset  = outerIdx   * layout_.axes[0].inStride
+                          + innerStart * layout_.axes[2].inStride;
+        layout_.outOffset = outerIdx   * layout_.axes[0].outStride
+                          + tileIdx    * layout_.axes[1].outStride
+                          + innerStart * layout_.axes[2].outStride;
+
+        ubLen_      = innerCount;
+        outGmBase_  = layout_.outOffset;
+        inGmBase_   = layout_.inOffset;
     }
 
     // ================================================================
@@ -328,24 +335,15 @@ private:
     }
 
     // ================================================================
-    // InsertSync: SetFlag/WaitFlag 同步
+    // InsertSync: SetFlag/WaitFlag 同步 (模板参数消除 switch-case)
     // 同步链: COPY_IN(MTE2) -> MTE2_MTE3 -> COPY_OUT(MTE3) -> MTE3_MTE2
     // ================================================================
-    __aicore__ inline void InsertSync(const HardEvent& event)
+    template <HardEvent EVENT>
+    __aicore__ inline void InsertSync()
     {
-        event_t eventID = static_cast<event_t>(pipe_.FetchEventID(event));
-        switch (event) {
-            case HardEvent::MTE2_MTE3:
-                SetFlag<HardEvent::MTE2_MTE3>(eventID);
-                WaitFlag<HardEvent::MTE2_MTE3>(eventID);
-                break;
-            case HardEvent::MTE3_MTE2:
-                SetFlag<HardEvent::MTE3_MTE2>(eventID);
-                WaitFlag<HardEvent::MTE3_MTE2>(eventID);
-                break;
-            default:
-                break;
-        }
+        event_t eventID = static_cast<event_t>(pipe_.FetchEventID(EVENT));
+        SetFlag<EVENT>(eventID);
+        WaitFlag<EVENT>(eventID);
     }
 
     // ================================================================
