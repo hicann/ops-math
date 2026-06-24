@@ -544,6 +544,7 @@
     {"name":"ScaledMaskedSoftmaxGradV2", "compute_units": ["ascend910b", "ascend910_93", "ascend310p"], "auto_sync": true},
     {"name":"PadInfer", "compute_units": ["ascend910b", "ascend910_93", "ascend310p"], "auto_sync": true},
     {"name":"Sort", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
+    {"name":"KthValue", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"SortWithIndex", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"TopKV2", "compute_units": ["ascend950", "mc62"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"], "mc62": ["--cce-no-dcache-flush"]}},
     {"name":"Cumsum", "compute_units": ["ascend950", "mc62"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"], "mc62": ["--cce-no-dcache-flush"]}},

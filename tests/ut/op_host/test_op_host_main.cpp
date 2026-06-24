@@ -9,11 +9,28 @@
  */
 
 #include <filesystem>
+#include <dlfcn.h>
+#include <link.h>
+#include <string>
+#include <vector>
 #include <gtest/gtest.h>
 #include "platform/platform_info.h"
 #include "base/registry/op_impl_space_registry_v2.h"
 
 using namespace std;
+
+namespace {
+int PinLoadedSo(struct dl_phdr_info* info, size_t, void*)
+{
+    if (info->dlpi_name && info->dlpi_name[0]) {
+        static std::vector<void*> pins;
+        void* h = dlopen(info->dlpi_name, RTLD_NOW | RTLD_NODELETE);
+        if (h)
+            pins.push_back(h);
+    }
+    return 0;
+}
+} // namespace
 
 class OpHostUtEnvironment : public testing::Environment {
 public:
@@ -46,7 +63,12 @@ public:
         gert::DefaultOpImplSpaceRegistryV2::GetInstance().SetSpaceRegistry(opImplSpaceRegistryV2);
     }
 
-    virtual void TearDown() { cout << "Global Environment TearDown" << endl; }
+    virtual void TearDown()
+    {
+        cout << "Global Environment TearDown" << endl;
+        gert::DefaultOpImplSpaceRegistryV2::GetInstance().SetSpaceRegistry(nullptr);
+        dl_iterate_phdr(PinLoadedSo, nullptr);
+    }
 
 private:
     char** argv_;

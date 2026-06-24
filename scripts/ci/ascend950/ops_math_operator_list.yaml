@@ -145,6 +145,7 @@ operator_group_4:
   - tanh_grad
   - tensor_equal
   - top_k_v2
+  - kth_value
 operator_group_5:
   - transform_bias_rescale_qkv
   - trunc

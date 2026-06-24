@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -18,10 +18,15 @@
 #include "conversion/fill/op_api/fill.h"
 
 #include "aclnn_kernels/common/op_error_check.h"
+#include "opdev/data_type_utils.h"
 #include "opdev/op_dfx.h"
 #include "opdev/op_executor.h"
 #include "opdev/platform.h"
 #include "op_api/aclnn_check.h"
+
+#include "util/math_util.h"
+
+#include <limits>
 
 using namespace op;
 #ifdef __cplusplus
@@ -124,7 +129,6 @@ static inline int64_t wrapDim(int64_t dim, int64_t dimSize)
 {
     return (dim < 0) ? dim + dimSize : dim;
 }
-
 
 // 将dim与最后一个dim进行对换
 static aclIntArray* GetPermResult(int64_t dim, int64_t dimSize, aclOpExecutor* executor)
@@ -250,6 +254,50 @@ static aclIntArray* updatePerm(int64_t dim, int64_t dimSize, aclOpExecutor* exec
         return perm;
     }
     return nullptr;
+}
+
+static bool IsNoTransposeProfitable(const aclTensor *self, int64_t dim)
+{
+    auto selfShape = self->GetViewShape();
+    int64_t outerSize = 1;
+    int64_t innerSize = 1;
+    int64_t dimSize = GetTensorDim(self);
+    for (int64_t i = 0; i < dim; ++i) {
+        outerSize *= selfShape[i];
+    }
+    for (int64_t i = dim + 1; i < dimSize; ++i) {
+        innerSize *= selfShape[i];
+    }
+
+    int64_t dtypeSize = static_cast<int64_t>(op::TypeSize(self->GetDataType()));
+
+    // If each GM row copy is smaller than one block, no-transpose pays heavy per-row padding/gather overhead.
+    // With many outer slices, that fixed cost can dominate the transpose traffic saved by the no-transpose path.
+    int64_t blockBytes = GetCurrentPlatformInfo().GetBlockSize();
+    constexpr int64_t SMALL_ROW_LARGE_OUTER_THRESHOLD = 1024;
+    int64_t blockElems = Ops::Base::CeilDiv(blockBytes, dtypeSize);
+    if (innerSize < blockElems && outerSize >= SMALL_ROW_LARGE_OUTER_THRESHOLD) {
+        return false;
+    }
+    return true;
+}
+
+static bool UseNoTranspose(const aclTensor *self, int64_t dim)
+{
+    if (!IsRegBase()) {
+        return false;
+    }
+    int64_t dimSize = GetTensorDim(self);
+    if (dimSize <= 0 || dimSize > DIM_MAX || dim == dimSize - 1) {
+        return false;
+    }
+    auto selfShape = self->GetViewShape();
+    int64_t axisLen = selfShape[dim];
+    int64_t axisThreshold = 2048;
+    if (axisLen < 2 || axisLen > axisThreshold) {
+        return false;
+    }
+    return IsNoTransposeProfitable(self, dim);
 }
 
 // 根据perm判断是否进行transpose, 再进行sort的计算
@@ -399,14 +447,19 @@ aclnnStatus aclnnSortGetWorkspaceSize(const aclTensor *self, bool stable, int64_
 
     auto selfShapeDetail = GetTensorShape(selfContiguous, uniqueExecutor.get());  // self最原始的shape
 
-    // 如果大于8维，需要reshape
-    if (dimSize > DIM_MAX) {
-        auto shapeNew = reshapeShape(selfContiguous, dimPositive, uniqueExecutor.get());
-        selfContiguous  = reshapeIfLargeTensor(selfContiguous, uniqueExecutor.get(), dimSize, shapeNew);
-    }
     auto indicesType = indicesOut->GetDataType();
-    auto perm = updatePerm(dimPositive, dimSize, uniqueExecutor.get());
-    auto sortRes = SortProcess(selfContiguous, perm, stable, descending, indicesType, uniqueExecutor.get());
+    std::tuple<const aclTensor*, const aclTensor*> sortRes;
+    if (UseNoTranspose(selfContiguous, dimPositive)) {
+        sortRes = l0op::Sort(selfContiguous, dimPositive, descending, stable, indicesType, uniqueExecutor.get());
+    } else {
+        // 如果大于8维，需要reshape
+        if (dimSize > DIM_MAX) {
+            auto shapeNew = reshapeShape(selfContiguous, dimPositive, uniqueExecutor.get());
+            selfContiguous  = reshapeIfLargeTensor(selfContiguous, uniqueExecutor.get(), dimSize, shapeNew);
+        }
+        auto perm = updatePerm(dimPositive, dimSize, uniqueExecutor.get());
+        sortRes = SortProcess(selfContiguous, perm, stable, descending, indicesType, uniqueExecutor.get());
+    }
     CHECK_RET(CheckTupleNullptr(sortRes), ACLNN_ERR_PARAM_NULLPTR);
 
     auto expectedCastRes = std::tie(valuesOut, indicesOut);

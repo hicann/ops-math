@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ private:
     __aicore__ inline void ProcessRadixSortOneCore(GlobalTensor<T1> inputXGm, int64_t gmOffset, uint32_t sortLoopRound);
     __aicore__ inline void ParserTilingData();
 
-private:
     GlobalTensor<T1> inputXGm_;
     GlobalTensor<T1> outValueGm_;
     GlobalTensor<uint32_t> outIdxGm_;
@@ -146,7 +145,7 @@ __aicore__ inline void SortRadixOneCore<T1, T2, isDescend>::ProcessRadixSortOneC
 template <typename T1, typename T2, bool isDescend>
 __aicore__ inline void SortRadixOneCore<T1, T2, isDescend>::Process()
 {
-    if (blockIdx_ > realCoreNum_) {
+    if (blockIdx_ >= realCoreNum_) {
         return;
     }
     for (uint32_t i = 0; i < sortLoopTimes_; i++) {

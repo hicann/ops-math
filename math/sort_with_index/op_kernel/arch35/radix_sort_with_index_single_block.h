@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 #ifndef RADIX_SORT_WITH_INDEX_SINGLE_BLOCK_H
 #define RADIX_SORT_WITH_INDEX_SINGLE_BLOCK_H
 
-#include "../../sort/arch35/util_type_simd.h" // 使用 ROUND_UP_AGLIN
+#include "../../sort/arch35/common/util_type_simd.h" // 使用 ROUND_UP_AGLIN
 
 namespace SortWithIndex {
 

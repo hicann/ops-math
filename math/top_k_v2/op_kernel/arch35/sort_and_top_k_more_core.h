@@ -20,7 +20,7 @@
 #include "kernel_operator.h"
 #include "../../sort/arch35/sort_radix_sort_more_core.h"
 #include "../../sort/arch35/sort_tiling_data.h" // sort_radix_sort_more_core.h 里面引用了 sort_tiling_data.h
-#include "../../sort/arch35/util_type_simd.h" // 使用 ROUND_UP_AGLIN , DoubleBufferSimd
+#include "../../sort/arch35/common/util_type_simd.h" // 使用 ROUND_UP_AGLIN , DoubleBufferSimd
 
 namespace SortAndTopK {
 const uint64_t AGLIN_FACTOR = 32;
@@ -67,7 +67,7 @@ __aicore__ inline void SortAndTopKMoreCore<T1, T2, UT, T3, isDescend>::InitParam
     ParserTilingData();
     this->realCoreNum_ = GetBlockNum();
     if constexpr (sizeof(T3) == sizeof(int64_t)) {
-        this->factor_ = Sort::CONST_2;
+        this->factor_ = 2;
     }
 
     this->inputXGm_.SetGlobalBuffer((__gm__ T1 *)x);
@@ -76,33 +76,33 @@ __aicore__ inline void SortAndTopKMoreCore<T1, T2, UT, T3, isDescend>::InitParam
     uint64_t wkOffset = this->clearCoreSize0_ * this->clearCore0_;
     uint64_t oneBlockNumB32 = this->oneBlock_ / sizeof(int32_t);
     if constexpr (sizeof(T3) == sizeof(int64_t)) {
-        wkOffset = wkOffset * Sort::CONST_2;
+        wkOffset = wkOffset * 2;
     }
-    wkOffset = this->CeilDivMul(wkOffset, oneBlockNumB32);
+    wkOffset = Ops::Base::CeilAlign(wkOffset, oneBlockNumB32);
     this->excusiveBinsGmWk_.SetGlobalBuffer((__gm__ uint32_t *)workspace, wkOffset);
     wkOffset = wkOffset * sizeof(uint32_t);
 
     uint64_t histOffset = this->clearCout_  * this->clearSize_ * this->clearCore1_;
     if constexpr (sizeof(T3) == sizeof(int64_t)) {
-        histOffset = histOffset * Sort::CONST_2;
+        histOffset = histOffset * 2;
     }
-    histOffset = this->CeilDivMul(histOffset, oneBlockNumB32);
+    histOffset = Ops::Base::CeilAlign(histOffset, oneBlockNumB32);
     this->globalHistGmWk_.SetGlobalBuffer((__gm__ uint32_t *)(workspace + wkOffset), histOffset);
     wkOffset = wkOffset + histOffset * sizeof(uint32_t);
 
     uint64_t dbOffset = this->totalDataNum_ * this->unsortedDimParallel_;
     if constexpr (sizeof(T3) == sizeof(int64_t)) {
-        dbOffset = dbOffset * Sort::CONST_2;
+        dbOffset = dbOffset * 2;
     }
-    dbOffset = this->CeilDivMul(dbOffset, oneBlockNumB32);
+    dbOffset = Ops::Base::CeilAlign(dbOffset, oneBlockNumB32);
     this->outIdxDbWK_.SetGlobalBuffer((__gm__ uint32_t *)(workspace + wkOffset), dbOffset);
     wkOffset = wkOffset + dbOffset * sizeof(uint32_t);
 
     dbOffset = this->totalDataNum_ * this->unsortedDimParallel_;
     if constexpr (sizeof(T2) == sizeof(int64_t)) {
-        dbOffset = dbOffset * Sort::CONST_2;
+        dbOffset = dbOffset * 2;
     }
-    dbOffset = this->CeilDivMul(dbOffset, oneBlockNumB32);
+    dbOffset = Ops::Base::CeilAlign(dbOffset, oneBlockNumB32);
     sortOutIdxGM_.SetGlobalBuffer((__gm__ uint32_t *)(workspace + wkOffset), dbOffset);
     wkOffset = wkOffset + dbOffset * sizeof(uint32_t);
 
@@ -113,12 +113,12 @@ __aicore__ inline void SortAndTopKMoreCore<T1, T2, UT, T3, isDescend>::InitParam
     wkOffset = wkOffset + histTileOffset * sizeof(uint16_t);
 
     uint64_t xB8Offset = this->lastDimTileNum_ * this->numTileData_ * this->unsortedDimParallel_;
-    xB8Offset = this->CeilDivMul(xB8Offset, this->oneBlock_);
+    xB8Offset = Ops::Base::CeilAlign(xB8Offset, this->oneBlock_);
     this->xB8GmWk_.SetGlobalBuffer((__gm__ uint8_t *)(workspace + wkOffset), xB8Offset);
     wkOffset = wkOffset + xB8Offset * sizeof(uint8_t);
 
     dbOffset = this->totalDataNum_ * this->unsortedDimParallel_;
-    dbOffset = this->CeilDivMul(dbOffset * sizeof(T1), this->oneBlock_) / sizeof(T1);
+    dbOffset = Ops::Base::CeilAlign(dbOffset * sizeof(T1), this->oneBlock_) / sizeof(T1);
     this->outValueDbWK_.SetGlobalBuffer((__gm__ T1 *)(workspace + wkOffset), dbOffset);
     wkOffset = wkOffset + dbOffset * sizeof(T1);
     sortOutValueGM_.SetGlobalBuffer((__gm__ T1 *)(workspace + wkOffset), dbOffset);
@@ -269,7 +269,7 @@ __aicore__ inline void SortAndTopKMoreCore<T1, T2, UT, T3, isDescend>::GetTopKRe
         GetIndexResData(dataCopyLoopTimes, hasLastTile, outGmOffset, sortOutGmOffset);
         SyncAll();
     }
-} 
+}
 
 template <typename T1, typename T2, typename UT, typename T3, uint64_t isDescend>
 __aicore__ inline void SortAndTopKMoreCore<T1, T2, UT, T3, isDescend>::ProcessSortAndTopK(GlobalTensor<T1> inputXGm,
@@ -307,7 +307,7 @@ __aicore__ inline void SortAndTopKMoreCore<T1, T2, UT, T3, isDescend>::ProcessSo
 template <typename T1, typename T2, typename UT, typename T3, uint64_t isDescend>
 __aicore__ inline void SortAndTopKMoreCore<T1, T2, UT, T3, isDescend>::ProcessTopK()
 {
-    if (this->blockIdx_ > this->realCoreNum_) {
+    if (this->blockIdx_ >= this->realCoreNum_) {
         return;
     }
     for (uint32_t i = 0; i < this->sortLoopTimes_; i++) {

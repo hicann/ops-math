@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 #include "arch35/sort_small_axis_insertion.h"
 #include "arch35/sort_small_axis_two_stage.h"
 #include "arch35/sort_axis_one_copy.h"
+#include "arch35/sort_non_last_small_axis.h"
 
 using namespace AscendC;
 using namespace Sort;
@@ -46,46 +47,46 @@ __global__ __aicore__ void sort(
         return;
     }
     if constexpr (schId == 2) {
-        if constexpr(sizeof(DTYPE_X) == 1) {
-            if constexpr(isInt32 == 1) {
-                SortRadixMoreCore<DTYPE_X, DTYPE_Y2, uint8_t, uint32_t,isDescend> op;
+        if constexpr (sizeof(DTYPE_X) == 1) {
+            if constexpr (isInt32 == 1) {
+                SortRadixMoreCore<DTYPE_X, DTYPE_Y2, uint8_t, uint32_t, isDescend> op;
                 op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
                 op.Process();
             } else {
-                SortRadixMoreCore<DTYPE_X, DTYPE_Y2, uint8_t, int64_t,isDescend> op;
+                SortRadixMoreCore<DTYPE_X, DTYPE_Y2, uint8_t, int64_t, isDescend> op;
                 op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
                 op.Process();
             }
         }
-        if constexpr(sizeof(DTYPE_X) == 2) {
-            if constexpr(isInt32 == 1) {
-                SortRadixMoreCore<DTYPE_X, DTYPE_Y2, uint16_t,uint32_t,isDescend> op;
+        if constexpr (sizeof(DTYPE_X) == 2) {
+            if constexpr (isInt32 == 1) {
+                SortRadixMoreCore<DTYPE_X, DTYPE_Y2, uint16_t, uint32_t, isDescend> op;
                 op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
                 op.Process();
             } else {
-                SortRadixMoreCore<DTYPE_X, DTYPE_Y2, uint16_t,int64_t,isDescend> op;
+                SortRadixMoreCore<DTYPE_X, DTYPE_Y2, uint16_t, int64_t, isDescend> op;
                 op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
                 op.Process();
             }
         }
-        if constexpr(sizeof(DTYPE_X) == 4) {
-            if constexpr(isInt32 == 1) {
-                SortRadixMoreCore<DTYPE_X, DTYPE_Y2, uint32_t,uint32_t,isDescend> op;
+        if constexpr (sizeof(DTYPE_X) == 4) {
+            if constexpr (isInt32 == 1) {
+                SortRadixMoreCore<DTYPE_X, DTYPE_Y2, uint32_t, uint32_t, isDescend> op;
                 op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
                 op.Process();
             } else {
-                SortRadixMoreCore<DTYPE_X, DTYPE_Y2, uint32_t,int64_t,isDescend> op;
+                SortRadixMoreCore<DTYPE_X, DTYPE_Y2, uint32_t, int64_t, isDescend> op;
                 op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
                 op.Process();
             }
         }
-        if constexpr(sizeof(DTYPE_X) == 8) {
-            if constexpr(isInt32 == 1) {
-                SortRadixMoreCore<DTYPE_X, DTYPE_Y2, uint64_t, uint32_t,isDescend> op;
+        if constexpr (sizeof(DTYPE_X) == 8) {
+            if constexpr (isInt32 == 1) {
+                SortRadixMoreCore<DTYPE_X, DTYPE_Y2, uint64_t, uint32_t, isDescend> op;
                 op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
                 op.Process();
             } else {
-                SortRadixMoreCore<DTYPE_X, DTYPE_Y2, uint64_t, int64_t,isDescend> op;
+                SortRadixMoreCore<DTYPE_X, DTYPE_Y2, uint64_t, int64_t, isDescend> op;
                 op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
                 op.Process();
             }
@@ -112,12 +113,7 @@ __global__ __aicore__ void sort(
         return;
     }
     if constexpr (schId == 3) {
-        if constexpr (IsSameType<DTYPE_X, bfloat16_t>::value) {
-            MergeSortBigSize<DTYPE_X, float, isDescending, DTYPE_Y2> op;
-            op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
-            op.Process();
-        }
-		if constexpr (IsSameType<float, DTYPE_X>::value || IsSameType<half, DTYPE_X>::value) {
+        if constexpr (IsSameType<float, DTYPE_X>::value) {
             MergeSortBigSize<DTYPE_X, DTYPE_X, isDescending, DTYPE_Y2> op;
             op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
             op.Process();
@@ -148,6 +144,19 @@ __global__ __aicore__ void sort(
         Sort::SortSmallAxisTwoStage<DTYPE_X, DTYPE_Y2, isDescending> op;
         op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
         op.Process();
+        return;
+    }
+    if constexpr (schId == 9 || schId == 10) {
+        constexpr bool useMergeSort = (schId == 9);
+        constexpr bool supportMergeSort =
+            IsSameType<DTYPE_X, float>::value || IsSameType<DTYPE_X, half>::value ||
+            IsSameType<DTYPE_X, bfloat16_t>::value;
+        // Host tiling only assigns merge sort to supported dtypes; this guard prevents unsupported instantiation.
+        if constexpr (!useMergeSort || supportMergeSort) {
+            Sort::SortNonLastSmallAxis<DTYPE_X, DTYPE_Y2, isDescending, useMergeSort> op;
+            op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
+            op.Process();
+        }
         return;
     }
 }

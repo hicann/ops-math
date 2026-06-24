@@ -49,7 +49,7 @@ __aicore__ inline void SortWithIndexMultiBlock<XType, UnsignedType, IsDescend, X
     // 需要使用的核心数
     this->realCoreNum_ = this->unsortedDimParallel_ * this->lastDimRealCore_;
     if constexpr (sizeof(XRangeType) == sizeof(int64_t)) { 
-        this->factor_ = Sort::CONST_2;
+        this->factor_ = 2;
     }
     // 输入输出GlobalTensor初始化
     this->inputXGm_.SetGlobalBuffer((__gm__ XType *)x);
@@ -60,22 +60,22 @@ __aicore__ inline void SortWithIndexMultiBlock<XType, UnsignedType, IsDescend, X
     uint64_t wkOffset = this->clearCoreSize0_ * this->clearCore0_;
     uint64_t oneBlockNumB32 = this->oneBlock_ / sizeof(int32_t); // oneBlock_ = 32
     if constexpr (sizeof(XRangeType) == sizeof(int64_t)) {
-        wkOffset = wkOffset * Sort::CONST_2;
+        wkOffset = wkOffset * 2;
     }
-    wkOffset = this->CeilDivMul(wkOffset, oneBlockNumB32);
+    wkOffset = Ops::Base::CeilAlign(wkOffset, oneBlockNumB32);
     this->excusiveBinsGmWk_.SetGlobalBuffer((__gm__ uint32_t *)workspace, wkOffset);
     wkOffset = wkOffset * sizeof(uint32_t);
 
     uint64_t histOffset = this->clearCout_ * this->clearSize_ * this->clearCore1_;
     if constexpr (sizeof(XRangeType) == sizeof(int64_t)) {
-        histOffset = histOffset * Sort::CONST_2;
+        histOffset = histOffset * 2;
     }
-    histOffset = this->CeilDivMul(histOffset, oneBlockNumB32);
+    histOffset = Ops::Base::CeilAlign(histOffset, oneBlockNumB32);
     this->globalHistGmWk_.SetGlobalBuffer((__gm__ uint32_t *)(workspace + wkOffset), histOffset);
     wkOffset = wkOffset + histOffset * sizeof(uint32_t);
 
     uint64_t indexDbOffset = this->totalDataNum_ * this->unsortedDimParallel_ * sizeof(IndexType);
-    indexDbOffset = this->CeilDivMul(indexDbOffset, this->oneBlock_);
+    indexDbOffset = Ops::Base::CeilAlign(indexDbOffset, this->oneBlock_);
     this->outIdxDbWK_.SetGlobalBuffer((__gm__ IndexType *)(workspace + wkOffset), indexDbOffset / sizeof(IndexType));
     wkOffset = wkOffset + indexDbOffset;
 
@@ -86,12 +86,12 @@ __aicore__ inline void SortWithIndexMultiBlock<XType, UnsignedType, IsDescend, X
     wkOffset = wkOffset + histTileOffset * sizeof(uint16_t);
 
     uint64_t xB8Offset = this->lastDimTileNum_ * this->numTileData_ * this->unsortedDimParallel_;
-    xB8Offset = this->CeilDivMul(xB8Offset, this->oneBlock_);
+    xB8Offset = Ops::Base::CeilAlign(xB8Offset, this->oneBlock_);
     this->xB8GmWk_.SetGlobalBuffer((__gm__ uint8_t *)(workspace + wkOffset), xB8Offset);
     wkOffset = wkOffset + xB8Offset * sizeof(uint8_t);
 
     uint64_t dbOffset = this->totalDataNum_ * this->unsortedDimParallel_;
-    dbOffset = this->CeilDivMul(dbOffset * sizeof(XType), this->oneBlock_) / sizeof(XType);
+    dbOffset = Ops::Base::CeilAlign(dbOffset * sizeof(XType), this->oneBlock_) / sizeof(XType);
     this->outValueDbWK_.SetGlobalBuffer((__gm__ XType *)(workspace + wkOffset), dbOffset);
 
     this->pipe_->InitBuffer(this->inQueueX_, 1, this->numTileData_ * sizeof(XType));

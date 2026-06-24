@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ struct SortRegBaseTilingData {
     // radix: 清零 globalHistGmWk_ ub 循环次数
     // radix_one_core: 队列 buffer 数
     // merge: 32 个数对齐的 alginH
+    // small-axis insertion/two-stage: non-last-axis flag
     uint32_t keyParams3;
     // radix: 清零 chunk 大小
     // merge_sort(sch0): 队列 buffer 数
@@ -48,5 +49,15 @@ struct SortRegBaseTilingData {
     uint32_t tmpUbSize; // sort高级api需要的临时ub大小
     int64_t lastAxisNum; // h轴大小
     int64_t unsortedDimNum; // b轴大小
+    // Non-last small-axis fields describe the original [outer, axis, inner] GM layout
+    // and the aligned UB row strides used by tile-local transpose schedules.
+    int64_t outerSize;
+    int64_t innerSize;
+    uint32_t innerLoopNum;
+    uint32_t innerChunk;
+    uint32_t inputRowBytes;
+    uint32_t valueAxisBytes;
+    uint32_t indexAxisBytes;
+    uint32_t outputIndexRowBytes;
 };
 #endif

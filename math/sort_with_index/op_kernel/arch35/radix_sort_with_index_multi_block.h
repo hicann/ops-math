@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 #include "constant_var_simd.h"
 #include "../../sort/arch35/sort_radix_sort_more_core.h"
 #include "../../sort/arch35/sort_tiling_data.h" // sort_radix_sort_more_core.h 里面引用了 sort_tiling_data.h
-#include "../../sort/arch35/util_type_simd.h" // 使用 ROUND_UP_AGLIN , DoubleBufferSimd
+#include "../../sort/arch35/common/util_type_simd.h" // 使用 ROUND_UP_AGLIN , DoubleBufferSimd
 #include "simt_api/asc_simt.h"
 
 namespace SortWithIndex {
@@ -72,8 +72,8 @@ __aicore__ inline void RadixSortWithIndexMultiBlock<XType, UnsignedType, IsDesce
     tilingData_ = tilingData;
     ParserTilingData();
     this->realCoreNum_ = GetBlockNum();
-    if constexpr (sizeof(XRangeType) == sizeof(int64_t)) { 
-         this->factor_ = Sort::CONST_2;
+    if constexpr (sizeof(XRangeType) == sizeof(int64_t)) {
+        this->factor_ = 2;
     }
     // 输入输出GlobalTensor初始化
     this->inputXGm_.SetGlobalBuffer((__gm__ XType *)x);
@@ -84,22 +84,22 @@ __aicore__ inline void RadixSortWithIndexMultiBlock<XType, UnsignedType, IsDesce
     uint64_t wkOffset = this->clearCoreSize0_ * this->clearCore0_;
     uint64_t oneBlockNumB32 = this->oneBlock_ / sizeof(int32_t); // oneBlock_ = 32
     if constexpr (sizeof(XRangeType) == sizeof(int64_t)) {
-        wkOffset = wkOffset * Sort::CONST_2;
+        wkOffset = wkOffset * 2;
     }
-    wkOffset = this->CeilDivMul(wkOffset, oneBlockNumB32);
+    wkOffset = Ops::Base::CeilAlign(wkOffset, oneBlockNumB32);
     this->excusiveBinsGmWk_.SetGlobalBuffer((__gm__ uint32_t *)workspace, wkOffset);
     wkOffset = wkOffset * sizeof(uint32_t);
 
     uint64_t histOffset = this->clearCout_ * this->clearSize_ * this->clearCore1_;
     if constexpr (sizeof(XRangeType) == sizeof(int64_t)) {
-        histOffset = histOffset * Sort::CONST_2;
+        histOffset = histOffset * 2;
     }
-    histOffset = this->CeilDivMul(histOffset, oneBlockNumB32);
+    histOffset = Ops::Base::CeilAlign(histOffset, oneBlockNumB32);
     this->globalHistGmWk_.SetGlobalBuffer((__gm__ uint32_t *)(workspace + wkOffset), histOffset);
     wkOffset = wkOffset + histOffset * sizeof(uint32_t);
 
     uint64_t indexDbOffset = this->totalDataNum_ * this->unsortedDimParallel_ * sizeof(IndexType);
-    indexDbOffset = this->CeilDivMul(indexDbOffset, this->oneBlock_);
+    indexDbOffset = Ops::Base::CeilAlign(indexDbOffset, this->oneBlock_);
     outIdxDbWK_.SetGlobalBuffer((__gm__ IndexType *)(workspace + wkOffset), indexDbOffset / sizeof(IndexType));
     wkOffset = wkOffset + indexDbOffset;
 
@@ -110,12 +110,12 @@ __aicore__ inline void RadixSortWithIndexMultiBlock<XType, UnsignedType, IsDesce
     wkOffset = wkOffset + histTileOffset * sizeof(uint16_t);
 
     uint64_t xB8Offset = this->lastDimTileNum_ * this->numTileData_ * this->unsortedDimParallel_;
-    xB8Offset = this->CeilDivMul(xB8Offset, this->oneBlock_);
+    xB8Offset = Ops::Base::CeilAlign(xB8Offset, this->oneBlock_);
     this->xB8GmWk_.SetGlobalBuffer((__gm__ uint8_t *)(workspace + wkOffset), xB8Offset);
     wkOffset = wkOffset + xB8Offset * sizeof(uint8_t);
 
     uint64_t dbOffset = this->totalDataNum_ * this->unsortedDimParallel_;
-    dbOffset = this->CeilDivMul(dbOffset * sizeof(XType), this->oneBlock_) / sizeof(XType);
+    dbOffset = Ops::Base::CeilAlign(dbOffset * sizeof(XType), this->oneBlock_) / sizeof(XType);
     this->outValueDbWK_.SetGlobalBuffer((__gm__ XType *)(workspace + wkOffset), dbOffset);
 
     this->pipe_->InitBuffer(this->inQueueX_, 1, this->numTileData_ * sizeof(XType));

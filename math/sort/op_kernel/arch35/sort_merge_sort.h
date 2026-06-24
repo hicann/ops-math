@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -20,13 +20,15 @@
 #include "kernel_operator.h"
 #include "op_kernel/platform_util.h"
 #include "kernel_tiling/kernel_tiling.h"
+#include "common/merge_sort_constants.h"
 
 namespace Sort {
 using namespace AscendC;
 
-const int32_t XOR_OP_VALUE_FP = 0x80000000;
-const int16_t XOR_OP_VALUE_HALF = 0x8000;
-const uint32_t UB_AGLIN_VALUE = 32;
+using MergeSortConstants::XOR_OP_VALUE_FP;
+using MergeSortConstants::XOR_OP_VALUE_HALF;
+
+const uint32_t UB_AGLIN_VALUE = Ops::Base::GetUbBlockSize();
 const uint32_t CONCAT_AGLIN_VALUE = 16;
 // T1输入x dtype T2输出Idx dtype UT无符号的数据类型
 template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis = 0>
@@ -50,7 +52,6 @@ private:
         uint32_t oneCoreRowNum);
     __aicore__ inline void flipSignBit(LocalTensor<CONVERT_TYPE> xLocal, uint32_t offsetOneRow, uint32_t aglinTileSize);
 
-private:
     GlobalTensor<T1> inputXGm_;
     GlobalTensor<T1> outValueGm_;
     GlobalTensor<T2> outIdxGm_;
@@ -290,9 +291,9 @@ __aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallA
         return;
     }
     uint32_t nowCoreRealRowNum = oneCoreRowNum_;
-    int64_t remianNum = unsortedDimNum_ - unsortedDimIndex;
-    if (remianNum < static_cast<int64_t>(oneCoreRowNum_)) {
-        nowCoreRealRowNum = static_cast<uint32_t>(remianNum);
+    int64_t remainNum = unsortedDimNum_ - unsortedDimIndex;
+    if (remainNum < static_cast<int64_t>(oneCoreRowNum_)) {
+        nowCoreRealRowNum = static_cast<uint32_t>(remainNum);
     }
     // offset
     uint64_t tileOffset = blockIdx_ * numTileData_ * oneCoreRowNum_;

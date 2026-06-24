@@ -253,6 +253,7 @@ sort@ops-math:
         - ops/ops-math/math/sort/
         - ops/ops-math/math/sort_with_index/
         - ops/ops-math/math/top_k_v2/
+        - ops/ops-math/math/kth_value/
       opensource_style: null
       kernel_style: null
     unrelease:

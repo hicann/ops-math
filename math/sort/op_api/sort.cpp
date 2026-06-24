@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
 
 static const int64_t DATA_LIMIT = 100000;
 static const int64_t AXIS_LIMIT = 8;
+static const int64_t NON_LAST_SMALL_AXIS_MIN = 2;
+static const int64_t NON_LAST_SMALL_AXIS_MAX = 2048;
 
 // 根据排序轴的数据量大小判断是否支持aicore
 static bool SocSupportDimSize(const aclTensor *self)
@@ -79,6 +81,17 @@ static bool IsAiCoreSupport(const aclTensor *self, bool stable, bool descending)
     }
 }
 
+static bool IsLastAxisOrSupportedNonLastAxis(const aclTensor *self, int64_t dim)
+{
+    auto dimSize = static_cast<int64_t>(self->GetViewShape().GetDimNum());
+    auto dimValue = dim < 0 ? dim + dimSize : dim;
+    if (dimValue == dimSize - 1) {
+        return true;
+    }
+    auto axisLen = self->GetViewShape()[dimValue];
+    return axisLen >= NON_LAST_SMALL_AXIS_MIN && axisLen <= NON_LAST_SMALL_AXIS_MAX;
+}
+
 void SortAiCore(const aclTensor *self, bool stable, int64_t dim, bool descending, aclTensor *values, aclTensor *indices,
     aclOpExecutor* executor)
 {
@@ -99,8 +112,16 @@ static void SortAiCoreForDavid(const aclTensor *self, bool stable, int64_t dim, 
     L0_DFX(SortAiCoreForDavid, self, stable, dim, descending, values, indices, indicesType);
     
     auto dimSize = static_cast<int64_t>(self->GetViewShape().GetDimNum());
-    if ((dimSize!= dim + 1) && (dim != -1)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "dim must equal to the (number of dimensions - 1 ) or -1.");
+    if ((dim >= dimSize) || (dim + dimSize < 0)) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim must be in range [-N, N-1]. Current dim is %ld.", dim);
+        return;
+    }
+    if (!IsLastAxisOrSupportedNonLastAxis(self, dim)) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+            "Dim must be the last axis or a supported non-last axis with axis size in [2, 2048]. "
+            "Current dim is %ld.",
+            dim);
+        return;
     }
 
     ADD_TO_LAUNCHER_LIST_AICORE(Sort, OP_INPUT(self), OP_OUTPUT(values, indices),
