@@ -132,7 +132,7 @@ usage() {
         echo "Package Build Options:"
         echo $dotted_line
         echo "    --pkg                  Build run package with kernel bin"
-        echo "    --static               Build static library package (cannot be used with --jit)"
+        echo "    --static               Build static library package"
         echo "    --jit                  Build run package without kernel bin"
         echo "    --soc=soc_version      Compile for specified Ascend SoC"
         echo "    --vendor_name=name     Specify custom operator package vendor name (cannot be used with --jit)"
@@ -477,10 +477,6 @@ check_param() {
       echo "[ERROR] --pkg cannot be used with --genop_aicpu"
       exit 1
     fi
-
-    if $(echo ${USE_CMD} | grep -wq "jit"); then
-      ENABLE_BINARY=FALSE
-    fi
   fi
 
   if [[ -n "${BUILD_TYPE}" ]]; then
@@ -513,11 +509,6 @@ check_param() {
 
   if [[ "$ENABLE_MSSANITIZER" == "TRUE" && "$ENABLE_OOM" == "TRUE" ]]; then
     echo "[ERROR] --mssanitizer cannot be used with --oom"
-    exit 1
-  fi
-
-  if $(echo ${USE_CMD} | grep -wq "static") && $(echo ${USE_CMD} | grep -wq "jit"); then
-    echo "[ERROR] --static cannot be used with --jit"
     exit 1
   fi
 
@@ -721,6 +712,7 @@ checkopts() {
   ENABLE_TEST=FALSE
   ENABLE_EXPERIMENTAL=FALSE
   ENABLE_STATIC=FALSE
+  ENABLE_JIT=FALSE
   ENABLE_SIMULATOR=FALSE
   ENABLE_RULE_LAUNCH=""
   AICPU_ONLY=FALSE
@@ -865,7 +857,7 @@ checkopts() {
           ENABLE_STATIC=TRUE
           ENABLE_BINARY=TRUE
           ;;
-        jit) ENABLE_BINARY=FALSE ;;
+        jit) ENABLE_JIT=TRUE ;;
         asan) ENABLE_ASAN=TRUE ;;
         valgrind)
           ENABLE_VALGRIND=TRUE
@@ -938,6 +930,10 @@ checkopts() {
     echo "unparsed param: $@"
     usage
     exit
+  fi
+
+  if [[ "$ENABLE_JIT" == "TRUE" ]]; then
+    ENABLE_BINARY=FALSE
   fi
 
   check_param
@@ -1175,10 +1171,14 @@ build_static_lib() {
     UNITS+=("ascend910b")
   fi
   cmake --build . --target opapi_math_static -- ${VERBOSE} -j $THREAD_NUM
+  local jit_command=""
+  if [[ "$ENABLE_JIT" == "TRUE" ]]; then
+    jit_command="-j"
+  fi
   for unit in "${UNITS[@]}"; do
     rm -fr ${BUILD_PATH}/bin_tmp/${unit}
-    python3 "${BASE_PATH}/scripts/util/build_opp_kernel_static.py" GenStaticOpResourceIni -s ${unit} -b ${BUILD_PATH}
-    python3 "${BASE_PATH}/scripts/util/build_opp_kernel_static.py" StaticCompile -s ${unit} -b ${BUILD_PATH} -n=0 -a=${ARCH_INFO}
+    python3 "${BASE_PATH}/scripts/util/build_opp_kernel_static.py" GenStaticOpResourceIni -s ${unit} -b ${BUILD_PATH} ${jit_command}
+    python3 "${BASE_PATH}/scripts/util/build_opp_kernel_static.py" StaticCompile -s ${unit} -b ${BUILD_PATH} -n=0 -a=${ARCH_INFO} ${jit_command}
   done
   cd "${BUILD_PATH}" && cmake ${CMAKE_ARGS} ..
   cmake --build . --target cann_math_static -- ${VERBOSE} -j $THREAD_NUM
@@ -1717,7 +1717,7 @@ main() {
   if [ "$ENABLE_CREATE_LIB" == "TRUE" ]; then
     build_lib
   fi
-  if [[ "$ENABLE_BINARY" == "TRUE" || "$ENABLE_CUSTOM" == "TRUE" ]]; then
+  if [[ "$ENABLE_BINARY" == "TRUE" || "$ENABLE_CUSTOM" == "TRUE" ]] && [[ "$ENABLE_JIT" == "FALSE" ]]; then
     build_binary
   fi
   if [[ "$ENABLE_STATIC" == "TRUE" ]]; then
