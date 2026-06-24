@@ -41,14 +41,14 @@ $$out_i=|input_i|$$
       <td>self</td>
       <td>输入</td>
       <td>待进行abs计算的入参，公式中的input_i。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX32、COMPLEX64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>out</td>
       <td>输出</td>
       <td>待进行abs计算的出参，公式中的out_i。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
   </tbody></table>
