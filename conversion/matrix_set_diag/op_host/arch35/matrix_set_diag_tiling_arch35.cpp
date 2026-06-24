@@ -209,7 +209,7 @@ ge::graphStatus MatrixSetDiagTiling::ParamCheck()
     xColNum_ = inputShapeVal.GetDim(dimNum_ - COL_DIM_OFFSET);
     xRowNum_ = inputShapeVal.GetDim(dimNum_ - ROW_DIM_OFFSET);
     tailAxisDataSize_ = xColNum_ * xRowNum_;
-    diagLen_ = diagShapeVal.GetDim(static_cast<size_t>(diagDimNum_ - 1));
+    diagLen_ = static_cast<uint64_t>(diagShapeVal.GetDim(diagDimNum_ - 1));
     OP_CHECK_IF(
         diagLen_ != std::min(xColNum_, xRowNum_),
         OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
