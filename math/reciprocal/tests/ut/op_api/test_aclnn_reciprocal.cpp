@@ -108,7 +108,7 @@ TEST_F(reciprocal_test, case_4)
  */
 TEST_F(reciprocal_test, case_5)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto self = TensorDesc({2, 3}, ACL_INT16, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
 

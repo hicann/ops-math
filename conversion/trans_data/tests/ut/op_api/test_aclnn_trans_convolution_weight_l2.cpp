@@ -28,7 +28,7 @@ class l2_trans_convolution_weight_test : public testing::Test {
 };
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P3_test_normal_input_FP16) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   // 使用**Desc描述host api输入输出
   auto x1_desc = TensorDesc({16, 4, 5, 5}, ACL_FLOAT16, ACL_FORMAT_NCHW);
   auto y_desc = TensorDesc(x1_desc);
@@ -41,7 +41,7 @@ TEST_F(l2_trans_convolution_weight_test, ascend310P3_test_normal_input_FP16) {
 }
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P3_test_normal_input_FP32) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   // 使用**Desc描述host api输入输出
   auto x1_desc = TensorDesc({16, 4, 5, 5}, ACL_FLOAT, ACL_FORMAT_NCHW);
   auto y_desc = TensorDesc({16, 4, 5, 5}, ACL_FLOAT16, ACL_FORMAT_NCHW);
@@ -54,7 +54,7 @@ TEST_F(l2_trans_convolution_weight_test, ascend310P3_test_normal_input_FP32) {
 }
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P3_test_wrong_format) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   // 使用**Desc描述host api输入输出
   auto x1_desc = TensorDesc({16, 4, 5, 5}, ACL_FLOAT, ACL_FORMAT_NHWC);
   auto y_desc = TensorDesc(x1_desc);
@@ -67,7 +67,7 @@ TEST_F(l2_trans_convolution_weight_test, ascend310P3_test_wrong_format) {
 }
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P3_test_wrong_dtype_input_int8) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   // 使用**Desc描述host api输入输出
   auto x1_desc = TensorDesc({16, 4, 5, 5}, ACL_INT8, ACL_FORMAT_NCHW);
   auto y_desc = TensorDesc(x1_desc);
@@ -80,7 +80,7 @@ TEST_F(l2_trans_convolution_weight_test, ascend310P3_test_wrong_dtype_input_int8
 }
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P3_test_wrong_format_out) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   // 使用**Desc描述host api输入输出
   auto x1_desc = TensorDesc({16, 4, 5, 5}, ACL_FLOAT, ACL_FORMAT_NCHW);
   auto y_desc = TensorDesc({16, 4, 5, 5}, ACL_FLOAT, ACL_FORMAT_NCHW);
@@ -93,7 +93,7 @@ TEST_F(l2_trans_convolution_weight_test, ascend310P3_test_wrong_format_out) {
 }
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P3_test_wrong_dtype_input_int8_out) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   // 使用**Desc描述host api输入输出
   auto x1_desc = TensorDesc({16, 4, 5, 5}, ACL_INT8, ACL_FORMAT_NCHW);
   auto y_desc = TensorDesc({16, 4, 5, 5}, ACL_INT8, ACL_FORMAT_NCHW);
@@ -106,7 +106,7 @@ TEST_F(l2_trans_convolution_weight_test, ascend310P3_test_wrong_dtype_input_int8
 }
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P3_dim_larger_than_4) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   // 使用**Desc描述host api输入输出
   auto x1_desc = TensorDesc({16, 16, 32, 2, 2}, ACL_FLOAT16, ACL_FORMAT_NCHW);
   auto y_desc = TensorDesc(x1_desc);
@@ -120,7 +120,7 @@ TEST_F(l2_trans_convolution_weight_test, ascend310P3_dim_larger_than_4) {
 
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P3_group_0) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   // 使用**Desc描述host api输入输出
   auto x1_desc = TensorDesc({16, 16, 32, 2}, ACL_FLOAT16, ACL_FORMAT_NCHW);
   auto y_desc = TensorDesc(x1_desc);
@@ -133,7 +133,7 @@ TEST_F(l2_trans_convolution_weight_test, ascend310P3_group_0) {
 }
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P3_transpose_true) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   // 使用**Desc描述host api输入输出
   auto x1_desc = TensorDesc({16, 16, 32, 2}, ACL_FLOAT16, ACL_FORMAT_NCHW);
   auto y_desc = TensorDesc(x1_desc);
@@ -146,7 +146,7 @@ TEST_F(l2_trans_convolution_weight_test, ascend310P3_transpose_true) {
 }
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P3_in_nullptr) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   // 使用**Desc描述host api输入输出
   auto x1_desc = TensorDesc({16, 16, 32, 2}, ACL_FLOAT16, ACL_FORMAT_NCHW);
   auto y_desc = TensorDesc(x1_desc);
@@ -159,7 +159,7 @@ TEST_F(l2_trans_convolution_weight_test, ascend310P3_in_nullptr) {
 }
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P3_out_nullptr) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   // 使用**Desc描述host api输入输出
   auto x1_desc = TensorDesc({16, 16, 32, 2}, ACL_FLOAT16, ACL_FORMAT_NCHW);
   auto y_desc = TensorDesc(x1_desc);
@@ -172,7 +172,7 @@ TEST_F(l2_trans_convolution_weight_test, ascend310P3_out_nullptr) {
 }
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P_normal_shape) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   aclIntArray* tensorShape = nullptr;
   vector<int64_t> tensorShapeVec = {2, 2, 32, 16};
   tensorShape = aclCreateIntArray(tensorShapeVec.data(), tensorShapeVec.size());
@@ -182,14 +182,14 @@ TEST_F(l2_trans_convolution_weight_test, ascend310P_normal_shape) {
 }
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P_shape_nullptr) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   uint64_t weightSize = 0;
   aclnnStatus aclRet = aclnnCalculateConvolutionWeightSize(nullptr, false, 1, ACL_FLOAT16, &weightSize);
   EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 }
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P_size_nullptr) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   aclIntArray* tensorShape = nullptr;
   vector<int64_t> tensorShapeVec = {2, 2, 32, 16};
   tensorShape = aclCreateIntArray(tensorShapeVec.data(), tensorShapeVec.size());
@@ -198,7 +198,7 @@ TEST_F(l2_trans_convolution_weight_test, ascend310P_size_nullptr) {
 }
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P_datatype_fp32) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   aclIntArray* tensorShape = nullptr;
   vector<int64_t> tensorShapeVec = {2, 2, 32, 16};
   tensorShape = aclCreateIntArray(tensorShapeVec.data(), tensorShapeVec.size());
@@ -208,7 +208,7 @@ TEST_F(l2_trans_convolution_weight_test, ascend310P_datatype_fp32) {
 }
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P_group_0) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   aclIntArray* tensorShape = nullptr;
   vector<int64_t> tensorShapeVec = {2, 2, 32, 16};
   tensorShape = aclCreateIntArray(tensorShapeVec.data(), tensorShapeVec.size());
@@ -218,7 +218,7 @@ TEST_F(l2_trans_convolution_weight_test, ascend310P_group_0) {
 }
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P_wrong_dim) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   aclIntArray* tensorShape = nullptr;
   vector<int64_t> tensorShapeVec = {2, 32, 16};
   tensorShape = aclCreateIntArray(tensorShapeVec.data(), tensorShapeVec.size());
@@ -228,7 +228,7 @@ TEST_F(l2_trans_convolution_weight_test, ascend310P_wrong_dim) {
 }
 
 TEST_F(l2_trans_convolution_weight_test, ascend310P_transpose_true) {
-  SetPlatformSocVersion(SocVersion::ASCEND310P);
+  SetPlatformNpuArch(NpuArch::DAV_2002);
   aclIntArray* tensorShape = nullptr;
   vector<int64_t> tensorShapeVec = {2, 2, 32, 16};
   tensorShape = aclCreateIntArray(tensorShapeVec.data(), tensorShapeVec.size());

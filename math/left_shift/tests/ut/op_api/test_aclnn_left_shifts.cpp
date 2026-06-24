@@ -37,7 +37,7 @@ protected:
 // 正常场景_INT8_ND
 TEST_F(l2_left_shifts_test, normal_INT8_ND)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2}, ACL_INT8, ACL_FORMAT_ND);
     int8_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -54,7 +54,7 @@ TEST_F(l2_left_shifts_test, normal_INT8_ND)
 // 正常场景_INT16_NHWC
 TEST_F(l2_left_shifts_test, normal_INT16_NHWC)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2, 2, 2, 2}, ACL_INT16, ACL_FORMAT_NHWC);
     int16_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -71,7 +71,7 @@ TEST_F(l2_left_shifts_test, normal_INT16_NHWC)
 // 正常场景_INT32_HWCN
 TEST_F(l2_left_shifts_test, normal_INT32_HWCN)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2, 2, 2, 2}, ACL_INT32, ACL_FORMAT_HWCN);
     int32_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -88,7 +88,7 @@ TEST_F(l2_left_shifts_test, normal_INT32_HWCN)
 // 正常场景_INT64_NDHWC
 TEST_F(l2_left_shifts_test, normal_INT64_NDHWC)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2, 2, 2, 2, 2}, ACL_INT64, ACL_FORMAT_NDHWC);
     int64_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -105,7 +105,7 @@ TEST_F(l2_left_shifts_test, normal_INT64_NDHWC)
 // 正常场景_UINT16_ND
 TEST_F(l2_left_shifts_test, normal_UINT16_ND)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2}, ACL_UINT16, ACL_FORMAT_ND);
     uint16_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -122,7 +122,7 @@ TEST_F(l2_left_shifts_test, normal_UINT16_ND)
 // 空tensor场景
 TEST_F(l2_left_shifts_test, normal_empty_tensor)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({0}, ACL_INT32, ACL_FORMAT_ND);
     int32_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -139,7 +139,7 @@ TEST_F(l2_left_shifts_test, normal_empty_tensor)
 // CheckNotNull_self_nullptr
 TEST_F(l2_left_shifts_test, abnormal_self_nullptr)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = nullptr;
     int32_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -156,7 +156,7 @@ TEST_F(l2_left_shifts_test, abnormal_self_nullptr)
 // CheckNotNull_other_nullptr
 TEST_F(l2_left_shifts_test, abnormal_other_nullptr)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2}, ACL_INT32, ACL_FORMAT_ND);
     auto shiftBitsDesc = nullptr;
     auto outDesc = TensorDesc({2}, ACL_INT32, ACL_FORMAT_ND);
@@ -172,7 +172,7 @@ TEST_F(l2_left_shifts_test, abnormal_other_nullptr)
 // CheckNotNull_out_nullptr
 TEST_F(l2_left_shifts_test, abnormal_out_nullptr)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2}, ACL_INT32, ACL_FORMAT_ND);
     int32_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -189,7 +189,7 @@ TEST_F(l2_left_shifts_test, abnormal_out_nullptr)
 // CheckDtypeValid_self_BF16
 TEST_F(l2_left_shifts_test, abnormal_self_BF16)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2}, ACL_BF16, ACL_FORMAT_ND);
     int32_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -206,7 +206,7 @@ TEST_F(l2_left_shifts_test, abnormal_self_BF16)
 // CheckDtypeValid_self_FLOAT
 TEST_F(l2_left_shifts_test, abnormal_self_FLOAT)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2}, ACL_FLOAT, ACL_FORMAT_ND);
     int32_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -223,7 +223,7 @@ TEST_F(l2_left_shifts_test, abnormal_self_FLOAT)
 // CheckDtypeValid_self_FLOAT16
 TEST_F(l2_left_shifts_test, abnormal_self_FLOAT16)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2}, ACL_FLOAT16, ACL_FORMAT_ND);
     int32_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -240,7 +240,7 @@ TEST_F(l2_left_shifts_test, abnormal_self_FLOAT16)
 // CheckDtypeValid_self_DOUBLE
 TEST_F(l2_left_shifts_test, abnormal_self_DOUBLE)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2}, ACL_DOUBLE, ACL_FORMAT_ND);
     int32_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -257,7 +257,7 @@ TEST_F(l2_left_shifts_test, abnormal_self_DOUBLE)
 // CheckDtypeValid_self_COMPLEX64
 TEST_F(l2_left_shifts_test, abnormal_self_COMPLEX64)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2}, ACL_COMPLEX64, ACL_FORMAT_ND);
     int32_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -274,7 +274,7 @@ TEST_F(l2_left_shifts_test, abnormal_self_COMPLEX64)
 // CheckDtypeValid_self_COMPLEX128
 TEST_F(l2_left_shifts_test, abnormal_self_COMPLEX128)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2}, ACL_COMPLEX128, ACL_FORMAT_ND);
     int32_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -291,7 +291,7 @@ TEST_F(l2_left_shifts_test, abnormal_self_COMPLEX128)
 // CheckDtypeValid_UNDEFINED
 TEST_F(l2_left_shifts_test, abnormal_dtype_UNDEFINED)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2}, ACL_DT_UNDEFINED, ACL_FORMAT_ND);
     int32_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -308,7 +308,7 @@ TEST_F(l2_left_shifts_test, abnormal_dtype_UNDEFINED)
 // CheckDtypeValid_other_FLOAT
 TEST_F(l2_left_shifts_test, abnormal_other_FLOAT)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2}, ACL_INT32, ACL_FORMAT_ND);
     float value = 1.0;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -325,7 +325,7 @@ TEST_F(l2_left_shifts_test, abnormal_other_FLOAT)
 // CheckDtypeValid_dtype_unequal
 TEST_F(l2_left_shifts_test, normal_dtype_unequal)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2}, ACL_INT8, ACL_FORMAT_ND);
     int64_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -342,7 +342,7 @@ TEST_F(l2_left_shifts_test, normal_dtype_unequal)
 // CheckPromoteType_can_cast
 TEST_F(l2_left_shifts_test, normal_dtype_can_cast)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2}, ACL_INT8, ACL_FORMAT_ND);
     int8_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -359,7 +359,7 @@ TEST_F(l2_left_shifts_test, normal_dtype_can_cast)
 // CheckShape_unequal
 TEST_F(l2_left_shifts_test, abnormal_shape_unequal)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2, 2}, ACL_INT32, ACL_FORMAT_ND);
     int32_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -376,7 +376,7 @@ TEST_F(l2_left_shifts_test, abnormal_shape_unequal)
 // CheckShape_10D
 TEST_F(l2_left_shifts_test, abnormal_shape_10D)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2, 2, 2, 2, 2, 2, 2, 2, 2, 2}, ACL_INT32, ACL_FORMAT_ND);
     int32_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -393,7 +393,7 @@ TEST_F(l2_left_shifts_test, abnormal_shape_10D)
 // CheckFormat_self_NC1HWC0
 TEST_F(l2_left_shifts_test, abnormal_format_self_NC1HWC0)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2, 2, 2, 2, 2}, ACL_INT32, ACL_FORMAT_NC1HWC0);
     int32_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -410,7 +410,7 @@ TEST_F(l2_left_shifts_test, abnormal_format_self_NC1HWC0)
 // CheckFormat_out_NC1HWC0
 TEST_F(l2_left_shifts_test, abnormal_format_out_NC1HWC0)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2, 2, 2, 2, 2}, ACL_INT32, ACL_FORMAT_ND);
     int32_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -427,7 +427,7 @@ TEST_F(l2_left_shifts_test, abnormal_format_out_NC1HWC0)
 // 数据范围[-1，1]
 TEST_F(l2_left_shifts_test, normal_valuerange)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-1, 1);
     int32_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);
@@ -444,7 +444,7 @@ TEST_F(l2_left_shifts_test, normal_valuerange)
 // 非连续
 TEST_F(l2_left_shifts_test, normal_uncontiguous)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2, 4}, ACL_INT32, ACL_FORMAT_ND, {1, 2}, 0, {4, 2});
     int32_t value = 1;
     auto shiftBitsDesc = ScalarDesc(value);

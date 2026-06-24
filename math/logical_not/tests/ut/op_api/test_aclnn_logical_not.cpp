@@ -29,7 +29,7 @@ class logical_not_test : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
-        op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+        op::SetPlatformNpuArch(NpuArch::DAV_3510);
         cout << "logical_not_test SetUp" << endl;
     }
 

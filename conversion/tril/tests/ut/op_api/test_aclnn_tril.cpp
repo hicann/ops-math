@@ -34,14 +34,14 @@ protected:
 
     void TearDown() override
     {
-        op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+        op::SetPlatformNpuArch(NpuArch::DAV_2201);
     }
 };
 
 // 测试所有支持的类型
 TEST_F(l2_tril_test, ascend910A_case_1_dtype_all_support)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910);
+    op::SetPlatformNpuArch(NpuArch::DAV_1001);
     vector<aclDataType> dtype_list{ACL_UINT8,   ACL_INT8,   ACL_INT16, ACL_INT32,     ACL_INT64,     ACL_FLOAT,
                                    ACL_FLOAT16, ACL_DOUBLE, ACL_BOOL,  ACL_COMPLEX64, ACL_COMPLEX128};
     for (auto dtype : dtype_list) {
@@ -64,7 +64,7 @@ TEST_F(l2_tril_test, ascend910A_case_1_dtype_all_support)
 // 测试所有支持的类型
 TEST_F(l2_tril_test, ascend910B2_case_1_dtype_all_support)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     vector<aclDataType> dtype_list{ACL_UINT8,   ACL_INT8,   ACL_INT16, ACL_INT32, ACL_INT64,     ACL_FLOAT,
                                    ACL_FLOAT16, ACL_DOUBLE, ACL_BOOL,  ACL_BF16,  ACL_COMPLEX64, ACL_COMPLEX128};
     for (auto dtype : dtype_list) {

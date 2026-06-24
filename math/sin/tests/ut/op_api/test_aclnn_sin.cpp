@@ -284,7 +284,7 @@ TEST_F(sin_test, case_15)
  */
 TEST_F(sin_test, ascend910B2_case_16)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto self = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);
 
@@ -413,7 +413,7 @@ TEST_F(sin_test, case_23)
  */
 TEST_F(sin_test, ascend950_case_inplace_1)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
 
     auto selfRef = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
 
@@ -430,7 +430,7 @@ TEST_F(sin_test, ascend950_case_inplace_1)
  */
 TEST_F(sin_test, ascend950_case_inplace_2)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
 
     auto selfRef = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
 
@@ -447,7 +447,7 @@ TEST_F(sin_test, ascend950_case_inplace_2)
  */
 TEST_F(sin_test, ascend950_case_inplace_3)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
 
     auto selfRef = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
 
@@ -464,7 +464,7 @@ TEST_F(sin_test, ascend950_case_inplace_3)
  */
 TEST_F(sin_test, ascend950_case_inplace_4)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
 
     auto selfRef = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND);
 
@@ -481,7 +481,7 @@ TEST_F(sin_test, ascend950_case_inplace_4)
  */
 TEST_F(sin_test, ascend950_case_inplace_5)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
 
     auto selfRef = TensorDesc({2, 3}, ACL_COMPLEX128, ACL_FORMAT_ND);
 
@@ -498,7 +498,7 @@ TEST_F(sin_test, ascend950_case_inplace_5)
  */
 TEST_F(sin_test, ascend950_case_inplace_6)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
 
     auto ut = OP_API_UT(aclnnInplaceSin, INPUT((aclTensor*)nullptr), OUTPUT());
 
@@ -513,7 +513,7 @@ TEST_F(sin_test, ascend950_case_inplace_6)
  */
 TEST_F(sin_test, ascend950_case_inplace_7)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
 
     auto selfRef = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);
 
@@ -530,7 +530,7 @@ TEST_F(sin_test, ascend950_case_inplace_7)
  */
 TEST_F(sin_test, ascend950_case_inplace_8)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
 
     auto selfRef = TensorDesc({2, 3}, ACL_INT8, ACL_FORMAT_ND);
 
@@ -547,7 +547,7 @@ TEST_F(sin_test, ascend950_case_inplace_8)
  */
 TEST_F(sin_test, ascend310P_case_bf16_not_supported)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND310P);
+    op::SetPlatformNpuArch(NpuArch::DAV_2002);
 
     auto self = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);

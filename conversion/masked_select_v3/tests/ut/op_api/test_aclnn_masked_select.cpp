@@ -883,7 +883,7 @@ TEST_F(l2_masked_select_test, aclnnMaskedSelect_error_input_dtype_with_uint64)
     auto maskTensorDesc = TensorDesc(maskShape, maskDtype, maskFormat).Value(boolMask);
     auto outTensorDesc = TensorDesc(outShape, outDtype, outFormat).ValidCount(shapeSize);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910B);
+    SetPlatformNpuArch(NpuArch::DAV_2201);
     auto ut = OP_API_UT(aclnnMaskedSelect, INPUT(selfTensorDesc, maskTensorDesc), OUTPUT(outTensorDesc));
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspaceSize = 0;

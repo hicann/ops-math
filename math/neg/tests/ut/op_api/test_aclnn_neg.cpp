@@ -168,7 +168,7 @@ TEST_F(l2_neg_test, case_not_support_int16)
 TEST_F(l2_neg_test, ascend310p_case_not_support_bfloat16)
 {
     auto tensor_desc = TensorDesc({10, 5}, ACL_BF16, ACL_FORMAT_ND);
-    SetPlatformSocVersion(SocVersion::ASCEND310P);
+    SetPlatformNpuArch(NpuArch::DAV_2002);
     auto ut = OP_API_UT(aclnnNeg, INPUT(tensor_desc), OUTPUT(tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
@@ -322,7 +322,7 @@ TEST_F(l2_neg_test, ascend310P_input_output_bf16)
 {
     auto self_tensor_desc = TensorDesc({3, 4, 5, 6}, ACL_BF16, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({3, 4, 5, 6}, ACL_BF16, ACL_FORMAT_ND).Precision(0.001, 0.001);
-    SetPlatformSocVersion(SocVersion::ASCEND310P);
+    SetPlatformNpuArch(NpuArch::DAV_2002);
     auto ut = OP_API_UT(aclnnNeg, INPUT(self_tensor_desc), OUTPUT(out_tensor_desc));
 
     uint64_t workspaceSize = 0;

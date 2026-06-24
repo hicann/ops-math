@@ -129,7 +129,7 @@ TEST_F(l2_im2col_test, ascend950_case_INT8)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -151,7 +151,7 @@ TEST_F(l2_im2col_test, ascend950_case_UINT8)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -173,7 +173,7 @@ TEST_F(l2_im2col_test, ascend950_case_INT16)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -195,7 +195,7 @@ TEST_F(l2_im2col_test, ascend950_case_UINT16)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -217,7 +217,7 @@ TEST_F(l2_im2col_test, ascend950_case_INT32)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -239,7 +239,7 @@ TEST_F(l2_im2col_test, ascend950_case_UINT32)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -261,7 +261,7 @@ TEST_F(l2_im2col_test, ascend950_case_INT64)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -283,7 +283,7 @@ TEST_F(l2_im2col_test, ascend950_case_UINT64)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -305,7 +305,7 @@ TEST_F(l2_im2col_test, ascend950_case_BF16)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -327,7 +327,7 @@ TEST_F(l2_im2col_test, ascend950_case_FLOAT)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -349,7 +349,7 @@ TEST_F(l2_im2col_test, ascend950_case_FLOAT16)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -371,7 +371,7 @@ TEST_F(l2_im2col_test, ascend950_case_DOUBLE)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -393,7 +393,7 @@ TEST_F(l2_im2col_test, ascend950_case_BOOL)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -415,7 +415,7 @@ TEST_F(l2_im2col_test, ascend950_case_COMPLEX32)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -437,7 +437,7 @@ TEST_F(l2_im2col_test, ascend950_case_COMPLEX64)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -459,7 +459,7 @@ TEST_F(l2_im2col_test, ascend950_case_COMPLEX128)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize

@@ -35,7 +35,7 @@ protected:
 
 TEST_F(l2_isfinite_test, case_01_float)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 
     auto selfDesc =
         TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{-1.023, 2023.08, 3.14, 10987654321.0});
@@ -50,7 +50,7 @@ TEST_F(l2_isfinite_test, case_01_float)
 
 TEST_F(l2_isfinite_test, case_02_float16)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
 
     auto selfDesc =
         TensorDesc({1, 1, 2, 2}, ACL_FLOAT16, ACL_FORMAT_NCHW).Value(vector<double>{-1, 2.718, 3.14, 49999});
@@ -65,7 +65,7 @@ TEST_F(l2_isfinite_test, case_02_float16)
 
 TEST_F(l2_isfinite_test, case_03_bfloat16)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 
     auto selfDesc =
         TensorDesc({2, 2}, ACL_BF16, ACL_FORMAT_ND).Value(vector<float>{-1.023, 2023.08, 3.14, 10987654321.0});
@@ -80,7 +80,7 @@ TEST_F(l2_isfinite_test, case_03_bfloat16)
 
 TEST_F(l2_isfinite_test, case_04_double)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 
     auto selfDesc = TensorDesc({2, 2, 2, 2, 2}, ACL_DOUBLE, ACL_FORMAT_NCHW).ValueRange(-1, 1);
     auto outDesc = TensorDesc({2, 2, 2, 2, 2}, ACL_BOOL, ACL_FORMAT_NCHW);
@@ -94,7 +94,7 @@ TEST_F(l2_isfinite_test, case_04_double)
 
 TEST_F(l2_isfinite_test, case_05_int32)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 
     auto selfDesc =
         TensorDesc({1, 1, 2, 2}, ACL_INT32, ACL_FORMAT_NCHW).Value(vector<int32_t>{-1, 2023, 314, 987654321});
@@ -109,7 +109,7 @@ TEST_F(l2_isfinite_test, case_05_int32)
 
 TEST_F(l2_isfinite_test, case_06_int64)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 
     auto selfDesc = TensorDesc({1, 2, 2}, ACL_INT64, ACL_FORMAT_ND).Value(vector<int64_t>{-1, 2023, 314, 987654321});
     auto outDesc = TensorDesc({1, 2, 2}, ACL_BOOL, ACL_FORMAT_ND);
@@ -123,7 +123,7 @@ TEST_F(l2_isfinite_test, case_06_int64)
 
 TEST_F(l2_isfinite_test, case_07_int16)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 
     auto selfDesc = TensorDesc({2, 2}, ACL_INT16, ACL_FORMAT_ND).Value(vector<int16_t>{-1, 2023, -32768, 32767});
     auto outDesc = TensorDesc({2, 2}, ACL_BOOL, ACL_FORMAT_ND);
@@ -137,7 +137,7 @@ TEST_F(l2_isfinite_test, case_07_int16)
 
 TEST_F(l2_isfinite_test, case_08_int8)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 
     auto selfDesc = TensorDesc({5}, ACL_INT8, ACL_FORMAT_ND).Value(vector<int8_t>{-1, 0, -128, 127, 88});
     auto outDesc = TensorDesc({5}, ACL_BOOL, ACL_FORMAT_ND);
@@ -151,7 +151,7 @@ TEST_F(l2_isfinite_test, case_08_int8)
 
 TEST_F(l2_isfinite_test, case_09_uint8)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 
     auto selfDesc = TensorDesc({5}, ACL_UINT8, ACL_FORMAT_ND).Value(vector<uint8_t>{255, 0, 1, 127, 88});
     auto outDesc = TensorDesc({5}, ACL_BOOL, ACL_FORMAT_ND);
@@ -165,7 +165,7 @@ TEST_F(l2_isfinite_test, case_09_uint8)
 
 TEST_F(l2_isfinite_test, case_10_bool)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 
     auto selfDesc = TensorDesc({5}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true, false, false, false, false});
     auto outDesc = TensorDesc({5}, ACL_BOOL, ACL_FORMAT_ND);
@@ -179,7 +179,7 @@ TEST_F(l2_isfinite_test, case_10_bool)
 
 TEST_F(l2_isfinite_test, case_11_empty_tensor)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 
     auto selfDesc = TensorDesc({0}, ACL_FLOAT, ACL_FORMAT_ND);
     auto outDesc = TensorDesc({0}, ACL_BOOL, ACL_FORMAT_ND);
@@ -193,7 +193,7 @@ TEST_F(l2_isfinite_test, case_11_empty_tensor)
 
 TEST_F(l2_isfinite_test, case_12_self_out_diff_shape)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 
     auto selfDesc = TensorDesc({3, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto outDesc = TensorDesc({4, 4}, ACL_BOOL, ACL_FORMAT_ND);
@@ -207,7 +207,7 @@ TEST_F(l2_isfinite_test, case_12_self_out_diff_shape)
 
 TEST_F(l2_isfinite_test, case_13_self_null)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 
     auto selfDesc = nullptr;
     auto outDesc = TensorDesc({3, 3}, ACL_BOOL, ACL_FORMAT_ND);
@@ -221,7 +221,7 @@ TEST_F(l2_isfinite_test, case_13_self_null)
 
 TEST_F(l2_isfinite_test, case_14_out_null)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 
     auto selfDesc = TensorDesc({3, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto outDesc = nullptr;
@@ -235,7 +235,7 @@ TEST_F(l2_isfinite_test, case_14_out_null)
 
 TEST_F(l2_isfinite_test, case_15_self_dim_gt_8)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 
     auto selfDesc = TensorDesc({3, 2, 1, 2, 1, 3, 2, 1, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto outDesc = TensorDesc({3, 2, 1, 2, 1, 3, 2, 1, 2, 2}, ACL_BOOL, ACL_FORMAT_ND);
@@ -249,7 +249,7 @@ TEST_F(l2_isfinite_test, case_15_self_dim_gt_8)
 
 TEST_F(l2_isfinite_test, case_16_out_not_bool)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 
     auto selfDesc = TensorDesc({3, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto outDesc = TensorDesc({3, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -263,7 +263,7 @@ TEST_F(l2_isfinite_test, case_16_out_not_bool)
 
 TEST_F(l2_isfinite_test, case_17_not_contiguous)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 
     auto selfDesc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND, {1, 2}, 0, {2, 2}).Value(vector<float>{1, 2, 3, 4});
     auto outDesc = TensorDesc({2, 2}, ACL_BOOL, ACL_FORMAT_ND);

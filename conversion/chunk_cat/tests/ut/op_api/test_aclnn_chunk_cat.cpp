@@ -36,7 +36,7 @@
  
      void TearDown() override
      {
-         op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+         op::SetPlatformNpuArch(NpuArch::DAV_2201);
      }
  };
  

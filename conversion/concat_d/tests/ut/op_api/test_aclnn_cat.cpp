@@ -36,7 +36,7 @@ protected:
 
     void TearDown() override
     {
-        op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+        op::SetPlatformNpuArch(NpuArch::DAV_2201);
     }
 };
 
@@ -306,7 +306,7 @@ TEST_F(l2_cat_test, cat_one_dim1_empty_tensor)
 
 TEST_F(l2_cat_test, ascend310P_bfloat16)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND310P);
+    op::SetPlatformNpuArch(NpuArch::DAV_2002);
     auto tensor_1_desc = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND).ValueRange(0, 2);
     auto tensor_2_desc = TensorDesc({1, 3}, ACL_BF16, ACL_FORMAT_ND).ValueRange(0, 2);
     auto out_tensor_desc = TensorDesc({3, 3}, ACL_FLOAT, ACL_FORMAT_ND);

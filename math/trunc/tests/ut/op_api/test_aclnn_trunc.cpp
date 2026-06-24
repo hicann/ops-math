@@ -35,7 +35,7 @@ protected:
 
 TEST_F(l2_trunc_test, case_dtype_float16)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto tensor_desc = TensorDesc({1, 16}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-2, 2);
     auto out_tensor_desc = TensorDesc(tensor_desc).Precision(0.01, 0.01);
 
@@ -47,7 +47,7 @@ TEST_F(l2_trunc_test, case_dtype_float16)
 
 TEST_F(l2_trunc_test, case_dtype_float32)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto tensor_desc = TensorDesc({1, 16}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2);
     auto out_tensor_desc = TensorDesc(tensor_desc).Precision(0.01, 0.01);
 
@@ -59,7 +59,7 @@ TEST_F(l2_trunc_test, case_dtype_float32)
 
 TEST_F(l2_trunc_test, case_dtype_bfloat16)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto tensor_desc = TensorDesc({2, 4}, ACL_BF16, ACL_FORMAT_ND).ValueRange(-2, 2);
     auto out_tensor_desc = TensorDesc(tensor_desc).Precision(0.01, 0.01);
 
@@ -71,7 +71,7 @@ TEST_F(l2_trunc_test, case_dtype_bfloat16)
 
 TEST_F(l2_trunc_test, case_shape_1D)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto tensor_desc = TensorDesc({16}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2);
     auto out_tensor_desc = TensorDesc(tensor_desc).Precision(0.01, 0.01);
 
@@ -83,7 +83,7 @@ TEST_F(l2_trunc_test, case_shape_1D)
 
 TEST_F(l2_trunc_test, case_shape_2D)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto tensor_desc = TensorDesc({3, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2);
     auto out_tensor_desc = TensorDesc(tensor_desc).Precision(0.01, 0.01);
 
@@ -95,7 +95,7 @@ TEST_F(l2_trunc_test, case_shape_2D)
 
 TEST_F(l2_trunc_test, case_shape_3D)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto tensor_desc = TensorDesc({2, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2);
     auto out_tensor_desc = TensorDesc(tensor_desc).Precision(0.01, 0.01);
 
@@ -107,7 +107,7 @@ TEST_F(l2_trunc_test, case_shape_3D)
 
 TEST_F(l2_trunc_test, case_shape_4D)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto tensor_desc = TensorDesc({2, 3, 4, 5}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2);
     auto out_tensor_desc = TensorDesc(tensor_desc).Precision(0.01, 0.01);
 
@@ -119,7 +119,7 @@ TEST_F(l2_trunc_test, case_shape_4D)
 
 TEST_F(l2_trunc_test, case_shape_5D)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto tensor_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2);
     auto out_tensor_desc = TensorDesc(tensor_desc).Precision(0.01, 0.01);
 
@@ -131,7 +131,7 @@ TEST_F(l2_trunc_test, case_shape_5D)
 
 TEST_F(l2_trunc_test, case_shape_8D)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto tensor_desc = TensorDesc({2, 2, 2, 2, 2, 2, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2);
     auto out_tensor_desc = TensorDesc(tensor_desc).Precision(0.01, 0.01);
 
@@ -143,7 +143,7 @@ TEST_F(l2_trunc_test, case_shape_8D)
 
 TEST_F(l2_trunc_test, case_invalid_shape_9D)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto tensor_desc = TensorDesc({2, 2, 2, 2, 2, 2, 2, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2);
     auto out_tensor_desc = TensorDesc(tensor_desc).Precision(0.01, 0.01);
 
@@ -155,7 +155,7 @@ TEST_F(l2_trunc_test, case_invalid_shape_9D)
 
 TEST_F(l2_trunc_test, case_empty_tensor)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto tensor_desc = TensorDesc({0}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc(tensor_desc);
 
@@ -167,7 +167,7 @@ TEST_F(l2_trunc_test, case_empty_tensor)
 
 TEST_F(l2_trunc_test, case_null_self)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto out_tensor_desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnTrunc, INPUT(nullptr), OUTPUT(out_tensor_desc));
@@ -178,7 +178,7 @@ TEST_F(l2_trunc_test, case_null_self)
 
 TEST_F(l2_trunc_test, case_null_out)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto tensor_desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnTrunc, INPUT(tensor_desc), OUTPUT(nullptr));
@@ -189,7 +189,7 @@ TEST_F(l2_trunc_test, case_null_out)
 
 TEST_F(l2_trunc_test, case_invalid_dtype_self)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto tensor_desc = TensorDesc({2, 2}, ACL_INT32, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc(tensor_desc);
 
@@ -201,7 +201,7 @@ TEST_F(l2_trunc_test, case_invalid_dtype_self)
 
 TEST_F(l2_trunc_test, case_invalid_dtype_mismatch)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto tensor_desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
 
@@ -213,7 +213,7 @@ TEST_F(l2_trunc_test, case_invalid_dtype_mismatch)
 
 TEST_F(l2_trunc_test, case_invalid_shape_diff)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto tensor_desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({3, 3}, ACL_FLOAT, ACL_FORMAT_ND);
 
@@ -225,7 +225,7 @@ TEST_F(l2_trunc_test, case_invalid_shape_diff)
 
 TEST_F(l2_trunc_test, case_not_contiguous)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto tensor_desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND, {1, 2}, 0, {2, 2}).ValueRange(-2, 2);
     auto out_tensor_desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
 

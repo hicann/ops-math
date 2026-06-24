@@ -35,7 +35,7 @@ protected:
 
     void TearDown() override
     {
-        op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+        op::SetPlatformNpuArch(NpuArch::DAV_2201);
     }
 };
 
@@ -484,7 +484,7 @@ TEST_F(l2_stack_test, l2_stack_test_one_empty_tensor)
 // 正常路径，bfloat16
 TEST_F(l2_stack_test, ascend310P_l2_stack_test_dtype_bfloat16)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND310P);
+    op::SetPlatformNpuArch(NpuArch::DAV_2002);
     auto tensor_1_desc =
         TensorDesc({2, 5}, ACL_BF16, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
     auto tensor_2_desc =

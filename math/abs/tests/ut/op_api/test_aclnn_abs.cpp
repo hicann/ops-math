@@ -311,7 +311,7 @@ TEST_F(l2_abs_test, ascend950_case_aicore_abs_for_float_type)
 // Ascend950 平台测试 - FLOAT16
 TEST_F(l2_abs_test, ascend950_case_dtype_float16)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
     auto out_tensor_desc = TensorDesc(self_tensor_desc).Precision(0.0001, 0.0001);
 
@@ -325,7 +325,7 @@ TEST_F(l2_abs_test, ascend950_case_dtype_float16)
 // Ascend950 平台测试 - BF16
 TEST_F(l2_abs_test, ascend950_case_dtype_bf16)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
     auto out_tensor_desc = TensorDesc(self_tensor_desc).Precision(0.0001, 0.0001);
 
@@ -339,7 +339,7 @@ TEST_F(l2_abs_test, ascend950_case_dtype_bf16)
 // Ascend950 平台测试 - DOUBLE
 TEST_F(l2_abs_test, ascend950_case_dtype_double)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
     auto out_tensor_desc = TensorDesc(self_tensor_desc).Precision(0.0001, 0.0001);
 
@@ -353,7 +353,7 @@ TEST_F(l2_abs_test, ascend950_case_dtype_double)
 // Ascend950 平台测试 - INT8
 TEST_F(l2_abs_test, ascend950_case_dtype_int8)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_INT8, ACL_FORMAT_ND).ValueRange(-10, 10);
     auto out_tensor_desc = TensorDesc(self_tensor_desc);
 
@@ -367,7 +367,7 @@ TEST_F(l2_abs_test, ascend950_case_dtype_int8)
 // Ascend950 平台测试 - INT16
 TEST_F(l2_abs_test, ascend950_case_dtype_int16)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_INT16, ACL_FORMAT_ND).ValueRange(-10, 10);
     auto out_tensor_desc = TensorDesc(self_tensor_desc);
 
@@ -381,7 +381,7 @@ TEST_F(l2_abs_test, ascend950_case_dtype_int16)
 // Ascend910B 平台测试 - 复数类型 COMPLEX64
 TEST_F(l2_abs_test, ascend910b_case_dtype_complex64)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
     auto out_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
 
@@ -395,7 +395,7 @@ TEST_F(l2_abs_test, ascend910b_case_dtype_complex64)
 // Ascend910B 平台测试 - 复数类型 FLOAT 输出类型不匹配
 TEST_F(l2_abs_test, ascend910b_case_complex64_out_dtype_mismatch)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
     auto out_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
 
@@ -409,7 +409,7 @@ TEST_F(l2_abs_test, ascend910b_case_complex64_out_dtype_mismatch)
 // Ascend910B 平台测试 - 不支持的复数类型 COMPLEX128
 TEST_F(l2_abs_test, ascend910b_case_complex128_not_supported)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_COMPLEX128, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
     auto out_tensor_desc = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
 

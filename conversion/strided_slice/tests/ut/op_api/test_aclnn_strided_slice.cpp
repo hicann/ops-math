@@ -47,7 +47,7 @@ TEST_F(l2_strided_slice_test, case_error_soc)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910B);
+    SetPlatformNpuArch(NpuArch::DAV_2201);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -77,7 +77,7 @@ TEST_F(l2_strided_slice_test, case_NULLPTR)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut1 = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -138,7 +138,7 @@ TEST_F(l2_strided_slice_test, case_error_output_shape)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -168,7 +168,7 @@ TEST_F(l2_strided_slice_test, case_error_dtype)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -198,7 +198,7 @@ TEST_F(l2_strided_slice_test, case_error_input_dtype)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -228,7 +228,7 @@ TEST_F(l2_strided_slice_test, case_error_output_dtype)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -258,7 +258,7 @@ TEST_F(l2_strided_slice_test, case_input_dim_gt_8)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -288,7 +288,7 @@ TEST_F(l2_strided_slice_test, case_strides_zero)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -318,7 +318,7 @@ TEST_F(l2_strided_slice_test, case_para_size)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -348,7 +348,7 @@ TEST_F(l2_strided_slice_test, case_ellipsisMask_gt_one)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -378,7 +378,7 @@ TEST_F(l2_strided_slice_test, case_shrinkAxisMask_strides_lt_zero)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -407,7 +407,7 @@ TEST_F(l2_strided_slice_test, ascend950_case_INT8)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -436,7 +436,7 @@ TEST_F(l2_strided_slice_test, ascend950_case_UINT8)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -465,7 +465,7 @@ TEST_F(l2_strided_slice_test, ascend950_case_INT16)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -494,7 +494,7 @@ TEST_F(l2_strided_slice_test, ascend950_case_UINT16)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -523,7 +523,7 @@ TEST_F(l2_strided_slice_test, ascend950_case_INT32)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -552,7 +552,7 @@ TEST_F(l2_strided_slice_test, ascend950_case_UINT32)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -581,7 +581,7 @@ TEST_F(l2_strided_slice_test, ascend950_case_INT64)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -610,7 +610,7 @@ TEST_F(l2_strided_slice_test, ascend950_case_UINT64)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -639,7 +639,7 @@ TEST_F(l2_strided_slice_test, ascend950_case_BF16)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -668,7 +668,7 @@ TEST_F(l2_strided_slice_test, ascend950_case_FLOAT)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -697,7 +697,7 @@ TEST_F(l2_strided_slice_test, ascend950_case_FLOAT16)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -726,7 +726,7 @@ TEST_F(l2_strided_slice_test, ascend950_case_BOOL)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -755,7 +755,7 @@ TEST_F(l2_strided_slice_test, ascend950_case_COMPLEX32)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -784,7 +784,7 @@ TEST_F(l2_strided_slice_test, ascend950_case_COMPLEX64)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -813,7 +813,7 @@ TEST_F(l2_strided_slice_test, ascend950_case_HIFLOAT8)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -842,7 +842,7 @@ TEST_F(l2_strided_slice_test, ascend950_case_FLOAT8_E5M2)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
@@ -871,7 +871,7 @@ TEST_F(l2_strided_slice_test, ascend950_case_FLOAT8_E4M3FN)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(

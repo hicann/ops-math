@@ -29,7 +29,7 @@ class masked_scale_test : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
-        op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+        op::SetPlatformNpuArch(NpuArch::DAV_3510);
         cout << "masked_scale_test SetUp" << endl;
     }
 

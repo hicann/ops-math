@@ -74,7 +74,7 @@ TEST_F(RightShiftTest, RightShiftTest_FAILED_2)
 
 TEST_F(RightShiftTest, RightShiftTest_SUCC_950)
 {
-    SetPlatformSocVersion(SocVersion::ASCEND950);
+    SetPlatformNpuArch(NpuArch::DAV_3510);
     auto x = CreateAclTensor({16}, ACL_INT32);
     auto y = CreateAclTensor({1}, ACL_INT32);
     auto z = l0op::RightShift(x, y, exe);

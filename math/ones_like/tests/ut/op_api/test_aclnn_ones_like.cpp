@@ -31,7 +31,7 @@ protected:
 
     void TearDown() override
     {
-        op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+        op::SetPlatformNpuArch(NpuArch::DAV_2201);
     }
 };
 
@@ -68,7 +68,7 @@ TEST_F(l2_ones_test, l2_ones_test_dtype_complex128)
 // 测试bfloat16
 TEST_F(l2_ones_test, ascend910b_l2_ones_test_dtype_bfloat16)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);
     auto ut = OP_API_UT(aclnnInplaceOne, INPUT(selfDesc), OUTPUT());
     uint64_t workspaceSize = 0;
@@ -79,7 +79,7 @@ TEST_F(l2_ones_test, ascend910b_l2_ones_test_dtype_bfloat16)
 // 测试bfloat16
 TEST_F(l2_ones_test, ascend910_l2_ones_test_dtype_bfloat16)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910);
+    op::SetPlatformNpuArch(NpuArch::DAV_1001);
     auto selfDesc = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);
     auto ut = OP_API_UT(aclnnInplaceOne, INPUT(selfDesc), OUTPUT());
     uint64_t workspaceSize = 0;
