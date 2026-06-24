@@ -42,6 +42,15 @@ op::DataType PromoteIntegerInputsToFloat(const op::DataType input)
     return input;
 }
 
+// fp16/bf16 提升到 float 做计算(对齐 CUDA acc_type),其余 dtype 原样返回。
+static inline op::DataType PromoteLowPrecToFloat(const op::DataType input)
+{
+    if (input == op::DataType::DT_FLOAT16 || input == op::DataType::DT_BF16) {
+        return op::DataType::DT_FLOAT;
+    }
+    return input;
+}
+
 static op::DataType InnerTypeToComplexType(const op::DataType input)
 {
     switch (input) {
@@ -694,6 +703,8 @@ aclnnStatus aclnnDivsGetWorkspaceSize(
             promoteType = op::PromoteType(self->GetDataType(), other->GetDataType()) == op::DataType::DT_INT32 ?
                               op::DataType::DT_INT32 :
                               promoteType;
+            // fp16/bf16 在 float 下计算,避免标量被提前降精
+            promoteType = PromoteLowPrecToFloat(promoteType);
         }
 
         bool canUseMuls = CanUseMuls(self, other);
@@ -711,7 +722,8 @@ aclnnStatus aclnnDivsGetWorkspaceSize(
             auto selfCasted = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
             CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
             if (canUseMuls) {
-                float invB = static_cast<float>(1.0f) / (other->ToFloat());
+                // 倒数在 double 下计算后单次舍入到 float,对齐 CUDA 标量除法精度
+                float invB = static_cast<float>(1.0 / other->ToDouble());
                 aclScalar* invBPtr = uniqueExecutor.get()->AllocScalar(invB);
                 divOpOut = l0op::Muls(selfCasted, invBPtr->ToFloat(), uniqueExecutor.get());
             } else {
@@ -934,6 +946,10 @@ aclnnStatus aclnnDivModsGetWorkspaceSize(
             CHECK_RET(promoteRet == ACLNN_SUCCESS, promoteRet);
         } else {
             promoteType = InferDivsModeDtype(self->GetDataType(), other->GetDataType(), mode);
+            // trueDiv/floorDiv 在 float 下计算,避免标量被压到 fp16/bf16 丢精度;trunc 保持原推导
+            if (mode == MODE_REAL_DIV || mode == MODE_FLOOR_DIV) {
+                promoteType = PromoteLowPrecToFloat(promoteType);
+            }
             auto complexRet = CheckDivModComplexDtype(promoteType, mode);
             CHECK_RET(complexRet == ACLNN_SUCCESS, complexRet);
             // customization
