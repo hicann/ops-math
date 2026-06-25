@@ -408,8 +408,8 @@
 - 确定性计算：
   - aclnnRemainderTensorScalar&aclnnInplaceRemainderTensorScalar默认确定性实现。
 
-  * 当self的数据类型为INT32时，优先保障在范围[-2^24, 2^24]内的功能和精度；
-  * 当other为0，且self的数据类型为整型时，out的结果为self。
+- 当self的数据类型为INT32时，优先保障在范围[-2^24, 2^24]内的功能和精度；
+- 当other为0，且self的数据类型为整型时，out的结果为self。
 
 ## 调用示例
 
