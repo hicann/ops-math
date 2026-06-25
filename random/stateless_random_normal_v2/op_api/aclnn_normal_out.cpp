@@ -229,7 +229,7 @@ aclnnStatus CommonLogicGeneralNormal(
                 self, seed, offset, zeroMeanTensor, oneStdTensor, uniqueExecutor.get());
             CHECK_RET(normalOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-            auto mulOut = l0op::MulInplace(std, normalOut, uniqueExecutor.get());
+            auto mulOut = l0op::Mul(std, normalOut, uniqueExecutor.get());
             CHECK_RET(mulOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
             // ScalarTensor 模式下，mean的类型一定为f32，mulout数据类型可为f16\f32\bf16，但mean是scalar, 故不能用AddInplace
             if (scalarMode == ScalarMode::ScalarTensor) {
