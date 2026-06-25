@@ -37,7 +37,8 @@ BraceWrapping:
     SplitEmptyNamespace: true
 
 # Align
-AlignAfterOpenBracket: AlwaysBreak
+AlignAfterOpenBracket: Align
+PenaltyBreakAssignment: 1000
 AlignEscapedNewlines: Left
 AlignOperands: true
 AlignTrailingComments: true
