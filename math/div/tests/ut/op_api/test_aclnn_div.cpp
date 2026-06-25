@@ -411,3 +411,197 @@ TEST_F(l2_div_test, Ascend950PR_89_case_inplace_other_scalar_support)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
+
+// A5(Ascend950)TrueDiv 标量倒数乘(CanUseMuls)路径:仅校验 GetWorkspaceSize 成功,
+// 逐位精度由真机用例覆盖。各用例显式切 ASCEND950 并在结束还原 ASCEND910B。
+TEST_F(l2_div_test, ascend950_case_divs_fp32_scalar_canusemuls)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(3.0f);
+    auto out_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+
+    auto ut = OP_API_UT(aclnnDivs, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
+
+TEST_F(l2_div_test, ascend950_case_divs_fp16_scalar_canusemuls)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(7.0f);
+    auto out_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).Precision(0.001, 0.001);
+
+    auto ut = OP_API_UT(aclnnDivs, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
+
+TEST_F(l2_div_test, ascend950_case_divs_bf16_scalar_canusemuls)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({4, 5}, ACL_BF16, ACL_FORMAT_ND).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(7.0f);
+    auto out_tensor_desc = TensorDesc({4, 5}, ACL_BF16, ACL_FORMAT_ND).Precision(0.01, 0.01);
+
+    auto ut = OP_API_UT(aclnnDivs, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
+
+// double 标量:倒数在 double 域计算后舍入到 float
+TEST_F(l2_div_test, ascend950_case_divs_fp32_double_scalar_canusemuls)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(static_cast<double>(3.0));
+    auto out_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+
+    auto ut = OP_API_UT(aclnnDivs, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
+
+// inplace 标量:aclnnInplaceDivs 委派到 aclnnDivs 倒数乘路径
+TEST_F(l2_div_test, ascend950_case_inplace_divs_fp16_scalar_canusemuls)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(3.0f);
+
+    auto ut = OP_API_UT(aclnnInplaceDivs, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT());
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
+
+// fp16 self + double 标量:走 PromoteLowPrecToFloat,在 float 下计算,double 标量不被提前压到 fp16
+TEST_F(l2_div_test, ascend950_case_divs_fp16_double_scalar_opmath_float)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(static_cast<double>(3.0));
+    auto out_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+
+    auto ut = OP_API_UT(aclnnDivs, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
+
+// bf16 self + double 标量:同上,提升到 float
+TEST_F(l2_div_test, ascend950_case_divs_bf16_double_scalar_opmath_float)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({4, 5}, ACL_BF16, ACL_FORMAT_ND).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(static_cast<double>(3.0));
+    auto out_tensor_desc = TensorDesc({4, 5}, ACL_BF16, ACL_FORMAT_ND).Precision(0.01, 0.01);
+
+    auto ut = OP_API_UT(aclnnDivs, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
+
+// trueDiv 经 aclnnDivMods mode=0 入口:经 PromoteLowPrecToFloat 在 float 下计算(走 RealDiv,非倒数乘快路)
+TEST_F(l2_div_test, ascend950_case_divmods_fp16_double_scalar_realdiv_opmath_float)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(static_cast<double>(3.0));
+    auto out_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+
+    auto ut = OP_API_UT(aclnnDivMods, INPUT(self_tensor_desc, other_tensor_desc, 0), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
+
+// inplace trueDiv:aclnnInplaceDivMods mode=0 委派到 aclnnDivMods
+TEST_F(l2_div_test, ascend950_case_inplace_divmods_fp16_scalar_realdiv)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(3.0f);
+
+    auto ut = OP_API_UT(aclnnInplaceDivMods, INPUT(self_tensor_desc, other_tensor_desc, 0), OUTPUT());
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
+
+// A5(Ascend950)floorDiv 标量路径(aclnnDivMods mode=2):经 PromoteLowPrecToFloat 在 float 下计算,
+// 标量不被提前压到 fp16/bf16。仅校验 GetWorkspaceSize 成功,逐位精度由真机用例覆盖。
+
+// fp16 self + double 标量 floorDiv:在 float 下计算并保留标量精度
+TEST_F(l2_div_test, ascend950_case_divmods_fp16_double_scalar_floordiv_acctype_float)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(static_cast<double>(3.0));
+    auto out_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+
+    auto ut = OP_API_UT(aclnnDivMods, INPUT(self_tensor_desc, other_tensor_desc, 2), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
+
+// bf16 self + double 标量 floorDiv:同上,提升到 float
+TEST_F(l2_div_test, ascend950_case_divmods_bf16_double_scalar_floordiv_acctype_float)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({4, 5}, ACL_BF16, ACL_FORMAT_ND).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(static_cast<double>(3.0));
+    auto out_tensor_desc = TensorDesc({4, 5}, ACL_BF16, ACL_FORMAT_ND).Precision(0.01, 0.01);
+
+    auto ut = OP_API_UT(aclnnDivMods, INPUT(self_tensor_desc, other_tensor_desc, 2), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
+
+// fp16 self + float 标量 floorDiv
+TEST_F(l2_div_test, ascend950_case_divmods_fp16_float_scalar_floordiv_acctype_float)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(7.0f);
+    auto out_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).Precision(0.001, 0.001);
+
+    auto ut = OP_API_UT(aclnnDivMods, INPUT(self_tensor_desc, other_tensor_desc, 2), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
+
+// inplace floorDiv:aclnnInplaceDivMods mode=2 委派到 aclnnDivMods
+TEST_F(l2_div_test, ascend950_case_inplace_divmods_fp16_scalar_floordiv)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(3.0f);
+
+    auto ut = OP_API_UT(aclnnInplaceDivMods, INPUT(self_tensor_desc, other_tensor_desc, 2), OUTPUT());
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
