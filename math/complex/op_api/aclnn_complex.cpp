@@ -73,6 +73,32 @@ static bool CheckDtypeValid(const aclTensor *real, const aclTensor *imag, const 
   return isSupport;
 }
 
+static bool CheckFormat(const aclTensor* real, const aclTensor* imag, const aclTensor* out)
+{
+    // 检查 real、imag、out 三者的 format 是否一致
+    if (real->GetStorageFormat() != imag->GetStorageFormat() ||
+        real->GetStorageFormat() != out->GetStorageFormat()) {
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID,
+            "Format of real, imag and out should be equal, "
+            "real [%s], imag [%s], out [%s].",
+            op::ToString(real->GetStorageFormat()).GetString(),
+            op::ToString(imag->GetStorageFormat()).GetString(),
+            op::ToString(out->GetStorageFormat()).GetString());
+        return false;
+    }
+
+    // 拦截 real 的 format 非 ND 的场景
+    if (op::IsPrivateFormat(real->GetStorageFormat())) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "Format of real only support ND, NCHW, NHWC, HWCN, NDHWC, NCDHW, "
+                "but got [%s].",
+                op::ToString(real->GetStorageFormat()).GetString());
+        return false;
+    }
+    return true;
+}
+
 static bool CheckOutShape(const aclTensor *real, const aclTensor *imag, const aclTensor *out) {
   const size_t MAX_DIM = 8;
   OP_CHECK_MAX_DIM(real, MAX_DIM, return false);
@@ -95,6 +121,11 @@ static aclnnStatus CheckParams(const aclTensor *real, const aclTensor *imag, con
 
   // 2. 检查双输入是否能broadcast,检查boradcast后的输出与out是否一致
   CHECK_RET(CheckOutShape(real, imag, out), ACLNN_ERR_PARAM_INVALID);
+
+  // 3. A5后的场景Format校验
+  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+    CHECK_RET(CheckFormat(real, imag, out), ACLNN_ERR_PARAM_INVALID);
+  }
 
   return ACLNN_SUCCESS;
 }
