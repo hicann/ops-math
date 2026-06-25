@@ -68,7 +68,7 @@ def bincount_golden(array, size, weight, **kwargs):
     if weight_tensor.numel() == 0:
         res = torch.bincount(array_tensor).to(dtype=torch.int32)
     else:
-        size = int(size) if size is not None else 0
+        size = int(size.item()) if size is not None else 0
         res = torch.bincount(array_tensor, weights=weight_tensor, minlength=size)
 
     return torch_to_numpy_tensor(res)
