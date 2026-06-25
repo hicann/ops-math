@@ -189,6 +189,7 @@ operator_group_5:
   - trans_data
   - transpose
   - tril
+  - trilu
   - triu
   - unfold_grad
   - unpack
