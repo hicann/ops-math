@@ -646,6 +646,13 @@ VC6@ops-math:
         - ops/ops-math/random/stateless_random/
         - ops/ops-math/random/stateless_random/op_host/
         - ops/ops-math/random/stateless_random/op_kernel/
+        # drop_out_do_mask_v3
+        - ops/ops-math/random/drop_out_do_mask_v3/
+        - ops/ops-math/random/drop_out_do_mask_v3/op_host/
+        - ops/ops-math/random/drop_out_do_mask_v3/op_kernel/
+        # drop_out_do_mask_v3_d
+        - ops/ops-math/random/drop_out_do_mask_v3_d/
+        - ops/ops-math/random/drop_out_do_mask_v3_d/op_host/
       opensource_style: null
       kernel_style: null
     unrelease:
@@ -677,6 +684,8 @@ VC6@ops-math:
         - ops/ops-math/random/stateless_uniform/tests/
         # stateless_random
         - ops/ops-math/random/stateless_random/tests/
+        # truncated_normal_v2
+        - ops/ops-math/random/truncated_normal_v2/tests/
       non_delivery: null
       open_source: null
 
