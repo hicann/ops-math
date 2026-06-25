@@ -190,7 +190,7 @@ static const aclTensor* normalDavidPath(
         // fp32 下做 z * std + mean（全程 fp32，无中间舍入）
         auto stdScalar = executor->AllocScalar(std);
         auto stdTensor = executor->ConvertToTensor(stdScalar, op::DataType::DT_FLOAT);
-        auto mulOut = l0op::MulInplace(stdTensor, normalOut, executor);
+        auto mulOut = l0op::Mul(normalOut, stdTensor, executor);
         CHECK_RET(mulOut != nullptr, nullptr);
 
         auto meanScalar = executor->AllocScalar(mean);
@@ -257,7 +257,7 @@ static const aclTensor* normalTensorDavidPath(
         // Step 2: fp32 下做 z * std + mean
         auto stdScalar = executor->AllocScalar(std);
         auto stdTensor = executor->ConvertToTensor(stdScalar, op::DataType::DT_FLOAT);
-        auto mulOut = l0op::MulInplace(stdTensor, normalOut, executor);
+        auto mulOut = l0op::Mul(normalOut, stdTensor, executor);
         CHECK_RET(mulOut != nullptr, nullptr);
 
         auto meanScalar = executor->AllocScalar(mean);
