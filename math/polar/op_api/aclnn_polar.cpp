@@ -78,6 +78,32 @@ static bool CheckShape(const aclTensor *input, const aclTensor *angle, const acl
     return true;
 }
 
+static bool CheckFormat(const aclTensor* input, const aclTensor* angle, const aclTensor* out)
+{
+    // 输入输出的格式需要一致
+    if (input->GetStorageFormat() != out->GetStorageFormat()) {
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Format of input and output should be equal. input [%s], out [%s].",
+            ToString(input->GetStorageFormat()).GetString(), ToString(out->GetStorageFormat()).GetString());
+        return false;
+    }
+
+    if (angle->GetStorageFormat() != out->GetStorageFormat()) {
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Format of angle and output should be equal. angle [%s], out [%s].",
+            ToString(angle->GetStorageFormat()).GetString(), ToString(out->GetStorageFormat()).GetString());
+        return false;
+    }
+
+    // input格式不能是私有格式
+    if (IsPrivateFormat(input->GetStorageFormat())) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
+        return false;
+    }
+
+    return true;
+}
+
 static aclnnStatus CheckParams(const aclTensor* input, const aclTensor* angle, const aclTensor* out){
     // 1. 检查是否为空指针
     CHECK_RET(CheckNotNull(input, angle, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -87,6 +113,11 @@ static aclnnStatus CheckParams(const aclTensor* input, const aclTensor* angle, c
 
     // 3. 检查输入输出维度是否小于8维且输入输出维度是否相同
     CHECK_RET(CheckShape(input, angle, out), ACLNN_ERR_PARAM_INVALID);
+
+    // 4. 检查数据格式是否支持
+    if (IsRegBase()){
+      CHECK_RET(CheckFormat(input, angle, out), ACLNN_ERR_PARAM_INVALID);
+    }
 
     return ACLNN_SUCCESS;
 }
