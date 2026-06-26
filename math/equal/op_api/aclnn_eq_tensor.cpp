@@ -23,6 +23,7 @@
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "op_api/aclnn_check.h"
+#include "op_api/data_type_utils.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -128,7 +129,7 @@ static inline const std::initializer_list<op::DataType>& GetOutputDtypeSupportLi
     return OUT_DTYPE_SUPPORT_910_LIST;
 }
 
-static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const aclTensor* out)
+static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const aclTensor* out, DataType& promoteType)
 {
     const std::initializer_list<op::DataType> inputSupportList = GetInputDtypeSupportList();
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
@@ -154,7 +155,11 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const
     }
 
     // 检查self和other能否做数据类型推导
-    op::DataType promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
+    if (IsRegBase(npuArch)) {
+        promoteType = op::BinaryOpTypePromote(self, other);
+    } else {
+        promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
+    }
     if (promoteType == DataType::DT_UNDEFINED) {
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
@@ -197,10 +202,11 @@ static bool CheckShape(const aclTensor* self, const aclTensor* other, const aclT
     return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, const aclTensor* out)
+static aclnnStatus CheckParams(
+    const aclTensor* self, const aclTensor* other, const aclTensor* out, DataType& promoteType)
 {
     // 1. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
-    CHECK_RET(CheckDtypeValid(self, other, out), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckDtypeValid(self, other, out, promoteType), ACLNN_ERR_PARAM_INVALID);
 
     // 2. 检查双输入是否能broadcast,检查boradcast后的输出与out是否一致
     CHECK_RET(CheckShape(self, other, out), ACLNN_ERR_PARAM_INVALID);
@@ -221,7 +227,8 @@ aclnnStatus aclnnEqTensorGetWorkspaceSize(
     CHECK_RET(CheckNotNull(self, other, out), ACLNN_ERR_PARAM_NULLPTR);
 
     // 固定写法，参数检查
-    auto ret = CheckParams(self, other, out);
+    DataType promoteType = DataType::DT_UNDEFINED;
+    auto ret = CheckParams(self, other, out, promoteType);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
     // 如果两个入参其中有一个为空，则返回空
@@ -230,8 +237,6 @@ aclnnStatus aclnnEqTensorGetWorkspaceSize(
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }
-
-    auto promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
 
     // 固定写法，将输入self转换成连续的tensor
     auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());

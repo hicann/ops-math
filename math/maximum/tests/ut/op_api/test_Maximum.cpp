@@ -15,20 +15,15 @@
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/tensor_desc.h"
+#include "opdev/platform.h"
 
 using namespace std;
 
 class l2_maximum_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "maximum_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "maximum_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "maximum_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "maximum_test TearDown" << endl; }
 };
 
 TEST_F(l2_maximum_test, aclnnMaximum_001_aclnnMaximum_1_4_3_2_1_6_5_1_float_nd_2_1_3_2_1_1_5_5_float_nd)
@@ -752,6 +747,38 @@ TEST_F(l2_maximum_test, aclnnMaximum_022_aclnnMaximum_out_error_cast_dtype)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+TEST_F(l2_maximum_test, aclnnMaximum_022_1_aclnnMaximum_ascend950_out_dtype_compute)
+{
+    auto curSocVersion = op::GetCurrentPlatformInfo().GetSocVersion();
+    if (curSocVersion != op::SocVersion::ASCEND950) {
+        op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    }
+
+    const vector<int64_t>& selfShape = {2, 3};
+    aclDataType selfDtype = ACL_FLOAT;
+    aclFormat selfFormat = ACL_FORMAT_ND;
+    const vector<int64_t>& otherShape = {2, 3};
+    aclDataType otherDtype = ACL_FLOAT;
+    aclFormat otherFormat = ACL_FORMAT_ND;
+    const vector<int64_t>& outShape = {2, 3};
+    aclDataType outDtype = ACL_INT32;
+    aclFormat outFormat = ACL_FORMAT_ND;
+
+    auto selfTensorDesc =
+        TensorDesc(selfShape, selfDtype, selfFormat).Value(vector<float>{1.2, -3.4, 5.6, 7.8, -9.1, 2.3});
+    auto otherTensorDesc =
+        TensorDesc(otherShape, otherDtype, otherFormat).Value(vector<float>{0.5, -4.5, 6.1, 7.2, -8.8, 3.9});
+    auto outTensorDesc = TensorDesc(outShape, outDtype, outFormat);
+
+    auto ut = OP_API_UT(aclnnMaximum, INPUT(selfTensorDesc, otherTensorDesc), OUTPUT(outTensorDesc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    if (curSocVersion != op::SocVersion::ASCEND950) {
+        op::SetPlatformSocVersion(curSocVersion);
+    }
 }
 
 TEST_F(l2_maximum_test, aclnnMaximum_023_aclnnMaximum_error_input_dtype)

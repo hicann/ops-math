@@ -14,8 +14,10 @@
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
+#include "op_api/data_type_utils.h"
 #include "opdev/format_utils.h"
 #include "opdev/op_dfx.h"
 #include "opdev/op_executor.h"
@@ -28,23 +30,6 @@ using namespace op;
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* Minimum 算子的完整计算流程如下:
- * self                               other
- *   |                                  |
- *   \                                  /
- * Contiguous(workspace_0)    Contiguous(workspace_2)
- *      \                             /
- *     Cast(workspace_1)     Cast(workspace_3)
- *               \            /
- *             Minimum(workspace_4)
- *                    |
- *               Cast(workspace_5)
- *                    |
- *                ViewCopy
- *                    |
- *                  result
- */
 
 constexpr size_t MAX_DIM_LEN = 8;
 
@@ -91,10 +76,11 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const
     return true;
 }
 
-static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, const aclTensor* out)
+static bool CheckComputeDtype(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
-    // 检查self和other能否做数据类型推导
-    op::DataType promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
+    // 根据平台选择数据类型推导方式
+    op::DataType promoteType =
+        IsRegBase() ? op::BinaryOpTypePromote(self, other) : op::PromoteType(self->GetDataType(), other->GetDataType());
     if (promoteType == DataType::DT_UNDEFINED) {
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
@@ -120,85 +106,78 @@ static bool CheckShape(const aclTensor* self, const aclTensor* other, const aclT
 
 static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
-    // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, other, out), ACLNN_ERR_PARAM_NULLPTR);
-
-    // 2. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
     CHECK_RET(CheckDtypeValid(self, other, out), ACLNN_ERR_PARAM_INVALID);
-
-    // 3. 检查self和other能否做数据类型推导以及推导的数据类型能否转换为输出数据类型
-    CHECK_RET(CheckPromoteType(self, other, out), ACLNN_ERR_PARAM_INVALID);
-
-    // 4. 检查双输入是否能broadcast
+    CHECK_RET(CheckComputeDtype(self, other, out), ACLNN_ERR_PARAM_INVALID);
     CHECK_RET(CheckShape(self, other, out), ACLNN_ERR_PARAM_INVALID);
-
     return ACLNN_SUCCESS;
+}
+
+// RegBase平台计算类型优化，输入类型安全时直接计算，否则推导后统一转换
+static void GetComputeType(
+    const aclTensor* self, const aclTensor* other, const aclTensor* out, DataType& computeType, bool& needOutputCast)
+{
+    needOutputCast = true;
+    if (!IsRegBase()) {
+        computeType = op::PromoteType(self->GetDataType(), other->GetDataType());
+        return;
+    }
+    auto inDtype = self->GetDataType();
+    auto outDtype = out->GetDataType();
+    if (inDtype == other->GetDataType() && op::IsMaxMinSafeInputDtype(inDtype, outDtype)) {
+        computeType = inDtype;
+        needOutputCast = (computeType != outDtype);
+    } else if (inDtype == other->GetDataType()) {
+        computeType = outDtype;
+        needOutputCast = false;
+    } else {
+        computeType = op::BinaryOpTypePromote(self, other);
+        needOutputCast = (computeType != outDtype);
+    }
 }
 
 aclnnStatus aclnnMinimumGetWorkspaceSize(
     const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnMinimum, DFX_IN(self, other), DFX_OUT(out));
-
-    // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
-    
-    // 固定写法，参数检查
     auto ret = CheckParams(self, other, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
-
-    // Minimum算子的空tensor在kernel中支持，对标竞品根据算子实际情况补充
     if (self->IsEmpty() || other->IsEmpty()) {
-        // 根据实际支持情况补充
         *workspaceSize = 0;
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }
-
-    // 检查Format
-    if(self->GetStorageFormat() != Format::FORMAT_ND){
+    if (self->GetStorageFormat() != Format::FORMAT_ND) {
         OP_LOGW("Format only support ND");
     }
-    
-    // Minimum算子需要对self和other两个输入做隐式数据类型转换，根据具体算子语义按需调用
-    auto promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
-
-    // 固定写法，将输入self转换成连续的tensor
+    DataType computeType = DataType::DT_UNDEFINED;
+    bool needOutputCast = true;
+    GetComputeType(self, other, out, computeType, needOutputCast);
+    CHECK_RET(computeType != DataType::DT_UNDEFINED, ACLNN_ERR_INNER);
     auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 将输入self的数据类型转换成隐式数据类型，根据具体算子语义按需调用
-    auto selfCasted = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
+    auto selfCasted = l0op::Cast(selfContiguous, computeType, uniqueExecutor.get());
     CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 固定写法，将输入other转换成连续的tensor
     auto otherContiguous = l0op::Contiguous(other, uniqueExecutor.get());
     CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 将输入other的数据类型转换成隐式数据类型，根据具体算子语义按需调用
-    auto otherCasted = l0op::Cast(otherContiguous, promoteType, uniqueExecutor.get());
+    auto otherCasted = l0op::Cast(otherContiguous, computeType, uniqueExecutor.get());
     CHECK_RET(otherCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 双输入为bool类型时，调LogicalAnd算子kernel
     const aclTensor* minimumOpOut = nullptr;
-    if (self->GetDataType() == op::DataType::DT_BOOL && other->GetDataType() == op::DataType::DT_BOOL) {
+    if (computeType == op::DataType::DT_BOOL) {
         minimumOpOut = l0op::LogicalAnd(selfCasted, otherCasted, uniqueExecutor.get());
     } else {
-        // 调用Minimum算子kernel
         minimumOpOut = l0op::Minimum(selfCasted, otherCasted, uniqueExecutor.get());
     }
     CHECK_RET(minimumOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 固定写法，将计算结果转换成输出out的数据类型
-    auto castOut = l0op::Cast(minimumOpOut, out->GetDataType(), uniqueExecutor.get());
-    CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 固定写法，将计算结果拷贝到输出out上，out可能是非连续的tensor
-    auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
+    const aclTensor* finalOut = minimumOpOut;
+    if (needOutputCast) {
+        finalOut = l0op::Cast(minimumOpOut, out->GetDataType(), uniqueExecutor.get());
+        CHECK_RET(finalOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    }
+    auto viewCopyResult = l0op::ViewCopy(finalOut, out, uniqueExecutor.get());
     CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 固定写法，获取计算过程中需要使用的workspace大小
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
     uniqueExecutor.ReleaseTo(executor);
     return ACLNN_SUCCESS;
@@ -206,7 +185,6 @@ aclnnStatus aclnnMinimumGetWorkspaceSize(
 
 aclnnStatus aclnnMinimum(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
-    // 固定写法，调用框架能力，完成计算
     L2_DFX_PHASE_2(aclnnMinimum);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
