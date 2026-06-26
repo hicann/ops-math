@@ -229,17 +229,23 @@ ge::graphStatus AngleV2Tiling::Init()
     auto xShape = inputShape0->GetStorageShape();
     totalLength = xShape.GetShapeSize();
     OP_LOGD(tilingContext, "totalLength %ld.", totalLength);
-    if (xShape.GetDimNum() > 8){
-        OP_LOGW(tilingContext, "AngleV2 only support tensor with dim num <= 8, but input dim num is %zu.",
-            xShape.GetDimNum());
-    }
-
     auto platformInfo = tilingContext->GetPlatformInfo();
     if (platformInfo == nullptr) {
         return ge::GRAPH_FAILED;
     }
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     socVersion = ascendcPlatform.GetSocVersion();
+
+    if (xShape.GetDimNum() > 8) {
+        if (socVersion == platform_ascendc::SocVersion::ASCEND950) {
+            OP_LOGE(tilingContext, "AngleV2 only support tensor with dim num <= 8, but input dim num is %zu.",
+                xShape.GetDimNum());
+            return ge::GRAPH_FAILED;
+        } else {
+            OP_LOGW(tilingContext, "AngleV2 only support tensor with dim num <= 8, but input dim num is %zu.",
+                xShape.GetDimNum());
+        }
+    }
     coreNum = ascendcPlatform.GetCoreNumAiv();
     OP_LOGD(tilingContext, "coreNum %ld.", coreNum);
     if (coreNum == 0) {
