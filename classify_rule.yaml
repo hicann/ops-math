@@ -271,16 +271,6 @@ VC2@ops-math:
   src:
     release:
       style:
-        - ops/ops-math/conversion/batch_to_space_nd/op_graph/
-        - ops/ops-math/conversion/batch_to_space_nd/op_host/
-        - ops/ops-math/conversion/batch_to_space_nd/op_kernel/
-        - ops/ops-math/conversion/broadcast_to/op_host/
-        - ops/ops-math/conversion/broadcast_to/op_kernel/
-        - ops/ops-math/conversion/circular_pad_grad/op_host/arch35/
-        - ops/ops-math/conversion/circular_pad_grad/op_kernel/arch35/
-        - ops/ops-math/conversion/circular_pad/op_host/arch35/
-        - ops/ops-math/conversion/circular_pad/op_kernel/arch35/
-        - ops/ops-math/conversion/depth_to_space/
         - ops/ops-math/conversion/fill/
         - ops/ops-math/conversion/fills/
         - ops/ops-math/conversion/im2col/
@@ -290,19 +280,8 @@ VC2@ops-math:
         - ops/ops-math/conversion/matrix_set_diag/op_host/
         - ops/ops-math/conversion/matrix_set_diag/op_kernel/
         - ops/ops-math/conversion/mem_set_v2/
-        - ops/ops-math/conversion/mirror_pad/
-        - ops/ops-math/conversion/pad_v2/
-        - ops/ops-math/conversion/pad_v3_grad_replicate/op_host/arch35/
-        - ops/ops-math/conversion/pad_v3_grad_replicate/op_kernel/arch35/
-        - ops/ops-math/conversion/pad_v3_grad_replication/
-        - ops/ops-math/conversion/pad_v3_grad/
-        - ops/ops-math/conversion/pad_v3/
-        - ops/ops-math/conversion/pad/
-        - ops/ops-math/conversion/reflection_pad3d_grad/op_host/arch35/
-        - ops/ops-math/conversion/reflection_pad3d_grad/op_kernel/arch35/
         - ops/ops-math/conversion/roll/
         - ops/ops-math/conversion/slice/
-        - ops/ops-math/conversion/space_to_depth/
         - ops/ops-math/conversion/strided_slice_v2/op_host/
         - ops/ops-math/conversion/strided_slice_v2/op_kernel/
         - ops/ops-math/conversion/strided_slice_v3/op_host/
@@ -312,8 +291,6 @@ VC2@ops-math:
         - ops/ops-math/conversion/strided_slice/op_kernel/
         - ops/ops-math/conversion/trans_data/op_host/
         - ops/ops-math/conversion/trans_data/op_kernel/
-        - ops/ops-math/conversion/transpose_v2/
-        - ops/ops-math/conversion/transpose/
         - ops/ops-math/conversion/zeros_like/
         - ops/ops-math/math/arg_max_v2/
         - ops/ops-math/math/arg_max_with_value/
@@ -339,16 +316,7 @@ VC2@ops-math:
       kernel_style: null
     unrelease:
       test_code:
-        - ops/ops-math/conversion/batch_to_space_nd/examples/
-        - ops/ops-math/conversion/batch_to_space_nd/tests/
-        - ops/ops-math/conversion/broadcast_to/examples/*.cpp
-        - ops/ops-math/conversion/broadcast_to/tests/**/*.cpp
-        - ops/ops-math/conversion/circular_pad_grad/examples/*.cpp
-        - ops/ops-math/conversion/circular_pad_grad/tests/**/*.cpp
-        - ops/ops-math/conversion/circular_pad/examples/*.cpp
-        - ops/ops-math/conversion/circular_pad/tests/**/*.cpp
-        - ops/ops-math/conversion/depth_to_space/examples/*.cpp
-        - ops/ops-math/conversion/depth_to_space/tests/**/*.cpp
+        
         - ops/ops-math/conversion/fill/examples/
         - ops/ops-math/conversion/fill/tests/
         - ops/ops-math/conversion/fills/examples/
@@ -363,28 +331,10 @@ VC2@ops-math:
         - ops/ops-math/conversion/matrix_set_diag/tests/
         - ops/ops-math/conversion/mem_set_v2/examples/*.cpp
         - ops/ops-math/conversion/mem_set_v2/tests/**/*.cpp
-        - ops/ops-math/conversion/mirror_pad/examples/
-        - ops/ops-math/conversion/mirror_pad/tests/
-        - ops/ops-math/conversion/pad_v2/examples/
-        - ops/ops-math/conversion/pad_v2/tests/
-        - ops/ops-math/conversion/pad_v3_grad_replicate/examples/*.cpp
-        - ops/ops-math/conversion/pad_v3_grad_replicate/tests/**/*.cpp
-        - ops/ops-math/conversion/pad_v3_grad_replication/examples/*.cpp
-        - ops/ops-math/conversion/pad_v3_grad_replication/tests/**/*.cpp
-        - ops/ops-math/conversion/pad_v3_grad/examples/
-        - ops/ops-math/conversion/pad_v3_grad/tests/
-        - ops/ops-math/conversion/pad_v3/examples/
-        - ops/ops-math/conversion/pad_v3/tests/
-        - ops/ops-math/conversion/pad/examples/
-        - ops/ops-math/conversion/pad/tests/
-        - ops/ops-math/conversion/reflection_pad3d_grad/examples/*.cpp
-        - ops/ops-math/conversion/reflection_pad3d_grad/tests/**/*.cpp
         - ops/ops-math/conversion/roll/examples/
         - ops/ops-math/conversion/roll/tests/
         - ops/ops-math/conversion/slice/examples/
         - ops/ops-math/conversion/slice/tests/
-        - ops/ops-math/conversion/space_to_depth/examples/
-        - ops/ops-math/conversion/space_to_depth/tests/
         - ops/ops-math/conversion/strided_slice_v2/examples/*.cpp
         - ops/ops-math/conversion/strided_slice_v2/tests/**/*.cpp
         - ops/ops-math/conversion/strided_slice_v3/examples/*.cpp
@@ -393,10 +343,6 @@ VC2@ops-math:
         - ops/ops-math/conversion/strided_slice/tests/
         - ops/ops-math/conversion/trans_data/examples/*.cpp
         - ops/ops-math/conversion/trans_data/tests/**/*.cpp
-        - ops/ops-math/conversion/transpose_v2/examples/*.cpp
-        - ops/ops-math/conversion/transpose_v2/tests/**/*.cpp
-        - ops/ops-math/conversion/transpose/examples/
-        - ops/ops-math/conversion/transpose/tests/
         - ops/ops-math/conversion/zeros_like/examples/
         - ops/ops-math/conversion/zeros_like/tests/
         - ops/ops-math/math/arg_max_v2/examples/
@@ -591,6 +537,152 @@ VC3@ops-math:
       non_delivery: null
       open_source: null
 
+VC5@ops-math:
+  src:
+    release:
+      style:
+        # batch_to_space
+        - ops/ops-math/conversion/batch_to_space_nd/op_graph/
+        - ops/ops-math/conversion/batch_to_space_nd/op_host/
+        - ops/ops-math/conversion/batch_to_space_nd/op_kernel/
+        # broadcast_to
+        - ops/ops-math/conversion/broadcast_to/op_host/
+        - ops/ops-math/conversion/broadcast_to/op_kernel/
+        # circular_pad_grad
+        - ops/ops-math/conversion/circular_pad_grad/op_host/arch35/
+        - ops/ops-math/conversion/circular_pad_grad/op_kernel/arch35/
+        - ops/ops-math/conversion/circular_pad_grad/op_kernel/circular_pad_grad_apt.cpp
+        # circular_pad
+        - ops/ops-math/conversion/circular_pad/op_host/arch35/
+        - ops/ops-math/conversion/circular_pad/op_kernel/arch35/
+        # depth_to_space
+        - ops/ops-math/conversion/depth_to_space/op_host/
+        - ops/ops-math/conversion/depth_to_space/op_kernel/
+        # mirror_pad
+        - ops/ops-math/conversion/mirror_pad/op_host/
+        - ops/ops-math/conversion/mirror_pad/op_kernel/
+        # pad_v2
+        - ops/ops-math/conversion/pad_v2/op_host/
+        - ops/ops-math/conversion/pad_v2/op_kernel/
+        # pad_v3_grad_replicate
+        - ops/ops-math/conversion/pad_v3_grad_replicate/op_host/arch35/
+        - ops/ops-math/conversion/pad_v3_grad_replicate/op_kernel/arch35/
+        # pad_v3_grad_replication
+        - ops/ops-math/conversion/pad_v3_grad_replication/op_host/arch35/
+        - ops/ops-math/conversion/pad_v3_grad_replication/op_kernel/arch35/
+        - ops/ops-math/conversion/pad_v3_grad_replication/op_kernel/pad_v3_grad_replication_apt.cpp
+        # pad_v3_grad
+        - ops/ops-math/conversion/pad_v3_grad/op_host/
+        - ops/ops-math/conversion/pad_v3_grad/op_kernel/
+        # pad_v3
+        - ops/ops-math/conversion/pad_v3/op_host/
+        - ops/ops-math/conversion/pad_v3/op_kernel/
+        # pad
+        - ops/ops-math/conversion/pad/op_host/
+        - ops/ops-math/conversion/pad/op_kernel/
+        # reflection_pad3d_grad
+        - ops/ops-math/conversion/reflection_pad3d_grad/op_host/arch35/
+        - ops/ops-math/conversion/reflection_pad3d_grad/op_kernel/arch35/
+        # space_to_depth
+        - ops/ops-math/conversion/space_to_depth/op_host/
+        - ops/ops-math/conversion/space_to_depth/op_kernel/
+        # transpose_v2
+        - ops/ops-math/conversion/transpose_v2/op_host/arch35/
+        - ops/ops-math/conversion/transpose_v2/op_kernel/arch35/
+        # transpose
+        - ops/ops-math/conversion/transpose/op_graph/
+        - ops/ops-math/conversion/transpose/op_host/
+        - ops/ops-math/conversion/transpose/op_kernel/
+        # expand
+        - ops/ops-math/math/expand/op_host/
+        - ops/ops-math/math/expand/op_kernel/
+        # sinc
+        - ops/ops-math/math/sinc/op_graph/
+        - ops/ops-math/math/sinc/op_host/
+        - ops/ops-math/math/sinc/op_kernel/
+        # tile
+        - ops/ops-math/math/tile/op_host/
+        - ops/ops-math/math/tile/op_kernel/
+        # truncate_div
+        - ops/ops-math/math/truncate_div/op_graph/
+        - ops/ops-math/math/truncate_div/op_host/
+        - ops/ops-math/math/truncate_div/op_kernel/
+      opensource_style: null
+      kernel_style: null
+    unrelease:
+      test_code:
+        # batch_to_space
+        - ops/ops-math/conversion/batch_to_space_nd/examples/
+        - ops/ops-math/conversion/batch_to_space_nd/tests/
+        # broadcast_to
+        - ops/ops-math/conversion/broadcast_to/examples/*.cpp
+        - ops/ops-math/conversion/broadcast_to/tests/**/*.cpp
+        - ops/ops-math/conversion/broadcast_to/tests/**/*.py
+        # circular_pad_grad
+        - ops/ops-math/conversion/circular_pad_grad/examples/*.cpp
+        - ops/ops-math/conversion/circular_pad_grad/tests/**/*.cpp
+        - ops/ops-math/conversion/circular_pad_grad/tests/**/*.py
+        # circular_pad
+        - ops/ops-math/conversion/circular_pad/examples/*.cpp
+        - ops/ops-math/conversion/circular_pad/tests/**/*.cpp
+        - ops/ops-math/conversion/circular_pad/tests/**/*.py
+        # depth_to_space
+        - ops/ops-math/conversion/depth_to_space/examples/*.cpp
+        - ops/ops-math/conversion/depth_to_space/tests/**/*.cpp
+        - ops/ops-math/conversion/depth_to_space/tests/**/*.py
+        # mirror_pad
+        - ops/ops-math/conversion/mirror_pad/examples/
+        - ops/ops-math/conversion/mirror_pad/tests/
+        # pad_v2
+        - ops/ops-math/conversion/pad_v2/examples/
+        - ops/ops-math/conversion/pad_v2/tests/
+        # pad_v3_grad_replicate
+        - ops/ops-math/conversion/pad_v3_grad_replicate/examples/*.cpp
+        - ops/ops-math/conversion/pad_v3_grad_replicate/tests/**/*.cpp
+        - ops/ops-math/conversion/pad_v3_grad_replicate/tests/**/*.py
+        # pad_v3_grad_replication
+        - ops/ops-math/conversion/pad_v3_grad_replication/examples/*.cpp
+        - ops/ops-math/conversion/pad_v3_grad_replication/tests/**/*.cpp
+        - ops/ops-math/conversion/pad_v3_grad_replication/tests/**/*.py
+        # pad_v3_grad
+        - ops/ops-math/conversion/pad_v3_grad/examples/
+        - ops/ops-math/conversion/pad_v3_grad/tests/
+        # pad_v3
+        - ops/ops-math/conversion/pad_v3/examples/
+        - ops/ops-math/conversion/pad_v3/tests/
+        # pad
+        - ops/ops-math/conversion/pad/examples/
+        - ops/ops-math/conversion/pad/tests/
+        # reflection_pad3d_grad
+        - ops/ops-math/conversion/reflection_pad3d_grad/examples/*.cpp
+        - ops/ops-math/conversion/reflection_pad3d_grad/tests/**/*.cpp
+        - ops/ops-math/conversion/reflection_pad3d_grad/tests/**/*.py
+        # space_to_depth
+        - ops/ops-math/conversion/space_to_depth/examples/
+        - ops/ops-math/conversion/space_to_depth/tests/
+        # transpose_v2
+        - ops/ops-math/conversion/transpose_v2/examples/*.cpp
+        - ops/ops-math/conversion/transpose_v2/tests/**/*.cpp
+        - ops/ops-math/conversion/transpose_v2/tests/**/*.py
+        # transpose
+        - ops/ops-math/conversion/transpose/examples/
+        - ops/ops-math/conversion/transpose/tests/
+        # expand
+        - ops/ops-math/math/expand/examples/
+        - ops/ops-math/math/expand/tests/
+        # sinc
+        - ops/ops-math/math/sinc/examples/
+        - ops/ops-math/math/sinc/tests/
+        # tile
+        - ops/ops-math/math/tile/examples/*.cpp
+        - ops/ops-math/math/tile/tests/**/*.cpp
+        - ops/ops-math/math/tile/tests/**/*.py
+        # truncate_div
+        - ops/ops-math/math/truncate_div/examples/
+        - ops/ops-math/math/truncate_div/tests/
+      non_delivery: null
+      open_source: null
+
 VC6@ops-math:
   src:
     release:
@@ -708,31 +800,6 @@ VC8@ops-math:
       kernel_style: null
     unrelease:
       test_code: null
-      non_delivery: null
-      open_source: null
-
-VC5@ops-math:
-  src:
-    release:
-      style:
-        # sinc
-        - ops/ops-math/math/sinc/op_graph/
-        - ops/ops-math/math/sinc/op_host/
-        - ops/ops-math/math/sinc/op_kernel/
-        # truncate_div
-        - ops/ops-math/math/truncate_div/op_graph/
-        - ops/ops-math/math/truncate_div/op_host/
-        - ops/ops-math/math/truncate_div/op_kernel/
-      opensource_style: null
-      kernel_style: null
-    unrelease:
-      test_code:
-        # sinc
-        - ops/ops-math/math/sinc/examples/
-        - ops/ops-math/math/sinc/tests/
-        # truncate_div
-        - ops/ops-math/math/truncate_div/examples/
-        - ops/ops-math/math/truncate_div/tests/
       non_delivery: null
       open_source: null
 
