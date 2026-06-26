@@ -17,7 +17,7 @@
 
 - 计算公式：
 
-  $out = x / y$，其中当x = 0时out = 0。
+  $$out = \begin{cases} 0 & \text{if } x = 0 \\ \frac{x}{y} & \text{otherwise} \end{cases}$$
 
 - 支持broadcast：x和y的shape需满足broadcast关系，输出shape为广播后的最大值shape。
 
