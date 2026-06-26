@@ -578,6 +578,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/dawsn/README.md">dawsn</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>计算Dawson积分 F(x) = exp(-x^2) * integral_0^x exp(t^2) dt。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/diag_part/README.md">diag_part</a></td>
     <td>√</td>
     <td>√</td>
