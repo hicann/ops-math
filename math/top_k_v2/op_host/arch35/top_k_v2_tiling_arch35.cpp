@@ -477,7 +477,8 @@ uint64_t GetSingleBlockTopkRunTimeNeedSpace(
     // 若lastAxisNum > tileData，initUb返回为0. 当前函数外部不会对tileData, 那么之后lastAxisNum > tileData
     // 不会进入SingleBlock模板
     uint32_t batchNumInUb = tileData / lastAxisNum;
-    uint64_t alignTileData = Ops::Base::CeilAlign(static_cast<uint64_t>(tileData), topkV2DataInfo::AGLIN_FACTOR);
+    // kernel侧实际以lastAxisNum计算空间，避免(1,1,1), dataType=int32无法处理
+    uint64_t alignTileData = Ops::Base::CeilAlign(static_cast<uint64_t>(lastAxisNum), topkV2DataInfo::AGLIN_FACTOR);
     uint64_t alignkValueMultDtypeSize =
         Ops::Base::CeilAlign(static_cast<uint64_t>(kValue * xDtypeSize), topkV2DataInfo::AGLIN_FACTOR);
     uint64_t alignkValueMultIndexDtypeSize =
