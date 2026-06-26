@@ -26,11 +26,11 @@ extern "C" {
  * 支持非连续的Tensor。
  * @param [in] scale: npu device侧的aclTensor, 数据类型支持float, bf16, float16
  * @param [in] bias: npu device侧的aclTensor，数据类型支持float, bf16, float16
- * @param [in] axis:  host侧的aclScalar，数据类型int64_t
+ * @param [in] axis:  host侧的int64_t类型参数
  * @param [in] numAxes:  host侧的aclScalar，数据类型int64_t
- * @param [in] scaleFromBlob:  host侧的aclScalar, 数据类型bool
+ * @param [in] scaleFromBlob:  host侧的bool类型参数
  * @param [in] y: Scale计算的出参。npu device侧的aclTensor,
- * 数据类型支持int8, 数据格式支持ND,
+ * 数据类型支持float16, bfloat16, float32, 数据格式支持ND,
  * 支持非连续的Tensor。
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。

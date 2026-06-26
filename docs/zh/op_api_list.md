@@ -273,7 +273,7 @@
 | [aclnnRsqrt&aclnnInplaceRsqrt](../../math/rsqrt/docs/aclnnRsqrt&aclnnInplaceRsqrt.md) | 求input(Tensor)每个元素的平方根的倒数。                      | 默认确定性实现| 默认确定性实现|
 | [aclnnRsub](../../math/sub/docs/aclnnRsub.md)                   | 完成减法计算。                                               | 默认确定性实现| 默认确定性实现 |
 | [aclnnRsubs](../../math/sub/docs/aclnnRsubs.md)         | 完成减法计算。    | 默认确定性实现| 默认确定性实现 |
-| [aclnnScale](../../math/scale/docs/aclnnScale.md)               | 参见算子文档。                                               | 默认确定性实现| - |
+| [aclnnScale](../../math/scale/docs/aclnnScale.md)               | 对输入Tensor进行scale和bias计算。若不输入bias，则 $y = x \cdot scale$；若输入bias，则 $y = x \cdot scale + bias$。                                               | 默认确定性实现| 默认确定性实现 |
 | [aclnnSearchSorted](../../math/search_sorted/docs/aclnnSearchSorted.md) | 在一个已排序的张量（sortedSequence）中查找给定tensor值（self）应该插入的位置。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnSearchSorteds](../../math/search_sorted/docs/aclnnSearchSorteds.md) | 在一个已排序的一维张量（sortedSequence）中查找给定Scalar值（self）应该插入的位置。 | 默认确定性实现| - |
 | [aclnnSign](../../math/sign/docs/aclnnSign.md)                  | 对输入的tensor逐元素进行Sign符号函数的运算并输出结果tensor。 | 默认确定性实现| 默认确定性实现|
