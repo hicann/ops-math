@@ -399,31 +399,19 @@ __simt_callee__ __aicore__ inline void PhiloxAlgParsInit(uint32_t* key, uint32_t
     SkipLo(counter, offset);
 }
 
-__simt_callee__ __aicore__ inline void MultiplyHighLow(
-    uint32_t a, uint32_t b, uint32_t* resultLow, uint32_t* resultHigh)
-{
-    const uint64_t product = static_cast<uint64_t>(a) * b;
-    *resultLow = static_cast<uint32_t>(product);
-    *resultHigh = static_cast<uint32_t>(product >> RIGHT_SHIFT);
-}
-
 __simt_callee__ __aicore__ inline void Philox4x32Round(uint32_t* counter, const uint32_t* key)
 {
-    uint32_t lo0;
-    uint32_t hi0;
-    MultiplyHighLow(PHILOX_M4X32_A, counter[0], &lo0, &hi0);
+    uint64_t res0_u64 = __mul_i32toi64(PHILOX_M4X32_A, counter[0]);
+    uint64_t res1_u64 = __mul_i32toi64(PHILOX_M4X32_B, counter[IDX_2]);
 
-    uint32_t lo1;
-    uint32_t hi1;
-    MultiplyHighLow(PHILOX_M4X32_B, counter[IDX_2], &lo1, &hi1);
+    // 这里使用uint2和uint32功能等价，但是编译器的编译结果不一样，导致性能差异很大，使用性能更好的uint2
+    uint2& res0 = reinterpret_cast<uint2&>(res0_u64);
+    uint2& res1 = reinterpret_cast<uint2&>(res1_u64);
 
-    uint32_t result[ALG_COUNTER_SIZE];
-    result[0] = hi1 ^ counter[1] ^ key[0];
-    result[1] = lo1;
-    result[IDX_2] = hi0 ^ counter[IDX_3] ^ key[1];
-    result[IDX_3] = lo0;
-
-    CopyArray<ALG_COUNTER_SIZE>(counter, result);
+    counter[0] = res1.y ^ counter[1] ^ key[0];
+    counter[1] = res1.x;
+    counter[IDX_2] = res0.y ^ counter[IDX_3] ^ key[1];
+    counter[IDX_3] = res0.x;
 }
 
 __simt_callee__ __aicore__ inline void KeyInc(uint32_t* key)
