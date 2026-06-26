@@ -34,6 +34,7 @@ extern "C" {
 #endif
 
 const float SQRT_EXP = 0.5;
+const float NOOP_EXP = 1.0;
 const float SQUARE_EXP = 2.0;
 const float CUBE_EXP = 3.0;
 const float NEGTIVE_SQRT_EXP = -0.5;
@@ -433,6 +434,7 @@ aclnnStatus aclnnPowTensorScalarGetWorkspaceSize(const aclTensor *self,
                                                    selfCast->GetDataType() == op::DataType::DT_INT64 ||
                                                    selfCast->GetDataType() == op::DataType::DT_COMPLEX64 ||
                                                    selfCast->GetDataType() == op::DataType::DT_COMPLEX128)));
+  bool canNoUseOp = static_cast<float>(exponent->ToFloat()) == NOOP_EXP && !IsRegBase();
   if (CheckSupportPows(selfCast, exponent)) {
     auto expTensor = uniqueExecutor.get()->ConvertToTensor(exponent, promoteType);
     CHECK_RET(expTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -446,6 +448,8 @@ aclnnStatus aclnnPowTensorScalarGetWorkspaceSize(const aclTensor *self,
     }
     // 当exponent为2.0时，使用square算子计算
     powOut = const_cast<aclTensor *>(l0op::Square(squareInput, uniqueExecutor.get()));
+  } else if (canNoUseOp) {
+    powOut = const_cast<aclTensor *>(selfCast);
   } else {
     auto expTensor = uniqueExecutor.get()->ConvertToTensor(exponent, promoteType);
     CHECK_RET(expTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
