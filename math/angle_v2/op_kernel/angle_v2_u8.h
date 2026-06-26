@@ -30,7 +30,15 @@ public:
     {
         pipe = inputPipe;
         this->BaseMemberDataInit(tilingData);
-        repeatTimes = (this->tileLength + this->mask - 1) / this->mask;
+        uint32_t actualRepeatTimes = (this->tileLength + this->mask - 1) / this->mask;
+        if (actualRepeatTimes > UINT8_MAX_VALUE) {
+            repeatTimes = UINT8_MAX_VALUE;
+            loopCnt = actualRepeatTimes / repeatTimes;
+            repeatLeft = actualRepeatTimes % repeatTimes;
+        } else {
+            repeatTimes = static_cast<uint8_t>(actualRepeatTimes);
+            repeatLeft = 0;
+        }
         blockLen = this->tileLength / dataPerBlock;
 
         yGm.SetGlobalBuffer(reinterpret_cast<__gm__ yType*>(y) + this->offset, this->blockLength);
@@ -42,10 +50,19 @@ public:
     __aicore__ inline void Process()
     {
         LocalTensor<yType> zeroTensor = outQueue.AllocTensor<yType>();
-        Duplicate(
-            zeroTensor, static_cast<yType>(0.0), this->mask, repeatTimes, this->dupDstBlockStride,
-            this->dupDstRepeatStride);
 
+        for (uint32_t i = 0; i < loopCnt; i++) {
+            Duplicate(
+                zeroTensor, static_cast<yType>(0.0), this->mask, repeatTimes, this->dupDstBlockStride,
+                this->dupDstRepeatStride);
+        }
+        if (repeatLeft >= 1) {
+            Duplicate(
+                zeroTensor[repeatTimes * loopCnt * this->mask], static_cast<yType>(0.0), this->mask, repeatLeft, this->dupDstBlockStride,
+                this->dupDstRepeatStride);
+        }
+
+        PipeBarrier<PIPE_ALL>();
         // loop count need to be doubled, due to double buffer
         for (int64_t i = 0; i < this->tileNum; i++) {
             int64_t coreOffset = i * this->tileLength;
@@ -66,6 +83,8 @@ private:
     TQue<QuePosition::VECOUT, BUFFER_NUM> outQueue;
     uint8_t repeatTimes;
     int32_t dataPerBlock = 32 / sizeof(yType);
+    uint32_t loopCnt = 1;
+    uint8_t repeatLeft = 0;
     uint16_t blockLen = 1;
 };
 } // namespace AngleV2N
