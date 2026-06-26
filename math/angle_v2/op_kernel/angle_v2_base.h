@@ -23,6 +23,7 @@ using namespace AscendC;
 
 constexpr int32_t BUFFER_NUM = 2;
 constexpr int32_t COEFFICENT = 2;
+constexpr uint8_t UINT8_MAX_VALUE = 255;
 const double PI = 3.14159265358979323846;
 
 #ifndef INFINITY
