@@ -73,14 +73,18 @@ static ge::graphStatus Tiling4ReduceSum(gert::TilingContext* context)
         }
     }
     ReduceTilingKey key;
+    // 获取确定性级别，如果为2（暂定）开启batch一致性
+    if (context->GetDeterministicLevel() == 2) {
+        key.batchInvariant = 1;
+    }
     OP_CHECK_IF(
         (DoTiling(context, opInput, key) == ge::GRAPH_FAILED),
         OP_LOGE(context->GetNodeName(), "DoTiling Failed for ReduceSum"), return ge::GRAPH_FAILED);
     uint64_t tilingKey;
     GEN_REDUCE_TILING_KEY(tilingKey, key);
     OP_LOGI(
-        context->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u, isContiguous:%d, Tiling Key is:%lu",
-        key.patternID, key.loopARCount, key.loopInnerARCount, key.isContiguous ? 1 : 0, tilingKey);
+        context->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u, isContiguous:%d, batchInvariant:%d, Tiling Key is:%lu",
+        key.patternID, key.loopARCount, key.loopInnerARCount, key.isContiguous ? 1 : 0, key.batchInvariant ? 1 : 0, tilingKey);
     context->SetTilingKey(tilingKey);
     return ge::GRAPH_SUCCESS;
 }
