@@ -65,9 +65,9 @@ aclnnInplaceNegGetWorkspaceSize(aclTensor* selfRef, uint64_t* workspaceSize, acl
 /**
  * @brief aclnnNeg的第二段接口，用于执行计算。
  *
- * 算子功能：完成加法计算
+ * 算子功能：对输入的每个元素完成相反数计算
  * 计算公式：
- * $$ output_i = self_i+alpha*other_i $$
+ * $$ output_i = -self_i $$
  *
  * 实现说明：
  * api计算的基本路径：

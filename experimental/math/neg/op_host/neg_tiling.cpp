@@ -23,6 +23,9 @@
 namespace optiling {
 
 const uint64_t BLOCK_SIZE = 32;
+const uint64_t INT64_UB_PART_NUM = 7;
+const uint64_t INT64_COMPARE_ALIGN_NUM = 32;
+const uint64_t INT64_MAX_REPEAT_TIMES = 255;
 
 struct NegCompileInfo {};
 
@@ -33,13 +36,20 @@ static ge::graphStatus NegTilingFunc(gert::TilingContext* context)
     int64_t ubPartNum = 4;
     uint64_t dataTypeLength = 4;
     auto dt = context->GetInputDesc(0)->GetDataType();
+    bool isInt64 = (dt == ge::DT_INT64);
     if (dt == ge::DT_INT8) {
         dataTypeLength = 1;
         ubPartNum += 4;
+    } else if (dt == ge::DT_UINT8) {
+        dataTypeLength = 1;
+        ubPartNum += 6;
+    } else if (dt == ge::DT_INT64) {
+        dataTypeLength = 8;
+        ubPartNum = INT64_UB_PART_NUM;
     } else if (dt == ge::DT_BF16) {
         dataTypeLength = 2;
         ubPartNum += 2;
-    } else if (dt == ge::DT_FLOAT16) {
+    } else if (dt == ge::DT_FLOAT16 || dt == ge::DT_INT16) {
         dataTypeLength = 2;
     }
 
@@ -63,6 +73,59 @@ static ge::graphStatus NegTilingFunc(gert::TilingContext* context)
     // The number of 32B data blocks that can be used for each data. DOUBLE BUFFER is already counted here
     uint64_t ubPartBlockNum = ubPartLength / BLOCK_SIZE;
     uint64_t ubPartDataNum = (ubPartBlockNum * BLOCK_SIZE) / dataTypeLength;
+    if (isInt64) {
+        ubPartDataNum = (ubPartDataNum / INT64_COMPARE_ALIGN_NUM) * INT64_COMPARE_ALIGN_NUM;
+        uint64_t maxInt64TileDataNum = INT64_COMPARE_ALIGN_NUM * INT64_MAX_REPEAT_TIMES;
+        ubPartDataNum = (ubPartDataNum > maxInt64TileDataNum) ? maxInt64TileDataNum : ubPartDataNum;
+    }
+    if (inputDataNum != 0 && ubPartDataNum == 0) {
+        OP_LOGE(context, "ubPartDataNum is 0");
+        return ge::GRAPH_FAILED;
+    }
+
+    if (isInt64) {
+        if (inputDataNum == 0) {
+            tiling->smallCoreDataNum = 0;
+            tiling->bigCoreDataNum = 0;
+            tiling->ubPartDataNum = ubPartDataNum;
+            tiling->smallCoreTailDataNum = 0;
+            tiling->bigCoreTailDataNum = 0;
+            tiling->smallCoreLoopNum = 0;
+            tiling->bigCoreLoopNum = 0;
+            tiling->tailBlockNum = 0;
+            context->SetTilingKey(0);
+            context->SetBlockDim(1);
+            size_t* currentWorkspace = context->GetWorkspaceSizes(1);
+            currentWorkspace[0] = 0;
+            return ge::GRAPH_SUCCESS;
+        }
+
+        coreNum = (coreNum < inputDataNum) ? coreNum : inputDataNum;
+        uint64_t smallCoreDataNum = inputDataNum / coreNum;
+        uint64_t tailBlockNum = inputDataNum % coreNum;
+        bigCoreDataNum = smallCoreDataNum + 1;
+
+        uint64_t smallCoreLoopNum = (smallCoreDataNum + ubPartDataNum - 1) / ubPartDataNum;
+        bigCoreLoopNum = (bigCoreDataNum + ubPartDataNum - 1) / ubPartDataNum;
+        uint64_t smallCoreTailDataNum = smallCoreDataNum - ubPartDataNum * (smallCoreLoopNum - 1);
+        bigCoreTailDataNum = bigCoreDataNum - ubPartDataNum * (bigCoreLoopNum - 1);
+
+        context->SetTilingKey((tailBlockNum != 0) ? 1 : 0);
+
+        tiling->smallCoreDataNum = smallCoreDataNum;
+        tiling->bigCoreDataNum = bigCoreDataNum;
+        tiling->ubPartDataNum = ubPartDataNum;
+        tiling->smallCoreTailDataNum = smallCoreTailDataNum;
+        tiling->bigCoreTailDataNum = bigCoreTailDataNum;
+        tiling->smallCoreLoopNum = smallCoreLoopNum;
+        tiling->bigCoreLoopNum = bigCoreLoopNum;
+        tiling->tailBlockNum = tailBlockNum;
+
+        context->SetBlockDim(coreNum);
+        size_t* currentWorkspace = context->GetWorkspaceSizes(1);
+        currentWorkspace[0] = 0;
+        return ge::GRAPH_SUCCESS;
+    }
 
     // Input data for 32B alignment
     uint64_t inputLengthAlign32 = (((inputLength + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE);

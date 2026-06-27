@@ -30,12 +30,13 @@ extern "C" {
 #endif
 
 static const std::initializer_list<op::DataType> dtype_support_list = {
-    op::DataType::DT_INT8,  op::DataType::DT_INT32,  op::DataType::DT_INT64,     op::DataType::DT_FLOAT16,
-    op::DataType::DT_FLOAT, op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
+    op::DataType::DT_INT8,      op::DataType::DT_UINT8,     op::DataType::DT_INT16, op::DataType::DT_INT32,
+    op::DataType::DT_INT64,     op::DataType::DT_FLOAT16,   op::DataType::DT_FLOAT, op::DataType::DT_DOUBLE,
+    op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
 
 static const std::initializer_list<op::DataType> dtype_support_list_afterV200 = {
-    op::DataType::DT_INT8,      op::DataType::DT_INT32,      op::DataType::DT_INT64,
-    op::DataType::DT_FLOAT16,   op::DataType::DT_FLOAT,      op::DataType::DT_DOUBLE,
+    op::DataType::DT_INT8,      op::DataType::DT_UINT8,      op::DataType::DT_INT16, op::DataType::DT_INT32,
+    op::DataType::DT_INT64,     op::DataType::DT_FLOAT16,    op::DataType::DT_FLOAT, op::DataType::DT_DOUBLE,
     op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16};
 
 static bool CheckNotNull(const aclTensor* self, const aclTensor* out)
