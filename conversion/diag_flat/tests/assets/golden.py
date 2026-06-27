@@ -14,14 +14,12 @@ import numpy as np
 
 __golden__ = {
     "kernel": {
-        "diag_v2": "diag_v2_golden"
+        "diag_flat": "diag_flat_golden"
     }
 }
 
 
-@register_golden(["diag_v2"])
-def diag_v2_golden(x,
-                   **kwargs):
+def diag_flat_golden(x,
+                     **kwargs):
     diagonal = kwargs.get("diagonal", 0)
-    return np.diag(x, k=diagonal)
-
+    return np.diagflat(x, k=diagonal)

@@ -19,47 +19,34 @@ __golden__ = {
 }
 
 
-def depth_to_space_golden(x, *, block_size, mode="DCR", data_format="NHWC", **kwargs):
-    """
-    Golden function for DepthToSpace.
-
-    Rearranges elements from the depth dimension into spatial blocks.
-
-    Args:
-        x: Input tensor
-        block_size: Size of the spatial block (int)
-        mode: "DCR" (depth-column-row) or "CRD" (column-row-depth), default "DCR"
-        data_format: "NHWC" or "NCHW", default "NHWC"
-
-    Returns:
-        Output tensor with rearranged data
-    """
-    bs = block_size
-
-    if data_format == "NHWC" or data_format == "nhwc":
-        N, H, W, C = x.shape
-        C_out = C // (bs * bs)
-
-        if mode == "DCR" or mode == "dcr":
-            out = x.reshape(N, H, W, bs, bs, C_out)
-            out = out.transpose(0, 1, 3, 2, 4, 5)
-            out = out.reshape(N, H * bs, W * bs, C_out)
-        else:  # CRD mode
-            out = x.reshape(N, H, W, C_out, bs, bs)
-            out = out.transpose(0, 1, 4, 2, 5, 3)
-            out = out.reshape(N, H * bs, W * bs, C_out)
-
-    else:  # NCHW
-        N, C, H, W = x.shape
-        C_out = C // (bs * bs)
-
-        if mode == "DCR" or mode == "dcr":
-            out = x.reshape(N, bs, bs, C_out, H, W)
-            out = out.transpose(0, 3, 4, 1, 5, 2)
-            out = out.reshape(N, C_out, H * bs, W * bs)
-        else:  # CRD mode
-            out = x.reshape(N, C_out, bs, bs, H, W)
-            out = out.transpose(0, 1, 4, 2, 5, 3)
-            out = out.reshape(N, C_out, H * bs, W * bs)
-
-    return out
+def depth_to_space(x, *, block_size, mode, data_format, **kwargs):
+    '''
+    Kernel golden for depth_to_space.
+    All the parameters follow @depth_to_space_def.cpp without outputs.
+    All the input Tensors are numpy.ndarray.
+    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
+        input_formats, output_formats, input_ori_formats, output_ori_formats,
+        input_dtypes, output_dtypes.
+    '''
+    shapes = x.shape
+    if data_format == "NCHW":
+        n, c, h, w = shapes
+        output_shapes = [n, c // (block_size ** 2), h * block_size, w * block_size]
+        if mode == "CRD":
+            input_shapes = [n, c // (block_size ** 2), block_size, block_size, h, w]
+            perm = [0, 1, 4, 2, 5, 3]
+        else:
+            input_shapes = [n, block_size, block_size, c // (block_size ** 2), h, w]
+            perm = [0, 3, 4, 1, 5, 2]
+    else:
+        n, h, w, c = shapes
+        output_shapes = [n, h * block_size, w * block_size, c // (block_size ** 2)]
+        if mode == "CRD":
+            input_shapes = [n, h, w, c // (block_size ** 2), block_size, block_size]
+            perm = [0, 1, 4, 2, 5, 3]
+        else:
+            input_shapes = [n, h, w, block_size, block_size, c // (block_size ** 2)]
+            perm = [0, 1, 3, 2, 4, 5]
+    tmp = x.reshape(input_shapes)
+    tmp = numpy.transpose(tmp, perm)
+    return tmp.reshape(output_shapes)

@@ -20,29 +20,32 @@ __golden__ = {
 
 def cumsum_golden(x, axis, *, exclusive, reverse, **kwargs):
     '''
-    Golden function for cumsum.
-    All the parameters (names and order) follow @cumsum_def.cpp without outputs.
+    Kernel golden for cumsum.
+    All the parameters follow @cumsum_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
-
-    Args:
-        **kwargs: {input,output}_{dtypes,ori_shapes,formats,ori_formats},
-                  full_soc_version, short_soc_version, testcase_name
-
-    Returns:
-        Output tensor
+    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
+        input_formats, output_formats, input_ori_formats, output_ori_formats,
+        input_dtypes, output_dtypes.
     '''
-    import tensorflow.compat.v1 as tf
-    tf.disable_eager_execution()
+    import numpy as np
 
-    x_dtype = x.dtype
-    if x_dtype.name == "bfloat16" or x_dtype.name == "float16":
+    axis = int(axis.item()) if hasattr(axis, 'item') else int(axis)
+    ori_dtype = kwargs.get("input_dtypes", ["float32"])[0]
+    input_x_dtype = x.dtype
+    if ori_dtype and ("bfloat16" in str(ori_dtype).lower() or "float16" in str(ori_dtype).lower()):
         x = x.astype("float32")
 
-    p0 = tf.constant(x)
-    out = tf.cumsum(x=p0, axis=axis, reverse=reverse, exclusive=exclusive)
+    if reverse:
+        x = np.flip(x, axis=axis)
+    res = np.cumsum(x, axis=axis)
+    if exclusive:
+        res = np.roll(res, 1, axis=axis)
+        res_slice = [slice(None)] * res.ndim
+        res_slice[axis] = 0
+        res[tuple(res_slice)] = 0
+    if reverse:
+        res = np.flip(res, axis=axis)
 
-    with tf.Session() as sess:
-        res = sess.run(out)
-    if x_dtype.name == "bfloat16" or x_dtype.name == "float16":
-        res = res.astype(x_dtype, copy=False)
+    if ori_dtype and ("bfloat16" in str(ori_dtype).lower() or "float16" in str(ori_dtype).lower()):
+        res = res.astype(input_x_dtype, copy=False)
     return res
