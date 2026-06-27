@@ -508,6 +508,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/cosine_similarity/README.md">cosine_similarity</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>计算两个输入张量沿指定维度的余弦相似度。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/cross/README.md">cross</a></td>
     <td>√</td>
     <td>√</td>
@@ -1969,12 +1979,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/trace/README.md">trace</a></td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>计算矩阵从左上角开始的主对角线元素的和。</td>
   </tr>
   <tr>
     <td>math</td>

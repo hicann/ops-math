@@ -308,7 +308,7 @@
 | [aclnnTanh&aclnnInplaceTanh](../../math/tanh/docs/aclnnTanh&aclnnInplaceTanh.md) | 激活函数。返回与输入tensor shape相同的tensor，对输入tensor进行elementwise的计算。 | 默认确定性实现| 默认确定性实现|
 | [aclnnTanhBackward](../../math/tanh_grad/docs/aclnnTanhBackward.md) | aclnnTanh的反向。                                            | 默认确定性实现| 默认确定性实现 |
 | [aclnnTopk](../../math/topk/docs/aclnnTopk.md) | 返回输入Tensor在指定维度上的k个极值及索引。                                            | 默认确定性实现| 默认确定性实现 |
-| [aclnnTrace](../../math/trace/docs/aclnnTrace.md) | 计算矩阵从左上角开始的主对角线元素的和。                                            | 默认确定性实现| - |
+| [aclnnTrace](../../math/trace/docs/aclnnTrace.md) | 计算矩阵从左上角开始的主对角线元素的和。                                            | 默认确定性实现| 默认确定性实现 |
 | [aclnnTransformBiasRescaleQkv](../../math/transform_bias_rescale_qkv/docs/aclnnTransformBiasRescaleQkv.md) | TransformBiasRescaleQkv算子是一个用于处理多头注意力机制中查询（Query）、键（Key）、值（Value）向量的接口。 | 默认确定性实现| 默认确定性实现   |
 | [aclnnTransConvolutionWeight](../../conversion/trans_data/docs/aclnnTransConvolutionWeight.md) | 需要和aclnnCalculateConvolutionWeightSize接口配套使用，用于创建一个对于Convolution算子计算性能亲和的weight Tensor。 | 默认确定性实现| - |
 | [aclnnTransMatmulWeight](../../conversion/trans_data/docs/aclnnTransMatmulWeight.md) | 需要和aclnnCalculateMatmulWeightSize、aclnnCalculateMatmulWeightSizeV2接口配套使用，用于创建一个对于Matmul算子计算性能亲和的weight Tensor。 | 默认确定性实现| 默认确定性实现  |

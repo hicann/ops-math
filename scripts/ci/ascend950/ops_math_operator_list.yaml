@@ -42,6 +42,7 @@ operator_group_1:
   - cholesky
   - cos
   - cosh
+  - cosine_similarity
   - cumsum
   - cummin
   - diag
@@ -192,6 +193,7 @@ operator_group_5:
   - tril
   - trilu
   - triu
+  - trace
   - unfold_grad
   - unpack
   - zeros_like
