@@ -64,18 +64,18 @@ static inline const aclTensor *AddNAiCpu(const aclTensorList *tensors, aclTensor
     return out;
 }
 
-const aclTensor *AddN(const aclTensorList *self, aclOpExecutor *executor)
+const aclTensor *AddN(const aclTensorList *tensors, aclOpExecutor *executor)
 {
-    auto out = executor->AllocTensor((*self)[0]->GetViewShape(), (*self)[0]->GetDataType());
+    auto out = executor->AllocTensor((*tensors)[0]->GetViewShape(), (*tensors)[0]->GetDataType());
     if (out == nullptr) {
         OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "Alloc out tensor failed.");
         return nullptr;
     }
 
-    if (IsAiCoreSupport(self)) {
-        return AddNAiCore(self, out, executor);
+    if (IsAiCoreSupport(tensors)) {
+        return AddNAiCore(tensors, out, executor);
     } else {
-        return AddNAiCpu(self, out, executor);
+        return AddNAiCpu(tensors, out, executor);
     }
 }
 

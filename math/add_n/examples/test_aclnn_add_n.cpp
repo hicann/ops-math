@@ -145,8 +145,6 @@ int main()
     }
 
     // 释放aclTensor和aclTensorList
-    aclDestroyTensor(input1);
-    aclDestroyTensor(input2);
     aclDestroyTensor(output);
     aclDestroyTensorList(inputList);
 
