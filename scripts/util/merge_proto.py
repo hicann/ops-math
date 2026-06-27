@@ -16,15 +16,24 @@ import re
 import argparse
 
 
+OP_DEF_PATTERN = re.compile(
+    r"(?P<guard>[ \t]*#\s*ifndef\s+\w+[^\n]*\n"
+    r"[ \t]*#\s*define\s+\w+[^\n]*\n\s*)?"
+    r"REG_OP\((?P<opname>.+?)\)"
+    r".*?OP_END_FACTORY_REG\((?P=opname)\)"
+    r"(?(guard)[^\n]*\n[ \t]*#\s*endif[^\n]*)",
+    re.DOTALL,
+)
+
+
 def match_op_proto(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    op_def_pattern = re.compile(r"REG_OP\((.+)\).*OP_END_FACTORY_REG\(\1\)", re.DOTALL)
-    match = op_def_pattern.search(content)
+    match = OP_DEF_PATTERN.search(content)
 
     if match:
-        op_name = match.group(1)
+        op_name = match.group("opname")
         op_def = match.group(0)
         return op_name, op_def
     else:
@@ -36,12 +45,11 @@ def match_op_proto_extend(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    op_def_pattern = re.compile(r"REG_OP\((.+)\).*OP_END_FACTORY_REG\(\1\)", re.DOTALL)
-    matches = op_def_pattern.finditer(content)
+    matches = OP_DEF_PATTERN.finditer(content)
 
     results = []
     for match in matches:
-        op_name = match.group(1)
+        op_name = match.group("opname")
         op_def = match.group(0)
         results.append((op_name, op_def))
     return results
