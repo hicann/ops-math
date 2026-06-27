@@ -185,6 +185,7 @@ operator_group_5:
   - strided_slice_v3
   - strided_slice_assign_v2
   - strided_slice_grad
+  - stride_add
   - tensor_move
   - trans_data
   - transpose

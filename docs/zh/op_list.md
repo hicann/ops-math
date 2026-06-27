@@ -1868,6 +1868,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/stride_add/README.md">stride_add</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>NC1HWC0格式5D张量的局部逐元素加法。从x1和x2的C1维度指定偏移位置开始，取出c1_len个C1块数据进行加法运算。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/sub/README.md">sub</a></td>
     <td>√</td>
     <td>√</td>
