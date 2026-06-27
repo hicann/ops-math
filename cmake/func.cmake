@@ -795,7 +795,7 @@ function(add_kernel_sources)
   set(multiValueArgs COMPUTE_UNITS OPTIONS)
   cmake_parse_arguments(MODULE "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   
-  set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+  set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/op_kernel)
   get_filename_component(PARENT_DIR ${SOURCE_DIR} DIRECTORY)
   get_filename_component(OP_NAME ${PARENT_DIR} NAME)
   set(OP_DIR ${PARENT_DIR})

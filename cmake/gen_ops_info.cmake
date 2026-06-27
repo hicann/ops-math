@@ -373,7 +373,8 @@ function(prepare_compile_from_config)
   add_custom_target(
     ${CONFCMP_TARGET}
     COMMAND
-      cp -r ${CONFCMP_IMPL_DIR}/*.* ${CONFCMP_OUT_DIR}/src
+      bash -c "find ${CONFCMP_IMPL_DIR} -mindepth 1 -maxdepth 1 -exec cp -r {} ${CONFCMP_OUT_DIR}/src \\;"
+    VERBATIM
     )
   add_dependencies(prepare_binary_compile_${CONFCMP_COMPUTE_UNIT}
     config_compile_${CONFCMP_COMPUTE_UNIT}_${CONFCMP_OP_NAME} ${CONFCMP_TARGET} ${CONFCMP_PY_COPY_TARGET})
