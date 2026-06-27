@@ -26,11 +26,11 @@ extern "C" {
  * @domain aclnn_math
  * 参数描述：
  * @param [in]   tensors
- * 输入TensorList，数据类型支持 INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64，FLOAT16, BFLOAT16, FLOAT32, DOUBLE, COMPLEX64, COMPLEX128。
+ * 输入TensorList，数据类型支持 INT32, INT64, FLOAT16, BFLOAT16, FLOAT32。
  * tensors中的tensor需要满足broadcast关系。
  * 支持非连续的Tensor，数据格式支持ND。
  * @param [out]  out
- * 输出Tensor，数据类型支持 INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64，FLOAT16, BFLOAT16, FLOAT32, DOUBLE, COMPLEX64, COMPLEX128。
+ * 输出Tensor，数据类型支持 INT32, INT64, FLOAT16, BFLOAT16, FLOAT32。
  * shape需要与tensors中的tensor做broadcast后的shape一致。
  * 支持非连续的Tensor，数据格式支持ND。
  * @param [out]  workspaceSize 返回用户需要在npu device侧申请的workspace大小。

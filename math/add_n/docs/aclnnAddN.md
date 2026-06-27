@@ -71,7 +71,7 @@ aclnnStatus aclnnAddN(
       <td>输入</td>
       <td>输入TensorList，对输入tensors进行主元素相加求和操作。</td>
       <td><li>支持空TensorList，此时输出为空Tensor。</li><li>tensors中的Tensor需要满足<a href="../../../docs/zh/context/broadcast关系.md" class="md-link">broadcast关系</a>。</li><li>不支持标量Tensor（0维度）。</li></td>
-      <td>INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、FLOAT16、BFLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128</td>
+      <td>INT32, INT64, FLOAT16, BFLOAT16, FLOAT32</td>
       <td>ND</td>
       <td>1~8</td>
       <td>√</td>
@@ -189,7 +189,7 @@ aclnnStatus aclnnAddN(
   <details>
   <summary>主场景说明：</summary>
 
-  - 数据类型：支持INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、FLOAT16、BFLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128。
+  - 数据类型：支持INT32, INT64, FLOAT16, BFLOAT16, FLOAT32。
   - 数据格式：仅支持ND格式。
   - 参数Shape：输入Tensor维度范围为1~8，不支持标量Tensor。
   - Broadcast：输入TensorList中的Tensor需要满足broadcast关系。

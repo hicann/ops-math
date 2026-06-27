@@ -82,18 +82,18 @@ int main()
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
     // 申请输入输出tensor的device侧内存
-    std::vector<int64_t> inputShape1 = {4, 2};
-    std::vector<int64_t> inputShape2 = {4, 2};
-    std::vector<int64_t> outputShape = {4, 2};
+    std::vector<int64_t> inputShape1 = {2, 1};
+    std::vector<int64_t> inputShape2 = {2, 1};
+    std::vector<int64_t> outputShape = {2, 1};
     void* inputDeviceAddr1 = nullptr;
     void* inputDeviceAddr2 = nullptr;
     void* outputDeviceAddr = nullptr;
     aclTensor* input1 = nullptr;
     aclTensor* input2 = nullptr;
     aclTensor* output = nullptr;
-    std::vector<float> inputHostData1 = {0, 1, 2, 3, 4, 5, 6, 7};
-    std::vector<float> inputHostData2 = {1, 1, 1, 2, 2, 2, 3, 3};
-    std::vector<float> outputHostData = {0, 0, 0, 0, 0, 0, 0, 0};
+    std::vector<float> inputHostData1 = {1, 2};
+    std::vector<float> inputHostData2 = {1, 1};
+    std::vector<float> outputHostData = {0, 0};
     aclDataType dtype = aclDataType::ACL_FLOAT;
     
     // 创建输入输出
@@ -145,8 +145,6 @@ int main()
     }
 
     // 释放aclTensor和aclTensorList
-    aclDestroyTensor(input1);
-    aclDestroyTensor(input2);
     aclDestroyTensor(output);
     aclDestroyTensorList(inputList);
 
