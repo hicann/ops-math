@@ -15,8 +15,10 @@
 #include <vector>
 
 #include "exe_graph/runtime/tiling_context.h"
+#include "log/log.h"
 #include "platform/platform_info.h"
 #include "tiling/tiling_api.h"
+#include "utils/extern_math_util.h"
 
 namespace optiling {
 
@@ -117,23 +119,48 @@ bool UseTwoStageRankInverse(uint32_t axisLen) { return axisLen <= TWO_STAGE_RANK
 uint32_t ComputeInsertionBytesPerSeg(
     ge::DataType dataType, uint32_t axisLen, uint32_t dtypeSize, uint32_t indexDtypeSize, uint32_t blockUbSize)
 {
-    uint64_t valueBytes = Ops::Base::CeilAlign<uint64_t>(static_cast<uint64_t>(axisLen) * dtypeSize, blockUbSize);
-    uint64_t idxBytes = Ops::Base::CeilAlign<uint64_t>(static_cast<uint64_t>(axisLen) * indexDtypeSize, blockUbSize);
+    uint64_t valueRawBytes = 0U;
+    uint64_t idxRawBytes = 0U;
+    if (ge::MulOverflow(axisLen, dtypeSize, valueRawBytes) ||
+        ge::MulOverflow(axisLen, indexDtypeSize, idxRawBytes)) {
+        OP_LOGE("ComputeInsertionBytesPerSeg",
+                "raw byte size overflow, axisLen %u, dtypeSize %u, indexDtypeSize %u", axisLen, dtypeSize,
+                indexDtypeSize);
+        return 0;
+    }
+    uint64_t valueBytes = Ops::Base::CeilAlign<uint64_t>(valueRawBytes, blockUbSize);
+    uint64_t idxBytes = Ops::Base::CeilAlign<uint64_t>(idxRawBytes, blockUbSize);
     if (valueBytes == 0 || idxBytes == 0) {
         return 0;
     }
-    uint64_t bytesPerSeg = valueBytes + idxBytes;
+    uint64_t bytesPerSeg = 0U;
+    if (ge::AddOverflow(valueBytes, idxBytes, bytesPerSeg)) {
+        OP_LOGE("ComputeInsertionBytesPerSeg", "bytesPerSeg overflow, valueBytes %lu, idxBytes %lu", valueBytes,
+                idxBytes);
+        return 0;
+    }
     if (dataType == ge::DT_BF16) {
-        uint64_t castBytes =
-            Ops::Base::CeilAlign<uint64_t>(static_cast<uint64_t>(axisLen) * sizeof(int16_t), blockUbSize);
+        uint64_t castRawBytes = 0U;
+        if (ge::MulOverflow(axisLen, sizeof(int16_t), castRawBytes)) {
+            OP_LOGE("ComputeInsertionBytesPerSeg", "cast raw byte size overflow, axisLen %u", axisLen);
+            return 0;
+        }
+        uint64_t castBytes = Ops::Base::CeilAlign<uint64_t>(castRawBytes, blockUbSize);
         if (castBytes == 0) {
             return 0;
         }
         uint64_t castRowElems = castBytes / sizeof(int16_t);
-        valueBytes = castRowElems * sizeof(float);
-        bytesPerSeg = valueBytes + idxBytes + castBytes;
+        if (ge::MulOverflow(castRowElems, sizeof(float), valueBytes) ||
+            ge::AddOverflow(valueBytes, idxBytes, bytesPerSeg) ||
+            ge::AddOverflow(bytesPerSeg, castBytes, bytesPerSeg)) {
+            OP_LOGE("ComputeInsertionBytesPerSeg",
+                    "bf16 bytesPerSeg overflow, castRowElems %lu, idxBytes %lu, castBytes %lu", castRowElems,
+                    idxBytes, castBytes);
+            return 0;
+        }
     }
     if (bytesPerSeg > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
+        OP_LOGE("ComputeInsertionBytesPerSeg", "bytesPerSeg %lu exceeds uint32_t max", bytesPerSeg);
         return 0;
     }
     return static_cast<uint32_t>(bytesPerSeg);
@@ -977,17 +1004,38 @@ bool ComputeTwoStageSortTmpUb(
 
 uint64_t EstimateTwoStageUbBytes(const SortKthTileInfo& info, uint32_t totalElems, uint32_t sortTmpUb)
 {
-    uint64_t valueBytes =
-        Ops::Base::CeilAlign<uint64_t>(static_cast<uint64_t>(totalElems) * info.dtypeSize, info.blockUbSize);
-    uint64_t idxBytes =
-        Ops::Base::CeilAlign<uint64_t>(static_cast<uint64_t>(totalElems) * sizeof(uint32_t), info.blockUbSize);
-    uint64_t aliasBytes =
-        Ops::Base::CeilAlign<uint64_t>(static_cast<uint64_t>(totalElems) * info.y2DtypeSize, info.blockUbSize);
+    uint64_t valueRawBytes = 0U;
+    uint64_t idxRawBytes = 0U;
+    uint64_t aliasRawBytes = 0U;
+    if (ge::MulOverflow(totalElems, info.dtypeSize, valueRawBytes) ||
+        ge::MulOverflow(totalElems, sizeof(uint32_t), idxRawBytes) ||
+        ge::MulOverflow(totalElems, info.y2DtypeSize, aliasRawBytes)) {
+        OP_LOGE("EstimateTwoStageUbBytes",
+                "raw byte size overflow, totalElems %u, dtypeSize %u, y2DtypeSize %u", totalElems, info.dtypeSize,
+                info.y2DtypeSize);
+        return std::numeric_limits<uint64_t>::max();
+    }
+    uint64_t valueBytes = Ops::Base::CeilAlign<uint64_t>(valueRawBytes, info.blockUbSize);
+    uint64_t idxBytes = Ops::Base::CeilAlign<uint64_t>(idxRawBytes, info.blockUbSize);
+    uint64_t aliasBytes = Ops::Base::CeilAlign<uint64_t>(aliasRawBytes, info.blockUbSize);
     if (valueBytes == 0U || idxBytes == 0U || aliasBytes == 0U) {
         return std::numeric_limits<uint64_t>::max();
     }
     uint32_t idxBufferCount = UseTwoStageRankInverse(static_cast<uint32_t>(info.lastAxis)) ? 2U : 3U;
-    return valueBytes * 2U + idxBytes * idxBufferCount + aliasBytes + sortTmpUb;
+    uint64_t totalBytes = 0U;
+    uint64_t idxTotalBytes = 0U;
+    if (ge::MulOverflow(valueBytes, 2U, totalBytes) ||
+        ge::MulOverflow(idxBytes, idxBufferCount, idxTotalBytes) ||
+        ge::AddOverflow(totalBytes, idxTotalBytes, totalBytes) ||
+        ge::AddOverflow(totalBytes, aliasBytes, totalBytes) ||
+        ge::AddOverflow(totalBytes, sortTmpUb, totalBytes)) {
+        OP_LOGE("EstimateTwoStageUbBytes",
+                "total byte size overflow, valueBytes %lu, idxBytes %lu, idxBufferCount %u, aliasBytes %lu, "
+                "sortTmpUb %u",
+                valueBytes, idxBytes, idxBufferCount, aliasBytes, sortTmpUb);
+        return std::numeric_limits<uint64_t>::max();
+    }
+    return totalBytes;
 }
 
 bool PrepareTwoStageBatchCandidate(
