@@ -25,9 +25,9 @@ void Transpose021VCONVTiling::CalcBasicInfo()
     basicInfo_.NLen = shapeInfo_.reducedInShape[0];
     basicInfo_.HLen = shapeInfo_.reducedInShape[1];
     basicInfo_.WLen = shapeInfo_.reducedInShape[2];
-    basicInfo_.BlockElem = (shapeInfo_.eleLenInBytes == B8_BYTES) ? BLOCKELEM_8BIT :
+    basicInfo_.BlockElem = (shapeInfo_.eleLenInBytes == B8_BYTES)  ? BLOCKELEM_8BIT :
                            (shapeInfo_.eleLenInBytes == B32_BYTES) ? BLOCKELEM_32BIT :
-                                                             BLOCKELEM_16BIT;
+                                                                     BLOCKELEM_16BIT;
     basicInfo_.UseRConv = basicInfo_.HLen >= basicInfo_.WLen;
     basicInfo_.UseHSplit =
         basicInfo_.NLen < DIM_FIVE && !basicInfo_.UseRConv && basicInfo_.HLen >= basicInfo_.NLen * TRANSELEM;
@@ -54,7 +54,6 @@ void Transpose021VCONVTiling::CalcNSplitInfo()
     basicInfo_.NTailCore = basicInfo_.NLen - (coreNum - 1) * basicInfo_.NPerCore;
     if (basicInfo_.NTailCore <= 0) {
         basicInfo_.UsedCoreNum = Ops::Base::CeilDiv(basicInfo_.NLen, basicInfo_.NPerCore);
-        basicInfo_.NPerCore = basicInfo_.NLen / basicInfo_.UsedCoreNum;
         basicInfo_.NTailCore = basicInfo_.NLen - (basicInfo_.UsedCoreNum - 1) * basicInfo_.NPerCore;
     } else {
         basicInfo_.UsedCoreNum = coreNum;
@@ -164,8 +163,7 @@ ge::graphStatus Transpose021VCONVTiling::CalcUbSplitRConv()
         basicInfo_.UbLoopCount = 1;
         return ge::GRAPH_SUCCESS;
     }
-    rUbParamInfo_.UbAlignFactor =
-        basicInfo_.AvailableUbSize / eleSize / basicInfo_.WAlignBlockElem / TRANSELEM;
+    rUbParamInfo_.UbAlignFactor = basicInfo_.AvailableUbSize / eleSize / basicInfo_.WAlignBlockElem / TRANSELEM;
     if (eleSize == 1 && rUbParamInfo_.UbAlignFactor % NUM_TWO != 0) {
         rUbParamInfo_.UbAlignFactor -= 1;
     }
@@ -208,8 +206,7 @@ ge::graphStatus Transpose021VCONVTiling::CalcUbSplitCConv()
         basicInfo_.UbLoopCount = 1;
         return ge::GRAPH_SUCCESS;
     }
-    cUbParamInfo_.UbAlignFactor =
-        basicInfo_.AvailableUbSize / eleSize / basicInfo_.HAlignBlockElem / TRANSELEM;
+    cUbParamInfo_.UbAlignFactor = basicInfo_.AvailableUbSize / eleSize / basicInfo_.HAlignBlockElem / TRANSELEM;
     if (eleSize == 1 && cUbParamInfo_.UbAlignFactor % NUM_TWO != 0) {
         cUbParamInfo_.UbAlignFactor -= 1;
     }

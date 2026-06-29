@@ -26,10 +26,7 @@ namespace optiling {
 static constexpr int32_t VCONV_DIM_NUM = 2;
 static constexpr int32_t VCONV_DSIZE = 2;
 
-static int IncreaseCompare(const void* a, const void* b)
-{
-    return (*(int64_t*)a - *(int64_t*)b);
-}
+static int IncreaseCompare(const void* a, const void* b) { return (*(int64_t*)a - *(int64_t*)b); }
 
 ge::graphStatus TransposeNddmaTiling::Init(const int64_t& coreNum, const int64_t& ubSize)
 {
@@ -118,22 +115,25 @@ ge::graphStatus TransposeNddmaTiling::TryVCONVTiling()
     auto platformInfo = tilingContext_->GetPlatformInfo();
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     auto arch = ascendcPlatform.GetCurNpuArch();
-    if (arch == NpuArch::DAV_5102) {
+    if (!isReleatedTranspsoe_ && arch == NpuArch::DAV_5102) {
         SMALL_SHAPE_BYTES_THRES_HOLD = SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102;
-        if (!isReleatedTranspsoe_ && shapeInfo_.reducedPerm[0] == 1 && shapeInfo_.reducedPerm[1] == 0 &&
-            shapeInfo_.dim == VCONV_DIM_NUM && shapeInfo_.eleLenInBytes == VCONV_DSIZE &&
-            shapeInfo_.reducedInShape[0] > DIM_FIVE) {
+        if (shapeInfo_.reducedPerm[0] == 1 && shapeInfo_.reducedPerm[1] == 0 && shapeInfo_.dim == VCONV_DIM_NUM &&
+            shapeInfo_.eleLenInBytes == VCONV_DSIZE && shapeInfo_.reducedInShape[0] > DIM_FIVE) {
             TransposeWithVCONV::PlatInfo platInfo{coreNum_, ubSize_};
             TransposeWithVCONV::TransposeVCONVTiling vconvTiling(tilingContext_, platInfo, shapeInfo_);
             OP_CHECK_IF(
                 vconvTiling.DoTiling() == ge::GRAPH_SUCCESS,
                 OP_LOGD(tilingContext_->GetNodeName(), "Do convTiling done"), return ge::GRAPH_SUCCESS);
         }
-        if (shapeInfo_.reducedPerm[0] == 0 && shapeInfo_.reducedPerm[1] == 2 && shapeInfo_.reducedPerm[2] == 1 && shapeInfo_.dim == DIM_THREE // 021 transpose
-            && (shapeInfo_.eleLenInBytes == B8_BYTES || shapeInfo_.eleLenInBytes == B16_BYTES || shapeInfo_.eleLenInBytes == B32_BYTES) // support B8、B16、B32
-            && shapeInfo_.reducedInShape[1] > DIM_EIGHT && shapeInfo_.reducedInShape[2] > DIM_EIGHT // not support very little W or H
-            && shapeInfo_.totalVolumeActual * shapeInfo_.eleLenInBytes >= SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102_021 // shape size bigger than 7w
-            ) {
+        if (shapeInfo_.reducedPerm[0] == 0 && shapeInfo_.reducedPerm[DIM_ONE] == VCONV_DIM_NUM && shapeInfo_.reducedPerm[DIM_TWO] == 1 &&
+            shapeInfo_.dim == DIM_THREE // 021 transpose
+            && (shapeInfo_.eleLenInBytes == B8_BYTES || shapeInfo_.eleLenInBytes == B16_BYTES ||
+                shapeInfo_.eleLenInBytes == B32_BYTES) // support B8、B16、B32
+            && shapeInfo_.reducedInShape[DIM_ONE] > DIM_EIGHT &&
+            shapeInfo_.reducedInShape[DIM_TWO] > DIM_EIGHT // not support very little W or H
+            && shapeInfo_.totalVolumeActual * shapeInfo_.eleLenInBytes >=
+                   SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102_021 // shape size bigger than 7w
+        ) {
             Transpose021WithVCONV::PlatInfo platInfo{coreNum_, ubSize_};
             Transpose021WithVCONV::Transpose021VCONVTiling vconv021Tiling(tilingContext_, platInfo, shapeInfo_);
             OP_CHECK_IF(
@@ -591,7 +591,7 @@ void TransposeNddmaTiling::EntryTilingTemplate()
         tilingKey_ = static_cast<int64_t>(SplitMode::TENSOR_MOVE);
         return;
     }
-    
+
     auto platformInfo = tilingContext_->GetPlatformInfo();
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     auto arch = ascendcPlatform.GetCurNpuArch();

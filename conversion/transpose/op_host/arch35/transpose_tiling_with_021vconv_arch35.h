@@ -72,16 +72,16 @@ struct PlatInfo {
 };
 
 struct BasicInfo {
-    int64_t AvailableUbSize;
-    int64_t UsedCoreNum;
-    int64_t NLen;
-    int64_t HLen;
-    int64_t WLen;
-    int64_t HAlignBlockElem;
-    int64_t WAlignBlockElem;
-    int64_t NPerCore;
-    int64_t NTailCore;
-    int64_t UbLoopCount;
+    int64_t AvailableUbSize = 0;
+    int64_t UsedCoreNum = 0;
+    int64_t NLen = 0;
+    int64_t HLen = 0;
+    int64_t WLen = 0;
+    int64_t HAlignBlockElem = 0;
+    int64_t WAlignBlockElem = 0;
+    int64_t NPerCore = 0;
+    int64_t NTailCore = 0;
+    int64_t UbLoopCount = 0;
     int64_t BlockElem = BLOCKELEM_16BIT;
     bool UseRConv = false;
     bool UseHSplit = false;
@@ -90,11 +90,11 @@ struct BasicInfo {
 };
 
 struct UbParamInfo {
-    int64_t UbAlignFactor;
-    int64_t UbFactor;
-    int64_t UbCount;
-    int64_t UbTailAlignFactor;
-    int64_t UbTailFactor;
+    int64_t UbAlignFactor = 0;
+    int64_t UbFactor = 0;
+    int64_t UbCount = 0;
+    int64_t UbTailAlignFactor = 0;
+    int64_t UbTailFactor = 0;
 };
 
 class Transpose021VCONVTiling {

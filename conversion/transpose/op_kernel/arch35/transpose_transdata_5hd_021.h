@@ -42,18 +42,14 @@ private:
     __aicore__ inline void ProcessOneBatchHSplit(int64_t nIdx);
     __aicore__ inline void CopyIn(int64_t nIdx, uint32_t ubLoop, uint32_t r, uint32_t c);
     __aicore__ inline void CopyInWAligned(uint32_t actualValidRows, uint32_t r, uint32_t c);
-    __aicore__ inline void CopyInWUnaligned(uint32_t actualValidRows,
-                                             uint32_t r, uint32_t c, uint32_t ubLoop);
+    __aicore__ inline void CopyInWUnaligned(uint32_t actualValidRows, uint32_t r, uint32_t c, uint32_t ubLoop);
     __aicore__ inline void CopyInHSplit(int64_t nIdx, uint32_t ubLoop, uint32_t r, uint32_t c);
     __aicore__ inline void Compute(uint32_t r, uint32_t c, uint32_t rAlign, uint32_t cAlign);
-    __aicore__ inline void ComputeRConv(int r, int c, int rAlign, int cAlign);
-    __aicore__ inline void ComputeRConv8Bit(int r, int c, int rAlign, int cAlign);
-    __aicore__ inline void ComputeRConvGeneric(int r, int c, int rAlign, int cAlign);
-    __aicore__ inline void ComputeCConv(int r, int c, int rAlign);
-    __aicore__ inline void ComputeCConv8Bit(int r, int c, int rAlign);
-    __aicore__ inline void ComputeCConvGeneric(int r, int c, int rAlign);
-    __aicore__ inline void Init8BitTransDataParams(TransDataTo5HDParams& evenParams,
-                                                    TransDataTo5HDParams& oddParams);
+    __aicore__ inline void ComputeRConv(uint32_t r, uint32_t c, uint32_t rAlign, uint32_t cAlign);
+    __aicore__ inline void Compute8BitCore(uint32_t r, uint32_t c, uint32_t rAlign);
+    __aicore__ inline void ComputeRConvGeneric(uint32_t r, uint32_t c, uint32_t rAlign, uint32_t cAlign);
+    __aicore__ inline void ComputeCConv(uint32_t r, uint32_t c, uint32_t rAlign);
+    __aicore__ inline void ComputeCConvGeneric(uint32_t r, uint32_t c, uint32_t rAlign);
     __aicore__ inline void CopyOut(int64_t nIdx, uint32_t ubLoop, uint32_t r, uint32_t c);
     __aicore__ inline void CopyOutHSplit(int64_t nIdx, uint32_t ubLoop, uint32_t r, uint32_t c);
     __aicore__ inline void CopyOutAligned(uint32_t r, uint32_t c);
@@ -116,64 +112,53 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::Init(
 }
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD021<T>::ComputeRConv(int r, int c, int rAlign, int cAlign)
+__aicore__ inline void KernelTransDataTo5HD021<T>::ComputeRConv(uint32_t r, uint32_t c, uint32_t rAlign, uint32_t cAlign)
 {
     if constexpr (sizeof(T) == 1) {
-        ComputeRConv8Bit(r, c, rAlign, cAlign);
+        Compute8BitCore(r, c, rAlign);
     } else {
         ComputeRConvGeneric(r, c, rAlign, cAlign);
     }
 }
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD021<T>::ComputeRConv8Bit(int r, int c, int rAlign, int cAlign)
+__aicore__ inline void KernelTransDataTo5HD021<T>::Compute8BitCore(uint32_t r, uint32_t c, uint32_t rAlign)
 {
     LocalTensor<T> srcLocal = inQueueSrc.DeQue<T>();
     LocalTensor<T> dstLocal = outQueueDst.AllocTensor<T>();
-    TransDataTo5HDParams evenParams, oddParams;
-    Init8BitTransDataParams(evenParams, oddParams);
-
-    for (int j = 0; j < cAlign; j++) {
-        for (int srcHalfIdx = 0; srcHalfIdx < 2; srcHalfIdx++) {
-            bool srcHighHalf = (srcHalfIdx == 1);
-            int dstRowBase = j * blockElem + srcHalfIdx * TRANSELEM_021;
-
-            evenParams.srcHighHalf = srcHighHalf;
-            evenParams.dstHighHalf = false;
-            int evenUbCount = (rAlign + 1) / 2;
-            for (int dbIdx = 0; dbIdx < evenUbCount; dbIdx++) {
-                int iGroup = dbIdx * 2;
-                LocalTensor<T> srcLocalList[16];
-                for (int i = 0; i < TRANSELEM_021; i++) {
-                    srcLocalList[i] = srcLocal[(i + iGroup * TRANSELEM_021) * c + j * blockElem];
-                }
-                LocalTensor<T> dstLocalList[16];
-                for (int k = 0; k < TRANSELEM_021; k++) {
-                    dstLocalList[k] = dstLocal[(dstRowBase + k) * r + dbIdx * blockElem];
-                }
-                TransDataTo5HD(dstLocalList, srcLocalList, evenParams);
+    uint16_t cAlignBlocks = c / blockElem;
+    uint8_t evenUbCount = (rAlign + 1) / 2;
+    uint8_t oddUbCount = rAlign / 2;
+    TransDataTo5HDParams evenParams{false, false, evenUbCount, static_cast<uint16_t>((evenUbCount <= 1) ? 0 : dstStrideFactor), static_cast<uint16_t>((evenUbCount <= 1) ? 0 : c)};
+    TransDataTo5HDParams oddParams{true, false, oddUbCount, static_cast<uint16_t>((oddUbCount <= 1) ? 0 : dstStrideFactor), static_cast<uint16_t>((oddUbCount <= 1) ? 0 : c)};
+    for (uint16_t j = 0; j < cAlignBlocks; j++) {
+        uint64_t srcList[TRANSELEM_021];
+        for (uint16_t i = 0; i < TRANSELEM_021; i++) {
+            srcList[i] = srcLocal[i * c + j * blockElem].GetPhyAddr();
+        }
+        uint64_t srcListOdd[TRANSELEM_021];
+        if (oddUbCount > 0) {
+            for (uint16_t i = 0; i < TRANSELEM_021; i++) {
+                srcListOdd[i] = srcLocal[(i + TRANSELEM_021) * c + j * blockElem].GetPhyAddr();
             }
+        }
+        for (uint16_t srcHalfIdx = 0; srcHalfIdx < 2; srcHalfIdx++) {
+            bool srcHighHalf = (srcHalfIdx == 1);
+            uint16_t dstRowBase = j * blockElem + srcHalfIdx * TRANSELEM_021;
 
-            int oddUbCount = rAlign / 2;
+            uint64_t dstList[TRANSELEM_021];
+            for (uint16_t k = 0; k < TRANSELEM_021; k++) {
+                dstList[k] = dstLocal[(dstRowBase + k) * r].GetPhyAddr();
+            }
+            evenParams.srcHighHalf = srcHighHalf;
+            if (evenUbCount > 0) {
+                TransDataTo5HD<T>(dstList, srcList, evenParams);
+            }
             if (oddUbCount > 0) {
                 PipeBarrier<PIPE_V>();
-
                 oddParams.srcHighHalf = srcHighHalf;
-                oddParams.dstHighHalf = true;
-                for (int dbIdx = 0; dbIdx < oddUbCount; dbIdx++) {
-                    int iGroup = dbIdx * 2 + 1;
-                    LocalTensor<T> srcLocalList[16];
-                    for (int i = 0; i < TRANSELEM_021; i++) {
-                        srcLocalList[i] = srcLocal[(i + iGroup * TRANSELEM_021) * c + j * blockElem];
-                    }
-                    LocalTensor<T> dstLocalList[16];
-                    for (int k = 0; k < TRANSELEM_021; k++) {
-                        dstLocalList[k] = dstLocal[(dstRowBase + k) * r + dbIdx * blockElem];
-                    }
-                    TransDataTo5HD(dstLocalList, srcLocalList, oddParams);
-                }
+                TransDataTo5HD<T>(dstList, srcListOdd, oddParams);
             }
-
             if (srcHalfIdx == 0) {
                 PipeBarrier<PIPE_V>();
             }
@@ -184,7 +169,7 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::ComputeRConv8Bit(int r, int c
 }
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD021<T>::ComputeRConvGeneric(int r, int c, int rAlign, int cAlign)
+__aicore__ inline void KernelTransDataTo5HD021<T>::ComputeRConvGeneric(uint32_t r, uint32_t c, uint32_t rAlign, uint32_t cAlign)
 {
     LocalTensor<T> srcLocal = inQueueSrc.DeQue<T>();
     LocalTensor<T> dstLocal = outQueueDst.AllocTensor<T>();
@@ -196,21 +181,21 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::ComputeRConvGeneric(int r, in
     transDataParams.dstRepStride = transDataParams.repeatTimes == 1 ? 0 : dstStrideFactor;
     transDataParams.srcRepStride = transDataParams.repeatTimes == 1 ? 0 : cAlign * TRANSELEM_021;
 
-    for (int j = 0; j < cAlign; j++) {
-        uint64_t srcLocalList[16];
-        for (int i = 0; i < 16; i++) {
+    for (uint16_t j = 0; j < cAlign; j++) {
+        uint64_t srcLocalList[TRANSELEM_021];
+        for (uint16_t i = 0; i < TRANSELEM_021; i++) {
             srcLocalList[i] = srcLocal[i * c + j * blockElem].GetPhyAddr();
         }
 
-        uint64_t dstLocalList[16];
+        uint64_t dstLocalList[TRANSELEM_021];
         if constexpr (sizeof(T) == 4) {
             constexpr int64_t dstRows = TRANSELEM_021 / dstStrideFactor;
-            for (int k = 0; k < dstRows; k++) {
+            for (uint16_t k = 0; k < dstRows; k++) {
                 dstLocalList[dstStrideFactor * k] = dstLocal[(k + j * blockElem) * r].GetPhyAddr();
                 dstLocalList[dstStrideFactor * k + 1] = dstLocal[(k + j * blockElem) * r + blockElem].GetPhyAddr();
             }
         } else {
-            for (int i = 0; i < 16; i++) {
+            for (uint16_t i = 0; i < TRANSELEM_021; i++) {
                 dstLocalList[i] = dstLocal[i * r + j * TRANSELEM_021 * r].GetPhyAddr();
             }
         }
@@ -221,77 +206,17 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::ComputeRConvGeneric(int r, in
 }
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD021<T>::ComputeCConv(int r, int c, int rAlign)
+__aicore__ inline void KernelTransDataTo5HD021<T>::ComputeCConv(uint32_t r, uint32_t c, uint32_t rAlign)
 {
     if constexpr (sizeof(T) == 1) {
-        ComputeCConv8Bit(r, c, rAlign);
+        Compute8BitCore(r, c, rAlign);
     } else {
         ComputeCConvGeneric(r, c, rAlign);
     }
 }
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD021<T>::ComputeCConv8Bit(int r, int c, int rAlign)
-{
-    LocalTensor<T> srcLocal = inQueueSrc.DeQue<T>();
-    LocalTensor<T> dstLocal = outQueueDst.AllocTensor<T>();
-    TransDataTo5HDParams evenParams, oddParams;
-    Init8BitTransDataParams(evenParams, oddParams);
-
-    int cAlignBlocks = c / blockElem;
-    int evenHCount = (rAlign + 1) / 2;
-    int oddHCount = rAlign / 2;
-
-    for (int j = 0; j < cAlignBlocks; j++) {
-        for (int srcHalfIdx = 0; srcHalfIdx < 2; srcHalfIdx++) {
-            bool srcHighHalf = (srcHalfIdx == 1);
-            int dstColBase = j * blockElem + srcHalfIdx * TRANSELEM_021;
-
-            evenParams.srcHighHalf = srcHighHalf;
-            evenParams.dstHighHalf = false;
-            for (int hDbIdx = 0; hDbIdx < evenHCount; hDbIdx++) {
-                int hStrip = hDbIdx * 2;
-                LocalTensor<T> srcLocalList[16];
-                for (int i = 0; i < TRANSELEM_021; i++) {
-                    srcLocalList[i] = srcLocal[(hStrip * TRANSELEM_021 + i) * c + j * blockElem];
-                }
-                LocalTensor<T> dstLocalList[16];
-                for (int k = 0; k < TRANSELEM_021; k++) {
-                    dstLocalList[k] = dstLocal[(dstColBase + k) * r + hDbIdx * blockElem];
-                }
-                TransDataTo5HD(dstLocalList, srcLocalList, evenParams);
-            }
-
-            if (oddHCount > 0) {
-                PipeBarrier<PIPE_V>();
-
-                oddParams.srcHighHalf = srcHighHalf;
-                oddParams.dstHighHalf = true;
-                for (int hDbIdx = 0; hDbIdx < oddHCount; hDbIdx++) {
-                    int hStrip = hDbIdx * 2 + 1;
-                    LocalTensor<T> srcLocalList[16];
-                    for (int i = 0; i < TRANSELEM_021; i++) {
-                        srcLocalList[i] = srcLocal[(hStrip * TRANSELEM_021 + i) * c + j * blockElem];
-                    }
-                    LocalTensor<T> dstLocalList[16];
-                    for (int k = 0; k < TRANSELEM_021; k++) {
-                        dstLocalList[k] = dstLocal[(dstColBase + k) * r + hDbIdx * blockElem];
-                    }
-                    TransDataTo5HD(dstLocalList, srcLocalList, oddParams);
-                }
-            }
-
-            if (srcHalfIdx == 0) {
-                PipeBarrier<PIPE_V>();
-            }
-        }
-    }
-    outQueueDst.EnQue<T>(dstLocal);
-    inQueueSrc.FreeTensor(srcLocal);
-}
-
-template <typename T>
-__aicore__ inline void KernelTransDataTo5HD021<T>::ComputeCConvGeneric(int r, int c, int rAlign)
+__aicore__ inline void KernelTransDataTo5HD021<T>::ComputeCConvGeneric(uint32_t r, uint32_t c, uint32_t rAlign)
 {
     LocalTensor<T> srcLocal = inQueueSrc.DeQue<T>();
     LocalTensor<T> dstLocal = outQueueDst.AllocTensor<T>();
@@ -303,22 +228,21 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::ComputeCConvGeneric(int r, in
     transDataParams.dstRepStride = transDataParams.repeatTimes == 1 ? 0 : rAlign * TRANSELEM_021;
     transDataParams.srcRepStride = transDataParams.repeatTimes == 1 ? 0 : 1;
 
-    for (int j = 0; j < rAlign; j++) {
-        uint64_t srcLocalList[16];
-        for (int i = 0; i < 16; i++) {
+    for (uint16_t j = 0; j < rAlign; j++) {
+        uint64_t srcLocalList[TRANSELEM_021];
+        for (uint16_t i = 0; i < TRANSELEM_021; i++) {
             srcLocalList[i] = srcLocal[i * c + j * TRANSELEM_021 * c].GetPhyAddr();
         }
 
-        uint64_t dstLocalList[16];
+        uint64_t dstLocalList[TRANSELEM_021];
         if constexpr (sizeof(T) == 4) {
             constexpr int64_t dstRows = TRANSELEM_021 / dstStrideFactor;
-            for (int k = 0; k < dstRows; k++) {
+            for (uint16_t k = 0; k < dstRows; k++) {
                 dstLocalList[dstStrideFactor * k] = dstLocal[k * r + j * TRANSELEM_021].GetPhyAddr();
-                dstLocalList[dstStrideFactor * k + 1] =
-                    dstLocal[k * r + j * TRANSELEM_021 + blockElem].GetPhyAddr();
+                dstLocalList[dstStrideFactor * k + 1] = dstLocal[k * r + j * TRANSELEM_021 + blockElem].GetPhyAddr();
             }
         } else {
-            for (int i = 0; i < 16; i++) {
+            for (uint16_t i = 0; i < TRANSELEM_021; i++) {
                 dstLocalList[i] = dstLocal[i * r + j * TRANSELEM_021].GetPhyAddr();
             }
         }
@@ -326,18 +250,6 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::ComputeCConvGeneric(int r, in
     }
     outQueueDst.EnQue<T>(dstLocal);
     inQueueSrc.FreeTensor(srcLocal);
-}
-
-template <typename T>
-__aicore__ inline void KernelTransDataTo5HD021<T>::Init8BitTransDataParams(
-    TransDataTo5HDParams& evenParams, TransDataTo5HDParams& oddParams)
-{
-    evenParams.repeatTimes = 1;
-    evenParams.dstRepStride = 0;
-    evenParams.srcRepStride = 0;
-    oddParams.repeatTimes = 1;
-    oddParams.dstRepStride = 0;
-    oddParams.srcRepStride = 0;
 }
 
 template <typename T>
@@ -384,8 +296,7 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::CopyIn(int64_t nIdx, uint32_t
 }
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD021<T>::CopyInWAligned(
-    uint32_t actualValidRows, uint32_t r, uint32_t c)
+__aicore__ inline void KernelTransDataTo5HD021<T>::CopyInWAligned(uint32_t actualValidRows, uint32_t r, uint32_t c)
 {
     if (tiling_->UseRConv) {
         copyInParams_.blockCount = 1;
