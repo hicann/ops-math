@@ -24,15 +24,15 @@ BEGIN_TILING_DATA_DEF(TopKV2TilingDataSimd)
     // TopK field
     TILING_DATA_FIELD_DEF(int32_t, isLargest);
     TILING_DATA_FIELD_DEF(int32_t, isSort);
-    TILING_DATA_FIELD_DEF(uint32_t, sortLoopTimes);
+    TILING_DATA_FIELD_DEF(uint64_t, sortLoopTimes);
     TILING_DATA_FIELD_DEF(uint32_t, unsortedDimParallel);
-    TILING_DATA_FIELD_DEF(uint32_t, unsortedDimNum);
+    TILING_DATA_FIELD_DEF(uint64_t, unsortedDimNum);
     TILING_DATA_FIELD_DEF(uint32_t, lastDimNeedCore);
     TILING_DATA_FIELD_DEF(uint32_t, numTileDataSize);
     TILING_DATA_FIELD_DEF(uint32_t, platformCoreNum);
     TILING_DATA_FIELD_DEF(uint32_t, topkAcApiTmpBufferSize);
     TILING_DATA_FIELD_DEF(uint32_t, mergSortAcApiNeedBufferSize);
-    TILING_DATA_FIELD_DEF(uint32_t, oneCoreRowNum);
+    TILING_DATA_FIELD_DEF(uint64_t, oneCoreRowNum);
     TILING_DATA_FIELD_DEF(uint32_t, batchNumInUb);
     TILING_DATA_FIELD_DEF(uint32_t, tailLoopBatchNum);
     TILING_DATA_FIELD_DEF(uint32_t, tailBatchNum);
@@ -59,7 +59,7 @@ BEGIN_TILING_DATA_DEF(TopKV2TilingDataSimd)
     TILING_DATA_FIELD_DEF(uint32_t, isInInt32RangeForSort);
     TILING_DATA_FIELD_DEF(int64_t, lastAxisNumForSort);
     TILING_DATA_FIELD_DEF(uint32_t, modeTypeForSort);    
-    TILING_DATA_FIELD_DEF(uint32_t, keyParams0);
+    TILING_DATA_FIELD_DEF(uint64_t, keyParams0);
     TILING_DATA_FIELD_DEF(uint32_t, keyParams1);
     TILING_DATA_FIELD_DEF(uint32_t, keyParams2);
     TILING_DATA_FIELD_DEF(uint32_t, keyParams3);
