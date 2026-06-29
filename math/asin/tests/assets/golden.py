@@ -9,30 +9,34 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
+
 import numpy as np
+import torch
+
 
 __golden__ = {
-  	"kernel": {
-  	    "split": "split_golden"
-  	}
+    "kernel": {
+        "asin": "asin_golden"
+    }
 }
-  	
-def split_golden(split_dim, x,
-                 num_split: int,
-                 **kwargs):
+
+
+def asin_golden(x, **kwargs):
     '''
-    Kernel golden for split.
-    All the parameters follow @split_def.cpp without outputs.
+    Kernel golden for asin.
+    All the parameters follow @asin_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
-    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes, 
-  	    input_formats, output_formats, input_ori_formats, output_ori_formats,
-  	    input_dtypes, output_dtypes.
+    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
+        input_formats, output_formats, input_ori_formats, output_ori_formats,
+        input_dtypes, output_dtypes.
     '''
-    split_dim_val = int(split_dim.item()) if isinstance(split_dim, np.ndarray) else int(split_dim)
+    x_dtype = x.dtype
+    x_tensor = torch.from_numpy(x)
 
-    input_ori_formats = kwargs.get('input_ori_formats', ['ND'])
-    x_ori_format = input_ori_formats[0] if input_ori_formats else 'ND'
-    if x_ori_format == "NHWC" and split_dim_val == 3:
-        split_dim_val = 1
+    if x_dtype.name == "bfloat16" or x_dtype.name == "float16":
+        x_tensor = x_tensor.to(torch.float32)
 
-    return np.split(x, num_split, axis=split_dim_val)
+    x_tensor = torch.clamp(x_tensor, -1.0, 1.0)
+    result = torch.asin(x_tensor)
+
+    return result.numpy().astype(x_dtype, copy=False)
