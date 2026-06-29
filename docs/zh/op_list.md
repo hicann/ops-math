@@ -1818,6 +1818,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/spence/README.md">spence</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>计算Spence函数（dilogarithm）：S(x) = -integral_0^x ln(1-t)/t dt。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/sqrt/README.md">sqrt</a></td>
     <td>√</td>
     <td>√</td>
