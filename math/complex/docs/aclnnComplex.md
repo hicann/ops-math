@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-- 接口功能：输入两个Shape和Dtype一致的Tensor：real和imag，代表复数的实部和虚部，返回一个复数类型的Tensor：out。
+- 接口功能：输入两个Shape满足broadcast关系、Dtype一致的Tensor。
 - 计算公式：
 
   $$

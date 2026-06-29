@@ -93,7 +93,7 @@
 | [aclnnClampMinTensor&aclnnInplaceClampMinTensor](../../conversion/clip_by_value_v2/docs/aclnnClampMinTensor&aclnnInplaceClampMinTensor.md) | 将输入的所有元素限制在[min, inf]范围内。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnClampTensor](../../conversion/clip_by_value_v2/docs/aclnnClampTensor.md) | 将输入的所有元素限制在[min, max]范围内，如果min缺省，则无下限，如果max缺省，则无上限。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnCoalesceSparse](../../conversion/coalesce_sparse/docs/aclnnCoalesceSparse.md) | 将相同坐标点的value进行累加求和，进而减少Coo_Tensor的内存大小。 | 默认非确定性实现，不支持配置开启 | 默认非确定性实现，支持配置开启 |
-| [aclnnComplex](../../math/complex/docs/aclnnComplex.md)         | 输入两个Shape和Dtype一致的Tensor：real和imag。               | 默认确定性实现| 默认确定性实现 |
+| [aclnnComplex](../../math/complex/docs/aclnnComplex.md)         | 输入两个Shape满足broadcast关系、Dtype一致的Tensor。               | 默认确定性实现| 默认确定性实现 |
 | [aclnnConfusionTranspose](../../conversion/confusion_transpose_d/docs/aclnnConfusionTranspose.md) | 融合reshape和transpose运算。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnConstantPadNd](../../conversion/pad_v3/docs/aclnnConstantPadNd.md) | 对输入的张量self，以pad参数为基准进行数据填充，填充值为value。 | 默认确定性实现| 默认确定性实现|
 | [aclnnCos&aclnnInplaceCos](../../math/cos/docs/aclnnCos&aclnnInplaceCos.md) | 对输入矩阵的每个元素进行余弦操作后输出。                     | 默认确定性实现| - |
