@@ -23,6 +23,7 @@
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "op_api/aclnn_check.h"
+#include "op_api/data_type_utils.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -106,7 +107,11 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const
     }
 
     // 检查self和other能否做数据类型推导
-    promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
+    if (IsRegBase(npuArch)) {
+        promoteType = op::BinaryOpTypePromote(self, other);
+    } else {
+        promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
+    }
     if (promoteType == DataType::DT_BOOL) {
         promoteType = DataType::DT_INT8;
     }
@@ -182,7 +187,7 @@ aclnnStatus aclnnGtTensorGetWorkspaceSize(
     CHECK_RET(CheckNotNull(self, other, out), ACLNN_ERR_PARAM_NULLPTR);
     CHECK_RET(workspaceSize != nullptr, ACLNN_ERR_PARAM_NULLPTR);
     // 固定写法，参数检查
-    DataType promoteType;
+    DataType promoteType = DataType::DT_UNDEFINED;
     auto result = CheckParams4Gt(self, other, out, promoteType);
     CHECK_RET(result == ACLNN_SUCCESS, result);
 

@@ -24,6 +24,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
 #include "op_api/aclnn_check.h"
+#include "op_api/data_type_utils.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -101,27 +102,31 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const
     // 检查out的数据类型是否在LessEqual算子的支持列表内
     op::DataType outType = out->GetDataType();
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
-    auto outSuportList = IsRegBase(npuArch) ? GetOutDtypeSupportList() : supportList;
-    if ((!CheckType(outType, outSuportList)) && (outType != DataType::DT_BOOL)) {
+    auto outSupportList = IsRegBase(npuArch) ? GetOutDtypeSupportList() : supportList;
+    if ((!CheckType(outType, outSupportList)) && (outType != DataType::DT_BOOL)) {
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID, "Out dtype %s should be in dtype support list [%s].",
-            op::ToString(out->GetDataType()).GetString(), op::ToString(outSuportList).GetString());
+            op::ToString(out->GetDataType()).GetString(), op::ToString(outSupportList).GetString());
         return false;
     }
     return true;
 }
 
-static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, const aclTensor* out)
+static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, const aclTensor* out, DataType& promoteType)
 {
     // 检查self和other能否做数据类型推导
-    op::DataType promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
+        promoteType = op::BinaryOpTypePromote(self, other);
+    } else {
+        promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
+    }
     if (promoteType == DataType::DT_UNDEFINED) {
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
             op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
         return false;
     }
-    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     if (IsRegBase(npuArch)) {
         // 查看promoteType是否在inputList
         auto inputSupportList = GetDtypeSupportList();
@@ -160,13 +165,14 @@ static bool CheckOutShape(const aclTensor* self, const aclTensor* other, const a
     return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, const aclTensor* out)
+static aclnnStatus CheckParams(
+    const aclTensor* self, const aclTensor* other, const aclTensor* out, DataType& promoteType)
 {
     // 1. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
     CHECK_RET(CheckDtypeValid(self, other, out), ACLNN_ERR_PARAM_INVALID);
 
     // 2. 检查self和other能否做数据类型推导以及推导的数据类型能否转换为输出数据类型
-    CHECK_RET(CheckPromoteType(self, other, out), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckPromoteType(self, other, out, promoteType), ACLNN_ERR_PARAM_INVALID);
 
     // 3. 检查双输入是否能broadcast,检查boradcast后的输出与out是否一致
     CHECK_RET(CheckOutShape(self, other, out), ACLNN_ERR_PARAM_INVALID);
@@ -192,10 +198,10 @@ static aclnnStatus aclnnLeTensorCommon(
     }
 
     // 固定写法，参数检查
-    auto ret = CheckParams(self, other, out);
+    DataType promoteType = DataType::DT_UNDEFINED;
+    auto ret = CheckParams(self, other, out, promoteType);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
-    auto promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
     if (promoteType == DataType::DT_BOOL) {
         promoteType = DataType::DT_FLOAT;
     }

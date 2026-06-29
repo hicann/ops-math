@@ -24,6 +24,7 @@
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/platform.h"
 #include "op_api/aclnn_check.h"
+#include "op_api/data_type_utils.h"
 
 using namespace op;
 
@@ -103,7 +104,12 @@ static bool CheckPromoteType(const aclTensor *self, const aclTensor *other,
                              const aclTensor *out, DataType &promoteType) {
   const auto& supportList = GetDtypeSupportList();
   // 类型提升判断，将提升后的数据类型返回
-  promoteType = PromoteType(self->GetDataType(), other->GetDataType());
+  auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+  if (IsRegBase(npuArch)) {
+    promoteType = op::BinaryOpTypePromote(self, other);
+  } else {
+    promoteType = PromoteType(self->GetDataType(), other->GetDataType());
+  }
   // 如果有经过评审可以进行的转换，在这里添加并修改promoteType的值
   if (promoteType == DataType::DT_BOOL) {
     promoteType = DataType::DT_INT8;
@@ -120,7 +126,6 @@ static bool CheckPromoteType(const aclTensor *self, const aclTensor *other,
             ToString(promoteType).GetString());
     return false;
   }
-  auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
   if (IsRegBase(npuArch)) {
     OP_CHECK_RESULT_DTYPE_CAST_FAILED(self->GetDataType(), promoteType, return false);
     OP_CHECK_RESULT_DTYPE_CAST_FAILED(other->GetDataType(), promoteType, return false);
@@ -171,7 +176,7 @@ static aclnnStatus aclnnGeTensorCommon(const aclTensor *self, const aclTensor *o
 
   // 参数检查
   CHECK_RET(workspaceSize != nullptr, ACLNN_ERR_PARAM_NULLPTR);
-  DataType promoteType;
+  DataType promoteType = DataType::DT_UNDEFINED;
   auto ret = CheckParams(self, other, out, promoteType);
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
 

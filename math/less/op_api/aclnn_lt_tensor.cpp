@@ -24,6 +24,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "aclnn_lt_tensor.h"
 #include "op_api/aclnn_check.h"
+#include "op_api/data_type_utils.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -105,7 +106,7 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const
 {
     auto supportList = GetDtypeSupportList();
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
-    auto outSuportList = IsRegBase(npuArch) ? GetOutDtypeSupportList() : supportList;
+    auto outSupportList = IsRegBase(npuArch) ? GetOutDtypeSupportList() : supportList;
     // 检查self的数据类型是否在Less算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
 
@@ -113,14 +114,19 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const
     OP_CHECK_DTYPE_NOT_SUPPORT(other, supportList, return false);
 
     // 检查out的数据类型是否在Less算子的支持列表内
-    OP_CHECK_DTYPE_NOT_SUPPORT(out, outSuportList, return false);
+    OP_CHECK_DTYPE_NOT_SUPPORT(out, outSupportList, return false);
     return true;
 }
 
-static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, const aclTensor* out)
+static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, const aclTensor* out, DataType& promoteType)
 {
     // 检查self和other能否做数据类型推导
-    op::DataType promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
+        promoteType = op::BinaryOpTypePromote(self, other);
+    } else {
+        promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
+    }
     if (promoteType == DataType::DT_UNDEFINED) {
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
@@ -129,7 +135,6 @@ static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, cons
     }
 
     // 检查promote后的数据类型是否在Less算子的支持列表内
-    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     if (IsRegBase(npuArch)) {
         auto supportList = GetDtypeSupportList();
         if (!CheckType(promoteType, supportList)) {
@@ -161,7 +166,8 @@ static bool CheckShape(const aclTensor* self, const aclTensor* other, const aclT
     return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, const aclTensor* out)
+static aclnnStatus CheckParams(
+    const aclTensor* self, const aclTensor* other, const aclTensor* out, DataType& promoteType)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, other, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -170,7 +176,7 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, co
     CHECK_RET(CheckDtypeValid(self, other, out), ACLNN_ERR_PARAM_INVALID);
 
     // 3. 检查self和other能否做数据类型推导以及推导的数据类型能否转换为输出数据类型
-    CHECK_RET(CheckPromoteType(self, other, out), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckPromoteType(self, other, out, promoteType), ACLNN_ERR_PARAM_INVALID);
 
     // 4. 检查双输入是否能broadcast
     CHECK_RET(CheckShape(self, other, out), ACLNN_ERR_PARAM_INVALID);
@@ -188,7 +194,8 @@ aclnnStatus aclnnLtTensorGetWorkspaceSize(
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
     // 固定写法，参数检查
-    auto ret = CheckParams(self, other, out);
+    DataType promoteType = DataType::DT_UNDEFINED;
+    auto ret = CheckParams(self, other, out, promoteType);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
     // Less算子的空tensor在kernel中支持，对标竞品根据算子实际情况补充
@@ -199,7 +206,6 @@ aclnnStatus aclnnLtTensorGetWorkspaceSize(
     }
 
     // Less算子需要对self和other两个输入做隐式数据类型转换，根据具体算子语义按需调用
-    auto promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
     if (promoteType == DataType::DT_BOOL) {
         promoteType = DataType::DT_UINT8;
     }

@@ -20,20 +20,15 @@
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/op_api_ut.h"
+#include "opdev/platform.h"
 
 using namespace std;
 
 class l2_le_tensor_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "le_tensor_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "le_tensor_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "le_tensor_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "le_tensor_test TearDown" << endl; }
 };
 
 // 入参无法broadcast的场景
@@ -140,4 +135,69 @@ TEST_F(l2_le_tensor_test, test_le_tensor_nullptr)
     uint64_t workspace_size = 5;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
+}
+
+TEST_F(l2_le_tensor_test, test_le_tensor_regbase_bool_tensor_bool_scalar)
+{
+    auto curSocVersion = op::GetCurrentPlatformInfo().GetSocVersion();
+    if (curSocVersion != op::SocVersion::ASCEND950) {
+        op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    }
+
+    auto tensor_self =
+        TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true, false, true, false, true, false});
+    auto tensor_other = TensorDesc({}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true});
+    auto out_tensor_desc = TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnLeTensor, INPUT(tensor_self, tensor_other), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    if (curSocVersion != op::SocVersion::ASCEND950) {
+        op::SetPlatformSocVersion(curSocVersion);
+    }
+}
+
+TEST_F(l2_le_tensor_test, test_le_tensor_regbase_uint64_tensor_bool_scalar)
+{
+    auto curSocVersion = op::GetCurrentPlatformInfo().GetSocVersion();
+    if (curSocVersion != op::SocVersion::ASCEND950) {
+        op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    }
+
+    auto tensor_self =
+        TensorDesc({2, 3}, ACL_UINT64, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<uint64_t>{1, 2, 3, 4, 5, 6});
+    auto tensor_other = TensorDesc({}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false});
+    auto out_tensor_desc = TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnLeTensor, INPUT(tensor_self, tensor_other), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    if (curSocVersion != op::SocVersion::ASCEND950) {
+        op::SetPlatformSocVersion(curSocVersion);
+    }
+}
+
+TEST_F(l2_le_tensor_test, test_le_tensor_regbase_bf16_tensor_float_scalar)
+{
+    auto curSocVersion = op::GetCurrentPlatformInfo().GetSocVersion();
+    if (curSocVersion != op::SocVersion::ASCEND950) {
+        op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    }
+
+    auto tensor_self = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6});
+    auto tensor_other = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{2});
+    auto out_tensor_desc = TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnLeTensor, INPUT(tensor_self, tensor_other), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    if (curSocVersion != op::SocVersion::ASCEND950) {
+        op::SetPlatformSocVersion(curSocVersion);
+    }
 }
