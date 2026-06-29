@@ -12,7 +12,6 @@
 add_all_modules_sources(
         OPTYPE isin_part_v1
         ACLNNTYPE aclnn
-        DEPENDENCIES concat_d sort zeros_like zero_op cast
         COMPUTE_UNIT ascend950
         TILING_DIR arch35
         DISABLE_IN_OPP TRUE

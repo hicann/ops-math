@@ -185,18 +185,26 @@ main() {
     fi
 
     compute_units=$(echo "$json_line" | awk '
-    match($0, /"compute_units"[[:space:]]*:[[:space:]]*\[([^]]*)\]/, arr) {
-      str = arr[1]
-      gsub(/"/, "", str)
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", str)
-      gsub(/,[[:space:]]*/, " ", str)
-      print str
+    {
+      if (match($0, /"compute_units"[[:space:]]*:[[:space:]]*\[[^]]*\]/)) {
+        str = substr($0, RSTART, RLENGTH)
+        sub(/^"compute_units"[[:space:]]*:[[:space:]]*\[/, "", str)
+        sub(/\][[:space:]]*$/, "", str)
+        gsub(/"/, "", str)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", str)
+        gsub(/,[[:space:]]*/, " ", str)
+        print str
+      }
     }')
 
     if [ -z "$compile_options" ]; then
       compile_options=$(echo "$json_line" | awk '
-      match($0, /"compile_options"[[:space:]]*:[[:space:]]*(\{[^}]*\})/, arr) {
-        print arr[1]
+      {
+        if (match($0, /"compile_options"[[:space:]]*:[[:space:]]*\{[^}]*\}/)) {
+          s = substr($0, RSTART, RLENGTH)
+          sub(/^"compile_options"[[:space:]]*:[[:space:]]*/, "", s)
+          print s
+        }
       }')
     fi
 
