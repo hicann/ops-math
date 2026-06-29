@@ -22,6 +22,17 @@
 using namespace AscendC;
 using namespace Ops::Base;
 
+template <typename T>
+struct VciTypeGet;
+template <>
+struct VciTypeGet<uint32_t> {
+    using T = int32_t;
+};
+template <>
+struct VciTypeGet<uint16_t> {
+    using T = int16_t;
+};
+
 static constexpr MicroAPI::CastTrait castTraitZero = {
     MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::UNKNOWN, MicroAPI::MaskMergeMode::ZEROING,
     RoundMode::UNKNOWN
@@ -126,7 +137,11 @@ private:
             SetFlag<HardEvent::MTE2_V>(this->event_);
             WaitFlag<HardEvent::MTE2_V>(this->event_);
         }
-        CopyCatVF(ubLoopInfo, tensorInfo, totalCol, localOffset);
+        if (tensorInfo.splitCol > GetVRegSize() / sizeof(T2) / 2 || ubLoopInfo.currentUbRowFactor < 2) {
+            CopyCatVF<false>(ubLoopInfo, tensorInfo, totalCol, localOffset);
+        } else {
+            CopyCatVF<true>(ubLoopInfo, tensorInfo, totalCol, localOffset);
+        }
         SetFlag<HardEvent::V_MTE3>(this->event_);
         WaitFlag<HardEvent::V_MTE3>(this->event_);
     }
@@ -225,6 +240,119 @@ private:
         }
     }
 
+    template <typename U>
+    __aicore__ inline void DoScatterCatVF(__ubuf__ T2* dstAddr, __ubuf__ T1* srcAddr, uint16_t rowLoop, uint32_t rowNum,
+                                        uint32_t rowNumTail, uint32_t srcLen, uint32_t rowStride)
+    {
+        // genarator index
+        AscendC::MicroAPI::RegTensor<U> v0;
+        AscendC::MicroAPI::RegTensor<U> v1;
+        AscendC::MicroAPI::RegTensor<U> v2;
+        AscendC::MicroAPI::RegTensor<U> v3;
+        AscendC::MicroAPI::RegTensor<U> v4;
+        AscendC::MicroAPI::RegTensor<U> v5;
+        AscendC::MicroAPI::RegTensor<U> index;
+        AscendC::MicroAPI::MaskReg p0 = AscendC::MicroAPI::CreateMask<U, AscendC::MicroAPI:: MaskPattern::ALL>();
+        AscendC::MicroAPI::MaskReg p1 = AscendC::MicroAPI::CreateMask<T1, AscendC::MicroAPI:: MaskPattern::ALL>();
+
+        using regType = typename VciTypeGet<U>::T;
+        AscendC::MicroAPI::RegTensor<regType> tmp;
+        AscendC::MicroAPI::Arange(tmp, 0);
+        v0 = (AscendC::MicroAPI::RegTensor<U>&)tmp;
+        AscendC::MicroAPI::Duplicate(v1, srcLen, p0);
+        AscendC::MicroAPI::Div(v2, v0, v1, p0);
+        AscendC::MicroAPI::Muls(v3, v2, srcLen, p0);
+        AscendC::MicroAPI::Sub(v4, v0, v3, p0);
+        AscendC::MicroAPI::Muls(v5, v2, rowStride, p0);
+        AscendC::MicroAPI::Add(index, v4, v5, p0);
+
+        AscendC::MicroAPI::UnalignReg u0;
+        AscendC::MicroAPI::RegTensor<T1> srcReg0;
+        AscendC::MicroAPI::RegTensor<T1> srcReg1;
+        AscendC::MicroAPI::RegTensor<T1> srcReg2;
+        AscendC::MicroAPI::RegTensor<T2> dstReg0;
+
+        uint32_t main = rowNum * srcLen;
+        p0 = AscendC::MicroAPI::UpdateMask<U>(main);
+        AscendC::MicroAPI::DataCopyUnAlignPre(u0, srcAddr);
+        for (uint16_t i = 0; i < rowLoop; i++) {
+            auto curDstAddr = dstAddr + i * rowNum * rowStride;
+            AscendC::MicroAPI::DataCopyUnAlign(srcReg0, u0, srcAddr, rowNum * srcLen);
+            if constexpr (std::is_same_v<T1, T2>) {
+                AscendC::MicroAPI::DataCopyScatter(curDstAddr, srcReg0, index, p0);
+            } else if constexpr (std::is_same_v<T1, half> && std::is_same_v<T2, bfloat16_t>) {
+                AscendC::MicroAPI::Cast<T2, T1, castTraithalf2bf>(dstReg0, srcReg0, p0);
+                AscendC::MicroAPI::DataCopyScatter(curDstAddr, dstReg0, index, p0);
+            } else if constexpr (std::is_same_v<T1, bfloat16_t> && std::is_same_v<T2, half>) {
+                AscendC::MicroAPI::Cast<T2, T1, castTraitbf2half>(dstReg0, srcReg0, p0);
+                AscendC::MicroAPI::DataCopyScatter(curDstAddr, dstReg0, index, p0);
+            } else {
+                AscendC::MicroAPI::Interleave(srcReg1, srcReg2, srcReg0, srcReg0);
+                AscendC::MicroAPI::Cast<T2, T1, castTraitZero>(dstReg0, srcReg1, p1);
+                AscendC::MicroAPI::DataCopyScatter(curDstAddr, dstReg0, index, p0);
+            }
+        }
+        uint32_t tail = rowNumTail * srcLen;
+        p0 = AscendC::MicroAPI::UpdateMask<U>(tail);
+        auto curDstAddr = dstAddr + rowLoop * rowNum * rowStride;
+        AscendC::MicroAPI::DataCopyUnAlign(srcReg0, u0, srcAddr, rowNumTail * srcLen);
+        if constexpr (std::is_same_v<T1, T2>) {
+            AscendC::MicroAPI::DataCopyScatter(curDstAddr, srcReg0, index, p0);
+        } else if constexpr (std::is_same_v<T1, half> && std::is_same_v<T2, bfloat16_t>) {
+            AscendC::MicroAPI::Cast<T2, T1, castTraithalf2bf>(dstReg0, srcReg0, p0);
+            AscendC::MicroAPI::DataCopyScatter(curDstAddr, dstReg0, index, p0);
+        } else if constexpr (std::is_same_v<T1, bfloat16_t> && std::is_same_v<T2, half>) {
+            AscendC::MicroAPI::Cast<T2, T1, castTraitbf2half>(dstReg0, srcReg0, p0);
+            AscendC::MicroAPI::DataCopyScatter(curDstAddr, dstReg0, index, p0);
+        } else {
+            AscendC::MicroAPI::Interleave(srcReg1, srcReg2, srcReg0, srcReg0);
+            AscendC::MicroAPI::Cast<T2, T1, castTraitZero>(dstReg0, srcReg1, p1);
+            AscendC::MicroAPI::DataCopyScatter(curDstAddr, dstReg0, index, p0);
+        }
+    }
+
+    template <typename U>
+    __aicore__ inline void DoScatterPadCatVF(__ubuf__ T2* dstAddr, uint16_t rowLoop, 
+                                        uint32_t rowNum, uint32_t rowNumTail, uint32_t srcLen, uint32_t rowStride)
+    {
+        AscendC::MicroAPI::RegTensor<T2> dstReg0;
+        // genarator index
+        AscendC::MicroAPI::RegTensor<U> v0;
+        AscendC::MicroAPI::RegTensor<U> v1;
+        AscendC::MicroAPI::RegTensor<U> v2;
+        AscendC::MicroAPI::RegTensor<U> v3;
+        AscendC::MicroAPI::RegTensor<U> v4;
+        AscendC::MicroAPI::RegTensor<U> v5;
+        AscendC::MicroAPI::RegTensor<U> index;
+        AscendC::MicroAPI::MaskReg p0 = AscendC::MicroAPI::CreateMask<U, AscendC::MicroAPI:: MaskPattern::ALL>();
+
+        using regType = typename VciTypeGet<U>::T;
+        AscendC::MicroAPI::RegTensor<regType> tmp;
+        AscendC::MicroAPI::Arange(tmp, 0);
+        v0 = (AscendC::MicroAPI::RegTensor<U>&)tmp;
+        AscendC::MicroAPI::Duplicate(v1, srcLen, p0);
+        AscendC::MicroAPI::Div(v2, v0, v1, p0);
+        AscendC::MicroAPI::Muls(v3, v2, srcLen, p0);
+        AscendC::MicroAPI::Sub(v4, v0, v3, p0);
+        AscendC::MicroAPI::Muls(v5, v2, rowStride, p0);
+        AscendC::MicroAPI::Add(index, v4, v5, p0);
+
+        // 纯pad
+        uint32_t main = rowNum * srcLen;
+        p0 = AscendC::MicroAPI::UpdateMask<U>(main);
+        T2 scalarValue = 0;
+        AscendC::MicroAPI::Duplicate(dstReg0, scalarValue);
+        for (uint16_t i = 0; i < rowLoop; i++) {
+            auto curDstAddr = dstAddr + i * rowNum * rowStride;
+            AscendC::MicroAPI::DataCopyScatter(curDstAddr, dstReg0, index, p0);
+        }
+        uint32_t tail = rowNumTail * srcLen;
+        p0 = AscendC::MicroAPI::UpdateMask<U>(tail);
+        auto curDstAddr = dstAddr + rowLoop * rowNum * rowStride;
+        AscendC::MicroAPI::DataCopyScatter(curDstAddr, dstReg0, index, p0);
+    }
+
+    template <bool IS_SCATTER = true>
     __aicore__ inline void CopyCatVF(const UbLoopInfo& ubLoopInfo, const TensorInfo& tensorInfo, int64_t totalCol, int64_t localOffset)
     {
         uint32_t srcLen = tensorInfo.splitCol;
@@ -272,18 +400,38 @@ private:
                 tailPad = colLen1 - colLoop1 * mainFP32;
             }
         }
+        uint32_t rowNum = GetVRegSize() / sizeof(T2) / srcLen;
+        uint16_t rowLoop00 = rowLoop0 / rowNum;
+        uint32_t rowNumTailLoop0 = rowLoop0 - rowNum * rowLoop00;
+        uint16_t rowLoop20 = rowLoop2 / rowNum;
+        uint32_t rowNumTailLoop2 = rowLoop2 - rowNum * rowLoop20;
+
         uint32_t padLen = isSplit ? this->GetAlign(srcLen * rowLoop0, this->srcEleUbBlock_) - srcLen * rowLoop0 : 0;
         uint32_t dstOffset = totalCol + tensorInfo.startOffset - ubLoopInfo.colStart - ubLoopInfo.preCatCol;
 
         auto dstAddr = (__ubuf__ T2*)this->dstLocal_.GetPhyAddr() + dstOffset;
-        auto srcAddr = (__ubuf__ T1*)this->srcLocal_.GetPhyAddr() + localOffset;
+        auto srcAddr = (__ubuf__ T1*)this->srcLocal_.GetPhyAddr() + localOffset;      
 
         __VEC_SCOPE__
         {
-            // rowLoop0
-            DoCopyCatVF(dstAddr, srcAddr, rowLoop0, colLoop, tail, rowStride);
-            // rowLoop2
-            DoPadCatVF(dstAddr + (rowLoop0 + rowLoop1) * rowStride, rowLoop2, colLoopFP32, mainFP32, tailFP32, rowStride);
+            if constexpr (IS_SCATTER) {
+                if constexpr (std::is_same_v<T2, bfloat16_t> || std::is_same_v<T2, half>) {
+                    // rowLoop0
+                    DoScatterCatVF<uint16_t>(dstAddr, srcAddr, rowLoop00, rowNum, rowNumTailLoop0, srcLen, rowStride);
+                    // rowLoop2
+                    DoScatterPadCatVF<uint16_t>(dstAddr + (rowLoop0 + rowLoop1) * rowStride, rowLoop20, rowNum, rowNumTailLoop2, srcLen, rowStride);
+                } else {
+                    // rowLoop0
+                    DoScatterCatVF<uint32_t>(dstAddr, srcAddr, rowLoop00, rowNum, rowNumTailLoop0, srcLen, rowStride);
+                    // rowLoop2
+                    DoScatterPadCatVF<uint32_t>(dstAddr + (rowLoop0 + rowLoop1) * rowStride, rowLoop20, rowNum, rowNumTailLoop2, srcLen, rowStride);
+                }
+            } else {
+                // rowLoop0
+                DoCopyCatVF(dstAddr, srcAddr, rowLoop0, colLoop, tail, rowStride);
+                // rowLoop2
+                DoPadCatVF(dstAddr + (rowLoop0 + rowLoop1) * rowStride, rowLoop2, colLoopFP32, mainFP32, tailFP32, rowStride);
+            }
             // rowLoop1
             DoCopyCatVF(dstAddr + rowLoop0 * rowStride, srcAddr + rowLoop0 * srcLen + padLen, rowLoop1, colLoop, tail, rowStride);
             AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE, AscendC::MicroAPI::MemType::VEC_STORE>();
