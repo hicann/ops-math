@@ -456,7 +456,7 @@ int main() {
   if (workspaceSize > 0) {
     aclrtFree(workspace);
   }
-  aclDestroyExecutor(executor);
+  
   aclrtDestroyStream(stream);
   auto aclRet = aclrtResetDevice(deviceId);
   CHECK_RET(aclRet == ACL_SUCCESS, LOG_PRINT("reset device failed. ERROR: %d\n", aclRet); return aclRet);
