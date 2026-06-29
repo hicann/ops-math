@@ -321,19 +321,16 @@ bool OneHotTilingBase::AnalyzeInputs()
 
 bool OneHotTilingBase::CheckSingleShape(const gert::Shape& shape, const string name) const
 {
-    OP_CHECK_IF(
-        (shape.GetDimNum() > MAX_DIM_CNT),
-        OP_LOGE(
-            context_->GetNodeName(), "%s's dim should not be bigger than %u, actual %zu.", name.c_str(), MAX_DIM_CNT,
-            shape.GetDimNum()),
-        return false);
+    OP_CHECK_IF((shape.GetDimNum() > MAX_DIM_CNT),
+                OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+                    context_->GetNodeName(), name, std::to_string(shape.GetDimNum()),
+                    "The shape dims of " + name + " must be less than or equal to " + std::to_string(MAX_DIM_CNT)),
+                return false);
     for (size_t i = 0; i < shape.GetDimNum(); i++) {
         OP_CHECK_IF(
             shape.GetDim(i) <= 0,
-            OP_LOGE(
-                context_->GetNodeName(), "%s has non positive shape, dim %lu actual %ld .", name.c_str(), i,
-                shape.GetDim(i)),
-            return false);
+            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), name, Ops::Base::ToString(shape),
+                                                  "All axes of " + name + " must be a positive number"), return false);
     }
     return true;
 }
