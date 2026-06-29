@@ -1,6 +1,6 @@
 # aclnnMultinomialTensor
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/random/dsa_random_uniform)
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/random/stateless_sample_multinomial)
 
 ## 产品支持情况
 
@@ -159,6 +159,8 @@ aclnnStatus aclnnMultinomialTensor(
       <td class="tg-0pky">-</td>
     </tr>
   </tbody></table>
+
+  - <term>Ascend 950PR/Ascend 950DT</term>：数据类型不支持DOUBLE。
 
 - **返回值：**
   

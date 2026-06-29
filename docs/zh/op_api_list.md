@@ -218,8 +218,8 @@
 | [aclnnMinN](../../math/minimum/docs/aclnnMinN.md)               | 对输入tensor列表中每个输入tensor对应元素求min。              | 默认确定性实现| 默认确定性实现 |
 | [aclnnMul&aclnnInplaceMul](../../math/mul/docs/aclnnMul&aclnnInplaceMul.md) | 完成tensor与tensor间的乘法计算。                             | 默认确定性实现| 默认确定性实现 |
 | [aclnnMuls&aclnnInplaceMuls](../../math/muls/docs/aclnnMuls&aclnnInplaceMuls.md) | 完成tensor与scalar间的乘法计算。                             | 默认确定性实现| 默认确定性实现 |
-| [aclnnMultinomial](../../random/dsa_random_uniform/docs/aclnnMultinomial.md) | 在输入张量中根据每个对象分布的概率，抽取numsamples个样本，并将这些样本的索引存储在输出张量中。                | 默认确定性实现| 默认确定性实现  |
-| [aclnnMultinomialTensor](../../random/dsa_random_uniform/docs/aclnnMultinomialTensor.md) | 在输入张量中根据每个对象分布的概率，抽取numsamples个样本，并将这些样本的索引存储在输出张量中。                | 默认确定性实现| 默认确定性实现 |
+| [aclnnMultinomial](../../random/stateless_sample_multinomial/docs/aclnnMultinomial.md) | 在输入张量中根据每个对象分布的概率，抽取numsamples个样本，并将这些样本的索引存储在输出张量中。                | 默认确定性实现| 默认确定性实现  |
+| [aclnnMultinomialTensor](../../random/stateless_sample_multinomial/docs/aclnnMultinomialTensor.md) | 在输入张量中根据每个对象分布的概率，抽取numsamples个样本，并将这些样本的索引存储在输出张量中。                | 默认确定性实现| 默认确定性实现 |
 | [aclnnNanToNum&aclnnInplaceNanToNum](../../math/nan_to_num/docs/aclnnNanToNum&aclnnInplaceNanToNum.md) | 将输入中的NaN、正无穷大和负无穷大值分别替换为nan、posinf、neginf指定的值。 | 默认确定性实现| 默认确定性实现|
 | [aclnnNeg&aclnnInplaceNeg](../../math/neg/docs/aclnnNeg&aclnnInplaceNeg.md) | 对输入的每个元素完成相反数计算。                             | 默认确定性实现| 默认确定性实现|
 | [aclnnNeScalar&aclnnInplaceNeScalar](../../math/not_equal/docs/aclnnNeScalar&aclnnInplaceNeScalar.md) | 计算selfRef中的元素的值与other的值是否不相等。               | 默认确定性实现| 默认确定性实现 |
