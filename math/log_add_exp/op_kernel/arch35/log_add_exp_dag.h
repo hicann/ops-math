@@ -38,6 +38,7 @@ namespace LogAddExpOp {
 constexpr int CAST_NONE_MODE = 0;
 constexpr int CAST_RINT_MODE = 1;
 constexpr int CMP_EQ_MODE = 2;   // AscendC::CMPMODE::EQ
+constexpr int CMP_NE_MODE = 5;   // AscendC::CMPMODE::NE
 constexpr int SEL_TT_MODE = 2;   // AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE
 constexpr float POS_INF = INFINITY;
 constexpr float NEG_INF = -INFINITY;
@@ -58,6 +59,24 @@ struct InfGuardedSub {
     using SubFixed = Bind<Vec::Select<uint8_t, CT, SEL_TT_MODE>, MaskBothNeg, DupZero, SubFixPos>;
 };
 
+// 稳定计算 log1p(x)，避免 x 很小时 1+x 舍入为 1 导致结果变 0。
+template <typename CT, typename In>
+struct StableLog1p {
+    using ConstOne = MAKE_CONST(CT, 1);
+    using ConstNegOne = MAKE_CONST(CT, -1);
+    using OpAddOne = Bind<Vec::Adds<CT>, In, ConstOne>;
+    using OpMid = Bind<Vec::Adds<CT>, OpAddOne, ConstNegOne>;
+    using OpRatio = Bind<Vec::Div<CT>, In, OpMid>;
+    using OpLog = Bind<Vec::Log<CT>, OpAddOne>;
+    using OpMul = Bind<Vec::Mul<CT>, OpLog, OpRatio>;
+    using MaskNotOne = Bind<Vec::Compare<uint8_t, CT, CMP_NE_MODE>, OpAddOne, ConstOne>;
+    using FixSmall = Bind<Vec::Select<uint8_t, CT, SEL_TT_MODE>, MaskNotOne, OpMul, In>;
+    using ConstPosInf = MAKE_CONST(CT, POS_INF);
+    using DupPosInf = Bind<Vec::Duplicate<CT>, ConstPosInf>;
+    using MaskNotInf = Bind<Vec::Compare<uint8_t, CT, CMP_NE_MODE>, OpAddOne, ConstPosInf>;
+    using OpOut = Bind<Vec::Select<uint8_t, CT, SEL_TT_MODE>, MaskNotInf, FixSmall, DupPosInf>;
+};
+
 // ==================== Simplified (base=-1, scale=1.0, shift=0.0) ====================
 
 template <typename T>
@@ -71,9 +90,7 @@ struct LogAddExpSimplifiedCompute {
     using ConstNegOne = MAKE_CONST(T, -1);
     using OpNeg = Bind<Vec::Muls<T>, OpAbs, ConstNegOne>;
     using OpExp = Bind<Vec::Exp<T>, OpNeg>;
-    using ConstOne = MAKE_CONST(T, 1);
-    using OpAdds = Bind<Vec::Adds<T>, OpExp, ConstOne>;
-    using OpLog = Bind<Vec::Log<T>, OpAdds>;
+    using OpLog = typename StableLog1p<T, OpExp>::OpOut;
     using OpAdd = Bind<Vec::Add<T>, OpMax, OpLog>;
 
     using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpAdd>;
@@ -97,9 +114,7 @@ struct LogAddExpSimplifiedWithCastCompute {
     using ConstNegOne = MAKE_CONST(float, -1);
     using OpNeg = Bind<Vec::Muls<float>, OpAbs, ConstNegOne>;
     using OpExp = Bind<Vec::Exp<float>, OpNeg>;
-    using ConstOne = MAKE_CONST(float, 1);
-    using OpAdds = Bind<Vec::Adds<float>, OpExp, ConstOne>;
-    using OpLog = Bind<Vec::Log<float>, OpAdds>;
+    using OpLog = typename StableLog1p<float, OpExp>::OpOut;
     using OpAdd = Bind<Vec::Add<float>, OpMax, OpLog>;
 
     using OpCastRes = Bind<Vec::Cast<T, float, CAST_RINT_MODE>, OpAdd>;
@@ -128,9 +143,7 @@ struct LogAddExpFullCompute {
     using VarLnBase = Placeholder::Var<float, 2>;
     using OpMulLnBase = Bind<Vec::Muls<T>, OpShift, VarLnBase>;
     using OpExp = Bind<Vec::Exp<T>, OpMulLnBase>;
-    using ConstOne = MAKE_CONST(T, 1);
-    using OpAdds = Bind<Vec::Adds<T>, OpExp, ConstOne>;
-    using OpLog = Bind<Vec::Log<T>, OpAdds>;
+    using OpLog = typename StableLog1p<T, OpExp>::OpOut;
     using VarInvLnBase = Placeholder::Var<float, 3>;
     using OpMulInvLnBase = Bind<Vec::Muls<T>, OpLog, VarInvLnBase>;
     using OpAdd = Bind<Vec::Add<T>, OpMax, OpMulInvLnBase>;
@@ -160,9 +173,7 @@ struct LogAddExpFullWithCastCompute {
     using VarLnBase = Placeholder::Var<float, 2>;
     using OpMulLnBase = Bind<Vec::Muls<float>, OpShift, VarLnBase>;
     using OpExp = Bind<Vec::Exp<float>, OpMulLnBase>;
-    using ConstOne = MAKE_CONST(float, 1);
-    using OpAdds = Bind<Vec::Adds<float>, OpExp, ConstOne>;
-    using OpLog = Bind<Vec::Log<float>, OpAdds>;
+    using OpLog = typename StableLog1p<float, OpExp>::OpOut;
     using VarInvLnBase = Placeholder::Var<float, 3>;
     using OpMulInvLnBase = Bind<Vec::Muls<float>, OpLog, VarInvLnBase>;
     using OpAdd = Bind<Vec::Add<float>, OpMax, OpMulInvLnBase>;
