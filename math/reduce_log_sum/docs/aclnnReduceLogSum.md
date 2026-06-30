@@ -109,7 +109,7 @@ aclnnStatus aclnnReduceLogSum(
       <td>输出</td>
       <td>表示计算后的结果。</td>
       <td>支持空Tensor。<br>数据类型需与data一致。<br>shape需要是data经过计算后的shape。</td>
-      <td>FLOAT16、FLOAT32</td>
+      <td>FLOAT16、FLOAT32、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>

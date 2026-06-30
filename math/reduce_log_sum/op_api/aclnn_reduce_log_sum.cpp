@@ -36,6 +36,8 @@ constexpr size_t MAX_MASK_LEN = 64;
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT};
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_950 = {
+    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16};
 
 static bool CheckNotNull(const aclTensor* data, const aclIntArray* axes, const aclTensor* reduce)
 {
@@ -48,8 +50,13 @@ static bool CheckNotNull(const aclTensor* data, const aclIntArray* axes, const a
 static bool CheckDtypeValid(const aclTensor* data, const aclTensor* reduce)
 {
     // 检查data和reduce的数据类型是否在支持列表内
-    OP_CHECK_DTYPE_NOT_SUPPORT(data, DTYPE_SUPPORT_LIST, return false);
-    OP_CHECK_DTYPE_NOT_SUPPORT(reduce, DTYPE_SUPPORT_LIST, return false);
+    if (IsRegBase()) {
+        OP_CHECK_DTYPE_NOT_SUPPORT(data, DTYPE_SUPPORT_LIST_950, return false);
+        OP_CHECK_DTYPE_NOT_SUPPORT(reduce, DTYPE_SUPPORT_LIST_950, return false);
+    } else {
+        OP_CHECK_DTYPE_NOT_SUPPORT(data, DTYPE_SUPPORT_LIST, return false);
+        OP_CHECK_DTYPE_NOT_SUPPORT(reduce, DTYPE_SUPPORT_LIST, return false);
+    }
 
     return true;
 }
