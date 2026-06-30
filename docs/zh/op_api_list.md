@@ -298,6 +298,7 @@
 | [aclnnStack](../../conversion/pack/docs/aclnnStack.md)          | 沿着新维度连接张量序列。                                     | 默认确定性实现| 默认确定性实现  |
 | [aclnnStd](../../math/reduce_std_v2/docs/aclnnStd.md)           | 计算指定维度(dim)的标准差，这个dim可以是单个维度，维度列表或者None。 | 默认确定性实现| 默认确定性实现|
 | [aclnnStdMeanCorrection](../../math/reduce_std_with_mean/docs/aclnnStdMeanCorrection.md) | 计算样本标准差和均值。                                       | 默认确定性实现| 默认确定性实现|
+| [aclnnStridedSlice](../../conversion/strided_slice/docs/aclnnStridedSlice.md) | 按照指定的起始、结束位置和步长，从输入张量中提取一个子张量。 | - | 默认确定性实现 |
 | [aclnnStridedSliceAssignV2](../../conversion/strided_slice_assign_v2/docs/aclnnStridedSliceAssignV2.md) | StridedSliceAssign是一种张量切片赋值操作，它可以将张量inputValue的内容，赋值给目标张量varRef中的指定位置。 | 默认确定性实现| - |
 | [aclnnSub&aclnnInplaceSub](../../math/sub/docs/aclnnSub&aclnnInplaceSub.md) | 完成减法计算，被减数按alpha进行缩放。                        | 默认确定性实现| 默认确定性实现 |
 | [aclnnSubs&aclnnInplaceSubs](../../math/sub/docs/aclnnSubs&aclnnInplaceSubs.md) | 完成减法计算，被减数按alpha进行缩放。                        | 默认确定性实现| 默认确定性实现 |
