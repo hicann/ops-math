@@ -26,12 +26,12 @@ extern "C" {
  * @domain aclnn_math
  * 参数描述：
  * @param [in]   tensors
- * 输入TensorList，数据类型支持 INT32, INT64, FLOAT16, BFLOAT16, FLOAT32。
- * tensors中的tensor需要满足broadcast关系。
+ * 输入TensorList，数据类型支持 INT32，INT64，FLOAT16，BFLOAT16，FLOAT32。
+ * tensors中的tensor需要满足shape一致。
  * 支持非连续的Tensor，数据格式支持ND。
  * @param [out]  out
- * 输出Tensor，数据类型支持 INT32, INT64, FLOAT16, BFLOAT16, FLOAT32。
- * shape需要与tensors中的tensor做broadcast后的shape一致。
+ * 输出Tensor，数据类型支持 INT32，INT64，FLOAT16，BFLOAT16，FLOAT32。
+ * shape需要与tensors中的tensor的shape一致。
  * 支持非连续的Tensor，数据格式支持ND。
  * @param [out]  workspaceSize 返回用户需要在npu device侧申请的workspace大小。
  * @param [out]  executor 返回op执行器，包含了算子计算流程。
@@ -50,8 +50,8 @@ ACLNN_API aclnnStatus aclnnAddNGetWorkspaceSize(const aclTensorList *tensors, ac
  * api计算的基本路径：
 ```mermaid
 flowchart LR
-   A[(tensors)]-->B([l0op::Contiguous])-->C[(l0op::BroadcastTo)]-->D([l0op::AddN])
-   -->E([l0op::ViewCopy])-->F[(out)]
+   A[(tensors)]-->B([l0op::Contiguous])-->C([l0op::AddN])
+   -->D([l0op::ViewCopy])-->E[(out)]
 ```
  * @param [in] workspace: 在npu device侧申请的workspace内存起址。
  * @param [in] workspaceSize: 在npu device侧申请的workspace大小，由第一段接口aclnnAddNGetWorkspaceSize获取。

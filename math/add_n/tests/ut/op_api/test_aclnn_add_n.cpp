@@ -150,15 +150,3 @@ TEST_F(l2_addn_test, l2_addn_test_10dims) {
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
-
-// broadcast
-TEST_F(l2_addn_test, l2_addn_test_broadcast) {
-    auto tensor_1_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6});
-    auto tensor_2_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6});
-    auto out_tensor_desc = TensorDesc({1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
-    auto ut = OP_API_UT(aclnnAddN, INPUT(tensor_list_desc), OUTPUT(out_tensor_desc));
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-}

@@ -70,8 +70,8 @@ aclnnStatus aclnnAddN(
       <td>tensors（const aclTensorList*）</td>
       <td>输入</td>
       <td>输入TensorList，对输入tensors进行主元素相加求和操作。</td>
-      <td><li>支持空TensorList，此时输出为空Tensor。</li><li>tensors中的Tensor需要满足<a href="../../../docs/zh/context/broadcast关系.md" class="md-link">broadcast关系</a>。</li><li>不支持标量Tensor（0维度）。</li></td>
-      <td>INT32, INT64, FLOAT16, BFLOAT16, FLOAT32</td>
+      <td><li>支持空TensorList，此时输出为空Tensor。</li><li>tensors中的Tensor需要满足shape一致。</li></td>
+      <td>INT32，INT64，FLOAT16，BFLOAT16，FLOAT32</td>
       <td>ND</td>
       <td>1~8</td>
       <td>√</td>
@@ -80,7 +80,7 @@ aclnnStatus aclnnAddN(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>输出Tensor，存储求和结果。</td>
-      <td><li>不支持空Tensor。</li><li>数据类型需与tensors中的Tensor保持一致。</li><li>shape需要与tensors中的Tensor做broadcast后的shape一致。</li></td>
+      <td><li>不支持空Tensor。</li><li>数据类型需与tensors中的Tensor保持一致。</li><li>shape需要与tensors中的Tensor的shape一致。</li></td>
       <td>数据类型与tensors保持一致。</td>
       <td>ND</td>
       <td>1~8</td>
@@ -133,21 +133,18 @@ aclnnStatus aclnnAddN(
     <td>tensors是空指针，或tensors中的某个Tensor是空指针，或out是空指针。</td>
   </tr>
   <tr>
-    <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
-    <td rowspan="6">161002</td>
+    <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+    <td rowspan="5">161002</td>
     <td>tensors或out的数据类型不在支持的范围之内。</td>
   </tr>
   <tr>
-    <td>tensors或out的shape维度超过8，或为0维度（标量）。</td>
+    <td>tensors或out的shape维度超过8。</td>
   </tr>
   <tr>
     <td>tensors中的Tensor数据类型不一致。</td>
   </tr>
   <tr>
-    <td>tensors中的Tensor无法进行broadcast。</td>
-  </tr>
-  <tr>
-    <td>out的shape与tensors broadcast后的shape不一致。</td>
+    <td>tensors中的Tensor shape不一致。</td>
   </tr>
   <tr>
     <td>当前NPU架构不支持此算子，仅支持ASCEND910B(A2)和ASCEND910_93(A3)系列。</td>
@@ -189,10 +186,9 @@ aclnnStatus aclnnAddN(
   <details>
   <summary>主场景说明：</summary>
 
-  - 数据类型：支持INT32, INT64, FLOAT16, BFLOAT16, FLOAT32。
+  - 数据类型：支持INT32，INT64，FLOAT16，BFLOAT16，FLOAT32。
   - 数据格式：仅支持ND格式。
-  - 参数Shape：输入Tensor维度范围为1~8，不支持标量Tensor。
-  - Broadcast：输入TensorList中的Tensor需要满足broadcast关系。
+  - 参数Shape：输入Tensor维度范围为1~8，需要满足shape一致。
 
   </details>
 
