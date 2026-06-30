@@ -17,6 +17,7 @@
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/tensor_desc.h"
+#include "opdev/platform.h"
 
 using namespace std;
 
@@ -30,10 +31,15 @@ protected:
     {
         cout << "l2_trace_test TearDown" << endl;
     }
+    void TearDown() override
+    {
+        op::SetPlatformNpuArch(NpuArch::DAV_2201);
+    }
 };
 
 TEST_F(l2_trace_test, case_fp32_4x4)
 {
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({4, 4}, ACL_FLOAT, ACL_FORMAT_ND);
     auto outDesc = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND);
 
@@ -46,6 +52,7 @@ TEST_F(l2_trace_test, case_fp32_4x4)
 
 TEST_F(l2_trace_test, case_fp16_8x8)
 {
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({8, 8}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto outDesc = TensorDesc({}, ACL_FLOAT16, ACL_FORMAT_ND);
 
@@ -58,6 +65,7 @@ TEST_F(l2_trace_test, case_fp16_8x8)
 
 TEST_F(l2_trace_test, case_int32_3x5)
 {
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({3, 5}, ACL_INT32, ACL_FORMAT_ND);
     auto outDesc = TensorDesc({}, ACL_INT64, ACL_FORMAT_ND);
 
@@ -70,6 +78,7 @@ TEST_F(l2_trace_test, case_int32_3x5)
 
 TEST_F(l2_trace_test, case_bf16_4x4)
 {
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto selfDesc = TensorDesc({4, 4}, ACL_BF16, ACL_FORMAT_ND);
     auto outDesc = TensorDesc({}, ACL_BF16, ACL_FORMAT_ND);
 
@@ -82,6 +91,7 @@ TEST_F(l2_trace_test, case_bf16_4x4)
 
 TEST_F(l2_trace_test, case_nullptr)
 {
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     auto outDesc = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnTrace, INPUT((aclTensor*)nullptr), OUTPUT(outDesc));
