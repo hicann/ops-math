@@ -54,15 +54,15 @@ uint32_t LinSpaceParaCheck(const CpuKernelContext &ctx, int64_t &num_value) {
   switch (num_type) {
     case DT_INT32:
     {
-      int32_t *num32 = reinterpret_cast<int32_t *>(tensor_num->GetData());
-      num_value = static_cast<int64_t>(*num32);
-      break;
+        int32_t *num32 = static_cast<int32_t *>(tensor_num->GetData());
+        num_value = static_cast<int64_t>(*num32);
+        break;
     }
     case DT_INT64:
     {
-      int64_t *num64 = reinterpret_cast<int64_t *>(tensor_num->GetData());
-      num_value = *num64;
-      break;
+        int64_t *num64 = static_cast<int64_t *>(tensor_num->GetData());
+        num_value = *num64;
+        break;
     }
     default:
       KERNEL_LOG_ERROR("num datatype[%d] must be DT_INT32 or DT_INT64 fail.", num_type);
@@ -74,20 +74,20 @@ uint32_t LinSpaceParaCheck(const CpuKernelContext &ctx, int64_t &num_value) {
 
 template <typename T>
 uint32_t LinSpaceCompute(const CpuKernelContext &ctx, int64_t num_value) {
-  T *start_value = reinterpret_cast<T *>(ctx.Input(kFirstInputIndex)->GetData());
-  T *stop_value = reinterpret_cast<T *>(ctx.Input(kSecondInputIndex)->GetData());
-  T *output_value = reinterpret_cast<T *>(ctx.Output(kFirstOutputIndex)->GetData());
+    T *start_value = static_cast<T *>(ctx.Input(kFirstInputIndex)->GetData());
+    T *stop_value = static_cast<T *>(ctx.Input(kSecondInputIndex)->GetData());
+    T *output_value = static_cast<T *>(ctx.Output(kFirstOutputIndex)->GetData());
 
-  output_value[0] = *start_value;
-  if (num_value > 1) {
-      T interval = (*stop_value - *start_value) / (num_value - 1);
-      for (int64_t i = 1; i < num_value - 1; i++) {
-        output_value[i] = *start_value + interval * i;
-      }
-      output_value[num_value - 1] = *stop_value;
-  }
+    output_value[0] = *start_value;
+    if (num_value > 1) {
+        T interval = (*stop_value - *start_value) / (num_value - 1);
+        for (int64_t i = 1; i < num_value - 1; i++) {
+            output_value[i] = *start_value + interval * i;
+        }
+        output_value[num_value - 1] = *stop_value;
+    }
 
-  return KERNEL_STATUS_OK;
+    return KERNEL_STATUS_OK;
 }
 
 uint32_t LinSpaceCpuKernel::Compute(CpuKernelContext &ctx) {

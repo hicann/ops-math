@@ -16,8 +16,10 @@
 #include "arch35/xlogy_kernel.h"
 #include "arch35/xlogy_tiling_struct.h"
 
-using TilingData4 = XlogyTilingData<4>;
-using TilingData8 = XlogyTilingData<8>;
+constexpr int64_t kRank4D = 4;
+constexpr int64_t kRank8D = 8;
+using TilingData4 = XlogyTilingData<kRank4D>;
+using TilingData8 = XlogyTilingData<kRank8D>;
 
 template<int RANK>
 __global__ __aicore__ void xlogy(

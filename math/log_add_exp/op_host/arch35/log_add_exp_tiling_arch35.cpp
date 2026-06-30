@@ -74,7 +74,6 @@ ge::graphStatus LogAddExpTiling::CheckDtype(ge::DataType& input0Dtype)
     auto outputDesc = context_->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
     ge::DataType outputDtype = outputDesc->GetDataType();
-
     if (input0Dtype != input1Dtype || input0Dtype != outputDtype) {
         std::string reasonMsg = "The dtypes of x1(" +
                                 ge::TypeUtils::DataTypeToSerialString(input0Dtype) + "), x2(" +

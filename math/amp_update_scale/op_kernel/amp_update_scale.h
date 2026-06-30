@@ -20,6 +20,10 @@
 
 using namespace AscendC;
 constexpr uint32_t BlockBytes = 32;
+// IEEE 754 float32 位字段常量
+constexpr uint32_t FLOAT32_ABS_MASK = 0x7FFFFFFF;
+constexpr int FLOAT32_EXP_SHIFT = 23;
+constexpr uint32_t FLOAT32_EXP_MASK = 0xFF;
 
 template<typename T>
 class AmpUpdateScale {
@@ -83,7 +87,7 @@ class AmpUpdateScale {
         __aicore__ inline bool IsFinite(float value)
         {
             uint32_t tmpValue = *((uint32_t*)&value);
-            if ((tmpValue & 0x7FFFFFFF) >> 23 == 0xFF) {
+            if ((tmpValue & FLOAT32_ABS_MASK) >> FLOAT32_EXP_SHIFT == FLOAT32_EXP_MASK) {
                 return false;
             } else {
                 return true;

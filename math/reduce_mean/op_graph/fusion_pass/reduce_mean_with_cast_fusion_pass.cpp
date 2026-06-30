@@ -105,7 +105,6 @@ std::vector<PatternUniqPtr> ReduceMeanWithCastFusionPass::Patterns()
         })
         .IrDefOutputs({{"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""}})
         .Build();
-
     // Connect x to ReduceMeanWithCast input 0
     if (es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(),
         reduceMeanWithCast, 0) != GRAPH_SUCCESS) {
@@ -233,7 +232,6 @@ GraphUniqPtr ReduceMeanWithCastFusionPass::Replacement(const std::unique_ptr<Mat
                     es::CreateFrom(static_cast<int64_t>(dataType))},
             })
             .Build();
-
         // Connect x to Cast input 0
         if (es::AddEdgeAndUpdatePeerDesc(*graph, *rX.GetProducer(), rX.GetProducerOutIndex(),
             castNode, 0) != GRAPH_SUCCESS) {

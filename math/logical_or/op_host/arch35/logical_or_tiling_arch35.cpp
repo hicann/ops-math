@@ -47,7 +47,6 @@ ge::graphStatus LogicalOrTiling::DoOpTiling()
     auto input1Desc = context_->GetInputDesc(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, input1Desc);
     ge::DataType input1DType = input1Desc->GetDataType();
-
     if (input0DType != input1DType) {
         std::string dtypesStr = ge::TypeUtils::DataTypeToSerialString(input0DType) + " and " +
                                 ge::TypeUtils::DataTypeToSerialString(input1DType);

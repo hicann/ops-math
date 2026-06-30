@@ -165,7 +165,6 @@ std::unique_ptr<Graph> HistogramFusionPass::Replacement(const std::unique_ptr<Ma
 
     std::vector<es::EsTensorHolder> outputs = {output};
     GraphUniqPtr replaceGraph = replaceGraphBuilder.BuildAndReset(outputs);
-
     if (InferShape(replaceGraph, subgraphInputs) != SUCCESS) {
         OP_LOGE(kPassName.c_str(), "Infershape for replacement failed.");
         return nullptr;
