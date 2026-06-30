@@ -3058,6 +3058,16 @@
   </tr>
   <tr>
     <td>random</td>
+    <td><a href="../../random/stateless_truncated_normal_v2/README.md">stateless_truncated_normal_v2</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td> </td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>生成截断正态分布的随机数</td>
+  </tr>
+  <tr>
+    <td>random</td>
     <td><a href="../../random/truncated_normal_v2/README.md">truncated_normal_v2</a></td>
     <td> </td>
     <td> </td>

@@ -35,6 +35,7 @@ ops_math:
       - "random/stateless_random_uniform_v3"
       - "random/stateless_uniform"
       - "random/stateless_random_normal_v3"
+      - "random/stateless_truncated_normal_v2"
       - "random/stateless_normal"
       - "random/stateless_random"
   llt:
@@ -728,6 +729,10 @@ VC6@ops-math:
         - ops/ops-math/random/stateless_normal/
         - ops/ops-math/random/stateless_normal/op_host/
         - ops/ops-math/random/stateless_normal/op_kernel/
+        # stateless_truncated_normal_v2
+        - ops/ops-math/random/stateless_truncated_normal_v2/
+        - ops/ops-math/random/stateless_truncated_normal_v2/op_host/
+        - ops/ops-math/random/stateless_truncated_normal_v2/op_kernel/
         # stateless_random_normal_v2
         - ops/ops-math/random/stateless_random_normal_v2/op_host/
         - ops/ops-math/random/stateless_random_normal_v2/op_kernel/
@@ -787,6 +792,8 @@ VC6@ops-math:
         - ops/ops-math/random/stateless_random_normal_v3/tests/
         # stateless_normal
         - ops/ops-math/random/stateless_normal/tests/
+        # stateless_truncated_normal_v2
+        - ops/ops-math/random/stateless_truncated_normal_v2/tests/
         # stateless_random_uniform_v2
         - ops/ops-math/random/stateless_random_uniform_v2/tests/
         # stateless_random_uniform_v3
@@ -1053,6 +1060,9 @@ conversion@ops-math:
         - ops/ops-math/random/stateless_random_normal_v3/op_api/
         - ops/ops-math/random/stateless_random_normal_v3/README.md
         - ops/ops-math/random/stateless_random_normal_v3/op_graph/
+        - ops/ops-math/random/stateless_truncated_normal_v2/op_api/
+        - ops/ops-math/random/stateless_truncated_normal_v2/README.md
+        - ops/ops-math/random/stateless_truncated_normal_v2/op_graph/
         - ops/ops-math/random/stateless_normal/op_api/
         - ops/ops-math/random/stateless_normal/README.md
         - ops/ops-math/random/stateless_normal/op_graph/
@@ -1193,6 +1203,7 @@ conversion@ops-math:
         - ops/ops-math/random/sim_thread_exponential/tests/
         - ops/ops-math/random/stateless_random_uniform_v2/examples/
         - ops/ops-math/random/stateless_random_uniform_v3/examples/
+        - ops/ops-math/random/stateless_truncated_normal_v2/examples/
         - ops/ops-math/random/stateless_uniform/examples/
         - ops/ops-math/random/stateless_random/examples/
         - ops/ops-math/random/stateless_normal/examples/
