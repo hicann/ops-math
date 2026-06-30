@@ -101,11 +101,11 @@ uint64_t PadACTiling::GetSizeOfBlockAlign(uint64_t inputSize, uint64_t alignBloc
     return (inputSize + alignBlockSize - 1) / alignBlockSize * alignBlockSize;
 }
 
-void PadACTiling::DoFindSplitAxisByInput(bool isBigLastDim)
+void PadACTiling::FindSplitAxisLoop(bool isBigLastDim, uint64_t& dimSizeInUb, uint64_t& dimSizeInLast4Axis)
 {
-    OP_LOGD(context_, "Start PadACTiling CalculateTilingKey DoFindSplitAxis.");
-    uint64_t dimSizeInUb = dtypeBytes_;
-    uint64_t dimSizeInLast4Axis = dimSizeInUb;
+    OP_LOGD(context_, "Start PadACTiling CalculateTilingKey FindSplitAxisLoop.");
+    dimSizeInUb = dtypeBytes_;
+    dimSizeInLast4Axis = dimSizeInUb;
     // 找到切分轴
     for (int64_t i = dimNum_ - 1; i >= 0; i--) {
         if (isBigLastDim && i == static_cast<int64_t>(dimNum_ - 1)) {
@@ -122,6 +122,13 @@ void PadACTiling::DoFindSplitAxisByInput(bool isBigLastDim)
             break;
         }
     }
+}
+
+void PadACTiling::DoFindSplitAxisByInput(bool isBigLastDim)
+{
+    uint64_t dimSizeInUb;
+    uint64_t dimSizeInLast4Axis;
+    FindSplitAxisLoop(isBigLastDim, dimSizeInUb, dimSizeInLast4Axis);
     // 维度超过4，满载后4个轴
     if (dimNum_ - ubAxis_ > PAD_DIM_INDEX_FOURTH) {
         ubAxis_ = dimNum_ - PAD_DIM_INDEX_FOURTH;
@@ -146,25 +153,9 @@ void PadACTiling::DoFindSplitAxisByInput(bool isBigLastDim)
 
 void PadACTiling::DoFindSplitAxis(bool isBigLastDim)
 {
-    OP_LOGD(context_, "Start PadACTiling CalculateTilingKey DoFindSplitAxis.");
-    uint64_t dimSizeInUb = dtypeBytes_;
-    uint64_t dimSizeInLast4Axis = dimSizeInUb;
-    // 找到切分轴
-    for (int64_t i = dimNum_ - 1; i >= 0; i--) {
-        if (isBigLastDim && i == static_cast<int64_t>(dimNum_ - 1)) {
-            dimSizeInUb = GetSizeOfBlockAlign(dimSizeInUb * tilingData_->outShape[i], blockSize_);
-        } else {
-            dimSizeInUb *= tilingData_->outShape[i];
-        }
-        // 切分超过4根轴时只切最后4根轴，记录下最后4根轴的大小
-        if (i == dimNum_ - PAD_DIM_INDEX_FOURTH) {
-            dimSizeInLast4Axis = dimSizeInUb;
-        }
-        if (dimSizeInUb >= bufferSize_) {
-            ubAxis_ = i;
-            break;
-        }
-    }
+    uint64_t dimSizeInUb;
+    uint64_t dimSizeInLast4Axis;
+    FindSplitAxisLoop(isBigLastDim, dimSizeInUb, dimSizeInLast4Axis);
 
     // 维度超过4，满载后4个轴
     if (dimNum_ - ubAxis_ > PAD_DIM_INDEX_FOURTH) {

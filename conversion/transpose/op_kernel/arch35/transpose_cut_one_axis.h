@@ -99,18 +99,11 @@ __aicore__ inline void TransposeCutOneAxis<T>::Init(
 template <typename T>
 __aicore__ inline void TransposeCutOneAxis<T>::Process()
 {
-    if (blockIdx_ >= tiling_->realCoreNum) {
+    if (!ParseMultiCoreRange(
+            blockIdx_, tiling_->realCoreNum, tiling_->blkFactor, tiling_->blkTailFactor, blkProcessNum_,
+            blkProcessIdxStart_, blkProcessIdxEnd_)) {
         return;
     }
-    blkProcessNum_ = tiling_->blkFactor;
-    blkProcessIdxStart_ = blockIdx_ * tiling_->blkFactor;
-    if (blockIdx_ < tiling_->blkTailFactor) {
-        blkProcessNum_ += 1;
-        blkProcessIdxStart_ += blockIdx_;
-    } else {
-        blkProcessIdxStart_ += tiling_->blkTailFactor;
-    }
-    blkProcessIdxEnd_ = blkProcessIdxStart_ + blkProcessNum_;
     ProcessPerCore();
 }
 

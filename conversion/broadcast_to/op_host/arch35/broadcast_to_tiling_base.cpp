@@ -26,15 +26,25 @@ namespace brcto {
 static constexpr int64_t DIM_NUM_THRESHOLD_FOR_R4_SIZE = 5; // 触发尾轴4D尺寸计算的维度数阈值
 static constexpr int64_t TRAILING_DIM_NUM_FOR_R4_SIZE = 4;  // 用于4D尺寸计算的尾轴维度数
 
-ge::graphStatus GetABFlag(const gert::TilingContext* context, const gert::Shape& inShape, const gert::Shape& outShape,
-                          std::array<bool, MAX_DIM_NUM>& abInfo)
+ge::graphStatus CheckSameDimNum(
+    const gert::TilingContext* context, const gert::Shape& inShape, const gert::Shape& outShape, size_t& dimNum)
 {
-    auto inDimNum = inShape.GetDimNum();
-    if (inDimNum != outShape.GetDimNum()) {
-        std::string dimMsg = std::to_string(inDimNum) + " and " + std::to_string(outShape.GetDimNum());
+    dimNum = inShape.GetDimNum();
+    if (dimNum != outShape.GetDimNum()) {
+        std::string dimMsg = std::to_string(dimNum) + " and " + std::to_string(outShape.GetDimNum());
         std::string reasonMsg = "The input and output shape dim num should be equal.";
         OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
             context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus GetABFlag(const gert::TilingContext* context, const gert::Shape& inShape, const gert::Shape& outShape,
+                          std::array<bool, MAX_DIM_NUM>& abInfo)
+{
+    size_t inDimNum;
+    if (CheckSameDimNum(context, inShape, outShape, inDimNum) != ge::GRAPH_SUCCESS) {
         return ge::GRAPH_FAILED;
     }
 
@@ -47,12 +57,8 @@ ge::graphStatus GetABFlag(const gert::TilingContext* context, const gert::Shape&
 
 ge::graphStatus MergeAxis(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape)
 {
-    auto dimNum = inShape.GetDimNum();
-    if (dimNum != outShape.GetDimNum()) {
-        std::string dimMsg = std::to_string(dimNum) + " and " + std::to_string(outShape.GetDimNum());
-        std::string reasonMsg = "The input and output shape dim num should be equal.";
-        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
-            context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
+    size_t dimNum;
+    if (CheckSameDimNum(context, inShape, outShape, dimNum) != ge::GRAPH_SUCCESS) {
         return ge::GRAPH_FAILED;
     }
 
@@ -89,12 +95,8 @@ ge::graphStatus MergeAxis(const gert::TilingContext* context, gert::Shape& inSha
 
 ge::graphStatus DeleteOneSizeAxis(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape)
 {
-    auto dimNum = inShape.GetDimNum();
-    if (dimNum != outShape.GetDimNum()) {
-        std::string dimMsg = std::to_string(dimNum) + " and " + std::to_string(outShape.GetDimNum());
-        std::string reasonMsg = "The input and output shape dim num should be equal.";
-        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
-            context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
+    size_t dimNum;
+    if (CheckSameDimNum(context, inShape, outShape, dimNum) != ge::GRAPH_SUCCESS) {
         return ge::GRAPH_FAILED;
     }
 
@@ -143,16 +145,12 @@ void AdjustShapesToSameDimNum(gert::Shape& inShape, size_t outDimNum)
 static ge::graphStatus CheckBroadcastRule(const gert::TilingContext* context, const gert::Shape& inShape,
                                           const gert::Shape& outShape)
 {
-    auto outDimNum = outShape.GetDimNum();
-    if (inShape.GetDimNum() != outDimNum) {
-        std::string dimMsg = std::to_string(inShape.GetDimNum()) + " and " + std::to_string(outDimNum);
-        std::string reasonMsg = "The input and output shape dim num should be equal.";
-        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
-            context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
+    size_t dimNum;
+    if (CheckSameDimNum(context, inShape, outShape, dimNum) != ge::GRAPH_SUCCESS) {
         return ge::GRAPH_FAILED;
     }
 
-    for (size_t i = 0; i < outDimNum; i++) {
+    for (size_t i = 0; i < dimNum; i++) {
         if (inShape[i] != 1 && outShape[i] != inShape[i]) {
             return ge::GRAPH_FAILED;
         }

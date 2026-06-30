@@ -259,6 +259,24 @@ private:
         __local_mem__ GatherRangeType* midIdxAddr, __local_mem__ GatherRangeType* leftIdxAddr,
         __local_mem__ GatherRangeType* rightIdxAddr);
 
+    // 由 padRow 计算 H 轴 pad 折叠的 srcRowOffset / dstRowOffset
+    __aicore__ inline void CalcHAxisPadRowOffset(
+        int64_t padRow, int64_t padCount, bool isLeftPad, int64_t leftPadH, int64_t outH, int64_t width,
+        int64_t& srcRowOffset, int64_t& dstRowOffset)
+    {
+        int64_t srcRow;
+        int64_t dstRow;
+        if (isLeftPad) {
+            srcRow = padCount - 1 - padRow;
+            dstRow = IS_REFLECT ? (2 * leftPadH - srcRow) : (2 * leftPadH - 1 - srcRow);
+        } else {
+            srcRow = leftPadH + outH + padRow;
+            dstRow = IS_REFLECT ? (leftPadH + outH - 2 - padRow) : (leftPadH + outH - 1 - padRow);
+        }
+        srcRowOffset = srcRow * width;
+        dstRowOffset = dstRow * width;
+    }
+
     /**
      * @brief 折叠 H 轴的 pad 数据（GatherAddScatter 方式）
      *
@@ -1791,16 +1809,8 @@ __aicore__ inline void PadV3GradGather<T,modeName>::FoldHAxisPad(
         if (nPerVF < 1) nPerVF = 1;
 
         for (int64_t padRow = 0; padRow < padCount; ++padRow) {
-            int64_t srcRow, dstRow;
-            if (isLeftPad) {
-                srcRow = padCount - 1 - padRow;
-                dstRow = IS_REFLECT ? (2 * leftPadH - srcRow) : (2 * leftPadH - 1 - srcRow);
-            } else {
-                srcRow = leftPadH + outH + padRow;
-                dstRow = IS_REFLECT ? (leftPadH + outH - 2 - padRow) : (leftPadH + outH - 1 - padRow);
-            }
-            const int64_t srcRowOffset = srcRow * width;
-            const int64_t dstRowOffset = dstRow * width;
+            int64_t srcRowOffset, dstRowOffset;
+            CalcHAxisPadRowOffset(padRow, padCount, isLeftPad, leftPadH, outH, width, srcRowOffset, dstRowOffset);
 
             for (int64_t nBase = 0; nBase < nFactor; nBase += nPerVF) {
                 int64_t curN = Std::min<int64_t>(nPerVF, nFactor - nBase);
@@ -1892,16 +1902,8 @@ __aicore__ inline void PadV3GradGather<T,modeName>::FoldHAxisPad(
             __local_mem__ PromoteDataT* nBaseAddr = baseAddr + n * static_cast<int64_t>(nStride);
 
             for (int64_t padRow = 0; padRow < padCount; ++padRow) {
-                int64_t srcRow, dstRow;
-                if (isLeftPad) {
-                    srcRow = padCount - 1 - padRow;
-                    dstRow = IS_REFLECT ? (2 * leftPadH - srcRow) : (2 * leftPadH - 1 - srcRow);
-                } else {
-                    srcRow = leftPadH + outH + padRow;
-                    dstRow = IS_REFLECT ? (leftPadH + outH - 2 - padRow) : (leftPadH + outH - 1 - padRow);
-                }
-                const int64_t srcRowOffset = srcRow * width;
-                const int64_t dstRowOffset = dstRow * width;
+                int64_t srcRowOffset, dstRowOffset;
+                CalcHAxisPadRowOffset(padRow, padCount, isLeftPad, leftPadH, outH, width, srcRowOffset, dstRowOffset);
 
                 int64_t remainC = factor;
                 int64_t cBase = 0;

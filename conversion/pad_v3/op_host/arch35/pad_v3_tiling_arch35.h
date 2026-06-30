@@ -103,6 +103,7 @@ private:
     uint64_t GetSizeOfBlockAlign(uint64_t inputSize, uint64_t alignBlockSize);
     void DoFindSplitAxis(bool isBigLastDim);
     void DoFindSplitAxisByInput(bool isBigLastDim);
+    void FindSplitAxisLoop(bool isBigLastDim, uint64_t& dimSizeInUb, uint64_t& dimSizeInLast4Axis);
     void CalculateGatherOrScatter();
     void CaculateTilingParams();
     void CircularOnlyLastTiling(uint64_t lastShapeSizeAlign);

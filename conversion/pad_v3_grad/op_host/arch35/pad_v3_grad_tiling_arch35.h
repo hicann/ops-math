@@ -94,6 +94,7 @@ private:
     void TilingInfoTuneForNormal(uint64_t lastShapeSizeAlign);
     void CalculateTilingKeyMirror();
     void CalculateTilingKeyCircular();
+    bool ClampBufferSizeAndCheckBigShape(uint64_t lastShapeSizeAlign);
     void DoTilingWithSIMDMirror();
     void DoTilingWithSIMDCircular();
 

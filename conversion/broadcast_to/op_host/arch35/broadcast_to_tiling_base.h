@@ -82,6 +82,8 @@ constexpr float coreFactor = 0.75;
 constexpr int64_t LAST_DIM_GATE = 8;
 
 ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape);
+ge::graphStatus CheckSameDimNum(
+    const gert::TilingContext* context, const gert::Shape& inShape, const gert::Shape& outShape, size_t& dimNum);
 ge::graphStatus GetABFlag(const gert::TilingContext* context, const gert::Shape& inShape, const gert::Shape& outShape,
                           std::array<bool, MAX_DIM_NUM>& abInfo);
 void AdjustShapesToSameDimNum(gert::Shape& inShape, size_t outDimNum);

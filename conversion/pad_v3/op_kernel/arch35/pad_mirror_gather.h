@@ -371,30 +371,47 @@ private:
         }
     }
 
-    __aicore__ inline void CopyOutLeftPadBw(
-        uint16_t ubAxisInCopyNum, const uint64_t* inIndex, LocalTensor<T>& outLocalBw, uint32_t inLeftPadNum,
-        uint32_t inLeftPadStart, OutIndicesSet* totalOutIdx)
+    __aicore__ inline void CopyOutPadBwInnerLoop(
+        LocalTensor<T>& outLocalBwReal, LocalTensor<T>& outLocalBwTmp,
+        uint32_t copyStartOffset, uint32_t copyOutNum, uint32_t alignOffset,
+        DataCopyExtParams& copyOutParams, DataCopyExtParams& outParamAlign,
+        OutIndicesSet* totalOutIdx, uint64_t baseOffset)
     {
-        // reflect:
-        //     左pad:   outIdx=leftNum-inIdx
-        // symmetric:
-        //     左pad:   outIdx=leftNum-1-inIdx
-
-        // ub切分轴，leftpad
-        uint64_t inIdx = inIndex[ubAxis_] + ubAxisInCopyNum - 1 - inLeftPadStart;
-        if constexpr (IS_REFLECT) {
-            totalOutIdx[ubAxis_].outIdx[0] = tdPtr_->leftPad[ubAxis_] - inIdx;
-            totalOutIdx[ubAxis_].count = 1;
-        } else {
-            totalOutIdx[ubAxis_].outIdx[0] = tdPtr_->leftPad[ubAxis_] - 1 - inIdx;
-            totalOutIdx[ubAxis_].count = 1;
+        for (int32_t o3 = 0; o3 < totalOutIdx[CONST3].count; o3++) {
+            uint64_t outAddr = baseOffset + totalOutIdx[CONST3].outIdx[o3] * tdPtr_->outStride[CONST3];
+            if (copyOutNum > 0) {
+                DataCopyPad(outputGm_[outAddr + alignOffset], outLocalBwReal[copyStartOffset], copyOutParams);
+            }
+            if (alignOffset > 0) {
+                DataCopyPad(outputGm_[outAddr], outLocalBwTmp, outParamAlign);
+            }
         }
+    }
 
-        LocalTensor<T> outLocalBwReal = outLocalBw[BLOCK_NUM * CONST2];
-        LocalTensor<T> outLocalBwTmp = outLocalBw[0];
+    __aicore__ inline void CopyOutPadBwLoopImpl(
+        LocalTensor<T>& outLocalBwReal, LocalTensor<T>& outLocalBwTmp,
+        uint32_t copyStartOffset, uint32_t copyOutNum, uint32_t alignOffset,
+        DataCopyExtParams& copyOutParams, DataCopyExtParams& outParamAlign,
+        OutIndicesSet* totalOutIdx)
+    {
+        for (int32_t o0 = 0; o0 < totalOutIdx[0].count; o0++) {
+            uint64_t o0Offset = totalOutIdx[0].outIdx[o0] * tdPtr_->outStride[0];
+            for (int32_t o1 = 0; o1 < totalOutIdx[1].count; o1++) {
+                uint64_t o1Offset = totalOutIdx[1].outIdx[o1] * tdPtr_->outStride[1];
+                for (int32_t o2 = 0; o2 < totalOutIdx[CONST2].count; o2++) {
+                    uint64_t baseOffset = o0Offset + o1Offset +
+                        totalOutIdx[CONST2].outIdx[o2] * tdPtr_->outStride[CONST2];
+                    CopyOutPadBwInnerLoop(outLocalBwReal, outLocalBwTmp, copyStartOffset,
+                        copyOutNum, alignOffset, copyOutParams, outParamAlign, totalOutIdx, baseOffset);
+                }
+            }
+        }
+    }
 
-        uint32_t copyOutNum = inLeftPadNum * tdPtr_->outStride[ubAxis_];
-        uint32_t copyStartOffset = inLeftPadStart * tdPtr_->outStride[ubAxis_];
+    __aicore__ inline void CopyOutPadBwImpl(
+        LocalTensor<T>& outLocalBwReal, LocalTensor<T>& outLocalBwTmp,
+        uint32_t copyStartOffset, uint32_t copyOutNum, OutIndicesSet* totalOutIdx)
+    {
         uint32_t alignRed = copyStartOffset % BLOCK_NUM;
         uint32_t alignOffset = 0;
         if (alignRed != 0) {
@@ -418,26 +435,34 @@ private:
         DataCopyExtParams copyOutParams = {1u, static_cast<uint32_t>(copyOutNum * sizeof(T)), 0, 0, 0};
         DataCopyExtParams outParamAlign = {1u, static_cast<uint32_t>(alignOffset * sizeof(T)), 0, 0, 0};
 
-        for (int32_t o0 = 0; o0 < totalOutIdx[0].count; o0++) {
-            uint64_t o0Offset = totalOutIdx[0].outIdx[o0] * tdPtr_->outStride[0];
-            for (int32_t o1 = 0; o1 < totalOutIdx[1].count; o1++) {
-                uint64_t o1Offset = totalOutIdx[1].outIdx[o1] * tdPtr_->outStride[1];
-                for (int32_t o2 = 0; o2 < totalOutIdx[CONST2].count; o2++) {
-                    uint64_t o2Offset = totalOutIdx[CONST2].outIdx[o2] * tdPtr_->outStride[CONST2];
-                    for (int32_t o3 = 0; o3 < totalOutIdx[CONST3].count; o3++) {
-                        uint64_t o3Offset = totalOutIdx[CONST3].outIdx[o3] * tdPtr_->outStride[CONST3];
-                        uint64_t outAddr = o0Offset + o1Offset + o2Offset + o3Offset;
-                        if (copyOutNum > 0) {
-                            DataCopyPad(
-                                outputGm_[outAddr + alignOffset], outLocalBwReal[copyStartOffset], copyOutParams);
-                        }
-                        if (alignOffset > 0) {
-                            DataCopyPad(outputGm_[outAddr], outLocalBwTmp, outParamAlign);
-                        }
-                    }
-                }
-            }
+        CopyOutPadBwLoopImpl(outLocalBwReal, outLocalBwTmp, copyStartOffset, copyOutNum, alignOffset,
+            copyOutParams, outParamAlign, totalOutIdx);
+    }
+
+    __aicore__ inline void CopyOutLeftPadBw(
+        uint16_t ubAxisInCopyNum, const uint64_t* inIndex, LocalTensor<T>& outLocalBw, uint32_t inLeftPadNum,
+        uint32_t inLeftPadStart, OutIndicesSet* totalOutIdx)
+    {
+        // reflect:
+        //     左pad:   outIdx=leftNum-inIdx
+        // symmetric:
+        //     左pad:   outIdx=leftNum-1-inIdx
+
+        // ub切分轴，leftpad
+        uint64_t inIdx = inIndex[ubAxis_] + ubAxisInCopyNum - 1 - inLeftPadStart;
+        if constexpr (IS_REFLECT) {
+            totalOutIdx[ubAxis_].outIdx[0] = tdPtr_->leftPad[ubAxis_] - inIdx;
+        } else {
+            totalOutIdx[ubAxis_].outIdx[0] = tdPtr_->leftPad[ubAxis_] - 1 - inIdx;
         }
+        totalOutIdx[ubAxis_].count = 1;
+
+        LocalTensor<T> outLocalBwReal = outLocalBw[BLOCK_NUM * CONST2];
+        LocalTensor<T> outLocalBwTmp = outLocalBw[0];
+        uint32_t copyOutNum = inLeftPadNum * tdPtr_->outStride[ubAxis_];
+        uint32_t copyStartOffset = inLeftPadStart * tdPtr_->outStride[ubAxis_];
+
+        CopyOutPadBwImpl(outLocalBwReal, outLocalBwTmp, copyStartOffset, copyOutNum, totalOutIdx);
     }
 
     __aicore__ inline void CopyOutRightPadBw(
@@ -453,60 +478,17 @@ private:
         uint64_t inIdx = inIndex[ubAxis_] + ubAxisInCopyNum - 1 - inRightPadStart;
         if constexpr (IS_REFLECT) {
             totalOutIdx[ubAxis_].outIdx[0] = tdPtr_->leftPad[ubAxis_] + CONST2 * (tdPtr_->inShape[ubAxis_] - 1) - inIdx;
-            totalOutIdx[ubAxis_].count = 1;
         } else {
             totalOutIdx[ubAxis_].outIdx[0] = tdPtr_->leftPad[ubAxis_] + CONST2 * tdPtr_->inShape[ubAxis_] - 1 - inIdx;
-            totalOutIdx[ubAxis_].count = 1;
         }
+        totalOutIdx[ubAxis_].count = 1;
 
         LocalTensor<T> outLocalBwReal = outLocalBw[BLOCK_NUM * CONST2];
         LocalTensor<T> outLocalBwTmp = outLocalBw[BLOCK_NUM];
-
         uint32_t copyOutNum = inRightPadNum * tdPtr_->outStride[ubAxis_];
         uint32_t copyStartOffset = inRightPadStart * tdPtr_->outStride[ubAxis_];
-        uint32_t alignRed = copyStartOffset % BLOCK_NUM;
-        uint32_t alignOffset = 0;
-        if (alignRed != 0) {
-            __local_mem__ T* inAddrTmp = (__local_mem__ T*)outLocalBwReal.GetPhyAddr() + copyStartOffset;
-            __local_mem__ T* outAddrTmp = (__local_mem__ T*)outLocalBwTmp.GetPhyAddr();
 
-            alignOffset = BLOCK_NUM - alignRed;
-            copyStartOffset = copyStartOffset + alignOffset;
-            if (copyOutNum > alignOffset) {
-                copyOutNum = (copyOutNum - alignOffset);
-            } else {
-                alignOffset = copyOutNum;
-                copyOutNum = 0;
-            }
-
-            CopyTmpUnAlign(inAddrTmp, outAddrTmp, alignOffset);
-
-            SetWaitEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
-        }
-
-        DataCopyExtParams copyOutParams = {1u, static_cast<uint32_t>(copyOutNum * sizeof(T)), 0, 0, 0};
-        DataCopyExtParams outParamAlign = {1u, static_cast<uint32_t>(alignOffset * sizeof(T)), 0, 0, 0};
-
-        for (int32_t o0 = 0; o0 < totalOutIdx[0].count; o0++) {
-            uint64_t o0Offset = totalOutIdx[0].outIdx[o0] * tdPtr_->outStride[0];
-            for (int32_t o1 = 0; o1 < totalOutIdx[1].count; o1++) {
-                uint64_t o1Offset = totalOutIdx[1].outIdx[o1] * tdPtr_->outStride[1];
-                for (int32_t o2 = 0; o2 < totalOutIdx[CONST2].count; o2++) {
-                    uint64_t o2Offset = totalOutIdx[CONST2].outIdx[o2] * tdPtr_->outStride[CONST2];
-                    for (int32_t o3 = 0; o3 < totalOutIdx[CONST3].count; o3++) {
-                        uint64_t o3Offset = totalOutIdx[CONST3].outIdx[o3] * tdPtr_->outStride[CONST3];
-                        uint64_t outAddr = o0Offset + o1Offset + o2Offset + o3Offset;
-                        if (copyOutNum > 0) {
-                            DataCopyPad(
-                                outputGm_[outAddr + alignOffset], outLocalBwReal[copyStartOffset], copyOutParams);
-                        }
-                        if (alignOffset > 0) {
-                            DataCopyPad(outputGm_[outAddr], outLocalBwTmp, outParamAlign);
-                        }
-                    }
-                }
-            }
-        }
+        CopyOutPadBwImpl(outLocalBwReal, outLocalBwTmp, copyStartOffset, copyOutNum, totalOutIdx);
     }
 
     __aicore__ inline void CopyTmpUnAlign(__local_mem__ T* inAddrTmp, __local_mem__ T* outAddrTmp, uint32_t alignOffset)

@@ -72,6 +72,10 @@ private:
     };
 
     __aicore__ inline void ParseTilingData();
+    __aicore__ inline int64_t FindPermIndex(int64_t j);
+    __aicore__ inline void GetLoopAddressOffsetImpl(
+        bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[], int64_t cutIndex1, int64_t cutIndex2,
+        const int64_t expandedShape[], const int64_t inUbShape[]);
     __aicore__ inline void GetMainLoopAddressOffset(
         bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[], const int64_t expandedShape[],
         const int64_t inUbShape[]);
@@ -176,75 +180,19 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ParseTilingData()
 }
 
 template <typename T>
-__aicore__ inline void TransposeCutTwoAxis<T>::GetMainLoopAddressOffset(
-    bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[], const int64_t expandedShape[],
-    const int64_t inUbShape[])
+__aicore__ inline int64_t TransposeCutTwoAxis<T>::FindPermIndex(int64_t j)
 {
-    int64_t startIndex = NDDMA_MAX_DIM_NUM - 1;
-    for (int64_t i = 0; i < NDDMA_MAX_DIM_NUM; i++) {
-        for (int64_t j = startIndex; j >= 0; j--) {
-            int64_t idx = j;
-            if (!isSrc) {
-                for (int64_t permIndex = 0; permIndex < NDDMA_MAX_DIM_NUM; permIndex++) {
-                    if (tiling_->expandedPerm[permIndex] == j) {
-                        idx = permIndex;
-                        break;
-                    }
-                }
-            }
-            int64_t loopNum = expandedShape[idx] / inUbShape[idx];
-            int64_t loopSize = inUbShape[idx];
-            for (int64_t k = idx + 1; k < NDDMA_MAX_DIM_NUM; k++) {
-                loopSize *= expandedShape[k];
-            }
-            if (loopNum > 1) {
-                startIndex = j - 1;
-                loopNumArray[i] = loopNum;
-                loopShapeSizeArray[i] = loopSize;
-                break;
-            }
+    for (int64_t permIndex = 0; permIndex < NDDMA_MAX_DIM_NUM; permIndex++) {
+        if (tiling_->expandedPerm[permIndex] == j) {
+            return permIndex;
         }
     }
+    return j;
 }
 
 template <typename T>
-__aicore__ inline void TransposeCutTwoAxis<T>::GetTailLoopAddressOffset(
-    bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[], int64_t cutIndex, const int64_t expandedShape[],
-    const int64_t inUbShape[])
-{
-    int64_t startIndex = NDDMA_MAX_DIM_NUM - 1;
-    for (int64_t i = 0; i < NDDMA_MAX_DIM_NUM; i++) {
-        for (int64_t j = startIndex; j >= 0; j--) {
-            int64_t idx = j;
-            if (!isSrc) {
-                for (int64_t permIndex = 0; permIndex < NDDMA_MAX_DIM_NUM; permIndex++) {
-                    if (tiling_->expandedPerm[permIndex] == j) {
-                        idx = permIndex;
-                        break;
-                    }
-                }
-            }
-            if (idx == cutIndex) {
-                continue;
-            }
-            int64_t loopNum = expandedShape[idx] / inUbShape[idx];
-            int64_t loopSize = inUbShape[idx];
-            for (int64_t k = idx + 1; k < NDDMA_MAX_DIM_NUM; k++) {
-                loopSize *= expandedShape[k];
-            }
-            if (loopNum > 1) {
-                startIndex = j - 1;
-                loopNumArray[i] = loopNum;
-                loopShapeSizeArray[i] = loopSize;
-                break;
-            }
-        }
-    }
-}
-
-template <typename T>
-__aicore__ inline void TransposeCutTwoAxis<T>::GetTailTailLoopAddressOffset(
-    bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[], int64_t inputCutIndex, int64_t outputCutIndex,
+__aicore__ inline void TransposeCutTwoAxis<T>::GetLoopAddressOffsetImpl(
+    bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[], int64_t cutIndex1, int64_t cutIndex2,
     const int64_t expandedShape[], const int64_t inUbShape[])
 {
     int64_t startIndex = NDDMA_MAX_DIM_NUM - 1;
@@ -252,14 +200,9 @@ __aicore__ inline void TransposeCutTwoAxis<T>::GetTailTailLoopAddressOffset(
         for (int64_t j = startIndex; j >= 0; j--) {
             int64_t idx = j;
             if (!isSrc) {
-                for (int64_t permIndex = 0; permIndex < NDDMA_MAX_DIM_NUM; permIndex++) {
-                    if (tiling_->expandedPerm[permIndex] == j) {
-                        idx = permIndex;
-                        break;
-                    }
-                }
+                idx = FindPermIndex(j);
             }
-            if (idx == inputCutIndex || idx == outputCutIndex) {
+            if (idx == cutIndex1 || idx == cutIndex2) {
                 continue;
             }
             int64_t loopNum = expandedShape[idx] / inUbShape[idx];
@@ -275,6 +218,31 @@ __aicore__ inline void TransposeCutTwoAxis<T>::GetTailTailLoopAddressOffset(
             }
         }
     }
+}
+
+template <typename T>
+__aicore__ inline void TransposeCutTwoAxis<T>::GetMainLoopAddressOffset(
+    bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[], const int64_t expandedShape[],
+    const int64_t inUbShape[])
+{
+    GetLoopAddressOffsetImpl(isSrc, loopNumArray, loopShapeSizeArray, -1, -1, expandedShape, inUbShape);
+}
+
+template <typename T>
+__aicore__ inline void TransposeCutTwoAxis<T>::GetTailLoopAddressOffset(
+    bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[], int64_t cutIndex,
+    const int64_t expandedShape[], const int64_t inUbShape[])
+{
+    GetLoopAddressOffsetImpl(isSrc, loopNumArray, loopShapeSizeArray, cutIndex, -1, expandedShape, inUbShape);
+}
+
+template <typename T>
+__aicore__ inline void TransposeCutTwoAxis<T>::GetTailTailLoopAddressOffset(
+    bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[], int64_t inputCutIndex, int64_t outputCutIndex,
+    const int64_t expandedShape[], const int64_t inUbShape[])
+{
+    GetLoopAddressOffsetImpl(isSrc, loopNumArray, loopShapeSizeArray, inputCutIndex, outputCutIndex,
+        expandedShape, inUbShape);
 }
 
 template <typename T>
@@ -598,33 +566,21 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessTail(int64_t loopidxStart,
         int64_t srcAddressOffset = tailSrcAddressOffsetBase;
         int64_t dstAddressOffset = tailDstAddressOffsetBase;
 
-        int64_t srcAddressOffsetMixedBase[NDDMA_MAX_DIM_NUM] = {0};
-        DecimalToMixedBase(
+        int64_t tailLoopLocalIdx =
             loopidx -
-                ((tiling_->expandedInputShape[expandedInputCutIndex_] /
-                  tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
-                 (tiling_->expandedInputShape[inputOutputCutIndex_] / tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
-                 outUbLoop_) -
-                ((tiling_->expandedInputShape[expandedInputCutIndex_] /
-                  tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
-                 outUbLoop_) -
-                ((tiling_->expandedInputShape[inputOutputCutIndex_] / tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
-                 outUbLoop_),
-            tailSrcLoopNumArray, srcAddressOffsetMixedBase);
+            ((tiling_->expandedInputShape[expandedInputCutIndex_] / tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
+             (tiling_->expandedInputShape[inputOutputCutIndex_] / tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
+             outUbLoop_) -
+            ((tiling_->expandedInputShape[expandedInputCutIndex_] / tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
+             outUbLoop_) -
+            ((tiling_->expandedInputShape[inputOutputCutIndex_] / tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
+             outUbLoop_);
+
+        int64_t srcAddressOffsetMixedBase[NDDMA_MAX_DIM_NUM] = {0};
+        DecimalToMixedBase(tailLoopLocalIdx, tailSrcLoopNumArray, srcAddressOffsetMixedBase);
 
         int64_t dstAddressOffsetMixedBase[NDDMA_MAX_DIM_NUM] = {0};
-        DecimalToMixedBase(
-            loopidx -
-                ((tiling_->expandedInputShape[expandedInputCutIndex_] /
-                  tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
-                 (tiling_->expandedInputShape[inputOutputCutIndex_] / tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
-                 outUbLoop_) -
-                ((tiling_->expandedInputShape[expandedInputCutIndex_] /
-                  tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
-                 outUbLoop_) -
-                ((tiling_->expandedInputShape[inputOutputCutIndex_] / tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
-                 outUbLoop_),
-            tailDstLoopNumArray, dstAddressOffsetMixedBase);
+        DecimalToMixedBase(tailLoopLocalIdx, tailDstLoopNumArray, dstAddressOffsetMixedBase);
         for (int64_t i = 0; i < NDDMA_MAX_DIM_NUM; i++) {
             if (tailSrcLoopShapeSizeArray[i] == 0) {
                 break;

@@ -276,15 +276,8 @@ void PadV3GradACTiling::CalculateTilingKeyMirror()
     uint64_t lastShapeSizeAlign = GetSizeOfBlockAlign(tilingData_->inShape[dimNum_ - 1], alignNum);
 
     bufferSize_ = GetSizeOfBlockAlign(ubSize_ / (CONST2 * dtypeBytes_ + CONST4 * FP32_SIZE) - alignNum, alignNum);
-    if (bufferSize_ > UB_MAX_DATA_SIZE_PER_BUFFER / dtypeBytes_) {
-        bufferSize_ = UB_MAX_DATA_SIZE_PER_BUFFER / dtypeBytes_;
-    }
-    if (lastShapeSizeAlign > bufferSize_) {
-        cutMode_ = TPL_SIMD_BIG;
-        ubAxis_ = dimNum_ - 1;
-        ubFactor_ = bufferSize_;
-        outTileSize_ = bufferSize_;
-        return TilingInfoTune();
+    if (ClampBufferSizeAndCheckBigShape(lastShapeSizeAlign)) {
+        return;
     }
     // 不切w，但是倒数第二根轴只能切1，此时也走切W分支
     // 不切w, 但是只有一根轴 & w > 128B，也走切w分支
@@ -331,6 +324,23 @@ void PadV3GradACTiling::CalculateTilingKeyMirror()
         TilingInfoTuneForNormal(lastShapeSizeAlign);
     }
 }
+
+bool PadV3GradACTiling::ClampBufferSizeAndCheckBigShape(uint64_t lastShapeSizeAlign)
+{
+    if (bufferSize_ > UB_MAX_DATA_SIZE_PER_BUFFER / dtypeBytes_) {
+        bufferSize_ = UB_MAX_DATA_SIZE_PER_BUFFER / dtypeBytes_;
+    }
+    if (lastShapeSizeAlign > bufferSize_) {
+        cutMode_ = TPL_SIMD_BIG;
+        ubAxis_ = dimNum_ - 1;
+        ubFactor_ = bufferSize_;
+        outTileSize_ = bufferSize_;
+        TilingInfoTune();
+        return true;
+    }
+    return false;
+}
+
 void PadV3GradACTiling::CalculateTilingKeyCircular()
 {
     OP_LOGD(context_, "Start PadV3GradACTiling CalculateTilingKeyCircular.");
@@ -343,15 +353,8 @@ void PadV3GradACTiling::CalculateTilingKeyCircular()
     uint64_t lastShapeSizeAlign = GetSizeOfBlockAlign(tilingData_->outShape[dimNum_ - 1], alignNum);
 
     bufferSize_ = GetSizeOfBlockAlign(ubSize_ / (CONST2 * dtypeBytes_ + CONST2 * FP32_SIZE) - alignNum, alignNum);
-    if (bufferSize_ > UB_MAX_DATA_SIZE_PER_BUFFER / dtypeBytes_) {
-        bufferSize_ = UB_MAX_DATA_SIZE_PER_BUFFER / dtypeBytes_;
-    }
-    if (lastShapeSizeAlign > bufferSize_) {
-        cutMode_ = TPL_SIMD_BIG;
-        ubAxis_ = dimNum_ - 1;
-        ubFactor_ = bufferSize_;
-        outTileSize_ = bufferSize_;
-        return TilingInfoTune();
+    if (ClampBufferSizeAndCheckBigShape(lastShapeSizeAlign)) {
+        return;
     }
     DoTilingWithSIMTCircular();
 }

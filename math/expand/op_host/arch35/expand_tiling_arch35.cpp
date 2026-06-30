@@ -61,50 +61,11 @@ void AdjustShapesToSameDimNum(gert::Shape& inShape, size_t outDimNum)
     inShape = newShape;
 }
 
-ge::graphStatus DeleteOneSizeAxis(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape)
-{
-    auto dimNum = inShape.GetDimNum();
-    if (dimNum != outShape.GetDimNum()) {
-        std::string dimMsg = std::to_string(dimNum) + " and " + std::to_string(outShape.GetDimNum());
-        std::string reasonMsg = "The input and output shape dim num should be equal.";
-        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
-            context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
-        return ge::GRAPH_FAILED;
-    }
-
-    if (dimNum == 1) {
-        return ge::GRAPH_SUCCESS;
-    }
-
-    size_t mIdx = 0;
-    for (size_t oIdx = 0; oIdx < dimNum; oIdx++) {
-        if (outShape[oIdx] != 1) {
-            inShape[mIdx] = inShape[oIdx];
-            outShape[mIdx] = outShape[oIdx];
-            mIdx += size_t(1);
-        }
-    }
-
-    if (mIdx == size_t(0)) {
-        inShape[0] = 1;
-        outShape[0] = 1;
-        mIdx += size_t(1);
-    }
-    inShape.SetDimNum(mIdx);
-    outShape.SetDimNum(mIdx);
-
-    return ge::GRAPH_SUCCESS;
-}
-
 ge::graphStatus GetABFlag(const gert::TilingContext* context, const gert::Shape& inShape, const gert::Shape& outShape,
                           std::array<bool, MAX_DIM_NUM>& abInfo)
 {
-    auto inDimNum = inShape.GetDimNum();
-    if (inDimNum != outShape.GetDimNum()) {
-        std::string dimMsg = std::to_string(inDimNum) + " and " + std::to_string(outShape.GetDimNum());
-        std::string reasonMsg = "The input and output shape dim num should be equal.";
-        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
-            context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
+    size_t inDimNum;
+    if (brcto::CheckSameDimNum(context, inShape, outShape, inDimNum) != ge::GRAPH_SUCCESS) {
         return ge::GRAPH_FAILED;
     }
 
@@ -117,12 +78,8 @@ ge::graphStatus GetABFlag(const gert::TilingContext* context, const gert::Shape&
 
 ge::graphStatus MergeAxis(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape)
 {
-    auto dimNum = inShape.GetDimNum();
-    if (dimNum != outShape.GetDimNum()) {
-        std::string dimMsg = std::to_string(dimNum) + " and " + std::to_string(outShape.GetDimNum());
-        std::string reasonMsg = "The input and output shape dim num should be equal.";
-        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
-            context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
+    size_t dimNum;
+    if (brcto::CheckSameDimNum(context, inShape, outShape, dimNum) != ge::GRAPH_SUCCESS) {
         return ge::GRAPH_FAILED;
     }
 
@@ -295,7 +252,7 @@ ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& in
     OP_LOGD(context->GetNodeName(), "%s",
         ConcatString("input0 and input1 infer output, output shape is ",
             Ops::Base::ToString(outShape).c_str()).c_str());
-    if (DeleteOneSizeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
+    if (brcto::DeleteOneSizeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
         std::string shapeMsg = "unknown";
         std::string reasonMsg = "Failed to delete one size axes.";
         OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(

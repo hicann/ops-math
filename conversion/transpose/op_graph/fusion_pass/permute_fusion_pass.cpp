@@ -97,22 +97,29 @@ static bool GetPermutePermAttr(const GNode& permuteNode, std::vector<int64_t>& p
     return false;
 }
 
+// Resolve the TensorDesc of a subgraph input's first matched input.
+// Fallback: if the input desc's shape is empty, try to get it from the source data node's output desc instead.
+static TensorDesc ResolveSubgraphInputTensorDesc(const SubgraphInput& subgraphInput)
+{
+    auto matchNode = subgraphInput.GetAllInputs().at(0);
+    TensorDesc tensorDesc;
+    matchNode.node.GetInputDesc(matchNode.index, tensorDesc);
+    if (tensorDesc.GetShape().GetDims().empty()) {
+        auto srcInfo = matchNode.node.GetInDataNodesAndPortIndexs(0);
+        if (srcInfo.first != nullptr) {
+            GNode srcNode = *srcInfo.first;
+            srcNode.GetOutputDesc(srcInfo.second, tensorDesc);
+        }
+    }
+    return tensorDesc;
+}
+
 static void GetInputsInfo(
     const std::vector<SubgraphInput>& subgraphInputs, std::vector<Shape>& inputShapes,
     std::vector<DataType>& inputDtypes, std::vector<Format>& inputFormats)
 {
     for (const auto& subgraphInput : subgraphInputs) {
-        auto matchNode = subgraphInput.GetAllInputs().at(0);
-        TensorDesc tensorDesc;
-        matchNode.node.GetInputDesc(matchNode.index, tensorDesc);
-        // Fallback: if shape is empty, try to get from source data node's output desc
-        if (tensorDesc.GetShape().GetDims().empty()) {
-            auto srcInfo = matchNode.node.GetInDataNodesAndPortIndexs(0);
-            if (srcInfo.first != nullptr) {
-                GNode srcNode = *srcInfo.first;
-                srcNode.GetOutputDesc(srcInfo.second, tensorDesc);
-            }
-        }
+        TensorDesc tensorDesc = ResolveSubgraphInputTensorDesc(subgraphInput);
         inputShapes.emplace_back(tensorDesc.GetShape());
         inputDtypes.emplace_back(tensorDesc.GetDataType());
         inputFormats.emplace_back(tensorDesc.GetFormat());
@@ -124,17 +131,7 @@ static Status InferShape(const GraphUniqPtr& replaceGraph, const std::vector<Sub
     OP_LOGD(kFusionPassName.c_str(), "Begin infershape for replacement.");
     std::vector<Shape> inputShapes;
     for (const auto& subgraphInput : subgraphInputs) {
-        auto matchNode = subgraphInput.GetAllInputs().at(0);
-        TensorDesc tensorDesc;
-        matchNode.node.GetInputDesc(matchNode.index, tensorDesc);
-        // Fallback: if shape is empty, try to get from source data node's output desc
-        if (tensorDesc.GetShape().GetDims().empty()) {
-            auto srcInfo = matchNode.node.GetInDataNodesAndPortIndexs(0);
-            if (srcInfo.first != nullptr) {
-                GNode srcNode = *srcInfo.first;
-                srcNode.GetOutputDesc(srcInfo.second, tensorDesc);
-            }
-        }
+        TensorDesc tensorDesc = ResolveSubgraphInputTensorDesc(subgraphInput);
         inputShapes.emplace_back(tensorDesc.GetShape());
     }
     return GeUtils::InferShape(*replaceGraph, inputShapes);

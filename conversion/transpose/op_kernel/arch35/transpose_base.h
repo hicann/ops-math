@@ -54,6 +54,27 @@ protected:
     };
 };
 
+// Compute this core's processing range from multicore tiling params.
+// Returns false when this core has no work (blockIdx >= realCoreNum).
+__aicore__ inline bool ParseMultiCoreRange(
+    int64_t blockIdx, int64_t realCoreNum, int64_t blkFactor, int64_t blkTailFactor, int64_t& blkProcessNum,
+    int64_t& blkProcessIdxStart, int64_t& blkProcessIdxEnd)
+{
+    if (blockIdx >= realCoreNum) {
+        return false;
+    }
+    blkProcessNum = blkFactor;
+    blkProcessIdxStart = blockIdx * blkFactor;
+    if (blockIdx < blkTailFactor) {
+        blkProcessNum += 1;
+        blkProcessIdxStart += blockIdx;
+    } else {
+        blkProcessIdxStart += blkTailFactor;
+    }
+    blkProcessIdxEnd = blkProcessIdxStart + blkProcessNum;
+    return true;
+}
+
 } // namespace Transpose
 
 #endif // TRANSPOSE_BASE_H
