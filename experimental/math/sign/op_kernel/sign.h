@@ -20,11 +20,12 @@
 #include "sign_tiling_data.h"
 #include "sign_tiling_key.h"
 
-namespace MySign {
+namespace NsSign {
 
 using namespace AscendC;
 
 constexpr int32_t BUFFER_NUM = 2;
+constexpr int32_t QUEUE_DEPTH = 1;
 
 template <typename TYPE_X>
 class KernelSign {
@@ -44,8 +45,8 @@ private:
 
 private:
     AscendC::TPipe pipe;
-    AscendC::TQue<AscendC::QuePosition::VECIN, BUFFER_NUM> inQueueX;
-    AscendC::TQue<AscendC::QuePosition::VECOUT, BUFFER_NUM> outQueueY;
+    AscendC::TQue<AscendC::QuePosition::VECIN, QUEUE_DEPTH> inQueueX;
+    AscendC::TQue<AscendC::QuePosition::VECOUT, QUEUE_DEPTH> outQueueY;
     AscendC::TBuf<AscendC::QuePosition::VECCALC> tmp1;
     AscendC::TBuf<AscendC::QuePosition::VECCALC> tmp2;
     AscendC::GlobalTensor<TYPE_X> xGm;
@@ -115,8 +116,12 @@ __aicore__ inline void KernelSign<TYPE_X>::Compute(int32_t progress)
         AscendC::Sign(tmp, xFP32, this->processDataNum);
         AscendC::Cast(yLocal, tmp, AscendC::RoundMode::CAST_RINT, this->processDataNum);
     } else if constexpr (std::is_same_v<TYPE_X, int32_t>) {
-        AscendC::Maxs(xLocal, xLocal, -1, this->processDataNum);
-        AscendC::Mins(yLocal, xLocal, 1, this->processDataNum);
+        AscendC::Maxs(xLocal, xLocal, static_cast<int32_t>(-1), this->processDataNum);
+        AscendC::Mins(yLocal, xLocal, static_cast<int32_t>(1), this->processDataNum);
+    } else if constexpr (std::is_same_v<TYPE_X, int16_t>) {
+        AscendC::Maxs(xLocal, xLocal, static_cast<int16_t>(-1), this->processDataNum);
+        AscendC::Mins(yLocal, xLocal, static_cast<int16_t>(1), this->processDataNum);
+
     } else {
         AscendC::Sign(yLocal, xLocal, this->processDataNum);
     }
@@ -140,5 +145,5 @@ __aicore__ inline void KernelSign<TYPE_X>::Process()
     CopyOut(loopCount - 1);
 }
 
-} // namespace MySign
+} // namespace NsSign
 #endif // SIGN_H

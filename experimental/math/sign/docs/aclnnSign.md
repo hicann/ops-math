@@ -5,6 +5,7 @@
 | 产品                                                                                     | 是否支持 |
 | :--------------------------------------------------------------------------------------- | :------: |
 | `<term>`Atlas A2 训练系列产品/Atlas A2 推理系列产品 `</term>` |    √    |
+| `<term>`Atlas A3 系列产品 `</term>` |    √    |
 
 ## 功能说明
 
@@ -71,7 +72,7 @@ aclnnStatus aclnnSign(
       <td>输入</td>
       <td>待进行sign计算的入参，公式中的self。</td>
       <td>无</td>
-      <td>FLOAT、FLOAT16、INT32、BFLOAT16</td>
+      <td>FLOAT、FLOAT16、INT32、INT16、BFLOAT16</td>
       <td>ND</td>
       <td>1-8</td>
       <td>√</td>
@@ -81,7 +82,7 @@ aclnnStatus aclnnSign(
       <td>输出</td>
       <td>待进行sign计算的出参，公式中的result。</td>
       <td>无</td>
-      <td>FLOAT、FLOAT16、INT32、BFLOAT16</td>
+      <td>FLOAT、FLOAT16、INT32、INT16、BFLOAT16</td>
       <td>ND</td>
       <td>1-8</td>
       <td>√</td>

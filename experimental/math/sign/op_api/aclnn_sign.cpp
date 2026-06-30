@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "aclnn_sign.h"
 
@@ -36,25 +36,35 @@ extern "C" {
 
 // 1971中对bf16的支持在下方校验，对bool的支持转成int32计算
 static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST = {
-    DataType::DT_DOUBLE, DataType::DT_FLOAT,     DataType::DT_FLOAT16,    DataType::DT_INT32,
-    DataType::DT_INT64,  DataType::DT_COMPLEX64, DataType::DT_COMPLEX128, DataType::DT_BOOL};
+    DataType::DT_DOUBLE, DataType::DT_FLOAT,     DataType::DT_FLOAT16,    DataType::DT_INT16,
+    DataType::DT_INT32,  DataType::DT_INT64,     DataType::DT_COMPLEX64,  DataType::DT_COMPLEX128,
+    DataType::DT_BOOL};
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* result)
 {
-    SocVersion socVersion = GetCurrentPlatformInfo().GetSocVersion();
     if (!CheckType(self->GetDataType(), DTYPE_SUPPORT_LIST)) {
-        if (socVersion == SocVersion::ASCEND910) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "On Ascend910 self dtype [%s] should be in dtype support list [%s].",
-                op::ToString(self->GetDataType()).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
-            return false;
-        } else if (socVersion == SocVersion::ASCEND910_93 || socVersion == SocVersion::ASCEND910B || IsRegBase()) {
-            if (self->GetDataType() != op::DataType::DT_BF16) {
+        SocVersion socVersion = GetCurrentPlatformInfo().GetSocVersion();
+        auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+        switch (curArch) {
+            case NpuArch::DAV_1001: {
                 OP_LOGE(
-                    ACLNN_ERR_PARAM_INVALID,
-                    "On Ascend910B, self dtype [%s] should be in dtype support list [%s] or be BF16.",
+                    ACLNN_ERR_PARAM_INVALID, "On Ascend910 self dtype [%s] should be in dtype support list [%s].",
                     op::ToString(self->GetDataType()).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
                 return false;
+            }
+            case NpuArch::DAV_2201:
+            case NpuArch::DAV_3510: {
+                if (self->GetDataType() != op::DataType::DT_BF16) {
+                    OP_LOGE(
+                        ACLNN_ERR_PARAM_INVALID,
+                        "On %s, self dtype [%s] should be in dtype support list [%s] or be BF16.",
+                        op::ToString(socVersion).GetString(), op::ToString(self->GetDataType()).GetString(),
+                        op::ToString(DTYPE_SUPPORT_LIST).GetString());
+                    return false;
+                }
+                break;
+            }
+            default: {
             }
         }
     } else {

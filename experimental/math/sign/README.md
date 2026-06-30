@@ -50,7 +50,7 @@
       <td>输入</td>
       <td>待取符号的Tensor。</td>
       <td>支持空Tensor。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT32</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT16</td>
       <td>ND</td>
       <td>1-8</td>
       <td>√</td>
@@ -60,7 +60,7 @@
       <td>输出</td>
       <td>与input同形状的符号结果。</td>
       <td>数据类型、shape需与input一致。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT32</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT16</td>
       <td>同input</td>
       <td>ND</td>
       <td>√</td>
@@ -68,37 +68,9 @@
    </tbody>
   </table>
 
-## 算子使用
+## 约束说明
 
-使用该算子前，请参考[社区版CANN开发套件包安装文档](../../../docs/zh/invocation/quick_op_invocation.md)完成开发运行环境的部署。
-
-### 编译部署
-
-  - 进入到仓库目录
-
-    ```bash
-    cd ${git_clone_path}/ops-math
-    ```
-
-  - 执行编译
-
-    ```bash
-    bash build.sh --pkg --experimental --soc=ascend910b --ops=sign
-    ```
-
-  - 部署算子包
-
-    ```bash
-    ./build_out/cann-ops-<vendor_name>-linux.<arch>.run
-    ```
-
-### 算子调用
-
-  - 执行调用
-
-    ```bash
-    bash build.sh --run_example sign eager cust --vendor_name=custom
-    ```    
+输入 input 和输出 output 的 Shape 必须严格保持一致。
 
 ## 调用说明
 
@@ -111,3 +83,4 @@
 | 贡献者 | 贡献方 | 贡献算子 | 贡献时间 | 贡献内容 |
 | ---- | ---- | ---- | ---- | ---- |
 | hth810 | 个人开发者 | Sign | 2025/12/12 | Sign算子适配开源仓 |
+| hth810 | 个人开发者 | Sign | 2026/5/12 | Sign算子添加int16支持 |
