@@ -17,6 +17,7 @@ import argparse
 
 
 OP_DEF_PATTERN = re.compile(
+    r"(?P<comment>[ \t]*/\*\*?(?:[^*]|\*(?!/))*?\*/[ \t]*\n\s*)?"
     r"(?P<guard>[ \t]*#\s*ifndef\s+\w+[^\n]*\n"
     r"[ \t]*#\s*define\s+\w+[^\n]*\n\s*)?"
     r"REG_OP\((?P<opname>.+?)\)"
