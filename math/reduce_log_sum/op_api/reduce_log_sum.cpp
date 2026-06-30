@@ -15,17 +15,23 @@
 #include "opdev/op_dfx.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/shape_utils.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
 namespace l0op {
 OP_TYPE_REGISTER(ReduceLogSum);
 
-static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST = {DataType::DT_FLOAT, DataType::DT_FLOAT16};
+static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST = {DataType::DT_FLOAT, DataType::DT_FLOAT16, };
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_950 = {
+    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16};
 
 //根据芯片类型，dtype判断算子是否支持走aicore
 static inline bool IsAiCoreSupport(DataType inputDtype)
 {
+    if (IsRegBase()) {
+        return CheckType(inputDtype, DTYPE_SUPPORT_LIST_950);
+    }
     //只需要判断dtype
     return CheckType(inputDtype, AICORE_DTYPE_SUPPORT_LIST);
 }
