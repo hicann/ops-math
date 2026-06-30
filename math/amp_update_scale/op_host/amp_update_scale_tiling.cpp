@@ -24,6 +24,9 @@ namespace {
   constexpr uint64_t GROWTH_FACTOR_ID = 0;
   constexpr uint64_t BACKOFF_FACTOR_ID = 1;
   constexpr uint64_t GROWTH_INTERVAL = 2;
+  constexpr uint64_t TILING_KEY_FLOAT = 0;
+  constexpr uint64_t TILING_KEY_FLOAT16 = 1;
+  constexpr uint64_t TILING_KEY_BF16 = 2;
 }
 
 namespace optiling {
@@ -65,11 +68,11 @@ namespace optiling {
     auto currentScaleDtype = TilingContext->GetInputDesc(0)->GetDataType();
     uint64_t tilingKey = 0;
     if (currentScaleDtype == ge::DT_FLOAT) {
-        tilingKey = 0;
+        tilingKey = TILING_KEY_FLOAT;
     } else if (currentScaleDtype == ge::DT_FLOAT16) {
-        tilingKey = 1;
+        tilingKey = TILING_KEY_FLOAT16;
     } else if (currentScaleDtype == ge::DT_BF16) {
-        tilingKey = 2;
+        tilingKey = TILING_KEY_BF16;
     }
     TilingContext->SetTilingKey(tilingKey);
 

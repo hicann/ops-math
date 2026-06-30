@@ -35,6 +35,9 @@ static constexpr uint64_t INPUT_X = 0;
 static constexpr uint64_t NUM_VALUE_2BIT = 4;
 static constexpr uint64_t BIT_PER_BYTE = 8;
 static constexpr uint64_t BUFFER_NUM_IN_OUT = 4;
+static constexpr uint64_t ATTR_INDEX_SORTED = 0;
+static constexpr uint64_t ATTR_INDEX_LARGEST = 2;
+static constexpr uint64_t WS_INT32_PER_TILE = 5;
 // 1、获取平台信息比如CoreNum、UB/L1/L0C资源大小
 ge::graphStatus RadixTopKTiling::GetPlatformInfo()
 {
@@ -73,8 +76,8 @@ ge::graphStatus RadixTopKTiling::GetShapeAttrsInfo()
     tilingData_.kValue = kValue;
 
     auto attrs = context_->GetAttrs();
-    tilingData_.sorted = *attrs->GetAttrPointer<bool>(0);
-    tilingData_.largest = *attrs->GetAttrPointer<bool>(2);
+    tilingData_.sorted = *attrs->GetAttrPointer<bool>(ATTR_INDEX_SORTED);
+    tilingData_.largest = *attrs->GetAttrPointer<bool>(ATTR_INDEX_LARGEST);
     isLargeShape_ = tilingData_.sortLen > LARGE_SORT_LEN;
 
     xDType_ = context_->GetInputDesc(INPUT_X)->GetDataType();
@@ -139,7 +142,8 @@ ge::graphStatus RadixTopKTiling::GetWorkspaceSize()
         return ge::GRAPH_SUCCESS;
     }
     if (isLargeShape_) {
-        workspaceSize_ = (NUM_VALUE_2BIT * tilingData_.coreNum + tilingData_.coreNum + tilingData_.coreNum + 5 * tilingData_.totalTileNum) * sizeof(int32_t);
+        workspaceSize_ = (NUM_VALUE_2BIT * tilingData_.coreNum + tilingData_.coreNum +
+                          tilingData_.coreNum + WS_INT32_PER_TILE * tilingData_.totalTileNum) * sizeof(int32_t);
     } else {
         workspaceSize_ = (NUM_VALUE_2BIT * tilingData_.coreNum + tilingData_.coreNum + tilingData_.coreNum) * sizeof(int32_t);
     }

@@ -162,7 +162,6 @@ static aclnnStatus GetWorkspaceSizeCommon(const aclTensor *self, const aclTensor
 
   op::DataType selfDtype = selfContiguous->GetDataType();
   op::DataType otherDtype = otherContiguous->GetDataType();
-
   if (IsRegBase() && selfDtype == otherDtype && KERNEL_SUPPORTED_DTYPE_SET.count(selfDtype)) {
     // 两个输入类型相同且kernel支持 → 直接调用kernel
     auto logical_orOpOut = l0op::LogicalOr(selfContiguous, otherContiguous, uniqueExecutor.get());

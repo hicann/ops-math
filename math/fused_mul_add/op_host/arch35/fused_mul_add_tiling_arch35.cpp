@@ -68,7 +68,6 @@ ge::graphStatus FusedMulAddTiling::DoOpTiling()
     auto outputDesc = context_->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
     ge::DataType outputDtype = outputDesc->GetDataType();
-
     if (!CheckDtype(x1Dtype, x2Dtype, x3Dtype, outputDtype)) {
         return ge::GRAPH_FAILED;
     }

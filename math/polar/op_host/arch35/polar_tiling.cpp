@@ -43,7 +43,6 @@ ge::graphStatus PolarTiling::CheckDtype()
     auto outputDesc = context_->GetOutputDesc(OUTPUT_Y);
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
     ge::DataType outputDtype = outputDesc->GetDataType();
-
     if (input0Dtype != ge::DT_FLOAT || input1Dtype != ge::DT_FLOAT || outputDtype != ge::DT_COMPLEX64) {
         std::string dtypesStr = ge::TypeUtils::DataTypeToSerialString(input0Dtype) + ", " +
                                 ge::TypeUtils::DataTypeToSerialString(input1Dtype) + " and " +

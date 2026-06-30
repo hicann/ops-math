@@ -18,6 +18,7 @@
 namespace ops {
 static const std::vector<ge::DataType> dataType = {ge::DT_FLOAT16, ge::DT_FLOAT};
 static const std::vector<ge::Format> format = {ge::FORMAT_ND, ge::FORMAT_ND};
+static constexpr float DEFAULT_P_NORM = 2.0f;
 
 class CdistGrad : public OpDef {
 public:
@@ -48,7 +49,7 @@ public:
             .DataType(dataType)
             .Format(format)
             .UnknownShapeFormat(format);
-        this->Attr("p").AttrType(OPTIONAL).Float(2.0);
+        this->Attr("p").AttrType(OPTIONAL).Float(DEFAULT_P_NORM);
 
         OpAICoreConfig aicoreConfig;
         aicoreConfig.DynamicCompileStaticFlag(true)

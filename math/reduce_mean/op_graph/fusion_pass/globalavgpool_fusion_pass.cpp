@@ -258,7 +258,6 @@ GraphUniqPtr GlobalavgpoolPass::Replacement(const std::unique_ptr<MatchResult>& 
             {"noop_with_empty_axes", es::CompliantNodeBuilder::kEsAttrRequired, "Bool", es::CreateFrom(true)},
         })
         .Build();
-
     // 连接输入
     if (es::AddEdgeAndUpdatePeerDesc(*graph, *reduceMeanInput.GetProducer(), reduceMeanInput.GetProducerOutIndex(), reduceMeanNode, 0) != GRAPH_SUCCESS) {
         OP_LOGE_WITHOUT_REPORT(FUSION_PASS_NAME.c_str(), "Failed to add edge for reduceMean input");

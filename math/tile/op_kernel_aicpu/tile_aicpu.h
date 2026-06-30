@@ -28,8 +28,8 @@ class TileCpuKernel : public CpuKernel {
  private:
   bool is_empty_tensor_;
   std::vector<int64_t> multiples_;
-  uint32_t TileComputeUsingMemcpy(void *dst_addr, void *src_addr, size_t copy_len);
-  uint32_t TileComputeUsingSdma(void *dst_addr, void *src_addr, size_t copy_len);
+  uint32_t TileComputeUsingMemcpy(void *dst_addr, void *src_addr, size_t copy_len) const;
+  uint32_t TileComputeUsingSdma(void *dst_addr, void *src_addr, size_t copy_len) const;
   void SetCopyHook(const bool condition) {
     if (condition) {
       copy_hook_ = &TileCpuKernel::TileComputeUsingSdma;
@@ -40,7 +40,7 @@ class TileCpuKernel : public CpuKernel {
   uint32_t CallCopyHook(void *dst, void *src, size_t copy_len) {
     return (this->*copy_hook_)(dst, src, copy_len);
   }
-  uint32_t (TileCpuKernel::*copy_hook_)(void*, void*, size_t);
+    uint32_t (TileCpuKernel::*copy_hook_)(void*, void*, size_t) const;
   template <typename T>
   uint32_t TileComputeWith2DNotUsingEigen(const CpuKernelContext &ctx);
   template <typename T>

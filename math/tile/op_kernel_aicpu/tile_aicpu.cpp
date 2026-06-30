@@ -170,7 +170,8 @@ constexpr int32_t kParallelShapeSize = 5 * 1024;
 
 namespace aicpu {
 uint32_t TileCpuKernel::TileComputeUsingMemcpy(
-  void *dst_addr, void *src_addr, size_t copy_len) {
+    void *dst_addr, void *src_addr, size_t copy_len) const
+{
     auto ret = memcpy_s(dst_addr, copy_len, src_addr, copy_len);
     if (ret != 0) {
       KERNEL_LOG_ERROR("failed to call memcpy_s copy len %zu.", copy_len);
@@ -180,7 +181,8 @@ uint32_t TileCpuKernel::TileComputeUsingMemcpy(
 }
 
 uint32_t TileCpuKernel::TileComputeUsingSdma(
-  void *dst_addr, void *src_addr, size_t copy_len) {
+    void *dst_addr, void *src_addr, size_t copy_len) const
+{
     auto ret = halSdmaCopy(reinterpret_cast<DVdeviceptr>(dst_addr), copy_len,
                           reinterpret_cast<DVdeviceptr>(src_addr), copy_len);
     if (ret != DRV_ERROR_NONE) {
@@ -194,8 +196,8 @@ template <typename T>
 uint32_t TileCpuKernel::TileComputeWith2DNotUsingEigen(const CpuKernelContext &ctx) {
   Tensor *input_x = ctx.Input(kFirstInputIndex);
   Tensor *output = ctx.Output(kFirstOutputIndex);
-  auto input_x_data = reinterpret_cast<T *>(input_x->GetData());
-  auto output_data = reinterpret_cast<T *>(output->GetData());
+  auto input_x_data = static_cast<T *>(input_x->GetData());
+  auto output_data = static_cast<T *>(output->GetData());
   const std::vector<int64_t> input_x_dims = input_x->GetTensorShape()->GetDimSizes();
   const int64_t x_first_dim = input_x_dims[kIndexZero];
   const int64_t mul_first_dim = multiples_[kIndexZero];
@@ -247,8 +249,8 @@ template <typename T>
 uint32_t TileCpuKernel::TileComputeWith3DNotUsingEigen(const CpuKernelContext &ctx) {
   Tensor *input_x = ctx.Input(kFirstInputIndex);
   Tensor *output = ctx.Output(kFirstOutputIndex);
-  auto input_x_data = reinterpret_cast<T *>(input_x->GetData());
-  auto output_data = reinterpret_cast<T *>(output->GetData());
+  auto input_x_data = static_cast<T *>(input_x->GetData());
+  auto output_data = static_cast<T *>(output->GetData());
   const std::vector<int64_t> input_x_dims = input_x->GetTensorShape()->GetDimSizes();
   const int64_t x_first_dim = input_x_dims[kIndexZero];
   const int64_t x_second_dim = input_x_dims[kIndexOne];
@@ -304,8 +306,8 @@ uint32_t TileCpuKernel::TileKernelCompute(const CpuKernelContext &ctx) {
                      "output rank must be equal to input rank, current input "
                      "rand [%d], output rank [%ld]", input_rank, output_rank);
   const std::vector<int64_t> input_x_dims = x_shape->GetDimSizes(), output_dims = output_shape->GetDimSizes();
-  auto input_x_data = reinterpret_cast<T *>(input_x->GetData());
-  auto output_data = reinterpret_cast<T *>(output->GetData());
+  auto input_x_data = static_cast<T *>(input_x->GetData());
+  auto output_data = static_cast<T *>(output->GetData());
   bool use_eigen = (std::count(multiples_.begin(), multiples_.end(), 0) > 0) ||
                      (input_x->NumElements() < kParallelShapeSize);
   switch (input_rank) {
@@ -381,12 +383,12 @@ uint32_t TileCpuKernel::GetMultiplesValue(Tensor *tensor,
                                           std::vector<int64_t> &mtp_value) {
   auto type = tensor->GetDataType();
   if (type == DT_INT32) {
-    auto data = reinterpret_cast<int32_t *>(tensor->GetData());
+    auto data = static_cast<int32_t *>(tensor->GetData());
     for (int64_t i = 0; i < tensor->NumElements(); i++) {
       mtp_value.emplace_back(static_cast<int64_t>(*(data + i)));
     }
   } else if (type == DT_INT64) {
-    auto data = reinterpret_cast<int64_t *>(tensor->GetData());
+    auto data = static_cast<int64_t *>(tensor->GetData());
     for (int64_t i = 0; i < tensor->NumElements(); i++) {
       mtp_value.emplace_back(*(data + i));
     }

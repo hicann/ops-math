@@ -14,8 +14,10 @@
 #include "arch35/xlog1py_kernel.h"
 #include "arch35/xlog1py_tiling_struct.h"
 
-using TilingData4 = Xlog1pyTilingData<4>;
-using TilingData8 = Xlog1pyTilingData<8>;
+constexpr int64_t kRank4D = 4;
+constexpr int64_t kRank8D = 8;
+using TilingData4 = Xlog1pyTilingData<kRank4D>;
+using TilingData8 = Xlog1pyTilingData<kRank8D>;
 
 template<int RANK>
 __global__ __aicore__ void xlog1py(

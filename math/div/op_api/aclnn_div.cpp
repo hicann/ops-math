@@ -783,7 +783,6 @@ aclnnStatus aclnnDivModGetWorkspaceSize(
     bool isMixDataType = isMixDtypeTensorSupport(self, other);
     const aclTensor* divOpOut = nullptr;
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
-
     // TruncateDiv 特殊处理：IsRegBase && mode=MODE_TRUNC_DIV && 类型组合在映射表中，不做类型提升
     if (IsRegBase(npuArch) && mode == MODE_TRUNC_DIV) {
         if (isInTruncDtypeMapping(self->GetDataType(), other->GetDataType())) {
@@ -902,7 +901,6 @@ aclnnStatus aclnnDivModsGetWorkspaceSize(
     bool isMixDataType = isMixDtypeScalarSupport(self, other);
     const aclTensor* divOpOut = nullptr;
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
-
     // TruncateDiv 特殊处理：IsRegBase && mode=MODE_TRUNC_DIV && 类型组合在映射表中，不做类型提升
     if (IsRegBase(npuArch) && mode == MODE_TRUNC_DIV) {
         if (isInTruncDtypeMapping(self->GetDataType(), other->GetDataType())) {
