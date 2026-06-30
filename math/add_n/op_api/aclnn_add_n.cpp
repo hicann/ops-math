@@ -77,18 +77,6 @@ static bool CheckArch()
     return true;
 }
 
-// 获取BroadcastShape
-static bool GetTensorBroadcastShape(const aclTensorList* tensors, op::Shape &broadcastShape)
-{
-    broadcastShape = (*tensors)[0]->GetViewShape();
-    for (uint64_t i = 1; i < tensors->Size(); i++) {
-        if (!BroadcastInferShape((*tensors)[i]->GetViewShape(), broadcastShape, broadcastShape)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 // 进行Shape检查
 static bool CheckShape(const aclTensorList* tensors, const aclTensor* out)
 {
@@ -99,21 +87,22 @@ static bool CheckShape(const aclTensorList* tensors, const aclTensor* out)
                     MAX_SUPPORT_DIMS_NUMS);
             return false;
         }
-        if (dimNum == 0) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input tensor %lu has 0 dimension (scalar), which is not supported in this operator.", i);
-            return false;
-        }
     }
     OP_CHECK_MAX_DIM(out, MAX_SUPPORT_DIMS_NUMS, return false);
     
-    op::Shape broadcastShape;
-    if (!GetTensorBroadcastShape(tensors, broadcastShape)) {
-        // 检查输入tensors中的tensor是否都满足broadcast规则
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input tensors can't broadcast.");
+    auto shape = (*tensors)[0]->GetViewShape();
+    for (uint64_t i = 1; i < tensors->Size(); i++) {
+        if ((*tensors)[i]->GetViewShape() != shape) {
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input tensors should have same shape.");
+            return false;
+        }
+    }
+
+    if (shape != out->GetViewShape()) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input tensors should have same shape with output.");
         return false;
     }
-    // 输出shape应该等于输入tensors经过broadcast后的shape
-    OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(out, broadcastShape, return false);
+
     return true;
 }
 
@@ -172,32 +161,20 @@ aclnnStatus aclnnAddNGetWorkspaceSize(const aclTensorList* tensors, aclTensor *o
         }
     }
     
-    // 对输入tensors进行broadcast
-    op::Shape broadcastShape = (*tensors)[0]->GetViewShape();
-    for (uint64_t i = 1; i < tensors->Size(); i++) {
-        BroadcastInferShape((*tensors)[i]->GetViewShape(), broadcastShape, broadcastShape);
-    }
-
-    op::FVector<int64_t, op::MAX_DIM_NUM> broadcastDims = op::ToShapeVector(broadcastShape);
-    auto broadcastShapeArray = uniqueExecutor.get()->AllocIntArray(broadcastDims.data(), broadcastDims.size());
-    CHECK_RET(broadcastShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    
-    op::FVector<const aclTensor *> tensorList;
-    for (uint64_t i = 0; i < tensors->Size(); i++) {
-        auto tensorsContiguous = l0op::Contiguous((*tensors)[i], uniqueExecutor.get());
-        CHECK_RET(tensorsContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        auto tensorsBroadcast = l0op::BroadcastTo(tensorsContiguous, broadcastShapeArray, uniqueExecutor.get());
-        CHECK_RET(tensorsBroadcast != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        tensorList.push_back(tensorsBroadcast);
-    }
-
-    // 调用AddN算子计算
-    const aclTensorList *inputList = uniqueExecutor.get()->AllocTensorList(tensorList.data(), tensorList.size());
-    const aclTensor *addnOut;
-    if (tensors->Size() == 1 || broadcastDims.size() == 0) {
-        addnOut = (*tensors)[0];
+    aclTensor *addnOut = nullptr;
+    if (tensors->Size() == 1) {
+        addnOut = const_cast<aclTensor*>((*tensors)[0]);
     } else {
-        addnOut = l0op::AddN(inputList, uniqueExecutor.get());
+        op::FVector<const aclTensor *> tensorList;
+        for (uint64_t i = 0; i < tensors->Size(); i++) {
+            auto tensorsContiguous = l0op::Contiguous((*tensors)[i], uniqueExecutor.get());
+            CHECK_RET(tensorsContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            tensorList.push_back(tensorsContiguous);
+        }
+        
+        // 调用AddN算子计算
+        const aclTensorList *inputList = uniqueExecutor.get()->AllocTensorList(tensorList.data(), tensorList.size());
+        addnOut = const_cast<aclTensor*>(l0op::AddN(inputList, uniqueExecutor.get()));
     }
 
     CHECK_RET(addnOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
