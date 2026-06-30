@@ -32,6 +32,10 @@ static constexpr uint64_t INT16_MAX_VAL = 32767; // int16最大值，用于16位
 static constexpr uint8_t FP32_SIZE = 4;
 static constexpr uint8_t FP16_SIZE = 2;
 static constexpr uint8_t BF16_SIZE = 2;
+static constexpr uint8_t INT8_BYTE_SIZE = 1;   // int8/uint8数据类型占用字节数
+static constexpr uint8_t INT16_BYTE_SIZE = 2;  // int16/uint16数据类型占用字节数
+static constexpr uint8_t INT32_BYTE_SIZE = 4;  // int32/uint32数据类型占用字节数
+static constexpr uint8_t INT64_BYTE_SIZE = 8;  // int64/uint64数据类型占用字节数
 
 template <typename T>
 std::string PadV3GradReplicationTiling::ToString(const T* value, size_t size)
@@ -108,19 +112,19 @@ ge::graphStatus PadV3GradReplicationTiling::GetShapeAttrsInfo()
             break;
         case ge::DT_INT8:
         case ge::DT_UINT8:
-            dataSize_ = 1;
+            dataSize_ = INT8_BYTE_SIZE;
             break;
         case ge::DT_INT16:
         case ge::DT_UINT16:
-            dataSize_ = 2;
+            dataSize_ = INT16_BYTE_SIZE;
             break;
         case ge::DT_INT32:
         case ge::DT_UINT32:
-            dataSize_ = 4;
+            dataSize_ = INT32_BYTE_SIZE;
             break;
         case ge::DT_INT64:
         case ge::DT_UINT64:
-            dataSize_ = 8;
+            dataSize_ = INT64_BYTE_SIZE;
             break;
         default:
             OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(),
@@ -162,7 +166,7 @@ ge::graphStatus PadV3GradReplicationTiling::GetPaddings()
         return ge::GRAPH_FAILED;
     }
 
-    const size_t paddingsNum = paddingsTensor->GetShapeSize();
+    const size_t paddingsNum = static_cast<size_t>(paddingsTensor->GetShapeSize());
     OP_CHECK_IF(
         paddingsNum != PAIR * dimNum_,
         OP_LOGE_FOR_INVALID_LISTSIZE(context_->GetNodeName(),
@@ -213,7 +217,7 @@ void PadV3GradReplicationTiling::CalcStrideAligned()
 
 bool PadV3GradReplicationTiling::IsPaddingDim(uint32_t axis) const
 {
-    return (dimNum_ <= 5) || (axis + 5 >= dimNum_);
+    return (dimNum_ <= PAD_GRAD_REPLICATION_MAX_PAD_DIMS_NUM) || (axis + PAD_GRAD_REPLICATION_MAX_PAD_DIMS_NUM >= dimNum_);
 }
 
 uint64_t PadV3GradReplicationTiling::CalcWorstFactor(uint32_t axis) const
@@ -261,7 +265,7 @@ bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailabl
     //   - 非 cast ≤16 位: GatherToOutputBufGatherPath IndexT=uint16_t，限制 INT16_MAX
     //   - > 16 位: uint32_t 索引，无限制
     bool isCastType = (paramsDtype_ == ge::DT_FLOAT16 || paramsDtype_ == ge::DT_BF16);
-    uint64_t dataBufSz = isCastType ? 4 : dataSize_;  // PromoteT 大小 vs T 大小
+    uint64_t dataBufSz = isCastType ? FP32_SIZE : dataSize_;  // PromoteT 大小 vs T 大小
     uint64_t maxDataBufElements = UINT64_MAX;
     if (!isCastType && dataSize_ <= 2) {
         maxDataBufElements = INT16_MAX_VAL;
@@ -455,7 +459,7 @@ void PadV3GradReplicationTiling::CalcSplitStrategy()
     splitSize_ = static_cast<uint32_t>(inputShape_[lastAxis]);
 
     uint64_t outerCombos = 1;
-    for (uint32_t k = 0; k + 1 < (uint32_t)dimNum_; k++) {
+    for (uint32_t k = 0; k + 1 < static_cast<uint32_t>(dimNum_); k++) {
         outerCombos *= inputShape_[k];
     }
     splitCount_ = static_cast<uint32_t>(outerCombos);

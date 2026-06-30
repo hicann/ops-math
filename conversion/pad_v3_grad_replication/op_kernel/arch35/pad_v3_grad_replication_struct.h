@@ -17,6 +17,7 @@
 #define PAD_V3_GRAD_REPLICATION_STRUCT_H_
 
 constexpr uint64_t PAD_GRAD_REPLICATION_MAX_DIMS_NUM = 8;
+constexpr uint32_t PAD_GRAD_REPLICATION_MAX_PAD_DIMS_NUM = 5; // 后5维可做padding的最大维度数
 
 struct PadV3GradReplicationTilingData {
     uint8_t dimNum;

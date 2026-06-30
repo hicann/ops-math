@@ -74,14 +74,14 @@ private:
     uint32_t usedCoreNum_{0};
     uint32_t tilesPerCore_{0};
 
-    uint64_t inputShape_[8] = {0};
-    uint64_t outputShape_[8] = {0};
-    uint64_t strideAligned_[8] = {0};
-    int64_t leftPad_[8] = {0};  // 所有维度左padding（实际运行时前N-5维为0）
-    int64_t rightPad_[8] = {0}; // 所有维度右padding（实际运行时前N-5维为0）;
+    uint64_t inputShape_[PAD_GRAD_REPLICATION_MAX_DIMS_NUM] = {0};
+    uint64_t outputShape_[PAD_GRAD_REPLICATION_MAX_DIMS_NUM] = {0};
+    uint64_t strideAligned_[PAD_GRAD_REPLICATION_MAX_DIMS_NUM] = {0};
+    int64_t leftPad_[PAD_GRAD_REPLICATION_MAX_DIMS_NUM] = {0};  // 所有维度左padding（实际运行时前N-5维为0）
+    int64_t rightPad_[PAD_GRAD_REPLICATION_MAX_DIMS_NUM] = {0}; // 所有维度右padding（实际运行时前N-5维为0）;
 
     uint32_t padDimNum_{0};
-    uint32_t padDimIndices_[5] = {0};
+    uint32_t padDimIndices_[PAD_GRAD_REPLICATION_MAX_PAD_DIMS_NUM] = {0};
 
     uint32_t dataSize_{0}; // 数据类型大小（字节）
 

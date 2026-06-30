@@ -26,6 +26,7 @@ using namespace AscendC;
 constexpr uint32_t MAX_DIMS  = PAD_GRAD_REPLICATION_MAX_DIMS_NUM;
 constexpr uint32_t BLOCK_SIZE = 32;
 constexpr uint32_t VREG_BYTES = 256;   // 向量寄存器宽度（arch35）
+constexpr uint8_t MAX_PAD_DIMS = (uint8_t)PAD_GRAD_REPLICATION_MAX_PAD_DIMS_NUM; // 后5维可做padding的最大维度数
 
 // 精度提升类型：FP16/BF16 → FP32，其它类型保持原样
 template <typename T> struct PromoteOf      { using type = T;     };
@@ -686,7 +687,7 @@ private:
 
         // ---- 多维"原始行 group"轴信息（按"内→外"排列）----
         // 后 5 维起始 axis（DIM_NUM<=5 时为 0；DIM_NUM>5 时为 DIM_NUM-5）
-        constexpr int8_t kPadAxisStart  = (DIM_NUM > 5) ? (int8_t)(DIM_NUM - 5) : (int8_t)0;
+        constexpr int8_t kPadAxisStart  = (DIM_NUM > MAX_PAD_DIMS) ? (int8_t)(DIM_NUM - MAX_PAD_DIMS) : (int8_t)0;
         constexpr bool   kHasFrontMerge = ((int8_t)SPLIT_AXIS < kPadAxisStart);
         constexpr int8_t kRearStart     = kHasFrontMerge ? kPadAxisStart : (int8_t)SPLIT_AXIS;
         // 后段 axes 数：从 kRearStart 到 N-2（含），共 (N-2) - kRearStart + 1 = N-1-kRearStart 个
@@ -694,8 +695,8 @@ private:
         constexpr uint8_t kEffAxes      = (uint8_t)kRearAxes + (kHasFrontMerge ? 1u : 0u);
 
         // 构造 effExtents / effStrides（内→外排列：[0] = innermost = axis N-2）
-        uint32_t effExtents[5] = {1, 1, 1, 1, 1};
-        uint32_t effStrides[5] = {0, 0, 0, 0, 0};
+        uint32_t effExtents[MAX_PAD_DIMS] = {1, 1, 1, 1, 1};
+        uint32_t effStrides[MAX_PAD_DIMS] = {0, 0, 0, 0, 0};
         // Rear: axes [kRearStart, N-2]，innermost-first
         for (int8_t i = 0; i < kRearAxes; i++) {
             int8_t axis = (int8_t)(DIM_NUM - 2) - i;  // axis N-2, N-3, ..., kRearStart
@@ -762,7 +763,7 @@ private:
             outputBuf_.Get<T>().GetPhyAddr());
 
         // 多维 base 索引常量（与 GatherToOutputBuf 对齐）
-        constexpr int8_t kPadAxisStart  = (DIM_NUM > 5) ? (int8_t)(DIM_NUM - 5) : (int8_t)0;
+        constexpr int8_t kPadAxisStart  = (DIM_NUM > MAX_PAD_DIMS) ? (int8_t)(DIM_NUM - MAX_PAD_DIMS) : (int8_t)0;
         constexpr bool   kHasFrontMerge = ((int8_t)SPLIT_AXIS < kPadAxisStart);
         constexpr int8_t kRearStart     = kHasFrontMerge ? kPadAxisStart : (int8_t)SPLIT_AXIS;
         constexpr uint8_t kEffAxes = (uint8_t)((int8_t)(DIM_NUM - 1) - kRearStart)
@@ -934,11 +935,11 @@ private:
 
     // ---------------- 非 cast 路径：Gather/Scatter 跨行并行 ----------------
     // 位宽-IndexT-CastT 对应表（硬件约束，见 kernel_micro_datacopy_impl.h:62 / :157）：
-    //   B8   sizeof(T)==1  Gather src→dst: b8 →b16 ; Scatter: b8;  IndexT=uint16_t; Arange RangeT=int16_t
+    //   B8   sizeof(T)==1  Gather src→dst: b8 →b16; Scatter: b8 ; IndexT=uint16_t; RangeT=int16_t 。
     //                      → 需 reinterpret 到 RegTensor<CastT=uint16_t/int16_t>，再 Pack 回 B8
-    //   B16  sizeof(T)==2  Gather src→dst: b16→b16; Scatter: b16; IndexT=uint16_t; Arange RangeT=int16_t
-    //   B32  sizeof(T)==4  Gather src→dst: b32→b32; Scatter: b32; IndexT=uint32_t; Arange RangeT=int32_t
-    //   B64  sizeof(T)==8  Gather src→dst: b64→b64; Scatter: b64; IndexT=uint32_t（前 32 数）; RangeT=int32_t
+    //   B16  sizeof(T)==2  Gather src→dst: b16→b16; Scatter: b16; IndexT=uint16_t; RangeT=int16_t 。
+    //   B32  sizeof(T)==4  Gather src→dst: b32→b32; Scatter: b32; IndexT=uint32_t; RangeT=int32_t 。
+    //   B64  sizeof(T)==8  Gather src→dst: b64→b64; Scatter: b64; IndexT=uint32_t（前 32 数）; RangeT=int32_t 。
     // index 单位为**元素索引**（不是字节偏移），与 pad_v3/pad_scatter.h、roll/roll_gather_simd.h 一致。
     __aicore__ inline void GatherToOutputBufGatherPath(
         LocalTensor<T>& data, LocalTensor<T>& output, uint32_t totalGroups,
@@ -980,7 +981,7 @@ private:
         auto outputAddr = reinterpret_cast<__ubuf__ T*>(output.GetPhyAddr());
 
         // 多维 base 索引相关编译期常量（与 GatherToOutputBuf 对齐）
-        constexpr int8_t  kPadAxisStart  = (DIM_NUM > 5) ? (int8_t)(DIM_NUM - 5) : (int8_t)0;
+        constexpr int8_t  kPadAxisStart  = (DIM_NUM > MAX_PAD_DIMS) ? (int8_t)(DIM_NUM - MAX_PAD_DIMS) : (int8_t)0;
         constexpr bool    kHasFrontMerge = ((int8_t)SPLIT_AXIS < kPadAxisStart);
         constexpr int8_t  kRearStart     = kHasFrontMerge ? kPadAxisStart : (int8_t)SPLIT_AXIS;
         constexpr uint8_t kEffAxes       = (uint8_t)((int8_t)(DIM_NUM - 1) - kRearStart)

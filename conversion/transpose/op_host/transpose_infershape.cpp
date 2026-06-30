@@ -32,7 +32,7 @@ static bool TransposeInferCommon(
     int64_t insertedByFe = 0;
     if (attrs->GetAttrNum() > 0) {
         const int64_t* insertedByFeFlag = attrs->GetInt(0);
-        insertedByFe = insertedByFeFlag == NULL ? 0 : *insertedByFeFlag;
+        insertedByFe = insertedByFeFlag == nullptr ? 0 : *insertedByFeFlag;
     }
     if (insertedByFe == 0) {
         for (size_t i = 0; i < inputDimSize; ++i) {
