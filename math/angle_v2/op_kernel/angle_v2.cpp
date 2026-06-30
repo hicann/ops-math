@@ -70,7 +70,7 @@ extern "C" __global__ __aicore__ void angle_v2(GM_ADDR x, GM_ADDR y, GM_ADDR wor
         op.Init(x, y, &tilingData, &pipe);
         op.Process();
     } 
-#if (__CCE_AICORE__ >= 310) // bf16 is only supported by 950
+#if (__NPU_ARCH__ == 3510) // bf16 is only supported by 950
     else if (TILING_KEY_IS(KEY_DTYPE_BF16)) {
         AngleV2N::AngleV2<bfloat16_t> op;
         op.Init(x, y, &tilingData, &pipe);
