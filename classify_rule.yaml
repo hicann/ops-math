@@ -45,11 +45,30 @@ math@ops-math:
   src:
     release:
       huawei_style:
-        - ops/ops-math/math/
+        - ops/ops-math/math/**/op_api/*.cpp
+        - ops/ops-math/math/**/op_api/*.h
+        - ops/ops-math/math/*/op_host/*.cpp
+        - ops/ops-math/math/*/op_host/*.h
+        - ops/ops-math/math/*/op_kernel/*.cpp
+        - ops/ops-math/math/*/op_kernel/*.h
+        - ops/ops-math/math/atan2/
+        - ops/ops-math/math/cdist_grad/
+        - ops/ops-math/math/complex/
+        - ops/ops-math/math/cross/
+        - ops/ops-math/math/cummin/
+        - ops/ops-math/math/log_add_exp/
+        - ops/ops-math/math/reduce_log_sum/
+        - ops/ops-math/math/reduce_mean_with_count/
+        - ops/ops-math/math/reduce_nansum/
+        - ops/ops-math/math/polar/
+        - ops/ops-math/math/amp_update_scale/
       opensource_style: null
       kernel_style: null
     unrelease:
-      test_code: null
+      test_code: 
+        - ops/ops-math/math/*/examples/*.cpp
+        - ops/ops-math/math/*/tests/*/*.cpp
+        - ops/ops-math/math/*/tests/*/*.h
       non_delivery: null
       open_source: null
 
