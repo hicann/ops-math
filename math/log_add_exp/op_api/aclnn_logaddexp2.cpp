@@ -13,6 +13,7 @@
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -134,6 +135,30 @@ static bool CheckShape(const aclTensor* self, const aclTensor* other, const aclT
     return true;
 }
 
+static bool CheckFormat(const aclTensor* self, const aclTensor* other, const aclTensor* out)
+{
+    if (self->GetStorageFormat() != out->GetStorageFormat()) {
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Format of self and output should be equal. self [%s], out [%s].",
+            ToString(self->GetStorageFormat()).GetString(), ToString(out->GetStorageFormat()).GetString());
+        return false;
+    }
+
+    if (other->GetStorageFormat() != out->GetStorageFormat()) {
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Format of other and output should be equal. other [%s], out [%s].",
+            ToString(other->GetStorageFormat()).GetString(), ToString(out->GetStorageFormat()).GetString());
+        return false;
+    }
+
+    if (IsPrivateFormat(self->GetStorageFormat())) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
+        return false;
+    }
+
+    return true;
+}
+
 static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, const aclTensor* out) {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, other, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -144,10 +169,14 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, co
     // 3. 检查输入的shape
     CHECK_RET(CheckShape(self, other, out), ACLNN_ERR_PARAM_INVALID);
 
+    if (IsRegBase()) {
+        CHECK_RET(CheckFormat(self, other, out), ACLNN_ERR_PARAM_INVALID);
+    }
+
     return ACLNN_SUCCESS;
 }
 
-static void CheckFormat(const aclTensor* self, const aclTensor* target){
+static void WarnFormat(const aclTensor* self, const aclTensor* target){
   ge::Format selfStorageFormat = self->GetStorageFormat();
   ge::Format targetStorageFormat = target->GetStorageFormat();
   if (selfStorageFormat != ge::Format::FORMAT_ND || targetStorageFormat != ge::Format::FORMAT_ND){
@@ -168,7 +197,9 @@ aclnnStatus aclnnLogAddExp2GetWorkspaceSize(const aclTensor* self, const aclTens
     auto ret = CheckParams(self, other, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
-    CheckFormat(self, other);
+    if (!IsRegBase()) {
+        WarnFormat(self, other);
+    }
 
     // 算子的空tensor在kernel中支持，对标竞品根据算子实际情况补充
     if (self->IsEmpty() || other->IsEmpty()) {
