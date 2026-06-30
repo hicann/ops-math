@@ -231,10 +231,12 @@ private:
         DataCopyPad(src[additionOffset_ + firstOffset], input_[inAddr], copyInParams, padParams);
         ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
         SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
-        if ((idx & 1) == 0) {
-            SetFlag<HardEvent::MTE2_V>(EVENT_ID0);
-        } else {
-            SetFlag<HardEvent::MTE2_V>(EVENT_ID1);
+        if (!lastOut_) {
+            if ((idx & 1) == 0) {
+                SetFlag<HardEvent::MTE2_V>(EVENT_ID0);
+            } else {
+                SetFlag<HardEvent::MTE2_V>(EVENT_ID1);
+            }
         }
         if (idx >= 1) {
             int32_t nextIdx = idx + 1;
@@ -302,10 +304,12 @@ private:
         DataCopyPad(src[additionOffset_ + firstOffset], input_[inAddr], copyInParams, padParams);
         ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
         SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
-        if ((idx & 1) == 0) {
-            SetFlag<HardEvent::MTE2_V>(EVENT_ID0);
-        } else {
-            SetFlag<HardEvent::MTE2_V>(EVENT_ID1);
+        if (!lastOut_) {
+            if ((idx & 1) == 0) {
+                SetFlag<HardEvent::MTE2_V>(EVENT_ID0);
+            } else {
+                SetFlag<HardEvent::MTE2_V>(EVENT_ID1);
+            }
         }
         if (idx >= 1) {
             int32_t nextIdx = idx + 1;
@@ -351,10 +355,12 @@ private:
             (outIndex_[ubAxis] + ubFactor < tilingData_->outShape[ubAxis] ? outIndex_[ubAxis] + ubFactor :
                                                                             tilingData_->outShape[ubAxis]);
         SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
-        if ((idx & 1) == 0) {
-            SetFlag<HardEvent::MTE2_V>(EVENT_ID0);
-        } else {
-            SetFlag<HardEvent::MTE2_V>(EVENT_ID1);
+        if (!lastOut_) {
+            if ((idx & 1) == 0) {
+                SetFlag<HardEvent::MTE2_V>(EVENT_ID0);
+            } else {
+                SetFlag<HardEvent::MTE2_V>(EVENT_ID1);
+            }
         }
         if (idx >= 1) {
             int32_t nextIdx = idx + 1;
@@ -1062,10 +1068,12 @@ private:
         const uint32_t ubFactor = tilingData_->ubFactor;
         uint64_t outAddr = 0;
         SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
-        if ((idx & 1) == 0) {
-            SetFlag<HardEvent::V_MTE3>(EVENT_ID0);
-        } else {
-            SetFlag<HardEvent::V_MTE3>(EVENT_ID1);
+        if (!lastOut_) {
+            if ((idx & 1) == 0) {
+                SetFlag<HardEvent::V_MTE3>(EVENT_ID0);
+            } else {
+                SetFlag<HardEvent::V_MTE3>(EVENT_ID1);
+            }
         }
         if (idx >= 1) {
             int32_t nextIdx = idx + 1;

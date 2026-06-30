@@ -200,10 +200,12 @@ private:
             LocalTensor<T> nextLocal =
                 input[(nextIdx & 1) * (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T)];
             Duplicate(nextLocal, constValue_, (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T));
-            if ((nextIdx & 1) == 0) {
-                SetFlag<HardEvent::V_MTE2>(EVENT_ID0);
-            } else {
-                SetFlag<HardEvent::V_MTE2>(EVENT_ID1);
+            if (!lastOut_) {
+                if ((nextIdx & 1) == 0) {
+                    SetFlag<HardEvent::V_MTE2>(EVENT_ID0);
+                } else {
+                    SetFlag<HardEvent::V_MTE2>(EVENT_ID1);
+                }
             }
         }
 

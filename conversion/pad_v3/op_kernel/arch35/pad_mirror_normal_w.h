@@ -239,10 +239,12 @@ private:
         PadMirrNormalParam& padParam, int32_t idx)
     {
         SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
-        if ((idx & 1) == 0) {
-            SetFlag<HardEvent::MTE2_V>(EVENT_ID0);
-        } else {
-            SetFlag<HardEvent::MTE2_V>(EVENT_ID1);
+        if (!lastOut_) {
+            if ((idx & 1) == 0) {
+                SetFlag<HardEvent::MTE2_V>(EVENT_ID0);
+            } else {
+                SetFlag<HardEvent::MTE2_V>(EVENT_ID1);
+            }
         }
         if (idx >= 1) {
             int32_t nextIdx = idx + 1;
@@ -666,10 +668,12 @@ private:
         const LocalTensor<T>& src, const LocalTensor<T>& srcT, PadMirrNormalParam& padParam, int32_t idx)
     {
         SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
-        if ((idx & 1) == 0) {
-            SetFlag<HardEvent::V_MTE3>(EVENT_ID0);
-        } else {
-            SetFlag<HardEvent::V_MTE3>(EVENT_ID1);
+        if (!lastOut_) {
+            if ((idx & 1) == 0) {
+                SetFlag<HardEvent::V_MTE3>(EVENT_ID0);
+            } else {
+                SetFlag<HardEvent::V_MTE3>(EVENT_ID1);
+            }
         }
         if (idx >= 1) {
             int32_t nextIdx = idx + 1;
@@ -710,10 +714,12 @@ private:
         } else {
             CopyOutPad(src, Indexes, padParam, curFromIndex, curToIndex);
         }
-        if ((idx & 1) == 0) {
-            SetFlag<HardEvent::MTE3_MTE2>(EVENT_ID0);
-        } else {
-            SetFlag<HardEvent::MTE3_MTE2>(EVENT_ID1);
+        if (!lastOut_) {
+            if ((idx & 1) == 0) {
+                SetFlag<HardEvent::MTE3_MTE2>(EVENT_ID0);
+            } else {
+                SetFlag<HardEvent::MTE3_MTE2>(EVENT_ID1);
+            }
         }
     }
 

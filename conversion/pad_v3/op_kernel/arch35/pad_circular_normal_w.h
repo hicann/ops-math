@@ -214,10 +214,12 @@ public:
     __aicore__ inline void ProcessPad(const LocalTensor<T>& src, PadCircNormalParam& padParam, int32_t idx)
     {
         SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
-        if ((idx & 1) == 0) {
-            SetFlag<HardEvent::MTE2_V>(EVENT_ID0);
-        } else {
-            SetFlag<HardEvent::MTE2_V>(EVENT_ID1);
+        if (!lastOut_) {
+            if ((idx & 1) == 0) {
+                SetFlag<HardEvent::MTE2_V>(EVENT_ID0);
+            } else {
+                SetFlag<HardEvent::MTE2_V>(EVENT_ID1);
+            }
         }
         if (idx >= 1) {
             int32_t nextIdx = idx + 1;
@@ -537,10 +539,12 @@ public:
     __aicore__ inline void CopyOut(const LocalTensor<T>& dst, PadCircNormalParam& padParam, int32_t idx)
     {
         SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
-        if ((idx & 1) == 0) {
-            SetFlag<HardEvent::V_MTE3>(EVENT_ID0);
-        } else {
-            SetFlag<HardEvent::V_MTE3>(EVENT_ID1);
+        if (!lastOut_) {
+            if ((idx & 1) == 0) {
+                SetFlag<HardEvent::V_MTE3>(EVENT_ID0);
+            } else {
+                SetFlag<HardEvent::V_MTE3>(EVENT_ID1);
+            }
         }
         if (idx >= 1) {
             int32_t nextIdx = idx + 1;
@@ -577,10 +581,12 @@ public:
         for (auto i = curFromIndex; i < curToIndex; i++) {
             CopyOutOne(dst, padParam, Indexes[i]);
         }
-        if ((idx & 1) == 0) {
-            SetFlag<HardEvent::MTE3_MTE2>(EVENT_ID0);
-        } else {
-            SetFlag<HardEvent::MTE3_MTE2>(EVENT_ID1);
+        if (!lastOut_) {
+            if ((idx & 1) == 0) {
+                SetFlag<HardEvent::MTE3_MTE2>(EVENT_ID0);
+            } else {
+                SetFlag<HardEvent::MTE3_MTE2>(EVENT_ID1);
+            }
         }
     }
 
