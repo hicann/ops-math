@@ -15,8 +15,7 @@ import numpy as np
 
 __golden__ = {
     "kernel": {
-        "transpose": "transpose_golden",
-        "transpose_d": "transpose_golden"
+        "transpose": "transpose_golden"
     }
 }
 

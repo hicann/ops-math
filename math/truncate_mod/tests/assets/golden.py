@@ -15,9 +15,33 @@ import numpy as np
 
 __golden__ = {
     "kernel": {
-        "sinc": "sinc_golden"
+        "truncate_mod": "truncate_mod_golden"
     }
 }
+
+
+def _broadcast_to_maxshape(shapes):
+    """
+    produce broadcast shape
+    for example:
+        input: shape is [[2, 3], [3, 2, 1], [3, 1, 3]]
+        output: [1, 2, 3], [3, 2, 1], [3, 1, 3], [3, 2, 3]
+    """
+    def _max(_shape):
+        no_one_shape = [s for s in _shape if s != 1]
+        if len(no_one_shape) == 0:
+            max_value = 1
+        else:
+            max_value = no_one_shape[0]
+        return max_value
+    max_dim_length = max(len(list(shape)) for shape in shapes)
+    input_shapes = []
+    for shape in shapes:
+        input_shapes.append([1 for _ in range(max_dim_length - len(shape))] + list(shape))
+    input_shapes = list(map(list, zip(*input_shapes)))
+    max_shape = [_max(shape) for shape in input_shapes]
+    input_shapes = list(map(list, zip(*input_shapes)))
+    return (*input_shapes, max_shape)
 
 
 def _numpy_bfloat16():
@@ -61,10 +85,10 @@ def _torch_to_numpy_tensor(torch_tensor):
         return torch_tensor.numpy()
 
 
-def sinc_golden(x, **kwargs):
+def truncate_mod_golden(x1, x2, **kwargs):
     '''
-    Kernel golden for sinc.
-    All the parameters follow @sinc_def.cpp without outputs.
+    Kernel golden for truncate_mod.
+    All the parameters follow @truncate_mod_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
@@ -72,6 +96,40 @@ def sinc_golden(x, **kwargs):
     '''
     import torch
 
-    input_x = _numpy_to_torch_tensor(x)
-    output = torch.sinc(input_x)
-    return _torch_to_numpy_tensor(output)
+    output_dtype = kwargs.get("output_dtypes", [None])[0]
+    if output_dtype is None:
+        output_dtype = str(x1.dtype)
+
+    type_int = [torch.int8, torch.int16, torch.int32, torch.int64]
+    type_uint = [torch.uint8, torch.uint16, torch.uint32, torch.uint64]
+    type_float = [torch.float16, torch.bfloat16, torch.float, torch.float64]
+
+    # copy
+    x1 = x1.copy()
+    x2 = x2.copy()
+
+    # 除零保护
+    _, _, res_shape = _broadcast_to_maxshape([x1.shape, x2.shape])
+    X2_broadcast = np.broadcast_to(x2, res_shape)
+    zero_X2_broadcast_idx = np.where(X2_broadcast == 0)
+
+    zero_idx = np.where(x2 == 0)
+    if zero_idx:
+        x2[zero_idx] = 1
+
+    x1 = _numpy_to_torch_tensor(x1)
+    x2 = _numpy_to_torch_tensor(x2)
+    res = torch.fmod(x1, x2)
+
+    # 除零保护
+    if zero_idx:
+        x2[zero_idx] = 0
+        if res.dtype in type_int:
+            res[zero_X2_broadcast_idx] = -1
+        if res.dtype in type_uint:
+            res[zero_X2_broadcast_idx] = 255
+        if res.dtype in type_float:
+            res[zero_X2_broadcast_idx] = torch.nan
+
+    res_np = _torch_to_numpy_tensor(res)
+    return res_np.astype(output_dtype, copy=False)

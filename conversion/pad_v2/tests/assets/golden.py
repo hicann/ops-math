@@ -130,7 +130,7 @@ def pad_v2_golden(x, paddings, constant_values, **kwargs):
         cv = constant_values_arr[0]
     elif x.dtype.name == "bfloat16":
         x_tensor = _numpy_to_torch_tensor(x).to(torch.float32)
-        cv = constant_values_arr[0]
+        cv = float(constant_values_arr[0])
     elif x.dtype.name in fp8dtypes:
         x_tensor = _numpy_to_torch_tensor(x.view(np.int8))
         constant_values_arr = constant_values_arr.view(np.int8)
