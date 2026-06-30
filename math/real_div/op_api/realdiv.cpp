@@ -30,12 +30,21 @@ static const int MODE_TRUNC_DIV = 1;
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT,
     op::DataType::DT_FLOAT16, op::DataType::DT_BF16, op::DataType::DT_BOOL};
 
+static const std::initializer_list<op::DataType> ASCEND910B_AICORE_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT,
+    op::DataType::DT_FLOAT16, op::DataType::DT_BF16, op::DataType::DT_BOOL, op::DataType::DT_INT32};
+
 static const std::initializer_list<op::DataType> ASCEND610LITE_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT,
     op::DataType::DT_FLOAT16, op::DataType::DT_INT8, op::DataType::DT_UINT8, op::DataType::DT_INT32};
 
 static const std::initializer_list<op::DataType> ASCEND950_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT,
     op::DataType::DT_FLOAT16, op::DataType::DT_BF16, op::DataType::DT_BOOL, op::DataType::DT_INT32,
     op::DataType::DT_INT64};
+
+// 判断当前芯片是否支持int32精度的RealDiv kernel（仅910B/910C支持）
+static bool IsInt32PrecisionSupported() {
+  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
+  return socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93;
+}
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static bool IsAiCoreSupport(const aclTensor* self) {
@@ -46,6 +55,9 @@ static bool IsAiCoreSupport(const aclTensor* self) {
   }
   if (socVersion == SocVersion::ASCEND610LITE) {
     return CheckType(self->GetDataType(), ASCEND610LITE_DTYPE_SUPPORT_LIST);
+  }
+  if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93) {
+    return CheckType(self->GetDataType(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
   }
   return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
 }
@@ -84,10 +96,12 @@ const aclTensor* RealDiv(const aclTensor* self, const aclTensor* other, aclOpExe
   }
 
   aclTensor* divOut;
-  if (self->GetDataType() != op::DataType::DT_BOOL) {
-    divOut = executor->AllocTensor(broadcastShape, self->GetDataType());
-  } else {
+  if (self->GetDataType() == op::DataType::DT_BOOL ||
+      (self->GetDataType() == op::DataType::DT_INT32 && other->GetDataType() == op::DataType::DT_INT32 &&
+       IsInt32PrecisionSupported())) {
     divOut = executor->AllocTensor(broadcastShape, op::DataType::DT_FLOAT);
+  } else {
+    divOut = executor->AllocTensor(broadcastShape, self->GetDataType());
   }
 
   if (IsAiCoreSupport(self)) {
@@ -108,7 +122,9 @@ const aclTensor* RealDiv(const aclTensor* self, const aclTensor* other, const in
 
   bool isOutDtypeFloat = false;
   if (mode == MODE_REAL_DIV &&
-      (self->GetDataType() == op::DataType::DT_BOOL || self->GetDataType() == op::DataType::DT_INT32)) {
+      (self->GetDataType() == op::DataType::DT_BOOL ||
+       (self->GetDataType() == op::DataType::DT_INT32 && other->GetDataType() == op::DataType::DT_INT32 &&
+        IsInt32PrecisionSupported()))) {
     isOutDtypeFloat = true;
   }
 
@@ -149,8 +165,11 @@ const aclTensor* RealDiv(const aclTensor* self, const aclTensor* other, bool isS
   }
 
   aclTensor* divOut;
-  if ((isScalar && self->GetDataType() != op::DataType::DT_BOOL) || 
-    ((!isScalar) && self->GetDataType() == other->GetDataType() && self->GetDataType() != op::DataType::DT_BOOL)) {
+  bool isInt32Precision = self->GetDataType() == op::DataType::DT_INT32 &&
+                          other->GetDataType() == op::DataType::DT_INT32 && IsInt32PrecisionSupported();
+  if ((isScalar && self->GetDataType() != op::DataType::DT_BOOL && !isInt32Precision) || 
+    ((!isScalar) && self->GetDataType() == other->GetDataType() && self->GetDataType() != op::DataType::DT_BOOL &&
+     !isInt32Precision)) {
     divOut = executor->AllocTensor(broadcastShape, self->GetDataType());
   } else {
     divOut = executor->AllocTensor(broadcastShape, op::DataType::DT_FLOAT);
