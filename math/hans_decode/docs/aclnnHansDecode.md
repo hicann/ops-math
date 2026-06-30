@@ -111,9 +111,10 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-## 约束与限制
+## 约束说明
 
-无
+- 确定性计算：
+  - aclnnHansDecode默认确定性实现。
 
 ## 调用示例
 
