@@ -53,7 +53,7 @@ aclnnStatus aclnnSub(
 
 ```cpp
 aclnnStatus aclnnInplaceSubGetWorkspaceSize(
-    const aclTensor* selfRef, 
+    aclTensor* selfRef,
     const aclTensor* other,
     const aclScalar* alpha, 
     uint64_t*        workspaceSize,
