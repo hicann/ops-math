@@ -55,6 +55,7 @@ constexpr int32_t SIMT_THREAD_NUM = 1024;
 constexpr int64_t MAX_NUM = 9223372036854775807;
 constexpr int32_t BASE_TWO = 2;
 constexpr int32_t BASE_FOUR = 4;
+constexpr int32_t SIMT_MIN_CORE_NUM = 8;
 
 template <typename T>
 std::string SplitVTiling::ArrayToString(const T *vec, size_t num) const
@@ -695,6 +696,9 @@ void SplitVTiling::CalSplitSizeDiff(int32_t maxCoreNum, int64_t &maxSizeSplit,
 // 6) 等长模式下，simd的性能更好
 bool SplitVTiling::IsDoSplitVSIMT(int32_t maxCoreNum) {
     if (isSameLenMode_) {
+        return false;
+    }
+    if (maxCoreNum <= SIMT_MIN_CORE_NUM) {
         return false;
     }
     // (3) (5) 分块限制
