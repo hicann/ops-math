@@ -173,8 +173,12 @@ static inline op::DataType CompatibleInferDivDtype(const op::DataType selfDtype,
 {
     // RealDiv算子需要对self和other两个输入做隐式数据类型转换，根据具体算子语义按需调用
     auto promoteType = op::PromoteType(selfDtype, otherDtype);
-    // 下沉PTA入口操作将入参类型转化成FLOAT进行后续处理
-    promoteType = (IsFloatingType(promoteType) || IsComplexType(promoteType) || promoteType == op::DataType::DT_BOOL) ?
+    // 下沉PTA入口操作将入参类型转化成FLOAT进行后续处理，int32除外（仅910B/910C的L0算子已支持int32精度）
+    auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
+    bool isInt32PrecisionSupported = socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93;
+    promoteType = (IsFloatingType(promoteType) || IsComplexType(promoteType) || promoteType == op::DataType::DT_BOOL ||
+                   (selfDtype == op::DataType::DT_INT32 && otherDtype == op::DataType::DT_INT32 &&
+                    isInt32PrecisionSupported)) ?
                       promoteType :
                       op::DataType::DT_FLOAT;
     return promoteType;
@@ -208,7 +212,13 @@ static inline op::DataType InferDivModeDtype(
 
 static inline op::DataType CompatibleInferDivsDtype(const op::DataType selfDtype, const op::DataType otherDtype)
 {
-    auto promoteType = (IsFloatingType(selfDtype) || IsComplexType(selfDtype)) ? selfDtype : op::DataType::DT_FLOAT;
+    auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
+    bool isInt32PrecisionSupported = socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93;
+    auto promoteType = (IsFloatingType(selfDtype) || IsComplexType(selfDtype) ||
+                        (selfDtype == op::DataType::DT_INT32 && otherDtype == op::DataType::DT_INT32 &&
+                         isInt32PrecisionSupported)) ?
+                           selfDtype :
+                           op::DataType::DT_FLOAT;
     promoteType = (selfDtype == op::DataType::DT_BOOL && otherDtype == op::DataType::DT_BOOL) ? selfDtype : promoteType;
     promoteType = (IsComplexType(otherDtype)) ? op::PromoteType(promoteType, otherDtype) : promoteType;
     return promoteType;
@@ -224,12 +234,16 @@ static aclnnStatus CompatibleInferDivModeDtype(
         return ACLNN_ERR_PARAM_INVALID;
     }
     // 根据mode分三种场景调用算子计算
+    auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
+    bool isInt32PrecisionSupported = socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93;
     if (mode == MODE_FLOOR_DIV) {
         promoteType = (promoteType == op::DataType::DT_BOOL) ? op::DataType::DT_FLOAT : promoteType;
     } else {
         promoteType = ((promoteType != op::DataType::DT_FLOAT) && (promoteType != op::DataType::DT_FLOAT16) &&
                        (promoteType != op::DataType::DT_COMPLEX64) && (promoteType != op::DataType::DT_COMPLEX128) &&
-                       (promoteType != op::DataType::DT_BF16) && (promoteType != op::DataType::DT_BOOL)) ?
+                       (promoteType != op::DataType::DT_BF16) && (promoteType != op::DataType::DT_BOOL) &&
+                       !(selfDtype == op::DataType::DT_INT32 && otherDtype == op::DataType::DT_INT32 &&
+                         isInt32PrecisionSupported)) ?
                           op::DataType::DT_FLOAT :
                           promoteType;
     }
@@ -246,11 +260,15 @@ static aclnnStatus CompatibleInferDivsModeDtype(
         return ACLNN_ERR_PARAM_INVALID;
     }
     // 根据mode分三种场景调用算子计算
+    auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
+    bool isInt32PrecisionSupported = socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93;
     if (mode == MODE_FLOOR_DIV) {
         promoteType = (promoteType == op::DataType::DT_BOOL) ? op::DataType::DT_FLOAT : promoteType;
     } else {
         promoteType = ((selfDtype != op::DataType::DT_FLOAT) && (selfDtype != op::DataType::DT_FLOAT16) &&
-                       (selfDtype != op::DataType::DT_BF16) && (promoteType != op::DataType::DT_BOOL)) ?
+                       (selfDtype != op::DataType::DT_BF16) && (promoteType != op::DataType::DT_BOOL) &&
+                       !(selfDtype == op::DataType::DT_INT32 && otherDtype == op::DataType::DT_INT32 &&
+                         isInt32PrecisionSupported)) ?
                           op::DataType::DT_FLOAT :
                           selfDtype;
         promoteType = (IsComplexType(selfDtype) || IsComplexType(otherDtype)) ? op::PromoteType(selfDtype, otherDtype) :
@@ -670,6 +688,8 @@ aclnnStatus aclnnDivsGetWorkspaceSize(
 
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     bool isSupportNonContiguous = IsRegBase(npuArch);
+    auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
+    bool isInt32PrecisionSupported = socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93;
 
     // 判断输入是否符合kernel支持的混合输入类型
     bool isMixDataType = isDivsMixDtypeSupport(self, other);
@@ -691,7 +711,9 @@ aclnnStatus aclnnDivsGetWorkspaceSize(
         auto promoteType = (!IsRegBase(npuArch)) ?
                                CompatibleInferDivsDtype(self->GetDataType(), other->GetDataType()) :
                                InferDivsModeDtype(self->GetDataType(), other->GetDataType(), MODE_REAL_DIV);
-        promoteType = (IsFloatingType(self->GetDataType()) || IsComplexType(self->GetDataType())) ?
+        promoteType = (IsFloatingType(self->GetDataType()) || IsComplexType(self->GetDataType()) ||
+                       (self->GetDataType() == op::DataType::DT_INT32 && other->GetDataType() == op::DataType::DT_INT32 &&
+                        isInt32PrecisionSupported)) ?
                           self->GetDataType() :
                           op::DataType::DT_FLOAT;
         promoteType = (self->GetDataType() == op::DataType::DT_BOOL && other->GetDataType() == op::DataType::DT_BOOL) ?
