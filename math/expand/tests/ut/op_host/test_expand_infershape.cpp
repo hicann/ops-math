@@ -46,3 +46,79 @@ TEST_F(ExpandInferShapeTest, expand_infershape_test_case_1){
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
+// Test scenario: expand with DT_INT32 dtype for shape tensor to cover the INT32 branch in GetConstValueToShape
+TEST_F(ExpandInferShapeTest, expand_infershape_int32_dtype_001)
+{
+    gert::StorageShape shape = {{3, 7}, {3, 7}};
+    gert::StorageShape shape1 = {{2}, {2}};
+    int32_t shapes[2] = {3, 7};
+    gert::InfershapeContextPara::TensorDescription x(shape, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::InfershapeContextPara::TensorDescription shapeParams(shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes);
+    gert::InfershapeContextPara::TensorDescription y(shape, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::InfershapeContextPara infershapeContextPara("Expand", {x, shapeParams}, {y});
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {{3, 7}},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test scenario: expand with -1 in shape tensor to cover the out_dim == -1 branch
+TEST_F(ExpandInferShapeTest, expand_infershape_negative_one_001)
+{
+    gert::StorageShape shape = {{3, 7}, {3, 7}};
+    gert::StorageShape shape1 = {{2}, {2}};
+    int64_t shapes[2] = {-1, 7};
+    gert::InfershapeContextPara::TensorDescription x(shape, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::InfershapeContextPara::TensorDescription shapeParams(shape1, ge::DT_INT64, ge::FORMAT_ND, true, &shapes);
+    gert::InfershapeContextPara::TensorDescription y(shape, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::InfershapeContextPara infershapeContextPara("Expand", {x, shapeParams}, {y});
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {{3, 7}},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test scenario: expand broadcast failure - x dim incompatible with target dim (x_dim != 1 && x_dim != out_dim)
+TEST_F(ExpandInferShapeTest, expand_infershape_broadcast_fail_001)
+{
+    gert::StorageShape shape = {{3, 7}, {3, 7}};
+    gert::StorageShape shape1 = {{2}, {2}};
+    int64_t shapes[2] = {3, 5};
+    gert::InfershapeContextPara::TensorDescription x(shape, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::InfershapeContextPara::TensorDescription shapeParams(shape1, ge::DT_INT64, ge::FORMAT_ND, true, &shapes);
+    gert::InfershapeContextPara::TensorDescription y(shape, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::InfershapeContextPara infershapeContextPara("Expand", {x, shapeParams}, {y});
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
+}
+
+// Test scenario: expand with fewer input dims and -1 in new leading dimensions (i < diff branch)
+TEST_F(ExpandInferShapeTest, expand_infershape_new_dim_minus_one_001)
+{
+    gert::StorageShape shape = {{7, 2}, {7, 2}};
+    gert::StorageShape shape1 = {{3}, {3}};
+    int64_t shapes[3] = {-1, 7, 2};
+    gert::InfershapeContextPara::TensorDescription x(shape, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::InfershapeContextPara::TensorDescription shapeParams(shape1, ge::DT_INT64, ge::FORMAT_ND, true, &shapes);
+    gert::InfershapeContextPara::TensorDescription y(shape, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::InfershapeContextPara infershapeContextPara("Expand", {x, shapeParams}, {y});
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {{1, 7, 2}},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test scenario: expand where target dim is 1 but x dim is not 1 (out_dim == 1 && x_dim != 1)
+TEST_F(ExpandInferShapeTest, expand_infershape_out_dim_1_x_not_1_001)
+{
+    gert::StorageShape shape = {{3, 7}, {3, 7}};
+    gert::StorageShape shape1 = {{2}, {2}};
+    int64_t shapes[2] = {3, 1};
+    gert::InfershapeContextPara::TensorDescription x(shape, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::InfershapeContextPara::TensorDescription shapeParams(shape1, ge::DT_INT64, ge::FORMAT_ND, true, &shapes);
+    gert::InfershapeContextPara::TensorDescription y(shape, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::InfershapeContextPara infershapeContextPara("Expand", {x, shapeParams}, {y});
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {{3, 7}},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}

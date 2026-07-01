@@ -523,3 +523,23 @@ TEST_F(BatchToSpaceNDInfershapeTest, batch_to_space_nd_block_shape_zero_both_dim
 
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
 }
+
+// Block_shape with float dtype (unsupported for integer const data); expect GRAPH_FAILED
+TEST_F(BatchToSpaceNDInfershapeTest, batch_to_space_nd_init_fail_block_shape_dtype)
+{
+    std::vector<float> blockShapeValues = {2.0f, 2.0f};
+    std::vector<int32_t> cropsValues = {0, 0, 0, 0};
+
+    gert::InfershapeContextPara infershapeContextPara(
+        "BatchToSpaceND",
+        {
+            {{{4, 1, 2, 2}, {4, 1, 2, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2}, {2}}, ge::DT_FLOAT, ge::FORMAT_ND, true, blockShapeValues.data()},
+            {{{2, 2}, {2, 2}}, ge::DT_INT32, ge::FORMAT_ND, true, cropsValues.data()},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
+
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
+}

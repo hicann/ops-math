@@ -130,3 +130,55 @@ TEST_F(BatchToSpaceNDTilingSimtTest, BatchToSpaceNDTilingSimtTest_4d_bigshape)
     EXPECT_EQ(data->tailBlockSize, 16384);
     EXPECT_EQ(tilingInfo.blockNum, 64);
 }
+
+// Bool dtype with small remain axis in 4D shape; expect SIMT tiling
+TEST_F(BatchToSpaceNDTilingSimtTest, BatchToSpaceNDTilingSimtTest_dsize1_bool_4d)
+{
+    std::vector<int32_t> blockShapeValues = {2, 2};
+    std::vector<int32_t> cropsValues = {0, 0, 0, 0};
+    size_t bsDimNum = blockShapeValues.size();
+    gert::TilingContextPara tilingContextPara(
+        "BatchToSpaceND",
+        {
+            {{{4, 3, 5, 3}, {4, 3, 5, 3}}, ge::DT_BOOL, ge::FORMAT_ND},
+            {{{bsDimNum}, {bsDimNum}}, ge::DT_INT32, ge::FORMAT_ND, true, blockShapeValues.data()},
+            {{{bsDimNum, 2}, {bsDimNum, 2}}, ge::DT_INT32, ge::FORMAT_ND, true, cropsValues.data()},
+        },
+        {
+            {{{1, 6, 10, 3}, {1, 6, 10, 3}}, ge::DT_BOOL, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    TilingInfo tilingInfo;
+    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+    ASSERT_TRUE(tilingRet);
+    std::vector<int64_t> expectWorkspaces = {0};
+    EXPECT_EQ(tilingInfo.workspaceSizes, expectWorkspaces);
+    EXPECT_EQ(tilingInfo.tilingKey, 0b0'00000000'00000000);
+    ASSERT_EQ(tilingInfo.tilingDataSize, sizeof(B2SNDSimtTilingData));
+}
+
+// Int8 dtype with small remain axis in 3D shape; expect SIMT tiling
+TEST_F(BatchToSpaceNDTilingSimtTest, BatchToSpaceNDTilingSimtTest_dsize1_int8_3d)
+{
+    std::vector<int32_t> blockShapeValues = {2};
+    std::vector<int32_t> cropsValues = {0, 0};
+    size_t bsDimNum = blockShapeValues.size();
+    gert::TilingContextPara tilingContextPara(
+        "BatchToSpaceND",
+        {
+            {{{6, 3, 4}, {6, 3, 4}}, ge::DT_INT8, ge::FORMAT_ND},
+            {{{bsDimNum}, {bsDimNum}}, ge::DT_INT32, ge::FORMAT_ND, true, blockShapeValues.data()},
+            {{{bsDimNum, 2}, {bsDimNum, 2}}, ge::DT_INT32, ge::FORMAT_ND, true, cropsValues.data()},
+        },
+        {
+            {{{3, 6, 4}, {3, 6, 4}}, ge::DT_INT8, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    TilingInfo tilingInfo;
+    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+    ASSERT_TRUE(tilingRet);
+    std::vector<int64_t> expectWorkspaces = {0};
+    EXPECT_EQ(tilingInfo.workspaceSizes, expectWorkspaces);
+    EXPECT_EQ(tilingInfo.tilingKey, 0b0'00000000'00000000);
+    ASSERT_EQ(tilingInfo.tilingDataSize, sizeof(B2SNDSimtTilingData));
+}

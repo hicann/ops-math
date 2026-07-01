@@ -14,6 +14,8 @@
  */
 
 #include "math/truncate_div/op_host/arch35/truncate_div_tiling_arch35.h"
+#include <cmath>
+#include <limits>
 #include <iostream>
 #include <gtest/gtest.h>
 #include "tiling_context_faker.h"
@@ -183,6 +185,327 @@ TEST_F(TruncateDivTilingTest, test_ez0020_scalar_dtype_int32)
     std::vector<size_t> expectWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
+}
+
+// FP16 x1 with scalar FP32 x2=0.0, reciprocal is INFINITY, tiling succeeds
+TEST_F(TruncateDivTilingTest, truncate_div_scalar_zero_divisor)
+{
+    BroadcastCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    std::vector<float> x2Data = {0.0f};
+    gert::TilingContextPara tilingContextPara("TruncateDiv",
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND, true, x2Data.data()},
+                                              },
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+}
+
+// FP16 x1 with scalar FP32 x2=-0.0, reciprocal is -INFINITY, tiling succeeds
+TEST_F(TruncateDivTilingTest, truncate_div_scalar_negative_zero)
+{
+    BroadcastCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    std::vector<float> x2Data = {-0.0f};
+    gert::TilingContextPara tilingContextPara("TruncateDiv",
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND, true, x2Data.data()},
+                                              },
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+}
+
+// FP32 x1 with scalar FP32 x2=INFINITY, reciprocal is 0.0, tiling succeeds
+TEST_F(TruncateDivTilingTest, truncate_div_scalar_infinity)
+{
+    BroadcastCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    std::vector<float> x2Data = {std::numeric_limits<float>::infinity()};
+    gert::TilingContextPara tilingContextPara("TruncateDiv",
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND, true, x2Data.data()},
+                                              },
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+}
+
+// FP32 x1 with scalar FP32 x2=-INFINITY, reciprocal is -0.0, tiling succeeds
+TEST_F(TruncateDivTilingTest, truncate_div_scalar_neg_infinity)
+{
+    BroadcastCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    std::vector<float> x2Data = {-std::numeric_limits<float>::infinity()};
+    gert::TilingContextPara tilingContextPara("TruncateDiv",
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND, true, x2Data.data()},
+                                              },
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+}
+
+// FP32 x1 with INT32 x2, non-scalar, tiling succeeds
+TEST_F(TruncateDivTilingTest, truncate_div_float_int32)
+{
+    BroadcastCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    gert::TilingContextPara tilingContextPara("TruncateDiv",
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{8, 128}, {8, 128}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+}
+
+// FP32 x1 with FP16 x2, non-scalar, tiling succeeds
+TEST_F(TruncateDivTilingTest, truncate_div_float_float16)
+{
+    BroadcastCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    gert::TilingContextPara tilingContextPara("TruncateDiv",
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+}
+
+// FP32 x1 with scalar FP16 x2, tiling succeeds via scalar multiply path
+TEST_F(TruncateDivTilingTest, truncate_div_float_float16_scalar)
+{
+    BroadcastCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    // FP16 bits for 2.0: sign=0, exponent=16, mantissa=0 → 0x4000
+    std::vector<uint16_t> x2Data = {0x4000};
+    gert::TilingContextPara tilingContextPara("TruncateDiv",
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND, true, x2Data.data()},
+                                              },
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+}
+
+// INT8 x1 and x2 same type, tiling succeeds
+TEST_F(TruncateDivTilingTest, truncate_div_int8_same)
+{
+    BroadcastCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    gert::TilingContextPara tilingContextPara("TruncateDiv",
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_INT8, ge::FORMAT_ND},
+                                                  {{{8, 128}, {8, 128}}, ge::DT_INT8, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_INT8, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+}
+
+// UINT8 x1 and x2 same type, tiling succeeds
+TEST_F(TruncateDivTilingTest, truncate_div_uint8_same)
+{
+    BroadcastCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    gert::TilingContextPara tilingContextPara("TruncateDiv",
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                                  {{{8, 128}, {8, 128}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+}
+
+// INT16 x1 and x2 same type, tiling succeeds
+TEST_F(TruncateDivTilingTest, truncate_div_int16_same)
+{
+    BroadcastCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    gert::TilingContextPara tilingContextPara("TruncateDiv",
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_INT16, ge::FORMAT_ND},
+                                                  {{{8, 128}, {8, 128}}, ge::DT_INT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_INT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+}
+
+// INT32 x1 and x2 same type, tiling succeeds
+TEST_F(TruncateDivTilingTest, truncate_div_int32_same)
+{
+    BroadcastCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    gert::TilingContextPara tilingContextPara("TruncateDiv",
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{8, 128}, {8, 128}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+}
+
+// INT64 x1 and x2 same type, tiling succeeds
+TEST_F(TruncateDivTilingTest, truncate_div_int64_same)
+{
+    BroadcastCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    gert::TilingContextPara tilingContextPara("TruncateDiv",
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                  {{{8, 128}, {8, 128}}, ge::DT_INT64, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_INT64, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+}
+
+// INT32 x1 with FP32 x2, tiling succeeds
+TEST_F(TruncateDivTilingTest, truncate_div_int32_float)
+{
+    BroadcastCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    gert::TilingContextPara tilingContextPara("TruncateDiv",
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+}
+
+// FP32 x1 with INT8 x2, unsupported dtype combination, tiling fails
+TEST_F(TruncateDivTilingTest, truncate_div_float_int8_unsupported)
+{
+    BroadcastCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    gert::TilingContextPara tilingContextPara("TruncateDiv",
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{8, 128}, {8, 128}}, ge::DT_INT8, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_FALSE(success);
+}
+
+// Scalar FP32 x2 with null const data, GetConstData fails, tiling fails
+TEST_F(TruncateDivTilingTest, truncate_div_scalar_null_data)
+{
+    BroadcastCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    gert::TilingContextPara tilingContextPara("TruncateDiv",
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND, true, nullptr},
+                                              },
+                                              {
+                                                  {{{8, 128}, {8, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_FALSE(success);
 }
 
 TEST_F(TruncateDivTilingTest, test_ez0021_dtype_combination_double)

@@ -622,3 +622,53 @@ TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_check_buff
     TestCheckBuffer(ge::DT_UINT16, {2, 2346, 2060, 2, 2}, {1, 1, 2}, {541, 224, 631, 1046, 2, 0});
     TestCheckBuffer(ge::DT_UINT16, {2, 2346, 2060, 2, 2}, {1, 1}, {1, 0, 1, 0});
 }
+
+// Asymmetric block_shape {2,1} with crops on second dim; expect SmallC tiling
+TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_asymmetric_block_shape_cut)
+{
+    auto dataType = ge::DT_FLOAT16;
+    std::vector<int32_t> blockShapeValues = {2, 1};
+    std::vector<int32_t> cropsValues = {0, 0, 1, 0};
+    gert::TilingContextPara tilingContextPara(
+        "BatchToSpaceND",
+        {
+            {{{2, 3, 5, 4}, {2, 3, 5, 4}}, dataType, ge::FORMAT_ND},
+            {{{2}, {2}}, ge::DT_INT32, ge::FORMAT_ND, true, blockShapeValues.data()},
+            {{{2, 2}, {2, 2}}, ge::DT_INT32, ge::FORMAT_ND, true, cropsValues.data()},
+        },
+        {
+            {{{1, 6, 4, 4}, {1, 6, 4, 4}}, dataType, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    TilingInfo tilingInfo;
+    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+    ASSERT_TRUE(tilingRet);
+    ASSERT_EQ(tilingInfo.tilingDataSize, sizeof(B2SNDSmallCTilingData));
+}
+
+// Large spatial axis with small block_shape dims; expect SmallC tiling
+TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_large_space_small_blockshape)
+{
+    auto dataType = ge::DT_FLOAT16;
+    std::vector<int32_t> blockShapeValues = {3, 2};
+    std::vector<int32_t> cropsValues = {0, 0, 0, 0};
+    gert::TilingContextPara tilingContextPara(
+        "BatchToSpaceND",
+        {
+            {{{6, 2000, 3, 4}, {6, 2000, 3, 4}}, dataType, ge::FORMAT_ND},
+            {{{2}, {2}}, ge::DT_INT32, ge::FORMAT_ND, true, blockShapeValues.data()},
+            {{{2, 2}, {2, 2}}, ge::DT_INT32, ge::FORMAT_ND, true, cropsValues.data()},
+        },
+        {
+            {{{1, 6000, 6, 4}, {1, 6000, 6, 4}}, dataType, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    TilingInfo tilingInfo;
+    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+    ASSERT_TRUE(tilingRet);
+    ASSERT_EQ(tilingInfo.tilingDataSize, sizeof(B2SNDSmallCTilingData));
+    B2SNDSmallCTilingData* data = reinterpret_cast<B2SNDSmallCTilingData*>(tilingInfo.tilingData.get());
+    // Verify tiling completed successfully with SmallC mode
+    EXPECT_EQ(tilingInfo.tilingKey, 0b0'00000010'00000010);
+    EXPECT_GT(data->ubTotalCount, 0);
+}

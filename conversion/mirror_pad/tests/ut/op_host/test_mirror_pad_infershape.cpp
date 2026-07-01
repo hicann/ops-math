@@ -160,3 +160,18 @@ TEST_F(MirrorPadInfershapeTest, mirror_pad_infershape_case_7_dynamic_paddings)
     };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
+
+// Test scenario: mirror_pad with const paddings of unsupported dtype (DT_FLOAT), expect infershape to fail
+TEST_F(MirrorPadInfershapeTest, mirror_pad_infershape_case_8_unsupported_paddings_dtype)
+{
+    gert::StorageShape xShape = {{2, 3}, {2, 3}};
+    gert::StorageShape padShape = {{2, 2}, {2, 2}};
+    float pad_value[2][2] = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+
+    gert::InfershapeContextPara infershapeContextPara(
+        "MirrorPad", {{xShape, ge::DT_FLOAT, ge::FORMAT_ND}, {padShape, ge::DT_FLOAT, ge::FORMAT_ND, true, pad_value}},
+        {{{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND}});
+
+    std::vector<std::vector<int64_t>> expectOutputShape = {};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
+}

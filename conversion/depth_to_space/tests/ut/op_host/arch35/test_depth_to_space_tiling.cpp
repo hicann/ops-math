@@ -188,7 +188,7 @@ TEST_F(DepthToSpaceTiling, test_invalid_depth_failed_001)
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
-// Test case 7: Failure case - format mismatch between input and attribute
+// Failure case: input format NHWC and data_format attr NCHW mismatch, expect failure
 TEST_F(DepthToSpaceTiling, test_format_mismatch_failed_001)
 {
     optiling::TransposeCompilerInfo compileInfo;
@@ -205,6 +205,94 @@ TEST_F(DepthToSpaceTiling, test_format_mismatch_failed_001)
         {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),
          gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("DCR")),
          gert::TilingContextPara::OpAttr("data_format", Ops::Math::AnyValue::CreateFrom<std::string>("NCHW"))},
+        &compileInfo);
+
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// Failure case: x and y have different storage formats (NHWC vs NCHW), expect failure
+TEST_F(DepthToSpaceTiling, test_xy_format_mismatch_failed_001)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 253952;
+    gert::TilingContextPara tilingContextPara(
+        "DepthToSpace",
+        {
+            {{{1, 2, 2, 8}, {1, 2, 2, 8}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
+        },
+        {
+            {{{1, 2, 4, 4}, {1, 2, 4, 4}}, ge::DT_FLOAT16, ge::FORMAT_NCHW},
+        },
+        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),
+         gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("DCR")),
+         gert::TilingContextPara::OpAttr("data_format", Ops::Math::AnyValue::CreateFrom<std::string>("NHWC"))},
+        &compileInfo);
+
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// Failure case: input shape is 3D (not 4D), expect failure
+TEST_F(DepthToSpaceTiling, test_invalid_dims_failed_001)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 253952;
+    gert::TilingContextPara tilingContextPara(
+        "DepthToSpace",
+        {
+            {{{1, 2, 8}, {1, 2, 8}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
+        },
+        {
+            {{{1, 4, 2}, {1, 4, 2}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
+        },
+        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),
+         gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("DCR")),
+         gert::TilingContextPara::OpAttr("data_format", Ops::Math::AnyValue::CreateFrom<std::string>("NHWC"))},
+        &compileInfo);
+
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// Failure case: data_format attr is invalid string (not NCHW or NHWC), expect failure
+TEST_F(DepthToSpaceTiling, test_invalid_data_format_failed_001)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 253952;
+    gert::TilingContextPara tilingContextPara(
+        "DepthToSpace",
+        {
+            {{{1, 2, 2, 8}, {1, 2, 2, 8}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
+        },
+        {
+            {{{1, 4, 4, 2}, {1, 4, 4, 2}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
+        },
+        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),
+         gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("DCR")),
+         gert::TilingContextPara::OpAttr("data_format", Ops::Math::AnyValue::CreateFrom<std::string>("ND"))},
+        &compileInfo);
+
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// Failure case: mode attr is invalid string (not DCR or CRD), expect failure
+TEST_F(DepthToSpaceTiling, test_invalid_mode_failed_001)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 253952;
+    gert::TilingContextPara tilingContextPara(
+        "DepthToSpace",
+        {
+            {{{1, 2, 2, 8}, {1, 2, 2, 8}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
+        },
+        {
+            {{{1, 4, 4, 2}, {1, 4, 4, 2}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
+        },
+        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),
+         gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("INVALID")),
+         gert::TilingContextPara::OpAttr("data_format", Ops::Math::AnyValue::CreateFrom<std::string>("NHWC"))},
         &compileInfo);
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);

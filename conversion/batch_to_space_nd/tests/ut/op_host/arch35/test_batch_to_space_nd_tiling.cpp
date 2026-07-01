@@ -313,3 +313,35 @@ TEST_F(BatchToSpaceNDTilingTest, BatchToSpaceNDTilingTest_MergeInput_merge_all_b
     EXPECT_THAT(Shape2Vec(data->input.blockShape, 1), ElementsAreArray({1}));
     EXPECT_THAT(Shape2Vec(*(data->input.crops), 2), ElementsAreArray({0, 0}));
 }
+
+// Block_shape first dim is 1 and next dim crops are all zero, spatial dims merge; expect LargeC tiling
+TEST_F(BatchToSpaceNDTilingTest, BatchToSpaceNDTilingTest_MergeInput_blockshape1_next_crops_zero)
+{
+    std::vector<int32_t> blockShapeValues = {1, 2};
+    std::vector<int32_t> cropsValues = {0, 0, 0, 0};
+    gert::TilingContextPara tilingContextPara(
+        "BatchToSpaceND",
+        {
+            {{{4, 3, 5, 256}, {4, 3, 5, 256}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2}, {2}}, ge::DT_INT32, ge::FORMAT_ND, true, blockShapeValues.data()},
+            {{{2, 2}, {2, 2}}, ge::DT_INT32, ge::FORMAT_ND, true, cropsValues.data()},
+        },
+        {
+            {{{2, 3, 10, 256}, {2, 3, 10, 256}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    TilingInfo tilingInfo;
+    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+    ASSERT_TRUE(tilingRet);
+    std::vector<int64_t> expectWorkspaces = {0};
+    EXPECT_EQ(tilingInfo.workspaceSizes, expectWorkspaces);
+    // LargeC mode (mode=1), blockShapeDimNum=0 for LargeC, isBigShape=0
+    EXPECT_EQ(tilingInfo.tilingKey, 0b0'00000000'00000001);
+    ASSERT_EQ(tilingInfo.tilingDataSize, sizeof(B2SNDLargeCTilingData));
+    B2SNDLargeCTilingData* data = reinterpret_cast<B2SNDLargeCTilingData*>(tilingInfo.tilingData.get());
+    EXPECT_EQ(data->input.rank, 3);
+    // block_shape[0]=1 with next crops both 0 merges spatial dim 1 into dim 2
+    EXPECT_THAT(Shape2Vec(data->input.inShape, 3), ElementsAreArray({4, 15, 256}));
+    EXPECT_THAT(Shape2Vec(data->input.blockShape, 1), ElementsAreArray({2}));
+    EXPECT_THAT(Shape2Vec(*(data->input.crops), 2), ElementsAreArray({0, 0}));
+}
