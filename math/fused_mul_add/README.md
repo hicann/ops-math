@@ -88,7 +88,7 @@
 
 ### fp16 / fp32通路
 
-```
+```pseudocode
 In0/In1/In2 -- CopyInBrc -- Cast(->fp32) -- Vec::Mul(x1,x2) -- Vec::Add(+x3) -- Cast(->T,RINT) -- CopyOut -- Out0
 ```
 
@@ -102,7 +102,7 @@ In0/In1/In2 -- CopyInBrc -- Cast(->fp32) -- Vec::Mul(x1,x2) -- Vec::Add(+x3) -- 
 
 ### int32通路
 
-```
+```pseudocode
 In0/In1/In2 -- CopyInBrc -- Vec::Mul(x1,x2) -- Vec::Add(+x3) -- CopyOut -- Out0
 ```
 

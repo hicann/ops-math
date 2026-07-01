@@ -85,7 +85,7 @@
 
 ### fp32 / int32通路
 
-```
+```pseudocode
 In0/In1 -- CopyInBrc --+
                        +-- Mul(x1,x2) --+
                                         +-- Select(mask, MulRes, Zero) -- CopyOut -- Out0
@@ -100,7 +100,7 @@ In0/In1 -- CopyInBrc --+
 
 ### fp16 / bf16通路
 
-```
+```pseudocode
 In0/In1 -- CopyInBrc -- Cast(->fp32) --+
                                        +-- Mul --+
                                                  +-- Select -- Cast(->T,RINT) -- CopyOut -- Out0
