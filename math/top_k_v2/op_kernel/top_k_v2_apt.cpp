@@ -16,6 +16,8 @@
 #ifndef TOP_K_V2_APT_H
 #define TOP_K_V2_APT_H
 
+#include <type_traits>
+
 #include "arch35/radix_sort_top_k.h"
 #include "arch35/radix_topk_constant.h"
 #include "arch35/top_k_merge_sort.h"
@@ -25,6 +27,7 @@
 #include "arch35/radix_sort_top_k_single_core.h"
 #include "arch35/radix_sort_top_k_inter_core_template_optimization.h"
 #include "arch35/sort_and_top_k_more_core.h"
+#include "arch35/top_k_non_last_small_non_transpose.h"
 
 using namespace AscendC;
 using namespace SortAndTopK;
@@ -49,6 +52,8 @@ using namespace SortAndTopK;
 const uint32_t SINGLE_CORE_MODE = 1;
 const uint32_t MULT_CORE_OPTIM_MODE = 4;
 const uint32_t SORT_AND_TOP_K_MODE = 5;
+const uint32_t NON_LAST_SMALL_AXIS_MODE = 8;
+const uint32_t NON_LAST_SMALL_AXIS_MERGE_SORT = 1;
 
 template <typename T, typename UNSINGED_TYPE, int32_t NUM_PASS, typename T_INDEX, typename T_INDEX_TO>
 __aicore__ inline void RadixSortTopKOpObject(
@@ -98,6 +103,37 @@ __aicore__ inline void SortAndTopKOpObject(GM_ADDR x, GM_ADDR values, GM_ADDR in
         SortAndTopK::SortAndTopKMoreCore<T, T_INDEX_TO, UNSINGED_TYPE, T_INDEX, 0> sortAndTopKMoreCore;
         sortAndTopKMoreCore.InitParam(x, values, indices, globalWorkGm, &tilingData, &tPipe);
         sortAndTopKMoreCore.ProcessTopK();
+    }
+}
+
+template <typename T, typename T_INDEX_TO, bool UseMergeSort>
+__aicore__ inline void TopKNonLastSmallAxisOpObject(GM_ADDR x, GM_ADDR values, GM_ADDR indices, GM_ADDR tiling)
+{
+    GET_TILING_DATA(tilingData, tiling);
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
+    bool isLargest = (tilingData.isLargest > 0) ? true : false;
+    bool isSort = (tilingData.isSort > 0) ? true : false;
+    TPipe pipe;
+    if (isLargest) {
+        if (isSort) {
+            topkV2::TopKNonLastSmallAxisNonTranspose<T, T_INDEX_TO, true, true, UseMergeSort> op;
+            op.Init(x, values, indices, &tilingData, &pipe);
+            op.Process();
+        } else {
+            topkV2::TopKNonLastSmallAxisNonTranspose<T, T_INDEX_TO, true, false, UseMergeSort> op;
+            op.Init(x, values, indices, &tilingData, &pipe);
+            op.Process();
+        }
+    } else {
+        if (isSort) {
+            topkV2::TopKNonLastSmallAxisNonTranspose<T, T_INDEX_TO, false, true, UseMergeSort> op;
+            op.Init(x, values, indices, &tilingData, &pipe);
+            op.Process();
+        } else {
+            topkV2::TopKNonLastSmallAxisNonTranspose<T, T_INDEX_TO, false, false, UseMergeSort> op;
+            op.Init(x, values, indices, &tilingData, &pipe);
+            op.Process();
+        }
     }
 }
 
@@ -211,6 +247,20 @@ __aicore__ inline void generateOpObject(
     bool isSortAndTopK = (tilingData.modeType == SORT_AND_TOP_K_MODE) ? true : false;
     bool isInInt32Range = (tilingData.isInInt32Range > 0) ? true : false;
     bool isMultiCoreOptimMode = (tilingData.modeType == MULT_CORE_OPTIM_MODE) ? true : false;
+    bool isNonLastSmallAxis = (tilingData.modeType == NON_LAST_SMALL_AXIS_MODE) ? true : false;
+
+    if (isNonLastSmallAxis) {
+        if (tilingData.keyParams0 == NON_LAST_SMALL_AXIS_MERGE_SORT) {
+            if constexpr (std::is_same_v<T, float> || std::is_same_v<T, half> || std::is_same_v<T, bfloat16_t>) {
+                TopKNonLastSmallAxisOpObject<T, T_INDEX_TO, true>(x, values, indices, tiling);
+            } else {
+                TopKNonLastSmallAxisOpObject<T, T_INDEX_TO, false>(x, values, indices, tiling);
+            }
+        } else {
+            TopKNonLastSmallAxisOpObject<T, T_INDEX_TO, false>(x, values, indices, tiling);
+        }
+        return;
+    }
 
     // 核内模板
     if (isSingleBlock) {
