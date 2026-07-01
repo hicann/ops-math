@@ -70,7 +70,6 @@
 
 ## 约束说明
 
-
 ## 调用说明
 
 <table><thead>
@@ -90,4 +89,3 @@
     <td><a href="./examples/test_aclnn_inplace_acosh.cpp">examples/test_aclnn_inplace_acosh.cpp</a></td>
   </tr>
 </tbody></table>
-
