@@ -56,7 +56,7 @@ ACLNN_API aclnnStatus aclnnSinh(void* workspace, uint64_t workspaceSize, aclOpEx
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码
  */
-ACLNN_API aclnnStatus aclnnInplaceSinhGetWorkspaceSize(aclTensor* selfRef, uint64_t* workspace_size,
+ACLNN_API aclnnStatus aclnnInplaceSinhGetWorkspaceSize(aclTensor* selfRef, uint64_t* workspaceSize,
                                                        aclOpExecutor** executor);
 
 /**

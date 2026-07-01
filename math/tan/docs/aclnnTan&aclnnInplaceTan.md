@@ -56,7 +56,7 @@ aclnnStatus aclnnTan(
   void*          workspace,
   uint64_t       workspaceSize,
   aclOpExecutor* executor,
-  aclrtStream    stream)
+  const aclrtStream    stream)
 ```
 
 ```Cpp
@@ -71,7 +71,7 @@ aclnnStatus aclnnInplaceTan(
   void*          workspace,
   uint64_t       workspaceSize,
   aclOpExecutor* executor,
-  aclrtStream    stream)
+  const aclrtStream    stream)
 ```
 
 ## aclnnTanGetWorkspaceSize

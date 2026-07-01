@@ -39,14 +39,14 @@ aclnnStatus aclnnSqrtGetWorkspaceSize(
     const aclTensor* self, 
     aclTensor*       out, 
     uint64_t*        workspaceSize,
-    aclOpExecutor**  executor)
+    aclOpExecutor**  opExecutor)
 ```
 
 ```cpp
 aclnnStatus aclnnSqrt(
     void*          workspace, 
     uint64_t       workspaceSize, 
-    aclOpExecutor* executor, 
+    aclOpExecutor* opExecutor,
     aclrtStream    stream)
 ```
 
@@ -127,7 +127,7 @@ aclnnStatus aclnnInplaceSqrt(
       <td class="tg-0pky">-</td>
     </tr>
     <tr>
-      <td class="tg-0pky">executor（aclOpExecutor**）</td>
+      <td class="tg-0pky">opExecutor（aclOpExecutor**）</td>
       <td class="tg-0pky">输出</td>
       <td class="tg-0pky">返回op执行器，包含了算子计算流程。</td>
       <td class="tg-0pky">-</td>
@@ -201,7 +201,7 @@ aclnnStatus aclnnInplaceSqrt(
       <td>在Device侧申请的workspace大小，由第一段接口aclnnSqrtGetWorkspaceSize获取。</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>opExecutor</td>
       <td>输入</td>
       <td>op执行器，包含了算子计算流程。</td>
     </tr>
