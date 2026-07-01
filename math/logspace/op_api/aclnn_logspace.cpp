@@ -89,23 +89,42 @@ aclnnStatus aclnnLogSpaceGetWorkspaceSize(const aclScalar *start, const aclScala
 
     DataType result_dtype = result->GetDataType();
 
-    const aclTensor* start_tensor = ScalarToTensor(start, result_dtype, uniqueExecutor.get());
+    // 推导数据类型，以输出类型为基准
+    auto compute_dtype = result_dtype;
+
+    // Linspace L0接口不支持int64输入，转为float32计算
+    if (compute_dtype == DataType::DT_INT64) {
+        compute_dtype = DataType::DT_FLOAT;
+    }
+    // start和end为FP16/BF16混合类型时升精度到FP32计算，避免Linspace和Pow多次cast导致精度损失
+    if ((start->GetDataType() == DataType::DT_FLOAT16 && end->GetDataType() == DataType::DT_BF16) ||
+        (start->GetDataType() == DataType::DT_BF16 && end->GetDataType() == DataType::DT_FLOAT16)) {
+        compute_dtype = DataType::DT_FLOAT;
+    }
+
+    const aclTensor* start_tensor = ScalarToTensor(start, compute_dtype, uniqueExecutor.get());
     CHECK_RET(start_tensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    const aclTensor* end_tensor = ScalarToTensor(end, result_dtype, uniqueExecutor.get());
+    const aclTensor* end_tensor = ScalarToTensor(end, compute_dtype, uniqueExecutor.get());
     CHECK_RET(end_tensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    const aclTensor* linspace_result = l0op::Linspace(start_tensor, end_tensor, steps,uniqueExecutor.get());
+    const aclTensor* linspace_result = l0op::Linspace(start_tensor, end_tensor, steps, uniqueExecutor.get());
     CHECK_RET(linspace_result != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     aclScalar* base_scalar = uniqueExecutor.get()->AllocScalar(static_cast<float>(base));
     CHECK_RET(base_scalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    const aclTensor* base_tensor = ScalarToTensor(base_scalar, result_dtype, uniqueExecutor.get());
+    const aclTensor* base_tensor = ScalarToTensor(base_scalar, compute_dtype, uniqueExecutor.get());
     CHECK_RET(base_tensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     const aclTensor* pow_result = l0op::InplacePow(base_tensor, linspace_result, uniqueExecutor.get());
     CHECK_RET(pow_result != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    // 如果计算类型与输出类型不一致，Cast 转换后再 ViewCopy
+    if (compute_dtype != result_dtype) {
+        pow_result = l0op::Cast(pow_result, result_dtype, uniqueExecutor.get());
+        CHECK_RET(pow_result != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    }
 
     auto view_copy_result = l0op::ViewCopy(pow_result, result, uniqueExecutor.get());
     CHECK_RET(view_copy_result != nullptr, ACLNN_ERR_INNER_NULLPTR);
