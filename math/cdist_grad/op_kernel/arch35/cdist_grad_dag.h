@@ -179,8 +179,14 @@ struct CdistGradDag {
     using DagMaskDiff    = Bind<CdistGradMaskNEZeroOp<PromoteT>, DagDiffAbs>;
     using DagMaskCdist   = Bind<CdistGradMaskNEZeroOp<PromoteT>, DagCastCdist>;
 
-    // ratio = |diff| / (cdist + eps), then (ratio)^(p-1) via single log+exp chain
-    using DagRatio       = Bind<Vec::Div<PromoteT>, DagDiffAbs, DagSafeCdist>;
+    // Mask |diff| to 0 where cdist==0 BEFORE the ratio. When the forward cdist
+    // underflows to 0 (large/tiny |diff|), ratio = |diff|/eps would explode and
+    // exp(log(ratio)*(p-1)) overflows to +inf; the trailing mask then yields
+    // inf*0 = NaN. Masking first makes ratio=0 -> pow_ratio=0 -> result=0,
+    // matching PyTorch CPU's `dist==0 ? 0` short-circuit.
+    using DagDiffAbsM  = Bind<Vec::Mul<PromoteT>, DagDiffAbs, DagMaskCdist>;
+    // ratio = |diff|_masked / (cdist + eps), then (ratio)^(p-1) via single log+exp chain
+    using DagRatio       = Bind<Vec::Div<PromoteT>, DagDiffAbsM, DagSafeCdist>;
     using DagSafeRatio   = Bind<Vec::Adds<PromoteT>, DagRatio, DagEps>;
     using DagPowRatio    = Bind<Vec::Exp<PromoteT>,
                              Bind<Vec::Muls<PromoteT>, Bind<Vec::Log<PromoteT>, DagSafeRatio>,
@@ -246,8 +252,12 @@ struct CdistGradLargePDag {
     // mask via MicroAPI: cdist != 0 ? 1.0 : 0.0
     using LpMaskCdist  = Bind<CdistGradMaskNEZeroOp<PromoteT>, LpCastCdist>;
 
-    // ratio = |diff| / (cdist + eps), then (ratio)^(p-1) via single log+exp chain
-    using LpRatio       = Bind<Vec::Div<PromoteT>, LpDiffAbs, LpSafeCdist>;
+    // Mask |diff| to 0 where cdist==0 BEFORE the ratio (see CdistGradDag rationale).
+    // Without this, forward cdist underflow (large p, tiny |diff|) makes ratio =
+    // |diff|/eps explode -> exp overflow +inf -> trailing mask inf*0 = NaN.
+    using LpDiffAbsM  = Bind<Vec::Mul<PromoteT>, LpDiffAbs, LpMaskCdist>;
+    // ratio = |diff|_masked / (cdist + eps), then (ratio)^(p-1) via single log+exp chain
+    using LpRatio       = Bind<Vec::Div<PromoteT>, LpDiffAbsM, LpSafeCdist>;
     using LpSafeRatio   = Bind<Vec::Adds<PromoteT>, LpRatio, LpEps>;
     using LpPowRatio    = Bind<Vec::Exp<PromoteT>,
                              Bind<Vec::Muls<PromoteT>, Bind<Vec::Log<PromoteT>, LpSafeRatio>,
