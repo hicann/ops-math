@@ -1825,9 +1825,7 @@ bool ComputeTopkNonLastLayout(const TopkNonLastSmallAxisTileInfo& info, uint32_t
         return false;
     }
     uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
-    uint32_t sortCount = useMergeSort ?
-        Ops::Base::CeilAlign(axisLen, topkV2DataInfo::MERGE_INTRA_CORE_SORT_ALIGN) :
-        axisLen;
+    uint32_t sortCount = Ops::Base::CeilAlign(axisLen, topkV2DataInfo::MERGE_INTRA_CORE_SORT_ALIGN);
     uint32_t sortDtypeSize = GetTopkNonLastSortDtypeSize(info.dtypeSize, useMergeSort, info.dataType);
     uint64_t valueAxisRawBytes = static_cast<uint64_t>(sortCount) * sortDtypeSize;
     uint32_t outputCount = useMergeSort ? sortCount : kValue;
@@ -1864,8 +1862,7 @@ bool EstimateTopkNonLastSmallAxisUb(
         return false;
     }
     uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
-    uint32_t sortCount = useMergeSort ?
-        Ops::Base::CeilAlign(axisLen, topkV2DataInfo::MERGE_INTRA_CORE_SORT_ALIGN) : axisLen;
+    uint32_t sortCount = Ops::Base::CeilAlign(axisLen, topkV2DataInfo::MERGE_INTRA_CORE_SORT_ALIGN);
         
     uint32_t inputCastRowBytes = 0;
     if (useMergeSort && info.dataType == ge::DT_BF16 &&
@@ -2071,9 +2068,9 @@ ge::graphStatus TileModeNonLastSmallAxisTopK(gert::TilingContext* context, TopKV
     // 步骤2：确定算法模式和排序元素个数
     topkTilingData.set_modeType(topkV2DataInfo::NON_LAST_SMALL_AXIS_MODE);
     bool useMergeSort = UseTopkNonLastMergeSort(computeInfo.dataType, static_cast<uint32_t>(info.lastAxis));
-    uint32_t sortCount = useMergeSort ?
-        Ops::Base::CeilAlign(static_cast<uint32_t>(info.lastAxis), topkV2DataInfo::MERGE_INTRA_CORE_SORT_ALIGN) :
-        static_cast<uint32_t>(info.lastAxis);
+    uint32_t sortCount =
+        Ops::Base::CeilAlign(static_cast<uint32_t>(info.lastAxis), topkV2DataInfo::MERGE_INTRA_CORE_SORT_ALIGN);
+    
 
     // 步骤3：设置临时UB大小
     if (SetupTopkNonLastSmallAxisTmpUb(context, topkTilingData, computeInfo, info, useMergeSort, sortCount) !=
