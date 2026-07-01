@@ -26,8 +26,6 @@ namespace optiling {
 static constexpr int32_t VCONV_DIM_NUM = 2;
 static constexpr int32_t VCONV_DSIZE = 2;
 
-static int IncreaseCompare(const void* a, const void* b) { return (*(int64_t*)a - *(int64_t*)b); }
-
 ge::graphStatus TransposeNddmaTiling::Init(const int64_t& coreNum, const int64_t& ubSize)
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Start init TransposeNddmaTiling.");
@@ -571,7 +569,7 @@ void TransposeNddmaTiling::FlushBaseNumForBigDim()
         }
     }
 
-    qsort(nddmaIdx_, NDDMA_MAX_DIM_NUM, sizeof(int64_t), IncreaseCompare);
+    std::sort(std::begin(nddmaIdx_), std::end(nddmaIdx_));
     for (int64_t i = 0; i < NDDMA_MAX_DIM_NUM; i++) {
         for (int64_t j = 0; j < NDDMA_MAX_DIM_NUM; j++) {
             if (nddmaIdx_[i] == oriNddmaIdx[j]) {

@@ -133,9 +133,9 @@ void TransposeGatherTiling::AdjustUbCutAxisFactor(int32_t& axisFactor, int8_t ax
              elemInTensor);
         if (isDstUbOverflow || isSrcUbOverflow) {
             dstFactor = elemInTensor / dstInUbAxesSize / elemPerBlock * elemPerBlock / dstOutUbAxesSize;
-            srcFactor =
-                (elemInTensor / srcOutUbAxesSize /
-                 Ops::Base::CeilAlign(srcInUbAxesSize * ubSplitInfo_.inUbCutAxisFactor, elemPerBlock));
+            srcFactor = Ops::Base::FloorDiv(
+                elemInTensor / srcOutUbAxesSize,
+                Ops::Base::CeilAlign(srcInUbAxesSize * ubSplitInfo_.inUbCutAxisFactor, elemPerBlock));
             axisFactor = static_cast<int32_t>(std::min(dstFactor, srcFactor));
         }
         // in ub cut axis
@@ -148,9 +148,9 @@ void TransposeGatherTiling::AdjustUbCutAxisFactor(int32_t& axisFactor, int8_t ax
         bool isSrcUbOverflow =
             (srcOutUbAxesSize * Ops::Base::CeilAlign(srcInUbAxesSize * axisFactor, elemPerBlock) > elemInTensor);
         if (isDstUbOverflow || isSrcUbOverflow) {
-            dstFactor =
-                (elemInTensor / dstInUbAxesSize /
-                 Ops::Base::CeilAlign(dstOutUbAxesSize * ubSplitInfo_.outUbCutAxisFactor, elemPerBlock));
+            dstFactor = Ops::Base::FloorDiv(
+                elemInTensor / dstInUbAxesSize,
+                Ops::Base::CeilAlign(dstOutUbAxesSize * ubSplitInfo_.outUbCutAxisFactor, elemPerBlock));
             srcFactor = elemInTensor / srcOutUbAxesSize / elemPerBlock * elemPerBlock / srcInUbAxesSize;
             axisFactor = static_cast<int32_t>(std::min(dstFactor, srcFactor));
         }
