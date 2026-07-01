@@ -52,6 +52,7 @@ constexpr uint64_t SCH_ID_SIMT_DETERMIN = 3;
 constexpr int64_t GM_ATOMIC_ADD_FACTOR = 100;
 constexpr uint64_t SIMD_SIMT_DCACHE_SIZE = static_cast<uint64_t>(32 * 1024); // 32K for DCACHE and 8K for AscendC
 constexpr uint32_t BATCH_MODE = 1;
+constexpr int64_t MAX_UB_LOOP_FOR_BATH = 8;
 
 struct AscendCBincountCompileInfo {
     int32_t totalCoreNum = 0;

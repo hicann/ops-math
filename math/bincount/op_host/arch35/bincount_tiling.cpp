@@ -222,7 +222,12 @@ ge::graphStatus BincountTiling::ComputeTilingStrategy()
     if (binsShapeSize_ < ubNumCanUse_) {
         schId_ = SCH_ID_SIMT_FULL_LOAD;
     } else if (IsMatchSimtBatchLoadMode()) {
-        schId_ = SCH_ID_SIMT_BATCH_LOAD; // also atomicAdd on ub
+        int64_t ubLoopNum = Ops::Base::CeilDiv(binsShapeSize_, ubNumCanUse_);
+        if (ubLoopNum <= MAX_UB_LOOP_FOR_BATH) {
+            schId_ = SCH_ID_SIMT_BATCH_LOAD; // also atomicAdd on ub
+        } else {
+            schId_ = SCH_ID_SIMT_NOT_FULL_LOAD;
+        }
     } else {
         schId_ = SCH_ID_SIMT_NOT_FULL_LOAD;
     }
