@@ -21,12 +21,11 @@ __golden__ = {
 def numpy_to_torch_tensor(x_np):
     """
     Convert numpy array to torch tensor, handling bfloat16 specifically.
+    bfloat16 in numpy is stored as int16; view back to torch.bfloat16 then float.
     """
-    dtype_name = x_np.dtype.name
-    if dtype_name == "bfloat16":
-        return torch.from_numpy(x_np.astype(np.float32)).to(torch.bfloat16)
-    else:
-        return torch.from_numpy(x_np)
+    if "bfloat16" in str(x_np.dtype):
+        return torch.from_numpy(x_np.view(dtype=np.int16)).view(torch.bfloat16).float()
+    return torch.from_numpy(x_np)
 
 def floor_mod_golden(x1, x2,
                      **kwargs):
@@ -38,34 +37,32 @@ def floor_mod_golden(x1, x2,
   	    input_formats, output_formats, input_ori_formats, output_ori_formats,
   	    input_dtypes, output_dtypes.
     '''
+    x1_dtype = x1.dtype
     type_int = [torch.int64, torch.int32]
     type_float = [torch.float, torch.float16, torch.bfloat16]
 
-    # 除零保护
+    # 除零保护：在副本上操作，避免污染入参
     res_shape = np.broadcast_shapes(x1.shape, x2.shape)
     X2_broadcast = np.broadcast_to(x2, res_shape)
     zero_X2_broadcast_idx = np.where(X2_broadcast == 0)
 
     zero_idx = np.where(x2 == 0)
-    if zero_idx:
-        x2[zero_idx] = 1
-    
-    x1_dtype = x1.dtype
-    x1 = numpy_to_torch_tensor(x1)
-    x2 = numpy_to_torch_tensor(x2)
-    res = torch.remainder(x1, x2)
+    has_zero = zero_idx[0].size > 0
+    x2_safe = x2.copy()
+    if has_zero:
+        x2_safe[zero_idx] = 1
+
+    x1_t = numpy_to_torch_tensor(x1)
+    x2_t = numpy_to_torch_tensor(x2_safe)
+    res = torch.remainder(x1_t, x2_t)
 
     # 除零保护
-    if zero_idx:
-        x2[zero_idx] = 0
+    if has_zero:
         if res.dtype in type_int:
             res[zero_X2_broadcast_idx] = -1
         if res.dtype in type_float:
             res[zero_X2_broadcast_idx] = torch.nan
 
-    if res.dtype == torch.bfloat16:
-        res_np = res.float().numpy()
-    else:
-        res_np = res.numpy()
-
-    return res_np.astype(x1_dtype, copy=False)
+    if "bfloat16" in str(x1_dtype):
+        return res.bfloat16().view(torch.int16).numpy().view(dtype=x1_dtype)
+    return res.numpy()

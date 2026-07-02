@@ -36,7 +36,8 @@ def one_hot_golden(x, depth, on_value, off_value,
     data_dtype = on_value.dtype
     on_value_const = tf.constant(on_value, shape=(), dtype=data_dtype)
     off_value_const = tf.constant(off_value, shape=(), dtype=data_dtype)
-    out = gen_array_ops.one_hot(x, depth, on_value_const, off_value_const, axis)
+    axis = max(axis, -1)
+    out = gen_array_ops.one_hot(x, max(int(depth), 0), on_value_const, off_value_const, axis)
     with tf.Session() as sess:
         res = sess.run(out)
     return res
