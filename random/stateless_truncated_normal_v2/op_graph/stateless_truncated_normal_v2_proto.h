@@ -42,9 +42,6 @@ filled with random truncated normal values. \n
 
 *@par Third-party framework compatibility
 Compatible with tensorflow StatelessTruncatedNormalV2 operator.
-
-* @par Restrictions:
-* Warning: THIS FUNCTION IS EXPERIMENTAL. Please do not use. \n
 */
 
 REG_OP(StatelessTruncatedNormalV2)

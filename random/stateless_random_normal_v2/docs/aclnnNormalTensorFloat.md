@@ -110,7 +110,7 @@ aclnnStatus aclnnNormalTensorFloat(
       <td>out</td>
       <td>输出</td>
       <td>输出张量，Device侧的aclTensor。</td>
-      <td>数据类型需要是mean可转换的数据类型。shape需要和mean做broadcast之后的shape相等。当mean为空tensor或元素个数为1，且out为空tensor且维度与mean相同时，直接返回成功，不执行计算。</td>
+      <td>数据类型需要同mean数据类型一致。shape需要和mean做broadcast之后的shape相等。当mean为空tensor或元素个数为1，且out为空tensor且维度与mean相同时，直接返回成功，不执行计算。</td>
       <td>BF16、FLOAT16、FLOAT、DOUBLE</td>
       <td>ND</td>
       <td>0-8</td>
