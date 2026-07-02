@@ -337,8 +337,6 @@ int main()
     }
 
     // 6. 释放aclTensor和aclTensorList，需要根据具体API的接口定义修改
-    aclDestroyTensor(input1);
-    aclDestroyTensor(input2);
     aclDestroyTensor(output);
     aclDestroyTensorList(inputList);
 
