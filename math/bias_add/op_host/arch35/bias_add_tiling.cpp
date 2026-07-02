@@ -36,7 +36,7 @@ constexpr size_t C_INDEX_NCXX = 1; // NCHW, NCDHW
 
 constexpr static uint64_t BIAS_ADD_COMMON_TILING_PRIORITY = 0;
 
-ge::graphStatus CheckDataFormat(std::string attrDataFormat)
+bool CheckDataFormat(std::string attrDataFormat)
 {
     std::unordered_set<std::string> checkList = {NCHW_STR, NHWC_STR, NCDHW_STR, NDHWC_STR};
     if (checkList.find(attrDataFormat) == checkList.end()) {
@@ -46,7 +46,7 @@ ge::graphStatus CheckDataFormat(std::string attrDataFormat)
     return true;
 }
 
-ge::graphStatus InferBiasShape(gert::TilingContext* context, vector<gert::Shape>& inputShapes)
+bool InferBiasShape(gert::TilingContext* context, vector<gert::Shape>& inputShapes)
 {
     ge::Format xFormat = context->GetInputDesc(0)->GetStorageFormat();
     gert::Shape broadcastBiasShape;
