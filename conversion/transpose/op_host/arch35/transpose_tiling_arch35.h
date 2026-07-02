@@ -59,6 +59,8 @@ constexpr int64_t DIM_FOUR = 4;
 constexpr int64_t DIM_FIVE = 5;
 constexpr int64_t DIM_SIX = 6;
 constexpr int64_t DIM_EIGHT = 8;
+constexpr int64_t HW_ALIGN = 16;
+constexpr int64_t HW_MIN_PRODUCT = 448;
 constexpr int64_t SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102 = 1000000;
 constexpr int64_t SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102_NLAST = 400000;
 constexpr int64_t SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102_021 = 70000;
@@ -107,8 +109,7 @@ TILING_DATA_FIELD_DEF_STRUCT(TransposeOpTilingData, transposeOpTiling);
 END_TILING_DATA_DEF;
 REGISTER_TILING_DATA_CLASS(Transpose, TransposeTilingData);
 
-enum class SplitMode : int64_t
-{
+enum class SplitMode : int64_t {
     TENSOR_MOVE = 10000,      // only one axis after fuse
     SMALL_SHAPE = 10001,      // UB is enough
     CUT_ONCE = 10002,         // cut one axis and last transpose
@@ -158,12 +159,11 @@ ge::graphStatus TilingPrepareTransposeForAscendC(gert::TilingParseContext* conte
 
 class TransposeNddmaTiling {
 public:
-    explicit TransposeNddmaTiling(gert::TilingContext* context) : tilingContext_(context) {};
+    explicit TransposeNddmaTiling(gert::TilingContext* context) : tilingContext_(context){};
     ge::graphStatus Init(const int64_t& coreNum, const int64_t& ubSize);
     ge::graphStatus RunTranposelTiling();
-    ge::graphStatus TilingForReleatedTranspose(
-        gert::TilingContext* context, TransposeOpTilingData* tilingData, TransposeCompilerInfo* compilerInfo,
-        ShapeInfo& opInput);
+    ge::graphStatus TilingForReleatedTranspose(gert::TilingContext* context, TransposeOpTilingData* tilingData,
+                                               TransposeCompilerInfo* compilerInfo, ShapeInfo& opInput);
 
 private:
     template <typename T>
@@ -175,6 +175,7 @@ private:
     ge::graphStatus CheckShapeInfo();
     ge::graphStatus CheckReducedShapeInfo();
     ge::graphStatus TryVCONVTiling();
+    bool Is021VConvValid();
     void FlushBaseNumForBigDim();
     void EntryTilingTemplate();
     void CalcUBSplitInfo();
@@ -194,14 +195,13 @@ private:
     int64_t FindOutIndex(int64_t index);
     bool UbOutOfBoundCheck(int64_t currentSplitIndex, int64_t currentSplitValue, bool calcIn);
     bool UbOutOfBoundCheckNLast(int64_t currentSplitIndex, int64_t currentSplitValue);
-    void FindSplitFactorByMultiplesLast(
-        int64_t currentSplitIndex, int64_t currentInShapeDim, int64_t remainingTotalElment, int64_t coreNumMultiples);
+    void FindSplitFactorByMultiplesLast(int64_t currentSplitIndex, int64_t currentInShapeDim,
+                                        int64_t remainingTotalElment, int64_t coreNumMultiples);
     void FindSplitFactorByRateNLast(int64_t currentSplitIndex, int64_t currentInShapeDim, int64_t remainingTotalElment);
-    void FindSplitFactorByMultiplesNLast(
-        int64_t currentSplitIndex, int64_t currentInShapeDim, int64_t remainingTotalElment, int64_t coreNumMultiples);
-    void CheckInUbFactorValid(
-        int64_t& currentSplitIndex, int64_t& currentInShapeDim, int64_t& remainingTotalElment,
-        int64_t& coreNumMultiples, int64_t* solvedTotalElment);
+    void FindSplitFactorByMultiplesNLast(int64_t currentSplitIndex, int64_t currentInShapeDim,
+                                         int64_t remainingTotalElment, int64_t coreNumMultiples);
+    void CheckInUbFactorValid(int64_t& currentSplitIndex, int64_t& currentInShapeDim, int64_t& remainingTotalElment,
+                              int64_t& coreNumMultiples, int64_t* solvedTotalElment);
     void DoSplitUBBigDim();
     void NDDMADimExpand();
     void GetInUbShapeInfo();

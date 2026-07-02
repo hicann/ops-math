@@ -30,21 +30,19 @@ ge::graphStatus TransposeNddmaTiling::Init(const int64_t& coreNum, const int64_t
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Start init TransposeNddmaTiling.");
     coreNum_ = coreNum;
-    OP_CHECK_IF(
-        (coreNum_ <= 0), OP_LOGE(tilingContext_->GetNodeName(), "Failed to get core num."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((coreNum_ <= 0), OP_LOGE(tilingContext_->GetNodeName(), "Failed to get core num."),
+                return ge::GRAPH_FAILED);
     ubSize_ = ubSize;
-    OP_CHECK_IF(
-        (ubSize_ <= 0), OP_LOGE(tilingContext_->GetNodeName(), "Failed to get ub size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((ubSize_ <= 0), OP_LOGE(tilingContext_->GetNodeName(), "Failed to get ub size."),
+                return ge::GRAPH_FAILED);
 
     cacheLineSize_ = Ops::Base::GetCacheLineSize(tilingContext_);
-    OP_CHECK_IF(
-        (cacheLineSize_ <= 0), OP_LOGE(tilingContext_->GetNodeName(), "Failed to get cache line size."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((cacheLineSize_ <= 0), OP_LOGE(tilingContext_->GetNodeName(), "Failed to get cache line size."),
+                return ge::GRAPH_FAILED);
 
     ubBlockSize_ = Ops::Base::GetUbBlockSize(tilingContext_);
-    OP_CHECK_IF(
-        (ubBlockSize_ <= 0), OP_LOGE(tilingContext_->GetNodeName(), "Failed to get ub block size."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((ubBlockSize_ <= 0), OP_LOGE(tilingContext_->GetNodeName(), "Failed to get ub block size."),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -52,9 +50,8 @@ ge::graphStatus TransposeNddmaTiling::RunTranposelTiling()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Start running Tiling4Transpose.");
     if (!isReleatedTranspsoe_) {
-        OP_CHECK_IF(
-            GetShapeInfo() != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext_->GetNodeName(), "Failed to get shape info!"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(GetShapeInfo() != ge::GRAPH_SUCCESS,
+                    OP_LOGE(tilingContext_->GetNodeName(), "Failed to get shape info!"), return ge::GRAPH_FAILED);
     }
 
     auto ret = CheckShapeInfo();
@@ -68,17 +65,15 @@ ge::graphStatus TransposeNddmaTiling::RunTranposelTiling()
     CHECK_RET_SUCC(ret);
 
     CalcTotalVolumeActual();
-    OP_CHECK_IF(
-        TryVCONVTiling() == ge::GRAPH_SUCCESS, OP_LOGD(tilingContext_->GetNodeName(), "Do convTiling success"),
-        return ge::GRAPH_SUCCESS);
+    OP_CHECK_IF(TryVCONVTiling() == ge::GRAPH_SUCCESS, OP_LOGD(tilingContext_->GetNodeName(), "Do convTiling success"),
+                return ge::GRAPH_SUCCESS);
 
     SetIsLastAxisTranspose();
     if (!isReleatedTranspsoe_ && shapeInfo_.isLastAxisTranspose) {
         TransWithGather::PlatInfo platInfo{coreNum_, ubSize_, cacheLineSize_, ubBlockSize_};
         TransWithGather::TransposeGatherTiling gatherTiling(tilingContext_, platInfo, shapeInfo_);
-        OP_CHECK_IF(
-            gatherTiling.DoTiling() == ge::GRAPH_SUCCESS,
-            OP_LOGD(tilingContext_->GetNodeName(), "Do gather tiling done!"), return ge::GRAPH_SUCCESS);
+        OP_CHECK_IF(gatherTiling.DoTiling() == ge::GRAPH_SUCCESS,
+                    OP_LOGD(tilingContext_->GetNodeName(), "Do gather tiling done!"), return ge::GRAPH_SUCCESS);
     }
 
     // ensure tiling template
@@ -119,27 +114,54 @@ ge::graphStatus TransposeNddmaTiling::TryVCONVTiling()
             shapeInfo_.eleLenInBytes == VCONV_DSIZE && shapeInfo_.reducedInShape[0] > DIM_FIVE) {
             TransposeWithVCONV::PlatInfo platInfo{coreNum_, ubSize_};
             TransposeWithVCONV::TransposeVCONVTiling vconvTiling(tilingContext_, platInfo, shapeInfo_);
-            OP_CHECK_IF(
-                vconvTiling.DoTiling() == ge::GRAPH_SUCCESS,
-                OP_LOGD(tilingContext_->GetNodeName(), "Do convTiling done"), return ge::GRAPH_SUCCESS);
+            OP_CHECK_IF(vconvTiling.DoTiling() == ge::GRAPH_SUCCESS,
+                        OP_LOGD(tilingContext_->GetNodeName(), "Do convTiling done"), return ge::GRAPH_SUCCESS);
         }
-        if (shapeInfo_.reducedPerm[0] == 0 && shapeInfo_.reducedPerm[DIM_ONE] == VCONV_DIM_NUM && shapeInfo_.reducedPerm[DIM_TWO] == 1 &&
-            shapeInfo_.dim == DIM_THREE // 021 transpose
-            && (shapeInfo_.eleLenInBytes == B8_BYTES || shapeInfo_.eleLenInBytes == B16_BYTES ||
-                shapeInfo_.eleLenInBytes == B32_BYTES) // support B8、B16、B32
-            && shapeInfo_.reducedInShape[DIM_ONE] > DIM_EIGHT &&
-            shapeInfo_.reducedInShape[DIM_TWO] > DIM_EIGHT // not support very little W or H
-            && shapeInfo_.totalVolumeActual * shapeInfo_.eleLenInBytes >=
-                   SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102_021 // shape size bigger than 7w
-        ) {
+        if (Is021VConvValid()) {
             Transpose021WithVCONV::PlatInfo platInfo{coreNum_, ubSize_};
             Transpose021WithVCONV::Transpose021VCONVTiling vconv021Tiling(tilingContext_, platInfo, shapeInfo_);
-            OP_CHECK_IF(
-                vconv021Tiling.DoTiling() == ge::GRAPH_SUCCESS,
-                OP_LOGD(tilingContext_->GetNodeName(), "Do 021 convTiling done"), return ge::GRAPH_SUCCESS);
+            OP_CHECK_IF(vconv021Tiling.DoTiling() == ge::GRAPH_SUCCESS,
+                        OP_LOGD(tilingContext_->GetNodeName(), "Do 021 convTiling done"), return ge::GRAPH_SUCCESS);
         }
     }
     return ge::GRAPH_FAILED;
+}
+
+bool TransposeNddmaTiling::Is021VConvValid()
+{
+    // check perm: 021 transpose
+    if (!(shapeInfo_.reducedPerm[0] == 0 && shapeInfo_.reducedPerm[DIM_ONE] == VCONV_DIM_NUM &&
+          shapeInfo_.reducedPerm[DIM_TWO] == 1)) {
+        return false;
+    }
+    // check dim
+    if (shapeInfo_.dim != DIM_THREE) {
+        return false;
+    }
+    // check dtype: support B8、B16、B32
+    if (!(shapeInfo_.eleLenInBytes == B8_BYTES || shapeInfo_.eleLenInBytes == B16_BYTES ||
+          shapeInfo_.eleLenInBytes == B32_BYTES)) {
+        return false;
+    }
+    // check HW shape
+    int64_t H = shapeInfo_.reducedInShape[DIM_ONE];
+    int64_t W = shapeInfo_.reducedInShape[DIM_TWO];
+    if (H <= DIM_EIGHT || W <= DIM_EIGHT) {
+        return false;
+    }
+    if (H * W < HW_MIN_PRODUCT) {
+        return false;
+    }
+    int64_t hAlign = Ops::Base::CeilDiv(H, HW_ALIGN) * HW_ALIGN;
+    int64_t wAlign = Ops::Base::CeilDiv(W, HW_ALIGN) * HW_ALIGN;
+    if (H * W <= hAlign * wAlign / DIM_TWO) {
+        return false;
+    }
+    // check total volume
+    if (shapeInfo_.totalVolumeActual * shapeInfo_.eleLenInBytes < SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102_021) {
+        return false;
+    }
+    return true;
 }
 
 template <typename T>
@@ -191,9 +213,8 @@ ge::graphStatus TransposeNddmaTiling::GetShapeInfo()
             return ge::GRAPH_FAILED;
         }
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(
-            tilingContext_->GetNodeName(), "perm", ge::TypeUtils::DataTypeToSerialString(permDtype).c_str(),
-            "int32 or int64");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext_->GetNodeName(), "perm",
+                                  ge::TypeUtils::DataTypeToSerialString(permDtype).c_str(), "int32 or int64");
         return ge::GRAPH_FAILED;
     }
 
@@ -225,23 +246,20 @@ ge::graphStatus TransposeNddmaTiling::CheckShapeDims()
     int64_t inDims = shapeInfo_.inShapeSize;
     int64_t outDims = shapeInfo_.outShapeSize;
     int64_t permDims = shapeInfo_.permSize;
-    OP_CHECK_IF(
-        inDims < 1,
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-            tilingContext_->GetNodeName(), "x", std::to_string(inDims).c_str(), "positive"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        inDims != outDims,
-        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
-            tilingContext_->GetNodeName(), "x and y", Ops::Math::Join(inDims, outDims).c_str(),
-            "The shape dims of x and y must be the same"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        inDims != permDims,
-        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
-            tilingContext_->GetNodeName(), "perm", std::to_string(permDims).c_str(),
-            "The total number of elements of perm must be equal to the shape dim of x"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inDims < 1,
+                OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(tilingContext_->GetNodeName(), "x",
+                                                         std::to_string(inDims).c_str(), "positive"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inDims != outDims,
+                OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(tilingContext_->GetNodeName(), "x and y",
+                                                          Ops::Math::Join(inDims, outDims).c_str(),
+                                                          "The shape dims of x and y must be the same"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inDims != permDims,
+                OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+                    tilingContext_->GetNodeName(), "perm", std::to_string(permDims).c_str(),
+                    "The total number of elements of perm must be equal to the shape dim of x"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -252,9 +270,9 @@ ge::graphStatus TransposeNddmaTiling::CheckShapeInfo()
 
     for (int64_t i = 0; i < shapeInfo_.inShapeSize; i++) {
         if (shapeInfo_.perm[i] >= shapeInfo_.inShapeSize) {
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-                tilingContext_->GetNodeName(), "perm", std::to_string(shapeInfo_.perm[i]).c_str(),
-                "The value of perm must be less than shape dim of x");
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "perm",
+                                                  std::to_string(shapeInfo_.perm[i]).c_str(),
+                                                  "The value of perm must be less than shape dim of x");
             return ge::GRAPH_FAILED;
         }
         if (shapeInfo_.inShape[shapeInfo_.perm[i]] != shapeInfo_.outShape[i]) {
@@ -273,15 +291,15 @@ ge::graphStatus TransposeNddmaTiling::CheckShapeInfo()
 
     for (int64_t i = 0; i < shapeInfo_.inShapeSize; i++) {
         if (shapeInfo_.inShape[i] <= 0) {
-            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
-                tilingContext_->GetNodeName(), "x", std::to_string(shapeInfo_.inShape[i]).c_str(),
-                "All axes of x must be positive numbers");
+            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(tilingContext_->GetNodeName(), "x",
+                                                  std::to_string(shapeInfo_.inShape[i]).c_str(),
+                                                  "All axes of x must be positive numbers");
             return ge::GRAPH_FAILED;
         }
         if (shapeInfo_.outShape[i] <= 0) {
-            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
-                tilingContext_->GetNodeName(), "y", std::to_string(shapeInfo_.outShape[i]).c_str(),
-                "All axes of y must be positive numbers");
+            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(tilingContext_->GetNodeName(), "y",
+                                                  std::to_string(shapeInfo_.outShape[i]).c_str(),
+                                                  "All axes of y must be positive numbers");
             return ge::GRAPH_FAILED;
         }
     }
@@ -300,9 +318,8 @@ ge::graphStatus TransposeNddmaTiling::CheckReducedShapeInfo()
 
     for (int64_t i = 0; i < dim; i++) {
         if (shapeInfo_.reducedInShape[i] <= 0 || shapeInfo_.reducedOutShape[i] <= 0) {
-            OP_LOGE(
-                tilingContext_->GetNodeName(), "Invalid shape, index is %ld, inShape is %ld, outShape is %ld", i,
-                shapeInfo_.reducedInShape[i], shapeInfo_.reducedOutShape[i]);
+            OP_LOGE(tilingContext_->GetNodeName(), "Invalid shape, index is %ld, inShape is %ld, outShape is %ld", i,
+                    shapeInfo_.reducedInShape[i], shapeInfo_.reducedOutShape[i]);
             return ge::GRAPH_FAILED;
         }
     }
@@ -320,8 +337,8 @@ int64_t TransposeNddmaTiling::DoSplitUBInput()
             splitInfo_.inUbFactor = splitInfo_.inUbElement;
             splitInfo_.inTailFactor = currentShapeDim % splitInfo_.inUbFactor;
             splitInfo_.inUbActual *= splitInfo_.inUbElement;
-            remainingTotalElment =
-                remainingTotalElment / currentShapeDim * Ops::Base::CeilDiv(currentShapeDim, splitInfo_.inUbElement);
+            remainingTotalElment = remainingTotalElment / currentShapeDim *
+                                   Ops::Base::CeilDiv(currentShapeDim, splitInfo_.inUbElement);
             break;
         } else {
             splitInfo_.inUbElement /= currentShapeDim;
@@ -354,8 +371,8 @@ bool TransposeNddmaTiling::UbOutOfBoundCheck(int64_t currentSplitIndex, int64_t 
     if (calcIn && shapeInfo_.reducedPerm[currentSplitIndex] == splitInfo_.inCutIndex) {
         burstLenBlockAlign *= splitInfo_.inUbFactor;
     }
-    burstLenBlockAlign =
-        Ops::Base::CeilAlign(burstLenBlockAlign * shapeInfo_.eleLenInBytes, ubBlockSize_) / shapeInfo_.eleLenInBytes;
+    burstLenBlockAlign = Ops::Base::CeilAlign(burstLenBlockAlign * shapeInfo_.eleLenInBytes, ubBlockSize_) /
+                         shapeInfo_.eleLenInBytes;
     int64_t inUbElements = burstLenBlockAlign;
     for (int64_t i = 0; i < currentSplitIndex; i++) {
         if (shapeInfo_.reducedPerm[i] > splitInfo_.inCutIndex) {
@@ -378,8 +395,8 @@ bool TransposeNddmaTiling::UbOutOfBoundCheckNLast(int64_t currentSplitIndex, int
     } else {
         burstLenBlockAlign = shapeInfo_.reducedInShape[shapeInfo_.dim - 1];
     }
-    burstLenBlockAlign =
-        Ops::Base::CeilAlign(burstLenBlockAlign * shapeInfo_.eleLenInBytes, ubBlockSize_) / shapeInfo_.eleLenInBytes;
+    burstLenBlockAlign = Ops::Base::CeilAlign(burstLenBlockAlign * shapeInfo_.eleLenInBytes, ubBlockSize_) /
+                         shapeInfo_.eleLenInBytes;
     int64_t inUbElements = burstLenBlockAlign;
     for (int64_t i = currentSplitIndex; i < shapeInfo_.dim - 1; i++) {
         if (i == currentSplitIndex) {
@@ -394,8 +411,8 @@ bool TransposeNddmaTiling::UbOutOfBoundCheckNLast(int64_t currentSplitIndex, int
     return false;
 }
 
-void TransposeNddmaTiling::FindSplitFactorByRateNLast(
-    int64_t currentSplitIndex, int64_t currentInShapeDim, int64_t remainingTotalElment)
+void TransposeNddmaTiling::FindSplitFactorByRateNLast(int64_t currentSplitIndex, int64_t currentInShapeDim,
+                                                      int64_t remainingTotalElment)
 {
     splitInfo_.inCutIndex = currentSplitIndex;
     splitInfo_.inUbFactor = 1;
@@ -412,8 +429,8 @@ void TransposeNddmaTiling::FindSplitFactorByRateNLast(
     }
 }
 
-void TransposeNddmaTiling::FindSplitFactorByMultiplesLast(
-    int64_t currentSplitIndex, int64_t currentShapeDim, int64_t remainingTotalElment, int64_t coreNumMultiples)
+void TransposeNddmaTiling::FindSplitFactorByMultiplesLast(int64_t currentSplitIndex, int64_t currentShapeDim,
+                                                          int64_t remainingTotalElment, int64_t coreNumMultiples)
 {
     splitInfo_.outCutIndex = currentSplitIndex;
     int64_t bestI = 1;
@@ -435,8 +452,8 @@ void TransposeNddmaTiling::FindSplitFactorByMultiplesLast(
     splitInfo_.outUbActual *= bestI;
 }
 
-void TransposeNddmaTiling::FindSplitFactorByMultiplesNLast(
-    int64_t currentSplitIndex, int64_t currentInShapeDim, int64_t remainingTotalElment, int64_t coreNumMultiples)
+void TransposeNddmaTiling::FindSplitFactorByMultiplesNLast(int64_t currentSplitIndex, int64_t currentInShapeDim,
+                                                           int64_t remainingTotalElment, int64_t coreNumMultiples)
 {
     splitInfo_.inCutIndex = currentSplitIndex;
     for (int64_t i = splitInfo_.inUbElement; i >= 1; i--) {
@@ -471,16 +488,16 @@ void TransposeNddmaTiling::DoSplitUB()
         }
         int64_t currentShapeDim = shapeInfo_.reducedOutShape[currentSplitIndex];
         if (shapeInfo_.reducedPerm[currentSplitIndex] == splitInfo_.inCutIndex) {
-            currentShapeDim =
-                Ops::Base::CeilDiv(shapeInfo_.reducedInShape[splitInfo_.inCutIndex], splitInfo_.inUbFactor);
+            currentShapeDim = Ops::Base::CeilDiv(shapeInfo_.reducedInShape[splitInfo_.inCutIndex],
+                                                 splitInfo_.inUbFactor);
         }
         remainingTotalElment /= currentShapeDim;
         int64_t coreNumTmp = remainingTotalElment * Ops::Base::CeilDiv(currentShapeDim, splitInfo_.outUbElement);
         if (splitInfo_.outUbElement < currentShapeDim) {
             if (coreNumTmp > coreNum_) { // use full coreNum
                 int64_t coreNumMultiples = Ops::Base::FloorDiv(coreNumTmp, coreNum_);
-                FindSplitFactorByMultiplesLast(
-                    currentSplitIndex, currentShapeDim, remainingTotalElment, coreNumMultiples);
+                FindSplitFactorByMultiplesLast(currentSplitIndex, currentShapeDim, remainingTotalElment,
+                                               coreNumMultiples);
             } else {
                 splitInfo_.outCutIndex = currentSplitIndex;
                 splitInfo_.outUbFactor = splitInfo_.outUbElement;
@@ -593,7 +610,8 @@ void TransposeNddmaTiling::EntryTilingTemplate()
     auto platformInfo = tilingContext_->GetPlatformInfo();
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     auto arch = ascendcPlatform.GetCurNpuArch();
-    if (arch == NpuArch::DAV_5102 && !shapeInfo_.isLastAxisTranspose) {
+    if (arch == NpuArch::DAV_5102 && !shapeInfo_.isLastAxisTranspose &&
+        shapeInfo_.reducedInShape[shapeInfo_.dim - 1] >= MOVEALIGN_LAST_MIN_ELE) {
         SMALL_SHAPE_BYTES_THRES_HOLD = SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102_NLAST;
     }
     if (shapeInfo_.totalVolumeActual * shapeInfo_.eleLenInBytes >= SMALL_SHAPE_BYTES_THRES_HOLD) {
@@ -653,8 +671,8 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForTensorMove()
     }
 }
 
-int64_t TransposeNddmaTiling::CalcBlockSplitInfoForNoCutForMultiCore(
-    int64_t i, int64_t shapeSizeByte, int64_t& totalElment)
+int64_t TransposeNddmaTiling::CalcBlockSplitInfoForNoCutForMultiCore(int64_t i, int64_t shapeSizeByte,
+                                                                     int64_t& totalElment)
 {
     for (int64_t j = 2; j <= shapeInfo_.reducedOutShape[i]; j++) {
         if ((shapeInfo_.reducedOutShape[i] % j == 0) &&
@@ -662,8 +680,8 @@ int64_t TransposeNddmaTiling::CalcBlockSplitInfoForNoCutForMultiCore(
             if (j == shapeInfo_.reducedOutShape[i] && i == 0) {
                 // 素数且切到了最后，正常切
                 splitInfo_.outCutIndex = i;
-                splitInfo_.outUbFactor =
-                    Ops::Base::CeilDiv(cacheLineSize_ + 1, shapeSizeByte / shapeInfo_.reducedOutShape[i]);
+                splitInfo_.outUbFactor = Ops::Base::CeilDiv(cacheLineSize_ + 1,
+                                                            shapeSizeByte / shapeInfo_.reducedOutShape[i]);
                 splitInfo_.outTailFactor = shapeInfo_.reducedOutShape[i] % splitInfo_.outUbFactor;
                 totalElment *= Ops::Base::CeilDiv(shapeInfo_.reducedOutShape[i], splitInfo_.outUbFactor);
                 break;
@@ -698,12 +716,12 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForSmallShape()
     }
     // simt every core elemets align to 128Byte
     int64_t blkFactor = totalElements / coreNum_;
-    int64_t ceilAlignFactor =
-        Ops::Base::CeilDiv(blkFactor * shapeInfo_.eleLenInBytes, SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE) *
-        SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE / shapeInfo_.eleLenInBytes;
-    int64_t floorAlignFactor =
-        Ops::Base::FloorDiv(blkFactor * shapeInfo_.eleLenInBytes, SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE) *
-        SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE / shapeInfo_.eleLenInBytes;
+    int64_t ceilAlignFactor = Ops::Base::CeilDiv(blkFactor * shapeInfo_.eleLenInBytes,
+                                                 SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE) *
+                              SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE / shapeInfo_.eleLenInBytes;
+    int64_t floorAlignFactor = Ops::Base::FloorDiv(blkFactor * shapeInfo_.eleLenInBytes,
+                                                   SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE) *
+                               SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE / shapeInfo_.eleLenInBytes;
     if (totalElements - floorAlignFactor * (coreNum_ - 1) <= floorAlignFactor) {
         realCoreNum_ = coreNum_;
         blkFactor_ = floorAlignFactor;
@@ -735,11 +753,11 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForNLastTranspose()
                 break;
             } else { // use full coreNum
                 int64_t coreNumMultiples = Ops::Base::FloorDiv(coreNumTmp, coreNum_);
-                FindSplitFactorByMultiplesNLast(
-                    currentSplitIndex, currentInShapeDim, remainingTotalElment, coreNumMultiples);
+                FindSplitFactorByMultiplesNLast(currentSplitIndex, currentInShapeDim, remainingTotalElment,
+                                                coreNumMultiples);
                 /* 检查inUbFactor是否合法，不合法则执行退轴逻辑 */
-                CheckInUbFactorValid(
-                    currentSplitIndex, currentInShapeDim, remainingTotalElment, coreNumMultiples, solvedTotalElment);
+                CheckInUbFactorValid(currentSplitIndex, currentInShapeDim, remainingTotalElment, coreNumMultiples,
+                                     solvedTotalElment);
                 break;
             }
         } else if (coreNumTmp < coreNum_) { // use at least VEC_CORE_USED_THRES_HOLD * coreNum
@@ -757,9 +775,9 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForNLastTranspose()
     SetRealCoreNumAndBlkFactor(coreNum);
 }
 
-void TransposeNddmaTiling::CheckInUbFactorValid(
-    int64_t& currentSplitIndex, int64_t& currentInShapeDim, int64_t& remainingTotalElment, int64_t& coreNumMultiples,
-    int64_t* solvedTotalElment)
+void TransposeNddmaTiling::CheckInUbFactorValid(int64_t& currentSplitIndex, int64_t& currentInShapeDim,
+                                                int64_t& remainingTotalElment, int64_t& coreNumMultiples,
+                                                int64_t* solvedTotalElment)
 {
     if (splitInfo_.inUbFactor == 0 && currentSplitIndex < shapeInfo_.dim - 1) {
         while (currentSplitIndex < shapeInfo_.dim - 1) {
@@ -768,8 +786,8 @@ void TransposeNddmaTiling::CheckInUbFactorValid(
             splitInfo_.inUbElement = shapeInfo_.reducedInShape[currentSplitIndex];
             remainingTotalElment = shapeInfo_.totalVolumeActual / solvedTotalElment[currentSplitIndex];
             coreNumMultiples = remainingTotalElment;
-            FindSplitFactorByMultiplesNLast(
-                currentSplitIndex, currentInShapeDim, remainingTotalElment, coreNumMultiples);
+            FindSplitFactorByMultiplesNLast(currentSplitIndex, currentInShapeDim, remainingTotalElment,
+                                            coreNumMultiples);
             if (splitInfo_.inUbFactor > 0) {
                 break;
             }
@@ -851,8 +869,8 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForCutTwice()
             outAxiseExceptSplitInAxis *= shapeInfo_.reducedOutShape[i];
         }
     }
-    outAxiseExceptSplitInAxis *=
-        Ops::Base::CeilDiv(shapeInfo_.reducedOutShape[splitInfo_.outCutIndex], splitInfo_.outUbFactor);
+    outAxiseExceptSplitInAxis *= Ops::Base::CeilDiv(shapeInfo_.reducedOutShape[splitInfo_.outCutIndex],
+                                                    splitInfo_.outUbFactor);
     int64_t inUbAxis = Ops::Base::CeilDiv(shapeInfo_.reducedInShape[splitInfo_.inCutIndex], splitInfo_.inUbFactor);
     if (outAxiseExceptSplitInAxis * inUbAxis < coreNum_) {
         // use at least VEC_CORE_USED_THRES_HOLD * coreNum
@@ -1064,14 +1082,14 @@ void TransposeNddmaTiling::CalcInUbShapeInfoForCutTwice()
         inUbOutputTailSrcShape_[idx] = inUbInputTailSrcShape_[idx];
     }
     inUbOutputTailSrcShape_[splitInfo_.inCutIndex + NDDMA_MAX_DIM_NUM - shapeInfo_.dim] = splitInfo_.inUbFactor;
-    inUbOutputTailSrcShape_[expandedPerm_[splitInfo_.outCutIndex + NDDMA_MAX_DIM_NUM - shapeInfo_.dim]] =
-        splitInfo_.outTailFactor;
-    inUbMainSrcShape_[expandedPerm_[splitInfo_.outCutIndex + NDDMA_MAX_DIM_NUM - shapeInfo_.dim]] =
-        splitInfo_.outUbFactor;
-    inUbInputTailSrcShape_[expandedPerm_[splitInfo_.outCutIndex + NDDMA_MAX_DIM_NUM - shapeInfo_.dim]] =
-        splitInfo_.outUbFactor;
-    inUbTailSrcShape_[expandedPerm_[splitInfo_.outCutIndex + NDDMA_MAX_DIM_NUM - shapeInfo_.dim]] =
-        splitInfo_.outTailFactor;
+    inUbOutputTailSrcShape_[expandedPerm_[splitInfo_.outCutIndex + NDDMA_MAX_DIM_NUM -
+                                          shapeInfo_.dim]] = splitInfo_.outTailFactor;
+    inUbMainSrcShape_[expandedPerm_[splitInfo_.outCutIndex + NDDMA_MAX_DIM_NUM - shapeInfo_.dim]] = splitInfo_
+                                                                                                        .outUbFactor;
+    inUbInputTailSrcShape_[expandedPerm_[splitInfo_.outCutIndex + NDDMA_MAX_DIM_NUM -
+                                         shapeInfo_.dim]] = splitInfo_.outUbFactor;
+    inUbTailSrcShape_[expandedPerm_[splitInfo_.outCutIndex + NDDMA_MAX_DIM_NUM - shapeInfo_.dim]] = splitInfo_
+                                                                                                        .outTailFactor;
     for (int64_t idx = splitInfo_.outCutIndex + NDDMA_MAX_DIM_NUM - shapeInfo_.dim + 1; idx < NDDMA_MAX_DIM_NUM;
          idx++) {
         if (expandedPerm_[idx] == splitInfo_.inCutIndex + NDDMA_MAX_DIM_NUM - shapeInfo_.dim) {
@@ -1110,29 +1128,37 @@ void TransposeNddmaTiling::GetIntervalInfoForCutTwice()
 
     if (splitInfo_.inTailFactor != 0 && splitInfo_.outTailFactor != 0) {
         offsetRangeInputTail_.start = offsetRangeMain_.end + 1;
-        offsetRangeInputTail_.end =
-            offsetRangeInputTail_.start +
-            (expandedInputShape_[inputOutputCutIndex] / inUbMainSrcShape_[inputOutputCutIndex]) * outUbLoop - 1;
+        offsetRangeInputTail_.end = offsetRangeInputTail_.start +
+                                    (expandedInputShape_[inputOutputCutIndex] /
+                                     inUbMainSrcShape_[inputOutputCutIndex]) *
+                                        outUbLoop -
+                                    1;
         offsetRangeOutputTail_.start = offsetRangeInputTail_.end + 1;
-        offsetRangeOutputTail_.end =
-            offsetRangeOutputTail_.start +
-            (expandedInputShape_[expandedInputCutIndex] / inUbMainSrcShape_[expandedInputCutIndex]) * outUbLoop - 1;
+        offsetRangeOutputTail_.end = offsetRangeOutputTail_.start +
+                                     (expandedInputShape_[expandedInputCutIndex] /
+                                      inUbMainSrcShape_[expandedInputCutIndex]) *
+                                         outUbLoop -
+                                     1;
         offsetRangeTail_.start = offsetRangeOutputTail_.end + 1;
         offsetRangeTail_.end = offsetRangeTail_.start + outUbLoop - 1;
     }
 
     if (splitInfo_.inTailFactor != 0 && splitInfo_.outTailFactor == 0) {
         offsetRangeInputTail_.start = offsetRangeMain_.end + 1;
-        offsetRangeInputTail_.end =
-            offsetRangeInputTail_.start +
-            (expandedInputShape_[inputOutputCutIndex] / inUbMainSrcShape_[inputOutputCutIndex]) * outUbLoop - 1;
+        offsetRangeInputTail_.end = offsetRangeInputTail_.start +
+                                    (expandedInputShape_[inputOutputCutIndex] /
+                                     inUbMainSrcShape_[inputOutputCutIndex]) *
+                                        outUbLoop -
+                                    1;
     }
 
     if (splitInfo_.inTailFactor == 0 && splitInfo_.outTailFactor != 0) {
         offsetRangeOutputTail_.start = offsetRangeMain_.end + 1;
-        offsetRangeOutputTail_.end =
-            offsetRangeOutputTail_.start +
-            (expandedInputShape_[expandedInputCutIndex] / inUbMainSrcShape_[expandedInputCutIndex]) * outUbLoop - 1;
+        offsetRangeOutputTail_.end = offsetRangeOutputTail_.start +
+                                     (expandedInputShape_[expandedInputCutIndex] /
+                                      inUbMainSrcShape_[expandedInputCutIndex]) *
+                                         outUbLoop -
+                                     1;
     }
 }
 
@@ -1185,8 +1211,8 @@ void TransposeNddmaTiling::FillTilingData()
     tilingData_.transposeOpTiling.set_inUbTailDstShape(inUbTailDstShape_);
 
     if (!isReleatedTranspsoe_) {
-        tilingData_.SaveToBuffer(
-            tilingContext_->GetRawTilingData()->GetData(), tilingContext_->GetRawTilingData()->GetCapacity());
+        tilingData_.SaveToBuffer(tilingContext_->GetRawTilingData()->GetData(),
+                                 tilingContext_->GetRawTilingData()->GetCapacity());
         tilingContext_->GetRawTilingData()->SetDataSize(tilingData_.GetDataSize());
     }
 }
@@ -1195,33 +1221,31 @@ void TransposeNddmaTiling::PrintTilingData()
 {
     OP_LOGI(tilingContext_->GetNodeName(), "Entering PrintTilingData.");
     for (int64_t i = 0; i < shapeInfo_.dim; i++) {
-        OP_LOGI(
-            tilingContext_->GetNodeName(),
-            "reducedInShape[%ld] is:%ld, reducedOutShape[%ld]:%ld, reducedPerm[%ld]:%ld. \
+        OP_LOGI(tilingContext_->GetNodeName(),
+                "reducedInShape[%ld] is:%ld, reducedOutShape[%ld]:%ld, reducedPerm[%ld]:%ld. \
                 baseInShape[%ld] is:%ld",
-            i, inputShape_[i], i, outputShape_[i], i, perm_[i], i, baseInShape_[i]);
+                i, inputShape_[i], i, outputShape_[i], i, perm_[i], i, baseInShape_[i]);
     }
     for (int64_t i = 0; i < NDDMA_MAX_DIM_NUM; i++) {
-        OP_LOGI(
-            tilingContext_->GetNodeName(), "baseNddmaShape_[%ld] is:%ld, nddmaIdx_[%ld]:%ld", i, baseNddmaShape_[i], i,
-            nddmaIdx_[i]);
+        OP_LOGI(tilingContext_->GetNodeName(), "baseNddmaShape_[%ld] is:%ld, nddmaIdx_[%ld]:%ld", i, baseNddmaShape_[i],
+                i, nddmaIdx_[i]);
     }
-    OP_LOGI(
-        tilingContext_->GetNodeName(),
-        "tilingData is permSize:%ld, inCutIndex:%ld, outCutIndex:%ld, inUbFactor:%ld, outUbFactor:%ld, \
+    OP_LOGI(tilingContext_->GetNodeName(),
+            "tilingData is permSize:%ld, inCutIndex:%ld, outCutIndex:%ld, inUbFactor:%ld, outUbFactor:%ld, \
             inTailFactor:%ld, outTailFactor:%ld, realCoreNum:%ld, blkFactor:%ld, blkTailFactor:%ld, \
             ubSize:%ld, totalNddmaNum:%ld, Tiling4Transpose ends. ",
-        tilingData_.transposeOpTiling.get_permSize(), tilingData_.transposeOpTiling.get_inCutIndex(),
-        tilingData_.transposeOpTiling.get_outCutIndex(), tilingData_.transposeOpTiling.get_inUbFactor(),
-        tilingData_.transposeOpTiling.get_outUbFactor(), tilingData_.transposeOpTiling.get_inTailFactor(),
-        tilingData_.transposeOpTiling.get_outTailFactor(), tilingData_.transposeOpTiling.get_realCoreNum(),
-        tilingData_.transposeOpTiling.get_blkFactor(), tilingData_.transposeOpTiling.get_blkTailFactor(),
-        tilingData_.transposeOpTiling.get_ubSize(), tilingData_.transposeOpTiling.get_totalNddmaNum());
+            tilingData_.transposeOpTiling.get_permSize(), tilingData_.transposeOpTiling.get_inCutIndex(),
+            tilingData_.transposeOpTiling.get_outCutIndex(), tilingData_.transposeOpTiling.get_inUbFactor(),
+            tilingData_.transposeOpTiling.get_outUbFactor(), tilingData_.transposeOpTiling.get_inTailFactor(),
+            tilingData_.transposeOpTiling.get_outTailFactor(), tilingData_.transposeOpTiling.get_realCoreNum(),
+            tilingData_.transposeOpTiling.get_blkFactor(), tilingData_.transposeOpTiling.get_blkTailFactor(),
+            tilingData_.transposeOpTiling.get_ubSize(), tilingData_.transposeOpTiling.get_totalNddmaNum());
 }
 
-ge::graphStatus TransposeNddmaTiling::TilingForReleatedTranspose(
-    gert::TilingContext* context, TransposeOpTilingData* tilingData, TransposeCompilerInfo* compilerInfo,
-    ShapeInfo& opInput)
+ge::graphStatus TransposeNddmaTiling::TilingForReleatedTranspose(gert::TilingContext* context,
+                                                                 TransposeOpTilingData* tilingData,
+                                                                 TransposeCompilerInfo* compilerInfo,
+                                                                 ShapeInfo& opInput)
 {
     OP_LOGD(context->GetNodeName(), "Start TilingForReleatedTranspose.");
     TransposeNddmaTiling tilingObject(context);
@@ -1259,17 +1283,15 @@ ge::graphStatus TilingPrepareTransposeForAscendC(gert::TilingParseContext* conte
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     ci->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (ci->coreNum <= 0),
-        OP_LOGE(context->GetNodeName(), "Transpose Op GetHardwareInfo Failed, coreNum:%ld.", ci->coreNum),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((ci->coreNum <= 0),
+                OP_LOGE(context->GetNodeName(), "Transpose Op GetHardwareInfo Failed, coreNum:%ld.", ci->coreNum),
+                return ge::GRAPH_FAILED);
     uint64_t ubSize;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     ci->ubSize = static_cast<int64_t>(ubSize);
-    OP_CHECK_IF(
-        (ci->ubSize <= 0),
-        OP_LOGE(context->GetNodeName(), "Transpose Op GetHardwareInfo Failed, ubSize:%ld.", ci->ubSize),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((ci->ubSize <= 0),
+                OP_LOGE(context->GetNodeName(), "Transpose Op GetHardwareInfo Failed, ubSize:%ld.", ci->ubSize),
+                return ge::GRAPH_FAILED);
 
     OP_LOGD(context->GetNodeName(), "Transpose Op get coreNum:%ld, ubSize:%ld.", ci->coreNum, ci->ubSize);
     return ge::GRAPH_SUCCESS;
