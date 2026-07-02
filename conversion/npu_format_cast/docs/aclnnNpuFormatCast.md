@@ -37,7 +37,7 @@
 aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(
     const aclTensor* srcTensor,
     const int        dstFormat,
-    int              additionalDtype,
+    const int        additionalDtype,
     int64_t**        dstShape,
     uint64_t*        dstShapeSize,
     int*             actualFormat)
