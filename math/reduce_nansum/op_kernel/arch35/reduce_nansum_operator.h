@@ -12,9 +12,15 @@
  * \file reduce_nansum_operator.h
  * \brief Custom ReduceNansumOp that integrates NaN->0 replacement inside the reduce pipeline.
  *
- * By inheriting ReduceSumOp and overriding CopyIn, the NaN detection and replacement
- * (Compare(x, x, EQ) + Select(mask, x, 0)) is performed on each data chunk as it is
- * loaded from GM to UB, before the reduction computation.
+ * By inheriting ReduceSumOp and overriding PadValue, the NaN detection and replacement
+ * (Compare(x, x, EQ) + Select(mask, x, 0)) is performed on each UB data chunk after
+ * data copy and padding, right before the reduction computation.
+ *
+ * 注意: NaN->0 不能放在 CopyIn 中执行，因为 reduce 框架的 CopyInAux 在调用
+ * reduceOp_->CopyIn() 之后，还会无条件调用 CopyInWithMoveAlign/CopyInWithNddma
+ * 再次从 GM 搬数据到 UB，会覆盖 CopyIn 中对 UB 数据的修改。
+ * PadValue 的调用时机在数据搬运和 padding 完成后、reduce 计算前，此时数据
+ * 已在 UB 中且不会再被覆盖，是执行 NaN->0 替换的正确位置。
  *
  * This eliminates the need for separate Compare, Select, and Duplicate DAG nodes,
  * avoiding buffer conflict issues caused by multi-consumer patterns in the DAG pipeline.
@@ -128,9 +134,8 @@ private:
     /**
      * \brief Process NaN->0 replacement on UB data using MicroAPI vector registers.
      *
-     * Uses data = data - data to detect NaN (NaN - NaN = NaN, normal - normal = 0).
-     * Then CompareScalar(diff, 0, EQ): NaN!=0->mask=0, 0==0->mask=1.
-     * Finally Select(data, data, 0, mask): mask=1(normal)->keep data, mask=0(NaN)->replace with 0.
+     * Uses Compare(x, x, EQ) to detect NaN (IEEE 754: NaN != NaN -> mask=0, normal == normal -> mask=1).
+     * Then Select(data, data, 0, mask): mask=1(normal)->keep data, mask=0(NaN)->replace with 0.
      * All operations use vector registers, no extra UB buffer allocation needed.
      */
     template <typename T>
@@ -146,9 +151,8 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T> dataReg;
-            MicroAPI::RegTensor<T> diffReg;
-            MicroAPI::RegTensor<T> zeroReg;
+            MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> dataReg;
+            MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> zeroReg;
             MicroAPI::MaskReg cmpMask;
             MicroAPI::MaskReg opMask;
 
@@ -162,12 +166,8 @@ private:
                 // Load data from UB to VR
                 MicroAPI::DataCopy(dataReg, dataAddr + i * vLElems);
 
-                // diffReg = data - data: NaN -> NaN, normal -> 0
-                MicroAPI::Sub(diffReg, dataReg, dataReg, opMask);
-
-                // Compare diff with 0: NaN != 0 -> mask=0, 0 == 0 -> mask=1
-                MicroAPI::CompareScalar<T, CMPMODE::EQ>(
-                    cmpMask, diffReg, static_cast<T>(0), opMask);
+                // Compare(x, x, EQ): NaN != NaN -> mask=0, normal == normal -> mask=1
+                MicroAPI::Compare<T, CMPMODE::EQ>(cmpMask, dataReg, dataReg, opMask);
 
                 // Select: mask=1(normal) -> data, mask=0(NaN) -> 0
                 MicroAPI::Select(dataReg, dataReg, zeroReg, cmpMask);
@@ -193,9 +193,13 @@ private:
 
 public:
     /**
-     * \brief Override CopyIn to add NaN->0 preprocessing.
+     * \brief Override CopyIn for inner-loop broadcast (pos!=0).
      *
-     * For pos==0 (standard data load): loads data from GM to UB, then replaces NaN with 0.
+     * For pos==0: no-op here. 数据搬运由 CopyInAux 的后续函数 (CopyInWithMoveAlign /
+     *             CopyInWithNddma) 完成。不能在此处做 NaN->0，因为 CopyInAux 在调用
+     *             reduceOp_->CopyIn() 之后，还会无条件调用 CopyInWithMoveAlign/
+     *             CopyInWithNddma 再次从 GM 搬数据到 UB，会覆盖此处对 UB 数据的修改。
+     *             NaN->0 替换改在 PadValue 中执行（数据搬运和 padding 完成后、reduce 计算前）。
      * For pos!=0 (inner loop / dichotomy): does standard broadcast same as ReduceSumOp.
      */
     template <int32_t pos, class InnerPattern, typename T, class V>
@@ -211,20 +215,8 @@ public:
         view.addr = addrOffset;
 
         if constexpr (pos == 0) {
-            // Standard data copy from GM to UB
-            SetCopyInAndLoopParams<T>(copyInParams, loopParams, view, false);
-            SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
-            CopyInLoop<T>(dst, src, view, copyInParams, padParams);
-            ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
-
-            // Wait for data copy to complete
-            int32_t eventIdMte2ToV = static_cast<int32_t>(GetTPipePtr()->FetchEventID(AscendC::HardEvent::MTE2_V));
-            AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(eventIdMte2ToV);
-            AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(eventIdMte2ToV);
-
-            // NaN->0 replacement on loaded data
-            uint64_t elemCount = GetViewElemCount(view);
-            NaNToZero<T>(const_cast<LocalTensor<T>&>(dst), elemCount);
+            // pos==0: 数据搬运交给 CopyInAux 的后续函数完成，此处不做任何操作。
+            // NaN->0 在 PadValue 中执行，避免被 CopyInWithMoveAlign/CopyInWithNddma 覆盖。
         } else {
             // For inner loop patterns, do broadcast (same as ReduceLogSumExpOp)
             V viewCopy = view;
@@ -305,6 +297,12 @@ public:
             DoPadding<AscendC::MicroAPI::RegTraitNumOne, true, Pattern, InputT, PromteT>(
                 (__ubuf__ PromteT*)dst.GetPhyAddr(), padValue, shape, padding);
         }
+
+        // PadValue 在数据搬运(CopyInWithMoveAlign)和 padding 完成后、reduce 计算前调用，
+        // 此时数据已在 UB 中且不会再被覆盖，执行 NaN->0 替换。
+        // padding 区域已被填充为 0，NaN->0 对其无影响（0 不是 NaN）。
+        uint64_t elemCount = static_cast<uint64_t>(shape.value[0]) * static_cast<uint64_t>(shape.value[1]);
+        NaNToZero<PromteT>(const_cast<LocalTensor<PromteT>&>(dst), elemCount);
     }
 #endif
 };
