@@ -2628,6 +2628,16 @@
   </tr>
   <tr>
     <td>conversion</td>
+    <td><a href="../../conversion/sparse_reshape/README.md">sparse_reshape</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>将稀疏张量的indices从输入shape重塑到目标shape。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
     <td><a href="../../conversion/split/README.md">split</a></td>
     <td>√</td>
     <td>√</td>
