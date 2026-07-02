@@ -229,8 +229,8 @@ ge::graphStatus GetTopkApiTmpBufferSize(
     gert::TilingContext* context, TopKV2TilingDataSimd& topkTilingData, uint32_t needDataNum, int64_t kValue,
     bool isLargest, ge::DataType dtype, bool isSort, uint32_t nowTileSize)
 {
-    uint32_t aglinInnerValue = 
-        static_cast<uint32_t>(Ops::Base::CeilAlign(static_cast<uint64_t>(needDataNum), topkV2DataInfo::AGLIN_FACTOR));
+    int32_t aglinInnerValue = 
+        static_cast<int32_t>(Ops::Base::CeilAlign(static_cast<uint64_t>(needDataNum), topkV2DataInfo::AGLIN_FACTOR));
     
     uint32_t aglinKValue = (topkTilingData.get_modeType() == topkV2DataInfo::SINGLE_CORE_MODE) ?
         std::min(static_cast<int64_t>(needDataNum), kValue) :
@@ -2144,6 +2144,8 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
         dimValue += static_cast<int32_t>(inputDimNum);
     }
     int64_t lastAxisNum = inputShape.GetDim(inputDimNum - 1);
+    OP_CHECK_IF(lastAxisNum <= 0, OP_LOGE("TopkV2", "lastAxisNum is invalid!"), return ge::GRAPH_FAILED);  
+
     uint64_t unsortedDimNum = 1;
     for (uint32_t i = 0; i < (inputDimNum - 1); i++) {
         unsortedDimNum *= inputShape.GetDim(i);
