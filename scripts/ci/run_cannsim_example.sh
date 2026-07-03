@@ -182,7 +182,7 @@ if [[ "$SKIP_BUILD" == "FALSE" ]]; then
         exit 1
     fi
     echo "[cannsim] Installing: ${RUN_PKG}"
-    ${RUN_PKG}
+    ${RUN_PKG} --force
 
     STAGE2_END=$(date +%s)
     STAGE2_ELAPSED=$((STAGE2_END - STAGE2_START))
@@ -202,7 +202,7 @@ echo "------------------------------------------------------------"
 STAGE3_START=$(date +%s)
 
 export LD_LIBRARY_PATH="${VENDOR_LIB_DIR}:${LD_LIBRARY_PATH}"
-bash build.sh --run_example ${OP_NAME} eager cust --noexec --vendor_name=${VENDOR_NAME}
+bash build.sh --run_example ${OP_NAME} eager cust --vendor_name=${VENDOR_NAME} --noexec
 
 EXECUTABLE="${PROJECT_ROOT}/build/test_aclnn_${OP_NAME}"
 if [[ ! -f "$EXECUTABLE" ]]; then

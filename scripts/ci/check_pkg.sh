@@ -14,6 +14,12 @@ variables_cmake="cmake/variables.cmake"
 op_category_list=$(perl -0777 -ne 'if (/set\(OPS_CATEGORY_LIST\s*(.*?)\)/s) { print $1 }' "$current_dir/$variables_cmake" | grep -oP '"[^"]+"' | sed 's/"//g' | xargs)
 IFS=' ' read -r -a op_categories <<< "$op_category_list"
 valid_dirs=()
+SOC_VERSION="ascend910b"
+for arg in "$@"; do
+    case "$arg" in
+        --soc=*) SOC_VERSION="${arg#*=}" ;;
+    esac
+done
 pr_file=$(realpath "${1:-pr_filelist.txt}")
 
 for category in "${op_categories[@]}"
@@ -93,12 +99,12 @@ do
     rm -rf build
     rm -rf build_out
     if [[ "${REPOSITORY_NAME}" == "ops-math-dev" ]]; then
-        echo "bash build.sh --pkg --vendor_name=$name --ops=$name --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH} -j16"
-        bash build.sh --pkg --vendor_name=$name --ops=$name --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH} -j16
+        echo "bash build.sh --pkg --vendor_name=$name --ops=$name --soc=${SOC_VERSION} --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH} -j16"
+        bash build.sh --pkg --vendor_name=$name --ops=$name --soc=${SOC_VERSION} --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH} -j16
         status=$?
     elif [[ "${REPOSITORY_NAME}" == "ops-math" ]]; then
-        echo "bash build.sh --pkg --vendor_name=$name --ops=$name  --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH} -j16"
-        bash build.sh --pkg --vendor_name=$name --ops=$name --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH} -j16
+        echo "bash build.sh --pkg --vendor_name=$name --ops=$name --soc=${SOC_VERSION} --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH} -j16"
+        bash build.sh --pkg --vendor_name=$name --ops=$name --soc=${SOC_VERSION} --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH} -j16
         status=$?       
     fi
     if [[ $status -ne 0 ]]; then

@@ -15,6 +15,12 @@ op_category_list=$(perl -0777 -ne 'if (/set\(OPS_CATEGORY_LIST\s*(.*?)\)/s) { pr
 
 IFS=' ' read -r -a op_categories <<< "$op_category_list"
 valid_dirs=()
+SOC_VERSION="ascend910b"
+for arg in "$@"; do
+    case "$arg" in
+        --soc=*) SOC_VERSION="${arg#*=}" ;;
+    esac
+done
 pr_file=$(realpath "${1:-pr_filelist.txt}")
 
 for category in "${op_categories[@]}"
@@ -84,9 +90,9 @@ done
 # run example for the modified op
 for name in "${ops_name[@]}"
 do
-    ./single/cann-ops-math-${name}_linux*.run --force
-    echo "[EXECUTE_COMMAND] bash build.sh --run_example $name eager cust --vendor_name=$name"
-    bash build.sh --run_example $name eager cust --vendor_name=$name
+    ./single/cann-ops-math-${name}_linux*.run --quiet --force
+    echo "[EXECUTE_COMMAND] bash build.sh --run_example $name eager cust --vendor_name=$name --soc=${SOC_VERSION}"
+    bash build.sh --run_example $name eager cust --vendor_name=$name --soc=${SOC_VERSION}
     status=$?
     if [ $status -ne 0 ]; then
         echo "${name} example fail"

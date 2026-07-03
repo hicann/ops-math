@@ -9,15 +9,15 @@
 # ============================================================================
 
 # 查找符合条件的二级目录：
-#    1. 一级目录由cmake/variables.cmake中的OP_CATEGORY_LIST直接提供
+#    1. 一级目录由cmake/variables.cmake中的OPS_CATEGORY_LIST直接提供
 #    2. 二级目录下需要包含/tests/ut/op_kernel文件夹
 #    3. 构建出valid_dirs清单
 
 current_dir=$(pwd)
 variables_cmake="cmake/variables.cmake"
 pr_file=$(realpath "${1:-pr_filelist.txt}")
-# 提取 OP_CATEGORY_LIST 的值
-op_category_list=$(grep -oP 'set\(OP_CATEGORY_LIST\s*\K".*"' $current_dir/$variables_cmake | sed 's/"//g')
+# 提取 OPS_CATEGORY_LIST 的值
+op_category_list=$(grep -oP 'set\(OPS_CATEGORY_LIST\s*\K".*"' $current_dir/$variables_cmake | sed 's/"//g')
 IFS=' ' read -r -a op_categories <<< "$op_category_list"
 
 #op_categories=("activation" "conv" "foreach" "vfusion" "index" "loss" "matmul" "norm" "optim" "pooling" "quant" "rnn" "control")
@@ -83,7 +83,7 @@ for name in "${ops_name[@]}"
 do
     for soc_version in "${supportedSocVersion[@]}"
     do
-        echo "[EXECUTE_COMMAND] bash build.sh -u --opkernel --ops=$name --cov --soc=$soc_version"
+        echo "[EXECUTE_COMMAND] bash build.sh -u --opkernel --ops=$name --cov --soc=$soc_version --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH} -j16"
         bash build.sh -u --opkernel --ops=$name --cov --soc=$soc_version --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH} -j16
         status=$?
         if [ $status -ne 0 ]; then
@@ -99,7 +99,7 @@ if [[ "$found_mirror_update" == "true" ]]; then
     operator_list_950=("${calc_ops_950[@]}")
     for name in "${operator_list_950[@]}"
     do
-        echo "[EXECUTE_COMMAND] bash build.sh -u --opapi --ophost --ops=$name --soc=ascend950"
+        echo "[EXECUTE_COMMAND] bash build.sh -u --opapi --ophost --ops=$name --soc=ascend950 --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH} -j16"
         bash build.sh -u --opapi --ophost --ops=$name --soc=ascend950 --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH} -j16
         status=$?
         if [ $status -ne 0 ]; then
