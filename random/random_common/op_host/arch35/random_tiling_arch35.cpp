@@ -29,7 +29,7 @@ static constexpr int32_t SPLIT_PUSH_COUNT = 2;
 
 int64_t TensorSliceState::GetMaxOffsetBytes() const
 {
-    int64_t maxOffsetBytes = elementSize;
+    int64_t maxOffsetBytes = 1L;
     for (int64_t dim = 0; dim < ndim; dim++) {
         maxOffsetBytes += (shape[dim] - 1) * strides[dim] * elementSize;
     }
@@ -377,7 +377,7 @@ ge::graphStatus RandomTilingArch35::GetPlatformInfo()
 {
     auto platformInfo = context_->GetPlatformInfo();
     if (platformInfo == nullptr) {
-        auto compileInfo = static_cast<const RandomOperatorCompileInfo *>(context_->GetCompileInfo());
+        auto compileInfo = static_cast<const RandomOperatorCompileInfo*>(context_->GetCompileInfo());
         OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfo);
         totalCoreNum_ = static_cast<int64_t>(compileInfo->totalCoreNum);
         ubSize_ = compileInfo->ubSize;
@@ -588,7 +588,8 @@ ge::graphStatus RandomTilingArch35::CheckTensor(
     if (!rule.dtypeSet.empty() && rule.dtypeSet.count(tensorDesc->GetDataType()) == 0) {
         std::string valueStr = Ops::Base::ToString(tensorDesc->GetDataType());
         std::string reasonMsg = "dtype not in allowed set";
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), tensorName.c_str(), valueStr.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context_->GetNodeName(), tensorName.c_str(), valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -597,7 +598,8 @@ ge::graphStatus RandomTilingArch35::CheckTensor(
     if (rule.shapeSize != -1 && shapeSize != rule.shapeSize) {
         std::string valueStr = std::to_string(shapeSize);
         std::string reasonMsg = "shape size must be " + std::to_string(rule.shapeSize);
-        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context_->GetNodeName(), tensorName.c_str(), valueStr.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
+            context_->GetNodeName(), tensorName.c_str(), valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -606,7 +608,8 @@ ge::graphStatus RandomTilingArch35::CheckTensor(
     if (!rule.dimNumSet.empty() && rule.dimNumSet.count(dimNum) == 0) {
         std::string valueStr = std::to_string(dimNum);
         std::string reasonMsg = "dim num not in allowed set";
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), tensorName.c_str(), valueStr.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+            context_->GetNodeName(), tensorName.c_str(), valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
