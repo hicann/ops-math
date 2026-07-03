@@ -9,7 +9,17 @@
 # ----------------------------------------------------------------------------
 
 if(UT_TEST_ALL OR OP_HOST_UT)
-    add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    # HistogramV2 has two tiling templates selected by SoC (IsRegbaseSocVersion):
+    #   ascend950               -> arch35 (HistogramV2SimtTiling)
+    #   ascend310p/910_93/910b  -> arch32 (HistogramV2MembaseTiling)
+    # The tiling UT is compiled once per BUILD_SOC_VERSION, and tiling_context_faker sets the SoC
+    # from BUILD_SOC_VERSION, so only the matching template is capable. Gate the arch-specific
+    # tiling cases by ASCEND_COMPUTE_UNIT so each set is compiled only where its template runs.
+    if("${ASCEND_COMPUTE_UNIT}" STREQUAL "ascend950")
+        add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR} TILING_DIR arch35)
+    else()
+        add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR} TILING_DIR arch32)
+    endif()
     add_modules_ut_sources(UT_NAME ${OP_INFERSHAPE_MODULE_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 

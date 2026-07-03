@@ -103,7 +103,7 @@ HPTG5@ops-math:
   src:
     release:
       style:
-        - ops/ops-math/histogram_v2/op_host
+        - ops/ops-math/math/histogram_v2/op_host
       opensource_style: null
       kernel_style: null
     unrelease:
