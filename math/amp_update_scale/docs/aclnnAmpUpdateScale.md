@@ -218,8 +218,8 @@ aclnnStatus aclnnAmpUpdateScale(
       <td>传入的currentScale、growthTracker、foundInf、updatedScale、updatedGrowthTracker是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="6">161002</td>
+      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="4">161002</td>
       <td>currentScale的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
@@ -230,12 +230,6 @@ aclnnStatus aclnnAmpUpdateScale(
     </tr>
     <tr>
       <td>growthTracker的数据类型不是INT32。</td>
-    </tr>
-    <tr>
-      <td>currentScale、growthTracker、foundInf、updatedScale、updatedGrowthTracker的shape不为 [1]。</td>
-    </tr>
-    <tr>
-      <td>growthInterval取值小于1。</td>
     </tr>
   </tbody>
   </table>
@@ -290,6 +284,7 @@ aclnnStatus aclnnAmpUpdateScale(
 
 - **数据类型约束**：current_scale与found_inf的数据类型必须一致；updated_scale的数据类型必须与current_scale一致。
 - **shape约束**：所有输入输出张量均为标量，shape为 [1]。
+- **growthInterval约束**：growthInterval取值范围为[1, 2147483647]。
 - **Inf/NaN优先级**：found_inf不为0时，直接执行回退逻辑，忽略growth_tracker状态。
 - **溢出保护**：当scale增长后的新值溢出（inf/nan）时，保持当前scale不变，growth_tracker重置为0。
 
@@ -456,7 +451,6 @@ int main() {
   if (workspaceSize > 0) {
     aclrtFree(workspace);
   }
-  
   aclrtDestroyStream(stream);
   auto aclRet = aclrtResetDevice(deviceId);
   CHECK_RET(aclRet == ACL_SUCCESS, LOG_PRINT("reset device failed. ERROR: %d\n", aclRet); return aclRet);

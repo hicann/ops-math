@@ -31,21 +31,23 @@ namespace {
 
 namespace optiling {
 
-  class AmpUpdateScaleTiling {
-    public:
-        explicit AmpUpdateScaleTiling(gert::TilingContext* context) : TilingContext(context){};
-        ge::graphStatus Init();
-        ge::graphStatus RunKernelTiling();
-        void TilingDataPrint() const;
-    private:
-        AmpUpdateScaleTilingData TilingData;
-        gert::TilingContext* TilingContext = nullptr;
-        float growthFactor = 0;
-        float backoffFactor = 0;
-        int32_t growthInterval = 0;
-  };
+class AmpUpdateScaleTiling {
+public:
+    explicit AmpUpdateScaleTiling(gert::TilingContext* context) : TilingContext(context){};
+    ge::graphStatus Init();
+    ge::graphStatus RunKernelTiling();
+    void TilingDataPrint() const;
 
-  ge::graphStatus AmpUpdateScaleTiling::Init(){
+private:
+    AmpUpdateScaleTilingData TilingData;
+    gert::TilingContext* TilingContext = nullptr;
+    float growthFactor = 0;
+    float backoffFactor = 0;
+    int32_t growthInterval = 0;
+};
+
+ge::graphStatus AmpUpdateScaleTiling::Init()
+{
     auto attrs = TilingContext->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(TilingContext, attrs);
 
@@ -58,11 +60,34 @@ namespace optiling {
 
     growthFactor = *growthFactorPtr;
     backoffFactor = *backoffFactorPtr;
-    growthInterval = static_cast<int32_t>(*growthIntervalPtr);
-    return ge::GRAPH_SUCCESS;
-  }
 
-  ge::graphStatus AmpUpdateScaleTiling::RunKernelTiling(){
+    int64_t growthIntervalRaw = *growthIntervalPtr;
+    // 校验 growthInterval 取值范围 [1, INT32_MAX]
+    OP_CHECK_IF(growthIntervalRaw < 1 || growthIntervalRaw > INT32_MAX,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(TilingContext->GetNodeName(), "growthInterval",
+                                                      std::to_string(growthIntervalRaw).c_str(),
+                                                      "growthInterval must be in range [1, INT32_MAX]"),
+                return ge::GRAPH_FAILED);
+    growthInterval = static_cast<int32_t>(growthIntervalRaw);
+
+    // 校验输入 tensor 的 shape 均为标量 [1]
+    constexpr int kInputNum = 3;
+    const char* kInputNames[kInputNum] = {"currentScale", "growthTracker", "foundInf"};
+    for (int i = 0; i < kInputNum; i++) {
+        auto inputShape = TilingContext->GetInputShape(i);
+        OP_CHECK_NULL_WITH_CONTEXT(TilingContext, inputShape);
+        int64_t shapeSize = inputShape->GetStorageShape().GetShapeSize();
+        OP_CHECK_IF(shapeSize != 1,
+                    OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(TilingContext->GetNodeName(), kInputNames[i],
+                                                               std::to_string(shapeSize).c_str(),
+                                                               "The shape of input must be scalar [1]"),
+                    return ge::GRAPH_FAILED);
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus AmpUpdateScaleTiling::RunKernelTiling()
+{
     TilingContext->SetBlockDim(1);
 
     auto currentScaleDtype = TilingContext->GetInputDesc(0)->GetDataType();
@@ -80,30 +105,34 @@ namespace optiling {
     TilingData.set_backoffFactor(backoffFactor);
     TilingData.set_growthInterval(growthInterval);
 
-    TilingData.SaveToBuffer(TilingContext->GetRawTilingData()->GetData(), TilingContext->GetRawTilingData()->GetCapacity());
+    TilingData.SaveToBuffer(TilingContext->GetRawTilingData()->GetData(),
+                            TilingContext->GetRawTilingData()->GetCapacity());
     TilingContext->GetRawTilingData()->SetDataSize(TilingData.GetDataSize());
     TilingDataPrint();
     return ge::GRAPH_SUCCESS;
-  }
+}
 
-  void AmpUpdateScaleTiling::TilingDataPrint() const {
+void AmpUpdateScaleTiling::TilingDataPrint() const
+{
     OP_LOGI(TilingContext->GetNodeName(), "growthFactor:%f.", growthFactor);
     OP_LOGI(TilingContext->GetNodeName(), "backoffFactor:%f.", backoffFactor);
     OP_LOGI(TilingContext->GetNodeName(), "growthInterval:%d.", growthInterval);
-  }
+}
 
-  static ge::graphStatus TilingAmpUpdateScale(gert::TilingContext* context) {
+static ge::graphStatus TilingAmpUpdateScale(gert::TilingContext* context)
+{
     AmpUpdateScaleTiling tilingObject(context);
     tilingObject.Init();
     return tilingObject.RunKernelTiling();
-  }
+}
 
-  static ge::graphStatus TilingPrepareForAmpUpdateScale(gert::TilingParseContext* context) {
+static ge::graphStatus TilingPrepareForAmpUpdateScale(gert::TilingParseContext* context)
+{
     OP_LOGD(context, "TilingPrepareForAmpUpdateScale start.");
     return ge::GRAPH_SUCCESS;
-  }
-  struct AmpUpdateScaleCompileInfo {};
-  IMPL_OP_OPTILING(AmpUpdateScale)
-      .Tiling(TilingAmpUpdateScale)
-      .TilingParse<AmpUpdateScaleCompileInfo>(TilingPrepareForAmpUpdateScale);
-}  // namespace optiling
+}
+struct AmpUpdateScaleCompileInfo {};
+IMPL_OP_OPTILING(AmpUpdateScale)
+    .Tiling(TilingAmpUpdateScale)
+    .TilingParse<AmpUpdateScaleCompileInfo>(TilingPrepareForAmpUpdateScale);
+} // namespace optiling
