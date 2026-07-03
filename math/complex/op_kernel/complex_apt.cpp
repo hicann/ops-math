@@ -10,31 +10,8 @@
 
 /*!
  * \file complex_apt.cpp
- * \brief Complex operator kernel entry
+ * \brief Complex operator kernel entry - dispatch to arch35
  */
 
 #include "kernel_operator.h"
-#include "arch35/complex_struct.h"
 #include "arch35/complex.h"
-
-using namespace AscendC;
-
-//   Complex_float32 : DTYPE_REAL=float, DTYPE_OUT=complex64
-//   Complex_float16 : DTYPE_REAL=half,  DTYPE_OUT=complex32
-#ifndef DTYPE_REAL
-#define DTYPE_REAL float
-#endif
-#ifndef DTYPE_OUT
-#define DTYPE_OUT complex64
-#endif
-
-extern "C" __global__ __aicore__ void complex(
-    GM_ADDR real, GM_ADDR imag, GM_ADDR out,
-    GM_ADDR workspace, GM_ADDR tiling)
-{
-    REGISTER_TILING_DEFAULT(ComplexTilingData);
-    GET_TILING_DATA(tilingData, tiling);
-    ComplexOp::ComplexSimt op;
-    op.Init(real, imag, out, tilingData);
-    op.Process();
-}
