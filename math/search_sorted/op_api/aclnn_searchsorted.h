@@ -37,7 +37,7 @@ extern "C" {
  * @return aclnnStatus: 返回状态码
  */
 ACLNN_API aclnnStatus aclnnSearchSortedGetWorkspaceSize(const aclTensor* sortedSequence, const aclTensor* self,
-                                                        const bool outInt32, const bool right, const aclTensor* sorter,
+                                                        bool outInt32, bool right, const aclTensor* sorter,
                                                         aclTensor* out, uint64_t* workspaceSize,
                                                         aclOpExecutor** executor);
 

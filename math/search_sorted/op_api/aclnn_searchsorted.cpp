@@ -142,8 +142,8 @@ static aclnnStatus CheckParams(const aclTensor *sortedSequence, const aclTensor 
 
 aclnnStatus aclnnSearchSortedGetWorkspaceSize(const aclTensor *sortedSequence,
                                               const aclTensor *self,
-                                              const bool outInt32,
-                                              const bool right,
+                                              bool outInt32,
+                                              bool right,
                                               const aclTensor *sorter,
                                               aclTensor *out,
                                               uint64_t *workspaceSize,
