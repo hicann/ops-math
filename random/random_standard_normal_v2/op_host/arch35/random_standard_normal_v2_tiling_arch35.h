@@ -29,7 +29,7 @@
 namespace optiling {
 class RandomStandardNormalV2Tiling : public RandomTilingArch35 {
 public:
-    explicit RandomStandardNormalV2Tiling(gert::TilingContext* context);
+    explicit RandomStandardNormalV2Tiling(gert::TilingContext* ctx);
     ~RandomStandardNormalV2Tiling() override = default;
 
 protected:

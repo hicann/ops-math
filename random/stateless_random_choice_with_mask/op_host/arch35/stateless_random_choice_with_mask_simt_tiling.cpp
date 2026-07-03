@@ -30,8 +30,7 @@ ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::GetPlatformInfo()
 {
     auto platformPtr = context_->GetPlatformInfo();
     if (platformPtr == nullptr) {
-        auto compileInfoPtr =
-            reinterpret_cast<const StatelessRandomChoiceWithMaskCompileInfo*>(context_->GetCompileInfo());
+        auto compileInfoPtr = context_->GetCompileInfo<StatelessRandomChoiceWithMaskCompileInfo>();
         OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_, "compile info is null"), return ge::GRAPH_FAILED);
         coreNum_ = compileInfoPtr->coreNum;
         ubSize_ = compileInfoPtr->ubSize;

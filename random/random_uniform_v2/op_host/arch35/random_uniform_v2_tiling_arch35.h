@@ -27,7 +27,7 @@ namespace optiling {
 class RandomUniformV2Tiling : public RandomTilingArch35
 {
 public:
-    explicit RandomUniformV2Tiling(gert::TilingContext* context);
+    explicit RandomUniformV2Tiling(gert::TilingContext* ctx);
     ~RandomUniformV2Tiling() override = default;
 
 protected:

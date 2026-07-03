@@ -28,7 +28,7 @@ namespace optiling {
 class DropOutDoMaskV3Tiling : public RandomTilingArch35
 {
 public:
-    explicit DropOutDoMaskV3Tiling(gert::TilingContext* context);
+    explicit DropOutDoMaskV3Tiling(gert::TilingContext* ctx);
     ~DropOutDoMaskV3Tiling() override = default;
 
 protected:
