@@ -41,7 +41,7 @@
 | [aclnnAddN](../../math/add_n/docs/aclnnAddN.md)    |  对输入进行主元素相加求和操作。  | 默认确定性实现 | - |
 | [aclnnAddr&aclnnInplaceAddr](../../math/addr/docs/aclnnAddr&aclnnInplaceAddr.md) | 求一维向量vec1和vec2的外积得到一个二维矩阵，并将外积结果矩阵乘一个系数后和自身乘系数相加后输出。 | 默认确定性实现| 默认确定性实现|
 | [aclnnAdds](../../math/add/docs/aclnnAdds.md) | 完成加法计算。 | 默认确定性实现|  默认确定性实现 |
-| [aclnnAddV3&aclnnInplaceAddV3](../../math/add/docs/aclnnAddV3&aclnnInplaceAddV3.md) | 完成加法计算。                                               | 默认确定性实现|  默认确定性实现 |
+| [aclnnAddV3&aclnnInplaceAddV3](../../math/add/docs/aclnnAddV3&aclnnInplaceAddV3.md) | 完成加法计算。                                               | - |  默认确定性实现 |
 | [aclnnAffineGrid](../../math/affine_grid/docs/aclnnAffineGrid.md) | 给定一组3维的仿射参数矩阵(theta)以及输出图像的大小(size)，生成一个2D或3D的网格，该网格表示仿射后图像的点在原图像上的坐标。            | 默认确定性实现| - |
 | [aclnnAll](../../math/reduce_all/docs/aclnnAll.md)              | 对于给定维度dim中的每一维，如果输入Tensor中该维度对应的所有元素计算为True，则返回True，否则返回False。 | 默认确定性实现| 默认确定性实现|
 | [aclnnAmax](../../math/reduce_max/docs/aclnnAmax.md)            | 返回张量在指定维度(dim)上每个切片的最大值。                  | 默认确定性实现| 默认确定性实现|
@@ -66,7 +66,7 @@
 | [aclnnBincount](../../math/bincount/docs/aclnnBincount.md) | 计算非负整数数组中每个数的频率。                             | 默认确定性实现| 默认非确定性实现，支持配置开启 |
 | [aclnnBitwiseAndScalar](../../math/bitwise_and/docs/aclnnBitwiseAndScalar.md) | 计算输入tensor中每个元素和输入标量的按位与结果。             | 默认确定性实现| 默认确定性实现 |
 | [aclnnBitwiseAndTensor](../../math/bitwise_and/docs/aclnnBitwiseAndTensor.md) | 输入为BOOL型tensor时，进行逻辑与运算；输入为INT型时，进行位与运算。 | 默认确定性实现| 默认确定性实现 |
-| [aclnnBitwiseAndTensorOut&aclnnInplaceBitwiseAndTensorOut](../../math/bitwise_and/docs/aclnnBitwiseAndTensorOut&aclnnInplaceBitwiseAndTensorOut.md) | 输入为BOOL型tensor时，进行逻辑与运算；输入为INT型时，进行位与运算。 | 默认确定性实现| 默认确定性实现 |
+| [aclnnBitwiseAndTensorOut&aclnnInplaceBitwiseAndTensorOut](../../math/bitwise_and/docs/aclnnBitwiseAndTensorOut&aclnnInplaceBitwiseAndTensorOut.md) | 输入为BOOL型tensor时，进行逻辑与运算；输入为INT型时，进行位与运算。 | - | 默认确定性实现 |
 | [aclnnBitwiseNot](../../math/bitwise_not/docs/aclnnBitwiseNot.md) | 输入为BOOL型tensor时，进行逻辑非运算；输入为INT型时进行按位非运算。 | 默认确定性实现| 默认确定性实现|
 | [aclnnBitwiseOrScalar&aclnnInplaceBitwiseOrScalar](../../math/bitwise_or/docs/aclnnBitwiseOrScalar&aclnnInplaceBitwiseOrScalar.md) | 计算输入张量self中每个元素和输入标量other的按位或。          | 默认确定性实现| 默认确定性实现 |
 | [aclnnBitwiseOrTensor&aclnnInplaceBitwiseOrTensor](../../math/bitwise_or/docs/aclnnBitwiseOrTensor&aclnnInplaceBitwiseOrTensor.md) | 计算张量self中每个元素与other张量中对应位置的元素的按位或。  | 默认确定性实现| 默认确定性实现 |
@@ -92,7 +92,6 @@
 | [aclnnClampMin](../../conversion/clip_by_value_v2/docs/aclnnClampMin.md) | 将输入的所有元素限制在[min, inf]范围内。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnClampMinTensor&aclnnInplaceClampMinTensor](../../conversion/clip_by_value_v2/docs/aclnnClampMinTensor&aclnnInplaceClampMinTensor.md) | 将输入的所有元素限制在[min, inf]范围内。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnClampTensor](../../conversion/clip_by_value_v2/docs/aclnnClampTensor.md) | 将输入的所有元素限制在[min, max]范围内，如果min缺省，则无下限，如果max缺省，则无上限。 | 默认确定性实现| 默认确定性实现 |
-| [aclnnCoalesceSparse](../../conversion/coalesce_sparse/docs/aclnnCoalesceSparse.md) | 将相同坐标点的value进行累加求和，进而减少Coo_Tensor的内存大小。 | 默认非确定性实现，不支持配置开启 | 默认非确定性实现，支持配置开启 |
 | [aclnnComplex](../../math/complex/docs/aclnnComplex.md)         | 输入两个Shape满足broadcast关系、Dtype一致的Tensor。               | 默认确定性实现| 默认确定性实现 |
 | [aclnnConfusionTranspose](../../conversion/confusion_transpose_d/docs/aclnnConfusionTranspose.md) | 融合reshape和transpose运算。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnConstantPadNd](../../conversion/pad_v3/docs/aclnnConstantPadNd.md) | 对输入的张量self，以pad参数为基准进行数据填充，填充值为value。 | 默认确定性实现| 默认确定性实现|
