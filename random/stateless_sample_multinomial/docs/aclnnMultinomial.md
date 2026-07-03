@@ -150,6 +150,7 @@ aclnnStatus aclnnMultinomial(
   </tbody></table>
 
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
+  - <term>Ascend 950PR/Ascend 950DT</term>：offset的值需要为4的倍数。
 
 - **返回值：**
 
