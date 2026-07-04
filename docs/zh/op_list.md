@@ -778,6 +778,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/fresnel_sin/README.md">fresnel_sin</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>计算Fresnel正弦积分。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/fused_mul_add/README.md">fused_mul_add</a></td>
     <td>√</td>
     <td>√</td>
