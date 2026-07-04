@@ -36,9 +36,13 @@ ge::graphStatus SpaceToDepthTilingForAscendC(gert::TilingContext* context,
 
 class SpaceToDepthTiling {
 public:
-    explicit SpaceToDepthTiling(gert::TilingContext* context) : tilingContext_(context) {};
+    explicit SpaceToDepthTiling(gert::TilingContext* context) : tilingContext_(context){};
     ge::graphStatus ParametersVerifying();
     void ProcessShapeInfo(ShapeInfo& shapeInfo);
+
+private:
+    ge::graphStatus CheckShapeAndFormat(ge::Format& xFormat);
+    ge::graphStatus CheckAttrsAndBlockSize(ge::Format xFormat);
 
 private:
     gert::TilingContext* tilingContext_ = nullptr;
@@ -46,5 +50,5 @@ private:
     int64_t nchwPerm_[DIM_SIX] = {0, 1, 3, 5, 2, 4};
     int64_t nhwcPerm_[DIM_SIX] = {0, 1, 3, 2, 4, 5};
 };
-}  // namespace optiling
+} // namespace optiling
 #endif

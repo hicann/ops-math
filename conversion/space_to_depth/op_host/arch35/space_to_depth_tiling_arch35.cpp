@@ -18,10 +18,8 @@
 #include "conversion/transpose/op_host/arch35/transpose_tiling_base.h"
 
 namespace optiling {
-ge::graphStatus SpaceToDepthTiling::ParametersVerifying()
+ge::graphStatus SpaceToDepthTiling::CheckShapeAndFormat(ge::Format& xFormat)
 {
-    OP_LOGD(tilingContext_->GetNodeName(), "Start SpaceToDepthTiling ParametersVerifying.");
-
     auto xStorageShape = tilingContext_->GetInputShape(INPUT_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, xStorageShape);
     auto xShape = xStorageShape->GetStorageShape();
@@ -35,7 +33,7 @@ ge::graphStatus SpaceToDepthTiling::ParametersVerifying()
 
     auto xDesc = tilingContext_->GetInputDesc(INPUT_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, xDesc);
-    auto xFormat = xDesc->GetFormat().GetStorageFormat();
+    xFormat = xDesc->GetFormat().GetStorageFormat();
     auto xDtype = xDesc->GetDataType();
     paramInfo_.xDtype = xDtype;
 
@@ -46,8 +44,8 @@ ge::graphStatus SpaceToDepthTiling::ParametersVerifying()
     // limit input output dim is 4D
     if (xDimNum != DIM_NUM || yDimNum != DIM_NUM) {
         std::string dimsStr = std::to_string(xDimNum) + " and " + std::to_string(yDimNum);
-        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
-            tilingContext_->GetNodeName(), "x and y", dimsStr.c_str(), "The shape of x and y must be 4D");
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(tilingContext_->GetNodeName(), "x and y", dimsStr.c_str(),
+                                                  "The shape of x and y must be 4D");
         return ge::GRAPH_FAILED;
     }
 
@@ -60,6 +58,11 @@ ge::graphStatus SpaceToDepthTiling::ParametersVerifying()
         return ge::GRAPH_FAILED;
     }
 
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus SpaceToDepthTiling::CheckAttrsAndBlockSize(ge::Format xFormat)
+{
     auto attrs = tilingContext_->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, attrs);
 
@@ -78,47 +81,53 @@ ge::graphStatus SpaceToDepthTiling::ParametersVerifying()
     } else if (strcmp(dataFormatPtr, "NHWC") == 0) {
         geFormat = ge::FORMAT_NHWC;
     } else {
-        OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(
-            tilingContext_->GetNodeName(), "data_format", dataFormatPtr,
-            "The value of data_format can only be NCHW or NHWC");
+        OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(tilingContext_->GetNodeName(), "data_format", dataFormatPtr,
+                                                "The value of data_format can only be NCHW or NHWC");
         return ge::GRAPH_FAILED;
     }
 
     if (xFormat != geFormat) {
         std::string formatMsg = std::to_string(xFormat) + " and " + std::to_string(static_cast<int64_t>(geFormat));
-        OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(
-            tilingContext_->GetNodeName(), "data_format and x", formatMsg.c_str(),
-            "The formats of data_format and x must be the same");
+        OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(tilingContext_->GetNodeName(), "data_format and x", formatMsg.c_str(),
+                                                "The formats of data_format and x must be the same");
         return ge::GRAPH_FAILED;
     }
 
     // limit blockSize positive integer
-    OP_CHECK_IF(
-        (*blockSizePtr <= 0),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            tilingContext_->GetNodeName(), "block_size", std::to_string(*blockSizePtr).c_str(),
-            "The value of block_size must be a positive integer"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((*blockSizePtr <= 0),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "block_size",
+                                                      std::to_string(*blockSizePtr).c_str(),
+                                                      "The value of block_size must be a positive integer"),
+                return ge::GRAPH_FAILED);
 
     // H % block_size == 0
-    auto h = xShape.GetDim(xFormat == ge::FORMAT_NCHW ? 2 : 1);
-    OP_CHECK_IF(
-        (h % *blockSizePtr != 0),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            tilingContext_->GetNodeName(), "block_size", std::to_string(*blockSizePtr).c_str(),
-            "H must be divisible by block_size"),
-        return ge::GRAPH_FAILED);
+    auto h = paramInfo_.xShape.GetDim(xFormat == ge::FORMAT_NCHW ? 2 : 1);
+    OP_CHECK_IF((h % *blockSizePtr != 0),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "block_size",
+                                                      std::to_string(*blockSizePtr).c_str(),
+                                                      "H must be divisible by block_size"),
+                return ge::GRAPH_FAILED);
 
     // W % block_size == 0
-    auto w = xShape.GetDim(xFormat == ge::FORMAT_NCHW ? 3 : 2);
-    OP_CHECK_IF(
-        (w % *blockSizePtr != 0),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            tilingContext_->GetNodeName(), "block_size", std::to_string(*blockSizePtr).c_str(),
-            "W must be divisible by block_size"),
-        return ge::GRAPH_FAILED);
+    auto w = paramInfo_.xShape.GetDim(xFormat == ge::FORMAT_NCHW ? 3 : 2);
+    OP_CHECK_IF((w % *blockSizePtr != 0),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "block_size",
+                                                      std::to_string(*blockSizePtr).c_str(),
+                                                      "W must be divisible by block_size"),
+                return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus SpaceToDepthTiling::ParametersVerifying()
+{
+    OP_LOGD(tilingContext_->GetNodeName(), "Start SpaceToDepthTiling ParametersVerifying.");
+
+    ge::Format xFormat = ge::FORMAT_NCHW;
+    if (CheckShapeAndFormat(xFormat) != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
+    return CheckAttrsAndBlockSize(xFormat);
 }
 
 void SpaceToDepthTiling::ProcessShapeInfo(ShapeInfo& shapeInfo)
@@ -155,15 +164,15 @@ void SpaceToDepthTiling::ProcessShapeInfo(ShapeInfo& shapeInfo)
     }
 }
 
-ge::graphStatus SpaceToDepthTilingForAscendC(
-    gert::TilingContext* context, const TransposeCompilerInfo* transposeCompileInfo)
+ge::graphStatus SpaceToDepthTilingForAscendC(gert::TilingContext* context,
+                                             const TransposeCompilerInfo* transposeCompileInfo)
 {
     OP_LOGD(context->GetNodeName(), "Start SpaceToDepthTilingForAscendC.");
     SpaceToDepthTiling tilingObject(context);
 
-    OP_CHECK_IF(
-        tilingObject.ParametersVerifying() != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "SpaceToDepthTiling failed to verify params!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(tilingObject.ParametersVerifying() != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "SpaceToDepthTiling failed to verify params!"),
+                return ge::GRAPH_FAILED);
 
     // construct an equivalent Transpose inputShapeInfo
     ShapeInfo inputShapeInfo;
@@ -175,11 +184,10 @@ ge::graphStatus SpaceToDepthTilingForAscendC(
     compileInfo.transposeCompilerInfo.ubSize = transposeCompileInfo->ubSize;
 
     TransposeNddmaTiling transposeTilingObject(context);
-    OP_CHECK_IF(
-        (transposeTilingObject.TilingForReleatedTranspose(
-             context, &tilingData.transposeOpTiling, &compileInfo.transposeCompilerInfo, inputShapeInfo) ==
-         ge::GRAPH_FAILED),
-        OP_LOGE(context->GetNodeName(), "Transpose Tiling failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((transposeTilingObject.TilingForReleatedTranspose(context, &tilingData.transposeOpTiling,
+                                                                  &compileInfo.transposeCompilerInfo,
+                                                                  inputShapeInfo) == ge::GRAPH_FAILED),
+                OP_LOGE(context->GetNodeName(), "Transpose Tiling failed"), return ge::GRAPH_FAILED);
 
     tilingData.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
     context->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
