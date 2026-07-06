@@ -1,4 +1,4 @@
-# FresnelSin
+# FresnelCos
 
 ## 产品支持情况
 
@@ -13,11 +13,11 @@
 
 ## 功能说明
 
-- 算子功能：计算Fresnel正弦积分。
+- 算子功能：计算Fresnel余弦积分 C(x) = integral_0^x cos(pi*t^2/2) dt。
 
 - 计算公式：
 
-$$S(x) = \int_{0}^{x} \sin\left(\frac{\pi t^{2}}{2}\right) \mathrm{d}t$$
+$$C(x) = \int_{0}^{x} \cos\left(\frac{\pi}{2} t^{2}\right) \mathrm{d}t$$
 
 ## 参数说明
 
@@ -40,14 +40,14 @@ $$S(x) = \int_{0}^{x} \sin\left(\frac{\pi t^{2}}{2}\right) \mathrm{d}t$$
     <tr>
       <td>x</td>
       <td>输入</td>
-      <td>待进行Fresnel正弦积分计算的入参，公式中的x。</td>
+      <td>待进行Fresnel余弦积分计算的入参，公式中的x。</td>
       <td>BFLOAT16、FLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
-      <td>Fresnel正弦积分计算的出参，公式中的S(x)。</td>
+      <td>Fresnel余弦积分计算的出参，公式中的C(x)。</td>
       <td>BFLOAT16、FLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
@@ -61,4 +61,4 @@ $$S(x) = \int_{0}^{x} \sin\left(\frac{\pi t^{2}}{2}\right) \mathrm{d}t$$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| 图模式调用 | [test_geir_fresnel_sin](./examples/test_geir_fresnel_sin.cpp) | 通过图模式调用FresnelSin算子。 |
+| 图模式调用 | [test_geir_fresnel_cos](./examples/test_geir_fresnel_cos.cpp) | 通过图模式调用FresnelCos算子。 |
