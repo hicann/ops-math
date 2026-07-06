@@ -50,19 +50,21 @@ ge::graphStatus ArgCommonBaseTiling::Init(const uint64_t& coreNum, const uint64_
     coreNum_ = coreNum;
     if (coreNum_ == 0) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "coreNum",
-            std::to_string(coreNum_).c_str(), "The value of coreNum must be greater than 0.");
+                                              std::to_string(coreNum_).c_str(),
+                                              "The value of coreNum must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
     ubSize_ = ubSize;
     if (ubSize_ == 0) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "ubSize",
-            std::to_string(ubSize_).c_str(), "The value of ubSize must be greater than 0.");
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "ubSize", std::to_string(ubSize_).c_str(),
+                                              "The value of ubSize must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
     vRegSize_ = vRegSize;
     if (vRegSize_ == 0) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "vRegSize",
-            std::to_string(vRegSize_).c_str(), "The value of vRegSize must be greater than 0.");
+                                              std::to_string(vRegSize_).c_str(),
+                                              "The value of vRegSize must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -87,6 +89,9 @@ ge::graphStatus ArgCommonBaseTiling::RunArgMaxTiling(bool withValue)
         tilingContext_->SetBlockDim(1);
     } else {
         tilingContext_->SetBlockDim(tilingData_.get_realCoreNum());
+    }
+    if (tilingKey_ == static_cast<uint64_t>(ArgMaxWithValueTilingMode::GROUP_REDUCE)) {
+        tilingContext_->SetScheduleMode(1);
     }
     tilingContext_->SetTilingKey(tilingData_.get_tilingKey());
     size_t* workspaces = tilingContext_->GetWorkspaceSizes(1);
@@ -138,9 +143,10 @@ ge::graphStatus ArgCommonBaseTiling::GetShapeInfo(bool withValue)
     indexDtypeSize_ = eleLenIndiceBytes_;
     indiceDtype_ = indiceDtype;
     if (eleLenInBytes_ == static_cast<uint64_t>(0) || eleLenIndiceBytes_ == static_cast<uint64_t>(0)) {
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext_->GetNodeName(), "x or indice",
-            ("xDtypeSize=" + std::to_string(eleLenInBytes_) + ", indiceDtypeSize=" +
-            std::to_string(eleLenIndiceBytes_)).c_str(),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            tilingContext_->GetNodeName(), "x or indice",
+            ("xDtypeSize=" + std::to_string(eleLenInBytes_) + ", indiceDtypeSize=" + std::to_string(eleLenIndiceBytes_))
+                .c_str(),
             "The data type size must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
@@ -188,7 +194,7 @@ ge::graphStatus ArgCommonBaseTiling::GetDimension(bool withValue)
         } else {
             if (!(Ops::Base::GetConstInt(tilingContext_, INPUT_IDX_DIMENSION, dimension_))) {
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "dimension", "null",
-                    "Failed to get const data for dimension.");
+                                                      "Failed to get const data for dimension.");
                 return ge::GRAPH_FAILED;
             }
         }
@@ -196,9 +202,10 @@ ge::graphStatus ArgCommonBaseTiling::GetDimension(bool withValue)
     }
     if (dimension_ >= xDimNum_ || dimension_ + xDimNum_ < 0) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "dimension",
-            std::to_string(dimension_).c_str(),
-            ("The value of dimension must be within the range [-" + std::to_string(xDimNum_) + ", " +
-            std::to_string(xDimNum_ - 1) + "].").c_str());
+                                              std::to_string(dimension_).c_str(),
+                                              ("The value of dimension must be within the range [-" +
+                                               std::to_string(xDimNum_) + ", " + std::to_string(xDimNum_ - 1) + "].")
+                                                  .c_str());
         return ge::GRAPH_FAILED;
     }
     dimension_ = dimension_ < 0 ? xDimNum_ + dimension_ : dimension_;
@@ -233,9 +240,11 @@ ge::graphStatus ArgCommonBaseTiling::SetShapeInfo()
         isEmptyTensor_ = true;
         return ge::GRAPH_SUCCESS;
     } else if (xShape.GetDim(dimension_) < 0) {
-        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(tilingContext_->GetNodeName(), "x",
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+            tilingContext_->GetNodeName(), "x",
             ("aSize=" + std::to_string(aSize) + ", nextASize=" + std::to_string(nextASize) +
-            ", R=" + std::to_string(xShape.GetDim(dimension_))).c_str(),
+             ", R=" + std::to_string(xShape.GetDim(dimension_)))
+                .c_str(),
             "The value of the reduction dimension must be greater than or equal to 0.");
         return ge::GRAPH_FAILED;
     }
@@ -316,8 +325,8 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfo()
         return ge::GRAPH_SUCCESS;
     }
 
-    uint64_t xDataSize =
-        tilingData_.get_aSize() * tilingData_.get_rSize() * tilingData_.get_nextASize() * indexDtypeSize_;
+    uint64_t xDataSize = tilingData_.get_aSize() * tilingData_.get_rSize() * tilingData_.get_nextASize() *
+                         indexDtypeSize_;
     if (xDataSize < MAX_SIZE_USING_SINGLE_CORE) {
         coreNum_ = static_cast<uint64_t>(1);
     }
@@ -406,10 +415,10 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForAr()
     } else {
         vlSize = vRegSize_ / sizeof(valueDtype_);
     }
-    uint64_t alignNum =
-        Ops::Base::CeilDiv(static_cast<uint64_t>(cutASize_) * static_cast<uint64_t>(cutRSize_), elementPerBlock_) *
-            elementPerBlock_ +
-        vlSize;
+    uint64_t alignNum = Ops::Base::CeilDiv(static_cast<uint64_t>(cutASize_) * static_cast<uint64_t>(cutRSize_),
+                                           elementPerBlock_) *
+                            elementPerBlock_ +
+                        vlSize;
     uint64_t ubInSize = ubSize_;
     if (ge::DT_BF16 == valueDtype_) {
         ubInSize -= alignNum * sizeof(float);
@@ -418,8 +427,8 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForAr()
     if (!(ge::DT_INT32 == valueDtype_ || ge::DT_INT64 == valueDtype_)) {
         ubInSize -= processSize_ * sizeof(indiceDtype_);
     }
-    ubElement_ =
-        (ubInSize / VALUE_TWO - PROCESS_SIZE * (eleLenInBytes_ + eleLenIndiceBytes_) - VL_SIZE) / eleLenInBytes_;
+    ubElement_ = (ubInSize / VALUE_TWO - PROCESS_SIZE * (eleLenInBytes_ + eleLenIndiceBytes_) - VL_SIZE) /
+                 eleLenInBytes_;
 
     if (tilingData_.get_rSize() < ubElement_ && tilingData_.get_rSize() < MAX_VALUE_UINT16) { // not need cut R
         uint64_t cutASize = std::min(ubElement_ / tilingData_.get_rSize(), PROCESS_SIZE);
@@ -444,8 +453,8 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForArACutAAndNextA()
     auto blkNumA = Ops::Base::CeilDiv(static_cast<uint64_t>(tilingData_.get_aSize()), blkFactor_);
     blkTailFactor_ = tilingData_.get_aSize() - (blkNumA - 1) * blkFactor_;
     if (blkNumA == static_cast<uint64_t>(0)) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "blkNumA",
-            std::to_string(blkNumA).c_str(), "The value of blkNumA must be greater than 0.");
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "blkNumA", std::to_string(blkNumA).c_str(),
+                                              "The value of blkNumA must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
     // 然后关于ANext分核
@@ -470,7 +479,8 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForArACutAAndNextA()
     cutNextASize_ = std::min(static_cast<uint64_t>(cutNextASize_), blkFactor2nd_);
     if (minDtypeSize == static_cast<uint64_t>(0)) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "minDtypeSize",
-            std::to_string(minDtypeSize).c_str(), "The value of minDtypeSize must be greater than 0.");
+                                              std::to_string(minDtypeSize).c_str(),
+                                              "The value of minDtypeSize must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
     // 然后保证R最大
@@ -481,9 +491,9 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForArACutAAndNextA()
     cutRSize_ = std::max(cutRSize_, static_cast<uint16_t>(1));
     cutRSize_ = std::min(static_cast<uint64_t>(cutRSize_), tilingData_.get_rSize());
     // 最后取A
-    uint64_t oneRAUbSize =
-        nextAAlign * (DOUBLE_BUFFER_NUM * cutRSize_ * valueDtypeSize_ + TEMP_BUFFER_NUM * valueDtypeSize_ +
-                      DOUBLE_BUFFER_NUM * indiceDtypeSize_ + DOUBLE_BUFFER_NUM * t2Size_);
+    uint64_t oneRAUbSize = nextAAlign *
+                           (DOUBLE_BUFFER_NUM * cutRSize_ * valueDtypeSize_ + TEMP_BUFFER_NUM * valueDtypeSize_ +
+                            DOUBLE_BUFFER_NUM * indiceDtypeSize_ + DOUBLE_BUFFER_NUM * t2Size_);
     cutASize_ = Ops::Base::FloorDiv(ubSize_, oneRAUbSize);
     cutASize_ = std::max(cutASize_, static_cast<uint16_t>(1));
     cutASize_ = std::min(static_cast<uint64_t>(cutASize_), blkFactor_);
@@ -515,7 +525,8 @@ void ArgCommonBaseTiling::CalcCutRA()
     cutNextASize = std::min(cutNextASize, maxCutNextA);
     if (cutNextASize == static_cast<uint64_t>(0)) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "cutNextASize",
-            std::to_string(cutNextASize).c_str(), "The value of cutNextASize must be greater than 0.");
+                                              std::to_string(cutNextASize).c_str(),
+                                              "The value of cutNextASize must be greater than 0.");
         return;
     }
     uint64_t rTempSize = ubElement_ / cutNextASize;
@@ -529,8 +540,8 @@ void ArgCommonBaseTiling::CalcCutRA()
     cutRSize_ = static_cast<uint16_t>(rTempSize);
     realCoreNum_ = coreNum_;
     blkFactor_ = tilingData_.get_aSize() * Ops::Base::CeilDiv(tilingData_.get_nextASize(), cutNextASize) / realCoreNum_;
-    blkTailFactor_ =
-        tilingData_.get_aSize() * Ops::Base::CeilDiv(tilingData_.get_nextASize(), cutNextASize) % realCoreNum_;
+    blkTailFactor_ = tilingData_.get_aSize() * Ops::Base::CeilDiv(tilingData_.get_nextASize(), cutNextASize) %
+                     realCoreNum_;
 }
 
 ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForArA()
@@ -546,9 +557,8 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForArA()
             aRaMode_ = static_cast<uint64_t>(ARAMode::ARA_MODE2);
         }
         CalcCutA();
-    } else if (
-        tilingData_.get_aSize() >= coreNum_ &&
-        tilingData_.get_nextASize() * eleLenInBytes_ <= MAX_NEXTA_SIZE) { // nextA较小且R * nextA UB放不下的场景，切R
+    } else if (tilingData_.get_aSize() >= coreNum_ && tilingData_.get_nextASize() * eleLenInBytes_ <=
+                                                          MAX_NEXTA_SIZE) { // nextA较小且R * nextA UB放不下的场景，切R
         aRaMode_ = static_cast<uint64_t>(ARAMode::ARA_MODE3);
         CalcCutA();
         uint64_t rTempSize = ubElement_ / tilingData_.get_nextASize();
@@ -565,10 +575,10 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForArA()
         realCoreNum_ = allASize <= coreNum_ ? allASize : coreNum_;
         uint64_t cutNextASize = std::min(ubElement_ / tilingData_.get_rSize(), PROCESS_SIZE);
         cutNextASize = CalcCutNextA(cutNextASize);
-        blkFactor_ =
-            tilingData_.get_aSize() * Ops::Base::CeilDiv(tilingData_.get_nextASize(), cutNextASize) / realCoreNum_;
-        blkTailFactor_ =
-            tilingData_.get_aSize() * Ops::Base::CeilDiv(tilingData_.get_nextASize(), cutNextASize) % realCoreNum_;
+        blkFactor_ = tilingData_.get_aSize() * Ops::Base::CeilDiv(tilingData_.get_nextASize(), cutNextASize) /
+                     realCoreNum_;
+        blkTailFactor_ = tilingData_.get_aSize() * Ops::Base::CeilDiv(tilingData_.get_nextASize(), cutNextASize) %
+                         realCoreNum_;
         cutNextASize_ = static_cast<uint16_t>(cutNextASize);
         cutRSize_ = static_cast<uint16_t>(tilingData_.get_rSize());
     } else { // 不满足以上条件，保底模版，R轴UB放不下，A和nextA切为1，R轴动态计算切分大小
@@ -609,7 +619,8 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForGatherRa()
     uint64_t aSize = CalcUnitUbSpace();
     if (aSize == static_cast<uint64_t>(0)) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "unitUbSpace",
-            std::to_string(aSize).c_str(), "The value of unitUbSpace must be greater than 0.");
+                                              std::to_string(aSize).c_str(),
+                                              "The value of unitUbSpace must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
     uint64_t calcASize = ubSize_ / VALUE_TWO / aSize;
@@ -633,7 +644,8 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForRa()
     uint64_t aSize = CalcUnitUbSpace();
     if (aSize == static_cast<uint64_t>(0)) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "unitUbSpace",
-            std::to_string(aSize).c_str(), "The value of unitUbSpace must be greater than 0.");
+                                              std::to_string(aSize).c_str(),
+                                              "The value of unitUbSpace must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
     uint64_t calcASize = ubSize_ / VALUE_TWO / aSize;
@@ -647,9 +659,9 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForRa()
     } else { // need cut nextA and r
         uint64_t cutNextASize = std::min(factor, processSize_);
         uint64_t outAAlign = Ops::Base::CeilDiv(cutNextASize, elementPerBlock_) * elementPerBlock_;
-        uint64_t cutRSize =
-            (ubSize_ / VALUE_TWO - VL_SIZE - outAAlign * VALUE_TWO * (eleLenInBytes_ + eleLenIndiceBytes_)) /
-            outAAlign / eleLenInBytes_;
+        uint64_t cutRSize = (ubSize_ / VALUE_TWO - VL_SIZE -
+                             outAAlign * VALUE_TWO * (eleLenInBytes_ + eleLenIndiceBytes_)) /
+                            outAAlign / eleLenInBytes_;
         if (ge::DT_BF16 == valueDtype_) {
             cutRSize = (ubSize_ / VALUE_TWO - VL_SIZE -
                         outAAlign * VALUE_TWO * (eleLenInBytes_ * VALUE_TWO + eleLenIndiceBytes_)) /
@@ -665,8 +677,8 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForRa()
 ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForGatherArA()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering ArgCommonBaseTiling CalcSplitInfoForGatherArA.");
-    uint64_t arSize =
-        CalcUnitUbSpace() * Ops::Base::CeilDiv(tilingData_.get_nextASize(), elementPerBlock_) * elementPerBlock_;
+    uint64_t arSize = CalcUnitUbSpace() * Ops::Base::CeilDiv(tilingData_.get_nextASize(), elementPerBlock_) *
+                      elementPerBlock_;
     uint64_t factor = 0;
     uint64_t calcASize = 0;
     if (tilingData_.get_aSize() >= coreNum_ && arSize < ubSize_ / VALUE_TWO) { // Cores are divided based on A
@@ -686,7 +698,8 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForGatherArA()
         uint64_t aSize = CalcUnitUbSpace();
         if (aSize == static_cast<uint64_t>(0)) {
             OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "unitUbSpace",
-                std::to_string(aSize).c_str(), "The value of unitUbSpace must be greater than 0.");
+                                                  std::to_string(aSize).c_str(),
+                                                  "The value of unitUbSpace must be greater than 0.");
             return ge::GRAPH_FAILED;
         }
         ubElement_ = ubSize_ / VALUE_TWO / aSize;
@@ -699,10 +712,10 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForGatherArA()
         if (tilingData_.get_rSize() * AlignCutNextASize * eleLenInBytes_ > realMaxUbSize) {
             cutNextASize = Ops::Base::FloorDiv(cutNextASize, elementPerBlock_) * elementPerBlock_;
         }
-        blkFactor_ =
-            tilingData_.get_aSize() * Ops::Base::CeilDiv(tilingData_.get_nextASize(), cutNextASize) / realCoreNum_;
-        blkTailFactor_ =
-            tilingData_.get_aSize() * Ops::Base::CeilDiv(tilingData_.get_nextASize(), cutNextASize) % realCoreNum_;
+        blkFactor_ = tilingData_.get_aSize() * Ops::Base::CeilDiv(tilingData_.get_nextASize(), cutNextASize) /
+                     realCoreNum_;
+        blkTailFactor_ = tilingData_.get_aSize() * Ops::Base::CeilDiv(tilingData_.get_nextASize(), cutNextASize) %
+                         realCoreNum_;
         cutNextASize_ = static_cast<uint16_t>(cutNextASize);
         cutRSize_ = static_cast<uint16_t>(tilingData_.get_rSize());
     }
@@ -724,8 +737,8 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForCopyOnly()
         blkTailFactor_ = sumSize % realCoreNum_;
     }
 
-    cutASize_ =
-        static_cast<uint16_t>(((ubSize_ - PROCESS_SIZE * eleLenIndiceBytes_ - VL_SIZE) / (VALUE_TWO * eleLenInBytes_)));
+    cutASize_ = static_cast<uint16_t>(
+        ((ubSize_ - PROCESS_SIZE * eleLenIndiceBytes_ - VL_SIZE) / (VALUE_TWO * eleLenInBytes_)));
 
     return ge::GRAPH_SUCCESS;
 }
@@ -746,8 +759,8 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForGroupReduce()
     }
     blkFactor_ = rSize / realCoreNum_;
     blkTailFactor_ = rSize % realCoreNum_;
-    uint64_t maxBlkPerCore =
-        blkTailFactor_ == static_cast<uint64_t>(0) ? blkFactor_ : blkFactor_ + static_cast<uint64_t>(1);
+    uint64_t maxBlkPerCore = blkTailFactor_ == static_cast<uint64_t>(0) ? blkFactor_ :
+                                                                          blkFactor_ + static_cast<uint64_t>(1);
 
     bool isRaSplit = (nextASize * eleLenInBytes_ >= ALIGN_128) || (blkFactor_ * eleLenInBytes_ < VL_SIZE);
     isRaSplit_ = isRaSplit ? 1 : 0;
@@ -782,8 +795,8 @@ void ArgCommonBaseTiling::AddExtraBufferNeed(uint64_t& fixedNeed, int& isBfloatN
     }
 }
 
-ge::graphStatus ArgCommonBaseTiling::CalcGroupReduceArBranch(
-    uint64_t aSize, uint64_t nextASize, uint64_t outAAlign, uint64_t maxBlkPerCore, bool& fallbackToRa)
+ge::graphStatus ArgCommonBaseTiling::CalcGroupReduceArBranch(uint64_t aSize, uint64_t nextASize, uint64_t outAAlign,
+                                                             uint64_t maxBlkPerCore, bool& fallbackToRa)
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering CalcGroupReduceArBranch.");
     uint64_t allASize = aSize * nextASize;
@@ -795,8 +808,8 @@ ge::graphStatus ArgCommonBaseTiling::CalcGroupReduceArBranch(
     }
     workSpaceSize_ = Ops::Base::CeilDiv(workSpaceSize, VL_SIZE) * VL_SIZE;
 
-    uint64_t fixedNeed =
-        outAAlign * DOUBLE_BUFFER_NUM * (eleLenInBytes_ + t2Size_) + realCoreNum_ * outAAlign * t2Size_ + VL_SIZE;
+    uint64_t fixedNeed = outAAlign * DOUBLE_BUFFER_NUM * (eleLenInBytes_ + t2Size_) +
+                         realCoreNum_ * outAAlign * t2Size_ + VL_SIZE;
     uint64_t inQueueXNeedForOne = std::max(VL_SIZE * allASize / eleLenInBytes_, realCoreNum_ * outAAlign);
     uint64_t inQueueXNeed = inQueueXNeedForOne * DOUBLE_BUFFER_NUM * eleLenInBytes_;
     int isBfloatNum = 1;
@@ -819,8 +832,8 @@ ge::graphStatus ArgCommonBaseTiling::CalcGroupReduceArBranch(
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus ArgCommonBaseTiling::CalcGroupReduceRaBranch(
-    uint64_t aSize, uint64_t nextASize, uint64_t nextAAlign, uint64_t maxBlkPerCore)
+ge::graphStatus ArgCommonBaseTiling::CalcGroupReduceRaBranch(uint64_t aSize, uint64_t nextASize, uint64_t nextAAlign,
+                                                             uint64_t maxBlkPerCore)
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering CalcGroupReduceRaBranch.");
     isRaSplit_ = 1;
@@ -896,30 +909,28 @@ void ArgCommonBaseTiling::FillTilingData()
     tilingData_.set_isRaSplit(isRaSplit_);
     tilingData_.set_gatherBlockSize(gatherBlockSize_);
 
-    tilingData_.SaveToBuffer(
-        tilingContext_->GetRawTilingData()->GetData(), tilingContext_->GetRawTilingData()->GetCapacity());
+    tilingData_.SaveToBuffer(tilingContext_->GetRawTilingData()->GetData(),
+                             tilingContext_->GetRawTilingData()->GetCapacity());
     tilingContext_->GetRawTilingData()->SetDataSize(tilingData_.GetDataSize());
 }
 
 void ArgCommonBaseTiling::PrintTilingData()
 {
-    OP_LOGI(
-        tilingContext_->GetNodeName(),
-        "tilingData is aSize = %lu, cutASize = %hu, rSize = %lu, cutRSize = %hu, nextASize = %lu, \
+    OP_LOGI(tilingContext_->GetNodeName(),
+            "tilingData is aSize = %lu, cutASize = %hu, rSize = %lu, cutRSize = %hu, nextASize = %lu, \
             cutNextASize = %hu, realCoreNum = %lu, blkFactor = %lu, blkTailFactor = %lu, blkFactor2nd = %lu,\
             blkTailFactor2nd = %lu, blkNum2nd=%lu,tilingKey = %lu, \
             aRaMode = %lu, workSpaceSize = %lu, loopANum = %hu, cutAPerLoop = %hu, isRaSplit = %u, gatherBlockSize = %hu, Tiling4ArgMaxWithValue ends.",
-        tilingData_.get_aSize(), tilingData_.get_cutASize(), tilingData_.get_rSize(), tilingData_.get_cutRSize(),
-        tilingData_.get_nextASize(), tilingData_.get_cutNextASize(), tilingData_.get_realCoreNum(),
-        tilingData_.get_blkFactor(), tilingData_.get_blkTailFactor(), tilingData_.get_blkFactor2nd(),
-        tilingData_.get_blkTailFactor2nd(), tilingData_.get_blkNum2nd(), tilingData_.get_tilingKey(),
-        tilingData_.get_aRaMode(), tilingData_.get_workSpaceSize(), tilingData_.get_loopANum(),
-        tilingData_.get_cutAPerLoop(), tilingData_.get_isRaSplit(), tilingData_.get_gatherBlockSize());
+            tilingData_.get_aSize(), tilingData_.get_cutASize(), tilingData_.get_rSize(), tilingData_.get_cutRSize(),
+            tilingData_.get_nextASize(), tilingData_.get_cutNextASize(), tilingData_.get_realCoreNum(),
+            tilingData_.get_blkFactor(), tilingData_.get_blkTailFactor(), tilingData_.get_blkFactor2nd(),
+            tilingData_.get_blkTailFactor2nd(), tilingData_.get_blkNum2nd(), tilingData_.get_tilingKey(),
+            tilingData_.get_aRaMode(), tilingData_.get_workSpaceSize(), tilingData_.get_loopANum(),
+            tilingData_.get_cutAPerLoop(), tilingData_.get_isRaSplit(), tilingData_.get_gatherBlockSize());
 }
 
-ge::graphStatus ArgOpsTilingForAscendC(
-    gert::TilingContext* context, const uint64_t& coreNum, const uint64_t& ubSize, bool withValue,
-    const uint64_t& vRegSize)
+ge::graphStatus ArgOpsTilingForAscendC(gert::TilingContext* context, const uint64_t& coreNum, const uint64_t& ubSize,
+                                       bool withValue, const uint64_t& vRegSize)
 {
     ArgCommonBaseTiling tilingObject(context);
     if (tilingObject.Init(coreNum, ubSize, vRegSize) != ge::GRAPH_SUCCESS) {
