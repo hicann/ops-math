@@ -15,6 +15,7 @@
 #include "random/stateless_random_normal_v2/op_api/stateless_random_normal_v2.h"
 #include "random/stateless_random_normal_v3/op_api/stateless_random_normal_v3.h"
 #include "random/stateless_normal/op_api/stateless_normal.h"
+#include "conversion/broadcast_to/op_api/broadcast_to.h"
 #include "dsa_random_normal.h"
 #include "../../../../conversion/concat_d/op_api/concat_d.h"
 #include "opdev/platform.h"
@@ -183,6 +184,11 @@ static const aclTensor* normalDavidPath(
         auto oneStdTensor = executor->ConvertToTensor(
             oneStdVector.data(), oneStdVector.size(), op::DataType::DT_FLOAT);
 
+        auto outDims = op::ToShapeVector(selfContiguous->GetViewShape());
+        auto outShapeArray = executor->AllocIntArray(outDims.data(), outDims.size());
+        zeroMeanTensor = l0op::BroadcastTo(zeroMeanTensor, outShapeArray, executor);
+        oneStdTensor = l0op::BroadcastTo(oneStdTensor, outShapeArray, executor);
+
         auto normalOut = l0op::StatelessNormal(
             selfFloat, seed, offset, zeroMeanTensor, oneStdTensor, executor);
         CHECK_RET(normalOut != nullptr, nullptr);
@@ -195,7 +201,7 @@ static const aclTensor* normalDavidPath(
 
         auto meanScalar = executor->AllocScalar(mean);
         auto meanTensor = executor->ConvertToTensor(meanScalar, op::DataType::DT_FLOAT);
-        return l0op::AddInplace(meanTensor, mulOut, executor);
+        return l0op::Add(mulOut, meanTensor, executor);
     } else {
         // V2 路径：seed 转化为 key，offset 转化为 counter
         FVector<int64_t, op::MAX_DIM_NUM> key_vec = {seed};
@@ -250,6 +256,11 @@ static const aclTensor* normalTensorDavidPath(
         auto oneStdTensor = executor->ConvertToTensor(
             oneStdVector.data(), oneStdVector.size(), op::DataType::DT_FLOAT);
 
+        auto outDims = op::ToShapeVector(selfContiguous->GetViewShape());
+        auto outShapeArray = executor->AllocIntArray(outDims.data(), outDims.size());
+        zeroMeanTensor = l0op::BroadcastTo(zeroMeanTensor, outShapeArray, executor);
+        oneStdTensor = l0op::BroadcastTo(oneStdTensor, outShapeArray, executor);
+
         auto normalOut = l0op::StatelessNormal(
             selfFloat, seedTensor, resultAddOut, zeroMeanTensor, oneStdTensor, executor);
         CHECK_RET(normalOut != nullptr, nullptr);
@@ -262,7 +273,7 @@ static const aclTensor* normalTensorDavidPath(
 
         auto meanScalar = executor->AllocScalar(mean);
         auto meanTensor = executor->ConvertToTensor(meanScalar, op::DataType::DT_FLOAT);
-        return l0op::AddInplace(meanTensor, mulOut, executor);
+        return l0op::Add(mulOut, meanTensor, executor);
     } else {
         // V2 路径：保持原有 Cast/concat 逻辑
         auto normalSeedU64 = l0op::Cast(seedTensor, op::DataType::DT_UINT64, executor);

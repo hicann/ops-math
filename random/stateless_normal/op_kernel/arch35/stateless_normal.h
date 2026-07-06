@@ -30,38 +30,45 @@ namespace StatelessNormalSimt {
 using namespace AscendC;
 using namespace RandomKernelBase;
 
-static constexpr uint16_t NUM_TWO = 2;
-
 // Box-Muller normal transform functor
 // mean/stdev are always float* (DT_FLOAT from L2 layer), output is T* (may be bf16/fp16/fp32)
 // For bf16/fp16: three-step rounding to match GPU normal_()→mul_(std)→add_(mean)
-template <typename T, typename M_T, typename S_T>
+template <typename T>
 struct NormalTransform {
-    __gm__ volatile M_T* meanGM_;
-    __gm__ volatile S_T* stdevGM_;
+    __gm__ volatile float* meanGM_;
+    __gm__ volatile float* stdevGM_;
 
-    __aicore__ NormalTransform(__gm__ volatile M_T* meanGM, __gm__ volatile S_T* stdevGM)
+    __aicore__ NormalTransform(__gm__ volatile float* meanGM, __gm__ volatile float* stdevGM)
         : meanGM_(meanGM), stdevGM_(stdevGM) {}
 
     __simt_callee__ __aicore__ inline void operator()(
         __gm__ volatile T* outputGm, uint64_t li, const uint32_t* results, uint32_t iStep,
         [[maybe_unused]] uint32_t unroll = 1)
     {
-        uint32_t pairBase = (iStep / NUM_TWO) * NUM_TWO;
+        uint32_t pairBase = (iStep / 2) * 2;
         float u1 = results[pairBase] * RAND_2POW32_INV + RAND_2POW32_INV_HALF;
         float u2 = results[pairBase + 1] * RAND_2POW32_INV + RAND_2POW32_INV_HALF;
         float z0, z1;
         // 使用对齐torch版本的BoxMullerFloat，无需eps保护
         BoxMullerFloat(u1, u2, &z0, &z1);
-        float z = (iStep % NUM_TWO == 0) ? z0 : z1;
-
-        outputGm[li] = static_cast<T>(z * static_cast<float>(stdevGM_[0]) + static_cast<float>(meanGM_[0]));
+        float z = (iStep % 2 == 0) ? z0 : z1;
+        if constexpr (IsSameType<T, float>::value) {
+            // fp32: 无中间舍入，直接计算
+            outputGm[li] = z * stdevGM_[li] + meanGM_[li];
+        } else {
+            // bf16/fp16: 严格对标 PyTorch GPU 三步舍入
+            // GPU 内部: output.normal_(0,1) → output.mul_(std) → output.add_(mean)
+            // 每步都在目标 dtype 上存储，产生中间舍入
+            T zT = static_cast<T>(z);                                       // step1: normal_() 存为目标dtype
+            T mulT = static_cast<T>(static_cast<float>(zT) * stdevGM_[li]); // step2: mul_(std) 在目标dtype下
+            outputGm[li] = static_cast<T>(static_cast<float>(mulT) + meanGM_[li]); // step3: add_(mean) 在目标dtype下
+        }
     }
 };
 
 // Launcher: wraps VF_CALL for each split block, adjusts GM pointers by gmOffset
 // mean/stdev pointers are always float* (DT_FLOAT), output is T*
-template <typename T, typename M_T, typename S_T>
+template <typename T>
 struct NormalLauncher {
     int64_t seed_;
     int64_t realOffset_;
@@ -82,11 +89,11 @@ struct NormalLauncher {
     {
         __gm__ volatile T* gmPtr = reinterpret_cast<__gm__ volatile T*>(yAddr_) + gmOffset;
         // mean/stdev 始终按 float* 读取（L2 传入 DT_FLOAT tensor）
-        __gm__ volatile M_T* meanPtr = reinterpret_cast<__gm__ volatile M_T*>(meanAddr_);
-        __gm__ volatile S_T* stdevPtr = reinterpret_cast<__gm__ volatile S_T*>(stdevAddr_);
+        __gm__ volatile float* meanPtr = reinterpret_cast<__gm__ volatile float*>(meanAddr_) + gmOffset;
+        __gm__ volatile float* stdevPtr = reinterpret_cast<__gm__ volatile float*>(stdevAddr_) + gmOffset;
 
-        NormalTransform<T, M_T, S_T> transform(meanPtr, stdevPtr);
-        Simt::VF_CALL<PhiloxSimtKernelDiscontinuous<T, NormalTransform<T, M_T, S_T>>>(
+        NormalTransform<T> transform(meanPtr, stdevPtr);
+        Simt::VF_CALL<PhiloxSimtKernelDiscontinuous<T, NormalTransform<T>>>(
             Simt::Dim3(DEFAULT_SIMT_THREAD_NUM),
             gmPtr, realOffset_ + kernelOffset, seed_, static_cast<uint64_t>(numel),
             policy.magic, policy.shift, static_cast<uint64_t>(totalThreads), transform);
@@ -94,7 +101,7 @@ struct NormalLauncher {
 };
 
 // Entry point: called from stateless_normal.cpp
-template <typename T, typename M_T, typename S_T>
+template <typename T>
 __aicore__ inline void Process(
     GM_ADDR seed, GM_ADDR offset,
     GM_ADDR y, GM_ADDR mean, GM_ADDR stdev,
@@ -108,7 +115,7 @@ __aicore__ inline void Process(
     int64_t realSeed = *(reinterpret_cast<__gm__ int64_t*>(seed));
     int64_t realOffset = *(reinterpret_cast<__gm__ int64_t*>(offset));
 
-    NormalLauncher<T, M_T, S_T> launcher(realSeed, realOffset, y, mean, stdev);
+    NormalLauncher<T> launcher(realSeed, realOffset, y, mean, stdev);
     ProcessWithSplitBlocks(tilingData, launcher);
 }
 

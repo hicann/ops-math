@@ -15,6 +15,8 @@
 #include "tikicpulib.h"
 #include "../../../../random_common/op_kernel/arch35/random_unified_tiling_data_arch35.h"
 
+#include "stateless_normal_tiling.h"
+
 extern "C" __global__ __aicore__ void stateless_normal(
     GM_ADDR shape, GM_ADDR seed, GM_ADDR offset, GM_ADDR mean, GM_ADDR stdev,
     GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);

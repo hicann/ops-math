@@ -22,6 +22,6 @@ extern "C" __global__ __aicore__ void stateless_normal(
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
     GET_TILING_DATA_WITH_STRUCT(RandomUnifiedSimtTilingDataStruct, tilingData, tiling);
     if (TILING_KEY_IS(STATELESS_NORMAL_DEFAULT_TILING_KEY)) {
-        StatelessNormalSimt::Process<DTYPE_Y, DTYPE_MEAN, DTYPE_STDEV>(seed, offset, y, mean, stdev, &tilingData);
+        StatelessNormalSimt::Process<DTYPE_Y>(seed, offset, y, mean, stdev, &tilingData);
     }
 }
