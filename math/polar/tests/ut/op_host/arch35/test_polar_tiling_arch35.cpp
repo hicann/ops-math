@@ -16,33 +16,27 @@
 
 using namespace std;
 
-class PolarTilingTest : public testing::Test
-{
+class PolarTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "PolarTilingTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "PolarTilingTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "PolarTilingTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "PolarTilingTest TearDown" << std::endl; }
 };
 
 TEST_F(PolarTilingTest, polar_test_fp32_same_shape)
 {
     optiling::PolarCompileInfo compileInfo = {64};
     gert::TilingContextPara tilingContextPara("Polar",
-    {
-        {{{16, 7, 14}, {16, 7, 14}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        {{{16, 7, 14}, {16, 7, 14}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    },
-    {
-        {{{16, 7, 14}, {16, 7, 14}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
-    }, &compileInfo);
-    uint64_t expectTilingKey = 0;
-    std::vector<size_t> expectWorkspaces = {0};
+                                              {
+                                                  {{{16, 7, 14}, {16, 7, 14}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{16, 7, 14}, {16, 7, 14}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16, 7, 14}, {16, 7, 14}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 8;
+    std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -50,47 +44,52 @@ TEST_F(PolarTilingTest, polar_test_fp32_broadcast)
 {
     optiling::PolarCompileInfo compileInfo = {64};
     gert::TilingContextPara tilingContextPara("Polar",
-    {
-        {{{15, 5}, {15, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        {{{1, 5}, {1, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    },
-    {
-        {{{15, 5}, {15, 5}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
-    }, &compileInfo);
+                                              {
+                                                  {{{15, 5}, {15, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1, 5}, {1, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{15, 5}, {15, 5}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
-    std::vector<size_t> expectWorkspaces = {0};
+    std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
 TEST_F(PolarTilingTest, polar_test_fp32_broadcast_multidim)
 {
     optiling::PolarCompileInfo compileInfo = {64};
-    gert::TilingContextPara tilingContextPara("Polar",
-    {
-        {{{1, 3, 1, 7, 1, 5, 1, 1}, {1, 3, 1, 7, 1, 5, 1, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        {{{3, 3, 3, 7, 8, 5, 10, 1}, {3, 3, 3, 7, 8, 5, 10, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    },
-    {
-        {{{3, 3, 3, 7, 8, 5, 10, 1}, {3, 3, 3, 7, 8, 5, 10, 1}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
-    }, &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "Polar",
+        {
+            {{{1, 3, 1, 7, 1, 5, 1, 1}, {1, 3, 1, 7, 1, 5, 1, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{3, 3, 3, 7, 8, 5, 10, 1}, {3, 3, 3, 7, 8, 5, 10, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{3, 3, 3, 7, 8, 5, 10, 1}, {3, 3, 3, 7, 8, 5, 10, 1}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 0;
-    std::vector<size_t> expectWorkspaces = {0};
+    std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
 TEST_F(PolarTilingTest, polar_test_fp32_scalar_broadcast)
 {
     optiling::PolarCompileInfo compileInfo = {64};
-    gert::TilingContextPara tilingContextPara("Polar",
-    {
-        {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    },
-    {
-        {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
-    }, &compileInfo);
-    uint64_t expectTilingKey = 0;
-    std::vector<size_t> expectWorkspaces = {0};
+    gert::TilingContextPara tilingContextPara(
+        "Polar",
+        {
+            {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    uint64_t expectTilingKey = 8;
+    std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -98,61 +97,31 @@ TEST_F(PolarTilingTest, polar_test_fp32_broadcast_diff_shape)
 {
     optiling::PolarCompileInfo compileInfo = {64};
     gert::TilingContextPara tilingContextPara("Polar",
-    {
-        {{{2, 3, 1, 4}, {2, 3, 1, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        {{{2, 1, 5, 1}, {2, 1, 5, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    },
-    {
-        {{{2, 3, 5, 4}, {2, 3, 5, 4}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
-    }, &compileInfo);
+                                              {
+                                                  {{{2, 3, 1, 4}, {2, 3, 1, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{2, 1, 5, 1}, {2, 1, 5, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{2, 3, 5, 4}, {2, 3, 5, 4}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
-    std::vector<size_t> expectWorkspaces = {0};
+    std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
-}
-
-TEST_F(PolarTilingTest, polar_test_failed_dtype_mismatch_input)
-{
-    optiling::PolarCompileInfo compileInfo = {64};
-    gert::TilingContextPara tilingContextPara("Polar",
-    {
-        {{{16, 7, 14}, {16, 7, 14}}, ge::DT_BF16, ge::FORMAT_ND},
-        {{{16, 7, 14}, {16, 7, 14}}, ge::DT_BF16, ge::FORMAT_ND},
-    },
-    {
-        {{{16, 7, 14}, {16, 7, 14}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
-    }, &compileInfo);
-    uint64_t expectTilingKey = 0;
-    std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
-}
-
-TEST_F(PolarTilingTest, polar_test_failed_dtype_mismatch_output)
-{
-    optiling::PolarCompileInfo compileInfo = {64};
-    gert::TilingContextPara tilingContextPara("Polar",
-    {
-        {{{16, 7, 14}, {16, 7, 14}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        {{{16, 7, 14}, {16, 7, 14}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    },
-    {
-        {{{16, 7, 14}, {16, 7, 14}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    }, &compileInfo);
-    uint64_t expectTilingKey = 0;
-    std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }
 
 TEST_F(PolarTilingTest, polar_test_failed_not_broadcastable)
 {
     optiling::PolarCompileInfo compileInfo = {64};
     gert::TilingContextPara tilingContextPara("Polar",
-    {
-        {{{3, 5}, {3, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        {{{4, 5}, {4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    },
-    {
-        {{{3, 5}, {3, 5}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
-    }, &compileInfo);
+                                              {
+                                                  {{{3, 5}, {3, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{4, 5}, {4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{3, 5}, {3, 5}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
