@@ -21,27 +21,19 @@
 using namespace ge;
 class TransposeInferShapeTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "TransposeInferShapeTest Proto Test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "TransposeInferShapeTest Proto Test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "TransposeInferShapeTest Proto Test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "TransposeInferShapeTest Proto Test TearDown" << std::endl; }
 };
 
 TEST_F(TransposeInferShapeTest, transpose_test_case_1)
 {
     int64_t perm_value[4] = {3, 0, 1, 2};
-    gert::InfershapeContextPara::TensorDescription x({{36, 203, 26, 31}, {36, 203, 26, 31}}, ge::DT_INT64, ge::FORMAT_ND);
+    gert::InfershapeContextPara::TensorDescription x({{36, 203, 26, 31}, {36, 203, 26, 31}}, ge::DT_INT64,
+                                                     ge::FORMAT_ND);
     gert::InfershapeContextPara::TensorDescription perm({{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
     gert::InfershapeContextPara::TensorDescription out({{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND);
-    gert::InfershapeContextPara infershapeContextPara(
-        "Transpose",
-        {x, perm},
-        {out});
+    gert::InfershapeContextPara infershapeContextPara("Transpose", {x, perm}, {out});
     std::vector<std::vector<int64_t>> expectOutputShape = {{31, 36, 203, 26}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -49,13 +41,11 @@ TEST_F(TransposeInferShapeTest, transpose_test_case_1)
 TEST_F(TransposeInferShapeTest, transpose_test_case_2)
 {
     int32_t perm_value[4] = {3, 0, 1, 2};
-    gert::InfershapeContextPara::TensorDescription x({{36, 203, 26, 31}, {36, 203, 26, 31}}, ge::DT_INT32, ge::FORMAT_ND);
+    gert::InfershapeContextPara::TensorDescription x({{36, 203, 26, 31}, {36, 203, 26, 31}}, ge::DT_INT32,
+                                                     ge::FORMAT_ND);
     gert::InfershapeContextPara::TensorDescription perm({{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND, true, &perm_value);
     gert::InfershapeContextPara::TensorDescription out({{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND);
-    gert::InfershapeContextPara infershapeContextPara(
-        "Transpose",
-        {x, perm},
-        {out});
+    gert::InfershapeContextPara infershapeContextPara("Transpose", {x, perm}, {out});
     std::vector<std::vector<int64_t>> expectOutputShape = {{31, 36, 203, 26}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -63,13 +53,11 @@ TEST_F(TransposeInferShapeTest, transpose_test_case_2)
 TEST_F(TransposeInferShapeTest, transpose_test_case_3)
 {
     int16_t perm_value[4] = {3, 0, 1, 2};
-    gert::InfershapeContextPara::TensorDescription x({{36, 203, 26, 31}, {36, 203, 26, 31}}, ge::DT_INT16, ge::FORMAT_ND);
+    gert::InfershapeContextPara::TensorDescription x({{36, 203, 26, 31}, {36, 203, 26, 31}}, ge::DT_INT16,
+                                                     ge::FORMAT_ND);
     gert::InfershapeContextPara::TensorDescription perm({{4}, {4}}, ge::DT_INT16, ge::FORMAT_ND, true, &perm_value);
     gert::InfershapeContextPara::TensorDescription out({{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND);
-    gert::InfershapeContextPara infershapeContextPara(
-        "Transpose",
-        {x, perm},
-        {out});
+    gert::InfershapeContextPara infershapeContextPara("Transpose", {x, perm}, {out});
     std::vector<std::vector<int64_t>> expectOutputShape = {{31, 36, 203, 26}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
 }
@@ -77,13 +65,11 @@ TEST_F(TransposeInferShapeTest, transpose_test_case_3)
 TEST_F(TransposeInferShapeTest, transpose_test_case_4)
 {
     int16_t perm_value[4] = {3, 0, 4, 2};
-    gert::InfershapeContextPara::TensorDescription x({{36, 203, 26, 31}, {36, 203, 26, 31}}, ge::DT_INT16, ge::FORMAT_ND);
+    gert::InfershapeContextPara::TensorDescription x({{36, 203, 26, 31}, {36, 203, 26, 31}}, ge::DT_INT16,
+                                                     ge::FORMAT_ND);
     gert::InfershapeContextPara::TensorDescription perm({{4}, {4}}, ge::DT_INT16, ge::FORMAT_ND, true, &perm_value);
     gert::InfershapeContextPara::TensorDescription out({{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND);
-    gert::InfershapeContextPara infershapeContextPara(
-        "Transpose",
-        {x, perm},
-        {out});
+    gert::InfershapeContextPara infershapeContextPara("Transpose", {x, perm}, {out});
     std::vector<std::vector<int64_t>> expectOutputShape = {{31, 36, 203, 26}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
 }
@@ -166,4 +152,17 @@ TEST_F(TransposeInferShapeTest, transpose_infershape_1d_tensor)
     gert::InfershapeContextPara infershapeContextPara("Transpose", {x, perm}, {out});
     std::vector<std::vector<int64_t>> expectOutputShape = {{100}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// 场景：perm为INT64类型，perm中包含超出输入维度有效范围的值（perm[2]=4，但输入为4维tensor，perm值最大应为3）
+// 期望：推导失败
+TEST_F(TransposeInferShapeTest, transpose_infershape_int64_invalid_perm_value)
+{
+    int64_t perm_value[4] = {3, 0, 4, 2}; // perm[2]=4 is out of range for 4-dim input
+    gert::InfershapeContextPara::TensorDescription x({{36, 203, 26, 31}, {36, 203, 26, 31}}, ge::DT_INT64,
+                                                     ge::FORMAT_ND);
+    gert::InfershapeContextPara::TensorDescription perm({{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::InfershapeContextPara::TensorDescription out({{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::InfershapeContextPara infershapeContextPara("Transpose", {x, perm}, {out});
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, {});
 }

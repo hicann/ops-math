@@ -11,6 +11,7 @@
 #include "infershape_case_executor.h"
 #include <gtest/gtest.h>
 #include "base/registry/op_impl_space_registry_v2.h"
+#include "exe_graph/runtime/kernel_run_context.h"
 
 #define DO_INFERSHAPE(infershapeContextPara)                                                                           \
     auto contextFaker = gert::InferShapeContextFaker();                                                                \
@@ -27,9 +28,8 @@
     for (size_t index = 0; index < inputNum; index++) {                                                                \
         std::unique_ptr<gert::Tensor> curTensor = std::make_unique<gert::Tensor>(                                      \
             infershapeContextPara.inputTensorDesc_[index].shape_,                                                      \
-            gert::StorageFormat(                                                                                       \
-                infershapeContextPara.inputTensorDesc_[index].format_,                                                 \
-                infershapeContextPara.inputTensorDesc_[index].format_, gert::ExpandDimsType()),                        \
+            gert::StorageFormat(infershapeContextPara.inputTensorDesc_[index].format_,                                 \
+                                infershapeContextPara.inputTensorDesc_[index].format_, gert::ExpandDimsType()),        \
             gert::TensorPlacement::kOnHost, infershapeContextPara.inputTensorDesc_[index].dtype_,                      \
             infershapeContextPara.inputTensorDesc_[index].isConst_ ?                                                   \
                 infershapeContextPara.inputTensorDesc_[index].constValue_ :                                            \
@@ -38,10 +38,9 @@
         inputTensorsKeepAlive.push_back(std::move(curTensor));                                                         \
     }                                                                                                                  \
     for (size_t index = 0; index < outputNum; index++) {                                                               \
-        contextFaker.NodeOutputTd(                                                                                     \
-            index, infershapeContextPara.outputTensorDesc_[index].dtype_,                                              \
-            infershapeContextPara.outputTensorDesc_[index].format_,                                                    \
-            infershapeContextPara.outputTensorDesc_[index].format_);                                                   \
+        contextFaker.NodeOutputTd(index, infershapeContextPara.outputTensorDesc_[index].dtype_,                        \
+                                  infershapeContextPara.outputTensorDesc_[index].format_,                              \
+                                  infershapeContextPara.outputTensorDesc_[index].format_);                             \
     }                                                                                                                  \
     contextFaker.InputTensors(inputTensors);                                                                           \
     for (auto& attrInfo : infershapeContextPara.attrs_) {                                                              \
@@ -65,24 +64,23 @@
                 break;                                                                                                 \
             }                                                                                                          \
             case Ops::Math::AnyValue::ValueType::VT_LIST_BOOL: {                                                       \
-                contextFaker.Attr(                                                                                     \
-                    attrInfo.attrName_, *reinterpret_cast<std::vector<bool>*>(attrInfo.attr_.valuePtr_.get()));        \
+                contextFaker.Attr(attrInfo.attrName_,                                                                  \
+                                  *reinterpret_cast<std::vector<bool>*>(attrInfo.attr_.valuePtr_.get()));              \
                 break;                                                                                                 \
             }                                                                                                          \
             case Ops::Math::AnyValue::ValueType::VT_LIST_INT: {                                                        \
-                contextFaker.Attr(                                                                                     \
-                    attrInfo.attrName_, *reinterpret_cast<std::vector<int64_t>*>(attrInfo.attr_.valuePtr_.get()));     \
+                contextFaker.Attr(attrInfo.attrName_,                                                                  \
+                                  *reinterpret_cast<std::vector<int64_t>*>(attrInfo.attr_.valuePtr_.get()));           \
                 break;                                                                                                 \
             }                                                                                                          \
             case Ops::Math::AnyValue::ValueType::VT_LIST_LIST_INT: {                                                   \
-                contextFaker.Attr(                                                                                     \
-                    attrInfo.attrName_,                                                                                \
-                    *reinterpret_cast<std::vector<std::vector<int64_t>>*>(attrInfo.attr_.valuePtr_.get()));            \
+                contextFaker.Attr(attrInfo.attrName_, *reinterpret_cast<std::vector<std::vector<int64_t>>*>(           \
+                                                          attrInfo.attr_.valuePtr_.get()));                            \
                 break;                                                                                                 \
             }                                                                                                          \
             case Ops::Math::AnyValue::ValueType::VT_LIST_FLOAT: {                                                      \
-                contextFaker.Attr(                                                                                     \
-                    attrInfo.attrName_, *reinterpret_cast<std::vector<float>*>(attrInfo.attr_.valuePtr_.get()));       \
+                contextFaker.Attr(attrInfo.attrName_,                                                                  \
+                                  *reinterpret_cast<std::vector<float>*>(attrInfo.attr_.valuePtr_.get()));             \
                 break;                                                                                                 \
             }                                                                                                          \
             default:                                                                                                   \
@@ -91,6 +89,14 @@
         }                                                                                                              \
     }                                                                                                                  \
     auto contextHolder = contextFaker.SetOpType(infershapeContextPara.opName_.c_str()).Build();                        \
+    /* Set null input tensor pointers to nullptr in the context */                                                     \
+    for (auto nullIdx : infershapeContextPara.nullInputIndices_) {                                                     \
+        /* InferShapeContext has standard layout (POD), and its address equals KernelRunContext address */             \
+        auto* kernelCtx = reinterpret_cast<KernelRunContext*>(contextHolder.GetContext());                             \
+        if (nullIdx < kernelCtx->input_size) {                                                                         \
+            kernelCtx->values[nullIdx]->data.pointer = nullptr;                                                        \
+        }                                                                                                              \
+    }                                                                                                                  \
     /* 2. get infershape func */                                                                                       \
     auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();                         \
     auto infershapeFunc = spaceRegistry->GetOpImpl(infershapeContextPara.opName_.c_str())->infer_shape;                \
@@ -108,9 +114,8 @@ static std::vector<int64_t> ToVector(const gert::Shape& shape)
     return shapeVec;
 }
 
-void ExecuteTestCase(
-    gert::InfershapeContextPara& infershapeContextPara, ge::graphStatus expectResult,
-    const std::vector<std::vector<int64_t>>& expectOutputShape)
+void ExecuteTestCase(gert::InfershapeContextPara& infershapeContextPara, ge::graphStatus expectResult,
+                     const std::vector<std::vector<int64_t>>& expectOutputShape)
 {
     DO_INFERSHAPE(infershapeContextPara);
 

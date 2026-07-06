@@ -20,9 +20,8 @@ class InfershapeContextPara {
 public:
     class TensorDescription {
     public:
-        TensorDescription(
-            const gert::StorageShape& shape, ge::DataType dtype, ge::Format format, bool isConst = false,
-            void* constValue = nullptr)
+        TensorDescription(const gert::StorageShape& shape, ge::DataType dtype, ge::Format format, bool isConst = false,
+                          void* constValue = nullptr)
             : shape_(shape), dtype_(dtype), format_(format), isConst_(isConst), constValue_(constValue)
         {}
 
@@ -44,27 +43,31 @@ public:
     };
 
 public:
-    InfershapeContextPara(
-        const std::string& opName, const std::vector<TensorDescription>& inputTensorDesc,
-        const std::vector<TensorDescription>& outputTensorDesc, const std::vector<OpAttr>& attrs,
-        const std::vector<uint32_t>& inputInstanceNum = {}, const std::vector<uint32_t>& outputInstanceNum = {})
+    InfershapeContextPara(const std::string& opName, const std::vector<TensorDescription>& inputTensorDesc,
+                          const std::vector<TensorDescription>& outputTensorDesc, const std::vector<OpAttr>& attrs,
+                          const std::vector<uint32_t>& inputInstanceNum = {},
+                          const std::vector<uint32_t>& outputInstanceNum = {},
+                          const std::vector<size_t> nullInputIndices = {})
         : opName_(opName),
           inputTensorDesc_(inputTensorDesc),
           outputTensorDesc_(outputTensorDesc),
           attrs_(attrs),
           inputInstanceNum_(inputInstanceNum),
-          outputInstanceNum_(outputInstanceNum)
+          outputInstanceNum_(outputInstanceNum),
+          nullInputIndices_(nullInputIndices)
     {}
 
-    InfershapeContextPara(
-        const std::string& opName, const std::vector<TensorDescription>& inputTensorDesc,
-        const std::vector<TensorDescription>& outputTensorDesc, const std::vector<uint32_t>& inputInstanceNum = {},
-        const std::vector<uint32_t>& outputInstanceNum = {})
+    InfershapeContextPara(const std::string& opName, const std::vector<TensorDescription>& inputTensorDesc,
+                          const std::vector<TensorDescription>& outputTensorDesc,
+                          const std::vector<uint32_t>& inputInstanceNum = {},
+                          const std::vector<uint32_t>& outputInstanceNum = {},
+                          const std::vector<size_t> nullInputIndices = {})
         : opName_(opName),
           inputTensorDesc_(inputTensorDesc),
           outputTensorDesc_(outputTensorDesc),
           inputInstanceNum_(inputInstanceNum),
-          outputInstanceNum_(outputInstanceNum)
+          outputInstanceNum_(outputInstanceNum),
+          nullInputIndices_(nullInputIndices)
     {}
 
 public:
@@ -74,6 +77,7 @@ public:
     std::vector<TensorDescription> inputTensorDesc_;
     std::vector<TensorDescription> outputTensorDesc_;
     std::vector<OpAttr> attrs_;
+    std::vector<size_t> nullInputIndices_; // indices of inputs whose GetInputTensor should return nullptr
 };
 
 class InferShapeContextFaker : public OpInferShapeContextBuilder {
@@ -85,14 +89,14 @@ public:
 
     /* can be used for dynamic inputs/outputs
      * only one can be choosed from NodeIoNum */
-    InferShapeContextFaker& IrInstanceNum(
-        const std::vector<uint32_t>& inputInstanceNum, const std::vector<uint32_t>& outputInstanceNum);
+    InferShapeContextFaker& IrInstanceNum(const std::vector<uint32_t>& inputInstanceNum,
+                                          const std::vector<uint32_t>& outputInstanceNum);
 
-    InferShapeContextFaker& NodeInputTd(
-        int32_t index, ge::DataType dtype, ge::Format originFormat, ge::Format storageFormat);
+    InferShapeContextFaker& NodeInputTd(int32_t index, ge::DataType dtype, ge::Format originFormat,
+                                        ge::Format storageFormat);
 
-    InferShapeContextFaker& NodeOutputTd(
-        int32_t index, ge::DataType dtype, ge::Format originFormat, ge::Format storageFormat);
+    InferShapeContextFaker& NodeOutputTd(int32_t index, ge::DataType dtype, ge::Format originFormat,
+                                         ge::Format storageFormat);
 
     InferShapeContextFaker& Attr(const std::string& attrName, bool attr)
     {
