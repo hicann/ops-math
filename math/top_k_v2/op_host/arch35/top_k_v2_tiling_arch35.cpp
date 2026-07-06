@@ -19,6 +19,12 @@
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "sort_with_index_tiling.h"
 
+#include <algorithm>
+#include <functional>
+#include <limits>
+#include <map>
+#include <vector>
+
 namespace optiling {
 namespace topkV2 {
 namespace topkV2DataInfo {
@@ -44,6 +50,9 @@ const uint32_t SINGLE_BLOCK_MODE = 3;
 const uint32_t SORT_AND_TOP_K_MODE = 5;
 const uint32_t FP32_MERGE_MORE_CORE_MODE = 6;
 const uint32_t FP32_MERGE_INTRA_CORE_MODE = 7;
+const uint32_t NON_LAST_SMALL_AXIS_MODE = 8;
+const uint32_t NON_LAST_SMALL_AXIS_RADIX_SELECT = 0;
+const uint32_t NON_LAST_SMALL_AXIS_MERGE_SORT = 1;
 const uint32_t INT64_BYTE = 8;
 const uint32_t INT32_BYTE = 4;
 // SortAndTopk的阈值，排序轴大于该阈值的场景，走sortAndTopK模板
@@ -57,6 +66,7 @@ const double FP32_K_LAST_AXIS_LOWER_RATIO = 0.25;
 const double FP32_K_LAST_AXIS_UPPER_RATIO = 0.50;
 const uint32_t SORT_STRUCT_SIZE_FP32 = 8;
 const uint32_t FP32_MERGE_SORT_MAX_SIZE = 4096;
+const int64_t NON_LAST_SMALL_AXIS_THRESHOLD = 2048;
 const uint32_t MERGE_SORT_DISABLE_DOUBLE_BUFFER_SIZE = 2048;
 const uint32_t MERGE_MORE_CORE_ONE_CORE_DATA_SIZE = 2048;
 const uint32_t MERGE_MORE_CORE_LIST_MAX_NUM = 4;
@@ -74,6 +84,7 @@ const uint32_t CONST_2 = 2;
 const uint32_t SMALL_TILE_DATA_NUM = 1024; // 测试数据得出一次至少处理1024，sort性能比较好
 // 排序轴在int32范围内的最大值, 超过这个值, cutsum，前缀和就要用int64数据范围表示              
 const uint32_t INT32_MAX_RANGE_VALUE_FOR_SORT = 1073741823; 
+const uint32_t SORT_STRUCT_BYTES = 8;
 
 constexpr size_t SYS_WORK_SPACE_SIZE = static_cast<size_t>(16 * 1024 * 1024);
 struct TopkTileInfo {
@@ -133,6 +144,12 @@ struct TopkComputeNowTileSizeInfo {
     uint64_t ubBlockAlignSize = 0; // ub的对齐数值，当前为32
     uint64_t unsortedDimNum = 0;
 };
+struct NonLastSmallAxisTopkLayout {
+    uint32_t inputRowBytes = 0;
+    uint32_t axisRowBytes = 0;
+    uint32_t valueRowBytes = 0;
+    uint32_t indexRowBytes = 0;
+};
 static const std::map<ge::DataType, uint32_t> tilingDataTypeKeyMap = {
     {ge::DT_INT64, 1004},  {ge::DT_INT32, 1003},   {ge::DT_INT16, 1002},  {ge::DT_INT8, 1001},
     {ge::DT_UINT64, 2004}, {ge::DT_UINT32, 2003},  {ge::DT_UINT16, 2002}, {ge::DT_UINT8, 2001},
@@ -145,6 +162,37 @@ static const std::map<ge::DataType, uint32_t> optDataTypeBitMap = {
     {ge::DT_FLOAT, 4}, {ge::DT_FLOAT16, 2}, {ge::DT_BF16, 2}};
 static const std::map<ge::DataType, uint32_t> b64DataTypeBitMap = {{ge::DT_INT64, 8}, {ge::DT_UINT64, 8}};
 } // namespace topkV2DataInfo
+
+struct TopkNonLastSmallAxisTileInfo {
+    int64_t rank = 0;
+    int64_t sortAxis = 0;
+    int64_t lastAxis = 1;
+    int64_t outerSize = 1;
+    int64_t innerSize = 1;
+    int64_t unsortedDim = 1;
+    uint32_t dtypeSize = 0;
+    uint32_t y2DtypeSize = 0;
+    uint32_t maxCoreNum = 0;
+    uint32_t blockUbSize = 0;
+    uint32_t tmpUbSize = 0;
+    ge::DataType dataType = ge::DT_UINT8;
+    uint32_t inputRowBytes = 0;
+    uint32_t valueAxisBytes = 0;
+    uint32_t indexAxisBytes = 0;
+    uint32_t outputIndexRowBytes = 0;
+};
+
+struct TopkNonLastSmallAxisCandidate {
+    uint32_t innerChunk = 0;
+    uint32_t innerLoopNum = 0;
+    uint32_t activeCore = 0;
+    uint64_t tileCount = 0;
+    uint64_t peakUb = 0;
+    uint32_t inputRowBytes = 0;
+    uint32_t valueAxisBytes = 0;
+    uint32_t indexAxisBytes = 0;
+    uint32_t outputIndexRowBytes = 0;
+};
 
 // ==================== Helper Functions ====================
 
@@ -181,8 +229,8 @@ ge::graphStatus GetTopkApiTmpBufferSize(
     gert::TilingContext* context, TopKV2TilingDataSimd& topkTilingData, uint32_t needDataNum, int64_t kValue,
     bool isLargest, ge::DataType dtype, bool isSort, uint32_t nowTileSize)
 {
-    uint32_t aglinInnerValue = 
-        static_cast<uint32_t>(Ops::Base::CeilAlign(static_cast<uint64_t>(needDataNum), topkV2DataInfo::AGLIN_FACTOR));
+    int32_t aglinInnerValue = 
+        static_cast<int32_t>(Ops::Base::CeilAlign(static_cast<uint64_t>(needDataNum), topkV2DataInfo::AGLIN_FACTOR));
     
     uint32_t aglinKValue = (topkTilingData.get_modeType() == topkV2DataInfo::SINGLE_CORE_MODE) ?
         std::min(static_cast<int64_t>(needDataNum), kValue) :
@@ -1631,6 +1679,420 @@ bool IsFp32MergeSortMode(topkV2DataInfo::TopkComputeNowTileSizeInfo& computNowTi
     return isMoreCoreModel || isIntraCoreModel;
 }
 
+
+
+bool CeilAlignUint32(uint64_t rawSize, uint32_t alignSize, uint32_t& alignedSize)
+{
+    uint64_t result = Ops::Base::CeilAlign(rawSize, static_cast<uint64_t>(alignSize));
+    if (result > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
+        return false;
+    }
+    alignedSize = static_cast<uint32_t>(result);
+    return true;
+}
+
+uint32_t GetTopkPreferredInnerChunk(ge::DataType dataType, uint32_t index)
+{
+    static constexpr uint32_t CHUNK_CANDIDATES[][6] = {
+        {4, 2, 1, 0, 0, 0},
+        {8, 4, 2, 1, 0, 0},
+        {16, 8, 4, 2, 1, 0},
+        {32, 16, 8, 4, 2, 1},
+    };
+    static constexpr uint32_t CHUNK_VALID_COUNT[] = {3, 4, 5, 6};
+    uint32_t group = 0;
+    if (dataType == ge::DT_INT64 || dataType == ge::DT_UINT64) {
+        group = 0;
+    } else if (dataType == ge::DT_FLOAT || dataType == ge::DT_INT32 || dataType == ge::DT_UINT32) {
+        group = 1;
+    } else if (
+        dataType == ge::DT_FLOAT16 || dataType == ge::DT_BF16 || dataType == ge::DT_INT16 ||
+        dataType == ge::DT_UINT16) {
+        group = 2;
+    } else if (dataType == ge::DT_INT8 || dataType == ge::DT_UINT8) {
+        group = 3;
+    } else {
+        return 0;
+    }
+    return index < CHUNK_VALID_COUNT[group] ? CHUNK_CANDIDATES[group][index] : 0;
+}
+
+bool UseTopkNonLastMergeSort(ge::DataType dataType, uint32_t axisLen)
+{
+    return dataType == ge::DT_FLOAT ||
+           ((dataType == ge::DT_FLOAT16 || dataType == ge::DT_BF16) &&
+               axisLen <= topkV2DataInfo::SMALL_MAX_DATA_SZIE);
+}
+
+ge::DataType GetTopkNonLastSortDtype(ge::DataType dataType, bool useMergeSort)
+{
+    return useMergeSort && dataType == ge::DT_BF16 ? ge::DT_FLOAT : dataType;
+}
+
+uint32_t GetTopkNonLastSortDtypeSize(uint32_t dtypeSize, bool useMergeSort, ge::DataType dataType)
+{
+    return useMergeSort && dataType == ge::DT_BF16 ? static_cast<uint32_t>(sizeof(float)) : dtypeSize;
+}
+
+bool GetTopkNonLastSortTmpSize(
+    ge::DataType dataType, uint32_t sortCount, bool useMergeSort, bool isDescend, uint32_t& tmpUbSize)
+{
+    std::vector<int64_t> shapeVec = {static_cast<int64_t>(sortCount)};
+    ge::Shape srcShape(shapeVec);
+    AscendC::SortConfig config;
+    config.type = useMergeSort ? AscendC::SortType::MERGE_SORT : AscendC::SortType::RADIX_SORT;
+    config.isDescend = isDescend;
+    config.hasSrcIndex = false;
+    config.hasDstIndex = true;
+    uint32_t maxValue = 0;
+    uint32_t minValue = 0;
+    ge::DataType finalDataType = GetTopkNonLastSortDtype(dataType, useMergeSort);
+    AscendC::GetSortMaxMinTmpSize(srcShape, finalDataType, ge::DT_UINT32, true, config, maxValue, minValue);
+    tmpUbSize = maxValue;
+    return maxValue > 0;
+}
+
+void ComputeTopkAxisDimProducts(const gert::Shape& shape, int64_t axis, TopkNonLastSmallAxisTileInfo& info)
+{
+    int64_t rank = shape.GetDimNum();
+    if (axis < 0 || axis >= rank) {
+        return;
+    }
+    int64_t outerSize = 1;
+    int64_t innerSize = 1;
+    for (int64_t i = 0; i < rank; ++i) {
+        int64_t dimSize = shape.GetDim(i);
+        if (i < axis) {
+            outerSize *= dimSize;
+        } else if (i > axis) {
+            innerSize *= dimSize;
+        }
+    }
+    info.outerSize = outerSize;
+    info.innerSize = innerSize;
+    info.lastAxis = shape.GetDim(axis);
+    info.unsortedDim = outerSize * innerSize;
+}
+
+bool SearchTopkNonLastSmallAxisPlan(
+    const TopkNonLastSmallAxisTileInfo& info, uint64_t usableUb,
+    std::function<bool(TopkNonLastSmallAxisTileInfo&, uint32_t, uint64_t&, TopkNonLastSmallAxisCandidate&)> estimateUb,
+    TopkNonLastSmallAxisCandidate& best, TopkNonLastSmallAxisTileInfo* selectedInfo = nullptr)
+{
+    for (uint32_t i = 0; i < 6; ++i) {
+        uint32_t chunk = GetTopkPreferredInnerChunk(info.dataType, i);
+        if (chunk == 0U) {
+            break;
+        }
+        chunk = static_cast<uint32_t>(std::min<uint64_t>(chunk, static_cast<uint64_t>(info.innerSize)));
+        if (chunk == 0U) {
+            return false;
+        }
+        uint64_t innerLoopNum64 = (static_cast<uint64_t>(info.innerSize) + chunk - 1U) / chunk;
+        if (innerLoopNum64 == 0U || innerLoopNum64 > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
+            continue;
+        }
+        TopkNonLastSmallAxisCandidate cur;
+        cur.innerChunk = chunk;
+        cur.innerLoopNum = static_cast<uint32_t>(innerLoopNum64);
+        cur.tileCount = static_cast<uint64_t>(info.outerSize) * innerLoopNum64;
+        if (cur.tileCount > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
+            continue;
+        }
+        TopkNonLastSmallAxisTileInfo candidateInfo = info;
+        if (!estimateUb(candidateInfo, chunk, cur.peakUb, cur) || cur.peakUb > usableUb) {
+            continue;
+        }
+        cur.activeCore =
+            static_cast<uint32_t>(std::min<uint64_t>(static_cast<uint64_t>(info.maxCoreNum), cur.tileCount));
+        bool betterCoreUse = cur.activeCore > best.activeCore;
+        bool sameCoreUseLargerChunk = cur.activeCore == best.activeCore && cur.innerChunk > best.innerChunk;
+        if (betterCoreUse || sameCoreUseLargerChunk) {
+            best = cur;
+            if (selectedInfo != nullptr) {
+                *selectedInfo = candidateInfo;
+            }
+        }
+    }
+    return best.innerChunk != 0U && best.tileCount != 0U && best.activeCore != 0U;
+}
+
+bool ComputeTopkNonLastLayout(const TopkNonLastSmallAxisTileInfo& info, uint32_t kValue, uint32_t innerChunk,
+    bool useMergeSort,
+    topkV2DataInfo::NonLastSmallAxisTopkLayout& layout)
+{
+    if (innerChunk == 0U || kValue == 0U || info.dtypeSize == 0U || info.blockUbSize == 0U) {
+        return false;
+    }
+    uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
+    uint32_t sortCount = Ops::Base::CeilAlign(axisLen, topkV2DataInfo::MERGE_INTRA_CORE_SORT_ALIGN);
+    uint32_t sortDtypeSize = GetTopkNonLastSortDtypeSize(info.dtypeSize, useMergeSort, info.dataType);
+    uint64_t valueAxisRawBytes = static_cast<uint64_t>(sortCount) * sortDtypeSize;
+    uint32_t outputCount = useMergeSort ? sortCount : kValue;
+    if (useMergeSort) {
+        valueAxisRawBytes = 
+            std::max(valueAxisRawBytes, static_cast<uint64_t>(sortCount) * topkV2DataInfo::SORT_STRUCT_BYTES);
+    }
+    if (!CeilAlignUint32(static_cast<uint64_t>(innerChunk) * info.dtypeSize, info.blockUbSize,
+            layout.inputRowBytes) ||
+        !CeilAlignUint32(valueAxisRawBytes, info.blockUbSize, layout.axisRowBytes) ||
+        !CeilAlignUint32(static_cast<uint64_t>(outputCount) * sortDtypeSize, info.blockUbSize,
+            layout.valueRowBytes) ||
+        !CeilAlignUint32(static_cast<uint64_t>(outputCount) * sizeof(uint32_t), info.blockUbSize,
+            layout.indexRowBytes)) {
+        return false;
+    }
+
+    uint64_t inputRowElems = static_cast<uint64_t>(layout.inputRowBytes) / info.dtypeSize;
+    uint64_t axisRowElems = static_cast<uint64_t>(layout.axisRowBytes) / sortDtypeSize;
+    if (info.dtypeSize <= sizeof(uint16_t) &&
+        ((static_cast<uint64_t>(axisLen) - 1U) * inputRowElems > std::numeric_limits<uint16_t>::max() ||
+         static_cast<uint64_t>(innerChunk - 1U) * axisRowElems > std::numeric_limits<uint16_t>::max())) {
+        return false;
+    }
+    return true;
+}
+
+bool EstimateTopkNonLastSmallAxisUb(
+    TopkNonLastSmallAxisTileInfo& info, uint32_t kValue, uint32_t innerChunk, bool useMergeSort, uint64_t& peakUb,
+    TopkNonLastSmallAxisCandidate& candidate)
+{
+    topkV2DataInfo::NonLastSmallAxisTopkLayout layout;
+    if (!ComputeTopkNonLastLayout(info, kValue, innerChunk, useMergeSort, layout)) {
+        return false;
+    }
+    uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
+    uint32_t sortCount = Ops::Base::CeilAlign(axisLen, topkV2DataInfo::MERGE_INTRA_CORE_SORT_ALIGN);
+        
+    uint32_t inputCastRowBytes = 0;
+    if (useMergeSort && info.dataType == ge::DT_BF16 &&
+        !CeilAlignUint32(static_cast<uint64_t>(sortCount) * info.dtypeSize, info.blockUbSize, inputCastRowBytes)) {
+        return false;
+    }
+    
+    peakUb = static_cast<uint64_t>(axisLen) * layout.inputRowBytes +
+        static_cast<uint64_t>(innerChunk) * layout.axisRowBytes +
+        static_cast<uint64_t>(innerChunk) * layout.valueRowBytes +
+        static_cast<uint64_t>(innerChunk) * layout.indexRowBytes +
+        static_cast<uint64_t>(innerChunk) * inputCastRowBytes +
+        static_cast<uint64_t>(info.tmpUbSize);
+    candidate.inputRowBytes = layout.inputRowBytes;
+    candidate.valueAxisBytes = layout.axisRowBytes;
+    candidate.indexAxisBytes = layout.valueRowBytes;
+    candidate.outputIndexRowBytes = layout.indexRowBytes;
+    info.inputRowBytes = layout.inputRowBytes;
+    info.valueAxisBytes = layout.axisRowBytes;
+    info.indexAxisBytes = layout.valueRowBytes;
+    info.outputIndexRowBytes = layout.indexRowBytes;
+    return true;
+}
+
+/**
+ * @brief 初始化非尾轴小轴TopK的Tile信息并验证参数有效性
+ * @param context Tiling上下文
+ * @param inputShape 输入张量的形状
+ * @param axis TopK操作的目标轴索引
+ * @param computeInfo TopK计算信息
+ * @param info 输出的Tile信息结构体
+ * @return true 参数有效，false 参数无效
+ */
+bool InitTopkNonLastSmallAxisInfo(gert::TilingContext* context, const gert::Shape& inputShape, int32_t axis,
+    const topkV2DataInfo::TopkComputeNowTileSizeInfo& computeInfo, TopkNonLastSmallAxisTileInfo& info)
+{
+    info.rank = inputShape.GetDimNum();
+    info.sortAxis = axis;
+    info.maxCoreNum = computeInfo.maxCoreNum;
+    info.dataType = computeInfo.dataType;
+    info.dtypeSize = GetDataTypeSize(computeInfo.dataType);
+    info.y2DtypeSize = GetDataTypeSize(computeInfo.indicesDType);
+    info.blockUbSize = static_cast<uint32_t>(computeInfo.ubBlockAlignSize);
+    ComputeTopkAxisDimProducts(inputShape, axis, info);
+
+    if (info.lastAxis <= 0 || info.innerSize <= 0 || info.outerSize <= 0 ||
+        info.lastAxis > topkV2DataInfo::NON_LAST_SMALL_AXIS_THRESHOLD || computeInfo.kValue <= 0 ||
+        computeInfo.kValue > info.lastAxis) {
+        OP_LOGE(context->GetNodeName(),
+            "TopKV2 non-last axis only supports positive small axis with 1 <= k <= axis, axis=%ld, k=%ld",
+            info.lastAxis, computeInfo.kValue);
+        return false;
+    }
+    return true;
+}
+
+/**
+ * @brief 设置非尾轴小轴TopK的临时UB大小
+ * @details 根据是否使用归并排序，查询并设置相应的临时UB大小
+ * @param context Tiling上下文
+ * @param topkTilingData TopK Tiling数据结构
+ * @param computeInfo TopK计算信息
+ * @param info Tile信息（会更新tmpUbSize字段）
+ * @param useMergeSort 是否使用归并排序
+ * @param sortCount 排序元素个数
+ * @return ge::GRAPH_SUCCESS 成功设置，ge::GRAPH_FAILED 设置失败
+ */
+ge::graphStatus SetupTopkNonLastSmallAxisTmpUb(gert::TilingContext* context, TopKV2TilingDataSimd& topkTilingData,
+    const topkV2DataInfo::TopkComputeNowTileSizeInfo& computeInfo, TopkNonLastSmallAxisTileInfo& info,
+    bool useMergeSort, uint32_t sortCount)
+{
+    if (useMergeSort) {
+        uint32_t tmpUbSize = 0;
+        if (!GetTopkNonLastSortTmpSize(
+            computeInfo.dataType, sortCount, useMergeSort, computeInfo.isLargest, tmpUbSize)) {
+            OP_LOGE(context->GetNodeName(), "TopKV2 non-last small-axis failed to query merge sort tmp size");
+            return ge::GRAPH_FAILED;
+        }
+        info.tmpUbSize = tmpUbSize;
+        topkTilingData.set_tmpUbSize(tmpUbSize);
+        topkTilingData.set_topkAcApiTmpBufferSize(0);
+    } else {
+        if (GetTopkApiTmpBufferSize(context, topkTilingData, static_cast<uint32_t>(info.lastAxis), computeInfo.kValue,
+            computeInfo.isLargest, computeInfo.dataType, computeInfo.isSort,
+            static_cast<uint32_t>(info.lastAxis)) != ge::GRAPH_SUCCESS) {
+            return ge::GRAPH_FAILED;
+        }
+        info.tmpUbSize = topkTilingData.get_topkAcApiTmpBufferSize();
+        topkTilingData.set_tmpUbSize(0);
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
+/**
+ * @brief 搜索非尾轴小轴TopK的最优切分方案
+ * @details 遍历不同的innerChunk大小，找到UB利用率最高的方案
+ * @param context Tiling上下文
+ * @param info Tile信息
+ * @param computeInfo TopK计算信息
+ * @param useMergeSort 是否使用归并排序
+ * @param best 输出的最优候选方案
+ * @return ge::GRAPH_SUCCESS 成功找到方案，ge::GRAPH_FAILED 未找到有效方案
+ */
+ge::graphStatus SearchBestTopkNonLastSmallAxisPlan(gert::TilingContext* context, TopkNonLastSmallAxisTileInfo& info,
+    const topkV2DataInfo::TopkComputeNowTileSizeInfo& computeInfo, bool useMergeSort,
+    TopkNonLastSmallAxisCandidate& best)
+{
+    TopkNonLastSmallAxisTileInfo selectedInfo = info;
+    auto estimateUb = [kValue = static_cast<uint32_t>(computeInfo.kValue), useMergeSort](
+        TopkNonLastSmallAxisTileInfo& candidateInfo, uint32_t innerChunk, uint64_t& peakUb,
+        TopkNonLastSmallAxisCandidate& candidate) -> bool {
+        return EstimateTopkNonLastSmallAxisUb(candidateInfo, kValue, innerChunk, useMergeSort, peakUb, candidate);
+    };
+
+    if (!SearchTopkNonLastSmallAxisPlan(info, computeInfo.ubSizePlatForm, estimateUb, best, &selectedInfo)) {
+        OP_LOGE(context->GetNodeName(), "TopKV2 non-last small-axis has no valid innerChunk");
+        return ge::GRAPH_FAILED;
+    }
+    info = selectedInfo;
+    return ge::GRAPH_SUCCESS;
+}
+
+/**
+ * @brief 填充非尾轴小轴TopK场景的TilingData并设置Context参数
+ * @details 该函数将搜索得到的最优切分方案填充到topkTilingData中，并设置context的相关参数，
+ *          包括TilingKey、BlockDim、LocalMemorySize等，最后保存TilingData并打印日志。
+ */
+ge::graphStatus FillTopkNonLastSmallAxisTilingData(gert::TilingContext* context, TopKV2TilingDataSimd& topkTilingData,
+    const topkV2DataInfo::TopkComputeNowTileSizeInfo& computeInfo, const TopkNonLastSmallAxisTileInfo& info,
+    const TopkNonLastSmallAxisCandidate& best, uint32_t dataTypeKey, int32_t axis, bool useMergeSort,
+    uint32_t sortCount, uint64_t originUbSize)
+{
+    // 设置TopK的基本参数
+    topkTilingData.set_isLargest(computeInfo.isLargest);
+    topkTilingData.set_isSort(computeInfo.isSort);
+    topkTilingData.set_isInInt32Range(computeInfo.isInInt32Range);
+    topkTilingData.set_lastAxisNum(info.lastAxis);
+    topkTilingData.set_unsortedDimNum(info.innerSize);
+    topkTilingData.set_oneCoreRowNum(info.outerSize);
+    topkTilingData.set_topKRealValue(computeInfo.kValue);
+    topkTilingData.set_outputLastDimValue(computeInfo.kValue);
+    topkTilingData.set_platformCoreNum(computeInfo.maxCoreNum);
+    topkTilingData.set_sortLoopTimes(1);
+    topkTilingData.set_unsortedDimParallel(best.activeCore);
+    topkTilingData.set_lastDimTileNum(1);
+    topkTilingData.set_lastDimNeedCore(1);
+    topkTilingData.set_numTileDataSize(sortCount);
+    topkTilingData.set_keyParams0(useMergeSort ? topkV2DataInfo::NON_LAST_SMALL_AXIS_MERGE_SORT :
+        topkV2DataInfo::NON_LAST_SMALL_AXIS_RADIX_SELECT);
+    topkTilingData.set_keyParams1(best.innerChunk);
+    topkTilingData.set_keyParams2(best.innerLoopNum);
+    topkTilingData.set_keyParams3(best.inputRowBytes);
+    topkTilingData.set_keyParams4(best.valueAxisBytes);
+    topkTilingData.set_keyParams5(best.indexAxisBytes);
+
+    context->SetTilingKey(dataTypeKey);
+    context->SetBlockDim(best.activeCore);
+    context->SetLocalMemorySize(computeInfo.ubSizePlatForm);
+    context->SetScheduleMode(1);
+    size_t* userWorkSpaceSize = context->GetWorkspaceSizes(1);
+    userWorkSpaceSize[0] = topkV2DataInfo::SYS_WORK_SPACE_SIZE;
+    topkTilingData.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
+    context->GetRawTilingData()->SetDataSize(topkTilingData.GetDataSize());
+    OP_LOGI(context->GetNodeName(),
+        "TopKV2 non-last small-axis selected axis=%d axisLen=%ld outer=%ld inner=%ld k=%ld algo=%u "
+        "innerChunk=%u tileCount=%lu activeCore=%u peakUb=%lu usableUb=%lu originUb=%lu",
+        axis, info.lastAxis, info.outerSize, info.innerSize, computeInfo.kValue,
+        useMergeSort ? topkV2DataInfo::NON_LAST_SMALL_AXIS_MERGE_SORT :
+            topkV2DataInfo::NON_LAST_SMALL_AXIS_RADIX_SELECT,
+        best.innerChunk, best.tileCount, best.activeCore, best.peakUb, computeInfo.ubSizePlatForm, originUbSize);
+    return ge::GRAPH_SUCCESS;
+}
+
+/**
+ * @brief 非尾轴小轴TopK模式的Tiling主函数（优化版本，不超过50行）
+ * @details 该函数通过调用多个辅助函数，完成非尾轴小轴TopK场景的Tiling参数计算。
+ *          处理流程：
+ *          1. 初始化Tile信息并验证参数有效性
+ *          2. 确定算法模式（归并排序或基数选择）
+ *          3. 设置临时UB大小
+ *          4. 搜索最优切分方案
+ *          5. 填充TilingData并设置Context参数
+ * 
+ * @param context Tiling上下文
+ * @param topkTilingData TopK Tiling数据结构
+ * @param computeInfo TopK计算信息
+ * @param inputShape 输入张量的形状
+ * @param axis TopK操作的目标轴索引
+ * @param dataTypeKey 数据类型对应的Tiling Key
+ * @param originUbSize 原始UB大小
+ * @return ge::GRAPH_SUCCESS 成功完成Tiling，ge::GRAPH_FAILED 处理失败
+ */
+ge::graphStatus TileModeNonLastSmallAxisTopK(gert::TilingContext* context, TopKV2TilingDataSimd& topkTilingData,
+    topkV2DataInfo::TopkComputeNowTileSizeInfo& computeInfo, const gert::Shape& inputShape, int32_t axis,
+    uint32_t dataTypeKey, uint64_t originUbSize)
+{
+    // 步骤1：初始化Tile信息并验证参数有效性
+    TopkNonLastSmallAxisTileInfo info;
+    if (!InitTopkNonLastSmallAxisInfo(context, inputShape, axis, computeInfo, info)) {
+        return ge::GRAPH_FAILED;
+    }
+
+    // 步骤2：确定算法模式和排序元素个数
+    topkTilingData.set_modeType(topkV2DataInfo::NON_LAST_SMALL_AXIS_MODE);
+    bool useMergeSort = UseTopkNonLastMergeSort(computeInfo.dataType, static_cast<uint32_t>(info.lastAxis));
+    uint32_t sortCount =
+        Ops::Base::CeilAlign(static_cast<uint32_t>(info.lastAxis), topkV2DataInfo::MERGE_INTRA_CORE_SORT_ALIGN);
+    
+
+    // 步骤3：设置临时UB大小
+    if (SetupTopkNonLastSmallAxisTmpUb(context, topkTilingData, computeInfo, info, useMergeSort, sortCount) !=
+        ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
+
+    // 步骤4：搜索最优切分方案
+    TopkNonLastSmallAxisCandidate best;
+    if (SearchBestTopkNonLastSmallAxisPlan(context, info, computeInfo, useMergeSort, best) != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
+
+    // 步骤5：填充TilingData并设置Context参数
+    return FillTopkNonLastSmallAxisTilingData(context, topkTilingData, computeInfo, info, best, dataTypeKey, axis,
+        useMergeSort, sortCount, originUbSize);
+}
+
+bool IsNonLastDimTopKMode(int32_t dimValue, size_t inputDimNum) {
+    return dimValue != static_cast<int32_t>(inputDimNum) - 1;
+}
+
 ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
 {
     OP_LOGI("TopKV2TilingForAscendC", "TopKV2Tiling start");
@@ -1678,7 +2140,12 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
                     std::to_string(dimValue).c_str(),
                     (std::string("range [") + std::to_string(dimMin) + ", " + std::to_string(dimMax) + "]").c_str()),
                 return ge::GRAPH_FAILED);
+    if (dimValue < 0) {
+        dimValue += static_cast<int32_t>(inputDimNum);
+    }
     int64_t lastAxisNum = inputShape.GetDim(inputDimNum - 1);
+    OP_CHECK_IF(lastAxisNum <= 0, OP_LOGE("TopkV2", "lastAxisNum is invalid!"), return ge::GRAPH_FAILED);  
+
     uint64_t unsortedDimNum = 1;
     for (uint32_t i = 0; i < (inputDimNum - 1); i++) {
         unsortedDimNum *= inputShape.GetDim(i);
@@ -1723,6 +2190,17 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
     topkV2DataInfo::TopkTileInfo topkTileInfo;
     topkTileInfo.topKOutLastAxisNum = outLastAxisNum;
     uint32_t nowTileSize = topkV2DataInfo::TMP_DATA_NUM;
+
+    // 处理非尾轴的topk场景
+    if (IsNonLastDimTopKMode(dimValue, inputDimNum)) {
+        computeNowTileSizeInfo.lastAxisNum = inputShape.GetDim(dimValue);
+        computeNowTileSizeInfo.kValue = outShape.GetDim(dimValue);
+        computeNowTileSizeInfo.isInInt32Range = computeNowTileSizeInfo.lastAxisNum <= int32Max;
+        return TileModeNonLastSmallAxisTopK(context, topkTilingData, computeNowTileSizeInfo, inputShape, dimValue,
+            dataTypeKey, originUbSizePlatForm);
+    }
+
+    // 处理尾轴的场景
     if (IsSmallSizeMergeSortMode(dataType, lastAxisNum)) {       
         TileModeSmallSizeOptim(context, topkTilingData, topkTileInfo, computeNowTileSizeInfo);
         dataTypeKey += topkV2DataInfo::MERGE_SORT_TILING_OFFSET;

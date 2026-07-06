@@ -15,6 +15,7 @@
 #define UTIL_TYPE_SIMD_H
 #include "kernel_operator.h"
 #include "top_k_constant_var_simd.h"
+#include "op_kernel/platform_util.h"
 
 namespace topkV2 {
 template <typename Tp, Tp v>
@@ -27,6 +28,8 @@ template <typename, typename>
 struct is_same : public false_type {};
 template <typename Tp>
 struct is_same<Tp, Tp> : public true_type {};
+
+constexpr uint32_t UB_BLOCK_SIZE = Ops::Base::GetUbBlockSize();  // UB block size in bytes
 
 __aicore__ inline uint32_t ROUND_UP_AGLIN(uint32_t x) {
     return (x + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE * UB_AGLIN_VALUE;
