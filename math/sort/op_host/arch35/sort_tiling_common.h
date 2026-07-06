@@ -92,8 +92,8 @@ constexpr SmallAxisRule kSmallAxisRules[] = {
     // dtype, insertionMaxN, twoStageMaxN, insertion tiers, two-stage tiers
     {ge::DT_INT64, 16, 512, {{8, 1}, {16, 4}, {0, 0}}, {{15, 8}, {128, 4}, {512, 8}, {0, 0}}},
     {ge::DT_UINT64, 16, 512, {{8, 1}, {16, 4}, {0, 0}}, {{15, 8}, {128, 4}, {512, 8}, {0, 0}}},
-    {ge::DT_INT32, 11, 384, {{8, 2}, {11, 4}, {0, 0}}, {{11, 8}, {64, 4}, {384, 12}, {0, 0}}},
-    {ge::DT_UINT32, 11, 384, {{8, 2}, {11, 4}, {0, 0}}, {{11, 8}, {64, 4}, {384, 12}, {0, 0}}},
+    {ge::DT_INT32, 11, 384, {{8, 2}, {11, 4}, {0, 0}}, {{11, 8}, {64, 4}, {384, 8}, {0, 0}}},
+    {ge::DT_UINT32, 11, 384, {{8, 2}, {11, 4}, {0, 0}}, {{11, 8}, {64, 4}, {384, 8}, {0, 0}}},
     {ge::DT_INT16, 8, 192, {{4, 2}, {8, 4}, {0, 0}}, {{7, 8}, {64, 4}, {192, 12}, {0, 0}}},
     {ge::DT_UINT16, 8, 192, {{4, 2}, {8, 4}, {0, 0}}, {{7, 8}, {64, 4}, {192, 12}, {0, 0}}},
     {ge::DT_INT8, 8, 128, {{4, 2}, {8, 7}, {0, 0}}, {{3, 8}, {64, 7}, {128, 16}, {0, 0}}},
@@ -107,8 +107,8 @@ constexpr size_t kNumSmallAxisRules = sizeof(kSmallAxisRules) / sizeof(kSmallAxi
 uint32_t LookupMinSegs(const uint32_t (*tiers)[2], uint32_t axisNum);
 const SmallAxisRule* FindSmallAxisRule(ge::DataType dataType);
 bool UseTwoStageRankInverse(uint32_t axisLen);
-uint32_t ComputeInsertionBytesPerSeg(
-    ge::DataType dataType, uint32_t axisLen, uint32_t dtypeSize, uint32_t indexDtypeSize, uint32_t blockUbSize);
+uint32_t ComputeInsertionBytesPerSeg(ge::DataType dataType, uint32_t axisLen, uint32_t dtypeSize,
+                                     uint32_t indexDtypeSize, uint32_t blockUbSize);
 
 // =============================================================================
 // SortKthTileInfo — central tiling information struct
@@ -169,8 +169,8 @@ ge::DataType GetNonLastSortDtype(ge::DataType dataType, bool useMergeSort);
 uint32_t GetNonLastSortDtypeSize(uint32_t dtypeSize, bool useMergeSort, ge::DataType dataType);
 
 uint32_t GetNonLastSortCount(ge::DataType dataType, uint32_t axisLen);
-bool GetNonLastSortTmpSize(
-    ge::DataType dataType, uint32_t sortCount, bool useMergeSort, bool isDescend, uint32_t& tmpUbSize);
+bool GetNonLastSortTmpSize(ge::DataType dataType, uint32_t sortCount, bool useMergeSort, bool isDescend,
+                           uint32_t& tmpUbSize);
 bool ComputeNonLastBatchNum(int64_t outerSize, int64_t innerSize, uint32_t innerChunk, uint32_t& batchNum);
 
 struct NonLastSmallAxisCandidate {
@@ -222,28 +222,26 @@ bool QuerySortTmpSizeRadix(ge::DataType dataType, uint32_t sortAxisNum, uint32_t
 
 uint32_t ComputeRadixRemainUb(uint32_t usableUb, uint32_t tileData, uint32_t ubExtra, uint32_t tileFactor);
 
-void AdjustRadixTmpUb(
-    uint32_t usableUb, uint32_t tileData, uint32_t ubExtra, uint32_t tileFactor, uint32_t blockUbSize,
-    uint32_t& tmpUbSize);
-bool ComputeRadixTileDataForAllCore(
-    int64_t axisLen, uint32_t maxCoreNum, uint32_t usableUb, uint32_t ubExtra, uint32_t tileFactor,
-    uint32_t blockUbSize, uint32_t lastDimTileNum, uint32_t& tileData, uint32_t& tmpUbSize);
-bool NeedAdjustRadixTileData(
-    int64_t axisLen, int64_t unsortedDim, uint32_t maxCoreNum, uint32_t usableUb, uint32_t ubExtra, uint32_t tileFactor,
-    uint32_t blockUbSize, uint32_t& tileData, uint32_t lastDimTileNum, uint32_t& tmpUbSize, bool& adjusted);
-bool ComputeRadixTileData(
-    int64_t axisLen, int64_t unsortedDim, uint32_t dtypeSize, uint32_t indexSize, uint32_t maxCoreNum,
-    uint32_t usableUb, uint32_t blockUbSize, uint32_t& tileData, uint32_t& tmpUbSize);
-bool FillRadixKernelParams(
-    uint32_t dtypeSize, uint32_t indexSize, uint32_t coreNumNeed, uint32_t lastDimTileNum, uint32_t unsortedDimParallel,
-    uint32_t blockUbSize, uint32_t tmpUbSize, RadixClearParams& out);
-bool ComputeRadixSortWorkspace(
-    int64_t axisLen, uint32_t dtypeSize, uint32_t indexSize, uint32_t lastDimTileNum, uint32_t numTileDataSize,
-    uint32_t unsortedDimParallel, uint32_t keyParams0, uint32_t keyParams1, uint32_t keyParams2, uint32_t keyParams3,
-    uint32_t keyParams4, uint32_t blockUbSize, uint64_t& workspaceSize);
-bool ComputeRadixOneCoreUbSizes(
-    int64_t lastAxis, uint32_t dtypeSize, uint32_t indexElemSize, uint32_t blockUbSize, uint32_t& xUbSize,
-    uint32_t& idxUbSize);
+void AdjustRadixTmpUb(uint32_t usableUb, uint32_t tileData, uint32_t ubExtra, uint32_t tileFactor, uint32_t blockUbSize,
+                      uint32_t& tmpUbSize);
+bool ComputeRadixTileDataForAllCore(int64_t axisLen, uint32_t maxCoreNum, uint32_t usableUb, uint32_t ubExtra,
+                                    uint32_t tileFactor, uint32_t blockUbSize, uint32_t lastDimTileNum,
+                                    uint32_t& tileData, uint32_t& tmpUbSize);
+bool NeedAdjustRadixTileData(int64_t axisLen, int64_t unsortedDim, uint32_t maxCoreNum, uint32_t usableUb,
+                             uint32_t ubExtra, uint32_t tileFactor, uint32_t blockUbSize, uint32_t& tileData,
+                             uint32_t lastDimTileNum, uint32_t& tmpUbSize, bool& adjusted);
+bool ComputeRadixTileData(int64_t axisLen, int64_t unsortedDim, uint32_t dtypeSize, uint32_t indexSize,
+                          uint32_t maxCoreNum, uint32_t usableUb, uint32_t blockUbSize, uint32_t& tileData,
+                          uint32_t& tmpUbSize);
+bool FillRadixKernelParams(uint32_t dtypeSize, uint32_t indexSize, uint32_t coreNumNeed, uint32_t lastDimTileNum,
+                           uint32_t unsortedDimParallel, uint32_t blockUbSize, uint32_t tmpUbSize,
+                           RadixClearParams& out);
+bool ComputeRadixSortWorkspace(int64_t axisLen, uint32_t dtypeSize, uint32_t indexSize, uint32_t lastDimTileNum,
+                               uint32_t numTileDataSize, uint32_t unsortedDimParallel, uint32_t keyParams0,
+                               uint32_t keyParams1, uint32_t keyParams2, uint32_t keyParams3, uint32_t keyParams4,
+                               uint32_t blockUbSize, uint64_t& workspaceSize);
+bool ComputeRadixOneCoreUbSizes(int64_t lastAxis, uint32_t dtypeSize, uint32_t indexElemSize, uint32_t blockUbSize,
+                                uint32_t& xUbSize, uint32_t& idxUbSize);
 bool FillRadixMoreCoreInfo(SortKthTileInfo& info);
 
 // =============================================================================
@@ -266,9 +264,8 @@ struct MergeSortPlan {
     uint32_t coreNumNeed = 0;
 };
 
-bool ComputeMergeSortPlan(
-    int64_t axisLen, int64_t unsortedDim, uint32_t blockUbSize, uint32_t tileDataNum, uint32_t maxCoreNum,
-    MergeSortPlan& plan);
+bool ComputeMergeSortPlan(int64_t axisLen, int64_t unsortedDim, uint32_t blockUbSize, uint32_t tileDataNum,
+                          uint32_t maxCoreNum, MergeSortPlan& plan);
 bool FillMergeSortInfo(SortKthTileInfo& info, uint32_t indexDtypeSize, uint32_t concatTmpSize);
 
 // =============================================================================
@@ -285,8 +282,8 @@ struct MergeMoreCorePlan {
 };
 
 bool IsMergeMoreCoreSupported(ge::DataType dataType, int64_t axisLen, int64_t unsortedDim, uint32_t maxCoreNum);
-bool ComputeMergeMoreCorePlan(
-    int64_t axisLen, int64_t unsortedDim, uint32_t ubSize, uint32_t mergeBytesPerElem, MergeMoreCorePlan& plan);
+bool ComputeMergeMoreCorePlan(int64_t axisLen, int64_t unsortedDim, uint32_t ubSize, uint32_t mergeBytesPerElem,
+                              MergeMoreCorePlan& plan);
 bool FillMergeMoreCoreInfo(SortKthTileInfo& info, uint32_t mergeBytesPerElem);
 
 // =============================================================================
@@ -304,22 +301,21 @@ struct MergeIntraCorePlan {
     uint32_t alignNum = 0;
 };
 
-bool IsMergeIntraCoreSupported(
-    ge::DataType dataType, int64_t axisLen, int64_t unsortedDim, uint32_t maxCoreNum, uint32_t ubSize);
-bool ComputeMergeIntraCorePlan(
-    int64_t axisLen, int64_t unsortedDim, uint32_t ubSize, uint32_t maxCoreNum, MergeIntraCorePlan& plan);
+bool IsMergeIntraCoreSupported(ge::DataType dataType, int64_t axisLen, int64_t unsortedDim, uint32_t maxCoreNum,
+                               uint32_t ubSize);
+bool ComputeMergeIntraCorePlan(int64_t axisLen, int64_t unsortedDim, uint32_t ubSize, uint32_t maxCoreNum,
+                               MergeIntraCorePlan& plan);
 bool FillMergeIntraCoreInfo(SortKthTileInfo& info);
 
 // =============================================================================
 // Two-stage sort
 // =============================================================================
 uint32_t MaxTwoStageU16SafeBatch(uint32_t axisLen);
-bool ComputeTwoStageSortTmpUb(
-    ge::DataType dataType, uint32_t axisLen, uint32_t totalElems, uint32_t blockUbSize, uint32_t& tmpUbSize);
+bool ComputeTwoStageSortTmpUb(ge::DataType dataType, uint32_t axisLen, uint32_t totalElems, uint32_t blockUbSize,
+                              uint32_t& tmpUbSize);
 uint64_t EstimateTwoStageUbBytes(const SortKthTileInfo& info, uint32_t totalElems, uint32_t sortTmpUb);
-bool PrepareTwoStageBatchCandidate(
-    const SortKthTileInfo& info, uint32_t candidate, uint32_t& totalElems, uint32_t& tmpUbSize, bool& useRankInverse,
-    uint64_t& totalBytes);
+bool PrepareTwoStageBatchCandidate(const SortKthTileInfo& info, uint32_t candidate, uint32_t& totalElems,
+                                   uint32_t& tmpUbSize, bool& useRankInverse, uint64_t& totalBytes);
 
 struct TwoStageBatchPlan {
     uint32_t batchSize = 0;
@@ -328,8 +324,8 @@ struct TwoStageBatchPlan {
     uint32_t tmpUbSize = 0;
 };
 
-bool SearchTwoStageBatchPlan(
-    uint32_t maxBatch, std::function<bool(uint32_t, TwoStageBatchPlan&)> tryCandidate, TwoStageBatchPlan& result);
+bool SearchTwoStageBatchPlan(uint32_t maxBatch, std::function<bool(uint32_t, TwoStageBatchPlan&)> tryCandidate,
+                             TwoStageBatchPlan& result);
 
 // =============================================================================
 // Tiling data conversion & top-level tiling computation

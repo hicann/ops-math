@@ -17,7 +17,9 @@
 #include "arch35/kth_value_non_last_small_axis.h"
 #include "arch35/kth_value_radix_more_core.h"
 #include "arch35/kth_value_radix_one_core.h"
+#include "arch35/kth_value_radix_select.h"
 #include "arch35/kth_value_small_axis_insertion.h"
+#include "arch35/kth_value_small_axis_short_rank_select.h"
 #include "arch35/kth_value_small_axis_two_stage.h"
 #include "arch35/kth_value_tiling_data.h"
 #include "arch35/kth_value_tiling_key.h"
@@ -40,8 +42,8 @@ __aicore__ inline void RunMergeSortRoute(GM_ADDR x, GM_ADDR y1, GM_ADDR y2, KthV
 }
 
 template <uint64_t isInt32>
-__aicore__ inline void RunRadixMoreCoreRoute(
-    GM_ADDR x, GM_ADDR y1, GM_ADDR y2, GM_ADDR workspace, KthValueTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void RunRadixMoreCoreRoute(GM_ADDR x, GM_ADDR y1, GM_ADDR y2, GM_ADDR workspace,
+                                             KthValueTilingData* tilingData, TPipe* pipe)
 {
     if constexpr (sizeof(DTYPE_X) == 1) {
         if constexpr (isInt32 == 1) {
@@ -89,8 +91,8 @@ __aicore__ inline void RunRadixMoreCoreRoute(
     }
 }
 
-__aicore__ inline void RunSmallAxisInsertionRoute(
-    GM_ADDR x, GM_ADDR y1, GM_ADDR y2, KthValueTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void RunSmallAxisInsertionRoute(GM_ADDR x, GM_ADDR y1, GM_ADDR y2, KthValueTilingData* tilingData,
+                                                  TPipe* pipe)
 {
     if constexpr (IsSameType<bfloat16_t, DTYPE_X>::value) {
         KthValue::KthValueSmallAxisInsertion<DTYPE_X, float> op;
@@ -103,8 +105,8 @@ __aicore__ inline void RunSmallAxisInsertionRoute(
     }
 }
 
-__aicore__ inline void RunMergeMoreCoreRoute(
-    GM_ADDR x, GM_ADDR y1, GM_ADDR y2, GM_ADDR workspace, KthValueTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void RunMergeMoreCoreRoute(GM_ADDR x, GM_ADDR y1, GM_ADDR y2, GM_ADDR workspace,
+                                             KthValueTilingData* tilingData, TPipe* pipe)
 {
     if constexpr (IsSameType<float, DTYPE_X>::value) {
         KthValue::KthValueMergeSortMoreCore<DTYPE_X, DTYPE_X, false, int64_t> op;
@@ -113,8 +115,8 @@ __aicore__ inline void RunMergeMoreCoreRoute(
     }
 }
 
-__aicore__ inline void RunMergeIntraCoreRoute(
-    GM_ADDR x, GM_ADDR y1, GM_ADDR y2, GM_ADDR workspace, KthValueTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void RunMergeIntraCoreRoute(GM_ADDR x, GM_ADDR y1, GM_ADDR y2, GM_ADDR workspace,
+                                              KthValueTilingData* tilingData, TPipe* pipe)
 {
     if constexpr (IsSameType<float, DTYPE_X>::value) {
         KthValue::KthValueMergeIntraCore<DTYPE_X, int64_t, false> op;
@@ -124,13 +126,12 @@ __aicore__ inline void RunMergeIntraCoreRoute(
 }
 
 template <bool useMergeSort>
-__aicore__ inline void RunNonLastSmallAxisRoute(
-    GM_ADDR x, GM_ADDR y1, GM_ADDR y2, GM_ADDR workspace, KthValueTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void RunNonLastSmallAxisRoute(GM_ADDR x, GM_ADDR y1, GM_ADDR y2, GM_ADDR workspace,
+                                                KthValueTilingData* tilingData, TPipe* pipe)
 {
     if constexpr (useMergeSort) {
-        if constexpr (
-            IsSameType<DTYPE_X, float>::value || IsSameType<DTYPE_X, half>::value ||
-            IsSameType<DTYPE_X, bfloat16_t>::value) {
+        if constexpr (IsSameType<DTYPE_X, float>::value || IsSameType<DTYPE_X, half>::value ||
+                      IsSameType<DTYPE_X, bfloat16_t>::value) {
             KthValue::KthValueNonLastSmallAxis<DTYPE_X, false, true> op;
             op.Init(x, y1, y2, workspace, tilingData, pipe);
             op.Process();
@@ -142,28 +143,79 @@ __aicore__ inline void RunNonLastSmallAxisRoute(
     }
 }
 
-__aicore__ inline void RunAxisOneCopyRoute(
-    GM_ADDR x, GM_ADDR y1, GM_ADDR y2, GM_ADDR workspace, KthValueTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void RunAxisOneCopyRoute(GM_ADDR x, GM_ADDR y1, GM_ADDR y2, GM_ADDR workspace,
+                                           KthValueTilingData* tilingData, TPipe* pipe)
 {
     KthValue::KthValueAxisOneCopy<DTYPE_X> op;
     op.Init(x, y1, y2, workspace, tilingData, pipe);
     op.Process();
 }
 
-__aicore__ inline void RunRadixOneCoreRoute(
-    GM_ADDR x, GM_ADDR y1, GM_ADDR y2, KthValueTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void RunRadixOneCoreRoute(GM_ADDR x, GM_ADDR y1, GM_ADDR y2, KthValueTilingData* tilingData,
+                                            TPipe* pipe)
 {
     KthValue::KthValueRadixOneCore<DTYPE_X> op;
     op.Init(x, y1, y2, tilingData, pipe);
     op.Process();
 }
 
-__aicore__ inline void RunSmallAxisTwoStageRoute(
-    GM_ADDR x, GM_ADDR y1, GM_ADDR y2, KthValueTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void RunRadixSelectRoute(GM_ADDR x, GM_ADDR y1, GM_ADDR y2, GM_ADDR workspace,
+                                           KthValueTilingData* tilingData, TPipe* pipe)
+{
+    if constexpr (sizeof(DTYPE_X) == 1) {
+        KthValue::KthValueRadixSelect<DTYPE_X, uint8_t> op;
+        op.Init(x, y1, y2, workspace, tilingData, pipe);
+        op.Process();
+    } else if constexpr (sizeof(DTYPE_X) == 2) {
+        KthValue::KthValueRadixSelect<DTYPE_X, uint16_t> op;
+        op.Init(x, y1, y2, workspace, tilingData, pipe);
+        op.Process();
+    } else if constexpr (sizeof(DTYPE_X) == 4) {
+        KthValue::KthValueRadixSelect<DTYPE_X, uint32_t> op;
+        op.Init(x, y1, y2, workspace, tilingData, pipe);
+        op.Process();
+    } else if constexpr (sizeof(DTYPE_X) == 8) {
+        KthValue::KthValueRadixSelect<DTYPE_X, uint64_t> op;
+        op.Init(x, y1, y2, workspace, tilingData, pipe);
+        op.Process();
+    }
+}
+
+__aicore__ inline void RunSmallAxisTwoStageRoute(GM_ADDR x, GM_ADDR y1, GM_ADDR y2, KthValueTilingData* tilingData,
+                                                 TPipe* pipe)
 {
     KthValue::KthValueSmallAxisTwoStage<DTYPE_X> op;
     op.Init(x, y1, y2, tilingData, pipe);
     op.Process();
+}
+
+__aicore__ inline void RunSmallAxisShortRankSelectRoute(GM_ADDR x, GM_ADDR y1, GM_ADDR y2,
+                                                        KthValueTilingData* tilingData, TPipe* pipe)
+{
+    if constexpr (sizeof(DTYPE_X) == 8) {
+        KthValue::KthValueSmallAxisShortRankSelect<DTYPE_X> op;
+        op.Init(x, y1, y2, tilingData, pipe);
+        op.Process();
+    }
+}
+
+template <uint64_t schId>
+__aicore__ inline bool TryRunSmallAxisRoute(GM_ADDR x, GM_ADDR y1, GM_ADDR y2, KthValueTilingData* tilingData,
+                                            TPipe* pipe)
+{
+    if constexpr (schId == KTH_VALUE_SCHID_SMALL_AXIS_INSERTION) {
+        RunSmallAxisInsertionRoute(x, y1, y2, tilingData, pipe);
+        return true;
+    }
+    if constexpr (schId == KTH_VALUE_SCHID_SMALL_AXIS_TWO_STAGE) {
+        RunSmallAxisTwoStageRoute(x, y1, y2, tilingData, pipe);
+        return true;
+    }
+    if constexpr (schId == KTH_VALUE_SCHID_SMALL_AXIS_SHORT_RANK_SELECT) {
+        RunSmallAxisShortRankSelectRoute(x, y1, y2, tilingData, pipe);
+        return true;
+    }
+    return false;
 }
 
 template <uint64_t schId, uint64_t isInt32>
@@ -190,12 +242,11 @@ __global__ __aicore__ void kth_value(GM_ADDR x, GM_ADDR y1, GM_ADDR y2, GM_ADDR 
         RunRadixMoreCoreRoute<isInt32>(x, y1, y2, usrWorkspace, &tilingData, &pipe);
         return;
     }
-    if constexpr (schId == KTH_VALUE_SCHID_SMALL_AXIS_INSERTION) {
-        RunSmallAxisInsertionRoute(x, y1, y2, &tilingData, &pipe);
+    if constexpr (schId == KTH_VALUE_SCHID_RADIX_SELECT) {
+        RunRadixSelectRoute(x, y1, y2, usrWorkspace, &tilingData, &pipe);
         return;
     }
-    if constexpr (schId == KTH_VALUE_SCHID_SMALL_AXIS_TWO_STAGE) {
-        RunSmallAxisTwoStageRoute(x, y1, y2, &tilingData, &pipe);
+    if (TryRunSmallAxisRoute<schId>(x, y1, y2, &tilingData, &pipe)) {
         return;
     }
     if constexpr (schId == KTH_VALUE_SCHID_MERGE_MORE_CORE) {

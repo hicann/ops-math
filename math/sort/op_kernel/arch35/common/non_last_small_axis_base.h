@@ -44,9 +44,8 @@ constexpr uint32_t NON_LAST_MERGE_SORT_ALIGN = 32;
  * @tparam UseMergeSort Whether to use MERGE_SORT instead of RADIX_SORT for row sorting
  * @tparam IsBf16Merge Whether bf16 input needs an intermediate cast buffer for merge-sort path
  */
-template <
-    typename Derived, typename T, typename SortT, typename RangeType, typename IdxType, typename CastType,
-    bool IsDescend, bool UseMergeSort, bool IsBf16Merge>
+template <typename Derived, typename T, typename SortT, typename RangeType, typename IdxType, typename CastType,
+          bool IsDescend, bool UseMergeSort, bool IsBf16Merge>
 class NonLastSmallAxisBase {
 public:
     __aicore__ inline void Process()
@@ -70,8 +69,9 @@ public:
                 continue;
             }
             int64_t innerStart = static_cast<int64_t>(innerTileId) * static_cast<int64_t>(this->innerChunk_);
-            int64_t inputOffset =
-                static_cast<int64_t>(outerId) * static_cast<int64_t>(this->axisLen_) * this->innerSize_ + innerStart;
+            int64_t inputOffset = static_cast<int64_t>(outerId) * static_cast<int64_t>(this->axisLen_) *
+                                      this->innerSize_ +
+                                  innerStart;
             int64_t outputOffset = static_cast<int64_t>(outerId) * this->innerSize_ + innerStart;
             this->LoadTile(inputOffset, curInnerChunk);
             this->TransposeToSortMajor(curInnerChunk);
@@ -119,6 +119,18 @@ protected:
     uint32_t sortCount_ = 0;
     uint32_t tmpUbSize_ = 0;
 
+    __aicore__ inline RangeType ToRangeScalar(uint32_t value) const
+    {
+        if constexpr (std::is_same_v<RangeType, int16_t>) {
+            uint32_t valueU16 = value & 0xFFFFU;
+            int32_t signedValue = (valueU16 <= 32767U) ? static_cast<int32_t>(valueU16) :
+                                                         static_cast<int32_t>(valueU16) - 65536;
+            return static_cast<int16_t>(signedValue);
+        } else {
+            return static_cast<RangeType>(value);
+        }
+    }
+
     __aicore__ inline uint32_t GetCurrentInnerChunk(uint32_t innerTileId) const
     {
         int64_t start = static_cast<int64_t>(this->innerChunk_) * static_cast<int64_t>(innerTileId);
@@ -136,8 +148,9 @@ protected:
     {
         uint32_t curBytes = curInnerChunk * sizeof(T);
         uint32_t curAlignedBytes = ROUND_UP_AGLIN(curBytes);
-        uint32_t dstStride =
-            (this->inputRowBytes_ > curAlignedBytes) ? (this->inputRowBytes_ - curAlignedBytes) / UB_BLOCK_SIZE : 0;
+        uint32_t dstStride = (this->inputRowBytes_ > curAlignedBytes) ?
+                                 (this->inputRowBytes_ - curAlignedBytes) / UB_BLOCK_SIZE :
+                                 0;
         uint32_t rightPadding = this->inputRowElems_ > curInnerChunk ? this->inputRowElems_ - curInnerChunk : 0;
         int64_t gmStride = (this->innerSize_ - static_cast<int64_t>(curInnerChunk)) * static_cast<int64_t>(sizeof(T));
         DataCopyExtParams copyParam{static_cast<uint16_t>(this->axisLen_), curBytes, gmStride, dstStride, 0};
@@ -160,10 +173,9 @@ protected:
         TransposeTileByGather(curInnerChunk);
         if constexpr (IsBf16Merge) {
             for (uint32_t inner = 0; inner < curInnerChunk; ++inner) {
-                Cast(
-                    this->sortInput_[inner * this->valueAxisElems_],
-                    this->inputCast_[inner * this->inputValueAxisElems_], RoundMode::CAST_NONE,
-                    this->inputValueAxisElems_);
+                Cast(this->sortInput_[inner * this->valueAxisElems_],
+                     this->inputCast_[inner * this->inputValueAxisElems_], RoundMode::CAST_NONE,
+                     this->inputValueAxisElems_);
             }
         }
     }
@@ -181,19 +193,19 @@ protected:
     {
         constexpr uint16_t vlSize = static_cast<uint16_t>(Ops::Base::GetVRegSize() / sizeof(CastType));
         __ubuf__ T* inputAddr = (__ubuf__ T*)this->inputTile_.GetPhyAddr();
-        __ubuf__ T* outputAddr =
-            (__ubuf__ T*)(IsBf16Merge ? this->inputCast_.GetPhyAddr() : this->sortInput_.GetPhyAddr());
+        __ubuf__ T* outputAddr = (__ubuf__ T*)(IsBf16Merge ? this->inputCast_.GetPhyAddr() :
+                                                             this->sortInput_.GetPhyAddr());
         uint32_t outputValueAxisElems = IsBf16Merge ? this->inputValueAxisElems_ : this->valueAxisElems_;
         __VEC_SCOPE__
         {
             AscendC::MicroAPI::RegTensor<CastType> dataReg;
             AscendC::MicroAPI::RegTensor<RangeType> baseIdxReg;
             AscendC::MicroAPI::RegTensor<RangeType> idxReg;
-            AscendC::MicroAPI::MaskReg idxMask =
-                AscendC::MicroAPI::CreateMask<RangeType, AscendC::MicroAPI::MaskPattern::ALL>();
+            AscendC::MicroAPI::MaskReg
+                idxMask = AscendC::MicroAPI::CreateMask<RangeType, AscendC::MicroAPI::MaskPattern::ALL>();
 
             AscendC::MicroAPI::Arange(baseIdxReg, 0);
-            AscendC::MicroAPI::Muls(baseIdxReg, baseIdxReg, static_cast<RangeType>(this->inputRowElems_), idxMask);
+            AscendC::MicroAPI::Muls(baseIdxReg, baseIdxReg, ToRangeScalar(this->inputRowElems_), idxMask);
             for (uint16_t axisBase = 0; axisBase < this->axisLen_;
                  axisBase = static_cast<uint16_t>(axisBase + vlSize)) {
                 uint32_t curCount = this->axisLen_ - axisBase;
@@ -201,16 +213,15 @@ protected:
                     curCount = vlSize;
                 }
                 AscendC::MicroAPI::MaskReg dataMask = AscendC::MicroAPI::UpdateMask<CastType>(curCount);
-                AscendC::MicroAPI::Adds(
-                    idxReg, baseIdxReg, static_cast<RangeType>(axisBase * this->inputRowElems_), idxMask);
+                AscendC::MicroAPI::Adds(idxReg, baseIdxReg, ToRangeScalar(axisBase * this->inputRowElems_), idxMask);
                 for (uint16_t inner = 0; inner < curInnerChunk; ++inner) {
                     // Gather: read data from inputAddr using transpose indices in idxReg
-                    AscendC::MicroAPI::DataCopyGather(
-                        dataReg, inputAddr + inner, (AscendC::MicroAPI::RegTensor<IdxType>&)idxReg, dataMask);
+                    AscendC::MicroAPI::DataCopyGather(dataReg, inputAddr + inner,
+                                                      (AscendC::MicroAPI::RegTensor<IdxType>&)idxReg, dataMask);
                     if constexpr (sizeof(T) != 1) {
                         // Non-int8: write directly to UB output address
-                        AscendC::MicroAPI::DataCopy(
-                            outputAddr + inner * outputValueAxisElems + axisBase, dataReg, dataMask);
+                        AscendC::MicroAPI::DataCopy(outputAddr + inner * outputValueAxisElems + axisBase, dataReg,
+                                                    dataMask);
                     } else {
                         // int8: pack into b16 for compact UB write
                         __local_mem__ CastType* outputAddrB16 = reinterpret_cast<__local_mem__ CastType*>(
