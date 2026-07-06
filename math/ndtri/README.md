@@ -13,13 +13,13 @@
 
 ## 功能说明
 
-- 算子功能：逆标准正态累积分布函数（probit / inverse normal CDF）。对输入概率张量逐元素计算标准正态分位点，对齐PyTorch `torch.special.ndtri`与SciPy `scipy.special.ndtri`语义。底层采用Cephes数学库的分区间有理逼近算法。
+- 算子功能：逆标准正态累积分布函数（probit / inverse normal CDF）。对输入概率张量逐元素计算标准正态分位点，底层采用Cephes数学库的分区间有理逼近算法。
 
 - 计算公式：
 
 $$y_i = \mathrm{ndtri}(x_i) = \Phi^{-1}(x_i) = \sqrt{2} \cdot \mathrm{erf}^{-1}(2 x_i - 1), \quad x_i \in (0, 1)$$
 
-- 特殊值处理（与PyTorch / SciPy一致）：
+- 特殊值处理：
 
 | 输入 $x_i$ | 输出 $y_i$ |
 | :---: | :---: |
@@ -63,6 +63,7 @@ $$y_i = \mathrm{ndtri}(x_i) = \Phi^{-1}(x_i) = \sqrt{2} \cdot \mathrm{erf}^{-1}(
   </tbody></table>
 
 ## 约束说明
+
 无
 
 ## 调用说明
