@@ -15,22 +15,11 @@
 #ifndef POLAR_STRUCT_H_
 #define POLAR_STRUCT_H_
 
-#include <cstdint>
+#include "atvoss/broadcast/broadcast_base_struct.h"
 
-constexpr int64_t POLAR_MAX_DIM = 8;
+using namespace Ops::Base;
 
-#pragma pack(push, 8)
-struct PolarTilingData {
-    int64_t totalElements;
-    int64_t elementsPerCore;
-    int64_t coreNum;
-    int64_t formerCore;
-    int64_t dimNum;
-    int64_t mergedStride[POLAR_MAX_DIM];
-    int64_t absStride[POLAR_MAX_DIM];
-    int64_t angleStride[POLAR_MAX_DIM];
-    int64_t yStride[POLAR_MAX_DIM];
-};
-#pragma pack(pop)
+ASCENDC_TPL_ARGS_DECL(Polar, BRC_TEMP_SCH_MODE_KEY_DECL(schMode));
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(BRC_TEMP_SCH_MODE_KEY_SEL(schMode)));
 
-#endif  // POLAR_STRUCT_H_
+#endif // POLAR_STRUCT_H_
