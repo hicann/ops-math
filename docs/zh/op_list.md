@@ -348,6 +348,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/bessel_i0e/README.md">bessel_i0e</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>计算指数缩放的第一类零阶修正贝塞尔函数，公式y = exp(-|x|) * I0(x)，仅支持图模式调用。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/bias_add/README.md">bias_add</a></td>
     <td>√</td>
     <td>√</td>
