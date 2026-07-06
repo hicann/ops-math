@@ -46,11 +46,10 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* other, const ac
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other)
 {
-    bool isBf16Support =
-        (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-         GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E);
-    const std::initializer_list<op::DataType> dtypeSupportList =
-        isBf16Support ? DTYPE_SUPPORT_LIST_910B : DTYPE_SUPPORT_LIST_910;
+    bool isBf16Support = (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
+                          GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E);
+    const std::initializer_list<op::DataType> dtypeSupportList = isBf16Support ? DTYPE_SUPPORT_LIST_910B :
+                                                                                 DTYPE_SUPPORT_LIST_910;
 
     // 检查self的数据类型是否在支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(self, dtypeSupportList, return false);
@@ -94,13 +93,13 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, co
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnIsCloseGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, double rtol, double atol, bool equal_nan, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnIsCloseGetWorkspaceSize(const aclTensor* self, const aclTensor* other, double rtol, double atol,
+                                         bool equalNan, aclTensor* out, uint64_t* workspaceSize,
+                                         aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
-    L2_DFX_PHASE_1(aclnnIsClose, DFX_IN(self, other, rtol, atol, equal_nan), DFX_OUT(out));
+    L2_DFX_PHASE_1(aclnnIsClose, DFX_IN(self, other, rtol, atol, equalNan), DFX_OUT(out));
 
     // 固定写法，参数检查
     auto ret = CheckParams(self, other, out);
@@ -133,8 +132,8 @@ aclnnStatus aclnnIsCloseGetWorkspaceSize(
     CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 调用IsClose算子kernel
-    auto isCloseOpOut =
-        l0op::IsClose(selfContiguous, otherContiguous, rtol_fp32, atol_fp32, equal_nan, out, uniqueExecutor.get());
+    auto isCloseOpOut = l0op::IsClose(selfContiguous, otherContiguous, rtol_fp32, atol_fp32, equalNan, out,
+                                      uniqueExecutor.get());
     CHECK_RET(isCloseOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 固定写法，将计算结果拷贝到输出out上，out可能是非连续的tensor
