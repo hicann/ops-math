@@ -21,16 +21,14 @@
 
 using namespace ge;
 
-namespace optiling
-{
+namespace optiling {
 template <typename T>
 inline static T* GetCompileInfoPtr(gert::TilingParseContext* context)
 {
     return context->GetCompiledInfo<T>();
 }
 
-namespace DynPart
-{
+namespace DynPart {
 static constexpr int64_t MC_TIMES = 2;
 static constexpr uint32_t NUM_TWO = 2;
 static constexpr uint32_t INT32_BYTES = 4;
@@ -43,18 +41,20 @@ bool DynamicPartitionTiling::CheckInputs()
     auto xDimNum = xShape_.GetDimNum();
     auto partDimNum = partShape_.GetDimNum();
 
-    OP_CHECK_IF(xDimNum < partDimNum,
-        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(context_->GetNodeName(), "x and partitions",
-            std::to_string(xDimNum) + " and " + std::to_string(partDimNum),
+    OP_CHECK_IF(
+        xDimNum < partDimNum,
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+            context_->GetNodeName(), "x and partitions", std::to_string(xDimNum) + " and " + std::to_string(partDimNum),
             "The dimNum of input x should be greater than or equal to the dimNum of input partitions"),
         return false);
 
     for (size_t i = 0; i < partDimNum; ++i) {
         OP_CHECK_IF(xShape_.GetDim(i) != partShape_.GetDim(i),
-            OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context_->GetNodeName(), "x and partitions",
-                Ops::Base::ToString(xShape_) + " and " + Ops::Base::ToString(partShape_),
-                std::to_string(i) + " of x and " + std::to_string(i) + " of partitions must be equal"),
-            return false);
+                    OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                        context_->GetNodeName(), "x and partitions",
+                        Ops::Base::ToString(xShape_) + " and " + Ops::Base::ToString(partShape_),
+                        std::to_string(i) + " of x and " + std::to_string(i) + " of partitions must be equal"),
+                    return false);
     }
     return true;
 }
@@ -72,13 +72,11 @@ ge::graphStatus DynamicPartitionTiling::GetInputShapeAndType()
     auto xDescPtr = context_->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, xDescPtr);
     dtypeSize_ = GetSizeByDataType(xDescPtr->GetDataType());
-    OP_CHECK_IF(dtypeSize_ == 0U,
-                    OP_LOGE(context_->GetNodeName(), "The data type size is zero!"),
-                    return ge::GRAPH_FAILED);
+    OP_CHECK_IF(dtypeSize_ == 0U, OP_LOGE(context_->GetNodeName(), "The data type size is zero!"),
+                return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(!CheckInputs(),
-                    OP_LOGE(context_->GetNodeName(), "Get input shape and type is failed!"),
-                    return ge::GRAPH_FAILED);
+    OP_CHECK_IF(!CheckInputs(), OP_LOGE(context_->GetNodeName(), "Get input shape and type is failed!"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -125,7 +123,9 @@ void DynamicPartitionTiling::CalcTilingMCHWSize()
         if (!partShape_.IsScalar()) {
             auto pSize = partShape_.GetDim(0);
             auto pUnitCnt = Ops::Base::CeilDiv(pSize, clSize);
-            tilingData_.usedCoreCnt = (pSize == 0) ? 1L : Ops::Base::CeilDiv(pUnitCnt, Ops::Base::CeilDiv(pUnitCnt, coreNum));
+            tilingData_.usedCoreCnt = (pSize == 0) ?
+                                          1L :
+                                          Ops::Base::CeilDiv(pUnitCnt, Ops::Base::CeilDiv(pUnitCnt, coreNum));
             tilingData_.hMSize = Ops::Base::CeilDiv(pUnitCnt, tilingData_.usedCoreCnt) * clSize;
             tilingData_.hTSize = pSize - tilingData_.hMSize * (tilingData_.usedCoreCnt - 1);
         }
@@ -141,7 +141,7 @@ void DynamicPartitionTiling::CalcTilingMCHWSize()
 
     auto hMCores = Ops::Base::CeilDiv(newHSize, Ops::Base::CeilDiv(newHSize, coreNum));
     auto wMCores = Ops::Base::CeilDiv(newWSize, Ops::Base::CeilDiv(newWSize, coreNum));
-    if (wMCores * MC_TIMES  < hMCores) {
+    if (wMCores * MC_TIMES < hMCores) {
         tilingData_.hMSize = Ops::Base::CeilDiv(newHSize, hMCores) * minHSize;
         tilingData_.hTSize = hSize - tilingData_.hMSize * (hMCores - 1);
         tilingData_.wMSize = wSize;
@@ -172,7 +172,8 @@ void DynamicPartitionTiling::CalcTilingHWLpUnit()
 
         if (Ops::Base::CeilAlign(wMSize * dtypeSize_, blockSize) * NUM_TWO + blockSize * NUM_TWO >= availUBSize) {
             tilingData_.hLpUnit = blockSize / INT32_BYTES;
-            tilingData_.wLpUnit = Ops::Base::CeilAlign((availUBSize - blockSize * NUM_TWO) / NUM_TWO / tilingData_.hLpUnit, clSize);
+            tilingData_.wLpUnit = Ops::Base::CeilAlign(
+                (availUBSize - blockSize * NUM_TWO) / NUM_TWO / tilingData_.hLpUnit, clSize);
             return;
         }
         if ((Ops::Base::CeilAlign(wMSize * dtypeSize_, blockSize) * hMSize * NUM_TWO +
@@ -182,12 +183,12 @@ void DynamicPartitionTiling::CalcTilingHWLpUnit()
         } else {
             if (wMSize <= W_THRESHOLD) {
                 while ((Ops::Base::CeilAlign(wMSize * hMSize * dtypeSize_, blockSize) * NUM_TWO +
-                    Ops::Base::CeilAlign(wMSize * hMSize * INT32_BYTES, blockSize)  * NUM_TWO) > availUBSize) {
+                        Ops::Base::CeilAlign(wMSize * hMSize * INT32_BYTES, blockSize) * NUM_TWO) > availUBSize) {
                     --hMSize;
                 }
             } else {
                 while ((Ops::Base::CeilAlign(wMSize * dtypeSize_, blockSize) * hMSize * NUM_TWO +
-                    Ops::Base::CeilAlign(hMSize * INT32_BYTES, blockSize) * NUM_TWO) > availUBSize) {
+                        Ops::Base::CeilAlign(hMSize * INT32_BYTES, blockSize) * NUM_TWO) > availUBSize) {
                     --hMSize;
                 }
             }
@@ -254,10 +255,10 @@ ge::graphStatus DynamicPartitionTiling::GetAttrNumPartitions()
         const int32_t* ptrNumParts = ptrAttrs->GetAttrPointer<int32_t>(0);
         OP_CHECK_NULL_WITH_CONTEXT(context_, ptrNumParts);
         int32_t numParts = *ptrNumParts;
-        OP_CHECK_IF(numParts < 1,
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "num_partitions",
-                std::to_string(numParts),
-                "The value of num_partitions cannot be less than 1"),
+        OP_CHECK_IF(
+            numParts < 1,
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "num_partitions", std::to_string(numParts),
+                                                  "The value of num_partitions cannot be less than 1"),
             return ge::GRAPH_FAILED);
         tilingData_.numPartitions = numParts;
         coreWS_ = std::min(tilingData_.numPartitions, ::DynPart::NUM_PARTITION_UNIT) * UINT64_BYTES;
@@ -302,18 +303,16 @@ std::string DynamicPartitionTiling::PrintTilingData()
 ge::graphStatus DynamicPartitionTiling::WriteTilingData()
 {
     OP_CHECK_IF(context_->SetTilingKey(tilingData_.tilingKey) != ge::GRAPH_SUCCESS,
-                    OP_LOGE(context_->GetNodeName(), "Set tiling key is failed!"),
-                    return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "Set tiling key is failed!"), return ge::GRAPH_FAILED);
     if (tilingData_.tilingKey == ::DynPart::TILING_X_EMPTY ||
         tilingData_.tilingKey == ::DynPart::TILING_H_MC_UB_CAN_HOLD_SPLIT_W ||
-        tilingData_.tilingKey == ::DynPart::TILING_H_MC_UB_CANNOT_HOLD_SPLIT_W) {
+        tilingData_.tilingKey == ::DynPart::TILING_H_MC_UB_CANNOT_HOLD_SPLIT_W ||
+        tilingData_.tilingKey == ::DynPart::TILING_H_MC_WITH_SMALL_W) {
         OP_CHECK_IF(context_->SetScheduleMode(1) != ge::GRAPH_SUCCESS,
-                        OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"),
-                        return ge::GRAPH_FAILED);
+                    OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"), return ge::GRAPH_FAILED);
     }
     OP_CHECK_IF(context_->SetBlockDim(static_cast<uint32_t>(tilingData_.usedCoreCnt)) != ge::GRAPH_SUCCESS,
-                    OP_LOGE(context_->GetNodeName(), "Set used core size is failed!"),
-                    return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "Set used core size is failed!"), return ge::GRAPH_FAILED);
 
     auto ptrTD = context_->GetRawTilingData();
     OP_CHECK_NULL_WITH_CONTEXT(context_, ptrTD);
@@ -323,8 +322,7 @@ ge::graphStatus DynamicPartitionTiling::WriteTilingData()
     void* ptrStruct = static_cast<void*>(&tilingData_);
     OP_CHECK_NULL_WITH_CONTEXT(context_, ptrStruct);
     OP_CHECK_IF(memcpy_s(ptrData, capSize, ptrStruct, sizeof(tilingData_)) != 0,
-                    OP_LOGE(context_->GetNodeName(), "Set tiling data is failed!"),
-                    return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "Set tiling data is failed!"), return ge::GRAPH_FAILED);
     ptrTD->SetDataSize(sizeof(tilingData_));
 
     size_t usrWorkspaceSize = 0;
@@ -346,22 +344,19 @@ ge::graphStatus DynamicPartitionTiling::DoTiling()
     compileInfo_ = context_->GetCompileInfo<DynamicPartitionCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfo_);
 
-    OP_CHECK_IF(GetInputShapeAndType() != ge::GRAPH_SUCCESS,
-                    OP_LOGE(context_->GetNodeName(), "Do tiling is failed!"),
-                    return ge::GRAPH_FAILED);
-    OP_CHECK_IF(GetAttrNumPartitions() != ge::GRAPH_SUCCESS,
-                    OP_LOGE(context_->GetNodeName(), "Do tiling is failed!"),
-                    return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetInputShapeAndType() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "Do tiling is failed!"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetAttrNumPartitions() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "Do tiling is failed!"),
+                return ge::GRAPH_FAILED);
     CalcTilingData();
     return WriteTilingData();
 }
-}  // namespace DynPart
+} // namespace DynPart
 
 static ge::graphStatus Tiling4DynamicPartition(gert::TilingContext* context)
 {
-    OP_CHECK_IF(context == nullptr,
-                    OP_LOGE("Tiling4DynamicPartition", "The context is nullptr!"),
-                    return ge::GRAPH_FAILED);
+    OP_CHECK_IF(context == nullptr, OP_LOGE("Tiling4DynamicPartition", "The context is nullptr!"),
+                return ge::GRAPH_FAILED);
 
     DynPart::DynamicPartitionTiling op(context);
     return op.DoTiling();
@@ -378,30 +373,26 @@ static ge::graphStatus TilingPrepare4DynamicPartitionAscendC(gert::TilingParseCo
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
 
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->coreNum < 1),
-        OP_LOGE(context->GetNodeName(), "The core num is invalid, %u.", compileInfo->coreNum),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->coreNum < 1),
+                OP_LOGE(context->GetNodeName(), "The core num is invalid, %u.", compileInfo->coreNum),
+                return ge::GRAPH_FAILED);
 
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ubSize = static_cast<uint32_t>(ubSize);
-    OP_CHECK_IF(
-        (compileInfo->ubSize < 1),
-        OP_LOGE(context->GetNodeName(), "The ub size is invalid, %u.", compileInfo->ubSize),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->ubSize < 1),
+                OP_LOGE(context->GetNodeName(), "The ub size is invalid, %u.", compileInfo->ubSize),
+                return ge::GRAPH_FAILED);
 
     compileInfo->clSize = Ops::Base::GetCacheLineSize(context);
     OP_CHECK_IF((compileInfo->clSize < 1),
-                    OP_LOGE(context->GetNodeName(), "The cache line size is invalid, %u.",
-                                                    compileInfo->clSize),
-                    return ge::GRAPH_FAILED);
+                OP_LOGE(context->GetNodeName(), "The cache line size is invalid, %u.", compileInfo->clSize),
+                return ge::GRAPH_FAILED);
 
     compileInfo->blockSize = Ops::Base::GetUbBlockSize(context);
     OP_CHECK_IF((compileInfo->blockSize < 1),
-                    OP_LOGE(context->GetNodeName(), "The block size is invalid, %u.",
-                                                    compileInfo->blockSize),
-                    return ge::GRAPH_FAILED);
+                OP_LOGE(context->GetNodeName(), "The block size is invalid, %u.", compileInfo->blockSize),
+                return ge::GRAPH_FAILED);
 
     OP_LOGD(context->GetNodeName(), "Exit TilingPrepare4DynamicPartitionAscendC.");
     return ge::GRAPH_SUCCESS;
@@ -411,4 +402,4 @@ static ge::graphStatus TilingPrepare4DynamicPartitionAscendC(gert::TilingParseCo
 IMPL_OP_OPTILING(DynamicPartition)
     .Tiling(Tiling4DynamicPartition)
     .TilingParse<DynPart::DynamicPartitionCompileInfo>(TilingPrepare4DynamicPartitionAscendC);
-}  // namespace optiling
+} // namespace optiling

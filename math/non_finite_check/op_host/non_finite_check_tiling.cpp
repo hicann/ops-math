@@ -30,8 +30,7 @@ constexpr uint8_t DTYPE_SIZE_FLOAT = 4;
 constexpr uint8_t NUM_TWO = 2;
 constexpr uint32_t COEFFICIENT_1 = 128;
 
-class NonFiniteCheckTiling
-{
+class NonFiniteCheckTiling {
 public:
     explicit NonFiniteCheckTiling(gert::TilingContext* context)
         : tilingContext(context), nodeName(context->GetNodeName()){};
@@ -76,11 +75,10 @@ ge::graphStatus NonFiniteCheckTiling::Init()
 {
     InitTilingDataItems();
     totalTensorCount = int32_t(tilingContext->GetComputeNodeInputNum());
-    OP_CHECK_IF(
-        totalTensorCount > MAX_TENSOR_COUNT || totalTensorCount <= 0,
-        OP_LOGE_FOR_INVALID_TENSORNUM(tilingContext->GetNodeName(), "tensor_list",
-            totalTensorCount, ("between 1 and " + std::to_string(MAX_TENSOR_COUNT)).c_str()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(totalTensorCount > MAX_TENSOR_COUNT || totalTensorCount <= 0,
+                OP_LOGE_FOR_INVALID_TENSORNUM(tilingContext->GetNodeName(), "tensor_list", totalTensorCount,
+                                              ("between 1 and " + std::to_string(MAX_TENSOR_COUNT)).c_str()),
+                return ge::GRAPH_FAILED);
     // Get shape, dtype information, and the total number of data.
     for (int32_t i = 0; i < totalTensorCount; i++) {
         auto descPtr = tilingContext->GetDynamicInputDesc(0, i);
@@ -102,19 +100,18 @@ ge::graphStatus NonFiniteCheckTiling::Init()
             std::string reasonMsg = "The dtype of all input tensor_list should be the same, but tensor_list " +
                                     std::to_string(i) + "th tensor`s dtype is not same as 0th tensor`s dtype " +
                                     Ops::Base::ToString(dataType);
-            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-                tilingContext->GetNodeName(), paramNames.c_str(),
-                Ops::Base::ToString(tempDtype).c_str(), reasonMsg.c_str());
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), paramNames.c_str(),
+                                                  Ops::Base::ToString(tempDtype).c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
         auto shapePtr = tilingContext->GetDynamicInputShape(0, i);
         OP_CHECK_NULL_WITH_CONTEXT(tilingContext, shapePtr);
         tensorDataCountList[i] = shapePtr->GetStorageShape().GetShapeSize();
-        OP_CHECK_IF(
-            tensorDataCountList[i] == 0,
-            OP_LOGE_FOR_INVALID_SHAPESIZE(tilingContext->GetNodeName(),
-                ("tensor_list " + std::to_string(i) + "th tensor").c_str(), "0", "greater than 0"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(tensorDataCountList[i] == 0,
+                    OP_LOGE_FOR_INVALID_SHAPESIZE(tilingContext->GetNodeName(),
+                                                  ("tensor_list " + std::to_string(i) + "th tensor").c_str(), "0",
+                                                  "greater than 0"),
+                    return ge::GRAPH_FAILED);
         // Make a 32-byte alignment for each Tensor
         tensorDataCountAlignedList[i] = Ops::Base::CeilAlign(tensorDataCountList[i], int64_t(elementsPerBlock));
         totalDataCountAligned += tensorDataCountAlignedList[i];
@@ -126,18 +123,16 @@ ge::graphStatus NonFiniteCheckTiling::Init()
 ge::graphStatus NonFiniteCheckTiling::RunBigKernelTiling()
 {
     OP_LOGD(tilingContext, "Start.");
-    OP_CHECK_IF(
-        FillCompileInfo() != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext, "FillCompileInfo error."), return ge::GRAPH_FAILED);
-    OP_LOGD(
-        tilingContext, "Platform info, totalCoreNum:%d, ubSizePlatForm:%lu.", compileInfo.totalCoreNum,
-        compileInfo.ubSizePlatForm);
-    OP_CHECK_IF(
-        compileInfo.totalCoreNum > MAX_CORE_COUNT,
-        OP_LOGE(tilingContext, "The number of totalCoreNum exceeds the limit(%hu).", MAX_CORE_COUNT),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(FillCompileInfo() != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext, "FillCompileInfo error."),
+                return ge::GRAPH_FAILED);
+    OP_LOGD(tilingContext, "Platform info, totalCoreNum:%d, ubSizePlatForm:%lu.", compileInfo.totalCoreNum,
+            compileInfo.ubSizePlatForm);
+    OP_CHECK_IF(compileInfo.totalCoreNum > MAX_CORE_COUNT,
+                OP_LOGE(tilingContext, "The number of totalCoreNum exceeds the limit(%hu).", MAX_CORE_COUNT),
+                return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        CalcNeedCoreNum() == false, OP_LOGE(tilingContext, "Param needCoreNum is zero."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcNeedCoreNum() == false, OP_LOGE(tilingContext, "Param needCoreNum is zero."),
+                return ge::GRAPH_FAILED);
     AssignDataToEachCore();
     OP_CHECK_IF(DivideUbMemory() == false, OP_LOGE(tilingContext, "DivideUbMemory failed."), return ge::GRAPH_FAILED);
 
@@ -145,6 +140,7 @@ ge::graphStatus NonFiniteCheckTiling::RunBigKernelTiling()
 
     tilingContext->SetTilingKey(GetTilingKeyVal());
     tilingContext->SetBlockDim(needCoreNum);
+    tilingContext->SetScheduleMode(1);
     size_t* workspaces = tilingContext->GetWorkspaceSizes(1);
     workspaces[0] = WORKSPACE_SIZE;
     OP_LOGD(tilingContext, "Success.");
@@ -162,21 +158,20 @@ void NonFiniteCheckTiling::InitTilingDataItems()
 
 ge::graphStatus NonFiniteCheckTiling::CheckParams() const
 {
-    OP_LOGD(
-        tilingContext, "dataType:%d, totalTensorCount:%d, totalDataCountAligned:%ld.", static_cast<int32_t>(dataType),
-        totalTensorCount, totalDataCountAligned);
-    OP_CHECK_IF(
-        dataType != ge::DT_FLOAT16 && dataType != ge::DT_BF16 && dataType != ge::DT_FLOAT,
-        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "tensor_list",
-            ge::TypeUtils::DataTypeToSerialString(dataType).c_str(), "float16, bfloat16 or float"),
-        return ge::GRAPH_FAILED);
+    OP_LOGD(tilingContext, "dataType:%d, totalTensorCount:%d, totalDataCountAligned:%ld.",
+            static_cast<int32_t>(dataType), totalTensorCount, totalDataCountAligned);
+    OP_CHECK_IF(dataType != ge::DT_FLOAT16 && dataType != ge::DT_BF16 && dataType != ge::DT_FLOAT,
+                OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "tensor_list",
+                                          ge::TypeUtils::DataTypeToSerialString(dataType).c_str(),
+                                          "float16, bfloat16 or float"),
+                return ge::GRAPH_FAILED);
 
     auto flagDescPtr = tilingContext->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, flagDescPtr);
     OP_CHECK_IF(
         flagDescPtr->GetDataType() != ge::DT_FLOAT,
         OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "found_flag",
-            ge::TypeUtils::DataTypeToSerialString(flagDescPtr->GetDataType()).c_str(), "float"),
+                                  ge::TypeUtils::DataTypeToSerialString(flagDescPtr->GetDataType()).c_str(), "float"),
         return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
@@ -269,8 +264,8 @@ bool NonFiniteCheckTiling::DivideUbMemory()
     if (dataType == ge::DT_BF16) {
         dtypeSizeTemp = DTYPE_SIZE_FLOAT;
     }
-    uint32_t predictSGUbSize =
-        uint32_t((canUseUbSize - BYTE_BLOCK) * COEFFICIENT_1 * 1.0 / (BYTE_REPEAT + dtypeSizeTemp));
+    uint32_t predictSGUbSize = uint32_t((canUseUbSize - BYTE_BLOCK) * COEFFICIENT_1 * 1.0 /
+                                        (BYTE_REPEAT + dtypeSizeTemp));
     uint32_t maxDataUbSize = predictSGUbSize / BYTE_BLOCK * BYTE_BLOCK;
     maxProcCount = maxDataUbSize / dtypeSizeTemp;
     tempValUbSize = GetReduceRetValSize(maxDataUbSize, dtypeSizeTemp);
@@ -324,8 +319,8 @@ void NonFiniteCheckTiling::FillTilingData()
 
     tilingData.set_maxProcCount(maxProcCount);
     tilingData.set_tempValUbSize(tempValUbSize);
-    tilingData.SaveToBuffer(
-        tilingContext->GetRawTilingData()->GetData(), tilingContext->GetRawTilingData()->GetCapacity());
+    tilingData.SaveToBuffer(tilingContext->GetRawTilingData()->GetData(),
+                            tilingContext->GetRawTilingData()->GetCapacity());
     tilingContext->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
 }
 
@@ -352,19 +347,14 @@ static ge::graphStatus TilingPrepare4NonFiniteCheck(gert::TilingParseContext* co
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->totalCoreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->totalCoreNum <= 0),
-        OP_LOGE(
-            context, "TilingPrepare4NonFiniteCheck get aiv core num failed."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->totalCoreNum <= 0),
+                OP_LOGE(context, "TilingPrepare4NonFiniteCheck get aiv core num failed."), return ge::GRAPH_FAILED);
 
     uint64_t ubSizePlatForm;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSizePlatForm = static_cast<int64_t>(ubSizePlatForm);
-    OP_CHECK_IF(
-        (compileInfo->ubSizePlatForm <= 0),
-        OP_LOGE(context, "TilingPrepare4NonFiniteCheck get ub size failed."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->ubSizePlatForm <= 0),
+                OP_LOGE(context, "TilingPrepare4NonFiniteCheck get ub size failed."), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
