@@ -20,9 +20,9 @@
  * CdistGradP0Dag:      p == 0   → output zeros
  * CdistGradP1Dag:      p == 1   → grad * sign(diff)
  * CdistGradP2Dag:      p == 2   → grad * diff / cdist
- * CdistGradDag:        0<p<2    → sign * (|diff|/cdist)^(p-1) * grad * masks
- * CdistGradLargePDag:  p>2      → sign * (|diff|/cdist)^(p-1) * grad * mask_cdist
- * CdistGradInfDag:     p==inf   → grad * sign * mask(|diff| >= cdist)
+ * CdistGradDag:        0<p<2    → sign * |diff|^(p-1) * grad / cdist^(p-1) * masks
+ * CdistGradLargePDag:  p>2      → sign * |diff|^(p-1) * grad / cdist^(p-1) * mask_cdist
+ * CdistGradInfDag:     p==inf   → grad * sign * mask(|diff| == cdist)
  */
 
 #ifndef CDIST_GRAD_DAG_H
@@ -41,12 +41,12 @@ using namespace Ops::Base;
 constexpr int CAST_MODE_NONE = 0;
 constexpr int CAST_MODE_RINT = 1;
 
-constexpr int32_t NORM_MODE_GENERAL  = 0;  // 0 < p < 2, p != 1
-constexpr int32_t NORM_MODE_INF      = 1;  // p == inf
-constexpr int32_t NORM_MODE_LARGE_P  = 2;  // p > 2
-constexpr int32_t NORM_MODE_P0       = 3;  // p == 0
-constexpr int32_t NORM_MODE_P1       = 4;  // p == 1
-constexpr int32_t NORM_MODE_P2       = 5;  // p == 2
+constexpr int32_t NORM_MODE_GENERAL = 0; // 0 < p < 2, p != 1
+constexpr int32_t NORM_MODE_INF = 1;     // p == inf
+constexpr int32_t NORM_MODE_LARGE_P = 2; // p > 2
+constexpr int32_t NORM_MODE_P0 = 3;      // p == 0
+constexpr int32_t NORM_MODE_P1 = 4;      // p == 1
+constexpr int32_t NORM_MODE_P2 = 5;      // p == 2
 
 // ---------------------------------------------------------------------------
 // CdistGradP0Dag — p == 0 → output zeros
@@ -55,16 +55,16 @@ constexpr int32_t NORM_MODE_P2       = 5;  // p == 2
 template <typename T, typename PromoteT>
 struct CdistGradP0Dag {
     using OpCopyInGrad = Bind<Vec::CopyIn<T>, Placeholder::In0<T>>;
-    using CastGrad     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, OpCopyInGrad>;
+    using CastGrad = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, OpCopyInGrad>;
 
-    using OpZero    = Bind<Vec::Muls<PromoteT>, CastGrad, Placeholder::Var<PromoteT, 0>>;
+    using OpZero = Bind<Vec::Muls<PromoteT>, CastGrad, Placeholder::Var<PromoteT, 0>>;
     using ReduceOp0 = Bind<Vec::ReduceSumOp<PromoteT>, OpZero>;
-    using CastOut   = Bind<Vec::Cast<T, PromoteT, CAST_MODE_RINT>, ReduceOp0>;
+    using CastOut = Bind<Vec::Cast<T, PromoteT, CAST_MODE_RINT>, ReduceOp0>;
     using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, CastOut>;
 
     using Outputs = Elems<OpCopyOut>;
-    using MemCfg  = MemOptCfg<MemLevel::LEVEL_2>;
-    using OpDag   = DAGSch<Outputs, void, MemCfg>;
+    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
+    using OpDag = DAGSch<Outputs, void, MemCfg>;
 };
 
 // ---------------------------------------------------------------------------
@@ -75,26 +75,26 @@ struct CdistGradP0Dag {
 template <typename T, typename PromoteT>
 struct CdistGradP1Dag {
     using OpCopyInGrad = Bind<Vec::CopyIn<T>, Placeholder::In0<T>>;
-    using CastGrad     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, OpCopyInGrad>;
+    using CastGrad = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, OpCopyInGrad>;
 
     using OpCopyInX1 = Bind<Vec::CopyIn<T>, Placeholder::In1<T>>;
-    using CastX1     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, OpCopyInX1>;
+    using CastX1 = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, OpCopyInX1>;
 
     using OpCopyInX2 = Bind<Vec::CopyIn<T>, Placeholder::In2<T>>;
-    using CastX2     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, OpCopyInX2>;
+    using CastX2 = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, OpCopyInX2>;
 
-    using OpDiff     = Bind<Vec::Sub<PromoteT>, CastX1, CastX2>;
-    using OpSign     = Bind<CdistGradSignOp<PromoteT>, OpDiff>;
+    using OpDiff = Bind<Vec::Sub<PromoteT>, CastX1, CastX2>;
+    using OpSign = Bind<CdistGradSignOp<PromoteT>, OpDiff>;
 
-    using OpRes      = Bind<Vec::Mul<PromoteT>, CastGrad, OpSign>;
+    using OpRes = Bind<Vec::Mul<PromoteT>, CastGrad, OpSign>;
 
-    using ReduceOp0  = Bind<Vec::ReduceSumOp<PromoteT>, OpRes>;
-    using CastOut    = Bind<Vec::Cast<T, PromoteT, CAST_MODE_RINT>, ReduceOp0>;
-    using OpCopyOut  = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, CastOut>;
+    using ReduceOp0 = Bind<Vec::ReduceSumOp<PromoteT>, OpRes>;
+    using CastOut = Bind<Vec::Cast<T, PromoteT, CAST_MODE_RINT>, ReduceOp0>;
+    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, CastOut>;
 
     using Outputs = Elems<OpCopyOut>;
-    using MemCfg  = MemOptCfg<MemLevel::LEVEL_2>;
-    using OpDag   = DAGSch<Outputs, void, MemCfg>;
+    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
+    using OpDag = DAGSch<Outputs, void, MemCfg>;
 };
 
 // ---------------------------------------------------------------------------
@@ -105,176 +105,139 @@ struct CdistGradP1Dag {
 // ---------------------------------------------------------------------------
 template <typename T, typename PromoteT>
 struct CdistGradP2Dag {
-    using Eps = MAKE_CONST(PromoteT, 1e-30);
+    using Eps = MAKE_CONST(PromoteT, 1e-38);
 
     using OpCopyInGrad = Bind<Vec::CopyIn<T>, Placeholder::In0<T>>;
-    using CastGrad     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, OpCopyInGrad>;
+    using CastGrad = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, OpCopyInGrad>;
 
     using OpCopyInX1 = Bind<Vec::CopyIn<T>, Placeholder::In1<T>>;
-    using CastX1     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, OpCopyInX1>;
+    using CastX1 = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, OpCopyInX1>;
 
     using OpCopyInX2 = Bind<Vec::CopyIn<T>, Placeholder::In2<T>>;
-    using CastX2     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, OpCopyInX2>;
+    using CastX2 = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, OpCopyInX2>;
 
     using OpCopyInCdist = Bind<Vec::CopyIn<T>, Placeholder::In3<T>>;
-    using CastCdist     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, OpCopyInCdist>;
+    using CastCdist = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, OpCopyInCdist>;
 
-    using OpDiff      = Bind<Vec::Sub<PromoteT>, CastX1, CastX2>;
-    using SafeCdist   = Bind<Vec::Adds<PromoteT>, CastCdist, Eps>;      // cdist + eps
-    using OpNumerator = Bind<Vec::Mul<PromoteT>, CastGrad, OpDiff>;     // grad * diff
+    using OpDiff = Bind<Vec::Sub<PromoteT>, CastX1, CastX2>;
+    using SafeCdist = Bind<Vec::Adds<PromoteT>, CastCdist, Eps>;          // cdist + eps
+    using OpNumerator = Bind<Vec::Mul<PromoteT>, CastGrad, OpDiff>;       // grad * diff
     using OpDivResult = Bind<Vec::Div<PromoteT>, OpNumerator, SafeCdist>; // grad * diff / (cdist+eps)
 
     // mask: cdist != 0 ? 1.0 : 0.0 — zeros out when cdist=0
-    using OpMask      = Bind<CdistGradMaskNEZeroOp<PromoteT>, CastCdist>;
-    using OpResult    = Bind<Vec::Mul<PromoteT>, OpDivResult, OpMask>;
+    using OpMask = Bind<CdistGradMaskNEZeroOp<PromoteT>, CastCdist>;
+    using OpResult = Bind<Vec::Mul<PromoteT>, OpDivResult, OpMask>;
 
-    using ReduceOp0  = Bind<Vec::ReduceSumOp<PromoteT>, OpResult>;
-    using CastOut    = Bind<Vec::Cast<T, PromoteT, CAST_MODE_RINT>, ReduceOp0>;
-    using OpCopyOut  = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, CastOut>;
+    using ReduceOp0 = Bind<Vec::ReduceSumOp<PromoteT>, OpResult>;
+    using CastOut = Bind<Vec::Cast<T, PromoteT, CAST_MODE_RINT>, ReduceOp0>;
+    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, CastOut>;
 
     using Outputs = Elems<OpCopyOut>;
-    using MemCfg  = MemOptCfg<MemLevel::LEVEL_2>;
-    using OpDag   = DAGSch<Outputs, void, MemCfg>;
+    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
+    using OpDag = DAGSch<Outputs, void, MemCfg>;
 };
 
 // ---------------------------------------------------------------------------
 // CdistGradDag — 0 < p < 2, p != 1
-// sign = CdistGradSignOp(diff)                     via MicroAPI
-// safe_cdist = cdist + eps  (prevents div-by-0)
-// ratio = |diff| / safe_cdist
-// pow_ratio = exp(log(ratio + eps) * (p-1))        single log+exp chain
-// mask_diff = CdistGradMaskNEZeroOp(|diff|)        via MicroAPI
-// mask_cdist = CdistGradMaskNEZeroOp(cdist)        via MicroAPI
-// result = sign * pow_ratio * grad * mask_cdist * mask_diff
-//
-// Optimization: (|diff|/cdist)^(p-1) replaces separate |diff|^(p-1)/cdist^(p-1),
-// cutting transcendental ops from 2 log + 2 exp + 1 div → 1 log + 1 exp + 1 div.
+// SPLIT form (matching PyTorch lttdist_calc):
+//   result = sign(diff) * |diff|^(p-1) * grad / cdist^(p-1)
+// NO eps — uses SelectZeroOp (per-element conditional) to handle cdist==0 and
+// diff==0, equivalent to PyTorch's vectorized ternary (cond ? 0 : formula).
 // Var<0>: power = p - 1
 // ---------------------------------------------------------------------------
 template <typename T, typename PromoteT>
 struct CdistGradDag {
-    using DagEps = MAKE_CONST(PromoteT, 1e-30);
-
     using DagCopyInGrad = Bind<Vec::CopyIn<T>, Placeholder::In0<T>>;
-    using DagCastGrad     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, DagCopyInGrad>;
+    using DagCastGrad = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, DagCopyInGrad>;
 
     using DagCopyInX1 = Bind<Vec::CopyIn<T>, Placeholder::In1<T>>;
-    using DagCastX1     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, DagCopyInX1>;
+    using DagCastX1 = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, DagCopyInX1>;
 
     using DagCopyInX2 = Bind<Vec::CopyIn<T>, Placeholder::In2<T>>;
-    using DagCastX2     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, DagCopyInX2>;
+    using DagCastX2 = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, DagCopyInX2>;
 
     using DagCopyInCdist = Bind<Vec::CopyIn<T>, Placeholder::In3<T>>;
-    using DagCastCdist     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, DagCopyInCdist>;
+    using DagCastCdist = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, DagCopyInCdist>;
 
-    // diff & abs
-    using DagDiff      = Bind<Vec::Sub<PromoteT>, DagCastX1, DagCastX2>;
-    using DagDiffAbs   = Bind<Vec::Abs<PromoteT>, DagDiff>;
-    using DagSafeCdist   = Bind<Vec::Adds<PromoteT>, DagCastCdist, DagEps>;       // cdist + eps
+    // diff & abs & sign
+    using DagDiff = Bind<Vec::Sub<PromoteT>, DagCastX1, DagCastX2>;
+    using DagDiffAbs = Bind<Vec::Abs<PromoteT>, DagDiff>;
+    using DagSign = Bind<CdistGradSignOp<PromoteT>, DagDiff>;
 
-    // sign via MicroAPI
-    using DagSign      = Bind<CdistGradSignOp<PromoteT>, DagDiff>;
+    // Power directly on raw values (no eps — Select handles edge cases downstream)
+    using DagTmpBufDiff = Bind<Vec::Abs<PromoteT>, DagDiffAbs>;
+    using DagPowDiff = Bind<CdistGradPowDftOp<PromoteT>, DagDiffAbs, DagTmpBufDiff, Placeholder::Var<PromoteT, 0>>;
+    using DagTmpBufCdist = Bind<Vec::Abs<PromoteT>, DagCastCdist>;
+    using DagPowCdist = Bind<CdistGradPowDftOp<PromoteT>, DagCastCdist, DagTmpBufCdist, Placeholder::Var<PromoteT, 0>>;
 
-    // masks via MicroAPI: 0 when input=0, 1 otherwise
-    using DagMaskDiff    = Bind<CdistGradMaskNEZeroOp<PromoteT>, DagDiffAbs>;
-    using DagMaskCdist   = Bind<CdistGradMaskNEZeroOp<PromoteT>, DagCastCdist>;
+    // term = sign * |diff|^(p-1) * grad / cdist^(p-1)
+    using DagSignPow = Bind<Vec::Mul<PromoteT>, DagSign, DagPowDiff>;
+    using DagWithGrad = Bind<Vec::Mul<PromoteT>, DagSignPow, DagCastGrad>;
+    using DagPerTerm = Bind<Vec::DivHighPrecision<PromoteT>, DagWithGrad, DagPowCdist>;
 
-    // Mask |diff| to 0 where cdist==0 BEFORE the ratio. When the forward cdist
-    // underflows to 0 (large/tiny |diff|), ratio = |diff|/eps would explode and
-    // exp(log(ratio)*(p-1)) overflows to +inf; the trailing mask then yields
-    // inf*0 = NaN. Masking first makes ratio=0 -> pow_ratio=0 -> result=0,
-    // matching PyTorch CPU's `dist==0 ? 0` short-circuit.
-    using DagDiffAbsM  = Bind<Vec::Mul<PromoteT>, DagDiffAbs, DagMaskCdist>;
-    // ratio = |diff|_masked / (cdist + eps), then (ratio)^(p-1) via single log+exp chain
-    using DagRatio       = Bind<Vec::Div<PromoteT>, DagDiffAbsM, DagSafeCdist>;
-    using DagSafeRatio   = Bind<Vec::Adds<PromoteT>, DagRatio, DagEps>;
-    using DagPowRatio    = Bind<Vec::Exp<PromoteT>,
-                             Bind<Vec::Muls<PromoteT>, Bind<Vec::Log<PromoteT>, DagSafeRatio>,
-                              Placeholder::Var<PromoteT, 0>>>;
+    // Select: 0 where cdist==0 (replaces Mul*maskCdist, no eps needed)
+    using DagSelCdist = Bind<CdistGradSelectZeroOp<PromoteT>, DagPerTerm, DagCastCdist>;
+    // Select: 0 where |diff|==0 (covers torch blendv for diff==0 & p<1)
+    using DagResult = Bind<CdistGradSelectZeroOp<PromoteT>, DagSelCdist, DagDiffAbs>;
 
-    // num = sign * (|diff|/cdist)^(p-1), result = num * grad * masks
-    using DagNum       = Bind<Vec::Mul<PromoteT>, DagSign, DagPowRatio>;
-    using DagNumerator = Bind<Vec::Mul<PromoteT>, DagNum, DagCastGrad>;
-
-    // apply masks: zero-out when cdist=0 or |diff|=0
-    using DagMaskedCdist = Bind<Vec::Mul<PromoteT>, DagNumerator, DagMaskCdist>;
-    using DagResult      = Bind<Vec::Mul<PromoteT>, DagMaskedCdist, DagMaskDiff>;
-
-    using DagReduceOp0  = Bind<Vec::ReduceSumOp<PromoteT>, DagResult>;
-    using DagCastOut    = Bind<Vec::Cast<T, PromoteT, CAST_MODE_RINT>, DagReduceOp0>;
-    using DagCopyOut  = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, DagCastOut>;
+    using DagReduceOp0 = Bind<Vec::ReduceSumOp<PromoteT>, DagResult>;
+    using DagCastOut = Bind<Vec::Cast<T, PromoteT, CAST_MODE_RINT>, DagReduceOp0>;
+    using DagCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, DagCastOut>;
 
     using Outputs = Elems<DagCopyOut>;
-    using MemCfg  = MemOptCfg<MemLevel::LEVEL_2>;
-    using OpDag   = DAGSch<Outputs, void, MemCfg>;
+    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
+    using OpDag = DAGSch<Outputs, void, MemCfg>;
 };
 
 // ---------------------------------------------------------------------------
 // CdistGradLargePDag — p > 2
-// Equivalent to: sign(diff) * (|diff|/cdist)^(p-1) * grad
-//   since diff * |diff|^(p-2) / cdist^(p-1) = sign * |diff|^(p-1) / cdist^(p-1)
-//                                            = sign * (|diff|/cdist)^(p-1)
-//
-// sign = CdistGradSignOp(diff)                     via MicroAPI
-// safe_cdist = cdist + eps
-// ratio = |diff| / safe_cdist
-// pow_ratio = exp(log(ratio + eps) * (p-1))        single log+exp chain
-// mask_cdist = CdistGradMaskNEZeroOp(cdist)        via MicroAPI
-// result = sign * pow_ratio * grad * mask_cdist
-//
-// Optimization: same ratio approach as CdistGradDag, reducing from
-// 2 log + 2 exp + 1 div → 1 log + 1 exp + 1 div.
+// SPLIT form (matching PyTorch pdist_calc):
+//   result = sign(diff) * |diff|^(p-1) * grad / cdist^(p-1)
+//   = diff * |diff|^(p-2) * grad / cdist^(p-1)  (PyTorch's form)
+// NO eps — uses SelectZeroOp (per-element conditional) to handle cdist==0.
+// No mask_diff (p>2 => |diff|^(p-2) at diff=0 = 0, naturally zero).
 // Var<0>: power = p - 1
 // ---------------------------------------------------------------------------
 template <typename T, typename PromoteT>
 struct CdistGradLargePDag {
-    using LpEps = MAKE_CONST(PromoteT, 1e-30);
-
     using LpCopyInGrad = Bind<Vec::CopyIn<T>, Placeholder::In0<T>>;
-    using LpCastGrad     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, LpCopyInGrad>;
+    using LpCastGrad = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, LpCopyInGrad>;
 
     using LpCopyInX1 = Bind<Vec::CopyIn<T>, Placeholder::In1<T>>;
-    using LpCastX1     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, LpCopyInX1>;
+    using LpCastX1 = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, LpCopyInX1>;
 
     using LpCopyInX2 = Bind<Vec::CopyIn<T>, Placeholder::In2<T>>;
-    using LpCastX2     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, LpCopyInX2>;
+    using LpCastX2 = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, LpCopyInX2>;
 
     using LpCopyInCdist = Bind<Vec::CopyIn<T>, Placeholder::In3<T>>;
-    using LpCastCdist     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, LpCopyInCdist>;
+    using LpCastCdist = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, LpCopyInCdist>;
 
-    using LpDiff     = Bind<Vec::Sub<PromoteT>, LpCastX1, LpCastX2>;
-    using LpDiffAbs  = Bind<Vec::Abs<PromoteT>, LpDiff>;
-    using LpSafeCdist  = Bind<Vec::Adds<PromoteT>, LpCastCdist, LpEps>;       // cdist + eps
+    // diff & abs & sign
+    using LpDiff = Bind<Vec::Sub<PromoteT>, LpCastX1, LpCastX2>;
+    using LpDiffAbs = Bind<Vec::Abs<PromoteT>, LpDiff>;
+    using LpSign = Bind<CdistGradSignOp<PromoteT>, LpDiff>;
 
-    // sign via MicroAPI
-    using LpSign      = Bind<CdistGradSignOp<PromoteT>, LpDiff>;
+    // Power directly on raw values (no eps — Select handles edge cases downstream)
+    using LpTmpBufDiff = Bind<Vec::Abs<PromoteT>, LpDiffAbs>;
+    using LpPowDiff = Bind<CdistGradPowDftOp<PromoteT>, LpDiffAbs, LpTmpBufDiff, Placeholder::Var<PromoteT, 0>>;
+    using LpTmpBufCdist = Bind<Vec::Abs<PromoteT>, LpCastCdist>;
+    using LpPowCdist = Bind<CdistGradPowDftOp<PromoteT>, LpCastCdist, LpTmpBufCdist, Placeholder::Var<PromoteT, 0>>;
 
-    // mask via MicroAPI: cdist != 0 ? 1.0 : 0.0
-    using LpMaskCdist  = Bind<CdistGradMaskNEZeroOp<PromoteT>, LpCastCdist>;
+    // term = sign * |diff|^(p-1) * grad / cdist^(p-1)
+    using LpSignPow = Bind<Vec::Mul<PromoteT>, LpSign, LpPowDiff>;
+    using LpWithGrad = Bind<Vec::Mul<PromoteT>, LpSignPow, LpCastGrad>;
+    using LpPerTerm = Bind<Vec::DivHighPrecision<PromoteT>, LpWithGrad, LpPowCdist>;
 
-    // Mask |diff| to 0 where cdist==0 BEFORE the ratio (see CdistGradDag rationale).
-    // Without this, forward cdist underflow (large p, tiny |diff|) makes ratio =
-    // |diff|/eps explode -> exp overflow +inf -> trailing mask inf*0 = NaN.
-    using LpDiffAbsM  = Bind<Vec::Mul<PromoteT>, LpDiffAbs, LpMaskCdist>;
-    // ratio = |diff|_masked / (cdist + eps), then (ratio)^(p-1) via single log+exp chain
-    using LpRatio       = Bind<Vec::Div<PromoteT>, LpDiffAbsM, LpSafeCdist>;
-    using LpSafeRatio   = Bind<Vec::Adds<PromoteT>, LpRatio, LpEps>;
-    using LpPowRatio    = Bind<Vec::Exp<PromoteT>,
-                             Bind<Vec::Muls<PromoteT>, Bind<Vec::Log<PromoteT>, LpSafeRatio>,
-                              Placeholder::Var<PromoteT, 0>>>;
+    // Select: 0 where cdist==0 (replaces Mul*maskCdist, no eps needed)
+    using LpResult = Bind<CdistGradSelectZeroOp<PromoteT>, LpPerTerm, LpCastCdist>;
 
-    // num = sign * (|diff|/cdist)^(p-1), result = num * grad * mask
-    using LpNum       = Bind<Vec::Mul<PromoteT>, LpSign, LpPowRatio>;
-    using LpNumerator = Bind<Vec::Mul<PromoteT>, LpNum, LpCastGrad>;
-    using LpResult    = Bind<Vec::Mul<PromoteT>, LpNumerator, LpMaskCdist>;
-
-    using LpReduceOp0  = Bind<Vec::ReduceSumOp<PromoteT>, LpResult>;
-    using LpCastOut    = Bind<Vec::Cast<T, PromoteT, CAST_MODE_RINT>, LpReduceOp0>;
-    using LpCopyOut  = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, LpCastOut>;
+    using LpReduceOp0 = Bind<Vec::ReduceSumOp<PromoteT>, LpResult>;
+    using LpCastOut = Bind<Vec::Cast<T, PromoteT, CAST_MODE_RINT>, LpReduceOp0>;
+    using LpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, LpCastOut>;
 
     using Outputs = Elems<LpCopyOut>;
-    using MemCfg  = MemOptCfg<MemLevel::LEVEL_2>;
-    using OpDag   = DAGSch<Outputs, void, MemCfg>;
+    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
+    using OpDag = DAGSch<Outputs, void, MemCfg>;
 };
 
 // ---------------------------------------------------------------------------
@@ -286,39 +249,39 @@ struct CdistGradLargePDag {
 template <typename T, typename PromoteT>
 struct CdistGradInfDag {
     using InfCopyInGrad = Bind<Vec::CopyIn<T>, Placeholder::In0<T>>;
-    using InfCastGrad     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, InfCopyInGrad>;
+    using InfCastGrad = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, InfCopyInGrad>;
 
     using InfCopyInX1 = Bind<Vec::CopyIn<T>, Placeholder::In1<T>>;
-    using InfCastX1     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, InfCopyInX1>;
+    using InfCastX1 = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, InfCopyInX1>;
 
     using InfCopyInX2 = Bind<Vec::CopyIn<T>, Placeholder::In2<T>>;
-    using InfCastX2     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, InfCopyInX2>;
+    using InfCastX2 = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, InfCopyInX2>;
 
     using InfCopyInCdist = Bind<Vec::CopyIn<T>, Placeholder::In3<T>>;
-    using InfCastCdist     = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, InfCopyInCdist>;
+    using InfCastCdist = Bind<Vec::Cast<PromoteT, T, CAST_MODE_NONE>, InfCopyInCdist>;
 
-    using InfDiff      = Bind<Vec::Sub<PromoteT>, InfCastX1, InfCastX2>;
-    using InfDiffAbs   = Bind<Vec::Abs<PromoteT>, InfDiff>;
+    using InfDiff = Bind<Vec::Sub<PromoteT>, InfCastX1, InfCastX2>;
+    using InfDiffAbs = Bind<Vec::Abs<PromoteT>, InfDiff>;
 
     // sign = MicroAPI sign(diff)
-    using InfSign      = Bind<CdistGradSignOp<PromoteT>, InfDiff>;
+    using InfSign = Bind<CdistGradSignOp<PromoteT>, InfDiff>;
 
     // mask = MicroAPI (|diff| == cdist) ? 1.0 : 0.0
-    using InfMask      = Bind<CdistGradMaskEQOp<PromoteT>, InfDiffAbs, InfCastCdist>;
+    using InfMask = Bind<CdistGradMaskEQOp<PromoteT>, InfDiffAbs, InfCastCdist>;
 
     // result = grad * sign * mask
-    using InfGradSign  = Bind<Vec::Mul<PromoteT>, InfCastGrad, InfSign>;
-    using InfResult    = Bind<Vec::Mul<PromoteT>, InfGradSign, InfMask>;
+    using InfGradSign = Bind<Vec::Mul<PromoteT>, InfCastGrad, InfSign>;
+    using InfResult = Bind<Vec::Mul<PromoteT>, InfGradSign, InfMask>;
 
-    using InfReduceOp0   = Bind<Vec::ReduceSumOp<PromoteT>, InfResult>;
-    using InfCastOut     = Bind<Vec::Cast<T, PromoteT, CAST_MODE_RINT>, InfReduceOp0>;
-    using InfCopyOut   = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, InfCastOut>;
+    using InfReduceOp0 = Bind<Vec::ReduceSumOp<PromoteT>, InfResult>;
+    using InfCastOut = Bind<Vec::Cast<T, PromoteT, CAST_MODE_RINT>, InfReduceOp0>;
+    using InfCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, InfCastOut>;
 
     using Outputs = Elems<InfCopyOut>;
-    using MemCfg  = MemOptCfg<MemLevel::LEVEL_2>;
-    using OpDag   = DAGSch<Outputs, void, MemCfg>;
+    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
+    using OpDag = DAGSch<Outputs, void, MemCfg>;
 };
 
-}  // namespace CdistGrad
+} // namespace CdistGrad
 
-#endif  // CDIST_GRAD_DAG_H
+#endif // CDIST_GRAD_DAG_H
