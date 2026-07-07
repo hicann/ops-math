@@ -8,19 +8,10 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "arch35/batch_to_space.h"
-#include "arch35/batch_to_space_tiling_data.h"
-#include "arch35/batch_to_space_tiling_key.h"
+#include "register/op_impl_registry.h"
+#include "op_graph/graph_infer_comm_funcs.h"
 
-using namespace NsBatchToSpace;
-
-// template 版本供 precompile 阶段解析 kernel entry 名称
-template <uint8_t UbAxis>
-__global__ __aicore__ void batch_to_space(GM_ADDR x, GM_ADDR crops, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
-{
-    REGISTER_TILING_DEFAULT(BatchToSpaceTilingData);
-    GET_TILING_DATA_WITH_STRUCT(BatchToSpaceTilingData, tilingData, tiling);
-    BatchToSpace<DTYPE_X, UbAxis> op;
-    op.Init(x, y, &tilingData);
-    op.Process();
-}
+using namespace ge;
+namespace ops {
+IMPL_OP(SpaceToBatchND).InferDataType(InferDataTypeOutputSameAsInput);
+} // namespace ops

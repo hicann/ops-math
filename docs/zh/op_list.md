@@ -2658,6 +2658,16 @@
   </tr>
   <tr>
     <td>conversion</td>
+    <td><a href="../../conversion/space_to_batch_nd/README.md">space_to_batch_nd</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>将多个空间维度的数据按块重新排列到批次维度，并对空间维度补零。支持任意数量的空间维度。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
     <td><a href="../../conversion/sparse_reshape/README.md">sparse_reshape</a></td>
     <td>√</td>
     <td>√</td>

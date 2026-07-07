@@ -53,8 +53,8 @@ def space_to_batch_golden(x, paddings, *, block_size, **kwargs):
     # Reshape spatial blocks into batch dimension
     # [N, H_out, bs, W_out, bs, C]
     out = out.reshape(N, H_out, bs, W_out, bs, C)
-    # -> [N, bs, bs, H_out, W_out, C]
-    out = out.transpose(0, 2, 4, 1, 3, 5)
+    # -> [bs, bs, N, H_out, W_out, C]
+    out = out.transpose(2, 4, 0, 1, 3, 5)
     # -> [N * bs * bs, H_out, W_out, C]
     out = out.reshape(N * bs * bs, H_out, W_out, C)
 

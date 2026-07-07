@@ -8,19 +8,13 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "arch35/batch_to_space.h"
-#include "arch35/batch_to_space_tiling_data.h"
-#include "arch35/batch_to_space_tiling_key.h"
+#ifndef _SPACE_TO_BATCH_ND_TILING_KEY_H_
+#define _SPACE_TO_BATCH_ND_TILING_KEY_H_
 
-using namespace NsBatchToSpace;
+#include "ascendc/host_api/tiling/template_argument.h"
 
-// template 版本供 precompile 阶段解析 kernel entry 名称
-template <uint8_t UbAxis>
-__global__ __aicore__ void batch_to_space(GM_ADDR x, GM_ADDR crops, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
-{
-    REGISTER_TILING_DEFAULT(BatchToSpaceTilingData);
-    GET_TILING_DATA_WITH_STRUCT(BatchToSpaceTilingData, tilingData, tiling);
-    BatchToSpace<DTYPE_X, UbAxis> op;
-    op.Init(x, y, &tilingData);
-    op.Process();
-}
+ASCENDC_TPL_ARGS_DECL(SpaceToBatchND, ASCENDC_TPL_UINT_DECL(tilingKey, 16, ASCENDC_TPL_UI_RANGE, 1, 1, 9), );
+
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(tilingKey, ASCENDC_TPL_UI_RANGE, 1, 1, 9), ), );
+
+#endif

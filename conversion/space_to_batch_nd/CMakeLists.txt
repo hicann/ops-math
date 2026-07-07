@@ -9,7 +9,7 @@
 # ----------------------------------------------------------------------------
 
 add_all_modules_sources(
-        OPTYPE space_to_batch
+        OPTYPE space_to_batch_nd
         ACLNNTYPE aclnn_exclude
         COMPUTE_UNIT ascend950
         TILING_DIR arch35

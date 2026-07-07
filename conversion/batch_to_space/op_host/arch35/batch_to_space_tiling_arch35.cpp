@@ -40,10 +40,10 @@ private:
     ge::graphStatus ComputeAndSetTiling();
 
     void InitElementSizes();
-    void DoCacheLineTiling(int64_t alignedC, int32_t& startAxis, int64_t& clInnerProduct,
-                           int64_t& minUbFactor, int64_t& outerProduct);
-    void DoTiling(int64_t alignedC, int32_t startAxis, int64_t minUbFactor,
-                  int64_t clInnerProduct, int64_t outerProduct);
+    void DoCacheLineTiling(int64_t alignedC, int32_t& startAxis, int64_t& clInnerProduct, int64_t& minUbFactor,
+                           int64_t& outerProduct);
+    void DoTiling(int64_t alignedC, int32_t startAxis, int64_t minUbFactor, int64_t clInnerProduct,
+                  int64_t outerProduct);
     ge::graphStatus SetTilingData();
 
     gert::TilingContext* context_;
@@ -128,8 +128,8 @@ ge::graphStatus BatchToSpaceTiling::GetParams()
 
     // derive outShape
     int64_t bs2 = blockSize_ * blockSize_;
-    OP_CHECK_IF(inShape_[AXIS_N] % bs2 != 0,
-        OP_LOGE(context_, "N must be divisible by block_size^2"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inShape_[AXIS_N] % bs2 != 0, OP_LOGE(context_, "N must be divisible by block_size^2"),
+                return ge::GRAPH_FAILED);
     outShape_[AXIS_N] = inShape_[AXIS_N] / bs2;
     outShape_[AXIS_H] = inShape_[AXIS_H] * blockSize_ - crops_[0] - crops_[1];
     outShape_[AXIS_W] = inShape_[AXIS_W] * blockSize_ - crops_[2] - crops_[3];
@@ -151,8 +151,8 @@ void BatchToSpaceTiling::InitElementSizes()
     cacheLineElements_ = cacheLineSize_ / static_cast<uint32_t>(dSize_);
 }
 
-void BatchToSpaceTiling::DoCacheLineTiling(int64_t alignedC, int32_t& startAxis,
-    int64_t& clInnerProduct, int64_t& minUbFactor, int64_t& outerProduct)
+void BatchToSpaceTiling::DoCacheLineTiling(int64_t alignedC, int32_t& startAxis, int64_t& clInnerProduct,
+                                           int64_t& minUbFactor, int64_t& outerProduct)
 {
     // find startAxis: first axis (from tail) where contiguous data ≥ CacheLine
     // clInnerProduct = product of axes AFTER startAxis (rolled up during search)
@@ -168,10 +168,8 @@ void BatchToSpaceTiling::DoCacheLineTiling(int64_t alignedC, int32_t& startAxis,
     }
 
     // minUbFactor: minimum elements on startAxis to fill one CacheLine
-    int64_t startAxisStep = (startAxis == static_cast<int32_t>(AXIS_C)) ?
-        static_cast<int64_t>(ubBlockElements_) : 1;
-    int64_t clMinFactor = Ops::Base::CeilDiv(
-        static_cast<int64_t>(cacheLineElements_), clInnerProduct);
+    int64_t startAxisStep = (startAxis == static_cast<int32_t>(AXIS_C)) ? static_cast<int64_t>(ubBlockElements_) : 1;
+    int64_t clMinFactor = Ops::Base::CeilDiv(static_cast<int64_t>(cacheLineElements_), clInnerProduct);
     minUbFactor = Ops::Base::CeilAlign(std::max(startAxisStep, clMinFactor), startAxisStep);
 
     // outerProduct: product of all axes before startAxis
@@ -181,8 +179,8 @@ void BatchToSpaceTiling::DoCacheLineTiling(int64_t alignedC, int32_t& startAxis,
     }
 }
 
-void BatchToSpaceTiling::DoTiling(int64_t alignedC, int32_t startAxis,
-    int64_t minUbFactor, int64_t clInnerProduct, int64_t outerProduct)
+void BatchToSpaceTiling::DoTiling(int64_t alignedC, int32_t startAxis, int64_t minUbFactor, int64_t clInnerProduct,
+                                  int64_t outerProduct)
 {
     uint8_t bestAxis = AXIS_N;
     uint32_t bestFactor = 1;
@@ -192,8 +190,7 @@ void BatchToSpaceTiling::DoTiling(int64_t alignedC, int32_t startAxis,
     int64_t cumInnerProduct = clInnerProduct;
     for (int32_t ax = startAxis; ax >= 0; --ax) {
         int64_t dimSize = (ax == static_cast<int32_t>(AXIS_C)) ? alignedC : outShape_[ax];
-        int64_t step = (ax == static_cast<int32_t>(AXIS_C)) ?
-            static_cast<int64_t>(ubBlockElements_) : 1;
+        int64_t step = (ax == static_cast<int32_t>(AXIS_C)) ? static_cast<int64_t>(ubBlockElements_) : 1;
         int64_t factorStart = (ax == startAxis) ? minUbFactor : step;
 
         for (int64_t factor = factorStart; factor <= dimSize; factor += step) {
@@ -201,12 +198,10 @@ void BatchToSpaceTiling::DoTiling(int64_t alignedC, int32_t startAxis,
             if (blockSize > static_cast<int64_t>(bufferSizeElements_)) {
                 break;
             }
-            uint64_t totalCount = static_cast<uint64_t>(outerProduct *
-                Ops::Base::CeilDiv(dimSize, factor));
+            uint64_t totalCount = static_cast<uint64_t>(outerProduct * Ops::Base::CeilDiv(dimSize, factor));
             uint64_t perCoreCount = Ops::Base::CeilDiv(totalCount, static_cast<uint64_t>(coreNum_));
             uint64_t realCoreNum = Ops::Base::CeilDiv(totalCount, perCoreCount);
-            if (static_cast<double>(realCoreNum) >=
-                    static_cast<double>(coreNum_) * MIN_CORE_UTIL_RATIO ||
+            if (static_cast<double>(realCoreNum) >= static_cast<double>(coreNum_) * MIN_CORE_UTIL_RATIO ||
                 realCoreNum > bestRealCore) {
                 bestAxis = static_cast<uint8_t>(ax);
                 bestFactor = static_cast<uint32_t>(factor);
@@ -233,9 +228,8 @@ ge::graphStatus BatchToSpaceTiling::SetTilingData()
     perCoreCount_ = Ops::Base::CeilDiv(totalCount_, static_cast<uint64_t>(coreNum_));
     uint64_t realCoreNum = Ops::Base::CeilDiv(totalCount_, perCoreCount_);
 
-    OP_LOGI(
-        context_, "BatchToSpace tiling: ubAxis=%u ubFactor=%u totalCount=%lu perCoreCount=%lu realCoreNum=%lu",
-        ubAxis_, ubFactor_, totalCount_, perCoreCount_, realCoreNum);
+    OP_LOGI(context_, "BatchToSpace tiling: ubAxis=%u ubFactor=%u totalCount=%lu perCoreCount=%lu realCoreNum=%lu",
+            ubAxis_, ubFactor_, totalCount_, perCoreCount_, realCoreNum);
 
     auto tilingData = context_->GetTilingData<BatchToSpaceTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context_, tilingData);
@@ -265,8 +259,7 @@ ge::graphStatus BatchToSpaceTiling::ComputeAndSetTiling()
 {
     InitElementSizes();
 
-    int64_t alignedC = Ops::Base::CeilAlign(outShape_[AXIS_C],
-        static_cast<int64_t>(ubBlockElements_));
+    int64_t alignedC = Ops::Base::CeilAlign(outShape_[AXIS_C], static_cast<int64_t>(ubBlockElements_));
     int32_t startAxis;
     int64_t clInnerProduct, minUbFactor, outerProduct;
     DoCacheLineTiling(alignedC, startAxis, clInnerProduct, minUbFactor, outerProduct);

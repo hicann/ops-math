@@ -48,8 +48,8 @@ public:
         layout_.axes[STB_AXIS_H].outStride = tilingData_->outShape[STB_AXIS_W] * layout_.axes[STB_AXIS_W].outStride;
         layout_.axes[STB_AXIS_N].outStride = tilingData_->outShape[STB_AXIS_H] * layout_.axes[STB_AXIS_H].outStride;
 
-        channelAligned_ = CeilAlign(
-            static_cast<uint32_t>(tilingData_->inShape[STB_AXIS_C]), static_cast<uint32_t>(ELEMS_PER_UB_BLOCK));
+        channelAligned_ = CeilAlign(static_cast<uint32_t>(tilingData_->inShape[STB_AXIS_C]),
+                                    static_cast<uint32_t>(ELEMS_PER_UB_BLOCK));
         channelAlignedBytes_ = channelAligned_ * sizeof(T);
 
         pipe_->InitBuffer(ubBuffer_, tilingData_->bufferSize * BUFFER_NUM);
@@ -128,23 +128,23 @@ private:
     __aicore__ inline void DecodeNOut(int64_t nOut, int64_t& n, int64_t& bh, int64_t& bw) const
     {
         int64_t blockSize = tilingData_->blockSize;
-        int64_t blockSizeSq = blockSize * blockSize;
-        n = nOut / blockSizeSq;
-        int64_t rem = nOut % blockSizeSq;
-        bh = rem / blockSize;
+        int64_t N = tilingData_->inShape[STB_AXIS_N];
+        n = nOut % N;
+        int64_t rem = nOut / N;
         bw = rem % blockSize;
+        bh = rem / blockSize;
     }
 
-    __aicore__ inline bool MapToInput(
-        int64_t nOut, int64_t hOut, int64_t wOut, int64_t& n, int64_t& hIn, int64_t& wIn) const
+    __aicore__ inline bool MapToInput(int64_t nOut, int64_t hOut, int64_t wOut, int64_t& n, int64_t& hIn,
+                                      int64_t& wIn) const
     {
         int64_t bh, bw;
         DecodeNOut(nOut, n, bh, bw);
         int64_t blockSize = tilingData_->blockSize;
         hIn = hOut * blockSize + bh - tilingData_->paddings[0][0];
         wIn = wOut * blockSize + bw - tilingData_->paddings[1][0];
-        return (
-            hIn >= 0 && hIn < tilingData_->inShape[STB_AXIS_H] && wIn >= 0 && wIn < tilingData_->inShape[STB_AXIS_W]);
+        return (hIn >= 0 && hIn < tilingData_->inShape[STB_AXIS_H] && wIn >= 0 &&
+                wIn < tilingData_->inShape[STB_AXIS_W]);
     }
 
     // ========================================================================
@@ -289,8 +289,8 @@ private:
     //  CopyIn — ubAxis = C
     // ========================================================================
 
-    __aicore__ inline void CopyInAxisC(
-        LocalTensor<T>& ubLocal, uint64_t ubOff, int64_t nOut, int64_t hOut, int64_t wOut, int64_t cStart)
+    __aicore__ inline void CopyInAxisC(LocalTensor<T>& ubLocal, uint64_t ubOff, int64_t nOut, int64_t hOut,
+                                       int64_t wOut, int64_t cStart)
     {
         int64_t n, hIn, wIn;
         if (!MapToInput(nOut, hOut, wOut, n, hIn, wIn)) {
@@ -324,8 +324,8 @@ private:
     //  UB layout: each w_out gets an aligned row (channelAlignedBytes_ stride).
     // ========================================================================
 
-    __aicore__ inline void CopyInAxisW(
-        LocalTensor<T>& ubLocal, uint64_t ubOff, int64_t nOut, int64_t hOut, int64_t wStart, uint32_t count)
+    __aicore__ inline void CopyInAxisW(LocalTensor<T>& ubLocal, uint64_t ubOff, int64_t nOut, int64_t hOut,
+                                       int64_t wStart, uint32_t count)
     {
         int64_t n, bh, bw;
         DecodeNOut(nOut, n, bh, bw);
@@ -354,9 +354,9 @@ private:
         int64_t validWCount = wBlockEnd - wBlockStart + 1;
 
         int64_t wInFirst = wBlockStart * blockSize + bw - padLeft;
-        uint64_t inputAddr = static_cast<uint64_t>(
-            n * layout_.axes[STB_AXIS_N].inStride + hIn * layout_.axes[STB_AXIS_H].inStride +
-            wInFirst * layout_.axes[STB_AXIS_W].inStride);
+        uint64_t inputAddr = static_cast<uint64_t>(n * layout_.axes[STB_AXIS_N].inStride +
+                                                   hIn * layout_.axes[STB_AXIS_H].inStride +
+                                                   wInFirst * layout_.axes[STB_AXIS_W].inStride);
 
         uint64_t curUbOff = ubOff + (wBlockStart - wStart) * channelAligned_;
 
@@ -382,8 +382,8 @@ private:
     //  CopyIn — ubAxis = H
     // ========================================================================
 
-    __aicore__ inline void CopyInAxisH(
-        LocalTensor<T>& ubLocal, uint64_t ubOff, int64_t nOut, int64_t hStart, uint32_t count)
+    __aicore__ inline void CopyInAxisH(LocalTensor<T>& ubLocal, uint64_t ubOff, int64_t nOut, int64_t hStart,
+                                       uint32_t count)
     {
         int64_t n, bh, bw;
         DecodeNOut(nOut, n, bh, bw);

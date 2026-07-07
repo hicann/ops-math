@@ -30,7 +30,7 @@ static constexpr uint32_t MAX_BUFFER_SIZE = 64 * 1024U;
 
 class SpaceToBatchTiling {
 public:
-    explicit SpaceToBatchTiling(gert::TilingContext* context) : context_(context) {};
+    explicit SpaceToBatchTiling(gert::TilingContext* context) : context_(context){};
     ~SpaceToBatchTiling() = default;
 
     ge::graphStatus DoTiling();
@@ -73,7 +73,8 @@ static std::string ArrToStr(const T* v, size_t size)
     std::ostringstream oss;
     oss << "[";
     for (size_t i = 0; i < size; ++i) {
-        if (i > 0) oss << ", ";
+        if (i > 0)
+            oss << ", ";
         oss << v[i];
     }
     oss << "]";
@@ -92,8 +93,7 @@ ge::graphStatus SpaceToBatchTiling::ParamCheck()
     OP_CHECK_NULL_WITH_CONTEXT(context_, xShape);
     auto xStorageShape = xShape->GetStorageShape();
     OP_CHECK_IF(xStorageShape.GetDimNum() != STB_AXIS_COUNT,
-        OP_LOGE(context_, "x must be 4D, got %zu", xStorageShape.GetDimNum()),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context_, "x must be 4D, got %zu", xStorageShape.GetDimNum()), return ge::GRAPH_FAILED);
     for (size_t i = 0; i < STB_AXIS_COUNT; ++i) {
         inShape_[i] = xStorageShape.GetDim(i);
     }
@@ -104,18 +104,16 @@ ge::graphStatus SpaceToBatchTiling::ParamCheck()
     auto blockSizePtr = attrs->GetAttrPointer<int64_t>(ATTR_IDX_BLOCK_SIZE);
     OP_CHECK_NULL_WITH_CONTEXT(context_, blockSizePtr);
     blockSize_ = *blockSizePtr;
-    OP_CHECK_IF(blockSize_ <= 0,
-        OP_LOGE(context_, "block_size must be positive, got %ld", blockSize_),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(blockSize_ <= 0, OP_LOGE(context_, "block_size must be positive, got %ld", blockSize_),
+                return ge::GRAPH_FAILED);
 
     // paddings
     gert::Shape paddings;
-    OP_CHECK_IF(
-        !Ops::Base::GetConstIntToShape(context_, INPUT_IDX_PADDINGS, paddings),
-        OP_LOGE(context_, "get paddings tensor failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(!Ops::Base::GetConstIntToShape(context_, INPUT_IDX_PADDINGS, paddings),
+                OP_LOGE(context_, "get paddings tensor failed"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(paddings.GetDimNum() != PADDINGS_ELEM_COUNT,
-        OP_LOGE(context_, "paddings must have 4 elements, got %zu", paddings.GetDimNum()),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context_, "paddings must have 4 elements, got %zu", paddings.GetDimNum()),
+                return ge::GRAPH_FAILED);
     for (size_t i = 0; i < PADDINGS_ROWS; ++i) {
         for (size_t j = 0; j < PADDINGS_COLS; ++j) {
             paddings_[i][j] = paddings[i * PADDINGS_COLS + j];
@@ -136,11 +134,11 @@ ge::graphStatus SpaceToBatchTiling::ComputeOutShape()
     int64_t wPadded = inShape_[STB_AXIS_W] + padLeft + padRight;
 
     OP_CHECK_IF(hPadded % blockSize_ != 0,
-        OP_LOGE(context_, "H_padded (%ld) not divisible by block_size (%ld)", hPadded, blockSize_),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context_, "H_padded (%ld) not divisible by block_size (%ld)", hPadded, blockSize_),
+                return ge::GRAPH_FAILED);
     OP_CHECK_IF(wPadded % blockSize_ != 0,
-        OP_LOGE(context_, "W_padded (%ld) not divisible by block_size (%ld)", wPadded, blockSize_),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context_, "W_padded (%ld) not divisible by block_size (%ld)", wPadded, blockSize_),
+                return ge::GRAPH_FAILED);
 
     outShape_[STB_AXIS_N] = inShape_[STB_AXIS_N] * blockSize_ * blockSize_;
     outShape_[STB_AXIS_H] = hPadded / blockSize_;
@@ -225,8 +223,7 @@ ge::graphStatus SpaceToBatchTiling::DoOpTiling()
 
             uint64_t totalCount = static_cast<uint64_t>(outerProduct * Ops::Base::CeilDiv(dimSize, factor));
             uint64_t perCoreCount = Ops::Base::CeilDiv(totalCount, static_cast<uint64_t>(coreNum_));
-            uint32_t realCoreNum = static_cast<uint32_t>(
-                Ops::Base::CeilDiv(totalCount, perCoreCount));
+            uint32_t realCoreNum = static_cast<uint32_t>(Ops::Base::CeilDiv(totalCount, perCoreCount));
 
             double coreRatio = static_cast<double>(realCoreNum) / static_cast<double>(coreNum_);
             if (coreRatio >= 0.8 || realCoreNum > bestRealCore) {
@@ -298,12 +295,10 @@ ge::graphStatus SpaceToBatchTiling::DoTiling()
 
     const uint64_t tilingKey = GET_TPL_TILING_KEY(ubAxis_);
     OP_LOGI(context_, "tilingKey=%lu, ubAxis=%u, ubFactor=%u, totalCount=%lu, perCoreCount=%lu, bufferSize=%u",
-        tilingKey, ubAxis_, ubFactor_, totalCount_, perCoreCount, bufferSize_);
+            tilingKey, ubAxis_, ubFactor_, totalCount_, perCoreCount, bufferSize_);
     OP_LOGI(context_, "inShape=%s, outShape=%s, blockSize=%ld, paddings=[%ld,%ld,%ld,%ld]",
-        ArrToStr(inShape_, STB_AXIS_COUNT).c_str(),
-        ArrToStr(outShape_, STB_AXIS_COUNT).c_str(),
-        blockSize_,
-        paddings_[0][0], paddings_[0][1], paddings_[1][0], paddings_[1][1]);
+            ArrToStr(inShape_, STB_AXIS_COUNT).c_str(), ArrToStr(outShape_, STB_AXIS_COUNT).c_str(), blockSize_,
+            paddings_[0][0], paddings_[0][1], paddings_[1][0], paddings_[1][1]);
 
     context_->SetTilingKey(tilingKey);
     context_->SetBlockDim(realCoreNum_);

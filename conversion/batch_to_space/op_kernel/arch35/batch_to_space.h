@@ -32,26 +32,24 @@ constexpr int64_t UB_BLOCK_BYTES = Ops::Base::GetUbBlockSize();
 // Layout 三区模型 (common_conversion.md §4.2)
 // ======================================================================
 struct AxisLayout {
-    int64_t inStart{0};     // 动态设置：输入起始坐标
-    int64_t outStart{0};    // 动态设置：输出起始坐标
-    int64_t inStride{0};    // Init 固定：输入 stride（基于 inShape）
-    int64_t outStride{0};   // Init 固定：输出 stride（基于 outShape）
+    int64_t inStart{0};   // 动态设置：输入起始坐标
+    int64_t outStart{0};  // 动态设置：输出起始坐标
+    int64_t inStride{0};  // Init 固定：输入 stride（基于 inShape）
+    int64_t outStride{0}; // Init 固定：输出 stride（基于 outShape）
 };
 
 struct Layout {
     AxisLayout axes[AXIS_COUNT];
 
-    __aicore__ inline int64_t InOffset() {
-        return axes[AXIS_N].inStart * axes[AXIS_N].inStride +
-               axes[AXIS_H].inStart * axes[AXIS_H].inStride +
-               axes[AXIS_W].inStart * axes[AXIS_W].inStride +
-               axes[AXIS_C].inStart * axes[AXIS_C].inStride;
+    __aicore__ inline int64_t InOffset()
+    {
+        return axes[AXIS_N].inStart * axes[AXIS_N].inStride + axes[AXIS_H].inStart * axes[AXIS_H].inStride +
+               axes[AXIS_W].inStart * axes[AXIS_W].inStride + axes[AXIS_C].inStart * axes[AXIS_C].inStride;
     }
-    __aicore__ inline int64_t OutOffset() {
-        return axes[AXIS_N].outStart * axes[AXIS_N].outStride +
-               axes[AXIS_H].outStart * axes[AXIS_H].outStride +
-               axes[AXIS_W].outStart * axes[AXIS_W].outStride +
-               axes[AXIS_C].outStart * axes[AXIS_C].outStride;
+    __aicore__ inline int64_t OutOffset()
+    {
+        return axes[AXIS_N].outStart * axes[AXIS_N].outStride + axes[AXIS_H].outStart * axes[AXIS_H].outStride +
+               axes[AXIS_W].outStart * axes[AXIS_W].outStride + axes[AXIS_C].outStart * axes[AXIS_C].outStride;
     }
 };
 
@@ -71,14 +69,16 @@ private:
     __aicore__ inline void InsertSync(const HardEvent& event);
 
     // 将 virtual 6D 坐标映射为真实 4D inStart，写入 layout_
-    __aicore__ inline void SetInStart(int64_t n, int64_t bh, int64_t bw,
-                                       int64_t hIn, int64_t wIn, int64_t c) {
-        layout_.axes[AXIS_N].inStart = n * bs_ * bs_ + bh * bs_ + bw;
+    __aicore__ inline void SetInStart(int64_t n, int64_t bh, int64_t bw, int64_t hIn, int64_t wIn, int64_t c)
+    {
+        int64_t N = td_->outShape[AXIS_N];
+        layout_.axes[AXIS_N].inStart = bh * bs_ * N + bw * N + n;
         layout_.axes[AXIS_H].inStart = hIn;
         layout_.axes[AXIS_W].inStart = wIn;
         layout_.axes[AXIS_C].inStart = c;
     }
-    __aicore__ inline void SetOutStart(int64_t n, int64_t h, int64_t w, int64_t c) {
+    __aicore__ inline void SetOutStart(int64_t n, int64_t h, int64_t w, int64_t c)
+    {
         layout_.axes[AXIS_N].outStart = n;
         layout_.axes[AXIS_H].outStart = h;
         layout_.axes[AXIS_W].outStart = w;
@@ -105,11 +105,11 @@ private:
 
     // virtual bw stride — DataCopyPad 的 srcStride/loop1SrcStride 参数，不属于 4D Layout
     int64_t Sbw_{0};
+    int64_t N_{0};
 };
 
 template <typename T, uint8_t UbAxis>
-__aicore__ inline void BatchToSpace<T, UbAxis>::Init(GM_ADDR x, GM_ADDR y,
-    const BatchToSpaceTilingData* tilingData)
+__aicore__ inline void BatchToSpace<T, UbAxis>::Init(GM_ADDR x, GM_ADDR y, const BatchToSpaceTilingData* tilingData)
 {
     td_ = tilingData;
     inputGM_.SetGlobalBuffer((__gm__ T*)x);
@@ -118,11 +118,13 @@ __aicore__ inline void BatchToSpace<T, UbAxis>::Init(GM_ADDR x, GM_ADDR y,
 
     // Cache shape and crop values
     bs_ = td_->blockSize;
-    ct_ = td_->cropTop;    cb_ = td_->cropBottom;
-    cl_ = td_->cropLeft;   cr_ = td_->cropRight;
+    ct_ = td_->cropTop;
+    cb_ = td_->cropBottom;
+    cl_ = td_->cropLeft;
+    cr_ = td_->cropRight;
     HIn_ = td_->inShape[AXIS_H];
     WIn_ = td_->inShape[AXIS_W];
-    C_   = td_->outShape[AXIS_C];
+    C_ = td_->outShape[AXIS_C];
     HOut_ = td_->outShape[AXIS_H];
     WOut_ = td_->outShape[AXIS_W];
 
@@ -142,7 +144,8 @@ __aicore__ inline void BatchToSpace<T, UbAxis>::Init(GM_ADDR x, GM_ADDR y,
     layout_.axes[AXIS_C].outStride = 1;
 
     // virtual bw stride (唯一不属于 4D Layout 的 stride)
-    Sbw_ = HIn_ * WIn_ * C_;
+    N_ = td_->outShape[AXIS_N];
+    Sbw_ = N_ * HIn_ * WIn_ * C_;
 
     pingpongOffset_ = td_->bufferSize / sizeof(T);
     pipe_.InitBuffer(ubBuffer_, td_->bufferSize * BUFFER_NUM);
@@ -200,19 +203,16 @@ __aicore__ inline void BatchToSpace<T, UbAxis>::CalcOutputStart(int64_t idx, int
 // CopyIn dispatch by ubAxis
 // ======================================================================
 template <typename T, uint8_t UbAxis>
-__aicore__ inline void BatchToSpace<T, UbAxis>::CopyIn(
-    int64_t idx, const int64_t* coords, int64_t bufOff)
+__aicore__ inline void BatchToSpace<T, UbAxis>::CopyIn(int64_t idx, const int64_t* coords, int64_t bufOff)
 {
     if constexpr (UbAxis == AXIS_C) {
         int64_t cBlocks = CeilDiv(C_, static_cast<int64_t>(td_->ubFactor));
         int64_t cStart = (idx % cBlocks) * td_->ubFactor;
-        CopyInAxisC(coords[AXIS_N], coords[AXIS_H], coords[AXIS_W],
-                    cStart, bufOff);
+        CopyInAxisC(coords[AXIS_N], coords[AXIS_H], coords[AXIS_W], cStart, bufOff);
     } else if constexpr (UbAxis == AXIS_W) {
         int64_t wCount = WOut_ - coords[AXIS_W];
         wCount = (wCount > td_->ubFactor) ? td_->ubFactor : wCount;
-        CopyInAxisW(coords[AXIS_N], coords[AXIS_H], coords[AXIS_W],
-                    wCount, bufOff);
+        CopyInAxisW(coords[AXIS_N], coords[AXIS_H], coords[AXIS_W], wCount, bufOff);
     } else if constexpr (UbAxis == AXIS_H) {
         int64_t hCount = HOut_ - coords[AXIS_H];
         hCount = (hCount > td_->ubFactor) ? td_->ubFactor : hCount;
@@ -229,28 +229,28 @@ __aicore__ inline void BatchToSpace<T, UbAxis>::CopyIn(
 // CopyInAxisC - ubAxis = 3: simple contiguous copy
 // ======================================================================
 template <typename T, uint8_t UbAxis>
-__aicore__ inline void BatchToSpace<T, UbAxis>::CopyInAxisC(
-    int64_t n, int64_t hOut, int64_t wOut, int64_t cStart, int64_t bufOff)
+__aicore__ inline void BatchToSpace<T, UbAxis>::CopyInAxisC(int64_t n, int64_t hOut, int64_t wOut, int64_t cStart,
+                                                            int64_t bufOff)
 {
     int64_t cCount = C_ - cStart;
     cCount = (cCount > static_cast<int64_t>(td_->ubFactor)) ? td_->ubFactor : cCount;
 
     int64_t hFull = hOut + ct_;
     int64_t wFull = wOut + cl_;
-    int64_t hIn   = hFull / bs_;
-    int64_t bh    = hFull % bs_;
-    int64_t wIn   = wFull / bs_;
-    int64_t bw    = wFull % bs_;
+    int64_t hIn = hFull / bs_;
+    int64_t bh = hFull % bs_;
+    int64_t wIn = wFull / bs_;
+    int64_t bw = wFull % bs_;
 
     SetInStart(n, bh, bw, hIn, wIn, cStart);
     int64_t inOff = layout_.InOffset();
 
     LocalTensor<T> ubLocal = ubBuffer_.Get<T>();
     DataCopyExtParams copyParams;
-    copyParams.blockLen   = cCount * sizeof(T);
+    copyParams.blockLen = cCount * sizeof(T);
     copyParams.blockCount = 1;
-    copyParams.srcStride  = 0;
-    copyParams.dstStride  = 0;
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
     DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
     DataCopyPad(ubLocal[bufOff], inputGM_[inOff], copyParams, padParams);
 }
@@ -259,20 +259,20 @@ __aicore__ inline void BatchToSpace<T, UbAxis>::CopyInAxisC(
 // CopyInAxisW - ubAxis = 2: most common case
 // ======================================================================
 template <typename T, uint8_t UbAxis>
-__aicore__ inline void BatchToSpace<T, UbAxis>::CopyInAxisW(
-    int64_t n, int64_t hOut, int64_t wStart, int64_t wCount, int64_t bufOff)
+__aicore__ inline void BatchToSpace<T, UbAxis>::CopyInAxisW(int64_t n, int64_t hOut, int64_t wStart, int64_t wCount,
+                                                            int64_t bufOff)
 {
     int64_t hFull = hOut + ct_;
     int64_t hIn = hFull / bs_;
-    int64_t bh  = hFull % bs_;
+    int64_t bh = hFull % bs_;
 
     int64_t wFullFirst = wStart + cl_;
-    int64_t wInFirst    = wFullFirst / bs_;
-    int64_t bwFirst     = wFullFirst % bs_;
+    int64_t wInFirst = wFullFirst / bs_;
+    int64_t bwFirst = wFullFirst % bs_;
 
-    int64_t wFullLast  = wStart + wCount - 1 + cl_;
-    int64_t wInLast    = wFullLast / bs_;
-    int64_t bwLast     = wFullLast % bs_;
+    int64_t wFullLast = wStart + wCount - 1 + cl_;
+    int64_t wInLast = wFullLast / bs_;
+    int64_t bwLast = wFullLast % bs_;
 
     LocalTensor<T> ubLocal = ubBuffer_.Get<T>();
     int64_t cBytes = C_ * sizeof(T);
@@ -284,10 +284,10 @@ __aicore__ inline void BatchToSpace<T, UbAxis>::CopyInAxisW(
         int64_t inOff = layout_.InOffset();
 
         DataCopyExtParams copyParams;
-        copyParams.blockLen   = cBytes;
+        copyParams.blockLen = cBytes;
         copyParams.blockCount = bwCount;
-        copyParams.srcStride  = Sbw_ * sizeof(T) - cBytes;
-        copyParams.dstStride  = (cAlignedBytes_ - cBytes) / UB_BLOCK_BYTES;
+        copyParams.srcStride = Sbw_ * sizeof(T) - cBytes;
+        copyParams.dstStride = (cAlignedBytes_ - cBytes) / UB_BLOCK_BYTES;
         DataCopyPad(ubLocal[bufOff], inputGM_[inOff], copyParams, padParams);
     } else {
         int64_t curUbOff = bufOff;
@@ -298,10 +298,10 @@ __aicore__ inline void BatchToSpace<T, UbAxis>::CopyInAxisW(
             int64_t inOff = layout_.InOffset();
 
             DataCopyExtParams copyParams;
-            copyParams.blockLen   = cBytes;
+            copyParams.blockLen = cBytes;
             copyParams.blockCount = bwCount;
-            copyParams.srcStride  = Sbw_ * sizeof(T) - cBytes;
-            copyParams.dstStride  = (cAlignedBytes_ - cBytes) / UB_BLOCK_BYTES;
+            copyParams.srcStride = Sbw_ * sizeof(T) - cBytes;
+            copyParams.dstStride = (cAlignedBytes_ - cBytes) / UB_BLOCK_BYTES;
             DataCopyPad(ubLocal[curUbOff], inputGM_[inOff], copyParams, padParams);
             curUbOff += bwCount * cAligned_;
         }
@@ -321,18 +321,18 @@ __aicore__ inline void BatchToSpace<T, UbAxis>::CopyInAxisW(
             int64_t inOff = layout_.InOffset();
 
             DataCopyExtParams copyParams;
-            copyParams.blockLen   = cBytes;
+            copyParams.blockLen = cBytes;
             copyParams.blockCount = numMiddleW;
-            copyParams.srcStride  = 0;
-            copyParams.dstStride  = (bs_ * cAlignedBytes_ - cBytes) / UB_BLOCK_BYTES;
+            copyParams.srcStride = 0;
+            copyParams.dstStride = (bs_ * cAlignedBytes_ - cBytes) / UB_BLOCK_BYTES;
 
             LoopModeParams loopParams;
-            loopParams.loop1Size       = bs_;
-            loopParams.loop1SrcStride  = Sbw_ * sizeof(T);
-            loopParams.loop1DstStride  = cAlignedBytes_;
-            loopParams.loop2Size       = 1;
-            loopParams.loop2SrcStride  = 0;
-            loopParams.loop2DstStride  = 0;
+            loopParams.loop1Size = bs_;
+            loopParams.loop1SrcStride = Sbw_ * sizeof(T);
+            loopParams.loop1DstStride = cAlignedBytes_;
+            loopParams.loop2Size = 1;
+            loopParams.loop2SrcStride = 0;
+            loopParams.loop2DstStride = 0;
 
             SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
             DataCopyPad(ubLocal[curUbOff], inputGM_[inOff], copyParams, padParams);
@@ -346,10 +346,10 @@ __aicore__ inline void BatchToSpace<T, UbAxis>::CopyInAxisW(
             int64_t inOff = layout_.InOffset();
 
             DataCopyExtParams copyParams;
-            copyParams.blockLen   = cBytes;
+            copyParams.blockLen = cBytes;
             copyParams.blockCount = bwCount;
-            copyParams.srcStride  = Sbw_ * sizeof(T) - cBytes;
-            copyParams.dstStride  = (cAlignedBytes_ - cBytes) / UB_BLOCK_BYTES;
+            copyParams.srcStride = Sbw_ * sizeof(T) - cBytes;
+            copyParams.dstStride = (cAlignedBytes_ - cBytes) / UB_BLOCK_BYTES;
             DataCopyPad(ubLocal[curUbOff], inputGM_[inOff], copyParams, padParams);
         }
     }
@@ -359,8 +359,7 @@ __aicore__ inline void BatchToSpace<T, UbAxis>::CopyInAxisW(
 // CopyInAxisH - ubAxis = 1: delegate each row to CopyInAxisW
 // ======================================================================
 template <typename T, uint8_t UbAxis>
-__aicore__ inline void BatchToSpace<T, UbAxis>::CopyInAxisH(
-    int64_t n, int64_t hStart, int64_t hCount, int64_t bufOff)
+__aicore__ inline void BatchToSpace<T, UbAxis>::CopyInAxisH(int64_t n, int64_t hStart, int64_t hCount, int64_t bufOff)
 {
     int64_t curUbOff = bufOff;
     for (int64_t hOut = hStart; hOut < hStart + hCount; ++hOut) {
@@ -373,8 +372,7 @@ __aicore__ inline void BatchToSpace<T, UbAxis>::CopyInAxisH(
 // CopyInAxisN - ubAxis = 0: delegate each frame to CopyInAxisH
 // ======================================================================
 template <typename T, uint8_t UbAxis>
-__aicore__ inline void BatchToSpace<T, UbAxis>::CopyInAxisN(
-    int64_t nStart, int64_t nCount, int64_t bufOff)
+__aicore__ inline void BatchToSpace<T, UbAxis>::CopyInAxisN(int64_t nStart, int64_t nCount, int64_t bufOff)
 {
     int64_t frameSize = HOut_ * WOut_ * cAligned_;
     int64_t curUbOff = bufOff;
@@ -391,13 +389,16 @@ template <typename T, uint8_t UbAxis>
 __aicore__ inline void BatchToSpace<T, UbAxis>::Process()
 {
     for (int32_t i = 0; i < AXIS_COUNT; ++i) {
-        if (td_->outShape[i] == 0) return;
+        if (td_->outShape[i] == 0)
+            return;
     }
 
     int64_t beginIdx = blockIdx_ * td_->perCoreCount;
     int64_t endIdx = beginIdx + td_->perCoreCount;
-    if (endIdx > static_cast<int64_t>(td_->totalCount)) endIdx = td_->totalCount;
-    if (beginIdx >= static_cast<int64_t>(td_->totalCount)) return;
+    if (endIdx > static_cast<int64_t>(td_->totalCount))
+        endIdx = td_->totalCount;
+    if (beginIdx >= static_cast<int64_t>(td_->totalCount))
+        return;
 
     LocalTensor<T> ubLocal = ubBuffer_.Get<T>();
     int64_t cBytes = C_ * sizeof(T);
@@ -419,46 +420,46 @@ __aicore__ inline void BatchToSpace<T, UbAxis>::Process()
             cCount = (cCount > td_->ubFactor) ? td_->ubFactor : cCount;
             SetOutStart(coords[AXIS_N], coords[AXIS_H], coords[AXIS_W], cStart);
             DataCopyExtParams outParams;
-            outParams.blockLen   = cCount * sizeof(T);
+            outParams.blockLen = cCount * sizeof(T);
             outParams.blockCount = 1;
-            outParams.srcStride  = 0;
-            outParams.dstStride  = 0;
+            outParams.srcStride = 0;
+            outParams.dstStride = 0;
             DataCopyPad(outputGM_[layout_.OutOffset()], ubLocal[bufOff], outParams);
         } else if constexpr (UbAxis == AXIS_W) {
             int64_t wCount = WOut_ - coords[AXIS_W];
             wCount = (wCount > td_->ubFactor) ? td_->ubFactor : wCount;
             SetOutStart(coords[AXIS_N], coords[AXIS_H], coords[AXIS_W], 0);
             DataCopyExtParams outParams;
-            outParams.blockLen   = cBytes;
+            outParams.blockLen = cBytes;
             outParams.blockCount = wCount;
-            outParams.srcStride  = (cAlignedBytes_ - cBytes) / UB_BLOCK_BYTES;
-            outParams.dstStride  = 0;
+            outParams.srcStride = (cAlignedBytes_ - cBytes) / UB_BLOCK_BYTES;
+            outParams.dstStride = 0;
             DataCopyPad(outputGM_[layout_.OutOffset()], ubLocal[bufOff], outParams);
         } else if constexpr (UbAxis == AXIS_H) {
             int64_t hCount = HOut_ - coords[AXIS_H];
             hCount = (hCount > td_->ubFactor) ? td_->ubFactor : hCount;
             SetOutStart(coords[AXIS_N], coords[AXIS_H], 0, 0);
             DataCopyExtParams outParams;
-            outParams.blockLen   = cBytes;
+            outParams.blockLen = cBytes;
             outParams.blockCount = hCount * WOut_;
-            outParams.srcStride  = (cAlignedBytes_ - cBytes) / UB_BLOCK_BYTES;
-            outParams.dstStride  = 0;
+            outParams.srcStride = (cAlignedBytes_ - cBytes) / UB_BLOCK_BYTES;
+            outParams.dstStride = 0;
             DataCopyPad(outputGM_[layout_.OutOffset()], ubLocal[bufOff], outParams);
         } else {
             int64_t nCount = td_->outShape[AXIS_N] - coords[AXIS_N];
             nCount = (nCount > td_->ubFactor) ? td_->ubFactor : nCount;
             SetOutStart(coords[AXIS_N], 0, 0, 0);
             DataCopyExtParams outParams;
-            outParams.blockLen   = cBytes;
+            outParams.blockLen = cBytes;
             outParams.blockCount = nCount * HOut_ * WOut_;
-            outParams.srcStride  = (cAlignedBytes_ - cBytes) / UB_BLOCK_BYTES;
-            outParams.dstStride  = 0;
+            outParams.srcStride = (cAlignedBytes_ - cBytes) / UB_BLOCK_BYTES;
+            outParams.dstStride = 0;
             DataCopyPad(outputGM_[layout_.OutOffset()], ubLocal[bufOff], outParams);
         }
         InsertSync(HardEvent::MTE3_MTE2);
     }
 }
 
-} // namespace B2S
+} // namespace NsBatchToSpace
 
 #endif // BATCH_TO_SPACE_H

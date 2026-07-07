@@ -1,12 +1,11 @@
 /**
  * Copyright (c) 2026 Huawei Technologies Co., Ltd.
- * TF-compatible BatchToSpace tiling tests.
- *
- * 公共参数（float16, dSize=2, ubSize=256KB, coreNum=64）:
- *   ubBlockElements=16, cacheLineElements=128, bufferSizeElements=32768
- *
- * TF semantics: input [N*bs*bs, H_in, W_in, C] → output [N, H_out, W_out, C]
- * N_out = N_in / (bs*bs), C_out = C_in (unchanged)
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include <cstddef>
@@ -23,7 +22,9 @@ protected:
     static void TearDownTestCase() { std::cout << "BatchToSpaceTilingTest TearDown" << std::endl; }
 };
 
-namespace { BatchToSpaceCompileInfo compileInfo; }
+namespace {
+BatchToSpaceCompileInfo compileInfo;
+}
 
 // -----------------------------------------------------------------------
 // 用例1: C对齐32B, ≥cacheLine → startAxis=C, 全轴遍历, 最后达标者胜
@@ -37,11 +38,10 @@ TEST_F(BatchToSpaceTilingTest, TailC_Aligned_Large)
     int64_t cropsData[4] = {0, 0, 0, 0};
     gert::TilingContextPara tilingContextPara(
         "BatchToSpace",
-        { {{{8, 28, 28, 128}, {8, 28, 28, 128}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
-          {{{2, 2}, {2, 2}}, ge::DT_INT64, ge::FORMAT_NHWC, true, cropsData} },
-        { {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_NHWC} },
-        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(2))},
-        &compileInfo, 64);
+        {{{{8, 28, 28, 128}, {8, 28, 28, 128}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
+         {{{2, 2}, {2, 2}}, ge::DT_INT64, ge::FORMAT_NHWC, true, cropsData}},
+        {{{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_NHWC}},
+        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(2))}, &compileInfo, 64);
     TilingInfo ti;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, ti));
     auto* td = reinterpret_cast<const BatchToSpaceTilingData*>(ti.tilingData.get());
@@ -64,11 +64,10 @@ TEST_F(BatchToSpaceTilingTest, TailC_Aligned_Small_StartAtW)
     int64_t cropsData[4] = {0, 0, 0, 0};
     gert::TilingContextPara tilingContextPara(
         "BatchToSpace",
-        { {{{16, 14, 14, 64}, {16, 14, 14, 64}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
-          {{{2, 2}, {2, 2}}, ge::DT_INT64, ge::FORMAT_NHWC, true, cropsData} },
-        { {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_NHWC} },
-        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(2))},
-        &compileInfo, 64);
+        {{{{16, 14, 14, 64}, {16, 14, 14, 64}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
+         {{{2, 2}, {2, 2}}, ge::DT_INT64, ge::FORMAT_NHWC, true, cropsData}},
+        {{{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_NHWC}},
+        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(2))}, &compileInfo, 64);
     TilingInfo ti;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, ti));
     auto* td = reinterpret_cast<const BatchToSpaceTilingData*>(ti.tilingData.get());
@@ -89,11 +88,10 @@ TEST_F(BatchToSpaceTilingTest, TailC_Unaligned)
     int64_t cropsData[4] = {0, 0, 0, 0};
     gert::TilingContextPara tilingContextPara(
         "BatchToSpace",
-        { {{{4, 4, 4, 33}, {4, 4, 4, 33}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
-          {{{2, 2}, {2, 2}}, ge::DT_INT64, ge::FORMAT_NHWC, true, cropsData} },
-        { {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_NHWC} },
-        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(2))},
-        &compileInfo, 64);
+        {{{{4, 4, 4, 33}, {4, 4, 4, 33}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
+         {{{2, 2}, {2, 2}}, ge::DT_INT64, ge::FORMAT_NHWC, true, cropsData}},
+        {{{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_NHWC}},
+        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(2))}, &compileInfo, 64);
     TilingInfo ti;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, ti));
     auto* td = reinterpret_cast<const BatchToSpaceTilingData*>(ti.tilingData.get());
@@ -116,11 +114,10 @@ TEST_F(BatchToSpaceTilingTest, WC_Insufficient_StartAtH)
     int64_t cropsData[4] = {0, 0, 0, 0};
     gert::TilingContextPara tilingContextPara(
         "BatchToSpace",
-        { {{{8, 7, 2, 6}, {8, 7, 2, 6}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
-          {{{2, 2}, {2, 2}}, ge::DT_INT64, ge::FORMAT_NHWC, true, cropsData} },
-        { {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_NHWC} },
-        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(2))},
-        &compileInfo, 64);
+        {{{{8, 7, 2, 6}, {8, 7, 2, 6}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
+         {{{2, 2}, {2, 2}}, ge::DT_INT64, ge::FORMAT_NHWC, true, cropsData}},
+        {{{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_NHWC}},
+        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(2))}, &compileInfo, 64);
     TilingInfo ti;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, ti));
     auto* td = reinterpret_cast<const BatchToSpaceTilingData*>(ti.tilingData.get());
@@ -143,11 +140,10 @@ TEST_F(BatchToSpaceTilingTest, Float32_DifferentCacheLine)
     int64_t cropsData[4] = {0, 0, 0, 0};
     gert::TilingContextPara tilingContextPara(
         "BatchToSpace",
-        { {{{4, 7, 7, 16}, {4, 7, 7, 16}}, ge::DT_FLOAT, ge::FORMAT_NHWC},
-          {{{2, 2}, {2, 2}}, ge::DT_INT64, ge::FORMAT_NHWC, true, cropsData} },
-        { {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_NHWC} },
-        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(2))},
-        &compileInfo, 64);
+        {{{{4, 7, 7, 16}, {4, 7, 7, 16}}, ge::DT_FLOAT, ge::FORMAT_NHWC},
+         {{{2, 2}, {2, 2}}, ge::DT_INT64, ge::FORMAT_NHWC, true, cropsData}},
+        {{{{}, {}}, ge::DT_FLOAT, ge::FORMAT_NHWC}},
+        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(2))}, &compileInfo, 64);
     TilingInfo ti;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, ti));
     auto* td = reinterpret_cast<const BatchToSpaceTilingData*>(ti.tilingData.get());
@@ -168,11 +164,10 @@ TEST_F(BatchToSpaceTilingTest, WithCrops_OutShapeCorrect)
     int64_t cropsData[4] = {2, 2, 2, 2};
     gert::TilingContextPara tilingContextPara(
         "BatchToSpace",
-        { {{{32, 8, 8, 32}, {32, 8, 8, 32}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
-          {{{2, 2}, {2, 2}}, ge::DT_INT64, ge::FORMAT_NHWC, true, cropsData} },
-        { {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_NHWC} },
-        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(4))},
-        &compileInfo, 64);
+        {{{{32, 8, 8, 32}, {32, 8, 8, 32}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
+         {{{2, 2}, {2, 2}}, ge::DT_INT64, ge::FORMAT_NHWC, true, cropsData}},
+        {{{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_NHWC}},
+        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(4))}, &compileInfo, 64);
     TilingInfo ti;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, ti));
     auto* td = reinterpret_cast<const BatchToSpaceTilingData*>(ti.tilingData.get());
@@ -194,11 +189,10 @@ TEST_F(BatchToSpaceTilingTest, N_NotDivisible_Fail)
     int64_t cropsData[4] = {0, 0, 0, 0};
     gert::TilingContextPara tilingContextPara(
         "BatchToSpace",
-        { {{{5, 7, 7, 16}, {5, 7, 7, 16}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
-          {{{2, 2}, {2, 2}}, ge::DT_INT64, ge::FORMAT_NHWC, true, cropsData} },
-        { {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_NHWC} },
-        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(2))},
-        &compileInfo, 64);
+        {{{{5, 7, 7, 16}, {5, 7, 7, 16}}, ge::DT_FLOAT16, ge::FORMAT_NHWC},
+         {{{2, 2}, {2, 2}}, ge::DT_INT64, ge::FORMAT_NHWC, true, cropsData}},
+        {{{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_NHWC}},
+        {gert::TilingContextPara::OpAttr("block_size", Ops::Math::AnyValue::CreateFrom<int64_t>(2))}, &compileInfo, 64);
     TilingInfo ti;
     EXPECT_FALSE(ExecuteTiling(tilingContextPara, ti));
 }

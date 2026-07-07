@@ -24,8 +24,7 @@ static constexpr size_t PADDINGS_COLS = 2;
 
 class SpaceToBatchInferShapeHelper {
 public:
-    explicit SpaceToBatchInferShapeHelper(gert::InferShapeContext* context) : context_(context)
-    {}
+    explicit SpaceToBatchInferShapeHelper(gert::InferShapeContext* context) : context_(context) {}
 
     ge::graphStatus Inference();
 
@@ -51,15 +50,14 @@ ge::graphStatus SpaceToBatchInferShapeHelper::Init()
     OP_CHECK_NULL_WITH_CONTEXT(context_, yShape_);
 
     blockSize_ = GetBlockSize();
-    OP_CHECK_IF(
-        blockSize_ <= 0,
-        OP_LOGE(context_, "block_size must be positive, but got %ld", blockSize_),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(blockSize_ <= 0, OP_LOGE(context_, "block_size must be positive, but got %ld", blockSize_),
+                return ge::GRAPH_FAILED);
 
     const gert::Tensor* paddingsTensor = context_->GetInputTensor(INPUT_IDX_PADDINGS);
     OP_CHECK_NULL_WITH_CONTEXT(context_, paddingsTensor);
 
-    isConstPaddings_ = Ops::Base::GetConstIntToShape<gert::InferShapeContext>(context_, INPUT_IDX_PADDINGS, paddingsVec_);
+    isConstPaddings_ = Ops::Base::GetConstIntToShape<gert::InferShapeContext>(context_, INPUT_IDX_PADDINGS,
+                                                                              paddingsVec_);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -69,9 +67,7 @@ int64_t SpaceToBatchInferShapeHelper::GetBlockSize()
     auto attrs = context_->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context_, attrs);
     const int64_t* blockSizePtr = attrs->GetInt(0);
-    OP_CHECK_IF(
-        blockSizePtr == nullptr,
-        OP_LOGE(context_, "get block_size attr failed"), return -1);
+    OP_CHECK_IF(blockSizePtr == nullptr, OP_LOGE(context_, "get block_size attr failed"), return -1);
     return *blockSizePtr;
 }
 
@@ -132,7 +128,5 @@ static ge::graphStatus Infershape4SpaceToBatch(gert::InferShapeContext* context)
     return helper.Inference();
 }
 
-IMPL_OP_INFERSHAPE(SpaceToBatch)
-    .InferShape(Infershape4SpaceToBatch)
-    .InputsDataDependency({INPUT_IDX_PADDINGS});
+IMPL_OP_INFERSHAPE(SpaceToBatch).InferShape(Infershape4SpaceToBatch).InputsDataDependency({INPUT_IDX_PADDINGS});
 } // namespace ops

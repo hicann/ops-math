@@ -39,10 +39,10 @@ def batch_to_space_golden(x, crops, *, block_size, **kwargs):
     N = N_in // (bs * bs)
 
     # Reshape batch into spatial blocks
-    # [N_in, H_in, W_in, C] -> [N, bs, bs, H_in, W_in, C]
-    out = x.reshape(N, bs, bs, H_in, W_in, C)
+    # [N_in, H_in, W_in, C] -> [bs, bs, N, H_in, W_in, C]
+    out = x.reshape(bs, bs, N, H_in, W_in, C)
     # -> [N, H_in, bs, W_in, bs, C]
-    out = out.transpose(0, 3, 1, 4, 2, 5)
+    out = out.transpose(2, 3, 0, 4, 1, 5)
     # -> [N, H_in * bs, W_in * bs, C]
     out = out.reshape(N, H_in * bs, W_in * bs, C)
 

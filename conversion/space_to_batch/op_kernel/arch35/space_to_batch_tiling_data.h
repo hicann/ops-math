@@ -23,15 +23,15 @@ constexpr size_t STB_AXIS_C = 3;
 struct SpaceToBatchCompileInfo {};
 
 struct SpaceToBatchTilingData {
-    int64_t inShape[STB_AXIS_COUNT];           // 输入 shape [N, H_in, W_in, C]
-    int64_t outShape[STB_AXIS_COUNT];          // 输出 shape [N*bs*bs, H_out, W_out, C]
-    int64_t blockSize;                         // bs
-    int64_t paddings[2][2];                    // [[pad_top, pad_bottom], [pad_left, pad_right]]
-    uint64_t totalCount;                       // UB 切分矩阵块总数
-    uint64_t perCoreCount;                     // 每核处理的矩阵块数
-    uint8_t  ubAxis;                           // UB 切分轴 (0=N, 1=H, 2=W, 3=C)
-    uint32_t ubFactor;                         // 切分因子
-    uint32_t bufferSize;                       // UB buffer 字节大小
+    int64_t inShape[STB_AXIS_COUNT];  // 输入 shape [N, H_in, W_in, C]
+    int64_t outShape[STB_AXIS_COUNT]; // 输出 shape [N*bs*bs, H_out, W_out, C]
+    int64_t blockSize;                // bs
+    int64_t paddings[2][2];           // [[pad_top, pad_bottom], [pad_left, pad_right]]
+    uint64_t totalCount;              // UB 切分矩阵块总数
+    uint64_t perCoreCount;            // 每核处理的矩阵块数
+    uint8_t ubAxis;                   // UB 切分轴 (0=N, 1=H, 2=W, 3=C)
+    uint32_t ubFactor;                // 切分因子
+    uint32_t bufferSize;              // UB buffer 字节大小
 };
 
 #endif // _SPACE_TO_BATCH_TILING_DATA_H_

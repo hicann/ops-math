@@ -14,8 +14,8 @@
 namespace ops {
 // x data type (BasicType: 9 types)
 static constexpr std::array VALUE_DATA_TYPE_ALL{
-    ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT32,  ge::DT_INT8,   ge::DT_UINT8,
-    ge::DT_INT16, ge::DT_UINT16,  ge::DT_INT64,  ge::DT_DOUBLE,
+    ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT32, ge::DT_INT8,   ge::DT_UINT8,
+    ge::DT_INT16, ge::DT_UINT16,  ge::DT_INT64, ge::DT_DOUBLE,
 };
 // crops data type (IndexNumberType: int32, int64)
 static constexpr std::array INDEX_DATA_TYPE_ALL{ge::DT_INT32, ge::DT_INT64};

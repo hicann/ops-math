@@ -122,7 +122,5 @@ static ge::graphStatus Infershape4BatchToSpace(gert::InferShapeContext* context)
     return helper.Inference();
 }
 
-IMPL_OP_INFERSHAPE(BatchToSpace)
-    .InferShape(Infershape4BatchToSpace)
-    .InputsDataDependency({INPUT_IDX_CROPS});
+IMPL_OP_INFERSHAPE(BatchToSpace).InferShape(Infershape4BatchToSpace).InputsDataDependency({INPUT_IDX_CROPS});
 } // namespace ops

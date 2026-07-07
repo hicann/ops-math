@@ -28,7 +28,7 @@
 
 #include "experiment_ops.h"
 #include "nn_other.h"
-#include "../op_graph/space_to_batch_proto.h"
+#include "../op_graph/space_to_batch_nd_proto.h"
 
 #define FAILED -1
 #define SUCCESS 0
@@ -38,24 +38,24 @@ using std::map;
 using std::string;
 using std::vector;
 
-#define ADD_SEQUENCE_INPUT(intputIndex, intputName, intputDtype, inputShape)                                          \
-    vector<int64_t> placeholder##intputIndex##_shape = inputShape;                                                    \
-    auto placeholder##intputIndex = op::Data("placeholder" + intputIndex).set_attr_index(0);                          \
-    TensorDesc placeholder##intputIndex##_desc = TensorDesc(ge::Shape(placeholder##intputIndex##_shape), FORMAT_NHWC, \
-                                                            intputDtype);                                             \
-    placeholder##intputIndex##_desc.SetPlacement(ge::kPlacementHost);                                                 \
-    placeholder##intputIndex##_desc.SetFormat(FORMAT_NHWC);                                                           \
-    Tensor tensor_placeholder##intputIndex;                                                                           \
-    ret = GenSequenceData(placeholder##intputIndex##_shape, tensor_placeholder##intputIndex,                          \
-                          placeholder##intputIndex##_desc, intputDtype);                                              \
-    if (ret != SUCCESS) {                                                                                             \
-        printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                                \
-        return FAILED;                                                                                                \
-    }                                                                                                                 \
-    placeholder##intputIndex.update_input_desc_x(placeholder##intputIndex##_desc);                                    \
-    input.push_back(tensor_placeholder##intputIndex);                                                                 \
-    graph.AddOp(placeholder##intputIndex);                                                                            \
-    node.set_input_##intputName(placeholder##intputIndex);                                                            \
+#define ADD_SEQUENCE_INPUT(intputIndex, intputName, intputDtype, inputShape)                                        \
+    vector<int64_t> placeholder##intputIndex##_shape = inputShape;                                                  \
+    auto placeholder##intputIndex = op::Data("placeholder" + intputIndex).set_attr_index(0);                        \
+    TensorDesc placeholder##intputIndex##_desc = TensorDesc(ge::Shape(placeholder##intputIndex##_shape), FORMAT_ND, \
+                                                            intputDtype);                                           \
+    placeholder##intputIndex##_desc.SetPlacement(ge::kPlacementHost);                                               \
+    placeholder##intputIndex##_desc.SetFormat(FORMAT_ND);                                                           \
+    Tensor tensor_placeholder##intputIndex;                                                                         \
+    ret = GenSequenceData(placeholder##intputIndex##_shape, tensor_placeholder##intputIndex,                        \
+                          placeholder##intputIndex##_desc, intputDtype);                                            \
+    if (ret != SUCCESS) {                                                                                           \
+        printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                              \
+        return FAILED;                                                                                              \
+    }                                                                                                               \
+    placeholder##intputIndex.update_input_desc_x(placeholder##intputIndex##_desc);                                  \
+    input.push_back(tensor_placeholder##intputIndex);                                                               \
+    graph.AddOp(placeholder##intputIndex);                                                                          \
+    node.set_input_##intputName(placeholder##intputIndex);                                                          \
     inputs.push_back(placeholder##intputIndex);
 
 #define ADD_INT_INPUT(intputIndex, intputName, intputDtype, inputShape, value)                                      \
@@ -78,8 +78,8 @@ using std::vector;
     node.set_input_##intputName(placeholder##intputIndex);                                                          \
     inputs.push_back(placeholder##intputIndex);
 
-#define ADD_OUTPUT(outputIndex, outputName, outputDtype, outputShape)                                         \
-    TensorDesc outputName##outputIndex##_desc = TensorDesc(ge::Shape(outputShape), FORMAT_NHWC, outputDtype); \
+#define ADD_OUTPUT(outputIndex, outputName, outputDtype, outputShape)                                       \
+    TensorDesc outputName##outputIndex##_desc = TensorDesc(ge::Shape(outputShape), FORMAT_ND, outputDtype); \
     node.update_output_desc_##outputName(outputName##outputIndex##_desc);
 
 #define LOG_PRINT(message, ...)         \
@@ -174,21 +174,18 @@ int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor>& input, std::vect
                      std::vector<Operator>& outputs, Graph& graph)
 {
     Status ret = SUCCESS;
-    // SpaceToBatch: 4D NHWC [N, H_in, W_in, C], block_size=2, no padding
-    auto node = op::SpaceToBatch("node");
+    auto node = op::SpaceToBatchND("node");
     std::vector<int64_t> xShape = {1, 4, 4, 2};
-    std::vector<int64_t> paddingsShape = {2, 2};
-    std::vector<int32_t> paddingsValue = {0, 0, 0, 0}; // [[0,0],[0,0]], no padding
-    int64_t blockSize = 2;
-
-    // H_out = (4+0+0)/2=2, W_out = (4+0+0)/2=2, N_out = 1*2*2=4
     std::vector<int64_t> yShape = {4, 2, 2, 2};
+    std::vector<int64_t> blockShapeShape = {2};
+    std::vector<int32_t> blockShapeValue = {2, 2};
+    std::vector<int64_t> paddingsShape = {2, 2};
+    std::vector<int32_t> paddingsValue = {0, 0, 0, 0};
 
     ADD_SEQUENCE_INPUT(1, x, inDtype, xShape);
 
-    ADD_INT_INPUT(2, paddings, DT_INT32, paddingsShape, paddingsValue);
-
-    node.SetAttr("block_size", blockSize);
+    ADD_INT_INPUT(2, block_shape, DT_INT32, blockShapeShape, blockShapeValue);
+    ADD_INT_INPUT(3, paddings, DT_INT32, paddingsShape, paddingsValue);
 
     ADD_OUTPUT(1, y, inDtype, yShape);
     outputs.push_back(node);
