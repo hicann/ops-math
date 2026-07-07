@@ -24,26 +24,27 @@ using namespace AscendC;
 template <typename T>
 class ViewCopyDim8 : public ViewCopyBase<T> {
 public:
-    __aicore__ inline ViewCopyDim8(TPipe &pipe, const ViewCopyTilingData *tilingData) :
-        pipe_(pipe), tilingData_(tilingData) {};
+    __aicore__ inline ViewCopyDim8(TPipe& pipe, const ViewCopyTilingData* tilingData)
+        : pipe_(pipe), tilingData_(tilingData){};
     __aicore__ inline void Init(
-        GM_ADDR dst, GM_ADDR dstSize, GM_ADDR dstStride, GM_ADDR dstStorageOffset,
-        GM_ADDR src, GM_ADDR srcSize, GM_ADDR srcStride, GM_ADDR srcStorageOffset,
-        GM_ADDR out);
+        GM_ADDR dst, GM_ADDR dstSize, GM_ADDR dstStride, GM_ADDR dstStorageOffset, GM_ADDR src, GM_ADDR srcSize,
+        GM_ADDR srcStride, GM_ADDR srcStorageOffset, GM_ADDR out);
     __aicore__ inline void Process();
     __aicore__ inline void InitCopyParams();
 
 private:
-    __aicore__ inline void CustomNddma(LocalTensor<T> &dst, const GlobalTensor<T> &src,
-        const MultiCopyParams<T, 5> &dmaParam, const CustomCopyExtParams &extParams);
-    __aicore__ inline void CopyOut(const GlobalTensor<T> &dst, const DataCopyExtParams &copyParams,
-        const CustomCopyExtParams &extParams);
-    __aicore__ inline void ProcessPerLoop(int64_t globalLoopIdx, const MultiCopyParams<T, DIM5> &dmaParams,
-        const DataCopyExtParams &copyParams,
-        const int32_t *inLoopSize, const int32_t *outLoopSize);
+    __aicore__ inline void CustomNddma(
+        LocalTensor<T>& dst, const GlobalTensor<T>& src, const MultiCopyParams<T, 5>& dmaParam,
+        const CustomCopyExtParams& extParams);
+    __aicore__ inline void CopyOut(
+        const GlobalTensor<T>& dst, const DataCopyExtParams& copyParams, const CustomCopyExtParams& extParams);
+    __aicore__ inline void ProcessPerLoop(
+        int64_t globalLoopIdx, const MultiCopyParams<T, DIM5>& dmaParams, const DataCopyExtParams& copyParams,
+        const int32_t* inLoopSize, const int32_t* outLoopSize);
+
 private:
-    TPipe &pipe_;
-    const ViewCopyTilingData *tilingData_;
+    TPipe& pipe_;
+    const ViewCopyTilingData* tilingData_;
     TQueBind<QuePosition::VECIN, QuePosition::VECOUT, BUFFER_NUM> inQueue_;
 
     GlobalTensor<T> dstGm_;
@@ -60,13 +61,12 @@ private:
 
 template <typename T>
 __aicore__ inline void ViewCopyDim8<T>::Init(
-    GM_ADDR dst, GM_ADDR dstSize, GM_ADDR dstStride, GM_ADDR dstStorageOffset,
-    GM_ADDR src, GM_ADDR srcSize, GM_ADDR srcStride, GM_ADDR srcStorageOffset,
-    GM_ADDR out)
+    GM_ADDR dst, GM_ADDR dstSize, GM_ADDR dstStride, GM_ADDR dstStorageOffset, GM_ADDR src, GM_ADDR srcSize,
+    GM_ADDR srcStride, GM_ADDR srcStorageOffset, GM_ADDR out)
 {
     this->ParseTilingData(tilingData_);
-    dstGm_.SetGlobalBuffer((__gm__ T *)(dst + tilingData_->dstStorageOffset * sizeof(T)));
-    srcGm_.SetGlobalBuffer((__gm__ T *)(src + tilingData_->srcStorageOffset * sizeof(T)));
+    dstGm_.SetGlobalBuffer((__gm__ T*)(dst + tilingData_->dstStorageOffset * sizeof(T)));
+    srcGm_.SetGlobalBuffer((__gm__ T*)(src + tilingData_->srcStorageOffset * sizeof(T)));
 
     pipe_.InitBuffer(inQueue_, BUFFER_NUM, tilingData_->bufferSize);
     InitCopyParams();
@@ -94,10 +94,10 @@ __aicore__ inline void ViewCopyDim8<T>::Process()
     for (int64_t idx = 0; idx < loopSize; idx++) {
         globalLoopIdx = blockOffset_ + idx;
         globalLoopIdxModUo = globalLoopIdx % tilingData_->uo;
-        if ((globalLoopIdxModUo) * tilingData_->ubFactor <= tilingData_->ubDimSize) {
+        if ((globalLoopIdxModUo)*tilingData_->ubFactor <= tilingData_->ubDimSize) {
             if ((globalLoopIdxModUo + 1) * tilingData_->ubFactor > tilingData_->ubDimSize) {
-                ProcessPerLoop(globalLoopIdx, tailDmaParam_, tailCopyParams_, this->tailNddmaSize_,
-                    this->tailUbDstSize_);
+                ProcessPerLoop(
+                    globalLoopIdx, tailDmaParam_, tailCopyParams_, this->tailNddmaSize_, this->tailUbDstSize_);
             } else {
                 ProcessPerLoop(globalLoopIdx, dmaParam_, copyParams_, tilingData_->nddmaSize, tilingData_->ubDstSize);
             }
@@ -106,25 +106,26 @@ __aicore__ inline void ViewCopyDim8<T>::Process()
 }
 
 template <typename T>
-__aicore__ inline void ViewCopyDim8<T>::ProcessPerLoop(int64_t globalLoopIdx,
-    const MultiCopyParams<T, DIM5> &dmaParams, const DataCopyExtParams &copyParams,
-    const int32_t *inLoopSize, const int32_t *outLoopSize)
+__aicore__ inline void ViewCopyDim8<T>::ProcessPerLoop(
+    int64_t globalLoopIdx, const MultiCopyParams<T, DIM5>& dmaParams, const DataCopyExtParams& copyParams,
+    const int32_t* inLoopSize, const int32_t* outLoopSize)
 {
-    int64_t srcOffset = this->GetGmOffset(globalLoopIdx, tilingData_->blockStride, tilingData_->blockSrcStride,
-                                          tilingData_->blockFusedDimsNumber);
+    int64_t srcOffset = this->GetGmOffset(
+        globalLoopIdx, tilingData_->blockStride, tilingData_->blockSrcStride, tilingData_->blockFusedDimsNumber);
     LocalTensor<T> srcLocal = inQueue_.AllocTensor<T>();
     inExtParams_.loopSize = inLoopSize;
     CustomNddma(srcLocal, srcGm_[srcOffset], dmaParams, inExtParams_);
     inQueue_.EnQue(srcLocal);
-    int64_t dstOffset = this->GetGmOffset(globalLoopIdx, tilingData_->blockStride, tilingData_->blockDstStride,
-                                          tilingData_->blockFusedDimsNumber);
+    int64_t dstOffset = this->GetGmOffset(
+        globalLoopIdx, tilingData_->blockStride, tilingData_->blockDstStride, tilingData_->blockFusedDimsNumber);
     outExtParams_.loopSize = outLoopSize;
     CopyOut(dstGm_[dstOffset], copyParams, outExtParams_);
 }
 
 template <typename T>
-__aicore__ inline void ViewCopyDim8<T>::CustomNddma(LocalTensor<T> &dst, const GlobalTensor<T> &src,
-        const MultiCopyParams<T, DIM5> &dmaParam, const CustomCopyExtParams &extParams)
+__aicore__ inline void ViewCopyDim8<T>::CustomNddma(
+    LocalTensor<T>& dst, const GlobalTensor<T>& src, const MultiCopyParams<T, DIM5>& dmaParam,
+    const CustomCopyExtParams& extParams)
 {
     // srcSize (dim7, dim6, dim5, dim4, dim3, dim2, dim1, dim0)
     int64_t srcOffset = 0;
@@ -133,19 +134,19 @@ __aicore__ inline void ViewCopyDim8<T>::CustomNddma(LocalTensor<T> &dst, const G
     for (int64_t loopDim7 = 0; loopDim7 < extParams.loopSize[DIM7_INDEX]; loopDim7++) {
         for (int64_t loopDim6 = 0; loopDim6 < extParams.loopSize[DIM6_INDEX]; loopDim6++) {
             for (int64_t loopDim5 = 0; loopDim5 < extParams.loopSize[DIM5_INDEX]; loopDim5++) {
-                    srcOffset = loopDim7 * extParams.srcStride[DIM7_INDEX] + loopDim6 * extParams.srcStride[DIM6_INDEX]
-                                + loopDim5 * extParams.srcStride[DIM5_INDEX];
-                    dstOffset = loopDim7 * extParams.dstStride[DIM7_INDEX] + loopDim6 * extParams.dstStride[DIM6_INDEX]
-                                + loopDim5 * extParams.dstStride[DIM5_INDEX];
-                    DataCopy(dst[dstOffset], src[srcOffset], dmaParam);
+                srcOffset = loopDim7 * extParams.srcStride[DIM7_INDEX] + loopDim6 * extParams.srcStride[DIM6_INDEX] +
+                            loopDim5 * extParams.srcStride[DIM5_INDEX];
+                dstOffset = loopDim7 * extParams.dstStride[DIM7_INDEX] + loopDim6 * extParams.dstStride[DIM6_INDEX] +
+                            loopDim5 * extParams.dstStride[DIM5_INDEX];
+                DataCopy(dst[dstOffset], src[srcOffset], dmaParam);
             }
         }
     }
 }
 
 template <typename T>
-__aicore__ inline void ViewCopyDim8<T>::CopyOut(const GlobalTensor<T> &dst, const DataCopyExtParams &copyParams,
-    const CustomCopyExtParams &extParams)
+__aicore__ inline void ViewCopyDim8<T>::CopyOut(
+    const GlobalTensor<T>& dst, const DataCopyExtParams& copyParams, const CustomCopyExtParams& extParams)
 {
     int64_t srcOffset = 0;
     int64_t dstOffset = 0;
@@ -159,17 +160,17 @@ __aicore__ inline void ViewCopyDim8<T>::CopyOut(const GlobalTensor<T> &dst, cons
                     for (int64_t loopDim3 = 0; loopDim3 < extParams.loopSize[DIM3_INDEX]; loopDim3++) {
                         for (int64_t loopDim2 = 0; loopDim2 < extParams.loopSize[DIM2_INDEX]; loopDim2++) {
                             srcOffset = loopDim7 * extParams.srcStride[DIM7_INDEX] +
-                                loopDim6 * extParams.srcStride[DIM6_INDEX] +
-                                loopDim5 * extParams.srcStride[DIM5_INDEX] +
-                                loopDim4 * extParams.srcStride[DIM4_INDEX] +
-                                loopDim3 * extParams.srcStride[DIM3_INDEX] +
-                                loopDim2 * extParams.srcStride[DIM2_INDEX];
+                                        loopDim6 * extParams.srcStride[DIM6_INDEX] +
+                                        loopDim5 * extParams.srcStride[DIM5_INDEX] +
+                                        loopDim4 * extParams.srcStride[DIM4_INDEX] +
+                                        loopDim3 * extParams.srcStride[DIM3_INDEX] +
+                                        loopDim2 * extParams.srcStride[DIM2_INDEX];
                             dstOffset = loopDim7 * extParams.dstStride[DIM7_INDEX] +
-                                loopDim6 * extParams.dstStride[DIM6_INDEX] +
-                                loopDim5 * extParams.dstStride[DIM5_INDEX] +
-                                loopDim4 * extParams.dstStride[DIM4_INDEX] +
-                                loopDim3 * extParams.dstStride[DIM3_INDEX] +
-                                loopDim2 * extParams.dstStride[DIM2_INDEX];
+                                        loopDim6 * extParams.dstStride[DIM6_INDEX] +
+                                        loopDim5 * extParams.dstStride[DIM5_INDEX] +
+                                        loopDim4 * extParams.dstStride[DIM4_INDEX] +
+                                        loopDim3 * extParams.dstStride[DIM3_INDEX] +
+                                        loopDim2 * extParams.dstStride[DIM2_INDEX];
                             DataCopyPad(dst[dstOffset], srcLocal[srcOffset], copyParams);
                         }
                     }
@@ -185,21 +186,22 @@ __aicore__ inline void ViewCopyDim8<T>::InitCopyParams()
 {
     dmaParam_ = {
         {
-            {   // src stride
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM0_INDEX]),
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM1_INDEX]),
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM2_INDEX]),
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM3_INDEX]),
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM4_INDEX])
-            },
-            {   // dst stride
+            {// src stride
+             static_cast<uint64_t>(tilingData_->nddmaStride[DIM0_INDEX]),
+             static_cast<uint64_t>(tilingData_->nddmaStride[DIM1_INDEX]),
+             static_cast<uint64_t>(tilingData_->nddmaStride[DIM2_INDEX]),
+             static_cast<uint64_t>(tilingData_->nddmaStride[DIM3_INDEX]),
+             static_cast<uint64_t>(tilingData_->nddmaStride[DIM4_INDEX])},
+            {
+                // dst stride
                 static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM0_INDEX]),
                 static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM1_INDEX]),
                 static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM2_INDEX]),
                 static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM3_INDEX]),
                 static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM4_INDEX]),
             },
-            {   // loop size
+            {
+                // loop size
                 static_cast<uint32_t>(tilingData_->nddmaSize[DIM0_INDEX]),
                 static_cast<uint32_t>(tilingData_->nddmaSize[DIM1_INDEX]),
                 static_cast<uint32_t>(tilingData_->nddmaSize[DIM2_INDEX]),
@@ -207,28 +209,29 @@ __aicore__ inline void ViewCopyDim8<T>::InitCopyParams()
                 static_cast<uint32_t>(tilingData_->nddmaSize[DIM4_INDEX]),
             },
             {ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8}, // left pad
-            {ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8} // right pad
+            {ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8}  // right pad
         },
-        0   //pad value
+        0                                                  // pad value
     };
 
     tailDmaParam_ = {
         {
-            {   // src stride
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM0_INDEX]),
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM1_INDEX]),
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM2_INDEX]),
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM3_INDEX]),
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM4_INDEX])
-            },
-            {   // dst stride
+            {// src stride
+             static_cast<uint64_t>(tilingData_->nddmaStride[DIM0_INDEX]),
+             static_cast<uint64_t>(tilingData_->nddmaStride[DIM1_INDEX]),
+             static_cast<uint64_t>(tilingData_->nddmaStride[DIM2_INDEX]),
+             static_cast<uint64_t>(tilingData_->nddmaStride[DIM3_INDEX]),
+             static_cast<uint64_t>(tilingData_->nddmaStride[DIM4_INDEX])},
+            {
+                // dst stride
                 static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM0_INDEX]),
                 static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM1_INDEX]),
                 static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM2_INDEX]),
                 static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM3_INDEX]),
                 static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM4_INDEX]),
             },
-            {   // loop size
+            {
+                // loop size
                 static_cast<uint32_t>(this->tailNddmaSize_[DIM0_INDEX]),
                 static_cast<uint32_t>(this->tailNddmaSize_[DIM1_INDEX]),
                 static_cast<uint32_t>(this->tailNddmaSize_[DIM2_INDEX]),
@@ -238,25 +241,19 @@ __aicore__ inline void ViewCopyDim8<T>::InitCopyParams()
             {ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8}, // left pad
             {ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8}  // right pad
         },
-        0   //pad value
+        0                                                  // pad value
     };
-    uint32_t copyDstStride = (tilingData_->ubDstStride[DIM1_INDEX] - tilingData_->ubDstSize[DIM0_INDEX]) * sizeof(T);
-    uint32_t tailCopyDstStride = (tilingData_->ubDstStride[DIM1_INDEX] - this->tailUbDstSize_[DIM0_INDEX]) * sizeof(T);
+    int64_t copyDstStride = (tilingData_->ubDstStride[DIM1_INDEX] - tilingData_->ubDstSize[DIM0_INDEX]) * sizeof(T);
+    int64_t tailCopyDstStride = (tilingData_->ubDstStride[DIM1_INDEX] - this->tailUbDstSize_[DIM0_INDEX]) * sizeof(T);
     copyParams_ = {
         static_cast<uint16_t>(tilingData_->ubDstSize[DIM1_INDEX]),
-        static_cast<uint32_t>(tilingData_->ubDstSize[DIM0_INDEX] * sizeof(T)),
-        static_cast<uint32_t>(0),
-        copyDstStride,
-        0
-    };
+        static_cast<uint32_t>(tilingData_->ubDstSize[DIM0_INDEX] * sizeof(T)), static_cast<uint32_t>(0), copyDstStride,
+        0};
     tailCopyParams_ = {
         static_cast<uint16_t>(this->tailUbDstSize_[DIM1_INDEX]),
-        static_cast<uint32_t>(this->tailUbDstSize_[DIM0_INDEX] * sizeof(T)),
-        static_cast<uint32_t>(0),
-        tailCopyDstStride,
-        0
-    };
+        static_cast<uint32_t>(this->tailUbDstSize_[DIM0_INDEX] * sizeof(T)), static_cast<uint32_t>(0),
+        tailCopyDstStride, 0};
 }
-}  // namespace ViewCopy
+} // namespace ViewCopy
 
-#endif  // VIEW_COPY_DIM8_H_
+#endif // VIEW_COPY_DIM8_H_
