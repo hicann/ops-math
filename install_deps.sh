@@ -95,7 +95,7 @@ install_python() {
             if grep -q "release 7" /etc/redhat-release; then
                 run_command sudo $PKG_MANAGER install -y centos-release-scl
                 run_command sudo $PKG_MANAGER install -y rh-python38 rh-python38-python-devel
-                run_command source /opt/rh/rh-python38/enable
+                source /opt/rh/rh-python38/enable
                 echo "Need to execute 'source /opt/rh/rh-python38/enable' to activate python3.8"
             else
                 run_command sudo $PKG_MANAGER install -y python3 python3-pip python3-devel
@@ -104,7 +104,7 @@ install_python() {
         macos)
             run_command brew install python@3.11
             echo 'export PATH="/usr/local/opt/python@3.11/bin:$PATH"' >> ~/.zshrc
-            run_command source ~/.zshrc
+            source ~/.zshrc
             ;;
     esac
 
@@ -167,7 +167,7 @@ install_gcc() {
             if grep -q "release 7" /etc/redhat-release; then
                 run_command sudo $PKG_MANAGER install -y centos-release-scl
                 run_command sudo $PKG_MANAGER install -y devtoolset-9-gcc devtoolset-9-gcc-c++
-                run_command source /opt/rh/devtoolset-9/enable
+                source /opt/rh/devtoolset-9/enable
                 echo "Need to execute 'source /opt/rh/devtoolset-9/enable' to activate GCC9"
             else
                 run_command sudo $PKG_MANAGER install -y gcc gcc-c++
@@ -180,7 +180,7 @@ install_gcc() {
             run_command brew install gcc@11
             echo 'export CC=/usr/local/bin/gcc-11' >> ~/.zshrc
             echo 'export CXX=/usr/local/bin/g++-11' >> ~/.zshrc
-            run_command source ~/.zshrc
+            source ~/.zshrc
             ;;
     esac
 
@@ -217,8 +217,8 @@ install_cmake() {
     case "$OS" in
         debian)
             if grep -q "Ubuntu 18.04" /etc/os-release; then
-                run_command wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
-                run_command echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ bionic main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
+                wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+                echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ bionic main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
                 run_command sudo apt update
                 run_command sudo apt install -y cmake make
             else
