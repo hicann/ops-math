@@ -20,11 +20,11 @@
 
 namespace op {
 const string REFLECTION_MODE = "REFLECT";
-inline const aclTensor *GetPaddingTensor(int64_t dim, const aclIntArray *padding, aclOpExecutor *executor)
+inline const aclTensor* GetPaddingTensor(int64_t dim, const aclIntArray* padding, aclOpExecutor* executor)
 {
     FVector<int64_t, op::MAX_DIM_NUM> paddingsVector;
     // 2 is the magnification
-    for (size_t i = 2 * dim; i > 0; i -= 2) {
+    for (size_t i = 2 * static_cast<size_t>(dim); i > 0; i -= 2) {
         if (i <= static_cast<size_t>(padding->Size())) {
             // 2 and 1 indicate the element of padding is put into paddingsVector from the back to the front
             paddingsVector.emplace_back((*padding)[i - 2]);
@@ -40,8 +40,8 @@ inline const aclTensor *GetPaddingTensor(int64_t dim, const aclIntArray *padding
     return paddingsTensor;
 }
 
-inline aclnnStatus ProcessPadV3(const aclTensor *selfContiguous, const aclIntArray *padding,
-    const aclTensor *&padResult, int64_t limitDim, aclOpExecutor *executor)
+inline aclnnStatus ProcessPadV3(const aclTensor* selfContiguous, const aclIntArray* padding,
+                                const aclTensor*& padResult, int64_t limitDim, aclOpExecutor* executor)
 {
     auto dim = static_cast<int64_t>(selfContiguous->GetViewShape().GetDimNum());
     auto dimCp = dim;
@@ -49,7 +49,7 @@ inline aclnnStatus ProcessPadV3(const aclTensor *selfContiguous, const aclIntArr
         // 0 is index
         const int64_t appendDim[] = {0};
         // 1 is the dim num to be unsqueezed
-        aclIntArray *dimArray = executor->AllocIntArray(appendDim, 1);
+        aclIntArray* dimArray = executor->AllocIntArray(appendDim, 1);
         selfContiguous = l0op::UnsqueezeNd(selfContiguous, dimArray, executor);
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
         dim += 1;
@@ -57,21 +57,20 @@ inline aclnnStatus ProcessPadV3(const aclTensor *selfContiguous, const aclIntArr
     auto paddingsTensor = GetPaddingTensor(dim, padding, executor);
     aclScalar* constantValueScalar = (executor)->AllocScalar(0);
     auto constantValueTensor = (executor)->ConvertToTensor(constantValueScalar, selfContiguous->GetDataType());
-    padResult = l0op::PadV3(selfContiguous, paddingsTensor,
-                              constantValueTensor, "reflect", true, executor);
+    padResult = l0op::PadV3(selfContiguous, paddingsTensor, constantValueTensor, "reflect", true, executor);
     CHECK_RET(padResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
     // 2 is dim num
     if (dimCp == limitDim) {
         const int64_t appendDim[] = {0};
-        aclIntArray *dimArray = (executor)->AllocIntArray(appendDim, 1);
+        aclIntArray* dimArray = (executor)->AllocIntArray(appendDim, 1);
         padResult = l0op::SqueezeNd(padResult, dimArray, executor);
         CHECK_RET(padResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
     }
     return ACLNN_SUCCESS;
 }
 
-inline aclnnStatus ProcessMirrorPad(const aclTensor *selfContiguous, const aclIntArray *padding,
-    const aclTensor *&padResult, aclOpExecutor *executor)
+inline aclnnStatus ProcessMirrorPad(const aclTensor* selfContiguous, const aclIntArray* padding,
+                                    const aclTensor*& padResult, aclOpExecutor* executor)
 {
     auto dim = static_cast<int64_t>(selfContiguous->GetViewShape().GetDimNum());
     auto paddingsTensor = GetPaddingTensor(dim, padding, executor);
@@ -83,5 +82,5 @@ inline aclnnStatus ProcessMirrorPad(const aclTensor *selfContiguous, const aclIn
     return ACLNN_SUCCESS;
 }
 
-}
-#endif  // REFLECTION_PAD_COMMON_H_
+} // namespace op
+#endif // REFLECTION_PAD_COMMON_H_
