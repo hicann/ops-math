@@ -23,21 +23,21 @@ StridedSliceAssign是一种张量切片赋值操作，它可以将张量inputVal
 
 ```cpp
 aclnnStatus aclnnStridedSliceAssignV2GetWorkspaceSize(
-    aclTensor         *varRef, 
-    const aclTensor   *inputValue, 
-    const aclIntArray *begin, 
-    const aclIntArray *end, 
-    const aclIntArray *strides, 
+    aclTensor         *varRef,
+    const aclTensor   *inputValue,
+    const aclIntArray *begin,
+    const aclIntArray *end,
+    const aclIntArray *strides,
     const aclIntArray *axesOptional,
-    uint64_t          *workspaceSize, 
+    uint64_t          *workspaceSize,
     aclOpExecutor    **executor)
 ```
 
 ```cpp
 aclnnStatus aclnnStridedSliceAssignV2(
-    void          *workspace, 
-    uint64_t       workspaceSize, 
-    aclOpExecutor *executor, 
+    void          *workspace,
+    uint64_t       workspaceSize,
+    aclOpExecutor *executor,
     aclrtStream    stream)
 ```
 
@@ -118,7 +118,7 @@ aclnnStatus aclnnStridedSliceAssignV2(
       <td class="tg-0lax">-</td>
     </tr>
     <tr>
-      <td class="tg-0lax">axesOptinal（aclIntArray*）</td>
+      <td class="tg-0lax">axesOptional（aclIntArray*）</td>
       <td class="tg-0lax">输入</td>
       <td class="tg-0lax">可选参数，切片的轴。</td>
       <td class="tg-0lax">-</td>

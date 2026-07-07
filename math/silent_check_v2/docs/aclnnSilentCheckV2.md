@@ -16,7 +16,7 @@
 - 算子功能：
   新增aclnnSilentCheckV2接口，该版本与[aclnnSilentCheck](../../silent_check/docs/aclnnSilentCheck.md)接口的计算逻辑做了改变，根据stepRef参数判断val与新增马尔可夫不等式阈值进行对比校验。
 - 计算公式：
-  
+
   - 如果stepRef==0:
     - 如果当前输入`val`为inf/-inf/nan，或val超过`avgRef` * `cThreshL1`，则识别为L1级故障，打印ERROR日志，若环境变量`npuAsdDetect`为1，则更新`avgRef`与`stepRef`后正常返回，否则将inputGradRef置零、触发断点续训。
     - 如果当前输入`val`超过`avgRef` * `cThreshL2`，则识别为L2级告警；打印WARNING日志，并更新`avgRef`与`stepRef`后正常返回。
@@ -25,7 +25,7 @@
     - 如果当前输入`val`超过马尔可夫不等式阈值(avgRef/(1-beta1)^stepRef) * cThreshL2，则识别为L2级告警；打印WARNING日志，并更新`avgRef`与`stepRef`后正常返回。
     - 如果没有触发L1级故障、L2级告警，正常情况下：若`npuAsdDetect`为3，则打印`val`特征值；否则更新`avgRef`与`stepRef`后正常返回。
   - 其中`stepRef`为检测次数。
-  
+
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnSilentCheckV2GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSilentCheckV2”接口执行计算。
@@ -33,28 +33,28 @@
 ```Cpp
 
 aclnnStatus aclnnSilentCheckV2GetWorkspaceSize(
-    const aclTensor *val, 
-    const aclTensor *max, 
-    aclTensor *avgRef, 
-    aclTensor *inputGradRef, 
-    aclTensor *stepRef, 
-    aclIntArray *dstSize, 
-    aclIntArray *dstStride, 
-    aclIntArray *dstOffset, 
-    float cThreshL1,  
-    float cThreshL2, 
-    float beta1, 
-    int32_t npuAsdDetect, 
+    const aclTensor *val,
+    const aclTensor *max,
+    aclTensor *avgRef,
+    aclTensor *inputGradRef,
+    aclTensor *stepRef,
+    aclIntArray *dstSize,
+    aclIntArray *dstStride,
+    aclIntArray *dstOffset,
+    float cThreshL1,
+    float cThreshL2,
+    float beta1,
+    int32_t npuAsdDetect,
     aclTensor* result,
-    uint64_t *workspaceSize, 
+    uint64_t *workspaceSize,
     aclOpExecutor **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnSilentCheckV2(
-    void *workspace, 
-    uint64_t workspaceSize, 
-    aclOpExecutor *executor, 
+    void *workspace,
+    uint64_t workspaceSize,
+    aclOpExecutor *executor,
     aclrtStream stream)
 ```
 
@@ -154,7 +154,7 @@ aclnnStatus aclnnSilentCheckV2(
       <td>-</td>
     </tr>
     <tr>
-      <td>dstDffset</td>
+      <td>dstOffset</td>
       <td>输入</td>
       <td>-</td>
       <td>-</td>
@@ -235,9 +235,9 @@ aclnnStatus aclnnSilentCheckV2(
     </tr>
   </tbody></table>
 - **返回值**：
-  
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
+
   第一段接口完成入参校验，出现以下场景时报错：
   <table style="undefined;table-layout: fixed; width: 1030px"><colgroup>
   <col style="width: 250px">
@@ -273,7 +273,7 @@ aclnnStatus aclnnSilentCheckV2(
 ## aclnnSilentCheck
 
 - **参数说明**：
-  
+
   <table><thead>
     <tr>
       <th>参数名</th>
@@ -303,9 +303,9 @@ aclnnStatus aclnnSilentCheckV2(
     </tr>
   </tbody>
   </table>
-  
+
 - **返回值**：
-  
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明

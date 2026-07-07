@@ -30,19 +30,19 @@ $$
 ```cpp
 aclnnStatus aclnnLogSpaceGetWorkspaceSize(
   const aclScalar*    start,
-  const aclScalar*    end, 
-  int64_t             steps, 
-  double              base, 
-  const aclTensor*    result, 
-  uint64_t*           workspaceSize, 
+  const aclScalar*    end,
+  int64_t             steps,
+  double              base,
+  const aclTensor*    result,
+  uint64_t*           workspaceSize,
   aclOpExecutor**     executor)
 ```
 
 ```cpp
-aclnnStatus aclnnLogSpace( 
-  void            *workspace, 
-  uint64_t         workspaceSize, 
-  aclOpExecutor   *executor, 
+aclnnStatus aclnnLogSpace(
+  void            *workspace,
+  uint64_t         workspaceSize,
+  aclOpExecutor   *executor,
   aclrtStream      stream)
 ```
 
@@ -113,7 +113,7 @@ aclnnStatus aclnnLogSpace(
       <td>-</td>
     </tr>
     <tr>
-      <td>out (aclTensor*)</td>
+      <td>result (aclTensor*)</td>
       <td>输出</td>
       <td>表示LogSpace的输出，输出的对数间隔序列张量。</td>
       <td>-</td>
@@ -145,7 +145,7 @@ aclnnStatus aclnnLogSpace(
   </tbody></table>
 
 - **返回值：**
-  
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
@@ -216,7 +216,7 @@ aclnnStatus aclnnLogSpace(
     </tr>
   </tbody>
   </table>
-  
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -224,7 +224,7 @@ aclnnStatus aclnnLogSpace(
 ## 约束说明
 
 - **确定性计算:**
-  
+
   - aclnnLogSpace默认确定性实现。
 
 ## 调用示例

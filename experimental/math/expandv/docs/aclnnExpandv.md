@@ -22,18 +22,18 @@ $$
 
 ```Cpp
 aclnnStatus aclnnExpandvGetWorkspaceSize(
-  const aclTensor *self, 
+  const aclTensor *self,
   const aclIntArray* shape,
-  aclTensor       *out, 
-  uint64_t        *workspaceSize, 
+  aclTensor       *out,
+  uint64_t        *workspaceSize,
   aclOpExecutor  **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnExpandv(
-  void              *workspace, 
-  uint64_t           workspaceSize, 
-  aclOpExecutor     *executor, 
+  void              *workspace,
+  uint64_t           workspaceSize,
+  aclOpExecutor     *executor,
   const aclrtStream  stream)
 ```
 
@@ -64,7 +64,7 @@ aclnnStatus aclnnExpandv(
     </tr></thead>
   <tbody>
     <tr>
-      <td>x</td>
+      <td>self</td>
       <td>输入</td>
       <td>待进行expand计算的入参，公式中的x。</td>
       <td>无</td>
@@ -72,7 +72,7 @@ aclnnStatus aclnnExpandv(
       <td>ND</td>
       <td>1</td>
       <td>√</td>
-    </tr>  
+    </tr>
     <tr>
       <td>shape</td>
       <td>输入</td>
@@ -84,7 +84,7 @@ aclnnStatus aclnnExpandv(
       <td>√</td>
     </tr>
     <tr>
-      <td>y</td>
+      <td>out</td>
       <td>输出</td>
       <td>待进行expand计算的入参，公式中的y。</td>
       <td>shape与self相同。</td>

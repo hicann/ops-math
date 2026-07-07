@@ -18,13 +18,13 @@
 - 接口功能：
   在Matmul算子ND格式输入下，计算如果要转换到NZ格式下需要占用的空间大小（单位为元素个数），该接口仅仅用于判断对weight Tensor预处理需要使用多少size才可使Matmul算子执行性能最优。
   例如：
-  
+
   - 输入【510， 510】Float16/Bfloat16：该函数出于性能角度考虑，会将shape变化为【512，512】
 因此函数会将引用输入修改为262144
-  
+
   - 输入【510， 270】INT8：该函数出于性能角度考虑，会将shape变化为【512，288】
 因此函数会将引用输入修改为147456
-  
+
 - 计算公式：
 
   $$
@@ -41,8 +41,8 @@
 
 ```cpp
 aclnnStatus aclnnCalculateMatmulWeightSizeV2(
-    const aclIntArray *tensorShape, 
-    aclDataType        dataType, 
+    const aclIntArray *tensorShape,
+    aclDataType        dataType,
     uint64_t          *weightTensorSize)
 ```
 
@@ -83,7 +83,7 @@ aclnnStatus aclnnCalculateMatmulWeightSizeV2(
       <td class="tg-0pky">-</td>
     </tr>
     <tr>
-      <td class="tg-0lax">weightDtype（aclDataType）</td>
+      <td class="tg-0lax">dataType（aclDataType）</td>
       <td class="tg-0lax">输入</td>
       <td class="tg-0lax">weight的Dtype</td>
       <td class="tg-0lax">-</td>
