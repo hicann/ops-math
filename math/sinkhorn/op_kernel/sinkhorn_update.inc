@@ -178,7 +178,7 @@ namespace AscendC {
                 length = this->lastTileLength;
                 row = lastTileRow;
             }
-            
+
             // 搬入cost
             CopyInFromP<IT>(row, pGlobal[tileIdx]);
 
@@ -294,19 +294,20 @@ namespace AscendC {
                 d1OutQueue3.FreeTensor(d1OutLocal3);
             }
 
-            // d1OutQueue2 = old d1
-            {
-                LocalTensor<T> d1OutLocal2 = d1OutQueue2.AllocTensor<T>();
-                DataCopyPad(d1OutLocal2, d1GlobalInWS, copyParams, padParams);
-                d1OutQueue2.EnQue(d1OutLocal2);
-            }
-
-            // 取出
-            LocalTensor<T> d1OutLocal2 = d1OutQueue2.DeQue<T>();
+            // 取出新 d1
             LocalTensor<T> d1InLocal = d1InQueue.DeQue<T>();
 
-            // 写新值
+            // 旧 d1 搬入专用 VECIN 队列 d1OldInQueue：EnQue/DeQue 自带 MTE2->V 同步，
+            // 不再复用 d1OutQueue2 跨 V/MTE2，规避手动 MTE2_V 与活跃 VECIN 队列抢 event id（报错4/5/6/7/8）
+            LocalTensor<T> d1OldLocal = d1OldInQueue.AllocTensor<T>();
+            DataCopyPad(d1OldLocal, d1GlobalInWS, copyParams, padParams);
+            d1OldInQueue.EnQue(d1OldLocal);
+
+            // 写新值（MTE3）：同一 d1GlobalInWS 区，旧 d1 的 MTE2 读须先完成，补 MTE2->MTE3 同步（报错9）
             {
+                event_t eventIdMte2Mte3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
+                SetFlag<HardEvent::MTE2_MTE3>(eventIdMte2Mte3);
+                WaitFlag<HardEvent::MTE2_MTE3>(eventIdMte2Mte3);
                 DataCopyPad(d1GlobalInWS, d1InLocal, copyParams);
                 DataCacheClean(d1GlobalInWS);
             }
@@ -322,13 +323,16 @@ namespace AscendC {
                 d1OutQueue3.FreeTensor(d1OutLocal3);
             }
 
+            // 收敛判断：mean(|old_d1 - new_d1|)
             {
                 DataCacheClean(d1GlobalInWSNew);
+                LocalTensor<T> d1OldLocalIn = d1OldInQueue.DeQue<T>();
                 LocalTensor<T> d1OutLocal3 = d1OutQueue3.AllocTensor<T>();
                 LocalTensor<T> d1OutLocal = d1OutQueue.AllocTensor<T>();
+                LocalTensor<T> d1OutLocal2 = d1OutQueue2.AllocTensor<T>();
 
                 // d1_old - d1
-                Sub(d1OutLocal3, d1OutLocal2, d1InLocal, totalCol);
+                Sub(d1OutLocal3, d1OldLocalIn, d1InLocal, totalCol);
                 DUMP_LT_3(d1OutLocal3, totalCol, " d1[sub]: ");
                 PipeBarrier<PIPE_V>();
                 Abs(d1OutLocal, d1OutLocal3, totalCol);
@@ -346,10 +350,11 @@ namespace AscendC {
                 }
                 d1OutQueue.FreeTensor(d1OutLocal);
                 d1OutQueue3.FreeTensor(d1OutLocal3);
+                d1OutQueue2.FreeTensor(d1OutLocal2);
+                d1OldInQueue.FreeTensor(d1OldLocalIn);
             }
 
             d1InQueue.FreeTensor(d1InLocal);
-            d1OutQueue2.FreeTensor(d1OutLocal2);
         }
 
         SyncAll();
