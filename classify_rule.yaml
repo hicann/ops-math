@@ -103,7 +103,12 @@ HPTG5@ops-math:
   src:
     release:
       style:
-        - ops/ops-math/math/histogram_v2/op_host
+        - ops/ops-math/math/histogram_v2/op_host/histogram_v2_infershape.cpp
+        - ops/ops-math/math/histogram_v2/op_host/histogram_v2_op_tiling.cpp
+        - ops/ops-math/math/histogram_v2/op_host/histogram_v2_simt_tiling.cpp
+        - ops/ops-math/math/histogram_v2/op_host/histogram_v2_tiling.h
+        - ops/ops-math/math/histogram_v2/op_host/op_api/aclnn_histc.cpp
+        - ops/ops-math/math/histogram_v2/op_host/op_api/histogram.cpp
       opensource_style: null
       kernel_style: null
     unrelease:
