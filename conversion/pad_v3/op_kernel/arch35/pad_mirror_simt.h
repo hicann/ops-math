@@ -46,8 +46,8 @@ private:
 };
 
 template <typename T, int32_t KEY>
-__aicore__ inline void PadReflectSimt<T, KEY>::Init(
-    GM_ADDR x, GM_ADDR paddings, GM_ADDR y, const PadACTilingData* tilingData)
+__aicore__ inline void PadReflectSimt<T, KEY>::Init(GM_ADDR x, GM_ADDR paddings, GM_ADDR y,
+                                                    const PadACTilingData* tilingData)
 {
     mBlockIdx_ = GetBlockIdx();
     mTD_ = tilingData;
@@ -56,12 +56,11 @@ __aicore__ inline void PadReflectSimt<T, KEY>::Init(
 }
 
 template <typename T, bool IS_REFLECT>
-__simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectDimOne(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t outputSize, uint32_t blockIdx, uint32_t blockNum,
-    uint32_t inShape0, int32_t left0)
+__simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__
+    void SimtComputeReflectDimOne(__gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t outputSize,
+                                  uint32_t blockIdx, uint32_t blockNum, uint32_t inShape0, int32_t left0)
 {
-    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         int32_t inIndex0 = idx - left0;
         if constexpr (IS_REFLECT) {
             inIndex0 = abs(inIndex0) - abs(inIndex0 - (int32_t(inShape0) - 1)) - inIndex0 + int32_t(inShape0) - 1;
@@ -74,12 +73,12 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectD
 }
 
 template <typename T, int32_t DIM, bool IS_REFLECT>
-__simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectDimTwo(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t outputSize, uint32_t blockIdx, uint32_t blockNum,
-    uint32_t outStride0, uint32_t inShape0, uint32_t inShape1, uint32_t m0, uint32_t s0, int32_t left0, int32_t left1)
+__simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__
+    void SimtComputeReflectDimTwo(__gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t outputSize,
+                                  uint32_t blockIdx, uint32_t blockNum, uint32_t outStride0, uint32_t inShape0,
+                                  uint32_t inShape1, uint32_t m0, uint32_t s0, int32_t left0, int32_t left1)
 {
-    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint32_t dstIdx = idx;
         int32_t inIndex[DIM] = {0};
 
@@ -90,10 +89,10 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectD
         inIndex[1] -= left1;
 
         if constexpr (IS_REFLECT) {
-            inIndex[0] =
-                abs(inIndex[0]) - abs(inIndex[0] - (int32_t(inShape0) - 1)) - inIndex[0] + int32_t(inShape0) - 1;
-            inIndex[1] =
-                abs(inIndex[1]) - abs(inIndex[1] - (int32_t(inShape1) - 1)) - inIndex[1] + int32_t(inShape1) - 1;
+            inIndex[0] = abs(inIndex[0]) - abs(inIndex[0] - (int32_t(inShape0) - 1)) - inIndex[0] + int32_t(inShape0) -
+                         1;
+            inIndex[1] = abs(inIndex[1]) - abs(inIndex[1] - (int32_t(inShape1) - 1)) - inIndex[1] + int32_t(inShape1) -
+                         1;
         } else {
             inIndex[0] = (abs(inIndex[0] * 2 + 1) - abs((inIndex[0] - (int32_t(inShape0) - 1)) * 2 - 1)) / 2 -
                          inIndex[0] + int32_t(inShape0) - 1;
@@ -107,13 +106,13 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectD
 }
 
 template <typename T, int32_t DIM, bool IS_REFLECT>
-__simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectDimThree(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t outputSize, uint32_t blockIdx, uint32_t blockNum,
-    uint32_t outStride0, uint32_t outStride1, uint32_t inShape0, uint32_t inShape1, uint32_t inShape2, uint32_t m0,
-    uint32_t m1, uint32_t s0, uint32_t s1, int32_t left0, int32_t left1, int32_t left2)
+__simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__
+    void SimtComputeReflectDimThree(__gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t outputSize,
+                                    uint32_t blockIdx, uint32_t blockNum, uint32_t outStride0, uint32_t outStride1,
+                                    uint32_t inShape0, uint32_t inShape1, uint32_t inShape2, uint32_t m0, uint32_t m1,
+                                    uint32_t s0, uint32_t s1, int32_t left0, int32_t left1, int32_t left2)
 {
-    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint32_t dstIdx = idx;
         int32_t inIndex[DIM] = {0};
 
@@ -128,10 +127,10 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectD
         inIndex[2] -= left2;
 
         if constexpr (IS_REFLECT) {
-            inIndex[0] =
-                abs(inIndex[0]) - abs(inIndex[0] - (int32_t(inShape0) - 1)) - inIndex[0] + int32_t(inShape0) - 1;
-            inIndex[1] =
-                abs(inIndex[1]) - abs(inIndex[1] - (int32_t(inShape1) - 1)) - inIndex[1] + int32_t(inShape1) - 1;
+            inIndex[0] = abs(inIndex[0]) - abs(inIndex[0] - (int32_t(inShape0) - 1)) - inIndex[0] + int32_t(inShape0) -
+                         1;
+            inIndex[1] = abs(inIndex[1]) - abs(inIndex[1] - (int32_t(inShape1) - 1)) - inIndex[1] + int32_t(inShape1) -
+                         1;
             inIndex[DIM - 1] = abs(inIndex[DIM - 1]) - abs(inIndex[DIM - 1] - (int32_t(inShape2) - 1)) -
                                inIndex[DIM - 1] + int32_t(inShape2) - 1;
         } else {
@@ -139,25 +138,26 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectD
                          inIndex[0] + int32_t(inShape0) - 1;
             inIndex[1] = (abs(inIndex[1] * 2 + 1) - abs((inIndex[1] - (int32_t(inShape1) - 1)) * 2 - 1)) / 2 -
                          inIndex[1] + int32_t(inShape1) - 1;
-            inIndex[DIM - 1] =
-                (abs(inIndex[DIM - 1] * 2 + 1) - abs((inIndex[DIM - 1] - (int32_t(inShape2) - 1)) * 2 - 1)) / 2 -
-                inIndex[DIM - 1] + int32_t(inShape2) - 1;
+            inIndex[DIM - 1] = (abs(inIndex[DIM - 1] * 2 + 1) -
+                                abs((inIndex[DIM - 1] - (int32_t(inShape2) - 1)) * 2 - 1)) /
+                                   2 -
+                               inIndex[DIM - 1] + int32_t(inShape2) - 1;
         }
 
-        uint32_t inputOffset =
-            uint32_t(inIndex[0]) * inShape1 * inShape2 + uint32_t(inIndex[1]) * inShape2 + uint32_t(inIndex[DIM - 1]);
+        uint32_t inputOffset = uint32_t(inIndex[0]) * inShape1 * inShape2 + uint32_t(inIndex[1]) * inShape2 +
+                               uint32_t(inIndex[DIM - 1]);
         outputGM[idx] = inputGM[inputOffset];
     }
 }
 
 template <typename T, int32_t DIM, bool IS_REFLECT>
-__simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectDimFour(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, uint32_t outputSize, uint32_t blockIdx,
-    uint32_t blockNum, uint32_t m0, uint32_t m1, uint32_t m2, uint32_t s0, uint32_t s1, uint32_t s2)
+__simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__
+    void SimtComputeReflectDimFour(__gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, uint32_t outputSize,
+                                   uint32_t blockIdx, uint32_t blockNum, uint32_t m0, uint32_t m1, uint32_t m2,
+                                   uint32_t s0, uint32_t s1, uint32_t s2)
 {
     GET_TILING_DATA_PTR_WITH_STRUCT(PadACTilingData, tD, tiling);
-    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint32_t dstIdx = idx;
         int32_t inIndex[DIM] = {0};
 
@@ -177,10 +177,10 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectD
         } else {
             for (int32_t i = 0; i < DIM; i++) {
                 inIndex[i] -= static_cast<int32_t>(tD->leftPad[i]);
-                inIndex[i] =
-                    (abs(inIndex[i] * 2 + 1) - abs((inIndex[i] - (static_cast<int32_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
-                        2 -
-                    inIndex[i] + static_cast<int32_t>(tD->inShape[i]) - 1;
+                inIndex[i] = (abs(inIndex[i] * 2 + 1) -
+                              abs((inIndex[i] - (static_cast<int32_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
+                                 2 -
+                             inIndex[i] + static_cast<int32_t>(tD->inShape[i]) - 1;
             }
         }
         uint32_t inputOffset = static_cast<uint32_t>(inIndex[0]) * static_cast<uint32_t>(tD->inStride[0]) +
@@ -192,14 +192,13 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectD
 }
 
 template <typename T, int32_t DIM, bool IS_REFLECT>
-__simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectDimFive(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, uint32_t outputSize, uint32_t blockIdx,
-    uint32_t blockNum, uint32_t m0, uint32_t m1, uint32_t m2, uint32_t m3, uint32_t s0, uint32_t s1, uint32_t s2,
-    uint32_t s3)
+__simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__
+    void SimtComputeReflectDimFive(__gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, uint32_t outputSize,
+                                   uint32_t blockIdx, uint32_t blockNum, uint32_t m0, uint32_t m1, uint32_t m2,
+                                   uint32_t m3, uint32_t s0, uint32_t s1, uint32_t s2, uint32_t s3)
 {
     GET_TILING_DATA_PTR_WITH_STRUCT(PadACTilingData, tD, tiling);
-    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint32_t dstIdx = idx;
         int32_t inIndex[DIM] = {0};
 
@@ -222,10 +221,10 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectD
         } else {
             for (int32_t i = 0; i < DIM; i++) {
                 inIndex[i] -= static_cast<int32_t>(tD->leftPad[i]);
-                inIndex[i] =
-                    (abs(inIndex[i] * 2 + 1) - abs((inIndex[i] - (static_cast<int32_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
-                        2 -
-                    inIndex[i] + static_cast<int32_t>(tD->inShape[i]) - 1;
+                inIndex[i] = (abs(inIndex[i] * 2 + 1) -
+                              abs((inIndex[i] - (static_cast<int32_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
+                                 2 -
+                             inIndex[i] + static_cast<int32_t>(tD->inShape[i]) - 1;
             }
         }
 
@@ -239,14 +238,14 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectD
 }
 
 template <typename T, int32_t DIM, bool IS_REFLECT>
-__simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectDimSix(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, uint32_t outputSize, uint32_t blockIdx,
-    uint32_t blockNum, uint32_t m0, uint32_t m1, uint32_t m2, uint32_t m3, uint32_t m4, uint32_t s0, uint32_t s1,
-    uint32_t s2, uint32_t s3, uint32_t s4)
+__simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__
+    void SimtComputeReflectDimSix(__gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, uint32_t outputSize,
+                                  uint32_t blockIdx, uint32_t blockNum, uint32_t m0, uint32_t m1, uint32_t m2,
+                                  uint32_t m3, uint32_t m4, uint32_t s0, uint32_t s1, uint32_t s2, uint32_t s3,
+                                  uint32_t s4)
 {
     GET_TILING_DATA_PTR_WITH_STRUCT(PadACTilingData, tD, tiling);
-    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint32_t dstIdx = idx;
         int32_t inIndex[DIM] = {0};
 
@@ -271,10 +270,10 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectD
         } else {
             for (int32_t i = 0; i < DIM; i++) {
                 inIndex[i] -= static_cast<int32_t>(tD->leftPad[i]);
-                inIndex[i] =
-                    (abs(inIndex[i] * 2 + 1) - abs((inIndex[i] - (static_cast<int32_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
-                        2 -
-                    inIndex[i] + static_cast<int32_t>(tD->inShape[i]) - 1;
+                inIndex[i] = (abs(inIndex[i] * 2 + 1) -
+                              abs((inIndex[i] - (static_cast<int32_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
+                                 2 -
+                             inIndex[i] + static_cast<int32_t>(tD->inShape[i]) - 1;
             }
         }
 
@@ -289,14 +288,14 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectD
 }
 
 template <typename T, int32_t DIM, bool IS_REFLECT>
-__simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectDimSeven(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, uint32_t outputSize, uint32_t blockIdx,
-    uint32_t blockNum, uint32_t m0, uint32_t m1, uint32_t m2, uint32_t m3, uint32_t m4, uint32_t m5, uint32_t s0,
-    uint32_t s1, uint32_t s2, uint32_t s3, uint32_t s4, uint32_t s5)
+__simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__
+    void SimtComputeReflectDimSeven(__gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, uint32_t outputSize,
+                                    uint32_t blockIdx, uint32_t blockNum, uint32_t m0, uint32_t m1, uint32_t m2,
+                                    uint32_t m3, uint32_t m4, uint32_t m5, uint32_t s0, uint32_t s1, uint32_t s2,
+                                    uint32_t s3, uint32_t s4, uint32_t s5)
 {
     GET_TILING_DATA_PTR_WITH_STRUCT(PadACTilingData, tD, tiling);
-    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint32_t dstIdx = idx;
         int32_t inIndex[DIM] = {0};
 
@@ -323,10 +322,10 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectD
         } else {
             for (int32_t i = 0; i < DIM; i++) {
                 inIndex[i] -= static_cast<int32_t>(tD->leftPad[i]);
-                inIndex[i] =
-                    (abs(inIndex[i] * 2 + 1) - abs((inIndex[i] - (static_cast<int32_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
-                        2 -
-                    inIndex[i] + static_cast<int32_t>(tD->inShape[i]) - 1;
+                inIndex[i] = (abs(inIndex[i] * 2 + 1) -
+                              abs((inIndex[i] - (static_cast<int32_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
+                                 2 -
+                             inIndex[i] + static_cast<int32_t>(tD->inShape[i]) - 1;
             }
         }
 
@@ -342,14 +341,14 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectD
 }
 
 template <typename T, int32_t DIM, bool IS_REFLECT>
-__simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectDimEight(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, uint32_t outputSize, uint32_t blockIdx,
-    uint32_t blockNum, uint32_t m0, uint32_t m1, uint32_t m2, uint32_t m3, uint32_t m4, uint32_t m5, uint32_t m6,
-    uint32_t s0, uint32_t s1, uint32_t s2, uint32_t s3, uint32_t s4, uint32_t s5, uint32_t s6)
+__simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__
+    void SimtComputeReflectDimEight(__gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, uint32_t outputSize,
+                                    uint32_t blockIdx, uint32_t blockNum, uint32_t m0, uint32_t m1, uint32_t m2,
+                                    uint32_t m3, uint32_t m4, uint32_t m5, uint32_t m6, uint32_t s0, uint32_t s1,
+                                    uint32_t s2, uint32_t s3, uint32_t s4, uint32_t s5, uint32_t s6)
 {
     GET_TILING_DATA_PTR_WITH_STRUCT(PadACTilingData, tD, tiling);
-    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint32_t dstIdx = idx;
         int32_t inIndex[DIM] = {0};
 
@@ -378,10 +377,10 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_THREAD_DIM) __aicore__ void SimtComputeReflectD
         } else {
             for (int32_t i = 0; i < DIM; i++) {
                 inIndex[i] -= static_cast<int32_t>(tD->leftPad[i]);
-                inIndex[i] =
-                    (abs(inIndex[i] * 2 + 1) - abs((inIndex[i] - (static_cast<int32_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
-                        2 -
-                    inIndex[i] + static_cast<int32_t>(tD->inShape[i]) - 1;
+                inIndex[i] = (abs(inIndex[i] * 2 + 1) -
+                              abs((inIndex[i] - (static_cast<int32_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
+                                 2 -
+                             inIndex[i] + static_cast<int32_t>(tD->inShape[i]) - 1;
             }
         }
 

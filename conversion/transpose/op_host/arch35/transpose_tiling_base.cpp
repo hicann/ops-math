@@ -52,15 +52,11 @@ static void DuplicateArray(const vector<int64_t>& src, int64_t* dst, int64_t len
 
 static bool IsAllOne(const ShapeInfo& shapeInfo)
 {
-    return std::all_of(shapeInfo.inShape.begin(), shapeInfo.inShape.begin() + shapeInfo.dim, [](const int64_t& item) {
-        return item == 1;
-    });
+    return std::all_of(shapeInfo.inShape.begin(), shapeInfo.inShape.begin() + shapeInfo.dim,
+                       [](const int64_t& item) { return item == 1; });
 }
 
-static int DecreaseCompare(const void* a, const void* b)
-{
-    return (*(int64_t*)b - *(int64_t*)a);
-}
+static int DecreaseCompare(const void* a, const void* b) { return (*(int64_t*)b - *(int64_t*)a); }
 
 static void CalcOutShape(ShapeInfo& shapeInfo)
 {

@@ -53,4 +53,4 @@ ACLNN_API aclnnStatus aclnnReflectionPad1d(void* workspace, uint64_t workspaceSi
 }
 #endif
 
-#endif  // OP_API_INC_REFLECTION_PAD1D_H_
+#endif // OP_API_INC_REFLECTION_PAD1D_H_

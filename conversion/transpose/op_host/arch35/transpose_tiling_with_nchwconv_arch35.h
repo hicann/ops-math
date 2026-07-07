@@ -30,7 +30,6 @@
 #include "transpose_tiling_base.h"
 #include "transpose_tiling_arch35.h"
 
-
 namespace optiling {
 namespace TransposeWithVCONV {
 static constexpr int8_t BUFFER_NUM = 2;
@@ -43,7 +42,6 @@ TILING_DATA_FIELD_DEF(int64_t, AlignBlockTailFactor);
 TILING_DATA_FIELD_DEF(int64_t, BlockTailFactor);
 END_TILING_DATA_DEF;
 REGISTER_TILING_DATA_CLASS(CoreSplitParaOp, CoreSplitPara);
-
 
 BEGIN_TILING_DATA_DEF(UbSplitPara)
 TILING_DATA_FIELD_DEF(int64_t, MainCoreUbAlignFactor);
@@ -58,7 +56,6 @@ TILING_DATA_FIELD_DEF(int64_t, TailCoreTailUbAlignFactor);
 TILING_DATA_FIELD_DEF(int64_t, TailCoreTailUbFactor);
 END_TILING_DATA_DEF;
 REGISTER_TILING_DATA_CLASS(UbSplitParaOp, UbSplitPara);
-
 
 BEGIN_TILING_DATA_DEF(TransposeVCONVTilingData)
 TILING_DATA_FIELD_DEF(int64_t, AvailableUbSize);
@@ -103,7 +100,7 @@ struct BasicInfo {
 };
 
 struct CoreSplitInfo {
-    //r 方向
+    // r 方向
     int64_t AlignBlockFactor;
     int64_t BlockFactor;
     int64_t BlockCount;
@@ -118,7 +115,7 @@ struct UbParamInfo {
     int64_t MainCoreUbCount;
     int64_t MainCoreTailUbAlignFactor;
     int64_t MainCoreTailUbFactor;
-    //尾核
+    // 尾核
     int64_t TailCoreUbAlignFactor;
     int64_t TailCoreUbFactor;
     int64_t TailCoreUbCount;
@@ -126,14 +123,12 @@ struct UbParamInfo {
     int64_t TailCoreTailUbFactor;
 };
 
-class TransposeVCONVTiling
-{
+class TransposeVCONVTiling {
 public:
-    explicit TransposeVCONVTiling(gert::TilingContext* context,
-                                  const PlatInfo& platInfo,
-                                  const ShapeInfo& shapeInfo)
-        : context_(context), platInfo_(platInfo), shapeInfo_(shapeInfo){};
+    explicit TransposeVCONVTiling(gert::TilingContext* context, const PlatInfo& platInfo, const ShapeInfo& shapeInfo)
+        : context_(context), platInfo_(platInfo), shapeInfo_(shapeInfo) {};
     ge::graphStatus DoTiling();
+
 private:
     void CalcBasicInfo();
     void CalcRSplitInfo();
@@ -150,6 +145,7 @@ private:
     void FillUbPara(UbSplitPara& ubSplitPara, UbParamInfo& ubPara);
     void PrintTilingData();
     ge::graphStatus SetTilingKeyAndCore();
+
 private:
     gert::TilingContext* context_ = nullptr;
     int64_t tilingKey_{0};
@@ -164,7 +160,6 @@ private:
     TransposeVCONVTilingData tiling_;
 };
 
-
-} //namespace TransposeWithVCONV
-} //namespace optiling
+} // namespace TransposeWithVCONV
+} // namespace optiling
 #endif

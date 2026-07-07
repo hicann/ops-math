@@ -62,15 +62,15 @@ struct TruncCustom : public Vec::ElemwiseUnaryOP<T, T> {
                     // OpCopyIn
                     MicroAPI::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
 
-                    MicroAPI::Truncate<T, RoundMode::CAST_TRUNC, MicroAPI::MaskMergeMode::ZEROING>(
-                        vregOutput, vregInput, mask);
+                    MicroAPI::Truncate<T, RoundMode::CAST_TRUNC, MicroAPI::MaskMergeMode::ZEROING>(vregOutput,
+                                                                                                   vregInput, mask);
                     MicroAPI::Duplicate(vregOutInt, UINT32_SIGN, mask);
                     MicroAPI::And(vregOutInt, vregOutInt, (MicroAPI::RegTensor<uint32_t>&)vregInput, mask);
                     MicroAPI::Or(vregOutInt, vregOutInt, (MicroAPI::RegTensor<uint32_t>&)vregOutput, mask);
 
                     // OpCopyOut
-                    MicroAPI::DataCopy(
-                        (__ubuf__ T*)(dstAddr + loopIdx * vlSize), (MicroAPI::RegTensor<T>&)vregOutInt, mask);
+                    MicroAPI::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), (MicroAPI::RegTensor<T>&)vregOutInt,
+                                       mask);
                 }
             }
         } else {
@@ -82,15 +82,15 @@ struct TruncCustom : public Vec::ElemwiseUnaryOP<T, T> {
                     // OpCopyIn
                     MicroAPI::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
 
-                    MicroAPI::Truncate<T, RoundMode::CAST_TRUNC, MicroAPI::MaskMergeMode::ZEROING>(
-                        vregOutput, vregInput, mask);
+                    MicroAPI::Truncate<T, RoundMode::CAST_TRUNC, MicroAPI::MaskMergeMode::ZEROING>(vregOutput,
+                                                                                                   vregInput, mask);
                     MicroAPI::Duplicate(vregOutInt, UINT16_SIGN, mask);
                     MicroAPI::And(vregOutInt, vregOutInt, (MicroAPI::RegTensor<uint16_t>&)vregInput, mask);
                     MicroAPI::Or(vregOutInt, vregOutInt, (MicroAPI::RegTensor<uint16_t>&)vregOutput, mask);
 
                     // OpCopyOut
-                    MicroAPI::DataCopy(
-                        (__ubuf__ T*)(dstAddr + loopIdx * vlSize), (MicroAPI::RegTensor<T>&)vregOutInt, mask);
+                    MicroAPI::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), (MicroAPI::RegTensor<T>&)vregOutInt,
+                                       mask);
                 }
             }
         }
@@ -105,9 +105,8 @@ struct CastOverFlow : public Vec::ElemwiseUnaryOP<R, T> {
     {
 #ifdef __CCE_AICORE__
         SetCtrlSpr<SAT_POS, SAT_POS>(0);
-        constexpr static MicroAPI::CastTrait castTrait3 = {
-            MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT, MicroAPI::MaskMergeMode::ZEROING,
-            RoundMode::CAST_TRUNC};
+        constexpr static MicroAPI::CastTrait castTrait3 = {MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT,
+                                                           MicroAPI::MaskMergeMode::ZEROING, RoundMode::CAST_TRUNC};
         __VEC_SCOPE__
         {
             MicroAPI::RegTensor<T> vreg0;
@@ -133,9 +132,9 @@ struct CastOverFlow : public Vec::ElemwiseUnaryOP<R, T> {
 
 template <class T>
 struct TruncIntPostCompute : public Vec::ElemwiseTernaryOP<T, T, T, T> {
-    __aicore__ inline TruncIntPostCompute(
-        const LocalTensor<T>& dst, const LocalTensor<T>& input1, const LocalTensor<T>& input2,
-        const LocalTensor<T>& div, const uint32_t& count)
+    __aicore__ inline TruncIntPostCompute(const LocalTensor<T>& dst, const LocalTensor<T>& input1,
+                                          const LocalTensor<T>& input2, const LocalTensor<T>& div,
+                                          const uint32_t& count)
     {
 #ifdef __CCE_AICORE__
         constexpr uint32_t VECTOR_LENGTH = GetVRegSize();
@@ -177,8 +176,9 @@ struct TruncIntPostCompute : public Vec::ElemwiseTernaryOP<T, T, T, T> {
 
 #ifdef __CCE_AICORE__
 template <typename T>
-__simt_vf__ __aicore__ LAUNCH_BOUND(TRUNCATE_DIV_SIMT_THREADS) inline void TruncDivInt_SIMT(
-    __ubuf__ T* dst, __ubuf__ T* src1, __ubuf__ T* src2, int count)
+__simt_vf__ __aicore__ LAUNCH_BOUND(TRUNCATE_DIV_SIMT_THREADS) inline void TruncDivInt_SIMT(__ubuf__ T* dst,
+                                                                                            __ubuf__ T* src1,
+                                                                                            __ubuf__ T* src2, int count)
 {
     for (uint32_t index = static_cast<uint32_t>(threadIdx.x); index < count;
          index += static_cast<uint32_t>(blockDim.x)) {

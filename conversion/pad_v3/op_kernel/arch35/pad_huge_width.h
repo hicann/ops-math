@@ -32,8 +32,7 @@ struct PadHugeParam {
 };
 
 template <typename T, typename U = int8_t>
-class KernelPadWithHugeWidth
-{
+class KernelPadWithHugeWidth {
 private:
     static constexpr uint32_t BLK_ELEMS = UB_BLOCK / sizeof(T);
     GlobalTensor<T> input_;
@@ -118,11 +117,11 @@ public:
                     if (outIndex_[ubAxis] + ubFactor <= tilingData_->leftPad[ubAxis]) {
                         // 输出都在左pad点左侧
                         inCopyLen_[ubAxis] = 0;
-                    } else if (
-                        outIndex_[ubAxis] + ubFactor < tilingData_->leftPad[ubAxis] + tilingData_->inShape[ubAxis]) {
+                    } else if (outIndex_[ubAxis] + ubFactor <
+                               tilingData_->leftPad[ubAxis] + tilingData_->inShape[ubAxis]) {
                         // 输出都在右pad点左侧
-                        inCopyLen_[ubAxis] =
-                            outIndex_[ubAxis] + ubFactor - inIndex_[ubAxis] - tilingData_->leftPad[ubAxis];
+                        inCopyLen_[ubAxis] = outIndex_[ubAxis] + ubFactor - inIndex_[ubAxis] -
+                                             tilingData_->leftPad[ubAxis];
                     } else {
                         // 输出跨过右pad点
                         inCopyLen_[ubAxis] = tilingData_->inShape[ubAxis] - inIndex_[ubAxis];
@@ -181,9 +180,16 @@ private:
             padParam.padWROffset = 0;
             Duplicate(src[additionOffset_], constValue_, tilingData_->outTileSize / sizeof(T));
         } else {
-            SetEvent<HardEvent::MTE3_V>(HardEvent::MTE3_V);  
-            padParam.padWLOffset = (outIndex_[ubAxis] < tilingData_->leftPad[ubAxis]) ? tilingData_->leftPad[ubAxis] % ubFactor : 0;
-            padParam.padWROffset = (outIndex_[ubAxis] + ubFactor <= tilingData_->leftPad[ubAxis] + tilingData_->inShape[ubAxis]) ? ubFactor : (tilingData_->leftPad[tilingData_->ubAxis] + tilingData_->inShape[tilingData_->ubAxis]) % ubFactor;
+            SetEvent<HardEvent::MTE3_V>(HardEvent::MTE3_V);
+            padParam.padWLOffset = (outIndex_[ubAxis] < tilingData_->leftPad[ubAxis]) ?
+                                       tilingData_->leftPad[ubAxis] % ubFactor :
+                                       0;
+            padParam.padWROffset = (outIndex_[ubAxis] + ubFactor <=
+                                    tilingData_->leftPad[ubAxis] + tilingData_->inShape[ubAxis]) ?
+                                       ubFactor :
+                                       (tilingData_->leftPad[tilingData_->ubAxis] +
+                                        tilingData_->inShape[tilingData_->ubAxis]) %
+                                           ubFactor;
             uint32_t ubOffset = CeilAlign(padParam.padWLOffset, BLK_ELEMS);
             Duplicate(src, constValue_, additionOffset_ + tilingData_->outTileSize / sizeof(T));
             SetEvent<HardEvent::V_MTE2>(HardEvent::V_MTE2);
@@ -217,10 +223,9 @@ private:
         for (uint32_t i = 0; i < tilingData_->dimNum; i++) {
             outAddr += outIndex_[i] * tilingData_->outStride[i];
         }
-        uint32_t copyLen =
-            (outIndex_[ubAxis] + ubFactor < tilingData_->outShape[ubAxis] ?
-                 ubFactor :
-                 tilingData_->outShape[ubAxis] - outIndex_[ubAxis]);
+        uint32_t copyLen = (outIndex_[ubAxis] + ubFactor < tilingData_->outShape[ubAxis] ?
+                                ubFactor :
+                                tilingData_->outShape[ubAxis] - outIndex_[ubAxis]);
         DataCopyExtParams copyOutParams;
         copyOutParams.blockCount = 1;
         copyOutParams.blockLen = copyLen * sizeof(T);
@@ -231,8 +236,8 @@ private:
         DataCopyPad(output_[outAddr], src[additionOffset_], copyOutParams);
     }
 
-    __aicore__ inline void PadOneLine(
-        LocalTensor<T> src, PadHugeParam& padParam, LocalTensor<T> addition, uint32_t additionLen)
+    __aicore__ inline void PadOneLine(LocalTensor<T> src, PadHugeParam& padParam, LocalTensor<T> addition,
+                                      uint32_t additionLen)
     {
         if (padParam.padW % BLK_ELEMS == 0 && padParam.padWLOffset % BLK_ELEMS == 0 &&
             padParam.padWROffset % BLK_ELEMS == 0) {
@@ -248,8 +253,8 @@ private:
     }
 
     template <const AscendC::MicroAPI::RegTrait& Trait>
-    __aicore__ inline void PadBothSide(
-        LocalTensor<T> dst, PadHugeParam& padParam, LocalTensor<T> addition, uint32_t additionLen)
+    __aicore__ inline void PadBothSide(LocalTensor<T> dst, PadHugeParam& padParam, LocalTensor<T> addition,
+                                       uint32_t additionLen)
     {
         __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
         __ubuf__ T* additionAddr = (__ubuf__ T*)addition.GetPhyAddr();
@@ -264,8 +269,8 @@ private:
         // pad一行的边界，最大到pad的右偏移点
         const uint32_t padLeftEdge = padParam.padWROffset > padLeftCeilAlign ? padLeftCeilAlign : padParam.padWROffset;
         const uint32_t padLeftSize = padLeftEdge - padParam.padWLOffset;
-        const uint16_t needPadRight =
-            (padParam.padWROffset > padLeftCeilAlign && padParam.padWROffset % BLK_ELEMS != 0);
+        const uint16_t needPadRight = (padParam.padWROffset > padLeftCeilAlign &&
+                                       padParam.padWROffset % BLK_ELEMS != 0);
         const uint32_t padRigthFloorAlign = padParam.padWROffset / BLK_ELEMS * BLK_ELEMS;
         const uint32_t noPadRightSize = padParam.padWROffset - padRigthFloorAlign; // 实际输入右边界
 
@@ -276,8 +281,8 @@ private:
             AscendC::MicroAPI::UnalignReg uReg;
             AscendC::MicroAPI::MaskReg pMask;
             AscendC::MicroAPI::MaskReg outMask;
-            AscendC::MicroAPI::MaskReg maskAll =
-                AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL, Trait>();
+            AscendC::MicroAPI::MaskReg
+                maskAll = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL, Trait>();
             uint32_t padLen = padLeftSize;
 
             for (uint16_t k = 0; k < needPadLeft; k++) {

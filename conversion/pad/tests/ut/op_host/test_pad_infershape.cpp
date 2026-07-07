@@ -14,13 +14,15 @@
 #include "infershape_case_executor.h"
 
 class Pad : public testing::Test {
-  protected:
-    static void SetUpTestCase() {
+protected:
+    static void SetUpTestCase()
+    {
         setenv("ASCEND_SLOG_PRINT_TO_STDOUT", "1", true);
         std::cout << "Pad SetUp" << std::endl;
     }
 
-    static void TearDownTestCase() {
+    static void TearDownTestCase()
+    {
         unsetenv("ASCEND_SLOG_PRINT_TO_STDOUT");
         std::cout << "Pad TearDown" << std::endl;
     }
@@ -28,62 +30,58 @@ class Pad : public testing::Test {
 
 using namespace ge;
 
-TEST_F(Pad, Pad_const_infer_1) {
+TEST_F(Pad, Pad_const_infer_1)
+{
     std::vector<int32_t> values = {1, 1, 2, 2};
-    gert::InfershapeContextPara infershapeContextPara("Pad",
-                                                      {
-                                                        {{{3, 5}, {3, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-                                                        {{{2, 2}, {2, 2}}, ge::DT_INT32, ge::FORMAT_ND, true, values.data()}
-                                                      },
-                                                      {
-                                                        {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-                                                      }
-                                                     );
+    gert::InfershapeContextPara infershapeContextPara(
+        "Pad",
+        {{{{3, 5}, {3, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+         {{{2, 2}, {2, 2}}, ge::DT_INT32, ge::FORMAT_ND, true, values.data()}},
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
     std::vector<std::vector<int64_t>> expectOutputShape = {{5, 9}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-TEST_F(Pad, Pad_const_infer_2_error_paddings_num) {
+TEST_F(Pad, Pad_const_infer_2_error_paddings_num)
+{
     std::vector<int32_t> values = {1, 1, 2, 2, 0, 0};
-    gert::InfershapeContextPara infershapeContextPara("Pad",
-                                                      {
-                                                        {{{3, 5}, {3, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-                                                        {{{3, 2}, {3, 2}}, ge::DT_INT64, ge::FORMAT_ND, true, values.data()}
-                                                      },
-                                                      {
-                                                        {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-                                                      }
-                                                     );
+    gert::InfershapeContextPara infershapeContextPara(
+        "Pad",
+        {{{{3, 5}, {3, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+         {{{3, 2}, {3, 2}}, ge::DT_INT64, ge::FORMAT_ND, true, values.data()}},
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
     std::vector<std::vector<int64_t>> expectOutputShape = {{5, 9}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
 }
 
-TEST_F(Pad, Pad_const_infer_3_error_paddings_dtype) {
+TEST_F(Pad, Pad_const_infer_3_error_paddings_dtype)
+{
     std::vector<int32_t> values = {1, 1, 2, 2};
-    gert::InfershapeContextPara infershapeContextPara("Pad",
-                                                      {
-                                                        {{{3, 5}, {3, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-                                                        {{{2, 2}, {2, 2}}, ge::DT_UINT64, ge::FORMAT_ND, true, values.data()}
-                                                      },
-                                                      {
-                                                        {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-                                                      }
-                                                     );
+    gert::InfershapeContextPara infershapeContextPara(
+        "Pad",
+        {{{{3, 5}, {3, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+         {{{2, 2}, {2, 2}}, ge::DT_UINT64, ge::FORMAT_ND, true, values.data()}},
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
     std::vector<std::vector<int64_t>> expectOutputShape = {{5, 9}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
 }
 
-TEST_F(Pad, Pad_const_infer_4_error_paddings_num) {
+TEST_F(Pad, Pad_const_infer_4_error_paddings_num)
+{
     std::vector<int32_t> values = {1, 1, 2, 2, 0, 0};
-    gert::InfershapeContextPara infershapeContextPara("Pad",
-                                                      {
-                                                        {{{3, 5}, {3, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-                                                        {{{3, 2}, {3, 2}}, ge::DT_INT64, ge::FORMAT_ND, true, values.data()}
-                                                      },
-                                                      {
-                                                        {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-                                                      }
-                                                     );
+    gert::InfershapeContextPara infershapeContextPara(
+        "Pad",
+        {{{{3, 5}, {3, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+         {{{3, 2}, {3, 2}}, ge::DT_INT64, ge::FORMAT_ND, true, values.data()}},
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
     std::vector<std::vector<int64_t>> expectOutputShape = {{5, 9}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
 }

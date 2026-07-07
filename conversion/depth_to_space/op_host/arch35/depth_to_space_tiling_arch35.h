@@ -50,6 +50,6 @@ private:
     int64_t nchwDcrPerm_[DIM_SIX] = {0, 3, 4, 1, 5, 2};
     int64_t crdPerm_[DIM_SIX] = {0, 1, 4, 2, 5, 3};
 };
-}  // namespace DepthToSpace
-}  // namespace optiling
+} // namespace DepthToSpace
+} // namespace optiling
 #endif

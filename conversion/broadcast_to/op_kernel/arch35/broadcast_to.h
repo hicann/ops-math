@@ -46,12 +46,12 @@ __aicore__ void inline broadcast_to_impl(GM_ADDR x, GM_ADDR shape, GM_ADDR y, GM
     constexpr auto b32 = sizeof(uint32_t);
     constexpr auto b64 = sizeof(uint64_t);
     constexpr auto tSize = sizeof(DTYPE_X);
-    using DTYPE_X_ =
-        std::conditional_t<tSize != b32,
-                           std::conditional_t<tSize == b8, uint8_t,
-                                              std::conditional_t<tSize == b16, uint16_t,
-                                                                 std::conditional_t<tSize == b64, uint64_t, DTYPE_X>>>,
-                           DTYPE_X>;
+    using DTYPE_X_ = std::conditional_t<
+        tSize != b32,
+        std::conditional_t<
+            tSize == b8, uint8_t,
+            std::conditional_t<tSize == b16, uint16_t, std::conditional_t<tSize == b64, uint64_t, DTYPE_X>>>,
+        DTYPE_X>;
     TPipe pipe;
 
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
@@ -84,4 +84,4 @@ __aicore__ void inline broadcast_to_impl(GM_ADDR x, GM_ADDR shape, GM_ADDR y, GM
     }
 }
 
-#endif  // BROADCAST_TO_H_
+#endif // BROADCAST_TO_H_

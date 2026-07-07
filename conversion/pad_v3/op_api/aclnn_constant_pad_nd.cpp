@@ -38,16 +38,16 @@ static const std::initializer_list<DataType> DTYPE_SUPPORT_910B_LIST = {
     DataType::DT_UINT8, DataType::DT_BOOL,  DataType::DT_COMPLEX64, DataType::DT_COMPLEX128, DataType::DT_BF16};
 
 static const std::initializer_list<DataType> DTYPE_SUPPORT_REGBASE_LIST = {
-    DataType::DT_FLOAT,       DataType::DT_INT32,         DataType::DT_FLOAT16,    DataType::DT_INT8,
-    DataType::DT_DOUBLE,      DataType::DT_INT16,         DataType::DT_INT64,      DataType::DT_UINT64,
-    DataType::DT_UINT32,      DataType::DT_UINT16,        DataType::DT_UINT8,      DataType::DT_BOOL,
-    DataType::DT_COMPLEX64,   DataType::DT_COMPLEX128,    DataType::DT_BF16,       DataType::DT_HIFLOAT8,
+    DataType::DT_FLOAT,       DataType::DT_INT32,         DataType::DT_FLOAT16,     DataType::DT_INT8,
+    DataType::DT_DOUBLE,      DataType::DT_INT16,         DataType::DT_INT64,       DataType::DT_UINT64,
+    DataType::DT_UINT32,      DataType::DT_UINT16,        DataType::DT_UINT8,       DataType::DT_BOOL,
+    DataType::DT_COMPLEX64,   DataType::DT_COMPLEX128,    DataType::DT_BF16,        DataType::DT_HIFLOAT8,
     DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E8M0, DataType::DT_FLOAT4_E2M1,
     DataType::DT_FLOAT4_E1M2};
 
 static const std::initializer_list<DataType> DTYPE_SUPPORT_FP8_FP4_LIST = {
-    DataType::DT_HIFLOAT8, DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E8M0,
-    DataType::DT_FLOAT4_E2M1, DataType::DT_FLOAT4_E1M2};
+    DataType::DT_HIFLOAT8,    DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN,
+    DataType::DT_FLOAT8_E8M0, DataType::DT_FLOAT4_E2M1, DataType::DT_FLOAT4_E1M2};
 
 static const size_t DIM_BOUND = 8;
 static const size_t SIZE_T_TWICE = 2;
@@ -66,11 +66,10 @@ static bool CheckNotNull(const aclTensor* self, const aclIntArray* pad, const ac
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
-    bool is910bSocVersion =
-        (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93);
-    std::initializer_list<op::DataType> CURRENT_DTYPE_SUPPORT_LIST =
-        is910bSocVersion ? DTYPE_SUPPORT_910B_LIST : DTYPE_SUPPORT_LIST;
+    bool is910bSocVersion = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+                             GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93);
+    std::initializer_list<op::DataType> CURRENT_DTYPE_SUPPORT_LIST = is910bSocVersion ? DTYPE_SUPPORT_910B_LIST :
+                                                                                        DTYPE_SUPPORT_LIST;
     if (IsRegBase()) {
         CURRENT_DTYPE_SUPPORT_LIST = DTYPE_SUPPORT_REGBASE_LIST;
     }
@@ -101,10 +100,9 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* pad, const aclT
     }
     // 判断pad数组是否符合要求
     if (padCover > selfDim) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "Expected aclnnConstantPadNd pad len [%zu] to not be greater than twice of [%zu] but check failed.", padLen,
-            selfDim);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "Expected aclnnConstantPadNd pad len [%zu] to not be greater than twice of [%zu] but check failed.",
+                padLen, selfDim);
         return false;
     }
 
@@ -118,11 +116,10 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* pad, const aclT
         int64_t min = std::min(begin, end);
         min = std::min(min, begin + end);
         if (curShape + min < 0) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID,
-                "The input size %ld plus padding %ld and %ld resulted in a negative output size,"
-                " which is invalid. Check dimension %zu of your input.",
-                curShape, begin, end, selfDim - i - 1);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "The input size %ld plus padding %ld and %ld resulted in a negative output size,"
+                    " which is invalid. Check dimension %zu of your input.",
+                    curShape, begin, end, selfDim - i - 1);
             return false;
         }
         if (begin > 0 || end > 0) {
@@ -132,13 +129,12 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* pad, const aclT
             signSymbol |= NEGETIVE;
         }
         if (newShape != out->GetViewShape().GetDim(selfDim - i - 1)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID,
-                "output shape at dim %zu check failed,"
-                "The output shape you provided is %ld at dim %zu,"
-                " and the expected one is %ld at dim %zu based on the infershape.",
-                selfDim - i - 1, out->GetViewShape().GetDim(selfDim - i - 1), selfDim - i - 1, newShape,
-                selfDim - i - 1);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "output shape at dim %zu check failed,"
+                    "The output shape you provided is %ld at dim %zu,"
+                    " and the expected one is %ld at dim %zu based on the infershape.",
+                    selfDim - i - 1, out->GetViewShape().GetDim(selfDim - i - 1), selfDim - i - 1, newShape,
+                    selfDim - i - 1);
             return false;
         }
         if (i < padCover && newShape == 0) {
@@ -147,9 +143,8 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* pad, const aclT
     }
 
     if (hasZero && ((signSymbol & POSITIVE) == POSITIVE)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "The output size %s with zero element is invalid, please check your input.",
-            op::ToString(out->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The output size %s with zero element is invalid, please check your input.",
+                op::ToString(out->GetViewShape()).GetString());
         return false;
     }
     return true;
@@ -159,15 +154,14 @@ static bool Checkformat(const aclTensor* self, const aclTensor* out)
 {
     if (self->GetStorageFormat() != out->GetStorageFormat() &&
         self->GetStorageFormat() != static_cast<op::Format>(ACL_FORMAT_ND)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "If Input tensor's format not ND, Input tensor's format[%s] should be same with output's format[%s].",
-            op::ToString(self->GetStorageFormat()).GetString(), op::ToString(out->GetStorageFormat()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "If Input tensor's format not ND, Input tensor's format[%s] should be same with output's format[%s].",
+                op::ToString(self->GetStorageFormat()).GetString(), op::ToString(out->GetStorageFormat()).GetString());
         return false;
     }
     if (op::IsPrivateFormat(self->GetStorageFormat()) || op::IsPrivateFormat(out->GetStorageFormat())) {
         OP_LOGW("Format of input gets [%s] and output gets [%s], this format may lead to precision failure",
-        op::ToString(self->GetStorageFormat()).GetString(), op::ToString(out->GetStorageFormat()).GetString());
+                op::ToString(self->GetStorageFormat()).GetString(), op::ToString(out->GetStorageFormat()).GetString());
     }
     return true;
 }
@@ -182,8 +176,8 @@ static bool CheckPadForFp8(const aclTensor* self, const uint32_t& signSymbol)
     return true; // 非fp8
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclIntArray* pad, const aclScalar* value, const aclTensor* out, uint32_t& signSymbol)
+static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* pad, const aclScalar* value,
+                               const aclTensor* out, uint32_t& signSymbol)
 {
     // 1. 检查参数是否为空指针
     CHECK_COND(CheckNotNull(self, pad, value, out), ACLNN_ERR_PARAM_NULLPTR, "CheckNotNull failed!");
@@ -219,8 +213,8 @@ static aclIntArray* GetRealPad(const aclTensor* self, const aclIntArray* pad, ac
     return executor->AllocIntArray(padVec.data(), padVec.size());
 }
 
-static aclnnStatus GetIntArr(
-    const aclTensor* self, const aclIntArray* realPad, aclIntArray** noneNegPad, aclOpExecutor* executor)
+static aclnnStatus GetIntArr(const aclTensor* self, const aclIntArray* realPad, aclIntArray** noneNegPad,
+                             aclOpExecutor* executor)
 {
     // 构造非负pad以及begin、end数组
     size_t selfDim = self->GetViewShape().GetDimNum();
@@ -282,9 +276,8 @@ static aclnnStatus HandleSelfEmpty(const aclScalar* value, aclTensor* out, aclOp
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus DoPadV3(
-    const aclTensor* self, const aclIntArray* noneNegPad, const aclScalar* value, const aclTensor** padV3Result,
-    aclOpExecutor* executor)
+static aclnnStatus DoPadV3(const aclTensor* self, const aclIntArray* noneNegPad, const aclScalar* value,
+                           const aclTensor** padV3Result, aclOpExecutor* executor)
 {
     auto padTensor = executor->ConvertToTensor(noneNegPad, DataType::DT_INT32);
     CHECK_RET(padTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -311,7 +304,7 @@ static aclnnStatus DoPadV3(
         for (size_t i = 0; i < valueDataSize; i++) {
             uint8_t valueDataIdx = valueData[i];
             CHECK_COND(valueDataIdx == 0 || valueTensor != nullptr, ACLNN_ERR_PARAM_INVALID,
-                "Fp8/Fp4 only support pad constant value 0.");
+                       "Fp8/Fp4 only support pad constant value 0.");
         }
         CHECK_RET(valueTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
         // 调用l0算子PadV3进行计算
@@ -338,8 +331,8 @@ static aclnnStatus DoPadV3(
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus DoStridedSlice(
-    const aclTensor* padV3Result, const aclIntArray* realPad, aclTensor* out, aclOpExecutor* executor)
+static aclnnStatus DoStridedSlice(const aclTensor* padV3Result, const aclIntArray* realPad, aclTensor* out,
+                                  aclOpExecutor* executor)
 {
     op::Shape curShape = padV3Result->GetViewShape();
     size_t outDim = out->GetViewShape().GetDimNum();
@@ -390,9 +383,8 @@ static aclnnStatus DoStridedSlice(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnConstantPadNdGetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* pad, const aclScalar* value, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnConstantPadNdGetWorkspaceSize(const aclTensor* self, const aclIntArray* pad, const aclScalar* value,
+                                               aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 

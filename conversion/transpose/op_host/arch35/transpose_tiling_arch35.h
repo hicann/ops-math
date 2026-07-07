@@ -159,7 +159,7 @@ ge::graphStatus TilingPrepareTransposeForAscendC(gert::TilingParseContext* conte
 
 class TransposeNddmaTiling {
 public:
-    explicit TransposeNddmaTiling(gert::TilingContext* context) : tilingContext_(context){};
+    explicit TransposeNddmaTiling(gert::TilingContext* context) : tilingContext_(context) {};
     ge::graphStatus Init(const int64_t& coreNum, const int64_t& ubSize);
     ge::graphStatus RunTranposelTiling();
     ge::graphStatus TilingForReleatedTranspose(gert::TilingContext* context, TransposeOpTilingData* tilingData,

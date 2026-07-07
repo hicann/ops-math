@@ -26,17 +26,16 @@ void TransposeGatherTiling::CalcTensorSize()
 {
     // ping pong, input and output
     if (shapeInfo_.eleLenInBytes == 1L) {
-        dataTensorSize_ = static_cast<uint32_t>(
-            platInfo_.ubSize / (NUM_TWO * NUM_TWO + NUM_TWO) / platInfo_.ubBlockSize * platInfo_.ubBlockSize);
+        dataTensorSize_ = static_cast<uint32_t>(platInfo_.ubSize / (NUM_TWO * NUM_TWO + NUM_TWO) /
+                                                platInfo_.ubBlockSize * platInfo_.ubBlockSize);
         indexTensorSize_ = dataTensorSize_ * static_cast<uint32_t>(NUM_TWO);
     } else if (shapeInfo_.eleLenInBytes == NUM_EIGHT) {
-        dataTensorSize_ = static_cast<uint32_t>(
-            (platInfo_.ubSize / (NUM_TWO * NUM_TWO * NUM_EIGHT + NUM_FOUR) * NUM_EIGHT / platInfo_.ubBlockSize *
-             platInfo_.ubBlockSize));
+        dataTensorSize_ = static_cast<uint32_t>((platInfo_.ubSize / (NUM_TWO * NUM_TWO * NUM_EIGHT + NUM_FOUR) *
+                                                 NUM_EIGHT / platInfo_.ubBlockSize * platInfo_.ubBlockSize));
         indexTensorSize_ = dataTensorSize_ / static_cast<uint32_t>(NUM_TWO);
     } else {
-        dataTensorSize_ = static_cast<uint32_t>(
-            platInfo_.ubSize / (NUM_TWO * NUM_TWO + 1) / platInfo_.ubBlockSize * platInfo_.ubBlockSize);
+        dataTensorSize_ = static_cast<uint32_t>(platInfo_.ubSize / (NUM_TWO * NUM_TWO + 1) / platInfo_.ubBlockSize *
+                                                platInfo_.ubBlockSize);
         indexTensorSize_ = dataTensorSize_;
     }
 }
@@ -108,10 +107,10 @@ void TransposeGatherTiling::AdjustUbCutAxisFactor(int32_t& axisFactor, int8_t ax
     int64_t srcFactor = 0;
     // in and out ub cut same axis
     if (axisFlag == 0) {
-        bool isDstUbOverflow =
-            (dstInUbAxesSize * Ops::Base::CeilAlign(dstOutUbAxesSize * axisFactor, elemPerBlock) > elemInTensor);
-        bool isSrcUbOverflow =
-            (srcOutUbAxesSize * Ops::Base::CeilAlign(srcInUbAxesSize * axisFactor, elemPerBlock) > elemInTensor);
+        bool isDstUbOverflow = (dstInUbAxesSize * Ops::Base::CeilAlign(dstOutUbAxesSize * axisFactor, elemPerBlock) >
+                                elemInTensor);
+        bool isSrcUbOverflow = (srcOutUbAxesSize * Ops::Base::CeilAlign(srcInUbAxesSize * axisFactor, elemPerBlock) >
+                                elemInTensor);
         if (isDstUbOverflow || isSrcUbOverflow) {
             dstFactor = elemInTensor / dstInUbAxesSize / elemPerBlock * elemPerBlock / dstOutUbAxesSize;
             srcFactor = elemInTensor / srcOutUbAxesSize / elemPerBlock * elemPerBlock / srcInUbAxesSize;
@@ -125,12 +124,12 @@ void TransposeGatherTiling::AdjustUbCutAxisFactor(int32_t& axisFactor, int8_t ax
         if (axisFlag == 1) {
             srcOutUbAxesSize /= ubSplitInfo_.inUbCutAxisFactor;
         }
-        bool isDstUbOverflow =
-            (dstInUbAxesSize * Ops::Base::CeilAlign(dstOutUbAxesSize * axisFactor, elemPerBlock) > elemInTensor);
-        bool isSrcUbOverflow =
-            (axisFactor * srcOutUbAxesSize *
-                 Ops::Base::CeilAlign(srcInUbAxesSize * ubSplitInfo_.inUbCutAxisFactor, elemPerBlock) >
-             elemInTensor);
+        bool isDstUbOverflow = (dstInUbAxesSize * Ops::Base::CeilAlign(dstOutUbAxesSize * axisFactor, elemPerBlock) >
+                                elemInTensor);
+        bool isSrcUbOverflow = (axisFactor * srcOutUbAxesSize *
+                                    Ops::Base::CeilAlign(srcInUbAxesSize * ubSplitInfo_.inUbCutAxisFactor,
+                                                         elemPerBlock) >
+                                elemInTensor);
         if (isDstUbOverflow || isSrcUbOverflow) {
             dstFactor = elemInTensor / dstInUbAxesSize / elemPerBlock * elemPerBlock / dstOutUbAxesSize;
             srcFactor = Ops::Base::FloorDiv(
@@ -141,12 +140,12 @@ void TransposeGatherTiling::AdjustUbCutAxisFactor(int32_t& axisFactor, int8_t ax
         // in ub cut axis
     } else if (axisFlag == NUM_TWO) {
         dstInUbAxesSize /= ubSplitInfo_.outUbCutAxisFactor;
-        bool isDstUbOverflow =
-            (axisFactor * dstInUbAxesSize *
-                 Ops::Base::CeilAlign(dstOutUbAxesSize * ubSplitInfo_.outUbCutAxisFactor, elemPerBlock) >
-             elemInTensor);
-        bool isSrcUbOverflow =
-            (srcOutUbAxesSize * Ops::Base::CeilAlign(srcInUbAxesSize * axisFactor, elemPerBlock) > elemInTensor);
+        bool isDstUbOverflow = (axisFactor * dstInUbAxesSize *
+                                    Ops::Base::CeilAlign(dstOutUbAxesSize * ubSplitInfo_.outUbCutAxisFactor,
+                                                         elemPerBlock) >
+                                elemInTensor);
+        bool isSrcUbOverflow = (srcOutUbAxesSize * Ops::Base::CeilAlign(srcInUbAxesSize * axisFactor, elemPerBlock) >
+                                elemInTensor);
         if (isDstUbOverflow || isSrcUbOverflow) {
             dstFactor = Ops::Base::FloorDiv(
                 elemInTensor / dstInUbAxesSize,
@@ -157,9 +156,8 @@ void TransposeGatherTiling::AdjustUbCutAxisFactor(int32_t& axisFactor, int8_t ax
     }
 }
 
-void TransposeGatherTiling::CalcUbAxisCutFactor(
-    int64_t elemInTensor, int64_t sqrtedTensor, bool isLastInPermLeft, bool isLastOutPermLeft,
-    const std::set<int8_t>& viceAllUbPerm)
+void TransposeGatherTiling::CalcUbAxisCutFactor(int64_t elemInTensor, int64_t sqrtedTensor, bool isLastInPermLeft,
+                                                bool isLastOutPermLeft, const std::set<int8_t>& viceAllUbPerm)
 {
     int64_t allSavedElems = 1;
     for (int8_t idx : allUbPerm_) {
@@ -172,8 +170,8 @@ void TransposeGatherTiling::CalcUbAxisCutFactor(
     int64_t inSavedElems = CalcShapeSize(shapeInfo_.reducedInShape, dim - inUbPerm_.cnt + 1, dim);
     // to save ub for gather index
     int64_t elemPerBlock = platInfo_.ubBlockSize / shapeInfo_.eleLenInBytes;
-    int64_t maxOutCutAxisSize =
-        elemInTensor / NUM_FOUR / elemPerBlock * elemPerBlock / Ops::Base::CeilAlign(outSavedElems, elemPerBlock);
+    int64_t maxOutCutAxisSize = elemInTensor / NUM_FOUR / elemPerBlock * elemPerBlock /
+                                Ops::Base::CeilAlign(outSavedElems, elemPerBlock);
     int64_t maxCutAxisSize = elemInTensor / allSavedElems;
 
     if (isLastInPermLeft && isLastOutPermLeft) {
@@ -188,8 +186,8 @@ void TransposeGatherTiling::CalcUbAxisCutFactor(
                         comSavedElems *= shapeInfo_.reducedInShape[outUbPerm_.perm[idx]];
                     }
                 }
-                int64_t newSqrtedTensor =
-                    static_cast<int64_t>(std::sqrt(elemInTensor / comSavedElems / elemPerBlock * elemPerBlock));
+                int64_t newSqrtedTensor = static_cast<int64_t>(
+                    std::sqrt(elemInTensor / comSavedElems / elemPerBlock * elemPerBlock));
                 int64_t inLeft = inSavedElems / comSavedElems;
                 int64_t outLeft = outSavedElems / comSavedElems;
                 ubSplitInfo_.inUbCutAxisFactor = std::min(ubSplitInfo_.inUbCutAxisSize, newSqrtedTensor / inLeft);
@@ -197,8 +195,8 @@ void TransposeGatherTiling::CalcUbAxisCutFactor(
                 AdjustUbCutAxisFactor(ubSplitInfo_.outUbCutAxisFactor, NUM_THREE, elemInTensor);
             }
         } else {
-            ubSplitInfo_.inUbCutAxisFactor =
-                std::min(std::min(ubSplitInfo_.inUbCutAxisSize, maxCutAxisSize), maxOutCutAxisSize);
+            ubSplitInfo_.inUbCutAxisFactor = std::min(std::min(ubSplitInfo_.inUbCutAxisSize, maxCutAxisSize),
+                                                      maxOutCutAxisSize);
             AdjustUbCutAxisFactor(ubSplitInfo_.inUbCutAxisFactor, 0, elemInTensor);
             ubSplitInfo_.outUbCutAxisFactor = ubSplitInfo_.inUbCutAxisFactor;
         }
@@ -208,8 +206,8 @@ void TransposeGatherTiling::CalcUbAxisCutFactor(
     } else {
         if (!isLastInPermLeft) {
             ubSplitInfo_.inUbCutAxisFactor = ubSplitInfo_.inUbCutAxisSize;
-            ubSplitInfo_.outUbCutAxisFactor =
-                std::min(std::min(ubSplitInfo_.outUbCutAxisSize, maxCutAxisSize), maxOutCutAxisSize);
+            ubSplitInfo_.outUbCutAxisFactor = std::min(std::min(ubSplitInfo_.outUbCutAxisSize, maxCutAxisSize),
+                                                       maxOutCutAxisSize);
             AdjustUbCutAxisFactor(ubSplitInfo_.outUbCutAxisFactor, 1, elemInTensor);
         } else {
             ubSplitInfo_.outUbCutAxisFactor = ubSplitInfo_.outUbCutAxisSize;
@@ -219,9 +217,9 @@ void TransposeGatherTiling::CalcUbAxisCutFactor(
     }
 }
 
-ge::graphStatus TransposeGatherTiling::CalcUbAxesInfo(
-    const int64_t (&tmpInAxes)[MAX_TRANS_AXIS_NUM], const int64_t (&tmpOutAxes)[MAX_TRANS_AXIS_NUM],
-    const int8_t (&tmpOutPerm)[MAX_TRANS_AXIS_NUM])
+ge::graphStatus TransposeGatherTiling::CalcUbAxesInfo(const int64_t (&tmpInAxes)[MAX_TRANS_AXIS_NUM],
+                                                      const int64_t (&tmpOutAxes)[MAX_TRANS_AXIS_NUM],
+                                                      const int8_t (&tmpOutPerm)[MAX_TRANS_AXIS_NUM])
 {
     int8_t inIdx = 0;
     int8_t outIdx = 0;
@@ -229,8 +227,8 @@ ge::graphStatus TransposeGatherTiling::CalcUbAxesInfo(
         if (tmpOutAxes[j] != 0) {
             ubSplitInfo_.outUbAxes[outIdx] = static_cast<int32_t>(tmpOutAxes[j]);
             // do like [5,2,3,0] -> [3,1,2,0]
-            ubSplitInfo_.ubPerm[outIdx] =
-                static_cast<int8_t>(std::distance(allUbPerm_.begin(), allUbPerm_.find(tmpOutPerm[j])));
+            ubSplitInfo_.ubPerm[outIdx] = static_cast<int8_t>(
+                std::distance(allUbPerm_.begin(), allUbPerm_.find(tmpOutPerm[j])));
             ++outIdx;
         }
         if (tmpInAxes[j] != 0) {
@@ -271,8 +269,8 @@ ge::graphStatus TransposeGatherTiling::CalcUbSplitInfo4Gather(int64_t elemInTens
 
     ubSplitInfo_.ubAxesCnt = static_cast<int8_t>(allUbPerm_.size());
     ubSplitInfo_.inUbCutAxisSize = shapeInfo_.reducedInShape[inUbPerm_.perm[inUbPerm_.cnt - 1]];
-    ubSplitInfo_.inUbInCutPos =
-        static_cast<int8_t>(std::distance(allUbPerm_.begin(), allUbPerm_.find(inUbPerm_.perm[inUbPerm_.cnt - 1])));
+    ubSplitInfo_.inUbInCutPos = static_cast<int8_t>(
+        std::distance(allUbPerm_.begin(), allUbPerm_.find(inUbPerm_.perm[inUbPerm_.cnt - 1])));
     // all axes can be move in ub except last
     for (int8_t i = 0; i < inUbPerm_.cnt - 1; ++i) {
         auto iter = std::find(shapeInfo_.reducedPerm.begin(), shapeInfo_.reducedPerm.end(), inUbPerm_.perm[i]);
@@ -283,8 +281,8 @@ ge::graphStatus TransposeGatherTiling::CalcUbSplitInfo4Gather(int64_t elemInTens
         viceAllUbPerm.erase(inUbPerm_.perm[i]);
     }
     ubSplitInfo_.outUbCutAxisSize = shapeInfo_.reducedInShape[outUbPerm_.perm[outUbPerm_.cnt - 1]];
-    ubSplitInfo_.inUbOutCutPos =
-        static_cast<int8_t>(std::distance(allUbPerm_.begin(), allUbPerm_.find(outUbPerm_.perm[outUbPerm_.cnt - 1])));
+    ubSplitInfo_.inUbOutCutPos = static_cast<int8_t>(
+        std::distance(allUbPerm_.begin(), allUbPerm_.find(outUbPerm_.perm[outUbPerm_.cnt - 1])));
     for (int8_t i = 0; i < outUbPerm_.cnt - 1; ++i) {
         if (viceAllUbPerm.find(outUbPerm_.perm[i]) != viceAllUbPerm.end()) {
             auto iter = std::find(shapeInfo_.reducedPerm.begin(), shapeInfo_.reducedPerm.end(), outUbPerm_.perm[i]);
@@ -304,8 +302,8 @@ ge::graphStatus TransposeGatherTiling::CalcUbSplitInfo4Gather(int64_t elemInTens
     CalcUbAxisCutFactor(elemInTensor, sqrtedTensor, isLastInPermLeft, isLastOutPermLeft, viceAllUbPerm);
 
     if (isLastInPermLeft) {
-        auto iter =
-            std::find(shapeInfo_.reducedPerm.begin(), shapeInfo_.reducedPerm.end(), inUbPerm_.perm[inUbPerm_.cnt - 1]);
+        auto iter = std::find(shapeInfo_.reducedPerm.begin(), shapeInfo_.reducedPerm.end(),
+                              inUbPerm_.perm[inUbPerm_.cnt - 1]);
         auto idx = std::distance(shapeInfo_.reducedPerm.begin(), iter);
         tmpOutPerm[idx] = inUbPerm_.perm[inUbPerm_.cnt - 1];
         tmpOutAxes[idx] = ubSplitInfo_.inUbCutAxisFactor;
@@ -313,8 +311,8 @@ ge::graphStatus TransposeGatherTiling::CalcUbSplitInfo4Gather(int64_t elemInTens
         viceAllUbPerm.erase(inUbPerm_.perm[inUbPerm_.cnt - 1]);
     }
     if (isLastOutPermLeft) {
-        auto iter = std::find(
-            shapeInfo_.reducedPerm.begin(), shapeInfo_.reducedPerm.end(), outUbPerm_.perm[outUbPerm_.cnt - 1]);
+        auto iter = std::find(shapeInfo_.reducedPerm.begin(), shapeInfo_.reducedPerm.end(),
+                              outUbPerm_.perm[outUbPerm_.cnt - 1]);
         auto idx = std::distance(shapeInfo_.reducedPerm.begin(), iter);
         tmpOutPerm[idx] = outUbPerm_.perm[outUbPerm_.cnt - 1];
         tmpOutAxes[idx] = ubSplitInfo_.outUbCutAxisFactor;
@@ -427,9 +425,8 @@ int64_t TransposeGatherTiling::CalcSqrtedTensor(int64_t elemInTensor)
     int64_t elemPerBlock = platInfo_.ubBlockSize / shapeInfo_.eleLenInBytes;
     int64_t sqrtedTensor = static_cast<int64_t>(std::sqrt(elemInTensor)) / elemPerBlock * elemPerBlock;
     if (sqrtedTensor * shapeInfo_.eleLenInBytes > platInfo_.cacheLineSize) {
-        sqrtedTensor =
-            (sqrtedTensor * shapeInfo_.eleLenInBytes / platInfo_.cacheLineSize * platInfo_.cacheLineSize /
-             shapeInfo_.eleLenInBytes);
+        sqrtedTensor = (sqrtedTensor * shapeInfo_.eleLenInBytes / platInfo_.cacheLineSize * platInfo_.cacheLineSize /
+                        shapeInfo_.eleLenInBytes);
     }
     int32_t bytesPerSubBank = 8;
     int64_t lastInDim = shapeInfo_.reducedInShape[shapeInfo_.dim - 1];
@@ -445,9 +442,8 @@ ge::graphStatus TransposeGatherTiling::CalcUbSplitInfo()
     int64_t sqrtedTensor = CalcSqrtedTensor(elemInTensor);
     CalcInUbPerm(sqrtedTensor);
     CalcOutUbPerm(sqrtedTensor);
-    OP_CHECK_IF(
-        CalcUbSplitInfo4Gather(elemInTensor, sqrtedTensor) != ge::GRAPH_SUCCESS,
-        OP_LOGD(context_->GetNodeName(), "MTE size is too small!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcUbSplitInfo4Gather(elemInTensor, sqrtedTensor) != ge::GRAPH_SUCCESS,
+                OP_LOGD(context_->GetNodeName(), "MTE size is too small!"), return ge::GRAPH_FAILED);
     CalcUbSplitInfo4MTE();
     AdjustInUbAxesPosition();
     OP_LOGD(context_->GetNodeName(), "UB tiling is done!");
@@ -462,15 +458,14 @@ ge::graphStatus TransposeGatherTiling::CalcBlockSplitInfo()
     for (int8_t i = 0; i < dim; ++i) {
         if (allUbPerm_.find(i) == allUbPerm_.end()) {
             axisFactor = 1;
-        } else if (
-            i == inUbPerm_.perm[inUbPerm_.cnt - 1] && ubSplitInfo_.inUbCutAxisSize != ubSplitInfo_.inUbCutAxisFactor) {
+        } else if (i == inUbPerm_.perm[inUbPerm_.cnt - 1] &&
+                   ubSplitInfo_.inUbCutAxisSize != ubSplitInfo_.inUbCutAxisFactor) {
             axisFactor = ubSplitInfo_.inUbCutAxisFactor;
             if (ubSplitInfo_.inUbCutAxisSize % ubSplitInfo_.inUbCutAxisFactor != 0) {
                 blkSplitInfo_.blkInUbCutPos = blkSplitInfo_.blkAxesCnt;
             }
-        } else if (
-            i == outUbPerm_.perm[outUbPerm_.cnt - 1] &&
-            ubSplitInfo_.outUbCutAxisSize != ubSplitInfo_.outUbCutAxisFactor) {
+        } else if (i == outUbPerm_.perm[outUbPerm_.cnt - 1] &&
+                   ubSplitInfo_.outUbCutAxisSize != ubSplitInfo_.outUbCutAxisFactor) {
             axisFactor = ubSplitInfo_.outUbCutAxisFactor;
             if (ubSplitInfo_.outUbCutAxisSize % ubSplitInfo_.outUbCutAxisFactor != 0) {
                 blkSplitInfo_.blkOutUbCutPos = blkSplitInfo_.blkAxesCnt;
@@ -480,12 +475,14 @@ ge::graphStatus TransposeGatherTiling::CalcBlockSplitInfo()
         }
         int64_t axisLpSize = Ops::Base::CeilDiv(shapeInfo_.reducedInShape[i], axisFactor);
         blkSplitInfo_.blkAxes[blkSplitInfo_.blkAxesCnt] = axisLpSize;
-        blkSplitInfo_.blkAxesInAOffset[blkSplitInfo_.blkAxesCnt] =
-            CalcShapeSize(shapeInfo_.reducedInShape, i + 1, dim) * axisFactor;
+        blkSplitInfo_.blkAxesInAOffset[blkSplitInfo_.blkAxesCnt] = CalcShapeSize(shapeInfo_.reducedInShape, i + 1,
+                                                                                 dim) *
+                                                                   axisFactor;
         auto iter = std::find(shapeInfo_.reducedPerm.begin(), shapeInfo_.reducedPerm.end(), i);
         int8_t gap = static_cast<int8_t>(std::distance(shapeInfo_.reducedPerm.begin(), iter));
-        blkSplitInfo_.blkAxesOutAOffset[blkSplitInfo_.blkAxesCnt] =
-            CalcShapeSize(shapeInfo_.reducedOutShape, gap + 1, dim) * axisFactor;
+        blkSplitInfo_.blkAxesOutAOffset[blkSplitInfo_.blkAxesCnt] = CalcShapeSize(shapeInfo_.reducedOutShape, gap + 1,
+                                                                                  dim) *
+                                                                    axisFactor;
         ++blkSplitInfo_.blkAxesCnt;
         totalElems *= axisLpSize;
     }
@@ -502,12 +499,10 @@ ge::graphStatus TransposeGatherTiling::CalcBlockSplitInfo()
 
 ge::graphStatus TransposeGatherTiling::SetTilingKeyAndCore()
 {
-    OP_CHECK_IF(
-        context_->SetTilingKey(tilingKey_) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "Set tiling key is failed!"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        context_->SetBlockDim(blkSplitInfo_.usedCoreCnt) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "Set used core size is failed!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(context_->SetTilingKey(tilingKey_) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "Set tiling key is failed!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(context_->SetBlockDim(blkSplitInfo_.usedCoreCnt) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "Set used core size is failed!"), return ge::GRAPH_FAILED);
 
     size_t* workspaces = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, workspaces);
@@ -611,13 +606,12 @@ std::string TransposeGatherTiling::PrintTilingData()
 ge::graphStatus TransposeGatherTiling::DoTiling()
 {
     CalcTensorSize();
-    OP_CHECK_IF(
-        CalcUbSplitInfo() != ge::GRAPH_SUCCESS,
-        OP_LOGD(context_->GetNodeName(), "Stop to run gather tiling, mte size is too small!"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CalcBlockSplitInfo() != ge::GRAPH_SUCCESS,
-        OP_LOGD(context_->GetNodeName(), "Stop to run gather tiling, block count is too small!"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcUbSplitInfo() != ge::GRAPH_SUCCESS,
+                OP_LOGD(context_->GetNodeName(), "Stop to run gather tiling, mte size is too small!"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcBlockSplitInfo() != ge::GRAPH_SUCCESS,
+                OP_LOGD(context_->GetNodeName(), "Stop to run gather tiling, block count is too small!"),
+                return ge::GRAPH_FAILED);
     WriteTilingData();
     OP_LOGI(context_->GetNodeName(), "The tiling data is: %s", PrintTilingData().c_str());
     return SetTilingKeyAndCore();

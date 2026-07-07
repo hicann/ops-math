@@ -29,16 +29,16 @@ public:
 
 private:
     __aicore__ inline void ParseTilingData();
-    __aicore__ inline MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> SetupLoopInfo(
-        const int64_t inUbSrcShape[], const int64_t inUbDstShape[]);
+    __aicore__ inline MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> SetupLoopInfo(const int64_t inUbSrcShape[],
+                                                                         const int64_t inUbDstShape[]);
     __aicore__ inline void ProcessMain(int64_t loopidxEnd);
     __aicore__ inline void ProcessTail();
     __aicore__ inline void GetLoopParams(int64_t n);
     __aicore__ inline void DecimalToMixed(int64_t num, int64_t bases[], int64_t mixedBase[]);
     __aicore__ inline void GetLoopAndStride();
     __aicore__ inline void CopyIn(int64_t loopIdx, MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& params);
-    __aicore__ inline void CopyOut(
-        int64_t loopIdx, int64_t loopSize[], int64_t loopSrcStride[], int64_t loopDstStride[]);
+    __aicore__ inline void CopyOut(int64_t loopIdx, int64_t loopSize[], int64_t loopSrcStride[],
+                                   int64_t loopDstStride[]);
     __aicore__ inline void ProcessPerCore();
 
 private:
@@ -85,8 +85,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void TransposeCutOneAxis<T>::Init(
-    GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void TransposeCutOneAxis<T>::Init(GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData,
+                                                    TPipe* pipe)
 {
     blockIdx_ = GetBlockIdx();
     tiling_ = tilingData;
@@ -99,9 +99,8 @@ __aicore__ inline void TransposeCutOneAxis<T>::Init(
 template <typename T>
 __aicore__ inline void TransposeCutOneAxis<T>::Process()
 {
-    if (!ParseMultiCoreRange(
-            blockIdx_, tiling_->realCoreNum, tiling_->blkFactor, tiling_->blkTailFactor, blkProcessNum_,
-            blkProcessIdxStart_, blkProcessIdxEnd_)) {
+    if (!ParseMultiCoreRange(blockIdx_, tiling_->realCoreNum, tiling_->blkFactor, tiling_->blkTailFactor,
+                             blkProcessNum_, blkProcessIdxStart_, blkProcessIdxEnd_)) {
         return;
     }
     ProcessPerCore();
@@ -137,8 +136,8 @@ __aicore__ inline MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> TransposeCutOneAxis<T>::S
 
     int64_t alignDstStride = 1;
     if (expandedOutputCutIndex_ - 1 >= 0) {
-        alignDstStride =
-            (loopDstStrideTmp[expandedOutputCutIndex_ - 1] * sizeof(T) + BLOCK_SIZE_BYTE - 1) / BLOCK_SIZE_BYTE;
+        alignDstStride = (loopDstStrideTmp[expandedOutputCutIndex_ - 1] * sizeof(T) + BLOCK_SIZE_BYTE - 1) /
+                         BLOCK_SIZE_BYTE;
         alignDstStride = alignDstStride * BLOCK_SIZE_BYTE / sizeof(T);
         loopDstStrideTmp[expandedOutputCutIndex_ - 1] = alignDstStride;
     }
@@ -182,12 +181,11 @@ __aicore__ inline void TransposeCutOneAxis<T>::GetLoopParams(int64_t n)
     // main loopSrcStride and loopDstStride
     if (n > 0) {
         if (n == NDDMA_MAX_DIM_NUM - expandedOutputCutIndex_) {
-            loopSrcStrideMain_[n] =
-                Ops::Base::CeilAlign(
-                    static_cast<int64_t>(
-                        tiling_->inUbMainDstShape[NDDMA_MAX_DIM_NUM - n] * loopSrcStrideMain_[n - 1] * sizeof(T)),
-                    BLOCK_SIZE_BYTE) /
-                sizeof(T);
+            loopSrcStrideMain_[n] = Ops::Base::CeilAlign(
+                                        static_cast<int64_t>(tiling_->inUbMainDstShape[NDDMA_MAX_DIM_NUM - n] *
+                                                             loopSrcStrideMain_[n - 1] * sizeof(T)),
+                                        BLOCK_SIZE_BYTE) /
+                                    sizeof(T);
         } else {
             loopSrcStrideMain_[n] = loopSrcStrideMain_[n - 1] * tiling_->inUbMainDstShape[NDDMA_MAX_DIM_NUM - n];
         }
@@ -197,12 +195,11 @@ __aicore__ inline void TransposeCutOneAxis<T>::GetLoopParams(int64_t n)
     if (tiling_->outTailFactor != 0) {
         if (n > 0) {
             if (n == NDDMA_MAX_DIM_NUM - expandedOutputCutIndex_) {
-                loopSrcStrideTail_[n] =
-                    Ops::Base::CeilAlign(
-                        static_cast<int64_t>(
-                            tiling_->inUbTailDstShape[NDDMA_MAX_DIM_NUM - n] * loopSrcStrideTail_[n - 1] * sizeof(T)),
-                        BLOCK_SIZE_BYTE) /
-                    sizeof(T);
+                loopSrcStrideTail_[n] = Ops::Base::CeilAlign(
+                                            static_cast<int64_t>(tiling_->inUbTailDstShape[NDDMA_MAX_DIM_NUM - n] *
+                                                                 loopSrcStrideTail_[n - 1] * sizeof(T)),
+                                            BLOCK_SIZE_BYTE) /
+                                        sizeof(T);
             } else {
                 loopSrcStrideTail_[n] = loopSrcStrideTail_[n - 1] * tiling_->inUbTailDstShape[NDDMA_MAX_DIM_NUM - n];
             }
@@ -240,8 +237,8 @@ __aicore__ inline void TransposeCutOneAxis<T>::CopyIn(int64_t loopIdx, MultiCopy
     DecimalToMixed(loopIdx, dstLoopSize_, dstAddressOffsetMixedBase_);
     for (int64_t i = 0; i < NDDMA_MAX_DIM_NUM; i++) {
         srcAddressOffsetMixedBase_[tiling_->expandedPerm[i]] = dstAddressOffsetMixedBase_[i];
-        srcAddressOffset +=
-            srcAddressOffsetMixedBase_[tiling_->expandedPerm[i]] * srcLoopStride_[tiling_->expandedPerm[i]];
+        srcAddressOffset += srcAddressOffsetMixedBase_[tiling_->expandedPerm[i]] *
+                            srcLoopStride_[tiling_->expandedPerm[i]];
     }
     LocalTensor<T> bindLocalIn = vecQue_.AllocTensor<T>();
     DataCopy<T, NDDMA_MAX_DIM_NUM, config>(bindLocalIn, inputGM_[srcAddressOffset], params);
@@ -249,8 +246,8 @@ __aicore__ inline void TransposeCutOneAxis<T>::CopyIn(int64_t loopIdx, MultiCopy
 }
 
 template <typename T>
-__aicore__ inline void TransposeCutOneAxis<T>::CopyOut(
-    int64_t loopIdx, int64_t loopSize[], int64_t loopSrcStride[], int64_t loopDstStride[])
+__aicore__ inline void TransposeCutOneAxis<T>::CopyOut(int64_t loopIdx, int64_t loopSize[], int64_t loopSrcStride[],
+                                                       int64_t loopDstStride[])
 {
     int64_t dstAddressOffset = 0;
     for (int64_t i = 0; i < NDDMA_MAX_DIM_NUM; i++) {
@@ -292,9 +289,8 @@ __aicore__ inline void TransposeCutOneAxis<T>::CopyOut(
     if (endIndex + 4 < NDDMA_MAX_DIM_NUM) {
         for (int64_t loop4Idx = 0; loop4Idx < loopSize[4]; loop4Idx++) {
             SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
-            DataCopyPad(
-                outputGM_[dstAddressOffset + loop4Idx * loopDstStride[4]], bindLocalOut[loop4Idx * loopSrcStride[4]],
-                copyOutParams);
+            DataCopyPad(outputGM_[dstAddressOffset + loop4Idx * loopDstStride[4]],
+                        bindLocalOut[loop4Idx * loopSrcStride[4]], copyOutParams);
             ResetLoopModePara(DataCopyMVType::UB_TO_OUT);
         }
     } else {
@@ -315,17 +311,17 @@ __aicore__ inline void TransposeCutOneAxis<T>::ProcessPerCore()
 
     // MTE2 params main
     T constValue = 0;
-    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoMain =
-        SetupLoopInfo(tiling_->inUbMainSrcShape, tiling_->inUbMainDstShape);
+    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoMain = SetupLoopInfo(tiling_->inUbMainSrcShape,
+                                                                      tiling_->inUbMainDstShape);
     MultiCopyParams<T, NDDMA_MAX_DIM_NUM> paramsMain = {loopInfoMain, constValue};
 
-    int64_t outCutLoopSize =
-        Ops::Base::CeilDiv(tiling_->expandedOutputShape[expandedOutputCutIndex_], tiling_->outUbFactor);
+    int64_t outCutLoopSize = Ops::Base::CeilDiv(tiling_->expandedOutputShape[expandedOutputCutIndex_],
+                                                tiling_->outUbFactor);
     for (int64_t loopIdx = blkProcessIdxStart_; loopIdx < blkProcessIdxEnd_; loopIdx++) {
         if (tiling_->outTailFactor != 0 && (loopIdx + 1) % outCutLoopSize == 0) { // tail
             // MTE2 params tail
-            MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoTail =
-                SetupLoopInfo(tiling_->inUbTailSrcShape, tiling_->inUbTailDstShape);
+            MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoTail = SetupLoopInfo(tiling_->inUbTailSrcShape,
+                                                                              tiling_->inUbTailDstShape);
             MultiCopyParams<T, NDDMA_MAX_DIM_NUM> paramsTail = {loopInfoTail, constValue};
             CopyIn(loopIdx, paramsTail);
             CopyOut(loopIdx, loopSizeTail_, loopSrcStrideTail_, loopDstStrideTail_);

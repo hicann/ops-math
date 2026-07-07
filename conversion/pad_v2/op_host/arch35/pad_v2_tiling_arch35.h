@@ -22,4 +22,4 @@
 // 编译信息使用：PadV3CompileInfo
 // 参考：op_host/arch35/pad_v2_tiling_arch35.cpp
 
-#endif  // OP_HOST_ARCH35_PAD_V2_TILING_ARCH35_H_
+#endif // OP_HOST_ARCH35_PAD_V2_TILING_ARCH35_H_

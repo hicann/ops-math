@@ -29,8 +29,8 @@ static const std::initializer_list<op::DataType> CONSTANT_PAD_ASCEND910B_AICORE_
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16, op::DataType::DT_INT8,
     op::DataType::DT_INT32};
 
-static const std::initializer_list<op::DataType> REPLICATION_PAD_AICORE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT};
+static const std::initializer_list<op::DataType> REPLICATION_PAD_AICORE_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT16,
+                                                                                              op::DataType::DT_FLOAT};
 
 static const std::initializer_list<op::DataType> REPLICATION_PAD_ASCEND910B_AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16};
@@ -38,18 +38,18 @@ static const std::initializer_list<op::DataType> CIRCULAR_PAD_ASCEND910B_AICORE_
     op::DataType::DT_FLOAT16, op::DataType::DT_BF16, op::DataType::DT_FLOAT, op::DataType::DT_INT8,
     op::DataType::DT_INT32};
 
-static const std::initializer_list<op::DataType> REFLECTION_PAD_AICORE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT};
+static const std::initializer_list<op::DataType> REFLECTION_PAD_AICORE_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT16,
+                                                                                             op::DataType::DT_FLOAT};
 
 static const std::initializer_list<op::DataType> REFLECTION_PAD_ASCEND910B_AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16};
 
 static const std::initializer_list<op::DataType> CONSTANT_PAD_REGBASE_AICORE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_INT64,         op::DataType::DT_UINT64,     op::DataType::DT_DOUBLE,
-    op::DataType::DT_INT32,         op::DataType::DT_UINT32,     op::DataType::DT_FLOAT,
-    op::DataType::DT_INT16,         op::DataType::DT_UINT16,     op::DataType::DT_FLOAT16,
-    op::DataType::DT_BF16,          op::DataType::DT_INT8,       op::DataType::DT_UINT8,
-    op::DataType::DT_BOOL,          op::DataType::DT_HIFLOAT8,   op::DataType::DT_FLOAT8_E5M2,
+    op::DataType::DT_INT64,         op::DataType::DT_UINT64,      op::DataType::DT_DOUBLE,
+    op::DataType::DT_INT32,         op::DataType::DT_UINT32,      op::DataType::DT_FLOAT,
+    op::DataType::DT_INT16,         op::DataType::DT_UINT16,      op::DataType::DT_FLOAT16,
+    op::DataType::DT_BF16,          op::DataType::DT_INT8,        op::DataType::DT_UINT8,
+    op::DataType::DT_BOOL,          op::DataType::DT_HIFLOAT8,    op::DataType::DT_FLOAT8_E5M2,
     op::DataType::DT_FLOAT8_E4M3FN, op::DataType::DT_FLOAT8_E8M0, op::DataType::DT_FLOAT4_E2M1,
     op::DataType::DT_FLOAT4_E1M2};
 
@@ -120,46 +120,43 @@ inline static bool IsAiCoreSupport(const aclTensor* self, const std::string& mod
     return false;
 }
 
-inline const aclTensor* CircularPadAiCore(
-    const aclTensor* self, const aclTensor* paddings, aclTensor* out, aclOpExecutor* executor)
+inline const aclTensor* CircularPadAiCore(const aclTensor* self, const aclTensor* paddings, aclTensor* out,
+                                          aclOpExecutor* executor)
 {
     L0_DFX(CircularPadAiCore, self, paddings, out);
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(CircularPad, OP_INPUT(self, paddings), OP_OUTPUT(out));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "CircularPadAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    OP_CHECK(ret == ACLNN_SUCCESS,
+             OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "CircularPadAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."), return nullptr);
     return out;
 }
 
-inline const aclTensor* PadV3AiCore(
-    const aclTensor* self, const aclTensor* paddings, const aclTensor* constant_values, const std::string& mode,
-    const bool paddingsContiguous, aclTensor* out, aclOpExecutor* executor)
+inline const aclTensor* PadV3AiCore(const aclTensor* self, const aclTensor* paddings, const aclTensor* constant_values,
+                                    const std::string& mode, const bool paddingsContiguous, aclTensor* out,
+                                    aclOpExecutor* executor)
 {
     L0_DFX(PadV3AiCore, self, paddings, constant_values, mode, paddingsContiguous, out);
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(
-        PadV3, OP_INPUT(self, paddings, constant_values), OP_OUTPUT(out), OP_ATTR(mode, paddingsContiguous));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "PadV3AiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(PadV3, OP_INPUT(self, paddings, constant_values), OP_OUTPUT(out),
+                                           OP_ATTR(mode, paddingsContiguous));
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "PadV3AiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
+             return nullptr);
     return out;
 }
 
-inline const aclTensor* PadV3AiCpu(
-    const aclTensor* self, const aclTensor* paddings, const aclTensor* constant_values, const std::string& mode,
-    const bool paddingsContiguous, aclTensor* out, aclOpExecutor* executor)
+inline const aclTensor* PadV3AiCpu(const aclTensor* self, const aclTensor* paddings, const aclTensor* constant_values,
+                                   const std::string& mode, const bool paddingsContiguous, aclTensor* out,
+                                   aclOpExecutor* executor)
 {
     L0_DFX(PadV3AiCpu, self, paddings, constant_values, mode, paddingsContiguous, out);
     static internal::AicpuTaskSpace space("PadV3");
-    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(
-        PadV3, OP_ATTR_NAMES({"mode", "paddingsContiguous"}), OP_INPUT(self, paddings, constant_values), OP_OUTPUT(out),
-        OP_ATTR(mode, paddingsContiguous));
+    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(PadV3, OP_ATTR_NAMES({"mode", "paddingsContiguous"}),
+                                          OP_INPUT(self, paddings, constant_values), OP_OUTPUT(out),
+                                          OP_ATTR(mode, paddingsContiguous));
     CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
     return out;
 }
 
-const aclTensor* PadV3(
-    const aclTensor* self, const aclTensor* paddings, const aclTensor* constant_values, const std::string& mode,
-    const bool paddingsContiguous, aclOpExecutor* executor)
+const aclTensor* PadV3(const aclTensor* self, const aclTensor* paddings, const aclTensor* constant_values,
+                       const std::string& mode, const bool paddingsContiguous, aclOpExecutor* executor)
 {
     auto out = executor->AllocTensor(self->GetDataType(), self->GetViewFormat(), self->GetViewFormat());
     auto ret = INFER_SHAPE(PadV3, OP_INPUT(self, paddings), OP_OUTPUT(out), OP_ATTR(mode, paddingsContiguous));

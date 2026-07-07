@@ -109,8 +109,8 @@ void PadV3GradACTiling::DoFindSplitAxisByInput(bool isBigLastDim)
 
 bool PadV3GradACTiling::CheckTilingInfoSatisfied(PadV3GradUbTileInfo& tilingInfo)
 {
-    tilingInfo.ubTotalCnt = Ops::Base::CeilDiv(
-        tilingData_->outShape[tilingInfo.ubSplitAxis], static_cast<uint64_t>(tilingInfo.ubSplitFactor));
+    tilingInfo.ubTotalCnt = Ops::Base::CeilDiv(tilingData_->outShape[tilingInfo.ubSplitAxis],
+                                               static_cast<uint64_t>(tilingInfo.ubSplitFactor));
     for (uint64_t i = 0; i < tilingInfo.ubSplitAxis; i++) {
         tilingInfo.ubTotalCnt *= tilingData_->outShape[i];
     }
@@ -124,9 +124,8 @@ bool PadV3GradACTiling::CheckTilingInfoSatisfied(PadV3GradUbTileInfo& tilingInfo
 
     if (static_cast<double>(tilingInfo.usedCoreNum) / static_cast<double>(coreNum_) >= MIN_USED_CORES_RATIO ||
         tilingInfo.ubSplitFactor * tilingData_->inStride[tilingInfo.ubSplitAxis] * dtypeBytes_ <= MIN_PER_UB_SIZE) {
-        OP_LOGD(
-            context_, "ubSplitAxis:%d ubSplitFactor:%d is ok, usedCoreNum:%ld dtypeBytes_:%u", tilingInfo.ubSplitAxis,
-            tilingInfo.ubSplitFactor, tilingInfo.usedCoreNum, dtypeBytes_);
+        OP_LOGD(context_, "ubSplitAxis:%d ubSplitFactor:%d is ok, usedCoreNum:%ld dtypeBytes_:%u",
+                tilingInfo.ubSplitAxis, tilingInfo.ubSplitFactor, tilingInfo.usedCoreNum, dtypeBytes_);
         return true;
     }
 
@@ -149,8 +148,8 @@ void PadV3GradACTiling::GetOptimizeTiling(const PadV3GradUbTileInfo& oldTilingIn
             outCount *= tilingData_->outShape[iDim - 1];
         }
 
-        int64_t iDimFactor =
-            (iDim == oldTilingInfo.ubSplitAxis) ? oldTilingInfo.ubSplitFactor : tilingData_->outShape[iDim];
+        int64_t iDimFactor = (iDim == oldTilingInfo.ubSplitAxis) ? oldTilingInfo.ubSplitFactor :
+                                                                   tilingData_->outShape[iDim];
         for (int64_t factor = iDimFactor; factor > 0;) {
             loops++;
             if (loops > maxLoop) {
@@ -162,17 +161,17 @@ void PadV3GradACTiling::GetOptimizeTiling(const PadV3GradUbTileInfo& oldTilingIn
             // iDimOuter 每次循环会增加1,最多增加 coreNum_ 后，tmpPerCount会增加1
             int64_t iDimOuter = Ops::Base::CeilDiv(tilingData_->outShape[iDim], static_cast<uint64_t>(factor));
             int64_t tmpTotalCount = iDimOuter * outCount;
-            int64_t tmpPerCount =
-                tmpTotalCount > coreNum_ ? Ops::Base::CeilDiv(tmpTotalCount, static_cast<int64_t>(coreNum_)) : 1;
-            int64_t tmpCoreNum =
-                tmpTotalCount > coreNum_ ? Ops::Base::CeilDiv(tmpTotalCount, tmpPerCount) : tmpTotalCount;
-            int64_t tmpFactor =
-                Ops::Base::CeilDiv(tilingData_->outShape[iDim], static_cast<uint64_t>(iDimOuter)); // 切分更均匀
+            int64_t tmpPerCount = tmpTotalCount > coreNum_ ?
+                                      Ops::Base::CeilDiv(tmpTotalCount, static_cast<int64_t>(coreNum_)) :
+                                      1;
+            int64_t tmpCoreNum = tmpTotalCount > coreNum_ ? Ops::Base::CeilDiv(tmpTotalCount, tmpPerCount) :
+                                                            tmpTotalCount;
+            int64_t tmpFactor = Ops::Base::CeilDiv(tilingData_->outShape[iDim],
+                                                   static_cast<uint64_t>(iDimOuter)); // 切分更均匀
 
             if (oldTilingInfo.ubPerCoreCnt != tmpPerCount) {
-                OP_LOGD(
-                    context_, "iDim:%u factor:%ld tmpPerCount:%ld not equal ubPerCoreCnt:%ld", iDim, factor,
-                    tmpPerCount, oldTilingInfo.ubPerCoreCnt);
+                OP_LOGD(context_, "iDim:%u factor:%ld tmpPerCount:%ld not equal ubPerCoreCnt:%ld", iDim, factor,
+                        tmpPerCount, oldTilingInfo.ubPerCoreCnt);
                 finded = true;
                 break;
             }
@@ -191,9 +190,8 @@ void PadV3GradACTiling::GetOptimizeTiling(const PadV3GradUbTileInfo& oldTilingIn
             newTilingInfo.usedCoreNum = tmpCoreNum;
 
             double usedRate = static_cast<double>(tmpCoreNum) / static_cast<double>(coreNum_);
-            OP_LOGD(
-                context_, "current iDim:%u factor:%ld iDimOuter:%ld tmpFactor:%ld tmpCoreNum:%ld usedRate:%f", iDim,
-                factor, iDimOuter, tmpFactor, tmpCoreNum, usedRate);
+            OP_LOGD(context_, "current iDim:%u factor:%ld iDimOuter:%ld tmpFactor:%ld tmpCoreNum:%ld usedRate:%f", iDim,
+                    factor, iDimOuter, tmpFactor, tmpCoreNum, usedRate);
             if (usedRate >= MIN_USED_CORES_RATIO) {
                 finded = true;
                 break;
@@ -201,9 +199,8 @@ void PadV3GradACTiling::GetOptimizeTiling(const PadV3GradUbTileInfo& oldTilingIn
             factor = tmpFactor - 1;
         }
 
-        OP_LOGD(
-            context_, "iDim:%u ubSplitAxis:%u ubSplitFactor:%u loops:%u finded:%d", iDim, newTilingInfo.ubSplitAxis,
-            newTilingInfo.ubSplitFactor, loops, finded);
+        OP_LOGD(context_, "iDim:%u ubSplitAxis:%u ubSplitFactor:%u loops:%u finded:%d", iDim, newTilingInfo.ubSplitAxis,
+                newTilingInfo.ubSplitFactor, loops, finded);
 
         if (finded) {
             break;
@@ -214,9 +211,8 @@ void PadV3GradACTiling::GetOptimizeTiling(const PadV3GradUbTileInfo& oldTilingIn
         newTilingInfo.ubSplitFactor >= tilingData_->outShape[newTilingInfo.ubSplitAxis]) {
         newTilingInfo.ubSplitAxis = newTilingInfo.ubSplitAxis - 1;
         newTilingInfo.ubSplitFactor = 1;
-        OP_LOGD(
-            context_, "Back to last axis, ubSplitAxis:%u ubSplitFactor:%u", newTilingInfo.ubSplitAxis,
-            newTilingInfo.ubSplitFactor);
+        OP_LOGD(context_, "Back to last axis, ubSplitAxis:%u ubSplitFactor:%u", newTilingInfo.ubSplitAxis,
+                newTilingInfo.ubSplitFactor);
     }
 }
 
@@ -245,18 +241,16 @@ void PadV3GradACTiling::TilingInfoTune()
         return;
     }
 
-    OP_LOGI(
-        context_, "before optimize ubSplitAxis:%u ubSplitFactor:%u ubTotalCnt:%ld ubPerCoreCnt:%ld usedCoreNum:%u",
-        oldTilingInfo.ubSplitAxis, oldTilingInfo.ubSplitFactor, oldTilingInfo.ubTotalCnt, oldTilingInfo.ubPerCoreCnt,
-        oldTilingInfo.usedCoreNum);
+    OP_LOGI(context_, "before optimize ubSplitAxis:%u ubSplitFactor:%u ubTotalCnt:%ld ubPerCoreCnt:%ld usedCoreNum:%u",
+            oldTilingInfo.ubSplitAxis, oldTilingInfo.ubSplitFactor, oldTilingInfo.ubTotalCnt,
+            oldTilingInfo.ubPerCoreCnt, oldTilingInfo.usedCoreNum);
 
     PadV3GradUbTileInfo newTilingInfo = oldTilingInfo;
     GetOptimizeTiling(oldTilingInfo, newTilingInfo);
 
-    OP_LOGI(
-        context_, "after optimize ubSplitAxis:%u ubSplitFactor:%u ubTotalCnt:%ld ubPerCoreCnt:%ld usedCoreNum:%u",
-        newTilingInfo.ubSplitAxis, newTilingInfo.ubSplitFactor, newTilingInfo.ubTotalCnt, newTilingInfo.ubPerCoreCnt,
-        newTilingInfo.usedCoreNum);
+    OP_LOGI(context_, "after optimize ubSplitAxis:%u ubSplitFactor:%u ubTotalCnt:%ld ubPerCoreCnt:%ld usedCoreNum:%u",
+            newTilingInfo.ubSplitAxis, newTilingInfo.ubSplitFactor, newTilingInfo.ubTotalCnt,
+            newTilingInfo.ubPerCoreCnt, newTilingInfo.usedCoreNum);
 
     ubAxis_ = newTilingInfo.ubSplitAxis;
     ubFactor_ = newTilingInfo.ubSplitFactor;
@@ -292,18 +286,18 @@ void PadV3GradACTiling::CalculateTilingKeyMirror()
     if (tilingData_->inShape[dimNum_ - 1] > vectorSize_ / sizeof(ge::float32_t)) {
         additionTileSize_ = GetSizeOfBlockAlign(tilingData_->inShape[dimNum_ - 1] * dtypeBytes_, blockSize_);
         if (dtypeBytes_ == 1) {
-            additionTileSize_ =
-                GetSizeOfBlockAlign(tilingData_->inShape[dimNum_ - 1] * dtypeBytes_ * EXPANSION_FACTOR, blockSize_);
+            additionTileSize_ = GetSizeOfBlockAlign(tilingData_->inShape[dimNum_ - 1] * dtypeBytes_ * EXPANSION_FACTOR,
+                                                    blockSize_);
         }
-        bufferSize_ = GetSizeOfBlockAlign(
-            (ubSize_ - additionTileSize_) / (CONST4 * dtypeBytes_ + FP32_SIZE) - alignNum, alignNum);
+        bufferSize_ = GetSizeOfBlockAlign((ubSize_ - additionTileSize_) / (CONST4 * dtypeBytes_ + FP32_SIZE) - alignNum,
+                                          alignNum);
         DoFindSplitAxisByInput(true);
         cutMode_ = TPL_SIMD_NORMAL;
 
         if (lastShapeSizeAlign * EXPANSION_FACTOR > outTileSize_) {
             cutMode_ = TPL_SIMD_BIG;
-            bufferSize_ =
-                GetSizeOfBlockAlign(ubSize_ / (CONST2 * dtypeBytes_ + CONST4 * FP32_SIZE) - alignNum, alignNum);
+            bufferSize_ = GetSizeOfBlockAlign(ubSize_ / (CONST2 * dtypeBytes_ + CONST4 * FP32_SIZE) - alignNum,
+                                              alignNum);
             ubAxis_ = static_cast<uint8_t>(static_cast<int8_t>(dimNum_) - 1);
             ubFactor_ = tilingData_->inShape[dimNum_ - 1];
             outTileSize_ = bufferSize_;
@@ -312,11 +306,10 @@ void PadV3GradACTiling::CalculateTilingKeyMirror()
             return TilingInfoTuneForNormal(lastShapeSizeAlign);
         }
     } else {
-        bufferSize_ = GetSizeOfBlockAlign(
-            (ubSize_ - vectorSize_ * CONST3 * CONST2 - blockSize_ * CONST2) /
-                    (CONST2 * dtypeBytes_ + CONST4 * FP32_SIZE) -
-                alignNum,
-            alignNum);
+        bufferSize_ = GetSizeOfBlockAlign((ubSize_ - vectorSize_ * CONST3 * CONST2 - blockSize_ * CONST2) /
+                                                  (CONST2 * dtypeBytes_ + CONST4 * FP32_SIZE) -
+                                              alignNum,
+                                          alignNum);
         DoFindSplitAxisByInput(false);
         cutMode_ = TPL_SIMD_SMALL;
 
@@ -446,12 +439,11 @@ ge::graphStatus PadV3GradACTiling::ComputeAfterPaddingsAndStrides()
         if (static_cast<int64_t>(tilingData_->inShape[i]) - tilingData_->leftPad[i] < 0 ||
             static_cast<int64_t>(tilingData_->inShape[i]) - tilingData_->rightPad[i] < 0 ||
             static_cast<int64_t>(tilingData_->inShape[i]) - tilingData_->leftPad[i] - tilingData_->rightPad[i] < 0) {
-            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-                context_->GetNodeName(), "y",
-                std::to_string(
-                    static_cast<int64_t>(tilingData_->inShape[i]) - tilingData_->leftPad[i] - tilingData_->rightPad[i])
-                    .c_str(),
-                "The shape dim of y must be >= 0");
+            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "y",
+                                                     std::to_string(static_cast<int64_t>(tilingData_->inShape[i]) -
+                                                                    tilingData_->leftPad[i] - tilingData_->rightPad[i])
+                                                         .c_str(),
+                                                     "The shape dim of y must be >= 0");
             return ge::GRAPH_FAILED;
         }
 
@@ -474,33 +466,33 @@ ge::graphStatus PadV3GradACTiling::CheckModeInputParam(int64_t inShapeV, int64_t
     int64_t rightsubin = padBack - outShapeV;
     if (padMode_ == TPL_MODE_REFLECT && (0 < (leftsubin + 1) || 0 < (rightsubin + 1))) {
         std::string incorrectValues = std::to_string(padFront) + " and " + std::to_string(padBack);
-        std::string reasonStr =
-            "The value of padFront and padBack must be less than InferredOutShape - 1 for reflect mode, "
-            "InferredOutShape: " +
-            std::to_string(outShapeV);
-        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
-            context_->GetNodeName(), "padFront and padBack", incorrectValues.c_str(), reasonStr.c_str());
+        std::string
+            reasonStr = "The value of padFront and padBack must be less than InferredOutShape - 1 for reflect mode, "
+                        "InferredOutShape: " +
+                        std::to_string(outShapeV);
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context_->GetNodeName(), "padFront and padBack", incorrectValues.c_str(),
+                                               reasonStr.c_str());
         return ge::GRAPH_FAILED;
     }
     if (padMode_ == TPL_MODE_SYMMETRIC && (0 < leftsubin || 0 < rightsubin)) {
         std::string incorrectValues = std::to_string(padFront) + " and " + std::to_string(padBack);
-        std::string reasonStr =
-            "The value of padFront and padBack must be no greater than InferredOutShape for symmetric mode, "
-            "InferredOutShape: " +
-            std::to_string(outShapeV);
-        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
-            context_->GetNodeName(), "padFront and padBack", incorrectValues.c_str(), reasonStr.c_str());
+        std::string reasonStr = "The value of padFront and padBack must be no greater than InferredOutShape for "
+                                "symmetric mode, "
+                                "InferredOutShape: " +
+                                std::to_string(outShapeV);
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context_->GetNodeName(), "padFront and padBack", incorrectValues.c_str(),
+                                               reasonStr.c_str());
         return ge::GRAPH_FAILED;
     }
 
     if (padMode_ == TPL_MODE_CIRCULAR && (0 < leftsubin || 0 < rightsubin)) {
         std::string incorrectValues = std::to_string(padFront) + " and " + std::to_string(padBack);
-        std::string reasonStr =
-            "The value of padFront and padBack must be no greater than InferredOutShape for circular mode, "
-            "InferredOutShape: " +
-            std::to_string(outShapeV);
-        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
-            context_->GetNodeName(), "padFront and padBack", incorrectValues.c_str(), reasonStr.c_str());
+        std::string
+            reasonStr = "The value of padFront and padBack must be no greater than InferredOutShape for circular mode, "
+                        "InferredOutShape: " +
+                        std::to_string(outShapeV);
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context_->GetNodeName(), "padFront and padBack", incorrectValues.c_str(),
+                                               reasonStr.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -519,17 +511,16 @@ ge::graphStatus PadV3GradACTiling::DimensionCollapseMode()
     uint16_t fastDim = 0;
     uint16_t slowDim = 0;
     uint8_t originalRank = dimNum_;
-    OP_LOGD(
-        context_, "Before collapse paddings, padMode_:%u dimNum is %u, shape is %s, left pad is %s, right pad is %s",
-        padMode_, originalRank, ToString(tilingData_->inShape, originalRank).c_str(),
-        Ops::Base::ToString(paddings_.padFront).c_str(), Ops::Base::ToString(paddings_.padBack).c_str());
+    OP_LOGD(context_,
+            "Before collapse paddings, padMode_:%u dimNum is %u, shape is %s, left pad is %s, right pad is %s",
+            padMode_, originalRank, ToString(tilingData_->inShape, originalRank).c_str(),
+            Ops::Base::ToString(paddings_.padFront).c_str(), Ops::Base::ToString(paddings_.padBack).c_str());
     while (fastDim < originalRank) {
         int64_t padFront = paddings_.padFront.GetDim(fastDim);
         int64_t padBack = paddings_.padBack.GetDim(fastDim);
 
-        OP_CHECK_IF(
-            CheckModeInputParam(tilingData_->inShape[fastDim], padFront, padBack) == ge::GRAPH_FAILED,
-            OP_LOGE(context_, "CheckModeInputParam failed."), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(CheckModeInputParam(tilingData_->inShape[fastDim], padFront, padBack) == ge::GRAPH_FAILED,
+                    OP_LOGE(context_, "CheckModeInputParam failed."), return ge::GRAPH_FAILED);
 
         // 消除1轴
         if (tilingData_->inShape[fastDim] == 1 && (tilingData_->inShape[fastDim] + padFront + padBack) == 1) {
@@ -571,10 +562,9 @@ ge::graphStatus PadV3GradACTiling::DimensionCollapseMode()
         tilingData_->rightPad[0] = 0;
         dimNum_ = 1;
     }
-    OP_LOGD(
-        context_, "After collapse paddings, dimNum is %u, shape is %s, left pad is %s, right pad is %s", dimNum_,
-        ToString(tilingData_->inShape, dimNum_).c_str(), ToString(tilingData_->leftPad, dimNum_).c_str(),
-        ToString(tilingData_->rightPad, dimNum_).c_str());
+    OP_LOGD(context_, "After collapse paddings, dimNum is %u, shape is %s, left pad is %s, right pad is %s", dimNum_,
+            ToString(tilingData_->inShape, dimNum_).c_str(), ToString(tilingData_->leftPad, dimNum_).c_str(),
+            ToString(tilingData_->rightPad, dimNum_).c_str());
     return ge::GRAPH_SUCCESS;
 }
 ge::graphStatus PadV3GradACTiling::DimensionCollapse()
@@ -582,10 +572,9 @@ ge::graphStatus PadV3GradACTiling::DimensionCollapse()
     uint16_t fastDim = 0;
     uint16_t slowDim = 0;
     uint8_t originalRank = dimNum_;
-    OP_LOGD(
-        context_, "Before collapse paddings, dimNum is %u, shape is %s, left pad is %s, right pad is %s", originalRank,
-        ToString(tilingData_->inShape, originalRank).c_str(), Ops::Base::ToString(paddings_.padFront).c_str(),
-        Ops::Base::ToString(paddings_.padBack).c_str());
+    OP_LOGD(context_, "Before collapse paddings, dimNum is %u, shape is %s, left pad is %s, right pad is %s",
+            originalRank, ToString(tilingData_->inShape, originalRank).c_str(),
+            Ops::Base::ToString(paddings_.padFront).c_str(), Ops::Base::ToString(paddings_.padBack).c_str());
     while (fastDim < originalRank) {
         uint64_t collapsedShape = tilingData_->inShape[fastDim];
         int64_t collapsedPadFront = paddings_.padFront.GetDim(fastDim);
@@ -605,21 +594,19 @@ ge::graphStatus PadV3GradACTiling::DimensionCollapse()
         tilingData_->rightPad[slowDim] = collapsedPadBack;
         ++slowDim;
     }
-    OP_LOGD(
-        context_, "After collapse paddings, dimNum is %u, shape is %s, left pad is %s, right pad is %s", dimNum_,
-        ToString(tilingData_->inShape, dimNum_).c_str(), ToString(tilingData_->leftPad, dimNum_).c_str(),
-        ToString(tilingData_->rightPad, dimNum_).c_str());
+    OP_LOGD(context_, "After collapse paddings, dimNum is %u, shape is %s, left pad is %s, right pad is %s", dimNum_,
+            ToString(tilingData_->inShape, dimNum_).c_str(), ToString(tilingData_->leftPad, dimNum_).c_str(),
+            ToString(tilingData_->rightPad, dimNum_).c_str());
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus PadV3GradACTiling::DoTilingModeEdge()
 {
-    OP_CHECK_IF(
-        DimensionCollapseMode() == ge::GRAPH_FAILED, OP_LOGE(context_, "PadV3GradACTiling Edge Collapse error."),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        ComputeAfterPaddingsAndStrides() == ge::GRAPH_FAILED,
-        OP_LOGE(context_, "PadV3GradACTiling Edge ComputeAfterPaddingsAndStrides error."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(DimensionCollapseMode() == ge::GRAPH_FAILED,
+                OP_LOGE(context_, "PadV3GradACTiling Edge Collapse error."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ComputeAfterPaddingsAndStrides() == ge::GRAPH_FAILED,
+                OP_LOGE(context_, "PadV3GradACTiling Edge ComputeAfterPaddingsAndStrides error."),
+                return ge::GRAPH_FAILED);
     if (isEmptyTensor_) {
         EmptyTensorCollapse();
     }
@@ -628,12 +615,11 @@ ge::graphStatus PadV3GradACTiling::DoTilingModeEdge()
 }
 ge::graphStatus PadV3GradACTiling::DoTilingModeMirror()
 {
-    OP_CHECK_IF(
-        DimensionCollapseMode() == ge::GRAPH_FAILED, OP_LOGE(context_, "PadV3GradACTiling Mirror Collapse error."),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        ComputeAfterPaddingsAndStrides() == ge::GRAPH_FAILED,
-        OP_LOGE(context_, "PadV3GradACTiling Mirror ComputeAfterPaddingsAndStrides error."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(DimensionCollapseMode() == ge::GRAPH_FAILED,
+                OP_LOGE(context_, "PadV3GradACTiling Mirror Collapse error."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ComputeAfterPaddingsAndStrides() == ge::GRAPH_FAILED,
+                OP_LOGE(context_, "PadV3GradACTiling Mirror ComputeAfterPaddingsAndStrides error."),
+                return ge::GRAPH_FAILED);
     if (isEmptyTensor_) {
         EmptyTensorCollapse();
         DoTilingWithSIMTMirror();
@@ -653,12 +639,11 @@ ge::graphStatus PadV3GradACTiling::DoTilingModeMirror()
 }
 ge::graphStatus PadV3GradACTiling::DoTilingModeCircular()
 {
-    OP_CHECK_IF(
-        DimensionCollapseMode() == ge::GRAPH_FAILED, OP_LOGE(context_, "PadV3GradACTiling Circular Collapse error."),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        ComputeAfterPaddingsAndStrides() == ge::GRAPH_FAILED,
-        OP_LOGE(context_, "PadV3GradACTiling Circular ComputeAfterPaddingsAndStrides error."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(DimensionCollapseMode() == ge::GRAPH_FAILED,
+                OP_LOGE(context_, "PadV3GradACTiling Circular Collapse error."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ComputeAfterPaddingsAndStrides() == ge::GRAPH_FAILED,
+                OP_LOGE(context_, "PadV3GradACTiling Circular ComputeAfterPaddingsAndStrides error."),
+                return ge::GRAPH_FAILED);
     if (isEmptyTensor_) {
         EmptyTensorCollapse();
         DoTilingWithSIMTCircular();
@@ -674,12 +659,11 @@ ge::graphStatus PadV3GradACTiling::DoTilingModeCircular()
 }
 ge::graphStatus PadV3GradACTiling::DoTilingModeConstant()
 {
-    OP_CHECK_IF(
-        DimensionCollapse() == ge::GRAPH_FAILED, OP_LOGE(context_, "PadV3GradACTiling Constant Collapse error."),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        ComputeAfterPaddingsAndStrides() == ge::GRAPH_FAILED,
-        OP_LOGE(context_, "PadV3GradACTiling Constant ComputeAfterPaddingsAndStrides error."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(DimensionCollapse() == ge::GRAPH_FAILED,
+                OP_LOGE(context_, "PadV3GradACTiling Constant Collapse error."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ComputeAfterPaddingsAndStrides() == ge::GRAPH_FAILED,
+                OP_LOGE(context_, "PadV3GradACTiling Constant ComputeAfterPaddingsAndStrides error."),
+                return ge::GRAPH_FAILED);
     // 空tensor时，合为一根轴
     if (isEmptyTensor_) {
         EmptyTensorCollapse();
@@ -733,8 +717,8 @@ ge::graphStatus PadV3GradACTiling::GetPaddings()
             return ge::GRAPH_SUCCESS;
         }
         default:
-            OP_LOGE_FOR_INVALID_DTYPE(
-                context_->GetNodeName(), "paddings", Ops::Base::ToString(paddingsDtype).c_str(), "int32 or int64");
+            OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "paddings", Ops::Base::ToString(paddingsDtype).c_str(),
+                                      "int32 or int64");
     }
     return ge::GRAPH_FAILED;
 }
@@ -748,21 +732,20 @@ ge::graphStatus PadV3GradACTiling::GetShapesAndDtypes()
     auto const inShapeVal = inShape->GetStorageShape();
     dimNum_ = inShapeVal.GetDimNum(); // 获取维度
     if (dimNum_ > MAX_DIM_NUM) {
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-            context_->GetNodeName(), "x", std::to_string(dimNum_).c_str(), "The shape dim of x must be <= 8");
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "x", std::to_string(dimNum_).c_str(),
+                                                 "The shape dim of x must be <= 8");
         return ge::GRAPH_FAILED;
     }
     if (padMode_ != TPL_MODE_CONSTANT && dimNum_ > NON_CONSTANT_MAX_DIM_NUM) {
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-            context_->GetNodeName(), "x", std::to_string(dimNum_).c_str(),
-            "The shape dim of x must be <= 5 for non-constant mode");
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "x", std::to_string(dimNum_).c_str(),
+                                                 "The shape dim of x must be <= 5 for non-constant mode");
         return ge::GRAPH_FAILED;
     }
     for (uint16_t i = 0; i < dimNum_; ++i) {
         if (inShapeVal.GetDim(i) < 0) {
-            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-                context_->GetNodeName(), "x", std::to_string(inShapeVal.GetDim(i)).c_str(),
-                "The shape dim of x must be >= 0");
+            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "x",
+                                                     std::to_string(inShapeVal.GetDim(i)).c_str(),
+                                                     "The shape dim of x must be >= 0");
             return ge::GRAPH_FAILED;
         }
         if (inShapeVal.GetDim(i) == 0) {
@@ -800,13 +783,12 @@ ge::graphStatus PadV3GradACTiling::GetShapeAttrsInfo()
             } else if (!strcmp(mode, "circular")) {
                 padMode_ = TPL_MODE_CIRCULAR;
             }
-            OP_CHECK_IF(
-                strcmp(mode, "constant") != 0 && strcmp(mode, "edge") != 0 && strcmp(mode, "reflect") != 0 &&
-                    strcmp(mode, "symmetric") != 0 && strcmp(mode, "circular") != 0,
-                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-                    context_->GetNodeName(), "mode", mode,
-                    "The value of mode can only be constant, edge, reflect, symmetric, or circular"),
-                return ge::GRAPH_FAILED);
+            OP_CHECK_IF(strcmp(mode, "constant") != 0 && strcmp(mode, "edge") != 0 && strcmp(mode, "reflect") != 0 &&
+                            strcmp(mode, "symmetric") != 0 && strcmp(mode, "circular") != 0,
+                        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                            context_->GetNodeName(), "mode", mode,
+                            "The value of mode can only be constant, edge, reflect, symmetric, or circular"),
+                        return ge::GRAPH_FAILED);
         }
         auto* paddingContiguous = attrs->GetAttrPointer<bool>(1);
         if (paddingContiguous) {
@@ -814,11 +796,11 @@ ge::graphStatus PadV3GradACTiling::GetShapeAttrsInfo()
         }
     }
 
-    OP_CHECK_IF(
-        GetShapesAndDtypes() == ge::GRAPH_FAILED,
-        OP_LOGE(context_, "PadV3GradACTiling GetShapeAttrsInfo GetShapesAndDtypes error."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        GetPaddings() == ge::GRAPH_FAILED, OP_LOGE(context_, "Get padding info failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetShapesAndDtypes() == ge::GRAPH_FAILED,
+                OP_LOGE(context_, "PadV3GradACTiling GetShapeAttrsInfo GetShapesAndDtypes error."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPaddings() == ge::GRAPH_FAILED, OP_LOGE(context_, "Get padding info failed"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -828,39 +810,33 @@ ge::graphStatus PadV3GradACTiling::Init()
     OP_CHECK_NULL_WITH_CONTEXT(context_, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     coreNum_ = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        coreNum_ == 0U,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "core_num", "0", "The value of core_num must be > 0"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(coreNum_ == 0U,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "core_num", "0",
+                                                      "The value of core_num must be > 0"),
+                return ge::GRAPH_FAILED);
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize_);
-    OP_CHECK_IF(
-        ubSize_ == 0U,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "ub_size", "0", "The value of ub_size must be > 0"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ubSize_ == 0U,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ub_size", "0",
+                                                      "The value of ub_size must be > 0"),
+                return ge::GRAPH_FAILED);
     blockSize_ = static_cast<uint64_t>(Ops::Base::GetUbBlockSize(context_));
-    OP_CHECK_IF(
-        blockSize_ == 0U,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "ub_block_size", "0", "The value of ub_block_size must be > 0"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(blockSize_ == 0U,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ub_block_size", "0",
+                                                      "The value of ub_block_size must be > 0"),
+                return ge::GRAPH_FAILED);
     vectorSize_ = static_cast<uint64_t>(Ops::Base::GetVRegSize(context_));
-    OP_CHECK_IF(
-        vectorSize_ == 0U,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "vector_size", "0", "The value of vector_size must be > 0"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(vectorSize_ == 0U,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "vector_size", "0",
+                                                      "The value of vector_size must be > 0"),
+                return ge::GRAPH_FAILED);
     cacheLineSize_ = Ops::Base::GetCacheLineSize(context_);
-    OP_CHECK_IF(
-        cacheLineSize_ == 0U,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "cache_line_size", "0", "The value of cache_line_size must be > 0"),
-        return ge::GRAPH_FAILED);
-    OP_LOGD(
-        context_,
-        "platform info is coreNum_ = %u, ubSize_ = %lu, blockSize_ = %lu, vectorSize_ = %lu, cacheLineSize_ = %u",
-        coreNum_, ubSize_, blockSize_, vectorSize_, cacheLineSize_);
+    OP_CHECK_IF(cacheLineSize_ == 0U,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "cache_line_size", "0",
+                                                      "The value of cache_line_size must be > 0"),
+                return ge::GRAPH_FAILED);
+    OP_LOGD(context_,
+            "platform info is coreNum_ = %u, ubSize_ = %lu, blockSize_ = %lu, vectorSize_ = %lu, cacheLineSize_ = %u",
+            coreNum_, ubSize_, blockSize_, vectorSize_, cacheLineSize_);
     tilingData_ = context_->GetTilingData<PadV3GradACTilingData>();
     OP_CHECK_IF(tilingData_ == nullptr, OP_LOGE(context_, "get tilingdata ptr failed"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
@@ -869,33 +845,27 @@ ge::graphStatus PadV3GradACTiling::Init()
 ge::graphStatus PadV3GradACTiling::DoTiling()
 {
     OP_LOGD(context_, "Start PadV3GradACTiling DoTiling.");
-    OP_CHECK_IF(
-        Init() == ge::GRAPH_FAILED, OP_LOGE(context_, "PadV3GradACTiling Init error."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        GetShapeAttrsInfo() == ge::GRAPH_FAILED, OP_LOGE(context_, "PadV3GradACTiling GetShapeAttrsInfo error."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(Init() == ge::GRAPH_FAILED, OP_LOGE(context_, "PadV3GradACTiling Init error."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetShapeAttrsInfo() == ge::GRAPH_FAILED,
+                OP_LOGE(context_, "PadV3GradACTiling GetShapeAttrsInfo error."), return ge::GRAPH_FAILED);
     if (padMode_ == TPL_MODE_EDGE) {
-        OP_CHECK_IF(
-            DoTilingModeEdge() == ge::GRAPH_FAILED, OP_LOGE(context_, "DoTilingModeEdge failed."),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(DoTilingModeEdge() == ge::GRAPH_FAILED, OP_LOGE(context_, "DoTilingModeEdge failed."),
+                    return ge::GRAPH_FAILED);
     } else if (padMode_ == TPL_MODE_REFLECT || padMode_ == TPL_MODE_SYMMETRIC) {
-        OP_CHECK_IF(
-            DoTilingModeMirror() == ge::GRAPH_FAILED, OP_LOGE(context_, "DoTilingModeMirror failed."),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(DoTilingModeMirror() == ge::GRAPH_FAILED, OP_LOGE(context_, "DoTilingModeMirror failed."),
+                    return ge::GRAPH_FAILED);
     } else if (padMode_ == TPL_MODE_CIRCULAR) {
-        OP_CHECK_IF(
-            DoTilingModeCircular() == ge::GRAPH_FAILED, OP_LOGE(context_, "DoTilingModeCircular failed."),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(DoTilingModeCircular() == ge::GRAPH_FAILED, OP_LOGE(context_, "DoTilingModeCircular failed."),
+                    return ge::GRAPH_FAILED);
     } else {
-        OP_CHECK_IF(
-            DoTilingModeConstant() == ge::GRAPH_FAILED, OP_LOGE(context_, "DoTilingModeConstant failed."),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(DoTilingModeConstant() == ge::GRAPH_FAILED, OP_LOGE(context_, "DoTilingModeConstant failed."),
+                    return ge::GRAPH_FAILED);
     }
 
     tilingKey_ = GET_TPL_TILING_KEY(padMode_, isBigShape_, isSimt_, cutMode_);
-    OP_LOGI(
-        context_->GetNodeName(), "tilingKey is %lu, modeName %d, isBigShape %d, isSimt_ %d, cutMode_ %d", tilingKey_,
-        padMode_, isBigShape_, isSimt_, cutMode_);
+    OP_LOGI(context_->GetNodeName(), "tilingKey is %lu, modeName %d, isBigShape %d, isSimt_ %d, cutMode_ %d",
+            tilingKey_, padMode_, isBigShape_, isSimt_, cutMode_);
 
     FillsAndPrintTilingData();
     context_->SetBlockDim(coreNum_);
@@ -927,17 +897,16 @@ ge::graphStatus TilingPreparePadV3GradForAscendC(gert::TilingParseContext* conte
     ci->core_num = ascendcPlatform.GetCoreNumAiv();
     OP_CHECK_IF(
         (ci->core_num <= 0),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context->GetNodeName(), "core_num", std::to_string(ci->core_num).c_str(),
-            "The value of core_num must be > 0"),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "core_num", std::to_string(ci->core_num).c_str(),
+                                              "The value of core_num must be > 0"),
         return ge::GRAPH_FAILED);
     uint64_t ubSize;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     ci->ub_size = static_cast<int64_t>(ubSize);
     OP_CHECK_IF(
         (ci->ub_size <= 0),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context->GetNodeName(), "ub_size", std::to_string(ci->ub_size).c_str(), "The value of ub_size must be > 0"),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ub_size", std::to_string(ci->ub_size).c_str(),
+                                              "The value of ub_size must be > 0"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }

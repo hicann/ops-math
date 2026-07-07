@@ -17,15 +17,9 @@
 
 class BatchToSpaceNDTilingLargeCTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "BatchToSpaceNDTilingLargeCTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "BatchToSpaceNDTilingLargeCTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "BatchToSpaceNDTilingLargeCTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "BatchToSpaceNDTilingLargeCTest TearDown" << std::endl; }
 };
 
 namespace {

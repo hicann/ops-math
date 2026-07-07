@@ -42,12 +42,12 @@ namespace ge {
 * Compatible with TensorFlow operator DepthToSpace.
 */
 REG_OP(DepthToSpace)
-  .INPUT(x, TensorType::BasicType())
-  .OUTPUT(y, TensorType::BasicType())
-  .REQUIRED_ATTR(block_size, Int)
-  .ATTR(mode, String, "DCR")
-  .ATTR(data_format, String, "NHWC")
-  .OP_END_FACTORY_REG(DepthToSpace)
+    .INPUT(x, TensorType::BasicType())
+    .OUTPUT(y, TensorType::BasicType())
+    .REQUIRED_ATTR(block_size, Int)
+    .ATTR(mode, String, "DCR")
+    .ATTR(data_format, String, "NHWC")
+    .OP_END_FACTORY_REG(DepthToSpace)
 
 } // namespace ge
 

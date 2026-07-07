@@ -18,18 +18,20 @@
 
 namespace optiling {
 
-static ge::graphStatus Tiling4PadV2(gert::TilingContext* context) {
+static ge::graphStatus Tiling4PadV2(gert::TilingContext* context)
+{
     // 直接使用 PadV3 的 Tiling 类
     PadACTiling tilingObject(context);
     return tilingObject.DoTiling();
 }
 
-static ge::graphStatus TilingPrepare4PadV2(gert::TilingParseContext* context) {
+static ge::graphStatus TilingPrepare4PadV2(gert::TilingParseContext* context)
+{
     OP_LOGD(context->GetNodeName(), "TilingPrepare4PadV2 entering.");
-    return ge::GRAPH_SUCCESS;  
+    return ge::GRAPH_SUCCESS;
 }
 
 // 注册 PadV2 的 tiling 接口
 IMPL_OP_OPTILING(PadV2).Tiling(Tiling4PadV2).TilingParse<PadV3CompileInfo>(TilingPrepare4PadV2);
 
-}  // namespace optiling
+} // namespace optiling

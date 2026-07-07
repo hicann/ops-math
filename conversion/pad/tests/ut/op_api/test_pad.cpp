@@ -16,56 +16,56 @@
 
 const int64_t DATA_SIZE = 1024 * 1024;
 
-class PadTest: public ::testing::Test {
- public:
-  PadTest() : l0Executor(nullptr) {}
+class PadTest : public ::testing::Test {
+public:
+    PadTest() : l0Executor(nullptr) {}
 
-  aclTensor *CreateContiguousAclTensor(std::vector<int64_t> viewShape, aclDataType dtype) {
-    std::vector<int64_t> stride(viewShape.size(), 1);
-    for (int i = viewShape.size() - 2; i >= 0; i--) {
-        stride[i] = stride[i + 1] * viewShape[i];
+    aclTensor* CreateContiguousAclTensor(std::vector<int64_t> viewShape, aclDataType dtype)
+    {
+        std::vector<int64_t> stride(viewShape.size(), 1);
+        for (int i = viewShape.size() - 2; i >= 0; i--) {
+            stride[i] = stride[i + 1] * viewShape[i];
+        }
+        return aclCreateTensor(viewShape.data(), viewShape.size(), dtype, stride.data(), 0, ACL_FORMAT_ND,
+                               viewShape.data(), viewShape.size(), data);
     }
-    return aclCreateTensor(viewShape.data(), viewShape.size(), dtype, stride.data(), 0,
-                           ACL_FORMAT_ND, viewShape.data(), viewShape.size(), data);
-  }
 
-  void Clear() {
-    l0Executor->kernelLaunchObjList_.clear();
-  }
+    void Clear() { l0Executor->kernelLaunchObjList_.clear(); }
 
-  void SetUp() override {
-    auto l2Executor = &l0Executor;
-    auto uniqueExecutor = CREATE_EXECUTOR();
-    uniqueExecutor.ReleaseTo(l2Executor);
-  }
+    void SetUp() override
+    {
+        auto l2Executor = &l0Executor;
+        auto uniqueExecutor = CREATE_EXECUTOR();
+        uniqueExecutor.ReleaseTo(l2Executor);
+    }
 
-  void TearDown() override {
-    delete l0Executor;
-  }
+    void TearDown() override { delete l0Executor; }
 
- public:
-  aclOpExecutor* l0Executor;
-  int64_t data[DATA_SIZE] = {0};
+public:
+    aclOpExecutor* l0Executor;
+    int64_t data[DATA_SIZE] = {0};
 };
 
-TEST_F(PadTest, Pad) {
-  auto self = CreateContiguousAclTensor({4, 5, 6, 7}, ACL_FLOAT16);
-  op::ShapeVector paddingsVec({0, 0, 0, 0, 0, 0, 0, 9});
-  auto paddings = l0Executor->AllocIntArray(paddingsVec.data(), paddingsVec.size());
-  auto reshapedTensor = l0op::Pad(self, l0Executor->ConvertToTensor(paddings, op::DataType::DT_INT64), l0Executor);
-  ASSERT_NE(reshapedTensor, nullptr);
+TEST_F(PadTest, Pad)
+{
+    auto self = CreateContiguousAclTensor({4, 5, 6, 7}, ACL_FLOAT16);
+    op::ShapeVector paddingsVec({0, 0, 0, 0, 0, 0, 0, 9});
+    auto paddings = l0Executor->AllocIntArray(paddingsVec.data(), paddingsVec.size());
+    auto reshapedTensor = l0op::Pad(self, l0Executor->ConvertToTensor(paddings, op::DataType::DT_INT64), l0Executor);
+    ASSERT_NE(reshapedTensor, nullptr);
 
-  op::ShapeVector expectShapeReshapedTensor({4, 5, 6, 16});
-  EXPECT_EQ(op::ToShapeVector(reshapedTensor->GetViewShape()), expectShapeReshapedTensor);
+    op::ShapeVector expectShapeReshapedTensor({4, 5, 6, 16});
+    EXPECT_EQ(op::ToShapeVector(reshapedTensor->GetViewShape()), expectShapeReshapedTensor);
 }
 
-TEST_F(PadTest, ascend950_Pad) {
-  auto self = CreateContiguousAclTensor({4, 5, 6, 7}, ACL_FLOAT16);
-  op::ShapeVector paddingsVec({0, 0, 0, 0, 0, 0, 0, 9});
-  auto paddings = l0Executor->AllocIntArray(paddingsVec.data(), paddingsVec.size());
-  auto reshapedTensor = l0op::Pad(self, l0Executor->ConvertToTensor(paddings, op::DataType::DT_INT64), l0Executor);
-  ASSERT_NE(reshapedTensor, nullptr);
+TEST_F(PadTest, ascend950_Pad)
+{
+    auto self = CreateContiguousAclTensor({4, 5, 6, 7}, ACL_FLOAT16);
+    op::ShapeVector paddingsVec({0, 0, 0, 0, 0, 0, 0, 9});
+    auto paddings = l0Executor->AllocIntArray(paddingsVec.data(), paddingsVec.size());
+    auto reshapedTensor = l0op::Pad(self, l0Executor->ConvertToTensor(paddings, op::DataType::DT_INT64), l0Executor);
+    ASSERT_NE(reshapedTensor, nullptr);
 
-  op::ShapeVector expectShapeReshapedTensor({4, 5, 6, 16});
-  EXPECT_EQ(op::ToShapeVector(reshapedTensor->GetViewShape()), expectShapeReshapedTensor);
+    op::ShapeVector expectShapeReshapedTensor({4, 5, 6, 16});
+    EXPECT_EQ(op::ToShapeVector(reshapedTensor->GetViewShape()), expectShapeReshapedTensor);
 }

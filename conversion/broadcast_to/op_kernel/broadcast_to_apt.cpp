@@ -15,7 +15,7 @@
 #include "arch35/broadcast_to.h"
 
 extern "C" __global__ __aicore__ void broadcast_to(GM_ADDR x, GM_ADDR shape, GM_ADDR y, GM_ADDR workspace,
-    GM_ADDR tiling)
+                                                   GM_ADDR tiling)
 {
     broadcast_to_impl(x, shape, y, workspace, tiling);
 }

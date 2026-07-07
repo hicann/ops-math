@@ -19,8 +19,8 @@
 
 using namespace AscendC;
 
-extern "C" __global__ __aicore__ void pad_v3_grad_replication(
-    GM_ADDR x, GM_ADDR paddings, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void pad_v3_grad_replication(GM_ADDR x, GM_ADDR paddings, GM_ADDR z, GM_ADDR workspace,
+                                                              GM_ADDR tiling)
 {
     GET_TILING_DATA(tilingData, tiling);
     if (TILING_KEY_IS(1)) {

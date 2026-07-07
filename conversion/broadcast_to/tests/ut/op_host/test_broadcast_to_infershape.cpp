@@ -19,30 +19,24 @@
 #include "infershape_case_executor.h"
 
 class BroadcastToInferShapeTest : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "broadcast_to Proto Test SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() { std::cout << "broadcast_to Proto Test SetUp" << std::endl; }
 
-  static void TearDownTestCase() {
-    std::cout << "broadcast_to Proto Test TearDown" << std::endl;
-  }
+    static void TearDownTestCase() { std::cout << "broadcast_to Proto Test TearDown" << std::endl; }
 };
 
 // Test scenario: INT64 dtype for shape tensor, broadcast [1,7,2] -> [6,7,2]
-TEST_F(BroadcastToInferShapeTest, broadcast_to_infershape_test_case_1){
-    gert::StorageShape shape = {{1,7,2}, {1,7,2}};
+TEST_F(BroadcastToInferShapeTest, broadcast_to_infershape_test_case_1)
+{
+    gert::StorageShape shape = {{1, 7, 2}, {1, 7, 2}};
     gert::StorageShape shape1 = {{3}, {3}};
     int64_t shapes[4] = {6, 7, 2};
     gert::InfershapeContextPara::TensorDescription x(shape, ge::DT_INT32, ge::FORMAT_ND);
     gert::InfershapeContextPara::TensorDescription shapeParams(shape1, ge::DT_INT64, ge::FORMAT_ND, true, &shapes);
     gert::InfershapeContextPara::TensorDescription y(shape, ge::DT_INT32, ge::FORMAT_ND);
-    gert::InfershapeContextPara infershapeContextPara(
-        "BroadcastTo",
-        { x, shapeParams },
-        { y });
+    gert::InfershapeContextPara infershapeContextPara("BroadcastTo", {x, shapeParams}, {y});
     std::vector<std::vector<int64_t>> expectOutputShape = {
-        {{6,7,2}},
+        {{6, 7, 2}},
     };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }

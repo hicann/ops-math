@@ -18,15 +18,9 @@ using namespace std;
 
 class replication_pad3d_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "replication_pad3d_test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "replication_pad3d_test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "replication_pad3d_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "replication_pad3d_test TearDown" << std::endl; }
 };
 
 TEST_F(replication_pad3d_test, case_1)

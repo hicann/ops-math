@@ -60,8 +60,7 @@ struct PadV3UbTileInfo {
 
 class PadACTiling {
 public:
-    explicit PadACTiling(gert::TilingContext* context) : context_(context)
-    {}
+    explicit PadACTiling(gert::TilingContext* context) : context_(context) {}
     ge::graphStatus DoTiling();
 
 private:
@@ -132,14 +131,7 @@ private:
     PadACTilingData* tilingData_;
     PadACTilingData* tilingDataSIMT_;
     uint64_t tilingKey_;
-    enum class ModeNum : uint8_t
-    {
-        CONSTANT = 0,
-        EDGE = 1,
-        REFLECT = 2,
-        SYMMETRIC = 3,
-        CIRCULAR = 4
-    };
+    enum class ModeNum : uint8_t { CONSTANT = 0, EDGE = 1, REFLECT = 2, SYMMETRIC = 3, CIRCULAR = 4 };
     ModeNum padMode_{ModeNum::CONSTANT}; // 0为constant，1为edge,2为reflect,3为symmetric
 
     uint8_t dimNum_{1};

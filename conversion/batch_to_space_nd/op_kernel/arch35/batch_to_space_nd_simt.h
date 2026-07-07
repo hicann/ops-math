@@ -29,8 +29,8 @@ template <typename T, typename U>
 class BatchToSpaceNDSIMT {
 public:
     __aicore__ inline BatchToSpaceNDSIMT(){};
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR block_shape, GM_ADDR crops, GM_ADDR y, const B2SNDSimtTilingData* tilingData, TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR block_shape, GM_ADDR crops, GM_ADDR y,
+                                const B2SNDSimtTilingData* tilingData, TPipe* pipe);
     __aicore__ inline void Process(GM_ADDR tiling);
 
 private:
@@ -533,8 +533,8 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(HALF_THREAD_NUM_LAUNCH_BOUND) void SimtCompu
 }
 
 template <typename T, typename U>
-__aicore__ inline void BatchToSpaceNDSIMT<T, U>::Init(
-    GM_ADDR x, GM_ADDR block_shape, GM_ADDR crops, GM_ADDR y, const B2SNDSimtTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void BatchToSpaceNDSIMT<T, U>::Init(GM_ADDR x, GM_ADDR block_shape, GM_ADDR crops, GM_ADDR y,
+                                                      const B2SNDSimtTilingData* tilingData, TPipe* pipe)
 {
     blockIdx_ = GetBlockIdx();
     mTD = tilingData;

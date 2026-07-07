@@ -20,8 +20,8 @@
 
 namespace optiling {
 struct PadCompileInfo {
-  int64_t core_num;
-  int64_t ub_size;
+    int64_t core_num;
+    int64_t ub_size;
 };
 
 } // namespace optiling

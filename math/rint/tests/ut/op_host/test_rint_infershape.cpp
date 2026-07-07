@@ -20,27 +20,20 @@
 
 class RintInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "RintInfershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "RintInfershape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "RintInfershape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "RintInfershape TearDown" << std::endl; }
 };
 
 TEST_F(RintInfershape, rint_infershape_float16_test)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Rint",
-        {
-            {{{4, 3, 4}, {4, 3, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Rint",
+                                                      {
+                                                          {{{4, 3, 4}, {4, 3, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {4, 3, 4},
     };
@@ -49,14 +42,13 @@ TEST_F(RintInfershape, rint_infershape_float16_test)
 
 TEST_F(RintInfershape, rint_infershape_float_test)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Rint",
-        {
-            {{{2, 3, 4}, {2, 3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Rint",
+                                                      {
+                                                          {{{2, 3, 4}, {2, 3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {2, 3, 4},
     };
@@ -65,14 +57,13 @@ TEST_F(RintInfershape, rint_infershape_float_test)
 
 TEST_F(RintInfershape, rint_infershape_bf16_test)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Rint",
-        {
-            {{{2, 3, 4, 5}, {2, 3, 4, 5}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_BF16, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Rint",
+                                                      {
+                                                          {{{2, 3, 4, 5}, {2, 3, 4, 5}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {2, 3, 4, 5},
     };

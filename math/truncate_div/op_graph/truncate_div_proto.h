@@ -31,21 +31,19 @@ namespace ge {
  * @li x2: A ND Tensor. Has the same dtype and format as input "x1". \n
 
  * @par Outputs:
- * y: A ND Tensor. Has the same dtype and format as input "x1". Has the same shape as the broadcast shape of x1 and x2. \n
+ * y: A ND Tensor. Has the same dtype and format as input "x1". Has the same shape as the broadcast shape of x1 and x2.
+ \n
 
  * @par Third-party framework compatibility
  * Compatible with the PyTorch operator TruncateDiv.
  */
 REG_OP(TruncateDiv)
-    .INPUT(
-        x1, TensorType(
-                {DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT8, DT_UINT8, DT_INT32, DT_DOUBLE, DT_UINT16, DT_INT16, DT_INT64}))
-    .INPUT(
-        x2, TensorType(
-                {DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT8, DT_UINT8, DT_INT32, DT_DOUBLE, DT_UINT16, DT_INT16, DT_INT64}))
-    .OUTPUT(
-        y, TensorType(
-                {DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT8, DT_UINT8, DT_INT32, DT_DOUBLE, DT_UINT16, DT_INT16, DT_INT64}))
+    .INPUT(x1, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT8, DT_UINT8, DT_INT32, DT_DOUBLE, DT_UINT16, DT_INT16,
+                           DT_INT64}))
+    .INPUT(x2, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT8, DT_UINT8, DT_INT32, DT_DOUBLE, DT_UINT16, DT_INT16,
+                           DT_INT64}))
+    .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT8, DT_UINT8, DT_INT32, DT_DOUBLE, DT_UINT16, DT_INT16,
+                           DT_INT64}))
     .OP_END_FACTORY_REG(TruncateDiv)
 
 } // namespace ge

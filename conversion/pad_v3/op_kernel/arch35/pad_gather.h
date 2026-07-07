@@ -48,16 +48,13 @@ private:
 
     using RangeType = std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>;
     using IdxType = std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>;
-    using CastType =
-        std::conditional_t<sizeof(T) == 1, std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
+    using CastType = std::conditional_t<sizeof(T) == 1,
+                                        std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
 
 public:
-    __aicore__ inline PadGather(TPipe *pipe)
-    {
-        pipe_ = pipe;
-    }
+    __aicore__ inline PadGather(TPipe* pipe) { pipe_ = pipe; }
 
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, const PadACTilingData *tilingData,
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, const PadACTilingData* tilingData,
                                 GM_ADDR constValue = nullptr)
     {
         blockIdxGather_ = GetBlockIdx();
@@ -70,14 +67,14 @@ public:
             // 一次VL需要处理后面3根轴
             lastThirdDimInVL_ = true;
             vlSplitInGather_ = Std::min(uint64_t(VL_CNT / tdPtr_->outStride[dimNum_ - CONST3]),
-                                            uint64_t(tdPtr_->outShape[dimNum_ - CONST3]));
+                                        uint64_t(tdPtr_->outShape[dimNum_ - CONST3]));
         } else {
             vlSplitInGather_ = Std::min(uint64_t(VL_CNT / tdPtr_->outStride[dimNum_ - CONST2]),
-                                         uint64_t(tdPtr_->outShape[dimNum_ - CONST2]));
+                                        uint64_t(tdPtr_->outShape[dimNum_ - CONST2]));
         }
 
         if (constValue != nullptr) {
-            constValueGMGather_.SetGlobalBuffer((__gm__ T *)constValue);
+            constValueGMGather_.SetGlobalBuffer((__gm__ T*)constValue);
             constValue_ = constValueGMGather_(0);
             if constexpr (IsSameType<U, fp4x2_e2m1_t>::value || IsSameType<U, fp4x2_e1m2_t>::value) {
                 T padValue = constValueGMGather_(0);
@@ -85,8 +82,8 @@ public:
                 constValue_ = (low4bit << 4) | low4bit;
             }
         }
-        inputGm_.SetGlobalBuffer((__gm__ T *)x);
-        outputGm_.SetGlobalBuffer((__gm__ T *)y);
+        inputGm_.SetGlobalBuffer((__gm__ T*)x);
+        outputGm_.SetGlobalBuffer((__gm__ T*)y);
 
         pipe_->InitBuffer(inQue_, BUF_NUM, tdPtr_->outTileSize + VL_SIZE);
         pipe_->InitBuffer(outQue_, BUF_NUM, tdPtr_->outTileSize);
@@ -128,7 +125,7 @@ public:
     }
 
 private:
-    __aicore__ inline void CalcDimIdx(uint32_t curIdx, uint64_t *inIndex, uint64_t *outIndex, bool& isAllDup)
+    __aicore__ inline void CalcDimIdx(uint32_t curIdx, uint64_t* inIndex, uint64_t* outIndex, bool& isAllDup)
     {
         for (int32_t i = ubAxis_; i >= 0; i--) {
             uint64_t factorGather = tdPtr_->outShape[i];
@@ -139,17 +136,18 @@ private:
                 outIndex[i] = (i == ubAxis_ ? curIdx % factorGather * ubFactor_ : curIdx % factorGather);
             }
             inIndex[i] = outIndex[i] < tdPtr_->leftPad[i] ? 0 : outIndex[i] - tdPtr_->leftPad[i];
-            if (i != ubAxis_ && (outIndex[i] < tdPtr_->leftPad[i] || outIndex[i] >= tdPtr_->leftPad[i] + tdPtr_->inShape[i])) {
+            if (i != ubAxis_ &&
+                (outIndex[i] < tdPtr_->leftPad[i] || outIndex[i] >= tdPtr_->leftPad[i] + tdPtr_->inShape[i])) {
                 isAllDup = true;
             }
             if (factorGather != 0) {
-                    curIdx = curIdx / factorGather;
+                curIdx = curIdx / factorGather;
             }
         }
     }
 
-    __aicore__ inline void CalcUbSplitInAndOut(const uint64_t *inIndex, const uint64_t *outIndex, uint64_t ubTailFactor,
-        uint32_t &ubAxisInCopyNum, uint32_t &ubAxisOutCopyNum)
+    __aicore__ inline void CalcUbSplitInAndOut(const uint64_t* inIndex, const uint64_t* outIndex, uint64_t ubTailFactor,
+                                               uint32_t& ubAxisInCopyNum, uint32_t& ubAxisOutCopyNum)
     {
         if (outIndex[ubAxis_] < tdPtr_->leftPad[ubAxis_] + tdPtr_->inShape[ubAxis_]) {
             // outIndex 在右pad点的左侧
@@ -158,7 +156,8 @@ private:
                 ubAxisInCopyNum = 0;
             } else if (outIndex[ubAxis_] + ubFactor_ < tdPtr_->leftPad[ubAxis_] + tdPtr_->inShape[ubAxis_]) {
                 // 输出都在右pad点左侧
-                ubAxisInCopyNum = outIndex[ubAxis_] + ubFactor_ - inIndex[ubAxis_] - tdPtr_->leftPad[ubAxis_]; // ub非整切时是否正确？
+                ubAxisInCopyNum = outIndex[ubAxis_] + ubFactor_ - inIndex[ubAxis_] -
+                                  tdPtr_->leftPad[ubAxis_]; // ub非整切时是否正确？
             } else {
                 // 输出跨过右pad点
                 ubAxisInCopyNum = tdPtr_->inShape[ubAxis_] - inIndex[ubAxis_];
@@ -171,8 +170,9 @@ private:
         ubAxisOutCopyNum = (outIndex[ubAxis_] + ubFactor_ > tdPtr_->outShape[ubAxis_]) ? ubTailFactor : ubFactor_;
     }
 
-    __aicore__ inline void ProcessOneStep(const uint64_t *inIndex, const uint64_t *outIndex, bool isAllDup,
-        uint32_t ubAxisInCopyNum, uint32_t ubAxisOutCopyNum, LocalTensor<RangeType>& idxTensor)
+    __aicore__ inline void ProcessOneStep(const uint64_t* inIndex, const uint64_t* outIndex, bool isAllDup,
+                                          uint32_t ubAxisInCopyNum, uint32_t ubAxisOutCopyNum,
+                                          LocalTensor<RangeType>& idxTensor)
     {
         if (ubAxisInCopyNum == 0 || isAllDup) {
             DoOnlyDup(outIndex, ubAxisOutCopyNum);
@@ -183,7 +183,7 @@ private:
         }
     }
 
-    __aicore__ inline void CopyIn(const uint64_t *inIndex, uint32_t ubAxisInCopyNum)
+    __aicore__ inline void CopyIn(const uint64_t* inIndex, uint32_t ubAxisInCopyNum)
     {
         uint32_t copyInNumGather = ubAxisInCopyNum * tdPtr_->inStride[ubAxis_];
         uint64_t inAddr = 0;
@@ -200,7 +200,8 @@ private:
         inQue_.EnQue(inLocal);
     }
 
-    __aicore__ inline void GatherCompute(const uint64_t *outIndex, uint32_t ubAxisInCopyNum, LocalTensor<RangeType>& idxTensor)
+    __aicore__ inline void GatherCompute(const uint64_t* outIndex, uint32_t ubAxisInCopyNum,
+                                         LocalTensor<RangeType>& idxTensor)
     {
         LocalTensor<T> inLocal = inQue_.DeQue<T>();
         LocalTensor<T> outLocal = outQue_.AllocTensor<T>();
@@ -219,7 +220,7 @@ private:
         outQue_.EnQue(outLocal);
     }
 
-    __aicore__ inline void CopyOut(const uint64_t *outIndex, uint32_t ubAxisOutCopyNum)
+    __aicore__ inline void CopyOut(const uint64_t* outIndex, uint32_t ubAxisOutCopyNum)
     {
         uint64_t outAddr = 0;
         for (uint32_t i = 0; i < dimNum_; i++) {
@@ -233,7 +234,7 @@ private:
         outQue_.FreeTensor(outLocal);
     }
 
-    __aicore__ inline void DoOnlyDup(const uint64_t *outIndex, uint32_t ubAxisOutCopyNum)
+    __aicore__ inline void DoOnlyDup(const uint64_t* outIndex, uint32_t ubAxisOutCopyNum)
     {
         uint64_t outAddr = 0;
         for (uint32_t i = 0; i < dimNum_; i++) {
@@ -263,8 +264,8 @@ private:
         inQue_.FreeTensor(srcLocal1);
     }
 
-    __aicore__ inline void GetGatherParam(const uint64_t *outIndex, uint32_t ubAxisInCopyNum, uint32_t &outUbStart,
-        PadGatherParam &gatherParam)
+    __aicore__ inline void GetGatherParam(const uint64_t* outIndex, uint32_t ubAxisInCopyNum, uint32_t& outUbStart,
+                                          PadGatherParam& gatherParam)
     {
         // N C H W -- VL循环在H上
         // 3 2 1
@@ -299,8 +300,8 @@ private:
         }
     }
 
-    __aicore__ inline void GetGatherParamThreeDim(const uint64_t *outIndex, uint32_t ubAxisInCopyNum, uint32_t &outUbStart,
-        PadGatherParam &gatherParam)
+    __aicore__ inline void GetGatherParamThreeDim(const uint64_t* outIndex, uint32_t ubAxisInCopyNum,
+                                                  uint32_t& outUbStart, PadGatherParam& gatherParam)
     {
         //   N C HW -- VL循环在C上，为了复用同一份gather vf代码
         // 3 2 1
@@ -328,7 +329,7 @@ private:
         }
     }
 
-    __aicore__ inline void GenGatherIndexThreeDim(LocalTensor<RangeType> &idxTensor)
+    __aicore__ inline void GenGatherIndexThreeDim(LocalTensor<RangeType>& idxTensor)
     {
         uint32_t lastInDimSize = tdPtr_->inShape[dimNum_ - 1];
         uint16_t lastSecInDimSize = tdPtr_->inShape[dimNum_ - CONST2];
@@ -340,9 +341,9 @@ private:
         uint16_t lastTwoDimLoops = vlSplitInGather_;
         // 切在-3轴上，-2轴上的数据都是从gather中获取到的，包含pad
         int32_t leftPadNum = tdPtr_->leftPad[dimNum_ - CONST2] * tdPtr_->outStride[dimNum_ - CONST2] +
-            tdPtr_->leftPad[dimNum_ - 1];
+                             tdPtr_->leftPad[dimNum_ - 1];
 
-        __local_mem__ RangeType *idxAddr = (__local_mem__ RangeType *)idxTensor.GetPhyAddr();
+        __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
 
         __VEC_SCOPE__
         {
@@ -357,7 +358,7 @@ private:
 
             for (uint16_t i = 0; i < lastTwoDimLoops; i++) {
                 for (uint16_t j = 0; j < lastSecInDimSize; j++) {
-                    __local_mem__ RangeType *idxAddrTmp = idxAddr + leftPadNum + i * outStride1 + j * outStride2;
+                    __local_mem__ RangeType* idxAddrTmp = idxAddr + leftPadNum + i * outStride1 + j * outStride2;
                     MicroAPI::Arange(validReg, validBeginIdx + i * inStride1 + j * inStride2);
                     MicroAPI::DataCopyUnAlign(idxAddrTmp, validReg, uReg, lastInDimSize);
                     MicroAPI::DataCopyUnAlignPost(idxAddrTmp, uReg, 0);
@@ -366,7 +367,7 @@ private:
         }
     }
 
-    __aicore__ inline void GenGatherIndex(LocalTensor<RangeType> &idxTensor)
+    __aicore__ inline void GenGatherIndex(LocalTensor<RangeType>& idxTensor)
     {
         uint32_t lastInDimSize = tdPtr_->inShape[dimNum_ - 1];
         int32_t lastLeftPadNum = tdPtr_->leftPad[dimNum_ - 1];
@@ -375,7 +376,7 @@ private:
         int32_t scatBeginIdx = lastLeftPadNum + (vlSplitInGather_ - 1) * allPadNum;
         uint32_t scatterNum = vlSplitInGather_ * lastInDimSize;
         uint16_t lastDimsLeft = vlSplitInGather_ - 1;
-        __local_mem__ RangeType *idxAddr = (__local_mem__ RangeType *)idxTensor.GetPhyAddr();
+        __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
 
         /*
         1. 生成 (0,1,2,,,,127) -> ub  假设 vlSplitInGather_=3
@@ -409,17 +410,16 @@ private:
             }
 
             mask = MicroAPI::UpdateMask<RangeType>(scatterNum);
-            MicroAPI::DataCopyScatter(idxAddr, validReg, (MicroAPI::RegTensor<IdxType> &)scatIdxReg, mask);
+            MicroAPI::DataCopyScatter(idxAddr, validReg, (MicroAPI::RegTensor<IdxType>&)scatIdxReg, mask);
         }
     }
 
-    __aicore__ inline void GatherProcess(const PadGatherParam &gatherParam,
-        const LocalTensor<RangeType> &idxTensor, LocalTensor<T> &inTensor, LocalTensor<T>& outTensor,
-        uint32_t outUbStart)
+    __aicore__ inline void GatherProcess(const PadGatherParam& gatherParam, const LocalTensor<RangeType>& idxTensor,
+                                         LocalTensor<T>& inTensor, LocalTensor<T>& outTensor, uint32_t outUbStart)
     {
-        __local_mem__ RangeType *idxAddr = (__local_mem__ RangeType *)idxTensor.GetPhyAddr();
-        __local_mem__ T *inAddr = (__local_mem__ T *)inTensor.GetPhyAddr();
-        __local_mem__ T *outAddr = (__local_mem__ T *)outTensor.GetPhyAddr() + outUbStart;
+        __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
+        __local_mem__ T* inAddr = (__local_mem__ T*)inTensor.GetPhyAddr();
+        __local_mem__ T* outAddr = (__local_mem__ T*)outTensor.GetPhyAddr() + outUbStart;
 
         RangeType validBegin = VL_CNT;
         uint32_t vlSplitLoopIn = vlSplitInGather_;
@@ -464,19 +464,19 @@ private:
 
             for (uint16_t nIdx = 0; nIdx < axisVlO2; nIdx++) {
                 for (uint16_t cIdx = 0; cIdx < axisVlO1; cIdx++) {
-                    __local_mem__ T *outAddrTmp = outAddr + nIdx * strideOutVlO2 + cIdx * strideOutVlO1;
+                    __local_mem__ T* outAddrTmp = outAddr + nIdx * strideOutVlO2 + cIdx * strideOutVlO1;
                     RangeType addsScale = nIdx * strideInVlO2 + cIdx * strideInVlO1;
                     for (uint16_t hIdx = 0; hIdx < vlSplitLoopCnt; hIdx++) {
                         MicroAPI::Adds(regIdxBK, regIdx, hIdx * idxOffset + addsScale, pregT);
                         MicroAPI::Copy<RangeType, MicroAPI::MaskMergeMode::MERGING>(regNewIdx, regIdxBK, pregT);
 
-                        MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType> &)regData, inAddr,
-                                                (MicroAPI::RegTensor<IdxType> &)regNewIdx, maskIdx);
+                        MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType>&)regData, inAddr,
+                                                 (MicroAPI::RegTensor<IdxType>&)regNewIdx, maskIdx);
                         if constexpr (sizeof(T) != 1) {
                             // MicroAPI::DataCopy(outAddr + hIdx * maskValue, regData, maskData);
                             MicroAPI::DataCopyUnAlign(outAddrTmp, regData, uReg, maskValue);
                         } else {
-                            MicroAPI::Pack(regDataT, (MicroAPI::RegTensor<CastType> &)regData);
+                            MicroAPI::Pack(regDataT, (MicroAPI::RegTensor<CastType>&)regData);
                             MicroAPI::DataCopyUnAlign(outAddrTmp, regDataT, uReg, maskValue);
                         }
                     }
@@ -486,12 +486,12 @@ private:
                         MicroAPI::Adds(regIdxBK, regIdx, vlSplitLoopCnt * idxOffset + addsScale, pregT);
                         MicroAPI::Copy<RangeType, MicroAPI::MaskMergeMode::MERGING>(regNewIdx, regIdxBK, pregT);
 
-                        MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType> &)regData, inAddr,
-                                                (MicroAPI::RegTensor<IdxType> &)regNewIdx, maskIdx);
+                        MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType>&)regData, inAddr,
+                                                 (MicroAPI::RegTensor<IdxType>&)regNewIdx, maskIdx);
                         if constexpr (sizeof(T) != 1) {
                             MicroAPI::DataCopyUnAlign(outAddrTmp, regData, uReg, maskValueTail);
                         } else {
-                            MicroAPI::Pack(regDataT, (MicroAPI::RegTensor<CastType> &)regData);
+                            MicroAPI::Pack(regDataT, (MicroAPI::RegTensor<CastType>&)regData);
                             MicroAPI::DataCopyUnAlign(outAddrTmp, regDataT, uReg, maskValueTail);
                         }
                         MicroAPI::DataCopyUnAlignPost(outAddrTmp, uReg, 0);
@@ -502,8 +502,8 @@ private:
     }
 
 private:
-    TPipe *pipe_ = nullptr;
-    const PadACTilingData *tdPtr_ = nullptr;
+    TPipe* pipe_ = nullptr;
+    const PadACTilingData* tdPtr_ = nullptr;
     GlobalTensor<T> inputGm_;
     GlobalTensor<T> outputGm_;
     GlobalTensor<T> constValueGMGather_;
@@ -516,11 +516,11 @@ private:
     int32_t dimNum_{0};
     int32_t ubAxis_{0};
     int32_t ubFactor_{0};
-    uint16_t vlSplitInGather_{0}; // VL切分轴的factor
+    uint16_t vlSplitInGather_{0};  // VL切分轴的factor
     bool lastThirdDimInVL_{false}; // 一次VL是否处理后面三根轴
 
     T constValue_{0};
 };
-} // namespace Pad
+} // namespace PadV3
 
 #endif

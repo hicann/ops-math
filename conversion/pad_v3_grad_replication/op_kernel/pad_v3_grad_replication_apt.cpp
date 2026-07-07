@@ -34,8 +34,7 @@ __aicore__ inline void LaunchKernel(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_
 
         // 切尾轴：纯 SIMT 路径，直接从 GM 读写，不需要 UB buffer
         if constexpr (SplitAxis == DimNum - 1) {
-            if constexpr (std::is_same_v<DTYPE_X, half> ||
-                          std::is_same_v<DTYPE_X, bfloat16_t> ||
+            if constexpr (std::is_same_v<DTYPE_X, half> || std::is_same_v<DTYPE_X, bfloat16_t> ||
                           std::is_same_v<DTYPE_X, float>) {
                 PadV3GradReplicationEdgeSimt<DTYPE_X> op;
                 op.Init(x, y, &tilingData);
@@ -62,14 +61,13 @@ __aicore__ inline void LaunchKernel(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_
 
         // 非切尾轴：原矩形搬移 + 向量累加 kernel
         TPipe pipe;
-        if constexpr (std::is_same_v<DTYPE_X, half> ||
-                      std::is_same_v<DTYPE_X, bfloat16_t> ||
+        if constexpr (std::is_same_v<DTYPE_X, half> || std::is_same_v<DTYPE_X, bfloat16_t> ||
                       std::is_same_v<DTYPE_X, float>) {
             KernelPadV3GradReplication<DTYPE_X, DimNum, SplitAxis> op(&pipe, &tilingData);
             op.Init(x, y);
             op.Process();
         } else if constexpr (sizeof(DTYPE_X) == sizeof(uint8_t)) {
-            KernelPadV3GradReplication<uint8_t,  DimNum, SplitAxis> op(&pipe, &tilingData);
+            KernelPadV3GradReplication<uint8_t, DimNum, SplitAxis> op(&pipe, &tilingData);
             op.Init(x, y);
             op.Process();
         } else if constexpr (sizeof(DTYPE_X) == sizeof(uint16_t)) {
@@ -89,8 +87,8 @@ __aicore__ inline void LaunchKernel(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_
 }
 
 template <uint8_t DimNum, uint8_t SplitAxis>
-__global__ __aicore__ void pad_v3_grad_replication(
-    GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void pad_v3_grad_replication(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR workspace,
+                                                   GM_ADDR tiling)
 {
     SetSysWorkspace(workspace);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);

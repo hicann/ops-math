@@ -30,9 +30,8 @@ static constexpr int64_t UNKNOWN_DIM_VALUE_ = -1L;
 
 namespace ops {
 template <typename T>
-static ge::graphStatus PadV3GradInfershape(
-    const gert::InferShapeContext* context, const gert::Shape* x_shape, const gert::Tensor* paddings_tensor,
-    gert::Shape* y_shape)
+static ge::graphStatus PadV3GradInfershape(const gert::InferShapeContext* context, const gert::Shape* x_shape,
+                                           const gert::Tensor* paddings_tensor, gert::Shape* y_shape)
 {
     const T* paddings_value = paddings_tensor->GetData<T>();
     const size_t paddings_num = static_cast<size_t>(paddings_tensor->GetShapeSize());
@@ -44,11 +43,10 @@ static ge::graphStatus PadV3GradInfershape(
     OP_LOGD(context->GetNodeName(), "input x = %s", Ops::Base::ToString(*x_shape).c_str());
     // input shape check
     size_t input_dim_size = x_shape->GetDimNum();
-    OP_CHECK_IF(
-        input_dim_size == 0,
-        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
-            context->GetNodeName(), "x", Ops::Base::ToString(*x_shape).c_str(), "x cannot be an empty tensor"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(input_dim_size == 0,
+                OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+                    context->GetNodeName(), "x", Ops::Base::ToString(*x_shape).c_str(), "x cannot be an empty tensor"),
+                return ge::GRAPH_FAILED);
     // pad size check
     if (input_dim_size * PAIR != paddings_num) {
         OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
@@ -68,12 +66,11 @@ static ge::graphStatus PadV3GradInfershape(
         auto pad_front = paddings_value[index_cof * i];
         auto pad_end = paddings_value[index_cof * i + index_offset];
 
-        int64_t dim_value =
-            x_shape->GetDim(i) == UNKNOWN_DIM_VALUE_ ? UNKNOWN_DIM_VALUE_ : (x_shape->GetDim(i) - pad_front - pad_end);
+        int64_t dim_value = x_shape->GetDim(i) == UNKNOWN_DIM_VALUE_ ? UNKNOWN_DIM_VALUE_ :
+                                                                       (x_shape->GetDim(i) - pad_front - pad_end);
         if (x_shape->GetDim(i) != UNKNOWN_DIM_VALUE_ && dim_value < 0) {
-            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-                context->GetNodeName(), "y", std::to_string(dim_value).c_str(),
-                "The shape dim of y must be greater than or equal to 0");
+            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "y", std::to_string(dim_value).c_str(),
+                                                     "The shape dim of y must be greater than or equal to 0");
             return ge::GRAPH_FAILED;
         }
         y_shape->SetDim(i, dim_value);
@@ -122,8 +119,8 @@ static ge::graphStatus InferShape4PadV3Grad(gert::InferShapeContext* context)
             return PadV3GradInfershape<int64_t>(context, x_shape, paddings_tensor, y_shape);
         }
         default:
-            OP_LOGE_FOR_INVALID_DTYPE(
-                context->GetNodeName(), "paddings", Ops::Base::ToString(paddings_dtype).c_str(), "int32 or int64");
+            OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "paddings", Ops::Base::ToString(paddings_dtype).c_str(),
+                                      "int32 or int64");
             return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_FAILED;

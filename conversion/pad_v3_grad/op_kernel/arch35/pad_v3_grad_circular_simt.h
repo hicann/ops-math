@@ -64,9 +64,9 @@ __aicore__ inline void PadV3GradCircularSimt<T>::Init(GM_ADDR x, GM_ADDR y, cons
 }
 
 template <uint8_t DIM_NUM, typename U, typename GmOffsetType>
-__simt_callee__ __aicore__ void CalPos(
-    GmOffsetType yIdx, U* inIndex, U* outIndex, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
-    __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts)
+__simt_callee__ __aicore__ void CalPos(GmOffsetType yIdx, U* inIndex, U* outIndex, __ubuf__ U* outStrides,
+                                       __ubuf__ U* leftPads, __ubuf__ GmOffsetType* magics,
+                                       __ubuf__ GmOffsetType* shifts)
 {
     for (uint8_t i = 0; i < DIM_NUM - 1; i++) {
         outIndex[i] = static_cast<U>(Simt::UintDiv(yIdx, magics[i], shifts[i])); // outIndex[i] = yIdx / outStrides[i];
@@ -81,9 +81,8 @@ __simt_callee__ __aicore__ void CalPos(
 }
 
 template <uint8_t DIM_NUM, typename U>
-__simt_callee__ __aicore__ void CalCandidate(
-    IdxAndTimes<U>* inIdxCnt, U* inIndex, U* outIndex, __ubuf__ U* inStrides, __ubuf__ U* outShapes,
-    __ubuf__ U* leftPads, __ubuf__ U* rightPads)
+__simt_callee__ __aicore__ void CalCandidate(IdxAndTimes<U>* inIdxCnt, U* inIndex, U* outIndex, __ubuf__ U* inStrides,
+                                             __ubuf__ U* outShapes, __ubuf__ U* leftPads, __ubuf__ U* rightPads)
 {
     for (uint8_t i = 0; i < DIM_NUM; i++) {
         inIdxCnt[i].inGmIdx[0] = inIndex[i] * inStrides[i];
@@ -113,13 +112,14 @@ __simt_callee__ __aicore__ void CopyOut(GmOffsetType idx, __gm__ volatile T* out
 }
 
 template <typename T, uint8_t DIM_NUM, typename U, typename GmOffsetType, typename CastType>
-__simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__ void SimtComputeCircularOne(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize, uint32_t blockIdx, uint32_t blockNum,
-    __ubuf__ U* inShapes, __ubuf__ U* outShapes, __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
-    __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts, __ubuf__ U* cutBounds)
+__simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__
+    void SimtComputeCircularOne(__gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize,
+                                uint32_t blockIdx, uint32_t blockNum, __ubuf__ U* inShapes, __ubuf__ U* outShapes,
+                                __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
+                                __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts,
+                                __ubuf__ U* cutBounds)
 {
-    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         U outIndex[DIM_NUM]{0};
         U inIndex[DIM_NUM]{0};
         GmOffsetType yIdx = idx;
@@ -153,13 +153,14 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__ void SimtCompute
 }
 
 template <typename T, uint8_t DIM_NUM, typename U, typename GmOffsetType, typename CastType>
-__simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__ void SimtComputeCircularTwo(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize, uint32_t blockIdx, uint32_t blockNum,
-    __ubuf__ U* inShapes, __ubuf__ U* outShapes, __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
-    __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts, __ubuf__ U* cutBounds)
+__simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__
+    void SimtComputeCircularTwo(__gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize,
+                                uint32_t blockIdx, uint32_t blockNum, __ubuf__ U* inShapes, __ubuf__ U* outShapes,
+                                __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
+                                __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts,
+                                __ubuf__ U* cutBounds)
 {
-    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         U outIndex[DIM_NUM]{0};
         U inIndex[DIM_NUM]{0};
         uint64_t yIdx = idx;
@@ -199,13 +200,14 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__ void SimtCompute
 }
 
 template <typename T, uint8_t DIM_NUM, typename U, typename GmOffsetType, typename CastType>
-__simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__ void SimtComputeCircularThree(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize, uint32_t blockIdx, uint32_t blockNum,
-    __ubuf__ U* inShapes, __ubuf__ U* outShapes, __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
-    __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts, __ubuf__ U* cutBounds)
+__simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__
+    void SimtComputeCircularThree(__gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize,
+                                  uint32_t blockIdx, uint32_t blockNum, __ubuf__ U* inShapes, __ubuf__ U* outShapes,
+                                  __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
+                                  __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts,
+                                  __ubuf__ U* cutBounds)
 {
-    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         U outIndex[DIM_NUM]{0};
         U inIndex[DIM_NUM]{0};
         GmOffsetType yIdx = idx;
@@ -252,13 +254,14 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__ void SimtCompute
 }
 
 template <typename T, uint8_t DIM_NUM, typename U, typename GmOffsetType, typename CastType>
-__simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__ void SimtComputeCircularFour(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize, uint32_t blockIdx, uint32_t blockNum,
-    __ubuf__ U* inShapes, __ubuf__ U* outShapes, __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
-    __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts, __ubuf__ U* cutBounds)
+__simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__
+    void SimtComputeCircularFour(__gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize,
+                                 uint32_t blockIdx, uint32_t blockNum, __ubuf__ U* inShapes, __ubuf__ U* outShapes,
+                                 __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
+                                 __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts,
+                                 __ubuf__ U* cutBounds)
 {
-    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         U outIndex[DIM_NUM]{0};
         U inIndex[DIM_NUM]{0};
         GmOffsetType yIdx = idx;
@@ -310,13 +313,14 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__ void SimtCompute
 }
 
 template <typename T, uint8_t DIM_NUM, typename U, typename GmOffsetType, typename CastType>
-__simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__ void SimtComputeCircularFive(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize, uint32_t blockIdx, uint32_t blockNum,
-    __ubuf__ U* inShapes, __ubuf__ U* outShapes, __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
-    __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts, __ubuf__ U* cutBounds)
+__simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__
+    void SimtComputeCircularFive(__gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize,
+                                 uint32_t blockIdx, uint32_t blockNum, __ubuf__ U* inShapes, __ubuf__ U* outShapes,
+                                 __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
+                                 __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts,
+                                 __ubuf__ U* cutBounds)
 {
-    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         U outIndex[DIM_NUM]{0};
         U inIndex[DIM_NUM]{0};
         GmOffsetType yIdx = idx;
@@ -377,8 +381,8 @@ template <typename T>
 template <typename U>
 __aicore__ inline void PadV3GradCircularSimt<T>::Process()
 {
-    using CastType = std::conditional_t<
-        std::is_same_v<T, bfloat16_t>, float32_t, std::conditional_t<std::is_same_v<T, float16_t>, float32_t, T>>;
+    using CastType = std::conditional_t<std::is_same_v<T, bfloat16_t>, float32_t,
+                                        std::conditional_t<std::is_same_v<T, float16_t>, float32_t, T>>;
     using GmOffsetType = std::conditional_t<std::is_same_v<U, int64_t>, uint64_t, uint32_t>;
 
     uint32_t blockNum = GetBlockNum(); // 获取到核数

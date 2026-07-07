@@ -29,8 +29,7 @@ static constexpr size_t CROPS_LENGTH = 2;
 
 class BatchToSpaceNDInferShapeHelper {
 public:
-    explicit BatchToSpaceNDInferShapeHelper(gert::InferShapeContext* context) : context_(context)
-    {}
+    explicit BatchToSpaceNDInferShapeHelper(gert::InferShapeContext* context) : context_(context) {}
 
     ge::graphStatus Inference();
 
@@ -65,16 +64,14 @@ ge::graphStatus BatchToSpaceNDInferShapeHelper::Init()
 
     if (IsConstTensor(blockTensor)) {
         isConstBlock_ = true;
-        OP_CHECK_IF(
-            !Ops::Base::GetConstIntToShape<gert::InferShapeContext>(context_, INPUT_IDX_BLOCK_SHAPE, blockVec_),
-            OP_LOGE(context_, "Get block_shape tensor data failed!"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(!Ops::Base::GetConstIntToShape<gert::InferShapeContext>(context_, INPUT_IDX_BLOCK_SHAPE, blockVec_),
+                    OP_LOGE(context_, "Get block_shape tensor data failed!"), return ge::GRAPH_FAILED);
     }
 
     if (IsConstTensor(cropsTensor)) {
         isConstCrops_ = true;
-        OP_CHECK_IF(
-            !Ops::Base::GetConstIntToShape<gert::InferShapeContext>(context_, INPUT_IDX_CROPS, cropsVec_),
-            OP_LOGE(context_, "Get crops tensor data failed!"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(!Ops::Base::GetConstIntToShape<gert::InferShapeContext>(context_, INPUT_IDX_CROPS, cropsVec_),
+                    OP_LOGE(context_, "Get crops tensor data failed!"), return ge::GRAPH_FAILED);
     }
 
     return ge::GRAPH_SUCCESS;
@@ -98,11 +95,10 @@ ge::graphStatus BatchToSpaceNDInferShapeHelper::Inference()
     int64_t batch = xShape_->GetDim(0);
     if (batch != UNKNOWN_DIM) {
         for (size_t i = 0; i < blockNum_; ++i) {
-            OP_CHECK_IF(
-                blockVec_.GetDim(i) == 0,
-                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-                    context_->GetNodeName(), "block_shape", "0", "The value of block_shape cannot be zero"),
-                return ge::GRAPH_FAILED);
+            OP_CHECK_IF(blockVec_.GetDim(i) == 0,
+                        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "block_shape", "0",
+                                                              "The value of block_shape cannot be zero"),
+                        return ge::GRAPH_FAILED);
             batch = batch / blockVec_.GetDim(i);
         }
     }

@@ -23,14 +23,8 @@ using namespace std;
 
 class l2_sinc_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "Sinc Test Setup" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "Sinc Test TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "Sinc Test Setup" << std::endl; }
+    static void TearDownTestCase() { std::cout << "Sinc Test TearDown" << std::endl; }
 };
 
 TEST_F(l2_sinc_test, case_empty)

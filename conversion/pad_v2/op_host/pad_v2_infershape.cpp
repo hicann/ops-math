@@ -30,9 +30,8 @@ static constexpr int64_t UNKNOWN_DIM_VALUE_ = -1L;
 namespace ops {
 
 template <typename T>
-static ge::graphStatus PadV2Infershape(
-    const gert::InferShapeContext* context, const gert::Shape* x_shape, const gert::Tensor* paddings_tensor,
-    gert::Shape* y_shape)
+static ge::graphStatus PadV2Infershape(const gert::InferShapeContext* context, const gert::Shape* x_shape,
+                                       const gert::Tensor* paddings_tensor, gert::Shape* y_shape)
 {
     const T* paddings_value = paddings_tensor->GetData<T>();
     const size_t paddings_num = static_cast<size_t>(paddings_tensor->GetShapeSize());
@@ -40,21 +39,19 @@ static ge::graphStatus PadV2Infershape(
     OP_LOGD(context->GetNodeName(), "Begin to do PadV2Infershape");
     OP_LOGD(context->GetNodeName(), "input x = %s", Ops::Base::ToString(*x_shape).c_str());
 
-    OP_CHECK_IF(
-        paddings_num > 0 && paddings_value == nullptr,
-        OP_LOGE(context->GetNodeName(), "paddings const data cannot be nullptr"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(paddings_num > 0 && paddings_value == nullptr,
+                OP_LOGE(context->GetNodeName(), "paddings const data cannot be nullptr"), return ge::GRAPH_FAILED);
 
     // input shape check
     size_t input_dim_size = x_shape->GetDimNum();
-    OP_CHECK_IF(
-        input_dim_size == 0, OP_LOGE(context->GetNodeName(), "input shape cannot empty"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(input_dim_size == 0, OP_LOGE(context->GetNodeName(), "input shape cannot empty"),
+                return ge::GRAPH_FAILED);
 
     // pad size check
     if (input_dim_size * PAIR != paddings_num) {
-        OP_LOGE(
-            context->GetNodeName(),
-            "the paddings num must be twice of the input x rank. but paddings num is %zu, input x rank is %zu",
-            paddings_num, input_dim_size);
+        OP_LOGE(context->GetNodeName(),
+                "the paddings num must be twice of the input x rank. but paddings num is %zu, input x rank is %zu",
+                paddings_num, input_dim_size);
         return ge::GRAPH_FAILED;
     }
 
@@ -64,14 +61,14 @@ static ge::graphStatus PadV2Infershape(
         auto pad_front = paddings_value[PAIR * i]; // paddings_contiguous=true
         auto pad_end = paddings_value[PAIR * i + 1];
 
-        int64_t dim_value =
-            x_shape->GetDim(i) == UNKNOWN_DIM_VALUE_ ? UNKNOWN_DIM_VALUE_ : (x_shape->GetDim(i) + pad_front + pad_end);
+        int64_t dim_value = x_shape->GetDim(i) == UNKNOWN_DIM_VALUE_ ? UNKNOWN_DIM_VALUE_ :
+                                                                       (x_shape->GetDim(i) + pad_front + pad_end);
         if (x_shape->GetDim(i) != UNKNOWN_DIM_VALUE_ && dim_value < 0) {
-            OP_LOGE(
-                context->GetNodeName(),
-                "The output shape at index %zu is %ld, but output shape CANNOT contain negative values. x_shape at "
-                "index %zu: %ld, corresponding pad_front: %ld, corresponding pad_end: %ld.",
-                i, dim_value, i, x_shape->GetDim(i), static_cast<int64_t>(pad_front), static_cast<int64_t>(pad_end));
+            OP_LOGE(context->GetNodeName(),
+                    "The output shape at index %zu is %ld, but output shape CANNOT contain negative values. x_shape at "
+                    "index %zu: %ld, corresponding pad_front: %ld, corresponding pad_end: %ld.",
+                    i, dim_value, i, x_shape->GetDim(i), static_cast<int64_t>(pad_front),
+                    static_cast<int64_t>(pad_end));
             return ge::GRAPH_FAILED;
         }
         y_shape->SetDim(i, dim_value);
@@ -123,8 +120,8 @@ static ge::graphStatus InferShape4PadV2(gert::InferShapeContext* context)
             return PadV2Infershape<int64_t>(context, x_shape, paddings_tensor, y_shape);
         }
         default:
-            OP_LOGE_FOR_INVALID_DTYPE(
-                context->GetNodeName(), "paddings", Ops::Base::ToString(paddings_dtype).c_str(), "int32 or int64");
+            OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "paddings", Ops::Base::ToString(paddings_dtype).c_str(),
+                                      "int32 or int64");
             return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_FAILED;

@@ -74,8 +74,8 @@ private:
     DataCopyExtParams copyOutParamsD;
     using RT = std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>;
     using IdxType = std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>;
-    using CastType =
-        std::conditional_t<sizeof(T) == 1, std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
+    using CastType = std::conditional_t<sizeof(T) == 1,
+                                        std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
     static constexpr uint32_t VL_ELEMS_R = VL_SIZE / sizeof(RT);
     static constexpr uint32_t VL_ELEMS_C = VL_SIZE / sizeof(CastType);
 
@@ -135,14 +135,13 @@ public:
         uint32_t endIdx = (blockIdx_ + 1L) * ubPerCount;
         endIdx = (endIdx < ubTotalCount ? endIdx : ubTotalCount);
 
-        PadMirrNormalParam padParam = {
-            .padH = padHLength_,
-            .padWI = padWInLength_,
-            .padWO = padWOutLength_,
-            .padLeft = static_cast<uint32_t>(tilingData_->leftPad[tilingData_->dimNum - 1]),
-            .padRight = static_cast<uint32_t>(
-                tilingData_->leftPad[tilingData_->dimNum - 1] + tilingData_->inShape[tilingData_->dimNum - 1]),
-            .padStride = {padStride_[0], padStride_[1], padStride_[2]}};
+        PadMirrNormalParam padParam = {.padH = padHLength_,
+                                       .padWI = padWInLength_,
+                                       .padWO = padWOutLength_,
+                                       .padLeft = static_cast<uint32_t>(tilingData_->leftPad[tilingData_->dimNum - 1]),
+                                       .padRight = static_cast<uint32_t>(tilingData_->leftPad[tilingData_->dimNum - 1] +
+                                                                         tilingData_->inShape[tilingData_->dimNum - 1]),
+                                       .padStride = {padStride_[0], padStride_[1], padStride_[2]}};
         LocalTensor<RT> idxDst = idxQueue_.Get<RT>();
         if (has1DPadding) {
             CalPadPara(idxDst, padParam);
@@ -234,9 +233,8 @@ private:
         }
     }
 
-    __aicore__ inline void ProcessPad(
-        const LocalTensor<T>& src, const LocalTensor<T>& dst, const LocalTensor<T>& dstF, const LocalTensor<RT>& idxDst,
-        PadMirrNormalParam& padParam, int32_t idx)
+    __aicore__ inline void ProcessPad(const LocalTensor<T>& src, const LocalTensor<T>& dst, const LocalTensor<T>& dstF,
+                                      const LocalTensor<RT>& idxDst, PadMirrNormalParam& padParam, int32_t idx)
     {
         SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
         if (!lastOut_) {
@@ -300,18 +298,19 @@ private:
         const uint16_t modeOffset = MODE <= 1 ? 0 : 1;
         const int32_t firstIndexLeft = padParam.padLeft - VL_ELEMS_R - modeOffset;
         const int32_t firstIndexMiddle = 0 - padParam.padLeft % VL_ELEMS_R;
-        const int32_t firstIndexRight =
-            rightCrossNum == 0 ?
-                padParam.padRight - padParam.padLeft - 2 + modeOffset :
-                padParam.padRight - padParam.padLeft + padParam.padRight % VL_ELEMS_R - 2 - VL_ELEMS_R + modeOffset;
+        const int32_t firstIndexRight = rightCrossNum == 0 ?
+                                            padParam.padRight - padParam.padLeft - 2 + modeOffset :
+                                            padParam.padRight - padParam.padLeft + padParam.padRight % VL_ELEMS_R - 2 -
+                                                VL_ELEMS_R + modeOffset;
         const uint32_t leftMaskLen = padParam.padLeft % VL_ELEMS_R;
         const uint32_t rightMaskLen = padParam.padRight % VL_ELEMS_R;
         const uint32_t endMaskLen = (tilingData_->outShape[dimNum - 1] % VL_ELEMS_R > 0 && rightNum <= 1) ?
                                         tilingData_->outShape[dimNum - 1] % VL_ELEMS_R :
                                         VL_ELEMS_R;
         const uint32_t endRMaskLen = (rightNum == 0) ? endMaskLen : VL_ELEMS_R;
-        const uint32_t middleOffset =
-            padParam.padRight / VL_ELEMS_R - padParam.padLeft / VL_ELEMS_R < leftCrossNum ? 1 : 0;
+        const uint32_t middleOffset = padParam.padRight / VL_ELEMS_R - padParam.padLeft / VL_ELEMS_R < leftCrossNum ?
+                                          1 :
+                                          0;
         const uint32_t endLMaskLen = (middleOffset > 0) ? endRMaskLen : VL_ELEMS_R;
 
         __VEC_SCOPE__
@@ -321,8 +320,8 @@ private:
             AscendC::MicroAPI::RegTensor<RT> rightIdx;
             AscendC::MicroAPI::RegTensor<RT> tempIdx;
             AscendC::MicroAPI::MaskReg maskReg;
-            AscendC::MicroAPI::MaskReg maskAll =
-                AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
+            AscendC::MicroAPI::MaskReg
+                maskAll = AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
             uint32_t idOffset = 0;
             uint32_t leftLen = leftMaskLen;
             uint32_t rightLen = rightMaskLen;
@@ -379,8 +378,8 @@ private:
         }
     }
 
-    __aicore__ inline void GatherProcess(
-        const LocalTensor<T>& dst, const LocalTensor<T>& src, const LocalTensor<RT>& idx, PadMirrNormalParam& padParam)
+    __aicore__ inline void GatherProcess(const LocalTensor<T>& dst, const LocalTensor<T>& src,
+                                         const LocalTensor<RT>& idx, PadMirrNormalParam& padParam)
     {
         auto dstAddr = reinterpret_cast<__local_mem__ T*>(dst.GetPhyAddr());
         auto srcAddr = reinterpret_cast<__local_mem__ T*>(src.GetPhyAddr());
@@ -407,25 +406,23 @@ private:
 
             if constexpr (UB_AXES == CONST2) {
                 for (uint16_t i = 0; i < dimHNum; i++) {
-                    GatherProcessLine(
-                        dstAddr + i * padWO, srcAddr + i * padWI, idxAddr, padVLNum, padBLNum, endMask, maskAll);
+                    GatherProcessLine(dstAddr + i * padWO, srcAddr + i * padWI, idxAddr, padVLNum, padBLNum, endMask,
+                                      maskAll);
                 }
             } else if constexpr (UB_AXES == CONST3) {
                 for (uint16_t c = 0; c < dimCNum; c++) {
                     for (uint16_t i = 0; i < dimHNum; i++) {
-                        GatherProcessLine(
-                            dstAddr + c * padHW + i * padWO, srcAddr + (c * dimHNum + i) * padWI, idxAddr, padVLNum,
-                            padBLNum, endMask, maskAll);
+                        GatherProcessLine(dstAddr + c * padHW + i * padWO, srcAddr + (c * dimHNum + i) * padWI, idxAddr,
+                                          padVLNum, padBLNum, endMask, maskAll);
                     }
                 }
             } else if constexpr (UB_AXES == CONST4) {
                 for (uint16_t n = 0; n < dimNNum; n++) {
                     for (uint16_t c = 0; c < dimCNum; c++) {
                         for (uint16_t i = 0; i < dimHNum; i++) {
-                            GatherProcessLine(
-                                dstAddr + n * padCHW + c * padHW + i * padWO,
-                                srcAddr + (n * dimCNum * dimHNum + c * dimHNum + i) * padWI, idxAddr, padVLNum,
-                                padBLNum, endMask, maskAll);
+                            GatherProcessLine(dstAddr + n * padCHW + c * padHW + i * padWO,
+                                              srcAddr + (n * dimCNum * dimHNum + c * dimHNum + i) * padWI, idxAddr,
+                                              padVLNum, padBLNum, endMask, maskAll);
                         }
                     }
                 }
@@ -433,9 +430,9 @@ private:
         }
     }
 
-    __aicore__ inline void GatherProcessLine(
-        __local_mem__ T* dstAddr, __local_mem__ T* srcAddr, __local_mem__ RT* idxAddr, uint16_t padVLNum,
-        uint16_t padBLNum, MicroAPI::MaskReg endMask, MicroAPI::MaskReg maskAll)
+    __aicore__ inline void GatherProcessLine(__local_mem__ T* dstAddr, __local_mem__ T* srcAddr,
+                                             __local_mem__ RT* idxAddr, uint16_t padVLNum, uint16_t padBLNum,
+                                             MicroAPI::MaskReg endMask, MicroAPI::MaskReg maskAll)
     {
         __VEC_SCOPE__
         {
@@ -445,8 +442,8 @@ private:
 
             for (uint16_t i = 0; i < padVLNum; i++) {
                 AscendC::MicroAPI::DataCopy(idxTmp, idxAddr + i * VL_ELEMS_C);
-                AscendC::MicroAPI::DataCopyGather(
-                    (MicroAPI::RegTensor<CastType>&)dataTmp, srcAddr, (MicroAPI::RegTensor<IdxType>&)idxTmp, maskAll);
+                AscendC::MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType>&)dataTmp, srcAddr,
+                                                  (MicroAPI::RegTensor<IdxType>&)idxTmp, maskAll);
                 if constexpr (sizeof(T) != 1) {
                     MicroAPI::DataCopy(dstAddr + i * VL_ELEMS_C, dataTmp, maskAll);
                 } else {
@@ -456,8 +453,8 @@ private:
             }
             for (uint16_t i = 0; i < padBLNum; i++) {
                 AscendC::MicroAPI::DataCopy(idxTmp, idxAddr + padVLNum * VL_ELEMS_C);
-                AscendC::MicroAPI::DataCopyGather(
-                    (MicroAPI::RegTensor<CastType>&)dataTmp, srcAddr, (MicroAPI::RegTensor<IdxType>&)idxTmp, endMask);
+                AscendC::MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType>&)dataTmp, srcAddr,
+                                                  (MicroAPI::RegTensor<IdxType>&)idxTmp, endMask);
                 if constexpr (sizeof(T) != 1) {
                     MicroAPI::DataCopy(dstAddr + padVLNum * VL_ELEMS_C, dataTmp, endMask);
                 } else {
@@ -468,8 +465,8 @@ private:
         }
     }
 
-    __aicore__ inline void MoveProcess(
-        const LocalTensor<T>& dst, const LocalTensor<T>& src, PadMirrNormalParam& padParam)
+    __aicore__ inline void MoveProcess(const LocalTensor<T>& dst, const LocalTensor<T>& src,
+                                       PadMirrNormalParam& padParam)
     {
         auto dstAddr = reinterpret_cast<__local_mem__ T*>(dst.GetPhyAddr());
         auto srcAddr = reinterpret_cast<__local_mem__ T*>(src.GetPhyAddr());
@@ -501,24 +498,22 @@ private:
             } else if constexpr (UB_AXES == CONST4) {
                 for (uint16_t n = 0; n < dimNNum; n++) {
                     for (uint16_t c = 0; c < dimCNum; c++) {
-                        MoveLine(
-                            dstAddr + c * padHW + n * padCHW, srcAddr + c * moveLen + n * dimCNum * moveLen, padVLNum,
-                            BLNum, endMask);
+                        MoveLine(dstAddr + c * padHW + n * padCHW, srcAddr + c * moveLen + n * dimCNum * moveLen,
+                                 padVLNum, BLNum, endMask);
                     }
                 }
             }
         }
     }
 
-    __aicore__ inline void MoveLine(
-        __local_mem__ T* dstAddr, __local_mem__ T* srcAddr, uint16_t padVLNum, uint16_t padBLNum,
-        MicroAPI::MaskReg endMask)
+    __aicore__ inline void MoveLine(__local_mem__ T* dstAddr, __local_mem__ T* srcAddr, uint16_t padVLNum,
+                                    uint16_t padBLNum, MicroAPI::MaskReg endMask)
     {
         __VEC_SCOPE__
         {
             AscendC::MicroAPI::RegTensor<T> vRegTmp;
-            AscendC::MicroAPI::MaskReg maskAll =
-                AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL>();
+            AscendC::MicroAPI::MaskReg
+                maskAll = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL>();
             for (uint16_t i = 0; i < padVLNum; i++) {
                 AscendC::MicroAPI::DataCopy(vRegTmp, srcAddr + i * VL_ELEMS);
                 AscendC::MicroAPI::DataCopy(dstAddr + i * VL_ELEMS, vRegTmp, maskAll);
@@ -561,14 +556,12 @@ private:
             if constexpr (UB_AXES == CONST3) {
                 for (uint16_t c = 0; c < dimCNum; c++) {
                     for (uint16_t i = 0; i < upNum; i++) {
-                        MoveLine(
-                            dstAddr + c * padHW + i * padWO, dstAddr + c * padHW + (upOffset - i) * padWO, padVLNum,
-                            BLNum, endMask);
+                        MoveLine(dstAddr + c * padHW + i * padWO, dstAddr + c * padHW + (upOffset - i) * padWO,
+                                 padVLNum, BLNum, endMask);
                     }
                     for (uint16_t i = 0; i < downNum; i++) {
-                        MoveLine(
-                            dstAddr + c * padHW + (i + downInOffset) * padWO,
-                            dstAddr + c * padHW + (downOffset - i) * padWO, padVLNum, BLNum, endMask);
+                        MoveLine(dstAddr + c * padHW + (i + downInOffset) * padWO,
+                                 dstAddr + c * padHW + (downOffset - i) * padWO, padVLNum, BLNum, endMask);
                     }
                 }
             } else if constexpr (UB_AXES == CONST4) {
@@ -576,14 +569,12 @@ private:
                     for (uint16_t c = 0; c < dimCNum; c++) {
                         uint32_t tempOffset = c * padHW + n * padCHW;
                         for (uint16_t i = 0; i < upNum; i++) {
-                            MoveLine(
-                                dstAddr + tempOffset + i * padWO, dstAddr + tempOffset + (upOffset - i) * padWO,
-                                padVLNum, BLNum, endMask);
+                            MoveLine(dstAddr + tempOffset + i * padWO, dstAddr + tempOffset + (upOffset - i) * padWO,
+                                     padVLNum, BLNum, endMask);
                         }
                         for (uint16_t i = 0; i < downNum; i++) {
-                            MoveLine(
-                                dstAddr + tempOffset + (i + downInOffset) * padWO,
-                                dstAddr + tempOffset + (downOffset - i) * padWO, padVLNum, BLNum, endMask);
+                            MoveLine(dstAddr + tempOffset + (i + downInOffset) * padWO,
+                                     dstAddr + tempOffset + (downOffset - i) * padWO, padVLNum, BLNum, endMask);
                         }
                     }
                 }
@@ -619,21 +610,19 @@ private:
 
             for (uint16_t n = 0; n < dimNNum; n++) {
                 for (uint16_t i = 0; i < upNum; i++) {
-                    MoveLine(
-                        dstAddr + n * padCHW + i * padHW, dstAddr + n * padCHW + (upOffset - i) * padHW, padVLNum,
-                        BLNum, endMask);
+                    MoveLine(dstAddr + n * padCHW + i * padHW, dstAddr + n * padCHW + (upOffset - i) * padHW, padVLNum,
+                             BLNum, endMask);
                 }
                 for (uint16_t i = 0; i < downNum; i++) {
-                    MoveLine(
-                        dstAddr + n * padCHW + (i + downInOffset) * padHW,
-                        dstAddr + n * padCHW + (downOffset - i) * padHW, padVLNum, BLNum, endMask);
+                    MoveLine(dstAddr + n * padCHW + (i + downInOffset) * padHW,
+                             dstAddr + n * padCHW + (downOffset - i) * padHW, padVLNum, BLNum, endMask);
                 }
             }
         }
     }
 
-    __aicore__ inline void FlipProcess(
-        const LocalTensor<T>& dst, const LocalTensor<T>& src, PadMirrNormalParam& padParam)
+    __aicore__ inline void FlipProcess(const LocalTensor<T>& dst, const LocalTensor<T>& src,
+                                       PadMirrNormalParam& padParam)
     {
         auto dstAddr = reinterpret_cast<__local_mem__ T*>(dst.GetPhyAddr());
         auto srcAddr = reinterpret_cast<__local_mem__ T*>(src.GetPhyAddr());
@@ -652,8 +641,8 @@ private:
         __VEC_SCOPE__
         {
             AscendC::MicroAPI::RegTensor<T> vRegTmp;
-            AscendC::MicroAPI::MaskReg maskAll =
-                AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL>();
+            AscendC::MicroAPI::MaskReg
+                maskAll = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL>();
             AscendC::MicroAPI::MaskReg outMask;
             uint32_t outLen = padBLNum;
             outMask = AscendC::MicroAPI::UpdateMask<T>(outLen);
@@ -664,8 +653,8 @@ private:
         }
     }
 
-    __aicore__ inline void CopyOut(
-        const LocalTensor<T>& src, const LocalTensor<T>& srcT, PadMirrNormalParam& padParam, int32_t idx)
+    __aicore__ inline void CopyOut(const LocalTensor<T>& src, const LocalTensor<T>& srcT, PadMirrNormalParam& padParam,
+                                   int32_t idx)
     {
         SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
         if (!lastOut_) {
@@ -723,9 +712,8 @@ private:
         }
     }
 
-    __aicore__ inline void CopyOutSelf(
-        const LocalTensor<T>& dst, int64_t (&Indexes)[MAX_INDEX_NUM], PadMirrNormalParam& padParam,
-        int32_t curFromIndex, int32_t curToIndex)
+    __aicore__ inline void CopyOutSelf(const LocalTensor<T>& dst, int64_t (&Indexes)[MAX_INDEX_NUM],
+                                       PadMirrNormalParam& padParam, int32_t curFromIndex, int32_t curToIndex)
     {
         const int8_t ubAxis = tilingData_->ubAxis;
         const int8_t dimNum = tilingData_->dimNum;
@@ -774,9 +762,8 @@ private:
         return res;
     }
 
-    __aicore__ inline void CopyOutPad(
-        const LocalTensor<T>& dstT, int64_t (&Indexes)[MAX_INDEX_NUM], PadMirrNormalParam& padParam,
-        int32_t curFromIndex, int32_t curToIndex)
+    __aicore__ inline void CopyOutPad(const LocalTensor<T>& dstT, int64_t (&Indexes)[MAX_INDEX_NUM],
+                                      PadMirrNormalParam& padParam, int32_t curFromIndex, int32_t curToIndex)
     {
         const int8_t ubAxis = tilingData_->ubAxis;
         const int8_t dimNum = tilingData_->dimNum;
@@ -803,12 +790,12 @@ private:
         copyOutParamsU.dstStride = 0;
         uint32_t lastIndex = tilingData_->leftPad[ubAxis] + tilingData_->inShape[ubAxis] * 2 + modeOffset -
                              tilingData_->outShape[ubAxis] - 1;
-        uint32_t blockCountD =
-            Std::min(last, static_cast<uint32_t>(tilingData_->inShape[ubAxis] + modeOffset - 1)) >
-                    Std::max(lastIndex, first) ?
-                (Std::min(last, static_cast<uint32_t>(tilingData_->inShape[ubAxis] + modeOffset - 1)) -
-                 Std::max(lastIndex, first)) :
-                0;
+        uint32_t blockCountD = Std::min(last, static_cast<uint32_t>(tilingData_->inShape[ubAxis] + modeOffset - 1)) >
+                                       Std::max(lastIndex, first) ?
+                                   (Std::min(last,
+                                             static_cast<uint32_t>(tilingData_->inShape[ubAxis] + modeOffset - 1)) -
+                                    Std::max(lastIndex, first)) :
+                                   0;
         for (auto i = ubAxis + 1; i < dimNum - 1; i++) {
             // blockCount 计算到倒数第二维
             blockCountD = blockCountD * tilingData_->outShape[i];
@@ -826,31 +813,26 @@ private:
                                        (tilingData_->leftPad[ubAxis] - modeOffset - last + 1) :
                                        0;
             if (ubAxis == 0) {
-                DataCopyPad(
-                    output_[outAddr + upOutOffset * tilingData_->outStride[ubAxis]],
-                    dstT[upInOffset * padParam.padStride[0]], copyOutParamsU);
+                DataCopyPad(output_[outAddr + upOutOffset * tilingData_->outStride[ubAxis]],
+                            dstT[upInOffset * padParam.padStride[0]], copyOutParamsU);
             } else {
                 for (auto i = curFromIndex; i < curToIndex; i++) {
-                    DataCopyPad(
-                        output_[Indexes[i] + upOutOffset * tilingData_->outStride[ubAxis]],
-                        dstT[upInOffset * padParam.padStride[0]], copyOutParamsU);
+                    DataCopyPad(output_[Indexes[i] + upOutOffset * tilingData_->outStride[ubAxis]],
+                                dstT[upInOffset * padParam.padStride[0]], copyOutParamsU);
                 }
             }
         }
         if (copyOutParamsD.blockCount > 0) {
             uint64_t downInOffset = (last == tilingData_->inShape[ubAxis]) ? (1 - modeOffset) : 0;
-            uint64_t downOutOffset =
-                (tilingData_->leftPad[ubAxis] + tilingData_->inShape[ubAxis] * 2 - last - 1 + modeOffset +
-                 downInOffset);
+            uint64_t downOutOffset = (tilingData_->leftPad[ubAxis] + tilingData_->inShape[ubAxis] * 2 - last - 1 +
+                                      modeOffset + downInOffset);
             if (ubAxis == 0) {
-                DataCopyPad(
-                    output_[outAddr + downOutOffset * tilingData_->outStride[ubAxis]],
-                    dstT[downInOffset * padParam.padStride[0]], copyOutParamsD);
+                DataCopyPad(output_[outAddr + downOutOffset * tilingData_->outStride[ubAxis]],
+                            dstT[downInOffset * padParam.padStride[0]], copyOutParamsD);
             } else {
                 for (auto i = curFromIndex; i < curToIndex; i++) {
-                    DataCopyPad(
-                        output_[Indexes[i] + downOutOffset * tilingData_->outStride[ubAxis]],
-                        dstT[downInOffset * padParam.padStride[0]], copyOutParamsD);
+                    DataCopyPad(output_[Indexes[i] + downOutOffset * tilingData_->outStride[ubAxis]],
+                                dstT[downInOffset * padParam.padStride[0]], copyOutParamsD);
                 }
             }
         }

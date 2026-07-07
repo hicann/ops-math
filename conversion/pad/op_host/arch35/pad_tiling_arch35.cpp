@@ -18,17 +18,18 @@
 
 namespace optiling {
 
-static ge::graphStatus Tiling4Pad(gert::TilingContext* context) {
-  PadACTiling tilingObject(context);
-  return tilingObject.DoTiling();
-
+static ge::graphStatus Tiling4Pad(gert::TilingContext* context)
+{
+    PadACTiling tilingObject(context);
+    return tilingObject.DoTiling();
 }
 
-static ge::graphStatus TilingPrepare4Pad(gert::TilingParseContext* context) {
-  OP_LOGD(context->GetNodeName(), "TilingPreparePad entering.");
-  return ge::GRAPH_SUCCESS;  
+static ge::graphStatus TilingPrepare4Pad(gert::TilingParseContext* context)
+{
+    OP_LOGD(context->GetNodeName(), "TilingPreparePad entering.");
+    return ge::GRAPH_SUCCESS;
 }
 
 // register tiling interface of the Pad op.
 IMPL_OP_OPTILING(Pad).Tiling(Tiling4Pad).TilingParse<PadCompileInfo>(TilingPrepare4Pad);
-}  // namespace optiling
+} // namespace optiling

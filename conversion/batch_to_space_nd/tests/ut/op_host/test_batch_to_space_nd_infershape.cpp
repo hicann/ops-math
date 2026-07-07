@@ -15,15 +15,9 @@
 
 class BatchToSpaceNDInfershapeTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "BatchToSpaceNDInfershapeTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "BatchToSpaceNDInfershapeTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "BatchToSpaceNDInfershapeTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "BatchToSpaceNDInfershapeTest TearDown" << std::endl; }
 };
 
 TEST_F(BatchToSpaceNDInfershapeTest, batch_to_space_nd_basic_4d)

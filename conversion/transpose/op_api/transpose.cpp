@@ -88,9 +88,8 @@ static bool IsTransposeV2AiCoreSupport(const aclTensor* self, const aclIntArray*
         self->GetViewShape().GetDim(DIM2) != 1) {
         IsSupport = (IsTransposeV2021Support(self, perm) || IsTransposeV2102Support(self, perm));
         // 4 is permSize
-    } else if (
-        permSize == 4U && self->GetViewShape().GetDim(DIM0) != 1 && self->GetViewShape().GetDim(DIM1) != 1 &&
-        self->GetViewShape().GetDim(DIM2) != 1 && self->GetViewShape().GetDim(DIM3) != 1) {
+    } else if (permSize == 4U && self->GetViewShape().GetDim(DIM0) != 1 && self->GetViewShape().GetDim(DIM1) != 1 &&
+               self->GetViewShape().GetDim(DIM2) != 1 && self->GetViewShape().GetDim(DIM3) != 1) {
         IsSupport = IsTransposeV20213Support(self, perm);
     }
     if (op::GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND910B ||
@@ -100,13 +99,13 @@ static bool IsTransposeV2AiCoreSupport(const aclTensor* self, const aclIntArray*
     return false;
 }
 
-const aclTensor* TransposeV2AiCore(
-    const aclTensor* x, const aclTensor* y, const aclTensor* perm, aclOpExecutor* executor)
+const aclTensor* TransposeV2AiCore(const aclTensor* x, const aclTensor* y, const aclTensor* perm,
+                                   aclOpExecutor* executor)
 {
     L0_DFX(TransposeV2AiCore, x, y, perm);
     auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(TransposeV2, OP_INPUT(x, perm), OP_OUTPUT(y));
-    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
-        retAicore != ACLNN_SUCCESS, return nullptr, "TransposeV2 ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
+                                         "TransposeV2 ADD_TO_LAUNCHER_LIST_AICORE failed.");
     return y;
 }
 
@@ -119,8 +118,8 @@ const aclTensor* TransposeAiCore(const aclTensor* x, const aclTensor* y, const a
 {
     L0_DFX(TransposeAiCore, x, y, perm);
     auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(Transpose, OP_INPUT(x, perm), OP_OUTPUT(y));
-    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
-        retAicore != ACLNN_SUCCESS, return nullptr, "Transpose ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
+                                         "Transpose ADD_TO_LAUNCHER_LIST_AICORE failed.");
     return y;
 }
 
@@ -128,9 +127,8 @@ const aclTensor* TransposeAiCpu(const aclTensor* x, const aclTensor* y, const ac
 {
     L0_DFX(TransposeAiCpu, x, y, perm);
     static op::internal::AicpuTaskSpace space("Transpose", ge::DEPEND_CONST_VALUE, true);
-    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(
-        Transpose, OP_ATTR_NAMES({"T", "Tperm"}), OP_INPUT(x, perm), OP_OUTPUT(y),
-        OP_ATTR(x->GetDataType(), perm->GetDataType()));
+    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Transpose, OP_ATTR_NAMES({"T", "Tperm"}), OP_INPUT(x, perm), OP_OUTPUT(y),
+                                          OP_ATTR(x->GetDataType(), perm->GetDataType()));
     CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
     return y;
 }
@@ -151,8 +149,8 @@ const aclTensor* Transpose(const aclTensor* x, const aclIntArray* perm, aclOpExe
     }
 
     auto permTensor = executor->ConvertToTensor(perm, op::ToOpDataType(ACL_INT64));
-    auto out =
-        executor->AllocTensor(x->GetDataType(), static_cast<op::Format>(x->GetStorageFormat()), x->GetOriginalFormat());
+    auto out = executor->AllocTensor(x->GetDataType(), static_cast<op::Format>(x->GetStorageFormat()),
+                                     x->GetOriginalFormat());
     INFER_SHAPE(Transpose, OP_INPUT(x, permTensor), OP_OUTPUT(out), OP_EMPTY_ARG);
     if (IsTransposeV2AiCoreSupport(x, perm)) {
         return TransposeV2AiCore(x, out, permTensor, executor);

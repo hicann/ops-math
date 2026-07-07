@@ -19,8 +19,8 @@ using namespace AscendC;
 using namespace B2SND;
 
 template <bool isBigShape>
-__aicore__ inline void BatchToSpaceND4Simt(
-    GM_ADDR x, GM_ADDR block_shape, GM_ADDR crops, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+__aicore__ inline void BatchToSpaceND4Simt(GM_ADDR x, GM_ADDR block_shape, GM_ADDR crops, GM_ADDR y, GM_ADDR workspace,
+                                           GM_ADDR tiling)
 {
     constexpr auto b8 = sizeof(uint8_t);
     constexpr auto b16 = sizeof(uint16_t);
@@ -48,8 +48,8 @@ __aicore__ inline void BatchToSpaceND4Simt(
     }
 }
 
-__aicore__ inline void BatchToSpaceND4LargeC(
-    GM_ADDR x, GM_ADDR block_shape, GM_ADDR crops, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+__aicore__ inline void BatchToSpaceND4LargeC(GM_ADDR x, GM_ADDR block_shape, GM_ADDR crops, GM_ADDR y,
+                                             GM_ADDR workspace, GM_ADDR tiling)
 {
     TPipe pipe;
 
@@ -74,8 +74,8 @@ __aicore__ inline void BatchToSpaceND4LargeC(
 }
 
 template <uint8_t blockShapeDimNum>
-__aicore__ inline void BatchToSpaceND4SmallC(
-    GM_ADDR x, GM_ADDR block_shape, GM_ADDR crops, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+__aicore__ inline void BatchToSpaceND4SmallC(GM_ADDR x, GM_ADDR block_shape, GM_ADDR crops, GM_ADDR y,
+                                             GM_ADDR workspace, GM_ADDR tiling)
 {
     TPipe pipe;
 
@@ -100,8 +100,8 @@ __aicore__ inline void BatchToSpaceND4SmallC(
 }
 
 template <uint8_t mode, uint8_t blockShapeDimNum, bool IsBigShape>
-__global__ __aicore__ void batch_to_space_nd(
-    GM_ADDR x, GM_ADDR block_shape, GM_ADDR crops, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void batch_to_space_nd(GM_ADDR x, GM_ADDR block_shape, GM_ADDR crops, GM_ADDR y,
+                                             GM_ADDR workspace, GM_ADDR tiling)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     REGISTER_NONE_TILING;

@@ -21,8 +21,7 @@
 #include "broadcast_to_base.h"
 #include "kernel_operator.h"
 
-namespace BrcTo
-{
+namespace BrcTo {
 using namespace AscendC;
 
 using AscendC::MicroAPI::CreateMask;
@@ -38,8 +37,7 @@ constexpr uint32_t DIM_FOUR = 4;
 constexpr uint32_t DATA_ALIGN_SIZE = 32;
 
 template <typename T, typename U, bool isLastDimSmall = false>
-class BroadcastToUb : public BrcToBase<U>
-{
+class BroadcastToUb : public BrcToBase<U> {
 public:
     __aicore__ inline BroadcastToUb(){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const U* tilingDataPtr, TPipe* pipeIn);
@@ -560,6 +558,6 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::Process()
     }
 }
 
-}  // namespace BrcTo
+} // namespace BrcTo
 
-#endif  // BROADCAST_TO_WITH_UB_H_
+#endif // BROADCAST_TO_WITH_UB_H_

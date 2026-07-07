@@ -157,8 +157,8 @@ private:
     {
         // Copy IN
         LocalTensor<T> input = inQueue_.Get<T>();
-        LocalTensor<T> srcLocal =
-            input[(idx & 1) * (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T)];
+        LocalTensor<T>
+            srcLocal = input[(idx & 1) * (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T)];
         PadReplNormalParam padParam = {
             .padH = padHLength_,
             .padW = padWLength_,
@@ -209,8 +209,8 @@ private:
                       tilingData_->inStride[i];
         }
 
-        uint32_t firstOffset =
-            tilingData_->leftPad[dimNum - CONST2] * padParam.padW + tilingData_->leftPad[dimNum - CONST3] * padHW;
+        uint32_t firstOffset = tilingData_->leftPad[dimNum - CONST2] * padParam.padW +
+                               tilingData_->leftPad[dimNum - CONST3] * padHW;
         uint32_t lastOffset = firstOffset + (inCopyLen_[dimNum - CONST2] - 1) * padParam.padW;
 
         DataCopyPadExtParams<T> padParams{true, 0, 0, 0};
@@ -225,8 +225,8 @@ private:
         loopParams.loop1DstStride = tilingData_->outShape[dimNum - CONST2] * padParam.padW * sizeof(T);
         loopParams.loop2Size = inCopyLen_[dimNum - CONST4];
         loopParams.loop2SrcStride = tilingData_->inStride[dimNum - CONST4] * sizeof(T);
-        loopParams.loop2DstStride =
-            tilingData_->outShape[dimNum - CONST3] * tilingData_->outShape[dimNum - CONST2] * padParam.padW * sizeof(T);
+        loopParams.loop2DstStride = tilingData_->outShape[dimNum - CONST3] * tilingData_->outShape[dimNum - CONST2] *
+                                    padParam.padW * sizeof(T);
         SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
         DataCopyPad(src[additionOffset_ + firstOffset], input_[inAddr], copyInParams, padParams);
         ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
@@ -254,11 +254,11 @@ private:
             PadLeftSideLast(src, padParam, lastOffset);
         }
         if constexpr (sizeof(T) == B64_BYTES) {
-            PadCopyDiff<AscendC::MicroAPI::RegTraitNumTwo>(
-                src, padParam, tilingData_->leftPad[dimNum - CONST3] * padHW, ubAxis + CONST2);
+            PadCopyDiff<AscendC::MicroAPI::RegTraitNumTwo>(src, padParam, tilingData_->leftPad[dimNum - CONST3] * padHW,
+                                                           ubAxis + CONST2);
         } else {
-            PadCopyDiff<AscendC::MicroAPI::RegTraitNumOne>(
-                src, padParam, tilingData_->leftPad[dimNum - CONST3] * padHW, ubAxis + CONST2);
+            PadCopyDiff<AscendC::MicroAPI::RegTraitNumOne>(src, padParam, tilingData_->leftPad[dimNum - CONST3] * padHW,
+                                                           ubAxis + CONST2);
         }
         PadLeftSide(src, padParam, firstOffset + padParam.padW, false, inCopyLen_[dimNum - CONST2] - 1);
         if constexpr (sizeof(T) == B64_BYTES) {
@@ -284,8 +284,9 @@ private:
                       tilingData_->inStride[i];
         }
 
-        uint32_t firstOffset =
-            (first >= tilingData_->leftPad[ubAxis] || is3DPadding) ? 0 : (tilingData_->leftPad[ubAxis] - first) * padHW;
+        uint32_t firstOffset = (first >= tilingData_->leftPad[ubAxis] || is3DPadding) ?
+                                   0 :
+                                   (tilingData_->leftPad[ubAxis] - first) * padHW;
         firstOffset = firstOffset + tilingData_->leftPad[dimNum - CONST2] * padParam.padW;
 
         DataCopyPadExtParams<T> padParams{true, 0, 0, 0};
@@ -342,8 +343,8 @@ private:
         copyInParams.dstStride = (padParam.padW - tilingData_->inShape[dimNum - 1]) / BLK_ELEMS;
         uint32_t ubInOffset = 0;
         if (outIndex_[dimNum - CONST2] < tilingData_->leftPad[dimNum - CONST2] && !is2DPadding) {
-            padParam.padHLOffset[dimNum - CONST2 - ubAxis] =
-                tilingData_->leftPad[dimNum - CONST2] - outIndex_[dimNum - CONST2];
+            padParam.padHLOffset[dimNum - CONST2 - ubAxis] = tilingData_->leftPad[dimNum - CONST2] -
+                                                             outIndex_[dimNum - CONST2];
         }
         for (auto i = 0; i < MAX_H_DIMS; i++) {
             ubInOffset += padParam.padHLOffset[i] * padParam.padStride[i];
@@ -351,9 +352,8 @@ private:
         DataCopyPad(src[additionOffset_ + ubInOffset], input_[inAddr], copyInParams, padParams);
         // 将最上行或最下行复制到pad位
         uint64_t first = outIndex_[ubAxis];
-        uint64_t last =
-            (outIndex_[ubAxis] + ubFactor < tilingData_->outShape[ubAxis] ? outIndex_[ubAxis] + ubFactor :
-                                                                            tilingData_->outShape[ubAxis]);
+        uint64_t last = (outIndex_[ubAxis] + ubFactor < tilingData_->outShape[ubAxis] ? outIndex_[ubAxis] + ubFactor :
+                                                                                        tilingData_->outShape[ubAxis]);
         SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
         if (!lastOut_) {
             if ((idx & 1) == 0) {
@@ -384,21 +384,21 @@ private:
             PadLeftSideLast(src, padParam, 0);
             if (last > first + 1) {
                 if constexpr (sizeof(T) == B64_BYTES) {
-                    PadCopySame<AscendC::MicroAPI::RegTraitNumTwo>(
-                        src, padParam, 0, padParam.padW, last - first - 1, dimNum - CONST2);
+                    PadCopySame<AscendC::MicroAPI::RegTraitNumTwo>(src, padParam, 0, padParam.padW, last - first - 1,
+                                                                   dimNum - CONST2);
                 } else {
-                    PadCopySame<AscendC::MicroAPI::RegTraitNumOne>(
-                        src, padParam, 0, padParam.padW, last - first - 1, dimNum - CONST2);
+                    PadCopySame<AscendC::MicroAPI::RegTraitNumOne>(src, padParam, 0, padParam.padW, last - first - 1,
+                                                                   dimNum - CONST2);
                 }
             }
         } else {
             bool needPadUp = first < tilingData_->leftPad[dimNum - CONST2];
             bool needPadDown = last > tilingData_->leftPad[dimNum - CONST2] + tilingData_->inShape[dimNum - CONST2];
             uint32_t firstOffset = needPadUp ? (tilingData_->leftPad[dimNum - CONST2] - first) * padParam.padW : 0;
-            uint32_t lastOffset =
-                (UB_AXES == 2) ?
-                    firstOffset + (inCopyLen_[ubAxis] - 1) * padParam.padW :
-                    (tilingData_->leftPad[dimNum - CONST2] + tilingData_->inShape[dimNum - CONST2] - 1) * padParam.padW;
+            uint32_t lastOffset = (UB_AXES == 2) ? firstOffset + (inCopyLen_[ubAxis] - 1) * padParam.padW :
+                                                   (tilingData_->leftPad[dimNum - CONST2] +
+                                                    tilingData_->inShape[dimNum - CONST2] - 1) *
+                                                       padParam.padW;
             PadLeftSideFirst(src, padParam, firstOffset);
             PadRightSide(src, padParam, firstOffset, inCopyLen_[dimNum - CONST2]);
             if (needPadUp) {
@@ -418,11 +418,11 @@ private:
                 uint32_t padLen = last - tilingData_->leftPad[dimNum - CONST2] - tilingData_->inShape[dimNum - CONST2];
                 PadLeftSideLast(src, padParam, lastOffset);
                 if constexpr (sizeof(T) == B64_BYTES) {
-                    PadCopySame<AscendC::MicroAPI::RegTraitNumTwo>(
-                        src, padParam, lastOffset, lastOffset + padParam.padW, padLen, dimNum - CONST2);
+                    PadCopySame<AscendC::MicroAPI::RegTraitNumTwo>(src, padParam, lastOffset,
+                                                                   lastOffset + padParam.padW, padLen, dimNum - CONST2);
                 } else {
-                    PadCopySame<AscendC::MicroAPI::RegTraitNumOne>(
-                        src, padParam, lastOffset, lastOffset + padParam.padW, padLen, dimNum - CONST2);
+                    PadCopySame<AscendC::MicroAPI::RegTraitNumOne>(src, padParam, lastOffset,
+                                                                   lastOffset + padParam.padW, padLen, dimNum - CONST2);
                 }
             }
         }
@@ -437,11 +437,11 @@ private:
             ProcessPad2D(src, padParam, 0, tilingData_->outShape[dimNum - CONST2]);
             if (last > first + 1) {
                 if constexpr (sizeof(T) == B64_BYTES) {
-                    PadCopySame<AscendC::MicroAPI::RegTraitNumTwo>(
-                        src, padParam, 0, padHW, last - first - 1, dimNum - CONST3);
+                    PadCopySame<AscendC::MicroAPI::RegTraitNumTwo>(src, padParam, 0, padHW, last - first - 1,
+                                                                   dimNum - CONST3);
                 } else {
-                    PadCopySame<AscendC::MicroAPI::RegTraitNumOne>(
-                        src, padParam, 0, padHW, last - first - 1, dimNum - CONST3);
+                    PadCopySame<AscendC::MicroAPI::RegTraitNumOne>(src, padParam, 0, padHW, last - first - 1,
+                                                                   dimNum - CONST3);
                 }
             }
             // 每面第一行需要添加左pad
@@ -453,9 +453,8 @@ private:
             uint32_t lastOffset = firstOffset + (inCopyLen_[ubAxis] - 1) * padHW;
             uint32_t copyLen = tilingData_->leftPad[dimNum - CONST3] - first;
             PadLeftSideFirst(src, padParam, firstOffset + tilingData_->leftPad[dimNum - CONST2] * padParam.padW);
-            PadRightSide(
-                src, padParam, firstOffset + tilingData_->leftPad[dimNum - CONST2] * padParam.padW,
-                inCopyLen_[dimNum - CONST2]);
+            PadRightSide(src, padParam, firstOffset + tilingData_->leftPad[dimNum - CONST2] * padParam.padW,
+                         inCopyLen_[dimNum - CONST2]);
             PadLeftSideLast(src, padParam, firstOffset + tilingData_->leftPad[dimNum - CONST2] * padParam.padW);
             PadLeftSideLast(
                 src, padParam,
@@ -468,27 +467,26 @@ private:
                 PadCopyDiff<AscendC::MicroAPI::RegTraitNumOne>(src, padParam, firstOffset, ubAxis + 1);
             }
             // 补每面除第一行以外的左pad
-            PadLeftSide(
-                src, padParam, firstOffset + (tilingData_->leftPad[dimNum - CONST2] + 1) * padParam.padW, false,
-                inCopyLen_[dimNum - CONST2] - 1);
+            PadLeftSide(src, padParam, firstOffset + (tilingData_->leftPad[dimNum - CONST2] + 1) * padParam.padW, false,
+                        inCopyLen_[dimNum - CONST2] - 1);
 
             if (needPadUp) {
                 if constexpr (sizeof(T) == B64_BYTES) {
-                    PadCopySame<AscendC::MicroAPI::RegTraitNumTwo>(
-                        src, padParam, firstOffset, 0, copyLen, dimNum - CONST3);
+                    PadCopySame<AscendC::MicroAPI::RegTraitNumTwo>(src, padParam, firstOffset, 0, copyLen,
+                                                                   dimNum - CONST3);
                 } else {
-                    PadCopySame<AscendC::MicroAPI::RegTraitNumOne>(
-                        src, padParam, firstOffset, 0, copyLen, dimNum - CONST3);
+                    PadCopySame<AscendC::MicroAPI::RegTraitNumOne>(src, padParam, firstOffset, 0, copyLen,
+                                                                   dimNum - CONST3);
                 }
             }
             if (needPadDown) {
                 uint32_t padLen = last - tilingData_->leftPad[dimNum - CONST3] - tilingData_->inShape[dimNum - CONST3];
                 if constexpr (sizeof(T) == B64_BYTES) {
-                    PadCopySame<AscendC::MicroAPI::RegTraitNumTwo>(
-                        src, padParam, lastOffset, lastOffset + padHW, padLen, dimNum - CONST3);
+                    PadCopySame<AscendC::MicroAPI::RegTraitNumTwo>(src, padParam, lastOffset, lastOffset + padHW,
+                                                                   padLen, dimNum - CONST3);
                 } else {
-                    PadCopySame<AscendC::MicroAPI::RegTraitNumOne>(
-                        src, padParam, lastOffset, lastOffset + padHW, padLen, dimNum - CONST3);
+                    PadCopySame<AscendC::MicroAPI::RegTraitNumOne>(src, padParam, lastOffset, lastOffset + padHW,
+                                                                   padLen, dimNum - CONST3);
                 }
             }
             // 补每面第一行左pad
@@ -496,29 +494,30 @@ private:
         }
     }
 
-    __aicore__ inline void PadRightSide(
-        const LocalTensor<T>& dst, PadReplNormalParam& padParam, uint32_t ubOffset, uint32_t copylen)
+    __aicore__ inline void PadRightSide(const LocalTensor<T>& dst, PadReplNormalParam& padParam, uint32_t ubOffset,
+                                        uint32_t copylen)
     {
         auto dstAddr = reinterpret_cast<__local_mem__ RT*>(dst.GetPhyAddr());
         const uint16_t sizeNum = (sizeof(T) > CONST4) ? 2 : 1;
         const int8_t dimNum = tilingData_->dimNum;
         const uint16_t dimNNum = (UB_AXES < CONST4) ? 1 : inCopyLen_[dimNum - CONST4];
-        const uint16_t dimCNum =
-            (UB_AXES < CONST3 || is3DPadding) ? 1 : (inCopyLen_[dimNum - CONST3] > 0 ? inCopyLen_[dimNum - CONST3] : 1);
+        const uint16_t dimCNum = (UB_AXES < CONST3 || is3DPadding) ?
+                                     1 :
+                                     (inCopyLen_[dimNum - CONST3] > 0 ? inCopyLen_[dimNum - CONST3] : 1);
         const uint32_t padW = padParam.padStride[UB_AXES - CONST2] * sizeNum;
         const uint32_t padHW = (UB_AXES >= CONST3) ? padParam.padStride[UB_AXES - CONST3] * sizeNum : 0;
         const uint32_t padCHW = (UB_AXES >= CONST4) ? padParam.padStride[UB_AXES - CONST4] * sizeNum : 0;
         const uint32_t padRightFloorAlign = CeilAlign(padParam.padWROffset * sizeNum, BLK_ELEMS * sizeNum);
-        const uint32_t padLeftlen =
-            (padParam.padWLOffset + padParam.padW - tilingData_->outShape[dimNum - 1]) * sizeNum;
+        const uint32_t padLeftlen = (padParam.padWLOffset + padParam.padW - tilingData_->outShape[dimNum - 1]) *
+                                    sizeNum;
         const uint16_t padLeftVLNum = padLeftlen / (VL_ELEMS * sizeNum);
         const uint16_t padLeftBLNum = (padLeftlen % (VL_ELEMS * sizeNum)) / (BLK_ELEMS * sizeNum);
         const uint32_t PadRightSize = padRightFloorAlign - padParam.padWROffset * sizeNum;
         const uint32_t padRightLen = padParam.padW * sizeNum - padRightFloorAlign - padLeftVLNum * VL_ELEMS * sizeNum -
                                      padLeftBLNum * BLK_ELEMS * sizeNum;
         const uint16_t padRightVLNum = padRightLen / (VL_ELEMS * sizeNum);
-        const uint16_t padRightBLNum =
-            (padRightLen % (VL_ELEMS * sizeNum) + BLK_ELEMS * sizeNum - 1) / (BLK_ELEMS * sizeNum);
+        const uint16_t padRightBLNum = (padRightLen % (VL_ELEMS * sizeNum) + BLK_ELEMS * sizeNum - 1) /
+                                       (BLK_ELEMS * sizeNum);
         const uint32_t lastOffset = (padParam.padWROffset - 1) * sizeNum;
         const uint16_t firstOffset = ubOffset * sizeNum;
         const uint16_t BLNum = padRightBLNum > 0 ? 1 : 0;
@@ -529,8 +528,8 @@ private:
             AscendC::MicroAPI::MaskReg rMask;
             AscendC::MicroAPI::MaskReg outMask;
             AscendC::MicroAPI::MaskReg outNMask;
-            AscendC::MicroAPI::MaskReg maskAll =
-                AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
+            AscendC::MicroAPI::MaskReg
+                maskAll = AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
 
             uint32_t norPadLen = BLK_ELEMS * sizeNum - PadRightSize;
             uint32_t outLen = BLK_ELEMS * sizeNum;
@@ -543,52 +542,51 @@ private:
             outMask = AscendC::MicroAPI::UpdateMask<RT>(outLen2);
 
             if constexpr (UB_AXES == CONST2) {
-                PadRightSideOne(
-                    dstAddr + firstOffset + additionOffset_ * sizeNum, copylen, padW, lastOffset, padRightFloorAlign,
-                    padRightVLNum, BLNum, outMask, outNMask);
+                PadRightSideOne(dstAddr + firstOffset + additionOffset_ * sizeNum, copylen, padW, lastOffset,
+                                padRightFloorAlign, padRightVLNum, BLNum, outMask, outNMask);
             } else if constexpr (UB_AXES == CONST3) {
                 for (uint16_t c = 0; c < dimCNum; c++) {
-                    PadRightSideOne(
-                        dstAddr + firstOffset + additionOffset_ * sizeNum + c * padHW, copylen, padW, lastOffset,
-                        padRightFloorAlign, padRightVLNum, BLNum, outMask, outNMask);
+                    PadRightSideOne(dstAddr + firstOffset + additionOffset_ * sizeNum + c * padHW, copylen, padW,
+                                    lastOffset, padRightFloorAlign, padRightVLNum, BLNum, outMask, outNMask);
                 }
             } else if constexpr (UB_AXES == CONST4) {
                 for (uint16_t n = 0; n < dimNNum; n++) {
                     for (uint16_t c = 0; c < dimCNum; c++) {
-                        PadRightSideOne(
-                            dstAddr + firstOffset + additionOffset_ * sizeNum + n * padCHW + c * padHW, copylen, padW,
-                            lastOffset, padRightFloorAlign, padRightVLNum, BLNum, outMask, outNMask);
+                        PadRightSideOne(dstAddr + firstOffset + additionOffset_ * sizeNum + n * padCHW + c * padHW,
+                                        copylen, padW, lastOffset, padRightFloorAlign, padRightVLNum, BLNum, outMask,
+                                        outNMask);
                     }
                 }
             }
         }
     }
 
-    __aicore__ inline void PadRightSideOne(
-        __local_mem__ RT* dstAddr, uint32_t copylen, uint32_t step, uint32_t lastOffset, uint32_t padRightFloorAlign,
-        uint16_t padRightVLNum, uint16_t padRightBLNum, MicroAPI::MaskReg outMask, MicroAPI::MaskReg outNMask)
+    __aicore__ inline void PadRightSideOne(__local_mem__ RT* dstAddr, uint32_t copylen, uint32_t step,
+                                           uint32_t lastOffset, uint32_t padRightFloorAlign, uint16_t padRightVLNum,
+                                           uint16_t padRightBLNum, MicroAPI::MaskReg outMask,
+                                           MicroAPI::MaskReg outNMask)
     {
         __VEC_SCOPE__
         {
             AscendC::MicroAPI::RegTensor<RT> vRegTmp;
-            AscendC::MicroAPI::MaskReg maskAll =
-                AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
+            AscendC::MicroAPI::MaskReg
+                maskAll = AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
 
             if constexpr (sizeof(T) > CONST4) {
                 AscendC::MicroAPI::RegTensor<RT> tmpIn;
                 AscendC::MicroAPI::RegTensor<RT> tmpIn1;
                 AscendC::MicroAPI::RegTensor<RT> tmpOut;
                 for (uint16_t h = 0; h < copylen; h++) {
-                    AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B32>(
-                        tmpIn, dstAddr + h * step + lastOffset);
+                    AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B32>(tmpIn,
+                                                                                      dstAddr + h * step + lastOffset);
                     AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B32>(
                         tmpIn1, dstAddr + h * step + lastOffset + 1);
                     MicroAPI::Interleave(vRegTmp, tmpOut, tmpIn, tmpIn1);
-                    AscendC::MicroAPI::DataCopy(
-                        dstAddr + h * step + padRightFloorAlign - BLK_ELEMS * 2, vRegTmp, outNMask);
+                    AscendC::MicroAPI::DataCopy(dstAddr + h * step + padRightFloorAlign - BLK_ELEMS * 2, vRegTmp,
+                                                outNMask);
                     for (uint16_t i = 0; i < padRightVLNum; i++) {
-                        AscendC::MicroAPI::DataCopy(
-                            dstAddr + h * step + padRightFloorAlign + i * VL_ELEMS * 2, vRegTmp, maskAll);
+                        AscendC::MicroAPI::DataCopy(dstAddr + h * step + padRightFloorAlign + i * VL_ELEMS * 2, vRegTmp,
+                                                    maskAll);
                     }
                     for (uint16_t i = 0; i < padRightBLNum; i++) {
                         AscendC::MicroAPI::DataCopy(
@@ -597,44 +595,44 @@ private:
                 }
             } else if constexpr (sizeof(T) == CONST4) {
                 for (uint16_t h = 0; h < copylen; h++) {
-                    AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B32>(
-                        vRegTmp, dstAddr + h * step + lastOffset);
+                    AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B32>(vRegTmp,
+                                                                                      dstAddr + h * step + lastOffset);
                     AscendC::MicroAPI::DataCopy(dstAddr + h * step + padRightFloorAlign - BLK_ELEMS, vRegTmp, outNMask);
                     for (uint16_t i = 0; i < padRightVLNum; i++) {
-                        AscendC::MicroAPI::DataCopy(
-                            dstAddr + h * step + padRightFloorAlign + i * VL_ELEMS, vRegTmp, maskAll);
+                        AscendC::MicroAPI::DataCopy(dstAddr + h * step + padRightFloorAlign + i * VL_ELEMS, vRegTmp,
+                                                    maskAll);
                     }
                     for (uint16_t i = 0; i < padRightBLNum; i++) {
-                        AscendC::MicroAPI::DataCopy(
-                            dstAddr + h * step + padRightFloorAlign + padRightVLNum * VL_ELEMS, vRegTmp, outMask);
+                        AscendC::MicroAPI::DataCopy(dstAddr + h * step + padRightFloorAlign + padRightVLNum * VL_ELEMS,
+                                                    vRegTmp, outMask);
                     }
                 }
             } else if constexpr (sizeof(T) == CONST2) {
                 for (uint16_t h = 0; h < copylen; h++) {
-                    AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B16>(
-                        vRegTmp, dstAddr + h * step + lastOffset);
+                    AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B16>(vRegTmp,
+                                                                                      dstAddr + h * step + lastOffset);
                     AscendC::MicroAPI::DataCopy(dstAddr + h * step + padRightFloorAlign - BLK_ELEMS, vRegTmp, outNMask);
                     for (uint16_t i = 0; i < padRightVLNum; i++) {
-                        AscendC::MicroAPI::DataCopy(
-                            dstAddr + h * step + padRightFloorAlign + i * VL_ELEMS, vRegTmp, maskAll);
+                        AscendC::MicroAPI::DataCopy(dstAddr + h * step + padRightFloorAlign + i * VL_ELEMS, vRegTmp,
+                                                    maskAll);
                     }
                     for (uint16_t i = 0; i < padRightBLNum; i++) {
-                        AscendC::MicroAPI::DataCopy(
-                            dstAddr + h * step + padRightFloorAlign + padRightVLNum * VL_ELEMS, vRegTmp, outMask);
+                        AscendC::MicroAPI::DataCopy(dstAddr + h * step + padRightFloorAlign + padRightVLNum * VL_ELEMS,
+                                                    vRegTmp, outMask);
                     }
                 }
             } else if constexpr (sizeof(T) == 1) {
                 for (uint16_t h = 0; h < copylen; h++) {
-                    AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B8>(
-                        vRegTmp, dstAddr + h * step + lastOffset);
+                    AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B8>(vRegTmp,
+                                                                                     dstAddr + h * step + lastOffset);
                     AscendC::MicroAPI::DataCopy(dstAddr + h * step + padRightFloorAlign - BLK_ELEMS, vRegTmp, outNMask);
                     for (uint16_t i = 0; i < padRightVLNum; i++) {
-                        AscendC::MicroAPI::DataCopy(
-                            dstAddr + h * step + padRightFloorAlign + i * VL_ELEMS, vRegTmp, maskAll);
+                        AscendC::MicroAPI::DataCopy(dstAddr + h * step + padRightFloorAlign + i * VL_ELEMS, vRegTmp,
+                                                    maskAll);
                     }
                     for (uint16_t i = 0; i < padRightBLNum; i++) {
-                        AscendC::MicroAPI::DataCopy(
-                            dstAddr + h * step + padRightFloorAlign + padRightVLNum * VL_ELEMS, vRegTmp, outMask);
+                        AscendC::MicroAPI::DataCopy(dstAddr + h * step + padRightFloorAlign + padRightVLNum * VL_ELEMS,
+                                                    vRegTmp, outMask);
                     }
                 }
             }
@@ -647,16 +645,17 @@ private:
         const uint16_t sizeNum = (sizeof(T) > CONST4) ? 2 : 1;
         const int8_t dimNum = tilingData_->dimNum;
         const uint16_t dimNNum = (UB_AXES < CONST4) ? 1 : inCopyLen_[dimNum - CONST4];
-        const uint16_t dimCNum =
-            (UB_AXES < CONST3 || is3DPadding) ? 1 : (inCopyLen_[dimNum - CONST3] > 0 ? inCopyLen_[dimNum - CONST3] : 1);
+        const uint16_t dimCNum = (UB_AXES < CONST3 || is3DPadding) ?
+                                     1 :
+                                     (inCopyLen_[dimNum - CONST3] > 0 ? inCopyLen_[dimNum - CONST3] : 1);
         const uint32_t padHW = (UB_AXES >= CONST3) ? padParam.padStride[UB_AXES - CONST3] * sizeNum : 0;
         const uint32_t padCHW = (UB_AXES >= CONST4) ? padParam.padStride[UB_AXES - CONST4] * sizeNum : 0;
         const uint32_t padRight = (tilingData_->outShape[dimNum - 1] - tilingData_->leftPad[dimNum - 1]) * sizeNum;
         const uint32_t padRightFloorAlign = CeilAlign(padRight, BLK_ELEMS * sizeNum);
         const uint32_t padLeftSize = padRightFloorAlign - padRight;
         const uint16_t padLeftVLNum = (padParam.padW * sizeNum - padRightFloorAlign) / (VL_ELEMS * sizeNum);
-        const uint16_t padLeftBLNum =
-            ((padParam.padW * sizeNum - padRightFloorAlign) % (VL_ELEMS * sizeNum)) / (BLK_ELEMS * sizeNum);
+        const uint16_t padLeftBLNum = ((padParam.padW * sizeNum - padRightFloorAlign) % (VL_ELEMS * sizeNum)) /
+                                      (BLK_ELEMS * sizeNum);
         const uint16_t firstOffset = ubOffset * sizeNum;
         const uint16_t BLNum = padLeftBLNum > 0 ? 1 : 0;
 
@@ -666,8 +665,8 @@ private:
             AscendC::MicroAPI::MaskReg rMask;
             AscendC::MicroAPI::MaskReg outMask;
             AscendC::MicroAPI::MaskReg outNMask;
-            AscendC::MicroAPI::MaskReg maskAll =
-                AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
+            AscendC::MicroAPI::MaskReg
+                maskAll = AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
             AscendC::MicroAPI::RegTensor<RT> tmpIn;
             AscendC::MicroAPI::RegTensor<RT> tmpIn1;
             AscendC::MicroAPI::RegTensor<RT> tmpOut;
@@ -693,8 +692,8 @@ private:
                             AscendC::MicroAPI::DataCopy(dstAddr + ubInOffset + i * VL_ELEMS, vRegTmp, maskAll);
                         }
                         for (uint16_t i = 0; i < BLNum; i++) {
-                            AscendC::MicroAPI::DataCopy(
-                                dstAddr + ubInOffset + padLeftVLNum * VL_ELEMS, vRegTmp, outNMask);
+                            AscendC::MicroAPI::DataCopy(dstAddr + ubInOffset + padLeftVLNum * VL_ELEMS, vRegTmp,
+                                                        outNMask);
                         }
                     }
                 }
@@ -709,8 +708,8 @@ private:
                             AscendC::MicroAPI::DataCopy(dstAddr + ubInOffset + i * VL_ELEMS, vRegTmp, maskAll);
                         }
                         for (uint16_t i = 0; i < BLNum; i++) {
-                            AscendC::MicroAPI::DataCopy(
-                                dstAddr + ubInOffset + padLeftVLNum * VL_ELEMS, vRegTmp, outNMask);
+                            AscendC::MicroAPI::DataCopy(dstAddr + ubInOffset + padLeftVLNum * VL_ELEMS, vRegTmp,
+                                                        outNMask);
                         }
                     }
                 }
@@ -725,8 +724,8 @@ private:
                             AscendC::MicroAPI::DataCopy(dstAddr + ubInOffset + i * VL_ELEMS, vRegTmp, maskAll);
                         }
                         for (uint16_t i = 0; i < BLNum; i++) {
-                            AscendC::MicroAPI::DataCopy(
-                                dstAddr + ubInOffset + padLeftVLNum * VL_ELEMS, vRegTmp, outNMask);
+                            AscendC::MicroAPI::DataCopy(dstAddr + ubInOffset + padLeftVLNum * VL_ELEMS, vRegTmp,
+                                                        outNMask);
                         }
                     }
                 }
@@ -735,8 +734,8 @@ private:
                     for (uint16_t c = 0; c < dimCNum; c++) {
                         ubInOffset = firstOffset + n * padCHW + c * padHW + additionOffset_ * 2;
                         AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B32>(tmpIn, dstAddr + ubInOffset);
-                        AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B32>(
-                            tmpIn1, dstAddr + ubInOffset + 1);
+                        AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B32>(tmpIn1,
+                                                                                          dstAddr + ubInOffset + 1);
                         MicroAPI::Interleave(vRegTmp, tmpOut, tmpIn, tmpIn1);
                         ubInOffset = ubInOffset + padRightFloorAlign;
                         AscendC::MicroAPI::DataCopy(dstAddr + ubInOffset - BLK_ELEMS * 2, vRegTmp, outMask);
@@ -744,8 +743,8 @@ private:
                             AscendC::MicroAPI::DataCopy(dstAddr + ubInOffset + i * VL_ELEMS * 2, vRegTmp, maskAll);
                         }
                         for (uint16_t i = 0; i < BLNum; i++) {
-                            AscendC::MicroAPI::DataCopy(
-                                dstAddr + ubInOffset + padLeftVLNum * VL_ELEMS * 2, vRegTmp, outNMask);
+                            AscendC::MicroAPI::DataCopy(dstAddr + ubInOffset + padLeftVLNum * VL_ELEMS * 2, vRegTmp,
+                                                        outNMask);
                         }
                     }
                 }
@@ -753,8 +752,8 @@ private:
         }
     }
 
-    __aicore__ inline void PadLeftSide(
-        const LocalTensor<T>& dst, PadReplNormalParam& padParam, uint32_t ubOffset, bool isFirst, uint32_t copylen)
+    __aicore__ inline void PadLeftSide(const LocalTensor<T>& dst, PadReplNormalParam& padParam, uint32_t ubOffset,
+                                       bool isFirst, uint32_t copylen)
     {
         auto dstAddr = reinterpret_cast<__local_mem__ RT*>(dst.GetPhyAddr());
         const uint16_t sizeNum = (sizeof(T) > CONST4) ? 2 : 1;
@@ -762,11 +761,11 @@ private:
         const uint64_t ubFactor = tilingData_->ubFactor;
         const int8_t dimNum = tilingData_->dimNum;
         const uint16_t dim3D = dimNum - CONST3;
-        const uint16_t totalLen =
-            (UB_AXES < CONST3) ? 1 :
-                                 ((outIndex_[dim3D] + ubFactor < tilingData_->outShape[dim3D] && UB_AXES == CONST3) ?
-                                      ubFactor :
-                                      tilingData_->outShape[dim3D] - outIndex_[dim3D]);
+        const uint16_t totalLen = (UB_AXES < CONST3) ? 1 :
+                                                       ((outIndex_[dim3D] + ubFactor < tilingData_->outShape[dim3D] &&
+                                                         UB_AXES == CONST3) ?
+                                                            ubFactor :
+                                                            tilingData_->outShape[dim3D] - outIndex_[dim3D]);
         const uint16_t tempNNum = UB_AXES < CONST4 ? 1 : inCopyLen_[dimNum - CONST4];
         const uint16_t dimNNum = (UB_AXES < CONST4 || isFirst) ? 1 : inCopyLen_[dimNum - CONST4];
         const uint16_t dimCNum = (UB_AXES < CONST3 || (is3DPadding && !isFirst)) ?
@@ -775,8 +774,8 @@ private:
         const uint32_t padW = padParam.padStride[UB_AXES - CONST2] * sizeNum;
         const uint32_t padHW = (UB_AXES >= CONST3) ? padParam.padStride[UB_AXES - CONST3] * sizeNum : 0;
         const uint32_t padCHW = (UB_AXES >= CONST4) ? padParam.padStride[UB_AXES - CONST4] * sizeNum : 0;
-        const uint32_t padLeftlen =
-            (padParam.padWLOffset + padParam.padW - tilingData_->outShape[dimNum - 1]) * sizeNum;
+        const uint32_t padLeftlen = (padParam.padWLOffset + padParam.padW - tilingData_->outShape[dimNum - 1]) *
+                                    sizeNum;
         const uint16_t padLeftVLNum = padLeftlen / (VL_ELEMS * sizeNum);
         const uint32_t PadLeftSize = padLeftlen - padLeftVLNum * VL_ELEMS * sizeNum;
         const uint16_t BLNum = PadLeftSize > 0 ? 1 : 0;
@@ -786,8 +785,8 @@ private:
         {
             AscendC::MicroAPI::RegTensor<RT> vRegTmp;
             AscendC::MicroAPI::MaskReg lMask;
-            AscendC::MicroAPI::MaskReg maskAll =
-                AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
+            AscendC::MicroAPI::MaskReg
+                maskAll = AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
             AscendC::MicroAPI::RegTensor<RT> tmpIn;
             AscendC::MicroAPI::RegTensor<RT> tmpIn1;
             AscendC::MicroAPI::RegTensor<RT> tmpOut;
@@ -796,50 +795,47 @@ private:
             lMask = AscendC::MicroAPI::UpdateMask<RT>(nolPadLen);
             AscendC::MicroAPI::MaskNot(lMask, lMask, maskAll);
             if constexpr (UB_AXES == CONST2) {
-                PadLeftSideOne(
-                    dstAddr, firstOffset + additionOffset_ * sizeNum, copylen, padW, padLeftVLNum, BLNum, lMask);
+                PadLeftSideOne(dstAddr, firstOffset + additionOffset_ * sizeNum, copylen, padW, padLeftVLNum, BLNum,
+                               lMask);
             } else if constexpr (UB_AXES == CONST3) {
                 for (uint16_t c = 0; c < dimCNum; c++) {
-                    PadLeftSideOne(
-                        dstAddr, firstOffset + additionOffset_ * sizeNum + c * padHW, copylen, padW, padLeftVLNum,
-                        BLNum, lMask);
+                    PadLeftSideOne(dstAddr, firstOffset + additionOffset_ * sizeNum + c * padHW, copylen, padW,
+                                   padLeftVLNum, BLNum, lMask);
                 }
             } else if constexpr (UB_AXES == CONST4) {
                 for (uint16_t n = 0; n < dimNNum; n++) {
                     for (uint16_t c = 0; c < dimCNum; c++) {
-                        PadLeftSideOne(
-                            dstAddr, firstOffset + additionOffset_ * sizeNum + n * padCHW + c * padHW, copylen, padW,
-                            padLeftVLNum, BLNum, lMask);
+                        PadLeftSideOne(dstAddr, firstOffset + additionOffset_ * sizeNum + n * padCHW + c * padHW,
+                                       copylen, padW, padLeftVLNum, BLNum, lMask);
                     }
                 }
             }
         }
     }
 
-    __aicore__ inline void PadLeftSideOne(
-        __local_mem__ RT* dstAddr, uint32_t firstOffset, uint32_t copylen, uint32_t step, uint16_t padLeftVLNum,
-        uint16_t BLNum, MicroAPI::MaskReg lMask)
+    __aicore__ inline void PadLeftSideOne(__local_mem__ RT* dstAddr, uint32_t firstOffset, uint32_t copylen,
+                                          uint32_t step, uint16_t padLeftVLNum, uint16_t BLNum, MicroAPI::MaskReg lMask)
     {
         __VEC_SCOPE__
         {
             AscendC::MicroAPI::RegTensor<RT> vRegTmp;
-            AscendC::MicroAPI::MaskReg maskAll =
-                AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
+            AscendC::MicroAPI::MaskReg
+                maskAll = AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
 
             if constexpr (sizeof(T) > CONST4) {
                 AscendC::MicroAPI::RegTensor<RT> tmpIn;
                 AscendC::MicroAPI::RegTensor<RT> tmpIn1;
                 AscendC::MicroAPI::RegTensor<RT> tmpOut;
                 for (uint16_t h = 0; h < copylen; h++) {
-                    AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B32>(
-                        tmpIn, dstAddr + firstOffset + h * step);
+                    AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B32>(tmpIn,
+                                                                                      dstAddr + firstOffset + h * step);
                     AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B32>(
                         tmpIn1, dstAddr + firstOffset + h * step + 1);
                     MicroAPI::Interleave(vRegTmp, tmpOut, tmpIn, tmpIn1);
                     // 先逐个vreg，再逐个32B
                     for (uint16_t i = 0; i < padLeftVLNum; i++) {
-                        AscendC::MicroAPI::DataCopy(
-                            dstAddr + firstOffset + h * step - (i + 1) * VL_ELEMS * 2, vRegTmp, maskAll);
+                        AscendC::MicroAPI::DataCopy(dstAddr + firstOffset + h * step - (i + 1) * VL_ELEMS * 2, vRegTmp,
+                                                    maskAll);
                     }
                     for (uint16_t i = 0; i < BLNum; i++) {
                         AscendC::MicroAPI::DataCopy(
@@ -848,44 +844,44 @@ private:
                 }
             } else if constexpr (sizeof(T) == CONST4) {
                 for (uint16_t h = 0; h < copylen; h++) {
-                    AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B32>(
-                        vRegTmp, dstAddr + firstOffset + h * step);
+                    AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B32>(vRegTmp,
+                                                                                      dstAddr + firstOffset + h * step);
                     // 先逐个vreg，再逐个32B
                     for (uint16_t i = 0; i < padLeftVLNum; i++) {
-                        AscendC::MicroAPI::DataCopy(
-                            dstAddr + firstOffset + h * step - (i + 1) * VL_ELEMS, vRegTmp, maskAll);
+                        AscendC::MicroAPI::DataCopy(dstAddr + firstOffset + h * step - (i + 1) * VL_ELEMS, vRegTmp,
+                                                    maskAll);
                     }
                     for (uint16_t i = 0; i < BLNum; i++) {
-                        AscendC::MicroAPI::DataCopy(
-                            dstAddr + firstOffset + h * step - (padLeftVLNum + 1) * VL_ELEMS, vRegTmp, lMask);
+                        AscendC::MicroAPI::DataCopy(dstAddr + firstOffset + h * step - (padLeftVLNum + 1) * VL_ELEMS,
+                                                    vRegTmp, lMask);
                     }
                 }
             } else if constexpr (sizeof(T) == CONST2) {
                 for (uint16_t h = 0; h < copylen; h++) {
-                    AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B16>(
-                        vRegTmp, dstAddr + firstOffset + h * step);
+                    AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B16>(vRegTmp,
+                                                                                      dstAddr + firstOffset + h * step);
                     // 先逐个vreg，再逐个32B
                     for (uint16_t i = 0; i < padLeftVLNum; i++) {
-                        AscendC::MicroAPI::DataCopy(
-                            dstAddr + firstOffset + h * step - (i + 1) * VL_ELEMS, vRegTmp, maskAll);
+                        AscendC::MicroAPI::DataCopy(dstAddr + firstOffset + h * step - (i + 1) * VL_ELEMS, vRegTmp,
+                                                    maskAll);
                     }
                     for (uint16_t i = 0; i < BLNum; i++) {
-                        AscendC::MicroAPI::DataCopy(
-                            dstAddr + firstOffset + h * step - (padLeftVLNum + 1) * VL_ELEMS, vRegTmp, lMask);
+                        AscendC::MicroAPI::DataCopy(dstAddr + firstOffset + h * step - (padLeftVLNum + 1) * VL_ELEMS,
+                                                    vRegTmp, lMask);
                     }
                 }
             } else if constexpr (sizeof(T) == 1) {
                 for (uint16_t h = 0; h < copylen; h++) {
-                    AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B8>(
-                        vRegTmp, dstAddr + firstOffset + h * step);
+                    AscendC::MicroAPI::DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B8>(vRegTmp,
+                                                                                     dstAddr + firstOffset + h * step);
                     // 先逐个vreg，再逐个32B
                     for (uint16_t i = 0; i < padLeftVLNum; i++) {
-                        AscendC::MicroAPI::DataCopy(
-                            dstAddr + firstOffset + h * step - (i + 1) * VL_ELEMS, vRegTmp, maskAll);
+                        AscendC::MicroAPI::DataCopy(dstAddr + firstOffset + h * step - (i + 1) * VL_ELEMS, vRegTmp,
+                                                    maskAll);
                     }
                     for (uint16_t i = 0; i < BLNum; i++) {
-                        AscendC::MicroAPI::DataCopy(
-                            dstAddr + firstOffset + h * step - (padLeftVLNum + 1) * VL_ELEMS, vRegTmp, lMask);
+                        AscendC::MicroAPI::DataCopy(dstAddr + firstOffset + h * step - (padLeftVLNum + 1) * VL_ELEMS,
+                                                    vRegTmp, lMask);
                     }
                 }
             }
@@ -898,8 +894,8 @@ private:
         const uint16_t sizeNum = (sizeof(T) > CONST4) ? 2 : 1;
         const int8_t dimNum = tilingData_->dimNum;
         const uint32_t padRightFloorAlign = CeilAlign(padParam.padWROffset * sizeNum, BLK_ELEMS * sizeNum);
-        const uint32_t padLeftlen =
-            (padParam.padWLOffset + padParam.padW - tilingData_->outShape[dimNum - 1]) * sizeNum;
+        const uint32_t padLeftlen = (padParam.padWLOffset + padParam.padW - tilingData_->outShape[dimNum - 1]) *
+                                    sizeNum;
         const uint16_t padLeftVLNum = padLeftlen / (VL_ELEMS * sizeNum);
         const uint16_t padLeftBLNum = (padLeftlen % (VL_ELEMS * sizeNum)) / (BLK_ELEMS * sizeNum);
         const uint16_t firstOffset = ubOffset * sizeNum;
@@ -910,8 +906,8 @@ private:
             AscendC::MicroAPI::MaskReg rMask;
             AscendC::MicroAPI::MaskReg outMask;
 
-            AscendC::MicroAPI::MaskReg maskAll =
-                AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
+            AscendC::MicroAPI::MaskReg
+                maskAll = AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
 
             uint32_t outLen = BLK_ELEMS * sizeNum;
 
@@ -947,9 +943,8 @@ private:
     }
 
     template <const AscendC::MicroAPI::RegTrait& Trait>
-    __aicore__ inline void PadCopySame(
-        const LocalTensor<T>& dst, PadReplNormalParam& padParam, uint32_t inOffset, uint32_t outOffset,
-        uint32_t copyLen, int8_t curAxis)
+    __aicore__ inline void PadCopySame(const LocalTensor<T>& dst, PadReplNormalParam& padParam, uint32_t inOffset,
+                                       uint32_t outOffset, uint32_t copyLen, int8_t curAxis)
     {
         auto dstAddr = reinterpret_cast<__local_mem__ RT*>(dst.GetPhyAddr());
         const int8_t ubAxis = tilingData_->ubAxis;
@@ -964,8 +959,8 @@ private:
         {
             AscendC::MicroAPI::RegTensor<RT> vRegTmp;
             AscendC::MicroAPI::MaskReg outMask;
-            AscendC::MicroAPI::MaskReg maskAll =
-                AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
+            AscendC::MicroAPI::MaskReg
+                maskAll = AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
 
             uint32_t outLen = BLK_ELEMS * sizeNum * padBLNum;
             outMask = AscendC::MicroAPI::UpdateMask<T, Trait>(outLen);
@@ -979,8 +974,8 @@ private:
                 }
             }
             for (uint16_t i = 0; i < BLNum; i++) {
-                AscendC::MicroAPI::DataCopy(
-                    vRegTmp, dstAddr + (inOffset + additionOffset_ + padVLNum * VL_ELEMS) * sizeNum);
+                AscendC::MicroAPI::DataCopy(vRegTmp,
+                                            dstAddr + (inOffset + additionOffset_ + padVLNum * VL_ELEMS) * sizeNum);
                 for (uint16_t n = 0; n < dimHNum; n++) {
                     AscendC::MicroAPI::DataCopy(
                         dstAddr + (outOffset + additionOffset_ + padVLNum * VL_ELEMS) * sizeNum + n * totalNum, vRegTmp,
@@ -991,8 +986,8 @@ private:
     }
 
     template <const AscendC::MicroAPI::RegTrait& Trait>
-    __aicore__ inline void PadCopyDiff(
-        const LocalTensor<T>& dst, PadReplNormalParam& padParam, uint32_t ubOffset, int8_t curAxis)
+    __aicore__ inline void PadCopyDiff(const LocalTensor<T>& dst, PadReplNormalParam& padParam, uint32_t ubOffset,
+                                       int8_t curAxis)
     {
         auto dstAddr = reinterpret_cast<__local_mem__ RT*>(dst.GetPhyAddr());
         const int8_t dimNum = tilingData_->dimNum;
@@ -1018,8 +1013,8 @@ private:
         {
             AscendC::MicroAPI::RegTensor<RT> vRegTmp;
             AscendC::MicroAPI::MaskReg outMask;
-            AscendC::MicroAPI::MaskReg maskAll =
-                AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
+            AscendC::MicroAPI::MaskReg
+                maskAll = AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
 
             uint32_t outLen = BLK_ELEMS * sizeNum * padBLNum;
             uint32_t inOffset = 0;
@@ -1031,8 +1026,8 @@ private:
                     for (uint16_t i = 0; i < padVLNum; i++) {
                         AscendC::MicroAPI::DataCopy(vRegTmp, dstAddr + inOffset + i * VL_ELEMS * sizeNum + firstOffset);
                         for (uint16_t h = 0; h < dimUp; h++) {
-                            AscendC::MicroAPI::DataCopy(
-                                dstAddr + inOffset + i * VL_ELEMS * sizeNum + h * oneLen, vRegTmp, maskAll);
+                            AscendC::MicroAPI::DataCopy(dstAddr + inOffset + i * VL_ELEMS * sizeNum + h * oneLen,
+                                                        vRegTmp, maskAll);
                         }
                         AscendC::MicroAPI::DataCopy(vRegTmp, dstAddr + inOffset + i * VL_ELEMS * sizeNum + lastOffset);
                         for (uint16_t h = 0; h < dimDown; h++) {
@@ -1042,14 +1037,14 @@ private:
                         }
                     }
                     for (uint16_t i = 0; i < BLNum; i++) {
-                        AscendC::MicroAPI::DataCopy(
-                            vRegTmp, dstAddr + inOffset + padVLNum * sizeNum * VL_ELEMS + firstOffset);
+                        AscendC::MicroAPI::DataCopy(vRegTmp,
+                                                    dstAddr + inOffset + padVLNum * sizeNum * VL_ELEMS + firstOffset);
                         for (uint16_t h = 0; h < dimUp; h++) {
-                            AscendC::MicroAPI::DataCopy(
-                                dstAddr + inOffset + padVLNum * VL_ELEMS * sizeNum + h * oneLen, vRegTmp, outMask);
+                            AscendC::MicroAPI::DataCopy(dstAddr + inOffset + padVLNum * VL_ELEMS * sizeNum + h * oneLen,
+                                                        vRegTmp, outMask);
                         }
-                        AscendC::MicroAPI::DataCopy(
-                            vRegTmp, dstAddr + inOffset + padVLNum * sizeNum * VL_ELEMS + lastOffset);
+                        AscendC::MicroAPI::DataCopy(vRegTmp,
+                                                    dstAddr + inOffset + padVLNum * sizeNum * VL_ELEMS + lastOffset);
                         for (uint16_t h = 0; h < dimDown; h++) {
                             AscendC::MicroAPI::DataCopy(
                                 dstAddr + inOffset + padVLNum * VL_ELEMS * sizeNum + lastOffset + (h + 1) * oneLen,
@@ -1106,18 +1101,18 @@ private:
                 DataCopyPad(output_[outAddr + addNum * BLK_ELEMS], src, copyOutParams0);
             }
         }
-        uint32_t blockCount =
-            (outIndex_[ubAxis] + ubFactor < tilingData_->outShape[ubAxis] ?
-                 ubFactor :
-                 tilingData_->outShape[ubAxis] - outIndex_[ubAxis]);
+        uint32_t blockCount = (outIndex_[ubAxis] + ubFactor < tilingData_->outShape[ubAxis] ?
+                                   ubFactor :
+                                   tilingData_->outShape[ubAxis] - outIndex_[ubAxis]);
         for (auto i = ubAxis + 1; i < dimNum - 1; i++) {
             // blockCount 计算到倒数第二维
             blockCount = blockCount * tilingData_->outShape[i];
         }
         // 如果每行32B对齐，一次性搬出
         if (tilingData_->outShape[dimNum - 1] % BLK_ELEMS == 0) {
-            copyOutParams.blockLen =
-                (blockCount * tilingData_->outShape[dimNum - 1] - tilingData_->leftPad[dimNum - 1]) * sizeof(T);
+            copyOutParams.blockLen = (blockCount * tilingData_->outShape[dimNum - 1] -
+                                      tilingData_->leftPad[dimNum - 1]) *
+                                     sizeof(T);
             DataCopyPad(output_[outAddr + tilingData_->leftPad[dimNum - 1]], src[additionOffset_], copyOutParams);
         } else {
             // 先copy前blockCount - 1行，最后一行单独拷贝
@@ -1129,13 +1124,11 @@ private:
 
             DataCopyExtParams copyOutParams1;
             copyOutParams1.blockCount = 1;
-            copyOutParams1.blockLen =
-                (tilingData_->outShape[dimNum - 1] - tilingData_->leftPad[dimNum - 1]) * sizeof(T);
-            DataCopyPad(
-                output_
-                    [outAddr + tilingData_->leftPad[dimNum - 1] +
-                     copyOutParams.blockCount * tilingData_->outShape[dimNum - 1]],
-                src[additionOffset_ + copyOutParams.blockCount * padParam.padW], copyOutParams1);
+            copyOutParams1.blockLen = (tilingData_->outShape[dimNum - 1] - tilingData_->leftPad[dimNum - 1]) *
+                                      sizeof(T);
+            DataCopyPad(output_[outAddr + tilingData_->leftPad[dimNum - 1] +
+                                copyOutParams.blockCount * tilingData_->outShape[dimNum - 1]],
+                        src[additionOffset_ + copyOutParams.blockCount * padParam.padW], copyOutParams1);
         }
         if (!lastOut_) {
             if ((idx & 1) == 0) {

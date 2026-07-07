@@ -20,15 +20,9 @@ using ::testing::ElementsAreArray;
 
 class BatchToSpaceNDTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "BatchToSpaceNDTilingTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "BatchToSpaceNDTilingTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "BatchToSpaceNDTilingTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "BatchToSpaceNDTilingTest TearDown" << std::endl; }
 
     std::vector<uint64_t> Shape2Vec(uint64_t shape[], size_t size)
     {

@@ -14,7 +14,7 @@
 #include "opdev/make_op_executor.h"
 
 namespace l0op {
-const aclTensor *MirrorPad(const aclTensor *self, const aclTensor *paddings,
-                           const std::string& mode, aclOpExecutor *executor);
+const aclTensor* MirrorPad(const aclTensor* self, const aclTensor* paddings, const std::string& mode,
+                           aclOpExecutor* executor);
 }
 #endif // PTA_NPU_OP_API_INC_LEVEL0_OP_MIRRORPAD_OP_H_

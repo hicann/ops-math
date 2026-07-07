@@ -21,19 +21,18 @@
 #include "register/tilingdata_base.h"
 #include "tiling/tiling_api.h"
 
-namespace optiling
-{
+namespace optiling {
 constexpr size_t brctoMaxDMADimNum = 0x5;
-constexpr size_t brctoMaxADimNum = static_cast<size_t>(0x8) * 3;  // axisSize, axisInASize, axisOutASize
-constexpr size_t brctoMaxBDimNum = static_cast<size_t>(0x8) * 2;  // axisSize, axisASize
+constexpr size_t brctoMaxADimNum = static_cast<size_t>(0x8) * 3; // axisSize, axisInASize, axisOutASize
+constexpr size_t brctoMaxBDimNum = static_cast<size_t>(0x8) * 2; // axisSize, axisASize
 
 BEGIN_TILING_DATA_DEF(BroadcastToTilingData)
 TILING_DATA_FIELD_DEF(int64_t, tilingKey);
 TILING_DATA_FIELD_DEF(int64_t, dFactor);
 TILING_DATA_FIELD_DEF(uint8_t, doubleMode);
-TILING_DATA_FIELD_DEF(uint8_t, uAxisCnt);    // axis count in ub
-TILING_DATA_FIELD_DEF(uint8_t, bufferCnt);   // buffer count in ub
-TILING_DATA_FIELD_DEF(uint8_t, blockAxis);  // 0: A, 1: B, 2, U
+TILING_DATA_FIELD_DEF(uint8_t, uAxisCnt);  // axis count in ub
+TILING_DATA_FIELD_DEF(uint8_t, bufferCnt); // buffer count in ub
+TILING_DATA_FIELD_DEF(uint8_t, blockAxis); // 0: A, 1: B, 2, U
 TILING_DATA_FIELD_DEF(uint32_t, tensorSize);
 TILING_DATA_FIELD_DEF(int64_t, usedCoreCnt);
 TILING_DATA_FIELD_DEF(int64_t, ntcALen);
@@ -47,7 +46,7 @@ TILING_DATA_FIELD_DEF(int64_t, uLpUnit);
 TILING_DATA_FIELD_DEF(int64_t, uInOffset);
 TILING_DATA_FIELD_DEF(int64_t, uOutOffset);
 TILING_DATA_FIELD_DEF(int32_t, isUNotB);
-TILING_DATA_FIELD_DEF(int32_t, isLastDimB);  // 0: A, 1:B
+TILING_DATA_FIELD_DEF(int32_t, isLastDimB); // 0: A, 1:B
 TILING_DATA_FIELD_DEF(int32_t, aAxesNum);
 TILING_DATA_FIELD_DEF(int32_t, bAxesNum);
 TILING_DATA_FIELD_DEF_ARR(uint64_t, brctoMaxDMADimNum, xSrcStride);
@@ -62,9 +61,8 @@ REGISTER_TILING_DATA_CLASS(BroadcastTo, BroadcastToTilingData);
 ge::graphStatus Tiling4BroadcastToAscendC(gert::TilingContext* context, const gert::Shape* inShapePtr,
                                           const gert::Shape* outShapePtr);
 
-namespace brcto
-{
-constexpr int64_t MAX_TENSOR_SIZE = 0xff00;  // to avoid index overflow when B8
+namespace brcto {
+constexpr int64_t MAX_TENSOR_SIZE = 0xff00; // to avoid index overflow when B8
 constexpr int64_t TILING_MODE_NDDMA = 11000;
 constexpr int64_t TILING_MODE_UB_BRC = 11001;
 constexpr int64_t TILING_MODE_LAST_DIM_LARGE_A = 11002;
@@ -82,20 +80,19 @@ constexpr float coreFactor = 0.75;
 constexpr int64_t LAST_DIM_GATE = 8;
 
 ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape);
-ge::graphStatus CheckSameDimNum(
-    const gert::TilingContext* context, const gert::Shape& inShape, const gert::Shape& outShape, size_t& dimNum);
+ge::graphStatus CheckSameDimNum(const gert::TilingContext* context, const gert::Shape& inShape,
+                                const gert::Shape& outShape, size_t& dimNum);
 ge::graphStatus GetABFlag(const gert::TilingContext* context, const gert::Shape& inShape, const gert::Shape& outShape,
                           std::array<bool, MAX_DIM_NUM>& abInfo);
 void AdjustShapesToSameDimNum(gert::Shape& inShape, size_t outDimNum);
 ge::graphStatus MergeAxis(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape);
 ge::graphStatus DeleteOneSizeAxis(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape);
 
-class BroadcastToTilingAscendC
-{
+class BroadcastToTilingAscendC {
 public:
     explicit BroadcastToTilingAscendC(gert::TilingContext* context, const gert::Shape* inShapePtr,
                                       const gert::Shape* outShapePtr)
-        : context_(context), inShapePtr_(inShapePtr), outShapePtr_(outShapePtr){};
+        : context_(context), inShapePtr_(inShapePtr), outShapePtr_(outShapePtr) {};
     ge::graphStatus DoTiling();
 
     // define stay with implementation so that its implementation can be found
@@ -114,11 +111,10 @@ public:
         if (coreNum_ <= 0 || ubSize_ <= 0 || blockSize_ <= 0 || cacheLine_ <= 0 || vlSize_ <= 0) {
             std::string valueMsg = "coreNum=" + std::to_string(coreNum_) + ", ubSize=" + std::to_string(ubSize_) +
                                    ", blockSize=" + std::to_string(blockSize_) +
-                                   ", cacheLine=" + std::to_string(cacheLine_) +
-                                   ", vlSize=" + std::to_string(vlSize_);
+                                   ", cacheLine=" + std::to_string(cacheLine_) + ", vlSize=" + std::to_string(vlSize_);
             std::string reasonMsg = "BroadcastTo GetHardwareInfo failed, all values must be positive.";
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-                context_->GetNodeName(), "hardwareInfo", valueMsg.c_str(), reasonMsg.c_str());
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "hardwareInfo", valueMsg.c_str(),
+                                                  reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
 
@@ -207,7 +203,7 @@ private:
     int64_t bAxesParams_[brctoMaxBDimNum]{0};
 };
 
-}  // namespace brcto
+} // namespace brcto
 
-}  // namespace optiling
-#endif  // BROADCASTTO_TILING_NDDMA_H_
+} // namespace optiling
+#endif // BROADCASTTO_TILING_NDDMA_H_

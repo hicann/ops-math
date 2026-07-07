@@ -86,12 +86,10 @@ ge::graphStatus SincTiling::CheckShape()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
     const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
-    OP_CHECK_IF(
-        inputYShape != outputZShape,
-        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
-            tilingContext->GetNodeName(), "y", ToString(outputZShape).c_str(),
-            "The shape of y must be equal to the shape of x"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputYShape != outputZShape,
+                OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(tilingContext->GetNodeName(), "y", ToString(outputZShape).c_str(),
+                                                      "The shape of y must be equal to the shape of x"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -103,8 +101,8 @@ ge::graphStatus SincTiling::CalcOutputDtype()
     this->outputDtype = outputDesc->GetDataType();
     if (this->outputDtype != this->inputDtype) {
         std::string errorMsg = "The dtype of y must be the same as " + ToString(this->inputDtype) + " of x";
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            tilingContext->GetNodeName(), "y", ToString(this->outputDtype).c_str(), errorMsg.c_str());
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "y", ToString(this->outputDtype).c_str(),
+                                              errorMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -133,8 +131,8 @@ ge::graphStatus SincTiling::RunTiling()
             tiling->baseTiling, ASCEND_API_BUFFER + DCACHE_SIZE);
     } else if (this->outputDtype == ge::DT_FLOAT) {
         dType = TPL_FP32;
-        baseTilingResult = elewiseBaseTiling.DoTiling<SincOp::SincDAG<float>::OpDag>(
-            tiling->baseTiling, ASCEND_API_BUFFER + DCACHE_SIZE);
+        baseTilingResult = elewiseBaseTiling.DoTiling<SincOp::SincDAG<float>::OpDag>(tiling->baseTiling,
+                                                                                     ASCEND_API_BUFFER + DCACHE_SIZE);
     } else {
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
             tilingContext->GetNodeName(), "y", ToString(this->outputDtype).c_str(),

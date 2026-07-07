@@ -26,15 +26,9 @@ using namespace ge;
 
 class TransposeTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "TransposeTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "TransposeTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "TransposeTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "TransposeTiling TearDown" << std::endl; }
 };
 
 TEST_F(TransposeTiling, transpose_tiling_01)

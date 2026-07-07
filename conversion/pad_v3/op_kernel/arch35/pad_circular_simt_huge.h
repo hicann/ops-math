@@ -48,8 +48,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void PadCircularSimtHuge<T>::Init(
-    GM_ADDR x, GM_ADDR paddings, GM_ADDR y, const PadACTilingData* tilingData)
+__aicore__ inline void PadCircularSimtHuge<T>::Init(GM_ADDR x, GM_ADDR paddings, GM_ADDR y,
+                                                    const PadACTilingData* tilingData)
 {
     mBlockIdx_ = GetBlockIdx();
     mTD_ = tilingData;
@@ -58,12 +58,11 @@ __aicore__ inline void PadCircularSimtHuge<T>::Init(
 }
 
 template <typename T>
-__simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_HALF_THREAD_DIM) __aicore__ void SimtComputeCircularHugeDimOne(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, uint64_t outputSize, uint32_t blockIdx, uint32_t blockNum,
-    uint64_t inShape0, int64_t left0)
+__simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_HALF_THREAD_DIM) __aicore__
+    void SimtComputeCircularHugeDimOne(__gm__ T* inputGM, __gm__ volatile T* outputGM, uint64_t outputSize,
+                                       uint32_t blockIdx, uint32_t blockNum, uint64_t inShape0, int64_t left0)
 {
-    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         int64_t inIndex0 = idx - left0;
 
         if (inIndex0 < 0) {
@@ -76,12 +75,12 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_HALF_THREAD_DIM) __aicore__ void SimtComp
 }
 
 template <typename T, int32_t DIM>
-__simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_HALF_THREAD_DIM) __aicore__ void SimtComputeCircularHugeDimTwo(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, uint64_t outputSize, uint32_t blockIdx, uint32_t blockNum,
-    uint64_t outStride0, uint64_t inShape0, uint64_t inShape1, uint64_t m0, uint64_t s0, int64_t left0, int64_t left1)
+__simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_HALF_THREAD_DIM) __aicore__
+    void SimtComputeCircularHugeDimTwo(__gm__ T* inputGM, __gm__ volatile T* outputGM, uint64_t outputSize,
+                                       uint32_t blockIdx, uint32_t blockNum, uint64_t outStride0, uint64_t inShape0,
+                                       uint64_t inShape1, uint64_t m0, uint64_t s0, int64_t left0, int64_t left1)
 {
-    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint64_t dstIdx = idx;
         int64_t inIndex[DIM] = {0};
 
@@ -109,13 +108,14 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_HALF_THREAD_DIM) __aicore__ void SimtComp
 }
 
 template <typename T, int32_t DIM>
-__simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_HALF_THREAD_DIM) __aicore__ void SimtComputeCircularHugeDimThree(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, uint64_t outputSize, uint32_t blockIdx, uint32_t blockNum,
-    uint64_t outStride0, uint64_t outStride1, uint64_t inShape0, uint64_t inShape1, uint64_t inShape2, uint64_t m0,
-    uint64_t m1, uint64_t s0, uint64_t s1, int64_t left0, int64_t left1, int64_t left2)
+__simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_HALF_THREAD_DIM) __aicore__
+    void SimtComputeCircularHugeDimThree(__gm__ T* inputGM, __gm__ volatile T* outputGM, uint64_t outputSize,
+                                         uint32_t blockIdx, uint32_t blockNum, uint64_t outStride0, uint64_t outStride1,
+                                         uint64_t inShape0, uint64_t inShape1, uint64_t inShape2, uint64_t m0,
+                                         uint64_t m1, uint64_t s0, uint64_t s1, int64_t left0, int64_t left1,
+                                         int64_t left2)
 {
-    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint64_t dstIdx = idx;
         int64_t inIndex[DIM] = {0};
 
@@ -147,20 +147,20 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_HALF_THREAD_DIM) __aicore__ void SimtComp
             inIndex[2] -= inShape2;
         }
 
-        uint64_t inputOffset =
-            uint64_t(inIndex[0]) * inShape1 * inShape2 + uint64_t(inIndex[1]) * inShape2 + uint64_t(inIndex[DIM - 1]);
+        uint64_t inputOffset = uint64_t(inIndex[0]) * inShape1 * inShape2 + uint64_t(inIndex[1]) * inShape2 +
+                               uint64_t(inIndex[DIM - 1]);
         outputGM[idx] = inputGM[inputOffset];
     }
 }
 
 template <typename T, int32_t DIM>
-__simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_QUATER_THREAD_DIM) __aicore__ void SimtComputeCircularHugeDimFour(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, uint64_t outputSize, uint32_t blockIdx,
-    uint32_t blockNum, uint64_t m0, uint64_t m1, uint64_t m2, uint64_t s0, uint64_t s1, uint64_t s2)
+__simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_QUATER_THREAD_DIM) __aicore__
+    void SimtComputeCircularHugeDimFour(__gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling,
+                                        uint64_t outputSize, uint32_t blockIdx, uint32_t blockNum, uint64_t m0,
+                                        uint64_t m1, uint64_t m2, uint64_t s0, uint64_t s1, uint64_t s2)
 {
     GET_TILING_DATA_PTR_WITH_STRUCT(PadACTilingData, tD, tiling);
-    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint64_t dstIdx = idx;
         int64_t inIndex[DIM] = {0};
 
@@ -190,14 +190,14 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_QUATER_THREAD_DIM) __aicore__ void SimtCo
 }
 
 template <typename T, int32_t DIM>
-__simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_QUATER_THREAD_DIM) __aicore__ void SimtComputeCircularHugeDimFive(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, uint64_t outputSize, uint32_t blockIdx,
-    uint32_t blockNum, uint64_t m0, uint64_t m1, uint64_t m2, uint64_t m3, uint64_t s0, uint64_t s1, uint64_t s2,
-    uint64_t s3)
+__simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_QUATER_THREAD_DIM) __aicore__
+    void SimtComputeCircularHugeDimFive(__gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling,
+                                        uint64_t outputSize, uint32_t blockIdx, uint32_t blockNum, uint64_t m0,
+                                        uint64_t m1, uint64_t m2, uint64_t m3, uint64_t s0, uint64_t s1, uint64_t s2,
+                                        uint64_t s3)
 {
     GET_TILING_DATA_PTR_WITH_STRUCT(PadACTilingData, tD, tiling);
-    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint64_t dstIdx = idx;
         int64_t inIndex[DIM] = {0};
 
@@ -230,14 +230,14 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_QUATER_THREAD_DIM) __aicore__ void SimtCo
 }
 
 template <typename T, int32_t DIM>
-__simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_QUATER_THREAD_DIM) __aicore__ void SimtComputeCircularHugeDimSix(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, uint64_t outputSize, uint32_t blockIdx,
-    uint32_t blockNum, uint64_t m0, uint64_t m1, uint64_t m2, uint64_t m3, uint64_t m4, uint64_t s0, uint64_t s1,
-    uint64_t s2, uint64_t s3, uint64_t s4)
+__simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_QUATER_THREAD_DIM) __aicore__
+    void SimtComputeCircularHugeDimSix(__gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling,
+                                       uint64_t outputSize, uint32_t blockIdx, uint32_t blockNum, uint64_t m0,
+                                       uint64_t m1, uint64_t m2, uint64_t m3, uint64_t m4, uint64_t s0, uint64_t s1,
+                                       uint64_t s2, uint64_t s3, uint64_t s4)
 {
     GET_TILING_DATA_PTR_WITH_STRUCT(PadACTilingData, tD, tiling);
-    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint64_t dstIdx = idx;
         int64_t inIndex[DIM] = {0};
 
@@ -273,14 +273,14 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_QUATER_THREAD_DIM) __aicore__ void SimtCo
 }
 
 template <typename T, int32_t DIM>
-__simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_QUATER_THREAD_DIM) __aicore__ void SimtComputeCircularHugeDimSeven(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, uint64_t outputSize, uint32_t blockIdx,
-    uint32_t blockNum, uint64_t m0, uint64_t m1, uint64_t m2, uint64_t m3, uint64_t m4, uint64_t m5, uint64_t s0,
-    uint64_t s1, uint64_t s2, uint64_t s3, uint64_t s4, uint64_t s5)
+__simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_QUATER_THREAD_DIM) __aicore__
+    void SimtComputeCircularHugeDimSeven(__gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling,
+                                         uint64_t outputSize, uint32_t blockIdx, uint32_t blockNum, uint64_t m0,
+                                         uint64_t m1, uint64_t m2, uint64_t m3, uint64_t m4, uint64_t m5, uint64_t s0,
+                                         uint64_t s1, uint64_t s2, uint64_t s3, uint64_t s4, uint64_t s5)
 {
     GET_TILING_DATA_PTR_WITH_STRUCT(PadACTilingData, tD, tiling);
-    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint64_t dstIdx = idx;
         int64_t inIndex[DIM] = {0};
 
@@ -319,14 +319,15 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_QUATER_THREAD_DIM) __aicore__ void SimtCo
 }
 
 template <typename T, int32_t DIM>
-__simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_EIGHTH_THREAD_DIM) __aicore__ void SimtComputeCircularHugeDimEight(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, uint64_t outputSize, uint32_t blockIdx,
-    uint32_t blockNum, uint64_t m0, uint64_t m1, uint64_t m2, uint64_t m3, uint64_t m4, uint64_t m5, uint64_t m6,
-    uint64_t s0, uint64_t s1, uint64_t s2, uint64_t s3, uint64_t s4, uint64_t s5, uint64_t s6)
+__simt_vf__ LAUNCH_BOUND(CIRCULAR_HUGE_EIGHTH_THREAD_DIM) __aicore__
+    void SimtComputeCircularHugeDimEight(__gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling,
+                                         uint64_t outputSize, uint32_t blockIdx, uint32_t blockNum, uint64_t m0,
+                                         uint64_t m1, uint64_t m2, uint64_t m3, uint64_t m4, uint64_t m5, uint64_t m6,
+                                         uint64_t s0, uint64_t s1, uint64_t s2, uint64_t s3, uint64_t s4, uint64_t s5,
+                                         uint64_t s6)
 {
     GET_TILING_DATA_PTR_WITH_STRUCT(PadACTilingData, tD, tiling);
-    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint64_t dstIdx = idx;
         int64_t inIndex[DIM] = {0};
 
@@ -378,10 +379,10 @@ __aicore__ inline void PadCircularSimtHuge<T>::Process(GM_ADDR tiling)
     uint32_t mDimNum = mTD_->dimNum;
 
     if (mDimNum == 1) {
-        asc_vf_call<SimtComputeCircularHugeDimOne<T>>(
-            dim3(CIRCULAR_HUGE_HALF_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
-            (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), mTD_->outShape[0], mBlockIdx_, blockNum, mTD_->inShape[0],
-            mTD_->leftPad[0]);
+        asc_vf_call<SimtComputeCircularHugeDimOne<T>>(dim3(CIRCULAR_HUGE_HALF_THREAD_DIM),
+                                                      (__gm__ T*)(mInputGM_.GetPhyAddr()),
+                                                      (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), mTD_->outShape[0],
+                                                      mBlockIdx_, blockNum, mTD_->inShape[0], mTD_->leftPad[0]);
         return;
     }
 

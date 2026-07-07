@@ -19,8 +19,7 @@
 #include "broadcast_to_base.h"
 #include "kernel_operator.h"
 
-namespace BrcTo
-{
+namespace BrcTo {
 using namespace AscendC;
 
 using AscendC::MicroAPI::CreateMask;
@@ -32,8 +31,7 @@ using AscendC::MicroAPI::UpdateMask;
 constexpr int64_t DataCopyAlignUnit = 32;
 
 template <typename T, typename U>
-class BrcToWithTailAxis : public BrcToBase<U>
-{
+class BrcToWithTailAxis : public BrcToBase<U> {
 public:
     __aicore__ inline BrcToWithTailAxis(){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const U* tilingDataPtr, TPipe* pipeIn);
@@ -213,6 +211,6 @@ __aicore__ inline void BrcToWithTailAxis<T, U>::VFBrcTo(LocalTensor<T> outTensor
     }
 }
 
-}  // namespace BrcTo
+} // namespace BrcTo
 
 #endif

@@ -73,20 +73,20 @@ private:
 
     __aicore__ inline void ParseTilingData();
     __aicore__ inline int64_t FindPermIndex(int64_t j);
-    __aicore__ inline void GetLoopAddressOffsetImpl(
-        bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[], int64_t cutIndex1, int64_t cutIndex2,
-        const int64_t expandedShape[], const int64_t inUbShape[]);
-    __aicore__ inline void GetMainLoopAddressOffset(
-        bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[], const int64_t expandedShape[],
-        const int64_t inUbShape[]);
-    __aicore__ inline void GetTailLoopAddressOffset(
-        bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[], int64_t cutIndex,
-        const int64_t expandedShape[], const int64_t inUbShape[]);
-    __aicore__ inline void GetTailTailLoopAddressOffset(
-        bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[], int64_t inputCutIndex, int64_t outputCutIndex,
-        const int64_t expandedShape[], const int64_t inUbShape[]);
-    __aicore__ inline MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> SetupLoopInfo(
-        const int64_t inUbSrcShape[], const int64_t inUbDstShape[]);
+    __aicore__ inline void GetLoopAddressOffsetImpl(bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[],
+                                                    int64_t cutIndex1, int64_t cutIndex2, const int64_t expandedShape[],
+                                                    const int64_t inUbShape[]);
+    __aicore__ inline void GetMainLoopAddressOffset(bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[],
+                                                    const int64_t expandedShape[], const int64_t inUbShape[]);
+    __aicore__ inline void GetTailLoopAddressOffset(bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[],
+                                                    int64_t cutIndex, const int64_t expandedShape[],
+                                                    const int64_t inUbShape[]);
+    __aicore__ inline void GetTailTailLoopAddressOffset(bool isSrc, int64_t loopNumArray[],
+                                                        int64_t loopShapeSizeArray[], int64_t inputCutIndex,
+                                                        int64_t outputCutIndex, const int64_t expandedShape[],
+                                                        const int64_t inUbShape[]);
+    __aicore__ inline MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> SetupLoopInfo(const int64_t inUbSrcShape[],
+                                                                         const int64_t inUbDstShape[]);
     __aicore__ inline void ProcessMain(int64_t loopidxStart, int64_t loopidxEnd);
     __aicore__ inline void ProcessOutputTail(int64_t loopidxStart, int64_t loopidxEnd);
     __aicore__ inline void ProcessInputTail(int64_t loopidxStart, int64_t loopidxEnd);
@@ -99,8 +99,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void TransposeCutTwoAxis<T>::Init(
-    GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void TransposeCutTwoAxis<T>::Init(GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData,
+                                                    TPipe* pipe)
 {
     blockIdx_ = GetBlockIdx();
     tiling_ = tilingData;
@@ -191,9 +191,11 @@ __aicore__ inline int64_t TransposeCutTwoAxis<T>::FindPermIndex(int64_t j)
 }
 
 template <typename T>
-__aicore__ inline void TransposeCutTwoAxis<T>::GetLoopAddressOffsetImpl(
-    bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[], int64_t cutIndex1, int64_t cutIndex2,
-    const int64_t expandedShape[], const int64_t inUbShape[])
+__aicore__ inline void TransposeCutTwoAxis<T>::GetLoopAddressOffsetImpl(bool isSrc, int64_t loopNumArray[],
+                                                                        int64_t loopShapeSizeArray[], int64_t cutIndex1,
+                                                                        int64_t cutIndex2,
+                                                                        const int64_t expandedShape[],
+                                                                        const int64_t inUbShape[])
 {
     int64_t startIndex = NDDMA_MAX_DIM_NUM - 1;
     for (int64_t i = 0; i < NDDMA_MAX_DIM_NUM; i++) {
@@ -221,17 +223,19 @@ __aicore__ inline void TransposeCutTwoAxis<T>::GetLoopAddressOffsetImpl(
 }
 
 template <typename T>
-__aicore__ inline void TransposeCutTwoAxis<T>::GetMainLoopAddressOffset(
-    bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[], const int64_t expandedShape[],
-    const int64_t inUbShape[])
+__aicore__ inline void TransposeCutTwoAxis<T>::GetMainLoopAddressOffset(bool isSrc, int64_t loopNumArray[],
+                                                                        int64_t loopShapeSizeArray[],
+                                                                        const int64_t expandedShape[],
+                                                                        const int64_t inUbShape[])
 {
     GetLoopAddressOffsetImpl(isSrc, loopNumArray, loopShapeSizeArray, -1, -1, expandedShape, inUbShape);
 }
 
 template <typename T>
-__aicore__ inline void TransposeCutTwoAxis<T>::GetTailLoopAddressOffset(
-    bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[], int64_t cutIndex,
-    const int64_t expandedShape[], const int64_t inUbShape[])
+__aicore__ inline void TransposeCutTwoAxis<T>::GetTailLoopAddressOffset(bool isSrc, int64_t loopNumArray[],
+                                                                        int64_t loopShapeSizeArray[], int64_t cutIndex,
+                                                                        const int64_t expandedShape[],
+                                                                        const int64_t inUbShape[])
 {
     GetLoopAddressOffsetImpl(isSrc, loopNumArray, loopShapeSizeArray, cutIndex, -1, expandedShape, inUbShape);
 }
@@ -241,8 +245,8 @@ __aicore__ inline void TransposeCutTwoAxis<T>::GetTailTailLoopAddressOffset(
     bool isSrc, int64_t loopNumArray[], int64_t loopShapeSizeArray[], int64_t inputCutIndex, int64_t outputCutIndex,
     const int64_t expandedShape[], const int64_t inUbShape[])
 {
-    GetLoopAddressOffsetImpl(isSrc, loopNumArray, loopShapeSizeArray, inputCutIndex, outputCutIndex,
-        expandedShape, inUbShape);
+    GetLoopAddressOffsetImpl(isSrc, loopNumArray, loopShapeSizeArray, inputCutIndex, outputCutIndex, expandedShape,
+                             inUbShape);
 }
 
 template <typename T>
@@ -299,8 +303,8 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessMain(int64_t loopidxStart,
 {
     // main
     T constValue = 0;
-    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoMain =
-        SetupLoopInfo(tiling_->inUbMainSrcShape, tiling_->inUbMainDstShape);
+    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoMain = SetupLoopInfo(tiling_->inUbMainSrcShape,
+                                                                      tiling_->inUbMainDstShape);
     MultiCopyParams<T, NDDMA_MAX_DIM_NUM> paramsMain = {loopInfoMain, constValue};
 
     DataCopyExtParams copyOutParamsMain;
@@ -319,13 +323,13 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessMain(int64_t loopidxStart,
 
     int64_t srcLoopNumArray[NDDMA_MAX_DIM_NUM] = {0};
     int64_t srcLoopShapeSizeArray[NDDMA_MAX_DIM_NUM] = {0};
-    GetMainLoopAddressOffset(
-        true, srcLoopNumArray, srcLoopShapeSizeArray, tiling_->expandedInputShape, tiling_->inUbMainSrcShape);
+    GetMainLoopAddressOffset(true, srcLoopNumArray, srcLoopShapeSizeArray, tiling_->expandedInputShape,
+                             tiling_->inUbMainSrcShape);
 
     int64_t dstLoopNumArray[NDDMA_MAX_DIM_NUM] = {0};
     int64_t dstLoopShapeSizeArray[NDDMA_MAX_DIM_NUM] = {0};
-    GetMainLoopAddressOffset(
-        false, dstLoopNumArray, dstLoopShapeSizeArray, tiling_->expandedOutputShape, tiling_->inUbMainDstShape);
+    GetMainLoopAddressOffset(false, dstLoopNumArray, dstLoopShapeSizeArray, tiling_->expandedOutputShape,
+                             tiling_->inUbMainDstShape);
 
     // multicore cycle align main blocks
     for (int64_t loopidx = loopidxStart; loopidx <= loopidxEnd; loopidx++) {
@@ -351,9 +355,8 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessMain(int64_t loopidxStart,
         SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
         LocalTensor<T> bindLocalOut = vecQue_.DeQue<T>();
         for (int64_t i = 0; i < mainLoopSize_[4]; i++) {
-            DataCopyPad(
-                outputGM_[dstAddressOffset + i * loopDstStride_[4]], bindLocalOut[i * mainLoopSrcStride_[4]],
-                copyOutParamsMain);
+            DataCopyPad(outputGM_[dstAddressOffset + i * loopDstStride_[4]], bindLocalOut[i * mainLoopSrcStride_[4]],
+                        copyOutParamsMain);
         }
         ResetLoopModePara(DataCopyMVType::UB_TO_OUT);
         vecQue_.FreeTensor(bindLocalOut);
@@ -365,8 +368,8 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessInputTail(int64_t loopidxS
 {
     // NDDMA loopInfo init
     T constValue = 0;
-    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoInputTail =
-        SetupLoopInfo(tiling_->inUbInputTailSrcShape, tiling_->inUbInputTailDstShape);
+    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoInputTail = SetupLoopInfo(tiling_->inUbInputTailSrcShape,
+                                                                           tiling_->inUbInputTailDstShape);
     MultiCopyParams<T, NDDMA_MAX_DIM_NUM> paramsInputTail = {loopInfoInputTail, constValue};
 
     DataCopyExtParams copyOutParamsInputTail;
@@ -386,15 +389,13 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessInputTail(int64_t loopidxS
     // inputTail
     int64_t inputTailSrcLoopNumArray[NDDMA_MAX_DIM_NUM] = {0};
     int64_t inputTailSrcLoopShapeSizeArray[NDDMA_MAX_DIM_NUM] = {0};
-    GetTailLoopAddressOffset(
-        true, inputTailSrcLoopNumArray, inputTailSrcLoopShapeSizeArray, expandedInputCutIndex_,
-        tiling_->expandedInputShape, tiling_->inUbInputTailSrcShape);
+    GetTailLoopAddressOffset(true, inputTailSrcLoopNumArray, inputTailSrcLoopShapeSizeArray, expandedInputCutIndex_,
+                             tiling_->expandedInputShape, tiling_->inUbInputTailSrcShape);
 
     int64_t inputTailDstLoopNumArray[NDDMA_MAX_DIM_NUM] = {0};
     int64_t inputTailDstLoopShapeSizeArray[NDDMA_MAX_DIM_NUM] = {0};
-    GetTailLoopAddressOffset(
-        false, inputTailDstLoopNumArray, inputTailDstLoopShapeSizeArray, outputInputCutIndex_,
-        tiling_->expandedOutputShape, tiling_->inUbInputTailDstShape);
+    GetTailLoopAddressOffset(false, inputTailDstLoopNumArray, inputTailDstLoopShapeSizeArray, outputInputCutIndex_,
+                             tiling_->expandedOutputShape, tiling_->inUbInputTailDstShape);
 
     for (int64_t loopidx = loopidxStart; loopidx <= loopidxEnd; loopidx++) {
         int64_t srcAddressOffset = inputTailSrcAddressOffsetBase_;
@@ -402,22 +403,20 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessInputTail(int64_t loopidxS
         int64_t ubAddressOffset = 0;
 
         int64_t srcAddressOffsetMixedBase[NDDMA_MAX_DIM_NUM] = {0};
-        DecimalToMixedBase(
-            loopidx -
-                ((tiling_->expandedInputShape[expandedInputCutIndex_] /
-                  tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
-                 (tiling_->expandedInputShape[inputOutputCutIndex_] / tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
-                 outUbLoop_),
-            inputTailSrcLoopNumArray, srcAddressOffsetMixedBase);
+        DecimalToMixedBase(loopidx - ((tiling_->expandedInputShape[expandedInputCutIndex_] /
+                                       tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
+                                      (tiling_->expandedInputShape[inputOutputCutIndex_] /
+                                       tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
+                                      outUbLoop_),
+                           inputTailSrcLoopNumArray, srcAddressOffsetMixedBase);
 
         int64_t dstAddressOffsetMixedBase[NDDMA_MAX_DIM_NUM] = {0};
-        DecimalToMixedBase(
-            loopidx -
-                ((tiling_->expandedInputShape[expandedInputCutIndex_] /
-                  tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
-                 (tiling_->expandedInputShape[inputOutputCutIndex_] / tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
-                 outUbLoop_),
-            inputTailDstLoopNumArray, dstAddressOffsetMixedBase);
+        DecimalToMixedBase(loopidx - ((tiling_->expandedInputShape[expandedInputCutIndex_] /
+                                       tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
+                                      (tiling_->expandedInputShape[inputOutputCutIndex_] /
+                                       tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
+                                      outUbLoop_),
+                           inputTailDstLoopNumArray, dstAddressOffsetMixedBase);
         for (int64_t i = 0; i < NDDMA_MAX_DIM_NUM; i++) {
             if (inputTailSrcLoopShapeSizeArray[i] == 0) {
                 break;
@@ -431,9 +430,8 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessInputTail(int64_t loopidxS
         SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
         LocalTensor<T> bindLocalOut = vecQue_.DeQue<T>();
         for (int64_t i = 0; i < inputTailLoopSize_[4]; i++) {
-            DataCopyPad(
-                outputGM_[dstAddressOffset + i * loopDstStride_[4]], bindLocalOut[i * inputTailLoopSrcStride_[4]],
-                copyOutParamsInputTail);
+            DataCopyPad(outputGM_[dstAddressOffset + i * loopDstStride_[4]],
+                        bindLocalOut[i * inputTailLoopSrcStride_[4]], copyOutParamsInputTail);
         }
         ResetLoopModePara(DataCopyMVType::UB_TO_OUT);
         vecQue_.FreeTensor(bindLocalOut);
@@ -445,8 +443,8 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessOutputTail(int64_t loopidx
 {
     // NDDMA loopInfo init
     T constValue = 0;
-    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoOutputTail =
-        SetupLoopInfo(tiling_->inUbOutputTailSrcShape, tiling_->inUbOutputTailDstShape);
+    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoOutputTail = SetupLoopInfo(tiling_->inUbOutputTailSrcShape,
+                                                                            tiling_->inUbOutputTailDstShape);
     MultiCopyParams<T, NDDMA_MAX_DIM_NUM> paramsOutputTail = {loopInfoOutputTail, constValue};
 
     DataCopyExtParams copyOutParamsOutputTail;
@@ -466,29 +464,30 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessOutputTail(int64_t loopidx
     // outputTail
     int64_t outputTailSrcLoopNumArray[NDDMA_MAX_DIM_NUM] = {0};
     int64_t outputTailSrcLoopShapeSizeArray[NDDMA_MAX_DIM_NUM] = {0};
-    GetTailLoopAddressOffset(
-        true, outputTailSrcLoopNumArray, outputTailSrcLoopShapeSizeArray, inputOutputCutIndex_,
-        tiling_->expandedInputShape, tiling_->inUbOutputTailSrcShape);
+    GetTailLoopAddressOffset(true, outputTailSrcLoopNumArray, outputTailSrcLoopShapeSizeArray, inputOutputCutIndex_,
+                             tiling_->expandedInputShape, tiling_->inUbOutputTailSrcShape);
 
     int64_t outputTailDstLoopNumArray[NDDMA_MAX_DIM_NUM] = {0};
     int64_t outputTailDstLoopShapeSizeArray[NDDMA_MAX_DIM_NUM] = {0};
-    GetTailLoopAddressOffset(
-        false, outputTailDstLoopNumArray, outputTailDstLoopShapeSizeArray, expandedOutputCutIndex_,
-        tiling_->expandedOutputShape, tiling_->inUbOutputTailDstShape);
+    GetTailLoopAddressOffset(false, outputTailDstLoopNumArray, outputTailDstLoopShapeSizeArray, expandedOutputCutIndex_,
+                             tiling_->expandedOutputShape, tiling_->inUbOutputTailDstShape);
 
     int64_t idxOffset = 0;
     if (tiling_->inTailFactor == 0) {
-        idxOffset =
-            (tiling_->expandedInputShape[expandedInputCutIndex_] / tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
-            (tiling_->expandedInputShape[inputOutputCutIndex_] / tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
-            outUbLoop_;
+        idxOffset = (tiling_->expandedInputShape[expandedInputCutIndex_] /
+                     tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
+                    (tiling_->expandedInputShape[inputOutputCutIndex_] /
+                     tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
+                    outUbLoop_;
     } else {
-        idxOffset =
-            (tiling_->expandedInputShape[expandedInputCutIndex_] / tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
-                (tiling_->expandedInputShape[inputOutputCutIndex_] / tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
-                outUbLoop_ +
-            (tiling_->expandedInputShape[inputOutputCutIndex_] / tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
-                outUbLoop_;
+        idxOffset = (tiling_->expandedInputShape[expandedInputCutIndex_] /
+                     tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
+                        (tiling_->expandedInputShape[inputOutputCutIndex_] /
+                         tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
+                        outUbLoop_ +
+                    (tiling_->expandedInputShape[inputOutputCutIndex_] /
+                     tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
+                        outUbLoop_;
     }
 
     for (int64_t loopidx = loopidxStart; loopidx <= loopidxEnd; loopidx++) {
@@ -514,9 +513,8 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessOutputTail(int64_t loopidx
         SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
         LocalTensor<T> bindLocalOut = vecQue_.DeQue<T>();
         for (int64_t i = 0; i < outputTailLoopSize_[4]; i++) {
-            DataCopyPad(
-                outputGM_[dstAddressOffset + i * loopDstStride_[4]], bindLocalOut[i * outputTailLoopSrcStride_[4]],
-                copyOutParamsOutputTail);
+            DataCopyPad(outputGM_[dstAddressOffset + i * loopDstStride_[4]],
+                        bindLocalOut[i * outputTailLoopSrcStride_[4]], copyOutParamsOutputTail);
         }
         ResetLoopModePara(DataCopyMVType::UB_TO_OUT);
         vecQue_.FreeTensor(bindLocalOut);
@@ -528,8 +526,8 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessTail(int64_t loopidxStart,
 {
     // NDDMA loopInfo init
     T constValue = 0;
-    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoTail =
-        SetupLoopInfo(tiling_->inUbTailSrcShape, tiling_->inUbTailDstShape);
+    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoTail = SetupLoopInfo(tiling_->inUbTailSrcShape,
+                                                                      tiling_->inUbTailDstShape);
     MultiCopyParams<T, NDDMA_MAX_DIM_NUM> paramsTail = {loopInfoTail, constValue};
 
     DataCopyExtParams copyOutParamsTail;
@@ -552,29 +550,30 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessTail(int64_t loopidxStart,
 
     int64_t tailSrcLoopNumArray[NDDMA_MAX_DIM_NUM] = {0};
     int64_t tailSrcLoopShapeSizeArray[NDDMA_MAX_DIM_NUM] = {0};
-    GetTailTailLoopAddressOffset(
-        true, tailSrcLoopNumArray, tailSrcLoopShapeSizeArray, expandedInputCutIndex_, inputOutputCutIndex_,
-        tiling_->expandedInputShape, tiling_->inUbTailSrcShape);
+    GetTailTailLoopAddressOffset(true, tailSrcLoopNumArray, tailSrcLoopShapeSizeArray, expandedInputCutIndex_,
+                                 inputOutputCutIndex_, tiling_->expandedInputShape, tiling_->inUbTailSrcShape);
 
     int64_t tailDstLoopNumArray[NDDMA_MAX_DIM_NUM] = {0};
     int64_t tailDstLoopShapeSizeArray[NDDMA_MAX_DIM_NUM] = {0};
-    GetTailTailLoopAddressOffset(
-        false, tailDstLoopNumArray, tailDstLoopShapeSizeArray, expandedOutputCutIndex_, outputInputCutIndex_,
-        tiling_->expandedOutputShape, tiling_->inUbTailDstShape);
+    GetTailTailLoopAddressOffset(false, tailDstLoopNumArray, tailDstLoopShapeSizeArray, expandedOutputCutIndex_,
+                                 outputInputCutIndex_, tiling_->expandedOutputShape, tiling_->inUbTailDstShape);
 
     for (int64_t loopidx = loopidxStart; loopidx <= loopidxEnd; loopidx++) {
         int64_t srcAddressOffset = tailSrcAddressOffsetBase;
         int64_t dstAddressOffset = tailDstAddressOffsetBase;
 
-        int64_t tailLoopLocalIdx =
-            loopidx -
-            ((tiling_->expandedInputShape[expandedInputCutIndex_] / tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
-             (tiling_->expandedInputShape[inputOutputCutIndex_] / tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
-             outUbLoop_) -
-            ((tiling_->expandedInputShape[expandedInputCutIndex_] / tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
-             outUbLoop_) -
-            ((tiling_->expandedInputShape[inputOutputCutIndex_] / tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
-             outUbLoop_);
+        int64_t tailLoopLocalIdx = loopidx -
+                                   ((tiling_->expandedInputShape[expandedInputCutIndex_] /
+                                     tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
+                                    (tiling_->expandedInputShape[inputOutputCutIndex_] /
+                                     tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
+                                    outUbLoop_) -
+                                   ((tiling_->expandedInputShape[expandedInputCutIndex_] /
+                                     tiling_->inUbMainSrcShape[expandedInputCutIndex_]) *
+                                    outUbLoop_) -
+                                   ((tiling_->expandedInputShape[inputOutputCutIndex_] /
+                                     tiling_->inUbMainSrcShape[inputOutputCutIndex_]) *
+                                    outUbLoop_);
 
         int64_t srcAddressOffsetMixedBase[NDDMA_MAX_DIM_NUM] = {0};
         DecimalToMixedBase(tailLoopLocalIdx, tailSrcLoopNumArray, srcAddressOffsetMixedBase);
@@ -594,9 +593,8 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessTail(int64_t loopidxStart,
         SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
         LocalTensor<T> bindLocalOut = vecQue_.DeQue<T>();
         for (int64_t i = 0; i < tailLoopSize_[4]; i++) {
-            DataCopyPad(
-                outputGM_[dstAddressOffset + i * loopDstStride_[4]], bindLocalOut[i * tailLoopSrcStride_[4]],
-                copyOutParamsTail);
+            DataCopyPad(outputGM_[dstAddressOffset + i * loopDstStride_[4]], bindLocalOut[i * tailLoopSrcStride_[4]],
+                        copyOutParamsTail);
         }
         ResetLoopModePara(DataCopyMVType::UB_TO_OUT);
         vecQue_.FreeTensor(bindLocalOut);
@@ -631,12 +629,12 @@ __aicore__ inline void TransposeCutTwoAxis<T>::GetCopyOutParams()
     }
     mainLoopSrcStride_[1] = Ops::Base::CeilDiv(static_cast<int64_t>(mainLoopSize_[0] * sizeof(T)), BLOCK_SIZE_BYTE) *
                             BLOCK_SIZE_BYTE / sizeof(T);
-    inputTailLoopSrcStride_[1] =
-        Ops::Base::CeilDiv(static_cast<int64_t>(inputTailLoopSize_[0] * sizeof(T)), BLOCK_SIZE_BYTE) * BLOCK_SIZE_BYTE /
-        sizeof(T);
-    outputTailLoopSrcStride_[1] =
-        Ops::Base::CeilDiv(static_cast<int64_t>(outputTailLoopSize_[0] * sizeof(T)), BLOCK_SIZE_BYTE) *
-        BLOCK_SIZE_BYTE / sizeof(T);
+    inputTailLoopSrcStride_[1] = Ops::Base::CeilDiv(static_cast<int64_t>(inputTailLoopSize_[0] * sizeof(T)),
+                                                    BLOCK_SIZE_BYTE) *
+                                 BLOCK_SIZE_BYTE / sizeof(T);
+    outputTailLoopSrcStride_[1] = Ops::Base::CeilDiv(static_cast<int64_t>(outputTailLoopSize_[0] * sizeof(T)),
+                                                     BLOCK_SIZE_BYTE) *
+                                  BLOCK_SIZE_BYTE / sizeof(T);
     tailLoopSrcStride_[1] = Ops::Base::CeilDiv(static_cast<int64_t>(tailLoopSize_[0] * sizeof(T)), BLOCK_SIZE_BYTE) *
                             BLOCK_SIZE_BYTE / sizeof(T);
     for (int64_t i = 2; i < NDDMA_MAX_DIM_NUM; i++) {

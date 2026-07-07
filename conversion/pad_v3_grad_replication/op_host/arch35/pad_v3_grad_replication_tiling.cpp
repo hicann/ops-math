@@ -32,10 +32,10 @@ static constexpr uint64_t INT16_MAX_VAL = 32767; // int16最大值，用于16位
 static constexpr uint8_t FP32_SIZE = 4;
 static constexpr uint8_t FP16_SIZE = 2;
 static constexpr uint8_t BF16_SIZE = 2;
-static constexpr uint8_t INT8_BYTE_SIZE = 1;   // int8/uint8数据类型占用字节数
-static constexpr uint8_t INT16_BYTE_SIZE = 2;  // int16/uint16数据类型占用字节数
-static constexpr uint8_t INT32_BYTE_SIZE = 4;  // int32/uint32数据类型占用字节数
-static constexpr uint8_t INT64_BYTE_SIZE = 8;  // int64/uint64数据类型占用字节数
+static constexpr uint8_t INT8_BYTE_SIZE = 1;  // int8/uint8数据类型占用字节数
+static constexpr uint8_t INT16_BYTE_SIZE = 2; // int16/uint16数据类型占用字节数
+static constexpr uint8_t INT32_BYTE_SIZE = 4; // int32/uint32数据类型占用字节数
+static constexpr uint8_t INT64_BYTE_SIZE = 8; // int64/uint64数据类型占用字节数
 
 template <typename T>
 std::string PadV3GradReplicationTiling::ToString(const T* value, size_t size)
@@ -69,8 +69,8 @@ ge::graphStatus PadV3GradReplicationTiling::Init()
     OP_CHECK_IF(ubSize_ <= 0, OP_LOGE(context_->GetNodeName(), "Failed to get ub size."), return ge::GRAPH_FAILED);
 
     blockSize_ = static_cast<uint64_t>(Ops::Base::GetUbBlockSize(context_));
-    OP_CHECK_IF(
-        blockSize_ == 0, OP_LOGE(context_->GetNodeName(), "Failed to get ub block size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(blockSize_ == 0, OP_LOGE(context_->GetNodeName(), "Failed to get ub block size."),
+                return ge::GRAPH_FAILED);
 
     OP_LOGI(context_->GetNodeName(), "Init: coreNum=%u, ubSize=%lu, blockSize=%lu", coreNum_, ubSize_, blockSize_);
     return ge::GRAPH_SUCCESS;
@@ -82,11 +82,10 @@ ge::graphStatus PadV3GradReplicationTiling::GetShapeAttrsInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, xShape);
 
     dimNum_ = xShape->GetStorageShape().GetDimNum();
-    OP_CHECK_IF(
-        dimNum_ == 0 || dimNum_ > MAX_DIM_NUM,
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(),
-            "x", std::to_string(dimNum_).c_str(), "The shape dim of x must be within the range [1, 8]"),
-            return ge::GRAPH_FAILED);
+    OP_CHECK_IF(dimNum_ == 0 || dimNum_ > MAX_DIM_NUM,
+                OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "x", std::to_string(dimNum_).c_str(),
+                                                         "The shape dim of x must be within the range [1, 8]"),
+                return ge::GRAPH_FAILED);
 
     for (size_t i = 0; i < dimNum_; i++) {
         outputShape_[i] = xShape->GetStorageShape().GetDim(i); // padding后的tensor（含padding）
@@ -127,15 +126,14 @@ ge::graphStatus PadV3GradReplicationTiling::GetShapeAttrsInfo()
             dataSize_ = INT64_BYTE_SIZE;
             break;
         default:
-            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(),
-                "x", Ops::Base::ToString(paramsDtype_).c_str(),
-                "The dtype of x must be float, float16, bfloat16 or integer types");
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
+                                                  Ops::Base::ToString(paramsDtype_).c_str(),
+                                                  "The dtype of x must be float, float16, bfloat16 or integer types");
             return ge::GRAPH_FAILED;
     }
 
-    OP_LOGI(
-        context_->GetNodeName(), "GetShapeAttrsInfo: dimNum=%u, dtype=%s, dataSize=%u", dimNum_,
-        Ops::Base::ToString(paramsDtype_).c_str(), dataSize_);
+    OP_LOGI(context_->GetNodeName(), "GetShapeAttrsInfo: dimNum=%u, dtype=%s, dataSize=%u", dimNum_,
+            Ops::Base::ToString(paramsDtype_).c_str(), dataSize_);
     OP_LOGI(context_->GetNodeName(), "inputShape=%s", ToString(inputShape_, dimNum_).c_str());
     OP_LOGI(context_->GetNodeName(), "outputShape=%s", ToString(outputShape_, dimNum_).c_str());
 
@@ -167,12 +165,10 @@ ge::graphStatus PadV3GradReplicationTiling::GetPaddings()
     }
 
     const size_t paddingsNum = static_cast<size_t>(paddingsTensor->GetShapeSize());
-    OP_CHECK_IF(
-        paddingsNum != PAIR * dimNum_,
-        OP_LOGE_FOR_INVALID_LISTSIZE(context_->GetNodeName(),
-            "paddings",
-            std::to_string(paddingsNum).c_str(), std::to_string(PAIR * dimNum_).c_str()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(paddingsNum != PAIR * dimNum_,
+                OP_LOGE_FOR_INVALID_LISTSIZE(context_->GetNodeName(), "paddings", std::to_string(paddingsNum).c_str(),
+                                             std::to_string(PAIR * dimNum_).c_str()),
+                return ge::GRAPH_FAILED);
 
     ge::DataType paddingsDtype = paddingsTensor->GetDataType();
     switch (paddingsDtype) {
@@ -183,9 +179,9 @@ ge::graphStatus PadV3GradReplicationTiling::GetPaddings()
             GetPaddingsToShape<int64_t>(paddingsTensor);
             break;
         default:
-            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(),
-                "paddings", Ops::Base::ToString(paddingsDtype).c_str(),
-                "The dtype of paddings must be int32 or int64");
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "paddings",
+                                                  Ops::Base::ToString(paddingsDtype).c_str(),
+                                                  "The dtype of paddings must be int32 or int64");
             return ge::GRAPH_FAILED;
     }
 
@@ -217,7 +213,8 @@ void PadV3GradReplicationTiling::CalcStrideAligned()
 
 bool PadV3GradReplicationTiling::IsPaddingDim(uint32_t axis) const
 {
-    return (dimNum_ <= PAD_GRAD_REPLICATION_MAX_PAD_DIMS_NUM) || (axis + PAD_GRAD_REPLICATION_MAX_PAD_DIMS_NUM >= dimNum_);
+    return (dimNum_ <= PAD_GRAD_REPLICATION_MAX_PAD_DIMS_NUM) ||
+           (axis + PAD_GRAD_REPLICATION_MAX_PAD_DIMS_NUM >= dimNum_);
 }
 
 uint64_t PadV3GradReplicationTiling::CalcWorstFactor(uint32_t axis) const
@@ -227,7 +224,8 @@ uint64_t PadV3GradReplicationTiling::CalcWorstFactor(uint32_t axis) const
     //   max(paddingLeft[k], paddingRight[k]) + 1 个切片
     uint64_t factor = 1;
     for (uint32_t k = 0; k < axis; k++) {
-        if (!IsPaddingDim(k)) continue;
+        if (!IsPaddingDim(k))
+            continue;
         uint64_t maxPad = std::max(static_cast<uint64_t>(leftPad_[k]), static_cast<uint64_t>(rightPad_[k]));
         factor *= inputShape_[k] == 1 ? leftPad_[k] + rightPad_[k] + 1 : (maxPad + 1);
     }
@@ -265,7 +263,7 @@ bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailabl
     //   - 非 cast ≤16 位: GatherToOutputBufGatherPath IndexT=uint16_t，限制 INT16_MAX
     //   - > 16 位: uint32_t 索引，无限制
     bool isCastType = (paramsDtype_ == ge::DT_FLOAT16 || paramsDtype_ == ge::DT_BF16);
-    uint64_t dataBufSz = isCastType ? FP32_SIZE : dataSize_;  // PromoteT 大小 vs T 大小
+    uint64_t dataBufSz = isCastType ? FP32_SIZE : dataSize_; // PromoteT 大小 vs T 大小
     uint64_t maxDataBufElements = UINT64_MAX;
     if (!isCastType && dataSize_ <= 2) {
         maxDataBufElements = INT16_MAX_VAL;
@@ -273,18 +271,17 @@ bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailabl
 
     // 每 tile 至多一端 pad（首 tile pL / 尾 tile pR），单 tile 才同时 pL + pR。
     // 先用 max(pL, pR) 估 budget，出单 tile 时再回验 pL + pR。
-    const uint64_t maxSinglePad  = (pL > pR) ? pL : pR;
+    const uint64_t maxSinglePad = (pL > pR) ? pL : pR;
     // dataBuf 用 PromoteT 大小，outputBuf 仍用 T 大小
-    const uint64_t perUnitBytes  = worstFactor * innerProdUb * dataBufSz + innerProdInGm * dataSize_;
-    const uint64_t fixedBytes    = worstFactor * innerProdUb * maxSinglePad * dataBufSz;
+    const uint64_t perUnitBytes = worstFactor * innerProdUb * dataBufSz + innerProdInGm * dataSize_;
+    const uint64_t fixedBytes = worstFactor * innerProdUb * maxSinglePad * dataBufSz;
     // 两个 buf 各自 CeilAlign 到 BLOCK_SIZE，最坏多占 2 × (BLOCK_SIZE - 1)
-    const uint64_t alignSlack    = 2 * blockSize_;
+    const uint64_t alignSlack = 2 * blockSize_;
 
-    OP_LOGI(
-        context_->GetNodeName(),
-        "TrySplitAxis: axis=%u, worstFactor=%lu, innerProdUb=%lu, innerProdInGm=%lu, pL=%lu, pR=%lu, "
-        "perUnitBytes=%lu, fixedBytes=%lu, ubAvailable=%lu",
-        axis, worstFactor, innerProdUb, innerProdInGm, pL, pR, perUnitBytes, fixedBytes, ubAvailable);
+    OP_LOGI(context_->GetNodeName(),
+            "TrySplitAxis: axis=%u, worstFactor=%lu, innerProdUb=%lu, innerProdInGm=%lu, pL=%lu, pR=%lu, "
+            "perUnitBytes=%lu, fixedBytes=%lu, ubAvailable=%lu",
+            axis, worstFactor, innerProdUb, innerProdInGm, pL, pR, perUnitBytes, fixedBytes, ubAvailable);
 
     if (perUnitBytes == 0) {
         OP_LOGI(context_->GetNodeName(), "axis=%u failed: perUnitBytes=0 (invalid shape)", axis);
@@ -292,18 +289,14 @@ bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailabl
     }
     // 阶梯式从 ubAvailable 减 fixedBytes / alignSlack，避免任何中间值 uint64 翻转
     if (fixedBytes >= ubAvailable) {
-        OP_LOGI(
-            context_->GetNodeName(),
-            "axis=%u failed: fixedBytes=%lu >= ubAvailable=%lu (两端 pad 区已超 UB)",
-            axis, fixedBytes, ubAvailable);
+        OP_LOGI(context_->GetNodeName(), "axis=%u failed: fixedBytes=%lu >= ubAvailable=%lu (两端 pad 区已超 UB)", axis,
+                fixedBytes, ubAvailable);
         return false;
     }
     uint64_t budget = ubAvailable - fixedBytes;
     if (alignSlack >= budget) {
-        OP_LOGI(
-            context_->GetNodeName(),
-            "axis=%u failed: alignSlack=%lu >= remaining budget=%lu",
-            axis, alignSlack, budget);
+        OP_LOGI(context_->GetNodeName(), "axis=%u failed: alignSlack=%lu >= remaining budget=%lu", axis, alignSlack,
+                budget);
         return false;
     }
     budget -= alignSlack;
@@ -320,15 +313,12 @@ bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailabl
         const uint64_t bothFixedBytes = worstFactor * innerProdUb * (pL + pR) * dataBufSz;
         if (bothFixedBytes + alignSlack >= ubAvailable) {
             if (inputShape_[axis] <= 1) {
-                OP_LOGI(context_->GetNodeName(),
-                    "axis=%u failed: singleTile both pads exceed UB and shape=1", axis);
+                OP_LOGI(context_->GetNodeName(), "axis=%u failed: singleTile both pads exceed UB and shape=1", axis);
                 return false;
             }
             splitSize_ = static_cast<uint32_t>(inputShape_[axis] - 1);
-            OP_LOGI(
-                context_->GetNodeName(),
-                "axis=%u: single-tile both pads exceed UB, force multi-tile splitSize=%u",
-                axis, splitSize_);
+            OP_LOGI(context_->GetNodeName(), "axis=%u: single-tile both pads exceed UB, force multi-tile splitSize=%u",
+                    axis, splitSize_);
         } else {
             uint64_t budgetBoth = ubAvailable - bothFixedBytes - alignSlack;
             uint64_t unitsBoth = budgetBoth / perUnitBytes;
@@ -338,30 +328,25 @@ bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailabl
                 if (inputShape_[axis] > 1) {
                     // pads fit UB but no room for even 1 data unit → force multi-tile
                     splitSize_ = static_cast<uint32_t>(inputShape_[axis] - 1);
-                    OP_LOGI(
-                        context_->GetNodeName(),
-                        "axis=%u: single-tile pads fit but no room for data, force multi-tile splitSize=%u",
-                        axis, splitSize_);
+                    OP_LOGI(context_->GetNodeName(),
+                            "axis=%u: single-tile pads fit but no room for data, force multi-tile splitSize=%u", axis,
+                            splitSize_);
                 } else {
-                    OP_LOGI(
-                        context_->GetNodeName(),
-                        "axis=%u failed: single-tile pads fit but no room for data with shape=1", axis);
+                    OP_LOGI(context_->GetNodeName(),
+                            "axis=%u failed: single-tile pads fit but no room for data with shape=1", axis);
                     return false;
                 }
             } else {
                 splitSize_ = static_cast<uint32_t>(unitsBoth);
-                OP_LOGI(
-                    context_->GetNodeName(),
-                    "axis=%u: single-tile both pads reduce to %u (bothFixed=%lu)",
-                    axis, splitSize_, bothFixedBytes);
+                OP_LOGI(context_->GetNodeName(), "axis=%u: single-tile both pads reduce to %u (bothFixed=%lu)", axis,
+                        splitSize_, bothFixedBytes);
             }
         }
     }
 
     // 检查 dataBuf 元素索引限制（B16 dtype Gather/Scatter uint16_t 索引）
     // dataBuf 分配与 kernel Init 一致：singleTile 用 pL+pR，multiTile 用 max(pL,pR)
-    uint64_t effectivePad = (static_cast<uint64_t>(splitSize_) == inputShape_[axis])
-        ? (pL + pR) : maxSinglePad;
+    uint64_t effectivePad = (static_cast<uint64_t>(splitSize_) == inputShape_[axis]) ? (pL + pR) : maxSinglePad;
     const uint64_t indexCoef = worstFactor * innerProdUb;
     if (maxDataBufElements != UINT64_MAX) {
         uint64_t dataBufElems = indexCoef * (static_cast<uint64_t>(splitSize_) + effectivePad);
@@ -376,14 +361,12 @@ bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailabl
                     uint64_t multiAllowedSlice = maxDataBufElements / indexCoef;
                     if (multiAllowedSlice > multiEffPad) {
                         uint64_t multiSplit = multiAllowedSlice - multiEffPad;
-                        splitSize_ = static_cast<uint32_t>(
-                            std::min(multiSplit, inputShape_[axis] - 1));
+                        splitSize_ = static_cast<uint32_t>(std::min(multiSplit, inputShape_[axis] - 1));
                         effectivePad = multiEffPad;
                         forcedMultiTile = true;
-                        OP_LOGI(
-                            context_->GetNodeName(),
-                            "axis=%u: uint16_t limit forced multi-tile, splitSize=%u, effectivePad=%lu",
-                            axis, splitSize_, effectivePad);
+                        OP_LOGI(context_->GetNodeName(),
+                                "axis=%u: uint16_t limit forced multi-tile, splitSize=%u, effectivePad=%lu", axis,
+                                splitSize_, effectivePad);
                     }
                 }
             }
@@ -395,20 +378,16 @@ bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailabl
                         axis, indexCoef, effectivePad);
                     return false;
                 }
-                uint64_t allowedSlice = maxDataBufElements / indexCoef;  // splitSize + effectivePad
+                uint64_t allowedSlice = maxDataBufElements / indexCoef; // splitSize + effectivePad
                 if (allowedSlice <= effectivePad) {
-                    OP_LOGI(
-                        context_->GetNodeName(),
-                        "axis=%u failed: allowedSlice=%lu ≤ effectivePad=%lu",
-                        axis, allowedSlice, effectivePad);
+                    OP_LOGI(context_->GetNodeName(), "axis=%u failed: allowedSlice=%lu ≤ effectivePad=%lu", axis,
+                            allowedSlice, effectivePad);
                     return false;
                 }
                 uint64_t allowedSplit = allowedSlice - effectivePad;
                 splitSize_ = static_cast<uint32_t>(std::min(allowedSplit, static_cast<uint64_t>(splitSize_)));
-                OP_LOGI(
-                    context_->GetNodeName(),
-                    "axis=%u: uint16_t index limit reduces splitSize to %u",
-                    axis, splitSize_);
+                OP_LOGI(context_->GetNodeName(), "axis=%u: uint16_t index limit reduces splitSize to %u", axis,
+                        splitSize_);
             }
         }
     }
@@ -425,15 +404,14 @@ bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailabl
     uint64_t splitCountAxis = Ops::Base::CeilDiv(inputShape_[axis], static_cast<uint64_t>(splitSize_));
     splitCount_ = static_cast<uint32_t>(outerCombos * splitCountAxis);
 
-    const uint64_t finalDataBufElems  = indexCoef * (static_cast<uint64_t>(splitSize_) + effectivePad);
-    const uint64_t finalDataBufBytes  = finalDataBufElems * dataSize_;
+    const uint64_t finalDataBufElems = indexCoef * (static_cast<uint64_t>(splitSize_) + effectivePad);
+    const uint64_t finalDataBufBytes = finalDataBufElems * dataSize_;
     const uint64_t finalOutputBufBytes = static_cast<uint64_t>(splitSize_) * innerProdInGm * dataSize_;
-    OP_LOGI(
-        context_->GetNodeName(),
-        "axis=%u success: splitSize=%u, splitCountAxis=%lu, outerCombos=%lu, splitCount=%u, "
-        "worstFactor=%lu, dataBufBytes=%lu, outputBufBytes=%lu",
-        axis, splitSize_, splitCountAxis, outerCombos, splitCount_, worstFactor,
-        finalDataBufBytes, finalOutputBufBytes);
+    OP_LOGI(context_->GetNodeName(),
+            "axis=%u success: splitSize=%u, splitCountAxis=%lu, outerCombos=%lu, splitCount=%u, "
+            "worstFactor=%lu, dataBufBytes=%lu, outputBufBytes=%lu",
+            axis, splitSize_, splitCountAxis, outerCombos, splitCount_, worstFactor, finalDataBufBytes,
+            finalOutputBufBytes);
 
     return true;
 }
@@ -464,11 +442,10 @@ void PadV3GradReplicationTiling::CalcSplitStrategy()
     }
     splitCount_ = static_cast<uint32_t>(outerCombos);
 
-    OP_LOGI(
-        context_->GetNodeName(),
-        "CalcSplitStrategy: non-tail axes failed, force tail axis=%u (edge_simt), "
-        "splitSize=%u, splitCount=%u",
-        splitAxis_, splitSize_, splitCount_);
+    OP_LOGI(context_->GetNodeName(),
+            "CalcSplitStrategy: non-tail axes failed, force tail axis=%u (edge_simt), "
+            "splitSize=%u, splitCount=%u",
+            splitAxis_, splitSize_, splitCount_);
 }
 
 void PadV3GradReplicationTiling::CalcUsedCore()
@@ -477,8 +454,7 @@ void PadV3GradReplicationTiling::CalcUsedCore()
     if (splitAxis_ == dimNum_ - 1) {
         usedCoreNum_ = coreNum_;
         tilesPerCore_ = 1;
-        OP_LOGI(
-            context_->GetNodeName(), "CalcUsedCore: tail axis edge_simt, use all cores=%u", usedCoreNum_);
+        OP_LOGI(context_->GetNodeName(), "CalcUsedCore: tail axis edge_simt, use all cores=%u", usedCoreNum_);
         return;
     }
 
@@ -491,9 +467,8 @@ void PadV3GradReplicationTiling::CalcUsedCore()
         tilesPerCore_ = Ops::Base::CeilDiv(splitCount_, usedCoreNum_);
     }
 
-    OP_LOGI(
-        context_->GetNodeName(), "CalcUsedCore: splitCount=%u, coreNum=%u, usedCoreNum=%u, tilesPerCore=%u",
-        splitCount_, coreNum_, usedCoreNum_, tilesPerCore_);
+    OP_LOGI(context_->GetNodeName(), "CalcUsedCore: splitCount=%u, coreNum=%u, usedCoreNum=%u, tilesPerCore=%u",
+            splitCount_, coreNum_, usedCoreNum_, tilesPerCore_);
 }
 
 void PadV3GradReplicationTiling::FillTilingData(PadV3GradReplicationTilingData* tilingData)
@@ -526,14 +501,13 @@ ge::graphStatus PadV3GradReplicationTiling::DoTiling()
 
     // Step 2: Get shape and attrs info
     ret = GetShapeAttrsInfo();
-    OP_CHECK_IF(
-        ret != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "GetShapeAttrsInfo failed."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "GetShapeAttrsInfo failed."),
+                return ge::GRAPH_FAILED);
 
     // Step 3: Get paddings
     ret = GetPaddings();
-    OP_CHECK_IF(
-        ret != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "GetPaddings failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "GetPaddings failed."),
+                return ge::GRAPH_FAILED);
 
     // Step 4: Calc stride (32B aligned)
     CalcStrideAligned();
@@ -559,9 +533,8 @@ ge::graphStatus PadV3GradReplicationTiling::DoTiling()
     size_t* workspaces = context_->GetWorkspaceSizes(1);
     workspaces[0] = SYS_WORK_SPACE_SIZE;
 
-    OP_LOGI(
-        context_->GetNodeName(), "PadV3GradReplication tiling done. tilingKey=%lu, blockDim=%u", tilingKey,
-        usedCoreNum_);
+    OP_LOGI(context_->GetNodeName(), "PadV3GradReplication tiling done. tilingKey=%lu, blockDim=%u", tilingKey,
+            usedCoreNum_);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -579,16 +552,14 @@ static ge::graphStatus TilingPrepare4PadV3GradReplication(gert::TilingParseConte
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->core_num = ascendcPlatform.GetCoreNumAiv();
 
-    OP_CHECK_IF(
-        compileInfo->core_num <= 0, OP_LOGE(context->GetNodeName(), "Failed to get core num."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(compileInfo->core_num <= 0, OP_LOGE(context->GetNodeName(), "Failed to get core num."),
+                return ge::GRAPH_FAILED);
 
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, compileInfo->ub_size);
     compileInfo->sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
 
-    OP_LOGI(
-        context->GetNodeName(), "TilingPrepare4PadV3GradReplication done. coreNum=%ld, ubSize=%lu",
-        compileInfo->core_num, compileInfo->ub_size);
+    OP_LOGI(context->GetNodeName(), "TilingPrepare4PadV3GradReplication done. coreNum=%ld, ubSize=%lu",
+            compileInfo->core_num, compileInfo->ub_size);
 
     return ge::GRAPH_SUCCESS;
 }

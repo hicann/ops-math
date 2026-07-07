@@ -49,9 +49,8 @@ inline static bool CheckFormat(const aclTensor* self, const aclTensor* out)
 {
     OP_CHECK(
         self->GetViewFormat() == out->GetViewFormat(),
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Format of input and output should be equal, self [%s], gradInoutput [%s].",
-            op::ToString(self->GetViewFormat()).GetString(), op::ToString(out->GetViewFormat()).GetString()),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format of input and output should be equal, self [%s], gradInoutput [%s].",
+                op::ToString(self->GetViewFormat()).GetString(), op::ToString(out->GetViewFormat()).GetString()),
         return false);
     return true;
 }

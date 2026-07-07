@@ -30,8 +30,8 @@ struct PadV3GradReplicationTilingData {
     uint64_t inputShape[PAD_GRAD_REPLICATION_MAX_DIMS_NUM];    // 原始tensor（不含padding）
     uint64_t outputShape[PAD_GRAD_REPLICATION_MAX_DIMS_NUM];   // padding后tensor（含padding）
     uint64_t strideAligned[PAD_GRAD_REPLICATION_MAX_DIMS_NUM]; // UB对齐stride
-    int64_t leftPad[PAD_GRAD_REPLICATION_MAX_DIMS_NUM];        // 所有维度左padding（实际运行时前N-5维为0）
-    int64_t rightPad[PAD_GRAD_REPLICATION_MAX_DIMS_NUM];       // 所有维度右padding（实际运行时前N-5维为0）
+    int64_t leftPad[PAD_GRAD_REPLICATION_MAX_DIMS_NUM];  // 所有维度左padding（实际运行时前N-5维为0）
+    int64_t rightPad[PAD_GRAD_REPLICATION_MAX_DIMS_NUM]; // 所有维度右padding（实际运行时前N-5维为0）
 };
 
 #endif // PAD_V3_GRAD_REPLICATION_STRUCT_H_

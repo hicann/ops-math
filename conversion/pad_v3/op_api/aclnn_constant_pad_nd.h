@@ -51,4 +51,4 @@ ACLNN_API aclnnStatus aclnnConstantPadNd(void* workspace, uint64_t workspaceSize
 }
 #endif
 
-#endif  // OP_API_INC_CONSTANT_PAD_ND_H_
+#endif // OP_API_INC_CONSTANT_PAD_ND_H_

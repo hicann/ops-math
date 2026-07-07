@@ -52,4 +52,4 @@ ACLNN_API aclnnStatus aclnnReplicationPad2d(void* workspace, uint64_t workspaceS
 }
 #endif
 
-#endif  // OP_API_INC_REPLICATION_PAD2D_H_
+#endif // OP_API_INC_REPLICATION_PAD2D_H_

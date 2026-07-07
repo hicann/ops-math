@@ -34,8 +34,7 @@ struct PadNormalParam {
 };
 
 template <typename T, int32_t KEY, typename U = int8_t>
-class KernelPadWithNormalWidth
-{
+class KernelPadWithNormalWidth {
 private:
     static constexpr uint32_t BLK_ELEMS = UB_BLOCK / sizeof(T);
     static constexpr uint32_t UB_AXES = (KEY / KEY_BASE) % KEY_BASE; // TilingKey倒数第二维为UB内轴个数
@@ -146,10 +145,11 @@ public:
                     if (outIndex_[ubAxis] + ubFactor <= tilingData_->leftPad[ubAxis]) {
                         // 输出都在左pad点左侧
                         inCopyLen_[ubAxis] = 0;
-                    } else if (
-                        outIndex_[ubAxis] + ubFactor < tilingData_->leftPad[ubAxis] + tilingData_->inShape[ubAxis]) {
+                    } else if (outIndex_[ubAxis] + ubFactor <
+                               tilingData_->leftPad[ubAxis] + tilingData_->inShape[ubAxis]) {
                         // 输出都在右pad点左侧
-                        inCopyLen_[ubAxis] = outIndex_[ubAxis] + ubFactor - inIndex_[ubAxis] - tilingData_->leftPad[ubAxis];
+                        inCopyLen_[ubAxis] = outIndex_[ubAxis] + ubFactor - inIndex_[ubAxis] -
+                                             tilingData_->leftPad[ubAxis];
                     } else {
                         // 输出跨过右pad点
                         inCopyLen_[ubAxis] = tilingData_->inShape[ubAxis] - inIndex_[ubAxis];
@@ -168,16 +168,15 @@ private:
     {
         // Copy IN
         LocalTensor<T> input = inQueue_.Get<T>();
-        LocalTensor<T> srcLocal =
-            input[(idx & 1) * (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T)];
-        PadNormalParam padParam = {
-            .padH = padHLength_,
-            .padW = padWLength_,
-            .padStride = {padStride_[0], padStride_[1], padStride_[2]},
-            .padHLOffset = {0, padHLOffset_[1], padHLOffset_[2]},
-            .padHROffset = {tilingData_->ubFactor, padHROffset_[1], padHROffset_[2]},
-            .padWLOffset = 0,
-            .padWROffset = static_cast<uint32_t>(tilingData_->inShape[tilingData_->dimNum - 1])};
+        LocalTensor<T>
+            srcLocal = input[(idx & 1) * (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T)];
+        PadNormalParam padParam = {.padH = padHLength_,
+                                   .padW = padWLength_,
+                                   .padStride = {padStride_[0], padStride_[1], padStride_[2]},
+                                   .padHLOffset = {0, padHLOffset_[1], padHLOffset_[2]},
+                                   .padHROffset = {tilingData_->ubFactor, padHROffset_[1], padHROffset_[2]},
+                                   .padWLOffset = 0,
+                                   .padWROffset = static_cast<uint32_t>(tilingData_->inShape[tilingData_->dimNum - 1])};
         bool hasMTE2 = false;
         bool hasPadding = false;
         CopyIn(srcLocal, padParam, hasMTE2, idx);
@@ -197,8 +196,8 @@ private:
                 WaitFlag<HardEvent::MTE3_V>(EVENT_ID1);
             }
             LocalTensor<T> input = inQueue_.Get<T>();
-            LocalTensor<T> nextLocal =
-                input[(nextIdx & 1) * (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T)];
+            LocalTensor<T> nextLocal = input[(nextIdx & 1) *
+                                             (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T)];
             Duplicate(nextLocal, constValue_, (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T));
             if (!lastOut_) {
                 if ((nextIdx & 1) == 0) {
@@ -232,10 +231,13 @@ private:
         }
         DataCopyPadExtParams<T> padParams{true, 0, 0, 0};
         if (inCopyLen_[ubAxis] != ubFactor) {
-            padParam.padHLOffset[0] = (outIndex_[ubAxis] < tilingData_->leftPad[ubAxis]) ? tilingData_->leftPad[ubAxis] % ubFactor : padParam.padHLOffset[0];
+            padParam.padHLOffset[0] = (outIndex_[ubAxis] < tilingData_->leftPad[ubAxis]) ?
+                                          tilingData_->leftPad[ubAxis] % ubFactor :
+                                          padParam.padHLOffset[0];
             if (outIndex_[ubAxis] + ubFactor > tilingData_->leftPad[ubAxis] + tilingData_->inShape[ubAxis]) {
-                padParam.padHROffset[0] =
-                    (tilingData_->leftPad[tilingData_->ubAxis] + tilingData_->inShape[tilingData_->ubAxis]) % ubFactor;
+                padParam.padHROffset[0] = (tilingData_->leftPad[tilingData_->ubAxis] +
+                                           tilingData_->inShape[tilingData_->ubAxis]) %
+                                          ubFactor;
             }
         }
         uint32_t ubInOffset = 0;
@@ -265,8 +267,8 @@ private:
             loopParams.loop1DstStride = tilingData_->outShape[dimNum - DIM_INDEX_SECOND] * padParam.padW * sizeof(T);
             loopParams.loop2Size = inCopyLen_[dimNum - DIM_INDEX_FOURTH];
             loopParams.loop2SrcStride = tilingData_->inStride[dimNum - DIM_INDEX_FOURTH] * sizeof(T);
-            loopParams.loop2DstStride =
-                tilingData_->outShape[dimNum - DIM_INDEX_THIRD] * tilingData_->outShape[dimNum - DIM_INDEX_SECOND] * padParam.padW * sizeof(T);
+            loopParams.loop2DstStride = tilingData_->outShape[dimNum - DIM_INDEX_THIRD] *
+                                        tilingData_->outShape[dimNum - DIM_INDEX_SECOND] * padParam.padW * sizeof(T);
             SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
             DataCopyPad(src[additionOffset_ + ubInOffset], input_[inAddr], copyInParams, padParams);
             ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
@@ -275,8 +277,8 @@ private:
         }
     }
 
-    __aicore__ inline void CopyOut(
-        const LocalTensor<T>& src, PadNormalParam& padParam, bool hasMTE2, bool hasPadding, int32_t idx)
+    __aicore__ inline void CopyOut(const LocalTensor<T>& src, PadNormalParam& padParam, bool hasMTE2, bool hasPadding,
+                                   int32_t idx)
     {
         const int8_t ubAxis = tilingData_->ubAxis;
         const int8_t dimNum = tilingData_->dimNum;
@@ -285,7 +287,9 @@ private:
         for (uint32_t i = 0; i < dimNum; i++) {
             outAddr += outIndex_[i] * tilingData_->outStride[i];
         }
-        uint32_t blockCount = (outIndex_[ubAxis] + ubFactor < tilingData_->outShape[ubAxis] ? ubFactor : tilingData_->outShape[ubAxis] - outIndex_[ubAxis]);
+        uint32_t blockCount = (outIndex_[ubAxis] + ubFactor < tilingData_->outShape[ubAxis] ?
+                                   ubFactor :
+                                   tilingData_->outShape[ubAxis] - outIndex_[ubAxis]);
         for (auto i = ubAxis + 1; i < dimNum - 1; i++) {
             // blockCount 计算到倒数第二维
             blockCount = blockCount * tilingData_->outShape[i];
@@ -315,12 +319,11 @@ private:
             }
             DataCopyExtParams copyOutParams1;
             copyOutParams1.blockCount = 1;
-            copyOutParams1.blockLen = (tilingData_->outShape[dimNum - 1] - tilingData_->leftPad[dimNum - 1]) * sizeof(T);
-            DataCopyPad(
-                output_
-                    [outAddr + tilingData_->leftPad[dimNum - 1] +
-                     copyOutParams.blockCount * tilingData_->outShape[dimNum - 1]],
-                src[additionOffset_ + copyOutParams.blockCount * padParam.padW], copyOutParams1);
+            copyOutParams1.blockLen = (tilingData_->outShape[dimNum - 1] - tilingData_->leftPad[dimNum - 1]) *
+                                      sizeof(T);
+            DataCopyPad(output_[outAddr + tilingData_->leftPad[dimNum - 1] +
+                                copyOutParams.blockCount * tilingData_->outShape[dimNum - 1]],
+                        src[additionOffset_ + copyOutParams.blockCount * padParam.padW], copyOutParams1);
         } else {
             DataCopyPad(output_[outAddr + tilingData_->leftPad[dimNum - 1]], src[additionOffset_], copyOutParams);
             if ((idx & 1) == 0) {
@@ -377,8 +380,8 @@ private:
             AscendC::MicroAPI::RegTensor<T, Trait> vRegTmp;
             AscendC::MicroAPI::MaskReg pMask;
             AscendC::MicroAPI::MaskReg outMask;
-            AscendC::MicroAPI::MaskReg maskAll =
-                AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL, Trait>();
+            AscendC::MicroAPI::MaskReg
+                maskAll = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL, Trait>();
 
             uint32_t noPadLen = noPadRightSize;
             uint32_t outLen = BLK_ELEMS;
@@ -396,13 +399,13 @@ private:
             } else if constexpr (UB_AXES == 3) {
                 for (uint16_t n = 0; n < dimNNum; n++) {
                     for (uint16_t c = 0; c < dimCNum; c++) {
-                        AscendC::MicroAPI::DataCopy(
-                            vReg, dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW + c * padHW);
+                        AscendC::MicroAPI::DataCopy(vReg,
+                                                    dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW + c * padHW);
                         vRegTmp = vReg;
                         Duplicate<T, AscendC::MicroAPI::MaskMergeMode::ZEROING, T>(vRegTmp, value, pMask);
                         Copy(vReg, vRegTmp, pMask);
-                        AscendC::MicroAPI::DataCopy(
-                            dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW + c * padHW, vReg, outMask);
+                        AscendC::MicroAPI::DataCopy(dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW + c * padHW,
+                                                    vReg, outMask);
                     }
                 }
             } else {

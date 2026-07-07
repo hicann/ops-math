@@ -26,8 +26,7 @@ struct RintCompileInfo {
     uint64_t ubSize;
 };
 
-class RintTiling
-{
+class RintTiling {
 public:
     explicit RintTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
@@ -43,5 +42,5 @@ private:
     ge::DataType inputDtype = ge::DT_UNDEFINED;
     uint64_t dType = 0;
 };
-}  // namespace optiling
-#endif  // OP_HOST_ARCH35_RINT_TILING_H
+} // namespace optiling
+#endif // OP_HOST_ARCH35_RINT_TILING_H

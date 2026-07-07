@@ -23,15 +23,24 @@
 namespace PadV3GradReplication {
 using namespace AscendC;
 
-constexpr uint32_t MAX_DIMS  = PAD_GRAD_REPLICATION_MAX_DIMS_NUM;
+constexpr uint32_t MAX_DIMS = PAD_GRAD_REPLICATION_MAX_DIMS_NUM;
 constexpr uint32_t BLOCK_SIZE = 32;
-constexpr uint32_t VREG_BYTES = 256;   // 向量寄存器宽度（arch35）
+constexpr uint32_t VREG_BYTES = 256;                                             // 向量寄存器宽度（arch35）
 constexpr uint8_t MAX_PAD_DIMS = (uint8_t)PAD_GRAD_REPLICATION_MAX_PAD_DIMS_NUM; // 后5维可做padding的最大维度数
 
 // 精度提升类型：FP16/BF16 → FP32，其它类型保持原样
-template <typename T> struct PromoteOf      { using type = T;     };
-template <>           struct PromoteOf<half>       { using type = float; };
-template <>           struct PromoteOf<bfloat16_t> { using type = float; };
+template <typename T>
+struct PromoteOf {
+    using type = T;
+};
+template <>
+struct PromoteOf<half> {
+    using type = float;
+};
+template <>
+struct PromoteOf<bfloat16_t> {
+    using type = float;
+};
 
 template <typename T>
 __aicore__ inline constexpr bool NeedCast()
@@ -42,24 +51,26 @@ __aicore__ inline constexpr bool NeedCast()
 // vec_scope cast traits
 // 对宽度不同（B16 ↔ B32）类型，必须 ZERO + ONE 两次 cast + Select 合并，否则有数据丢失
 // 参考 conversion/batch_to_space_nd/op_kernel/arch35/batch_to_space_nd_small_c.h
-constexpr static MicroAPI::CastTrait CAST_TRAIT_PROMOTE_ZERO = {
-    MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::UNKNOWN,
-    MicroAPI::MaskMergeMode::ZEROING, RoundMode::UNKNOWN};
-constexpr static MicroAPI::CastTrait CAST_TRAIT_PROMOTE_ONE = {
-    MicroAPI::RegLayout::ONE, MicroAPI::SatMode::UNKNOWN,
-    MicroAPI::MaskMergeMode::ZEROING, RoundMode::UNKNOWN};
-constexpr static MicroAPI::CastTrait CAST_TRAIT_DOWN_ZERO = {
-    MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::SAT,
-    MicroAPI::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
-constexpr static MicroAPI::CastTrait CAST_TRAIT_DOWN_ONE = {
-    MicroAPI::RegLayout::ONE, MicroAPI::SatMode::SAT,
-    MicroAPI::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
+constexpr static MicroAPI::CastTrait CAST_TRAIT_PROMOTE_ZERO = {MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::UNKNOWN,
+                                                                MicroAPI::MaskMergeMode::ZEROING, RoundMode::UNKNOWN};
+constexpr static MicroAPI::CastTrait CAST_TRAIT_PROMOTE_ONE = {MicroAPI::RegLayout::ONE, MicroAPI::SatMode::UNKNOWN,
+                                                               MicroAPI::MaskMergeMode::ZEROING, RoundMode::UNKNOWN};
+constexpr static MicroAPI::CastTrait CAST_TRAIT_DOWN_ZERO = {MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::SAT,
+                                                             MicroAPI::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
+constexpr static MicroAPI::CastTrait CAST_TRAIT_DOWN_ONE = {MicroAPI::RegLayout::ONE, MicroAPI::SatMode::SAT,
+                                                            MicroAPI::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
 
 template <typename T1, typename T2>
-__aicore__ inline T1 CeilDiv(T1 a, T2 b) { return (b == 0) ? 0 : ((a + b - 1) / b); }
+__aicore__ inline T1 CeilDiv(T1 a, T2 b)
+{
+    return (b == 0) ? 0 : ((a + b - 1) / b);
+}
 
 template <typename T1, typename T2>
-__aicore__ inline T1 CeilAlign(T1 a, T2 b) { return (b == 0) ? a : ((a + b - 1) / b * b); }
+__aicore__ inline T1 CeilAlign(T1 a, T2 b)
+{
+    return (b == 0) ? a : ((a + b - 1) / b * b);
+}
 
 // =====================================================================
 // Kernel 主体
@@ -75,7 +86,8 @@ public:
     static constexpr bool kNeedCast = NeedCast<T>();
 
     __aicore__ inline KernelPadV3GradReplication(TPipe* pipe, const PadV3GradReplicationTilingData* td)
-        : pipe_(pipe), tilingData_(td) {}
+        : pipe_(pipe), tilingData_(td)
+    {}
 
     // ---------------- Init ----------------
     __aicore__ inline void Init(GM_ADDR gradOut, GM_ADDR gradIn)
@@ -85,15 +97,15 @@ public:
         gradInGm_.SetGlobalBuffer((__gm__ T*)gradIn);
 
         for (uint32_t k = 0; k < DIM_NUM; k++) {
-            inputShape_[k]    = tilingData_->inputShape[k];
-            outputShape_[k]   = tilingData_->outputShape[k];
+            inputShape_[k] = tilingData_->inputShape[k];
+            outputShape_[k] = tilingData_->outputShape[k];
             strideAligned_[k] = tilingData_->strideAligned[k];
-            leftPad_[k]       = (int32_t)tilingData_->leftPad[k];
-            rightPad_[k]      = (int32_t)tilingData_->rightPad[k];
+            leftPad_[k] = (int32_t)tilingData_->leftPad[k];
+            rightPad_[k] = (int32_t)tilingData_->rightPad[k];
         }
-        splitSize_     = tilingData_->splitSize;
-        splitCount_    = tilingData_->splitCount;
-        tilesPerCore_  = tilingData_->tilesPerCore;
+        splitSize_ = tilingData_->splitSize;
+        splitCount_ = tilingData_->splitCount;
+        tilesPerCore_ = tilingData_->tilesPerCore;
 
         splitCountAxis_ = CeilDiv(inputShape_[SPLIT_AXIS], (uint64_t)splitSize_);
 
@@ -112,7 +124,7 @@ public:
         //   innerProdUb_：UB 内（尾轴 32B 对齐 + 外层 extent-packed）—— 用于 dataBuf 大小估算、
         //                AccumNonLastAxis 与 SPLIT_AXIS 切片间距。SPLIT_AXIS<N-1 时 = strideAligned_[SPLIT_AXIS]。
         //   innerProdInGm_：grad_in 侧 GM 紧凑（inputShape 累乘）—— 用于写回 GM。
-        innerProdUb_   = strideAligned_[SPLIT_AXIS];
+        innerProdUb_ = strideAligned_[SPLIT_AXIS];
         innerProdInGm_ = 1;
         for (uint32_t k = SPLIT_AXIS + 1; k < DIM_NUM; k++) {
             innerProdInGm_ *= inputShape_[k];
@@ -121,12 +133,12 @@ public:
         // padOverhead：单 tile 需两端 pad(pL+pR)，多 tile 每 tile 至多一端(max(pL,pR))
         // dataBuf 布局：尾轴 32B 对齐（strideAligned_[N-2]），外层轴 0..SPLIT_AXIS-1 按 extent 紧密排布。
         bool isSingleTile = ((uint64_t)splitSize_ == inputShape_[SPLIT_AXIS]);
-        uint64_t padOverhead = isSingleTile
-            ? (leftPad_[SPLIT_AXIS] + rightPad_[SPLIT_AXIS])
-            : (leftPad_[SPLIT_AXIS] > rightPad_[SPLIT_AXIS] ? leftPad_[SPLIT_AXIS] : rightPad_[SPLIT_AXIS]);
+        uint64_t padOverhead = isSingleTile ? (leftPad_[SPLIT_AXIS] + rightPad_[SPLIT_AXIS]) :
+                                              (leftPad_[SPLIT_AXIS] > rightPad_[SPLIT_AXIS] ? leftPad_[SPLIT_AXIS] :
+                                                                                              rightPad_[SPLIT_AXIS]);
         uint64_t maxSliceAxis = (uint64_t)splitSize_ + padOverhead;
         uint64_t dataBufElems = worstFactor_ * maxSliceAxis * innerProdUb_;
-        dataBufElems_ = dataBufElems;  // BulkCast 用
+        dataBufElems_ = dataBufElems; // BulkCast 用
 
         // outputBuf 容量：splitSize × innerProdInGm (tile 原始区域，紧凑写回 GM，无需 UB 对齐)
         uint64_t outputBufElems = (uint64_t)splitSize_ * innerProdInGm_;
@@ -134,14 +146,14 @@ public:
         // cast 类型 (fp16/bf16): dataBuf 按 PromoteT (4B) 分配，BulkCast 后存 F32；
         // outputBuf 仍按 T 分配（scatter 前在 VF 内 F32→B16 转换）
         if constexpr (kNeedCast) {
-            dataBufBytes_   = CeilAlign(dataBufElems   * (uint64_t)sizeof(PromoteT), (uint64_t)BLOCK_SIZE);
-            outputBufBytes_ = CeilAlign(outputBufElems * (uint64_t)sizeof(T),        (uint64_t)BLOCK_SIZE);
+            dataBufBytes_ = CeilAlign(dataBufElems * (uint64_t)sizeof(PromoteT), (uint64_t)BLOCK_SIZE);
+            outputBufBytes_ = CeilAlign(outputBufElems * (uint64_t)sizeof(T), (uint64_t)BLOCK_SIZE);
         } else {
-            dataBufBytes_   = CeilAlign(dataBufElems   * (uint64_t)sizeof(T), (uint64_t)BLOCK_SIZE);
+            dataBufBytes_ = CeilAlign(dataBufElems * (uint64_t)sizeof(T), (uint64_t)BLOCK_SIZE);
             outputBufBytes_ = CeilAlign(outputBufElems * (uint64_t)sizeof(T), (uint64_t)BLOCK_SIZE);
         }
 
-        pipe_->InitBuffer(dataBuf_,   dataBufBytes_);
+        pipe_->InitBuffer(dataBuf_, dataBufBytes_);
         pipe_->InitBuffer(outputBuf_, outputBufBytes_);
     }
 
@@ -162,10 +174,10 @@ public:
     //   axis ∈ [SPLIT_AXIS, N-1]    —— 按 strideAligned_（中间维全量 outputShape + 尾轴 32B 对齐）
     //   axis < SPLIT_AXIS：stride = innerProdUb_ × ∏_{j=axis+1..SPLIT_AXIS} extent[j]
     //   axis ≥ SPLIT_AXIS：stride = strideAligned_[axis]
-    __aicore__ inline uint64_t SliceStrideInBuf(uint32_t axis,
-        const uint32_t* loadStart, const uint32_t* loadEnd) const
+    __aicore__ inline uint64_t SliceStrideInBuf(uint32_t axis, const uint32_t* loadStart, const uint32_t* loadEnd) const
     {
-        if (axis >= DIM_NUM) return 1;
+        if (axis >= DIM_NUM)
+            return 1;
         if (axis >= SPLIT_AXIS) {
             return strideAligned_[axis];
         }
@@ -180,9 +192,11 @@ public:
     __aicore__ inline void Process()
     {
         uint64_t startIdx = (uint64_t)blockIdx_ * tilesPerCore_;
-        if (startIdx >= splitCount_) return;
+        if (startIdx >= splitCount_)
+            return;
         uint64_t endIdx = startIdx + tilesPerCore_;
-        if (endIdx > splitCount_) endIdx = splitCount_;
+        if (endIdx > splitCount_)
+            endIdx = splitCount_;
 
         for (uint64_t idx = startIdx; idx < endIdx; idx++) {
             ProcessOneTile(idx);
@@ -201,19 +215,20 @@ private:
         uint64_t cur = outerCombo;
         for (int k = (int)SPLIT_AXIS - 1; k >= 0; k--) {
             outerCoords[k] = (uint32_t)(cur % inputShape_[k]);
-            cur            = cur / inputShape_[k];
+            cur = cur / inputShape_[k];
         }
 
         uint32_t tileStart = tileInAxis * splitSize_;
-        uint32_t tileEnd   = tileStart + splitSize_;
-        if (tileEnd > (uint32_t)inputShape_[SPLIT_AXIS]) tileEnd = (uint32_t)inputShape_[SPLIT_AXIS];
+        uint32_t tileEnd = tileStart + splitSize_;
+        if (tileEnd > (uint32_t)inputShape_[SPLIT_AXIS])
+            tileEnd = (uint32_t)inputShape_[SPLIT_AXIS];
         uint32_t tileLen = tileEnd - tileStart;
         bool firstTile = (tileStart == 0);
-        bool lastTile  = (tileEnd   == (uint32_t)inputShape_[SPLIT_AXIS]);
+        bool lastTile = (tileEnd == (uint32_t)inputShape_[SPLIT_AXIS]);
 
         // (2) 计算每个轴的 load 区间
         uint32_t loadStart[MAX_DIMS] = {0};
-        uint32_t loadEnd  [MAX_DIMS] = {0};
+        uint32_t loadEnd[MAX_DIMS] = {0};
         ComputeLoadRange(outerCoords, tileStart, tileEnd, firstTile, lastTile, loadStart, loadEnd);
 
         // (3) 一次性 DataCopyPad 搬入 grad_out → dataBuf（含 padding）
@@ -243,86 +258,87 @@ private:
     // ---------------- BulkCast B16→F32（仅 kNeedCast）----------------
     __aicore__ inline void BulkCastB16ToF32(uint64_t totalElems)
     {
-        uint32_t VL_F32 = VREG_BYTES / sizeof(PromoteT);   // 64
-        uint32_t FULL   = VL_F32 * 2;                      // 128 B16 = 2×64 F32
-        uint16_t loops      = CeilDiv((uint32_t)totalElems, FULL);
+        uint32_t VL_F32 = VREG_BYTES / sizeof(PromoteT); // 64
+        uint32_t FULL = VL_F32 * 2;                      // 128 B16 = 2×64 F32
+        uint16_t loops = CeilDiv((uint32_t)totalElems, FULL);
 
         LocalTensor<T> dataBuf = dataBuf_.Get<T>();
         auto* b16Ptr = reinterpret_cast<__ubuf__ T*>(dataBuf.GetPhyAddr());
         auto* f32Ptr = reinterpret_cast<__ubuf__ PromoteT*>(dataBuf.GetPhyAddr());
 
-        uint32_t tail16    = totalElems % FULL;
-        if (tail16 == 0 && totalElems > 0) tail16 = FULL;
-        
-        uint16_t hasTail    = (tail16 > 0 && tail16 < FULL) ? (uint16_t)1 : (uint16_t)0;
-        uint16_t nonTailCnt = loops - hasTail;
-        uint32_t tailLo     = tail16;
-        if (tailLo > VL_F32) tailLo = VL_F32;
-        uint32_t tailHi     = (tail16 > VL_F32) ? (uint32_t)(tail16 - VL_F32) : 0;
+        uint32_t tail16 = totalElems % FULL;
+        if (tail16 == 0 && totalElems > 0)
+            tail16 = FULL;
 
-        __VEC_SCOPE__ {
+        uint16_t hasTail = (tail16 > 0 && tail16 < FULL) ? (uint16_t)1 : (uint16_t)0;
+        uint16_t nonTailCnt = loops - hasTail;
+        uint32_t tailLo = tail16;
+        if (tailLo > VL_F32)
+            tailLo = VL_F32;
+        uint32_t tailHi = (tail16 > VL_F32) ? (uint32_t)(tail16 - VL_F32) : 0;
+
+        __VEC_SCOPE__
+        {
             MicroAPI::MaskReg maskB16, maskLo, maskHi;
-            MicroAPI::RegTensor<T>        vregB16;
+            MicroAPI::RegTensor<T> vregB16;
             MicroAPI::RegTensor<PromoteT> vregF1, vregF2, vregF32Lo, vregF32Hi;
 
             // Step 1: tail (forward-last), hasTail=0 skip
             for (uint16_t t = 0; t < hasTail; t++) {
                 uint32_t off = (uint32_t)(loops - 1) * FULL;
                 maskB16 = MicroAPI::UpdateMask<T>(tail16);
-                maskLo  = MicroAPI::UpdateMask<PromoteT>(tailLo);
-                maskHi  = MicroAPI::UpdateMask<PromoteT>(tailHi);
+                maskLo = MicroAPI::UpdateMask<PromoteT>(tailLo);
+                maskHi = MicroAPI::UpdateMask<PromoteT>(tailHi);
                 MicroAPI::DataCopy(vregB16, b16Ptr + off);
                 MicroAPI::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ZERO>(vregF1, vregB16, maskB16);
                 MicroAPI::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ONE>(vregF2, vregB16, maskB16);
                 MicroAPI::Interleave(vregF32Lo, vregF32Hi, vregF1, vregF2);
-                MicroAPI::DataCopy(f32Ptr + off,          vregF32Lo, maskLo);
+                MicroAPI::DataCopy(f32Ptr + off, vregF32Lo, maskLo);
                 MicroAPI::DataCopy(f32Ptr + off + VL_F32, vregF32Hi, maskHi);
             }
             // Step 2: non-tail chunks backward (loops-2 ... 0)
             maskB16 = MicroAPI::CreateMask<T, MicroAPI::MaskPattern::ALL>();
             for (uint16_t i = 0; i < nonTailCnt; i++) {
                 uint32_t off = (uint32_t)(loops - 1 - i - hasTail) * FULL;
-                
+
                 MicroAPI::DataCopy(vregB16, b16Ptr + off);
                 MicroAPI::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ZERO>(vregF1, vregB16, maskB16);
                 MicroAPI::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ONE>(vregF2, vregB16, maskB16);
                 MicroAPI::Interleave(vregF32Lo, vregF32Hi, vregF1, vregF2);
-                MicroAPI::DataCopy(f32Ptr + off,          vregF32Lo, maskB16);
+                MicroAPI::DataCopy(f32Ptr + off, vregF32Lo, maskB16);
                 MicroAPI::DataCopy(f32Ptr + off + VL_F32, vregF32Hi, maskB16);
             }
         }
     }
 
     // ---------------- 计算每个轴的 load 区间 ----------------
-    __aicore__ inline void ComputeLoadRange(
-        const uint32_t* outerCoords, uint32_t tileStart, uint32_t tileEnd,
-        bool firstTile, bool lastTile,
-        uint32_t* loadStart, uint32_t* loadEnd)
+    __aicore__ inline void ComputeLoadRange(const uint32_t* outerCoords, uint32_t tileStart, uint32_t tileEnd,
+                                            bool firstTile, bool lastTile, uint32_t* loadStart, uint32_t* loadEnd)
     {
         for (uint32_t k = 0; k < SPLIT_AXIS; k++) {
-            bool leftEdge  = (outerCoords[k] == 0) && (leftPad_[k] > 0);
+            bool leftEdge = (outerCoords[k] == 0) && (leftPad_[k] > 0);
             bool rightEdge = (outerCoords[k] == (uint32_t)inputShape_[k] - 1) && (rightPad_[k] > 0);
             if (leftEdge && rightEdge) {
                 // inputShape[k]==1 且两端都有 padding：必须同时涵盖左右 padding 区间
                 loadStart[k] = 0;
-                loadEnd[k]   = (uint32_t)outputShape_[k];
+                loadEnd[k] = (uint32_t)outputShape_[k];
             } else if (leftEdge) {
                 loadStart[k] = 0;
-                loadEnd[k]   = (uint32_t)leftPad_[k] + 1;
+                loadEnd[k] = (uint32_t)leftPad_[k] + 1;
             } else if (rightEdge) {
                 loadStart[k] = outerCoords[k] + (uint32_t)leftPad_[k];
-                loadEnd[k]   = (uint32_t)outputShape_[k];
+                loadEnd[k] = (uint32_t)outputShape_[k];
             } else {
                 loadStart[k] = outerCoords[k] + (uint32_t)leftPad_[k];
-                loadEnd[k]   = loadStart[k] + 1;
+                loadEnd[k] = loadStart[k] + 1;
             }
         }
         loadStart[SPLIT_AXIS] = firstTile ? 0 : (tileStart + (uint32_t)leftPad_[SPLIT_AXIS]);
-        loadEnd[SPLIT_AXIS]   = lastTile  ? (uint32_t)outputShape_[SPLIT_AXIS]
-                                          : (tileEnd + (uint32_t)leftPad_[SPLIT_AXIS]);
+        loadEnd[SPLIT_AXIS] = lastTile ? (uint32_t)outputShape_[SPLIT_AXIS] :
+                                         (tileEnd + (uint32_t)leftPad_[SPLIT_AXIS]);
         for (uint32_t k = SPLIT_AXIS + 1; k < DIM_NUM; k++) {
             loadStart[k] = 0;
-            loadEnd[k]   = (uint32_t)outputShape_[k];
+            loadEnd[k] = (uint32_t)outputShape_[k];
         }
     }
 
@@ -345,114 +361,117 @@ private:
 
         // SPLIT_AXIS < DIM_NUM-1 ⇒ DIM_NUM ≥ 2
         if constexpr (DIM_NUM >= 2) {
-        const uint32_t lastDim   = (uint32_t)outputShape_[DIM_NUM - 1];
-        const uint32_t rowBytesGm = lastDim * sizeof(T);
-        const uint32_t rowBytesUb = (uint32_t)(strideAligned_[DIM_NUM - 2] * sizeof(T));
-        const uint32_t dstStrideBlocks = (rowBytesUb - rowBytesGm) / BLOCK_SIZE;
+            const uint32_t lastDim = (uint32_t)outputShape_[DIM_NUM - 1];
+            const uint32_t rowBytesGm = lastDim * sizeof(T);
+            const uint32_t rowBytesUb = (uint32_t)(strideAligned_[DIM_NUM - 2] * sizeof(T));
+            const uint32_t dstStrideBlocks = (rowBytesUb - rowBytesGm) / BLOCK_SIZE;
 
-        // 内层行数 = extent[SPLIT_AXIS] × ∏ outputShape[SPLIT_AXIS+1..N-2]
-        uint64_t numRowsInner = loadEnd[SPLIT_AXIS] - loadStart[SPLIT_AXIS];
-        for (uint32_t k = SPLIT_AXIS + 1; k <= (uint32_t)DIM_NUM - 2; k++) {
-            numRowsInner *= outputShape_[k];
-        }
-
-        DataCopyExtParams copyInParams;
-        copyInParams.blockCount = (uint16_t)numRowsInner;
-        copyInParams.blockLen   = rowBytesGm;
-        copyInParams.srcStride  = 0;                 // GM 紧凑：相邻行 GM 间隔即 blockLen，"间距 - blockLen" = 0
-        copyInParams.dstStride  = dstStrideBlocks;   // UB 行间 32B 对齐补齐
-
-        if constexpr (SPLIT_AXIS == 0) {
-            // 无外层 axis：单次 DataCopyPad
-            const uint64_t gmOff = (uint64_t)loadStart[SPLIT_AXIS] * GmStride(SPLIT_AXIS);
-            DataCopyPad(dataLocal, gradOutGm_[gmOff], copyInParams, padParams);
-            return;
-        }
-
-        // UB 内"一次 DataCopyPad 内层块"字节数 = blockCount × rowBytesUb（含行 32B 对齐补齐）
-        // 也等于 extent[SPLIT_AXIS] × innerProdUb_ × sizeof(T)
-        const uint64_t innerBlockBytes = numRowsInner * (uint64_t)rowBytesUb;
-
-        // LoopModeParams：loop1 = axis SPLIT_AXIS-1，loop2 = axis SPLIT_AXIS-2
-        // src stride 用 GM 紧凑跨度（GmStride × sizeof(T)），dst stride 用 packed-extent UB 步长。
-        LoopModeParams loopParams;
-        loopParams.loop1Size = 1;
-        loopParams.loop2Size = 1;
-        bool useLoopParams   = false;
-        uint32_t extent1 = 1;
-        uint32_t extent2 = 1;
-
-        if constexpr (SPLIT_AXIS >= 1) {
-            extent1 = loadEnd[SPLIT_AXIS - 1] - loadStart[SPLIT_AXIS - 1];
-            loopParams.loop1Size      = extent1;
-            loopParams.loop1SrcStride = (uint32_t)(GmStride(SPLIT_AXIS - 1) * sizeof(T));
-            loopParams.loop1DstStride = (uint32_t)innerBlockBytes;
-            useLoopParams = useLoopParams || (extent1 > 1);
-        }
-        if constexpr (SPLIT_AXIS >= 2) {
-            extent2 = loadEnd[SPLIT_AXIS - 2] - loadStart[SPLIT_AXIS - 2];
-            loopParams.loop2Size      = extent2;
-            loopParams.loop2SrcStride = (uint32_t)(GmStride(SPLIT_AXIS - 2) * sizeof(T));
-            loopParams.loop2DstStride = (uint32_t)((uint64_t)extent1 * innerBlockBytes);
-            useLoopParams = useLoopParams || (extent2 > 1);
-        }
-
-        // 一次手动外层迭代覆盖 inner × loop1 × loop2 个 packed-extent 单元
-        const uint64_t outerStepBytes = (uint64_t)extent1 * extent2 * innerBlockBytes;
-
-        constexpr int kManualOuterStart = (int)SPLIT_AXIS - 3;
-        if constexpr (kManualOuterStart < 0) {
-            // SPLIT_AXIS ∈ {1, 2}：单次 DataCopyPad 就能覆盖全部外层
-            uint64_t gmOff = (uint64_t)loadStart[SPLIT_AXIS] * GmStride(SPLIT_AXIS);
-            for (uint32_t k = 0; k < SPLIT_AXIS; k++) {
-                gmOff += (uint64_t)loadStart[k] * GmStride(k);
+            // 内层行数 = extent[SPLIT_AXIS] × ∏ outputShape[SPLIT_AXIS+1..N-2]
+            uint64_t numRowsInner = loadEnd[SPLIT_AXIS] - loadStart[SPLIT_AXIS];
+            for (uint32_t k = SPLIT_AXIS + 1; k <= (uint32_t)DIM_NUM - 2; k++) {
+                numRowsInner *= outputShape_[k];
             }
-            if (useLoopParams) {
-                SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
+
+            DataCopyExtParams copyInParams;
+            copyInParams.blockCount = (uint16_t)numRowsInner;
+            copyInParams.blockLen = rowBytesGm;
+            copyInParams.srcStride = 0; // GM 紧凑：相邻行 GM 间隔即 blockLen，"间距 - blockLen" = 0
+            copyInParams.dstStride = dstStrideBlocks; // UB 行间 32B 对齐补齐
+
+            if constexpr (SPLIT_AXIS == 0) {
+                // 无外层 axis：单次 DataCopyPad
+                const uint64_t gmOff = (uint64_t)loadStart[SPLIT_AXIS] * GmStride(SPLIT_AXIS);
                 DataCopyPad(dataLocal, gradOutGm_[gmOff], copyInParams, padParams);
-                ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
-            } else {
-                DataCopyPad(dataLocal, gradOutGm_[gmOff], copyInParams, padParams);
+                return;
             }
-            return;
-        }
 
-        // 手动外层迭代 axes 0..SPLIT_AXIS-3（仅 SPLIT_AXIS ≥ 3 时进入）
-        uint32_t coords[MAX_DIMS] = {0};
-        for (int k = 0; k <= kManualOuterStart; k++) coords[k] = loadStart[k];
+            // UB 内"一次 DataCopyPad 内层块"字节数 = blockCount × rowBytesUb（含行 32B 对齐补齐）
+            // 也等于 extent[SPLIT_AXIS] × innerProdUb_ × sizeof(T)
+            const uint64_t innerBlockBytes = numRowsInner * (uint64_t)rowBytesUb;
 
-        uint64_t dstOffBytes = 0;
-        while (true) {
-            uint64_t gmOff = (uint64_t)loadStart[SPLIT_AXIS] * GmStride(SPLIT_AXIS);
+            // LoopModeParams：loop1 = axis SPLIT_AXIS-1，loop2 = axis SPLIT_AXIS-2
+            // src stride 用 GM 紧凑跨度（GmStride × sizeof(T)），dst stride 用 packed-extent UB 步长。
+            LoopModeParams loopParams;
+            loopParams.loop1Size = 1;
+            loopParams.loop2Size = 1;
+            bool useLoopParams = false;
+            uint32_t extent1 = 1;
+            uint32_t extent2 = 1;
+
             if constexpr (SPLIT_AXIS >= 1) {
-                gmOff += (uint64_t)loadStart[SPLIT_AXIS - 1] * GmStride(SPLIT_AXIS - 1);
+                extent1 = loadEnd[SPLIT_AXIS - 1] - loadStart[SPLIT_AXIS - 1];
+                loopParams.loop1Size = extent1;
+                loopParams.loop1SrcStride = (uint32_t)(GmStride(SPLIT_AXIS - 1) * sizeof(T));
+                loopParams.loop1DstStride = (uint32_t)innerBlockBytes;
+                useLoopParams = useLoopParams || (extent1 > 1);
             }
             if constexpr (SPLIT_AXIS >= 2) {
-                gmOff += (uint64_t)loadStart[SPLIT_AXIS - 2] * GmStride(SPLIT_AXIS - 2);
-            }
-            for (int k = 0; k <= kManualOuterStart; k++) {
-                gmOff += (uint64_t)coords[k] * GmStride(k);
+                extent2 = loadEnd[SPLIT_AXIS - 2] - loadStart[SPLIT_AXIS - 2];
+                loopParams.loop2Size = extent2;
+                loopParams.loop2SrcStride = (uint32_t)(GmStride(SPLIT_AXIS - 2) * sizeof(T));
+                loopParams.loop2DstStride = (uint32_t)((uint64_t)extent1 * innerBlockBytes);
+                useLoopParams = useLoopParams || (extent2 > 1);
             }
 
-            const uint64_t dstOffElems = dstOffBytes / sizeof(T);
-            if (useLoopParams) {
-                SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
-                DataCopyPad(dataLocal[dstOffElems], gradOutGm_[gmOff], copyInParams, padParams);
-                ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
-            } else {
-                DataCopyPad(dataLocal[dstOffElems], gradOutGm_[gmOff], copyInParams, padParams);
-            }
-            dstOffBytes += outerStepBytes;
+            // 一次手动外层迭代覆盖 inner × loop1 × loop2 个 packed-extent 单元
+            const uint64_t outerStepBytes = (uint64_t)extent1 * extent2 * innerBlockBytes;
 
-            int k = kManualOuterStart;
-            for (; k >= 0; k--) {
-                coords[k]++;
-                if (coords[k] < loadEnd[k]) break;
+            constexpr int kManualOuterStart = (int)SPLIT_AXIS - 3;
+            if constexpr (kManualOuterStart < 0) {
+                // SPLIT_AXIS ∈ {1, 2}：单次 DataCopyPad 就能覆盖全部外层
+                uint64_t gmOff = (uint64_t)loadStart[SPLIT_AXIS] * GmStride(SPLIT_AXIS);
+                for (uint32_t k = 0; k < SPLIT_AXIS; k++) {
+                    gmOff += (uint64_t)loadStart[k] * GmStride(k);
+                }
+                if (useLoopParams) {
+                    SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
+                    DataCopyPad(dataLocal, gradOutGm_[gmOff], copyInParams, padParams);
+                    ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
+                } else {
+                    DataCopyPad(dataLocal, gradOutGm_[gmOff], copyInParams, padParams);
+                }
+                return;
+            }
+
+            // 手动外层迭代 axes 0..SPLIT_AXIS-3（仅 SPLIT_AXIS ≥ 3 时进入）
+            uint32_t coords[MAX_DIMS] = {0};
+            for (int k = 0; k <= kManualOuterStart; k++)
                 coords[k] = loadStart[k];
+
+            uint64_t dstOffBytes = 0;
+            while (true) {
+                uint64_t gmOff = (uint64_t)loadStart[SPLIT_AXIS] * GmStride(SPLIT_AXIS);
+                if constexpr (SPLIT_AXIS >= 1) {
+                    gmOff += (uint64_t)loadStart[SPLIT_AXIS - 1] * GmStride(SPLIT_AXIS - 1);
+                }
+                if constexpr (SPLIT_AXIS >= 2) {
+                    gmOff += (uint64_t)loadStart[SPLIT_AXIS - 2] * GmStride(SPLIT_AXIS - 2);
+                }
+                for (int k = 0; k <= kManualOuterStart; k++) {
+                    gmOff += (uint64_t)coords[k] * GmStride(k);
+                }
+
+                const uint64_t dstOffElems = dstOffBytes / sizeof(T);
+                if (useLoopParams) {
+                    SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
+                    DataCopyPad(dataLocal[dstOffElems], gradOutGm_[gmOff], copyInParams, padParams);
+                    ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
+                } else {
+                    DataCopyPad(dataLocal[dstOffElems], gradOutGm_[gmOff], copyInParams, padParams);
+                }
+                dstOffBytes += outerStepBytes;
+
+                int k = kManualOuterStart;
+                for (; k >= 0; k--) {
+                    coords[k]++;
+                    if (coords[k] < loadEnd[k])
+                        break;
+                    coords[k] = loadStart[k];
+                }
+                if (k < 0)
+                    break;
             }
-            if (k < 0) break;
-        }
-        }  // if constexpr (DIM_NUM >= 2)
+        } // if constexpr (DIM_NUM >= 2)
     }
 
     // ---------------- 累加 axis = 0 .. N-2 padding ----------------
@@ -470,9 +489,8 @@ private:
     //     j == SPLIT_AXIS：当前 tile 的非 pad 区段，长度 = tileLen
     //                      （firstTile 起点偏 pL_{SPLIT_AXIS}，lastTile 终点提前 pR）
     //     j >  SPLIT_AXIS：[pL_j, pL_j + inputShape[j])，长度 = inputShape[j]
-    __aicore__ inline void AccumNonLastAxis(
-        const uint32_t* outerCoords, bool firstTile, bool lastTile,
-        const uint32_t* loadStart, const uint32_t* loadEnd)
+    __aicore__ inline void AccumNonLastAxis(const uint32_t* outerCoords, bool firstTile, bool lastTile,
+                                            const uint32_t* loadStart, const uint32_t* loadEnd)
     {
         // BulkCast 后 kNeedCast 时 dataBuf 为 F32，用 PromoteT 视图
         if constexpr (kNeedCast) {
@@ -485,24 +503,23 @@ private:
     }
 
     template <typename DType>
-    __aicore__ inline void AccumNonLastAxisImpl(
-        LocalTensor<DType>& data,
-        const uint32_t* outerCoords, bool firstTile, bool lastTile,
-        const uint32_t* loadStart, const uint32_t* loadEnd)
+    __aicore__ inline void AccumNonLastAxisImpl(LocalTensor<DType>& data, const uint32_t* outerCoords, bool firstTile,
+                                                bool lastTile, const uint32_t* loadStart, const uint32_t* loadEnd)
     {
         // 当前 tile 切分轴上"有效（非 pad）"段长度。三种情况都退化为 tileLen：
         //   firstTile && lastTile：extent = outputShape，两端扣除 pL+pR
         //   firstTile / lastTile：extent = tileLen + 单端 pad
         //   middle：extent = tileLen
         const uint32_t splitExtent = loadEnd[SPLIT_AXIS] - loadStart[SPLIT_AXIS];
-        const uint32_t splitPadL   = firstTile ? (uint32_t)leftPad_[SPLIT_AXIS]  : 0u;
-        const uint32_t splitPadR   = lastTile  ? (uint32_t)rightPad_[SPLIT_AXIS] : 0u;
-        const uint32_t tileLen     = splitExtent - splitPadL - splitPadR;
+        const uint32_t splitPadL = firstTile ? (uint32_t)leftPad_[SPLIT_AXIS] : 0u;
+        const uint32_t splitPadR = lastTile ? (uint32_t)rightPad_[SPLIT_AXIS] : 0u;
+        const uint32_t tileLen = splitExtent - splitPadL - splitPadR;
 
         for (uint32_t axis = 0; axis < DIM_NUM - 1; axis++) {
-            if (leftPad_[axis] == 0 && rightPad_[axis] == 0) continue;
+            if (leftPad_[axis] == 0 && rightPad_[axis] == 0)
+                continue;
 
-            bool doLeft  = false;
+            bool doLeft = false;
             bool doRight = false;
             uint32_t totalSlices = loadEnd[axis] - loadStart[axis];
 
@@ -514,10 +531,11 @@ private:
             uint32_t rSrcStart = 0, rSrcCnt = 0, rDstRel = 0;
 
             if (axis < SPLIT_AXIS) {
-                bool leftEdge  = (outerCoords[axis] == 0) && (leftPad_[axis] > 0);
+                bool leftEdge = (outerCoords[axis] == 0) && (leftPad_[axis] > 0);
                 bool rightEdge = (outerCoords[axis] == (uint32_t)inputShape_[axis] - 1) && (rightPad_[axis] > 0);
                 if (leftEdge) {
-                    lSrcStart = 0; lSrcCnt = (uint32_t)leftPad_[axis];
+                    lSrcStart = 0;
+                    lSrcCnt = (uint32_t)leftPad_[axis];
                     lDstRel = (uint32_t)leftPad_[axis];
                     doLeft = (lSrcCnt > 0);
                 }
@@ -536,7 +554,8 @@ private:
                 }
             } else if (axis == SPLIT_AXIS) {
                 if (firstTile && leftPad_[axis] > 0) {
-                    lSrcStart = 0; lSrcCnt = (uint32_t)leftPad_[axis];
+                    lSrcStart = 0;
+                    lSrcCnt = (uint32_t)leftPad_[axis];
                     lDstRel = (uint32_t)leftPad_[axis];
                     doLeft = true;
                 }
@@ -548,7 +567,8 @@ private:
                 }
             } else {
                 if (leftPad_[axis] > 0) {
-                    lSrcStart = 0; lSrcCnt = (uint32_t)leftPad_[axis];
+                    lSrcStart = 0;
+                    lSrcCnt = (uint32_t)leftPad_[axis];
                     lDstRel = (uint32_t)leftPad_[axis];
                     doLeft = true;
                 }
@@ -560,7 +580,8 @@ private:
                 }
             }
 
-            if (!doLeft && !doRight) continue;
+            if (!doLeft && !doRight)
+                continue;
 
             // ============ 外层"有效位置"迭代 ============
             // 固定部分（j < min(axis, SPLIT_AXIS)）：每个 j 都只剩 boundary slot。
@@ -580,8 +601,8 @@ private:
             //   j == SPLIT_AXIS：iterStart = firstTile ? pL_{SPLIT_AXIS} : 0，count = tileLen
             //   j >  SPLIT_AXIS：iterStart = pL_j，count = inputShape[j]
             uint32_t numVar = (axis > (uint32_t)SPLIT_AXIS) ? (axis - (uint32_t)SPLIT_AXIS) : 0u;
-            uint64_t varStart [MAX_DIMS] = {0};
-            uint64_t varCount [MAX_DIMS] = {0};
+            uint64_t varStart[MAX_DIMS] = {0};
+            uint64_t varCount[MAX_DIMS] = {0};
             uint64_t varStride[MAX_DIMS] = {0};
             for (uint32_t v = 0; v < numVar; v++) {
                 uint32_t j = (uint32_t)SPLIT_AXIS + v;
@@ -596,8 +617,10 @@ private:
             }
 
             uint64_t outerCount = 1;
-            for (uint32_t v = 0; v < numVar; v++) outerCount *= varCount[v];
-            if (outerCount == 0) continue;
+            for (uint32_t v = 0; v < numVar; v++)
+                outerCount *= varCount[v];
+            if (outerCount == 0)
+                continue;
 
             for (uint64_t o = 0; o < outerCount; o++) {
                 // 把扁平 o 解码为 (idx_{SPLIT_AXIS}, ..., idx_{axis-1})，innermost 变化最快
@@ -611,13 +634,13 @@ private:
 
                 if (doLeft) {
                     AccumSlicesVf(data, baseElems + (uint64_t)lDstRel * sliceStrideElems,
-                                  baseElems + (uint64_t)lSrcStart * sliceStrideElems,
-                                  sliceStrideElems, lSrcCnt, sliceElems);
+                                  baseElems + (uint64_t)lSrcStart * sliceStrideElems, sliceStrideElems, lSrcCnt,
+                                  sliceElems);
                 }
                 if (doRight) {
                     AccumSlicesVf(data, baseElems + (uint64_t)rDstRel * sliceStrideElems,
-                                  baseElems + (uint64_t)rSrcStart * sliceStrideElems,
-                                  sliceStrideElems, rSrcCnt, sliceElems);
+                                  baseElems + (uint64_t)rSrcStart * sliceStrideElems, sliceStrideElems, rSrcCnt,
+                                  sliceElems);
                 }
             }
         }
@@ -626,17 +649,18 @@ private:
     // 在 vec_scope 内执行：data[dstOffset, dstOffset+sliceElems) += Σ data[srcStart + j*srcStride, ...)
     // DType = T（非 cast）或 PromoteT（kNeedCast, BulkCast 后 dataBuf 已为 F32）
     template <typename DType>
-    __aicore__ inline void AccumSlicesVf(
-        LocalTensor<DType>& data, uint64_t dstOffsetElems, uint64_t srcStartElems,
-        uint64_t srcStrideElems, uint32_t srcCnt, uint64_t sliceElems)
+    __aicore__ inline void AccumSlicesVf(LocalTensor<DType>& data, uint64_t dstOffsetElems, uint64_t srcStartElems,
+                                         uint64_t srcStrideElems, uint32_t srcCnt, uint64_t sliceElems)
     {
-        if (srcCnt == 0 || sliceElems == 0) return;
+        if (srcCnt == 0 || sliceElems == 0)
+            return;
 
         auto baseAddr = reinterpret_cast<__local_mem__ DType*>(data.GetPhyAddr());
         constexpr uint32_t VL = VREG_BYTES / sizeof(DType);
         const uint16_t loopCount = (uint16_t)CeilDiv((uint32_t)sliceElems, VL);
 
-        __VEC_SCOPE__ {
+        __VEC_SCOPE__
+        {
             uint32_t remain = (uint32_t)sliceElems;
             MicroAPI::MaskReg mask;
             MicroAPI::RegTensor<DType> vregDst, vregSrc;
@@ -644,8 +668,7 @@ private:
                 mask = MicroAPI::UpdateMask<DType>(remain);
                 MicroAPI::DataCopy(vregDst, baseAddr + dstOffsetElems + i * VL);
                 for (uint16_t j = 0; j < (uint16_t)srcCnt; j++) {
-                    MicroAPI::DataCopy(vregSrc, baseAddr + srcStartElems +
-                                       j * srcStrideElems + i * VL);
+                    MicroAPI::DataCopy(vregSrc, baseAddr + srcStartElems + j * srcStrideElems + i * VL);
                     MicroAPI::Add(vregDst, vregDst, vregSrc, mask);
                 }
                 MicroAPI::DataCopy(baseAddr + dstOffsetElems + i * VL, vregDst, mask);
@@ -666,43 +689,44 @@ private:
     //   "前段合并"优化：后 5 维以前的 axes（k < kPadAxisStart）若 padding=0，
     //   则 outputShape_[k] = inputShape_[k]，strideAligned_ 链与 inputShape 一致，可合并为
     //   1 个虚拟 axis。最终 kEffAxes ∈ [1, 5]，effExtents/effStrides 按"内→外"排列。
-    __aicore__ inline void GatherToOutputBuf(
-        const uint32_t* outerCoords, uint32_t tileStart, uint32_t tileLen,
-        bool firstTile, bool lastTile,
-        const uint32_t* loadStart, const uint32_t* loadEnd)
+    __aicore__ inline void GatherToOutputBuf(const uint32_t* outerCoords, uint32_t tileStart, uint32_t tileLen,
+                                             bool firstTile, bool lastTile, const uint32_t* loadStart,
+                                             const uint32_t* loadEnd)
     {
-        LocalTensor<T> data   = dataBuf_.Get<T>();
+        LocalTensor<T> data = dataBuf_.Get<T>();
         LocalTensor<T> output = outputBuf_.Get<T>();
 
         const uint32_t dN1 = (uint32_t)inputShape_[DIM_NUM - 1];
-        const int32_t  pL  = leftPad_[DIM_NUM - 1];
-        const int32_t  pR  = rightPad_[DIM_NUM - 1];
+        const int32_t pL = leftPad_[DIM_NUM - 1];
+        const int32_t pR = rightPad_[DIM_NUM - 1];
 
         // 第一个原始行在 dataBuf 中的元素偏移
         uint32_t firstOrigCoords[MAX_DIMS] = {0};
-        for (uint32_t k = 0; k < SPLIT_AXIS; k++) firstOrigCoords[k] = outerCoords[k];
+        for (uint32_t k = 0; k < SPLIT_AXIS; k++)
+            firstOrigCoords[k] = outerCoords[k];
         firstOrigCoords[SPLIT_AXIS] = tileStart;
-        for (uint32_t k = SPLIT_AXIS + 1; k < DIM_NUM - 1; k++) firstOrigCoords[k] = 0;
+        for (uint32_t k = SPLIT_AXIS + 1; k < DIM_NUM - 1; k++)
+            firstOrigCoords[k] = 0;
         const uint64_t firstRowElems = ComputeRowOffsetInBuf(firstOrigCoords, loadStart, loadEnd);
 
         // ---- 多维"原始行 group"轴信息（按"内→外"排列）----
         // 后 5 维起始 axis（DIM_NUM<=5 时为 0；DIM_NUM>5 时为 DIM_NUM-5）
-        constexpr int8_t kPadAxisStart  = (DIM_NUM > MAX_PAD_DIMS) ? (int8_t)(DIM_NUM - MAX_PAD_DIMS) : (int8_t)0;
-        constexpr bool   kHasFrontMerge = ((int8_t)SPLIT_AXIS < kPadAxisStart);
-        constexpr int8_t kRearStart     = kHasFrontMerge ? kPadAxisStart : (int8_t)SPLIT_AXIS;
+        constexpr int8_t kPadAxisStart = (DIM_NUM > MAX_PAD_DIMS) ? (int8_t)(DIM_NUM - MAX_PAD_DIMS) : (int8_t)0;
+        constexpr bool kHasFrontMerge = ((int8_t)SPLIT_AXIS < kPadAxisStart);
+        constexpr int8_t kRearStart = kHasFrontMerge ? kPadAxisStart : (int8_t)SPLIT_AXIS;
         // 后段 axes 数：从 kRearStart 到 N-2（含），共 (N-2) - kRearStart + 1 = N-1-kRearStart 个
-        constexpr int8_t kRearAxes      = (int8_t)(DIM_NUM - 1) - kRearStart;
-        constexpr uint8_t kEffAxes      = (uint8_t)kRearAxes + (kHasFrontMerge ? 1u : 0u);
+        constexpr int8_t kRearAxes = (int8_t)(DIM_NUM - 1) - kRearStart;
+        constexpr uint8_t kEffAxes = (uint8_t)kRearAxes + (kHasFrontMerge ? 1u : 0u);
 
         // 构造 effExtents / effStrides（内→外排列：[0] = innermost = axis N-2）
         uint32_t effExtents[MAX_PAD_DIMS] = {1, 1, 1, 1, 1};
         uint32_t effStrides[MAX_PAD_DIMS] = {0, 0, 0, 0, 0};
         // Rear: axes [kRearStart, N-2]，innermost-first
         for (int8_t i = 0; i < kRearAxes; i++) {
-            int8_t axis = (int8_t)(DIM_NUM - 2) - i;  // axis N-2, N-3, ..., kRearStart
+            int8_t axis = (int8_t)(DIM_NUM - 2) - i; // axis N-2, N-3, ..., kRearStart
             uint32_t ext;
             if (axis == (int8_t)SPLIT_AXIS) {
-                ext = tileLen;  // 仅 SPLIT_AXIS 等于 kRearStart 时（无 front merge），取 tileLen
+                ext = tileLen; // 仅 SPLIT_AXIS 等于 kRearStart 时（无 front merge），取 tileLen
             } else {
                 ext = (uint32_t)inputShape_[axis];
             }
@@ -711,7 +735,7 @@ private:
         }
         // Front merged virtual axis（仅 DIM_NUM>5 且 SPLIT_AXIS<kPadAxisStart 时存在）
         if constexpr (kHasFrontMerge) {
-            uint32_t mergedExt = tileLen;  // SPLIT_AXIS 的 extent 用 tileLen 替换
+            uint32_t mergedExt = tileLen; // SPLIT_AXIS 的 extent 用 tileLen 替换
             for (int8_t k = (int8_t)SPLIT_AXIS + 1; k <= (int8_t)(kPadAxisStart - 1); k++) {
                 mergedExt *= (uint32_t)inputShape_[k];
             }
@@ -721,30 +745,28 @@ private:
 
         // 原始行数（除最低维外的位置数）= ∏ effExtents
         uint32_t totalGroups = 1;
-        for (uint8_t i = 0; i < kEffAxes; i++) totalGroups *= effExtents[i];
+        for (uint8_t i = 0; i < kEffAxes; i++)
+            totalGroups *= effExtents[i];
 
         if constexpr (kNeedCast) {
-            GatherToOutputBufF32Path(totalGroups, firstRowElems,
-                effExtents, effStrides, dN1, pL, pR);
+            GatherToOutputBufF32Path(totalGroups, firstRowElems, effExtents, effStrides, dN1, pL, pR);
         } else {
-            GatherToOutputBufGatherPath(data, output, totalGroups,
-                firstRowElems, effExtents, effStrides, dN1, pL, pR);
+            GatherToOutputBufGatherPath(data, output, totalGroups, firstRowElems, effExtents, effStrides, dN1, pL, pR);
         }
     }
 
     // ---------------- F32 cast 路径（新方案）：gather F32 → accumulate F32 → cast F32→B16 → scatter B16
     // BulkCast 后 dataBuf 已为 F32，所有 gather/累加 在 F32 下进行，scatter 前做一次 F32→B16 cast。
-    __aicore__ inline void GatherToOutputBufF32Path(
-        uint32_t totalGroups, uint64_t firstRowElems,
-        const uint32_t* effExtents, const uint32_t* effStrides,
-        uint32_t dN1, int32_t pL, int32_t pR)
+    __aicore__ inline void GatherToOutputBufF32Path(uint32_t totalGroups, uint64_t firstRowElems,
+                                                    const uint32_t* effExtents, const uint32_t* effStrides,
+                                                    uint32_t dN1, int32_t pL, int32_t pR)
     {
-        using Idx32 = uint32_t;   // F32 gather: 64 lanes/256B
-        using Idx16 = uint16_t;   // B16 scatter: 128 lanes/256B
+        using Idx32 = uint32_t; // F32 gather: 64 lanes/256B
+        using Idx16 = uint16_t; // B16 scatter: 128 lanes/256B
         using Rng32 = int32_t;
         using Rng16 = int16_t;
 
-        uint32_t VL_F32 = VREG_BYTES / sizeof(PromoteT);  // 64
+        uint32_t VL_F32 = VREG_BYTES / sizeof(PromoteT); // 64
         uint16_t numBatches = (totalGroups + VL_F32 - 1) / VL_F32;
         uint32_t totalGrp = totalGroups;
         const Rng32 baseE = (Rng32)firstRowElems;
@@ -757,17 +779,14 @@ private:
         const uint16_t phaseA_pLu = (dN1 <= 1) ? (uint16_t)0 : pLu;
         const uint16_t combPadCnt = (dN1 <= 1) ? pLu : (uint16_t)0;
 
-        auto* dataAddr = reinterpret_cast<__ubuf__ PromoteT*>(
-            dataBuf_.Get<T>().GetPhyAddr());
-        auto* outputAddr = reinterpret_cast<__ubuf__ T*>(
-            outputBuf_.Get<T>().GetPhyAddr());
+        auto* dataAddr = reinterpret_cast<__ubuf__ PromoteT*>(dataBuf_.Get<T>().GetPhyAddr());
+        auto* outputAddr = reinterpret_cast<__ubuf__ T*>(outputBuf_.Get<T>().GetPhyAddr());
 
         // 多维 base 索引常量（与 GatherToOutputBuf 对齐）
-        constexpr int8_t kPadAxisStart  = (DIM_NUM > MAX_PAD_DIMS) ? (int8_t)(DIM_NUM - MAX_PAD_DIMS) : (int8_t)0;
-        constexpr bool   kHasFrontMerge = ((int8_t)SPLIT_AXIS < kPadAxisStart);
-        constexpr int8_t kRearStart     = kHasFrontMerge ? kPadAxisStart : (int8_t)SPLIT_AXIS;
-        constexpr uint8_t kEffAxes = (uint8_t)((int8_t)(DIM_NUM - 1) - kRearStart)
-                                      + (kHasFrontMerge ? 1u : 0u);
+        constexpr int8_t kPadAxisStart = (DIM_NUM > MAX_PAD_DIMS) ? (int8_t)(DIM_NUM - MAX_PAD_DIMS) : (int8_t)0;
+        constexpr bool kHasFrontMerge = ((int8_t)SPLIT_AXIS < kPadAxisStart);
+        constexpr int8_t kRearStart = kHasFrontMerge ? kPadAxisStart : (int8_t)SPLIT_AXIS;
+        constexpr uint8_t kEffAxes = (uint8_t)((int8_t)(DIM_NUM - 1) - kRearStart) + (kHasFrontMerge ? 1u : 0u);
 
         const Idx32 eE0 = (Idx32)effExtents[0];
         const Idx32 eE1 = (Idx32)effExtents[1];
@@ -779,19 +798,20 @@ private:
         const Idx32 eS3 = (Idx32)effStrides[3];
         const Idx32 eS4 = (Idx32)effStrides[4];
 
-        __VEC_SCOPE__ {
+        __VEC_SCOPE__
+        {
             // F32 侧
             MicroAPI::MaskReg maskF32;
-            MicroAPI::RegTensor<Rng32>  tmpRange32;
-            MicroAPI::RegTensor<Idx32>  baseIdx, quot, idxF32, tmpReg;
-            MicroAPI::RegTensor<Idx32>  qNext, ik, dExt;
+            MicroAPI::RegTensor<Rng32> tmpRange32;
+            MicroAPI::RegTensor<Idx32> baseIdx, quot, idxF32, tmpReg;
+            MicroAPI::RegTensor<Idx32> qNext, ik, dExt;
             MicroAPI::RegTensor<PromoteT> vregF32, vregPadF32;
 
             // B16 侧 (scatter + cast)
             MicroAPI::MaskReg maskB16, selMaskLo, selMaskHi, allMask;
             MicroAPI::RegTensor<Rng16> tmpRange16, tmpHalf;
             MicroAPI::RegTensor<Idx16> idxB16;
-            MicroAPI::RegTensor<T>     vregB16Lo, vregB16Hi, vregScatter;
+            MicroAPI::RegTensor<T> vregB16Lo, vregB16Hi, vregScatter;
 
             for (uint16_t b = 0; b < numBatches; b++) {
                 uint32_t remain = totalGrp * 2;
@@ -866,44 +886,38 @@ private:
                 }
                 // F32→B16 cast + Select
                 MicroAPI::Cast<T, PromoteT, CAST_TRAIT_DOWN_ZERO>(vregB16Lo, vregF32, maskB16);
-                MicroAPI::Cast<T, PromoteT, CAST_TRAIT_DOWN_ONE >(vregB16Hi, vregF32, maskB16);
+                MicroAPI::Cast<T, PromoteT, CAST_TRAIT_DOWN_ONE>(vregB16Hi, vregF32, maskB16);
                 MicroAPI::Select(vregScatter, vregB16Lo, vregB16Hi, selMaskLo);
                 // scatter B16 to outputBuf (Idx16 + maskB16)
                 MicroAPI::Arange(tmpRange16, (Rng16)0);
                 MicroAPI::Duplicate(tmpHalf, (Rng16)2, maskB16);
-                MicroAPI::Div<Idx16>((MicroAPI::RegTensor<Idx16>&)tmpRange16,
-                     (MicroAPI::RegTensor<Idx16>&)tmpRange16,
-                     (MicroAPI::RegTensor<Idx16>&)tmpHalf, maskB16);
-                MicroAPI::Muls(idxB16, (MicroAPI::RegTensor<Idx16>&)tmpRange16,
-                               (Idx16)dN1, maskB16);
-                MicroAPI::Adds(idxB16, idxB16,
-                               (Idx16)((Rng16)b * (Rng16)VL_F32 * (Rng16)dN1), maskB16);
+                MicroAPI::Div<Idx16>((MicroAPI::RegTensor<Idx16>&)tmpRange16, (MicroAPI::RegTensor<Idx16>&)tmpRange16,
+                                     (MicroAPI::RegTensor<Idx16>&)tmpHalf, maskB16);
+                MicroAPI::Muls(idxB16, (MicroAPI::RegTensor<Idx16>&)tmpRange16, (Idx16)dN1, maskB16);
+                MicroAPI::Adds(idxB16, idxB16, (Idx16)((Rng16)b * (Rng16)VL_F32 * (Rng16)dN1), maskB16);
                 MicroAPI::DataCopyScatter(outputAddr, vregScatter, idxB16, maskB16);
 
                 // ======== Phase B: 中间 ========
                 for (uint16_t i = 0; i < midCount; i++) {
                     const uint16_t iN1 = i + 1;
-                    MicroAPI::Adds(idxF32, baseIdx,
-                                   (Idx32)((Rng32)iN1 + (Rng32)pL), maskF32);
+                    MicroAPI::Adds(idxF32, baseIdx, (Idx32)((Rng32)iN1 + (Rng32)pL), maskF32);
                     MicroAPI::DataCopyGather(vregF32, dataAddr, idxF32, maskF32);
                     MicroAPI::Cast<T, PromoteT, CAST_TRAIT_DOWN_ZERO>(vregB16Lo, vregF32, maskB16);
-                    MicroAPI::Cast<T, PromoteT, CAST_TRAIT_DOWN_ONE >(vregB16Hi, vregF32, maskB16);
+                    MicroAPI::Cast<T, PromoteT, CAST_TRAIT_DOWN_ONE>(vregB16Hi, vregF32, maskB16);
                     MicroAPI::Select(vregScatter, vregB16Lo, vregB16Hi, selMaskLo);
                     MicroAPI::Arange(tmpRange16, (Rng16)0);
                     MicroAPI::Duplicate(tmpHalf, (Rng16)2, maskB16);
                     MicroAPI::Div<Idx16>((MicroAPI::RegTensor<Idx16>&)tmpRange16,
-                     (MicroAPI::RegTensor<Idx16>&)tmpRange16,
-                     (MicroAPI::RegTensor<Idx16>&)tmpHalf, maskB16);
-                    MicroAPI::Muls(idxB16, (MicroAPI::RegTensor<Idx16>&)tmpRange16,
-                                   (Idx16)dN1, maskB16);
-                    MicroAPI::Adds(idxB16, idxB16,
-                        (Idx16)((Rng16)b * (Rng16)VL_F32 * (Rng16)dN1 + (Rng16)iN1), maskB16);
+                                         (MicroAPI::RegTensor<Idx16>&)tmpRange16, (MicroAPI::RegTensor<Idx16>&)tmpHalf,
+                                         maskB16);
+                    MicroAPI::Muls(idxB16, (MicroAPI::RegTensor<Idx16>&)tmpRange16, (Idx16)dN1, maskB16);
+                    MicroAPI::Adds(idxB16, idxB16, (Idx16)((Rng16)b * (Rng16)VL_F32 * (Rng16)dN1 + (Rng16)iN1),
+                                   maskB16);
                     MicroAPI::DataCopyScatter(outputAddr, vregScatter, idxB16, maskB16);
                 }
 
                 // ======== Phase C: 右边界 ========
-                MicroAPI::Adds(idxF32, baseIdx,
-                               (Idx32)((Rng32)pL + (Rng32)iRight), maskF32);
+                MicroAPI::Adds(idxF32, baseIdx, (Idx32)((Rng32)pL + (Rng32)iRight), maskF32);
                 MicroAPI::DataCopyGather(vregF32, dataAddr, idxF32, maskF32);
                 for (uint16_t k = 0; k < combPadCnt; k++) {
                     MicroAPI::Adds(idxF32, baseIdx, (Idx32)k, maskF32);
@@ -911,23 +925,19 @@ private:
                     MicroAPI::Add(vregF32, vregF32, vregPadF32, maskF32);
                 }
                 for (uint16_t k = 0; k < pRu; k++) {
-                    MicroAPI::Adds(idxF32, baseIdx,
-                                   (Idx32)(rightPadStart + (Rng32)k), maskF32);
+                    MicroAPI::Adds(idxF32, baseIdx, (Idx32)(rightPadStart + (Rng32)k), maskF32);
                     MicroAPI::DataCopyGather(vregPadF32, dataAddr, idxF32, maskF32);
                     MicroAPI::Add(vregF32, vregF32, vregPadF32, maskF32);
                 }
                 MicroAPI::Cast<T, PromoteT, CAST_TRAIT_DOWN_ZERO>(vregB16Lo, vregF32, maskB16);
-                MicroAPI::Cast<T, PromoteT, CAST_TRAIT_DOWN_ONE >(vregB16Hi, vregF32, maskB16);
+                MicroAPI::Cast<T, PromoteT, CAST_TRAIT_DOWN_ONE>(vregB16Hi, vregF32, maskB16);
                 MicroAPI::Select(vregScatter, vregB16Lo, vregB16Hi, selMaskLo);
                 MicroAPI::Arange(tmpRange16, (Rng16)0);
                 MicroAPI::Duplicate(tmpHalf, (Rng16)2, maskB16);
-                MicroAPI::Div<Idx16>((MicroAPI::RegTensor<Idx16>&)tmpRange16,
-                     (MicroAPI::RegTensor<Idx16>&)tmpRange16,
-                     (MicroAPI::RegTensor<Idx16>&)tmpHalf, maskB16);
-                MicroAPI::Muls(idxB16, (MicroAPI::RegTensor<Idx16>&)tmpRange16,
-                               (Idx16)dN1, maskB16);
-                MicroAPI::Adds(idxB16, idxB16,
-                    (Idx16)((Rng16)b * (Rng16)VL_F32 * (Rng16)dN1 + (Rng16)iRight), maskB16);
+                MicroAPI::Div<Idx16>((MicroAPI::RegTensor<Idx16>&)tmpRange16, (MicroAPI::RegTensor<Idx16>&)tmpRange16,
+                                     (MicroAPI::RegTensor<Idx16>&)tmpHalf, maskB16);
+                MicroAPI::Muls(idxB16, (MicroAPI::RegTensor<Idx16>&)tmpRange16, (Idx16)dN1, maskB16);
+                MicroAPI::Adds(idxB16, idxB16, (Idx16)((Rng16)b * (Rng16)VL_F32 * (Rng16)dN1 + (Rng16)iRight), maskB16);
                 MicroAPI::DataCopyScatter(outputAddr, vregScatter, idxB16, maskB16);
             }
         }
@@ -941,28 +951,26 @@ private:
     //   B32  sizeof(T)==4  Gather src→dst: b32→b32; Scatter: b32; IndexT=uint32_t; RangeT=int32_t 。
     //   B64  sizeof(T)==8  Gather src→dst: b64→b64; Scatter: b64; IndexT=uint32_t（前 32 数）; RangeT=int32_t 。
     // index 单位为**元素索引**（不是字节偏移），与 pad_v3/pad_scatter.h、roll/roll_gather_simd.h 一致。
-    __aicore__ inline void GatherToOutputBufGatherPath(
-        LocalTensor<T>& data, LocalTensor<T>& output, uint32_t totalGroups,
-        uint64_t firstRowElems,
-        const uint32_t* effExtents, const uint32_t* effStrides,
-        uint32_t dN1, int32_t pL, int32_t pR)
+    __aicore__ inline void GatherToOutputBufGatherPath(LocalTensor<T>& data, LocalTensor<T>& output,
+                                                       uint32_t totalGroups, uint64_t firstRowElems,
+                                                       const uint32_t* effExtents, const uint32_t* effStrides,
+                                                       uint32_t dN1, int32_t pL, int32_t pR)
     {
         // 编译期分派 IndexT / RangeT / CastT
         using IndexT = std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>;
         using RangeT = std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>;
         // CastT：B8 时 Gather/Scatter 的 dst/src 寄存器需扩展到 B16（DataCopyGather 自动 src=b8→dst=b16）
         // 写法参考 conversion/pad_v3/op_kernel/arch35/pad_scatter.h（uint8_t→uint16_t, int8_t→int16_t）
-        using CastT  = std::conditional_t<sizeof(T) == 1,
-                          std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>,
-                          T>;
+        using CastT = std::conditional_t<sizeof(T) == 1,
+                                         std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
 
         // index 单位为元素索引（不是字节偏移）
-        const RangeT baseE      = (RangeT)firstRowElems;
-        const RangeT outRowE    = (RangeT)dN1;
+        const RangeT baseE = (RangeT)firstRowElems;
+        const RangeT outRowE = (RangeT)dN1;
         constexpr uint32_t VL = VREG_BYTES / sizeof(T);
         // B8 (sizeof(T)=1): VL=256 but IndexT=uint16_t has only 128 lanes, so batch size
         // must be capped at IndexT lane count.  For B16/B32/B64, kBatchVL == VL.
-        constexpr uint32_t kIdxVL  = VREG_BYTES / sizeof(IndexT);
+        constexpr uint32_t kIdxVL = VREG_BYTES / sizeof(IndexT);
         constexpr uint32_t kBatchVL = (VL < kIdxVL) ? VL : kIdxVL;
         const uint16_t numBatches = (uint16_t)((totalGroups + kBatchVL - 1) / kBatchVL);
         const uint16_t pLu = (uint16_t)pL;
@@ -974,18 +982,17 @@ private:
         const uint16_t iRight = (uint16_t)(dN1 - 1);
         // dN1==1: left/right boundary are the same element; Phase C overwrites Phase A's scatter,
         // so skip Phase A left-padding loop and re-accumulate it in Phase C instead.
-        const uint16_t phaseA_pLu  = (dN1 <= 1) ? (uint16_t)0 : pLu;
+        const uint16_t phaseA_pLu = (dN1 <= 1) ? (uint16_t)0 : pLu;
         const uint16_t combPadCnt = (dN1 <= 1) ? pLu : (uint16_t)0;
 
-        auto dataAddr   = reinterpret_cast<__ubuf__ T*>(data.GetPhyAddr());
+        auto dataAddr = reinterpret_cast<__ubuf__ T*>(data.GetPhyAddr());
         auto outputAddr = reinterpret_cast<__ubuf__ T*>(output.GetPhyAddr());
 
         // 多维 base 索引相关编译期常量（与 GatherToOutputBuf 对齐）
-        constexpr int8_t  kPadAxisStart  = (DIM_NUM > MAX_PAD_DIMS) ? (int8_t)(DIM_NUM - MAX_PAD_DIMS) : (int8_t)0;
-        constexpr bool    kHasFrontMerge = ((int8_t)SPLIT_AXIS < kPadAxisStart);
-        constexpr int8_t  kRearStart     = kHasFrontMerge ? kPadAxisStart : (int8_t)SPLIT_AXIS;
-        constexpr uint8_t kEffAxes       = (uint8_t)((int8_t)(DIM_NUM - 1) - kRearStart)
-                                            + (kHasFrontMerge ? 1u : 0u);
+        constexpr int8_t kPadAxisStart = (DIM_NUM > MAX_PAD_DIMS) ? (int8_t)(DIM_NUM - MAX_PAD_DIMS) : (int8_t)0;
+        constexpr bool kHasFrontMerge = ((int8_t)SPLIT_AXIS < kPadAxisStart);
+        constexpr int8_t kRearStart = kHasFrontMerge ? kPadAxisStart : (int8_t)SPLIT_AXIS;
+        constexpr uint8_t kEffAxes = (uint8_t)((int8_t)(DIM_NUM - 1) - kRearStart) + (kHasFrontMerge ? 1u : 0u);
 
         // 把 effExtents/effStrides 拷到局部 IndexT 域常量（避免 vec_scope 内访问 uint32_t 数组）
         const IndexT eE0 = (IndexT)effExtents[0];
@@ -1001,13 +1008,14 @@ private:
         uint32_t remain = sizeof(T) > 4 ? totalGroups * 2 : totalGroups;
 
         // ============ Gather→Scatter: left/mid/right 三阶段合一，baseIdx 只算一次 ============
-        __VEC_SCOPE__ {
+        __VEC_SCOPE__
+        {
             MicroAPI::MaskReg mask;
             MicroAPI::RegTensor<RangeT> tmpRange;
             MicroAPI::RegTensor<IndexT> baseIdx, quot, idx, tmpReg;
             MicroAPI::RegTensor<IndexT> qNext, ik, dExt;
             MicroAPI::RegTensor<T> vregT, vregPadT;
-            MicroAPI::RegTensor<T> vregOut, vregScatter;  // B8 Pack/UnPack 中转
+            MicroAPI::RegTensor<T> vregOut, vregScatter; // B8 Pack/UnPack 中转
             for (uint16_t b = 0; b < numBatches; b++) {
                 mask = MicroAPI::UpdateMask<IndexT>(remain);
                 // === shared baseIdx computation ===
@@ -1079,8 +1087,7 @@ private:
                     MicroAPI::Adds(idx, baseIdx, (IndexT)k, mask);
                     if constexpr (sizeof(T) == 1) {
                         MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastT>&)vregPadT, dataAddr, idx, mask);
-                        MicroAPI::Add((MicroAPI::RegTensor<CastT>&)vregT,
-                                      (MicroAPI::RegTensor<CastT>&)vregT,
+                        MicroAPI::Add((MicroAPI::RegTensor<CastT>&)vregT, (MicroAPI::RegTensor<CastT>&)vregT,
                                       (MicroAPI::RegTensor<CastT>&)vregPadT, mask);
                     } else {
                         MicroAPI::DataCopyGather(vregPadT, dataAddr, idx, mask);
@@ -1089,10 +1096,8 @@ private:
                 }
 
                 MicroAPI::Arange(tmpRange, (RangeT)0);
-                MicroAPI::Muls(idx, (MicroAPI::RegTensor<IndexT>&)tmpRange,
-                               (IndexT)outRowE, mask);
-                MicroAPI::Adds(idx, idx,
-                               (IndexT)((RangeT)b * (RangeT)kBatchVL * outRowE), mask);
+                MicroAPI::Muls(idx, (MicroAPI::RegTensor<IndexT>&)tmpRange, (IndexT)outRowE, mask);
+                MicroAPI::Adds(idx, idx, (IndexT)((RangeT)b * (RangeT)kBatchVL * outRowE), mask);
 
                 if constexpr (sizeof(T) == 1) {
                     MicroAPI::Pack(vregOut, (MicroAPI::RegTensor<CastT>&)vregT);
@@ -1114,8 +1119,7 @@ private:
 
                     MicroAPI::Arange(tmpRange, (RangeT)0);
                     MicroAPI::Muls(idx, (MicroAPI::RegTensor<IndexT>&)tmpRange, (IndexT)outRowE, mask);
-                    MicroAPI::Adds(idx, idx,
-                                   (IndexT)((RangeT)b * (RangeT)kBatchVL * outRowE + (RangeT)iN1), mask);
+                    MicroAPI::Adds(idx, idx, (IndexT)((RangeT)b * (RangeT)kBatchVL * outRowE + (RangeT)iN1), mask);
                     if constexpr (sizeof(T) == 1) {
                         MicroAPI::Pack(vregOut, (MicroAPI::RegTensor<CastT>&)vregT);
                         MicroAPI::UnPack((MicroAPI::RegTensor<CastT>&)vregScatter, vregOut);
@@ -1138,8 +1142,7 @@ private:
                     MicroAPI::Adds(idx, baseIdx, (IndexT)k, mask);
                     if constexpr (sizeof(T) == 1) {
                         MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastT>&)vregPadT, dataAddr, idx, mask);
-                        MicroAPI::Add((MicroAPI::RegTensor<CastT>&)vregT,
-                                      (MicroAPI::RegTensor<CastT>&)vregT,
+                        MicroAPI::Add((MicroAPI::RegTensor<CastT>&)vregT, (MicroAPI::RegTensor<CastT>&)vregT,
                                       (MicroAPI::RegTensor<CastT>&)vregPadT, mask);
                     } else {
                         MicroAPI::DataCopyGather(vregPadT, dataAddr, idx, mask);
@@ -1151,8 +1154,7 @@ private:
                     MicroAPI::Adds(idx, baseIdx, (IndexT)(rightPadStart + (RangeT)k), mask);
                     if constexpr (sizeof(T) == 1) {
                         MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastT>&)vregPadT, dataAddr, idx, mask);
-                        MicroAPI::Add((MicroAPI::RegTensor<CastT>&)vregT,
-                                      (MicroAPI::RegTensor<CastT>&)vregT,
+                        MicroAPI::Add((MicroAPI::RegTensor<CastT>&)vregT, (MicroAPI::RegTensor<CastT>&)vregT,
                                       (MicroAPI::RegTensor<CastT>&)vregPadT, mask);
                     } else {
                         MicroAPI::DataCopyGather(vregPadT, dataAddr, idx, mask);
@@ -1162,8 +1164,7 @@ private:
 
                 MicroAPI::Arange(tmpRange, (RangeT)0);
                 MicroAPI::Muls(idx, (MicroAPI::RegTensor<IndexT>&)tmpRange, (IndexT)outRowE, mask);
-                MicroAPI::Adds(idx, idx,
-                               (IndexT)((RangeT)b * (RangeT)kBatchVL * outRowE + (RangeT)iRight), mask);
+                MicroAPI::Adds(idx, idx, (IndexT)((RangeT)b * (RangeT)kBatchVL * outRowE + (RangeT)iRight), mask);
                 if constexpr (sizeof(T) == 1) {
                     MicroAPI::Pack(vregOut, (MicroAPI::RegTensor<CastT>&)vregT);
                     MicroAPI::UnPack((MicroAPI::RegTensor<CastT>&)vregScatter, vregOut);
@@ -1180,8 +1181,8 @@ private:
     // strideAligned_ 排布（尾轴 32B 对齐）。axis k 的 stride 走 SliceStrideInBuf。
     // rel[k] = (origCoords[k] + leftPad[k] - loadStart[k])：把原始（不含 pad）坐标转换为
     //          dataBuf 中 padding 后的相对坐标。
-    __aicore__ inline uint64_t ComputeRowOffsetInBuf(
-        const uint32_t* origCoords, const uint32_t* loadStart, const uint32_t* loadEnd) const
+    __aicore__ inline uint64_t ComputeRowOffsetInBuf(const uint32_t* origCoords, const uint32_t* loadStart,
+                                                     const uint32_t* loadEnd) const
     {
         uint64_t ubOff = 0;
         for (int k = (int)DIM_NUM - 2; k >= 0; k--) {
@@ -1200,10 +1201,12 @@ private:
         uint64_t stride = 1;
         for (int k = (int)DIM_NUM - 1; k >= 0; k--) {
             uint32_t coord = 0;
-            if (k == (int)SPLIT_AXIS)        coord = tileStart;
-            else  if (k < (int)SPLIT_AXIS)                      coord = outerCoords[k];
+            if (k == (int)SPLIT_AXIS)
+                coord = tileStart;
+            else if (k < (int)SPLIT_AXIS)
+                coord = outerCoords[k];
             gmOffset += (uint64_t)coord * stride;
-            stride   *= inputShape_[k];
+            stride *= inputShape_[k];
         }
 
         uint64_t outElems = (uint64_t)tileLen * innerProdInGm_;
@@ -1221,32 +1224,32 @@ private:
     GlobalTensor<T> gradOutGm_;
     GlobalTensor<T> gradInGm_;
 
-    TBuf<TPosition::VECCALC> dataBuf_;    // kNeedCast 时按 PromoteT 分配，否则按 T
-    TBuf<TPosition::VECCALC> outputBuf_;  // T 大小
+    TBuf<TPosition::VECCALC> dataBuf_;   // kNeedCast 时按 PromoteT 分配，否则按 T
+    TBuf<TPosition::VECCALC> outputBuf_; // T 大小
 
     uint32_t blockIdx_;
-    uint64_t inputShape_[MAX_DIMS]    = {0};
-    uint64_t outputShape_[MAX_DIMS]   = {0};
+    uint64_t inputShape_[MAX_DIMS] = {0};
+    uint64_t outputShape_[MAX_DIMS] = {0};
     uint64_t strideAligned_[MAX_DIMS] = {0};
-    int32_t  leftPad_[MAX_DIMS]       = {0};
-    int32_t  rightPad_[MAX_DIMS]      = {0};
+    int32_t leftPad_[MAX_DIMS] = {0};
+    int32_t rightPad_[MAX_DIMS] = {0};
 
-    uint32_t splitSize_      = 0;
-    uint64_t splitCount_     = 0;
-    uint32_t tilesPerCore_   = 0;
+    uint32_t splitSize_ = 0;
+    uint64_t splitCount_ = 0;
+    uint32_t tilesPerCore_ = 0;
     uint64_t splitCountAxis_ = 0;
-    uint64_t worstFactor_    = 1;
+    uint64_t worstFactor_ = 1;
     // UB 内 axis>SPLIT_AXIS 总 element 数（尾轴 32B 对齐）。SPLIT_AXIS<N-1 时 = strideAligned_[SPLIT_AXIS]。
-    uint64_t innerProdUb_    = 1;
+    uint64_t innerProdUb_ = 1;
     // GM 紧凑 axis>SPLIT_AXIS 总 element 数（=∏ outputShape[k>SPLIT_AXIS]）。
     // grad_in GM 紧凑 axis>SPLIT_AXIS 总 element 数（=∏ inputShape[k>SPLIT_AXIS]）。
-    uint64_t innerProdInGm_  = 1;
+    uint64_t innerProdInGm_ = 1;
 
-    uint64_t dataBufElems_   = 0;  // dataBuf T 元素数（kNeedCast 时用于 BulkCast 长度）
-    uint64_t dataBufBytes_   = 0;
+    uint64_t dataBufElems_ = 0; // dataBuf T 元素数（kNeedCast 时用于 BulkCast 长度）
+    uint64_t dataBufBytes_ = 0;
     uint64_t outputBufBytes_ = 0;
 };
 
-}  // namespace PadV3GradReplication
+} // namespace PadV3GradReplication
 
-#endif  // PAD_V3_GRAD_REPLICATION_H
+#endif // PAD_V3_GRAD_REPLICATION_H

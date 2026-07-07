@@ -57,9 +57,8 @@ inline static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
     bool bf16flag = CheckSocVersionIsSupportBf16();
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     if (!bf16flag && self->GetDataType() == op::DataType::DT_BF16) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s is unsupported by the current SOC version [%s].",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(socVersion).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s is unsupported by the current SOC version [%s].",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(socVersion).GetString());
         return false;
     }
 
@@ -100,17 +99,15 @@ static bool CheckShapeValid(const aclTensor* self, const aclIntArray* dims, cons
     auto dimOut = out->GetViewShape().GetDimNum();
     // 输入输出维度数不同
     if (dimSelf != dimOut) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Permute not support self shape: %s, output shape: %s",
-            op::ToString(self->GetViewShape()).GetString(), op::ToString(out->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Permute not support self shape: %s, output shape: %s",
+                op::ToString(self->GetViewShape()).GetString(), op::ToString(out->GetViewShape()).GetString());
         return false;
     }
     // dim size 超出 inuput output 维度
     if (dims->Size() != dimSelf) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "The dimension of the dims:%ld and the dimension of the input shape:%ld are inconsistent",
-            static_cast<int64_t>(dims->Size()), static_cast<int64_t>(dimSelf));
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "The dimension of the dims:%ld and the dimension of the input shape:%ld are inconsistent",
+                static_cast<int64_t>(dims->Size()), static_cast<int64_t>(dimSelf));
         return false;
     }
 
@@ -183,8 +180,8 @@ static const aclTensor* ProcessEmptyTensor(const aclTensor* self, const aclTenso
     }
 }
 
-static const aclTensor* BuildPermuteGraph(
-    const aclTensor* self, const aclIntArray* dims, const aclTensor* out, aclOpExecutor* executor)
+static const aclTensor* BuildPermuteGraph(const aclTensor* self, const aclIntArray* dims, const aclTensor* out,
+                                          aclOpExecutor* executor)
 {
     // 空tensor处理
     if (self->IsEmpty()) {
@@ -213,8 +210,8 @@ static const aclTensor* BuildPermuteGraph(
     return selfPermute;
 }
 
-aclnnStatus aclnnPermuteGetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* dims, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnPermuteGetWorkspaceSize(const aclTensor* self, const aclIntArray* dims, aclTensor* out,
+                                         uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnPermute, DFX_IN(self, dims), DFX_OUT(out));
     // 固定写法，创建OpExecutor

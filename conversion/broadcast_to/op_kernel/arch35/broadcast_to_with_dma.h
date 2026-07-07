@@ -19,8 +19,7 @@
 #include "broadcast_to_base.h"
 #include "kernel_operator.h"
 
-namespace BrcTo
-{
+namespace BrcTo {
 using namespace AscendC;
 
 constexpr uint8_t bufferNum = 1;
@@ -28,8 +27,7 @@ constexpr int32_t queDepth = 1;
 constexpr MultiCopyConfig copyCfg{false, 0, 0, false};
 
 template <typename T, typename U, uint8_t maxDim = 4>
-class BrcToWithNDDMA : public BrcToBase<U>
-{
+class BrcToWithNDDMA : public BrcToBase<U> {
 public:
     __aicore__ inline BrcToWithNDDMA(){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const U* tilingDataPtr, TPipe* pipeIn);
@@ -59,7 +57,7 @@ private:
     AscendC::MultiCopyParams<T, maxDim> mCopyParams;
     AscendC::DataCopyExtParams copyParams{1, 0, 0, 0, 0};
     uint32_t outLen = sizeof(T);
-    uint8_t copySwitch = 1;  // to avoid repeat copy in for U is broadcast axis
+    uint8_t copySwitch = 1; // to avoid repeat copy in for U is broadcast axis
 };
 
 template <typename T, typename U, uint8_t maxDim>
@@ -140,8 +138,8 @@ __aicore__ inline void BrcToWithNDDMA<T, U, maxDim>::Process()
         if (lpInfo.uLeft > 0) {
             mCopyParams.loopInfo.loopSize[0] = lpInfo.uLeft;
             copyParams.blockLen = lpInfo.uLeft * outLen;
-            gmInOffset =
-                (aInOffset + inBlockOffset + lpInfo.uLpCnt * tdPtr_->uLpUnit * tdPtr_->uInOffset * tdPtr_->isUNotB);
+            gmInOffset = (aInOffset + inBlockOffset +
+                          lpInfo.uLpCnt * tdPtr_->uLpUnit * tdPtr_->uInOffset * tdPtr_->isUNotB);
             CopyDataInWithDMA(tensor);
             gmOutOffset = (aOutOffset + outBlockOffset + lpInfo.uLpCnt * tdPtr_->uLpUnit * tdPtr_->uOutOffset);
             CopyDataOut(tensor);
@@ -151,6 +149,6 @@ __aicore__ inline void BrcToWithNDDMA<T, U, maxDim>::Process()
     que.FreeTensor(tensor);
 }
 
-}  // namespace BrcTo
+} // namespace BrcTo
 
-#endif  // BROADCAST_TO_WITH_NDDMA_H_
+#endif // BROADCAST_TO_WITH_NDDMA_H_

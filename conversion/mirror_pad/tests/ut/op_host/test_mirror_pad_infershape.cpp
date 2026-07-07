@@ -16,26 +16,19 @@
 
 class MirrorPadInfershapeTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "MirrorPadInfershapeTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "MirrorPadInfershapeTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "MirrorPadInfershapeTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "MirrorPadInfershapeTest TearDown" << std::endl; }
 };
 
 TEST_F(MirrorPadInfershapeTest, mirror_pad_infershape_case_0)
 {
-    gert::StorageShape xShape = {
-        {
-            6,
-        },
-        {
-            6,
-        }};
+    gert::StorageShape xShape = {{
+                                     6,
+                                 },
+                                 {
+                                     6,
+                                 }};
     // padShape和pad_value的形状要相同
     gert::StorageShape padShape = {{1, 2}, {1, 2}};
     int pad_value[2] = {2, 2};

@@ -76,8 +76,8 @@ private:
 
     using RangeType = std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>;
     using IdxType = std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>;
-    using CastType =
-        std::conditional_t<sizeof(T) == 1, std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
+    using CastType = std::conditional_t<sizeof(T) == 1,
+                                        std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
 
     uint8_t mode{0};
 
@@ -148,10 +148,9 @@ public:
                 inAddr += inIndex_[i] * tilingData_->inStride[i];
             }
 
-            mDataLen =
-                (inIndex_[mUbAxis] + mUbFactor <= tilingData_->inShape[mUbAxis] ?
-                     mUbFactor :
-                     tilingData_->inShape[mUbAxis] - inIndex_[mUbAxis]);
+            mDataLen = (inIndex_[mUbAxis] + mUbFactor <= tilingData_->inShape[mUbAxis] ?
+                            mUbFactor :
+                            tilingData_->inShape[mUbAxis] - inIndex_[mUbAxis]);
 
             ProcessOneStep(idx - startIdx, inAddr);
         }
@@ -186,20 +185,20 @@ private:
             leftUbStartIdx_ = 0;
         } else {
             leftUbStartIdx_ = (!mode && inIndex_[mUbAxis] == 0);
-            leftUbCopyLen_ =
-                min(mDataLen, (tilingData_->leftPad[mUbAxis] - mode) - inIndex_[mUbAxis] + 1) - leftUbStartIdx_;
-            outIdxCnt[CONST4].outIdx[1] =
-                (tilingData_->leftPad[mUbAxis] - mode) - (inIndex_[mUbAxis] + leftUbStartIdx_ + leftUbCopyLen_ - 1);
+            leftUbCopyLen_ = min(mDataLen, (tilingData_->leftPad[mUbAxis] - mode) - inIndex_[mUbAxis] + 1) -
+                             leftUbStartIdx_;
+            outIdxCnt[CONST4].outIdx[1] = (tilingData_->leftPad[mUbAxis] - mode) -
+                                          (inIndex_[mUbAxis] + leftUbStartIdx_ + leftUbCopyLen_ - 1);
         }
 
         if (originRightPad == 0 || inIndex_[mUbAxis] + mDataLen <= originRightStartIndex) {
             rightUbCopyLen_ = 0;
             rightUbStartIdx_ = 0;
         } else {
-            rightUbStartIdx_ =
-                (originRightStartIndex <= inIndex_[mUbAxis]) ? 0 : originRightStartIndex - inIndex_[mUbAxis];
-            rightUbCopyLen_ =
-                mDataLen - (!mode && inIndex_[mUbAxis] + mDataLen == tilingData_->inShape[mUbAxis]) - rightUbStartIdx_;
+            rightUbStartIdx_ = (originRightStartIndex <= inIndex_[mUbAxis]) ? 0 :
+                                                                              originRightStartIndex - inIndex_[mUbAxis];
+            rightUbCopyLen_ = mDataLen - (!mode && inIndex_[mUbAxis] + mDataLen == tilingData_->inShape[mUbAxis]) -
+                              rightUbStartIdx_;
             outIdxCnt[CONST4].outIdx[CONST2] = CONST2 * (tilingData_->inShape[mUbAxis] - !mode) +
                                                (tilingData_->leftPad[mUbAxis] - mode) -
                                                (inIndex_[mUbAxis] + rightUbStartIdx_ + rightUbCopyLen_ - 1);
@@ -209,16 +208,19 @@ private:
             outIdxCnt[realBase + i].outIdx[0] = outIndex_[i] * tilingData_->outStride[i];
             if (tilingData_->leftPad[i] != 0 && inIndex_[i] >= (!mode) &&
                 inIndex_[i] <= (tilingData_->leftPad[i] - mode)) {
-                outIdxCnt[realBase + i].outIdx[outIdxCnt[realBase + i].cnt++] =
-                    (tilingData_->leftPad[i] - mode - inIndex_[i]) * tilingData_->outStride[i];
+                outIdxCnt[realBase + i].outIdx[outIdxCnt[realBase + i].cnt++] = (tilingData_->leftPad[i] - mode -
+                                                                                 inIndex_[i]) *
+                                                                                tilingData_->outStride[i];
             }
 
             uint64_t originRightPad = tilingData_->outShape[i] - tilingData_->leftPad[i] - tilingData_->inShape[i];
             if (originRightPad != 0 && inIndex_[i] >= (tilingData_->inShape[i] - originRightPad - (!mode)) &&
                 inIndex_[i] < (tilingData_->inShape[i] - (!mode))) {
-                outIdxCnt[realBase + i].outIdx[outIdxCnt[realBase + i].cnt++] =
-                    (CONST2 * (tilingData_->inShape[i] - !mode) + tilingData_->leftPad[i] - mode - inIndex_[i]) *
-                    tilingData_->outStride[i];
+                outIdxCnt[realBase + i].outIdx[outIdxCnt[realBase + i].cnt++] = (CONST2 *
+                                                                                     (tilingData_->inShape[i] - !mode) +
+                                                                                 tilingData_->leftPad[i] - mode -
+                                                                                 inIndex_[i]) *
+                                                                                tilingData_->outStride[i];
             }
         }
 
@@ -292,8 +294,8 @@ private:
             AscendC::MicroAPI::MaskReg maskReg;
 
             AscendC::MicroAPI::RegTensor<T> dataB16ToB8Reg;
-            AscendC::MicroAPI::MaskReg maskRegLowHalf =
-                AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::H>();
+            AscendC::MicroAPI::MaskReg
+                maskRegLowHalf = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::H>();
 
             __ubuf__ T* srcAddr = dstAddr + inStart;
             for (uint16_t j = 0; j < needPadleftVF; j++) {
@@ -303,9 +305,8 @@ private:
                     maskReg = AscendC::MicroAPI::UpdateMask<CastType>(leftUbCopyLenVF);
                     MicroAPI::Arange<RangeType, AscendC::MicroAPI::IndexOrder::DECREASE_ORDER>(
                         idxReg, (RangeType)(leftIdxStart - rangeStart - k * oneRepeatSize));
-                    MicroAPI::DataCopyGather(
-                        (MicroAPI::RegTensor<CastType>&)dataReg, srcAddr, (MicroAPI::RegTensor<IdxType>&)idxReg,
-                        maskReg);
+                    MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType>&)dataReg, srcAddr,
+                                             (MicroAPI::RegTensor<IdxType>&)idxReg, maskReg);
                     if constexpr (sizeof(T) != 1) {
                         MicroAPI::DataCopy(ubLeftAddr + k * oneRepeatSize, dataReg, maskReg);
                     } else {
@@ -323,9 +324,8 @@ private:
                     maskReg = AscendC::MicroAPI::UpdateMask<CastType>(rightUbCopyLenVF);
                     MicroAPI::Arange<RangeType, AscendC::MicroAPI::IndexOrder::DECREASE_ORDER>(
                         idxReg, (RangeType)(rightIdxStart - rangeStart - k * oneRepeatSize));
-                    MicroAPI::DataCopyGather(
-                        (MicroAPI::RegTensor<CastType>&)dataReg, srcAddr, (MicroAPI::RegTensor<IdxType>&)idxReg,
-                        maskReg);
+                    MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType>&)dataReg, srcAddr,
+                                             (MicroAPI::RegTensor<IdxType>&)idxReg, maskReg);
                     if constexpr (sizeof(T) != 1) {
                         MicroAPI::DataCopy(ubRightAddr + k * oneRepeatSize, dataReg, maskReg);
                     } else {

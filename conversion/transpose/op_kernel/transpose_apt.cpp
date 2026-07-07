@@ -35,8 +35,8 @@
 
 using namespace Transpose;
 
-extern "C" __aicore__ inline void TransposeTensorMoveProcess(
-    GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData, TPipe* pipe)
+extern "C" __aicore__ inline void TransposeTensorMoveProcess(GM_ADDR x, GM_ADDR y,
+                                                             const TransposeOpTilingData* tilingData, TPipe* pipe)
 {
     if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
         Transpose::TransposeTensorMove<int8_t> op;
@@ -61,8 +61,8 @@ extern "C" __aicore__ inline void TransposeTensorMoveProcess(
     }
 }
 
-extern "C" __aicore__ inline void TransposeSmallShapeProcess(
-    GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData)
+extern "C" __aicore__ inline void TransposeSmallShapeProcess(GM_ADDR x, GM_ADDR y,
+                                                             const TransposeOpTilingData* tilingData)
 {
     if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
         Transpose::TransposeSmallShape<int8_t> op;
@@ -87,8 +87,8 @@ extern "C" __aicore__ inline void TransposeSmallShapeProcess(
     }
 }
 
-extern "C" __aicore__ inline void TransposeCutOneAxisProcess(
-    GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData, TPipe* pipe)
+extern "C" __aicore__ inline void TransposeCutOneAxisProcess(GM_ADDR x, GM_ADDR y,
+                                                             const TransposeOpTilingData* tilingData, TPipe* pipe)
 {
     if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
         Transpose::TransposeCutOneAxis<int8_t> op;
@@ -113,8 +113,8 @@ extern "C" __aicore__ inline void TransposeCutOneAxisProcess(
     }
 }
 
-extern "C" __aicore__ inline void TransposeCutTwoAxisProcess(
-    GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData, TPipe* pipe)
+extern "C" __aicore__ inline void TransposeCutTwoAxisProcess(GM_ADDR x, GM_ADDR y,
+                                                             const TransposeOpTilingData* tilingData, TPipe* pipe)
 {
     if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
         Transpose::TransposeCutTwoAxis<int8_t> op;
@@ -139,8 +139,8 @@ extern "C" __aicore__ inline void TransposeCutTwoAxisProcess(
     }
 }
 
-extern "C" __aicore__ inline void TransposeBigDimProcess(
-    GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData, TPipe* pipe)
+extern "C" __aicore__ inline void TransposeBigDimProcess(GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData,
+                                                         TPipe* pipe)
 {
     if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
         Transpose::TransposeBigDim<int8_t> op;
@@ -165,8 +165,8 @@ extern "C" __aicore__ inline void TransposeBigDimProcess(
     }
 }
 
-extern "C" __aicore__ inline void TransposeNLastProcess(
-    GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData, TPipe* pipe)
+extern "C" __aicore__ inline void TransposeNLastProcess(GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData,
+                                                        TPipe* pipe)
 {
     if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
         Transpose::TransposeNLast<int8_t> op;
@@ -191,8 +191,8 @@ extern "C" __aicore__ inline void TransposeNLastProcess(
     }
 }
 
-extern "C" __aicore__ inline void TransposeGatherProcess(
-    GM_ADDR x, GM_ADDR y, const GatherTransposeTilingData* tilingData, TPipe* pipe)
+extern "C" __aicore__ inline void TransposeGatherProcess(GM_ADDR x, GM_ADDR y,
+                                                         const GatherTransposeTilingData* tilingData, TPipe* pipe)
 {
     if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
         Transpose::TransposeWithGather<int8_t> op;
@@ -213,8 +213,8 @@ extern "C" __aicore__ inline void TransposeGatherProcess(
     }
 }
 
-extern "C" __aicore__ inline void TransposeVconvProcess(
-    GM_ADDR x, GM_ADDR y, const TransposeVCONVTilingData* tilingData, TPipe* pipe)
+extern "C" __aicore__ inline void TransposeVconvProcess(GM_ADDR x, GM_ADDR y,
+                                                        const TransposeVCONVTilingData* tilingData, TPipe* pipe)
 {
     if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
         Transpose::KernelTransDataTo5HD<int16_t> op;
@@ -223,8 +223,8 @@ extern "C" __aicore__ inline void TransposeVconvProcess(
     }
 }
 
-extern "C" __aicore__ inline void Transpose021VconvProcess(
-    GM_ADDR x, GM_ADDR y, const Transpose021VCONVTilingData* tilingData, TPipe* pipe)
+extern "C" __aicore__ inline void Transpose021VconvProcess(GM_ADDR x, GM_ADDR y,
+                                                           const Transpose021VCONVTilingData* tilingData, TPipe* pipe)
 {
     if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
         Transpose::KernelTransDataTo5HD021<int8_t> op;

@@ -60,12 +60,11 @@ __aicore__ inline void PadV3GradConstantSimt<T>::Init(GM_ADDR x, GM_ADDR y, cons
 }
 
 template <typename T, typename U, typename S>
-__simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__ void SimtComputeDimOne(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx, uint32_t blockNum, U inShape0,
-    S left0)
+__simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__
+    void SimtComputeDimOne(__gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx,
+                           uint32_t blockNum, U inShape0, S left0)
 {
-    for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         U yIdx = idx;
 
         S inIndex0 = yIdx + left0;
@@ -78,12 +77,12 @@ __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__ void SimtComputeDi
 }
 
 template <typename T, typename U, typename S, int32_t DIM>
-__simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__ void SimtComputeDimTwo(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx, uint32_t blockNum,
-    __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes, U m0, U s0, __ubuf__ S* lefts)
+__simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__
+    void SimtComputeDimTwo(__gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx,
+                           uint32_t blockNum, __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes, U m0,
+                           U s0, __ubuf__ S* lefts)
 {
-    for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         S inIndex[DIM]{0};
         U yIdx = idx;
 
@@ -104,12 +103,12 @@ __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__ void SimtComputeDi
 }
 
 template <typename T, typename U, typename S, int32_t DIM>
-__simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__ void SimtComputeDimThree(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx, uint32_t blockNum,
-    __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes, U m0, U m1, U s0, U s1, __ubuf__ S* lefts)
+__simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__
+    void SimtComputeDimThree(__gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx,
+                             uint32_t blockNum, __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes,
+                             U m0, U m1, U s0, U s1, __ubuf__ S* lefts)
 {
-    for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         S inIndex[DIM]{0};
 
         U yIdx = idx;
@@ -135,13 +134,12 @@ __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__ void SimtComputeDi
 }
 
 template <typename T, typename U, typename S, int32_t DIM>
-__simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__ void SimtComputeDimFour(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx, uint32_t blockNum,
-    __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes, U m0, U m1, U m2, U s0, U s1, U s2,
-    __ubuf__ S* lefts)
+__simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__
+    void SimtComputeDimFour(__gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx,
+                            uint32_t blockNum, __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes,
+                            U m0, U m1, U m2, U s0, U s1, U s2, __ubuf__ S* lefts)
 {
-    for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         S inIndex[DIM]{0};
 
         U yIdx = idx;
@@ -171,13 +169,12 @@ __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__ void SimtComputeDi
 }
 
 template <typename T, typename U, typename S, int32_t DIM>
-__simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__ void SimtComputeDimFive(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx, uint32_t blockNum,
-    __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes, U m0, U m1, U m2, U m3, U s0, U s1, U s2, U s3,
-    __ubuf__ S* lefts)
+__simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__
+    void SimtComputeDimFive(__gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx,
+                            uint32_t blockNum, __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes,
+                            U m0, U m1, U m2, U m3, U s0, U s1, U s2, U s3, __ubuf__ S* lefts)
 {
-    for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         S inIndex[DIM]{0};
 
         U yIdx = idx;
@@ -211,13 +208,12 @@ __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__ void SimtComputeDi
 }
 
 template <typename T, typename U, typename S, int32_t DIM>
-__simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_HALF_THREAD_DIM) __aicore__ void SimtComputeDimSix(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx, uint32_t blockNum,
-    __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes, U m0, U m1, U m2, U m3, U m4, U s0, U s1, U s2,
-    U s3, U s4, __ubuf__ S* lefts)
+__simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_HALF_THREAD_DIM) __aicore__
+    void SimtComputeDimSix(__gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx,
+                           uint32_t blockNum, __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes, U m0,
+                           U m1, U m2, U m3, U m4, U s0, U s1, U s2, U s3, U s4, __ubuf__ S* lefts)
 {
-    for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         S inIndex[DIM]{0};
 
         U yIdx = idx;
@@ -254,13 +250,12 @@ __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_HALF_THREAD_DIM) __aicore__ void SimtComp
 }
 
 template <typename T, typename U, typename S, int32_t DIM>
-__simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_HALF_THREAD_DIM) __aicore__ void SimtComputeDimSeven(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx, uint32_t blockNum,
-    __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes, U m0, U m1, U m2, U m3, U m4, U m5, U s0, U s1,
-    U s2, U s3, U s4, U s5, __ubuf__ S* lefts)
+__simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_HALF_THREAD_DIM) __aicore__
+    void SimtComputeDimSeven(__gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx,
+                             uint32_t blockNum, __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes,
+                             U m0, U m1, U m2, U m3, U m4, U m5, U s0, U s1, U s2, U s3, U s4, U s5, __ubuf__ S* lefts)
 {
-    for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         S inIndex[DIM]{0};
 
         U yIdx = idx;
@@ -301,13 +296,13 @@ __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_HALF_THREAD_DIM) __aicore__ void SimtComp
 }
 
 template <typename T, typename U, typename S, int32_t DIM>
-__simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_EIGHTH_THREAD_DIM) __aicore__ void SimtComputeDimEight(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx, uint32_t blockNum,
-    __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes, U m0, U m1, U m2, U m3, U m4, U m5, U m6, U s0,
-    U s1, U s2, U s3, U s4, U s5, U s6, __ubuf__ S* lefts)
+__simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_EIGHTH_THREAD_DIM) __aicore__
+    void SimtComputeDimEight(__gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx,
+                             uint32_t blockNum, __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes,
+                             U m0, U m1, U m2, U m3, U m4, U m5, U m6, U s0, U s1, U s2, U s3, U s4, U s5, U s6,
+                             __ubuf__ S* lefts)
 {
-    for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         S inIndex[DIM]{0};
 
         U yIdx = idx;
@@ -362,10 +357,9 @@ __aicore__ inline void PadV3GradConstantSimt<T>::Process()
     uint32_t mDimNum = mTD_->dimNum; // 维度数
 
     if (mDimNum == 1) {
-        asc_vf_call<SimtComputeDimOne<T, U, S>>(
-            dim3(CONSTANT_GRAD_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
-            (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), mTD_->outShape[0], mBlockIdx_, blockNum, mTD_->inShape[0],
-            mTD_->leftPad[0]);
+        asc_vf_call<SimtComputeDimOne<T, U, S>>(dim3(CONSTANT_GRAD_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
+                                                (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), mTD_->outShape[0],
+                                                mBlockIdx_, blockNum, mTD_->inShape[0], mTD_->leftPad[0]);
         return;
     }
 
@@ -393,25 +387,25 @@ __aicore__ inline void PadV3GradConstantSimt<T>::Process()
     }
 
     if (mDimNum == 2) {
-        asc_vf_call<SimtComputeDimTwo<T, U, S, 2>>(
-            dim3(CONSTANT_GRAD_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
-            (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize, mBlockIdx_, blockNum, outStrides, inStrides,
-            inShapes, m[0], s[0], leftPads);
+        asc_vf_call<SimtComputeDimTwo<T, U, S, 2>>(dim3(CONSTANT_GRAD_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
+                                                   (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize,
+                                                   mBlockIdx_, blockNum, outStrides, inStrides, inShapes, m[0], s[0],
+                                                   leftPads);
     } else if (mDimNum == 3) {
         asc_vf_call<SimtComputeDimThree<T, U, S, 3>>(
             dim3(CONSTANT_GRAD_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
             (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize, mBlockIdx_, blockNum, outStrides, inStrides,
             inShapes, m[0], m[1], s[0], s[1], leftPads);
     } else if (mDimNum == 4) {
-        asc_vf_call<SimtComputeDimFour<T, U, S, 4>>(
-            dim3(CONSTANT_GRAD_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
-            (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize, mBlockIdx_, blockNum, outStrides, inStrides,
-            inShapes, m[0], m[1], m[2], s[0], s[1], s[2], leftPads);
+        asc_vf_call<SimtComputeDimFour<T, U, S, 4>>(dim3(CONSTANT_GRAD_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
+                                                    (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize,
+                                                    mBlockIdx_, blockNum, outStrides, inStrides, inShapes, m[0], m[1],
+                                                    m[2], s[0], s[1], s[2], leftPads);
     } else if (mDimNum == 5) {
-        asc_vf_call<SimtComputeDimFive<T, U, S, 5>>(
-            dim3(CONSTANT_GRAD_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
-            (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize, mBlockIdx_, blockNum, outStrides, inStrides,
-            inShapes, m[0], m[1], m[2], m[3], s[0], s[1], s[2], s[3], leftPads);
+        asc_vf_call<SimtComputeDimFive<T, U, S, 5>>(dim3(CONSTANT_GRAD_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
+                                                    (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize,
+                                                    mBlockIdx_, blockNum, outStrides, inStrides, inShapes, m[0], m[1],
+                                                    m[2], m[3], s[0], s[1], s[2], s[3], leftPads);
     } else if (mDimNum == 6) {
         asc_vf_call<SimtComputeDimSix<T, U, S, 6>>(
             dim3(CONSTANT_GRAD_HALF_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),

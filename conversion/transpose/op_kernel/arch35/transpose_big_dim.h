@@ -32,9 +32,9 @@ private:
     __aicore__ inline void SetLoopInfo(MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM>& loopInfo);
     __aicore__ inline void CopyIn(int64_t loopIdx, MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& params);
     __aicore__ inline void CopyOut(int64_t loopIdx, DataCopyExtParams& copyOutParams);
-    __aicore__ inline void ProcessPerCore(
-        MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& paramsMain, MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& paramsTail,
-        DataCopyExtParams& copyOutParamsMain, DataCopyExtParams& copyOutParamsTail);
+    __aicore__ inline void ProcessPerCore(MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& paramsMain,
+                                          MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& paramsTail,
+                                          DataCopyExtParams& copyOutParamsMain, DataCopyExtParams& copyOutParamsTail);
 
 private:
     int64_t blockIdx_;
@@ -62,8 +62,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void TransposeBigDim<T>::Init(
-    GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void TransposeBigDim<T>::Init(GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData,
+                                                TPipe* pipe)
 {
     blockIdx_ = GetBlockIdx();
     tiling_ = tilingData;
@@ -126,9 +126,8 @@ __aicore__ inline void TransposeBigDim<T>::SetLoopInfo(MultiCopyLoopInfo<NDDMA_M
 template <typename T>
 __aicore__ inline void TransposeBigDim<T>::Process()
 {
-    if (!ParseMultiCoreRange(
-            blockIdx_, tiling_->realCoreNum, tiling_->blkFactor, tiling_->blkTailFactor, blkProcessNum_,
-            blkProcessIdxStart_, blkProcessIdxEnd_)) {
+    if (!ParseMultiCoreRange(blockIdx_, tiling_->realCoreNum, tiling_->blkFactor, tiling_->blkTailFactor,
+                             blkProcessNum_, blkProcessIdxStart_, blkProcessIdxEnd_)) {
         return;
     }
 
@@ -179,9 +178,10 @@ __aicore__ inline void TransposeBigDim<T>::CopyOut(int64_t loopIdx, DataCopyExtP
 }
 
 template <typename T>
-__aicore__ inline void TransposeBigDim<T>::ProcessPerCore(
-    MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& paramsMain, MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& paramsTail,
-    DataCopyExtParams& copyOutParamsMain, DataCopyExtParams& copyOutParamsTail)
+__aicore__ inline void TransposeBigDim<T>::ProcessPerCore(MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& paramsMain,
+                                                          MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& paramsTail,
+                                                          DataCopyExtParams& copyOutParamsMain,
+                                                          DataCopyExtParams& copyOutParamsTail)
 {
     int64_t outCutLoopSize = Ops::Base::CeilDiv(tiling_->outputShape[tiling_->outCutIndex], tiling_->outUbFactor);
     const int64_t permSize = tiling_->permSize;

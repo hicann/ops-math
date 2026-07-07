@@ -84,8 +84,8 @@ private:
 
     using RangeType = int32_t;
     using IdxType = uint32_t;
-    using CalType = std::conditional_t<
-        std::is_same_v<T, bfloat16_t>, float32_t, std::conditional_t<std::is_same_v<T, float16_t>, float32_t, T>>;
+    using CalType = std::conditional_t<std::is_same_v<T, bfloat16_t>, float32_t,
+                                       std::conditional_t<std::is_same_v<T, float16_t>, float32_t, T>>;
 
 public:
     __aicore__ inline KernelPadV3GradMirrorHugeWidth(TPipe* pipe, const PadV3GradACTilingData* tilingData)
@@ -154,11 +154,10 @@ public:
                 outSelfAddr += outIndex_[i] * tilingData_->outStride[i];
             }
             // 当前块的数据长度
-            mDataLen_ =
-                (outIndex_[mUbAxis_] + mUbFactor_ <= tilingData_->outShape[mUbAxis_] ?
-                     mUbFactor_ :
-                     tilingData_->outShape[mUbAxis_] - outIndex_[mUbAxis_]);
-            ProcessOneStep(idx-startIdx, inSelfAddr, outSelfAddr);
+            mDataLen_ = (outIndex_[mUbAxis_] + mUbFactor_ <= tilingData_->outShape[mUbAxis_] ?
+                             mUbFactor_ :
+                             tilingData_->outShape[mUbAxis_] - outIndex_[mUbAxis_]);
+            ProcessOneStep(idx - startIdx, inSelfAddr, outSelfAddr);
         }
     }
 
@@ -227,11 +226,11 @@ private:
             leftUbStartIdx_ = 0; // 在输出上参与pad的起始索引
         } else {
             leftUbStartIdx_ = (mode_ && outIndex_[mUbAxis_] == 0);
-            leftUbAddLen_ =
-                min(mDataLen_, tilingData_->leftPad[mUbAxis_] + mode_ - outIndex_[mUbAxis_]) - leftUbStartIdx_;
+            leftUbAddLen_ = min(mDataLen_, tilingData_->leftPad[mUbAxis_] + mode_ - outIndex_[mUbAxis_]) -
+                            leftUbStartIdx_;
             // 当前块的左pad在输入中的索引
-            inIdxCnt[UB_AXIS_DATA_IDX].inGmIdx[LEFT_PAD_IDX] =
-                tilingData_->leftPad[mUbAxis_] + mode_ - (outIndex_[mUbAxis_] + leftUbStartIdx_ + leftUbAddLen_);
+            inIdxCnt[UB_AXIS_DATA_IDX].inGmIdx[LEFT_PAD_IDX] = tilingData_->leftPad[mUbAxis_] + mode_ -
+                                                               (outIndex_[mUbAxis_] + leftUbStartIdx_ + leftUbAddLen_);
         }
 
         if (tilingData_->rightPad[mUbAxis_] == 0 || outIndex_[mUbAxis_] + mDataLen_ <= originRightPadStartIndex_) {
@@ -239,11 +238,15 @@ private:
             rightUbStartIdx_ = 0;
         } else {
             rightUbStartIdx_ = (originRightPadStartIndex_ <= outIndex_[mUbAxis_]) ?
-                0 : originRightPadStartIndex_ - outIndex_[mUbAxis_];
+                                   0 :
+                                   originRightPadStartIndex_ - outIndex_[mUbAxis_];
             rightUbAddLen_ = mDataLen_ - rightUbStartIdx_ -
-                (mode_ && outIndex_[mUbAxis_] + mDataLen_ == tilingData_->outShape[mUbAxis_]);
-            inIdxCnt[UB_AXIS_DATA_IDX].inGmIdx[RIGHT_PAD_IDX] = MIRROR_SHAPE_MULTIPLIER * tilingData_->outShape[mUbAxis_] +
-                tilingData_->leftPad[mUbAxis_] - (outIndex_[mUbAxis_] + rightUbStartIdx_ + rightUbAddLen_ + mode_);
+                             (mode_ && outIndex_[mUbAxis_] + mDataLen_ == tilingData_->outShape[mUbAxis_]);
+            inIdxCnt[UB_AXIS_DATA_IDX].inGmIdx[RIGHT_PAD_IDX] = MIRROR_SHAPE_MULTIPLIER *
+                                                                    tilingData_->outShape[mUbAxis_] +
+                                                                tilingData_->leftPad[mUbAxis_] -
+                                                                (outIndex_[mUbAxis_] + rightUbStartIdx_ +
+                                                                 rightUbAddLen_ + mode_);
             // 当前块的右pad在输入中的索引
         }
 
@@ -253,23 +256,23 @@ private:
             // left
             if (tilingData_->leftPad[i] != 0 && outIndex_[i] >= mode_ &&
                 outIndex_[i] < tilingData_->leftPad[i] + mode_) {
-                inIdxCnt[i].inGmIdx[inIdxCnt[i].cnt++] =
-                    (tilingData_->leftPad[i] - outIndex_[i] - !mode_) * tilingData_->inStride[i];   //symm -1    reflect -0
+                inIdxCnt[i].inGmIdx[inIdxCnt[i].cnt++] = (tilingData_->leftPad[i] - outIndex_[i] - !mode_) *
+                                                         tilingData_->inStride[i]; // symm -1    reflect -0
             }
             // right
             if (tilingData_->rightPad[i] != 0 &&
                 tilingData_->outShape[i] - outIndex_[i] - mode_ <= tilingData_->rightPad[i] &&
                 tilingData_->outShape[i] - outIndex_[i] - mode_ > 0) {
-                inIdxCnt[i].inGmIdx[inIdxCnt[i].cnt++] =
-                    (MIRROR_SHAPE_MULTIPLIER * tilingData_->outShape[i] - outIndex_[i] + tilingData_->leftPad[i] - 1 - mode_) *
-                    tilingData_->inStride[i];
+                inIdxCnt[i].inGmIdx[inIdxCnt[i].cnt++] = (MIRROR_SHAPE_MULTIPLIER * tilingData_->outShape[i] -
+                                                          outIndex_[i] + tilingData_->leftPad[i] - 1 - mode_) *
+                                                         tilingData_->inStride[i];
             }
         }
     }
 
-    __aicore__ inline void CopyAndCal(
-        __ubuf__ T* srcAddr, __ubuf__ CalType* resAddr, __ubuf__ CalType*  tempAddr, LocalTensor<T> src, LocalTensor<CalType> temp, uint32_t idx, uint64_t outSelfAddr,
-        IdxAndTimes* inIdxCnt)
+    __aicore__ inline void CopyAndCal(__ubuf__ T* srcAddr, __ubuf__ CalType* resAddr, __ubuf__ CalType* tempAddr,
+                                      LocalTensor<T> src, LocalTensor<CalType> temp, uint32_t idx, uint64_t outSelfAddr,
+                                      IdxAndTimes* inIdxCnt)
     {
         // 搬入
         for (uint8_t a0 = 0; a0 < inIdxCnt[0].cnt; ++a0) {
@@ -300,8 +303,8 @@ private:
         }
     }
 
-    __aicore__ inline void ProcessMiddleData(__ubuf__ T* srcAddr, __ubuf__ CalType* resAddr, 
-                                            LocalTensor<T> src, uint32_t idx, uint64_t a3Offset)
+    __aicore__ inline void ProcessMiddleData(__ubuf__ T* srcAddr, __ubuf__ CalType* resAddr, LocalTensor<T> src,
+                                             uint32_t idx, uint64_t a3Offset)
     {
         uint32_t inMidAddr = a3Offset + inIndex_[mUbAxis_];
         copyInParams_.blockLen = mDataLen_ * sizeof(T);
@@ -314,7 +317,7 @@ private:
         // 同步：V等MTE2
         // 本身（非首块）
         ProcessSelfAdd(srcAddr, resAddr);
-        
+
         SetEvent<HardEvent::V_MTE2>(idx);
         WaitEvent<HardEvent::V_MTE2>(idx);
     }
@@ -323,7 +326,8 @@ private:
     {
         uint16_t repeatSelfTimes = CeilDiv(mDataLen_, oneRepeatSize_);
         uint32_t midUbAddLenVF = mDataLen_;
-        __VEC_SCOPE__ {
+        __VEC_SCOPE__
+        {
             MicroAPI::RegTensor<T> srcReg;
             MicroAPI::RegTensor<CalType> tempRegB32;
             MicroAPI::RegTensor<CalType> resReg;
@@ -334,7 +338,6 @@ private:
                 RoundMode::UNKNOWN};
 
             for (uint16_t k = 0; k < repeatSelfTimes; k++) {
-
                 maskReg = AscendC::MicroAPI::UpdateMask<CalType>(midUbAddLenVF);
                 if constexpr (sizeof(T) != sizeof(float32_t)) {
                     MicroAPI::LoadAlign<T, MicroAPI::LoadDist::DIST_UNPACK_B16>(srcReg, srcAddr + k * oneRepeatSize_);
@@ -353,16 +356,15 @@ private:
         }
     }
 
-    __aicore__ inline void ProcessLeftData(
-        __ubuf__ T* srcAddr, __ubuf__ CalType* resAddr, __ubuf__ CalType* tempAddr,
-        LocalTensor<T> src, LocalTensor<CalType> temp,
-        uint32_t idx, uint64_t a3Offset, IdxAndTimes* inIdxCnt)
+    __aicore__ inline void ProcessLeftData(__ubuf__ T* srcAddr, __ubuf__ CalType* resAddr, __ubuf__ CalType* tempAddr,
+                                           LocalTensor<T> src, LocalTensor<CalType> temp, uint32_t idx,
+                                           uint64_t a3Offset, IdxAndTimes* inIdxCnt)
     {
         uint64_t inLeftAddr = a3Offset + inIdxCnt[4].inGmIdx[1];
         copyInParams_.blockLen = leftUbAddLen_ * sizeof(T);
 
         uint16_t leftMainTimes = leftUbAddLen_ / oneRepeatSize_;
-        uint16_t leftTailLen     = leftUbAddLen_ - leftMainTimes * oneRepeatSize_;
+        uint16_t leftTailLen = leftUbAddLen_ - leftMainTimes * oneRepeatSize_;
         // 有尾块时，主体只跑前 (repeatLeftTimes-1) 次；无尾块时跑全部
         uint16_t leftTailTimes = (leftTailLen != 0);
 
@@ -383,11 +385,12 @@ private:
             Cast<CalType, T>(temp, src, RoundMode::CAST_NONE, leftUbAddLen_);
         }
 
-        __VEC_SCOPE__ {
-            MicroAPI::UnalignRegForLoad  ureg0;
+        __VEC_SCOPE__
+        {
+            MicroAPI::UnalignRegForLoad ureg0;
             MicroAPI::UnalignRegForStore ureg1;
-            MicroAPI::RegTensor<CalType>   tempReg;
-            MicroAPI::RegTensor<CalType>   resReg;
+            MicroAPI::RegTensor<CalType> tempReg;
+            MicroAPI::RegTensor<CalType> resReg;
             MicroAPI::RegTensor<RangeType> idxReg;
             MicroAPI::MaskReg maskRegMain = MicroAPI::UpdateMask<CalType>(leftMainLenVF);
             MicroAPI::MaskReg maskRegTail = MicroAPI::UpdateMask<CalType>(leftTailLenVF);
@@ -403,8 +406,7 @@ private:
 
                 // 2. 逆序 Gather left → reg
                 MicroAPI::Arange<RangeType, MicroAPI::IndexOrder::DECREASE_ORDER>(
-                    idxReg,
-                    (RangeType)((leftUbAddLen_ - 1) - (oneRepeatSize_ - 1) - k * oneRepeatSize_));
+                    idxReg, (RangeType)((leftUbAddLen_ - 1) - (oneRepeatSize_ - 1) - k * oneRepeatSize_));
 
                 if constexpr (sizeof(T) != sizeof(float32_t)) {
                     MicroAPI::Gather(tempReg, tempAddr, (MicroAPI::RegTensor<IdxType>&)idxReg, maskRegMain);
@@ -433,8 +435,7 @@ private:
 
                 // 2. 逆序 Gather（尾块起始索引同样在域外算好）
                 MicroAPI::Arange<RangeType, MicroAPI::IndexOrder::DECREASE_ORDER>(
-                    idxReg,
-                    (RangeType)((leftUbAddLen_ - 1) - (oneRepeatSize_ - 1) - leftMainTimes * oneRepeatSize_));
+                    idxReg, (RangeType)((leftUbAddLen_ - 1) - (oneRepeatSize_ - 1) - leftMainTimes * oneRepeatSize_));
 
                 if constexpr (sizeof(T) != sizeof(float32_t)) {
                     MicroAPI::Gather(tempReg, tempAddr, (MicroAPI::RegTensor<IdxType>&)idxReg, maskRegTail);
@@ -457,22 +458,21 @@ private:
             }
         }
         // ---------- V → MTE2 反向同步 ----------
-            SetEvent<HardEvent::V_MTE2>(idx);
-            WaitEvent<HardEvent::V_MTE2>(idx);
+        SetEvent<HardEvent::V_MTE2>(idx);
+        WaitEvent<HardEvent::V_MTE2>(idx);
     }
 
-    __aicore__ inline void ProcessRightData(
-        __ubuf__ T* srcAddr, __ubuf__ CalType* resAddr, __ubuf__ CalType* tempAddr,
-        LocalTensor<T> src, LocalTensor<CalType> temp,
-        uint32_t idx, uint64_t a3Offset, IdxAndTimes* inIdxCnt)
+    __aicore__ inline void ProcessRightData(__ubuf__ T* srcAddr, __ubuf__ CalType* resAddr, __ubuf__ CalType* tempAddr,
+                                            LocalTensor<T> src, LocalTensor<CalType> temp, uint32_t idx,
+                                            uint64_t a3Offset, IdxAndTimes* inIdxCnt)
     {
         uint64_t inRightAddr = a3Offset + inIdxCnt[4].inGmIdx[2];
         copyInParams_.blockLen = rightUbAddLen_ * sizeof(T);
 
-        uint16_t rightMainTimes = rightUbAddLen_ / oneRepeatSize_;  // 向下取整
-        uint16_t rightTailLen     = rightUbAddLen_ - rightMainTimes * oneRepeatSize_;
+        uint16_t rightMainTimes = rightUbAddLen_ / oneRepeatSize_; // 向下取整
+        uint16_t rightTailLen = rightUbAddLen_ - rightMainTimes * oneRepeatSize_;
         uint16_t rightTailTimes = (rightTailLen != 0);
-        uint32_t rightMainLenVF  = oneRepeatSize_;
+        uint32_t rightMainLenVF = oneRepeatSize_;
         uint32_t rightTailLenVF = rightTailLen;
 
         __ubuf__ CalType* src_r_resAddr = resAddr + rightUbStartIdx_;
@@ -489,12 +489,13 @@ private:
             Cast<CalType, T>(temp, src, RoundMode::CAST_NONE, rightUbAddLen_);
         }
 
-        __VEC_SCOPE__ {
-            MicroAPI::UnalignRegForLoad  ureg0;
+        __VEC_SCOPE__
+        {
+            MicroAPI::UnalignRegForLoad ureg0;
             MicroAPI::UnalignRegForStore ureg1;
 
-            MicroAPI::RegTensor<CalType>   tempReg;
-            MicroAPI::RegTensor<CalType>   resReg;
+            MicroAPI::RegTensor<CalType> tempReg;
+            MicroAPI::RegTensor<CalType> resReg;
             MicroAPI::RegTensor<RangeType> idxReg;
             MicroAPI::MaskReg maskRegMain = MicroAPI::UpdateMask<CalType>(rightMainLenVF);
             MicroAPI::MaskReg maskRegTail = MicroAPI::UpdateMask<CalType>(rightTailLenVF);
@@ -524,7 +525,8 @@ private:
                 MicroAPI::LoadUnAlign(resReg, ureg0, src_r_resAddr + rightMainTimes * oneRepeatSize_);
 
                 // 尾块反向：最高索引 = rightTailLen - 1（从0到rightTailLen-1倒序）
-                RangeType tailStartIdx = (RangeType)((rightUbAddLen_ - 1) - (oneRepeatSize_ - 1) - rightMainTimes * oneRepeatSize_);
+                RangeType tailStartIdx = (RangeType)((rightUbAddLen_ - 1) - (oneRepeatSize_ - 1) -
+                                                     rightMainTimes * oneRepeatSize_);
 
                 MicroAPI::Arange<RangeType, MicroAPI::IndexOrder::DECREASE_ORDER>(idxReg, tailStartIdx);
                 if constexpr (sizeof(T) != sizeof(float32_t)) {
@@ -542,8 +544,8 @@ private:
         WaitEvent<HardEvent::V_MTE2>(idx);
     }
 
-    __aicore__ inline void CopyOutputToGM(
-        __ubuf__ T* srcAddr, __ubuf__ CalType* resAddr, LocalTensor<T> src, LocalTensor<CalType> res, uint32_t idx, uint64_t outSelfAddr)
+    __aicore__ inline void CopyOutputToGM(__ubuf__ T* srcAddr, __ubuf__ CalType* resAddr, LocalTensor<T> src,
+                                          LocalTensor<CalType> res, uint32_t idx, uint64_t outSelfAddr)
     {
         copyInParams_.blockLen = mDataLen_ * sizeof(T);
         if constexpr (sizeof(T) != sizeof(float32_t)) {

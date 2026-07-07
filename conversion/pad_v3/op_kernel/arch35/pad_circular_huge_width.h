@@ -140,9 +140,9 @@ public:
                 inAddr += inIndex_[i] * mTD->inStride[i];
             }
 
-            mDataLen =
-                (inIndex_[mUbAxis] + mUbFactor <= mTD->inShape[mUbAxis] ? mUbFactor :
-                                                                          mTD->inShape[mUbAxis] - inIndex_[mUbAxis]);
+            mDataLen = (inIndex_[mUbAxis] + mUbFactor <= mTD->inShape[mUbAxis] ?
+                            mUbFactor :
+                            mTD->inShape[mUbAxis] - inIndex_[mUbAxis]);
 
             ProcessOneStep(idx - startIdx, inAddr);
         }
@@ -180,8 +180,8 @@ private:
         if (originRightPad == 0 || inIndex_[mUbAxis] >= originRightPad) {
             rightUbCopyLen_ = 0;
         } else {
-            rightUbCopyLen_ =
-                (inIndex_[mUbAxis] + mDataLen <= originRightPad) ? mDataLen : originRightPad - inIndex_[mUbAxis];
+            rightUbCopyLen_ = (inIndex_[mUbAxis] + mDataLen <= originRightPad) ? mDataLen :
+                                                                                 originRightPad - inIndex_[mUbAxis];
             rightOutGmIdx = mTD->inShape[mUbAxis] + mTD->leftPad[mUbAxis] + inIndex_[mUbAxis];
         }
 
@@ -189,14 +189,14 @@ private:
             outIdxCnt[i].outGmIdx[0] = outIndex_[i] * mTD->outStride[i];
 
             if (mTD->leftPad[i] != 0 && inIndex_[i] >= mTD->inShape[i] - mTD->leftPad[i]) {
-                outIdxCnt[i].outGmIdx[outIdxCnt[i].cnt++] =
-                    (inIndex_[i] - (mTD->inShape[i] - mTD->leftPad[i])) * mTD->outStride[i];
+                outIdxCnt[i].outGmIdx[outIdxCnt[i].cnt++] = (inIndex_[i] - (mTD->inShape[i] - mTD->leftPad[i])) *
+                                                            mTD->outStride[i];
             }
 
             uint64_t originRightPadHigh = mTD->outShape[i] - mTD->leftPad[i] - mTD->inShape[i];
             if (originRightPadHigh != 0 && inIndex_[i] <= (originRightPadHigh - 1)) {
-                outIdxCnt[i].outGmIdx[outIdxCnt[i].cnt++] =
-                    (mTD->inShape[i] + mTD->leftPad[i] + inIndex_[i]) * mTD->outStride[i];
+                outIdxCnt[i].outGmIdx[outIdxCnt[i].cnt++] = (mTD->inShape[i] + mTD->leftPad[i] + inIndex_[i]) *
+                                                            mTD->outStride[i];
             }
         }
 

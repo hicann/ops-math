@@ -13,51 +13,49 @@
  * \brief op config of broadcast_to
  */
 
- #include "register/op_def_registry.h"
- 
- namespace ops
- {
- static const std::vector<ge::DataType> xDType = {
-     ge::DT_INT8,          ge::DT_INT32,  ge::DT_INT64,  ge::DT_UINT8,    ge::DT_FLOAT16,     ge::DT_FLOAT,
-     ge::DT_BF16,          ge::DT_UINT32, ge::DT_BOOL,   ge::DT_HIFLOAT8, ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN,
-     ge::DT_INT16,         ge::DT_INT8,   ge::DT_INT32,  ge::DT_INT64,    ge::DT_UINT8,       ge::DT_FLOAT16,
-     ge::DT_FLOAT,         ge::DT_BF16,   ge::DT_UINT32, ge::DT_BOOL,     ge::DT_HIFLOAT8,    ge::DT_FLOAT8_E5M2,
-     ge::DT_FLOAT8_E4M3FN, ge::DT_INT16};
- static const std::vector<ge::Format> xFormat = {
-     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
- static const std::vector<ge::DataType> constDType = {
-     ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-     ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64,
-     ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-     ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
+#include "register/op_def_registry.h"
 
- class BroadcastTo : public OpDef
- {
- public:
-     explicit BroadcastTo(const char* name) : OpDef(name)
-     {
-         this->Input("x").ParamType(REQUIRED).DataType(xDType).Format(xFormat).UnknownShapeFormat(xFormat);
-         this->Input("shape")
-             .ParamType(REQUIRED)
-             .DataType(constDType)
-             .Format(xFormat)
-             .UnknownShapeFormat(xFormat)
-             .ValueDepend(OPTIONAL);
-         this->Output("y").ParamType(REQUIRED).DataType(xDType).Format(xFormat).UnknownShapeFormat(xFormat);
- 
-         OpAICoreConfig aicoreConfig;
-         aicoreConfig.DynamicCompileStaticFlag(true)
-             .DynamicFormatFlag(false)
-             .DynamicRankSupportFlag(true)
-             .DynamicShapeSupportFlag(true)
-             .NeedCheckSupportFlag(false)
-             .ExtendCfgInfo("opFile.value", "broadcast_to_apt");
-         this->AICore().AddConfig("ascend950", aicoreConfig);
-     }
- };
- 
- OP_ADD(BroadcastTo);
- }  // namespace ops
+namespace ops {
+static const std::vector<ge::DataType> xDType = {
+    ge::DT_INT8,          ge::DT_INT32,  ge::DT_INT64,  ge::DT_UINT8,    ge::DT_FLOAT16,     ge::DT_FLOAT,
+    ge::DT_BF16,          ge::DT_UINT32, ge::DT_BOOL,   ge::DT_HIFLOAT8, ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN,
+    ge::DT_INT16,         ge::DT_INT8,   ge::DT_INT32,  ge::DT_INT64,    ge::DT_UINT8,       ge::DT_FLOAT16,
+    ge::DT_FLOAT,         ge::DT_BF16,   ge::DT_UINT32, ge::DT_BOOL,     ge::DT_HIFLOAT8,    ge::DT_FLOAT8_E5M2,
+    ge::DT_FLOAT8_E4M3FN, ge::DT_INT16};
+static const std::vector<ge::Format> xFormat = {
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+static const std::vector<ge::DataType> constDType = {
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64,
+    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
+
+class BroadcastTo : public OpDef {
+public:
+    explicit BroadcastTo(const char* name) : OpDef(name)
+    {
+        this->Input("x").ParamType(REQUIRED).DataType(xDType).Format(xFormat).UnknownShapeFormat(xFormat);
+        this->Input("shape")
+            .ParamType(REQUIRED)
+            .DataType(constDType)
+            .Format(xFormat)
+            .UnknownShapeFormat(xFormat)
+            .ValueDepend(OPTIONAL);
+        this->Output("y").ParamType(REQUIRED).DataType(xDType).Format(xFormat).UnknownShapeFormat(xFormat);
+
+        OpAICoreConfig aicoreConfig;
+        aicoreConfig.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .ExtendCfgInfo("opFile.value", "broadcast_to_apt");
+        this->AICore().AddConfig("ascend950", aicoreConfig);
+    }
+};
+
+OP_ADD(BroadcastTo);
+} // namespace ops

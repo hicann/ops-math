@@ -36,8 +36,7 @@ struct PadScatterParam {
 };
 
 template <typename T, typename U = int8_t>
-class PadScatter
-{
+class PadScatter {
 private:
     constexpr static uint32_t VL_CNT = VL_SIZE / sizeof(T);
     constexpr static uint32_t BLOCK_SIZE = Ops::Base::GetUbBlockSize();
@@ -50,17 +49,14 @@ private:
 
     using RangeType = std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>;
     using IdxType = std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>;
-    using CastType =
-        std::conditional_t<sizeof(T) == 1, std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
+    using CastType = std::conditional_t<sizeof(T) == 1,
+                                        std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
 
 public:
-    __aicore__ inline PadScatter(TPipe* pipe)
-    {
-        pipe_ = pipe;
-    }
+    __aicore__ inline PadScatter(TPipe* pipe) { pipe_ = pipe; }
 
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR paddings, GM_ADDR y, const PadACTilingData* tilingData, GM_ADDR constValue = nullptr)
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, const PadACTilingData* tilingData,
+                                GM_ADDR constValue = nullptr)
     {
         blockIdx_ = GetBlockIdx();
         tdPtr_ = tilingData;
@@ -71,8 +67,8 @@ public:
         if (dimNum_ - ubAxis_ >= CONST3 && tdPtr_->inStride[dimNum_ - CONST3] <= VL_CNT / CONST2) {
             // 一次VL需要处理后面3根轴
             lastThirdDimInVL_ = true;
-            vlSplitIn_ = Std::min(
-                uint64_t(VL_CNT / tdPtr_->inStride[dimNum_ - CONST3]), uint64_t(tdPtr_->inShape[dimNum_ - CONST3]));
+            vlSplitIn_ = Std::min(uint64_t(VL_CNT / tdPtr_->inStride[dimNum_ - CONST3]),
+                                  uint64_t(tdPtr_->inShape[dimNum_ - CONST3]));
             if (vlSplitIn_ == 1) {
                 // 考虑到int8场景的gather，vlSplitIn_不能为1
                 lastThirdDimInVL_ = false;
@@ -80,8 +76,8 @@ public:
             }
         } else {
             // 如果倒数第二根轴为1，则最后一根轴肯定 <= VL/2. vlSplitIn_不需要赋值为最后一根轴，也能保证b8场景的scatter
-            vlSplitIn_ = Std::min(
-                uint64_t(VL_CNT / tdPtr_->inStride[dimNum_ - CONST2]), uint64_t(tdPtr_->inShape[dimNum_ - CONST2]));
+            vlSplitIn_ = Std::min(uint64_t(VL_CNT / tdPtr_->inStride[dimNum_ - CONST2]),
+                                  uint64_t(tdPtr_->inShape[dimNum_ - CONST2]));
         }
 
         if (constValue != nullptr) {
@@ -152,9 +148,8 @@ private:
         }
     }
 
-    __aicore__ inline void CalcUbSplitInAndOut(
-        const uint64_t* inIndex, const uint64_t* outIndex, uint64_t ubTailFactor, uint32_t& ubAxisInCopyNum,
-        uint32_t& ubAxisOutCopyNum)
+    __aicore__ inline void CalcUbSplitInAndOut(const uint64_t* inIndex, const uint64_t* outIndex, uint64_t ubTailFactor,
+                                               uint32_t& ubAxisInCopyNum, uint32_t& ubAxisOutCopyNum)
     {
         if (outIndex[ubAxis_] < tdPtr_->leftPad[ubAxis_] + tdPtr_->inShape[ubAxis_]) {
             // outIndex 在右pad点的左侧
@@ -163,8 +158,8 @@ private:
                 ubAxisInCopyNum = 0;
             } else if (outIndex[ubAxis_] + ubFactor_ < tdPtr_->leftPad[ubAxis_] + tdPtr_->inShape[ubAxis_]) {
                 // 输出都在右pad点左侧
-                ubAxisInCopyNum =
-                    outIndex[ubAxis_] + ubFactor_ - inIndex[ubAxis_] - tdPtr_->leftPad[ubAxis_]; // ub非整切时是否正确？
+                ubAxisInCopyNum = outIndex[ubAxis_] + ubFactor_ - inIndex[ubAxis_] -
+                                  tdPtr_->leftPad[ubAxis_]; // ub非整切时是否正确？
             } else {
                 // 输出跨过右pad点
                 ubAxisInCopyNum = tdPtr_->inShape[ubAxis_] - inIndex[ubAxis_];
@@ -177,9 +172,9 @@ private:
         ubAxisOutCopyNum = (outIndex[ubAxis_] + ubFactor_ > tdPtr_->outShape[ubAxis_]) ? ubTailFactor : ubFactor_;
     }
 
-    __aicore__ inline void ProcessOneStep(
-        const uint64_t* inIndex, const uint64_t* outIndex, bool isAllDup, uint32_t ubAxisInCopyNum,
-        uint32_t ubAxisOutCopyNum, LocalTensor<RangeType>& idxTensor)
+    __aicore__ inline void ProcessOneStep(const uint64_t* inIndex, const uint64_t* outIndex, bool isAllDup,
+                                          uint32_t ubAxisInCopyNum, uint32_t ubAxisOutCopyNum,
+                                          LocalTensor<RangeType>& idxTensor)
     {
         if (ubAxisInCopyNum == 0 || isAllDup) {
             DoOnlyDup(outIndex, ubAxisOutCopyNum);
@@ -207,8 +202,8 @@ private:
         inQue_.EnQue(inLocal);
     }
 
-    __aicore__ inline void ScatterCompute(
-        const uint64_t* outIndex, uint32_t ubAxisInCopyNum, LocalTensor<RangeType>& idxTensor)
+    __aicore__ inline void ScatterCompute(const uint64_t* outIndex, uint32_t ubAxisInCopyNum,
+                                          LocalTensor<RangeType>& idxTensor)
     {
         LocalTensor<T> inLocal = inQue_.DeQue<T>();
         LocalTensor<T> outLocal = outQue_.AllocTensor<T>();
@@ -260,8 +255,8 @@ private:
         outQue_.FreeTensor(outLocal);
     }
 
-    __aicore__ inline void GetScatterParam(
-        const uint64_t* outIndex, uint32_t ubAxisInCopyNum, uint32_t& outUbStart, PadScatterParam& scatterParam)
+    __aicore__ inline void GetScatterParam(const uint64_t* outIndex, uint32_t ubAxisInCopyNum, uint32_t& outUbStart,
+                                           PadScatterParam& scatterParam)
     {
         // N C H W -- VL循环在H上
         // 3 2 1
@@ -296,8 +291,8 @@ private:
         }
     }
 
-    __aicore__ inline void GetScatterParamThreeDim(
-        const uint64_t* outIndex, uint32_t ubAxisInCopyNum, uint32_t& outUbStart, PadScatterParam& scatterParam)
+    __aicore__ inline void GetScatterParamThreeDim(const uint64_t* outIndex, uint32_t ubAxisInCopyNum,
+                                                   uint32_t& outUbStart, PadScatterParam& scatterParam)
     {
         //   N C HW -- VL循环在C上，为了复用同一份gather vf代码
         // 3 2 1
@@ -327,10 +322,9 @@ private:
 
     __aicore__ inline void GenScatterIndex(LocalTensor<RangeType>& idxTensor)
     {
-        int32_t startValue =
-            lastThirdDimInVL_ ?
-                (tdPtr_->leftPad[dimNum_ - CONST2] * tdPtr_->outShape[dimNum_ - 1] + tdPtr_->leftPad[dimNum_ - 1]) :
-                (tdPtr_->leftPad[dimNum_ - 1]);
+        int32_t startValue = lastThirdDimInVL_ ? (tdPtr_->leftPad[dimNum_ - CONST2] * tdPtr_->outShape[dimNum_ - 1] +
+                                                  tdPtr_->leftPad[dimNum_ - 1]) :
+                                                 (tdPtr_->leftPad[dimNum_ - 1]);
         uint16_t loop0 = lastThirdDimInVL_ ? vlSplitIn_ : 1;
         uint16_t loop1 = lastThirdDimInVL_ ? tdPtr_->inShape[dimNum_ - CONST2] : vlSplitIn_;
         int32_t lastDimIn = tdPtr_->inShape[dimNum_ - 1];
@@ -358,9 +352,8 @@ private:
         }
     }
 
-    __aicore__ inline void ScatterProcess(
-        const PadScatterParam& scatterParam, const LocalTensor<RangeType>& idxTensor, LocalTensor<T>& inTensor,
-        LocalTensor<T>& outTensor, uint32_t outUbStart)
+    __aicore__ inline void ScatterProcess(const PadScatterParam& scatterParam, const LocalTensor<RangeType>& idxTensor,
+                                          LocalTensor<T>& inTensor, LocalTensor<T>& outTensor, uint32_t outUbStart)
     {
         __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
         __local_mem__ T* inAddr = (__local_mem__ T*)inTensor.GetPhyAddr();
@@ -417,12 +410,12 @@ private:
 
                         MicroAPI::DataCopyUnAlign(regData, uReg, inAddrTmp, maskValue); // maskValue 实际搬入的长度
                         if constexpr (sizeof(T) != 1) {
-                            MicroAPI::DataCopyScatter(
-                                outAddr, regData, (MicroAPI::RegTensor<IdxType>&)regIdxBK, maskMain);
+                            MicroAPI::DataCopyScatter(outAddr, regData, (MicroAPI::RegTensor<IdxType>&)regIdxBK,
+                                                      maskMain);
                         } else {
                             MicroAPI::UnPack((MicroAPI::RegTensor<CastType>&)regDataT, regData);
-                            MicroAPI::DataCopyScatter(
-                                outAddr, regDataT, (MicroAPI::RegTensor<IdxType>&)regIdxBK, maskMain);
+                            MicroAPI::DataCopyScatter(outAddr, regDataT, (MicroAPI::RegTensor<IdxType>&)regIdxBK,
+                                                      maskMain);
                         }
                     }
 
@@ -430,15 +423,15 @@ private:
                         inAddrTmp = inAddr + nIdx * strideInVlO2 + cIdx * strideInVlO1 + vlSplitLoopCnt * maskValue;
                         MicroAPI::DataCopyUnAlignPre(uReg, inAddrTmp);
                         MicroAPI::Adds(regIdxBK, regIdx, (RangeType)(vlSplitLoopCnt * idxOffset + addsScale), maskIdx);
-                        MicroAPI::DataCopyUnAlign(
-                            regData, uReg, inAddrTmp, maskValueTail); // maskValueTail 实际搬入的长度
+                        MicroAPI::DataCopyUnAlign(regData, uReg, inAddrTmp,
+                                                  maskValueTail); // maskValueTail 实际搬入的长度
                         if constexpr (sizeof(T) != 1) {
-                            MicroAPI::DataCopyScatter(
-                                outAddr, regData, (MicroAPI::RegTensor<IdxType>&)regIdxBK, maskTail);
+                            MicroAPI::DataCopyScatter(outAddr, regData, (MicroAPI::RegTensor<IdxType>&)regIdxBK,
+                                                      maskTail);
                         } else {
                             MicroAPI::UnPack((MicroAPI::RegTensor<CastType>&)regDataT, regData);
-                            MicroAPI::DataCopyScatter(
-                                outAddr, regDataT, (MicroAPI::RegTensor<IdxType>&)regIdxBK, maskTail);
+                            MicroAPI::DataCopyScatter(outAddr, regDataT, (MicroAPI::RegTensor<IdxType>&)regIdxBK,
+                                                      maskTail);
                         }
                     }
                 }

@@ -18,15 +18,9 @@ using namespace std;
 
 class circular_pad2d_backward_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "circular_pad2d_backward_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "circular_pad2d_backward_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "circular_pad2d_backward_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "circular_pad2d_backward_test TearDown" << endl; }
 };
 
 TEST_F(circular_pad2d_backward_test, case_1)
@@ -36,9 +30,8 @@ TEST_F(circular_pad2d_backward_test, case_1)
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
     auto grad_input_desc = TensorDesc({1, 1, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
 
-    auto ut = OP_API_UT(
-        aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-        OUTPUT(grad_input_desc));
+    auto ut = OP_API_UT(aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
+                        OUTPUT(grad_input_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -53,9 +46,8 @@ TEST_F(circular_pad2d_backward_test, case_2)
     auto input_tensor_desc = TensorDesc({0, 3, 10}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
     auto grad_input_desc = TensorDesc({0, 3, 10}, ACL_FLOAT16, ACL_FORMAT_ND);
-    auto ut = OP_API_UT(
-        aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-        OUTPUT(grad_input_desc));
+    auto ut = OP_API_UT(aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
+                        OUTPUT(grad_input_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -71,23 +63,22 @@ TEST_F(circular_pad2d_backward_test, case_3)
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
     auto grad_input_desc = TensorDesc({2, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
 
-    auto ut =
-        OP_API_UT(aclnnCircularPad2dBackward, INPUT(nullptr, input_tensor_desc, padding_desc), OUTPUT(grad_input_desc));
+    auto ut = OP_API_UT(aclnnCircularPad2dBackward, INPUT(nullptr, input_tensor_desc, padding_desc),
+                        OUTPUT(grad_input_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 
-    auto ut_2 = OP_API_UT(
-        aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, nullptr, padding_desc), OUTPUT(grad_input_desc));
+    auto ut_2 = OP_API_UT(aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, nullptr, padding_desc),
+                          OUTPUT(grad_input_desc));
     workspace_size = 0;
     aclRet = ut_2.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 
-    auto ut_3 = OP_API_UT(
-        aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, nullptr),
-        OUTPUT(grad_input_desc));
+    auto ut_3 = OP_API_UT(aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, nullptr),
+                          OUTPUT(grad_input_desc));
     workspace_size = 0;
     aclRet = ut_3.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
@@ -101,8 +92,8 @@ TEST_F(circular_pad2d_backward_test, case_4)
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
     auto grad_input_desc = TensorDesc({2, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
 
-    auto ut = OP_API_UT(
-        aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc), OUTPUT(nullptr));
+    auto ut = OP_API_UT(aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
+                        OUTPUT(nullptr));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -118,9 +109,8 @@ TEST_F(circular_pad2d_backward_test, case_5)
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
     auto grad_input_desc = TensorDesc({2, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
 
-    auto ut = OP_API_UT(
-        aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-        OUTPUT(grad_input_desc));
+    auto ut = OP_API_UT(aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
+                        OUTPUT(grad_input_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspaceSize = 0;
@@ -137,9 +127,8 @@ TEST_F(circular_pad2d_backward_test, case_6)
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2});
     auto grad_input_desc = TensorDesc({2, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
 
-    auto ut = OP_API_UT(
-        aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-        OUTPUT(grad_input_desc));
+    auto ut = OP_API_UT(aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
+                        OUTPUT(grad_input_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspaceSize = 0;
@@ -156,9 +145,8 @@ TEST_F(circular_pad2d_backward_test, case_7)
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
     auto grad_input_desc = TensorDesc({4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
 
-    auto ut = OP_API_UT(
-        aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-        OUTPUT(grad_input_desc));
+    auto ut = OP_API_UT(aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
+                        OUTPUT(grad_input_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspaceSize = 0;
@@ -175,9 +163,8 @@ TEST_F(circular_pad2d_backward_test, case_8)
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
     auto grad_input_desc = TensorDesc({1, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
 
-    auto ut = OP_API_UT(
-        aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-        OUTPUT(grad_input_desc));
+    auto ut = OP_API_UT(aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
+                        OUTPUT(grad_input_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspaceSize = 0;
@@ -194,9 +181,8 @@ TEST_F(circular_pad2d_backward_test, case_9)
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
     auto grad_input_desc = TensorDesc({1, 1, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
 
-    auto ut = OP_API_UT(
-        aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-        OUTPUT(grad_input_desc));
+    auto ut = OP_API_UT(aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
+                        OUTPUT(grad_input_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspaceSize = 0;
@@ -217,9 +203,8 @@ TEST_F(circular_pad2d_backward_test, case_10)
         auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
         auto grad_input_desc = TensorDesc({1, 1, 4, 3}, ValidList[i], ACL_FORMAT_ND);
 
-        auto ut = OP_API_UT(
-            aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-            OUTPUT(grad_input_desc));
+        auto ut = OP_API_UT(aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
+                            OUTPUT(grad_input_desc));
 
         // SAMPLE: only test GetWorkspaceSize
         uint64_t workspaceSize = 0;
@@ -236,9 +221,8 @@ TEST_F(circular_pad2d_backward_test, case_11)
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
     auto grad_input_desc = TensorDesc({1, 1, 4, 3}, ACL_INT16, ACL_FORMAT_ND);
 
-    auto ut = OP_API_UT(
-        aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-        OUTPUT(grad_input_desc));
+    auto ut = OP_API_UT(aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
+                        OUTPUT(grad_input_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspaceSize = 0;
@@ -254,9 +238,8 @@ TEST_F(circular_pad2d_backward_test, case_12)
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
     auto grad_input_desc = TensorDesc({1, 1, 4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
 
-    auto ut = OP_API_UT(
-        aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-        OUTPUT(grad_input_desc));
+    auto ut = OP_API_UT(aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
+                        OUTPUT(grad_input_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspaceSize = 0;
@@ -272,9 +255,8 @@ TEST_F(circular_pad2d_backward_test, case_13)
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
     auto grad_input_desc = TensorDesc({1, 1, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
 
-    auto ut = OP_API_UT(
-        aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-        OUTPUT(grad_input_desc));
+    auto ut = OP_API_UT(aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
+                        OUTPUT(grad_input_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspaceSize = 0;
@@ -290,9 +272,8 @@ TEST_F(circular_pad2d_backward_test, case_14)
     auto padding_desc = IntArrayDesc(vector<int64_t>{1, 1, 1, 1});
     auto grad_input_desc = TensorDesc({1, 2, 4}, ACL_FLOAT16, ACL_FORMAT_ND);
 
-    auto ut = OP_API_UT(
-        aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-        OUTPUT(grad_input_desc));
+    auto ut = OP_API_UT(aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
+                        OUTPUT(grad_input_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspaceSize = 0;
@@ -308,9 +289,8 @@ TEST_F(circular_pad2d_backward_test, case_15)
     auto padding_desc = IntArrayDesc(vector<int64_t>{1, 1, 1, 1});
     auto grad_input_desc = TensorDesc({1, 2, 4}, ACL_FLOAT16, ACL_FORMAT_FRACTAL_NZ);
 
-    auto ut = OP_API_UT(
-        aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-        OUTPUT(grad_input_desc));
+    auto ut = OP_API_UT(aclnnCircularPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
+                        OUTPUT(grad_input_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspaceSize = 0;

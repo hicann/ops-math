@@ -20,15 +20,9 @@
 
 class sinc : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "sinc Proto Test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "sinc Proto Test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "sinc Proto Test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "sinc Proto Test TearDown" << std::endl; }
 };
 
 // ========== 正常场景测试 ==========

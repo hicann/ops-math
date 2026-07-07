@@ -131,9 +131,9 @@ private:
 
     // 辅助函数
     // LargeC
-    ge::graphStatus MoveAlignTilingBlock(
-        uint32_t maxUBElements, const std::vector<uint64_t>& ubFactorAlign, const std::vector<uint64_t>& leftAlign,
-        const std::vector<uint64_t>& dimValue, int32_t minCutAxis, B2SNDLargeCTilingData* tilingData);
+    ge::graphStatus MoveAlignTilingBlock(uint32_t maxUBElements, const std::vector<uint64_t>& ubFactorAlign,
+                                         const std::vector<uint64_t>& leftAlign, const std::vector<uint64_t>& dimValue,
+                                         int32_t minCutAxis, B2SNDLargeCTilingData* tilingData);
     // SmallC
     void SmallCSetInput(B2SNDSmallCTilingData* tilingData);
     std::array<size_t, MAX_EXPAND_RANK> SmallCComputeOutputAxisPerm();
@@ -161,9 +161,8 @@ ge::graphStatus BatchToSpaceNDTiling::DoTiling()
     CHECK_RET_SUCC(DoOpTiling());
 
     const uint64_t tilingKey = GET_TPL_TILING_KEY(mode_, blockShapeDimNum_, isBigShape_);
-    OP_LOGI(
-        context_, "tilingKey is %lu, mode %u, blockShapeDimNum %u, isBigShape %d", tilingKey, mode_, blockShapeDimNum_,
-        isBigShape_);
+    OP_LOGI(context_, "tilingKey is %lu, mode %u, blockShapeDimNum %u, isBigShape %d", tilingKey, mode_,
+            blockShapeDimNum_, isBigShape_);
     context_->SetTilingKey(tilingKey);
     context_->SetBlockDim(realCoreNum_);
     size_t* workSpaceSize = context_->GetWorkspaceSizes(1);
@@ -199,16 +198,14 @@ void BatchToSpaceNDTiling::ShowBaseTilingData()
         return;
     }
     // 输入信息
-    OP_LOGI(
-        context_, "input: x_shape %s, block_shape %s, crops %s, y_shape %s, data type size %d",
-        ArrayToString(mergedInput_.inShape, mergedInput_.rank).c_str(),
-        ArrayToString(mergedInput_.blockShape, mergedInput_.rank - NUM_FIXED_AXES).c_str(),
-        ArrayToString(*mergedInput_.crops, (mergedInput_.rank - NUM_FIXED_AXES) * CROPS_DIM_NUM_1).c_str(),
-        ArrayToString(mergedInput_.outShape, mergedInput_.rank).c_str(), dSize_);
+    OP_LOGI(context_, "input: x_shape %s, block_shape %s, crops %s, y_shape %s, data type size %d",
+            ArrayToString(mergedInput_.inShape, mergedInput_.rank).c_str(),
+            ArrayToString(mergedInput_.blockShape, mergedInput_.rank - NUM_FIXED_AXES).c_str(),
+            ArrayToString(*mergedInput_.crops, (mergedInput_.rank - NUM_FIXED_AXES) * CROPS_DIM_NUM_1).c_str(),
+            ArrayToString(mergedInput_.outShape, mergedInput_.rank).c_str(), dSize_);
     // soc 信息
-    OP_LOGI(
-        context_, "soc info: ubSize %lu, coreNum %u, cacheLineSize %lu, ubBlockSize %lu, simtMaxThreads %lu", ubSize_,
-        coreNum_, cacheLineSize_, ubBlockSize_, simtMaxThreads_);
+    OP_LOGI(context_, "soc info: ubSize %lu, coreNum %u, cacheLineSize %lu, ubBlockSize %lu, simtMaxThreads %lu",
+            ubSize_, coreNum_, cacheLineSize_, ubBlockSize_, simtMaxThreads_);
     // 中间计算结果
     OP_LOGI(context_, "middle data: realCoreNum %lu", realCoreNum_);
 }
@@ -217,9 +214,8 @@ void BatchToSpaceNDTiling::ShowLargeCTilingData()
 {
     ShowBaseTilingData();
     auto tilingData = context_->GetTilingData<B2SNDLargeCTilingData>();
-    OP_LOGI(
-        context_, "tiling data: ubAxis %lu, ubFactor %lu, outputBufferSize %lu", tilingData->ubAxis,
-        tilingData->ubFactor, tilingData->outputBufferSize);
+    OP_LOGI(context_, "tiling data: ubAxis %lu, ubFactor %lu, outputBufferSize %lu", tilingData->ubAxis,
+            tilingData->ubFactor, tilingData->outputBufferSize);
     OP_LOGI(context_, "\t: totalCount %u, perCoreCount %u", tilingData->totalCount, tilingData->perCoreCount);
 }
 
@@ -227,28 +223,24 @@ void BatchToSpaceNDTiling::ShowSmallCTilingData()
 {
     ShowBaseTilingData();
     auto tilingData = context_->GetTilingData<B2SNDSmallCTilingData>();
-    OP_LOGI(
-        context_, "tiling data: oriInShape %s, croppedInShape %s, crops %s",
-        ArrayToString(tilingData->oriInShape, mergedInput_.rank + blockShapeDimNum_).c_str(),
-        ArrayToString(tilingData->croppedInShape, mergedInput_.rank + blockShapeDimNum_).c_str(),
-        ArrayToString(*tilingData->crops, blockShapeDimNum_ * CROPS_DIM_NUM_1).c_str());
-    OP_LOGI(
-        context_, "\t: coreNum %u, inUbAxis %u, outUbAxis %u, inUbFactor %u, outUbFactor %u", tilingData->coreNum,
-        tilingData->inUbAxis, tilingData->outUbAxis, tilingData->inUbFactor, tilingData->outUbFactor);
-    OP_LOGI(
-        context_, "\t: ubTotalCount %u, ubPerCount %u, ubTileSize %u", tilingData->ubTotalCount, tilingData->ubPerCount,
-        tilingData->ubTileSize);
+    OP_LOGI(context_, "tiling data: oriInShape %s, croppedInShape %s, crops %s",
+            ArrayToString(tilingData->oriInShape, mergedInput_.rank + blockShapeDimNum_).c_str(),
+            ArrayToString(tilingData->croppedInShape, mergedInput_.rank + blockShapeDimNum_).c_str(),
+            ArrayToString(*tilingData->crops, blockShapeDimNum_ * CROPS_DIM_NUM_1).c_str());
+    OP_LOGI(context_, "\t: coreNum %u, inUbAxis %u, outUbAxis %u, inUbFactor %u, outUbFactor %u", tilingData->coreNum,
+            tilingData->inUbAxis, tilingData->outUbAxis, tilingData->inUbFactor, tilingData->outUbFactor);
+    OP_LOGI(context_, "\t: ubTotalCount %u, ubPerCount %u, ubTileSize %u", tilingData->ubTotalCount,
+            tilingData->ubPerCount, tilingData->ubTileSize);
 }
 
 void BatchToSpaceNDTiling::ShowSIMTTilingData()
 {
     ShowBaseTilingData();
     auto tilingData = context_->GetTilingData<B2SNDSimtTilingData>();
-    OP_LOGI(
-        context_, "tiling data: totalBlock %lu, mainCoreBlock %lu", tilingData->totalBlock, tilingData->mainCoreBlock);
-    OP_LOGI(
-        context_, "\t: needCoreNum %u, mainCoreNum %u, blockSize %u, tailBlockSize %u", tilingData->needCoreNum,
-        tilingData->mainCoreNum, tilingData->blockSize, tilingData->tailBlockSize);
+    OP_LOGI(context_, "tiling data: totalBlock %lu, mainCoreBlock %lu", tilingData->totalBlock,
+            tilingData->mainCoreBlock);
+    OP_LOGI(context_, "\t: needCoreNum %u, mainCoreNum %u, blockSize %u, tailBlockSize %u", tilingData->needCoreNum,
+            tilingData->mainCoreNum, tilingData->blockSize, tilingData->tailBlockSize);
 }
 
 ge::graphStatus BatchToSpaceNDTiling::CheckX()
@@ -258,31 +250,28 @@ ge::graphStatus BatchToSpaceNDTiling::CheckX()
     OP_CHECK_NULL_WITH_CONTEXT(context_, inputValueDesc);
     auto inputDataType = inputValueDesc->GetDataType();
     dSize_ = ge::GetSizeByDataType(inputDataType);
-    OP_CHECK_IF(
-        dSize_ <= 0,
-        OP_LOGE_FOR_INVALID_DTYPE(
-            context_->GetNodeName(), "x", ge::TypeUtils::DataTypeToSerialString(inputDataType).c_str(),
-            Ops::Math::JoinArray<Ops::Math::ItemConj::OR>(VALUE_DATA_TYPE_ALL).c_str()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(dSize_ <= 0,
+                OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x",
+                                          ge::TypeUtils::DataTypeToSerialString(inputDataType).c_str(),
+                                          Ops::Math::JoinArray<Ops::Math::ItemConj::OR>(VALUE_DATA_TYPE_ALL).c_str()),
+                return ge::GRAPH_FAILED);
 
     // 校验输入shape
     auto xInputShape = context_->GetInputShape(INPUT_IDX_X);
     OP_CHECK_NULL_WITH_CONTEXT(context_, xInputShape);
     auto xShape = xInputShape->GetStorageShape();
     originInput_.rank = xShape.GetDimNum();
-    OP_CHECK_IF(
-        originInput_.rank < MIN_X_RANK,
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-            context_->GetNodeName(), "x", std::to_string(originInput_.rank).c_str(),
-            "The shape dim of x must be within the range [2, 8]"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(originInput_.rank < MIN_X_RANK,
+                OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "x",
+                                                         std::to_string(originInput_.rank).c_str(),
+                                                         "The shape dim of x must be within the range [2, 8]"),
+                return ge::GRAPH_FAILED);
 
     // 校验溢出
     xShapeSize_ = xShape.GetShapeSize();
-    OP_CHECK_IF(
-        xShapeSize_ <= 0,
-        OP_LOGE_FOR_INVALID_SHAPESIZE(context_->GetNodeName(), "x", "overflow", "less than INT64_MAX"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(xShapeSize_ <= 0,
+                OP_LOGE_FOR_INVALID_SHAPESIZE(context_->GetNodeName(), "x", "overflow", "less than INT64_MAX"),
+                return ge::GRAPH_FAILED);
 
     // 获取 shape
     for (size_t i = 0; i < originInput_.rank; ++i) {
@@ -300,54 +289,51 @@ ge::graphStatus BatchToSpaceNDTiling::CheckBlockShape()
     // 校验shape
     auto bsShape = bsInputShape->GetStorageShape();
     size_t bsRank = bsShape.GetDimNum();
-    OP_CHECK_IF(
-        bsRank != BLOCK_SHAPE_RANK,
-        OP_LOGE_FOR_INVALID_SHAPEDIM(context_->GetNodeName(), "block_shape", std::to_string(bsRank).c_str(),
-            std::to_string(BLOCK_SHAPE_RANK).c_str()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(bsRank != BLOCK_SHAPE_RANK,
+                OP_LOGE_FOR_INVALID_SHAPEDIM(context_->GetNodeName(), "block_shape", std::to_string(bsRank).c_str(),
+                                             std::to_string(BLOCK_SHAPE_RANK).c_str()),
+                return ge::GRAPH_FAILED);
 
     // 获取 block_shape 值
     gert::Shape blockShape;
-    OP_CHECK_IF(
-        !Ops::Base::GetConstIntToShape(context_, INPUT_IDX_BLOCK_SHAPE, blockShape),
-        OP_LOGE(context_, "get block_shape tensor data failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(!Ops::Base::GetConstIntToShape(context_, INPUT_IDX_BLOCK_SHAPE, blockShape),
+                OP_LOGE(context_, "get block_shape tensor data failed"), return ge::GRAPH_FAILED);
 
     // 校验维度
     originBlockShapeDim_ = blockShape.GetDimNum();
-    OP_CHECK_IF(
-        originBlockShapeDim_ < MIN_BLOCK_SHAPE_DIM,
-        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "block_shape",
-            std::to_string(originBlockShapeDim_).c_str(), "All axes of block_shape must be greater than 0"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(originBlockShapeDim_ < MIN_BLOCK_SHAPE_DIM,
+                OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "block_shape",
+                                                      std::to_string(originBlockShapeDim_).c_str(),
+                                                      "All axes of block_shape must be greater than 0"),
+                return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         originBlockShapeDim_ >= originInput_.rank,
         OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(context_->GetNodeName(), "x and block_shape",
-            Ops::Math::Join(originInput_.rank, originBlockShapeDim_).c_str(),
-            "The shape dim of x must be > that of block_shape"),
+                                                  Ops::Math::Join(originInput_.rank, originBlockShapeDim_).c_str(),
+                                                  "The shape dim of x must be > that of block_shape"),
         return ge::GRAPH_FAILED);
 
     // block_shape 为正数
     for (size_t i = 0; i < originBlockShapeDim_; ++i) {
-        OP_CHECK_IF(
-            blockShape[i] <= 0,
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "block_shape",
-                std::to_string(blockShape[i]).c_str(), "Each value of block_shape must be positive"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(blockShape[i] <= 0,
+                    OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "block_shape",
+                                                          std::to_string(blockShape[i]).c_str(),
+                                                          "Each value of block_shape must be positive"),
+                    return ge::GRAPH_FAILED);
         originInput_.blockShape[i] = static_cast<uint64_t>(blockShape[i]);
     }
     int64_t block_size = blockShape.GetShapeSize();
-    OP_CHECK_IF(
-        block_size <= 0,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "block_shape", "overflow", "The value of block_shape must be less than INT64_MAX"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(block_size <= 0,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "block_shape", "overflow",
+                                                      "The value of block_shape must be less than INT64_MAX"),
+                return ge::GRAPH_FAILED);
 
     // block_shape 能被batch整除
     int64_t batch = originInput_.inShape[0];
     OP_CHECK_IF(
         (batch % block_size) != 0,
         OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "x", std::to_string(batch).c_str(),
-            "0th axis of x must be exactly divided by product of block_shape"),
+                                              "0th axis of x must be exactly divided by product of block_shape"),
         return ge::GRAPH_FAILED);
 
     originInput_.outShape[0] = Ops::Base::FloorDiv(batch, block_size);
@@ -364,39 +350,35 @@ ge::graphStatus BatchToSpaceNDTiling::CheckCrops()
     size_t cropsRank = cropsShape.GetDimNum();
     OP_CHECK_IF(
         cropsRank != CROPS_RANK,
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-            context_->GetNodeName(), "crops", std::to_string(cropsRank).c_str(), "The shape dim of crops must be 2"),
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "crops", std::to_string(cropsRank).c_str(),
+                                                 "The shape dim of crops must be 2"),
         return ge::GRAPH_FAILED);
 
     // crops 和 block_shape shape 相等
     OP_CHECK_IF(
         cropsShape.GetDim(0) != static_cast<int64_t>(originBlockShapeDim_),
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-            context_->GetNodeName(), "crops and block_shape",
-            Ops::Math::Join(cropsShape.GetDim(0), originBlockShapeDim_).c_str(),
-            "0th axis of crops must be equal to 0th axis of block_shape"),
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context_->GetNodeName(), "crops and block_shape",
+                                               Ops::Math::Join(cropsShape.GetDim(0), originBlockShapeDim_).c_str(),
+                                               "0th axis of crops must be equal to 0th axis of block_shape"),
         return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        cropsShape.GetDim(1) != static_cast<int64_t>(CROPS_DIM_NUM_1),
-        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
-            context_->GetNodeName(), "crops", std::to_string(cropsShape.GetDim(1)).c_str(),
-            "1st axis of crops must be equal to 2"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(cropsShape.GetDim(1) != static_cast<int64_t>(CROPS_DIM_NUM_1),
+                OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "crops",
+                                                      std::to_string(cropsShape.GetDim(1)).c_str(),
+                                                      "1st axis of crops must be equal to 2"),
+                return ge::GRAPH_FAILED);
 
     // 获取 crops 值
     gert::Shape crops;
-    OP_CHECK_IF(
-        !Ops::Base::GetConstIntToShape(context_, INPUT_IDX_CROPS, crops),
-        OP_LOGE(context_, "get crops tensor data failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(!Ops::Base::GetConstIntToShape(context_, INPUT_IDX_CROPS, crops),
+                OP_LOGE(context_, "get crops tensor data failed"), return ge::GRAPH_FAILED);
 
     // crops >= 0
     auto dims = crops.GetDimNum();
     for (size_t i = 0; i < dims; ++i) {
         OP_CHECK_IF(
             crops[i] < 0,
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-                context_->GetNodeName(), "crops", std::to_string(crops[i]).c_str(),
-                "Each value of crops must be non-negative"),
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "crops", std::to_string(crops[i]).c_str(),
+                                                  "Each value of crops must be non-negative"),
             return ge::GRAPH_FAILED);
         originInput_.crops[i / CROPS_DIM_NUM_1][i % CROPS_DIM_NUM_1] = static_cast<uint64_t>(crops[i]);
     }
@@ -412,16 +394,15 @@ ge::graphStatus BatchToSpaceNDTiling::CheckY()
         // x shape 已判断不会溢出，block_shape已判断整除batch，这里不会翻转
         int64_t cropedShape = originInput_.inShape[i] * originInput_.blockShape[j];
         // crops 是否溢出
-        OP_CHECK_IF(
-            originInput_.crops[j][0] > std::numeric_limits<int64_t>::max() - originInput_.crops[j][1],
-            OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "crops", "overflow", "less than INT64_MAX"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(originInput_.crops[j][0] > std::numeric_limits<int64_t>::max() - originInput_.crops[j][1],
+                    OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "crops", "overflow", "less than INT64_MAX"),
+                    return ge::GRAPH_FAILED);
         // y shape 不能为负
         int64_t crops = originInput_.crops[j][0] + originInput_.crops[j][1];
         OP_CHECK_IF(
             cropedShape < crops,
-            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
-                context_->GetNodeName(), "y", std::to_string(cropedShape - crops).c_str(), "y has negative axes"),
+            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "y",
+                                                  std::to_string(cropedShape - crops).c_str(), "y has negative axes"),
             return ge::GRAPH_FAILED);
         originInput_.outShape[i] = cropedShape - crops;
         // 比x shape size 小，不会溢出
@@ -514,9 +495,11 @@ ge::graphStatus BatchToSpaceNDTiling::ParamCheck()
     return MergeInput();
 }
 
-ge::graphStatus BatchToSpaceNDTiling::MoveAlignTilingBlock(
-    uint32_t maxUBElements, const std::vector<uint64_t>& ubFactorAlign, const std::vector<uint64_t>& leftAlign,
-    const std::vector<uint64_t>& dimValue, int32_t minCutAxis, B2SNDLargeCTilingData* tilingData)
+ge::graphStatus BatchToSpaceNDTiling::MoveAlignTilingBlock(uint32_t maxUBElements,
+                                                           const std::vector<uint64_t>& ubFactorAlign,
+                                                           const std::vector<uint64_t>& leftAlign,
+                                                           const std::vector<uint64_t>& dimValue, int32_t minCutAxis,
+                                                           B2SNDLargeCTilingData* tilingData)
 {
     uint64_t totalCount = 1;
     uint32_t restFactor = maxUBElements;
@@ -539,8 +522,8 @@ ge::graphStatus BatchToSpaceNDTiling::MoveAlignTilingBlock(
         // 塞不下
         // 头尾要单独处理
         // 对齐值不能为0，内部错误，无需上报
-        OP_CHECK_IF(
-            ubFactorAlign[i] == 0, OP_LOGE(context_, "the ub factor align must be non-zero"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(ubFactorAlign[i] == 0, OP_LOGE(context_, "the ub factor align must be non-zero"),
+                    return ge::GRAPH_FAILED);
         uint64_t lastLeftAlign = leftAlign[i] % ubFactorAlign[i];
         uint64_t head = 0, tail = 0;
         if (lastLeftAlign + dimVal > ubFactorAlign[i]) {
@@ -601,12 +584,13 @@ ge::graphStatus BatchToSpaceNDTiling::Tiling4LargeC()
     // batch 不对齐
     ubFactorAlign[0] = 1;
     // space 对齐 block shape
-    std::copy(mergedInput_.blockShape, mergedInput_.blockShape + mergedInput_.rank - NUM_FIXED_AXES, ubFactorAlign.begin() + 1);
+    std::copy(mergedInput_.blockShape, mergedInput_.blockShape + mergedInput_.rank - NUM_FIXED_AXES,
+              ubFactorAlign.begin() + 1);
     // remain shape 对齐 ub block
     ubFactorAlign[mergedInput_.rank - 1] = ubBlockElements_;
 
-    std::vector<uint64_t> dimValue =
-        std::vector<uint64_t>(mergedInput_.outShape, mergedInput_.outShape + mergedInput_.rank);
+    std::vector<uint64_t> dimValue = std::vector<uint64_t>(mergedInput_.outShape,
+                                                           mergedInput_.outShape + mergedInput_.rank);
     std::vector<uint64_t> leftAlign{};
     leftAlign.resize(mergedInput_.rank);
     // batch 不对齐
@@ -620,8 +604,8 @@ ge::graphStatus BatchToSpaceNDTiling::Tiling4LargeC()
     leftAlign[mergedInput_.rank - 1] = 0;
 
     // 分块
-    auto ret =
-        MoveAlignTilingBlock(maxUBElements, ubFactorAlign, leftAlign, dimValue, LARGE_C_OUTMOST_CUT_AXIS, tilingData);
+    auto ret = MoveAlignTilingBlock(maxUBElements, ubFactorAlign, leftAlign, dimValue, LARGE_C_OUTMOST_CUT_AXIS,
+                                    tilingData);
     OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context_, "large C tiling failed"), return ret);
 
     // 分核
@@ -641,9 +625,8 @@ void BatchToSpaceNDTiling::SmallCSetInput(B2SNDSmallCTilingData* tilingData)
     std::copy(mergedInput_.blockShape, mergedInput_.blockShape + blockShapeDimNum_, tilingData->oriInShape);
     tilingData->oriInShape[blockShapeDimNum_] = mergedInput_.outShape[0];
     // space + remain
-    std::copy(
-        mergedInput_.inShape + 1, mergedInput_.inShape + mergedInput_.rank,
-        tilingData->oriInShape + blockShapeDimNum_ + 1);
+    std::copy(mergedInput_.inShape + 1, mergedInput_.inShape + mergedInput_.rank,
+              tilingData->oriInShape + blockShapeDimNum_ + 1);
 
     // 预crop
     for (size_t i = 0; i < blockShapeDimNum_; ++i) {
@@ -729,9 +712,8 @@ ge::graphStatus BatchToSpaceNDTiling::Tiling4SmallC()
     uint32_t inputElements = (tilingData->ubTileSize - SMALL_C_RESERVE_BUFFER_SIZE) / dSize_;
 
     // 输入输出双切分
-    auto tiling = DualSideTiling(
-        context_, ubBlockElements_, tilingData->croppedInShape, yAxisPerm.data(), xNeedAlignAxis,
-        blockShapeDimNum_ + mergedInput_.rank);
+    auto tiling = DualSideTiling(context_, ubBlockElements_, tilingData->croppedInShape, yAxisPerm.data(),
+                                 xNeedAlignAxis, blockShapeDimNum_ + mergedInput_.rank);
     tiling.DoTiling(inputElements);
     tilingData->inUbAxis = tiling.inAxis;
     tilingData->inUbFactor = tiling.inFactor;
@@ -745,9 +727,8 @@ ge::graphStatus BatchToSpaceNDTiling::Tiling4SmallC()
             break;
         }
         inputElements = inputElements / UB_TILE_SIZE_REDUCTION_FACTOR;
-        auto tiling1 = DualSideTiling(
-            context_, ubBlockElements_, tilingData->croppedInShape, yAxisPerm.data(), xNeedAlignAxis,
-            blockShapeDimNum_ + mergedInput_.rank);
+        auto tiling1 = DualSideTiling(context_, ubBlockElements_, tilingData->croppedInShape, yAxisPerm.data(),
+                                      xNeedAlignAxis, blockShapeDimNum_ + mergedInput_.rank);
         tiling1.DoTiling(inputElements);
         if (tiling1.totalCount > coreNum_) {
             break;

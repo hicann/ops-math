@@ -1,17 +1,17 @@
 /**
-* Copyright (c) 2026 Huawei Technologies Co., Ltd.
-* This program is free software, you can redistribute it and/or modify it under the terms and conditions of
-* CANN Open Software License Agreement Version 2.0 (the "License").
-* Please refer to the License for details. You may not use this file except in compliance with the License.
-* THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-* INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
-* See LICENSE in the root of the software repository for the full text of the License.
-*/
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /**
  * @file test_geir_pad_v2.cpp
  * @brief PadV2算子的GE IR示例代码
- * 
+ *
  * 本示例演示如何使用GE IR接口构建和执行PadV2算子：
  * 1. 创建输入tensor（2D tensor）
  * 2. 设置paddings参数（例如：[[1,1], [2,2]]）
@@ -51,66 +51,66 @@ using std::string;
 using std::vector;
 
 // 宏：添加输入tensor
-#define ADD_INPUT(inputIndex, inputName, inputDtype, inputShape)                                                    \
-    do {                                                                                                            \
-        std::string name##inputIndex = "placeholder" + std::to_string(inputIndex);                                  \
-        auto placeholder##inputIndex = op::Data(name##inputIndex.c_str()).set_attr_index(0);                        \
-        TensorDesc placeholder##inputIndex##_desc = TensorDesc(ge::Shape(inputShape), FORMAT_ND, inputDtype);       \
-        placeholder##inputIndex##_desc.SetPlacement(ge::kPlacementHost);                                            \
-        placeholder##inputIndex##_desc.SetFormat(FORMAT_ND);                                                        \
-        Tensor tensor_placeholder##inputIndex;                                                                      \
-        ret = GenDataFloat32(inputShape, tensor_placeholder##inputIndex, placeholder##inputIndex##_desc);           \
-        if (ret != SUCCESS) {                                                                                       \
-            printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                          \
-            return FAILED;                                                                                          \
-        }                                                                                                           \
-        placeholder##inputIndex.update_input_desc_x(placeholder##inputIndex##_desc);                                \
-        graph.AddOp(placeholder##inputIndex);                                                                       \
-        input.push_back(tensor_placeholder##inputIndex);                                                            \
-        padv2.set_input_##inputName(placeholder##inputIndex);                                                       \
-        inputs.push_back(placeholder##inputIndex);                                                                  \
+#define ADD_INPUT(inputIndex, inputName, inputDtype, inputShape)                                              \
+    do {                                                                                                      \
+        std::string name##inputIndex = "placeholder" + std::to_string(inputIndex);                            \
+        auto placeholder##inputIndex = op::Data(name##inputIndex.c_str()).set_attr_index(0);                  \
+        TensorDesc placeholder##inputIndex##_desc = TensorDesc(ge::Shape(inputShape), FORMAT_ND, inputDtype); \
+        placeholder##inputIndex##_desc.SetPlacement(ge::kPlacementHost);                                      \
+        placeholder##inputIndex##_desc.SetFormat(FORMAT_ND);                                                  \
+        Tensor tensor_placeholder##inputIndex;                                                                \
+        ret = GenDataFloat32(inputShape, tensor_placeholder##inputIndex, placeholder##inputIndex##_desc);     \
+        if (ret != SUCCESS) {                                                                                 \
+            printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                    \
+            return FAILED;                                                                                    \
+        }                                                                                                     \
+        placeholder##inputIndex.update_input_desc_x(placeholder##inputIndex##_desc);                          \
+        graph.AddOp(placeholder##inputIndex);                                                                 \
+        input.push_back(tensor_placeholder##inputIndex);                                                      \
+        padv2.set_input_##inputName(placeholder##inputIndex);                                                 \
+        inputs.push_back(placeholder##inputIndex);                                                            \
     } while (0)
 
 // 宏：添加int32类型的输入tensor（用于paddings）
-#define ADD_INT32_INPUT(inputIndex, inputName, inputShape, dataVec)                                                 \
-    do {                                                                                                            \
-        std::string name##inputIndex = "placeholder" + std::to_string(inputIndex);                                  \
-        auto placeholder##inputIndex = op::Data(name##inputIndex.c_str()).set_attr_index(0);                        \
-        TensorDesc placeholder##inputIndex##_desc = TensorDesc(ge::Shape(inputShape), FORMAT_ND, DT_INT32);         \
-        placeholder##inputIndex##_desc.SetPlacement(ge::kPlacementHost);                                            \
-        placeholder##inputIndex##_desc.SetFormat(FORMAT_ND);                                                        \
-        Tensor tensor_placeholder##inputIndex;                                                                      \
-        ret = GenInt32Data(inputShape, tensor_placeholder##inputIndex, placeholder##inputIndex##_desc, dataVec);    \
-        if (ret != SUCCESS) {                                                                                       \
-            printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                          \
-            return FAILED;                                                                                          \
-        }                                                                                                           \
-        placeholder##inputIndex.update_input_desc_x(placeholder##inputIndex##_desc);                                \
-        graph.AddOp(placeholder##inputIndex);                                                                       \
-        input.push_back(tensor_placeholder##inputIndex);                                                            \
-        padv2.set_input_##inputName(placeholder##inputIndex);                                                       \
-        inputs.push_back(placeholder##inputIndex);                                                                  \
+#define ADD_INT32_INPUT(inputIndex, inputName, inputShape, dataVec)                                              \
+    do {                                                                                                         \
+        std::string name##inputIndex = "placeholder" + std::to_string(inputIndex);                               \
+        auto placeholder##inputIndex = op::Data(name##inputIndex.c_str()).set_attr_index(0);                     \
+        TensorDesc placeholder##inputIndex##_desc = TensorDesc(ge::Shape(inputShape), FORMAT_ND, DT_INT32);      \
+        placeholder##inputIndex##_desc.SetPlacement(ge::kPlacementHost);                                         \
+        placeholder##inputIndex##_desc.SetFormat(FORMAT_ND);                                                     \
+        Tensor tensor_placeholder##inputIndex;                                                                   \
+        ret = GenInt32Data(inputShape, tensor_placeholder##inputIndex, placeholder##inputIndex##_desc, dataVec); \
+        if (ret != SUCCESS) {                                                                                    \
+            printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                       \
+            return FAILED;                                                                                       \
+        }                                                                                                        \
+        placeholder##inputIndex.update_input_desc_x(placeholder##inputIndex##_desc);                             \
+        graph.AddOp(placeholder##inputIndex);                                                                    \
+        input.push_back(tensor_placeholder##inputIndex);                                                         \
+        padv2.set_input_##inputName(placeholder##inputIndex);                                                    \
+        inputs.push_back(placeholder##inputIndex);                                                               \
     } while (0)
 
 // 宏：添加scalar输入tensor（用于constant_values）
-#define ADD_SCALAR_INPUT(inputIndex, inputName, inputDtype, value)                                                  \
-    do {                                                                                                            \
-        std::string name##inputIndex = "placeholder" + std::to_string(inputIndex);                                  \
-        auto placeholder##inputIndex = op::Data(name##inputIndex.c_str()).set_attr_index(0);                        \
-        TensorDesc placeholder##inputIndex##_desc = TensorDesc(ge::Shape({1}), FORMAT_ND, inputDtype);              \
-        placeholder##inputIndex##_desc.SetPlacement(ge::kPlacementHost);                                            \
-        placeholder##inputIndex##_desc.SetFormat(FORMAT_ND);                                                        \
-        Tensor tensor_placeholder##inputIndex;                                                                      \
-        ret = GenScalarData(inputDtype, tensor_placeholder##inputIndex, placeholder##inputIndex##_desc, value);     \
-        if (ret != SUCCESS) {                                                                                       \
-            printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                          \
-            return FAILED;                                                                                          \
-        }                                                                                                           \
-        placeholder##inputIndex.update_input_desc_x(placeholder##inputIndex##_desc);                                \
-        graph.AddOp(placeholder##inputIndex);                                                                       \
-        input.push_back(tensor_placeholder##inputIndex);                                                            \
-        padv2.set_input_##inputName(placeholder##inputIndex);                                                       \
-        inputs.push_back(placeholder##inputIndex);                                                                  \
+#define ADD_SCALAR_INPUT(inputIndex, inputName, inputDtype, value)                                              \
+    do {                                                                                                        \
+        std::string name##inputIndex = "placeholder" + std::to_string(inputIndex);                              \
+        auto placeholder##inputIndex = op::Data(name##inputIndex.c_str()).set_attr_index(0);                    \
+        TensorDesc placeholder##inputIndex##_desc = TensorDesc(ge::Shape({1}), FORMAT_ND, inputDtype);          \
+        placeholder##inputIndex##_desc.SetPlacement(ge::kPlacementHost);                                        \
+        placeholder##inputIndex##_desc.SetFormat(FORMAT_ND);                                                    \
+        Tensor tensor_placeholder##inputIndex;                                                                  \
+        ret = GenScalarData(inputDtype, tensor_placeholder##inputIndex, placeholder##inputIndex##_desc, value); \
+        if (ret != SUCCESS) {                                                                                   \
+            printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                      \
+            return FAILED;                                                                                      \
+        }                                                                                                       \
+        placeholder##inputIndex.update_input_desc_x(placeholder##inputIndex##_desc);                            \
+        graph.AddOp(placeholder##inputIndex);                                                                   \
+        input.push_back(tensor_placeholder##inputIndex);                                                        \
+        padv2.set_input_##inputName(placeholder##inputIndex);                                                   \
+        inputs.push_back(placeholder##inputIndex);                                                              \
     } while (0)
 
 // 宏：添加输出tensor
@@ -175,7 +175,7 @@ int32_t GenDataFloat32(vector<int64_t> shapes, Tensor& input_tensor, TensorDesc&
 }
 
 // 生成int32数据（用于paddings）
-int32_t GenInt32Data(vector<int64_t> shapes, Tensor& input_tensor, TensorDesc& input_tensor_desc, 
+int32_t GenInt32Data(vector<int64_t> shapes, Tensor& input_tensor, TensorDesc& input_tensor_desc,
                      const std::vector<int32_t>& dataVec)
 {
     input_tensor_desc.SetRealDimCnt(shapes.size());
@@ -199,7 +199,7 @@ int32_t GenScalarData(DataType dtype, Tensor& input_tensor, TensorDesc& input_te
 {
     input_tensor_desc.SetRealDimCnt(1);
     uint32_t data_len = GetDataTypeSize(dtype);
-    
+
     if (dtype == ge::DT_FLOAT) {
         float* pData = new (std::nothrow) float[1];
         pData[0] = value;
@@ -228,26 +228,26 @@ int32_t WriteDataToFile(string bin_file, uint64_t data_size, uint8_t* inputData)
 
 /**
  * @brief 创建包含PadV2算子的计算图
- * 
+ *
  * 示例场景：
  * - 输入x: shape=[3, 3]，数据为[0,1,2,3,4,5,6,7,8]
  * - paddings: [[1,1], [2,2]]，表示在第0维前后各填充1，在第1维前后各填充2
  * - constant_values: 0.0
  * - 输出y: shape=[5, 7]，填充后的结果
  */
-int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor> &input, std::vector<Operator> &inputs,
-    std::vector<Operator> &outputs, Graph &graph)
+int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor>& input, std::vector<Operator>& inputs,
+                     std::vector<Operator>& outputs, Graph& graph)
 {
     Status ret = SUCCESS;
-    
+
     // 创建PadV2算子
     auto padv2 = op::PadV2("test_geir_pad_v2");
-    
+
     // 定义输入shape
     std::vector<int64_t> xShape = {3, 3};           // 输入tensor的shape
     std::vector<int64_t> paddingsShape = {2, 2};    // paddings的shape: [N, 2]，N为x的rank
     std::vector<int64_t> constantValuesShape = {1}; // constant_values的shape（scalar）
-    
+
     // 定义输出shape（根据paddings计算）
     // x.shape = [3, 3], paddings = [[1,1], [2,2]]
     // y.shape = [3+1+1, 3+2+2] = [5, 7]
@@ -255,12 +255,12 @@ int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor> &input, std::vect
 
     // 添加输入x
     ADD_INPUT(1, x, inDtype, xShape);
-    
+
     // 添加输入paddings（int32类型）
     // paddings = [[1,1], [2,2]]，表示在第0维前后各填充1，在第1维前后各填充2
     std::vector<int32_t> paddingsData = {1, 1, 2, 2};
     ADD_INT32_INPUT(2, paddings, paddingsShape, paddingsData);
-    
+
     // 添加输入constant_values（可选输入）
     ADD_SCALAR_INPUT(3, constant_values, inDtype, 0.0f);
 
@@ -271,23 +271,20 @@ int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor> &input, std::vect
     ADD_OUTPUT(1, y, inDtype, yShape);
 
     outputs.push_back(padv2);
-    
+
     return SUCCESS;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-    const char *graph_name = "tc_ge_irrun_test";
+    const char* graph_name = "tc_ge_irrun_test";
     Graph graph(graph_name);
     std::vector<ge::Tensor> input;
 
     printf("%s - INFO - [XIR]: Start to initialize ge using ge global options\n", GetTime().c_str());
-    
+
     // 初始化GE环境
-    std::map<AscendString, AscendString> global_options = {
-        {"ge.exec.deviceId", "0"}, 
-        {"ge.graphRunMode", "1"}
-    };
+    std::map<AscendString, AscendString> global_options = {{"ge.exec.deviceId", "0"}, {"ge.graphRunMode", "1"}};
     Status ret = ge::GEInitialize(global_options);
     if (ret != SUCCESS) {
         printf("%s - INFO - [XIR]: Initialize ge using ge global options failed\n", GetTime().c_str());
@@ -317,7 +314,7 @@ int main(int argc, char *argv[])
     // 创建会话
     std::map<AscendString, AscendString> build_options = {};
     printf("%s - INFO - [XIR]: Start to create ir session using build options\n", GetTime().c_str());
-    ge::Session *session = new Session(build_options);
+    ge::Session* session = new Session(build_options);
 
     if (session == nullptr) {
         printf("%s - ERROR - [XIR]: Create ir session using build options failed\n", GetTime().c_str());
@@ -333,11 +330,11 @@ int main(int argc, char *argv[])
 
     printf("%s - INFO - [XIR]: Session add ir compute graph to ir session success\n", GetTime().c_str());
     printf("%s - INFO - [XIR]: dump graph to txt\n", GetTime().c_str());
-    
+
     // dump图结构到文件
     std::string file_path = "./dump";
     aclgrphDumpGraph(graph, file_path.c_str(), file_path.length());
-    
+
     // 执行图
     printf("%s - INFO - [XIR]: Start to run ir compute graph\n", GetTime().c_str());
     std::vector<ge::Tensor> output;
@@ -355,15 +352,15 @@ int main(int argc, char *argv[])
     for (int i = 0; i < input_num; i++) {
         std::cout << "input " << i << " dtype :  " << input[i].GetTensorDesc().GetDataType() << std::endl;
         string input_file = "./tc_ge_irrun_test_0008_npu_input_" + std::to_string(i) + ".bin";
-        uint8_t *input_data_i = input[i].GetData();
+        uint8_t* input_data_i = input[i].GetData();
         int64_t input_shape = input[i].GetTensorDesc().GetShape().GetShapeSize();
         std::cout << "this is " << i << "th input, input shape size =" << input_shape << std::endl;
         uint32_t data_size = input_shape * GetDataTypeSize(input[i].GetTensorDesc().GetDataType());
-        WriteDataToFile((const char *)input_file.c_str(), data_size, input_data_i);
-        
+        WriteDataToFile((const char*)input_file.c_str(), data_size, input_data_i);
+
         // 打印输入数据（仅float类型）
         if (input[i].GetTensorDesc().GetDataType() == ge::DT_FLOAT) {
-            float *inputData = (float*)input_data_i;
+            float* inputData = (float*)input_data_i;
             std::cout << "Input " << i << " data:" << std::endl;
             for (int64_t j = 0; j < std::min(input_shape, (int64_t)10); j++) {
                 LOG_PRINT("  input[%ld] = %f\n", j, inputData[j]);
@@ -376,15 +373,15 @@ int main(int argc, char *argv[])
     for (int i = 0; i < output_num; i++) {
         std::cout << "output " << i << " dtype :  " << output[i].GetTensorDesc().GetDataType() << std::endl;
         string output_file = "./tc_ge_irrun_test_0008_npu_output_" + std::to_string(i) + ".bin";
-        uint8_t *output_data_i = output[i].GetData();
+        uint8_t* output_data_i = output[i].GetData();
         int64_t output_shape = output[i].GetTensorDesc().GetShape().GetShapeSize();
         std::cout << "this is " << i << "th output, output shape size =" << output_shape << std::endl;
         uint32_t data_size = output_shape * GetDataTypeSize(output[i].GetTensorDesc().GetDataType());
-        WriteDataToFile((const char *)output_file.c_str(), data_size, output_data_i);
-        
+        WriteDataToFile((const char*)output_file.c_str(), data_size, output_data_i);
+
         // 打印输出数据（仅float类型）
         if (output[i].GetTensorDesc().GetDataType() == ge::DT_FLOAT) {
-            float *resultData = (float*)output_data_i;
+            float* resultData = (float*)output_data_i;
             std::cout << "Output " << i << " data:" << std::endl;
             // 打印前10个和后10个元素
             for (int64_t j = 0; j < std::min(output_shape, (int64_t)10); j++) {
@@ -406,7 +403,7 @@ int main(int argc, char *argv[])
     ge::AscendString warning_msg = ge::GEGetWarningMsgV2();
     std::string warning_str(warning_msg.GetString());
     std::cout << "Warning message: " << warning_str << std::endl;
-    
+
     // 清理资源
     printf("%s - INFO - [XIR]: Start to finalize ir graph session\n", GetTime().c_str());
     ret = ge::GEFinalize();
@@ -415,6 +412,6 @@ int main(int argc, char *argv[])
         return FAILED;
     }
     printf("%s - INFO - [XIR]: Finalize ir graph session success\n", GetTime().c_str());
-    
+
     return SUCCESS;
 }

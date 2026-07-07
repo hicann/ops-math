@@ -126,7 +126,7 @@ struct UbPermInfo {
 class TransposeGatherTiling {
 public:
     explicit TransposeGatherTiling(gert::TilingContext* context, const PlatInfo& platInfo, const ShapeInfo& shapeInfo)
-        : context_(context), platInfo_(platInfo), shapeInfo_(shapeInfo){};
+        : context_(context), platInfo_(platInfo), shapeInfo_(shapeInfo) {};
     ge::graphStatus DoTiling();
 
 private:
@@ -135,12 +135,11 @@ private:
     void CalcTensorSize();
     void CalcInUbPerm(int64_t sqrtedTensor);
     void CalcOutUbPerm(int64_t sqrtedTensor);
-    void CalcUbAxisCutFactor(
-        int64_t elemInTensor, int64_t sqrtedTensor, bool isLastInPermLeft, bool isLastOutPermLeft,
-        const std::set<int8_t>& viceAllUbPerm);
-    ge::graphStatus CalcUbAxesInfo(
-        const int64_t (&tmpInAxes)[MAX_TRANS_AXIS_NUM], const int64_t (&tmpOutAxes)[MAX_TRANS_AXIS_NUM],
-        const int8_t (&tmpOutPerm)[MAX_TRANS_AXIS_NUM]);
+    void CalcUbAxisCutFactor(int64_t elemInTensor, int64_t sqrtedTensor, bool isLastInPermLeft, bool isLastOutPermLeft,
+                             const std::set<int8_t>& viceAllUbPerm);
+    ge::graphStatus CalcUbAxesInfo(const int64_t (&tmpInAxes)[MAX_TRANS_AXIS_NUM],
+                                   const int64_t (&tmpOutAxes)[MAX_TRANS_AXIS_NUM],
+                                   const int8_t (&tmpOutPerm)[MAX_TRANS_AXIS_NUM]);
     ge::graphStatus CalcUbSplitInfo4Gather(int64_t elemInTensor, int64_t sqrtedTensor);
     void CalcUbSplitInfo4MTE();
     void AdjustInUbAxesPosition();

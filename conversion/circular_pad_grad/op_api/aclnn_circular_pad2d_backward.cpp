@@ -21,11 +21,11 @@ extern "C" {
 
 static const string CIRCULAR_MODE = "circular";
 // 根据API定义，需要列出所能支持的所有dtype
-static const std::initializer_list<op::DataType> dtypeSupportList = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
+static const std::initializer_list<op::DataType> dtypeSupportList = {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16,
+                                                                     op::DataType::DT_BF16};
 
-inline static bool CheckNotNull(
-    const aclTensor* gradOutput, const aclTensor* self, const aclIntArray* padding, const aclTensor* gradInput)
+inline static bool CheckNotNull(const aclTensor* gradOutput, const aclTensor* self, const aclIntArray* padding,
+                                const aclTensor* gradInput)
 {
     OP_CHECK_NULL(gradOutput, return false);
     OP_CHECK_NULL(self, return false);
@@ -60,17 +60,16 @@ inline static bool CheckFormat(const aclTensor* gradOutput, const aclTensor* sel
     OP_CHECK(
         gradOutput->GetViewFormat() == self->GetViewFormat() &&
             gradOutput->GetViewFormat() == gradInput->GetViewFormat(),
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "Format of input and output should be equal, gradOutput [%s], self [%s], gradInput [%s].",
-            op::ToString(gradOutput->GetViewFormat()).GetString(), op::ToString(self->GetViewFormat()).GetString(),
-            op::ToString(gradInput->GetViewFormat()).GetString()),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "Format of input and output should be equal, gradOutput [%s], self [%s], gradInput [%s].",
+                op::ToString(gradOutput->GetViewFormat()).GetString(), op::ToString(self->GetViewFormat()).GetString(),
+                op::ToString(gradInput->GetViewFormat()).GetString()),
         return false);
     return true;
 }
 
-static bool CheckShape(
-    const aclTensor* gradOutput, const aclTensor* self, const aclIntArray* padding, const aclTensor* gradInput)
+static bool CheckShape(const aclTensor* gradOutput, const aclTensor* self, const aclIntArray* padding,
+                       const aclTensor* gradInput)
 {
     auto selfDimnum = self->GetViewShape().GetDimNum();
     // self和gradInput的shape必须一致
@@ -86,22 +85,21 @@ static bool CheckShape(
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "gradOutput, self, gradInput dim should be same."), return false);
 
     // padding长度为4
-    OP_CHECK(
-        padding->Size() == 4,
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding length should be 4, but got %zu.", padding->Size()), return false);
+    OP_CHECK(padding->Size() == 4,
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding length should be 4, but got %zu.", padding->Size()),
+             return false);
 
     // check the last 2 dim value of out. 0, 1, 2, 3 are indexes
-    OP_CHECK(
-        gradOutput->GetViewShape().GetDim(selfDimnum - 2) ==
-                self->GetViewShape().GetDim(selfDimnum - 2) + (*padding)[2] + (*padding)[3] &&
-            gradOutput->GetViewShape().GetDim(selfDimnum - 1) ==
-                self->GetViewShape().GetDim(selfDimnum - 1) + (*padding)[0] + (*padding)[1],
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "wrong gradOutput shape."), return false);
+    OP_CHECK(gradOutput->GetViewShape().GetDim(selfDimnum - 2) ==
+                     self->GetViewShape().GetDim(selfDimnum - 2) + (*padding)[2] + (*padding)[3] &&
+                 gradOutput->GetViewShape().GetDim(selfDimnum - 1) ==
+                     self->GetViewShape().GetDim(selfDimnum - 1) + (*padding)[0] + (*padding)[1],
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "wrong gradOutput shape."), return false);
     return true;
 }
 
-inline static aclnnStatus CheckParams(
-    const aclTensor* gradOutput, const aclTensor* self, const aclIntArray* padding, const aclTensor* gradInput)
+inline static aclnnStatus CheckParams(const aclTensor* gradOutput, const aclTensor* self, const aclIntArray* padding,
+                                      const aclTensor* gradInput)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(gradOutput, self, padding, gradInput), ACLNN_ERR_PARAM_NULLPTR);
@@ -148,9 +146,9 @@ static aclnnStatus InputPreprocess(const aclTensor*& gradOutput, const aclTensor
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus commonPad2dBackward(
-    const aclTensor* gradOutput, const aclTensor* self, const aclIntArray* padding, const string& mode,
-    aclTensor* gradInput, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus commonPad2dBackward(const aclTensor* gradOutput, const aclTensor* self, const aclIntArray* padding,
+                                       const string& mode, aclTensor* gradInput, uint64_t* workspaceSize,
+                                       aclOpExecutor** executor)
 {
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -206,9 +204,9 @@ static aclnnStatus commonPad2dBackward(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnCircularPad2dBackwardGetWorkspaceSize(
-    const aclTensor* gradOutput, const aclTensor* self, const aclIntArray* padding, aclTensor* gradInput,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnCircularPad2dBackwardGetWorkspaceSize(const aclTensor* gradOutput, const aclTensor* self,
+                                                       const aclIntArray* padding, aclTensor* gradInput,
+                                                       uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
@@ -216,8 +214,8 @@ aclnnStatus aclnnCircularPad2dBackwardGetWorkspaceSize(
     return commonPad2dBackward(gradOutput, self, padding, CIRCULAR_MODE, gradInput, workspaceSize, executor);
 }
 
-aclnnStatus aclnnCircularPad2dBackward(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnCircularPad2dBackward(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                       aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnCircularPad2dBackward);
     // 固定写法，调用框架能力，完成计算

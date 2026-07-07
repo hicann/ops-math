@@ -20,15 +20,9 @@ using namespace optiling;
 
 class PadV3GradTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "PadV3GradTilingTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "PadV3GradTilingTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "PadV3GradTilingTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "PadV3GradTilingTest TearDown" << std::endl; }
 };
 
 TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_1)
@@ -48,8 +42,8 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_1)
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
     uint64_t expectTilingKey = 18;
-    string expectTilingData =
-        "1 0 0 60 0 0 0 0 0 0 0 50 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 6 0 0 0 0 0 0 0 4 0 0 0 0 0 0 0 ";
+    string expectTilingData = "1 0 0 60 0 0 0 0 0 0 0 50 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 6 0 0 0 0 0 0 0 "
+                              "4 0 0 0 0 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

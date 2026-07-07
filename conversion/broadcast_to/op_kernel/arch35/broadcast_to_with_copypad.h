@@ -19,16 +19,14 @@
 #include "broadcast_to_base.h"
 #include "kernel_operator.h"
 
-namespace BrcTo
-{
+namespace BrcTo {
 using namespace AscendC;
 
 constexpr uint8_t bufferNum_datacopypad = 2;
 constexpr int32_t queDepth_datacopypad = 1;
 
 template <typename T, typename U>
-class BrcToDataCopyPad : public BrcToBase<U>
-{
+class BrcToDataCopyPad : public BrcToBase<U> {
 public:
     __aicore__ inline BrcToDataCopyPad(){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const U* tilingDataPtr, TPipe* pipeIn);
@@ -108,8 +106,8 @@ __aicore__ inline void BrcToDataCopyPad<T, U>::Process()
         }
         if (lpInfo.uLeft > 0) {
             copyParams.blockLen = lpInfo.uLeft * outLen;
-            gmInOffset =
-                (aInOffset + inBlockOffset + lpInfo.uLpCnt * tdPtr_->uLpUnit * tdPtr_->uInOffset * tdPtr_->isUNotB);
+            gmInOffset = (aInOffset + inBlockOffset +
+                          lpInfo.uLpCnt * tdPtr_->uLpUnit * tdPtr_->uInOffset * tdPtr_->isUNotB);
             CopyDataIn();
             gmOutOffset = (aOutOffset + outBlockOffset + lpInfo.uLpCnt * tdPtr_->uLpUnit * tdPtr_->uOutOffset);
             CopyDataOut();
@@ -117,6 +115,6 @@ __aicore__ inline void BrcToDataCopyPad<T, U>::Process()
     }
 }
 
-}  // namespace BrcTo
+} // namespace BrcTo
 
-#endif  // BROADCAST_TO_WITH_DATACOPYPAD_H_
+#endif // BROADCAST_TO_WITH_DATACOPYPAD_H_

@@ -18,15 +18,9 @@ using namespace std;
 
 class reflection_pad1d_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "reflection_pad1d_test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "reflection_pad1d_test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "reflection_pad1d_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "reflection_pad1d_test TearDown" << std::endl; }
 };
 
 TEST_F(reflection_pad1d_test, case_1)

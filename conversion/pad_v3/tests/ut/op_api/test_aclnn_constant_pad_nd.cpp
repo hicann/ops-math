@@ -21,15 +21,9 @@ using namespace std;
 
 class l2ConstantPadNd : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "l2ConstantPadNd SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "l2ConstantPadNd SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "l2ConstantPadNd TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "l2ConstantPadNd TearDown" << std::endl; }
 };
 
 TEST_F(l2ConstantPadNd, case_norm_int64)
@@ -263,8 +257,8 @@ TEST_F(l2ConstantPadNd, case_nullptr_input)
     auto value = ScalarDesc(static_cast<int64_t>(2));
     auto out_tensor_desc = TensorDesc({6, 6}, ACL_FLOAT, ACL_FORMAT_ND);
 
-    auto ut =
-        OP_API_UT(aclnnConstantPadNd, INPUT((aclTensor*)nullptr, pad, (aclScalar*)nullptr), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnConstantPadNd, INPUT((aclTensor*)nullptr, pad, (aclScalar*)nullptr),
+                        OUTPUT(out_tensor_desc));
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);

@@ -49,26 +49,24 @@ static inline bool IsAiCoreSupport(const aclTensor* self, const aclTensor* other
     return it->second.find(otherDtype) != it->second.end();
 }
 
-static const aclTensor* TruncateDivAiCore(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, aclOpExecutor* executor)
+static const aclTensor* TruncateDivAiCore(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                          aclOpExecutor* executor)
 {
     L0_DFX(TruncateDivAiCore, self, other, out);
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(TruncateDiv, OP_INPUT(self, other), OP_OUTPUT(out));
-    OP_CHECK(
-        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "TruncateDivAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    OP_CHECK(ret == ACL_SUCCESS,
+             OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "TruncateDivAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."), return nullptr);
     return out;
 }
 
-static const aclTensor* TruncateDivAiCpu(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, aclOpExecutor* executor)
+static const aclTensor* TruncateDivAiCpu(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                         aclOpExecutor* executor)
 {
     L0_DFX(TruncateDivAiCpu, self, other, out);
     static internal::AicpuTaskSpace space("TruncateDiv", ge::DEPEND_IN_SHAPE, true);
     auto ret = ADD_TO_LAUNCHER_LIST_AICPU(TruncateDiv, OP_ATTR_NAMES(), OP_INPUT(self, other), OP_OUTPUT(out));
-    OP_CHECK(
-        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "TruncateDivAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
-        return nullptr);
+    OP_CHECK(ret == ACL_SUCCESS,
+             OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "TruncateDivAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."), return nullptr);
     return out;
 }
 
@@ -77,9 +75,8 @@ const aclTensor* TruncateDiv(const aclTensor* self, const aclTensor* other, aclO
     L0_DFX(TruncateDiv, self, other);
     op::Shape broadcastShape;
     if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
-            op::ToString(other->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+                op::ToString(other->GetViewShape()).GetString());
         return nullptr;
     }
 

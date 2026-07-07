@@ -20,8 +20,7 @@
 #include "op_kernel/math_util.h"
 #include "op_kernel/platform_util.h"
 
-namespace BrcTo
-{
+namespace BrcTo {
 using namespace AscendC;
 
 constexpr uint8_t aAxisPos = 0;
@@ -44,8 +43,7 @@ struct AxesLpInfo {
 };
 
 template <typename U>
-class BrcToBase
-{
+class BrcToBase {
 public:
     __aicore__ inline BrcToBase(){};
 
@@ -207,6 +205,6 @@ __aicore__ inline void BrcToBase<U>::CalcABBaseIdx(const U* tdPtr, int64_t block
     }
 }
 
-}  // namespace BrcTo
+} // namespace BrcTo
 
-#endif  // BROADCAST_TO_BASE_H_
+#endif // BROADCAST_TO_BASE_H_

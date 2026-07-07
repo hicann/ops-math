@@ -87,8 +87,7 @@ struct TransposeCompilerInfo {
     int64_t coreNum;
     int64_t ubSize; // unit: block
 
-    TransposeCompilerInfo() : coreNum(0), ubSize(0)
-    {}
+    TransposeCompilerInfo() : coreNum(0), ubSize(0) {}
 };
 
 void RemoveAxisV2(ShapeInfo& shapeInfo);

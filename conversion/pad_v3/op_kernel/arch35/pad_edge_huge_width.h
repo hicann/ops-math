@@ -28,8 +28,7 @@ struct PadEdgeHugeParam {
 };
 
 template <typename T>
-class KernelPadEdgeWithHugeWidth
-{
+class KernelPadEdgeWithHugeWidth {
 private:
     static constexpr uint32_t BLK_ELEMS = UB_BLOCK / sizeof(T);
 
@@ -117,7 +116,8 @@ public:
             if (outIndex_[ubAxis_] < tilingData_->leftPad[ubAxis_] + tilingData_->inShape[ubAxis_]) {
                 if (outIndex_[ubAxis_] + ubFactor_ <= tilingData_->leftPad[ubAxis_]) {
                     inCopyLen_ = 0;
-                } else if (outIndex_[ubAxis_] + ubFactor_ < tilingData_->leftPad[ubAxis_] + tilingData_->inShape[ubAxis_]) {
+                } else if (outIndex_[ubAxis_] + ubFactor_ <
+                           tilingData_->leftPad[ubAxis_] + tilingData_->inShape[ubAxis_]) {
                     inCopyLen_ = outIndex_[ubAxis_] + ubFactor_ - inIndex_[ubAxis_] - tilingData_->leftPad[ubAxis_];
                 } else {
                     inCopyLen_ = tilingData_->inShape[ubAxis_] - inIndex_[ubAxis_];
@@ -206,7 +206,8 @@ private:
 
             if (copyLen != 0) {
                 copyInParams.blockLen = copyLen * sizeof(T);
-                DataCopyPad(src[additionOffsetHuge_ + ubOffset], input_[inAddr + remainderLen], copyInParams, padParams);
+                DataCopyPad(src[additionOffsetHuge_ + ubOffset], input_[inAddr + remainderLen], copyInParams,
+                            padParams);
             }
 
             if (padParam.padWLOffset != 0) {
@@ -220,7 +221,8 @@ private:
                 Duplicate(src[additionOffsetHuge_], padValue, padParam.padWLOffset);
             }
             if (padParam.padWROffset != ubFactor_) {
-                padRightLen_ = min(ubFactor_, tilingData_->outShape[ubAxis_] - outIndex_[ubAxis_]) - padParam.padWROffset;
+                padRightLen_ = min(ubFactor_, tilingData_->outShape[ubAxis_] - outIndex_[ubAxis_]) -
+                               padParam.padWROffset;
                 if (padRightLen_ != 0) {
                     SetEvent<HardEvent::MTE2_S>(HardEvent::MTE2_S);
                     if (copyLen != 0) {
@@ -242,27 +244,26 @@ private:
         }
     }
 
-    __aicore__ inline void PadOneLine(
-        LocalTensor<T> src, PadEdgeHugeParam& padParam, LocalTensor<T> addition, uint32_t additionLen)
+    __aicore__ inline void PadOneLine(LocalTensor<T> src, PadEdgeHugeParam& padParam, LocalTensor<T> addition,
+                                      uint32_t additionLen)
     {
         if (padParam.padWLOffset % BLK_ELEMS == 0 && needPadRight_ == 0) {
             SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
             return;
         }
         if constexpr (sizeof(T) == B64_BYTES) {
-            PadBothSide<AscendC::MicroAPI::RegTraitNumTwo>(
-                src, padParam, addition, additionLen, needPadRight_, padRightLen_, padRightValue_, repeatTimes_);
+            PadBothSide<AscendC::MicroAPI::RegTraitNumTwo>(src, padParam, addition, additionLen, needPadRight_,
+                                                           padRightLen_, padRightValue_, repeatTimes_);
         } else {
-            PadBothSide<AscendC::MicroAPI::RegTraitNumOne>(
-                src, padParam, addition, additionLen, needPadRight_, padRightLen_, padRightValue_, repeatTimes_);
+            PadBothSide<AscendC::MicroAPI::RegTraitNumOne>(src, padParam, addition, additionLen, needPadRight_,
+                                                           padRightLen_, padRightValue_, repeatTimes_);
         }
         SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
     }
 
     template <const AscendC::MicroAPI::RegTrait& Trait>
-    __aicore__ inline void PadBothSide(
-        LocalTensor<T> dst, PadEdgeHugeParam& padParam, LocalTensor<T> addition, uint32_t additionLen, uint16_t npr,
-        uint32_t prl, T prv, uint16_t rt)
+    __aicore__ inline void PadBothSide(LocalTensor<T> dst, PadEdgeHugeParam& padParam, LocalTensor<T> addition,
+                                       uint32_t additionLen, uint16_t npr, uint32_t prl, T prv, uint16_t rt)
     {
         __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
         __ubuf__ T* additionAddr = (__ubuf__ T*)addition.GetPhyAddr();
@@ -316,10 +317,9 @@ private:
         for (uint32_t i = 0; i < tilingData_->dimNum; i++) {
             outAddr += outIndex_[i] * tilingData_->outStride[i];
         }
-        uint32_t copyLen =
-            (outIndex_[ubAxis_] + ubFactor_ < tilingData_->outShape[ubAxis_] ?
-                 ubFactor_ :
-                 tilingData_->outShape[ubAxis_] - outIndex_[ubAxis_]);
+        uint32_t copyLen = (outIndex_[ubAxis_] + ubFactor_ < tilingData_->outShape[ubAxis_] ?
+                                ubFactor_ :
+                                tilingData_->outShape[ubAxis_] - outIndex_[ubAxis_]);
 
         DataCopyExtParams copyOutParams;
         copyOutParams.blockCount = 1;

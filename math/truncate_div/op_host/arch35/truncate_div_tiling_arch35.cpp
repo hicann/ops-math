@@ -33,15 +33,9 @@ constexpr static uint32_t INPUT_IDX_X1 = 0;
 constexpr static uint32_t INPUT_IDX_X2 = 1;
 constexpr static int64_t DCACHE_SIZE = 32 * 1024;
 
-ge::graphStatus TruncateDivTiling::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus TruncateDivTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
-bool TruncateDivTiling::IsCapable()
-{
-    return true;
-}
+bool TruncateDivTiling::IsCapable() { return true; }
 
 float TruncateDivTiling::GetReciprocal(float data)
 {
@@ -269,27 +263,17 @@ ge::graphStatus TruncateDivTiling::DoOpTiling()
         return ret;
     }
 
-    OP_LOGI(
-        context_, "TruncateDiv tiling completed: tilingKey_=%lu, schMode_=%u, canUseMul_=%d, reciprocal %f", tilingKey_,
-        schMode_, static_cast<int>(canUseMul_), reciprocal_);
+    OP_LOGI(context_, "TruncateDiv tiling completed: tilingKey_=%lu, schMode_=%u, canUseMul_=%d, reciprocal %f",
+            tilingKey_, schMode_, static_cast<int>(canUseMul_), reciprocal_);
 
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus TruncateDivTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus TruncateDivTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t TruncateDivTiling::GetTilingKey() const
-{
-    return tilingKey_;
-}
+uint64_t TruncateDivTiling::GetTilingKey() const { return tilingKey_; }
 
-ge::graphStatus TruncateDivTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus TruncateDivTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus TruncateDivTiling::PostTiling()
 {

@@ -36,7 +36,7 @@ ge::graphStatus SpaceToDepthTilingForAscendC(gert::TilingContext* context,
 
 class SpaceToDepthTiling {
 public:
-    explicit SpaceToDepthTiling(gert::TilingContext* context) : tilingContext_(context){};
+    explicit SpaceToDepthTiling(gert::TilingContext* context) : tilingContext_(context) {};
     ge::graphStatus ParametersVerifying();
     void ProcessShapeInfo(ShapeInfo& shapeInfo);
 

@@ -32,7 +32,8 @@ namespace ge {
 * y: A ND tensor. Support 4D. Has the same type as "x".
 
 * @attention Constraints:
-* The Attributes order must ensure that the provided dimensions are unique,do not repeat, and cover all dimensions of "x". \n
+* The Attributes order must ensure that the provided dimensions are unique,do not repeat, and cover all dimensions of
+"x". \n
 */
 REG_OP(Permute)
     .INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT}))

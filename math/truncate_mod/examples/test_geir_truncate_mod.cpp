@@ -143,8 +143,8 @@ int SaveInput(const vector<ge::Tensor>& input)
         string input_file = "./tc_ge_irrun_example_npu_input_" + std::to_string(i) + ".bin";
         const uint8_t* input_data = input[i].GetData();
         int64_t shape_size = input[i].GetTensorDesc().GetShape().GetShapeSize();
-        uint32_t data_size =
-            static_cast<uint32_t>(shape_size) * ge::GetSizeByDataType(input[i].GetTensorDesc().GetDataType());
+        uint32_t data_size = static_cast<uint32_t>(shape_size) *
+                             ge::GetSizeByDataType(input[i].GetTensorDesc().GetDataType());
         if (WriteDataToFile(input_file, data_size, input_data) != SUCCESS) {
             return FAILED;
         }
@@ -158,8 +158,8 @@ int SaveOutput(const vector<ge::Tensor>& output)
         string output_file = "./tc_ge_irrun_example_npu_output_" + std::to_string(i) + ".bin";
         const uint8_t* output_data = output[i].GetData();
         int64_t shape_size = output[i].GetTensorDesc().GetShape().GetShapeSize();
-        uint32_t data_size =
-            static_cast<uint32_t>(shape_size) * ge::GetSizeByDataType(output[i].GetTensorDesc().GetDataType());
+        uint32_t data_size = static_cast<uint32_t>(shape_size) *
+                             ge::GetSizeByDataType(output[i].GetTensorDesc().GetDataType());
         if (WriteDataToFile(output_file, data_size, output_data) != SUCCESS) {
             return FAILED;
         }

@@ -31,14 +31,14 @@ private:
     __aicore__ inline void ParseTilingData();
     __aicore__ inline void GetBlockLoopNum();
     __aicore__ inline void GetLoopParams(int64_t n);
-    __aicore__ inline int64_t GetDstAddressOffset(
-        int64_t loopIdx, int64_t permSize, const int64_t mixedBase[], const int64_t loopNum[]);
+    __aicore__ inline int64_t GetDstAddressOffset(int64_t loopIdx, int64_t permSize, const int64_t mixedBase[],
+                                                  const int64_t loopNum[]);
     __aicore__ inline void ProcessPerCore();
-    __aicore__ inline void CopyIn(int64_t loopIdx, int64_t inputBlockLen, int64_t inCutLoopSize,
-                                  int64_t inUbFactor, int64_t inTailFactor, int64_t permSize);
-    __aicore__ inline void CopyOut(
-        int64_t loopIdx, int64_t loopSize[], int64_t loopSrcStride[], int64_t loopDstStride[],
-        int64_t permSize, const int64_t mixedBase[], const int64_t loopNum[]);
+    __aicore__ inline void CopyIn(int64_t loopIdx, int64_t inputBlockLen, int64_t inCutLoopSize, int64_t inUbFactor,
+                                  int64_t inTailFactor, int64_t permSize);
+    __aicore__ inline void CopyOut(int64_t loopIdx, int64_t loopSize[], int64_t loopSrcStride[],
+                                   int64_t loopDstStride[], int64_t permSize, const int64_t mixedBase[],
+                                   const int64_t loopNum[]);
 
 private:
     int64_t blockIdx_;
@@ -78,8 +78,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void TransposeNLast<T>::Init(
-    GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void TransposeNLast<T>::Init(GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData,
+                                               TPipe* pipe)
 {
     blockIdx_ = GetBlockIdx();
     tiling_ = tilingData;
@@ -92,9 +92,8 @@ __aicore__ inline void TransposeNLast<T>::Init(
 template <typename T>
 __aicore__ inline void TransposeNLast<T>::Process()
 {
-    if (!ParseMultiCoreRange(
-            blockIdx_, tiling_->realCoreNum, tiling_->blkFactor, tiling_->blkTailFactor, blkProcessNum_,
-            blkProcessIdxStart_, blkProcessIdxEnd_)) {
+    if (!ParseMultiCoreRange(blockIdx_, tiling_->realCoreNum, tiling_->blkFactor, tiling_->blkTailFactor,
+                             blkProcessNum_, blkProcessIdxStart_, blkProcessIdxEnd_)) {
         return;
     }
     ProcessPerCore();
@@ -157,10 +156,12 @@ __aicore__ inline void TransposeNLast<T>::GetLoopParams(int64_t n)
     loopSizeMain_[n] = inUbInputShapeMain_[reverseIdx];
     loopSizeTail_[n] = inUbInputShapeTail_[reverseIdx];
     // main and tail last axis aligned to ub block size
-    int64_t alignedStrideMain =
-        Ops::Base::CeilAlign(static_cast<int64_t>(loopSizeMain_[0] * sizeof(T)), BLOCK_SIZE_BYTE) / sizeof(T);
-    int64_t alignedStrideTail =
-        Ops::Base::CeilAlign(static_cast<int64_t>(loopSizeTail_[0] * sizeof(T)), BLOCK_SIZE_BYTE) / sizeof(T);
+    int64_t alignedStrideMain = Ops::Base::CeilAlign(static_cast<int64_t>(loopSizeMain_[0] * sizeof(T)),
+                                                     BLOCK_SIZE_BYTE) /
+                                sizeof(T);
+    int64_t alignedStrideTail = Ops::Base::CeilAlign(static_cast<int64_t>(loopSizeTail_[0] * sizeof(T)),
+                                                     BLOCK_SIZE_BYTE) /
+                                sizeof(T);
     // main loopSrcStride and loopDstStride
     if (loopSizeMain_[n] != 1) {
         loopSrcStrideMain_[n] = alignedStrideMain;
@@ -197,8 +198,8 @@ __aicore__ inline void TransposeNLast<T>::GetLoopParams(int64_t n)
 }
 
 template <typename T>
-__aicore__ inline int64_t TransposeNLast<T>::GetDstAddressOffset(
-    int64_t loopIdx, int64_t permSize, const int64_t mixedBase[], const int64_t loopNum[])
+__aicore__ inline int64_t TransposeNLast<T>::GetDstAddressOffset(int64_t loopIdx, int64_t permSize,
+                                                                 const int64_t mixedBase[], const int64_t loopNum[])
 {
     // Fuse DecimalToMixed + accumulation: no intermediate array, no zero-init overhead (P9)
     int64_t dstAddressOffset = 0;
@@ -213,16 +214,15 @@ __aicore__ inline int64_t TransposeNLast<T>::GetDstAddressOffset(
 }
 
 template <typename T>
-__aicore__ inline void TransposeNLast<T>::CopyIn(
-    int64_t loopIdx, int64_t inputBlockLen, int64_t inCutLoopSize,
-    int64_t inUbFactor, int64_t inTailFactor, int64_t permSize)
+__aicore__ inline void TransposeNLast<T>::CopyIn(int64_t loopIdx, int64_t inputBlockLen, int64_t inCutLoopSize,
+                                                 int64_t inUbFactor, int64_t inTailFactor, int64_t permSize)
 {
     int64_t inputBlockLenMain = inputBlockLen * inUbFactor;
     int64_t inputBlockLenTail = inputBlockLen * inTailFactor;
     int64_t srcAddressOffset = loopIdx * inputBlockLenMain;
     if (inTailFactor != 0) {
-        srcAddressOffset =
-            (loopIdx - loopIdx / inCutLoopSize) * inputBlockLenMain + loopIdx / inCutLoopSize * inputBlockLenTail;
+        srcAddressOffset = (loopIdx - loopIdx / inCutLoopSize) * inputBlockLenMain +
+                           loopIdx / inCutLoopSize * inputBlockLenTail;
     }
     int64_t blockLen = inputBlockLenMain;
     int64_t lastAxisLen = inUbInputShapeMain_[permSize - 1];
@@ -245,9 +245,9 @@ __aicore__ inline void TransposeNLast<T>::CopyIn(
 }
 
 template <typename T>
-__aicore__ inline void TransposeNLast<T>::CopyOut(
-    int64_t loopIdx, int64_t loopSize[], int64_t loopSrcStride[], int64_t loopDstStride[],
-    int64_t permSize, const int64_t mixedBase[], const int64_t loopNum[])
+__aicore__ inline void TransposeNLast<T>::CopyOut(int64_t loopIdx, int64_t loopSize[], int64_t loopSrcStride[],
+                                                  int64_t loopDstStride[], int64_t permSize, const int64_t mixedBase[],
+                                                  const int64_t loopNum[])
 {
     int64_t dstAddressOffset = GetDstAddressOffset(loopIdx, permSize, mixedBase, loopNum);
 
@@ -279,14 +279,10 @@ __aicore__ inline void TransposeNLast<T>::CopyOut(
         for (int64_t loop6Idx = 0; loop6Idx < ls6; loop6Idx++) {
             for (int64_t loop5Idx = 0; loop5Idx < ls5; loop5Idx++) {
                 for (int64_t loop4Idx = 0; loop4Idx < ls4; loop4Idx++) {
-                    DataCopyPad(
-                        outputGM_
-                            [dstAddressOffset + loop7Idx * lds7 + loop6Idx * lds6 +
-                             loop5Idx * lds5 + loop4Idx * lds4],
-                        bindLocalOut
-                            [loop7Idx * lss7 + loop6Idx * lss6 + loop5Idx * lss5 +
-                             loop4Idx * lss4],
-                        copyOutParams);
+                    DataCopyPad(outputGM_[dstAddressOffset + loop7Idx * lds7 + loop6Idx * lds6 + loop5Idx * lds5 +
+                                          loop4Idx * lds4],
+                                bindLocalOut[loop7Idx * lss7 + loop6Idx * lss6 + loop5Idx * lss5 + loop4Idx * lss4],
+                                copyOutParams);
                 }
             }
         }
@@ -330,12 +326,12 @@ __aicore__ inline void TransposeNLast<T>::ProcessPerCore()
     for (int64_t loopIdx = loopStart; loopIdx < loopEnd; loopIdx++) {
         if (inTailFactor != 0 && (loopIdx + 1) % inCutLoopSize == 0) {
             CopyIn(loopIdx, inputBlockLen, inCutLoopSize, inUbFactor, inTailFactor, permSize);
-            CopyOut(loopIdx, loopSizeTail_, loopSrcStrideTail_, loopDstStrideTail_,
-                    permSize, localMixedBase, localLoopNum);
+            CopyOut(loopIdx, loopSizeTail_, loopSrcStrideTail_, loopDstStrideTail_, permSize, localMixedBase,
+                    localLoopNum);
         } else {
             CopyIn(loopIdx, inputBlockLen, inCutLoopSize, inUbFactor, inTailFactor, permSize);
-            CopyOut(loopIdx, loopSizeMain_, loopSrcStrideMain_, loopDstStrideMain_,
-                    permSize, localMixedBase, localLoopNum);
+            CopyOut(loopIdx, loopSizeMain_, loopSrcStrideMain_, loopDstStrideMain_, permSize, localMixedBase,
+                    localLoopNum);
         }
     }
 }

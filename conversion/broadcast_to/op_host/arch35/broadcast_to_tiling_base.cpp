@@ -26,15 +26,14 @@ namespace brcto {
 static constexpr int64_t DIM_NUM_THRESHOLD_FOR_R4_SIZE = 5; // 触发尾轴4D尺寸计算的维度数阈值
 static constexpr int64_t TRAILING_DIM_NUM_FOR_R4_SIZE = 4;  // 用于4D尺寸计算的尾轴维度数
 
-ge::graphStatus CheckSameDimNum(
-    const gert::TilingContext* context, const gert::Shape& inShape, const gert::Shape& outShape, size_t& dimNum)
+ge::graphStatus CheckSameDimNum(const gert::TilingContext* context, const gert::Shape& inShape,
+                                const gert::Shape& outShape, size_t& dimNum)
 {
     dimNum = inShape.GetDimNum();
     if (dimNum != outShape.GetDimNum()) {
         std::string dimMsg = std::to_string(dimNum) + " and " + std::to_string(outShape.GetDimNum());
         std::string reasonMsg = "The input and output shape dim num should be equal.";
-        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
-            context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -70,8 +69,7 @@ ge::graphStatus MergeAxis(const gert::TilingContext* context, gert::Shape& inSha
     if (GetABFlag(context, inShape, outShape, abInfo) != ge::GRAPH_SUCCESS) {
         std::string shapeMsg = "unknown";
         std::string reasonMsg = "Failed to get axes info.";
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-            context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -184,7 +182,8 @@ ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& in
 
     gert::Shape constShape_{};
     constexpr int64_t constIdx = 1;
-    if (Ops::Base::GetConstIntToShape(context, constIdx, constShape_) && outShape != Ops::Base::EnsureNotScalar(constShape_)) {
+    if (Ops::Base::GetConstIntToShape(context, constIdx, constShape_) &&
+        outShape != Ops::Base::EnsureNotScalar(constShape_)) {
         OP_LOGW(context->GetNodeName(), "Output shape %s is different from input const shape %s!",
                 Shape2String(outShape).c_str(), Shape2String(constShape_).c_str());
     }
@@ -193,30 +192,27 @@ ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& in
     if (inShape.GetDimNum() > outDimNum) {
         std::string dimMsg = std::to_string(inShape.GetDimNum()) + " and " + std::to_string(outDimNum);
         std::string reasonMsg = "The input shape should not have more dimensions than output shape.";
-        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
-            context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     if (outDimNum > BRCTO_MAX_DIM_NUM) {
         std::string dimMsg = std::to_string(outDimNum);
-        std::string reasonMsg = "The output dim num should not be greater than " + std::to_string(BRCTO_MAX_DIM_NUM) + ".";
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-            context->GetNodeName(), "y", dimMsg.c_str(), reasonMsg.c_str());
+        std::string reasonMsg = "The output dim num should not be greater than " + std::to_string(BRCTO_MAX_DIM_NUM) +
+                                ".";
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "y", dimMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     AdjustShapesToSameDimNum(inShape, outDimNum);
     if (inShape.GetShapeSize() == 0 || outShape.GetShapeSize() == 0) {
         std::string shapeMsg = Shape2String(inShape) + " and " + Shape2String(outShape);
         std::string reasonMsg = "The input or output shape must not be empty.";
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-            context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     if (CheckBroadcastRule(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
         std::string shapeMsg = Shape2String(inShape) + " and " + Shape2String(outShape);
         std::string reasonMsg = "The input and output shapes mismatch the broadcast rule.";
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-            context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     OP_LOGI(context->GetNodeName(), "The input and output is: %s and %s", Shape2String(inShape).c_str(),
@@ -225,8 +221,7 @@ ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& in
     if (DeleteOneSizeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
         std::string shapeMsg = Shape2String(inShape) + " and " + Shape2String(outShape);
         std::string reasonMsg = "Failed to delete one size axes.";
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-            context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     OP_LOGI(context->GetNodeName(), "The reshaped input and output is: %s and %s", Shape2String(inShape).c_str(),
@@ -235,8 +230,7 @@ ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& in
     if (MergeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
         std::string shapeMsg = Shape2String(inShape) + " and " + Shape2String(outShape);
         std::string reasonMsg = "Failed to merge axes.";
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-            context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     OP_LOGI(context->GetNodeName(), "The merged input and output is: %s and %s", Shape2String(inShape).c_str(),
@@ -287,11 +281,10 @@ void BroadcastToTilingAscendC::GetUAxisInfo()
         curDim = outShapePtr_->GetDim(size_t(i));
         res *= curDim;
         if (res >= tensorSize_ || curIdx >= maxUbAxisCnt) {
-            OP_CHECK_IF(
-                curDim == 0 || Ops::Base::FloorDiv(res, curDim) == 0,
-                OP_LOGE(
-                    context_->GetNodeName(), "Division by zero in nested division, curDim=%ld, res=%ld", curDim, res),
-                return);
+            OP_CHECK_IF(curDim == 0 || Ops::Base::FloorDiv(res, curDim) == 0,
+                        OP_LOGE(context_->GetNodeName(), "Division by zero in nested division, curDim=%ld, res=%ld",
+                                curDim, res),
+                        return);
             uAxis_ = size_t(i);
             uLpUnit_ = (tensorSize_ / (res / curDim) > curDim) ? curDim : tensorSize_ / (res / curDim);
             uAxisLen_ = curDim;
@@ -333,9 +326,9 @@ void BroadcastToTilingAscendC::GetDMAAxesParams()
 {
     auto dimNum = outShapePtr_->GetDimNum();
     for (size_t i = uAxis_; i < dimNum; i++) {
-        if (abInfo_[i]) {  // axes B
+        if (abInfo_[i]) { // axes B
             xSrcStride_[i - uAxis_] = 0;
-        } else {  // axes A
+        } else { // axes A
             xSrcStride_[i - uAxis_] = CalcDimSize(inShapePtr_, i + 1, dimNum);
         }
         xDstStride_[i - uAxis_] = CalcDimSize(outShapePtr_, i + 1, dimNum);
@@ -357,12 +350,12 @@ void BroadcastToTilingAscendC::GetABAxesParams()
     int64_t tmpDimSize = 0;
     for (size_t i = 0; i < uAxis_; i++) {
         tmpDimSize = outShapePtr_->GetDim(i);
-        if (abInfo_[i]) {  // axes B
+        if (abInfo_[i]) { // axes B
             bAxisLen_ *= tmpDimSize;
             bAxesParams_[bAxesNum_ * bParamUnit] = tmpDimSize;
             bAxesParams_[bAxesNum_ * bParamUnit + 1] = CalcDimSize(outShapePtr_, i + 1, dimNum);
             bAxesNum_++;
-        } else {  // axes A
+        } else { // axes A
             aAxisLen_ *= tmpDimSize;
             aAxesParams_[aAxesNum_ * aParamUnit] = tmpDimSize;
             aAxesParams_[aAxesNum_ * aParamUnit + 1] = CalcDimSize(inShapePtr_, i + 1, dimNum);
@@ -394,7 +387,7 @@ void BroadcastToTilingAscendC::OptimizeMCTilingForDoubleMode()
     // 优化：当U轴切分导致核数不足时，改为A轴切分，以便利用doubleMode在U轴二次切分
     // 条件：1.核数不足 2.当前是U轴切分 3.A轴可切分 4.U轴有二次切分空间
     if (usedCoreCnt_ < coreNum_ / nTwo && blockAxis_ == nTwo && aAxisLen_ > 1 && uAxisLen_ > uLpUnit_) {
-        OP_LOGD("BroadcastTo","Enter BroadcastToTilingAscendC::GetMCTilingInfo");
+        OP_LOGD("BroadcastTo", "Enter BroadcastToTilingAscendC::GetMCTilingInfo");
         blockAxis_ = 0;
         usedCoreCnt_ = Ops::Base::CeilDiv(aAxisLen_, Ops::Base::CeilDiv(aAxisLen_, coreNum_));
         ntcALen_ = Ops::Base::CeilDiv(aAxisLen_, usedCoreCnt_);
@@ -504,9 +497,8 @@ void BroadcastToTilingAscendC::AdjustBrwdSize(int64_t& brwSize, int64_t uAxis)
     int64_t totalULpCnt = uLpCnt * coreNum_;
     OP_CHECK_IF(
         totalULpCnt == 0,
-        OP_LOGE(
-            context_->GetNodeName(), "totalULpCnt must not be zero, got totalULpCnt=%ld, uLpCnt=%ld, coreNum=%ld",
-            totalULpCnt, uLpCnt, coreNum_),
+        OP_LOGE(context_->GetNodeName(), "totalULpCnt must not be zero, got totalULpCnt=%ld, uLpCnt=%ld, coreNum=%ld",
+                totalULpCnt, uLpCnt, coreNum_),
         return);
     if (uAxis % totalULpCnt == 0) {
         brwSize = uAxis / totalULpCnt;
@@ -574,14 +566,14 @@ void BroadcastToTilingAscendC::CalcTensorSize()
         r4DimSize = CalcDimSize(inShapePtr_, dimNum - TRAILING_DIM_NUM_FOR_R4_SIZE, dimNum);
     }
 
-    isDMABrcA_ =
-        (dimNum > 1 && (nTwo * outLastDim <= LAST_DIM_GATE ||
-                        (outLastDim == LAST_DIM_GATE / nTwo + 1 && outShapePtr_->GetDim(dimNum - nTwo) <= LAST_DIM_GATE)
-                        || ((outLastDim < LAST_DIM_GATE) && (r4DimSize < minTensorSize_))));
+    isDMABrcA_ = (dimNum > 1 &&
+                  (nTwo * outLastDim <= LAST_DIM_GATE ||
+                   (outLastDim == LAST_DIM_GATE / nTwo + 1 && outShapePtr_->GetDim(dimNum - nTwo) <= LAST_DIM_GATE) ||
+                   ((outLastDim < LAST_DIM_GATE) && (r4DimSize < minTensorSize_))));
     if ((!abInfo_[dimNum - 1] && outLastDim <= ubGate && !isDMABrcA_) ||
-        (abInfo_[dimNum - 1] && outLastDim >= LAST_DIM_GATE)) {  // UB broadcast
+        (abInfo_[dimNum - 1] && outLastDim >= LAST_DIM_GATE)) { // UB broadcast
         tmpTensorSize = std::min(ubGate, MAX_TENSOR_SIZE);
-    } else if (!abInfo_[dimNum - 1] && outLastDim >= ubGate) {  // data copy
+    } else if (!abInfo_[dimNum - 1] && outLastDim >= ubGate) { // data copy
         tmpTensorSize = std::min(ubGate * nTwo, MAX_TENSOR_SIZE);
     }
     maxTensorSize_ = tmpTensorSize;
@@ -643,9 +635,9 @@ void BroadcastToTilingAscendC::CalcTilingData()
 
 ge::graphStatus BroadcastToTilingAscendC::SetBlockCnt()
 {
-    OP_CHECK_IF(
-        usedCoreCnt_ == 0, OP_LOGE(context_->GetNodeName(), "usedCoreCnt must not be zero, got %ld", usedCoreCnt_),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(usedCoreCnt_ == 0,
+                OP_LOGE(context_->GetNodeName(), "usedCoreCnt must not be zero, got %ld", usedCoreCnt_),
+                return ge::GRAPH_FAILED);
     int64_t maxMC = coreNum_ / usedCoreCnt_;
     int64_t uLpCnt = Ops::Base::CeilDiv(ntcULen_, uLpUnit_);
     if (usedCoreCnt_ <= coreNum_ / nTwo &&
@@ -664,15 +656,14 @@ ge::graphStatus BroadcastToTilingAscendC::WriteTilingData()
     if (SetBlockCnt() != ge::GRAPH_SUCCESS) {
         std::string valueMsg = std::to_string(usedCoreCnt_ * dFactor_);
         std::string reasonMsg = "Failed to set block dim.";
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "blockDim", valueMsg.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "blockDim", valueMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     if (context_->SetTilingKey(tilingKey_) != ge::GRAPH_SUCCESS) {
         std::string valueMsg = std::to_string(tilingKey_);
         std::string reasonMsg = "Failed to set tiling key.";
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "tilingKey", valueMsg.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "tilingKey", valueMsg.c_str(),
+                                              reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -780,8 +771,8 @@ ge::graphStatus Tiling4BroadcastToAscendC(gert::TilingContext* context, const ge
     if (brcToTiling.GetHardwareInfo<BroadcastToCompileInfo>() != ge::GRAPH_SUCCESS) {
         std::string valueMsg = "unknown";
         std::string reasonMsg = "BroadcastToTilingAscendC failed to get hardware info.";
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context->GetNodeName(), "hardwareInfo", valueMsg.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "hardwareInfo", valueMsg.c_str(),
+                                              reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 

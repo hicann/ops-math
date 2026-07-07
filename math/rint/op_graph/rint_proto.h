@@ -35,10 +35,9 @@ namespace ge {
 * Compatible with the TensorFlow operator Rint.
 */
 REG_OP(Rint)
-     .INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_BF16}))
-     .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_BF16}))
-     .OP_END_FACTORY_REG(Rint);
+    .INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_BF16}))
+    .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_BF16}))
+    .OP_END_FACTORY_REG(Rint);
 } // namespace ge
 
 #endif // OPS_OP_PROTO_INC_RINT_H_
-

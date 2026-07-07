@@ -38,8 +38,8 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT16, op::DataType::DT_INT32,   op::DataType::DT_INT64,  op::DataType::DT_BOOL,
     op::DataType::DT_UINT8, op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> DTYPE_OUT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE, op::DataType::DT_BF16};
+static const std::initializer_list<op::DataType> DTYPE_OUT_LIST = {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16,
+                                                                   op::DataType::DT_DOUBLE, op::DataType::DT_BF16};
 
 static const std::initializer_list<op::DataType> DTYPE_SINC_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
@@ -66,9 +66,8 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
     bool bf16flag = CheckSocVersionIsSupportBf16();
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     if (!bf16flag && self->GetDataType() == op::DataType::DT_BF16) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s is unsupported by the current SOC version [%s].",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(socVersion).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s is unsupported by the current SOC version [%s].",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(socVersion).GetString());
         return false;
     }
     return true;
@@ -82,9 +81,8 @@ static bool CheckInplaceDtypeValid(const aclTensor* self)
     bool bf16flag = CheckSocVersionIsSupportBf16();
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     if (!bf16flag && self->GetDataType() == op::DataType::DT_BF16) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s is unsupported by the current SOC version [%s].",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(socVersion).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s is unsupported by the current SOC version [%s].",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(socVersion).GetString());
         return false;
     }
     return true;
@@ -121,8 +119,8 @@ static aclnnStatus CheckInplaceParams(const aclTensor* self)
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ExecSincGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus ExecSincGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                            aclOpExecutor** executor)
 {
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -198,8 +196,8 @@ static aclnnStatus ExecSincGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnSincGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnSincGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                      aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnSinc, DFX_IN(self), DFX_OUT(out));
     return ExecSincGetWorkspaceSize(self, out, workspaceSize, executor);

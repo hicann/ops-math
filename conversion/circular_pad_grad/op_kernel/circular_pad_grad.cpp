@@ -16,8 +16,8 @@
 #include "arch32/circular_pad_grad_3d.h"
 using namespace AscendC;
 
-extern "C" __global__ __aicore__ void circular_pad_grad(
-    GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void circular_pad_grad(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR workspace,
+                                                        GM_ADDR tiling)
 {
     GET_TILING_DATA(tiling_data, tiling);
     TPipe pipe;

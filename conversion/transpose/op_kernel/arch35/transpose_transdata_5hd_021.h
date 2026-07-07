@@ -77,8 +77,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD021<T>::Init(
-    GM_ADDR x, GM_ADDR y, const Transpose021VCONVTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void KernelTransDataTo5HD021<T>::Init(GM_ADDR x, GM_ADDR y,
+                                                        const Transpose021VCONVTilingData* tilingData, TPipe* pipe)
 {
     tiling_ = tilingData;
     blockIdx_ = GetBlockIdx();
@@ -112,7 +112,8 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::Init(
 }
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD021<T>::ComputeRConv(uint32_t r, uint32_t c, uint32_t rAlign, uint32_t cAlign)
+__aicore__ inline void KernelTransDataTo5HD021<T>::ComputeRConv(uint32_t r, uint32_t c, uint32_t rAlign,
+                                                                uint32_t cAlign)
 {
     if constexpr (sizeof(T) == 1) {
         Compute8BitCore(r, c, rAlign);
@@ -129,8 +130,12 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::Compute8BitCore(uint32_t r, u
     uint16_t cAlignBlocks = c / blockElem;
     uint8_t evenUbCount = (rAlign + 1) / 2;
     uint8_t oddUbCount = rAlign / 2;
-    TransDataTo5HDParams evenParams{false, false, evenUbCount, static_cast<uint16_t>((evenUbCount <= 1) ? 0 : dstStrideFactor), static_cast<uint16_t>((evenUbCount <= 1) ? 0 : c)};
-    TransDataTo5HDParams oddParams{true, false, oddUbCount, static_cast<uint16_t>((oddUbCount <= 1) ? 0 : dstStrideFactor), static_cast<uint16_t>((oddUbCount <= 1) ? 0 : c)};
+    TransDataTo5HDParams evenParams{false, false, evenUbCount,
+                                    static_cast<uint16_t>((evenUbCount <= 1) ? 0 : dstStrideFactor),
+                                    static_cast<uint16_t>((evenUbCount <= 1) ? 0 : c)};
+    TransDataTo5HDParams oddParams{true, false, oddUbCount,
+                                   static_cast<uint16_t>((oddUbCount <= 1) ? 0 : dstStrideFactor),
+                                   static_cast<uint16_t>((oddUbCount <= 1) ? 0 : c)};
     for (uint16_t j = 0; j < cAlignBlocks; j++) {
         uint64_t srcList[TRANSELEM_021];
         for (uint16_t i = 0; i < TRANSELEM_021; i++) {
@@ -169,7 +174,8 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::Compute8BitCore(uint32_t r, u
 }
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD021<T>::ComputeRConvGeneric(uint32_t r, uint32_t c, uint32_t rAlign, uint32_t cAlign)
+__aicore__ inline void KernelTransDataTo5HD021<T>::ComputeRConvGeneric(uint32_t r, uint32_t c, uint32_t rAlign,
+                                                                       uint32_t cAlign)
 {
     LocalTensor<T> srcLocal = inQueueSrc.DeQue<T>();
     LocalTensor<T> dstLocal = outQueueDst.AllocTensor<T>();
@@ -317,8 +323,8 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::CopyInWAligned(uint32_t actua
 }
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD021<T>::CopyInWUnaligned(
-    uint32_t actualValidRows, uint32_t r, uint32_t c, uint32_t ubLoop)
+__aicore__ inline void KernelTransDataTo5HD021<T>::CopyInWUnaligned(uint32_t actualValidRows, uint32_t r, uint32_t c,
+                                                                    uint32_t ubLoop)
 {
     if (tiling_->UseRConv) {
         copyInParams_.blockCount = actualValidRows;

@@ -66,11 +66,9 @@ protected:
     }
 
     // Helper to build a Permute node and return the graph with pass applied
-    std::shared_ptr<Graph> BuildPermuteGraphAndRunPass(
-        const std::vector<int64_t>& inputDims,
-        const std::vector<int64_t>& permAttr,
-        DataType dtype = DT_FLOAT,
-        Format format = FORMAT_ND)
+    std::shared_ptr<Graph> BuildPermuteGraphAndRunPass(const std::vector<int64_t>& inputDims,
+                                                       const std::vector<int64_t>& permAttr, DataType dtype = DT_FLOAT,
+                                                       Format format = FORMAT_ND)
     {
         Shape shapeX(inputDims);
 
@@ -82,13 +80,14 @@ protected:
         // Build Permute node using CompliantNodeBuilder
         auto* graph = graphBuilder.GetCGraphBuilder()->GetGraph();
         auto permuteNode = es::CompliantNodeBuilder(graph)
-            .OpType("Permute")
-            .IrDefInputs({{"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""}})
-            .IrDefOutputs({{"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""}})
-            .IrDefAttrs({
-                {"perm", es::CompliantNodeBuilder::kEsAttrOptional, "ListInt", es::CreateFrom(permAttr)},
-            })
-            .Build();
+                               .OpType("Permute")
+                               .IrDefInputs({{"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""}})
+                               .IrDefOutputs({{"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""}})
+                               .IrDefAttrs({
+                                   {"perm", es::CompliantNodeBuilder::kEsAttrOptional, "ListInt",
+                                    es::CreateFrom(permAttr)},
+                               })
+                               .Build();
 
         // Connect input to Permute
         es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(), permuteNode, 0);
@@ -150,10 +149,8 @@ TEST_F(PermuteFusionPassTest, unsupportedDtypeFail)
     // on some platforms) still triggers fusion, documenting the pass behavior.
     SetPlatform("Ascend910_93");
 
-    auto resultGraph = BuildPermuteGraphAndRunPass(
-        std::vector<int64_t>{4, 3, 2, 1},
-        std::vector<int64_t>{0, 2, 3, 1},
-        DT_INT32);
+    auto resultGraph = BuildPermuteGraphAndRunPass(std::vector<int64_t>{4, 3, 2, 1}, std::vector<int64_t>{0, 2, 3, 1},
+                                                   DT_INT32);
 
     // Pass does not filter by dtype, so fusion should still succeed
     EXPECT_TRUE(HasNodeType(resultGraph, "TransposeD"));
@@ -169,9 +166,7 @@ TEST_F(PermuteFusionPassTest, unsupportedPlatformFail)
     // correctly falls back to the Transpose branch.
     SetPlatform("UnknownPlatform");
 
-    auto resultGraph = BuildPermuteGraphAndRunPass(
-        std::vector<int64_t>{4, 3, 2, 1},
-        std::vector<int64_t>{0, 2, 3, 1});
+    auto resultGraph = BuildPermuteGraphAndRunPass(std::vector<int64_t>{4, 3, 2, 1}, std::vector<int64_t>{0, 2, 3, 1});
 
     // Unknown platform should fall back to Transpose (not TransposeD)
     EXPECT_TRUE(HasNodeType(resultGraph, "Transpose"));
@@ -185,9 +180,7 @@ TEST_F(PermuteFusionPassTest, fusionSuccess910Normal)
     // Ascend910_93 platform: Permute -> TransposeD (normal case)
     SetPlatform("Ascend910_93");
 
-    auto resultGraph = BuildPermuteGraphAndRunPass(
-        std::vector<int64_t>{4, 3, 2, 1},
-        std::vector<int64_t>{0, 2, 3, 1});
+    auto resultGraph = BuildPermuteGraphAndRunPass(std::vector<int64_t>{4, 3, 2, 1}, std::vector<int64_t>{0, 2, 3, 1});
 
     // Check that TransposeD node exists and no Transpose node
     EXPECT_TRUE(HasNodeType(resultGraph, "TransposeD"));
@@ -202,9 +195,7 @@ TEST_F(PermuteFusionPassTest, fusionSuccess910Special)
     // so it now produces a single TransposeD with original perm.
     SetPlatform("Ascend910_93");
 
-    auto resultGraph = BuildPermuteGraphAndRunPass(
-        std::vector<int64_t>{2, 3, 4, 5},
-        std::vector<int64_t>{0, 3, 2, 1});
+    auto resultGraph = BuildPermuteGraphAndRunPass(std::vector<int64_t>{2, 3, 4, 5}, std::vector<int64_t>{0, 3, 2, 1});
 
     // Exactly 1 TransposeD node (not split)
     EXPECT_EQ(CountNodeType(resultGraph, "TransposeD"), 1);
@@ -216,9 +207,7 @@ TEST_F(PermuteFusionPassTest, fusionSuccess950Normal)
     // Ascend950 platform: Permute -> Transpose (perm as input)
     SetPlatform("Ascend950");
 
-    auto resultGraph = BuildPermuteGraphAndRunPass(
-        std::vector<int64_t>{4, 3, 2, 1},
-        std::vector<int64_t>{0, 2, 3, 1});
+    auto resultGraph = BuildPermuteGraphAndRunPass(std::vector<int64_t>{4, 3, 2, 1}, std::vector<int64_t>{0, 2, 3, 1});
 
     // Check that Transpose node exists and no TransposeD node
     EXPECT_TRUE(HasNodeType(resultGraph, "Transpose"));
@@ -231,9 +220,7 @@ TEST_F(PermuteFusionPassTest, fusionSuccess950Special)
     // Single Transpose replacement (no multi-node split)
     SetPlatform("Ascend950");
 
-    auto resultGraph = BuildPermuteGraphAndRunPass(
-        std::vector<int64_t>{2, 3, 4, 5},
-        std::vector<int64_t>{0, 3, 2, 1});
+    auto resultGraph = BuildPermuteGraphAndRunPass(std::vector<int64_t>{2, 3, 4, 5}, std::vector<int64_t>{0, 3, 2, 1});
 
     // Exactly 1 Transpose node (not split), no TransposeD
     EXPECT_EQ(CountNodeType(resultGraph, "Transpose"), 1);
@@ -247,9 +234,7 @@ TEST_F(PermuteFusionPassTest, fusionSuccess3dShape)
     // 3D input shape test (non-special case)
     SetPlatform("Ascend910_93");
 
-    auto resultGraph = BuildPermuteGraphAndRunPass(
-        std::vector<int64_t>{4, 3, 2},
-        std::vector<int64_t>{0, 2, 1});
+    auto resultGraph = BuildPermuteGraphAndRunPass(std::vector<int64_t>{4, 3, 2}, std::vector<int64_t>{0, 2, 1});
 
     EXPECT_TRUE(HasNodeType(resultGraph, "TransposeD"));
 }
@@ -259,10 +244,8 @@ TEST_F(PermuteFusionPassTest, fusionSuccessFp16)
     // FP16 dtype test on Ascend910_93
     SetPlatform("Ascend910_93");
 
-    auto resultGraph = BuildPermuteGraphAndRunPass(
-        std::vector<int64_t>{4, 3, 2, 1},
-        std::vector<int64_t>{0, 2, 3, 1},
-        DT_FLOAT16);
+    auto resultGraph = BuildPermuteGraphAndRunPass(std::vector<int64_t>{4, 3, 2, 1}, std::vector<int64_t>{0, 2, 3, 1},
+                                                   DT_FLOAT16);
 
     EXPECT_TRUE(HasNodeType(resultGraph, "TransposeD"));
 }
@@ -273,9 +256,7 @@ TEST_F(PermuteFusionPassTest, nonTransposeDPlatformUsesTranspose)
     // so it should fall back to the Transpose branch (perm as input).
     SetPlatform("Ascend310");
 
-    auto resultGraph = BuildPermuteGraphAndRunPass(
-        std::vector<int64_t>{4, 3, 2, 1},
-        std::vector<int64_t>{0, 2, 3, 1});
+    auto resultGraph = BuildPermuteGraphAndRunPass(std::vector<int64_t>{4, 3, 2, 1}, std::vector<int64_t>{0, 2, 3, 1});
 
     // Should produce Transpose, not TransposeD
     EXPECT_TRUE(HasNodeType(resultGraph, "Transpose"));
@@ -310,9 +291,7 @@ TEST_F(PermuteFusionPassTest, compatibleInheritedStageTest910)
     // Ascend910_93: Permute -> TransposeD via kCompatibleInherited stage
     SetPlatform("Ascend910_93");
 
-    auto resultGraph = BuildPermuteGraphAndRunPass(
-        std::vector<int64_t>{4, 3, 2, 1},
-        std::vector<int64_t>{0, 2, 3, 1});
+    auto resultGraph = BuildPermuteGraphAndRunPass(std::vector<int64_t>{4, 3, 2, 1}, std::vector<int64_t>{0, 2, 3, 1});
 
     // Verify the pass correctly replaced Permute with TransposeD
     EXPECT_TRUE(HasNodeType(resultGraph, "TransposeD"));
@@ -325,9 +304,7 @@ TEST_F(PermuteFusionPassTest, compatibleInheritedStageTest950)
 {
     SetPlatform("Ascend950");
 
-    auto resultGraph = BuildPermuteGraphAndRunPass(
-        std::vector<int64_t>{4, 3, 2, 1},
-        std::vector<int64_t>{0, 2, 3, 1});
+    auto resultGraph = BuildPermuteGraphAndRunPass(std::vector<int64_t>{4, 3, 2, 1}, std::vector<int64_t>{0, 2, 3, 1});
 
     // Verify the pass correctly replaced Permute with Transpose on new platforms
     EXPECT_TRUE(HasNodeType(resultGraph, "Transpose"));
@@ -340,15 +317,11 @@ TEST_F(PermuteFusionPassTest, compatibleInheritedStageMultiPlatform)
 {
     // Test on Ascend910_93 (TransposeD platform)
     SetPlatform("Ascend910_93");
-    auto graph910 = BuildPermuteGraphAndRunPass(
-        std::vector<int64_t>{8, 16},
-        std::vector<int64_t>{1, 0});
+    auto graph910 = BuildPermuteGraphAndRunPass(std::vector<int64_t>{8, 16}, std::vector<int64_t>{1, 0});
     EXPECT_TRUE(HasNodeType(graph910, "TransposeD"));
 
     // Test on Ascend950 (Transpose platform)
     SetPlatform("Ascend950");
-    auto graph950 = BuildPermuteGraphAndRunPass(
-        std::vector<int64_t>{8, 16},
-        std::vector<int64_t>{1, 0});
+    auto graph950 = BuildPermuteGraphAndRunPass(std::vector<int64_t>{8, 16}, std::vector<int64_t>{1, 0});
     EXPECT_TRUE(HasNodeType(graph950, "Transpose"));
 }

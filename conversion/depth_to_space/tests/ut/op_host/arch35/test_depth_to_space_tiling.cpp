@@ -24,14 +24,8 @@ using namespace ge;
 
 class DepthToSpaceTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "DepthToSpaceTiling SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "DepthToSpaceTiling TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "DepthToSpaceTiling SetUp" << std::endl; }
+    static void TearDownTestCase() { std::cout << "DepthToSpaceTiling TearDown" << std::endl; }
 };
 
 // Test case 1: NHWC format with DCR mode (default scenario)
@@ -56,7 +50,9 @@ TEST_F(DepthToSpaceTiling, test_nhwc_dcr_float16_success_001)
         &compileInfo);
     // TODO: Update these values after running the test to get actual tiling results
     uint64_t expectTilingKey = 10001;
-    string expectTilingData = "4 0 0 0 0 0 0 32 1 0 253952 1 0 0 0 0 0 0 0 2 2 2 4 0 0 0 0 2 2 2 4 0 0 0 0 0 2 1 3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1 0 0 0 0 0 1 3 2 4 1 2 2 2 4 1 2 2 2 4 1 0 2 2 4 1 0 2 2 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 2 2 4 1 0 2 2 4 ";
+    string expectTilingData = "4 0 0 0 0 0 0 32 1 0 253952 1 0 0 0 0 0 0 0 2 2 2 4 0 0 0 0 2 2 2 4 0 0 0 0 0 2 1 3 0 0 "
+                              "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1 0 0 0 0 0 1 3 2 4 1 2 2 2 4 1 2 2 2 4 1 0 2 2 4 1 0 2 "
+                              "2 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 2 2 4 1 0 2 2 4 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -83,7 +79,9 @@ TEST_F(DepthToSpaceTiling, test_nchw_dcr_float16_success_001)
         &compileInfo);
     // TODO: Update these values after running the test to get actual tiling results
     uint64_t expectTilingKey = 10001;
-    string expectTilingData = "4 0 0 0 0 0 0 32 1 0 253952 1 0 0 0 0 0 0 0 2 2 4 2 0 0 0 0 4 2 2 2 0 0 0 0 2 0 3 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1 0 0 0 0 0 3 1 4 2 1 2 2 4 2 1 4 2 2 2 1 2 2 0 2 1 0 2 2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 2 2 0 2 1 0 2 2 2 ";
+    string expectTilingData = "4 0 0 0 0 0 0 32 1 0 253952 1 0 0 0 0 0 0 0 2 2 4 2 0 0 0 0 4 2 2 2 0 0 0 0 2 0 3 1 0 0 "
+                              "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1 0 0 0 0 0 3 1 4 2 1 2 2 4 2 1 4 2 2 2 1 2 2 0 2 1 0 2 "
+                              "2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 2 2 0 2 1 0 2 2 2 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -110,7 +108,9 @@ TEST_F(DepthToSpaceTiling, test_nhwc_crd_float16_success_001)
         &compileInfo);
     // TODO: Update these values after running the test to get actual tiling results
     uint64_t expectTilingKey = 10001;
-    string expectTilingData = "5 0 0 0 0 0 0 32 1 0 253952 1 0 0 0 0 0 0 0 2 2 2 2 2 0 0 0 2 2 2 2 2 0 0 0 0 3 1 4 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1 0 0 0 0 0 3 1 4 2 2 2 2 2 2 2 2 2 2 2 0 2 2 2 2 0 2 2 2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 2 2 0 2 2 2 2 ";
+    string expectTilingData = "5 0 0 0 0 0 0 32 1 0 253952 1 0 0 0 0 0 0 0 2 2 2 2 2 0 0 0 2 2 2 2 2 0 0 0 0 3 1 4 2 0 "
+                              "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1 0 0 0 0 0 3 1 4 2 2 2 2 2 2 2 2 2 2 2 0 2 2 2 2 0 2 2 "
+                              "2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 2 2 0 2 2 2 2 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -137,7 +137,9 @@ TEST_F(DepthToSpaceTiling, test_nchw_crd_float16_success_001)
         &compileInfo);
     // TODO: Update these values after running the test to get actual tiling results
     uint64_t expectTilingKey = 10001;
-    string expectTilingData = "5 0 0 0 0 0 0 32 1 0 253952 1 0 0 0 0 0 0 0 2 2 2 2 2 0 0 0 2 2 2 2 2 0 0 0 0 3 1 4 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1 0 0 0 0 0 3 1 4 2 2 2 2 2 2 2 2 2 2 2 0 2 2 2 2 0 2 2 2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 2 2 0 2 2 2 2 ";
+    string expectTilingData = "5 0 0 0 0 0 0 32 1 0 253952 1 0 0 0 0 0 0 0 2 2 2 2 2 0 0 0 2 2 2 2 2 0 0 0 0 3 1 4 2 0 "
+                              "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1 0 0 0 0 0 3 1 4 2 2 2 2 2 2 2 2 2 2 2 0 2 2 2 2 0 2 2 "
+                              "2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 2 2 0 2 2 2 2 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

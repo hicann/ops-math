@@ -22,8 +22,7 @@ using namespace AscendC;
 template <typename dtype, bool isB16>
 class PadV3GradReplication {
 public:
-    __aicore__ inline PadV3GradReplication(PadV3GradReplicationTilingData& tilingData) : tilingData(tilingData)
-    {}
+    __aicore__ inline PadV3GradReplication(PadV3GradReplicationTilingData& tilingData) : tilingData(tilingData) {}
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR z, GM_ADDR workspace)
     {
@@ -131,12 +130,11 @@ private:
 
     // —— —— —— —— —— —— —— —— —— —— —— Top/Bottom处理接口 —— —— —— —— —— —— —— —— —— —— —— —— ——
 
-    __aicore__ inline void CopyInTop(
-        uint64_t startPos, uint32_t dataLength, uint32_t fullDataLength, uint16_t repeatTimes, bool isFirst)
+    __aicore__ inline void CopyInTop(uint64_t startPos, uint32_t dataLength, uint32_t fullDataLength,
+                                     uint16_t repeatTimes, bool isFirst)
     {
-        DataCopyExtParams copyParams{
-            repeatTimes, dataLength * dtypeByteSize, (tilingData.layerInputSize - tilingData.topSize) * dtypeByteSize,
-            0, 0};
+        DataCopyExtParams copyParams{repeatTimes, dataLength * dtypeByteSize,
+                                     (tilingData.layerInputSize - tilingData.topSize) * dtypeByteSize, 0, 0};
         DataCopyPadExtParams<dtype> padParams{false, 0, 0, 0};
         if constexpr (isB16) {
             if (isFirst) {
@@ -167,21 +165,20 @@ private:
         atX1 = !atX1;
     }
 
-    __aicore__ inline void CopyOutTop(
-        bool atX1, uint64_t startPos, uint32_t dataLength, uint32_t fullDataLength, uint16_t repeatTimes)
+    __aicore__ inline void CopyOutTop(bool atX1, uint64_t startPos, uint32_t dataLength, uint32_t fullDataLength,
+                                      uint16_t repeatTimes)
     {
         LocalTensor<float> zLocal = atX1 ? x1Local : x2Local;
-        DataCopyExtParams copyParams{
-            repeatTimes, dataLength * 4U, // 4U为float的字节大小
-            (fullDataLength - dataLength >= 8) ?
-                1U :
-                0U, // 如果每块脏数据达到8个，为b16（最大15），则这里UB自动对齐少算一个32Block
-            0, 0};
+        DataCopyExtParams copyParams{repeatTimes, dataLength * 4U, // 4U为float的字节大小
+                                     (fullDataLength - dataLength >= 8) ?
+                                         1U :
+                                         0U, // 如果每块脏数据达到8个，为b16（最大15），则这里UB自动对齐少算一个32Block
+                                     0, 0};
         DataCopyPad(ws[startPos], zLocal, copyParams);
     }
 
-    __aicore__ inline void ProcessTopYield(
-        uint64_t yieldStart, uint32_t dataLength, uint64_t wsYieldStart, uint32_t computeTimes, uint16_t repeatTimes)
+    __aicore__ inline void ProcessTopYield(uint64_t yieldStart, uint32_t dataLength, uint64_t wsYieldStart,
+                                           uint32_t computeTimes, uint16_t repeatTimes)
     {
         bool atX1 = true;                               // 加数是否在X1
         SetFlag<HardEvent::MTE3_MTE2>(evtIDMTE3ToMTE2); // 搬入等搬出
@@ -222,17 +219,15 @@ private:
                 uint64_t yieldStart = layerStart + tilingData.addTensorSize * j;     // 轮区起始序号
                 uint32_t dataLength = tilingData.addTensorSize;                      // 轮区实际搬运长度
                 uint64_t wsYieldStart = wsLayerStart + tilingData.addTensorSize * j; // 轮区WS起始序号
-                ProcessTopYield(
-                    yieldStart, dataLength, wsYieldStart,
-                    (bottomMode ? tilingData.paddings[DIM_3] : tilingData.paddings[DIM_2]), 1);
+                ProcessTopYield(yieldStart, dataLength, wsYieldStart,
+                                (bottomMode ? tilingData.paddings[DIM_3] : tilingData.paddings[DIM_2]), 1);
             }
             if (topTiling.additionalCount) { // 待处理的轮区（不满）
                 uint64_t yieldStart = layerStart + tilingData.addTensorSize * topTiling.tileCount; // 轮区起始序号
-                uint32_t dataLength = topTiling.additionalCount;                                   // 轮区实际搬运长度
+                uint32_t dataLength = topTiling.additionalCount; // 轮区实际搬运长度
                 uint64_t wsYieldStart = wsLayerStart + tilingData.addTensorSize * topTiling.tileCount; // 轮区WS起始序号
-                ProcessTopYield(
-                    yieldStart, dataLength, wsYieldStart,
-                    (bottomMode ? tilingData.paddings[DIM_3] : tilingData.paddings[DIM_2]), 1);
+                ProcessTopYield(yieldStart, dataLength, wsYieldStart,
+                                (bottomMode ? tilingData.paddings[DIM_3] : tilingData.paddings[DIM_2]), 1);
             }
         }
     }
@@ -245,23 +240,21 @@ private:
                                (bottomMode ? tilingData.topResultSize : 0); // 任务ws起始序号
         uint32_t dataLength = tilingData.topSize;                           // 每面的搬运长度
 
-        for (auto i = 0; i < topTiling.tileCount; i++) {                                           // 待处理的轮区（满）
+        for (auto i = 0; i < topTiling.tileCount; i++) { // 待处理的轮区（满）
             uint64_t yieldStart = taskStart + topTiling.edgeCount * tilingData.layerInputSize * i; // 轮区起始序号
-            uint64_t wsYieldStart = wsTaskStart + topTiling.edgeCount * tilingData.topSize * i;    // 轮区WS起始序号
-            uint16_t repeatTimes = topTiling.edgeCount;                                            // 要搬几个面
-            ProcessTopYield(
-                yieldStart, dataLength, wsYieldStart,
-                (bottomMode ? tilingData.paddings[DIM_3] : tilingData.paddings[DIM_2]), repeatTimes);
+            uint64_t wsYieldStart = wsTaskStart + topTiling.edgeCount * tilingData.topSize * i; // 轮区WS起始序号
+            uint16_t repeatTimes = topTiling.edgeCount;                                         // 要搬几个面
+            ProcessTopYield(yieldStart, dataLength, wsYieldStart,
+                            (bottomMode ? tilingData.paddings[DIM_3] : tilingData.paddings[DIM_2]), repeatTimes);
         }
         if (topTiling.additionalCount) { // 待处理的轮区（不满）
-            uint64_t yieldStart =
-                taskStart + topTiling.edgeCount * tilingData.layerInputSize * topTiling.tileCount; // 轮区起始序号
-            uint64_t wsYieldStart =
-                wsTaskStart + topTiling.edgeCount * tilingData.topSize * topTiling.tileCount; // 轮区WS起始序号
-            uint16_t repeatTimes = topTiling.additionalCount;                                 // 要搬几个面
-            ProcessTopYield(
-                yieldStart, dataLength, wsYieldStart,
-                (bottomMode ? tilingData.paddings[DIM_3] : tilingData.paddings[DIM_2]), repeatTimes);
+            uint64_t yieldStart = taskStart +
+                                  topTiling.edgeCount * tilingData.layerInputSize * topTiling.tileCount; // 轮区起始序号
+            uint64_t wsYieldStart = wsTaskStart +
+                                    topTiling.edgeCount * tilingData.topSize * topTiling.tileCount; // 轮区WS起始序号
+            uint16_t repeatTimes = topTiling.additionalCount;                                       // 要搬几个面
+            ProcessTopYield(yieldStart, dataLength, wsYieldStart,
+                            (bottomMode ? tilingData.paddings[DIM_3] : tilingData.paddings[DIM_2]), repeatTimes);
         }
     }
 
@@ -285,8 +278,8 @@ private:
 
     // —— —— —— —— —— —— —— —— —— —— —— Left/Right处理接口 —— —— —— —— —— —— —— —— —— —— —— —— ——
 
-    __aicore__ inline void CopyInLeft(
-        uint64_t startPos, uint16_t dataLength, uint32_t fullDataLength, uint16_t repeatTimes, bool isFirst)
+    __aicore__ inline void CopyInLeft(uint64_t startPos, uint16_t dataLength, uint32_t fullDataLength,
+                                      uint16_t repeatTimes, bool isFirst)
     // dataLength为实际的列长，repeatTimes还是面数，但无法多面调用一次接口，必须一面面搬运
     {
         uint32_t eleNumPerRepeat = dataLength * eleNumPer32Block;
@@ -295,22 +288,18 @@ private:
             DataCopyPadExtParams<dtype> padParams{false, 0, 0, 0};
             if constexpr (isB16) {
                 if (isFirst) {
-                    DataCopyPad(
-                        x1LocalB16Big[i * eleNumPerRepeat], xGm[startPos + i * tilingData.layerInputSize], copyParams,
-                        padParams);
+                    DataCopyPad(x1LocalB16Big[i * eleNumPerRepeat], xGm[startPos + i * tilingData.layerInputSize],
+                                copyParams, padParams);
                 }
-                DataCopyPad(
-                    yLocalB16Big[i * eleNumPerRepeat], xGm[startPos + 1 + i * tilingData.layerInputSize], copyParams,
-                    padParams);
+                DataCopyPad(yLocalB16Big[i * eleNumPerRepeat], xGm[startPos + 1 + i * tilingData.layerInputSize],
+                            copyParams, padParams);
             } else {
                 if (isFirst) {
-                    DataCopyPad(
-                        x1Local[i * eleNumPerRepeat], xGm[startPos + i * tilingData.layerInputSize], copyParams,
-                        padParams);
+                    DataCopyPad(x1Local[i * eleNumPerRepeat], xGm[startPos + i * tilingData.layerInputSize], copyParams,
+                                padParams);
                 }
-                DataCopyPad(
-                    yLocal[i * eleNumPerRepeat], xGm[startPos + 1 + i * tilingData.layerInputSize], copyParams,
-                    padParams);
+                DataCopyPad(yLocal[i * eleNumPerRepeat], xGm[startPos + 1 + i * tilingData.layerInputSize], copyParams,
+                            padParams);
             }
         }
         if constexpr (isB16) {
@@ -336,14 +325,13 @@ private:
     __aicore__ inline void CopyOutLeft(bool atX1, uint64_t startPos, uint16_t dataLength, uint16_t repeatTimes)
     {
         LocalTensor<float> zLocal = atX1 ? x1Local : x2Local;
-        DataCopyExtParams copyParams{
-            (uint16_t)(repeatTimes * dataLength), 4U, (isB16) ? 1U : 0U, 0,
-            0}; // b16场景每块恒有15个脏数据，UB自然对齐必少一个32Block
+        DataCopyExtParams copyParams{(uint16_t)(repeatTimes * dataLength), 4U, (isB16) ? 1U : 0U, 0,
+                                     0}; // b16场景每块恒有15个脏数据，UB自然对齐必少一个32Block
         DataCopyPad(ws[startPos], zLocal, copyParams);
     }
 
-    __aicore__ inline void ProcessLeftYield(
-        uint64_t yieldStart, uint16_t dataLength, uint64_t wsYieldStart, uint32_t computeTimes, uint16_t repeatTimes)
+    __aicore__ inline void ProcessLeftYield(uint64_t yieldStart, uint16_t dataLength, uint64_t wsYieldStart,
+                                            uint32_t computeTimes, uint16_t repeatTimes)
     {
         bool atX1 = true;                               // 加数是否在X1
         SetFlag<HardEvent::MTE3_MTE2>(evtIDMTE3ToMTE2); // 搬入等搬出
@@ -383,23 +371,21 @@ private:
             uint64_t wsLayerStart = wsTaskStart + tilingData.leftSize * l;             // 面WS起始序号
 
             for (auto j = 0; j < leftTiling.tileCount; j++) { // 待处理的轮区（满）
-                uint64_t yieldStart =
-                    layerStart + tilingData.addTensorBlockNum * j * tilingData.topSize;  // 轮区起始序号
-                uint16_t dataLength = tilingData.addTensorBlockNum;                      // 轮区实际搬运长度
-                uint64_t wsYieldStart = wsLayerStart + tilingData.addTensorBlockNum * j; // 轮区WS起始序号
-                ProcessLeftYield(
-                    yieldStart, dataLength, wsYieldStart,
-                    (rightMode ? tilingData.paddings[DIM_1] : tilingData.paddings[DIM_0]), 1);
+                uint64_t yieldStart = layerStart +
+                                      tilingData.addTensorBlockNum * j * tilingData.topSize; // 轮区起始序号
+                uint16_t dataLength = tilingData.addTensorBlockNum;                          // 轮区实际搬运长度
+                uint64_t wsYieldStart = wsLayerStart + tilingData.addTensorBlockNum * j;     // 轮区WS起始序号
+                ProcessLeftYield(yieldStart, dataLength, wsYieldStart,
+                                 (rightMode ? tilingData.paddings[DIM_1] : tilingData.paddings[DIM_0]), 1);
             }
             if (leftTiling.additionalCount) { // 待处理的轮区（不满）
                 uint64_t yieldStart = layerStart + tilingData.addTensorBlockNum * leftTiling.tileCount *
                                                        tilingData.topSize; // 轮区起始序号
                 uint16_t dataLength = leftTiling.additionalCount;          // 轮区实际搬运长度
-                uint64_t wsYieldStart =
-                    wsLayerStart + tilingData.addTensorBlockNum * leftTiling.tileCount; // 轮区WS起始序号
-                ProcessLeftYield(
-                    yieldStart, dataLength, wsYieldStart,
-                    (rightMode ? tilingData.paddings[DIM_1] : tilingData.paddings[DIM_0]), 1);
+                uint64_t wsYieldStart = wsLayerStart +
+                                        tilingData.addTensorBlockNum * leftTiling.tileCount; // 轮区WS起始序号
+                ProcessLeftYield(yieldStart, dataLength, wsYieldStart,
+                                 (rightMode ? tilingData.paddings[DIM_1] : tilingData.paddings[DIM_0]), 1);
             }
         }
     }
@@ -416,21 +402,19 @@ private:
 
         for (auto i = 0; i < leftTiling.tileCount; i++) { // 待处理的轮区（满）
             uint64_t yieldStart = taskStart + leftTiling.edgeCount * tilingData.layerInputSize * i; // 轮区起始序号
-            uint64_t wsYieldStart = wsTaskStart + leftTiling.edgeCount * tilingData.leftSize * i;   // 轮区WS起始序号
-            uint16_t repeatTimes = leftTiling.edgeCount;                                            // 要搬几个面
-            ProcessLeftYield(
-                yieldStart, dataLength, wsYieldStart,
-                (rightMode ? tilingData.paddings[DIM_1] : tilingData.paddings[DIM_0]), repeatTimes);
+            uint64_t wsYieldStart = wsTaskStart + leftTiling.edgeCount * tilingData.leftSize * i; // 轮区WS起始序号
+            uint16_t repeatTimes = leftTiling.edgeCount;                                          // 要搬几个面
+            ProcessLeftYield(yieldStart, dataLength, wsYieldStart,
+                             (rightMode ? tilingData.paddings[DIM_1] : tilingData.paddings[DIM_0]), repeatTimes);
         }
         if (leftTiling.additionalCount) { // 待处理的轮区（不满）
-            uint64_t yieldStart =
-                taskStart + leftTiling.edgeCount * tilingData.layerInputSize * leftTiling.tileCount; // 轮区起始序号
-            uint64_t wsYieldStart =
-                wsTaskStart + leftTiling.edgeCount * tilingData.leftSize * leftTiling.tileCount; // 轮区WS起始序号
-            uint16_t repeatTimes = leftTiling.additionalCount;                                   // 要搬几个面
-            ProcessLeftYield(
-                yieldStart, dataLength, wsYieldStart,
-                (rightMode ? tilingData.paddings[DIM_1] : tilingData.paddings[DIM_0]), repeatTimes);
+            uint64_t yieldStart = taskStart + leftTiling.edgeCount * tilingData.layerInputSize *
+                                                  leftTiling.tileCount; // 轮区起始序号
+            uint64_t wsYieldStart = wsTaskStart +
+                                    leftTiling.edgeCount * tilingData.leftSize * leftTiling.tileCount; // 轮区WS起始序号
+            uint16_t repeatTimes = leftTiling.additionalCount; // 要搬几个面
+            ProcessLeftYield(yieldStart, dataLength, wsYieldStart,
+                             (rightMode ? tilingData.paddings[DIM_1] : tilingData.paddings[DIM_0]), repeatTimes);
         }
     }
 
@@ -482,9 +466,8 @@ private:
         DataCopyPad(ws[startPos], zLocal, copyParams);
     }
 
-    __aicore__ inline void ProcessCornerYield(
-        uint64_t yieldStart, uint16_t dataLength, uint64_t wsYieldStart, uint32_t computeTimes,
-        uint16_t repeatTimes = 0)
+    __aicore__ inline void ProcessCornerYield(uint64_t yieldStart, uint16_t dataLength, uint64_t wsYieldStart,
+                                              uint32_t computeTimes, uint16_t repeatTimes = 0)
     {
         bool atX1 = true;                               // 加数是否在X1
         SetFlag<HardEvent::MTE3_MTE2>(evtIDMTE3ToMTE2); // 搬入等搬出
@@ -519,19 +502,20 @@ private:
     {
         // 左边需要累加
         if (tilingData.paddings[DIM_0]) {
-            uint64_t taskInputStart =
-                GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.totalTopInputSizeEachCube +
-                (bottomMode ? tilingData.topResultSize : 0); // 任务ws输入起始序号
-            uint64_t taskOutputStart =
-                GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.totalTopInputSizeEachCube +
-                (bottomMode ? tilingData.topResultSize : 0) + tilingData.paddings[DIM_0]; // 任务ws输出起始序号
+            uint64_t taskInputStart = GetBlockIdx() * tilingData.cubeNumEachCore *
+                                          tilingData.totalTopInputSizeEachCube +
+                                      (bottomMode ? tilingData.topResultSize : 0); // 任务ws输入起始序号
+            uint64_t taskOutputStart = GetBlockIdx() * tilingData.cubeNumEachCore *
+                                           tilingData.totalTopInputSizeEachCube +
+                                       (bottomMode ? tilingData.topResultSize : 0) +
+                                       tilingData.paddings[DIM_0]; // 任务ws输出起始序号
 
             for (auto i = 0; i < cornerTiling.tileCount; i++) { // 待处理的轮区（满）
-                uint64_t yieldStart =
-                    taskInputStart + tilingData.addTensorBlockNum * tilingData.topSize * i; // 轮区输入起始序号
-                uint64_t wsYieldStart =
-                    taskOutputStart + tilingData.addTensorBlockNum * tilingData.topSize * i; // 轮区输出起始序号
-                uint16_t dataLength = tilingData.addTensorBlockNum;                          // 要搬几个面
+                uint64_t yieldStart = taskInputStart +
+                                      tilingData.addTensorBlockNum * tilingData.topSize * i; // 轮区输入起始序号
+                uint64_t wsYieldStart = taskOutputStart +
+                                        tilingData.addTensorBlockNum * tilingData.topSize * i; // 轮区输出起始序号
+                uint16_t dataLength = tilingData.addTensorBlockNum;                            // 要搬几个面
                 ProcessCornerYield(yieldStart, dataLength, wsYieldStart, tilingData.paddings[DIM_0], 1);
             }
             if (cornerTiling.additionalCount) { // 待处理的轮区（不满）
@@ -546,19 +530,21 @@ private:
 
         // 右边需要累加
         if (tilingData.paddings[DIM_1]) {
-            uint64_t taskInputStart =
-                GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.totalTopInputSizeEachCube +
-                (bottomMode ? tilingData.topResultSize : 0) + tilingData.leftToRightSize; // 任务ws输入起始序号
-            uint64_t taskOutputStart =
-                GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.totalTopInputSizeEachCube +
-                (bottomMode ? tilingData.topResultSize : 0) + tilingData.leftToRightSize; // 任务ws输出起始序号
+            uint64_t taskInputStart = GetBlockIdx() * tilingData.cubeNumEachCore *
+                                          tilingData.totalTopInputSizeEachCube +
+                                      (bottomMode ? tilingData.topResultSize : 0) +
+                                      tilingData.leftToRightSize; // 任务ws输入起始序号
+            uint64_t taskOutputStart = GetBlockIdx() * tilingData.cubeNumEachCore *
+                                           tilingData.totalTopInputSizeEachCube +
+                                       (bottomMode ? tilingData.topResultSize : 0) +
+                                       tilingData.leftToRightSize; // 任务ws输出起始序号
 
             for (auto i = 0; i < cornerTiling.tileCount; i++) { // 待处理的轮区（满）
-                uint64_t yieldStart =
-                    taskInputStart + tilingData.addTensorBlockNum * tilingData.topSize * i; // 轮区输入起始序号
-                uint64_t wsYieldStart =
-                    taskOutputStart + tilingData.addTensorBlockNum * tilingData.topSize * i; // 轮区输出起始序号
-                uint16_t dataLength = tilingData.addTensorBlockNum;                          // 要搬几个面
+                uint64_t yieldStart = taskInputStart +
+                                      tilingData.addTensorBlockNum * tilingData.topSize * i; // 轮区输入起始序号
+                uint64_t wsYieldStart = taskOutputStart +
+                                        tilingData.addTensorBlockNum * tilingData.topSize * i; // 轮区输出起始序号
+                uint16_t dataLength = tilingData.addTensorBlockNum;                            // 要搬几个面
                 ProcessCornerYield(yieldStart, dataLength, wsYieldStart, tilingData.paddings[DIM_1], 1);
             }
             if (cornerTiling.additionalCount) { // 待处理的轮区（不满）
@@ -589,12 +575,11 @@ private:
 
     __aicore__ inline void CopyInInner(uint64_t startPos, uint32_t dataLength, uint16_t repeatTimes)
     {
-        DataCopyExtParams copyParams{
-            repeatTimes, dataLength * dtypeByteSize,
-            (uint32_t)(((tilingData.paddings[DIM_0] ? (tilingData.paddings[DIM_0] + 1) : 0) +
-                        (tilingData.paddings[DIM_1] ? (tilingData.paddings[DIM_1] + 1) : 0)) *
-                       dtypeByteSize),
-            0, 0};
+        DataCopyExtParams copyParams{repeatTimes, dataLength * dtypeByteSize,
+                                     (uint32_t)(((tilingData.paddings[DIM_0] ? (tilingData.paddings[DIM_0] + 1) : 0) +
+                                                 (tilingData.paddings[DIM_1] ? (tilingData.paddings[DIM_1] + 1) : 0)) *
+                                                dtypeByteSize),
+                                     0, 0};
         DataCopyPadExtParams<dtype> padParams{false, 0, 0, 0};
         if constexpr (isB16) {
             DataCopyPad(mLocalB16Big, xGm[startPos], copyParams, padParams);
@@ -603,8 +588,8 @@ private:
         }
     }
 
-    __aicore__ inline void CopyInInnerPadding(
-        uint64_t startPos, uint32_t dataLength, uint32_t fullDataLength, uint16_t repeatTimes)
+    __aicore__ inline void CopyInInnerPadding(uint64_t startPos, uint32_t dataLength, uint32_t fullDataLength,
+                                              uint16_t repeatTimes)
     {
         CopyInInner(startPos, dataLength, repeatTimes);
         if constexpr (isB16) {
@@ -627,23 +612,23 @@ private:
     }
 
     // atomic add到WS
-    __aicore__ inline void CopyOutInnerPadding(
-        uint64_t startPos, uint32_t dataLength, uint32_t fullDataLength, uint16_t repeatTimes)
+    __aicore__ inline void CopyOutInnerPadding(uint64_t startPos, uint32_t dataLength, uint32_t fullDataLength,
+                                               uint16_t repeatTimes)
     {
-        DataCopyExtParams copyParams{
-            repeatTimes, dataLength * 4U, // 已转为float
-            (fullDataLength - dataLength >= 8) ?
-                1U :
-                0U, // 如果每块脏数据达到8个，为b16（最大15），则这里UB自动对齐少算一个32Block
-            ((tilingData.paddings[DIM_0] ? 1 : 0) + (tilingData.paddings[DIM_1] ? 1 : 0)) * 4U, 0};
+        DataCopyExtParams copyParams{repeatTimes, dataLength * 4U, // 已转为float
+                                     (fullDataLength - dataLength >= 8) ?
+                                         1U :
+                                         0U, // 如果每块脏数据达到8个，为b16（最大15），则这里UB自动对齐少算一个32Block
+                                     ((tilingData.paddings[DIM_0] ? 1 : 0) + (tilingData.paddings[DIM_1] ? 1 : 0)) * 4U,
+                                     0};
         PipeBarrier<PIPE_ALL>();
         SetAtomicAdd<float>();
         DataCopyPad(ws[startPos], mLocal, copyParams);
         SetAtomicNone();
     }
 
-    __aicore__ inline void ProcessInnerYield(
-        uint64_t yieldStart, uint32_t dataLength, uint64_t outYieldStart, uint16_t repeatTimes, bool isPadding)
+    __aicore__ inline void ProcessInnerYield(uint64_t yieldStart, uint32_t dataLength, uint64_t outYieldStart,
+                                             uint16_t repeatTimes, bool isPadding)
     {
         uint32_t fullDataLength = GetDataLength32BAligned(dataLength);
         SetFlag<HardEvent::MTE3_MTE2>(evtIDMTE3ToMTE2); // 搬入等搬出
@@ -667,8 +652,8 @@ private:
         }
     }
 
-    __aicore__ inline void GetStartPosInner(
-        uint64_t& taskInputStart, uint64_t& taskOutputStart, uint64_t& taskOutputStartPadding)
+    __aicore__ inline void GetStartPosInner(uint64_t& taskInputStart, uint64_t& taskOutputStart,
+                                            uint64_t& taskOutputStartPadding)
     {
         taskInputStart = GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.cubeInputSize +
                          (tilingData.paddings[DIM_2] ? ((tilingData.paddings[DIM_2] + 1) * tilingData.topSize) : 0) +
@@ -676,15 +661,15 @@ private:
         taskOutputStart = GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.cubeOutputSize +
                           (tilingData.paddings[DIM_2] ? tilingData.outputShape[DIM_3] : 0) +
                           (tilingData.paddings[DIM_0] ? 1 : 0); // 本核GM输出起始序号
-        taskOutputStartPadding =
-            GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.layerOutputSize +
-            (tilingData.paddings[DIM_2] ? tilingData.outputShape[DIM_3] : 0) + (tilingData.paddings[DIM_0] ? 1 : 0) +
-            (tilingData.topResultSize + tilingData.leftResultSize) * PAIR; // 本核WS输出起始序号(padding)
+        taskOutputStartPadding = GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.layerOutputSize +
+                                 (tilingData.paddings[DIM_2] ? tilingData.outputShape[DIM_3] : 0) +
+                                 (tilingData.paddings[DIM_0] ? 1 : 0) +
+                                 (tilingData.topResultSize + tilingData.leftResultSize) *
+                                     PAIR; // 本核WS输出起始序号(padding)
     }
 
-    __aicore__ inline void GetPaddingOutputPos(
-        const uint64_t& cubeOutputStart, const uint64_t& cubeOutputStartPadding, const uint32_t& l,
-        uint64_t& layerOutputStart, bool& isPadding)
+    __aicore__ inline void GetPaddingOutputPos(const uint64_t& cubeOutputStart, const uint64_t& cubeOutputStartPadding,
+                                               const uint32_t& l, uint64_t& layerOutputStart, bool& isPadding)
     {
         if (tilingData.paddings[DIM_4] && (l <= tilingData.paddings[DIM_4])) {
             layerOutputStart = cubeOutputStartPadding;
@@ -718,18 +703,18 @@ private:
                 for (auto k = 0; k < tilingData.leftSize; k++) { // 对于每一行
                     uint64_t lineInputStart = layerInputStart + tilingData.topSize * k;
                     uint64_t lineOutputStart = layerOutputStart + tilingData.outputShape[DIM_3] * k;
-                    for (auto i = 0; i < innerTiling.tileCount; i++) {                             // 待处理的轮区（满）
+                    for (auto i = 0; i < innerTiling.tileCount; i++) { // 待处理的轮区（满）
                         uint64_t yieldInputStart = lineInputStart + tilingData.moveTensorSize * i; // 轮区起始序号
                         uint64_t yieldOutputStart = lineOutputStart + tilingData.moveTensorSize * i; // 轮区输出起始序号
-                        uint32_t dataLength = tilingData.moveTensorSize;                             // 每行的搬运长度
+                        uint32_t dataLength = tilingData.moveTensorSize; // 每行的搬运长度
                         ProcessInnerYield(yieldInputStart, dataLength, yieldOutputStart, 1, isPadding);
                     }
                     if (innerTiling.additionalCount) { // 待处理的轮区（不满）
-                        uint64_t yieldInputStart =
-                            lineInputStart + tilingData.moveTensorSize * innerTiling.tileCount; // 轮区起始序号
-                        uint64_t yieldOutputStart =
-                            lineOutputStart + tilingData.moveTensorSize * innerTiling.tileCount; // 轮区输出起始序号
-                        uint32_t dataLength = innerTiling.additionalCount;                       // 每行的搬运长度
+                        uint64_t yieldInputStart = lineInputStart +
+                                                   tilingData.moveTensorSize * innerTiling.tileCount; // 轮区起始序号
+                        uint64_t yieldOutputStart = lineOutputStart + tilingData.moveTensorSize *
+                                                                          innerTiling.tileCount; // 轮区输出起始序号
+                        uint32_t dataLength = innerTiling.additionalCount; // 每行的搬运长度
                         ProcessInnerYield(yieldInputStart, dataLength, yieldOutputStart, 1, isPadding);
                     }
                 }
@@ -756,8 +741,8 @@ private:
                 GetPaddingOutputPos(cubeOutputStart, cubeOutputStartPadding, l, layerOutputStart, isPadding);
 
                 for (auto i = 0; i < innerTiling.tileCount; i++) { // 待处理的轮区（满）
-                    uint64_t yieldInputStart =
-                        layerInputStart + innerTiling.edgeCount * tilingData.topSize * i; // 轮区起始序号
+                    uint64_t yieldInputStart = layerInputStart +
+                                               innerTiling.edgeCount * tilingData.topSize * i; // 轮区起始序号
                     uint64_t yieldOutputStart = layerOutputStart + innerTiling.edgeCount *
                                                                        tilingData.outputShape[DIM_3] *
                                                                        i; // 轮区输出起始序号
@@ -809,8 +794,8 @@ private:
         SetAtomicNone();
     }
 
-    __aicore__ inline void ProcessMoveTopYield(
-        uint64_t yieldStart, uint32_t dataLength, uint64_t outYieldStart, bool isPadding)
+    __aicore__ inline void ProcessMoveTopYield(uint64_t yieldStart, uint32_t dataLength, uint64_t outYieldStart,
+                                               bool isPadding)
     {
         SetFlag<HardEvent::MTE3_MTE2>(evtIDMTE3ToMTE2); // 搬入等搬出
         WaitFlag<HardEvent::MTE3_MTE2>(evtIDMTE3ToMTE2);
@@ -832,13 +817,14 @@ private:
         uint64_t taskInputStart = GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.totalTopInputSizeEachCube +
                                   tilingData.paddings[DIM_0] +
                                   (bottomMode ? tilingData.topResultSize : 0); // 本核ws输入起始序号
-        uint64_t taskOutputStart =
-            GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.cubeOutputSize +
-            (bottomMode ? (tilingData.layerOutputSize - tilingData.outputShape[DIM_3]) : 0); // 本核GM输出起始序号
-        uint64_t taskOutputStartPadding =
-            GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.layerOutputSize +
-            (bottomMode ? (tilingData.layerOutputSize - tilingData.outputShape[DIM_3]) : 0) +
-            (tilingData.topResultSize + tilingData.leftResultSize) * 2; // 本核WS输出起始序号(padding)
+        uint64_t taskOutputStart = GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.cubeOutputSize +
+                                   (bottomMode ? (tilingData.layerOutputSize - tilingData.outputShape[DIM_3]) :
+                                                 0); // 本核GM输出起始序号
+        uint64_t taskOutputStartPadding = GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.layerOutputSize +
+                                          (bottomMode ? (tilingData.layerOutputSize - tilingData.outputShape[DIM_3]) :
+                                                        0) +
+                                          (tilingData.topResultSize + tilingData.leftResultSize) *
+                                              2; // 本核WS输出起始序号(padding)
 
         for (auto c = 0; c < cubeNumCurrentCore; c++) { // 对于每个要处理的cube
             uint64_t cubeInputStart = taskInputStart + (tilingData.inputShape[DIM_1] * tilingData.topSize) * c;
@@ -854,16 +840,16 @@ private:
                 uint32_t lastCount = tilingData.outputShape[DIM_3] % tilingData.moveTensorSize;
                 for (auto i = 0; i < repeatTimes; i++) { // 待处理的轮区
                     uint32_t dataLength = tilingData.moveTensorSize;
-                    uint64_t yieldInputStart = layerInputStart + tilingData.moveTensorSize * i;   // 轮区起始序号
+                    uint64_t yieldInputStart = layerInputStart + tilingData.moveTensorSize * i; // 轮区起始序号
                     uint64_t yieldOutputStart = layerOutputStart + tilingData.moveTensorSize * i; // 轮区输出起始序号
                     ProcessMoveTopYield(yieldInputStart, dataLength, yieldOutputStart, isPadding);
                 }
                 if (lastCount) {
                     uint32_t dataLength = lastCount;
-                    uint64_t yieldInputStart =
-                        layerInputStart + tilingData.moveTensorSize * repeatTimes; // 轮区起始序号
-                    uint64_t yieldOutputStart =
-                        layerOutputStart + tilingData.moveTensorSize * repeatTimes; // 轮区输出起始序号
+                    uint64_t yieldInputStart = layerInputStart +
+                                               tilingData.moveTensorSize * repeatTimes; // 轮区起始序号
+                    uint64_t yieldOutputStart = layerOutputStart +
+                                                tilingData.moveTensorSize * repeatTimes; // 轮区输出起始序号
                     ProcessMoveTopYield(yieldInputStart, dataLength, yieldOutputStart, isPadding);
                 }
             }
@@ -872,18 +858,16 @@ private:
 
     __aicore__ inline void CopyInMoveLeft(uint64_t startPos, uint16_t dataLength, bool isPadding)
     {
-        DataCopyExtParams copyParams{
-            dataLength, 4U, 0, (isB16 && !isPadding) ? 1U : 0U,
-            0}; // WS上数据为float；如果为b16直搬，留出一个32Block以供cast
+        DataCopyExtParams copyParams{dataLength, 4U, 0, (isB16 && !isPadding) ? 1U : 0U,
+                                     0}; // WS上数据为float；如果为b16直搬，留出一个32Block以供cast
         DataCopyPadExtParams<float> padParams{false, 0, 0, 0};
         DataCopyPad(mLocal, ws[startPos], copyParams, padParams);
     }
 
     __aicore__ inline void CopyOutMoveLeft(uint64_t startPos, uint16_t dataLength)
     {
-        DataCopyExtParams copyParams{
-            dataLength, dtypeByteSize, 0,
-            (uint32_t)((tilingData.outputShape[DIM_3] - 1) * dtypeByteSize), 0};
+        DataCopyExtParams copyParams{dataLength, dtypeByteSize, 0,
+                                     (uint32_t)((tilingData.outputShape[DIM_3] - 1) * dtypeByteSize), 0};
         if constexpr (isB16) {
             SetFlag<HardEvent::MTE2_V>(evtIDMTE2ToV); // 计算等搬入
             WaitFlag<HardEvent::MTE2_V>(evtIDMTE2ToV);
@@ -906,8 +890,8 @@ private:
         SetAtomicNone();
     }
 
-    __aicore__ inline void ProcessMoveLeftYield(
-        uint64_t yieldStart, uint16_t dataLength, uint64_t outYieldStart, bool isPadding)
+    __aicore__ inline void ProcessMoveLeftYield(uint64_t yieldStart, uint16_t dataLength, uint64_t outYieldStart,
+                                                bool isPadding)
     {
         SetFlag<HardEvent::MTE3_MTE2>(evtIDMTE3ToMTE2); // 搬入等搬出
         WaitFlag<HardEvent::MTE3_MTE2>(evtIDMTE3ToMTE2);
@@ -926,17 +910,17 @@ private:
 
     __aicore__ inline void MoveLeft(bool rightMode = false)
     {
-        uint64_t taskInputStart =
-            tilingData.topResultSize * 2 + (rightMode ? tilingData.leftResultSize : 0) +
-            GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.totalLeftInputSizeEachCube; // 本核ws输入起始序号
+        uint64_t taskInputStart = tilingData.topResultSize * 2 + (rightMode ? tilingData.leftResultSize : 0) +
+                                  GetBlockIdx() * tilingData.cubeNumEachCore *
+                                      tilingData.totalLeftInputSizeEachCube; // 本核ws输入起始序号
         uint64_t taskOutputStart = GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.cubeOutputSize +
                                    (tilingData.paddings[DIM_2] ? tilingData.outputShape[DIM_3] : 0) +
                                    (rightMode ? (tilingData.outputShape[DIM_3] - 1) : 0); // 本核GM输出起始序号
-        uint64_t taskOutputStartPadding =
-            GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.layerOutputSize +
-            (tilingData.paddings[DIM_2] ? tilingData.outputShape[DIM_3] : 0) +
-            (rightMode ? (tilingData.outputShape[DIM_3] - 1) : 0) +
-            (tilingData.topResultSize + tilingData.leftResultSize) * 2; // 本核WS输出起始序号(padding)
+        uint64_t taskOutputStartPadding = GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.layerOutputSize +
+                                          (tilingData.paddings[DIM_2] ? tilingData.outputShape[DIM_3] : 0) +
+                                          (rightMode ? (tilingData.outputShape[DIM_3] - 1) : 0) +
+                                          (tilingData.topResultSize + tilingData.leftResultSize) *
+                                              2; // 本核WS输出起始序号(padding)
 
         for (auto c = 0; c < cubeNumCurrentCore; c++) { // 对于每个要处理的cube
             uint64_t cubeInputStart = taskInputStart + (tilingData.inputShape[DIM_1] * tilingData.leftSize) * c;
@@ -956,31 +940,30 @@ private:
                 for (auto i = 0; i < repeatTimes; i++) { // 待处理的轮区
                     uint32_t dataLength = maxMoveNum;
                     uint64_t yieldInputStart = layerInputStart + maxMoveNum * i; // 轮区起始序号
-                    uint64_t yieldOutputStart =
-                        layerOutputStart + maxMoveNum * tilingData.outputShape[DIM_3] * i; // 轮区输出起始序号
+                    uint64_t yieldOutputStart = layerOutputStart +
+                                                maxMoveNum * tilingData.outputShape[DIM_3] * i; // 轮区输出起始序号
                     ProcessMoveLeftYield(yieldInputStart, dataLength, yieldOutputStart, isPadding);
                 }
                 if (lastCount) {
                     uint32_t dataLength = lastCount;
                     uint64_t yieldInputStart = layerInputStart + maxMoveNum * repeatTimes; // 轮区起始序号
-                    uint64_t yieldOutputStart =
-                        layerOutputStart + maxMoveNum * tilingData.outputShape[DIM_3] * repeatTimes; // 轮区输出起始序号
+                    uint64_t yieldOutputStart = layerOutputStart + maxMoveNum * tilingData.outputShape[DIM_3] *
+                                                                       repeatTimes; // 轮区输出起始序号
                     ProcessMoveLeftYield(yieldInputStart, dataLength, yieldOutputStart, isPadding);
                 }
             }
         }
     }
 
-    __aicore__ inline void CopyInPaddingLayer(
-        uint64_t startPos, uint32_t dataLength, uint32_t fullDataLength, uint16_t repeatTimes)
+    __aicore__ inline void CopyInPaddingLayer(uint64_t startPos, uint32_t dataLength, uint32_t fullDataLength,
+                                              uint16_t repeatTimes)
     {
-        DataCopyExtParams copyParams{
-            repeatTimes, dataLength * 4U, // 从WS搬入中间结果
-            0,
-            (isB16 && IsBlockNumOddPerDataLength(dataLength)) ?
-                1U :
-                0U, // 保持一个repeat搬入后占32Block数量的偶数倍（仅b16场景）
-            0};
+        DataCopyExtParams copyParams{repeatTimes, dataLength * 4U, // 从WS搬入中间结果
+                                     0,
+                                     (isB16 && IsBlockNumOddPerDataLength(dataLength)) ?
+                                         1U :
+                                         0U, // 保持一个repeat搬入后占32Block数量的偶数倍（仅b16场景）
+                                     0};
         DataCopyPadExtParams<float> padParams{false, 0, 0, 0};
         if constexpr (isB16) {
             DataCopyPad(mLocal, ws[startPos], copyParams, padParams);
@@ -1006,8 +989,8 @@ private:
         }
     }
 
-    __aicore__ inline void ProcessPaddingLayerYield(
-        uint64_t yieldStart, uint32_t dataLength, uint64_t outYieldStart, uint16_t repeatTimes)
+    __aicore__ inline void ProcessPaddingLayerYield(uint64_t yieldStart, uint32_t dataLength, uint64_t outYieldStart,
+                                                    uint16_t repeatTimes)
     {
         SetFlag<HardEvent::MTE3_MTE2>(evtIDMTE3ToMTE2); // 搬入等搬出
         WaitFlag<HardEvent::MTE3_MTE2>(evtIDMTE3ToMTE2);
@@ -1027,17 +1010,17 @@ private:
         uint64_t taskInputStart = GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.layerOutputSize +
                                   ((backMode) ? tilingData.layerOutputSize * tilingData.inputShape[DIM_0] : 0) +
                                   (tilingData.topResultSize + tilingData.leftResultSize) * 2; // 本核WS输入起始序号
-        uint64_t taskOutputStart =
-            GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.cubeOutputSize +
-            ((backMode) ? tilingData.layerOutputSize * (tilingData.outputShape[DIM_1] - 1) : 0); // 本核GM输出起始序号
-        uint32_t dataLength = tilingData.layerOutputSize;                                        // 每行的搬运长度
+        uint64_t taskOutputStart = GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.cubeOutputSize +
+                                   ((backMode) ? tilingData.layerOutputSize * (tilingData.outputShape[DIM_1] - 1) :
+                                                 0);      // 本核GM输出起始序号
+        uint32_t dataLength = tilingData.layerOutputSize; // 每行的搬运长度
 
         for (auto i = 0; i < paddingLayerTiling.tileCount; i++) { // 待处理的轮区（满）
-            uint64_t yieldInputStart =
-                taskInputStart + paddingLayerTiling.edgeCount * tilingData.layerOutputSize * i; // 轮区起始序号
-            uint64_t yieldOutputStart =
-                taskOutputStart + paddingLayerTiling.edgeCount * tilingData.cubeOutputSize * i; // 轮区输出起始序号
-            uint16_t repeatTimes = paddingLayerTiling.edgeCount;                                // 要搬几个面
+            uint64_t yieldInputStart = taskInputStart +
+                                       paddingLayerTiling.edgeCount * tilingData.layerOutputSize * i; // 轮区起始序号
+            uint64_t yieldOutputStart = taskOutputStart + paddingLayerTiling.edgeCount * tilingData.cubeOutputSize *
+                                                              i; // 轮区输出起始序号
+            uint16_t repeatTimes = paddingLayerTiling.edgeCount; // 要搬几个面
             ProcessPaddingLayerYield(yieldInputStart, dataLength, yieldOutputStart, repeatTimes);
         }
         if (paddingLayerTiling.additionalCount) { // 待处理的轮区（不满）
@@ -1055,27 +1038,27 @@ private:
         uint64_t taskInputStart = GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.layerOutputSize +
                                   ((backMode) ? tilingData.layerOutputSize * tilingData.inputShape[DIM_0] : 0) +
                                   (tilingData.topResultSize + tilingData.leftResultSize) * 2; // 本核WS输入起始序号
-        uint64_t taskOutputStart =
-            GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.cubeOutputSize +
-            ((backMode) ? tilingData.layerOutputSize * (tilingData.outputShape[DIM_1] - 1) : 0); // 本核输出起始序号
+        uint64_t taskOutputStart = GetBlockIdx() * tilingData.cubeNumEachCore * tilingData.cubeOutputSize +
+                                   ((backMode) ? tilingData.layerOutputSize * (tilingData.outputShape[DIM_1] - 1) :
+                                                 0); // 本核输出起始序号
 
         for (auto l = 0; l < cubeNumCurrentCore; l++) {                               // 待处理padding面
             uint64_t layerStart = taskInputStart + tilingData.layerOutputSize * l;    // 面WS起始序号
             uint64_t outLayerStart = taskOutputStart + tilingData.cubeOutputSize * l; // 面GM起始序号
 
-            for (auto i = 0; i < paddingLayerTiling.tileCount; i++) {                      // 待处理的轮区（满）
-                uint32_t dataLength = tilingData.moveTensorSize;                           // 每轮的搬运长度
-                uint64_t yieldInputStart = layerStart + tilingData.moveTensorSize * i;     // 轮区起始序号
+            for (auto i = 0; i < paddingLayerTiling.tileCount; i++) {                  // 待处理的轮区（满）
+                uint32_t dataLength = tilingData.moveTensorSize;                       // 每轮的搬运长度
+                uint64_t yieldInputStart = layerStart + tilingData.moveTensorSize * i; // 轮区起始序号
                 uint64_t yieldOutputStart = outLayerStart + tilingData.moveTensorSize * i; // 轮区输出起始序号
                 uint16_t repeatTimes = 1;
                 ProcessPaddingLayerYield(yieldInputStart, dataLength, yieldOutputStart, repeatTimes);
             }
             if (paddingLayerTiling.additionalCount) {                     // 待处理的轮区（不满）
                 uint32_t dataLength = paddingLayerTiling.additionalCount; // 每轮的搬运长度
-                uint64_t yieldInputStart =
-                    layerStart + tilingData.moveTensorSize * paddingLayerTiling.tileCount; // 轮区起始序号
-                uint64_t yieldOutputStart =
-                    outLayerStart + tilingData.moveTensorSize * paddingLayerTiling.tileCount; // 轮区输出起始序号
+                uint64_t yieldInputStart = layerStart +
+                                           tilingData.moveTensorSize * paddingLayerTiling.tileCount; // 轮区起始序号
+                uint64_t yieldOutputStart = outLayerStart + tilingData.moveTensorSize *
+                                                                paddingLayerTiling.tileCount; // 轮区输出起始序号
                 uint16_t repeatTimes = 1;
                 ProcessPaddingLayerYield(yieldInputStart, dataLength, yieldOutputStart, repeatTimes);
             }
@@ -1106,8 +1089,8 @@ private:
                 MoveLeft(true);
         }
 
-        EdgeTiling paddingLayerTiling =
-            (isLastCore) ? tilingData.paddingLayerTilingLastCore : tilingData.paddingLayerTiling;
+        EdgeTiling paddingLayerTiling = (isLastCore) ? tilingData.paddingLayerTilingLastCore :
+                                                       tilingData.paddingLayerTiling;
         if (paddingLayerTiling.edgeCount) {
             // 一次处理多面
             if (tilingData.paddings[DIM_4])

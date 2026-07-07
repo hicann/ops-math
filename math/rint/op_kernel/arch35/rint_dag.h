@@ -13,83 +13,84 @@
  * \brief rint_dag
  */
 
- #ifndef RINT_DAG_H
- #define RINT_DAG_H
- #include "atvoss/util/dag.h"
- #include "atvoss/util/vec.h"
- #include "atvoss/util/placeholder.h"
+#ifndef RINT_DAG_H
+#define RINT_DAG_H
+#include "atvoss/util/dag.h"
+#include "atvoss/util/vec.h"
+#include "atvoss/util/placeholder.h"
 
- namespace RintOp {
-    using namespace AscendC;
-    using namespace Ops::Base;
+namespace RintOp {
+using namespace AscendC;
+using namespace Ops::Base;
 
-    constexpr uint32_t UINT32_SIGN = 0x80000000;
-    constexpr uint16_t UINT16_SIGN = 0x8000;
-    constexpr uint64_t VECTOR_REG_WIDTH = 256UL;
+constexpr uint32_t UINT32_SIGN = 0x80000000;
+constexpr uint16_t UINT16_SIGN = 0x8000;
+constexpr uint64_t VECTOR_REG_WIDTH = 256UL;
 
-    template<class T>
-    struct RintCalc : public Vec::ElemwiseUnaryOP<T, T> {
-        __aicore__ inline RintCalc(LocalTensor<T>& dst, LocalTensor<T>& src, uint32_t count) {
-        #ifdef __CCE_AICORE__
-            uint32_t dtypeSize = sizeof(T);
-            uint32_t vlSize = VECTOR_REG_WIDTH / dtypeSize;
-            uint16_t loopNum = (count + vlSize - 1) / vlSize;
-            __ubuf__ T* srcAddr = (__ubuf__ T*)src.GetPhyAddr();
-            __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
+template <class T>
+struct RintCalc : public Vec::ElemwiseUnaryOP<T, T> {
+    __aicore__ inline RintCalc(LocalTensor<T>& dst, LocalTensor<T>& src, uint32_t count)
+    {
+#ifdef __CCE_AICORE__
+        uint32_t dtypeSize = sizeof(T);
+        uint32_t vlSize = VECTOR_REG_WIDTH / dtypeSize;
+        uint16_t loopNum = (count + vlSize - 1) / vlSize;
+        __ubuf__ T* srcAddr = (__ubuf__ T*)src.GetPhyAddr();
+        __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
 
-            MicroAPI::RegTensor<T> inputReg;
-            MicroAPI::RegTensor<T> outReg;
-            MicroAPI::MaskReg mask;
-            if constexpr (std::is_same_v<T, float>) {
-                MicroAPI::RegTensor<uint32_t> resultReg;
-                __VEC_SCOPE__
-                {
-                    for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                        mask = MicroAPI::UpdateMask<T>(count);
-                        MicroAPI::LoadAlign(inputReg, srcAddr + loopIdx * vlSize);
-                        MicroAPI::Truncate<T, RoundMode::CAST_RINT, MicroAPI::MaskMergeMode::ZEROING>(
-                            outReg, inputReg, mask);
-                        MicroAPI::Duplicate(resultReg, UINT32_SIGN, mask);
-                        MicroAPI::And(resultReg, resultReg, (MicroAPI::RegTensor<uint32_t>&)inputReg, mask);
-                        MicroAPI::Or(resultReg, resultReg, (MicroAPI::RegTensor<uint32_t>&)outReg, mask);
-                        MicroAPI::StoreAlign(dstAddr + loopIdx * vlSize, (MicroAPI::RegTensor<T>&)resultReg, mask);
-                    }
-                }
-            } else {
-                MicroAPI::RegTensor<uint16_t> resultReg;
-                __VEC_SCOPE__
-                {
-                    for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                        mask = MicroAPI::UpdateMask<T>(count);
-                        MicroAPI::LoadAlign(inputReg, srcAddr + loopIdx * vlSize);
-                        MicroAPI::Truncate<T, RoundMode::CAST_RINT, MicroAPI::MaskMergeMode::ZEROING>(
-                            outReg, inputReg, mask);
-                        MicroAPI::Duplicate(resultReg, UINT16_SIGN, mask);
-                        MicroAPI::And(resultReg, resultReg, (MicroAPI::RegTensor<uint16_t>&)inputReg, mask);
-                        MicroAPI::Or(resultReg, resultReg, (MicroAPI::RegTensor<uint16_t>&)outReg, mask);
-                        MicroAPI::StoreAlign(dstAddr + loopIdx * vlSize, (MicroAPI::RegTensor<T>&)resultReg, mask);
-                    }
+        MicroAPI::RegTensor<T> inputReg;
+        MicroAPI::RegTensor<T> outReg;
+        MicroAPI::MaskReg mask;
+        if constexpr (std::is_same_v<T, float>) {
+            MicroAPI::RegTensor<uint32_t> resultReg;
+            __VEC_SCOPE__
+            {
+                for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
+                    mask = MicroAPI::UpdateMask<T>(count);
+                    MicroAPI::LoadAlign(inputReg, srcAddr + loopIdx * vlSize);
+                    MicroAPI::Truncate<T, RoundMode::CAST_RINT, MicroAPI::MaskMergeMode::ZEROING>(outReg, inputReg,
+                                                                                                  mask);
+                    MicroAPI::Duplicate(resultReg, UINT32_SIGN, mask);
+                    MicroAPI::And(resultReg, resultReg, (MicroAPI::RegTensor<uint32_t>&)inputReg, mask);
+                    MicroAPI::Or(resultReg, resultReg, (MicroAPI::RegTensor<uint32_t>&)outReg, mask);
+                    MicroAPI::StoreAlign(dstAddr + loopIdx * vlSize, (MicroAPI::RegTensor<T>&)resultReg, mask);
                 }
             }
-        #endif
+        } else {
+            MicroAPI::RegTensor<uint16_t> resultReg;
+            __VEC_SCOPE__
+            {
+                for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
+                    mask = MicroAPI::UpdateMask<T>(count);
+                    MicroAPI::LoadAlign(inputReg, srcAddr + loopIdx * vlSize);
+                    MicroAPI::Truncate<T, RoundMode::CAST_RINT, MicroAPI::MaskMergeMode::ZEROING>(outReg, inputReg,
+                                                                                                  mask);
+                    MicroAPI::Duplicate(resultReg, UINT16_SIGN, mask);
+                    MicroAPI::And(resultReg, resultReg, (MicroAPI::RegTensor<uint16_t>&)inputReg, mask);
+                    MicroAPI::Or(resultReg, resultReg, (MicroAPI::RegTensor<uint16_t>&)outReg, mask);
+                    MicroAPI::StoreAlign(dstAddr + loopIdx * vlSize, (MicroAPI::RegTensor<T>&)resultReg, mask);
+                }
+            }
         }
-    };
- 
-     template <typename T>
-     struct RintDag {
-         // 数据搬入
-         using InputX = Bind<Vec::CopyIn<T>, Placeholder::In0<T>>;
+#endif
+    }
+};
 
-         // 计算
-         using OpResult = Bind<RintCalc<T>, InputX>;
- 
-         // Copy out
-         using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpResult>;
- 
-         using Outputs = Elems<OpCopyOut>;
-         using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
-         using OpDag = DAGSch<Outputs, void, MemCfg>;
-     };
- }
- 
- #endif // RINT_DAG_H
+template <typename T>
+struct RintDag {
+    // 数据搬入
+    using InputX = Bind<Vec::CopyIn<T>, Placeholder::In0<T>>;
+
+    // 计算
+    using OpResult = Bind<RintCalc<T>, InputX>;
+
+    // Copy out
+    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpResult>;
+
+    using Outputs = Elems<OpCopyOut>;
+    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
+    using OpDag = DAGSch<Outputs, void, MemCfg>;
+};
+} // namespace RintOp
+
+#endif // RINT_DAG_H

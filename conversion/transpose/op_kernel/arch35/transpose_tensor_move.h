@@ -51,8 +51,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void TransposeTensorMove<T>::Init(
-    GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void TransposeTensorMove<T>::Init(GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData,
+                                                    TPipe* pipe)
 {
     blockIdx_ = GetBlockIdx();
     tiling_ = tilingData;

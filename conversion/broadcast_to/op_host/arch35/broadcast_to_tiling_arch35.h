@@ -23,11 +23,11 @@
 
 namespace optiling {
 struct BroadcastToCompileInfo {
-  int64_t coreNum;
-  int64_t ubSize;
-  uint32_t clSize;
-  uint32_t vRegSize;
-  int64_t blockSize;
+    int64_t coreNum;
+    int64_t ubSize;
+    uint32_t clSize;
+    uint32_t vRegSize;
+    int64_t blockSize;
 };
-}  // namespace optiling
-#endif  // OPS_BUILT_IN_OP_TILING_RUNTIME_BROADCAST_TO_H_
+} // namespace optiling
+#endif // OPS_BUILT_IN_OP_TILING_RUNTIME_BROADCAST_TO_H_

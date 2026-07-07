@@ -66,13 +66,13 @@ ge::graphStatus DepthToSpaceTiling::ParametersVerifying()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus DepthToSpaceTiling::CheckFormatAndShape(
-    int64_t xDimNum, int64_t yDimNum, ge::Format xFormat, ge::Format yFormat)
+ge::graphStatus DepthToSpaceTiling::CheckFormatAndShape(int64_t xDimNum, int64_t yDimNum, ge::Format xFormat,
+                                                        ge::Format yFormat)
 {
     if (xDimNum != DIM_NUM || yDimNum != DIM_NUM) {
         std::string incorrectDims = std::to_string(xDimNum) + " and " + std::to_string(yDimNum);
-        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
-            tilingContext_->GetNodeName(), "x and y", incorrectDims.c_str(), "The shape of x and y must be 4D");
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(tilingContext_->GetNodeName(), "x and y", incorrectDims.c_str(),
+                                                  "The shape of x and y must be 4D");
         return ge::GRAPH_FAILED;
     }
 
@@ -96,26 +96,24 @@ ge::graphStatus DepthToSpaceTiling::CheckAttrValues(ge::Format xFormat)
     } else if (strcmp(paramInfo_.dataFormatPtr, "NHWC") == 0) {
         geFormat = ge::FORMAT_NHWC;
     } else {
-        OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(
-            tilingContext_->GetNodeName(), "data_format", paramInfo_.dataFormatPtr,
-            "The formats of data_format must be NCHW or NHWC");
+        OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(tilingContext_->GetNodeName(), "data_format", paramInfo_.dataFormatPtr,
+                                                "The formats of data_format must be NCHW or NHWC");
         return ge::GRAPH_FAILED;
     }
 
     if (xFormat != geFormat) {
         std::string incorrectValues = std::string(paramInfo_.dataFormatPtr) + " and " + Ops::Base::ToString(xFormat);
-        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
-            tilingContext_->GetNodeName(), "data_format and x", incorrectValues.c_str(),
-            "The value of data_format must be equal to that of x");
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(tilingContext_->GetNodeName(), "data_format and x",
+                                               incorrectValues.c_str(),
+                                               "The value of data_format must be equal to that of x");
         return ge::GRAPH_FAILED;
     }
 
-    OP_CHECK_IF(
-        (paramInfo_.blockSize < 2),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            tilingContext_->GetNodeName(), "block_size", std::to_string(paramInfo_.blockSize).c_str(),
-            "The value of block_size must be a positive integer greater than or equal to 2"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((paramInfo_.blockSize < 2),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                    tilingContext_->GetNodeName(), "block_size", std::to_string(paramInfo_.blockSize).c_str(),
+                    "The value of block_size must be a positive integer greater than or equal to 2"),
+                return ge::GRAPH_FAILED);
 
     auto depth = paramInfo_.xShape.GetDim(xFormat == ge::FORMAT_NCHW ? 1 : 3);
     OP_CHECK_IF(
@@ -125,11 +123,10 @@ ge::graphStatus DepthToSpaceTiling::CheckAttrValues(ge::Format xFormat)
             "The value of block_size must be a divisor such that depth is divisible by the square of block_size"),
         return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        (strcmp(paramInfo_.modePtr, "DCR") != 0 && strcmp(paramInfo_.modePtr, "CRD") != 0),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            tilingContext_->GetNodeName(), "mode", paramInfo_.modePtr, "The value of mode can only be DCR or CRD"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((strcmp(paramInfo_.modePtr, "DCR") != 0 && strcmp(paramInfo_.modePtr, "CRD") != 0),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "mode", paramInfo_.modePtr,
+                                                      "The value of mode can only be DCR or CRD"),
+                return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -192,15 +189,15 @@ void DepthToSpaceTiling::ProcessShapeInfo(ShapeInfo& shapeInfo)
     }
 }
 
-ge::graphStatus DepthToSpaceTilingForAscendC(
-    gert::TilingContext* context, const TransposeCompilerInfo* transposeCompileInfo)
+ge::graphStatus DepthToSpaceTilingForAscendC(gert::TilingContext* context,
+                                             const TransposeCompilerInfo* transposeCompileInfo)
 {
     OP_LOGD(context->GetNodeName(), "Start DepthToSpaceTilingForAscendC.");
     DepthToSpaceTiling tilingObject(context);
 
-    OP_CHECK_IF(
-        tilingObject.ParametersVerifying() != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "DepthToSpaceTiling failed to verify params!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(tilingObject.ParametersVerifying() != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "DepthToSpaceTiling failed to verify params!"),
+                return ge::GRAPH_FAILED);
 
     // construct an equivalent Transpose inputShapeInfo
     ShapeInfo inputShapeInfo;
@@ -212,11 +209,10 @@ ge::graphStatus DepthToSpaceTilingForAscendC(
     compileInfo.transposeCompilerInfo.ubSize = transposeCompileInfo->ubSize;
 
     TransposeNddmaTiling transposeTilingObject(context);
-    OP_CHECK_IF(
-        (transposeTilingObject.TilingForReleatedTranspose(
-             context, &tilingData.transposeOpTiling, &compileInfo.transposeCompilerInfo, inputShapeInfo) ==
-         ge::GRAPH_FAILED),
-        OP_LOGE(context->GetNodeName(), "Transpose Tiling failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((transposeTilingObject.TilingForReleatedTranspose(context, &tilingData.transposeOpTiling,
+                                                                  &compileInfo.transposeCompilerInfo,
+                                                                  inputShapeInfo) == ge::GRAPH_FAILED),
+                OP_LOGE(context->GetNodeName(), "Transpose Tiling failed"), return ge::GRAPH_FAILED);
 
     tilingData.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
     context->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());

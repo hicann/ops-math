@@ -49,31 +49,30 @@ inline static bool IsAiCoreSupport(const aclTensor* self)
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
 }
 
-inline const aclTensor* MirrorPadAiCore(
-    const aclTensor* self, const aclTensor* paddings, const std::string& mode, aclTensor* out, aclOpExecutor* executor)
+inline const aclTensor* MirrorPadAiCore(const aclTensor* self, const aclTensor* paddings, const std::string& mode,
+                                        aclTensor* out, aclOpExecutor* executor)
 {
     L0_DFX(MirrorPadAiCore, self, paddings, mode, out);
     auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(MirrorPad, OP_INPUT(self, paddings), OP_OUTPUT(out), OP_ATTR(mode));
-    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
-        retAicore != ACLNN_SUCCESS, return nullptr, "MirrorPad add to aicore launch list failed.");
+    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
+                                         "MirrorPad add to aicore launch list failed.");
     return out;
 }
 
-inline const aclTensor* MirrorPadAiCpu(
-    const aclTensor* self, const aclTensor* paddings, const std::string& mode, aclTensor* out, aclOpExecutor* executor)
+inline const aclTensor* MirrorPadAiCpu(const aclTensor* self, const aclTensor* paddings, const std::string& mode,
+                                       aclTensor* out, aclOpExecutor* executor)
 {
     L0_DFX(MirrorPadAiCpu, self, paddings, mode, out);
     static internal::AicpuTaskSpace space("MirrorPad", ge::DEPEND_IN_SHAPE, true);
     op::DataType dtype = paddings->GetDataType();
-    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(
-        MirrorPad, OP_ATTR_NAMES({"Tpaddings", "mode"}), OP_INPUT(self, paddings), OP_OUTPUT(out),
-        OP_ATTR(dtype, mode));
+    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(MirrorPad, OP_ATTR_NAMES({"Tpaddings", "mode"}), OP_INPUT(self, paddings),
+                                          OP_OUTPUT(out), OP_ATTR(dtype, mode));
     CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
     return out;
 }
 
-const aclTensor* MirrorPad(
-    const aclTensor* self, const aclTensor* paddings, const std::string& mode, aclOpExecutor* executor)
+const aclTensor* MirrorPad(const aclTensor* self, const aclTensor* paddings, const std::string& mode,
+                           aclOpExecutor* executor)
 {
     auto out = executor->AllocTensor(self->GetDataType(), self->GetViewFormat(), self->GetViewFormat());
     auto ret = INFER_SHAPE(MirrorPad, OP_INPUT(self, paddings), OP_OUTPUT(out), OP_ATTR(mode));

@@ -55,8 +55,8 @@ __aicore__ inline void PadV3GradEdgeSimt<T>::Init(GM_ADDR x, GM_ADDR y, const Pa
 }
 
 template <uint8_t DIM, typename U>
-__simt_callee__ __aicore__ void CalScope(
-    U (*scopeIndex)[2], U* inIndex, U* outIndex, __ubuf__ U* rightPads, __ubuf__ U* inShapes, __ubuf__ U* outShapes)
+__simt_callee__ __aicore__ void CalScope(U (*scopeIndex)[2], U* inIndex, U* outIndex, __ubuf__ U* rightPads,
+                                         __ubuf__ U* inShapes, __ubuf__ U* outShapes)
 {
     int8_t flag = 0;
     for (uint8_t i = 0; i < DIM; i++) {
@@ -81,13 +81,13 @@ __simt_callee__ __aicore__ void CalScope(
 }
 
 template <typename T, int32_t DIM, typename U, typename GmOffsetType, typename CastType>
-__simt_vf__ LAUNCH_BOUND(EDGE_THREAD_DIM) __aicore__ void SimtComputeEdgeDimOne(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize, uint32_t blockIdx, uint32_t blockNum,
-    __ubuf__ U* inShapes, __ubuf__ U* outShapes, __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
-    __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts)
+__simt_vf__ LAUNCH_BOUND(EDGE_THREAD_DIM) __aicore__
+    void SimtComputeEdgeDimOne(__gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize,
+                               uint32_t blockIdx, uint32_t blockNum, __ubuf__ U* inShapes, __ubuf__ U* outShapes,
+                               __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
+                               __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts)
 {
-    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         U inIndex[DIM]{0};
         U outIndex[DIM]{0};
         GmOffsetType yIdx = idx;
@@ -116,13 +116,13 @@ __simt_vf__ LAUNCH_BOUND(EDGE_THREAD_DIM) __aicore__ void SimtComputeEdgeDimOne(
 }
 
 template <typename T, int32_t DIM, typename U, typename GmOffsetType, typename CastType>
-__simt_vf__ LAUNCH_BOUND(EDGE_HALF_THREAD_DIM) __aicore__ void SimtComputeEdgeDimTwo(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize, uint32_t blockIdx, uint32_t blockNum,
-    __ubuf__ U* inShapes, __ubuf__ U* outShapes, __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
-    __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts)
+__simt_vf__ LAUNCH_BOUND(EDGE_HALF_THREAD_DIM) __aicore__
+    void SimtComputeEdgeDimTwo(__gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize,
+                               uint32_t blockIdx, uint32_t blockNum, __ubuf__ U* inShapes, __ubuf__ U* outShapes,
+                               __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
+                               __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts)
 {
-    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         U inIndex[DIM]{0};
         U outIndex[DIM]{0};
         GmOffsetType yIdx = idx;
@@ -154,13 +154,13 @@ __simt_vf__ LAUNCH_BOUND(EDGE_HALF_THREAD_DIM) __aicore__ void SimtComputeEdgeDi
 }
 
 template <typename T, int32_t DIM, typename U, typename GmOffsetType, typename CastType>
-__simt_vf__ LAUNCH_BOUND(EDGE_QUARTER_THREAD_DIM) __aicore__ void SimtComputeEdgeDimThree(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize, uint32_t blockIdx, uint32_t blockNum,
-    __ubuf__ U* inShapes, __ubuf__ U* outShapes, __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
-    __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts)
+__simt_vf__ LAUNCH_BOUND(EDGE_QUARTER_THREAD_DIM) __aicore__
+    void SimtComputeEdgeDimThree(__gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize,
+                                 uint32_t blockIdx, uint32_t blockNum, __ubuf__ U* inShapes, __ubuf__ U* outShapes,
+                                 __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
+                                 __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts)
 {
-    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         U inIndex[DIM]{0};
         U outIndex[DIM]{0};
         GmOffsetType yIdx = idx;
@@ -194,13 +194,13 @@ __simt_vf__ LAUNCH_BOUND(EDGE_QUARTER_THREAD_DIM) __aicore__ void SimtComputeEdg
 }
 
 template <typename T, int32_t DIM, typename U, typename GmOffsetType, typename CastType>
-__simt_vf__ LAUNCH_BOUND(EDGE_EIGHTH_THREAD_DIM) __aicore__ void SimtComputeEdgeDimFour(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize, uint32_t blockIdx, uint32_t blockNum,
-    __ubuf__ U* inShapes, __ubuf__ U* outShapes, __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
-    __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts)
+__simt_vf__ LAUNCH_BOUND(EDGE_EIGHTH_THREAD_DIM) __aicore__
+    void SimtComputeEdgeDimFour(__gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize,
+                                uint32_t blockIdx, uint32_t blockNum, __ubuf__ U* inShapes, __ubuf__ U* outShapes,
+                                __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
+                                __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts)
 {
-    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         U inIndex[DIM]{0};
         U outIndex[DIM]{0};
         GmOffsetType yIdx = idx;
@@ -217,8 +217,8 @@ __simt_vf__ LAUNCH_BOUND(EDGE_EIGHTH_THREAD_DIM) __aicore__ void SimtComputeEdge
             for (U a1 = scopeIndex[1][0]; a1 <= scopeIndex[1][1]; ++a1) {
                 for (U a2 = scopeIndex[2][0]; a2 <= scopeIndex[2][1]; ++a2) {
                     for (U a3 = scopeIndex[3][0]; a3 <= scopeIndex[3][1]; ++a3) {
-                        GmOffsetType inputOffset =
-                            static_cast<GmOffsetType>(a0 * inStrides[0] + a1 * inStrides[1] + a2 * inStrides[2] + a3);
+                        GmOffsetType inputOffset = static_cast<GmOffsetType>(a0 * inStrides[0] + a1 * inStrides[1] +
+                                                                             a2 * inStrides[2] + a3);
                         CastType tmpVal;
                         if constexpr (std::is_same_v<T, bfloat16_t>) {
                             tmpVal = __bfloat162float(inputGM[inputOffset]);
@@ -237,13 +237,13 @@ __simt_vf__ LAUNCH_BOUND(EDGE_EIGHTH_THREAD_DIM) __aicore__ void SimtComputeEdge
 }
 
 template <typename T, int32_t DIM, typename U, typename GmOffsetType, typename CastType>
-__simt_vf__ LAUNCH_BOUND(EDGE_EIGHTH_THREAD_DIM) __aicore__ void SimtComputeEdgeDimFive(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize, uint32_t blockIdx, uint32_t blockNum,
-    __ubuf__ U* inShapes, __ubuf__ U* outShapes, __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
-    __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts)
+__simt_vf__ LAUNCH_BOUND(EDGE_EIGHTH_THREAD_DIM) __aicore__
+    void SimtComputeEdgeDimFive(__gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize,
+                                uint32_t blockIdx, uint32_t blockNum, __ubuf__ U* inShapes, __ubuf__ U* outShapes,
+                                __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
+                                __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts)
 {
-    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNum * blockDim.x) {
+    for (GmOffsetType idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         U inIndex[DIM]{0};
         U outIndex[DIM]{0};
         GmOffsetType yIdx = idx;
@@ -285,8 +285,8 @@ template <typename T>
 template <typename U>
 __aicore__ inline void PadV3GradEdgeSimt<T>::Process()
 {
-    using CastType = std::conditional_t<
-        std::is_same_v<T, bfloat16_t>, float32_t, std::conditional_t<std::is_same_v<T, float16_t>, float32_t, T>>;
+    using CastType = std::conditional_t<std::is_same_v<T, bfloat16_t>, float32_t,
+                                        std::conditional_t<std::is_same_v<T, float16_t>, float32_t, T>>;
     using GmOffsetType = std::conditional_t<std::is_same_v<U, int64_t>, uint64_t, uint32_t>;
 
     uint32_t blockNum = GetBlockNum(); // 获取到核数
@@ -327,9 +327,9 @@ __aicore__ inline void PadV3GradEdgeSimt<T>::Process()
 
     if (mDimNum == 1) {
         asc_vf_call<SimtComputeEdgeDimOne<T, 1, U, GmOffsetType, CastType>>(
-            dim3(EDGE_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
-            (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize, mBlockIdx_, blockNum, inShapes, outShapes,
-            inStrides, outStrides, leftPads, rightPads, magics, shifts);
+            dim3(EDGE_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()), (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()),
+            outputSize, mBlockIdx_, blockNum, inShapes, outShapes, inStrides, outStrides, leftPads, rightPads, magics,
+            shifts);
     } else if (mDimNum == 2) {
         asc_vf_call<SimtComputeEdgeDimTwo<T, 2, U, GmOffsetType, CastType>>(
             dim3(EDGE_HALF_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),

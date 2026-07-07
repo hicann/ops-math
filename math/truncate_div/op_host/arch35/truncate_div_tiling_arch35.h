@@ -27,8 +27,7 @@ namespace optiling {
 
 class TruncateDivTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit TruncateDivTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit TruncateDivTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;

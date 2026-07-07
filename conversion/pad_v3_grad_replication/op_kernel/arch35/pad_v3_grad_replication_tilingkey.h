@@ -26,13 +26,10 @@
 //   → tilingKey = (SplitAxis << 4) | (DimNum - 1)
 // 示例：N=3、axis=0 → (0<<4)|(3-1) = 2；N=4、axis=2 → (2<<4)|(4-1) = 35。
 
-ASCENDC_TPL_ARGS_DECL(
-    pad_v3_grad_replication, ASCENDC_TPL_UINT_DECL(DimNum, 4, ASCENDC_TPL_UI_RANGE, 1, 1, 8),
-    ASCENDC_TPL_UINT_DECL(SplitAxis, 4, ASCENDC_TPL_UI_RANGE, 1, 0, 7),);
+ASCENDC_TPL_ARGS_DECL(pad_v3_grad_replication, ASCENDC_TPL_UINT_DECL(DimNum, 4, ASCENDC_TPL_UI_RANGE, 1, 1, 8),
+                      ASCENDC_TPL_UINT_DECL(SplitAxis, 4, ASCENDC_TPL_UI_RANGE, 1, 0, 7), );
 
-ASCENDC_TPL_SEL(
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_UINT_SEL(DimNum, ASCENDC_TPL_UI_RANGE, 1, 1, 8),
-        ASCENDC_TPL_UINT_SEL(SplitAxis, ASCENDC_TPL_UI_RANGE, 1, 0, 7),),);
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(DimNum, ASCENDC_TPL_UI_RANGE, 1, 1, 8),
+                                     ASCENDC_TPL_UINT_SEL(SplitAxis, ASCENDC_TPL_UI_RANGE, 1, 0, 7), ), );
 
 #endif // _PAD_V3_GRAD_REPLICATION_TILING_KEY_H_

@@ -76,9 +76,8 @@ inline static bool CheckFormat(const aclTensor* self, const aclTensor* out)
 {
     OP_CHECK(
         self->GetViewFormat() == out->GetViewFormat(),
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Format of input and output should be equal, self [%s], gradInoutput [%s].",
-            op::ToString(self->GetViewFormat()).GetString(), op::ToString(out->GetViewFormat()).GetString()),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format of input and output should be equal, self [%s], gradInoutput [%s].",
+                op::ToString(self->GetViewFormat()).GetString(), op::ToString(out->GetViewFormat()).GetString()),
         return false);
     return true;
 }
@@ -91,35 +90,32 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* padding, const 
     OP_CHECK_MAX_DIM(self, 5, return false);
 
     // self, out维度需要一致
-    OP_CHECK(
-        selfDimnum == out->GetViewShape().GetDimNum(),
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self, out dim should be same."), return false);
+    OP_CHECK(selfDimnum == out->GetViewShape().GetDimNum(),
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self, out dim should be same."), return false);
 
     // padding长度为6
-    OP_CHECK(
-        padding->Size() == 6,
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding length should be 6, but got %lu.", padding->Size()), return false);
+    OP_CHECK(padding->Size() == 6,
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding length should be 6, but got %lu.", padding->Size()),
+             return false);
 
     // check padding value. 0, 1, 2, 3, 4, 5 are indexes
-    OP_CHECK(
-        (*padding)[0] < self->GetViewShape().GetDim(selfDimnum - 1) &&
-            (*padding)[1] < self->GetViewShape().GetDim(selfDimnum - 1) &&
-            (*padding)[2] < self->GetViewShape().GetDim(selfDimnum - 2) &&
-            (*padding)[3] < self->GetViewShape().GetDim(selfDimnum - 2) &&
-            (*padding)[4] < self->GetViewShape().GetDim(selfDimnum - 3) &&
-            (*padding)[5] < self->GetViewShape().GetDim(selfDimnum - 3),
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding size should be less than the corresponding self dimention."),
-        return false);
+    OP_CHECK((*padding)[0] < self->GetViewShape().GetDim(selfDimnum - 1) &&
+                 (*padding)[1] < self->GetViewShape().GetDim(selfDimnum - 1) &&
+                 (*padding)[2] < self->GetViewShape().GetDim(selfDimnum - 2) &&
+                 (*padding)[3] < self->GetViewShape().GetDim(selfDimnum - 2) &&
+                 (*padding)[4] < self->GetViewShape().GetDim(selfDimnum - 3) &&
+                 (*padding)[5] < self->GetViewShape().GetDim(selfDimnum - 3),
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding size should be less than the corresponding self dimention."),
+             return false);
 
     // check the last 3 dim value of out. 0, 1, 2, 3, 4, 5 are indexes
-    OP_CHECK(
-        out->GetViewShape().GetDim(selfDimnum - 2) ==
-                self->GetViewShape().GetDim(selfDimnum - 2) + (*padding)[2] + (*padding)[3] &&
-            out->GetViewShape().GetDim(selfDimnum - 1) ==
-                self->GetViewShape().GetDim(selfDimnum - 1) + (*padding)[0] + (*padding)[1] &&
-            out->GetViewShape().GetDim(selfDimnum - 3) ==
-                self->GetViewShape().GetDim(selfDimnum - 3) + (*padding)[4] + (*padding)[5],
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "wrong out shape."), return false);
+    OP_CHECK(out->GetViewShape().GetDim(selfDimnum - 2) ==
+                     self->GetViewShape().GetDim(selfDimnum - 2) + (*padding)[2] + (*padding)[3] &&
+                 out->GetViewShape().GetDim(selfDimnum - 1) ==
+                     self->GetViewShape().GetDim(selfDimnum - 1) + (*padding)[0] + (*padding)[1] &&
+                 out->GetViewShape().GetDim(selfDimnum - 3) ==
+                     self->GetViewShape().GetDim(selfDimnum - 3) + (*padding)[4] + (*padding)[5],
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "wrong out shape."), return false);
     return true;
 }
 
@@ -140,9 +136,8 @@ inline static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* 
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnReflectionPad3dGetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* padding, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnReflectionPad3dGetWorkspaceSize(const aclTensor* self, const aclIntArray* padding, aclTensor* out,
+                                                 uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnReflectionPad3d, DFX_IN(self, padding), DFX_OUT(out));
     // 固定写法，创建OpExecutor
@@ -158,9 +153,8 @@ aclnnStatus aclnnReflectionPad3dGetWorkspaceSize(
         *workspaceSize = 0;
         // 4 is dim number
         if (self->GetViewShape().GetDimNum() == 4) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID,
-                "Expected 4D or 5D tensor with possibly 0 batch size and other non-zero dimentions for input.");
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "Expected 4D or 5D tensor with possibly 0 batch size and other non-zero dimentions for input.");
             return ACLNN_ERR_PARAM_INVALID;
         }
         // 5 is dim number
@@ -169,9 +163,8 @@ aclnnStatus aclnnReflectionPad3dGetWorkspaceSize(
             if (self->GetViewShape().GetDim(1) == 0 || self->GetViewShape().GetDim(2) == 0 ||
                 // 3, 4 are indexes
                 self->GetViewShape().GetDim(3) == 0 || self->GetViewShape().GetDim(4) == 0) {
-                OP_LOGE(
-                    ACLNN_ERR_PARAM_INVALID,
-                    "Expected 4D or 5D tensor with possibly 0 batch size and other non-zero dimentions for input.");
+                OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                        "Expected 4D or 5D tensor with possibly 0 batch size and other non-zero dimentions for input.");
                 return ACLNN_ERR_PARAM_INVALID;
             }
         }

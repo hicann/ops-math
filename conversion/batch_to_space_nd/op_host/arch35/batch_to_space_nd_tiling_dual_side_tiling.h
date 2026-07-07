@@ -36,15 +36,9 @@ struct CutInfo {                  // 切分信息
         : axisPerm(perm), alignAxis(align), innerProd(initInnerProd), alignedInnerProd(initInnerProd) {};
     ~CutInfo() {};
 
-    inline size_t Idx2Axis(int16_t idx) const
-    {
-        return axisPerm == nullptr ? idx : axisPerm[idx];
-    }
+    inline size_t Idx2Axis(int16_t idx) const { return axisPerm == nullptr ? idx : axisPerm[idx]; }
 
-    inline bool IsNeedAlign(int16_t idx) const
-    {
-        return alignAxis == idx;
-    }
+    inline bool IsNeedAlign(int16_t idx) const { return alignAxis == idx; }
 };
 } // namespace
 
@@ -76,18 +70,16 @@ public:
     uint32_t outFactor{1};  // 输出切分轴维度数量
     uint64_t totalCount{1}; // 块数
 public:
-    DualSideTiling(
-        gert::TilingContext* context, const uint32_t ubBlockElements, const uint64_t* axisSizeList,
-        const size_t* outAxisPerm, const size_t rank)
+    DualSideTiling(gert::TilingContext* context, const uint32_t ubBlockElements, const uint64_t* axisSizeList,
+                   const size_t* outAxisPerm, const size_t rank)
         : context_(context),
           ubBlockElements_(ubBlockElements),
           axisSizeList_(axisSizeList),
           outAxisPerm_(outAxisPerm),
           needAlignAxis_(INVALID_ALIGN_AXIS),
           rank_(rank) {};
-    DualSideTiling(
-        gert::TilingContext* context, const uint32_t ubBlockElements, const uint64_t* axisSizeList,
-        const size_t* outAxisPerm, const int16_t needAlign, const size_t rank)
+    DualSideTiling(gert::TilingContext* context, const uint32_t ubBlockElements, const uint64_t* axisSizeList,
+                   const size_t* outAxisPerm, const int16_t needAlign, const size_t rank)
         : context_(context),
           ubBlockElements_(ubBlockElements),
           axisSizeList_(axisSizeList),

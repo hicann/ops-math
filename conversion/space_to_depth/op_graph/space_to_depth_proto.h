@@ -38,10 +38,10 @@ namespace ge {
 * Compatible with the TensorFlow operator SpaceToDepth.
 */
 REG_OP(SpaceToDepth)
-  .INPUT(x, TensorType::BasicType())
-  .OUTPUT(y, TensorType::BasicType())
-  .REQUIRED_ATTR(block_size, Int)
-  .ATTR(data_format, String, "NHWC")
-  .OP_END_FACTORY_REG(SpaceToDepth)
+    .INPUT(x, TensorType::BasicType())
+    .OUTPUT(y, TensorType::BasicType())
+    .REQUIRED_ATTR(block_size, Int)
+    .ATTR(data_format, String, "NHWC")
+    .OP_END_FACTORY_REG(SpaceToDepth)
 } // namespace ge
 #endif // SPACE_TO_DEPTH_PROTO_H

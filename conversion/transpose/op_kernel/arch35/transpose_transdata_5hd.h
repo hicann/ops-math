@@ -13,7 +13,6 @@
  * \brief transpose_transdata_5hd
  */
 
-
 #ifndef KERNEL_TRANSPOSE_TRANSDATA_5HD_H_
 #define KERNEL_TRANSPOSE_TRANSDATA_5HD_H_
 
@@ -31,6 +30,7 @@ public:
     __aicore__ inline KernelTransDataTo5HD(){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const TransposeVCONVTilingData* tilingData, TPipe* pipe);
     __aicore__ inline void Process();
+
 private:
     __aicore__ inline void SetCopyInParams(uint32_t process);
     __aicore__ inline void SetRCSplitCopyInParams(uint32_t process);
@@ -47,6 +47,7 @@ private:
     __aicore__ inline void SetRSplitCopyOutParams(uint32_t process);
     __aicore__ inline void SetCSplitCopyOutParams(uint32_t process);
     __aicore__ inline void BaseCopyOut(uint32_t process);
+
 private:
     const TransposeVCONVTilingData* tiling_ = nullptr;
     TQue<TPosition::VECIN, 1> inQueueSrc;
@@ -66,8 +67,9 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD<T>::Init(GM_ADDR x, GM_ADDR y, const TransposeVCONVTilingData* tilingData, TPipe* pipe)
-{   
+__aicore__ inline void KernelTransDataTo5HD<T>::Init(GM_ADDR x, GM_ADDR y, const TransposeVCONVTilingData* tilingData,
+                                                     TPipe* pipe)
+{
     tiling_ = tilingData;
     blockIdx_ = GetBlockIdx();
     srcGlobal.SetGlobalBuffer((__gm__ T*)x);
@@ -99,7 +101,7 @@ __aicore__ inline void KernelTransDataTo5HD<T>::ComputeRConv(int r, int c, int c
         for (int i = 0; i < 16; i++) {
             srcLocalList[i] = srcLocal[i * c + j * TRANSELEM];
         }
-        
+
         LocalTensor<T> dstLocalList[16];
         for (int i = 0; i < 16; i++) {
             dstLocalList[i] = dstLocal[i * r + j * TRANSELEM * r];
@@ -129,7 +131,7 @@ __aicore__ inline void KernelTransDataTo5HD<T>::ComputeCConv(int r, int c, int r
         for (int i = 0; i < 16; i++) {
             srcLocalList[i] = srcLocal[i * c + j * TRANSELEM * c];
         }
-        
+
         LocalTensor<T> dstLocalList[16];
         for (int i = 0; i < 16; i++) {
             dstLocalList[i] = dstLocal[i * r + j * TRANSELEM];
@@ -150,24 +152,26 @@ __aicore__ inline void KernelTransDataTo5HD<T>::Process()
         for (int i = 0; i < loopCount; i++) {
             if (i < loopCount - 1) {
                 SetBasePocessData(i, isRsplit, isRCSplit);
-                BaseProcess(i, tiling_->rUbSplitPara.MainCoreUbFactor, tiling_->cUbSplitPara.MainCoreUbFactor, 
+                BaseProcess(i, tiling_->rUbSplitPara.MainCoreUbFactor, tiling_->cUbSplitPara.MainCoreUbFactor,
                             tiling_->rUbSplitPara.MainCoreUbAlignFactor, tiling_->cUbSplitPara.MainCoreUbAlignFactor);
             } else {
                 SetBasePocessData(i, isRsplit, isRCSplit);
-                BaseProcess(i, tiling_->rUbSplitPara.MainCoreTailUbFactor, tiling_->cUbSplitPara.MainCoreTailUbFactor, 
-                            tiling_->rUbSplitPara.MainCoreTailUbAlignFactor, tiling_->cUbSplitPara.MainCoreTailUbAlignFactor);
+                BaseProcess(i, tiling_->rUbSplitPara.MainCoreTailUbFactor, tiling_->cUbSplitPara.MainCoreTailUbFactor,
+                            tiling_->rUbSplitPara.MainCoreTailUbAlignFactor,
+                            tiling_->cUbSplitPara.MainCoreTailUbAlignFactor);
             }
         }
     } else {
         for (int i = 0; i < loopCount; i++) {
             if (i < loopCount - 1) {
                 SetBasePocessData(i, isRsplit, isRCSplit);
-                BaseProcess(i, tiling_->rUbSplitPara.TailCoreUbFactor, tiling_->cUbSplitPara.TailCoreUbFactor, 
+                BaseProcess(i, tiling_->rUbSplitPara.TailCoreUbFactor, tiling_->cUbSplitPara.TailCoreUbFactor,
                             tiling_->rUbSplitPara.TailCoreUbAlignFactor, tiling_->cUbSplitPara.TailCoreUbAlignFactor);
             } else {
                 SetBasePocessData(i, isRsplit, isRCSplit);
-                BaseProcess(i, tiling_->rUbSplitPara.TailCoreTailUbFactor, tiling_->cUbSplitPara.TailCoreTailUbFactor, 
-                            tiling_->rUbSplitPara.TailCoreTailUbAlignFactor, tiling_->cUbSplitPara.TailCoreTailUbAlignFactor);
+                BaseProcess(i, tiling_->rUbSplitPara.TailCoreTailUbFactor, tiling_->cUbSplitPara.TailCoreTailUbFactor,
+                            tiling_->rUbSplitPara.TailCoreTailUbAlignFactor,
+                            tiling_->cUbSplitPara.TailCoreTailUbAlignFactor);
             }
         }
     }
@@ -197,9 +201,10 @@ __aicore__ inline void KernelTransDataTo5HD<T>::SetBasePocessData(uint32_t proce
 }
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD<T>::BaseProcess(uint32_t process, uint32_t r, uint32_t c, uint32_t rAlign, uint32_t cAlign) 
+__aicore__ inline void KernelTransDataTo5HD<T>::BaseProcess(uint32_t process, uint32_t r, uint32_t c, uint32_t rAlign,
+                                                            uint32_t cAlign)
 {
-    BaseCopyIn(process); 
+    BaseCopyIn(process);
     BaseCompute(r, c, rAlign, cAlign);
     BaseCopyOut(process);
 }
@@ -214,7 +219,8 @@ __aicore__ inline void KernelTransDataTo5HD<T>::BaseCopyIn(uint32_t process)
 }
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD<T>::BaseCompute(uint32_t r, uint32_t c, uint32_t rAlign, uint32_t cAlign) {
+__aicore__ inline void KernelTransDataTo5HD<T>::BaseCompute(uint32_t r, uint32_t c, uint32_t rAlign, uint32_t cAlign)
+{
     if (r >= c) {
         ComputeRConv(r, c, cAlign);
     } else {
@@ -243,9 +249,9 @@ __aicore__ inline void KernelTransDataTo5HD<T>::SetCopyInParams(uint32_t process
     }
 }
 
-
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD<T>::SetRCSplitCopyInParams(uint32_t process) {
+__aicore__ inline void KernelTransDataTo5HD<T>::SetRCSplitCopyInParams(uint32_t process)
+{
     if (blockIdx_ < fullCoreNum) {
         if (process < loopCount - 1) {
             Params.blockCount = tiling_->rUbSplitPara.MainCoreUbFactor;
@@ -271,22 +277,28 @@ __aicore__ inline void KernelTransDataTo5HD<T>::SetRCSplitCopyInParams(uint32_t 
 }
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD<T>::SetRSplitCopyInParams(uint32_t process) {
+__aicore__ inline void KernelTransDataTo5HD<T>::SetRSplitCopyInParams(uint32_t process)
+{
     if (tiling_->CLen % TRANSELEM == 0) {
         Params.blockCount = 1;
         Params.srcStride = 0;
         Params.dstStride = 0;
         if (blockIdx_ < fullCoreNum) {
             if (process < loopCount - 1) {
-                Params.blockLen = tiling_->rUbSplitPara.MainCoreUbFactor * tiling_->cUbSplitPara.MainCoreUbFactor * sizeof(T);
+                Params.blockLen = tiling_->rUbSplitPara.MainCoreUbFactor * tiling_->cUbSplitPara.MainCoreUbFactor *
+                                  sizeof(T);
             } else {
-                Params.blockLen = tiling_->rUbSplitPara.MainCoreTailUbFactor * tiling_->cUbSplitPara.MainCoreTailUbFactor * sizeof(T);
+                Params.blockLen = tiling_->rUbSplitPara.MainCoreTailUbFactor *
+                                  tiling_->cUbSplitPara.MainCoreTailUbFactor * sizeof(T);
             }
         } else {
             if (process < loopCount - 1) {
-                Params.blockLen = tiling_->rUbSplitPara.TailCoreUbFactor * tiling_->cUbSplitPara.TailCoreUbFactor * sizeof(T);
+                Params.blockLen = tiling_->rUbSplitPara.TailCoreUbFactor * tiling_->cUbSplitPara.TailCoreUbFactor *
+                                  sizeof(T);
             } else {
-                Params.blockLen = (tiling_->RLen - (blockIdx_ * tiling_->rSplitPara.BlockFactor + process * tiling_->rUbSplitPara.TailCoreUbFactor)) * tiling_->cUbSplitPara.TailCoreTailUbFactor * sizeof(T);
+                Params.blockLen = (tiling_->RLen - (blockIdx_ * tiling_->rSplitPara.BlockFactor +
+                                                    process * tiling_->rUbSplitPara.TailCoreUbFactor)) *
+                                  tiling_->cUbSplitPara.TailCoreTailUbFactor * sizeof(T);
             }
         }
     } else {
@@ -300,7 +312,8 @@ __aicore__ inline void KernelTransDataTo5HD<T>::SetRSplitCopyInParams(uint32_t p
             if (process < loopCount - 1) {
                 Params.blockCount = tiling_->rUbSplitPara.TailCoreUbFactor;
             } else {
-                Params.blockCount = tiling_->RLen - (blockIdx_ * tiling_->rSplitPara.BlockFactor + process * tiling_->rUbSplitPara.TailCoreUbFactor);
+                Params.blockCount = tiling_->RLen - (blockIdx_ * tiling_->rSplitPara.BlockFactor +
+                                                     process * tiling_->rUbSplitPara.TailCoreUbFactor);
             }
         }
         Params.blockLen = tiling_->CLen * sizeof(T);
@@ -310,7 +323,8 @@ __aicore__ inline void KernelTransDataTo5HD<T>::SetRSplitCopyInParams(uint32_t p
 }
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD<T>::SetCSplitCopyInParams(uint32_t process) {
+__aicore__ inline void KernelTransDataTo5HD<T>::SetCSplitCopyInParams(uint32_t process)
+{
     if (blockIdx_ < fullCoreNum) {
         if (process < loopCount - 1) {
             Params.blockCount = tiling_->RLen;
@@ -328,8 +342,12 @@ __aicore__ inline void KernelTransDataTo5HD<T>::SetCSplitCopyInParams(uint32_t p
             Params.srcStride = (tiling_->CLen - tiling_->cUbSplitPara.TailCoreUbFactor) * sizeof(T);
         } else {
             Params.blockCount = tiling_->RLen;
-            Params.blockLen = (tiling_->CLen - blockIdx_ * tiling_->cSplitPara.BlockFactor - process * tiling_->cUbSplitPara.TailCoreUbFactor) * sizeof(T);
-            Params.srcStride = (blockIdx_ * tiling_->cSplitPara.BlockFactor + process * tiling_->cUbSplitPara.TailCoreUbFactor) * sizeof(T);
+            Params.blockLen = (tiling_->CLen - blockIdx_ * tiling_->cSplitPara.BlockFactor -
+                               process * tiling_->cUbSplitPara.TailCoreUbFactor) *
+                              sizeof(T);
+            Params.srcStride = (blockIdx_ * tiling_->cSplitPara.BlockFactor +
+                                process * tiling_->cUbSplitPara.TailCoreUbFactor) *
+                               sizeof(T);
         }
     }
     Params.dstStride = 0;
@@ -348,7 +366,8 @@ __aicore__ inline void KernelTransDataTo5HD<T>::SetCopyOutParams(uint32_t proces
 }
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD<T>::SetRCSplitCopyOutParams(uint32_t process) {
+__aicore__ inline void KernelTransDataTo5HD<T>::SetRCSplitCopyOutParams(uint32_t process)
+{
     if (blockIdx_ < fullCoreNum) {
         if (process < loopCount - 1) {
             Params.blockCount = tiling_->cUbSplitPara.MainCoreUbFactor;
@@ -377,63 +396,85 @@ __aicore__ inline void KernelTransDataTo5HD<T>::SetRCSplitCopyOutParams(uint32_t
 }
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD<T>::SetRSplitCopyOutParams(uint32_t process) {
+__aicore__ inline void KernelTransDataTo5HD<T>::SetRSplitCopyOutParams(uint32_t process)
+{
     if (blockIdx_ < fullCoreNum) {
         if (process < loopCount - 1) {
             Params.blockCount = tiling_->CLen;
-            Params.blockLen =  tiling_->rUbSplitPara.MainCoreUbFactor * sizeof(T);
+            Params.blockLen = tiling_->rUbSplitPara.MainCoreUbFactor * sizeof(T);
             Params.srcStride = 0;
             Params.dstStride = (tiling_->RLen - tiling_->rUbSplitPara.MainCoreUbFactor) * sizeof(T);
         } else {
             Params.blockCount = tiling_->CLen;
-            Params.blockLen =  tiling_->rUbSplitPara.MainCoreTailUbFactor * sizeof(T);
+            Params.blockLen = tiling_->rUbSplitPara.MainCoreTailUbFactor * sizeof(T);
             Params.srcStride = 0;
             Params.dstStride = (tiling_->RLen - tiling_->rUbSplitPara.MainCoreTailUbFactor) * sizeof(T);
         }
     } else {
         if (process < loopCount - 1) {
             Params.blockCount = tiling_->CLen;
-            Params.blockLen =  tiling_->rUbSplitPara.TailCoreUbFactor * sizeof(T);
+            Params.blockLen = tiling_->rUbSplitPara.TailCoreUbFactor * sizeof(T);
             Params.srcStride = 0;
             Params.dstStride = (tiling_->RLen - tiling_->rUbSplitPara.TailCoreUbFactor) * sizeof(T);
         } else {
             Params.blockCount = tiling_->CLen;
-            Params.blockLen = (tiling_->RLen - blockIdx_ * tiling_->rSplitPara.BlockFactor - process * tiling_->rUbSplitPara.TailCoreUbFactor) * sizeof(T);
+            Params.blockLen = (tiling_->RLen - blockIdx_ * tiling_->rSplitPara.BlockFactor -
+                               process * tiling_->rUbSplitPara.TailCoreUbFactor) *
+                              sizeof(T);
             Params.srcStride = 0;
-            Params.dstStride = (blockIdx_ * tiling_->rSplitPara.BlockFactor + process * tiling_->rUbSplitPara.TailCoreUbFactor) * sizeof(T);
+            Params.dstStride = (blockIdx_ * tiling_->rSplitPara.BlockFactor +
+                                process * tiling_->rUbSplitPara.TailCoreUbFactor) *
+                               sizeof(T);
         }
     }
 }
 
 template <typename T>
-__aicore__ inline void KernelTransDataTo5HD<T>::SetCSplitCopyOutParams(uint32_t process) {
+__aicore__ inline void KernelTransDataTo5HD<T>::SetCSplitCopyOutParams(uint32_t process)
+{
     if (blockIdx_ < fullCoreNum) {
         if (process < loopCount - 1) {
             Params.blockCount = (tiling_->RLen % TRANSELEM == 0) ? 1 : tiling_->cUbSplitPara.MainCoreUbFactor;
-            Params.blockLen =  (tiling_->RLen % TRANSELEM == 0) ? tiling_->rUbSplitPara.MainCoreUbFactor * tiling_->cUbSplitPara.MainCoreUbFactor * sizeof(T) : tiling_->RLen * sizeof(T);
+            Params.blockLen = (tiling_->RLen % TRANSELEM == 0) ?
+                                  tiling_->rUbSplitPara.MainCoreUbFactor * tiling_->cUbSplitPara.MainCoreUbFactor *
+                                      sizeof(T) :
+                                  tiling_->RLen * sizeof(T);
             Params.srcStride = 0;
             Params.dstStride = 0;
         } else {
-            Params.blockCount = (tiling_->RLen % TRANSELEM == 0) ? 1 :tiling_->cUbSplitPara.MainCoreTailUbFactor;
-            Params.blockLen =  (tiling_->RLen % TRANSELEM == 0) ? tiling_->rUbSplitPara.MainCoreTailUbFactor * tiling_->cUbSplitPara.MainCoreTailUbFactor * sizeof(T) : \
-                                                    tiling_->RLen * sizeof(T);
+            Params.blockCount = (tiling_->RLen % TRANSELEM == 0) ? 1 : tiling_->cUbSplitPara.MainCoreTailUbFactor;
+            Params.blockLen = (tiling_->RLen % TRANSELEM == 0) ?
+                                  tiling_->rUbSplitPara.MainCoreTailUbFactor *
+                                      tiling_->cUbSplitPara.MainCoreTailUbFactor * sizeof(T) :
+                                  tiling_->RLen * sizeof(T);
             Params.srcStride = 0;
             Params.dstStride = 0;
         }
     } else {
         if (process < loopCount - 1) {
             Params.blockCount = (tiling_->RLen % TRANSELEM == 0) ? 1 : tiling_->cUbSplitPara.TailCoreUbFactor;
-            Params.blockLen =  (tiling_->RLen % TRANSELEM == 0) ? tiling_->rUbSplitPara.TailCoreUbFactor * tiling_->cUbSplitPara.TailCoreUbFactor * sizeof(T) : tiling_->RLen * sizeof(T);
+            Params.blockLen = (tiling_->RLen % TRANSELEM == 0) ?
+                                  tiling_->rUbSplitPara.TailCoreUbFactor * tiling_->cUbSplitPara.TailCoreUbFactor *
+                                      sizeof(T) :
+                                  tiling_->RLen * sizeof(T);
             Params.srcStride = 0;
             Params.dstStride = 0;
         } else {
-            Params.blockCount = (tiling_->RLen % TRANSELEM == 0) ? 1 : (tiling_->CLen - blockIdx_ * tiling_->cSplitPara.BlockFactor - process * tiling_->cUbSplitPara.TailCoreUbFactor);
-            Params.blockLen =  (tiling_->RLen % TRANSELEM == 0) ? tiling_->rUbSplitPara.TailCoreTailUbFactor * (tiling_->CLen - blockIdx_ * tiling_->cSplitPara.BlockFactor - process * tiling_->cUbSplitPara.TailCoreUbFactor ) * sizeof(T) : tiling_->RLen * sizeof(T);
+            Params.blockCount = (tiling_->RLen % TRANSELEM == 0) ?
+                                    1 :
+                                    (tiling_->CLen - blockIdx_ * tiling_->cSplitPara.BlockFactor -
+                                     process * tiling_->cUbSplitPara.TailCoreUbFactor);
+            Params.blockLen = (tiling_->RLen % TRANSELEM == 0) ?
+                                  tiling_->rUbSplitPara.TailCoreTailUbFactor *
+                                      (tiling_->CLen - blockIdx_ * tiling_->cSplitPara.BlockFactor -
+                                       process * tiling_->cUbSplitPara.TailCoreUbFactor) *
+                                      sizeof(T) :
+                                  tiling_->RLen * sizeof(T);
             Params.srcStride = 0;
             Params.dstStride = 0;
         }
     }
 }
 
-}
+} // namespace Transpose
 #endif

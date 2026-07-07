@@ -120,8 +120,8 @@ int32_t WriteDataToFile(const string& binFile, uint64_t dataSize, uint8_t* input
     return SUCCESS;
 }
 
-int CreateOppInGraph(
-    DataType inDtype, vector<Tensor>& input, vector<Operator>& inputs, vector<Operator>& outputs, Graph& graph)
+int CreateOppInGraph(DataType inDtype, vector<Tensor>& input, vector<Operator>& inputs, vector<Operator>& outputs,
+                     Graph& graph)
 {
     Status ret = SUCCESS;
 

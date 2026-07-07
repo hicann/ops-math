@@ -45,4 +45,4 @@ public:
 };
 
 OP_ADD(Rint);
-}  // namespace ops
+} // namespace ops

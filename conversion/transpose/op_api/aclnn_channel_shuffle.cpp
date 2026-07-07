@@ -58,9 +58,8 @@ static bool CheckAttrValid(const aclTensor* self, const int64_t groups)
 {
     // 检查groups值是否小于等于0
     if (groups <= 0) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Number of groups to divide channels in must be positive. Value of groups: %ld.",
-            groups);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "Number of groups to divide channels in must be positive. Value of groups: %ld.", groups);
         return false;
     }
 
@@ -68,9 +67,8 @@ static bool CheckAttrValid(const aclTensor* self, const int64_t groups)
     const auto& selfShape = self->GetViewShape();
     auto channels = selfShape.GetDim(SECOND_DIM);
     if (channels % groups != 0) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Number of channels must be divisible by groups.Got %ld channels and %ld groups.",
-            channels, groups);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "Number of channels must be divisible by groups.Got %ld channels and %ld groups.", channels, groups);
         return false;
     }
     return true;
@@ -101,8 +99,8 @@ static aclnnStatus CheckParams(const aclTensor* self, int64_t groups, aclTensor*
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ProcessChannelShuffle(
-    const aclTensor* self, const int64_t groups, aclTensor* out, aclOpExecutor* executor)
+static aclnnStatus ProcessChannelShuffle(const aclTensor* self, const int64_t groups, aclTensor* out,
+                                         aclOpExecutor* executor)
 {
     // 计算reshape的size
     const auto selfShape = self->GetViewShape();
@@ -153,8 +151,8 @@ static aclnnStatus ProcessChannelShuffle(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnChannelShuffleGetWorkspaceSize(
-    const aclTensor* self, int64_t groups, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnChannelShuffleGetWorkspaceSize(const aclTensor* self, int64_t groups, aclTensor* out,
+                                                uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnChannelShuffle, DFX_IN(self, groups), DFX_OUT(out));
     // 固定写法，创建OpExecutor

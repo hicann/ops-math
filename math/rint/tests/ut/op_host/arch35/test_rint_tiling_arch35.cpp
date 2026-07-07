@@ -24,104 +24,86 @@ using namespace std;
 using namespace ge;
 
 class RintTilingTest : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "RintTilingTest SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() { std::cout << "RintTilingTest SetUp" << std::endl; }
 
-  static void TearDownTestCase() {
-    std::cout << "RintTilingTest TearDown" << std::endl;
-  }
+    static void TearDownTestCase() { std::cout << "RintTilingTest TearDown" << std::endl; }
 };
 
-TEST_F(RintTilingTest, test_tiling_fp16_001) {
+TEST_F(RintTilingTest, test_tiling_fp16_001)
+{
     optiling::RintCompileInfo compileInfo = {64, 262144};
     gert::StorageShape shape = {{1, 64, 2, 64}, {1, 64, 2, 64}};
-    gert::TilingContextPara tilingContextPara(
-        "Rint",
-        {{ shape, ge::DT_FLOAT16, ge::FORMAT_ND }},
-        {{ shape, ge::DT_FLOAT16, ge::FORMAT_ND }},
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Rint", {{shape, ge::DT_FLOAT16, ge::FORMAT_ND}},
+                                              {{shape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 3;
-    std::vector<size_t> expectedWorkspaces = { 0 };
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
-TEST_F(RintTilingTest, test_tiling_bf16_002) {
+TEST_F(RintTilingTest, test_tiling_bf16_002)
+{
     optiling::RintCompileInfo compileInfo = {64, 262144};
     gert::StorageShape shape = {{1, 64, 2, 64}, {1, 64, 2, 64}};
-    gert::TilingContextPara tilingContextPara(
-        "Rint",
-        {{ shape, ge::DT_BF16, ge::FORMAT_ND }},
-        {{ shape, ge::DT_BF16, ge::FORMAT_ND }},
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Rint", {{shape, ge::DT_BF16, ge::FORMAT_ND}},
+                                              {{shape, ge::DT_BF16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 5;
-    std::vector<size_t> expectedWorkspaces = { 0 };
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
-TEST_F(RintTilingTest, test_tiling_fp32_003) {
+TEST_F(RintTilingTest, test_tiling_fp32_003)
+{
     optiling::RintCompileInfo compileInfo = {64, 262144};
     gert::StorageShape shape = {{1, 64, 2, 64}, {1, 64, 2, 64}};
-    gert::TilingContextPara tilingContextPara(
-        "Rint",
-        {{ shape, ge::DT_FLOAT, ge::FORMAT_ND }},
-        {{ shape, ge::DT_FLOAT, ge::FORMAT_ND }},
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Rint", {{shape, ge::DT_FLOAT, ge::FORMAT_ND}},
+                                              {{shape, ge::DT_FLOAT, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 7;
-    std::vector<size_t> expectedWorkspaces = { 0 };
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
-TEST_F(RintTilingTest, test_tiling_failed_dtype_input_output_diff_005) {
+TEST_F(RintTilingTest, test_tiling_failed_dtype_input_output_diff_005)
+{
     optiling::RintCompileInfo compileInfo = {64, 262144};
     gert::StorageShape shape = {{1, 64, 2, 64}, {1, 64, 2, 64}};
-    gert::TilingContextPara tilingContextPara(
-        "Rint",
-        {{ shape, ge::DT_FLOAT, ge::FORMAT_ND }},
-        {{ shape, ge::DT_BF16, ge::FORMAT_ND }},
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Rint", {{shape, ge::DT_FLOAT, ge::FORMAT_ND}},
+                                              {{shape, ge::DT_BF16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = { 0 };
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
-TEST_F(RintTilingTest, test_tiling_failed_shape_input_output_diff_007) {
+TEST_F(RintTilingTest, test_tiling_failed_shape_input_output_diff_007)
+{
     optiling::RintCompileInfo compileInfo = {64, 262144};
     gert::StorageShape inShape = {{1, 64, 2, 64}, {1, 64, 2, 64}};
     gert::StorageShape outShape = {{1, 64, 2, 32}, {1, 64, 2, 32}};
-    gert::TilingContextPara tilingContextPara(
-        "Rint",
-        {{ inShape, ge::DT_FLOAT, ge::FORMAT_ND }},
-        {{ outShape, ge::DT_FLOAT, ge::FORMAT_ND }},
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Rint", {{inShape, ge::DT_FLOAT, ge::FORMAT_ND}},
+                                              {{outShape, ge::DT_FLOAT, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = { 0 };
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
-TEST_F(RintTilingTest, test_tiling_failed_empty_tensor_008) {
+TEST_F(RintTilingTest, test_tiling_failed_empty_tensor_008)
+{
     optiling::RintCompileInfo compileInfo = {64, 262144};
     gert::StorageShape shape = {{1, 0, 2, 64}, {1, 0, 2, 64}};
-    gert::TilingContextPara tilingContextPara(
-        "Rint",
-        {{ shape, ge::DT_FLOAT, ge::FORMAT_ND }},
-        {{ shape, ge::DT_FLOAT, ge::FORMAT_ND }},
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Rint", {{shape, ge::DT_FLOAT, ge::FORMAT_ND}},
+                                              {{shape, ge::DT_FLOAT, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = { 0 };
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
-TEST_F(RintTilingTest, test_tiling_failed_unsupported_dtype_int32_009) {
+TEST_F(RintTilingTest, test_tiling_failed_unsupported_dtype_int32_009)
+{
     optiling::RintCompileInfo compileInfo = {64, 262144};
     gert::StorageShape shape = {{1, 64, 2, 64}, {1, 64, 2, 64}};
-    gert::TilingContextPara tilingContextPara(
-        "Rint",
-        {{ shape, ge::DT_INT32, ge::FORMAT_ND }},
-        {{ shape, ge::DT_INT32, ge::FORMAT_ND }},
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Rint", {{shape, ge::DT_INT32, ge::FORMAT_ND}},
+                                              {{shape, ge::DT_INT32, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = { 0 };
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }

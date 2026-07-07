@@ -21,8 +21,8 @@
 
 namespace PadV3Grad {
 
-constexpr uint32_t BUFFER_NUM = 2;                       ///< 队列 buffer 数量
-constexpr uint32_t VL_SIZE = Ops::Base::GetVRegSize();   ///< 向量寄存器大小（256B）
+constexpr uint32_t BUFFER_NUM = 2;                     ///< 队列 buffer 数量
+constexpr uint32_t VL_SIZE = Ops::Base::GetVRegSize(); ///< 向量寄存器大小（256B）
 constexpr uint32_t UB_BLOCK = Ops::Base::GetUbBlockSize();
 
 constexpr static int64_t CONST2 = 2;
@@ -30,15 +30,15 @@ constexpr static int64_t CONST3 = 3;
 constexpr static int64_t CONST4 = 4;
 constexpr static int32_t CONST5 = 5;
 
-using PromoteDataT = float;            ///< 计算过程使用 float32，避免精度损失
+using PromoteDataT = float; ///< 计算过程使用 float32，避免精度损失
 
 constexpr static AscendC::MicroAPI::CastTrait CAST_TRAIT_0 = {
-    AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::UNKNOWN,
-    AscendC::MicroAPI::MaskMergeMode::ZEROING, AscendC::RoundMode::UNKNOWN};
+    AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::UNKNOWN, AscendC::MicroAPI::MaskMergeMode::ZEROING,
+    AscendC::RoundMode::UNKNOWN};
 
 constexpr static AscendC::MicroAPI::CastTrait CAST_TRAIT_1 = {
-    AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::SAT,
-    AscendC::MicroAPI::MaskMergeMode::ZEROING, AscendC::RoundMode::CAST_RINT};
+    AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::SAT, AscendC::MicroAPI::MaskMergeMode::ZEROING,
+    AscendC::RoundMode::CAST_RINT};
 
 } // namespace PadV3Grad
 

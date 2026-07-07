@@ -31,9 +31,8 @@ static constexpr int64_t UNKNOWN_DIM_VALUE_ = -1L;
 
 namespace ops {
 template <typename T>
-static ge::graphStatus PadV3Infershape(
-    const gert::InferShapeContext* context, const gert::Shape* x_shape, const gert::Tensor* paddings_tensor,
-    gert::Shape* y_shape)
+static ge::graphStatus PadV3Infershape(const gert::InferShapeContext* context, const gert::Shape* x_shape,
+                                       const gert::Tensor* paddings_tensor, gert::Shape* y_shape)
 {
     const T* paddings_value = paddings_tensor->GetData<T>();
     const size_t paddings_num = static_cast<size_t>(paddings_tensor->GetShapeSize());
@@ -45,14 +44,13 @@ static ge::graphStatus PadV3Infershape(
     OP_LOGD(context->GetNodeName(), "input x = %s", Ops::Base::ToString(*x_shape).c_str());
     // input shape check
     size_t input_dim_size = x_shape->GetDimNum();
-    OP_CHECK_IF(
-        input_dim_size == 0, OP_LOGE(context->GetNodeName(), "input shape cannot empty"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(input_dim_size == 0, OP_LOGE(context->GetNodeName(), "input shape cannot empty"),
+                return ge::GRAPH_FAILED);
     // pad size check
     if (input_dim_size * PAIR != paddings_num) {
-        OP_LOGE(
-            context->GetNodeName(),
-            "the paddings num must be twice of the input x rank. but paddings num is %zu, input x rank is %zu",
-            paddings_num, input_dim_size);
+        OP_LOGE(context->GetNodeName(),
+                "the paddings num must be twice of the input x rank. but paddings num is %zu, input x rank is %zu",
+                paddings_num, input_dim_size);
         return ge::GRAPH_FAILED;
     }
     // infer by paddings_contiguous
@@ -67,14 +65,14 @@ static ge::graphStatus PadV3Infershape(
         auto pad_front = paddings_value[index_cof * i];
         auto pad_end = paddings_value[index_cof * i + index_offset];
 
-        int64_t dim_value =
-            x_shape->GetDim(i) == UNKNOWN_DIM_VALUE_ ? UNKNOWN_DIM_VALUE_ : (x_shape->GetDim(i) + pad_front + pad_end);
+        int64_t dim_value = x_shape->GetDim(i) == UNKNOWN_DIM_VALUE_ ? UNKNOWN_DIM_VALUE_ :
+                                                                       (x_shape->GetDim(i) + pad_front + pad_end);
         if (x_shape->GetDim(i) != UNKNOWN_DIM_VALUE_ && dim_value < 0) {
-            OP_LOGE(
-                context->GetNodeName(),
-                "The output shape at index %zu is %ld, but output shape CANNOT contain negative values. x_shape at "
-                "index %zu: %ld, corresponding pad_front: %ld, corresponding pad_end: %ld.",
-                i, dim_value, i, x_shape->GetDim(i), static_cast<int64_t>(pad_front), static_cast<int64_t>(pad_end));
+            OP_LOGE(context->GetNodeName(),
+                    "The output shape at index %zu is %ld, but output shape CANNOT contain negative values. x_shape at "
+                    "index %zu: %ld, corresponding pad_front: %ld, corresponding pad_end: %ld.",
+                    i, dim_value, i, x_shape->GetDim(i), static_cast<int64_t>(pad_front),
+                    static_cast<int64_t>(pad_end));
             return ge::GRAPH_FAILED;
         }
         y_shape->SetDim(i, dim_value);
@@ -84,9 +82,10 @@ static ge::graphStatus PadV3Infershape(
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus PadV3InferShapeWithPaddingsValues(
-    const gert::InferShapeContext* context, const gert::Shape* x_shape, const gert::ContinuousVector* padding_attr,
-    gert::Shape* y_shape)
+static ge::graphStatus PadV3InferShapeWithPaddingsValues(const gert::InferShapeContext* context,
+                                                         const gert::Shape* x_shape,
+                                                         const gert::ContinuousVector* padding_attr,
+                                                         gert::Shape* y_shape)
 {
     const int64_t* paddings_value = static_cast<const int64_t*>(padding_attr->GetData());
     OP_CHECK_NULL_WITH_CONTEXT(context, paddings_value);
@@ -99,10 +98,9 @@ static ge::graphStatus PadV3InferShapeWithPaddingsValues(
     OP_LOGD(context->GetNodeName(), "input x = %s", Ops::Base::ToString(*x_shape).c_str());
     // input shape check
     size_t input_dim_size = x_shape->GetDimNum();
-    OP_CHECK_IF(
-        input_dim_size == 0,
-        OP_LOGE(context->GetNodeName(), "PadV3InferShapeWithPaddingsValues input shape cannot empty"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(input_dim_size == 0,
+                OP_LOGE(context->GetNodeName(), "PadV3InferShapeWithPaddingsValues input shape cannot empty"),
+                return ge::GRAPH_FAILED);
     // pad size check
     if (input_dim_size * PAIR != paddings_num) {
         OP_LOGE(
@@ -127,12 +125,11 @@ static ge::graphStatus PadV3InferShapeWithPaddingsValues(
                                 UNKNOWN_DIM_VALUE_ :
                                 (x_shape->GetDim(i) + pad_front_paddings + pad_end_paddings);
         if (x_shape->GetDim(i) != UNKNOWN_DIM_VALUE_ && dim_value < 0) {
-            OP_LOGE(
-                context->GetNodeName(),
-                "The output shape at index %zu is %ld, but output shape CANNOT contain negative values. x_shape at "
-                "index %zu: %ld, corresponding pad_front: %ld, corresponding pad_end: %ld.",
-                i, dim_value, i, x_shape->GetDim(i), static_cast<int64_t>(pad_front_paddings),
-                static_cast<int64_t>(pad_end_paddings));
+            OP_LOGE(context->GetNodeName(),
+                    "The output shape at index %zu is %ld, but output shape CANNOT contain negative values. x_shape at "
+                    "index %zu: %ld, corresponding pad_front: %ld, corresponding pad_end: %ld.",
+                    i, dim_value, i, x_shape->GetDim(i), static_cast<int64_t>(pad_front_paddings),
+                    static_cast<int64_t>(pad_end_paddings));
             return ge::GRAPH_FAILED;
         }
         y_shape->SetDim(i, dim_value);
@@ -171,8 +168,8 @@ static ge::graphStatus InferShape4PadV3(gert::InferShapeContext* context)
     if (paddings_tensor == nullptr) {
         auto attrs = context->GetAttrs();
         OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
-        const gert::ContinuousVector* padding_attr =
-            attrs->GetAttrPointer<gert::ContinuousVector>(INDEX_PADDINGS_VALUES);
+        const gert::ContinuousVector* padding_attr = attrs->GetAttrPointer<gert::ContinuousVector>(
+            INDEX_PADDINGS_VALUES);
         OP_CHECK_NULL_WITH_CONTEXT(context, padding_attr);
         return PadV3InferShapeWithPaddingsValues(context, x_shape, padding_attr, y_shape);
     }
@@ -190,8 +187,8 @@ static ge::graphStatus InferShape4PadV3(gert::InferShapeContext* context)
             return PadV3Infershape<int64_t>(context, x_shape, paddings_tensor, y_shape);
         }
         default:
-            OP_LOGE_FOR_INVALID_DTYPE(
-                context->GetNodeName(), "paddings", Ops::Base::ToString(paddings_dtype).c_str(), "int32 or int64");
+            OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "paddings", Ops::Base::ToString(paddings_dtype).c_str(),
+                                      "int32 or int64");
             return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_FAILED;

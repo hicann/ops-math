@@ -44,8 +44,7 @@ namespace ops {
 // Weak declare aclsysGetVersionNum to avoid hard link dependency on libascendcl.
 // At runtime: if GE >= 9.0.0, symbol resolves normally; if GE 8.5.0, pointer is NULL.
 extern "C" {
-__attribute__((weak))
-int32_t aclsysGetVersionNum(char* pkgName, int32_t* versionNum);
+__attribute__((weak)) int32_t aclsysGetVersionNum(char* pkgName, int32_t* versionNum);
 }
 
 const std::string kFusionPassName = "PermuteFusionPass";
@@ -62,20 +61,20 @@ CustomPassStage GetPermutePassStage()
     if (version >= GE_COMPILER_VERSION_900) {
         return CustomPassStage::kCompatibleInherited;
     }
-    return CustomPassStage::kBeforeInferShape;  // fallback to old stage for 8.5.0
+    return CustomPassStage::kBeforeInferShape; // fallback to old stage for 8.5.0
 }
-}  // anonymous namespace
+} // anonymous namespace
 
 // Platforms that use TransposeD (perm as attr); all others use Transpose (perm as input)
-const std::set<std::string> kTransposeDPlatformList = {
-    "Ascend310B", "Ascend310P", "Ascend910", "Ascend910B", "Ascend910_93"};
+const std::set<std::string> kTransposeDPlatformList = {"Ascend310B", "Ascend310P", "Ascend910", "Ascend910B",
+                                                       "Ascend910_93"};
 
 static bool IsTransposeDPlatform()
 {
     PlatformInfo platformInfo;
     OptionalInfo optionalInfo;
-    if (unlikely(
-            PlatformInfoManager::Instance().GetPlatformInfoWithOutSocVersion(platformInfo, optionalInfo) != SUCCESS)) {
+    if (unlikely(PlatformInfoManager::Instance().GetPlatformInfoWithOutSocVersion(platformInfo, optionalInfo) !=
+                 SUCCESS)) {
         OP_LOGE(kFusionPassName.c_str(), "Get platform_info failed.");
         return false;
     }
@@ -114,9 +113,8 @@ static TensorDesc ResolveSubgraphInputTensorDesc(const SubgraphInput& subgraphIn
     return tensorDesc;
 }
 
-static void GetInputsInfo(
-    const std::vector<SubgraphInput>& subgraphInputs, std::vector<Shape>& inputShapes,
-    std::vector<DataType>& inputDtypes, std::vector<Format>& inputFormats)
+static void GetInputsInfo(const std::vector<SubgraphInput>& subgraphInputs, std::vector<Shape>& inputShapes,
+                          std::vector<DataType>& inputDtypes, std::vector<Format>& inputFormats)
 {
     for (const auto& subgraphInput : subgraphInputs) {
         TensorDesc tensorDesc = ResolveSubgraphInputTensorDesc(subgraphInput);
@@ -139,20 +137,20 @@ static Status InferShape(const GraphUniqPtr& replaceGraph, const std::vector<Sub
 
 // Helper to build TransposeD using CompliantNodeBuilder (for 310B/310P/910/910B/910_93 platforms)
 // Returns the output EsTensorHolder, or empty if failed.
-static es::EsTensorHolder BuildTransposeDNode(
-    es::EsGraphBuilder& replaceGraphBuilder, GNode inputNode, int32_t inputIndex, const std::vector<int64_t>& permAttr)
+static es::EsTensorHolder BuildTransposeDNode(es::EsGraphBuilder& replaceGraphBuilder, GNode inputNode,
+                                              int32_t inputIndex, const std::vector<int64_t>& permAttr)
 {
     auto* graph = replaceGraphBuilder.GetCGraphBuilder()->GetGraph();
 
-    auto transposeDNode =
-        es::CompliantNodeBuilder(graph)
-            .OpType("TransposeD")
-            .IrDefInputs({{"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""}})
-            .IrDefOutputs({{"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""}})
-            .IrDefAttrs({
-                {"perm", es::CompliantNodeBuilder::kEsAttrRequired, "ListInt", es::CreateFrom(permAttr)},
-            })
-            .Build();
+    auto transposeDNode = es::CompliantNodeBuilder(graph)
+                              .OpType("TransposeD")
+                              .IrDefInputs({{"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""}})
+                              .IrDefOutputs({{"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""}})
+                              .IrDefAttrs({
+                                  {"perm", es::CompliantNodeBuilder::kEsAttrRequired, "ListInt",
+                                   es::CreateFrom(permAttr)},
+                              })
+                              .Build();
     // Connect input
     if (es::AddEdgeAndUpdatePeerDesc(*graph, inputNode, inputIndex, transposeDNode, 0) != GRAPH_SUCCESS) {
         OP_LOGE(kFusionPassName.c_str(), "Failed to add edge for TransposeD input.");
@@ -165,14 +163,14 @@ static es::EsTensorHolder BuildTransposeDNode(
 
 // Helper to build Transpose using CompliantNodeBuilder (for Ascend950 and newer platforms)
 // Returns the output EsTensorHolder, or empty if failed.
-static es::EsTensorHolder BuildTransposeNode(
-    es::EsGraphBuilder& replaceGraphBuilder, GNode inputNode, int32_t inputIndex, const std::vector<int64_t>& permAttr)
+static es::EsTensorHolder BuildTransposeNode(es::EsGraphBuilder& replaceGraphBuilder, GNode inputNode,
+                                             int32_t inputIndex, const std::vector<int64_t>& permAttr)
 {
     auto* graph = replaceGraphBuilder.GetCGraphBuilder()->GetGraph();
 
     // Create perm Const node
-    auto permConst =
-        replaceGraphBuilder.CreateConst(permAttr, std::vector<int64_t>{static_cast<int64_t>(permAttr.size())});
+    auto permConst = replaceGraphBuilder.CreateConst(permAttr,
+                                                     std::vector<int64_t>{static_cast<int64_t>(permAttr.size())});
 
     auto transposeNode = es::CompliantNodeBuilder(graph)
                              .OpType("Transpose")
@@ -189,8 +187,8 @@ static es::EsTensorHolder BuildTransposeNode(
     }
 
     // Connect perm input
-    if (es::AddEdgeAndUpdatePeerDesc(
-            *graph, *permConst.GetProducer(), permConst.GetProducerOutIndex(), transposeNode, 1) != GRAPH_SUCCESS) {
+    if (es::AddEdgeAndUpdatePeerDesc(*graph, *permConst.GetProducer(), permConst.GetProducerOutIndex(), transposeNode,
+                                     1) != GRAPH_SUCCESS) {
         OP_LOGE(kFusionPassName.c_str(), "Failed to add edge for Transpose perm input.");
         return es::EsTensorHolder();
     }
@@ -343,6 +341,6 @@ GraphUniqPtr PermuteFusionPass::Replacement(const std::unique_ptr<MatchResult>& 
 
 REG_FUSION_PASS(PermuteFusionPass).Stage(GetPermutePassStage());
 
-#endif  // GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
+#endif // GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
 
 } // namespace ops

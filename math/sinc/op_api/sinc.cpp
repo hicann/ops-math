@@ -35,8 +35,8 @@ inline static const aclTensor* SincAiCore(const aclTensor* self, aclTensor* sinc
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore Sin算子加入任务队列
     // Sinc是算子的OpType，self是算子的输入，sincOut是算子的输出
     auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(Sinc, OP_INPUT(self), OP_OUTPUT(sincOut));
-    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
-        retAicore != ACLNN_SUCCESS, return nullptr, "Sinc ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
+                                         "Sinc ADD_TO_LAUNCHER_LIST_AICORE failed.");
     return sincOut;
 }
 

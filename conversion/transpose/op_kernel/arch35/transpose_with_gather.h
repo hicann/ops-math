@@ -87,8 +87,8 @@ private:
 
     using RangeType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>;
     using IdxType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>;
-    using CastType_ =
-        std::conditional_t<sizeof(T) == 1, std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
+    using CastType_ = std::conditional_t<sizeof(T) == 1,
+                                         std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
     uint32_t vlSize_ = static_cast<uint32_t>(Ops::Base::GetVRegSize() / sizeof(CastType_));
     uint32_t idxVLSize_ = static_cast<uint32_t>(Ops::Base::GetVRegSize() / sizeof(RangeType_));
     LocalTensor<RangeType_> idxLocal_;
@@ -111,8 +111,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void TransposeWithGather<T>::Init(
-    GM_ADDR x, GM_ADDR y, const GatherTransposeTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void TransposeWithGather<T>::Init(GM_ADDR x, GM_ADDR y, const GatherTransposeTilingData* tilingData,
+                                                    TPipe* pipe)
 {
     blockIdx_ = GetBlockIdx();
     td_ = tilingData;
@@ -298,9 +298,8 @@ __aicore__ inline void TransposeWithGather<T>::GatherData()
                         RangeType_ axis0Update = static_cast<RangeType_>(axis0Idx * outUbAxis0InROffset_);
                         RangeType_ idxUpdate = axis2Update + axis1Update + axis0Update;
                         MicroAPI::Adds(idxReg, idxOriReg, idxUpdate, maskIdx);
-                        DataCopyGather(
-                            (MicroAPI::RegTensor<CastType_>&)xReg, xInAddr, (MicroAPI::RegTensor<IdxType_>&)idxReg,
-                            mask);
+                        DataCopyGather((MicroAPI::RegTensor<CastType_>&)xReg, xInAddr,
+                                       (MicroAPI::RegTensor<IdxType_>&)idxReg, mask);
                         if constexpr (sizeof(T) != sizeof(int8_t)) {
                             MicroAPI::DataCopy(xOutAddr + outIdx * outLenAlign + lpIdx * vlSize_, xReg, mask);
                         } else {
@@ -616,8 +615,8 @@ __aicore__ inline void TransposeWithGather<T>::SetCopyInParams()
     lpModeInParams_.loop2Size = inUbAxis2;
     lpModeInParams_.loop1SrcStride = td_->axis1InSrcStride * sizeof(T);
     lpModeInParams_.loop2SrcStride = td_->axis2InSrcStride * sizeof(T);
-    lpModeInParams_.loop1DstStride =
-        Ops::Base::CeilAlign(static_cast<int64_t>(copyInParams_.blockCount * copyInParams_.blockLen), BLOCK_SIZE_BYTE);
+    lpModeInParams_.loop1DstStride = Ops::Base::CeilAlign(
+        static_cast<int64_t>(copyInParams_.blockCount * copyInParams_.blockLen), BLOCK_SIZE_BYTE);
     lpModeInParams_.loop2DstStride = lpModeInParams_.loop1Size * lpModeInParams_.loop1DstStride;
 }
 

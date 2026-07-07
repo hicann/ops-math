@@ -42,35 +42,35 @@ using std::map;
 using std::string;
 using std::vector;
 
-#define ADD_INPUT(intputIndex, intputName, intputDtype, inputShape)                                                 \
-    do {                                                                                                            \
-        vector<int64_t> placeholder##intputIndex##_shape = inputShape;                                              \
-        auto placeholder##intputIndex = op::Data("placeholder" + intputIndex).set_attr_index(0);                    \
-        TensorDesc placeholder##intputIndex##_desc =                                                                \
-            TensorDesc(ge::Shape(placeholder##intputIndex##_shape), FORMAT_NHWC, intputDtype);                      \
-        placeholder##intputIndex##_desc.SetPlacement(ge::kPlacementHost);                                           \
-        placeholder##intputIndex##_desc.SetFormat(FORMAT_NHWC);                                                     \
-        Tensor tensor_placeholder##intputIndex;                                                                     \
-        ret = GenOnesDataFloat32(                                                                                   \
-            placeholder##intputIndex##_shape, tensor_placeholder##intputIndex, placeholder##intputIndex##_desc, 2); \
-        if (ret != SUCCESS) {                                                                                       \
-            printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                          \
-            return FAILED;                                                                                          \
-        }                                                                                                           \
-        placeholder##intputIndex.update_input_desc_x(placeholder##intputIndex##_desc);                              \
-        placeholder##intputIndex.update_output_desc_y(placeholder##intputIndex##_desc);                             \
-        input.push_back(tensor_placeholder##intputIndex);                                                           \
-        graph.AddOp(placeholder##intputIndex);                                                                      \
-        spaceToDepth1.set_input_##intputName(placeholder##intputIndex);                                             \
-        inputs.push_back(placeholder##intputIndex);                                                                 \
+#define ADD_INPUT(intputIndex, intputName, intputDtype, inputShape)                                          \
+    do {                                                                                                     \
+        vector<int64_t> placeholder##intputIndex##_shape = inputShape;                                       \
+        auto placeholder##intputIndex = op::Data("placeholder" + intputIndex).set_attr_index(0);             \
+        TensorDesc placeholder##intputIndex##_desc = TensorDesc(ge::Shape(placeholder##intputIndex##_shape), \
+                                                                FORMAT_NHWC, intputDtype);                   \
+        placeholder##intputIndex##_desc.SetPlacement(ge::kPlacementHost);                                    \
+        placeholder##intputIndex##_desc.SetFormat(FORMAT_NHWC);                                              \
+        Tensor tensor_placeholder##intputIndex;                                                              \
+        ret = GenOnesDataFloat32(placeholder##intputIndex##_shape, tensor_placeholder##intputIndex,          \
+                                 placeholder##intputIndex##_desc, 2);                                        \
+        if (ret != SUCCESS) {                                                                                \
+            printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                   \
+            return FAILED;                                                                                   \
+        }                                                                                                    \
+        placeholder##intputIndex.update_input_desc_x(placeholder##intputIndex##_desc);                       \
+        placeholder##intputIndex.update_output_desc_y(placeholder##intputIndex##_desc);                      \
+        input.push_back(tensor_placeholder##intputIndex);                                                    \
+        graph.AddOp(placeholder##intputIndex);                                                               \
+        spaceToDepth1.set_input_##intputName(placeholder##intputIndex);                                      \
+        inputs.push_back(placeholder##intputIndex);                                                          \
     } while (0)
 
-#define ADD_INPUT_ATTR(attrName, attrValue)          \
-    do {                                             \
+#define ADD_INPUT_ATTR(attrName, attrValue)           \
+    do {                                              \
         spaceToDepth1.set_attr_##attrName(attrValue); \
     } while (0)
 
-#define ADD_OUTPUT(outputIndex, outputName, outputDtype, outputShape)                                           \
+#define ADD_OUTPUT(outputIndex, outputName, outputDtype, outputShape)                                         \
     TensorDesc outputName##outputIndex##_desc = TensorDesc(ge::Shape(outputShape), FORMAT_NHWC, outputDtype); \
     spaceToDepth1.update_output_desc_##outputName(outputName##outputIndex##_desc);
 
@@ -175,31 +175,30 @@ void SaveInputOutput(std::vector<ge::Tensor>& input, std::vector<ge::Tensor>& ou
     }
 }
 
-int CreateOppInGraph(
-    DataType inDtype, std::vector<ge::Tensor>& input, std::vector<Operator>& inputs, std::vector<Operator>& outputs,
-    Graph& graph)
+int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor>& input, std::vector<Operator>& inputs,
+                     std::vector<Operator>& outputs, Graph& graph)
 {
     Status ret = SUCCESS;
     // 自定义代码：添加单算子定义到图中
     auto spaceToDepth1 = op::SpaceToDepth("spaceToDepth1");
-    
+
     // 输入形状：NHWC format
     // N: batch size, H: height, W: width, C: channels
-    std::vector<int64_t> xShape = {1, 4, 4, 1};  // NHWC: [batch, height, width, channels]
-    
+    std::vector<int64_t> xShape = {1, 4, 4, 1}; // NHWC: [batch, height, width, channels]
+
     // 输出形状：NHWC format
     // block_size = 2
     // new_height = height / block_size = 4 / 2 = 2
     // new_width = width / block_size = 4 / 2 = 2
     // new_channels = channels * block_size * block_size = 1 * 2 * 2 = 4
-    std::vector<int64_t> yShape = {1, 2, 2, 4};  // NHWC: [batch, new_height, new_width, new_channels]
+    std::vector<int64_t> yShape = {1, 2, 2, 4}; // NHWC: [batch, new_height, new_width, new_channels]
 
     ADD_INPUT(1, x, inDtype, xShape);
 
     // 设置属性
     // block_size: 必需属性，指定块大小
     ADD_INPUT_ATTR(block_size, 2);
-    
+
     // data_format: 可选属性，指定数据格式，默认为 "NHWC"
     ADD_INPUT_ATTR(data_format, "NHWC");
 

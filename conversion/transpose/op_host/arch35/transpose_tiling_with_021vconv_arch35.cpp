@@ -29,8 +29,8 @@ void Transpose021VCONVTiling::CalcBasicInfo()
                            (shapeInfo_.eleLenInBytes == B32_BYTES) ? BLOCKELEM_32BIT :
                                                                      BLOCKELEM_16BIT;
     basicInfo_.UseRConv = basicInfo_.HLen >= basicInfo_.WLen;
-    basicInfo_.UseHSplit =
-        basicInfo_.NLen < DIM_FIVE && !basicInfo_.UseRConv && basicInfo_.HLen >= basicInfo_.NLen * TRANSELEM;
+    basicInfo_.UseHSplit = basicInfo_.NLen < DIM_FIVE && !basicInfo_.UseRConv &&
+                           basicInfo_.HLen >= basicInfo_.NLen * TRANSELEM;
     if (basicInfo_.UseRConv) {
         int64_t hAlignUnit = (shapeInfo_.eleLenInBytes == 1) ? basicInfo_.BlockElem : TRANSELEM;
         int64_t hAlignBlock = Ops::Base::CeilDiv(basicInfo_.HLen, hAlignUnit);
@@ -267,9 +267,8 @@ void Transpose021VCONVTiling::WriteTilingData()
 ge::graphStatus Transpose021VCONVTiling::SetTilingKeyAndCore()
 {
     context_->SetTilingKey(static_cast<uint64_t>(SplitMode::VCONV_021_TRANSPOSE));
-    OP_CHECK_IF(
-        context_->SetBlockDim(basicInfo_.UsedCoreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "Set used core num is failed!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(context_->SetBlockDim(basicInfo_.UsedCoreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "Set used core num is failed!"), return ge::GRAPH_FAILED);
 
     size_t* workspaces = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, workspaces);
@@ -291,9 +290,9 @@ ge::graphStatus Transpose021VCONVTiling::DoTiling()
     } else {
         CalcNSplitInfo();
     }
-    OP_CHECK_IF(
-        CalcUbSplitInfo() != ge::GRAPH_SUCCESS,
-        OP_LOGD(context_->GetNodeName(), "Stop to run 021 VCONV tiling, UB split failed!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcUbSplitInfo() != ge::GRAPH_SUCCESS,
+                OP_LOGD(context_->GetNodeName(), "Stop to run 021 VCONV tiling, UB split failed!"),
+                return ge::GRAPH_FAILED);
 
     WriteTilingData();
     return SetTilingKeyAndCore();

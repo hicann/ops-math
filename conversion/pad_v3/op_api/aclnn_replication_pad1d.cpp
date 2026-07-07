@@ -30,14 +30,13 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* padding, const 
     OP_CHECK_MAX_DIM(self, 3, return false);
 
     // self, out维度需要一致
-    OP_CHECK(
-        selfDimnum == out->GetViewShape().GetDimNum(),
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self, out dim should be same."), return false);
+    OP_CHECK(selfDimnum == out->GetViewShape().GetDimNum(),
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self, out dim should be same."), return false);
 
     // padding长度为2
-    OP_CHECK(
-        padding->Size() == 2,
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding length should be 2, but got %lu.", padding->Size()), return false);
+    OP_CHECK(padding->Size() == 2,
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding length should be 2, but got %lu.", padding->Size()),
+             return false);
 
     op::Shape expectShape;
     expectShape.SetDimNum(selfDimnum);
@@ -87,8 +86,8 @@ inline static aclnnStatus InputPreprocess(const aclTensor*& self, int64_t dimCp,
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnReplicationPad1dGetWorkspaceSize(const aclTensor* self, 
-    const aclIntArray* padding, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnReplicationPad1dGetWorkspaceSize(const aclTensor* self, const aclIntArray* padding, aclTensor* out,
+                                                  uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
@@ -106,14 +105,16 @@ aclnnStatus aclnnReplicationPad1dGetWorkspaceSize(const aclTensor* self,
         *workspaceSize = 0UL;
         // 2 is dim num
         if (self->GetViewShape().GetDimNum() == 2) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expected 2D or 3D tensor with possibly 0 batch size and other non-zero dimentions for input.");
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "Expected 2D or 3D tensor with possibly 0 batch size and other non-zero dimentions for input.");
             return ACLNN_ERR_PARAM_INVALID;
         }
         // 3 is dim num
         if (self->GetViewShape().GetDimNum() == 3) {
             // 1, 2 are indexes
             if (self->GetViewShape().GetDim(1) == 0 || self->GetViewShape().GetDim(2) == 0) {
-                OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expected 2D or 3D tensor with possibly 0 batch size and other non-zero dimentions for input.");
+                OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                        "Expected 2D or 3D tensor with possibly 0 batch size and other non-zero dimentions for input.");
                 return ACLNN_ERR_PARAM_INVALID;
             }
         }
@@ -136,7 +137,8 @@ aclnnStatus aclnnReplicationPad1dGetWorkspaceSize(const aclTensor* self,
         aclScalar* constantValueScalar = (uniqueExecutor.get())->AllocScalar(0);
         CHECK_RET(constantValueScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto constantValueTensor = (uniqueExecutor.get())->ConvertToTensor(constantValueScalar, self->GetDataType());
-        pad1dResult = l0op::PadV3(self, paddingsTensor, constantValueTensor, REPLICATION_MODE, true, uniqueExecutor.get());
+        pad1dResult = l0op::PadV3(self, paddingsTensor, constantValueTensor, REPLICATION_MODE, true,
+                                  uniqueExecutor.get());
     }
     CHECK_RET(pad1dResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
     // 2 is dim num

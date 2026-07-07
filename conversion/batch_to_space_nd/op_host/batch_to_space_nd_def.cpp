@@ -21,8 +21,8 @@ static constexpr std::array VALUE_DATA_TYPE_ALL{
 // 索引类型 data type 所有取值
 static constexpr std::array INDEX_DATA_TYPE_ALL{ge::DT_INT32, ge::DT_INT64};
 // 所有组合数量
-static constexpr size_t DATA_TYPE_COMBINE_COUNT =
-    VALUE_DATA_TYPE_ALL.size() * INDEX_DATA_TYPE_ALL.size() * INDEX_DATA_TYPE_ALL.size();
+static constexpr size_t DATA_TYPE_COMBINE_COUNT = VALUE_DATA_TYPE_ALL.size() * INDEX_DATA_TYPE_ALL.size() *
+                                                  INDEX_DATA_TYPE_ALL.size();
 // 计算各输入的 data type 组合
 static constexpr std::array<std::array<ge::DataType, DATA_TYPE_COMBINE_COUNT>, 3> CombineDataTypes()
 {

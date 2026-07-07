@@ -42,11 +42,11 @@ ge::graphStatus RintTiling::CalcInputDtype()
     auto inputDesc = tilingContext->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
     this->inputDtype = inputDesc->GetDataType();
-    OP_CHECK_IF(
-        !IsSupportedDtype(this->inputDtype),
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "x",
-            ToString(this->inputDtype).c_str(), "The dtype of x must be within the range DT_FLOAT16, DT_BF16 and DT_FLOAT"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(!IsSupportedDtype(this->inputDtype),
+                OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+                    tilingContext->GetNodeName(), "x", ToString(this->inputDtype).c_str(),
+                    "The dtype of x must be within the range DT_FLOAT16, DT_BF16 and DT_FLOAT"),
+                return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -58,12 +58,10 @@ ge::graphStatus RintTiling::CalcOutputDtype()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
     std::string errorMsg = "The dtype of y must be the same as " + ToString(this->inputDtype) + " of x";
-    OP_CHECK_IF(
-        this->outputDtype != this->inputDtype,
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "y",
-            ToString(this->outputDtype).c_str(),
-            errorMsg.c_str()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(this->outputDtype != this->inputDtype,
+                OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "y",
+                                                      ToString(this->outputDtype).c_str(), errorMsg.c_str()),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -78,12 +76,10 @@ ge::graphStatus RintTiling::CheckShape()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
     const gert::Shape& outputYShape = EnsureNotScalar(outputStorageShape->GetStorageShape());
 
-    OP_CHECK_IF(
-        inputXShape != outputYShape,
-        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(tilingContext->GetNodeName(), "y",
-            ToString(outputYShape).c_str(),
-            "The shape of y must be equal to the shape of x"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputXShape != outputYShape,
+                OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(tilingContext->GetNodeName(), "y", ToString(outputYShape).c_str(),
+                                                      "The shape of y must be equal to the shape of x"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -92,7 +88,8 @@ ge::graphStatus RintTiling::RunTiling()
     OP_LOGD(tilingContext->GetNodeName(), "RintTiling RunTiling enter.");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
 
-    if (CalcInputDtype() == ge::GRAPH_FAILED || CalcOutputDtype() == ge::GRAPH_FAILED || CheckShape() == ge::GRAPH_FAILED) {
+    if (CalcInputDtype() == ge::GRAPH_FAILED || CalcOutputDtype() == ge::GRAPH_FAILED ||
+        CheckShape() == ge::GRAPH_FAILED) {
         return ge::GRAPH_FAILED;
     }
 
@@ -110,12 +107,13 @@ ge::graphStatus RintTiling::RunTiling()
         dType = TPL_FP32;
         res = elewiseBaseTiling.DoTiling<RintDag<float>::OpDag>(*tiling);
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "x",
-            ToString(this->inputDtype).c_str(), "The dtype of x must be within the range DT_FLOAT16, DT_BF16 and DT_FLOAT");
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            tilingContext->GetNodeName(), "x", ToString(this->inputDtype).c_str(),
+            "The dtype of x must be within the range DT_FLOAT16, DT_BF16 and DT_FLOAT");
         return ge::GRAPH_FAILED;
     }
 
-    size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1); 
+    size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     currentWorkspace[0] = 0;
     const uint64_t tilingKey = GET_TPL_TILING_KEY(tiling->scheMode, dType);
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tiling_Key=%ld", tilingKey);
@@ -134,10 +132,7 @@ ge::graphStatus TilingForRint(gert::TilingContext* tilingContext)
     return baseOpTiling.RunTiling();
 }
 
-ge::graphStatus TilingPrepareForRint([[maybe_unused]] gert::TilingParseContext* context)
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus TilingPrepareForRint([[maybe_unused]] gert::TilingParseContext* context) { return ge::GRAPH_SUCCESS; }
 
 IMPL_OP_OPTILING(Rint).Tiling(TilingForRint).TilingParse<RintCompileInfo>(TilingPrepareForRint);
 

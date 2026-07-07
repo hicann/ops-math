@@ -57,8 +57,7 @@ struct PadV3GradUbTileInfo {
 
 class PadV3GradACTiling {
 public:
-    explicit PadV3GradACTiling(gert::TilingContext* context) : context_(context)
-    {}
+    explicit PadV3GradACTiling(gert::TilingContext* context) : context_(context) {}
     ge::graphStatus DoTiling();
 
 private:

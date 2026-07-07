@@ -28,15 +28,9 @@ class BatchToSpaceNDTilingSmallCTest : public testing::Test {
     static constexpr uint32_t SMALL_C_RESERVE_BUFFER_SIZE = 256U;
 
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "BatchToSpaceNDTilingSmallCTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "BatchToSpaceNDTilingSmallCTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "BatchToSpaceNDTilingSmallCTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "BatchToSpaceNDTilingSmallCTest TearDown" << std::endl; }
 
     template <typename T>
     inline T CeilAlignBlockSize(T size)
@@ -74,9 +68,9 @@ protected:
         return x2y;
     }
 
-    uint64_t ComputeNeedBuffSize(
-        int dSize, B2SNDSmallCTilingData* data, const std::set<size_t>& inner, const std::set<size_t>& outter,
-        uint32_t cutAxisFactor, uint32_t otherSideFactor, bool needAlignOnSomeAxis = false)
+    uint64_t ComputeNeedBuffSize(int dSize, B2SNDSmallCTilingData* data, const std::set<size_t>& inner,
+                                 const std::set<size_t>& outter, uint32_t cutAxisFactor, uint32_t otherSideFactor,
+                                 bool needAlignOnSomeAxis = false)
     {
         // 计算内轴，要Block对齐
         uint64_t needBufSize = dSize;
@@ -124,10 +118,10 @@ protected:
         for (size_t i = xAxisToYAxis[data->outUbAxis]; i < rank; ++i) {
             yInner.insert(yAxisPerm[i]);
         }
-        std::set_difference(
-            yInner.begin(), yInner.end(), xInner.begin(), xInner.end(), std::inserter(xOutter, xOutter.begin()));
-        std::set_difference(
-            xInner.begin(), xInner.end(), yInner.begin(), yInner.end(), std::inserter(yOutter, yOutter.begin()));
+        std::set_difference(yInner.begin(), yInner.end(), xInner.begin(), xInner.end(),
+                            std::inserter(xOutter, xOutter.begin()));
+        std::set_difference(xInner.begin(), xInner.end(), yInner.begin(), yInner.end(),
+                            std::inserter(yOutter, yOutter.begin()));
 
         // 切同一根轴，则切的大小要相等
         if (data->inUbAxis == data->outUbAxis) {
@@ -155,17 +149,16 @@ protected:
 
         int dSize = ge::GetSizeByDataType(dataType);
         // 计算输入需要bufsize
-        uint64_t xNeedBufSize =
-            ComputeNeedBuffSize(dSize, data, xInner, xOutter, data->inUbFactor, data->outUbFactor, true);
+        uint64_t xNeedBufSize = ComputeNeedBuffSize(dSize, data, xInner, xOutter, data->inUbFactor, data->outUbFactor,
+                                                    true);
         EXPECT_GE(data->ubTileSize - SMALL_C_RESERVE_BUFFER_SIZE, xNeedBufSize);
         // 计算输出需要bufsize
         uint64_t yNeedBufSize = ComputeNeedBuffSize(dSize, data, yInner, yOutter, data->outUbFactor, data->inUbFactor);
         EXPECT_GE(data->ubTileSize - SMALL_C_RESERVE_BUFFER_SIZE, yNeedBufSize);
     }
 
-    void TestCheckBuffer(
-        ge::DataType dataType, const std::initializer_list<int64_t>& xShape,
-        const std::vector<int32_t>& blockShapeValues, const std::vector<int32_t>& cropsValues)
+    void TestCheckBuffer(ge::DataType dataType, const std::initializer_list<int64_t>& xShape,
+                         const std::vector<int32_t>& blockShapeValues, const std::vector<int32_t>& cropsValues)
     {
         int64_t bsDimNum = blockShapeValues.size();
         gert::TilingContextPara tilingContextPara(

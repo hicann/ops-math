@@ -20,15 +20,9 @@ using namespace optiling;
 
 class PadV3GradReplicationTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "PadV3GradReplicationTilingTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "PadV3GradReplicationTilingTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "PadV3GradReplicationTilingTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "PadV3GradReplicationTilingTest TearDown" << std::endl; }
 };
 
 // 1D float32 basic case, tail axis fallback (1D has no non-tail axis)

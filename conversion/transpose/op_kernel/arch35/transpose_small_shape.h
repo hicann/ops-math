@@ -57,9 +57,10 @@ __aicore__ inline void TransposeSmallShape<T>::Init(GM_ADDR x, GM_ADDR y, const 
 }
 
 template <typename T>
-__simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__ void SimtComputeDimTwo(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t coreFactor, uint32_t coreOffset, uint32_t outputShape0,
-    uint32_t outputShape1, uint32_t m0, uint32_t m1, uint32_t s0, uint32_t s1)
+__simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__
+    void SimtComputeDimTwo(__gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t coreFactor, uint32_t coreOffset,
+                           uint32_t outputShape0, uint32_t outputShape1, uint32_t m0, uint32_t m1, uint32_t s0,
+                           uint32_t s1)
 {
     for (uint32_t idx = static_cast<uint32_t>(threadIdx.x); idx < coreFactor;
          idx += static_cast<uint32_t>(blockDim.x)) {
@@ -73,10 +74,11 @@ __simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__ void SimtComputeDimTwo(
 }
 
 template <typename T>
-__simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__ void SimtComputeDimThree(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t coreFactor, uint32_t coreOffset, uint32_t outputShape0,
-    uint32_t outputShape1, uint32_t outputShape2, uint32_t dstStride0, uint32_t dstStride1, uint32_t dstStride2,
-    uint32_t m0, uint32_t m1, uint32_t m2, uint32_t s0, uint32_t s1, uint32_t s2)
+__simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__
+    void SimtComputeDimThree(__gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t coreFactor, uint32_t coreOffset,
+                             uint32_t outputShape0, uint32_t outputShape1, uint32_t outputShape2, uint32_t dstStride0,
+                             uint32_t dstStride1, uint32_t dstStride2, uint32_t m0, uint32_t m1, uint32_t m2,
+                             uint32_t s0, uint32_t s1, uint32_t s2)
 {
     for (uint32_t idx = static_cast<uint32_t>(threadIdx.x); idx < coreFactor;
          idx += static_cast<uint32_t>(blockDim.x)) {
@@ -92,11 +94,12 @@ __simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__ void SimtComputeDimThree(
 }
 
 template <typename T>
-__simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__ void SimtComputeDimFour(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t coreFactor, uint32_t coreOffset, uint32_t outputShape0,
-    uint32_t outputShape1, uint32_t outputShape2, uint32_t outputShape3, uint32_t dstStride0, uint32_t dstStride1,
-    uint32_t dstStride2, uint32_t dstStride3, uint32_t m0, uint32_t m1, uint32_t m2, uint32_t m3, uint32_t s0,
-    uint32_t s1, uint32_t s2, uint32_t s3)
+__simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__
+    void SimtComputeDimFour(__gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t coreFactor, uint32_t coreOffset,
+                            uint32_t outputShape0, uint32_t outputShape1, uint32_t outputShape2, uint32_t outputShape3,
+                            uint32_t dstStride0, uint32_t dstStride1, uint32_t dstStride2, uint32_t dstStride3,
+                            uint32_t m0, uint32_t m1, uint32_t m2, uint32_t m3, uint32_t s0, uint32_t s1, uint32_t s2,
+                            uint32_t s3)
 {
     for (uint32_t idx = static_cast<uint32_t>(threadIdx.x); idx < coreFactor;
          idx += static_cast<uint32_t>(blockDim.x)) {
@@ -108,18 +111,19 @@ __simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__ void SimtComputeDimFour(
         uint32_t inputIndex2 = yIdx - Simt::UintDiv(yIdx, m2, s2) * outputShape2;
         yIdx = Simt::UintDiv(yIdx, m2, s2);
         uint32_t inputIndex3 = yIdx - Simt::UintDiv(yIdx, m3, s3) * outputShape3;
-        uint32_t xIdx =
-            inputIndex0 * dstStride0 + inputIndex1 * dstStride1 + inputIndex2 * dstStride2 + inputIndex3 * dstStride3;
+        uint32_t xIdx = inputIndex0 * dstStride0 + inputIndex1 * dstStride1 + inputIndex2 * dstStride2 +
+                        inputIndex3 * dstStride3;
         outputGM[coreOffset + idx] = inputGM[xIdx];
     }
 }
 
 template <typename T>
-__simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__ void SimtComputeDimFive(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t coreFactor, uint32_t coreOffset, uint32_t outputShape0,
-    uint32_t outputShape1, uint32_t outputShape2, uint32_t outputShape3, uint32_t outputShape4, uint32_t dstStride0,
-    uint32_t dstStride1, uint32_t dstStride2, uint32_t dstStride3, uint32_t dstStride4, uint32_t m0, uint32_t m1,
-    uint32_t m2, uint32_t m3, uint32_t m4, uint32_t s0, uint32_t s1, uint32_t s2, uint32_t s3, uint32_t s4)
+__simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__
+    void SimtComputeDimFive(__gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t coreFactor, uint32_t coreOffset,
+                            uint32_t outputShape0, uint32_t outputShape1, uint32_t outputShape2, uint32_t outputShape3,
+                            uint32_t outputShape4, uint32_t dstStride0, uint32_t dstStride1, uint32_t dstStride2,
+                            uint32_t dstStride3, uint32_t dstStride4, uint32_t m0, uint32_t m1, uint32_t m2,
+                            uint32_t m3, uint32_t m4, uint32_t s0, uint32_t s1, uint32_t s2, uint32_t s3, uint32_t s4)
 {
     for (uint32_t idx = static_cast<uint32_t>(threadIdx.x); idx < coreFactor;
          idx += static_cast<uint32_t>(blockDim.x)) {
@@ -140,12 +144,13 @@ __simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__ void SimtComputeDimFive(
 }
 
 template <typename T>
-__simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__ void SimtComputeDimSix(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t coreFactor, uint32_t coreOffset, uint32_t outputShape0,
-    uint32_t outputShape1, uint32_t outputShape2, uint32_t outputShape3, uint32_t outputShape4, uint32_t outputShape5,
-    uint32_t dstStride0, uint32_t dstStride1, uint32_t dstStride2, uint32_t dstStride3, uint32_t dstStride4,
-    uint32_t dstStride5, uint32_t m0, uint32_t m1, uint32_t m2, uint32_t m3, uint32_t m4, uint32_t m5, uint32_t s0,
-    uint32_t s1, uint32_t s2, uint32_t s3, uint32_t s4, uint32_t s5)
+__simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__
+    void SimtComputeDimSix(__gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t coreFactor, uint32_t coreOffset,
+                           uint32_t outputShape0, uint32_t outputShape1, uint32_t outputShape2, uint32_t outputShape3,
+                           uint32_t outputShape4, uint32_t outputShape5, uint32_t dstStride0, uint32_t dstStride1,
+                           uint32_t dstStride2, uint32_t dstStride3, uint32_t dstStride4, uint32_t dstStride5,
+                           uint32_t m0, uint32_t m1, uint32_t m2, uint32_t m3, uint32_t m4, uint32_t m5, uint32_t s0,
+                           uint32_t s1, uint32_t s2, uint32_t s3, uint32_t s4, uint32_t s5)
 {
     for (uint32_t idx = static_cast<uint32_t>(threadIdx.x); idx < coreFactor;
          idx += static_cast<uint32_t>(blockDim.x)) {
@@ -168,13 +173,14 @@ __simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__ void SimtComputeDimSix(
 }
 
 template <typename T>
-__simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__ void SimtComputeDimSeven(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t coreFactor, uint32_t coreOffset, uint32_t outputShape0,
-    uint32_t outputShape1, uint32_t outputShape2, uint32_t outputShape3, uint32_t outputShape4, uint32_t outputShape5,
-    uint32_t outputShape6, uint32_t dstStride0, uint32_t dstStride1, uint32_t dstStride2, uint32_t dstStride3,
-    uint32_t dstStride4, uint32_t dstStride5, uint32_t dstStride6, uint32_t m0, uint32_t m1, uint32_t m2, uint32_t m3,
-    uint32_t m4, uint32_t m5, uint32_t m6, uint32_t s0, uint32_t s1, uint32_t s2, uint32_t s3, uint32_t s4, uint32_t s5,
-    uint32_t s6)
+__simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__
+    void SimtComputeDimSeven(__gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t coreFactor, uint32_t coreOffset,
+                             uint32_t outputShape0, uint32_t outputShape1, uint32_t outputShape2, uint32_t outputShape3,
+                             uint32_t outputShape4, uint32_t outputShape5, uint32_t outputShape6, uint32_t dstStride0,
+                             uint32_t dstStride1, uint32_t dstStride2, uint32_t dstStride3, uint32_t dstStride4,
+                             uint32_t dstStride5, uint32_t dstStride6, uint32_t m0, uint32_t m1, uint32_t m2,
+                             uint32_t m3, uint32_t m4, uint32_t m5, uint32_t m6, uint32_t s0, uint32_t s1, uint32_t s2,
+                             uint32_t s3, uint32_t s4, uint32_t s5, uint32_t s6)
 {
     for (uint32_t idx = static_cast<uint32_t>(threadIdx.x); idx < coreFactor;
          idx += static_cast<uint32_t>(blockDim.x)) {
@@ -200,13 +206,15 @@ __simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__ void SimtComputeDimSeven(
 }
 
 template <typename T>
-__simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__ void SimtComputeDimEight(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t coreFactor, uint32_t coreOffset, uint32_t outputShape0,
-    uint32_t outputShape1, uint32_t outputShape2, uint32_t outputShape3, uint32_t outputShape4, uint32_t outputShape5,
-    uint32_t outputShape6, uint32_t outputShape7, uint32_t dstStride0, uint32_t dstStride1, uint32_t dstStride2,
-    uint32_t dstStride3, uint32_t dstStride4, uint32_t dstStride5, uint32_t dstStride6, uint32_t dstStride7,
-    uint32_t m0, uint32_t m1, uint32_t m2, uint32_t m3, uint32_t m4, uint32_t m5, uint32_t m6, uint32_t m7, uint32_t s0,
-    uint32_t s1, uint32_t s2, uint32_t s3, uint32_t s4, uint32_t s5, uint32_t s6, uint32_t s7)
+__simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__
+    void SimtComputeDimEight(__gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t coreFactor, uint32_t coreOffset,
+                             uint32_t outputShape0, uint32_t outputShape1, uint32_t outputShape2, uint32_t outputShape3,
+                             uint32_t outputShape4, uint32_t outputShape5, uint32_t outputShape6, uint32_t outputShape7,
+                             uint32_t dstStride0, uint32_t dstStride1, uint32_t dstStride2, uint32_t dstStride3,
+                             uint32_t dstStride4, uint32_t dstStride5, uint32_t dstStride6, uint32_t dstStride7,
+                             uint32_t m0, uint32_t m1, uint32_t m2, uint32_t m3, uint32_t m4, uint32_t m5, uint32_t m6,
+                             uint32_t m7, uint32_t s0, uint32_t s1, uint32_t s2, uint32_t s3, uint32_t s4, uint32_t s5,
+                             uint32_t s6, uint32_t s7)
 {
     for (uint32_t idx = static_cast<uint32_t>(threadIdx.x); idx < coreFactor;
          idx += static_cast<uint32_t>(blockDim.x)) {
@@ -265,14 +273,14 @@ __aicore__ inline void TransposeSmallShape<T>::Process()
     }
 
     if (permSize == DIM_TWO) {
-        asc_vf_call<SimtComputeDimTwo<T>>(
-            dim3(THREAD_DIM), (__gm__ T*)(inputGM_.GetPhyAddr()), (__gm__ volatile T*)(outputGM_.GetPhyAddr()),
-            blkProcessNum, blkStartOffset, outputShape[0], outputShape[1], m[0], m[1], shift[0], shift[1]);
+        asc_vf_call<SimtComputeDimTwo<T>>(dim3(THREAD_DIM), (__gm__ T*)(inputGM_.GetPhyAddr()),
+                                          (__gm__ volatile T*)(outputGM_.GetPhyAddr()), blkProcessNum, blkStartOffset,
+                                          outputShape[0], outputShape[1], m[0], m[1], shift[0], shift[1]);
     } else if (permSize == DIM_THREE) {
-        asc_vf_call<SimtComputeDimThree<T>>(
-            dim3(THREAD_DIM), (__gm__ T*)(inputGM_.GetPhyAddr()), (__gm__ volatile T*)(outputGM_.GetPhyAddr()),
-            blkProcessNum, blkStartOffset, outputShape[0], outputShape[1], outputShape[2], dstStride[0], dstStride[1],
-            dstStride[2], m[0], m[1], m[2], shift[0], shift[1], shift[2]);
+        asc_vf_call<SimtComputeDimThree<T>>(dim3(THREAD_DIM), (__gm__ T*)(inputGM_.GetPhyAddr()),
+                                            (__gm__ volatile T*)(outputGM_.GetPhyAddr()), blkProcessNum, blkStartOffset,
+                                            outputShape[0], outputShape[1], outputShape[2], dstStride[0], dstStride[1],
+                                            dstStride[2], m[0], m[1], m[2], shift[0], shift[1], shift[2]);
     } else if (permSize == DIM_FOUR) {
         asc_vf_call<SimtComputeDimFour<T>>(
             dim3(THREAD_DIM), (__gm__ T*)(inputGM_.GetPhyAddr()), (__gm__ volatile T*)(outputGM_.GetPhyAddr()),
@@ -285,12 +293,12 @@ __aicore__ inline void TransposeSmallShape<T>::Process()
             outputShape[4], dstStride[0], dstStride[1], dstStride[2], dstStride[3], dstStride[4], m[0], m[1], m[2],
             m[3], m[4], shift[0], shift[1], shift[2], shift[3], shift[4]);
     } else if (permSize == DIM_SIX) {
-        asc_vf_call<SimtComputeDimSix<T>>(
-            dim3(THREAD_DIM), (__gm__ T*)(inputGM_.GetPhyAddr()), (__gm__ volatile T*)(outputGM_.GetPhyAddr()),
-            blkProcessNum, blkStartOffset, outputShape[0], outputShape[1], outputShape[2], outputShape[3],
-            outputShape[4], outputShape[5], dstStride[0], dstStride[1], dstStride[2], dstStride[3], dstStride[4],
-            dstStride[5], m[0], m[1], m[2], m[3], m[4], m[5], shift[0], shift[1], shift[2], shift[3], shift[4],
-            shift[5]);
+        asc_vf_call<SimtComputeDimSix<T>>(dim3(THREAD_DIM), (__gm__ T*)(inputGM_.GetPhyAddr()),
+                                          (__gm__ volatile T*)(outputGM_.GetPhyAddr()), blkProcessNum, blkStartOffset,
+                                          outputShape[0], outputShape[1], outputShape[2], outputShape[3],
+                                          outputShape[4], outputShape[5], dstStride[0], dstStride[1], dstStride[2],
+                                          dstStride[3], dstStride[4], dstStride[5], m[0], m[1], m[2], m[3], m[4], m[5],
+                                          shift[0], shift[1], shift[2], shift[3], shift[4], shift[5]);
     } else if (permSize == DIM_SEVEN) {
         asc_vf_call<SimtComputeDimSeven<T>>(
             dim3(THREAD_DIM), (__gm__ T*)(inputGM_.GetPhyAddr()), (__gm__ volatile T*)(outputGM_.GetPhyAddr()),

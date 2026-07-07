@@ -14,8 +14,7 @@
 #include "opdev/make_op_executor.h"
 
 namespace l0op {
-const aclTensor* PadV3Grad(
-    const aclTensor* gradOutput, const aclTensor* paddings, const std::string& mode, const bool paddingsContiguous,
-    const bool padFlag, aclOpExecutor* executor);
+const aclTensor* PadV3Grad(const aclTensor* gradOutput, const aclTensor* paddings, const std::string& mode,
+                           const bool paddingsContiguous, const bool padFlag, aclOpExecutor* executor);
 }
 #endif // PTA_NPU_OP_API_INC_LEVEL0_OP_PADV3GRAD_OP_H_

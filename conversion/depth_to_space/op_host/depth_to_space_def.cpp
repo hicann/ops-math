@@ -15,35 +15,25 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-static const std::vector<ge::DataType> dataType = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT8, ge::DT_INT16,
-                                                   ge::DT_INT32, ge::DT_UINT8, ge::DT_UINT16, ge::DT_UINT32,
-                                                   ge::DT_INT64, ge::DT_UINT64, ge::DT_BF16,
-                                                   ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT8, ge::DT_INT16,
-                                                   ge::DT_INT32, ge::DT_UINT8, ge::DT_UINT16, ge::DT_UINT32,
-                                                   ge::DT_INT64, ge::DT_UINT64, ge::DT_BF16};
+static const std::vector<ge::DataType> dataType = {
+    ge::DT_FLOAT,   ge::DT_FLOAT16, ge::DT_INT8,   ge::DT_INT16,  ge::DT_INT32, ge::DT_UINT8,
+    ge::DT_UINT16,  ge::DT_UINT32,  ge::DT_INT64,  ge::DT_UINT64, ge::DT_BF16,  ge::DT_FLOAT,
+    ge::DT_FLOAT16, ge::DT_INT8,    ge::DT_INT16,  ge::DT_INT32,  ge::DT_UINT8, ge::DT_UINT16,
+    ge::DT_UINT32,  ge::DT_INT64,   ge::DT_UINT64, ge::DT_BF16};
 
-
-static const std::vector<ge::Format> format = {ge::FORMAT_NHWC, ge::FORMAT_NHWC, ge::FORMAT_NHWC, ge::FORMAT_NHWC,
-                                               ge::FORMAT_NHWC, ge::FORMAT_NHWC, ge::FORMAT_NHWC, ge::FORMAT_NHWC,
-                                               ge::FORMAT_NHWC, ge::FORMAT_NHWC, ge::FORMAT_NHWC,
-                                               ge::FORMAT_NCHW, ge::FORMAT_NCHW, ge::FORMAT_NCHW, ge::FORMAT_NCHW,
-                                               ge::FORMAT_NCHW, ge::FORMAT_NCHW, ge::FORMAT_NCHW, ge::FORMAT_NCHW,
-                                               ge::FORMAT_NCHW, ge::FORMAT_NCHW, ge::FORMAT_NCHW};
+static const std::vector<ge::Format> format = {
+    ge::FORMAT_NHWC, ge::FORMAT_NHWC, ge::FORMAT_NHWC, ge::FORMAT_NHWC, ge::FORMAT_NHWC, ge::FORMAT_NHWC,
+    ge::FORMAT_NHWC, ge::FORMAT_NHWC, ge::FORMAT_NHWC, ge::FORMAT_NHWC, ge::FORMAT_NHWC, ge::FORMAT_NCHW,
+    ge::FORMAT_NCHW, ge::FORMAT_NCHW, ge::FORMAT_NCHW, ge::FORMAT_NCHW, ge::FORMAT_NCHW, ge::FORMAT_NCHW,
+    ge::FORMAT_NCHW, ge::FORMAT_NCHW, ge::FORMAT_NCHW, ge::FORMAT_NCHW};
 
 class DepthToSpace : public OpDef {
-   public:
-    explicit DepthToSpace(const char* name) : OpDef(name) {
-        this->Input("x")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .Format(format)
-            .UnknownShapeFormat(format);
-    
-        this->Output("y")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .Format(format)
-            .UnknownShapeFormat(format);
+public:
+    explicit DepthToSpace(const char* name) : OpDef(name)
+    {
+        this->Input("x").ParamType(REQUIRED).DataType(dataType).Format(format).UnknownShapeFormat(format);
+
+        this->Output("y").ParamType(REQUIRED).DataType(dataType).Format(format).UnknownShapeFormat(format);
 
         this->Attr("block_size").AttrType(REQUIRED).Int();
         this->Attr("mode").AttrType(OPTIONAL).String("DCR");
@@ -59,4 +49,4 @@ class DepthToSpace : public OpDef {
 };
 
 OP_ADD(DepthToSpace);
-}  // namespace ops
+} // namespace ops

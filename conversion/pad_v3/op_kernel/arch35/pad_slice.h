@@ -27,8 +27,8 @@
 
 using namespace Slice;
 
-extern "C" __aicore__ inline void PadSliceMoveAlignProcess(
-    GM_ADDR x, GM_ADDR offsets, GM_ADDR size, GM_ADDR y, const SliceMoveAlignTilingData* tilingData, TPipe* pipe)
+extern "C" __aicore__ inline void PadSliceMoveAlignProcess(GM_ADDR x, GM_ADDR offsets, GM_ADDR size, GM_ADDR y,
+                                                           const SliceMoveAlignTilingData* tilingData, TPipe* pipe)
 {
     // ub不切最后一根轴
     // complex32/uint32/int32/float32
@@ -52,8 +52,9 @@ extern "C" __aicore__ inline void PadSliceMoveAlignProcess(
     }
 }
 
-extern "C" __aicore__ inline void PadSliceMoveAlignLastDimProcess(
-    GM_ADDR x, GM_ADDR offsets, GM_ADDR size, GM_ADDR y, const SliceMoveAlignLastDimTilingData* tilingData, TPipe* pipe)
+extern "C" __aicore__ inline void PadSliceMoveAlignLastDimProcess(GM_ADDR x, GM_ADDR offsets, GM_ADDR size, GM_ADDR y,
+                                                                  const SliceMoveAlignLastDimTilingData* tilingData,
+                                                                  TPipe* pipe)
 {
     // ub切最后一根轴 or 纯搬运模板
     // complex32/uint32/int32/float32
@@ -77,9 +78,9 @@ extern "C" __aicore__ inline void PadSliceMoveAlignLastDimProcess(
     }
 }
 
-extern "C" __aicore__ inline void PadSliceMoveAlignTwoDimProcess(
-    GM_ADDR x, GM_ADDR offsets, GM_ADDR size, GM_ADDR y, const SliceMoveAlignLast2DimTilingData* tilingData,
-    TPipe* pipe)
+extern "C" __aicore__ inline void PadSliceMoveAlignTwoDimProcess(GM_ADDR x, GM_ADDR offsets, GM_ADDR size, GM_ADDR y,
+                                                                 const SliceMoveAlignLast2DimTilingData* tilingData,
+                                                                 TPipe* pipe)
 {
     if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
         Slice::SliceMoveAlignTwoDim<int32_t, int32_t> op;
@@ -100,8 +101,8 @@ extern "C" __aicore__ inline void PadSliceMoveAlignTwoDimProcess(
     }
 }
 
-extern "C" __aicore__ inline void PadSliceNDDMAProcess(
-    GM_ADDR x, GM_ADDR offsets, GM_ADDR size, GM_ADDR y, const SliceNDDMATilingData* tilingData, TPipe* pipe)
+extern "C" __aicore__ inline void PadSliceNDDMAProcess(GM_ADDR x, GM_ADDR offsets, GM_ADDR size, GM_ADDR y,
+                                                       const SliceNDDMATilingData* tilingData, TPipe* pipe)
 {
     // complex32/uint32/int32/float32
     if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
@@ -124,8 +125,9 @@ extern "C" __aicore__ inline void PadSliceNDDMAProcess(
     }
 }
 
-extern "C" __aicore__ inline void PadSliceNDDMALastDimProcess(
-    GM_ADDR x, GM_ADDR offsets, GM_ADDR size, GM_ADDR y, const SliceNDDMALastDimTilingData* tilingData, TPipe* pipe)
+extern "C" __aicore__ inline void PadSliceNDDMALastDimProcess(GM_ADDR x, GM_ADDR offsets, GM_ADDR size, GM_ADDR y,
+                                                              const SliceNDDMALastDimTilingData* tilingData,
+                                                              TPipe* pipe)
 {
     // ub切最后一根轴
     // complex32/uint32/int32/float32
@@ -149,8 +151,9 @@ extern "C" __aicore__ inline void PadSliceNDDMALastDimProcess(
     }
 }
 
-extern "C" __aicore__ inline void PadSliceMoveAlignGatherProcess(
-    GM_ADDR x, GM_ADDR offsets, GM_ADDR size, GM_ADDR y, const SliceMoveAlignGatherTilingData* tilingData, TPipe* pipe)
+extern "C" __aicore__ inline void PadSliceMoveAlignGatherProcess(GM_ADDR x, GM_ADDR offsets, GM_ADDR size, GM_ADDR y,
+                                                                 const SliceMoveAlignGatherTilingData* tilingData,
+                                                                 TPipe* pipe)
 {
     // ub切最后一根轴
     // complex32/uint32/int32/float32
@@ -199,8 +202,9 @@ extern "C" __aicore__ inline void PadSliceMoveAlignDataCopyUnalignProcess(
     }
 }
 
-extern "C" __aicore__ inline void PadSliceTwoDimSmallShapeProcess(
-    GM_ADDR x, GM_ADDR offsets, GM_ADDR size, GM_ADDR y, const SliceTwoDimSmallSapeTilingData* tilingData, TPipe* pipe)
+extern "C" __aicore__ inline void PadSliceTwoDimSmallShapeProcess(GM_ADDR x, GM_ADDR offsets, GM_ADDR size, GM_ADDR y,
+                                                                  const SliceTwoDimSmallSapeTilingData* tilingData,
+                                                                  TPipe* pipe)
 {
     // complex32/uint32/int32/float32
     if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
