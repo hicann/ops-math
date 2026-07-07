@@ -213,6 +213,14 @@ aclnnStatus aclnnAmpUpdateScale(
     </tr></thead>
   <tbody>
     <tr>
+      <td rowspan="2">ACLNN_ERR_INNER_TILING_ERROR</td>
+      <td rowspan="2">561002</td>
+      <td>输入currentScale、growthTracker、foundInf的shape不是标量[1]。</td>
+    </tr>
+    <tr>
+      <td>growthInterval超出取值范围[1, 2147483647]。</td>
+    </tr>
+    <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
       <td>传入的currentScale、growthTracker、foundInf、updatedScale、updatedGrowthTracker是空指针。</td>

@@ -33,7 +33,7 @@ namespace optiling {
 
 class AmpUpdateScaleTiling {
 public:
-    explicit AmpUpdateScaleTiling(gert::TilingContext* context) : TilingContext(context){};
+    explicit AmpUpdateScaleTiling(gert::TilingContext* context) : TilingContext(context) {};
     ge::graphStatus Init();
     ge::graphStatus RunKernelTiling();
     void TilingDataPrint() const;
@@ -73,14 +73,20 @@ ge::graphStatus AmpUpdateScaleTiling::Init()
     // 校验输入 tensor 的 shape 均为标量 [1]
     constexpr int kInputNum = 3;
     const char* kInputNames[kInputNum] = {"currentScale", "growthTracker", "foundInf"};
+    constexpr int64_t kScalarDimNum = 1;
     for (int i = 0; i < kInputNum; i++) {
         auto inputShape = TilingContext->GetInputShape(i);
         OP_CHECK_NULL_WITH_CONTEXT(TilingContext, inputShape);
-        int64_t shapeSize = inputShape->GetStorageShape().GetShapeSize();
+        auto storageShape = inputShape->GetStorageShape();
+        OP_CHECK_IF(storageShape.GetDimNum() != kScalarDimNum,
+                    OP_LOGE_FOR_INVALID_SHAPEDIM(TilingContext->GetNodeName(), kInputNames[i],
+                                                 std::to_string(storageShape.GetDimNum()).c_str(), "scalar [1]"),
+                    return ge::GRAPH_FAILED);
+        int64_t shapeSize = storageShape.GetShapeSize();
         OP_CHECK_IF(shapeSize != 1,
-                    OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(TilingContext->GetNodeName(), kInputNames[i],
-                                                               std::to_string(shapeSize).c_str(),
-                                                               "The shape of input must be scalar [1]"),
+                    OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(TilingContext->GetNodeName(), kInputNames[i],
+                                                              std::to_string(shapeSize).c_str(),
+                                                              "The shape of input must be scalar [1]"),
                     return ge::GRAPH_FAILED);
     }
     return ge::GRAPH_SUCCESS;
@@ -122,7 +128,9 @@ void AmpUpdateScaleTiling::TilingDataPrint() const
 static ge::graphStatus TilingAmpUpdateScale(gert::TilingContext* context)
 {
     AmpUpdateScaleTiling tilingObject(context);
-    tilingObject.Init();
+    if (tilingObject.Init() != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
     return tilingObject.RunKernelTiling();
 }
 
