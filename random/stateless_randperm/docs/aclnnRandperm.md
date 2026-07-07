@@ -23,19 +23,19 @@
 
 ```Cpp
 aclnnStatus aclnnRandpermGetWorkspaceSize(
-  int64_t             n, 
-  int64_t             seed, 
-  int64_t             offset, 
-  aclTensor*          out, 
-  uint64_t*           workspaceSize, 
+  int64_t             n,
+  int64_t             seed,
+  int64_t             offset,
+  aclTensor*          out,
+  uint64_t*           workspaceSize,
   aclOpExecutor**     executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnRandperm(
-  void*               workspace, 
-  uint64_t            workspaceSize,  
-  aclOpExecutor*      executor, 
+  void*               workspace,
+  uint64_t            workspaceSize,
+  aclOpExecutor*      executor,
   aclrtStream         stream)
 ```
 
@@ -212,7 +212,7 @@ aclnnStatus aclnnRandperm(
   - aclnnRandperm默认确定性实现。
 - Ascend 950PR/Ascend 950DT：
   - INT64、INT32、INT16、UINT8、INT8、FLOAT、FLOAT16、BFLOAT16：n不超过int32的最大值。
-  - DOUBLE、以及其它产品：当n大于268000000时有运行超时风险，详见[超时时间设置方法](https://www.hiascend.com/document/detail/zh/canncommercial/850/API/appdevgapi/aclcppdevg_03_0132.html)。
+  - DOUBLE、以及其它产品：当n大于268000000时有运行超时风险，通过aclrtSetOpExecuteTimeOut设置超时时间。
 
 ## 调用示例
 

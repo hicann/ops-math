@@ -63,10 +63,10 @@ cmake .. -DCMAKE_PREFIX_PATH=$(python3 -c "import torch; print(torch.utils.cmake
 make                     # 生成 libtorch_adapter.so
 ```
 
-### 5.3 NPU 实跑（torch_npu + NPU + 自定义算子包就绪时）
+### 5.3 NPU 实跑（TorchNPU + NPU + 自定义算子包就绪时）
 
 ```bash
 python3 ../test.py --lib ./libtorch_adapter.so
 ```
 
-> torch_npu 不可用时，`test.py` 自动回退为 CPU golden mock 闭环（不阻断）。
+> TorchNPU不可用时，`test.py`自动回退为CPU golden mock闭环（不阻断）。

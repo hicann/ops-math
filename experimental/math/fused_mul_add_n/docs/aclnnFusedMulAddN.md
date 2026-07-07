@@ -277,7 +277,7 @@ CHECK_RET(ret == ACL_SUCCESS,
 // ...（拷回 y、校验结果、释放 aclTensor / device 资源，详见示例完整代码）
 ```
 
-PyTorch（torch_npu）侧的两段式封装见 [tests/st/torch/torch_adapter.cpp](../tests/st/torch/torch_adapter.cpp)：
+PyTorch（TorchNPU）侧的两段式封装见 [tests/st/torch/torch_adapter.cpp](../tests/st/torch/torch_adapter.cpp)：
 在 `forward_npu` 中分配输出 tensor 与 workspace tensor，调用 `aclnnFusedMulAddNGetWorkspaceSize` 取
 workspace 大小与 executor，再经 `OpCommand::RunOpApiV2` 异步入队执行 `aclnnFusedMulAddN`，workspace 内存
 由 `torch::empty` 管理（不使用 `aclrtMalloc`）。
