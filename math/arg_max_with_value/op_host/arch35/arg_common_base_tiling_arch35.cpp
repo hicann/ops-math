@@ -88,6 +88,9 @@ ge::graphStatus ArgCommonBaseTiling::RunArgMaxTiling(bool withValue)
     } else {
         tilingContext_->SetBlockDim(tilingData_.get_realCoreNum());
     }
+    if (tilingKey_ == static_cast<uint64_t>(ArgMaxWithValueTilingMode::GROUP_REDUCE)) {
+        tilingContext_->SetScheduleMode(1);
+    }
     tilingContext_->SetTilingKey(tilingData_.get_tilingKey());
     size_t* workspaces = tilingContext_->GetWorkspaceSizes(1);
     workspaces[0] = workSpaceSize_ + WORK_SPACE_SIZE;

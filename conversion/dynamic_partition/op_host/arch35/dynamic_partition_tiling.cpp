@@ -306,7 +306,8 @@ ge::graphStatus DynamicPartitionTiling::WriteTilingData()
                     return ge::GRAPH_FAILED);
     if (tilingData_.tilingKey == ::DynPart::TILING_X_EMPTY ||
         tilingData_.tilingKey == ::DynPart::TILING_H_MC_UB_CAN_HOLD_SPLIT_W ||
-        tilingData_.tilingKey == ::DynPart::TILING_H_MC_UB_CANNOT_HOLD_SPLIT_W) {
+        tilingData_.tilingKey == ::DynPart::TILING_H_MC_UB_CANNOT_HOLD_SPLIT_W ||
+        tilingData_.tilingKey == ::DynPart::TILING_H_MC_WITH_SMALL_W) {
         OP_CHECK_IF(context_->SetScheduleMode(1) != ge::GRAPH_SUCCESS,
                         OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"),
                         return ge::GRAPH_FAILED);

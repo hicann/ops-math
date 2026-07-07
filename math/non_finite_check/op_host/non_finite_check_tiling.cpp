@@ -145,6 +145,7 @@ ge::graphStatus NonFiniteCheckTiling::RunBigKernelTiling()
 
     tilingContext->SetTilingKey(GetTilingKeyVal());
     tilingContext->SetBlockDim(needCoreNum);
+    tilingContext->SetScheduleMode(1);
     size_t* workspaces = tilingContext->GetWorkspaceSizes(1);
     workspaces[0] = WORKSPACE_SIZE;
     OP_LOGD(tilingContext, "Success.");
