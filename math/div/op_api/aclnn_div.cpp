@@ -28,6 +28,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "conversion/broadcast_to/op_api/broadcast_to.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -774,6 +775,15 @@ aclnnStatus aclnnDivs(void* workspace, uint64_t workspaceSize, aclOpExecutor* ex
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
+// 返回为[1]的intarray shape
+static inline aclIntArray* GetBaseShape(aclOpExecutor* executor)
+{
+    int64_t tensorShape[1] = {};
+    tensorShape[0] = 1;
+    auto res = executor->AllocIntArray(tensorShape, 1);
+    return res;
+}
+
 aclnnStatus aclnnDivModGetWorkspaceSize(
     const aclTensor* self, const aclTensor* other, int mode, aclTensor* out, uint64_t* workspaceSize,
     aclOpExecutor** executor)
@@ -807,8 +817,15 @@ aclnnStatus aclnnDivModGetWorkspaceSize(
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     // TruncateDiv 特殊处理：IsRegBase && mode=MODE_TRUNC_DIV && 类型组合在映射表中，不做类型提升
     if (IsRegBase(npuArch) && mode == MODE_TRUNC_DIV) {
+        // 如果tensor为0维，则转换为1维tensor
+        if (otherContiguous->GetViewShape().GetDimNum() == 0) {
+            auto baseShape = GetBaseShape(uniqueExecutor.get());
+            auto broadcastOut = l0op::BroadcastTo(otherContiguous, baseShape, uniqueExecutor.get());
+            CHECK_RET(broadcastOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            otherCasted = broadcastOut;
+        }
         if (isInTruncDtypeMapping(self->GetDataType(), other->GetDataType())) {
-            divOpOut = l0op::TruncateDiv(selfContiguous, otherContiguous, uniqueExecutor.get());
+            divOpOut = l0op::TruncateDiv(selfCasted, otherCasted, uniqueExecutor.get());
         } else {
             op::DataType promoteType;
             promoteType = InferDivModeDtype(self->GetDataType(), other->GetDataType(), mode);
@@ -818,7 +835,7 @@ aclnnStatus aclnnDivModGetWorkspaceSize(
             CHECK_RET(complexRet == ACLNN_SUCCESS, complexRet);
             selfCasted = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
             CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
-            otherCasted = l0op::Cast(otherContiguous, promoteType, uniqueExecutor.get());
+            otherCasted = l0op::Cast(otherCasted, promoteType, uniqueExecutor.get());
             CHECK_RET(otherCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
             divOpOut = l0op::TruncateDiv(selfCasted, otherCasted, uniqueExecutor.get());
         }
