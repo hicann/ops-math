@@ -20,10 +20,35 @@
 #include "platform/platform_info.h"
 #include "ge/ge_utils.h"
 #include "log/log.h"
+#include "version/ge-compiler_version.h"
 #include "stateless_bernoulli_fusion_pass.h"
 
 using namespace ge;
 using namespace fe;
+
+// D1 scenario: uses kCompatibleInherited stage (9.0.0+).
+// Strategy: compile-time macro guard + runtime version check + overall silence.
+#define GE_COMPILER_VERSION_900 90000000
+
+extern "C" {
+__attribute__((weak)) int32_t aclsysGetVersionNum(char* pkgName, int32_t* versionNum);
+}
+
+namespace {
+#if GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
+CustomPassStage GetBernoulliFusionPassStage()
+{
+    int32_t version = 0;
+    if (aclsysGetVersionNum) {
+        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+    }
+    if (version >= GE_COMPILER_VERSION_900) {
+        return CustomPassStage::kCompatibleInherited;
+    }
+    return CustomPassStage::kBeforeInferShape;
+}
+#endif
+} // namespace
 
 namespace ge::fusion {
 
@@ -64,10 +89,7 @@ void UpdateNodeOutputDesc(es::EsTensorHolder& tensor, DataType dtype, const Shap
     tensor.GetProducer()->UpdateOutputDesc(0, desc);
 }
 
-bool CheckPlatform(const std::string& soc)
-{
-    return (soc == "Ascend910_93" || soc == "Ascend950");
-}
+bool CheckPlatform(const std::string& soc) { return (soc == "Ascend910_93" || soc == "Ascend950"); }
 
 bool CheckDtype(DataType dtype, const std::vector<DataType>& validTypes)
 {
@@ -97,6 +119,15 @@ std::vector<PatternUniqPtr> BernoulliFusionPass::Patterns()
 bool BernoulliFusionPass::MeetRequirements(const std::unique_ptr<MatchResult>& matchResult)
 {
     OP_LOGI(kPassName.c_str(), "Enter MeetRequirements");
+
+    int32_t version = 0;
+    if (aclsysGetVersionNum) {
+        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+    }
+    if (version < GE_COMPILER_VERSION_900) {
+        OP_LOGD(kPassName.c_str(), "GE runtime version %d < 90000000, skip pass.", version);
+        return false;
+    }
 
     PlatformInfo platformInfo;
     OptionalInfo optionalInfo;
@@ -159,19 +190,19 @@ std::unique_ptr<Graph> BernoulliFusionPass::Replacement(const std::unique_ptr<Ma
 
     auto replaceGraphBuilder = es::EsGraphBuilder("replacement");
     auto rProb = replaceGraphBuilder.CreateInput(kIdxProb, "prob", probDesc.GetDataType(), probDesc.GetFormat(),
-                                                  GetShapeDims(probDesc.GetShape()));
+                                                 GetShapeDims(probDesc.GetShape()));
     rProb.SetFormat(probDesc.GetFormat());
     auto rSeed = replaceGraphBuilder.CreateInput(kIdxSeed, "seed", seedDesc.GetDataType(), seedDesc.GetFormat(),
-                                                  GetShapeDims(seedDesc.GetShape()));
+                                                 GetShapeDims(seedDesc.GetShape()));
     rSeed.SetFormat(seedDesc.GetFormat());
-    auto rOffset = replaceGraphBuilder.CreateInput(kIdxOffset, "offset", offsetDesc.GetDataType(), offsetDesc.GetFormat(),
-                                                    GetShapeDims(offsetDesc.GetShape()));
+    auto rOffset = replaceGraphBuilder.CreateInput(kIdxOffset, "offset", offsetDesc.GetDataType(),
+                                                   offsetDesc.GetFormat(), GetShapeDims(offsetDesc.GetShape()));
     rOffset.SetFormat(offsetDesc.GetFormat());
 
     std::vector<int64_t> shapeValue = GetShapeDims(probDesc.GetShape());
     std::vector<int64_t> shapeDims = {static_cast<int64_t>(shapeValue.size())};
     auto rShape = replaceGraphBuilder.CreateConst(shapeValue, shapeDims);
-    
+
     auto output = es::StatelessBernoulli(rShape, rProb, rSeed, rOffset, dtype);
 
     UpdateNodeOutputDesc(rProb, probDesc.GetDataType(), probDesc.GetShape(), probDesc.GetFormat());
@@ -189,6 +220,10 @@ std::unique_ptr<Graph> BernoulliFusionPass::Replacement(const std::unique_ptr<Ma
     return replaceGraph;
 }
 
-REG_FUSION_PASS(BernoulliFusionPass).Stage(CustomPassStage::kCompatibleInherited);
+#if GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
+REG_FUSION_PASS(BernoulliFusionPass).Stage(GetBernoulliFusionPassStage());
+#else
+REG_FUSION_PASS(BernoulliFusionPass).Stage(CustomPassStage::kBeforeInferShape);
+#endif
 
 } // namespace ge::fusion

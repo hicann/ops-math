@@ -22,12 +22,37 @@
 #include "ge/ge_utils.h"
 #include "platform/platform_info.h"
 #include "log/log.h"
+#include "version/ge-compiler_version.h"
 #include "drop_out_v3_fusion_pass.h"
 
 namespace ge::fusion {
 
 using namespace ge;
 using namespace fe;
+
+// D1 scenario: uses kCompatibleInherited stage (9.0.0+).
+// Strategy: compile-time macro guard + runtime version check + overall silence.
+#define GE_COMPILER_VERSION_900 90000000
+
+extern "C" {
+__attribute__((weak)) int32_t aclsysGetVersionNum(char* pkgName, int32_t* versionNum);
+}
+
+namespace {
+#if GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
+CustomPassStage GetDropOutV3FusionPassStage()
+{
+    int32_t version = 0;
+    if (aclsysGetVersionNum) {
+        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+    }
+    if (version >= GE_COMPILER_VERSION_900) {
+        return CustomPassStage::kCompatibleInherited;
+    }
+    return CustomPassStage::kBeforeInferShape;
+}
+#endif
+} // namespace
 
 namespace {
 const std::string kPassName = "DropOutV3FusionPass";
@@ -90,9 +115,8 @@ DataType GetInputDtype(const std::vector<DataType>& inputDtypes, size_t idx)
     return (idx < inputDtypes.size()) ? inputDtypes[idx] : DT_FLOAT;
 }
 
-void GetInputsInfo(
-    const std::vector<SubgraphInput>& subgraphInputs, std::vector<Shape>& inputShapes,
-    std::vector<DataType>& inputDtypes, std::vector<Format>& inputFormats)
+void GetInputsInfo(const std::vector<SubgraphInput>& subgraphInputs, std::vector<Shape>& inputShapes,
+                   std::vector<DataType>& inputDtypes, std::vector<Format>& inputFormats)
 {
     for (const auto& subgraphInput : subgraphInputs) {
         auto matchNode = subgraphInput.GetAllInputs().at(0);
@@ -139,8 +163,7 @@ bool GetNodeIo(const std::unique_ptr<MatchResult>& matchResult, int64_t idx, Nod
     return true;
 }
 
-InputParams GetInputParams(const std::vector<Shape>& inputShapes,
-                           const std::vector<DataType>& inputDtypes,
+InputParams GetInputParams(const std::vector<Shape>& inputShapes, const std::vector<DataType>& inputDtypes,
                            const std::vector<Format>& inputFormats)
 {
     InputParams params;
@@ -183,7 +206,7 @@ es::DropOutV3Output CreateDropOutV3Node(es::EsGraphBuilder& builder, const Input
 
     return output;
 }
-}
+} // namespace
 
 std::vector<PatternUniqPtr> DropOutV3FusionPass::Patterns()
 {
@@ -212,6 +235,16 @@ std::vector<PatternUniqPtr> DropOutV3FusionPass::Patterns()
 bool DropOutV3FusionPass::MeetRequirements(const std::unique_ptr<MatchResult>& matchResult)
 {
     OP_LOGI(kPassName.c_str(), "Enter MeetRequirements");
+
+    int32_t version = 0;
+    if (aclsysGetVersionNum) {
+        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+    }
+    if (version < GE_COMPILER_VERSION_900) {
+        OP_LOGD(kPassName.c_str(), "GE runtime version %d < 90000000, skip pass.", version);
+        return false;
+    }
+
     PlatformInfo platformInfo;
     OptionalInfo optionalInfo;
     if (PlatformInfoManager::Instance().GetPlatformInfoWithOutSocVersion(platformInfo, optionalInfo) != SUCCESS) {
@@ -334,5 +367,10 @@ GraphUniqPtr DropOutV3FusionPass::Replacement(const std::unique_ptr<MatchResult>
     return replaceGraph;
 }
 
-REG_FUSION_PASS(DropOutV3FusionPass).Stage(CustomPassStage::kCompatibleInherited);
-}
+#if GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
+REG_FUSION_PASS(DropOutV3FusionPass).Stage(GetDropOutV3FusionPassStage());
+#else
+REG_FUSION_PASS(DropOutV3FusionPass).Stage(CustomPassStage::kBeforeInferShape);
+#endif
+
+} // namespace ge::fusion

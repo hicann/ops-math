@@ -23,12 +23,37 @@
 #include "ge/fusion/graph_rewriter.h"
 #include "platform/platform_info.h"
 #include "log/log.h"
+#include "version/ge-compiler_version.h"
 #include "drop_out_v3_split_fusion_pass.h"
 
 namespace ge::fusion {
 
 using namespace ge;
 using namespace fe;
+
+// D1 scenario: uses kCompatibleInherited stage (9.0.0+).
+// Strategy: compile-time macro guard + runtime version check + overall silence.
+#define GE_COMPILER_VERSION_900 90000000
+
+extern "C" {
+__attribute__((weak)) int32_t aclsysGetVersionNum(char* pkgName, int32_t* versionNum);
+}
+
+namespace {
+#if GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
+CustomPassStage GetDropOutV3SplitFusionPassStage()
+{
+    int32_t version = 0;
+    if (aclsysGetVersionNum) {
+        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+    }
+    if (version >= GE_COMPILER_VERSION_900) {
+        return CustomPassStage::kCompatibleInherited;
+    }
+    return CustomPassStage::kBeforeInferShape;
+}
+#endif
+} // namespace
 
 namespace {
 const std::string kPassName = "DropOutV3SplitFusionPass";
@@ -64,7 +89,7 @@ std::vector<int64_t> GetDimsFromShape(const Shape& shape)
     }
     return dims;
 }
-}
+} // namespace
 
 bool DropOutV3SplitFusionPass::CheckPlatform() const
 {
@@ -81,7 +106,7 @@ bool DropOutV3SplitFusionPass::CheckPlatform() const
     return true;
 }
 
-bool DropOutV3SplitFusionPass::CheckDtypes(const GNode &node) const
+bool DropOutV3SplitFusionPass::CheckDtypes(const GNode& node) const
 {
     TensorDesc xDesc;
     node.GetInputDesc(kIdxX, xDesc);
@@ -116,15 +141,15 @@ bool DropOutV3SplitFusionPass::CheckDtypes(const GNode &node) const
     }
 
     if (xDtype != yDtype) {
-        OP_LOGE(kPassName.c_str(), "x dtype should same with y dtype, x: %d, y: %d",
-                static_cast<int>(xDtype), static_cast<int>(yDtype));
+        OP_LOGE(kPassName.c_str(), "x dtype should same with y dtype, x: %d, y: %d", static_cast<int>(xDtype),
+                static_cast<int>(yDtype));
         return false;
     }
 
     return true;
 }
 
-bool DropOutV3SplitFusionPass::CheckNode(const GNode &node) const
+bool DropOutV3SplitFusionPass::CheckNode(const GNode& node) const
 {
     AscendString nodeType;
     if (node.GetType(nodeType) != SUCCESS) {
@@ -155,7 +180,7 @@ bool DropOutV3SplitFusionPass::CheckNode(const GNode &node) const
     return true;
 }
 
-InputInfo DropOutV3SplitFusionPass::GetInputInfo(const GNode &node) const
+InputInfo DropOutV3SplitFusionPass::GetInputInfo(const GNode& node) const
 {
     InputInfo info;
     TensorDesc xDesc;
@@ -182,15 +207,12 @@ InputInfo DropOutV3SplitFusionPass::GetInputInfo(const GNode &node) const
     return info;
 }
 
-void DropOutV3SplitFusionPass::UpdateTensorDescs(const InputInfo &info,
-                                                 const es::EsTensorHolder &rX,
-                                                 const es::EsTensorHolder &rProb,
-                                                 const es::EsTensorHolder &rSeed,
-                                                 const es::EsTensorHolder &rOffset,
-                                                 const es::EsTensorHolder &genMask,
-                                                 const es::EsTensorHolder &doMask,
-                                                 const es::EsTensorHolder &rShapeConst,
-                                                 const es::EsTensorHolder &rSeed1) const
+void DropOutV3SplitFusionPass::UpdateTensorDescs(const InputInfo& info, const es::EsTensorHolder& rX,
+                                                 const es::EsTensorHolder& rProb, const es::EsTensorHolder& rSeed,
+                                                 const es::EsTensorHolder& rOffset, const es::EsTensorHolder& genMask,
+                                                 const es::EsTensorHolder& doMask,
+                                                 const es::EsTensorHolder& rShapeConst,
+                                                 const es::EsTensorHolder& rSeed1) const
 {
     TensorDesc shapeConstDesc(Shape(info.noiseShapeDims), FORMAT_ND, DT_INT64);
     rShapeConst.GetProducer()->UpdateOutputDesc(0, shapeConstDesc);
@@ -229,7 +251,7 @@ void DropOutV3SplitFusionPass::UpdateTensorDescs(const InputInfo &info,
     doMask.GetProducer()->UpdateInputDesc(kDoMaskIdxProb, probDesc);
 }
 
-GraphUniqPtr DropOutV3SplitFusionPass::CreateReplacement(const GNode &node)
+GraphUniqPtr DropOutV3SplitFusionPass::CreateReplacement(const GNode& node)
 {
     InputInfo info = GetInputInfo(node);
     auto builder = es::EsGraphBuilder("replacement");
@@ -257,7 +279,7 @@ GraphUniqPtr DropOutV3SplitFusionPass::CreateReplacement(const GNode &node)
     return builder.BuildAndReset(outputs);
 }
 
-std::unique_ptr<SubgraphBoundary> DropOutV3SplitFusionPass::ConstructBoundary(const GNode &node)
+std::unique_ptr<SubgraphBoundary> DropOutV3SplitFusionPass::ConstructBoundary(const GNode& node)
 {
     auto boundary = std::make_unique<SubgraphBoundary>();
     for (size_t idx = 0; idx < node.GetInputsSize(); ++idx) {
@@ -285,15 +307,25 @@ std::unique_ptr<SubgraphBoundary> DropOutV3SplitFusionPass::ConstructBoundary(co
     return boundary;
 }
 
-Status DropOutV3SplitFusionPass::Run(GraphPtr &graph, [[maybe_unused]] CustomPassContext &passContext)
+Status DropOutV3SplitFusionPass::Run(GraphPtr& graph, [[maybe_unused]] CustomPassContext& passContext)
 {
     OP_LOGI(kPassName.c_str(), "Enter DropOutV3SplitFusionPass");
+
+    int32_t version = 0;
+    if (aclsysGetVersionNum) {
+        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+    }
+    if (version < GE_COMPILER_VERSION_900) {
+        OP_LOGD(kPassName.c_str(), "GE runtime version %d < 90000000, skip pass.", version);
+        return GRAPH_NOT_CHANGED;
+    }
+
     if (!CheckPlatform()) {
         return GRAPH_NOT_CHANGED;
     }
 
     std::vector<GNode> dropOutV3Nodes;
-    for (auto &node : graph->GetDirectNode()) {
+    for (auto& node : graph->GetDirectNode()) {
         if (CheckNode(node)) {
             dropOutV3Nodes.emplace_back(node);
         }
@@ -303,7 +335,7 @@ Status DropOutV3SplitFusionPass::Run(GraphPtr &graph, [[maybe_unused]] CustomPas
     }
 
     Graph originGraph = *graph;
-    for (auto &node : dropOutV3Nodes) {
+    for (auto& node : dropOutV3Nodes) {
         auto replacement = CreateReplacement(node);
         if (!replacement) {
             AscendString nodeName;
@@ -326,8 +358,8 @@ Status DropOutV3SplitFusionPass::Run(GraphPtr &graph, [[maybe_unused]] CustomPas
         if (replaceStatus != SUCCESS) {
             AscendString nodeName;
             node.GetName(nodeName);
-            OP_LOGE(kPassName.c_str(), "SubgraphRewriter::Replace failed for node %s, status=%d",
-                    nodeName.GetString(), static_cast<int>(replaceStatus));
+            OP_LOGE(kPassName.c_str(), "SubgraphRewriter::Replace failed for node %s, status=%d", nodeName.GetString(),
+                    static_cast<int>(replaceStatus));
             *graph = originGraph;
             return FAILED;
         }
@@ -337,5 +369,10 @@ Status DropOutV3SplitFusionPass::Run(GraphPtr &graph, [[maybe_unused]] CustomPas
     return SUCCESS;
 }
 
-REG_FUSION_PASS(DropOutV3SplitFusionPass).Stage(CustomPassStage::kCompatibleInherited);
-}
+#if GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
+REG_FUSION_PASS(DropOutV3SplitFusionPass).Stage(GetDropOutV3SplitFusionPassStage());
+#else
+REG_FUSION_PASS(DropOutV3SplitFusionPass).Stage(CustomPassStage::kBeforeInferShape);
+#endif
+
+} // namespace ge::fusion

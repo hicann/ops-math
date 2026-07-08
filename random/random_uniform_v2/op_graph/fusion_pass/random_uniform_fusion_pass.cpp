@@ -26,6 +26,7 @@
 #include "platform/platform_info.h"
 #include "ge/ge_utils.h"
 #include "log/log.h"
+#include "version/ge-compiler_version.h"
 #include "random_uniform_fusion_pass.h"
 
 using namespace ge;
@@ -33,6 +34,30 @@ using namespace ge::fusion;
 using namespace fe;
 
 namespace ops {
+
+// D1 scenario: uses kCompatibleInherited stage (9.0.0+).
+// Strategy: compile-time macro guard + runtime version check + overall silence.
+#define GE_COMPILER_VERSION_900 90000000
+
+extern "C" {
+__attribute__((weak)) int32_t aclsysGetVersionNum(char* pkgName, int32_t* versionNum);
+}
+
+namespace {
+#if GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
+CustomPassStage GetRandomUniformFusionPassStage()
+{
+    int32_t version = 0;
+    if (aclsysGetVersionNum) {
+        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+    }
+    if (version >= GE_COMPILER_VERSION_900) {
+        return CustomPassStage::kCompatibleInherited;
+    }
+    return CustomPassStage::kBeforeInferShape;
+}
+#endif
+} // namespace
 
 static const std::string kPassName = "RandomUniformFusionPass";
 static const int64_t kCaptureIdxNode = 0L;
@@ -58,6 +83,15 @@ std::vector<PatternUniqPtr> RandomUniformFusionPass::Patterns()
 bool RandomUniformFusionPass::MeetRequirements(const std::unique_ptr<MatchResult>& matchResult)
 {
     OP_LOGD(kPassName.c_str(), "Enter MeetRequirements");
+
+    int32_t version = 0;
+    if (aclsysGetVersionNum) {
+        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+    }
+    if (version < GE_COMPILER_VERSION_900) {
+        OP_LOGD(kPassName.c_str(), "GE runtime version %d < 90000000, skip pass.", version);
+        return false;
+    }
 
     PlatformInfo platformInfo;
     OptionalInfo optionalInfo;
@@ -122,7 +156,8 @@ std::unique_ptr<Graph> RandomUniformFusionPass::Replacement(const std::unique_pt
     nodeIo.node.GetAttr("seed2", seed2);
 
     auto replaceGraphBuilder = es::EsGraphBuilder("replacement");
-    auto rShape = replaceGraphBuilder.CreateInput(0, "shape", inputDtypes[0], inputFormats[0], inputShapes[0].GetDims());
+    auto rShape = replaceGraphBuilder.CreateInput(0, "shape", inputDtypes[0], inputFormats[0],
+                                                  inputShapes[0].GetDims());
 
     AscendString nodeName;
     nodeIo.node.GetName(nodeName);
@@ -169,6 +204,10 @@ static void GetInputsInfo(const std::vector<SubgraphInput>& subgraphInputs, std:
     }
 }
 
-REG_FUSION_PASS(RandomUniformFusionPass).Stage(CustomPassStage::kCompatibleInherited);
+#if GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
+REG_FUSION_PASS(RandomUniformFusionPass).Stage(GetRandomUniformFusionPassStage());
+#else
+REG_FUSION_PASS(RandomUniformFusionPass).Stage(CustomPassStage::kBeforeInferShape);
+#endif
 
 } // namespace ops
