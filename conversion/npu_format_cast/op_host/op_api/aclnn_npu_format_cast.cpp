@@ -1190,10 +1190,12 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
             // 适配srcFormat为NCL的场景
             formatTensor->SetOriginalShape(srcTensor->GetViewShape());
             formatTensor->SetStorageShape(srcTensor->GetViewShape());
+            dstTensor->SetViewFormat(srcTensor->GetViewFormat());
+            dstTensor->SetViewShape(srcTensor->GetViewShape());
+            dstTensor->SetOriginalFormat(srcTensor->GetOriginalFormat());
+            dstTensor->SetOriginalShape(srcTensor->GetOriginalShape());
             // 公有转私有Format
             if (dstFormat == op::Format::FORMAT_FRACTAL_NZ) {
-                dstTensor->SetViewShape(srcTensor->GetViewShape());
-                dstTensor->SetOriginalShape(srcTensor->GetOriginalShape());
                 formatTensor->SetViewFormat(op::Format::FORMAT_ND);
                 formatTensor->SetOriginalFormat(op::Format::FORMAT_ND);
                 formatTensor->SetStorageFormat(op::Format::FORMAT_ND);
