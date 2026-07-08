@@ -131,18 +131,17 @@ ge::graphStatus SimThreadExponentialTiling::GetInputTensorInfo()
 {
     auto nodeName = context->GetNodeName();
 
-    OP_CHECK_IF(
-        count < 0, OP_LOGE(nodeName, "Count %ld must be greater than or equal to 0.", count), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        threadPerProcessor <= 0, OP_LOGE(nodeName, "ThreadPerProcessor %d must be greater than 0.", threadPerProcessor),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        streamProcessorCount <= 0,
-        OP_LOGE(nodeName, "StreamProcessorCount %d must be greater than 0.", streamProcessorCount),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        start > end, // 如何获取start、end？
-        OP_LOGE(nodeName, "Start %f must be less than or equal to end %f.", start, end), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(count < 0, OP_LOGE(nodeName, "Count %ld must be greater than or equal to 0.", count),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(threadPerProcessor <= 0,
+                OP_LOGE(nodeName, "ThreadPerProcessor %d must be greater than 0.", threadPerProcessor),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(streamProcessorCount <= 0,
+                OP_LOGE(nodeName, "StreamProcessorCount %d must be greater than 0.", streamProcessorCount),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(start > end, // 如何获取start、end？
+                OP_LOGE(nodeName, "Start %f must be less than or equal to end %f.", start, end),
+                return ge::GRAPH_FAILED);
 
     // 获取第一个输入gradOut的信息
     auto selfShapePtr = context->GetInputShape(INPUT_SELF_IDX);
@@ -152,10 +151,9 @@ ge::graphStatus SimThreadExponentialTiling::GetInputTensorInfo()
     for (size_t i = 0; i < selfShape.GetDimNum(); ++i) {
         usrWorkspaceSize *= selfShape[i];
     }
-    OP_CHECK_IF(
-        usrWorkspaceSize != count,
-        OP_LOGE(nodeName, "Count %ld must be equal to the product of the elements in selfShape.", count),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(usrWorkspaceSize != count,
+                OP_LOGE(nodeName, "Count %ld must be equal to the product of the elements in selfShape.", count),
+                return ge::GRAPH_FAILED);
     usrWorkspaceSize = Ceil(usrWorkspaceSize, BATCHNUMPERHANDLE * BLOCKSIZE);
     usrWorkspaceSize *= FP32_TYPESIZE;
 
@@ -163,9 +161,9 @@ ge::graphStatus SimThreadExponentialTiling::GetInputTensorInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context, selfDesc);
     selfDType = selfDesc->GetDataType();
     GetDataTypeKey(selfDType);
-    OP_CHECK_IF(
-        GetDataTypeKey(selfDType) == false,
-        OP_LOGE(nodeName, "The dtype of input self must be in [float32, float16, bfloat16]."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetDataTypeKey(selfDType) == false,
+                OP_LOGE(nodeName, "The dtype of input self must be in [float32, float16, bfloat16]."),
+                return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -195,8 +193,10 @@ ge::graphStatus SimThreadExponentialTiling::Tiling4Block()
     offset_t_high = static_cast<uint32_t>(offset_t >> SHIFT_LEFT_32);
 
     // 分核计算
-    useCoreNum =
-        static_cast<int64_t>(Ops::Base::CeilDiv(batchNumTotal, Ops::Base::CeilDiv(batchNumTotal, totalCoreNum)));
+    useCoreNum = static_cast<int64_t>(
+        Ops::Base::CeilDiv(batchNumTotal, Ops::Base::CeilDiv(batchNumTotal, totalCoreNum)));
+    OP_CHECK_IF(useCoreNum == 0, OP_LOGE(nodeName, "useCoreNum %u must be not equal to 0.", useCoreNum),
+                return ge::GRAPH_FAILED);
     // useCoreNum = static_cast<int64_t>(CeilDiv(batchNumTotal, CeilDiv(batchNumTotal, totalCoreNum)));
     batchNumPerCore = (batchNumTotal + useCoreNum - 1) / useCoreNum;
     batchNumTailCore = batchNumTotal - (useCoreNum - 1) * batchNumPerCore;
@@ -204,9 +204,8 @@ ge::graphStatus SimThreadExponentialTiling::Tiling4Block()
     handleNumLoop = batchNumPerCore / BATCHNUMPERHANDLE;
     handleNumTail = batchNumPerCore - handleNumLoop * BATCHNUMPERHANDLE;
 
-    OP_CHECK_IF(
-        batchNumPerCore <= 0, OP_LOGE(nodeName, "batchNumPerCore %u must be greater than 0.", batchNumPerCore),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(batchNumPerCore <= 0, OP_LOGE(nodeName, "batchNumPerCore %u must be greater than 0.", batchNumPerCore),
+                return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -223,10 +222,9 @@ ge::graphStatus SimThreadExponentialTiling::SetAttrParams()
     const float* lambdaPtr = attrs->GetAttrPointer<float>(ATTR_1);
     OP_CHECK_NULL_WITH_CONTEXT(context, lambdaPtr);
     lambda = static_cast<float>(*lambdaPtr);
-    OP_CHECK_IF(
-        lambda == 0,
-        OP_LOGE(context->GetNodeName(), "lambda is the denominator and cannot be zero, but get %f.", lambda),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(lambda == 0,
+                OP_LOGE(context->GetNodeName(), "lambda is the denominator and cannot be zero, but get %f.", lambda),
+                return ge::GRAPH_FAILED);
     const int64_t* seedPtr = attrs->GetAttrPointer<int64_t>(ATTR_2);
     OP_CHECK_NULL_WITH_CONTEXT(context, seedPtr);
     seed = static_cast<uint64_t>(*seedPtr);
@@ -240,29 +238,22 @@ ge::graphStatus SimThreadExponentialTiling::SetAttrParams()
     return ge::GRAPH_SUCCESS;
 }
 
-void SimThreadExponentialTiling::SetTilingKey()
-{
-    tilingKey_ = dataSizeType;
-}
+void SimThreadExponentialTiling::SetTilingKey() { tilingKey_ = dataSizeType; }
 
-uint64_t SimThreadExponentialTiling::GetTilingKey()
-{
-    return tilingKey_;
-}
+uint64_t SimThreadExponentialTiling::GetTilingKey() { return tilingKey_; }
 
 ge::graphStatus SimThreadExponentialTiling::DoTiling()
 {
     auto nodeName = context->GetNodeName();
 
-    OP_CHECK_IF(
-        SetAttrParams() != ge::GRAPH_SUCCESS, OP_LOGE(nodeName, "SetAttrParams failed."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        GetInputTensorInfo() != ge::GRAPH_SUCCESS, OP_LOGE(nodeName, "GetInputTensorInfo failed."),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        GetPlatformInfo() != ge::GRAPH_SUCCESS, OP_LOGE(nodeName, "GetPlatformInfo failed."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        Tiling4Block() != ge::GRAPH_SUCCESS, OP_LOGE(nodeName, "Tiling4Block failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(SetAttrParams() != ge::GRAPH_SUCCESS, OP_LOGE(nodeName, "SetAttrParams failed."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetInputTensorInfo() != ge::GRAPH_SUCCESS, OP_LOGE(nodeName, "GetInputTensorInfo failed."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo() != ge::GRAPH_SUCCESS, OP_LOGE(nodeName, "GetPlatformInfo failed."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(Tiling4Block() != ge::GRAPH_SUCCESS, OP_LOGE(nodeName, "Tiling4Block failed."),
+                return ge::GRAPH_FAILED);
     SetTilingData();
 
     SetTilingKey();
@@ -275,10 +266,11 @@ ge::graphStatus SimThreadExponentialTiling::DoTiling()
 
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
-    currentWorkspace[0] =
-        usrWorkspaceSize +
-        ascendcPlatform.GetLibApiWorkSpaceSize(); // 设置总的workspace的数值大小，总的workspace空间由框架来申请并管理。
-                                                  // 该workspace作为中转空间用来放T2类型数据
+    currentWorkspace
+        [0] = usrWorkspaceSize +
+              ascendcPlatform
+                  .GetLibApiWorkSpaceSize(); // 设置总的workspace的数值大小，总的workspace空间由框架来申请并管理。
+                                             // 该workspace作为中转空间用来放T2类型数据
 
     return ge::GRAPH_SUCCESS;
 }

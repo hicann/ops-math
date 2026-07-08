@@ -19,26 +19,29 @@
 
 namespace optiling {
 
-constexpr uint32_t UB_BLOCK_SIZE = 32; // UB块大小
-constexpr uint32_t TRANS_BLOCK = 16; // 转置行数
-constexpr uint32_t RESERVE_UB = 256; // 接口获取UB的预留空间
-constexpr uint32_t HALF = 2; // 半对齐/UB对半切分
-constexpr uint32_t ONETHIRD = 3; // UB对三切分
+constexpr uint32_t UB_BLOCK_SIZE = 32;    // UB块大小
+constexpr uint32_t TRANS_BLOCK = 16;      // 转置行数
+constexpr uint32_t RESERVE_UB = 256;      // 接口获取UB的预留空间
+constexpr uint32_t HALF = 2;              // 半对齐/UB对半切分
+constexpr uint32_t ONETHIRD = 3;          // UB对三切分
 constexpr uint32_t DEFAUL_TILING_KEY = 0; // 默认tiling key
+constexpr uint32_t NUM_THIRTY_TWO = 32;
 
-static const std::set<ge::DataType> supportedDtype =
-    {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
+static const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
 
-std::string ChunkCatTiling::TilingDataToString() const {
+std::string ChunkCatTiling::TilingDataToString() const
+{
     return "blockRowNum = " + std::to_string(blockRowNum_) + ", blockColNum = " + std::to_string(blockColNum_) +
-        ", dim = " + std::to_string(dim_) + ", numChunk = " + std::to_string(numChunk_) +
-        ", outputRow = " + std::to_string(outputRow_) + ", outputCol = " + std::to_string(outputCol_) +
-        ", blockRowFactor = " + std::to_string(blockRowFactor_) + ", blockColFactor = " + std::to_string(blockColFactor_) +
-        ", tailBlockRowFactor = " + std::to_string(tailBlockRowFactor_) + ", tailBlockColFactor = " + std::to_string(tailBlockColFactor_) +
-        ", ubRowFactor = " + std::to_string(ubRowFactor_) + ", ubColFactor = " + std::to_string(ubColFactor_) +
-        ", inputNum = " + std::to_string(inputNum_) + ", inUbSize = " + std::to_string(inUbSize_) +
-        ", outUbSize = " + std::to_string(outUbSize_) + ", isAllAlign = " + std::to_string(isAllAlign_) +
-        ", isHalfAlign = " + std::to_string(isHalfAlign_) + ", isOneConcat = " + std::to_string(isOneConcat_);
+           ", dim = " + std::to_string(dim_) + ", numChunk = " + std::to_string(numChunk_) +
+           ", outputRow = " + std::to_string(outputRow_) + ", outputCol = " + std::to_string(outputCol_) +
+           ", blockRowFactor = " + std::to_string(blockRowFactor_) +
+           ", blockColFactor = " + std::to_string(blockColFactor_) +
+           ", tailBlockRowFactor = " + std::to_string(tailBlockRowFactor_) +
+           ", tailBlockColFactor = " + std::to_string(tailBlockColFactor_) +
+           ", ubRowFactor = " + std::to_string(ubRowFactor_) + ", ubColFactor = " + std::to_string(ubColFactor_) +
+           ", inputNum = " + std::to_string(inputNum_) + ", inUbSize = " + std::to_string(inUbSize_) +
+           ", outUbSize = " + std::to_string(outUbSize_) + ", isAllAlign = " + std::to_string(isAllAlign_) +
+           ", isHalfAlign = " + std::to_string(isHalfAlign_) + ", isOneConcat = " + std::to_string(isOneConcat_);
 }
 
 // 获取硬件信息
@@ -83,8 +86,10 @@ ge::graphStatus ChunkCatTiling::GetInputInfo()
     auto outputDesc = context_->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
     auto outputDataType = outputDesc->GetDataType();
-    OP_CHECK_IF(supportedDtype.count(inputDataType) == 0, OP_LOGE(context_, "input dtype is invalid"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(supportedDtype.count(outputDataType) == 0, OP_LOGE(context_, "output dtype is invalid"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(supportedDtype.count(inputDataType) == 0, OP_LOGE(context_, "input dtype is invalid"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(supportedDtype.count(outputDataType) == 0, OP_LOGE(context_, "output dtype is invalid"),
+                return ge::GRAPH_FAILED);
     if (inputDataType == ge::DT_FLOAT && outputDataType != ge::DT_FLOAT) {
         OP_LOGE(context_, "output dtype must be float when input dtype is float");
         return ge::GRAPH_FAILED;
@@ -144,30 +149,30 @@ void ChunkCatTiling::DoUbSplit()
     if (isRegBase) {
         // 列切
         uint32_t colLimit = inUbSize_ / srcDtypeSize_;
-        colLimit = colLimit - 32 * srcEleUbBlock_;
-        int64_t ubColLoop = (outputCol_ + colLimit - 1) / colLimit ;
+        colLimit = colLimit - NUM_THIRTY_TWO * srcEleUbBlock_;
+        int64_t ubColLoop = (outputCol_ + colLimit - 1) / colLimit;
         ubColFactor_ = (outputCol_ + ubColLoop - 1) / ubColLoop;
         ubColFactor_ = (ubColFactor_ + srcEleUbBlock_ - 1) / srcEleUbBlock_ * srcEleUbBlock_;
         ubColFactor_ = ubColFactor_ > colLimit ? colLimit : ubColFactor_;
         // 行切
         uint32_t rowLimit = ubColLoop == 1 ? colLimit / ubColFactor_ : 1;
-        int64_t ubRowLoop = (outputRow_ + rowLimit - 1) / rowLimit ;
+        int64_t ubRowLoop = (outputRow_ + rowLimit - 1) / rowLimit;
         ubRowFactor_ = (outputRow_ + ubRowLoop - 1) / ubRowLoop;
     } else if (isAllAlign_ || isOneConcat_) {
         // 列切
         uint32_t colLimit = inUbSize_ / srcDtypeSize_;
         colLimit = (isOneConcat_) ? colLimit - 32 * (srcEleUbBlock_ - 1) : colLimit;
-        int64_t ubColLoop = (outputCol_ + colLimit - 1) / colLimit ;
+        int64_t ubColLoop = (outputCol_ + colLimit - 1) / colLimit;
         ubColFactor_ = (outputCol_ + ubColLoop - 1) / ubColLoop;
         ubColFactor_ = (ubColFactor_ + srcEleUbBlock_ - 1) / srcEleUbBlock_ * srcEleUbBlock_;
         ubColFactor_ = ubColFactor_ > colLimit ? colLimit : ubColFactor_;
         // 行切
         uint32_t rowLimit = ubColLoop == 1 ? colLimit / ubColFactor_ : 1;
-        int64_t ubRowLoop = (outputRow_ + rowLimit - 1) / rowLimit ;
+        int64_t ubRowLoop = (outputRow_ + rowLimit - 1) / rowLimit;
         ubRowFactor_ = (outputRow_ + ubRowLoop - 1) / ubRowLoop;
     } else {
         // 行切
-        uint32_t rowLimit = isHalfAlign_ ? TRANS_BLOCK * HALF: TRANS_BLOCK * srcEleUbBlock_;
+        uint32_t rowLimit = isHalfAlign_ ? TRANS_BLOCK * HALF : TRANS_BLOCK * srcEleUbBlock_;
         int64_t ubRowLoop = (outputRow_ + rowLimit - 1) / rowLimit;
         ubRowFactor_ = (outputRow_ + ubRowLoop - 1) / ubRowLoop;
         // 列切
@@ -228,23 +233,19 @@ static ge::graphStatus Tiling4ChunkCat(gert::TilingContext* context)
 {
     OP_LOGD(context, "ChunkCatTiling");
     ChunkCatTiling tiling(context);
-    OP_CHECK_IF(
-        tiling.GetPlatformInfo() != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        tiling.GetInputInfo() != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetInputInfo error"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        tiling.CalculateOutputInfo() != ge::GRAPH_SUCCESS, OP_LOGE(context, "CalculateOutputInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(tiling.GetPlatformInfo() != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(tiling.GetInputInfo() != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetInputInfo error"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(tiling.CalculateOutputInfo() != ge::GRAPH_SUCCESS, OP_LOGE(context, "CalculateOutputInfo error"),
+                return ge::GRAPH_FAILED);
     tiling.DoUbSplit();
     tiling.DoBlockSplit();
-    
+
     ChunkCatTilingData* tilingData = context->GetTilingData<ChunkCatTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tilingData);
-    OP_CHECK_IF(
-        memset_s(tilingData, sizeof(ChunkCatTilingData), 0, sizeof(ChunkCatTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tilingData, sizeof(ChunkCatTilingData), 0, sizeof(ChunkCatTilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
     tiling.SetTilingData(tilingData);
     OP_LOGD(context, "tiling data: %s", tiling.TilingDataToString().c_str());
     return ge::GRAPH_SUCCESS;
@@ -255,7 +256,5 @@ static ge::graphStatus TilingPrepare4ChunkCat([[maybe_unused]] gert::TilingParse
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_OPTILING(ChunkCat)
-    .Tiling(Tiling4ChunkCat)
-    .TilingParse<ChunkCatCompileInfo>(TilingPrepare4ChunkCat);
+IMPL_OP_OPTILING(ChunkCat).Tiling(Tiling4ChunkCat).TilingParse<ChunkCatCompileInfo>(TilingPrepare4ChunkCat);
 } // namespace optiling
