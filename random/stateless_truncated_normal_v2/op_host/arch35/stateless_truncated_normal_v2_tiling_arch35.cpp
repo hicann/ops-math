@@ -13,6 +13,7 @@
  * \brief
  */
 #include "stateless_truncated_normal_v2_tiling_arch35.h"
+#include <string>
 #include "log/log.h"
 #include "platform/platform_ascendc.h"
 #include "register/op_def_registry.h"
@@ -37,21 +38,37 @@ OpTilingConfig StatelessTruncatedNormalV2Tiling::BuildOpConfig()
 {
     OpTilingConfig config;
 
-    config.inputCheckRules = {
-        {INPUT_IDX_SHAPE, {{ge::DT_INT32, ge::DT_INT64}, -1, {1}, nullptr}},
-        {INPUT_IDX_KEY, {{ge::DT_UINT64}, 1, {1}, nullptr}},
-        {INPUT_IDX_COUNTER, {{ge::DT_UINT64}, 2, {1}, nullptr}},
-        {INPUT_IDX_ALG, {{ge::DT_INT32}, 1, {0, 1}, nullptr}}};
-    config.outputCheckRules = {
-        {OUTPUT_IDX_Y, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {}, nullptr}}};
-    config.attrCheckRules = {
-        {INDEX_0, [](gert::TilingContext* ctx) {
-            const auto* attrs = ctx->GetAttrs();
-            const int64_t* attrPtr = attrs ? attrs->GetAttrPointer<int64_t>(INDEX_0) : nullptr;
-            const auto* outDesc = ctx->GetOutputDesc(OUTPUT_IDX_Y);
-            return attrPtr != nullptr && outDesc != nullptr &&
-                   static_cast<ge::DataType>(*attrPtr) == outDesc->GetDataType();
-        }}};
+    config.inputCheckRules = {{INPUT_IDX_SHAPE, {{ge::DT_INT32, ge::DT_INT64}, -1, {1}, nullptr}},
+                              {INPUT_IDX_KEY, {{ge::DT_UINT64}, 1, {1}, nullptr}},
+                              {INPUT_IDX_COUNTER, {{ge::DT_UINT64}, 2, {1}, nullptr}},
+                              {INPUT_IDX_ALG, {{ge::DT_INT32}, 1, {0, 1}, [](gert::TilingContext* ctx) {
+                                                   const auto* algTensor = ctx->GetInputTensor(INPUT_IDX_ALG);
+                                                   if (algTensor == nullptr) {
+                                                       return false;
+                                                   }
+                                                   const int32_t* algData = algTensor->GetData<int32_t>();
+                                                   if (algData == nullptr) {
+                                                       return false;
+                                                   }
+                                                   constexpr int32_t ALG_PHILOX = 1;
+                                                   if (algData[0] != ALG_PHILOX) {
+                                                       std::string valueStr = std::to_string(algData[0]);
+                                                       std::string reasonMsg = "Unsupported algorithm id: " + valueStr;
+                                                       OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                                                           ctx->GetNodeName(), "input alg", valueStr.c_str(),
+                                                           reasonMsg.c_str());
+                                                       return false;
+                                                   }
+                                                   return true;
+                                               }}}};
+    config.outputCheckRules = {{OUTPUT_IDX_Y, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {}, nullptr}}};
+    config.attrCheckRules = {{INDEX_0, [](gert::TilingContext* ctx) {
+                                  const auto* attrs = ctx->GetAttrs();
+                                  const int64_t* attrPtr = attrs ? attrs->GetAttrPointer<int64_t>(INDEX_0) : nullptr;
+                                  const auto* outDesc = ctx->GetOutputDesc(OUTPUT_IDX_Y);
+                                  return attrPtr != nullptr && outDesc != nullptr &&
+                                         static_cast<ge::DataType>(*attrPtr) == outDesc->GetDataType();
+                              }}};
     config.getOutputSize = [](gert::TilingContext* ctx, int64_t& size) {
         // 0-dim scalar output: the `shape` input is an empty tensor (ShapeSize==0).
         // GetData<>() on an empty tensor legally returns nullptr, which ExtractTensorValue
@@ -83,9 +100,8 @@ OpTilingConfig StatelessTruncatedNormalV2Tiling::BuildOpConfig()
 
 ge::graphStatus StatelessTruncatedNormalV2Tiling::DoSimtBlockTiling()
 {
-    OP_CHECK_IF(
-        (totalCoreNum_ <= 0), OP_LOGE(opName_, "totalCoreNum is less than or equal to 0. please check."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((totalCoreNum_ <= 0), OP_LOGE(opName_, "totalCoreNum is less than or equal to 0. please check."),
+                return ge::GRAPH_FAILED);
     int64_t threadNum = Ops::Base::CeilAlign(simtTilingData_.outputSize, THREAD_DISPOSAL_NUM);
     int64_t coreNum = Ops::Base::CeilAlign(threadNum, MAX_THREAD_NUM);
     simtTilingData_.usedCoreNum = std::min(coreNum, totalCoreNum_);
@@ -133,5 +149,5 @@ static ge::graphStatus TilingPrepare4StatelessTruncatedNormalV2(gert::TilingPars
 IMPL_OP_OPTILING(StatelessTruncatedNormalV2)
     .Tiling(Tiling4StatelessTruncatedNormalV2)
     .TilingParse<RandomOperatorCompileInfo>(TilingPrepare4StatelessTruncatedNormalV2)
-    .TilingInputsDataDependency({INPUT_IDX_SHAPE, INPUT_IDX_KEY, INPUT_IDX_COUNTER});
+    .TilingInputsDataDependency({INPUT_IDX_SHAPE, INPUT_IDX_KEY, INPUT_IDX_COUNTER, INPUT_IDX_ALG});
 } // namespace optiling
