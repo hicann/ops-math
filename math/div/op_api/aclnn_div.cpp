@@ -28,6 +28,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "conversion/broadcast_to/op_api/broadcast_to.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -194,8 +195,8 @@ static inline aclnnStatus CheckDivModComplexDtype(const op::DataType promoteType
     return ACLNN_SUCCESS;
 }
 
-static inline op::DataType InferDivModeDtype(
-    const op::DataType selfDtype, const op::DataType otherDtype, const int mode)
+static inline op::DataType InferDivModeDtype(const op::DataType selfDtype, const op::DataType otherDtype,
+                                             const int mode)
 {
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     auto promoteType = op::PromoteType(selfDtype, otherDtype);
@@ -224,8 +225,8 @@ static inline op::DataType CompatibleInferDivsDtype(const op::DataType selfDtype
     return promoteType;
 }
 
-static aclnnStatus CompatibleInferDivModeDtype(
-    const op::DataType selfDtype, const op::DataType otherDtype, const int mode, op::DataType& promoteType)
+static aclnnStatus CompatibleInferDivModeDtype(const op::DataType selfDtype, const op::DataType otherDtype,
+                                               const int mode, op::DataType& promoteType)
 {
     promoteType = op::PromoteType(selfDtype, otherDtype);
     if ((mode == MODE_TRUNC_DIV || mode == MODE_FLOOR_DIV) &&
@@ -250,8 +251,8 @@ static aclnnStatus CompatibleInferDivModeDtype(
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus CompatibleInferDivsModeDtype(
-    const op::DataType selfDtype, const op::DataType otherDtype, const int mode, op::DataType& promoteType)
+static aclnnStatus CompatibleInferDivsModeDtype(const op::DataType selfDtype, const op::DataType otherDtype,
+                                                const int mode, op::DataType& promoteType)
 {
     promoteType = op::PromoteType(selfDtype, otherDtype);
     if ((mode == MODE_TRUNC_DIV || mode == MODE_FLOOR_DIV) &&
@@ -277,8 +278,8 @@ static aclnnStatus CompatibleInferDivsModeDtype(
     return ACLNN_SUCCESS;
 }
 
-static inline op::DataType InferDivsModeDtype(
-    const op::DataType selfDtype, const op::DataType otherDtype, const int mode)
+static inline op::DataType InferDivsModeDtype(const op::DataType selfDtype, const op::DataType otherDtype,
+                                              const int mode)
 {
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     auto scalarDefaultDtype = GetScalarDefaultDtype(otherDtype);
@@ -292,7 +293,8 @@ static inline op::DataType InferDivsModeDtype(
         promoteType = DataType::DT_FLOAT;
     }
 
-    if (mode == MODE_TRUNC_DIV && (promoteType == DataType::DT_BF16 || promoteType == DataType::DT_FLOAT16) && IsRegBase(npuArch)) {
+    if (mode == MODE_TRUNC_DIV && (promoteType == DataType::DT_BF16 || promoteType == DataType::DT_FLOAT16) &&
+        IsRegBase(npuArch)) {
         promoteType = DataType::DT_FLOAT;
     }
 
@@ -332,9 +334,8 @@ static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, cons
     auto promoteType = (IsRegBase(npuArch)) ? InferDivModeDtype(self->GetDataType(), other->GetDataType(), mode) :
                                               op::PromoteType(self->GetDataType(), other->GetDataType());
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
         return false;
     }
 
@@ -446,9 +447,8 @@ inline static bool isDivsMixDtypeSupport(const aclTensor* self, const aclScalar*
 
 inline static bool checkMixDtypeConditions(DataType selfDtype, DataType otherDtype)
 {
-    return std::find(
-               AllowedMixDtypePairs.begin(), AllowedMixDtypePairs.end(),
-               std::pair<op::DataType, op::DataType>(selfDtype, otherDtype)) != AllowedMixDtypePairs.end();
+    return std::find(AllowedMixDtypePairs.begin(), AllowedMixDtypePairs.end(),
+                     std::pair<op::DataType, op::DataType>(selfDtype, otherDtype)) != AllowedMixDtypePairs.end();
 }
 
 inline static bool isMixDtypeScalarSupport(const aclTensor* self, const aclScalar* other)
@@ -469,8 +469,8 @@ inline static bool isMixDtypeTensorSupport(const aclTensor* self, const aclTenso
     return checkMixDtypeConditions(self->GetDataType(), other->GetDataType());
 }
 
-static aclnnStatus HandleMixDataTypeDiv(
-    const aclTensor* self, const aclTensor* other, aclOpExecutor* executor, const aclTensor** divOpOut)
+static aclnnStatus HandleMixDataTypeDiv(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor,
+                                        const aclTensor** divOpOut)
 {
     // 固定写法，将输入self转换成连续的tensor
     auto selfContiguous = l0op::Contiguous(self, executor);
@@ -486,8 +486,8 @@ static aclnnStatus HandleMixDataTypeDiv(
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus HandleNotMixDataTypeDiv(
-    const aclTensor* self, const aclTensor* other, aclOpExecutor* executor, const aclTensor** divOpOut)
+static aclnnStatus HandleNotMixDataTypeDiv(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor,
+                                           const aclTensor** divOpOut)
 {
     // RealDiv算子需要对self和other两个输入做隐式数据类型转换，根据具体算子语义按需调用
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
@@ -498,8 +498,8 @@ static aclnnStatus HandleNotMixDataTypeDiv(
     // 处理self输入
     const aclTensor* selfProcessed = nullptr;
     if (self->GetDataType() == promoteType && l0op::IsRealDivSupportNonContiguous(self)) {
-        selfProcessed = executor->CreateView(
-            self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
+        selfProcessed = executor->CreateView(self, self->GetViewShape(), self->GetStorageShape(),
+                                             self->GetViewStrides(), self->GetViewOffset());
     } else {
         // 固定写法，将输入self转换成连续的tensor
         auto selfContiguous = l0op::Contiguous(self, executor);
@@ -513,8 +513,8 @@ static aclnnStatus HandleNotMixDataTypeDiv(
     // 处理other输入
     const aclTensor* otherProcessed = nullptr;
     if (other->GetDataType() == promoteType && l0op::IsRealDivSupportNonContiguous(other)) {
-        otherProcessed = executor->CreateView(
-            other, other->GetViewShape(), other->GetStorageShape(), other->GetViewStrides(), other->GetViewOffset());
+        otherProcessed = executor->CreateView(other, other->GetViewShape(), other->GetStorageShape(),
+                                              other->GetViewStrides(), other->GetViewOffset());
     } else {
         // 固定写法，将输入other转换成连续的tensor
         auto otherContiguous = l0op::Contiguous(other, executor);
@@ -532,8 +532,8 @@ static aclnnStatus HandleNotMixDataTypeDiv(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnDivGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnDivGetWorkspaceSize(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                     uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnDiv, DFX_IN(self, other), DFX_OUT(out));
     // 固定写法，创建OpExecutor
@@ -598,9 +598,8 @@ static bool CheckPromoteTypeScalar(const aclTensor* self, const aclScalar* other
         // 检查self和other能否做数据类型推导
         auto promoteType = InferDivsModeDtype(self->GetDataType(), other->GetDataType(), mode);
         if (promoteType == DataType::DT_UNDEFINED) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
-                op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
+                    op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
             return false;
         }
         if (GetCurrentPlatformInfo().GetCurNpuArch() >= NpuArch::DAV_3510 && mode == MODE_TRUNC_DIV) {
@@ -624,9 +623,8 @@ static bool CheckShapeScalar(const aclTensor* self, const aclTensor* y)
     OP_CHECK_MAX_DIM(self, MAX_SUPPORT_DIMS_NUMS, return false);
 
     if (self->GetViewShape() != y->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
-            op::ToString(self->GetViewShape()).GetString(), op::ToString(y->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
+                op::ToString(self->GetViewShape()).GetString(), op::ToString(y->GetViewShape()).GetString());
         return false;
     }
     return true;
@@ -668,8 +666,8 @@ static bool CanUseMuls(const aclTensor* self, const aclScalar* other)
     return true;
 }
 
-aclnnStatus aclnnDivsGetWorkspaceSize(
-    const aclTensor* self, const aclScalar* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnDivsGetWorkspaceSize(const aclTensor* self, const aclScalar* other, aclTensor* out,
+                                      uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnDivs, DFX_IN(self, other), DFX_OUT(out));
 
@@ -696,14 +694,14 @@ aclnnStatus aclnnDivsGetWorkspaceSize(
     const aclTensor* divOpOut = nullptr;
     if (isMixDataType) {
         // aclScalar转aclTensor
-        auto promoteType =
-            other->GetDataType() == op::DataType::DT_DOUBLE ? op::DataType::DT_FLOAT : other->GetDataType();
+        auto promoteType = other->GetDataType() == op::DataType::DT_DOUBLE ? op::DataType::DT_FLOAT :
+                                                                             other->GetDataType();
         auto otherConvert = uniqueExecutor.get()->ConvertToTensor(other, promoteType);
         CHECK_RET(otherConvert != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        auto selfProcessed = isSupportNonContiguous ? uniqueExecutor.get()->CreateView(
-                                                          self, self->GetViewShape(), self->GetStorageShape(),
-                                                          self->GetViewStrides(), self->GetViewOffset()) :
-                                                      l0op::Contiguous(self, uniqueExecutor.get());
+        auto selfProcessed = isSupportNonContiguous ?
+                                 uniqueExecutor.get()->CreateView(self, self->GetViewShape(), self->GetStorageShape(),
+                                                                  self->GetViewStrides(), self->GetViewOffset()) :
+                                 l0op::Contiguous(self, uniqueExecutor.get());
         CHECK_RET(selfProcessed != nullptr, ACLNN_ERR_INNER_NULLPTR);
         divOpOut = l0op::RealDiv(selfProcessed, otherConvert, true, uniqueExecutor.get());
         CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -712,15 +710,15 @@ aclnnStatus aclnnDivsGetWorkspaceSize(
                                CompatibleInferDivsDtype(self->GetDataType(), other->GetDataType()) :
                                InferDivsModeDtype(self->GetDataType(), other->GetDataType(), MODE_REAL_DIV);
         promoteType = (IsFloatingType(self->GetDataType()) || IsComplexType(self->GetDataType()) ||
-                       (self->GetDataType() == op::DataType::DT_INT32 && other->GetDataType() == op::DataType::DT_INT32 &&
-                        isInt32PrecisionSupported)) ?
+                       (self->GetDataType() == op::DataType::DT_INT32 &&
+                        other->GetDataType() == op::DataType::DT_INT32 && isInt32PrecisionSupported)) ?
                           self->GetDataType() :
                           op::DataType::DT_FLOAT;
         promoteType = (self->GetDataType() == op::DataType::DT_BOOL && other->GetDataType() == op::DataType::DT_BOOL) ?
                           self->GetDataType() :
                           promoteType;
-        promoteType =
-            (IsComplexType(other->GetDataType())) ? op::PromoteType(promoteType, other->GetDataType()) : promoteType;
+        promoteType = (IsComplexType(other->GetDataType())) ? op::PromoteType(promoteType, other->GetDataType()) :
+                                                              promoteType;
         if (IsRegBase(npuArch)) {
             promoteType = op::PromoteType(self->GetDataType(), other->GetDataType()) == op::DataType::DT_INT32 ?
                               op::DataType::DT_INT32 :
@@ -734,8 +732,8 @@ aclnnStatus aclnnDivsGetWorkspaceSize(
             // aclScalar转aclTensor
             auto otherConvert = uniqueExecutor.get()->ConvertToTensor(other, promoteType);
             CHECK_RET(otherConvert != nullptr, ACLNN_ERR_INNER_NULLPTR);
-            auto selfWithStride = uniqueExecutor.get()->CreateView(
-                self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
+            auto selfWithStride = uniqueExecutor.get()->CreateView(self, self->GetViewShape(), self->GetStorageShape(),
+                                                                   self->GetViewStrides(), self->GetViewOffset());
             divOpOut = l0op::RealDiv(selfWithStride, otherConvert, MODE_REAL_DIV, uniqueExecutor.get());
             CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
         } else {
@@ -774,9 +772,17 @@ aclnnStatus aclnnDivs(void* workspace, uint64_t workspaceSize, aclOpExecutor* ex
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnDivModGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, int mode, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+// 返回为[1]的intarray shape
+static inline aclIntArray* GetBaseShape(aclOpExecutor* executor)
+{
+    int64_t tensorShape[1] = {};
+    tensorShape[0] = 1;
+    auto res = executor->AllocIntArray(tensorShape, 1);
+    return res;
+}
+
+aclnnStatus aclnnDivModGetWorkspaceSize(const aclTensor* self, const aclTensor* other, int mode, aclTensor* out,
+                                        uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnDivMod, DFX_IN(self, other, mode), DFX_OUT(out));
 
@@ -807,8 +813,15 @@ aclnnStatus aclnnDivModGetWorkspaceSize(
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     // TruncateDiv 特殊处理：IsRegBase && mode=MODE_TRUNC_DIV && 类型组合在映射表中，不做类型提升
     if (IsRegBase(npuArch) && mode == MODE_TRUNC_DIV) {
+        // 如果tensor为0维，则转换为1维tensor
+        if (otherContiguous->GetViewShape().GetDimNum() == 0) {
+            auto baseShape = GetBaseShape(uniqueExecutor.get());
+            auto broadcastOut = l0op::BroadcastTo(otherContiguous, baseShape, uniqueExecutor.get());
+            CHECK_RET(broadcastOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            otherCasted = broadcastOut;
+        }
         if (isInTruncDtypeMapping(self->GetDataType(), other->GetDataType())) {
-            divOpOut = l0op::TruncateDiv(selfContiguous, otherContiguous, uniqueExecutor.get());
+            divOpOut = l0op::TruncateDiv(selfCasted, otherCasted, uniqueExecutor.get());
         } else {
             op::DataType promoteType;
             promoteType = InferDivModeDtype(self->GetDataType(), other->GetDataType(), mode);
@@ -818,7 +831,7 @@ aclnnStatus aclnnDivModGetWorkspaceSize(
             CHECK_RET(complexRet == ACLNN_SUCCESS, complexRet);
             selfCasted = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
             CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
-            otherCasted = l0op::Cast(otherContiguous, promoteType, uniqueExecutor.get());
+            otherCasted = l0op::Cast(otherCasted, promoteType, uniqueExecutor.get());
             CHECK_RET(otherCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
             divOpOut = l0op::TruncateDiv(selfCasted, otherCasted, uniqueExecutor.get());
         }
@@ -896,9 +909,8 @@ aclnnStatus aclnnDivMod(void* workspace, uint64_t workspaceSize, aclOpExecutor* 
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnDivModsGetWorkspaceSize(
-    const aclTensor* self, const aclScalar* other, int mode, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnDivModsGetWorkspaceSize(const aclTensor* self, const aclScalar* other, int mode, aclTensor* out,
+                                         uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnDivMods, DFX_IN(self, other, mode), DFX_OUT(out));
 
@@ -961,8 +973,8 @@ aclnnStatus aclnnDivModsGetWorkspaceSize(
         bool needToInt32 = false;
         op::DataType oriType = out->GetDataType();
         if (!IsRegBase(npuArch)) {
-            auto promoteRet =
-                CompatibleInferDivsModeDtype(self->GetDataType(), other->GetDataType(), mode, promoteType);
+            auto promoteRet = CompatibleInferDivsModeDtype(self->GetDataType(), other->GetDataType(), mode,
+                                                           promoteType);
             CHECK_RET(promoteRet == ACLNN_SUCCESS, promoteRet);
         } else {
             promoteType = InferDivsModeDtype(self->GetDataType(), other->GetDataType(), mode);
@@ -1024,30 +1036,25 @@ aclnnStatus aclnnDivMods(void* workspace, uint64_t workspaceSize, aclOpExecutor*
 
 static inline aclnnStatus CheckInplace(const aclTensor* selfRef, const aclTensor* other)
 {
-    OP_CHECK(
-        selfRef != nullptr, OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "Expected selfRef not to be null."),
-        return ACLNN_ERR_PARAM_NULLPTR);
-    OP_CHECK(
-        other != nullptr, OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "Expected other not to be null."),
-        return ACLNN_ERR_PARAM_NULLPTR);
+    OP_CHECK(selfRef != nullptr, OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "Expected selfRef not to be null."),
+             return ACLNN_ERR_PARAM_NULLPTR);
+    OP_CHECK(other != nullptr, OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "Expected other not to be null."),
+             return ACLNN_ERR_PARAM_NULLPTR);
     op::Shape broadcastShape;
     OP_CHECK(
         BroadcastInferShape(selfRef->GetViewShape(), other->GetViewShape(), broadcastShape),
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Shape of selfRef and other can't broadcast, got %s, %s.",
-            op::ToString(selfRef->GetViewShape()).GetString(), op::ToString(other->GetViewShape()).GetString()),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of selfRef and other can't broadcast, got %s, %s.",
+                op::ToString(selfRef->GetViewShape()).GetString(), op::ToString(other->GetViewShape()).GetString()),
         return ACLNN_ERR_PARAM_INVALID);
-    OP_CHECK(
-        selfRef->GetViewShape() == broadcastShape,
-        OP_LOGE(
-            ACLNN_ERR_PARAM_NULLPTR, "Expected shape of selfRef should be %s, but got %s.",
-            op::ToString(broadcastShape).GetString(), op::ToString(selfRef->GetViewShape()).GetString()),
-        return ACLNN_ERR_PARAM_INVALID);
+    OP_CHECK(selfRef->GetViewShape() == broadcastShape,
+             OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "Expected shape of selfRef should be %s, but got %s.",
+                     op::ToString(broadcastShape).GetString(), op::ToString(selfRef->GetViewShape()).GetString()),
+             return ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceDivGetWorkspaceSize(
-    aclTensor* selfRef, const aclTensor* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceDivGetWorkspaceSize(aclTensor* selfRef, const aclTensor* other, uint64_t* workspaceSize,
+                                            aclOpExecutor** executor)
 {
     auto ret = CheckInplace(selfRef, other);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
@@ -1104,8 +1111,8 @@ aclnnStatus aclnnInplaceDiv(void* workspace, uint64_t workspaceSize, aclOpExecut
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceDivsGetWorkspaceSize(
-    aclTensor* selfRef, const aclScalar* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceDivsGetWorkspaceSize(aclTensor* selfRef, const aclScalar* other, uint64_t* workspaceSize,
+                                             aclOpExecutor** executor)
 {
     auto out = const_cast<aclTensor*>(selfRef);
     return aclnnDivsGetWorkspaceSize(selfRef, other, out, workspaceSize, executor);
@@ -1117,8 +1124,8 @@ aclnnStatus aclnnInplaceDivs(void* workspace, uint64_t workspaceSize, aclOpExecu
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceDivModGetWorkspaceSize(
-    aclTensor* selfRef, const aclTensor* other, int mode, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceDivModGetWorkspaceSize(aclTensor* selfRef, const aclTensor* other, int mode,
+                                               uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     auto ret = CheckInplace(selfRef, other);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
@@ -1177,8 +1184,8 @@ aclnnStatus aclnnInplaceDivMod(void* workspace, uint64_t workspaceSize, aclOpExe
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceDivModsGetWorkspaceSize(
-    aclTensor* selfRef, const aclScalar* other, int mode, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceDivModsGetWorkspaceSize(aclTensor* selfRef, const aclScalar* other, int mode,
+                                                uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     auto out = const_cast<aclTensor*>(selfRef);
     return aclnnDivModsGetWorkspaceSize(selfRef, other, mode, out, workspaceSize, executor);
