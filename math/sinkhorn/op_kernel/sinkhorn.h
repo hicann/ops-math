@@ -144,11 +144,9 @@ constexpr uint64_t LOOP_FLAG_INDEX = 0;
 // T: 表示运算过程中的数据类型
 // IT: 表示输入cost的数据类型
 template <typename T, typename IT = T>
-class KernelSinkhorn
-{
+class KernelSinkhorn {
 public:
-    __aicore__ inline KernelSinkhorn()
-    {}
+    __aicore__ inline KernelSinkhorn() {}
     __aicore__ inline void Init(GM_ADDR cost, GM_ADDR p, GM_ADDR workspace, const SinkhornTilingData* tilingData);
     __aicore__ inline void Process();
 
@@ -194,10 +192,10 @@ private:
     // Workspace空间
     GlobalTensor<uint64_t> headerInWS; // 头，64B对齐，[0]: loopFlag, 控制是否退出循环，其他空间预留
     GlobalTensor<T> d0GlobalInWS;      // Global d0, 大小为totalRow
-    GlobalTensor<T> d0BlockInWS;       // Block d0, 这个是前者+offset之后的地址，不额外占用workspace空间
-    GlobalTensor<T> d1GlobalInWS;      // Global d1, 大小为totalCol
-    GlobalTensor<T> d1GlobalInWSNew;   // Global d1 new, 新的d1汇总数据， 大小为totalCol
-    GlobalTensor<T> d1BlockInWS;       // Block d1, 每个Block需要一块，每块大小totalCol
+    GlobalTensor<T> d0BlockInWS;     // Block d0, 这个是前者+offset之后的地址，不额外占用workspace空间
+    GlobalTensor<T> d1GlobalInWS;    // Global d1, 大小为totalCol
+    GlobalTensor<T> d1GlobalInWSNew; // Global d1 new, 新的d1汇总数据， 大小为totalCol
+    GlobalTensor<T> d1BlockInWS;     // Block d1, 每个Block需要一块，每块大小totalCol
 
     // 用于Vector计算，存放在UB中
     TPipe pipe;
@@ -206,6 +204,8 @@ private:
 
     // d0, d1空间
     TQue<QuePosition::VECIN, 1> d0InQueue, d1InQueue; // d0, d1作为输入的空间，大小分别为tileRow, totalCol
+    TQue<QuePosition::VECIN, 1>
+        d1OldInQueue; // 旧 d1 搬入空间（收敛判断用），大小 totalCol，专用 VECIN 以 EnQue/DeQue 提供 MTE2->V 同步
     TQue<QuePosition::VECOUT, 1> d0OutQueue, d0OutQueue2, d0OutQueue3; // d0临时输出空间，大小分别为tileRow
     TQue<QuePosition::VECOUT, 1> d1OutQueue, d1OutQueue2, d1OutQueue3; // d1临时输出空间，大小分别为totalCol
 

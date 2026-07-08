@@ -69,7 +69,7 @@ namespace AscendC {
         GM_ADDR newBegin = workspace;
         headerInWS.SetGlobalBuffer((__gm__ uint64_t*)newBegin, HEADER_SIZE_IN_INT64);
         newBegin += sizeof(uint64_t) * HEADER_SIZE_IN_INT64;
-        
+
         d0GlobalInWS.SetGlobalBuffer((__gm__ T*)newBegin, this->totalRow);
         if (isFormer) {
             // former
@@ -101,13 +101,14 @@ namespace AscendC {
     {
         pipe.InitBuffer(costInQueue, COST_BUFFER_NUM, tileRow * totalColAligned * sizeof(T));
         pipe.InitBuffer(costOutQueue, COST_BUFFER_NUM, tileRow * totalColAligned * sizeof(T));
-        
+
         pipe.InitBuffer(d0InQueue, 1, tileRow * sizeof(T));
         pipe.InitBuffer(d0OutQueue, 1, tileRow * sizeof(T));
         pipe.InitBuffer(d0OutQueue2, 1, tileRow * sizeof(T));
         pipe.InitBuffer(d0OutQueue3, 1, tileRow * sizeof(T));
 
         pipe.InitBuffer(d1InQueue, 1, totalColAligned * sizeof(T));
+        pipe.InitBuffer(d1OldInQueue, 1, totalColAligned * sizeof(T));
         pipe.InitBuffer(d1OutQueue, 1, totalColAligned * sizeof(T));
         pipe.InitBuffer(d1OutQueue2, 1, totalColAligned * sizeof(T));
         pipe.InitBuffer(d1OutQueue3, 1, totalColAligned * sizeof(T));
@@ -145,6 +146,10 @@ namespace AscendC {
 
         LocalTensor<T> tmpLocal = costInQueue.AllocTensor<T>();
         Duplicate(tmpLocal, static_cast<T>(1.0), tmpBufLength);
+        // Duplicate(PIPE_V)写UB后，DataCopyPad(PIPE_MTE3)需读取同一UB，补V->MTE3同步
+        event_t eventIdVMte3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
+        SetFlag<HardEvent::V_MTE3>(eventIdVMte3);
+        WaitFlag<HardEvent::V_MTE3>(eventIdVMte3);
 
         uint32_t loopCount = totalRow / tmpBufLength;
         uint32_t remainingD0 = totalRow % tmpBufLength;
@@ -164,6 +169,10 @@ namespace AscendC {
     {
         LocalTensor<T> tmpLocal = d1InQueue.AllocTensor<T>();
         Duplicate(tmpLocal, static_cast<T>(1.0), totalCol);
+        // Duplicate(PIPE_V)写UB后，DataCopyPad(PIPE_MTE3)需读取同一UB，补V->MTE3同步
+        event_t eventIdVMte3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
+        SetFlag<HardEvent::V_MTE3>(eventIdVMte3);
+        WaitFlag<HardEvent::V_MTE3>(eventIdVMte3);
         DataCopyExtParams copyParams{1, static_cast<uint32_t>(totalCol * sizeof(T)), 0, 0, 0};
         DataCopyPad(d1GlobalInWS, tmpLocal, copyParams);
         d1InQueue.FreeTensor(tmpLocal);
@@ -174,6 +183,10 @@ namespace AscendC {
     {
         LocalTensor<T> tmpLocal = d1OutQueue.AllocTensor<T>();
         Duplicate(tmpLocal, static_cast<T>(0.0), totalCol);
+        // Duplicate(PIPE_V)写UB后，DataCopyPad(PIPE_MTE3)需读取同一UB，补V->MTE3同步
+        event_t eventIdVMte3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
+        SetFlag<HardEvent::V_MTE3>(eventIdVMte3);
+        WaitFlag<HardEvent::V_MTE3>(eventIdVMte3);
         DataCopyExtParams copyParams{1, static_cast<uint32_t>(totalCol * sizeof(T)), 0, 0, 0};
         DataCopyPad(d1GlobalInWSNew, tmpLocal, copyParams);
         d1OutQueue.FreeTensor(tmpLocal);
@@ -247,7 +260,7 @@ namespace AscendC {
             }
             WaitFlag<HardEvent::V_S>(eventId);
             costInQueue.EnQue(costSrcLocal);
-            costOutQueue.FreeTensor(costDstLocal);            
+            costOutQueue.FreeTensor(costDstLocal);
         }
     }
 
@@ -269,7 +282,7 @@ namespace AscendC {
 
         event_t eventId_MTE3_MTE2 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_MTE2));
         SetFlag<HardEvent::MTE3_MTE2>(eventId_MTE3_MTE2);
-        
+
         for (int t = 0; t < tileNum; t++) {
             uint32_t tileIdx = t * this->tileLength;
             uint32_t length = this->tileLength;
@@ -306,7 +319,7 @@ namespace AscendC {
         uint32_t dataSize = (GM_ADDR)(global[1].GetPhyAddr()) - p;
         uint32_t stride = 64 / dataSize;
         uint32_t repeatTimes = (global.GetSize() + stride - 1) / stride;
-        
+
         // 非64B对齐，则多一行
         if (uint64_t(p - 0) % 64) {
             repeatTimes++;
