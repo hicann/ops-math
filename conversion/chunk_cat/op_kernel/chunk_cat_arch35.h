@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
- /*!
+/*!
  * \file chunk_cat_arch35.h
  * \brief
  */
@@ -33,28 +33,19 @@ struct VciTypeGet<uint16_t> {
     using T = int16_t;
 };
 
-static constexpr MicroAPI::CastTrait castTraitZero = {
-    MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::UNKNOWN, MicroAPI::MaskMergeMode::ZEROING,
-    RoundMode::UNKNOWN
-};
-static constexpr MicroAPI::CastTrait castTraitOne = {
-    MicroAPI::RegLayout::ONE, MicroAPI::SatMode::UNKNOWN, MicroAPI::MaskMergeMode::ZEROING,
-    RoundMode::UNKNOWN
-};
-static constexpr MicroAPI::CastTrait castTraitbf2half = {
-    MicroAPI::RegLayout::UNKNOWN, MicroAPI::SatMode::NO_SAT, MicroAPI::MaskMergeMode::ZEROING,
-    RoundMode::CAST_RINT
-};
-static constexpr MicroAPI::CastTrait castTraithalf2bf = {
-    MicroAPI::RegLayout::UNKNOWN, MicroAPI::SatMode::UNKNOWN, MicroAPI::MaskMergeMode::ZEROING,
-    RoundMode::CAST_RINT
-};
+static constexpr MicroAPI::CastTrait castTraitZero = {MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::UNKNOWN,
+                                                      MicroAPI::MaskMergeMode::ZEROING, RoundMode::UNKNOWN};
+static constexpr MicroAPI::CastTrait castTraitOne = {MicroAPI::RegLayout::ONE, MicroAPI::SatMode::UNKNOWN,
+                                                     MicroAPI::MaskMergeMode::ZEROING, RoundMode::UNKNOWN};
+static constexpr MicroAPI::CastTrait castTraitbf2half = {MicroAPI::RegLayout::UNKNOWN, MicroAPI::SatMode::NO_SAT,
+                                                         MicroAPI::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
+static constexpr MicroAPI::CastTrait castTraithalf2bf = {MicroAPI::RegLayout::UNKNOWN, MicroAPI::SatMode::UNKNOWN,
+                                                         MicroAPI::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
 
 template <typename T1, typename T2, bool NEED_CAST = false>
-class ChunkCatArch35 : public ChunkCatCommon<T1, T2>
-{
+class ChunkCatArch35 : public ChunkCatCommon<T1, T2> {
 public:
-    __aicore__ inline ChunkCatArch35(TPipe *pipe) : ChunkCatCommon<T1, T2>(pipe) {}
+    __aicore__ inline ChunkCatArch35(TPipe* pipe) : ChunkCatCommon<T1, T2>(pipe) {}
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const ChunkCatTilingData& tilingData)
     {
@@ -70,15 +61,15 @@ public:
 
         uint64_t buf[10];
         this->desc_.SetShapeAddr(buf); // 用于获取shape信息
-        
+
         for (int64_t i = 0; i < rowLoop * colLoop; i++) {
             UbLoopInfo ubLoopInfo{};
             ubLoopInfo.ubRowGroup = i / colLoop;
             ubLoopInfo.ubColGroup = i % colLoop;
-            ubLoopInfo.currentUbRowFactor = (rowTail != 0 && ubLoopInfo.ubRowGroup == rowLoop - 1) ?
-                                            rowTail : this->ubRowFactor_;
-            ubLoopInfo.currentUbColFactor = (colTail != 0 && ubLoopInfo.ubColGroup == colLoop - 1) ?
-                                            colTail : this->ubColFactor_;
+            ubLoopInfo.currentUbRowFactor = (rowTail != 0 && ubLoopInfo.ubRowGroup == rowLoop - 1) ? rowTail :
+                                                                                                     this->ubRowFactor_;
+            ubLoopInfo.currentUbColFactor = (colTail != 0 && ubLoopInfo.ubColGroup == colLoop - 1) ? colTail :
+                                                                                                     this->ubColFactor_;
             // 搬入&&计算
             CopyInAndCompute(ubLoopInfo);
             SetFlag<HardEvent::V_MTE3>(this->event_);
@@ -106,7 +97,8 @@ private:
                 totalCol += tensorInfo.tensorCol;
             } else {
                 tensorInfo.chunkRow = tensorInfo.chunkDimSize / tensorInfo.chunkCol;
-                tensorInfo.chunkRowAlign = this->GetAlign(tensorInfo.chunkDimSize, tensorInfo.chunkCol) / tensorInfo.chunkCol;
+                tensorInfo.chunkRowAlign = this->GetAlign(tensorInfo.chunkDimSize, tensorInfo.chunkCol) /
+                                           tensorInfo.chunkCol;
                 this->SplitTensorDim0(totalCol, ubLoopInfo, tensorInfo);
                 if (ubLoopInfo.rowStart >= tensorInfo.chunkRowAlign) {
                     tensorInfo.isZero = true;
@@ -118,10 +110,11 @@ private:
                 ubLoopInfo.count++;
                 ubLoopInfo.totalUbCol += tensorInfo.splitCol;
                 totalCol += tensorInfo.tensorCol;
-                localOffset += this->GetAlign(ubLoopInfo.currentUbRowFactor * tensorInfo.splitCol, this->srcEleUbBlock_);
+                localOffset += this->GetAlign(ubLoopInfo.currentUbRowFactor * tensorInfo.splitCol,
+                                              this->srcEleUbBlock_);
             }
 
-            if (ubLoopInfo.count > 31) {
+            if (ubLoopInfo.count > NUM_THIRTY_ONE) {
                 // 32个tensor处理一次
                 CopyOut(ubLoopInfo);
                 localOffset = 0;
@@ -131,13 +124,14 @@ private:
         }
     }
 
-    __aicore__ inline void Compute(const UbLoopInfo& ubLoopInfo, const TensorInfo& tensorInfo, int64_t totalCol, int64_t localOffset)
+    __aicore__ inline void Compute(const UbLoopInfo& ubLoopInfo, const TensorInfo& tensorInfo, int64_t totalCol,
+                                   int64_t localOffset)
     {
         if (!tensorInfo.isZero) {
             SetFlag<HardEvent::MTE2_V>(this->event_);
             WaitFlag<HardEvent::MTE2_V>(this->event_);
         }
-        if (tensorInfo.splitCol > GetVRegSize() / sizeof(T2) / 2 || ubLoopInfo.currentUbRowFactor < 2) {
+        if (tensorInfo.splitCol > GetVRegSize() / sizeof(T2) / NUM_TWO || ubLoopInfo.currentUbRowFactor < HALF) {
             CopyCatVF<false>(ubLoopInfo, tensorInfo, totalCol, localOffset);
         } else {
             CopyCatVF<true>(ubLoopInfo, tensorInfo, totalCol, localOffset);
@@ -150,9 +144,10 @@ private:
     {
         uint16_t blockCount = ubLoopInfo.currentUbRowFactor;
         uint32_t blockLen = ubLoopInfo.totalUbCol * sizeof(T2);
-        uint32_t dstStride = (this->outputCol_ - ubLoopInfo.totalUbCol)* sizeof(T2);
+        uint32_t dstStride = (this->outputCol_ - ubLoopInfo.totalUbCol) * sizeof(T2);
         uint32_t srcStride = (this->GetAlign(ubLoopInfo.currentUbColFactor, this->dstEleUbBlock_) -
-                              this->GetAlign(ubLoopInfo.totalUbCol, this->dstEleUbBlock_)) / this->dstEleUbBlock_;
+                              this->GetAlign(ubLoopInfo.totalUbCol, this->dstEleUbBlock_)) /
+                             this->dstEleUbBlock_;
         DataCopyExtParams copyParamsOut{blockCount, blockLen, srcStride, dstStride, 0};
         int64_t dstOffset = ubLoopInfo.ubRowGroup * this->ubRowFactor_ * this->outputCol_ +
                             ubLoopInfo.ubColGroup * this->ubColFactor_ + ubLoopInfo.preCatCol;
@@ -165,7 +160,7 @@ private:
     }
     // Compute
     __aicore__ inline void DoCopyCatVF(__ubuf__ T2* dstAddr, __ubuf__ T1* srcAddr, uint16_t rowLoop, uint16_t colLoop,
-                                        uint32_t tail, uint32_t rowStride)
+                                       uint32_t tail, uint32_t rowStride)
     {
         uint32_t main = GetVRegSize() / sizeof(T1);
         uint32_t mainFP32 = GetVRegSize() / sizeof(T2);
@@ -176,7 +171,7 @@ private:
         AscendC::MicroAPI::RegTensor<T1> srcReg0;
         AscendC::MicroAPI::RegTensor<T2> dstReg0;
         AscendC::MicroAPI::RegTensor<T2> dstReg1;
-        AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::CreateMask<T1, AscendC::MicroAPI:: MaskPattern::ALL>();
+        AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::CreateMask<T1, AscendC::MicroAPI::MaskPattern::ALL>();
 
         AscendC::MicroAPI::DataCopyUnAlignPre(u0, srcAddr);
         for (uint16_t i = 0; i < rowLoop; i++) {
@@ -196,7 +191,8 @@ private:
                     AscendC::MicroAPI::Cast<T2, T1, castTraitOne>(dstReg1, srcReg0, mask);
                     AscendC::MicroAPI::Interleave(dstReg0, dstReg1, dstReg0, dstReg1);
                     AscendC::MicroAPI::DataCopyUnAlign(curDstAddr, dstReg0, uReg, mainFP32);
-                    AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE, AscendC::MicroAPI::MemType::VEC_STORE>();
+                    AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
+                                                   AscendC::MicroAPI::MemType::VEC_STORE>();
                     AscendC::MicroAPI::DataCopyUnAlign(curDstAddr, dstReg1, uReg, mainFP32);
                 }
             }
@@ -214,15 +210,16 @@ private:
                 AscendC::MicroAPI::Cast<T2, T1, castTraitOne>(dstReg1, srcReg0, mask);
                 AscendC::MicroAPI::Interleave(dstReg0, dstReg1, dstReg0, dstReg1);
                 AscendC::MicroAPI::DataCopyUnAlign(curDstAddr, dstReg0, uReg, tailFP32Fir);
-                AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE, AscendC::MicroAPI::MemType::VEC_STORE>();
+                AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
+                                               AscendC::MicroAPI::MemType::VEC_STORE>();
                 AscendC::MicroAPI::DataCopyUnAlign(curDstAddr, dstReg1, uReg, tailFP32Sec);
             }
             AscendC::MicroAPI::DataCopyUnAlignPost(curDstAddr, uReg, 0);
         }
     }
 
-    __aicore__ inline void DoPadCatVF(__ubuf__ T2* dstAddr, uint16_t rowLoop, uint16_t colLoop,
-                                        uint32_t main, uint32_t tail, uint32_t rowStride)
+    __aicore__ inline void DoPadCatVF(__ubuf__ T2* dstAddr, uint16_t rowLoop, uint16_t colLoop, uint32_t main,
+                                      uint32_t tail, uint32_t rowStride)
     {
         AscendC::MicroAPI::UnalignReg uReg;
         AscendC::MicroAPI::RegTensor<T2> dstReg0;
@@ -242,7 +239,7 @@ private:
 
     template <typename U>
     __aicore__ inline void DoScatterCatVF(__ubuf__ T2* dstAddr, __ubuf__ T1* srcAddr, uint16_t rowLoop, uint32_t rowNum,
-                                        uint32_t rowNumTail, uint32_t srcLen, uint32_t rowStride)
+                                          uint32_t rowNumTail, uint32_t srcLen, uint32_t rowStride)
     {
         // genarator index
         AscendC::MicroAPI::RegTensor<U> v0;
@@ -252,8 +249,8 @@ private:
         AscendC::MicroAPI::RegTensor<U> v4;
         AscendC::MicroAPI::RegTensor<U> v5;
         AscendC::MicroAPI::RegTensor<U> index;
-        AscendC::MicroAPI::MaskReg p0 = AscendC::MicroAPI::CreateMask<U, AscendC::MicroAPI:: MaskPattern::ALL>();
-        AscendC::MicroAPI::MaskReg p1 = AscendC::MicroAPI::CreateMask<T1, AscendC::MicroAPI:: MaskPattern::ALL>();
+        AscendC::MicroAPI::MaskReg p0 = AscendC::MicroAPI::CreateMask<U, AscendC::MicroAPI::MaskPattern::ALL>();
+        AscendC::MicroAPI::MaskReg p1 = AscendC::MicroAPI::CreateMask<T1, AscendC::MicroAPI::MaskPattern::ALL>();
 
         using regType = typename VciTypeGet<U>::T;
         AscendC::MicroAPI::RegTensor<regType> tmp;
@@ -312,8 +309,8 @@ private:
     }
 
     template <typename U>
-    __aicore__ inline void DoScatterPadCatVF(__ubuf__ T2* dstAddr, uint16_t rowLoop, 
-                                        uint32_t rowNum, uint32_t rowNumTail, uint32_t srcLen, uint32_t rowStride)
+    __aicore__ inline void DoScatterPadCatVF(__ubuf__ T2* dstAddr, uint16_t rowLoop, uint32_t rowNum,
+                                             uint32_t rowNumTail, uint32_t srcLen, uint32_t rowStride)
     {
         AscendC::MicroAPI::RegTensor<T2> dstReg0;
         // genarator index
@@ -324,7 +321,7 @@ private:
         AscendC::MicroAPI::RegTensor<U> v4;
         AscendC::MicroAPI::RegTensor<U> v5;
         AscendC::MicroAPI::RegTensor<U> index;
-        AscendC::MicroAPI::MaskReg p0 = AscendC::MicroAPI::CreateMask<U, AscendC::MicroAPI:: MaskPattern::ALL>();
+        AscendC::MicroAPI::MaskReg p0 = AscendC::MicroAPI::CreateMask<U, AscendC::MicroAPI::MaskPattern::ALL>();
 
         using regType = typename VciTypeGet<U>::T;
         AscendC::MicroAPI::RegTensor<regType> tmp;
@@ -353,11 +350,12 @@ private:
     }
 
     template <bool IS_SCATTER = true>
-    __aicore__ inline void CopyCatVF(const UbLoopInfo& ubLoopInfo, const TensorInfo& tensorInfo, int64_t totalCol, int64_t localOffset)
+    __aicore__ inline void CopyCatVF(const UbLoopInfo& ubLoopInfo, const TensorInfo& tensorInfo, int64_t totalCol,
+                                     int64_t localOffset)
     {
         uint32_t srcLen = tensorInfo.splitCol;
         bool isSplit = tensorInfo.isSplit;
-        
+
         // 无搬运&&完整搬运阶段参数
         uint32_t main = GetVRegSize() / sizeof(T1);
         uint32_t mainFP32 = GetVRegSize() / sizeof(T2);
@@ -379,7 +377,7 @@ private:
         uint16_t colLen1 = 0;
         uint16_t colLoop1 = 0;
         uint32_t tailPad = 0;
-        
+
         if (ubLoopInfo.rowStart >= tensorInfo.chunkRowAlign) {
             // 无搬运，纯pad
             rowLoop2 = ubLoopInfo.currentUbRowFactor;
@@ -410,7 +408,7 @@ private:
         uint32_t dstOffset = totalCol + tensorInfo.startOffset - ubLoopInfo.colStart - ubLoopInfo.preCatCol;
 
         auto dstAddr = (__ubuf__ T2*)this->dstLocal_.GetPhyAddr() + dstOffset;
-        auto srcAddr = (__ubuf__ T1*)this->srcLocal_.GetPhyAddr() + localOffset;      
+        auto srcAddr = (__ubuf__ T1*)this->srcLocal_.GetPhyAddr() + localOffset;
 
         __VEC_SCOPE__
         {
@@ -419,22 +417,27 @@ private:
                     // rowLoop0
                     DoScatterCatVF<uint16_t>(dstAddr, srcAddr, rowLoop00, rowNum, rowNumTailLoop0, srcLen, rowStride);
                     // rowLoop2
-                    DoScatterPadCatVF<uint16_t>(dstAddr + (rowLoop0 + rowLoop1) * rowStride, rowLoop20, rowNum, rowNumTailLoop2, srcLen, rowStride);
+                    DoScatterPadCatVF<uint16_t>(dstAddr + (rowLoop0 + rowLoop1) * rowStride, rowLoop20, rowNum,
+                                                rowNumTailLoop2, srcLen, rowStride);
                 } else {
                     // rowLoop0
                     DoScatterCatVF<uint32_t>(dstAddr, srcAddr, rowLoop00, rowNum, rowNumTailLoop0, srcLen, rowStride);
                     // rowLoop2
-                    DoScatterPadCatVF<uint32_t>(dstAddr + (rowLoop0 + rowLoop1) * rowStride, rowLoop20, rowNum, rowNumTailLoop2, srcLen, rowStride);
+                    DoScatterPadCatVF<uint32_t>(dstAddr + (rowLoop0 + rowLoop1) * rowStride, rowLoop20, rowNum,
+                                                rowNumTailLoop2, srcLen, rowStride);
                 }
             } else {
                 // rowLoop0
                 DoCopyCatVF(dstAddr, srcAddr, rowLoop0, colLoop, tail, rowStride);
                 // rowLoop2
-                DoPadCatVF(dstAddr + (rowLoop0 + rowLoop1) * rowStride, rowLoop2, colLoopFP32, mainFP32, tailFP32, rowStride);
+                DoPadCatVF(dstAddr + (rowLoop0 + rowLoop1) * rowStride, rowLoop2, colLoopFP32, mainFP32, tailFP32,
+                           rowStride);
             }
             // rowLoop1
-            DoCopyCatVF(dstAddr + rowLoop0 * rowStride, srcAddr + rowLoop0 * srcLen + padLen, rowLoop1, colLoop, tail, rowStride);
-            AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE, AscendC::MicroAPI::MemType::VEC_STORE>();
+            DoCopyCatVF(dstAddr + rowLoop0 * rowStride, srcAddr + rowLoop0 * srcLen + padLen, rowLoop1, colLoop, tail,
+                        rowStride);
+            AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
+                                           AscendC::MicroAPI::MemType::VEC_STORE>();
             DoPadCatVF(dstAddr + rowLoop0 * rowStride + colLen0, rowLoop1, colLoop1, mainFP32, tailPad, rowStride);
         }
     }

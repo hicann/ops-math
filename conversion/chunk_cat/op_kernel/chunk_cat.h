@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
- /*!
+/*!
  * \file chunk_cat.h
  * \brief
  */
@@ -19,11 +19,10 @@
 #include "chunk_cat_common.h"
 
 using namespace AscendC;
-template <typename T1, typename T2, bool NEED_CAST=false>
-class ChunkCat : public ChunkCatCommon<T1, T2>
-{
+template <typename T1, typename T2, bool NEED_CAST = false>
+class ChunkCat : public ChunkCatCommon<T1, T2> {
 public:
-    __aicore__ inline ChunkCat(TPipe *pipe) : ChunkCatCommon<T1, T2>(pipe) {}
+    __aicore__ inline ChunkCat(TPipe* pipe) : ChunkCatCommon<T1, T2>(pipe) {}
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const ChunkCatTilingData& tilingData)
     {
@@ -49,16 +48,16 @@ public:
         uint64_t buf[10];
         this->desc_.SetShapeAddr(buf); // 用于获取shape信息
         int64_t inputCol[32];
-        
+
         for (int64_t i = 0; i < rowLoop * colLoop; i++) {
             UbLoopInfo ubLoopInfo{};
             ubLoopInfo.inputCol = inputCol;
             ubLoopInfo.ubRowGroup = i / colLoop;
             ubLoopInfo.ubColGroup = i % colLoop;
-            ubLoopInfo.currentUbRowFactor = (rowTail != 0 && ubLoopInfo.ubRowGroup == rowLoop - 1) ?
-                                            rowTail : this->ubRowFactor_;
-            ubLoopInfo.currentUbColFactor = (colTail != 0 && ubLoopInfo.ubColGroup == colLoop - 1) ?
-                                            colTail : this->ubColFactor_;
+            ubLoopInfo.currentUbRowFactor = (rowTail != 0 && ubLoopInfo.ubRowGroup == rowLoop - 1) ? rowTail :
+                                                                                                     this->ubRowFactor_;
+            ubLoopInfo.currentUbColFactor = (colTail != 0 && ubLoopInfo.ubColGroup == colLoop - 1) ? colTail :
+                                                                                                     this->ubColFactor_;
             // 1、清零ub
             dupToZero();
             // 搬入
@@ -91,19 +90,27 @@ private:
                 totalCol += tensorInfo.tensorCol;
             } else {
                 this->SplitTensorDim0(totalCol, ubLoopInfo, tensorInfo);
-                ubLoopInfo.inputCol[ubLoopInfo.count] = (!isOneConcat_ && !isAllAlign_ && tensorInfo.isSplit) ? -tensorInfo.splitCol : tensorInfo.splitCol;
+                ubLoopInfo.inputCol[ubLoopInfo.count] = (!isOneConcat_ && !isAllAlign_ && tensorInfo.isSplit) ?
+                                                            -tensorInfo.splitCol :
+                                                            tensorInfo.splitCol;
                 tensorInfo.chunkRow = tensorInfo.chunkDimSize / tensorInfo.chunkCol;
-                tensorInfo.chunkRowAlign = this->GetAlign(tensorInfo.chunkDimSize, tensorInfo.chunkCol) / tensorInfo.chunkCol;
-                int64_t localOffsetIncrement = (isOneConcat_ || isAllAlign_) ? ubLoopInfo.currentUbRowFactor :
-                    (isHalfAlign_ ? TRANS_BLOCK * HALF : TRANS_BLOCK * this->srcEleUbBlock_);
+                tensorInfo.chunkRowAlign = this->GetAlign(tensorInfo.chunkDimSize, tensorInfo.chunkCol) /
+                                           tensorInfo.chunkCol;
+                int64_t localOffsetIncrement = (isOneConcat_ || isAllAlign_) ?
+                                                   ubLoopInfo.currentUbRowFactor :
+                                                   (isHalfAlign_ ? TRANS_BLOCK * HALF :
+                                                                   TRANS_BLOCK * this->srcEleUbBlock_);
                 if (ubLoopInfo.rowStart >= tensorInfo.chunkRowAlign) {
                     ubLoopInfo.inputCol[ubLoopInfo.count] = tensorInfo.splitCol;
                     ubLoopInfo.totalUbColAlign += tensorInfo.splitCol;
                     localOffsetIncrement *= tensorInfo.splitCol;
                 } else {
                     this->CopyInChunk(totalCol, localOffset, ubLoopInfo, tensorInfo);
-                    localOffsetIncrement *= (isOneConcat_ || tensorInfo.isSplit) ? tensorInfo.splitColAlign : tensorInfo.splitCol;
-                    ubLoopInfo.totalUbColAlign += (isOneConcat_ || (!isAllAlign_ && tensorInfo.isSplit)) ? tensorInfo.splitColAlign : tensorInfo.splitCol;
+                    localOffsetIncrement *= (isOneConcat_ || tensorInfo.isSplit) ? tensorInfo.splitColAlign :
+                                                                                   tensorInfo.splitCol;
+                    ubLoopInfo.totalUbColAlign += (isOneConcat_ || (!isAllAlign_ && tensorInfo.isSplit)) ?
+                                                      tensorInfo.splitColAlign :
+                                                      tensorInfo.splitCol;
                 }
                 ubLoopInfo.totalUbCol += tensorInfo.splitCol;
                 ubLoopInfo.count++;
@@ -118,19 +125,20 @@ private:
     {
         if (isOneConcat_) {
             ComputeOneConcat(ubLoopInfo);
-        }
-        else if (ubLoopInfo.isAllZero) {
+        } else if (ubLoopInfo.isAllZero) {
             PipeBarrier<PIPE_V>();
             SetFlag<HardEvent::MTE3_V>(this->event_);
             WaitFlag<HardEvent::MTE3_V>(this->event_);
             if constexpr (NEED_CAST) {
-                uint32_t castCount = ubLoopInfo.currentUbRowFactor * this->GetAlign(ubLoopInfo.currentUbColFactor, this->dstEleUbBlock_);
+                uint32_t castCount = ubLoopInfo.currentUbRowFactor *
+                                     this->GetAlign(ubLoopInfo.currentUbColFactor, this->dstEleUbBlock_);
                 DoCast(ubLoopInfo, castCount);
             } else {
-                DataCopy(dstLocalT1_, this->srcLocal_, ubLoopInfo.currentUbRowFactor * this->GetAlign(ubLoopInfo.currentUbColFactor, this->dstEleUbBlock_));
+                DataCopy(dstLocalT1_, this->srcLocal_,
+                         ubLoopInfo.currentUbRowFactor *
+                             this->GetAlign(ubLoopInfo.currentUbColFactor, this->dstEleUbBlock_));
             }
-        }
-        else if (ubLoopInfo.count == 1 && ubLoopInfo.currentUbColFactor % this->srcEleUbBlock_ == 0) {
+        } else if (ubLoopInfo.count == 1 && ubLoopInfo.currentUbColFactor % this->srcEleUbBlock_ == 0) {
             SetFlag<HardEvent::MTE2_V>(this->event_);
             WaitFlag<HardEvent::MTE2_V>(this->event_);
             if constexpr (NEED_CAST) {
@@ -139,8 +147,7 @@ private:
             } else {
                 DataCopy(dstLocalT1_, this->srcLocal_, ubLoopInfo.currentUbRowFactor * ubLoopInfo.currentUbColFactor);
             }
-        }
-        else if (isAllAlign_) {
+        } else if (isAllAlign_) {
             ComputeAllAlign(ubLoopInfo);
         } else {
             ComputeNotAlign(ubLoopInfo);
@@ -153,7 +160,8 @@ private:
     {
         if (isOneConcat_) {
             int64_t localOffset = 0;
-            int64_t globalOffset = ubLoopInfo.ubRowGroup * this->ubRowFactor_ * this->outputCol_ + ubLoopInfo.ubColGroup * this->ubColFactor_ + ubLoopInfo.preCatCol;
+            int64_t globalOffset = ubLoopInfo.ubRowGroup * this->ubRowFactor_ * this->outputCol_ +
+                                   ubLoopInfo.ubColGroup * this->ubColFactor_ + ubLoopInfo.preCatCol;
             for (int i = 0; i < ubLoopInfo.count; i++) {
                 uint16_t blockCount = ubLoopInfo.currentUbRowFactor;
                 uint32_t blockLen = ubLoopInfo.inputCol[i] * sizeof(T2);
@@ -169,17 +177,19 @@ private:
         }
         uint16_t blockCount = ubLoopInfo.currentUbRowFactor;
         uint32_t blockLen = ubLoopInfo.currentUbColFactor * sizeof(T2);
-        uint32_t dstStride = (this->outputCol_ - ubLoopInfo.currentUbColFactor)* sizeof(T2);
+        uint32_t dstStride = (this->outputCol_ - ubLoopInfo.currentUbColFactor) * sizeof(T2);
         DataCopyExtParams copyParamsOut{blockCount, blockLen, 0, dstStride, 0};
-        int64_t dstOffset = ubLoopInfo.ubRowGroup * this->ubRowFactor_ * this->outputCol_ + ubLoopInfo.ubColGroup * this->ubColFactor_;
+        int64_t dstOffset = ubLoopInfo.ubRowGroup * this->ubRowFactor_ * this->outputCol_ +
+                            ubLoopInfo.ubColGroup * this->ubColFactor_;
         DataCopyPad(this->dstGlobal_[dstOffset], this->dstLocal_, copyParamsOut);
         SetFlag<HardEvent::MTE3_MTE2>(this->event_);
         WaitFlag<HardEvent::MTE3_MTE2>(this->event_);
     }
 
-    __aicore__ inline void ComputeOver32(int64_t& totalCol, int64_t& localOffset, UbLoopInfo& ubLoopInfo, TensorInfo& tensorInfo)
+    __aicore__ inline void ComputeOver32(int64_t& totalCol, int64_t& localOffset, UbLoopInfo& ubLoopInfo,
+                                         TensorInfo& tensorInfo)
     {
-        if (isOneConcat_ && ubLoopInfo.count > 31) {
+        if (isOneConcat_ && ubLoopInfo.count > NUM_THIRTY_ONE) {
             // 计算
             Compute(ubLoopInfo);
             // 搬出
@@ -189,8 +199,7 @@ private:
             ubLoopInfo.count = 0;
             ubLoopInfo.totalUbCol = 0;
             ubLoopInfo.totalUbColAlign = 0;
-        }
-        else if (ubLoopInfo.count > 31) {
+        } else if (ubLoopInfo.count > NUM_THIRTY_ONE) {
             // 提前做部分concat
             if (!ubLoopInfo.isAllZero) {
                 SetFlag<HardEvent::MTE2_V>(this->event_);
@@ -228,14 +237,16 @@ private:
         WaitFlag<HardEvent::V_MTE2>(this->event_);
     }
 
-    __aicore__ inline void UBRearrange4Trans(const UbLoopInfo& ubLoopInfo, LocalTensor<T1>& srcLocal, LocalTensor<T1>& dstLocal)
+    __aicore__ inline void UBRearrange4Trans(const UbLoopInfo& ubLoopInfo, LocalTensor<T1>& srcLocal,
+                                             LocalTensor<T1>& dstLocal)
     {
         int64_t srcOffset = 0;
         int64_t dstOffset = 0;
         for (int64_t i = 0; i < ubLoopInfo.count; i++) {
             uint16_t blockCount = TRANS_BLOCK;
-            uint16_t actualCol = ubLoopInfo.inputCol[i] > 0 ? ubLoopInfo.inputCol[i] :
-                                 this->GetAlign(-ubLoopInfo.inputCol[i], this->srcEleUbBlock_);
+            uint16_t actualCol = ubLoopInfo.inputCol[i] > 0 ?
+                                     ubLoopInfo.inputCol[i] :
+                                     this->GetAlign(-ubLoopInfo.inputCol[i], this->srcEleUbBlock_);
             uint16_t blockLen = actualCol * colRepeatNum_ / this->srcEleUbBlock_;
             uint16_t dstGap = ubLoopInfo.totalUbColAlign * colRepeatNum_ / this->srcEleUbBlock_ - blockLen;
             DataCopyParams copyParams{blockCount, blockLen, 0, dstGap};
@@ -252,7 +263,7 @@ private:
         uint16_t srcRepStride = repeatTimes == 1 ? 0 : 1;
         uint16_t dstRepStride = repeatTimes == 1 ? 0 : TRANS_BLOCK;
         TransDataTo5HDParams transDataParams{false, false, repeatTimes, dstRepStride, srcRepStride};
-        
+
         uint64_t srcLocalList[TRANS_BLOCK];
         uint64_t dstLocalList[TRANS_BLOCK];
         if constexpr (sizeof(T1) == 2) {
@@ -275,8 +286,8 @@ private:
             for (uint64_t i = 0; i < this->srcEleUbBlock_; i++) {
                 for (uint64_t j = 0; j < TRANS_BLOCK / this->srcEleUbBlock_; j++) {
                     uint64_t offset = i * TRANS_BLOCK + j * this->srcEleUbBlock_;
-                    dstLocalList[i * TRANS_BLOCK / this->srcEleUbBlock_ + j] =
-                        reinterpret_cast<uint64_t>(dstLocal[offset].GetPhyAddr());
+                    dstLocalList[i * TRANS_BLOCK / this->srcEleUbBlock_ + j] = reinterpret_cast<uint64_t>(
+                        dstLocal[offset].GetPhyAddr());
                 }
             }
             TransDataTo5HD<T1>(dstLocalList, srcLocalList, transDataParams);
@@ -284,8 +295,9 @@ private:
         PipeBarrier<PIPE_V>();
     }
 
-    template <bool NO_NEED_ALIGN=false>
-    __aicore__ inline void UBRearrange4TransConcat(const UbLoopInfo& ubLoopInfo, LocalTensor<T1>& srcLocal, LocalTensor<T1>& dstLocal)
+    template <bool NO_NEED_ALIGN = false>
+    __aicore__ inline void UBRearrange4TransConcat(const UbLoopInfo& ubLoopInfo, LocalTensor<T1>& srcLocal,
+                                                   LocalTensor<T1>& dstLocal)
     {
         int64_t srcOffset = 0;
         int64_t dstOffset = 0;
@@ -293,22 +305,28 @@ private:
             uint16_t blockCount = colRepeatNum_;
             uint16_t actualCol = ubLoopInfo.inputCol[i] > 0 ? ubLoopInfo.inputCol[i] : -ubLoopInfo.inputCol[i];
             uint16_t blockLen = actualCol * TRANS_BLOCK / this->srcEleUbBlock_;
-            uint16_t srcGap = ubLoopInfo.inputCol[i] > 0 ? 0 :
-                (this->GetAlign(-ubLoopInfo.inputCol[i], this->srcEleUbBlock_) + ubLoopInfo.inputCol[i]) * TRANS_BLOCK / this->srcEleUbBlock_;
-            uint16_t dstGap = this->GetAlign(ubLoopInfo.totalUbCol, this->dstEleUbBlock_) * TRANS_BLOCK / this->srcEleUbBlock_ - blockLen;
+            uint16_t srcGap = ubLoopInfo.inputCol[i] > 0 ?
+                                  0 :
+                                  (this->GetAlign(-ubLoopInfo.inputCol[i], this->srcEleUbBlock_) +
+                                   ubLoopInfo.inputCol[i]) *
+                                      TRANS_BLOCK / this->srcEleUbBlock_;
+            uint16_t dstGap = this->GetAlign(ubLoopInfo.totalUbCol, this->dstEleUbBlock_) * TRANS_BLOCK /
+                                  this->srcEleUbBlock_ -
+                              blockLen;
             if constexpr (NO_NEED_ALIGN) {
                 dstGap = ubLoopInfo.totalUbCol * TRANS_BLOCK / this->srcEleUbBlock_ - blockLen;
             }
             DataCopyParams copyParams{blockCount, blockLen, srcGap, dstGap};
             DataCopy(dstLocal[dstOffset], srcLocal[srcOffset], copyParams);
-            srcOffset += ubLoopInfo.inputCol[i] > 0 ? (colRepeatNum_ * actualCol * TRANS_BLOCK) :
-                         (colRepeatNum_ * this->GetAlign(actualCol, this->srcEleUbBlock_) * TRANS_BLOCK);
+            srcOffset += ubLoopInfo.inputCol[i] > 0 ?
+                             (colRepeatNum_ * actualCol * TRANS_BLOCK) :
+                             (colRepeatNum_ * this->GetAlign(actualCol, this->srcEleUbBlock_) * TRANS_BLOCK);
             dstOffset += (actualCol * TRANS_BLOCK);
         }
         PipeBarrier<PIPE_V>();
     }
 
-    template <bool NO_NEED_ALIGN=false>
+    template <bool NO_NEED_ALIGN = false>
     __aicore__ inline void Trans2(const UbLoopInfo& ubLoopInfo, LocalTensor<T1>& srcLocal, LocalTensor<T1>& dstLocal)
     {
         int64_t actualTotalUbCol = this->GetAlign(ubLoopInfo.totalUbCol, this->dstEleUbBlock_);
@@ -337,25 +355,26 @@ private:
             for (uint64_t i = 0; i < TRANS_BLOCK / this->srcEleUbBlock_; i++) {
                 for (uint64_t j = 0; j < this->srcEleUbBlock_; j++) {
                     uint64_t offset = i * this->srcEleUbBlock_ + j * TRANS_BLOCK;
-                    srcLocalList[i * this->srcEleUbBlock_ + j] =
-                        reinterpret_cast<uint64_t>(srcLocal[offset].GetPhyAddr());
+                    srcLocalList[i * this->srcEleUbBlock_ + j] = reinterpret_cast<uint64_t>(
+                        srcLocal[offset].GetPhyAddr());
                 }
             }
-            for (uint64_t i = 0; i < TRANS_BLOCK; i += 2) { // 2 is stride
-                uint64_t offset = (i / 2)  * actualTotalUbCol * colRepeatNum_; // 2 is stride
+            for (uint64_t i = 0; i < TRANS_BLOCK; i += 2) {                   // 2 is stride
+                uint64_t offset = (i / 2) * actualTotalUbCol * colRepeatNum_; // 2 is stride
                 dstLocalList[i] = reinterpret_cast<uint64_t>(dstLocal[offset].GetPhyAddr());
             }
-            for (uint64_t i = 1; i < TRANS_BLOCK; i += 2) { // 2 is stride
-                uint64_t offset = (i / 2 + this->srcEleUbBlock_) * actualTotalUbCol * colRepeatNum_;  // 2 is stride
+            for (uint64_t i = 1; i < TRANS_BLOCK; i += 2) {                                          // 2 is stride
+                uint64_t offset = (i / 2 + this->srcEleUbBlock_) * actualTotalUbCol * colRepeatNum_; // 2 is stride
                 dstLocalList[i] = reinterpret_cast<uint64_t>(dstLocal[offset].GetPhyAddr());
             }
             TransDataTo5HD<T1>(dstLocalList, srcLocalList, transDataParams);
         }
-        
+
         PipeBarrier<PIPE_V>();
     }
 
-    __aicore__ inline void UBRearrange4Concat(const UbLoopInfo& ubLoopInfo, LocalTensor<T1>& srcLocal, LocalTensor<T1>& dstLocal)
+    __aicore__ inline void UBRearrange4Concat(const UbLoopInfo& ubLoopInfo, LocalTensor<T1>& srcLocal,
+                                              LocalTensor<T1>& dstLocal)
     {
         int64_t srcOffset = 0;
         int64_t dstOffset = 0;
@@ -426,10 +445,13 @@ private:
 
         // 7、cast or ubToub
         if constexpr (NEED_CAST) {
-            uint32_t castCount = ubLoopInfo.currentUbRowFactor * this->GetAlign(ubLoopInfo.currentUbColFactor, this->dstEleUbBlock_);
+            uint32_t castCount = ubLoopInfo.currentUbRowFactor *
+                                 this->GetAlign(ubLoopInfo.currentUbColFactor, this->dstEleUbBlock_);
             DoCast(ubLoopInfo, castCount);
         } else {
-            DataCopy(dstLocalT1_, this->srcLocal_, ubLoopInfo.currentUbRowFactor * this->GetAlign(ubLoopInfo.currentUbColFactor, this->dstEleUbBlock_));
+            DataCopy(
+                dstLocalT1_, this->srcLocal_,
+                ubLoopInfo.currentUbRowFactor * this->GetAlign(ubLoopInfo.currentUbColFactor, this->dstEleUbBlock_));
         }
     }
 

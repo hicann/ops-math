@@ -36,6 +36,7 @@ static constexpr uint8_t INT8_BYTE_SIZE = 1;  // int8/uint8数据类型占用字
 static constexpr uint8_t INT16_BYTE_SIZE = 2; // int16/uint16数据类型占用字节数
 static constexpr uint8_t INT32_BYTE_SIZE = 4; // int32/uint32数据类型占用字节数
 static constexpr uint8_t INT64_BYTE_SIZE = 8; // int64/uint64数据类型占用字节数
+static constexpr uint8_t NUM_TWO = 2;
 
 template <typename T>
 std::string PadV3GradReplicationTiling::ToString(const T* value, size_t size)
@@ -200,7 +201,7 @@ void PadV3GradReplicationTiling::CalcStrideAligned()
     uint64_t rowSize = outputShape_[dimNum_ - 1] * dataSize_;
     uint64_t rowSizeAligned = GetSizeOfBlockAlign(rowSize, blockSize_) / dataSize_;
 
-    for (int64_t k = dimNum_ - 2; k >= 0; k--) {
+    for (int64_t k = dimNum_ - NUM_TWO; k >= 0; k--) {
         if (k == dimNum_ - 2) {
             strideAligned_[k] = rowSizeAligned; // 中间维stride（行stride，blockSize对齐）
         } else {
@@ -265,7 +266,7 @@ bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailabl
     bool isCastType = (paramsDtype_ == ge::DT_FLOAT16 || paramsDtype_ == ge::DT_BF16);
     uint64_t dataBufSz = isCastType ? FP32_SIZE : dataSize_; // PromoteT 大小 vs T 大小
     uint64_t maxDataBufElements = UINT64_MAX;
-    if (!isCastType && dataSize_ <= 2) {
+    if (!isCastType && dataSize_ <= static_cast<uint32_t>(NUM_TWO)) {
         maxDataBufElements = INT16_MAX_VAL;
     }
 

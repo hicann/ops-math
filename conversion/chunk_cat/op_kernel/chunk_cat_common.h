@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
- /*!
+/*!
  * \file chunk_cat_common.h
  * \brief
  */
@@ -21,8 +21,10 @@
 #include "chunk_cat_tiling_data.h"
 
 constexpr uint32_t UB_BLOCK_SIZE = 32; // UB块大小
-constexpr uint32_t TRANS_BLOCK = 16; // 转置行数
-constexpr uint32_t HALF = 2; // 半对齐/UB对半切分
+constexpr uint32_t TRANS_BLOCK = 16;   // 转置行数
+constexpr uint32_t HALF = 2;           // 半对齐/UB对半切分
+constexpr int64_t NUM_THIRTY_ONE = 31;
+constexpr int64_t NUM_TWO = 2;
 
 struct TensorInfo {
     bool isSplit{false};
@@ -55,10 +57,9 @@ struct UbLoopInfo {
 
 using namespace AscendC;
 template <typename T1, typename T2>
-class ChunkCatCommon
-{
+class ChunkCatCommon {
 public:
-    __aicore__ inline ChunkCatCommon(TPipe *pipe) : pipe_(pipe) {}
+    __aicore__ inline ChunkCatCommon(TPipe* pipe) : pipe_(pipe) {}
 
     __aicore__ inline void InitCommon(GM_ADDR x, GM_ADDR y, const ChunkCatTilingData& tilingData)
     {
@@ -145,32 +146,35 @@ public:
         AscendC::DataCopyExtParams copyParams{blockCount, blockLen, srcStride, 0, 0};
         uint8_t rightPadValue = (GetAlign(blockLen, UB_BLOCK_SIZE) - blockLen) / sizeof(T1);
         AscendC::DataCopyPadExtParams<T1> padParams{true, 0, rightPadValue, 0};
-        #if __CCE_AICORE__ == 310
-        AscendC::DataCopyPad<T1, PaddingMode::Compact>(srcLocal_[localOffset], srcGlobal_[gmOffset], copyParams, padParams);
-        #else
+#if __CCE_AICORE__ == 310
+        AscendC::DataCopyPad<T1, PaddingMode::Compact>(srcLocal_[localOffset], srcGlobal_[gmOffset], copyParams,
+                                                       padParams);
+#else
         AscendC::DataCopyPad(srcLocal_[localOffset], srcGlobal_[gmOffset], copyParams, padParams);
-        #endif
+#endif
     }
 
     __aicore__ inline void DoRowsCopy(int64_t localOffset, const UbLoopInfo& ubLoopInfo, const TensorInfo& tensorInfo)
     {
         uint16_t blockCount = tensorInfo.isSplit ? static_cast<uint16_t>(ubLoopInfo.currentUbRowFactor) : 1;
         uint32_t blockLen = tensorInfo.isSplit ?
-            static_cast<uint32_t>(tensorInfo.splitCol * sizeof(T1)) :
-            static_cast<uint32_t>(ubLoopInfo.currentUbRowFactor * tensorInfo.splitCol * sizeof(T1));
+                                static_cast<uint32_t>(tensorInfo.splitCol * sizeof(T1)) :
+                                static_cast<uint32_t>(ubLoopInfo.currentUbRowFactor * tensorInfo.splitCol * sizeof(T1));
         uint32_t srcStride = (tensorInfo.tensorCol - tensorInfo.splitCol) * sizeof(T1);
         int64_t gmOffset = ubLoopInfo.rowStart * tensorInfo.tensorCol + tensorInfo.startOffset;
         ExecuteDataCopy(localOffset, gmOffset, blockCount, blockLen, srcStride);
     }
 
-    __aicore__ inline void DoLastRowsCopy(int64_t localOffset, const UbLoopInfo& ubLoopInfo, const TensorInfo& tensorInfo)
+    __aicore__ inline void DoLastRowsCopy(int64_t localOffset, const UbLoopInfo& ubLoopInfo,
+                                          const TensorInfo& tensorInfo)
     {
         // 0 无切分
         int64_t srcGmOffset = ubLoopInfo.rowStart * tensorInfo.tensorCol;
         uint32_t srcStride = (tensorInfo.tensorCol - tensorInfo.splitCol) * sizeof(T1);
         if (!tensorInfo.isSplit) {
             uint32_t blockLen = static_cast<uint32_t>(
-                (tensorInfo.chunkDimSize * tensorInfo.originCol - ubLoopInfo.rowStart * tensorInfo.tensorCol) * sizeof(T1));
+                (tensorInfo.chunkDimSize * tensorInfo.originCol - ubLoopInfo.rowStart * tensorInfo.tensorCol) *
+                sizeof(T1));
             ExecuteDataCopy(localOffset, srcGmOffset + tensorInfo.startOffset, 1, blockLen, srcStride);
             return;
         }
@@ -199,13 +203,13 @@ public:
             // 1.3.1
             blockLen = (remainderCol - tensorInfo.startOffset) * sizeof(T1);
             int64_t localOffsetPart = 0;
-            #if __CCE_AICORE__ == 310
-            localOffsetPart = localOffset + GetAlign((tensorInfo.chunkRow - ubLoopInfo.rowStart) *
-                                                     tensorInfo.splitCol, srcEleUbBlock_);
-            #else
+#if __CCE_AICORE__ == 310
+            localOffsetPart = localOffset + GetAlign((tensorInfo.chunkRow - ubLoopInfo.rowStart) * tensorInfo.splitCol,
+                                                     srcEleUbBlock_);
+#else
             localOffsetPart = localOffset + (tensorInfo.chunkRow - ubLoopInfo.rowStart) * tensorInfo.splitColAlign;
-            #endif
-            
+#endif
+
             int64_t gmOffsetPart = srcGmOffset + tensorInfo.startOffset +
                                    (tensorInfo.chunkRow - ubLoopInfo.rowStart) * tensorInfo.tensorCol;
             ExecuteDataCopy(localOffsetPart, gmOffsetPart, 1, blockLen, srcStride);
@@ -216,7 +220,8 @@ public:
         ExecuteDataCopy(localOffset, srcGmOffset + tensorInfo.startOffset, blockCount, blockLen, srcStride);
     }
 
-    __aicore__ inline void CopyInChunk(int64_t& totalCol, int64_t& localOffset, UbLoopInfo& ubLoopInfo, TensorInfo& tensorInfo)
+    __aicore__ inline void CopyInChunk(int64_t& totalCol, int64_t& localOffset, UbLoopInfo& ubLoopInfo,
+                                       TensorInfo& tensorInfo)
     {
         ubLoopInfo.isAllZero = false;
         int64_t rowEnd = ubLoopInfo.rowStart + ubLoopInfo.currentUbRowFactor;
@@ -247,7 +252,7 @@ protected:
     int64_t currentBlockRowFactor_{0};
     int64_t currentBlockColFactor_{0};
 
-    TPipe *pipe_;
+    TPipe* pipe_;
     TEventID event_{0};
     TensorDesc<T1> desc_;
     ListTensorDesc inputList_;

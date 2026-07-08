@@ -28,6 +28,7 @@ static constexpr int64_t OFFSET_MULTIPLE = 4;
 static constexpr uint64_t TILING_KEY_FP16 = 1;
 static constexpr uint64_t TILING_KEY_BF16 = 2;
 static constexpr uint64_t TILING_KEY_FP32 = 3;
+static constexpr uint32_t NUM_FOUR = 4;
 
 OpTilingConfig SimThreadExponentialTilingSimt::BuildOpConfig()
 {
@@ -51,7 +52,8 @@ OpTilingConfig SimThreadExponentialTilingSimt::BuildOpConfig()
         if (size != outputShapeSize) {
             std::string valueStr = std::to_string(size) + " and " + std::to_string(outputShapeSize);
             std::string reasonMsg = "count must be equal to output shape size";
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(ctx->GetNodeName(), "attr count", valueStr.c_str(), reasonMsg.c_str());
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(ctx->GetNodeName(), "attr count", valueStr.c_str(),
+                                                  reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
 
@@ -70,7 +72,8 @@ OpTilingConfig SimThreadExponentialTilingSimt::BuildOpConfig()
         if (offset % OFFSET_MULTIPLE != 0) {
             std::string valueStr = std::to_string(offset);
             std::string reasonMsg = "offset must be a multiple of 4";
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(ctx->GetNodeName(), "input offset", valueStr.c_str(), reasonMsg.c_str());
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(ctx->GetNodeName(), "input offset", valueStr.c_str(),
+                                                  reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
         return ge::GRAPH_SUCCESS;
@@ -88,7 +91,8 @@ OpTilingConfig SimThreadExponentialTilingSimt::BuildOpConfig()
              if (*lambdAttr <= 0.0f) {
                  std::string valueStr = std::to_string(*lambdAttr);
                  std::string reasonMsg = "lambd must be greater than 0";
-                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(ctx->GetNodeName(), "attr lambd", valueStr.c_str(), reasonMsg.c_str());
+                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(ctx->GetNodeName(), "attr lambd", valueStr.c_str(),
+                                                       reasonMsg.c_str());
                  return false;
              }
              return true;
@@ -98,7 +102,7 @@ OpTilingConfig SimThreadExponentialTilingSimt::BuildOpConfig()
     config.kernelMode = RandomKernelMode::SIMT;
     config.DcacheSize = DCACHE_SIZE;
     config.isNeedSyncAll = false;
-    config.unrollFactor = 4;
+    config.unrollFactor = NUM_FOUR;
     config.enableSplitBlocks = true;
     return config;
 }

@@ -60,6 +60,7 @@ static constexpr int64_t BLOCK_SIZE = 32;
 static constexpr size_t FRACTAL_NZ_C0_4B = 64;
 static constexpr int64_t C0_SIZE = 16;
 static constexpr int64_t N0_SIZE = 16;
+static constexpr int64_t NUM_SIXTEEN = 16;
 static constexpr const char* ACLNN_NAME = "aclnnNpuFormatCast";
 
 const std::set<std::pair<op::Format, op::Format>> kTransdataForwardFormatPairsRegBase = {
@@ -679,7 +680,7 @@ aclnnStatus CalcNCDHWToNDC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int
     int64_t W = viewShape.GetDim(4);
     int64_t C1 = CeilDiv(C, C0);
 
-    *dstShapeSize = 6; // 6HD
+    *dstShapeSize = DIMS_SIX; // 6HD
     try {
         *dstShape = new int64_t[6]{N, D, C1, H, W, C0};
     } catch (...) {
@@ -708,7 +709,7 @@ aclnnStatus CalcNDHWCToNDC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int
     int64_t C = viewShape.GetDim(4);
     int64_t C1 = CeilDiv(C, C0);
 
-    *dstShapeSize = 6; // 6HD
+    *dstShapeSize = DIMS_SIX; // 6HD
     try {
         *dstShape = new int64_t[6]{N, D, C1, H, W, C0};
     } catch (...) {
@@ -736,7 +737,7 @@ aclnnStatus CalcNCHWToNC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int a
     int64_t W = viewShape.GetDim(3);
     int64_t C1 = CeilDiv(C, C0);
 
-    *dstShapeSize = 5; // 5HD
+    *dstShapeSize = DIMS_FIVE; // 5HD
     try {
         *dstShape = new int64_t[5]{N, C1, H, W, C0};
     } catch (...) {
@@ -764,7 +765,7 @@ aclnnStatus CalcNHWCToNC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int a
     int64_t C = viewShape.GetDim(3);
     int64_t C1 = CeilDiv(C, C0);
 
-    *dstShapeSize = 5; // 5HD
+    *dstShapeSize = DIMS_FIVE; // 5HD
     try {
         *dstShape = new int64_t[5]{N, C1, H, W, C0};
     } catch (...) {
@@ -794,7 +795,7 @@ aclnnStatus CalcNCHWToFRACTALZ(const aclTensor* srcTensor, [[maybe_unused]] int 
     int64_t C1 = CeilDiv(C, C0);
     int64_t N1 = CeilDiv(N, N0);
 
-    *dstShapeSize = 4; // FRACTAL_Z
+    *dstShapeSize = DIMS_FOUR; // FRACTAL_Z
     try {
         *dstShape = new int64_t[4]{C1 * H * W, N1, N0, C0};
     } catch (...) {
@@ -823,7 +824,7 @@ aclnnStatus CalcHWCNToFRACTALZ(const aclTensor* srcTensor, [[maybe_unused]] int 
     int64_t N = viewShape.GetDim(3);
     int64_t C1 = CeilDiv(C, C0);
     int64_t N1 = CeilDiv(N, N0);
-    *dstShapeSize = 4; // FRACTAL_Z
+    *dstShapeSize = DIMS_FOUR; // FRACTAL_Z
     try {
         *dstShape = new int64_t[4]{C1 * H * W, N1, N0, C0};
     } catch (...) {
@@ -854,7 +855,7 @@ aclnnStatus CalcNCDHWToFZ3D(const aclTensor* srcTensor, [[maybe_unused]] int add
     int64_t C1 = CeilDiv(C, C0);
     int64_t N1 = CeilDiv(N, N0);
 
-    *dstShapeSize = 4; // FZ3D
+    *dstShapeSize = DIMS_FOUR; // FZ3D
     try {
         *dstShape = new int64_t[4]{D * C1 * H * W, N1, N0, C0};
     } catch (...) {
@@ -885,7 +886,7 @@ aclnnStatus CalcDHWCNToFZ3D(const aclTensor* srcTensor, [[maybe_unused]] int add
     int64_t C1 = CeilDiv(C, C0);
     int64_t N1 = CeilDiv(N, N0);
 
-    *dstShapeSize = 4; // FZ3D
+    *dstShapeSize = DIMS_FOUR; // FZ3D
     try {
         *dstShape = new int64_t[4]{D * C1 * H * W, N1, N0, C0};
     } catch (...) {
@@ -906,7 +907,7 @@ aclnnStatus CalcToNCDHW(const aclTensor* srcTensor, [[maybe_unused]] int additio
     int64_t H = viewShape.GetDim(3);
     int64_t W = viewShape.GetDim(4);
 
-    *dstShapeSize = 5; // 5HD
+    *dstShapeSize = DIMS_FIVE; // 5HD
     try {
         *dstShape = new int64_t[5]{N, C, D, H, W};
     } catch (...) {
@@ -926,7 +927,7 @@ aclnnStatus CalcToNCHW(const aclTensor* srcTensor, [[maybe_unused]] int addition
     int64_t H = viewShape.GetDim(2);
     int64_t W = viewShape.GetDim(3);
 
-    *dstShapeSize = 4; // NCHW
+    *dstShapeSize = DIMS_FOUR; // NCHW
     try {
         *dstShape = new int64_t[4]{N, C, H, W};
     } catch (...) {
@@ -946,7 +947,7 @@ aclnnStatus CalcToNHWC(const aclTensor* srcTensor, [[maybe_unused]] int addition
     int64_t W = viewShape.GetDim(2);
     int64_t C = viewShape.GetDim(3);
 
-    *dstShapeSize = 4; // NHWC
+    *dstShapeSize = DIMS_FOUR; // NHWC
     try {
         *dstShape = new int64_t[4]{N, C, H, W};
     } catch (...) {
@@ -966,7 +967,7 @@ aclnnStatus CalcToHWCN(const aclTensor* srcTensor, [[maybe_unused]] int addition
     int64_t C = viewShape.GetDim(2);
     int64_t N = viewShape.GetDim(3);
 
-    *dstShapeSize = 4; // HWCN
+    *dstShapeSize = DIMS_FOUR; // HWCN
     try {
         *dstShape = new int64_t[4]{H, W, C, N};
     } catch (...) {
@@ -987,7 +988,7 @@ aclnnStatus CalcToDHWCN(const aclTensor* srcTensor, [[maybe_unused]] int additio
     int64_t C = viewShape.GetDim(3);
     int64_t N = viewShape.GetDim(4);
 
-    *dstShapeSize = 5; // DHWCN
+    *dstShapeSize = DIMS_FIVE; // DHWCN
     try {
         *dstShape = new int64_t[5]{D, H, W, C, N};
     } catch (...) {
@@ -1008,7 +1009,7 @@ aclnnStatus CalcToNDHWC(const aclTensor* srcTensor, [[maybe_unused]] int additio
     int64_t W = viewShape.GetDim(3);
     int64_t C = viewShape.GetDim(4);
 
-    *dstShapeSize = 5; // NDHWC
+    *dstShapeSize = DIMS_FIVE; // NDHWC
     try {
         *dstShape = new int64_t[5]{N, D, H, W, C};
     } catch (...) {
@@ -1195,7 +1196,7 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(const aclTensor* srcTensor, aclTe
     }
     aclTensor* outTensor;
     int64_t dstDimNum = dstTensor->GetStorageShape().GetDimNum();
-    if (dstTensor->GetStorageShape().GetDim(dstDimNum - 1) == 16 &&
+    if (dstTensor->GetStorageShape().GetDim(dstDimNum - 1) == NUM_SIXTEEN &&
         ge::GetSizeByDataType(srcTensor->GetDataType()) >= 4 && !IsRegBase()) {
         outTensor = const_cast<aclTensor*>(
             l0op::TransDataSpecial(formatTensor, dstTensor->GetStorageFormat(), 1, uniqueExecutor.get()));
