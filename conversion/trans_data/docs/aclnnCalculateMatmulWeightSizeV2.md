@@ -83,7 +83,7 @@ aclnnStatus aclnnCalculateMatmulWeightSizeV2(
       <td class="tg-0pky">-</td>
     </tr>
     <tr>
-      <td class="tg-0lax">weightDtype（aclDataType）</td>
+      <td class="tg-0lax">dataType（aclDataType）</td>
       <td class="tg-0lax">输入</td>
       <td class="tg-0lax">weight的Dtype</td>
       <td class="tg-0lax">-</td>
