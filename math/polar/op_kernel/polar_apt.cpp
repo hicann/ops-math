@@ -10,8 +10,20 @@
 
 /* !
  * \file polar_apt.cpp
- * \brief polar kernel entry - dispatch to arch35 SIMD implementation
+ * \brief polar kernel
  */
 
 #include "kernel_operator.h"
-#include "arch35/polar.h"
+#include "arch35/polar_struct.h"
+#include "arch35/polar_simt.h"
+
+using namespace AscendC;
+
+__global__ __aicore__ void polar(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+{
+    REGISTER_TILING_DEFAULT(PolarTilingData);
+    GET_TILING_DATA(tilingData, tiling);
+    PolarOp::PolarSimt<float> polarOp;
+    polarOp.Init(x1, x2, y, tilingData);
+    polarOp.Process();
+}

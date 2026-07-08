@@ -10,39 +10,57 @@
 
 /*!
  * \file polar_tiling.h
- * \brief polar broadcast tiling header
+ * \brief polar tiling header
  */
 #ifndef OPS_BUILD_IN_OP_TILING_RUNTIME_POLAR_TILING_H
 #define OPS_BUILD_IN_OP_TILING_RUNTIME_POLAR_TILING_H
 
-#include "register/op_def_registry.h"
-#include "tiling/tiling_api.h"
+#include <cstdint>
+#include "register/tilingdata_base.h"
 #include "op_host/tiling_base_class.h"
+#include "register/op_impl_registry.h"
+#include "platform/platform_ascendc.h"
+#include "log/log.h"
+#include "../../op_kernel/arch35/polar_struct.h"
 
 namespace optiling {
 
 struct PolarCompileInfo {
-    uint64_t coreNum = 0;
-    uint64_t ubSize = 0;
+    int64_t coreNum = 0;
 };
 
 class PolarTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit PolarTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
+    explicit PolarTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    {}
 
 protected:
-    bool IsCapable() override;
+    bool IsCapable() override { return true; }
     ge::graphStatus GetPlatformInfo() override;
     ge::graphStatus GetShapeAttrsInfo() override;
     ge::graphStatus DoOpTiling() override;
-    ge::graphStatus DoLibApiTiling() override;
-    uint64_t GetTilingKey() const override;
-    ge::graphStatus GetWorkspaceSize() override;
+    ge::graphStatus DoLibApiTiling() override { return ge::GRAPH_SUCCESS; }
+    uint64_t GetTilingKey() const override { return 0; }
+    ge::graphStatus GetWorkspaceSize() override { return ge::GRAPH_SUCCESS; }
     ge::graphStatus PostTiling() override;
+    ge::graphStatus CheckDtype();
+    ge::graphStatus CheckBroadcastAndMergeShape();
+    ge::graphStatus CalcStride();
 
 private:
-    uint64_t tilingKey = 0;
+    const PolarCompileInfo* compileInfo_;
+    PolarTilingData tilingData_{};
+    uint32_t blockDim_{1};
+    int64_t totalElements_ = 0;
+    int64_t dimNum_ = 0;
+    int64_t absDims_[POLAR_MAX_DIM] = {0};
+    int64_t angleDims_[POLAR_MAX_DIM] = {0};
+    int64_t mergedShape_[POLAR_MAX_DIM] = {0};
+    int64_t mergedStride_[POLAR_MAX_DIM] = {0};
+    int64_t absStride_[POLAR_MAX_DIM] = {0};
+    int64_t angleStride_[POLAR_MAX_DIM] = {0};
+    int64_t yStride_[POLAR_MAX_DIM] = {0};
 };
 
-} // namespace optiling
-#endif // OPS_BUILD_IN_OP_TILING_RUNTIME_POLAR_TILING_H
+}  // namespace optiling
+#endif  // OPS_BUILD_IN_OP_TILING_RUNTIME_POLAR_TILING_H
