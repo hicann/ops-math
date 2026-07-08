@@ -12,45 +12,26 @@
 
 /*!
  * \file cosh_tiling_key.h
- * \brief Cosh 算子 TilingKey 模板参数定义（标准 Ascend C kernel，DESIGN §3.1/§3.3）
+ * \brief Cosh 算子 TilingKey 模板参数声明（arch35 / Ascend950PR）
  *
- * ✅ 使用 ASCENDC_TPL_ARGS_DECL 模板编程，TilingKey 仅 dtype 一个维度。
+ * def 驱动 dtype 模式：dtype 维度由 op_def 的 DataType 列表（fp16/fp32/bf16）经构建系统
+ *   注入 -DDTYPE_X=<type> 展开（宏名取首输入名 x），tiling_key 不再编码 dtype。
+ * 本算子除 dtype 外无其它分发轴（无 buffer mode / 无算法分支），故 tiling_key 仅保留
+ *   单值 UINT 占位轴 schMode∈{0}（框架要求 ARGS_DECL 至少一个模板轴）。
+ * 编译变体数 = def dtype(3: fp16/fp32/bf16) × tiling_key(schMode 1 值) = 3 个 kernel 变体。
+ *
  * ❌ 禁止使用废弃的 TILING_KEY_IS / BEGIN_TILING_DATA_DEF 宏。
- *
- * dtype 维度映射到 kernel 入口模板参数 D_T_X：
- *   - C_DT_FLOAT16 -> half       （WithCast：Cast 升 fp32 -> 8 步 -> Cast 还原 fp16）
- *   - C_DT_FLOAT   -> float      （WithoutCast：fp32 直通，迭代二放开）
- *   - C_DT_BF16    -> bfloat16_t （WithCast：还原 bf16，迭代三放开）
- *
- * 多核切分 / UB 切分不进 TilingKey —— 它们是 CoshTilingData 的运行时数值字段，
- * 同一份 kernel 二进制按 TilingData 处理任意 shape（DESIGN §3.1）。
- *
- * 迭代二：op_host/cosh_def.cpp 注册全 3 dtype，CoshTilingFunc 通过
- *   ASCENDC_TPL_SEL_PARAM(context, dtype) emit 实际 dtype，SEL 枚举全部 3 个分支
- *   （C_DT_FLOAT16 / C_DT_FLOAT / C_DT_BF16），kernel 模板按 D_T_X 编译期分发。
- *
  * 参考：ascendc/host_api/tiling/template_argument.h
  */
-
 #ifndef OPS_COSH_OP_KERNEL_ARCH35_COSH_TILING_KEY_H_
 #define OPS_COSH_OP_KERNEL_ARCH35_COSH_TILING_KEY_H_
 
 #include "ascendc/host_api/tiling/template_argument.h"
 
-ASCENDC_TPL_ARGS_DECL(Cosh,
-    ASCENDC_TPL_DATATYPE_DECL(D_T_X, C_DT_FLOAT16, C_DT_FLOAT, C_DT_BF16, ASCENDC_TPL_INPUT(0))
-);
+#define COSH_TPL_SCH_MODE_0 0
 
-ASCENDC_TPL_SEL(
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT16)
-    ),
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT)
-    ),
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_BF16)
-    ),
-);
+ASCENDC_TPL_ARGS_DECL(Cosh, ASCENDC_TPL_UINT_DECL(schMode, 1, ASCENDC_TPL_UI_LIST, COSH_TPL_SCH_MODE_0));
+
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST, COSH_TPL_SCH_MODE_0)), );
 
 #endif // OPS_COSH_OP_KERNEL_ARCH35_COSH_TILING_KEY_H_

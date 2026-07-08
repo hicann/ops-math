@@ -12,27 +12,39 @@
 
 /*!
  * \file cosh.h
- * \brief Cosh 算子 kernel 类定义（标准 Ascend C kernel，arch35 / Ascend950PR，DESIGN §3.4）
+ * \brief Cosh 算子 kernel 类定义（标准 Ascend C kernel，arch35 / Ascend950PR）
  *
- * 数学契约: y = cosh(x) = (e^x + e^(-x)) / 2 （spec math_semantics.formula: y = np.cosh(x)）
+ * 数学契约: y = cosh(x) = (e^x + e^(-x)) / 2
+ * 数值流程：换底 + 范围缩减（Cody-Waite）+ 位操作 2^n：
  *
- * NPU 实现采用 exp 分解数值流程（REQUIREMENTS §4.2，与数学契约等价，全 fp32 计算）：
- *   Step1: ax = abs(x)         // cosh 为偶函数，取绝对值降低大值溢出风险
- *   Step2: x1 = ax * 0.5       // x/2
- *   Step3: x2 = ax * (-1.5)    // -1.5x
- *   Step4: e1 = exp(x1)        // exp(x/2)
- *   Step5: e2 = exp(x2)        // exp(-1.5x)
- *   Step6: x3 = e1 + e2        // exp(x/2) + exp(-1.5x)
- *   Step7: x4 = x3 * 0.5       // 0.5 * (...)
- *   Step8: y  = x4 * e1        // 0.5*(exp(x/2)+exp(-1.5x))*exp(x/2) = cosh(x)
+ *   ① ax = |x|
+ *   ② n  = trunc(ax · log2e)                         // 换底后取整，n ≥ 0
+ *   ③ n  = min(n, 126)                               // 钳位（copysign(126,n) 于 ax≥0 对应 min，在缩减之前）
+ *   ④⑤ r = ax − n·ln2   （Cody-Waite 双 FMA，单次舍入，用钳位后的 n）
+ *   ⑥⑨ p2 = 2^(n−2)     （n + 0x4B40007D 位重解释后 <<23，低 9 位 125+n 落入 IEEE754 指数字段）
+ *   ⑩⑪ er = exp(r) · 2^(n−2) = e^x / 4               // 用 base-e Exp(r)=e^r（无硬件 2^x 指令）
+ *   ⑫⑮ y  = 2·er + 0.125/er = e^x/2 + e^(−x)/2 = cosh(x)
+ *   ⑯⑰ 溢出兜底：|x| ≥ 90 ⇒ +inf；[≈89.42, 90) 由 2·(e^x/4) 自然溢出到 inf
+ *
+ * ⚠ 数值实现的关键点（易错，务必保持）：
+ *   1. n 钳位 min(n,126) 必须在 Cody-Waite 之前：r 与 2^(n−2) 用同一 n 合成才等于 e^x/4；
+ *      钳位到 126 使指数字段 125+n≤251<256，位构造不产生 inf/nan；被钳元素残差 r 变大由 Exp 吸收。
+ *   2. 2^(n−2) 位操作 magic=0x4B40007D（=1.5·2^23+125，含 +125 偏置）：(n+magic)<<23 靠 32 位
+ *      逐位左移高位丢弃、低 9 位=125+n 落入指数字段。
+ *   3. Cody-Waite 低位项符号为 +ln2_lo（+1.9046e-9，bit 0x3102E308）。
+ *   4. Fma 为三张量入参（dst=src0·src1+src2），把 −ln2_hi/+ln2_lo 用 Duplicate 张量化后传入
+ *      （Init 内一次性填充 cwHi_/cwLo_）；溢出兜底选 true +inf（bit 0x7F800000）。
  *
  * 模板参数 T：输入/输出 dtype。
- *   - half / bfloat16_t：WithCast 路径，入口 Cast(CAST_NONE) 升 fp32、出口 Cast(CAST_RINT) 还原。
+ *   - half / bfloat16_t：WithCast 路径，入口 Cast(CAST_NONE) 升 fp32、出口 Cast(CAST_RINT) 还原
+ *     （fp16/bf16 的大值溢出由出口 Cast fp32→T 饱和为 inf，天然匹配 golden）。
  *   - float：WithoutCast 路径，fp32 直通，省去两次 Cast。
  *   分支由 needCast = is_same_v<T,half> || is_same_v<T,bfloat16_t> 编译期裁剪。
  *
  * 三级流水（CopyIn -> Compute -> CopyOut）+ double buffer（BUFFER_NUM=2）。
- * 8 步全 fp32，使用 3 份独立 fp32 VECCALC 缓冲（ax / e1 / work），无原位别名。
+ * 计算全 fp32：ax / n / r / p2 / er / work + Cody-Waite 常量 cwHi_ / cwLo_ + mask，无非法别名。
+ * Trunc / Fma 为高阶 API（lib/math，arch35 仅 __NPU_ARCH__ 3510/5102），使用免 tmpBuffer 的
+ * count 形重载；Host Tiling 已按更高 FP32_BUF_COUNT 预留 UB（含高阶 API 内部栈）。
  * DataCopyPad 处理非 32B 对齐尾块。
  */
 #ifndef OPS_COSH_OP_KERNEL_ARCH35_COSH_H_
@@ -40,6 +52,8 @@
 
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
+#include "lib/math/trunc.h" // 高阶 API Trunc（arch35 / lib/math）
+#include "lib/math/fma.h"   // 高阶 API Fma（arch35 / lib/math）
 #include "cosh_tiling_data.h"
 #include "cosh_tiling_key.h"
 
@@ -51,7 +65,20 @@ template <typename T>
 class KernelCosh {
     // fp16 / bf16 需升精度到 fp32 计算；fp32 直通
     static constexpr bool needCast = std::is_same_v<T, half> || std::is_same_v<T, bfloat16_t>;
-    static constexpr int32_t BUFFER_NUM = 2;  // double buffer
+    static constexpr int32_t BUFFER_NUM = 2; // double buffer
+
+    // ── 数值常量（fp32）──
+    static constexpr float kLog2e = 1.442695041f;      // log2(e)，bit 0x3FB8AA3B
+    static constexpr float kNegLn2Hi = -0.6931471825f; // −ln2 高位，bit 0xBF317218（Cody-Waite）
+    static constexpr float kLn2Lo = 1.9046542e-9f;     // +ln2 低位残差，bit 0x3102E308（Cody-Waite）
+    static constexpr float kExpMagic = 12583037.0f;    // bit 0x4B40007D = 1.5·2^23 + 125（含 +125 偏置）；
+                                                    // (n+magic) 位重解释后 <<23，低 9 位 125+n 落入指数字段 ⇒ 2^(n−2)
+    static constexpr int32_t kFp32MantissaBits = 23; // 左移量 = fp32 尾数位宽
+    static constexpr float kNClamp = 126.0f;         // n 钳位上限（ax≥0 即 min(n,126)）；
+                                                     // 保证 125+n≤251<256，位构造不越指数字段
+    static constexpr float kHalfInv8 = 0.125f;       // e^(−x)/2 分子 0.125，bit 0x3E000000
+    static constexpr float kTwo = 2.0f;              // e^x/4 → e^x/2 系数，bit 0x40000000
+    static constexpr float kOvfThreshold = 90.0f; // |x|≥90 ⇒ +inf，bit 0x42B40000（[≈89.42,90) 由自然溢出兜底）
 
 public:
     __aicore__ inline KernelCosh() {}
@@ -69,15 +96,22 @@ private:
     TQue<QuePosition::VECIN, BUFFER_NUM> inQueue_;
     TQue<QuePosition::VECOUT, BUFFER_NUM> outQueue_;
     // fp32 中间计算缓冲（VECCALC，单份，不参与队列流水）
-    TBuf<QuePosition::VECCALC> axBuf_;    // ax = abs(x) 升精度结果
-    TBuf<QuePosition::VECCALC> e1Buf_;    // x1 -> e1 = exp(x/2)，保活到 Step8
-    TBuf<QuePosition::VECCALC> workBuf_;  // x2 -> e2 -> x3 -> x4 -> y
+    TBuf<QuePosition::VECCALC> axBuf_;   // ax = |x|（升精度结果），保活至溢出比较
+    TBuf<QuePosition::VECCALC> nBuf_;    // n = trunc(ax·log2e)
+    TBuf<QuePosition::VECCALC> rBuf_;    // r = ax − n·ln2_hi（Cody-Waite 中间）
+    TBuf<QuePosition::VECCALC> p2Buf_;   // 2^(n−2)，随后复用为 e^x/2
+    TBuf<QuePosition::VECCALC> erBuf_;   // 缩减后的 r → exp(r) → e^x/4
+    TBuf<QuePosition::VECCALC> workBuf_; // cosh 合成累加器
+    TBuf<QuePosition::VECCALC> cwHiBuf_; // 常量张量 −ln2_hi（Init 一次性填充）
+    TBuf<QuePosition::VECCALC> cwLoBuf_; // 常量张量 +ln2_lo（Init 一次性填充）
+    TBuf<QuePosition::VECCALC> infBuf_;  // 常量张量 +inf（Init 一次性填充，溢出兜底 Select 源）
+    TBuf<QuePosition::VECCALC> maskBuf_; // 溢出比较位掩码（uint8）
 
     GlobalTensor<T> xGm_;
     GlobalTensor<T> yGm_;
 
-    int64_t blockLength_ = 0;  // 本核负责的元素数
-    int64_t ubFactor_ = 0;     // 单次 UB 循环处理元素数
+    int64_t blockLength_ = 0; // 本核负责的元素数
+    int64_t ubFactor_ = 0;    // 单次 UB 循环处理元素数
 };
 
 template <typename T>
@@ -93,10 +127,35 @@ __aicore__ inline void KernelCosh<T>::Init(GM_ADDR x, GM_ADDR y, const CoshTilin
     // 输入 / 输出队列：原 dtype T，双缓冲
     pipe_.InitBuffer(inQueue_, BUFFER_NUM, ubFactor_ * sizeof(T));
     pipe_.InitBuffer(outQueue_, BUFFER_NUM, ubFactor_ * sizeof(T));
-    // fp32 中间缓冲：3 份独立单缓冲，无别名复用
+    // fp32 中间缓冲：独立单缓冲，无别名复用
     pipe_.InitBuffer(axBuf_, ubFactor_ * sizeof(float));
-    pipe_.InitBuffer(e1Buf_, ubFactor_ * sizeof(float));
+    pipe_.InitBuffer(nBuf_, ubFactor_ * sizeof(float));
+    pipe_.InitBuffer(rBuf_, ubFactor_ * sizeof(float));
+    pipe_.InitBuffer(p2Buf_, ubFactor_ * sizeof(float));
+    pipe_.InitBuffer(erBuf_, ubFactor_ * sizeof(float));
     pipe_.InitBuffer(workBuf_, ubFactor_ * sizeof(float));
+    pipe_.InitBuffer(cwHiBuf_, ubFactor_ * sizeof(float));
+    pipe_.InitBuffer(cwLoBuf_, ubFactor_ * sizeof(float));
+    pipe_.InitBuffer(infBuf_, ubFactor_ * sizeof(float));
+    // 位掩码缓冲：Compare/Select 每元素 1 bit，按 sizeof(uint8) 上界宽松分配（≥ ubFactor/8）
+    pipe_.InitBuffer(maskBuf_, ubFactor_ * sizeof(uint8_t));
+
+    // 防御性编程：blockLength_ 非正时归零，配合 Process 入口短路，避免下游循环出现越界
+    if (blockLength_ <= 0) {
+        blockLength_ = 0;
+        return;
+    }
+
+    // Cody-Waite 常量张量化 + 溢出兜底 +inf 常量张量化：blockLength_>0 时 ubFactor_>0
+    // （Host Tiling 保证），一次性填充，后续每个 Compute 复用，避免重复 Duplicate。
+    // Fma 需三张量入参，标量常量必须先张量化；溢出兜底用 tensor-tensor Select（见 Compute），
+    // 故 +inf 也需张量化——用内置 NumericLimits<float>::Infinity 张量填充
+    AscendC::LocalTensor<float> cwHi = cwHiBuf_.Get<float>();
+    AscendC::LocalTensor<float> cwLo = cwLoBuf_.Get<float>();
+    AscendC::LocalTensor<float> inf = infBuf_.Get<float>();
+    AscendC::Duplicate(cwHi, kNegLn2Hi, static_cast<int32_t>(ubFactor_));
+    AscendC::Duplicate(cwLo, kLn2Lo, static_cast<int32_t>(ubFactor_));
+    AscendC::NumericLimits<float>::Infinity(inf, static_cast<uint32_t>(ubFactor_));
 }
 
 template <typename T>
@@ -121,38 +180,72 @@ __aicore__ inline void KernelCosh<T>::Compute(int64_t currentNum)
     AscendC::LocalTensor<T> yLocal = outQueue_.template AllocTensor<T>();
 
     AscendC::LocalTensor<float> ax = axBuf_.Get<float>();
-    AscendC::LocalTensor<float> e1 = e1Buf_.Get<float>();
+    AscendC::LocalTensor<float> n = nBuf_.Get<float>();
+    AscendC::LocalTensor<float> r = rBuf_.Get<float>();
+    AscendC::LocalTensor<float> p2 = p2Buf_.Get<float>();
+    AscendC::LocalTensor<float> er = erBuf_.Get<float>();
     AscendC::LocalTensor<float> work = workBuf_.Get<float>();
+    AscendC::LocalTensor<float> cwHi = cwHiBuf_.Get<float>();
+    AscendC::LocalTensor<float> cwLo = cwLoBuf_.Get<float>();
+    AscendC::LocalTensor<float> inf = infBuf_.Get<float>();
+    AscendC::LocalTensor<uint8_t> mask = maskBuf_.Get<uint8_t>();
 
     const int32_t cnt = static_cast<int32_t>(currentNum);
+    const uint32_t cntU = static_cast<uint32_t>(currentNum);
 
+    // ── ① 取绝对值（cosh 偶函数）；fp16/bf16 先升 fp32 ──
     if constexpr (needCast) {
-        // Step0：升精度 T -> fp32（无精度损失）
-        AscendC::Cast(ax, xLocal, AscendC::RoundMode::CAST_NONE, cnt);
-        // Step1：ax = abs(ax)（原位）
+        AscendC::Cast(ax, xLocal, AscendC::RoundMode::CAST_NONE, cnt); // 升精度 T → fp32（无损）
         AscendC::Abs(ax, ax, cnt);
     } else {
-        // fp32 直通：xLocal 即 float，直接 Abs 到 ax 缓冲
-        AscendC::Abs(ax, xLocal, cnt);  // Step1
+        AscendC::Abs(ax, xLocal, cnt); // fp32 直通
     }
 
-    AscendC::Muls(e1, ax, static_cast<float>(0.5), cnt);    // Step2 x1 = ax*0.5  -> e1Buf
-    AscendC::Muls(work, ax, static_cast<float>(-1.5), cnt); // Step3 x2 = ax*(-1.5) -> workBuf
-    AscendC::Exp(e1, e1, cnt);                              // Step4 e1 = exp(x/2)（原位 e1Buf）
-    AscendC::Exp(work, work, cnt);                          // Step5 e2 = exp(-1.5x)（原位 workBuf）
-    AscendC::Add(work, e1, work, cnt);                      // Step6 x3 = e1 + e2 -> workBuf
-    AscendC::Muls(work, work, static_cast<float>(0.5), cnt);// Step7 x4 = 0.5*x3（原位 workBuf）
-    AscendC::Mul(work, work, e1, cnt);                      // Step8 y = x4*e1 -> workBuf
+    // ── ② 换底取整 n = trunc(ax · log2e) ──
+    AscendC::Muls(n, ax, kLog2e, cnt);
+    AscendC::Trunc(n, n, cntU); // 高阶 API，count 形免 tmpBuffer 重载
 
+    // ── ③ n 钳位 min(n,126)（钳位在 Cody-Waite 之前，使 r 与 2^(n−2) 用同一 n 合成）──
+    // ax≥0 ⇒ n≥0，copysign(126,n) 即 min(n,126)；被钳元素残差 r 变大由 Exp 吸收，e^r·2^(n−2)=e^x/4 仍精确。
+    AscendC::Mins(n, n, kNClamp, cnt);
+
+    // ── ④⑤ Cody-Waite 双 FMA 范围缩减 r = ax − n·ln2（用钳位后的 n，单次舍入，dst≠src2 避免地址重叠）──
+    AscendC::Fma(r, n, cwHi, ax, cntU); // r  = n·(−ln2_hi) + ax
+    AscendC::Fma(er, n, cwLo, r, cntU); // er = n·(+ln2_lo) + r  → 缩减后的 r
+
+    // ── ⑥⑨ 位操作构造 p2 = 2^(n−2)（magic 加 + 左移 23 构造 IEEE754 指数字段）──
+    // (n + 0x4B40007D) 位重解释后 <<23：32 位逐位左移，高位丢弃、低 9 位 (125+n)≤251 落入 IEEE754 指数字段；
+    // n≤126 保证指数字段有效（不产生 inf/nan）。
+    AscendC::Adds(p2, n, kExpMagic, cnt);
+    AscendC::LocalTensor<int32_t> p2i = p2.ReinterpretCast<int32_t>();
+    AscendC::ShiftLeft(p2i, p2i, kFp32MantissaBits, cnt);
+    // p2（float 视图）现为 2^((125+n)−127) = 2^(n−2)
+
+    // ── ⑩⑪ 合成 e^x/4 = exp(r) · 2^(n−2) ──
+    AscendC::Exp(er, er, cnt);     // er = exp(r)（缩减小区间，高精度）
+    AscendC::Mul(er, er, p2, cnt); // er = e^x / 4
+
+    // ── ⑫⑮ cosh 合成：y = 2·(e^x/4) + 0.125/(e^x/4) = e^x/2 + e^(−x)/2 ──
+    AscendC::Reciprocal(work, er, cnt);        // work = 4 / e^x
+    AscendC::Muls(work, work, kHalfInv8, cnt); // work = e^(−x) / 2
+    AscendC::Muls(p2, er, kTwo, cnt);          // p2   = e^x / 2
+    AscendC::Add(work, p2, work, cnt);         // work = cosh(x)
+
+    // ── ⑯⑰ 溢出兜底：|x| ≥ 90 ⇒ +inf。用 GE 掩码 + tensor-tensor Select
+    //    使 NaN 正确透传：NaN 与阈值比较恒为 false ⇒ mask=0 ⇒ 选 work（work 对 NaN 天然为 NaN）；
+    //    ax≥90 ⇒ mask=1 ⇒ 选 +inf。区间 [≈89.42, 90) 的 cosh>FLT_MAX，已由上面 2·(e^x/4) 自然溢出为 inf。
+    AscendC::CompareScalar(mask, ax, kOvfThreshold, AscendC::CMPMODE::GE, cntU);
+    AscendC::Select(work, mask, inf, work, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, cntU);
+
+    // ── 输出 ──
     if constexpr (needCast) {
-        // 还原 fp32 -> T（就近偶舍入）
+        // 还原 fp32 → T（就近偶舍入）；大值经此 Cast 饱和为 T 的 inf
         AscendC::Cast(yLocal, work, AscendC::RoundMode::CAST_RINT, cnt);
     } else {
         // fp32 直通：work 即结果，按元素级 Adds(+0) 拷贝到 yLocal（float）。
         // ⚠️ 不能用 DataCopy(yLocal, work, cnt) —— 本地 UB→UB DataCopy 要求 32B 对齐
         // （fp32 8 元素），非对齐 cnt（rank0 标量/17/45/130 等）会导致尾部数据丢失。
-        // Adds 是 vector 元素级操作，IEEE754 规定 x+0=x（NaN/±Inf 传播正确），
-        // 与 Cast 路径在精度行为上对齐。
+        // Adds 是 vector 元素级操作，IEEE754 规定 x+0=x（NaN/±Inf 传播正确）。
         AscendC::Adds(yLocal, work, static_cast<float>(0.0f), cnt);
     }
 
@@ -177,6 +270,12 @@ __aicore__ inline void KernelCosh<T>::CopyOut(int64_t progress, int64_t currentN
 template <typename T>
 __aicore__ inline void KernelCosh<T>::Process()
 {
+    // blockLength_ 为 0 时直接返回，避免后续 loopCount 计算依赖 ubFactor_>0 的不变量
+    if (blockLength_ == 0) {
+        return;
+    }
+    // 开发期断言 ubFactor_>0（Host Tiling 已保护，Kernel 侧加 ASSERT 作为防御性诊断）
+    ASCENDC_ASSERT(ubFactor_ > 0, { KERNEL_LOG(KERNEL_ERROR, "ubFactor_ must > 0"); });
     int64_t loopCount = (blockLength_ + ubFactor_ - 1) / ubFactor_;
     for (int64_t i = 0; i < loopCount; i++) {
         int64_t currentNum = (i == (loopCount - 1)) ? (blockLength_ - ubFactor_ * i) : ubFactor_;

@@ -14,7 +14,7 @@
  * \file cosh_infershape.cpp
  * \brief Cosh 算子形状/类型推导实现
  *
- * 逐元素一元算子：y.shape = x.shape，y.dtype = x.dtype（spec outputs[].shape_rule / dtype_rule）。
+ * 逐元素一元算子：y.shape = x.shape，y.dtype = x.dtype。
  */
 
 #include "register/op_impl_registry.h"
@@ -47,8 +47,6 @@ static ge::graphStatus InferDataType4Cosh(gert::InferDataTypeContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_INFERSHAPE(Cosh)
-    .InferShape(InferShape4Cosh)
-    .InferDataType(InferDataType4Cosh);
+IMPL_OP_INFERSHAPE(Cosh).InferShape(InferShape4Cosh).InferDataType(InferDataType4Cosh);
 
 } // namespace ops

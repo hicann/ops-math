@@ -12,7 +12,7 @@
 
 /*!
  * \file cosh_tiling_data.h
- * \brief Cosh 算子 TilingData 结构体定义（标准 Ascend C kernel，DESIGN §3.2）
+ * \brief Cosh 算子 TilingData 结构体定义（标准 Ascend C kernel）
  *
  * ✅ 标准 C++ struct 定义 TilingData，host 与 kernel 共用。
  * ❌ 禁止使用废弃的 BEGIN_TILING_DATA_DEF 宏。
@@ -24,8 +24,9 @@
 #define OPS_COSH_OP_KERNEL_ARCH35_COSH_TILING_DATA_H_
 
 struct CoshTilingData {
-    int64_t totalNum = 0;     // 元素总数（展平后），= x.shape 各维乘积
-    int64_t blockFactor = 0;  // 每个核处理的元素数（按 UB block 对齐）
-    int64_t ubFactor = 0;     // 每次 UB 循环处理的元素数（按 UB block 对齐）
+    int64_t totalNum = 0;    // 元素总数（展平后），= x.shape 各维乘积
+    int64_t blockFactor = 0; // 每个核处理的元素数（按 UB block 对齐）
+    int64_t ubFactor = 0;    // 每次 UB 循环处理的元素数（按 UB block 对齐）
 };
+
 #endif // OPS_COSH_OP_KERNEL_ARCH35_COSH_TILING_DATA_H_

@@ -14,12 +14,12 @@
  * \file cosh_def.cpp
  * \brief Cosh 算子定义（单输入单输出逐元素算子）
  *
- * 输入 x / 输出 y 与 spec inputs/outputs 名称、数量一致。
- * 目标芯片 Ascend950PR（DAV_3510，spec platform_constraints.supported_chips）。
+ * 输入 x / 输出 y，单输入单输出。
+ * 目标芯片 Ascend950PR（DAV_3510）。
  *
- * 迭代二：整合全 3 dtype，按 spec dtype_policy.supported_combinations 注册
+ * 整合全 3 dtype 注册：
  *   float32（WithoutCast 直通）/ float16（WithCast 升精度）/ bfloat16（WithCast 升精度）。
- *   输出 dtype 恒等于输入 dtype（spec dtype_rule: y.dtype = x.dtype）。
+ *   输出 dtype 恒等于输入 dtype（y.dtype = x.dtype）。
  */
 #include "register/op_def_registry.h"
 
@@ -28,20 +28,19 @@ class Cosh : public OpDef {
 public:
     explicit Cosh(const char* name) : OpDef(name)
     {
-        this->Input("x")                                        // 输入 x（spec inputs[0]）
-            .ParamType(REQUIRED)                                // 必选输入
-            .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16})  // 迭代二：全 3 dtype（spec dtype_policy）
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})  // ND 格式
-            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})  // 动态 shape 对应 format
-            .AutoContiguous();                                  // 内存自动连续化
-        this->Output("y")                                       // 输出 y（spec outputs[0]，y.shape=x.shape，y.dtype=x.dtype）
+        this->Input("x")
             .ParamType(REQUIRED)
-            .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16})  // 输出 dtype 恒等输入 dtype
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .AutoContiguous();
+        this->Output("y")
+            .ParamType(REQUIRED)
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
 
-        // 标准 Ascend C kernel：目标芯片 ascend950（DAV_3510 / Ascend950PR）
         OpAICoreConfig aiCoreConfig;
         aiCoreConfig.DynamicCompileStaticFlag(true)
             .DynamicFormatFlag(false)
