@@ -20,6 +20,7 @@
 bash build.sh --pkg --soc=ascend910b --ops=polar -j16     # A3: --soc=ascend910_93
 ./build_out/cann-ops-math-*linux*.run
 ```
+
 装到 `${ASCEND_HOME_PATH}/opp/vendors/custom_math/`。
 
 ## 用法
@@ -28,6 +29,7 @@ bash build.sh --pkg --soc=ascend910b --ops=polar -j16     # A3: --soc=ascend910_
 cd case_910b/Polar
 bash run.sh 2          # 跑 case2（广播主战场）
 ```
+
 输出 `xxx verify result pass!` + `time_base = ... time_use = ...`。
 
 ## case 覆盖

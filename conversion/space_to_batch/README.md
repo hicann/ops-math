@@ -30,7 +30,8 @@
   输出y形状为`[N * bs * bs, H_out, W_out, C]`。
 
   坐标映射（输出 → 输入）：
-  ```
+
+  ```text
   n     = n_out / (bs * bs)
   bh    = (n_out % (bs * bs)) / bs
   bw    = n_out % bs

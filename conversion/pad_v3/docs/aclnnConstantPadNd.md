@@ -25,7 +25,7 @@
     &假设输入self的shape为：
     \\ &[dim0_{in},dim1_{in}, dim2_{in}, dim3_{in}]
     &假设
-    \\ &pad = 
+    \\ &pad =
     &[dim3_{begin},dim3_{end},
     \\&&dim2_{begin},dim2_{end},
     \\&&dim1_{begin},dim1_{end},
@@ -44,7 +44,7 @@
     \end{aligned}
     $$
 
-  - 例子1：  
+  - 例子1：
     (pad数组长度等于self维度的两倍的情况)
 
     $$
@@ -56,7 +56,7 @@
     \end{aligned}
     $$
 
-  - 例子2：  
+  - 例子2：
     (pad数组长度小于self维度的两倍的情况)
 
     $$
@@ -75,18 +75,18 @@
 ```cpp
   aclnnStatus aclnnConstantPadNdGetWorkspaceSize(
     const aclTensor*   self,
-    const aclIntArray* pad, 
-    const aclScalar*   value, 
-    aclTensor*         out, 
-    uint64_t*          workspaceSize, 
+    const aclIntArray* pad,
+    const aclScalar*   value,
+    aclTensor*         out,
+    uint64_t*          workspaceSize,
     aclOpExecutor**    executor)
 ```
-    
+
 ```cpp
     aclnnStatus aclnnConstantPadNd(
-      void*          workspace, 
-      uint64_t       workspaceSize, 
-      aclOpExecutor* executor, 
+      void*          workspace,
+      uint64_t       workspaceSize,
+      aclOpExecutor* executor,
       aclrtStream    stream)
 ```
 
@@ -177,9 +177,9 @@
     </tr>
   </tbody></table>
 
-    - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型不支持BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E2M1、FLOAT4_E1M2。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型不支持HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E2M1、FLOAT4_E1M2。
-    - 对于CANN 9.0.0版本，self的数据类型为HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0时，仅支持value的bit值全为0。
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型不支持BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E2M1、FLOAT4_E1M2。
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型不支持HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E2M1、FLOAT4_E1M2。
+  - 对于CANN 9.0.0版本，self的数据类型为HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0时，仅支持value的bit值全为0。
 
 - **返回值**
 
@@ -236,8 +236,8 @@
         <td>当self的数据格式不为ND，out的数据格式与self的数据格式不一致。</td>
       </tr>
       <tr>
- 	      <td>当self的数据类型为HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E2M1、FLOAT4_E1M2时，pad中元素是负数。</td>
- 	    </tr>
+        <td>当self的数据类型为HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E2M1、FLOAT4_E1M2时，pad中元素是负数。</td>
+      </tr>
       <tr>
         <td>对于CANN 9.0.0版本，当self的数据类型为HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0时，value不为0。</td>
       </tr>

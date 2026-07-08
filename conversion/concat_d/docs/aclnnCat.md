@@ -23,18 +23,18 @@
 
 ```cpp
 aclnnStatus aclnnCatGetWorkspaceSize(
-    const aclTensorList *tensors, 
-    int64_t              dim, 
-    aclTensor           *out, 
-    uint64_t            *workspaceSize, 
+    const aclTensorList *tensors,
+    int64_t              dim,
+    aclTensor           *out,
+    uint64_t            *workspaceSize,
     aclOpExecutor      **executor)
 ```
 
 ```cpp
 aclnnStatus aclnnCat(
-    void             *workspace, 
-    uint64_t          workspaceSize, 
-    aclOpExecutor    *executor, 
+    void             *workspace,
+    uint64_t          workspaceSize,
+    aclOpExecutor    *executor,
     const aclrtStream stream)
 ```
 

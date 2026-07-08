@@ -8,7 +8,7 @@
 
 ## 数据流
 
-```
+```text
 PyTorch Tensor (NPU) -> torch_adapter.so -> aclnnFusedMulAddN(两段式) -> NPU 结果
 CPU golden (golden.py)  <-- compare.py（MERE/MARE 社区标准 / 整型 bitwise）--> NPU 结果(取回 CPU)
 ```

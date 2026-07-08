@@ -7,7 +7,8 @@
 **FresnelSin** 是一个 Ascend C 自定义算子，对输入 tensor 的每个元素计算 Fresnel 正弦积分 S(x)。
 
 **数学定义**：
-```
+
+```text
 S(x) = ∫_0^x sin(π/2 * t^2) dt
 ```
 
@@ -81,7 +82,7 @@ aclnnStatus aclnnFresnelSin(
 
 ## 目录结构
 
-```
+```text
 fresnel_sin/
 ├── CMakeLists.txt
 ├── README.md

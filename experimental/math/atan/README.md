@@ -10,6 +10,7 @@
 
 - 算子功能：按元素做三角函数反正切运算，计算公式如下：
 - 计算公式：
+
 $$
 \text{dstTensor}_i = \operatorname{Atan}(\text{srcTensor}_i)
 $$
@@ -56,7 +57,7 @@ $$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                             |
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_atan](./examples/test_aclnn_atan.cpp) | 通过[aclnnAtan](./docs/aclnnAtan.md)接口方式调用Atan算子。 
+| aclnn调用 | [test_aclnn_atan](./examples/test_aclnn_atan.cpp) | 通过[aclnnAtan](./docs/aclnnAtan.md)接口方式调用Atan算子。
 
 ## 贡献说明
 

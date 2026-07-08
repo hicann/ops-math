@@ -23,20 +23,20 @@
 
 ```Cpp
 aclnnStatus aclnnInplaceNormalGetWorkspaceSize(
-  const aclTensor*    selfRef, 
-  float               mean, 
-  float               std, 
-  int64_t             seed, 
-  int64_t             offset, 
-  uint64_t*           workspaceSize, 
+  const aclTensor*    selfRef,
+  float               mean,
+  float               std,
+  int64_t             seed,
+  int64_t             offset,
+  uint64_t*           workspaceSize,
   aclOpExecutor**     executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceNormal(
-  void*               workspace, 
-  uint64_t            workspaceSize, 
-  aclOpExecutor*      executor, 
+  void*               workspace,
+  uint64_t            workspaceSize,
+  aclOpExecutor*      executor,
   aclrtStream         stream)
 ```
 
@@ -179,6 +179,7 @@ aclnnStatus aclnnInplaceNormal(
     </tr>
   </tbody>
   </table>
+
 ## aclnnInplaceNormal
 
 - **参数描述：**

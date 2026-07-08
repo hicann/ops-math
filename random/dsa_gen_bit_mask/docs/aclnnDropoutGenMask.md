@@ -23,20 +23,20 @@
 
 ```Cpp
 aclnnStatus aclnnDropoutGenMaskGetWorkspaceSize(
-  const aclIntArray*  shape, 
-  double              prob, 
-  int64_t             seed, 
-  int64_t             offset, 
-  aclTensor*          out, 
-  uint64_t*           workspaceSize, 
+  const aclIntArray*  shape,
+  double              prob,
+  int64_t             seed,
+  int64_t             offset,
+  aclTensor*          out,
+  uint64_t*           workspaceSize,
   aclOpExecutor**     executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnDropoutGenMask(
-  void*               workspace, 
-  uint64_t            workspaceSize, 
-  aclOpExecutor*      executor, 
+  void*               workspace,
+  uint64_t            workspaceSize,
+  aclOpExecutor*      executor,
   aclrtStream         stream)
 ```
 

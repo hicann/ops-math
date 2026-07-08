@@ -16,6 +16,7 @@
   $$
 
 ## 函数原型
+
 - aclnnNeg和aclnnInplaceNeg实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
 
   - aclnnNeg：需新建一个输出张量对象存储计算结果。
@@ -40,7 +41,7 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
+  ```text
   第一段接口完成入参校验，出现以下场景时报错：
   161001(ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self、out是空指针。
   161002(ACLNN_ERR_PARAM_INVALID): 1. self和out的数据类型不在支持的范围之内。
@@ -73,7 +74,7 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
+  ```text
   第一段接口完成入参校验，出现以下场景时报错：
   161001(ACLNN_ERR_PARAM_NULLPTR): 1. 传入的selfRef是空指针。
   161002(ACLNN_ERR_PARAM_INVALID): 1. selfRef的数据类型不在支持的范围之内。
@@ -99,6 +100,7 @@
   - aclnnNeg&aclnnInplaceNeg默认确定性实现。
 
 ## 调用示例
+
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
 **aclnnNeg示例代码：**
 
@@ -232,6 +234,7 @@ int main() {
   return 0;
 }
 ```
+
 **aclnnInplaceNeg示例代码：**
 
 ```Cpp
@@ -358,4 +361,3 @@ int main() {
   return 0;
 }
 ```
-

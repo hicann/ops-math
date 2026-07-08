@@ -137,7 +137,7 @@ bash run.sh                  # 编译 eager + geir 两个示例；在真实 NPU 
 
 真实 NPU 上 eager 示例预期输出（节选）：
 
-```
+```bash
 [PASS] int32  ~self bitwise-exact
 [PASS] int8   ~self bitwise-exact (boundary ~(-128)=127)
 [PASS] uint8  ~self bitwise-exact (~0=255 ~255=0)

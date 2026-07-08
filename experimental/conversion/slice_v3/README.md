@@ -12,6 +12,7 @@
 
 - 计算公式：
 给定输入张量 x，起始位置 begin 和切片大小 size，输出张量 y 的计算公式为：
+
 $$
 y[i_1, i_2, \ldots, i_n] = x[\text{begin}[0] + i_1, \text{begin}[1] + i_2, \ldots, \text{begin}[n] + i_n]
 $$

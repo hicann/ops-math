@@ -16,11 +16,11 @@
 - **算子功能**：对输入tensor进行指定值的常量填充。
 - **示例**：
 
-  ```
+  ```text
   输入tensor([[0,1,2]])
   paddings([[2,2]])
   constant_values(0)
-  
+
   输出为([[0,0,0,1,2,0,0]])
   ```
 
@@ -77,7 +77,7 @@
 
 ### 输出shape计算
 
-```
+```text
 y.shape[d] = x.shape[d] + paddings[d][0] + paddings[d][1]
 ```
 

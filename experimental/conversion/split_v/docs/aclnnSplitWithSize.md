@@ -125,8 +125,8 @@ aclnnStatus aclnnSplitWithSize(
     </tr>
   </tbody></table>
 
-    - <term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。当输出个数大于32时，不支持DOUBLE、COMPLEX128、COMPLEX64。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：当输出个数大于32时，数据类型不支持DOUBLE、COMPLEX128、COMPLEX64。
+  - <term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。当输出个数大于32时，不支持DOUBLE、COMPLEX128、COMPLEX64。
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：当输出个数大于32时，数据类型不支持DOUBLE、COMPLEX128、COMPLEX64。
 
 - **返回值**
 
@@ -217,7 +217,6 @@ aclnnStatus aclnnSplitWithSize(
 
 - 确定性计算：
   - aclnnSplitWithSize默认确定性实现。
-
 
 ## 调用示例
 

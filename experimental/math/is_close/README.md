@@ -41,4 +41,3 @@ For floating-point inputs, exact equality is also treated as close. When
 | Mode | Example | Description |
 | :-- | :-- | :-- |
 | aclnn | [test_aclnn_is_close](./examples/test_aclnn_is_close.cpp) | Calls `IsClose` through the two-stage `aclnnIsClose` API. |
-

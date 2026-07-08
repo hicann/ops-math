@@ -79,7 +79,6 @@
     </tr>
   </tbody></table>
 
-
 ## 约束说明
 
 - alg参数当前仅支持Philox算法（alg=1）

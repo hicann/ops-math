@@ -1,6 +1,5 @@
 # aclnnEqTensor&aclnnInplaceEqTensor
 
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -27,34 +26,34 @@
 
 ```Cpp
 aclnnStatus aclnnEqTensorGetWorkspaceSize(
-  const aclTensor *self, 
-  const aclTensor *other, 
-  aclTensor       *out, 
-  uint64_t        *workspaceSize, 
+  const aclTensor *self,
+  const aclTensor *other,
+  aclTensor       *out,
+  uint64_t        *workspaceSize,
   aclOpExecutor  **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnEqTensor(
-  void          *workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor, 
+  void          *workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor *executor,
   aclrtStream    stream)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceEqTensorGetWorkspaceSize(
-  const aclTensor *selfRef, 
-  const aclTensor *other, 
-  uint64_t        *workspaceSize, 
+  const aclTensor *selfRef,
+  const aclTensor *other,
+  uint64_t        *workspaceSize,
   aclOpExecutor  **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceEqTensor(
-  void          *workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor, 
+  void          *workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor *executor,
   aclrtStream    stream)
 ```
 
@@ -149,7 +148,7 @@ aclnnStatus aclnnInplaceEqTensor(
 - **返回值：**
 
   aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
-  
+
   第一段接口完成入参校验，出现以下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>

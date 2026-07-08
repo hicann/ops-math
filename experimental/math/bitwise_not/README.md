@@ -97,7 +97,7 @@ bash run.sh --run-geir       # 额外实跑 geir 示例（需完整 GE 图执行
 
 eager 示例在真实 NPU 上的预期输出（节选）：
 
-```
+```bash
 [PASS] int32  ~self bitwise-exact
 [PASS] int8   ~self bitwise-exact (boundary ~(-128)=127)
 [PASS] uint8  ~self bitwise-exact (~0=255 ~255=0)

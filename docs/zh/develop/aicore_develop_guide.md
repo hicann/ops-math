@@ -26,8 +26,8 @@
 5. [Kernel实现](#kernel实现)：实现Device侧算子核函数。
 6. [图模式适配](#图模式适配)：自定义算子实现运行图模式。
 7. [aclnn适配](#aclnn适配)：自定义算子推荐aclnn接口调用，需完成二进制发布。如需入图，请参考[附录](#附录)。
-8. [编译部署](#编译部署)：通过工程编译脚本完成自定义算子的编译和安装。 
-9. [算子验证](#算子验证)：通过常见算子调用方式，验证自定义算子功能。  
+8. [编译部署](#编译部署)：通过工程编译脚本完成自定义算子的编译和安装。
+9. [算子验证](#算子验证)：通过常见算子调用方式，验证自定义算子功能。
 
 ## 工程创建
 
@@ -176,11 +176,9 @@ endif()
 
 **标准算子**的Tiling一共需要三个交付件：```${op_name}_tiling.cpp``` ```${op_name}_tiling_key.h``` ```${op_name}_tiling_data.h```
 
-> 说明：
->
-> 1. `${op_name}_tiling.cpp`放在`${op_name}/op_host`目录下；
-> 2. `${op_name}_tiling_key.h`和`${op_name}_tiling_data.h`放在`${op_name}/op_kernel`目录下；
-> 3.如果`${op_name}_tiling.cpp`中需要引用`${op_name}_tiling_data.h`，请使用相对路径的方式，例如：`#include "../op_kernel/${op_name}_tiling_data.h"`。
+- `${op_name}_tiling.cpp`放在`${op_name}/op_host`目录下；
+- `${op_name}_tiling_key.h`和`${op_name}_tiling_data.h`放在`${op_name}/op_kernel`目录下；
+- 如果`${op_name}_tiling.cpp`中需要引用`${op_name}_tiling_data.h`，请使用相对路径的方式，例如：`#include "../op_kernel/${op_name}_tiling_data.h"`。
 
 > **atvoss算子**的Tiling交付件与标准算子有所不同，通常包含：
 >
@@ -229,7 +227,7 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context){
     OP_CHECK_IF(
         GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
         return ge::GRAPH_FAILED);
-    
+
     // 2.2获取输入信息
     // 获取输入张量shape信息
     auto inputX = context->GetInputShape(0);
@@ -321,10 +319,9 @@ graph LR
 ### 代码实现
 
 **标准算子**的Kernel一共需要两个交付件：```${op_name}.cpp``` ```${op_name}.h```
-> 说明：
->
-> 1. `${op_name}.cpp`为kernel的入口函数只能放在`${op_name}/op_kernel`目录下；
-> 2. `${op_name}.h`文件可以按照不同SoC或模板放在对应目录下，例如：`${op_name}/op_kernel/arch32`、`${op_name}/op_kernel/arch35`或`${op_name}/op_kernel/impl`等目录下；
+
+- `${op_name}.cpp`为kernel的入口函数只能放在`${op_name}/op_kernel`目录下；
+- `${op_name}.h`文件可以按照不同SoC或模板放在对应目录下，例如：`${op_name}/op_kernel/arch32`、`${op_name}/op_kernel/arch35`或`${op_name}/op_kernel/impl`等目录下；
 
 > **atvoss算子**的Kernel交付件与标准算子有所不同，通常包含：
 >
@@ -374,7 +371,7 @@ class AddExample
 {
 public:
     // 默认构造函数，__aicore__表示该函数在AI Core上运行
-    __aicore__ inline AddExample(){};     
+    __aicore__ inline AddExample(){};
     // 初始化函数，用于设置输入输出地址和Tiling切分信息计算
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, const AddExampleTilingData* tilingData);
     // 主处理函数，执行数据拷贝和计算
@@ -404,7 +401,7 @@ private:
     GlobalTensor<T> inputGMY_;
     // 输出Z的GM地址
     GlobalTensor<T> outputGMZ_;
-    
+
     // 总数据长度
     int64_t blockLength_ = 0;
     // 每个block被划分多少块
@@ -484,14 +481,14 @@ __aicore__ inline void AddExample<T>::Process()
 
    以`AddExample`算子为例，假设开发交付件在`examples`目录，完整代码参见[add_example](../../../examples/add_example)目录。若编译`experimental`目录下用户自定义算子，编译命令需增加编译参数`--experimental`。
 
-   > 说明：编译过程依赖第三方开源软件，联网场景会自动下载，离线编译场景需要自行安装，具体参考[未联网编译](../invocation/quick_op_invocation.md#未联网编译)。
+   > 说明：编译过程依赖第三方开源软件，联网场景会自动下载，离线编译场景需要自行安装，具体参考[未联网编译](../install/compile.md#未联网编译)。
 
    进入项目根目录，执行如下编译命令。
 
    ```bash
    # 编译指定算子，如bash build.sh --pkg --ops=add_example -j16
    bash build.sh --pkg --soc=${soc_version} --vendor_name=${vendor_name} --ops=${op_list} [-j${n}]
-   
+
    # 编译experimental目录下指定算子
    bash build.sh --pkg --soc=${soc_version} --vendor_name=${vendor_name} --ops=${op_list} [--experimental] [-j${n}]
    ```
@@ -511,7 +508,7 @@ __aicore__ inline void AddExample<T>::Process()
 4. **安装自定义算子包。**
 
     执行以下命令进行安装：
-    
+
     ```bash
     # 安装run包
     ./build_out/cann-ops-math-${vendor_name}_linux-${arch}.run
@@ -628,7 +625,7 @@ UT编写指导如下，如需查看详细实现，请参考样例UT实现[test_a
 **1.组织结构与命名建议**
 
 - **头文件**：统一包含`iostream`, `gtest/gtest.h`、`tiling_context_faker.h`、`tiling_case_executor.h`。
-     - 若tiling头文件中已经定义CompileInfo结构体，则也需引入。
+  - 若tiling头文件中已经定义CompileInfo结构体，则也需引入。
 - **测试类**：继承`testing::Test`，实现`SetUpTestCase/TearDownTestCase`统一做数据准备与清理。
 - **命名**：测试类建议`${OpName}TilingTest`，用例名建议`test_case_xxx`，可读性更高。
 
@@ -706,9 +703,9 @@ UT编写指导如下，如需查看详细实现，请参考样例UT实现[test_a
 **1.组织结构与命名建议**
 
 - **头文件**：建议统一包含`gtest/gtest.h`、`tikicpulib.h`、`data_utils.h`与Tiling头文件。
-    - 直接引用`op_host/${op_name}_tiling.h`
-    - 或在UT目录提供轻量适配头（如`examples/add_example/tests/ut/op_kernel/add_example_tiling.h`）
-    - 若Kernel为模板函数，可在UT中直接`#include "../../../op_kernel/${op_name}.cpp"`触发实例化（参考`AddExample`）
+  - 直接引用`op_host/${op_name}_tiling.h`
+  - 或在UT目录提供轻量适配头（如`examples/add_example/tests/ut/op_kernel/add_example_tiling.h`）
+  - 若Kernel为模板函数，可在UT中直接`#include "../../../op_kernel/${op_name}.cpp"`触发实例化（参考`AddExample`）
 - **测试类**：继承`testing::Test`，实现`SetUpTestCase/TearDownTestCase`统一做数据准备与清理（如拷贝数据目录、chmod、生成bin）。
 - **命名**：测试类建议`${OpName}KernelTest`，用例名建议`test_case_xxx`，可读性更高。
 
@@ -803,7 +800,7 @@ uint32_t blockDim = tilingInfo.blockNum;
   [gen_data.py](../../../examples/add_example/tests/ut/op_kernel/add_example_data/gen_data.py)、
   [compare_data.py](../../../examples/add_example/tests/ut/op_kernel/add_example_data/compare_data.py)。
 - 简单算子可直接在UT中计算期望值并比对。
-    - 浮点比较建议使用`EXPECT_NEAR/ASSERT_NEAR`并设置合理容差。
+  - 浮点比较建议使用`EXPECT_NEAR/ASSERT_NEAR`并设置合理容差。
 
 ### aclnn调用验证
 

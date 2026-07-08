@@ -18,58 +18,58 @@
 ## 参数说明
 
 <table style="undefined;table-layout: fixed; width: 1400px"><colgroup>
-	<col style="width: 140px">
-	<col style="width: 180px">
-	<col style="width: 360px">
-	<col style="width: 500px">
-	<col style="width: 120px">
-	</colgroup>
-	<thead>
-		<tr>
-			<th>参数名</th>
-			<th>输入/输出/属性</th>
-			<th>描述</th>
-			<th>数据类型</th>
-			<th>数据格式</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr>
-			<td>x</td>
-			<td>输入</td>
-			<td>待重塑的输入张量。</td>
-			<td>BOOL, FLOAT, FLOAT16, INT8, INT16, UINT16, UINT8, INT32, INT64, UINT32, UINT64, DOUBLE, COMPLEX64, COMPLEX128, BF16</td>
-			<td>ND</td>
-		</tr>
-		<tr>
-			<td>shape</td>
-			<td>输入</td>
-			<td>目标形状张量，支持一个 <code>-1</code>；默认模式下 <code>0</code> 表示复制对应输入维度。</td>
-			<td>INT32, INT64</td>
-			<td>1D</td>
-		</tr>
-		<tr>
-			<td>axis</td>
-			<td>属性</td>
-			<td>起始替换维度，默认值为0。</td>
-			<td>INT</td>
-			<td>-</td>
-		</tr>
-		<tr>
-			<td>num_axes</td>
-			<td>属性</td>
-			<td>被替换的连续维度数，默认值为 -1。</td>
-			<td>INT</td>
-			<td>-</td>
-		</tr>
-		<tr>
-			<td>y</td>
-			<td>输出</td>
-			<td>重塑后的输出张量，数据类型与输入x相同。</td>
-			<td>与x相同</td>
-			<td>ND</td>
-		</tr>
-	</tbody>
+ <col style="width: 140px">
+ <col style="width: 180px">
+ <col style="width: 360px">
+ <col style="width: 500px">
+ <col style="width: 120px">
+ </colgroup>
+ <thead>
+  <tr>
+   <th>参数名</th>
+   <th>输入/输出/属性</th>
+   <th>描述</th>
+   <th>数据类型</th>
+   <th>数据格式</th>
+  </tr>
+ </thead>
+ <tbody>
+  <tr>
+   <td>x</td>
+   <td>输入</td>
+   <td>待重塑的输入张量。</td>
+   <td>BOOL, FLOAT, FLOAT16, INT8, INT16, UINT16, UINT8, INT32, INT64, UINT32, UINT64, DOUBLE, COMPLEX64, COMPLEX128, BF16</td>
+   <td>ND</td>
+  </tr>
+  <tr>
+   <td>shape</td>
+   <td>输入</td>
+   <td>目标形状张量，支持一个 <code>-1</code>；默认模式下 <code>0</code> 表示复制对应输入维度。</td>
+   <td>INT32, INT64</td>
+   <td>1D</td>
+  </tr>
+  <tr>
+   <td>axis</td>
+   <td>属性</td>
+   <td>起始替换维度，默认值为0。</td>
+   <td>INT</td>
+   <td>-</td>
+  </tr>
+  <tr>
+   <td>num_axes</td>
+   <td>属性</td>
+   <td>被替换的连续维度数，默认值为 -1。</td>
+   <td>INT</td>
+   <td>-</td>
+  </tr>
+  <tr>
+   <td>y</td>
+   <td>输出</td>
+   <td>重塑后的输出张量，数据类型与输入x相同。</td>
+   <td>与x相同</td>
+   <td>ND</td>
+  </tr>
+ </tbody>
 </table>
 
 ## 约束说明

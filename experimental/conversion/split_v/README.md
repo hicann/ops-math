@@ -65,13 +65,11 @@
     </tr>
   </tbody></table>
 
-
 ## 约束说明
 
-* size_splits中的每个元素都大于或等于1。
-* size_splits的长度等于num_split的值。
-* size_splits中的元素总和为维度split_dim的大小。
-
+- size_splits中的每个元素都大于或等于1。
+- size_splits的长度等于num_split的值。
+- size_splits中的元素总和为维度split_dim的大小。
 
 ## 调用说明
 

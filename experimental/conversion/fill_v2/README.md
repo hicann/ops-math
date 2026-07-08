@@ -12,6 +12,7 @@
 
 - 计算公式：
 对于任意索引位置 `(i, j, ...)`，执行 `fill(T, v)` 后：
+
 $$
 \forall (i, j, \dots), \quad T[i, j, \dots] = v
 $$

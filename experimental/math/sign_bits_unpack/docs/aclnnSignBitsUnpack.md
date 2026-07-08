@@ -2,7 +2,6 @@
 
 ## 产品支持情况
 
-
 | 产品                                                     | 是否支持 |
 | :------------------------------------------------------- | :------: |
 | <term>Ascend 950PR/Ascend 950DT</term>                   |    ×    |
@@ -205,7 +204,7 @@ int main() {
 
   void* selfDeviceAddr = nullptr;
   void* outDeviceAddr = nullptr;
-  
+
   aclTensor* self = nullptr;
   aclTensor* out = nullptr;
 
@@ -252,7 +251,7 @@ int main() {
   // 6. 释放aclTensor，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
   aclDestroyTensor(out);
-  
+
   // 7. 释放device 资源
   aclrtFree(selfDeviceAddr);
   aclrtFree(outDeviceAddr);
@@ -262,7 +261,7 @@ int main() {
   aclrtDestroyStream(stream);
   aclrtResetDevice(deviceId);
   aclFinalize();
-   
+
   return 0;
 }
 ```

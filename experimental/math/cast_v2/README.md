@@ -57,14 +57,14 @@ Cast 进行数据类型转换
 │   ├── examples           // Cast算子测试文件
 │   ├── op_host           // Cast算子host侧实现
 │   ├── op_kernel          // Cast算子kernel侧实现
-│   ├── tests           
+│   ├── tests
 │   └── README             // 算子工程README
 ```
 
 ## 5. 开发者信息
 
 - 开发者1：梁杨琳
-- 邮箱：3431470978@qq.com
+- 邮箱：<3431470978@qq.com>
 
 ## 6. 更新日志
 

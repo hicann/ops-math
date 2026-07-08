@@ -159,6 +159,7 @@ experimental/conversion/zeros_like/
 - **现象**：`usableUb = (uint64_t)ubSize - ZL_RESERVED_UB(8192) - sizeof(ZerosLikeTilingData)`，前置仅校验 `ubSize > 0`。当 `ubSize < 8232` 时 uint64 回绕为巨大值。
 - **缓解**：下游 `tileBytes` 受 `ZL_TILE_BYTES_LIMIT`(64KB) 截断并被 `ZL_BLOCK_BYTES`(32) 下限钳住，不会真正分配巨型 UB；目标 DAV_2201 UB=192KB ≫ 8232，实际不触发，属理论健壮性问题。
 - **加固建议**：加显式下界保护：
+
   ```cpp
   uint64_t reserved = ZL_RESERVED_UB + sizeof(ZerosLikeTilingData);
   uint64_t usableUb = (static_cast<uint64_t>(compileInfo->ubSize) > reserved)

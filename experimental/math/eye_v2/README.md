@@ -10,6 +10,7 @@
 
 - 算子功能：创建一个二维矩阵，其中对角线上的值为1，其余值为0。
 - 计算公式：
+
 $$
 y_{ij} = \begin{cases} 1, & \text{if } i = j \\ 0, & \text{if } i \neq j \end{cases}
 $$

@@ -5,7 +5,7 @@
 
 ## 1. 目录结构
 
-```
+```text
 tests/st/torch/
 ├── README.md           # 本文件
 ├── CMakeLists.txt      # 编译 torch_adapter.cpp -> libtorch_adapter.so（含 ACLNN 两段式封装）

@@ -28,7 +28,7 @@
 
 ## 函数原型
 
-  - 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnBernoulliTensorGetWorkspaceSize”或者“aclnnInplaceBernoulliTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnBernoulliTensor”或者“aclnnInplaceBernoulliTensor”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnBernoulliTensorGetWorkspaceSize”或者“aclnnInplaceBernoulliTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnBernoulliTensor”或者“aclnnInplaceBernoulliTensor”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnBernoulliTensorGetWorkspaceSize(
@@ -174,7 +174,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)
 
   第一段接口完成入参校验，出现以下场景时报错：
-  
+
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 288px">
   <col style="width: 114px">
@@ -348,7 +348,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)
 
   第一段接口完成入参校验，出现以下场景时报错：
-  
+
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 288px">
   <col style="width: 114px">
@@ -422,10 +422,9 @@ aclnnStatus aclnnInplaceBernoulliTensor(
 
 ## 约束说明
 
-- 确定性计算：
-  - aclnnBernoulliTensor&aclnnInplaceBernoulliTensor默认确定性实现。
- - 输入prob的元素值域必须为[0, 1]。
- - 当输入prob的shape与输入self/selfRef的shape不一致时，只计算两者可对应元素的数据，其余数据的行为未定义。例如：当prob的shape为[4, 2]，self的shape为[4, 4]时，只计算前8个元素，输出的shape为[4, 4]；当prob的shape为[4, 4, 2], self的shape为[4, 4]时，只计算前16个元素，输出的shape为[4, 4]。
+- 确定性计算：aclnnBernoulliTensor&aclnnInplaceBernoulliTensor默认确定性实现。
+- 输入prob的元素值域必须为[0, 1]。
+- 当输入prob的shape与输入self/selfRef的shape不一致时，只计算两者可对应元素的数据，其余数据的行为未定义。例如：当prob的shape为[4, 2]，self的shape为[4, 4]时，只计算前8个元素，输出的shape为[4, 4]；当prob的shape为[4, 4, 2], self的shape为[4, 4]时，只计算前16个元素，输出的shape为[4, 4]。
 
 ## 调用示例
 

@@ -43,7 +43,7 @@
 
 ## 目录结构
 
-```
+```text
 pdist/
 ├── README.md
 ├── op_host/                     # Host 侧：算子定义、Tiling、InferShape

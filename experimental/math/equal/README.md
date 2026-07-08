@@ -7,6 +7,7 @@
 | skywang2 | 个人开发者 | Equal | 2026/6/21 | 新增Equal算子 |
 
 ## 支持的产品型号
+
 - Atlas A2训练系列产品
 
 产品形态详细说明请参见[昇腾产品形态说明](http://www.hiascend.com/document/redirect/CannCommunityProductForm)

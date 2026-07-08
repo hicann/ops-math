@@ -788,7 +788,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/fresnel_sin/README.md">fresnel_sin</a></td>
+    <td><a href="../../math/fresnel_sin">fresnel_sin</a></td>
     <td>√</td>
     <td>√</td>
     <td>×</td>

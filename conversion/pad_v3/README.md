@@ -95,27 +95,27 @@
     </tr>
   </tbody></table>
 
-  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：数据类型不支持BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E2M1、FLOAT4_E1M2。
-  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型不支持HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E2M1、FLOAT4_E1M2。
+- <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：数据类型不支持BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E2M1、FLOAT4_E1M2。
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型不支持HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E2M1、FLOAT4_E1M2。
 
-- paddings  
+- paddings
     paddings的第0维表示对输入x第0维的扩充配置，以此类推。每一行表示对应维度上的填充数量（左/右、前/后、上/下等）。对于每一行[a, b]，a表示在该维度的开头填充的元素数，b表示在该维度的末尾填充的元素数(在paddings_contiguous为true的情况下)。
 
-- mode  
-    constant模式下，填充常量值，常量值在输入constant_values中表示，当constant_values为空时表示填充0。  
-    edge模式下，以输入x的边缘值进行填充。  
-    REFLECT模式下，以镜像的方式填充，镜像时不会包括边界本身。  
-    在SYMMETRIC模式下，以镜像的方式填充，镜像时会包含边界本身。  
-- paddings_contiguous  
+- mode
+    constant模式下，填充常量值，常量值在输入constant_values中表示，当constant_values为空时表示填充0。
+    edge模式下，以输入x的边缘值进行填充。
+    REFLECT模式下，以镜像的方式填充，镜像时不会包括边界本身。
+    在SYMMETRIC模式下，以镜像的方式填充，镜像时会包含边界本身。
+- paddings_contiguous
 
-    若为true时，paddings按 行主序(row-major)排列。  
-    例如[[2,2],[1,1]]表示：  
+    若为true时，paddings按 行主序(row-major)排列。
+    例如[[2,2],[1,1]]表示：
 
         第0维：左边填2，右边填2。
         第1维：左边填1，右边填1。
 
-    若为false时，paddings按 列主序(column-major)排列。  
-    例如[[2,1],[2,1]]表示：  
+    若为false时，paddings按 列主序(column-major)排列。
+    例如[[2,1],[2,1]]表示：
 
         第0维：左边填2，右边填2。
         第1维：左边填1，右边填1。

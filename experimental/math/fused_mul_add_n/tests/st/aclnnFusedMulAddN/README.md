@@ -21,10 +21,12 @@ Kit). ATK calls the already-built operator on the NPU and compares it against a 
 
 1. ATK installed (`atk` CLI on PATH). Wheel: `OperatorDevtools/ATK/atk-*-cp310-*.whl`.
 2. The custom package built **and unpacked** so its aclnn lib + kernels are discoverable:
+
    ```bash
    bash build.sh --pkg --experimental --soc=ascend910b --ops=fused_mul_add_n   # from worktree root
    # unpack the .run somewhere writable; run_atk.sh expects build_out/installed_custom_math/packages
    ```
+
    `run_atk.sh` points `ASCEND_CUSTOM_OPP_PATH` at the **parent of `vendors/`** (with a
    `vendors/config.ini` listing `custom_math`) — ATK resolves the op's `libcust_opapi.so` from
    `${ASCEND_CUSTOM_OPP_PATH}/vendors/<name>/op_api/lib/`. (Pointing it at the vendor dir itself, or at

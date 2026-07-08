@@ -70,4 +70,3 @@ aclnnStatus aclnnIsNegInf(
 | 调用方式 | 调用样例 | 说明 |
 | :-- | :-- | :-- |
 | ACLNN | [examples/test_aclnn_is_neg_inf.cpp](./examples/test_aclnn_is_neg_inf.cpp) | 两段式调用 `aclnnIsNegInfGetWorkspaceSize` 和 `aclnnIsNegInf` |
-

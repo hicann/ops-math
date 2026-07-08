@@ -13,6 +13,7 @@
 - isin算子功能：判断给定张量elements的每个元素是否在另一个张量test_elements中出现，并返回一个布尔类型张量，形状与给定张量一致。
 
 - isin算子完整实现：
+
 $$
 elementsNum = elements.length() \\
 combine\_elements = cat(elements, test\_elements) \\

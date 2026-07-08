@@ -7,7 +7,8 @@
 **FresnelCos** 是一个 Ascend C 自定义算子，对输入 tensor 的每个元素计算 Fresnel 余弦积分 C(x)。
 
 **数学定义**：
-```
+
+```text
 C(x) = ∫_0^x cos(π/2 * t^2) dt
 ```
 
@@ -81,7 +82,7 @@ aclnnStatus aclnnFresnelCos(
 
 ## 目录结构
 
-```
+```text
 fresnel_cos/
 ├── CMakeLists.txt
 ├── README.md

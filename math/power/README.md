@@ -4,7 +4,7 @@
 
 逐元素计算：
 
-```
+```text
 y = exp(power * log(x * scale + shift))
 ```
 
@@ -22,7 +22,7 @@ y = exp(power * log(x * scale + shift))
 
 - 使用 **Elementwise模板**（`ElewiseBaseTiling` + `ElementwiseSchWithScalar` + `DAGSch`）。
 - 在tiling层完成所有`scale / power / shift`标量计算与分支决策，最终通过`culType`枚举值
-  + dtype编码出`tilingKey`，在kernel中实例化对应的DAG，避免kernel内运行时分支：
+  - dtype编码出`tilingKey`，在kernel中实例化对应的DAG，避免kernel内运行时分支：
 
 | culType | 计算 |
 |---|---|
@@ -36,7 +36,7 @@ y = exp(power * log(x * scale + shift))
 
 通用分支在kernel内通过`Compare + Select`合并三种取值（正/负/零底数）：
 
-```
+```text
 absBase   = |base|
 logAbs    = log(absBase)
 rawExp    = exp(power * logAbs)
@@ -57,7 +57,7 @@ y         = base == 0 ? zeroVal : tmp
 
 ## 5.目录结构
 
-```
+```text
 power/
 ├── CMakeLists.txt
 ├── README.md
