@@ -6,7 +6,7 @@
 
 1. **[前提条件](../README.md)**：参考项目README完成环境准备和源码下载，此处不再赘述。快速入门场景**推荐CANNLab或Docker部署**，操作简单。
 
-   > **说明**：CANNLab或Docker环境默认提供最新商发版CANN包；如需体验master分支最新能力，可手动搭建环境。
+   > **说明**：CANNLab或Docker环境默认提供最新版本CANN包；如需体验master分支最新能力，可手动搭建环境。
 
 2. **[编译运行](#一编译运行)**：编译自定义算子包并安装，实现快速调用算子。
 
@@ -23,17 +23,17 @@
 ### 1.进入项目源码
 
 - CANNLab云开发环境：
-   
-   默认提供最新商发版CANN包配套的项目源码，进入源码目录，\$\{gitCode\_id\}替换为开发者个人gitCode账号。
-   
+
+   默认提供最新版本CANN包配套的项目源码，进入源码目录，\$\{gitCode\_id\}替换为开发者个人gitCode账号。
+
    ```bash
    cd /mnt/workspace/gitCode/${gitCode_id}/ops-math
    ```
 
 - 非CANNLab云开发环境：
-  
+
   根据[release仓库](https://gitcode.com/cann/release-management)源码与CANN版本配套关系，执行如下命令下载源码，\$\{tag\_version\}替换为目标分支标签，例如9.0.0。
-    
+
   ```bash
   git clone -b ${tag_version} https://gitcode.com/cann/ops-math.git && cd ops-math
   ```

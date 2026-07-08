@@ -79,7 +79,7 @@
 
 ## 约束说明
 
-只能从PTA侧调用，如想使用aclnn接口需要手动构造unique_indices入参，并确保调用Kernel前new_values Tensor已置为全零。
+只能PyTorch侧调用，如想使用aclnn接口需要手动构造unique_indices入参，并确保调用Kernel前new_values Tensor已置为全零。
 
 重索引后的indices值不能超过int32上限。
 

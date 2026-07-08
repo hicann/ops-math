@@ -6,7 +6,7 @@
 |--------|------------------|-------|-----------|-----------|
 | skywang2 | 个人开发者 | Fill | 2025/12/31 | 新增Fill算子 |
 
-### 支持的产品型号 
+### 支持的产品型号
 
 - Atlas A2训练系列产品
 
@@ -19,26 +19,26 @@
 - 原型信息
 
 <table>
-<tr><th align="center">算子类型(OpType)</th><th colspan="4" align="center">Fill</th></tr> 
-<tr><td align="center"> </td><td align="center">name</td><td align="center">Type</td><td align="center">data type</td><td align="center">format</td></tr>  
+<tr><th align="center">算子类型(OpType)</th><th colspan="4" align="center">Fill</th></tr>
+<tr><td align="center"> </td><td align="center">name</td><td align="center">Type</td><td align="center">data type</td><td align="center">format</td></tr>
 <tr><td rowspan="2" align="center">算子输入</td></tr>
- 
-<tr><td align="center">dims</td><td align="center">attr_tuple</td><td align="center">int64</td><td align="center">-</td></tr>   
+
+<tr><td align="center">dims</td><td align="center">attr_tuple</td><td align="center">int64</td><td align="center">-</td></tr>
 <tr><td rowspan="2" align="center">算子输入</td></tr>
- 
-<tr><td align="center">value</td><td align="center">scalar</td><td align="center">float32,float16,bfloat16,int8,bool,int64,int32</td><td align="center">-</td></tr>  
+
+<tr><td align="center">value</td><td align="center">scalar</td><td align="center">float32,float16,bfloat16,int8,bool,int64,int32</td><td align="center">-</td></tr>
 
 <tr><td rowspan="1" align="center">算子输出</td>
-<td align="center">y</td><td align="center">tensor</td><td align="center">float32,float16,bfloat16,int8,bool,int64,int32</td><td align="center">ND</td></tr>  
-<tr><td rowspan="1" align="center">核函数名</td><td colspan="4" align="center">Fill</td></tr>  
+<td align="center">y</td><td align="center">tensor</td><td align="center">float32,float16,bfloat16,int8,bool,int64,int32</td><td align="center">ND</td></tr>
+<tr><td rowspan="1" align="center">核函数名</td><td colspan="4" align="center">Fill</td></tr>
 </table>
 
 - 约束与限制
 
   dims的数据类型支持INT64。
-  
+
   value的数据类型支持FLOAT16、FLOAT32、INT8、INT32、INT64，BOOL、BFLOAT16。
-  
+
   y的数据类型支持FLOAT16、FLOAT32、INT8、INT32、INT64，BOOL、BFLOAT16。，数据格式只支持ND。
 
 ### 环境要求
@@ -51,6 +51,6 @@
 <table>
     <th>目录</th><th>描述</th>
     <tr>
-        <td><a href="./examples/test_aclnn_fill.cpp"> test_aclnn_fill.cpp</a></td><td>通过aclnn调用的方式调用Fill算子。</td>
+        <td><a href="./examples/test_aclnn_fill_scalar.cpp"> test_aclnn_fill.cpp</a></td><td>通过aclnn调用的方式调用Fill算子。</td>
     </tr>
 </table>

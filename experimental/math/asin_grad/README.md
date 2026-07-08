@@ -77,7 +77,7 @@ aclnnStatus aclnnAsinGrad(
 | 调用方式 | 是否支持 |
 | -------- | :------: |
 | ACLNN 调用 | Yes |
-| torch_npu 单算子 | No |
+| TorchNPU 单算子 | No |
 | torch.compile 入图 | No |
 | GE 图模式-静态 shape | No |
 | GE 图模式-动态 shape | No |

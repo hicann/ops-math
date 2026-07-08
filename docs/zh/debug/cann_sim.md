@@ -43,7 +43,7 @@ bash build.sh --pkg --soc=Ascend950 --vendor_name=custom --ops=add_example
 ./build_out/cann-ops-math-${vendor_name}_linux-${arch}.run
 ```
 
-* 参考[aclnn调用](../invocation/quick_op_invocation.md#aclnn调用)完成test_aclnn_add_example.cpp的编译，编出可执行文件test_aclnn_add_example
+* 参考[aclnn调用](../invocation/quick_op_invocation.md)完成test_aclnn_add_example.cpp的编译，编出可执行文件test_aclnn_add_example
 
 ## 执行仿真命令
 
@@ -160,7 +160,7 @@ cannsim report [options]
 
     ```bash
     在当前目录下生成性能分析报告（默认仅分析核0）
-    cannsim report -e /path/to/cannsim_{timestamp}_${user_app} 
+    cannsim report -e /path/to/cannsim_{timestamp}_${user_app}
 
     在指定目录下生成核0、核1、核11、核12的性能分析报告
     cannsim report -e /path/to/cannsim_{timestamp}_${user_app} -o /path/to/report -n '0-1, 11-12'
@@ -215,7 +215,7 @@ cannsim record --help
 查询工具report子命令的帮助信息：
 
  ```bash
- cannsim report --help 
+ cannsim report --help
  ```
 
 ## 参数说明
