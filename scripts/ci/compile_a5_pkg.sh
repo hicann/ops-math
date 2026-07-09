@@ -57,35 +57,37 @@ do
     if [[ "$file_path" == *.md ]]; then
         continue
     fi
-    
-    if [[ ! "$file_path" == "experimental/"* ]]; then
-        for dir in "${builtin_dirs[@]}"
+
+    if [ -f "$current_dir/$file_path" ]; then
+        if [[ ! "$file_path" == "experimental/"* ]]; then
+            for dir in "${builtin_dirs[@]}"
+            do
+                if [[ "$file_path" == *"/$dir/"*"/arch35/"* ]]; then
+                    if [[ ! " ${builtin_ops_name[@]} " =~ " $dir " ]]; then
+                        builtin_ops_name+=("$dir")
+                    fi
+                    break
+                fi
+            done
+        fi
+
+        for dir in "${experimental_dirs[@]}"
         do
-            if [[ "$file_path" == *"/$dir/"*"/arch35/"* ]]; then
-                if [[ ! " ${builtin_ops_name[@]} " =~ " $dir " ]]; then
-                    builtin_ops_name+=("$dir")
+            if [[ "$file_path" == "experimental/"*"/$dir/"*"/arch35/"* ]]; then
+                if [[ ! " ${experimental_ops_name[@]} " =~ " $dir " ]]; then
+                    experimental_ops_name+=("$dir")
                 fi
                 break
             fi
         done
     fi
-
-    for dir in "${experimental_dirs[@]}"
-    do
-        if [[ "$file_path" == "experimental/"*"/$dir/"*"/arch35/"* ]]; then
-            if [[ ! " ${experimental_ops_name[@]} " =~ " $dir " ]]; then
-                experimental_ops_name+=("$dir")
-            fi
-            break
-        fi
-    done
     if [[ "$file_path" == "common/"* || "$file_path" == "cmake/"* ]]; then
         build_all=1
     fi
 done
 
 echo "related op: ${builtin_ops_name[*]}"
-echo "releted experimental op: ${experimental_ops_name[*]}"
+echo "related experimental op: ${experimental_ops_name[*]}"
 echo "need build all: ${build_all}"
 run_build_command() {
     local cmd=$1
