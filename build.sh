@@ -10,7 +10,6 @@
 
 set -e
 RELEASE_TARGETS=("ophost" "opapi" "opgraph" "opkernel" "opkernel_aicpu" "onnxplugin" "tfplugin")
-UT_TARGETS=("ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "opkernel_aicpu_test")
 SUPPORT_COMPUTE_UNIT_SHORT=("ascend910b" "ascend910_93" "ascend950" "ascend310p" "ascend910" "ascend310b" "ascend630" "ascend610lite" "ascend031" "ascend035" "kirinx90"  "kirin9030" "mc62")
 # 所有支持的短选项
 SUPPORTED_SHORT_OPTS="hj:vO:uf:-:"
@@ -19,7 +18,7 @@ SUPPORTED_SHORT_OPTS="hj:vO:uf:-:"
 SUPPORTED_LONG_OPTS=(
   "help" "ops=" "soc=" "vendor_name=" "debug" "cov" "noexec" "aicpu" "noaicpu" "opkernel" "opkernel_aicpu" "jit"
   "pkg" "asan" "valgrind" "make_clean" "static" "build-type=" "no_force" "simulator"
-  "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "opkernel_aicpu_test"
+  "ophost" "opapi" "opgraph"
   "run_example" "genop=" "genop_aicpu=" "experimental" "cann_3rd_lib_path" "mssanitizer" "oom" "onnxplugin" "tfplugin"
   "dump_cce" "bisheng_flags=" "kernel_template_input=" "module_extension=" "example_name=" "rule_launch=" "gtest_filter=" "ccache="
 )
@@ -371,7 +370,7 @@ usage() {
   echo "    -O[n] Compile optimization options, support [O0 O1 O2 O3], eg:-O3"
   echo "    -u Compile all ut"
   echo $dotted_line
-  echo "    examples, Build ophost_test with O3 level compilation optimization and do not execute."
+  echo "    examples, Build ophost ut with O3 level compilation optimization and do not execute."
   echo "    ./build.sh -u --ophost --noexec -O3"
   echo $dotted_line
   echo "    The following are all supported arguments:"
@@ -401,7 +400,6 @@ usage() {
   echo "    --build-type specify build-type (Type options: Release/Debug), Default:Release"
   echo "    --static build static library package"
   echo "    --experimental Build experimental version"
-  echo "    --opkernel_aicpu_test build and run aicpu opkernel unit tests"
   echo "    --run_example Compile and execute the test_aclnn_xxx.cpp/test_geir_xxx.cpp"
   echo "    --simulator     Enable simulator mode for run_example (requires --soc parameter)"
   echo "    --genop Create the initial directory for op"
@@ -427,7 +425,7 @@ check_help_combinations() {
   for arg in "${args[@]}"; do
     case "$arg" in
       -u) has_u=true ;;
-      --ophost_test | --opapi_test | --opgraph_test | --ophost | --opapi | --opgraph | --onnxplugin | --tfplugin)
+      --ophost | --opapi | --opgraph | --onnxplugin | --tfplugin)
         has_test_command=true
         has_build_command=true
         ;;
@@ -440,17 +438,17 @@ check_help_combinations() {
 
   # Check the invalid command combinations in help
   if [[ "$has_package" == "true" && ("$has_test_command" == "true" || "$has_u" == "true") ]]; then
-    echo "[ERROR] --pkg cannot be used with test(-u, --ophost_test, etc.), --ophost, --opapi, or --opgraph"
+    echo "[ERROR] --pkg cannot be used with test(-u), --ophost, --opapi, or --opgraph"
     return 1
   fi
 
   if [[ "$has_opkernel" == "true" && ("$has_test_command" == "true" || "$has_u" == "true") ]]; then
-    echo "[ERROR] --opkernel cannot be used with test(-u, --ophost_test, etc.), --ophost, --opapi, or --opgraph"
+    echo "[ERROR] --opkernel cannot be used with test(-u), --ophost, --opapi, or --opgraph"
     return 1
   fi
 
   if [[ "$has_opkernel_aicpu" == "true" && ("$has_test_command" == "true" || "$has_u" == "true") ]]; then
-    echo "[ERROR] --opkernel_aicpu cannot be used with test(-u, --ophost_test, etc.), --ophost, --opapi, or --opgraph"
+    echo "[ERROR] --opkernel_aicpu cannot be used with test(-u), --ophost, --opapi, or --opgraph"
     return 1
   fi
 
@@ -467,10 +465,10 @@ check_param() {
     exit 1
   fi
 
-  # -pkg不能与-u（UT模式，包含_test的参数）或者--ophost，--opapi，--opgraph同时存在
+  # -pkg不能与-u（UT模式）或者--ophost，--opapi，--opgraph同时存在
   if [[ "$ENABLE_PACKAGE" == "TRUE" ]]; then
     if [[ "$ENABLE_TEST" == "TRUE" ]]; then
-      echo "[ERROR] --pkg cannot be used with test(-u, --ophost_test, etc.)"
+      echo "[ERROR] --pkg cannot be used with -u"
       exit 1
     fi
 
@@ -611,7 +609,7 @@ set_ut_mode() {
 
   # 检查测试项，至少有一个
   if [[ "$UT_TEST_ALL" == "FALSE" && "$OP_HOST_UT" == "FALSE" && "$OP_API_UT" == "FALSE" && "$OP_GRAPH_UT" == "FALSE" && "$OP_KERNEL_UT" == "FALSE" && "$OP_KERNEL_AICPU_UT" == "FALSE" ]]; then
-    echo "[ERROR] At least one test target must be specified (ophost_test, opapi_test, opgraph_test, opkernel_test, opkernel_aicpu_test)"
+    echo "[ERROR] At least one test target must be specified (use -u with one of: --ophost, --opapi, --opgraph, --opkernel, --opkernel_aicpu)"
     usage
     exit 1
   fi
@@ -788,9 +786,6 @@ checkopts() {
           --opgraph) SHOW_HELP="opgraph" ;;
           --onnxplugin) SHOW_HELP="onnxplugin" ;;
           --tfplugin) SHOW_HELP="tfplugin" ;;
-          --ophost_test) SHOW_HELP="ophost_test" ;;
-          --opapi_test) SHOW_HELP="opapi_test" ;;
-          --opgraph_test) SHOW_HELP="opgraph_test" ;;
           --run_example) SHOW_HELP="run_example" ;;
           --genop) SHOW_HELP="genop" ;;
           --genop_aicpu) SHOW_HELP="genop_aicpu" ;;
@@ -904,16 +899,11 @@ checkopts() {
           ;;
         no_force) NO_FORCE=TRUE ;;
         *)
-          ## 如果不在RELEASE_TARGETS 或者 UT_TARGETS，不做处理
-          if ! in_array "$OPTARG" "${RELEASE_TARGETS[@]}" && ! in_array "$OPTARG" "${UT_TARGETS[@]}"; then
+          ## 如果不在RELEASE_TARGETS，不做处理
+          if ! in_array "$OPTARG" "${RELEASE_TARGETS[@]}"; then
             echo "[ERROR] Invalid option: --$OPTARG"
             usage
             exit 1
-          fi
-          ## 如果_test形式的，那么获取正确的名，并强设UT_MODE为TRUE
-          if [[ "$OPTARG" == *"_test" ]]; then
-            OPTARG="${OPTARG%_test}"
-            ENABLE_TEST=TRUE
           fi
 
           if [[ "$OPTARG" == "ophost" ]]; then
@@ -1233,11 +1223,11 @@ build_binary() {
   if grep -wq "gen_bin_scripts" <<< "${all_targets}"; then
     echo "[INFO] Begin to execute build target: gen_bin_scripts."
     cmake --build . --target gen_bin_scripts -- ${VERBOSE} -j $THREAD_NUM
-    if [ $? -ne 0 ]; then 
+    if [ $? -ne 0 ]; then
       echo "[ERROR] Failed to execute gen_bin_scripts."
-      exit 1; 
+      exit 1;
     fi
-  else 
+  else
     echo "[WARNING] Build target 'gen_bin_scripts' not found in cmake targets, available targets: ${all_targets}"
   fi
   echo "--------------- prepare build end ---------------"
@@ -1278,14 +1268,14 @@ build_binary() {
     if [ $? -ne 0 ]; then
       echo "[ERROR] Kernel compile failed!" && exit 1
     fi
-  else 
-    echo "[WARNING] Compile kernel binary failed! Build target 'binary' not found in cmake targets. Available targets: ${all_targets}"  
+  else
+    echo "[WARNING] Compile kernel binary failed! Build target 'binary' not found in cmake targets. Available targets: ${all_targets}"
   fi
   if grep -wq "gen_bin_info_config" <<< "${all_targets}"; then
     cmake --build . --target gen_bin_info_config -- ${VERBOSE} -j $THREAD_NUM
     if [ $? -ne 0 ]; then exit 1; fi
-  else 
-    echo "[WARNING] Generate binary info config failed! Build target 'gen_bin_info_config' not found in cmake targets. Available targets: ${all_targets}"  
+  else
+    echo "[WARNING] Generate binary info config failed! Build target 'gen_bin_info_config' not found in cmake targets. Available targets: ${all_targets}"
   fi
   echo "--------------- binary build end ---------------"
 
