@@ -459,7 +459,7 @@ void PadV3GradReplicationTiling::CalcSplitStrategy()
     splitSize_ = static_cast<uint32_t>(inputShape_[lastAxis]);
 
     uint64_t outerCombos = 1;
-    for (uint32_t k = 0; k + 1 < (uint32_t)dimNum_; k++) {
+    for (uint32_t k = 0; k + 1 < static_cast<uint32_t>(dimNum_); k++) {
         outerCombos *= inputShape_[k];
     }
     splitCount_ = static_cast<uint32_t>(outerCombos);
