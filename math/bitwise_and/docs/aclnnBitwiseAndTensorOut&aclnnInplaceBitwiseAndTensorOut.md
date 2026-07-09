@@ -391,7 +391,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
-#include "aclnnop/bitwiseand.h"
+#include "aclnnop/aclnn_bitwiseand.h"
 
 #define CHECK_RET(cond, return_expr) \
   do {                               \
