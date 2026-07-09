@@ -16,7 +16,6 @@ set(COMMON_L0_SRCS
   ${CMAKE_SOURCE_DIR}/conversion/contiguous/op_host/op_api/contiguous.cpp
   ${CMAKE_SOURCE_DIR}/conversion/reshape/op_api/reshape.cpp
   ${CMAKE_SOURCE_DIR}/conversion/slice/op_api/slice.cpp
-  ${CMAKE_SOURCE_DIR}/conversion/view_copy/op_api/view_copy.cpp
   ${CMAKE_SOURCE_DIR}/conversion/strided_slice/op_api/strided_slice.cpp
   ${CMAKE_SOURCE_DIR}/conversion/broadcast_to/op_api/broadcast_to.cpp
   ${CMAKE_SOURCE_DIR}/conversion/tensor_move/op_api/tensor_move.cpp
