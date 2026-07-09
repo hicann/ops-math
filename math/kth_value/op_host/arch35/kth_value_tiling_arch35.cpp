@@ -126,8 +126,7 @@ static ge::graphStatus ComputeKthValueUbInfo(gert::TilingContext* context,
                                               "The value of ubSize must be less than or equal to uint32 max."),
         return ge::GRAPH_FAILED);
     info.ubSize = static_cast<uint32_t>(ubSize64);
-    int64_t int32Max = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
-    info.isInt32 = static_cast<uint32_t>(info.lastAxis <= int32Max);
+    info.isInt32 = static_cast<uint32_t>(IsRadixUint32CounterRange(info.lastAxis));
     oneCoreUbValid = ComputeRadixOneCoreUbSizes(info.lastAxis, info.dtypeSize, static_cast<uint32_t>(sizeof(uint32_t)),
                                                 info.blockUbSize, info.xUbSize, info.idxUbSize) &&
                      (info.isInt32 != 0U);

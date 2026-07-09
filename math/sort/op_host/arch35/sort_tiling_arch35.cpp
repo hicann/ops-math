@@ -759,8 +759,7 @@ ge::graphStatus RadixSortTiling(gert::TilingContext* context, int32_t maxCoreNum
                                                       "The value of SortCheckParams must be GRAPH_SUCCESS."),
                 return ge::GRAPH_FAILED);
     sortTileInfo.maxCoreNum = static_cast<uint32_t>(maxCoreNum);
-    int64_t int32Max = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
-    uint64_t isInt32 = static_cast<uint64_t>((sortTileInfo.lastAxis <= int32Max));
+    uint64_t isInt32 = static_cast<uint64_t>(IsRadixUint32CounterRange(sortTileInfo.lastAxis));
     const bool* isDescending = context->GetAttrs()->GetAttrPointer<bool>(1);
     uint64_t isDescend = *isDescending;
     sortTileInfo.isDescend = static_cast<bool>(isDescend);

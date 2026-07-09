@@ -32,15 +32,18 @@ namespace optiling {
 // General constants
 // =============================================================================
 constexpr size_t WORK_SPACE_SIZE = 16 * 1024 * 1024;
-constexpr uint32_t BIN_NUM = 256;              // 直方图一次处理256B
-constexpr uint32_t SMALL_TILE_DATA_NUM = 1024; // 测试数据得出一次至少处理1024，sort性能比较好
-constexpr uint32_t SIMT_UB = 32768;            // 预留了32k给simt使用
+constexpr uint32_t BIN_NUM = 256;                      // 直方图一次处理256B
+constexpr uint32_t SMALL_TILE_DATA_NUM = 1024;         // 测试数据得出一次至少处理1024，sort性能比较好
+constexpr uint32_t SIMT_UB = 32768;                    // 预留了32k给simt使用
+constexpr int64_t RADIX_UINT32_VALUE_MAX = 0x3fffffff; // uint32 radix counters reserve the top two bits for state
 constexpr uint32_t SMALL_AXIS_THRESHOLD = 512;
 constexpr int64_t NON_LAST_SMALL_AXIS_THRESHOLD = 2048;
 constexpr int64_t ONE_CORE_DATA_SIZE = 2048;
 constexpr uint32_t SORT32_SMALL_AXIS_THRESHOLD = 32;
 constexpr uint32_t SMALL_AXIS_MAX_DATACOPY_BLOCK_COUNT = 4095; // DataCopy hardware limit for blockCount
 constexpr uint32_t SORT_STRUCT_BYTES = 8;                      // fp32 sort struct size (index + value)
+
+constexpr bool IsRadixUint32CounterRange(int64_t axisLen) { return axisLen <= RADIX_UINT32_VALUE_MAX; }
 
 // =============================================================================
 // Safe arithmetic utilities

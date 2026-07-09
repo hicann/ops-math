@@ -12,6 +12,7 @@
 #include <vector>
 #include <gtest/gtest.h>
 #include "math/sort/op_host/arch35/sort_tiling.h"
+#include "math/sort/op_host/arch35/sort_tiling_common.h"
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
 #include "../../../../op_kernel/arch35/sort_tiling_data.h"
@@ -21,20 +22,17 @@ using namespace ge;
 
 class SortTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-    }
-    static void TearDownTestCase()
-    {
-    }
+    static void SetUpTestCase() {}
+    static void TearDownTestCase() {}
 };
 
 namespace {
 constexpr size_t WORK_SPACE_SIZE = 16777216;
 optiling::SortCompileInfo g_compileInfo = {64, 1, 0, 4};
 
-gert::TilingContextPara MakeSortTilingContext(const gert::StorageShape &storageShape, ge::DataType xDtype,
-    ge::DataType y2Dtype, int64_t dim = -1, bool descending = false, bool stable = false)
+gert::TilingContextPara MakeSortTilingContext(const gert::StorageShape& storageShape, ge::DataType xDtype,
+                                              ge::DataType y2Dtype, int64_t dim = -1, bool descending = false,
+                                              bool stable = false)
 {
     return gert::TilingContextPara(
         "Sort",
@@ -52,7 +50,7 @@ gert::TilingContextPara MakeSortTilingContext(const gert::StorageShape &storageS
         },
         &g_compileInfo);
 }
-}  // namespace
+} // namespace
 
 TEST_F(SortTilingTest, test_sort_merge_sort_fp32_basic_2x1024)
 {
@@ -297,7 +295,7 @@ TEST_F(SortTilingTest, test_sort_small_axis_two_stage_uint8_7524x127_balances_ba
     EXPECT_EQ(tilingInfo.tilingKey, 262);
     EXPECT_EQ(tilingInfo.blockNum, 64);
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(SortRegBaseTilingData));
-    const auto *tilingData = reinterpret_cast<const SortRegBaseTilingData *>(tilingInfo.tilingData.get());
+    const auto* tilingData = reinterpret_cast<const SortRegBaseTilingData*>(tilingInfo.tilingData.get());
     EXPECT_EQ(tilingData->numTileDataSize, 127);
     EXPECT_EQ(tilingData->keyParams0, 20);
     EXPECT_EQ(tilingData->keyParams1, 377);
@@ -329,14 +327,20 @@ TEST_F(SortTilingTest, test_sort_small_axis_fallback_radix_one_core_int64_outidx
 
 TEST_F(SortTilingTest, test_sort_large_batch_falls_back_when_small_axis_batching_overflows)
 {
-    int64_t largeBatch =
-        (static_cast<int64_t>(std::numeric_limits<uint32_t>::max()) + 1) * static_cast<int64_t>(32);
-    auto tilingContextPara = MakeSortTilingContext({{largeBatch, 512}, {largeBatch, 512}},
-        ge::DT_INT64, ge::DT_INT64);
+    int64_t largeBatch = (static_cast<int64_t>(std::numeric_limits<uint32_t>::max()) + 1) * static_cast<int64_t>(32);
+    auto tilingContextPara = MakeSortTilingContext({{largeBatch, 512}, {largeBatch, 512}}, ge::DT_INT64, ge::DT_INT64);
 
     uint64_t expectTilingKey = 257;
     std::vector<size_t> expectWorkspaces = {WORK_SPACE_SIZE};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+}
+
+TEST_F(SortTilingTest, test_sort_radix_counter_range_boundary)
+{
+    constexpr int64_t radixUint32ValueMax = 0x3fffffff;
+
+    EXPECT_TRUE(optiling::IsRadixUint32CounterRange(radixUint32ValueMax));
+    EXPECT_FALSE(optiling::IsRadixUint32CounterRange(radixUint32ValueMax + 1));
 }
 
 TEST_F(SortTilingTest, test_sort_non_last_small_axis_insertion_fp32_uses_no_transpose)
@@ -347,7 +351,7 @@ TEST_F(SortTilingTest, test_sort_non_last_small_axis_insertion_fp32_uses_no_tran
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
     EXPECT_EQ(tilingInfo.tilingKey, 261);
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(SortRegBaseTilingData));
-    const auto *tilingData = reinterpret_cast<const SortRegBaseTilingData *>(tilingInfo.tilingData.get());
+    const auto* tilingData = reinterpret_cast<const SortRegBaseTilingData*>(tilingInfo.tilingData.get());
     EXPECT_EQ(tilingData->keyParams3, 1);
     EXPECT_EQ(tilingData->innerLoopNum, 1);
     ASSERT_EQ(tilingInfo.workspaceSizes.size(), 1);
@@ -356,15 +360,14 @@ TEST_F(SortTilingTest, test_sort_non_last_small_axis_insertion_fp32_uses_no_tran
 
 TEST_F(SortTilingTest, test_sort_non_last_small_axis_two_stage_int32_uses_no_transpose)
 {
-    auto tilingContextPara = MakeSortTilingContext({{8, 13, 64}, {8, 13, 64}},
-        ge::DT_INT32, ge::DT_INT32, 1);
+    auto tilingContextPara = MakeSortTilingContext({{8, 13, 64}, {8, 13, 64}}, ge::DT_INT32, ge::DT_INT32, 1);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
     EXPECT_EQ(tilingInfo.tilingKey, 262);
     EXPECT_EQ(tilingInfo.blockNum, 8);
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(SortRegBaseTilingData));
-    const auto *tilingData = reinterpret_cast<const SortRegBaseTilingData *>(tilingInfo.tilingData.get());
+    const auto* tilingData = reinterpret_cast<const SortRegBaseTilingData*>(tilingInfo.tilingData.get());
     EXPECT_EQ(tilingData->keyParams3, 1);
     EXPECT_EQ(tilingData->innerLoopNum, 1);
     ASSERT_EQ(tilingInfo.workspaceSizes.size(), 1);
@@ -373,15 +376,14 @@ TEST_F(SortTilingTest, test_sort_non_last_small_axis_two_stage_int32_uses_no_tra
 
 TEST_F(SortTilingTest, test_sort_non_last_small_axis_int32_desc_uses_no_transpose)
 {
-    auto tilingContextPara = MakeSortTilingContext({{4, 128, 17}, {4, 128, 17}},
-        ge::DT_INT32, ge::DT_INT32, 1, true);
+    auto tilingContextPara = MakeSortTilingContext({{4, 128, 17}, {4, 128, 17}}, ge::DT_INT32, ge::DT_INT32, 1, true);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
     EXPECT_EQ(tilingInfo.tilingKey, 65802);
     EXPECT_EQ(tilingInfo.blockNum, 64);
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(SortRegBaseTilingData));
-    const auto *tilingData = reinterpret_cast<const SortRegBaseTilingData *>(tilingInfo.tilingData.get());
+    const auto* tilingData = reinterpret_cast<const SortRegBaseTilingData*>(tilingInfo.tilingData.get());
     EXPECT_EQ(tilingData->innerChunk, 1);
     EXPECT_EQ(tilingData->innerLoopNum, 17);
     ASSERT_EQ(tilingInfo.workspaceSizes.size(), 1);
@@ -390,15 +392,14 @@ TEST_F(SortTilingTest, test_sort_non_last_small_axis_int32_desc_uses_no_transpos
 
 TEST_F(SortTilingTest, test_sort_non_last_small_axis_fp32_unaligned_axis_uses_no_transpose)
 {
-    auto tilingContextPara = MakeSortTilingContext({{2, 31, 5}, {2, 31, 5}},
-        ge::DT_FLOAT, ge::DT_INT64, 1);
+    auto tilingContextPara = MakeSortTilingContext({{2, 31, 5}, {2, 31, 5}}, ge::DT_FLOAT, ge::DT_INT64, 1);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
     EXPECT_EQ(tilingInfo.tilingKey, 265);
     EXPECT_EQ(tilingInfo.blockNum, 10);
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(SortRegBaseTilingData));
-    const auto *tilingData = reinterpret_cast<const SortRegBaseTilingData *>(tilingInfo.tilingData.get());
+    const auto* tilingData = reinterpret_cast<const SortRegBaseTilingData*>(tilingInfo.tilingData.get());
     EXPECT_EQ(tilingData->innerChunk, 1);
     EXPECT_EQ(tilingData->innerLoopNum, 5);
     ASSERT_EQ(tilingInfo.workspaceSizes.size(), 1);
@@ -407,15 +408,14 @@ TEST_F(SortTilingTest, test_sort_non_last_small_axis_fp32_unaligned_axis_uses_no
 
 TEST_F(SortTilingTest, test_sort_non_last_small_axis_uint16_uses_no_transpose)
 {
-    auto tilingContextPara = MakeSortTilingContext({{3, 192, 9}, {3, 192, 9}},
-        ge::DT_UINT16, ge::DT_INT32, 1);
+    auto tilingContextPara = MakeSortTilingContext({{3, 192, 9}, {3, 192, 9}}, ge::DT_UINT16, ge::DT_INT32, 1);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
     EXPECT_EQ(tilingInfo.tilingKey, 266);
     EXPECT_EQ(tilingInfo.blockNum, 27);
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(SortRegBaseTilingData));
-    const auto *tilingData = reinterpret_cast<const SortRegBaseTilingData *>(tilingInfo.tilingData.get());
+    const auto* tilingData = reinterpret_cast<const SortRegBaseTilingData*>(tilingInfo.tilingData.get());
     EXPECT_EQ(tilingData->innerChunk, 1);
     EXPECT_EQ(tilingData->innerLoopNum, 9);
     ASSERT_EQ(tilingInfo.workspaceSizes.size(), 1);
@@ -424,15 +424,14 @@ TEST_F(SortTilingTest, test_sort_non_last_small_axis_uint16_uses_no_transpose)
 
 TEST_F(SortTilingTest, test_sort_non_last_small_axis_uint8_inner_smaller_than_preferred_chunk)
 {
-    auto tilingContextPara = MakeSortTilingContext({{2, 7, 3}, {2, 7, 3}},
-        ge::DT_UINT8, ge::DT_INT64, 1);
+    auto tilingContextPara = MakeSortTilingContext({{2, 7, 3}, {2, 7, 3}}, ge::DT_UINT8, ge::DT_INT64, 1);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
     EXPECT_EQ(tilingInfo.tilingKey, 266);
     EXPECT_EQ(tilingInfo.blockNum, 6);
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(SortRegBaseTilingData));
-    const auto *tilingData = reinterpret_cast<const SortRegBaseTilingData *>(tilingInfo.tilingData.get());
+    const auto* tilingData = reinterpret_cast<const SortRegBaseTilingData*>(tilingInfo.tilingData.get());
     EXPECT_EQ(tilingData->innerChunk, 1);
     EXPECT_EQ(tilingData->innerLoopNum, 3);
     ASSERT_EQ(tilingInfo.workspaceSizes.size(), 1);
@@ -441,15 +440,14 @@ TEST_F(SortTilingTest, test_sort_non_last_small_axis_uint8_inner_smaller_than_pr
 
 TEST_F(SortTilingTest, test_sort_non_last_small_axis_uint8_axis2048_uses_no_transpose)
 {
-    auto tilingContextPara = MakeSortTilingContext({{2, 2048, 1}, {2, 2048, 1}},
-        ge::DT_UINT8, ge::DT_INT64, 1);
+    auto tilingContextPara = MakeSortTilingContext({{2, 2048, 1}, {2, 2048, 1}}, ge::DT_UINT8, ge::DT_INT64, 1);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
     EXPECT_EQ(tilingInfo.tilingKey, 266);
     EXPECT_EQ(tilingInfo.blockNum, 2);
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(SortRegBaseTilingData));
-    const auto *tilingData = reinterpret_cast<const SortRegBaseTilingData *>(tilingInfo.tilingData.get());
+    const auto* tilingData = reinterpret_cast<const SortRegBaseTilingData*>(tilingInfo.tilingData.get());
     EXPECT_EQ(tilingData->innerChunk, 1);
     EXPECT_EQ(tilingData->innerLoopNum, 1);
     ASSERT_EQ(tilingInfo.workspaceSizes.size(), 1);
@@ -458,23 +456,21 @@ TEST_F(SortTilingTest, test_sort_non_last_small_axis_uint8_axis2048_uses_no_tran
 
 TEST_F(SortTilingTest, test_sort_rejects_non_last_uint8_axis2049_for_no_transpose)
 {
-    auto tilingContextPara = MakeSortTilingContext({{2, 2049, 1}, {2, 2049, 1}},
-        ge::DT_UINT8, ge::DT_INT64, 1);
+    auto tilingContextPara = MakeSortTilingContext({{2, 2049, 1}, {2, 2049, 1}}, ge::DT_UINT8, ge::DT_INT64, 1);
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
 TEST_F(SortTilingTest, test_sort_non_last_small_axis_uint16_axis2048_uses_no_transpose)
 {
-    auto tilingContextPara = MakeSortTilingContext({{2, 2048, 1}, {2, 2048, 1}},
-        ge::DT_UINT16, ge::DT_INT64, 1);
+    auto tilingContextPara = MakeSortTilingContext({{2, 2048, 1}, {2, 2048, 1}}, ge::DT_UINT16, ge::DT_INT64, 1);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
     EXPECT_EQ(tilingInfo.tilingKey, 266);
     EXPECT_EQ(tilingInfo.blockNum, 2);
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(SortRegBaseTilingData));
-    const auto *tilingData = reinterpret_cast<const SortRegBaseTilingData *>(tilingInfo.tilingData.get());
+    const auto* tilingData = reinterpret_cast<const SortRegBaseTilingData*>(tilingInfo.tilingData.get());
     EXPECT_EQ(tilingData->innerChunk, 1);
     EXPECT_EQ(tilingData->innerLoopNum, 1);
     ASSERT_EQ(tilingInfo.workspaceSizes.size(), 1);
@@ -483,22 +479,21 @@ TEST_F(SortTilingTest, test_sort_non_last_small_axis_uint16_axis2048_uses_no_tra
 
 TEST_F(SortTilingTest, test_sort_rejects_non_last_uint16_axis2049_for_no_transpose)
 {
-    auto tilingContextPara = MakeSortTilingContext({{2, 2049, 1}, {2, 2049, 1}},
-        ge::DT_UINT16, ge::DT_INT64, 1);
+    auto tilingContextPara = MakeSortTilingContext({{2, 2049, 1}, {2, 2049, 1}}, ge::DT_UINT16, ge::DT_INT64, 1);
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
 TEST_F(SortTilingTest, test_sort_non_last_small_axis_fp16_axis1840_uses_radix)
 {
-    auto tilingContextPara = MakeSortTilingContext({{2, 2, 1840, 1610, 2, 2}, {2, 2, 1840, 1610, 2, 2}},
-        ge::DT_FLOAT16, ge::DT_INT64, 2, true, true);
+    auto tilingContextPara = MakeSortTilingContext({{2, 2, 1840, 1610, 2, 2}, {2, 2, 1840, 1610, 2, 2}}, ge::DT_FLOAT16,
+                                                   ge::DT_INT64, 2, true, true);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
     EXPECT_EQ(tilingInfo.tilingKey, 65802);
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(SortRegBaseTilingData));
-    const auto *tilingData = reinterpret_cast<const SortRegBaseTilingData *>(tilingInfo.tilingData.get());
+    const auto* tilingData = reinterpret_cast<const SortRegBaseTilingData*>(tilingInfo.tilingData.get());
     EXPECT_GT(tilingData->innerChunk, 1);
     ASSERT_EQ(tilingInfo.workspaceSizes.size(), 1);
     EXPECT_EQ(tilingInfo.workspaceSizes[0], WORK_SPACE_SIZE);
@@ -513,7 +508,7 @@ TEST_F(SortTilingTest, test_sort_non_last_small_axis_bf16_uses_merge_no_transpos
     EXPECT_EQ(tilingInfo.tilingKey, 265);
     EXPECT_EQ(tilingInfo.blockNum, 64);
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(SortRegBaseTilingData));
-    const auto *tilingData = reinterpret_cast<const SortRegBaseTilingData *>(tilingInfo.tilingData.get());
+    const auto* tilingData = reinterpret_cast<const SortRegBaseTilingData*>(tilingInfo.tilingData.get());
     EXPECT_EQ(tilingData->innerChunk, 1);
     EXPECT_EQ(tilingData->innerLoopNum, 32);
     ASSERT_EQ(tilingInfo.workspaceSizes.size(), 1);
@@ -529,7 +524,7 @@ TEST_F(SortTilingTest, test_sort_non_last_small_axis_bf16_axis1840_uses_radix)
     EXPECT_EQ(tilingInfo.tilingKey, 266);
     EXPECT_EQ(tilingInfo.blockNum, 2);
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(SortRegBaseTilingData));
-    const auto *tilingData = reinterpret_cast<const SortRegBaseTilingData *>(tilingInfo.tilingData.get());
+    const auto* tilingData = reinterpret_cast<const SortRegBaseTilingData*>(tilingInfo.tilingData.get());
     EXPECT_EQ(tilingData->innerChunk, 1);
     EXPECT_EQ(tilingData->innerLoopNum, 1);
     ASSERT_EQ(tilingInfo.workspaceSizes.size(), 1);
@@ -545,7 +540,7 @@ TEST_F(SortTilingTest, test_sort_non_last_small_axis_int64_uses_no_transpose)
     EXPECT_EQ(tilingInfo.tilingKey, 266);
     EXPECT_EQ(tilingInfo.blockNum, 64);
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(SortRegBaseTilingData));
-    const auto *tilingData = reinterpret_cast<const SortRegBaseTilingData *>(tilingInfo.tilingData.get());
+    const auto* tilingData = reinterpret_cast<const SortRegBaseTilingData*>(tilingInfo.tilingData.get());
     EXPECT_EQ(tilingData->innerChunk, 1);
     EXPECT_EQ(tilingData->innerLoopNum, 32);
     ASSERT_EQ(tilingInfo.workspaceSizes.size(), 1);
@@ -561,7 +556,7 @@ TEST_F(SortTilingTest, test_sort_non_last_small_axis_uint64_uses_no_transpose)
     EXPECT_EQ(tilingInfo.tilingKey, 266);
     EXPECT_EQ(tilingInfo.blockNum, 64);
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(SortRegBaseTilingData));
-    const auto *tilingData = reinterpret_cast<const SortRegBaseTilingData *>(tilingInfo.tilingData.get());
+    const auto* tilingData = reinterpret_cast<const SortRegBaseTilingData*>(tilingInfo.tilingData.get());
     EXPECT_EQ(tilingData->innerChunk, 1);
     EXPECT_EQ(tilingData->innerLoopNum, 32);
     ASSERT_EQ(tilingInfo.workspaceSizes.size(), 1);

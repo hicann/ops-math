@@ -11,6 +11,7 @@
 #include <limits>
 #include <vector>
 #include <gtest/gtest.h>
+#include "math/sort/op_host/arch35/sort_tiling_common.h"
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
 #include "../../../../op_kernel/arch35/kth_value_tiling_data.h"
@@ -238,6 +239,14 @@ TEST_F(KthValueTilingTest, test_kthvalue_bf16_nonlast_axis1840_radix)
     EXPECT_EQ(tilingInfo.tilingKey, 266);
     ASSERT_EQ(tilingInfo.workspaceSizes.size(), 1);
     EXPECT_EQ(tilingInfo.workspaceSizes[0], WORK_SPACE_SIZE);
+}
+
+TEST_F(KthValueTilingTest, test_kthvalue_radix_counter_range_boundary)
+{
+    constexpr int64_t radixUint32ValueMax = 0x3fffffff;
+
+    EXPECT_TRUE(optiling::IsRadixUint32CounterRange(radixUint32ValueMax));
+    EXPECT_FALSE(optiling::IsRadixUint32CounterRange(radixUint32ValueMax + 1));
 }
 
 TEST_F(KthValueTilingTest, test_kthvalue_rejects_invalid_dtype)
