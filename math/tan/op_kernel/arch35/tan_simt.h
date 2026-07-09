@@ -42,14 +42,14 @@ static constexpr float PIO2_1 = 1.5f;
 static constexpr float PIO2_2 = 0.0703125f;
 static constexpr float PIO2_3 = 4.83826794896619e-04f;
 
-// float32 路径的多项式系数（8阶泰勒展开）
-static constexpr float C0 = 0.3333333333f;       // 1/3
-static constexpr float C1 = 0.1333333333f;       // 2/15
-static constexpr float C2 = 0.0539682540f;       // 17/315
-static constexpr float C3 = 0.0218253968f;       // 62/2835
-static constexpr float C4 = 0.0088632353f;       // 1382/155925
-static constexpr float C5 = 0.0035921281f;       // 21844/6081075
-static constexpr float C6 = 0.0014558335f;       // 929569/638512875
+// float32 路径的多项式系数（[-pi/4,pi/4] minimax 拟合，替代原泰勒展开以满足 FP32 rtol=1.3e-6）
+static constexpr float C0 = 3.3333349758e-01f;
+static constexpr float C1 = 1.3332663237e-01f;
+static constexpr float C2 = 5.4059927854e-02f;
+static constexpr float C3 = 2.1282127874e-02f;
+static constexpr float C4 = 1.0835969442e-02f;
+static constexpr float C5 = 8.9335614893e-05f;
+static constexpr float C6 = 4.3763746355e-03f;
 
 // Rule 006: LAUNCH_BOUND 按索引位宽模板化
 // tan 算子寄存器压力中等（多项式计算变量多），uint32_t 开 1024，uint64_t 开 512
@@ -57,21 +57,22 @@ template <typename IDX_T>
 static constexpr uint32_t THREAD_NUM = (sizeof(IDX_T) == 4) ? 1024 : 512;
 
 template <typename T, typename IDX_T>
-__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM<IDX_T>)
-inline void OpTanSimtKernel(IDX_T totalElements, __gm__ T* input, __gm__ T* output)
+__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM<IDX_T>) inline void OpTanSimtKernel(IDX_T totalElements, __gm__ T* input,
+                                                                                   __gm__ T* output)
 {
-    for (IDX_T index = static_cast<IDX_T>(AscendC::Simt::GetBlockIdx()) * static_cast<IDX_T>(AscendC::Simt::GetThreadNum()) + static_cast<IDX_T>(AscendC::Simt::GetThreadIdx());
-         index < totalElements;
-         index += static_cast<IDX_T>(AscendC::Simt::GetThreadNum()) * static_cast<IDX_T>(AscendC::Simt::GetBlockNum()))
-    {
+    for (IDX_T index =
+             static_cast<IDX_T>(AscendC::Simt::GetBlockIdx()) * static_cast<IDX_T>(AscendC::Simt::GetThreadNum()) +
+             static_cast<IDX_T>(AscendC::Simt::GetThreadIdx());
+         index < totalElements; index += static_cast<IDX_T>(AscendC::Simt::GetThreadNum()) *
+                                         static_cast<IDX_T>(AscendC::Simt::GetBlockNum())) {
         // 读取输入并转为 float32
         float x = static_cast<float>(input[index]);
-        
+
         // 特殊值处理：|x| >= 1e7 或 Inf/NaN → NaN
         float abs_x = fabsf(x);
         bool is_special = (abs_x >= LARGE_THRESHOLD) || isinf(x) || isnan(x);
-        float special_result = ASCRT_INF_F / ASCRT_INF_F;  // NaN
-        
+        float special_result = ASCRT_INF_F / ASCRT_INF_F; // NaN
+
         // 3-part Cody-Waite range reduction (float-only)
         float fn = roundf(x * TWO_OVER_PI);
         int32_t k = static_cast<int32_t>(fn);
@@ -93,19 +94,19 @@ inline void OpTanSimtKernel(IDX_T totalElements, __gm__ T* input, __gm__ T* outp
         p = fmaf(p, r2, C2);
         p = fmaf(p, r2, C1);
         p = fmaf(p, r2, C0);
-        
+
         float tan_r = r + r3 * p;
-        
+
         // Rule 001: 象限调整使用 select 替代 if-else
         // 奇数象限：tan(x) = -1/tan(r)，偶数象限：tan(x) = tan(r)
         int32_t k_odd = k & 1;
         float odd_result = -1.0f / tan_r;
         float normal_result = tan_r;
         float result = (k_odd != 0) ? odd_result : normal_result;
-        
+
         // Rule 001: 最终结果选择（特殊值 vs 正常计算）
         float final_result = is_special ? special_result : result;
-        
+
         output[index] = static_cast<T>(final_result);
     }
 }
@@ -118,13 +119,11 @@ __aicore__ inline void Process(GM_ADDR input, GM_ADDR output, const TanTilingDat
     __gm__ T* output_gm = (__gm__ T*)output;
 
     if (totalElements <= static_cast<int64_t>(INT32_MAX)) {
-        AscendC::Simt::VF_CALL<OpTanSimtKernel<T, int32_t>>(
-            AscendC::Simt::Dim3(THREAD_NUM<int32_t>),
-            static_cast<int32_t>(totalElements), input_gm, output_gm);
+        AscendC::Simt::VF_CALL<OpTanSimtKernel<T, int32_t>>(AscendC::Simt::Dim3(THREAD_NUM<int32_t>),
+                                                            static_cast<int32_t>(totalElements), input_gm, output_gm);
     } else {
-        AscendC::Simt::VF_CALL<OpTanSimtKernel<T, int64_t>>(
-            AscendC::Simt::Dim3(THREAD_NUM<int64_t>),
-            totalElements, input_gm, output_gm);
+        AscendC::Simt::VF_CALL<OpTanSimtKernel<T, int64_t>>(AscendC::Simt::Dim3(THREAD_NUM<int64_t>), totalElements,
+                                                            input_gm, output_gm);
     }
 }
 
