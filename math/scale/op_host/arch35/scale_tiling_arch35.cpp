@@ -38,39 +38,38 @@ namespace scale {
 
 // 5.0 CheckBroadcastShape — 补 1 后逐维校验 broadcast 兼容性：同维非 1 大小必须一致
 // 单组（入参或出参）在第 d 维校验，非 1 大小须与共享 ref 一致；ref 跨入参/出参累积
-static bool CheckGroupDim(const std::vector<std::vector<int64_t>>& group, int64_t d,
-                          const char* tag, int64_t& ref)
+static bool CheckGroupDim(const std::vector<std::vector<int64_t>>& group, int64_t d, const char* tag, int64_t& ref)
 {
     for (size_t i = 0; i < group.size(); i++) {
         int64_t v = group[i][d];
-        if (v == 1) continue;
+        if (v == 1)
+            continue;
         if (ref == -1) {
             ref = v;
         } else if (v != ref) {
-            OP_LOGE("PadAndSqueeze", "dim %d broadcast incompatible: %s[%d] size %d != %d",
-                    (int)d, tag, (int)i, (int)v, (int)ref);
+            OP_LOGE("PadAndSqueeze", "dim %d broadcast incompatible: %s[%d] size %d != %d", (int)d, tag, (int)i, (int)v,
+                    (int)ref);
             return false;
         }
     }
     return true;
 }
 
-static bool CheckBroadcastShape(
-    const std::vector<std::vector<int64_t>>& padded_in,
-    const std::vector<std::vector<int64_t>>& padded_out,
-    int64_t max_rank)
+static bool CheckBroadcastShape(const std::vector<std::vector<int64_t>>& padded_in,
+                                const std::vector<std::vector<int64_t>>& padded_out, int64_t max_rank)
 {
     for (int64_t d = 0; d < max_rank; d++) {
         int64_t ref = -1;
-        if (!CheckGroupDim(padded_in, d, "input", ref)) return false;
-        if (!CheckGroupDim(padded_out, d, "output", ref)) return false;
+        if (!CheckGroupDim(padded_in, d, "input", ref))
+            return false;
+        if (!CheckGroupDim(padded_out, d, "output", ref))
+            return false;
     }
     return true;
 }
 
 // 补 1 — 低 rank 在 shape 最前面补 1，拉齐到 max_rank
-static std::vector<std::vector<int64_t>> PadFront(
-    const std::vector<std::vector<int64_t>>& shapes, int64_t max_rank)
+static std::vector<std::vector<int64_t>> PadFront(const std::vector<std::vector<int64_t>>& shapes, int64_t max_rank)
 {
     std::vector<std::vector<int64_t>> out(shapes.size());
     for (size_t i = 0; i < shapes.size(); i++) {
@@ -81,41 +80,51 @@ static std::vector<std::vector<int64_t>> PadFront(
 }
 
 // 单维去 1：所有入参+出参在该维都为 1 则废维 squeeze；否则取 max 并保留归一化分量
-static bool SqueezeDim(
-    const std::vector<std::vector<int64_t>>& padded_in,
-    const std::vector<std::vector<int64_t>>& padded_out, int64_t d,
-    std::vector<int64_t>& maximum_bro_shape,
-    std::vector<std::vector<int64_t>>& normal_input_shapes,
-    std::vector<std::vector<int64_t>>& normal_output_shapes)
+static bool SqueezeDim(const std::vector<std::vector<int64_t>>& padded_in,
+                       const std::vector<std::vector<int64_t>>& padded_out, int64_t d,
+                       std::vector<int64_t>& maximum_bro_shape, std::vector<std::vector<int64_t>>& normal_input_shapes,
+                       std::vector<std::vector<int64_t>>& normal_output_shapes)
 {
     bool all_one = true;
     int64_t max_dim = 0;
-    for (auto& s : padded_in)  { if (s[d] != 1) all_one = false; max_dim = std::max(max_dim, s[d]); }
-    for (auto& s : padded_out) { if (s[d] != 1) all_one = false; max_dim = std::max(max_dim, s[d]); }
-    if (all_one) return false;
+    for (auto& s : padded_in) {
+        if (s[d] != 1)
+            all_one = false;
+        max_dim = std::max(max_dim, s[d]);
+    }
+    for (auto& s : padded_out) {
+        if (s[d] != 1)
+            all_one = false;
+        max_dim = std::max(max_dim, s[d]);
+    }
+    if (all_one)
+        return false;
     maximum_bro_shape.push_back(max_dim);
-    for (size_t i = 0; i < padded_in.size(); i++)  normal_input_shapes[i].push_back(padded_in[i][d]);
-    for (size_t i = 0; i < padded_out.size(); i++) normal_output_shapes[i].push_back(padded_out[i][d]);
+    for (size_t i = 0; i < padded_in.size(); i++)
+        normal_input_shapes[i].push_back(padded_in[i][d]);
+    for (size_t i = 0; i < padded_out.size(); i++)
+        normal_output_shapes[i].push_back(padded_out[i][d]);
     return true;
 }
 
 // 5.1 PadAndSqueeze
-bool PadAndSqueeze(
-    const std::vector<std::vector<int64_t>>& input_shapes,
-    const std::vector<std::vector<int64_t>>& output_shapes,
-    std::vector<int64_t>&                    maximum_bro_shape,
-    std::vector<std::vector<int64_t>>&       normal_input_shapes,
-    std::vector<std::vector<int64_t>>&       normal_output_shapes)
+bool PadAndSqueeze(const std::vector<std::vector<int64_t>>& input_shapes,
+                   const std::vector<std::vector<int64_t>>& output_shapes, std::vector<int64_t>& maximum_bro_shape,
+                   std::vector<std::vector<int64_t>>& normal_input_shapes,
+                   std::vector<std::vector<int64_t>>& normal_output_shapes)
 {
-    int64_t num_inputs  = (int64_t)input_shapes.size();
+    int64_t num_inputs = (int64_t)input_shapes.size();
     int64_t num_outputs = (int64_t)output_shapes.size();
     int64_t max_rank = 0;
-    for (auto& s : input_shapes)  max_rank = std::max(max_rank, (int64_t)s.size());
-    for (auto& s : output_shapes) max_rank = std::max(max_rank, (int64_t)s.size());
+    for (auto& s : input_shapes)
+        max_rank = std::max(max_rank, (int64_t)s.size());
+    for (auto& s : output_shapes)
+        max_rank = std::max(max_rank, (int64_t)s.size());
     // 补 1 + 校验 broadcast 兼容性（同维非 1 大小必须一致）
-    auto padded_in  = PadFront(input_shapes, max_rank);
+    auto padded_in = PadFront(input_shapes, max_rank);
     auto padded_out = PadFront(output_shapes, max_rank);
-    if (!CheckBroadcastShape(padded_in, padded_out, max_rank)) return false;
+    if (!CheckBroadcastShape(padded_in, padded_out, max_rank))
+        return false;
     // 去 1 — 废维 squeeze，其余轴归一化保留
     maximum_bro_shape.clear();
     normal_input_shapes.assign(num_inputs, std::vector<int64_t>());
@@ -123,31 +132,34 @@ bool PadAndSqueeze(
     for (int64_t d = 0; d < max_rank; d++) {
         SqueezeDim(padded_in, padded_out, d, maximum_bro_shape, normal_input_shapes, normal_output_shapes);
     }
-    if (maximum_bro_shape.empty()) {  // 全标量归一为 (1,)
+    if (maximum_bro_shape.empty()) { // 全标量归一为 (1,)
         maximum_bro_shape.push_back(1);
-        for (int64_t i = 0; i < num_inputs; i++) normal_input_shapes[i].push_back(1);
-        for (int64_t i = 0; i < num_outputs; i++) normal_output_shapes[i].push_back(1);
+        for (int64_t i = 0; i < num_inputs; i++)
+            normal_input_shapes[i].push_back(1);
+        for (int64_t i = 0; i < num_outputs; i++)
+            normal_output_shapes[i].push_back(1);
     }
     return true;
 }
 
 // 5.2 FindSplitAxis
 // per_buf_elems 统一按 FP32 计算（cast.md §Tile）
-bool FindSplitAxis(const std::vector<int64_t>& max_bro_shape,
-    int64_t /*dtype_size*/, int64_t ub_per_core, int64_t phys_nodes, SplitResult& out)
+bool FindSplitAxis(const std::vector<int64_t>& max_bro_shape, int64_t /*dtype_size*/, int64_t ub_per_core,
+                   int64_t phys_nodes, SplitResult& out)
 {
-    if (phys_nodes <= 0) {  // 除 0 保护：phys_nodes 异常直接判失败
+    if (phys_nodes <= 0) { // 除 0 保护：phys_nodes 异常直接判失败
         OP_LOGE("FindSplitAxis", "phys_nodes(%ld) must be > 0", phys_nodes);
         return false;
     }
-    int64_t per_buf_bytes = (ub_per_core / phys_nodes) & ~31LL;  // 32B 对齐
-    int64_t per_buf_elems = per_buf_bytes / 4;  // 统一按 FP32 计算
+    int64_t per_buf_bytes = (ub_per_core / phys_nodes) & ~31LL; // 32B 对齐
+    int64_t per_buf_elems = per_buf_bytes / 4;                  // 统一按 FP32 计算
     int64_t rank = (int64_t)max_bro_shape.size();
     int64_t inner = 1;
     for (int64_t k = rank - 1; k >= 0; k--) {
         if (max_bro_shape[k] * inner > per_buf_elems) {
             out.a_i = per_buf_elems / inner;
-            if (out.a_i < 1) out.a_i = 1;  // 除 0 保护：单元素超 buffer 时至少切 1，避免后续 /a_i %a_i 除 0
+            if (out.a_i < 1)
+                out.a_i = 1; // 除 0 保护：单元素超 buffer 时至少切 1，避免后续 /a_i %a_i 除 0
             out.a_o = (max_bro_shape[k] + out.a_i - 1) / out.a_i;
             int64_t rem = max_bro_shape[k] % out.a_i;
             out.a_i_tail = (rem == 0) ? out.a_i : rem;
@@ -167,38 +179,49 @@ bool FindSplitAxis(const std::vector<int64_t>& max_bro_shape,
 }
 
 // 5.3 MultiCoreSplit
-bool MultiCoreSplit(const std::vector<int64_t>& max_bro_shape,
-    const SplitResult& ub_split, int64_t max_cores, MultiCoreResult& out)
+bool MultiCoreSplit(const std::vector<int64_t>& max_bro_shape, const SplitResult& ub_split, int64_t max_cores,
+                    MultiCoreResult& out)
 {
     int64_t k = ub_split.axis, outer_prod = 1;
-    for (int64_t j = 0; j < k; j++) outer_prod *= max_bro_shape[j];
+    for (int64_t j = 0; j < k; j++)
+        outer_prod *= max_bro_shape[j];
     out.total_tiles = outer_prod * ub_split.a_o;
-    out.num_cores   = (out.total_tiles < max_cores) ? out.total_tiles : max_cores;
-    out.tiles_main  = out.total_tiles / out.num_cores;
-    out.cores_tail  = out.total_tiles % out.num_cores;
+    out.num_cores = (out.total_tiles < max_cores) ? out.total_tiles : max_cores;
+    out.tiles_main = out.total_tiles / out.num_cores;
+    out.cores_tail = out.total_tiles % out.num_cores;
     return true;
 }
 
 // 5.5 地址偏移计算
-bool PrecomputeInputStrides(const std::vector<int64_t>& s, std::vector<int64_t>& strides) {
+bool PrecomputeInputStrides(const std::vector<int64_t>& s, std::vector<int64_t>& strides)
+{
     int64_t rank = (int64_t)s.size();
     strides.assign(rank, 0);
     for (int64_t d = rank - 1; d >= 0; d--) {
-        if (s[d] == 1) { strides[d] = 0; continue; }
+        if (s[d] == 1) {
+            strides[d] = 0;
+            continue;
+        }
         int64_t prod = 1;
-        for (int64_t j = d + 1; j < rank; j++) prod *= s[j];
+        for (int64_t j = d + 1; j < rank; j++)
+            prod *= s[j];
         strides[d] = prod;
     }
     return true;
 }
 
-bool PrecomputeOutputStrides(const std::vector<int64_t>& s, std::vector<int64_t>& strides) {
+bool PrecomputeOutputStrides(const std::vector<int64_t>& s, std::vector<int64_t>& strides)
+{
     int64_t rank = (int64_t)s.size();
     strides.assign(rank, 0);
     for (int64_t d = rank - 1; d >= 0; d--) {
-        if (s[d] == 1) { strides[d] = 0; continue; }
+        if (s[d] == 1) {
+            strides[d] = 0;
+            continue;
+        }
         int64_t prod = 1;
-        for (int64_t j = d + 1; j < rank; j++) prod *= s[j];
+        for (int64_t j = d + 1; j < rank; j++)
+            prod *= s[j];
         strides[d] = prod;
     }
     return true;
@@ -232,11 +255,13 @@ public:
     ge::graphStatus RunTiling()
     {
         ge::graphStatus ret = GetShapeInfo();
-        if (ret != ge::GRAPH_SUCCESS) return ret;
+        if (ret != ge::GRAPH_SUCCESS)
+            return ret;
 
         // 空 Tensor 防御：输出 shape 任一维为 0 则跳过 Tiling
         int64_t total_out = 1;
-        for (auto d : raw_output_shapes_[0]) total_out *= d;
+        for (auto d : raw_output_shapes_[0])
+            total_out *= d;
         if (total_out == 0) {
             ctx_->SetBlockDim(1);
             return ge::GRAPH_SUCCESS;
@@ -272,7 +297,8 @@ private:
         auto readInto = [&](const gert::StorageShape* shape, std::vector<std::vector<int64_t>>& dst) {
             std::vector<int64_t> dims;
             gert::Shape s = shape->GetStorageShape();
-            for (size_t d = 0; d < s.GetDimNum(); ++d) dims.push_back(s.GetDim(d));
+            for (size_t d = 0; d < s.GetDimNum(); ++d)
+                dims.push_back(s.GetDim(d));
             dst.push_back(dims);
         };
         auto xShape = ctx_->GetInputShape(0);
@@ -283,7 +309,8 @@ private:
         readInto(scShape, raw_input_shapes_);
         auto biasShape = ctx_->GetOptionalInputShape(2);
         has_bias_ = (biasShape != nullptr) ? 1 : 0;
-        if (biasShape != nullptr) readInto(biasShape, raw_input_shapes_);
+        if (biasShape != nullptr)
+            readInto(biasShape, raw_input_shapes_);
         for (size_t i = 0; i < ctx_->GetComputeNodeInfo()->GetOutputsNum(); ++i) {
             auto shape = ctx_->GetOutputShape(i);
             OP_CHECK_NULL_WITH_CONTEXT(ctx_, shape);
@@ -297,8 +324,10 @@ private:
         auto inputDesc = ctx_->GetInputDesc(0);
         OP_CHECK_NULL_WITH_CONTEXT(ctx_, inputDesc);
         ge::DataType dtype = inputDesc->GetDataType();
-        if (dtype == ge::DT_FLOAT16 || dtype == ge::DT_BF16) dtype_size_ = 2;
-        else if (dtype == ge::DT_FLOAT) dtype_size_ = 4;
+        if (dtype == ge::DT_FLOAT16 || dtype == ge::DT_BF16)
+            dtype_size_ = 2;
+        else if (dtype == ge::DT_FLOAT)
+            dtype_size_ = 4;
         else {
             OP_LOGE(ctx_->GetNodeName(), "Unsupported dtype");
             return ge::GRAPH_FAILED;
@@ -310,7 +339,8 @@ private:
     void ReadAttrs()
     {
         const auto* attrs = ctx_->GetAttrs();
-        if (attrs == nullptr) return;
+        if (attrs == nullptr)
+            return;
         const int64_t* axisPtr = attrs->GetInt(0);
         const int64_t* numAxesPtr = attrs->GetInt(1);
         const bool* sfbPtr = attrs->GetBool(2);
@@ -324,19 +354,23 @@ private:
     {
         int64_t vrank = (int64_t)vshape.size();
         // 标量 (rank=0)：广播全 1，PadAndSqueeze 右补 1 即可，显式跳过预补
-        if (vrank == 0) return;
-        if (!(vrank < xRank && newAxis >= 0 && newAxis < xRank)) return;
+        if (vrank == 0)
+            return;
+        if (!(vrank < xRank && newAxis >= 0 && newAxis < xRank))
+            return;
         std::vector<int64_t> padded(xRank, 1);
         if (scale_from_blob_) {
             // scaleFromBlob=true: numAxes 个维度从 axis 位置开始（numAxes==0 为标量，保持全 1）
             int64_t scaleLen = (num_axes_ == -1) ? (xRank - newAxis) : num_axes_;
             if (scaleLen != 0)
-                for (int64_t i = 0; i < vrank && (newAxis + i) < xRank; i++) padded[newAxis + i] = vshape[i];
+                for (int64_t i = 0; i < vrank && (newAxis + i) < xRank; i++)
+                    padded[newAxis + i] = vshape[i];
         } else {
-            // scaleFromBlob=false: 右对齐到 x 末尾（标准 broadcast 口径）；
+            // scaleFromBlob=false: scale 从 axis 位置起逐维对齐 x（Caffe Scale 口径）
+            // 与 aclnn CheckShapeNoFromBlob 一致：scale.dim[i] 对齐 x.dim[newAxis+i]
             // 非法 shape 由后续 CheckBroadcastShape 逐维校验拦截并报错
-            int64_t offset = xRank - vrank;
-            for (int64_t i = 0; i < vrank; i++) padded[offset + i] = vshape[i];
+            for (int64_t i = 0; i < vrank && (newAxis + i) < xRank; i++)
+                padded[newAxis + i] = vshape[i];
         }
         vshape = padded;
     }
@@ -346,24 +380,29 @@ private:
     // scale(idx=1) 与 bias(idx=2) 与 x 的广播口径相同，必须同时预补，否则 bias 错位
     void PrePadScaleBias()
     {
-        if (raw_input_shapes_.size() < 2) return;
+        if (raw_input_shapes_.size() < 2)
+            return;
         int64_t xRank = (int64_t)raw_input_shapes_[0].size();
         // axis<0 归一，与 aclnn newAxis = axis>=0 ? axis : xRank+axis 口径一致
         int64_t newAxis = axis_ >= 0 ? axis_ : xRank + axis_;
-        PadVecToAxis(raw_input_shapes_[1], xRank, newAxis);            // scale
-        if (raw_input_shapes_.size() >= 3) PadVecToAxis(raw_input_shapes_[2], xRank, newAxis);  // bias
+        PadVecToAxis(raw_input_shapes_[1], xRank, newAxis); // scale
+        if (raw_input_shapes_.size() >= 3)
+            PadVecToAxis(raw_input_shapes_[2], xRank, newAxis); // bias
     }
 
     ge::graphStatus GetShapeInfo()
     {
-        if (ReadPlatform() != ge::GRAPH_SUCCESS) return ge::GRAPH_FAILED;
-        if (ReadShapes() != ge::GRAPH_SUCCESS) return ge::GRAPH_FAILED;
-        if (ReadDtypeSize() != ge::GRAPH_SUCCESS) return ge::GRAPH_FAILED;
+        if (ReadPlatform() != ge::GRAPH_SUCCESS)
+            return ge::GRAPH_FAILED;
+        if (ReadShapes() != ge::GRAPH_SUCCESS)
+            return ge::GRAPH_FAILED;
+        if (ReadDtypeSize() != ge::GRAPH_SUCCESS)
+            return ge::GRAPH_FAILED;
         ReadAttrs();
         PrePadScaleBias();
 
-        if (!scale::PadAndSqueeze(raw_input_shapes_, raw_output_shapes_,
-                      max_bro_shape_, normal_input_shapes_, normal_output_shapes_)) {
+        if (!scale::PadAndSqueeze(raw_input_shapes_, raw_output_shapes_, max_bro_shape_, normal_input_shapes_,
+                                  normal_output_shapes_)) {
             OP_LOGE(ctx_->GetNodeName(), "scale/bias shape cannot broadcast to x");
             return ge::GRAPH_FAILED;
         }
@@ -375,32 +414,37 @@ private:
             return ge::GRAPH_FAILED;
         }
 
-        OP_LOGI(ctx_->GetNodeName(), "GetShapeInfo done rank %ld dtype %ld ub %lu core %lu has_bias %ld",
-            rank_, dtype_size_, ubSize_, coreNum_, has_bias_);
+        OP_LOGI(ctx_->GetNodeName(), "GetShapeInfo done rank %ld dtype %ld ub %lu core %lu has_bias %ld", rank_,
+                dtype_size_, ubSize_, coreNum_, has_bias_);
 
         return ge::GRAPH_SUCCESS;
     }
 
     // 各 slot 填 TilingData：前补 shape=1/stride=0，归一化值右移；未用 slot 全填 1/0
-    template<int64_t R, typename ShapeArr, typename StrideArr>
-    static void FillSlots(ShapeArr shapes, StrideArr strides,
-                          const std::vector<std::vector<int64_t>>& norm,
-                          const std::vector<std::vector<int64_t>>& norm_strides,
-                          int64_t num, int64_t max_slots, int64_t delta)
+    template <int64_t R, typename ShapeArr, typename StrideArr>
+    static void FillSlots(ShapeArr shapes, StrideArr strides, const std::vector<std::vector<int64_t>>& norm,
+                          const std::vector<std::vector<int64_t>>& norm_strides, int64_t num, int64_t max_slots,
+                          int64_t delta)
     {
         int64_t rank = R - delta;
         for (int64_t i = 0; i < num; i++) {
-            for (int64_t d = 0; d < delta; d++) { shapes[i][d] = 1; strides[i][d] = 0; }
+            for (int64_t d = 0; d < delta; d++) {
+                shapes[i][d] = 1;
+                strides[i][d] = 0;
+            }
             for (int64_t d = 0; d < rank; d++) {
-                shapes[i][d + delta]  = norm[i][d];
+                shapes[i][d + delta] = norm[i][d];
                 strides[i][d + delta] = norm_strides[i][d];
             }
         }
         for (int64_t i = num; i < max_slots; i++)
-            for (int64_t d = 0; d < R; d++) { shapes[i][d] = 1; strides[i][d] = 0; }
+            for (int64_t d = 0; d < R; d++) {
+                shapes[i][d] = 1;
+                strides[i][d] = 0;
+            }
     }
 
-    template<int64_t R>
+    template <int64_t R>
     ge::graphStatus DoTilingAndSet()
     {
         auto* tiling = ctx_->GetTilingData<ScaleTilingData<R>>();
@@ -412,57 +456,60 @@ private:
         scale::FindSplitAxis(max_bro_shape_, dtype_size_, ub_per_core, kPhysNodes, tiling->split);
         scale::MultiCoreSplit(max_bro_shape_, tiling->split, (int64_t)coreNum_, tiling->multicore);
         tiling->per_buf_bytes = per_buf_bytes;
-        tiling->per_buf_elems = per_buf_bytes / 4;  // 统一按 FP32
+        tiling->per_buf_elems = per_buf_bytes / 4; // 统一按 FP32
 
-        int64_t num_in  = (int64_t)normal_input_shapes_.size();
+        int64_t num_in = (int64_t)normal_input_shapes_.size();
         int64_t num_out = (int64_t)normal_output_shapes_.size();
         std::vector<std::vector<int64_t>> in_strides(num_in), out_strides(num_out);
-        for (int64_t i = 0; i < num_in; i++) scale::PrecomputeInputStrides(normal_input_shapes_[i], in_strides[i]);
-        for (int64_t i = 0; i < num_out; i++) scale::PrecomputeOutputStrides(normal_output_shapes_[i], out_strides[i]);
+        for (int64_t i = 0; i < num_in; i++)
+            scale::PrecomputeInputStrides(normal_input_shapes_[i], in_strides[i]);
+        for (int64_t i = 0; i < num_out; i++)
+            scale::PrecomputeOutputStrides(normal_output_shapes_[i], out_strides[i]);
 
         tiling->rank = rank_;
         tiling->has_bias = has_bias_;
-        int64_t delta = R - rank_;  // 前补维数
+        int64_t delta = R - rank_; // 前补维数
 
         // max_bro_shape: 前补 1，实际值右移
-        for (int64_t d = 0; d < delta; d++) tiling->max_bro_shape[d] = 1;
-        for (int64_t d = 0; d < rank_; d++) tiling->max_bro_shape[d + delta] = max_bro_shape_[d];
+        for (int64_t d = 0; d < delta; d++)
+            tiling->max_bro_shape[d] = 1;
+        for (int64_t d = 0; d < rank_; d++)
+            tiling->max_bro_shape[d + delta] = max_bro_shape_[d];
 
         // split axis 右平移
         tiling->split.axis += delta;
 
-        tiling->num_inputs  = num_in;
+        tiling->num_inputs = num_in;
         tiling->num_outputs = num_out;
 
-        FillSlots<R>(tiling->input_shapes, tiling->input_strides, normal_input_shapes_, in_strides,
-                     num_in, kMaxInputSlots, delta);
-        FillSlots<R>(tiling->output_shapes, tiling->output_strides, normal_output_shapes_, out_strides,
-                     num_out, kMaxOutputSlots, delta);
+        FillSlots<R>(tiling->input_shapes, tiling->input_strides, normal_input_shapes_, in_strides, num_in,
+                     kMaxInputSlots, delta);
+        FillSlots<R>(tiling->output_shapes, tiling->output_strides, normal_output_shapes_, out_strides, num_out,
+                     kMaxOutputSlots, delta);
 
         ctx_->SetBlockDim(tiling->multicore.num_cores);
         LogTilingData<R>(tiling, num_in, num_out);
         return ge::GRAPH_SUCCESS;
     }
 
-    template<int64_t R>
+    template <int64_t R>
     void LogTilingData(ScaleTilingData<R>* tiling, int64_t num_in, int64_t num_out)
     {
-        OP_LOGI(ctx_->GetNodeName(), "TilingData: per_buf_bytes=%ld rank=%ld->R=%d "
+        OP_LOGI(ctx_->GetNodeName(),
+                "TilingData: per_buf_bytes=%ld rank=%ld->R=%d "
                 "max_bro_shape=%s "
                 "split(axis=%ld a_i=%ld a_o=%ld a_i_tail=%ld) "
                 "multi(cores=%ld tiles=%ld main=%ld core_tail=%ld) num_in=%ld num_out=%ld has_bias=%ld",
-                tiling->per_buf_bytes, rank_, (int)R,
-                Arr2String(tiling->max_bro_shape, R).c_str(),
-                tiling->split.axis, tiling->split.a_i, tiling->split.a_o, tiling->split.a_i_tail,
-                tiling->multicore.num_cores, tiling->multicore.total_tiles,
-                tiling->multicore.tiles_main, tiling->multicore.cores_tail,
-                num_in, num_out, has_bias_);
+                tiling->per_buf_bytes, rank_, (int)R, Arr2String(tiling->max_bro_shape, R).c_str(), tiling->split.axis,
+                tiling->split.a_i, tiling->split.a_o, tiling->split.a_i_tail, tiling->multicore.num_cores,
+                tiling->multicore.total_tiles, tiling->multicore.tiles_main, tiling->multicore.cores_tail, num_in,
+                num_out, has_bias_);
     }
 
     gert::TilingContext* ctx_;
     std::vector<std::vector<int64_t>> raw_input_shapes_;
     std::vector<std::vector<int64_t>> raw_output_shapes_;
-    std::vector<int64_t>              max_bro_shape_;
+    std::vector<int64_t> max_bro_shape_;
     std::vector<std::vector<int64_t>> normal_input_shapes_;
     std::vector<std::vector<int64_t>> normal_output_shapes_;
     int64_t dtype_size_ = 0;
@@ -479,9 +526,10 @@ static ge::graphStatus TilingFuncScale(gert::TilingContext* context)
 {
     ScaleTiling scaleTiling(context);
     auto ret = scaleTiling.RunTiling();
-    if (ret != ge::GRAPH_SUCCESS) return ret;
+    if (ret != ge::GRAPH_SUCCESS)
+        return ret;
     size_t* workspaces = context->GetWorkspaceSizes(1);
-    workspaces[0] = 0;  // Scale 无 workspace 需求
+    workspaces[0] = 0; // Scale 无 workspace 需求
     return ge::GRAPH_SUCCESS;
 }
 
