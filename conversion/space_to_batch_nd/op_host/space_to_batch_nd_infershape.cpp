@@ -10,7 +10,6 @@
 
 #include "register/op_impl_registry.h"
 #include "log/log.h"
-#include "op_api/op_util.h"
 #include "op_host/util/const_util.h"
 #include "op_host/util/shape_util.h"
 
@@ -22,7 +21,6 @@ static constexpr size_t INPUT_IDX_PADS = 2;
 static constexpr size_t OUTPUT_IDX_Y = 0;
 static constexpr size_t PADS_DIM2 = 2;
 static constexpr int64_t MAX_RANK = 8;
-static constexpr int64_t MAX_SPATIAL_DIMS = 6;
 
 class SpaceToBatchNDInferShapeHelper {
 public:
@@ -39,8 +37,7 @@ private:
     gert::Shape* yShape_{nullptr};
     size_t N_{0};
     gert::Shape blockVec_;
-    int64_t padTop_[MAX_SPATIAL_DIMS]{};
-    int64_t padBottom_[MAX_SPATIAL_DIMS]{};
+    gert::Shape padsVec_;
 };
 
 ge::graphStatus SpaceToBatchNDInferShapeHelper::Init()
@@ -54,7 +51,8 @@ ge::graphStatus SpaceToBatchNDInferShapeHelper::Init()
     const gert::Tensor* bsTensor = context_->GetInputTensor(INPUT_IDX_BS);
     OP_CHECK_NULL_WITH_CONTEXT(context_, bsTensor);
     N_ = bsTensor->GetShapeSize();
-    OP_CHECK_IF(N_ == 0, OP_LOGE(context_, "block_shape element count is 0"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(static_cast<int64_t>(N_) < 0, OP_LOGE(context_, "block_shape element count is negative"),
+                return ge::GRAPH_FAILED);
 
     OP_CHECK_IF(!Ops::Base::GetConstIntToShape<gert::InferShapeContext>(context_, INPUT_IDX_BS, blockVec_),
                 OP_LOGE(context_, "get block_shape const data failed"), return ge::GRAPH_FAILED);
@@ -67,14 +65,10 @@ ge::graphStatus SpaceToBatchNDInferShapeHelper::Init()
                     padsShape->GetDim(1) != static_cast<int64_t>(PADS_DIM2),
                 OP_LOGE(context_, "paddings shape must be [%zu, 2]", N_), return ge::GRAPH_FAILED);
 
-    gert::Shape padsVec;
-    if (Ops::Base::GetConstIntToShape<gert::InferShapeContext>(context_, INPUT_IDX_PADS, padsVec)) {
-        for (size_t i = 0; i < N_; i++) {
-            padTop_[i] = padsVec.GetDim(i * 2);
-            padBottom_[i] = padsVec.GetDim(i * 2 + 1);
-        }
+    if (!Ops::Base::GetConstIntToShape<gert::InferShapeContext>(context_, INPUT_IDX_PADS, padsVec_)) {
+        OP_LOGE(context_, "get paddings const data failed");
+        return ge::GRAPH_FAILED;
     }
-    // padTop_ / padBottom_ zero-initialized as fallback
 
     return ge::GRAPH_SUCCESS;
 }
@@ -92,10 +86,18 @@ ge::graphStatus SpaceToBatchNDInferShapeHelper::CheckAndInfer()
         batchMul *= bs;
     }
 
-    yShape_->AppendDim(xShape_->GetDim(0) * batchMul);
+    yShape_->SetDimNum(0);
+
+    int64_t firstDim = xShape_->GetDim(0);
+    firstDim = firstDim == -1 ? -1 : firstDim * batchMul;
+    yShape_->AppendDim(firstDim);
+
     for (size_t i = 0; i < N_; i++) {
-        int64_t spatial = xShape_->GetDim(i + 1) + padTop_[i] + padBottom_[i];
-        yShape_->AppendDim(spatial / blockVec_.GetDim(i));
+        int64_t dim = xShape_->GetDim(i + 1) == -1 ?
+                          -1 :
+                          ((xShape_->GetDim(i + 1) + padsVec_.GetDim(i * 2) + padsVec_.GetDim(i * 2 + 1)) /
+                           blockVec_.GetDim(i));
+        yShape_->AppendDim(dim);
     }
     for (size_t i = N_ + 1; i < static_cast<size_t>(rank); i++) {
         yShape_->AppendDim(xShape_->GetDim(i));
@@ -106,6 +108,12 @@ ge::graphStatus SpaceToBatchNDInferShapeHelper::CheckAndInfer()
 ge::graphStatus SpaceToBatchNDInferShapeHelper::Inference()
 {
     OP_CHECK_IF(Init() != ge::GRAPH_SUCCESS, OP_LOGE(context_, "init failed"), return ge::GRAPH_FAILED);
+
+    if (Ops::Base::IsUnknownRank(*xShape_)) {
+        Ops::Base::SetUnknownRank(*yShape_);
+        return ge::GRAPH_SUCCESS;
+    }
+
     OP_CHECK_IF(CheckAndInfer() != ge::GRAPH_SUCCESS, OP_LOGE(context_, "infer failed"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }

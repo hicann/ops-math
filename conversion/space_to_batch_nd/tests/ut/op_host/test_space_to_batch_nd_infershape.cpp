@@ -62,6 +62,27 @@ TEST_F(SpaceToBatchNDInfershapeTest, basic_5d_with_inner_dims)
     ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
+TEST_F(SpaceToBatchNDInfershapeTest, basic_4d_1d_bs)
+{
+    // in [8, 996, 1, 512], bs=[2], pad=[[0,0]]
+    // batch = 8*2 = 16, out_spatial = 996/2 = 498, trailing = [1, 512]
+    std::vector<int32_t> blockShapeValues = {2};
+    std::vector<int32_t> paddingsValues = {0, 0};
+
+    gert::InfershapeContextPara para("SpaceToBatchND",
+                                     {
+                                         {{{8, 996, 1, 512}, {8, 996, 1, 512}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                         {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, blockShapeValues.data()},
+                                         {{{1, 2}, {1, 2}}, ge::DT_INT32, ge::FORMAT_ND, true, paddingsValues.data()},
+                                     },
+                                     {
+                                         {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     });
+
+    std::vector<std::vector<int64_t>> expectOutputShape = {{16, 498, 1, 512}};
+    ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
 TEST_F(SpaceToBatchNDInfershapeTest, block_shape_zero_should_fail)
 {
     std::vector<int32_t> blockShapeValues = {0};
