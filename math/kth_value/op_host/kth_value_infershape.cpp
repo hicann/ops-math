@@ -8,6 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <string>
+
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 
@@ -27,7 +29,9 @@ static ge::graphStatus KthValueInferShapeFunc(gert::InferShapeContext* context)
     int64_t dim = (dimAttr == nullptr) ? -1 : *dimAttr;
     int64_t normDim = dim < 0 ? dim + rank : dim;
     if (normDim < 0 || normDim >= rank) {
-        OP_LOGE(context->GetNodeName(), "dim should be in range [%ld, %ld].", -rank, rank - 1);
+        std::string dimValue = std::to_string(dim);
+        std::string dimRange = "[" + std::to_string(-rank) + ", " + std::to_string(rank - 1) + "]";
+        OP_LOGE_WITH_INVALID_ATTR(context->GetNodeName(), "dim", dimValue.c_str(), dimRange.c_str());
         return ge::GRAPH_FAILED;
     }
     auto* valuesShape = context->GetOutputShape(0);

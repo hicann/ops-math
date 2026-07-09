@@ -33,7 +33,9 @@ static graphStatus InferDataType4TopKV2(gert::InferDataTypeContext* context)
             OP_LOGI(context->GetNodeName(), "The dtype of output indices is set as int64.");
             indicesDtype = ge::DT_INT64;
         } else if (raw_indices_dtype != static_cast<int64_t>(ge::DataType::DT_INT32)) {
-            OP_LOGE(context->GetNodeName(), "The dtype of output indices only support int64 or int32.");
+            OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "indices_dtype",
+                                      Ops::Base::ToString(static_cast<ge::DataType>(raw_indices_dtype)).c_str(),
+                                      "INT32 or INT64");
             return GRAPH_FAILED;
         }
     }

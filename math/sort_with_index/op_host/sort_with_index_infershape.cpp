@@ -17,9 +17,10 @@
 #include "util/shape_util.h"
 #include "log/log.h"
 
+#include <string>
+
 using namespace ge;
-namespace ops
-{
+namespace ops {
 static constexpr int INPUT_NODE_NUM = 2;
 static constexpr int OUTPUT_NODE_NUM = 2;
 static constexpr int X_IDX = 0;
@@ -33,7 +34,11 @@ ge::graphStatus InferShape4SortWithIndex(gert::InferShapeContext* context)
 
     OP_CHECK_IF(
         (context->GetComputeNodeInputNum() != INPUT_NODE_NUM || context->GetComputeNodeOutputNum() != OUTPUT_NODE_NUM),
-        OP_LOGE(context->GetNodeName(), "Get input or output num failed, infershape failed."),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "inputOutputNum",
+                                              (std::to_string(context->GetComputeNodeInputNum()) + ", " +
+                                               std::to_string(context->GetComputeNodeOutputNum()))
+                                                  .c_str(),
+                                              "The values of input num and output num must be 2."),
         return GRAPH_FAILED);
 
     const gert::Shape* xShape = context->GetInputShape(X_IDX);
@@ -41,14 +46,17 @@ ge::graphStatus InferShape4SortWithIndex(gert::InferShapeContext* context)
     const gert::Shape* indexShape = context->GetInputShape(INDEX_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context, indexShape);
 
-    bool isDynamicShape = (Ops::Base::IsUnknownRank(*xShape) || Ops::Base::IsUnknownRank(*indexShape) || 
+    bool isDynamicShape = (Ops::Base::IsUnknownRank(*xShape) || Ops::Base::IsUnknownRank(*indexShape) ||
                            Ops::Base::IsUnknownShape(*xShape) || Ops::Base::IsUnknownShape(*indexShape));
 
     OP_LOGD(context->GetNodeName(), "isDynamicShape=[%d]", isDynamicShape);
     if (!isDynamicShape) {
         OP_CHECK_IF((*xShape != *indexShape),
-        OP_LOGE(context->GetNodeName(), "input[x] and input[index] shape is different, infershape failed."),
-        return GRAPH_FAILED);
+                    OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                        context->GetNodeName(), "x, index",
+                        (Ops::Base::ToString(*xShape) + ", " + Ops::Base::ToString(*indexShape)).c_str(),
+                        "The shapes of x and index must be the same."),
+                    return GRAPH_FAILED);
     }
 
     gert::Shape* y1Shape = context->GetOutputShape(Y1_IDX);
@@ -64,4 +72,4 @@ ge::graphStatus InferShape4SortWithIndex(gert::InferShapeContext* context)
 }
 
 IMPL_OP_INFERSHAPE(SortWithIndex).InferShape(InferShape4SortWithIndex);
-}  // namespace ops
+} // namespace ops

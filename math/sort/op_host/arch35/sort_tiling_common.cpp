@@ -12,6 +12,7 @@
 
 #include <cmath>
 #include <functional>
+#include <string>
 #include <vector>
 
 #include "exe_graph/runtime/tiling_context.h"
@@ -79,9 +80,8 @@ uint32_t GetPreferredInnerChunk(ge::DataType dataType, uint32_t index)
         group = 0; // 8-byte types
     } else if (dataType == ge::DT_FLOAT || dataType == ge::DT_INT32 || dataType == ge::DT_UINT32) {
         group = 1; // 4-byte types
-    } else if (
-        dataType == ge::DT_FLOAT16 || dataType == ge::DT_BF16 || dataType == ge::DT_INT16 ||
-        dataType == ge::DT_UINT16) {
+    } else if (dataType == ge::DT_FLOAT16 || dataType == ge::DT_BF16 || dataType == ge::DT_INT16 ||
+               dataType == ge::DT_UINT16) {
         group = 2; // 2-byte types
     } else if (dataType == ge::DT_INT8 || dataType == ge::DT_UINT8) {
         group = 3; // 1-byte types
@@ -116,16 +116,14 @@ const SmallAxisRule* FindSmallAxisRule(ge::DataType dataType)
 
 bool UseTwoStageRankInverse(uint32_t axisLen) { return axisLen <= TWO_STAGE_RANK_INVERSE_MAX_N; }
 
-uint32_t ComputeInsertionBytesPerSeg(
-    ge::DataType dataType, uint32_t axisLen, uint32_t dtypeSize, uint32_t indexDtypeSize, uint32_t blockUbSize)
+uint32_t ComputeInsertionBytesPerSeg(ge::DataType dataType, uint32_t axisLen, uint32_t dtypeSize,
+                                     uint32_t indexDtypeSize, uint32_t blockUbSize)
 {
     uint64_t valueRawBytes = 0U;
     uint64_t idxRawBytes = 0U;
-    if (ge::MulOverflow(axisLen, dtypeSize, valueRawBytes) ||
-        ge::MulOverflow(axisLen, indexDtypeSize, idxRawBytes)) {
-        OP_LOGE("ComputeInsertionBytesPerSeg",
-                "raw byte size overflow, axisLen %u, dtypeSize %u, indexDtypeSize %u", axisLen, dtypeSize,
-                indexDtypeSize);
+    if (ge::MulOverflow(axisLen, dtypeSize, valueRawBytes) || ge::MulOverflow(axisLen, indexDtypeSize, idxRawBytes)) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeInsertionBytesPerSeg", "axisLen", std::to_string(axisLen).c_str(),
+                                              "The value of axisLen must not cause raw byte size overflow.");
         return 0;
     }
     uint64_t valueBytes = Ops::Base::CeilAlign<uint64_t>(valueRawBytes, blockUbSize);
@@ -135,14 +133,17 @@ uint32_t ComputeInsertionBytesPerSeg(
     }
     uint64_t bytesPerSeg = 0U;
     if (ge::AddOverflow(valueBytes, idxBytes, bytesPerSeg)) {
-        OP_LOGE("ComputeInsertionBytesPerSeg", "bytesPerSeg overflow, valueBytes %lu, idxBytes %lu", valueBytes,
-                idxBytes);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeInsertionBytesPerSeg", "bytesPerSeg",
+                                              (std::to_string(valueBytes) + ", " + std::to_string(idxBytes)).c_str(),
+                                              "The value of valueBytes plus idxBytes must not overflow.");
         return 0;
     }
     if (dataType == ge::DT_BF16) {
         uint64_t castRawBytes = 0U;
         if (ge::MulOverflow(axisLen, sizeof(int16_t), castRawBytes)) {
-            OP_LOGE("ComputeInsertionBytesPerSeg", "cast raw byte size overflow, axisLen %u", axisLen);
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeInsertionBytesPerSeg", "axisLen",
+                                                  std::to_string(axisLen).c_str(),
+                                                  "The value of axisLen must not cause cast raw byte size overflow.");
             return 0;
         }
         uint64_t castBytes = Ops::Base::CeilAlign<uint64_t>(castRawBytes, blockUbSize);
@@ -153,14 +154,18 @@ uint32_t ComputeInsertionBytesPerSeg(
         if (ge::MulOverflow(castRowElems, sizeof(float), valueBytes) ||
             ge::AddOverflow(valueBytes, idxBytes, bytesPerSeg) ||
             ge::AddOverflow(bytesPerSeg, castBytes, bytesPerSeg)) {
-            OP_LOGE("ComputeInsertionBytesPerSeg",
-                    "bf16 bytesPerSeg overflow, castRowElems %lu, idxBytes %lu, castBytes %lu", castRowElems,
-                    idxBytes, castBytes);
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                "ComputeInsertionBytesPerSeg", "bytesPerSeg",
+                (std::to_string(castRowElems) + ", " + std::to_string(idxBytes) + ", " + std::to_string(castBytes))
+                    .c_str(),
+                "The value of bf16 bytesPerSeg must not overflow.");
             return 0;
         }
     }
     if (bytesPerSeg > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
-        OP_LOGE("ComputeInsertionBytesPerSeg", "bytesPerSeg %lu exceeds uint32_t max", bytesPerSeg);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeInsertionBytesPerSeg", "bytesPerSeg",
+                                              std::to_string(bytesPerSeg).c_str(),
+                                              "The value of bytesPerSeg must be less than or equal to uint32 max.");
         return 0;
     }
     return static_cast<uint32_t>(bytesPerSeg);
@@ -239,8 +244,8 @@ bool IsMergeSortSupported(ge::DataType dataType, int64_t axisLen)
            ((dataType == ge::DT_FLOAT) && (axisLen <= static_cast<int64_t>(MERGE_SORT_MAX_AXIS_FP32)));
 }
 
-bool GetNonLastSortTmpSize(
-    ge::DataType dataType, uint32_t sortCount, bool useMergeSort, bool isDescend, uint32_t& tmpUbSize)
+bool GetNonLastSortTmpSize(ge::DataType dataType, uint32_t sortCount, bool useMergeSort, bool isDescend,
+                           uint32_t& tmpUbSize)
 {
     std::vector<int64_t> shapeVec = {static_cast<int64_t>(sortCount)};
     ge::Shape srcShape(shapeVec);
@@ -251,8 +256,8 @@ bool GetNonLastSortTmpSize(
     config.hasDstIndex = true;
     uint32_t maxValue = 0;
     uint32_t minValue = 0;
-    AscendC::GetSortMaxMinTmpSize(
-        srcShape, GetNonLastSortDtype(dataType, useMergeSort), ge::DT_UINT32, true, config, maxValue, minValue);
+    AscendC::GetSortMaxMinTmpSize(srcShape, GetNonLastSortDtype(dataType, useMergeSort), ge::DT_UINT32, true, config,
+                                  maxValue, minValue);
     tmpUbSize = maxValue;
     return maxValue > 0;
 }
@@ -286,8 +291,8 @@ bool SearchNonLastSmallAxisPlan(
         if (!estimateUb(candidateInfo, chunk, cur.peakUb, cur) || cur.peakUb > usableUb) {
             continue;
         }
-        cur.activeCore =
-            static_cast<uint32_t>(std::min<uint64_t>(static_cast<uint64_t>(info.maxCoreNum), cur.tileCount));
+        cur.activeCore = static_cast<uint32_t>(
+            std::min<uint64_t>(static_cast<uint64_t>(info.maxCoreNum), cur.tileCount));
         bool betterCoreUse = cur.activeCore > best.activeCore;
         bool sameCoreUseLargerChunk = cur.activeCore == best.activeCore && cur.innerChunk > best.innerChunk;
         if (betterCoreUse || sameCoreUseLargerChunk) {
@@ -312,9 +317,8 @@ uint32_t ComputeRadixRemainUb(uint32_t usableUb, uint32_t tileData, uint32_t ubE
     return usableUb - static_cast<uint32_t>(usedUb);
 }
 
-void AdjustRadixTmpUb(
-    uint32_t usableUb, uint32_t tileData, uint32_t ubExtra, uint32_t tileFactor, uint32_t blockUbSize,
-    uint32_t& tmpUbSize)
+void AdjustRadixTmpUb(uint32_t usableUb, uint32_t tileData, uint32_t ubExtra, uint32_t tileFactor, uint32_t blockUbSize,
+                      uint32_t& tmpUbSize)
 {
     if (blockUbSize == 0U) {
         return;
@@ -325,9 +329,9 @@ void AdjustRadixTmpUb(
     tmpUbSize += (remainUb / blockUbSize) * blockUbSize;
 }
 
-bool ComputeRadixTileDataForAllCore(
-    int64_t axisLen, uint32_t maxCoreNum, uint32_t usableUb, uint32_t ubExtra, uint32_t tileFactor,
-    uint32_t blockUbSize, uint32_t lastDimTileNum, uint32_t& tileData, uint32_t& tmpUbSize)
+bool ComputeRadixTileDataForAllCore(int64_t axisLen, uint32_t maxCoreNum, uint32_t usableUb, uint32_t ubExtra,
+                                    uint32_t tileFactor, uint32_t blockUbSize, uint32_t lastDimTileNum,
+                                    uint32_t& tileData, uint32_t& tmpUbSize)
 {
     if (axisLen <= 0 || maxCoreNum == 0U || lastDimTileNum == 0U) {
         return false;
@@ -366,9 +370,9 @@ bool QuerySortTmpSizeRadix(ge::DataType dataType, uint32_t sortAxisNum, uint32_t
     return maxValue > 0;
 }
 
-static bool AdjustSingleRowSingleTile(
-    int64_t axisLen, uint32_t maxCoreNum, uint32_t usableUb, uint32_t ubExtra, uint32_t tileFactor,
-    uint32_t blockUbSize, uint32_t& tileData, uint32_t& tmpUbSize, bool& adjusted)
+static bool AdjustSingleRowSingleTile(int64_t axisLen, uint32_t maxCoreNum, uint32_t usableUb, uint32_t ubExtra,
+                                      uint32_t tileFactor, uint32_t blockUbSize, uint32_t& tileData,
+                                      uint32_t& tmpUbSize, bool& adjusted)
 {
     uint32_t newTileData = 0;
     if (!CeilDivUint32(static_cast<uint64_t>(axisLen), static_cast<uint64_t>(maxCoreNum), newTileData) ||
@@ -384,9 +388,9 @@ static bool AdjustSingleRowSingleTile(
     return true;
 }
 
-static bool AdjustBSharedSingleHTile(
-    int64_t axisLen, int64_t unsortedDim, uint32_t maxCoreNum, uint32_t usableUb, uint32_t ubExtra, uint32_t tileFactor,
-    uint32_t blockUbSize, uint32_t& tileData, uint32_t& tmpUbSize, bool& adjusted)
+static bool AdjustBSharedSingleHTile(int64_t axisLen, int64_t unsortedDim, uint32_t maxCoreNum, uint32_t usableUb,
+                                     uint32_t ubExtra, uint32_t tileFactor, uint32_t blockUbSize, uint32_t& tileData,
+                                     uint32_t& tmpUbSize, bool& adjusted)
 {
     uint32_t hCore = maxCoreNum / static_cast<uint32_t>(unsortedDim);
     if (hCore == 0U) {
@@ -404,9 +408,10 @@ static bool AdjustBSharedSingleHTile(
     return true;
 }
 
-static bool AdjustMultiTileHWithBSharing(
-    int64_t axisLen, int64_t unsortedDim, uint32_t maxCoreNum, uint32_t usableUb, uint32_t ubExtra, uint32_t tileFactor,
-    uint32_t blockUbSize, uint32_t& tileData, uint32_t lastDimTileNum, uint32_t& tmpUbSize, bool& adjusted)
+static bool AdjustMultiTileHWithBSharing(int64_t axisLen, int64_t unsortedDim, uint32_t maxCoreNum, uint32_t usableUb,
+                                         uint32_t ubExtra, uint32_t tileFactor, uint32_t blockUbSize,
+                                         uint32_t& tileData, uint32_t lastDimTileNum, uint32_t& tmpUbSize,
+                                         bool& adjusted)
 {
     uint64_t newTileData64 = static_cast<uint64_t>(axisLen) / static_cast<uint64_t>(lastDimTileNum);
     if (!CeilAlignUint32(newTileData64, BIN_NUM, tileData)) {
@@ -428,9 +433,8 @@ static bool AdjustMultiTileHWithBSharing(
         }
     }
     if (bCore == 1U && adjustedLastDimTileNum < maxCoreNum) {
-        if (!ComputeRadixTileDataForAllCore(
-            axisLen, maxCoreNum, usableUb, ubExtra, tileFactor, blockUbSize, adjustedLastDimTileNum, tileData,
-            tmpUbSize)) {
+        if (!ComputeRadixTileDataForAllCore(axisLen, maxCoreNum, usableUb, ubExtra, tileFactor, blockUbSize,
+                                            adjustedLastDimTileNum, tileData, tmpUbSize)) {
             return false;
         }
         adjusted = true;
@@ -444,21 +448,21 @@ static bool AdjustMultiTileHWithBSharing(
     return true;
 }
 
-bool NeedAdjustRadixTileData(
-    int64_t axisLen, int64_t unsortedDim, uint32_t maxCoreNum, uint32_t usableUb, uint32_t ubExtra, uint32_t tileFactor,
-    uint32_t blockUbSize, uint32_t& tileData, uint32_t lastDimTileNum, uint32_t& tmpUbSize, bool& adjusted)
+bool NeedAdjustRadixTileData(int64_t axisLen, int64_t unsortedDim, uint32_t maxCoreNum, uint32_t usableUb,
+                             uint32_t ubExtra, uint32_t tileFactor, uint32_t blockUbSize, uint32_t& tileData,
+                             uint32_t lastDimTileNum, uint32_t& tmpUbSize, bool& adjusted)
 {
     adjusted = false;
     if (axisLen <= 0 || maxCoreNum == 0U) {
         return false;
     }
     if (unsortedDim == static_cast<int64_t>(1) && lastDimTileNum == 1U) {
-        return AdjustSingleRowSingleTile(
-            axisLen, maxCoreNum, usableUb, ubExtra, tileFactor, blockUbSize, tileData, tmpUbSize, adjusted);
+        return AdjustSingleRowSingleTile(axisLen, maxCoreNum, usableUb, ubExtra, tileFactor, blockUbSize, tileData,
+                                         tmpUbSize, adjusted);
     }
     if (unsortedDim == static_cast<int64_t>(1) || lastDimTileNum >= maxCoreNum) {
-        if (!ComputeRadixTileDataForAllCore(
-            axisLen, maxCoreNum, usableUb, ubExtra, tileFactor, blockUbSize, lastDimTileNum, tileData, tmpUbSize)) {
+        if (!ComputeRadixTileDataForAllCore(axisLen, maxCoreNum, usableUb, ubExtra, tileFactor, blockUbSize,
+                                            lastDimTileNum, tileData, tmpUbSize)) {
             return false;
         }
         adjusted = true;
@@ -466,21 +470,19 @@ bool NeedAdjustRadixTileData(
     }
     if (unsortedDim > static_cast<int64_t>(1) && unsortedDim < static_cast<int64_t>(maxCoreNum) &&
         lastDimTileNum == 1U) {
-        return AdjustBSharedSingleHTile(
-            axisLen, unsortedDim, maxCoreNum, usableUb, ubExtra, tileFactor, blockUbSize, tileData, tmpUbSize,
-            adjusted);
+        return AdjustBSharedSingleHTile(axisLen, unsortedDim, maxCoreNum, usableUb, ubExtra, tileFactor, blockUbSize,
+                                        tileData, tmpUbSize, adjusted);
     }
     if (unsortedDim > static_cast<int64_t>(1) && lastDimTileNum > 1U) {
-        return AdjustMultiTileHWithBSharing(
-            axisLen, unsortedDim, maxCoreNum, usableUb, ubExtra, tileFactor, blockUbSize, tileData, lastDimTileNum,
-            tmpUbSize, adjusted);
+        return AdjustMultiTileHWithBSharing(axisLen, unsortedDim, maxCoreNum, usableUb, ubExtra, tileFactor,
+                                            blockUbSize, tileData, lastDimTileNum, tmpUbSize, adjusted);
     }
     return true;
 }
 
-bool ComputeRadixTileData(
-    int64_t axisLen, int64_t unsortedDim, uint32_t dtypeSize, uint32_t indexSize, uint32_t maxCoreNum,
-    uint32_t usableUb, uint32_t blockUbSize, uint32_t& tileData, uint32_t& tmpUbSize)
+bool ComputeRadixTileData(int64_t axisLen, int64_t unsortedDim, uint32_t dtypeSize, uint32_t indexSize,
+                          uint32_t maxCoreNum, uint32_t usableUb, uint32_t blockUbSize, uint32_t& tileData,
+                          uint32_t& tmpUbSize)
 {
     if (maxCoreNum == 0U) {
         return false;
@@ -518,9 +520,8 @@ bool ComputeRadixTileData(
     bool adjusted = false;
     if ((lastDimTileNum % maxCoreNum == 0U) || smallTile) {
         AdjustRadixTmpUb(usableUb, tileData, ubExtra, tileFactor, blockUbSize, tmpUbSize);
-    } else if (!NeedAdjustRadixTileData(
-        axisLen, unsortedDim, maxCoreNum, usableUb, ubExtra, tileFactor, blockUbSize, tileData,
-        lastDimTileNum, tmpUbSize, adjusted)) {
+    } else if (!NeedAdjustRadixTileData(axisLen, unsortedDim, maxCoreNum, usableUb, ubExtra, tileFactor, blockUbSize,
+                                        tileData, lastDimTileNum, tmpUbSize, adjusted)) {
         return false;
     } else if (!adjusted) {
         AdjustRadixTmpUb(usableUb, tileData, ubExtra, tileFactor, blockUbSize, tmpUbSize);
@@ -528,9 +529,9 @@ bool ComputeRadixTileData(
     return true;
 }
 
-bool FillRadixKernelParams(
-    uint32_t dtypeSize, uint32_t indexSize, uint32_t coreNumNeed, uint32_t lastDimTileNum, uint32_t unsortedDimParallel,
-    uint32_t blockUbSize, uint32_t tmpUbSize, RadixClearParams& out)
+bool FillRadixKernelParams(uint32_t dtypeSize, uint32_t indexSize, uint32_t coreNumNeed, uint32_t lastDimTileNum,
+                           uint32_t unsortedDimParallel, uint32_t blockUbSize, uint32_t tmpUbSize,
+                           RadixClearParams& out)
 {
     if (indexSize == 0U) {
         return false;
@@ -563,26 +564,26 @@ bool FillRadixKernelParams(
     return true;
 }
 
-bool ComputeRadixSortWorkspace(
-    int64_t axisLen, uint32_t dtypeSize, uint32_t indexSize, uint32_t lastDimTileNum, uint32_t numTileDataSize,
-    uint32_t unsortedDimParallel, uint32_t keyParams0, uint32_t keyParams1, uint32_t keyParams2, uint32_t keyParams3,
-    uint32_t keyParams4, uint32_t blockUbSize, uint64_t& workspaceSize)
+bool ComputeRadixSortWorkspace(int64_t axisLen, uint32_t dtypeSize, uint32_t indexSize, uint32_t lastDimTileNum,
+                               uint32_t numTileDataSize, uint32_t unsortedDimParallel, uint32_t keyParams0,
+                               uint32_t keyParams1, uint32_t keyParams2, uint32_t keyParams3, uint32_t keyParams4,
+                               uint32_t blockUbSize, uint64_t& workspaceSize)
 {
     uint64_t indexSize64 = static_cast<uint64_t>(indexSize);
     uint64_t blockUbSize64 = static_cast<uint64_t>(blockUbSize);
     uint64_t unsortedDimParallel64 = static_cast<uint64_t>(unsortedDimParallel);
     uint64_t axisLen64 = static_cast<uint64_t>(axisLen);
 
-    uint64_t excusiveBins =
-        Ops::Base::CeilAlign(static_cast<uint64_t>(keyParams1) * keyParams4 * indexSize64, blockUbSize64);
-    uint64_t globalHist =
-        Ops::Base::CeilAlign(static_cast<uint64_t>(keyParams3) * keyParams2 * keyParams0 * indexSize64, blockUbSize64);
+    uint64_t excusiveBins = Ops::Base::CeilAlign(static_cast<uint64_t>(keyParams1) * keyParams4 * indexSize64,
+                                                 blockUbSize64);
+    uint64_t globalHist = Ops::Base::CeilAlign(
+        static_cast<uint64_t>(keyParams3) * keyParams2 * keyParams0 * indexSize64, blockUbSize64);
     uint64_t sortedIdx = Ops::Base::CeilAlign(axisLen64 * unsortedDimParallel64 * indexSize64, blockUbSize64);
     uint64_t histTile = static_cast<uint64_t>(lastDimTileNum) * BIN_NUM * unsortedDimParallel64 * sizeof(uint16_t) * 2U;
-    uint64_t xB8 = Ops::Base::CeilAlign(
-        static_cast<uint64_t>(lastDimTileNum) * numTileDataSize * unsortedDimParallel64, blockUbSize64);
-    uint64_t sortedValue =
-        Ops::Base::CeilAlign(axisLen64 * unsortedDimParallel64 * static_cast<uint64_t>(dtypeSize), blockUbSize64);
+    uint64_t xB8 = Ops::Base::CeilAlign(static_cast<uint64_t>(lastDimTileNum) * numTileDataSize * unsortedDimParallel64,
+                                        blockUbSize64);
+    uint64_t sortedValue = Ops::Base::CeilAlign(axisLen64 * unsortedDimParallel64 * static_cast<uint64_t>(dtypeSize),
+                                                blockUbSize64);
 
     workspaceSize = excusiveBins + globalHist + sortedIdx + histTile + xB8 + sortedValue;
     return true;
@@ -591,13 +592,12 @@ bool ComputeRadixSortWorkspace(
 bool FillRadixMoreCoreInfo(SortKthTileInfo& info)
 {
     uint32_t usableUb = info.ubSize > SIMT_UB ? info.ubSize - SIMT_UB : 0;
-    uint32_t indexSize =
-        info.isInt32 != 0 ? static_cast<uint32_t>(sizeof(int32_t)) : static_cast<uint32_t>(sizeof(int64_t));
+    uint32_t indexSize = info.isInt32 != 0 ? static_cast<uint32_t>(sizeof(int32_t)) :
+                                             static_cast<uint32_t>(sizeof(int64_t));
     uint32_t tileData = 0;
     uint32_t tmpUbSize = 0;
-    if (!ComputeRadixTileData(
-        info.lastAxis, info.unsortedDim, info.dtypeSize, indexSize, info.maxCoreNum, usableUb, info.blockUbSize,
-        tileData, tmpUbSize)) {
+    if (!ComputeRadixTileData(info.lastAxis, info.unsortedDim, info.dtypeSize, indexSize, info.maxCoreNum, usableUb,
+                              info.blockUbSize, tileData, tmpUbSize)) {
         return false;
     }
     info.tmpUbSize = tmpUbSize;
@@ -614,8 +614,8 @@ bool FillRadixMoreCoreInfo(SortKthTileInfo& info)
         }
     }
     info.numTileDataSize = tileData;
-    uint64_t sortLoopTimes64 =
-        (static_cast<uint64_t>(info.unsortedDim) + info.unsortedDimParallel - 1U) / info.unsortedDimParallel;
+    uint64_t sortLoopTimes64 = (static_cast<uint64_t>(info.unsortedDim) + info.unsortedDimParallel - 1U) /
+                               info.unsortedDimParallel;
     if (sortLoopTimes64 > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
         return false;
     }
@@ -624,9 +624,8 @@ bool FillRadixMoreCoreInfo(SortKthTileInfo& info)
     info.coreNumNeed = info.unsortedDimParallel * info.lastDimNeedCore;
     info.lastDimTileNum = lastDimTileNum;
     RadixClearParams clearParams;
-    if (!FillRadixKernelParams(
-        info.dtypeSize, indexSize, info.coreNumNeed, lastDimTileNum, info.unsortedDimParallel, info.blockUbSize,
-        tmpUbSize, clearParams)) {
+    if (!FillRadixKernelParams(info.dtypeSize, indexSize, info.coreNumNeed, lastDimTileNum, info.unsortedDimParallel,
+                               info.blockUbSize, tmpUbSize, clearParams)) {
         return false;
     }
     info.keyParams0 = clearParams.keyParams0;
@@ -636,19 +635,17 @@ bool FillRadixMoreCoreInfo(SortKthTileInfo& info)
     info.keyParams4 = clearParams.keyParams4;
     info.keyParams5 = clearParams.keyParams5;
     uint64_t sortWorkspaceSize = 0;
-    if (!ComputeRadixSortWorkspace(
-        info.lastAxis, info.dtypeSize, indexSize, lastDimTileNum, info.numTileDataSize, info.unsortedDimParallel,
-        info.keyParams0, info.keyParams1, info.keyParams2, info.keyParams3, info.keyParams4, info.blockUbSize,
-        sortWorkspaceSize)) {
+    if (!ComputeRadixSortWorkspace(info.lastAxis, info.dtypeSize, indexSize, lastDimTileNum, info.numTileDataSize,
+                                   info.unsortedDimParallel, info.keyParams0, info.keyParams1, info.keyParams2,
+                                   info.keyParams3, info.keyParams4, info.blockUbSize, sortWorkspaceSize)) {
         return false;
     }
     info.workspaceSize = static_cast<size_t>(sortWorkspaceSize + WORK_SPACE_SIZE);
     return true;
 }
 
-bool ComputeRadixOneCoreUbSizes(
-    int64_t lastAxis, uint32_t dtypeSize, uint32_t indexElemSize, uint32_t blockUbSize, uint32_t& xUbSize,
-    uint32_t& idxUbSize)
+bool ComputeRadixOneCoreUbSizes(int64_t lastAxis, uint32_t dtypeSize, uint32_t indexElemSize, uint32_t blockUbSize,
+                                uint32_t& xUbSize, uint32_t& idxUbSize)
 {
     uint64_t xBytes = static_cast<uint64_t>(lastAxis) * dtypeSize;
     uint64_t idxBytes = static_cast<uint64_t>(lastAxis) * indexElemSize;
@@ -658,9 +655,8 @@ bool ComputeRadixOneCoreUbSizes(
 // =============================================================================
 // Merge sort — common
 // =============================================================================
-bool ComputeMergeSortPlan(
-    int64_t axisLen, int64_t unsortedDim, uint32_t blockUbSize, uint32_t tileDataNum, uint32_t maxCoreNum,
-    MergeSortPlan& plan)
+bool ComputeMergeSortPlan(int64_t axisLen, int64_t unsortedDim, uint32_t blockUbSize, uint32_t tileDataNum,
+                          uint32_t maxCoreNum, MergeSortPlan& plan)
 {
     uint64_t alignNum64 = Ops::Base::CeilAlign(static_cast<uint64_t>(axisLen), static_cast<uint64_t>(blockUbSize));
     if (alignNum64 > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) || alignNum64 == 0U) {
@@ -694,8 +690,8 @@ bool FillMergeSortInfo(SortKthTileInfo& info, uint32_t indexDtypeSize, uint32_t 
 {
     constexpr uint32_t TILE_DATA_NUM = 4096;
     MergeSortPlan plan;
-    if (!ComputeMergeSortPlan(
-        info.lastAxis, info.unsortedDim, info.blockUbSize, TILE_DATA_NUM, info.maxCoreNum, plan)) {
+    if (!ComputeMergeSortPlan(info.lastAxis, info.unsortedDim, info.blockUbSize, TILE_DATA_NUM, info.maxCoreNum,
+                              plan)) {
         return false;
     }
     info.sortLoopTimes = plan.sortLoopTimes;
@@ -718,8 +714,8 @@ bool ComputeMergeSortTiling(gert::TilingContext* context, SortKthTileInfo& info,
 {
     constexpr uint32_t TILE_DATA_NUM = 4096;
     MergeSortPlan plan;
-    if (!ComputeMergeSortPlan(
-        info.lastAxis, info.unsortedDim, info.blockUbSize, TILE_DATA_NUM, info.maxCoreNum, plan)) {
+    if (!ComputeMergeSortPlan(info.lastAxis, info.unsortedDim, info.blockUbSize, TILE_DATA_NUM, info.maxCoreNum,
+                              plan)) {
         return false;
     }
     auto platformInfo = context->GetPlatformInfo();
@@ -747,8 +743,8 @@ bool IsMergeMoreCoreSupported(ge::DataType dataType, int64_t axisLen, int64_t un
     return hCoreNum > 0 && static_cast<uint64_t>(unsortedDim) * hCoreNum <= maxCoreNum;
 }
 
-bool ComputeMergeMoreCorePlan(
-    int64_t axisLen, int64_t unsortedDim, uint32_t ubSize, uint32_t mergeBytesPerElem, MergeMoreCorePlan& plan)
+bool ComputeMergeMoreCorePlan(int64_t axisLen, int64_t unsortedDim, uint32_t ubSize, uint32_t mergeBytesPerElem,
+                              MergeMoreCorePlan& plan)
 {
     if (axisLen <= 0 || unsortedDim <= 0 || mergeBytesPerElem == 0U) {
         return false;
@@ -791,8 +787,8 @@ bool FillMergeMoreCoreInfo(SortKthTileInfo& info, uint32_t mergeBytesPerElem)
     info.sortLoopTimes = plan.sortLoopTimes;
     info.coreNumNeed = plan.coreNumNeed;
     info.keyParams0 = plan.keyParams0;
-    uint64_t wsBytes =
-        static_cast<uint64_t>(MERGE_SORT_WORKSPACE_PARAM) * info.lastAxis * info.unsortedDim * sizeof(int32_t);
+    uint64_t wsBytes = static_cast<uint64_t>(MERGE_SORT_WORKSPACE_PARAM) * info.lastAxis * info.unsortedDim *
+                       sizeof(int32_t);
     info.workspaceSize = static_cast<size_t>(wsBytes + WORK_SPACE_SIZE);
     return true;
 }
@@ -820,14 +816,14 @@ uint32_t ComputeMergeIntraCoreBlockSortSize(uint32_t ubSize)
 
 uint32_t ComputeMergeIntraCoreExtractChunkSize(uint32_t ubSize)
 {
-    constexpr uint32_t PHASE3_BYTES_PER_ELEM =
-        (SORT_STRUCT_BYTES + sizeof(float) + sizeof(int32_t) + sizeof(int64_t)) * 2;
+    constexpr uint32_t PHASE3_BYTES_PER_ELEM = (SORT_STRUCT_BYTES + sizeof(float) + sizeof(int32_t) + sizeof(int64_t)) *
+                                               2;
     uint32_t extractChunkSize = ubSize / PHASE3_BYTES_PER_ELEM;
     return (extractChunkSize / MERGE_INTRA_CORE_SORT_ALIGN) * MERGE_INTRA_CORE_SORT_ALIGN;
 }
 
-bool IsMergeIntraCoreSupported(
-    ge::DataType dataType, int64_t axisLen, int64_t unsortedDim, uint32_t maxCoreNum, uint32_t ubSize)
+bool IsMergeIntraCoreSupported(ge::DataType dataType, int64_t axisLen, int64_t unsortedDim, uint32_t maxCoreNum,
+                               uint32_t ubSize)
 {
     if (dataType != ge::DT_FLOAT || axisLen <= static_cast<int64_t>(MERGE_SORT_MAX_AXIS_FP32) ||
         unsortedDim < static_cast<int64_t>(maxCoreNum / 2)) {
@@ -845,8 +841,8 @@ bool IsMergeIntraCoreSupported(
     return axisLen <= static_cast<int64_t>(blockSortSize) * MERGE_INTRA_CORE_MAX_BLOCKS;
 }
 
-bool ComputeMergeIntraCorePlan(
-    int64_t axisLen, int64_t unsortedDim, uint32_t ubSize, uint32_t maxCoreNum, MergeIntraCorePlan& plan)
+bool ComputeMergeIntraCorePlan(int64_t axisLen, int64_t unsortedDim, uint32_t ubSize, uint32_t maxCoreNum,
+                               MergeIntraCorePlan& plan)
 {
     if (axisLen <= 0 || unsortedDim <= 0 || maxCoreNum == 0U) {
         return false;
@@ -920,8 +916,8 @@ bool ComputeMergeIntraCoreTiling(gert::TilingContext* context, SortKthTileInfo& 
 // =============================================================================
 // Two-stage sort
 // =============================================================================
-bool SearchTwoStageBatchPlan(
-    uint32_t maxBatch, std::function<bool(uint32_t, TwoStageBatchPlan&)> tryCandidate, TwoStageBatchPlan& result)
+bool SearchTwoStageBatchPlan(uint32_t maxBatch, std::function<bool(uint32_t, TwoStageBatchPlan&)> tryCandidate,
+                             TwoStageBatchPlan& result)
 {
     if (maxBatch == 0U) {
         return false;
@@ -979,8 +975,8 @@ uint32_t MaxTwoStageU16SafeBatch(uint32_t axisLen)
     return maxBatch;
 }
 
-bool ComputeTwoStageSortTmpUb(
-    ge::DataType dataType, uint32_t axisLen, uint32_t totalElems, uint32_t blockUbSize, uint32_t& tmpUbSize)
+bool ComputeTwoStageSortTmpUb(ge::DataType dataType, uint32_t axisLen, uint32_t totalElems, uint32_t blockUbSize,
+                              uint32_t& tmpUbSize)
 {
     tmpUbSize = 0;
     QuerySortTmpSizeRadix(dataType, totalElems, tmpUbSize);
@@ -1010,9 +1006,9 @@ uint64_t EstimateTwoStageUbBytes(const SortKthTileInfo& info, uint32_t totalElem
     if (ge::MulOverflow(totalElems, info.dtypeSize, valueRawBytes) ||
         ge::MulOverflow(totalElems, sizeof(uint32_t), idxRawBytes) ||
         ge::MulOverflow(totalElems, info.y2DtypeSize, aliasRawBytes)) {
-        OP_LOGE("EstimateTwoStageUbBytes",
-                "raw byte size overflow, totalElems %u, dtypeSize %u, y2DtypeSize %u", totalElems, info.dtypeSize,
-                info.y2DtypeSize);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("EstimateTwoStageUbBytes", "totalElems",
+                                              std::to_string(totalElems).c_str(),
+                                              "The value of totalElems must not cause raw byte size overflow.");
         return std::numeric_limits<uint64_t>::max();
     }
     uint64_t valueBytes = Ops::Base::CeilAlign<uint64_t>(valueRawBytes, info.blockUbSize);
@@ -1024,23 +1020,22 @@ uint64_t EstimateTwoStageUbBytes(const SortKthTileInfo& info, uint32_t totalElem
     uint32_t idxBufferCount = UseTwoStageRankInverse(static_cast<uint32_t>(info.lastAxis)) ? 2U : 3U;
     uint64_t totalBytes = 0U;
     uint64_t idxTotalBytes = 0U;
-    if (ge::MulOverflow(valueBytes, 2U, totalBytes) ||
-        ge::MulOverflow(idxBytes, idxBufferCount, idxTotalBytes) ||
-        ge::AddOverflow(totalBytes, idxTotalBytes, totalBytes) ||
-        ge::AddOverflow(totalBytes, aliasBytes, totalBytes) ||
+    if (ge::MulOverflow(valueBytes, 2U, totalBytes) || ge::MulOverflow(idxBytes, idxBufferCount, idxTotalBytes) ||
+        ge::AddOverflow(totalBytes, idxTotalBytes, totalBytes) || ge::AddOverflow(totalBytes, aliasBytes, totalBytes) ||
         ge::AddOverflow(totalBytes, sortTmpUb, totalBytes)) {
-        OP_LOGE("EstimateTwoStageUbBytes",
-                "total byte size overflow, valueBytes %lu, idxBytes %lu, idxBufferCount %u, aliasBytes %lu, "
-                "sortTmpUb %u",
-                valueBytes, idxBytes, idxBufferCount, aliasBytes, sortTmpUb);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            "EstimateTwoStageUbBytes", "totalBytes",
+            (std::to_string(valueBytes) + ", " + std::to_string(idxBytes) + ", " + std::to_string(idxBufferCount) +
+             ", " + std::to_string(aliasBytes) + ", " + std::to_string(sortTmpUb))
+                .c_str(),
+            "The value of totalBytes must not overflow.");
         return std::numeric_limits<uint64_t>::max();
     }
     return totalBytes;
 }
 
-bool PrepareTwoStageBatchCandidate(
-    const SortKthTileInfo& info, uint32_t candidate, uint32_t& totalElems, uint32_t& tmpUbSize, bool& useRankInverse,
-    uint64_t& totalBytes)
+bool PrepareTwoStageBatchCandidate(const SortKthTileInfo& info, uint32_t candidate, uint32_t& totalElems,
+                                   uint32_t& tmpUbSize, bool& useRankInverse, uint64_t& totalBytes)
 {
     uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
     uint64_t totalElems64 = static_cast<uint64_t>(candidate) * axisLen;
@@ -1057,14 +1052,14 @@ bool PrepareTwoStageBatchCandidate(
     return true;
 }
 
-static bool ComputeSmallAxisInsertionBatchParams(
-    const SortKthTileInfo& info, uint32_t axisLen, uint32_t& bytesPerSeg, uint32_t& usableUb, uint32_t& maxBatchByUb)
+static bool ComputeSmallAxisInsertionBatchParams(const SortKthTileInfo& info, uint32_t axisLen, uint32_t& bytesPerSeg,
+                                                 uint32_t& usableUb, uint32_t& maxBatchByUb)
 {
     if (info.ubSize <= SIMT_UB) {
         return false;
     }
-    bytesPerSeg =
-        ComputeInsertionBytesPerSeg(info.dataType, axisLen, info.dtypeSize, info.y2DtypeSize, info.blockUbSize);
+    bytesPerSeg = ComputeInsertionBytesPerSeg(info.dataType, axisLen, info.dtypeSize, info.y2DtypeSize,
+                                              info.blockUbSize);
     if (bytesPerSeg == 0U) {
         return false;
     }
@@ -1074,8 +1069,8 @@ static bool ComputeSmallAxisInsertionBatchParams(
 }
 
 template <typename ComputeBatchNumFn>
-static bool EstimateSmallAxisInsertionBatching(
-    const SortKthTileInfo& info, uint32_t batchSizeCap, ComputeBatchNumFn computeBatchNum, SmallAxisRoutePlan& plan)
+static bool EstimateSmallAxisInsertionBatching(const SortKthTileInfo& info, uint32_t batchSizeCap,
+                                               ComputeBatchNumFn computeBatchNum, SmallAxisRoutePlan& plan)
 {
     uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
     uint32_t bytesPerSeg = 0;
@@ -1098,8 +1093,8 @@ static bool EstimateSmallAxisInsertionBatching(
 }
 
 template <typename ComputeBatchNumFn>
-static bool TrySmallAxisTwoStageBatchCandidate(
-    const SortKthTileInfo& info, uint32_t candidate, ComputeBatchNumFn computeBatchNum, SmallAxisRoutePlan& plan)
+static bool TrySmallAxisTwoStageBatchCandidate(const SortKthTileInfo& info, uint32_t candidate,
+                                               ComputeBatchNumFn computeBatchNum, SmallAxisRoutePlan& plan)
 {
     uint32_t totalElems = 0;
     uint32_t tmpUbSize = 0;
@@ -1142,8 +1137,8 @@ static bool TrySmallAxisTwoStageBatchCandidate(
 // SearchTwoStageBatchPlan() which picks the batch size that minimises
 // idle core slots while keeping the same per-core loop count.
 template <typename ComputeBatchNumFn>
-static bool EstimateSmallAxisTwoStageBatching(
-    const SortKthTileInfo& info, uint32_t batchSizeCap, ComputeBatchNumFn computeBatchNum, SmallAxisRoutePlan& plan)
+static bool EstimateSmallAxisTwoStageBatching(const SortKthTileInfo& info, uint32_t batchSizeCap,
+                                              ComputeBatchNumFn computeBatchNum, SmallAxisRoutePlan& plan)
 {
     uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
     if (info.ubSize <= SIMT_UB || axisLen == 0U || batchSizeCap == 0U) {
@@ -1186,9 +1181,8 @@ static bool EstimateSmallAxisTwoStageBatching(
 // =============================================================================
 // Small-axis route selection
 // =============================================================================
-static bool SelectSmallAxisRouteImpl(
-    const SortKthTileInfo& info, uint32_t batchSizeCap, std::function<bool(uint32_t, uint32_t&)> computeBatchNum,
-    SmallAxisRoutePlan& plan)
+static bool SelectSmallAxisRouteImpl(const SortKthTileInfo& info, uint32_t batchSizeCap,
+                                     std::function<bool(uint32_t, uint32_t&)> computeBatchNum, SmallAxisRoutePlan& plan)
 {
     uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
     if (axisLen <= 1U) {

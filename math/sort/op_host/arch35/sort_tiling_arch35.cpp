@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <iostream>
 #include <limits>
+#include <string>
 
 #include "log/log.h"
 #include "platform/platform_info.h"
@@ -42,7 +43,8 @@ ge::graphStatus CheckInputAndOutput(gert::TilingContext* context, SortKthTileInf
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     OP_CHECK_IF(ubSize <= static_cast<uint64_t>(SIMT_UB),
-                OP_LOGE(context->GetNodeName(), "ubSize must be greater than %u, but is %lu", SIMT_UB, ubSize),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ubSize", std::to_string(ubSize).c_str(),
+                                                      "The value of ubSize must be greater than SIMT_UB."),
                 return ge::GRAPH_FAILED);
     sortTileInfo.blockUbSize = Ops::Base::GetUbBlockSize(context);
     OP_LOGI(context->GetNodeName(), "ubSize is %ld, blockUbSize %u", ubSize, sortTileInfo.blockUbSize);
@@ -56,17 +58,20 @@ ge::graphStatus CheckInputAndOutput(gert::TilingContext* context, SortKthTileInf
     auto yStorage1 = context->GetOutputShape(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, yStorage1);
     const gert::Shape& outShape1 = Ops::Base::EnsureNotScalar(yStorage1->GetStorageShape());
-    OP_CHECK_IF(inputShape.GetShapeSize() == 0 || outShape.GetShapeSize() == 0,
-                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "x, y1", "0",
-                                                      "The shape size of input x and output y1 should be positive"),
-                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        inputShape.GetShapeSize() == 0 || outShape.GetShapeSize() == 0,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "x, y1",
+            (std::to_string(inputShape.GetShapeSize()) + ", " + std::to_string(outShape.GetShapeSize())).c_str(),
+            "The values of shape sizes of x and y1 must be positive."),
+        return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         outShape != outShape1 || outShape != inputShape,
         OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x, y1, y2",
                                                (Ops::Base::ToString(inputShape) + ", " + Ops::Base::ToString(outShape) +
                                                 ", " + Ops::Base::ToString(outShape1))
                                                    .c_str(),
-                                               "The shape of input x, output y1 and y2 should be the same"),
+                                               "The shapes of x, y1, and y2 must be the same."),
         return ge::GRAPH_FAILED);
     int32_t xDimNum = inputShape.GetDimNum();
     sortTileInfo.rank = xDimNum;
@@ -92,7 +97,7 @@ ge::graphStatus CheckSortOutputDtypes(gert::TilingContext* context, SortKthTileI
                 OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
                     context->GetNodeName(), "x, y1",
                     (Ops::Base::ToString(dataType) + ", " + Ops::Base::ToString(y1DType)).c_str(),
-                    "The dtype of input x should be the same as output y1"),
+                    "The dtypes of x and y1 must be the same."),
                 return ge::GRAPH_FAILED);
     ge::TypeUtils::GetDataTypeLength(y2DType, sortTileInfo.y2DtypeSize);
     return ge::GRAPH_SUCCESS;
@@ -110,7 +115,9 @@ ge::graphStatus ComputeNonLastAxisLayout(gert::TilingContext* context, SortKthTi
 ge::graphStatus SortCheckParams(gert::TilingContext* context, SortKthTileInfo& sortTileInfo)
 {
     OP_CHECK_IF(CheckInputAndOutput(context, sortTileInfo) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "CheckInputAndOutput failed"), return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "CheckInputAndOutput", "GRAPH_FAILED",
+                                                      "The value of CheckInputAndOutput must be GRAPH_SUCCESS."),
+                return ge::GRAPH_FAILED);
     auto inputDescPtr = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDescPtr);
     ge::DataType dataType = inputDescPtr->GetDataType();
@@ -121,7 +128,9 @@ ge::graphStatus SortCheckParams(gert::TilingContext* context, SortKthTileInfo& s
                                   "INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64, FLOAT, FLOAT16, BF16"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(CheckSortOutputDtypes(context, sortTileInfo, dataType) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "CheckSortOutputDtypes failed"), return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "CheckSortOutputDtypes", "GRAPH_FAILED",
+                                                      "The value of CheckSortOutputDtypes must be GRAPH_SUCCESS."),
+                return ge::GRAPH_FAILED);
     auto const attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
     const bool* isDescending = attrs->GetAttrPointer<bool>(1);
@@ -137,8 +146,12 @@ ge::graphStatus SortCheckParams(gert::TilingContext* context, SortKthTileInfo& s
     sortTileInfo.sortAxis = sortAxis;
     sortTileInfo.isNonLastAxis = (sortAxis != (static_cast<int32_t>(sortTileInfo.rank) - 1));
     if (sortTileInfo.isNonLastAxis) {
-        OP_CHECK_IF(ComputeNonLastAxisLayout(context, sortTileInfo, sortAxis) != ge::GRAPH_SUCCESS,
-                    OP_LOGE(context->GetNodeName(), "ComputeNonLastAxisLayout failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(
+            ComputeNonLastAxisLayout(context, sortTileInfo, sortAxis) != ge::GRAPH_SUCCESS,
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ComputeNonLastAxisLayout", "GRAPH_FAILED",
+                                                  "The value of ComputeNonLastAxisLayout must be "
+                                                  "GRAPH_SUCCESS."),
+            return ge::GRAPH_FAILED);
     }
     return ge::GRAPH_SUCCESS;
 }
@@ -263,16 +276,22 @@ ge::graphStatus SetAxisOneCopyTiling(gert::TilingContext* context, SortKthTileIn
     uint64_t bytesPerElem = static_cast<uint64_t>(2) * (static_cast<uint64_t>(sortTileInfo.dtypeSize) +
                                                         static_cast<uint64_t>(sortTileInfo.y2DtypeSize));
     if (bytesPerElem == 0) {
-        OP_LOGE(context->GetNodeName(), "bytesPerElem is 0, invalid dtype configuration");
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "x",
+                                              Ops::Base::ToString(sortTileInfo.dataType).c_str(),
+                                              "The dtype size of x must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
     uint64_t copyElemsPerLoop64 = static_cast<uint64_t>(sortTileInfo.ubSize) / bytesPerElem;
     if (copyElemsPerLoop64 == 0) {
-        OP_LOGE(context->GetNodeName(), "copyElemsPerLoop is 0, ub is too small for axis-one copy");
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "copyElemsPerLoop",
+                                              std::to_string(copyElemsPerLoop64).c_str(),
+                                              "The value of copyElemsPerLoop must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
     if (copyElemsPerLoop64 > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
-        OP_LOGE(context->GetNodeName(), "copyElemsPerLoop exceeds uint32_t limit");
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "copyElemsPerLoop", std::to_string(copyElemsPerLoop64).c_str(),
+            "The value of copyElemsPerLoop must be less than or equal to uint32 max.");
         return ge::GRAPH_FAILED;
     }
     uint32_t copyElemsPerLoop = static_cast<uint32_t>(copyElemsPerLoop64);
@@ -280,7 +299,8 @@ ge::graphStatus SetAxisOneCopyTiling(gert::TilingContext* context, SortKthTileIn
                           static_cast<uint64_t>(sortTileInfo.lastAxis);
     uint64_t loopTimes64 = (totalElems + copyElemsPerLoop64 - 1) / copyElemsPerLoop64;
     if (loopTimes64 > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
-        OP_LOGE(context->GetNodeName(), "loopTimes exceeds uint32_t limit");
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "loopTimes", std::to_string(loopTimes64).c_str(),
+                                              "The value of loopTimes must be less than or equal to uint32 max.");
         return ge::GRAPH_FAILED;
     }
     uint32_t loopTimes = static_cast<uint32_t>(loopTimes64);
@@ -305,7 +325,7 @@ ge::graphStatus SetAxisOneCopyTiling(gert::TilingContext* context, SortKthTileIn
 
 void FillSmallAxisBatched(gert::TilingContext* context, SortKthTileInfo& sortTileInfo, const SmallAxisRoutePlan& plan)
 {
-    sortTileInfo.ubSize = sortTileInfo.ubSize - SIMT_UB;            // reserve 32KB for SIMT kernel scratch
+    sortTileInfo.ubSize = sortTileInfo.ubSize - SIMT_UB; // reserve 32KB for SIMT kernel scratch
     sortTileInfo.numTileDataSize = static_cast<uint32_t>(sortTileInfo.lastAxis);
     sortTileInfo.keyParams0 = plan.batchSize;                       // rows per batch
     sortTileInfo.keyParams1 = plan.batchNum;                        // total batches
@@ -326,14 +346,16 @@ void FillSmallAxisBatched(gert::TilingContext* context, SortKthTileInfo& sortTil
 // how many rows fit in available UB via ComputeMergeMoreCoreTiling.
 ge::graphStatus SetMergeMoreCoreTiling(gert::TilingContext* context, SortKthTileInfo& info)
 {
-    uint32_t byteNum = MERGE_SORT_LIST_NUM * MERGE_SORT_DATA_BYTES * 2;          // value double buffer
-    byteNum += MERGE_SORT_LIST_NUM * static_cast<uint32_t>(sizeof(uint32_t));    // int32 index
+    uint32_t byteNum = MERGE_SORT_LIST_NUM * MERGE_SORT_DATA_BYTES * 2;       // value double buffer
+    byteNum += MERGE_SORT_LIST_NUM * static_cast<uint32_t>(sizeof(uint32_t)); // int32 index
     if (info.y2DtypeSize == sizeof(int64_t)) {
         byteNum += MERGE_SORT_LIST_NUM * static_cast<uint32_t>(sizeof(int64_t)); // int64 index extra
     }
     byteNum += MERGE_SORT_LIST_NUM * info.dtypeSize;
     OP_CHECK_IF(!ComputeMergeMoreCoreTiling(context, info, byteNum),
-                OP_LOGE(context->GetNodeName(), "merge more-core plan failed"), return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ComputeMergeMoreCoreTiling", "false",
+                                                      "The value of ComputeMergeMoreCoreTiling must be true."),
+                return ge::GRAPH_FAILED);
     OP_LOGI("[mergeSort]", "maxDealingNum: %u", info.keyParams0);
     return ge::GRAPH_SUCCESS;
 }
@@ -346,7 +368,9 @@ ge::graphStatus SetRadixOneCoreTiling(gert::TilingContext* context, SortKthTileI
     uint64_t sortLoopTimes64 = Ops::Base::CeilDiv(sortTileInfo.unsortedDim,
                                                   static_cast<int64_t>(sortTileInfo.maxCoreNum));
     if (sortLoopTimes64 > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
-        OP_LOGE(context->GetNodeName(), "sortLoopTimes exceeds uint32_t limit");
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "sortLoopTimes",
+                                              std::to_string(sortLoopTimes64).c_str(),
+                                              "The value of sortLoopTimes must be less than or equal to uint32 max.");
         return ge::GRAPH_FAILED;
     }
     sortTileInfo.sortLoopTimes = static_cast<uint32_t>(sortLoopTimes64);
@@ -364,7 +388,9 @@ ge::graphStatus SetRadixOneCoreTiling(gert::TilingContext* context, SortKthTileI
 
 ge::graphStatus SetRadixMoreCoreTiling(gert::TilingContext* context, SortKthTileInfo& info)
 {
-    OP_CHECK_IF(!FillRadixMoreCoreInfo(info), OP_LOGE(context->GetNodeName(), "radix more-core plan failed"),
+    OP_CHECK_IF(!FillRadixMoreCoreInfo(info),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "FillRadixMoreCoreInfo", "false",
+                                                      "The value of FillRadixMoreCoreInfo must be true."),
                 return ge::GRAPH_FAILED);
     info.ubSize = info.ubSize - SIMT_UB;
     size_t* userWorkSpaceSize = context->GetWorkspaceSizes(1);
@@ -401,14 +427,18 @@ void PrintTilingDataSort(gert::TilingContext* context, SortKthTileInfo& sortTile
 ge::graphStatus SetMergeSortTiling(gert::TilingContext* context, SortKthTileInfo& info)
 {
     OP_CHECK_IF(!ComputeMergeSortTiling(context, info, info.y2DtypeSize),
-                OP_LOGE(context->GetNodeName(), "merge sort tiling failed"), return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ComputeMergeSortTiling", "false",
+                                                      "The value of ComputeMergeSortTiling must be true."),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus SetMergeIntraCoreTiling(gert::TilingContext* context, SortKthTileInfo& info)
 {
     OP_CHECK_IF(!ComputeMergeIntraCoreTiling(context, info),
-                OP_LOGE(context->GetNodeName(), "merge intra-core plan computation failed"), return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ComputeMergeIntraCoreTiling", "false",
+                                                      "The value of ComputeMergeIntraCoreTiling must be true."),
+                return ge::GRAPH_FAILED);
     OP_LOGI("MergeIntraCoreTiling",
             "B %ld, N %ld, batchPerCore %u, actualCoreNum %u, blockSortSize %u, extractChunkSize %u, "
             "blocksPerRow %u, alignNum %u, ubSize %u",
@@ -692,7 +722,9 @@ ge::graphStatus SelectSortSchedule(gert::TilingContext* context, SortKthTileInfo
     if (sortTileInfo.isNonLastAxis) {
         // L0 Sort cannot fall back to full-tensor transpose here. aclnnSort should only
         // dispatch non-last axes that satisfy one of the no-transpose schedules above.
-        OP_LOGE(context->GetNodeName(), "non-last sort axis does not meet no-transpose schedule constraints");
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "sortAxis", std::to_string(sortTileInfo.sortAxis).c_str(),
+            "The value of sortAxis must be the last axis or meet no-transpose schedule constraints.");
         return ge::GRAPH_FAILED;
     }
     if (TryMerge(context, sortTileInfo, schId) || TryRadixOneCore(context, sortTileInfo, schId) ||
@@ -702,7 +734,9 @@ ge::graphStatus SelectSortSchedule(gert::TilingContext* context, SortKthTileInfo
 
     schId = SORT_SCHID_2;
     OP_CHECK_IF(SetRadixMoreCoreTiling(context, sortTileInfo) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "radix more-core tiling failed"), return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "SetRadixMoreCoreTiling", "GRAPH_FAILED",
+                                                      "The value of SetRadixMoreCoreTiling must be GRAPH_SUCCESS."),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -713,13 +747,17 @@ ge::graphStatus RadixSortTiling(gert::TilingContext* context, int32_t maxCoreNum
 {
     SortRegBaseTilingData* sortTilingData{nullptr};
     sortTilingData = context->GetTilingData<SortRegBaseTilingData>();
-    OP_CHECK_IF(sortTilingData == nullptr, OP_LOGE(context->GetNodeName(), "get tilingdata ptr failed"),
+    OP_CHECK_IF(sortTilingData == nullptr, OP_LOGE_WITH_INVALID_INPUT(context->GetNodeName(), "tilingData"),
                 return ge::GRAPH_FAILED);
     OP_CHECK_IF((memset_s(sortTilingData, sizeof(SortRegBaseTilingData), 0, sizeof(SortRegBaseTilingData)) != EOK),
-                OP_LOGE(context->GetNodeName(), "memset tilingdata failed"), return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "memset_s", "not EOK",
+                                                      "The value of memset_s must be EOK."),
+                return ge::GRAPH_FAILED);
     SortKthTileInfo sortTileInfo;
     OP_CHECK_IF(SortCheckParams(context, sortTileInfo) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "check params failed"), return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "SortCheckParams", "GRAPH_FAILED",
+                                                      "The value of SortCheckParams must be GRAPH_SUCCESS."),
+                return ge::GRAPH_FAILED);
     sortTileInfo.maxCoreNum = static_cast<uint32_t>(maxCoreNum);
     int64_t int32Max = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
     uint64_t isInt32 = static_cast<uint64_t>((sortTileInfo.lastAxis <= int32Max));
@@ -730,7 +768,9 @@ ge::graphStatus RadixSortTiling(gert::TilingContext* context, int32_t maxCoreNum
     OP_LOGI(context->GetNodeName(), "isInt32 is %lu, isDescend is %lu", isInt32, isDescend);
     uint64_t schId = static_cast<uint64_t>(0);
     OP_CHECK_IF(SelectSortSchedule(context, sortTileInfo, schId) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "select sort schedule failed"), return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "SelectSortSchedule", "GRAPH_FAILED",
+                                                      "The value of SelectSortSchedule must be GRAPH_SUCCESS."),
+                return ge::GRAPH_FAILED);
     const uint64_t tilingKey = GET_TPL_TILING_KEY(schId, isInt32, isDescend);
     OP_LOGI(context->GetNodeName(), "tilingKey is %lu, maxCoreNum %d, schId %lu", tilingKey, maxCoreNum, schId);
     context->SetTilingKey(tilingKey);

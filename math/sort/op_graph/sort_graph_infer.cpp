@@ -19,28 +19,30 @@ using namespace ge;
 namespace ops {
 graphStatus InferDataType4Sort(gert::InferDataTypeContext* context)
 {
-  context->SetOutputDataType(0, context->GetInputDataType(0));
-  auto attrs = context->GetAttrs();
-  OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
-  int64_t y2Dtype = static_cast<int64_t>(ge::DataType::DT_INT32);
-  ge::DataType indicesDtype = ge::DT_INT32;
-  OP_LOGI(context->GetNodeName(), "The default dtype of output indices is int32.");
-  auto out_idx_dtype_ptr = attrs->GetAttrPointer<int64_t>(3);
-  if (out_idx_dtype_ptr != nullptr) {
-    y2Dtype = *out_idx_dtype_ptr;
-    if (y2Dtype == static_cast<int64_t>(ge::DataType::DT_INT64)) {
-      OP_LOGI(context->GetNodeName(), "The dtype of output indices is set as int64.");
-      indicesDtype = ge::DT_INT64;
-    } else {
-      if (y2Dtype != static_cast<int64_t>(ge::DataType::DT_INT32)) {
-        OP_LOGE(context->GetNodeName(), "The dtype of output indices only support int64 or int32.");
-        return GRAPH_FAILED;
-      }
+    context->SetOutputDataType(0, context->GetInputDataType(0));
+    auto attrs = context->GetAttrs();
+    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
+    int64_t y2Dtype = static_cast<int64_t>(ge::DataType::DT_INT32);
+    ge::DataType indicesDtype = ge::DT_INT32;
+    OP_LOGI(context->GetNodeName(), "The default dtype of output indices is int32.");
+    auto out_idx_dtype_ptr = attrs->GetAttrPointer<int64_t>(3);
+    if (out_idx_dtype_ptr != nullptr) {
+        y2Dtype = *out_idx_dtype_ptr;
+        if (y2Dtype == static_cast<int64_t>(ge::DataType::DT_INT64)) {
+            OP_LOGI(context->GetNodeName(), "The dtype of output indices is set as int64.");
+            indicesDtype = ge::DT_INT64;
+        } else {
+            if (y2Dtype != static_cast<int64_t>(ge::DataType::DT_INT32)) {
+                OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "indices_dtype",
+                                          Ops::Base::ToString(static_cast<ge::DataType>(y2Dtype)).c_str(),
+                                          "INT32 or INT64");
+                return GRAPH_FAILED;
+            }
+        }
     }
-  }
-  context->SetOutputDataType(1, indicesDtype);
-  return GRAPH_SUCCESS;
+    context->SetOutputDataType(1, indicesDtype);
+    return GRAPH_SUCCESS;
 }
 
 IMPL_OP(Sort).InferDataType(InferDataType4Sort);
-}  // namespace ops
+} // namespace ops
