@@ -35,6 +35,7 @@
 #include "log/log.h"
 #include "version/ge-compiler_version.h"
 #include "random_standard_normal_fusion_pass.h"
+#include "common/inc/op_graph/fusion_pass/fusion_pass_common.h"
 
 using namespace ge;
 using namespace ge::fusion;
@@ -45,10 +46,6 @@ namespace ops {
 // D1 scenario: uses kCompatibleInherited stage (9.0.0+).
 // Strategy: compile-time macro guard + runtime version check + overall silence.
 #define GE_COMPILER_VERSION_900 90000000
-
-extern "C" {
-__attribute__((weak)) int32_t aclsysGetVersionNum(char* pkgName, int32_t* versionNum);
-}
 
 namespace {
 #if GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
@@ -99,6 +96,11 @@ std::vector<PatternUniqPtr> RandomStandardNormalFusionPass::Patterns()
 {
     OP_LOGD(kPassName.c_str(), "Enter Patterns for RandomStandardNormalFusionPass");
     std::vector<PatternUniqPtr> patternGraphs;
+
+    if (!IsTargetVersion()) {
+        OP_LOGD(kPassName.c_str(), "GE runtime version < %d, skip pass.", GE_COMPILER_VERSION_910);
+        return patternGraphs;
+    }
 
     auto graphBuilder = es::EsGraphBuilder(kPassName.c_str());
     auto shape = graphBuilder.CreateInput(0);
