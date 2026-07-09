@@ -49,7 +49,7 @@ public:
         uint64_t buf[10];
         this->desc_.SetShapeAddr(buf); // 用于获取shape信息
         int64_t inputCol[32];
-        
+
         for (int64_t i = 0; i < rowLoop * colLoop; i++) {
             UbLoopInfo ubLoopInfo{};
             ubLoopInfo.inputCol = inputCol;
@@ -179,7 +179,7 @@ private:
 
     __aicore__ inline void ComputeOver32(int64_t& totalCol, int64_t& localOffset, UbLoopInfo& ubLoopInfo, TensorInfo& tensorInfo)
     {
-        if (isOneConcat_ && ubLoopInfo.count > 31) {
+        if (isOneConcat_ && ubLoopInfo.count > NUM_THIRTY_ONE) {
             // 计算
             Compute(ubLoopInfo);
             // 搬出
@@ -190,7 +190,7 @@ private:
             ubLoopInfo.totalUbCol = 0;
             ubLoopInfo.totalUbColAlign = 0;
         }
-        else if (ubLoopInfo.count > 31) {
+        else if (ubLoopInfo.count > NUM_THIRTY_ONE) {
             // 提前做部分concat
             if (!ubLoopInfo.isAllZero) {
                 SetFlag<HardEvent::MTE2_V>(this->event_);
@@ -252,7 +252,7 @@ private:
         uint16_t srcRepStride = repeatTimes == 1 ? 0 : 1;
         uint16_t dstRepStride = repeatTimes == 1 ? 0 : TRANS_BLOCK;
         TransDataTo5HDParams transDataParams{false, false, repeatTimes, dstRepStride, srcRepStride};
-        
+
         uint64_t srcLocalList[TRANS_BLOCK];
         uint64_t dstLocalList[TRANS_BLOCK];
         if constexpr (sizeof(T1) == 2) {
@@ -351,7 +351,7 @@ private:
             }
             TransDataTo5HD<T1>(dstLocalList, srcLocalList, transDataParams);
         }
-        
+
         PipeBarrier<PIPE_V>();
     }
 

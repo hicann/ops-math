@@ -40,7 +40,7 @@ public:
 
 private:
     gert::TilingContext* context_;
-    bool isRegBase;
+    bool isRegBase{false};
     int32_t coreNum_{0};
     uint64_t ubSize_{0};
     uint64_t sysWorkspaceSize_{0};

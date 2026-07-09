@@ -23,6 +23,8 @@
 constexpr uint32_t UB_BLOCK_SIZE = 32; // UB块大小
 constexpr uint32_t TRANS_BLOCK = 16; // 转置行数
 constexpr uint32_t HALF = 2; // 半对齐/UB对半切分
+constexpr int64_t NUM_THIRTY_ONE = 31;
+constexpr int64_t NUM_TWO = 2;
 
 struct TensorInfo {
     bool isSplit{false};
@@ -205,7 +207,7 @@ public:
             #else
             localOffsetPart = localOffset + (tensorInfo.chunkRow - ubLoopInfo.rowStart) * tensorInfo.splitColAlign;
             #endif
-            
+
             int64_t gmOffsetPart = srcGmOffset + tensorInfo.startOffset +
                                    (tensorInfo.chunkRow - ubLoopInfo.rowStart) * tensorInfo.tensorCol;
             ExecuteDataCopy(localOffsetPart, gmOffsetPart, 1, blockLen, srcStride);

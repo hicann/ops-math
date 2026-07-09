@@ -70,7 +70,7 @@ public:
 
         uint64_t buf[10];
         this->desc_.SetShapeAddr(buf); // 用于获取shape信息
-        
+
         for (int64_t i = 0; i < rowLoop * colLoop; i++) {
             UbLoopInfo ubLoopInfo{};
             ubLoopInfo.ubRowGroup = i / colLoop;
@@ -121,7 +121,7 @@ private:
                 localOffset += this->GetAlign(ubLoopInfo.currentUbRowFactor * tensorInfo.splitCol, this->srcEleUbBlock_);
             }
 
-            if (ubLoopInfo.count > 31) {
+            if (ubLoopInfo.count > NUM_THIRTY_ONE) {
                 // 32个tensor处理一次
                 CopyOut(ubLoopInfo);
                 localOffset = 0;
@@ -137,7 +137,7 @@ private:
             SetFlag<HardEvent::MTE2_V>(this->event_);
             WaitFlag<HardEvent::MTE2_V>(this->event_);
         }
-        if (tensorInfo.splitCol > GetVRegSize() / sizeof(T2) / 2 || ubLoopInfo.currentUbRowFactor < 2) {
+        if (tensorInfo.splitCol > GetVRegSize() / sizeof(T2) / NUM_TWO || ubLoopInfo.currentUbRowFactor < HALF) {
             CopyCatVF<false>(ubLoopInfo, tensorInfo, totalCol, localOffset);
         } else {
             CopyCatVF<true>(ubLoopInfo, tensorInfo, totalCol, localOffset);
@@ -312,7 +312,7 @@ private:
     }
 
     template <typename U>
-    __aicore__ inline void DoScatterPadCatVF(__ubuf__ T2* dstAddr, uint16_t rowLoop, 
+    __aicore__ inline void DoScatterPadCatVF(__ubuf__ T2* dstAddr, uint16_t rowLoop,
                                         uint32_t rowNum, uint32_t rowNumTail, uint32_t srcLen, uint32_t rowStride)
     {
         AscendC::MicroAPI::RegTensor<T2> dstReg0;
@@ -357,7 +357,7 @@ private:
     {
         uint32_t srcLen = tensorInfo.splitCol;
         bool isSplit = tensorInfo.isSplit;
-        
+
         // 无搬运&&完整搬运阶段参数
         uint32_t main = GetVRegSize() / sizeof(T1);
         uint32_t mainFP32 = GetVRegSize() / sizeof(T2);
@@ -379,7 +379,7 @@ private:
         uint16_t colLen1 = 0;
         uint16_t colLoop1 = 0;
         uint32_t tailPad = 0;
-        
+
         if (ubLoopInfo.rowStart >= tensorInfo.chunkRowAlign) {
             // 无搬运，纯pad
             rowLoop2 = ubLoopInfo.currentUbRowFactor;
@@ -410,7 +410,7 @@ private:
         uint32_t dstOffset = totalCol + tensorInfo.startOffset - ubLoopInfo.colStart - ubLoopInfo.preCatCol;
 
         auto dstAddr = (__ubuf__ T2*)this->dstLocal_.GetPhyAddr() + dstOffset;
-        auto srcAddr = (__ubuf__ T1*)this->srcLocal_.GetPhyAddr() + localOffset;      
+        auto srcAddr = (__ubuf__ T1*)this->srcLocal_.GetPhyAddr() + localOffset;
 
         __VEC_SCOPE__
         {

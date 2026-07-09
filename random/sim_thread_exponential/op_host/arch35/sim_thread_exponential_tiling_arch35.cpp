@@ -28,6 +28,7 @@ static constexpr int64_t OFFSET_MULTIPLE = 4;
 static constexpr uint64_t TILING_KEY_FP16 = 1;
 static constexpr uint64_t TILING_KEY_BF16 = 2;
 static constexpr uint64_t TILING_KEY_FP32 = 3;
+static constexpr uint32_t NUM_FOUR = 4;
 
 OpTilingConfig SimThreadExponentialTilingSimt::BuildOpConfig()
 {
@@ -98,7 +99,7 @@ OpTilingConfig SimThreadExponentialTilingSimt::BuildOpConfig()
     config.kernelMode = RandomKernelMode::SIMT;
     config.DcacheSize = DCACHE_SIZE;
     config.isNeedSyncAll = false;
-    config.unrollFactor = 4;
+    config.unrollFactor = NUM_FOUR;
     config.enableSplitBlocks = true;
     return config;
 }

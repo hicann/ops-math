@@ -197,6 +197,9 @@ ge::graphStatus SimThreadExponentialTiling::Tiling4Block()
     // 分核计算
     useCoreNum =
         static_cast<int64_t>(Ops::Base::CeilDiv(batchNumTotal, Ops::Base::CeilDiv(batchNumTotal, totalCoreNum)));
+    OP_CHECK_IF(
+        useCoreNum == 0, OP_LOGE(nodeName, "useCoreNum %u must be not equal to 0.", useCoreNum),
+        return ge::GRAPH_FAILED);
     // useCoreNum = static_cast<int64_t>(CeilDiv(batchNumTotal, CeilDiv(batchNumTotal, totalCoreNum)));
     batchNumPerCore = (batchNumTotal + useCoreNum - 1) / useCoreNum;
     batchNumTailCore = batchNumTotal - (useCoreNum - 1) * batchNumPerCore;

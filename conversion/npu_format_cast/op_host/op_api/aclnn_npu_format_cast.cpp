@@ -60,6 +60,7 @@ static constexpr int64_t BLOCK_SIZE = 32;
 static constexpr size_t FRACTAL_NZ_C0_4B = 64;
 static constexpr int64_t C0_SIZE = 16;
 static constexpr int64_t N0_SIZE = 16;
+static constexpr int64_t NUM_SIXTEEN = 16;
 static constexpr const char* ACLNN_NAME = "aclnnNpuFormatCast";
 
 const std::set<std::pair<op::Format, op::Format>> kTransdataForwardFormatPairsRegBase = {
@@ -441,7 +442,7 @@ static bool IsNz2Nd(op::Format srcFormat, op::Format dstFormat)
                     dstFormat == op::Format::FORMAT_NCHW ||
                     dstFormat == op::Format::FORMAT_NCDHW;
 
- 	return IsNzFormat(srcFormat) && isDstNd;    
+ 	return IsNzFormat(srcFormat) && isDstNd;
 }
 
 static bool ValidNzShape(const aclTensor* srcTensor)
@@ -532,21 +533,21 @@ static bool ValidNz2NdShape(const aclTensor* srcTensor, const aclTensor* dstTens
             std::to_string(n0) + ", " + std::to_string(c0) + ")",
             "n1 must be equal to ceil(n/n0) and c1 must be equal to ceil(c/c0) when converting Nz to ND"),
         return false);
-    
+
     return true;
 }
 
-static bool ValidDtypeFormatForNz2Nd(const aclTensor* srcTensor) 
+static bool ValidDtypeFormatForNz2Nd(const aclTensor* srcTensor)
 {
     DataType srcDtype = srcTensor->GetDataType();
     op::Format srcFormat = srcTensor->GetStorageFormat();
     std::pair<DataType, op::Format> targetPair = {srcDtype, srcFormat};
-    auto it = std::find(INPUT_DTYPE_FORMAT_NZ_TO_ND_SUPPORT_LIST.begin(), 
-                        INPUT_DTYPE_FORMAT_NZ_TO_ND_SUPPORT_LIST.end(), 
+    auto it = std::find(INPUT_DTYPE_FORMAT_NZ_TO_ND_SUPPORT_LIST.begin(),
+                        INPUT_DTYPE_FORMAT_NZ_TO_ND_SUPPORT_LIST.end(),
                         targetPair);
     OP_CHECK(it != INPUT_DTYPE_FORMAT_NZ_TO_ND_SUPPORT_LIST.end(),
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Do not support converting [%s] to ND when srcDtype is [%s].",
-                op::ToString(srcFormat).GetString(), op::ToString(srcDtype).GetString()), return false); 
+                op::ToString(srcFormat).GetString(), op::ToString(srcDtype).GetString()), return false);
     return true;
 }
 
@@ -563,10 +564,10 @@ static aclnnStatus Check95NzToNdGetWorkSpaceSizeInputs(const aclTensor* srcTenso
         return ACLNN_ERR_PARAM_INVALID);
     // check the shape of output ND tensor matches the input Nz tensor
     OP_CHECK(ValidNz2NdShape(srcTensor, dstTensor),
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, 
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
             "The shape of ND output does not match the shape of Nz input."),
         return ACLNN_ERR_PARAM_INVALID);
-    // check the dtype and format of input    
+    // check the dtype and format of input
     OP_CHECK(ValidDtypeFormatForNz2Nd(srcTensor),
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Invalid format and data type for NZ-to-ND conversion"),
         return ACLNN_ERR_PARAM_INVALID);
@@ -691,7 +692,7 @@ aclnnStatus CalcNCDHWToNDC1HWC0(
     int64_t W = viewShape.GetDim(4);
     int64_t C1 = CeilDiv(C, C0);
 
-    *dstShapeSize = 6; // 6HD
+    *dstShapeSize = DIMS_SIX; // 6HD
     try {
         *dstShape = new int64_t[6]{N, D, C1, H, W, C0};
     } catch (...) {
@@ -721,7 +722,7 @@ aclnnStatus CalcNDHWCToNDC1HWC0(
     int64_t C = viewShape.GetDim(4);
     int64_t C1 = CeilDiv(C, C0);
 
-    *dstShapeSize = 6; // 6HD
+    *dstShapeSize = DIMS_SIX; // 6HD
     try {
         *dstShape = new int64_t[6]{N, D, C1, H, W, C0};
     } catch (...) {
@@ -750,7 +751,7 @@ aclnnStatus CalcNCHWToNC1HWC0(
     int64_t W = viewShape.GetDim(3);
     int64_t C1 = CeilDiv(C, C0);
 
-    *dstShapeSize = 5; // 5HD
+    *dstShapeSize = DIMS_FIVE; // 5HD
     try {
         *dstShape = new int64_t[5]{N, C1, H, W, C0};
     } catch (...) {
@@ -779,7 +780,7 @@ aclnnStatus CalcNHWCToNC1HWC0(
     int64_t C = viewShape.GetDim(3);
     int64_t C1 = CeilDiv(C, C0);
 
-    *dstShapeSize = 5; // 5HD
+    *dstShapeSize = DIMS_FIVE; // 5HD
     try {
         *dstShape = new int64_t[5]{N, C1, H, W, C0};
     } catch (...) {
@@ -810,7 +811,7 @@ aclnnStatus CalcNCHWToFRACTALZ(
     int64_t C1 = CeilDiv(C, C0);
     int64_t N1 = CeilDiv(N, N0);
 
-    *dstShapeSize = 4; // FRACTAL_Z
+    *dstShapeSize = DIMS_FOUR; // FRACTAL_Z
     try {
         *dstShape = new int64_t[4]{C1 * H * W, N1, N0, C0};
     } catch (...) {
@@ -840,7 +841,7 @@ aclnnStatus CalcHWCNToFRACTALZ(
     int64_t N = viewShape.GetDim(3);
     int64_t C1 = CeilDiv(C, C0);
     int64_t N1 = CeilDiv(N, N0);
-    *dstShapeSize = 4; // FRACTAL_Z
+    *dstShapeSize = DIMS_FOUR; // FRACTAL_Z
     try {
         *dstShape = new int64_t[4]{C1 * H * W, N1, N0, C0};
     } catch (...) {
@@ -872,7 +873,7 @@ aclnnStatus CalcNCDHWToFZ3D(
     int64_t C1 = CeilDiv(C, C0);
     int64_t N1 = CeilDiv(N, N0);
 
-    *dstShapeSize = 4; // FZ3D
+    *dstShapeSize = DIMS_FOUR; // FZ3D
     try {
         *dstShape = new int64_t[4]{D * C1 * H * W, N1, N0, C0};
     } catch (...) {
@@ -904,7 +905,7 @@ aclnnStatus CalcDHWCNToFZ3D(
     int64_t C1 = CeilDiv(C, C0);
     int64_t N1 = CeilDiv(N, N0);
 
-    *dstShapeSize = 4; // FZ3D
+    *dstShapeSize = DIMS_FOUR; // FZ3D
     try {
         *dstShape = new int64_t[4]{D * C1 * H * W, N1, N0, C0};
     } catch (...) {
@@ -926,7 +927,7 @@ aclnnStatus CalcToNCDHW(
     int64_t H = viewShape.GetDim(3);
     int64_t W = viewShape.GetDim(4);
 
-    *dstShapeSize = 5; // 5HD
+    *dstShapeSize = DIMS_FIVE; // 5HD
     try {
         *dstShape = new int64_t[5]{N, C, D, H, W};
     } catch (...) {
@@ -947,7 +948,7 @@ aclnnStatus CalcToNCHW(
     int64_t H = viewShape.GetDim(2);
     int64_t W = viewShape.GetDim(3);
 
-    *dstShapeSize = 4; // NCHW
+    *dstShapeSize = DIMS_FOUR; // NCHW
     try {
         *dstShape = new int64_t[4]{N, C, H, W};
     } catch (...) {
@@ -968,7 +969,7 @@ aclnnStatus CalcToNHWC(
     int64_t W = viewShape.GetDim(2);
     int64_t C = viewShape.GetDim(3);
 
-    *dstShapeSize = 4; // NHWC
+    *dstShapeSize = DIMS_FOUR; // NHWC
     try {
         *dstShape = new int64_t[4]{N, C, H, W};
     } catch (...) {
@@ -989,7 +990,7 @@ aclnnStatus CalcToHWCN(
     int64_t C = viewShape.GetDim(2);
     int64_t N = viewShape.GetDim(3);
 
-    *dstShapeSize = 4; // HWCN
+    *dstShapeSize = DIMS_FOUR; // HWCN
     try {
         *dstShape = new int64_t[4]{H, W, C, N};
     } catch (...) {
@@ -1011,7 +1012,7 @@ aclnnStatus CalcToDHWCN(
     int64_t C = viewShape.GetDim(3);
     int64_t N = viewShape.GetDim(4);
 
-    *dstShapeSize = 5; // DHWCN
+    *dstShapeSize = DIMS_FIVE; // DHWCN
     try {
         *dstShape = new int64_t[5]{D, H, W, C, N};
     } catch (...) {
@@ -1033,7 +1034,7 @@ aclnnStatus CalcToNDHWC(
     int64_t W = viewShape.GetDim(3);
     int64_t C = viewShape.GetDim(4);
 
-    *dstShapeSize = 5; // NDHWC
+    *dstShapeSize = DIMS_FIVE; // NDHWC
     try {
         *dstShape = new int64_t[5]{N, D, H, W, C};
     } catch (...) {
@@ -1127,7 +1128,7 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
     if (IsRegBase()) {
         if (dstFormat == op::Format::FORMAT_FRACTAL_NZ &&
          ((srcFormat == op::Format::FORMAT_ND || srcFormat == op::Format::FORMAT_NCL) ||
-         (srcTensor->GetDataType() == dstTensor->GetDataType() && CheckInputFormatSupportedToNz(srcFormat)))) {   
+         (srcTensor->GetDataType() == dstTensor->GetDataType() && CheckInputFormatSupportedToNz(srcFormat)))) {
             ret = Check95NdToNzGetWorkSpaceSizeInputs(srcTensor, dstTensor);
         } else if (IsNz2Nd(srcFormat, dstFormat)) {
             ret = Check95NzToNdGetWorkSpaceSizeInputs(srcTensor, dstTensor);
@@ -1220,7 +1221,7 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
     }
     aclTensor *outTensor;
     int64_t dstDimNum = dstTensor->GetStorageShape().GetDimNum();
-    if (dstTensor->GetStorageShape().GetDim(dstDimNum - 1) == 16 && ge::GetSizeByDataType(srcTensor->GetDataType()) >= 4
+    if (dstTensor->GetStorageShape().GetDim(dstDimNum - 1) == NUM_SIXTEEN && ge::GetSizeByDataType(srcTensor->GetDataType()) >= 4
         && !IsRegBase()) {
         outTensor =
             const_cast<aclTensor*>(l0op::TransDataSpecial(formatTensor, dstTensor->GetStorageFormat(), 1, uniqueExecutor.get()));

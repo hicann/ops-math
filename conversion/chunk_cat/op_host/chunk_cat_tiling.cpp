@@ -25,6 +25,7 @@ constexpr uint32_t RESERVE_UB = 256; // 接口获取UB的预留空间
 constexpr uint32_t HALF = 2; // 半对齐/UB对半切分
 constexpr uint32_t ONETHIRD = 3; // UB对三切分
 constexpr uint32_t DEFAUL_TILING_KEY = 0; // 默认tiling key
+constexpr uint32_t NUM_THIRTY_TWO = 32;
 
 static const std::set<ge::DataType> supportedDtype =
     {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
@@ -144,7 +145,7 @@ void ChunkCatTiling::DoUbSplit()
     if (isRegBase) {
         // 列切
         uint32_t colLimit = inUbSize_ / srcDtypeSize_;
-        colLimit = colLimit - 32 * srcEleUbBlock_;
+        colLimit = colLimit - NUM_THIRTY_TWO * srcEleUbBlock_;
         int64_t ubColLoop = (outputCol_ + colLimit - 1) / colLimit ;
         ubColFactor_ = (outputCol_ + ubColLoop - 1) / ubColLoop;
         ubColFactor_ = (ubColFactor_ + srcEleUbBlock_ - 1) / srcEleUbBlock_ * srcEleUbBlock_;
@@ -239,7 +240,7 @@ static ge::graphStatus Tiling4ChunkCat(gert::TilingContext* context)
         return ge::GRAPH_FAILED);
     tiling.DoUbSplit();
     tiling.DoBlockSplit();
-    
+
     ChunkCatTilingData* tilingData = context->GetTilingData<ChunkCatTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tilingData);
     OP_CHECK_IF(

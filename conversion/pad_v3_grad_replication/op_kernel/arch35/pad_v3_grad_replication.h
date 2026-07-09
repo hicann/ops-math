@@ -26,6 +26,8 @@ using namespace AscendC;
 constexpr uint32_t MAX_DIMS  = PAD_GRAD_REPLICATION_MAX_DIMS_NUM;
 constexpr uint32_t BLOCK_SIZE = 32;
 constexpr uint32_t VREG_BYTES = 256;   // 向量寄存器宽度（arch35）
+constexpr uint32_t DIM_TWO = 2;
+constexpr uint8_t NUM_TWO = 2;
 
 // 精度提升类型：FP16/BF16 → FP32，其它类型保持原样
 template <typename T> struct PromoteOf      { using type = T;     };
@@ -252,7 +254,7 @@ private:
 
         uint32_t tail16    = totalElems % FULL;
         if (tail16 == 0 && totalElems > 0) tail16 = FULL;
-        
+
         uint16_t hasTail    = (tail16 > 0 && tail16 < FULL) ? (uint16_t)1 : (uint16_t)0;
         uint16_t nonTailCnt = loops - hasTail;
         uint32_t tailLo     = tail16;
@@ -281,7 +283,7 @@ private:
             maskB16 = MicroAPI::CreateMask<T, MicroAPI::MaskPattern::ALL>();
             for (uint16_t i = 0; i < nonTailCnt; i++) {
                 uint32_t off = (uint32_t)(loops - 1 - i - hasTail) * FULL;
-                
+
                 MicroAPI::DataCopy(vregB16, b16Ptr + off);
                 MicroAPI::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ZERO>(vregF1, vregB16, maskB16);
                 MicroAPI::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ONE>(vregF2, vregB16, maskB16);
@@ -351,7 +353,7 @@ private:
 
         // 内层行数 = extent[SPLIT_AXIS] × ∏ outputShape[SPLIT_AXIS+1..N-2]
         uint64_t numRowsInner = loadEnd[SPLIT_AXIS] - loadStart[SPLIT_AXIS];
-        for (uint32_t k = SPLIT_AXIS + 1; k <= (uint32_t)DIM_NUM - 2; k++) {
+        for (uint32_t k = SPLIT_AXIS + 1; k <= (uint32_t)DIM_NUM - DIM_TWO; k++) {
             numRowsInner *= outputShape_[k];
         }
 
@@ -391,7 +393,7 @@ private:
         if constexpr (SPLIT_AXIS >= 2) {
             extent2 = loadEnd[SPLIT_AXIS - 2] - loadStart[SPLIT_AXIS - 2];
             loopParams.loop2Size      = extent2;
-            loopParams.loop2SrcStride = (uint32_t)(GmStride(SPLIT_AXIS - 2) * sizeof(T));
+            loopParams.loop2SrcStride = (uint32_t)(GmStride(SPLIT_AXIS - NUM_TWO) * sizeof(T));
             loopParams.loop2DstStride = (uint32_t)((uint64_t)extent1 * innerBlockBytes);
             useLoopParams = useLoopParams || (extent2 > 1);
         }
@@ -427,7 +429,7 @@ private:
                 gmOff += (uint64_t)loadStart[SPLIT_AXIS - 1] * GmStride(SPLIT_AXIS - 1);
             }
             if constexpr (SPLIT_AXIS >= 2) {
-                gmOff += (uint64_t)loadStart[SPLIT_AXIS - 2] * GmStride(SPLIT_AXIS - 2);
+                gmOff += (uint64_t)loadStart[SPLIT_AXIS - NUM_TWO] * GmStride(SPLIT_AXIS - NUM_TWO);
             }
             for (int k = 0; k <= kManualOuterStart; k++) {
                 gmOff += (uint64_t)coords[k] * GmStride(k);

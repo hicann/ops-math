@@ -86,15 +86,15 @@ private:
     uint32_t batchNumTotal = 864;
     int64_t numel = 250000;
 
-    uint32_t stepNum;
-    uint32_t stepBlock;
-    uint32_t roundedSizeNum;
-    uint32_t roundedSizeBlock;
-    float range;
-    uint32_t handleNumLoop;
-    uint32_t handleNumTail;
-    uint32_t totalCoreNum;
-    uint32_t ubSize;
+    uint32_t stepNum = 0;
+    uint32_t stepBlock = 0;
+    uint32_t roundedSizeNum = 0;
+    uint32_t roundedSizeBlock = 0;
+    float range = 0;
+    uint32_t handleNumLoop = 0;
+    uint32_t handleNumTail = 0;
+    uint32_t totalCoreNum = 0;
+    uint32_t ubSize = 0;
 
     uint64_t state = 0;
 
@@ -102,14 +102,14 @@ private:
     float end = 1;
 
     uint32_t dataSizeType = 3;
-    int64_t count;
-    float lambda;
-    uint64_t seed;
-    uint64_t offset;
-    int threadPerProcessor;
-    int streamProcessorCount;
+    int64_t count = 0;
+    float lambda = 0;
+    uint64_t seed = 0;
+    uint64_t offset = 0;
+    int threadPerProcessor = 0;
+    int streamProcessorCount = 0;
 
-    ge::DataType selfDType;
+    ge::DataType selfDType = ge::DT_UNDEFINED;
 };
 } // namespace optiling
 
