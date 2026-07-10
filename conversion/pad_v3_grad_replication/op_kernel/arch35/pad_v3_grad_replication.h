@@ -391,7 +391,7 @@ private:
             useLoopParams = useLoopParams || (extent1 > 1);
         }
         if constexpr (SPLIT_AXIS >= 2) {
-            extent2 = loadEnd[SPLIT_AXIS - 2] - loadStart[SPLIT_AXIS - 2];
+            extent2 = loadEnd[SPLIT_AXIS - NUM_TWO] - loadStart[SPLIT_AXIS - NUM_TWO];
             loopParams.loop2Size      = extent2;
             loopParams.loop2SrcStride = (uint32_t)(GmStride(SPLIT_AXIS - NUM_TWO) * sizeof(T));
             loopParams.loop2DstStride = (uint32_t)((uint64_t)extent1 * innerBlockBytes);
