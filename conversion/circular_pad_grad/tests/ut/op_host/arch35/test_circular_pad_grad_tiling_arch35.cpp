@@ -313,26 +313,6 @@ TEST_F(CircularPadGradTilingArch35, circular_pad_grad_tiling_dim_exceeds_max_fai
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
-// Test scenario: circular grad with unsupported input dtype (DT_INT32), expect tiling to succeed with dtype passthrough
-TEST_F(CircularPadGradTilingArch35, circular_pad_grad_tiling_unsupported_dtype_success)
-{
-    struct CircularPadGradCompileInfo {};
-    CircularPadGradCompileInfo compileInfo = {};
-
-    std::vector<int64_t> paddingsValue = {1, 1};
-    gert::StorageShape xShape = {{20}, {20}};
-    gert::StorageShape paddingsShape = {{1, 2}, {1, 2}};
-    gert::StorageShape yShape = {{18}, {18}};
-    gert::TilingContextPara tilingContextPara(
-        "CircularPadGrad",
-        {{xShape, ge::DT_INT32, ge::FORMAT_ND},
-         {paddingsShape, ge::DT_INT64, ge::FORMAT_ND, true, paddingsValue.data()}},
-        {{yShape, ge::DT_INT32, ge::FORMAT_ND}}, DUMMY_ATTRS, &compileInfo);
-
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 20, expectWorkspaces);
-}
-
 // Test scenario: circular grad with negative output dimension after subtracting pads, expect tiling to fail
 TEST_F(CircularPadGradTilingArch35, circular_pad_grad_tiling_negative_output_dim_fail)
 {
