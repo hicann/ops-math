@@ -49,6 +49,7 @@ const uint32_t MERGE_INTRA_CORE_SORT_ALIGN = 32;    // Sort/Extract API alignmen
 // Beyond 4 merge rounds (>256 blocks), radix sort has little performance disadvantage.
 const uint32_t MERGE_INTRA_CORE_MAX_BLOCKS = 256;
 const uint32_t SORT32_SMALL_AXIS_THRESHOLD = 32;
+const int64_t RADIX_UINT32_VALUE_MAX = 0x3fffffff;  // uint32 radix counters reserve top two bits for state
 
 struct SortTileInfo {
     uint32_t coreNumNeed = 0;
@@ -76,6 +77,12 @@ struct SortTileInfo {
     int64_t sortAxisNum = 1;
     int64_t unSortDimNum = 1;
 };
+
+bool IsRadixUint32CounterRange(int64_t axisLen)
+{
+    return axisLen <= RADIX_UINT32_VALUE_MAX;
+}
+
 static const std::map<ge::DataType, uint32_t> tilingDataTypeBitMap = {
     { ge::DT_INT64, 8 },  { ge::DT_INT32, 4 },   { ge::DT_INT16, 2 },  { ge::DT_INT8, 1 },
     { ge::DT_UINT64, 8 }, { ge::DT_UINT32, 4 },  { ge::DT_UINT16, 2 }, { ge::DT_UINT8, 1 },
@@ -1444,8 +1451,7 @@ ge::graphStatus RadixSortTiling(gert::TilingContext *context, int32_t maxCoreNum
     OP_CHECK_IF(SortCheckParams(context, sortTileInfo) != ge::GRAPH_SUCCESS,
         OP_LOGE(context->GetNodeName(), "check params failed"), return ge::GRAPH_FAILED);
     sortTileInfo.maxCoreNum = static_cast<uint32_t>(maxCoreNum);
-    int64_t int32Max = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
-    uint64_t isInt32 = static_cast<uint64_t>((sortTileInfo.sortAxisNum <= int32Max));
+    uint64_t isInt32 = static_cast<uint64_t>(IsRadixUint32CounterRange(sortTileInfo.sortAxisNum));
     const bool *isDescending = context->GetAttrs()->GetAttrPointer<bool>(1);
     uint64_t isDescend = *isDescending;
     sortTileInfo.isDescend = static_cast<bool>(isDescend);

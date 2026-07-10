@@ -947,7 +947,7 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::PreGlobalEx
 
 template <typename T3>
 __simt_vf__ LAUNCH_BOUND(RADIX_SORT_NUM)__aicore__
-    void SimtGlobalOffset(uint32_t excusiveBinOffset, __gm__ T3 *excusiveBinsGm, __ubuf__ T3 *blockExcusiveBuffer, __gm__ T3* outGM_)
+    void SimtGlobalOffset(uint64_t excusiveBinOffset, __gm__ T3 *excusiveBinsGm, __ubuf__ T3 *blockExcusiveBuffer, __gm__ T3* outGM_)
 {
     for (int32_t i = threadIdx.x; i < RADIX_SORT_NUM; i += RADIX_SORT_NUM) {
         int32_t offset = i;
@@ -967,14 +967,15 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::GetGlobalEx
     if (unsortedDimIndex < unsortedDimNum_) {
         LocalTensor<uint32_t> blockExcusiveUb = blockUbFlagQue_.AllocTensor<uint32_t>();
 
-        uint32_t excusiveBinOffset = unSortId * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM;
+        uint64_t excusiveBinOffset =
+            static_cast<uint64_t>(unSortId) * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM;
         if constexpr (sizeof(T3) == sizeof(uint32_t)) {
             Duplicate(blockExcusiveUb, static_cast<uint32_t>(0), RADIX_SORT_NUM);
         } else {
             Duplicate(blockExcusiveUb, static_cast<uint32_t>(0), RADIX_SORT_NUM * CONST_2);
         }
         for (uint32_t tileId = startTileId; tileId < lastDimTileNum_; tileId += lastDimRealCore_) {
-            uint64_t tileOffset = tileId * numTileData_;    // 可能超过INT64最大值，用uint64
+            uint64_t tileOffset = static_cast<uint64_t>(tileId) * numTileData_;
             uint64_t remainTileDataNum = totalDataNum_ - tileOffset;
             if (totalDataNum_ < tileOffset) {
                 break;
@@ -1014,14 +1015,14 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::GetGlobalEx
             copyParams.blockLen = RADIX_SORT_NUM * sizeof(uint16_t);
             copyParams.srcStride = 0;
             copyParams.dstStride = 0;
-            DataCopyPad(histTileGmWk_[unSortId * RADIX_SORT_NUM * lastDimTileNum_ + tileId * RADIX_SORT_NUM], histUb,
-                copyParams);
+            uint64_t histTileBase = static_cast<uint64_t>(unSortId) * RADIX_SORT_NUM * lastDimTileNum_ +
+                static_cast<uint64_t>(tileId) * RADIX_SORT_NUM;
+            DataCopyPad(histTileGmWk_[histTileBase], histUb, copyParams);
             outIdxQueue_.FreeTensor(histUb);
 
             outValueQueue_.EnQue(histCumsumUb);
             histCumsumUb = outValueQueue_.DeQue<uint16_t>();
-            DataCopyPad(histCumsumTileGmWk_[unSortId * RADIX_SORT_NUM * lastDimTileNum_ + tileId * RADIX_SORT_NUM],
-                histCumsumUb, copyParams);
+            DataCopyPad(histCumsumTileGmWk_[histTileBase], histCumsumUb, copyParams);
             outValueQueue_.FreeTensor(histCumsumUb);
         }
         blockUbFlagQue_.EnQue(blockExcusiveUb);
@@ -1049,8 +1050,8 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::ScatterBloc
     uint32_t tileId, uint32_t round)
 {
     uint32_t unSortId = blockIdx_ / lastDimRealCore_;
-    int64_t unSortIdOffset =
-        unSortId * lastDimTileNum_ * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM * lastDimTileNum_;
+    int64_t unSortIdOffset = static_cast<int64_t>(unSortId) * lastDimTileNum_ * RADIX_SORT_NUM * sizeof(T1) +
+        static_cast<int64_t>(round) * RADIX_SORT_NUM * lastDimTileNum_;
     __local_mem__ uint16_t *blockHistPtr = (__ubuf__ uint16_t *)blockHist.GetPhyAddr();
     __local_mem__ T3 *blockHistWithFlagPtr = (__ubuf__ T3 *)blockHistWithFlag.GetPhyAddr();
     // 软同步，写入状态位2bit
@@ -1171,8 +1172,8 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::LookbackGlo
     LocalTensor<uint32_t> ubFlagTensor, uint32_t tileId, uint32_t round)
 {
     uint32_t unSortId = blockIdx_ / lastDimRealCore_;
-    int64_t unSortIdOffset =
-        unSortId * lastDimTileNum_ * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM * lastDimTileNum_;
+    int64_t unSortIdOffset = static_cast<int64_t>(unSortId) * lastDimTileNum_ * RADIX_SORT_NUM * sizeof(T1) +
+        static_cast<int64_t>(round) * RADIX_SORT_NUM * lastDimTileNum_;
     __local_mem__ T3 *nowTileHistBufferPtr = (__ubuf__ T3 *)nowTileHistBuffer.GetPhyAddr();
 
     uint16_t repeatTime;
@@ -1353,8 +1354,8 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::AddPrevfixM
     LocalTensor<T3> &blockHistWithFlag, GlobalTensor<T3> blockHistToGm, uint32_t tileId, uint32_t round)
 {
     uint32_t unSortId = blockIdx_ / lastDimRealCore_;
-    int64_t unSortIdOffset =
-        unSortId * lastDimTileNum_ * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM * lastDimTileNum_;
+    int64_t unSortIdOffset = static_cast<int64_t>(unSortId) * lastDimTileNum_ * RADIX_SORT_NUM * sizeof(T1) +
+        static_cast<int64_t>(round) * RADIX_SORT_NUM * lastDimTileNum_;
     __local_mem__ T3 *histCumsumPtr = (__ubuf__ T3 *)blockHistWithFlag.GetPhyAddr();
     __local_mem__ T3 *histCumsumPtrCopy = histCumsumPtr;
 
@@ -1415,7 +1416,7 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::AddPrevfixM
 }
 template <typename T1, typename T2, typename T3, int32_t round>
 __simt_vf__ LAUNCH_BOUND(THREAD_DIM_NUM)__aicore__ void CopyOutGm(T3 tileDataStart, uint32_t cureTileSize,
-    uint32_t outputXUnsortedAxisOffset, uint32_t unSortIdOffset,
+    uint64_t outputXUnsortedAxisOffset, uint64_t unSortIdOffset,
     __ubuf__ uint16_t *blockExcusiveSumAddr,     // 当前tile块直方图局部前缀和
     __gm__ volatile T3 *excusiveBinsGmAddr,      // 全局前缀和（适配int64）
     __ubuf__ T3 *blockDataInGlobalPosAddr,       // 位置信息
@@ -1479,8 +1480,8 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::ScatterOutI
     uint32_t round, T3 tileDataStart, uint32_t cureTileSize)
 {
     uint32_t unSortId = blockIdx_ / lastDimRealCore_;
-    uint32_t outputXUnsortedAxisOffset = unSortId * totalDataNum_;
-    uint32_t unSortIdOffset = unSortId * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM;
+    uint64_t outputXUnsortedAxisOffset = static_cast<uint64_t>(unSortId) * totalDataNum_;
+    uint64_t unSortIdOffset = static_cast<uint64_t>(unSortId) * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM;
     if (round == 0) {
         asc_vf_call<CopyOutGm<T1, uint32_t, T3, 0>>(dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
             outputXUnsortedAxisOffset, unSortIdOffset, (__ubuf__ uint16_t *)(blockExcusiveSum.GetPhyAddr()),
@@ -1509,8 +1510,8 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::ScatterOutI
     uint32_t round, T3 tileDataStart, uint32_t cureTileSize)
 {
     uint32_t unSortId = blockIdx_ / lastDimRealCore_;
-    uint32_t outputXUnsortedAxisOffset = unSortId * totalDataNum_;
-    uint32_t unSortIdOffset = unSortId * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM;
+    uint64_t outputXUnsortedAxisOffset = static_cast<uint64_t>(unSortId) * totalDataNum_;
+    uint64_t unSortIdOffset = static_cast<uint64_t>(unSortId) * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM;
     if (round == 0) {
         asc_vf_call<CopyOutGm<T1, uint32_t, T3, 0>>(dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
             outputXUnsortedAxisOffset, unSortIdOffset, (__ubuf__ uint16_t *)(blockExcusiveSum.GetPhyAddr()),
@@ -1548,8 +1549,8 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::ScatterOutI
     uint32_t round, T3 tileDataStart, uint32_t cureTileSize)
 {
     uint32_t unSortId = blockIdx_ / lastDimRealCore_;
-    uint32_t outputXUnsortedAxisOffset = unSortId * totalDataNum_;
-    uint32_t unSortIdOffset = unSortId * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM;
+    uint64_t outputXUnsortedAxisOffset = static_cast<uint64_t>(unSortId) * totalDataNum_;
+    uint64_t unSortIdOffset = static_cast<uint64_t>(unSortId) * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM;
 
     if (round == 0) {
         asc_vf_call<CopyOutGm<T1, T2, T3, 0>>(dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
@@ -1581,8 +1582,9 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::ScatterKeys
     if constexpr (sizeof(T1) == sizeof(int8_t)) {
         // int8时只循环一次,所以scatter时肯定要按照输出数据类型
         uint32_t unSortId = blockIdx_ / lastDimRealCore_;
-        uint32_t outputXUnsortedAxisOffset = unSortId * totalDataNum_;
-        uint32_t unSortIdOffset = unSortId * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM;
+        uint64_t outputXUnsortedAxisOffset = static_cast<uint64_t>(unSortId) * totalDataNum_;
+        uint64_t unSortIdOffset =
+            static_cast<uint64_t>(unSortId) * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM;
         GlobalTensor<T2> outIdxT2 = (idxDbGm_.Alternate()).template ReinterpretCast<T2>();
         asc_vf_call<CopyOutGm<T1, T2, T3, 0>>(dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
             outputXUnsortedAxisOffset, unSortIdOffset, (__ubuf__ uint16_t *)(blockExcusiveSum.GetPhyAddr()),
@@ -1622,17 +1624,16 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::DataCopyWor
     LocalTensor<uint8_t> inputX8Ub, LocalTensor<uint16_t> blockExcusiveUb, LocalTensor<uint16_t> blockHistUb,
     uint32_t unSortId, uint32_t tileId, uint32_t curSize)
 {
+    uint64_t histTileBase = static_cast<uint64_t>(unSortId) * RADIX_SORT_NUM * lastDimTileNum_ +
+        static_cast<uint64_t>(tileId) * RADIX_SORT_NUM;
     DataCopyPadExtParams<uint16_t> padParams{ false, 0, 0, 0 };
     DataCopyExtParams dataCopyParam;
     dataCopyParam.blockCount = 1;
     dataCopyParam.blockLen = RADIX_SORT_NUM * sizeof(uint16_t);
     dataCopyParam.srcStride = 0;
     dataCopyParam.dstStride = 0;
-    DataCopyPad(blockExcusiveUb,
-        histCumsumTileGmWk_[unSortId * RADIX_SORT_NUM * lastDimTileNum_ + tileId * RADIX_SORT_NUM], dataCopyParam,
-        padParams);
-    DataCopyPad(blockHistUb, histTileGmWk_[unSortId * RADIX_SORT_NUM * lastDimTileNum_ + tileId * RADIX_SORT_NUM],
-        dataCopyParam, padParams);
+    DataCopyPad(blockExcusiveUb, histCumsumTileGmWk_[histTileBase], dataCopyParam, padParams);
+    DataCopyPad(blockHistUb, histTileGmWk_[histTileBase], dataCopyParam, padParams);
 
     DataCopyPadExtParams<uint8_t> padParamsB8{ false, 0, 0, 0 };
     DataCopyExtParams dataCopyParam1;
@@ -1640,7 +1641,9 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::DataCopyWor
     dataCopyParam1.blockLen = curSize * sizeof(uint8_t);
     dataCopyParam1.srcStride = 0;
     dataCopyParam1.dstStride = 0;
-    DataCopyPad(inputX8Ub, xB8GmWk_[unSortId * totalDataNum_ + tileId * numTileData_], dataCopyParam1, padParamsB8);
+    DataCopyPad(inputX8Ub,
+        xB8GmWk_[static_cast<uint64_t>(unSortId) * totalDataNum_ + static_cast<uint64_t>(tileId) * numTileData_],
+        dataCopyParam1, padParamsB8);
 }
 template <typename T1, typename T2, typename UT, typename T3, uint64_t isDescend>
 __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::ComputeOnePass(uint32_t round,
@@ -1652,8 +1655,8 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::ComputeOneP
     int64_t xUnsortOffset = unSortId * totalDataNum_;
     if (unsortedDimIndex < unsortedDimNum_) {
         for (uint32_t tileId = startId; tileId < lastDimTileNum_; tileId += lastDimRealCore_) {
-            uint64_t tileOffset = tileId * numTileData_;
-            uint64_t tileDataStart = tileId * numTileData_; // 可能超INT64最大值，用uint64
+            uint64_t tileOffset = static_cast<uint64_t>(tileId) * numTileData_;
+            uint64_t tileDataStart = static_cast<uint64_t>(tileId) * numTileData_;
             uint64_t remainTileDataNum = totalDataNum_ - tileDataStart;
             if (totalDataNum_ < tileDataStart) {
                 break;
