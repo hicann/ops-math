@@ -758,6 +758,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/expint/README.md">expint</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>计算指数积分函数。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/expm1/README.md">expm1</a></td>
     <td>√</td>
     <td>√</td>
