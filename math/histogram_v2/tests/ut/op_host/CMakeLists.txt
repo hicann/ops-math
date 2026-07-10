@@ -9,18 +9,22 @@
 # ----------------------------------------------------------------------------
 
 if(UT_TEST_ALL OR OP_HOST_UT)
-    # HistogramV2 has two tiling templates selected by SoC (IsRegbaseSocVersion):
-    #   ascend950               -> arch35 (HistogramV2SimtTiling)
-    #   ascend310p/910_93/910b  -> arch32 (HistogramV2MembaseTiling)
-    # The tiling UT is compiled once per BUILD_SOC_VERSION, and tiling_context_faker sets the SoC
-    # from BUILD_SOC_VERSION, so only the matching template is capable. Gate the arch-specific
-    # tiling cases by ASCEND_COMPUTE_UNIT so each set is compiled only where its template runs.
-    if("${ASCEND_COMPUTE_UNIT}" STREQUAL "ascend950")
-        add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR} TILING_DIR arch35)
-    else()
-        add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR} TILING_DIR arch32)
-    endif()
+    # HistogramV2 has two tiling templates selected at runtime by SoC (IsRegbaseSocVersion):
+    #   RegBase (ascend950)               -> arch35 (HistogramV2SimtTiling)
+    #   non-RegBase (ascend310p/910_93/910b) -> arch32 (HistogramV2MembaseTiling)
+    # Both arch UTs are compiled unconditionally: each test case fakes the SoC it needs via
+    # TilingContextPara::socVersion_ (arch35 -> "ascend950", arch32 -> "ascend910b"), so a single
+    # build (any BUILD_SOC_VERSION) exercises BOTH templates and covers both tiling sources.
+    add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR} TILING_DIR arch35)
+    add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR} TILING_DIR arch32)
     add_modules_ut_sources(UT_NAME ${OP_INFERSHAPE_MODULE_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    # histogram_v2_tiling_ut_util.h fetches/runs tiling via the op-impl space registry (to fake the
+    # SoC per case). That header lives under ${ASCEND_DIR}/pkg_inc, which the shared tiling common
+    # obj already includes but the cases obj does not — add it here just for this op's cases obj.
+    # The registry symbols themselves come from libs the UT already links.
+    if(TARGET ${OP_TILING_MODULE_NAME}_cases_obj)
+        target_include_directories(${OP_TILING_MODULE_NAME}_cases_obj PRIVATE ${ASCEND_DIR}/pkg_inc)
+    endif()
 endif()
 
 file(GLOB CURRENT_DIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
