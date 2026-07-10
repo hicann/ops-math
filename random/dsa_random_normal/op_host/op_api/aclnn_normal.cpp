@@ -212,7 +212,7 @@ static const aclTensor* normalDavidPath(
 
         // 调用normal_算子kernel function(AI Cpu算子)
         int64_t alg = 1;
-        auto algScalar = executor->AllocScalar(reinterpret_cast<void*>(&alg), DataType::DT_INT32);
+        auto algScalar = executor->AllocScalar(&alg, DataType::DT_INT32);
         const aclTensor* algTensor = executor->ConvertToTensor(algScalar, op::ToOpDataType(ACL_INT32));
         auto stateLessOut =
             l0op::StatelessRandomNormalV2(selfContiguous, keyArr, counterArr, algTensor, executor);
@@ -288,7 +288,7 @@ static const aclTensor* normalTensorDavidPath(
         CHECK_RET(resultAddOut != nullptr, nullptr);
 
         int64_t alg = 1;
-        auto algScalar = executor->AllocScalar(reinterpret_cast<void*>(&alg), DataType::DT_INT32);
+        auto algScalar = executor->AllocScalar(&alg, DataType::DT_INT32);
         const aclTensor* algTensor = executor->ConvertToTensor(algScalar, op::ToOpDataType(ACL_INT32));
         auto stateLessOut =
             l0op::StatelessRandomNormalV2(selfContiguous, normalSeedU64, resultAddOut, algTensor, executor);

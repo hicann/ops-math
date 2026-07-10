@@ -205,7 +205,7 @@ void PadV3GradReplicationTiling::CalcStrideAligned()
     uint64_t rowSizeAligned = GetSizeOfBlockAlign(rowSize, blockSize_) / dataSize_;
 
     for (int64_t k = dimNum_ - NUM_TWO; k >= 0; k--) {
-        if (k == dimNum_ - 2) {
+        if (k == dimNum_ - NUM_TWO) {
             strideAligned_[k] = rowSizeAligned; // 中间维stride（行stride，blockSize对齐）
         } else {
             strideAligned_[k] = strideAligned_[k + 1] * outputShape_[k + 1];

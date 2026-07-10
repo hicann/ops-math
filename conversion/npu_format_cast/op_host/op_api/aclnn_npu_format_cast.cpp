@@ -60,7 +60,9 @@ static constexpr int64_t BLOCK_SIZE = 32;
 static constexpr size_t FRACTAL_NZ_C0_4B = 64;
 static constexpr int64_t C0_SIZE = 16;
 static constexpr int64_t N0_SIZE = 16;
+static constexpr int64_t NUM_ONE = 1;
 static constexpr int64_t NUM_SIXTEEN = 16;
+static constexpr int NUM_FOUR = 4;
 static constexpr const char* ACLNN_NAME = "aclnnNpuFormatCast";
 
 const std::set<std::pair<op::Format, op::Format>> kTransdataForwardFormatPairsRegBase = {
@@ -1221,7 +1223,7 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
     }
     aclTensor *outTensor;
     int64_t dstDimNum = dstTensor->GetStorageShape().GetDimNum();
-    if (dstTensor->GetStorageShape().GetDim(dstDimNum - 1) == NUM_SIXTEEN && ge::GetSizeByDataType(srcTensor->GetDataType()) >= 4
+    if (dstTensor->GetStorageShape().GetDim(dstDimNum - NUM_ONE) == NUM_SIXTEEN && ge::GetSizeByDataType(srcTensor->GetDataType()) >= NUM_FOUR
         && !IsRegBase()) {
         outTensor =
             const_cast<aclTensor*>(l0op::TransDataSpecial(formatTensor, dstTensor->GetStorageFormat(), 1, uniqueExecutor.get()));
