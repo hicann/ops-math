@@ -39,6 +39,7 @@ namespace ops {
 // D1 scenario: uses kCompatibleInherited stage (9.0.0+).
 // Strategy: compile-time macro guard + runtime version check + overall silence.
 #define GE_COMPILER_VERSION_900 90000000
+#define GE_COMPILER_VERSION_910 90100000
 #if GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
 
 // Weak declare aclsysGetVersionNum to avoid hard link dependency on libascendcl.
@@ -197,10 +198,27 @@ static es::EsTensorHolder BuildTransposeNode(es::EsGraphBuilder& replaceGraphBui
     return es::EsTensorHolder(output);
 }
 
+static bool IsTargetVersion()
+{
+    int32_t version = 0;
+    char pkgName[] = "ge_compiler";
+    if (aclsysGetVersionNum) {
+        aclsysGetVersionNum(pkgName, &version);
+    }
+    if (version >= GE_COMPILER_VERSION_910) {
+        return true;
+    }
+    return false;
+}
+
 std::vector<PatternUniqPtr> PermuteFusionPass::Patterns()
 {
     OP_LOGD(kFusionPassName.c_str(), "Enter Patterns for PermuteFusionPass.");
     std::vector<PatternUniqPtr> patternGraphs;
+
+    if (!IsTargetVersion()) {
+        return patternGraphs;
+    }
 
     auto graphBuilder = es::EsGraphBuilder("PermuteFusionPass");
 
@@ -238,8 +256,9 @@ bool PermuteFusionPass::MeetRequirements(const std::unique_ptr<MatchResult>& mat
 
     // Runtime version check: on GE 8.5.0, return false to no-op.
     int32_t version = 0;
+    char pkgName[] = "ge_compiler";
     if (aclsysGetVersionNum) {
-        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+        aclsysGetVersionNum(pkgName, &version);
     }
     if (version < GE_COMPILER_VERSION_900) {
         OP_LOGD(kFusionPassName.c_str(), "GE runtime version %d < 90000000, skip pass.", version);

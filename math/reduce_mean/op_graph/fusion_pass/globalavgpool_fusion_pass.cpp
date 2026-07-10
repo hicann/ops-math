@@ -25,13 +25,13 @@ namespace ops {
 // D1 scenario: uses kCompatibleInherited stage (9.0.0+).
 // Strategy: compile-time macro guard + runtime version check + overall silence.
 #define GE_COMPILER_VERSION_900 90000000
+#define GE_COMPILER_VERSION_910 90100000
 #if GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
 
 // Weak declare aclsysGetVersionNum to avoid hard link dependency on libascendcl.
 // At runtime: if GE >= 9.0.0, symbol resolves normally; if GE 8.5.0, pointer is NULL.
 extern "C" {
-__attribute__((weak))
-int32_t aclsysGetVersionNum(char* pkgName, int32_t* versionNum);
+__attribute__((weak)) int32_t aclsysGetVersionNum(char* pkgName, int32_t* versionNum);
 }
 
 const std::string FUSION_PASS_NAME = "GlobalavgpoolPass";
@@ -53,13 +53,12 @@ CustomPassStage GetGlobalavgpoolPassStage()
     if (version >= GE_COMPILER_VERSION_900) {
         return CustomPassStage::kCompatibleInherited;
     }
-    return CustomPassStage::kBeforeInferShape;  // fallback to old stage for 8.5.0
+    return CustomPassStage::kBeforeInferShape; // fallback to old stage for 8.5.0
 }
-}  // anonymous namespace
+} // anonymous namespace
 
-static void GetInputsInfo(
-    const std::vector<SubgraphInput>& subGraphInputs, std::vector<Shape>& inputShapes,
-    std::vector<DataType>& inputDtypes, std::vector<Format>& inputFormats)
+static void GetInputsInfo(const std::vector<SubgraphInput>& subGraphInputs, std::vector<Shape>& inputShapes,
+                          std::vector<DataType>& inputDtypes, std::vector<Format>& inputFormats)
 {
     for (const auto& subGraphInput : subGraphInputs) {
         auto matchNode = subGraphInput.GetAllInputs().at(0);
@@ -72,12 +71,13 @@ static void GetInputsInfo(
             // 如果失败，尝试获取输出描述
             status = matchNode.node.GetOutputDesc(matchNode.index, tensorDesc);
             if (status != GRAPH_SUCCESS) {
-                OP_LOGE("GlobalavgpoolPass", "Failed to get output desc from GlobalAveragePool node, status: %u", status);
+                OP_LOGE("GlobalavgpoolPass", "Failed to get output desc from GlobalAveragePool node, status: %u",
+                        status);
                 // 使用默认值
                 tensorDesc.SetDataType(DT_FLOAT);
                 tensorDesc.SetFormat(FORMAT_ND);
                 // 使用合理的默认形状
-                Shape defaultShape({1, 1, 1});  // 3D默认形状
+                Shape defaultShape({1, 1, 1}); // 3D默认形状
                 tensorDesc.SetShape(defaultShape);
             }
         }
@@ -96,7 +96,8 @@ static Status InferShape(const GraphUniqPtr& replaceGraph, const std::vector<Sub
         // matchNode.node是GlobalAveragePool节点，matchNode.index是输出索引（0）
         // 我们需要获取GlobalAveragePool的输入描述（索引0）
         if (matchNode.node.GetInputDesc(0, tensorDesc) != GRAPH_SUCCESS) {
-            OP_LOGE_WITHOUT_REPORT("GlobalavgpoolPass", "Failed to get input desc from GlobalAveragePool node in InferShape");
+            OP_LOGE_WITHOUT_REPORT("GlobalavgpoolPass",
+                                   "Failed to get input desc from GlobalAveragePool node in InferShape");
             // 如果失败，尝试获取输出描述
             matchNode.node.GetOutputDesc(matchNode.index, tensorDesc);
         }
@@ -105,35 +106,52 @@ static Status InferShape(const GraphUniqPtr& replaceGraph, const std::vector<Sub
     return GeUtils::InferShape(*replaceGraph, inputShapes);
 }
 
+static bool IsTargetVersion()
+{
+    int32_t version = 0;
+    char pkgName[] = "ge_compiler";
+    if (aclsysGetVersionNum) {
+        aclsysGetVersionNum(pkgName, &version);
+    }
+    if (version >= GE_COMPILER_VERSION_910) {
+        return true;
+    }
+    return false;
+}
+
 std::vector<PatternUniqPtr> GlobalavgpoolPass::Patterns()
 {
     OP_LOGD(FUSION_PASS_NAME.c_str(), "Enter Patterns for GlobalavgpoolPass");
     std::vector<PatternUniqPtr> patternGraphs;
+    if (!IsTargetVersion()) {
+        return patternGraphs;
+    }
     auto graphBuilder = es::EsGraphBuilder(FUSION_PASS_NAME.c_str());
 
     // 创建输入
     auto x = graphBuilder.CreateInput(0);
     OP_LOGD(FUSION_PASS_NAME.c_str(), "Created input node");
-    
+
     // 构建 GlobalAveragePool 节点
     // 注意：我们需要获取Graph对象来构建CompliantNode
     auto* graph = graphBuilder.GetCGraphBuilder()->GetGraph();
     OP_LOGD(FUSION_PASS_NAME.c_str(), "Got graph pointer: %p", graph);
     auto globalAvgPool = es::CompliantNodeBuilder(graph)
-        .OpType("GlobalAveragePool")
-        .Name("global_avg_pool")
-        .IrDefInputs({{"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""}})
-        .IrDefOutputs({{"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""}})
-        .Build();
+                             .OpType("GlobalAveragePool")
+                             .Name("global_avg_pool")
+                             .IrDefInputs({{"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""}})
+                             .IrDefOutputs({{"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""}})
+                             .Build();
     OP_LOGD(FUSION_PASS_NAME.c_str(), "Built GlobalAveragePool node");
-    
+
     // 连接输入 - 使用正确的Graph参数
-    if (es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(), globalAvgPool, 0) != GRAPH_SUCCESS) {
+    if (es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(), globalAvgPool, 0) !=
+        GRAPH_SUCCESS) {
         OP_LOGE_WITHOUT_REPORT(FUSION_PASS_NAME.c_str(), "Failed to add edge in pattern");
         return patternGraphs;
     }
     OP_LOGD(FUSION_PASS_NAME.c_str(), "Added edge successfully");
-    
+
     // 获取输出并构建图
     // 注意：GetTensorHolderFromNode需要EsCGraphBuilder和节点
     auto y = graphBuilder.GetCGraphBuilder()->GetTensorHolderFromNode(globalAvgPool, 0);
@@ -148,7 +166,7 @@ std::vector<PatternUniqPtr> GlobalavgpoolPass::Patterns()
     NodeIo nodeIo = {y->GetProducer(), 0};
     pattern->CaptureTensor(nodeIo);
     OP_LOGD(FUSION_PASS_NAME.c_str(), "Pattern created and tensor captured");
-    
+
     patternGraphs.emplace_back(std::move(pattern));
     return patternGraphs;
 }
@@ -156,11 +174,12 @@ std::vector<PatternUniqPtr> GlobalavgpoolPass::Patterns()
 bool GlobalavgpoolPass::MeetRequirements(const std::unique_ptr<MatchResult>& match_result)
 {
     OP_LOGD(FUSION_PASS_NAME.c_str(), "=== Enter MeetRequirements for GlobalavgpoolPass ===");
-    
+
     // Runtime version check: on GE 8.5.0, return false to no-op.
     int32_t version = 0;
+    char pkgName[] = "ge_compiler";
     if (aclsysGetVersionNum) {
-        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+        aclsysGetVersionNum(pkgName, &version);
     }
     if (version < GE_COMPILER_VERSION_900) {
         OP_LOGD(FUSION_PASS_NAME.c_str(), "GE runtime version %d < 90000000, skip pass.", version);
@@ -175,7 +194,7 @@ bool GlobalavgpoolPass::MeetRequirements(const std::unique_ptr<MatchResult>& mat
         OP_LOGE_WITHOUT_REPORT(FUSION_PASS_NAME.c_str(), "Failed to GetCaptrue tensor");
         return false;
     }
-    
+
     auto node = matchedNode.node;
     AscendString nodeType;
     node.GetType(nodeType);
@@ -221,7 +240,8 @@ GraphUniqPtr GlobalavgpoolPass::Replacement(const std::unique_ptr<MatchResult>& 
     auto replaceGraphBuilder = es::EsGraphBuilder("replacement");
 
     // 创建输入节点 - 使用带有数据类型和形状的重载版本
-    auto reduceMeanInput = replaceGraphBuilder.CreateInput(0, "x", inputDtypes[0], inputFormats[0], inputShapes[0].GetDims());
+    auto reduceMeanInput = replaceGraphBuilder.CreateInput(0, "x", inputDtypes[0], inputFormats[0],
+                                                           inputShapes[0].GetDims());
 
     // 根据输入维度计算axes
     int64_t inputDim = inputShapes[0].GetDims().size();
@@ -244,28 +264,32 @@ GraphUniqPtr GlobalavgpoolPass::Replacement(const std::unique_ptr<MatchResult>& 
     // 使用CompliantNodeBuilder创建ReduceMean节点
     auto* graph = replaceGraphBuilder.GetCGraphBuilder()->GetGraph();
     auto reduceMeanNode = es::CompliantNodeBuilder(graph)
-        .OpType("ReduceMean")
-        .Name("reduce_mean")
-        .IrDefInputs({
-            {"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
-            {"axes", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
-        })
-        .IrDefOutputs({
-            {"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""},
-        })
-        .IrDefAttrs({
-            {"keep_dims", es::CompliantNodeBuilder::kEsAttrRequired, "Bool", es::CreateFrom(true)},
-            {"noop_with_empty_axes", es::CompliantNodeBuilder::kEsAttrRequired, "Bool", es::CreateFrom(true)},
-        })
-        .Build();
+                              .OpType("ReduceMean")
+                              .Name("reduce_mean")
+                              .IrDefInputs({
+                                  {"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
+                                  {"axes", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
+                              })
+                              .IrDefOutputs({
+                                  {"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""},
+                              })
+                              .IrDefAttrs({
+                                  {"keep_dims", es::CompliantNodeBuilder::kEsAttrRequired, "Bool",
+                                   es::CreateFrom(true)},
+                                  {"noop_with_empty_axes", es::CompliantNodeBuilder::kEsAttrRequired, "Bool",
+                                   es::CreateFrom(true)},
+                              })
+                              .Build();
     // 连接输入
-    if (es::AddEdgeAndUpdatePeerDesc(*graph, *reduceMeanInput.GetProducer(), reduceMeanInput.GetProducerOutIndex(), reduceMeanNode, 0) != GRAPH_SUCCESS) {
+    if (es::AddEdgeAndUpdatePeerDesc(*graph, *reduceMeanInput.GetProducer(), reduceMeanInput.GetProducerOutIndex(),
+                                     reduceMeanNode, 0) != GRAPH_SUCCESS) {
         OP_LOGE_WITHOUT_REPORT(FUSION_PASS_NAME.c_str(), "Failed to add edge for reduceMean input");
         return nullptr;
     }
 
     // 连接axes常量节点
-    if (es::AddEdgeAndUpdatePeerDesc(*graph, *axesConst.GetProducer(), axesConst.GetProducerOutIndex(), reduceMeanNode, 1) != GRAPH_SUCCESS) {
+    if (es::AddEdgeAndUpdatePeerDesc(*graph, *axesConst.GetProducer(), axesConst.GetProducerOutIndex(), reduceMeanNode,
+                                     1) != GRAPH_SUCCESS) {
         OP_LOGE_WITHOUT_REPORT(FUSION_PASS_NAME.c_str(), "Failed to add edge for axes constant");
         return nullptr;
     }
@@ -288,6 +312,6 @@ GraphUniqPtr GlobalavgpoolPass::Replacement(const std::unique_ptr<MatchResult>& 
 
 REG_FUSION_PASS(GlobalavgpoolPass).Stage(GetGlobalavgpoolPassStage());
 
-#endif  // GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
+#endif // GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
 
 } // namespace ops
