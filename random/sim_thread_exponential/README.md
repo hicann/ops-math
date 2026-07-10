@@ -1,4 +1,5 @@
 # SimThreadExponential
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -14,7 +15,7 @@
 
 - 算子功能：生成服从参数为lambda的指数分布随机数，并将其填充到self张量中。
 - 计算公式：
-  
+
   $$
   f(x) = -\frac{1}{\lambda} \ln(1 - u), u \sim \text{Uniform}(0, 1]
   $$
