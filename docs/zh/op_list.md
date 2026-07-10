@@ -498,6 +498,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/conj/README.md">conj</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CPU</td>
+    <td>返回复数张量的共轭，对输入每个复数元素取共轭（实部不变、虚部取反）。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/cos/README.md">cos</a></td>
     <td>√</td>
     <td>√</td>
@@ -2405,6 +2415,16 @@
     <td>√</td>
     <td>AI CPU</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/conjugate_transpose/README.md">conjugate_transpose</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CPU</td>
+    <td>按perm指定的维度顺序对输入x做转置并取共轭，实数类型等价于普通Transpose。</td>
   </tr>
   <tr>
     <td>conversion</td>
