@@ -30,37 +30,37 @@
   - aclnnDivs：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceDivs：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 - 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnDivsGetWorkspaceSize”或者“aclnnInplaceDivsGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnDivs”或者“aclnnInplaceDivs”接口执行计算。
-  
+
 ```Cpp
 aclnnStatus aclnnDivsGetWorkspaceSize(
-  const aclTensor *self, 
-  const aclScalar *other, 
-  aclTensor       *out, 
-  uint64_t        *workspaceSize, 
+  const aclTensor *self,
+  const aclScalar *other,
+  aclTensor       *out,
+  uint64_t        *workspaceSize,
   aclOpExecutor  **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnDivs(
-  void          *workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor, 
+  void          *workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor *executor,
   aclrtStream    stream)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceDivsGetWorkspaceSize(
-  aclTensor       *selfRef, 
-  const aclScalar *other, 
-  uint64_t        *workspaceSize, 
+  aclTensor       *selfRef,
+  const aclScalar *other,
+  uint64_t        *workspaceSize,
 aclOpExecutor    **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceDivs(
-  void          *workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor, 
+  void          *workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor *executor,
   aclrtStream    stream)
 ```
 
@@ -150,14 +150,14 @@ aclnnStatus aclnnInplaceDivs(
     - self数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
   - <term>Ascend 950PR/Ascend 950DT</term>：
     - out数据类型不支持INT32、INT64、INT16、INT8、UINT8、BOOL。
-    - self数据类型与other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)，推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
+    - self数据类型与other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)，推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  
+
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 272px">
   <col style="width: 114px">
@@ -311,14 +311,14 @@ aclnnStatus aclnnInplaceDivs(
     - selfRef数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
   - <term>Ascend 950PR/Ascend 950DT</term>：
     - selfRef数据类型不支持INT32、INT64、INT16、INT8、UINT8、BOOL。
-    - selfRef数据类型与other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)，推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
+    - selfRef数据类型与other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)，推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  
+
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 272px">
   <col style="width: 114px">

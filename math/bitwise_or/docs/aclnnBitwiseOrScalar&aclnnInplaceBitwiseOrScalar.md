@@ -144,16 +144,16 @@ aclnnStatus aclnnInplaceBitwiseOrScalar(
     </tr>
   </tbody></table>
 
-  - <term>Ascend 950PR/Ascend 950DT</term>：self和other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
+  - <term>Ascend 950PR/Ascend 950DT</term>：self和other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)。
 
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
     - self和other的数据类型不支持UINT32、UINT64；
     - out数据类型不支持UINT32、UINT64、COMPLEX64、COMPLEX128。
-  
+
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：
     - self和other的数据类型不支持UINT32、UINT64；
     - out数据类型不支持BFLOAT16、UINT32、UINT64、COMPLEX64、COMPLEX128。
-  
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -308,7 +308,7 @@ aclnnStatus aclnnInplaceBitwiseOrScalar(
     </tr>
   </tbody></table>
 
-  - <term>Ascend 950PR/Ascend 950DT</term>：selfRef和other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)，且需要是推导之后可转换的数据类型。
+  - <term>Ascend 950PR/Ascend 950DT</term>：selfRef和other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)，且需要是推导之后可转换的数据类型。
 
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：selfRef和other的数据类型不支持UINT32、UINT64。
 
@@ -508,7 +508,7 @@ int main() {
   // 调用aclnnBitwiseOrScalar第二段接口
   ret = aclnnBitwiseOrScalar(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnBitwiseOrScalar failed. ERROR: %d\n", ret); return ret);
-  
+
   // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);

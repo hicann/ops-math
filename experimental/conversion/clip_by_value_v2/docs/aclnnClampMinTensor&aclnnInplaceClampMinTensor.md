@@ -26,34 +26,34 @@
 
 ```cpp
 aclnnStatus aclnnClampMinTensorGetWorkspaceSize(
-    const aclTensor* self, 
+    const aclTensor* self,
     const aclTensor* clipValueMin,
-    aclTensor*       out, 
-    uint64_t*        workspaceSize, 
+    aclTensor*       out,
+    uint64_t*        workspaceSize,
     aclOpExecutor**  executor)
 ```
 
 ```cpp
 aclnnStatus aclnnClampMinTensor(
-    void*             workspace, 
-    uint64_t          workspaceSize, 
-    aclOpExecutor*    executor, 
+    void*             workspace,
+    uint64_t          workspaceSize,
+    aclOpExecutor*    executor,
     const aclrtStream stream)
 ```
 
 ```cpp
 aclnnStatus aclnnInplaceClampMinTensorGetWorkspaceSize(
-    aclTensor*       selfRef, 
-    const aclTensor* clipValueMin, 
-    uint64_t*        workspaceSize, 
+    aclTensor*       selfRef,
+    const aclTensor* clipValueMin,
+    uint64_t*        workspaceSize,
     aclOpExecutor**  executor)
 ```
 
 ```cpp
 aclnnStatus aclnnInplaceClampMinTensor(
-    void*             workspace, 
-    uint64_t          workspaceSize, 
-    aclOpExecutor*    executor, 
+    void*             workspace,
+    uint64_t          workspaceSize,
+    aclOpExecutor*    executor,
     const aclrtStream stream)
 ```
 
@@ -287,7 +287,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
     - clipValueMax的数据类型不支持BFLOAT16。
 
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：
-    - selfRef和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../../docs/zh/context/TensorScalar互推导关系.md)）。
+    - selfRef和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../../docs/zh/context/互推导关系.md)）。
     - selfRef的数据类型不支持BOOL。
 
 - **返回值：**
@@ -295,7 +295,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  
+
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
@@ -538,7 +538,7 @@ int main() {
     LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
   }
 
-  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改  
+  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   ReleaseTensorAndScalar(self, min, out);
 
   // 7.释放device资源，需要根据具体API的接口定义修改
@@ -661,10 +661,10 @@ int main() {
   void* minDeviceAddr = nullptr;
   aclTensor* self = nullptr;
   aclTensor* min = nullptr;
-  
+
   ret = PrepareInputAndOutput(selfShape, minShape, &selfDeviceAddr, &self, &minDeviceAddr, &min);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  
+
   // 3. 调用CANN算子库API
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
@@ -696,7 +696,7 @@ int main() {
     LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
   }
 
-  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改  
+  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   ReleaseTensorAndScalar(self, min);
 
   // 7. 释放device资源

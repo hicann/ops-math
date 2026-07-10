@@ -28,18 +28,18 @@
 
 ```Cpp
 aclnnStatus aclnnInplaceAddsGetWorkspaceSize(
-  const aclTensor *selfRef, 
-  const aclScalar *other, 
-  const aclScalar *alpha, 
-  uint64_t        *workspaceSize, 
+  const aclTensor *selfRef,
+  const aclScalar *other,
+  const aclScalar *alpha,
+  uint64_t        *workspaceSize,
   aclOpExecutor  **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceAdds(
-  void          *workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor, 
+  void          *workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor *executor,
   aclrtStream    stream)
 ```
 
@@ -128,12 +128,12 @@ aclnnStatus aclnnInplaceAdds(
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
     - selfRef与other满足[互推导关系](../../../docs/zh/context/互推导关系.md)，且需要是推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。
   - <term>Ascend 950PR/Ascend 950DT</term>：
-    - selfRef与other满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)，且需要是推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。
+    - selfRef与other满足[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)，且需要是推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
+
   第一段接口完成入参校验，出现以下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>

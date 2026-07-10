@@ -28,26 +28,26 @@
 
 ```Cpp
   aclnnStatus aclnnAddsGetWorkspaceSize(
-  const aclTensor* self, 
-  const aclScalar* other, 
-  const aclScalar* alpha, 
-  aclTensor*       out, 
-  uint64_t*        workspaceSize, 
+  const aclTensor* self,
+  const aclScalar* other,
+  const aclScalar* alpha,
+  aclTensor*       out,
+  uint64_t*        workspaceSize,
   aclOpExecutor**  executor)
 ```
 
 ```Cpp
   aclnnStatus aclnnAdds(
-  void*          workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor* executor, 
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
   aclrtStream    stream)
 ```
 
 ## aclnnAddsGetWorkspaceSize
 
 - **参数说明：**
-  
+
     <table style="undefined;table-layout: fixed; width: 1510px"><colgroup>
     <col style="width: 153px">
     <col style="width: 120px">
@@ -132,12 +132,12 @@
       </tr>
     </tbody>
     </table>
-  
+
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：
       - 不支持BFLOAT16数据类型。
       - self与other数据类型满足[互推导关系](../../../docs/zh/context/互推导关系.md)。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：self与other数据类型满足[互推导关系](../../../docs/zh/context/互推导关系.md)。  
-    - <term>Ascend 950PR/Ascend 950DT</term>：other数据类型与与self满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：self与other数据类型满足[互推导关系](../../../docs/zh/context/互推导关系.md)。
+    - <term>Ascend 950PR/Ascend 950DT</term>：other数据类型与与self满足[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)。
 
 - **返回值：**
 
@@ -188,7 +188,7 @@
 ## aclnnAdds
 
 - **参数说明：**
-  
+
     <table style="undefined;table-layout: fixed; width: 1110px"><colgroup>
     <col style="width: 153px">
     <col style="width: 124px">
@@ -223,7 +223,7 @@
       </tr>
     </tbody>
     </table>
-  
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。

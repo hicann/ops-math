@@ -33,32 +33,32 @@
 
 ```cpp
 aclnnStatus aclnnClampMaxTensorGetWorkspaceSize(
-    const aclTensor* self, 
-    const aclTensor* max, 
-    aclTensor*       out, 
-    uint64_t*        workspaceSize, 
+    const aclTensor* self,
+    const aclTensor* max,
+    aclTensor*       out,
+    uint64_t*        workspaceSize,
     aclOpExecutor**  executor)
 
 ```cpp
 aclnnStatus aclnnClampMaxTensor(
-    void*          workspace, 
-    uint64_t       workspaceSize, 
-    aclOpExecutor* executor, 
+    void*          workspace,
+    uint64_t       workspaceSize,
+    aclOpExecutor* executor,
     aclrtStream    stream)
 ```
 
 ```cpp
 aclnnStatus aclnnInplaceClampMaxTensorGetWorkspaceSize(
-    aclTensor*       selfRef, 
-    const aclTensor* max, 
-    uint64_t*        workspaceSize, 
+    aclTensor*       selfRef,
+    const aclTensor* max,
+    uint64_t*        workspaceSize,
     aclOpExecutor**  executor)
 ```
 
 ```cpp
 aclnnStatus aclnnInplaceClampMaxTensor(
     void*          workspace,
-    uint64_t       workspaceSize, 
+    uint64_t       workspaceSize,
     aclOpExecutor* executor,
     aclrtStream    stream)
 ```
@@ -66,7 +66,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
 ## aclnnClampMaxTensorGetWorkspaceSize
 
 - **参数说明：**
-  
+
   <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
@@ -147,7 +147,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
 
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>
     - self和out的数据类型不支持BOOL。
-  
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -303,7 +303,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
     - max的数据类型不支持BFLOAT16。
 
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>
-    - selfRef和max数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)）。
+    - selfRef和max数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)）。
     - selfRef的数据类型不支持BOOL。
 
 - **返回值：**
@@ -559,9 +559,9 @@ int main() {
     LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
   }
 
-  // 6.释放aclTensor和aclScalar，需要根据具体API的接口定义修改  
+  // 6.释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   ReleaseTensorAndScalar(self, max, out);
-  
+
   // 7.释放device资源，需要根据具体API的接口定义修改
   ReleaseDevice(selfDeviceAddr, maxDeviceAddr, outDeviceAddr, workspaceSize, workspaceAddr, stream, deviceId);
 
@@ -682,7 +682,7 @@ int main() {
   void* maxDeviceAddr = nullptr;
   aclTensor* self = nullptr;
   aclTensor* max = nullptr;
-  
+
   ret = PrepareInputAndOutput(selfShape, maxShape, &selfDeviceAddr, &self, &maxDeviceAddr, &max);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
@@ -716,7 +716,7 @@ int main() {
     LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
   }
 
-  // 6.释放aclTensor和aclScalar，需要根据具体API的接口定义修改  
+  // 6.释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   ReleaseTensorAndScalar(self, max);
 
   // 7.释放device资源，需要根据具体API的接口定义修改

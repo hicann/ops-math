@@ -29,19 +29,19 @@ $$
 
 ```cpp
 aclnnStatus aclnnClampGetWorkspaceSize(
-    const aclTensor *self, 
-    const aclScalar *clipValueMin, 
-    const aclScalar *clipValueMax, 
-    aclTensor       *out, 
-    uint64_t        *workspaceSize, 
+    const aclTensor *self,
+    const aclScalar *clipValueMin,
+    const aclScalar *clipValueMax,
+    aclTensor       *out,
+    uint64_t        *workspaceSize,
     aclOpExecutor  **executor)
 ```
 
 ```cpp
 aclnnStatus aclnnClamp(
-    void*             workspace, 
-    uint64_t          workspaceSize, 
-    aclOpExecutor*    executor, 
+    void*             workspace,
+    uint64_t          workspaceSize,
+    aclOpExecutor*    executor,
     const aclrtStream stream)
 ```
 
@@ -132,7 +132,7 @@ aclnnStatus aclnnClamp(
       <td>-</td>
     </tr>
   </tbody></table>
-  
+
   - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：
     - self和out的数据类型不支持BOOL、BFLOAT16。
     - clipValueMin和clipValueMax的数据类型不支持BFLOAT16。
@@ -141,9 +141,9 @@ aclnnStatus aclnnClamp(
     - self和out的数据类型不支持BOOL。
 
   - <term>Ascend 950PR/Ascend 950DT</term>：
-     - self、clipValueMin和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)）
-     - out的数据类型需要是self、clipValueMin、clipValueMax推导之后可转换的数据类型。
-     - self、clipValueMin、clipValueMax和out的数据类型不支持BOOL。
+    - self、clipValueMin和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)）
+    - out的数据类型需要是self、clipValueMin、clipValueMax推导之后可转换的数据类型。
+    - self、clipValueMin、clipValueMax和out的数据类型不支持BOOL。
 
 - **返回值**
 
@@ -175,7 +175,7 @@ aclnnStatus aclnnClamp(
     </tr>
   </tbody>
   </table>
-                                        
+
 ## aclnnClamp
 
 - **参数说明**

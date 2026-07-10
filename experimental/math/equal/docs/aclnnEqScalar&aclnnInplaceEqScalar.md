@@ -137,7 +137,7 @@ aclnnStatus aclnnInplaceEqScalar(
   </table>
 
   - <term>Ascend 950PR/Ascend 950DT</term>：
-    - self与other满足[TensorScalar互推导关系](../../../../docs/zh/context/TensorScalar互推导关系.md)。
+    - self与other满足[TensorScalar互推导关系](../../../../docs/zh/context/互推导关系.md)。
     - self、other不支持UINT32数据类型。
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
     - self与other满足[互推导关系](../../../../docs/zh/context/互推导关系.md)。
@@ -301,7 +301,7 @@ aclnnStatus aclnnInplaceEqScalar(
   </table>
 
   - <term>Ascend 950PR/Ascend 950DT</term>：
-    - selfRef与other满足[TensorScalar互推导关系](../../../../docs/zh/context/TensorScalar互推导关系.md)。
+    - selfRef与other满足[TensorScalar互推导关系](../../../../docs/zh/context/互推导关系.md)。
     - selfRef、other不支持UINT32数据类型。
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
     - selfRef与other满足[互推导关系](../../../../docs/zh/context/互推导关系.md)。

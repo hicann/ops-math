@@ -33,34 +33,34 @@
 
 ```Cpp
 aclnnStatus aclnnEqScalarGetWorkspaceSize(
-  const aclTensor *self, 
-  const aclScalar *other, 
-  aclTensor       *out, 
-  uint64_t        *workspaceSize, 
+  const aclTensor *self,
+  const aclScalar *other,
+  aclTensor       *out,
+  uint64_t        *workspaceSize,
   aclOpExecutor  **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnEqScalar(
-  void*             workspace, 
-  uint64_t          workspaceSize, 
-  aclOpExecutor*    executor, 
+  void*             workspace,
+  uint64_t          workspaceSize,
+  aclOpExecutor*    executor,
   const aclrtStream stream)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceEqScalarGetWorkspaceSize(
-  const aclTensor *selfRef, 
-  const aclScalar *other, 
-  uint64_t        *workspaceSize, 
+  const aclTensor *selfRef,
+  const aclScalar *other,
+  uint64_t        *workspaceSize,
   aclOpExecutor  **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceEqScalar(
-  void          *workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor, 
+  void          *workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor *executor,
   aclrtStream    stream)
 ```
 
@@ -142,9 +142,9 @@ aclnnStatus aclnnInplaceEqScalar(
     </tr>
   </tbody>
   </table>
-  
+
   - <term>Ascend 950PR/Ascend 950DT</term>：
-    - self与other满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
+    - self与other满足[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)。
     - self、other不支持UINT32数据类型。
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
     - self与other满足[互推导关系](../../../docs/zh/context/互推导关系.md)。
@@ -158,9 +158,9 @@ aclnnStatus aclnnInplaceEqScalar(
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
+
   第一段接口完成入参校验，出现以下场景时报错：
- 
+
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 272px">
   <col style="width: 114px">
@@ -308,7 +308,7 @@ aclnnStatus aclnnInplaceEqScalar(
   </table>
 
   - <term>Ascend 950PR/Ascend 950DT</term>：
-    - selfRef与other满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
+    - selfRef与other满足[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)。
     - selfRef、other不支持UINT32数据类型。
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
     - selfRef与other满足[互推导关系](../../../docs/zh/context/互推导关系.md)。
