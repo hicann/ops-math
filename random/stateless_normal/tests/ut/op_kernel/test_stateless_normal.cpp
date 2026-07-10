@@ -14,10 +14,10 @@
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
 #include "../../../../random_common/op_kernel/arch35/random_unified_tiling_data_arch35.h"
+#include "./stateless_normal_tiling.h"
 
-extern "C" __global__ __aicore__ void stateless_normal(
-    GM_ADDR shape, GM_ADDR seed, GM_ADDR offset, GM_ADDR mean, GM_ADDR stdev,
-    GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
+extern "C" __global__ __aicore__ void stateless_normal(GM_ADDR shape, GM_ADDR seed, GM_ADDR offset, GM_ADDR mean,
+                                                       GM_ADDR stdev, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
 
 namespace {
 
@@ -39,10 +39,7 @@ constexpr int64_t MAX_THREADS_PER_SM = 2048;
 constexpr int64_t BLOCKS_PER_SM = MAX_THREADS_PER_SM / GPU_BLOCK_SIZE;
 constexpr int64_t MAX_GENERATOR_OFFSETS = 4;
 
-inline size_t Align32(size_t size)
-{
-    return (size + 31U) / 32U * 32U;
-}
+inline size_t Align32(size_t size) { return (size + 31U) / 32U * 32U; }
 
 // Compute execution policy for a split block (mirrors CalcExecutionPoliciesForBlocks)
 inline void CalcBlockPolicy(int64_t numel, int64_t& grid, int64_t& totalThreads, int64_t& counterOffset)
@@ -60,15 +57,14 @@ inline void CalcBlockPolicy(int64_t numel, int64_t& grid, int64_t& totalThreads,
 }
 
 // Fill a single split block with execution policy
-inline void FillSingleBlock(RandomUnifiedSimtTilingDataStruct* tilingData, int64_t numel, int64_t seedVal, int64_t offsetVal)
+inline void FillSingleBlock(RandomUnifiedSimtTilingDataStruct* tilingData, int64_t numel, int64_t seedVal,
+                            int64_t offsetVal)
 {
     tilingData->splitBlockCount = 1;
     tilingData->splitBlocks[0].numel = numel;
     tilingData->splitBlocks[0].gmOffset = 0;
     int64_t counterOffset = 0;
-    CalcBlockPolicy(numel, tilingData->splitBlocks[0].grid,
-                    tilingData->splitBlocks[0].totalThreads,
-                    counterOffset);
+    CalcBlockPolicy(numel, tilingData->splitBlocks[0].grid, tilingData->splitBlocks[0].totalThreads, counterOffset);
     tilingData->splitBlocks[0].kernelOffset = offsetVal;
 }
 
@@ -78,8 +74,7 @@ inline float ReadAsFloat(const uint8_t* buf, int64_t idx)
 }
 } // namespace
 
-class StatelessNormalKernelTest : public testing::Test {
-};
+class StatelessNormalKernelTest : public testing::Test {};
 
 // Test 1: standard normal N(0,1), mean/stdev broadcast to full tensor
 TEST_F(StatelessNormalKernelTest, smoke_standard_normal)

@@ -37,15 +37,13 @@ static constexpr uint16_t NUM_TWO = 2;
 // For bf16/fp16: three-step rounding to match GPU normal_()→mul_(std)→add_(mean)
 template <typename T, typename M_T, typename S_T>
 struct NormalTransform {
-    __gm__ volatile M_T* meanGM_;
-    __gm__ volatile S_T* stdevGM_;
+    M_T meanVal_;
+    S_T stdVal_;
 
-    __aicore__ NormalTransform(__gm__ volatile M_T* meanGM, __gm__ volatile S_T* stdevGM)
-        : meanGM_(meanGM), stdevGM_(stdevGM) {}
+    __aicore__ NormalTransform(M_T meanVal, S_T stdVal) : meanVal_(meanVal), stdVal_(stdVal) {}
 
-    __simt_callee__ __aicore__ inline void operator()(
-        __gm__ volatile T* outputGm, uint64_t li, const uint32_t* results, uint32_t iStep,
-        [[maybe_unused]] uint32_t unroll = 1)
+    __simt_callee__ __aicore__ inline void operator()(__gm__ volatile T* outputGm, uint64_t li, const uint32_t* results,
+                                                      uint32_t iStep, [[maybe_unused]] uint32_t unroll = 1)
     {
         uint32_t pairBase = (iStep / NUM_TWO) * NUM_TWO;
         float u1 = results[pairBase] * RAND_2POW32_INV + RAND_2POW32_INV_HALF;
@@ -55,7 +53,7 @@ struct NormalTransform {
         BoxMullerFloat(u1, u2, &z0, &z1);
         float z = (iStep % NUM_TWO == 0) ? z0 : z1;
 
-        outputGm[li] = static_cast<T>(z * static_cast<float>(stdevGM_[0]) + static_cast<float>(meanGM_[0]));
+        outputGm[li] = static_cast<T>(z * static_cast<float>(stdVal_) + static_cast<float>(meanVal_));
     }
 };
 
@@ -68,37 +66,38 @@ struct NormalLauncher {
     GM_ADDR yAddr_;
     GM_ADDR meanAddr_;
     GM_ADDR stdevAddr_;
+    AscendC::GlobalTensor<M_T> meanGlobal_;
+    AscendC::GlobalTensor<S_T> stdGlobal_;
 
     __aicore__ NormalLauncher(int64_t seed, int64_t realOffset, GM_ADDR y, GM_ADDR mean, GM_ADDR stdev)
-        : seed_(seed), realOffset_(realOffset), yAddr_(y), meanAddr_(mean), stdevAddr_(stdev) {}
+        : seed_(seed), realOffset_(realOffset), yAddr_(y), meanAddr_(mean), stdevAddr_(stdev)
+    {}
 
-    __aicore__ inline void operator()(
-        const ExecutionPolicyKernel& policy,
-        int64_t gmOffset,
-        int64_t kernelOffset,
-        int64_t numel,
-        [[maybe_unused]] int64_t grid,
-        int64_t totalThreads)
+    __aicore__ inline void operator()(const ExecutionPolicyKernel& policy, int64_t gmOffset, int64_t kernelOffset,
+                                      int64_t numel, [[maybe_unused]] int64_t grid, int64_t totalThreads)
     {
         __gm__ volatile T* gmPtr = reinterpret_cast<__gm__ volatile T*>(yAddr_) + gmOffset;
         // mean/stdev 始终按 float* 读取（L2 传入 DT_FLOAT tensor）
-        __gm__ volatile M_T* meanPtr = reinterpret_cast<__gm__ volatile M_T*>(meanAddr_);
-        __gm__ volatile S_T* stdevPtr = reinterpret_cast<__gm__ volatile S_T*>(stdevAddr_);
+        __gm__ M_T* meanPtr = reinterpret_cast<__gm__ M_T*>(meanAddr_);
+        __gm__ S_T* stdevPtr = reinterpret_cast<__gm__ S_T*>(stdevAddr_);
 
-        NormalTransform<T, M_T, S_T> transform(meanPtr, stdevPtr);
+        meanGlobal_.SetGlobalBuffer(meanPtr);
+        stdGlobal_.SetGlobalBuffer(stdevPtr);
+
+        M_T meanVal = meanGlobal_(0);
+        S_T stdVal = stdGlobal_(0);
+
+        NormalTransform<T, M_T, S_T> transform(meanVal, stdVal);
         Simt::VF_CALL<PhiloxSimtKernelDiscontinuous<T, NormalTransform<T, M_T, S_T>>>(
-            Simt::Dim3(DEFAULT_SIMT_THREAD_NUM),
-            gmPtr, realOffset_ + kernelOffset, seed_, static_cast<uint64_t>(numel),
+            Simt::Dim3(DEFAULT_SIMT_THREAD_NUM), gmPtr, realOffset_ + kernelOffset, seed_, static_cast<uint64_t>(numel),
             policy.magic, policy.shift, static_cast<uint64_t>(totalThreads), transform);
     }
 };
 
 // Entry point: called from stateless_normal.cpp
 template <typename T, typename M_T, typename S_T>
-__aicore__ inline void Process(
-    GM_ADDR seed, GM_ADDR offset,
-    GM_ADDR y, GM_ADDR mean, GM_ADDR stdev,
-    const RandomUnifiedSimtTilingDataStruct* __restrict tilingData)
+__aicore__ inline void Process(GM_ADDR seed, GM_ADDR offset, GM_ADDR y, GM_ADDR mean, GM_ADDR stdev,
+                               const RandomUnifiedSimtTilingDataStruct* __restrict tilingData)
 {
     if (GetBlockIdx() >= static_cast<uint32_t>(tilingData->usedCoreNum)) {
         return;
