@@ -25,7 +25,6 @@ public:
                                     ge::DT_UINT16, ge::DT_UINT32, ge::DT_UINT64});
 
         ApplyMathAicpuDefaultCfg(*this);
-        this->AICPU().ExtendCfgInfo(OP_INFO_OPS_FLAG.c_str(), OPEN_OPS_FLAG.c_str());
     }
 };
 
