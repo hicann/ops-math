@@ -1350,10 +1350,10 @@ void ComputeWorkSpace(gert::TilingContext *context, topkV2DataInfo::SortTileInfo
         Ops::Base::CeilAlign(static_cast<uint64_t>(xB8GmWkSize), static_cast<uint64_t>(sortTileInfo.blockUbSize)));
 
     size_t outValueDbWKSize = static_cast<size_t>(sortTileInfo.sortAxisNum) * sortTileInfo.unsortedDimParallel *
-        sortTileInfo.dtypeSize *topkV2DataInfo::CONST_2;
+        sortTileInfo.dtypeSize;
     outValueDbWKSize = static_cast<size_t>(
         Ops::Base::CeilAlign(static_cast<uint64_t>(outValueDbWKSize), static_cast<uint64_t>(sortTileInfo.blockUbSize)));
-
+    outValueDbWKSize *= topkV2DataInfo::CONST_2;
     OP_LOGI("RadixSortTiling",
         "excusiveBinsGmWkSize %lu, globalHistGmWkSize %lu, outIdxDbWK %lu, sortOutIdxGMWK %lu, histTileGmWk %lu,"
         " xB8GmWkSize %lu, outValueDbWKSize %lu ",
