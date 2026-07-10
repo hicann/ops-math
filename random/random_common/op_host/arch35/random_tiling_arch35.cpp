@@ -88,20 +88,55 @@ void TensorSliceState::PartitionDim(int64_t dim, TensorSliceState& other)
 ge::graphStatus InitTensorSliceState(TensorSliceState& state, const gert::Shape& outputTensor, int64_t outputSize,
                                      ge::DataType outputDtype)
 {
-    state.ndim = static_cast<int64_t>(outputTensor.GetDimNum());
     state.numel = outputSize;
     state.gmOffset = 0;
     state.elementSize = ge::GetSizeByDataType(outputDtype);
 
-    for (int64_t dim = 0; dim < state.ndim && dim < MAX_TENSOR_DIMS; dim++) {
-        state.shape[dim] = outputTensor.GetDim(static_cast<size_t>(dim));
+    int64_t rawShape[MAX_TENSOR_DIMS] = {0};
+    int64_t rawStrides[MAX_TENSOR_DIMS] = {0};
+    int64_t rawNdim = static_cast<int64_t>(outputTensor.GetDimNum());
+    for (int64_t dim = 0; dim < rawNdim && dim < MAX_TENSOR_DIMS; dim++) {
+        rawShape[dim] = outputTensor.GetDim(static_cast<size_t>(dim));
+    }
+    if (rawNdim > 0) {
+        rawStrides[rawNdim - 1] = 1;
+        for (int64_t dim = rawNdim - 2; dim >= 0; dim--) {
+            rawStrides[dim] = rawShape[dim + 1] * rawStrides[dim + 1];
+        }
     }
 
-    if (state.ndim > 0) {
-        state.strides[state.ndim - 1] = 1;
-        for (int64_t dim = state.ndim - 2; dim >= 0; dim--) {
-            state.strides[dim] = state.shape[dim + 1] * state.strides[dim + 1];
+    int64_t coalescedShape[MAX_TENSOR_DIMS] = {0};
+    int64_t coalescedStrides[MAX_TENSOR_DIMS] = {0};
+    int64_t coalescedNdim = 0;
+    for (int64_t dim = 0; dim < rawNdim; dim++) {
+        if (rawShape[dim] == 1) {
+            continue;
         }
+        coalescedShape[coalescedNdim] = rawShape[dim];
+        coalescedStrides[coalescedNdim] = rawStrides[dim];
+        coalescedNdim++;
+    }
+    if (coalescedNdim == 0) {
+        coalescedShape[0] = 1;
+        coalescedStrides[0] = 1;
+        coalescedNdim = 1;
+    }
+    for (int64_t dim = coalescedNdim - 1; dim > 0; dim--) {
+        if (coalescedShape[dim] * coalescedStrides[dim] == coalescedStrides[dim - 1]) {
+            coalescedShape[dim - 1] *= coalescedShape[dim];
+            coalescedStrides[dim - 1] = coalescedStrides[dim];
+            for (int64_t d = dim; d < coalescedNdim - 1; d++) {
+                coalescedShape[d] = coalescedShape[d + 1];
+                coalescedStrides[d] = coalescedStrides[d + 1];
+            }
+            coalescedNdim--;
+        }
+    }
+
+    state.ndim = coalescedNdim;
+    for (int64_t dim = 0; dim < coalescedNdim && dim < MAX_TENSOR_DIMS; dim++) {
+        state.shape[dim] = coalescedShape[dim];
+        state.strides[dim] = coalescedStrides[dim];
     }
 
     return ge::GRAPH_SUCCESS;
