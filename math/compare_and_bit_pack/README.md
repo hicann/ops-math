@@ -1,4 +1,4 @@
-# TopK
+# CompareAndBitpack
 
 ## 产品支持情况
 
@@ -13,7 +13,7 @@
 
 ## 功能说明
 
-- 算子功能：沿指定维度找出输入张量中最大或最小的k个元素及其索引。
+- 算子功能：将输入张量x中的每个元素与阈值threshold进行比较，将比较结果（大于为1，否则为0）打包为uint8类型的位域输出。每8个连续输入元素的比较结果打包为一个uint8值。
 
 ## 参数说明
 
@@ -36,62 +36,35 @@
     <tr>
     <td>x</td>
     <td>输入</td>
-    <td>输入张量。</td>
-    <td>FLOAT16、FLOAT、DOUBLE、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BFLOAT16</td>
+    <td>待比较的输入张量，维度至少为1维。</td>
+    <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、BOOL</td>
     <td>ND</td>
     </tr>
     <tr>
-    <td>k</td>
+    <td>threshold</td>
     <td>输入</td>
-    <td>要取出的元素个数。</td>
-    <td>INT32</td>
+    <td>标量阈值，用于与x中的元素进行比较。</td>
+    <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、BOOL</td>
     <td>ND</td>
     </tr>
     <tr>
-    <td>sorted</td>
-    <td>属性</td>
-    <td>是否对输出结果排序，默认为true。</td>
-    <td>Bool</td>
-    <td>-</td>
-    </tr>
-    <tr>
-    <td>largest</td>
-    <td>属性</td>
-    <td>是否取最大值，默认为true。若为false则取最小值。</td>
-    <td>Bool</td>
-    <td>-</td>
-    </tr>
-    <tr>
-    <td>dim</td>
-    <td>属性</td>
-    <td>指定沿哪个维度进行操作，默认为-1（最后一维）。</td>
-    <td>Int</td>
-    <td>-</td>
-    </tr>
-    <tr>
-    <td>values</td>
+    <td>y</td>
     <td>输出</td>
-    <td>输出的top-k个元素值。</td>
-    <td>FLOAT16、FLOAT、DOUBLE、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BFLOAT16</td>
-    <td>ND</td>
-    </tr>
-    <tr>
-    <td>indices</td>
-    <td>输出</td>
-    <td>输出的top-k个元素在输入张量中的索引。</td>
-    <td>INT32</td>
+    <td>打包后的位域输出张量，最内维大小为输入最内维的1/8。</td>
+    <td>UINT8</td>
     <td>ND</td>
     </tr>
 </tbody></table>
 
 ## 约束说明
 
-- dim必须在[-x维度数, x维度数)范围内
-- k必须大于等于0且小于等于x在dim维度上的大小
-- BFLOAT16类型仅在特定产品上支持
+- threshold必须为标量（scalar）
+- x必须至少为一维张量（vector或更高维度），不支持标量输入
+- x的最内维（最后一个维度）大小必须能被8整除
+- x和threshold的数据类型必须一致
 
 ## 调用说明
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| 图模式接口 | [test_geir_topk](examples/test_geir_topk.cpp) | 通过[算子IR](op_graph/topk_proto.h)接口方式调用TopK算子。 |
+| 图模式接口 | [test_geir_compare_and_bit_pack](examples/test_geir_compare_and_bit_pack.cpp) | 通过[算子IR](op_graph/compare_and_bit_pack_proto.h)接口方式调用CompareAndBitpack算子。 |

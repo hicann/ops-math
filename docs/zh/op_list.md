@@ -478,6 +478,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/compare_and_bit_pack/README.md">compare_and_bit_pack</a></td>
+    <td>√</td>
+    <td>×</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CPU</td>
+    <td>将输入与阈值进行比较，将比较结果的比特位打包为一个uint8输出。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/complex/README.md">complex</a></td>
     <td>×</td>
     <td>×</td>
@@ -2019,12 +2029,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/topk/README.md">topk</a></td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CPU</td>
+    <td>沿指定维度找出输入张量中最大或最小的k个元素及其索引。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -2125,6 +2135,16 @@
     <td>√</td>
     <td>AI Core</td>
     <td>将张量填充为全零。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/calc_buckets_limit_and_offset/README.md">calc_buckets_limit_and_offset</a></td>
+    <td>√</td>
+    <td>×</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CPU</td>
+    <td>根据ivf_counts和bucket_list计算每个桶的limits和offsets，用于向量检索场景。</td>
   </tr>
   <tr>
     <td>conversion</td>
