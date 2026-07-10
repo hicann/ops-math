@@ -17,7 +17,7 @@
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "dropout_v3.h"
-#include "conversion/fill//op_api/fill.h"
+#include "conversion/fill/op_api/fill.h"
 #include "math/zero_op/op_api/zero_op.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "op_api/aclnn_check.h"
@@ -42,8 +42,8 @@ static const int64_t UINT8_BIT_NUMBER = 8;
 static const int8_t MAX_MASK_NUM = -1;
 
 // 根据API定义，需要列出所能支持的所有dtype
-static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
+static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT,
+                                                                                 op::DataType::DT_FLOAT16};
 
 static const std::initializer_list<op::DataType> ARCH3510_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
@@ -122,9 +122,8 @@ static bool CheckShape(const aclTensor* input, const aclTensor* out, const aclTe
     return true;
 }
 
-static inline aclnnStatus CheckParams(
-    const aclTensor* input, const aclTensor* optionalNoiseShape, double p, const aclTensor* out,
-    const aclTensor* maskOut)
+static inline aclnnStatus CheckParams(const aclTensor* input, const aclTensor* optionalNoiseShape, double p,
+                                      const aclTensor* out, const aclTensor* maskOut)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(input, out, maskOut), ACLNN_ERR_PARAM_NULLPTR);
@@ -174,9 +173,9 @@ static inline const aclTensor* FillScalar(const aclTensor* out, int8_t val, aclO
     return out;
 }
 
-aclnnStatus aclnnDropoutV3GetWorkspaceSize(
-    const aclTensor* input, const aclTensor* optionalNoiseShape, double p, int64_t seed, int64_t offset, aclTensor* out,
-    aclTensor* maskOut, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnDropoutV3GetWorkspaceSize(const aclTensor* input, const aclTensor* optionalNoiseShape, double p,
+                                           int64_t seed, int64_t offset, aclTensor* out, aclTensor* maskOut,
+                                           uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnDropoutV3, DFX_IN(input, optionalNoiseShape, p, seed, offset), DFX_OUT(out, maskOut));
     // 固定写法，创建OpExecutor
@@ -208,16 +207,16 @@ aclnnStatus aclnnDropoutV3GetWorkspaceSize(
         maskResult = FillScalar(maskOut, 0, uniqueExecutor.get());
     } else {
         FVector<double> probVector = {p};
-        auto probTensor =
-            uniqueExecutor.get()->ConvertToTensor(probVector.data(), probVector.size(), op::DataType::DT_DOUBLE);
+        auto probTensor = uniqueExecutor.get()->ConvertToTensor(probVector.data(), probVector.size(),
+                                                                op::DataType::DT_DOUBLE);
         FVector<int64_t> seedVector = {seed};
-        auto seedTensor =
-            uniqueExecutor.get()->ConvertToTensor(seedVector.data(), seedVector.size(), op::DataType::DT_INT64);
+        auto seedTensor = uniqueExecutor.get()->ConvertToTensor(seedVector.data(), seedVector.size(),
+                                                                op::DataType::DT_INT64);
         FVector<int64_t> offsetVector = {0, offset};
-        auto offsetTensor =
-            uniqueExecutor.get()->ConvertToTensor(offsetVector.data(), offsetVector.size(), op::DataType::DT_INT64);
-        auto dropOutResult = l0op::DropoutV3(
-            inputContiguous, optionalNoiseShape, probTensor, seedTensor, offsetTensor, maskOut, uniqueExecutor.get());
+        auto offsetTensor = uniqueExecutor.get()->ConvertToTensor(offsetVector.data(), offsetVector.size(),
+                                                                  op::DataType::DT_INT64);
+        auto dropOutResult = l0op::DropoutV3(inputContiguous, optionalNoiseShape, probTensor, seedTensor, offsetTensor,
+                                             maskOut, uniqueExecutor.get());
         CHECK_RET(CheckTupleNullptr(dropOutResult), ACLNN_ERR_INNER_NULLPTR);
         outResult = std::get<0>(dropOutResult);
         maskResult = std::get<1>(dropOutResult);
