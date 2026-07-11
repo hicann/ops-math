@@ -28,6 +28,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
+#include "../../random_common/op_api/aclnn_set_pytorch_random.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -36,16 +37,11 @@ extern "C" {
 
 static constexpr size_t MAX_DIM_LEN = 8;
 
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_BF16, op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_DOUBLE};
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {op::DataType::DT_BF16, op::DataType::DT_FLOAT16,
+                                                                       op::DataType::DT_FLOAT, op::DataType::DT_DOUBLE};
 
 // 表示mean,std的数据类型是Tensor还是Scalar
-enum class ScalarMode {
-    TensorTensor,
-    TensorScalar,
-    ScalarTensor,
-    ScalarScalar
-};
+enum class ScalarMode { TensorTensor, TensorScalar, ScalarTensor, ScalarScalar };
 
 /* 查看TensorFloat的Dtype和Shape */
 static bool CheckTensorAndFloatDtype(const aclTensor* mean, const aclTensor* out)
@@ -66,9 +62,8 @@ static bool CheckTensorAndFloatShapeOfMean(const aclTensor* mean, const aclTenso
     OP_CHECK_BROADCAST_AND_INFER_SHAPE(mean, out, broadcastShape, return false);
 
     if (broadcastShape != out->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
-            op::ToString(broadcastShape).GetString(), op::ToString(out->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
+                op::ToString(broadcastShape).GetString(), op::ToString(out->GetViewShape()).GetString());
         return false;
     }
     return true;
@@ -135,9 +130,8 @@ static bool CheckTensorAndTensorShape(const aclTensor* mean, const aclTensor* st
     OP_CHECK_BROADCAST_AND_INFER_SHAPE(mean, std, broadcastShape, return false);
 
     if (broadcastShape != out->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
-            op::ToString(broadcastShape).GetString(), op::ToString(out->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
+                op::ToString(broadcastShape).GetString(), op::ToString(out->GetViewShape()).GetString());
         return false;
     }
     return true;
@@ -151,13 +145,13 @@ static inline bool CheckTensorAndTensorNotNull(const aclTensor* mean, const aclT
     return true;
 }
 
-static bool CheckPromoteType(const aclTensor* mean, const aclTensor* std, const aclTensor* out, op::DataType promoteType)
+static bool CheckPromoteType(const aclTensor* mean, const aclTensor* std, const aclTensor* out,
+                             op::DataType promoteType)
 {
     // 检查self和other能否做数据类型推导
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Mean dtype [%s] and std dtype [%s] can not promote dtype.",
-            op::ToString(mean->GetDataType()).GetString(), op::ToString(std->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Mean dtype [%s] and std dtype [%s] can not promote dtype.",
+                op::ToString(mean->GetDataType()).GetString(), op::ToString(std->GetDataType()).GetString());
         return false;
     }
     // 检查推导后的数据类型是否能转换为输出的数据类型
@@ -209,29 +203,46 @@ static aclnnStatus CheckTensorAndTensorParams(const aclTensor* mean, const aclTe
 /**
  * common部分的调用流程
  */
-aclnnStatus CommonLogicGeneralNormal(
-    const aclTensor* mean, const aclTensor* std, int64_t seed, int64_t offset, aclTensor* self, aclTensor* out,
-    UniqueExecutor& uniqueExecutor, uint64_t* workspaceSize, aclOpExecutor** executor,
-    ScalarMode scalarMode = ScalarMode::TensorTensor)
+aclnnStatus CommonLogicGeneralNormal(const aclTensor* mean, const aclTensor* std, int64_t seed, int64_t offset,
+                                     aclTensor* self, aclTensor* out, UniqueExecutor& uniqueExecutor,
+                                     uint64_t* workspaceSize, aclOpExecutor** executor,
+                                     ScalarMode scalarMode = ScalarMode::TensorTensor)
 {
     const aclTensor* addOut = nullptr;
 
-    if(GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && self->GetDataType() != DataType::DT_DOUBLE){
+    if (!aclnnGetPytorchRandom() && GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 &&
+        self->GetDataType() != DataType::DT_DOUBLE) {
+        OP_LOGD("compat mode, use V3 Normal");
+        // seed转化为key
+        FVector<int64_t, op::MAX_DIM_NUM> key_vec = {seed};
+        auto keyArr = (uniqueExecutor.get())->AllocIntArray(key_vec.data(), key_vec.size());
+
+        // offset转化为counter
+        FVector<int64_t, op::MAX_DIM_NUM> counter_vec = {0, offset};
+        auto counterArr = (uniqueExecutor.get())->AllocIntArray(counter_vec.data(), counter_vec.size());
+        auto meanFP32 = l0op::Cast(mean, DataType::DT_FLOAT, uniqueExecutor.get());
+        CHECK_RET(meanFP32 != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto stdFP32 = l0op::Cast(std, DataType::DT_FLOAT, uniqueExecutor.get());
+        CHECK_RET(stdFP32 != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        addOut = l0op::StatelessRandomNormalV3(self, keyArr, counterArr, meanFP32, stdFP32, uniqueExecutor.get());
+    } else if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 &&
+               self->GetDataType() != DataType::DT_DOUBLE) {
         if (scalarMode == ScalarMode::TensorTensor || scalarMode == ScalarMode::ScalarTensor) {
             FVector<float> zeroMeanVector = {0.0f};
-            auto zeroMeanTensor = uniqueExecutor.get()->ConvertToTensor(
-                zeroMeanVector.data(), zeroMeanVector.size(), op::DataType::DT_FLOAT);
+            auto zeroMeanTensor = uniqueExecutor.get()->ConvertToTensor(zeroMeanVector.data(), zeroMeanVector.size(),
+                                                                        op::DataType::DT_FLOAT);
             FVector<float> oneStdVector = {1.0f};
-            auto oneStdTensor = uniqueExecutor.get()->ConvertToTensor(
-                oneStdVector.data(), oneStdVector.size(), op::DataType::DT_FLOAT);
+            auto oneStdTensor = uniqueExecutor.get()->ConvertToTensor(oneStdVector.data(), oneStdVector.size(),
+                                                                      op::DataType::DT_FLOAT);
 
-            auto normalOut = l0op::StatelessNormal(
-                self, seed, offset, zeroMeanTensor, oneStdTensor, uniqueExecutor.get());
+            auto normalOut = l0op::StatelessNormal(self, seed, offset, zeroMeanTensor, oneStdTensor,
+                                                   uniqueExecutor.get());
             CHECK_RET(normalOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
             auto mulOut = l0op::Mul(std, normalOut, uniqueExecutor.get());
             CHECK_RET(mulOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-            // ScalarTensor 模式下，mean的类型一定为f32，mulout数据类型可为f16\f32\bf16，但mean是scalar, 故不能用AddInplace
+            // ScalarTensor 模式下，mean的类型一定为f32，mulout数据类型可为f16\f32\bf16，但mean是scalar,
+            // 故不能用AddInplace
             if (scalarMode == ScalarMode::ScalarTensor) {
                 addOut = l0op::Add(mulOut, mean, uniqueExecutor.get());
             } else {
@@ -239,19 +250,17 @@ aclnnStatus CommonLogicGeneralNormal(
             }
         } else if (scalarMode == ScalarMode::TensorScalar) {
             FVector<float> zeroMeanVector = {0.0f};
-            auto zeroMeanTensor = uniqueExecutor.get()->ConvertToTensor(
-                zeroMeanVector.data(), zeroMeanVector.size(), op::DataType::DT_FLOAT);
+            auto zeroMeanTensor = uniqueExecutor.get()->ConvertToTensor(zeroMeanVector.data(), zeroMeanVector.size(),
+                                                                        op::DataType::DT_FLOAT);
 
-            auto normalOut = l0op::StatelessNormal(
-                self, seed, offset, zeroMeanTensor, std, uniqueExecutor.get());
+            auto normalOut = l0op::StatelessNormal(self, seed, offset, zeroMeanTensor, std, uniqueExecutor.get());
             CHECK_RET(normalOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
             addOut = l0op::AddInplace(mean, normalOut, uniqueExecutor.get());
         } else {
             addOut = l0op::StatelessNormal(self, seed, offset, mean, std, uniqueExecutor.get());
         }
-    }
-    else{
+    } else {
         // V2 路径：seed 转化为 key，offset 转化为 counter
         // 设置算法序号 int64_t -> scalar -> tensor
         int64_t alg = 1;
@@ -304,9 +313,9 @@ aclnnStatus CommonLogicGeneralNormal(
 }
 
 // normal.Tensor_Tensor_out
-aclnnStatus aclnnNormalTensorTensorGetWorkspaceSize(
-    const aclTensor* mean, const aclTensor* std, int64_t seed, int64_t offset, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnNormalTensorTensorGetWorkspaceSize(const aclTensor* mean, const aclTensor* std, int64_t seed,
+                                                    int64_t offset, aclTensor* out, uint64_t* workspaceSize,
+                                                    aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnNormalTensorTensor, DFX_IN(mean, std, seed, offset), DFX_OUT(out));
 
@@ -345,14 +354,13 @@ aclnnStatus aclnnNormalTensorTensorGetWorkspaceSize(
 
     // 拷贝mean副本
     auto self = const_cast<aclTensor*>(meanCasted);
-    return CommonLogicGeneralNormal(
-        meanCasted, stdCasted, seed, offset, self, out, uniqueExecutor, workspaceSize, executor, ScalarMode::TensorTensor);
+    return CommonLogicGeneralNormal(meanCasted, stdCasted, seed, offset, self, out, uniqueExecutor, workspaceSize,
+                                    executor, ScalarMode::TensorTensor);
 }
 
 // normal.Tensor_float_out
-aclnnStatus aclnnNormalTensorFloatGetWorkspaceSize(
-    const aclTensor* mean, float std, int64_t seed, int64_t offset, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnNormalTensorFloatGetWorkspaceSize(const aclTensor* mean, float std, int64_t seed, int64_t offset,
+                                                   aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnNormalTensorFloat, DFX_IN(mean, std, seed, offset), DFX_OUT(out));
 
@@ -385,14 +393,13 @@ aclnnStatus aclnnNormalTensorFloatGetWorkspaceSize(
 
     // 拷贝mean副本
     auto self = const_cast<aclTensor*>(out);
-    return CommonLogicGeneralNormal(
-        meanContiguous, stdContiguous, seed, offset, self, out, uniqueExecutor, workspaceSize, executor, ScalarMode::TensorScalar);
+    return CommonLogicGeneralNormal(meanContiguous, stdContiguous, seed, offset, self, out, uniqueExecutor,
+                                    workspaceSize, executor, ScalarMode::TensorScalar);
 }
 
 // normal.float_Tensor_out
-aclnnStatus aclnnNormalFloatTensorGetWorkspaceSize(
-    float mean, const aclTensor* std, int64_t seed, int64_t offset, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnNormalFloatTensorGetWorkspaceSize(float mean, const aclTensor* std, int64_t seed, int64_t offset,
+                                                   aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnNormalFloatTensor, DFX_IN(mean, std, seed, offset), DFX_OUT(out));
 
@@ -425,14 +432,13 @@ aclnnStatus aclnnNormalFloatTensorGetWorkspaceSize(
 
     // 拷贝std副本
     auto self = const_cast<aclTensor*>(stdContiguous);
-    return CommonLogicGeneralNormal(
-        meanContiguous, stdContiguous, seed, offset, self, out, uniqueExecutor, workspaceSize, executor, ScalarMode::ScalarTensor);
+    return CommonLogicGeneralNormal(meanContiguous, stdContiguous, seed, offset, self, out, uniqueExecutor,
+                                    workspaceSize, executor, ScalarMode::ScalarTensor);
 }
 
 // normal.float_float_out
-aclnnStatus aclnnNormalFloatFloatGetWorkspaceSize(
-    float mean, float std, int64_t seed, int64_t offset, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnNormalFloatFloatGetWorkspaceSize(float mean, float std, int64_t seed, int64_t offset, aclTensor* out,
+                                                  uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnNormalFloatFloat, DFX_IN(mean, std, seed, offset), DFX_OUT(out));
 
@@ -465,13 +471,12 @@ aclnnStatus aclnnNormalFloatFloatGetWorkspaceSize(
 
     // 拷贝out副本
     auto self = const_cast<aclTensor*>(out);
-    return CommonLogicGeneralNormal(
-        meanContiguous, stdContiguous, seed, offset, self, out, uniqueExecutor, workspaceSize, executor,
-        ScalarMode::ScalarScalar);
+    return CommonLogicGeneralNormal(meanContiguous, stdContiguous, seed, offset, self, out, uniqueExecutor,
+                                    workspaceSize, executor, ScalarMode::ScalarScalar);
 }
 
-aclnnStatus aclnnNormalTensorTensor(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnNormalTensorTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                    aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnNormalTensorTensor);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

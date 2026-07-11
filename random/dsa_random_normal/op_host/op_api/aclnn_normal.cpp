@@ -31,6 +31,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "../../../random_common/op_api/aclnn_set_pytorch_random.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -168,6 +169,24 @@ static const aclTensor* normalDavidPath(const aclTensor* selfContiguous, int64_t
 {
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 &&
         selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
+        if (!aclnnGetPytorchRandom()) {
+            OP_LOGD("compat mode, use V3 Normal");
+            // seed转化为key
+            FVector<int64_t, op::MAX_DIM_NUM> key_vec = {seed};
+            auto keyArr = executor->AllocIntArray(key_vec.data(), key_vec.size());
+
+            // offset转化为counter
+            FVector<int64_t, op::MAX_DIM_NUM> counter_vec = {0, offset};
+            auto counterArr = executor->AllocIntArray(counter_vec.data(), counter_vec.size());
+            FVector<float> meanVector = {mean};
+            auto meanTensorV3 = executor->ConvertToTensor(meanVector.data(), meanVector.size(), op::DataType::DT_FLOAT);
+
+            FVector<float> stdVector = {std};
+            auto stdTensorV3 = executor->ConvertToTensor(stdVector.data(), stdVector.size(), op::DataType::DT_FLOAT);
+            // 调用normal_算子kernel function(AI Core算子)
+            return l0op::StatelessRandomNormalV3(selfContiguous, keyArr, counterArr, meanTensorV3, stdTensorV3,
+                                                 executor);
+        }
         // 精度等价：kernel 内 z * static_cast<float>(std) + static_cast<float>(mean) 在 fp32 下完成，
         // 最终 static_cast<T>(result) 仅一次 fp32→T 舍入，与原来 L2 层 Mul+Add+外层Cast 等价
         FVector<float> meanVector = {mean};
@@ -211,6 +230,26 @@ static const aclTensor* normalTensorDavidPath(const aclTensor* selfContiguous, c
 
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 &&
         selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
+        if (!aclnnGetPytorchRandom()) {
+            OP_LOGD("compat mode, use V3 Normal");
+            // seedTensor/offsetTensor 从 int64 Cast 为 uint64（V3 OpDef 要求 uint64）
+            auto normalSeedU64 = l0op::Cast(seedTensor, op::DataType::DT_UINT64, executor);
+            CHECK_RET(normalSeedU64 != nullptr, nullptr);
+            auto normalOffsetU64 = l0op::Cast(offsetTensor, op::DataType::DT_UINT64, executor);
+            CHECK_RET(normalOffsetU64 != nullptr, nullptr);
+
+            FVector<int64_t> offsetVector{0, static_cast<int64_t>(offset)};
+            aclIntArray* offsetList = executor->AllocIntArray(offsetVector.data(), 2);
+            auto tmpTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_UINT64);
+            auto resultAddOut = l0op::Add(normalOffsetU64, tmpTensor, executor);
+            CHECK_RET(resultAddOut != nullptr, nullptr);
+            FVector<float> meanVector = {mean};
+            auto meanTensorV3 = executor->ConvertToTensor(meanVector.data(), meanVector.size(), op::DataType::DT_FLOAT);
+            FVector<float> stdVector = {std};
+            auto stdTensorV3 = executor->ConvertToTensor(stdVector.data(), stdVector.size(), op::DataType::DT_FLOAT);
+            return l0op::StatelessRandomNormalV3(selfContiguous, normalSeedU64, resultAddOut, meanTensorV3, stdTensorV3,
+                                                 executor);
+        }
         // 精度等价论证同 normalDavidPath 改造
         FVector<int64_t> offsetVector{static_cast<int64_t>(offset)};
         auto tmpTensor = executor->ConvertToTensor(offsetVector.data(), offsetVector.size(), op::DataType::DT_INT64);
