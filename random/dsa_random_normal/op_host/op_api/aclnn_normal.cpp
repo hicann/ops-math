@@ -32,6 +32,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "../../../random_common/op_api/aclnn_set_pytorch_random.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -170,6 +171,24 @@ static const aclTensor* normalDavidPath(
     float mean, float std, aclOpExecutor* executor)
 {
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
+        if (!aclnnGetPytorchRandom()) {
+            OP_LOGD("compat mode, use V3 uniform");
+            // seed转化为key
+            FVector<int64_t, op::MAX_DIM_NUM> key_vec = {seed};
+            auto keyArr = executor->AllocIntArray(key_vec.data(), key_vec.size());
+
+            // offset转化为counter
+            FVector<int64_t, op::MAX_DIM_NUM> counter_vec = {0, offset};
+            auto counterArr = executor->AllocIntArray(counter_vec.data(), counter_vec.size());
+            FVector<float> meanVector = {mean};
+            auto meanTensorV3 = executor->ConvertToTensor(meanVector.data(), meanVector.size(), op::DataType::DT_FLOAT);
+
+            FVector<float> stdVector = {std};
+            auto stdTensorV3 = executor->ConvertToTensor(stdVector.data(), stdVector.size(), op::DataType::DT_FLOAT);
+            // 调用normal_算子kernel function(AI Core算子)
+            return l0op::StatelessRandomNormalV3(
+            selfContiguous, keyArr, counterArr, meanTensorV3, stdTensorV3, executor);
+        }
         // V4 标量路径：对标 PyTorch normal_(scalar_mean, scalar_std) 单步 FMA
         // PyTorch 在 float 精度下计算 z * std + mean，最后一次 cast 到目标 dtype
         auto selfFloat = (selfContiguous->GetDataType() != DataType::DT_FLOAT)
@@ -237,6 +256,26 @@ static const aclTensor* normalTensorDavidPath(
     }
 
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
+        if (!aclnnGetPytorchRandom()) {
+            OP_LOGD("compat mode, use V3 uniform");
+            // seedTensor/offsetTensor 从 int64 Cast 为 uint64（V3 OpDef 要求 uint64）
+            auto normalSeedU64 = l0op::Cast(seedTensor, op::DataType::DT_UINT64, executor);
+            CHECK_RET(normalSeedU64 != nullptr, nullptr);
+            auto normalOffsetU64 = l0op::Cast(offsetTensor, op::DataType::DT_UINT64, executor);
+            CHECK_RET(normalOffsetU64 != nullptr, nullptr);
+
+            FVector<int64_t> offsetVector{0, static_cast<int64_t>(offset)};
+            aclIntArray* offsetList = executor->AllocIntArray(offsetVector.data(), 2);
+            auto tmpTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_UINT64);
+            auto resultAddOut = l0op::Add(normalOffsetU64, tmpTensor, executor);
+            CHECK_RET(resultAddOut != nullptr, nullptr);
+            FVector<float> meanVector = {mean};
+            auto meanTensorV3 = executor->ConvertToTensor(meanVector.data(), meanVector.size(), op::DataType::DT_FLOAT);
+            FVector<float> stdVector = {std};
+            auto stdTensorV3 = executor->ConvertToTensor(stdVector.data(), stdVector.size(), op::DataType::DT_FLOAT);
+            return l0op::StatelessRandomNormalV3(
+                selfContiguous, normalSeedU64, resultAddOut, meanTensorV3, stdTensorV3, executor);
+        }
         // V4 标量路径：对标 PyTorch normal_(scalar_mean, scalar_std) 单步 FMA
         FVector<int64_t> offsetVector{static_cast<int64_t>(offset)};
         auto tmpTensor = executor->ConvertToTensor(offsetVector.data(), offsetVector.size(), op::DataType::DT_INT64);
