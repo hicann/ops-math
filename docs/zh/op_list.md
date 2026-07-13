@@ -2528,6 +2528,16 @@
   </tr>
   <tr>
     <td>conversion</td>
+    <td><a href="../../conversion/case_condition/README.md">case_condition</a></td>
+    <td>√</td>
+    <td>×</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CPU</td>
+    <td>根据三个输入值与阈值的关系，输出离散case编号。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
     <td><a href="../../conversion/concat/README.md">concat</a></td>
     <td>√</td>
     <td>√</td>
