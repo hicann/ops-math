@@ -31,15 +31,18 @@ constexpr uint8_t DIFF_SHAPE_OUTPUT = 0;
 
 template <typename T>
 class TensorEqualKernel {
-using InputType = std::conditional_t<std::is_integral_v<T>, uint8_t, T>;
+    using InputType = std::conditional_t<std::is_integral_v<T>, uint8_t, T>;
+
 public:
-    __aicore__ inline TensorEqualKernel(const TensorEqualTilingData& tilingData, TPipe& pipe) :
-    tilingData_(tilingData), pipe_(pipe) {};
+    __aicore__ inline TensorEqualKernel(const TensorEqualTilingData& tilingData, TPipe& pipe)
+        : tilingData_(tilingData), pipe_(pipe){};
     __aicore__ inline void Init(GM_ADDR input_x, GM_ADDR input_y, GM_ADDR output_z, GM_ADDR workspace);
     __aicore__ inline void Process();
+
 private:
     __aicore__ inline void CopyIn(int64_t offset, int64_t dataLen);
     __aicore__ inline void Compute(int64_t dataLen);
+
 private:
     TQue<QuePosition::VECIN, DOUBLE_BUFFER> inputXQueue_;
     TQue<QuePosition::VECIN, DOUBLE_BUFFER> inputYQueue_;
@@ -72,9 +75,9 @@ __aicore__ inline void TensorEqualKernel<T>::Init(GM_ADDR input_x, GM_ADDR input
                    ((tilingData_.perCoreLoopTimes - 1) * tilingData_.ubFactor + tilingData_.perCoreTailFactor);
     bufferSize_ = tilingData_.ubFactor * sizeof(T);
 
-    inputXGm_.SetGlobalBuffer((__gm__ InputType *)(input_x) + blockOffset_);
-    inputYGm_.SetGlobalBuffer((__gm__ InputType *)(input_y) + blockOffset_);
-    outputZGm_.SetGlobalBuffer((__gm__ uint8_t *)(output_z));
+    inputXGm_.SetGlobalBuffer((__gm__ InputType*)(input_x) + blockOffset_);
+    inputYGm_.SetGlobalBuffer((__gm__ InputType*)(input_y) + blockOffset_);
+    outputZGm_.SetGlobalBuffer((__gm__ uint8_t*)(output_z));
 
     if (blockIdx_ == 0) {
         uint32_t initOutput = 1;
@@ -95,14 +98,15 @@ __aicore__ inline void TensorEqualKernel<T>::Init(GM_ADDR input_x, GM_ADDR input
 template <typename T>
 __aicore__ inline void TensorEqualKernel<T>::CopyIn(int64_t offset, int64_t dataLen)
 {
-    DataCopyExtParams inParams = { 1, static_cast<uint32_t>(dataLen * sizeof(T)), 0, 0, 0 };
-    DataCopyPadExtParams<InputType> padParams = { false, 0, 0, 0};
+    DataCopyExtParams inParams = {1, static_cast<uint32_t>(dataLen * sizeof(T)), 0, 0, 0};
+    DataCopyPadExtParams<InputType> padParams = {false, 0, 0, 0};
 
     LocalTensor<InputType> xLocal = inputXQueue_.AllocTensor<InputType>();
     LocalTensor<InputType> yLocal = inputYQueue_.AllocTensor<InputType>();
 
-    DataCopyPad(xLocal, inputXGm_[offset], inParams, padParams);
-    DataCopyPad(yLocal, inputYGm_[offset], inParams, padParams);
+    int64_t gmOffset = offset * (sizeof(T) / sizeof(InputType));
+    DataCopyPad(xLocal, inputXGm_[gmOffset], inParams, padParams);
+    DataCopyPad(yLocal, inputYGm_[gmOffset], inParams, padParams);
 
     inputXQueue_.EnQue(xLocal);
     inputYQueue_.EnQue(yLocal);
@@ -113,13 +117,13 @@ __aicore__ inline void TensorEqualKernel<T>::Compute(int64_t dataLen)
 {
     LocalTensor<InputType> xLocal = inputXQueue_.DeQue<InputType>();
     LocalTensor<InputType> yLocal = inputYQueue_.DeQue<InputType>();
-    __ubuf__ InputType *inputXAddr = (__ubuf__ InputType *)xLocal.GetPhyAddr();
-    __ubuf__ InputType *inputYAddr = (__ubuf__ InputType *)yLocal.GetPhyAddr();
+    __ubuf__ InputType* inputXAddr = (__ubuf__ InputType*)xLocal.GetPhyAddr();
+    __ubuf__ InputType* inputYAddr = (__ubuf__ InputType*)yLocal.GetPhyAddr();
     uint16_t strideVReg = Ops::Base::GetVRegSize();
     uint32_t dataLenVf = dataLen * sizeof(T);
     uint16_t repeatTimes = (dataLenVf + strideVReg - 1) / strideVReg;
     LocalTensor<uint32_t> resultLocal = resultBuf_.Get<uint32_t>();
-    __ubuf__ uint32_t *resultAddr = (__ubuf__ uint32_t *)resultLocal.GetPhyAddr();
+    __ubuf__ uint32_t* resultAddr = (__ubuf__ uint32_t*)resultLocal.GetPhyAddr();
 
     __VEC_SCOPE__
     {
@@ -128,8 +132,10 @@ __aicore__ inline void TensorEqualKernel<T>::Compute(int64_t dataLen)
         AscendC::MicroAPI::RegTensor<uint32_t> tmpU32Reg;
         AscendC::MicroAPI::AddrReg offSetReg;
         AscendC::MicroAPI::MaskReg bakMaskRegHigh, bakMaskRegLow, maskReg, cmpMaskReg;
-        AscendC::MicroAPI::MaskReg allMaskReg = AscendC::MicroAPI::CreateMask<uint8_t, AscendC::MicroAPI::MaskPattern::ALL>();
-        AscendC::MicroAPI::MaskReg bakMaskReg = AscendC::MicroAPI::CreateMask<uint8_t, AscendC::MicroAPI::MaskPattern::ALLF>();
+        AscendC::MicroAPI::MaskReg
+            allMaskReg = AscendC::MicroAPI::CreateMask<uint8_t, AscendC::MicroAPI::MaskPattern::ALL>();
+        AscendC::MicroAPI::MaskReg
+            bakMaskReg = AscendC::MicroAPI::CreateMask<uint8_t, AscendC::MicroAPI::MaskPattern::ALLF>();
         for (uint16_t i = 0; i < repeatTimes; i++) {
             offSetReg = AscendC::MicroAPI::CreateAddrReg<uint8_t>(i, strideVReg);
             AscendC::MicroAPI::DataCopy(xReg, inputXAddr, offSetReg);
@@ -165,14 +171,17 @@ __aicore__ inline void TensorEqualKernel<T>::Compute(int64_t dataLen)
 template <typename T>
 __aicore__ inline void TensorEqualKernel<T>::Process()
 {
-    if (blockIdx_ >= tilingData_.usedCoreNum || tilingData_.tilingKey == DIFF_SHAPE_TILINGKEY || tilingData_.tilingKey == EMPTY_SHAPE_TILINGKEY) {
+    if (blockIdx_ >= tilingData_.usedCoreNum || tilingData_.tilingKey == DIFF_SHAPE_TILINGKEY ||
+        tilingData_.tilingKey == EMPTY_SHAPE_TILINGKEY) {
         return;
     }
     LocalTensor<uint32_t> saveLocal = saveBuf_.Get<uint32_t>();
     AscendC::Duplicate<uint32_t>(saveLocal, 0, 1);
 
-    int64_t loopSize_ = blockIdx_ == tilingData_.usedCoreNum - 1 ? tilingData_.tailCoreLoopTimes : tilingData_.perCoreLoopTimes;
-    int64_t tailFactor_ = blockIdx_ == tilingData_.usedCoreNum - 1 ? tilingData_.tailCoreTailFactor : tilingData_.perCoreTailFactor;
+    int64_t loopSize_ = blockIdx_ == tilingData_.usedCoreNum - 1 ? tilingData_.tailCoreLoopTimes :
+                                                                   tilingData_.perCoreLoopTimes;
+    int64_t tailFactor_ = blockIdx_ == tilingData_.usedCoreNum - 1 ? tilingData_.tailCoreTailFactor :
+                                                                     tilingData_.perCoreTailFactor;
 
     int64_t offset = 0;
 
@@ -196,10 +205,11 @@ __aicore__ inline void TensorEqualKernel<T>::Process()
 
     if (saveLocal(0) != 0 && outputZGm_.GetValue(0) == NORMAL_OUTPUT) {
         outputZGm_.SetValue(0, 0);
-        AscendC::DataCacheCleanAndInvalid<uint8_t, AscendC::CacheLine::SINGLE_CACHE_LINE, AscendC::DcciDst::CACHELINE_ALL>(outputZGm_);
+        AscendC::DataCacheCleanAndInvalid<uint8_t, AscendC::CacheLine::SINGLE_CACHE_LINE,
+                                          AscendC::DcciDst::CACHELINE_ALL>(outputZGm_);
         return;
     }
 }
-}  // namespace TensorEqual
+} // namespace TensorEqual
 
-#endif  // TENSOR_EQUAL_H_
+#endif // TENSOR_EQUAL_H_

@@ -30,18 +30,20 @@ namespace ge {
 * @li input_y: A ND tensor of the same dtype as "input_x". \n
 
 * @par Outputs:
-* output_z: A ND tensor. Bool type, compare result of the two inputs. True if element in input_x is equal to input_y, False otherwise. \n
+* output_z: A ND tensor. Bool type, compare result of the two inputs. True if element in input_x is equal to input_y,
+False otherwise. \n
 
 * @par Third-party framework compatibility
 * Compatible with the PyTorch equal operator. \n
 */
 REG_OP(TensorEqual)
-    .INPUT(input_x, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_INT64, DT_INT32, DT_INT8, DT_UINT8, DT_BOOL, DT_BF16, DT_IN16, DT_UINT16, DT_UINT32, DT_UINT64}))
-    .INPUT(input_y, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_INT64, DT_INT32, DT_INT8, DT_UINT8, DT_BOOL, DT_BF16, DT_IN16, DT_UINT16, DT_UINT32, DT_UINT64}))
+    .INPUT(input_x, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_INT64, DT_INT32, DT_INT8, DT_UINT8, DT_BOOL,
+                                DT_BF16, DT_INT16, DT_UINT16, DT_UINT32, DT_UINT64}))
+    .INPUT(input_y, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_INT64, DT_INT32, DT_INT8, DT_UINT8, DT_BOOL,
+                                DT_BF16, DT_INT16, DT_UINT16, DT_UINT32, DT_UINT64}))
     .OUTPUT(output_z, TensorType({DT_BOOL}))
     .OP_END_FACTORY_REG(TensorEqual)
 
 } // namespace ge
 
 #endif // OPS_OP_PROTO_INC_TENSOR_EQUAL_H_
-
