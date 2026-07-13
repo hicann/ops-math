@@ -15,7 +15,8 @@
 
 namespace l0op {
 const aclTensor *Mul(const aclTensor *self, const aclTensor *other, aclOpExecutor *executor);
-    bool IsMulSupportNonContiguous(const aclTensor* self, const aclTensor *other);
+bool IsMulSupportNonContiguous(const aclTensor* self, const aclTensor *other);
+const aclTensor *MulInplace(const aclTensor *self, const aclTensor *rfRes, aclOpExecutor *executor);
 }
 
 #endif // OP_API_INC_LEVEL0_MUL_H_

@@ -15,7 +15,6 @@
 #include "random/stateless_random_normal_v2/op_api/stateless_random_normal_v2.h"
 #include "random/stateless_random_normal_v3/op_api/stateless_random_normal_v3.h"
 #include "random/stateless_normal/op_api/stateless_normal.h"
-#include "conversion/broadcast_to/op_api/broadcast_to.h"
 #include "dsa_random_normal.h"
 #include "../../../../conversion/concat_d/op_api/concat_d.h"
 #include "opdev/platform.h"
@@ -147,9 +146,8 @@ static aclTensor* ProcessOffsetTensor(const aclTensor* offsetTensor, int64_t off
 }
 
 // DT_DOUBLE 路径：StatelessRandomNormalV2 + Mul(std) + Add(mean)
-static const aclTensor* normalDoublePath(
-    const aclTensor* selfContiguous, const aclTensor* stateLessOut,
-    float mean, float std, aclOpExecutor* executor)
+static const aclTensor* normalDoublePath(const aclTensor* selfContiguous, const aclTensor* stateLessOut, float mean,
+                                         float std, aclOpExecutor* executor)
 {
     CHECK_RET(stateLessOut != nullptr, nullptr);
 
@@ -166,11 +164,11 @@ static const aclTensor* normalDoublePath(
 }
 
 // 非DSA路径的 normal 正态分布计算
-static const aclTensor* normalDavidPath(
-    const aclTensor* selfContiguous, int64_t seed, int64_t offset,
-    float mean, float std, aclOpExecutor* executor)
+static const aclTensor* normalDavidPath(const aclTensor* selfContiguous, int64_t seed, int64_t offset, float mean,
+                                        float std, aclOpExecutor* executor)
 {
-    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
+    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 &&
+        selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
         if (!aclnnGetPytorchRandom()) {
             OP_LOGD("compat mode, use V3 uniform");
             // seed转化为key
@@ -189,38 +187,14 @@ static const aclTensor* normalDavidPath(
             return l0op::StatelessRandomNormalV3(
             selfContiguous, keyArr, counterArr, meanTensorV3, stdTensorV3, executor);
         }
-        // V4 标量路径：对标 PyTorch normal_(scalar_mean, scalar_std) 单步 FMA
-        // PyTorch 在 float 精度下计算 z * std + mean，最后一次 cast 到目标 dtype
-        auto selfFloat = (selfContiguous->GetDataType() != DataType::DT_FLOAT)
-            ? l0op::Cast(selfContiguous, op::DataType::DT_FLOAT, executor)
-            : selfContiguous;
-        CHECK_RET(selfFloat != nullptr, nullptr);
+        // 精度等价：kernel 内 z * static_cast<float>(std) + static_cast<float>(mean) 在 fp32 下完成，
+        // 最终 static_cast<T>(result) 仅一次 fp32→T 舍入，与原来 L2 层 Mul+Add+外层Cast 等价
+        FVector<float> meanVector = {mean};
+        auto meanTensor = executor->ConvertToTensor(meanVector.data(), meanVector.size(), op::DataType::DT_FLOAT);
+        FVector<float> stdVector = {std};
+        auto stdTensor = executor->ConvertToTensor(stdVector.data(), stdVector.size(), op::DataType::DT_FLOAT);
 
-        FVector<float> zeroMeanVector = {0.0f};
-        auto zeroMeanTensor = executor->ConvertToTensor(
-            zeroMeanVector.data(), zeroMeanVector.size(), op::DataType::DT_FLOAT);
-        FVector<float> oneStdVector = {1.0f};
-        auto oneStdTensor = executor->ConvertToTensor(
-            oneStdVector.data(), oneStdVector.size(), op::DataType::DT_FLOAT);
-
-        auto outDims = op::ToShapeVector(selfContiguous->GetViewShape());
-        auto outShapeArray = executor->AllocIntArray(outDims.data(), outDims.size());
-        zeroMeanTensor = l0op::BroadcastTo(zeroMeanTensor, outShapeArray, executor);
-        oneStdTensor = l0op::BroadcastTo(oneStdTensor, outShapeArray, executor);
-
-        auto normalOut = l0op::StatelessNormal(
-            selfFloat, seed, offset, zeroMeanTensor, oneStdTensor, executor);
-        CHECK_RET(normalOut != nullptr, nullptr);
-
-        // fp32 下做 z * std + mean（全程 fp32，无中间舍入）
-        auto stdScalar = executor->AllocScalar(std);
-        auto stdTensor = executor->ConvertToTensor(stdScalar, op::DataType::DT_FLOAT);
-        auto mulOut = l0op::Mul(normalOut, stdTensor, executor);
-        CHECK_RET(mulOut != nullptr, nullptr);
-
-        auto meanScalar = executor->AllocScalar(mean);
-        auto meanTensor = executor->ConvertToTensor(meanScalar, op::DataType::DT_FLOAT);
-        return l0op::Add(mulOut, meanTensor, executor);
+        return l0op::StatelessNormal(selfContiguous, seed, offset, meanTensor, stdTensor, executor);
     } else {
         // V2 路径：seed 转化为 key，offset 转化为 counter
         FVector<int64_t, op::MAX_DIM_NUM> key_vec = {seed};
@@ -233,16 +207,15 @@ static const aclTensor* normalDavidPath(
         int64_t alg = 1;
         auto algScalar = executor->AllocScalar(&alg, DataType::DT_INT32);
         const aclTensor* algTensor = executor->ConvertToTensor(algScalar, op::ToOpDataType(ACL_INT32));
-        auto stateLessOut =
-            l0op::StatelessRandomNormalV2(selfContiguous, keyArr, counterArr, algTensor, executor);
+        auto stateLessOut = l0op::StatelessRandomNormalV2(selfContiguous, keyArr, counterArr, algTensor, executor);
         return normalDoublePath(selfContiguous, stateLessOut, mean, std, executor);
     }
 }
 
 // 非DSA路径的 normal 正态分布计算（Tensor seed/offset 版本）
-static const aclTensor* normalTensorDavidPath(
-    const aclTensor* selfContiguous, const aclTensor* seedTensor, const aclTensor* offsetTensor,
-    int64_t offset, float mean, float std, aclOpExecutor* executor)
+static const aclTensor* normalTensorDavidPath(const aclTensor* selfContiguous, const aclTensor* seedTensor,
+                                              const aclTensor* offsetTensor, int64_t offset, float mean, float std,
+                                              aclOpExecutor* executor)
 {
     if (seedTensor->GetDataType() != op::DataType::DT_INT64) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Normal seedTensor dtype must be DT_INT64, got %s.",
@@ -255,7 +228,8 @@ static const aclTensor* normalTensorDavidPath(
         return nullptr;
     }
 
-    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
+    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 &&
+        selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
         if (!aclnnGetPytorchRandom()) {
             OP_LOGD("compat mode, use V3 uniform");
             // seedTensor/offsetTensor 从 int64 Cast 为 uint64（V3 OpDef 要求 uint64）
@@ -276,43 +250,18 @@ static const aclTensor* normalTensorDavidPath(
             return l0op::StatelessRandomNormalV3(
                 selfContiguous, normalSeedU64, resultAddOut, meanTensorV3, stdTensorV3, executor);
         }
-        // V4 标量路径：对标 PyTorch normal_(scalar_mean, scalar_std) 单步 FMA
+        // 精度等价论证同 normalDavidPath 改造
         FVector<int64_t> offsetVector{static_cast<int64_t>(offset)};
         auto tmpTensor = executor->ConvertToTensor(offsetVector.data(), offsetVector.size(), op::DataType::DT_INT64);
         auto resultAddOut = l0op::Add(offsetTensor, tmpTensor, executor);
         CHECK_RET(resultAddOut != nullptr, nullptr);
 
-        // Step 1: Kernel 以 fp32 生成 N(0,1)
-        auto selfFloat = (selfContiguous->GetDataType() != DataType::DT_FLOAT)
-            ? l0op::Cast(selfContiguous, op::DataType::DT_FLOAT, executor)
-            : selfContiguous;
-        CHECK_RET(selfFloat != nullptr, nullptr);
+        FVector<float> meanVector = {mean};
+        auto meanTensor = executor->ConvertToTensor(meanVector.data(), meanVector.size(), op::DataType::DT_FLOAT);
+        FVector<float> stdVector = {std};
+        auto stdTensor = executor->ConvertToTensor(stdVector.data(), stdVector.size(), op::DataType::DT_FLOAT);
 
-        FVector<float> zeroMeanVector = {0.0f};
-        auto zeroMeanTensor = executor->ConvertToTensor(
-            zeroMeanVector.data(), zeroMeanVector.size(), op::DataType::DT_FLOAT);
-        FVector<float> oneStdVector = {1.0f};
-        auto oneStdTensor = executor->ConvertToTensor(
-            oneStdVector.data(), oneStdVector.size(), op::DataType::DT_FLOAT);
-
-        auto outDims = op::ToShapeVector(selfContiguous->GetViewShape());
-        auto outShapeArray = executor->AllocIntArray(outDims.data(), outDims.size());
-        zeroMeanTensor = l0op::BroadcastTo(zeroMeanTensor, outShapeArray, executor);
-        oneStdTensor = l0op::BroadcastTo(oneStdTensor, outShapeArray, executor);
-
-        auto normalOut = l0op::StatelessNormal(
-            selfFloat, seedTensor, resultAddOut, zeroMeanTensor, oneStdTensor, executor);
-        CHECK_RET(normalOut != nullptr, nullptr);
-
-        // Step 2: fp32 下做 z * std + mean
-        auto stdScalar = executor->AllocScalar(std);
-        auto stdTensor = executor->ConvertToTensor(stdScalar, op::DataType::DT_FLOAT);
-        auto mulOut = l0op::Mul(normalOut, stdTensor, executor);
-        CHECK_RET(mulOut != nullptr, nullptr);
-
-        auto meanScalar = executor->AllocScalar(mean);
-        auto meanTensor = executor->ConvertToTensor(meanScalar, op::DataType::DT_FLOAT);
-        return l0op::Add(mulOut, meanTensor, executor);
+        return l0op::StatelessNormal(selfContiguous, seedTensor, resultAddOut, meanTensor, stdTensor, executor);
     } else {
         // V2 路径：保持原有 Cast/concat 逻辑
         auto normalSeedU64 = l0op::Cast(seedTensor, op::DataType::DT_UINT64, executor);
@@ -329,8 +278,8 @@ static const aclTensor* normalTensorDavidPath(
         int64_t alg = 1;
         auto algScalar = executor->AllocScalar(&alg, DataType::DT_INT32);
         const aclTensor* algTensor = executor->ConvertToTensor(algScalar, op::ToOpDataType(ACL_INT32));
-        auto stateLessOut =
-            l0op::StatelessRandomNormalV2(selfContiguous, normalSeedU64, resultAddOut, algTensor, executor);
+        auto stateLessOut = l0op::StatelessRandomNormalV2(selfContiguous, normalSeedU64, resultAddOut, algTensor,
+                                                          executor);
         return normalDoublePath(selfContiguous, stateLessOut, mean, std, executor);
     }
 }
@@ -338,9 +287,8 @@ static const aclTensor* normalTensorDavidPath(
 /**
  * torch.Tensor.normal_()的API的总体调用流程
  */
-aclnnStatus aclnnInplaceNormalGetWorkspaceSize(
-    const aclTensor* selfRef, float mean, float std, int64_t seed, int64_t offset, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnInplaceNormalGetWorkspaceSize(const aclTensor* selfRef, float mean, float std, int64_t seed,
+                                               int64_t offset, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
@@ -402,14 +350,14 @@ aclnnStatus aclnnInplaceNormalGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceNormalTensorGetWorkspaceSize(
-    const aclTensor* selfRef, float mean, float std, const aclTensor* seedTensor, const aclTensor* offsetTensor,
-    int64_t offset, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceNormalTensorGetWorkspaceSize(const aclTensor* selfRef, float mean, float std,
+                                                     const aclTensor* seedTensor, const aclTensor* offsetTensor,
+                                                     int64_t offset, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
-    L2_DFX_PHASE_1(
-        aclnnInplaceNormalTensor, DFX_IN(selfRef, mean, std, seedTensor, offsetTensor, offset), DFX_OUT(selfRef));
+    L2_DFX_PHASE_1(aclnnInplaceNormalTensor, DFX_IN(selfRef, mean, std, seedTensor, offsetTensor, offset),
+                   DFX_OUT(selfRef));
     auto out = const_cast<aclTensor*>(selfRef);
 
     // 固定写法，创建OpExecutor
@@ -449,11 +397,11 @@ aclnnStatus aclnnInplaceNormalTensorGetWorkspaceSize(
         CHECK_RET(stdScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto concatTensor = ProcessOffsetTensor(offsetTensor, offset, uniqueExecutor.get());
         CHECK_RET(concatTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        computeOut = l0op::DSARandomNormalTensor(
-            inputShapeArray, seedTensor, concatTensor, meanScalar, stdScalar, uniqueExecutor.get());
+        computeOut = l0op::DSARandomNormalTensor(inputShapeArray, seedTensor, concatTensor, meanScalar, stdScalar,
+                                                 uniqueExecutor.get());
     } else {
-        computeOut = normalTensorDavidPath(
-            selfContiguous, seedTensor, offsetTensor, offset, mean, std, uniqueExecutor.get());
+        computeOut = normalTensorDavidPath(selfContiguous, seedTensor, offsetTensor, offset, mean, std,
+                                           uniqueExecutor.get());
     }
     CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
@@ -477,8 +425,8 @@ aclnnStatus aclnnInplaceNormal(void* workspace, uint64_t workspaceSize, aclOpExe
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceNormalTensor(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnInplaceNormalTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                     aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnInplaceNormalTensor);
     // 固定写法，调用框架能力，完成计算

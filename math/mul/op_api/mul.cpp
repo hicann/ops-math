@@ -143,4 +143,35 @@ const aclTensor *Mul(const aclTensor *self, const aclTensor *other, aclOpExecuto
   return MulAiCpu(self, other, mulOut, executor);
 }
 
+const aclTensor *MulInplace(const aclTensor *self, const aclTensor *rfRes, aclOpExecutor *executor) {
+  Shape broadcastShape;
+  OP_CHECK_BROADCAST_AND_INFER_SHAPE(self, rfRes, broadcastShape, return nullptr);
+
+  // 校验输出tensor的shape和rfRes tensor一致
+  if (broadcastShape != rfRes->GetViewShape()) {
+      OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self and rfRes broadcastShape [%s] not equal to rfRes shape [%s], do no support inplace from the 'rfRes' tensor!", 
+          op::ToString(broadcastShape).GetString(), op::ToString(rfRes->GetViewShape()).GetString());
+      return nullptr;
+  }
+
+  // 校验输出tensor的dtype和rfRes tensor一致
+  bool isMixDataType = (self->GetDataType() == DataType::DT_FLOAT16 && rfRes->GetDataType() == DataType::DT_FLOAT) ||
+                        (self->GetDataType() == DataType::DT_FLOAT && rfRes->GetDataType() == DataType::DT_FLOAT16) ||
+                        (self->GetDataType() == DataType::DT_BF16 && rfRes->GetDataType() == DataType::DT_FLOAT) ||
+                        (self->GetDataType() == DataType::DT_FLOAT && rfRes->GetDataType() == DataType::DT_BF16);
+  if (isMixDataType && (rfRes->GetDataType() == DataType::DT_FLOAT16 || rfRes->GetDataType() == DataType::DT_BF16)) {
+      OP_LOGE(ACLNN_ERR_PARAM_INVALID, "out dtype DataType::DT_FLOAT not equal to rfRes dtype [%s], do no support inplace from the 'rfRes' tensor!", 
+          op::ToString(rfRes->GetDataType()).GetString());
+      return nullptr;
+  }
+
+  auto mulOut = const_cast<aclTensor*>(rfRes);
+
+  if (isMixDataType || (IsAiCoreSupport(self) && IsAiCoreSupport(rfRes)) || IsDoubleSupport(self, rfRes)) {
+    return MulAiCore(self, rfRes, mulOut, executor);
+  }
+
+  return MulAiCpu(self, rfRes, mulOut, executor);
+}
+
 } // namespace l0op
