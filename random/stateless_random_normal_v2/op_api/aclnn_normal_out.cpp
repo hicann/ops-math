@@ -28,7 +28,6 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
-#include "../../random_common/op_api/aclnn_set_pytorch_random.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -217,22 +216,7 @@ aclnnStatus CommonLogicGeneralNormal(
 {
     const aclTensor* addOut = nullptr;
 
-    if (!aclnnGetPytorchRandom() && GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 &&
-        self->GetDataType() != DataType::DT_DOUBLE) {
-        OP_LOGD("compat mode, use V3 Normal");
-        // seed转化为key
-        FVector<int64_t, op::MAX_DIM_NUM> key_vec = {seed};
-        auto keyArr = (uniqueExecutor.get())->AllocIntArray(key_vec.data(), key_vec.size());
-
-        // offset转化为counter
-        FVector<int64_t, op::MAX_DIM_NUM> counter_vec = {0, offset};
-        auto counterArr = (uniqueExecutor.get())->AllocIntArray(counter_vec.data(), counter_vec.size());
-        auto meanFP32 = l0op::Cast(mean, DataType::DT_FLOAT, uniqueExecutor.get());
-        CHECK_RET(meanFP32 != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        auto stdFP32 = l0op::Cast(std, DataType::DT_FLOAT, uniqueExecutor.get());
-        CHECK_RET(stdFP32 != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        addOut = l0op::StatelessRandomNormalV3(self, keyArr, counterArr, meanFP32, stdFP32, uniqueExecutor.get());
-    } else if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && self->GetDataType() != DataType::DT_DOUBLE){
+    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && self->GetDataType() != DataType::DT_DOUBLE){
         if (scalarMode == ScalarMode::TensorTensor || scalarMode == ScalarMode::ScalarTensor) {
             FVector<float> zeroMeanVector = {0.0f};
             auto zeroMeanTensor = uniqueExecutor.get()->ConvertToTensor(
