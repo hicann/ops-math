@@ -25,29 +25,28 @@ namespace GroupedBiasAddGrad {
 using namespace AscendC;
 
 // T: grad_y data type, U: group_idx type
-template<typename T, typename U>
-class GroupedBiasAddGradSplitH 
-{
-using PromoteDataT = float;                                             // DataType in compute
+template <typename T, typename U>
+class GroupedBiasAddGradSplitH {
+    using PromoteDataT = float; // DataType in compute
 
-constexpr static int64_t BLOCK_BYTE = 512;                              // Processed block: 512B
-constexpr static uint64_t ALIGN_BYTE = 32;
-constexpr static int64_t BLOCK_SIZE = BLOCK_BYTE / sizeof(T);           // Processed block length: 512B
-constexpr static uint64_t BLOCK_UB_SIZE = ALIGN_BYTE / sizeof(T);       // Aligned block length
-constexpr static float ZERO_VALUE = 0.0;
-constexpr static int32_t ELEMENT_ONE_REPEAT_COMPUTE = Ops::Base::GetVRegSize() / sizeof(PromoteDataT);
-constexpr static int64_t BUFFER_NUM = 4;
+    constexpr static int64_t BLOCK_BYTE = 512; // Processed block: 512B
+    constexpr static uint64_t ALIGN_BYTE = 32;
+    constexpr static int64_t BLOCK_SIZE = BLOCK_BYTE / sizeof(T);     // Processed block length: 512B
+    constexpr static uint64_t BLOCK_UB_SIZE = ALIGN_BYTE / sizeof(T); // Aligned block length
+    constexpr static float ZERO_VALUE = 0.0;
+    constexpr static int32_t ELEMENT_ONE_REPEAT_COMPUTE = Ops::Base::GetVRegSize() / sizeof(PromoteDataT);
+    constexpr static int64_t BUFFER_NUM = 4;
 
 #ifdef __CCE_AICORE__
-constexpr static AscendC::MicroAPI::CastTrait castTrait0 = {
+    constexpr static AscendC::MicroAPI::CastTrait castTrait0 = {
         AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::UNKNOWN,
         AscendC::MicroAPI::MaskMergeMode::ZEROING, AscendC::RoundMode::UNKNOWN};
 #endif
 
 public:
     __aicore__ inline GroupedBiasAddGradSplitH(){};
-    __aicore__ inline void Init(GM_ADDR grad_y, GM_ADDR group_idx, GM_ADDR grad_bias, 
-                                                const GroupedBiasAddGradCutHTilingData* tiling);
+    __aicore__ inline void Init(GM_ADDR grad_y, GM_ADDR group_idx, GM_ADDR grad_bias,
+                                const GroupedBiasAddGradCutHTilingData* tiling);
     __aicore__ inline void Process();
 
 private:
@@ -70,60 +69,60 @@ private:
     TPipe pipe_;
 
     // grad_y：input，grad_idx：group idx info，grad_bias：bias grad
-    GlobalTensor<T> gradYGm_;                         // grad_y
-    GlobalTensor<U> gradIdxGm_;                       // grad_idx
-    GlobalTensor<T> gradBiasGm_;                      // output
+    GlobalTensor<T> gradYGm_;    // grad_y
+    GlobalTensor<U> gradIdxGm_;  // grad_idx
+    GlobalTensor<T> gradBiasGm_; // output
 
     // basic param
-    int64_t blockIdx_;              // core id
+    int64_t blockIdx_; // core id
     int64_t curH_;
-    int64_t groupIdxDim_;           // group num
-    int64_t inputShape_[2];         // input shape
-    int64_t hMainFactor_;           // H main block length
-    int64_t hTailFactor_;           // H tail block length
-    int64_t usedUbSize_;            // used ub size
-    int64_t useTempBufSize_;        // tempBuf size
+    int64_t groupIdxDim_;    // group num
+    int64_t inputShape_[2];  // input shape
+    int64_t hMainFactor_;    // H main block length
+    int64_t hTailFactor_;    // H tail block length
+    int64_t usedUbSize_;     // used ub size
+    int64_t useTempBufSize_; // tempBuf size
     int64_t groupedIdxSize_;
-    int64_t outputSize_;            // output size
-    int64_t maxPerHLen_ = 0;        // single max h 
-    int64_t srcIndex_;              // CopyIn start addr
-    int64_t startIndex_;            // core start addr
-    bool  groupIdxType_;
+    int64_t outputSize_;     // output size
+    int64_t maxPerHLen_ = 0; // single max h
+    int64_t srcIndex_;       // CopyIn start addr
+    int64_t startIndex_;     // core start addr
+    bool groupIdxType_;
     int64_t cacheStride_ = 0;
 
     // G and H Que
     TQue<TPosition::VECIN, 1> groupIdxQue_;
     TQue<TPosition::VECIN, 1> xQue_;
-    TQueBind<TPosition::VECIN, TPosition::VECOUT, 1> outputQue_;              // output
-    TQue<TPosition::VECOUT, 1> zeroOutQue_;                                   // dup zero 
+    TQueBind<TPosition::VECIN, TPosition::VECOUT, 1> outputQue_; // output
+    TQue<TPosition::VECOUT, 1> zeroOutQue_;                      // dup zero
 
     // cut G param
-    int64_t g_;                     // cur G length
-    int64_t gId_;                   // cur G id
-    int64_t blockGNum_;             // cut cur G num
-    int64_t mainG_;                 // main G length
-    int64_t tailG_;                 // tail G length
-    int64_t bisectionPos_;          // nearest pow 2
+    int64_t g_;            // cur G length
+    int64_t gId_;          // cur G id
+    int64_t blockGNum_;    // cut cur G num
+    int64_t mainG_;        // main G length
+    int64_t tailG_;        // tail G length
+    int64_t bisectionPos_; // nearest pow 2
     int64_t cacheCount_;
-    int64_t bisectionTail_;         // blockGNum_ - bisectionPos_
+    int64_t bisectionTail_; // blockGNum_ - bisectionPos_
 
     TBuf<> computeResBuf_;
     TBuf<> tempResBuf_;
     TBuf<> tempBufBuf_;
-    
+
     LocalTensor<U> groupIdx_;
     LocalTensor<PromoteDataT> xTensor_;
     LocalTensor<T> xTensorT_;
 
     // BinaryReduceSum space
-    LocalTensor<PromoteDataT> computeRes_;  // reduceSum compute result
-    LocalTensor<PromoteDataT> tempRes_;     // temp result
+    LocalTensor<PromoteDataT> computeRes_; // reduceSum compute result
+    LocalTensor<PromoteDataT> tempRes_;    // temp result
     LocalTensor<PromoteDataT> tempBuf_;
 };
 
-template<typename T, typename U>
-__aicore__ inline void GroupedBiasAddGradSplitH<T, U>::Init(GM_ADDR grad_y, GM_ADDR group_idx, GM_ADDR grad_bias, 
-                                                const GroupedBiasAddGradCutHTilingData* tiling)
+template <typename T, typename U>
+__aicore__ inline void GroupedBiasAddGradSplitH<T, U>::Init(GM_ADDR grad_y, GM_ADDR group_idx, GM_ADDR grad_bias,
+                                                            const GroupedBiasAddGradCutHTilingData* tiling)
 {
     blockIdx_ = GetBlockIdx();
     tilingData_ = tiling;
@@ -168,7 +167,7 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::Init(GM_ADDR grad_y, GM_A
     tempBuf_ = tempBufBuf_.template Get<PromoteDataT>();
 }
 
-template<typename T, typename U>
+template <typename T, typename U>
 __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyInGroup()
 {
     // CopyIn group info
@@ -176,20 +175,14 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyInGroup()
     DataCopyPadExtParams<U> dataCopyPadParams{false, 0, 0, 0};
     DataCopyExtParams dataCopyInParams{1, static_cast<uint32_t>(groupIdxDim_ * sizeof(U)), 0, 0, 0};
     DataCopyPad(groupIdx_, gradIdxGm_, dataCopyInParams, dataCopyPadParams);
-    
+
     groupIdxQue_.EnQue<U>(groupIdx_);
     groupIdx_ = groupIdxQue_.DeQue<U>();
-
-    // if groupIdxType_ = 0, [10, 15, 30, 42] -> [10, 5, 15, 12]
-    if (groupIdxType_ == 0) {
-        for (int64_t i = groupIdxDim_ - 1; i >= 1 ; i--) {
-            groupIdx_.SetValue(i, groupIdx_.GetValue(i) - groupIdx_.GetValue(i - 1));
-        }
-    }
 }
 
-template<typename T, typename U>
-__aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyDataInForOne(int64_t offset, int64_t curDimH, int64_t blkCount)
+template <typename T, typename U>
+__aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyDataInForOne(int64_t offset, int64_t curDimH,
+                                                                        int64_t blkCount)
 {
     xTensorT_ = outputQue_.AllocTensor<T>();
     DataCopyPadExtParams<T> copyPadExtParams = {false, 0, 0, 0};
@@ -203,7 +196,7 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyDataInForOne(int64_t 
     outputQue_.EnQue<T>(xTensorT_);
 }
 
-template<typename T, typename U>
+template <typename T, typename U>
 __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyDataIn(int64_t offset, int64_t curDimH, int64_t blkCount)
 {
     xTensor_ = xQue_.AllocTensor<PromoteDataT>();
@@ -232,15 +225,16 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyDataIn(int64_t offset
 
         // VF: T->PromoteDataT
         int64_t count = blkCount * utils::CeilAlign<int64_t>(curDimH, BLOCK_UB_SIZE);
-        uint16_t loops = utils::CeilDiv<int64_t>(static_cast<int64_t>(count * sizeof(PromoteDataT)), static_cast<int64_t>(Ops::Base::GetVRegSize()));
+        uint16_t loops = utils::CeilDiv<int64_t>(static_cast<int64_t>(count * sizeof(PromoteDataT)),
+                                                 static_cast<int64_t>(Ops::Base::GetVRegSize()));
         uint32_t loopsStride = Ops::Base::GetVRegSize() / sizeof(PromoteDataT);
 
         __VEC_SCOPE__
         {
             uint32_t inputOffsetReg = inputOffset;
 
-            __local_mem__ PromoteDataT* dst = (__local_mem__ PromoteDataT*) xTensor_.GetPhyAddr();
-            __local_mem__ T* src = (__local_mem__ T*) inputLocal.GetPhyAddr() + inputOffsetReg;
+            __local_mem__ PromoteDataT* dst = (__local_mem__ PromoteDataT*)xTensor_.GetPhyAddr();
+            __local_mem__ T* src = (__local_mem__ T*)inputLocal.GetPhyAddr() + inputOffsetReg;
 
             uint32_t sreg = static_cast<uint32_t>(count);
 
@@ -248,9 +242,10 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyDataIn(int64_t offset
             AscendC::MicroAPI::RegTensor<T> aReg;
             AscendC::MicroAPI::RegTensor<PromoteDataT> bReg;
 
-            for (uint16_t i = 0 ; i < loops; i++) {
+            for (uint16_t i = 0; i < loops; i++) {
                 mask = AscendC::MicroAPI::UpdateMask<PromoteDataT>(sreg);
-                AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::LoadDist::DIST_UNPACK_B16>(aReg, (__local_mem__ T*)src + i * loopsStride);
+                AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::LoadDist::DIST_UNPACK_B16>(
+                    aReg, (__local_mem__ T*)src + i * loopsStride);
                 AscendC::MicroAPI::Cast<PromoteDataT, T, castTrait0>(bReg, aReg, mask);
                 AscendC::MicroAPI::DataCopy(dst + i * loopsStride, bReg, mask);
             }
@@ -260,10 +255,12 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyDataIn(int64_t offset
     xTensor_ = xQue_.DeQue<PromoteDataT>();
 }
 
-template<typename T, typename U>
+template <typename T, typename U>
 __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::SetGParam(int64_t singleH)
 {
-    int64_t singleG = usedUbSize_ / (utils::CeilAlign<int64_t>(static_cast<int64_t>(singleH), static_cast<int64_t>(BLOCK_UB_SIZE)) * sizeof(PromoteDataT));
+    int64_t singleG = usedUbSize_ /
+                      (utils::CeilAlign<int64_t>(static_cast<int64_t>(singleH), static_cast<int64_t>(BLOCK_UB_SIZE)) *
+                       sizeof(PromoteDataT));
     blockGNum_ = utils::CeilDiv<int64_t>(g_, singleG);
     mainG_ = singleG;
     tailG_ = g_ - (blockGNum_ - 1) * mainG_;
@@ -276,19 +273,24 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::SetGParam(int64_t singleH
     bisectionTail_ = blockGNum_ - bisectionPos_;
 }
 
-template<typename T, typename U>
+template <typename T, typename U>
 __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::Process()
 {
     // cal init index
-    srcIndex_ = blockIdx_ * hMainFactor_;        // mte start addr, maybe change
-    startIndex_ = srcIndex_;                     // keep no change
+    srcIndex_ = blockIdx_ * hMainFactor_; // mte start addr, maybe change
+    startIndex_ = srcIndex_;              // keep no change
 
     // mte2 group
     CopyInGroup();
-    
+
     // start process
     for (int64_t i = 0; i < groupIdxDim_; i++) {
-        g_ = groupIdx_.GetValue(i);
+        if (groupIdxType_ == 0 && i > 0) {
+            g_ = groupIdx_.GetValue(i) - groupIdx_.GetValue(i - 1);
+        } else {
+            g_ = groupIdx_.GetValue(i);
+        }
+
         gId_ = i;
 
         if (g_ == 0) {
@@ -309,7 +311,7 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::Process()
     }
 }
 
-template<typename T, typename U>
+template <typename T, typename U>
 __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::ProcessOneG(int64_t curH, int64_t startIndex, int64_t gId)
 {
     int64_t loops = utils::CeilDiv<int64_t>(curH, static_cast<int64_t>(outputSize_ / sizeof(T)));
@@ -331,7 +333,7 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::ProcessOneG(int64_t curH,
     CopyDataOutUnCast(outputDataOffset, tailH);
 }
 
-template<typename T, typename U>
+template <typename T, typename U>
 __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::ProcessZeroG(int64_t curH, int64_t startIndex, int64_t gId)
 {
     DataCopyExtParams copyOutParams = {1, 1, 0, 0, 0};
@@ -357,7 +359,7 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::ProcessZeroG(int64_t curH
     zeroOutQue_.FreeTensor(outputRes);
 }
 
-template<typename T, typename U>
+template <typename T, typename U>
 __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::ProcessSplitG(int64_t curH)
 {
     int64_t hLoops = utils::CeilDiv<int64_t>(curH, BLOCK_SIZE);
@@ -374,7 +376,7 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::ProcessSplitG(int64_t cur
     }
 }
 
-template<typename T, typename U>
+template <typename T, typename U>
 __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::ProcessSplitH(int64_t curH, int64_t g, int64_t gId)
 {
     // cut H param
@@ -388,6 +390,11 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::ProcessSplitH(int64_t cur
         int64_t hMainAlign = utils::CeilAlign<int64_t>(hMainLen, BLOCK_UB_SIZE);
 
         CopyDataIn(offset, hMainLen, g);
+
+        event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_V));
+        SetFlag<HardEvent::MTE3_V>(eventId);
+        WaitFlag<HardEvent::MTE3_V>(eventId);
+
         LocalTensor<PromoteDataT> outputRes = outputQue_.AllocTensor<PromoteDataT>();
         uint32_t srcShape[2] = {static_cast<uint32_t>(g), static_cast<uint32_t>(hMainAlign)};
         ReduceSum<PromoteDataT, AscendC::Pattern::Reduce::RA, true>(outputRes, xTensor_, srcShape, false);
@@ -404,6 +411,11 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::ProcessSplitH(int64_t cur
         int64_t hTailAlign = utils::CeilAlign<int64_t>(hTailLen, BLOCK_UB_SIZE);
 
         CopyDataIn(offset, hTailLen, g);
+
+        event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_V));
+        SetFlag<HardEvent::MTE3_V>(eventId);
+        WaitFlag<HardEvent::MTE3_V>(eventId);
+
         LocalTensor<PromoteDataT> outputRes = outputQue_.AllocTensor<PromoteDataT>();
         uint32_t srcShape[2] = {static_cast<uint32_t>(g), static_cast<uint32_t>(hTailAlign)};
         ReduceSum<PromoteDataT, AscendC::Pattern::Reduce::RA, true>(outputRes, xTensor_, srcShape, false);
@@ -415,12 +427,12 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::ProcessSplitH(int64_t cur
     }
 }
 
-template<typename T, typename U>
+template <typename T, typename U>
 __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::BinaryReduceSum(int64_t loop, int64_t singleH)
 {
-    int64_t singleHAlign = utils::CeilAlign<int64_t>(singleH, BLOCK_UB_SIZE);  // 32 byte Align
+    int64_t singleHAlign = utils::CeilAlign<int64_t>(singleH, BLOCK_UB_SIZE); // 32 byte Align
     int64_t i = 0;
-    
+
     for (; i < bisectionTail_; i++) {
         int64_t offsetLeft = srcIndex_ + (loop * BLOCK_SIZE) + (i + bisectionPos_) * mainG_ * inputShape_[1];
         if (i == bisectionTail_ - 1) {
@@ -428,7 +440,9 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::BinaryReduceSum(int64_t l
         } else {
             CopyDataIn(offsetLeft, singleH, mainG_);
         }
-        uint32_t srcShape[2] = {(i == bisectionTail_ - 1) ? static_cast<uint32_t>(tailG_) : static_cast<uint32_t>(mainG_), static_cast<uint32_t>(singleHAlign)};
+        uint32_t srcShape[2] = {
+            (i == bisectionTail_ - 1) ? static_cast<uint32_t>(tailG_) : static_cast<uint32_t>(mainG_),
+            static_cast<uint32_t>(singleHAlign)};
         tempRes_ = tempResBuf_.template Get<PromoteDataT>();
         ReduceSum<PromoteDataT, AscendC::Pattern::Reduce::RA, true>(tempRes_, xTensor_, srcShape, false);
         xQue_.FreeTensor(xTensor_);
@@ -441,7 +455,8 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::BinaryReduceSum(int64_t l
         Add(computeRes_, computeRes_, tempRes_, 1 * singleH);
         tempResBuf_.FreeTensor(tempRes_);
         int64_t cacheID = utils::GetCacheID(i);
-        cacheStride_ = utils::CeilDiv<int64_t>(static_cast<int64_t>(singleH), static_cast<int64_t>(ELEMENT_ONE_REPEAT_COMPUTE)) *
+        cacheStride_ = utils::CeilDiv<int64_t>(static_cast<int64_t>(singleH),
+                                               static_cast<int64_t>(ELEMENT_ONE_REPEAT_COMPUTE)) *
                        ELEMENT_ONE_REPEAT_COMPUTE;
         UpdateCacheAux(cacheID, cacheStride_, singleH);
     }
@@ -452,7 +467,8 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::BinaryReduceSum(int64_t l
         ReduceSum<PromoteDataT, AscendC::Pattern::Reduce::RA, true>(computeRes_, xTensor_, srcShape, false);
         xQue_.FreeTensor(xTensor_);
         int64_t cacheID = utils::GetCacheID(i);
-        cacheStride_ = utils::CeilDiv<int64_t>(static_cast<int64_t>(singleH), static_cast<int64_t>(ELEMENT_ONE_REPEAT_COMPUTE)) *
+        cacheStride_ = utils::CeilDiv<int64_t>(static_cast<int64_t>(singleH),
+                                               static_cast<int64_t>(ELEMENT_ONE_REPEAT_COMPUTE)) *
                        ELEMENT_ONE_REPEAT_COMPUTE;
         UpdateCacheAux(cacheID, cacheStride_, singleH);
     }
@@ -466,7 +482,7 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::BinaryReduceSum(int64_t l
     CopyDataOutForBuf(outputDataOffset, ubRes, singleH);
 }
 
-template<typename T, typename U>
+template <typename T, typename U>
 __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyDataOutUnCast(int64_t outputDataOffset, int64_t dimH)
 {
     // copyOutParams
@@ -479,8 +495,9 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyDataOutUnCast(int64_t
     outputQue_.FreeTensor(outputRes);
 }
 
-template<typename T, typename U>
-__aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyDataOutForBuf(int64_t outputDataOffset, LocalTensor<PromoteDataT>& ubRes, int64_t dimH)
+template <typename T, typename U>
+__aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyDataOutForBuf(int64_t outputDataOffset,
+                                                                         LocalTensor<PromoteDataT>& ubRes, int64_t dimH)
 {
     // if T == b16，b32->b16
     // copyOutParams
@@ -504,7 +521,7 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyDataOutForBuf(int64_t
     WaitFlag<HardEvent::MTE3_V>(eventId);
 }
 
-template<typename T, typename U>
+template <typename T, typename U>
 __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyDataOut(int64_t outputDataOffset, int64_t dimH)
 {
     // if T == b16，b32->b16
@@ -527,12 +544,13 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyDataOut(int64_t outpu
     outputQue_.FreeTensor(outputRes);
 }
 
-template<typename T, typename U>
-__aicore__ inline void GroupedBiasAddGradSplitH<T, U>::UpdateCacheAux(const int64_t cacheID, const int64_t stride, const int64_t count)
+template <typename T, typename U>
+__aicore__ inline void GroupedBiasAddGradSplitH<T, U>::UpdateCacheAux(const int64_t cacheID, const int64_t stride,
+                                                                      const int64_t count)
 {
     // count H size * VL
-    uint16_t outerLoopTimes =
-        utils::CeilDiv<int64_t>(static_cast<int64_t>(count * sizeof(PromoteDataT)), static_cast<int64_t>(Ops::Base::GetVRegSize()));
+    uint16_t outerLoopTimes = utils::CeilDiv<int64_t>(static_cast<int64_t>(count * sizeof(PromoteDataT)),
+                                                      static_cast<int64_t>(Ops::Base::GetVRegSize()));
     uint16_t innerLoopTimes = cacheID;
     uint32_t outerLoopStride = ELEMENT_ONE_REPEAT_COMPUTE;
     uint32_t innerLoopStride = stride;
@@ -563,6 +581,6 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::UpdateCacheAux(const int6
     }
 }
 
-} // end namespace
+} // namespace GroupedBiasAddGrad
 
 #endif
