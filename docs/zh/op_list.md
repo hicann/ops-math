@@ -358,6 +358,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/bessel_i1e/README.md">bessel_i1e</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>计算指数缩放修正贝塞尔函数（第一类，阶数1）。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/bias_add/README.md">bias_add</a></td>
     <td>√</td>
     <td>√</td>

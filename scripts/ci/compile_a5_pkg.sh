@@ -71,6 +71,18 @@ do
             done
         fi
 
+    if [[ ! "$file_path" == "experimental/"* ]]; then
+        for dir in "${builtin_dirs[@]}"
+        do
+            if [[ "$file_path" == *"/$dir/"*"/arch35/"* ]]; then
+                if [[ ! " ${builtin_ops_name[@]} " =~ " $dir " ]]; then
+                    builtin_ops_name+=("$dir")
+                fi
+                break
+            fi
+        done
+    fi
+
         for dir in "${experimental_dirs[@]}"
         do
             if [[ "$file_path" == "experimental/"*"/$dir/"*"/arch35/"* ]]; then
@@ -119,14 +131,14 @@ execute_run_file() {
 
 if [ ${#builtin_ops_name[@]} -gt 0 ]; then
     builtin_ops_str=$(IFS=,; echo "${builtin_ops_name[*]}")
-    build_cmd="bash build.sh --pkg --ops=$builtin_ops_str --soc=ascend950 -j16 --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH}"
+    build_cmd="bash build.sh --pkg --ops=${builtin_ops_str} --soc=ascend950 -j16 --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH}"
     run_build_command "$build_cmd"
     execute_run_file "custom"
 fi
 
 if [ ${#experimental_ops_name[@]} -gt 0 ]; then
     experimental_ops_str=$(IFS=,; echo "${experimental_ops_name[*]}")
-    build_cmd="bash build.sh --pkg --experimental --ops=$experimental_ops_str --soc=ascend950 -j16 --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH}"
+    build_cmd="bash build.sh --pkg --experimental --ops=${experimental_ops_str} --soc=ascend950 -j16 --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH}"
     run_build_command "$build_cmd"
     execute_run_file "custom"
 fi
