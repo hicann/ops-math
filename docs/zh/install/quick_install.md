@@ -181,7 +181,7 @@
 ```bash
 cd ${local_repo_path}/ops-math # ${local_repo_path}为本地代码仓的路径
 source spack/prepare_cann_env.sh
-spack install --add cann-ops@${cann_version} soc=${soc_name} # ops包是运行态依赖，若仅编译算子，可不安装此包。
+spack install --add cann-ops-math@${cann_version} soc=${soc_name} # ops包是运行态依赖，若仅编译算子，可不安装此包。
 ```
 
 prepare_cann_env.sh会自动安装Spack、搭建构建环境、拉取相关依赖并完成构建，构建场景默认为编译ops-math包，如需其他构建场景请参考[compile.md](./compile.md#使用Spack的场景)

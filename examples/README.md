@@ -10,25 +10,26 @@
 ## 目录说明
 
 ```text
-├── examples                       
+├── examples
 │   ├── add_example                # AI Core算子名
-│   │   ├── CMakeLists.txt         # 算子编译配置文件，保留原文件即可   
+│   │   ├── CMakeLists.txt         # 算子编译配置文件，保留原文件即可
 │   │   ├── examples               # 算子使用示例
 │   │   ├── op_graph               # 算子构图相关目录
 │   │   ├── op_host                # 算子信息库、Tiling、InferShape相关实现
 │   │   └── op_kernel              # 算子kernel目录
 │   ├── add_example_c_api          # AI Core C API算子名（使用C API/asc_simd开发kernel）
-│   │   ├── CMakeLists.txt         # 算子编译配置文件，保留原文件即可   
+│   │   ├── CMakeLists.txt         # 算子编译配置文件，保留原文件即可
 │   │   ├── examples               # 算子使用示例
 │   │   ├── op_graph               # 算子构图相关目录
 │   │   ├── op_host                # 算子信息库、Tiling、InferShape相关实现
 │   │   └── op_kernel              # 算子kernel目录（C API风格）
 │   ├── add_example_aicpu          # AI CPU算子名
-│   │   ├── CMakeLists.txt         # 算子编译配置文件，保留原文件即可   
+│   │   ├── CMakeLists.txt         # 算子编译配置文件，保留原文件即可
 │   │   ├── examples               # 算子使用示例
 │   │   ├── op_graph               # 算子构图相关目录
 │   │   ├── op_host                # 算子信息库、InferShape相关实现
 │   │   └── op_kernel_aicpu        # 算子kernel目录
+│   ├── fast_kernel_launch_example # PyTorch场景下快速端到端开发算子的样例
 │   ├── CMakeLists.txt             # 算子编译配置文件，保留原文件即可
 │   └── README.md                  # 算子说明文档
 
