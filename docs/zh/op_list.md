@@ -88,6 +88,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/ada_cast/README.md">ada_cast</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CORE</td>
+    <td>uint16→float16 类型转换并按 pixel 归一化（HDRnet 白电平缩放），公式 y = SaturateCast_FP16(float32(x) × (1/pixel))。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/add/README.md">add</a></td>
     <td>√</td>
     <td>√</td>

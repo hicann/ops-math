@@ -10,7 +10,7 @@
 | ACLNN_SUCCESS | 0 | 成功。 |
 | ACLNN_ERR_PARAM_NULLPTR | 161001 | 参数校验错误，参数中存在非法的nullptr。 |
 | ACLNN_ERR_PARAM_INVALID | 161002 | 参数校验错误，如输入的两个数据类型不满足输入类型推导关系。 |
-| ACLNN_ERR_RUNTIME_ERROR | 361001 | API内存调用npu runtime的接口异常。 |
+| ACLNN_ERR_RUNTIME_ERROR | 361001 | API内部调用npu runtime的接口异常。 |
 | ACLNN_ERR_INNER_XXX | 561xxx | API内部发生异常。 |
 
 更多关于ACLNN_ERR_INNER_XXX类状态码的说明如[表2](#table2)所示。
