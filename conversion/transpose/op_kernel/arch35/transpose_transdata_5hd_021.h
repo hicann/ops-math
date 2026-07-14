@@ -440,8 +440,9 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::CopyInHSplit(int64_t nIdx, ui
     int64_t nSrcOffset = nIdx * tiling_->HLen * tiling_->WLen;
     int64_t hSrcOffset = hStart_ * tiling_->WLen;
     int64_t ubSrcOffset = ubLoop * tiling_->cUbSplitPara.UbFactor;
-
     int64_t totalSrcOffset = nSrcOffset + hSrcOffset + ubSrcOffset;
+    // 【新增】计算实际有效的 H 行数，防止尾核越界读取 GM
+    int32_t validH = (tiling_->HLen - hStart_ < hCount_) ? tiling_->HLen - hStart_ : hCount_;
 
     DataCopyPadExtParams<T> copyInPadParams{false, 0, 0, 0};
 
@@ -449,11 +450,11 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::CopyInHSplit(int64_t nIdx, ui
     if (tiling_->WLen % wAlignCheck == 0) {
         if (c == tiling_->WAlignBlockElem) {
             copyInParams_.blockCount = 1;
-            copyInParams_.blockLen = hCount_ * c * sizeof(T);
+            copyInParams_.blockLen = validH * c * sizeof(T);
             copyInParams_.srcStride = 0;
             copyInParams_.dstStride = 0;
         } else {
-            copyInParams_.blockCount = hCount_;
+            copyInParams_.blockCount = validH;
             copyInParams_.blockLen = c * sizeof(T);
             copyInParams_.srcStride = (tiling_->WLen - c) * sizeof(T);
             copyInParams_.dstStride = 0;
@@ -462,7 +463,7 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::CopyInHSplit(int64_t nIdx, ui
     } else {
         int32_t wOffset = ubLoop * tiling_->cUbSplitPara.UbFactor;
         int32_t validW = (tiling_->WLen - wOffset < c) ? tiling_->WLen - wOffset : c;
-        copyInParams_.blockCount = hCount_;
+        copyInParams_.blockCount = validH;
         copyInParams_.blockLen = validW * sizeof(T);
         copyInParams_.srcStride = (tiling_->WLen - validW) * sizeof(T);
         copyInParams_.dstStride = (c - validW) * sizeof(T) / BLOCK_SIZE_BYTE;
