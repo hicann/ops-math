@@ -19,28 +19,26 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnTopkGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnTopk”接口执行计算。
-
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnTopkGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnTopk"接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnTopkGetWorkspaceSize(
-  const aclTensor* self, 
-  int64_t          k, 
-  int64_t          dim, 
-  bool             largest, 
-  bool             sorted, 
-  aclTensor*       valuesOut, 
-  aclTensor*       indicesOut, 
-  uint64_t*        workspaceSize, 
+  const aclTensor* self,
+  int64_t          k,
+  int64_t          dim,
+  bool             largest,
+  bool             sorted,
+  aclTensor*       valuesOut,
+  aclTensor*       indicesOut,
+  uint64_t*        workspaceSize,
   aclOpExecutor**  executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnTopk(
-  void*          workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor* executor, 
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
   const aclrtStream stream)
 ```
 
@@ -161,6 +159,8 @@ aclnnStatus aclnnTopk(
       <td>-</td>
     </tr>
   </tbody></table>
+
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：self、valuesOut的数据类型不支持UINT16、UINT32、UINT64。
 
 - **返回值：**
 

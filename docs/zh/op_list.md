@@ -53,18 +53,18 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI CORE/AI CPU</td>
+    <td>AI Core/AI CPU</td>
     <td>该算子对输入的每个元素进行反余弦操作后输出。</td>
   </tr>
   <tr>
     <td>math</td>
     <td><a href="../../math/acosh/README.md">acosh</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>AI CORE/AI CPU</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core/AI CPU</td>
+    <td>计算逆双曲余弦（inverse hyperbolic cosine），支持FLOAT、FLOAT16、BF16数据类型。</td>
   </tr>
     <tr>
     <td>math</td>
@@ -309,12 +309,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/atan2/README.md">atan2</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>计算输入张量self中每个元素和输入标量other的反正切（四象限）。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -571,9 +571,9 @@
     <td><a href="../../math/cross/README.md">cross</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
     <td>√</td>
-    <td>AI CPU</td>
+    <td>√</td>
+    <td>AI Core/AI CPU</td>
     <td>该算子对输入Tensor完成linear_cross运算。</td>
   </tr>
   <tr>
@@ -669,11 +669,11 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/div/README.md">div</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>AI Core</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core/AI CPU</td>
     <td>张量除法计算。</td>
   </tr>
   <tr>
@@ -723,7 +723,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI CPU</td>
+    <td>AI Core/AI CPU</td>
     <td>该算子计算两个Tensor是否有相同的大小和元素。</td>
   </tr>
   <tr>
@@ -753,7 +753,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI CORE/AI CPU</td>
+    <td>AI Core/AI CPU</td>
     <td>返回一个新的张量，该张量的每个元素都是输入张量对应元素的指数。</td>
   </tr>
   <tr>
@@ -773,7 +773,7 @@
     <td>√</td>
     <td>×</td>
     <td>√</td>
-    <td>AI CORE/AI CPU</td>
+    <td>AI Core/AI CPU</td>
     <td>将输入tensor广播到指定的shape。</td>
   </tr>
   <tr>
@@ -889,22 +889,22 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/gcd/README.md">gcd</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>计算两个输入张量的最大公约数。</td>
   </tr>
   <tr>
     <td>math</td>
     <td><a href="../../math/ger/README.md">ger</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>求一维向量vec1和vec2的外积得到一个二维矩阵。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -981,7 +981,7 @@
     <td><a href="../../math/inv/README.md">inv</a></td>
     <td>√</td>
     <td>√</td>
-    <td>x</td>
+    <td>×</td>
     <td>√</td>
     <td>AI Core</td>
     <td>对输入张量的每一个元素计算其倒数。</td>
@@ -1103,7 +1103,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI CPU</td>
+    <td>AI Core/AI CPU</td>
     <td>该算子用于判断输入self中的每个元素是否小于输入other的值。</td>
   </tr>
   <tr>
@@ -1473,7 +1473,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI CORE</td>
+    <td>AI Core</td>
     <td>返回复数张量的实部，若输入为实数张量则按原值返回。</td>
   </tr>
   <tr>
@@ -1663,7 +1663,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI CPU</td>
+    <td>AI Core/AI CPU</td>
     <td>该算子将输入张量的值舍入到最接近的整数，若该值与两个整数距离一样则向偶数取整。</td>
   </tr>
   <tr>
@@ -1673,7 +1673,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI Core</td>
+    <td>AI Core/AI CPU</td>
     <td>求input(Tensor)每个元素的平方根的倒数。</td>
   </tr>
   <tr>
@@ -1853,7 +1853,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI CPU</td>
+    <td>AI Core/AI CPU</td>
     <td>该算子对输入的每个元素进行正弦后输出。</td>
   </tr>
   <tr>
@@ -1913,7 +1913,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI Core</td>
+    <td>AI Core/AI CPU</td>
     <td>完成非负数平方根计算，负数情况返回nan。</td>
   </tr>
   <tr>
@@ -2099,12 +2099,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/trunc/README.md">trunc</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>对输入张量逐元素截断取整，向零方向舍入。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -2181,8 +2181,8 @@
     <td><a href="../../conversion/chunk_cat/README.md">chunk_cat</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
     <td>将tensors中所有tensor先按照维度dim切分为numChunks块，再按照dim后一维进行级联，最后转换为out的数据类型。</td>
   </tr>
@@ -2191,8 +2191,8 @@
     <td><a href="../../conversion/circular_pad/README.md">circular_pad</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
     <td>使用输入循环填充输入tensor的最后两维。</td>
   </tr>
@@ -2212,7 +2212,7 @@
     <td>√</td>
     <td>√</td>
     <td>×</td>
-    <td>×</td>
+    <td>√</td>
     <td>AI Core</td>
     <td>实现对Coo_Tensor优化的方法coalesce()方法。</td>
   </tr>
@@ -2251,7 +2251,7 @@
     <td><a href="../../conversion/diag_flat/README.md">diag_flat</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
+    <td>√</td>
     <td>√</td>
     <td>AI Core</td>
     <td>创建一个以输入数组为对角线元素的平铺对角矩阵。</td>
@@ -2281,7 +2281,7 @@
     <td><a href="../../conversion/fill_diagonal_v2/README.md">fill_diagonal_v2</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
+    <td>√</td>
     <td>√</td>
     <td>AI Core</td>
     <td>将指定值填充到矩阵的主对角线上。</td>
@@ -2291,8 +2291,8 @@
     <td><a href="../../conversion/masked_select_v3/README.md">masked_select_v3</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
     <td>根据mask是否为True，选出input中对应位置的值，input和mask满足广播规则，结果为一维Tensor。</td>
   </tr>
@@ -2331,8 +2331,8 @@
     <td><a href="../../conversion/pad_v4_grad/README.md">pad_v4_grad</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
     <td>pad之后的输入的反向传播。</td>
   </tr>
@@ -2391,9 +2391,9 @@
     <td><a href="../../conversion/unfold_grad/README.md">unfold_grad</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
-    <td>×</td>
-    <td>AI Core</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core/AI CPU</td>
     <td>实现Unfold算子的反向功能，计算相应的梯度。</td>
   </tr>
   <tr>
@@ -2423,7 +2423,7 @@
     <td>√</td>
     <td>×</td>
     <td>√</td>
-    <td>AI CPU</td>
+    <td>AI Core/AI CPU</td>
     <td>该算子沿指定维度将多个输入张量进行拼接。</td>
   </tr>
   <tr>
@@ -2453,7 +2453,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI CPU</td>
+    <td>AI Core/AI CPU</td>
     <td>该算子将输入的所有元素限制在[clipValueMin,clipValueMax]范围内。</td>
   </tr>
   <tr>
@@ -2483,7 +2483,7 @@
     <td>√</td>
     <td>×</td>
     <td>√</td>
-    <td>AI Core</td>
+    <td>AI Core/AI CPU</td>
     <td>将张量沿着某一维度拆分为多个子张量。</td>
   </tr>
   <tr>
@@ -2509,12 +2509,12 @@
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/broadcast_to/README.md">broadcast_to</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>将输入tensor广播到指定shape。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -2659,10 +2659,10 @@
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/pad/README.md">pad</a></td>
-    <td>×</td>
-    <td>×</td>
     <td>√</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
     <td>对输入Tensor做填充。</td>
   </tr>
@@ -2670,9 +2670,9 @@
     <td>conversion</td>
     <td><a href="../../conversion/pad_v2/README.md">pad_v2</a></td>
     <td>×</td>
-    <td>×</td>
     <td>√</td>
     <td>×</td>
+    <td>√</td>
     <td>AI Core</td>
     <td>对输入tensor进行指定值的常量填充。</td>
   </tr>
@@ -2709,19 +2709,19 @@
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/roll/README.md">roll</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>沿指定维度滚动张量元素。</td>
   </tr>
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/slice/README.md">slice</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
+    <td>√</td>
     <td>√</td>
     <td>AI Core</td>
     <td>根据给定的范围和步长，从输入张量中提取子张量。</td>
@@ -2780,20 +2780,20 @@
     <td>conversion</td>
     <td><a href="../../conversion/squeeze/README.md">squeeze</a></td>
     <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>移除输入张量中大小为1的维度。</td>
   </tr>
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/strided_slice/README.md">strided_slice</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
     <td>√</td>
-    <td>AI Core</td>
+    <td>√</td>
+    <td>AI Core/AI CPU</td>
     <td>按照指定的起始、结束位置和步长，从输入张量中提取一个子张量。</td>
   </tr>
   <tr>
@@ -2802,19 +2802,19 @@
     <td>√</td>
     <td>√</td>
     <td>×</td>
-    <td>×</td>
+    <td>√</td>
     <td>AI Core</td>
     <td>将子张量的梯度映射回原始张量的对应位置。</td>
   </tr>
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/strided_slice_v3/README.md">strided_slice_v3</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>按照指定的起始、结束位置和步长，从输入张量中提取子张量。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -2829,12 +2829,12 @@
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/trans_data/README.md">trans_data</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>实现张量的数据格式转换。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -2870,11 +2870,11 @@
     <td>conversion</td>
     <td><a href="../../conversion/unsqueeze/README.md">unsqueeze</a></td>
     <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>对输入Tensor做填充。</td>
+    <td>在指定位置插入一个大小为1的维度。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -3101,7 +3101,7 @@
     <td><a href="../../random/stateless_random_choice_with_mask/README.md">stateless_random_choice_with_mask</a></td>
     <td>√</td>
     <td>√</td>
-    <td>x</td>
+    <td>×</td>
     <td>√</td>
     <td>AI Core</td>
     <td>根据输入x中值为true，选择出对应索引列表，其次根据seed, offset调用philox_random生成索引列表长度个随机数，利用随机数对索引列表做洗牌算法，得到随机交换后得索引列表，返回count个。</td>
