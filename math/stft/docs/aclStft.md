@@ -17,19 +17,19 @@
 - 计算公式：
 
   - 当normalized=false时：
-    
+
     $$
     X[w,m]=\sum_{k=0}^{winLength-1}window[k]*self[m*hopLength+k]*exp(-j*\frac{2{\pi}wk}{nFft})
     $$
 
   - 当normalized=true时：
-  
+
     $$
     X[w,m]=\frac{1}{\sqrt{nFft}}(\sum_{k=0}^{winLength-1}window[k]*self[m*hopLength+k]*exp(-j*\frac{2{\pi}wk}{nFft}))
     $$
 
   其中：
-  
+
   - $w$为FFT的频点。
   - $m$为滑动窗口的index。
   - $self$为1维或2维Tensor，当$self$是1维时，其为一个时序采样序列，当$self$是2维时，其为多个时序采样序列。
@@ -206,7 +206,7 @@ aclnnStatus aclStft(
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
+
   第一段接口完成入参校验，出现以下场景时报错：
 
   <table style="undefined;table-layout: fixed;width: 1170px"><colgroup>
@@ -295,7 +295,7 @@ aclnnStatus aclStft(
 
 - 输入self与PyTorch接口的不同：PyTorch接口的输入self为原始输入；aclStftGetWorkspaceSize的入参self是原始输入经过前端PyTorch补pad后得到的结果。
 - 当输入self的shape为[B, L]时，如下公式的计算结果较大时，当前接口的计算可能会超时。
-  
+
   $$
   B * ((L - nFft) / hopLength + 1) * nFft
   $$
@@ -303,13 +303,13 @@ aclnnStatus aclStft(
 - nFft <= L。
 - winLength <= nFft。
 - 当normalized=True时，
-  
+
   $$
   STFT(w,m)=\frac{1}{\sqrt{N}}X[w,m]
   $$
 
 - self、windowOptional、returnComplex、out输入和输出数据类型的对应关系如下：
-  
+
   |self|windowOptional|returnComplex|out|
   |-------|-------|-------|-------|
   |FLOAT32| FLOAT32        | True          | COMPLEX64  |
