@@ -23,42 +23,45 @@ namespace l0op {
 OP_TYPE_REGISTER(ComplexAbs);
 
 static const std::initializer_list<op::DataType> ASCEND910_AICORE_DTYPE_SUPPORT_LIST = {};
-static const std::initializer_list<op::DataType> ASCEND910B_AICORE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_COMPLEX32, op::DataType::DT_COMPLEX64};
+static const std::initializer_list<op::DataType> ASCEND910B_AICORE_DTYPE_SUPPORT_LIST = {op::DataType::DT_COMPLEX32,
+                                                                                         op::DataType::DT_COMPLEX64};
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
-static bool IsAiCoreSupport(const aclTensor *self) {
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
-    return CheckType(self->GetDataType(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
-  }
-  return CheckType(self->GetDataType(), ASCEND910_AICORE_DTYPE_SUPPORT_LIST);
+static bool IsAiCoreSupport(const aclTensor* self)
+{
+    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+        return CheckType(self->GetDataType(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
+    }
+    return CheckType(self->GetDataType(), ASCEND910_AICORE_DTYPE_SUPPORT_LIST);
 }
 
 // AICORE算子kernel
-static const aclTensor *ComplexAbsAiCore(const aclTensor *self, aclTensor *out, DataType Tout, aclOpExecutor *executor) {
-  L0_DFX(ComplexAbsAiCore, self, out, Tout);
-  // 使用框架宏ADD_TO_KERNEL_OBJ_LIST，将ComplexAbs算子加入任务队列
-  // op::OP_TYPE_ComplexAbs是算子的OpType，self是算子的输入，out是算子的输出
-  auto ret = ADD_TO_LAUNCHER_LIST_AICORE(ComplexAbs, OP_INPUT(self), OP_OUTPUT(out), OP_ATTR(Tout));
-  OP_CHECK(ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ComplexAbsAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."), return nullptr);
-  return out;
+static const aclTensor* ComplexAbsAiCore(const aclTensor* self, aclTensor* out, DataType Tout, aclOpExecutor* executor)
+{
+    L0_DFX(ComplexAbsAiCore, self, out, Tout);
+    // 使用框架宏ADD_TO_KERNEL_OBJ_LIST，将ComplexAbs算子加入任务队列
+    // op::OP_TYPE_ComplexAbs是算子的OpType，self是算子的输入，out是算子的输出
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(ComplexAbs, OP_INPUT(self), OP_OUTPUT(out), OP_ATTR(Tout));
+    OP_CHECK(ret == ACL_SUCCESS,
+             OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ComplexAbsAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."), return nullptr);
+    return out;
 }
 
-const aclTensor *ComplexAbs(const aclTensor *self, aclOpExecutor *executor) {
-  // 根据推导出的输出shape申请输出tensor
-  // 第一个参数是输出shape，第二个参数是输出的dtype
-  DataType outType{DataType::DT_FLOAT};
-  if (self->GetDataType() == DataType::DT_COMPLEX32) {
-    outType = DataType::DT_FLOAT16;
-  }
-  auto out = executor->AllocTensor(self->GetViewShape(), outType);
+const aclTensor* ComplexAbs(const aclTensor* self, aclOpExecutor* executor)
+{
+    // 根据推导出的输出shape申请输出tensor
+    // 第一个参数是输出shape，第二个参数是输出的dtype
+    DataType outType{DataType::DT_FLOAT};
+    if (self->GetDataType() == DataType::DT_COMPLEX32) {
+        outType = DataType::DT_FLOAT16;
+    }
+    auto out = executor->AllocTensor(self->GetViewShape(), outType);
 
-  if (IsAiCoreSupport(self)) {
-    return ComplexAbsAiCore(self, out, outType, executor);
-  } else {
-    return nullptr;
-  }
+    if (IsAiCoreSupport(self)) {
+        return ComplexAbsAiCore(self, out, outType, executor);
+    } else {
+        return nullptr;
+    }
 }
-}  // namespace l0op
-
+} // namespace l0op
