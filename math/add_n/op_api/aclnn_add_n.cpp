@@ -36,11 +36,11 @@ extern "C" {
 
 // 根据API定义，列出所有能支持的dtype
 static const std::initializer_list<op::DataType> ADD_N_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_FLOAT16, op::DataType::DT_BF16, op::DataType::DT_FLOAT
-};
+    op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_FLOAT16, op::DataType::DT_BF16,
+    op::DataType::DT_FLOAT};
 
 // 检查入参是否为nullptr
-static bool CheckNotNull(const aclTensorList *tensors, const aclTensor* out)
+static bool CheckNotNull(const aclTensorList* tensors, const aclTensor* out)
 {
     OP_CHECK_NULL(tensors, return false);
     for (uint64_t i = 0; i < tensors->Size(); i++) {
@@ -58,20 +58,21 @@ static bool CheckDtypeValid(const aclTensorList* tensors, const aclTensor* out)
 {
     for (uint64_t i = 0; i < tensors->Size(); i++) {
         if (!CheckType((*tensors)[i]->GetDataType(), ADD_N_DTYPE_SUPPORT_LIST)) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Tensor %lu not implemented for %s, should be in dtype support list [%s].", i,
-                    op::ToString((*tensors)[i]->GetDataType()).GetString(), op::ToString(ADD_N_DTYPE_SUPPORT_LIST).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Tensor %lu not implemented for %s, should be in dtype support list [%s].",
+                    i, op::ToString((*tensors)[i]->GetDataType()).GetString(),
+                    op::ToString(ADD_N_DTYPE_SUPPORT_LIST).GetString());
             return false;
         }
-    } 
+    }
     OP_CHECK_DTYPE_NOT_SUPPORT(out, ADD_N_DTYPE_SUPPORT_LIST, return false);
     return true;
 }
 
 // 检查当前NPU架构是否支持
-static bool CheckArch() 
+static bool CheckArch()
 {
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
-    if (npuArch != NpuArch::DAV_2201) {
+    if (npuArch != NpuArch::DAV_2201 && !IsRegBase(npuArch)) {
         return false;
     }
     return true;
@@ -89,7 +90,7 @@ static bool CheckShape(const aclTensorList* tensors, const aclTensor* out)
         }
     }
     OP_CHECK_MAX_DIM(out, MAX_SUPPORT_DIMS_NUMS, return false);
-    
+
     auto shape = (*tensors)[0]->GetViewShape();
     for (uint64_t i = 1; i < tensors->Size(); i++) {
         if ((*tensors)[i]->GetViewShape() != shape) {
@@ -115,7 +116,9 @@ static aclnnStatus CheckParams(const aclTensorList* tensors, const aclTensor* ou
     // 检查数据类型是否一致
     OP_CHECK_DTYPE_NOT_SAME((*tensors)[0], out, return false);
     if (!CheckArch()) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "ACLNN only support ASCEND910B(A2) and ASCEND910_93(A3) series");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "ACLNN only support ASCEND910B(A2), ASCEND910_93(A3) and ASCEND950(A5) series");
+        return ACLNN_ERR_PARAM_INVALID;
     }
 
     // 检查输入的数据类型是否为支持的数据类型
@@ -127,13 +130,14 @@ static aclnnStatus CheckParams(const aclTensorList* tensors, const aclTensor* ou
     // 检查数据格式是否为ND
     if (IsPrivateFormat((*tensors)[0]->GetStorageFormat())) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
+        return ACLNN_ERR_PARAM_INVALID;
     }
 
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnAddNGetWorkspaceSize(const aclTensorList* tensors, aclTensor *out, 
-                                      uint64_t *workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnAddNGetWorkspaceSize(const aclTensorList* tensors, aclTensor* out, uint64_t* workspaceSize,
+                                      aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAddN, DFX_IN(tensors), DFX_OUT(out));
 
@@ -160,20 +164,20 @@ aclnnStatus aclnnAddNGetWorkspaceSize(const aclTensorList* tensors, aclTensor *o
             return ACLNN_SUCCESS;
         }
     }
-    
-    aclTensor *addnOut = nullptr;
+
+    aclTensor* addnOut = nullptr;
     if (tensors->Size() == 1) {
         addnOut = const_cast<aclTensor*>((*tensors)[0]);
     } else {
-        op::FVector<const aclTensor *> tensorList;
+        op::FVector<const aclTensor*> tensorList;
         for (uint64_t i = 0; i < tensors->Size(); i++) {
             auto tensorsContiguous = l0op::Contiguous((*tensors)[i], uniqueExecutor.get());
             CHECK_RET(tensorsContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
             tensorList.push_back(tensorsContiguous);
         }
-        
+
         // 调用AddN算子计算
-        const aclTensorList *inputList = uniqueExecutor.get()->AllocTensorList(tensorList.data(), tensorList.size());
+        const aclTensorList* inputList = uniqueExecutor.get()->AllocTensorList(tensorList.data(), tensorList.size());
         addnOut = const_cast<aclTensor*>(l0op::AddN(inputList, uniqueExecutor.get()));
     }
 
