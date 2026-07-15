@@ -32,6 +32,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
+#include "../../../random_common/op_api/aclnn_set_pytorch_random.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -152,6 +153,14 @@ static const aclTensor* uniformDavidPath(
     double from, double to, aclOpExecutor* executor)
 {
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfRef->GetDataType() != DataType::DT_DOUBLE) {
+        if (!aclnnGetPytorchRandom()) {
+            OP_LOGD("compat mode, use V3 uniform");
+            int32_t uniformV3ScaleMode = 0;
+            auto fromOut = static_cast<float>(from);
+            auto toOut = static_cast<float>(to);
+            return l0op::StatelessRandomUniformV3(
+                selfRef, seed, offset, fromOut, toOut, uniformV3ScaleMode, executor);
+        }
         return l0op::StatelessUniform(
             selfRef, seed, offset, from, to, executor);
     } else {
@@ -167,6 +176,20 @@ static const aclTensor* uniformTensorDavidPath(
     uint64_t offset, double from, double to, aclOpExecutor* executor)
 {
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfRef->GetDataType() != DataType::DT_DOUBLE) {
+        if (!aclnnGetPytorchRandom()) {
+            OP_LOGD("compat mode, use V3 uniform");
+            FVector<int64_t> offsetVector{0, static_cast<int64_t>(offset)};
+            aclIntArray* offsetList = executor->AllocIntArray(offsetVector.data(), 2);
+            auto tmpTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_UINT64);
+            auto resultAddOut = l0op::Add(offsetTensor, tmpTensor, executor);
+            CHECK_RET(resultAddOut != nullptr, nullptr);
+
+            int32_t uniformV3ScaleMode = 0;
+            auto fromOut = static_cast<float>(from);
+            auto toOut = static_cast<float>(to);
+            return l0op::StatelessRandomUniformV3(
+                selfRef, seedTensor, resultAddOut, fromOut, toOut, uniformV3ScaleMode, executor);
+        }
         // V4: offsetTensor + offset → resultAddOut，直接作为 INT64 传入
         FVector<int64_t> offsetVector{static_cast<int64_t>(offset)};
         auto tmpTensor = executor->ConvertToTensor(offsetVector.data(), offsetVector.size(), op::DataType::DT_INT64);

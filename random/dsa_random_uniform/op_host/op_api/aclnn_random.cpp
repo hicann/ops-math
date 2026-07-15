@@ -11,6 +11,7 @@
 #include "aclnn_random.h"
 #include "random/stateless_random_uniform_v2/op_api/stateless_random_uniform_v2.h"
 #include "random/stateless_random/op_api/stateless_random.h"
+#include "random/stateless_random_uniform_v3/op_api/stateless_random_uniform_v3.h"
 #include "dsa_random_uniform.h"
 #include "opdev/platform.h"
 #include "math/round/op_api/round.h"
@@ -32,6 +33,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
+#include "../../../random_common/op_api/aclnn_set_pytorch_random.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -250,6 +252,14 @@ static const aclTensor* randomDavidPath(
     int64_t from, int64_t to, aclOpExecutor* executor)
 {
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfRef->GetDataType() != DataType::DT_DOUBLE) {
+        if (!aclnnGetPytorchRandom()) {
+            OP_LOGD("compat mode, use V3 uniform");
+            int32_t uniformV3ScaleMode = 1;
+            auto fromOut = static_cast<float>(from);
+            auto toOut = static_cast<float>(to);
+            return l0op::StatelessRandomUniformV3(
+                selfRef, seed, offset, fromOut, toOut, uniformV3ScaleMode, executor);
+        }
         auto randomOpOut =l0op::StatelessRandom(selfRef, seed, offset, from, to, executor);
         if (selfRef->GetDataType() == op::DataType::DT_BOOL && randomOpOut != nullptr) {
             auto castOut = l0op::Cast(randomOpOut, op::DataType::DT_INT32, executor);
@@ -284,6 +294,26 @@ static const aclTensor* randomTensorDavidPath(
     }
 
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfRef->GetDataType() != DataType::DT_DOUBLE) {
+        if (!aclnnGetPytorchRandom()) {
+            OP_LOGD("compat mode, use V3 uniform");
+            // seedTensor/offsetTensor 从 int64 Cast 为 uint64（V3 OpDef 要求 uint64）
+            auto randomSeedU64 = l0op::Cast(seedTensor, op::DataType::DT_UINT64, executor);
+            CHECK_RET(randomSeedU64 != nullptr, nullptr);
+            auto randomOffsetU64 = l0op::Cast(offsetTensor, op::DataType::DT_UINT64, executor);
+            CHECK_RET(randomOffsetU64 != nullptr, nullptr);
+
+            FVector<int64_t> offsetVector{0, static_cast<int64_t>(offset)};
+            aclIntArray* offsetList = executor->AllocIntArray(offsetVector.data(), 2);
+            auto tmpTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_UINT64);
+            auto resultAddOut = l0op::Add(randomOffsetU64, tmpTensor, executor);
+            CHECK_RET(resultAddOut != nullptr, nullptr);
+
+            int32_t uniformV3ScaleMode = 1;
+            auto fromOut = static_cast<float>(from);
+            auto toOut = static_cast<float>(to);
+            return l0op::StatelessRandomUniformV3(
+                selfRef, randomSeedU64, resultAddOut, fromOut, toOut, uniformV3ScaleMode, executor);
+        }
         FVector<int64_t> offsetVector{static_cast<int64_t>(offset)};
         aclIntArray* offsetList = executor->AllocIntArray(offsetVector.data(), 1);
         auto tmpTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_INT64);
