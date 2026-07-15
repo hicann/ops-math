@@ -38,7 +38,7 @@
   git clone -b ${tag_version} https://gitcode.com/cann/ops-math.git && cd ops-math
   ```
 
-> 说明：如需切换源码分支版本，请参考如下指导。msprof
+> 说明：如需切换源码分支版本，请参考如下指导。
 >
 > 1.在源码目录执行`git branch`，查询当前源码版本。
 > 2.在源码目录执行`git checkout ${tag_version}`，切换到目标分支源码，注意满足源码与CANN版本配套关系。若源码已存在，执行`git pull`拉取最新源码。
@@ -48,6 +48,12 @@
 本指南默认采用**单算子编译**：仅构建目标算子，编译时间短，适合快速入门与日常开发。通用命令格式：`bash build.sh --pkg --soc=<芯片版本> --ops=<算子名>`。
 
 > 若需编译整个算子库（省略`--ops`），请参阅 [源码构建指南 · 全量编译（ops-math包）](zh/install/compile.md#ops-math包)。
+
+> **说明**：编译前请确保已配置CANN环境变量，否则可能因找不到`ASCEND_HOME_PATH`等导致编译失败。默认路径安装时执行：
+>
+> ```bash
+> source /usr/local/Ascend/cann/set_env.sh
+> ```
 
 以AddExample算子为例，编译命令如下：
 
@@ -95,17 +101,17 @@ export LD_LIBRARY_PATH=${ASCEND_HOME_PATH}/opp/vendors/custom_math/op_api/lib:${
 bash build.sh --run_example add_example eager cust --vendor_name=custom
 ```
 
-预期输出：打印算子`AddExample`的加法计算结果，表明算子已成功部署并正确执行。
+预期输出：打印算子`AddExample`的加法计算结果，表明算子已成功部署并正确执行。样例输入由代码固定生成（`selfX`递增、`selfY`为固定种子随机数），每次运行结果一致，示例如下（此处展示前8组）：
 
 ```bash
-add_example first input[0] is: 1.000000, second input[0] is: 1.000000, result[0] is: 2.000000
-add_example first input[1] is: 1.000000, second input[1] is: 1.000000, result[1] is: 2.000000
-add_example first input[2] is: 1.000000, second input[2] is: 1.000000, result[2] is: 2.000000
-add_example first input[3] is: 1.000000, second input[3] is: 1.000000, result[3] is: 2.000000
-add_example first input[4] is: 1.000000, second input[4] is: 1.000000, result[4] is: 2.000000
-add_example first input[5] is: 1.000000, second input[5] is: 1.000000, result[5] is: 2.000000
-add_example first input[6] is: 1.000000, second input[6] is: 1.000000, result[6] is: 2.000000
-add_example first input[7] is: 1.000000, second input[7] is: 1.000000, result[7] is: 2.000000
+add_example first input[0] is: 1.000000, second input[0] is: -257.000000, result[0] is: -256.000000
+add_example first input[1] is: 2.000000, second input[1] is: 608.000000, result[1] is: 610.000000
+add_example first input[2] is: 3.000000, second input[2] is: 924.000000, result[2] is: 927.000000
+add_example first input[3] is: 4.000000, second input[3] is: -649.000000, result[3] is: -645.000000
+add_example first input[4] is: 5.000000, second input[4] is: 475.000000, result[4] is: 480.000000
+add_example first input[5] is: 6.000000, second input[5] is: 573.000000, result[5] is: 579.000000
+add_example first input[6] is: 7.000000, second input[6] is: 202.000000, result[6] is: 209.000000
+add_example first input[7] is: 8.000000, second input[7] is: 198.000000, result[7] is: 206.000000
 ...
 ```
 
@@ -158,17 +164,17 @@ __aicore__ inline void AddExample<T>::Compute(int64_t currentNum)
     bash build.sh --run_example add_example eager cust --vendor_name=custom
     ```
 
-4. **成功标志**：输出结果变成乘法结果。
+4. **成功标志**：输出结果变成乘法结果（`result = 第一个输入 × 第二个输入`），示例如下（此处展示前8组）：
 
     ```bash
-    add_example first input[0] is: 1.000000, second input[0] is: 1.000000, result[0] is: 1.000000
-    add_example first input[1] is: 1.000000, second input[1] is: 1.000000, result[1] is: 1.000000
-    add_example first input[2] is: 1.000000, second input[2] is: 1.000000, result[2] is: 1.000000
-    add_example first input[3] is: 1.000000, second input[3] is: 1.000000, result[3] is: 1.000000
-    add_example first input[4] is: 1.000000, second input[4] is: 1.000000, result[4] is: 1.000000
-    add_example first input[5] is: 1.000000, second input[5] is: 1.000000, result[5] is: 1.000000
-    add_example first input[6] is: 1.000000, second input[6] is: 1.000000, result[6] is: 1.000000
-    add_example first input[7] is: 1.000000, second input[7] is: 1.000000, result[7] is: 1.000000
+    add_example first input[0] is: 1.000000, second input[0] is: -257.000000, result[0] is: -257.000000
+    add_example first input[1] is: 2.000000, second input[1] is: 608.000000, result[1] is: 1216.000000
+    add_example first input[2] is: 3.000000, second input[2] is: 924.000000, result[2] is: 2772.000000
+    add_example first input[3] is: 4.000000, second input[3] is: -649.000000, result[3] is: -2596.000000
+    add_example first input[4] is: 5.000000, second input[4] is: 475.000000, result[4] is: 2375.000000
+    add_example first input[5] is: 6.000000, second input[5] is: 573.000000, result[5] is: 3438.000000
+    add_example first input[6] is: 7.000000, second input[6] is: 202.000000, result[6] is: 1414.000000
+    add_example first input[7] is: 8.000000, second input[7] is: 198.000000, result[7] is: 1584.000000
     ...
     ```
 
@@ -199,14 +205,12 @@ __aicore__ inline void AddExample<T>::Compute(int64_t currentNum)
   该接口支持Dump指定Tensor的内容，同时支持打印自定义附加信息，比如当前行号等，详细介绍请参见[《Ascend C API》](https://hiascend.com/document/redirect/CannCommunityAscendCApi)中“算子调测API > DumpTensor”。
 
   ```c++
-  AscendC::LocalTensor<T> zLocal = outputQueueZ.DeQue<T>();
-  // 打印zLocal Tensor信息
   DumpTensor(zLocal, 0, 128);
   ```
 
 ### 2.性能采集
 
-当算子功能验证正确后，可通过`msprof`工具采集算子性能数据。
+当算子功能验证正确后，可通过`msprof op`命令采集算子级性能数据。
 
 - **生成可执行文件**
 
@@ -221,10 +225,12 @@ __aicore__ inline void AddExample<T>::Compute(int64_t currentNum)
     进入AddExample算子可执行文件目录`ops-math/build/`，执行如下命令：
 
     ```bash
-    msprof --application="./test_aclnn_add_example"
+    msprof op --application="./test_aclnn_add_example"
     ```
 
-采集结果在项目`ops-math/build/`目录，msprof命令执行完后会自动解析并导出性能数据结果文件，详细内容请参见[msProf性能数据文件参考](https://gitcode.com/Ascend/msprof/blob/master/docs/zh/user_guide/profile_data_file_references.md)。
+    执行后会直接打印算子基础信息（如Op Name、Op Type、Task Duration、Block Dim等）和性能瓶颈提示。
+
+采集结果保存在项目`ops-math/build/`目录下的`OPPROF_*`文件夹中，命令执行完后会自动解析并导出性能数据文件。如需进一步解读各项性能指标（如流水占比、带宽利用率等），请参见[《msProf工具使用指南》](https://www.hiascend.com/document/redirect/CannCommunityToolMsprof)。
 
 ## 四、算子验证
 
@@ -241,7 +247,7 @@ int main() {
     // ...初始化代码 ...
 
     // === ① 修改selfX的输入 ===
-    // 修改前：shape = {32, 4, 4, 4}，数值全为1
+    // 修改前：shape = {32, 4, 4, 4}，数值为从1.0开始、步长为1的递增序列
     // 修改后：将输入shape改为 {8, 8, 8, 8}，并填充不同的测试数据
     std::vector<int64_t> selfXShape = {8, 8, 8, 8};
     std::vector<float> selfXHostData(4096); // 4096 = 8 * 8 * 8 *8
@@ -249,11 +255,13 @@ int main() {
     for (int i = 0; i < 4096; ++i) {
         selfXHostData[i] = static_cast<float>(i % 10); // 填充0-9的循环值
     }
-    // === ② 参考selfX，同理修改selfY、selfZ的输入 ===
+    // === ② 参考selfX，同理修改selfY（第二个输入）与out（输出）的shape及数据 ===
 
     // ...后续执行代码 ...
 }
 ```
+
+> **注意**：修改shape时需同步修改对应host侧数据vector的长度（本例`selfX`、`selfY`、`out`三者的vector长度都要从默认的2048改为4096 = 8×8×8×8），并保证三者shape一致，否则会出现数据越界或结果不匹配。
 
 ### 2.重新编译并验证
 

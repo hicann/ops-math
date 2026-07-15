@@ -14,7 +14,7 @@
 |  安装方式  |  使用说明  |  使用场景  |
 | ----- | ------ | ------ |
 |  CANNLab  | 一站式开发平台，提供在线直接运行的昇腾环境，无需手动安装。<br>当前可提供单机算力，**默认安装最新版本CANN包**。 | 适用于没有昇腾设备的开发者。|
-|  Docker  | Docker镜像是一种高效部署方式，已预集成CANN包和必备依赖。<br>当前仅适用于Atlas A2系列产品，OS仅支持Ubuntu操作系统。**默认安装最新版本CANN包**。 |适用有昇腾设备，需要快速搭建环境的开发者。|
+|  Docker  | Docker镜像是一种高效部署方式，已预集成CANN包和必备依赖。<br>当前适用于Atlas A2、A3系列产品，OS支持ubuntu22.04、openeuler24.03。**默认安装最新版本CANN包**。 |适用有昇腾设备，需要快速搭建环境的开发者。|
 |  手动安装  | 手动安装CANN包和基础依赖，灵活性高。 |适用有昇腾设备，想体验手动安装CANN包或体验最新master分支能力的开发者。|
 |  Spack  | 包管理工具，自动安装依赖并管理编译选项，支持一键式脚本或自定义配置。<br>**自动安装CANN包及编译依赖**（运行态需宿主机提前安装驱动与固件）。 | 适用有昇腾设备，需要自动化管理CANN包版本、编译选项及依赖，支持多配置与定制化构建的开发者（尤其适合HPC环境）。|
 
@@ -52,20 +52,24 @@
    - 步骤1：以root用户登录宿主机。确保宿主机已安装Docker引擎（版本1.11.2及以上），使用`docker --version`检查Docker版本，若没有，请参考[Docker官方安装指南](https://docs.docker.com/engine/install/)。
    - 步骤2：从[昇腾镜像仓库](https://www.hiascend.com/developer/ascendhub/detail/17da20d1c2b6493cb38765adeba85884)拉取已预集成CANN软件包及`ops-math`所需依赖的镜像。
 
-      示例如下，请自行替换CANN版本号、芯片系列、操作系统、python版本信息。
+      示例如下，请自行替换CANN版本号、芯片系列、操作系统、python版本等信息，各字段支持的取值可在上述昇腾镜像仓库页面查询。
 
       ```bash
       # 以cann:9.1.0-beta.1版本为例
-      docker pull swr.cn-south-1.myhuaweicloud.com/ascendhub/cann:9.1.0-beta.1-910b-openeuler24.03-py3.12-devel
+      docker pull swr.cn-south-1.myhuaweicloud.com/ascendhub/cann:9.1.0-beta.1-910b-ubuntu22.04-py3.12-devel
        ```
+
+      > **说明**：镜像标签格式为`<CANN版本>-<芯片系列>-<操作系统>-<Python版本>-devel`。带`-devel`后缀的镜像为算子开发镜像，内含算子开发编译依赖。
 
 3. **运行Docker**
 
     拉取镜像后，需要以特定参数启动容器，以便容器内能访问宿主的昇腾设备。
 
     ```bash
-    docker run --name cann_container --device /dev/davinci0 --device /dev/davinci_manager --device /dev/devmm_svm --device /dev/hisi_hdc -v /usr/local/dcmi:/usr/local/dcmi -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi -v /usr/local/Ascend/driver/lib64/:/usr/local/Ascend/driver/lib64/ -v /usr/local/Ascend/driver/version.info:/usr/local/Ascend/driver/version.info -v /etc/ascend_install.info:/etc/ascend_install.info -it swr.cn-south-1.myhuaweicloud.com/ascendhub/cann:9.1.0-beta.1-910b-openeuler24.03-py3.12-devel bash
+    docker run --name cann_container --device /dev/davinci0 --device /dev/davinci_manager --device /dev/devmm_svm --device /dev/hisi_hdc -v /usr/local/dcmi:/usr/local/dcmi -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi -v /usr/local/Ascend/driver/lib64/:/usr/local/Ascend/driver/lib64/ -v /usr/local/Ascend/driver/version.info:/usr/local/Ascend/driver/version.info -v /etc/ascend_install.info:/etc/ascend_install.info -it swr.cn-south-1.myhuaweicloud.com/ascendhub/cann:9.1.0-beta.1-910b-ubuntu22.04-py3.12-devel bash
     ```
+
+    > **说明**：`--name`用于指定容器名称，请替换为便于识别的自定义名称；若该名称已被占用，容器会启动失败。
 
     | 参数 | 说明 | 注意事项 |
     | :--- | :--- | :--- |
@@ -80,7 +84,7 @@
     | `-v /usr/local/Ascend/driver/version.info:/usr/local/Ascend/driver/version.info` | 挂载驱动版本信息文件。 | - |
     | `-v /etc/ascend_install.info:/etc/ascend_install.info` | 挂载CANN软件安装信息文件。 | - |
     | `-it` | `-i`（交互式）和`-t`（分配伪终端）的组合参数。 | - |
-    | `swr.cn-south-1.myhuaweicloud.com/ascendhub/cann:9.1.0-beta.1-910b-openeuler24.03-py3.12-devel` | 指定要运行的Docker镜像。 |请确保此镜像名和标签（tag）与你通过`docker pull`拉取的镜像完全一致。 |
+    | `swr.cn-south-1.myhuaweicloud.com/ascendhub/cann:9.1.0-beta.1-910b-ubuntu22.04-py3.12-devel` | 指定要运行的Docker镜像。 |请确保此镜像名和标签（tag）与你通过`docker pull`拉取的镜像完全一致。 |
     | `bash` | 容器启动后立即执行的命令。 | - |
 
 ### 方式3：手动安装
