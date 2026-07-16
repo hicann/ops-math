@@ -1904,9 +1904,15 @@ bool ComputeTopkNonLastLayout(const TopkNonLastSmallAxisTileInfo& info, uint32_t
         valueAxisRawBytes = std::max(valueAxisRawBytes,
                                      static_cast<uint64_t>(sortCount) * topkV2DataInfo::SORT_STRUCT_BYTES);
     }
+
+    uint64_t valueOutputRawBytes = static_cast<uint64_t>(outputCount) * sortDtypeSize;
+    if (useMergeSort) {
+        valueOutputRawBytes = std::max(valueOutputRawBytes,
+                                       static_cast<uint64_t>(outputCount) * topkV2DataInfo::SORT_STRUCT_BYTES);
+    }
     if (!CeilAlignUint32(static_cast<uint64_t>(innerChunk) * info.dtypeSize, info.blockUbSize, layout.inputRowBytes) ||
         !CeilAlignUint32(valueAxisRawBytes, info.blockUbSize, layout.axisRowBytes) ||
-        !CeilAlignUint32(static_cast<uint64_t>(outputCount) * sortDtypeSize, info.blockUbSize, layout.valueRowBytes) ||
+        !CeilAlignUint32(valueOutputRawBytes, info.blockUbSize, layout.valueRowBytes) ||
         !CeilAlignUint32(static_cast<uint64_t>(outputCount) * sizeof(uint32_t), info.blockUbSize,
                          layout.indexRowBytes)) {
         return false;
