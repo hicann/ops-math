@@ -101,19 +101,11 @@ export LD_LIBRARY_PATH=${ASCEND_HOME_PATH}/opp/vendors/custom_math/op_api/lib:${
 bash build.sh --run_example add_example eager cust --vendor_name=custom
 ```
 
-预期输出：打印算子`AddExample`的加法计算结果，表明算子已成功部署并正确执行。样例输入由代码固定生成（`selfX`递增、`selfY`为固定种子随机数），每次运行结果一致，示例如下（此处展示前8组）：
+预期输出：打印算子`AddExample`的加法计算结果，表明算子已成功部署并正确执行。样例输入由代码固定生成（`selfX`为递增序列、`selfY`为随机数），输出格式如下：
 
-```bash
-add_example first input[0] is: 1.000000, second input[0] is: -257.000000, result[0] is: -256.000000
-add_example first input[1] is: 2.000000, second input[1] is: 608.000000, result[1] is: 610.000000
-add_example first input[2] is: 3.000000, second input[2] is: 924.000000, result[2] is: 927.000000
-add_example first input[3] is: 4.000000, second input[3] is: -649.000000, result[3] is: -645.000000
-add_example first input[4] is: 5.000000, second input[4] is: 475.000000, result[4] is: 480.000000
-add_example first input[5] is: 6.000000, second input[5] is: 573.000000, result[5] is: 579.000000
-add_example first input[6] is: 7.000000, second input[6] is: 202.000000, result[6] is: 209.000000
-add_example first input[7] is: 8.000000, second input[7] is: 198.000000, result[7] is: 206.000000
+add_example first input[0] is: 1.000000, second input[0] is: (随机值), result[0] is: (Add结果)
+add_example first input[1] is: 2.000000, second input[1] is: (随机值), result[1] is: (Add结果)
 ...
-```
 
 ## 二、算子开发
 
@@ -164,17 +156,11 @@ __aicore__ inline void AddExample<T>::Compute(int64_t currentNum)
     bash build.sh --run_example add_example eager cust --vendor_name=custom
     ```
 
-4. **成功标志**：输出结果变成乘法结果（`result = 第一个输入 × 第二个输入`），示例如下（此处展示前8组）：
+4. **成功标志**：输出结果变成乘法结果（`result = 第一个输入 × 第二个输入`），输出格式如下：
 
     ```bash
-    add_example first input[0] is: 1.000000, second input[0] is: -257.000000, result[0] is: -257.000000
-    add_example first input[1] is: 2.000000, second input[1] is: 608.000000, result[1] is: 1216.000000
-    add_example first input[2] is: 3.000000, second input[2] is: 924.000000, result[2] is: 2772.000000
-    add_example first input[3] is: 4.000000, second input[3] is: -649.000000, result[3] is: -2596.000000
-    add_example first input[4] is: 5.000000, second input[4] is: 475.000000, result[4] is: 2375.000000
-    add_example first input[5] is: 6.000000, second input[5] is: 573.000000, result[5] is: 3438.000000
-    add_example first input[6] is: 7.000000, second input[6] is: 202.000000, result[6] is: 1414.000000
-    add_example first input[7] is: 8.000000, second input[7] is: 198.000000, result[7] is: 1584.000000
+    add_example first input[0] is: 1.000000, second input[0] is: (随机值), result[0] is: (Mul结果)
+    add_example first input[1] is: 2.000000, second input[1] is: (随机值), result[1] is: (Mul结果)
     ...
     ```
 
