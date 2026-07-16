@@ -19,7 +19,8 @@ namespace l0op {
 OP_TYPE_REGISTER(Rsqrt);
 
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16,  op::DataType::DT_INT8,
+    op::DataType::DT_INT16, op::DataType::DT_INT32,   op::DataType::DT_UINT8, op::DataType::DT_BOOL};
 
 inline static bool IsAiCoreSupport(const aclTensor* self)
 {
@@ -30,8 +31,8 @@ inline static const aclTensor* RsqrtAiCore(const aclTensor* self, aclTensor* rsq
 {
     L0_DFX(RsqrtAiCore, self, rsqrtOut);
     auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(Rsqrt, OP_INPUT(self), OP_OUTPUT(rsqrtOut));
-    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
-        retAicore != ACLNN_SUCCESS, return nullptr, "Rsqrt ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
+                                         "Rsqrt ADD_TO_LAUNCHER_LIST_AICORE failed.");
     return rsqrtOut;
 }
 

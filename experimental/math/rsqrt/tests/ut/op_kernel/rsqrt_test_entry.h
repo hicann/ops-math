@@ -9,11 +9,24 @@
  */
 
 /*!
- * \file rsqrt.cpp
- * \brief
+ * \file rsqrt_test_entry.h
+ * \brief Shared kernel entry-point template for rsqrt type-specific kernel tests.
+ *
+ * Include this file AFTER defining:
+ *   DTYPE_X              — the AscendC data type (e.g. int8_t, int16_t, int32_t, uint8_t, bool)
+ *   RSQRT_KERNEL_SUFFIX  — a unique identifier appended to the kernel function name
+ *
+ * Example:
+ *   #define DTYPE_X int8_t
+ *   #define RSQRT_KERNEL_SUFFIX int8
+ *   #include "rsqrt_test_entry.h"
+ *   // ... test code using ICPU_RUN_KF(rsqrt_int8<1>, ...)
  */
 
-#include "rsqrt.h"
+#ifndef RSQRT_TEST_ENTRY_H
+#define RSQRT_TEST_ENTRY_H
+
+#include "../../../op_kernel/rsqrt.h"
 
 #define DOUBLE_BUFFER_NUM 2
 #define SINGLE_BUFFER_NUM 1
@@ -23,8 +36,11 @@ enum class RsqrtTilingKey : uint32_t {
     TILING_KEY_NDB = 1,
 };
 
+#define CONCAT2(a, b) a##b
+#define CONCAT(a, b) CONCAT2(a, b)
+
 template <uint32_t schMode>
-__global__ __aicore__ void rsqrt(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void CONCAT(rsqrt_, RSQRT_KERNEL_SUFFIX)(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(RsqrtTilingData);
     GET_TILING_DATA_WITH_STRUCT(RsqrtTilingData, tilingData, tiling);
@@ -41,3 +57,5 @@ __global__ __aicore__ void rsqrt(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADD
         op.Process();
     }
 }
+
+#endif // RSQRT_TEST_ENTRY_H

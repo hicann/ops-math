@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -25,19 +25,19 @@ namespace ge {
 
 *
 *@par Inputs:
-* x: An ND or 5HD tensor. Must be one of the following types: bfloat16, float, double, float16,
- * complex64, complex128.
+* x: An ND tensor. Must be one of the following types: bfloat16, float, float16,
+ * int32, int16, uint8, int8, bool.
 *
 *@par Outputs:
-* y: An ND or 5HD tensor. Has the same dtype as "x".
+* y: An ND tensor. Has the same dtype as "x".
 *
 *@par Third-party framework compatibility
 *Compatible with the TensorFlow operator Rsqrt.
 *
 */
 REG_OP(Rsqrt)
-    .INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16}))
-    .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16}))
+    .INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16, DT_INT32, DT_INT16, DT_UINT8, DT_INT8, DT_BOOL}))
+    .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16, DT_INT32, DT_INT16, DT_UINT8, DT_INT8, DT_BOOL}))
     .OP_END_FACTORY_REG(Rsqrt)
 
 } // namespace ge

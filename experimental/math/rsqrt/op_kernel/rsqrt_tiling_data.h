@@ -13,17 +13,17 @@
  * \brief tiling data struct
  */
 
-#ifndef __RSQRT_TILLING_DATA_H__
-#define __RSQRT_TILLING_DATA_H__
+#ifndef __RSQRT_TILING_DATA_H__
+#define __RSQRT_TILING_DATA_H__
 
 struct RsqrtTilingData {
-    uint32_t smallCoreDataNum;
-    uint32_t bigCoreDataNum;
-    uint32_t finalBigTileNum;
-    uint32_t finalSmallTileNum;
-    uint32_t tileDataNum;
-    uint32_t smallTailDataNum;
-    uint32_t bigTailDataNum;
-    uint32_t tailBlockNum;
+    uint64_t smallCoreDataNum;
+    uint64_t bigCoreDataNum;
+    uint64_t finalBigTileNum;
+    uint64_t finalSmallTileNum;
+    uint64_t tileDataNum;
+    uint64_t smallTailDataNum;
+    uint64_t bigTailDataNum;
+    uint64_t tailBlockNum;
 };
 #endif

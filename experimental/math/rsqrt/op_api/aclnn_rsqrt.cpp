@@ -39,22 +39,12 @@ extern "C" {
 #endif
 
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT,     op::DataType::DT_FLOAT16,    op::DataType::DT_DOUBLE, op::DataType::DT_INT8,
-    op::DataType::DT_INT16,     op::DataType::DT_INT32,      op::DataType::DT_INT64,  op::DataType::DT_BOOL,
-    op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16,   op::DataType::DT_UINT8};
-
-static const std::initializer_list<op::DataType> DTYPE_OUT_LIST = {
-    op::DataType::DT_FLOAT,     op::DataType::DT_FLOAT16,    op::DataType::DT_DOUBLE,
-    op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16};
-
-static const std::initializer_list<DataType> ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_COMPLEX64, DataType::DT_COMPLEX128};
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT8, op::DataType::DT_INT16,
+    op::DataType::DT_INT32, op::DataType::DT_BOOL,    op::DataType::DT_BF16, op::DataType::DT_UINT8};
 
 static bool CheckInplaceDtypeValid(aclTensor* selfRef)
 {
-    auto inplaceSupportList = GetDtypeSupportListV2(DTYPE_OUT_LIST, ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST);
-    OP_CHECK_DTYPE_NOT_SUPPORT(selfRef, inplaceSupportList, return false);
-
+    OP_CHECK_DTYPE_NOT_SUPPORT(selfRef, DTYPE_SUPPORT_LIST, return false);
     return true;
 }
 
@@ -67,13 +57,16 @@ static inline bool CheckSocVersionIsSupportBf16(void)
 inline static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
-    OP_CHECK_DTYPE_NOT_SUPPORT(out, DTYPE_OUT_LIST, return false);
+    OP_CHECK_DTYPE_NOT_SUPPORT(out, DTYPE_SUPPORT_LIST, return false);
+    if (self->GetDataType() != out->GetDataType()) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype must be same as Out dtype.");
+        return false;
+    }
     bool bf16flag = CheckSocVersionIsSupportBf16();
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     if (!bf16flag && self->GetDataType() == op::DataType::DT_BF16) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s is unsupported by the current SOC version [%s].",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(socVersion).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s is unsupported by the current SOC version [%s].",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(socVersion).GetString());
         return false;
     }
     return true;
@@ -96,8 +89,8 @@ static aclnnStatus CheckInplaceParamsRsqrt(aclTensor* selfRef)
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ExecRsqrtGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus ExecRsqrtGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                             aclOpExecutor** executor)
 {
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
@@ -114,20 +107,10 @@ static aclnnStatus ExecRsqrtGetWorkspaceSize(
     auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    auto castDtype = selfContiguous->GetDataType();
-    if (!CheckType(castDtype, DTYPE_OUT_LIST)) {
-        castDtype = out->GetDataType();
-    }
-    auto selfCast = l0op::Cast(selfContiguous, castDtype, uniqueExecutor.get());
-    CHECK_RET(selfCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    auto rsqrtOpOut = l0op::Rsqrt(selfCast, uniqueExecutor.get());
+    auto rsqrtOpOut = l0op::Rsqrt(selfContiguous, uniqueExecutor.get());
     CHECK_RET(rsqrtOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    auto castOut = l0op::Cast(rsqrtOpOut, out->GetDataType(), uniqueExecutor.get());
-    CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
+    auto viewCopyResult = l0op::ViewCopy(rsqrtOpOut, out, uniqueExecutor.get());
     CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
@@ -135,8 +118,8 @@ static aclnnStatus ExecRsqrtGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnRsqrtGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnRsqrtGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                       aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnRsqrt, DFX_IN(self), DFX_OUT(out));
     return ExecRsqrtGetWorkspaceSize(self, out, workspaceSize, executor);
