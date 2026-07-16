@@ -126,7 +126,7 @@
 | [aclnnExp2&aclnnInplaceExp2](../../math/pow/docs/aclnnExp2&aclnnInplaceExp2.md) | self每个元素作为基数2的幂完成计算。                          | 默认确定性实现| 默认确定性实现 |
 | [aclnnExpand](../../math/expand/docs/aclnnExpand.md)            | 将输入张量self广播成指定size的张量。                         | 默认确定性实现| 默认确定性实现|
 | [aclnnExpm1&aclnnInplaceExpm1](../../math/expm1/docs/aclnnExpm1&aclnnInplaceExpm1.md) | 以输入的self为指数，计算自然常数e的幂，并对指数计算结果进行减1计算。 | 默认确定性实现| 默认确定性实现|
-| [aclnnExpSegsum](../../math/segsum/docs/aclnnExpSegsum.md)      | 进行分段和计算。生成对角线为0的半可分矩阵，且上三角为-inf。  | 默认确定性实现| - |
+| [aclnnExpSegsum](../../math/segsum/docs/aclnnExpSegsum.md)      | 进行分段和计算。生成对角线为1、上三角为0的半可分矩阵。 | 默认确定性实现| - |
 | [aclnnExpSegsumBackward](../../math/exp_segsum_grad/docs/aclnnExpSegsumBackward.md)      | [aclnnExpSegsum](../../math/segsum/docs/aclnnExpSegsum.md)的反向计算。  | 默认确定性实现| - |
 | [aclnnEye](../../math/eye/docs/aclnnEye.md)                     | 返回一个二维张量，该张量的对角线上元素值为1，其余元素值为0。 | 默认确定性实现| 默认确定性实现  |
 | [aclnnFlatten](../../conversion/flatten/docs/aclnnFlatten.md)   | 将输入Tensor，基于给定的axis，扁平化为一个2D的Tensor。       | 默认确定性实现| 默认确定性实现|

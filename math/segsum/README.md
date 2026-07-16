@@ -10,12 +10,12 @@
 |  <term>Atlas 200I/500 A2 推理产品</term>    |     ×    |
 |  <term>Atlas 推理系列产品</term>    |     ×    |
 |  <term>Atlas 训练系列产品</term>    |     ×    |
-|  <term>Kirin X90 处理器系列产品</term> | √ | 
+|  <term>Kirin X90 处理器系列产品</term> | √ |
 |  <term>Kirin 9030 处理器系列产品</term> | √ |
 
 ## 功能说明
 
-- 算子功能：进行分段和计算。生成对角线为0的半可分矩阵，且上三角为-inf。
+- 算子功能：进行分段和计算。生成对角线为1、上三角为0的半可分矩阵。
 - 计算公式（以4D输入为例）：
 
   1. 输入self由（N1,N2,N3,N4）升维成（N1,N2,N3,N4,1）。
@@ -28,13 +28,14 @@
       \begin{cases}self_i,\quad A_i==False
       \\0, \quad A_i==True
       \end{cases}
-      $$  
+      $$
 
   5. 以self的倒数第二维进行cumsum累加。从维度视角来看的某个元素（其它维度下标不变，当前维度下标依次递增），$selfTemp\_{i}$是输出张量中对应位置的元素。
 
      $$
      selfTemp_{i} = self_{1} + self_{2} + self_{3} + ...... + self_{i}
      $$
+
   6. 生成（N4,N4）类型为bool的三角矩阵B，上三角为True，下三角为False，对角线为False。
   7. 用-inf填充selfTemp里面与矩阵B中值为True的位置相对应的元素。
 
@@ -43,7 +44,7 @@
       \begin{cases}selfTemp_i,\quad B_i==False
       \\-inf, \quad B_i==True
       \end{cases}
-      $$  
+      $$
 
   8. 计算selfTemp里面每个元素的指数。
 
@@ -85,7 +86,7 @@
     </tr>
   </tbody></table>
 
-- Kirin X90/Kirin 9030 处理器系列产品: 不支持BFLOAT16。
+- Kirin X90/Kirin 9030 处理器系列产品：不支持BFLOAT16。
 
 ## 约束说明
 

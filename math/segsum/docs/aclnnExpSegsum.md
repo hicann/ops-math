@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-- 接口功能：进行分段和计算。生成对角线为0的半可分矩阵，且上三角为-inf。
+- 接口功能：进行分段和计算。生成对角线为1、上三角为0的半可分矩阵。
 - 计算公式（以4D输入为例）：
 
   1. 输入self由（N1,N2,N3,N4）升维成（N1,N2,N3,N4,1）。
@@ -29,11 +29,13 @@
       \\0, \quad A_i==True
       \end{cases}
       $$
+
   5. 以self的倒数第二维进行cumsum累加。从维度视角来看的某个元素（其它维度下标不变，当前维度下标依次递增），$selfTemp\_{i}$是输出张量中对应位置的元素。
 
       $$
       selfTemp_{i} = self_{1} + self_{2} + self_{3} + ...... + self_{i}
       $$
+
   6. 生成（N4,N4）类型为bool的三角矩阵B，上三角为True，下三角为False，对角线为False。
   7. 用-inf填充selfTemp里面与矩阵B中值为True的位置相对应的元素。
 
@@ -42,13 +44,14 @@
      \begin{cases}selfTemp_i,\quad B_i==False
      \\-inf, \quad B_i==True
      \end{cases}
-     $$   
+     $$
+
   8. 计算selfTemp里面每个元素的指数。
 
      $$
      out_i=e^{selfTemp_i}
      $$
-  
+
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnExpSegsumGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnExpSegsum”接口执行计算。
@@ -141,7 +144,7 @@ aclnnStatus aclnnExpSegsum(
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
+
   第一段接口完成入参校验，出现以下场景时报错：
 
   <table style="undefined;table-layout: fixed;width: 1170px"><colgroup>
@@ -163,8 +166,8 @@ aclnnStatus aclnnExpSegsum(
       <td>传入的self或out是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="4">161002</td>
+      <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="2">161002</td>
       <td>self、out的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
@@ -175,7 +178,7 @@ aclnnStatus aclnnExpSegsum(
 ## aclnnExpSegsum
 
 - **参数说明**：
-  
+
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
