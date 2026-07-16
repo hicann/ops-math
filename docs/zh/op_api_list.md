@@ -320,6 +320,7 @@
 | [aclnnVar](../../math/reduce_var/docs/aclnnVar.md)  | 返回输入Tensor指定维度的值求得的方差。                       | 默认确定性实现| 默认确定性实现|
 | [aclnnVarCorrection](../../math/reduce_var/docs/aclnnVarCorrection.md)              | 返回输入Tensor指定维度的值求得的方差。                      | 默认确定性实现| 默认确定性实现  |
 | [aclnnVarMean](../../math/reduce_var/docs/aclnnVarMean.md)      | 返回输入Tensor指定维度的值求得的均值及方差。                 | 默认确定性实现| 默认确定性实现|
+| [aclnnWeightQuantPreprocess](../../conversion/weight_quant_preprocess/docs/aclnnWeightQuantPreprocess.md) | 完成伪量化Matmul的参数预处理。 | - | 默认确定性实现 |
 | [aclnnXlog1py](../../math/xlog1py/docs/aclnnXlog1py.md) | 计算x * log(1 + y)，当x == 0时结果为0。支持broadcast。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnAmpUpdateScale](../../math/amp_update_scale/docs/aclnnAmpUpdateScale.md) | 实现AMP训练中的动态Scale更新逻辑。 | 默认确定性实现 | 默认确定性实现 |
 | [aclnnXLogYScalarOther&aclnnInplaceXLogYScalarOther](../../math/x_log_y/docs/aclnnXLogYScalarOther&aclnnInplaceXLogYScalarOther.md) | 计算self * log(other)的结果。                                | 默认确定性实现| - |

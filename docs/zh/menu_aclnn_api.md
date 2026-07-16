@@ -291,6 +291,7 @@
 - [aclnnVar](../../math/reduce_var/docs/aclnnVar.md)
 - [aclnnVarCorrection](../../math/reduce_var/docs/aclnnVarCorrection.md)
 - [aclnnVarMean](../../math/reduce_var/docs/aclnnVarMean.md)
+- [aclnnWeightQuantPreprocess](../../conversion/weight_quant_preprocess/docs/aclnnWeightQuantPreprocess.md)
 - [aclnnXlog1py](../../math/xlog1py/docs/aclnnXlog1py.md)
 - [aclnnXLogYScalarOther&aclnnInplaceXLogYScalarOther](../../math/x_log_y/docs/aclnnXLogYScalarOther&aclnnInplaceXLogYScalarOther.md)
 - [aclnnXLogYScalarSelf](../../math/x_log_y/docs/aclnnXLogYScalarSelf.md)

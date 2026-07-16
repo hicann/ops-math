@@ -17,16 +17,16 @@
 
 ## 功能说明
 
-完成伪量化 Matmul（包括 QuantBatchMatmulV5、GroupedMatmul-伪量化）的参数预处理：主要将 weight 从 ND 格式转换为 FRACTAL_NZ 格式，并在需要时对 weightScale、weightOffsetOptional、biasOptional 进行同步处理。
+完成伪量化Matmul（包括QuantBatchMatmulV5、GroupedMatmul-伪量化）的参数预处理：主要将weight从ND格式转换为FRACTAL_NZ格式，并在需要时对weightScale、weightOffsetOptional、biasOptional进行同步处理。
 
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)：
 
-1. 调用 `aclnnWeightQuantPreprocessGetWorkspaceSize` 获取 workspace 大小及执行器；
-2. 调用 `aclnnWeightQuantPreprocess` 执行计算。
+1. 调用`aclnnWeightQuantPreprocessGetWorkspaceSize`获取workspace大小及执行器；
+2. 调用`aclnnWeightQuantPreprocess`执行计算。
 
-**注意**：用户需自行构造输出张量，参考约束说明中的 shape 计算公式。
+**注意**：用户需自行构造输出张量，参考约束说明中的shape计算公式。
 
 ```c++
 aclnnStatus aclnnWeightQuantPreprocessGetWorkspaceSize(
@@ -34,188 +34,188 @@ aclnnStatus aclnnWeightQuantPreprocessGetWorkspaceSize(
     const aclTensor *weightScale,
     const aclTensor *weightOffsetOptional,
     const aclTensor *biasOptional,
-    aclDataType xDtype,
-    aclDataType xScaleDtype,
-    int64_t kGroupSize,
-    aclTensor *outWeight,
-    aclTensor *outWeightScale,
-    aclTensor *outWeightOffsetOptional,
-    aclTensor *outBiasOptional,
-    uint64_t *workspaceSize,
-    aclOpExecutor **executor)
+    aclDataType      xDtype,
+    aclDataType      xScaleDtype,
+    int64_t          kGroupSize,
+    aclTensor       *outWeight,
+    aclTensor       *outWeightScale,
+    aclTensor       *outWeightOffsetOptional,
+    aclTensor       *outBiasOptional,
+    uint64_t        *workspaceSize,
+    aclOpExecutor  **executor)
 
 aclnnStatus aclnnWeightQuantPreprocess(
-    void *workspace,
-    uint64_t workspaceSize,
+    void          *workspace,
+    uint64_t       workspaceSize,
     aclOpExecutor *executor,
-    aclrtStream stream)
+    aclrtStream    stream)
 ```
 
 ## aclnnWeightQuantPreprocessGetWorkspaceSize
 
 + **参数说明**
 
-<table style="undefined;table-layout: fixed; width: 1195px"><colgroup>
-<col style="width: 220px">
-<col style="width: 90px">
-<col style="width: 160px">
-<col style="width: 270px">
-<col style="width: 180px">
-<col style="width: 95px">
-<col style="width: 120px">
-<col style="width: 120px">
-</colgroup>
-<thead>
-  <tr>
-    <th class="tg-0pky">参数名</th>
-    <th class="tg-0pky">输入/输出</th>
-    <th class="tg-0pky">描述</th>
-    <th class="tg-0pky">使用说明</th>
-    <th class="tg-0pky">数据类型</th>
-    <th class="tg-0pky">数据格式</th>
-    <th class="tg-0pky">维度（shape）</th>
-    <th class="tg-0pky">非连续Tensor</th>
-  </tr>
-</thead>
-<tbody>
-  <tr>
-    <td class="tg-0pky">weight(aclTensor *)</td>
-    <td class="tg-0pky">输入</td>
-    <td class="tg-0pky">Matmul的权重矩阵</td>
-    <td class="tg-0pky">不支持空 tensor</td>
-    <td class="tg-0pky">float4_e2m1</td>
-    <td class="tg-0pky">ND</td>
-    <td class="tg-0pky">2-3</td>
-    <td class="tg-0pky">仅转置场景支持</td>
-  </tr>
-  <tr>
-    <td class="tg-0pky">weightScale(aclTensor *)</td>
-    <td class="tg-0pky">输入</td>
-    <td class="tg-0pky">权重的反量化 scale 参数</td>
-    <td class="tg-0pky">不支持空 tensor</td>
-    <td class="tg-0pky">float8_e8m0</td>
-    <td class="tg-0pky">ND/NCL/NCHW</td>
-    <td class="tg-0pky">3-4</td>
-    <td class="tg-0pky">仅转置场景支持</td>
-  </tr>
-  <tr>
-    <td class="tg-0pky">weightOffsetOptional(aclTensor *)</td>
-    <td class="tg-0pky">可选输入</td>
-    <td class="tg-0pky">权重的反量化 offset 参数</td>
-    <td class="tg-0pky">当前 MM_MX_A8W4/GMM_MX_A8W4 数据流不支持，必须为 nullptr</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">ND</td>
-    <td class="tg-0pky">1-2</td>
-    <td class="tg-0pky">仅转置场景支持</td>
-  </tr>
-  <tr>
-    <td class="tg-0pky">biasOptional(aclTensor *)</td>
-    <td class="tg-0pky">可选输入</td>
-    <td class="tg-0pky">Matmul 的偏置矩阵</td>
-    <td class="tg-0pky">不支持空 tensor，必须 contiguous</td>
-    <td class="tg-0pky">float16/bfloat16</td>
-    <td class="tg-0pky">ND</td>
-    <td class="tg-0pky">1-2</td>
-    <td class="tg-0pky">不支持</td>
-  </tr>
-  <tr>
-    <td class="tg-0pky">xDtype(aclDataType)</td>
-    <td class="tg-0pky">输入</td>
-    <td class="tg-0pky">Matmul的激活矩阵的数据类型</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">aclDataType</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">-</td>
-  </tr>
-  <tr>
-    <td class="tg-0pky">xScaleDtype(aclDataType)</td>
-    <td class="tg-0pky">输入</td>
-    <td class="tg-0pky">激活的量化 scale 参数的数据类型</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">aclDataType</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">-</td>
-  </tr>
-  <tr>
-    <td class="tg-0pky">kGroupSize(int64_t)</td>
-    <td class="tg-0pky">输入</td>
-    <td class="tg-0pky">权重在 per-group 量化时 K 维度的 group的大小</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">int64</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">-</td>
-  </tr>
-  <tr>
-    <td class="tg-0pky">outWeight(aclTensor *)</td>
-    <td class="tg-0pky">输出</td>
-    <td class="tg-0pky">预处理后的 weight</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">int8/int4/fp8_e4m3/hif8/fp4_e2m1</td>
-    <td class="tg-0pky">NZ</td>
-    <td class="tg-0pky">2-5</td>
-    <td class="tg-0pky">仅转置场景支持</td>
-  </tr>
-  <tr>
-    <td class="tg-0pky">outWeightScale(aclTensor *)</td>
-    <td class="tg-0pky">输出</td>
-    <td class="tg-0pky">预处理后的 weightScale</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">float16/bfloat16/fp8_e8m0</td>
-    <td class="tg-0pky">ND/NCL/NCHW</td>
-    <td class="tg-0pky">3-4</td>
-    <td class="tg-0pky">仅转置场景支持</td>
-  </tr>
-  <tr>
-    <td class="tg-0pky">outWeightOffsetOptional(aclTensor *)</td>
-    <td class="tg-0pky">输出</td>
-    <td class="tg-0pky">预处理后的 weightOffset</td>
-    <td class="tg-0pky">当前 MM_MX_A8W4/GMM_MX_A8W4 数据流不支持，必须为 nullptr</td>
-    <td class="tg-0pky">float16/bfloat16</td>
-    <td class="tg-0pky">ND</td>
-    <td class="tg-0pky">1-2</td>
-    <td class="tg-0pky">仅转置场景支持</td>
-  </tr>
-  <tr>
-    <td class="tg-0pky">outBiasOptional(aclTensor *)</td>
-    <td class="tg-0pky">输出</td>
-    <td class="tg-0pky">预处理后的 bias</td>
-    <td class="tg-0pky">必须 contiguous</td>
-    <td class="tg-0pky">float16/bfloat16</td>
-    <td class="tg-0pky">ND</td>
-    <td class="tg-0pky">1-2</td>
-    <td class="tg-0pky">不支持</td>
-  </tr>
-  <tr>
-    <td class="tg-0pky">workspaceSize(uint64_t *)</td>
-    <td class="tg-0pky">输出</td>
-    <td class="tg-0pky">计算所需的workspace大小</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">uint64*</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">-</td>
-  </tr>
-  <tr>
-    <td class="tg-0pky">executor(aclOpExecutor **)</td>
-    <td class="tg-0pky">输出</td>
-    <td class="tg-0pky">包含算子计算流程的执行器</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">aclOpExecutor**</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">-</td>
-  </tr>
-</tbody>
-</table>
+  <table style="undefined;table-layout: fixed; width: 1195px"><colgroup>
+  <col style="width: 220px">
+  <col style="width: 90px">
+  <col style="width: 160px">
+  <col style="width: 270px">
+  <col style="width: 180px">
+  <col style="width: 95px">
+  <col style="width: 120px">
+  <col style="width: 120px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">参数名</th>
+      <th class="tg-0pky">输入/输出</th>
+      <th class="tg-0pky">描述</th>
+      <th class="tg-0pky">使用说明</th>
+      <th class="tg-0pky">数据类型</th>
+      <th class="tg-0pky">数据格式</th>
+      <th class="tg-0pky">维度（shape）</th>
+      <th class="tg-0pky">非连续Tensor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">weight(aclTensor *)</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">Matmul的权重矩阵</td>
+      <td class="tg-0pky">不支持空tensor</td>
+      <td class="tg-0pky">float4_e2m1</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">2-3</td>
+      <td class="tg-0pky">仅转置场景支持</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">weightScale(aclTensor *)</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">权重的反量化scale参数</td>
+      <td class="tg-0pky">不支持空tensor</td>
+      <td class="tg-0pky">float8_e8m0</td>
+      <td class="tg-0pky">ND/NCL/NCHW</td>
+      <td class="tg-0pky">3-4</td>
+      <td class="tg-0pky">仅转置场景支持</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">weightOffsetOptional(aclTensor *)</td>
+      <td class="tg-0pky">可选输入</td>
+      <td class="tg-0pky">权重的反量化offset参数</td>
+      <td class="tg-0pky">当前MM_MX_A8W4/GMM_MX_A8W4数据流不支持，必须为nullptr</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">1-2</td>
+      <td class="tg-0pky">仅转置场景支持</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">biasOptional(aclTensor *)</td>
+      <td class="tg-0pky">可选输入</td>
+      <td class="tg-0pky">Matmul的偏置矩阵</td>
+      <td class="tg-0pky">不支持空tensor，必须contiguous</td>
+      <td class="tg-0pky">float16/bfloat16</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">1-2</td>
+      <td class="tg-0pky">不支持</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">xDtype(aclDataType)</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">Matmul的激活矩阵的数据类型</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">aclDataType</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">xScaleDtype(aclDataType)</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">激活的量化scale参数的数据类型</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">aclDataType</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">kGroupSize(int64_t)</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">权重在per-group量化时K维度的group的大小</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">int64</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">outWeight(aclTensor *)</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">预处理后的weight</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">int8/int4/fp8_e4m3/hif8/fp4_e2m1</td>
+      <td class="tg-0pky">NZ</td>
+      <td class="tg-0pky">2-5</td>
+      <td class="tg-0pky">仅转置场景支持</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">outWeightScale(aclTensor *)</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">预处理后的weightScale</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">float16/bfloat16/fp8_e8m0</td>
+      <td class="tg-0pky">ND/NCL/NCHW</td>
+      <td class="tg-0pky">3-4</td>
+      <td class="tg-0pky">仅转置场景支持</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">outWeightOffsetOptional(aclTensor *)</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">预处理后的weightOffset</td>
+      <td class="tg-0pky">当前MM_MX_A8W4/GMM_MX_A8W4数据流不支持，必须为nullptr</td>
+      <td class="tg-0pky">float16/bfloat16</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">1-2</td>
+      <td class="tg-0pky">仅转置场景支持</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">outBiasOptional(aclTensor *)</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">预处理后的bias</td>
+      <td class="tg-0pky">必须contiguous</td>
+      <td class="tg-0pky">float16/bfloat16</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">1-2</td>
+      <td class="tg-0pky">不支持</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">workspaceSize(uint64_t *)</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">计算所需的workspace大小</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">uint64*</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">executor(aclOpExecutor **)</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">包含算子计算流程的执行器</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">aclOpExecutor**</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+  </tbody>
+  </table>
 
 + **返回值**
 
-aclnnStatus：返回状态码，具体参见[aclnn返回码](https://gitcode.com/cann/ops-nn/blob/master/docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](https://gitcode.com/cann/ops-nn/blob/master/docs/zh/context/aclnn返回码.md)。
 
-第一段接口完成入参校验，出现以下场景时报错：
+  第一段接口完成入参校验，出现以下场景时报错：
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
@@ -288,7 +288,10 @@ aclnnStatus：返回状态码，具体参见[aclnn返回码](https://gitcode.com
 
 ## 约束说明
 
-+ **MM_MX_A8W4 数据流**（MM 表示 Matmul；MX_A8W4 表示 x 的数据类型为 FLOAT8_E4M3FN，weight 的数据类型为 FLOAT4_E2M1，Mx量化模式）
+- 确定性说明：aclnnWeightQuantPreprocess默认确定性实现。
+
+<details>
+<summary><strong>MM_MX_A8W4数据流</strong>（MM表示Matmul；MX_A8W4表示x的数据类型为FLOAT8_E4M3FN，weight的数据类型为FLOAT4_E2M1，Mx量化模式）</summary>
 
   + **weight**
     + 数据类型：FLOAT4_E2M1
@@ -296,8 +299,8 @@ aclnnStatus：返回状态码，具体参见[aclnn返回码](https://gitcode.com
     + K % kGroupSize == 0
     + view shape：2-D `{K, N}`
     + storage shape：`{N, K}`（transposed）
-    + stride：`[1, K]`（最后两维 transposed）
-    + 不支持空 tensor
+    + stride：`[1, K]`（最后两维transposed）
+    + 不支持空tensor
 
   + **weightScale**
     + 数据类型：FLOAT8_E8M0
@@ -305,17 +308,17 @@ aclnnStatus：返回状态码，具体参见[aclnn返回码](https://gitcode.com
     + view shape：3-D `{ceildiv(K, 64), N, 2}`
     + storage shape：`{N, ceildiv(K, 64), 2}`（transposed）
     + stride：`[2, 2*ceildiv(K,64), 1]`（维度0和1交换）
-    + 不支持空 tensor
+    + 不支持空tensor
 
   + **weightOffsetOptional**
-    + 当前不支持，必须为 nullptr
-    + outWeightOffsetOptional 也必须为 nullptr
+    + 当前不支持，必须为nullptr
+    + outWeightOffsetOptional也必须为nullptr
 
   + **biasOptional**
     + 数据类型：float16/bfloat16
     + 格式：ND
-    + 必须为 contiguous
-    + 不支持空 tensor（若提供）
+    + 必须为contiguous
+    + 不支持空tensor（若提供）
 
   + **kGroupSize**
     + 必须等于 32
@@ -327,25 +330,28 @@ aclnnStatus：返回状态码，具体参见[aclnn返回码](https://gitcode.com
     + FLOAT8_E8M0
 
   + **outWeight**
-    + 数据类型：与 weight 相同
+    + 数据类型：与weight相同
     + 格式：FRACTAL_NZ_C0_32
-    + view shape：与 weight view shape 相同 `{K, N}`
+    + view shape：与weight view shape相同 `{K, N}`
     + storage shape：4-D `{ceildiv(K, 32), ceildiv(N, 16), 16, 32}`
 
   + **outWeightScale**
-    + 数据类型：与 weightScale 相同
+    + 数据类型：与weightScale相同
     + 格式：ND
-    + view shape：与 weightScale view shape 相同
-    + storage shape：与 weightScale storage shape 相同
+    + view shape：与weightScale view shape相同
+    + storage shape：与weightScale storage shape相同
 
   + **outBiasOptional**
-    + 数据类型：与 biasOptional 相同
+    + 数据类型：与biasOptional相同
     + 格式：ND
-    + 必须为 contiguous
-    + view shape：与 biasOptional 相同
-    + storage shape：与 biasOptional 相同
+    + 必须为contiguous
+    + view shape：与biasOptional相同
+    + storage shape：与biasOptional相同
 
-+ **GMM_MX_A8W4 数据流**（GMM 表示 GroupedMatmul；MX_A8W4 表示 x 的数据类型为 FLOAT8_E4M3FN，weight 的数据类型为 FLOAT4_E2M1，Mx量化模式）
+</details>
+
+<details>
+<summary><strong>GMM_MX_A8W4数据流</strong>（GMM表示GroupedMatmul；MX_A8W4表示x的数据类型为FLOAT8_E4M3FN，weight的数据类型为FLOAT4_E2M1，Mx量化模式）</summary>
 
   + **weight**
     + 数据类型：FLOAT4_E2M1
@@ -354,7 +360,7 @@ aclnnStatus：返回状态码，具体参见[aclnn返回码](https://gitcode.com
     + view shape：3-D `{G, K, N}`
     + storage shape：`{G, N, K}`（transposed，最后两维交换）
     + stride：`[K*N, 1, K]`（维度1和2 transposed）
-    + 不支持空 tensor
+    + 不支持空tensor
 
   + **weightScale**
     + 数据类型：FLOAT8_E8M0
@@ -362,17 +368,17 @@ aclnnStatus：返回状态码，具体参见[aclnn返回码](https://gitcode.com
     + view shape：4-D `{G, ceildiv(K, 64), N, 2}`
     + storage shape：`{G, N, ceildiv(K, 64), 2}`（transposed，维度2和3交换）
     + stride：`[2*ceildiv(K,64)*N, 2, 2*ceildiv(K,64), 1]`（维度2和3交换）
-    + 不支持空 tensor
+    + 不支持空tensor
 
   + **weightOffsetOptional**
-    + 当前不支持，必须为 nullptr
-    + outWeightOffsetOptional 也必须为 nullptr
+    + 当前不支持，必须为nullptr
+    + outWeightOffsetOptional也必须为nullptr
 
   + **biasOptional**
     + 数据类型：float16/bfloat16
     + 格式：ND
-    + 必须为 contiguous
-    + 不支持空 tensor（若提供）
+    + 必须为contiguous
+    + 不支持空tensor（若提供）
 
   + **kGroupSize**
     + 必须等于 32
@@ -384,33 +390,35 @@ aclnnStatus：返回状态码，具体参见[aclnn返回码](https://gitcode.com
     + FLOAT8_E8M0
 
   + **outWeight**
-    + 数据类型：与 weight 相同
+    + 数据类型：与weight相同
     + 格式：FRACTAL_NZ_C0_32
-    + view shape：与 weight view shape 相同 `{G, K, N}`
+    + view shape：与weight view shape相同 `{G, K, N}`
     + storage shape：5-D `{G, ceildiv(K, 32), ceildiv(N, 16), 16, 32}`
 
   + **outWeightScale**
-    + 数据类型：与 weightScale 相同
+    + 数据类型：与weightScale相同
     + 格式：ND
-    + view shape：与 weightScale view shape 相同
-    + storage shape：与 weightScale storage shape 相同
+    + view shape：与weightScale view shape相同
+    + storage shape：与weightScale storage shape相同
 
   + **outBiasOptional**
-    + 数据类型：与 biasOptional 相同
+    + 数据类型：与biasOptional相同
     + 格式：ND
-    + 必须为 contiguous
-    + view shape：与 biasOptional 相同
-    + storage shape：与 biasOptional 相同
+    + 必须为contiguous
+    + view shape：与biasOptional相同
+    + storage shape：与biasOptional相同
 
-+ 其余数据类型与 shape 组合为预留接口，当前调用将返回 ACLNN_ERR_PARAM_INVALID
+</details>
+
++ 其余数据类型与shape组合为预留接口，当前调用将返回ACLNN_ERR_PARAM_INVALID
 
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
-**注意**：用户需自行计算并构造输出张量 shape，参考约束说明中的公式：
+**注意**：用户需自行计算并构造输出张量shape，参考约束说明中的公式：
 
-+ outWeight viewShape：与 weight viewShape 相同
++ outWeight viewShape：与weight viewShape相同
 + outWeight storageShape：`{CeilDiv(K, 32), CeilDiv(N, 16), 16, 32}`
 + outWeight format：`ACL_FORMAT_FRACTAL_NZ_C0_32`
 
