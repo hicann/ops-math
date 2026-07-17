@@ -715,35 +715,6 @@ REG_OP(ExpandDims)
     .OP_END_FACTORY_REG(DenseBincount)
 
     /**
-    * @brief Concatenates a list of N tensors along the first dimension.
-    * @par Inputs:
-    * @li x: A list of Tensors. Must be one of the following types:  int32,
-    * float16, float32. Tensors to be concatenated. All must have size 1 in
-    *  the first dimension and same shape. It's a dynamic input. \n
-
-    * @par Attributes:
-    * @li equation: The subscripts for the Einstein summation. \n
-    * @li N: tensor size of input. \n
-
-    * @par Outputs:
-    * @li y: Sums the product of the elements of the input operands along
-    * dimensions specified
-    * using a notation based on the Einstein summation convention. \n
-
-    * @attention Constraints:
-    * Input N must be Int. \n
-
-    * @par Third-party framework compatibility
-    * Compatible with Tensorflow 2.x einsum operator.
-    */
-    REG_OP(Einsum)
-    .DYNAMIC_INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT32}))
-    .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT32}))
-    .REQUIRED_ATTR(equation, String)
-    .REQUIRED_ATTR(N, Int)
-    .OP_END_FACTORY_REG(Einsum)
-
-    /**
     * @brief Flattens the inputs tensor into a 2D matrix. If input tensor has shape (d_0, d_1,..., d_n),
     *        then the output will have shape (d_0 X d_1 ... d_(axis-1), d_axis X d_(axis + 1)...X d_n)\n
 
