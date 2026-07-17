@@ -29,24 +29,24 @@ $$
 
 ```Cpp
 aclnnStatus aclnnAbsGetWorkspaceSize(
-  const aclTensor *self, 
-  aclTensor       *out, 
-  uint64_t        *workspaceSize, 
+  const aclTensor *self,
+  aclTensor       *out,
+  uint64_t        *workspaceSize,
   aclOpExecutor  **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnAbs(
-  void              *workspace, 
-  uint64_t           workspaceSize, 
-  aclOpExecutor     *executor, 
+  void              *workspace,
+  uint64_t           workspaceSize,
+  aclOpExecutor     *executor,
   const aclrtStream  stream)
 ```
 
 ## aclnnAbsGetWorkspaceSize
 
 - **参数说明：**
-  
+
   <table style="undefined;table-layout: fixed; width: 1494px"><colgroup>
   <col style="width: 146px">
   <col style="width: 110px">
@@ -111,15 +111,15 @@ aclnnStatus aclnnAbs(
     </tr>
   </tbody>
   </table>
-  
+
   - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16、COMPLEX32、COMPLEX64。
-  
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口会完成入参校验，出现以下场景时报错：
-  
+
   <table style="undefined;table-layout: fixed;width: 1155px"><colgroup>
   <col style="width: 319px">
   <col style="width: 144px">
@@ -238,7 +238,7 @@ void PrintOutResult(std::vector<int64_t> &shape, void** deviceAddr) {
                          *deviceAddr, size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
   for (int64_t i = 0; i < size; i++) {
-    LOG_PRINT("mean result[%ld] is: %f\n", i, resultData[i]);
+    LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
   }
 }
 
