@@ -42,9 +42,8 @@ struct CastOverFlow : public Vec::ElemwiseUnaryOP<R, T> {
     {
 #ifdef __CCE_AICORE__
         SetCtrlSpr<SAT_POS, SAT_POS>(0);
-        constexpr static MicroAPI::CastTrait castTrait3 = {
-            MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT, MicroAPI::MaskMergeMode::ZEROING,
-            RoundMode::CAST_RINT};
+        constexpr static MicroAPI::CastTrait castTrait3 = {MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT,
+                                                           MicroAPI::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
         __VEC_SCOPE__
         {
             MicroAPI::RegTensor<T> vreg0;
@@ -71,8 +70,8 @@ struct CastOverFlow : public Vec::ElemwiseUnaryOP<R, T> {
 
 #ifdef __CCE_AICORE__
 template <typename T>
-__simt_vf__ __aicore__
-    LAUNCH_BOUND(1024) inline void FloorDivInt_1(__ubuf__ T* dst, __ubuf__ T* src1, __ubuf__ T* src2, int count)
+__simt_vf__ __aicore__ LAUNCH_BOUND(1024) inline void FloorDivInt_1(__ubuf__ T* dst, __ubuf__ T* src1, __ubuf__ T* src2,
+                                                                    int count)
 {
     for (uint32_t index = static_cast<uint32_t>(threadIdx.x); index < count;
          index += static_cast<uint32_t>(blockDim.x)) {
@@ -129,6 +128,81 @@ struct FloorDivFloatWithCast {
     using OpDag = DAGSch<Outputs, void, MemCfg>;
 };
 
+template <class T1, class T2>
+struct FloorDivIntS8PostCompute : public Vec::ElemwiseTernaryOP<T1, T2, T2, T2> {
+    __aicore__ inline FloorDivIntS8PostCompute(LocalTensor<T1>& dst, LocalTensor<T2>& input1, LocalTensor<T2>& input2,
+                                               LocalTensor<T2>& div, const uint32_t& count)
+    {
+#ifdef __CCE_AICORE__
+        SetCtrlSpr<SAT_POS, SAT_POS>(0);
+        constexpr uint32_t VL_T = VECTOR_REG_WIDTH / sizeof(T2);
+        __local_mem__ T2* input1Addr = (__local_mem__ T2*)input1.GetPhyAddr();
+        __local_mem__ T2* input2Addr = (__local_mem__ T2*)input2.GetPhyAddr();
+        __local_mem__ T2* divAddr = (__local_mem__ T2*)div.GetPhyAddr();
+        __local_mem__ T1* dstAddr = (__local_mem__ T1*)dst.GetPhyAddr();
+        uint16_t loopTimes = (count + VL_T - 1) / VL_T;
+
+        constexpr static MicroAPI::CastTrait castTraitT2ToHalf = {MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT,
+                                                                  MicroAPI::MaskMergeMode::ZEROING,
+                                                                  RoundMode::CAST_ROUND};
+        constexpr static MicroAPI::CastTrait castTraitHalfToInt8 = {
+            MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT, MicroAPI::MaskMergeMode::ZEROING,
+            RoundMode::CAST_RINT};
+
+        __VEC_SCOPE__
+        {
+            MicroAPI::RegTensor<T2> zeroValue;
+            MicroAPI::RegTensor<T2> oneValue;
+            MicroAPI::RegTensor<T2> signValue;
+            MicroAPI::RegTensor<T2> input1Value;
+            MicroAPI::RegTensor<T2> input2Value;
+            MicroAPI::RegTensor<T2> divValue;
+            MicroAPI::RegTensor<T2> mulValue;
+            MicroAPI::RegTensor<T2> subValue;
+            MicroAPI::RegTensor<T2> resValue;
+            MicroAPI::RegTensor<T2> subValue1;
+            MicroAPI::RegTensor<half> halfValue;
+            MicroAPI::RegTensor<T1> int8Value;
+            MicroAPI::RegTensor<T2> input1SignValue;
+            MicroAPI::RegTensor<T2> input2SignValue;
+
+            MicroAPI::MaskReg preg;
+            MicroAPI::MaskReg negValue;
+            MicroAPI::MaskReg signNegValue;
+            MicroAPI::MaskReg resMaskValue;
+            uint32_t sregMask = count;
+
+            MicroAPI::Duplicate(zeroValue, T2(0));
+            MicroAPI::Duplicate(oneValue, T2(1));
+            MicroAPI::Duplicate(signValue, T2(DIV_B16_SIGN));
+
+            for (uint16_t j = 0; j < loopTimes; j++) {
+                preg = MicroAPI::UpdateMask<T2>(sregMask);
+                MicroAPI::DataCopy<T2, MicroAPI::LoadDist::DIST_NORM>(input2Value, input2Addr + VL_T * j);
+                MicroAPI::DataCopy<T2, MicroAPI::LoadDist::DIST_NORM>(divValue, divAddr + VL_T * j);
+                MicroAPI::Mul(mulValue, input2Value, divValue, preg);
+                MicroAPI::DataCopy<T2, MicroAPI::LoadDist::DIST_NORM>(input1Value, input1Addr + VL_T * j);
+                MicroAPI::Sub(subValue, input1Value, mulValue, preg);
+                MicroAPI::Compare<T2, CMPMODE::NE>(negValue, subValue, zeroValue, preg);
+
+                MicroAPI::And(input1SignValue, input1Value, signValue, preg);
+                MicroAPI::And(input2SignValue, input2Value, signValue, preg);
+                MicroAPI::Compare<T2, CMPMODE::NE>(signNegValue, input1SignValue, input2SignValue, preg);
+
+                MicroAPI::MaskAnd(resMaskValue, signNegValue, negValue, preg);
+                MicroAPI::Sub(subValue1, divValue, oneValue, preg);
+                MicroAPI::Select(resValue, subValue1, divValue, resMaskValue);
+
+                MicroAPI::Cast<half, T2, castTraitT2ToHalf>(halfValue, resValue, preg);
+                MicroAPI::Cast<T1, half, castTraitHalfToInt8>(int8Value, halfValue, preg);
+                MicroAPI::DataCopy<T1, MicroAPI::StoreDist::DIST_PACK_B16>(dstAddr + VL_T * j, int8Value, preg);
+            }
+        }
+        SetCtrlSpr<SAT_POS, SAT_POS>(1);
+#endif
+    }
+};
+
 template <typename T1, typename T2>
 struct FloorDivIntegerS8 {
     using InputX1 = Bind<Vec::CopyInBrc<T1>, Placeholder::In0<T1>>;
@@ -136,24 +210,8 @@ struct FloorDivIntegerS8 {
     using CastX1 = Bind<Vec::Cast<T2, T1, DIV_CAST_MODE_NONE>, InputX1>;
     using CastX2 = Bind<Vec::Cast<T2, T1, DIV_CAST_MODE_NONE>, InputX2>;
     using DivValue = Bind<Vec::Div<T2>, CastX1, CastX2>;
-    using MulValue = Bind<Vec::Mul<T2>, CastX2, DivValue>;
-    using SubValue = Bind<Vec::Sub<T2>, CastX1, MulValue>;
-    using ConstZero = MAKE_CONST(T2, 0);
-    using DupZero = Bind<Vec::Duplicate<T2>, ConstZero>;
-    using RemMask = Bind<Vec::Compare<uint8_t, T2, DIV_CMP_NE_MODE>, SubValue, DupZero>;
-    using ConstFlag = MAKE_CONST(T2, DIV_B16_SIGN);
-    using DupFlag = Bind<Vec::Duplicate<T2>, ConstFlag>;
-    using AndX1 = Bind<Vec::And<T2>, CastX1, DupFlag>;
-    using AndX2 = Bind<Vec::And<T2>, CastX2, DupFlag>;
-    using SignMask = Bind<Vec::Compare<uint8_t, T2, DIV_CMP_NE_MODE>, AndX1, AndX2>;
-    using ResMask = Bind<Vec::And<uint8_t>, RemMask, SignMask>;
-    using ConstOne = MAKE_CONST(T2, 1);
-    using DupOne = Bind<Vec::Duplicate<T2>, ConstOne>;
-    using SubValue1 = Bind<Vec::Sub<T2>, DivValue, DupOne>;
-    using SelectRes = Bind<Vec::Select<uint8_t, T2, DIV_SEL_TENSOR_TENSOR_MODE>, ResMask, SubValue1, DivValue>;
-    using CastOutHalf = Bind<Vec::Cast<half, T2, DIV_CAST_MODE_RINT>, SelectRes>;
-    using CastOutInteger = Bind<CastOverFlow<T1, half, DIV_CAST_MODE_RINT>, CastOutHalf>;
-    using OpCopyOut = Bind<Vec::CopyOut<T1>, Placeholder::Out0<T1>, CastOutInteger>;
+    using Output = Bind<FloorDivIntS8PostCompute<T1, T2>, CastX1, CastX2, DivValue>;
+    using OpCopyOut = Bind<Vec::CopyOut<T1>, Placeholder::Out0<T1>, Output>;
     using Outputs = Elems<OpCopyOut>;
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
     using OpDag = DAGSch<Outputs, void, MemCfg>;
