@@ -88,6 +88,7 @@ $$
 ## 约束说明
 
 - 输入indices必须为2D矩阵，shape和new_shape必须为1D向量。
+- 输入indices每行是一个非零元素的多维坐标。元素值大于等于0且小于对应shape维度的size。
 - input_rank和output_rank均不超过8维(MAX_RANK=8)。
 - new_shape中最多允许一个维度为-1，该维度值由总元素数除以其他维度乘积自动推导。
 - 输入shape和输出new_shape的总元素数必须一致。
