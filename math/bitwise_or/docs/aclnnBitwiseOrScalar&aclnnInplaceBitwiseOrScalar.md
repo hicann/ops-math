@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -144,15 +154,19 @@ aclnnStatus aclnnInplaceBitwiseOrScalar(
     </tr>
   </tbody></table>
 
+  <!-- npu="950" id7 -->
   - <term>Ascend 950PR/Ascend 950DT</term>：self和other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)。
-
+  <!-- end id7 -->
+  <!-- npu="A3,910b" id8 -->
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
     - self和other的数据类型不支持UINT32、UINT64；
     - out数据类型不支持UINT32、UINT64、COMPLEX64、COMPLEX128。
-
+  <!-- end id8 -->
+  <!-- npu="910,310p" id9 -->
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：
     - self和other的数据类型不支持UINT32、UINT64；
     - out数据类型不支持BFLOAT16、UINT32、UINT64、COMPLEX64、COMPLEX128。
+  <!-- end id9 -->
 
 - **返回值：**
 
@@ -308,9 +322,12 @@ aclnnStatus aclnnInplaceBitwiseOrScalar(
     </tr>
   </tbody></table>
 
+  <!-- npu="950" id10 -->
   - <term>Ascend 950PR/Ascend 950DT</term>：selfRef和other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)，且需要是推导之后可转换的数据类型。
-
+  <!-- end id10 -->
+  <!-- npu="A3,910b,910,310p" id11 -->
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：selfRef和other的数据类型不支持UINT32、UINT64。
+  <!-- end id11 -->
 
 - **返回值：**
 

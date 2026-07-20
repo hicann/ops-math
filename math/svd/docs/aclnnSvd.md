@@ -2,14 +2,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    ×     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：不支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -338,7 +348,7 @@ int SetupAndExecuteSVD(aclrtStream stream, SVDTensors& tensors, SVDWorkspace& wo
   std::vector<float> uHostData = {0, 0, 0, 0};
   std::vector<float> sigmaHostData = {0, 0};
   std::vector<float> vHostData = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-  bool fullMatrices = true;  
+  bool fullMatrices = true;
   bool computeUV = true;
 
 
@@ -354,21 +364,21 @@ int SetupAndExecuteSVD(aclrtStream stream, SVDTensors& tensors, SVDWorkspace& wo
   // 创建v aclTensor
   ret = CreateAclTensor(vHostData, tensors.vShape, &tensors.vDeviceAddr, aclDataType::ACL_FLOAT, &tensors.v);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  
+
   // 调用CANN算子库API，需要修改为具体的Api名称
   aclOpExecutor* executor;
   // 调用aclnnSvdGetWorkspaceSize第一段接口
-  ret = aclnnSvdGetWorkspaceSize(tensors.input, fullMatrices, computeUV, tensors.sigma, tensors.u, tensors.v, 
+  ret = aclnnSvdGetWorkspaceSize(tensors.input, fullMatrices, computeUV, tensors.sigma, tensors.u, tensors.v,
                                  &workspace.size, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnSvdGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
-  
+
   // 根据第一段接口计算出的workspaceSize申请device内存
   workspace.addr = nullptr;
   if (workspace.size > 0) {
     ret = aclrtMalloc(&workspace.addr, workspace.size, ACL_MEM_MALLOC_HUGE_FIRST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
   }
-  
+
   // 调用aclnnSvd第二段接口
   ret = aclnnSvd(workspace.addr, workspace.size, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnSvd failed. ERROR: %d\n", ret); return ret);
@@ -376,20 +386,20 @@ int SetupAndExecuteSVD(aclrtStream stream, SVDTensors& tensors, SVDWorkspace& wo
   // 同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
-  
+
   return 0;
 }
 
 int ProcessAndCleanupSVD(SVDTensors& tensors, SVDWorkspace& workspace) {
   auto ret = 0;
-  
+
   // 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
   auto uSize = GetShapeSize(tensors.uShape);
   std::vector<float> uData(uSize, 0);
   ret = aclrtMemcpy(uData.data(), uData.size() * sizeof(uData[0]), tensors.uDeviceAddr,
                     uSize * sizeof(uData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy outTensor U from device to host failed. ERROR: %d\n", ret); return ret);
-  
+
   for (int64_t i = 0; i < uSize; i++) {
     LOG_PRINT("u[%ld] is: %f\n", i, uData[i]);
   }
@@ -399,21 +409,21 @@ int ProcessAndCleanupSVD(SVDTensors& tensors, SVDWorkspace& workspace) {
   ret = aclrtMemcpy(sigmaData.data(), sigmaData.size() * sizeof(sigmaData[0]), tensors.sigmaDeviceAddr,
                     sigmaSize * sizeof(sigmaData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy outTensor sigma from device to host failed. ERROR: %d\n", ret); return ret);
-  
+
   for (int64_t i = 0; i < sigmaSize; i++) {
     LOG_PRINT("sigma[%ld] is: %f\n", i, sigmaData[i]);
   }
-  
+
   auto vSize = GetShapeSize(tensors.vShape);
   std::vector<float> vData(vSize, 0);
   ret = aclrtMemcpy(vData.data(), vData.size() * sizeof(vData[0]), tensors.vDeviceAddr,
                     vSize * sizeof(vData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy outTensor V from device to host failed. ERROR: %d\n", ret); return ret);
-  
+
   for (int64_t i = 0; i < vSize; i++) {
     LOG_PRINT("v[%ld] is: %f\n", i, vData[i]);
-  }  
-  
+  }
+
   // 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   aclDestroyTensor(tensors.input);
   aclDestroyTensor(tensors.u);
@@ -428,20 +438,20 @@ int ProcessAndCleanupSVD(SVDTensors& tensors, SVDWorkspace& workspace) {
   if (workspace.size > 0) {
     aclrtFree(workspace.addr);
   }
-  
+
   return 0;
 }
 
 int ExecuteSVDOperator(aclrtStream stream) {
   SVDTensors tensors;
   SVDWorkspace workspace;
-  
+
   auto ret = SetupAndExecuteSVD(stream, tensors, workspace);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  
+
   ret = ProcessAndCleanupSVD(tensors, workspace);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  
+
   return 0;
 }
 

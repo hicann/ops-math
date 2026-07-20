@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：不支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -32,32 +42,32 @@
 
 ```cpp
 aclnnStatus aclnnAcosGetWorkspaceSize(
-  const aclTensor*    input, 
-  aclTensor*          out, 
-  uint64_t*           workspaceSize, 
+  const aclTensor*    input,
+  aclTensor*          out,
+  uint64_t*           workspaceSize,
   aclOpExecutor**     executor)
 ```
 
 ```cpp
 aclnnStatus aclnnAcos(
-  void*             workspace, 
-  uint64_t          workspaceSize, 
-  aclOpExecutor*    executor, 
+  void*             workspace,
+  uint64_t          workspaceSize,
+  aclOpExecutor*    executor,
   const aclrtStream stream)
 ```
 
 ```cpp
 aclnnStatus aclnnInplaceAcosGetWorkspaceSize(
-  aclTensor*          inputRef, 
-  uint64_t*           workspaceSize, 
+  aclTensor*          inputRef,
+  uint64_t*           workspaceSize,
   aclOpExecutor**     executor)
 ```
 
 ```cpp
 aclnnStatus aclnnInplaceAcos(
-  void*             workspace, 
-  uint64_t          workspaceSize, 
-  aclOpExecutor*    executor, 
+  void*             workspace,
+  uint64_t          workspaceSize,
+  aclOpExecutor*    executor,
   const aclrtStream stream)
 ```
 
@@ -129,7 +139,9 @@ aclnnStatus aclnnInplaceAcos(
       </tr>
     </tbody></table>
 
+  <!-- npu="A3" id7 -->
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：input和out数据类型额外支持BFLOAT16。
+  <!-- end id7 -->
 
 - **返回值：**
 
@@ -269,7 +281,9 @@ aclnnStatus aclnnInplaceAcos(
       </tr>
     </tbody></table>
 
+  <!-- npu="A3" id8 -->
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：inputRef数据类型额外支持BFLOAT16。
+  <!-- end id8 -->
 
 - **返回值：**
 
@@ -501,7 +515,7 @@ int main() {
   for (int64_t i = 0; i < size; i++) {
     LOG_PRINT("%ld acos(%f) = %f\n", i, selfHostData[i], resultData[i]);
   }
-  
+
 
   // 6. 释放aclTensor，需要根据具体API的接口定义修改
   aclDestroyTensor(self);

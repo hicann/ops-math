@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>          |      √   |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √    |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √    |
-| <term>Atlas 200I/500 A2 推理产品</term>             |    ×    |
-| <term>Atlas 推理系列产品</term>                       |     √    |
-| <term>Atlas 训练系列产品</term>                       |     √    |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -118,7 +128,7 @@ aclnnStatus aclnnInplaceAtan2(
       <td>shape是self与other broadcast之后的shape。</td>
       <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
       <td>ND</td>
-      <td>不超过8维</td>    
+      <td>不超过8维</td>
       <td>√</td>
     </tr>
     <tr>
@@ -143,9 +153,12 @@ aclnnStatus aclnnInplaceAtan2(
     </tr>
   </tbody></table>
 
+  <!-- npu="950" id7 -->
   - <term>Ascend 950PR/Ascend 950DT</term>：
     - self和other数据类型支持BFLOAT16、FLOAT16、FLOAT32；
     - out数据类型支持BFLOAT16、FLOAT16、FLOAT32。
+
+  <!-- end id7 -->
 
 - **返回值：**
 
@@ -263,7 +276,7 @@ aclnnStatus aclnnInplaceAtan2(
       <td>shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
       <td>ND</td>
-      <td>不超过8维</td>    
+      <td>不超过8维</td>
       <td>√</td>
     </tr>
     <tr>
@@ -298,7 +311,10 @@ aclnnStatus aclnnInplaceAtan2(
     </tr>
   </tbody></table>
 
+  <!-- npu="950" id8 -->
   - <term>Ascend 950PR/Ascend 950DT</term>：selfRef和other数据类型支持BFLOAT16、FLOAT16、FLOAT32。
+
+  <!-- end id8 -->
 
 - **返回值：**
 
@@ -495,7 +511,7 @@ int main() {
   // 调用aclnnAtan2第二段接口
   ret = aclnnAtan2(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAtan2 failed. ERROR: %d\n", ret); return ret);
-  
+
   // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
@@ -509,7 +525,7 @@ int main() {
   for (int64_t i = 0; i < size; i++) {
     LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
   }
- 
+
   // aclnnInplaceAtan2接口调用示例
   // 3. 调用CANN算子库API
   LOG_PRINT("\ntest aclnnInplaceAtan2\n");
@@ -527,7 +543,7 @@ int main() {
   // 调用aclnnInplaceAtan2第二段接口
   ret = aclnnInplaceAtan2(inplaceWorkspaceAddr, inplaceWorkspaceSize, inplaceExecutor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceAtan2 failed. ERROR: %d\n", ret); return ret);
-    
+
   // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);

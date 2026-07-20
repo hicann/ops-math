@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -138,7 +148,9 @@ aclnnStatus aclnnInplaceGtTensor(
   </tbody>
   </table>
 
+  <!-- npu="910,310p" id7 -->
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
+  <!-- end id7 -->
 
 - **返回值：**
 
@@ -295,7 +307,9 @@ aclnnStatus aclnnInplaceGtTensor(
   </tbody>
   </table>
 
+  <!-- npu="910,310p" id8 -->
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
+  <!-- end id8 -->
 
 - **返回值：**
 
@@ -392,7 +406,7 @@ aclnnStatus aclnnInplaceGtTensor(
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
-- <term>Ascend 950PR/Ascend 950DT</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term> aclnnGtTensor示例代码：
+**aclnnGtTensor示例代码**：
 
 ```Cpp
 #include <iostream>
@@ -496,7 +510,7 @@ int PrepareAndExecuteGtTensor(aclrtStream stream, GtTensorData& data, void*& wor
   // 调用aclnnGtTensor第二段接口
   ret = aclnnGtTensor(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnGtTensor failed. ERROR: %d\n", ret); return ret);
-  
+
   return 0;
 }
 
@@ -505,7 +519,7 @@ int HandleGtTensorResult(aclrtStream stream, const GtTensorData& data, void* wor
   // 同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
-  
+
   // 获取输出的值，将device侧内存上的结果拷贝至host侧
   auto size = GetShapeSize(data.outShape);
   std::vector<char> resultData(size, 0);
@@ -528,7 +542,7 @@ int HandleGtTensorResult(aclrtStream stream, const GtTensorData& data, void* wor
   if (workspaceSize > 0) {
     aclrtFree(workspaceAddr);
   }
-  
+
   return 0;
 }
 
@@ -566,7 +580,7 @@ int main() {
 }
 ```
 
-- <term>Ascend 950PR/Ascend 950DT</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term> aclnnInplaceGtTensor示例代码：
+**aclnnInplaceGtTensor示例代码**：
 
 ```Cpp
 #include <iostream>

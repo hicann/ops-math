@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
-| <term>Atlas 推理系列产品</term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -34,34 +44,34 @@
 
 ```Cpp
 aclnnStatus aclnnLtScalarGetWorkspaceSize(
-  const aclTensor*     self, 
+  const aclTensor*     self,
   const aclScalar*     other,
-  aclTensor*           out, 
-  uint64_t*            workspaceSize, 
+  aclTensor*           out,
+  uint64_t*            workspaceSize,
   aclOpExecutor**      executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnLtScalar(
-  void*          workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor* executor, 
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
   aclrtStream    stream)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceLtScalarGetWorkspaceSize(
-  const aclTensor*     selfRef, 
+  const aclTensor*     selfRef,
   const aclScalar*     other,
-  uint64_t*            workspaceSize, 
+  uint64_t*            workspaceSize,
   aclOpExecutor**      executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceLtScalar(
-  void*          workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor* executor, 
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
   aclrtStream    stream)
 ```
 
@@ -147,9 +157,13 @@ aclnnStatus aclnnInplaceLtScalar(
       <td class="tg-0pky">-</td>
     </tr>
   </tbody></table>
-  
+
+  <!-- npu="910,310b" id7 -->
   - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
-  - <term>Ascend 950PR/Ascend 950DT</term>：self与other的数据类型需相互满足数据类型推导规则（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>）。
+  <!-- end id7 -->
+  <!-- npu="950" id8 -->
+  - <term>Ascend 950PR/Ascend 950DT</term>：self与other的数据类型需相互满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)）。
+  <!-- end id8 -->
 
 - **返回值：**
 
@@ -302,8 +316,12 @@ aclnnStatus aclnnInplaceLtScalar(
     </tr>
   </tbody></table>
 
+  <!-- npu="910,310b" id9 -->
   - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
-  - <term>Ascend 950PR/Ascend 950DT</term>：self与other的数据类型需相互满足数据类型推导规则（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>）。
+  <!-- end id9 -->
+  <!-- npu="950" id10 -->
+  - <term>Ascend 950PR/Ascend 950DT</term>：self与other的数据类型需相互满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)）。
+  <!-- end id10 -->
 
 - **返回值：**
 
@@ -528,7 +546,7 @@ int main() {
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
-  
+
   // 执行InplaceLtScalar操作
   ret = ExecuteLtScalarOperator(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteInplaceLtScalarOperator failed. ERROR: %d\n", ret); return ret);
@@ -659,7 +677,7 @@ int main() {
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
-  
+
   // 执行InplaceLtScalar操作
   ret = ExecuteInplaceLtScalarOperator(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteInplaceLtScalarOperator failed. ERROR: %d\n", ret); return ret);

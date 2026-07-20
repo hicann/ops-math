@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -26,39 +36,39 @@
 
   ```Cpp
   aclnnStatus aclnnRoundGetWorkspaceSize(
-    const aclTensor* self, 
-    aclTensor*       out, 
-    uint64_t*        workspaceSize, 
+    const aclTensor* self,
+    aclTensor*       out,
+    uint64_t*        workspaceSize,
     aclOpExecutor**  executor)
   ```
 
   ```Cpp
   aclnnStatus aclnnRound(
-    void*             workspace, 
-    uint64_t          workspaceSize, 
-    aclOpExecutor*    executor, 
+    void*             workspace,
+    uint64_t          workspaceSize,
+    aclOpExecutor*    executor,
     const aclrtStream stream)
   ```
 
   ```Cpp
   aclnnStatus aclnnInplaceRoundGetWorkspaceSize(
-    const aclTensor* selfRef, 
-    uint64_t*        workspaceSize, 
+    const aclTensor* selfRef,
+    uint64_t*        workspaceSize,
     aclOpExecutor**  executor)
   ```
 
   ```Cpp
   aclnnStatus aclnnInplaceRound(
-    void*             workspace, 
-    uint64_t          workspaceSize, 
-    aclOpExecutor*    executor, 
+    void*             workspace,
+    uint64_t          workspaceSize,
+    aclOpExecutor*    executor,
     const aclrtStream stream)
   ```
 
 ## aclnnRoundGetWorkspaceSize
 
 - **参数说明：**
-  
+
   <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
   <col style="width: 180px">
   <col style="width: 120px">
@@ -122,9 +132,11 @@
       <td>-</td>
     </tr>
   </tbody></table>
-  
+
+  <!-- npu="910" id7 -->
   - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
-  
+  <!-- end id7 -->
+
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -200,7 +212,7 @@
     </tr>
   </tbody>
   </table>
-  
+
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -208,7 +220,7 @@
 ## aclnnInplaceRoundGetWorkspaceSize
 
 - **参数说明：**
-  
+
   <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
   <col style="width: 180px">
   <col style="width: 120px">
@@ -262,9 +274,11 @@
       <td>-</td>
     </tr>
   </tbody></table>
-  
+
+  <!-- npu="910" id8 -->
   - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
-  
+  <!-- end id8 -->
+
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -334,7 +348,7 @@
     </tr>
   </tbody>
   </table>
-  
+
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -345,7 +359,7 @@
 
   - aclnnRound&aclnnInplaceRound默认确定性实现。
 
-* 当输入值在[-0.5, -0]之间时，输出值为0
+- 当输入值在[-0.5, -0]之间时，输出值为0
 
 ## 调用示例
 
@@ -461,7 +475,7 @@ int main() {
     // 5.获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
     auto size = GetShapeSize(outShape);
     std::vector<double> resultData(size, 0);
-    ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, 
+    ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr,
                       size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
 
@@ -486,7 +500,7 @@ int main() {
     ret = aclrtSynchronizeStream(stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
     // step5.获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
-    ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), selfDeviceAddr, 
+    ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), selfDeviceAddr,
                       size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
 

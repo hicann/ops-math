@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
-| <term>Atlas 推理系列产品</term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -33,34 +43,34 @@
 
 ```Cpp
 aclnnStatus aclnnLtTensorGetWorkspaceSize(
-  const aclTensor*     self, 
+  const aclTensor*     self,
   const aclTensor*     other,
-  aclTensor*           out, 
-  uint64_t*            workspaceSize, 
+  aclTensor*           out,
+  uint64_t*            workspaceSize,
   aclOpExecutor**      executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnLtTensor(
-  void*          workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor* executor, 
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
   aclrtStream    stream)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceLtTensorGetWorkspaceSize(
-  const aclTensor*     selfRef, 
+  const aclTensor*     selfRef,
   const aclTensor*     other,
-  uint64_t*            workspaceSize, 
+  uint64_t*            workspaceSize,
   aclOpExecutor**      executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceLtTensor(
-  void*          workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor* executor, 
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
   aclrtStream    stream)
 ```
 
@@ -156,8 +166,10 @@ aclnnStatus aclnnInplaceLtTensor(
       <td class="tg-0pky">-</td>
     </tr>
   </tbody></table>
-  
+
+  <!-- npu="910,310b" id7 -->
   - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
+  <!-- end id7 -->
 
 - **返回值：**
 
@@ -324,8 +336,10 @@ aclnnStatus aclnnInplaceLtTensor(
       <td class="tg-0pky">-</td>
     </tr>
   </tbody></table>
-  
+
+  <!-- npu="910,310b" id8 -->
   - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
+  <!-- end id8 -->
 
 - **返回值：**
 
@@ -504,7 +518,7 @@ struct LtTensorData {
 
 int CreateInputAndOutputTensors(LtTensorData& data) {
   auto ret = 0;
-  
+
   // 创建self aclTensor
   ret = CreateAclTensor(data.selfHostData, data.selfShape, &data.selfDeviceAddr, aclDataType::ACL_DOUBLE, &data.self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -514,33 +528,33 @@ int CreateInputAndOutputTensors(LtTensorData& data) {
   // 创建out aclTensor
   ret = CreateAclTensor(data.outHostData, data.outShape, &data.outDeviceAddr, aclDataType::ACL_DOUBLE, &data.out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  
+
   return ret;
 }
 
 int ExecuteLtTensorComputation(aclrtStream stream, LtTensorData& data) {
   auto ret = 0;
   aclOpExecutor* executor;
-  
+
   // 调用aclnnLtTensor第一段接口
   ret = aclnnLtTensorGetWorkspaceSize(data.self, data.other, data.out, &data.workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnLtTensorGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
-  
+
   // 根据第一段接口计算出的workspaceSize申请device内存
   data.workspaceAddr = nullptr;
   if (data.workspaceSize > 0) {
     ret = aclrtMalloc(&data.workspaceAddr, data.workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
   }
-  
+
   // 调用aclnnLtTensor第二段接口
   ret = aclnnLtTensor(data.workspaceAddr, data.workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnLtTensor failed. ERROR: %d\n", ret); return ret);
-  
+
   // 同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
-  
+
   return ret;
 }
 
@@ -574,22 +588,22 @@ void ReleaseResources(LtTensorData& data) {
 
 int ExecuteLtTensorOperator(aclrtStream stream) {
   LtTensorData data;
-  
+
   // 创建输入和输出张量
   auto ret = CreateInputAndOutputTensors(data);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  
+
   // 执行LtTensor算子操作
   ret = ExecuteLtTensorComputation(stream, data);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  
+
   // 处理并打印结果
   ret = ProcessAndPrintResults(data);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  
+
   // 释放资源
   ReleaseResources(data);
-  
+
   return 0;
 }
 
@@ -598,7 +612,7 @@ int main() {
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
-  
+
   // 执行InplaceLtScalar操作
   ret = ExecuteLtTensorOperator(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteInplaceLtScalarOperator failed. ERROR: %d\n", ret); return ret);
@@ -732,7 +746,7 @@ int main() {
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
-  
+
   // 执行InplaceLtScalar操作
   ret = ExecuteInplaceLtTensorOperator(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteInplaceLtScalarOperator failed. ERROR: %d\n", ret); return ret);

@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -96,7 +106,7 @@ aclnnStatus aclnnInplaceDivMods(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>表示被除数，公式中的input。</td>
-      <td>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>）。</td>
+      <td>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">TensorScalar互推导关系</a>）。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
       <td>不超过8维</td>
@@ -106,7 +116,7 @@ aclnnStatus aclnnInplaceDivMods(
       <td>other（aclScalar*）</td>
       <td>输入</td>
       <td>表示除数，公式中的输入other。</td>
-      <td>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>）。</td>
+      <td>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">TensorScalar互推导关系</a>）。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>-</td>
       <td>-</td>
@@ -154,12 +164,15 @@ aclnnStatus aclnnInplaceDivMods(
     </tr>
   </tbody></table>
 
+  <!-- npu="910" id7 -->
   - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
-
+  <!-- end id7 -->
+  <!-- npu="950" id8 -->
   - <term>Ascend 950PR/Ascend 950DT</term>：
-    - 数据类型需满足<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>
+    - 数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)。
     - mode为0时，out数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX128、COMPLEX64，self与other推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT；
     - mode为1或2时，out数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16、COMPLEX128、COMPLEX64。
+  <!-- end id8 -->
 
 - **返回值：**
 
@@ -280,7 +293,7 @@ aclnnStatus aclnnInplaceDivMods(
       <td>selfRef（aclTensor*）</td>
       <td>输入/输出</td>
       <td>表示被除数和商，公式中的输入input和out。</td>
-      <td>数据类型需要是selfRef与other推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>）。</td>
+      <td>数据类型需要是selfRef与other推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">TensorScalar互推导关系</a>）。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
       <td>不超过8维</td>
@@ -290,7 +303,7 @@ aclnnStatus aclnnInplaceDivMods(
       <td>other（aclScalar*）</td>
       <td>输入</td>
       <td>表示除数，公式中的输入other。</td>
-      <td>数据类型与selfRef的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>）。</td>
+      <td>数据类型与selfRef的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">TensorScalar互推导关系</a>）。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>-</td>
       <td>-</td>
@@ -328,12 +341,15 @@ aclnnStatus aclnnInplaceDivMods(
     </tr>
   </tbody></table>
 
+  <!-- npu="910" id9 -->
   - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
-
+  <!-- end id9 -->
+  <!-- npu="950" id10 -->
   - <term>Ascend 950PR/Ascend 950DT</term>：
-    - 数据类型需满足<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>。
+    - 数据类型需满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">TensorScalar互推导关系</a>。
     - 当mode为0时，selfRef与other推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
     - selfRef在mode为0时，支持FLOAT、FLOAT16、DOUBLE、BFLOAT16；mode为1或2时，支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16。other不支持COMPLEX128、COMPLEX64。
+  <!-- end id10 -->
 
 - **返回值：**
 
@@ -425,7 +441,10 @@ aclnnStatus aclnnInplaceDivMods(
 
 - 确定性计算：
   - aclnnDivMods&aclnnInplaceDivMods默认确定性实现。
+
+<!-- npu="A3,910b" id11 -->
 - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：当mode为1（trunc模式）或2（floor模式），因FLOAT16/BFLOAT16数据类型精度有限，无法表示所有小数，在舍入取整/向下取整时存在一定误差，可以选择更高精度的数据类型如FLOAT32。
+<!-- end id11 -->
 
 ## 调用示例
 

@@ -4,19 +4,29 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
-* 接口功能：计算selfRef中的元素的值与other的值是否不相等。
-* 计算公式：
+- 接口功能：计算selfRef中的元素的值与other的值是否不相等。
+- 计算公式：
 
 $$
 out_i​=(self_i \ne other)?[1]:[0]
@@ -28,10 +38,10 @@ $$
 
 ## 函数原型
 
-* aclnnNeScalar和aclnnInplaceNeScalar实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
-  * aclnnNeScalar：需新建一个输出张量对象存储计算结果。
-  * aclnnInplaceNeScalar：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-* 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnNeScalarGetWorkspaceSize”或“aclnnInplaceNeScalarGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnNeScalar”或“aclnnInplaceNeScalar”接口执行计算。
+- aclnnNeScalar和aclnnInplaceNeScalar实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
+  - aclnnNeScalar：需新建一个输出张量对象存储计算结果。
+  - aclnnInplaceNeScalar：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
+- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnNeScalarGetWorkspaceSize”或“aclnnInplaceNeScalarGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnNeScalar”或“aclnnInplaceNeScalar”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnNeScalarGetWorkspaceSize(
@@ -68,7 +78,7 @@ aclnnStatus aclnnInplaceNeScalar(
 
 ## aclnnNeScalarGetWorkspaceSize
 
-* **参数说明：**
+- **参数说明：**
 
   <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
   <col style="width: 217px">
@@ -144,18 +154,21 @@ aclnnStatus aclnnInplaceNeScalar(
     </tr>
   </tbody></table>
 
+  <!-- npu="A3,910b" id7 -->
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
     - self与other不支持UINT64。
     - out不支持UINT64、UINT32、UINT16。
-
+  <!-- end id7 -->
+  <!-- npu="910" id8 -->
   - <term>Atlas 训练系列产品</term>：
     - self与other不支持BFLOAT16、UINT64。
     - out不支持BFLOAT16、UINT64、UINT32、UINT16。
+  <!-- end id8 -->
 
-* **返回值**：
+- **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
+
   第一段接口完成入参校验，出现以下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
@@ -194,7 +207,7 @@ aclnnStatus aclnnInplaceNeScalar(
 
 ## aclnnInplaceNeScalar
 
-* **参数说明**：
+- **参数说明**：
 
   <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
   <col style="width: 184px">
@@ -231,13 +244,13 @@ aclnnStatus aclnnInplaceNeScalar(
   </tbody>
   </table>
 
-* **返回值**：
+- **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceNeScalarGetWorkspaceSize
 
-* **参数说明**：
+- **参数说明**：
 
   <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
   <col style="width: 217px">
@@ -303,11 +316,14 @@ aclnnStatus aclnnInplaceNeScalar(
     </tr>
   </tbody></table>
 
+  <!-- npu="A3,910b" id9 -->
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持UINT64。
-
+  <!-- end id9 -->
+  <!-- npu="910" id10 -->
   - <term>Atlas 训练系列产品</term>：不支持BFLOAT16、UINT64。
+  <!-- end id10 -->
 
-* **返回值**：
+- **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
@@ -346,7 +362,7 @@ aclnnStatus aclnnInplaceNeScalar(
 
 ## aclnnInplaceNeScalar
 
-* **参数说明**
+- **参数说明**
 
   <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
   <col style="width: 184px">
@@ -383,7 +399,7 @@ aclnnStatus aclnnInplaceNeScalar(
   </tbody>
   </table>
 
-* **返回值**：
+- **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
@@ -499,7 +515,7 @@ int main()
     // 创建out aclTensor
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_DOUBLE, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
- 
+
     // aclnnNeScalar调用示例
     // 3.调用CANN算子库API，需要修改为具体的API名称
     uint64_t workspaceSize = 0;
@@ -565,15 +581,15 @@ int main()
     aclDestroyScalar(other);
     aclDestroyTensor(out);
 
-    // 7.释放device资源，需要根据具体API的接口定义修改 
-    aclrtFree(selfDeviceAddr); 
-    aclrtFree(otherDeviceAddr); 
+    // 7.释放device资源，需要根据具体API的接口定义修改
+    aclrtFree(selfDeviceAddr);
+    aclrtFree(otherDeviceAddr);
     aclrtFree(outDeviceAddr);
-    if (workspaceSize > 0) { 
-       aclrtFree(workspaceAddr); 
-    } 
-    aclrtDestroyStream(stream); 
-    aclrtResetDevice(deviceId);  
-    aclFinalize(); 
+    if (workspaceSize > 0) {
+       aclrtFree(workspaceAddr);
+    }
+    aclrtDestroyStream(stream);
+    aclrtResetDevice(deviceId);
+    aclFinalize();
     return 0;
 }```

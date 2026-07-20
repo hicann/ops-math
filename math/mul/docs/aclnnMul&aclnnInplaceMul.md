@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         |  是否支持   |
-| :----------------------------------------------------------- |:-------:|
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √    |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √    |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √    |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×    |
-| <term>Atlas 推理系列产品</term>                             |    √    |
-| <term>Atlas 训练系列产品</term>                              |    √    |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -27,41 +37,41 @@ $$
 
 aclnnMul和aclnnInplaceMul实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
 
-  - aclnnMul：需新建一个输出张量对象存储计算结果。
-  - aclnnInplaceMul：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
+- aclnnMul：需新建一个输出张量对象存储计算结果。
+- aclnnInplaceMul：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnMulGetWorkspaceSize”或者“aclnnInplaceMulGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMul”或者“aclnnInplaceMul”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnMulGetWorkspaceSize(
-  const aclTensor *self, 
-  const aclTensor *other, 
-  aclTensor       *out, 
-  uint64_t        *workspaceSize, 
+  const aclTensor *self,
+  const aclTensor *other,
+  aclTensor       *out,
+  uint64_t        *workspaceSize,
   aclOpExecutor  **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnMul(
-  void           *workspace, 
-  uint64_t        workspaceSize, 
-  aclOpExecutor  *executor, 
+  void           *workspace,
+  uint64_t        workspaceSize,
+  aclOpExecutor  *executor,
   aclrtStream     stream)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceMulGetWorkspaceSize(
-  aclTensor       *selfRef, 
-  const aclTensor *other, 
-  uint64_t        *workspaceSize, 
+  aclTensor       *selfRef,
+  const aclTensor *other,
+  uint64_t        *workspaceSize,
   aclOpExecutor  **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceMul(
-  void           *workspace, 
-  uint64_t        workspaceSize, 
-  aclOpExecutor  *executor, 
+  void           *workspace,
+  uint64_t        workspaceSize,
+  aclOpExecutor  *executor,
   aclrtStream     stream)
 ```
 
@@ -143,7 +153,9 @@ aclnnStatus aclnnInplaceMul(
     </tr>
   </tbody></table>
 
+  <!-- npu="910,310p,310b" id7 -->
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：不支持BFLOAT16数据类型。
+  <!-- end id7 -->
 
 - **返回值：**
 
@@ -296,7 +308,9 @@ aclnnStatus aclnnInplaceMul(
     </tr>
   </tbody></table>
 
+  <!-- npu="910,310p,310b" id8 -->
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：不支持BFLOAT16数据类型。
+  <!-- end id8 -->
 
 - **返回值：**
 
@@ -627,7 +641,7 @@ int main() {
   // 创建out aclTensor
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-   
+
   // 3.调用CANN算子库API，需要修改为具体的Api名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
@@ -657,8 +671,8 @@ int main() {
   for (int64_t i = 0; i < size; i++) {
     LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
   }
-          
-    
+
+
   // 6.释放aclTensor，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
   aclDestroyTensor(other);

@@ -4,50 +4,60 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |     √      |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √       |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
-| <term>Atlas 推理系列产品</term>                             |   ×     |
-| <term>Atlas 训练系列产品</term>                              |   √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
-* 接口功能：完成减法计算，被减数按alpha进行缩放。
-* 计算公式：
-  
+- 接口功能：完成减法计算，被减数按alpha进行缩放。
+- 计算公式：
+
   $$
   out_{i} = self_{i} - alpha \times other_{i}
   $$
-  
+
   $$
   selfRef_{i}=selfRef_{i}-alpha \times other_{i}
   $$
 
 ## 函数原型
 
-* aclnnSub和aclnnInplaceSub实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
-  * aclnnSub：需新建一个输出张量对象存储计算结果。
-  * aclnnInplaceSub：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-* 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnSubGetWorkspaceSize”或者“aclnnInplaceSubGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnSub”或者“aclnnInplaceSub”接口执行计算。
+- aclnnSub和aclnnInplaceSub实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
+  - aclnnSub：需新建一个输出张量对象存储计算结果。
+  - aclnnInplaceSub：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
+- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnSubGetWorkspaceSize”或者“aclnnInplaceSubGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnSub”或者“aclnnInplaceSub”接口执行计算。
 
 ```cpp
 aclnnStatus aclnnSubGetWorkspaceSize(
-    const aclTensor* self, 
+    const aclTensor* self,
     const aclTensor* other,
-    const aclScalar* alpha, 
-    aclTensor*       out, 
+    const aclScalar* alpha,
+    aclTensor*       out,
     uint64_t*        workspaceSize,
     aclOpExecutor**  executor)
 ```
 
 ```cpp
 aclnnStatus aclnnSub(
-    void*          workspace, 
-    uint64_t       workspaceSize, 
-    aclOpExecutor* executor, 
+    void*          workspace,
+    uint64_t       workspaceSize,
+    aclOpExecutor* executor,
     aclrtStream    stream)
 ```
 
@@ -55,22 +65,22 @@ aclnnStatus aclnnSub(
 aclnnStatus aclnnInplaceSubGetWorkspaceSize(
     aclTensor* selfRef,
     const aclTensor* other,
-    const aclScalar* alpha, 
+    const aclScalar* alpha,
     uint64_t*        workspaceSize,
     aclOpExecutor**  executor)
 ```
 
 ```cpp
 aclnnStatus aclnnInplaceSub(
-    void*          workspace, 
-    uint64_t       workspaceSize, 
-    aclOpExecutor* executor, 
+    void*          workspace,
+    uint64_t       workspaceSize,
+    aclOpExecutor* executor,
     aclrtStream    stream)
 ```
 
 ## aclnnSubGetWorkspaceSize
 
-* **参数说明**：
+- **参数说明**：
 
   <table class="tg" style="undefined;table-layout: fixed; width: 1445px"><colgroup>
   <col style="width: 165px">
@@ -170,10 +180,12 @@ aclnnStatus aclnnInplaceSub(
       <td class="tg-0pky">-</td>
     </tr>
   </tbody></table>
-  
-  - <term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：不支持BFLOAT16数据类型。
 
-* **返回值**：
+  <!-- npu="910,310b" id7 -->
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：不支持BFLOAT16数据类型。
+  <!-- end id7 -->
+
+- **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
   第一段接口完成入参校验，出现以下场景时报错：
@@ -224,7 +236,7 @@ aclnnStatus aclnnInplaceSub(
 ## aclnnSub
 
 - **参数说明**：
-  
+
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
@@ -261,12 +273,12 @@ aclnnStatus aclnnInplaceSub(
   </table>
 
 - **返回值**：
-  
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceSubGetWorkspaceSize
 
-* **参数说明**：
+- **参数说明**：
 
   <table class="tg" style="undefined;table-layout: fixed; width: 1445px"><colgroup>
   <col style="width: 165px">
@@ -351,12 +363,14 @@ aclnnStatus aclnnInplaceSub(
       <td class="tg-0pky">-</td>
     </tr>
   </tbody></table>
-  
+
+  <!-- npu="910,310b" id8 -->
   - <term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：不支持BFLOAT16数据类型。
+  <!-- end id8 -->
 
-* **返回值**：
+- **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。 
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -405,7 +419,7 @@ aclnnStatus aclnnInplaceSub(
 
 ## aclnnInplaceSub
 
-* **参数说明**：
+- **参数说明**：
 
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
@@ -442,8 +456,8 @@ aclnnStatus aclnnInplaceSub(
   </tbody>
   </table>
 
-* **返回值**：
-  
+- **返回值**：
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
@@ -607,15 +621,15 @@ int main() {
   aclDestroyTensor(other);
   aclDestroyScalar(alpha);
   aclDestroyTensor(out);
-  // 7.释放device资源，需要根据具体API的接口定义修改 
+  // 7.释放device资源，需要根据具体API的接口定义修改
   aclrtFree(selfDeviceAddr);
   aclrtFree(otherDeviceAddr);
   aclrtFree(outDeviceAddr);
-  if (workspaceSize > 0) { 
+  if (workspaceSize > 0) {
      aclrtFree(workspaceAddr);
-   }   
+   }
   aclrtDestroyStream(stream);
-  aclrtResetDevice(deviceId); 
+  aclrtResetDevice(deviceId);
   aclFinalize();
   return 0;
 }

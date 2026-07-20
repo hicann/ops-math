@@ -2,52 +2,62 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品 </term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    ×     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：不支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品 </term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：不支持
+<!-- end id6 -->
 
 ## 功能说明
 
 - 算子功能：
   SilentCheck算子功能主要根据输入特征值（val），与绝对阈值、相对阈值比较，来识别是否触发静默检测故障。同时支持通过框架侧传入的环境变量（npuAsdDetect）控制故障时是否触发告警或断点续训，默认情况（即npuAsdDetect=1时）只打印日志。
 - 计算公式：
-  
+
   - 如果当前输入`val`为inf/nan，或val超过绝对阈值`cThreshL1`，或跳变超过相对阈值`cCoeffL1`，则识别为L1故障；若环境变量`npuAsdDetect`为2，则打印日志并触发断点续训；若环境变量`npuAsdDetect`为1，则更新`sfdaRef`与`stepRef`后正常返回。
   - 如果当前输入`val`超过绝对阈值`cThreshL2`，或跳变超过相对阈值`cCoeffL2`，则识别为L2故障；打印告警并更新`sfdaRef`与`stepRef`后正常返回。
   - 如果既没有触发L1故障，又没有触发L2告警，则为正常情况：若`npuAsdDetect`为3，则打印特征值；否则更新`sfdaRef`与`stepRef`后正常返回。
   - 其中`sfdaRef`为[pre_val, min_val, max_val]，代表[上次检测val，历史最小val，历史最大val]；`stepRef`为检测次数，每次检测加一。
-  
+
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnSilentCheckGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSilentCheck”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnSilentCheckGetWorkspaceSize(
-    const aclTensor *val, 
-    aclTensor *inputGradRef, 
-    aclTensor *sfdaRef, 
-    aclTensor *stepRef, 
-    const int32_t cMinSteps, 
-    const float cThreshL1, 
-    const float cCoeffL1, 
-    const float cThreshL2, 
-    const float cCoeffL2, 
-    const int32_t npuAsdDetect, 
+    const aclTensor *val,
+    aclTensor *inputGradRef,
+    aclTensor *sfdaRef,
+    aclTensor *stepRef,
+    const int32_t cMinSteps,
+    const float cThreshL1,
+    const float cCoeffL1,
+    const float cThreshL2,
+    const float cCoeffL2,
+    const int32_t npuAsdDetect,
     aclTensor* result,
-    uint64_t *workspaceSize, 
+    uint64_t *workspaceSize,
     aclOpExecutor **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnSilentCheck(
-    void *workspace, 
-    uint64_t workspaceSize, 
-    aclOpExecutor *executor, 
+    void *workspace,
+    uint64_t workspaceSize,
+    aclOpExecutor *executor,
     aclrtStream stream)
 ```
 
@@ -208,9 +218,9 @@ aclnnStatus aclnnSilentCheck(
     </tr>
   </tbody></table>
 - **返回值**：
-  
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
+
   第一段接口完成入参校验，出现以下场景时报错：
   <table style="undefined;table-layout: fixed; width: 1030px"><colgroup>
   <col style="width: 250px">
@@ -243,7 +253,7 @@ aclnnStatus aclnnSilentCheck(
 ## aclnnSilentCheck
 
 - **参数说明**：
-  
+
   <table><thead>
     <tr>
       <th>参数名</th>
@@ -273,9 +283,9 @@ aclnnStatus aclnnSilentCheck(
     </tr>
   </tbody>
   </table>
-  
+
 - **返回值**：
-  
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明

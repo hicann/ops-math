@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -50,34 +60,34 @@
 
   ```Cpp
   aclnnStatus aclnnRemainderTensorScalarGetWorkspaceSize(
-    const aclTensor* self, 
-    const aclScalar* other, 
-    aclTensor*       out, 
-    uint64_t*        workspaceSize, 
+    const aclTensor* self,
+    const aclScalar* other,
+    aclTensor*       out,
+    uint64_t*        workspaceSize,
     aclOpExecutor**  executor)
   ```
 
   ```Cpp
   aclnnStatus aclnnRemainderTensorScalar(
-    void*          workspace, 
-    uint64_t       workspaceSize, 
-    aclOpExecutor* executor, 
+    void*          workspace,
+    uint64_t       workspaceSize,
+    aclOpExecutor* executor,
     aclrtStream    stream)
   ```
 
   ```Cpp
   aclnnStatus aclnnInplaceRemainderTensorScalarGetWorkspaceSize(
-    aclTensor*       selfRef, 
-    const aclScalar* other, 
-    uint64_t*        workspaceSize, 
+    aclTensor*       selfRef,
+    const aclScalar* other,
+    uint64_t*        workspaceSize,
     aclOpExecutor**  executor)
   ```
 
   ```Cpp
   aclnnStatus aclnnInplaceRemainderTensorScalar(
-    void*          workspace, 
-    uint64_t       workspaceSize, 
-    aclOpExecutor* executor, 
+    void*          workspace,
+    uint64_t       workspaceSize,
+    aclOpExecutor* executor,
     aclrtStream    stream)
   ```
 
@@ -111,7 +121,7 @@
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入self。</td>
-      <td>支持空Tensor。<br>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>/<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
+      <td>支持空Tensor。<br>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">TensorScalar互推导关系</a>/<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
       <td>INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
@@ -121,7 +131,7 @@
       <td>other（aclScalar*）</td>
       <td>输入</td>
       <td>公式中的输入other。</td>
-      <td>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>/<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
+      <td>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">TensorScalar互推导关系</a>/<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
       <td>INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
       <td>-</td>
       <td>-</td>
@@ -158,8 +168,10 @@
       <td>-</td>
     </tr>
   </tbody></table>
-  
+
+  <!-- npu="910" id7 -->
   - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
+  <!-- end id7 -->
 
 - **返回值：**
 
@@ -280,7 +292,7 @@
       <td>selfRef（aclTensor*）</td>
       <td>输入/输出</td>
       <td>输入输出tensor。</td>
-      <td>支持空Tensor。<br>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>/<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），且需要是推导之后可转换的数据类型。</td>
+      <td>支持空Tensor。<br>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">TensorScalar互推导关系</a>/<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），且需要是推导之后可转换的数据类型。</td>
       <td>INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
@@ -290,7 +302,7 @@
       <td>other（aclScalar*）</td>
       <td>输入</td>
       <td>公式中的输入other。</td>
-      <td>数据类型与selfRef的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>/<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
+      <td>数据类型与selfRef的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">TensorScalar互推导关系</a>/<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
       <td>INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
       <td>-</td>
       <td>-</td>
@@ -317,13 +329,15 @@
       <td>-</td>
     </tr>
   </tbody></table>
-  
+
+  <!-- npu="910" id8 -->
   - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
+  <!-- end id8 -->
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
+
   第一段接口完成入参校验，出现以下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>

@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>          |      ×   |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √    |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √    |
-| <term>Atlas 200I/500 A2 推理产品</term>             |    ×    |
-| <term>Atlas 推理系列产品</term>                       |     ×    |
-| <term>Atlas 训练系列产品</term>                       |     ×    |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：不支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：不支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -31,7 +41,7 @@
       用数学公式表示$y_i=\prod_{j=1}^ix_j，其中i=1,2...,n$。
 
   - **高维张量情况（以二维张量为例， dim=0沿行方向）**
-    对于二维张量：  
+    对于二维张量：
 
     $$
     X=\begin{bmatrix}x_{11}&x_{12}&...&x_{1m}\\x_{21}&x_{22}&...&x_{2m}\\...&...&...&...&\\x_{n1}&x_{n2}&...&x_{nm}&\end{bmatrix}
@@ -61,7 +71,7 @@
     $$
     y_{ij}=\prod_{k=1}^{j} x_{ik}
     $$
-  
+
   - **其它参数可以类似地根据上述规则进行推导**
 
 ## 函数原型
@@ -574,7 +584,7 @@ int main()
     // 调用aclnnCumprod第一段接口
     ret = aclnnCumprodGetWorkspaceSize(input, axis, dtype, result, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnCumprodGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
-    
+
     // 根据第一段接口计算出的workspaceSize申请device内存
     if (workspaceSize > 0)
     {

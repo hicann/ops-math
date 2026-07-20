@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -161,7 +171,9 @@ aclnnStatus aclnnInplaceLerp(
     </tr>
   </tbody></table>
 
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16。
+  <!-- npu="910,310p" id7 -->
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16。
+  <!-- end id7 -->
 
 - **返回值：**
 
@@ -330,7 +342,9 @@ aclnnStatus aclnnInplaceLerp(
     </tr>
   </tbody></table>
 
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16。
+  <!-- npu="910,310p" id8 -->
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16。
+  <!-- end id8 -->
 
 - **返回值：**
 
@@ -559,7 +573,7 @@ int main() {
     aclDestroyTensor(end);
     aclDestroyTensor(weight);
     aclDestroyTensor(out);
-    
+
     // 7. 释放device资源，需要根据具体API的接口定义修改
     aclrtFree(selfDeviceAddr);
     aclrtFree(endDeviceAddr);
@@ -669,7 +683,7 @@ int main() {
 
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
-    
+
     // 3. 调用CANN算子库API
     // 调用aclnnInplaceLerp第一段接口
     ret = aclnnInplaceLerpGetWorkspaceSize(self, end, weight, &workspaceSize, &executor);
@@ -702,7 +716,7 @@ int main() {
     aclDestroyTensor(self);
     aclDestroyTensor(end);
     aclDestroyTensor(weight);
-    
+
     // 7. 释放device资源，需要根据具体API的接口定义修改
     aclrtFree(selfDeviceAddr);
     aclrtFree(endDeviceAddr);

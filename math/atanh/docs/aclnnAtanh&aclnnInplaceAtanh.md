@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>          |      ×   |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √    |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √    |
-| <term>Atlas 200I/500 A2 推理产品</term>             |    ×    |
-| <term>Atlas 推理系列产品</term>                       |     √    |
-| <term>Atlas 训练系列产品</term>                       |     √    |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：不支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -131,9 +141,9 @@ aclnnStatus aclnnInplaceAtanh(
     </tr>
   </tbody></table>
 
-  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
-    - input数据类型额外支持COMPLEX64、COMPLEX128、BFLOAT16；
-    - out数据类型额外支持COMPLEX64、COMPLEX128、BFLOAT16。
+  <!-- npu="A3" id7 -->
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：input和out数据类型额外支持COMPLEX64、COMPLEX128、BFLOAT16。
+  <!-- end id7 -->
 
 - **返回值：**
 
@@ -273,7 +283,9 @@ aclnnStatus aclnnInplaceAtanh(
     </tr>
   </tbody></table>
 
+  <!-- npu="A3" id8 -->
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：inputRef数据类型额外支持COMPLEX64、COMPLEX128、BFLOAT16。
+  <!-- end id8 -->
 
 - **返回值：**
 
@@ -460,7 +472,7 @@ int main() {
   // 调用aclnnAtanh第二段接口
   ret = aclnnAtanh(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAtanh failed. ERROR: %d\n", ret); return ret);
-  
+
   // aclnnInplaceAtanh接口调用示例
   uint64_t inplaceWorkspaceSize = 0;
   aclOpExecutor* inplaceExecutor;
@@ -475,7 +487,7 @@ int main() {
   // 调用aclnnInplaceAtanh第二段接口
   ret = aclnnInplaceAtanh(inplaceWorkspaceAddr, inplaceWorkspaceSize, inplaceExecutor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceAtanh failed. ERROR: %d\n", ret); return ret);
-    
+
   // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
@@ -493,7 +505,7 @@ int main() {
   // 6. 释放aclTensor，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
   aclDestroyTensor(out);
-  
+
   // 7. 释放device资源，需要根据具体API的接口定义修改
   aclrtFree(selfDeviceAddr);
   aclrtFree(outDeviceAddr);

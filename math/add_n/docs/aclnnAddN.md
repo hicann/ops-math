@@ -2,21 +2,31 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------- |
-| <term>Ascend 950PR/Ascend 950DT</term>                      | ×      |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     | √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     | √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      | ×        |
-| <term>Atlas 推理系列产品</term>                               | ×        |
-| <term>Atlas 训练系列产品</term>                               | ×        |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：不支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：不支持
+<!-- end id6 -->
 
 ## 功能说明
 
 - 接口功能：对输入TensorList中的tensors进行主元素相加求和操作。
 
 - 计算公式：
-  
+
   $$
   out = tensors_{1} + tensors_{2} + \dots + tensors_{n}
   $$
@@ -180,22 +190,12 @@ aclnnStatus aclnnAddN(
 
 - 确定性说明：aclnnAddN默认确定性实现。
 
-- **平台约束**：仅支持Ascend 910B(A2)和Ascend 910_93(A3)系列NPU架构。
-
+<!-- npu="A3,910b" id7 -->
 - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
-
-  <details>
-  <summary>主场景说明：</summary>
-
   - 数据类型：支持INT32，INT64，FLOAT16，BFLOAT16，FLOAT32。
   - 数据格式：仅支持ND格式。
   - 参数Shape：输入Tensor维度范围为1~8，需要满足shape一致。
-
-  </details>
-
-- <term>Ascend 950PR/Ascend 950DT</term>、<term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：
-
-  不支持此算子。
+<!-- end id7 -->
 
 ## 调用示例
 

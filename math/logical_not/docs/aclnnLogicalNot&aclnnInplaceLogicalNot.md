@@ -4,19 +4,29 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
 - 接口功能：计算给定输入Tensor的逐元素逻辑非。如果未指定输出类型，输出Tensor是bool类型。如果输入Tensor不是bool类型，则将零视为False，非零视为True。
-  
+
 - 计算公式：
 
 $$
@@ -36,32 +46,32 @@ $$
 
 ```Cpp
 aclnnStatus aclnnLogicalNotGetWorkspaceSize(
-  const aclTensor*     self, 
-  aclTensor*           out, 
-  uint64_t*            workspaceSize, 
+  const aclTensor*     self,
+  aclTensor*           out,
+  uint64_t*            workspaceSize,
   aclOpExecutor**      executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnLogicalNot(
-  void*          workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor* executor, 
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
   aclrtStream    stream)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceLogicalNotGetWorkspaceSize(
-  aclTensor*           selfRef, 
-  uint64_t*            workspaceSize, 
+  aclTensor*           selfRef,
+  uint64_t*            workspaceSize,
   aclOpExecutor**      executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceLogicalNot(
-  void*          workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor* executor, 
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
   aclrtStream    stream)
 ```
 
@@ -132,9 +142,11 @@ aclnnStatus aclnnInplaceLogicalNot(
       <td class="tg-0pky">-</td>
     </tr>
   </tbody></table>
-  
+
+  <!-- npu="910,310p" id7 -->
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
-  
+  <!-- end id7 -->
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -172,7 +184,7 @@ aclnnStatus aclnnInplaceLogicalNot(
 ## aclnnLogicalNot
 
 - **参数说明：**
-  
+
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
@@ -207,7 +219,7 @@ aclnnStatus aclnnInplaceLogicalNot(
     </tr>
   </tbody>
   </table>
-  
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -269,9 +281,11 @@ aclnnStatus aclnnInplaceLogicalNot(
       <td class="tg-0pky">-</td>
     </tr>
   </tbody></table>
-  
+
+  <!-- npu="910,310p" id8 -->
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
-  
+  <!-- end id8 -->
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -306,7 +320,7 @@ aclnnStatus aclnnInplaceLogicalNot(
 ## aclnnInplaceLogicalNot
 
 - **参数说明：**
-  
+
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
@@ -341,7 +355,7 @@ aclnnStatus aclnnInplaceLogicalNot(
     </tr>
   </tbody>
   </table>
-  
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -402,13 +416,13 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
     // 调用aclrtMemcpy将host侧数据拷贝到device侧内存上
     ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
-    
+
     // 计算连续tensor的strides
     std::vector<int64_t> strides(shape.size(), 1);
     for (int64_t i = shape.size() - 2; i >= 0; i--) {
         strides[i] = shape[i + 1] * strides[i + 1];
     }
-    
+
     // 调用aclCreateTensor接口创建aclTensor
     *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND,
                               shape.data(), shape.size(), *deviceAddr);
@@ -431,20 +445,20 @@ int main() {
     void* outDeviceAddr = nullptr;
     aclTensor* self = nullptr;
     aclTensor* out = nullptr;
-    
+
     std::vector<int> selfHostData = {0, 1, 0, 2, 0, 3, 4, 0, 0};
     std::vector<int> outHostData ={0, 0, 0, 0, 0, 0, 0, 0, 0};
-    
+
     // 创建self aclTensor
     ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_INT32, &self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建out aclTensor
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_INT32, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-    
+
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
-    
+
     // aclnnLogicalNot接口调用示例
     // 3. 调用aclnnLogicalNot第一段接口
     ret = aclnnLogicalNotGetWorkspaceSize(self, out, &workspaceSize, &executor);
@@ -464,14 +478,14 @@ int main() {
     // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
     auto size = GetShapeSize(outShape);
     std::vector<int> resultData(size, 0);
-    ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, 
+    ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr,
                       size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
-    
+
     for (int64_t i = 0; i < size; i++) {
         LOG_PRINT("result[%ld] is: %d\n", i, resultData[i]);
     }
-    
+
     // aclnnInplaceLogicalNot接口调用示例
     // step3. 调用aclnnInplaceLogicalNot第一段接口
     ret = aclnnInplaceLogicalNotGetWorkspaceSize(self, &workspaceSize, &executor);
@@ -488,18 +502,18 @@ int main() {
     ret = aclrtSynchronizeStream(stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
     // step5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
-    ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), selfDeviceAddr, 
+    ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), selfDeviceAddr,
                       size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
-    
+
     for (int64_t i = 0; i < size; i++) {
         LOG_PRINT("result[%ld] is: %d\n", i, resultData[i]);
     }
-    
+
     // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
     aclDestroyTensor(self);
     aclDestroyTensor(out);
-    
+
     // 7. 释放device资源
     aclrtFree(selfDeviceAddr);
     aclrtFree(outDeviceAddr);
@@ -509,7 +523,7 @@ int main() {
     aclrtDestroyStream(stream);
     aclrtResetDevice(deviceId);
     aclFinalize();
-    
+
     return 0;
 }
 ```

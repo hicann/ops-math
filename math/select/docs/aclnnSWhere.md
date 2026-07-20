@@ -4,19 +4,29 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
-+ 算子功能：根据条件选取self或other中元素并返回（支持广播）。
-+ 计算公式如下：
+- 算子功能：根据条件选取self或other中元素并返回（支持广播）。
+- 计算公式如下：
 
 $$
 out_i=where(self_i,other_i,condition_i)=\begin{cases}
@@ -34,25 +44,40 @@ $$
 
 ## aclnnSWhereGetWorkspaceSize
 
-* **参数说明**:
+- **参数说明**:
   - condition（aclTensor*，计算输入）：公式中的输入`condition`，Device侧的aclTensor，数据类型支持UINT8、BOOL，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，shape需要与self和other满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
 
   - self（aclTensor*，计算输入）：公式中的输入`self`，数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），Device侧的aclTensor，shape需要与other和condition满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
+
+    <!-- npu="950,A3,910b" id7 -->
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128、 BFLOAT16。
+    <!-- end id7 -->
+    <!-- npu="910,310p" id8 -->
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128。
+    <!-- end id8 -->
 
   - other（aclTensor*，计算输入）：公式中的输入`other`，数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），Device侧的aclTensor，shape需要与self和condition满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
+
+    <!-- npu="950,A3,910b" id9 -->
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128、 BFLOAT16。
+    <!-- end id9 -->
+    <!-- npu="910,310p" id10 -->
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128。
+    <!-- end id10 -->
 
   - out（aclTensor \*，计算输出）：公式中的输出`out`，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，Device侧的aclTensor，shape需要是self与other和condition broadcast之后的shape。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
+
+    <!-- npu="950,A3,910b" id11 -->
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128、 BFLOAT16。
+    <!-- end id11 -->
+    <!-- npu="910,310p" id12 -->
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128。
+    <!-- end id12 -->
 
   - workspaceSize（uint64_t \*，出参）：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor\*\*，出参): 返回op执行器，包含了算子计算流程。
 
-* **返回值**：
+- **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
@@ -91,7 +116,7 @@ $$
 
 ## aclnnSWhere
 
-* **参数说明**:
+- **参数说明**:
 
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
@@ -128,7 +153,7 @@ $$
   </tbody>
   </table>
 
-* **返回值**：
+- **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 

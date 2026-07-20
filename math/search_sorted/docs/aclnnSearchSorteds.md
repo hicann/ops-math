@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品 | 是否支持 |
-| :--- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term> | × |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term> | √ |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> | √ |
-| <term>Atlas 200I/500 A2 推理产品</term> | × |
-| <term>Atlas 推理系列产品</term> | × |
-| <term>Atlas 训练系列产品</term> | √ |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：不支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -86,7 +96,7 @@ aclnnStatus aclnnSearchSorteds(
       <td>sortedSequence（aclTensor*）</td>
       <td>输入</td>
       <td>已排序的一维输入张量。</td>
-      <td><ul><li>必须为一维张量。</li><li>与<code>self</code>数据类型需满足<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">互推导关系</a>。</li><li>公式中的<code>N</code>为<code>sortedSequence</code>长度，<code>sortedSequence<sub>j</sub></code>为第<code>j</code>个元素。</li></ul></td>
+      <td><ul><li>必须为一维张量。</li><li>与<code>self</code>数据类型需满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</li><li>公式中的<code>N</code>为<code>sortedSequence</code>长度，<code>sortedSequence<sub>j</sub></code>为第<code>j</code>个元素。</li></ul></td>
       <td>DOUBLE、FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64</td>
       <td>ND</td>
       <td>1维</td>
@@ -96,7 +106,7 @@ aclnnStatus aclnnSearchSorteds(
       <td>self（aclScalar*）</td>
       <td>输入</td>
       <td>待查找插入位置的标量值。</td>
-      <td><ul><li>Host侧标量。</li><li>与<code>sortedSequence</code>数据类型需满足<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">互推导关系</a>。</li><li>公式中<code>x=self</code>。</li></ul></td>
+      <td><ul><li>Host侧标量。</li><li>与<code>sortedSequence</code>数据类型需满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</li><li>公式中<code>x=self</code>。</li></ul></td>
       <td>DOUBLE、FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64</td>
       <td>-</td>
       <td>标量</td>
@@ -165,9 +175,9 @@ aclnnStatus aclnnSearchSorteds(
   </tbody></table>
 
 - **返回值**
-  
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
+
   第一段接口完成入参校验，出现以下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
@@ -213,7 +223,7 @@ aclnnStatus aclnnSearchSorteds(
 ## aclnnSearchSorteds
 
 - **参数说明**
-  
+
   <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
   <col style="width: 180px">
   <col style="width: 120px">
@@ -251,7 +261,7 @@ aclnnStatus aclnnSearchSorteds(
   </table>
 
 - **返回值**
-  
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明

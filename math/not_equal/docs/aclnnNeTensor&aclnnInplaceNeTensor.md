@@ -4,19 +4,29 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
-* 接口功能：计算self（selfRef）中的元素的值与other的值是否不相等。
-* 计算公式：
+- 接口功能：计算self（selfRef）中的元素的值与other的值是否不相等。
+- 计算公式：
 
 $$
 out_i​=(self_i \ne other_i)?[1]:[0]
@@ -28,10 +38,10 @@ $$
 
 ## 函数原型
 
-* aclnnNeTensor和aclnnInplaceNeTensor实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
-  * aclnnNeTensor：需新建一个输出张量对象存储计算结果。
-  * aclnnInplaceNeTensor：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-* 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnNeTensorGetWorkspaceSize”或者“aclnnInplaceNeTensorGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnNeTensor”或者“aclnnInplaceNeTensor”接口执行计算。
+- aclnnNeTensor和aclnnInplaceNeTensor实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
+  - aclnnNeTensor：需新建一个输出张量对象存储计算结果。
+  - aclnnInplaceNeTensor：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
+- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnNeTensorGetWorkspaceSize”或者“aclnnInplaceNeTensorGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnNeTensor”或者“aclnnInplaceNeTensor”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnNeTensorGetWorkspaceSize(
@@ -60,7 +70,7 @@ aclnnStatus aclnnInplaceNeTensorGetWorkspaceSize(
 
 ```Cpp
 aclnnStatus aclnnInplaceNeTensor(
-    void             *workspace,  
+    void             *workspace,
     uint64_t          workspaceSize,
     aclOpExecutor    *executor,
     aclrtStream       stream)
@@ -68,7 +78,7 @@ aclnnStatus aclnnInplaceNeTensor(
 
 ## aclnnNeTensorGetWorkspaceSize
 
-* **参数说明：**
+- **参数说明：**
 
   <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
   <col style="width: 217px">
@@ -144,10 +154,10 @@ aclnnStatus aclnnInplaceNeTensor(
     </tr>
   </tbody></table>
 
-* **返回值**：
+- **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
+
   第一段接口完成入参校验，出现以下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
@@ -189,7 +199,7 @@ aclnnStatus aclnnInplaceNeTensor(
 
 ## aclnnNeTensor
 
-* **参数说明**：
+- **参数说明**：
 
   <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
   <col style="width: 184px">
@@ -226,13 +236,13 @@ aclnnStatus aclnnInplaceNeTensor(
   </tbody>
   </table>
 
-* **返回值**：
+- **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceNeTensorGetWorkspaceSize
 
-* **参数说明**：
+- **参数说明**：
 
   <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
   <col style="width: 217px">
@@ -298,10 +308,10 @@ aclnnStatus aclnnInplaceNeTensor(
     </tr>
   </tbody></table>
 
-* **返回值**：
+- **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
+
   第一段接口完成入参校验，出现以下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
@@ -343,7 +353,7 @@ aclnnStatus aclnnInplaceNeTensor(
 
 ## aclnnInplaceNeTensor
 
-* **参数说明**：
+- **参数说明**：
 
   <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
   <col style="width: 184px">
@@ -380,7 +390,7 @@ aclnnStatus aclnnInplaceNeTensor(
   </tbody>
   </table>
 
-* **返回值**：
+- **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
@@ -528,7 +538,7 @@ int main()
     for (int64_t i = 0; i < size; i++) {
         LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
     }
-    
+
     //aclnnInplaceNeTensor接口调用示例
     // 3.调用CANN算子库API
     LOG_PRINT("\ntest aclnnInplaceNeTensor\n");
@@ -546,7 +556,7 @@ int main()
     // 4.（固定写法）同步等待任务执行结束
     ret = aclrtSynchronizeStream(stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
-    
+
     // 5.获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
     ret = aclrtMemcpy(resultData.data(),
         resultData.size() * sizeof(resultData[0]), selfDeviceAddr,
@@ -561,14 +571,14 @@ int main()
     aclDestroyTensor(self);
     aclDestroyTensor(other);
 
-    // 7.释放device资源，需要根据具体API的接口定义修改 
-    aclrtFree(selfDeviceAddr); 
-    aclrtFree(otherDeviceAddr); 
-    if (workspaceSize > 0) { 
-       aclrtFree(workspaceAddr); 
-    } 
-    aclrtDestroyStream(stream); 
-    aclrtResetDevice(deviceId);  
-    aclFinalize(); 
+    // 7.释放device资源，需要根据具体API的接口定义修改
+    aclrtFree(selfDeviceAddr);
+    aclrtFree(otherDeviceAddr);
+    if (workspaceSize > 0) {
+       aclrtFree(workspaceAddr);
+    }
+    aclrtDestroyStream(stream);
+    aclrtResetDevice(deviceId);
+    aclFinalize();
     return 0;
 }```

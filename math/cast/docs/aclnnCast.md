@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -23,18 +33,18 @@
 
 ```Cpp
 aclnnStatus aclnnCastGetWorkspaceSize(
-  const aclTensor   *self, 
-  const aclDataType  dtype, 
-  aclTensor         *out, 
-  uint64_t          *workspaceSize, 
+  const aclTensor   *self,
+  const aclDataType  dtype,
+  aclTensor         *out,
+  uint64_t          *workspaceSize,
   aclOpExecutor    **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnCast(
-  void          *workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor, 
+  void          *workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor *executor,
   aclrtStream    stream)
 ```
 
@@ -115,16 +125,20 @@ aclnnStatus aclnnCast(
       <td>-</td>
     </tr>
   </tbody></table>
-  
+
+  <!-- npu="910,310p" id7 -->
   - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16、INT4。
+  <!-- end id7 -->
+  <!-- npu="A3,910b" id8 -->
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持COMPLEX32、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT4_E2M1、FLOAT4_E1M2、INT4。
+  <!-- end id8 -->
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口会完成入参校验，出现以下场景时报错：
-  
+
   <table style="undefined;table-layout: fixed;width: 1155px"><colgroup>
   <col style="width: 319px">
   <col style="width: 144px">
@@ -220,19 +234,17 @@ aclnnStatus aclnnCast(
 - 针对输入数据类型为BOOL、COMPLEX32、COMPLEX64、COMPLEX128、FLOAT4_E2M1、FLOAT4_E1M2的场景：
   不支持输入为非连续。
 
+<!-- npu="A3,910b,910,310p" id9 -->
 - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
-  - 针对数据类型从int32转换为int8的场景：
-    只能保证输入数据在(-2048, 1920)范围内精度无误差。
-  - 针对数据类型从float64/complex64/complex128转换为uint8的场景：
-    只能保证输入数据为非负数精度无误差。
-
+  - 针对数据类型从int32转换为int8的场景：只能保证输入数据在(-2048, 1920)范围内精度无误差。
+  - 针对数据类型从float64/complex64/complex128转换为uint8的场景：只能保证输入数据为非负数精度无误差。
+<!-- end id9 -->
+<!-- npu="310p" id10 -->
 - <term>Atlas 推理系列产品</term>：
-  - 针对数据类型从float32转换为int64和float32转换为uint8的场景：
-    只能保证输入数据在(-2147483648, 2147483583)范围内精度无误差。
-
-  - 针对数据类型从int64转换为float32的场景：
-    只能保证输入数据在(-2147483648, 2147483647)范围内精度无误差。
-
+  - 针对数据类型从float32转换为int64和float32转换为uint8的场景：只能保证输入数据在(-2147483648, 2147483583)范围内精度无误差。
+  - 针对数据类型从int64转换为float32的场景：只能保证输入数据在(-2147483648, 2147483647)范围内精度无误差。
+<!-- end id10 -->
+<!-- npu="950" id11 -->
 - <term>Ascend 950PR/Ascend 950DT</term>：
   - 针对输出类型为INT4的场景：不支持输入Shape的尾轴为奇数、不支持输入为非连续。
   - 针对输入、输出类型，涉及COMPLEX32、COMPLEX64、FLOAT4_E2M1、FLOAT4_E1M2、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、INT4的，只支持如下表格中的转换路径：
@@ -252,6 +264,8 @@ aclnnStatus aclnnCast(
     | HIFLOAT8/FLOAT8_E5M2/FLOAT8_E4M3FN | FLOAT4_E2M1/FLOAT4_E1M2 |
     | FLOAT4_E2M1/FLOAT4_E1M2 | HIFLOAT8/FLOAT8_E5M2/FLOAT8_E4M3FN |
     | INT32 | INT4 |
+
+<!-- end id11 -->
 
 ## 调用示例
 
