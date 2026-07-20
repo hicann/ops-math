@@ -875,7 +875,44 @@ VC5@ops-math:
         - ops/ops-math/math/truncate_div/tests/
       non_delivery: null
       open_source: null
-
+  llt:
+    ut_filter:
+      - ops/ops-math/math/truncate_div/op_graph/
+      - ops/ops-math/math/truncate_div/op_host/
+      - ops/ops-math/math/truncate_div/op_kernel/
+      - ops/ops-math/math/tile/op_kernel/
+      - ops/ops-math/math/tile/op_host/
+      - ops/ops-math/math/sinc/op_graph/
+      - ops/ops-math/math/sinc/op_host/
+      - ops/ops-math/math/sinc/op_kernel/
+      - ops/ops-math/math/expand/op_kernel/
+      - ops/ops-math/math/expand/op_host/
+      - ops/ops-math/conversion/transpose/op_kernel/
+      - ops/ops-math/conversion/transpose/op_graph/
+      - ops/ops-math/conversion/transpose/op_host/
+      - ops/ops-math/conversion/space_to_depth/op_kernel/
+      - ops/ops-math/conversion/space_to_depth/op_host/
+      - ops/ops-math/conversion/pad/op_kernel/
+      - ops/ops-math/conversion/pad/op_host/
+      - ops/ops-math/conversion/pad_v3/op_kernel/
+      - ops/ops-math/conversion/pad_v3/op_host/
+      - ops/ops-math/conversion/pad_v3_grad/op_kernel/
+      - ops/ops-math/conversion/pad_v3_grad/op_host/
+      - ops/ops-math/conversion/pad_v3_grad_replication/op_kernel/
+      - ops/ops-math/conversion/pad_v3_grad_replication/op_host/
+      - ops/ops-math/conversion/pad_v2/op_kernel/
+      - ops/ops-math/conversion/pad_v2/op_host/
+      - ops/ops-math/conversion/mirror_pad/op_kernel/
+      - ops/ops-math/conversion/mirror_pad/op_host/
+      - ops/ops-math/conversion/depth_to_space/op_kernel/
+      - ops/ops-math/conversion/depth_to_space/op_host/
+      - ops/ops-math/conversion/circular_pad_grad/op_kernel/
+      - ops/ops-math/conversion/circular_pad_grad/op_host/
+      - ops/ops-math/conversion/broadcast_to/op_kernel/
+      - ops/ops-math/conversion/broadcast_to/op_host/
+      - ops/ops-math/conversion/batch_to_space_nd/op_kernel/
+      - ops/ops-math/conversion/batch_to_space_nd/op_graph/
+      - ops/ops-math/conversion/batch_to_space_nd/op_host/
 VC6@ops-math:
   src:
     release:
