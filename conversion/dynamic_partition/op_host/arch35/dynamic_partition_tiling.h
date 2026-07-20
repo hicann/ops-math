@@ -19,10 +19,8 @@
 #include "register/op_impl_registry.h"
 #include "conversion/dynamic_partition/op_kernel/arch35/dynamic_partition_tiling_data_struct.h"
 
-namespace optiling
-{
-namespace DynPart
-{
+namespace optiling {
+namespace DynPart {
 struct DynamicPartitionCompileInfo {
     uint32_t coreNum{0};
     uint32_t ubSize{0};
@@ -31,10 +29,9 @@ struct DynamicPartitionCompileInfo {
     bool isAscendC{false};
 };
 
-class DynamicPartitionTiling
-{
+class DynamicPartitionTiling {
 public:
-    explicit DynamicPartitionTiling(gert::TilingContext* context) : context_(context){};
+    explicit DynamicPartitionTiling(gert::TilingContext* context) : context_(context) {};
     ge::graphStatus DoTiling();
 
 private:
@@ -48,6 +45,7 @@ private:
     void CalcTilingMCHWSize();
     void CalcTilingKey();
     void CalcTilingData();
+    void CalcTilingDataNumPartOne();
     std::string PrintTilingData();
     ge::graphStatus WriteTilingData();
 
@@ -55,12 +53,13 @@ private:
     gert::TilingContext* context_{nullptr};
     const DynamicPartitionCompileInfo* compileInfo_{nullptr};
     ::DynPart::DynPartTilingData tilingData_;
+    ::DynPart::DynPartNumPartOneTilingData numPartOneTilingData_;
     gert::Shape xShape_;
     gert::Shape partShape_;
     uint32_t dtypeSize_{1};
     bool isHBlockAxis_{false};
     uint32_t coreWS_{0};
 };
-}  // namespace DynPart
-}  // namespace optiling
-#endif  // OPS_BUILT_IN_OP_TILING_RUNTIME_DYNAMIC_PARTITION_TILING_H_
+} // namespace DynPart
+} // namespace optiling
+#endif // OPS_BUILT_IN_OP_TILING_RUNTIME_DYNAMIC_PARTITION_TILING_H_

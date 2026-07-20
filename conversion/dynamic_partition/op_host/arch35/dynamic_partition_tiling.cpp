@@ -30,11 +30,14 @@ inline static T* GetCompileInfoPtr(gert::TilingParseContext* context)
 
 namespace DynPart {
 static constexpr int64_t MC_TIMES = 2;
+static constexpr int64_t SHAPE_BUF_SIZE = 96;
 static constexpr uint32_t NUM_TWO = 2;
 static constexpr uint32_t INT32_BYTES = 4;
 static constexpr uint32_t UINT64_BYTES = 8;
 static constexpr uint32_t W_THRESHOLD = 6;
 static constexpr size_t SYS_WORKSPACE_SIZE = static_cast<size_t>(16) * 1024 * 1024;
+// arch35 MTE burst 粒度：每次 burst 传输 32 个 32 字节 block，即 1024 字节
+static constexpr int64_t UB_BURST_IN_ONE_BLOCK = 32;
 
 bool DynamicPartitionTiling::CheckInputs()
 {
@@ -224,6 +227,11 @@ void DynamicPartitionTiling::CalcTilingKey()
         return;
     }
 
+    if (tilingData_.numPartitions == 1) {
+        tilingData_.tilingKey = ::DynPart::TILING_NUM_PART_ONE;
+        return;
+    }
+
     if (tilingData_.wMSize == tilingData_.wLpUnit) {
         if (isHBlockAxis_) {
             if (tilingData_.wMSize <= W_THRESHOLD) {
@@ -266,6 +274,41 @@ ge::graphStatus DynamicPartitionTiling::GetAttrNumPartitions()
     return ge::GRAPH_SUCCESS;
 }
 
+void DynamicPartitionTiling::CalcTilingDataNumPartOne()
+{
+    int64_t blockSize = static_cast<int64_t>(compileInfo_->blockSize);
+    int64_t elePerBlock = blockSize / static_cast<int64_t>(dtypeSize_);
+    int64_t coreNum = static_cast<int64_t>(compileInfo_->coreNum);
+    int64_t totalUB = static_cast<int64_t>(compileInfo_->ubSize);
+    int64_t totalElements = xShape_.GetShapeSize();
+    int64_t optBurstElems = UB_BURST_IN_ONE_BLOCK * elePerBlock; // 最优 DMA burst 粒度（元素数）
+
+    numPartOneTilingData_.tilingKey = ::DynPart::TILING_NUM_PART_ONE;
+    numPartOneTilingData_.totalElements = totalElements;
+    numPartOneTilingData_.totalUBSize = compileInfo_->ubSize;
+    numPartOneTilingData_.mainSize = std::max(
+        Ops::Base::CeilAlign(Ops::Base::CeilDiv(totalElements, coreNum), elePerBlock), optBurstElems);
+    numPartOneTilingData_.usedCoreCnt = Ops::Base::CeilDiv(totalElements, numPartOneTilingData_.mainSize);
+    numPartOneTilingData_.tailSize = totalElements -
+                                     numPartOneTilingData_.mainSize * (numPartOneTilingData_.usedCoreCnt - 1);
+
+    // 预留 shapeBuf_ 的 UB 开销（96 字节，与 kernel InitBuffer(shapeBuf_, SHAPE_BUF_SIZE=96) 对齐）
+    int64_t availUB = totalUB - SHAPE_BUF_SIZE;
+    int64_t ubFactor = (availUB / 2 / blockSize) * elePerBlock;
+    ubFactor = std::min(ubFactor, numPartOneTilingData_.mainSize);
+    ubFactor = std::max(ubFactor, elePerBlock);
+    numPartOneTilingData_.ubFactor = ubFactor;
+
+    // 填充 y[0] shape 信息（供 kernel 写 yshape 输出）
+    // 注意：此时 xShape_ 已被 ReshapeInputShape() 重塑为 [partSize, wSize]
+    // dim0 = 原始 partitions 的元素总数，即重塑后 xShape_[0]
+    numPartOneTilingData_.dim0 = xShape_.GetDim(0);
+    numPartOneTilingData_.dimNumExtFirst = tilingData_.dimNumExtFirst;
+    for (int64_t i = 0; i < tilingData_.dimNumExtFirst; ++i) {
+        numPartOneTilingData_.outDimsExtFirst[i] = tilingData_.outDimsExtFirst[i];
+    }
+}
+
 void DynamicPartitionTiling::CalcTilingData()
 {
     CalcTilingExtFirstOutDims();
@@ -274,6 +317,9 @@ void DynamicPartitionTiling::CalcTilingData()
     CalcTilingHWLpUnit();
     CalcTilingUB();
     CalcTilingKey();
+    if (tilingData_.tilingKey == ::DynPart::TILING_NUM_PART_ONE) {
+        CalcTilingDataNumPartOne();
+    }
 }
 
 std::string DynamicPartitionTiling::PrintTilingData()
@@ -304,6 +350,30 @@ ge::graphStatus DynamicPartitionTiling::WriteTilingData()
 {
     OP_CHECK_IF(context_->SetTilingKey(tilingData_.tilingKey) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context_->GetNodeName(), "Set tiling key is failed!"), return ge::GRAPH_FAILED);
+
+    if (tilingData_.tilingKey == ::DynPart::TILING_NUM_PART_ONE) {
+        OP_CHECK_IF(
+            context_->SetBlockDim(static_cast<uint32_t>(numPartOneTilingData_.usedCoreCnt)) != ge::GRAPH_SUCCESS,
+            OP_LOGE(context_->GetNodeName(), "Set used core size is failed!"), return ge::GRAPH_FAILED);
+        auto ptrTD = context_->GetRawTilingData();
+        OP_CHECK_NULL_WITH_CONTEXT(context_, ptrTD);
+        auto capSize = ptrTD->GetCapacity();
+        void* ptrData = ptrTD->GetData();
+        OP_CHECK_NULL_WITH_CONTEXT(context_, ptrData);
+        OP_CHECK_IF(memcpy_s(ptrData, capSize, &numPartOneTilingData_, sizeof(numPartOneTilingData_)) != 0,
+                    OP_LOGE(context_->GetNodeName(), "Set tiling data is failed!"), return ge::GRAPH_FAILED);
+        ptrTD->SetDataSize(sizeof(numPartOneTilingData_));
+        size_t* ptrWS = context_->GetWorkspaceSizes(1);
+        OP_CHECK_NULL_WITH_CONTEXT(context_, ptrWS);
+        ptrWS[0] = SYS_WORKSPACE_SIZE;
+        OP_LOGI(
+            context_->GetNodeName(),
+            "The tiling data (NumPartOne): key=%lu coreCnt=%ld totalElem=%ld mainSize=%ld tailSize=%ld ubFactor=%ld",
+            numPartOneTilingData_.tilingKey, numPartOneTilingData_.usedCoreCnt, numPartOneTilingData_.totalElements,
+            numPartOneTilingData_.mainSize, numPartOneTilingData_.tailSize, numPartOneTilingData_.ubFactor);
+        return ge::GRAPH_SUCCESS;
+    }
+
     if (tilingData_.tilingKey == ::DynPart::TILING_X_EMPTY ||
         tilingData_.tilingKey == ::DynPart::TILING_H_MC_UB_CAN_HOLD_SPLIT_W ||
         tilingData_.tilingKey == ::DynPart::TILING_H_MC_UB_CANNOT_HOLD_SPLIT_W ||
