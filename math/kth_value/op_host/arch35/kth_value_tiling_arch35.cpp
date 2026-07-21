@@ -174,7 +174,8 @@ static void InitKthValueBaseTiling(KthValueTilingData* tilingData, const SortKth
 // =============================================================================
 static bool CheckNonLastSmallAxisInput(int64_t axisLen, int64_t outerSize, int64_t innerSize, uint32_t& axisLen32)
 {
-    if (axisLen < 2 || axisLen > NON_LAST_SMALL_AXIS_THRESHOLD || outerSize <= 0 || innerSize <= 0) {
+    if (axisLen < NON_LAST_SMALL_AXIS_MIN_AXIS_LEN || axisLen > NON_LAST_SMALL_AXIS_THRESHOLD || outerSize <= 0 ||
+        innerSize <= 0) {
         return false;
     }
     axisLen32 = static_cast<uint32_t>(axisLen);
@@ -283,12 +284,12 @@ static ge::graphStatus SetRadixOneCoreTiling(gert::TilingContext* context, const
                                                       std::to_string(tilingData->tmpUbSize).c_str(),
                                                       "The value of tmpUbSize must be less than or equal to remainUb."),
                 return ge::GRAPH_FAILED);
-    uint64_t doubleBufferRemainUb = info.ubSize > info.oneBufferQueSize * 2 ?
-                                        (info.ubSize - info.oneBufferQueSize * 2) / info.blockUbSize *
+    uint64_t doubleBufferRemainUb = info.ubSize > info.oneBufferQueSize * DOUBLE_BUFFER_NUM ?
+                                        (info.ubSize - info.oneBufferQueSize * DOUBLE_BUFFER_NUM) / info.blockUbSize *
                                             info.blockUbSize :
                                         0;
     if (static_cast<uint64_t>(tilingData->tmpUbSize) <= doubleBufferRemainUb) {
-        tilingData->keyParams3 = 2;
+        tilingData->keyParams3 = DOUBLE_BUFFER_NUM;
     }
     return ge::GRAPH_SUCCESS;
 }
@@ -924,6 +925,31 @@ static void SetKthValueTilingContext(gert::TilingContext* context, uint64_t schI
     }
 }
 
+static ge::graphStatus SelectAndFinalizeKthValueRoute(gert::TilingContext* context,
+                                                      const platform_ascendc::PlatformAscendC& ascendcPlatform,
+                                                      SortKthTileInfo& info, KthValueTilingData* tilingData)
+{
+    KthValueTilingData candidateTilingData = *tilingData;
+    uint64_t schId = KTH_VALUE_SCHID_RADIX_MORE_CORE;
+    uint32_t blockDim = 1;
+    OP_CHECK_IF((SelectKthValueRoute(context, info, &candidateTilingData, blockDim, schId) != ge::GRAPH_SUCCESS),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "SelectKthValueRoute", "GRAPH_FAILED",
+                                                      "The value of SelectKthValueRoute must be GRAPH_SUCCESS."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF((FinalizeKthValueRoute(context, ascendcPlatform, info, &candidateTilingData, schId, blockDim) !=
+                 ge::GRAPH_SUCCESS),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "FinalizeKthValueRoute", "GRAPH_FAILED",
+                                                      "The value of FinalizeKthValueRoute must be GRAPH_SUCCESS."),
+                return ge::GRAPH_FAILED);
+    *tilingData = candidateTilingData;
+    OP_LOGI(context->GetNodeName(),
+            "KthValueTiling: schId=%lu, blockDim=%u, lastAxis=%ld, unsortedDim=%ld, "
+            "isNonLastAxis=%d, dtypeSize=%u",
+            schId, blockDim, info.lastAxis, info.unsortedDim, static_cast<int>(info.isNonLastAxis), info.dtypeSize);
+    SetKthValueTilingContext(context, schId, info, blockDim);
+    return ge::GRAPH_SUCCESS;
+}
+
 // =============================================================================
 // Main entry
 // =============================================================================
@@ -968,25 +994,7 @@ static ge::graphStatus Tiling4KthValue(gert::TilingContext* context)
                                                       "The value of ComputeKthValueUbInfo must be GRAPH_SUCCESS."),
                 return ge::GRAPH_FAILED);
     InitKthValueBaseTiling(tilingData, info, oneCoreUbValid, *kAttr - 1);
-    KthValueTilingData candidateTilingData = *tilingData;
-    uint64_t schId = KTH_VALUE_SCHID_RADIX_MORE_CORE;
-    uint32_t blockDim = 1;
-    OP_CHECK_IF((SelectKthValueRoute(context, info, &candidateTilingData, blockDim, schId) != ge::GRAPH_SUCCESS),
-                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "SelectKthValueRoute", "GRAPH_FAILED",
-                                                      "The value of SelectKthValueRoute must be GRAPH_SUCCESS."),
-                return ge::GRAPH_FAILED);
-    OP_CHECK_IF((FinalizeKthValueRoute(context, ascendcPlatform, info, &candidateTilingData, schId, blockDim) !=
-                 ge::GRAPH_SUCCESS),
-                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "FinalizeKthValueRoute", "GRAPH_FAILED",
-                                                      "The value of FinalizeKthValueRoute must be GRAPH_SUCCESS."),
-                return ge::GRAPH_FAILED);
-    *tilingData = candidateTilingData;
-    OP_LOGI(context->GetNodeName(),
-            "KthValueTiling: schId=%lu, blockDim=%u, lastAxis=%ld, unsortedDim=%ld, "
-            "isNonLastAxis=%d, dtypeSize=%u",
-            schId, blockDim, info.lastAxis, info.unsortedDim, static_cast<int>(info.isNonLastAxis), info.dtypeSize);
-    SetKthValueTilingContext(context, schId, info, blockDim);
-    return ge::GRAPH_SUCCESS;
+    return SelectAndFinalizeKthValueRoute(context, ascendcPlatform, info, tilingData);
 }
 
 static ge::graphStatus TilingPrepare4KthValue(gert::TilingParseContext* context)

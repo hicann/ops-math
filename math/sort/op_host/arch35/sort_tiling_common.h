@@ -37,8 +37,10 @@ constexpr uint32_t SMALL_TILE_DATA_NUM = 1024;         // 测试数据得出一�
 constexpr uint32_t SIMT_UB = 32768;                    // 预留了32k给simt使用
 constexpr int64_t RADIX_UINT32_VALUE_MAX = 0x3fffffff; // uint32 radix counters reserve the top two bits for state
 constexpr uint32_t SMALL_AXIS_THRESHOLD = 512;
+constexpr int64_t NON_LAST_SMALL_AXIS_MIN_AXIS_LEN = 2;
 constexpr int64_t NON_LAST_SMALL_AXIS_THRESHOLD = 2048;
 constexpr int64_t ONE_CORE_DATA_SIZE = 2048;
+constexpr uint32_t DOUBLE_BUFFER_NUM = 2;
 constexpr uint32_t SORT32_SMALL_AXIS_THRESHOLD = 32;
 constexpr uint32_t SMALL_AXIS_MAX_DATACOPY_BLOCK_COUNT = 4095; // DataCopy hardware limit for blockCount
 constexpr uint32_t SORT_STRUCT_BYTES = 8;                      // fp32 sort struct size (index + value)
@@ -193,10 +195,10 @@ struct NonLastSmallAxisCandidate {
 // sorting axisLen elements at each (outer, inner) position independently.
 // innerChunk controls how many adjacent inner positions are batched into one
 // sort invocation, trading UB for fewer total tiles (tileCount).
-// Candidate evaluation:
+// Candidate quality is evaluated with the following metrics.
 //   tileCount = outerSize × ceil(innerSize / innerChunk)
 //   activeCore = min(maxCoreNum, tileCount)
-// Selection criteria (in priority order):
+// Candidates are selected in the following priority order.
 //   1. Maximise activeCore — better core utilisation
 //   2. Tie-break: prefer larger innerChunk — fewer kernel invocations per core
 // innerChunk candidates come from GetPreferredInnerChunk(), which returns

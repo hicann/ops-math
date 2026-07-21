@@ -31,16 +31,16 @@ constexpr uint32_t TWO_STAGE_THREAD_NUM = 1024;
  * @tparam T Input storage data type
  */
 template <typename T>
-__simt_vf__ LAUNCH_BOUND(TWO_STAGE_THREAD_NUM) __aicore__ void LoadNonLastBatchSimt(
-    uint32_t totalElems, uint32_t segmentLen, uint32_t validSegs, uint64_t outerBaseOffset, uint64_t innerStart,
-    uint64_t innerSize, __gm__ volatile T* input, __ubuf__ T* output)
+__simt_vf__ LAUNCH_BOUND(TWO_STAGE_THREAD_NUM) __aicore__
+    void LoadNonLastBatchSimt(uint32_t totalElems, uint32_t segmentLen, uint32_t validSegs, uint64_t outerBaseOffset,
+                              uint64_t innerStart, uint64_t innerSize, __gm__ volatile T* input, __ubuf__ T* output)
 {
     // Gather the original [axis, inner] tile into [inner segment, axis] order for two-stage sorting.
     for (uint32_t idx = static_cast<uint32_t>(threadIdx.x); idx < totalElems; idx += TWO_STAGE_THREAD_NUM) {
         uint32_t axis = idx / validSegs;
         uint32_t seg = idx - axis * validSegs;
-        output[seg * segmentLen + axis] =
-            input[outerBaseOffset + static_cast<uint64_t>(axis) * innerSize + innerStart + seg];
+        output[seg * segmentLen + axis] = input[outerBaseOffset + static_cast<uint64_t>(axis) * innerSize + innerStart +
+                                                seg];
     }
 }
 
@@ -58,9 +58,10 @@ __simt_vf__ LAUNCH_BOUND(TWO_STAGE_THREAD_NUM) __aicore__ void LoadNonLastBatchS
  * @tparam OutIdxT Final index data type stored in UB
  */
 template <typename T, typename OutIdxT>
-__simt_vf__ LAUNCH_BOUND(TWO_STAGE_THREAD_NUM) __aicore__ void RankInverseScatter(
-    uint32_t totalElems, uint32_t segmentLen, __ubuf__ T* stage1ValuePtr, __ubuf__ uint32_t* stage1OrderPtr,
-    __ubuf__ uint32_t* rankInversePtr, __ubuf__ T* finalValuePtr, __ubuf__ OutIdxT* finalIdxPtr)
+__simt_vf__ LAUNCH_BOUND(TWO_STAGE_THREAD_NUM) __aicore__
+    void RankInverseScatter(uint32_t totalElems, uint32_t segmentLen, __ubuf__ T* stage1ValuePtr,
+                            __ubuf__ uint32_t* stage1OrderPtr, __ubuf__ uint32_t* rankInversePtr,
+                            __ubuf__ T* finalValuePtr, __ubuf__ OutIdxT* finalIdxPtr)
 {
     // Build inverse mapping: for each flattened index, store its rank from stage-1 sort.
     // rankInverse[stage1Order[rank]] = rank, e.g. stage1Order=[1, 4, 0, 3, 2, 5]
@@ -119,8 +120,9 @@ __simt_vf__ LAUNCH_BOUND(TWO_STAGE_THREAD_NUM) __aicore__ void RankInverseScatte
 /**
  * @brief SIMT helper that packs stage-2 sort keys and rewrites stage-1 order to row-local lane ids.
  */
-inline __simt_vf__ LAUNCH_BOUND(TWO_STAGE_THREAD_NUM) __aicore__ void BuildStage2KeysSimt(
-    uint32_t totalElems, uint32_t segmentLen, __ubuf__ uint32_t* stage1OrderPtr, __ubuf__ uint16_t* stage2KeyPtr)
+inline __simt_vf__ LAUNCH_BOUND(TWO_STAGE_THREAD_NUM) __aicore__
+    void BuildStage2KeysSimt(uint32_t totalElems, uint32_t segmentLen, __ubuf__ uint32_t* stage1OrderPtr,
+                             __ubuf__ uint16_t* stage2KeyPtr)
 {
     for (uint32_t rank = static_cast<uint32_t>(threadIdx.x); rank < totalElems; rank += TWO_STAGE_THREAD_NUM) {
         uint32_t flatIdx = stage1OrderPtr[rank];
@@ -158,8 +160,8 @@ public:
         }
     }
 
-    __aicore__ inline void InitSortBuffers(
-        TPipe* pipe, uint32_t maxFlatElems, uint32_t tmpUbSize, bool useRankInverse, uint32_t finalIdxElemBytes)
+    __aicore__ inline void InitSortBuffers(TPipe* pipe, uint32_t maxFlatElems, uint32_t tmpUbSize, bool useRankInverse,
+                                           uint32_t finalIdxElemBytes)
     {
         pipe_ = pipe;
         maxFlatElems_ = maxFlatElems;
@@ -206,9 +208,8 @@ public:
         WaitFlag<HardEvent::MTE2_V>(eventIdMte2ToV);
     }
 
-    __aicore__ inline void LoadNonLastBatch(
-        GlobalTensor<T>& inputGm, uint64_t outerBaseOffset, uint64_t innerStart, uint64_t innerSize, uint32_t validSegs,
-        uint32_t totalElems)
+    __aicore__ inline void LoadNonLastBatch(GlobalTensor<T>& inputGm, uint64_t outerBaseOffset, uint64_t innerStart,
+                                            uint64_t innerSize, uint32_t validSegs, uint32_t totalElems)
     {
         asc_vf_call<LoadNonLastBatchSimt<T>>(
             dim3(TWO_STAGE_THREAD_NUM), totalElems, segmentLen_, validSegs, outerBaseOffset, innerStart, innerSize,
@@ -282,15 +283,15 @@ private:
 
     __aicore__ inline void BuildStage2Keys(uint32_t totalElems)
     {
-        asc_vf_call<BuildStage2KeysSimt>(
-            dim3(TWO_STAGE_THREAD_NUM), totalElems, segmentLen_, (__ubuf__ uint32_t*)stage1Order_.GetPhyAddr(),
-            (__ubuf__ uint16_t*)stage2KeysIn_.GetPhyAddr());
+        asc_vf_call<BuildStage2KeysSimt>(dim3(TWO_STAGE_THREAD_NUM), totalElems, segmentLen_,
+                                         (__ubuf__ uint32_t*)stage1Order_.GetPhyAddr(),
+                                         (__ubuf__ uint16_t*)stage2KeysIn_.GetPhyAddr());
     }
 
     __aicore__ inline void Stage2Sort(uint32_t totalElems)
     {
-        AscendC::Sort<uint16_t, false, kStage2SortConfig>(
-            stage2KeysOut_, stage2Order_, stage2KeysIn_, tmp_, totalElems);
+        AscendC::Sort<uint16_t, false, kStage2SortConfig>(stage2KeysOut_, stage2Order_, stage2KeysIn_, tmp_,
+                                                          totalElems);
     }
 
     __aicore__ inline void BuildOutputs(uint32_t totalElems)
@@ -313,22 +314,19 @@ private:
         LocalTensor<uint32_t> gatherOffsets = stage2KeysOut_.template ReinterpretCast<uint32_t>();
         LocalTensor<int32_t> gatherOffsetsInt = gatherOffsets.template ReinterpretCast<int32_t>();
 
-        Muls(
-            gatherOffsetsInt, stage2Order_.template ReinterpretCast<int32_t>(), static_cast<int32_t>(sizeof(T)),
-            totalElems);
+        Muls(gatherOffsetsInt, stage2Order_.template ReinterpretCast<int32_t>(), static_cast<int32_t>(sizeof(T)),
+             totalElems);
         Gather(finalValues_, stage1Values_, gatherOffsets, 0, totalElems);
 
-        Muls(
-            gatherOffsetsInt, stage2Order_.template ReinterpretCast<int32_t>(), static_cast<int32_t>(sizeof(uint32_t)),
-            totalElems);
+        Muls(gatherOffsetsInt, stage2Order_.template ReinterpretCast<int32_t>(), static_cast<int32_t>(sizeof(uint32_t)),
+             totalElems);
         if constexpr (IsSameType<FinalIdxT, int64_t>::value) {
             LocalTensor<int32_t> gatheredIdxInt32 = stage2Order_.template ReinterpretCast<int32_t>();
             Gather(gatheredIdxInt32, stage1Order_.template ReinterpretCast<int32_t>(), gatherOffsets, 0, totalElems);
             Cast(finalIdx_, gatheredIdxInt32, RoundMode::CAST_NONE, Ops::Base::CeilAlign(totalElems, 4u));
         } else {
-            Gather(
-                finalIdx_.template ReinterpretCast<int32_t>(), stage1Order_.template ReinterpretCast<int32_t>(),
-                gatherOffsets, 0, totalElems);
+            Gather(finalIdx_.template ReinterpretCast<int32_t>(), stage1Order_.template ReinterpretCast<int32_t>(),
+                   gatherOffsets, 0, totalElems);
         }
     }
 };

@@ -18,15 +18,15 @@
 
 namespace optiling {
 struct SortTilingData {
-  int32_t task_num;
-  int32_t num_per_task;
+    int32_t task_num;
+    int32_t num_per_task;
 };
 
 struct SortCompileInfo {
-  int32_t core_num;
-  int32_t num_block;
-  int32_t num_offset;
-  int32_t float_bytes;
+    int32_t core_num;
+    int32_t num_block;
+    int32_t num_offset;
+    int32_t float_bytes;
 };
-}  // namespace optiling
-#endif  // OPS_BUILT_IN_OP_TILING_RUNTIME_SORT_TILING_H
+} // namespace optiling
+#endif // OPS_BUILT_IN_OP_TILING_RUNTIME_SORT_TILING_H

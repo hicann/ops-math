@@ -79,8 +79,8 @@ static op::Shape MakeKthShape(const op::Shape& shape, int64_t dim)
     return outShape;
 }
 
-static std::tuple<aclTensor*, aclTensor*> KthValueAiCore(
-    const aclTensor* self, int64_t k, int64_t dim, aclOpExecutor* executor)
+static std::tuple<aclTensor*, aclTensor*> KthValueAiCore(const aclTensor* self, int64_t k, int64_t dim,
+                                                         aclOpExecutor* executor)
 {
     auto rank = static_cast<int64_t>(self->GetViewShape().GetDimNum());
     auto normDim = dim < 0 ? dim + rank : dim;
@@ -91,14 +91,13 @@ static std::tuple<aclTensor*, aclTensor*> KthValueAiCore(
     OP_CHECK_NULL(indices, return {});
 
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(KthValue, OP_INPUT(self), OP_OUTPUT(values, indices), OP_ATTR(k, dim));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "KthValue ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return {});
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "KthValue ADD_TO_LAUNCHER_LIST_AICORE failed."),
+             return {});
     return std::tie(values, indices);
 }
 
-const std::tuple<aclTensor*, aclTensor*> KthValue(
-    const aclTensor* self, int64_t k, int64_t dim, aclOpExecutor* executor)
+const std::tuple<aclTensor*, aclTensor*> KthValue(const aclTensor* self, int64_t k, int64_t dim,
+                                                  aclOpExecutor* executor)
 {
     L0_DFX(KthValue, self, k, dim);
     if (!CheckParams(self, k, dim)) {

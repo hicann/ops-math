@@ -31,9 +31,8 @@ using AscendC::MicroAPI::UpdateMask;
 // round, so the normalization lives in TwiddleInFp16/TwiddleInFp32.
 
 template <typename UT, uint64_t isDescend>
-__aicore__ inline void Twiddle(
-    uint16_t repeatTime, uint32_t vfLen, uint32_t inputNum, RegTensor<UT>& xorReg, __local_mem__ UT* xValuePtr,
-    __local_mem__ UT* uXValuePtr)
+__aicore__ inline void Twiddle(uint16_t repeatTime, uint32_t vfLen, uint32_t inputNum, RegTensor<UT>& xorReg,
+                               __local_mem__ UT* xValuePtr, __local_mem__ UT* uXValuePtr)
 {
     MicroAPI::MaskReg xorMask;
     MicroAPI::RegTensor<UT> inputReg;
@@ -156,19 +155,19 @@ __aicore__ inline void TwiddleInFp16(LocalTensor<T1> inputX, LocalTensor<UT> uin
             // 如果后期需要改为单次twiddleIn，则需要在提取位数时将负0转换为正0
             // get -0.0 mask
             MicroAPI::MaskReg minusZeroMask;
-            MicroAPI::CompareScalar<uint16_t, CMPMODE::EQ>(
-                minusZeroMask, xorVectorOne, TWIDDLED_MINUS_ZERO_BITS_FP16, maskB16);
+            MicroAPI::CompareScalar<uint16_t, CMPMODE::EQ>(minusZeroMask, xorVectorOne, TWIDDLED_MINUS_ZERO_BITS_FP16,
+                                                           maskB16);
             // change -0.0 to +0.0
             MicroAPI::RegTensor<uint16_t> resultReg;
             MicroAPI::Select(resultReg, twiddledZeroReg, xorVectorOne, minusZeroMask);
 
             if constexpr (isDescend == 0) {
-                MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    uXValuePtr, resultReg, VF_LEN_B16, xorMask);
+                MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, resultReg, VF_LEN_B16,
+                                                                                      xorMask);
             } else {
                 MicroAPI::Not(vnotReg, resultReg, xorMask);
-                MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    uXValuePtr, vnotReg, VF_LEN_B16, xorMask);
+                MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, vnotReg, VF_LEN_B16,
+                                                                                      xorMask);
             }
         }
     }
@@ -212,19 +211,19 @@ __aicore__ inline void TwiddleInFp32(LocalTensor<T1> inputX, LocalTensor<UT> uin
             // 如果后期需要改为单次twiddleIn，则需要在提取位数时将负0转换为正0
             // get -0.0 mask
             MicroAPI::MaskReg minusZeroMask;
-            MicroAPI::CompareScalar<uint32_t, CMPMODE::EQ>(
-                minusZeroMask, xorVectorZero, TWIDDLED_MINUS_ZERO_BITS_FP32, maskB32);
+            MicroAPI::CompareScalar<uint32_t, CMPMODE::EQ>(minusZeroMask, xorVectorZero, TWIDDLED_MINUS_ZERO_BITS_FP32,
+                                                           maskB32);
             // change -0.0 to +0.0
             MicroAPI::RegTensor<uint32_t> resultReg;
             MicroAPI::Select(resultReg, twiddledZeroReg, xorVectorZero, minusZeroMask);
 
             if constexpr (isDescend == 0) {
-                MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    uXValuePtr, resultReg, VF_LEN_B32, xorMask);
+                MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, resultReg, VF_LEN_B32,
+                                                                                      xorMask);
             } else {
                 MicroAPI::Not(vnotReg, resultReg, maskB32);
-                MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    uXValuePtr, vnotReg, VF_LEN_B32, xorMask);
+                MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, vnotReg, VF_LEN_B32,
+                                                                                      xorMask);
             }
         }
     }
@@ -247,8 +246,8 @@ __aicore__ inline void ReverseInputData(LocalTensor<T1> inputX, LocalTensor<UT> 
             MicroAPI::MaskReg vnotMask = MicroAPI::UpdateMask<UT>(inputElementNum);
             MicroAPI::DataCopy<UT, MicroAPI::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtr, vfLen);
             MicroAPI::Not(vnotVectorZero, inputVectorOne, predicateDefaultB8);
-            MicroAPI::DataCopy<UT, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                reverseInputXPtr, vnotVectorZero, vfLen, vnotMask);
+            MicroAPI::DataCopy<UT, MicroAPI::PostLiteral::POST_MODE_UPDATE>(reverseInputXPtr, vnotVectorZero, vfLen,
+                                                                            vnotMask);
         }
     }
 }

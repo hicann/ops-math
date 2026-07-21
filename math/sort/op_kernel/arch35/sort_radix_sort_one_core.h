@@ -28,7 +28,7 @@ class SortRadixOneCore {
 public:
     __aicore__ inline SortRadixOneCore(){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR value, GM_ADDR sortIndex, GM_ADDR workspace,
-        const SortRegBaseTilingData *__restrict tilingData, TPipe *pipe);
+                                const SortRegBaseTilingData* __restrict tilingData, TPipe* pipe);
     __aicore__ inline void Process();
 
 private:
@@ -39,13 +39,13 @@ private:
     GlobalTensor<T1> outValueGm_;
     GlobalTensor<uint32_t> outIdxGm_;
 
-    TPipe *pipe_;
-    const SortRegBaseTilingData *tilingData_;
+    TPipe* pipe_;
+    const SortRegBaseTilingData* tilingData_;
     TQue<QuePosition::VECIN, 1> inQueueX_;
     TBuf<TPosition::VECCALC> tmpUb_;
     TQue<QuePosition::VECOUT, 1> outIdxQueue_;
     TQue<QuePosition::VECOUT, 1> outValueQueue_;
-    static constexpr SortConfig sortConfigMuti{ SortType::RADIX_SORT, isDescend };
+    static constexpr SortConfig sortConfigMuti{SortType::RADIX_SORT, isDescend};
 
     int64_t totalDataNum_ = 0;
     uint32_t numTileData_ = 0;
@@ -63,15 +63,17 @@ private:
 
 template <typename T1, typename T2, bool isDescend>
 __aicore__ inline void SortRadixOneCore<T1, T2, isDescend>::Init(GM_ADDR x, GM_ADDR value, GM_ADDR sortIndex,
-    GM_ADDR workspace, const SortRegBaseTilingData *__restrict tilingData, TPipe *pipe)
+                                                                 GM_ADDR workspace,
+                                                                 const SortRegBaseTilingData* __restrict tilingData,
+                                                                 TPipe* pipe)
 {
     blockIdx_ = GetBlockIdx();
     pipe_ = pipe;
     tilingData_ = tilingData;
     ParserTilingData();
-    inputXGm_.SetGlobalBuffer((__gm__ T1 *)x);
-    outValueGm_.SetGlobalBuffer((__gm__ T1 *)value);
-    outIdxGm_.SetGlobalBuffer((__gm__ uint32_t *)sortIndex);
+    inputXGm_.SetGlobalBuffer((__gm__ T1*)x);
+    outValueGm_.SetGlobalBuffer((__gm__ T1*)value);
+    outIdxGm_.SetGlobalBuffer((__gm__ uint32_t*)sortIndex);
     realCoreNum_ = GetBlockNum();
 
     pipe_->InitBuffer(inQueueX_, bufferNum_, xUbSize_);
@@ -91,13 +93,14 @@ __aicore__ inline void SortRadixOneCore<T1, T2, isDescend>::ParserTilingData()
     tmpUbSize_ = tilingData_->tmpUbSize;                     // 高级api需要用的ub大小
     xUbSize_ = tilingData_->keyParams0;                      // xInQue需要的ub大小
     yUbSize_ = tilingData_->keyParams1;                      // y2OutQue需要的ub大小
-    halfIndex_ = tilingData_->keyParams2; // 输出idx如果是int64，cast时需要从ub的一半开始
-    bufferNum_ = tilingData_->keyParams3 == 2 ? 2 : 1;       // one-core队列buffer数
+    halfIndex_ = tilingData_->keyParams2;              // 输出idx如果是int64，cast时需要从ub的一半开始
+    bufferNum_ = tilingData_->keyParams3 == 2 ? 2 : 1; // one-core队列buffer数
 }
 
 template <typename T1, typename T2, bool isDescend>
 __aicore__ inline void SortRadixOneCore<T1, T2, isDescend>::ProcessRadixSortOneCore(GlobalTensor<T1> inputXGm,
-    int64_t gmOffset, uint32_t sortLoopRound)
+                                                                                    int64_t gmOffset,
+                                                                                    uint32_t sortLoopRound)
 {
     uint32_t unsortDimIndex = blockIdx_ + sortLoopRound * unsortedDimParallel_;
     if (unsortDimIndex >= unsortedDimNum_) {
@@ -105,7 +108,7 @@ __aicore__ inline void SortRadixOneCore<T1, T2, isDescend>::ProcessRadixSortOneC
     }
     LocalTensor<T1> xLocal = inQueueX_.AllocTensor<T1>();
     uint32_t tileOffset = blockIdx_ * numTileData_;
-    DataCopyPadExtParams<T1> padParams{ false, 0, 0, 0 };
+    DataCopyPadExtParams<T1> padParams{false, 0, 0, 0};
     DataCopyExtParams dataCopyParam;
     dataCopyParam.blockCount = 1;
     dataCopyParam.blockLen = numTileData_ * sizeof(T1);

@@ -47,17 +47,16 @@ using MergeSortConstants::UB_BLOCK_BYTES;
  */
 template <typename ValueType, typename IndexType, bool IsDescend>
 class KthValueMergeIntraCore
-    : public MergeIntraCoreCommon::MergeIntraCoreBase<
-          KthValueMergeIntraCore<ValueType, IndexType, IsDescend>, ValueType, IndexType, IsDescend> {
-    using Base = MergeIntraCoreCommon::MergeIntraCoreBase<
-        KthValueMergeIntraCore<ValueType, IndexType, IsDescend>, ValueType, IndexType, IsDescend>;
+    : public MergeIntraCoreCommon::MergeIntraCoreBase<KthValueMergeIntraCore<ValueType, IndexType, IsDescend>,
+                                                      ValueType, IndexType, IsDescend> {
+    using Base = MergeIntraCoreCommon::MergeIntraCoreBase<KthValueMergeIntraCore<ValueType, IndexType, IsDescend>,
+                                                          ValueType, IndexType, IsDescend>;
     friend Base;
 
 public:
     __aicore__ inline KthValueMergeIntraCore() {}
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR value, GM_ADDR indices, GM_ADDR workspace, const KthValueTilingData* tilingData,
-        TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR value, GM_ADDR indices, GM_ADDR workspace,
+                                const KthValueTilingData* tilingData, TPipe* pipe);
 
 private:
     // KthValue-specific members
@@ -68,9 +67,8 @@ private:
     __aicore__ inline void InitPhase2Buffers();
     __aicore__ inline void InitPhase3Buffers();
     __aicore__ inline void ExtractAndCopyOut(int64_t batchIdx, uint32_t resultRegion);
-    __aicore__ inline void ExtractAndCopyChunk(
-        int64_t cacheBatchOffset, uint32_t cacheOffset, int64_t outputOffset, uint32_t elemProcessed,
-        uint32_t elemCount);
+    __aicore__ inline void ExtractAndCopyChunk(int64_t cacheBatchOffset, uint32_t cacheOffset, int64_t outputOffset,
+                                               uint32_t elemProcessed, uint32_t elemCount);
 };
 
 template <typename ValueType, typename IndexType, bool IsDescend>
@@ -112,16 +110,16 @@ __aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend>::
     this->sortBufferSize_ = this->blockSortLen_ * sizeof(ValueType);
     this->sortRepeatTimes_ = this->blockSortSize_ / DEALING_SORT_NUM_ONCE;
     this->concatRepeatTimes_ = this->blockSortSize_ / DEALING_CONCAT_NUM_ONCE;
-    this->lastBlockSize_ = static_cast<uint32_t>(
-        this->sortAxisNum_ - static_cast<int64_t>(this->blocksPerRow_ - 1) * this->blockSortSize_);
+    this->lastBlockSize_ = static_cast<uint32_t>(this->sortAxisNum_ -
+                                                 static_cast<int64_t>(this->blocksPerRow_ - 1) * this->blockSortSize_);
 
     // Cache stores sort struct data (8 bytes per element: index + value)
     // Each core has its own cache region, reused across batches
     // perBatchCacheLen: sort struct length for one batch (with ping-pong, in ValueType units)
     int64_t perCoreCacheLen = static_cast<int64_t>(this->batchSortLen_) * 2; // ping-pong, reused per batch
 
-    this->cacheGm_.SetGlobalBuffer(
-        (__gm__ ValueType*)workspace + static_cast<int64_t>(this->blockIdx_) * perCoreCacheLen);
+    this->cacheGm_.SetGlobalBuffer((__gm__ ValueType*)workspace +
+                                   static_cast<int64_t>(this->blockIdx_) * perCoreCacheLen);
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
@@ -156,8 +154,8 @@ __aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend>::
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend>::ExtractAndCopyOut(
-    int64_t batchIdx, uint32_t resultRegion)
+__aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend>::ExtractAndCopyOut(int64_t batchIdx,
+                                                                                                  uint32_t resultRegion)
 {
     int64_t outputOffset = batchIdx;
 
@@ -205,9 +203,8 @@ __aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend>::
 
     // Flip back sign bit for ascending order (was flipped in SortBlockToStruct)
     if constexpr (!IsDescend) {
-        Adds(
-            valueLocal.template ReinterpretCast<int32_t>(), valueLocal.template ReinterpretCast<int32_t>(), 0x80000000,
-            elemCount);
+        Adds(valueLocal.template ReinterpretCast<int32_t>(), valueLocal.template ReinterpretCast<int32_t>(), 0x80000000,
+             elemCount);
     }
 
     this->outValueQueue_.EnQue(valueLocal);

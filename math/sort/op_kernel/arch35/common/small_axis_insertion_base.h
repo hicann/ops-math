@@ -33,17 +33,18 @@ constexpr uint32_t MAX_DATACOPY_BLOCK_COUNT = 4095;
  * @tparam T Input storage data type
  */
 template <typename T>
-__simt_vf__ LAUNCH_BOUND(INSERTION_THREAD_NUM) __aicore__ void SimtLoadNonLastInsertionBatch(
-    uint32_t totalElems, uint32_t validSegs, uint32_t segmentLen, uint32_t valueRowElems, uint64_t outerBaseOffset,
-    uint64_t innerStart, uint64_t innerSize, __gm__ volatile T* input, __ubuf__ T* output)
+__simt_vf__ LAUNCH_BOUND(INSERTION_THREAD_NUM) __aicore__
+    void SimtLoadNonLastInsertionBatch(uint32_t totalElems, uint32_t validSegs, uint32_t segmentLen,
+                                       uint32_t valueRowElems, uint64_t outerBaseOffset, uint64_t innerStart,
+                                       uint64_t innerSize, __gm__ volatile T* input, __ubuf__ T* output)
 {
     // Load a non-last-axis tile as sort-major segments:
     // GM [axis, inner] -> UB [inner segment, axis].
     for (uint32_t idx = static_cast<uint32_t>(threadIdx.x); idx < totalElems; idx += INSERTION_THREAD_NUM) {
         uint32_t axis = idx / validSegs;
         uint32_t seg = idx - axis * validSegs;
-        output[seg * valueRowElems + axis] =
-            input[outerBaseOffset + static_cast<uint64_t>(axis) * innerSize + innerStart + seg];
+        output[seg * valueRowElems + axis] = input[outerBaseOffset + static_cast<uint64_t>(axis) * innerSize +
+                                                   innerStart + seg];
     }
 }
 
@@ -54,9 +55,9 @@ __simt_vf__ LAUNCH_BOUND(INSERTION_THREAD_NUM) __aicore__ void SimtLoadNonLastIn
  * @tparam IsDescend Sort order: true for descending, false for ascending
  */
 template <typename T, typename IDX_T, bool IsDescend>
-__simt_vf__ LAUNCH_BOUND(INSERTION_THREAD_NUM) __aicore__ void SimtInsertionSortSegments(
-    uint32_t validSegs, uint32_t segmentLen, uint32_t valueRowElems, uint32_t idxRowElems, __ubuf__ T* valueBase,
-    __ubuf__ IDX_T* idxBase)
+__simt_vf__ LAUNCH_BOUND(INSERTION_THREAD_NUM) __aicore__
+    void SimtInsertionSortSegments(uint32_t validSegs, uint32_t segmentLen, uint32_t valueRowElems,
+                                   uint32_t idxRowElems, __ubuf__ T* valueBase, __ubuf__ IDX_T* idxBase)
 {
     for (int32_t seg = threadIdx.x; seg < static_cast<int32_t>(validSegs);
          seg += static_cast<int32_t>(INSERTION_THREAD_NUM)) {
@@ -144,8 +145,8 @@ public:
         indices_ = idxBuf_.template Get<IDX_T>();
     }
 
-    __aicore__ inline void LoadContiguousBatch(
-        GlobalTensor<T>& inputGm, int64_t inputStart, uint32_t validSegs, bool padTail)
+    __aicore__ inline void LoadContiguousBatch(GlobalTensor<T>& inputGm, int64_t inputStart, uint32_t validSegs,
+                                               bool padTail)
     {
         if (validSegs == 0U) {
             return;
@@ -153,8 +154,8 @@ public:
         uint32_t dstRowStride = IsSameType<T, CONVERT_TYPE>::value ? valueRowStride_ : castRowStride_;
         uint32_t copiedRowElems = padTail ? ROUND_UP_AGLIN(segmentLen_ * sizeof(T)) / sizeof(T) : segmentLen_;
         uint32_t dstStrideBlocks = ((dstRowStride - copiedRowElems) * sizeof(T)) / UB_BLOCK_SIZE;
-        DataCopyExtParams copyParam{
-            static_cast<uint16_t>(validSegs), static_cast<uint32_t>(segmentLen_ * sizeof(T)), 0, dstStrideBlocks, 0};
+        DataCopyExtParams copyParam{static_cast<uint16_t>(validSegs), static_cast<uint32_t>(segmentLen_ * sizeof(T)), 0,
+                                    dstStrideBlocks, 0};
         DataCopyPadExtParams<T> padParams{
             padTail, 0, static_cast<uint8_t>(padTail ? (copiedRowElems - segmentLen_) : 0U), static_cast<T>(0)};
         if constexpr (!IsSameType<T, CONVERT_TYPE>::value) {
@@ -172,8 +173,8 @@ public:
         }
     }
 
-    __aicore__ inline void LoadNonLastBatch(
-        GlobalTensor<T>& inputGm, uint64_t outerBaseOffset, uint64_t innerStart, uint64_t innerSize, uint32_t validSegs)
+    __aicore__ inline void LoadNonLastBatch(GlobalTensor<T>& inputGm, uint64_t outerBaseOffset, uint64_t innerStart,
+                                            uint64_t innerSize, uint32_t validSegs)
     {
         uint32_t totalElems = validSegs * segmentLen_;
         if constexpr (!IsSameType<T, CONVERT_TYPE>::value) {

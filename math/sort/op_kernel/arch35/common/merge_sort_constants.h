@@ -20,8 +20,11 @@ constexpr uint32_t FP32_DTYPE_BYTES = 4;
 constexpr uint32_t UB_BLOCK_BYTES = Ops::Base::GetUbBlockSize();
 
 constexpr uint32_t MERGE_LIST_MAX_NUM = 4;
+constexpr uint32_t TWO_WAY_MERGE_LIST_NUM = 2;
+constexpr uint32_t THREE_WAY_MERGE_LIST_NUM = 3;
 constexpr uint32_t MERGE_INTRA_BUFFER_NUM = 2;
 constexpr uint32_t MERGE_MORE_BUFFER_NUM = 1;
+constexpr uint32_t MERGE_WORKSPACE_BUFFER_NUM = 2;
 
 constexpr int32_t XOR_OP_VALUE_FP = 0x80000000;
 constexpr int16_t XOR_OP_VALUE_HALF = 0x8000;

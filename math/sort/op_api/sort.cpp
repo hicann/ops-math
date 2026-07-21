@@ -34,11 +34,11 @@ static const int64_t NON_LAST_SMALL_AXIS_MIN = 2;
 static const int64_t NON_LAST_SMALL_AXIS_MAX = 2048;
 
 // 根据排序轴的数据量大小判断是否支持aicore
-static bool SocSupportDimSize(const aclTensor *self)
+static bool SocSupportDimSize(const aclTensor* self)
 {
     // 该维度数据量为1 或数据量>100000 走AICPU
     auto shapeSize = (int64_t)(self->GetViewShape().GetDimNum());
-    auto lastDimSize = (self->GetViewShape())[shapeSize-1];
+    auto lastDimSize = (self->GetViewShape())[shapeSize - 1];
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     if (socVersion == SocVersion::ASCEND310 || socVersion == SocVersion::ASCEND310B) {
         // sort轴数据量大于100k
@@ -55,14 +55,14 @@ static bool SocSupportDimSize(const aclTensor *self)
 }
 
 // 根据dtype判断是否支持aicore
-static bool SocSupportDtype(const aclTensor *self)
+static bool SocSupportDtype(const aclTensor* self)
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     // AiCore只支持FLOAT16 + FLOAT32
     if (CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST)) {
         // 910和310芯片 + tensor为FLOAT32 则不支持AiCore
         if (((socVersion == SocVersion::ASCEND910) || (socVersion == SocVersion::ASCEND310)) &&
-            (self->GetDataType()==op::DataType::DT_FLOAT || self->GetDataType()==op::DataType::DT_BF16)) {
+            (self->GetDataType() == op::DataType::DT_FLOAT || self->GetDataType() == op::DataType::DT_BF16)) {
             return false;
         }
         return true;
@@ -70,9 +70,9 @@ static bool SocSupportDtype(const aclTensor *self)
     return false;
 }
 
-static bool IsAiCoreSupport(const aclTensor *self, bool stable, bool descending)
+static bool IsAiCoreSupport(const aclTensor* self, bool stable, bool descending)
 {
-    if (IsRegBase()){
+    if (IsRegBase()) {
         return true;
     } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND310B && stable && !descending) {
         return false;
@@ -81,7 +81,7 @@ static bool IsAiCoreSupport(const aclTensor *self, bool stable, bool descending)
     }
 }
 
-static bool IsLastAxisOrSupportedNonLastAxis(const aclTensor *self, int64_t dim)
+static bool IsLastAxisOrSupportedNonLastAxis(const aclTensor* self, int64_t dim)
 {
     auto dimSize = static_cast<int64_t>(self->GetViewShape().GetDimNum());
     auto dimValue = dim < 0 ? dim + dimSize : dim;
@@ -92,25 +92,24 @@ static bool IsLastAxisOrSupportedNonLastAxis(const aclTensor *self, int64_t dim)
     return axisLen >= NON_LAST_SMALL_AXIS_MIN && axisLen <= NON_LAST_SMALL_AXIS_MAX;
 }
 
-void SortAiCore(const aclTensor *self, bool stable, int64_t dim, bool descending, aclTensor *values, aclTensor *indices,
-    aclOpExecutor* executor)
+void SortAiCore(const aclTensor* self, bool stable, int64_t dim, bool descending, aclTensor* values, aclTensor* indices,
+                aclOpExecutor* executor)
 {
     L0_DFX(SortAiCore, self, stable, dim, descending, values, indices);
 
     auto dimSize = (int64_t)(self->GetViewShape().GetDimNum());
-    if ((dimSize!= dim + 1) && (dim != -1)) {
+    if ((dimSize != dim + 1) && (dim != -1)) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "dim must equal to the (number of dimensions - 1 ) or -1.");
     }
 
-    ADD_TO_LAUNCHER_LIST_AICORE(Sort, OP_INPUT(self), OP_OUTPUT(values, indices),
-        OP_ATTR(dim, descending, stable));
+    ADD_TO_LAUNCHER_LIST_AICORE(Sort, OP_INPUT(self), OP_OUTPUT(values, indices), OP_ATTR(dim, descending, stable));
 }
 
-static void SortAiCoreForDavid(const aclTensor *self, bool stable, int64_t dim, bool descending, aclTensor *values,
-    aclTensor *indices, op::DataType indicesType, aclOpExecutor* executor)
+static void SortAiCoreForDavid(const aclTensor* self, bool stable, int64_t dim, bool descending, aclTensor* values,
+                               aclTensor* indices, op::DataType indicesType, aclOpExecutor* executor)
 {
     L0_DFX(SortAiCoreForDavid, self, stable, dim, descending, values, indices, indicesType);
-    
+
     auto dimSize = static_cast<int64_t>(self->GetViewShape().GetDimNum());
     if ((dim >= dimSize) || (dim + dimSize < 0)) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim must be in range [-N, N-1]. Current dim is %ld.", dim);
@@ -118,29 +117,29 @@ static void SortAiCoreForDavid(const aclTensor *self, bool stable, int64_t dim, 
     }
     if (!IsLastAxisOrSupportedNonLastAxis(self, dim)) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-            "Dim must be the last axis or a supported non-last axis with axis size in [2, 2048]. "
-            "Current dim is %ld.",
-            dim);
+                "Dim must be the last axis or a supported non-last axis with axis size in [2, 2048]. "
+                "Current dim is %ld.",
+                dim);
         return;
     }
 
     ADD_TO_LAUNCHER_LIST_AICORE(Sort, OP_INPUT(self), OP_OUTPUT(values, indices),
-        OP_ATTR(dim, descending, stable, indicesType));
+                                OP_ATTR(dim, descending, stable, indicesType));
 }
 
-std::tuple<aclTensor*, aclTensor*> SortAiCpu(const aclTensor *self, bool stable, int64_t dim, bool descending,
-                                             aclTensor *values, aclTensor *indices, aclOpExecutor* executor)
+std::tuple<aclTensor*, aclTensor*> SortAiCpu(const aclTensor* self, bool stable, int64_t dim, bool descending,
+                                             aclTensor* values, aclTensor* indices, aclOpExecutor* executor)
 {
     L0_DFX(SortAiCpu, self, stable, dim, descending, values, indices);
 
     auto dimSize = (int64_t)(self->GetViewShape().GetDimNum());
-    if ((dim > (dimSize-1)) || (dim + dimSize < 0)) {
+    if ((dim > (dimSize - 1)) || (dim + dimSize < 0)) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "dim must be in range [-N, N-1]. Current dim is %ld.", dim);
     }
 
     static internal::AicpuTaskSpace space("Sort");
     auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Sort, OP_ATTR_NAMES({"axis", "descending", "stable"}), OP_INPUT(self),
-        OP_OUTPUT(values, indices), OP_ATTR(dim, descending, stable));
+                                          OP_OUTPUT(values, indices), OP_ATTR(dim, descending, stable));
     if (ret != ACLNN_SUCCESS) {
         return std::tuple<aclTensor*, aclTensor*>(nullptr, nullptr);
     }
@@ -148,8 +147,8 @@ std::tuple<aclTensor*, aclTensor*> SortAiCpu(const aclTensor *self, bool stable,
 }
 
 // 处理0维场景：self cast以后viewcopy, indices是为0
-static aclnnStatus HandleDimZeroTensor(const aclTensor *self, aclTensor *valuesOut, aclTensor *indicesOut,
-    aclOpExecutor* executor)
+static aclnnStatus HandleDimZeroTensor(const aclTensor* self, aclTensor* valuesOut, aclTensor* indicesOut,
+                                       aclOpExecutor* executor)
 {
     auto selfContiguous = l0op::Contiguous(self, executor);
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -171,7 +170,17 @@ static aclnnStatus HandleDimZeroTensor(const aclTensor *self, aclTensor *valuesO
     return ACLNN_SUCCESS;
 }
 
-const std::tuple<aclTensor*, aclTensor*> Sort(const aclTensor *self, int64_t dim, bool descending, bool stable,
+static std::tuple<aclTensor*, aclTensor*> AllocateSortOutputs(const aclTensor* self, const op::Shape& shape,
+                                                              op::Format format, op::DataType indicesType,
+                                                              aclOpExecutor* executor)
+{
+    auto values = executor->AllocTensor(shape, self->GetDataType(), format);
+    auto outputIndicesType = IsRegBase() ? indicesType : op::DataType::DT_INT32;
+    auto indices = executor->AllocTensor(shape, outputIndicesType, format);
+    return std::tie(values, indices);
+}
+
+const std::tuple<aclTensor*, aclTensor*> Sort(const aclTensor* self, int64_t dim, bool descending, bool stable,
                                               op::DataType indicesType, aclOpExecutor* executor)
 {
     L0_DFX(Sort, self, dim, descending, stable, indicesType);
@@ -181,24 +190,20 @@ const std::tuple<aclTensor*, aclTensor*> Sort(const aclTensor *self, int64_t dim
     auto dimSize = (int64_t)(selfShape.GetDimNum());
     if (dimSize < 0 || dimSize > AXIS_LIMIT) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Tensor self dimension size must be in range [0, 8]. Current size is [%ld].",
-            dimSize);
+                dimSize);
     }
     // handle dimsize=0
-    if (dimSize == 0) { 
+    if (dimSize == 0) {
         if (dim == 0 || dim == -1) {
-            auto valuesOut = executor->AllocTensor(selfShape, self->GetDataType(), selfFormat);
-            aclTensor* indicesOut = nullptr;
-            if (IsRegBase()) {
-                indicesOut = executor->AllocTensor(selfShape, indicesType, selfFormat);
-            } else {
-                indicesOut = executor->AllocTensor(selfShape, op::DataType::DT_INT32, selfFormat);
-            }
+            auto outputs = AllocateSortOutputs(self, selfShape, selfFormat, indicesType, executor);
+            auto valuesOut = std::get<0>(outputs);
+            auto indicesOut = std::get<1>(outputs);
             auto res = HandleDimZeroTensor(self, valuesOut, indicesOut, executor);
             if (res != ACLNN_SUCCESS) {
                 OP_LOGE(ACLNN_ERR_INNER, "HandleDimZeroTensor error.");
                 return std::tuple<aclTensor*, aclTensor*>(nullptr, nullptr);
             } else {
-                return std::tie(valuesOut, indicesOut); 
+                return std::tie(valuesOut, indicesOut);
             }
         } else {
             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "When dimSize == 0 , dim must be 0 or -1.");
@@ -207,18 +212,14 @@ const std::tuple<aclTensor*, aclTensor*> Sort(const aclTensor *self, int64_t dim
     }
     auto lastDimSize = selfShape[dimSize - 1];
     // The Sort Op not support sort axis is 1 when input type is BF16..
-    bool  isNotSupport = (1 == lastDimSize && op::DataType::DT_BF16 == self->GetDataType());
+    bool isNotSupport = (1 == lastDimSize && op::DataType::DT_BF16 == self->GetDataType());
     if (isNotSupport && !IsRegBase()) {
-      OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The sort axis value is not support 1 when input type is BF16.");
-      return std::tuple<aclTensor*, aclTensor*>(nullptr, nullptr);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The sort axis value is not support 1 when input type is BF16.");
+        return std::tuple<aclTensor*, aclTensor*>(nullptr, nullptr);
     }
-    auto values = executor->AllocTensor(selfShape, self->GetDataType(), selfFormat);
-    aclTensor* indices = nullptr;
-    if (IsRegBase()) {
-        indices = executor->AllocTensor(selfShape, indicesType, selfFormat);
-    } else {
-        indices = executor->AllocTensor(selfShape, op::DataType::DT_INT32, selfFormat);
-    }
+    auto outputs = AllocateSortOutputs(self, selfShape, selfFormat, indicesType, executor);
+    auto values = std::get<0>(outputs);
+    auto indices = std::get<1>(outputs);
     if (IsAiCoreSupport(self, stable, descending)) {
         if (IsRegBase()) {
             SortAiCoreForDavid(self, stable, dim, descending, values, indices, indicesType, executor);
@@ -230,4 +231,4 @@ const std::tuple<aclTensor*, aclTensor*> Sort(const aclTensor *self, int64_t dim
     }
     return std::tie(values, indices);
 }
-}
+} // namespace l0op

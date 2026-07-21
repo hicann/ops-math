@@ -17,11 +17,11 @@
 #define _SORT_REGBASE_TILING_DATA_H_
 
 struct SortRegBaseTilingData {
-    uint32_t numTileDataSize; // h轴ub一次处理个数
+    uint32_t numTileDataSize;     // h轴ub一次处理个数
     uint32_t unsortedDimParallel; // b轴使用的核数
-    uint32_t lastDimTileNum; // h轴循环次数
-    uint32_t sortLoopTimes; // b轴循环次数
-    uint32_t lastDimNeedCore; // h轴需要的核数
+    uint32_t lastDimTileNum;      // h轴循环次数
+    uint32_t sortLoopTimes;       // b轴循环次数
+    uint32_t lastDimNeedCore;     // h轴需要的核数
     // keyParamsxxx 预留参数
     // radix: globalHistGmWk_ 使用核数
     // radix_one_core: inqueX 的 ub 大小
@@ -45,9 +45,9 @@ struct SortRegBaseTilingData {
     // merge_sort(sch0): 队列 buffer 数
     // intra_core(sch4): extract chunk 大小
     uint32_t keyParams4;
-    uint32_t keyParams5; // radix：清零chunk大小；intra_core(sch4)：最大归并迭代次数
-    uint32_t tmpUbSize; // sort高级api需要的临时ub大小
-    int64_t lastAxisNum; // h轴大小
+    uint32_t keyParams5;    // radix：清零chunk大小；intra_core(sch4)：最大归并迭代次数
+    uint32_t tmpUbSize;     // sort高级api需要的临时ub大小
+    int64_t lastAxisNum;    // h轴大小
     int64_t unsortedDimNum; // b轴大小
     // Non-last small-axis fields describe the original [outer, axis, inner] GM layout
     // and the aligned UB row strides used by tile-local transpose schedules.

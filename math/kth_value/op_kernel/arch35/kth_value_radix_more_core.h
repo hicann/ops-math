@@ -49,45 +49,47 @@ struct KthValueRadixMoreInnerTilingData {
 // T1输入x dtype T2输出Idx dtype UT无符号的数据类型
 template <typename T1, typename T2, typename UT, typename T3, uint64_t isDescend>
 class KthValueRadixMoreInnerCore
-    : public RadixSortCommon::RadixMoreCoreBase<
-          KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend>, T1, T2, UT, T3, isDescend> {
-    using Base = RadixSortCommon::RadixMoreCoreBase<
-        KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend>, T1, T2, UT, T3, isDescend>;
+    : public RadixSortCommon::RadixMoreCoreBase<KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend>, T1, T2, UT, T3,
+                                                isDescend> {
+    using Base = RadixSortCommon::RadixMoreCoreBase<KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend>, T1, T2, UT,
+                                                    T3, isDescend>;
     friend Base;
 
 public:
     __aicore__ inline KthValueRadixMoreInnerCore(){};
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR value, GM_ADDR sortIndex, GM_ADDR workspace,
-        const KthValueRadixMoreInnerTilingData* __restrict tilingData, TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR value, GM_ADDR sortIndex, GM_ADDR workspace,
+                                const KthValueRadixMoreInnerTilingData* __restrict tilingData, TPipe* pipe);
     __aicore__ inline void SetKthOutput(GM_ADDR value, GM_ADDR index, T3 kthIndex);
 
 protected:
     __aicore__ inline void ParserTilingData();
-    __aicore__ inline void ScatterKeysGlobal(
-        LocalTensor<T1> xInputValueLocal, LocalTensor<uint32_t> sortedIndexLocal,
-        LocalTensor<uint32_t> xInputIndexLocal, LocalTensor<uint8_t> sortedValueLocal,
-        LocalTensor<uint16_t> blockExcusiveSum, LocalTensor<T3> blockDataInGlobalPos,
-        LocalTensor<uint32_t> blockHistFlag, LocalTensor<uint16_t> blockHist, uint32_t round, T3 tileDataStart,
-        uint32_t cureTileSize, uint32_t sortLoopRound);
-    __aicore__ inline void ScatterOutInt32(
-        LocalTensor<T1> xInputValueLocal, LocalTensor<uint32_t> sortedIndexLocal,
-        LocalTensor<uint32_t> xInputIndexLocal, LocalTensor<uint8_t> sortedValueLocal,
-        LocalTensor<uint16_t> blockExcusiveSum, LocalTensor<T3> blockDataInGlobalPos,
-        LocalTensor<uint32_t> blockHistFlag, LocalTensor<uint16_t> blockHist, uint32_t round, T3 tileDataStart,
-        uint32_t cureTileSize, uint32_t sortLoopRound);
+    __aicore__ inline void ScatterKeysGlobal(LocalTensor<T1> xInputValueLocal, LocalTensor<uint32_t> sortedIndexLocal,
+                                             LocalTensor<uint32_t> xInputIndexLocal,
+                                             LocalTensor<uint8_t> sortedValueLocal,
+                                             LocalTensor<uint16_t> blockExcusiveSum,
+                                             LocalTensor<T3> blockDataInGlobalPos, LocalTensor<uint32_t> blockHistFlag,
+                                             LocalTensor<uint16_t> blockHist, uint32_t round, T3 tileDataStart,
+                                             uint32_t cureTileSize, uint32_t sortLoopRound);
+    __aicore__ inline void ScatterOutInt32(LocalTensor<T1> xInputValueLocal, LocalTensor<uint32_t> sortedIndexLocal,
+                                           LocalTensor<uint32_t> xInputIndexLocal,
+                                           LocalTensor<uint8_t> sortedValueLocal,
+                                           LocalTensor<uint16_t> blockExcusiveSum, LocalTensor<T3> blockDataInGlobalPos,
+                                           LocalTensor<uint32_t> blockHistFlag, LocalTensor<uint16_t> blockHist,
+                                           uint32_t round, T3 tileDataStart, uint32_t cureTileSize,
+                                           uint32_t sortLoopRound);
     __aicore__ inline void ScatterOutInt32ToInt64(
         LocalTensor<T1> xInputValueLocal, LocalTensor<uint32_t> sortedIndexLocal,
         LocalTensor<uint32_t> xInputIndexLocal, LocalTensor<uint8_t> sortedValueLocal,
         LocalTensor<uint16_t> blockExcusiveSum, LocalTensor<uint32_t> blockDataInGlobalPos,
         LocalTensor<uint32_t> blockHistFlag, LocalTensor<uint16_t> blockHist, uint32_t round, T3 tileDataStart,
         uint32_t cureTileSize, uint32_t sortLoopRound);
-    __aicore__ inline void ScatterOutInt64(
-        LocalTensor<T1> xInputValueLocal, LocalTensor<uint32_t> sortedIndexLocal,
-        LocalTensor<uint32_t> xInputIndexLocal, LocalTensor<uint8_t> sortedValueLocal,
-        LocalTensor<uint16_t> blockExcusiveSum, LocalTensor<T3> blockDataInGlobalPos,
-        LocalTensor<uint32_t> blockHistFlag, LocalTensor<uint16_t> blockHist, uint32_t round, T3 tileDataStart,
-        uint32_t cureTileSize, uint32_t sortLoopRound);
+    __aicore__ inline void ScatterOutInt64(LocalTensor<T1> xInputValueLocal, LocalTensor<uint32_t> sortedIndexLocal,
+                                           LocalTensor<uint32_t> xInputIndexLocal,
+                                           LocalTensor<uint8_t> sortedValueLocal,
+                                           LocalTensor<uint16_t> blockExcusiveSum, LocalTensor<T3> blockDataInGlobalPos,
+                                           LocalTensor<uint32_t> blockHistFlag, LocalTensor<uint16_t> blockHist,
+                                           uint32_t round, T3 tileDataStart, uint32_t cureTileSize,
+                                           uint32_t sortLoopRound);
 
     const KthValueRadixMoreInnerTilingData* tilingData_;
     GlobalTensor<T1> kthValueGm_;
@@ -173,8 +175,8 @@ __aicore__ inline void KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend>::In
 }
 
 template <typename T1, typename T2, typename UT, typename T3, uint64_t isDescend>
-__aicore__ inline void KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend>::SetKthOutput(
-    GM_ADDR value, GM_ADDR index, T3 kthIndex)
+__aicore__ inline void KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend>::SetKthOutput(GM_ADDR value, GM_ADDR index,
+                                                                                           T3 kthIndex)
 {
     kthValueGm_.SetGlobalBuffer((__gm__ T1*)value);
     kthIndexGm_.SetGlobalBuffer((__gm__ T2*)index);
@@ -223,12 +225,13 @@ __aicore__ inline void KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend>::Pa
  * @param xInputIndexLocalAddr Original indices carried from the previous radix round.
  */
 template <typename T1, typename T2, typename T3, typename KthIdxT, int32_t round>
-__simt_vf__ LAUNCH_BOUND(THREAD_DIM_NUM) __aicore__ void CopyOutKthGm(
-    T3 tileDataStart, uint64_t unSortIdOffset, T3 kthIndex, uint32_t outputRow, __ubuf__ uint16_t* blockExcusiveSumAddr,
-    __gm__ volatile T3* excusiveBinsGmAddr, __ubuf__ T3* blockDataInGlobalPosAddr,
-    __ubuf__ uint32_t* sortedIndexLocalAddr, __ubuf__ T3* xInputIndexLocalAddr, __ubuf__ T1* xInputValueLocalAddr,
-    __ubuf__ T3* blockHistFlagAddr, __ubuf__ uint16_t* blockHistAddr, __gm__ volatile T1* kthValueGmAddr,
-    __gm__ volatile KthIdxT* kthIndexGmAddr)
+__simt_vf__ LAUNCH_BOUND(THREAD_DIM_NUM) __aicore__
+    void CopyOutKthGm(T3 tileDataStart, uint64_t unSortIdOffset, T3 kthIndex, uint32_t outputRow,
+                      __ubuf__ uint16_t* blockExcusiveSumAddr, __gm__ volatile T3* excusiveBinsGmAddr,
+                      __ubuf__ T3* blockDataInGlobalPosAddr, __ubuf__ uint32_t* sortedIndexLocalAddr,
+                      __ubuf__ T3* xInputIndexLocalAddr, __ubuf__ T1* xInputValueLocalAddr,
+                      __ubuf__ T3* blockHistFlagAddr, __ubuf__ uint16_t* blockHistAddr,
+                      __gm__ volatile T1* kthValueGmAddr, __gm__ volatile KthIdxT* kthIndexGmAddr)
 {
     // Phase 1: compute the global scatter base for each bucket in this tile. The formula is identical to the
     // regular radix scatter path, but only the bucket containing kthIndex will be consumed below.
@@ -448,10 +451,10 @@ __aicore__ inline void KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend>::Sc
     if constexpr (sizeof(T1) == sizeof(int8_t)) {
         // int8时只循环一次,所以scatter时肯定要按照输出数据类型
         uint32_t unSortId = this->blockIdx_ / this->lastDimRealCore_;
-        uint64_t outputXUnsortedAxisOffset =
-            static_cast<uint64_t>(unSortId) * static_cast<uint64_t>(this->totalDataNum_);
-        uint64_t unSortIdOffset =
-            static_cast<uint64_t>(unSortId) * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM;
+        uint64_t outputXUnsortedAxisOffset = static_cast<uint64_t>(unSortId) *
+                                             static_cast<uint64_t>(this->totalDataNum_);
+        uint64_t unSortIdOffset = static_cast<uint64_t>(unSortId) * RADIX_SORT_NUM * sizeof(T1) +
+                                  round * RADIX_SORT_NUM;
         uint64_t outputRow = static_cast<uint64_t>(sortLoopRound) * this->unsortedDimParallel_ + unSortId;
         bool writeKthOutput = writeKthOutput_ && outputRow < static_cast<uint64_t>(this->unsortedDimNum_);
         if constexpr (IsSameType<T3, uint32_t>::value) {
@@ -504,19 +507,19 @@ __aicore__ inline void KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend>::Sc
         }
     } else if constexpr (sizeof(T2) == sizeof(int32_t)) {
         // 输出idx本省就是int32，无需cast
-        ScatterOutInt32(
-            xInputValueLocal, sortedIndexLocal, xInputIndexLocal, sortedValueLocal, blockExcusiveSum,
-            blockDataInGlobalPos, blockHistFlag, blockHist, round, tileDataStart, cureTileSize, sortLoopRound);
+        ScatterOutInt32(xInputValueLocal, sortedIndexLocal, xInputIndexLocal, sortedValueLocal, blockExcusiveSum,
+                        blockDataInGlobalPos, blockHistFlag, blockHist, round, tileDataStart, cureTileSize,
+                        sortLoopRound);
     } else if constexpr (IsSameType<T3, uint32_t>::value) {
         // 输出idx是int64，需要在最后一次scatter时cast为int64
-        ScatterOutInt32ToInt64(
-            xInputValueLocal, sortedIndexLocal, xInputIndexLocal, sortedValueLocal, blockExcusiveSum,
-            blockDataInGlobalPos, blockHistFlag, blockHist, round, tileDataStart, cureTileSize, sortLoopRound);
+        ScatterOutInt32ToInt64(xInputValueLocal, sortedIndexLocal, xInputIndexLocal, sortedValueLocal, blockExcusiveSum,
+                               blockDataInGlobalPos, blockHistFlag, blockHist, round, tileDataStart, cureTileSize,
+                               sortLoopRound);
     } else {
         // 计算过程中idx使用int64
-        ScatterOutInt64(
-            xInputValueLocal, sortedIndexLocal, xInputIndexLocal, sortedValueLocal, blockExcusiveSum,
-            blockDataInGlobalPos, blockHistFlag, blockHist, round, tileDataStart, cureTileSize, sortLoopRound);
+        ScatterOutInt64(xInputValueLocal, sortedIndexLocal, xInputIndexLocal, sortedValueLocal, blockExcusiveSum,
+                        blockDataInGlobalPos, blockHistFlag, blockHist, round, tileDataStart, cureTileSize,
+                        sortLoopRound);
     }
 }
 
@@ -533,9 +536,8 @@ template <typename T, typename T3, typename KeyT>
 class KthValueRadixMoreCore {
 public:
     __aicore__ inline KthValueRadixMoreCore(){};
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR values, GM_ADDR indices, GM_ADDR workspace, const KthValueTilingData* tilingData,
-        TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices, GM_ADDR workspace,
+                                const KthValueTilingData* tilingData, TPipe* pipe);
     __aicore__ inline void Process();
 
 protected:
@@ -567,8 +569,9 @@ protected:
 };
 
 template <typename T, typename T3, typename KeyT>
-__aicore__ inline void KthValueRadixMoreCore<T, T3, KeyT>::Init(
-    GM_ADDR x, GM_ADDR values, GM_ADDR indices, GM_ADDR workspace, const KthValueTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void KthValueRadixMoreCore<T, T3, KeyT>::Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices,
+                                                                GM_ADDR workspace, const KthValueTilingData* tilingData,
+                                                                TPipe* pipe)
 {
     if (tilingData == nullptr || pipe == nullptr) {
         return;

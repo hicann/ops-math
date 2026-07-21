@@ -17,20 +17,21 @@
 
 using namespace ge;
 namespace ops {
-static ge::graphStatus SortInferShapeFunc(gert::InferShapeContext *context) {
-  const gert::Shape* x1_shape = context->GetInputShape(0);
-  OP_CHECK_NULL_WITH_CONTEXT(context, x1_shape);
+static ge::graphStatus SortInferShapeFunc(gert::InferShapeContext* context)
+{
+    const gert::Shape* x1_shape = context->GetInputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, x1_shape);
 
-  gert::Shape *output_shape_1 = context->GetOutputShape(0);
-  OP_CHECK_NULL_WITH_CONTEXT(context, output_shape_1);
-  gert::Shape *output_shape_2 = context->GetOutputShape(1);
-  OP_CHECK_NULL_WITH_CONTEXT(context, output_shape_2);
- 
-  *output_shape_1 = *x1_shape;
-  *output_shape_2 = *x1_shape; 
+    gert::Shape* output_shape_1 = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, output_shape_1);
+    gert::Shape* output_shape_2 = context->GetOutputShape(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, output_shape_2);
 
-  return ge::GRAPH_SUCCESS;
+    *output_shape_1 = *x1_shape;
+    *output_shape_2 = *x1_shape;
+
+    return ge::GRAPH_SUCCESS;
 }
 
 IMPL_OP_INFERSHAPE(Sort).InferShape(SortInferShapeFunc);
-}  // namespace ops
+} // namespace ops

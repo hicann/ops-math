@@ -25,9 +25,10 @@ namespace Sort {
 using namespace AscendC;
 
 template <typename T, typename OutIdxT>
-__simt_vf__ LAUNCH_BOUND(SmallAxisCommon::NON_LAST_TRANSPOSE_THREAD_NUM) __aicore__ void StoreSingleInnerOutput(
-    uint32_t axisLen, uint32_t threadNum, uint64_t baseOffset, uint64_t innerSize, __ubuf__ T* sortedValue,
-    __ubuf__ uint32_t* sortedIndex, __gm__ volatile T* outputValue, __gm__ volatile OutIdxT* outputIndex)
+__simt_vf__ LAUNCH_BOUND(SmallAxisCommon::NON_LAST_TRANSPOSE_THREAD_NUM) __aicore__
+    void StoreSingleInnerOutput(uint32_t axisLen, uint32_t threadNum, uint64_t baseOffset, uint64_t innerSize,
+                                __ubuf__ T* sortedValue, __ubuf__ uint32_t* sortedIndex, __gm__ volatile T* outputValue,
+                                __gm__ volatile OutIdxT* outputIndex)
 {
     for (uint32_t axis = static_cast<uint32_t>(threadIdx.x); axis < axisLen; axis += threadNum) {
         uint64_t gmOffset = baseOffset + static_cast<uint64_t>(axis) * innerSize;
@@ -37,24 +38,26 @@ __simt_vf__ LAUNCH_BOUND(SmallAxisCommon::NON_LAST_TRANSPOSE_THREAD_NUM) __aicor
 }
 
 template <typename OutIdxT>
-__simt_vf__ LAUNCH_BOUND(SmallAxisCommon::NON_LAST_TRANSPOSE_THREAD_NUM) __aicore__ void BuildOutputIndexTile(
-    uint32_t axisLen, uint32_t innerChunk, uint32_t threadNum, uint32_t indexAxisElems, uint32_t outputIndexRowElems,
-    __ubuf__ uint32_t* sortedIndex, __ubuf__ OutIdxT* outputIndex)
+__simt_vf__ LAUNCH_BOUND(SmallAxisCommon::NON_LAST_TRANSPOSE_THREAD_NUM) __aicore__
+    void BuildOutputIndexTile(uint32_t axisLen, uint32_t innerChunk, uint32_t threadNum, uint32_t indexAxisElems,
+                              uint32_t outputIndexRowElems, __ubuf__ uint32_t* sortedIndex,
+                              __ubuf__ OutIdxT* outputIndex)
 {
     uint32_t total = axisLen * innerChunk;
     for (uint32_t idx = static_cast<uint32_t>(threadIdx.x); idx < total; idx += threadNum) {
         uint32_t inner = idx / axisLen;
         uint32_t axis = idx - inner * axisLen;
-        outputIndex[axis * outputIndexRowElems + inner] =
-            static_cast<OutIdxT>(sortedIndex[inner * indexAxisElems + axis]);
+        outputIndex[axis * outputIndexRowElems + inner] = static_cast<OutIdxT>(
+            sortedIndex[inner * indexAxisElems + axis]);
     }
 }
 
 template <typename T, typename SortT, typename OutIdxT>
-__simt_vf__ LAUNCH_BOUND(SmallAxisCommon::NON_LAST_TRANSPOSE_THREAD_NUM) __aicore__ void StoreConvertedOutputTile(
-    uint32_t axisLen, uint32_t innerChunk, uint32_t threadNum, uint32_t valueAxisElems, uint32_t indexAxisElems,
-    uint64_t baseOffset, uint64_t innerSize, __ubuf__ SortT* sortedValue, __ubuf__ uint32_t* sortedIndex,
-    __gm__ volatile T* outputValue, __gm__ volatile OutIdxT* outputIndex)
+__simt_vf__ LAUNCH_BOUND(SmallAxisCommon::NON_LAST_TRANSPOSE_THREAD_NUM) __aicore__
+    void StoreConvertedOutputTile(uint32_t axisLen, uint32_t innerChunk, uint32_t threadNum, uint32_t valueAxisElems,
+                                  uint32_t indexAxisElems, uint64_t baseOffset, uint64_t innerSize,
+                                  __ubuf__ SortT* sortedValue, __ubuf__ uint32_t* sortedIndex,
+                                  __gm__ volatile T* outputValue, __gm__ volatile OutIdxT* outputIndex)
 {
     uint32_t total = axisLen * innerChunk;
     for (uint32_t idx = static_cast<uint32_t>(threadIdx.x); idx < total; idx += threadNum) {
@@ -87,13 +90,13 @@ public:
     using SortT_ = typename std::conditional_t<UseMergeSort && std::is_same_v<T, bfloat16_t>, float, T>;
     using RangeType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>;
     using IdxType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>;
-    using CastType_ =
-        std::conditional_t<sizeof(T) == 1, std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
+    using CastType_ = std::conditional_t<sizeof(T) == 1,
+                                         std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
     static constexpr bool IsBf16Merge_ = UseMergeSort && std::is_same_v<T, bfloat16_t>;
 
     __aicore__ inline SortNonLastSmallAxis() {}
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR y, GM_ADDR idx, GM_ADDR workspace, const SortRegBaseTilingData* tilingData, TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR idx, GM_ADDR workspace,
+                                const SortRegBaseTilingData* tilingData, TPipe* pipe);
 
     __aicore__ inline void ParseTilingData();
     __aicore__ inline void BuildOutputs(uint32_t curInnerChunk);
@@ -217,19 +220,19 @@ __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>
         AscendC::MicroAPI::RegTensor<CastType_> valueReg;
         AscendC::MicroAPI::RegTensor<RangeType_> valueIdxReg;
         AscendC::MicroAPI::MaskReg valueMask = AscendC::MicroAPI::UpdateMask<CastType_>(curInnerChunk);
-        AscendC::MicroAPI::MaskReg valueIdxMask =
-            AscendC::MicroAPI::CreateMask<RangeType_, AscendC::MicroAPI::MaskPattern::ALL>();
+        AscendC::MicroAPI::MaskReg
+            valueIdxMask = AscendC::MicroAPI::CreateMask<RangeType_, AscendC::MicroAPI::MaskPattern::ALL>();
 
         AscendC::MicroAPI::Arange(valueIdxReg, 0);
         AscendC::MicroAPI::Muls(valueIdxReg, valueIdxReg, static_cast<RangeType_>(this->valueAxisElems_), valueIdxMask);
         for (uint16_t axis = 0; axis < this->axisLen_; ++axis) {
-            AscendC::MicroAPI::DataCopyGather(
-                valueReg, sortedValueAddr + axis, (AscendC::MicroAPI::RegTensor<IdxType_>&)valueIdxReg, valueMask);
+            AscendC::MicroAPI::DataCopyGather(valueReg, sortedValueAddr + axis,
+                                              (AscendC::MicroAPI::RegTensor<IdxType_>&)valueIdxReg, valueMask);
             if constexpr (sizeof(T) != 1) {
                 AscendC::MicroAPI::DataCopy(outputValueAddr + axis * this->inputRowElems_, valueReg, valueMask);
             } else {
-                __local_mem__ CastType_* outputValueAddrB16 =
-                    reinterpret_cast<__local_mem__ CastType_*>(outputValueAddr + axis * this->inputRowElems_);
+                __local_mem__ CastType_* outputValueAddrB16 = reinterpret_cast<__local_mem__ CastType_*>(
+                    outputValueAddr + axis * this->inputRowElems_);
                 AscendC::MicroAPI::DataCopy<CastType_, AscendC::MicroAPI::StoreDist::DIST_PACK_B16>(
                     outputValueAddrB16, valueReg, valueMask);
             }
@@ -248,23 +251,25 @@ __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>
 
     uint32_t valueBytes = curInnerChunk * sizeof(T);
     uint32_t valueAlignedBytes = ROUND_UP_AGLIN(valueBytes);
-    uint32_t valueSrcStride =
-        (this->inputRowBytes_ > valueAlignedBytes) ? (this->inputRowBytes_ - valueAlignedBytes) / UB_BLOCK_SIZE : 0;
+    uint32_t valueSrcStride = (this->inputRowBytes_ > valueAlignedBytes) ?
+                                  (this->inputRowBytes_ - valueAlignedBytes) / UB_BLOCK_SIZE :
+                                  0;
     int64_t valueDstStride = (this->innerSize_ - static_cast<int64_t>(curInnerChunk)) * static_cast<int64_t>(sizeof(T));
     // Store the restored [axisLen, curInnerChunk] tile back into the original
     // non-last-axis GM layout without materializing a full transposed tensor.
-    DataCopyExtParams valueCopyParam{
-        static_cast<uint16_t>(this->axisLen_), valueBytes, valueSrcStride, valueDstStride, 0};
+    DataCopyExtParams valueCopyParam{static_cast<uint16_t>(this->axisLen_), valueBytes, valueSrcStride, valueDstStride,
+                                     0};
     DataCopyPad(outValueGm_[baseOffset], this->inputTile_, valueCopyParam);
 
     uint32_t indexBytes = curInnerChunk * sizeof(OutIdxT);
     uint32_t indexAlignedBytes = ROUND_UP_AGLIN(indexBytes);
-    uint32_t indexSrcStride =
-        (outputIndexRowBytes_ > indexAlignedBytes) ? (outputIndexRowBytes_ - indexAlignedBytes) / UB_BLOCK_SIZE : 0;
-    int64_t indexDstStride =
-        (this->innerSize_ - static_cast<int64_t>(curInnerChunk)) * static_cast<int64_t>(sizeof(OutIdxT));
-    DataCopyExtParams indexCopyParam{
-        static_cast<uint16_t>(this->axisLen_), indexBytes, indexSrcStride, indexDstStride, 0};
+    uint32_t indexSrcStride = (outputIndexRowBytes_ > indexAlignedBytes) ?
+                                  (outputIndexRowBytes_ - indexAlignedBytes) / UB_BLOCK_SIZE :
+                                  0;
+    int64_t indexDstStride = (this->innerSize_ - static_cast<int64_t>(curInnerChunk)) *
+                             static_cast<int64_t>(sizeof(OutIdxT));
+    DataCopyExtParams indexCopyParam{static_cast<uint16_t>(this->axisLen_), indexBytes, indexSrcStride, indexDstStride,
+                                     0};
     DataCopyPad(outIndexGm_[baseOffset], outputIndex_, indexCopyParam);
 
     // Sync: ensure MTE3 GM writes complete before the next tile starts
@@ -318,8 +323,9 @@ __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>
 }
 
 template <typename T, typename OutIdxT, bool IsDescend, bool UseMergeSort>
-__aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>::StoreTile(
-    int64_t inputOffset, int64_t outputOffset, uint32_t curInnerChunk)
+__aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>::StoreTile(int64_t inputOffset,
+                                                                                            int64_t outputOffset,
+                                                                                            uint32_t curInnerChunk)
 {
     (void)outputOffset;
     if constexpr (IsBf16Merge_) {

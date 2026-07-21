@@ -32,6 +32,9 @@ using MergeSortConstants::DEALING_SORT_NUM_ONCE;
 using MergeSortConstants::FP32_DTYPE_BYTES;
 using MergeSortConstants::MERGE_LIST_MAX_NUM;
 using MergeSortConstants::MERGE_MORE_BUFFER_NUM;
+using MergeSortConstants::MERGE_WORKSPACE_BUFFER_NUM;
+using MergeSortConstants::THREE_WAY_MERGE_LIST_NUM;
+using MergeSortConstants::TWO_WAY_MERGE_LIST_NUM;
 using MergeSortConstants::UB_BLOCK_BYTES;
 using MergeSortConstants::XOR_OP_VALUE_FP;
 using MergeSortConstants::XOR_OP_VALUE_HALF;
@@ -147,7 +150,7 @@ public:
             this->currentTailElements_ = this->currentElements_ * (remainListNum - 1) + this->currentTailElements_;
             this->listNum_ = currentCoreNum;
             this->currentElements_ = this->currentElements_ * MERGE_LIST_MAX_NUM;
-            this->workSpaceFlag_ = (this->workSpaceFlag_ + 1) % 2;
+            this->workSpaceFlag_ = (this->workSpaceFlag_ + 1) % MERGE_WORKSPACE_BUFFER_NUM;
         }
         this->workspaceInput_ = this->workspaceGm_[this->workSpaceFlag_];
         this->workspaceOutput_ = this->workspaceGm_[1 - this->workSpaceFlag_];
@@ -190,13 +193,13 @@ public:
         padParams.rightPadding = currTileSizeAlign - tileNum;
         padParams.paddingValue = static_cast<T>(defaultValue);
 
-        AscendC::DataCopyPad(
-            inputLocal, this->inputValueGm_[this->rowDataOffset_ + offsetPerCore], copyParams, padParams);
+        AscendC::DataCopyPad(inputLocal, this->inputValueGm_[this->rowDataOffset_ + offsetPerCore], copyParams,
+                             padParams);
         this->inputQueue_.EnQue(inputLocal);
     }
 
-    __aicore__ inline void InitIndexLocal(
-        uint32_t tileNum, LocalTensor<uint32_t> sortedValueIndexLocal, int64_t offsetPerCore)
+    __aicore__ inline void InitIndexLocal(uint32_t tileNum, LocalTensor<uint32_t> sortedValueIndexLocal,
+                                          int64_t offsetPerCore)
     {
         PipeBarrier<PIPE_ALL>();
         LocalTensor<int32_t> tempIndexLocal = sortedValueIndexLocal.ReinterpretCast<int32_t>();
@@ -204,14 +207,14 @@ public:
         PipeBarrier<PIPE_ALL>();
     }
 
-    __aicore__ inline void DoSort(
-        uint32_t tileNum, LocalTensor<T> inputLocal, LocalTensor<CONVERT_TYPE> sortedValueLocal,
-        LocalTensor<uint32_t> sortedValueIndexLocal)
+    __aicore__ inline void DoSort(uint32_t tileNum, LocalTensor<T> inputLocal,
+                                  LocalTensor<CONVERT_TYPE> sortedValueLocal,
+                                  LocalTensor<uint32_t> sortedValueIndexLocal)
     {
         AscendC::LocalTensor<CONVERT_TYPE> sortTempLocal = this->sortTempBuf_.template Get<CONVERT_TYPE>();
         AscendC::LocalTensor<CONVERT_TYPE> concatTempLocal = this->concatTempBuf_.template Get<CONVERT_TYPE>();
-        AscendC::LocalTensor<CONVERT_TYPE> sortedValueLocalCast =
-            this->sortedValueLocalCastTbuf_.template Get<CONVERT_TYPE>();
+        AscendC::LocalTensor<CONVERT_TYPE> sortedValueLocalCast = this->sortedValueLocalCastTbuf_
+                                                                      .template Get<CONVERT_TYPE>();
 
         uint32_t aglinTileNum = ROUND_UP_AGLIN(tileNum);
         uint32_t sortRepeatTimes = Ops::Base::CeilDiv(aglinTileNum, DEALING_SORT_NUM_ONCE);
@@ -222,8 +225,8 @@ public:
         }
         AscendC::LocalTensor<CONVERT_TYPE> concatLocal;
         AscendC::Concat(concatLocal, inputLocal, concatTempLocal, concatRepeatTimes);
-        AscendC::Sort<CONVERT_TYPE, true>(
-            sortedValueLocal, concatLocal, sortedValueIndexLocal, sortTempLocal, sortRepeatTimes);
+        AscendC::Sort<CONVERT_TYPE, true>(sortedValueLocal, concatLocal, sortedValueIndexLocal, sortTempLocal,
+                                          sortRepeatTimes);
     }
 
     __aicore__ inline void FlipSignBit(LocalTensor<CONVERT_TYPE> xLocal, uint32_t aglinTileNum)
@@ -237,8 +240,8 @@ public:
         }
     }
 
-    __aicore__ inline void CopyOutWorkSpace(
-        uint32_t tileNum, int64_t offsetPerCore, LocalTensor<CONVERT_TYPE> sortedValueLocal)
+    __aicore__ inline void CopyOutWorkSpace(uint32_t tileNum, int64_t offsetPerCore,
+                                            LocalTensor<CONVERT_TYPE> sortedValueLocal)
     {
         event_t eventIdVToMTE3 = static_cast<event_t>(this->pipe_->FetchEventID(HardEvent::V_MTE3));
         SetFlag<HardEvent::V_MTE3>(eventIdVToMTE3);
@@ -350,9 +353,9 @@ public:
         this->remainListNum_ = 0;
         for (int64_t i = 0, j = 0; i < MERGE_LIST_MAX_NUM; i++) {
             // Copy at most onceMaxElements_ from each non-empty run so one MrgSort call can merge the current window.
-            this->dealLengths_[i] =
-                (this->onceMaxElements_ > this->listRemainElements_[i] ? this->listRemainElements_[i] :
-                                                                         this->onceMaxElements_);
+            this->dealLengths_[i] = (this->onceMaxElements_ > this->listRemainElements_[i] ?
+                                         this->listRemainElements_[i] :
+                                         this->onceMaxElements_);
             if (this->dealLengths_[i] > 0) {
                 DataCopyExtParams copyParams;
                 copyParams.blockCount = 1;
@@ -360,9 +363,8 @@ public:
                 copyParams.srcStride = 0;
                 copyParams.dstStride = 0;
                 DataCopyPadExtParams<CONVERT_TYPE> padParams{false, 0, 0, 0};
-                DataCopyPad(
-                    ubMainInput[GetSortLen<CONVERT_TYPE>(this->onceMaxElements_) * i],
-                    this->workspaceInput_[this->offsets_[i]], copyParams, padParams);
+                DataCopyPad(ubMainInput[GetSortLen<CONVERT_TYPE>(this->onceMaxElements_) * i],
+                            this->workspaceInput_[this->offsets_[i]], copyParams, padParams);
                 this->elementCountList_[j] = this->dealLengths_[i];
                 this->remainListNum_ += 1;
                 j++;
@@ -374,19 +376,19 @@ public:
     __aicore__ inline void UpdateMrgParam()
     {
         // MrgSort accepts four source lists. validBitTail marks which of the four are real for this window.
-        if (this->remainListNum_ == 2) {
-            this->elementCountList_[2] = 0;
-            this->elementCountList_[3] = 0;
+        if (this->remainListNum_ == TWO_WAY_MERGE_LIST_NUM) {
+            this->elementCountList_[TWO_WAY_MERGE_LIST_NUM] = 0;
+            this->elementCountList_[THREE_WAY_MERGE_LIST_NUM] = 0;
             this->validBitTail_ = 0b0011;
-        } else if (this->remainListNum_ == 3) {
-            this->elementCountList_[3] = 0;
+        } else if (this->remainListNum_ == THREE_WAY_MERGE_LIST_NUM) {
+            this->elementCountList_[THREE_WAY_MERGE_LIST_NUM] = 0;
             this->validBitTail_ = 0b0111;
-        } else if (this->remainListNum_ == 4) {
+        } else if (this->remainListNum_ == MERGE_LIST_MAX_NUM) {
             this->validBitTail_ = 0b1111;
         } else {
             this->elementCountList_[1] = 0;
-            this->elementCountList_[2] = 0;
-            this->elementCountList_[3] = 0;
+            this->elementCountList_[TWO_WAY_MERGE_LIST_NUM] = 0;
+            this->elementCountList_[THREE_WAY_MERGE_LIST_NUM] = 0;
             this->validBitTail_ = 0b0001;
         }
     }
@@ -402,27 +404,26 @@ public:
                 j++;
             }
         }
-        if (this->remainListNum_ == 2) {
+        if (this->remainListNum_ == TWO_WAY_MERGE_LIST_NUM) {
             // Unused source-list arguments are duplicated because validBitTail controls which lists participate.
-            MrgSortSrcList sortListTail =
-                MrgSortSrcList(tmpUbInputs[0], tmpUbInputs[1], tmpUbInputs[0], tmpUbInputs[0]);
-            MrgSort<CONVERT_TYPE, true>(
-                sortTempBuffer, sortListTail, this->elementCountList_, this->listSortedNums_, this->validBitTail_, 1);
-        } else if (this->remainListNum_ == 3) {
-            MrgSortSrcList sortListTail =
-                MrgSortSrcList(tmpUbInputs[0], tmpUbInputs[1], tmpUbInputs[2], tmpUbInputs[0]);
-            MrgSort<CONVERT_TYPE, true>(
-                sortTempBuffer, sortListTail, this->elementCountList_, this->listSortedNums_, this->validBitTail_, 1);
-        } else if (this->remainListNum_ == 4) {
-            MrgSortSrcList sortListTail =
-                MrgSortSrcList(tmpUbInputs[0], tmpUbInputs[1], tmpUbInputs[2], tmpUbInputs[3]);
-            MrgSort<CONVERT_TYPE, true>(
-                sortTempBuffer, sortListTail, this->elementCountList_, this->listSortedNums_, this->validBitTail_, 1);
+            MrgSortSrcList sortListTail = MrgSortSrcList(tmpUbInputs[0], tmpUbInputs[1], tmpUbInputs[0],
+                                                         tmpUbInputs[0]);
+            MrgSort<CONVERT_TYPE, true>(sortTempBuffer, sortListTail, this->elementCountList_, this->listSortedNums_,
+                                        this->validBitTail_, 1);
+        } else if (this->remainListNum_ == THREE_WAY_MERGE_LIST_NUM) {
+            MrgSortSrcList sortListTail = MrgSortSrcList(tmpUbInputs[0], tmpUbInputs[1], tmpUbInputs[2],
+                                                         tmpUbInputs[0]);
+            MrgSort<CONVERT_TYPE, true>(sortTempBuffer, sortListTail, this->elementCountList_, this->listSortedNums_,
+                                        this->validBitTail_, 1);
+        } else if (this->remainListNum_ == MERGE_LIST_MAX_NUM) {
+            MrgSortSrcList sortListTail = MrgSortSrcList(tmpUbInputs[0], tmpUbInputs[1], tmpUbInputs[2],
+                                                         tmpUbInputs[3]);
+            MrgSort<CONVERT_TYPE, true>(sortTempBuffer, sortListTail, this->elementCountList_, this->listSortedNums_,
+                                        this->validBitTail_, 1);
         } else {
-            AscendC::Copy(
-                sortTempBuffer, tmpUbInputs[0],
-                ROUND_UP_AGLIN(GetSortLen<CONVERT_TYPE>(this->elementCountList_[0]) * sizeof(CONVERT_TYPE)) /
-                    sizeof(CONVERT_TYPE));
+            AscendC::Copy(sortTempBuffer, tmpUbInputs[0],
+                          ROUND_UP_AGLIN(GetSortLen<CONVERT_TYPE>(this->elementCountList_[0]) * sizeof(CONVERT_TYPE)) /
+                              sizeof(CONVERT_TYPE));
             this->listSortedNums_[0] = this->elementCountList_[0];
         }
         this->sortedQueue_.EnQue(sortTempBuffer);

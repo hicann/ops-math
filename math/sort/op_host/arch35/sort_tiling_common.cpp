@@ -67,8 +67,10 @@ uint64_t ComputeUbAfterSimtReserve(uint32_t ubSize)
 // Returns 0 when index is out of range or dataType is unsupported.
 uint32_t GetPreferredInnerChunk(ge::DataType dataType, uint32_t index)
 {
+    constexpr uint32_t kMaxChunkCandidates = 6;
+    constexpr uint32_t kOneByteChunkGroup = 3;
     // Each row: dtype group's chunk candidates (decreasing powers of 2, padded with 0).
-    static constexpr uint32_t kChunkCandidates[][6] = {
+    static constexpr uint32_t kChunkCandidates[][kMaxChunkCandidates] = {
         {4, 2, 1, 0, 0, 0},
         {8, 4, 2, 1, 0, 0},
         {16, 8, 4, 2, 1, 0},
@@ -84,7 +86,7 @@ uint32_t GetPreferredInnerChunk(ge::DataType dataType, uint32_t index)
                dataType == ge::DT_UINT16) {
         group = 2; // 2-byte types
     } else if (dataType == ge::DT_INT8 || dataType == ge::DT_UINT8) {
-        group = 3; // 1-byte types
+        group = kOneByteChunkGroup;
     } else {
         return 0;
     }
@@ -267,7 +269,8 @@ bool SearchNonLastSmallAxisPlan(
     std::function<bool(SortKthTileInfo&, uint32_t, uint64_t&, NonLastSmallAxisCandidate&)> estimateUb,
     NonLastSmallAxisCandidate& best, SortKthTileInfo* selectedInfo)
 {
-    for (uint32_t i = 0; i < 6; ++i) {
+    constexpr uint32_t kMaxChunkCandidates = 6;
+    for (uint32_t i = 0; i < kMaxChunkCandidates; ++i) {
         uint32_t chunk = GetPreferredInnerChunk(info.dataType, i);
         if (chunk == 0U) {
             break;
@@ -589,6 +592,30 @@ bool ComputeRadixSortWorkspace(int64_t axisLen, uint32_t dtypeSize, uint32_t ind
     return true;
 }
 
+static bool FillRadixKernelResources(SortKthTileInfo& info, uint32_t indexSize, uint32_t lastDimTileNum,
+                                     uint32_t tmpUbSize)
+{
+    RadixClearParams clearParams;
+    if (!FillRadixKernelParams(info.dtypeSize, indexSize, info.coreNumNeed, lastDimTileNum, info.unsortedDimParallel,
+                               info.blockUbSize, tmpUbSize, clearParams)) {
+        return false;
+    }
+    info.keyParams0 = clearParams.keyParams0;
+    info.keyParams1 = clearParams.keyParams1;
+    info.keyParams2 = clearParams.keyParams2;
+    info.keyParams3 = clearParams.keyParams3;
+    info.keyParams4 = clearParams.keyParams4;
+    info.keyParams5 = clearParams.keyParams5;
+    uint64_t sortWorkspaceSize = 0;
+    if (!ComputeRadixSortWorkspace(info.lastAxis, info.dtypeSize, indexSize, lastDimTileNum, info.numTileDataSize,
+                                   info.unsortedDimParallel, info.keyParams0, info.keyParams1, info.keyParams2,
+                                   info.keyParams3, info.keyParams4, info.blockUbSize, sortWorkspaceSize)) {
+        return false;
+    }
+    info.workspaceSize = static_cast<size_t>(sortWorkspaceSize + WORK_SPACE_SIZE);
+    return true;
+}
+
 bool FillRadixMoreCoreInfo(SortKthTileInfo& info)
 {
     uint32_t usableUb = info.ubSize > SIMT_UB ? info.ubSize - SIMT_UB : 0;
@@ -623,25 +650,7 @@ bool FillRadixMoreCoreInfo(SortKthTileInfo& info)
     info.lastDimNeedCore = std::min(info.maxCoreNum, lastDimTileNum);
     info.coreNumNeed = info.unsortedDimParallel * info.lastDimNeedCore;
     info.lastDimTileNum = lastDimTileNum;
-    RadixClearParams clearParams;
-    if (!FillRadixKernelParams(info.dtypeSize, indexSize, info.coreNumNeed, lastDimTileNum, info.unsortedDimParallel,
-                               info.blockUbSize, tmpUbSize, clearParams)) {
-        return false;
-    }
-    info.keyParams0 = clearParams.keyParams0;
-    info.keyParams1 = clearParams.keyParams1;
-    info.keyParams2 = clearParams.keyParams2;
-    info.keyParams3 = clearParams.keyParams3;
-    info.keyParams4 = clearParams.keyParams4;
-    info.keyParams5 = clearParams.keyParams5;
-    uint64_t sortWorkspaceSize = 0;
-    if (!ComputeRadixSortWorkspace(info.lastAxis, info.dtypeSize, indexSize, lastDimTileNum, info.numTileDataSize,
-                                   info.unsortedDimParallel, info.keyParams0, info.keyParams1, info.keyParams2,
-                                   info.keyParams3, info.keyParams4, info.blockUbSize, sortWorkspaceSize)) {
-        return false;
-    }
-    info.workspaceSize = static_cast<size_t>(sortWorkspaceSize + WORK_SPACE_SIZE);
-    return true;
+    return FillRadixKernelResources(info, indexSize, lastDimTileNum, tmpUbSize);
 }
 
 bool ComputeRadixOneCoreUbSizes(int64_t lastAxis, uint32_t dtypeSize, uint32_t indexElemSize, uint32_t blockUbSize,
@@ -704,7 +713,7 @@ bool FillMergeSortInfo(SortKthTileInfo& info, uint32_t indexDtypeSize, uint32_t 
     info.keyParams1 = plan.alignNum * plan.oneCoreRowNum * info.dtypeSize;
     info.keyParams2 = plan.alignNum * plan.oneCoreRowNum * indexDtypeSize;
     info.keyParams3 = plan.alignNum;
-    info.keyParams4 = info.lastAxis > 2048 ? 1 : 2;
+    info.keyParams4 = info.lastAxis > ONE_CORE_DATA_SIZE ? 1 : DOUBLE_BUFFER_NUM;
     info.tmpUbSize = std::max(concatTmpSize, info.blockUbSize);
     info.workspaceSize = WORK_SPACE_SIZE;
     return true;
@@ -826,7 +835,7 @@ bool IsMergeIntraCoreSupported(ge::DataType dataType, int64_t axisLen, int64_t u
                                uint32_t ubSize)
 {
     if (dataType != ge::DT_FLOAT || axisLen <= static_cast<int64_t>(MERGE_SORT_MAX_AXIS_FP32) ||
-        unsortedDim < static_cast<int64_t>(maxCoreNum / 2)) {
+        unsortedDim < static_cast<int64_t>(maxCoreNum / DOUBLE_BUFFER_NUM)) {
         return false;
     }
     uint64_t maxBatch = static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) * static_cast<uint64_t>(maxCoreNum);
@@ -1156,7 +1165,7 @@ static bool EstimateSmallAxisTwoStageBatching(const SortKthTileInfo& info, uint3
         maxBatch = std::min(maxBatch, MaxTwoStageU16SafeBatch(axisLen));
     }
     TwoStageBatchPlan result;
-    auto tryCandidate = [&](uint32_t candidate, TwoStageBatchPlan& p) -> bool {
+    auto tryCandidate = [&info, &computeBatchNum](uint32_t candidate, TwoStageBatchPlan& p) -> bool {
         SmallAxisRoutePlan candidatePlan;
         if (!TrySmallAxisTwoStageBatchCandidate(info, candidate, computeBatchNum, candidatePlan)) {
             return false;

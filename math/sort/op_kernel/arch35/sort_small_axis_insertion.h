@@ -24,10 +24,11 @@ using namespace AscendC;
 
 template <typename T, typename OUT_IDX_T>
 __simt_vf__ LAUNCH_BOUND(SmallAxisCommon::INSERTION_THREAD_NUM) __aicore__
-void SimtStoreNonLastInsertionBatch(uint32_t totalElems, uint32_t validSegs, uint32_t segmentLen,
-    uint32_t valueRowElems, uint32_t indexRowElems, uint64_t outerBaseOffset, uint64_t innerStart,
-    uint64_t innerSize, __ubuf__ T *inputValue, __ubuf__ OUT_IDX_T *inputIdx,
-    __gm__ volatile T *outputValue, __gm__ volatile OUT_IDX_T *outputIdx)
+    void SimtStoreNonLastInsertionBatch(uint32_t totalElems, uint32_t validSegs, uint32_t segmentLen,
+                                        uint32_t valueRowElems, uint32_t indexRowElems, uint64_t outerBaseOffset,
+                                        uint64_t innerStart, uint64_t innerSize, __ubuf__ T* inputValue,
+                                        __ubuf__ OUT_IDX_T* inputIdx, __gm__ volatile T* outputValue,
+                                        __gm__ volatile OUT_IDX_T* outputIdx)
 {
     // Store sorted sort-major segments back to the original non-last-axis GM layout.
     for (uint32_t idx = static_cast<uint32_t>(threadIdx.x); idx < totalElems;
@@ -41,19 +42,17 @@ void SimtStoreNonLastInsertionBatch(uint32_t totalElems, uint32_t validSegs, uin
 }
 
 template <typename T, typename CONVERT_TYPE, typename OUT_IDX_T, bool IsDescend>
-class SortSmallAxisInsertion : public SmallAxisCommon::SmallAxisInsertionBase<
-    SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, IsDescend>, T, CONVERT_TYPE, OUT_IDX_T, IsDescend> {
-    using Base = SmallAxisCommon::SmallAxisInsertionBase<
-        SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, IsDescend>, T, CONVERT_TYPE, OUT_IDX_T, IsDescend>;
+class SortSmallAxisInsertion
+    : public SmallAxisCommon::SmallAxisInsertionBase<SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, IsDescend>, T,
+                                                     CONVERT_TYPE, OUT_IDX_T, IsDescend> {
+    using Base = SmallAxisCommon::SmallAxisInsertionBase<SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, IsDescend>,
+                                                         T, CONVERT_TYPE, OUT_IDX_T, IsDescend>;
 
 public:
     __aicore__ inline SortSmallAxisInsertion() {}
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR idx, GM_ADDR workspace,
-        const SortRegBaseTilingData *tilingData, TPipe *pipe);
-    __aicore__ inline void Process()
-    {
-        Base::Process();
-    }
+                                const SortRegBaseTilingData* tilingData, TPipe* pipe);
+    __aicore__ inline void Process() { Base::Process(); }
 
     friend Base;
 
@@ -78,7 +77,7 @@ private:
     __aicore__ inline void StoreBatch(int64_t segStart, uint32_t validSegs);
     __aicore__ inline void StoreNonLastBatch(uint64_t outerId, uint64_t innerStart, uint32_t validSegs);
 
-    const SortRegBaseTilingData *tilingData_ = nullptr;
+    const SortRegBaseTilingData* tilingData_ = nullptr;
 
     GlobalTensor<T> inputXGm_;
     GlobalTensor<T> outValueGm_;
@@ -93,7 +92,7 @@ private:
 
 template <typename T, typename CONVERT_TYPE, typename OUT_IDX_T, bool IsDescend>
 __aicore__ inline void SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, IsDescend>::Init(
-    GM_ADDR x, GM_ADDR y, GM_ADDR idx, GM_ADDR workspace, const SortRegBaseTilingData *tilingData, TPipe *pipe)
+    GM_ADDR x, GM_ADDR y, GM_ADDR idx, GM_ADDR workspace, const SortRegBaseTilingData* tilingData, TPipe* pipe)
 {
     (void)workspace;
     if (tilingData == nullptr || pipe == nullptr) {
@@ -110,12 +109,11 @@ __aicore__ inline void SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, IsDesc
     outerSize_ = tilingData_->outerSize;
     innerSize_ = tilingData_->innerSize;
     innerLoopNum_ = tilingData_->innerLoopNum;
-    inputXGm_.SetGlobalBuffer((__gm__ T *)x);
-    outValueGm_.SetGlobalBuffer((__gm__ T *)y);
-    outIdxGm_.SetGlobalBuffer((__gm__ OUT_IDX_T *)idx);
+    inputXGm_.SetGlobalBuffer((__gm__ T*)x);
+    outValueGm_.SetGlobalBuffer((__gm__ T*)y);
+    outIdxGm_.SetGlobalBuffer((__gm__ OUT_IDX_T*)idx);
 
-    if (segmentLen_ == 0 || segmentsPerBatch_ == 0 ||
-        segmentsPerBatch_ > SmallAxisCommon::MAX_DATACOPY_BLOCK_COUNT) {
+    if (segmentLen_ == 0 || segmentsPerBatch_ == 0 || segmentsPerBatch_ > SmallAxisCommon::MAX_DATACOPY_BLOCK_COUNT) {
         return;
     }
 
@@ -126,7 +124,7 @@ template <typename T, typename CONVERT_TYPE, typename OUT_IDX_T, bool IsDescend>
 __aicore__ inline bool SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, IsDescend>::IsProcessInvalid() const
 {
     return blockIdx_ >= blockDim_ || segmentLen_ == 0 || segmentsPerBatch_ == 0 ||
-        (isNonLastAxis_ && (innerLoopNum_ == 0 || outerSize_ <= 0 || innerSize_ <= 0));
+           (isNonLastAxis_ && (innerLoopNum_ == 0 || outerSize_ <= 0 || innerSize_ <= 0));
 }
 
 template <typename T, typename CONVERT_TYPE, typename OUT_IDX_T, bool IsDescend>
@@ -143,7 +141,7 @@ __aicore__ inline uint32_t SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, Is
             return 0;
         }
         return innerRemain >= static_cast<int64_t>(segmentsPerBatch_) ? segmentsPerBatch_ :
-            static_cast<uint32_t>(innerRemain);
+                                                                        static_cast<uint32_t>(innerRemain);
     }
     int64_t segStart = static_cast<int64_t>(batchId) * static_cast<int64_t>(segmentsPerBatch_);
     int64_t segRemain = totalSegs_ - segStart;
@@ -157,8 +155,8 @@ __aicore__ inline uint32_t SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, Is
 }
 
 template <typename T, typename CONVERT_TYPE, typename OUT_IDX_T, bool IsDescend>
-__aicore__ inline void SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, IsDescend>::ProcessBatch(
-    uint32_t batchId, uint32_t validSegs)
+__aicore__ inline void SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, IsDescend>::ProcessBatch(uint32_t batchId,
+                                                                                                   uint32_t validSegs)
 {
     int64_t segStart = static_cast<int64_t>(batchId) * static_cast<int64_t>(segmentsPerBatch_);
     uint64_t outerId = 0;
@@ -191,18 +189,17 @@ __aicore__ inline void SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, IsDesc
         // Convert widened sorted values back to the output storage dtype before SIMT GM stores.
         LocalTensor<T> storeBuf = castBuf_.template Get<T>();
         Cast(storeBuf, values_, RoundMode::CAST_RINT, validSegs * valueRowStride_);
-        asc_vf_call<SimtStoreNonLastInsertionBatch<T, OUT_IDX_T>>(dim3(SmallAxisCommon::INSERTION_THREAD_NUM),
-            totalElems, validSegs, segmentLen_, castRowStride_, indexRowStride_, outerBaseOffset, innerStart,
-            static_cast<uint64_t>(innerSize_), (__ubuf__ T *)storeBuf.GetPhyAddr(),
-            (__ubuf__ OUT_IDX_T *)indices_.GetPhyAddr(), (__gm__ volatile T *)outValueGm_.GetPhyAddr(),
-            (__gm__ volatile OUT_IDX_T *)outIdxGm_.GetPhyAddr());
+        asc_vf_call<SimtStoreNonLastInsertionBatch<T, OUT_IDX_T>>(
+            dim3(SmallAxisCommon::INSERTION_THREAD_NUM), totalElems, validSegs, segmentLen_, castRowStride_,
+            indexRowStride_, outerBaseOffset, innerStart, static_cast<uint64_t>(innerSize_),
+            (__ubuf__ T*)storeBuf.GetPhyAddr(), (__ubuf__ OUT_IDX_T*)indices_.GetPhyAddr(),
+            (__gm__ volatile T*)outValueGm_.GetPhyAddr(), (__gm__ volatile OUT_IDX_T*)outIdxGm_.GetPhyAddr());
     } else {
-        asc_vf_call<SimtStoreNonLastInsertionBatch<T, OUT_IDX_T>>(dim3(SmallAxisCommon::INSERTION_THREAD_NUM),
-            totalElems,
-            validSegs, segmentLen_, valueRowStride_, indexRowStride_, outerBaseOffset, innerStart,
-            static_cast<uint64_t>(innerSize_), (__ubuf__ T *)values_.GetPhyAddr(),
-            (__ubuf__ OUT_IDX_T *)indices_.GetPhyAddr(), (__gm__ volatile T *)outValueGm_.GetPhyAddr(),
-            (__gm__ volatile OUT_IDX_T *)outIdxGm_.GetPhyAddr());
+        asc_vf_call<SimtStoreNonLastInsertionBatch<T, OUT_IDX_T>>(
+            dim3(SmallAxisCommon::INSERTION_THREAD_NUM), totalElems, validSegs, segmentLen_, valueRowStride_,
+            indexRowStride_, outerBaseOffset, innerStart, static_cast<uint64_t>(innerSize_),
+            (__ubuf__ T*)values_.GetPhyAddr(), (__ubuf__ OUT_IDX_T*)indices_.GetPhyAddr(),
+            (__gm__ volatile T*)outValueGm_.GetPhyAddr(), (__gm__ volatile OUT_IDX_T*)outIdxGm_.GetPhyAddr());
     }
     event_t eventId = static_cast<event_t>(pipe_->FetchEventID(HardEvent::V_S));
     SetFlag<HardEvent::V_S>(eventId);
@@ -211,7 +208,7 @@ __aicore__ inline void SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, IsDesc
 
 template <typename T, typename CONVERT_TYPE, typename OUT_IDX_T, bool IsDescend>
 __aicore__ inline void SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, IsDescend>::StoreBatch(int64_t segStart,
-    uint32_t validSegs)
+                                                                                                 uint32_t validSegs)
 {
     if (validSegs == 0) {
         return;
@@ -225,8 +222,8 @@ __aicore__ inline void SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, IsDesc
     // For diff-type, valueRowStride_ is intentionally equal to castRowStride_, so the
     // GM-transfer T buffer and the CONVERT_TYPE sort buffer share the same row pitch.
     uint32_t valueSrcStrideBlocks = ((valueRowStride_ - segmentLen_) * sizeof(T)) / UB_BLOCK_SIZE;
-    DataCopyExtParams valueCopyParam{
-        static_cast<uint16_t>(validSegs), static_cast<uint32_t>(segmentLen_ * sizeof(T)), valueSrcStrideBlocks, 0, 0 };
+    DataCopyExtParams valueCopyParam{static_cast<uint16_t>(validSegs), static_cast<uint32_t>(segmentLen_ * sizeof(T)),
+                                     valueSrcStrideBlocks, 0, 0};
     if constexpr (!IsSameType<T, CONVERT_TYPE>::value) {
         LocalTensor<T> storeBuf = castBuf_.template Get<T>();
         Cast(storeBuf, values_, RoundMode::CAST_RINT, validSegs * valueRowStride_);
@@ -240,12 +237,8 @@ __aicore__ inline void SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, IsDesc
     }
 
     uint32_t idxStrideBlocks = ((indexRowStride_ - segmentLen_) * sizeof(OUT_IDX_T)) / UB_BLOCK_SIZE;
-    DataCopyExtParams idxCopyParam{
-        static_cast<uint16_t>(validSegs),
-        static_cast<uint32_t>(segmentLen_ * sizeof(OUT_IDX_T)),
-        idxStrideBlocks,
-        0,
-        0 };
+    DataCopyExtParams idxCopyParam{static_cast<uint16_t>(validSegs),
+                                   static_cast<uint32_t>(segmentLen_ * sizeof(OUT_IDX_T)), idxStrideBlocks, 0, 0};
     DataCopyPad(outIdxGm_[gmOffset], indices_, idxCopyParam);
 
     // The next batch is issued by scalar/control flow after these MTE3 writebacks complete.

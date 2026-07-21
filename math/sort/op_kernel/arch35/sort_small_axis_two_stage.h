@@ -23,10 +23,10 @@ using namespace AscendC;
 
 template <typename T, typename OutIdxT>
 __simt_vf__ LAUNCH_BOUND(SmallAxisCommon::TWO_STAGE_THREAD_NUM) __aicore__
-void StoreNonLastBatchSimt(uint32_t totalElems, uint32_t segmentLen, uint32_t validSegs,
-    uint64_t outerBaseOffset, uint64_t innerStart, uint64_t innerSize,
-    __ubuf__ T *inputValue, __ubuf__ OutIdxT *inputIdx,
-    __gm__ volatile T *outputValue, __gm__ volatile OutIdxT *outputIdx)
+    void StoreNonLastBatchSimt(uint32_t totalElems, uint32_t segmentLen, uint32_t validSegs, uint64_t outerBaseOffset,
+                               uint64_t innerStart, uint64_t innerSize, __ubuf__ T* inputValue,
+                               __ubuf__ OutIdxT* inputIdx, __gm__ volatile T* outputValue,
+                               __gm__ volatile OutIdxT* outputIdx)
 {
     // Scatter final sorted rows from [inner segment, axis] order back to original GM offsets.
     for (uint32_t idx = static_cast<uint32_t>(threadIdx.x); idx < totalElems;
@@ -41,19 +41,16 @@ void StoreNonLastBatchSimt(uint32_t totalElems, uint32_t segmentLen, uint32_t va
 }
 
 template <typename T, typename OutIdxT, bool IsDescend>
-class SortSmallAxisTwoStage : public SmallAxisCommon::SmallAxisTwoStageBase<
-    SortSmallAxisTwoStage<T, OutIdxT, IsDescend>, T, OutIdxT, IsDescend> {
-    using Base = SmallAxisCommon::SmallAxisTwoStageBase<
-        SortSmallAxisTwoStage<T, OutIdxT, IsDescend>, T, OutIdxT, IsDescend>;
+class SortSmallAxisTwoStage
+    : public SmallAxisCommon::SmallAxisTwoStageBase<SortSmallAxisTwoStage<T, OutIdxT, IsDescend>, T, OutIdxT,
+                                                    IsDescend> {
+    using Base = SmallAxisCommon::SmallAxisTwoStageBase<SortSmallAxisTwoStage<T, OutIdxT, IsDescend>, T, OutIdxT,
+                                                        IsDescend>;
 
 public:
     __aicore__ inline SortSmallAxisTwoStage() {}
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR idx, GM_ADDR workspace,
-        const SortRegBaseTilingData *tilingData, TPipe *pipe);
-    __aicore__ inline void Process()
-    {
-        Base::Process();
-    }
+                                const SortRegBaseTilingData* tilingData, TPipe* pipe);
 
     friend Base;
 
@@ -71,10 +68,10 @@ private:
     __aicore__ inline uint32_t ComputeValidSegs(uint32_t batchId) const;
     __aicore__ inline void ProcessBatch(uint32_t batchId, uint32_t validSegs);
     __aicore__ inline void StoreBatch(int64_t segStart, uint32_t totalElems);
-    __aicore__ inline void StoreNonLastBatch(uint64_t outerId, uint64_t innerStart,
-        uint32_t validSegs, uint32_t totalElems);
+    __aicore__ inline void StoreNonLastBatch(uint64_t outerId, uint64_t innerStart, uint32_t validSegs,
+                                             uint32_t totalElems);
 
-    const SortRegBaseTilingData *tilingData_ = nullptr;
+    const SortRegBaseTilingData* tilingData_ = nullptr;
 
     GlobalTensor<T> inputXGm_;
     GlobalTensor<T> outValueGm_;
@@ -88,8 +85,10 @@ private:
 };
 
 template <typename T, typename OutIdxT, bool IsDescend>
-__aicore__ inline void SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::Init(GM_ADDR x, GM_ADDR y,
-    GM_ADDR idx, GM_ADDR workspace, const SortRegBaseTilingData *tilingData, TPipe *pipe)
+__aicore__ inline void SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR idx,
+                                                                          GM_ADDR workspace,
+                                                                          const SortRegBaseTilingData* tilingData,
+                                                                          TPipe* pipe)
 {
     (void)workspace;
     if (tilingData == nullptr || pipe == nullptr) {
@@ -108,24 +107,23 @@ __aicore__ inline void SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::Init(GM_ADD
     innerSize_ = tilingData_->innerSize;
     innerLoopNum_ = tilingData_->innerLoopNum;
 
-    inputXGm_.SetGlobalBuffer((__gm__ T *)x);
-    outValueGm_.SetGlobalBuffer((__gm__ T *)y);
-    outIdxGm_.SetGlobalBuffer((__gm__ OutIdxT *)idx);
+    inputXGm_.SetGlobalBuffer((__gm__ T*)x);
+    outValueGm_.SetGlobalBuffer((__gm__ T*)y);
+    outIdxGm_.SetGlobalBuffer((__gm__ OutIdxT*)idx);
 
     if (batchSize_ == 0 || segmentLen_ == 0 || maxFlatElems_ == 0) {
         return;
     }
 
     constexpr uint32_t kAliasElemBytes = static_cast<uint32_t>(sizeof(OutIdxT));
-    Base::InitSortBuffers(pipe, maxFlatElems_, tilingData_->tmpUbSize,
-        tilingData_->keyParams2 != 0U, kAliasElemBytes);
+    Base::InitSortBuffers(pipe, maxFlatElems_, tilingData_->tmpUbSize, tilingData_->keyParams2 != 0U, kAliasElemBytes);
 }
 
 template <typename T, typename OutIdxT, bool IsDescend>
 __aicore__ inline bool SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::IsProcessInvalid() const
 {
     return blockIdx_ >= blockDim_ || batchSize_ == 0 || segmentLen_ == 0 ||
-        (isNonLastAxis_ && (innerLoopNum_ == 0 || outerSize_ <= 0 || innerSize_ <= 0));
+           (isNonLastAxis_ && (innerLoopNum_ == 0 || outerSize_ <= 0 || innerSize_ <= 0));
 }
 
 template <typename T, typename OutIdxT, bool IsDescend>
@@ -141,7 +139,8 @@ __aicore__ inline uint32_t SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::Compute
             return 0;
         }
         uint32_t validInnerSegs = remainingInTile >= static_cast<int64_t>(batchSize_) ?
-            batchSize_ : static_cast<uint32_t>(remainingInTile);
+                                      batchSize_ :
+                                      static_cast<uint32_t>(remainingInTile);
         return validInnerSegs;
     }
     int64_t batchStart = static_cast<int64_t>(batchId) * static_cast<int64_t>(batchSize_);
@@ -156,8 +155,7 @@ __aicore__ inline uint32_t SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::Compute
 }
 
 template <typename T, typename OutIdxT, bool IsDescend>
-__aicore__ inline void SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::ProcessBatch(
-    uint32_t batchId, uint32_t validSegs)
+__aicore__ inline void SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::ProcessBatch(uint32_t batchId, uint32_t validSegs)
 {
     uint32_t totalElems = validSegs * segmentLen_;
     int64_t segStart = static_cast<int64_t>(batchId) * static_cast<int64_t>(batchSize_);
@@ -170,8 +168,8 @@ __aicore__ inline void SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::ProcessBatc
         uint32_t innerTileId = batchId % innerLoopNum_;
         innerStart = static_cast<uint64_t>(innerTileId) * static_cast<uint64_t>(batchSize_);
         uint64_t outerBaseOffset = outerId * static_cast<uint64_t>(segmentLen_) * static_cast<uint64_t>(innerSize_);
-        Base::LoadNonLastBatch(inputXGm_, outerBaseOffset, innerStart, static_cast<uint64_t>(innerSize_),
-            validSegs, totalElems);
+        Base::LoadNonLastBatch(inputXGm_, outerBaseOffset, innerStart, static_cast<uint64_t>(innerSize_), validSegs,
+                               totalElems);
     } else {
         Base::LoadContiguousBatch(inputXGm_, segStart * static_cast<int64_t>(segmentLen_), totalElems);
     }
@@ -184,27 +182,29 @@ __aicore__ inline void SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::ProcessBatc
 }
 
 template <typename T, typename OutIdxT, bool IsDescend>
-__aicore__ inline void SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::StoreNonLastBatch(
-    uint64_t outerId, uint64_t innerStart, uint32_t validSegs, uint32_t totalElems)
+__aicore__ inline void SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::StoreNonLastBatch(uint64_t outerId,
+                                                                                       uint64_t innerStart,
+                                                                                       uint32_t validSegs,
+                                                                                       uint32_t totalElems)
 {
     uint64_t outerBaseOffset = outerId * static_cast<uint64_t>(segmentLen_) * static_cast<uint64_t>(innerSize_);
     // finalValues_/finalIdx_ are already in per-segment order when this store runs.
-    asc_vf_call<StoreNonLastBatchSimt<T, OutIdxT>>(dim3(SmallAxisCommon::TWO_STAGE_THREAD_NUM),
-        totalElems, segmentLen_, validSegs, outerBaseOffset, innerStart, static_cast<uint64_t>(innerSize_),
-        (__ubuf__ T *)finalValues_.GetPhyAddr(), (__ubuf__ OutIdxT *)finalIdx_.GetPhyAddr(),
-        (__gm__ volatile T *)outValueGm_.GetPhyAddr(), (__gm__ volatile OutIdxT *)outIdxGm_.GetPhyAddr());
+    asc_vf_call<StoreNonLastBatchSimt<T, OutIdxT>>(
+        dim3(SmallAxisCommon::TWO_STAGE_THREAD_NUM), totalElems, segmentLen_, validSegs, outerBaseOffset, innerStart,
+        static_cast<uint64_t>(innerSize_), (__ubuf__ T*)finalValues_.GetPhyAddr(),
+        (__ubuf__ OutIdxT*)finalIdx_.GetPhyAddr(), (__gm__ volatile T*)outValueGm_.GetPhyAddr(),
+        (__gm__ volatile OutIdxT*)outIdxGm_.GetPhyAddr());
     event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
     SetFlag<HardEvent::V_S>(eventId);
     WaitFlag<HardEvent::V_S>(eventId);
 }
 
 template <typename T, typename OutIdxT, bool IsDescend>
-__aicore__ inline void SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::StoreBatch(int64_t segStart,
-    uint32_t totalElems)
+__aicore__ inline void SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::StoreBatch(int64_t segStart, uint32_t totalElems)
 {
     int64_t gmOffset = segStart * static_cast<int64_t>(segmentLen_);
-    DataCopyExtParams valueCopyParam{ 1, static_cast<uint32_t>(totalElems * sizeof(T)), 0, 0, 0 };
-    DataCopyExtParams idxCopyParam{ 1, static_cast<uint32_t>(totalElems * sizeof(OutIdxT)), 0, 0, 0 };
+    DataCopyExtParams valueCopyParam{1, static_cast<uint32_t>(totalElems * sizeof(T)), 0, 0, 0};
+    DataCopyExtParams idxCopyParam{1, static_cast<uint32_t>(totalElems * sizeof(OutIdxT)), 0, 0, 0};
     // Rank-inverse writes final buffers via SIMT VF; BuildOutputs writes them via vector APIs.
     // Wait for the producing VF/vector work before GM writeback.
     event_t eventIdVToMte3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));

@@ -44,9 +44,8 @@ class KthValueNonLastSmallAxis
     static constexpr bool IS_BF16_MERGE = UseMergeSort && std::is_same_v<T, bfloat16_t>;
 
 public:
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR values, GM_ADDR indices, GM_ADDR workspace, const KthValueTilingData* tilingData,
-        TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices, GM_ADDR workspace,
+                                const KthValueTilingData* tilingData, TPipe* pipe);
 
     __aicore__ inline void StoreTile(int64_t inputOffset, int64_t outputOffset, uint32_t curInnerChunk);
 
@@ -70,8 +69,10 @@ private:
 };
 
 template <typename T, bool IsDescend, bool UseMergeSort>
-__aicore__ inline void KthValueNonLastSmallAxis<T, IsDescend, UseMergeSort>::Init(
-    GM_ADDR x, GM_ADDR values, GM_ADDR indices, GM_ADDR workspace, const KthValueTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void KthValueNonLastSmallAxis<T, IsDescend, UseMergeSort>::Init(GM_ADDR x, GM_ADDR values,
+                                                                                  GM_ADDR indices, GM_ADDR workspace,
+                                                                                  const KthValueTilingData* tilingData,
+                                                                                  TPipe* pipe)
 {
     (void)workspace;
     if (tilingData == nullptr || pipe == nullptr) {
@@ -140,8 +141,8 @@ __aicore__ inline void KthValueNonLastSmallAxis<T, IsDescend, UseMergeSort>::Par
 }
 
 template <typename T, bool IsDescend, bool UseMergeSort>
-__aicore__ inline void KthValueNonLastSmallAxis<T, IsDescend, UseMergeSort>::CopyKthToOutput(
-    uint32_t curInnerChunk, int64_t outputOffset)
+__aicore__ inline void KthValueNonLastSmallAxis<T, IsDescend, UseMergeSort>::CopyKthToOutput(uint32_t curInnerChunk,
+                                                                                             int64_t outputOffset)
 {
     event_t eventIdVToS = static_cast<event_t>(this->pipe_->FetchEventID(HardEvent::V_S));
     SetFlag<HardEvent::V_S>(eventIdVToS);
@@ -188,8 +189,9 @@ __aicore__ inline void KthValueNonLastSmallAxis<T, IsDescend, UseMergeSort>::Cop
 }
 
 template <typename T, bool IsDescend, bool UseMergeSort>
-__aicore__ inline void KthValueNonLastSmallAxis<T, IsDescend, UseMergeSort>::StoreTile(
-    int64_t inputOffset, int64_t outputOffset, uint32_t curInnerChunk)
+__aicore__ inline void KthValueNonLastSmallAxis<T, IsDescend, UseMergeSort>::StoreTile(int64_t inputOffset,
+                                                                                       int64_t outputOffset,
+                                                                                       uint32_t curInnerChunk)
 {
     (void)inputOffset;
     CopyKthToOutput(curInnerChunk, outputOffset);

@@ -631,7 +631,7 @@ public:
             if constexpr (sizeof(T3) == sizeof(uint32_t)) {
                 Duplicate(blockExcusiveUb, static_cast<uint32_t>(0), RADIX_SORT_NUM);
             } else {
-                Duplicate(blockExcusiveUb, static_cast<uint32_t>(0), RADIX_SORT_NUM * 2);
+                Duplicate(blockExcusiveUb, static_cast<uint32_t>(0), RADIX_SORT_NUM * RADIX_HIST_BUFFER_NUM);
             }
             for (uint32_t tileId = startTileId; tileId < this->lastDimTileNum_; tileId += this->lastDimRealCore_) {
                 // tileOffset may exceed int32 range for large rows, so keep the address arithmetic in uint64.
@@ -1180,10 +1180,10 @@ public:
         } else {
             if constexpr (sizeof(T1) == sizeof(int8_t)) {
                 this->inputXDbGm_.SetDoubleBuffer(this->outValueDbWK_, this->outValueGm_[gmOffset]);
-                this->idxDbGm_.SetDoubleBuffer(this->outIdxDbWK_, this->outIdxGm_[gmOffset * 2]);
+                this->idxDbGm_.SetDoubleBuffer(this->outIdxDbWK_, this->outIdxGm_[gmOffset * INT64_INDEX_SCALE]);
             } else {
                 this->inputXDbGm_.SetDoubleBuffer(this->outValueGm_[gmOffset], this->outValueDbWK_);
-                this->idxDbGm_.SetDoubleBuffer(this->outIdxGm_[gmOffset * 2], this->outIdxDbWK_);
+                this->idxDbGm_.SetDoubleBuffer(this->outIdxGm_[gmOffset * INT64_INDEX_SCALE], this->outIdxDbWK_);
             }
         }
         for (uint32_t round = 0; round < static_cast<uint32_t>(sizeof(T1)); round++) {

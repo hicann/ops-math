@@ -32,11 +32,10 @@ using namespace AscendC;
 
 // Import shared constants from MergeSortConstants namespace
 using MergeSortConstants::DEALING_CONCAT_NUM_ONCE;
-using MergeSortConstants::DEALING_SORT_NUM_ONCE;
 using MergeSortConstants::DEALING_EXTRACT_NUM_ONCE;
-using MergeSortConstants::MERGE_LIST_MAX_NUM;
+using MergeSortConstants::DEALING_SORT_NUM_ONCE;
 using MergeSortConstants::MERGE_INTRA_BUFFER_NUM;
-
+using MergeSortConstants::MERGE_LIST_MAX_NUM;
 
 /**
  * @brief Intra-core block merge sort: independent per-core sort+merge without inter-core coordination
@@ -45,10 +44,11 @@ using MergeSortConstants::MERGE_INTRA_BUFFER_NUM;
  * @tparam IsDescend Sort order: true for descending, false for ascending
  */
 template <typename ValueType, typename IndexType, bool IsDescend>
-class SortMergeIntraCore : public MergeIntraCoreCommon::MergeIntraCoreBase<
-    SortMergeIntraCore<ValueType, IndexType, IsDescend>, ValueType, IndexType, IsDescend> {
-    using Base = MergeIntraCoreCommon::MergeIntraCoreBase<
-        SortMergeIntraCore<ValueType, IndexType, IsDescend>, ValueType, IndexType, IsDescend>;
+class SortMergeIntraCore
+    : public MergeIntraCoreCommon::MergeIntraCoreBase<SortMergeIntraCore<ValueType, IndexType, IsDescend>, ValueType,
+                                                      IndexType, IsDescend> {
+    using Base = MergeIntraCoreCommon::MergeIntraCoreBase<SortMergeIntraCore<ValueType, IndexType, IsDescend>,
+                                                          ValueType, IndexType, IsDescend>;
     friend Base;
 
 public:
@@ -56,14 +56,14 @@ public:
 
     __aicore__ inline SortMergeIntraCore() {}
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR value, GM_ADDR indices, GM_ADDR workspace,
-        const SortRegBaseTilingData* tilingData, TPipe* pipe);
+                                const SortRegBaseTilingData* tilingData, TPipe* pipe);
 
 protected:
     __aicore__ inline void InitPhase1Buffers();
     __aicore__ inline void InitPhase2Buffers();
     __aicore__ inline void InitPhase3Buffers();
-    __aicore__ inline void ExtractAndCopyChunk(int64_t cacheBatchOffset, uint32_t cacheOffset,
-        int64_t outputOffset, uint32_t elemProcessed, uint32_t elemCount);
+    __aicore__ inline void ExtractAndCopyChunk(int64_t cacheBatchOffset, uint32_t cacheOffset, int64_t outputOffset,
+                                               uint32_t elemProcessed, uint32_t elemCount);
 
 private:
     // Phase 3 only
@@ -91,8 +91,8 @@ __aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::Init
     this->alignNum_ = tilingData->keyParams3;
     this->maxMergeIterations_ = tilingData->keyParams5;
 
-    if (this->blockSortSize_ == 0 || this->extractChunkSize_ == 0 ||
-        this->blocksPerRow_ == 0 || this->sortAxisNum_ <= 0) {
+    if (this->blockSortSize_ == 0 || this->extractChunkSize_ == 0 || this->blocksPerRow_ == 0 ||
+        this->sortAxisNum_ <= 0) {
         return;
     }
 
@@ -102,8 +102,8 @@ __aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::Init
     this->sortBufferSize_ = this->blockSortLen_ * sizeof(ValueType);
     this->sortRepeatTimes_ = this->blockSortSize_ / DEALING_SORT_NUM_ONCE;
     this->concatRepeatTimes_ = this->blockSortSize_ / DEALING_CONCAT_NUM_ONCE;
-    this->lastBlockSize_ = static_cast<uint32_t>(
-        this->sortAxisNum_ - static_cast<int64_t>(this->blocksPerRow_ - 1) * this->blockSortSize_);
+    this->lastBlockSize_ = static_cast<uint32_t>(this->sortAxisNum_ -
+                                                 static_cast<int64_t>(this->blocksPerRow_ - 1) * this->blockSortSize_);
 
     // Set GM buffers
     this->inputXGm_.SetGlobalBuffer((__gm__ ValueType*)x);
@@ -113,10 +113,10 @@ __aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::Init
     // Cache stores sort struct data (8 bytes per element: index + value)
     // Each core has its own cache region, reused across batches
     // perBatchCacheLen: sort struct length for one batch (with ping-pong, in ValueType units)
-    int64_t perCoreCacheLen = static_cast<int64_t>(this->batchSortLen_) * 2;  // ping-pong, reused per batch
+    int64_t perCoreCacheLen = static_cast<int64_t>(this->batchSortLen_) * 2; // ping-pong, reused per batch
 
     this->cacheGm_.SetGlobalBuffer((__gm__ ValueType*)workspace +
-        static_cast<int64_t>(this->blockIdx_) * perCoreCacheLen);
+                                   static_cast<int64_t>(this->blockIdx_) * perCoreCacheLen);
 
     // Note: Queue/Buffer initialization is deferred to base Process() per phase
     // to optimize UB usage. Each phase initializes only what it needs.
@@ -125,8 +125,7 @@ __aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::Init
 template <typename ValueType, typename IndexType, bool IsDescend>
 __aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::InitPhase1Buffers()
 {
-    this->pipe_->InitBuffer(
-        this->inQueueX_, MERGE_INTRA_BUFFER_NUM, this->blockSortSize_ * sizeof(ValueType));
+    this->pipe_->InitBuffer(this->inQueueX_, MERGE_INTRA_BUFFER_NUM, this->blockSortSize_ * sizeof(ValueType));
     this->pipe_->InitBuffer(this->concatTmpBuf_, this->sortBufferSize_);
     this->pipe_->InitBuffer(this->sortTmpBuf_, this->sortBufferSize_);
     this->pipe_->InitBuffer(this->sortedOutQueue_, MERGE_INTRA_BUFFER_NUM, this->sortBufferSize_);
@@ -146,18 +145,17 @@ __aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::Init
 {
     uint32_t extractInSize = AscendC::GetSortLen<ValueType>(this->extractChunkSize_) * sizeof(ValueType);
     this->pipe_->InitBuffer(this->extractInQueue_, MERGE_INTRA_BUFFER_NUM, extractInSize);
-    this->pipe_->InitBuffer(
-        this->outValueQueue_, MERGE_INTRA_BUFFER_NUM, this->extractChunkSize_ * sizeof(ValueType));
+    this->pipe_->InitBuffer(this->outValueQueue_, MERGE_INTRA_BUFFER_NUM, this->extractChunkSize_ * sizeof(ValueType));
     this->pipe_->InitBuffer(this->outIdxQueue_, MERGE_INTRA_BUFFER_NUM, this->extractChunkSize_ * sizeof(uint32_t));
     if constexpr (IsSameType<int64_t, IndexType>::value) {
-        this->pipe_->InitBuffer(
-            this->outIdxInt64Queue_, MERGE_INTRA_BUFFER_NUM, this->extractChunkSize_ * sizeof(int64_t));
+        this->pipe_->InitBuffer(this->outIdxInt64Queue_, MERGE_INTRA_BUFFER_NUM,
+                                this->extractChunkSize_ * sizeof(int64_t));
     }
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::ExtractAndCopyOut(
-    int64_t batchIdx, uint32_t resultRegion)
+__aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::ExtractAndCopyOut(int64_t batchIdx,
+                                                                                              uint32_t resultRegion)
 {
     int64_t outputOffset = batchIdx * this->sortAxisNum_;
 
@@ -169,8 +167,10 @@ __aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::Extr
 
     while (elemProcessed < this->sortAxisNum_) {
         uint32_t elemCount = (elemProcessed + this->extractChunkSize_ <= this->sortAxisNum_) ?
-                             this->extractChunkSize_ : (this->sortAxisNum_ - elemProcessed);
-        if (elemCount == 0) break;
+                                 this->extractChunkSize_ :
+                                 (this->sortAxisNum_ - elemProcessed);
+        if (elemCount == 0)
+            break;
 
         ExtractAndCopyChunk(cacheBatchOffset, cacheOffset, outputOffset, elemProcessed, elemCount);
 
@@ -181,8 +181,7 @@ __aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::Extr
 
 template <typename ValueType, typename IndexType, bool IsDescend>
 __aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::ExtractAndCopyChunk(
-    int64_t cacheBatchOffset, uint32_t cacheOffset,
-    int64_t outputOffset, uint32_t elemProcessed, uint32_t elemCount)
+    int64_t cacheBatchOffset, uint32_t cacheOffset, int64_t outputOffset, uint32_t elemProcessed, uint32_t elemCount)
 {
     LocalTensor<ValueType> cacheLocal = this->extractInQueue_.template AllocTensor<ValueType>();
     DataCopyExtParams loadParams{
@@ -197,8 +196,8 @@ __aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::Extr
 
     // Flip back sign bit for ascending order (was flipped in SortBlockToStruct)
     if constexpr (!IsDescend) {
-        Adds(valueLocal.template ReinterpretCast<int32_t>(),
-            valueLocal.template ReinterpretCast<int32_t>(), 0x80000000, elemCount);
+        Adds(valueLocal.template ReinterpretCast<int32_t>(), valueLocal.template ReinterpretCast<int32_t>(), 0x80000000,
+             elemCount);
     }
 
     this->outValueQueue_.EnQue(valueLocal);

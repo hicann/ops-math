@@ -23,17 +23,17 @@ using namespace AscendC;
 template <typename T>
 class KthValueRadixOneCore {
 public:
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR values, GM_ADDR indices, const KthValueTilingData* tiling, TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices, const KthValueTilingData* tiling,
+                                TPipe* pipe);
     __aicore__ inline void Process();
 
 private:
     __aicore__ inline void ParseTilingData();
     __aicore__ inline void CopyInputToUb(LocalTensor<T>& xLocal, int64_t row);
-    __aicore__ inline void ProcessOneRow(
-        int64_t row, uint32_t localOffset, LocalTensor<T>& compactValue, LocalTensor<int64_t>& compactIndex);
-    __aicore__ inline void CopyOutputToGm(
-        int64_t rowStart, uint32_t rowCount, LocalTensor<T>& compactValue, LocalTensor<int64_t>& compactIndex);
+    __aicore__ inline void ProcessOneRow(int64_t row, uint32_t localOffset, LocalTensor<T>& compactValue,
+                                         LocalTensor<int64_t>& compactIndex);
+    __aicore__ inline void CopyOutputToGm(int64_t rowStart, uint32_t rowCount, LocalTensor<T>& compactValue,
+                                          LocalTensor<int64_t>& compactIndex);
     __aicore__ inline void ProcessRows(int64_t rowStart, uint32_t rowCount);
 
     static constexpr SortConfig SORT_CONFIG{SortType::RADIX_SORT, false};
@@ -67,8 +67,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void KthValueRadixOneCore<T>::Init(
-    GM_ADDR x, GM_ADDR values, GM_ADDR indices, const KthValueTilingData* tiling, TPipe* pipe)
+__aicore__ inline void KthValueRadixOneCore<T>::Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices,
+                                                     const KthValueTilingData* tiling, TPipe* pipe)
 {
     if (tiling == nullptr || pipe == nullptr) {
         return;
@@ -118,8 +118,9 @@ __aicore__ inline void KthValueRadixOneCore<T>::CopyInputToUb(LocalTensor<T>& xL
 }
 
 template <typename T>
-__aicore__ inline void KthValueRadixOneCore<T>::ProcessOneRow(
-    int64_t row, uint32_t localOffset, LocalTensor<T>& compactValue, LocalTensor<int64_t>& compactIndex)
+__aicore__ inline void KthValueRadixOneCore<T>::ProcessOneRow(int64_t row, uint32_t localOffset,
+                                                              LocalTensor<T>& compactValue,
+                                                              LocalTensor<int64_t>& compactIndex)
 {
     LocalTensor<T> xLocal = inQueueX_.AllocTensor<T>();
     CopyInputToUb(xLocal, row);
@@ -147,8 +148,9 @@ __aicore__ inline void KthValueRadixOneCore<T>::ProcessOneRow(
 }
 
 template <typename T>
-__aicore__ inline void KthValueRadixOneCore<T>::CopyOutputToGm(
-    int64_t rowStart, uint32_t rowCount, LocalTensor<T>& compactValue, LocalTensor<int64_t>& compactIndex)
+__aicore__ inline void KthValueRadixOneCore<T>::CopyOutputToGm(int64_t rowStart, uint32_t rowCount,
+                                                               LocalTensor<T>& compactValue,
+                                                               LocalTensor<int64_t>& compactIndex)
 {
     event_t eventIdSToMte3 = static_cast<event_t>(pipe_->FetchEventID(HardEvent::S_MTE3));
     SetFlag<HardEvent::S_MTE3>(eventIdSToMte3);

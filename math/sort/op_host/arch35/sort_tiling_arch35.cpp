@@ -255,11 +255,11 @@ bool IsRadixSortOneCore(SortKthTileInfo& sortTileInfo)
         return false;
     }
 
-    int64_t doubleBufferRemainUb = static_cast<int64_t>(sortTileInfo.ubSize) - oneBufferQueSize * 2;
+    int64_t doubleBufferRemainUb = static_cast<int64_t>(sortTileInfo.ubSize) - oneBufferQueSize * DOUBLE_BUFFER_NUM;
     doubleBufferRemainUb = (doubleBufferRemainUb / static_cast<int64_t>(sortTileInfo.blockUbSize)) *
                            static_cast<int64_t>(sortTileInfo.blockUbSize);
     if (tmpUb <= doubleBufferRemainUb) {
-        sortTileInfo.keyParams3 = 2;
+        sortTileInfo.keyParams3 = DOUBLE_BUFFER_NUM;
     }
     OP_LOGI("RadixSortTiling", "radix one-core bufferNum is %u", sortTileInfo.keyParams3);
     return true;
@@ -623,7 +623,8 @@ bool TryNonLastSmallAxis(gert::TilingContext* context, SortKthTileInfo& sortTile
     if (!sortTileInfo.isNonLastAxis) {
         return false;
     }
-    if (sortTileInfo.lastAxis < 2 || sortTileInfo.lastAxis > NON_LAST_SMALL_AXIS_THRESHOLD) {
+    if (sortTileInfo.lastAxis < NON_LAST_SMALL_AXIS_MIN_AXIS_LEN ||
+        sortTileInfo.lastAxis > NON_LAST_SMALL_AXIS_THRESHOLD) {
         return false;
     }
     if (sortTileInfo.innerSize <= 0 || sortTileInfo.outerSize <= 0) {

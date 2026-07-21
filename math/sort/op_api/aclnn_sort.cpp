@@ -242,7 +242,7 @@ static aclIntArray* updatePerm(int64_t dim, int64_t dimSize, aclOpExecutor* exec
     if (dim != dimSize - 1) {
         auto perm = GetPermResult(dim, dimSize, executor); // 不需改动时的版本
         if (dimSize > DIM_MAX) {
-            perm = GetPermResult(1, 3, executor);          // 1为sort的维度，3为reshape以后总共有3维
+            perm = GetPermResult(1, 3, executor); // 1为sort的维度，3为reshape以后总共有3维
         }
         return perm;
     }
@@ -277,6 +277,8 @@ static bool IsNoTransposeProfitable(const aclTensor* self, int64_t dim)
 
 static bool UseNoTranspose(const aclTensor* self, int64_t dim)
 {
+    constexpr int64_t NON_LAST_AXIS_MIN_LEN = 2;
+    constexpr int64_t NON_LAST_AXIS_MAX_LEN = 2048;
     if (!IsRegBase()) {
         return false;
     }
@@ -286,8 +288,7 @@ static bool UseNoTranspose(const aclTensor* self, int64_t dim)
     }
     auto selfShape = self->GetViewShape();
     int64_t axisLen = selfShape[dim];
-    int64_t axisThreshold = 2048;
-    if (axisLen < 2 || axisLen > axisThreshold) {
+    if (axisLen < NON_LAST_AXIS_MIN_LEN || axisLen > NON_LAST_AXIS_MAX_LEN) {
         return false;
     }
     return IsNoTransposeProfitable(self, dim);
@@ -370,6 +371,43 @@ static const aclTensor* GetTensorWithValueZero(aclTensor* out, aclOpExecutor* ex
     return viewCopyResult;
 }
 
+static aclnnStatus BuildSortGraph(const aclTensor* self, int64_t dimPositive, int64_t dimSize, bool stable,
+                                  bool descending, aclTensor* valuesOut, aclTensor* indicesOut, aclOpExecutor* executor)
+{
+    auto selfContiguous = l0op::Contiguous(self, executor);
+    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_PARAM_NULLPTR);
+    if (self->GetDataType() == op::DataType::DT_BF16 && !IsRegBase()) {
+        selfContiguous = l0op::Cast(selfContiguous, op::DataType::DT_FLOAT, executor);
+        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_PARAM_NULLPTR);
+    }
+    if (self->GetDataType() == op::DataType::DT_BOOL) {
+        selfContiguous = l0op::Cast(selfContiguous, op::DataType::DT_UINT8, executor);
+        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_PARAM_NULLPTR);
+    }
+
+    auto selfShapeDetail = GetTensorShape(selfContiguous, executor);
+    auto indicesType = indicesOut->GetDataType();
+    std::tuple<const aclTensor*, const aclTensor*> sortRes;
+    if (UseNoTranspose(selfContiguous, dimPositive)) {
+        sortRes = l0op::Sort(selfContiguous, dimPositive, descending, stable, indicesType, executor);
+    } else {
+        if (dimSize > DIM_MAX) {
+            auto shapeNew = reshapeShape(selfContiguous, dimPositive, executor);
+            selfContiguous = reshapeIfLargeTensor(selfContiguous, executor, dimSize, shapeNew);
+        }
+        auto perm = updatePerm(dimPositive, dimSize, executor);
+        sortRes = SortProcess(selfContiguous, perm, stable, descending, indicesType, executor);
+    }
+    CHECK_RET(CheckTupleNullptr(sortRes), ACLNN_ERR_PARAM_NULLPTR);
+
+    auto castRes = reshapeCastRes(sortRes, std::tie(valuesOut, indicesOut), dimSize, selfShapeDetail, executor);
+    CHECK_RET(CheckTupleNullptr(castRes), ACLNN_ERR_PARAM_NULLPTR);
+    auto viewCopyValues = l0op::ViewCopy(std::get<0>(castRes), valuesOut, executor);
+    auto viewCopyIndices = l0op::ViewCopy(std::get<1>(castRes), indicesOut, executor);
+    CHECK_RET(viewCopyValues != nullptr && viewCopyIndices != nullptr, ACLNN_ERR_PARAM_NULLPTR);
+    return ACLNN_SUCCESS;
+}
+
 aclnnStatus aclnnSortGetWorkspaceSize(const aclTensor* self, bool stable, int64_t dim, bool descending,
                                       aclTensor* valuesOut, aclTensor* indicesOut, uint64_t* workspaceSize,
                                       aclOpExecutor** executor)
@@ -424,47 +462,8 @@ aclnnStatus aclnnSortGetWorkspaceSize(const aclTensor* self, bool stable, int64_
         return ACLNN_SUCCESS;
     }
 
-    auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
-    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_PARAM_NULLPTR);
-
-    // kernel暂不支持bf16输入，转为fp32进行计算
-    if (self->GetDataType() == op::DataType::DT_BF16 && !IsRegBase()) {
-        selfContiguous = l0op::Cast(selfContiguous, op::DataType::DT_FLOAT, uniqueExecutor.get());
-        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_PARAM_NULLPTR);
-    }
-
-    // kernel暂不支持bool输入，转为uint8进行计算
-    if (self->GetDataType() == op::DataType::DT_BOOL) {
-        selfContiguous = l0op::Cast(selfContiguous, op::DataType::DT_UINT8, uniqueExecutor.get());
-        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_PARAM_NULLPTR);
-    }
-
-    auto selfShapeDetail = GetTensorShape(selfContiguous, uniqueExecutor.get()); // self最原始的shape
-
-    auto indicesType = indicesOut->GetDataType();
-    std::tuple<const aclTensor*, const aclTensor*> sortRes;
-    if (UseNoTranspose(selfContiguous, dimPositive)) {
-        sortRes = l0op::Sort(selfContiguous, dimPositive, descending, stable, indicesType, uniqueExecutor.get());
-    } else {
-        // 如果大于8维，需要reshape
-        if (dimSize > DIM_MAX) {
-            auto shapeNew = reshapeShape(selfContiguous, dimPositive, uniqueExecutor.get());
-            selfContiguous = reshapeIfLargeTensor(selfContiguous, uniqueExecutor.get(), dimSize, shapeNew);
-        }
-        auto perm = updatePerm(dimPositive, dimSize, uniqueExecutor.get());
-        sortRes = SortProcess(selfContiguous, perm, stable, descending, indicesType, uniqueExecutor.get());
-    }
-    CHECK_RET(CheckTupleNullptr(sortRes), ACLNN_ERR_PARAM_NULLPTR);
-
-    auto expectedCastRes = std::tie(valuesOut, indicesOut);
-    auto castRes = reshapeCastRes(sortRes, expectedCastRes, dimSize, selfShapeDetail, uniqueExecutor.get());
-    CHECK_RET(CheckTupleNullptr(castRes), ACLNN_ERR_PARAM_NULLPTR);
-    auto valuesCast = std::get<0>(castRes);
-    auto indicesCast = std::get<1>(castRes);
-
-    auto viewCopyValues = l0op::ViewCopy(valuesCast, valuesOut, uniqueExecutor.get());
-    auto viewCopyIndices = l0op::ViewCopy(indicesCast, indicesOut, uniqueExecutor.get());
-    CHECK_RET(viewCopyValues != nullptr && viewCopyIndices != nullptr, ACLNN_ERR_PARAM_NULLPTR);
+    ret = BuildSortGraph(self, dimPositive, dimSize, stable, descending, valuesOut, indicesOut, uniqueExecutor.get());
+    CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
     uniqueExecutor.ReleaseTo(executor);

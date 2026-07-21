@@ -22,190 +22,180 @@ protected:
 
 TEST_F(KthValueInfershape, kthvalue_infershape_2d_last_axis)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "KthValue",
-        {
-            {{{3, 10}, {3, 10}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(5)},
-            {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
-        });
+    gert::InfershapeContextPara infershapeContextPara("KthValue",
+                                                      {
+                                                          {{{3, 10}, {3, 10}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(5)},
+                                                          {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {{3, 1}, {3, 1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 TEST_F(KthValueInfershape, kthvalue_infershape_3d_first_axis)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "KthValue",
-        {
-            {{{4, 5, 6}, {4, 5, 6}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
-            {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
-        });
+    gert::InfershapeContextPara infershapeContextPara("KthValue",
+                                                      {
+                                                          {{{4, 5, 6}, {4, 5, 6}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+                                                          {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {{1, 5, 6}, {1, 5, 6}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 TEST_F(KthValueInfershape, kthvalue_infershape_3d_middle_axis)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "KthValue",
-        {
-            {{{2, 8, 3}, {2, 8, 3}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
-            {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
-        });
+    gert::InfershapeContextPara infershapeContextPara("KthValue",
+                                                      {
+                                                          {{{2, 8, 3}, {2, 8, 3}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+                                                          {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {{2, 1, 3}, {2, 1, 3}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 TEST_F(KthValueInfershape, kthvalue_infershape_1d)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "KthValue",
-        {
-            {{{100}, {100}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
-            {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
-        });
+    gert::InfershapeContextPara infershapeContextPara("KthValue",
+                                                      {
+                                                          {{{100}, {100}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
+                                                          {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {{1}, {1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 TEST_F(KthValueInfershape, kthvalue_infershape_negative_dim)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "KthValue",
-        {
-            {{{2, 3, 4}, {2, 3, 4}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
-            {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-2)},
-        });
+    gert::InfershapeContextPara infershapeContextPara("KthValue",
+                                                      {
+                                                          {{{2, 3, 4}, {2, 3, 4}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+                                                          {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-2)},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {{2, 1, 4}, {2, 1, 4}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 TEST_F(KthValueInfershape, kthvalue_infershape_invalid_dim_out_of_range)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "KthValue",
-        {
-            {{{3, 10}, {3, 10}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(5)},
-            {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
-        });
+    gert::InfershapeContextPara infershapeContextPara("KthValue",
+                                                      {
+                                                          {{{3, 10}, {3, 10}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(5)},
+                                                          {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {{3, 1}, {3, 1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
 }
 
 TEST_F(KthValueInfershape, kthvalue_infershape_invalid_negative_dim_out_of_range)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "KthValue",
-        {
-            {{{3, 10}, {3, 10}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(5)},
-            {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-3)},
-        });
+    gert::InfershapeContextPara infershapeContextPara("KthValue",
+                                                      {
+                                                          {{{3, 10}, {3, 10}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(5)},
+                                                          {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-3)},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {{3, 1}, {3, 1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
 }
 
 TEST_F(KthValueInfershape, kthvalue_infershape_scalar_input_fails)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "KthValue",
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
-            {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
-        });
+    gert::InfershapeContextPara infershapeContextPara("KthValue",
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
+                                                          {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {{}, {}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
 }
 
 TEST_F(KthValueInfershape, kthvalue_infershape_int8_dtype)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "KthValue",
-        {
-            {{{5, 20}, {5, 20}}, ge::DT_INT8, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_INT8, ge::FORMAT_ND},
-            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(10)},
-            {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
-        });
+    gert::InfershapeContextPara infershapeContextPara("KthValue",
+                                                      {
+                                                          {{{5, 20}, {5, 20}}, ge::DT_INT8, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_INT8, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(10)},
+                                                          {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {{5, 1}, {5, 1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 TEST_F(KthValueInfershape, kthvalue_infershape_uint64_dtype)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "KthValue",
-        {
-            {{{4, 8}, {4, 8}}, ge::DT_UINT64, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_UINT64, ge::FORMAT_ND},
-            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
-            {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
-        });
+    gert::InfershapeContextPara infershapeContextPara("KthValue",
+                                                      {
+                                                          {{{4, 8}, {4, 8}}, ge::DT_UINT64, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_UINT64, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
+                                                          {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {{4, 1}, {4, 1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }

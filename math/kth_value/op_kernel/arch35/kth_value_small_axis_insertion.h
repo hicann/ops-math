@@ -23,10 +23,11 @@ namespace KthValue {
 using namespace AscendC;
 
 template <typename T, typename CONVERT_TYPE>
-__simt_vf__ LAUNCH_BOUND(SmallAxisCommon::INSERTION_THREAD_NUM) __aicore__ void SimtStoreKthInsertionBatch(
-    uint32_t validSegs, uint32_t kthIndex, uint32_t valueRowElems, uint32_t indexRowElems, uint64_t outputStart,
-    __ubuf__ CONVERT_TYPE* values, __ubuf__ uint32_t* indices, __gm__ volatile T* outputValue,
-    __gm__ volatile int64_t* outputIndex)
+__simt_vf__ LAUNCH_BOUND(SmallAxisCommon::INSERTION_THREAD_NUM) __aicore__
+    void SimtStoreKthInsertionBatch(uint32_t validSegs, uint32_t kthIndex, uint32_t valueRowElems,
+                                    uint32_t indexRowElems, uint64_t outputStart, __ubuf__ CONVERT_TYPE* values,
+                                    __ubuf__ uint32_t* indices, __gm__ volatile T* outputValue,
+                                    __gm__ volatile int64_t* outputIndex)
 {
     for (uint32_t seg = static_cast<uint32_t>(threadIdx.x); seg < validSegs;
          seg += SmallAxisCommon::INSERTION_THREAD_NUM) {
@@ -38,14 +39,15 @@ __simt_vf__ LAUNCH_BOUND(SmallAxisCommon::INSERTION_THREAD_NUM) __aicore__ void 
 }
 
 template <typename T, typename CONVERT_TYPE>
-class KthValueSmallAxisInsertion : public SmallAxisCommon::SmallAxisInsertionBase<
-                                       KthValueSmallAxisInsertion<T, CONVERT_TYPE>, T, CONVERT_TYPE, uint32_t, false> {
-    using Base = SmallAxisCommon::SmallAxisInsertionBase<
-        KthValueSmallAxisInsertion<T, CONVERT_TYPE>, T, CONVERT_TYPE, uint32_t, false>;
+class KthValueSmallAxisInsertion
+    : public SmallAxisCommon::SmallAxisInsertionBase<KthValueSmallAxisInsertion<T, CONVERT_TYPE>, T, CONVERT_TYPE,
+                                                     uint32_t, false> {
+    using Base = SmallAxisCommon::SmallAxisInsertionBase<KthValueSmallAxisInsertion<T, CONVERT_TYPE>, T, CONVERT_TYPE,
+                                                         uint32_t, false>;
 
 public:
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR values, GM_ADDR indices, const KthValueTilingData* tiling, TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices, const KthValueTilingData* tiling,
+                                TPipe* pipe);
     __aicore__ inline void Process() { Base::Process(); }
 
     friend Base;
@@ -84,8 +86,8 @@ private:
 };
 
 template <typename T, typename CONVERT_TYPE>
-__aicore__ inline void KthValueSmallAxisInsertion<T, CONVERT_TYPE>::Init(
-    GM_ADDR x, GM_ADDR values, GM_ADDR indices, const KthValueTilingData* tiling, TPipe* pipe)
+__aicore__ inline void KthValueSmallAxisInsertion<T, CONVERT_TYPE>::Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices,
+                                                                         const KthValueTilingData* tiling, TPipe* pipe)
 {
     if (tiling == nullptr || pipe == nullptr) {
         return;
@@ -116,7 +118,7 @@ template <typename T, typename CONVERT_TYPE>
 __aicore__ inline bool KthValueSmallAxisInsertion<T, CONVERT_TYPE>::IsProcessInvalid() const
 {
     return blockIdx_ >= blockDim_ || segmentLen_ == 0U || segmentsPerBatch_ == 0U ||
-        (IsNonLastMode() && innerSize_ <= 0);
+           (IsNonLastMode() && innerSize_ <= 0);
 }
 
 template <typename T, typename CONVERT_TYPE>

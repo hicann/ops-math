@@ -14,11 +14,11 @@
 #include <cstdint>
 
 struct KthValueTilingData {
-    uint32_t numTileDataSize; // h轴ub一次处理个数
+    uint32_t numTileDataSize;     // h轴ub一次处理个数
     uint32_t unsortedDimParallel; // b轴使用的核数
-    uint32_t lastDimTileNum; // h轴循环次数
-    uint32_t sortLoopTimes; // b轴循环次数
-    uint32_t lastDimNeedCore; // h轴需要的核数
+    uint32_t lastDimTileNum;      // h轴循环次数
+    uint32_t sortLoopTimes;       // b轴循环次数
+    uint32_t lastDimNeedCore;     // h轴需要的核数
     // keyParamsxxx 预留参数
     // radix: globalHistGmWk_ 使用核数
     // radix_one_core: inqueX 的 ub 大小
@@ -53,15 +53,15 @@ struct KthValueTilingData {
     // radix: 清零 globalHistGmWk_ chunk 大小
     // intra_core: 最大归并迭代次数
     uint32_t keyParams5;
-    uint32_t tmpUbSize; // 高级api需要的临时ub大小
-    int64_t kthIndex; // 零基kth偏移，避免按k展开binary
-    int64_t lastAxisNum; // h轴大小
-    int64_t unsortedDimNum; // b轴大小
-    int64_t outerSize; // non-last-axis: 外层维度大小
-    int64_t innerSize; // non-last-axis: 内层维度大小
-    uint32_t innerLoopNum; // non-last-axis: inner分块循环次数
-    uint32_t innerChunk; // non-last-axis: inner分块大小
-    uint32_t inputRowBytes; // non-last-axis: 输入一行字节数
+    uint32_t tmpUbSize;      // 高级api需要的临时ub大小
+    int64_t kthIndex;        // 零基kth偏移，避免按k展开binary
+    int64_t lastAxisNum;     // h轴大小
+    int64_t unsortedDimNum;  // b轴大小
+    int64_t outerSize;       // non-last-axis: 外层维度大小
+    int64_t innerSize;       // non-last-axis: 内层维度大小
+    uint32_t innerLoopNum;   // non-last-axis: inner分块循环次数
+    uint32_t innerChunk;     // non-last-axis: inner分块大小
+    uint32_t inputRowBytes;  // non-last-axis: 输入一行字节数
     uint32_t valueAxisBytes; // non-last-axis: value轴字节数
     uint32_t indexAxisBytes; // non-last-axis: index轴字节数
 };

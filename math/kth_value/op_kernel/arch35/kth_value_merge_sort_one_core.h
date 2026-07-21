@@ -31,8 +31,8 @@ constexpr uint32_t UB_BLOCK_SIZE = Ops::Base::GetUbBlockSize();
 template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis = 0>
 class KthValueMergeSortOneCore {
 public:
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR values, GM_ADDR indices, const KthValueTilingData* tiling, TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices, const KthValueTilingData* tiling,
+                                TPipe* pipe);
     __aicore__ inline void Process();
 
 private:
@@ -40,9 +40,8 @@ private:
     __aicore__ inline void InitIndexLocal();
     __aicore__ inline void CopyDataIn(uint64_t tileOffset, uint32_t currTileSize, uint32_t rowNum);
     __aicore__ inline void FlipSignBit(LocalTensor<CONVERT_TYPE> xLocal, uint32_t offset, uint32_t count);
-    __aicore__ inline void SortRows(
-        LocalTensor<T> xLocal, LocalTensor<T> sortedValueLocal, LocalTensor<uint32_t> sortedIndexLocal,
-        uint32_t rowNum);
+    __aicore__ inline void SortRows(LocalTensor<T> xLocal, LocalTensor<T> sortedValueLocal,
+                                    LocalTensor<uint32_t> sortedIndexLocal, uint32_t rowNum);
     __aicore__ inline void CopyKthToGm(uint64_t outputOffset, uint32_t rowNum);
     __aicore__ inline void ProcessSingleRound(uint32_t round);
 
@@ -140,15 +139,16 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
         for (uint16_t i = 0; i < repeatTime; ++i) {
             MicroAPI::MaskReg mask = MicroAPI::UpdateMask<uint32_t>(alignSizeCopy);
             MicroAPI::Adds(indexTensor, vciTensor, i * vfLenB32, mask);
-            MicroAPI::DataCopy<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                indexValuePtr, indexTensor, vfLenB32, mask);
+            MicroAPI::DataCopy<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(indexValuePtr, indexTensor, vfLenB32,
+                                                                                 mask);
         }
     }
 }
 
 template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis>
-__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis>::CopyDataIn(
-    uint64_t tileOffset, uint32_t currTileSize, uint32_t rowNum)
+__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis>::CopyDataIn(uint64_t tileOffset,
+                                                                                                uint32_t currTileSize,
+                                                                                                uint32_t rowNum)
 {
     LocalTensor<T> xLocal = inQueueX_.AllocTensor<T>();
     Duplicate(xLocal, static_cast<T>(NAN), alignSize_ * rowNum);
@@ -156,13 +156,13 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
     SetFlag<HardEvent::V_MTE2>(eventId);
     WaitFlag<HardEvent::V_MTE2>(eventId);
 
-    uint32_t currTileSizeAlign =
-        (currTileSize * sizeof(T) + UB_BLOCK_SIZE - 1U) / UB_BLOCK_SIZE * UB_BLOCK_SIZE / sizeof(T);
+    uint32_t currTileSizeAlign = (currTileSize * sizeof(T) + UB_BLOCK_SIZE - 1U) / UB_BLOCK_SIZE * UB_BLOCK_SIZE /
+                                 sizeof(T);
     uint32_t dstStride = ((alignSize_ - currTileSizeAlign) * sizeof(T)) / UB_BLOCK_SIZE;
-    DataCopyPadExtParams<T> padParams{
-        true, 0, static_cast<uint8_t>(currTileSizeAlign - currTileSize), static_cast<T>(NAN)};
-    DataCopyExtParams copyParam{
-        static_cast<uint16_t>(rowNum), static_cast<uint32_t>(currTileSize * sizeof(T)), 0, dstStride, 0};
+    DataCopyPadExtParams<T> padParams{true, 0, static_cast<uint8_t>(currTileSizeAlign - currTileSize),
+                                      static_cast<T>(NAN)};
+    DataCopyExtParams copyParam{static_cast<uint16_t>(rowNum), static_cast<uint32_t>(currTileSize * sizeof(T)), 0,
+                                dstStride, 0};
     DataCopyPad(xLocal, xGm_[tileOffset], copyParam, padParams);
     inQueueX_.EnQue<T>(xLocal);
 }
@@ -210,9 +210,8 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
             Concat(concatLocal, xSortLocal[offset], concatTmp, concatRepeatTimes);
             AscendC::Sort<CONVERT_TYPE, true>(sortedLocal, concatLocal, indexLocal_, sortTmp, sortRepeatTimes);
         }
-        Extract(
-            sortedValueCast[offset], sortedIndexLocal[offset], sortedLocal,
-            isSort32SmallAxis == 1 ? 1 : sortRepeatTimes);
+        Extract(sortedValueCast[offset], sortedIndexLocal[offset], sortedLocal,
+                isSort32SmallAxis == 1 ? 1 : sortRepeatTimes);
         FlipSignBit(sortedValueCast, offset, alignSize_);
     }
     if constexpr (!IsSameType<T, CONVERT_TYPE>::value) {
@@ -221,8 +220,8 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
 }
 
 template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis>
-__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis>::CopyKthToGm(
-    uint64_t outputOffset, uint32_t rowNum)
+__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis>::CopyKthToGm(uint64_t outputOffset,
+                                                                                                 uint32_t rowNum)
 {
     LocalTensor<T> sortedValueLocal = outValueQueue_.DeQue<T>();
     LocalTensor<uint32_t> sortedIndexLocal = outIndexQueue_.DeQue<uint32_t>();
@@ -258,8 +257,8 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
 template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis>
 __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis>::ProcessSingleRound(uint32_t round)
 {
-    int64_t rowStart =
-        (static_cast<int64_t>(blockIdx_) + static_cast<int64_t>(round) * unsortedDimParallel_) * oneCoreRowNum_;
+    int64_t rowStart = (static_cast<int64_t>(blockIdx_) + static_cast<int64_t>(round) * unsortedDimParallel_) *
+                       oneCoreRowNum_;
     if (rowStart >= unsortedDimNum_) {
         return;
     }

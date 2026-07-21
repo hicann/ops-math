@@ -18,6 +18,6 @@
 #include "register/tilingdata_base.h"
 
 namespace optiling {
-ge::graphStatus  SortTilingSimt(gert::TilingContext* context, int32_t maxCoreNum);
+ge::graphStatus SortTilingSimt(gert::TilingContext* context, int32_t maxCoreNum);
 }
 #endif // SORT_TILING_ARCH35_H

@@ -181,7 +181,7 @@ protected:
     }
 
     // Transpose a tile via gather: convert row-major layout to column-major (or vice versa).
-    // Example (4x4 tile, inputRowElems_=4):
+    // The following 4x4 tile illustrates the transpose when inputRowElems_ is 4.
     //   Input (row-major):          Output (column-major):
     //   [0  1  2  3 ]               [0  4  8  12]
     //   [4  5  6  7 ]    ------>    [1  5  9  13]

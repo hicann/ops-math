@@ -36,16 +36,15 @@ using MergeSortConstants::XOR_OP_VALUE_HALF;
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
 struct KthValueMergeSortMoreCore
-    : public MergeMoreCoreCommon::MergeMoreCoreBase<
-          KthValueMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>, T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE> {
+    : public MergeMoreCoreCommon::MergeMoreCoreBase<KthValueMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>,
+                                                    T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE> {
     using Base = MergeMoreCoreCommon::MergeMoreCoreBase<
         KthValueMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>, T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>;
     friend Base;
 
     __aicore__ inline KthValueMergeSortMoreCore() {}
-    __aicore__ inline void Init(
-        GM_ADDR inputValue, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace, const KthValueTilingData* tilingData,
-        TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR inputValue, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace,
+                                const KthValueTilingData* tilingData, TPipe* pipe);
     __aicore__ inline void InitMergeBuffers();
     __aicore__ inline void ExtractAndCopyOut();
 
@@ -76,18 +75,17 @@ __aicore__ inline void KthValueMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, IN
     this->rowDataOffset_ = static_cast<int64_t>(this->rowIdx_) * static_cast<int64_t>(this->outputLastDimValue_);
     // Per-row workspace stores Sort API sort-struct data. This capacity uses sortBufferSize bytes per
     // original element and UB-block byte alignment; it must cover later GetSortLen-based accesses.
-    uint64_t rowWorkspaceBytes =
-        ROUND_UP_AGLIN_UINT64(static_cast<uint64_t>(this->outputLastDimValue_) * sortBufferSize);
+    uint64_t rowWorkspaceBytes = ROUND_UP_AGLIN_UINT64(static_cast<uint64_t>(this->outputLastDimValue_) *
+                                                       sortBufferSize);
     uint64_t rowWorkspaceElements = rowWorkspaceBytes / sizeof(CONVERT_TYPE);
-    this->rowWorkspaceOffset_ =
-        static_cast<int64_t>(this->rowIdx_) * static_cast<int64_t>(rowWorkspaceElements) * 2;
+    this->rowWorkspaceOffset_ = static_cast<int64_t>(this->rowIdx_) * static_cast<int64_t>(rowWorkspaceElements) * 2;
     this->onceMaxElements_ = tilingData->keyParams0 / DEALING_SORT_NUM_ONCE * DEALING_SORT_NUM_ONCE;
 
     this->inputValueGm_.SetGlobalBuffer((__gm__ T*)(inputValue));
     this->outValueGm_.SetGlobalBuffer((__gm__ T*)(value));
     this->outIndexGm_.SetGlobalBuffer((__gm__ INDEX_TYPE*)(indices));
-    this->workspaceGm_[0].SetGlobalBuffer(
-        (__gm__ CONVERT_TYPE*)(workSpace) + this->rowWorkspaceOffset_, rowWorkspaceElements);
+    this->workspaceGm_[0].SetGlobalBuffer((__gm__ CONVERT_TYPE*)(workSpace) + this->rowWorkspaceOffset_,
+                                          rowWorkspaceElements);
     this->workspaceGm_[1].SetGlobalBuffer(
         (__gm__ CONVERT_TYPE*)(workSpace) + this->rowWorkspaceOffset_ + rowWorkspaceElements, rowWorkspaceElements);
 
@@ -106,18 +104,14 @@ template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYP
 __aicore__ inline void KthValueMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::InitMergeBuffers()
 {
     uint32_t sortBufferSize = 8;
-    this->pipe_->InitBuffer(
-        this->sortedQueue_, MERGE_MORE_BUFFER_NUM,
-        MERGE_LIST_MAX_NUM * this->onceMaxElements_ * sortBufferSize);
-    this->pipe_->InitBuffer(
-        this->copyInQueue_, MERGE_MORE_BUFFER_NUM,
-        MERGE_LIST_MAX_NUM * this->onceMaxElements_ * sortBufferSize);
-    this->pipe_->InitBuffer(
-        this->castValueQueue_, MERGE_MORE_BUFFER_NUM,
-        MERGE_LIST_MAX_NUM * this->onceMaxElements_ * sizeof(CONVERT_TYPE));
-    this->pipe_->InitBuffer(
-        this->castIndexQueue_, MERGE_MORE_BUFFER_NUM,
-        MERGE_LIST_MAX_NUM * this->onceMaxElements_ * sizeof(uint32_t));
+    this->pipe_->InitBuffer(this->sortedQueue_, MERGE_MORE_BUFFER_NUM,
+                            MERGE_LIST_MAX_NUM * this->onceMaxElements_ * sortBufferSize);
+    this->pipe_->InitBuffer(this->copyInQueue_, MERGE_MORE_BUFFER_NUM,
+                            MERGE_LIST_MAX_NUM * this->onceMaxElements_ * sortBufferSize);
+    this->pipe_->InitBuffer(this->castValueQueue_, MERGE_MORE_BUFFER_NUM,
+                            MERGE_LIST_MAX_NUM * this->onceMaxElements_ * sizeof(CONVERT_TYPE));
+    this->pipe_->InitBuffer(this->castIndexQueue_, MERGE_MORE_BUFFER_NUM,
+                            MERGE_LIST_MAX_NUM * this->onceMaxElements_ * sizeof(uint32_t));
     this->pipe_->InitBuffer(this->outValueQueue_, 1, UB_BLOCK_BYTES);
     this->pipe_->InitBuffer(this->outIndexQueue_, 1, UB_BLOCK_BYTES);
 }
@@ -128,9 +122,8 @@ __aicore__ inline void KthValueMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, IN
     LocalTensor<CONVERT_TYPE> sortTempBuffer = this->sortedQueue_.template DeQue<CONVERT_TYPE>();
     LocalTensor<CONVERT_TYPE> castValue = this->castValueQueue_.template AllocTensor<CONVERT_TYPE>();
     LocalTensor<uint32_t> castIndex = this->castIndexQueue_.template AllocTensor<uint32_t>();
-    AscendC::Extract(
-        castValue, castIndex, sortTempBuffer,
-        ((this->curLoopSortedNum_ + DEALING_EXTRACT_NUM_ONCE - 1) / DEALING_EXTRACT_NUM_ONCE));
+    AscendC::Extract(castValue, castIndex, sortTempBuffer,
+                     ((this->curLoopSortedNum_ + DEALING_EXTRACT_NUM_ONCE - 1) / DEALING_EXTRACT_NUM_ONCE));
     if constexpr (!IS_DESCEND) {
         this->FlipSignBit(castValue, ROUND_UP_AGLIN(this->curLoopSortedNum_));
     }

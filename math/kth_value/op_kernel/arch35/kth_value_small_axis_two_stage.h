@@ -23,9 +23,10 @@ namespace KthValue {
 using namespace AscendC;
 
 template <typename T>
-__simt_vf__ LAUNCH_BOUND(SmallAxisCommon::TWO_STAGE_THREAD_NUM) __aicore__ void SimtStoreKthTwoStageBatch(
-    uint32_t validSegs, uint32_t segmentLen, uint32_t kthIndex, uint64_t outputStart, __ubuf__ T* finalValues,
-    __ubuf__ uint32_t* finalIdx, __gm__ volatile T* outputValue, __gm__ volatile int64_t* outputIndex)
+__simt_vf__ LAUNCH_BOUND(SmallAxisCommon::TWO_STAGE_THREAD_NUM) __aicore__
+    void SimtStoreKthTwoStageBatch(uint32_t validSegs, uint32_t segmentLen, uint32_t kthIndex, uint64_t outputStart,
+                                   __ubuf__ T* finalValues, __ubuf__ uint32_t* finalIdx, __gm__ volatile T* outputValue,
+                                   __gm__ volatile int64_t* outputIndex)
 {
     for (uint32_t seg = static_cast<uint32_t>(threadIdx.x); seg < validSegs;
          seg += SmallAxisCommon::TWO_STAGE_THREAD_NUM) {
@@ -41,9 +42,8 @@ class KthValueSmallAxisTwoStage
     using Base = SmallAxisCommon::SmallAxisTwoStageBase<KthValueSmallAxisTwoStage<T>, T, uint32_t, false>;
 
 public:
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR values, GM_ADDR indices, const KthValueTilingData* tiling, TPipe* pipe);
-    __aicore__ inline void Process() { Base::Process(); }
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices, const KthValueTilingData* tiling,
+                                TPipe* pipe);
 
     friend Base;
 
@@ -80,8 +80,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void KthValueSmallAxisTwoStage<T>::Init(
-    GM_ADDR x, GM_ADDR values, GM_ADDR indices, const KthValueTilingData* tiling, TPipe* pipe)
+__aicore__ inline void KthValueSmallAxisTwoStage<T>::Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices,
+                                                          const KthValueTilingData* tiling, TPipe* pipe)
 {
     if (tiling == nullptr || pipe == nullptr) {
         return;
@@ -179,16 +179,16 @@ __aicore__ inline int64_t KthValueSmallAxisTwoStage<T>::GetInputStart(uint32_t b
 }
 
 template <typename T>
-__aicore__ inline void KthValueSmallAxisTwoStage<T>::LoadBatch(
-    uint32_t batchId, uint32_t validSegs, uint32_t totalElems)
+__aicore__ inline void KthValueSmallAxisTwoStage<T>::LoadBatch(uint32_t batchId, uint32_t validSegs,
+                                                               uint32_t totalElems)
 {
     if (IsNonLastMode()) {
         uint64_t outerId = static_cast<uint64_t>(batchId / innerLoopNum_);
         uint64_t innerTileId = static_cast<uint64_t>(batchId % innerLoopNum_);
         uint64_t innerStart = innerTileId * static_cast<uint64_t>(batchSize_);
         uint64_t outerBaseOffset = outerId * static_cast<uint64_t>(segmentLen_) * static_cast<uint64_t>(innerSize_);
-        Base::LoadNonLastBatch(
-            inputGm_, outerBaseOffset, innerStart, static_cast<uint64_t>(innerSize_), validSegs, totalElems);
+        Base::LoadNonLastBatch(inputGm_, outerBaseOffset, innerStart, static_cast<uint64_t>(innerSize_), validSegs,
+                               totalElems);
     } else {
         Base::LoadContiguousBatch(inputGm_, GetInputStart(batchId), totalElems);
     }
