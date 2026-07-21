@@ -86,7 +86,7 @@ function(merge_graph_headers)
 endfunction()
 
 function(gen_es_math_lib_ready)
-  # 合并proto.h生成ops_proto_math.h和ops_proto_math.cpp 
+  # 合并proto.h生成ops_proto_math.h和ops_proto_math.cpp
   merge_graph_headers(TARGET merge_ops_proto_${PKG_NAME} OUT_DIR ${ASCEND_GRAPH_CONF_DST})
   add_library(
     proto_${PKG_NAME} SHARED
@@ -103,7 +103,7 @@ function(gen_es_math_lib_ready)
     )
   target_link_directories(proto_${PKG_NAME} PRIVATE ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64)
 
-  # 生成 es_math 
+  # 生成 es_math
   add_es_library_and_whl(
     ES_LINKABLE_AND_ALL_TARGET es_${PKG_NAME}
     OPP_PROTO_TARGET proto_${PKG_NAME}
@@ -146,7 +146,7 @@ function(gen_es_math_lib_ready_cust)
     )
   target_link_directories(proto_${PKG_NAME}_cust PRIVATE ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64)
 
-  # 生成 es_math 
+  # 生成 es_math
   add_es_library(
     ES_LINKABLE_AND_ALL_TARGET es_${PKG_NAME}
     OPP_PROTO_TARGET proto_${PKG_NAME}_cust
@@ -180,17 +180,17 @@ function(gen_opgraph_symbol)
     add_library(
       ${OPGRAPH_NAME} SHARED
       $<$<TARGET_EXISTS:${GRAPH_PLUGIN_NAME}_obj>:$<TARGET_OBJECTS:${GRAPH_PLUGIN_NAME}_obj>>
-      $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>> 
+      $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>>
       $<$<TARGET_EXISTS:opbase_infer_objs>:$<TARGET_OBJECTS:opbase_infer_objs>>
       )
     add_dependencies(${OPGRAPH_NAME} merge_ops_proto_${PKG_NAME})
 
-    target_sources( 
- 	    ${OPGRAPH_NAME} 
- 	    PRIVATE 
- 	    ${ASCEND_GRAPH_CONF_DST}/ops_proto_math.cpp 
+    target_sources(
+ 	    ${OPGRAPH_NAME}
+ 	    PRIVATE
+ 	    ${ASCEND_GRAPH_CONF_DST}/ops_proto_math.cpp
  	    )
- 	       
+
     target_link_libraries(
       ${OPGRAPH_NAME}
       PRIVATE $<BUILD_INTERFACE:intf_pub_cxx17>
@@ -205,12 +205,12 @@ function(gen_opgraph_symbol)
               -Wl,-Bsymbolic
               ge_compiler
       )
- 	 
-    target_link_directories(${OPGRAPH_NAME} PRIVATE 
+
+    target_link_directories(${OPGRAPH_NAME} PRIVATE
       ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64
       ${CMAKE_BINARY_DIR}/es_packages/lib64
       )
-    set_target_properties(${OPGRAPH_NAME} PROPERTIES 
+    set_target_properties(${OPGRAPH_NAME} PROPERTIES
       LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/opp/built-in/op_proto
       )
 
@@ -332,7 +332,7 @@ function(gen_cust_proto_symbol)
            $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>>
            $<$<TARGET_EXISTS:opbase_infer_objs>:$<TARGET_OBJECTS:opbase_infer_objs>>
     )
-  
+
   target_link_libraries(
     cust_proto
     PUBLIC  $<BUILD_INTERFACE:intf_pub_cxx17>
@@ -460,6 +460,7 @@ function(gen_aicpu_kernel_symbol enable_built_in)
       -o ${ARM_SO_OUTPUT}
     DEPENDS ${AICPU_CUST_OBJ_TARGETS}
     COMMENT "Linking aicpu_kernels.so using ARM toolchain"
+    COMMAND_EXPAND_LISTS
   )
 
   add_custom_target(aicpu_kernels ALL DEPENDS ${ARM_SO_OUTPUT})
@@ -619,7 +620,7 @@ function(gen_norm_symbol)
   gen_opapi_symbol()
 
   gen_onnx_plugin_symbol()
-  
+
   gen_tf_plugin_symbol()
 
   gen_aicpu_const_symbol()
