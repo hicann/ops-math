@@ -6,14 +6,24 @@
 
 ## 产品支持情况
 
-| 产品                                              | 是否支持 |
-|:------------------------------------------------| :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>          |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>    |    ×     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>    |    ×     |
-| <term>Atlas 200I/500 A2 推理产品</term>             |    ×     |
-| <term>Atlas 推理系列产品</term>                       |    ×     |
-| <term>Atlas 训练系列产品</term>                       |    ×     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：不支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：不支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -53,7 +63,7 @@ aclnnStatus aclnnWeightQuantPreprocess(
 
 ## aclnnWeightQuantPreprocessGetWorkspaceSize
 
-+ **参数说明**
+- **参数说明**
 
   <table style="undefined;table-layout: fixed; width: 1195px"><colgroup>
   <col style="width: 220px">
@@ -211,7 +221,7 @@ aclnnStatus aclnnWeightQuantPreprocess(
   </tbody>
   </table>
 
-+ **返回值**
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](https://gitcode.com/cann/ops-nn/blob/master/docs/zh/context/aclnn返回码.md)。
 
@@ -273,7 +283,7 @@ aclnnStatus aclnnWeightQuantPreprocess(
 
 ## aclnnWeightQuantPreprocess
 
-+ **参数说明**
+- **参数说明**
 
   | 参数名        | 输入/输出 | 描述                                                         |
   | ------------- | --------- | ------------------------------------------------------------ |
@@ -282,7 +292,7 @@ aclnnStatus aclnnWeightQuantPreprocess(
   | executor      | 输入      | op执行器，包含了算子计算流程。                               |
   | stream        | 输入      | 指定执行任务的Stream。                                       |
 
-+ **返回值**
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](https://gitcode.com/cann/ops-nn/blob/master/docs/zh/context/aclnn返回码.md)。
 
@@ -293,124 +303,124 @@ aclnnStatus aclnnWeightQuantPreprocess(
 <details>
 <summary><strong>MM_MX_A8W4数据流</strong>（MM表示Matmul；MX_A8W4表示x的数据类型为FLOAT8_E4M3FN，weight的数据类型为FLOAT4_E2M1，Mx量化模式）</summary>
 
-  + **weight**
-    + 数据类型：FLOAT4_E2M1
-    + 格式：ND
-    + K % kGroupSize == 0
-    + view shape：2-D `{K, N}`
-    + storage shape：`{N, K}`（transposed）
-    + stride：`[1, K]`（最后两维transposed）
-    + 不支持空tensor
+- **weight**
+  - 数据类型：FLOAT4_E2M1
+  - 格式：ND
+  - K % kGroupSize == 0
+  - view shape：2-D `{K, N}`
+  - storage shape：`{N, K}`（transposed）
+  - stride：`[1, K]`（最后两维transposed）
+  - 不支持空tensor
 
-  + **weightScale**
-    + 数据类型：FLOAT8_E8M0
-    + 格式：ND/NCL
-    + view shape：3-D `{ceildiv(K, 64), N, 2}`
-    + storage shape：`{N, ceildiv(K, 64), 2}`（transposed）
-    + stride：`[2, 2*ceildiv(K,64), 1]`（维度0和1交换）
-    + 不支持空tensor
+- **weightScale**
+  - 数据类型：FLOAT8_E8M0
+  - 格式：ND/NCL
+  - view shape：3-D `{ceildiv(K, 64), N, 2}`
+  - storage shape：`{N, ceildiv(K, 64), 2}`（transposed）
+  - stride：`[2, 2*ceildiv(K,64), 1]`（维度0和1交换）
+  - 不支持空tensor
 
-  + **weightOffsetOptional**
-    + 当前不支持，必须为nullptr
-    + outWeightOffsetOptional也必须为nullptr
+- **weightOffsetOptional**
+  - 当前不支持，必须为nullptr
+  - outWeightOffsetOptional也必须为nullptr
 
-  + **biasOptional**
-    + 数据类型：float16/bfloat16
-    + 格式：ND
-    + 必须为contiguous
-    + 不支持空tensor（若提供）
+- **biasOptional**
+  - 数据类型：float16/bfloat16
+  - 格式：ND
+  - 必须为contiguous
+  - 不支持空tensor（若提供）
 
-  + **kGroupSize**
-    + 必须等于 32
+- **kGroupSize**
+  - 必须等于 32
 
-  + **xDtype**
-    + FLOAT8_E4M3FN
+- **xDtype**
+  - FLOAT8_E4M3FN
 
-  + **xScaleDtype**
-    + FLOAT8_E8M0
+- **xScaleDtype**
+  - FLOAT8_E8M0
 
-  + **outWeight**
-    + 数据类型：与weight相同
-    + 格式：FRACTAL_NZ_C0_32
-    + view shape：与weight view shape相同 `{K, N}`
-    + storage shape：4-D `{ceildiv(K, 32), ceildiv(N, 16), 16, 32}`
+- **outWeight**
+  - 数据类型：与weight相同
+  - 格式：FRACTAL_NZ_C0_32
+  - view shape：与weight view shape相同 `{K, N}`
+  - storage shape：4-D `{ceildiv(K, 32), ceildiv(N, 16), 16, 32}`
 
-  + **outWeightScale**
-    + 数据类型：与weightScale相同
-    + 格式：ND
-    + view shape：与weightScale view shape相同
-    + storage shape：与weightScale storage shape相同
+- **outWeightScale**
+  - 数据类型：与weightScale相同
+  - 格式：ND
+  - view shape：与weightScale view shape相同
+  - storage shape：与weightScale storage shape相同
 
-  + **outBiasOptional**
-    + 数据类型：与biasOptional相同
-    + 格式：ND
-    + 必须为contiguous
-    + view shape：与biasOptional相同
-    + storage shape：与biasOptional相同
+- **outBiasOptional**
+  - 数据类型：与biasOptional相同
+  - 格式：ND
+  - 必须为contiguous
+  - view shape：与biasOptional相同
+  - storage shape：与biasOptional相同
 
 </details>
 
 <details>
 <summary><strong>GMM_MX_A8W4数据流</strong>（GMM表示GroupedMatmul；MX_A8W4表示x的数据类型为FLOAT8_E4M3FN，weight的数据类型为FLOAT4_E2M1，Mx量化模式）</summary>
 
-  + **weight**
-    + 数据类型：FLOAT4_E2M1
-    + 格式：ND
-    + K % kGroupSize == 0
-    + view shape：3-D `{G, K, N}`
-    + storage shape：`{G, N, K}`（transposed，最后两维交换）
-    + stride：`[K*N, 1, K]`（维度1和2 transposed）
-    + 不支持空tensor
+- **weight**
+  - 数据类型：FLOAT4_E2M1
+  - 格式：ND
+  - K % kGroupSize == 0
+  - view shape：3-D `{G, K, N}`
+  - storage shape：`{G, N, K}`（transposed，最后两维交换）
+  - stride：`[K*N, 1, K]`（维度1和2 transposed）
+  - 不支持空tensor
 
-  + **weightScale**
-    + 数据类型：FLOAT8_E8M0
-    + 格式：ND/NCL/NCHW
-    + view shape：4-D `{G, ceildiv(K, 64), N, 2}`
-    + storage shape：`{G, N, ceildiv(K, 64), 2}`（transposed，维度2和3交换）
-    + stride：`[2*ceildiv(K,64)*N, 2, 2*ceildiv(K,64), 1]`（维度2和3交换）
-    + 不支持空tensor
+- **weightScale**
+  - 数据类型：FLOAT8_E8M0
+  - 格式：ND/NCL/NCHW
+  - view shape：4-D `{G, ceildiv(K, 64), N, 2}`
+  - storage shape：`{G, N, ceildiv(K, 64), 2}`（transposed，维度2和3交换）
+  - stride：`[2*ceildiv(K,64)*N, 2, 2*ceildiv(K,64), 1]`（维度2和3交换）
+  - 不支持空tensor
 
-  + **weightOffsetOptional**
-    + 当前不支持，必须为nullptr
-    + outWeightOffsetOptional也必须为nullptr
+- **weightOffsetOptional**
+  - 当前不支持，必须为nullptr
+  - outWeightOffsetOptional也必须为nullptr
 
-  + **biasOptional**
-    + 数据类型：float16/bfloat16
-    + 格式：ND
-    + 必须为contiguous
-    + 不支持空tensor（若提供）
+- **biasOptional**
+  - 数据类型：float16/bfloat16
+  - 格式：ND
+  - 必须为contiguous
+  - 不支持空tensor（若提供）
 
-  + **kGroupSize**
-    + 必须等于 32
+- **kGroupSize**
+  - 必须等于 32
 
-  + **xDtype**
-    + FLOAT8_E4M3FN
+- **xDtype**
+  - FLOAT8_E4M3FN
 
-  + **xScaleDtype**
-    + FLOAT8_E8M0
+- **xScaleDtype**
+  - FLOAT8_E8M0
 
-  + **outWeight**
-    + 数据类型：与weight相同
-    + 格式：FRACTAL_NZ_C0_32
-    + view shape：与weight view shape相同 `{G, K, N}`
-    + storage shape：5-D `{G, ceildiv(K, 32), ceildiv(N, 16), 16, 32}`
+- **outWeight**
+  - 数据类型：与weight相同
+  - 格式：FRACTAL_NZ_C0_32
+  - view shape：与weight view shape相同 `{G, K, N}`
+  - storage shape：5-D `{G, ceildiv(K, 32), ceildiv(N, 16), 16, 32}`
 
-  + **outWeightScale**
-    + 数据类型：与weightScale相同
-    + 格式：ND
-    + view shape：与weightScale view shape相同
-    + storage shape：与weightScale storage shape相同
+- **outWeightScale**
+  - 数据类型：与weightScale相同
+  - 格式：ND
+  - view shape：与weightScale view shape相同
+  - storage shape：与weightScale storage shape相同
 
-  + **outBiasOptional**
-    + 数据类型：与biasOptional相同
-    + 格式：ND
-    + 必须为contiguous
-    + view shape：与biasOptional相同
-    + storage shape：与biasOptional相同
+- **outBiasOptional**
+  - 数据类型：与biasOptional相同
+  - 格式：ND
+  - 必须为contiguous
+  - view shape：与biasOptional相同
+  - storage shape：与biasOptional相同
 
 </details>
 
-+ 其余数据类型与shape组合为预留接口，当前调用将返回ACLNN_ERR_PARAM_INVALID
+- 其余数据类型与shape组合为预留接口，当前调用将返回ACLNN_ERR_PARAM_INVALID
 
 ## 调用示例
 
@@ -418,9 +428,9 @@ aclnnStatus aclnnWeightQuantPreprocess(
 
 **注意**：用户需自行计算并构造输出张量shape，参考约束说明中的公式：
 
-+ outWeight viewShape：与weight viewShape相同
-+ outWeight storageShape：`{CeilDiv(K, 32), CeilDiv(N, 16), 16, 32}`
-+ outWeight format：`ACL_FORMAT_FRACTAL_NZ_C0_32`
+- outWeight viewShape：与weight viewShape相同
+- outWeight storageShape：`{CeilDiv(K, 32), CeilDiv(N, 16), 16, 32}`
+- outWeight format：`ACL_FORMAT_FRACTAL_NZ_C0_32`
 
 ```cpp
 #include <iostream>

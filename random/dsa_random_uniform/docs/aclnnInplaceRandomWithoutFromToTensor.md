@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    ×     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    ×     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品 </term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    ×     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：不支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：不支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -24,26 +34,26 @@ DTYPE_MAX_VALUE是selfRef数据类型能连续精确表示整型的最大值，�
 
 ```Cpp
 aclnnStatus aclnnInplaceRandomWithoutFromToTensorGetWorkspaceSize(
-  const aclTensor* selfRef, 
-  const aclTensor* seedTensor, 
-  const aclTensor* offsetTensor, 
-  int64_t          offset, 
-  uint64_t*        workspaceSize, 
+  const aclTensor* selfRef,
+  const aclTensor* seedTensor,
+  const aclTensor* offsetTensor,
+  int64_t          offset,
+  uint64_t*        workspaceSize,
   aclOpExecutor**  executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceRandomWithoutFromToTensor(
-  void*          workspace, 
-  uint64_t       workspaceSize,  
-  aclOpExecutor* executor, 
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
   aclrtStream    stream)
 ```
 
 ## aclnnInplaceRandomWithoutFromToTensorGetWorkspaceSize
 
 - **参数说明：**
-  
+
   <table style="undefined;table-layout: fixed; width: 1546px"><colgroup>
   <col style="width: 165px">
   <col style="width: 121px">
@@ -129,9 +139,9 @@ aclnnStatus aclnnInplaceRandomWithoutFromToTensor(
   </tbody></table>
 
 - **返回值：**
-  
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
+
   第一段接口完成入参校验，出现以下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1124px"><colgroup>
@@ -162,7 +172,7 @@ aclnnStatus aclnnInplaceRandomWithoutFromToTensor(
 ## aclnnInplaceRandomWithoutFromToTensor
 
 - **参数说明：**
-  
+
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 180px">
   <col style="width: 130px">
@@ -199,15 +209,19 @@ aclnnStatus aclnnInplaceRandomWithoutFromToTensor(
   </table>
 
 - **返回值：**
-  
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
 - 确定性计算：
   - aclnnInplaceRandomWithoutFromToTensor默认确定性实现。
+
+<!-- npu="950" id7 -->
 - <term>Ascend 950PR/Ascend 950DT</term>：
   - offset必须为4的倍数。
+
+<!-- end id7 -->
 
 ## 调用示例
 

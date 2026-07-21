@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -143,14 +153,17 @@ aclnnStatus aclnnInplaceClampMax(
     </tr>
   </tbody></table>
 
+  <!-- npu="910,310p" id7 -->
   - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：
     - self和out的数据类型不支持BOOL、BFLOAT16。
     - clipValueMax的数据类型不支持BFLOAT16。
-
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>
-     - self和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)）。
-     - out的数据类型需要是self、clipValueMax推导之后可转换的数据类型。
-     - self和out的数据类型不支持BOOL。
+  <!-- end id7 -->
+  <!-- npu="950,A3,910b" id8 -->
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：
+    - self和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)）。
+    - out的数据类型需要是self、clipValueMax推导之后可转换的数据类型。
+    - self和out的数据类型不支持BOOL。
+  <!-- end id8 -->
 
 - **返回值：**
 
@@ -302,13 +315,16 @@ aclnnStatus aclnnInplaceClampMax(
     </tr>
   </tbody></table>
 
+  <!-- npu="910,310p" id9 -->
   - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：
     - selfRef的数据类型不支持BOOL、BFLOAT16。
     - clipValueMax的数据类型不支持BFLOAT16。
-
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>
+  <!-- end id9 -->
+  <!-- npu="950,A3,910b" id10 -->
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：
     - selfRef和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)）。
     - selfRef的数据类型不支持BOOL。
+  <!-- end id10 -->
 
 - **返回值：**
 

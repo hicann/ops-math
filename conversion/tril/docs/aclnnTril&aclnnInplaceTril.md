@@ -4,26 +4,36 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |     √      |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √       |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |   ×     |
-| <term>Atlas 训练系列产品</term>                              |   √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
-  - 算子功能：将输入的self张量的最后二维（按shape从左向右数）沿对角线的右上部分置零。参数diagonal可正可负，默认为零，正数表示主对角线向右上方向移动，负数表示主对角线向左下方向移动。
-  - 计算公式：下面用i表示遍历倒数第二维元素的序号（i是行索引），用j表示遍历最后一维元素的序号（j是列索引），用d表示diagonal，在(i, j)对应的二维坐标图中，i+d==j表示在对角线上。
+- 算子功能：将输入的self张量的最后二维（按shape从左向右数）沿对角线的右上部分置零。参数diagonal可正可负，默认为零，正数表示主对角线向右上方向移动，负数表示主对角线向左下方向移动。
+- 计算公式：下面用i表示遍历倒数第二维元素的序号（i是行索引），用j表示遍历最后一维元素的序号（j是列索引），用d表示diagonal，在(i, j)对应的二维坐标图中，i+d==j表示在对角线上。
 
     $$
     对角线及其左下方，即i+d>=j，保留原值： out_{i, j} = self_{i, j}\\
     而位于对角线右上方的情况，即i+d<j，置零（不含对角线）：out_{i, j} = 0
     $$
 
-  - 示例：
+- 示例：
 
     $self = \begin{bmatrix} [9&6&3] \\ [1&2&3] \\ [3&4&1] \end{bmatrix}$，
     triu(self, diagonal=0)的结果为：
@@ -35,41 +45,41 @@
 
 ## 函数原型
 
-  - aclnnTril和aclnnInplaceTril实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
-    - aclnnTril：需新建一个输出张量对象存储计算结果。
-    - aclnnInplaceTril：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-  - 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnTrilGetWorkspaceSize”或者“aclnnInplaceTrilGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnTril”或者“aclnnInplaceTril”接口执行计算。
+- aclnnTril和aclnnInplaceTril实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
+  - aclnnTril：需新建一个输出张量对象存储计算结果。
+  - aclnnInplaceTril：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
+- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnTrilGetWorkspaceSize”或者“aclnnInplaceTrilGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnTril”或者“aclnnInplaceTril”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnTrilGetWorkspaceSize(
-  const aclTensor* self, 
-  int64_t          diagonal, 
-  aclTensor*       out, 
-  uint64_t*        workspaceSize, 
+  const aclTensor* self,
+  int64_t          diagonal,
+  aclTensor*       out,
+  uint64_t*        workspaceSize,
   aclOpExecutor**  executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnTril(
-  void*             workspace, 
-  uint64_t          workspaceSize, 
-  aclOpExecutor*    executor, 
+  void*             workspace,
+  uint64_t          workspaceSize,
+  aclOpExecutor*    executor,
   const aclrtStream stream)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceTrilGetWorkspaceSize(
-  const aclTensor* selfRef, 
-  int64_t          diagonal, 
-  uint64_t*        workspaceSize, 
+  const aclTensor* selfRef,
+  int64_t          diagonal,
+  uint64_t*        workspaceSize,
   aclOpExecutor**  executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceTril(
-  void*             workspace, 
-  uint64_t          workspaceSize, 
-  aclOpExecutor*    executor, 
+  void*             workspace,
+  uint64_t          workspaceSize,
+  aclOpExecutor*    executor,
   const aclrtStream stream)
 ```
 
@@ -148,10 +158,14 @@ aclnnStatus aclnnInplaceTril(
       <td>-</td>
       <td>-</td>
     </tr>
-  </tbody></table> 
+  </tbody></table>
 
+  <!-- npu="950" id7 -->
   - <term>Ascend 950PR/Ascend 950DT</term>：COMPLEX32、COMPLEX64仅支持该产品。
+  <!-- end id7 -->
+  <!-- npu="910,310p" id8 -->
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
+  <!-- end id8 -->
 
 - **返回值**
 
@@ -305,10 +319,14 @@ aclnnStatus aclnnInplaceTril(
       <td>-</td>
       <td>-</td>
     </tr>
-    </tbody></table>  
+    </tbody></table>
 
+  <!-- npu="950" id9 -->
   - <term>Ascend 950PR/Ascend 950DT</term>：COMPLEX32、COMPLEX64仅支持该产品。
+  <!-- end id9 -->
+  <!-- npu="910,310p" id10 -->
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
+  <!-- end id10 -->
 
 - **返回值**
 

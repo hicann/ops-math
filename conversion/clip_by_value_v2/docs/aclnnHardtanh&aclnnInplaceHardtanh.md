@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -19,12 +29,12 @@
 - 计算公式：
 
   $$
-  HardTanh(x) = \left\{\begin{matrix}\begin{array}{l} 
+  HardTanh(x) = \left\{\begin{matrix}\begin{array}{l}
   clipValueMax, \ if\ x>clipValueMax \\
-  clipValueMin, \ if\ x<clipValueMin \\ 
+  clipValueMin, \ if\ x<clipValueMin \\
   x, \ otherwise \\\end{array}\end{matrix}\right.\begin{array}{l}\end{array}
   $$
-  
+
 ## 函数原型
 
 - aclnnHardtanh和aclnnInplaceHardtanh实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
@@ -34,35 +44,35 @@
 
 ```cpp
 aclnnStatus aclnnHardtanhGetWorkspaceSize(
-    const aclTensor *self, 
-    const aclScalar *clipValueMin, 
-    const aclScalar *clipValueMax, 
-    aclTensor       *out, 
-    uint64_t        *workspaceSize, 
+    const aclTensor *self,
+    const aclScalar *clipValueMin,
+    const aclScalar *clipValueMax,
+    aclTensor       *out,
+    uint64_t        *workspaceSize,
     aclOpExecutor  **executor)
 ```
 
 ```cpp
 aclnnStatus aclnnHardtanh(
-    void          *workspace, 
-    uint64_t       workspaceSize, 
-    aclOpExecutor *executor, 
+    void          *workspace,
+    uint64_t       workspaceSize,
+    aclOpExecutor *executor,
     aclrtStream    stream)
 ```
 
 ```cpp
 aclnnStatus aclnnInplaceHardtanhGetWorkspaceSize(
-    aclTensor       *selfRef, 
-    const aclScalar *clipValueMin, 
-    const aclScalar *clipValueMax, 
-    uint64_t        *workspaceSize, 
+    aclTensor       *selfRef,
+    const aclScalar *clipValueMin,
+    const aclScalar *clipValueMax,
+    uint64_t        *workspaceSize,
     aclOpExecutor  **executor)
 ```
 
 ```cpp
 aclnnStatus aclnnInplaceHardtanh(
-    void          *workspace, 
-    uint64_t       workspaceSize, 
+    void          *workspace,
+    uint64_t       workspaceSize,
     aclOpExecutor *executor,
     aclrtStream    stream)
 ```
@@ -507,11 +517,11 @@ int main() {
   // 调用aclnnHardtanh第二段接口
   ret = aclnnHardtanh(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnHardtanh failed. ERROR: %d\n", ret); return ret);
-  
+
   // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
-  
+
   // 5.获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
   auto size = GetShapeSize(outShape);
   std::vector<float> resultData(size, 0);
@@ -521,7 +531,7 @@ int main() {
   for (int64_t i = 0; i < size; i++) {
     LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
   }
- 
+
   // aclnnInplaceHardtanh接口调用示例
   // 3.调用CANN算子库API
   LOG_PRINT("\ntest aclnnInplaceHardtanh\n");
@@ -539,11 +549,11 @@ int main() {
   // 调用aclnnInplaceHardtanh第二段接口
   ret = aclnnInplaceHardtanh(inplaceWorkspaceAddr, inplaceWorkspaceSize, inplaceExecutor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceHardtanh failed. ERROR: %d\n", ret); return ret);
-  
+
   // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
-  
+
   // 5.获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
   size = GetShapeSize(outShape);
   ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), selfDeviceAddr, size * sizeof(float),
@@ -558,7 +568,7 @@ int main() {
   aclDestroyScalar(clipValueMin);
   aclDestroyScalar(clipValueMax);
   aclDestroyTensor(out);
- 
+
   // 7.释放device资源，需要根据具体API的接口定义修改
   aclrtFree(selfDeviceAddr);
   aclrtFree(outDeviceAddr);

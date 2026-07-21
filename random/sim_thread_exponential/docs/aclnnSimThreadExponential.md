@@ -2,20 +2,30 @@
 
 ## 产品支持情况
 
-|产品             |  是否支持  |
-|:-------------------------|:----------:|
-|  <term>Ascend 950PR/Ascend 950DT</term>   |     √    |
-|  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     √    |
-|  <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |     √    |
-|  <term>Atlas 200I/500 A2 推理产品</term>    |    ×    |
-|  <term>Atlas 推理系列产品</term>    |     ×    |
-|  <term>Atlas 训练系列产品</term>    |     ×    |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：不支持
+<!-- end id6 -->
 
 ## 功能说明
 
 - 接口功能：生成服从参数为lambda的指数分布随机数，并将其填充到selfRef张量中。
 - 计算公式：
-  
+
   $$
   f(x) = -\frac{1}{\lambda} \ln(1 - u), u \sim \text{Uniform}(0, 1]
   $$
@@ -26,37 +36,37 @@
 
 ```cpp
 aclnnStatus aclnnSimThreadExponentialGetWorkspaceSize(
-  aclTensor       *selfRef, 
-  int64_t          count, 
-  double           lambda, 
-  int64_t          seed, 
-  int64_t          offset, 
-  uint64_t        *workspaceSize, 
+  aclTensor       *selfRef,
+  int64_t          count,
+  double           lambda,
+  int64_t          seed,
+  int64_t          offset,
+  uint64_t        *workspaceSize,
   aclOpExecutor   **executor)
 ```
 
 ```cpp
 aclnnStatus aclnnSimThreadExponential(
-  void              *workspace, 
-  uint64_t           workspace_size, 
-  aclOpExecutor     *executor, 
+  void              *workspace,
+  uint64_t           workspace_size,
+  aclOpExecutor     *executor,
   aclrtStream  stream)
 ```
 
 ## aclnnSimThreadExponentialGetWorkspaceSize
 
 - **参数说明**
-  
+
   <div style="overflow-x: auto;">
-    <table style="undefined;table-layout: fixed; width: 1497px"><colgroup> 
-     <col style="width: 150px"> 
-     <col style="width: 120px"> 
-     <col style="width: 300px"> 
-     <col style="width: 330px"> 
-     <col style="width: 212px"> 
-     <col style="width: 100px">  
-     <col style="width: 140px">  
-     <col style="width: 145px">  
+    <table style="undefined;table-layout: fixed; width: 1497px"><colgroup>
+     <col style="width: 150px">
+     <col style="width: 120px">
+     <col style="width: 300px">
+     <col style="width: 330px">
+     <col style="width: 212px">
+     <col style="width: 100px">
+     <col style="width: 140px">
+     <col style="width: 145px">
      </colgroup>
     <thead>
       <tr>
@@ -143,9 +153,9 @@ aclnnStatus aclnnSimThreadExponential(
     </tbody></table>
     </div>
 - **返回值**
-  
+
   返回aclnnStatus状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
+
   第一段接口完成入参校验，出现以下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1155px"><colgroup>
@@ -177,7 +187,7 @@ aclnnStatus aclnnSimThreadExponential(
     <tr>
       <td>lambda小于等于0。</td>
     </tr>
-  
+
   </tbody></table>
 
 ## aclnnSimThreadExponential
@@ -228,9 +238,13 @@ aclnnStatus aclnnSimThreadExponential(
 - lambda必须大于0。
 - 确定性计算：
   - aclnnSimThreadExponential默认确定性实现。
+
+<!-- npu="950" id7 -->
 - Ascend 950PR/Ascend 950DT：
   - offset必须为4的倍数。
   - count必须等于selfRef张量的元素总数。
+
+<!-- end id7 -->
 
 ## 调用示例
 

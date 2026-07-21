@@ -8,8 +8,8 @@
 
 ## 支持的产品型号
 
-- Atlas A2训练系列产品
-- Atlas 200I/500 A2推理产品
+- Atlas A2 训练系列产品
+- Atlas 200I/500 A2 推理产品
 
 ## 算子描述
 
@@ -20,17 +20,17 @@
 - 原型信息
 
   <table>
-    <tr><th align="center">算子类型(OpType)</th><th colspan="4" align="center">Axpy</th></tr> 
-    <tr><td align="center"> </td><td align="center">name</td><td align="center">Type</td><td align="center">data type</td><td align="center">format</td></tr>  
-    <tr><td rowspan="3" align="center">算子输入</td></tr>  
-     
-    <tr><td align="center">x</td><td align="center">tensor</td><td align="center">float32,float16</td><td align="center">ND</td></tr>  
+    <tr><th align="center">算子类型(OpType)</th><th colspan="4" align="center">Axpy</th></tr>
+    <tr><td align="center"> </td><td align="center">name</td><td align="center">Type</td><td align="center">data type</td><td align="center">format</td></tr>
+    <tr><td rowspan="3" align="center">算子输入</td></tr>
+
+    <tr><td align="center">x</td><td align="center">tensor</td><td align="center">float32,float16</td><td align="center">ND</td></tr>
     <tr><td align="center">y</td><td align="center">tensor</td><td align="center">float32,float16</td><td align="center">ND</td></tr>
     <tr><td align="center">alpha</td><td align="center">a</td><td align="center">float32</td><td align="center">ND</td></tr>
-    
+
     <tr><td rowspan="1" align="center">算子输出</td>
-    <td align="center">z</td><td align="center">tensor</td><td align="center">float32,float16</td><td align="center">ND</td></tr>  
-    <tr><td rowspan="1" align="center">核函数名</td><td colspan="4" align="center">axpy</td></tr>  
+    <td align="center">z</td><td align="center">tensor</td><td align="center">float32,float16</td><td align="center">ND</td></tr>
+    <tr><td rowspan="1" align="center">核函数名</td><td colspan="4" align="center">axpy</td></tr>
   </table>
 
 ## 约束与限制
@@ -67,10 +67,10 @@
 
     ```bash
     bash build.sh --run_example axpy_v3 eager cust --vendor_name=custom
-    ```    
+    ```
 
 ## 调用说明
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_axpy](./examples/test_aclnn_axpy_v3.cpp) |  |    
+| aclnn调用 | [test_aclnn_axpy](./examples/test_aclnn_axpy_v3.cpp) |  |

@@ -2,7 +2,7 @@
 
 ## 支持的产品型号
 
-- Atlas A2训练系列产品
+- Atlas A2 训练系列产品
 
 产品形态详细说明请参见[昇腾产品形态说明](http://www.hiascend.com/document/redirect/CannCommunityProductForm)
 

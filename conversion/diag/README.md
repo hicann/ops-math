@@ -8,7 +8,7 @@
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
-| <term>Atlas 推理系列产品 </term>                             |    √     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
 ## 功能说明
@@ -18,16 +18,16 @@
 - 计算公式：
 
     设：
-    $$ 
+    $$
     \mathbf{x} \in \mathbb{R}^n ：输入向量
     $$
-    $$ 
+    $$
     \mathbf{y} \in \mathbb{R}^{n \times n}：输出对角矩阵
     $$
 
     其中：
-    $$ 
-    \mathbf{y}_{i,i} = x_i 
+    $$
+    \mathbf{y}_{i,i} = x_i
     $$
     $$
     \mathbf{y}_{i,j} = 0 当i \ne j

@@ -8,8 +8,8 @@
 
 ## 支持的产品型号
 
-- Atlas A2训练系列产品
-- Atlas 200I/500 A2推理产品
+- Atlas A2 训练系列产品
+- Atlas 200I/500 A2 推理产品
 
 ## 算子描述
 
@@ -47,16 +47,16 @@
 
 - **输出尺寸计算**：
   输出图像尺寸为 (output_h, output_w)，由属性直接指定
-  
+
 - **输入维度一致性约束**：
   $输入第二维度 = C \times kernel\_h \times kernel\_w$，且必须能被整除
-  
+
   $输入第三维度 L = out\_H \times out\_W$
-  
+
   其中 $out\_H$ 和 $out\_W$ 由以下公式计算：
-  
+
   $out\_H = \lfloor \frac{output\_h + 2 \times padding\_val - dilation\_val \times (kernel\_h - 1) - 1}{stride\_val} + 1 \rfloor$
-  
+
   $out\_W = \lfloor \frac{output\_w + 2 \times padding\_val - dilation\_val \times (kernel\_w - 1) - 1}{stride\_val} + 1 \rfloor$
 
 - **有效卷积核约束**：
@@ -122,14 +122,14 @@
     ```bash
     ./build_out/cann-ops-math-custom_linux-aarch64.run
     ```
-    
+
 ### 算子调用
 
   - 执行调用
 
     ```bash
     bash build.sh --run_example col2_im eager cust --vendor_name=custom
-    ```    
+    ```
 
 ## 调用说明
 

@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                              | 是否支持 |
-|:------------------------------------------------| :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>          |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>    |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>    |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>             |    ×     |
-| <term>Atlas 推理系列产品</term>                       |    √     |
-| <term>Atlas 训练系列产品</term>                       |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -31,19 +41,19 @@
 
 ```cpp
 aclnnStatus aclnnReflectionPad2dBackwardGetWorkspaceSize(
-    const aclTensor*   gradOutput, 
-    const aclTensor*   self, 
-    const aclIntArray* padding, 
-    aclTensor*         gradInput, 
-    uint64_t*          workspaceSize, 
+    const aclTensor*   gradOutput,
+    const aclTensor*   self,
+    const aclIntArray* padding,
+    aclTensor*         gradInput,
+    uint64_t*          workspaceSize,
     aclOpExecutor**    executor)
 ```
 
 ```cpp
 aclnnStatus aclnnReflectionPad2dBackward(
-    void*             workspace, 
-    uint64_t          workspaceSize, 
-    aclOpExecutor*    executor, 
+    void*             workspace,
+    uint64_t          workspaceSize,
+    aclOpExecutor*    executor,
     const aclrtStream stream)
 ```
 
@@ -138,7 +148,7 @@ aclnnStatus aclnnReflectionPad2dBackward(
 - **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
+
   第一段接口完成入参校验，出现如下场景时报错：
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
@@ -285,13 +295,13 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
     // 调用aclrtMemcpy将host侧数据拷贝到device侧内存上
     ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
-    
+
     // 计算连续tensor的strides
     std::vector<int64_t> strides(shape.size(), 1);
     for (int64_t i = shape.size() - 2; i >= 0; i--) {
         strides[i] = shape[i + 1] * strides[i + 1];
     }
-    
+
     // 调用aclCreateTensor接口创建aclTensor
     *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND,
                               shape.data(), shape.size(), *deviceAddr);
@@ -358,17 +368,17 @@ int main() {
     ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), gradInputDeviceAddr, size * sizeof(float),
                       ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
-    
+
     for (int64_t i = 0; i < size; i++) {
         LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
     }
-    
+
     // 6.释放aclTensor，需要根据具体API的接口定义修改
     aclDestroyTensor(gradOutput);
     aclDestroyTensor(self);
     aclDestroyIntArray(padding);
     aclDestroyTensor(gradInput);
-    
+
     // 7.释放device资源，需要根据具体API的接口定义修改
     aclrtFree(gradOutputDeviceAddr);
     aclrtFree(selfDeviceAddr);

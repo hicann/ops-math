@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                              | 是否支持 |
-|:------------------------------------------------| :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>          |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>    |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>    |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>             |    ×     |
-| <term>Atlas 推理系列产品</term>                       |    √     |
-| <term>Atlas 训练系列产品</term>                       |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -23,19 +33,19 @@
 
 ```cpp
 aclnnStatus aclnnReflectionPad3dBackwardGetWorkspaceSize(
-    const aclTensor*   gradOutput, 
-    const aclTensor*   self, 
-    const aclIntArray* padding, 
-    aclTensor*         gradInput, 
-    uint64_t*          workspaceSize, 
+    const aclTensor*   gradOutput,
+    const aclTensor*   self,
+    const aclIntArray* padding,
+    aclTensor*         gradInput,
+    uint64_t*          workspaceSize,
     aclOpExecutor**    executor)
 ```
 
 ```cpp
 aclnnStatus aclnnReflectionPad3dBackward(
-    void*             workspace, 
-    uint64_t          workspaceSize, 
-    aclOpExecutor*    executor, 
+    void*             workspace,
+    uint64_t          workspaceSize,
+    aclOpExecutor*    executor,
     const aclrtStream stream)
 ```
 
@@ -127,7 +137,7 @@ aclnnStatus aclnnReflectionPad3dBackward(
     </tr>
   </tbody></table>
 
-- **返回值**  
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
@@ -211,7 +221,7 @@ aclnnStatus aclnnReflectionPad3dBackward(
   </tbody>
   </table>
 
-- **返回值**  
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
@@ -294,7 +304,7 @@ int main() {
     auto ret = Init(deviceId, &stream);
     // check根据自己的需要处理
     CHECK_RET(ret == 0, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
-    
+
     // 2.构造输入与输出，需要根据API的接口定义构造
     std::vector<int64_t> gradOutputShape = {1, 1, 4, 4, 4};
     std::vector<int64_t> selfShape = {1, 1, 2, 2, 2};
@@ -360,7 +370,7 @@ int main() {
     aclDestroyTensor(self);
     aclDestroyIntArray(padding);
     aclDestroyTensor(gradInput);
-    
+
     // 7.释放device资源
     aclrtFree(gradOutputDeviceAddr);
     aclrtFree(selfDeviceAddr);

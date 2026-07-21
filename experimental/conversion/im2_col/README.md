@@ -8,8 +8,8 @@
 
 ## 支持的产品型号
 
-- Atlas A2训练系列产品
-- Atlas 200I/500 A2推理产品
+- Atlas A2 训练系列产品
+- Atlas 200I/500 A2 推理产品
 
 ## 算子描述
 
@@ -44,7 +44,7 @@
 
 - **输出尺寸必须为正数**：
   $out\_H = \lfloor \frac{H + 2 \times padding\_val - dilation \times (kernel\_h - 1) - 1}{stride\_val} + 1 \rfloor ≥ 1$
-  
+
   $out\_W = \lfloor \frac{W + 2 \times padding\_val - dilation \times (kernel\_w - 1) - 1}{stride\_val} + 1 \rfloor ≥ 1$
 
 - **有效卷积核约束**：
@@ -111,10 +111,10 @@
 
     ```bash
     bash build.sh --run_example im2_col eager cust --vendor_name=custom
-    ```    
+    ```
 
 ## 调用说明
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_im2_col](./examples/test_aclnn_im2_col.cpp) | 通过[aclnnIm2Col]接口方式调用Im2Col算子。 |    
+| aclnn调用 | [test_aclnn_im2_col](./examples/test_aclnn_im2_col.cpp) | 通过[aclnnIm2Col]接口方式调用Im2Col算子。 |

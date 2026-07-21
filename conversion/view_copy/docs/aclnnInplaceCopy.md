@@ -2,14 +2,24 @@
 
 ## 产品支持情况
 
-| 产品                                              | 是否支持 |
-|:------------------------------------------------| :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>          |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>    |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>    |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>             |    √     |
-| <term>Atlas 推理系列产品</term>                       |    √     |
-| <term>Atlas 训练系列产品</term>                       |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -30,7 +40,7 @@
   输入src为：
   tensor([[5, 6],
           [7, 8]])
-  
+
   输出selfRef为：
   tensor([[5, 6],
           [7, 8]])
@@ -42,9 +52,9 @@
 
 ```cpp
 aclnnStatus aclnnInplaceCopyGetWorkspaceSize(
-    aclTensor       *selfRef, 
-    const aclTensor *src, 
-    uint64_t        *workspaceSize, 
+    aclTensor       *selfRef,
+    const aclTensor *src,
+    uint64_t        *workspaceSize,
     aclOpExecutor  **executor)
 ```
 
@@ -212,12 +222,12 @@ aclnnStatus aclnnInplaceCopy(
 
 当src和selfRef的数据类型不一致时，HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN浮点类型转换规则：
 
- - HIFLOAT8 -> FLOAT32、BFLOAT16、FLOAT16
- - FLOAT8_E5M2 -> FLOAT32、BFLOAT16、FLOAT16
- - FLOAT8_E4M3FN -> FLOAT32、BFLOAT16、FLOAT16
- - BFLOAT16 -> HIFLOAT8
- - FLOAT16 -> HIFLOAT8
- - FLOAT32 -> HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN
+- HIFLOAT8 -> FLOAT32、BFLOAT16、FLOAT16
+- FLOAT8_E5M2 -> FLOAT32、BFLOAT16、FLOAT16
+- FLOAT8_E4M3FN -> FLOAT32、BFLOAT16、FLOAT16
+- BFLOAT16 -> HIFLOAT8
+- FLOAT16 -> HIFLOAT8
+- FLOAT32 -> HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN
 
 ## 调用示例
 

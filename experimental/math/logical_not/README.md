@@ -8,13 +8,13 @@
 
 ## 支持的产品型号
 
-- Atlas A2训练系列产品
-   
+- Atlas A2 训练系列产品
+
 产品形态详细说明请参见[昇腾产品形态说明](https://www.hiascend.com/document/redirect/CannCommunityProductForm)。
 
 ## 算子描述
 
-- 功能描述    
+- 功能描述
 
   `LogicalNot` 算子对输入的布尔值进行逻辑非运算（取反操作）。
 
@@ -24,7 +24,7 @@
   y = \neg x
   $$
 
-- 原型信息    
+- 原型信息
 
    <table>
       <tr>
@@ -95,4 +95,3 @@
     ```bash
     bash build.sh --run_example --experimental logical_not eager cust --vendor_name=custom
     ```
-    

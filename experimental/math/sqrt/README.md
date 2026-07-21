@@ -9,8 +9,8 @@
 
 ## 支持的产品型号
 
-- Atlas A2训练系列产品
-- Atlas 200I/500 A2推理产品
+- Atlas A2 训练系列产品
+- Atlas 200I/500 A2 推理产品
 
 ## 算子描述
 
@@ -21,15 +21,15 @@
 - 原型信息
 
   <table>
-    <tr><th align="center">算子类型(OpType)</th><th colspan="4" align="center">Sqrt</th></tr> 
-    <tr><td align="center"> </td><td align="center">name</td><td align="center">Type</td><td align="center">data type</td><td align="center">format</td></tr>  
-    <tr><td rowspan="2" align="center">算子输入</td></tr> 
-     
-    <tr><td align="center">x</td><td align="center">tensor</td><td align="center">float32,float16,bfloat16</td><td align="center">ND</td></tr>  
-    
+    <tr><th align="center">算子类型(OpType)</th><th colspan="4" align="center">Sqrt</th></tr>
+    <tr><td align="center"> </td><td align="center">name</td><td align="center">Type</td><td align="center">data type</td><td align="center">format</td></tr>
+    <tr><td rowspan="2" align="center">算子输入</td></tr>
+
+    <tr><td align="center">x</td><td align="center">tensor</td><td align="center">float32,float16,bfloat16</td><td align="center">ND</td></tr>
+
     <tr><td rowspan="1" align="center">算子输出</td>
-    <td align="center">y</td><td align="center">tensor</td><td align="center">float32,float16,bfloat16</td><td align="center">ND</td></tr>  
-    <tr><td rowspan="1" align="center">核函数名</td><td colspan="4" align="center">sqrt</td></tr>  
+    <td align="center">y</td><td align="center">tensor</td><td align="center">float32,float16,bfloat16</td><td align="center">ND</td></tr>
+    <tr><td rowspan="1" align="center">核函数名</td><td colspan="4" align="center">sqrt</td></tr>
   </table>
 
 ## 约束与限制
@@ -66,10 +66,10 @@
 
     ```bash
     bash build.sh --run_example sqrt eager cust --vendor_name=custom
-    ```    
+    ```
 
 ## 调用说明
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_sqrt](./examples/test_aclnn_sqrt.cpp) | 通过[aclnnSqrt](./docs/aclnnSqrt.md)接口方式调用Sqrt算子。 |    
+| aclnn调用 | [test_aclnn_sqrt](./examples/test_aclnn_sqrt.cpp) | 通过[aclnnSqrt](./docs/aclnnSqrt.md)接口方式调用Sqrt算子。 |

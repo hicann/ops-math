@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -49,18 +59,18 @@
 
 ```cpp
 aclnnStatus aclnnReplicationPad3dGetWorkspaceSize(
-    const aclTensor*   self, 
-    const aclIntArray* padding, 
-    aclTensor*         out, 
-    uint64_t*          workspaceSize, 
+    const aclTensor*   self,
+    const aclIntArray* padding,
+    aclTensor*         out,
+    uint64_t*          workspaceSize,
     aclOpExecutor**    executor)
 ```
 
 ```cpp
 aclnnStatus aclnnReplicationPad3d(
-    void*          workspace, 
-    uint64_t       workspaceSize, 
-    aclOpExecutor* executor, 
+    void*          workspace,
+    uint64_t       workspaceSize,
+    aclOpExecutor* executor,
     aclrtStream    stream)
 ```
 
@@ -141,8 +151,11 @@ aclnnStatus aclnnReplicationPad3d(
       <td>-</td>
     </tr>
   </tbody></table>
-  
+
+  <!-- npu="A3,910b,910,310p" id7 -->
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BOOL、UINT16、UINT32、UINT64、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0。
+  <!-- end id7 -->
+
 - **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -187,7 +200,7 @@ aclnnStatus aclnnReplicationPad3d(
     </tr>
   </tbody>
   </table>
-  
+
 ## aclnnReplicationPad3d
 
 - **参数说明**
@@ -309,7 +322,7 @@ int main() {
     auto ret = Init(deviceId, &stream);
     // check根据自己的需要处理
     CHECK_RET(ret == 0, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
-    
+
     // 2.构造输入与输出，需要根据API的接口定义构造
     std::vector<int64_t> selfShape = {1, 1, 2, 2, 2};
     std::vector<int64_t> outShape = {1, 1, 4, 4, 4};
@@ -348,11 +361,11 @@ int main() {
     // 调用aclnnReplicationPad3d第二段接口
     ret = aclnnReplicationPad3d(workspaceAddr, workspaceSize, executor, stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnReplicationPad3d failed. ERROR: %d\n", ret); return ret);
-    
+
     // 4.固定写法，同步等待任务执行结束
     ret = aclrtSynchronizeStream(stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
-    
+
     // 5.获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
     auto size = GetShapeSize(outShape);
     std::vector<float> resultData(size, 0);

@@ -4,14 +4,24 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    ×     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    ×     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    ×     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：不支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：不支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -54,24 +64,24 @@
 
 ```Cpp
 aclnnStatus aclnnStridedSliceGetWorkspaceSize(
-    const aclTensor   *self, 
-    const aclIntArray *begin, 
-    const aclIntArray *end, 
+    const aclTensor   *self,
+    const aclIntArray *begin,
+    const aclIntArray *end,
     const aclIntArray *strides,
-    int64_t           beginMask, 
-    int64_t           endMask, 
-    int64_t           ellipsisMask, 
-    int64_t           newAxisMask, 
+    int64_t           beginMask,
+    int64_t           endMask,
+    int64_t           ellipsisMask,
+    int64_t           newAxisMask,
     int64_t           shrinkAxisMask,
-    aclTensor         *out, 
-    uint64_t          *workspaceSize, 
+    aclTensor         *out,
+    uint64_t          *workspaceSize,
     aclOpExecutor     **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnStridedSlice(
     void          *workspace,
-    uint64_t       workspaceSize, 
+    uint64_t       workspaceSize,
     aclOpExecutor *executor,
     aclrtStream    stream)
 ```
@@ -142,7 +152,7 @@ aclnnStatus aclnnStridedSlice(
       <td>-</td>
     </tr>
     <tr>
-      <td>beginMask</td> 
+      <td>beginMask</td>
       <td>输入</td>
       <td>这个值指定bit位为1对应的索引维度的begin被忽略。</td>
       <td>-</td>
@@ -184,7 +194,7 @@ aclnnStatus aclnnStridedSlice(
     <tr>
       <td>shrinkAxisMask</td>
       <td>输入</td>
-      <td>把bit位为1对应的索引维度强制降为1 。</td> 
+      <td>把bit位为1对应的索引维度强制降为1 。</td>
       <td>shrinkAxisMask中bit位为1的索引，对应的strides需要大于0，即正数。</td>
       <td>INT64</td>
       <td>-</td>
@@ -227,7 +237,7 @@ aclnnStatus aclnnStridedSlice(
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
+
   第一段接口完成入参校验，出现以下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>

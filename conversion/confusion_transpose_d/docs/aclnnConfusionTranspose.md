@@ -2,14 +2,24 @@
 
 ## 产品支持情况
 
-| 产品                                              | 是否支持 |
-|:------------------------------------------------| :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>          |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>    |    x     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>    |    x     |
-| <term>Atlas 200I/500 A2 推理产品</term>             |    ×     |
-| <term>Atlas 推理系列产品</term>                       |    x     |
-| <term>Atlas 训练系列产品</term>                       |    x     |
+<!-- npu="950" id1 -->
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：不支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- <term>Atlas 推理系列产品</term>：不支持
+<!-- end id5 -->
+<!-- npu="910" id6 -->
+- <term>Atlas 训练系列产品</term>：不支持
+<!-- end id6 -->
 
 ## 功能说明
 
@@ -18,41 +28,41 @@
   融合reshape和transpose运算。
 
 - 计算公式：
-  
+
   1. transposeFirst为False时：
 
      $$
      y=transpose(reshape(x,shape),perm)
      $$
   2. transposeFirst为True时：
-  
+
      $$
      y=reshape(transpose(x,perm),shape)
      $$
-     
+
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnConfusionTransposeGetWorkspaceSize"接口获取入参并根据计算流程计算所需workspace大小，再调用"aclnnConfusionTranspose"接口执行计算。
 
 ```Cpp
-aclnnStatus aclnnConfusionTransposeGetWorkspaceSize( 
-    const aclTensor    *x, 
-    const aclIntArray  *perm, 
-    const aclIntArray  *shape, 
-    bool                transposeFirst, 
+aclnnStatus aclnnConfusionTransposeGetWorkspaceSize(
+    const aclTensor    *x,
+    const aclIntArray  *perm,
+    const aclIntArray  *shape,
+    bool                transposeFirst,
     aclTensor          *out,
-    uint64_t           *workspaceSize, 
+    uint64_t           *workspaceSize,
     aclOpExecutor      **executor)
 ```
 
-```Cpp 
+```Cpp
 aclnnStatus aclnnConfusionTranspose(
-    void               *workspace, 
-    uint64_t            workspaceSize, 
-    aclOpExecutor      *executor, 
+    void               *workspace,
+    uint64_t            workspaceSize,
+    aclOpExecutor      *executor,
     aclrtStream         stream)
 ```
-   
+
 ## aclnnConfusionTransposeGetWorkspaceSize
 
 - **参数说明**：
@@ -154,7 +164,7 @@ aclnnStatus aclnnConfusionTranspose(
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
+
   第一段接口完成入参校验，出现以下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
@@ -232,15 +242,15 @@ aclnnStatus aclnnConfusionTranspose(
 
 ## 约束说明
 
-* 确定性说明：aclnnConfusionTranspose默认确定性实现。
+- 确定性说明：aclnnConfusionTranspose默认确定性实现。
 
   例如：
-      
+
       设shape_before为reshape操作前的数据形状，shape_after为reshape操作后的数据形状，
 
           shape_before = [(ab),(cd),f,(gh)]
           shape_after = [a,(bc),d,e,(fg),h]
-      
+
       而如下的shape_after是不被允许的：
 
           shape_after_illegal = [a,b,d,e,(fg),(ch)]
@@ -332,7 +342,7 @@ int main() {
 
   // 创建input aclTensor
   aclTensor* x = nullptr;
-  std::vector<int64_t> xShape = {2, 4}; 
+  std::vector<int64_t> xShape = {2, 4};
   std::vector<float> xHostData = {1, 2, 3, 4, 5, 6, 7, 8};
   void* xDeviceAddr = nullptr;
   ret = CreateAclTensor(xHostData, xShape, &xDeviceAddr, aclDataType::ACL_FLOAT, &x);
@@ -341,13 +351,13 @@ int main() {
   // 创建perm
   aclIntArray* perm = nullptr;
   std::vector<int64_t> permData = {1, 0};
-  perm = aclCreateIntArray(permData.data(), permData.size()); 
+  perm = aclCreateIntArray(permData.data(), permData.size());
   CHECK_RET(perm != nullptr, return ret);
 
   // 创建shape
   aclIntArray* shape = nullptr;
   std::vector<int64_t> shapeData = {2, 4};
-  shape = aclCreateIntArray(shapeData.data(), shapeData.size()); 
+  shape = aclCreateIntArray(shapeData.data(), shapeData.size());
   CHECK_RET(shape != nullptr, return ret);
 
   // 创建transposeFirst
