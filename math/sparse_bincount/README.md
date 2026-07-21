@@ -99,12 +99,12 @@ $$
 - indices 为 2D tensor，shape (N, R)；values、dense_shape、size、weights 均为 1D tensor
 - indices 行数(N) 必须等于 values 元素数(N)
 - indices 列数(R) 必须等于 dense_shape 元素数(R)
+- indices[:, j] 必须在 [0, dense_shape[j]) 范围内
+- values[i] 必须在 [0, size) 范围内
 - weights 非空时，元素数必须与 values 元素数(N) 相等
 - size 为非负标量
-- values[i] < 0 或 values[i] >= size 时跳过，不写入输出
 - weights 为空（元素数为0）时，每个出现计为 1.0
 - binary_output = True 时，出现过的 bin 设为 1.0，忽略权重
-- 多维场景 batch < 0 或 batch >= dense_shape[0] 时跳过
 
 ## 调用说明
 
