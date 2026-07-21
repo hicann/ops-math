@@ -19,24 +19,22 @@
 #include "op_kernel/platform_util.h"
 #include "as_strided.h"
 
-namespace AsStrided
-{
+namespace AsStrided {
 using namespace AscendC;
-using AscendC::MicroAPI::CreateMask;
-using AscendC::MicroAPI::MaskReg;
-using AscendC::MicroAPI::RegTensor;
-using AscendC::MicroAPI::UpdateMask;
+using AscendC::Reg::CreateMask;
+using AscendC::Reg::MaskReg;
+using AscendC::Reg::RegTensor;
+using AscendC::Reg::UpdateMask;
 constexpr uint16_t VF_LENGTH = Ops::Base::GetVRegSize();
 
 template <typename T>
-class KernelAsStridedGather
-{
+class KernelAsStridedGather {
 public:
     __aicore__ inline KernelAsStridedGather(){};
-    __aicore__ inline void Init(GM_ADDR input, GM_ADDR outShape, GM_ADDR outStride, 
-                                GM_ADDR output, const AsStridedWithGatherTilingData* tilingDataPtr);
+    __aicore__ inline void Init(GM_ADDR input, GM_ADDR outShape, GM_ADDR outStride, GM_ADDR output,
+                                const AsStridedWithGatherTilingData* tilingDataPtr);
     template <typename K>
-    __aicore__ inline void CopyArray(const K *src, K *dst, int64_t size);
+    __aicore__ inline void CopyArray(const K* src, K* dst, int64_t size);
     __aicore__ inline uint16_t CeilDiv(uint32_t a, uint16_t b);
     __aicore__ inline int64_t GetMod(int64_t a, uint32_t b);
     __aicore__ inline void Process();
@@ -51,12 +49,13 @@ public:
     __aicore__ inline void AsGather(int64_t idxOffset);
     __aicore__ inline void ComputeGMOffset(int64_t idxInTotal, int64_t& yGMOffset);
     __aicore__ inline void AsCopyOut(int64_t yGMOffset);
+
 private:
     using RangeType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>;
     using IdxType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>;
-    using CastType_ =
-        std::conditional_t<sizeof(T) == 1, std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
-    
+    using CastType_ = std::conditional_t<sizeof(T) == 1,
+                                         std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
+
     TPipe pipe_;
     const AsStridedWithGatherTilingData* tdPtr_ = nullptr;
     TQue<QuePosition::VECIN, 1> inQue_;
@@ -67,7 +66,7 @@ private:
     int64_t blockIdx_ = 0;
     int64_t storageOffset_ = 0;
     int64_t blockNum_ = 0;
-    int64_t bufferCnt_ = 2;  // enable db
+    int64_t bufferCnt_ = 2; // enable db
 
     uint32_t ubBatchArr_[TILING_ARRAY_LEN];
     uint32_t strideArr_[TILING_ARRAY_LEN];
@@ -95,7 +94,7 @@ private:
     uint32_t coreInnerAxisFactor_ = 0;
     uint32_t coreInnerAxisTailFactor_ = 0;
     uint32_t preSize_ = 0;
-    
+
     int64_t loopsUb_ = 0;
     int64_t coreStart_ = 0;
 
@@ -105,8 +104,9 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void KernelAsStridedGather<T>::Init(GM_ADDR input, GM_ADDR outShape, 
-    GM_ADDR outStride, GM_ADDR output, const AsStridedWithGatherTilingData* tilingDataPtr)
+__aicore__ inline void KernelAsStridedGather<T>::Init(GM_ADDR input, GM_ADDR outShape, GM_ADDR outStride,
+                                                      GM_ADDR output,
+                                                      const AsStridedWithGatherTilingData* tilingDataPtr)
 {
     blockIdx_ = GetBlockIdx();
     tdPtr_ = tilingDataPtr;
@@ -119,7 +119,7 @@ __aicore__ inline void KernelAsStridedGather<T>::Init(GM_ADDR input, GM_ADDR out
     realInUbSize_ = tdPtr_->inUbSize;
     realInDataLen_ = tdPtr_->inDataLen;
     dimNum_ = tdPtr_->outDimNum;
-    tilingAxisIdx_ =  tdPtr_->tilingAxisIdx;
+    tilingAxisIdx_ = tdPtr_->tilingAxisIdx;
     blockInnerAxisFactor_ = tdPtr_->mainBlockUbParam.innerAxisFactor;
     blockTailInnerAxisFactor_ = tdPtr_->tailBlockUbParam.innerAxisFactor;
     blockUbFactor_ = tdPtr_->mainBlockUbParam.ubFactor;
@@ -154,11 +154,11 @@ template <typename T>
 __aicore__ inline void KernelAsStridedGather<T>::ComputeCoreOffset()
 {
     loopsUb_ = blockFactor_;
-    if (blockAxisIdx_ == tilingAxisIdx_) {  //切同轴
-        if (tilingAxisIdx_ != 0) { // 不切在首轴
+    if (blockAxisIdx_ == tilingAxisIdx_) { // 切同轴
+        if (tilingAxisIdx_ != 0) {         // 不切在首轴
             uint32_t mulsFactor = blockIdx_ / coreOuterAxisFactor_;
             int64_t modFactor = 0;
-            if (coreOuterAxisFactor_ != 1) { //核外轴不为1
+            if (coreOuterAxisFactor_ != 1) { // 核外轴不为1
                 modFactor = GetMod(blockIdx_, coreOuterAxisFactor_);
             }
             coreStart_ = mulsFactor * ubBatchArr_[tilingAxisIdx_] + modFactor * blockOuterAxisFactor_;
@@ -232,7 +232,8 @@ __aicore__ inline void KernelAsStridedGather<T>::ComputeIdxOffset(int64_t idxInT
 }
 
 template <typename T>
-__aicore__ inline void KernelAsStridedGather<T>::ComputeSameAxisOffset(int64_t idxInTotal, int64_t& idxOffset, int64_t& yGMOffset)
+__aicore__ inline void KernelAsStridedGather<T>::ComputeSameAxisOffset(int64_t idxInTotal, int64_t& idxOffset,
+                                                                       int64_t& yGMOffset)
 {
     int64_t mulsFactor = 0;
     int64_t modFactor = 0;
@@ -250,7 +251,8 @@ __aicore__ inline void KernelAsStridedGather<T>::ComputeSameAxisOffset(int64_t i
             curUbFactor_ = blockTailUbFactor_;
         }
 
-        yGMOffset = blockMainCount_ * coreInnerAxisFactor_ * preSize_ + modFactor * blockTailInnerAxisFactor_ * preSize_;
+        yGMOffset = blockMainCount_ * coreInnerAxisFactor_ * preSize_ +
+                    modFactor * blockTailInnerAxisFactor_ * preSize_;
     } else {
         mulsFactor = idxInTotal / blockFactor_;
         modFactor = GetMod(idxInTotal, blockFactor_);
@@ -285,7 +287,7 @@ __aicore__ inline void KernelAsStridedGather<T>::AsCopyGM2Ub()
     copyInParams.blockLen = realInDataLen_ * sizeof(T);
     copyInParams.srcStride = 0;
     copyInParams.dstStride = 0;
-    DataCopyPadExtParams<T> copyInPadParams {false, 0, 0, 0};
+    DataCopyPadExtParams<T> copyInPadParams{false, 0, 0, 0};
     DataCopyPad(ubFactorLocal_, inputGM_, copyInParams, copyInPadParams);
     inQue_.EnQue<T>(ubFactorLocal_);
 }
@@ -310,23 +312,26 @@ __aicore__ inline void KernelAsStridedGather<T>::AsGather(int64_t idxOffset)
         uint32_t xUbTail = curUbFactor_ > vfLen ? (curUbFactor_ - (loopsCnt - 1) * xUbMain) : 0;
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg p0 = AscendC::MicroAPI::UpdateMask<IdxType_>(xUbMain);
-            MicroAPI::MaskReg p1 = AscendC::MicroAPI::UpdateMask<IdxType_>(xUbTail);
-            MicroAPI::RegTensor<IdxType_> indexReg;
-            MicroAPI::RegTensor<IdxType_> vd0;
-            MicroAPI::RegTensor<T> dstReg;
+            Reg::MaskReg p0 = AscendC::Reg::UpdateMask<IdxType_>(xUbMain);
+            Reg::MaskReg p1 = AscendC::Reg::UpdateMask<IdxType_>(xUbTail);
+            Reg::RegTensor<IdxType_> indexReg;
+            Reg::RegTensor<IdxType_> vd0;
+            Reg::RegTensor<T> dstReg;
             for (uint16_t idx_reg = 0; idx_reg < mainLoopsCnt; ++idx_reg) {
-                MicroAPI::DataCopy(indexReg, indexAddr + idx_reg * xUbMain_copy);
-                MicroAPI::Adds(vd0, indexReg, idxOffset, p0);
-                MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType_>&)dstReg, xUbAddr, vd0, p0);
-                __local_mem__ CastType_* yUbAddrB16 = reinterpret_cast<__local_mem__ CastType_*>(yUbAddr + idx_reg * xUbMain_copy);
-                MicroAPI::DataCopy<CastType_, MicroAPI::StoreDist::DIST_PACK_B16>(yUbAddrB16, (MicroAPI::RegTensor<CastType_>&)dstReg, p0);
+                Reg::DataCopy(indexReg, indexAddr + idx_reg * xUbMain_copy);
+                Reg::Adds(vd0, indexReg, idxOffset, p0);
+                Reg::DataCopyGather((Reg::RegTensor<CastType_>&)dstReg, xUbAddr, vd0, p0);
+                __local_mem__ CastType_* yUbAddrB16 = reinterpret_cast<__local_mem__ CastType_*>(
+                    yUbAddr + idx_reg * xUbMain_copy);
+                Reg::DataCopy<CastType_, Reg::StoreDist::DIST_PACK_B16>(yUbAddrB16, (Reg::RegTensor<CastType_>&)dstReg,
+                                                                        p0);
             }
-            MicroAPI::DataCopy(indexReg, indexAddr + mainLoopsCnt2 * xUbMain_copy);
-            MicroAPI::Adds(vd0, indexReg, idxOffset, p1);
-            MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType_>&)dstReg, xUbAddr, vd0, p1);
-            __local_mem__ CastType_* yUbAddrB16 = reinterpret_cast<__local_mem__ CastType_*>(yUbAddr + mainLoopsCnt2 * xUbMain_copy);
-            MicroAPI::DataCopy<CastType_, MicroAPI::StoreDist::DIST_PACK_B16>(yUbAddrB16, (MicroAPI::RegTensor<CastType_>&)dstReg, p1);
+            Reg::DataCopy(indexReg, indexAddr + mainLoopsCnt2 * xUbMain_copy);
+            Reg::Adds(vd0, indexReg, idxOffset, p1);
+            Reg::DataCopyGather((Reg::RegTensor<CastType_>&)dstReg, xUbAddr, vd0, p1);
+            __local_mem__ CastType_* yUbAddrB16 = reinterpret_cast<__local_mem__ CastType_*>(
+                yUbAddr + mainLoopsCnt2 * xUbMain_copy);
+            Reg::DataCopy<CastType_, Reg::StoreDist::DIST_PACK_B16>(yUbAddrB16, (Reg::RegTensor<CastType_>&)dstReg, p1);
         }
     } else {
         uint16_t vfLen = VF_LENGTH / sizeof(CastType_);
@@ -339,23 +344,23 @@ __aicore__ inline void KernelAsStridedGather<T>::AsGather(int64_t idxOffset)
         uint32_t xUbTail = curUbFactor_ > vfLen ? (curUbFactor_ - (loopsCnt - 1) * xUbMain) : 0;
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg p0 = AscendC::MicroAPI::UpdateMask<CastType_>(xUbMain);
-            MicroAPI::MaskReg p2 = AscendC::MicroAPI::UpdateMask<IdxType_>(vfLen_idxType);
-            MicroAPI::MaskReg p1 = AscendC::MicroAPI::UpdateMask<CastType_>(xUbTail);
-            MicroAPI::RegTensor<IdxType_> indexReg;
-            MicroAPI::RegTensor<IdxType_> vd0;
-            MicroAPI::RegTensor<T> dstReg;
-            MicroAPI::AddrReg aReg0;
+            Reg::MaskReg p0 = AscendC::Reg::UpdateMask<CastType_>(xUbMain);
+            Reg::MaskReg p2 = AscendC::Reg::UpdateMask<IdxType_>(vfLen_idxType);
+            Reg::MaskReg p1 = AscendC::Reg::UpdateMask<CastType_>(xUbTail);
+            Reg::RegTensor<IdxType_> indexReg;
+            Reg::RegTensor<IdxType_> vd0;
+            Reg::RegTensor<T> dstReg;
+            Reg::AddrReg aReg0;
             for (uint16_t idx_reg = 0; idx_reg < mainLoopsCnt; ++idx_reg) {
-                MicroAPI::DataCopy(indexReg, indexAddr + idx_reg * xUbMain_copy);
-                MicroAPI::Adds(vd0, indexReg, idxOffset, p2);
-                MicroAPI::DataCopyGather(dstReg, xUbAddr, vd0, p0);
-                MicroAPI::DataCopy(yUbAddr + idx_reg * xUbMain_copy, dstReg, p0);
+                Reg::DataCopy(indexReg, indexAddr + idx_reg * xUbMain_copy);
+                Reg::Adds(vd0, indexReg, idxOffset, p2);
+                Reg::DataCopyGather(dstReg, xUbAddr, vd0, p0);
+                Reg::DataCopy(yUbAddr + idx_reg * xUbMain_copy, dstReg, p0);
             }
-            MicroAPI::DataCopy(indexReg, indexAddr + mainLoopsCnt2 * xUbMain_copy);
-            MicroAPI::Adds(vd0, indexReg, idxOffset, p2);
-            MicroAPI::DataCopyGather(dstReg, xUbAddr, vd0, p1);
-            MicroAPI::DataCopy(yUbAddr + mainLoopsCnt2 * xUbMain_copy, dstReg, p1);
+            Reg::DataCopy(indexReg, indexAddr + mainLoopsCnt2 * xUbMain_copy);
+            Reg::Adds(vd0, indexReg, idxOffset, p2);
+            Reg::DataCopyGather(dstReg, xUbAddr, vd0, p1);
+            Reg::DataCopy(yUbAddr + mainLoopsCnt2 * xUbMain_copy, dstReg, p1);
         }
     }
     outQue_.EnQue<T>(yUbFactorLocal_);
@@ -380,7 +385,7 @@ __aicore__ inline void KernelAsStridedGather<T>::AsComputeIdx()
     uint32_t dim = dimNum_ - tilingAxisIdx_;
     if (dim == 1) {
         GenDim1Index();
-    } else if(dim == 2) {
+    } else if (dim == 2) {
         GenDim2Index();
     } else {
         GenDim3Index();
@@ -408,7 +413,7 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim3Index()
         leftDimSize = blockUbFactor_ - vfLen;
         loopsCnt = CeilDiv(leftDimSize, vfLen);
     }
-    
+
     __VEC_SCOPE__
     {
         RegTensor<RangeType_> tmp;
@@ -419,70 +424,70 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim3Index()
         RegTensor<IdxType_> tmp1Reg;
         RegTensor<IdxType_> dim2Reg;
         RegTensor<IdxType_> dstReg;
-        MaskReg mask = CreateMask<RangeType_, MicroAPI::MaskPattern::ALL>();
+        MaskReg mask = CreateMask<RangeType_, Reg::MaskPattern::ALL>();
         // vec_a: VL % a
-        MicroAPI::Arange(tmp, 0);
-        idxReg = (RegTensor<IdxType_> &)tmp;
-        MicroAPI::Duplicate(dim0Reg, lastDimSize);
-        MicroAPI::Copy(dim2Reg, dim0Reg);  // backup a
-        MicroAPI::Div(tmpReg, idxReg, dim0Reg, mask);
-        MicroAPI::Copy(dim1Reg, tmpReg);  // backup VL / a
-        MicroAPI::Mul(tmpReg, tmpReg, dim0Reg, mask);
-        MicroAPI::Sub(dim0Reg, idxReg, tmpReg, mask);
+        Reg::Arange(tmp, 0);
+        idxReg = (RegTensor<IdxType_>&)tmp;
+        Reg::Duplicate(dim0Reg, lastDimSize);
+        Reg::Copy(dim2Reg, dim0Reg); // backup a
+        Reg::Div(tmpReg, idxReg, dim0Reg, mask);
+        Reg::Copy(dim1Reg, tmpReg); // backup VL / a
+        Reg::Mul(tmpReg, tmpReg, dim0Reg, mask);
+        Reg::Sub(dim0Reg, idxReg, tmpReg, mask);
         // vec_b: VL / a % b
-        MicroAPI::Duplicate(tmp1Reg, last2ndDimSize);
-        MicroAPI::Mul(dim2Reg, dim2Reg, tmp1Reg, mask);  // backup b
-        MicroAPI::Div(tmpReg, dim1Reg, tmp1Reg, mask);
-        MicroAPI::Mul(tmpReg, tmpReg, tmp1Reg, mask);
-        MicroAPI::Sub(dim1Reg, dim1Reg, tmpReg, mask);
+        Reg::Duplicate(tmp1Reg, last2ndDimSize);
+        Reg::Mul(dim2Reg, dim2Reg, tmp1Reg, mask); // backup b
+        Reg::Div(tmpReg, dim1Reg, tmp1Reg, mask);
+        Reg::Mul(tmpReg, tmpReg, tmp1Reg, mask);
+        Reg::Sub(dim1Reg, dim1Reg, tmpReg, mask);
         // vec_c: VL / (a * b)
-        MicroAPI::Div(dim2Reg, idxReg, dim2Reg, mask);
+        Reg::Div(dim2Reg, idxReg, dim2Reg, mask);
         // index: vec_a * a_in_offset + vec_b * b_in_offset + vec_c * c_in_offset
-        MicroAPI::Muls(tmpReg, dim0Reg, lastDimInOffset, mask);
-        MicroAPI::Muls(tmp1Reg, dim1Reg, last2ndDimInOffset, mask);
-        MicroAPI::Muls(dstReg, dim2Reg, last3rdDimInOffset, mask);
-        MicroAPI::Add(dstReg, dstReg, tmpReg, mask);
-        MicroAPI::Add(dstReg, dstReg, tmp1Reg, mask);
-        MicroAPI::DataCopy(idxAddr, dstReg, mask);
+        Reg::Muls(tmpReg, dim0Reg, lastDimInOffset, mask);
+        Reg::Muls(tmp1Reg, dim1Reg, last2ndDimInOffset, mask);
+        Reg::Muls(dstReg, dim2Reg, last3rdDimInOffset, mask);
+        Reg::Add(dstReg, dstReg, tmpReg, mask);
+        Reg::Add(dstReg, dstReg, tmp1Reg, mask);
+        Reg::DataCopy(idxAddr, dstReg, mask);
 
         MaskReg lpMask;
         MaskReg selMask;
         RegTensor<IdxType_> zeroReg;
         RegTensor<IdxType_> oneReg;
         RegTensor<IdxType_> cmpReg;
-        MicroAPI::Duplicate(zeroReg, 0);
-        MicroAPI::Duplicate(oneReg, 1);
+        Reg::Duplicate(zeroReg, 0);
+        Reg::Duplicate(oneReg, 1);
         for (uint16_t lpIdx = 0; lpIdx < loopsCnt; ++lpIdx) {
             lpMask = UpdateMask<IdxType_>(leftDimSize);
             /*   vec_a += a_inc
              *   cmp_a = vec_a >= a
              *   vec_a = vec_a - cmp_a * a
              */
-            MicroAPI::Adds(dim0Reg, dim0Reg, lastDimInc, lpMask);
-            MicroAPI::CompareScalar<IdxType_, CMPMODE::GE>(selMask, dim0Reg, lastDimSize, lpMask);
-            MicroAPI::Select(cmpReg, oneReg, zeroReg, selMask);
-            MicroAPI::Muls(tmpReg, cmpReg, lastDimSize, lpMask);
-            MicroAPI::Sub(dim0Reg, dim0Reg, tmpReg, lpMask);
+            Reg::Adds(dim0Reg, dim0Reg, lastDimInc, lpMask);
+            Reg::CompareScalar<IdxType_, CMPMODE::GE>(selMask, dim0Reg, lastDimSize, lpMask);
+            Reg::Select(cmpReg, oneReg, zeroReg, selMask);
+            Reg::Muls(tmpReg, cmpReg, lastDimSize, lpMask);
+            Reg::Sub(dim0Reg, dim0Reg, tmpReg, lpMask);
             /*   vec_b += (b_inc + cmp_a)
              *   cmp_b = vec_b >= b
              *   vec_b = vec_b - cmp_b * b
              */
-            MicroAPI::Adds(cmpReg, cmpReg, last2ndDimInc, lpMask);
-            MicroAPI::Add(dim1Reg, dim1Reg, cmpReg, lpMask);
-            MicroAPI::CompareScalar<IdxType_, CMPMODE::GE>(selMask, dim1Reg, last2ndDimSize, lpMask);
-            MicroAPI::Select(cmpReg, oneReg, zeroReg, selMask);
-            MicroAPI::Muls(tmpReg, cmpReg, last2ndDimSize, lpMask);
-            MicroAPI::Sub(dim1Reg, dim1Reg, tmpReg, lpMask);
+            Reg::Adds(cmpReg, cmpReg, last2ndDimInc, lpMask);
+            Reg::Add(dim1Reg, dim1Reg, cmpReg, lpMask);
+            Reg::CompareScalar<IdxType_, CMPMODE::GE>(selMask, dim1Reg, last2ndDimSize, lpMask);
+            Reg::Select(cmpReg, oneReg, zeroReg, selMask);
+            Reg::Muls(tmpReg, cmpReg, last2ndDimSize, lpMask);
+            Reg::Sub(dim1Reg, dim1Reg, tmpReg, lpMask);
             // vec_c += (c_inc + cmp_b)
-            MicroAPI::Adds(dim2Reg, dim2Reg, last3rdDimInc, lpMask);
-            MicroAPI::Add(dim2Reg, dim2Reg, cmpReg, lpMask);
+            Reg::Adds(dim2Reg, dim2Reg, last3rdDimInc, lpMask);
+            Reg::Add(dim2Reg, dim2Reg, cmpReg, lpMask);
             // index: vec_a * a_in_offset + vec_b * b_in_offset + vec_c * c_in_offset
-            MicroAPI::Muls(tmpReg, dim0Reg, lastDimInOffset, lpMask);
-            MicroAPI::Muls(tmp1Reg, dim1Reg, last2ndDimInOffset, lpMask);
-            MicroAPI::Muls(dstReg, dim2Reg, last3rdDimInOffset, lpMask);
-            MicroAPI::Add(dstReg, dstReg, tmpReg, lpMask);
-            MicroAPI::Add(dstReg, dstReg, tmp1Reg, lpMask);
-            MicroAPI::DataCopy(idxAddr + (lpIdx + 1) * vfLen, dstReg, lpMask);
+            Reg::Muls(tmpReg, dim0Reg, lastDimInOffset, lpMask);
+            Reg::Muls(tmp1Reg, dim1Reg, last2ndDimInOffset, lpMask);
+            Reg::Muls(dstReg, dim2Reg, last3rdDimInOffset, lpMask);
+            Reg::Add(dstReg, dstReg, tmpReg, lpMask);
+            Reg::Add(dstReg, dstReg, tmp1Reg, lpMask);
+            Reg::DataCopy(idxAddr + (lpIdx + 1) * vfLen, dstReg, lpMask);
         }
     }
 }
@@ -514,47 +519,47 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim2Index()
         RegTensor<IdxType_> tmpReg;
         RegTensor<IdxType_> dim1Reg;
         RegTensor<IdxType_> dstReg;
-        MaskReg mask = CreateMask<IdxType_, MicroAPI::MaskPattern::ALL>();
+        MaskReg mask = CreateMask<IdxType_, Reg::MaskPattern::ALL>();
         // vec_a: VL % a
-        MicroAPI::Arange(tmp, 0);
-        idxReg = (RegTensor<IdxType_> &)tmp;
-        MicroAPI::Duplicate(dim0Reg, lastDimSize);
-        MicroAPI::Div(tmpReg, idxReg, dim0Reg, mask);
-        MicroAPI::Copy(dim1Reg, tmpReg);  // vec_b: VL / a
-        MicroAPI::Mul(tmpReg, tmpReg, dim0Reg, mask);
-        MicroAPI::Sub(dim0Reg, idxReg, tmpReg, mask);
+        Reg::Arange(tmp, 0);
+        idxReg = (RegTensor<IdxType_>&)tmp;
+        Reg::Duplicate(dim0Reg, lastDimSize);
+        Reg::Div(tmpReg, idxReg, dim0Reg, mask);
+        Reg::Copy(dim1Reg, tmpReg); // vec_b: VL / a
+        Reg::Mul(tmpReg, tmpReg, dim0Reg, mask);
+        Reg::Sub(dim0Reg, idxReg, tmpReg, mask);
         // index: vec_a * a_in_offset + vec_b * b_in_offset
-        MicroAPI::Muls(tmpReg, dim0Reg, lastDimInOffset, mask);
-        MicroAPI::Muls(dstReg, dim1Reg, last2ndDimInOffset, mask);
-        MicroAPI::Add(dstReg, dstReg, tmpReg, mask);
-        MicroAPI::DataCopy(idxAddr, dstReg, mask);
+        Reg::Muls(tmpReg, dim0Reg, lastDimInOffset, mask);
+        Reg::Muls(dstReg, dim1Reg, last2ndDimInOffset, mask);
+        Reg::Add(dstReg, dstReg, tmpReg, mask);
+        Reg::DataCopy(idxAddr, dstReg, mask);
 
         MaskReg lpMask;
         MaskReg selMask;
         RegTensor<IdxType_> zeroReg;
         RegTensor<IdxType_> oneReg;
         RegTensor<IdxType_> cmpReg;
-        MicroAPI::Duplicate(zeroReg, 0);
-        MicroAPI::Duplicate(oneReg, 1);
+        Reg::Duplicate(zeroReg, 0);
+        Reg::Duplicate(oneReg, 1);
         for (uint16_t lpIdx = 0; lpIdx < loopsCnt; ++lpIdx) {
             lpMask = UpdateMask<IdxType_>(leftDimSize);
             /*   vec_a += a_inc
              *   cmp_a = vec_a >= a
              *   vec_a = vec_a - cmp_a * a
              */
-            MicroAPI::Adds(dim0Reg, dim0Reg, lastDimInc, lpMask);
-            MicroAPI::CompareScalar<IdxType_, CMPMODE::GE>(selMask, dim0Reg, lastDimSize, lpMask);
-            MicroAPI::Select(cmpReg, oneReg, zeroReg, selMask);
-            MicroAPI::Muls(tmpReg, cmpReg, lastDimSize, lpMask);
-            MicroAPI::Sub(dim0Reg, dim0Reg, tmpReg, lpMask);
+            Reg::Adds(dim0Reg, dim0Reg, lastDimInc, lpMask);
+            Reg::CompareScalar<IdxType_, CMPMODE::GE>(selMask, dim0Reg, lastDimSize, lpMask);
+            Reg::Select(cmpReg, oneReg, zeroReg, selMask);
+            Reg::Muls(tmpReg, cmpReg, lastDimSize, lpMask);
+            Reg::Sub(dim0Reg, dim0Reg, tmpReg, lpMask);
             // vec_b += (b_inc + cmp_a)
-            MicroAPI::Adds(dim1Reg, dim1Reg, last2ndDimInc, lpMask);
-            MicroAPI::Add(dim1Reg, dim1Reg, cmpReg, lpMask);
+            Reg::Adds(dim1Reg, dim1Reg, last2ndDimInc, lpMask);
+            Reg::Add(dim1Reg, dim1Reg, cmpReg, lpMask);
             // index: vec_a * a_in_offset + vec_b * b_in_offset
-            MicroAPI::Muls(tmpReg, dim0Reg, lastDimInOffset, lpMask);
-            MicroAPI::Muls(dstReg, dim1Reg, last2ndDimInOffset, lpMask);
-            MicroAPI::Add(dstReg, dstReg, tmpReg, lpMask);
-            MicroAPI::DataCopy(idxAddr + (lpIdx + 1) * vfLen, dstReg, lpMask);
+            Reg::Muls(tmpReg, dim0Reg, lastDimInOffset, lpMask);
+            Reg::Muls(dstReg, dim1Reg, last2ndDimInOffset, lpMask);
+            Reg::Add(dstReg, dstReg, tmpReg, lpMask);
+            Reg::DataCopy(idxAddr + (lpIdx + 1) * vfLen, dstReg, lpMask);
         }
     }
 }
@@ -573,27 +578,27 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim1Index()
         RegTensor<IdxType_> srcReg;
         RegTensor<IdxType_> dstReg;
         MaskReg mask;
-        MicroAPI::Arange(tmp, 0);
-        srcReg = (RegTensor<IdxType_> &)tmp;
+        Reg::Arange(tmp, 0);
+        srcReg = (RegTensor<IdxType_>&)tmp;
         for (uint16_t lpIdx = 0; lpIdx < loopsCnt; ++lpIdx) {
             mask = UpdateMask<IdxType_>(tempBUF);
-            MicroAPI::Muls(dstReg, srcReg, lastDimInOffset, mask);
-            MicroAPI::DataCopy(idxAddr + lpIdx * vfLen, dstReg, mask);
-            MicroAPI::Adds(srcReg, srcReg, vfLen, mask);
+            Reg::Muls(dstReg, srcReg, lastDimInOffset, mask);
+            Reg::DataCopy(idxAddr + lpIdx * vfLen, dstReg, mask);
+            Reg::Adds(srcReg, srcReg, vfLen, mask);
         }
     }
 }
 
-template<typename T>
+template <typename T>
 template <typename K>
-__aicore__ inline void KernelAsStridedGather<T>::CopyArray(const K *src, K *dst, int64_t size)
+__aicore__ inline void KernelAsStridedGather<T>::CopyArray(const K* src, K* dst, int64_t size)
 {
     for (int64_t i = 0; i < size; i++) {
         dst[i] = src[i];
     }
 }
 
-template<typename T>
+template <typename T>
 __aicore__ inline uint16_t KernelAsStridedGather<T>::CeilDiv(uint32_t a, uint16_t b)
 {
     if (b == 0) {
@@ -602,7 +607,7 @@ __aicore__ inline uint16_t KernelAsStridedGather<T>::CeilDiv(uint32_t a, uint16_
     return (a + b - 1) / b;
 };
 
-template<typename T>
+template <typename T>
 __aicore__ inline int64_t KernelAsStridedGather<T>::GetMod(int64_t a, uint32_t b)
 {
     if (b == 0) {
@@ -610,5 +615,5 @@ __aicore__ inline int64_t KernelAsStridedGather<T>::GetMod(int64_t a, uint32_t b
     }
     return a - b * (a / b);
 };
-}
+} // namespace AsStrided
 #endif // OP_KERNEL_AS_STRIDED_GATHER

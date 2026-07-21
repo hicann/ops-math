@@ -252,7 +252,7 @@ private:
             else
                 WaitFlag<HardEvent::MTE2_V>(EVENT_ID0);
 
-            PadBothSide<AscendC::MicroAPI::RegTraitNumOne>(src);
+            PadBothSide<AscendC::Reg::RegTraitNumOne>(src);
 
             if (idx & 1)
                 SetFlag<HardEvent::V_MTE3>(EVENT_ID1);
@@ -266,7 +266,7 @@ private:
         }
     }
 
-    template <const AscendC::MicroAPI::RegTrait& Trait>
+    template <const AscendC::Reg::RegTrait& Trait>
     __aicore__ inline void PadBothSide(LocalTensor<T> dst)
     {
         __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
@@ -289,30 +289,29 @@ private:
 
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<RangeType> idxReg;
-            AscendC::MicroAPI::RegTensor<T> dataReg;
-            AscendC::MicroAPI::MaskReg maskReg;
+            AscendC::Reg::RegTensor<RangeType> idxReg;
+            AscendC::Reg::RegTensor<T> dataReg;
+            AscendC::Reg::MaskReg maskReg;
 
-            AscendC::MicroAPI::RegTensor<T> dataB16ToB8Reg;
-            AscendC::MicroAPI::MaskReg
-                maskRegLowHalf = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::H>();
+            AscendC::Reg::RegTensor<T> dataB16ToB8Reg;
+            AscendC::Reg::MaskReg maskRegLowHalf = AscendC::Reg::CreateMask<T, AscendC::Reg::MaskPattern::H>();
 
             __ubuf__ T* srcAddr = dstAddr + inStart;
             for (uint16_t j = 0; j < needPadleftVF; j++) {
                 __ubuf__ T* ubLeftAddr = dstAddr + outLeftStart;
                 uint16_t leftIdxStart = leftUbStartIdx_ + leftUbCopyLen_ - 1;
                 for (uint16_t k = 0; k < repeatLeftTimes; k++) {
-                    maskReg = AscendC::MicroAPI::UpdateMask<CastType>(leftUbCopyLenVF);
-                    MicroAPI::Arange<RangeType, AscendC::MicroAPI::IndexOrder::DECREASE_ORDER>(
+                    maskReg = AscendC::Reg::UpdateMask<CastType>(leftUbCopyLenVF);
+                    Reg::Arange<RangeType, AscendC::Reg::IndexOrder::DECREASE_ORDER>(
                         idxReg, (RangeType)(leftIdxStart - rangeStart - k * oneRepeatSize));
-                    MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType>&)dataReg, srcAddr,
-                                             (MicroAPI::RegTensor<IdxType>&)idxReg, maskReg);
+                    Reg::DataCopyGather((Reg::RegTensor<CastType>&)dataReg, srcAddr, (Reg::RegTensor<IdxType>&)idxReg,
+                                        maskReg);
                     if constexpr (sizeof(T) != 1) {
-                        MicroAPI::DataCopy(ubLeftAddr + k * oneRepeatSize, dataReg, maskReg);
+                        Reg::DataCopy(ubLeftAddr + k * oneRepeatSize, dataReg, maskReg);
                     } else {
-                        maskRegLowHalf = AscendC::MicroAPI::UpdateMask<T>(leftUbCopyLenVFB8);
-                        MicroAPI::Pack(dataB16ToB8Reg, (MicroAPI::RegTensor<CastType>&)dataReg);
-                        MicroAPI::DataCopy(ubLeftAddr + k * oneRepeatSize, dataB16ToB8Reg, maskRegLowHalf);
+                        maskRegLowHalf = AscendC::Reg::UpdateMask<T>(leftUbCopyLenVFB8);
+                        Reg::Pack(dataB16ToB8Reg, (Reg::RegTensor<CastType>&)dataReg);
+                        Reg::DataCopy(ubLeftAddr + k * oneRepeatSize, dataB16ToB8Reg, maskRegLowHalf);
                     }
                 }
             }
@@ -321,17 +320,17 @@ private:
                 __ubuf__ T* ubRightAddr = dstAddr + outRightStart;
                 uint16_t rightIdxStart = rightUbStartIdx_ + rightUbCopyLen_ - 1;
                 for (uint16_t k = 0; k < repeatRightTimes; k++) {
-                    maskReg = AscendC::MicroAPI::UpdateMask<CastType>(rightUbCopyLenVF);
-                    MicroAPI::Arange<RangeType, AscendC::MicroAPI::IndexOrder::DECREASE_ORDER>(
+                    maskReg = AscendC::Reg::UpdateMask<CastType>(rightUbCopyLenVF);
+                    Reg::Arange<RangeType, AscendC::Reg::IndexOrder::DECREASE_ORDER>(
                         idxReg, (RangeType)(rightIdxStart - rangeStart - k * oneRepeatSize));
-                    MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType>&)dataReg, srcAddr,
-                                             (MicroAPI::RegTensor<IdxType>&)idxReg, maskReg);
+                    Reg::DataCopyGather((Reg::RegTensor<CastType>&)dataReg, srcAddr, (Reg::RegTensor<IdxType>&)idxReg,
+                                        maskReg);
                     if constexpr (sizeof(T) != 1) {
-                        MicroAPI::DataCopy(ubRightAddr + k * oneRepeatSize, dataReg, maskReg);
+                        Reg::DataCopy(ubRightAddr + k * oneRepeatSize, dataReg, maskReg);
                     } else {
-                        maskRegLowHalf = AscendC::MicroAPI::UpdateMask<T>(rightUbCopyLenVFB8);
-                        MicroAPI::Pack(dataB16ToB8Reg, (MicroAPI::RegTensor<CastType>&)dataReg);
-                        MicroAPI::DataCopy(ubRightAddr + k * oneRepeatSize, dataB16ToB8Reg, maskRegLowHalf);
+                        maskRegLowHalf = AscendC::Reg::UpdateMask<T>(rightUbCopyLenVFB8);
+                        Reg::Pack(dataB16ToB8Reg, (Reg::RegTensor<CastType>&)dataReg);
+                        Reg::DataCopy(ubRightAddr + k * oneRepeatSize, dataB16ToB8Reg, maskRegLowHalf);
                     }
                 }
             }

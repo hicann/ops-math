@@ -20,16 +20,15 @@
 
 #include "slice_base.h"
 
-namespace Slice
-{
+namespace Slice {
 using namespace AscendC;
 
 template <typename T, typename U, typename V = int8_t>
-class SliceMoveAlignGather : public SliceBase<T, U, V>
-{
+class SliceMoveAlignGather : public SliceBase<T, U, V> {
 public:
     __aicore__ inline SliceMoveAlignGather(){};
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y, const SliceMoveAlignGatherTilingData* tdPtr, TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y, const SliceMoveAlignGatherTilingData* tdPtr,
+                                TPipe* pipe);
     __aicore__ inline void Process();
 
 private:
@@ -37,12 +36,12 @@ private:
                                          std::conditional_t<sizeof(T) <= sizeof(int32_t), int32_t, int64_t>>;
     using IdxType = std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t,
                                        std::conditional_t<sizeof(T) <= sizeof(int32_t), uint32_t, uint64_t>>;
-    using CastType =
-        std::conditional_t<sizeof(T) == 1, std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
+    using CastType = std::conditional_t<sizeof(T) == 1,
+                                        std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
 
 private:
-    __aicore__ inline void ParseMoveAlignGatherTilingData(
-        GM_ADDR begin, const SliceMoveAlignGatherTilingData* tdPtr, int64_t blockIdx);
+    __aicore__ inline void ParseMoveAlignGatherTilingData(GM_ADDR begin, const SliceMoveAlignGatherTilingData* tdPtr,
+                                                          int64_t blockIdx);
     __aicore__ inline void ProcessPerBlock(const DataCopyExtParams& copyOutParamsMain,
                                            const DataCopyExtParams& copyOutParamsTail);
     __aicore__ inline void ParseCopyInTilingData();
@@ -62,7 +61,7 @@ private:
     GlobalTensor<T> outputGM_;
 
     int64_t blockIdx_ = 0;
-    uint8_t bufferCnt_ = 2;  // enable db
+    uint8_t bufferCnt_ = 2; // enable db
     int64_t inUbDims_ = 0;
 
     LoopModeParams loopMode_;
@@ -85,7 +84,7 @@ private:
 
 template <typename T, typename U, typename V>
 __aicore__ inline void SliceMoveAlignGather<T, U, V>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y,
-        const SliceMoveAlignGatherTilingData* tdPtr, TPipe* pipe)
+                                                           const SliceMoveAlignGatherTilingData* tdPtr, TPipe* pipe)
 {
     blockIdx_ = GetBlockIdx();
 
@@ -102,14 +101,14 @@ __aicore__ inline void SliceMoveAlignGather<T, U, V>::Init(GM_ADDR x, GM_ADDR be
     pipe_ = pipe;
     pipe_->InitBuffer(inQue_, bufferCnt_, tdPtr_->ubSizeInput);
     pipe_->InitBuffer(outQue_, bufferCnt_, this->ubSize_);
-    pipe_->InitBuffer(idxInitBuf_, 2 * VL_SIZE_BYTE);  // 和连续搬入的维度相关，当前固定为2
+    pipe_->InitBuffer(idxInitBuf_, 2 * VL_SIZE_BYTE); // 和连续搬入的维度相关，当前固定为2
 
     InitLoopIndex();
 }
 
 template <typename T, typename U, typename V>
-__aicore__ inline void SliceMoveAlignGather<T, U, V>::ParseMoveAlignGatherTilingData(GM_ADDR begin, 
-    const SliceMoveAlignGatherTilingData* tdPtr, int64_t blockIdx)
+__aicore__ inline void SliceMoveAlignGather<T, U, V>::ParseMoveAlignGatherTilingData(
+    GM_ADDR begin, const SliceMoveAlignGatherTilingData* tdPtr, int64_t blockIdx)
 {
     this->ParseBaseTilingData(begin, &(tdPtr->sliceBaseTilingData), blockIdx);
     this->ubOutLoopSteps_ = tdPtr->ubOutLoopSteps;
@@ -135,18 +134,18 @@ __aicore__ inline void SliceMoveAlignGather<T, U, V>::InitLoopIndex()
 
     __VEC_SCOPE__
     {
-        MicroAPI::MaskReg mask = MicroAPI::CreateMask<RangeType, MicroAPI::MaskPattern::ALL>();
-        MicroAPI::RegTensor<RangeType> indexReg;
-        MicroAPI::RegTensor<RangeType> loopLastTwoDimInitReg;
-        MicroAPI::RegTensor<RangeType> loopLastOneDimInitReg;
-        MicroAPI::RegTensor<RangeType> lastOneOutputDimReg;
-        AscendC::MicroAPI::Duplicate(lastOneOutputDimReg, lastOneOutputDim, mask);
-        MicroAPI::Arange(indexReg, 0);
-        MicroAPI::Div(loopLastTwoDimInitReg, indexReg, lastOneOutputDimReg, mask);
-        MicroAPI::Muls(loopLastOneDimInitReg, loopLastTwoDimInitReg, lastOneOutputDim, mask);
-        MicroAPI::Sub(loopLastOneDimInitReg, indexReg, loopLastOneDimInitReg, mask);
-        MicroAPI::DataCopy(loopLastTwoDimInitAddr, loopLastTwoDimInitReg, mask);
-        MicroAPI::DataCopy(loopLastOneDimInitAddr, loopLastOneDimInitReg, mask);
+        Reg::MaskReg mask = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
+        Reg::RegTensor<RangeType> indexReg;
+        Reg::RegTensor<RangeType> loopLastTwoDimInitReg;
+        Reg::RegTensor<RangeType> loopLastOneDimInitReg;
+        Reg::RegTensor<RangeType> lastOneOutputDimReg;
+        AscendC::Reg::Duplicate(lastOneOutputDimReg, lastOneOutputDim, mask);
+        Reg::Arange(indexReg, 0);
+        Reg::Div(loopLastTwoDimInitReg, indexReg, lastOneOutputDimReg, mask);
+        Reg::Muls(loopLastOneDimInitReg, loopLastTwoDimInitReg, lastOneOutputDim, mask);
+        Reg::Sub(loopLastOneDimInitReg, indexReg, loopLastOneDimInitReg, mask);
+        Reg::DataCopy(loopLastTwoDimInitAddr, loopLastTwoDimInitReg, mask);
+        Reg::DataCopy(loopLastOneDimInitAddr, loopLastOneDimInitReg, mask);
     }
 }
 
@@ -171,7 +170,7 @@ __aicore__ inline void SliceMoveAlignGather<T, U, V>::Process()
 
 template <typename T, typename U, typename V>
 __aicore__ inline void SliceMoveAlignGather<T, U, V>::ParseLoopModeAndMoveAlignParams(LoopModeParams& loopMode,
-                                                                                DataCopyExtParams& extParams)
+                                                                                      DataCopyExtParams& extParams)
 {
     loopMode.loop1Size = tdPtr_->moveAlignParams.loop1Size;
     loopMode.loop2Size = tdPtr_->moveAlignParams.loop2Size;
@@ -209,9 +208,9 @@ __aicore__ inline void SliceMoveAlignGather<T, U, V>::ParseCopyInTilingData()
 
 template <typename T, typename U, typename V>
 __aicore__ inline void SliceMoveAlignGather<T, U, V>::SetCopyOutAlignParams(DataCopyExtParams& copyOutParams,
-                                                                      const DataCopyExtParams& copyInParam,
-                                                                      const LoopModeParams& loopMode,
-                                                                      const uint32_t blockLen)
+                                                                            const DataCopyExtParams& copyInParam,
+                                                                            const LoopModeParams& loopMode,
+                                                                            const uint32_t blockLen)
 {
     copyOutParams.blockCount = copyInParam.blockCount * loopMode.loop1Size;
     copyOutParams.blockLen = blockLen;
@@ -232,10 +231,9 @@ __aicore__ inline void SliceMoveAlignGather<T, U, V>::GatherWithIndex(uint32_t b
     uint32_t lastOneInputDim = tdPtr_->lastOneInputDim;
     auto lastOneOutputDim = RangeType(lastOneDimOutputDim_);
 
-    uint32_t perLoopInputPadElem =
-        Ops::Base::CeilAlign(tdPtr_->moveAlignParams.blockLen, uint32_t(BLOCK_SIZE_BYTE)) / sizeof(T);
-    uint32_t perLoopOutputPadElem =
-        Ops::Base::CeilAlign(tdPtr_->outBlockLen, uint32_t(BLOCK_SIZE_BYTE)) / sizeof(T);
+    uint32_t perLoopInputPadElem = Ops::Base::CeilAlign(tdPtr_->moveAlignParams.blockLen, uint32_t(BLOCK_SIZE_BYTE)) /
+                                   sizeof(T);
+    uint32_t perLoopOutputPadElem = Ops::Base::CeilAlign(tdPtr_->outBlockLen, uint32_t(BLOCK_SIZE_BYTE)) / sizeof(T);
     uint32_t perOutBlkLenElem = tdPtr_->outBlockLen / sizeof(T);
     uint32_t rVLCnt = VL_SIZE_BYTE / sizeof(T);
     uint16_t times = CeilDivision(perOutBlkLenElem, rVLCnt);
@@ -248,54 +246,53 @@ __aicore__ inline void SliceMoveAlignGather<T, U, V>::GatherWithIndex(uint32_t b
     uint32_t loopLastTwoDimInc = loopLastTwoDimInc_;
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<RangeType> regIdx;
-        MicroAPI::RegTensor<T> regData;
-        MicroAPI::RegTensor<RangeType> regLastOneDimIdx;
-        MicroAPI::RegTensor<RangeType> regLastTwoDimIdx;
-        MicroAPI::MaskReg maskData;
-        MicroAPI::MaskReg cmpMaskReg;
-        MicroAPI::RegTensor<RangeType> regAllOne;
-        MicroAPI::RegTensor<RangeType> regAllZero;
-        MicroAPI::RegTensor<RangeType> regCarry;
+        Reg::RegTensor<RangeType> regIdx;
+        Reg::RegTensor<T> regData;
+        Reg::RegTensor<RangeType> regLastOneDimIdx;
+        Reg::RegTensor<RangeType> regLastTwoDimIdx;
+        Reg::MaskReg maskData;
+        Reg::MaskReg cmpMaskReg;
+        Reg::RegTensor<RangeType> regAllOne;
+        Reg::RegTensor<RangeType> regAllZero;
+        Reg::RegTensor<RangeType> regCarry;
 
-        MicroAPI::Duplicate(regAllOne, 1);
-        MicroAPI::Duplicate(regAllZero, 0);
+        Reg::Duplicate(regAllOne, 1);
+        Reg::Duplicate(regAllZero, 0);
 
-        MicroAPI::DataCopy(regLastOneDimIdx, loopLastOneDimInitAddr);
-        MicroAPI::DataCopy(regLastTwoDimIdx, loopLastTwoDimInitAddr);
+        Reg::DataCopy(regLastOneDimIdx, loopLastOneDimInitAddr);
+        Reg::DataCopy(regLastTwoDimIdx, loopLastTwoDimInitAddr);
         uint32_t perLoopCount = perOutBlkLenElem;
         for (uint16_t j = 0; j < times; j++) {
-            maskData = MicroAPI::UpdateMask<T>(perLoopCount);
+            maskData = Reg::UpdateMask<T>(perLoopCount);
             // 计算regIdx
-            MicroAPI::Muls(regIdx, regLastTwoDimIdx, RangeType(lastOneInputDim), maskData);
-            MicroAPI::Add(regIdx, regIdx, regLastOneDimIdx, maskData);
-            MicroAPI::Adds(regIdx, regIdx, RangeType(lastOneDimBegin), maskData);
+            Reg::Muls(regIdx, regLastTwoDimIdx, RangeType(lastOneInputDim), maskData);
+            Reg::Add(regIdx, regIdx, regLastOneDimIdx, maskData);
+            Reg::Adds(regIdx, regIdx, RangeType(lastOneDimBegin), maskData);
             for (uint16_t i = 0; i < (uint16_t)blockCount; i++) {
                 // 初始地址：inAddr[i * perLoopInputPadElem]
                 uint32_t blockCountInputOffest = i * perLoopInputPadElem;
                 uint32_t blockCountOutputOffest = i * perLoopOutputPadElem;
-                
-                MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType>&)regData, inAddr + blockCountInputOffest,
-                                         (MicroAPI::RegTensor<IdxType>&)regIdx, maskData);
+
+                Reg::DataCopyGather((Reg::RegTensor<CastType>&)regData, inAddr + blockCountInputOffest,
+                                    (Reg::RegTensor<IdxType>&)regIdx, maskData);
                 if constexpr (sizeof(T) != 1) {
-                    MicroAPI::DataCopy(outAddr + blockCountOutputOffest + j * rVLCnt, regData,
-                                       maskData);  // 下次搬出的起始位置也是block对齐的，不需要考虑最后一次的尾块
+                    Reg::DataCopy(outAddr + blockCountOutputOffest + j * rVLCnt, regData,
+                                  maskData); // 下次搬出的起始位置也是block对齐的，不需要考虑最后一次的尾块
                 } else {
-                    __local_mem__ CastType* outAddrB16 =
-                        reinterpret_cast<__local_mem__ CastType*>(outAddr + blockCountOutputOffest + j * rVLCnt);
-                    MicroAPI::DataCopy<CastType, MicroAPI::StoreDist::DIST_PACK_B16>(
-                        outAddrB16, (MicroAPI::RegTensor<CastType>&)regData, maskData);
+                    __local_mem__ CastType* outAddrB16 = reinterpret_cast<__local_mem__ CastType*>(
+                        outAddr + blockCountOutputOffest + j * rVLCnt);
+                    Reg::DataCopy<CastType, Reg::StoreDist::DIST_PACK_B16>(
+                        outAddrB16, (Reg::RegTensor<CastType>&)regData, maskData);
                 }
             }
             // update index
-            MicroAPI::Adds(regLastOneDimIdx, regLastOneDimIdx, RangeType(loopLastOneDimInc), maskData);
-            MicroAPI::Adds(regLastTwoDimIdx, regLastTwoDimIdx, RangeType(loopLastTwoDimInc), maskData);
-            MicroAPI::CompareScalar<RangeType, CMPMODE::GE>(cmpMaskReg, regLastOneDimIdx, lastOneOutputDim,
-                                                            maskData);
-            MicroAPI::Select(regCarry, regAllOne, regAllZero, cmpMaskReg);
-            MicroAPI::Add(regLastTwoDimIdx, regLastTwoDimIdx, regCarry, maskData);
-            MicroAPI::Muls(regCarry, regCarry, lastOneOutputDim, maskData);
-            MicroAPI::Sub(regLastOneDimIdx, regLastOneDimIdx, regCarry, maskData);
+            Reg::Adds(regLastOneDimIdx, regLastOneDimIdx, RangeType(loopLastOneDimInc), maskData);
+            Reg::Adds(regLastTwoDimIdx, regLastTwoDimIdx, RangeType(loopLastTwoDimInc), maskData);
+            Reg::CompareScalar<RangeType, CMPMODE::GE>(cmpMaskReg, regLastOneDimIdx, lastOneOutputDim, maskData);
+            Reg::Select(regCarry, regAllOne, regAllZero, cmpMaskReg);
+            Reg::Add(regLastTwoDimIdx, regLastTwoDimIdx, regCarry, maskData);
+            Reg::Muls(regCarry, regCarry, lastOneOutputDim, maskData);
+            Reg::Sub(regLastOneDimIdx, regLastOneDimIdx, regCarry, maskData);
         }
     }
     inQue_.FreeTensor(inTensor);
@@ -304,19 +301,19 @@ __aicore__ inline void SliceMoveAlignGather<T, U, V>::GatherWithIndex(uint32_t b
 
 template <typename T, typename U, typename V>
 __aicore__ inline void SliceMoveAlignGather<T, U, V>::ProcessPerBlock(const DataCopyExtParams& copyOutParamsMain,
-                                                                const DataCopyExtParams& copyOutParamsTail)
+                                                                      const DataCopyExtParams& copyOutParamsTail)
 {
     int64_t inputGmAddr = 0;
     int64_t outputGmAddr = 0;
-    int64_t ubSplitLoopsNum = 0;   // ub切分轴上的循环次数
-    int64_t ubOuterLoopsNum = 0;   // ub切分轴之外的循环次数
-    int64_t rowsOffsetOutput = 0;  // 当前核处理的output shape中的起始行数
+    int64_t ubSplitLoopsNum = 0;  // ub切分轴上的循环次数
+    int64_t ubOuterLoopsNum = 0;  // ub切分轴之外的循环次数
+    int64_t rowsOffsetOutput = 0; // 当前核处理的output shape中的起始行数
 
     this->CalcProcessLoopsNum(ubOuterLoopsNum, ubSplitLoopsNum, blockIdx_);
     this->GetProcessRowsOffset(rowsOffsetOutput, blockIdx_);
     for (int64_t idx = 0; idx < ubOuterLoopsNum; idx++) {
-        inputGmAddr =
-            this->GetInputGmAddrWithoutLastDim(rowsOffsetOutput + idx * this->rowsOffsetSteps_[this->ubIndex_]);
+        inputGmAddr = this->GetInputGmAddrWithoutLastDim(rowsOffsetOutput +
+                                                         idx * this->rowsOffsetSteps_[this->ubIndex_]);
         outputGmAddr = this->GetOutputGmAddr(rowsOffsetOutput + idx * this->rowsOffsetSteps_[this->ubIndex_]);
         for (int64_t loops = 0; loops < ubSplitLoopsNum; loops++) {
             LocalTensor<T> inputLocal = inQue_.AllocTensor<T>();
@@ -348,6 +345,6 @@ __aicore__ inline void SliceMoveAlignGather<T, U, V>::ProcessPerBlock(const Data
     }
 }
 
-}  // namespace Slice
+} // namespace Slice
 
-#endif  // SLICE_MOVE_ALIGN_GATHER_H
+#endif // SLICE_MOVE_ALIGN_GATHER_H

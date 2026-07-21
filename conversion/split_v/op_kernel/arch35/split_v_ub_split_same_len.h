@@ -19,27 +19,27 @@ using namespace AscendC;
 template <typename T, typename U, typename Y> // T原始数据类型  U做datacopygather的数据类型 Y是做vci的数据类型
 class SplitVUbSplitSameLen {
 public:
-    __aicore__ inline SplitVUbSplitSameLen(TPipe &pipe) : pipe_(pipe){};
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const SplitVTilingData *tilingData);
+    __aicore__ inline SplitVUbSplitSameLen(TPipe& pipe) : pipe_(pipe){};
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const SplitVTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
-    __aicore__ inline __gm__ T *GetTensorAddr(int64_t index);
-    __aicore__ inline void CopyIn(int64_t blockCount, int64_t blockLen, int64_t srcOffset,
-                                  int64_t srcStride, int64_t dstStride, LocalTensor<T> &xUb);
+    __aicore__ inline __gm__ T* GetTensorAddr(int64_t index);
+    __aicore__ inline void CopyIn(int64_t blockCount, int64_t blockLen, int64_t srcOffset, int64_t srcStride,
+                                  int64_t dstStride, LocalTensor<T>& xUb);
     __aicore__ inline void ComputeIdx(int64_t processGNum, int64_t processMNNum, uint32_t gnAlignSize,
                                       uint32_t mnAlignSize);
-    __aicore__ inline void Compute(uint32_t g, int64_t processMNNum, uint32_t gnAlignSize,
-                                   uint32_t mnAlignSize, LocalTensor<T> &srcUb);
+    __aicore__ inline void Compute(uint32_t g, int64_t processMNNum, uint32_t gnAlignSize, uint32_t mnAlignSize,
+                                   LocalTensor<T>& srcUb);
     __aicore__ inline void CopyOut(int64_t localOffset, int64_t blockCount, int64_t blockLen, int64_t dstOffset,
                                    int64_t srcStride, int64_t dstStride);
 
 private:
-    TPipe &pipe_;
+    TPipe& pipe_;
     constexpr static int32_t BUFFER_NUM = 2;
     constexpr static int64_t BLOCK_ELENUM = Ops::Base::GetUbBlockSize() / sizeof(T);
     constexpr static int64_t VL_LEN = Ops::Base::GetVRegSize();
-    const SplitVTilingData *tilingData_;
+    const SplitVTilingData* tilingData_;
     TQue<QuePosition::VECIN, 1> inQueueX_;
     TQue<QuePosition::VECOUT, 1> outQueueY_;
     TQue<QuePosition::VECCALC, 1> idxQueue_;
@@ -80,7 +80,8 @@ private:
 };
 
 template <typename T, typename U, typename Y>
-__aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::Init(GM_ADDR x, GM_ADDR y, const SplitVTilingData *tilingData) {
+__aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::Init(GM_ADDR x, GM_ADDR y, const SplitVTilingData* tilingData)
+{
     blockIdx_ = GetBlockIdx();
     tilingData_ = tilingData;
     gSize_ = tilingData_->gSize;
@@ -100,8 +101,8 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::Init(GM_ADDR x, GM_ADDR y,
     pipe_.InitBuffer(inQueueX_, BUFFER_NUM, initInputSpace);
     pipe_.InitBuffer(outQueueY_, BUFFER_NUM, initInputSpace);
     pipe_.InitBuffer(idxQueue_, BUFFER_NUM, initIdxSpace);
-    xGm_.SetGlobalBuffer((__gm__ T *)x);
-    inputList_ = ListTensorDesc(reinterpret_cast<__gm__ void *>(y));
+    xGm_.SetGlobalBuffer((__gm__ T*)x);
+    inputList_ = ListTensorDesc(reinterpret_cast<__gm__ void*>(y));
 
     // Calc start idx per core
     blkProcessNum_ = blockFactor_;
@@ -120,7 +121,8 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::Init(GM_ADDR x, GM_ADDR y,
 }
 
 template <typename T, typename U, typename Y>
-__aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::Process() {
+__aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::Process()
+{
     if (blockIdx_ >= tilingData_->realCoreNum) {
         return;
     }
@@ -195,9 +197,9 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::Process() {
 }
 
 template <typename T, typename U, typename Y>
-__aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::CopyIn(int64_t blockCount, int64_t blockLen,
-                                                             int64_t srcOffset, int64_t srcStride,
-                                                             int64_t dstStride, LocalTensor<T> &xUb) {
+__aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::CopyIn(int64_t blockCount, int64_t blockLen, int64_t srcOffset,
+                                                             int64_t srcStride, int64_t dstStride, LocalTensor<T>& xUb)
+{
     copyInParam_.blockCount = blockCount;
     copyInParam_.blockLen = blockLen * dtypeSize_;
     copyInParam_.srcStride = srcStride * dtypeSize_;
@@ -207,9 +209,9 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::CopyIn(int64_t blockCount,
 }
 
 template <typename T, typename U, typename Y>
-__aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::CopyOut(int64_t localOffset, int64_t blockCount,
-                                                              int64_t blockLen, int64_t dstOffset,
-                                                              int64_t srcStride, int64_t dstStride) {
+__aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::CopyOut(int64_t localOffset, int64_t blockCount, int64_t blockLen,
+                                                              int64_t dstOffset, int64_t srcStride, int64_t dstStride)
+{
     copyOutParam_.blockCount = blockCount;
     copyOutParam_.blockLen = blockLen * dtypeSize_;
     copyOutParam_.srcStride = srcStride / BLOCK_ELENUM;
@@ -242,66 +244,66 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::ComputeIdx(int64_t process
         processNum = processNum * BUFFER_NUM;
         processLastNum = processNum % nRegSize == 0 ? nRegSize : processNum % nRegSize;
         loopNum = CeilDivision(processNum, tmpLoop * nSizeInt64);
-        __ubuf__ U *idxPtr = (__ubuf__ U *)idxUb.GetPhyAddr();
+        __ubuf__ U* idxPtr = (__ubuf__ U*)idxUb.GetPhyAddr();
 
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<Y> indexRegB64;
-            AscendC::MicroAPI::RegTensor<U> tmpB64;
-            AscendC::MicroAPI::RegTensor<U> tmp1B64;
-            AscendC::MicroAPI::RegTensor<U> tmp2B64;
-            AscendC::MicroAPI::RegTensor<U> addRegB64;
-            AscendC::MicroAPI::RegTensor<U> niRegB64;
-            AscendC::MicroAPI::RegTensor<U> subRegB64;
-            AscendC::MicroAPI::MaskReg maskB64;
+            AscendC::Reg::RegTensor<Y> indexRegB64;
+            AscendC::Reg::RegTensor<U> tmpB64;
+            AscendC::Reg::RegTensor<U> tmp1B64;
+            AscendC::Reg::RegTensor<U> tmp2B64;
+            AscendC::Reg::RegTensor<U> addRegB64;
+            AscendC::Reg::RegTensor<U> niRegB64;
+            AscendC::Reg::RegTensor<U> subRegB64;
+            AscendC::Reg::MaskReg maskB64;
 
-            maskB64 = AscendC::MicroAPI::UpdateMask<U>(processNum);
+            maskB64 = AscendC::Reg::UpdateMask<U>(processNum);
 
             Y startIdx = (Y)0;
-            AscendC::MicroAPI::Arange(indexRegB64, startIdx);
-            AscendC::MicroAPI::Duplicate(niRegB64, (U)nSizeInt64, maskB64);
-            AscendC::MicroAPI::Div(tmpB64, (AscendC::MicroAPI::RegTensor<U> &)indexRegB64, niRegB64, maskB64);
-            AscendC::MicroAPI::Muls(tmp1B64, tmpB64, (U)gnAlignSize, maskB64);
-            AscendC::MicroAPI::Mul(subRegB64, tmpB64, niRegB64, maskB64);
-            AscendC::MicroAPI::Sub(tmp2B64, (AscendC::MicroAPI::RegTensor<U> &)indexRegB64, subRegB64, maskB64);
-            AscendC::MicroAPI::Add(addRegB64, tmp1B64, tmp2B64, maskB64);
+            AscendC::Reg::Arange(indexRegB64, startIdx);
+            AscendC::Reg::Duplicate(niRegB64, (U)nSizeInt64, maskB64);
+            AscendC::Reg::Div(tmpB64, (AscendC::Reg::RegTensor<U>&)indexRegB64, niRegB64, maskB64);
+            AscendC::Reg::Muls(tmp1B64, tmpB64, (U)gnAlignSize, maskB64);
+            AscendC::Reg::Mul(subRegB64, tmpB64, niRegB64, maskB64);
+            AscendC::Reg::Sub(tmp2B64, (AscendC::Reg::RegTensor<U>&)indexRegB64, subRegB64, maskB64);
+            AscendC::Reg::Add(addRegB64, tmp1B64, tmp2B64, maskB64);
 
-            AscendC::MicroAPI::DataCopy(idxPtr, addRegB64, maskB64);
+            AscendC::Reg::DataCopy(idxPtr, addRegB64, maskB64);
         }
     } else {
-        __ubuf__ U *idxPtr = (__ubuf__ U *)idxUb.GetPhyAddr();
+        __ubuf__ U* idxPtr = (__ubuf__ U*)idxUb.GetPhyAddr();
 
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<Y> indexReg;
-            AscendC::MicroAPI::RegTensor<U> tmp;
-            AscendC::MicroAPI::RegTensor<U> tmp1;
-            AscendC::MicroAPI::RegTensor<U> tmp2;
-            AscendC::MicroAPI::RegTensor<U> addReg;
-            AscendC::MicroAPI::RegTensor<U> niReg;
-            AscendC::MicroAPI::RegTensor<U> subReg;
-            AscendC::MicroAPI::MaskReg mask;
+            AscendC::Reg::RegTensor<Y> indexReg;
+            AscendC::Reg::RegTensor<U> tmp;
+            AscendC::Reg::RegTensor<U> tmp1;
+            AscendC::Reg::RegTensor<U> tmp2;
+            AscendC::Reg::RegTensor<U> addReg;
+            AscendC::Reg::RegTensor<U> niReg;
+            AscendC::Reg::RegTensor<U> subReg;
+            AscendC::Reg::MaskReg mask;
 
-            mask = AscendC::MicroAPI::UpdateMask<U>(processNum);
+            mask = AscendC::Reg::UpdateMask<U>(processNum);
             Y startIdx = (Y)0;
-            AscendC::MicroAPI::Arange(indexReg, startIdx);
-            AscendC::MicroAPI::Duplicate(niReg, (U)nSize, mask);
-            AscendC::MicroAPI::Div(tmp, (AscendC::MicroAPI::RegTensor<U> &)indexReg, niReg, mask);
-            AscendC::MicroAPI::Muls(tmp1, tmp, (U)gnAlignSize, mask);
-            AscendC::MicroAPI::Mul(subReg, tmp, niReg, mask);
-            AscendC::MicroAPI::Sub(tmp2, (AscendC::MicroAPI::RegTensor<U> &)indexReg, subReg, mask);
-            AscendC::MicroAPI::Add(addReg, tmp1, tmp2, mask);
+            AscendC::Reg::Arange(indexReg, startIdx);
+            AscendC::Reg::Duplicate(niReg, (U)nSize, mask);
+            AscendC::Reg::Div(tmp, (AscendC::Reg::RegTensor<U>&)indexReg, niReg, mask);
+            AscendC::Reg::Muls(tmp1, tmp, (U)gnAlignSize, mask);
+            AscendC::Reg::Mul(subReg, tmp, niReg, mask);
+            AscendC::Reg::Sub(tmp2, (AscendC::Reg::RegTensor<U>&)indexReg, subReg, mask);
+            AscendC::Reg::Add(addReg, tmp1, tmp2, mask);
 
-            AscendC::MicroAPI::DataCopy(idxPtr, addReg, mask);
+            AscendC::Reg::DataCopy(idxPtr, addReg, mask);
         }
     }
     idxQueue_.EnQue(idxUb);
 }
 
 template <typename T, typename U, typename Y>
-__aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::Compute(uint32_t g, int64_t processMNNum,
-                                                              uint32_t gnAlignSize, uint32_t mnAlignSize,
-                                                              LocalTensor<T> &srcUb) {
+__aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::Compute(uint32_t g, int64_t processMNNum, uint32_t gnAlignSize,
+                                                              uint32_t mnAlignSize, LocalTensor<T>& srcUb)
+{
     uint32_t processNum = processMNNum;
     uint16_t loopNum = CeilDivision(processNum, nRegSize_);
     uint32_t gnSize = g * nSize_;
@@ -328,87 +330,88 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::Compute(uint32_t g, int64_
         processNum = processNum * BUFFER_NUM;
         processLastNum = processNum % nRegSize == 0 ? nRegSize : processNum % nRegSize;
         loopNum = CeilDivision(processNum, tmpLoop * nSizeInt64);
-        __ubuf__ U *srcPtr = (__ubuf__ U *)srcUbU32.GetPhyAddr();
-        __ubuf__ U *dstPtr = (__ubuf__ U *)yLocal_.GetPhyAddr() + g * mnAlignSize;
-        __ubuf__ U *idxPtr = (__ubuf__ U *)idxLocal_.GetPhyAddr();
+        __ubuf__ U* srcPtr = (__ubuf__ U*)srcUbU32.GetPhyAddr();
+        __ubuf__ U* dstPtr = (__ubuf__ U*)yLocal_.GetPhyAddr() + g * mnAlignSize;
+        __ubuf__ U* idxPtr = (__ubuf__ U*)idxLocal_.GetPhyAddr();
 
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<U> addReg;
-            AscendC::MicroAPI::RegTensor<U> dstReg;
-            AscendC::MicroAPI::UnalignReg uDst;
-            AscendC::MicroAPI::MaskReg mask;
-            AscendC::MicroAPI::MaskReg maskTmp;
+            AscendC::Reg::RegTensor<U> addReg;
+            AscendC::Reg::RegTensor<U> dstReg;
+            AscendC::Reg::UnalignReg uDst;
+            AscendC::Reg::MaskReg mask;
+            AscendC::Reg::MaskReg maskTmp;
 
-            mask = AscendC::MicroAPI::UpdateMask<U>(processNum);
-            maskTmp = AscendC::MicroAPI::UpdateMask<U>(nRegSize);
-            AscendC::MicroAPI::DataCopy(addReg, idxPtr);
-            AscendC::MicroAPI::Adds(addReg, addReg, (U)gnSize, mask);
+            mask = AscendC::Reg::UpdateMask<U>(processNum);
+            maskTmp = AscendC::Reg::UpdateMask<U>(nRegSize);
+            AscendC::Reg::DataCopy(addReg, idxPtr);
+            AscendC::Reg::Adds(addReg, addReg, (U)gnSize, mask);
 
             for (uint16_t i = 0; i < loopNum; i++) {
-                AscendC::MicroAPI::DataCopyGather(dstReg, srcPtr, addReg, maskTmp);
+                AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg, maskTmp);
                 // Copy out
-                AscendC::MicroAPI::DataCopyUnAlign(dstPtr, dstReg, uDst, mnSize);
-                AscendC::MicroAPI::Adds(addReg, addReg, (U)(tmpLoop * gnAlignSize), mask);
+                AscendC::Reg::DataCopyUnAlign(dstPtr, dstReg, uDst, mnSize);
+                AscendC::Reg::Adds(addReg, addReg, (U)(tmpLoop * gnAlignSize), mask);
             }
-            maskTmp = AscendC::MicroAPI::UpdateMask<U>(processLastNum);
-            AscendC::MicroAPI::DataCopyGather(dstReg, srcPtr, addReg, maskTmp);
-            AscendC::MicroAPI::DataCopyUnAlign(dstPtr, dstReg, uDst, mnSizeLast);
-            AscendC::MicroAPI::DataCopyUnAlignPost(dstPtr, uDst, 0);
+            maskTmp = AscendC::Reg::UpdateMask<U>(processLastNum);
+            AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg, maskTmp);
+            AscendC::Reg::DataCopyUnAlign(dstPtr, dstReg, uDst, mnSizeLast);
+            AscendC::Reg::DataCopyUnAlignPost(dstPtr, uDst, 0);
         }
     } else {
-        __ubuf__ T *srcPtr = (__ubuf__ T *)srcUb.GetPhyAddr();
-        __ubuf__ U *dstPtrU = (__ubuf__ U *)yLocal_.GetPhyAddr() + g * mnAlignSize;
-        __ubuf__ T *dstPtrT = (__ubuf__ T *)yLocal_.GetPhyAddr() + g * mnAlignSize;
-        __ubuf__ U *idxPtr = (__ubuf__ U *)idxLocal_.GetPhyAddr();
+        __ubuf__ T* srcPtr = (__ubuf__ T*)srcUb.GetPhyAddr();
+        __ubuf__ U* dstPtrU = (__ubuf__ U*)yLocal_.GetPhyAddr() + g * mnAlignSize;
+        __ubuf__ T* dstPtrT = (__ubuf__ T*)yLocal_.GetPhyAddr() + g * mnAlignSize;
+        __ubuf__ U* idxPtr = (__ubuf__ U*)idxLocal_.GetPhyAddr();
 
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<U> addReg;
-            AscendC::MicroAPI::RegTensor<U> dstReg;
-            AscendC::MicroAPI::RegTensor<T> dstRegT;
-            AscendC::MicroAPI::UnalignReg uDst;
-            AscendC::MicroAPI::MaskReg mask;
-            AscendC::MicroAPI::MaskReg maskTmp;
+            AscendC::Reg::RegTensor<U> addReg;
+            AscendC::Reg::RegTensor<U> dstReg;
+            AscendC::Reg::RegTensor<T> dstRegT;
+            AscendC::Reg::UnalignReg uDst;
+            AscendC::Reg::MaskReg mask;
+            AscendC::Reg::MaskReg maskTmp;
 
-            mask = AscendC::MicroAPI::UpdateMask<U>(processNum);
-            maskTmp = AscendC::MicroAPI::UpdateMask<U>(nRegSize);
-            AscendC::MicroAPI::DataCopy(addReg, idxPtr);
-            AscendC::MicroAPI::Adds(addReg, addReg, (U)gnSize, mask);
+            mask = AscendC::Reg::UpdateMask<U>(processNum);
+            maskTmp = AscendC::Reg::UpdateMask<U>(nRegSize);
+            AscendC::Reg::DataCopy(addReg, idxPtr);
+            AscendC::Reg::Adds(addReg, addReg, (U)gnSize, mask);
 
             for (uint16_t i = 0; i < loopNum; i++) {
-                AscendC::MicroAPI::DataCopyGather(dstReg, srcPtr, addReg, maskTmp);
+                AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg, maskTmp);
                 // Copy out
                 if constexpr (sizeof(T) == sizeof(int8_t)) {
                     // Convert B16 to B8
-                    AscendC::MicroAPI::Pack(dstRegT, dstReg);
-                    AscendC::MicroAPI::DataCopyUnAlign(dstPtrT, dstRegT, uDst, mnSize);
-                    AscendC::MicroAPI::DataCopyUnAlignPost(dstPtrT, uDst, 0);
+                    AscendC::Reg::Pack(dstRegT, dstReg);
+                    AscendC::Reg::DataCopyUnAlign(dstPtrT, dstRegT, uDst, mnSize);
+                    AscendC::Reg::DataCopyUnAlignPost(dstPtrT, uDst, 0);
                 } else {
-                    AscendC::MicroAPI::DataCopyUnAlign(dstPtrU, dstReg, uDst, mnSize);
-                    AscendC::MicroAPI::DataCopyUnAlignPost(dstPtrU, uDst, 0);
+                    AscendC::Reg::DataCopyUnAlign(dstPtrU, dstReg, uDst, mnSize);
+                    AscendC::Reg::DataCopyUnAlignPost(dstPtrU, uDst, 0);
                 }
-                AscendC::MicroAPI::Adds(addReg, addReg, (U)(tmpLoop * gnAlignSize), mask);
+                AscendC::Reg::Adds(addReg, addReg, (U)(tmpLoop * gnAlignSize), mask);
             }
-            maskTmp = AscendC::MicroAPI::UpdateMask<U>(processLastNum);
-            AscendC::MicroAPI::DataCopyGather(dstReg, srcPtr, addReg, maskTmp);
+            maskTmp = AscendC::Reg::UpdateMask<U>(processLastNum);
+            AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg, maskTmp);
             if constexpr (sizeof(T) == sizeof(int8_t)) {
                 // Convert B16 to B8
-                AscendC::MicroAPI::Pack(dstRegT, dstReg);
-                AscendC::MicroAPI::DataCopyUnAlign(dstPtrT, dstRegT, uDst, mnSizeLast);
-                AscendC::MicroAPI::DataCopyUnAlignPost(dstPtrT, uDst, 0);
+                AscendC::Reg::Pack(dstRegT, dstReg);
+                AscendC::Reg::DataCopyUnAlign(dstPtrT, dstRegT, uDst, mnSizeLast);
+                AscendC::Reg::DataCopyUnAlignPost(dstPtrT, uDst, 0);
             } else {
-                AscendC::MicroAPI::DataCopyUnAlign(dstPtrU, dstReg, uDst, mnSizeLast);
-                AscendC::MicroAPI::DataCopyUnAlignPost(dstPtrU, uDst, 0);
+                AscendC::Reg::DataCopyUnAlign(dstPtrU, dstReg, uDst, mnSizeLast);
+                AscendC::Reg::DataCopyUnAlignPost(dstPtrU, uDst, 0);
             }
         }
     }
 }
 
 template <typename T, typename U, typename Y>
-__aicore__ inline __gm__ T *SplitVUbSplitSameLen<T, U, Y>::GetTensorAddr(int64_t index) {
+__aicore__ inline __gm__ T* SplitVUbSplitSameLen<T, U, Y>::GetTensorAddr(int64_t index)
+{
     return inputList_.GetDataPtr<T>(index);
 }
 
-}
+} // namespace SplitV
 #endif // namespace SplitV

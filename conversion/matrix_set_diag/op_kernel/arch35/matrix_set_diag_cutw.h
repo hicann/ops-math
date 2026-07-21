@@ -36,8 +36,8 @@ private:
     using RangeType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>;
     using IdxType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>;
     using MaskType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), T, int32_t>;
-    using CastType_ =
-        std::conditional_t<sizeof(T) == 1, std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
+    using CastType_ = std::conditional_t<sizeof(T) == 1,
+                                         std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
 
     TPipe* pipe_ = nullptr;
     const MatrixSetDiagTilingData* tdPtr_ = nullptr;
@@ -63,10 +63,7 @@ private:
     uint16_t vlLen_ = Ops::Base::GetVRegSize() / sizeof(T);
 
 public:
-    __aicore__ inline MatrixSetDiagCutWScatter(TPipe* pipe)
-    {
-        pipe_ = pipe;
-    }
+    __aicore__ inline MatrixSetDiagCutWScatter(TPipe* pipe) { pipe_ = pipe; }
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR diagonal, GM_ADDR y, const MatrixSetDiagTilingData* tilingData)
     {
@@ -112,8 +109,8 @@ public:
 
             xOffsetInTail = (idx % ubPerTail_) * ubFactor_;
             xOffsetCurCore = (idx / ubPerTail_) * xRowNum_ * xColNum_ + xOffsetInTail;
-            xNum = static_cast<uint32_t>(
-                min(xOffsetCurCore + ubFactor_, (idx / ubPerTail_ + 1) * xRowNum_ * xColNum_) - xOffsetCurCore);
+            xNum = static_cast<uint32_t>(min(xOffsetCurCore + ubFactor_, (idx / ubPerTail_ + 1) * xRowNum_ * xColNum_) -
+                                         xOffsetCurCore);
 
             // x终点地址覆盖的对角线个数 - x起始地址覆盖的对角线个数
             diagNum = min(diagLen_, Ops::Base::CeilDiv(xOffsetInTail + xNum, xColNum_ + 1)) -
@@ -132,42 +129,41 @@ public:
             }
             CopyIn(x, xOffsetCurCore, xNum, diag, diagOffsetCurCore, diagNum);
             SetWaitEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V, bufIdx);
-            ScatterAndCopyOut(
-                x, diag, diagNum, rowIdxInTail, colIdxInTail, xOffsetCurCore, xNum, xOffsetInTail, bufIdx);
+            ScatterAndCopyOut(x, diag, diagNum, rowIdxInTail, colIdxInTail, xOffsetCurCore, xNum, xOffsetInTail,
+                              bufIdx);
             bufIdx++;
         }
     }
 
 private:
-    __aicore__ inline void VFProcess(
-        __local_mem__ T* diagPtr, __ubuf__ T* xLocalPtr, uint32_t diagNum, uint16_t loopNum, uint16_t processNum,
-        IdxType_ indexStart)
+    __aicore__ inline void VFProcess(__local_mem__ T* diagPtr, __ubuf__ T* xLocalPtr, uint32_t diagNum,
+                                     uint16_t loopNum, uint16_t processNum, IdxType_ indexStart)
     {
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T> diagReg;
-            MicroAPI::RegTensor<T> diagCastReg;
-            MicroAPI::RegTensor<RangeType_> indexReg;
-            MicroAPI::MaskReg mask;
+            Reg::RegTensor<T> diagReg;
+            Reg::RegTensor<T> diagCastReg;
+            Reg::RegTensor<RangeType_> indexReg;
+            Reg::MaskReg mask;
             for (uint16_t i = 0; i < loopNum; i++) {
-                mask = MicroAPI::UpdateMask<MaskType_>(diagNum);
-                MicroAPI::LoadAlign(diagReg, diagPtr + i * processNum);
+                mask = Reg::UpdateMask<MaskType_>(diagNum);
+                Reg::LoadAlign(diagReg, diagPtr + i * processNum);
 
-                MicroAPI::Arange(indexReg, i * processNum);
-                MicroAPI::Muls(indexReg, indexReg, xColNum_ + 1, mask);
-                MicroAPI::Adds(indexReg, indexReg, indexStart, mask);
+                Reg::Arange(indexReg, i * processNum);
+                Reg::Muls(indexReg, indexReg, xColNum_ + 1, mask);
+                Reg::Adds(indexReg, indexReg, indexStart, mask);
                 if constexpr (sizeof(T) != sizeof(int8_t)) {
-                    MicroAPI::Scatter(xLocalPtr, diagReg, (MicroAPI::RegTensor<IdxType_>&)indexReg, mask);
+                    Reg::Scatter(xLocalPtr, diagReg, (Reg::RegTensor<IdxType_>&)indexReg, mask);
                 } else {
-                    MicroAPI::UnPack((MicroAPI::RegTensor<CastType_>&)diagCastReg, diagReg);
-                    MicroAPI::Scatter(xLocalPtr, diagCastReg, (MicroAPI::RegTensor<IdxType_>&)indexReg, mask);
+                    Reg::UnPack((Reg::RegTensor<CastType_>&)diagCastReg, diagReg);
+                    Reg::Scatter(xLocalPtr, diagCastReg, (Reg::RegTensor<IdxType_>&)indexReg, mask);
                 }
             }
         }
     }
-    __aicore__ inline void ScatterAndCopyOut(
-        const LocalTensor<T>& x, const LocalTensor<T>& diag, uint32_t diagNum, uint64_t rowIdxInTail,
-        uint64_t colIdxInTail, const uint64_t yAddr, uint32_t yNum, const uint64_t offsetInTail, uint32_t bufIdx)
+    __aicore__ inline void ScatterAndCopyOut(const LocalTensor<T>& x, const LocalTensor<T>& diag, uint32_t diagNum,
+                                             uint64_t rowIdxInTail, uint64_t colIdxInTail, const uint64_t yAddr,
+                                             uint32_t yNum, const uint64_t offsetInTail, uint32_t bufIdx)
     {
         // 构建index
         uint64_t indexStart = 0;
@@ -203,12 +199,11 @@ private:
         }
     }
 
-    __aicore__ inline void CopyIn(
-        const LocalTensor<T>& x, const uint64_t xAddr, uint32_t xNum, const LocalTensor<T>& diag,
-        const uint64_t diagAddr, uint32_t diagNum)
+    __aicore__ inline void CopyIn(const LocalTensor<T>& x, const uint64_t xAddr, uint32_t xNum,
+                                  const LocalTensor<T>& diag, const uint64_t diagAddr, uint32_t diagNum)
     {
-        DataCopyPadExtParams<T> xPadParams{
-            false, 0, static_cast<uint8_t>(Ops::Base::CeilAlign(xNum, ALIGN_NUM) - xNum), 0};
+        DataCopyPadExtParams<T> xPadParams{false, 0, static_cast<uint8_t>(Ops::Base::CeilAlign(xNum, ALIGN_NUM) - xNum),
+                                           0};
         DataCopyExtParams xCopyInParams = {1u, static_cast<uint32_t>(xNum * sizeof(T)), 0, 0, 0};
         DataCopyPad(x, inputGm_[xAddr], xCopyInParams, xPadParams);
 

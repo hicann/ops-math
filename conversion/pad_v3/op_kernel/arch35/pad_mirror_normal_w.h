@@ -315,13 +315,12 @@ private:
 
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<RT> leftIdx;
-            AscendC::MicroAPI::RegTensor<RT> middleIdx;
-            AscendC::MicroAPI::RegTensor<RT> rightIdx;
-            AscendC::MicroAPI::RegTensor<RT> tempIdx;
-            AscendC::MicroAPI::MaskReg maskReg;
-            AscendC::MicroAPI::MaskReg
-                maskAll = AscendC::MicroAPI::CreateMask<RT, AscendC::MicroAPI::MaskPattern::ALL>();
+            AscendC::Reg::RegTensor<RT> leftIdx;
+            AscendC::Reg::RegTensor<RT> middleIdx;
+            AscendC::Reg::RegTensor<RT> rightIdx;
+            AscendC::Reg::RegTensor<RT> tempIdx;
+            AscendC::Reg::MaskReg maskReg;
+            AscendC::Reg::MaskReg maskAll = AscendC::Reg::CreateMask<RT, AscendC::Reg::MaskPattern::ALL>();
             uint32_t idOffset = 0;
             uint32_t leftLen = leftMaskLen;
             uint32_t rightLen = rightMaskLen;
@@ -330,50 +329,50 @@ private:
             uint32_t endRLen = endRMaskLen;
             uint32_t endLLen = endLMaskLen;
             RT addsScale = VL_ELEMS_R;
-            MicroAPI::Arange<RT, AscendC::MicroAPI::IndexOrder::DECREASE_ORDER>(leftIdx, firstIndexLeft + 1);
-            MicroAPI::Arange<RT, AscendC::MicroAPI::IndexOrder::DECREASE_ORDER>(tempIdx, firstIndexLeft + 1);
-            MicroAPI::Arange(middleIdx, firstIndexMiddle);
-            MicroAPI::Arange<RT, AscendC::MicroAPI::IndexOrder::DECREASE_ORDER>(rightIdx, firstIndexRight + 1);
+            Reg::Arange<RT, AscendC::Reg::IndexOrder::DECREASE_ORDER>(leftIdx, firstIndexLeft + 1);
+            Reg::Arange<RT, AscendC::Reg::IndexOrder::DECREASE_ORDER>(tempIdx, firstIndexLeft + 1);
+            Reg::Arange(middleIdx, firstIndexMiddle);
+            Reg::Arange<RT, AscendC::Reg::IndexOrder::DECREASE_ORDER>(rightIdx, firstIndexRight + 1);
 
             for (uint16_t i = 0; i < leftNum; i++) {
-                AscendC::MicroAPI::DataCopy(dstAddr + idOffset * VL_ELEMS_R, tempIdx, maskAll);
+                AscendC::Reg::DataCopy(dstAddr + idOffset * VL_ELEMS_R, tempIdx, maskAll);
                 Adds(tempIdx, tempIdx, -1 * addsScale, maskAll);
                 idOffset += 1;
             }
             for (uint16_t i = 0; i < leftCrossNum; i++) {
-                maskReg = AscendC::MicroAPI::UpdateMask<RT>(leftLen);
-                AscendC::MicroAPI::MaskNot(maskReg, maskReg, maskAll);
+                maskReg = AscendC::Reg::UpdateMask<RT>(leftLen);
+                AscendC::Reg::MaskNot(maskReg, maskReg, maskAll);
                 Copy(tempIdx, middleIdx, maskReg);
-                maskReg = AscendC::MicroAPI::UpdateMask<RT>(endLLen);
-                AscendC::MicroAPI::DataCopy(dstAddr + idOffset * VL_ELEMS_R, tempIdx, maskReg);
-                AscendC::MicroAPI::Adds(middleIdx, middleIdx, addsScale, maskAll);
+                maskReg = AscendC::Reg::UpdateMask<RT>(endLLen);
+                AscendC::Reg::DataCopy(dstAddr + idOffset * VL_ELEMS_R, tempIdx, maskReg);
+                AscendC::Reg::Adds(middleIdx, middleIdx, addsScale, maskAll);
                 idOffset += (1 - middleOffset);
             }
-            maskReg = AscendC::MicroAPI::UpdateMask<RT>(midLen);
+            maskReg = AscendC::Reg::UpdateMask<RT>(midLen);
             // leftcross和rightcross在同一block时，不copy mid
             Copy(tempIdx, middleIdx, maskReg);
             for (uint16_t i = 0; i < middleNum; i++) {
-                AscendC::MicroAPI::DataCopy(dstAddr + idOffset * VL_ELEMS_R, tempIdx, maskAll);
-                AscendC::MicroAPI::Adds(tempIdx, tempIdx, addsScale, maskAll);
+                AscendC::Reg::DataCopy(dstAddr + idOffset * VL_ELEMS_R, tempIdx, maskAll);
+                AscendC::Reg::Adds(tempIdx, tempIdx, addsScale, maskAll);
                 idOffset += 1;
             }
             for (uint16_t i = 0; i < rightCrossNum; i++) {
-                maskReg = AscendC::MicroAPI::UpdateMask<RT>(rightLen);
-                AscendC::MicroAPI::MaskNot(maskReg, maskReg, maskAll);
+                maskReg = AscendC::Reg::UpdateMask<RT>(rightLen);
+                AscendC::Reg::MaskNot(maskReg, maskReg, maskAll);
                 Copy(tempIdx, rightIdx, maskReg);
-                maskReg = AscendC::MicroAPI::UpdateMask<RT>(endRLen);
-                AscendC::MicroAPI::DataCopy(dstAddr + idOffset * VL_ELEMS_R, tempIdx, maskReg);
+                maskReg = AscendC::Reg::UpdateMask<RT>(endRLen);
+                AscendC::Reg::DataCopy(dstAddr + idOffset * VL_ELEMS_R, tempIdx, maskReg);
                 idOffset += 1;
             }
             for (uint16_t i = 0; i < noLastRight; i++) {
-                AscendC::MicroAPI::Adds(rightIdx, rightIdx, -1 * addsScale, maskAll);
-                AscendC::MicroAPI::DataCopy(dstAddr + idOffset * VL_ELEMS_R, rightIdx, maskAll);
+                AscendC::Reg::Adds(rightIdx, rightIdx, -1 * addsScale, maskAll);
+                AscendC::Reg::DataCopy(dstAddr + idOffset * VL_ELEMS_R, rightIdx, maskAll);
                 idOffset += 1;
             }
             for (uint16_t i = 0; i < hasRight; i++) {
-                maskReg = AscendC::MicroAPI::UpdateMask<RT>(endLen);
-                AscendC::MicroAPI::Adds(rightIdx, rightIdx, -1 * addsScale, maskReg);
-                AscendC::MicroAPI::DataCopy(dstAddr + idOffset * VL_ELEMS_R, rightIdx, maskReg);
+                maskReg = AscendC::Reg::UpdateMask<RT>(endLen);
+                AscendC::Reg::Adds(rightIdx, rightIdx, -1 * addsScale, maskReg);
+                AscendC::Reg::DataCopy(dstAddr + idOffset * VL_ELEMS_R, rightIdx, maskReg);
             }
         }
     }
@@ -398,11 +397,11 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg endMask;
-            MicroAPI::MaskReg maskAll;
+            Reg::MaskReg endMask;
+            Reg::MaskReg maskAll;
             uint32_t endLen = endMaskLen * (VL_ELEMS / VL_ELEMS_C);
-            endMask = AscendC::MicroAPI::UpdateMask<T>(endLen);
-            maskAll = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL>();
+            endMask = AscendC::Reg::UpdateMask<T>(endLen);
+            maskAll = AscendC::Reg::CreateMask<T, AscendC::Reg::MaskPattern::ALL>();
 
             if constexpr (UB_AXES == CONST2) {
                 for (uint16_t i = 0; i < dimHNum; i++) {
@@ -432,34 +431,34 @@ private:
 
     __aicore__ inline void GatherProcessLine(__local_mem__ T* dstAddr, __local_mem__ T* srcAddr,
                                              __local_mem__ RT* idxAddr, uint16_t padVLNum, uint16_t padBLNum,
-                                             MicroAPI::MaskReg endMask, MicroAPI::MaskReg maskAll)
+                                             Reg::MaskReg endMask, Reg::MaskReg maskAll)
     {
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<RT> idxTmp;
-            AscendC::MicroAPI::RegTensor<T> dataTmp;
-            AscendC::MicroAPI::RegTensor<T> dataT;
+            AscendC::Reg::RegTensor<RT> idxTmp;
+            AscendC::Reg::RegTensor<T> dataTmp;
+            AscendC::Reg::RegTensor<T> dataT;
 
             for (uint16_t i = 0; i < padVLNum; i++) {
-                AscendC::MicroAPI::DataCopy(idxTmp, idxAddr + i * VL_ELEMS_C);
-                AscendC::MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType>&)dataTmp, srcAddr,
-                                                  (MicroAPI::RegTensor<IdxType>&)idxTmp, maskAll);
+                AscendC::Reg::DataCopy(idxTmp, idxAddr + i * VL_ELEMS_C);
+                AscendC::Reg::DataCopyGather((Reg::RegTensor<CastType>&)dataTmp, srcAddr,
+                                             (Reg::RegTensor<IdxType>&)idxTmp, maskAll);
                 if constexpr (sizeof(T) != 1) {
-                    MicroAPI::DataCopy(dstAddr + i * VL_ELEMS_C, dataTmp, maskAll);
+                    Reg::DataCopy(dstAddr + i * VL_ELEMS_C, dataTmp, maskAll);
                 } else {
-                    MicroAPI::Pack(dataT, (MicroAPI::RegTensor<CastType>&)dataTmp);
-                    MicroAPI::DataCopy(dstAddr + i * VL_ELEMS_C, dataT, maskAll);
+                    Reg::Pack(dataT, (Reg::RegTensor<CastType>&)dataTmp);
+                    Reg::DataCopy(dstAddr + i * VL_ELEMS_C, dataT, maskAll);
                 }
             }
             for (uint16_t i = 0; i < padBLNum; i++) {
-                AscendC::MicroAPI::DataCopy(idxTmp, idxAddr + padVLNum * VL_ELEMS_C);
-                AscendC::MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType>&)dataTmp, srcAddr,
-                                                  (MicroAPI::RegTensor<IdxType>&)idxTmp, endMask);
+                AscendC::Reg::DataCopy(idxTmp, idxAddr + padVLNum * VL_ELEMS_C);
+                AscendC::Reg::DataCopyGather((Reg::RegTensor<CastType>&)dataTmp, srcAddr,
+                                             (Reg::RegTensor<IdxType>&)idxTmp, endMask);
                 if constexpr (sizeof(T) != 1) {
-                    MicroAPI::DataCopy(dstAddr + padVLNum * VL_ELEMS_C, dataTmp, endMask);
+                    Reg::DataCopy(dstAddr + padVLNum * VL_ELEMS_C, dataTmp, endMask);
                 } else {
-                    MicroAPI::Pack(dataT, (MicroAPI::RegTensor<CastType>&)dataTmp);
-                    MicroAPI::DataCopy(dstAddr + padVLNum * VL_ELEMS_C, dataT, endMask);
+                    Reg::Pack(dataT, (Reg::RegTensor<CastType>&)dataTmp);
+                    Reg::DataCopy(dstAddr + padVLNum * VL_ELEMS_C, dataT, endMask);
                 }
             }
         }
@@ -485,9 +484,9 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg endMask;
+            Reg::MaskReg endMask;
             uint32_t endLen = padBLNum;
-            endMask = AscendC::MicroAPI::UpdateMask<T>(endLen);
+            endMask = AscendC::Reg::UpdateMask<T>(endLen);
 
             if constexpr (UB_AXES == CONST2) {
                 MoveLine(dstAddr, srcAddr, padVLNum, BLNum, endMask);
@@ -507,20 +506,19 @@ private:
     }
 
     __aicore__ inline void MoveLine(__local_mem__ T* dstAddr, __local_mem__ T* srcAddr, uint16_t padVLNum,
-                                    uint16_t padBLNum, MicroAPI::MaskReg endMask)
+                                    uint16_t padBLNum, Reg::MaskReg endMask)
     {
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<T> vRegTmp;
-            AscendC::MicroAPI::MaskReg
-                maskAll = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL>();
+            AscendC::Reg::RegTensor<T> vRegTmp;
+            AscendC::Reg::MaskReg maskAll = AscendC::Reg::CreateMask<T, AscendC::Reg::MaskPattern::ALL>();
             for (uint16_t i = 0; i < padVLNum; i++) {
-                AscendC::MicroAPI::DataCopy(vRegTmp, srcAddr + i * VL_ELEMS);
-                AscendC::MicroAPI::DataCopy(dstAddr + i * VL_ELEMS, vRegTmp, maskAll);
+                AscendC::Reg::DataCopy(vRegTmp, srcAddr + i * VL_ELEMS);
+                AscendC::Reg::DataCopy(dstAddr + i * VL_ELEMS, vRegTmp, maskAll);
             }
             for (uint16_t i = 0; i < padBLNum; i++) {
-                AscendC::MicroAPI::DataCopy(vRegTmp, srcAddr + padVLNum * VL_ELEMS);
-                AscendC::MicroAPI::DataCopy(dstAddr + padVLNum * VL_ELEMS, vRegTmp, endMask);
+                AscendC::Reg::DataCopy(vRegTmp, srcAddr + padVLNum * VL_ELEMS);
+                AscendC::Reg::DataCopy(dstAddr + padVLNum * VL_ELEMS, vRegTmp, endMask);
             }
         }
     }
@@ -549,9 +547,9 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg endMask;
+            Reg::MaskReg endMask;
             uint32_t endLen = padBLNum;
-            endMask = AscendC::MicroAPI::UpdateMask<T>(endLen);
+            endMask = AscendC::Reg::UpdateMask<T>(endLen);
 
             if constexpr (UB_AXES == CONST3) {
                 for (uint16_t c = 0; c < dimCNum; c++) {
@@ -604,9 +602,9 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg endMask;
+            Reg::MaskReg endMask;
             uint32_t endLen = padBLNum;
-            endMask = AscendC::MicroAPI::UpdateMask<T>(endLen);
+            endMask = AscendC::Reg::UpdateMask<T>(endLen);
 
             for (uint16_t n = 0; n < dimNNum; n++) {
                 for (uint16_t i = 0; i < upNum; i++) {
@@ -640,12 +638,11 @@ private:
 
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<T> vRegTmp;
-            AscendC::MicroAPI::MaskReg
-                maskAll = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL>();
-            AscendC::MicroAPI::MaskReg outMask;
+            AscendC::Reg::RegTensor<T> vRegTmp;
+            AscendC::Reg::MaskReg maskAll = AscendC::Reg::CreateMask<T, AscendC::Reg::MaskPattern::ALL>();
+            AscendC::Reg::MaskReg outMask;
             uint32_t outLen = padBLNum;
-            outMask = AscendC::MicroAPI::UpdateMask<T>(outLen);
+            outMask = AscendC::Reg::UpdateMask<T>(outLen);
 
             for (uint16_t n = 0; n < totalNum; n++) {
                 MoveLine(dstAddr + n * flipLen, srcAddr + (totalNum - 1 - n) * flipLen, padVLNum, BLNum, outMask);

@@ -249,22 +249,22 @@ __aicore__ inline void OneAxisConcatNoAlignCopy<T, TILINGDATA>::ComputeNoSplitDi
     __ubuf__ T* curSrcAddr;
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<T> vd0;
-        AscendC::MicroAPI::RegTensor<T> vd1;
-        AscendC::MicroAPI::UnalignReg u0;
-        AscendC::MicroAPI::UnalignReg u1;
+        AscendC::Reg::RegTensor<T> vd0;
+        AscendC::Reg::RegTensor<T> vd1;
+        AscendC::Reg::UnalignReg u0;
+        AscendC::Reg::UnalignReg u1;
         for (uint16_t i = 0; i < size0; i++) {
             for (uint16_t j = 0; j < inputNum; j++) {
                 curSrcAddr = srcAddr + j * tensorStride + i * inputCols;
                 curDstAddr = dstAddr + i * dstColStride + j * inputCols;
-                AscendC::MicroAPI::DataCopyUnAlignPre(u0, curSrcAddr);
+                AscendC::Reg::DataCopyUnAlignPre(u0, curSrcAddr);
                 for (uint16_t k = 0; k < size1; k++) {
-                    AscendC::MicroAPI::DataCopyUnAlign(vd0, u0, curSrcAddr, main);
-                    AscendC::MicroAPI::DataCopyUnAlign(curDstAddr, vd0, u1, main);
+                    AscendC::Reg::DataCopyUnAlign(vd0, u0, curSrcAddr, main);
+                    AscendC::Reg::DataCopyUnAlign(curDstAddr, vd0, u1, main);
                 }
-                AscendC::MicroAPI::DataCopyUnAlign(vd0, u0, curSrcAddr, tail);
-                AscendC::MicroAPI::DataCopyUnAlign(curDstAddr, vd0, u1, tail);
-                AscendC::MicroAPI::DataCopyUnAlignPost(curDstAddr, u1, 0);
+                AscendC::Reg::DataCopyUnAlign(vd0, u0, curSrcAddr, tail);
+                AscendC::Reg::DataCopyUnAlign(curDstAddr, vd0, u1, tail);
+                AscendC::Reg::DataCopyUnAlignPost(curDstAddr, u1, 0);
             }
         }
     }

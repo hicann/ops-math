@@ -337,16 +337,16 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<RangeType> indexReg;
-            MicroAPI::RegTensor<RangeType> validReg;
-            MicroAPI::UnalignReg uReg;
+            Reg::RegTensor<RangeType> indexReg;
+            Reg::RegTensor<RangeType> validReg;
+            Reg::UnalignReg uReg;
 
             for (uint16_t i = 0; i < loop0; i++) {
                 for (uint16_t j = 0; j < loop1; j++) {
                     __local_mem__ RangeType* idxAddrTmp = idxAddr + i * inStride0 + j * inStride1;
-                    MicroAPI::Arange(validReg, startValue + i * outStride0 + j * outStride1);
-                    MicroAPI::DataCopyUnAlign(idxAddrTmp, validReg, uReg, lastDimIn);
-                    MicroAPI::DataCopyUnAlignPost(idxAddrTmp, uReg, 0);
+                    Reg::Arange(validReg, startValue + i * outStride0 + j * outStride1);
+                    Reg::DataCopyUnAlign(idxAddrTmp, validReg, uReg, lastDimIn);
+                    Reg::DataCopyUnAlignPost(idxAddrTmp, uReg, 0);
                 }
             }
         }
@@ -384,54 +384,50 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<RangeType> regIdx;
-            MicroAPI::RegTensor<RangeType> regIdxBK;
-            MicroAPI::RegTensor<RangeType> regNewIdx;
-            MicroAPI::RegTensor<T> regData;
-            MicroAPI::RegTensor<T> regDataT;
+            Reg::RegTensor<RangeType> regIdx;
+            Reg::RegTensor<RangeType> regIdxBK;
+            Reg::RegTensor<RangeType> regNewIdx;
+            Reg::RegTensor<T> regData;
+            Reg::RegTensor<T> regDataT;
             uint32_t main = maskValue;
             uint32_t tail = maskValueTail;
-            MicroAPI::MaskReg maskMain = MicroAPI::UpdateMask<CastType>(main);
-            MicroAPI::MaskReg maskTail = MicroAPI::UpdateMask<CastType>(tail);
-            MicroAPI::MaskReg maskIdx = MicroAPI::CreateMask<RangeType, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::MaskReg maskData;
-            MicroAPI::MaskReg pregT;
-            MicroAPI::UnalignReg uReg;
+            Reg::MaskReg maskMain = Reg::UpdateMask<CastType>(main);
+            Reg::MaskReg maskTail = Reg::UpdateMask<CastType>(tail);
+            Reg::MaskReg maskIdx = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
+            Reg::MaskReg maskData;
+            Reg::MaskReg pregT;
+            Reg::UnalignReg uReg;
 
-            MicroAPI::DataCopy(regIdx, idxAddr);
+            Reg::DataCopy(regIdx, idxAddr);
 
             for (uint16_t nIdx = 0; nIdx < axisVlO2; nIdx++) {
                 for (uint16_t cIdx = 0; cIdx < axisVlO1; cIdx++) {
                     __local_mem__ T* inAddrTmp = inAddr + nIdx * strideInVlO2 + cIdx * strideInVlO1;
                     RangeType addsScale = nIdx * strideOutVlO2 + cIdx * strideOutVlO1 + outUbStart;
-                    MicroAPI::DataCopyUnAlignPre(uReg, inAddrTmp);
+                    Reg::DataCopyUnAlignPre(uReg, inAddrTmp);
                     for (uint16_t hIdx = 0; hIdx < vlSplitLoopCnt; hIdx++) {
-                        MicroAPI::Adds(regIdxBK, regIdx, (RangeType)(hIdx * idxOffset + addsScale), maskIdx);
+                        Reg::Adds(regIdxBK, regIdx, (RangeType)(hIdx * idxOffset + addsScale), maskIdx);
 
-                        MicroAPI::DataCopyUnAlign(regData, uReg, inAddrTmp, maskValue); // maskValue 实际搬入的长度
+                        Reg::DataCopyUnAlign(regData, uReg, inAddrTmp, maskValue); // maskValue 实际搬入的长度
                         if constexpr (sizeof(T) != 1) {
-                            MicroAPI::DataCopyScatter(outAddr, regData, (MicroAPI::RegTensor<IdxType>&)regIdxBK,
-                                                      maskMain);
+                            Reg::DataCopyScatter(outAddr, regData, (Reg::RegTensor<IdxType>&)regIdxBK, maskMain);
                         } else {
-                            MicroAPI::UnPack((MicroAPI::RegTensor<CastType>&)regDataT, regData);
-                            MicroAPI::DataCopyScatter(outAddr, regDataT, (MicroAPI::RegTensor<IdxType>&)regIdxBK,
-                                                      maskMain);
+                            Reg::UnPack((Reg::RegTensor<CastType>&)regDataT, regData);
+                            Reg::DataCopyScatter(outAddr, regDataT, (Reg::RegTensor<IdxType>&)regIdxBK, maskMain);
                         }
                     }
 
                     for (uint16_t hTail = 0; hTail < vlSplitTailLoopCnt; hTail++) {
                         inAddrTmp = inAddr + nIdx * strideInVlO2 + cIdx * strideInVlO1 + vlSplitLoopCnt * maskValue;
-                        MicroAPI::DataCopyUnAlignPre(uReg, inAddrTmp);
-                        MicroAPI::Adds(regIdxBK, regIdx, (RangeType)(vlSplitLoopCnt * idxOffset + addsScale), maskIdx);
-                        MicroAPI::DataCopyUnAlign(regData, uReg, inAddrTmp,
-                                                  maskValueTail); // maskValueTail 实际搬入的长度
+                        Reg::DataCopyUnAlignPre(uReg, inAddrTmp);
+                        Reg::Adds(regIdxBK, regIdx, (RangeType)(vlSplitLoopCnt * idxOffset + addsScale), maskIdx);
+                        Reg::DataCopyUnAlign(regData, uReg, inAddrTmp,
+                                             maskValueTail); // maskValueTail 实际搬入的长度
                         if constexpr (sizeof(T) != 1) {
-                            MicroAPI::DataCopyScatter(outAddr, regData, (MicroAPI::RegTensor<IdxType>&)regIdxBK,
-                                                      maskTail);
+                            Reg::DataCopyScatter(outAddr, regData, (Reg::RegTensor<IdxType>&)regIdxBK, maskTail);
                         } else {
-                            MicroAPI::UnPack((MicroAPI::RegTensor<CastType>&)regDataT, regData);
-                            MicroAPI::DataCopyScatter(outAddr, regDataT, (MicroAPI::RegTensor<IdxType>&)regIdxBK,
-                                                      maskTail);
+                            Reg::UnPack((Reg::RegTensor<CastType>&)regDataT, regData);
+                            Reg::DataCopyScatter(outAddr, regDataT, (Reg::RegTensor<IdxType>&)regIdxBK, maskTail);
                         }
                     }
                 }

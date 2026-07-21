@@ -24,25 +24,26 @@ using namespace RandomKernelBase;
 const uint32_t DOUBLE_BUFFER = 2;
 
 template <typename T>
-class DropOutDoMaskV3Op : public RandomKernelBaseOp
-{
+class DropOutDoMaskV3Op : public RandomKernelBaseOp {
 public:
-    __aicore__ inline DropOutDoMaskV3Op(TPipe* pipe, const RandomUnifiedTilingDataStruct* __restrict tilingData) : RandomKernelBaseOp(tilingData),pipePtr_(pipe){};
+    __aicore__ inline DropOutDoMaskV3Op(TPipe* pipe, const RandomUnifiedTilingDataStruct* __restrict tilingData)
+        : RandomKernelBaseOp(tilingData), pipePtr_(pipe){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR mask, GM_ADDR y);
     __aicore__ inline void Process();
 
 private:
-    __aicore__ inline void doMaskB32(
-        AscendC::MicroAPI::MaskReg& preg0, AscendC::MicroAPI::MaskReg maskInputVf,
-        AscendC::MicroAPI::RegTensor<T> xInputVf, AscendC::MicroAPI::RegTensor<T> yOutputVf,
-        AscendC::MicroAPI::RegTensor<float> select0, __ubuf__ T* xInputUbPtr, __ubuf__ T* yOutputUbPtr, uint32_t& size,
-        uint32_t postUpdateStride, uint16_t index, uint32_t offset, float prob_reciprocal);
-    __aicore__ inline void doMaskB16(
-        AscendC::MicroAPI::MaskReg& preg0, AscendC::MicroAPI::MaskReg maskInputVf,
-        AscendC::MicroAPI::RegTensor<T> xInputVf, AscendC::MicroAPI::RegTensor<T> yOutputVf,
-        AscendC::MicroAPI::RegTensor<float> select0, __ubuf__ T* xInputUbPtr, __ubuf__ T* yOutputUbPtr, uint32_t& size,
-        uint32_t postUpdateStride, uint16_t index, uint32_t offset, float prob_reciprocal,
-        AscendC::MicroAPI::RegTensor<float> xFp32InputVf, AscendC::MicroAPI::RegTensor<float> yFp32OutputVf);
+    __aicore__ inline void doMaskB32(AscendC::Reg::MaskReg& preg0, AscendC::Reg::MaskReg maskInputVf,
+                                     AscendC::Reg::RegTensor<T> xInputVf, AscendC::Reg::RegTensor<T> yOutputVf,
+                                     AscendC::Reg::RegTensor<float> select0, __ubuf__ T* xInputUbPtr,
+                                     __ubuf__ T* yOutputUbPtr, uint32_t& size, uint32_t postUpdateStride,
+                                     uint16_t index, uint32_t offset, float prob_reciprocal);
+    __aicore__ inline void doMaskB16(AscendC::Reg::MaskReg& preg0, AscendC::Reg::MaskReg maskInputVf,
+                                     AscendC::Reg::RegTensor<T> xInputVf, AscendC::Reg::RegTensor<T> yOutputVf,
+                                     AscendC::Reg::RegTensor<float> select0, __ubuf__ T* xInputUbPtr,
+                                     __ubuf__ T* yOutputUbPtr, uint32_t& size, uint32_t postUpdateStride,
+                                     uint16_t index, uint32_t offset, float prob_reciprocal,
+                                     AscendC::Reg::RegTensor<float> xFp32InputVf,
+                                     AscendC::Reg::RegTensor<float> yFp32OutputVf);
     __aicore__ inline bool IsProbEqual(float a, float b);
 
     template <bool COPY_MASK>
@@ -65,15 +66,15 @@ private:
     AscendC::GlobalTensor<T> yOutputGm_;
 
     float prob_ = 0.0f;
-    uint64_t ubTailLoopSize_ = 0;      // 当前coreUB尾循环搬运数据量
-    uint64_t currLoopCount_ = 0;       // 当前core循环搬运数据次数
+    uint64_t ubTailLoopSize_ = 0; // 当前coreUB尾循环搬运数据量
+    uint64_t currLoopCount_ = 0;  // 当前core循环搬运数据次数
 
-    static constexpr AscendC::MicroAPI::CastTrait castTraitB16ToB32 = {
-        AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::UNKNOWN,
-        AscendC::MicroAPI::MaskMergeMode::ZEROING, AscendC::RoundMode::UNKNOWN};
-    static constexpr AscendC::MicroAPI::CastTrait castTraitB32ToB16 = {
-        AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::NO_SAT,
-        AscendC::MicroAPI::MaskMergeMode::ZEROING, AscendC::RoundMode::CAST_RINT};
+    static constexpr AscendC::Reg::CastTrait castTraitB16ToB32 = {
+        AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::UNKNOWN, AscendC::Reg::MaskMergeMode::ZEROING,
+        AscendC::RoundMode::UNKNOWN};
+    static constexpr AscendC::Reg::CastTrait castTraitB32ToB16 = {
+        AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::NO_SAT, AscendC::Reg::MaskMergeMode::ZEROING,
+        AscendC::RoundMode::CAST_RINT};
 };
 
 template <typename T>
@@ -83,46 +84,45 @@ __aicore__ inline bool DropOutDoMaskV3Op<T>::IsProbEqual(float a, float b)
 }
 
 template <typename T>
-__aicore__ inline void DropOutDoMaskV3Op<T>::doMaskB32(
-    AscendC::MicroAPI::MaskReg& preg0, AscendC::MicroAPI::MaskReg maskInputVf,
-    AscendC::MicroAPI::RegTensor<T> xInputVf, AscendC::MicroAPI::RegTensor<T> yOutputVf,
-    AscendC::MicroAPI::RegTensor<float> select0, __ubuf__ T* xInputUbPtr, __ubuf__ T* yOutputUbPtr, uint32_t& size,
-    uint32_t postUpdateStride, uint16_t index, uint32_t offset, float prob_reciprocal)
+__aicore__ inline void DropOutDoMaskV3Op<T>::doMaskB32(AscendC::Reg::MaskReg& preg0, AscendC::Reg::MaskReg maskInputVf,
+                                                       AscendC::Reg::RegTensor<T> xInputVf,
+                                                       AscendC::Reg::RegTensor<T> yOutputVf,
+                                                       AscendC::Reg::RegTensor<float> select0, __ubuf__ T* xInputUbPtr,
+                                                       __ubuf__ T* yOutputUbPtr, uint32_t& size,
+                                                       uint32_t postUpdateStride, uint16_t index, uint32_t offset,
+                                                       float prob_reciprocal)
 {
-    preg0 = AscendC::MicroAPI::UpdateMask<float>(size);
-    AscendC::MicroAPI::DataCopy<float, AscendC::MicroAPI::LoadDist::DIST_NORM>(
-        xInputVf, xInputUbPtr + index * postUpdateStride);
-    AscendC::MicroAPI::Muls<float, float, AscendC::MicroAPI::MaskMergeMode::ZEROING>(
-        xInputVf, xInputVf, prob_reciprocal, preg0);
-    AscendC::MicroAPI::Select<float>(yOutputVf, xInputVf, select0, maskInputVf);
-    AscendC::MicroAPI::DataCopy<float, AscendC::MicroAPI::StoreDist::DIST_NORM_B32>(
-        yOutputUbPtr + index * postUpdateStride, yOutputVf, preg0);
+    preg0 = AscendC::Reg::UpdateMask<float>(size);
+    AscendC::Reg::DataCopy<float, AscendC::Reg::LoadDist::DIST_NORM>(xInputVf, xInputUbPtr + index * postUpdateStride);
+    AscendC::Reg::Muls<float, float, AscendC::Reg::MaskMergeMode::ZEROING>(xInputVf, xInputVf, prob_reciprocal, preg0);
+    AscendC::Reg::Select<float>(yOutputVf, xInputVf, select0, maskInputVf);
+    AscendC::Reg::DataCopy<float, AscendC::Reg::StoreDist::DIST_NORM_B32>(yOutputUbPtr + index * postUpdateStride,
+                                                                          yOutputVf, preg0);
 }
 
 template <typename T>
 __aicore__ inline void DropOutDoMaskV3Op<T>::doMaskB16(
-    AscendC::MicroAPI::MaskReg& preg0, AscendC::MicroAPI::MaskReg maskInputVf,
-    AscendC::MicroAPI::RegTensor<T> xInputVf, AscendC::MicroAPI::RegTensor<T> yOutputVf,
-    AscendC::MicroAPI::RegTensor<float> select0, __ubuf__ T* xInputUbPtr, __ubuf__ T* yOutputUbPtr, uint32_t& size,
-    uint32_t postUpdateStride, uint16_t index, uint32_t offset, float prob_reciprocal,
-    AscendC::MicroAPI::RegTensor<float> xFp32InputVf, AscendC::MicroAPI::RegTensor<float> yFp32OutputVf)
+    AscendC::Reg::MaskReg& preg0, AscendC::Reg::MaskReg maskInputVf, AscendC::Reg::RegTensor<T> xInputVf,
+    AscendC::Reg::RegTensor<T> yOutputVf, AscendC::Reg::RegTensor<float> select0, __ubuf__ T* xInputUbPtr,
+    __ubuf__ T* yOutputUbPtr, uint32_t& size, uint32_t postUpdateStride, uint16_t index, uint32_t offset,
+    float prob_reciprocal, AscendC::Reg::RegTensor<float> xFp32InputVf, AscendC::Reg::RegTensor<float> yFp32OutputVf)
 {
-    preg0 = AscendC::MicroAPI::UpdateMask<float>(size);
-    AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::LoadDist::DIST_UNPACK_B16>(
-        xInputVf, xInputUbPtr + index * postUpdateStride);
-    AscendC::MicroAPI::Cast<float, T, castTraitB16ToB32>(xFp32InputVf, xInputVf, preg0);
-    AscendC::MicroAPI::Muls<float, float, AscendC::MicroAPI::MaskMergeMode::ZEROING>(
-        xFp32InputVf, xFp32InputVf, prob_reciprocal, preg0);
-    AscendC::MicroAPI::Select<float>(yFp32OutputVf, xFp32InputVf, select0, maskInputVf);
-    AscendC::MicroAPI::Cast<T, float, castTraitB32ToB16>(yOutputVf, yFp32OutputVf, preg0);
-    AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::StoreDist::DIST_PACK_B32>(
-        yOutputUbPtr + index * postUpdateStride, yOutputVf, preg0);
+    preg0 = AscendC::Reg::UpdateMask<float>(size);
+    AscendC::Reg::DataCopy<T, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(xInputVf,
+                                                                       xInputUbPtr + index * postUpdateStride);
+    AscendC::Reg::Cast<float, T, castTraitB16ToB32>(xFp32InputVf, xInputVf, preg0);
+    AscendC::Reg::Muls<float, float, AscendC::Reg::MaskMergeMode::ZEROING>(xFp32InputVf, xFp32InputVf, prob_reciprocal,
+                                                                           preg0);
+    AscendC::Reg::Select<float>(yFp32OutputVf, xFp32InputVf, select0, maskInputVf);
+    AscendC::Reg::Cast<T, float, castTraitB32ToB16>(yOutputVf, yFp32OutputVf, preg0);
+    AscendC::Reg::DataCopy<T, AscendC::Reg::StoreDist::DIST_PACK_B32>(yOutputUbPtr + index * postUpdateStride,
+                                                                      yOutputVf, preg0);
 }
 
 template <typename T>
 __aicore__ inline void DropOutDoMaskV3Op<T>::Init(GM_ADDR x, GM_ADDR mask, GM_ADDR y)
 {
-    //Parsetiling data
+    // Parsetiling data
     VarsInit();
     xInputGm_.SetGlobalBuffer((__gm__ T*)x);
     maskInputGm_.SetGlobalBuffer((__gm__ uint8_t*)mask);
@@ -132,7 +132,7 @@ __aicore__ inline void DropOutDoMaskV3Op<T>::Init(GM_ADDR x, GM_ADDR mask, GM_AD
     int64_t normBlockTail = tiling_->normalCoreProNum - (normBlockLoop - 1) * tiling_->singleBufferSize;
     int64_t tailBlockLoop = Ops::Base::CeilDiv(tiling_->tailCoreProNum, tiling_->singleBufferSize);
     int64_t tailBlockTail = tiling_->tailCoreProNum - (tailBlockLoop - 1) * tiling_->singleBufferSize;
-    
+
     if (blockIdx_ == tiling_->usedCoreNum - 1) {
         currLoopCount_ = tailBlockLoop;
         ubTailLoopSize_ = tailBlockTail;
@@ -142,7 +142,8 @@ __aicore__ inline void DropOutDoMaskV3Op<T>::Init(GM_ADDR x, GM_ADDR mask, GM_AD
     }
 
     pipePtr_->InitBuffer(xInputQueue_, DOUBLE_BUFFER, tiling_->singleBufferSize * sizeof(T));
-    pipePtr_->InitBuffer(maskInputQueue_, DOUBLE_BUFFER,
+    pipePtr_->InitBuffer(
+        maskInputQueue_, DOUBLE_BUFFER,
         Ops::Base::CeilAlign(static_cast<uint32_t>(tiling_->singleBufferSize), ALIGN_128) * sizeof(uint8_t));
     pipePtr_->InitBuffer(yOutputQueue_, DOUBLE_BUFFER, tiling_->singleBufferSize * sizeof(T));
 
@@ -156,9 +157,9 @@ __aicore__ inline void DropOutDoMaskV3Op<T>::CopyIn(uint32_t loopIdx, uint32_t d
     AscendC::LocalTensor<T> xInputUb_ = xInputQueue_.AllocTensor<T>();
     AscendC::DataCopyExtParams xCopyParams{1, (uint32_t)(dataCount * sizeof(T)), 0, 0, 0};
     AscendC::DataCopyPadExtParams<T> xPadParams{false, 0, 0, 0};
-    AscendC::DataCopyPad(
-        xInputUb_, xInputGm_[blockIdx_ * tiling_->normalCoreProNum + loopIdx * tiling_->singleBufferSize],
-        xCopyParams, xPadParams);
+    AscendC::DataCopyPad(xInputUb_,
+                         xInputGm_[blockIdx_ * tiling_->normalCoreProNum + loopIdx * tiling_->singleBufferSize],
+                         xCopyParams, xPadParams);
     xInputQueue_.EnQue<T>(xInputUb_);
 
     event_t event_MTE2_MTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(AscendC::HardEvent::MTE2_MTE3));
@@ -170,14 +171,12 @@ __aicore__ inline void DropOutDoMaskV3Op<T>::CopyIn(uint32_t loopIdx, uint32_t d
         AscendC::DataCopyExtParams maskCopyParams{
             1, (uint32_t)(Ops::Base::CeilAlign(dataCount, ALIGN_128) * sizeof(uint8_t)), 0, 0, 0};
         AscendC::DataCopyPadExtParams<uint8_t> maskPadParams{false, 0, 0, 0};
-        AscendC::DataCopyPad(
-            maskInputUb_,
-            maskInputGm_[blockIdx_ * tiling_->normalCoreProNum + loopIdx * tiling_->singleBufferSize],
-            maskCopyParams, maskPadParams);
+        AscendC::DataCopyPad(maskInputUb_,
+                             maskInputGm_[blockIdx_ * tiling_->normalCoreProNum + loopIdx * tiling_->singleBufferSize],
+                             maskCopyParams, maskPadParams);
         maskInputQueue_.EnQue<uint8_t>(maskInputUb_);
     }
 }
-
 
 template <typename T>
 __aicore__ inline void DropOutDoMaskV3Op<T>::Compute(uint32_t loopIdx, uint32_t dataCount)
@@ -186,7 +185,8 @@ __aicore__ inline void DropOutDoMaskV3Op<T>::Compute(uint32_t loopIdx, uint32_t 
     AscendC::LocalTensor<uint8_t> maskInputUb_ = maskInputQueue_.DeQue<uint8_t>();
     AscendC::LocalTensor<T> yOutputUb_ = yOutputQueue_.AllocTensor<T>();
     constexpr uint16_t vRegSize = Ops::Base::GetVRegSize();
-    uint16_t vfLoopNum = Ops::Base::CeilDiv(static_cast<uint32_t>(dataCount * sizeof(float)), static_cast<uint32_t>(vRegSize));
+    uint16_t vfLoopNum = Ops::Base::CeilDiv(static_cast<uint32_t>(dataCount * sizeof(float)),
+                                            static_cast<uint32_t>(vRegSize));
     __ubuf__ T* xInputUbPtr = (__ubuf__ T*)xInputUb_.GetPhyAddr();
     __ubuf__ T* yOutputUbPtr = (__ubuf__ T*)yOutputUb_.GetPhyAddr();
     __ubuf__ uint8_t* maskInputUbPtr = (__ubuf__ uint8_t*)maskInputUb_.GetPhyAddr();
@@ -196,35 +196,37 @@ __aicore__ inline void DropOutDoMaskV3Op<T>::Compute(uint32_t loopIdx, uint32_t 
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<T> xInputVf;
-        AscendC::MicroAPI::RegTensor<float> xFp32InputVf;
-        AscendC::MicroAPI::RegTensor<T> yOutputVf;
-        AscendC::MicroAPI::RegTensor<float> yFp32OutputVf;
-        AscendC::MicroAPI::RegTensor<float> select0;
-        AscendC::MicroAPI::MaskReg preg0;
-        AscendC::MicroAPI::MaskReg maskInputVf0;
-        AscendC::MicroAPI::MaskReg maskInputVf1;
-        AscendC::MicroAPI::MaskReg newMask0;
-        AscendC::MicroAPI::MaskReg newMask1;
-        AscendC::MicroAPI::Duplicate(select0, 0.0f);
+        AscendC::Reg::RegTensor<T> xInputVf;
+        AscendC::Reg::RegTensor<float> xFp32InputVf;
+        AscendC::Reg::RegTensor<T> yOutputVf;
+        AscendC::Reg::RegTensor<float> yFp32OutputVf;
+        AscendC::Reg::RegTensor<float> select0;
+        AscendC::Reg::MaskReg preg0;
+        AscendC::Reg::MaskReg maskInputVf0;
+        AscendC::Reg::MaskReg maskInputVf1;
+        AscendC::Reg::MaskReg newMask0;
+        AscendC::Reg::MaskReg newMask1;
+        AscendC::Reg::Duplicate(select0, 0.0f);
 
         if constexpr (AscendC::IsSameType<T, float>::value) {
             for (uint16_t i = 0; i < vfLoopNum; i++) {
-                AscendC::MicroAPI::DataCopy<uint8_t, AscendC::MicroAPI::MaskDist::DIST_NORM>(maskInputVf0, maskInputUbPtr + i * REG_COUNT * MASK_REG_LEN);
-                AscendC::MicroAPI::DataCopy<uint8_t, AscendC::MicroAPI::MaskDist::DIST_NORM>(maskInputVf1, maskInputUbPtr + (i * REG_COUNT + INDEX_ONE) * MASK_REG_LEN);
-                AscendC::MicroAPI::MaskDeInterleave<T>(newMask0,newMask1,maskInputVf0,maskInputVf1);
-                doMaskB32(
-                    preg0, newMask0, xInputVf, yOutputVf, select0, xInputUbPtr, yOutputUbPtr, size,
-                    postUpdateStride, i, 0, prob_reciprocal);
+                AscendC::Reg::DataCopy<uint8_t, AscendC::Reg::MaskDist::DIST_NORM>(
+                    maskInputVf0, maskInputUbPtr + i * REG_COUNT * MASK_REG_LEN);
+                AscendC::Reg::DataCopy<uint8_t, AscendC::Reg::MaskDist::DIST_NORM>(
+                    maskInputVf1, maskInputUbPtr + (i * REG_COUNT + INDEX_ONE) * MASK_REG_LEN);
+                AscendC::Reg::MaskDeInterleave<T>(newMask0, newMask1, maskInputVf0, maskInputVf1);
+                doMaskB32(preg0, newMask0, xInputVf, yOutputVf, select0, xInputUbPtr, yOutputUbPtr, size,
+                          postUpdateStride, i, 0, prob_reciprocal);
             }
         } else {
             for (uint16_t i = 0; i < vfLoopNum; i++) {
-                AscendC::MicroAPI::DataCopy<uint8_t, AscendC::MicroAPI::MaskDist::DIST_NORM>(maskInputVf0, maskInputUbPtr + i * REG_COUNT * MASK_REG_LEN);
-                AscendC::MicroAPI::DataCopy<uint8_t, AscendC::MicroAPI::MaskDist::DIST_NORM>(maskInputVf1, maskInputUbPtr + (i * REG_COUNT + INDEX_ONE) * MASK_REG_LEN);
-                AscendC::MicroAPI::MaskDeInterleave<T>(newMask0,newMask1,maskInputVf0,maskInputVf1);
-                doMaskB16(
-                    preg0, newMask0, xInputVf, yOutputVf, select0, xInputUbPtr, yOutputUbPtr, size,
-                    postUpdateStride, i, 0, prob_reciprocal, xFp32InputVf, yFp32OutputVf);
+                AscendC::Reg::DataCopy<uint8_t, AscendC::Reg::MaskDist::DIST_NORM>(
+                    maskInputVf0, maskInputUbPtr + i * REG_COUNT * MASK_REG_LEN);
+                AscendC::Reg::DataCopy<uint8_t, AscendC::Reg::MaskDist::DIST_NORM>(
+                    maskInputVf1, maskInputUbPtr + (i * REG_COUNT + INDEX_ONE) * MASK_REG_LEN);
+                AscendC::Reg::MaskDeInterleave<T>(newMask0, newMask1, maskInputVf0, maskInputVf1);
+                doMaskB16(preg0, newMask0, xInputVf, yOutputVf, select0, xInputUbPtr, yOutputUbPtr, size,
+                          postUpdateStride, i, 0, prob_reciprocal, xFp32InputVf, yFp32OutputVf);
             }
         }
     }
@@ -233,21 +235,19 @@ __aicore__ inline void DropOutDoMaskV3Op<T>::Compute(uint32_t loopIdx, uint32_t 
     yOutputQueue_.EnQue<T>(yOutputUb_);
 }
 
-
 template <typename T>
 __aicore__ inline void DropOutDoMaskV3Op<T>::CopyOutY(uint32_t loopIdx, uint32_t dataCount)
 {
     AscendC::LocalTensor<T> yOutputUb_ = yOutputQueue_.DeQue<T>();
     int64_t yOffset = blockIdx_ * tiling_->normalCoreProNum + loopIdx * tiling_->singleBufferSize;
-    CopyOut(yOutputUb_, yOutputGm_, 1, (uint32_t)(dataCount * sizeof(T)), yOffset); 
+    CopyOut(yOutputUb_, yOutputGm_, 1, (uint32_t)(dataCount * sizeof(T)), yOffset);
     yOutputQueue_.FreeTensor(yOutputUb_);
 }
-
 
 template <typename T>
 __aicore__ inline void DropOutDoMaskV3Op<T>::Process()
 {
-    if (blockIdx_ >=  tiling_->usedCoreNum) {
+    if (blockIdx_ >= tiling_->usedCoreNum) {
         return;
     }
 

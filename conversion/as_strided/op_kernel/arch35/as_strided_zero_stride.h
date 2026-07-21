@@ -30,8 +30,9 @@ __aicore__ inline T CeilDiv(T a, T b)
 };
 
 template <typename T>
-__aicore__ inline T FloorDiv(T x, T y) {
-  return y == 0 ? x : x / y;
+__aicore__ inline T FloorDiv(T x, T y)
+{
+    return y == 0 ? x : x / y;
 }
 
 namespace AsStrided {
@@ -41,13 +42,11 @@ using namespace AscendC;
 constexpr int64_t BUF_NUM = 2;
 constexpr int64_t ALIGN_NUM = 32;
 
-template<typename T>
+template <typename T>
 class StridedIsZero {
-
 public:
-    __aicore__ inline StridedIsZero() {};
-    __aicore__ inline void Init(GM_ADDR input, GM_ADDR output, 
-                                const AsStridedZeroStrideTilingData* tiling);
+    __aicore__ inline StridedIsZero(){};
+    __aicore__ inline void Init(GM_ADDR input, GM_ADDR output, const AsStridedZeroStrideTilingData* tiling);
     __aicore__ inline void CopyIn();
     __aicore__ inline void Compute();
     __aicore__ inline void CopyOut();
@@ -76,8 +75,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void StridedIsZero<T>::Init(GM_ADDR input, GM_ADDR output, 
-                                                const AsStridedZeroStrideTilingData* tiling)
+__aicore__ inline void StridedIsZero<T>::Init(GM_ADDR input, GM_ADDR output,
+                                              const AsStridedZeroStrideTilingData* tiling)
 {
     blockIdx_ = GetBlockIdx();
     tilingData_ = tiling;
@@ -128,22 +127,23 @@ __aicore__ inline void StridedIsZero<T>::Compute()
 
     uint16_t vfLen = Ops::Base::GetVRegSize() / sizeof(T);
     uint32_t dupNum = static_cast<uint32_t>(dupNum_);
-    uint16_t loopsCnt = static_cast<uint16_t>((dupNum + static_cast<uint32_t>(vfLen) - 1) / static_cast<uint32_t>(vfLen));
-    
+    uint16_t loopsCnt = static_cast<uint16_t>((dupNum + static_cast<uint32_t>(vfLen) - 1) /
+                                              static_cast<uint32_t>(vfLen));
+
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<T> tempXTensor;
-        MicroAPI::RegTensor<T> tempInRegTensor;
+        Reg::RegTensor<T> tempXTensor;
+        Reg::RegTensor<T> tempInRegTensor;
 
-        MicroAPI::MaskReg dupMask = MicroAPI::CreateMask<T, MicroAPI::MaskPattern::ALL>();
-        MicroAPI::MaskReg lenMask;
+        Reg::MaskReg dupMask = Reg::CreateMask<T, Reg::MaskPattern::ALL>();
+        Reg::MaskReg lenMask;
 
-        MicroAPI::DataCopy(tempInRegTensor, tempInTensorUbAddr);
-        MicroAPI::Duplicate<T, MicroAPI::HighLowPart::LOWEST, MicroAPI::MaskMergeMode::ZEROING>(tempXTensor, tempInRegTensor, dupMask);
+        Reg::DataCopy(tempInRegTensor, tempInTensorUbAddr);
+        Reg::Duplicate<T, Reg::HighLowPart::LOWEST, Reg::MaskMergeMode::ZEROING>(tempXTensor, tempInRegTensor, dupMask);
 
         for (uint16_t loop = 0; loop < loopsCnt; loop++) {
-            lenMask = MicroAPI::UpdateMask<T>(dupNum);
-            MicroAPI::DataCopy(xTensorUbAddr + loop * vfLen, tempXTensor, lenMask);
+            lenMask = Reg::UpdateMask<T>(dupNum);
+            Reg::DataCopy(xTensorUbAddr + loop * vfLen, tempXTensor, lenMask);
         }
     }
 }

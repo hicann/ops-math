@@ -44,9 +44,8 @@ static constexpr int64_t MASK_LENGTH_ADDR = 10;
 class StatelessRandomChoiceWithMask {
 public:
     __aicore__ inline StatelessRandomChoiceWithMask(){};
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR count, GM_ADDR y, GM_ADDR mask, GM_ADDR shapeOut, GM_ADDR workspace,
-        const StatelessRandomChoiceWithMaskSimtTilingData* __restrict tilingData, TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR count, GM_ADDR y, GM_ADDR mask, GM_ADDR shapeOut, GM_ADDR workspace,
+                                const StatelessRandomChoiceWithMaskSimtTilingData* __restrict tilingData, TPipe* pipe);
     __aicore__ inline void InitKeyAndCounter();
     __aicore__ inline void GenRandomData(int64_t outputNonzeroCount);
     __aicore__ inline void Process();
@@ -78,9 +77,9 @@ private:
     uint32_t counter_[ALG_COUNTER_SIZE] = {0};
 };
 
-__simt_vf__ LAUNCH_BOUND(CORE_THREAD_NUM) __aicore__ inline void SimtComputeNonZeroCount(
-    __gm__ bool* inputGM, __gm__ volatile int64_t* workspaceNonZeroCount, int64_t inputSize, int64_t perThreadCalcCount,
-    int64_t count)
+__simt_vf__ LAUNCH_BOUND(CORE_THREAD_NUM) __aicore__
+    inline void SimtComputeNonZeroCount(__gm__ bool* inputGM, __gm__ volatile int64_t* workspaceNonZeroCount,
+                                        int64_t inputSize, int64_t perThreadCalcCount, int64_t count)
 {
     int64_t threadOffset = blockIdx.x * blockDim.x + threadIdx.x;
     int64_t startIdx = threadOffset * perThreadCalcCount;
@@ -113,9 +112,9 @@ __simt_vf__ LAUNCH_BOUND(1) __aicore__
     }
 }
 
-__simt_vf__ LAUNCH_BOUND(CORE_THREAD_NUM) __aicore__ inline void SimtPadOutput(
-    __gm__ volatile int32_t* outputGM, __gm__ volatile bool* maskGM, int64_t blockNum, uint32_t inputDim,
-    int64_t outputLength, int64_t outputNonzeroCount)
+__simt_vf__ LAUNCH_BOUND(CORE_THREAD_NUM) __aicore__
+    inline void SimtPadOutput(__gm__ volatile int32_t* outputGM, __gm__ volatile bool* maskGM, int64_t blockNum,
+                              uint32_t inputDim, int64_t outputLength, int64_t outputNonzeroCount)
 {
     int64_t threadOffset = blockIdx.x * blockDim.x + threadIdx.x;
     for (uint64_t idx = outputNonzeroCount + threadOffset; idx < outputLength; idx += blockNum * blockDim.x) {
@@ -126,10 +125,10 @@ __simt_vf__ LAUNCH_BOUND(CORE_THREAD_NUM) __aicore__ inline void SimtPadOutput(
     }
 }
 
-__simt_vf__ LAUNCH_BOUND(CORE_THREAD_NUM) __aicore__ inline void SimtCalcOutput(
-    __gm__ volatile bool* inputGM, __gm__ volatile int64_t* workspaceNonZeroCount, __gm__ volatile int32_t* outputGM,
-    __gm__ volatile bool* maskGM, int64_t blockNum, int64_t outputLength, int64_t outputNonzeroCount,
-    int64_t perThreadCalcCount)
+__simt_vf__ LAUNCH_BOUND(CORE_THREAD_NUM) __aicore__
+    inline void SimtCalcOutput(__gm__ volatile bool* inputGM, __gm__ volatile int64_t* workspaceNonZeroCount,
+                               __gm__ volatile int32_t* outputGM, __gm__ volatile bool* maskGM, int64_t blockNum,
+                               int64_t outputLength, int64_t outputNonzeroCount, int64_t perThreadCalcCount)
 {
     int64_t threadOffset = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -147,17 +146,17 @@ __simt_vf__ LAUNCH_BOUND(CORE_THREAD_NUM) __aicore__ inline void SimtCalcOutput(
     }
 }
 
-__simt_vf__ LAUNCH_BOUND(CORE_THREAD_NUM) __aicore__ inline void SplitDim(
-    __gm__ volatile int32_t* srcGM, __gm__ volatile int32_t* dstGM, int64_t outputNonzeroCount, int64_t blockNum,
-    int64_t inputDim, uint32_t m0, uint32_t s0, uint32_t m1, uint32_t s1, uint32_t m2, uint32_t s2, uint32_t m3,
-    uint32_t s3, uint32_t m4, uint32_t s4, uint32_t c0, uint32_t c1, uint32_t c2, uint32_t c3)
+__simt_vf__ LAUNCH_BOUND(CORE_THREAD_NUM) __aicore__
+    inline void SplitDim(__gm__ volatile int32_t* srcGM, __gm__ volatile int32_t* dstGM, int64_t outputNonzeroCount,
+                         int64_t blockNum, int64_t inputDim, uint32_t m0, uint32_t s0, uint32_t m1, uint32_t s1,
+                         uint32_t m2, uint32_t s2, uint32_t m3, uint32_t s3, uint32_t m4, uint32_t s4, uint32_t c0,
+                         uint32_t c1, uint32_t c2, uint32_t c3)
 {
     uint32_t m[5] = {m0, m1, m2, m3, m4};
     uint32_t s[5] = {s0, s1, s2, s3, s4};
     uint32_t c[5] = {c0, c1, c2, c3, 1};
 
-    for (int64_t idx = blockIdx.x * blockDim.x + threadIdx.x; idx < outputNonzeroCount;
-         idx += blockNum * blockDim.x) {
+    for (int64_t idx = blockIdx.x * blockDim.x + threadIdx.x; idx < outputNonzeroCount; idx += blockNum * blockDim.x) {
         uint32_t realIdx = srcGM[idx];
         for (int64_t dim = 0; dim < inputDim; dim++) {
             dstGM[idx * inputDim + dim] = Simt::UintDiv(realIdx, m[dim], s[dim]);
@@ -166,9 +165,10 @@ __simt_vf__ LAUNCH_BOUND(CORE_THREAD_NUM) __aicore__ inline void SplitDim(
     }
 }
 
-__simt_vf__ LAUNCH_BOUND(1) __aicore__ inline void SimtFisherYatesShuffle(
-    __gm__ uint32_t* workspaceRandomData, __gm__ volatile int32_t* outputGM, __gm__ uint64_t* outShapeGM,
-    int64_t inputDim, int64_t outputNonzeroCount, int64_t outputCount)
+__simt_vf__ LAUNCH_BOUND(1) __aicore__
+    inline void SimtFisherYatesShuffle(__gm__ uint32_t* workspaceRandomData, __gm__ volatile int32_t* outputGM,
+                                       __gm__ uint64_t* outShapeGM, int64_t inputDim, int64_t outputNonzeroCount,
+                                       int64_t outputCount)
 {
     if (blockIdx.x != 0 || threadIdx.x != 0) {
         return;
@@ -205,11 +205,11 @@ __aicore__ inline void StatelessRandomChoiceWithMask::Init(
     outShapeGM_.SetGlobalBuffer((__gm__ uint64_t*)shapeOut);
 
     workspaceNoZeroCount_.SetGlobalBuffer((__gm__ int64_t*)workspace);
-    workSpaceOutput_.SetGlobalBuffer(
-        (__gm__ int32_t*)workspace + tiling_->noZeroWorkspaceSize * sizeof(int64_t) / sizeof(int32_t));
-    workspaceRandomData_.SetGlobalBuffer(
-        (__gm__ uint32_t*)workspace + tiling_->noZeroWorkspaceSize * sizeof(int64_t) / sizeof(int32_t) +
-        tiling_->randomWorkspaceSize);
+    workSpaceOutput_.SetGlobalBuffer((__gm__ int32_t*)workspace +
+                                     tiling_->noZeroWorkspaceSize * sizeof(int64_t) / sizeof(int32_t));
+    workspaceRandomData_.SetGlobalBuffer((__gm__ uint32_t*)workspace +
+                                         tiling_->noZeroWorkspaceSize * sizeof(int64_t) / sizeof(int32_t) +
+                                         tiling_->randomWorkspaceSize);
 
     count_ = countGM_.GetValue(0);
     pipe_->InitBuffer(queOut_, DOUBLE_BUFFER, (tiling_->ubSize - PrefixUbSize) / DOUBLE_BUFFER);
@@ -233,15 +233,16 @@ __aicore__ inline void StatelessRandomChoiceWithMask::GenRandomData(int64_t outp
     }
     InitKeyAndCounter();
     auto valueSize = sizeof(uint32_t);
-    int64_t perCoreHandleRandomAlign =
-        Ops::Base::CeilAlign(Ops::Base::CeilDiv(outputNonzeroCount, tiling_->blockNum), CORE_ALIGN_SIZE);
+    int64_t perCoreHandleRandomAlign = Ops::Base::CeilAlign(Ops::Base::CeilDiv(outputNonzeroCount, tiling_->blockNum),
+                                                            CORE_ALIGN_SIZE);
     int64_t simdBlockNum = Ops::Base::CeilDiv(outputNonzeroCount, perCoreHandleRandomAlign);
     if (blockIdx_ >= simdBlockNum) {
         return;
     }
 
     auto alignFactor = Ops::Base::GetUbBlockSize() / valueSize;
-    int64_t ubFactor = Ops::Base::FloorAlign((tiling_->ubSize - PrefixUbSize) / (valueSize * DOUBLE_BUFFER), alignFactor);
+    int64_t ubFactor = Ops::Base::FloorAlign((tiling_->ubSize - PrefixUbSize) / (valueSize * DOUBLE_BUFFER),
+                                             alignFactor);
     int64_t blockFactor = Ops::Base::CeilDiv(perCoreHandleRandomAlign, ubFactor);
     int64_t tailUbFactor = perCoreHandleRandomAlign - (blockFactor - 1) * ubFactor;
     auto tailCoreHandleRandom = outputNonzeroCount - (simdBlockNum - 1) * perCoreHandleRandomAlign;
@@ -261,8 +262,8 @@ __aicore__ inline void StatelessRandomChoiceWithMask::GenRandomData(int64_t outp
 
         LocalTensor<uint32_t> philoxRes = queOut_.AllocTensor<uint32_t>();
 
-        PhiloxRandom<10>(
-            philoxRes, {key_[0], key_[1]}, {counter_[0], counter_[1], counter_[2], counter_[3]}, currUbTilingSize);
+        PhiloxRandom<10>(philoxRes, {key_[0], key_[1]}, {counter_[0], counter_[1], counter_[2], counter_[3]},
+                         currUbTilingSize);
         queOut_.EnQue(philoxRes);
         CopyRandomToWorkspace(blockOffSet + idx * ubFactor, currUbTilingSize);
         groupCnt = currUbTilingSize / RESULT_ELEMENT_CNT;
@@ -270,29 +271,27 @@ __aicore__ inline void StatelessRandomChoiceWithMask::GenRandomData(int64_t outp
     }
 }
 
-__aicore__ inline void StatelessRandomChoiceWithMask::FisherYatesShuffleAndSplit(
-    int64_t outputNonzeroCount, int64_t outputLength)
+__aicore__ inline void StatelessRandomChoiceWithMask::FisherYatesShuffleAndSplit(int64_t outputNonzeroCount,
+                                                                                 int64_t outputLength)
 {
     auto outGM = outputGM_;
     if (tiling_->inputDim != 1) {
         outGM = workSpaceOutput_;
     }
-    asc_vf_call<SimtCalcOutput>(
-        dim3{CORE_THREAD_NUM}, (__gm__ volatile bool*)(inputGM_.GetPhyAddr()),
-        (__gm__ volatile int64_t*)(workspaceNoZeroCount_.GetPhyAddr()), (__gm__ volatile int32_t*)(outGM.GetPhyAddr()),
-        (__gm__ volatile bool*)(maskGM_.GetPhyAddr()), tiling_->blockNum, outputLength, outputNonzeroCount,
-        threadProNum_);
-    asc_vf_call<SimtPadOutput>(
-        dim3{CORE_THREAD_NUM}, (__gm__ volatile int32_t*)(outputGM_.GetPhyAddr()),
-        (__gm__ volatile bool*)(maskGM_.GetPhyAddr()), tiling_->blockNum, tiling_->inputDim, outputLength,
-        outputNonzeroCount);
+    asc_vf_call<SimtCalcOutput>(dim3{CORE_THREAD_NUM}, (__gm__ volatile bool*)(inputGM_.GetPhyAddr()),
+                                (__gm__ volatile int64_t*)(workspaceNoZeroCount_.GetPhyAddr()),
+                                (__gm__ volatile int32_t*)(outGM.GetPhyAddr()),
+                                (__gm__ volatile bool*)(maskGM_.GetPhyAddr()), tiling_->blockNum, outputLength,
+                                outputNonzeroCount, threadProNum_);
+    asc_vf_call<SimtPadOutput>(dim3{CORE_THREAD_NUM}, (__gm__ volatile int32_t*)(outputGM_.GetPhyAddr()),
+                               (__gm__ volatile bool*)(maskGM_.GetPhyAddr()), tiling_->blockNum, tiling_->inputDim,
+                               outputLength, outputNonzeroCount);
     GenRandomData(outputNonzeroCount);
     SyncAll();
     // 6、洗牌算法 - 单核、单线程，后续性能考虑，可改为多线程
     asc_vf_call<SimtFisherYatesShuffle>(
-        dim3{1}, (__gm__ uint32_t*)(workspaceRandomData_.GetPhyAddr()),
-        (__gm__ volatile int32_t*)(outGM.GetPhyAddr()), (__gm__ uint64_t*)(outShapeGM_.GetPhyAddr()), tiling_->inputDim,
-        outputNonzeroCount, outputLength);
+        dim3{1}, (__gm__ uint32_t*)(workspaceRandomData_.GetPhyAddr()), (__gm__ volatile int32_t*)(outGM.GetPhyAddr()),
+        (__gm__ uint64_t*)(outShapeGM_.GetPhyAddr()), tiling_->inputDim, outputNonzeroCount, outputLength);
 
     if (tiling_->inputDim != 1) {
         SyncAll();
@@ -306,14 +305,12 @@ __aicore__ inline void StatelessRandomChoiceWithMask::FisherYatesShuffleAndSplit
             GetUintDivMagicAndShift(m[idx], s[idx], strides[idx]);
         }
         // 如果是多轴情况，需要做拆轴
-        asc_vf_call<SplitDim>(
-            dim3{CORE_THREAD_NUM}, (__gm__ volatile int32_t*)(workSpaceOutput_.GetPhyAddr()),
-            (__gm__ volatile int32_t*)(outputGM_.GetPhyAddr()), outputNonzeroCount, tiling_->blockNum,
-            tiling_->inputDim, m[0], s[0], m[1], s[1], m[2], s[2], m[3], s[3], m[4], s[4], strides[0], strides[1],
-            strides[2], strides[3]);
+        asc_vf_call<SplitDim>(dim3{CORE_THREAD_NUM}, (__gm__ volatile int32_t*)(workSpaceOutput_.GetPhyAddr()),
+                              (__gm__ volatile int32_t*)(outputGM_.GetPhyAddr()), outputNonzeroCount, tiling_->blockNum,
+                              tiling_->inputDim, m[0], s[0], m[1], s[1], m[2], s[2], m[3], s[3], m[4], s[4], strides[0],
+                              strides[1], strides[2], strides[3]);
     }
 }
-
 
 __aicore__ inline void StatelessRandomChoiceWithMask::Process()
 {
@@ -330,9 +327,9 @@ __aicore__ inline void StatelessRandomChoiceWithMask::Process()
         return;
     }
 
-    asc_vf_call<SimtComputeNonZeroCount>(
-        dim3{CORE_THREAD_NUM}, (__gm__ bool*)(inputGM_.GetPhyAddr()),
-        (__gm__ volatile int64_t*)(workspaceNoZeroCount_.GetPhyAddr()), tiling_->inputSize, threadProNum_, count_);
+    asc_vf_call<SimtComputeNonZeroCount>(dim3{CORE_THREAD_NUM}, (__gm__ bool*)(inputGM_.GetPhyAddr()),
+                                         (__gm__ volatile int64_t*)(workspaceNoZeroCount_.GetPhyAddr()),
+                                         tiling_->inputSize, threadProNum_, count_);
     SyncAll();
 
     int64_t colsTotal = tiling_->m;
@@ -396,45 +393,46 @@ __aicore__ inline void StatelessRandomChoiceWithMask::CopyInCount(const int64_t 
     WaitFlag<HardEvent::MTE2_V>(eventId);
 }
 
-__aicore__ inline void StatelessRandomChoiceWithMask::ComputePrefixSum(const int64_t rows, const int64_t cols, const int64_t maxValue)
+__aicore__ inline void StatelessRandomChoiceWithMask::ComputePrefixSum(const int64_t rows, const int64_t cols,
+                                                                       const int64_t maxValue)
 {
     LocalTensor<int64_t> countLocal = xBuf_.Get<int64_t>();
     __local_mem__ int64_t* countLocalAddr = (__local_mem__ int64_t*)countLocal.GetPhyAddr();
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<uint64_t> sequence;
-        AscendC::MicroAPI::RegTensor<uint64_t> index;
-        AscendC::MicroAPI::Arange((AscendC::MicroAPI::RegTensor<int64_t> &)(sequence), 0);
-        AscendC::MicroAPI::RegTensor<int64_t> reg0;
-        AscendC::MicroAPI::RegTensor<int64_t> reg1;
-        AscendC::MicroAPI::RegTensor<int64_t> tmpReg;
+        AscendC::Reg::RegTensor<uint64_t> sequence;
+        AscendC::Reg::RegTensor<uint64_t> index;
+        AscendC::Reg::Arange((AscendC::Reg::RegTensor<int64_t>&)(sequence), 0);
+        AscendC::Reg::RegTensor<int64_t> reg0;
+        AscendC::Reg::RegTensor<int64_t> reg1;
+        AscendC::Reg::RegTensor<int64_t> tmpReg;
 
-        AscendC::MicroAPI::MaskReg pregFull = AscendC::MicroAPI::CreateMask<int64_t, AscendC::MicroAPI::MaskPattern::ALL>();
-        AscendC::MicroAPI::Duplicate(tmpReg, 0, pregFull);
-        AscendC::MicroAPI::Muls(sequence, sequence, cols, pregFull);
+        AscendC::Reg::MaskReg pregFull = AscendC::Reg::CreateMask<int64_t, AscendC::Reg::MaskPattern::ALL>();
+        AscendC::Reg::Duplicate(tmpReg, 0, pregFull);
+        AscendC::Reg::Muls(sequence, sequence, cols, pregFull);
 
         for (uint16_t j = 0; j < static_cast<uint16_t>(cols); j++) {
-            AscendC::MicroAPI::Adds(index, sequence, (uint64_t)j, pregFull);
-            AscendC::MicroAPI::DataCopyGather(reg0, countLocalAddr, index, pregFull);
-            AscendC::MicroAPI::Add(reg1, reg0, tmpReg, pregFull);
-            AscendC::MicroAPI::Copy(tmpReg, reg1, pregFull);
-            AscendC::MicroAPI::DataCopyScatter(countLocalAddr, reg1, index, pregFull);
+            AscendC::Reg::Adds(index, sequence, (uint64_t)j, pregFull);
+            AscendC::Reg::DataCopyGather(reg0, countLocalAddr, index, pregFull);
+            AscendC::Reg::Add(reg1, reg0, tmpReg, pregFull);
+            AscendC::Reg::Copy(tmpReg, reg1, pregFull);
+            AscendC::Reg::DataCopyScatter(countLocalAddr, reg1, index, pregFull);
         }
 
-        AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE, AscendC::MicroAPI::MemType::VEC_LOAD>();
+        AscendC::Reg::LocalMemBar<AscendC::Reg::MemType::VEC_STORE, AscendC::Reg::MemType::VEC_LOAD>();
 
-        AscendC::MicroAPI::DataCopy(reg1, countLocalAddr);
-        AscendC::MicroAPI::Adds(reg1, reg1, maxValue, pregFull);
-        AscendC::MicroAPI::DataCopy(countLocalAddr, reg1, pregFull);
+        AscendC::Reg::DataCopy(reg1, countLocalAddr);
+        AscendC::Reg::Adds(reg1, reg1, maxValue, pregFull);
+        AscendC::Reg::DataCopy(countLocalAddr, reg1, pregFull);
         __local_mem__ int64_t* countAddr = countLocalAddr;
         for (uint16_t i = 1; i < static_cast<uint16_t>(rows); i++) {
-            AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE, AscendC::MicroAPI::MemType::SCALAR_LOAD>();
+            AscendC::Reg::LocalMemBar<AscendC::Reg::MemType::VEC_STORE, AscendC::Reg::MemType::SCALAR_LOAD>();
             int64_t max = countLocalAddr[i * cols - 1];
             int64_t maxValue1 = max;
             countAddr += ALIGNMENT_32;
-            AscendC::MicroAPI::DataCopy(reg1, countAddr);
-            AscendC::MicroAPI::Adds(reg1, reg1, maxValue1, pregFull);
-            AscendC::MicroAPI::DataCopy(countAddr, reg1, pregFull);
+            AscendC::Reg::DataCopy(reg1, countAddr);
+            AscendC::Reg::Adds(reg1, reg1, maxValue1, pregFull);
+            AscendC::Reg::DataCopy(countAddr, reg1, pregFull);
         }
     }
 }

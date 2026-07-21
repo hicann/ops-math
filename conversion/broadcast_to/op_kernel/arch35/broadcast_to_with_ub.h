@@ -24,11 +24,11 @@
 namespace BrcTo {
 using namespace AscendC;
 
-using AscendC::MicroAPI::CreateMask;
-using AscendC::MicroAPI::DataCopy;
-using AscendC::MicroAPI::MaskReg;
-using AscendC::MicroAPI::RegTensor;
-using AscendC::MicroAPI::UpdateMask;
+using AscendC::Reg::CreateMask;
+using AscendC::Reg::DataCopy;
+using AscendC::Reg::MaskReg;
+using AscendC::Reg::RegTensor;
+using AscendC::Reg::UpdateMask;
 
 constexpr uint32_t MAX_INNER_DIM = 5;
 constexpr uint32_t DIM_TWO = 2;
@@ -55,7 +55,7 @@ private:
     __aicore__ inline void VFInnerBroadcastToB(LocalTensor<T>& outputTensor, LocalTensor<T>& inputTensor);
     __aicore__ inline void VFInnerBroadcastToA(LocalTensor<T>& outputTensor, LocalTensor<T>& inputTensor);
     __aicore__ inline void VFInnerBrcLastDimLEBlock(LocalTensor<T>& outputTensor, LocalTensor<T>& inputTensor);
-    __aicore__ inline void GenGatherIdx(MicroAPI::RegTensor<int32_t>& gatherIdx, int32_t axis4BA);
+    __aicore__ inline void GenGatherIdx(Reg::RegTensor<int32_t>& gatherIdx, int32_t axis4BA);
     __aicore__ inline void VFInnerBrcLastDimGTBlock(LocalTensor<T>& outputTensor, LocalTensor<T>& inputTensor);
     __aicore__ inline void BroadcastUb(LocalTensor<T>& outputTensor);
     __aicore__ inline void BrcUNotB(int64_t aIdx);
@@ -163,23 +163,23 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFBroadcastOneElemLB
     uint32_t maskValue = axis3OutOffset;
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<T> tmpIn;
-        AscendC::MicroAPI::RegTensor<T> tmpOut;
+        AscendC::Reg::RegTensor<T> tmpIn;
+        AscendC::Reg::RegTensor<T> tmpOut;
         MaskReg mask;
         for (uint16_t axis4LpIdx = 0; axis4LpIdx < axis4LpCnt; axis4LpIdx++) {
             mask = UpdateMask<T>(maskValue);
             for (uint16_t axis1Idx = 0; axis1Idx < static_cast<uint16_t>(innerAxis1); axis1Idx++) {
                 for (uint16_t axis3Idx = 0; axis3Idx < static_cast<uint16_t>(innerAxis3); axis3Idx++) {
-                    auto aregI = MicroAPI::CreateAddrReg<T>(axis1Idx, innerAxis3, axis3Idx, 1);
+                    auto aregI = Reg::CreateAddrReg<T>(axis1Idx, innerAxis3, axis3Idx, 1);
                     if constexpr (sizeof(T) == sizeof(uint8_t)) {
-                        DataCopy<T, MicroAPI::LoadDist::DIST_BRC_B8>(tmpIn, inputAddr, aregI);
+                        DataCopy<T, Reg::LoadDist::DIST_BRC_B8>(tmpIn, inputAddr, aregI);
                     } else if constexpr (sizeof(T) == sizeof(uint16_t)) {
-                        DataCopy<T, MicroAPI::LoadDist::DIST_BRC_B16>(tmpIn, inputAddr, aregI);
+                        DataCopy<T, Reg::LoadDist::DIST_BRC_B16>(tmpIn, inputAddr, aregI);
                     } else {
-                        DataCopy<T, MicroAPI::LoadDist::DIST_BRC_B32>(tmpIn, inputAddr, aregI);
+                        DataCopy<T, Reg::LoadDist::DIST_BRC_B32>(tmpIn, inputAddr, aregI);
                     }
-                    auto aregO = MicroAPI::CreateAddrReg<T>(axis4LpIdx, axis4Offset, axis1Idx, axis1OutOffset, axis3Idx,
-                                                            axis3OutOffset);
+                    auto aregO = Reg::CreateAddrReg<T>(axis4LpIdx, axis4Offset, axis1Idx, axis1OutOffset, axis3Idx,
+                                                       axis3OutOffset);
                     DataCopy(outputAddr, tmpIn, aregO, mask);
                 }
             }
@@ -202,21 +202,21 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFBroadcastOneElemLB
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<RT> tmpIn;
-        AscendC::MicroAPI::RegTensor<RT> tmpIn1;
-        AscendC::MicroAPI::RegTensor<RT> tmpOut;
-        AscendC::MicroAPI::RegTensor<RT> tmpOut1;
+        AscendC::Reg::RegTensor<RT> tmpIn;
+        AscendC::Reg::RegTensor<RT> tmpIn1;
+        AscendC::Reg::RegTensor<RT> tmpOut;
+        AscendC::Reg::RegTensor<RT> tmpOut1;
         MaskReg mask;
         for (uint16_t axis4LpIdx = 0; axis4LpIdx < axis4LpCnt; axis4LpIdx++) {
             mask = UpdateMask<RT>(maskValue);
             for (uint16_t axis1Idx = 0; axis1Idx < static_cast<uint16_t>(innerAxis1); axis1Idx++) {
                 for (uint16_t axis3Idx = 0; axis3Idx < static_cast<uint16_t>(innerAxis3); axis3Idx++) {
-                    auto regI = MicroAPI::CreateAddrReg<RT>(axis1Idx, axis1InOffset, axis3Idx, nTwo);
-                    DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B32>(tmpIn, reInAddr, regI);
-                    DataCopy<RT, MicroAPI::LoadDist::DIST_BRC_B32>(tmpIn1, reInAddr + 1, regI);
-                    MicroAPI::Interleave(tmpOut, tmpOut1, tmpIn, tmpIn1);
-                    auto aregO = MicroAPI::CreateAddrReg<RT>(axis4LpIdx, axis4Offset, axis1Idx, axis1OutOffset,
-                                                             axis3Idx, axis3OutOffset);
+                    auto regI = Reg::CreateAddrReg<RT>(axis1Idx, axis1InOffset, axis3Idx, nTwo);
+                    DataCopy<RT, Reg::LoadDist::DIST_BRC_B32>(tmpIn, reInAddr, regI);
+                    DataCopy<RT, Reg::LoadDist::DIST_BRC_B32>(tmpIn1, reInAddr + 1, regI);
+                    Reg::Interleave(tmpOut, tmpOut1, tmpIn, tmpIn1);
+                    auto aregO = Reg::CreateAddrReg<RT>(axis4LpIdx, axis4Offset, axis1Idx, axis1OutOffset, axis3Idx,
+                                                        axis3OutOffset);
                     DataCopy(reOutAddr, tmpOut, aregO, mask);
                 }
             }
@@ -242,15 +242,15 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFBroadcastOneElemOB
     // ABA
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<RT> tmpIn;
+        AscendC::Reg::RegTensor<RT> tmpIn;
         for (uint16_t axis34LpIdx = 0; axis34LpIdx < axis34LpCnt; axis34LpIdx++) {
             MaskReg mask = UpdateMask<RT>(iAxis34Size);
             for (uint16_t axis1Idx = 0; axis1Idx < static_cast<uint16_t>(innerAxis1); axis1Idx++) {
-                auto aregI = MicroAPI::CreateAddrReg<RT>(axis34LpIdx, axis34Offset, axis1Idx, axis1OutOffset);
+                auto aregI = Reg::CreateAddrReg<RT>(axis34LpIdx, axis34Offset, axis1Idx, axis1OutOffset);
                 DataCopy(tmpIn, reOutAddr, aregI);
                 for (uint16_t axis2Idx = 0; axis2Idx < static_cast<uint16_t>(innerAxis2 - 1); axis2Idx++) {
-                    auto aregO = MicroAPI::CreateAddrReg<RT>(axis34LpIdx, axis34Offset, axis1Idx, axis1OutOffset,
-                                                             axis2Idx, axis2Offset);
+                    auto aregO = Reg::CreateAddrReg<RT>(axis34LpIdx, axis34Offset, axis1Idx, axis1OutOffset, axis2Idx,
+                                                        axis2Offset);
                     DataCopy(reOutAddr + axis2Offset, tmpIn, aregO, mask);
                 }
             }
@@ -302,16 +302,16 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFInnerBroadcastToA(
     if (innerAxis1 != 1) {
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<RT> tmpIn;
+            AscendC::Reg::RegTensor<RT> tmpIn;
             for (uint16_t axis4LpIdx = 0; axis4LpIdx < axis4LpCnt; axis4LpIdx++) {
                 MaskReg mask = UpdateMask<RT>(lastASize);
                 for (uint16_t axis2Idx = 0; axis2Idx < static_cast<uint16_t>(innerAxis2); axis2Idx++) {
-                    auto aregI = MicroAPI::CreateAddrReg<RT>(axis4LpIdx, axis4Offset, axis2Idx, axis2InOffset);
+                    auto aregI = Reg::CreateAddrReg<RT>(axis4LpIdx, axis4Offset, axis2Idx, axis2InOffset);
                     DataCopy(tmpIn, reInAddr, aregI);
                     for (uint16_t axis1Idx = 0; axis1Idx < static_cast<uint16_t>(innerAxis1); axis1Idx++) {
                         for (uint16_t axis3Idx = 0; axis3Idx < static_cast<uint16_t>(innerAxis3); axis3Idx++) {
-                            auto aregO = MicroAPI::CreateAddrReg<RT>(axis4LpIdx, axis4Offset, axis2Idx, axis2Offset,
-                                                                     axis1Idx, axis1Offset, axis3Idx, axis3Offset);
+                            auto aregO = Reg::CreateAddrReg<RT>(axis4LpIdx, axis4Offset, axis2Idx, axis2Offset,
+                                                                axis1Idx, axis1Offset, axis3Idx, axis3Offset);
                             DataCopy(reOutAddr, tmpIn, aregO, mask);
                         }
                     }
@@ -321,15 +321,15 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFInnerBroadcastToA(
     } else {
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<RT> tmpIn;
+            AscendC::Reg::RegTensor<RT> tmpIn;
             for (uint16_t axis4LpIdx = 0; axis4LpIdx < axis4LpCnt; axis4LpIdx++) {
                 MaskReg mask = UpdateMask<RT>(lastASize);
                 for (uint16_t axis2Idx = 0; axis2Idx < static_cast<uint16_t>(innerAxis2); axis2Idx++) {
-                    auto aregI = MicroAPI::CreateAddrReg<RT>(axis4LpIdx, axis4Offset, axis2Idx, axis2InOffset);
+                    auto aregI = Reg::CreateAddrReg<RT>(axis4LpIdx, axis4Offset, axis2Idx, axis2InOffset);
                     DataCopy(tmpIn, reInAddr, aregI);
                     for (uint16_t axis3Idx = 0; axis3Idx < static_cast<uint16_t>(innerAxis3); axis3Idx++) {
-                        auto aregO = MicroAPI::CreateAddrReg<RT>(axis4LpIdx, axis4Offset, axis2Idx, axis2Offset,
-                                                                 axis3Idx, axis3Offset);
+                        auto aregO = Reg::CreateAddrReg<RT>(axis4LpIdx, axis4Offset, axis2Idx, axis2Offset, axis3Idx,
+                                                            axis3Offset);
                         DataCopy(reOutAddr, tmpIn, aregO, mask);
                     }
                 }
@@ -359,10 +359,10 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFInnerBrcLastDimLEB
     if (innerAxis1 != 1) {
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<RT> tmpIn;
+            AscendC::Reg::RegTensor<RT> tmpIn;
             MaskReg mask = UpdateMask<RT>(lastASize);
             for (uint16_t axis2Idx = 0; axis2Idx < static_cast<uint16_t>(innerAxis2); axis2Idx++) {
-                DataCopy<RT, MicroAPI::LoadDist::DIST_BLK>(tmpIn, reInAddr + axis2Idx * axis2InOffset);
+                DataCopy<RT, Reg::LoadDist::DIST_BLK>(tmpIn, reInAddr + axis2Idx * axis2InOffset);
                 for (uint16_t axis1Idx = 0; axis1Idx < static_cast<uint16_t>(innerAxis1); axis1Idx++) {
                     DataCopy(reOutAddr + axis2Idx * axis2Offset + axis1Idx * axis1Offset, tmpIn, mask);
                 }
@@ -371,10 +371,10 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFInnerBrcLastDimLEB
     } else {
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<RT> tmpIn;
+            AscendC::Reg::RegTensor<RT> tmpIn;
             MaskReg mask = UpdateMask<RT>(lastASize);
             for (uint16_t axis2Idx = 0; axis2Idx < static_cast<uint16_t>(innerAxis2); axis2Idx++) {
-                DataCopy<RT, MicroAPI::LoadDist::DIST_BLK>(tmpIn, reInAddr + axis2Idx * axis2InOffset);
+                DataCopy<RT, Reg::LoadDist::DIST_BLK>(tmpIn, reInAddr + axis2Idx * axis2InOffset);
                 DataCopy(reOutAddr + axis2Idx * axis2Offset, tmpIn, mask);
             }
         }
@@ -382,17 +382,17 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFInnerBrcLastDimLEB
 }
 
 template <typename T, typename U, bool isLastDimSmall>
-__aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::GenGatherIdx(MicroAPI::RegTensor<int32_t>& gatherIdx,
+__aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::GenGatherIdx(Reg::RegTensor<int32_t>& gatherIdx,
                                                                          int32_t axis4BA)
 {
-    MicroAPI::MaskReg mask = MicroAPI::CreateMask<int32_t, MicroAPI::MaskPattern::ALL>();
-    MicroAPI::RegTensor<int32_t> axis4Reg;
-    MicroAPI::RegTensor<int32_t> divReg;
-    MicroAPI::Duplicate(axis4Reg, axis4BA);
-    MicroAPI::Arange(gatherIdx, 0);
-    MicroAPI::Div(divReg, gatherIdx, axis4Reg, mask);
-    MicroAPI::Mul(axis4Reg, axis4Reg, divReg, mask);
-    MicroAPI::Sub(gatherIdx, gatherIdx, axis4Reg, mask);
+    Reg::MaskReg mask = Reg::CreateMask<int32_t, Reg::MaskPattern::ALL>();
+    Reg::RegTensor<int32_t> axis4Reg;
+    Reg::RegTensor<int32_t> divReg;
+    Reg::Duplicate(axis4Reg, axis4BA);
+    Reg::Arange(gatherIdx, 0);
+    Reg::Div(divReg, gatherIdx, axis4Reg, mask);
+    Reg::Mul(axis4Reg, axis4Reg, divReg, mask);
+    Reg::Sub(gatherIdx, gatherIdx, axis4Reg, mask);
 }
 
 template <typename T, typename U, bool isLastDimSmall>
@@ -420,14 +420,14 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFInnerBrcLastDimGTB
     if (innerAxis1 != 1) {
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<int32_t> tmpIn;
-            AscendC::MicroAPI::RegTensor<int32_t> tmpOut;
-            AscendC::MicroAPI::RegTensor<int32_t> gatherIdx;
+            AscendC::Reg::RegTensor<int32_t> tmpIn;
+            AscendC::Reg::RegTensor<int32_t> tmpOut;
+            AscendC::Reg::RegTensor<int32_t> gatherIdx;
             GenGatherIdx(gatherIdx, static_cast<int32_t>(axis4BA));
             MaskReg mask = UpdateMask<int32_t>(lastASize);
             for (uint16_t axis2Idx = 0; axis2Idx < static_cast<uint16_t>(innerAxis2); axis2Idx++) {
                 DataCopy(tmpIn, reInAddr + axis2Idx * axis2InOffset);
-                MicroAPI::Gather(tmpOut, tmpIn, (MicroAPI::RegTensor<uint32_t>&)gatherIdx);
+                Reg::Gather(tmpOut, tmpIn, (Reg::RegTensor<uint32_t>&)gatherIdx);
                 for (uint16_t axis1Idx = 0; axis1Idx < static_cast<uint16_t>(innerAxis1); axis1Idx++) {
                     DataCopy(reOutAddr + axis2Idx * axis2Offset + axis1Idx * axis1Offset, tmpOut, mask);
                 }
@@ -436,14 +436,14 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFInnerBrcLastDimGTB
     } else {
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<int32_t> tmpIn;
-            AscendC::MicroAPI::RegTensor<int32_t> tmpOut;
-            AscendC::MicroAPI::RegTensor<int32_t> gatherIdx;
+            AscendC::Reg::RegTensor<int32_t> tmpIn;
+            AscendC::Reg::RegTensor<int32_t> tmpOut;
+            AscendC::Reg::RegTensor<int32_t> gatherIdx;
             GenGatherIdx(gatherIdx, static_cast<int32_t>(axis4BA));
             MaskReg mask = UpdateMask<int32_t>(lastASize);
             for (uint16_t axis2Idx = 0; axis2Idx < static_cast<uint16_t>(innerAxis2); axis2Idx++) {
                 DataCopy(tmpIn, reInAddr + axis2Idx * axis2InOffset);
-                MicroAPI::Gather(tmpOut, tmpIn, (MicroAPI::RegTensor<uint32_t>&)gatherIdx);
+                Reg::Gather(tmpOut, tmpIn, (Reg::RegTensor<uint32_t>&)gatherIdx);
                 DataCopy(reOutAddr + axis2Idx * axis2Offset, tmpOut, mask);
             }
         }

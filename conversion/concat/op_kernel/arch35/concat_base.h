@@ -71,8 +71,8 @@ template <typename Tp>
 struct IsSame<Tp, Tp> : public trueType {};
 
 template <typename T>
-__aicore__ inline void Copy(
-    const LocalTensor<T>& dstLocal, const LocalTensor<T>& srcLocal, uint32_t rows, uint32_t cols, uint32_t rowStride)
+__aicore__ inline void Copy(const LocalTensor<T>& dstLocal, const LocalTensor<T>& srcLocal, uint32_t rows,
+                            uint32_t cols, uint32_t rowStride)
 {
     constexpr uint32_t vfLen = GetVRegSize() / sizeof(T);
     uint16_t size0 = rows;
@@ -85,26 +85,26 @@ __aicore__ inline void Copy(
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::UnalignReg u0;
-        AscendC::MicroAPI::UnalignReg uReg;
-        AscendC::MicroAPI::RegTensor<T> vd0;
-        AscendC::MicroAPI::DataCopyUnAlignPre(u0, srcAddr);
+        AscendC::Reg::UnalignReg u0;
+        AscendC::Reg::UnalignReg uReg;
+        AscendC::Reg::RegTensor<T> vd0;
+        AscendC::Reg::DataCopyUnAlignPre(u0, srcAddr);
         for (uint16_t i = 0; i < size0; i++) {
             auto curDstAddr = dstAddr + i * rowStride;
             for (uint16_t j = 0; j < size1; j++) {
-                AscendC::MicroAPI::DataCopyUnAlign(vd0, u0, srcAddr, main);
-                AscendC::MicroAPI::DataCopyUnAlign(curDstAddr, vd0, uReg, main);
+                AscendC::Reg::DataCopyUnAlign(vd0, u0, srcAddr, main);
+                AscendC::Reg::DataCopyUnAlign(curDstAddr, vd0, uReg, main);
             }
-            AscendC::MicroAPI::DataCopyUnAlign(vd0, u0, srcAddr, tail);
-            AscendC::MicroAPI::DataCopyUnAlign(curDstAddr, vd0, uReg, tail);
-            AscendC::MicroAPI::DataCopyUnAlignPost(curDstAddr, uReg, 0);
+            AscendC::Reg::DataCopyUnAlign(vd0, u0, srcAddr, tail);
+            AscendC::Reg::DataCopyUnAlign(curDstAddr, vd0, uReg, tail);
+            AscendC::Reg::DataCopyUnAlignPost(curDstAddr, uReg, 0);
         }
     }
 }
 
 template <typename T, typename U, int32_t ScatterNum>
-__aicore__ inline void ScatterConcat(
-    const LocalTensor<T>& dstLocal, const LocalTensor<T>& srcLocal, uint32_t rows, uint32_t cols, uint32_t rowStride)
+__aicore__ inline void ScatterConcat(const LocalTensor<T>& dstLocal, const LocalTensor<T>& srcLocal, uint32_t rows,
+                                     uint32_t cols, uint32_t rowStride)
 {
     constexpr uint32_t vfLen = GetVRegSize() / sizeof(U);
     uint16_t size0 = rows;
@@ -119,60 +119,60 @@ __aicore__ inline void ScatterConcat(
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::UnalignReg u0;
-        AscendC::MicroAPI::RegTensor<T> gather0;
-        AscendC::MicroAPI::RegTensor<T> gather1;
-        AscendC::MicroAPI::RegTensor<T> gather2;
-        AscendC::MicroAPI::RegTensor<T> gather3;
-        AscendC::MicroAPI::RegTensor<T> dst;
-        AscendC::MicroAPI::RegTensor<U> index;
+        AscendC::Reg::UnalignReg u0;
+        AscendC::Reg::RegTensor<T> gather0;
+        AscendC::Reg::RegTensor<T> gather1;
+        AscendC::Reg::RegTensor<T> gather2;
+        AscendC::Reg::RegTensor<T> gather3;
+        AscendC::Reg::RegTensor<T> dst;
+        AscendC::Reg::RegTensor<U> index;
         using regType = typename VciTypeGet<U>::T;
-        AscendC::MicroAPI::RegTensor<regType> tmp;
-        AscendC::MicroAPI::Arange(tmp, 0);
-        index = (AscendC::MicroAPI::RegTensor<U>&)tmp;
+        AscendC::Reg::RegTensor<regType> tmp;
+        AscendC::Reg::Arange(tmp, 0);
+        index = (AscendC::Reg::RegTensor<U>&)tmp;
         auto allVf = main;
         auto tailVf = tail;
-        AscendC::MicroAPI::MaskReg p0 = AscendC::MicroAPI::UpdateMask<U>(allVf);
-        AscendC::MicroAPI::MaskReg p1 = AscendC::MicroAPI::UpdateMask<U>(tailVf);
-        AscendC::MicroAPI::DataCopyUnAlignPre(u0, srcAddr);
+        AscendC::Reg::MaskReg p0 = AscendC::Reg::UpdateMask<U>(allVf);
+        AscendC::Reg::MaskReg p1 = AscendC::Reg::UpdateMask<U>(tailVf);
+        AscendC::Reg::DataCopyUnAlignPre(u0, srcAddr);
         for (uint16_t i = 0; i < size0; i++) {
             auto curDstAddr = dstAddr + i * rowStride;
             if constexpr (ScatterNum > DIGIT_THREE) {
-                AscendC::MicroAPI::DataCopyUnAlign(gather3, u0, srcAddr, main);
+                AscendC::Reg::DataCopyUnAlign(gather3, u0, srcAddr, main);
                 if constexpr (sizeof(T) == 1) {
-                    AscendC::MicroAPI::UnPack((AscendC::MicroAPI::RegTensor<uint16_t>&)dst, gather3);
-                    AscendC::MicroAPI::DataCopyScatter(curDstAddr, dst, index, p0);
+                    AscendC::Reg::UnPack((AscendC::Reg::RegTensor<uint16_t>&)dst, gather3);
+                    AscendC::Reg::DataCopyScatter(curDstAddr, dst, index, p0);
                 } else {
-                    AscendC::MicroAPI::DataCopyScatter(curDstAddr, gather3, index, p0);
+                    AscendC::Reg::DataCopyScatter(curDstAddr, gather3, index, p0);
                 }
                 curDstAddr = curDstAddr + main;
             }
             if constexpr (ScatterNum > DIGIT_TWO) {
-                AscendC::MicroAPI::DataCopyUnAlign(gather2, u0, srcAddr, main);
+                AscendC::Reg::DataCopyUnAlign(gather2, u0, srcAddr, main);
                 if constexpr (sizeof(T) == 1) {
-                    AscendC::MicroAPI::UnPack((AscendC::MicroAPI::RegTensor<uint16_t>&)dst, gather2);
-                    AscendC::MicroAPI::DataCopyScatter(curDstAddr, dst, index, p0);
+                    AscendC::Reg::UnPack((AscendC::Reg::RegTensor<uint16_t>&)dst, gather2);
+                    AscendC::Reg::DataCopyScatter(curDstAddr, dst, index, p0);
                 } else {
-                    AscendC::MicroAPI::DataCopyScatter(curDstAddr, gather2, index, p0);
+                    AscendC::Reg::DataCopyScatter(curDstAddr, gather2, index, p0);
                 }
                 curDstAddr = curDstAddr + main;
             }
             if constexpr (ScatterNum > 1) {
-                AscendC::MicroAPI::DataCopyUnAlign(gather1, u0, srcAddr, main);
+                AscendC::Reg::DataCopyUnAlign(gather1, u0, srcAddr, main);
                 if constexpr (sizeof(T) == 1) {
-                    AscendC::MicroAPI::UnPack((AscendC::MicroAPI::RegTensor<uint16_t>&)dst, gather1);
-                    AscendC::MicroAPI::DataCopyScatter(curDstAddr, dst, index, p0);
+                    AscendC::Reg::UnPack((AscendC::Reg::RegTensor<uint16_t>&)dst, gather1);
+                    AscendC::Reg::DataCopyScatter(curDstAddr, dst, index, p0);
                 } else {
-                    AscendC::MicroAPI::DataCopyScatter(curDstAddr, gather1, index, p0);
+                    AscendC::Reg::DataCopyScatter(curDstAddr, gather1, index, p0);
                 }
                 curDstAddr = curDstAddr + main;
             }
-            AscendC::MicroAPI::DataCopyUnAlign(gather0, u0, srcAddr, tail);
+            AscendC::Reg::DataCopyUnAlign(gather0, u0, srcAddr, tail);
             if constexpr (sizeof(T) == 1) {
-                AscendC::MicroAPI::UnPack((AscendC::MicroAPI::RegTensor<uint16_t>&)dst, gather0);
-                AscendC::MicroAPI::DataCopyScatter(curDstAddr, dst, index, p1);
+                AscendC::Reg::UnPack((AscendC::Reg::RegTensor<uint16_t>&)dst, gather0);
+                AscendC::Reg::DataCopyScatter(curDstAddr, dst, index, p1);
             } else {
-                AscendC::MicroAPI::DataCopyScatter(curDstAddr, gather0, index, p1);
+                AscendC::Reg::DataCopyScatter(curDstAddr, gather0, index, p1);
             }
         }
     }
@@ -189,7 +189,8 @@ __aicore__ inline int64_t GetTensorDim0Stride(const TILINGDATA& tilingData_, int
 }
 
 template <typename TILINGDATA, typename T>
-__aicore__ inline int64_t GetNonConDimSize(const TILINGDATA& tilingData_, int64_t idx, ListTensorDesc inputList_, TensorDesc<T> desc_)
+__aicore__ inline int64_t GetNonConDimSize(const TILINGDATA& tilingData_, int64_t idx, ListTensorDesc inputList_,
+                                           TensorDesc<T> desc_)
 {
     int64_t concatDimSize_ = 0;
     if (tilingData_.isNonContiguous) {

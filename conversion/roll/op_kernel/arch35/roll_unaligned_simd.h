@@ -31,16 +31,15 @@ public:
         : pipe_(pipe), tilingData_(tiling){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR workspace);
     __aicore__ inline void CopyIn(int64_t index, int32_t blockCount, int32_t blockLen);
-    __aicore__ inline void CopyOutForGather(
-        int64_t srcindex, int64_t outindex, int32_t addr_offset, int32_t alignIndex, bool outKey,
-        LocalTensor<T>& xTensor, LocalTensor<T>& alignTensor);
+    __aicore__ inline void CopyOutForGather(int64_t srcindex, int64_t outindex, int32_t addr_offset, int32_t alignIndex,
+                                            bool outKey, LocalTensor<T>& xTensor, LocalTensor<T>& alignTensor);
     __aicore__ inline void CopyOut(int64_t srcindex, int64_t outindex, LocalTensor<T>& xTensor);
     __aicore__ inline void ComputeOutIndex(int64_t inputIndex, int64_t& outputIndex);
     __aicore__ inline void Process();
 
 private:
-    __aicore__ inline void GaTher(
-        int32_t Addr, uint16_t repeatnum, int32_t strides, int32_t dstStride, int32_t eventIdToMTE2);
+    __aicore__ inline void GaTher(int32_t Addr, uint16_t repeatnum, int32_t strides, int32_t dstStride,
+                                  int32_t eventIdToMTE2);
 
 private:
     const RollTilingData* tilingData_;
@@ -103,8 +102,8 @@ __aicore__ inline void RollUnaliegnedSimd<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR
     if (tilingData_->shifts[tilingData_->dimNum - 1] != 0) {
         if (WAddrShift * sizeof(T) % UNALIGN_BYTESIZE != 0) {
             gatherKey = 11000;
-            pipe_->InitBuffer(
-                AlienBuf, BUF_NUM, UNALIGN_REG_SIZE * UbForHW * tilingData_->shapes[tilingData_->dimNum - 2]);
+            pipe_->InitBuffer(AlienBuf, BUF_NUM,
+                              UNALIGN_REG_SIZE * UbForHW * tilingData_->shapes[tilingData_->dimNum - 2]);
         } else {
             gatherKey = 10100;
         }
@@ -130,61 +129,59 @@ __aicore__ inline void RollUnaliegnedSimd<T>::CopyIn(int64_t index, int32_t bloc
 }
 
 template <typename T>
-__aicore__ inline void RollUnaliegnedSimd<T>::GaTher(
-    int32_t Addr, uint16_t repeatnum, int32_t strides, int32_t dstStride, int32_t eventIdToMTE2)
+__aicore__ inline void RollUnaliegnedSimd<T>::GaTher(int32_t Addr, uint16_t repeatnum, int32_t strides,
+                                                     int32_t dstStride, int32_t eventIdToMTE2)
 {
     WaitFlag<HardEvent::MTE2_V>(eventIdToMTE2);
     LocalTensor<T> xTensor = xInQue_.DeQue<T>();
     LocalTensor<T> AlienTensor = AlienBuf.AllocTensor<T>();
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<T> dst0;
-        MicroAPI::UnalignReg u0;
-        MicroAPI::UnalignReg u1;
+        Reg::RegTensor<T> dst0;
+        Reg::UnalignReg u0;
+        Reg::UnalignReg u1;
         auto dstPtr = (__ubuf__ T*)AlienTensor.GetPhyAddr();
         auto srcPtr = (__ubuf__ T*)xTensor.GetPhyAddr();
         for (uint16_t i = 0; i < repeatnum; i++) {
             auto srcUbT = srcPtr + Addr + i * strides;
-            MicroAPI::DataCopyUnAlignPre(u0, srcUbT);
-            MicroAPI::DataCopyUnAlign(dst0, u0, srcUbT);
-            MicroAPI::DataCopyUnAlign(dstPtr, dst0, u1, dstStride);
+            Reg::DataCopyUnAlignPre(u0, srcUbT);
+            Reg::DataCopyUnAlign(dst0, u0, srcUbT);
+            Reg::DataCopyUnAlign(dstPtr, dst0, u1, dstStride);
         }
-        MicroAPI::DataCopyUnAlignPost(dstPtr, u1, 0);
+        Reg::DataCopyUnAlignPost(dstPtr, u1, 0);
     }
     AlienBuf.EnQue<T>(AlienTensor);
     xInQue_.EnQue<T>(xTensor);
 }
 
 template <typename T>
-__aicore__ inline void RollUnaliegnedSimd<T>::CopyOutForGather(
-    int64_t srcIndex, int64_t outIndex, int32_t addr_offset, int32_t alignIndex, bool outKey, LocalTensor<T>& xTensor,
-    LocalTensor<T>& alignTensor)
+__aicore__ inline void RollUnaliegnedSimd<T>::CopyOutForGather(int64_t srcIndex, int64_t outIndex, int32_t addr_offset,
+                                                               int32_t alignIndex, bool outKey, LocalTensor<T>& xTensor,
+                                                               LocalTensor<T>& alignTensor)
 {
     DataCopyExtParams dataCopyParams;
     for (int32_t i = 0; i < tilingData_->moveparam.mte3Count; i += 2) {
         dataCopyParams.blockCount = tilingData_->moveparam.blockCount[i];
         dataCopyParams.blockLen = tilingData_->moveparam.blockLen[i] * sizeof(T);
-        dataCopyParams.srcStride =
-            (tilingData_->moveparam.srcStride[i] - tilingData_->moveparam.blockLen[i]) * sizeof(T) / UNALIGN_BYTESIZE;
-        dataCopyParams.dstStride =
-            (tilingData_->shapes[tilingData_->dimNum - 1] - tilingData_->moveparam.blockLen[i]) * sizeof(T);
-        DataCopyPad(
-            yGm_[outIndex + tilingData_->moveparam.dstOffset[i]],
-            xTensor[srcIndex + tilingData_->moveparam.srcOffset[i]], dataCopyParams);
+        dataCopyParams.srcStride = (tilingData_->moveparam.srcStride[i] - tilingData_->moveparam.blockLen[i]) *
+                                   sizeof(T) / UNALIGN_BYTESIZE;
+        dataCopyParams.dstStride = (tilingData_->shapes[tilingData_->dimNum - 1] - tilingData_->moveparam.blockLen[i]) *
+                                   sizeof(T);
+        DataCopyPad(yGm_[outIndex + tilingData_->moveparam.dstOffset[i]],
+                    xTensor[srcIndex + tilingData_->moveparam.srcOffset[i]], dataCopyParams);
     }
     if (outKey) {
         for (int32_t i = 1; i < tilingData_->moveparam.mte3Count; i += 2) {
             dataCopyParams.blockCount = tilingData_->moveparam.blockCount[i];
             dataCopyParams.blockLen = (tilingData_->moveparam.blockLen[i] - addr_offset) * sizeof(T);
-            dataCopyParams.srcStride =
-                (tilingData_->moveparam.srcStride[i] - tilingData_->moveparam.blockLen[i] + addr_offset) * sizeof(T) /
-                UNALIGN_BYTESIZE;
-            dataCopyParams.dstStride =
-                (tilingData_->shapes[tilingData_->dimNum - 1] - tilingData_->moveparam.blockLen[i] + addr_offset) *
-                sizeof(T);
-            DataCopyPad(
-                yGm_[outIndex + tilingData_->moveparam.dstOffset[i] + addr_offset],
-                xTensor[srcIndex + tilingData_->moveparam.srcOffset[i] + addr_offset], dataCopyParams);
+            dataCopyParams.srcStride = (tilingData_->moveparam.srcStride[i] - tilingData_->moveparam.blockLen[i] +
+                                        addr_offset) *
+                                       sizeof(T) / UNALIGN_BYTESIZE;
+            dataCopyParams.dstStride = (tilingData_->shapes[tilingData_->dimNum - 1] -
+                                        tilingData_->moveparam.blockLen[i] + addr_offset) *
+                                       sizeof(T);
+            DataCopyPad(yGm_[outIndex + tilingData_->moveparam.dstOffset[i] + addr_offset],
+                        xTensor[srcIndex + tilingData_->moveparam.srcOffset[i] + addr_offset], dataCopyParams);
         }
     }
     for (int32_t i = 1; i < tilingData_->moveparam.mte3Count; i += 2) { // aligntensor
@@ -206,13 +203,12 @@ __aicore__ inline void RollUnaliegnedSimd<T>::CopyOut(int64_t srcindex, int64_t 
     for (int32_t i = 0; i < tilingData_->moveparam.mte3Count; i++) {
         dataCopyParams.blockCount = tilingData_->moveparam.blockCount[i];
         dataCopyParams.blockLen = tilingData_->moveparam.blockLen[i] * sizeof(T);
-        dataCopyParams.srcStride =
-            (tilingData_->moveparam.srcStride[i] - tilingData_->moveparam.blockLen[i]) * sizeof(T) / UNALIGN_BYTESIZE;
-        dataCopyParams.dstStride =
-            (tilingData_->shapes[tilingData_->dimNum - 1] - tilingData_->moveparam.blockLen[i]) * sizeof(T);
-        DataCopyPad(
-            yGm_[outindex + tilingData_->moveparam.dstOffset[i]],
-            xTensor[srcindex + tilingData_->moveparam.srcOffset[i]], dataCopyParams);
+        dataCopyParams.srcStride = (tilingData_->moveparam.srcStride[i] - tilingData_->moveparam.blockLen[i]) *
+                                   sizeof(T) / UNALIGN_BYTESIZE;
+        dataCopyParams.dstStride = (tilingData_->shapes[tilingData_->dimNum - 1] - tilingData_->moveparam.blockLen[i]) *
+                                   sizeof(T);
+        DataCopyPad(yGm_[outindex + tilingData_->moveparam.dstOffset[i]],
+                    xTensor[srcindex + tilingData_->moveparam.srcOffset[i]], dataCopyParams);
     }
 }
 
@@ -223,8 +219,8 @@ __aicore__ inline void RollUnaliegnedSimd<T>::ComputeOutIndex(int64_t inputIndex
         inputIndices_[dim] = inputIndex / tilingData_->strides[dim];
         inputIndex = inputIndex % tilingData_->strides[dim];
         if (dim < tilingData_->dimNum - 2) {
-            outputIndex +=
-                (inputIndices_[dim] + tilingData_->shifts[dim]) % tilingData_->shapes[dim] * tilingData_->strides[dim];
+            outputIndex += (inputIndices_[dim] + tilingData_->shifts[dim]) % tilingData_->shapes[dim] *
+                           tilingData_->strides[dim];
         }
     }
 }
@@ -252,14 +248,12 @@ __aicore__ inline void RollUnaliegnedSimd<T>::Process()
             } else {
                 CopyLoop = UbForHW;
             }
-            CopyIn(
-                curCoreBaseIndex_, CopyLoop * tilingData_->shapes[tilingData_->dimNum - 2],
-                tilingData_->shapes[tilingData_->dimNum - 1]);
+            CopyIn(curCoreBaseIndex_, CopyLoop * tilingData_->shapes[tilingData_->dimNum - 2],
+                   tilingData_->shapes[tilingData_->dimNum - 1]);
             int32_t eventIdToMTE2 = static_cast<int32_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
             SetFlag<HardEvent::MTE2_V>(eventIdToMTE2);
-            GaTher(
-                WAddrShift, CopyLoop * tilingData_->shapes[tilingData_->dimNum - 2], AlignWLen, dstStride,
-                eventIdToMTE2);
+            GaTher(WAddrShift, CopyLoop * tilingData_->shapes[tilingData_->dimNum - 2], AlignWLen, dstStride,
+                   eventIdToMTE2);
             LocalTensor<T> xTensor = xInQue_.DeQue<T>();
             LocalTensor<T> alienTensor = AlienBuf.DeQue<T>();
             for (int32_t i = 0; i < CopyLoop; i++) {
@@ -279,9 +273,8 @@ __aicore__ inline void RollUnaliegnedSimd<T>::Process()
             } else {
                 CopyLoop = UbForHW;
             }
-            CopyIn(
-                curCoreBaseIndex_, CopyLoop * tilingData_->shapes[tilingData_->dimNum - 2],
-                tilingData_->shapes[tilingData_->dimNum - 1]);
+            CopyIn(curCoreBaseIndex_, CopyLoop * tilingData_->shapes[tilingData_->dimNum - 2],
+                   tilingData_->shapes[tilingData_->dimNum - 1]);
             LocalTensor<T> xTensor = xInQue_.DeQue<T>();
             for (int32_t i = 0; i < CopyLoop; i++) {
                 int64_t outIndex = 0;

@@ -69,9 +69,8 @@ private:
     uint32_t blockOffset_ = 0;
     uint32_t singleBufferProNum = 0;
 
-    static constexpr MicroAPI::CastTrait castTraitPt = {MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::UNKNOWN,
-                                                        MicroAPI::MaskMergeMode::ZEROING,
-                                                        AscendC::RoundMode::CAST_RINT};
+    static constexpr Reg::CastTrait castTraitPt = {Reg::RegLayout::ZERO, Reg::SatMode::UNKNOWN,
+                                                   Reg::MaskMergeMode::ZEROING, AscendC::RoundMode::CAST_RINT};
 };
 
 template <typename T>
@@ -165,11 +164,11 @@ __aicore__ inline void StatelessDropOutGenMaskPt<T>::Uint32ToFloat(uint32_t calC
 
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<int64_t> vReg0;
-        MicroAPI::RegTensor<float> vReg1;
-        MicroAPI::RegTensor<float> vReg2;
-        MicroAPI::RegTensor<float> vReg3;
-        MicroAPI::MaskReg mask;
+        Reg::RegTensor<int64_t> vReg0;
+        Reg::RegTensor<float> vReg1;
+        Reg::RegTensor<float> vReg2;
+        Reg::RegTensor<float> vReg3;
+        Reg::MaskReg mask;
 
         uint32_t sReg1 = static_cast<uint32_t>(calCount) * gainCoeff;
         float sReg3 = static_cast<float>(CURAND_2POW32_INV);
@@ -177,14 +176,14 @@ __aicore__ inline void StatelessDropOutGenMaskPt<T>::Uint32ToFloat(uint32_t calC
         int32_t offset = static_cast<int32_t>(vfLen);
 
         for (uint16_t i = 0; i < static_cast<uint16_t>(repeatTimes); ++i) {
-            mask = MicroAPI::UpdateMask<int32_t>(sReg1);
-            MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE, MicroAPI::LoadDist::DIST_UNPACK_B32>(
+            mask = Reg::UpdateMask<int32_t>(sReg1);
+            Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE, Reg::LoadDist::DIST_UNPACK_B32>(
                 vReg0, ubPhilox, offset / gainCoeff);
-            MicroAPI::Cast<float, int64_t, castTraitPt>(vReg1, vReg0, mask);
-            MicroAPI::Muls<float, float, MicroAPI::MaskMergeMode::ZEROING>(vReg2, vReg1, sReg3, mask);
-            MicroAPI::Adds<float, float, MicroAPI::MaskMergeMode::ZEROING>(vReg3, vReg2, sReg4, mask);
-            MicroAPI::DataCopy<float, MicroAPI::PostLiteral::POST_MODE_UPDATE, MicroAPI::StoreDist::DIST_PACK_B64>(
-                ubOut, vReg3, offset, mask);
+            Reg::Cast<float, int64_t, castTraitPt>(vReg1, vReg0, mask);
+            Reg::Muls<float, float, Reg::MaskMergeMode::ZEROING>(vReg2, vReg1, sReg3, mask);
+            Reg::Adds<float, float, Reg::MaskMergeMode::ZEROING>(vReg3, vReg2, sReg4, mask);
+            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE, Reg::StoreDist::DIST_PACK_B64>(ubOut, vReg3,
+                                                                                                    offset, mask);
         }
     }
 }

@@ -292,26 +292,26 @@ private:
         uint32_t midUbAddLenVF = dataLen_;
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T> srcReg;
-            MicroAPI::RegTensor<CalType> tempRegB32;
-            MicroAPI::RegTensor<CalType> resReg;
-            MicroAPI::MaskReg maskReg;
+            Reg::RegTensor<T> srcReg;
+            Reg::RegTensor<CalType> tempRegB32;
+            Reg::RegTensor<CalType> resReg;
+            Reg::MaskReg maskReg;
 
             for (uint16_t k = 0; k < repeatSelfTimes; k++) {
-                maskReg = AscendC::MicroAPI::UpdateMask<CalType>(midUbAddLenVF);
+                maskReg = AscendC::Reg::UpdateMask<CalType>(midUbAddLenVF);
                 if constexpr (sizeof(T) != sizeof(float32_t)) {
-                    MicroAPI::LoadAlign<T, MicroAPI::LoadDist::DIST_UNPACK_B16>(srcReg, srcAddr + k * oneRepeatSize_);
+                    Reg::LoadAlign<T, Reg::LoadDist::DIST_UNPACK_B16>(srcReg, srcAddr + k * oneRepeatSize_);
                 } else {
-                    MicroAPI::LoadAlign(srcReg, srcAddr + k * oneRepeatSize_);
+                    Reg::LoadAlign(srcReg, srcAddr + k * oneRepeatSize_);
                 }
-                MicroAPI::LoadAlign(resReg, resAddr + k * oneRepeatSize_);
+                Reg::LoadAlign(resReg, resAddr + k * oneRepeatSize_);
                 if constexpr (sizeof(T) != sizeof(float32_t)) {
-                    MicroAPI::Cast<CalType, T, CAST_TRAIT_0>(tempRegB32, srcReg, maskReg);
-                    MicroAPI::Add(resReg, tempRegB32, resReg, maskReg);
+                    Reg::Cast<CalType, T, CAST_TRAIT_0>(tempRegB32, srcReg, maskReg);
+                    Reg::Add(resReg, tempRegB32, resReg, maskReg);
                 } else {
-                    MicroAPI::Add(resReg, srcReg, resReg, maskReg);
+                    Reg::Add(resReg, srcReg, resReg, maskReg);
                 }
-                MicroAPI::StoreAlign(resAddr + k * oneRepeatSize_, resReg, maskReg);
+                Reg::StoreAlign(resAddr + k * oneRepeatSize_, resReg, maskReg);
             }
         }
     }
@@ -340,9 +340,9 @@ private:
         __ubuf__ CalType* dstAddr = resAddr;
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T> inReg16;
-            MicroAPI::RegTensor<CalType> inReg32;
-            MicroAPI::RegTensor<CalType> resReg;
+            Reg::RegTensor<T> inReg16;
+            Reg::RegTensor<CalType> inReg32;
+            Reg::RegTensor<CalType> resReg;
 
             AscendC::Reg::UnalignRegForLoad ureg0;
             AscendC::Reg::UnalignRegForStore ureg1;
@@ -408,9 +408,9 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T> inReg16;
-            MicroAPI::RegTensor<CalType> inReg32;
-            MicroAPI::RegTensor<CalType> resReg;
+            Reg::RegTensor<T> inReg16;
+            Reg::RegTensor<CalType> inReg32;
+            Reg::RegTensor<CalType> resReg;
             AscendC::Reg::MaskReg mask;
 
             for (uint16_t r = 0; r < rightMainTimes; ++r) {

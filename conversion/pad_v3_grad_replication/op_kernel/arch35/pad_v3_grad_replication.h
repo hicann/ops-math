@@ -53,14 +53,14 @@ __aicore__ inline constexpr bool NeedCast()
 // vec_scope cast traits
 // 对宽度不同（B16 ↔ B32）类型，必须 ZERO + ONE 两次 cast + Select 合并，否则有数据丢失
 // 参考 conversion/batch_to_space_nd/op_kernel/arch35/batch_to_space_nd_small_c.h
-constexpr static MicroAPI::CastTrait CAST_TRAIT_PROMOTE_ZERO = {MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::UNKNOWN,
-                                                                MicroAPI::MaskMergeMode::ZEROING, RoundMode::UNKNOWN};
-constexpr static MicroAPI::CastTrait CAST_TRAIT_PROMOTE_ONE = {MicroAPI::RegLayout::ONE, MicroAPI::SatMode::UNKNOWN,
-                                                               MicroAPI::MaskMergeMode::ZEROING, RoundMode::UNKNOWN};
-constexpr static MicroAPI::CastTrait CAST_TRAIT_DOWN_ZERO = {MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::SAT,
-                                                             MicroAPI::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
-constexpr static MicroAPI::CastTrait CAST_TRAIT_DOWN_ONE = {MicroAPI::RegLayout::ONE, MicroAPI::SatMode::SAT,
-                                                            MicroAPI::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
+constexpr static Reg::CastTrait CAST_TRAIT_PROMOTE_ZERO = {Reg::RegLayout::ZERO, Reg::SatMode::UNKNOWN,
+                                                           Reg::MaskMergeMode::ZEROING, RoundMode::UNKNOWN};
+constexpr static Reg::CastTrait CAST_TRAIT_PROMOTE_ONE = {Reg::RegLayout::ONE, Reg::SatMode::UNKNOWN,
+                                                          Reg::MaskMergeMode::ZEROING, RoundMode::UNKNOWN};
+constexpr static Reg::CastTrait CAST_TRAIT_DOWN_ZERO = {Reg::RegLayout::ZERO, Reg::SatMode::SAT,
+                                                        Reg::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
+constexpr static Reg::CastTrait CAST_TRAIT_DOWN_ONE = {Reg::RegLayout::ONE, Reg::SatMode::SAT,
+                                                       Reg::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
 
 template <typename T1, typename T2>
 __aicore__ inline T1 CeilDiv(T1 a, T2 b)
@@ -281,34 +281,34 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg maskB16, maskLo, maskHi;
-            MicroAPI::RegTensor<T> vregB16;
-            MicroAPI::RegTensor<PromoteT> vregF1, vregF2, vregF32Lo, vregF32Hi;
+            Reg::MaskReg maskB16, maskLo, maskHi;
+            Reg::RegTensor<T> vregB16;
+            Reg::RegTensor<PromoteT> vregF1, vregF2, vregF32Lo, vregF32Hi;
 
             // Step 1: tail (forward-last), hasTail=0 skip
             for (uint16_t t = 0; t < hasTail; t++) {
                 uint32_t off = (uint32_t)(loops - 1) * FULL;
-                maskB16 = MicroAPI::UpdateMask<T>(tail16);
-                maskLo = MicroAPI::UpdateMask<PromoteT>(tailLo);
-                maskHi = MicroAPI::UpdateMask<PromoteT>(tailHi);
-                MicroAPI::DataCopy(vregB16, b16Ptr + off);
-                MicroAPI::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ZERO>(vregF1, vregB16, maskB16);
-                MicroAPI::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ONE>(vregF2, vregB16, maskB16);
-                MicroAPI::Interleave(vregF32Lo, vregF32Hi, vregF1, vregF2);
-                MicroAPI::DataCopy(f32Ptr + off, vregF32Lo, maskLo);
-                MicroAPI::DataCopy(f32Ptr + off + VL_F32, vregF32Hi, maskHi);
+                maskB16 = Reg::UpdateMask<T>(tail16);
+                maskLo = Reg::UpdateMask<PromoteT>(tailLo);
+                maskHi = Reg::UpdateMask<PromoteT>(tailHi);
+                Reg::DataCopy(vregB16, b16Ptr + off);
+                Reg::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ZERO>(vregF1, vregB16, maskB16);
+                Reg::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ONE>(vregF2, vregB16, maskB16);
+                Reg::Interleave(vregF32Lo, vregF32Hi, vregF1, vregF2);
+                Reg::DataCopy(f32Ptr + off, vregF32Lo, maskLo);
+                Reg::DataCopy(f32Ptr + off + VL_F32, vregF32Hi, maskHi);
             }
             // Step 2: non-tail chunks backward (loops-2 ... 0)
-            maskB16 = MicroAPI::CreateMask<T, MicroAPI::MaskPattern::ALL>();
+            maskB16 = Reg::CreateMask<T, Reg::MaskPattern::ALL>();
             for (uint16_t i = 0; i < nonTailCnt; i++) {
                 uint32_t off = (uint32_t)(loops - 1 - i - hasTail) * FULL;
 
-                MicroAPI::DataCopy(vregB16, b16Ptr + off);
-                MicroAPI::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ZERO>(vregF1, vregB16, maskB16);
-                MicroAPI::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ONE>(vregF2, vregB16, maskB16);
-                MicroAPI::Interleave(vregF32Lo, vregF32Hi, vregF1, vregF2);
-                MicroAPI::DataCopy(f32Ptr + off, vregF32Lo, maskB16);
-                MicroAPI::DataCopy(f32Ptr + off + VL_F32, vregF32Hi, maskB16);
+                Reg::DataCopy(vregB16, b16Ptr + off);
+                Reg::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ZERO>(vregF1, vregB16, maskB16);
+                Reg::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ONE>(vregF2, vregB16, maskB16);
+                Reg::Interleave(vregF32Lo, vregF32Hi, vregF1, vregF2);
+                Reg::DataCopy(f32Ptr + off, vregF32Lo, maskB16);
+                Reg::DataCopy(f32Ptr + off + VL_F32, vregF32Hi, maskB16);
             }
         }
     }
@@ -664,16 +664,16 @@ private:
         __VEC_SCOPE__
         {
             uint32_t remain = (uint32_t)sliceElems;
-            MicroAPI::MaskReg mask;
-            MicroAPI::RegTensor<DType> vregDst, vregSrc;
+            Reg::MaskReg mask;
+            Reg::RegTensor<DType> vregDst, vregSrc;
             for (uint16_t i = 0; i < loopCount; i++) {
-                mask = MicroAPI::UpdateMask<DType>(remain);
-                MicroAPI::DataCopy(vregDst, baseAddr + dstOffsetElems + i * VL);
+                mask = Reg::UpdateMask<DType>(remain);
+                Reg::DataCopy(vregDst, baseAddr + dstOffsetElems + i * VL);
                 for (uint16_t j = 0; j < (uint16_t)srcCnt; j++) {
-                    MicroAPI::DataCopy(vregSrc, baseAddr + srcStartElems + j * srcStrideElems + i * VL);
-                    MicroAPI::Add(vregDst, vregDst, vregSrc, mask);
+                    Reg::DataCopy(vregSrc, baseAddr + srcStartElems + j * srcStrideElems + i * VL);
+                    Reg::Add(vregDst, vregDst, vregSrc, mask);
                 }
-                MicroAPI::DataCopy(baseAddr + dstOffsetElems + i * VL, vregDst, mask);
+                Reg::DataCopy(baseAddr + dstOffsetElems + i * VL, vregDst, mask);
             }
         }
     }
@@ -803,144 +803,142 @@ private:
         __VEC_SCOPE__
         {
             // F32 侧
-            MicroAPI::MaskReg maskF32;
-            MicroAPI::RegTensor<Rng32> tmpRange32;
-            MicroAPI::RegTensor<Idx32> baseIdx, quot, idxF32, tmpReg;
-            MicroAPI::RegTensor<Idx32> qNext, ik, dExt;
-            MicroAPI::RegTensor<PromoteT> vregF32, vregPadF32;
+            Reg::MaskReg maskF32;
+            Reg::RegTensor<Rng32> tmpRange32;
+            Reg::RegTensor<Idx32> baseIdx, quot, idxF32, tmpReg;
+            Reg::RegTensor<Idx32> qNext, ik, dExt;
+            Reg::RegTensor<PromoteT> vregF32, vregPadF32;
 
             // B16 侧 (scatter + cast)
-            MicroAPI::MaskReg maskB16, selMaskLo, selMaskHi, allMask;
-            MicroAPI::RegTensor<Rng16> tmpRange16, tmpHalf;
-            MicroAPI::RegTensor<Idx16> idxB16;
-            MicroAPI::RegTensor<T> vregB16Lo, vregB16Hi, vregScatter;
+            Reg::MaskReg maskB16, selMaskLo, selMaskHi, allMask;
+            Reg::RegTensor<Rng16> tmpRange16, tmpHalf;
+            Reg::RegTensor<Idx16> idxB16;
+            Reg::RegTensor<T> vregB16Lo, vregB16Hi, vregScatter;
 
             for (uint16_t b = 0; b < numBatches; b++) {
                 uint32_t remain = totalGrp * 2;
-                maskF32 = MicroAPI::UpdateMask<PromoteT>(totalGrp);
-                maskB16 = MicroAPI::UpdateMask<T>(remain);
-                allMask = MicroAPI::CreateMask<T, MicroAPI::MaskPattern::ALLF>();
-                MicroAPI::MaskInterleave<T>(selMaskLo, selMaskHi, maskB16, allMask);
+                maskF32 = Reg::UpdateMask<PromoteT>(totalGrp);
+                maskB16 = Reg::UpdateMask<T>(remain);
+                allMask = Reg::CreateMask<T, Reg::MaskPattern::ALLF>();
+                Reg::MaskInterleave<T>(selMaskLo, selMaskHi, maskB16, allMask);
 
                 // === shared baseIdx computation (Idx32 + maskF32) ===
-                MicroAPI::Arange(tmpRange32, (Rng32)0);
-                quot = (MicroAPI::RegTensor<Idx32>&)tmpRange32;
-                MicroAPI::Adds(quot, quot, (Idx32)((Rng32)b * (Rng32)VL_F32), maskF32);
-                MicroAPI::Duplicate(baseIdx, (Idx32)baseE, maskF32);
+                Reg::Arange(tmpRange32, (Rng32)0);
+                quot = (Reg::RegTensor<Idx32>&)tmpRange32;
+                Reg::Adds(quot, quot, (Idx32)((Rng32)b * (Rng32)VL_F32), maskF32);
+                Reg::Duplicate(baseIdx, (Idx32)baseE, maskF32);
                 if constexpr (kEffAxes >= 2) {
-                    MicroAPI::Duplicate(dExt, eE0, maskF32);
-                    MicroAPI::Div<Idx32>(qNext, quot, dExt, maskF32);
-                    MicroAPI::Muls(tmpReg, qNext, eE0, maskF32);
-                    MicroAPI::Sub<Idx32>(ik, quot, tmpReg, maskF32);
-                    MicroAPI::Muls(tmpReg, ik, eS0, maskF32);
-                    MicroAPI::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
-                    MicroAPI::Copy(quot, qNext);
+                    Reg::Duplicate(dExt, eE0, maskF32);
+                    Reg::Div<Idx32>(qNext, quot, dExt, maskF32);
+                    Reg::Muls(tmpReg, qNext, eE0, maskF32);
+                    Reg::Sub<Idx32>(ik, quot, tmpReg, maskF32);
+                    Reg::Muls(tmpReg, ik, eS0, maskF32);
+                    Reg::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
+                    Reg::Copy(quot, qNext);
                     if constexpr (kEffAxes >= 3) {
-                        MicroAPI::Duplicate(dExt, eE1, maskF32);
-                        MicroAPI::Div<Idx32>(qNext, quot, dExt, maskF32);
-                        MicroAPI::Muls(tmpReg, qNext, eE1, maskF32);
-                        MicroAPI::Sub<Idx32>(ik, quot, tmpReg, maskF32);
-                        MicroAPI::Muls(tmpReg, ik, eS1, maskF32);
-                        MicroAPI::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
-                        MicroAPI::Copy(quot, qNext);
+                        Reg::Duplicate(dExt, eE1, maskF32);
+                        Reg::Div<Idx32>(qNext, quot, dExt, maskF32);
+                        Reg::Muls(tmpReg, qNext, eE1, maskF32);
+                        Reg::Sub<Idx32>(ik, quot, tmpReg, maskF32);
+                        Reg::Muls(tmpReg, ik, eS1, maskF32);
+                        Reg::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
+                        Reg::Copy(quot, qNext);
                         if constexpr (kEffAxes >= 4) {
-                            MicroAPI::Duplicate(dExt, eE2, maskF32);
-                            MicroAPI::Div<Idx32>(qNext, quot, dExt, maskF32);
-                            MicroAPI::Muls(tmpReg, qNext, eE2, maskF32);
-                            MicroAPI::Sub<Idx32>(ik, quot, tmpReg, maskF32);
-                            MicroAPI::Muls(tmpReg, ik, eS2, maskF32);
-                            MicroAPI::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
-                            MicroAPI::Copy(quot, qNext);
+                            Reg::Duplicate(dExt, eE2, maskF32);
+                            Reg::Div<Idx32>(qNext, quot, dExt, maskF32);
+                            Reg::Muls(tmpReg, qNext, eE2, maskF32);
+                            Reg::Sub<Idx32>(ik, quot, tmpReg, maskF32);
+                            Reg::Muls(tmpReg, ik, eS2, maskF32);
+                            Reg::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
+                            Reg::Copy(quot, qNext);
                             if constexpr (kEffAxes >= 5) {
-                                MicroAPI::Duplicate(dExt, eE3, maskF32);
-                                MicroAPI::Div<Idx32>(qNext, quot, dExt, maskF32);
-                                MicroAPI::Muls(tmpReg, qNext, eE3, maskF32);
-                                MicroAPI::Sub<Idx32>(ik, quot, tmpReg, maskF32);
-                                MicroAPI::Muls(tmpReg, ik, eS3, maskF32);
-                                MicroAPI::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
-                                MicroAPI::Copy(quot, qNext);
-                                MicroAPI::Muls(tmpReg, quot, eS4, maskF32);
-                                MicroAPI::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
+                                Reg::Duplicate(dExt, eE3, maskF32);
+                                Reg::Div<Idx32>(qNext, quot, dExt, maskF32);
+                                Reg::Muls(tmpReg, qNext, eE3, maskF32);
+                                Reg::Sub<Idx32>(ik, quot, tmpReg, maskF32);
+                                Reg::Muls(tmpReg, ik, eS3, maskF32);
+                                Reg::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
+                                Reg::Copy(quot, qNext);
+                                Reg::Muls(tmpReg, quot, eS4, maskF32);
+                                Reg::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
                             } else {
-                                MicroAPI::Muls(tmpReg, quot, eS3, maskF32);
-                                MicroAPI::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
+                                Reg::Muls(tmpReg, quot, eS3, maskF32);
+                                Reg::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
                             }
                         } else {
-                            MicroAPI::Muls(tmpReg, quot, eS2, maskF32);
-                            MicroAPI::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
+                            Reg::Muls(tmpReg, quot, eS2, maskF32);
+                            Reg::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
                         }
                     } else {
-                        MicroAPI::Muls(tmpReg, quot, eS1, maskF32);
-                        MicroAPI::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
+                        Reg::Muls(tmpReg, quot, eS1, maskF32);
+                        Reg::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
                     }
                 } else {
-                    MicroAPI::Muls(tmpReg, quot, eS0, maskF32);
-                    MicroAPI::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
+                    Reg::Muls(tmpReg, quot, eS0, maskF32);
+                    Reg::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
                 }
 
                 // ======== Phase A: 左边界 ========
-                MicroAPI::Adds(idxF32, baseIdx, (Idx32)pL, maskF32);
-                MicroAPI::DataCopyGather(vregF32, dataAddr, idxF32, maskF32);
+                Reg::Adds(idxF32, baseIdx, (Idx32)pL, maskF32);
+                Reg::DataCopyGather(vregF32, dataAddr, idxF32, maskF32);
                 for (uint16_t k = 0; k < phaseA_pLu; k++) {
-                    MicroAPI::Adds(idxF32, baseIdx, (Idx32)k, maskF32);
-                    MicroAPI::DataCopyGather(vregPadF32, dataAddr, idxF32, maskF32);
-                    MicroAPI::Add(vregF32, vregF32, vregPadF32, maskF32);
+                    Reg::Adds(idxF32, baseIdx, (Idx32)k, maskF32);
+                    Reg::DataCopyGather(vregPadF32, dataAddr, idxF32, maskF32);
+                    Reg::Add(vregF32, vregF32, vregPadF32, maskF32);
                 }
                 // F32→B16 cast + Select
-                MicroAPI::Cast<T, PromoteT, CAST_TRAIT_DOWN_ZERO>(vregB16Lo, vregF32, maskB16);
-                MicroAPI::Cast<T, PromoteT, CAST_TRAIT_DOWN_ONE>(vregB16Hi, vregF32, maskB16);
-                MicroAPI::Select(vregScatter, vregB16Lo, vregB16Hi, selMaskLo);
+                Reg::Cast<T, PromoteT, CAST_TRAIT_DOWN_ZERO>(vregB16Lo, vregF32, maskB16);
+                Reg::Cast<T, PromoteT, CAST_TRAIT_DOWN_ONE>(vregB16Hi, vregF32, maskB16);
+                Reg::Select(vregScatter, vregB16Lo, vregB16Hi, selMaskLo);
                 // scatter B16 to outputBuf (Idx16 + maskB16)
-                MicroAPI::Arange(tmpRange16, (Rng16)0);
-                MicroAPI::Duplicate(tmpHalf, (Rng16)2, maskB16);
-                MicroAPI::Div<Idx16>((MicroAPI::RegTensor<Idx16>&)tmpRange16, (MicroAPI::RegTensor<Idx16>&)tmpRange16,
-                                     (MicroAPI::RegTensor<Idx16>&)tmpHalf, maskB16);
-                MicroAPI::Muls(idxB16, (MicroAPI::RegTensor<Idx16>&)tmpRange16, (Idx16)dN1, maskB16);
-                MicroAPI::Adds(idxB16, idxB16, (Idx16)((Rng16)b * (Rng16)VL_F32 * (Rng16)dN1), maskB16);
-                MicroAPI::DataCopyScatter(outputAddr, vregScatter, idxB16, maskB16);
+                Reg::Arange(tmpRange16, (Rng16)0);
+                Reg::Duplicate(tmpHalf, (Rng16)2, maskB16);
+                Reg::Div<Idx16>((Reg::RegTensor<Idx16>&)tmpRange16, (Reg::RegTensor<Idx16>&)tmpRange16,
+                                (Reg::RegTensor<Idx16>&)tmpHalf, maskB16);
+                Reg::Muls(idxB16, (Reg::RegTensor<Idx16>&)tmpRange16, (Idx16)dN1, maskB16);
+                Reg::Adds(idxB16, idxB16, (Idx16)((Rng16)b * (Rng16)VL_F32 * (Rng16)dN1), maskB16);
+                Reg::DataCopyScatter(outputAddr, vregScatter, idxB16, maskB16);
 
                 // ======== Phase B: 中间 ========
                 for (uint16_t i = 0; i < midCount; i++) {
                     const uint16_t iN1 = i + 1;
-                    MicroAPI::Adds(idxF32, baseIdx, (Idx32)((Rng32)iN1 + (Rng32)pL), maskF32);
-                    MicroAPI::DataCopyGather(vregF32, dataAddr, idxF32, maskF32);
-                    MicroAPI::Cast<T, PromoteT, CAST_TRAIT_DOWN_ZERO>(vregB16Lo, vregF32, maskB16);
-                    MicroAPI::Cast<T, PromoteT, CAST_TRAIT_DOWN_ONE>(vregB16Hi, vregF32, maskB16);
-                    MicroAPI::Select(vregScatter, vregB16Lo, vregB16Hi, selMaskLo);
-                    MicroAPI::Arange(tmpRange16, (Rng16)0);
-                    MicroAPI::Duplicate(tmpHalf, (Rng16)2, maskB16);
-                    MicroAPI::Div<Idx16>((MicroAPI::RegTensor<Idx16>&)tmpRange16,
-                                         (MicroAPI::RegTensor<Idx16>&)tmpRange16, (MicroAPI::RegTensor<Idx16>&)tmpHalf,
-                                         maskB16);
-                    MicroAPI::Muls(idxB16, (MicroAPI::RegTensor<Idx16>&)tmpRange16, (Idx16)dN1, maskB16);
-                    MicroAPI::Adds(idxB16, idxB16, (Idx16)((Rng16)b * (Rng16)VL_F32 * (Rng16)dN1 + (Rng16)iN1),
-                                   maskB16);
-                    MicroAPI::DataCopyScatter(outputAddr, vregScatter, idxB16, maskB16);
+                    Reg::Adds(idxF32, baseIdx, (Idx32)((Rng32)iN1 + (Rng32)pL), maskF32);
+                    Reg::DataCopyGather(vregF32, dataAddr, idxF32, maskF32);
+                    Reg::Cast<T, PromoteT, CAST_TRAIT_DOWN_ZERO>(vregB16Lo, vregF32, maskB16);
+                    Reg::Cast<T, PromoteT, CAST_TRAIT_DOWN_ONE>(vregB16Hi, vregF32, maskB16);
+                    Reg::Select(vregScatter, vregB16Lo, vregB16Hi, selMaskLo);
+                    Reg::Arange(tmpRange16, (Rng16)0);
+                    Reg::Duplicate(tmpHalf, (Rng16)2, maskB16);
+                    Reg::Div<Idx16>((Reg::RegTensor<Idx16>&)tmpRange16, (Reg::RegTensor<Idx16>&)tmpRange16,
+                                    (Reg::RegTensor<Idx16>&)tmpHalf, maskB16);
+                    Reg::Muls(idxB16, (Reg::RegTensor<Idx16>&)tmpRange16, (Idx16)dN1, maskB16);
+                    Reg::Adds(idxB16, idxB16, (Idx16)((Rng16)b * (Rng16)VL_F32 * (Rng16)dN1 + (Rng16)iN1), maskB16);
+                    Reg::DataCopyScatter(outputAddr, vregScatter, idxB16, maskB16);
                 }
 
                 // ======== Phase C: 右边界 ========
-                MicroAPI::Adds(idxF32, baseIdx, (Idx32)((Rng32)pL + (Rng32)iRight), maskF32);
-                MicroAPI::DataCopyGather(vregF32, dataAddr, idxF32, maskF32);
+                Reg::Adds(idxF32, baseIdx, (Idx32)((Rng32)pL + (Rng32)iRight), maskF32);
+                Reg::DataCopyGather(vregF32, dataAddr, idxF32, maskF32);
                 for (uint16_t k = 0; k < combPadCnt; k++) {
-                    MicroAPI::Adds(idxF32, baseIdx, (Idx32)k, maskF32);
-                    MicroAPI::DataCopyGather(vregPadF32, dataAddr, idxF32, maskF32);
-                    MicroAPI::Add(vregF32, vregF32, vregPadF32, maskF32);
+                    Reg::Adds(idxF32, baseIdx, (Idx32)k, maskF32);
+                    Reg::DataCopyGather(vregPadF32, dataAddr, idxF32, maskF32);
+                    Reg::Add(vregF32, vregF32, vregPadF32, maskF32);
                 }
                 for (uint16_t k = 0; k < pRu; k++) {
-                    MicroAPI::Adds(idxF32, baseIdx, (Idx32)(rightPadStart + (Rng32)k), maskF32);
-                    MicroAPI::DataCopyGather(vregPadF32, dataAddr, idxF32, maskF32);
-                    MicroAPI::Add(vregF32, vregF32, vregPadF32, maskF32);
+                    Reg::Adds(idxF32, baseIdx, (Idx32)(rightPadStart + (Rng32)k), maskF32);
+                    Reg::DataCopyGather(vregPadF32, dataAddr, idxF32, maskF32);
+                    Reg::Add(vregF32, vregF32, vregPadF32, maskF32);
                 }
-                MicroAPI::Cast<T, PromoteT, CAST_TRAIT_DOWN_ZERO>(vregB16Lo, vregF32, maskB16);
-                MicroAPI::Cast<T, PromoteT, CAST_TRAIT_DOWN_ONE>(vregB16Hi, vregF32, maskB16);
-                MicroAPI::Select(vregScatter, vregB16Lo, vregB16Hi, selMaskLo);
-                MicroAPI::Arange(tmpRange16, (Rng16)0);
-                MicroAPI::Duplicate(tmpHalf, (Rng16)2, maskB16);
-                MicroAPI::Div<Idx16>((MicroAPI::RegTensor<Idx16>&)tmpRange16, (MicroAPI::RegTensor<Idx16>&)tmpRange16,
-                                     (MicroAPI::RegTensor<Idx16>&)tmpHalf, maskB16);
-                MicroAPI::Muls(idxB16, (MicroAPI::RegTensor<Idx16>&)tmpRange16, (Idx16)dN1, maskB16);
-                MicroAPI::Adds(idxB16, idxB16, (Idx16)((Rng16)b * (Rng16)VL_F32 * (Rng16)dN1 + (Rng16)iRight), maskB16);
-                MicroAPI::DataCopyScatter(outputAddr, vregScatter, idxB16, maskB16);
+                Reg::Cast<T, PromoteT, CAST_TRAIT_DOWN_ZERO>(vregB16Lo, vregF32, maskB16);
+                Reg::Cast<T, PromoteT, CAST_TRAIT_DOWN_ONE>(vregB16Hi, vregF32, maskB16);
+                Reg::Select(vregScatter, vregB16Lo, vregB16Hi, selMaskLo);
+                Reg::Arange(tmpRange16, (Rng16)0);
+                Reg::Duplicate(tmpHalf, (Rng16)2, maskB16);
+                Reg::Div<Idx16>((Reg::RegTensor<Idx16>&)tmpRange16, (Reg::RegTensor<Idx16>&)tmpRange16,
+                                (Reg::RegTensor<Idx16>&)tmpHalf, maskB16);
+                Reg::Muls(idxB16, (Reg::RegTensor<Idx16>&)tmpRange16, (Idx16)dN1, maskB16);
+                Reg::Adds(idxB16, idxB16, (Idx16)((Rng16)b * (Rng16)VL_F32 * (Rng16)dN1 + (Rng16)iRight), maskB16);
+                Reg::DataCopyScatter(outputAddr, vregScatter, idxB16, maskB16);
             }
         }
     }
@@ -1012,167 +1010,167 @@ private:
         // ============ Gather→Scatter: left/mid/right 三阶段合一，baseIdx 只算一次 ============
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg mask;
-            MicroAPI::RegTensor<RangeT> tmpRange;
-            MicroAPI::RegTensor<IndexT> baseIdx, quot, idx, tmpReg;
-            MicroAPI::RegTensor<IndexT> qNext, ik, dExt;
-            MicroAPI::RegTensor<T> vregT, vregPadT;
-            MicroAPI::RegTensor<T> vregOut, vregScatter; // B8 Pack/UnPack 中转
+            Reg::MaskReg mask;
+            Reg::RegTensor<RangeT> tmpRange;
+            Reg::RegTensor<IndexT> baseIdx, quot, idx, tmpReg;
+            Reg::RegTensor<IndexT> qNext, ik, dExt;
+            Reg::RegTensor<T> vregT, vregPadT;
+            Reg::RegTensor<T> vregOut, vregScatter; // B8 Pack/UnPack 中转
             for (uint16_t b = 0; b < numBatches; b++) {
-                mask = MicroAPI::UpdateMask<IndexT>(remain);
+                mask = Reg::UpdateMask<IndexT>(remain);
                 // === shared baseIdx computation ===
-                MicroAPI::Arange(tmpRange, (RangeT)0);
-                quot = (MicroAPI::RegTensor<IndexT>&)tmpRange;
-                MicroAPI::Adds(quot, quot, (IndexT)((RangeT)b * (RangeT)kBatchVL), mask);
-                MicroAPI::Duplicate(baseIdx, (IndexT)baseE, mask);
+                Reg::Arange(tmpRange, (RangeT)0);
+                quot = (Reg::RegTensor<IndexT>&)tmpRange;
+                Reg::Adds(quot, quot, (IndexT)((RangeT)b * (RangeT)kBatchVL), mask);
+                Reg::Duplicate(baseIdx, (IndexT)baseE, mask);
 
                 if constexpr (kEffAxes >= 2) {
-                    MicroAPI::Duplicate(dExt, eE0, mask);
-                    MicroAPI::Div<IndexT>(qNext, quot, dExt, mask);
-                    MicroAPI::Muls(tmpReg, qNext, eE0, mask);
-                    MicroAPI::Sub<IndexT>(ik, quot, tmpReg, mask);
-                    MicroAPI::Muls(tmpReg, ik, eS0, mask);
-                    MicroAPI::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
-                    MicroAPI::Copy(quot, qNext);
+                    Reg::Duplicate(dExt, eE0, mask);
+                    Reg::Div<IndexT>(qNext, quot, dExt, mask);
+                    Reg::Muls(tmpReg, qNext, eE0, mask);
+                    Reg::Sub<IndexT>(ik, quot, tmpReg, mask);
+                    Reg::Muls(tmpReg, ik, eS0, mask);
+                    Reg::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
+                    Reg::Copy(quot, qNext);
                     if constexpr (kEffAxes >= 3) {
-                        MicroAPI::Duplicate(dExt, eE1, mask);
-                        MicroAPI::Div<IndexT>(qNext, quot, dExt, mask);
-                        MicroAPI::Muls(tmpReg, qNext, eE1, mask);
-                        MicroAPI::Sub<IndexT>(ik, quot, tmpReg, mask);
-                        MicroAPI::Muls(tmpReg, ik, eS1, mask);
-                        MicroAPI::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
-                        MicroAPI::Copy(quot, qNext);
+                        Reg::Duplicate(dExt, eE1, mask);
+                        Reg::Div<IndexT>(qNext, quot, dExt, mask);
+                        Reg::Muls(tmpReg, qNext, eE1, mask);
+                        Reg::Sub<IndexT>(ik, quot, tmpReg, mask);
+                        Reg::Muls(tmpReg, ik, eS1, mask);
+                        Reg::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
+                        Reg::Copy(quot, qNext);
                         if constexpr (kEffAxes >= 4) {
-                            MicroAPI::Duplicate(dExt, eE2, mask);
-                            MicroAPI::Div<IndexT>(qNext, quot, dExt, mask);
-                            MicroAPI::Muls(tmpReg, qNext, eE2, mask);
-                            MicroAPI::Sub<IndexT>(ik, quot, tmpReg, mask);
-                            MicroAPI::Muls(tmpReg, ik, eS2, mask);
-                            MicroAPI::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
-                            MicroAPI::Copy(quot, qNext);
+                            Reg::Duplicate(dExt, eE2, mask);
+                            Reg::Div<IndexT>(qNext, quot, dExt, mask);
+                            Reg::Muls(tmpReg, qNext, eE2, mask);
+                            Reg::Sub<IndexT>(ik, quot, tmpReg, mask);
+                            Reg::Muls(tmpReg, ik, eS2, mask);
+                            Reg::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
+                            Reg::Copy(quot, qNext);
                             if constexpr (kEffAxes >= 5) {
-                                MicroAPI::Duplicate(dExt, eE3, mask);
-                                MicroAPI::Div<IndexT>(qNext, quot, dExt, mask);
-                                MicroAPI::Muls(tmpReg, qNext, eE3, mask);
-                                MicroAPI::Sub<IndexT>(ik, quot, tmpReg, mask);
-                                MicroAPI::Muls(tmpReg, ik, eS3, mask);
-                                MicroAPI::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
-                                MicroAPI::Copy(quot, qNext);
-                                MicroAPI::Muls(tmpReg, quot, eS4, mask);
-                                MicroAPI::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
+                                Reg::Duplicate(dExt, eE3, mask);
+                                Reg::Div<IndexT>(qNext, quot, dExt, mask);
+                                Reg::Muls(tmpReg, qNext, eE3, mask);
+                                Reg::Sub<IndexT>(ik, quot, tmpReg, mask);
+                                Reg::Muls(tmpReg, ik, eS3, mask);
+                                Reg::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
+                                Reg::Copy(quot, qNext);
+                                Reg::Muls(tmpReg, quot, eS4, mask);
+                                Reg::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
                             } else {
-                                MicroAPI::Muls(tmpReg, quot, eS3, mask);
-                                MicroAPI::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
+                                Reg::Muls(tmpReg, quot, eS3, mask);
+                                Reg::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
                             }
                         } else {
-                            MicroAPI::Muls(tmpReg, quot, eS2, mask);
-                            MicroAPI::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
+                            Reg::Muls(tmpReg, quot, eS2, mask);
+                            Reg::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
                         }
                     } else {
-                        MicroAPI::Muls(tmpReg, quot, eS1, mask);
-                        MicroAPI::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
+                        Reg::Muls(tmpReg, quot, eS1, mask);
+                        Reg::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
                     }
                 } else {
-                    MicroAPI::Muls(tmpReg, quot, eS0, mask);
-                    MicroAPI::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
+                    Reg::Muls(tmpReg, quot, eS0, mask);
+                    Reg::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
                 }
 
                 // ======== Phase A: 左边界（iN1=0） ========
-                MicroAPI::Adds(idx, baseIdx, (IndexT)pL, mask);
+                Reg::Adds(idx, baseIdx, (IndexT)pL, mask);
                 if constexpr (sizeof(T) == 1) {
-                    MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastT>&)vregT, dataAddr, idx, mask);
+                    Reg::DataCopyGather((Reg::RegTensor<CastT>&)vregT, dataAddr, idx, mask);
                 } else {
-                    MicroAPI::DataCopyGather(vregT, dataAddr, idx, mask);
+                    Reg::DataCopyGather(vregT, dataAddr, idx, mask);
                 }
 
                 for (uint16_t k = 0; k < phaseA_pLu; k++) {
-                    MicroAPI::Adds(idx, baseIdx, (IndexT)k, mask);
+                    Reg::Adds(idx, baseIdx, (IndexT)k, mask);
                     if constexpr (sizeof(T) == 1) {
-                        MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastT>&)vregPadT, dataAddr, idx, mask);
-                        MicroAPI::Add((MicroAPI::RegTensor<CastT>&)vregT, (MicroAPI::RegTensor<CastT>&)vregT,
-                                      (MicroAPI::RegTensor<CastT>&)vregPadT, mask);
+                        Reg::DataCopyGather((Reg::RegTensor<CastT>&)vregPadT, dataAddr, idx, mask);
+                        Reg::Add((Reg::RegTensor<CastT>&)vregT, (Reg::RegTensor<CastT>&)vregT,
+                                 (Reg::RegTensor<CastT>&)vregPadT, mask);
                     } else {
-                        MicroAPI::DataCopyGather(vregPadT, dataAddr, idx, mask);
-                        MicroAPI::Add(vregT, vregT, vregPadT, mask);
+                        Reg::DataCopyGather(vregPadT, dataAddr, idx, mask);
+                        Reg::Add(vregT, vregT, vregPadT, mask);
                     }
                 }
 
-                MicroAPI::Arange(tmpRange, (RangeT)0);
-                MicroAPI::Muls(idx, (MicroAPI::RegTensor<IndexT>&)tmpRange, (IndexT)outRowE, mask);
-                MicroAPI::Adds(idx, idx, (IndexT)((RangeT)b * (RangeT)kBatchVL * outRowE), mask);
+                Reg::Arange(tmpRange, (RangeT)0);
+                Reg::Muls(idx, (Reg::RegTensor<IndexT>&)tmpRange, (IndexT)outRowE, mask);
+                Reg::Adds(idx, idx, (IndexT)((RangeT)b * (RangeT)kBatchVL * outRowE), mask);
 
                 if constexpr (sizeof(T) == 1) {
-                    MicroAPI::Pack(vregOut, (MicroAPI::RegTensor<CastT>&)vregT);
-                    MicroAPI::UnPack((MicroAPI::RegTensor<CastT>&)vregScatter, vregOut);
-                    MicroAPI::DataCopyScatter(outputAddr, vregScatter, idx, mask);
+                    Reg::Pack(vregOut, (Reg::RegTensor<CastT>&)vregT);
+                    Reg::UnPack((Reg::RegTensor<CastT>&)vregScatter, vregOut);
+                    Reg::DataCopyScatter(outputAddr, vregScatter, idx, mask);
                 } else {
-                    MicroAPI::DataCopyScatter(outputAddr, vregT, idx, mask);
+                    Reg::DataCopyScatter(outputAddr, vregT, idx, mask);
                 }
 
                 // ======== Phase B: 中间（iN1 ∈ [1, dN1-1)） ========
                 for (uint16_t i = 0; i < midCount; i++) {
                     const uint16_t iN1 = (uint16_t)(i + 1);
-                    MicroAPI::Adds(idx, baseIdx, (IndexT)((RangeT)iN1 + (RangeT)pL), mask);
+                    Reg::Adds(idx, baseIdx, (IndexT)((RangeT)iN1 + (RangeT)pL), mask);
                     if constexpr (sizeof(T) == 1) {
-                        MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastT>&)vregT, dataAddr, idx, mask);
+                        Reg::DataCopyGather((Reg::RegTensor<CastT>&)vregT, dataAddr, idx, mask);
                     } else {
-                        MicroAPI::DataCopyGather(vregT, dataAddr, idx, mask);
+                        Reg::DataCopyGather(vregT, dataAddr, idx, mask);
                     }
 
-                    MicroAPI::Arange(tmpRange, (RangeT)0);
-                    MicroAPI::Muls(idx, (MicroAPI::RegTensor<IndexT>&)tmpRange, (IndexT)outRowE, mask);
-                    MicroAPI::Adds(idx, idx, (IndexT)((RangeT)b * (RangeT)kBatchVL * outRowE + (RangeT)iN1), mask);
+                    Reg::Arange(tmpRange, (RangeT)0);
+                    Reg::Muls(idx, (Reg::RegTensor<IndexT>&)tmpRange, (IndexT)outRowE, mask);
+                    Reg::Adds(idx, idx, (IndexT)((RangeT)b * (RangeT)kBatchVL * outRowE + (RangeT)iN1), mask);
                     if constexpr (sizeof(T) == 1) {
-                        MicroAPI::Pack(vregOut, (MicroAPI::RegTensor<CastT>&)vregT);
-                        MicroAPI::UnPack((MicroAPI::RegTensor<CastT>&)vregScatter, vregOut);
-                        MicroAPI::DataCopyScatter(outputAddr, vregScatter, idx, mask);
+                        Reg::Pack(vregOut, (Reg::RegTensor<CastT>&)vregT);
+                        Reg::UnPack((Reg::RegTensor<CastT>&)vregScatter, vregOut);
+                        Reg::DataCopyScatter(outputAddr, vregScatter, idx, mask);
                     } else {
-                        MicroAPI::DataCopyScatter(outputAddr, vregT, idx, mask);
+                        Reg::DataCopyScatter(outputAddr, vregT, idx, mask);
                     }
                 }
 
                 // ======== Phase C: 右边界（iN1 = dN1-1） ========
-                MicroAPI::Adds(idx, baseIdx, (IndexT)((RangeT)pL + (RangeT)iRight), mask);
+                Reg::Adds(idx, baseIdx, (IndexT)((RangeT)pL + (RangeT)iRight), mask);
                 if constexpr (sizeof(T) == 1) {
-                    MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastT>&)vregT, dataAddr, idx, mask);
+                    Reg::DataCopyGather((Reg::RegTensor<CastT>&)vregT, dataAddr, idx, mask);
                 } else {
-                    MicroAPI::DataCopyGather(vregT, dataAddr, idx, mask);
+                    Reg::DataCopyGather(vregT, dataAddr, idx, mask);
                 }
 
                 // dN1==1: re-accumulate left padding (otherwise lost by Phase C overwrite)
                 for (uint16_t k = 0; k < combPadCnt; k++) {
-                    MicroAPI::Adds(idx, baseIdx, (IndexT)k, mask);
+                    Reg::Adds(idx, baseIdx, (IndexT)k, mask);
                     if constexpr (sizeof(T) == 1) {
-                        MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastT>&)vregPadT, dataAddr, idx, mask);
-                        MicroAPI::Add((MicroAPI::RegTensor<CastT>&)vregT, (MicroAPI::RegTensor<CastT>&)vregT,
-                                      (MicroAPI::RegTensor<CastT>&)vregPadT, mask);
+                        Reg::DataCopyGather((Reg::RegTensor<CastT>&)vregPadT, dataAddr, idx, mask);
+                        Reg::Add((Reg::RegTensor<CastT>&)vregT, (Reg::RegTensor<CastT>&)vregT,
+                                 (Reg::RegTensor<CastT>&)vregPadT, mask);
                     } else {
-                        MicroAPI::DataCopyGather(vregPadT, dataAddr, idx, mask);
-                        MicroAPI::Add(vregT, vregT, vregPadT, mask);
+                        Reg::DataCopyGather(vregPadT, dataAddr, idx, mask);
+                        Reg::Add(vregT, vregT, vregPadT, mask);
                     }
                 }
 
                 for (uint16_t k = 0; k < pRu; k++) {
-                    MicroAPI::Adds(idx, baseIdx, (IndexT)(rightPadStart + (RangeT)k), mask);
+                    Reg::Adds(idx, baseIdx, (IndexT)(rightPadStart + (RangeT)k), mask);
                     if constexpr (sizeof(T) == 1) {
-                        MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastT>&)vregPadT, dataAddr, idx, mask);
-                        MicroAPI::Add((MicroAPI::RegTensor<CastT>&)vregT, (MicroAPI::RegTensor<CastT>&)vregT,
-                                      (MicroAPI::RegTensor<CastT>&)vregPadT, mask);
+                        Reg::DataCopyGather((Reg::RegTensor<CastT>&)vregPadT, dataAddr, idx, mask);
+                        Reg::Add((Reg::RegTensor<CastT>&)vregT, (Reg::RegTensor<CastT>&)vregT,
+                                 (Reg::RegTensor<CastT>&)vregPadT, mask);
                     } else {
-                        MicroAPI::DataCopyGather(vregPadT, dataAddr, idx, mask);
-                        MicroAPI::Add(vregT, vregT, vregPadT, mask);
+                        Reg::DataCopyGather(vregPadT, dataAddr, idx, mask);
+                        Reg::Add(vregT, vregT, vregPadT, mask);
                     }
                 }
 
-                MicroAPI::Arange(tmpRange, (RangeT)0);
-                MicroAPI::Muls(idx, (MicroAPI::RegTensor<IndexT>&)tmpRange, (IndexT)outRowE, mask);
-                MicroAPI::Adds(idx, idx, (IndexT)((RangeT)b * (RangeT)kBatchVL * outRowE + (RangeT)iRight), mask);
+                Reg::Arange(tmpRange, (RangeT)0);
+                Reg::Muls(idx, (Reg::RegTensor<IndexT>&)tmpRange, (IndexT)outRowE, mask);
+                Reg::Adds(idx, idx, (IndexT)((RangeT)b * (RangeT)kBatchVL * outRowE + (RangeT)iRight), mask);
                 if constexpr (sizeof(T) == 1) {
-                    MicroAPI::Pack(vregOut, (MicroAPI::RegTensor<CastT>&)vregT);
-                    MicroAPI::UnPack((MicroAPI::RegTensor<CastT>&)vregScatter, vregOut);
-                    MicroAPI::DataCopyScatter(outputAddr, vregScatter, idx, mask);
+                    Reg::Pack(vregOut, (Reg::RegTensor<CastT>&)vregT);
+                    Reg::UnPack((Reg::RegTensor<CastT>&)vregScatter, vregOut);
+                    Reg::DataCopyScatter(outputAddr, vregScatter, idx, mask);
                 } else {
-                    MicroAPI::DataCopyScatter(outputAddr, vregT, idx, mask);
+                    Reg::DataCopyScatter(outputAddr, vregT, idx, mask);
                 }
             }
         }

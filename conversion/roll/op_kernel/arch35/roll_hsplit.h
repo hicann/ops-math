@@ -32,18 +32,17 @@ public:
     __aicore__ inline void InsertSync(const HardEvent& event);
     __aicore__ inline void CopyIn(int64_t index, int64_t block_count, int64_t block_len);
     __aicore__ inline void Gather(int32_t Addr, uint16_t repeatnum, int64_t stride);
-    __aicore__ inline void CopyOut(
-        LocalTensor<T>& Tensor, int64_t inputIndex, int64_t outIndex, int64_t block_count, int64_t block_len,
-        int64_t src_stride, int64_t dst_stride);
-    __aicore__ inline void CopyOut_Align(
-        LocalTensor<T> xTensor, int64_t xTensorAddr, int64_t index, int64_t offsetOut, int64_t blockCount);
-    __aicore__ inline void CopyOut_UnAlign(
-        LocalTensor<T> xTensor, LocalTensor<T> alienTensor, int64_t xTensorAddr, int64_t alienTensorAddr, int64_t index,
-        int64_t offsetOut, int64_t blockCount, int64_t maskNum, bool outKey);
+    __aicore__ inline void CopyOut(LocalTensor<T>& Tensor, int64_t inputIndex, int64_t outIndex, int64_t block_count,
+                                   int64_t block_len, int64_t src_stride, int64_t dst_stride);
+    __aicore__ inline void CopyOut_Align(LocalTensor<T> xTensor, int64_t xTensorAddr, int64_t index, int64_t offsetOut,
+                                         int64_t blockCount);
+    __aicore__ inline void CopyOut_UnAlign(LocalTensor<T> xTensor, LocalTensor<T> alienTensor, int64_t xTensorAddr,
+                                           int64_t alienTensorAddr, int64_t index, int64_t offsetOut,
+                                           int64_t blockCount, int64_t maskNum, bool outKey);
     __aicore__ inline void ComputeAllParam(int64_t inputIndex, int64_t index, int64_t hRe, bool isCount);
     __aicore__ inline void ComputeAllParamForFour(int64_t inputIndex, int64_t hRe, bool isCount);
-    __aicore__ inline void CopyInAndOut(
-        int64_t inputIndex, int64_t& offsetIn, int64_t hRe, int64_t maskNum, bool outKey, bool isAlign);
+    __aicore__ inline void CopyInAndOut(int64_t inputIndex, int64_t& offsetIn, int64_t hRe, int64_t maskNum,
+                                        bool outKey, bool isAlign);
     __aicore__ inline void Process_UnAlignAndAlign(int64_t inputIndex, bool isAlign);
     __aicore__ inline void Process();
 
@@ -80,8 +79,8 @@ template <typename T>
 __aicore__ inline void RollHSplitSimd<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR workspace)
 {
     blockIdx_ = GetBlockIdx();
-    coreUbParam =
-        (blockIdx_ == tilingData_->blockCount - 1) ? tilingData_->tailCoreUbParam : tilingData_->mainCoreUbParam;
+    coreUbParam = (blockIdx_ == tilingData_->blockCount - 1) ? tilingData_->tailCoreUbParam :
+                                                               tilingData_->mainCoreUbParam;
     blockFactor = (blockIdx_ == tilingData_->blockCount - 1) ? tilingData_->blockTailFactor : tilingData_->blockFactor;
     hShapes = tilingData_->shapes[tilingData_->dimNum - 2];
     wShapes = tilingData_->shapes[tilingData_->dimNum - 1];
@@ -146,27 +145,27 @@ __aicore__ inline void RollHSplitSimd<T>::Gather(int32_t Addr, uint16_t repeatnu
     LocalTensor<T> AlienTensor = AlienBuf.AllocTensor<T>();
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<T> dst0;
-        MicroAPI::UnalignReg u0;
-        MicroAPI::UnalignReg u1;
+        Reg::RegTensor<T> dst0;
+        Reg::UnalignReg u0;
+        Reg::UnalignReg u1;
         auto dstPtr = (__ubuf__ T*)AlienTensor.GetPhyAddr();
         auto srcPtr = (__ubuf__ T*)xTensor.GetPhyAddr();
         for (uint16_t i = 0; i < repeatnum; i++) {
             auto srcUbT = srcPtr + Addr + i * stride;
-            MicroAPI::DataCopyUnAlignPre(u0, srcUbT);
-            MicroAPI::DataCopyUnAlign(dst0, u0, srcUbT);
-            MicroAPI::DataCopyUnAlign(dstPtr, dst0, u1, dstStride);
+            Reg::DataCopyUnAlignPre(u0, srcUbT);
+            Reg::DataCopyUnAlign(dst0, u0, srcUbT);
+            Reg::DataCopyUnAlign(dstPtr, dst0, u1, dstStride);
         }
-        MicroAPI::DataCopyUnAlignPost(dstPtr, u1, 0);
+        Reg::DataCopyUnAlignPost(dstPtr, u1, 0);
     }
     xInQue_.EnQue<T>(xTensor);
     AlienBuf.EnQue<T>(AlienTensor);
 }
 
 template <typename T>
-__aicore__ inline void RollHSplitSimd<T>::CopyOut(
-    LocalTensor<T>& Tensor, int64_t inputIndex, int64_t outIndex, int64_t block_count, int64_t block_len,
-    int64_t src_stride, int64_t dst_stride)
+__aicore__ inline void RollHSplitSimd<T>::CopyOut(LocalTensor<T>& Tensor, int64_t inputIndex, int64_t outIndex,
+                                                  int64_t block_count, int64_t block_len, int64_t src_stride,
+                                                  int64_t dst_stride)
 {
     DataCopyExtParams dataCopyParams;
     dataCopyParams.blockCount = block_count;
@@ -183,8 +182,8 @@ __aicore__ inline void RollHSplitSimd<T>::ComputeAllParam(int64_t inputIndex, in
     for (int64_t dim = 0; dim < tilingData_->dimNum; dim++) {
         inputIndices_[dim] = inputIndex / tilingData_->strides[dim];
         inputIndex = inputIndex % tilingData_->strides[dim];
-        outIndex[index] +=
-            (inputIndices_[dim] + tilingData_->shifts[dim]) % tilingData_->shapes[dim] * tilingData_->strides[dim];
+        outIndex[index] += (inputIndices_[dim] + tilingData_->shifts[dim]) % tilingData_->shapes[dim] *
+                           tilingData_->strides[dim];
     }
     if (!isCount) {
         return;
@@ -229,10 +228,10 @@ __aicore__ inline void RollHSplitSimd<T>::ComputeAllParamForFour(int64_t inputIn
         ComputeAllParam(inputIndex + lenSum[0], 1, hRe, isCount);
     }
     hRe -= countSum[0];
-    if(isCount) {
-        for(int32_t i = 0; i < 2; i++) {
-            countSum[i+2] = 0;
-            lenSum[i+2] = 0;
+    if (isCount) {
+        for (int32_t i = 0; i < 2; i++) {
+            countSum[i + 2] = 0;
+            lenSum[i + 2] = 0;
         }
     }
     if (hRe != 0 && tilingData_->shifts[tilingData_->dimNum - 2] != 0) {
@@ -244,41 +243,37 @@ __aicore__ inline void RollHSplitSimd<T>::ComputeAllParamForFour(int64_t inputIn
 }
 
 template <typename T>
-__aicore__ inline void RollHSplitSimd<T>::CopyOut_Align(
-    LocalTensor<T> xTensor, int64_t xTensorAddr, int64_t index, int64_t offsetOut, int64_t blockCount)
+__aicore__ inline void RollHSplitSimd<T>::CopyOut_Align(LocalTensor<T> xTensor, int64_t xTensorAddr, int64_t index,
+                                                        int64_t offsetOut, int64_t blockCount)
 {
-    CopyOut(
-        xTensor, xTensorAddr, outIndex[2 * index] + offsetOut, blockCount, lenSum[2 * index],
-        wAlienLen_ - lenSum[2 * index], lenSum[2 * index + 1]);
+    CopyOut(xTensor, xTensorAddr, outIndex[2 * index] + offsetOut, blockCount, lenSum[2 * index],
+            wAlienLen_ - lenSum[2 * index], lenSum[2 * index + 1]);
     if (lenSum[2 * index] < wShapes) {
-        CopyOut(
-            xTensor, xTensorAddr + lenSum[2 * index], outIndex[2 * index + 1] + offsetOut, blockCount,
-            lenSum[2 * index + 1], wAlienLen_ - lenSum[2 * index + 1], lenSum[2 * index]);
+        CopyOut(xTensor, xTensorAddr + lenSum[2 * index], outIndex[2 * index + 1] + offsetOut, blockCount,
+                lenSum[2 * index + 1], wAlienLen_ - lenSum[2 * index + 1], lenSum[2 * index]);
     }
 }
 
 template <typename T>
-__aicore__ inline void RollHSplitSimd<T>::CopyOut_UnAlign(
-    LocalTensor<T> xTensor, LocalTensor<T> alienTensor, int64_t xTensorAddr, int64_t alienTensorAddr, int64_t index,
-    int64_t offsetOut, int64_t blockCount, int64_t maskNum, bool outKey)
+__aicore__ inline void RollHSplitSimd<T>::CopyOut_UnAlign(LocalTensor<T> xTensor, LocalTensor<T> alienTensor,
+                                                          int64_t xTensorAddr, int64_t alienTensorAddr, int64_t index,
+                                                          int64_t offsetOut, int64_t blockCount, int64_t maskNum,
+                                                          bool outKey)
 {
-    CopyOut(
-        xTensor, xTensorAddr, outIndex[2 * index] + offsetOut, blockCount, lenSum[2 * index],
-        wAlienLen_ - lenSum[2 * index], lenSum[2 * index + 1]);
-    CopyOut(
-        alienTensor, alienTensorAddr, outIndex[2 * index + 1] + offsetOut, blockCount, maskNum, dstStride - maskNum,
-        wShapes - maskNum);
+    CopyOut(xTensor, xTensorAddr, outIndex[2 * index] + offsetOut, blockCount, lenSum[2 * index],
+            wAlienLen_ - lenSum[2 * index], lenSum[2 * index + 1]);
+    CopyOut(alienTensor, alienTensorAddr, outIndex[2 * index + 1] + offsetOut, blockCount, maskNum, dstStride - maskNum,
+            wShapes - maskNum);
     if (outKey) {
-        CopyOut(
-            xTensor, xTensorAddr + lenSum[2 * index] + maskNum, outIndex[2 * index + 1] + offsetOut + maskNum,
-            blockCount, lenSum[2 * index + 1] - maskNum, wAlienLen_ - lenSum[2 * index + 1] + maskNum,
-            lenSum[2 * index] + maskNum);
+        CopyOut(xTensor, xTensorAddr + lenSum[2 * index] + maskNum, outIndex[2 * index + 1] + offsetOut + maskNum,
+                blockCount, lenSum[2 * index + 1] - maskNum, wAlienLen_ - lenSum[2 * index + 1] + maskNum,
+                lenSum[2 * index] + maskNum);
     }
 }
 
 template <typename T>
-__aicore__ inline void RollHSplitSimd<T>::CopyInAndOut(
-    int64_t inputIndex, int64_t& offsetIn, int64_t hRe, int64_t maskNum, bool outKey, bool isAlign)
+__aicore__ inline void RollHSplitSimd<T>::CopyInAndOut(int64_t inputIndex, int64_t& offsetIn, int64_t hRe,
+                                                       int64_t maskNum, bool outKey, bool isAlign)
 {
     int64_t hLenRe = hRe;
     int64_t offsetOut = 0;
@@ -334,9 +329,8 @@ __aicore__ inline void RollHSplitSimd<T>::CopyInAndOut(
                 CopyOut_UnAlign(xTensor, alienTensor, 0, 0, i, offsetOut, lastLoopCount, maskNum, outKey);
                 if (lastLoopCount != factor) {
                     InsertSync(HardEvent::V_MTE3);
-                    CopyOut_UnAlign(
-                        xTensor, alienTensor, lastLoopCount * wAlienLen_, lastLoopCount * dstStride, i + 1, 0,
-                        factor - lastLoopCount, maskNum, outKey);
+                    CopyOut_UnAlign(xTensor, alienTensor, lastLoopCount * wAlienLen_, lastLoopCount * dstStride, i + 1,
+                                    0, factor - lastLoopCount, maskNum, outKey);
                     countSum[2 * i + 2] -= factor - lastLoopCount;
                     countSum[2 * i + 3] -= factor - lastLoopCount;
                 }

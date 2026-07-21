@@ -328,30 +328,29 @@ private:
         uint32_t midUbAddLenVF = mDataLen_;
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T> srcReg;
-            MicroAPI::RegTensor<CalType> tempRegB32;
-            MicroAPI::RegTensor<CalType> resReg;
-            MicroAPI::MaskReg maskReg;
+            Reg::RegTensor<T> srcReg;
+            Reg::RegTensor<CalType> tempRegB32;
+            Reg::RegTensor<CalType> resReg;
+            Reg::MaskReg maskReg;
 
-            static constexpr MicroAPI::CastTrait castTrait16to32 = {
-                MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::UNKNOWN, MicroAPI::MaskMergeMode::ZEROING,
-                RoundMode::UNKNOWN};
+            static constexpr Reg::CastTrait castTrait16to32 = {Reg::RegLayout::ZERO, Reg::SatMode::UNKNOWN,
+                                                               Reg::MaskMergeMode::ZEROING, RoundMode::UNKNOWN};
 
             for (uint16_t k = 0; k < repeatSelfTimes; k++) {
-                maskReg = AscendC::MicroAPI::UpdateMask<CalType>(midUbAddLenVF);
+                maskReg = AscendC::Reg::UpdateMask<CalType>(midUbAddLenVF);
                 if constexpr (sizeof(T) != sizeof(float32_t)) {
-                    MicroAPI::LoadAlign<T, MicroAPI::LoadDist::DIST_UNPACK_B16>(srcReg, srcAddr + k * oneRepeatSize_);
+                    Reg::LoadAlign<T, Reg::LoadDist::DIST_UNPACK_B16>(srcReg, srcAddr + k * oneRepeatSize_);
                 } else {
-                    MicroAPI::LoadAlign(srcReg, srcAddr + k * oneRepeatSize_);
+                    Reg::LoadAlign(srcReg, srcAddr + k * oneRepeatSize_);
                 }
-                MicroAPI::LoadAlign(resReg, resAddr + k * oneRepeatSize_);
+                Reg::LoadAlign(resReg, resAddr + k * oneRepeatSize_);
                 if constexpr (sizeof(T) != sizeof(float32_t)) {
-                    MicroAPI::Cast<CalType, T, castTrait16to32>(tempRegB32, srcReg, maskReg);
-                    MicroAPI::Add(resReg, tempRegB32, resReg, maskReg);
+                    Reg::Cast<CalType, T, castTrait16to32>(tempRegB32, srcReg, maskReg);
+                    Reg::Add(resReg, tempRegB32, resReg, maskReg);
                 } else {
-                    MicroAPI::Add(resReg, srcReg, resReg, maskReg);
+                    Reg::Add(resReg, srcReg, resReg, maskReg);
                 }
-                MicroAPI::StoreAlign(resAddr + k * oneRepeatSize_, resReg, maskReg);
+                Reg::StoreAlign(resAddr + k * oneRepeatSize_, resReg, maskReg);
             }
         }
     }
@@ -387,74 +386,74 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::UnalignRegForLoad ureg0;
-            MicroAPI::UnalignRegForStore ureg1;
-            MicroAPI::RegTensor<CalType> tempReg;
-            MicroAPI::RegTensor<CalType> resReg;
-            MicroAPI::RegTensor<RangeType> idxReg;
-            MicroAPI::MaskReg maskRegMain = MicroAPI::UpdateMask<CalType>(leftMainLenVF);
-            MicroAPI::MaskReg maskRegTail = MicroAPI::UpdateMask<CalType>(leftTailLenVF);
+            Reg::UnalignRegForLoad ureg0;
+            Reg::UnalignRegForStore ureg1;
+            Reg::RegTensor<CalType> tempReg;
+            Reg::RegTensor<CalType> resReg;
+            Reg::RegTensor<RangeType> idxReg;
+            Reg::MaskReg maskRegMain = Reg::UpdateMask<CalType>(leftMainLenVF);
+            Reg::MaskReg maskRegTail = Reg::UpdateMask<CalType>(leftTailLenVF);
 
             for (uint16_t k = 0; k < leftMainTimes; k++) {
                 // 1. res → reg
                 if constexpr (Mode == 2) {
-                    MicroAPI::LoadUnAlignPre(ureg0, src_l_resAddr + k * oneRepeatSize_);
-                    MicroAPI::LoadUnAlign(resReg, ureg0, src_l_resAddr + k * oneRepeatSize_);
+                    Reg::LoadUnAlignPre(ureg0, src_l_resAddr + k * oneRepeatSize_);
+                    Reg::LoadUnAlign(resReg, ureg0, src_l_resAddr + k * oneRepeatSize_);
                 } else {
-                    MicroAPI::LoadAlign(resReg, resAddr + k * oneRepeatSize_);
+                    Reg::LoadAlign(resReg, resAddr + k * oneRepeatSize_);
                 }
 
                 // 2. 逆序 Gather left → reg
-                MicroAPI::Arange<RangeType, MicroAPI::IndexOrder::DECREASE_ORDER>(
+                Reg::Arange<RangeType, Reg::IndexOrder::DECREASE_ORDER>(
                     idxReg, (RangeType)((leftUbAddLen_ - 1) - (oneRepeatSize_ - 1) - k * oneRepeatSize_));
 
                 if constexpr (sizeof(T) != sizeof(float32_t)) {
-                    MicroAPI::Gather(tempReg, tempAddr, (MicroAPI::RegTensor<IdxType>&)idxReg, maskRegMain);
+                    Reg::Gather(tempReg, tempAddr, (Reg::RegTensor<IdxType>&)idxReg, maskRegMain);
                 } else {
-                    MicroAPI::Gather(tempReg, srcAddr, (MicroAPI::RegTensor<IdxType>&)idxReg, maskRegMain);
+                    Reg::Gather(tempReg, srcAddr, (Reg::RegTensor<IdxType>&)idxReg, maskRegMain);
                 }
 
                 // 3. Add
-                MicroAPI::Add(resReg, tempReg, resReg, maskRegMain);
+                Reg::Add(resReg, tempReg, resReg, maskRegMain);
 
                 // 4. Store —— 主体块固定用 oneRepeatSize_，无运行时分支
                 if constexpr (Mode == 2) {
-                    MicroAPI::StoreUnAlign(dst_l_resAddr, resReg, ureg1, oneRepeatSize_);
+                    Reg::StoreUnAlign(dst_l_resAddr, resReg, ureg1, oneRepeatSize_);
                 } else {
-                    MicroAPI::StoreAlign(resAddr + k * oneRepeatSize_, resReg, maskRegMain);
+                    Reg::StoreAlign(resAddr + k * oneRepeatSize_, resReg, maskRegMain);
                 }
             }
             // 尾块
             for (uint16_t k = 0; k < leftTailTimes; k++) {
                 if constexpr (Mode == 2) {
-                    MicroAPI::LoadUnAlignPre(ureg0, src_l_resAddr + leftMainTimes * oneRepeatSize_);
-                    MicroAPI::LoadUnAlign(resReg, ureg0, src_l_resAddr + leftMainTimes * oneRepeatSize_);
+                    Reg::LoadUnAlignPre(ureg0, src_l_resAddr + leftMainTimes * oneRepeatSize_);
+                    Reg::LoadUnAlign(resReg, ureg0, src_l_resAddr + leftMainTimes * oneRepeatSize_);
                 } else {
-                    MicroAPI::LoadAlign(resReg, resAddr + leftMainTimes * oneRepeatSize_);
+                    Reg::LoadAlign(resReg, resAddr + leftMainTimes * oneRepeatSize_);
                 }
 
                 // 2. 逆序 Gather（尾块起始索引同样在域外算好）
-                MicroAPI::Arange<RangeType, MicroAPI::IndexOrder::DECREASE_ORDER>(
+                Reg::Arange<RangeType, Reg::IndexOrder::DECREASE_ORDER>(
                     idxReg, (RangeType)((leftUbAddLen_ - 1) - (oneRepeatSize_ - 1) - leftMainTimes * oneRepeatSize_));
 
                 if constexpr (sizeof(T) != sizeof(float32_t)) {
-                    MicroAPI::Gather(tempReg, tempAddr, (MicroAPI::RegTensor<IdxType>&)idxReg, maskRegTail);
+                    Reg::Gather(tempReg, tempAddr, (Reg::RegTensor<IdxType>&)idxReg, maskRegTail);
                 } else {
-                    MicroAPI::Gather(tempReg, srcAddr, (MicroAPI::RegTensor<IdxType>&)idxReg, maskRegTail);
+                    Reg::Gather(tempReg, srcAddr, (Reg::RegTensor<IdxType>&)idxReg, maskRegTail);
                 }
 
                 // 3. Add
-                MicroAPI::Add(resReg, tempReg, resReg, maskRegTail);
+                Reg::Add(resReg, tempReg, resReg, maskRegTail);
 
                 // 4. Store —— 尾块用 leftTailLen，值在域外已确定
                 if constexpr (Mode == 2) {
-                    MicroAPI::StoreUnAlign(dst_l_resAddr, resReg, ureg1, leftTailLen);
+                    Reg::StoreUnAlign(dst_l_resAddr, resReg, ureg1, leftTailLen);
                 } else {
-                    MicroAPI::StoreAlign(resAddr + leftMainTimes * oneRepeatSize_, resReg, maskRegTail);
+                    Reg::StoreAlign(resAddr + leftMainTimes * oneRepeatSize_, resReg, maskRegTail);
                 }
             }
             if constexpr (Mode == 2) {
-                MicroAPI::StoreUnAlignPost(dst_l_resAddr, ureg1, 0);
+                Reg::StoreUnAlignPost(dst_l_resAddr, ureg1, 0);
             }
         }
         // ---------- V → MTE2 反向同步 ----------
@@ -491,53 +490,53 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::UnalignRegForLoad ureg0;
-            MicroAPI::UnalignRegForStore ureg1;
+            Reg::UnalignRegForLoad ureg0;
+            Reg::UnalignRegForStore ureg1;
 
-            MicroAPI::RegTensor<CalType> tempReg;
-            MicroAPI::RegTensor<CalType> resReg;
-            MicroAPI::RegTensor<RangeType> idxReg;
-            MicroAPI::MaskReg maskRegMain = MicroAPI::UpdateMask<CalType>(rightMainLenVF);
-            MicroAPI::MaskReg maskRegTail = MicroAPI::UpdateMask<CalType>(rightTailLenVF);
+            Reg::RegTensor<CalType> tempReg;
+            Reg::RegTensor<CalType> resReg;
+            Reg::RegTensor<RangeType> idxReg;
+            Reg::MaskReg maskRegMain = Reg::UpdateMask<CalType>(rightMainLenVF);
+            Reg::MaskReg maskRegTail = Reg::UpdateMask<CalType>(rightTailLenVF);
 
             // —— 主体：每块恰好 oneRepeatSize_ 个元素 ——
             for (uint16_t k = 0; k < rightMainTimes; k++) {
-                MicroAPI::LoadUnAlignPre(ureg0, src_r_resAddr + k * oneRepeatSize_);
-                MicroAPI::LoadUnAlign(resReg, ureg0, src_r_resAddr + k * oneRepeatSize_);
+                Reg::LoadUnAlignPre(ureg0, src_r_resAddr + k * oneRepeatSize_);
+                Reg::LoadUnAlign(resReg, ureg0, src_r_resAddr + k * oneRepeatSize_);
 
                 // DECREASE_ORDER: 第k块对应的反向起始索引
                 // 第0块最高索引 = rightUbAddLen_-1，每块递减 oneRepeatSize_
                 RangeType mainStartIdx = (RangeType)((rightUbAddLen_ - 1) - (oneRepeatSize_ - 1) - k * oneRepeatSize_);
 
-                MicroAPI::Arange<RangeType, MicroAPI::IndexOrder::DECREASE_ORDER>(idxReg, mainStartIdx);
+                Reg::Arange<RangeType, Reg::IndexOrder::DECREASE_ORDER>(idxReg, mainStartIdx);
 
                 if constexpr (sizeof(T) != sizeof(float32_t)) {
-                    MicroAPI::Gather(tempReg, tempAddr, (MicroAPI::RegTensor<IdxType>&)idxReg, maskRegMain);
+                    Reg::Gather(tempReg, tempAddr, (Reg::RegTensor<IdxType>&)idxReg, maskRegMain);
                 } else {
-                    MicroAPI::Gather(tempReg, srcAddr, (MicroAPI::RegTensor<IdxType>&)idxReg, maskRegMain);
+                    Reg::Gather(tempReg, srcAddr, (Reg::RegTensor<IdxType>&)idxReg, maskRegMain);
                 }
-                MicroAPI::Add(resReg, tempReg, resReg, maskRegMain);
-                MicroAPI::StoreUnAlign(dst_r_resAddr, resReg, ureg1, oneRepeatSize_);
+                Reg::Add(resReg, tempReg, resReg, maskRegMain);
+                Reg::StoreUnAlign(dst_r_resAddr, resReg, ureg1, oneRepeatSize_);
             }
             for (uint16_t k = 0; k < rightTailTimes; k++) {
                 // —— 尾块：仅 rightTailLen 个有效元素 ——
-                MicroAPI::LoadUnAlignPre(ureg0, src_r_resAddr + rightMainTimes * oneRepeatSize_);
-                MicroAPI::LoadUnAlign(resReg, ureg0, src_r_resAddr + rightMainTimes * oneRepeatSize_);
+                Reg::LoadUnAlignPre(ureg0, src_r_resAddr + rightMainTimes * oneRepeatSize_);
+                Reg::LoadUnAlign(resReg, ureg0, src_r_resAddr + rightMainTimes * oneRepeatSize_);
 
                 // 尾块反向：最高索引 = rightTailLen - 1（从0到rightTailLen-1倒序）
                 RangeType tailStartIdx = (RangeType)((rightUbAddLen_ - 1) - (oneRepeatSize_ - 1) -
                                                      rightMainTimes * oneRepeatSize_);
 
-                MicroAPI::Arange<RangeType, MicroAPI::IndexOrder::DECREASE_ORDER>(idxReg, tailStartIdx);
+                Reg::Arange<RangeType, Reg::IndexOrder::DECREASE_ORDER>(idxReg, tailStartIdx);
                 if constexpr (sizeof(T) != sizeof(float32_t)) {
-                    MicroAPI::Gather(tempReg, tempAddr, (MicroAPI::RegTensor<IdxType>&)idxReg, maskRegTail);
+                    Reg::Gather(tempReg, tempAddr, (Reg::RegTensor<IdxType>&)idxReg, maskRegTail);
                 } else {
-                    MicroAPI::Gather(tempReg, srcAddr, (MicroAPI::RegTensor<IdxType>&)idxReg, maskRegTail);
+                    Reg::Gather(tempReg, srcAddr, (Reg::RegTensor<IdxType>&)idxReg, maskRegTail);
                 }
-                MicroAPI::Add(resReg, tempReg, resReg, maskRegTail);
-                MicroAPI::StoreUnAlign(dst_r_resAddr, resReg, ureg1, rightTailLen);
+                Reg::Add(resReg, tempReg, resReg, maskRegTail);
+                Reg::StoreUnAlign(dst_r_resAddr, resReg, ureg1, rightTailLen);
             }
-            MicroAPI::StoreUnAlignPost(dst_r_resAddr, ureg1, 0);
+            Reg::StoreUnAlignPost(dst_r_resAddr, ureg1, 0);
         }
         // ---- V→MTE2 同步 ----
         SetEvent<HardEvent::V_MTE2>(idx);

@@ -27,9 +27,8 @@ using namespace AscendC;
 namespace ClipByValueOp {
 template <typename T>
 struct ClipByValueFused : public Vec::ElemwiseTernaryOP<T, T, T, T> {
-    __aicore__ inline ClipByValueFused(
-        LocalTensor<T>& dst, LocalTensor<T>& x, LocalTensor<T>& clipValueMin, LocalTensor<T>& clipValueMax,
-        const uint32_t& count)
+    __aicore__ inline ClipByValueFused(LocalTensor<T>& dst, LocalTensor<T>& x, LocalTensor<T>& clipValueMin,
+                                       LocalTensor<T>& clipValueMax, const uint32_t& count)
     {
 #ifdef __CCE_AICORE__
         __local_mem__ T* dstAddr = (__local_mem__ T*)dst.GetPhyAddr();
@@ -43,22 +42,22 @@ struct ClipByValueFused : public Vec::ElemwiseTernaryOP<T, T, T, T> {
 
             __VEC_SCOPE__
             {
-                MicroAPI::RegTensor<int64_t, MicroAPI::RegTraitNumTwo> xReg;
-                MicroAPI::RegTensor<int64_t, MicroAPI::RegTraitNumTwo> minReg;
-                MicroAPI::RegTensor<int64_t, MicroAPI::RegTraitNumTwo> maxReg;
-                MicroAPI::RegTensor<int64_t, MicroAPI::RegTraitNumTwo> resReg;
-                MicroAPI::MaskReg mask;
+                Reg::RegTensor<int64_t, Reg::RegTraitNumTwo> xReg;
+                Reg::RegTensor<int64_t, Reg::RegTraitNumTwo> minReg;
+                Reg::RegTensor<int64_t, Reg::RegTraitNumTwo> maxReg;
+                Reg::RegTensor<int64_t, Reg::RegTraitNumTwo> resReg;
+                Reg::MaskReg mask;
                 uint32_t remain = count;
 
                 for (uint16_t idx = 0; idx < loopNum; idx++) {
                     const uint32_t offset = idx * vl;
-                    mask = MicroAPI::UpdateMask<int64_t, MicroAPI::RegTraitNumTwo>(remain);
-                    MicroAPI::DataCopy<int64_t, MicroAPI::LoadDist::DIST_NORM>(xReg, xAddr + offset);
-                    MicroAPI::DataCopy<int64_t, MicroAPI::LoadDist::DIST_NORM>(maxReg, maxAddr + offset);
-                    MicroAPI::Min<int64_t, MicroAPI::MaskMergeMode::ZEROING>(resReg, xReg, maxReg, mask);
-                    MicroAPI::DataCopy<int64_t, MicroAPI::LoadDist::DIST_NORM>(minReg, minAddr + offset);
-                    MicroAPI::Max<int64_t, MicroAPI::MaskMergeMode::ZEROING>(resReg, resReg, minReg, mask);
-                    MicroAPI::DataCopy<int64_t, MicroAPI::StoreDist::DIST_NORM>(dstAddr + offset, resReg, mask);
+                    mask = Reg::UpdateMask<int64_t, Reg::RegTraitNumTwo>(remain);
+                    Reg::DataCopy<int64_t, Reg::LoadDist::DIST_NORM>(xReg, xAddr + offset);
+                    Reg::DataCopy<int64_t, Reg::LoadDist::DIST_NORM>(maxReg, maxAddr + offset);
+                    Reg::Min<int64_t, Reg::MaskMergeMode::ZEROING>(resReg, xReg, maxReg, mask);
+                    Reg::DataCopy<int64_t, Reg::LoadDist::DIST_NORM>(minReg, minAddr + offset);
+                    Reg::Max<int64_t, Reg::MaskMergeMode::ZEROING>(resReg, resReg, minReg, mask);
+                    Reg::DataCopy<int64_t, Reg::StoreDist::DIST_NORM>(dstAddr + offset, resReg, mask);
                 }
             }
         } else {
@@ -67,22 +66,22 @@ struct ClipByValueFused : public Vec::ElemwiseTernaryOP<T, T, T, T> {
 
             __VEC_SCOPE__
             {
-                MicroAPI::RegTensor<T> xReg;
-                MicroAPI::RegTensor<T> minReg;
-                MicroAPI::RegTensor<T> maxReg;
-                MicroAPI::RegTensor<T> resReg;
-                MicroAPI::MaskReg mask;
+                Reg::RegTensor<T> xReg;
+                Reg::RegTensor<T> minReg;
+                Reg::RegTensor<T> maxReg;
+                Reg::RegTensor<T> resReg;
+                Reg::MaskReg mask;
                 uint32_t remain = count;
 
                 for (uint16_t idx = 0; idx < loopNum; idx++) {
                     const uint32_t offset = idx * vl;
-                    mask = MicroAPI::UpdateMask<T>(remain);
-                    MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(xReg, xAddr + offset);
-                    MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(maxReg, maxAddr + offset);
-                    MicroAPI::Min<T, MicroAPI::MaskMergeMode::ZEROING>(resReg, xReg, maxReg, mask);
-                    MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(minReg, minAddr + offset);
-                    MicroAPI::Max<T, MicroAPI::MaskMergeMode::ZEROING>(resReg, resReg, minReg, mask);
-                    MicroAPI::DataCopy<T, MicroAPI::StoreDist::DIST_NORM>(dstAddr + offset, resReg, mask);
+                    mask = Reg::UpdateMask<T>(remain);
+                    Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(xReg, xAddr + offset);
+                    Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(maxReg, maxAddr + offset);
+                    Reg::Min<T, Reg::MaskMergeMode::ZEROING>(resReg, xReg, maxReg, mask);
+                    Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(minReg, minAddr + offset);
+                    Reg::Max<T, Reg::MaskMergeMode::ZEROING>(resReg, resReg, minReg, mask);
+                    Reg::DataCopy<T, Reg::StoreDist::DIST_NORM>(dstAddr + offset, resReg, mask);
                 }
             }
         }

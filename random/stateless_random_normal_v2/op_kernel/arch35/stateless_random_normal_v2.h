@@ -77,9 +77,9 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void StatelessRandomNormalV2<T>::Init(
-    GM_ADDR y, GM_ADDR key, GM_ADDR counter,
-    const StatelessRandomNormalV2TilingData* __restrict tilingData, TPipe* pipe)
+__aicore__ inline void StatelessRandomNormalV2<T>::Init(GM_ADDR y, GM_ADDR key, GM_ADDR counter,
+                                                        const StatelessRandomNormalV2TilingData* __restrict tilingData,
+                                                        TPipe* pipe)
 {
     ParseTilingData(tilingData);
 
@@ -135,8 +135,8 @@ __aicore__ inline void StatelessRandomNormalV2<T>::Process()
         LocalTensor<uint32_t> philoxRes = philoxQueBuf_.Get<uint32_t>();
         LocalTensor<float> yOutputTmp = uniformResult_.Get<float>();
         uint16_t uniformResCount = CeilDiv(currUbTilingSize_, DOUBLE_UNIFORM_RESULT) * DOUBLE_UNIFORM_RESULT;
-        PhiloxRandom<10>(
-            philoxRes, {key_[0], key_[1]}, {counter_[0], counter_[1], counter_[2], counter_[3]}, uniformResCount);
+        PhiloxRandom<10>(philoxRes, {key_[0], key_[1]}, {counter_[0], counter_[1], counter_[2], counter_[3]},
+                         uniformResCount);
         Uint32ToFloat(yOutputTmp, uniformResCount);
         BoxMullerFloat(yOutputTmp, uniformResCount);
         BoxMullerMul(yOutputTmp, uniformResCount);
@@ -182,8 +182,8 @@ __aicore__ inline void StatelessRandomNormalV2<T>::Skip(const uint64_t count)
 }
 
 template <typename T>
-__aicore__ inline void StatelessRandomNormalV2<T>::Uint32ToFloat(
-    LocalTensor<float>& yOutputTmp, const uint32_t calCount)
+__aicore__ inline void StatelessRandomNormalV2<T>::Uint32ToFloat(LocalTensor<float>& yOutputTmp,
+                                                                 const uint32_t calCount)
 {
     LocalTensor<uint32_t> philoxRes = philoxQueBuf_.Get<uint32_t>();
     __ubuf__ int32_t* ubPhilox = (__ubuf__ int32_t*)philoxRes.GetPhyAddr();
@@ -194,37 +194,37 @@ __aicore__ inline void StatelessRandomNormalV2<T>::Uint32ToFloat(
 
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<int32_t> vReg0;
-        MicroAPI::RegTensor<int32_t> vReg1;
-        MicroAPI::RegTensor<int32_t> vReg2;
-        MicroAPI::RegTensor<int32_t> vReg3;
-        MicroAPI::RegTensor<int32_t> vReg4;
-        MicroAPI::RegTensor<float> vReg5;
-        MicroAPI::RegTensor<float> vReg6;
-        MicroAPI::MaskReg mask;
+        Reg::RegTensor<int32_t> vReg0;
+        Reg::RegTensor<int32_t> vReg1;
+        Reg::RegTensor<int32_t> vReg2;
+        Reg::RegTensor<int32_t> vReg3;
+        Reg::RegTensor<int32_t> vReg4;
+        Reg::RegTensor<float> vReg5;
+        Reg::RegTensor<float> vReg6;
+        Reg::MaskReg mask;
 
         uint32_t sReg1 = static_cast<uint32_t>(calCount);
         uint32_t sReg2 = static_cast<uint32_t>(0x7fffffu);
         uint32_t exp = static_cast<uint32_t>(127);
         uint32_t sReg3 = exp << 23;
 
-        MicroAPI::MaskReg maskAll = MicroAPI::CreateMask<int32_t>();
-        MicroAPI::Duplicate<int32_t, MicroAPI::MaskMergeMode::ZEROING>(vReg1, sReg2, maskAll);
-        MicroAPI::Duplicate<int32_t, MicroAPI::MaskMergeMode::ZEROING>(vReg3, sReg3, maskAll);
+        Reg::MaskReg maskAll = Reg::CreateMask<int32_t>();
+        Reg::Duplicate<int32_t, Reg::MaskMergeMode::ZEROING>(vReg1, sReg2, maskAll);
+        Reg::Duplicate<int32_t, Reg::MaskMergeMode::ZEROING>(vReg3, sReg3, maskAll);
 
         float sReg4 = static_cast<float>(-1.0);
         int32_t offset = static_cast<int32_t>(vfLen);
 
         for (uint16_t i = 0; i < static_cast<uint16_t>(repeatTimes); ++i) {
-            mask = MicroAPI::UpdateMask<float>(sReg1);
-            MicroAPI::DataCopy<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE, MicroAPI::LoadDist::DIST_NORM>(
-                vReg0, ubPhilox, offset);
-            MicroAPI::And<int32_t, MicroAPI::MaskMergeMode::ZEROING>(vReg2, vReg0, vReg1, mask);
-            MicroAPI::Or<int32_t, MicroAPI::MaskMergeMode::ZEROING>(vReg4, vReg2, vReg3, mask);
-            vReg5 = (MicroAPI::RegTensor<float>&)vReg4;
-            MicroAPI::Adds<float, float, MicroAPI::MaskMergeMode::ZEROING>(vReg6, vReg5, sReg4, mask);
-            MicroAPI::DataCopy<float, MicroAPI::PostLiteral::POST_MODE_UPDATE, MicroAPI::StoreDist::DIST_NORM_B32>(
-                ubOut, vReg6, offset, mask);
+            mask = Reg::UpdateMask<float>(sReg1);
+            Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE, Reg::LoadDist::DIST_NORM>(vReg0, ubPhilox,
+                                                                                                 offset);
+            Reg::And<int32_t, Reg::MaskMergeMode::ZEROING>(vReg2, vReg0, vReg1, mask);
+            Reg::Or<int32_t, Reg::MaskMergeMode::ZEROING>(vReg4, vReg2, vReg3, mask);
+            vReg5 = (Reg::RegTensor<float>&)vReg4;
+            Reg::Adds<float, float, Reg::MaskMergeMode::ZEROING>(vReg6, vReg5, sReg4, mask);
+            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE, Reg::StoreDist::DIST_NORM_B32>(ubOut, vReg6,
+                                                                                                    offset, mask);
         }
     }
 }
@@ -235,8 +235,8 @@ __aicore__ inline void StatelessRandomNormalV2<T>::Uint32ToFloat(
  *   Y = sqrt(-2 * ln(U1)) * sin(2 * PI * U2)
  */
 template <typename T>
-__aicore__ inline void StatelessRandomNormalV2<T>::BoxMullerFloat(
-    LocalTensor<float>& yOutputTmp, const uint32_t calCount)
+__aicore__ inline void StatelessRandomNormalV2<T>::BoxMullerFloat(LocalTensor<float>& yOutputTmp,
+                                                                  const uint32_t calCount)
 {
     __ubuf__ float* uniformRes = (__ubuf__ float*)yOutputTmp.GetPhyAddr();
     LocalTensor<float> v1Result = philoxQueBuf_.Get<float>();
@@ -248,29 +248,29 @@ __aicore__ inline void StatelessRandomNormalV2<T>::BoxMullerFloat(
 
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<float> vreg0;
-        MicroAPI::RegTensor<float> vreg1;
-        MicroAPI::RegTensor<float> vreg2;
-        MicroAPI::RegTensor<float> vreg3;
-        MicroAPI::RegTensor<float> vreg4;
-        MicroAPI::RegTensor<float> vreg5;
-        MicroAPI::RegTensor<float> vreg6;
-        MicroAPI::MaskReg mask;
+        Reg::RegTensor<float> vreg0;
+        Reg::RegTensor<float> vreg1;
+        Reg::RegTensor<float> vreg2;
+        Reg::RegTensor<float> vreg3;
+        Reg::RegTensor<float> vreg4;
+        Reg::RegTensor<float> vreg5;
+        Reg::RegTensor<float> vreg6;
+        Reg::MaskReg mask;
 
         float epsScalar = 1.0e-7f;
         float doublePiScalar = DOUBLE_MULTIPLE * PI;
         int32_t offset = static_cast<int32_t>(INT32_FLOAT32_ONE_REPEAT);
         for (uint16_t i = 0; i < static_cast<uint16_t>(repeatTimes); ++i) {
-            mask = MicroAPI::UpdateMask<float>(sreg1);
-            MicroAPI::DataCopy<float, MicroAPI::LoadDist::DIST_DINTLV_B32>(
-                vreg0, vreg1, uniformRes + i * offset * DOUBLE_UNIFORM_RESULT);
-            MicroAPI::Maxs(vreg2, vreg0, epsScalar, mask);
-            MicroAPI::Ln(vreg3, vreg2, mask);
-            MicroAPI::Muls(vreg4, vreg1, doublePiScalar, mask);
-            MicroAPI::Muls(vreg5, vreg3, -DOUBLE_MULTIPLE, mask);
-            MicroAPI::Sqrt(vreg6, vreg5, mask);
-            MicroAPI::DataCopy<float, MicroAPI::PostLiteral::POST_MODE_UPDATE>(ubV1Out, vreg4, offset, mask);
-            MicroAPI::DataCopy<float, MicroAPI::PostLiteral::POST_MODE_UPDATE>(ubU2Out, vreg6, offset, mask);
+            mask = Reg::UpdateMask<float>(sreg1);
+            Reg::DataCopy<float, Reg::LoadDist::DIST_DINTLV_B32>(vreg0, vreg1,
+                                                                 uniformRes + i * offset * DOUBLE_UNIFORM_RESULT);
+            Reg::Maxs(vreg2, vreg0, epsScalar, mask);
+            Reg::Ln(vreg3, vreg2, mask);
+            Reg::Muls(vreg4, vreg1, doublePiScalar, mask);
+            Reg::Muls(vreg5, vreg3, -DOUBLE_MULTIPLE, mask);
+            Reg::Sqrt(vreg6, vreg5, mask);
+            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(ubV1Out, vreg4, offset, mask);
+            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(ubU2Out, vreg6, offset, mask);
         }
     }
 }
@@ -293,28 +293,28 @@ __aicore__ inline void StatelessRandomNormalV2<T>::BoxMullerMul(LocalTensor<floa
 
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<float> vreg0;
-        MicroAPI::RegTensor<float> vreg1;
-        MicroAPI::RegTensor<float> vreg2;
-        MicroAPI::RegTensor<float> vreg3;
-        MicroAPI::RegTensor<float> vreg4;
-        MicroAPI::RegTensor<float> vreg5;
-        MicroAPI::MaskReg mask;
+        Reg::RegTensor<float> vreg0;
+        Reg::RegTensor<float> vreg1;
+        Reg::RegTensor<float> vreg2;
+        Reg::RegTensor<float> vreg3;
+        Reg::RegTensor<float> vreg4;
+        Reg::RegTensor<float> vreg5;
+        Reg::MaskReg mask;
 
         uint32_t sreg1 = static_cast<uint32_t>(calCount);
         int32_t offset = static_cast<int32_t>(INT32_FLOAT32_ONE_REPEAT);
         for (uint16_t i = 0; i < static_cast<uint16_t>(repeatTimes); ++i) {
-            mask = MicroAPI::UpdateMask<float>(sreg1);
-            MicroAPI::DataCopy<float, MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg0, ubSinResult, offset);
-            MicroAPI::DataCopy<float, MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg1, ubCosResult, offset);
-            MicroAPI::DataCopy<float, MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg2, ubU2Result, offset);
+            mask = Reg::UpdateMask<float>(sreg1);
+            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(vreg0, ubSinResult, offset);
+            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(vreg1, ubCosResult, offset);
+            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(vreg2, ubU2Result, offset);
 
-            MicroAPI::Mul(vreg3, vreg0, vreg2, mask);
-            MicroAPI::Mul(vreg4, vreg1, vreg2, mask);
+            Reg::Mul(vreg3, vreg0, vreg2, mask);
+            Reg::Mul(vreg4, vreg1, vreg2, mask);
 
-            MicroAPI::DataCopy<int32_t, MicroAPI::StoreDist::DIST_INTLV_B32>(
+            Reg::DataCopy<int32_t, Reg::StoreDist::DIST_INTLV_B32>(
                 reinterpret_cast<__ubuf__ int32_t*>(ubOut + i * offset * DOUBLE_UNIFORM_RESULT),
-                (MicroAPI::RegTensor<int32_t>&)(vreg3), (MicroAPI::RegTensor<int32_t>&)(vreg4), mask);
+                (Reg::RegTensor<int32_t>&)(vreg3), (Reg::RegTensor<int32_t>&)(vreg4), mask);
         }
     }
     outQue_.EnQue(yOutput);

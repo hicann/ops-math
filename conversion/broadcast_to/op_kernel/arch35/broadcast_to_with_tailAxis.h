@@ -22,11 +22,11 @@
 namespace BrcTo {
 using namespace AscendC;
 
-using AscendC::MicroAPI::CreateMask;
-using AscendC::MicroAPI::DataCopy;
-using AscendC::MicroAPI::MaskReg;
-using AscendC::MicroAPI::RegTensor;
-using AscendC::MicroAPI::UpdateMask;
+using AscendC::Reg::CreateMask;
+using AscendC::Reg::DataCopy;
+using AscendC::Reg::MaskReg;
+using AscendC::Reg::RegTensor;
+using AscendC::Reg::UpdateMask;
 
 constexpr int64_t DataCopyAlignUnit = 32;
 
@@ -185,11 +185,11 @@ __aicore__ inline void BrcToWithTailAxis<T, U>::VFBrcTo(LocalTensor<T> outTensor
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<T> tmpIn;
-        AscendC::MicroAPI::RegTensor<T> tmpOut;
-        MaskReg pregAll = CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL>();
-        MaskReg pregAllB8 = CreateMask<uint8_t, AscendC::MicroAPI::MaskPattern::ALL>();
-        MaskReg pregAllFB8 = CreateMask<uint8_t, AscendC::MicroAPI::MaskPattern::ALLF>();
+        AscendC::Reg::RegTensor<T> tmpIn;
+        AscendC::Reg::RegTensor<T> tmpOut;
+        MaskReg pregAll = CreateMask<T, AscendC::Reg::MaskPattern::ALL>();
+        MaskReg pregAllB8 = CreateMask<uint8_t, AscendC::Reg::MaskPattern::ALL>();
+        MaskReg pregAllFB8 = CreateMask<uint8_t, AscendC::Reg::MaskPattern::ALLF>();
 
         MaskReg pregTmp;
         MaskReg pregGather;
@@ -198,14 +198,14 @@ __aicore__ inline void BrcToWithTailAxis<T, U>::VFBrcTo(LocalTensor<T> outTensor
         DataCopy(tmpIn, inputAddr + inputOffset);
         uint32_t sregTmp = uint32_t(elemIdx * sizeof(T));
         pregTmp = UpdateMask<uint8_t>(sregTmp);
-        AscendC::MicroAPI::MaskSel(pregGather, pregAllFB8, pregAllB8, pregTmp);
-        GatherMask((MicroAPI::RegTensor<uint8_t>&)tmpOut, (MicroAPI::RegTensor<uint8_t>&)tmpIn, pregGather);
+        AscendC::Reg::MaskSel(pregGather, pregAllFB8, pregAllB8, pregTmp);
+        GatherMask((Reg::RegTensor<uint8_t>&)tmpOut, (Reg::RegTensor<uint8_t>&)tmpIn, pregGather);
         Duplicate(tmpOut, tmpOut, pregAll);
 
         uint32_t sregB = brcCnt;
         for (uint16_t vIdx = 0; vIdx < brcLoopCnt; vIdx++) {
-            pregLoopB = AscendC::MicroAPI::UpdateMask<T>(sregB);
-            AscendC::MicroAPI::DataCopy(outputAddr + outputOffset, tmpOut, pregLoopB);
+            pregLoopB = AscendC::Reg::UpdateMask<T>(sregB);
+            AscendC::Reg::DataCopy(outputAddr + outputOffset, tmpOut, pregLoopB);
             outputOffset += VL_CNT;
         }
     }

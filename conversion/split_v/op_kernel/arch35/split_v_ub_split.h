@@ -29,39 +29,39 @@ const int32_t ONE_BLOCK_UB = Ops::Base::GetUbBlockSize(); // 一个block的ub大
 template <typename T, typename U, typename Y> // T原始数据类型  U做datacopygather的数据类型 Y是做vci的数据类型
 class SplitVUbSplit {
 public:
-    __aicore__ inline SplitVUbSplit(TPipe &pipe) : pipe_(pipe){};
+    __aicore__ inline SplitVUbSplit(TPipe& pipe) : pipe_(pipe){};
 
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR sizeSplits, const SplitVTilingData *tilingData);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR sizeSplits, const SplitVTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
     __aicore__ inline void DataCopyGatherVf(int64_t mFactor, int64_t niSize, int64_t ubStartOffset, int64_t nUbFactor,
-        LocalTensor<T> &srcUbSize, int64_t ubOffset);
+                                            LocalTensor<T>& srcUbSize, int64_t ubOffset);
     __aicore__ inline void DataCopyVf(int64_t mFactor, int64_t niSize, int64_t ubStartOffset, int64_t curNFactor,
-        LocalTensor<T> &srcUbSize, int64_t ubOffset);
-    __aicore__ inline __gm__ T *GetTensorAddr(int64_t index, int64_t offset);
+                                      LocalTensor<T>& srcUbSize, int64_t ubOffset);
+    __aicore__ inline __gm__ T* GetTensorAddr(int64_t index, int64_t offset);
     __aicore__ inline int64_t SplitPrefix(int64_t index);
     __aicore__ inline int64_t CurSplitSize(int64_t index);
-    __aicore__ inline void ComputeEndLine(int32_t &curNFactor, int64_t nOffset, int64_t nowBlockEnd);
-    __aicore__ inline void DataCopyIn(int64_t mOffset,int64_t nOffset, int32_t curNFactor,
-        int32_t mUbFactorNow, LocalTensor<T> &xUb);
+    __aicore__ inline void ComputeEndLine(int32_t& curNFactor, int64_t nOffset, int64_t nowBlockEnd);
+    __aicore__ inline void DataCopyIn(int64_t mOffset, int64_t nOffset, int32_t curNFactor, int32_t mUbFactorNow,
+                                      LocalTensor<T>& xUb);
     __aicore__ inline void UbProcess(int32_t mTimes, int32_t mUbFactor, int64_t nBlockFactorNow,
-       int64_t mBlockFactorNow, int32_t nUbFactor, int64_t nowBlockEnd);
-    __aicore__ inline void MoreCopyOut(int32_t curNFactor,int32_t curNFactorBeginSplit,
-        int32_t curNFactorEndSplit, int64_t mOffset, int64_t nOffset,
-        int64_t perSize, int32_t mUbFactorNow, LocalTensor<T> &xUb);
-    __aicore__ inline void OnceCopyOut(int32_t curNFactorBeginSplit, int64_t mOffset, int64_t nOffset,
-        int64_t perSize, int32_t curNFactor, int32_t mUbFactorNow, LocalTensor<T> &xUb);
+                                     int64_t mBlockFactorNow, int32_t nUbFactor, int64_t nowBlockEnd);
+    __aicore__ inline void MoreCopyOut(int32_t curNFactor, int32_t curNFactorBeginSplit, int32_t curNFactorEndSplit,
+                                       int64_t mOffset, int64_t nOffset, int64_t perSize, int32_t mUbFactorNow,
+                                       LocalTensor<T>& xUb);
+    __aicore__ inline void OnceCopyOut(int32_t curNFactorBeginSplit, int64_t mOffset, int64_t nOffset, int64_t perSize,
+                                       int32_t curNFactor, int32_t mUbFactorNow, LocalTensor<T>& xUb);
     __aicore__ inline void DataCopyOutGm(int32_t blockCount, int64_t blockLen, int64_t stride, int64_t ubOffset);
-    __aicore__ inline void AllCopyOut(int64_t mOffset,int64_t nOffset, int32_t &curNFactor,
-        int32_t mUbFactorNow, int64_t nowBlockEnd, LocalTensor<T> &xUb);
+    __aicore__ inline void AllCopyOut(int64_t mOffset, int64_t nOffset, int32_t& curNFactor, int32_t mUbFactorNow,
+                                      int64_t nowBlockEnd, LocalTensor<T>& xUb);
 
 private:
-    TPipe &pipe_;
+    TPipe& pipe_;
     constexpr static int32_t bufferNum = 2;
     constexpr static int64_t BLOCK_ELENUM = Ops::Base::GetUbBlockSize() / sizeof(T);
     constexpr static int64_t MAX_COPY_NUM = MAX_COPY_BYTE / sizeof(T);
-    const SplitVTilingData *tilingData_;
+    const SplitVTilingData* tilingData_;
     TQue<QuePosition::VECIN, 1> inQueueX_;
     TQue<QuePosition::VECOUT, 1> outQueueY_;
     TBuf<> splitBuf_;
@@ -90,197 +90,196 @@ private:
     int64_t curNOffset_ = 0;
     int64_t curSplitOffset_ = 0;
 
-    DataCopyPadExtParams<T> padParams = { false, 0, 0, 0 };
+    DataCopyPadExtParams<T> padParams = {false, 0, 0, 0};
 };
 
 template <typename T1, typename T2>
 __aicore__ inline void DataCopyGatherScope(int32_t vfLenU, int32_t ubSizeNum, int64_t mFactor, int64_t niSize,
-    int64_t ubStartOffset,int64_t nUbFactor, LocalTensor<T1> &srcUbSize, LocalTensor<T1> &dstUbSize, int64_t ubOffset)
+                                           int64_t ubStartOffset, int64_t nUbFactor, LocalTensor<T1>& srcUbSize,
+                                           LocalTensor<T1>& dstUbSize, int64_t ubOffset)
 {
     uint32_t size0 = vfLenU / (niSize);
     if (size0 > mFactor) {
         size0 = mFactor;
     }
     uint32_t offset = size0 * nUbFactor;
-    uint32_t num = size0*niSize;
+    uint32_t num = size0 * niSize;
     uint16_t times = (mFactor - size0) / size0;
-    uint32_t tail = (mFactor - size0 - times*size0)*niSize;
+    uint32_t tail = (mFactor - size0 - times * size0) * niSize;
     uint32_t mask1 = num;
     uint32_t mask2 = tail;
-    __ubuf__ T1 *srcPtr = (__ubuf__ T1 *)srcUbSize.GetPhyAddr();
-    __ubuf__ T1 *dstPtr = (__ubuf__ T1 *)dstUbSize.GetPhyAddr() + ubOffset;
-    __ubuf__ T1 *curDstPtr = dstPtr + num;
+    __ubuf__ T1* srcPtr = (__ubuf__ T1*)srcUbSize.GetPhyAddr();
+    __ubuf__ T1* dstPtr = (__ubuf__ T1*)dstUbSize.GetPhyAddr() + ubOffset;
+    __ubuf__ T1* curDstPtr = dstPtr + num;
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::MaskReg p0;
-        AscendC::MicroAPI::MaskReg p1;
-        AscendC::MicroAPI::RegTensor<T2> indexReg;
-        AscendC::MicroAPI::RegTensor<T1> tmp;
-        AscendC::MicroAPI::RegTensor<T1> addReg;
-        AscendC::MicroAPI::RegTensor<T1> addReg1;
-        AscendC::MicroAPI::RegTensor<T1> dstReg;
-        AscendC::MicroAPI::RegTensor<T1> tmp1;
-        AscendC::MicroAPI::RegTensor<T1> tmp2;
-        AscendC::MicroAPI::RegTensor<T1> subReg;
-        AscendC::MicroAPI::RegTensor<T1> niReg;
-        AscendC::MicroAPI::UnalignReg u0;
-        p0 = AscendC::MicroAPI::UpdateMask<T1>(mask1);
-        AscendC::MicroAPI::Duplicate(niReg, (T1)niSize, p0);
-        AscendC::MicroAPI::Arange(indexReg, 0);
-        AscendC::MicroAPI::Div(tmp, (AscendC::MicroAPI::RegTensor<T1> &)indexReg, niReg, p0);
-        AscendC::MicroAPI::Muls(tmp1, tmp, (T1)nUbFactor, p0);
-        AscendC::MicroAPI::Mul(subReg, tmp, niReg, p0);
-        AscendC::MicroAPI::Sub(tmp2, (AscendC::MicroAPI::RegTensor<T1> &)indexReg, subReg, p0);
-        AscendC::MicroAPI::Add(addReg, tmp1, tmp2, p0);
-        AscendC::MicroAPI::Adds(addReg, addReg, (T1)ubStartOffset, p0);
-        AscendC::MicroAPI::DataCopyGather(dstReg, srcPtr, addReg, p0);
-        AscendC::MicroAPI::DataCopy(dstPtr, dstReg, p0);
+        AscendC::Reg::MaskReg p0;
+        AscendC::Reg::MaskReg p1;
+        AscendC::Reg::RegTensor<T2> indexReg;
+        AscendC::Reg::RegTensor<T1> tmp;
+        AscendC::Reg::RegTensor<T1> addReg;
+        AscendC::Reg::RegTensor<T1> addReg1;
+        AscendC::Reg::RegTensor<T1> dstReg;
+        AscendC::Reg::RegTensor<T1> tmp1;
+        AscendC::Reg::RegTensor<T1> tmp2;
+        AscendC::Reg::RegTensor<T1> subReg;
+        AscendC::Reg::RegTensor<T1> niReg;
+        AscendC::Reg::UnalignReg u0;
+        p0 = AscendC::Reg::UpdateMask<T1>(mask1);
+        AscendC::Reg::Duplicate(niReg, (T1)niSize, p0);
+        AscendC::Reg::Arange(indexReg, 0);
+        AscendC::Reg::Div(tmp, (AscendC::Reg::RegTensor<T1>&)indexReg, niReg, p0);
+        AscendC::Reg::Muls(tmp1, tmp, (T1)nUbFactor, p0);
+        AscendC::Reg::Mul(subReg, tmp, niReg, p0);
+        AscendC::Reg::Sub(tmp2, (AscendC::Reg::RegTensor<T1>&)indexReg, subReg, p0);
+        AscendC::Reg::Add(addReg, tmp1, tmp2, p0);
+        AscendC::Reg::Adds(addReg, addReg, (T1)ubStartOffset, p0);
+        AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg, p0);
+        AscendC::Reg::DataCopy(dstPtr, dstReg, p0);
         for (uint16_t ii = 0; ii < times; ii++) {
-            AscendC::MicroAPI::Adds(addReg1, addReg, (T1)(offset*(ii + 1)), p0);
-            AscendC::MicroAPI::DataCopyGather(dstReg, srcPtr, addReg1, p0);
-            AscendC::MicroAPI::DataCopyUnAlign(curDstPtr, dstReg, u0, num);
-            AscendC::MicroAPI::DataCopyUnAlignPost(curDstPtr, u0, 0);
+            AscendC::Reg::Adds(addReg1, addReg, (T1)(offset * (ii + 1)), p0);
+            AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg1, p0);
+            AscendC::Reg::DataCopyUnAlign(curDstPtr, dstReg, u0, num);
+            AscendC::Reg::DataCopyUnAlignPost(curDstPtr, u0, 0);
         }
-        p1 = AscendC::MicroAPI::UpdateMask<T1>(mask2);
-        AscendC::MicroAPI::Adds(addReg1, addReg, (T1)(offset*(times + 1)), p1);
-        AscendC::MicroAPI::DataCopyGather(dstReg, srcPtr, addReg1, p1);
-        AscendC::MicroAPI::DataCopyUnAlign(curDstPtr, dstReg, u0, tail);
-        AscendC::MicroAPI::DataCopyUnAlignPost(curDstPtr, u0, 0);
+        p1 = AscendC::Reg::UpdateMask<T1>(mask2);
+        AscendC::Reg::Adds(addReg1, addReg, (T1)(offset * (times + 1)), p1);
+        AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg1, p1);
+        AscendC::Reg::DataCopyUnAlign(curDstPtr, dstReg, u0, tail);
+        AscendC::Reg::DataCopyUnAlignPost(curDstPtr, u0, 0);
     }
 }
 
 template <typename T, typename U, typename Y>
-__aicore__ inline void SplitVUbSplit<T, U, Y>::DataCopyGatherVf(int64_t mFactor, int64_t niSize,
-    int64_t ubStartOffset, int64_t nUbFactor, LocalTensor<T> &srcUbSize, int64_t ubOffset)
+__aicore__ inline void SplitVUbSplit<T, U, Y>::DataCopyGatherVf(int64_t mFactor, int64_t niSize, int64_t ubStartOffset,
+                                                                int64_t nUbFactor, LocalTensor<T>& srcUbSize,
+                                                                int64_t ubOffset)
 {
     if constexpr (sizeof(T) == sizeof(int64_t)) {
         LocalTensor<U> srcUbSizeInt32 = srcUbSize.template ReinterpretCast<U>();
         LocalTensor<U> dstUbSizeInt32 = yLocal_.template ReinterpretCast<U>();
-        DataCopyGatherScope<U, Y>(vfLenU_, ubOffset * 2, mFactor, niSize * 2,
-                                  ubStartOffset * 2, nUbFactor * 2, srcUbSizeInt32, dstUbSizeInt32, ubOffset * 2);
+        DataCopyGatherScope<U, Y>(vfLenU_, ubOffset * 2, mFactor, niSize * 2, ubStartOffset * 2, nUbFactor * 2,
+                                  srcUbSizeInt32, dstUbSizeInt32, ubOffset * 2);
     } else {
         uint32_t ubSizeNum = ubOffset;
         uint32_t size0 = vfLenU_ / niSize;
         if (size0 > mFactor) {
-           size0 = mFactor;
+            size0 = mFactor;
         }
         uint32_t offset = size0 * nUbFactor;
-        uint32_t num = size0*niSize;
+        uint32_t num = size0 * niSize;
         uint16_t times = (mFactor - size0) / size0;
-        uint32_t tail = (mFactor - size0 - times*size0)*niSize;
+        uint32_t tail = (mFactor - size0 - times * size0) * niSize;
         uint32_t mask1 = num;
         uint32_t mask2 = tail;
         if constexpr (sizeof(T) == sizeof(int8_t)) {
             ubSizeNum = ubSizeNum / 2;
         }
-        __ubuf__ T *srcPtr = (__ubuf__ T *)srcUbSize.GetPhyAddr();
-        __ubuf__ U *dstPtr = (__ubuf__ U *)yLocal_.GetPhyAddr() + ubSizeNum;
-        __ubuf__ T *curDstPtr = (__ubuf__ T *)dstPtr + num;
+        __ubuf__ T* srcPtr = (__ubuf__ T*)srcUbSize.GetPhyAddr();
+        __ubuf__ U* dstPtr = (__ubuf__ U*)yLocal_.GetPhyAddr() + ubSizeNum;
+        __ubuf__ T* curDstPtr = (__ubuf__ T*)dstPtr + num;
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::MaskReg p0;
-            AscendC::MicroAPI::MaskReg p1;
-            AscendC::MicroAPI::RegTensor<Y> indexReg;
-            AscendC::MicroAPI::RegTensor<U> tmp;
-            AscendC::MicroAPI::RegTensor<U> addReg;
-            AscendC::MicroAPI::RegTensor<U> addReg1;
-            AscendC::MicroAPI::RegTensor<U> dstReg;
-            AscendC::MicroAPI::RegTensor<U> tmp1;
-            AscendC::MicroAPI::RegTensor<U> tmp2;
-            AscendC::MicroAPI::RegTensor<U> subReg;
-            AscendC::MicroAPI::RegTensor<U> niReg;
-            AscendC::MicroAPI::RegTensor<T> dstRegO;
-            AscendC::MicroAPI::UnalignReg u0;
-            p0 = AscendC::MicroAPI::UpdateMask<U>(mask1);
-            AscendC::MicroAPI::Duplicate(niReg, (U)niSize, p0);
-            AscendC::MicroAPI::Arange(indexReg, 0);
-            AscendC::MicroAPI::Div(tmp, (AscendC::MicroAPI::RegTensor<U> &)indexReg, niReg, p0);
-            AscendC::MicroAPI::Muls(tmp1, tmp, (U)nUbFactor, p0);
-            AscendC::MicroAPI::Mul(subReg, tmp, niReg, p0);
-            AscendC::MicroAPI::Sub(tmp2, (AscendC::MicroAPI::RegTensor<U> &)indexReg, subReg, p0);
-            AscendC::MicroAPI::Add(addReg, tmp1, tmp2, p0);
-            AscendC::MicroAPI::Adds(addReg, addReg, (U)ubStartOffset, p0);
-            AscendC::MicroAPI::DataCopyGather(dstReg, srcPtr, addReg, p0);
+            AscendC::Reg::MaskReg p0;
+            AscendC::Reg::MaskReg p1;
+            AscendC::Reg::RegTensor<Y> indexReg;
+            AscendC::Reg::RegTensor<U> tmp;
+            AscendC::Reg::RegTensor<U> addReg;
+            AscendC::Reg::RegTensor<U> addReg1;
+            AscendC::Reg::RegTensor<U> dstReg;
+            AscendC::Reg::RegTensor<U> tmp1;
+            AscendC::Reg::RegTensor<U> tmp2;
+            AscendC::Reg::RegTensor<U> subReg;
+            AscendC::Reg::RegTensor<U> niReg;
+            AscendC::Reg::RegTensor<T> dstRegO;
+            AscendC::Reg::UnalignReg u0;
+            p0 = AscendC::Reg::UpdateMask<U>(mask1);
+            AscendC::Reg::Duplicate(niReg, (U)niSize, p0);
+            AscendC::Reg::Arange(indexReg, 0);
+            AscendC::Reg::Div(tmp, (AscendC::Reg::RegTensor<U>&)indexReg, niReg, p0);
+            AscendC::Reg::Muls(tmp1, tmp, (U)nUbFactor, p0);
+            AscendC::Reg::Mul(subReg, tmp, niReg, p0);
+            AscendC::Reg::Sub(tmp2, (AscendC::Reg::RegTensor<U>&)indexReg, subReg, p0);
+            AscendC::Reg::Add(addReg, tmp1, tmp2, p0);
+            AscendC::Reg::Adds(addReg, addReg, (U)ubStartOffset, p0);
+            AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg, p0);
             if constexpr (sizeof(T) == sizeof(int8_t)) {
-                AscendC::MicroAPI::DataCopy<uint16_t, AscendC::MicroAPI::StoreDist::DIST_PACK_B16>(
-                    dstPtr, dstReg, p0);
+                AscendC::Reg::DataCopy<uint16_t, AscendC::Reg::StoreDist::DIST_PACK_B16>(dstPtr, dstReg, p0);
             } else {
-                AscendC::MicroAPI::DataCopy(dstPtr, dstReg, p0);
+                AscendC::Reg::DataCopy(dstPtr, dstReg, p0);
             }
             for (uint16_t ii = 0; ii < times; ii++) {
-                AscendC::MicroAPI::Adds(addReg1, addReg, (U)(offset*(ii + 1)), p0);
-                AscendC::MicroAPI::DataCopyGather(dstReg, srcPtr, addReg1, p0);
+                AscendC::Reg::Adds(addReg1, addReg, (U)(offset * (ii + 1)), p0);
+                AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg1, p0);
                 if constexpr (sizeof(T) == sizeof(int8_t)) {
-                    AscendC::MicroAPI::Pack(dstRegO, dstReg);
-                    AscendC::MicroAPI::DataCopyUnAlign(curDstPtr, dstRegO, u0, num);
-                    AscendC::MicroAPI::DataCopyUnAlignPost(curDstPtr, u0, 0);
+                    AscendC::Reg::Pack(dstRegO, dstReg);
+                    AscendC::Reg::DataCopyUnAlign(curDstPtr, dstRegO, u0, num);
+                    AscendC::Reg::DataCopyUnAlignPost(curDstPtr, u0, 0);
                 } else {
-                    AscendC::MicroAPI::DataCopyUnAlign(curDstPtr, dstReg, u0, num);
-                    AscendC::MicroAPI::DataCopyUnAlignPost(curDstPtr, u0, 0);
+                    AscendC::Reg::DataCopyUnAlign(curDstPtr, dstReg, u0, num);
+                    AscendC::Reg::DataCopyUnAlignPost(curDstPtr, u0, 0);
                 }
             }
-            p1 = AscendC::MicroAPI::UpdateMask<U>(mask2);
-            AscendC::MicroAPI::Adds(addReg1, addReg, (U)(offset*(times + 1)), p1);
-            AscendC::MicroAPI::DataCopyGather(dstReg, srcPtr, addReg1, p1);
+            p1 = AscendC::Reg::UpdateMask<U>(mask2);
+            AscendC::Reg::Adds(addReg1, addReg, (U)(offset * (times + 1)), p1);
+            AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg1, p1);
             if constexpr (sizeof(T) == sizeof(int8_t)) {
-                AscendC::MicroAPI::Pack(dstRegO, dstReg);
-                AscendC::MicroAPI::DataCopyUnAlign(curDstPtr, dstRegO, u0, tail);
-                AscendC::MicroAPI::DataCopyUnAlignPost(curDstPtr, u0, 0);
+                AscendC::Reg::Pack(dstRegO, dstReg);
+                AscendC::Reg::DataCopyUnAlign(curDstPtr, dstRegO, u0, tail);
+                AscendC::Reg::DataCopyUnAlignPost(curDstPtr, u0, 0);
             } else {
-                AscendC::MicroAPI::DataCopyUnAlign(curDstPtr, dstReg, u0, tail);
-                AscendC::MicroAPI::DataCopyUnAlignPost(curDstPtr, u0, 0);
+                AscendC::Reg::DataCopyUnAlign(curDstPtr, dstReg, u0, tail);
+                AscendC::Reg::DataCopyUnAlignPost(curDstPtr, u0, 0);
             }
         }
     }
 }
 
 template <typename T1>
-__aicore__ inline void DataCopyScope(uint16_t size0, int64_t offset, int64_t nisize,
-    uint32_t vfLen1 ,__ubuf__ T1* srcPtr, __ubuf__ T1* dstPtr)
+__aicore__ inline void DataCopyScope(uint16_t size0, int64_t offset, int64_t nisize, uint32_t vfLen1,
+                                     __ubuf__ T1* srcPtr, __ubuf__ T1* dstPtr)
 {
     uint16_t repeatTimes = nisize / vfLen1;
-    uint32_t tail = nisize - repeatTimes*vfLen1;
+    uint32_t tail = nisize - repeatTimes * vfLen1;
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<T1> vd0;
-        AscendC::MicroAPI::UnalignReg u0;
-        AscendC::MicroAPI::UnalignReg u1;
+        AscendC::Reg::RegTensor<T1> vd0;
+        AscendC::Reg::UnalignReg u0;
+        AscendC::Reg::UnalignReg u1;
         for (uint16_t i = 0; i < size0; i++) {
             __ubuf__ T1* srcPtr1 = srcPtr + i * offset;
-            AscendC::MicroAPI::DataCopyUnAlignPre(u0, srcPtr1);
+            AscendC::Reg::DataCopyUnAlignPre(u0, srcPtr1);
             for (uint16_t j = 0; j < repeatTimes; j++) {
-                AscendC::MicroAPI::DataCopyUnAlign<T1, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vd0, u0,
-                    srcPtr1, vfLen1);
-                AscendC::MicroAPI::DataCopyUnAlign<T1, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(dstPtr, vd0,
-                    u1, vfLen1);
+                AscendC::Reg::DataCopyUnAlign<T1, AscendC::Reg::PostLiteral::POST_MODE_UPDATE>(vd0, u0, srcPtr1,
+                                                                                               vfLen1);
+                AscendC::Reg::DataCopyUnAlign<T1, AscendC::Reg::PostLiteral::POST_MODE_UPDATE>(dstPtr, vd0, u1, vfLen1);
             }
-            AscendC::MicroAPI::DataCopyUnAlign<T1, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vd0, u0,
-                srcPtr1, vfLen1);
-            AscendC::MicroAPI::DataCopyUnAlign<T1, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(dstPtr, vd0,
-                u1, tail);
-            AscendC::MicroAPI::DataCopyUnAlignPost<T1, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(dstPtr, u1, 0);
+            AscendC::Reg::DataCopyUnAlign<T1, AscendC::Reg::PostLiteral::POST_MODE_UPDATE>(vd0, u0, srcPtr1, vfLen1);
+            AscendC::Reg::DataCopyUnAlign<T1, AscendC::Reg::PostLiteral::POST_MODE_UPDATE>(dstPtr, vd0, u1, tail);
+            AscendC::Reg::DataCopyUnAlignPost<T1, AscendC::Reg::PostLiteral::POST_MODE_UPDATE>(dstPtr, u1, 0);
         }
     }
 }
 
 template <typename T, typename U, typename Y>
 __aicore__ inline void SplitVUbSplit<T, U, Y>::DataCopyVf(int64_t mFactor, int64_t niSize, int64_t ubStartOffset,
-    int64_t curNFactor, LocalTensor<T> &srcUbSize, int64_t ubOffset)
+                                                          int64_t curNFactor, LocalTensor<T>& srcUbSize,
+                                                          int64_t ubOffset)
 {
     if constexpr (sizeof(T) == sizeof(int64_t)) {
-        __ubuf__ U *srcPtr = (__ubuf__ U *)srcUbSize.GetPhyAddr() + ubStartOffset*2;
-        __ubuf__ U *dstPtr = (__ubuf__ U *)yLocal_.GetPhyAddr() + ubOffset*2;
-        int64_t offset = curNFactor*2;
-        DataCopyScope<U>((uint16_t)mFactor, offset,niSize*2, vfLenU_, srcPtr, dstPtr);
+        __ubuf__ U* srcPtr = (__ubuf__ U*)srcUbSize.GetPhyAddr() + ubStartOffset * 2;
+        __ubuf__ U* dstPtr = (__ubuf__ U*)yLocal_.GetPhyAddr() + ubOffset * 2;
+        int64_t offset = curNFactor * 2;
+        DataCopyScope<U>((uint16_t)mFactor, offset, niSize * 2, vfLenU_, srcPtr, dstPtr);
     } else {
-        __ubuf__ T *srcPtr = (__ubuf__ T *)srcUbSize.GetPhyAddr() + ubStartOffset;
-        __ubuf__ T *dstPtr = (__ubuf__ T *)yLocal_.GetPhyAddr() + ubOffset;
+        __ubuf__ T* srcPtr = (__ubuf__ T*)srcUbSize.GetPhyAddr() + ubStartOffset;
+        __ubuf__ T* dstPtr = (__ubuf__ T*)yLocal_.GetPhyAddr() + ubOffset;
         DataCopyScope<T>((uint16_t)mFactor, curNFactor, niSize, vfLen_, srcPtr, dstPtr);
     }
 }
 
 template <typename T, typename U, typename Y>
-__aicore__ inline __gm__ T *SplitVUbSplit<T, U, Y>::GetTensorAddr(int64_t index, int64_t offset)
+__aicore__ inline __gm__ T* SplitVUbSplit<T, U, Y>::GetTensorAddr(int64_t index, int64_t offset)
 {
     return inputList_.GetDataPtr<T>(index) + offset;
 }
@@ -301,7 +300,7 @@ template <typename T, typename U, typename Y>
 __aicore__ inline int64_t SplitVUbSplit<T, U, Y>::CurSplitSize(int64_t index)
 {
     int64_t tensorSize = 0;
-    if (index >=0 && index < numSplit_) {
+    if (index >= 0 && index < numSplit_) {
         tensorSize = splitOffsetLocal_.GetValue(index);
     }
 
@@ -309,7 +308,7 @@ __aicore__ inline int64_t SplitVUbSplit<T, U, Y>::CurSplitSize(int64_t index)
 }
 
 template <typename T, typename U, typename Y>
-__aicore__ inline void SplitVUbSplit<T, U, Y>::ComputeEndLine(int32_t &curNFactor, int64_t nOffset, int64_t nowBlockEnd)
+__aicore__ inline void SplitVUbSplit<T, U, Y>::ComputeEndLine(int32_t& curNFactor, int64_t nOffset, int64_t nowBlockEnd)
 {
     int64_t endLine = nOffset + nBlockOffset_ + curNFactor;
     bool isBoundary = (splitEndLine_ == curSplitOffset_ || endLine >= nowBlockEnd) ? true : false;
@@ -332,7 +331,7 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::ComputeEndLine(int32_t &curNFacto
             // 无需调整
             return;
         } else if ((endLineSuffixR >= oneUbNum_ && endLinePreL < oneUbNum_) ||
-            (endLineSuffixR < oneUbNum_ && (shengyuL <= 0 || (shengyuL > 0 && shengyuL < oneUbNum_)))) {
+                   (endLineSuffixR < oneUbNum_ && (shengyuL <= 0 || (shengyuL > 0 && shengyuL < oneUbNum_)))) {
             // 左半部分压缩为0
             curNFactor = curNFactor - endLinePreL;
             splitEndLine_ -= endLinePreL;
@@ -349,7 +348,8 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::ComputeEndLine(int32_t &curNFacto
 }
 
 template <typename T, typename U, typename Y>
-__aicore__ inline void SplitVUbSplit<T, U, Y>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR sizeSplits, const SplitVTilingData *tilingData)
+__aicore__ inline void SplitVUbSplit<T, U, Y>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR sizeSplits,
+                                                    const SplitVTilingData* tilingData)
 {
     blockIdx_ = GetBlockIdx();
     tilingData_ = tilingData;
@@ -359,23 +359,24 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::Init(GM_ADDR x, GM_ADDR y, GM_ADD
     pipe_.InitBuffer(splitBuf_, splitBufSize);
     pipe_.InitBuffer(splitBufInt32_, splitBufSizeInt32);
     if (tilingData_->isInt32 == 1) {
-        sizeSplitsGmInt32_.SetGlobalBuffer((__gm__ int32_t *)sizeSplits);
+        sizeSplitsGmInt32_.SetGlobalBuffer((__gm__ int32_t*)sizeSplits);
         splitOffsetLocalInt32_ = splitBufInt32_.template Get<int32_t>();
     } else {
-        sizeSplitsGm_.SetGlobalBuffer((__gm__ int64_t *)sizeSplits);
+        sizeSplitsGm_.SetGlobalBuffer((__gm__ int64_t*)sizeSplits);
     }
     splitOffsetLocal_ = splitBuf_.template Get<int64_t>();
-    int32_t ubSize = ((tilingData_->ubSize - splitBufSize - splitBufSizeInt32) / SPLIT_UB_NUM / ONE_BLOCK_UB) * ONE_BLOCK_UB;
+    int32_t ubSize = ((tilingData_->ubSize - splitBufSize - splitBufSizeInt32) / SPLIT_UB_NUM / ONE_BLOCK_UB) *
+                     ONE_BLOCK_UB;
     ubSizeNum_ = ubSize / sizeof(T);
     pipe_.InitBuffer(inQueueX_, bufferNum, ubSize);
     pipe_.InitBuffer(outQueueY_, bufferNum, ubSize);
-    xGm.SetGlobalBuffer((__gm__ T *)x);
-    inputList_ = ListTensorDesc(reinterpret_cast<__gm__ void *>(y));
+    xGm.SetGlobalBuffer((__gm__ T*)x);
+    inputList_ = ListTensorDesc(reinterpret_cast<__gm__ void*>(y));
 }
 
 template <typename T, typename U, typename Y>
 __aicore__ inline void SplitVUbSplit<T, U, Y>::DataCopyOutGm(int32_t blockCount, int64_t blockLen, int64_t stride,
-    int64_t ubOffset)
+                                                             int64_t ubOffset)
 {
     DataCopyExtParams copyParams;
     copyParams.blockCount = blockCount;
@@ -387,13 +388,13 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::DataCopyOutGm(int32_t blockCount,
 
 template <typename T, typename U, typename Y>
 __aicore__ inline void SplitVUbSplit<T, U, Y>::OnceCopyOut(int32_t curNFactorBeginSplit, int64_t mOffset,
-    int64_t nOffset, int64_t perSize, int32_t curNFactor, int32_t mUbFactorNow, LocalTensor<T> &xUb)
+                                                           int64_t nOffset, int64_t perSize, int32_t curNFactor,
+                                                           int32_t mUbFactorNow, LocalTensor<T>& xUb)
 {
     int64_t curNiSize = CurSplitSize(curProcessSplit_);
     int64_t curSplitNSize = curNFactor;
     int64_t stride = curNiSize - curSplitNSize;
-    int64_t startFirstOffset = (mBlockOffset_ + mOffset ) * curNiSize +
-        (nBlockOffset_ + nOffset - perSize);
+    int64_t startFirstOffset = (mBlockOffset_ + mOffset) * curNiSize + (nBlockOffset_ + nOffset - perSize);
     yGm.SetGlobalBuffer(GetTensorAddr(curProcessSplit_, startFirstOffset));
     DataCopyExtParams copyParams;
     copyParams.blockCount = mUbFactorNow;
@@ -413,24 +414,24 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::OnceCopyOut(int32_t curNFactorBeg
 
 template <typename T, typename U, typename Y>
 __aicore__ inline void SplitVUbSplit<T, U, Y>::DataCopyIn(int64_t mOffset, int64_t nOffset, int32_t curNFactor,
-    int32_t mUbFactorNow, LocalTensor<T> &xUb)
+                                                          int32_t mUbFactorNow, LocalTensor<T>& xUb)
 {
     DataCopyExtParams copyParams;
     copyParams.blockCount = mUbFactorNow;
     copyParams.blockLen = curNFactor * sizeof(T);
     copyParams.srcStride = (tilingData_->nSize - curNFactor) * sizeof(T);
     copyParams.dstStride = 0;
-    DataCopyPad(xUb,
-        xGm[(mBlockOffset_ + mOffset) * tilingData_->nSize + nBlockOffset_ + nOffset],
-        copyParams, padParams);
+    DataCopyPad(xUb, xGm[(mBlockOffset_ + mOffset) * tilingData_->nSize + nBlockOffset_ + nOffset], copyParams,
+                padParams);
 }
 
 template <typename T, typename U, typename Y>
-__aicore__ inline void SplitVUbSplit<T, U, Y>::AllCopyOut(int64_t mOffset, int64_t nOffset, int32_t &curNFactor,
-    int32_t mUbFactorNow, int64_t nowBlockEnd, LocalTensor<T> &xUb)
+__aicore__ inline void SplitVUbSplit<T, U, Y>::AllCopyOut(int64_t mOffset, int64_t nOffset, int32_t& curNFactor,
+                                                          int32_t mUbFactorNow, int64_t nowBlockEnd,
+                                                          LocalTensor<T>& xUb)
 {
-    splitEndLine_ = (nOffset + nBlockOffset_ + curNFactor) > nowBlockEnd ?
-                    nowBlockEnd : (nOffset + nBlockOffset_ + curNFactor);
+    splitEndLine_ = (nOffset + nBlockOffset_ + curNFactor) > nowBlockEnd ? nowBlockEnd :
+                                                                           (nOffset + nBlockOffset_ + curNFactor);
     int64_t splitStartOffset = nOffset + nBlockOffset_;
     int64_t preSize = 0;
     int64_t curSplitNSize = 0;
@@ -525,7 +526,8 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::AllCopyOut(int64_t mOffset, int64
 
 template <typename T, typename U, typename Y>
 __aicore__ inline void SplitVUbSplit<T, U, Y>::UbProcess(int32_t mTimes, int32_t mUbFactor, int64_t nBlockFactorNow,
-    int64_t mBlockFactorNow, int32_t nUbFactor, int64_t nowBlockEnd)
+                                                         int64_t mBlockFactorNow, int32_t nUbFactor,
+                                                         int64_t nowBlockEnd)
 {
     for (int32_t m = 0; m < mTimes; m++) {
         int32_t mUbFactorNow = mUbFactor;
@@ -549,7 +551,7 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::UbProcess(int32_t mTimes, int32_t
             }
             LocalTensor<T> xUb = inQueueX_.AllocTensor<T>();
             yLocal_ = outQueueY_.AllocTensor<T>();
-            int64_t mOffset = m *mUbFactor;
+            int64_t mOffset = m * mUbFactor;
             DataCopyIn(mOffset, nOffset, curNFactor, mUbFactorNow, xUb);
             inQueueX_.EnQue(xUb);
             LocalTensor<T> xUbSize = inQueueX_.DeQue<T>();
@@ -558,7 +560,8 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::UbProcess(int32_t mTimes, int32_t
     }
 }
 
-template <typename T, typename U, typename Y> __aicore__ inline void SplitVUbSplit<T, U, Y>::Process()
+template <typename T, typename U, typename Y>
+__aicore__ inline void SplitVUbSplit<T, U, Y>::Process()
 {
     if (blockIdx_ >= tilingData_->realCoreNum) {
         return;
@@ -575,8 +578,8 @@ template <typename T, typename U, typename Y> __aicore__ inline void SplitVUbSpl
         SetFlag<HardEvent::MTE2_V>(eventID);
         WaitFlag<HardEvent::MTE2_V>(eventID);
         AscendC::Cast(splitOffsetLocal_, splitOffsetLocalInt32_, RoundMode::CAST_NONE, numSplit_);
-        AscendC::Muls(
-            splitOffsetLocal_, splitOffsetLocal_, static_cast<int32_t>(tilingData_->sizeAfterSplitDim), numSplit_);
+        AscendC::Muls(splitOffsetLocal_, splitOffsetLocal_, static_cast<int32_t>(tilingData_->sizeAfterSplitDim),
+                      numSplit_);
     } else {
         DataCopyExtParams copyParams;
         DataCopyPadExtParams<int64_t> padParamsIdx = {false, 0, 0, 0};
@@ -607,14 +610,14 @@ template <typename T, typename U, typename Y> __aicore__ inline void SplitVUbSpl
         nBlockOffset_ = nblock * tilingData_->nBlockFactor;
     } else {
         nBlockOffset_ = tilingData_->nBlockFactorNum * tilingData_->nBlockFactor +
-            (nblock - tilingData_->nBlockFactorNum) * tilingData_->nBlockFactorTail;
+                        (nblock - tilingData_->nBlockFactorNum) * tilingData_->nBlockFactorTail;
     }
 
     if (mblock <= tilingData_->mBlockFactorNum) {
         mBlockOffset_ = mblock * tilingData_->mBlockFactor;
     } else {
         mBlockOffset_ = tilingData_->mBlockFactorNum * tilingData_->mBlockFactor +
-            (mblock - tilingData_->mBlockFactorNum) * tilingData_->mBlockFactorTail;
+                        (mblock - tilingData_->mBlockFactorNum) * tilingData_->mBlockFactorTail;
     }
     int32_t mUbFactor = tilingData_->mBlockFactor > oneUbNum_ ? oneUbNum_ : tilingData_->mBlockFactor;
     if (tilingData_->gSize > HUGE_NUM_SPLIT && tilingData_->mSize >= MORE_M) {
@@ -647,5 +650,5 @@ template <typename T, typename U, typename Y> __aicore__ inline void SplitVUbSpl
     int64_t nowBlockEnd = nBlockOffset_ + nBlockFactorNow;
     UbProcess(mTimes, mUbFactor, nBlockFactorNow, mBlockFactorNow, nUbFactor, nowBlockEnd);
 }
-}
+} // namespace SplitV
 #endif // namespace SplitV

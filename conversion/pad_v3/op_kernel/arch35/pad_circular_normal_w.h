@@ -302,25 +302,24 @@ public:
 
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg endMask;
+            Reg::MaskReg endMask;
             uint32_t endLen = padBLNum;
-            endMask = AscendC::MicroAPI::UpdateMask<T>(endLen);
-            AscendC::MicroAPI::RegTensor<T> vRegTmp;
-            AscendC::MicroAPI::UnalignReg uReg;
-            AscendC::MicroAPI::MaskReg
-                maskAll = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL>();
+            endMask = AscendC::Reg::UpdateMask<T>(endLen);
+            AscendC::Reg::RegTensor<T> vRegTmp;
+            AscendC::Reg::UnalignReg uReg;
+            AscendC::Reg::MaskReg maskAll = AscendC::Reg::CreateMask<T, AscendC::Reg::MaskPattern::ALL>();
 
             for (uint16_t i = 0; i < padVLNum; i++) {
                 __ubuf__ T* Addr6 = srcAddr + InOffset + i * VL_ELEMS;
-                AscendC::MicroAPI::DataCopyUnAlignPre(uReg, Addr6);
-                AscendC::MicroAPI::DataCopyUnAlign(vRegTmp, uReg, Addr6);
-                AscendC::MicroAPI::DataCopy(dstAddr + i * VL_ELEMS, vRegTmp, maskAll);
+                AscendC::Reg::DataCopyUnAlignPre(uReg, Addr6);
+                AscendC::Reg::DataCopyUnAlign(vRegTmp, uReg, Addr6);
+                AscendC::Reg::DataCopy(dstAddr + i * VL_ELEMS, vRegTmp, maskAll);
             }
             for (uint16_t i = 0; i < BLNum; i++) {
                 __ubuf__ T* Addr7 = srcAddr + InOffset + padVLNum * VL_ELEMS;
-                AscendC::MicroAPI::DataCopyUnAlignPre(uReg, Addr7);
-                AscendC::MicroAPI::DataCopyUnAlign(vRegTmp, uReg, Addr7);
-                AscendC::MicroAPI::DataCopy(dstAddr + padVLNum * VL_ELEMS, vRegTmp, endMask);
+                AscendC::Reg::DataCopyUnAlignPre(uReg, Addr7);
+                AscendC::Reg::DataCopyUnAlign(vRegTmp, uReg, Addr7);
+                AscendC::Reg::DataCopy(dstAddr + padVLNum * VL_ELEMS, vRegTmp, endMask);
             }
         }
     }
@@ -353,12 +352,11 @@ public:
 
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::MaskReg lMask;
+            AscendC::Reg::MaskReg lMask;
             uint32_t nolPadLen = VL_ELEMS - padBLNum;
-            AscendC::MicroAPI::MaskReg
-                maskAll = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL>();
-            lMask = AscendC::MicroAPI::UpdateMask<T>(nolPadLen);
-            AscendC::MicroAPI::MaskNot(lMask, lMask, maskAll);
+            AscendC::Reg::MaskReg maskAll = AscendC::Reg::CreateMask<T, AscendC::Reg::MaskPattern::ALL>();
+            lMask = AscendC::Reg::UpdateMask<T>(nolPadLen);
+            AscendC::Reg::MaskNot(lMask, lMask, maskAll);
 
             if constexpr (UB_AXES == CONST2) {
                 for (uint16_t h = 0; h < dimHNum; h++) {
@@ -385,27 +383,25 @@ public:
     }
 
     __aicore__ inline void PadLeftSideOne(__local_mem__ T* srcAddr, uint32_t firstOffset, uint32_t InOffset,
-                                          uint16_t padVLNum, uint16_t padBLNum, uint16_t BLNum,
-                                          MicroAPI::MaskReg endMask)
+                                          uint16_t padVLNum, uint16_t padBLNum, uint16_t BLNum, Reg::MaskReg endMask)
     {
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<T> vRegTmp;
-            AscendC::MicroAPI::UnalignReg uReg;
-            AscendC::MicroAPI::MaskReg
-                maskAll = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL>();
+            AscendC::Reg::RegTensor<T> vRegTmp;
+            AscendC::Reg::UnalignReg uReg;
+            AscendC::Reg::MaskReg maskAll = AscendC::Reg::CreateMask<T, AscendC::Reg::MaskPattern::ALL>();
 
             for (uint16_t i = 0; i < padVLNum; i++) {
                 __ubuf__ T* Addr0 = srcAddr + firstOffset + InOffset + padBLNum + i * VL_ELEMS;
-                AscendC::MicroAPI::DataCopyUnAlignPre(uReg, Addr0);
-                AscendC::MicroAPI::DataCopyUnAlign(vRegTmp, uReg, Addr0);
-                AscendC::MicroAPI::DataCopy(srcAddr + firstOffset - (padVLNum - i) * VL_ELEMS, vRegTmp, maskAll);
+                AscendC::Reg::DataCopyUnAlignPre(uReg, Addr0);
+                AscendC::Reg::DataCopyUnAlign(vRegTmp, uReg, Addr0);
+                AscendC::Reg::DataCopy(srcAddr + firstOffset - (padVLNum - i) * VL_ELEMS, vRegTmp, maskAll);
             }
             for (uint16_t i = 0; i < BLNum; i++) {
                 __ubuf__ T* Addr2 = srcAddr + firstOffset + InOffset + padBLNum - VL_ELEMS;
-                AscendC::MicroAPI::DataCopyUnAlignPre(uReg, Addr2);
-                AscendC::MicroAPI::DataCopyUnAlign(vRegTmp, uReg, Addr2);
-                AscendC::MicroAPI::DataCopy(srcAddr + firstOffset - (padVLNum + 1) * VL_ELEMS, vRegTmp, endMask);
+                AscendC::Reg::DataCopyUnAlignPre(uReg, Addr2);
+                AscendC::Reg::DataCopyUnAlign(vRegTmp, uReg, Addr2);
+                AscendC::Reg::DataCopy(srcAddr + firstOffset - (padVLNum + 1) * VL_ELEMS, vRegTmp, endMask);
             }
         }
     }
@@ -460,22 +456,22 @@ public:
     {
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<T> vRegTmp;
-            AscendC::MicroAPI::UnalignReg uReg;
+            AscendC::Reg::RegTensor<T> vRegTmp;
+            AscendC::Reg::UnalignReg uReg;
             uint32_t padLen = padBLNum;
             uint32_t allLen = VL_ELEMS;
 
             for (uint16_t i = 0; i < padVLNum; i++) {
                 __ubuf__ T* Addr3 = srcAddr + firstOffset + OutOffset + i * VL_ELEMS;
-                AscendC::MicroAPI::DataCopy(vRegTmp, srcAddr + firstOffset + i * VL_ELEMS);
-                AscendC::MicroAPI::DataCopyUnAlign(Addr3, vRegTmp, uReg, allLen);
-                AscendC::MicroAPI::DataCopyUnAlignPost(Addr3, uReg, 0);
+                AscendC::Reg::DataCopy(vRegTmp, srcAddr + firstOffset + i * VL_ELEMS);
+                AscendC::Reg::DataCopyUnAlign(Addr3, vRegTmp, uReg, allLen);
+                AscendC::Reg::DataCopyUnAlignPost(Addr3, uReg, 0);
             }
             for (uint16_t i = 0; i < BLNum; i++) {
                 __ubuf__ T* Addr4 = srcAddr + firstOffset + OutOffset + padVLNum * VL_ELEMS;
-                AscendC::MicroAPI::DataCopy(vRegTmp, srcAddr + firstOffset + padVLNum * VL_ELEMS);
-                AscendC::MicroAPI::DataCopyUnAlign(Addr4, vRegTmp, uReg, padLen);
-                AscendC::MicroAPI::DataCopyUnAlignPost(Addr4, uReg, 0);
+                AscendC::Reg::DataCopy(vRegTmp, srcAddr + firstOffset + padVLNum * VL_ELEMS);
+                AscendC::Reg::DataCopyUnAlign(Addr4, vRegTmp, uReg, padLen);
+                AscendC::Reg::DataCopyUnAlignPost(Addr4, uReg, 0);
             }
         }
     }
@@ -508,24 +504,23 @@ public:
 
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::MaskReg endMask;
-            AscendC::MicroAPI::RegTensor<T> vRegTmp;
+            AscendC::Reg::MaskReg endMask;
+            AscendC::Reg::RegTensor<T> vRegTmp;
             uint32_t PadLen = padBLNum;
-            AscendC::MicroAPI::MaskReg
-                maskAll = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL>();
-            endMask = AscendC::MicroAPI::UpdateMask<T>(PadLen);
+            AscendC::Reg::MaskReg maskAll = AscendC::Reg::CreateMask<T, AscendC::Reg::MaskPattern::ALL>();
+            endMask = AscendC::Reg::UpdateMask<T>(PadLen);
 
             for (uint16_t n = 0; n < dimNNum; n++) {
                 for (uint16_t c = 0; c < dimCNum; c++) {
                     uint32_t tempOffset = startOffset + c * padHW + n * padCHW;
                     for (uint16_t i = 0; i < padVLNum; i++) {
-                        AscendC::MicroAPI::DataCopy(vRegTmp, dstAddr + tempOffset + InOffset + i * VL_ELEMS);
-                        AscendC::MicroAPI::DataCopy(dstAddr + tempOffset + OutOffset + i * VL_ELEMS, vRegTmp, maskAll);
+                        AscendC::Reg::DataCopy(vRegTmp, dstAddr + tempOffset + InOffset + i * VL_ELEMS);
+                        AscendC::Reg::DataCopy(dstAddr + tempOffset + OutOffset + i * VL_ELEMS, vRegTmp, maskAll);
                     }
                     for (uint16_t i = 0; i < BLNum; i++) {
-                        AscendC::MicroAPI::DataCopy(vRegTmp, dstAddr + tempOffset + InOffset + padVLNum * VL_ELEMS);
-                        AscendC::MicroAPI::DataCopy(dstAddr + tempOffset + OutOffset + padVLNum * VL_ELEMS, vRegTmp,
-                                                    endMask);
+                        AscendC::Reg::DataCopy(vRegTmp, dstAddr + tempOffset + InOffset + padVLNum * VL_ELEMS);
+                        AscendC::Reg::DataCopy(dstAddr + tempOffset + OutOffset + padVLNum * VL_ELEMS, vRegTmp,
+                                               endMask);
                     }
                 }
             }

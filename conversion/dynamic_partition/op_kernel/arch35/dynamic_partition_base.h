@@ -22,22 +22,20 @@
 #include "kernel_operator.h"
 #include "kernel_operator_list_tensor_intf.h"
 
-namespace DynPart
-{
+namespace DynPart {
 using namespace AscendC;
-using AscendC::MicroAPI::CreateMask;
-using AscendC::MicroAPI::MaskReg;
-using AscendC::MicroAPI::RegTensor;
-using AscendC::MicroAPI::UpdateMask;
+using AscendC::Reg::CreateMask;
+using AscendC::Reg::MaskReg;
+using AscendC::Reg::RegTensor;
+using AscendC::Reg::UpdateMask;
 
 constexpr uint32_t BLOCK_SIZE = 32;
 constexpr uint32_t NUM_TWO = 2;
-constexpr uint32_t SHAPE_GAP = 9;  // dim size + 8 dims
+constexpr uint32_t SHAPE_GAP = 9; // dim size + 8 dims
 constexpr uint32_t MAX_BUFFER_NUM = 8;
 
 template <typename T>
-class DynPartBase
-{
+class DynPartBase {
 public:
     __aicore__ inline DynPartBase(){};
 
@@ -129,12 +127,11 @@ template <typename T>
 __aicore__ inline void DynPartBase<T>::InitProcessBuffer()
 {
     uint32_t xUBSize = 1;
-    if (tdPtr_->tilingKey == TILING_H_MC_UB_CAN_HOLD_SPLIT_W ||
-        tdPtr_->tilingKey == TILING_W_MC_UB_CAN_HOLD_SPLIT_W) {
-        xUBSize = static_cast<uint32_t>(tdPtr_->hLpUnit * Ops::Base::CeilAlign(tdPtr_->wLpUnit, int64_t(elePerBlock_)) * sizeof(T));
-    }
-    else if (tdPtr_->tilingKey == TILING_H_MC_UB_CANNOT_HOLD_SPLIT_W ||
-        tdPtr_->tilingKey == TILING_W_MC_UB_CANNOT_HOLD_SPLIT_W || tdPtr_->tilingKey == TILING_XP_SCALAR) {
+    if (tdPtr_->tilingKey == TILING_H_MC_UB_CAN_HOLD_SPLIT_W || tdPtr_->tilingKey == TILING_W_MC_UB_CAN_HOLD_SPLIT_W) {
+        xUBSize = static_cast<uint32_t>(tdPtr_->hLpUnit * Ops::Base::CeilAlign(tdPtr_->wLpUnit, int64_t(elePerBlock_)) *
+                                        sizeof(T));
+    } else if (tdPtr_->tilingKey == TILING_H_MC_UB_CANNOT_HOLD_SPLIT_W ||
+               tdPtr_->tilingKey == TILING_W_MC_UB_CANNOT_HOLD_SPLIT_W || tdPtr_->tilingKey == TILING_XP_SCALAR) {
         xUBSize = static_cast<uint32_t>(Ops::Base::CeilAlign(tdPtr_->wLpUnit, int64_t(elePerBlock_)) * sizeof(T));
     }
     bufPoolProcess_.InitBuffer(xInQue_, NUM_TWO, xUBSize);
@@ -186,12 +183,12 @@ __aicore__ inline void DynPartBase<T>::RefreshOutputShapes(LocalTensor<uint64_t>
         __VEC_SCOPE__
         {
             RegTensor<uint64_t> shapeInfo;
-            MicroAPI::UnalignReg ureg;
-            MicroAPI::DataCopy(shapeInfo, ptrFirstShape);
+            Reg::UnalignReg ureg;
+            Reg::DataCopy(shapeInfo, ptrFirstShape);
             for (uint16_t j = 0; j < lpCnt; ++j) {
-                MicroAPI::DataCopyUnAlign(ptrSecondShape, shapeInfo, ureg, SHAPE_GAP);
+                Reg::DataCopyUnAlign(ptrSecondShape, shapeInfo, ureg, SHAPE_GAP);
             }
-            MicroAPI::DataCopyUnAlignPost(ptrSecondShape, ureg);
+            Reg::DataCopyUnAlignPost(ptrSecondShape, ureg);
         }
         InsertSync(HardEvent::V_S);
     }
@@ -280,26 +277,26 @@ __aicore__ inline void DynPartBase<T>::MultiplePartCopyOutX(LocalTensor<uint64_t
             RegTensor<int32_t> partIn;
             RegTensor<int32_t> partMid;
             RegTensor<int32_t> alphaIdx;
-            MicroAPI::Arange(alphaIdx, int32_t(0));
-            MicroAPI::UnalignReg ureg;
+            Reg::Arange(alphaIdx, int32_t(0));
+            Reg::UnalignReg ureg;
             MaskReg validMask;
             MaskReg cmpMask;
-            MicroAPI::ClearSpr<SpecialPurposeReg::AR>();
+            Reg::ClearSpr<SpecialPurposeReg::AR>();
             for (uint16_t partLpIdx = 0; partLpIdx < partLpCnt; ++partLpIdx) {
                 validMask = UpdateMask<int32_t>(partSize);
-                MicroAPI::DataCopy<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(partIn, ptrPartIn, int32VL);
-                MicroAPI::CompareScalar(cmpMask, partIn, partID, validMask);
-                MicroAPI::GatherMask<int32_t, MicroAPI::GatherMaskMode::STORE_REG>(partMid, alphaIdx, cmpMask);
-                MicroAPI::DataCopyUnAlign<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(ptrPartMid, partMid, ureg);
-                MicroAPI::Adds(alphaIdx, alphaIdx, int32VL, validMask);
+                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(partIn, ptrPartIn, int32VL);
+                Reg::CompareScalar(cmpMask, partIn, partID, validMask);
+                Reg::GatherMask<int32_t, Reg::GatherMaskMode::STORE_REG>(partMid, alphaIdx, cmpMask);
+                Reg::DataCopyUnAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(ptrPartMid, partMid, ureg);
+                Reg::Adds(alphaIdx, alphaIdx, int32VL, validMask);
             }
-            MicroAPI::DataCopyUnAlignPost(ptrPartMid, ureg);
+            Reg::DataCopyUnAlignPost(ptrPartMid, ureg);
         }
 
-        uint32_t vPartCnt = static_cast<uint32_t>(MicroAPI::GetSpr<SpecialPurposeReg::AR>() / sizeof(int32_t));
+        uint32_t vPartCnt = static_cast<uint32_t>(Reg::GetSpr<SpecialPurposeReg::AR>() / sizeof(int32_t));
         if (vPartCnt > 0) {
-            uint32_t wLen =
-                static_cast<uint32_t>((blockIdx_ != tdPtr_->usedCoreCnt - 1) ? tdPtr_->wMSize : tdPtr_->wTSize);
+            uint32_t wLen = static_cast<uint32_t>((blockIdx_ != tdPtr_->usedCoreCnt - 1) ? tdPtr_->wMSize :
+                                                                                           tdPtr_->wTSize);
             uint32_t wAlign = Ops::Base::CeilAlign(wLen, elePerBlock_);
             uint16_t wLpCnt = Ops::Base::CeilDiv(wLen, vlSize_);
             for (uint32_t vPIdx = 0; vPIdx < vPartCnt; ++vPIdx) {
@@ -311,8 +308,8 @@ __aicore__ inline void DynPartBase<T>::MultiplePartCopyOutX(LocalTensor<uint64_t
                     MaskReg mask;
                     for (uint16_t wLpIdx = 0; wLpIdx < wLpCnt; ++wLpIdx) {
                         mask = UpdateMask<T>(wSize);
-                        MicroAPI::DataCopy(xReg, ptrXIn + curWIdx * wAlign + wLpIdx * vlSize_);
-                        MicroAPI::DataCopy(ptrXOut + vPIdx * wAlign + wLpIdx * vlSize_, xReg, mask);
+                        Reg::DataCopy(xReg, ptrXIn + curWIdx * wAlign + wLpIdx * vlSize_);
+                        Reg::DataCopy(ptrXOut + vPIdx * wAlign + wLpIdx * vlSize_, xReg, mask);
                     }
                 }
             }
@@ -513,6 +510,6 @@ __aicore__ inline void DynPartBase<T>::InsertSync(const HardEvent& event)
     }
 }
 
-}  // namespace DynPart
+} // namespace DynPart
 
-#endif  // OP_KERNEL_DYNAMIC_PARTITION_BASE_H_
+#endif // OP_KERNEL_DYNAMIC_PARTITION_BASE_H_

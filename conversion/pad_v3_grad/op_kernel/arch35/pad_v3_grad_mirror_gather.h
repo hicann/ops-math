@@ -576,27 +576,27 @@ __aicore__ inline void PadV3GradGather<T, modeName>::CastToPromote(__local_mem__
         uint16_t loops = (count + vlCount - 1) / vlCount;
         for (uint16_t i = 0; i < loops; i++) {
             uint32_t offset = i * vlCount;
-            AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<PromoteDataT>(sregCount);
+            AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<PromoteDataT>(sregCount);
 
-            AscendC::MicroAPI::RegTensor<PromoteDataT> newReg;
+            AscendC::Reg::RegTensor<PromoteDataT> newReg;
             if constexpr (IsSameType<PromoteDataT, T>::value) {
-                AscendC::MicroAPI::DataCopy(newReg, srcAddr + offset);
+                AscendC::Reg::DataCopy(newReg, srcAddr + offset);
             } else {
-                AscendC::MicroAPI::RegTensor<T> srcReg;
-                AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::LoadDist::DIST_UNPACK_B16>(srcReg, srcAddr + offset);
-                AscendC::MicroAPI::Cast<PromoteDataT, T, CAST_TRAIT_0>(newReg, srcReg, mask);
+                AscendC::Reg::RegTensor<T> srcReg;
+                AscendC::Reg::DataCopy<T, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(srcReg, srcAddr + offset);
+                AscendC::Reg::Cast<PromoteDataT, T, CAST_TRAIT_0>(newReg, srcReg, mask);
             }
 
             if (addMode) {
-                AscendC::MicroAPI::RegTensor<PromoteDataT> existReg;
-                AscendC::MicroAPI::DataCopy(existReg, dstAddr + offset);
-                AscendC::MicroAPI::RegTensor<PromoteDataT> resultReg;
+                AscendC::Reg::RegTensor<PromoteDataT> existReg;
+                AscendC::Reg::DataCopy(existReg, dstAddr + offset);
+                AscendC::Reg::RegTensor<PromoteDataT> resultReg;
 
-                AscendC::MicroAPI::Add(resultReg, existReg, newReg, mask);
+                AscendC::Reg::Add(resultReg, existReg, newReg, mask);
 
-                AscendC::MicroAPI::DataCopy(dstAddr + offset, resultReg, mask);
+                AscendC::Reg::DataCopy(dstAddr + offset, resultReg, mask);
             } else {
-                AscendC::MicroAPI::DataCopy(dstAddr + offset, newReg, mask);
+                AscendC::Reg::DataCopy(dstAddr + offset, newReg, mask);
             }
         }
     }
@@ -864,18 +864,18 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GatherAddStore(__local_mem_
 
         for (uint16_t i = 0; i < static_cast<uint16_t>(loops - 1); i++) {
             uint32_t offset = i * vlCount;
-            AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<GatherIdxType>(sregCurElements);
-            AscendC::MicroAPI::RegTensor<GatherIdxType> idxReg;
-            AscendC::MicroAPI::DataCopy(idxReg, idxAddrU + offset);
+            AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherIdxType>(sregCurElements);
+            AscendC::Reg::RegTensor<GatherIdxType> idxReg;
+            AscendC::Reg::DataCopy(idxReg, idxAddrU + offset);
 
-            AscendC::MicroAPI::RegTensor<PromoteDataT> gatherReg;
-            AscendC::MicroAPI::DataCopyGather(gatherReg, srcAddr, idxReg, mask);
+            AscendC::Reg::RegTensor<PromoteDataT> gatherReg;
+            AscendC::Reg::DataCopyGather(gatherReg, srcAddr, idxReg, mask);
 
-            AscendC::MicroAPI::RegTensor<PromoteDataT> dstReg;
+            AscendC::Reg::RegTensor<PromoteDataT> dstReg;
             AscendC::Reg::LoadUnAlign(dstReg, uSrc, dstAddr, vlCount);
 
-            AscendC::MicroAPI::RegTensor<PromoteDataT> resultReg;
-            AscendC::MicroAPI::Add(resultReg, dstReg, gatherReg, mask);
+            AscendC::Reg::RegTensor<PromoteDataT> resultReg;
+            AscendC::Reg::Add(resultReg, dstReg, gatherReg, mask);
 
             AscendC::Reg::StoreUnAlign(copyOutDstAddr, resultReg, uDst, vlCount);
         }
@@ -884,19 +884,19 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GatherAddStore(__local_mem_
         uint32_t offset = (loops - 1) * vlCount;
         uint32_t tempLastElements = lastElemets;
 
-        AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<GatherIdxType>(lastElemets);
+        AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherIdxType>(lastElemets);
 
-        AscendC::MicroAPI::RegTensor<GatherIdxType> idxReg;
-        AscendC::MicroAPI::DataCopy(idxReg, idxAddrU + offset);
+        AscendC::Reg::RegTensor<GatherIdxType> idxReg;
+        AscendC::Reg::DataCopy(idxReg, idxAddrU + offset);
 
-        AscendC::MicroAPI::RegTensor<PromoteDataT> gatherReg;
-        AscendC::MicroAPI::DataCopyGather(gatherReg, srcAddr, idxReg, mask);
+        AscendC::Reg::RegTensor<PromoteDataT> gatherReg;
+        AscendC::Reg::DataCopyGather(gatherReg, srcAddr, idxReg, mask);
 
-        AscendC::MicroAPI::RegTensor<PromoteDataT> dstReg;
+        AscendC::Reg::RegTensor<PromoteDataT> dstReg;
         AscendC::Reg::LoadUnAlign(dstReg, uSrc, dstAddr, tempLastElements);
 
-        AscendC::MicroAPI::RegTensor<PromoteDataT> resultReg;
-        AscendC::MicroAPI::Add(resultReg, dstReg, gatherReg, mask);
+        AscendC::Reg::RegTensor<PromoteDataT> resultReg;
+        AscendC::Reg::Add(resultReg, dstReg, gatherReg, mask);
 
         AscendC::Reg::StoreUnAlign(copyOutDstAddr, resultReg, uDst, tempLastElements);
 
@@ -935,24 +935,24 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GatherAddScatter(__local_me
             uint64_t remaining = curElements - offset;
             uint32_t curCount = static_cast<uint32_t>(Std::min(vlCount, remaining));
 
-            AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<PromoteDataT>(curCount);
+            AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<PromoteDataT>(curCount);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> srcIdxReg;
-            AscendC::MicroAPI::DataCopy(srcIdxReg, srcIdxAddrU + offset);
+            AscendC::Reg::RegTensor<GatherIdxType> srcIdxReg;
+            AscendC::Reg::DataCopy(srcIdxReg, srcIdxAddrU + offset);
 
-            AscendC::MicroAPI::RegTensor<PromoteDataT> srcDataReg;
-            AscendC::MicroAPI::DataCopyGather(srcDataReg, dataAddr, srcIdxReg, mask);
+            AscendC::Reg::RegTensor<PromoteDataT> srcDataReg;
+            AscendC::Reg::DataCopyGather(srcDataReg, dataAddr, srcIdxReg, mask);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> dstIdxReg;
-            AscendC::MicroAPI::DataCopy(dstIdxReg, dstIdxAddrU + offset);
+            AscendC::Reg::RegTensor<GatherIdxType> dstIdxReg;
+            AscendC::Reg::DataCopy(dstIdxReg, dstIdxAddrU + offset);
 
-            AscendC::MicroAPI::RegTensor<PromoteDataT> dstDataReg;
-            AscendC::MicroAPI::DataCopyGather(dstDataReg, dataAddr, dstIdxReg, mask);
+            AscendC::Reg::RegTensor<PromoteDataT> dstDataReg;
+            AscendC::Reg::DataCopyGather(dstDataReg, dataAddr, dstIdxReg, mask);
 
-            AscendC::MicroAPI::RegTensor<PromoteDataT> resultReg;
-            AscendC::MicroAPI::Add(resultReg, srcDataReg, dstDataReg, mask);
+            AscendC::Reg::RegTensor<PromoteDataT> resultReg;
+            AscendC::Reg::Add(resultReg, srcDataReg, dstDataReg, mask);
 
-            AscendC::MicroAPI::DataCopyScatter(dataAddr, resultReg, dstIdxReg, mask);
+            AscendC::Reg::DataCopyScatter(dataAddr, resultReg, dstIdxReg, mask);
         }
     }
 }
@@ -1062,11 +1062,11 @@ __aicore__ inline void PadV3GradGather<T, modeName>::ProcessUbAxisPad(int64_t* p
             {
                 uint32_t idxLen = static_cast<uint32_t>(rowsPerBatch * width);
                 int32_t idxStart = static_cast<int32_t>(srcPadRow * innerSize_);
-                AscendC::MicroAPI::RegTensor<GatherRangeType> leftIdxReg;
-                AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<GatherRangeType>(idxLen);
+                AscendC::Reg::RegTensor<GatherRangeType> leftIdxReg;
+                AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherRangeType>(idxLen);
 
-                AscendC::MicroAPI::Arange(leftIdxReg, idxStart);
-                AscendC::MicroAPI::DataCopy(idxAddr, leftIdxReg, mask);
+                AscendC::Reg::Arange(leftIdxReg, idxStart);
+                AscendC::Reg::DataCopy(idxAddr, leftIdxReg, mask);
             }
 
             for (int64_t hStart = 0; hStart < heightPerInner; hStart += rowsPerBatch) {
@@ -1164,11 +1164,11 @@ __aicore__ inline void PadV3GradGather<T, modeName>::ProcessUbAxisPad(int64_t* p
             {
                 uint32_t idxLen = static_cast<uint32_t>(rowsPerBatch * width);
                 int32_t idxStart = static_cast<int32_t>(srcPadRow * innerSize_);
-                AscendC::MicroAPI::RegTensor<GatherRangeType> rightIdxReg;
-                AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<GatherRangeType>(idxLen);
+                AscendC::Reg::RegTensor<GatherRangeType> rightIdxReg;
+                AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherRangeType>(idxLen);
 
-                AscendC::MicroAPI::Arange(rightIdxReg, idxStart);
-                AscendC::MicroAPI::DataCopy(idxAddr, rightIdxReg, mask);
+                AscendC::Reg::Arange(rightIdxReg, idxStart);
+                AscendC::Reg::DataCopy(idxAddr, rightIdxReg, mask);
             }
 
             for (int64_t hStart = 0; hStart < heightPerInner; hStart += rowsPerBatch) {
@@ -1316,76 +1316,76 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxis(int64_t factor, i
         __local_mem__ PromoteDataT* tempOutputAddr = outputAddr;
 
         // 加载索引到 RegTensor（只加载一次）
-        AscendC::MicroAPI::RegTensor<GatherIdxType> midIdxReg;
-        AscendC::MicroAPI::DataCopy(midIdxReg, midIdxAddrU);
+        AscendC::Reg::RegTensor<GatherIdxType> midIdxReg;
+        AscendC::Reg::DataCopy(midIdxReg, midIdxAddrU);
 
-        AscendC::MicroAPI::RegTensor<GatherIdxType> leftIdxReg;
-        AscendC::MicroAPI::DataCopy(leftIdxReg, leftIdxAddrU);
+        AscendC::Reg::RegTensor<GatherIdxType> leftIdxReg;
+        AscendC::Reg::DataCopy(leftIdxReg, leftIdxAddrU);
 
-        AscendC::MicroAPI::RegTensor<GatherIdxType> rightIdxReg;
-        AscendC::MicroAPI::DataCopy(rightIdxReg, rightIdxAddrU);
+        AscendC::Reg::RegTensor<GatherIdxType> rightIdxReg;
+        AscendC::Reg::DataCopy(rightIdxReg, rightIdxAddrU);
 
         // 加载偏移到 RegTensor
-        AscendC::MicroAPI::RegTensor<GatherIdxType> midOffsetReg;
-        AscendC::MicroAPI::DataCopy(midOffsetReg, midOffsetAddrU);
+        AscendC::Reg::RegTensor<GatherIdxType> midOffsetReg;
+        AscendC::Reg::DataCopy(midOffsetReg, midOffsetAddrU);
 
-        AscendC::MicroAPI::RegTensor<GatherIdxType> leftOffsetReg;
-        AscendC::MicroAPI::DataCopy(leftOffsetReg, leftOffsetAddrU);
+        AscendC::Reg::RegTensor<GatherIdxType> leftOffsetReg;
+        AscendC::Reg::DataCopy(leftOffsetReg, leftOffsetAddrU);
 
-        AscendC::MicroAPI::RegTensor<GatherIdxType> rightOffsetReg;
-        AscendC::MicroAPI::DataCopy(rightOffsetReg, rightOffsetAddrU);
+        AscendC::Reg::RegTensor<GatherIdxType> rightOffsetReg;
+        AscendC::Reg::DataCopy(rightOffsetReg, rightOffsetAddrU);
 
         AscendC::Reg::UnalignRegForStore ureg1; // 非对齐搬出
         uint32_t elementsPerBatch = static_cast<uint32_t>(rowsPerBatch * innerWidth);
-        AscendC::MicroAPI::MaskReg idxMask = AscendC::MicroAPI::UpdateMask<GatherIdxType>(elementsPerBatch);
+        AscendC::Reg::MaskReg idxMask = AscendC::Reg::UpdateMask<GatherIdxType>(elementsPerBatch);
 
         // 处理完整批次
         for (uint16_t loop = 0; loop < static_cast<uint16_t>(totalLoops - 1); loop++) {
             uint32_t tempCurElements = curElements;
-            AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<PromoteDataT>(tempCurElements);
+            AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<PromoteDataT>(tempCurElements);
 
             // Gather 三个区域的数据
-            AscendC::MicroAPI::RegTensor<PromoteDataT> midDataReg;
-            AscendC::MicroAPI::DataCopyGather(midDataReg, midAddr, midIdxReg, mask);
+            AscendC::Reg::RegTensor<PromoteDataT> midDataReg;
+            AscendC::Reg::DataCopyGather(midDataReg, midAddr, midIdxReg, mask);
 
-            AscendC::MicroAPI::RegTensor<PromoteDataT> leftDataReg;
-            AscendC::MicroAPI::DataCopyGather(leftDataReg, midAddr, leftIdxReg, mask);
+            AscendC::Reg::RegTensor<PromoteDataT> leftDataReg;
+            AscendC::Reg::DataCopyGather(leftDataReg, midAddr, leftIdxReg, mask);
 
-            AscendC::MicroAPI::RegTensor<PromoteDataT> rightDataReg;
-            AscendC::MicroAPI::DataCopyGather(rightDataReg, midAddr, rightIdxReg, mask);
+            AscendC::Reg::RegTensor<PromoteDataT> rightDataReg;
+            AscendC::Reg::DataCopyGather(rightDataReg, midAddr, rightIdxReg, mask);
 
             // 三个数据相加
-            AscendC::MicroAPI::RegTensor<PromoteDataT> sumReg;
-            AscendC::MicroAPI::Add(sumReg, midDataReg, leftDataReg, mask);
-            AscendC::MicroAPI::Add(sumReg, sumReg, rightDataReg, mask);
+            AscendC::Reg::RegTensor<PromoteDataT> sumReg;
+            AscendC::Reg::Add(sumReg, midDataReg, leftDataReg, mask);
+            AscendC::Reg::Add(sumReg, sumReg, rightDataReg, mask);
 
             // 存储到 outputAddr
             AscendC::Reg::StoreUnAlign(tempOutputAddr, sumReg, ureg1, curElements);
 
             // 更新索引（为下一次循环准备）
-            AscendC::MicroAPI::Add(midIdxReg, midIdxReg, midOffsetReg, idxMask);
-            AscendC::MicroAPI::Add(leftIdxReg, leftIdxReg, leftOffsetReg, idxMask);
-            AscendC::MicroAPI::Add(rightIdxReg, rightIdxReg, rightOffsetReg, idxMask);
+            AscendC::Reg::Add(midIdxReg, midIdxReg, midOffsetReg, idxMask);
+            AscendC::Reg::Add(leftIdxReg, leftIdxReg, leftOffsetReg, idxMask);
+            AscendC::Reg::Add(rightIdxReg, rightIdxReg, rightOffsetReg, idxMask);
         }
 
         // 处理尾块
         uint32_t tempCurElements = curTailElements;
-        AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<PromoteDataT>(tempCurElements);
+        AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<PromoteDataT>(tempCurElements);
 
         // Gather 三个区域的数据
-        AscendC::MicroAPI::RegTensor<PromoteDataT> midDataReg;
-        AscendC::MicroAPI::DataCopyGather(midDataReg, midAddr, midIdxReg, mask);
+        AscendC::Reg::RegTensor<PromoteDataT> midDataReg;
+        AscendC::Reg::DataCopyGather(midDataReg, midAddr, midIdxReg, mask);
 
-        AscendC::MicroAPI::RegTensor<PromoteDataT> leftDataReg;
-        AscendC::MicroAPI::DataCopyGather(leftDataReg, midAddr, leftIdxReg, mask);
+        AscendC::Reg::RegTensor<PromoteDataT> leftDataReg;
+        AscendC::Reg::DataCopyGather(leftDataReg, midAddr, leftIdxReg, mask);
 
-        AscendC::MicroAPI::RegTensor<PromoteDataT> rightDataReg;
-        AscendC::MicroAPI::DataCopyGather(rightDataReg, midAddr, rightIdxReg, mask);
+        AscendC::Reg::RegTensor<PromoteDataT> rightDataReg;
+        AscendC::Reg::DataCopyGather(rightDataReg, midAddr, rightIdxReg, mask);
 
         // 三个数据相加
-        AscendC::MicroAPI::RegTensor<PromoteDataT> sumReg;
-        AscendC::MicroAPI::Add(sumReg, midDataReg, leftDataReg, mask);
-        AscendC::MicroAPI::Add(sumReg, sumReg, rightDataReg, mask);
+        AscendC::Reg::RegTensor<PromoteDataT> sumReg;
+        AscendC::Reg::Add(sumReg, midDataReg, leftDataReg, mask);
+        AscendC::Reg::Add(sumReg, sumReg, rightDataReg, mask);
 
         // 存储到 outputAddr
         AscendC::Reg::StoreUnAlign(tempOutputAddr, sumReg, ureg1, curTailElements);
@@ -1429,139 +1429,139 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GenerateFoldWAxisIndices(
     __VEC_SCOPE__
     {
         uint32_t vLen = rowsPerBatch * innerWidth;
-        AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<GatherRangeType>(vLen);
+        AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherRangeType>(vLen);
 
         // x = [0, 1, ..., vLen-1]，批内线性位置
-        AscendC::MicroAPI::RegTensor<GatherRangeType> xReg;
-        AscendC::MicroAPI::Arange(xReg, static_cast<GatherRangeType>(0));
+        AscendC::Reg::RegTensor<GatherRangeType> xReg;
+        AscendC::Reg::Arange(xReg, static_cast<GatherRangeType>(0));
 
         // row = x / innerWidth，col = x % innerWidth（始终用 Div，避免运行时分支）
-        AscendC::MicroAPI::RegTensor<GatherRangeType> rowReg, colReg, tmpReg;
-        AscendC::MicroAPI::RegTensor<GatherRangeType> divWidthReg;
-        AscendC::MicroAPI::Duplicate(divWidthReg, static_cast<GatherRangeType>(innerWidth), mask);
-        AscendC::MicroAPI::Div(rowReg, xReg, divWidthReg, mask);
-        AscendC::MicroAPI::Muls(tmpReg, rowReg, static_cast<GatherRangeType>(innerWidth), mask);
-        AscendC::MicroAPI::Sub(colReg, xReg, tmpReg, mask);
+        AscendC::Reg::RegTensor<GatherRangeType> rowReg, colReg, tmpReg;
+        AscendC::Reg::RegTensor<GatherRangeType> divWidthReg;
+        AscendC::Reg::Duplicate(divWidthReg, static_cast<GatherRangeType>(innerWidth), mask);
+        AscendC::Reg::Div(rowReg, xReg, divWidthReg, mask);
+        AscendC::Reg::Muls(tmpReg, rowReg, static_cast<GatherRangeType>(innerWidth), mask);
+        AscendC::Reg::Sub(colReg, xReg, tmpReg, mask);
 
         // chanHBaseReg = row * width + (ZERO_PAD_CNT + leftPadW)
         // 三个索引的公共基：midIdx = chanHBase + col，leftIdx/rightIdx 从此派生，
         // 避免重复计算 row * width。
-        AscendC::MicroAPI::RegTensor<GatherRangeType> chanHBaseReg;
-        AscendC::MicroAPI::Muls(chanHBaseReg, rowReg, static_cast<GatherRangeType>(width), mask);
-        AscendC::MicroAPI::RegTensor<GatherRangeType> constBaseReg;
-        AscendC::MicroAPI::Duplicate(constBaseReg, static_cast<GatherRangeType>(ZERO_PAD_CNT + leftPadW), mask);
-        AscendC::MicroAPI::Add(chanHBaseReg, chanHBaseReg, constBaseReg, mask);
+        AscendC::Reg::RegTensor<GatherRangeType> chanHBaseReg;
+        AscendC::Reg::Muls(chanHBaseReg, rowReg, static_cast<GatherRangeType>(width), mask);
+        AscendC::Reg::RegTensor<GatherRangeType> constBaseReg;
+        AscendC::Reg::Duplicate(constBaseReg, static_cast<GatherRangeType>(ZERO_PAD_CNT + leftPadW), mask);
+        AscendC::Reg::Add(chanHBaseReg, chanHBaseReg, constBaseReg, mask);
 
         // ===== midIdx = chanHBase + col（恒有效）=====
-        AscendC::MicroAPI::RegTensor<GatherRangeType> midIdxReg;
-        AscendC::MicroAPI::Add(midIdxReg, chanHBaseReg, colReg, mask);
-        AscendC::MicroAPI::DataCopy(midIdxAddr, midIdxReg, mask);
+        AscendC::Reg::RegTensor<GatherRangeType> midIdxReg;
+        AscendC::Reg::Add(midIdxReg, chanHBaseReg, colReg, mask);
+        AscendC::Reg::DataCopy(midIdxAddr, midIdxReg, mask);
 
         // ===== leftIdx =====
         // Reflect:   leftIdx = chanHBase - col，有效 col ∈ [1, leftPadW]
         // Symmetric: leftIdx = chanHBase - 1 - col，有效 col ∈ [0, leftPadW-1]
         // leftPadW=0 时：两个 Compare 联合清零全部位置，效果等价于 Duplicate(0)，
         //              无需单独处理 leftPadW==0 分支。
-        AscendC::MicroAPI::RegTensor<GatherRangeType> leftIdxReg;
+        AscendC::Reg::RegTensor<GatherRangeType> leftIdxReg;
         if constexpr (IS_REFLECT) {
-            AscendC::MicroAPI::Sub(leftIdxReg, chanHBaseReg, colReg, mask);
+            AscendC::Reg::Sub(leftIdxReg, chanHBaseReg, colReg, mask);
             // 清零 col < 1（col == 0）
-            AscendC::MicroAPI::RegTensor<GatherRangeType> oneReg;
-            AscendC::MicroAPI::Duplicate(oneReg, static_cast<GatherRangeType>(1), mask);
-            AscendC::MicroAPI::MaskReg colLt1Mask;
-            AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(colLt1Mask, oneReg, colReg, mask);
-            AscendC::MicroAPI::Duplicate<GatherRangeType, MicroAPI::MaskMergeMode::MERGING, GatherRangeType>(
+            AscendC::Reg::RegTensor<GatherRangeType> oneReg;
+            AscendC::Reg::Duplicate(oneReg, static_cast<GatherRangeType>(1), mask);
+            AscendC::Reg::MaskReg colLt1Mask;
+            AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(colLt1Mask, oneReg, colReg, mask);
+            AscendC::Reg::Duplicate<GatherRangeType, Reg::MaskMergeMode::MERGING, GatherRangeType>(
                 leftIdxReg, static_cast<GatherRangeType>(0), colLt1Mask);
             // 清零 col > leftPadW（leftPadW=0 时 GT(col,0) 清零所有 col>0，与上行联合清零全部）
-            AscendC::MicroAPI::RegTensor<GatherRangeType> leftPWReg;
-            AscendC::MicroAPI::Duplicate(leftPWReg, static_cast<GatherRangeType>(leftPadW), mask);
-            AscendC::MicroAPI::MaskReg colGtLPWMask;
-            AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(colGtLPWMask, colReg, leftPWReg, mask);
-            AscendC::MicroAPI::Duplicate<GatherRangeType, MicroAPI::MaskMergeMode::MERGING, GatherRangeType>(
+            AscendC::Reg::RegTensor<GatherRangeType> leftPWReg;
+            AscendC::Reg::Duplicate(leftPWReg, static_cast<GatherRangeType>(leftPadW), mask);
+            AscendC::Reg::MaskReg colGtLPWMask;
+            AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(colGtLPWMask, colReg, leftPWReg, mask);
+            AscendC::Reg::Duplicate<GatherRangeType, Reg::MaskMergeMode::MERGING, GatherRangeType>(
                 leftIdxReg, static_cast<GatherRangeType>(0), colGtLPWMask);
         } else {
             // chanHBase - col - 1
-            AscendC::MicroAPI::Sub(leftIdxReg, chanHBaseReg, colReg, mask);
-            AscendC::MicroAPI::RegTensor<GatherRangeType> oneReg;
-            AscendC::MicroAPI::Duplicate(oneReg, static_cast<GatherRangeType>(1), mask);
-            AscendC::MicroAPI::Sub(leftIdxReg, leftIdxReg, oneReg, mask);
+            AscendC::Reg::Sub(leftIdxReg, chanHBaseReg, colReg, mask);
+            AscendC::Reg::RegTensor<GatherRangeType> oneReg;
+            AscendC::Reg::Duplicate(oneReg, static_cast<GatherRangeType>(1), mask);
+            AscendC::Reg::Sub(leftIdxReg, leftIdxReg, oneReg, mask);
             // 清零 col > leftPadW-1（leftPadW=0 时值为 -1，GT 对所有 col≥0 为真，全部清零）
-            AscendC::MicroAPI::RegTensor<GatherRangeType> lpwM1Reg;
-            AscendC::MicroAPI::Duplicate(lpwM1Reg, static_cast<GatherRangeType>(leftPadW - 1), mask);
-            AscendC::MicroAPI::MaskReg colGeLPWMask;
-            AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(colGeLPWMask, colReg, lpwM1Reg, mask);
-            AscendC::MicroAPI::Duplicate<GatherRangeType, MicroAPI::MaskMergeMode::MERGING, GatherRangeType>(
+            AscendC::Reg::RegTensor<GatherRangeType> lpwM1Reg;
+            AscendC::Reg::Duplicate(lpwM1Reg, static_cast<GatherRangeType>(leftPadW - 1), mask);
+            AscendC::Reg::MaskReg colGeLPWMask;
+            AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(colGeLPWMask, colReg, lpwM1Reg, mask);
+            AscendC::Reg::Duplicate<GatherRangeType, Reg::MaskMergeMode::MERGING, GatherRangeType>(
                 leftIdxReg, static_cast<GatherRangeType>(0), colGeLPWMask);
         }
-        AscendC::MicroAPI::DataCopy(leftIdxAddr, leftIdxReg, mask);
+        AscendC::Reg::DataCopy(leftIdxAddr, leftIdxReg, mask);
 
         // ===== rightIdx =====
         // Reflect:   rightIdx = chanHBase + (2*innerWidth-2) - col，有效 col ∈ [innerWidth-rightPadW-1, innerWidth-2]
         // Symmetric: rightIdx = chanHBase + (2*innerWidth-1) - col，有效 col ∈ [innerWidth-rightPadW, innerWidth-1]
         // rightPadW=0 时：Compare 条件覆盖全部位置，全部清零，无需单独分支。
-        AscendC::MicroAPI::RegTensor<GatherRangeType> rightIdxReg;
+        AscendC::Reg::RegTensor<GatherRangeType> rightIdxReg;
         if constexpr (IS_REFLECT) {
-            AscendC::MicroAPI::RegTensor<GatherRangeType> rightConstReg;
-            AscendC::MicroAPI::Duplicate(rightConstReg,
-                                         static_cast<GatherRangeType>(2 * static_cast<int64_t>(innerWidth) - 2), mask);
-            AscendC::MicroAPI::Add(rightIdxReg, chanHBaseReg, rightConstReg, mask);
-            AscendC::MicroAPI::Sub(rightIdxReg, rightIdxReg, colReg, mask);
+            AscendC::Reg::RegTensor<GatherRangeType> rightConstReg;
+            AscendC::Reg::Duplicate(rightConstReg,
+                                    static_cast<GatherRangeType>(2 * static_cast<int64_t>(innerWidth) - 2), mask);
+            AscendC::Reg::Add(rightIdxReg, chanHBaseReg, rightConstReg, mask);
+            AscendC::Reg::Sub(rightIdxReg, rightIdxReg, colReg, mask);
             // 清零 col < innerWidth - rightPadW - 1
-            AscendC::MicroAPI::RegTensor<GatherRangeType> lowBoundReg;
-            AscendC::MicroAPI::Duplicate(
+            AscendC::Reg::RegTensor<GatherRangeType> lowBoundReg;
+            AscendC::Reg::Duplicate(
                 lowBoundReg, static_cast<GatherRangeType>(static_cast<int64_t>(innerWidth) - rightPadW - 1), mask);
-            AscendC::MicroAPI::MaskReg colLtLowMask;
-            AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(colLtLowMask, lowBoundReg, colReg, mask);
-            AscendC::MicroAPI::Duplicate<GatherRangeType, MicroAPI::MaskMergeMode::MERGING, GatherRangeType>(
+            AscendC::Reg::MaskReg colLtLowMask;
+            AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(colLtLowMask, lowBoundReg, colReg, mask);
+            AscendC::Reg::Duplicate<GatherRangeType, Reg::MaskMergeMode::MERGING, GatherRangeType>(
                 rightIdxReg, static_cast<GatherRangeType>(0), colLtLowMask);
             // 清零 col > innerWidth - 2
-            AscendC::MicroAPI::RegTensor<GatherRangeType> highM1Reg;
-            AscendC::MicroAPI::Duplicate(highM1Reg, static_cast<GatherRangeType>(static_cast<int64_t>(innerWidth) - 2),
-                                         mask);
-            AscendC::MicroAPI::MaskReg colGtHighMask;
-            AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(colGtHighMask, colReg, highM1Reg, mask);
-            AscendC::MicroAPI::Duplicate<GatherRangeType, MicroAPI::MaskMergeMode::MERGING, GatherRangeType>(
+            AscendC::Reg::RegTensor<GatherRangeType> highM1Reg;
+            AscendC::Reg::Duplicate(highM1Reg, static_cast<GatherRangeType>(static_cast<int64_t>(innerWidth) - 2),
+                                    mask);
+            AscendC::Reg::MaskReg colGtHighMask;
+            AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(colGtHighMask, colReg, highM1Reg, mask);
+            AscendC::Reg::Duplicate<GatherRangeType, Reg::MaskMergeMode::MERGING, GatherRangeType>(
                 rightIdxReg, static_cast<GatherRangeType>(0), colGtHighMask);
         } else {
-            AscendC::MicroAPI::RegTensor<GatherRangeType> rightConstReg;
-            AscendC::MicroAPI::Duplicate(rightConstReg,
-                                         static_cast<GatherRangeType>(2 * static_cast<int64_t>(innerWidth) - 1), mask);
-            AscendC::MicroAPI::Add(rightIdxReg, chanHBaseReg, rightConstReg, mask);
-            AscendC::MicroAPI::Sub(rightIdxReg, rightIdxReg, colReg, mask);
+            AscendC::Reg::RegTensor<GatherRangeType> rightConstReg;
+            AscendC::Reg::Duplicate(rightConstReg,
+                                    static_cast<GatherRangeType>(2 * static_cast<int64_t>(innerWidth) - 1), mask);
+            AscendC::Reg::Add(rightIdxReg, chanHBaseReg, rightConstReg, mask);
+            AscendC::Reg::Sub(rightIdxReg, rightIdxReg, colReg, mask);
             // 清零 col < innerWidth - rightPadW（rightPadW=0 时为 innerWidth，GT 对全部 col 为真，全部清零）
-            AscendC::MicroAPI::RegTensor<GatherRangeType> lowBound2Reg;
-            AscendC::MicroAPI::Duplicate(
-                lowBound2Reg, static_cast<GatherRangeType>(static_cast<int64_t>(innerWidth) - rightPadW), mask);
-            AscendC::MicroAPI::MaskReg colLtLow2Mask;
-            AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(colLtLow2Mask, lowBound2Reg, colReg, mask);
-            AscendC::MicroAPI::Duplicate<GatherRangeType, MicroAPI::MaskMergeMode::MERGING, GatherRangeType>(
+            AscendC::Reg::RegTensor<GatherRangeType> lowBound2Reg;
+            AscendC::Reg::Duplicate(lowBound2Reg,
+                                    static_cast<GatherRangeType>(static_cast<int64_t>(innerWidth) - rightPadW), mask);
+            AscendC::Reg::MaskReg colLtLow2Mask;
+            AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(colLtLow2Mask, lowBound2Reg, colReg, mask);
+            AscendC::Reg::Duplicate<GatherRangeType, Reg::MaskMergeMode::MERGING, GatherRangeType>(
                 rightIdxReg, static_cast<GatherRangeType>(0), colLtLow2Mask);
         }
-        AscendC::MicroAPI::DataCopy(rightIdxAddr, rightIdxReg, mask);
+        AscendC::Reg::DataCopy(rightIdxAddr, rightIdxReg, mask);
 
         // ===== 偏移数组 =====
         // midOffset: 所有位置均为 rowWidthOffset（mid 索引始终有效）
-        AscendC::MicroAPI::RegTensor<GatherRangeType> midOffsetReg;
-        AscendC::MicroAPI::Duplicate(midOffsetReg, static_cast<GatherRangeType>(rowWidthOffset), mask);
-        AscendC::MicroAPI::DataCopy(midOffsetAddr, midOffsetReg, mask);
+        AscendC::Reg::RegTensor<GatherRangeType> midOffsetReg;
+        AscendC::Reg::Duplicate(midOffsetReg, static_cast<GatherRangeType>(rowWidthOffset), mask);
+        AscendC::Reg::DataCopy(midOffsetAddr, midOffsetReg, mask);
 
         // leftOffset: 有效位置（leftIdx > 0）为 rowWidthOffset，ZERO_PAD 位置（leftIdx == 0）为 0
-        AscendC::MicroAPI::RegTensor<GatherRangeType> zeroReg;
-        AscendC::MicroAPI::Duplicate(zeroReg, static_cast<GatherRangeType>(0), mask);
-        AscendC::MicroAPI::RegTensor<GatherRangeType> leftOffsetReg;
-        AscendC::MicroAPI::Duplicate(leftOffsetReg, static_cast<GatherRangeType>(0), mask);
-        AscendC::MicroAPI::MaskReg leftOffMask;
-        AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(leftOffMask, leftIdxReg, zeroReg, mask);
-        AscendC::MicroAPI::Duplicate(leftOffsetReg, static_cast<GatherRangeType>(rowWidthOffset), leftOffMask);
-        AscendC::MicroAPI::DataCopy(leftOffsetAddr, leftOffsetReg, mask);
+        AscendC::Reg::RegTensor<GatherRangeType> zeroReg;
+        AscendC::Reg::Duplicate(zeroReg, static_cast<GatherRangeType>(0), mask);
+        AscendC::Reg::RegTensor<GatherRangeType> leftOffsetReg;
+        AscendC::Reg::Duplicate(leftOffsetReg, static_cast<GatherRangeType>(0), mask);
+        AscendC::Reg::MaskReg leftOffMask;
+        AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(leftOffMask, leftIdxReg, zeroReg, mask);
+        AscendC::Reg::Duplicate(leftOffsetReg, static_cast<GatherRangeType>(rowWidthOffset), leftOffMask);
+        AscendC::Reg::DataCopy(leftOffsetAddr, leftOffsetReg, mask);
 
         // rightOffset: 有效位置（rightIdx > 0）为 rowWidthOffset，ZERO_PAD 位置为 0
-        AscendC::MicroAPI::RegTensor<GatherRangeType> rightOffsetReg;
-        AscendC::MicroAPI::Duplicate(rightOffsetReg, static_cast<GatherRangeType>(0), mask);
-        AscendC::MicroAPI::MaskReg rightOffMask;
-        AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(rightOffMask, rightIdxReg, zeroReg, mask);
-        AscendC::MicroAPI::Duplicate(rightOffsetReg, static_cast<GatherRangeType>(rowWidthOffset), rightOffMask);
-        AscendC::MicroAPI::DataCopy(rightOffsetAddr, rightOffsetReg, mask);
+        AscendC::Reg::RegTensor<GatherRangeType> rightOffsetReg;
+        AscendC::Reg::Duplicate(rightOffsetReg, static_cast<GatherRangeType>(0), mask);
+        AscendC::Reg::MaskReg rightOffMask;
+        AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(rightOffMask, rightIdxReg, zeroReg, mask);
+        AscendC::Reg::Duplicate(rightOffsetReg, static_cast<GatherRangeType>(rowWidthOffset), rightOffMask);
+        AscendC::Reg::DataCopy(rightOffsetAddr, rightOffsetReg, mask);
     }
 }
 
@@ -1587,111 +1587,111 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GenerateCrossChannelWAxisIn
     __VEC_SCOPE__
     {
         uint32_t vLen = totalRows * static_cast<uint32_t>(outW);
-        AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<GatherRangeType>(vLen);
+        AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherRangeType>(vLen);
 
         // x = [0, 1, ..., vLen-1]
-        AscendC::MicroAPI::RegTensor<GatherRangeType> xReg;
-        AscendC::MicroAPI::Arange(xReg, static_cast<GatherRangeType>(0));
+        AscendC::Reg::RegTensor<GatherRangeType> xReg;
+        AscendC::Reg::Arange(xReg, static_cast<GatherRangeType>(0));
 
         // 第一层分解：globalRow = x / outW，col = x % outW
-        AscendC::MicroAPI::RegTensor<GatherRangeType> globalRowReg, colReg, tmpReg;
-        AscendC::MicroAPI::RegTensor<GatherRangeType> outWReg;
-        AscendC::MicroAPI::Duplicate(outWReg, static_cast<GatherRangeType>(outW), mask);
-        AscendC::MicroAPI::Div(globalRowReg, xReg, outWReg, mask);
-        AscendC::MicroAPI::Muls(tmpReg, globalRowReg, static_cast<GatherRangeType>(outW), mask);
-        AscendC::MicroAPI::Sub(colReg, xReg, tmpReg, mask);
+        AscendC::Reg::RegTensor<GatherRangeType> globalRowReg, colReg, tmpReg;
+        AscendC::Reg::RegTensor<GatherRangeType> outWReg;
+        AscendC::Reg::Duplicate(outWReg, static_cast<GatherRangeType>(outW), mask);
+        AscendC::Reg::Div(globalRowReg, xReg, outWReg, mask);
+        AscendC::Reg::Muls(tmpReg, globalRowReg, static_cast<GatherRangeType>(outW), mask);
+        AscendC::Reg::Sub(colReg, xReg, tmpReg, mask);
 
         // 第二层分解：c = globalRow / outH，r = globalRow % outH
-        AscendC::MicroAPI::RegTensor<GatherRangeType> cReg, rReg;
-        AscendC::MicroAPI::RegTensor<GatherRangeType> outHReg;
-        AscendC::MicroAPI::Duplicate(outHReg, static_cast<GatherRangeType>(outH), mask);
-        AscendC::MicroAPI::Div(cReg, globalRowReg, outHReg, mask);
-        AscendC::MicroAPI::Muls(tmpReg, cReg, static_cast<GatherRangeType>(outH), mask);
-        AscendC::MicroAPI::Sub(rReg, globalRowReg, tmpReg, mask);
+        AscendC::Reg::RegTensor<GatherRangeType> cReg, rReg;
+        AscendC::Reg::RegTensor<GatherRangeType> outHReg;
+        AscendC::Reg::Duplicate(outHReg, static_cast<GatherRangeType>(outH), mask);
+        AscendC::Reg::Div(cReg, globalRowReg, outHReg, mask);
+        AscendC::Reg::Muls(tmpReg, cReg, static_cast<GatherRangeType>(outH), mask);
+        AscendC::Reg::Sub(rReg, globalRowReg, tmpReg, mask);
 
         // chanHBase = c * hwSize + (leftPadH + r) * width + ZERO_PAD_CNT + leftPadW
-        AscendC::MicroAPI::RegTensor<GatherRangeType> chanHBaseReg;
-        AscendC::MicroAPI::Muls(chanHBaseReg, cReg, static_cast<GatherRangeType>(hwSize), mask);
-        AscendC::MicroAPI::Muls(tmpReg, rReg, static_cast<GatherRangeType>(width), mask);
-        AscendC::MicroAPI::Add(chanHBaseReg, chanHBaseReg, tmpReg, mask);
-        AscendC::MicroAPI::RegTensor<GatherRangeType> constBaseReg;
-        AscendC::MicroAPI::Duplicate(constBaseReg,
-                                     static_cast<GatherRangeType>(leftPadH * width + ZERO_PAD_CNT + leftPadW), mask);
-        AscendC::MicroAPI::Add(chanHBaseReg, chanHBaseReg, constBaseReg, mask);
+        AscendC::Reg::RegTensor<GatherRangeType> chanHBaseReg;
+        AscendC::Reg::Muls(chanHBaseReg, cReg, static_cast<GatherRangeType>(hwSize), mask);
+        AscendC::Reg::Muls(tmpReg, rReg, static_cast<GatherRangeType>(width), mask);
+        AscendC::Reg::Add(chanHBaseReg, chanHBaseReg, tmpReg, mask);
+        AscendC::Reg::RegTensor<GatherRangeType> constBaseReg;
+        AscendC::Reg::Duplicate(constBaseReg, static_cast<GatherRangeType>(leftPadH * width + ZERO_PAD_CNT + leftPadW),
+                                mask);
+        AscendC::Reg::Add(chanHBaseReg, chanHBaseReg, constBaseReg, mask);
 
         // ===== midIdx = chanHBase + col =====
-        AscendC::MicroAPI::RegTensor<GatherRangeType> midIdxReg;
-        AscendC::MicroAPI::Add(midIdxReg, chanHBaseReg, colReg, mask);
-        AscendC::MicroAPI::DataCopy(midIdxAddr, midIdxReg, mask);
+        AscendC::Reg::RegTensor<GatherRangeType> midIdxReg;
+        AscendC::Reg::Add(midIdxReg, chanHBaseReg, colReg, mask);
+        AscendC::Reg::DataCopy(midIdxAddr, midIdxReg, mask);
 
         // ===== leftIdx（与 GenerateFoldWAxisIndices 相同的清零逻辑）=====
         // 注意：清零时必须使用 MERGING 模式，仅将指定位置置 0，保留其余有效索引
-        AscendC::MicroAPI::RegTensor<GatherRangeType> leftIdxReg;
+        AscendC::Reg::RegTensor<GatherRangeType> leftIdxReg;
         if constexpr (IS_REFLECT) {
-            AscendC::MicroAPI::Sub(leftIdxReg, chanHBaseReg, colReg, mask);
-            AscendC::MicroAPI::RegTensor<GatherRangeType> oneReg;
-            AscendC::MicroAPI::Duplicate(oneReg, static_cast<GatherRangeType>(1), mask);
-            AscendC::MicroAPI::MaskReg colLt1Mask;
-            AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(colLt1Mask, oneReg, colReg, mask);
-            AscendC::MicroAPI::Duplicate<GatherRangeType, MicroAPI::MaskMergeMode::MERGING, GatherRangeType>(
+            AscendC::Reg::Sub(leftIdxReg, chanHBaseReg, colReg, mask);
+            AscendC::Reg::RegTensor<GatherRangeType> oneReg;
+            AscendC::Reg::Duplicate(oneReg, static_cast<GatherRangeType>(1), mask);
+            AscendC::Reg::MaskReg colLt1Mask;
+            AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(colLt1Mask, oneReg, colReg, mask);
+            AscendC::Reg::Duplicate<GatherRangeType, Reg::MaskMergeMode::MERGING, GatherRangeType>(
                 leftIdxReg, static_cast<GatherRangeType>(0), colLt1Mask);
-            AscendC::MicroAPI::RegTensor<GatherRangeType> leftPWReg;
-            AscendC::MicroAPI::Duplicate(leftPWReg, static_cast<GatherRangeType>(leftPadW), mask);
-            AscendC::MicroAPI::MaskReg colGtLPWMask;
-            AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(colGtLPWMask, colReg, leftPWReg, mask);
-            AscendC::MicroAPI::Duplicate<GatherRangeType, MicroAPI::MaskMergeMode::MERGING, GatherRangeType>(
+            AscendC::Reg::RegTensor<GatherRangeType> leftPWReg;
+            AscendC::Reg::Duplicate(leftPWReg, static_cast<GatherRangeType>(leftPadW), mask);
+            AscendC::Reg::MaskReg colGtLPWMask;
+            AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(colGtLPWMask, colReg, leftPWReg, mask);
+            AscendC::Reg::Duplicate<GatherRangeType, Reg::MaskMergeMode::MERGING, GatherRangeType>(
                 leftIdxReg, static_cast<GatherRangeType>(0), colGtLPWMask);
         } else {
-            AscendC::MicroAPI::Sub(leftIdxReg, chanHBaseReg, colReg, mask);
-            AscendC::MicroAPI::RegTensor<GatherRangeType> oneReg;
-            AscendC::MicroAPI::Duplicate(oneReg, static_cast<GatherRangeType>(1), mask);
-            AscendC::MicroAPI::Sub(leftIdxReg, leftIdxReg, oneReg, mask);
-            AscendC::MicroAPI::RegTensor<GatherRangeType> lpwM1Reg;
-            AscendC::MicroAPI::Duplicate(lpwM1Reg, static_cast<GatherRangeType>(leftPadW - 1), mask);
-            AscendC::MicroAPI::MaskReg colGeLPWMask;
-            AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(colGeLPWMask, colReg, lpwM1Reg, mask);
-            AscendC::MicroAPI::Duplicate<GatherRangeType, MicroAPI::MaskMergeMode::MERGING, GatherRangeType>(
+            AscendC::Reg::Sub(leftIdxReg, chanHBaseReg, colReg, mask);
+            AscendC::Reg::RegTensor<GatherRangeType> oneReg;
+            AscendC::Reg::Duplicate(oneReg, static_cast<GatherRangeType>(1), mask);
+            AscendC::Reg::Sub(leftIdxReg, leftIdxReg, oneReg, mask);
+            AscendC::Reg::RegTensor<GatherRangeType> lpwM1Reg;
+            AscendC::Reg::Duplicate(lpwM1Reg, static_cast<GatherRangeType>(leftPadW - 1), mask);
+            AscendC::Reg::MaskReg colGeLPWMask;
+            AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(colGeLPWMask, colReg, lpwM1Reg, mask);
+            AscendC::Reg::Duplicate<GatherRangeType, Reg::MaskMergeMode::MERGING, GatherRangeType>(
                 leftIdxReg, static_cast<GatherRangeType>(0), colGeLPWMask);
         }
-        AscendC::MicroAPI::DataCopy(leftIdxAddr, leftIdxReg, mask);
+        AscendC::Reg::DataCopy(leftIdxAddr, leftIdxReg, mask);
 
         // ===== rightIdx（与 GenerateFoldWAxisIndices 相同的清零逻辑）=====
         // 注意：清零时必须使用 MERGING 模式，仅将指定位置置 0，保留其余有效索引
-        AscendC::MicroAPI::RegTensor<GatherRangeType> rightIdxReg;
+        AscendC::Reg::RegTensor<GatherRangeType> rightIdxReg;
         if constexpr (IS_REFLECT) {
-            AscendC::MicroAPI::RegTensor<GatherRangeType> rightConstReg;
-            AscendC::MicroAPI::Duplicate(rightConstReg,
-                                         static_cast<GatherRangeType>(2 * static_cast<int64_t>(outW) - 2), mask);
-            AscendC::MicroAPI::Add(rightIdxReg, chanHBaseReg, rightConstReg, mask);
-            AscendC::MicroAPI::Sub(rightIdxReg, rightIdxReg, colReg, mask);
-            AscendC::MicroAPI::RegTensor<GatherRangeType> lowBoundReg;
-            AscendC::MicroAPI::Duplicate(
-                lowBoundReg, static_cast<GatherRangeType>(static_cast<int64_t>(outW) - rightPadW - 1), mask);
-            AscendC::MicroAPI::MaskReg colLtLowMask;
-            AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(colLtLowMask, lowBoundReg, colReg, mask);
-            AscendC::MicroAPI::Duplicate<GatherRangeType, MicroAPI::MaskMergeMode::MERGING, GatherRangeType>(
+            AscendC::Reg::RegTensor<GatherRangeType> rightConstReg;
+            AscendC::Reg::Duplicate(rightConstReg, static_cast<GatherRangeType>(2 * static_cast<int64_t>(outW) - 2),
+                                    mask);
+            AscendC::Reg::Add(rightIdxReg, chanHBaseReg, rightConstReg, mask);
+            AscendC::Reg::Sub(rightIdxReg, rightIdxReg, colReg, mask);
+            AscendC::Reg::RegTensor<GatherRangeType> lowBoundReg;
+            AscendC::Reg::Duplicate(lowBoundReg,
+                                    static_cast<GatherRangeType>(static_cast<int64_t>(outW) - rightPadW - 1), mask);
+            AscendC::Reg::MaskReg colLtLowMask;
+            AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(colLtLowMask, lowBoundReg, colReg, mask);
+            AscendC::Reg::Duplicate<GatherRangeType, Reg::MaskMergeMode::MERGING, GatherRangeType>(
                 rightIdxReg, static_cast<GatherRangeType>(0), colLtLowMask);
-            AscendC::MicroAPI::RegTensor<GatherRangeType> highM1Reg;
-            AscendC::MicroAPI::Duplicate(highM1Reg, static_cast<GatherRangeType>(static_cast<int64_t>(outW) - 2), mask);
-            AscendC::MicroAPI::MaskReg colGtHighMask;
-            AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(colGtHighMask, colReg, highM1Reg, mask);
-            AscendC::MicroAPI::Duplicate<GatherRangeType, MicroAPI::MaskMergeMode::MERGING, GatherRangeType>(
+            AscendC::Reg::RegTensor<GatherRangeType> highM1Reg;
+            AscendC::Reg::Duplicate(highM1Reg, static_cast<GatherRangeType>(static_cast<int64_t>(outW) - 2), mask);
+            AscendC::Reg::MaskReg colGtHighMask;
+            AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(colGtHighMask, colReg, highM1Reg, mask);
+            AscendC::Reg::Duplicate<GatherRangeType, Reg::MaskMergeMode::MERGING, GatherRangeType>(
                 rightIdxReg, static_cast<GatherRangeType>(0), colGtHighMask);
         } else {
-            AscendC::MicroAPI::RegTensor<GatherRangeType> rightConstReg;
-            AscendC::MicroAPI::Duplicate(rightConstReg,
-                                         static_cast<GatherRangeType>(2 * static_cast<int64_t>(outW) - 1), mask);
-            AscendC::MicroAPI::Add(rightIdxReg, chanHBaseReg, rightConstReg, mask);
-            AscendC::MicroAPI::Sub(rightIdxReg, rightIdxReg, colReg, mask);
-            AscendC::MicroAPI::RegTensor<GatherRangeType> lowBound2Reg;
-            AscendC::MicroAPI::Duplicate(lowBound2Reg,
-                                         static_cast<GatherRangeType>(static_cast<int64_t>(outW) - rightPadW), mask);
-            AscendC::MicroAPI::MaskReg colLtLow2Mask;
-            AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(colLtLow2Mask, lowBound2Reg, colReg, mask);
-            AscendC::MicroAPI::Duplicate<GatherRangeType, MicroAPI::MaskMergeMode::MERGING, GatherRangeType>(
+            AscendC::Reg::RegTensor<GatherRangeType> rightConstReg;
+            AscendC::Reg::Duplicate(rightConstReg, static_cast<GatherRangeType>(2 * static_cast<int64_t>(outW) - 1),
+                                    mask);
+            AscendC::Reg::Add(rightIdxReg, chanHBaseReg, rightConstReg, mask);
+            AscendC::Reg::Sub(rightIdxReg, rightIdxReg, colReg, mask);
+            AscendC::Reg::RegTensor<GatherRangeType> lowBound2Reg;
+            AscendC::Reg::Duplicate(lowBound2Reg, static_cast<GatherRangeType>(static_cast<int64_t>(outW) - rightPadW),
+                                    mask);
+            AscendC::Reg::MaskReg colLtLow2Mask;
+            AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(colLtLow2Mask, lowBound2Reg, colReg, mask);
+            AscendC::Reg::Duplicate<GatherRangeType, Reg::MaskMergeMode::MERGING, GatherRangeType>(
                 rightIdxReg, static_cast<GatherRangeType>(0), colLtLow2Mask);
         }
-        AscendC::MicroAPI::DataCopy(rightIdxAddr, rightIdxReg, mask);
+        AscendC::Reg::DataCopy(rightIdxAddr, rightIdxReg, mask);
     }
 }
 
@@ -1856,49 +1856,49 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHAxisPad(int64_t factor
                     __VEC_SCOPE__
                     {
                         uint32_t vLen = static_cast<uint32_t>(totalElems);
-                        AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<GatherRangeType>(vLen);
+                        AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherRangeType>(vLen);
 
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> xReg;
-                        AscendC::MicroAPI::Arange(xReg, static_cast<GatherRangeType>(0));
+                        AscendC::Reg::RegTensor<GatherRangeType> xReg;
+                        AscendC::Reg::Arange(xReg, static_cast<GatherRangeType>(0));
 
                         // N 级分解：nInBatch = x / elemPerN, xi = x % elemPerN
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> nInBatchReg, xiReg, elemPerNReg, tmpReg;
-                        AscendC::MicroAPI::Duplicate(elemPerNReg, static_cast<GatherRangeType>(elemPerN), mask);
-                        AscendC::MicroAPI::Div(nInBatchReg, xReg, elemPerNReg, mask);
-                        AscendC::MicroAPI::Muls(tmpReg, nInBatchReg, static_cast<GatherRangeType>(elemPerN), mask);
-                        AscendC::MicroAPI::Sub(xiReg, xReg, tmpReg, mask);
+                        AscendC::Reg::RegTensor<GatherRangeType> nInBatchReg, xiReg, elemPerNReg, tmpReg;
+                        AscendC::Reg::Duplicate(elemPerNReg, static_cast<GatherRangeType>(elemPerN), mask);
+                        AscendC::Reg::Div(nInBatchReg, xReg, elemPerNReg, mask);
+                        AscendC::Reg::Muls(tmpReg, nInBatchReg, static_cast<GatherRangeType>(elemPerN), mask);
+                        AscendC::Reg::Sub(xiReg, xReg, tmpReg, mask);
 
                         // C 级分解：c = xi / width, col = xi % width
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> cReg, colReg, wReg;
-                        AscendC::MicroAPI::Duplicate(wReg, static_cast<GatherRangeType>(width), mask);
-                        AscendC::MicroAPI::Div(cReg, xiReg, wReg, mask);
-                        AscendC::MicroAPI::Muls(tmpReg, cReg, static_cast<GatherRangeType>(width), mask);
-                        AscendC::MicroAPI::Sub(colReg, xiReg, tmpReg, mask);
+                        AscendC::Reg::RegTensor<GatherRangeType> cReg, colReg, wReg;
+                        AscendC::Reg::Duplicate(wReg, static_cast<GatherRangeType>(width), mask);
+                        AscendC::Reg::Div(cReg, xiReg, wReg, mask);
+                        AscendC::Reg::Muls(tmpReg, cReg, static_cast<GatherRangeType>(width), mask);
+                        AscendC::Reg::Sub(colReg, xiReg, tmpReg, mask);
 
                         // N 轴偏移（src 和 dst 共享）
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> nOffsetReg;
-                        AscendC::MicroAPI::Muls(nOffsetReg, nInBatchReg, static_cast<GatherRangeType>(nStride), mask);
+                        AscendC::Reg::RegTensor<GatherRangeType> nOffsetReg;
+                        AscendC::Reg::Muls(nOffsetReg, nInBatchReg, static_cast<GatherRangeType>(nStride), mask);
 
                         // srcIdx = nOffset + c*hwSize + srcRowOffset + col
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> srcIdxReg;
-                        AscendC::MicroAPI::Muls(srcIdxReg, cReg, static_cast<GatherRangeType>(hwSize), mask);
-                        AscendC::MicroAPI::Add(srcIdxReg, srcIdxReg, nOffsetReg, mask);
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> srcBaseReg;
-                        AscendC::MicroAPI::Duplicate(srcBaseReg, static_cast<GatherRangeType>(srcRowOffset), mask);
-                        AscendC::MicroAPI::Add(srcIdxReg, srcIdxReg, srcBaseReg, mask);
-                        AscendC::MicroAPI::Add(srcIdxReg, srcIdxReg, colReg, mask);
+                        AscendC::Reg::RegTensor<GatherRangeType> srcIdxReg;
+                        AscendC::Reg::Muls(srcIdxReg, cReg, static_cast<GatherRangeType>(hwSize), mask);
+                        AscendC::Reg::Add(srcIdxReg, srcIdxReg, nOffsetReg, mask);
+                        AscendC::Reg::RegTensor<GatherRangeType> srcBaseReg;
+                        AscendC::Reg::Duplicate(srcBaseReg, static_cast<GatherRangeType>(srcRowOffset), mask);
+                        AscendC::Reg::Add(srcIdxReg, srcIdxReg, srcBaseReg, mask);
+                        AscendC::Reg::Add(srcIdxReg, srcIdxReg, colReg, mask);
 
                         // dstIdx = nOffset + c*hwSize + dstRowOffset + col
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> dstIdxReg;
-                        AscendC::MicroAPI::Muls(dstIdxReg, cReg, static_cast<GatherRangeType>(hwSize), mask);
-                        AscendC::MicroAPI::Add(dstIdxReg, dstIdxReg, nOffsetReg, mask);
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> dstBaseReg;
-                        AscendC::MicroAPI::Duplicate(dstBaseReg, static_cast<GatherRangeType>(dstRowOffset), mask);
-                        AscendC::MicroAPI::Add(dstIdxReg, dstIdxReg, dstBaseReg, mask);
-                        AscendC::MicroAPI::Add(dstIdxReg, dstIdxReg, colReg, mask);
+                        AscendC::Reg::RegTensor<GatherRangeType> dstIdxReg;
+                        AscendC::Reg::Muls(dstIdxReg, cReg, static_cast<GatherRangeType>(hwSize), mask);
+                        AscendC::Reg::Add(dstIdxReg, dstIdxReg, nOffsetReg, mask);
+                        AscendC::Reg::RegTensor<GatherRangeType> dstBaseReg;
+                        AscendC::Reg::Duplicate(dstBaseReg, static_cast<GatherRangeType>(dstRowOffset), mask);
+                        AscendC::Reg::Add(dstIdxReg, dstIdxReg, dstBaseReg, mask);
+                        AscendC::Reg::Add(dstIdxReg, dstIdxReg, colReg, mask);
 
-                        AscendC::MicroAPI::DataCopy(srcIdxAddr, srcIdxReg, mask);
-                        AscendC::MicroAPI::DataCopy(dstIdxAddr, dstIdxReg, mask);
+                        AscendC::Reg::DataCopy(srcIdxAddr, srcIdxReg, mask);
+                        AscendC::Reg::DataCopy(dstIdxAddr, dstIdxReg, mask);
                     }
                 } else {
                     // 后续批：src 和 dst 同向递增 nPerVF*nStride（N 轴两端方向一致）
@@ -1906,15 +1906,15 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHAxisPad(int64_t factor
                     __VEC_SCOPE__
                     {
                         uint32_t vLen = static_cast<uint32_t>(totalElems);
-                        AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<GatherRangeType>(vLen);
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> srcIdxReg, dstIdxReg, stepReg;
-                        AscendC::MicroAPI::DataCopy(srcIdxReg, srcIdxAddr);
-                        AscendC::MicroAPI::DataCopy(dstIdxReg, dstIdxAddr);
-                        AscendC::MicroAPI::Duplicate(stepReg, nStep, mask);
-                        AscendC::MicroAPI::Add(srcIdxReg, srcIdxReg, stepReg, mask);
-                        AscendC::MicroAPI::Add(dstIdxReg, dstIdxReg, stepReg, mask);
-                        AscendC::MicroAPI::DataCopy(srcIdxAddr, srcIdxReg, mask);
-                        AscendC::MicroAPI::DataCopy(dstIdxAddr, dstIdxReg, mask);
+                        AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherRangeType>(vLen);
+                        AscendC::Reg::RegTensor<GatherRangeType> srcIdxReg, dstIdxReg, stepReg;
+                        AscendC::Reg::DataCopy(srcIdxReg, srcIdxAddr);
+                        AscendC::Reg::DataCopy(dstIdxReg, dstIdxAddr);
+                        AscendC::Reg::Duplicate(stepReg, nStep, mask);
+                        AscendC::Reg::Add(srcIdxReg, srcIdxReg, stepReg, mask);
+                        AscendC::Reg::Add(dstIdxReg, dstIdxReg, stepReg, mask);
+                        AscendC::Reg::DataCopy(srcIdxAddr, srcIdxReg, mask);
+                        AscendC::Reg::DataCopy(dstIdxAddr, dstIdxReg, mask);
                     }
                 }
                 GatherAddScatter(baseAddr + ZERO_PAD_CNT, srcIdxAddr, dstIdxAddr, static_cast<uint64_t>(totalElems));
@@ -1947,36 +1947,36 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHAxisPad(int64_t factor
                 __VEC_SCOPE__
                 {
                     uint32_t vLen = static_cast<uint32_t>(curElements);
-                    AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<GatherRangeType>(vLen);
+                    AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherRangeType>(vLen);
 
-                    AscendC::MicroAPI::RegTensor<GatherRangeType> xReg;
-                    AscendC::MicroAPI::Arange(xReg, static_cast<GatherRangeType>(0));
+                    AscendC::Reg::RegTensor<GatherRangeType> xReg;
+                    AscendC::Reg::Arange(xReg, static_cast<GatherRangeType>(0));
 
-                    AscendC::MicroAPI::RegTensor<GatherRangeType> cReg, colReg, tmpReg, wReg;
-                    AscendC::MicroAPI::Duplicate(wReg, static_cast<GatherRangeType>(width), mask);
-                    AscendC::MicroAPI::Div(cReg, xReg, wReg, mask);
-                    AscendC::MicroAPI::Muls(tmpReg, cReg, static_cast<GatherRangeType>(width), mask);
-                    AscendC::MicroAPI::Sub(colReg, xReg, tmpReg, mask);
+                    AscendC::Reg::RegTensor<GatherRangeType> cReg, colReg, tmpReg, wReg;
+                    AscendC::Reg::Duplicate(wReg, static_cast<GatherRangeType>(width), mask);
+                    AscendC::Reg::Div(cReg, xReg, wReg, mask);
+                    AscendC::Reg::Muls(tmpReg, cReg, static_cast<GatherRangeType>(width), mask);
+                    AscendC::Reg::Sub(colReg, xReg, tmpReg, mask);
 
-                    AscendC::MicroAPI::RegTensor<GatherRangeType> absCReg;
-                    AscendC::MicroAPI::Duplicate(absCReg, static_cast<GatherRangeType>(cBase), mask);
-                    AscendC::MicroAPI::Add(absCReg, absCReg, cReg, mask);
+                    AscendC::Reg::RegTensor<GatherRangeType> absCReg;
+                    AscendC::Reg::Duplicate(absCReg, static_cast<GatherRangeType>(cBase), mask);
+                    AscendC::Reg::Add(absCReg, absCReg, cReg, mask);
 
-                    AscendC::MicroAPI::RegTensor<GatherRangeType> srcIdxReg, dstIdxReg;
-                    AscendC::MicroAPI::Muls(srcIdxReg, absCReg, static_cast<GatherRangeType>(hwSize), mask);
-                    AscendC::MicroAPI::Muls(dstIdxReg, absCReg, static_cast<GatherRangeType>(hwSize), mask);
+                    AscendC::Reg::RegTensor<GatherRangeType> srcIdxReg, dstIdxReg;
+                    AscendC::Reg::Muls(srcIdxReg, absCReg, static_cast<GatherRangeType>(hwSize), mask);
+                    AscendC::Reg::Muls(dstIdxReg, absCReg, static_cast<GatherRangeType>(hwSize), mask);
 
-                    AscendC::MicroAPI::RegTensor<GatherRangeType> srcBaseReg, dstBaseReg;
-                    AscendC::MicroAPI::Duplicate(srcBaseReg, static_cast<GatherRangeType>(srcRowOffset), mask);
-                    AscendC::MicroAPI::Duplicate(dstBaseReg, static_cast<GatherRangeType>(dstRowOffset), mask);
+                    AscendC::Reg::RegTensor<GatherRangeType> srcBaseReg, dstBaseReg;
+                    AscendC::Reg::Duplicate(srcBaseReg, static_cast<GatherRangeType>(srcRowOffset), mask);
+                    AscendC::Reg::Duplicate(dstBaseReg, static_cast<GatherRangeType>(dstRowOffset), mask);
 
-                    AscendC::MicroAPI::Add(srcIdxReg, srcIdxReg, srcBaseReg, mask);
-                    AscendC::MicroAPI::Add(dstIdxReg, dstIdxReg, dstBaseReg, mask);
-                    AscendC::MicroAPI::Add(srcIdxReg, srcIdxReg, colReg, mask);
-                    AscendC::MicroAPI::Add(dstIdxReg, dstIdxReg, colReg, mask);
+                    AscendC::Reg::Add(srcIdxReg, srcIdxReg, srcBaseReg, mask);
+                    AscendC::Reg::Add(dstIdxReg, dstIdxReg, dstBaseReg, mask);
+                    AscendC::Reg::Add(srcIdxReg, srcIdxReg, colReg, mask);
+                    AscendC::Reg::Add(dstIdxReg, dstIdxReg, colReg, mask);
 
-                    AscendC::MicroAPI::DataCopy(srcIdxAddr, srcIdxReg, mask);
-                    AscendC::MicroAPI::DataCopy(dstIdxAddr, dstIdxReg, mask);
+                    AscendC::Reg::DataCopy(srcIdxAddr, srcIdxReg, mask);
+                    AscendC::Reg::DataCopy(dstIdxAddr, dstIdxReg, mask);
                 }
 
                 GatherAddScatter(nBaseAddr + ZERO_PAD_CNT, srcIdxAddr, dstIdxAddr, static_cast<uint64_t>(curElements));
@@ -1995,20 +1995,20 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHAxisPad(int64_t factor
                     __VEC_SCOPE__
                     {
                         uint32_t vLen = static_cast<uint32_t>(curElements);
-                        AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<GatherRangeType>(vLen);
+                        AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherRangeType>(vLen);
 
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> stepReg;
-                        AscendC::MicroAPI::Duplicate(stepReg, static_cast<GatherRangeType>(cStep), mask);
+                        AscendC::Reg::RegTensor<GatherRangeType> stepReg;
+                        AscendC::Reg::Duplicate(stepReg, static_cast<GatherRangeType>(cStep), mask);
 
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> srcIdxReg, dstIdxReg;
-                        AscendC::MicroAPI::DataCopy(srcIdxReg, srcIdxAddr);
-                        AscendC::MicroAPI::DataCopy(dstIdxReg, dstIdxAddr);
+                        AscendC::Reg::RegTensor<GatherRangeType> srcIdxReg, dstIdxReg;
+                        AscendC::Reg::DataCopy(srcIdxReg, srcIdxAddr);
+                        AscendC::Reg::DataCopy(dstIdxReg, dstIdxAddr);
 
-                        AscendC::MicroAPI::Add(srcIdxReg, srcIdxReg, stepReg, mask);
-                        AscendC::MicroAPI::Add(dstIdxReg, dstIdxReg, stepReg, mask);
+                        AscendC::Reg::Add(srcIdxReg, srcIdxReg, stepReg, mask);
+                        AscendC::Reg::Add(dstIdxReg, dstIdxReg, stepReg, mask);
 
-                        AscendC::MicroAPI::DataCopy(srcIdxAddr, srcIdxReg, mask);
-                        AscendC::MicroAPI::DataCopy(dstIdxAddr, dstIdxReg, mask);
+                        AscendC::Reg::DataCopy(srcIdxAddr, srcIdxReg, mask);
+                        AscendC::Reg::DataCopy(dstIdxAddr, dstIdxReg, mask);
                     }
 
                     GatherAddScatter(nBaseAddr + ZERO_PAD_CNT, srcIdxAddr, dstIdxAddr,
@@ -2106,52 +2106,52 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldCAxisPad(uint64_t hwSiz
                 __VEC_SCOPE__
                 {
                     uint32_t vLen = static_cast<uint32_t>(totalElems);
-                    AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<GatherRangeType>(vLen);
+                    AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherRangeType>(vLen);
 
-                    AscendC::MicroAPI::RegTensor<GatherRangeType> xReg;
-                    AscendC::MicroAPI::Arange(xReg, static_cast<GatherRangeType>(0));
+                    AscendC::Reg::RegTensor<GatherRangeType> xReg;
+                    AscendC::Reg::Arange(xReg, static_cast<GatherRangeType>(0));
 
                     // ── N 层分解 ──
-                    AscendC::MicroAPI::RegTensor<GatherRangeType> nInBatchReg, xiReg, padElemReg, tmpReg;
-                    AscendC::MicroAPI::Duplicate(padElemReg, static_cast<GatherRangeType>(padElem), mask);
-                    AscendC::MicroAPI::Div(nInBatchReg, xReg, padElemReg, mask);
-                    AscendC::MicroAPI::Muls(tmpReg, nInBatchReg, static_cast<GatherRangeType>(padElem), mask);
-                    AscendC::MicroAPI::Sub(xiReg, xReg, tmpReg, mask); // xi = x % padElem
+                    AscendC::Reg::RegTensor<GatherRangeType> nInBatchReg, xiReg, padElemReg, tmpReg;
+                    AscendC::Reg::Duplicate(padElemReg, static_cast<GatherRangeType>(padElem), mask);
+                    AscendC::Reg::Div(nInBatchReg, xReg, padElemReg, mask);
+                    AscendC::Reg::Muls(tmpReg, nInBatchReg, static_cast<GatherRangeType>(padElem), mask);
+                    AscendC::Reg::Sub(xiReg, xReg, tmpReg, mask); // xi = x % padElem
 
                     // ── C 层分解 ──
-                    AscendC::MicroAPI::RegTensor<GatherRangeType> ciReg, eReg, hwReg;
-                    AscendC::MicroAPI::Duplicate(hwReg, static_cast<GatherRangeType>(hwSize), mask);
-                    AscendC::MicroAPI::Div(ciReg, xiReg, hwReg, mask);
-                    AscendC::MicroAPI::Muls(tmpReg, ciReg, static_cast<GatherRangeType>(hwSize), mask);
-                    AscendC::MicroAPI::Sub(eReg, xiReg, tmpReg, mask); // e = xi % hwSize
+                    AscendC::Reg::RegTensor<GatherRangeType> ciReg, eReg, hwReg;
+                    AscendC::Reg::Duplicate(hwReg, static_cast<GatherRangeType>(hwSize), mask);
+                    AscendC::Reg::Div(ciReg, xiReg, hwReg, mask);
+                    AscendC::Reg::Muls(tmpReg, ciReg, static_cast<GatherRangeType>(hwSize), mask);
+                    AscendC::Reg::Sub(eReg, xiReg, tmpReg, mask); // e = xi % hwSize
 
                     // ── N 轴偏移（两者共享）──
                     // nOffset_reg = nInBatch * nStride  （nBase=0 时不含常量偏移）
-                    AscendC::MicroAPI::RegTensor<GatherRangeType> nOffsetReg;
-                    AscendC::MicroAPI::Muls(nOffsetReg, nInBatchReg, static_cast<GatherRangeType>(nStride), mask);
+                    AscendC::Reg::RegTensor<GatherRangeType> nOffsetReg;
+                    AscendC::Reg::Muls(nOffsetReg, nInBatchReg, static_cast<GatherRangeType>(nStride), mask);
 
                     // ── srcIdx ──
                     // srcIdx = nOffset + srcC0*hwSize + xi
                     //        = nOffset + (srcC0*hwSize + xi)     [其中 srcC0*hwSize+xi 是 Arange 部分]
                     // 直接：srcIdx = nOffset + Duplicate(srcC0*hwSize) + xiReg
-                    AscendC::MicroAPI::RegTensor<GatherRangeType> srcIdxReg;
-                    AscendC::MicroAPI::Duplicate(
-                        srcIdxReg, static_cast<GatherRangeType>(srcC0 * static_cast<int64_t>(hwSize)), mask);
-                    AscendC::MicroAPI::Add(srcIdxReg, srcIdxReg, xiReg, mask);
-                    AscendC::MicroAPI::Add(srcIdxReg, srcIdxReg, nOffsetReg, mask);
+                    AscendC::Reg::RegTensor<GatherRangeType> srcIdxReg;
+                    AscendC::Reg::Duplicate(srcIdxReg,
+                                            static_cast<GatherRangeType>(srcC0 * static_cast<int64_t>(hwSize)), mask);
+                    AscendC::Reg::Add(srcIdxReg, srcIdxReg, xiReg, mask);
+                    AscendC::Reg::Add(srcIdxReg, srcIdxReg, nOffsetReg, mask);
 
                     // ── dstIdx ──
                     // dstC = dstC0 - ci
                     // dstIdx = nOffset + dstC * hwSize + e
-                    AscendC::MicroAPI::RegTensor<GatherRangeType> dstCReg, dstIdxReg;
-                    AscendC::MicroAPI::Duplicate(dstCReg, static_cast<GatherRangeType>(dstC0), mask);
-                    AscendC::MicroAPI::Sub(dstCReg, dstCReg, ciReg, mask);
-                    AscendC::MicroAPI::Muls(dstIdxReg, dstCReg, static_cast<GatherRangeType>(hwSize), mask);
-                    AscendC::MicroAPI::Add(dstIdxReg, dstIdxReg, eReg, mask);
-                    AscendC::MicroAPI::Add(dstIdxReg, dstIdxReg, nOffsetReg, mask);
+                    AscendC::Reg::RegTensor<GatherRangeType> dstCReg, dstIdxReg;
+                    AscendC::Reg::Duplicate(dstCReg, static_cast<GatherRangeType>(dstC0), mask);
+                    AscendC::Reg::Sub(dstCReg, dstCReg, ciReg, mask);
+                    AscendC::Reg::Muls(dstIdxReg, dstCReg, static_cast<GatherRangeType>(hwSize), mask);
+                    AscendC::Reg::Add(dstIdxReg, dstIdxReg, eReg, mask);
+                    AscendC::Reg::Add(dstIdxReg, dstIdxReg, nOffsetReg, mask);
 
-                    AscendC::MicroAPI::DataCopy(srcIdxAddr, srcIdxReg, mask);
-                    AscendC::MicroAPI::DataCopy(dstIdxAddr, dstIdxReg, mask);
+                    AscendC::Reg::DataCopy(srcIdxAddr, srcIdxReg, mask);
+                    AscendC::Reg::DataCopy(dstIdxAddr, dstIdxReg, mask);
                 }
             } else {
                 // 后续批次：N 轴移动，srcIdx 和 dstIdx 均加 nPerVF * nStride（方向相同）
@@ -2160,16 +2160,16 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldCAxisPad(uint64_t hwSiz
                 __VEC_SCOPE__
                 {
                     uint32_t vLen = static_cast<uint32_t>(totalElems);
-                    AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<GatherRangeType>(vLen);
+                    AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherRangeType>(vLen);
 
-                    AscendC::MicroAPI::RegTensor<GatherRangeType> srcIdxReg, dstIdxReg, stepReg;
-                    AscendC::MicroAPI::DataCopy(srcIdxReg, srcIdxAddr);
-                    AscendC::MicroAPI::DataCopy(dstIdxReg, dstIdxAddr);
-                    AscendC::MicroAPI::Duplicate(stepReg, nStep, mask);
-                    AscendC::MicroAPI::Add(srcIdxReg, srcIdxReg, stepReg, mask);
-                    AscendC::MicroAPI::Add(dstIdxReg, dstIdxReg, stepReg, mask);
-                    AscendC::MicroAPI::DataCopy(srcIdxAddr, srcIdxReg, mask);
-                    AscendC::MicroAPI::DataCopy(dstIdxAddr, dstIdxReg, mask);
+                    AscendC::Reg::RegTensor<GatherRangeType> srcIdxReg, dstIdxReg, stepReg;
+                    AscendC::Reg::DataCopy(srcIdxReg, srcIdxAddr);
+                    AscendC::Reg::DataCopy(dstIdxReg, dstIdxAddr);
+                    AscendC::Reg::Duplicate(stepReg, nStep, mask);
+                    AscendC::Reg::Add(srcIdxReg, srcIdxReg, stepReg, mask);
+                    AscendC::Reg::Add(dstIdxReg, dstIdxReg, stepReg, mask);
+                    AscendC::Reg::DataCopy(srcIdxAddr, srcIdxReg, mask);
+                    AscendC::Reg::DataCopy(dstIdxAddr, dstIdxReg, mask);
                 }
             }
 
@@ -2206,15 +2206,15 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldCAxisPad(uint64_t hwSiz
                 __VEC_SCOPE__
                 {
                     uint32_t vLen = VL_RANGE_CNT;
-                    AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<GatherRangeType>(vLen);
+                    AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherRangeType>(vLen);
 
-                    AscendC::MicroAPI::RegTensor<GatherRangeType> srcReg;
-                    AscendC::MicroAPI::Arange(srcReg, static_cast<GatherRangeType>(srcOffset));
-                    AscendC::MicroAPI::DataCopy(srcIdxAddr, srcReg, mask);
+                    AscendC::Reg::RegTensor<GatherRangeType> srcReg;
+                    AscendC::Reg::Arange(srcReg, static_cast<GatherRangeType>(srcOffset));
+                    AscendC::Reg::DataCopy(srcIdxAddr, srcReg, mask);
 
-                    AscendC::MicroAPI::RegTensor<GatherRangeType> dstReg;
-                    AscendC::MicroAPI::Arange(dstReg, static_cast<GatherRangeType>(dstOffset));
-                    AscendC::MicroAPI::DataCopy(dstIdxAddr, dstReg, mask);
+                    AscendC::Reg::RegTensor<GatherRangeType> dstReg;
+                    AscendC::Reg::Arange(dstReg, static_cast<GatherRangeType>(dstOffset));
+                    AscendC::Reg::DataCopy(dstIdxAddr, dstReg, mask);
                 }
 
                 // 分批处理 hwSize 个元素，后续批次 Adds 递增索引
@@ -2349,7 +2349,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHWAxis(int64_t factor, 
             __local_mem__ PromoteDataT* sregOutAddr = outputAddr;
             __local_mem__ PromoteDataT* sregMiddAddr = midAddr;
             uint32_t tempElementsPerBatch = elementsPerBatch;
-            AscendC::MicroAPI::MaskReg idxMask = AscendC::MicroAPI::UpdateMask<GatherIdxType>(elementsPerBatch);
+            AscendC::Reg::MaskReg idxMask = AscendC::Reg::UpdateMask<GatherIdxType>(elementsPerBatch);
 
             __local_mem__ GatherIdxType* midIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(midIdxAddr);
             __local_mem__ GatherIdxType* leftIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(leftIdxAddr);
@@ -2357,72 +2357,72 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHWAxis(int64_t factor, 
 
             AscendC::Reg::UnalignRegForStore ureg1;
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> midIdxReg;
-            AscendC::MicroAPI::DataCopy(midIdxReg, midIdxAddrU);
+            AscendC::Reg::RegTensor<GatherIdxType> midIdxReg;
+            AscendC::Reg::DataCopy(midIdxReg, midIdxAddrU);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> leftIdxReg;
-            AscendC::MicroAPI::DataCopy(leftIdxReg, leftIdxAddrU);
+            AscendC::Reg::RegTensor<GatherIdxType> leftIdxReg;
+            AscendC::Reg::DataCopy(leftIdxReg, leftIdxAddrU);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> rightIdxReg;
-            AscendC::MicroAPI::DataCopy(rightIdxReg, rightIdxAddrU);
+            AscendC::Reg::RegTensor<GatherIdxType> rightIdxReg;
+            AscendC::Reg::DataCopy(rightIdxReg, rightIdxAddrU);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> midBatchOffsetReg;
-            AscendC::MicroAPI::Duplicate(midBatchOffsetReg, batchDelta, idxMask);
+            AscendC::Reg::RegTensor<GatherIdxType> midBatchOffsetReg;
+            AscendC::Reg::Duplicate(midBatchOffsetReg, batchDelta, idxMask);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> zeroReg;
-            AscendC::MicroAPI::Duplicate(zeroReg, static_cast<GatherIdxType>(0), idxMask);
+            AscendC::Reg::RegTensor<GatherIdxType> zeroReg;
+            AscendC::Reg::Duplicate(zeroReg, static_cast<GatherIdxType>(0), idxMask);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> leftBatchOffsetReg;
-            AscendC::MicroAPI::Duplicate(leftBatchOffsetReg, static_cast<GatherIdxType>(0), idxMask);
-            AscendC::MicroAPI::MaskReg leftValidMask;
-            AscendC::MicroAPI::Compare<GatherIdxType, CMPMODE::GT>(leftValidMask, leftIdxReg, zeroReg, idxMask);
-            AscendC::MicroAPI::Duplicate<GatherIdxType, MicroAPI::MaskMergeMode::MERGING, GatherIdxType>(
+            AscendC::Reg::RegTensor<GatherIdxType> leftBatchOffsetReg;
+            AscendC::Reg::Duplicate(leftBatchOffsetReg, static_cast<GatherIdxType>(0), idxMask);
+            AscendC::Reg::MaskReg leftValidMask;
+            AscendC::Reg::Compare<GatherIdxType, CMPMODE::GT>(leftValidMask, leftIdxReg, zeroReg, idxMask);
+            AscendC::Reg::Duplicate<GatherIdxType, Reg::MaskMergeMode::MERGING, GatherIdxType>(
                 leftBatchOffsetReg, batchDelta, leftValidMask);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> rightBatchOffsetReg;
-            AscendC::MicroAPI::Duplicate(rightBatchOffsetReg, static_cast<GatherIdxType>(0), idxMask);
-            AscendC::MicroAPI::MaskReg rightValidMask;
-            AscendC::MicroAPI::Compare<GatherIdxType, CMPMODE::GT>(rightValidMask, rightIdxReg, zeroReg, idxMask);
-            AscendC::MicroAPI::Duplicate<GatherIdxType, MicroAPI::MaskMergeMode::MERGING, GatherIdxType>(
+            AscendC::Reg::RegTensor<GatherIdxType> rightBatchOffsetReg;
+            AscendC::Reg::Duplicate(rightBatchOffsetReg, static_cast<GatherIdxType>(0), idxMask);
+            AscendC::Reg::MaskReg rightValidMask;
+            AscendC::Reg::Compare<GatherIdxType, CMPMODE::GT>(rightValidMask, rightIdxReg, zeroReg, idxMask);
+            AscendC::Reg::Duplicate<GatherIdxType, Reg::MaskMergeMode::MERGING, GatherIdxType>(
                 rightBatchOffsetReg, batchDelta, rightValidMask);
 
             // 处理完整批次（不含尾块，VEC_SCOPE 内循环变量必须使用 uint16_t）
             for (uint16_t batch = 0; batch < static_cast<uint16_t>(totalBatchesU - 1); batch++) {
                 uint32_t maskElementsPerBatch = tempElementsPerBatch;
-                AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<PromoteDataT>(maskElementsPerBatch);
+                AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<PromoteDataT>(maskElementsPerBatch);
 
-                AscendC::MicroAPI::RegTensor<PromoteDataT> midDataReg;
-                AscendC::MicroAPI::DataCopyGather(midDataReg, sregMiddAddr, midIdxReg, mask);
+                AscendC::Reg::RegTensor<PromoteDataT> midDataReg;
+                AscendC::Reg::DataCopyGather(midDataReg, sregMiddAddr, midIdxReg, mask);
 
-                AscendC::MicroAPI::RegTensor<PromoteDataT> leftDataReg;
-                AscendC::MicroAPI::DataCopyGather(leftDataReg, sregMiddAddr, leftIdxReg, mask);
+                AscendC::Reg::RegTensor<PromoteDataT> leftDataReg;
+                AscendC::Reg::DataCopyGather(leftDataReg, sregMiddAddr, leftIdxReg, mask);
 
-                AscendC::MicroAPI::RegTensor<PromoteDataT> rightDataReg;
-                AscendC::MicroAPI::DataCopyGather(rightDataReg, sregMiddAddr, rightIdxReg, mask);
+                AscendC::Reg::RegTensor<PromoteDataT> rightDataReg;
+                AscendC::Reg::DataCopyGather(rightDataReg, sregMiddAddr, rightIdxReg, mask);
 
-                AscendC::MicroAPI::RegTensor<PromoteDataT> sumReg;
-                AscendC::MicroAPI::Add(sumReg, midDataReg, leftDataReg, mask);
-                AscendC::MicroAPI::Add(sumReg, sumReg, rightDataReg, mask);
+                AscendC::Reg::RegTensor<PromoteDataT> sumReg;
+                AscendC::Reg::Add(sumReg, midDataReg, leftDataReg, mask);
+                AscendC::Reg::Add(sumReg, sumReg, rightDataReg, mask);
                 AscendC::Reg::StoreUnAlign(sregOutAddr, sumReg, ureg1, tempElementsPerBatch);
 
-                AscendC::MicroAPI::Add(midIdxReg, midIdxReg, midBatchOffsetReg, idxMask);
-                AscendC::MicroAPI::Add(leftIdxReg, leftIdxReg, leftBatchOffsetReg, idxMask);
-                AscendC::MicroAPI::Add(rightIdxReg, rightIdxReg, rightBatchOffsetReg, idxMask);
+                AscendC::Reg::Add(midIdxReg, midIdxReg, midBatchOffsetReg, idxMask);
+                AscendC::Reg::Add(leftIdxReg, leftIdxReg, leftBatchOffsetReg, idxMask);
+                AscendC::Reg::Add(rightIdxReg, rightIdxReg, rightBatchOffsetReg, idxMask);
             }
 
             // 处理尾块（最后一个批次，行数可能不满 actualRowsPerVF）
             uint32_t tempTailElements = tailElements;
-            AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<PromoteDataT>(tailElements);
-            AscendC::MicroAPI::RegTensor<PromoteDataT> midDataReg;
-            AscendC::MicroAPI::DataCopyGather(midDataReg, sregMiddAddr, midIdxReg, mask);
-            AscendC::MicroAPI::RegTensor<PromoteDataT> leftDataReg;
-            AscendC::MicroAPI::DataCopyGather(leftDataReg, sregMiddAddr, leftIdxReg, mask);
-            AscendC::MicroAPI::RegTensor<PromoteDataT> rightDataReg;
-            AscendC::MicroAPI::DataCopyGather(rightDataReg, sregMiddAddr, rightIdxReg, mask);
+            AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<PromoteDataT>(tailElements);
+            AscendC::Reg::RegTensor<PromoteDataT> midDataReg;
+            AscendC::Reg::DataCopyGather(midDataReg, sregMiddAddr, midIdxReg, mask);
+            AscendC::Reg::RegTensor<PromoteDataT> leftDataReg;
+            AscendC::Reg::DataCopyGather(leftDataReg, sregMiddAddr, leftIdxReg, mask);
+            AscendC::Reg::RegTensor<PromoteDataT> rightDataReg;
+            AscendC::Reg::DataCopyGather(rightDataReg, sregMiddAddr, rightIdxReg, mask);
 
-            AscendC::MicroAPI::RegTensor<PromoteDataT> sumReg;
-            AscendC::MicroAPI::Add(sumReg, midDataReg, leftDataReg, mask);
-            AscendC::MicroAPI::Add(sumReg, sumReg, rightDataReg, mask);
+            AscendC::Reg::RegTensor<PromoteDataT> sumReg;
+            AscendC::Reg::Add(sumReg, midDataReg, leftDataReg, mask);
+            AscendC::Reg::Add(sumReg, sumReg, rightDataReg, mask);
             AscendC::Reg::StoreUnAlign(sregOutAddr, sumReg, ureg1, tempTailElements);
             AscendC::Reg::StoreUnAlignPost(sregOutAddr, ureg1, 0);
         }
@@ -2459,7 +2459,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHWAxis(int64_t factor, 
             __local_mem__ PromoteDataT* sregMiddAddr = midAddr;
             // UpdateMask 会修改参数，用临时副本传入
             uint32_t idxMaskCount = storeElemPerBatch;
-            AscendC::MicroAPI::MaskReg idxMask = AscendC::MicroAPI::UpdateMask<GatherIdxType>(idxMaskCount);
+            AscendC::Reg::MaskReg idxMask = AscendC::Reg::UpdateMask<GatherIdxType>(idxMaskCount);
 
             __local_mem__ GatherIdxType* midIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(midIdxAddr);
             __local_mem__ GatherIdxType* leftIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(leftIdxAddr);
@@ -2468,48 +2468,48 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHWAxis(int64_t factor, 
             AscendC::Reg::UnalignRegForStore ureg1;
 
             // 加载 C0 基准索引（GenerateCrossChannelWAxisIndices 生成 C0-r0..r(actualRowsPerVF-1)）
-            AscendC::MicroAPI::RegTensor<GatherIdxType> baseMidIdxReg;
-            AscendC::MicroAPI::DataCopy(baseMidIdxReg, midIdxAddrU);
-            AscendC::MicroAPI::RegTensor<GatherIdxType> baseLeftIdxReg;
-            AscendC::MicroAPI::DataCopy(baseLeftIdxReg, leftIdxAddrU);
-            AscendC::MicroAPI::RegTensor<GatherIdxType> baseRightIdxReg;
-            AscendC::MicroAPI::DataCopy(baseRightIdxReg, rightIdxAddrU);
+            AscendC::Reg::RegTensor<GatherIdxType> baseMidIdxReg;
+            AscendC::Reg::DataCopy(baseMidIdxReg, midIdxAddrU);
+            AscendC::Reg::RegTensor<GatherIdxType> baseLeftIdxReg;
+            AscendC::Reg::DataCopy(baseLeftIdxReg, leftIdxAddrU);
+            AscendC::Reg::RegTensor<GatherIdxType> baseRightIdxReg;
+            AscendC::Reg::DataCopy(baseRightIdxReg, rightIdxAddrU);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> zeroReg;
-            AscendC::MicroAPI::Duplicate(zeroReg, static_cast<GatherIdxType>(0), idxMask);
+            AscendC::Reg::RegTensor<GatherIdxType> zeroReg;
+            AscendC::Reg::Duplicate(zeroReg, static_cast<GatherIdxType>(0), idxMask);
 
             // 行批次偏移（同 C 通道内向下推进 actualRowsPerVF 行）
-            AscendC::MicroAPI::RegTensor<GatherIdxType> midRowOffsetReg;
-            AscendC::MicroAPI::Duplicate(midRowOffsetReg, rowBatchDelta, idxMask);
+            AscendC::Reg::RegTensor<GatherIdxType> midRowOffsetReg;
+            AscendC::Reg::Duplicate(midRowOffsetReg, rowBatchDelta, idxMask);
 
-            AscendC::MicroAPI::MaskReg leftValidMask;
-            AscendC::MicroAPI::Compare<GatherIdxType, CMPMODE::GT>(leftValidMask, baseLeftIdxReg, zeroReg, idxMask);
-            AscendC::MicroAPI::RegTensor<GatherIdxType> leftRowOffsetReg;
-            AscendC::MicroAPI::Duplicate(leftRowOffsetReg, static_cast<GatherIdxType>(0), idxMask);
-            AscendC::MicroAPI::Duplicate(leftRowOffsetReg, rowBatchDelta, leftValidMask);
+            AscendC::Reg::MaskReg leftValidMask;
+            AscendC::Reg::Compare<GatherIdxType, CMPMODE::GT>(leftValidMask, baseLeftIdxReg, zeroReg, idxMask);
+            AscendC::Reg::RegTensor<GatherIdxType> leftRowOffsetReg;
+            AscendC::Reg::Duplicate(leftRowOffsetReg, static_cast<GatherIdxType>(0), idxMask);
+            AscendC::Reg::Duplicate(leftRowOffsetReg, rowBatchDelta, leftValidMask);
 
-            AscendC::MicroAPI::MaskReg rightValidMask;
-            AscendC::MicroAPI::Compare<GatherIdxType, CMPMODE::GT>(rightValidMask, baseRightIdxReg, zeroReg, idxMask);
-            AscendC::MicroAPI::RegTensor<GatherIdxType> rightRowOffsetReg;
-            AscendC::MicroAPI::Duplicate(rightRowOffsetReg, static_cast<GatherIdxType>(0), idxMask);
-            AscendC::MicroAPI::Duplicate(rightRowOffsetReg, rowBatchDelta, rightValidMask);
+            AscendC::Reg::MaskReg rightValidMask;
+            AscendC::Reg::Compare<GatherIdxType, CMPMODE::GT>(rightValidMask, baseRightIdxReg, zeroReg, idxMask);
+            AscendC::Reg::RegTensor<GatherIdxType> rightRowOffsetReg;
+            AscendC::Reg::Duplicate(rightRowOffsetReg, static_cast<GatherIdxType>(0), idxMask);
+            AscendC::Reg::Duplicate(rightRowOffsetReg, rowBatchDelta, rightValidMask);
 
             // C 通道偏移（步长 hwSize，含 H pad 行；ZERO_PAD 位置保持 0）
-            AscendC::MicroAPI::RegTensor<GatherIdxType> midCOffsetReg;
-            AscendC::MicroAPI::Duplicate(midCOffsetReg, cChanDelta, idxMask);
+            AscendC::Reg::RegTensor<GatherIdxType> midCOffsetReg;
+            AscendC::Reg::Duplicate(midCOffsetReg, cChanDelta, idxMask);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> leftCOffsetReg;
-            AscendC::MicroAPI::Duplicate(leftCOffsetReg, static_cast<GatherIdxType>(0), idxMask);
-            AscendC::MicroAPI::Duplicate(leftCOffsetReg, cChanDelta, leftValidMask);
+            AscendC::Reg::RegTensor<GatherIdxType> leftCOffsetReg;
+            AscendC::Reg::Duplicate(leftCOffsetReg, static_cast<GatherIdxType>(0), idxMask);
+            AscendC::Reg::Duplicate(leftCOffsetReg, cChanDelta, leftValidMask);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> rightCOffsetReg;
-            AscendC::MicroAPI::Duplicate(rightCOffsetReg, static_cast<GatherIdxType>(0), idxMask);
-            AscendC::MicroAPI::Duplicate(rightCOffsetReg, cChanDelta, rightValidMask);
+            AscendC::Reg::RegTensor<GatherIdxType> rightCOffsetReg;
+            AscendC::Reg::Duplicate(rightCOffsetReg, static_cast<GatherIdxType>(0), idxMask);
+            AscendC::Reg::Duplicate(rightCOffsetReg, cChanDelta, rightValidMask);
 
             // 工作寄存器（行批次循环内使用）
-            AscendC::MicroAPI::RegTensor<GatherIdxType> midIdxReg;
-            AscendC::MicroAPI::RegTensor<GatherIdxType> leftIdxReg;
-            AscendC::MicroAPI::RegTensor<GatherIdxType> rightIdxReg;
+            AscendC::Reg::RegTensor<GatherIdxType> midIdxReg;
+            AscendC::Reg::RegTensor<GatherIdxType> leftIdxReg;
+            AscendC::Reg::RegTensor<GatherIdxType> rightIdxReg;
 
             // 外层循环：遍历每个 C 通道
             for (uint16_t c = 0; c < factorU; c++) {
@@ -2522,50 +2522,50 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHWAxis(int64_t factor, 
                 for (uint16_t loop = 0; loop < static_cast<uint16_t>(loopsPerCU - 1); loop++) {
                     // UpdateMask 会修改参数，用临时副本传入；StoreUnAlign 用 storeElemPerBatch
                     uint32_t tempLoopElem = storeElemPerBatch;
-                    AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<PromoteDataT>(tempLoopElem);
+                    AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<PromoteDataT>(tempLoopElem);
 
-                    AscendC::MicroAPI::RegTensor<PromoteDataT> midDataReg;
-                    AscendC::MicroAPI::DataCopyGather(midDataReg, sregMiddAddr, midIdxReg, mask);
-                    AscendC::MicroAPI::RegTensor<PromoteDataT> leftDataReg;
-                    AscendC::MicroAPI::DataCopyGather(leftDataReg, sregMiddAddr, leftIdxReg, mask);
-                    AscendC::MicroAPI::RegTensor<PromoteDataT> rightDataReg;
-                    AscendC::MicroAPI::DataCopyGather(rightDataReg, sregMiddAddr, rightIdxReg, mask);
+                    AscendC::Reg::RegTensor<PromoteDataT> midDataReg;
+                    AscendC::Reg::DataCopyGather(midDataReg, sregMiddAddr, midIdxReg, mask);
+                    AscendC::Reg::RegTensor<PromoteDataT> leftDataReg;
+                    AscendC::Reg::DataCopyGather(leftDataReg, sregMiddAddr, leftIdxReg, mask);
+                    AscendC::Reg::RegTensor<PromoteDataT> rightDataReg;
+                    AscendC::Reg::DataCopyGather(rightDataReg, sregMiddAddr, rightIdxReg, mask);
 
-                    AscendC::MicroAPI::RegTensor<PromoteDataT> sumReg;
-                    AscendC::MicroAPI::Add(sumReg, midDataReg, leftDataReg, mask);
-                    AscendC::MicroAPI::Add(sumReg, sumReg, rightDataReg, mask);
+                    AscendC::Reg::RegTensor<PromoteDataT> sumReg;
+                    AscendC::Reg::Add(sumReg, midDataReg, leftDataReg, mask);
+                    AscendC::Reg::Add(sumReg, sumReg, rightDataReg, mask);
                     AscendC::Reg::StoreUnAlign(outputAddr, sumReg, ureg1, storeElemPerBatch);
 
                     // 行批次内推进（同 C 通道，步长 actualRowsPerVF * width）
-                    AscendC::MicroAPI::Add(midIdxReg, midIdxReg, midRowOffsetReg, idxMask);
-                    AscendC::MicroAPI::Add(leftIdxReg, leftIdxReg, leftRowOffsetReg, idxMask);
-                    AscendC::MicroAPI::Add(rightIdxReg, rightIdxReg, rightRowOffsetReg, idxMask);
+                    AscendC::Reg::Add(midIdxReg, midIdxReg, midRowOffsetReg, idxMask);
+                    AscendC::Reg::Add(leftIdxReg, leftIdxReg, leftRowOffsetReg, idxMask);
+                    AscendC::Reg::Add(rightIdxReg, rightIdxReg, rightRowOffsetReg, idxMask);
                 }
 
                 // 当前 C 通道的尾块（最后一批行，可能不满 actualRowsPerVF）
                 {
                     // UpdateMask 会修改参数，用临时副本传入；StoreUnAlign 用 storeTailElemInC
                     uint32_t tempTailElem = storeTailElemInC;
-                    AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<PromoteDataT>(tempTailElem);
-                    AscendC::MicroAPI::RegTensor<PromoteDataT> midDataReg;
-                    AscendC::MicroAPI::DataCopyGather(midDataReg, sregMiddAddr, midIdxReg, mask);
-                    AscendC::MicroAPI::RegTensor<PromoteDataT> leftDataReg;
-                    AscendC::MicroAPI::DataCopyGather(leftDataReg, sregMiddAddr, leftIdxReg, mask);
-                    AscendC::MicroAPI::RegTensor<PromoteDataT> rightDataReg;
-                    AscendC::MicroAPI::DataCopyGather(rightDataReg, sregMiddAddr, rightIdxReg, mask);
+                    AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<PromoteDataT>(tempTailElem);
+                    AscendC::Reg::RegTensor<PromoteDataT> midDataReg;
+                    AscendC::Reg::DataCopyGather(midDataReg, sregMiddAddr, midIdxReg, mask);
+                    AscendC::Reg::RegTensor<PromoteDataT> leftDataReg;
+                    AscendC::Reg::DataCopyGather(leftDataReg, sregMiddAddr, leftIdxReg, mask);
+                    AscendC::Reg::RegTensor<PromoteDataT> rightDataReg;
+                    AscendC::Reg::DataCopyGather(rightDataReg, sregMiddAddr, rightIdxReg, mask);
 
-                    AscendC::MicroAPI::RegTensor<PromoteDataT> sumReg;
-                    AscendC::MicroAPI::Add(sumReg, midDataReg, leftDataReg, mask);
-                    AscendC::MicroAPI::Add(sumReg, sumReg, rightDataReg, mask);
+                    AscendC::Reg::RegTensor<PromoteDataT> sumReg;
+                    AscendC::Reg::Add(sumReg, midDataReg, leftDataReg, mask);
+                    AscendC::Reg::Add(sumReg, sumReg, rightDataReg, mask);
                     AscendC::Reg::StoreUnAlign(outputAddr, sumReg, ureg1, storeTailElemInC);
                 }
                 AscendC::Reg::StoreUnAlignPost(outputAddr, ureg1, 0);
 
                 // 更新基准到下一个 C 通道（步长 hwSize，不跨 H pad 行混淆）
                 if (c < static_cast<uint16_t>(factorU - 1)) {
-                    AscendC::MicroAPI::Add(baseMidIdxReg, baseMidIdxReg, midCOffsetReg, idxMask);
-                    AscendC::MicroAPI::Add(baseLeftIdxReg, baseLeftIdxReg, leftCOffsetReg, idxMask);
-                    AscendC::MicroAPI::Add(baseRightIdxReg, baseRightIdxReg, rightCOffsetReg, idxMask);
+                    AscendC::Reg::Add(baseMidIdxReg, baseMidIdxReg, midCOffsetReg, idxMask);
+                    AscendC::Reg::Add(baseLeftIdxReg, baseLeftIdxReg, leftCOffsetReg, idxMask);
+                    AscendC::Reg::Add(baseRightIdxReg, baseRightIdxReg, rightCOffsetReg, idxMask);
                 }
             }
         }
@@ -2659,174 +2659,173 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
             uint32_t maskLen = vLen;
 
             // ===== 首批：全用 GatherRangeType 计算索引 =====
-            AscendC::MicroAPI::MaskReg fullMask = AscendC::MicroAPI::UpdateMask<GatherRangeType>(vLen);
+            AscendC::Reg::MaskReg fullMask = AscendC::Reg::UpdateMask<GatherRangeType>(vLen);
 
             // x → (ncInBatch, row, col) 三级分解
-            AscendC::MicroAPI::RegTensor<GatherRangeType> xReg;
-            AscendC::MicroAPI::Arange(xReg, static_cast<GatherRangeType>(0));
+            AscendC::Reg::RegTensor<GatherRangeType> xReg;
+            AscendC::Reg::Arange(xReg, static_cast<GatherRangeType>(0));
 
-            AscendC::MicroAPI::RegTensor<GatherRangeType> ncInBatchReg;
-            AscendC::MicroAPI::RegTensor<GatherRangeType> xRemReg;
-            AscendC::MicroAPI::RegTensor<GatherRangeType> ePerNCReg;
-            AscendC::MicroAPI::RegTensor<GatherRangeType> tmpReg;
+            AscendC::Reg::RegTensor<GatherRangeType> ncInBatchReg;
+            AscendC::Reg::RegTensor<GatherRangeType> xRemReg;
+            AscendC::Reg::RegTensor<GatherRangeType> ePerNCReg;
+            AscendC::Reg::RegTensor<GatherRangeType> tmpReg;
 
-            AscendC::MicroAPI::Duplicate(ePerNCReg, static_cast<GatherRangeType>(elemPerNC), fullMask);
-            AscendC::MicroAPI::Div(ncInBatchReg, xReg, ePerNCReg, fullMask);
-            AscendC::MicroAPI::Muls(tmpReg, ncInBatchReg, static_cast<GatherRangeType>(elemPerNC), fullMask);
-            AscendC::MicroAPI::Sub(xRemReg, xReg, tmpReg, fullMask);
+            AscendC::Reg::Duplicate(ePerNCReg, static_cast<GatherRangeType>(elemPerNC), fullMask);
+            AscendC::Reg::Div(ncInBatchReg, xReg, ePerNCReg, fullMask);
+            AscendC::Reg::Muls(tmpReg, ncInBatchReg, static_cast<GatherRangeType>(elemPerNC), fullMask);
+            AscendC::Reg::Sub(xRemReg, xReg, tmpReg, fullMask);
 
-            AscendC::MicroAPI::RegTensor<GatherRangeType> rowReg;
-            AscendC::MicroAPI::RegTensor<GatherRangeType> colReg;
-            AscendC::MicroAPI::RegTensor<GatherRangeType> outWReg;
+            AscendC::Reg::RegTensor<GatherRangeType> rowReg;
+            AscendC::Reg::RegTensor<GatherRangeType> colReg;
+            AscendC::Reg::RegTensor<GatherRangeType> outWReg;
 
-            AscendC::MicroAPI::Duplicate(outWReg, static_cast<GatherRangeType>(outW), fullMask);
-            AscendC::MicroAPI::Div(rowReg, xRemReg, outWReg, fullMask);
-            AscendC::MicroAPI::Muls(tmpReg, rowReg, static_cast<GatherRangeType>(outW), fullMask);
-            AscendC::MicroAPI::Sub(colReg, xRemReg, tmpReg, fullMask);
+            AscendC::Reg::Duplicate(outWReg, static_cast<GatherRangeType>(outW), fullMask);
+            AscendC::Reg::Div(rowReg, xRemReg, outWReg, fullMask);
+            AscendC::Reg::Muls(tmpReg, rowReg, static_cast<GatherRangeType>(outW), fullMask);
+            AscendC::Reg::Sub(colReg, xRemReg, tmpReg, fullMask);
 
             // ncOffset = (ncInBatch/outC)*nStride + (ncInBatch%outC)*hwSize
-            AscendC::MicroAPI::RegTensor<GatherRangeType> nIdxReg;
-            AscendC::MicroAPI::RegTensor<GatherRangeType> cIdxReg;
-            AscendC::MicroAPI::RegTensor<GatherRangeType> outCReg;
-            AscendC::MicroAPI::RegTensor<GatherRangeType> ncOffsetReg;
+            AscendC::Reg::RegTensor<GatherRangeType> nIdxReg;
+            AscendC::Reg::RegTensor<GatherRangeType> cIdxReg;
+            AscendC::Reg::RegTensor<GatherRangeType> outCReg;
+            AscendC::Reg::RegTensor<GatherRangeType> ncOffsetReg;
 
-            AscendC::MicroAPI::Duplicate(outCReg, static_cast<GatherRangeType>(outC), fullMask);
-            AscendC::MicroAPI::Div(nIdxReg, ncInBatchReg, outCReg, fullMask);
-            AscendC::MicroAPI::Muls(tmpReg, nIdxReg, static_cast<GatherRangeType>(outC), fullMask);
-            AscendC::MicroAPI::Sub(cIdxReg, ncInBatchReg, tmpReg, fullMask);
+            AscendC::Reg::Duplicate(outCReg, static_cast<GatherRangeType>(outC), fullMask);
+            AscendC::Reg::Div(nIdxReg, ncInBatchReg, outCReg, fullMask);
+            AscendC::Reg::Muls(tmpReg, nIdxReg, static_cast<GatherRangeType>(outC), fullMask);
+            AscendC::Reg::Sub(cIdxReg, ncInBatchReg, tmpReg, fullMask);
 
-            AscendC::MicroAPI::RegTensor<GatherRangeType> nPartReg;
-            AscendC::MicroAPI::RegTensor<GatherRangeType> cPartReg;
+            AscendC::Reg::RegTensor<GatherRangeType> nPartReg;
+            AscendC::Reg::RegTensor<GatherRangeType> cPartReg;
 
-            AscendC::MicroAPI::Muls(nPartReg, nIdxReg, nStrideR, fullMask);
-            AscendC::MicroAPI::Muls(cPartReg, cIdxReg, hwSizeR, fullMask);
-            AscendC::MicroAPI::Add(ncOffsetReg, nPartReg, cPartReg, fullMask);
+            AscendC::Reg::Muls(nPartReg, nIdxReg, nStrideR, fullMask);
+            AscendC::Reg::Muls(cPartReg, cIdxReg, hwSizeR, fullMask);
+            AscendC::Reg::Add(ncOffsetReg, nPartReg, cPartReg, fullMask);
 
             // row 偏移
-            AscendC::MicroAPI::RegTensor<GatherRangeType> rowOffsetReg;
+            AscendC::Reg::RegTensor<GatherRangeType> rowOffsetReg;
 
-            AscendC::MicroAPI::Muls(rowOffsetReg, rowReg, widthR, fullMask);
+            AscendC::Reg::Muls(rowOffsetReg, rowReg, widthR, fullMask);
 
             // midIdx = ncOffset + baseOffset + rowOffset + col
-            AscendC::MicroAPI::RegTensor<GatherRangeType> midIdxR;
+            AscendC::Reg::RegTensor<GatherRangeType> midIdxR;
 
-            AscendC::MicroAPI::Duplicate(midIdxR, baseOffset, fullMask);
-            AscendC::MicroAPI::Add(midIdxR, midIdxR, ncOffsetReg, fullMask);
-            AscendC::MicroAPI::Add(midIdxR, midIdxR, rowOffsetReg, fullMask);
-            AscendC::MicroAPI::Add(midIdxR, midIdxR, colReg, fullMask);
+            AscendC::Reg::Duplicate(midIdxR, baseOffset, fullMask);
+            AscendC::Reg::Add(midIdxR, midIdxR, ncOffsetReg, fullMask);
+            AscendC::Reg::Add(midIdxR, midIdxR, rowOffsetReg, fullMask);
+            AscendC::Reg::Add(midIdxR, midIdxR, colReg, fullMask);
 
-            AscendC::MicroAPI::RegTensor<GatherRangeType> zeroFull;
+            AscendC::Reg::RegTensor<GatherRangeType> zeroFull;
 
-            AscendC::MicroAPI::Duplicate(zeroFull, static_cast<GatherRangeType>(0), fullMask);
+            AscendC::Reg::Duplicate(zeroFull, static_cast<GatherRangeType>(0), fullMask);
 
             // ===== leftIdx =====
-            AscendC::MicroAPI::RegTensor<GatherRangeType> leftIdxR;
-            AscendC::MicroAPI::RegTensor<GatherRangeType> col2Reg;
+            AscendC::Reg::RegTensor<GatherRangeType> leftIdxR;
+            AscendC::Reg::RegTensor<GatherRangeType> col2Reg;
 
-            AscendC::MicroAPI::Muls(col2Reg, colReg, static_cast<GatherRangeType>(2), fullMask);
+            AscendC::Reg::Muls(col2Reg, colReg, static_cast<GatherRangeType>(2), fullMask);
 
             if (leftPadW > 0) {
-                AscendC::MicroAPI::RegTensor<GatherRangeType> leftPadWFull;
+                AscendC::Reg::RegTensor<GatherRangeType> leftPadWFull;
 
-                AscendC::MicroAPI::Duplicate(leftPadWFull, static_cast<GatherRangeType>(leftPadW), fullMask);
+                AscendC::Reg::Duplicate(leftPadWFull, static_cast<GatherRangeType>(leftPadW), fullMask);
 
                 if constexpr (IS_REFLECT) {
                     // leftIdx = midIdx - 2*col，valid: 0 < col <= leftPadW
-                    AscendC::MicroAPI::Sub(leftIdxR, midIdxR, col2Reg, fullMask);
+                    AscendC::Reg::Sub(leftIdxR, midIdxR, col2Reg, fullMask);
                     // col == 0 → 置 0
-                    AscendC::MicroAPI::MaskReg eqZeroMask;
-                    AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::EQ>(eqZeroMask, colReg, zeroFull, fullMask);
-                    AscendC::MicroAPI::Select(leftIdxR, zeroFull, leftIdxR, eqZeroMask);
+                    AscendC::Reg::MaskReg eqZeroMask;
+                    AscendC::Reg::Compare<GatherRangeType, CMPMODE::EQ>(eqZeroMask, colReg, zeroFull, fullMask);
+                    AscendC::Reg::Select(leftIdxR, zeroFull, leftIdxR, eqZeroMask);
                     // col > leftPadW → 置 0
-                    AscendC::MicroAPI::MaskReg gtLPWMask;
-                    AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(gtLPWMask, colReg, leftPadWFull, fullMask);
-                    AscendC::MicroAPI::Select(leftIdxR, zeroFull, leftIdxR, gtLPWMask);
+                    AscendC::Reg::MaskReg gtLPWMask;
+                    AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(gtLPWMask, colReg, leftPadWFull, fullMask);
+                    AscendC::Reg::Select(leftIdxR, zeroFull, leftIdxR, gtLPWMask);
                 } else {
                     // leftIdx = midIdx - 2*col - 1，valid: col < leftPadW
-                    AscendC::MicroAPI::Sub(leftIdxR, midIdxR, colReg, fullMask);
-                    AscendC::MicroAPI::Adds(leftIdxR, leftIdxR, static_cast<GatherRangeType>(-1), fullMask);
+                    AscendC::Reg::Sub(leftIdxR, midIdxR, colReg, fullMask);
+                    AscendC::Reg::Adds(leftIdxR, leftIdxR, static_cast<GatherRangeType>(-1), fullMask);
                     // col >= leftPadW → 置 0
-                    AscendC::MicroAPI::MaskReg geLPWMask;
-                    AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GE>(geLPWMask, colReg, leftPadWFull, fullMask);
-                    AscendC::MicroAPI::Select(leftIdxR, zeroFull, leftIdxR, geLPWMask);
+                    AscendC::Reg::MaskReg geLPWMask;
+                    AscendC::Reg::Compare<GatherRangeType, CMPMODE::GE>(geLPWMask, colReg, leftPadWFull, fullMask);
+                    AscendC::Reg::Select(leftIdxR, zeroFull, leftIdxR, geLPWMask);
                 }
             } else {
-                AscendC::MicroAPI::Duplicate(leftIdxR, static_cast<GatherRangeType>(0), fullMask);
+                AscendC::Reg::Duplicate(leftIdxR, static_cast<GatherRangeType>(0), fullMask);
             }
 
             // ===== rightIdx =====
-            AscendC::MicroAPI::RegTensor<GatherRangeType> rightIdxR;
+            AscendC::Reg::RegTensor<GatherRangeType> rightIdxR;
             if (rightPadW > 0) {
                 // 公共部分：outW-1-col
-                AscendC::MicroAPI::RegTensor<GatherRangeType> outW1Reg;
-                AscendC::MicroAPI::RegTensor<GatherRangeType> outW1ColReg;
-                AscendC::MicroAPI::RegTensor<GatherRangeType> rightBase2Reg;
+                AscendC::Reg::RegTensor<GatherRangeType> outW1Reg;
+                AscendC::Reg::RegTensor<GatherRangeType> outW1ColReg;
+                AscendC::Reg::RegTensor<GatherRangeType> rightBase2Reg;
 
-                AscendC::MicroAPI::Duplicate(outW1Reg, static_cast<GatherRangeType>(outW - 1), fullMask);
-                AscendC::MicroAPI::Sub(outW1ColReg, outW1Reg, colReg, fullMask);
-                AscendC::MicroAPI::Muls(rightBase2Reg, outW1ColReg, static_cast<GatherRangeType>(2), fullMask);
+                AscendC::Reg::Duplicate(outW1Reg, static_cast<GatherRangeType>(outW - 1), fullMask);
+                AscendC::Reg::Sub(outW1ColReg, outW1Reg, colReg, fullMask);
+                AscendC::Reg::Muls(rightBase2Reg, outW1ColReg, static_cast<GatherRangeType>(2), fullMask);
                 // rightIdx = midIdx + 2*(outW-1-col)（两种模式共同部分）
-                AscendC::MicroAPI::Add(rightIdxR, midIdxR, rightBase2Reg, fullMask);
+                AscendC::Reg::Add(rightIdxR, midIdxR, rightBase2Reg, fullMask);
 
                 if constexpr (IS_REFLECT) {
                     // valid: outW-1-rightPadW <= col < outW-1
-                    AscendC::MicroAPI::RegTensor<GatherRangeType> threshLow, threshHigh;
-                    AscendC::MicroAPI::Duplicate(threshLow, static_cast<GatherRangeType>(outW - 1 - rightPadW),
-                                                 fullMask);
-                    AscendC::MicroAPI::Duplicate(threshHigh, static_cast<GatherRangeType>(outW - 2), fullMask);
+                    AscendC::Reg::RegTensor<GatherRangeType> threshLow, threshHigh;
+                    AscendC::Reg::Duplicate(threshLow, static_cast<GatherRangeType>(outW - 1 - rightPadW), fullMask);
+                    AscendC::Reg::Duplicate(threshHigh, static_cast<GatherRangeType>(outW - 2), fullMask);
                     // col < threshLow → 置 0
-                    AscendC::MicroAPI::MaskReg ltMask;
-                    AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::LT>(ltMask, colReg, threshLow, fullMask);
-                    AscendC::MicroAPI::Select(rightIdxR, zeroFull, rightIdxR, ltMask);
+                    AscendC::Reg::MaskReg ltMask;
+                    AscendC::Reg::Compare<GatherRangeType, CMPMODE::LT>(ltMask, colReg, threshLow, fullMask);
+                    AscendC::Reg::Select(rightIdxR, zeroFull, rightIdxR, ltMask);
                     // col > threshHigh（即 col >= outW-1）→ 置 0
-                    AscendC::MicroAPI::MaskReg gtMask;
-                    AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(gtMask, colReg, threshHigh, fullMask);
-                    AscendC::MicroAPI::Select(rightIdxR, zeroFull, rightIdxR, gtMask);
+                    AscendC::Reg::MaskReg gtMask;
+                    AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(gtMask, colReg, threshHigh, fullMask);
+                    AscendC::Reg::Select(rightIdxR, zeroFull, rightIdxR, gtMask);
                 } else {
                     // symmetric: +1，valid: col >= outW-rightPadW
-                    AscendC::MicroAPI::Adds(rightIdxR, rightIdxR, static_cast<GatherRangeType>(1), fullMask);
-                    AscendC::MicroAPI::RegTensor<GatherRangeType> threshR;
-                    AscendC::MicroAPI::Duplicate(threshR, static_cast<GatherRangeType>(outW - rightPadW), fullMask);
+                    AscendC::Reg::Adds(rightIdxR, rightIdxR, static_cast<GatherRangeType>(1), fullMask);
+                    AscendC::Reg::RegTensor<GatherRangeType> threshR;
+                    AscendC::Reg::Duplicate(threshR, static_cast<GatherRangeType>(outW - rightPadW), fullMask);
                     // col < threshR → 置 0
-                    AscendC::MicroAPI::MaskReg ltMask;
-                    AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::LT>(ltMask, colReg, threshR, fullMask);
-                    AscendC::MicroAPI::Select(rightIdxR, zeroFull, rightIdxR, ltMask);
+                    AscendC::Reg::MaskReg ltMask;
+                    AscendC::Reg::Compare<GatherRangeType, CMPMODE::LT>(ltMask, colReg, threshR, fullMask);
+                    AscendC::Reg::Select(rightIdxR, zeroFull, rightIdxR, ltMask);
                 }
             } else {
-                AscendC::MicroAPI::Duplicate(rightIdxR, static_cast<GatherRangeType>(0), fullMask);
+                AscendC::Reg::Duplicate(rightIdxR, static_cast<GatherRangeType>(0), fullMask);
             }
 
             // 存到 GatherRangeType* 内存缓冲区
-            AscendC::MicroAPI::DataCopy(midIdxAddr, midIdxR, fullMask);
-            AscendC::MicroAPI::DataCopy(leftIdxAddr, leftIdxR, fullMask);
-            AscendC::MicroAPI::DataCopy(rightIdxAddr, rightIdxR, fullMask);
+            AscendC::Reg::DataCopy(midIdxAddr, midIdxR, fullMask);
+            AscendC::Reg::DataCopy(leftIdxAddr, leftIdxR, fullMask);
+            AscendC::Reg::DataCopy(rightIdxAddr, rightIdxR, fullMask);
 
             // reinterpret 为 GatherIdxType*，加载为 GatherIdxType 寄存器后做数据 Gather
             __local_mem__ GatherIdxType* midIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(midIdxAddr);
             __local_mem__ GatherIdxType* leftIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(leftIdxAddr);
             __local_mem__ GatherIdxType* rightIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(rightIdxAddr);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> midIdxFull;
-            AscendC::MicroAPI::RegTensor<GatherIdxType> leftIdxFull;
-            AscendC::MicroAPI::RegTensor<GatherIdxType> rightIdxFull;
+            AscendC::Reg::RegTensor<GatherIdxType> midIdxFull;
+            AscendC::Reg::RegTensor<GatherIdxType> leftIdxFull;
+            AscendC::Reg::RegTensor<GatherIdxType> rightIdxFull;
 
-            AscendC::MicroAPI::DataCopy(midIdxFull, midIdxAddrU);
-            AscendC::MicroAPI::DataCopy(leftIdxFull, leftIdxAddrU);
-            AscendC::MicroAPI::DataCopy(rightIdxFull, rightIdxAddrU);
+            AscendC::Reg::DataCopy(midIdxFull, midIdxAddrU);
+            AscendC::Reg::DataCopy(leftIdxFull, leftIdxAddrU);
+            AscendC::Reg::DataCopy(rightIdxFull, rightIdxAddrU);
 
-            AscendC::MicroAPI::MaskReg dataMask = AscendC::MicroAPI::UpdateMask<PromoteDataT>(maskLen);
+            AscendC::Reg::MaskReg dataMask = AscendC::Reg::UpdateMask<PromoteDataT>(maskLen);
 
-            AscendC::MicroAPI::RegTensor<PromoteDataT> midD;
-            AscendC::MicroAPI::RegTensor<PromoteDataT> leftD;
-            AscendC::MicroAPI::RegTensor<PromoteDataT> rightD;
-            AscendC::MicroAPI::RegTensor<PromoteDataT> sumD;
+            AscendC::Reg::RegTensor<PromoteDataT> midD;
+            AscendC::Reg::RegTensor<PromoteDataT> leftD;
+            AscendC::Reg::RegTensor<PromoteDataT> rightD;
+            AscendC::Reg::RegTensor<PromoteDataT> sumD;
 
-            AscendC::MicroAPI::DataCopyGather(midD, midAddr, midIdxFull, dataMask);
-            AscendC::MicroAPI::DataCopyGather(leftD, midAddr, leftIdxFull, dataMask);
-            AscendC::MicroAPI::DataCopyGather(rightD, midAddr, rightIdxFull, dataMask);
+            AscendC::Reg::DataCopyGather(midD, midAddr, midIdxFull, dataMask);
+            AscendC::Reg::DataCopyGather(leftD, midAddr, leftIdxFull, dataMask);
+            AscendC::Reg::DataCopyGather(rightD, midAddr, rightIdxFull, dataMask);
 
-            AscendC::MicroAPI::Add(sumD, midD, leftD, dataMask);
-            AscendC::MicroAPI::Add(sumD, sumD, rightD, dataMask);
+            AscendC::Reg::Add(sumD, midD, leftD, dataMask);
+            AscendC::Reg::Add(sumD, sumD, rightD, dataMask);
 
             AscendC::Reg::StoreUnAlign(sregOutputAddr, sumD, ureg1, tmpLen);
             if (ncTotal <= ncPerVF) {
@@ -2838,43 +2837,42 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
                 int64_t ncBase = ncPerVF;
                 if (cInc == 0) {
                     // cInc==0：每批次 n 均匀递增，增量更新索引即可
-                    AscendC::MicroAPI::RegTensor<GatherIdxType> curMidIdx;
+                    AscendC::Reg::RegTensor<GatherIdxType> curMidIdx;
                     curMidIdx = midIdxFull;
 
-                    AscendC::MicroAPI::RegTensor<GatherIdxType> curLeftIdx;
+                    AscendC::Reg::RegTensor<GatherIdxType> curLeftIdx;
                     curLeftIdx = leftIdxFull;
 
-                    AscendC::MicroAPI::RegTensor<GatherIdxType> curRightIdx;
+                    AscendC::Reg::RegTensor<GatherIdxType> curRightIdx;
                     curRightIdx = rightIdxFull;
 
                     uint32_t fullVLen = static_cast<uint32_t>(curNC * elemPerNC);
                     uint32_t idxMaskLen = fullVLen;
 
-                    AscendC::MicroAPI::MaskReg fullMaskInc = AscendC::MicroAPI::UpdateMask<GatherIdxType>(idxMaskLen);
+                    AscendC::Reg::MaskReg fullMaskInc = AscendC::Reg::UpdateMask<GatherIdxType>(idxMaskLen);
 
-                    AscendC::MicroAPI::RegTensor<GatherIdxType> zeroFull2;
-                    AscendC::MicroAPI::Duplicate(zeroFull2, static_cast<GatherIdxType>(0), fullMaskInc);
+                    AscendC::Reg::RegTensor<GatherIdxType> zeroFull2;
+                    AscendC::Reg::Duplicate(zeroFull2, static_cast<GatherIdxType>(0), fullMaskInc);
 
-                    AscendC::MicroAPI::MaskReg lValid2;
-                    AscendC::MicroAPI::MaskReg rValid2;
+                    AscendC::Reg::MaskReg lValid2;
+                    AscendC::Reg::MaskReg rValid2;
 
-                    AscendC::MicroAPI::Compare<GatherIdxType, CMPMODE::GT>(lValid2, curLeftIdx, zeroFull2, fullMaskInc);
-                    AscendC::MicroAPI::Compare<GatherIdxType, CMPMODE::GT>(rValid2, curRightIdx, zeroFull2,
-                                                                           fullMaskInc);
+                    AscendC::Reg::Compare<GatherIdxType, CMPMODE::GT>(lValid2, curLeftIdx, zeroFull2, fullMaskInc);
+                    AscendC::Reg::Compare<GatherIdxType, CMPMODE::GT>(rValid2, curRightIdx, zeroFull2, fullMaskInc);
 
-                    AscendC::MicroAPI::RegTensor<GatherIdxType> midStepReg;
-                    AscendC::MicroAPI::RegTensor<GatherIdxType> leftStepReg;
-                    AscendC::MicroAPI::RegTensor<GatherIdxType> rightStepReg;
+                    AscendC::Reg::RegTensor<GatherIdxType> midStepReg;
+                    AscendC::Reg::RegTensor<GatherIdxType> leftStepReg;
+                    AscendC::Reg::RegTensor<GatherIdxType> rightStepReg;
 
                     uint32_t sregStep = midStep;
 
-                    AscendC::MicroAPI::Duplicate(midStepReg, sregStep, fullMaskInc);
-                    AscendC::MicroAPI::Duplicate(leftStepReg, static_cast<GatherIdxType>(0), fullMaskInc);
-                    AscendC::MicroAPI::Duplicate(rightStepReg, static_cast<GatherIdxType>(0), fullMaskInc);
+                    AscendC::Reg::Duplicate(midStepReg, sregStep, fullMaskInc);
+                    AscendC::Reg::Duplicate(leftStepReg, static_cast<GatherIdxType>(0), fullMaskInc);
+                    AscendC::Reg::Duplicate(rightStepReg, static_cast<GatherIdxType>(0), fullMaskInc);
 
-                    AscendC::MicroAPI::Duplicate<GatherIdxType, MicroAPI::MaskMergeMode::ZEROING, GatherIdxType>(
+                    AscendC::Reg::Duplicate<GatherIdxType, Reg::MaskMergeMode::ZEROING, GatherIdxType>(
                         leftStepReg, sregStep, lValid2);
-                    AscendC::MicroAPI::Duplicate<GatherIdxType, MicroAPI::MaskMergeMode::ZEROING, GatherIdxType>(
+                    AscendC::Reg::Duplicate<GatherIdxType, Reg::MaskMergeMode::ZEROING, GatherIdxType>(
                         rightStepReg, sregStep, rValid2);
 
                     while (ncBase < ncTotal) {
@@ -2884,25 +2882,24 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
                         uint32_t batchMaskLen = vLen2;
                         uint32_t tmpLen2 = vLen2;
 
-                        AscendC::MicroAPI::MaskReg batchMask = AscendC::MicroAPI::UpdateMask<GatherIdxType>(
-                            batchMaskLen);
-                        AscendC::MicroAPI::MaskReg dataMask2 = AscendC::MicroAPI::UpdateMask<PromoteDataT>(vLen2);
+                        AscendC::Reg::MaskReg batchMask = AscendC::Reg::UpdateMask<GatherIdxType>(batchMaskLen);
+                        AscendC::Reg::MaskReg dataMask2 = AscendC::Reg::UpdateMask<PromoteDataT>(vLen2);
 
-                        AscendC::MicroAPI::Add(curMidIdx, curMidIdx, midStepReg, batchMask);
-                        AscendC::MicroAPI::Add(curLeftIdx, curLeftIdx, leftStepReg, lValid2);
-                        AscendC::MicroAPI::Add(curRightIdx, curRightIdx, rightStepReg, rValid2);
+                        AscendC::Reg::Add(curMidIdx, curMidIdx, midStepReg, batchMask);
+                        AscendC::Reg::Add(curLeftIdx, curLeftIdx, leftStepReg, lValid2);
+                        AscendC::Reg::Add(curRightIdx, curRightIdx, rightStepReg, rValid2);
 
-                        AscendC::MicroAPI::RegTensor<PromoteDataT> midD2;
-                        AscendC::MicroAPI::RegTensor<PromoteDataT> leftD2;
-                        AscendC::MicroAPI::RegTensor<PromoteDataT> rightD2;
-                        AscendC::MicroAPI::RegTensor<PromoteDataT> sumD2;
+                        AscendC::Reg::RegTensor<PromoteDataT> midD2;
+                        AscendC::Reg::RegTensor<PromoteDataT> leftD2;
+                        AscendC::Reg::RegTensor<PromoteDataT> rightD2;
+                        AscendC::Reg::RegTensor<PromoteDataT> sumD2;
 
-                        AscendC::MicroAPI::DataCopyGather(midD2, midAddr, curMidIdx, dataMask2);
-                        AscendC::MicroAPI::DataCopyGather(leftD2, midAddr, curLeftIdx, dataMask2);
-                        AscendC::MicroAPI::DataCopyGather(rightD2, midAddr, curRightIdx, dataMask2);
+                        AscendC::Reg::DataCopyGather(midD2, midAddr, curMidIdx, dataMask2);
+                        AscendC::Reg::DataCopyGather(leftD2, midAddr, curLeftIdx, dataMask2);
+                        AscendC::Reg::DataCopyGather(rightD2, midAddr, curRightIdx, dataMask2);
 
-                        AscendC::MicroAPI::Add(sumD2, midD2, leftD2, dataMask2);
-                        AscendC::MicroAPI::Add(sumD2, sumD2, rightD2, dataMask2);
+                        AscendC::Reg::Add(sumD2, midD2, leftD2, dataMask2);
+                        AscendC::Reg::Add(sumD2, sumD2, rightD2, dataMask2);
 
                         AscendC::Reg::StoreUnAlign(sregOutputAddr, sumD2, ureg1, tmpLen2);
                         if (ncBase + ncPerVF >= ncTotal) {
@@ -2919,154 +2916,147 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
                         uint32_t tempVLen21 = vLen2;
                         uint32_t tempVLen22 = vLen2;
 
-                        AscendC::MicroAPI::MaskReg fullMask2 = AscendC::MicroAPI::UpdateMask<GatherRangeType>(
-                            tempVLen21);
-                        AscendC::MicroAPI::MaskReg dataMask2 = AscendC::MicroAPI::UpdateMask<PromoteDataT>(tempVLen22);
+                        AscendC::Reg::MaskReg fullMask2 = AscendC::Reg::UpdateMask<GatherRangeType>(tempVLen21);
+                        AscendC::Reg::MaskReg dataMask2 = AscendC::Reg::UpdateMask<PromoteDataT>(tempVLen22);
 
                         // 重新计算当前批次的索引（x → ncInBatch → n,c → row,col → midIdx/leftIdx/rightIdx）
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> xReg2;
-                        AscendC::MicroAPI::Arange(xReg2, static_cast<GatherRangeType>(0));
+                        AscendC::Reg::RegTensor<GatherRangeType> xReg2;
+                        AscendC::Reg::Arange(xReg2, static_cast<GatherRangeType>(0));
 
                         // ncInBatch = x / elemPerNC（当前批次内的 nc 索引）
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> ncInBatchReg2;
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> xRemReg2;
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> ePerNCReg2;
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> tmpReg2;
+                        AscendC::Reg::RegTensor<GatherRangeType> ncInBatchReg2;
+                        AscendC::Reg::RegTensor<GatherRangeType> xRemReg2;
+                        AscendC::Reg::RegTensor<GatherRangeType> ePerNCReg2;
+                        AscendC::Reg::RegTensor<GatherRangeType> tmpReg2;
 
-                        AscendC::MicroAPI::Duplicate(ePerNCReg2, static_cast<GatherRangeType>(elemPerNC), fullMask2);
-                        AscendC::MicroAPI::Div(ncInBatchReg2, xReg2, ePerNCReg2, fullMask2);
-                        AscendC::MicroAPI::Muls(tmpReg2, ncInBatchReg2, static_cast<GatherRangeType>(elemPerNC),
-                                                fullMask2);
-                        AscendC::MicroAPI::Sub(xRemReg2, xReg2, tmpReg2, fullMask2);
+                        AscendC::Reg::Duplicate(ePerNCReg2, static_cast<GatherRangeType>(elemPerNC), fullMask2);
+                        AscendC::Reg::Div(ncInBatchReg2, xReg2, ePerNCReg2, fullMask2);
+                        AscendC::Reg::Muls(tmpReg2, ncInBatchReg2, static_cast<GatherRangeType>(elemPerNC), fullMask2);
+                        AscendC::Reg::Sub(xRemReg2, xReg2, tmpReg2, fullMask2);
 
                         // 全局 nc 索引 = ncBase + ncInBatch
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> ncGlobalReg;
-                        AscendC::MicroAPI::Adds(ncGlobalReg, ncInBatchReg2, static_cast<GatherRangeType>(ncBase),
-                                                fullMask2);
+                        AscendC::Reg::RegTensor<GatherRangeType> ncGlobalReg;
+                        AscendC::Reg::Adds(ncGlobalReg, ncInBatchReg2, static_cast<GatherRangeType>(ncBase), fullMask2);
 
                         // row = xRem / outW, col = xRem % outW
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> rowReg2;
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> colReg2;
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> outWReg2;
+                        AscendC::Reg::RegTensor<GatherRangeType> rowReg2;
+                        AscendC::Reg::RegTensor<GatherRangeType> colReg2;
+                        AscendC::Reg::RegTensor<GatherRangeType> outWReg2;
 
-                        AscendC::MicroAPI::Duplicate(outWReg2, static_cast<GatherRangeType>(outW), fullMask2);
-                        AscendC::MicroAPI::Div(rowReg2, xRemReg2, outWReg2, fullMask2);
-                        AscendC::MicroAPI::Muls(tmpReg2, rowReg2, static_cast<GatherRangeType>(outW), fullMask2);
-                        AscendC::MicroAPI::Sub(colReg2, xRemReg2, tmpReg2, fullMask2);
+                        AscendC::Reg::Duplicate(outWReg2, static_cast<GatherRangeType>(outW), fullMask2);
+                        AscendC::Reg::Div(rowReg2, xRemReg2, outWReg2, fullMask2);
+                        AscendC::Reg::Muls(tmpReg2, rowReg2, static_cast<GatherRangeType>(outW), fullMask2);
+                        AscendC::Reg::Sub(colReg2, xRemReg2, tmpReg2, fullMask2);
 
                         // n = ncGlobal / outC, c = ncGlobal % outC
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> nIdxReg2;
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> cIdxReg2;
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> outCReg2;
+                        AscendC::Reg::RegTensor<GatherRangeType> nIdxReg2;
+                        AscendC::Reg::RegTensor<GatherRangeType> cIdxReg2;
+                        AscendC::Reg::RegTensor<GatherRangeType> outCReg2;
 
-                        AscendC::MicroAPI::Duplicate(outCReg2, static_cast<GatherRangeType>(outC), fullMask2);
-                        AscendC::MicroAPI::Div(nIdxReg2, ncGlobalReg, outCReg2, fullMask2);
-                        AscendC::MicroAPI::Muls(tmpReg2, nIdxReg2, static_cast<GatherRangeType>(outC), fullMask2);
-                        AscendC::MicroAPI::Sub(cIdxReg2, ncGlobalReg, tmpReg2, fullMask2);
+                        AscendC::Reg::Duplicate(outCReg2, static_cast<GatherRangeType>(outC), fullMask2);
+                        AscendC::Reg::Div(nIdxReg2, ncGlobalReg, outCReg2, fullMask2);
+                        AscendC::Reg::Muls(tmpReg2, nIdxReg2, static_cast<GatherRangeType>(outC), fullMask2);
+                        AscendC::Reg::Sub(cIdxReg2, ncGlobalReg, tmpReg2, fullMask2);
 
                         // ncOffset = n*nStride + c*hwSize
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> nPartReg2;
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> cPartReg2;
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> ncOffsetReg2;
+                        AscendC::Reg::RegTensor<GatherRangeType> nPartReg2;
+                        AscendC::Reg::RegTensor<GatherRangeType> cPartReg2;
+                        AscendC::Reg::RegTensor<GatherRangeType> ncOffsetReg2;
 
-                        AscendC::MicroAPI::Muls(nPartReg2, nIdxReg2, nStrideR, fullMask2);
-                        AscendC::MicroAPI::Muls(cPartReg2, cIdxReg2, hwSizeR, fullMask2);
-                        AscendC::MicroAPI::Add(ncOffsetReg2, nPartReg2, cPartReg2, fullMask2);
+                        AscendC::Reg::Muls(nPartReg2, nIdxReg2, nStrideR, fullMask2);
+                        AscendC::Reg::Muls(cPartReg2, cIdxReg2, hwSizeR, fullMask2);
+                        AscendC::Reg::Add(ncOffsetReg2, nPartReg2, cPartReg2, fullMask2);
 
                         // rowOffset = row * width
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> rowOffsetReg2;
-                        AscendC::MicroAPI::Muls(rowOffsetReg2, rowReg2, widthR, fullMask2);
+                        AscendC::Reg::RegTensor<GatherRangeType> rowOffsetReg2;
+                        AscendC::Reg::Muls(rowOffsetReg2, rowReg2, widthR, fullMask2);
 
                         // midIdx = ncOffset + baseOffset + rowOffset + col
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> midIdxR2;
-                        AscendC::MicroAPI::Duplicate(midIdxR2, baseOffset, fullMask2);
-                        AscendC::MicroAPI::Add(midIdxR2, midIdxR2, ncOffsetReg2, fullMask2);
-                        AscendC::MicroAPI::Add(midIdxR2, midIdxR2, rowOffsetReg2, fullMask2);
-                        AscendC::MicroAPI::Add(midIdxR2, midIdxR2, colReg2, fullMask2);
+                        AscendC::Reg::RegTensor<GatherRangeType> midIdxR2;
+                        AscendC::Reg::Duplicate(midIdxR2, baseOffset, fullMask2);
+                        AscendC::Reg::Add(midIdxR2, midIdxR2, ncOffsetReg2, fullMask2);
+                        AscendC::Reg::Add(midIdxR2, midIdxR2, rowOffsetReg2, fullMask2);
+                        AscendC::Reg::Add(midIdxR2, midIdxR2, colReg2, fullMask2);
 
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> zeroFull2;
-                        AscendC::MicroAPI::Duplicate(zeroFull2, static_cast<GatherRangeType>(0), fullMask2);
+                        AscendC::Reg::RegTensor<GatherRangeType> zeroFull2;
+                        AscendC::Reg::Duplicate(zeroFull2, static_cast<GatherRangeType>(0), fullMask2);
 
                         // 计算 leftIdx 和 rightIdx（与首批逻辑相同）
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> leftIdxR2;
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> rightIdxR2;
-                        AscendC::MicroAPI::RegTensor<GatherRangeType> col2Reg2;
+                        AscendC::Reg::RegTensor<GatherRangeType> leftIdxR2;
+                        AscendC::Reg::RegTensor<GatherRangeType> rightIdxR2;
+                        AscendC::Reg::RegTensor<GatherRangeType> col2Reg2;
 
-                        AscendC::MicroAPI::Muls(col2Reg2, colReg2, static_cast<GatherRangeType>(2), fullMask2);
+                        AscendC::Reg::Muls(col2Reg2, colReg2, static_cast<GatherRangeType>(2), fullMask2);
 
                         if (leftPadW > 0) {
-                            AscendC::MicroAPI::RegTensor<GatherRangeType> leftPadWFull2;
-                            AscendC::MicroAPI::Duplicate(leftPadWFull2, static_cast<GatherRangeType>(leftPadW),
-                                                         fullMask2);
+                            AscendC::Reg::RegTensor<GatherRangeType> leftPadWFull2;
+                            AscendC::Reg::Duplicate(leftPadWFull2, static_cast<GatherRangeType>(leftPadW), fullMask2);
                             if constexpr (IS_REFLECT) {
-                                AscendC::MicroAPI::Sub(leftIdxR2, midIdxR2, col2Reg2, fullMask2);
-                                AscendC::MicroAPI::MaskReg eqZeroMask2;
-                                AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::EQ>(eqZeroMask2, colReg2,
-                                                                                         zeroFull2, fullMask2);
-                                AscendC::MicroAPI::Select(leftIdxR2, zeroFull2, leftIdxR2, eqZeroMask2);
-                                AscendC::MicroAPI::MaskReg gtLPWMask2;
-                                AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(gtLPWMask2, colReg2,
-                                                                                         leftPadWFull2, fullMask2);
-                                AscendC::MicroAPI::Select(leftIdxR2, zeroFull2, leftIdxR2, gtLPWMask2);
+                                AscendC::Reg::Sub(leftIdxR2, midIdxR2, col2Reg2, fullMask2);
+                                AscendC::Reg::MaskReg eqZeroMask2;
+                                AscendC::Reg::Compare<GatherRangeType, CMPMODE::EQ>(eqZeroMask2, colReg2, zeroFull2,
+                                                                                    fullMask2);
+                                AscendC::Reg::Select(leftIdxR2, zeroFull2, leftIdxR2, eqZeroMask2);
+                                AscendC::Reg::MaskReg gtLPWMask2;
+                                AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(gtLPWMask2, colReg2, leftPadWFull2,
+                                                                                    fullMask2);
+                                AscendC::Reg::Select(leftIdxR2, zeroFull2, leftIdxR2, gtLPWMask2);
                             } else {
-                                AscendC::MicroAPI::Sub(leftIdxR2, midIdxR2, col2Reg2, fullMask2);
-                                AscendC::MicroAPI::Adds(leftIdxR2, leftIdxR2, static_cast<GatherRangeType>(-1),
-                                                        fullMask2);
-                                AscendC::MicroAPI::MaskReg geLPWMask2;
-                                AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GE>(geLPWMask2, colReg2,
-                                                                                         leftPadWFull2, fullMask2);
-                                AscendC::MicroAPI::Select(leftIdxR2, zeroFull2, leftIdxR2, geLPWMask2);
+                                AscendC::Reg::Sub(leftIdxR2, midIdxR2, col2Reg2, fullMask2);
+                                AscendC::Reg::Adds(leftIdxR2, leftIdxR2, static_cast<GatherRangeType>(-1), fullMask2);
+                                AscendC::Reg::MaskReg geLPWMask2;
+                                AscendC::Reg::Compare<GatherRangeType, CMPMODE::GE>(geLPWMask2, colReg2, leftPadWFull2,
+                                                                                    fullMask2);
+                                AscendC::Reg::Select(leftIdxR2, zeroFull2, leftIdxR2, geLPWMask2);
                             }
                         } else {
-                            AscendC::MicroAPI::Duplicate(leftIdxR2, static_cast<GatherRangeType>(0), fullMask2);
+                            AscendC::Reg::Duplicate(leftIdxR2, static_cast<GatherRangeType>(0), fullMask2);
                         }
 
                         if (rightPadW > 0) {
-                            AscendC::MicroAPI::RegTensor<GatherRangeType> outW1Reg2;
-                            AscendC::MicroAPI::RegTensor<GatherRangeType> outW1ColReg2;
-                            AscendC::MicroAPI::RegTensor<GatherRangeType> rightBase2Reg2;
+                            AscendC::Reg::RegTensor<GatherRangeType> outW1Reg2;
+                            AscendC::Reg::RegTensor<GatherRangeType> outW1ColReg2;
+                            AscendC::Reg::RegTensor<GatherRangeType> rightBase2Reg2;
 
-                            AscendC::MicroAPI::Duplicate(outW1Reg2, static_cast<GatherRangeType>(outW - 1), fullMask2);
-                            AscendC::MicroAPI::Sub(outW1ColReg2, outW1Reg2, colReg2, fullMask2);
-                            AscendC::MicroAPI::Muls(rightBase2Reg2, outW1ColReg2, static_cast<GatherRangeType>(2),
-                                                    fullMask2);
-                            AscendC::MicroAPI::Add(rightIdxR2, midIdxR2, rightBase2Reg2, fullMask2);
+                            AscendC::Reg::Duplicate(outW1Reg2, static_cast<GatherRangeType>(outW - 1), fullMask2);
+                            AscendC::Reg::Sub(outW1ColReg2, outW1Reg2, colReg2, fullMask2);
+                            AscendC::Reg::Muls(rightBase2Reg2, outW1ColReg2, static_cast<GatherRangeType>(2),
+                                               fullMask2);
+                            AscendC::Reg::Add(rightIdxR2, midIdxR2, rightBase2Reg2, fullMask2);
 
                             if constexpr (IS_REFLECT) {
-                                AscendC::MicroAPI::RegTensor<GatherRangeType> threshLow2;
-                                AscendC::MicroAPI::RegTensor<GatherRangeType> threshHigh2;
+                                AscendC::Reg::RegTensor<GatherRangeType> threshLow2;
+                                AscendC::Reg::RegTensor<GatherRangeType> threshHigh2;
 
-                                AscendC::MicroAPI::Duplicate(
-                                    threshLow2, static_cast<GatherRangeType>(outW - 1 - rightPadW), fullMask2);
-                                AscendC::MicroAPI::Duplicate(threshHigh2, static_cast<GatherRangeType>(outW - 2),
-                                                             fullMask2);
-                                AscendC::MicroAPI::MaskReg ltMask2;
-                                AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::LT>(ltMask2, colReg2, threshLow2,
-                                                                                         fullMask2);
-                                AscendC::MicroAPI::Select(rightIdxR2, zeroFull2, rightIdxR2, ltMask2);
-                                AscendC::MicroAPI::MaskReg gtMask2;
-                                AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::GT>(gtMask2, colReg2, threshHigh2,
-                                                                                         fullMask2);
-                                AscendC::MicroAPI::Select(rightIdxR2, zeroFull2, rightIdxR2, gtMask2);
-                            } else {
-                                AscendC::MicroAPI::Adds(rightIdxR2, rightIdxR2, static_cast<GatherRangeType>(1),
+                                AscendC::Reg::Duplicate(threshLow2, static_cast<GatherRangeType>(outW - 1 - rightPadW),
                                                         fullMask2);
-                                AscendC::MicroAPI::RegTensor<GatherRangeType> threshR2;
-                                AscendC::MicroAPI::Duplicate(threshR2, static_cast<GatherRangeType>(outW - rightPadW),
-                                                             fullMask2);
-                                AscendC::MicroAPI::MaskReg ltMask2;
-                                AscendC::MicroAPI::Compare<GatherRangeType, CMPMODE::LT>(ltMask2, colReg2, threshR2,
-                                                                                         fullMask2);
-                                AscendC::MicroAPI::Select(rightIdxR2, zeroFull2, rightIdxR2, ltMask2);
+                                AscendC::Reg::Duplicate(threshHigh2, static_cast<GatherRangeType>(outW - 2), fullMask2);
+                                AscendC::Reg::MaskReg ltMask2;
+                                AscendC::Reg::Compare<GatherRangeType, CMPMODE::LT>(ltMask2, colReg2, threshLow2,
+                                                                                    fullMask2);
+                                AscendC::Reg::Select(rightIdxR2, zeroFull2, rightIdxR2, ltMask2);
+                                AscendC::Reg::MaskReg gtMask2;
+                                AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(gtMask2, colReg2, threshHigh2,
+                                                                                    fullMask2);
+                                AscendC::Reg::Select(rightIdxR2, zeroFull2, rightIdxR2, gtMask2);
+                            } else {
+                                AscendC::Reg::Adds(rightIdxR2, rightIdxR2, static_cast<GatherRangeType>(1), fullMask2);
+                                AscendC::Reg::RegTensor<GatherRangeType> threshR2;
+                                AscendC::Reg::Duplicate(threshR2, static_cast<GatherRangeType>(outW - rightPadW),
+                                                        fullMask2);
+                                AscendC::Reg::MaskReg ltMask2;
+                                AscendC::Reg::Compare<GatherRangeType, CMPMODE::LT>(ltMask2, colReg2, threshR2,
+                                                                                    fullMask2);
+                                AscendC::Reg::Select(rightIdxR2, zeroFull2, rightIdxR2, ltMask2);
                             }
                         } else {
-                            AscendC::MicroAPI::Duplicate(rightIdxR2, static_cast<GatherRangeType>(0), fullMask2);
+                            AscendC::Reg::Duplicate(rightIdxR2, static_cast<GatherRangeType>(0), fullMask2);
                         }
 
                         // 转换为 GatherIdxType 并执行 Gather
-                        AscendC::MicroAPI::DataCopy(midIdxAddr, midIdxR2, fullMask2);
-                        AscendC::MicroAPI::DataCopy(leftIdxAddr, leftIdxR2, fullMask2);
-                        AscendC::MicroAPI::DataCopy(rightIdxAddr, rightIdxR2, fullMask2);
+                        AscendC::Reg::DataCopy(midIdxAddr, midIdxR2, fullMask2);
+                        AscendC::Reg::DataCopy(leftIdxAddr, leftIdxR2, fullMask2);
+                        AscendC::Reg::DataCopy(rightIdxAddr, rightIdxR2, fullMask2);
 
                         __local_mem__ GatherIdxType* midIdxAddrU2 = reinterpret_cast<__local_mem__ GatherIdxType*>(
                             midIdxAddr);
@@ -3075,25 +3065,25 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
                         __local_mem__ GatherIdxType* rightIdxAddrU2 = reinterpret_cast<__local_mem__ GatherIdxType*>(
                             rightIdxAddr);
 
-                        AscendC::MicroAPI::RegTensor<GatherIdxType> midIdxFull2;
-                        AscendC::MicroAPI::RegTensor<GatherIdxType> leftIdxFull2;
-                        AscendC::MicroAPI::RegTensor<GatherIdxType> rightIdxFull2;
+                        AscendC::Reg::RegTensor<GatherIdxType> midIdxFull2;
+                        AscendC::Reg::RegTensor<GatherIdxType> leftIdxFull2;
+                        AscendC::Reg::RegTensor<GatherIdxType> rightIdxFull2;
 
-                        AscendC::MicroAPI::DataCopy(midIdxFull2, midIdxAddrU2);
-                        AscendC::MicroAPI::DataCopy(leftIdxFull2, leftIdxAddrU2);
-                        AscendC::MicroAPI::DataCopy(rightIdxFull2, rightIdxAddrU2);
+                        AscendC::Reg::DataCopy(midIdxFull2, midIdxAddrU2);
+                        AscendC::Reg::DataCopy(leftIdxFull2, leftIdxAddrU2);
+                        AscendC::Reg::DataCopy(rightIdxFull2, rightIdxAddrU2);
 
-                        AscendC::MicroAPI::RegTensor<PromoteDataT> midD2;
-                        AscendC::MicroAPI::RegTensor<PromoteDataT> leftD2;
-                        AscendC::MicroAPI::RegTensor<PromoteDataT> rightD2;
-                        AscendC::MicroAPI::RegTensor<PromoteDataT> sumD2;
+                        AscendC::Reg::RegTensor<PromoteDataT> midD2;
+                        AscendC::Reg::RegTensor<PromoteDataT> leftD2;
+                        AscendC::Reg::RegTensor<PromoteDataT> rightD2;
+                        AscendC::Reg::RegTensor<PromoteDataT> sumD2;
 
-                        AscendC::MicroAPI::DataCopyGather(midD2, midAddr, midIdxFull2, dataMask2);
-                        AscendC::MicroAPI::DataCopyGather(leftD2, midAddr, leftIdxFull2, dataMask2);
-                        AscendC::MicroAPI::DataCopyGather(rightD2, midAddr, rightIdxFull2, dataMask2);
+                        AscendC::Reg::DataCopyGather(midD2, midAddr, midIdxFull2, dataMask2);
+                        AscendC::Reg::DataCopyGather(leftD2, midAddr, leftIdxFull2, dataMask2);
+                        AscendC::Reg::DataCopyGather(rightD2, midAddr, rightIdxFull2, dataMask2);
 
-                        AscendC::MicroAPI::Add(sumD2, midD2, leftD2, dataMask2);
-                        AscendC::MicroAPI::Add(sumD2, sumD2, rightD2, dataMask2);
+                        AscendC::Reg::Add(sumD2, midD2, leftD2, dataMask2);
+                        AscendC::Reg::Add(sumD2, sumD2, rightD2, dataMask2);
 
                         AscendC::Reg::StoreUnAlign(sregOutputAddr, sumD2, ureg1, static_cast<uint32_t>(vLen2));
                         if (ncBase + ncPerVF >= ncTotal) {
@@ -3123,7 +3113,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
         {
             AscendC::Reg::UnalignRegForStore ureg1;
             uint32_t maskLen = elementsPerBatch;
-            AscendC::MicroAPI::MaskReg idxMask = AscendC::MicroAPI::UpdateMask<GatherIdxType>(maskLen);
+            AscendC::Reg::MaskReg idxMask = AscendC::Reg::UpdateMask<GatherIdxType>(maskLen);
 
             __local_mem__ GatherIdxType* midIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(midIdxAddr);
             __local_mem__ GatherIdxType* leftIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(leftIdxAddr);
@@ -3135,50 +3125,50 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
             __local_mem__ GatherIdxType* rightOffsetAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(
                 rightOffsetAddr);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> baseMidIdxReg;
-            AscendC::MicroAPI::RegTensor<GatherIdxType> baseLeftIdxReg;
-            AscendC::MicroAPI::RegTensor<GatherIdxType> baseRightIdxReg;
+            AscendC::Reg::RegTensor<GatherIdxType> baseMidIdxReg;
+            AscendC::Reg::RegTensor<GatherIdxType> baseLeftIdxReg;
+            AscendC::Reg::RegTensor<GatherIdxType> baseRightIdxReg;
 
-            AscendC::MicroAPI::DataCopy(baseMidIdxReg, midIdxAddrU);
-            AscendC::MicroAPI::DataCopy(baseLeftIdxReg, leftIdxAddrU);
-            AscendC::MicroAPI::DataCopy(baseRightIdxReg, rightIdxAddrU);
+            AscendC::Reg::DataCopy(baseMidIdxReg, midIdxAddrU);
+            AscendC::Reg::DataCopy(baseLeftIdxReg, leftIdxAddrU);
+            AscendC::Reg::DataCopy(baseRightIdxReg, rightIdxAddrU);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> midOffsetReg;
-            AscendC::MicroAPI::RegTensor<GatherIdxType> leftOffsetReg;
-            AscendC::MicroAPI::RegTensor<GatherIdxType> rightOffsetReg;
+            AscendC::Reg::RegTensor<GatherIdxType> midOffsetReg;
+            AscendC::Reg::RegTensor<GatherIdxType> leftOffsetReg;
+            AscendC::Reg::RegTensor<GatherIdxType> rightOffsetReg;
 
-            AscendC::MicroAPI::DataCopy(midOffsetReg, midOffsetAddrU);
-            AscendC::MicroAPI::DataCopy(leftOffsetReg, leftOffsetAddrU);
-            AscendC::MicroAPI::DataCopy(rightOffsetReg, rightOffsetAddrU);
+            AscendC::Reg::DataCopy(midOffsetReg, midOffsetAddrU);
+            AscendC::Reg::DataCopy(leftOffsetReg, leftOffsetAddrU);
+            AscendC::Reg::DataCopy(rightOffsetReg, rightOffsetAddrU);
 
             GatherIdxType hwSizeU = static_cast<GatherIdxType>(hwSize);
             GatherIdxType nStride_ = static_cast<GatherIdxType>(nStride);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> zeroReg;
-            AscendC::MicroAPI::Duplicate(zeroReg, static_cast<GatherIdxType>(0), idxMask);
+            AscendC::Reg::RegTensor<GatherIdxType> zeroReg;
+            AscendC::Reg::Duplicate(zeroReg, static_cast<GatherIdxType>(0), idxMask);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> midCChanOffsetReg;
-            AscendC::MicroAPI::Duplicate(midCChanOffsetReg, hwSizeU, idxMask);
+            AscendC::Reg::RegTensor<GatherIdxType> midCChanOffsetReg;
+            AscendC::Reg::Duplicate(midCChanOffsetReg, hwSizeU, idxMask);
 
-            AscendC::MicroAPI::MaskReg leftValidMask, rightValidMask;
-            AscendC::MicroAPI::Compare<GatherIdxType, CMPMODE::GT>(leftValidMask, baseLeftIdxReg, zeroReg, idxMask);
-            AscendC::MicroAPI::Compare<GatherIdxType, CMPMODE::GT>(rightValidMask, baseRightIdxReg, zeroReg, idxMask);
+            AscendC::Reg::MaskReg leftValidMask, rightValidMask;
+            AscendC::Reg::Compare<GatherIdxType, CMPMODE::GT>(leftValidMask, baseLeftIdxReg, zeroReg, idxMask);
+            AscendC::Reg::Compare<GatherIdxType, CMPMODE::GT>(rightValidMask, baseRightIdxReg, zeroReg, idxMask);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> leftCChanOffsetReg, rightCChanOffsetReg;
-            AscendC::MicroAPI::Duplicate(leftCChanOffsetReg, static_cast<GatherIdxType>(0), idxMask);
-            AscendC::MicroAPI::Duplicate(rightCChanOffsetReg, static_cast<GatherIdxType>(0), idxMask);
-            AscendC::MicroAPI::Duplicate(leftCChanOffsetReg, hwSizeU, leftValidMask);
-            AscendC::MicroAPI::Duplicate(rightCChanOffsetReg, hwSizeU, rightValidMask);
+            AscendC::Reg::RegTensor<GatherIdxType> leftCChanOffsetReg, rightCChanOffsetReg;
+            AscendC::Reg::Duplicate(leftCChanOffsetReg, static_cast<GatherIdxType>(0), idxMask);
+            AscendC::Reg::Duplicate(rightCChanOffsetReg, static_cast<GatherIdxType>(0), idxMask);
+            AscendC::Reg::Duplicate(leftCChanOffsetReg, hwSizeU, leftValidMask);
+            AscendC::Reg::Duplicate(rightCChanOffsetReg, hwSizeU, rightValidMask);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> midNOffsetReg, leftNOffsetReg, rightNOffsetReg;
-            AscendC::MicroAPI::Duplicate(midNOffsetReg, nStride_, idxMask);
-            AscendC::MicroAPI::Duplicate(leftNOffsetReg, static_cast<GatherIdxType>(0), idxMask);
-            AscendC::MicroAPI::Duplicate(rightNOffsetReg, static_cast<GatherIdxType>(0), idxMask);
-            AscendC::MicroAPI::Duplicate(leftNOffsetReg, nStride_, leftValidMask);
-            AscendC::MicroAPI::Duplicate(rightNOffsetReg, nStride_, rightValidMask);
+            AscendC::Reg::RegTensor<GatherIdxType> midNOffsetReg, leftNOffsetReg, rightNOffsetReg;
+            AscendC::Reg::Duplicate(midNOffsetReg, nStride_, idxMask);
+            AscendC::Reg::Duplicate(leftNOffsetReg, static_cast<GatherIdxType>(0), idxMask);
+            AscendC::Reg::Duplicate(rightNOffsetReg, static_cast<GatherIdxType>(0), idxMask);
+            AscendC::Reg::Duplicate(leftNOffsetReg, nStride_, leftValidMask);
+            AscendC::Reg::Duplicate(rightNOffsetReg, nStride_, rightValidMask);
 
-            AscendC::MicroAPI::RegTensor<GatherIdxType> nMidIdxReg, nLeftIdxReg, nRightIdxReg;
-            AscendC::MicroAPI::RegTensor<GatherIdxType> midIdxReg, leftIdxReg, rightIdxReg;
+            AscendC::Reg::RegTensor<GatherIdxType> nMidIdxReg, nLeftIdxReg, nRightIdxReg;
+            AscendC::Reg::RegTensor<GatherIdxType> midIdxReg, leftIdxReg, rightIdxReg;
 
             for (uint16_t n = 0; n < static_cast<uint16_t>(factor); n++) {
                 nMidIdxReg = baseMidIdxReg;
@@ -3194,25 +3184,25 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
                         uint32_t curElements = elementsPerBatch;
                         uint32_t tmpLen = curElements;
 
-                        AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<PromoteDataT>(curElements);
+                        AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<PromoteDataT>(curElements);
 
-                        AscendC::MicroAPI::RegTensor<PromoteDataT> midDataReg;
-                        AscendC::MicroAPI::RegTensor<PromoteDataT> leftDataReg;
-                        AscendC::MicroAPI::RegTensor<PromoteDataT> rightDataReg;
-                        AscendC::MicroAPI::RegTensor<PromoteDataT> sumReg;
+                        AscendC::Reg::RegTensor<PromoteDataT> midDataReg;
+                        AscendC::Reg::RegTensor<PromoteDataT> leftDataReg;
+                        AscendC::Reg::RegTensor<PromoteDataT> rightDataReg;
+                        AscendC::Reg::RegTensor<PromoteDataT> sumReg;
 
-                        AscendC::MicroAPI::DataCopyGather(midDataReg, midAddr, midIdxReg, mask);
-                        AscendC::MicroAPI::DataCopyGather(leftDataReg, midAddr, leftIdxReg, mask);
-                        AscendC::MicroAPI::DataCopyGather(rightDataReg, midAddr, rightIdxReg, mask);
+                        AscendC::Reg::DataCopyGather(midDataReg, midAddr, midIdxReg, mask);
+                        AscendC::Reg::DataCopyGather(leftDataReg, midAddr, leftIdxReg, mask);
+                        AscendC::Reg::DataCopyGather(rightDataReg, midAddr, rightIdxReg, mask);
 
-                        AscendC::MicroAPI::Add(sumReg, midDataReg, leftDataReg, mask);
-                        AscendC::MicroAPI::Add(sumReg, sumReg, rightDataReg, mask);
+                        AscendC::Reg::Add(sumReg, midDataReg, leftDataReg, mask);
+                        AscendC::Reg::Add(sumReg, sumReg, rightDataReg, mask);
 
                         AscendC::Reg::StoreUnAlign(outputAddr, sumReg, ureg1, tmpLen);
 
-                        AscendC::MicroAPI::Add(midIdxReg, midIdxReg, midOffsetReg, idxMask);
-                        AscendC::MicroAPI::Add(leftIdxReg, leftIdxReg, leftOffsetReg, idxMask);
-                        AscendC::MicroAPI::Add(rightIdxReg, rightIdxReg, rightOffsetReg, idxMask);
+                        AscendC::Reg::Add(midIdxReg, midIdxReg, midOffsetReg, idxMask);
+                        AscendC::Reg::Add(leftIdxReg, leftIdxReg, leftOffsetReg, idxMask);
+                        AscendC::Reg::Add(rightIdxReg, rightIdxReg, rightOffsetReg, idxMask);
                     }
 
                     // 尾块
@@ -3220,34 +3210,34 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
                     uint32_t curElements = static_cast<uint32_t>(curRows * outW);
                     uint32_t tmpLen = curElements;
 
-                    AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<PromoteDataT>(curElements);
+                    AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<PromoteDataT>(curElements);
 
-                    AscendC::MicroAPI::RegTensor<PromoteDataT> midDataReg;
-                    AscendC::MicroAPI::RegTensor<PromoteDataT> leftDataReg;
-                    AscendC::MicroAPI::RegTensor<PromoteDataT> rightDataReg;
-                    AscendC::MicroAPI::RegTensor<PromoteDataT> sumReg;
+                    AscendC::Reg::RegTensor<PromoteDataT> midDataReg;
+                    AscendC::Reg::RegTensor<PromoteDataT> leftDataReg;
+                    AscendC::Reg::RegTensor<PromoteDataT> rightDataReg;
+                    AscendC::Reg::RegTensor<PromoteDataT> sumReg;
 
-                    AscendC::MicroAPI::DataCopyGather(midDataReg, midAddr, midIdxReg, mask);
-                    AscendC::MicroAPI::DataCopyGather(leftDataReg, midAddr, leftIdxReg, mask);
-                    AscendC::MicroAPI::DataCopyGather(rightDataReg, midAddr, rightIdxReg, mask);
+                    AscendC::Reg::DataCopyGather(midDataReg, midAddr, midIdxReg, mask);
+                    AscendC::Reg::DataCopyGather(leftDataReg, midAddr, leftIdxReg, mask);
+                    AscendC::Reg::DataCopyGather(rightDataReg, midAddr, rightIdxReg, mask);
 
-                    AscendC::MicroAPI::Add(sumReg, midDataReg, leftDataReg, mask);
-                    AscendC::MicroAPI::Add(sumReg, sumReg, rightDataReg, mask);
+                    AscendC::Reg::Add(sumReg, midDataReg, leftDataReg, mask);
+                    AscendC::Reg::Add(sumReg, sumReg, rightDataReg, mask);
 
                     AscendC::Reg::StoreUnAlign(outputAddr, sumReg, ureg1, tmpLen);
                     AscendC::Reg::StoreUnAlignPost(outputAddr, ureg1, 0);
 
                     if (c < static_cast<uint16_t>(outC) - 1) {
-                        AscendC::MicroAPI::Add(nMidIdxReg, nMidIdxReg, midCChanOffsetReg, idxMask);
-                        AscendC::MicroAPI::Add(nLeftIdxReg, nLeftIdxReg, leftCChanOffsetReg, idxMask);
-                        AscendC::MicroAPI::Add(nRightIdxReg, nRightIdxReg, rightCChanOffsetReg, idxMask);
+                        AscendC::Reg::Add(nMidIdxReg, nMidIdxReg, midCChanOffsetReg, idxMask);
+                        AscendC::Reg::Add(nLeftIdxReg, nLeftIdxReg, leftCChanOffsetReg, idxMask);
+                        AscendC::Reg::Add(nRightIdxReg, nRightIdxReg, rightCChanOffsetReg, idxMask);
                     }
                 }
 
                 if (n < static_cast<uint16_t>(factor) - 1) {
-                    AscendC::MicroAPI::Add(baseMidIdxReg, baseMidIdxReg, midNOffsetReg, idxMask);
-                    AscendC::MicroAPI::Add(baseLeftIdxReg, baseLeftIdxReg, leftNOffsetReg, idxMask);
-                    AscendC::MicroAPI::Add(baseRightIdxReg, baseRightIdxReg, rightNOffsetReg, idxMask);
+                    AscendC::Reg::Add(baseMidIdxReg, baseMidIdxReg, midNOffsetReg, idxMask);
+                    AscendC::Reg::Add(baseLeftIdxReg, baseLeftIdxReg, leftNOffsetReg, idxMask);
+                    AscendC::Reg::Add(baseRightIdxReg, baseRightIdxReg, rightNOffsetReg, idxMask);
                 }
             }
         }

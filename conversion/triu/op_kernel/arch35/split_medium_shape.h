@@ -33,8 +33,8 @@ template <typename T, const bool IS_LOWER>
 class SplitMediumShape {
 public:
     __aicore__ inline SplitMediumShape(){};
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR y, __tiling_data_ptr__ TriangulatorMediumTilingData* tilingDataPtr, TPipe* pipeIn);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, __tiling_data_ptr__ TriangulatorMediumTilingData* tilingDataPtr,
+                                TPipe* pipeIn);
     __aicore__ inline void Process();
     __aicore__ inline void CopyIn(const MediumBlockInfo& info);
     __aicore__ inline void CopyOut(const MediumBlockInfo& info);
@@ -168,22 +168,20 @@ __aicore__ inline void SplitMediumShape<T, IS_LOWER>::DoVectorCopy(const MediumB
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<T> vregZero;
-        AscendC::MicroAPI::RegTensor<T> vregSrc;
-        AscendC::MicroAPI::RegTensor<T> vregDst;
-        AscendC::MicroAPI::Duplicate(vregZero, 0);
+        AscendC::Reg::RegTensor<T> vregZero;
+        AscendC::Reg::RegTensor<T> vregSrc;
+        AscendC::Reg::RegTensor<T> vregDst;
+        AscendC::Reg::Duplicate(vregZero, 0);
         uint32_t count = regCount_;
-        AscendC::MicroAPI::MaskReg rowMask = AscendC::MicroAPI::UpdateMask<T>(count);
-        AscendC::MicroAPI::MaskReg selectMask;
+        AscendC::Reg::MaskReg rowMask = AscendC::Reg::UpdateMask<T>(count);
+        AscendC::Reg::MaskReg selectMask;
         for (uint16_t m = 0; m < highActual; ++m) {
             for (uint16_t i = 0; i < headLoops; ++i) {
                 if constexpr (IS_LOWER) {
-                    AscendC::MicroAPI::DataCopy<T, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                        yAddr, vregZero, regCount_, rowMask);
+                    AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregZero, regCount_, rowMask);
                 } else {
-                    AscendC::MicroAPI::DataCopy<T, MicroAPI::PostLiteral::POST_MODE_UPDATE>(vregSrc, xAddr, regCount_);
-                    AscendC::MicroAPI::DataCopy<T, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                        yAddr, vregSrc, regCount_, rowMask);
+                    AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(vregSrc, xAddr, regCount_);
+                    AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregSrc, regCount_, rowMask);
                 }
             }
             if constexpr (IS_LOWER) {
@@ -192,27 +190,25 @@ __aicore__ inline void SplitMediumShape<T, IS_LOWER>::DoVectorCopy(const MediumB
             for (uint16_t i = 0; i < midRows; ++i) {
                 uint32_t copyEleNum = copyCols_ + i;
                 for (uint16_t j = 0; j < vfInnerLoops; ++j) {
-                    AscendC::MicroAPI::DataCopy<T, MicroAPI::PostLiteral::POST_MODE_UPDATE>(vregSrc, xAddr, regCount_);
-                    selectMask = AscendC::MicroAPI::UpdateMask<T>(copyEleNum);
+                    AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(vregSrc, xAddr, regCount_);
+                    selectMask = AscendC::Reg::UpdateMask<T>(copyEleNum);
                     if constexpr (IS_LOWER) {
-                        AscendC::MicroAPI::Select(vregDst, vregSrc, vregZero, selectMask);
-                        AscendC::MicroAPI::DataCopy<T, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                            yAddr, vregDst, regCount_, rowMask);
+                        AscendC::Reg::Select(vregDst, vregSrc, vregZero, selectMask);
+                        AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregDst, regCount_,
+                                                                                      rowMask);
                     } else {
-                        AscendC::MicroAPI::Select(vregDst, vregZero, vregSrc, selectMask);
-                        AscendC::MicroAPI::DataCopy<T, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                            yAddr, vregDst, regCount_, rowMask);
+                        AscendC::Reg::Select(vregDst, vregZero, vregSrc, selectMask);
+                        AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregDst, regCount_,
+                                                                                      rowMask);
                     }
                 }
             }
             for (uint16_t i = 0; i < tailLoops; ++i) {
                 if constexpr (IS_LOWER) {
-                    AscendC::MicroAPI::DataCopy<T, MicroAPI::PostLiteral::POST_MODE_UPDATE>(vregSrc, xAddr, regCount_);
-                    AscendC::MicroAPI::DataCopy<T, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                        yAddr, vregSrc, regCount_, rowMask);
+                    AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(vregSrc, xAddr, regCount_);
+                    AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregSrc, regCount_, rowMask);
                 } else {
-                    AscendC::MicroAPI::DataCopy<T, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                        yAddr, vregZero, regCount_, rowMask);
+                    AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregZero, regCount_, rowMask);
                 }
             }
             if constexpr (!IS_LOWER) {

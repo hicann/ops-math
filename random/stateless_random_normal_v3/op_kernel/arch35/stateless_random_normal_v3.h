@@ -73,14 +73,14 @@ private:
     float meanScalar_ = 0.0f;
     float stdevScalar_ = 0.0f;
 
-    static constexpr AscendC::MicroAPI::CastTrait castTraitB32ToB16 = {
-        AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::NO_SAT,
-        AscendC::MicroAPI::MaskMergeMode::ZEROING, AscendC::RoundMode::CAST_RINT};
+    static constexpr AscendC::Reg::CastTrait castTraitB32ToB16 = {
+        AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::NO_SAT, AscendC::Reg::MaskMergeMode::ZEROING,
+        AscendC::RoundMode::CAST_RINT};
 };
 
 template <typename T>
-__aicore__ inline void StatelessRandomNormalV3<T>::Init(
-    GM_ADDR y, GM_ADDR key, GM_ADDR counter, GM_ADDR mean, GM_ADDR stdev)
+__aicore__ inline void StatelessRandomNormalV3<T>::Init(GM_ADDR y, GM_ADDR key, GM_ADDR counter, GM_ADDR mean,
+                                                        GM_ADDR stdev)
 {
     VarsInit();
     keyGm_.SetGlobalBuffer(reinterpret_cast<__gm__ uint64_t*>(key), 1);
@@ -99,7 +99,7 @@ __aicore__ inline void StatelessRandomNormalV3<T>::Init(
 
     blockOffset_ = static_cast<int64_t>(tiling_->normalCoreProNum) * blockIdx_;
     ubTilingSize_ = tiling_->singleBufferSize;
-    
+
     if (ubTilingSize_ > curCoreProNum_) {
         ubTilingSize_ = curCoreProNum_;
     }
@@ -108,15 +108,15 @@ __aicore__ inline void StatelessRandomNormalV3<T>::Init(
     meanGm_.SetGlobalBuffer((__gm__ float*)mean);
     stdevGm_.SetGlobalBuffer((__gm__ float*)stdev);
 
-    uint32_t bufSize = Ops::Base::CeilAlign(
-        ubTilingSize_ * static_cast<uint32_t>(sizeof(float)), static_cast<uint32_t>(BLOCK_SIZE));
+    uint32_t bufSize = Ops::Base::CeilAlign(ubTilingSize_ * static_cast<uint32_t>(sizeof(float)),
+                                            static_cast<uint32_t>(BLOCK_SIZE));
     pipe_->InitBuffer(philoxQueBuf_, bufSize);
     pipe_->InitBuffer(philoxQueBufY_, bufSize);
     pipe_->InitBuffer(uniformResult_, bufSize);
     pipe_->InitBuffer(outQue_, BUFFER_NUM, bufSize);
     meanIsTensor_ = !(tiling_->v3KernelMode & MEAN_SCALAR_FLAG);
     stdevIsTensor_ = !(tiling_->v3KernelMode & STDEV_SCALAR_FLAG);
-    
+
     if (meanIsTensor_) {
         pipe_->InitBuffer(meanInQue_, 1, bufSize);
     } else {
@@ -142,8 +142,8 @@ __aicore__ inline void StatelessRandomNormalV3<T>::Process()
         currOffset_ = blockOffset_ + idx * ubTilingSize_;
         LocalTensor<uint32_t> philoxRes = philoxQueBuf_.Get<uint32_t>();
         LocalTensor<float> yOutputTmp = uniformResult_.Get<float>();
-        uint32_t uniformResCount = Ops::Base::CeilDiv(currUbTilingSize_,
-            static_cast<uint32_t>(DOUBLE_UNIFORM_RESULT)) * DOUBLE_UNIFORM_RESULT;
+        uint32_t uniformResCount = Ops::Base::CeilDiv(currUbTilingSize_, static_cast<uint32_t>(DOUBLE_UNIFORM_RESULT)) *
+                                   DOUBLE_UNIFORM_RESULT;
         GenRandomSIMD(philoxRes, uniformResCount);
         Uint32ToFloat(yOutputTmp, philoxRes, uniformResCount);
 
@@ -175,8 +175,7 @@ __aicore__ inline void StatelessRandomNormalV3<T>::Process()
         }
 
         LocalTensor<T> copyOutput = outQue_.DeQue<T>();
-        CopyOut(copyOutput, outputGm_, static_cast<uint32_t>(1),
-                static_cast<uint32_t>(currUbTilingSize_ * sizeof(T)),
+        CopyOut(copyOutput, outputGm_, static_cast<uint32_t>(1), static_cast<uint32_t>(currUbTilingSize_ * sizeof(T)),
                 currOffset_);
         outQue_.FreeTensor(copyOutput);
 
@@ -219,32 +218,32 @@ __aicore__ inline void StatelessRandomNormalV3<T>::ApplyMeanStdevBothTensor(cons
     __VEC_SCOPE__
     {
         if constexpr (AscendC::IsSameType<T, float>::value) {
-            MicroAPI::RegTensor<float> vRegY, vRegStdev, vRegMean, vRegTmp, vRegResult;
+            Reg::RegTensor<float> vRegY, vRegStdev, vRegMean, vRegTmp, vRegResult;
             for (uint16_t i = 0; i < looptimes; i++) {
-                MicroAPI::MaskReg curMask = MicroAPI::UpdateMask<T>(Count);
-                AscendC::MicroAPI::AddrReg aReg = AscendC::MicroAPI::CreateAddrReg<float>(i, loopsize);
-                MicroAPI::DataCopy(vRegY, yOutputAddr, aReg);
-                MicroAPI::DataCopy(vRegStdev, stdevAddr, aReg);
-                MicroAPI::Mul(vRegTmp, vRegY, vRegStdev, curMask);
-                MicroAPI::DataCopy(vRegMean, meanAddr, aReg);
-                MicroAPI::Add(vRegResult, vRegTmp, vRegMean, curMask);
-                MicroAPI::DataCopy(yOutputAddr, vRegResult, aReg, curMask);
+                Reg::MaskReg curMask = Reg::UpdateMask<T>(Count);
+                AscendC::Reg::AddrReg aReg = AscendC::Reg::CreateAddrReg<float>(i, loopsize);
+                Reg::DataCopy(vRegY, yOutputAddr, aReg);
+                Reg::DataCopy(vRegStdev, stdevAddr, aReg);
+                Reg::Mul(vRegTmp, vRegY, vRegStdev, curMask);
+                Reg::DataCopy(vRegMean, meanAddr, aReg);
+                Reg::Add(vRegResult, vRegTmp, vRegMean, curMask);
+                Reg::DataCopy(yOutputAddr, vRegResult, aReg, curMask);
             }
         } else {
-            MicroAPI::RegTensor<T> vRegY, vRegStdev, vRegMean, vRegTmp, vRegResult;
-            MicroAPI::RegTensor<float> vRegStdevF, vRegMeanF;
+            Reg::RegTensor<T> vRegY, vRegStdev, vRegMean, vRegTmp, vRegResult;
+            Reg::RegTensor<float> vRegStdevF, vRegMeanF;
             for (uint16_t i = 0; i < looptimes; i++) {
-                MicroAPI::MaskReg curMask = MicroAPI::UpdateMask<float>(Count);
-                AscendC::MicroAPI::AddrReg aRegT = AscendC::MicroAPI::CreateAddrReg<T>(i, loopsize);
-                AscendC::MicroAPI::AddrReg aRegF = AscendC::MicroAPI::CreateAddrReg<float>(i, loopsize);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_UNPACK_B16>(vRegY, yOutputAddr, aRegT);
-                MicroAPI::DataCopy(vRegStdevF, stdevAddr, aRegF);
-                MicroAPI::Cast<T, float, castTraitB32ToB16>(vRegStdev, vRegStdevF, curMask);
-                MicroAPI::Mul(vRegTmp, vRegY, vRegStdev, curMask);
-                MicroAPI::DataCopy(vRegMeanF, meanAddr, aRegF);
-                MicroAPI::Cast<T, float, castTraitB32ToB16>(vRegMean, vRegMeanF, curMask);
-                MicroAPI::Add(vRegResult, vRegTmp, vRegMean, curMask);
-                MicroAPI::DataCopy<T, MicroAPI::StoreDist::DIST_PACK_B32>(yOutputAddr, vRegResult, aRegT, curMask);
+                Reg::MaskReg curMask = Reg::UpdateMask<float>(Count);
+                AscendC::Reg::AddrReg aRegT = AscendC::Reg::CreateAddrReg<T>(i, loopsize);
+                AscendC::Reg::AddrReg aRegF = AscendC::Reg::CreateAddrReg<float>(i, loopsize);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_UNPACK_B16>(vRegY, yOutputAddr, aRegT);
+                Reg::DataCopy(vRegStdevF, stdevAddr, aRegF);
+                Reg::Cast<T, float, castTraitB32ToB16>(vRegStdev, vRegStdevF, curMask);
+                Reg::Mul(vRegTmp, vRegY, vRegStdev, curMask);
+                Reg::DataCopy(vRegMeanF, meanAddr, aRegF);
+                Reg::Cast<T, float, castTraitB32ToB16>(vRegMean, vRegMeanF, curMask);
+                Reg::Add(vRegResult, vRegTmp, vRegMean, curMask);
+                Reg::DataCopy<T, Reg::StoreDist::DIST_PACK_B32>(yOutputAddr, vRegResult, aRegT, curMask);
             }
         }
     }
@@ -270,33 +269,33 @@ __aicore__ inline void StatelessRandomNormalV3<T>::ApplyMeanStdevMeanScalar(cons
     __VEC_SCOPE__
     {
         if constexpr (AscendC::IsSameType<T, float>::value) {
-            MicroAPI::RegTensor<float> vRegY, vRegStdev, vRegTmp, vRegResult, vRegMean;
-            MicroAPI::MaskReg maskAll = MicroAPI::CreateMask<float, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::Duplicate(vRegMean, scaleMean, maskAll);
+            Reg::RegTensor<float> vRegY, vRegStdev, vRegTmp, vRegResult, vRegMean;
+            Reg::MaskReg maskAll = Reg::CreateMask<float, Reg::MaskPattern::ALL>();
+            Reg::Duplicate(vRegMean, scaleMean, maskAll);
             for (uint16_t i = 0; i < looptimes; i++) {
-                MicroAPI::MaskReg curMask = MicroAPI::UpdateMask<float>(Count);
-                AscendC::MicroAPI::AddrReg aReg = AscendC::MicroAPI::CreateAddrReg<float>(i, loopsize);
-                MicroAPI::DataCopy(vRegY, yOutputAddr, aReg);
-                MicroAPI::DataCopy(vRegStdev, stdevAddr, aReg);
-                MicroAPI::Mul(vRegTmp, vRegY, vRegStdev, curMask);
-                MicroAPI::Add(vRegResult, vRegTmp, vRegMean, curMask);
-                MicroAPI::DataCopy(yOutputAddr, vRegResult, aReg, curMask);
+                Reg::MaskReg curMask = Reg::UpdateMask<float>(Count);
+                AscendC::Reg::AddrReg aReg = AscendC::Reg::CreateAddrReg<float>(i, loopsize);
+                Reg::DataCopy(vRegY, yOutputAddr, aReg);
+                Reg::DataCopy(vRegStdev, stdevAddr, aReg);
+                Reg::Mul(vRegTmp, vRegY, vRegStdev, curMask);
+                Reg::Add(vRegResult, vRegTmp, vRegMean, curMask);
+                Reg::DataCopy(yOutputAddr, vRegResult, aReg, curMask);
             }
         } else {
-            MicroAPI::RegTensor<T> vRegY, vRegStdev, vRegTmp, vRegResult, vRegMean;
-            MicroAPI::RegTensor<float> vRegStdevF;
-            MicroAPI::MaskReg maskAll = MicroAPI::CreateMask<float, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::Duplicate(vRegMean, scaleMean, maskAll);
+            Reg::RegTensor<T> vRegY, vRegStdev, vRegTmp, vRegResult, vRegMean;
+            Reg::RegTensor<float> vRegStdevF;
+            Reg::MaskReg maskAll = Reg::CreateMask<float, Reg::MaskPattern::ALL>();
+            Reg::Duplicate(vRegMean, scaleMean, maskAll);
             for (uint16_t i = 0; i < looptimes; i++) {
-                MicroAPI::MaskReg curMask = MicroAPI::UpdateMask<float>(Count);
-                AscendC::MicroAPI::AddrReg aRegT = AscendC::MicroAPI::CreateAddrReg<T>(i, loopsize);
-                AscendC::MicroAPI::AddrReg aRegF = AscendC::MicroAPI::CreateAddrReg<float>(i, loopsize);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_UNPACK_B16>(vRegY, yOutputAddr, aRegT);
-                MicroAPI::DataCopy(vRegStdevF, stdevAddr, aRegF);
-                MicroAPI::Cast<T, float, castTraitB32ToB16>(vRegStdev, vRegStdevF, curMask);
-                MicroAPI::Mul(vRegTmp, vRegY, vRegStdev, curMask);
-                MicroAPI::Add(vRegResult, vRegTmp, vRegMean, curMask);
-                MicroAPI::DataCopy<T, MicroAPI::StoreDist::DIST_PACK_B32>(yOutputAddr, vRegResult, aRegT, curMask);
+                Reg::MaskReg curMask = Reg::UpdateMask<float>(Count);
+                AscendC::Reg::AddrReg aRegT = AscendC::Reg::CreateAddrReg<T>(i, loopsize);
+                AscendC::Reg::AddrReg aRegF = AscendC::Reg::CreateAddrReg<float>(i, loopsize);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_UNPACK_B16>(vRegY, yOutputAddr, aRegT);
+                Reg::DataCopy(vRegStdevF, stdevAddr, aRegF);
+                Reg::Cast<T, float, castTraitB32ToB16>(vRegStdev, vRegStdevF, curMask);
+                Reg::Mul(vRegTmp, vRegY, vRegStdev, curMask);
+                Reg::Add(vRegResult, vRegTmp, vRegMean, curMask);
+                Reg::DataCopy<T, Reg::StoreDist::DIST_PACK_B32>(yOutputAddr, vRegResult, aRegT, curMask);
             }
         }
     }
@@ -321,33 +320,33 @@ __aicore__ inline void StatelessRandomNormalV3<T>::ApplyMeanStdevStdevScalar(con
     __VEC_SCOPE__
     {
         if constexpr (AscendC::IsSameType<T, float>::value) {
-            MicroAPI::RegTensor<float> vRegY, vRegMean, vRegTmp, vRegResult, vRegStdev;
-            MicroAPI::MaskReg maskAll = MicroAPI::CreateMask<float, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::Duplicate(vRegStdev, scaleStdev, maskAll);
+            Reg::RegTensor<float> vRegY, vRegMean, vRegTmp, vRegResult, vRegStdev;
+            Reg::MaskReg maskAll = Reg::CreateMask<float, Reg::MaskPattern::ALL>();
+            Reg::Duplicate(vRegStdev, scaleStdev, maskAll);
             for (uint16_t i = 0; i < looptimes; i++) {
-                MicroAPI::MaskReg curMask = MicroAPI::UpdateMask<float>(Count);
-                AscendC::MicroAPI::AddrReg aReg = AscendC::MicroAPI::CreateAddrReg<float>(i, loopsize);
-                MicroAPI::DataCopy(vRegY, yOutputAddr, aReg);
-                MicroAPI::Mul(vRegTmp, vRegY, vRegStdev, curMask);
-                MicroAPI::DataCopy(vRegMean, meanAddr, aReg);
-                MicroAPI::Add(vRegResult, vRegTmp, vRegMean, curMask);
-                MicroAPI::DataCopy(yOutputAddr, vRegResult, aReg, curMask);
+                Reg::MaskReg curMask = Reg::UpdateMask<float>(Count);
+                AscendC::Reg::AddrReg aReg = AscendC::Reg::CreateAddrReg<float>(i, loopsize);
+                Reg::DataCopy(vRegY, yOutputAddr, aReg);
+                Reg::Mul(vRegTmp, vRegY, vRegStdev, curMask);
+                Reg::DataCopy(vRegMean, meanAddr, aReg);
+                Reg::Add(vRegResult, vRegTmp, vRegMean, curMask);
+                Reg::DataCopy(yOutputAddr, vRegResult, aReg, curMask);
             }
         } else {
-            MicroAPI::RegTensor<T> vRegY, vRegMean, vRegTmp, vRegResult, vRegStdev;
-            MicroAPI::RegTensor<float> vRegMeanF;
-            MicroAPI::MaskReg maskAll = MicroAPI::CreateMask<float, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::Duplicate(vRegStdev, scaleStdev, maskAll);
+            Reg::RegTensor<T> vRegY, vRegMean, vRegTmp, vRegResult, vRegStdev;
+            Reg::RegTensor<float> vRegMeanF;
+            Reg::MaskReg maskAll = Reg::CreateMask<float, Reg::MaskPattern::ALL>();
+            Reg::Duplicate(vRegStdev, scaleStdev, maskAll);
             for (uint16_t i = 0; i < looptimes; i++) {
-                MicroAPI::MaskReg curMask = MicroAPI::UpdateMask<float>(Count);
-                AscendC::MicroAPI::AddrReg aRegT = AscendC::MicroAPI::CreateAddrReg<T>(i, loopsize);
-                AscendC::MicroAPI::AddrReg aRegF = AscendC::MicroAPI::CreateAddrReg<float>(i, loopsize);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_UNPACK_B16>(vRegY, yOutputAddr, aRegT);
-                MicroAPI::Mul(vRegTmp, vRegY, vRegStdev, curMask);
-                MicroAPI::DataCopy(vRegMeanF, meanAddr, aRegF);
-                MicroAPI::Cast<T, float, castTraitB32ToB16>(vRegMean, vRegMeanF, curMask);
-                MicroAPI::Add(vRegResult, vRegTmp, vRegMean, curMask);
-                MicroAPI::DataCopy<T, MicroAPI::StoreDist::DIST_PACK_B32>(yOutputAddr, vRegResult, aRegT, curMask);
+                Reg::MaskReg curMask = Reg::UpdateMask<float>(Count);
+                AscendC::Reg::AddrReg aRegT = AscendC::Reg::CreateAddrReg<T>(i, loopsize);
+                AscendC::Reg::AddrReg aRegF = AscendC::Reg::CreateAddrReg<float>(i, loopsize);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_UNPACK_B16>(vRegY, yOutputAddr, aRegT);
+                Reg::Mul(vRegTmp, vRegY, vRegStdev, curMask);
+                Reg::DataCopy(vRegMeanF, meanAddr, aRegF);
+                Reg::Cast<T, float, castTraitB32ToB16>(vRegMean, vRegMeanF, curMask);
+                Reg::Add(vRegResult, vRegTmp, vRegMean, curMask);
+                Reg::DataCopy<T, Reg::StoreDist::DIST_PACK_B32>(yOutputAddr, vRegResult, aRegT, curMask);
             }
         }
     }
@@ -371,30 +370,30 @@ __aicore__ inline void StatelessRandomNormalV3<T>::ApplyMeanStdevBothScalar(cons
     __VEC_SCOPE__
     {
         if constexpr (AscendC::IsSameType<T, float>::value) {
-            MicroAPI::RegTensor<float> vReg0, vReg1, vReg2, vReg3, vRegMean;
-            MicroAPI::MaskReg maskAll = MicroAPI::CreateMask<float, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::Duplicate(vReg1, scaleStdev, maskAll);
-            MicroAPI::Duplicate(vRegMean, scaleMean, maskAll);
+            Reg::RegTensor<float> vReg0, vReg1, vReg2, vReg3, vRegMean;
+            Reg::MaskReg maskAll = Reg::CreateMask<float, Reg::MaskPattern::ALL>();
+            Reg::Duplicate(vReg1, scaleStdev, maskAll);
+            Reg::Duplicate(vRegMean, scaleMean, maskAll);
             for (uint16_t i = 0; i < looptimes; i++) {
-                MicroAPI::MaskReg curMask = MicroAPI::UpdateMask<float>(Count);
-                AscendC::MicroAPI::AddrReg aReg = AscendC::MicroAPI::CreateAddrReg<float>(i, loopsize);
-                MicroAPI::DataCopy(vReg0, yOutputAddr, aReg);
-                MicroAPI::Mul(vReg2, vReg0, vReg1, curMask);
-                MicroAPI::Add(vReg3, vReg2, vRegMean, curMask);
-                MicroAPI::DataCopy(yOutputAddr, vReg3, aReg, curMask);
+                Reg::MaskReg curMask = Reg::UpdateMask<float>(Count);
+                AscendC::Reg::AddrReg aReg = AscendC::Reg::CreateAddrReg<float>(i, loopsize);
+                Reg::DataCopy(vReg0, yOutputAddr, aReg);
+                Reg::Mul(vReg2, vReg0, vReg1, curMask);
+                Reg::Add(vReg3, vReg2, vRegMean, curMask);
+                Reg::DataCopy(yOutputAddr, vReg3, aReg, curMask);
             }
         } else {
-            MicroAPI::RegTensor<T> vReg0, vReg1, vReg2, vReg3, vRegMean;
-            MicroAPI::MaskReg maskAll = MicroAPI::CreateMask<float, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::Duplicate(vReg1, scaleStdev, maskAll);
-            MicroAPI::Duplicate(vRegMean, scaleMean, maskAll);
+            Reg::RegTensor<T> vReg0, vReg1, vReg2, vReg3, vRegMean;
+            Reg::MaskReg maskAll = Reg::CreateMask<float, Reg::MaskPattern::ALL>();
+            Reg::Duplicate(vReg1, scaleStdev, maskAll);
+            Reg::Duplicate(vRegMean, scaleMean, maskAll);
             for (uint16_t i = 0; i < looptimes; i++) {
-                MicroAPI::MaskReg curMask = MicroAPI::UpdateMask<float>(Count);
-                AscendC::MicroAPI::AddrReg aRegT = AscendC::MicroAPI::CreateAddrReg<T>(i, loopsize);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_UNPACK_B16>(vReg0, yOutputAddr, aRegT);
-                MicroAPI::Mul(vReg2, vReg0, vReg1, curMask);
-                MicroAPI::Add(vReg3, vReg2, vRegMean, curMask);
-                MicroAPI::DataCopy<T, MicroAPI::StoreDist::DIST_PACK_B32>(yOutputAddr, vReg3, aRegT, curMask);
+                Reg::MaskReg curMask = Reg::UpdateMask<float>(Count);
+                AscendC::Reg::AddrReg aRegT = AscendC::Reg::CreateAddrReg<T>(i, loopsize);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_UNPACK_B16>(vReg0, yOutputAddr, aRegT);
+                Reg::Mul(vReg2, vReg0, vReg1, curMask);
+                Reg::Add(vReg3, vReg2, vRegMean, curMask);
+                Reg::DataCopy<T, Reg::StoreDist::DIST_PACK_B32>(yOutputAddr, vReg3, aRegT, curMask);
             }
         }
     }

@@ -22,11 +22,11 @@
 
 namespace Transpose {
 using namespace AscendC;
-using AscendC::MicroAPI::CreateMask;
-using AscendC::MicroAPI::DataCopyGather;
-using AscendC::MicroAPI::MaskReg;
-using AscendC::MicroAPI::RegTensor;
-using AscendC::MicroAPI::UpdateMask;
+using AscendC::Reg::CreateMask;
+using AscendC::Reg::DataCopyGather;
+using AscendC::Reg::MaskReg;
+using AscendC::Reg::RegTensor;
+using AscendC::Reg::UpdateMask;
 
 constexpr int8_t UB_MAX_DIM_NUM = 6;
 constexpr int8_t NUM_TWO = 2;
@@ -283,12 +283,12 @@ __aicore__ inline void TransposeWithGather<T>::GatherData()
         RegTensor<T> xReg;
         RegTensor<RangeType_> idxReg;
         RegTensor<RangeType_> idxOriReg;
-        MaskReg maskIdx = CreateMask<RangeType_, MicroAPI::MaskPattern::ALL>();
+        MaskReg maskIdx = CreateMask<RangeType_, Reg::MaskPattern::ALL>();
         MaskReg mask;
 
         for (uint16_t lpIdx = 0; lpIdx < burstLpCnt; ++lpIdx) {
             mask = UpdateMask<T>(maskValue);
-            MicroAPI::DataCopy(idxOriReg, idxAddr + lpIdx * vlSize_);
+            Reg::DataCopy(idxOriReg, idxAddr + lpIdx * vlSize_);
             uint32_t outIdx = 0;
             for (uint16_t axis2Idx = 0; axis2Idx < static_cast<uint16_t>(outUbAxis2_); ++axis2Idx) {
                 RangeType_ axis2Update = static_cast<RangeType_>(axis2Idx * outUbAxis2InROffset_);
@@ -297,16 +297,16 @@ __aicore__ inline void TransposeWithGather<T>::GatherData()
                     for (uint16_t axis0Idx = 0; axis0Idx < static_cast<uint16_t>(outUbAxis0_); ++axis0Idx) {
                         RangeType_ axis0Update = static_cast<RangeType_>(axis0Idx * outUbAxis0InROffset_);
                         RangeType_ idxUpdate = axis2Update + axis1Update + axis0Update;
-                        MicroAPI::Adds(idxReg, idxOriReg, idxUpdate, maskIdx);
-                        DataCopyGather((MicroAPI::RegTensor<CastType_>&)xReg, xInAddr,
-                                       (MicroAPI::RegTensor<IdxType_>&)idxReg, mask);
+                        Reg::Adds(idxReg, idxOriReg, idxUpdate, maskIdx);
+                        DataCopyGather((Reg::RegTensor<CastType_>&)xReg, xInAddr, (Reg::RegTensor<IdxType_>&)idxReg,
+                                       mask);
                         if constexpr (sizeof(T) != sizeof(int8_t)) {
-                            MicroAPI::DataCopy(xOutAddr + outIdx * outLenAlign + lpIdx * vlSize_, xReg, mask);
+                            Reg::DataCopy(xOutAddr + outIdx * outLenAlign + lpIdx * vlSize_, xReg, mask);
                         } else {
                             __local_mem__ CastType_* xOutAddrB16 = reinterpret_cast<__local_mem__ CastType_*>(
                                 xOutAddr + outIdx * outLenAlign + lpIdx * vlSize_);
-                            MicroAPI::DataCopy<CastType_, MicroAPI::StoreDist::DIST_PACK_B16>(
-                                xOutAddrB16, (MicroAPI::RegTensor<CastType_>&)xReg, mask);
+                            Reg::DataCopy<CastType_, Reg::StoreDist::DIST_PACK_B16>(
+                                xOutAddrB16, (Reg::RegTensor<CastType_>&)xReg, mask);
                         }
                         ++outIdx;
                     }
@@ -334,12 +334,12 @@ __aicore__ inline void TransposeWithGather<T>::GenIndex4OneDim(int32_t goffset)
         RegTensor<RangeType_> srcReg;
         RegTensor<RangeType_> dstReg;
         MaskReg mask;
-        MicroAPI::Arange(srcReg, 0);
+        Reg::Arange(srcReg, 0);
         for (uint16_t lpIdx = 0; lpIdx < loopCnt; ++lpIdx) {
             mask = UpdateMask<RangeType_>(lastDimSize);
-            MicroAPI::Muls(dstReg, srcReg, lastDimInOffset, mask);
-            MicroAPI::DataCopy(idxAddr + lpIdx * idxVLSize_, dstReg, mask);
-            MicroAPI::Adds(srcReg, srcReg, idxVLSize_, mask);
+            Reg::Muls(dstReg, srcReg, lastDimInOffset, mask);
+            Reg::DataCopy(idxAddr + lpIdx * idxVLSize_, dstReg, mask);
+            Reg::Adds(srcReg, srcReg, idxVLSize_, mask);
         }
     }
 }
@@ -377,46 +377,46 @@ __aicore__ inline void TransposeWithGather<T>::GenIndex4TwoDim(int32_t goffset)
         RegTensor<RangeType_> tmpReg;
         RegTensor<RangeType_> dim1Reg;
         RegTensor<RangeType_> dstReg;
-        MaskReg mask = CreateMask<RangeType_, MicroAPI::MaskPattern::ALL>();
+        MaskReg mask = CreateMask<RangeType_, Reg::MaskPattern::ALL>();
         // vec_a: VL % a
-        MicroAPI::Arange(idxReg, 0);
-        MicroAPI::Duplicate(dim0Reg, lastDimSize);
-        MicroAPI::Div(tmpReg, idxReg, dim0Reg, mask);
-        MicroAPI::Copy(dim1Reg, tmpReg); // vec_b: VL / a
-        MicroAPI::Mul(tmpReg, tmpReg, dim0Reg, mask);
-        MicroAPI::Sub(dim0Reg, idxReg, tmpReg, mask);
+        Reg::Arange(idxReg, 0);
+        Reg::Duplicate(dim0Reg, lastDimSize);
+        Reg::Div(tmpReg, idxReg, dim0Reg, mask);
+        Reg::Copy(dim1Reg, tmpReg); // vec_b: VL / a
+        Reg::Mul(tmpReg, tmpReg, dim0Reg, mask);
+        Reg::Sub(dim0Reg, idxReg, tmpReg, mask);
         // index: vec_a * a_in_offset + vec_b * b_in_offset
-        MicroAPI::Muls(tmpReg, dim0Reg, lastDimInOffset, mask);
-        MicroAPI::Muls(dstReg, dim1Reg, last2ndDimInOffset, mask);
-        MicroAPI::Add(dstReg, dstReg, tmpReg, mask);
-        MicroAPI::DataCopy(idxAddr, dstReg, mask);
+        Reg::Muls(tmpReg, dim0Reg, lastDimInOffset, mask);
+        Reg::Muls(dstReg, dim1Reg, last2ndDimInOffset, mask);
+        Reg::Add(dstReg, dstReg, tmpReg, mask);
+        Reg::DataCopy(idxAddr, dstReg, mask);
 
         MaskReg lpMask;
         MaskReg selMask;
         RegTensor<RangeType_> zeroReg;
         RegTensor<RangeType_> oneReg;
         RegTensor<RangeType_> cmpReg;
-        MicroAPI::Duplicate(zeroReg, 0);
-        MicroAPI::Duplicate(oneReg, 1);
+        Reg::Duplicate(zeroReg, 0);
+        Reg::Duplicate(oneReg, 1);
         for (uint16_t lpIdx = 0; lpIdx < loopCnt; ++lpIdx) {
             lpMask = UpdateMask<RangeType_>(leftDimSize);
             /*   vec_a += a_inc
              *   cmp_a = vec_a >= a
              *   vec_a = vec_a - cmp_a * a
              */
-            MicroAPI::Adds(dim0Reg, dim0Reg, lastDimInc, lpMask);
-            MicroAPI::CompareScalar<RangeType_, CMPMODE::GE>(selMask, dim0Reg, lastDimSize, lpMask);
-            MicroAPI::Select(cmpReg, oneReg, zeroReg, selMask);
-            MicroAPI::Muls(tmpReg, cmpReg, lastDimSize, lpMask);
-            MicroAPI::Sub(dim0Reg, dim0Reg, tmpReg, lpMask);
+            Reg::Adds(dim0Reg, dim0Reg, lastDimInc, lpMask);
+            Reg::CompareScalar<RangeType_, CMPMODE::GE>(selMask, dim0Reg, lastDimSize, lpMask);
+            Reg::Select(cmpReg, oneReg, zeroReg, selMask);
+            Reg::Muls(tmpReg, cmpReg, lastDimSize, lpMask);
+            Reg::Sub(dim0Reg, dim0Reg, tmpReg, lpMask);
             // vec_b += (b_inc + cmp_a)
-            MicroAPI::Adds(dim1Reg, dim1Reg, last2ndDimInc, lpMask);
-            MicroAPI::Add(dim1Reg, dim1Reg, cmpReg, lpMask);
+            Reg::Adds(dim1Reg, dim1Reg, last2ndDimInc, lpMask);
+            Reg::Add(dim1Reg, dim1Reg, cmpReg, lpMask);
             // index: vec_a * a_in_offset + vec_b * b_in_offset
-            MicroAPI::Muls(tmpReg, dim0Reg, lastDimInOffset, lpMask);
-            MicroAPI::Muls(dstReg, dim1Reg, last2ndDimInOffset, lpMask);
-            MicroAPI::Add(dstReg, dstReg, tmpReg, lpMask);
-            MicroAPI::DataCopy(idxAddr + (lpIdx + 1) * idxVLSize_, dstReg, lpMask);
+            Reg::Muls(tmpReg, dim0Reg, lastDimInOffset, lpMask);
+            Reg::Muls(dstReg, dim1Reg, last2ndDimInOffset, lpMask);
+            Reg::Add(dstReg, dstReg, tmpReg, lpMask);
+            Reg::DataCopy(idxAddr + (lpIdx + 1) * idxVLSize_, dstReg, lpMask);
         }
     }
 }
@@ -460,69 +460,69 @@ __aicore__ inline void TransposeWithGather<T>::GenIndex4ThreeDim(int32_t goffset
         RegTensor<RangeType_> tmp1Reg;
         RegTensor<RangeType_> dim2Reg;
         RegTensor<RangeType_> dstReg;
-        MaskReg mask = CreateMask<RangeType_, MicroAPI::MaskPattern::ALL>();
+        MaskReg mask = CreateMask<RangeType_, Reg::MaskPattern::ALL>();
         // vec_a: VL % a
-        MicroAPI::Arange(idxReg, 0);
-        MicroAPI::Duplicate(dim0Reg, lastDimSize);
-        MicroAPI::Copy(dim2Reg, dim0Reg); // backup a
-        MicroAPI::Div(tmpReg, idxReg, dim0Reg, mask);
-        MicroAPI::Copy(dim1Reg, tmpReg); // backup VL / a
-        MicroAPI::Mul(tmpReg, tmpReg, dim0Reg, mask);
-        MicroAPI::Sub(dim0Reg, idxReg, tmpReg, mask);
+        Reg::Arange(idxReg, 0);
+        Reg::Duplicate(dim0Reg, lastDimSize);
+        Reg::Copy(dim2Reg, dim0Reg); // backup a
+        Reg::Div(tmpReg, idxReg, dim0Reg, mask);
+        Reg::Copy(dim1Reg, tmpReg); // backup VL / a
+        Reg::Mul(tmpReg, tmpReg, dim0Reg, mask);
+        Reg::Sub(dim0Reg, idxReg, tmpReg, mask);
         // vec_b: VL / a % b
-        MicroAPI::Duplicate(tmp1Reg, last2ndDimSize);
-        MicroAPI::Mul(dim2Reg, dim2Reg, tmp1Reg, mask); // backup b
-        MicroAPI::Div(tmpReg, dim1Reg, tmp1Reg, mask);
-        MicroAPI::Mul(tmpReg, tmpReg, tmp1Reg, mask);
-        MicroAPI::Sub(dim1Reg, dim1Reg, tmpReg, mask);
+        Reg::Duplicate(tmp1Reg, last2ndDimSize);
+        Reg::Mul(dim2Reg, dim2Reg, tmp1Reg, mask); // backup b
+        Reg::Div(tmpReg, dim1Reg, tmp1Reg, mask);
+        Reg::Mul(tmpReg, tmpReg, tmp1Reg, mask);
+        Reg::Sub(dim1Reg, dim1Reg, tmpReg, mask);
         // vec_c: VL / (a * b)
-        MicroAPI::Div(dim2Reg, idxReg, dim2Reg, mask);
+        Reg::Div(dim2Reg, idxReg, dim2Reg, mask);
         // index: vec_a * a_in_offset + vec_b * b_in_offset + vec_c * c_in_offset
-        MicroAPI::Muls(tmpReg, dim0Reg, lastDimInOffset, mask);
-        MicroAPI::Muls(tmp1Reg, dim1Reg, last2ndDimInOffset, mask);
-        MicroAPI::Muls(dstReg, dim2Reg, last3rdDimInOffset, mask);
-        MicroAPI::Add(dstReg, dstReg, tmpReg, mask);
-        MicroAPI::Add(dstReg, dstReg, tmp1Reg, mask);
-        MicroAPI::DataCopy(idxAddr, dstReg, mask);
+        Reg::Muls(tmpReg, dim0Reg, lastDimInOffset, mask);
+        Reg::Muls(tmp1Reg, dim1Reg, last2ndDimInOffset, mask);
+        Reg::Muls(dstReg, dim2Reg, last3rdDimInOffset, mask);
+        Reg::Add(dstReg, dstReg, tmpReg, mask);
+        Reg::Add(dstReg, dstReg, tmp1Reg, mask);
+        Reg::DataCopy(idxAddr, dstReg, mask);
 
         MaskReg lpMask;
         MaskReg selMask;
         RegTensor<RangeType_> zeroReg;
         RegTensor<RangeType_> oneReg;
         RegTensor<RangeType_> cmpReg;
-        MicroAPI::Duplicate(zeroReg, 0);
-        MicroAPI::Duplicate(oneReg, 1);
+        Reg::Duplicate(zeroReg, 0);
+        Reg::Duplicate(oneReg, 1);
         for (uint16_t lpIdx = 0; lpIdx < loopCnt; ++lpIdx) {
             lpMask = UpdateMask<RangeType_>(leftDimSize);
             /*   vec_a += a_inc
              *   cmp_a = vec_a >= a
              *   vec_a = vec_a - cmp_a * a
              */
-            MicroAPI::Adds(dim0Reg, dim0Reg, lastDimInc, lpMask);
-            MicroAPI::CompareScalar<RangeType_, CMPMODE::GE>(selMask, dim0Reg, lastDimSize, lpMask);
-            MicroAPI::Select(cmpReg, oneReg, zeroReg, selMask);
-            MicroAPI::Muls(tmpReg, cmpReg, lastDimSize, lpMask);
-            MicroAPI::Sub(dim0Reg, dim0Reg, tmpReg, lpMask);
+            Reg::Adds(dim0Reg, dim0Reg, lastDimInc, lpMask);
+            Reg::CompareScalar<RangeType_, CMPMODE::GE>(selMask, dim0Reg, lastDimSize, lpMask);
+            Reg::Select(cmpReg, oneReg, zeroReg, selMask);
+            Reg::Muls(tmpReg, cmpReg, lastDimSize, lpMask);
+            Reg::Sub(dim0Reg, dim0Reg, tmpReg, lpMask);
             /*   vec_b += (b_inc + cmp_a)
              *   cmp_b = vec_b >= b
              *   vec_b = vec_b - cmp_b * b
              */
-            MicroAPI::Adds(cmpReg, cmpReg, last2ndDimInc, lpMask);
-            MicroAPI::Add(dim1Reg, dim1Reg, cmpReg, lpMask);
-            MicroAPI::CompareScalar<RangeType_, CMPMODE::GE>(selMask, dim1Reg, last2ndDimSize, lpMask);
-            MicroAPI::Select(cmpReg, oneReg, zeroReg, selMask);
-            MicroAPI::Muls(tmpReg, cmpReg, last2ndDimSize, lpMask);
-            MicroAPI::Sub(dim1Reg, dim1Reg, tmpReg, lpMask);
+            Reg::Adds(cmpReg, cmpReg, last2ndDimInc, lpMask);
+            Reg::Add(dim1Reg, dim1Reg, cmpReg, lpMask);
+            Reg::CompareScalar<RangeType_, CMPMODE::GE>(selMask, dim1Reg, last2ndDimSize, lpMask);
+            Reg::Select(cmpReg, oneReg, zeroReg, selMask);
+            Reg::Muls(tmpReg, cmpReg, last2ndDimSize, lpMask);
+            Reg::Sub(dim1Reg, dim1Reg, tmpReg, lpMask);
             // vec_c += (c_inc + cmp_b)
-            MicroAPI::Adds(dim2Reg, dim2Reg, last3rdDimInc, lpMask);
-            MicroAPI::Add(dim2Reg, dim2Reg, cmpReg, lpMask);
+            Reg::Adds(dim2Reg, dim2Reg, last3rdDimInc, lpMask);
+            Reg::Add(dim2Reg, dim2Reg, cmpReg, lpMask);
             // index: vec_a * a_in_offset + vec_b * b_in_offset + vec_c * c_in_offset
-            MicroAPI::Muls(tmpReg, dim0Reg, lastDimInOffset, lpMask);
-            MicroAPI::Muls(tmp1Reg, dim1Reg, last2ndDimInOffset, lpMask);
-            MicroAPI::Muls(dstReg, dim2Reg, last3rdDimInOffset, lpMask);
-            MicroAPI::Add(dstReg, dstReg, tmpReg, lpMask);
-            MicroAPI::Add(dstReg, dstReg, tmp1Reg, lpMask);
-            MicroAPI::DataCopy(idxAddr + (lpIdx + 1) * idxVLSize_, dstReg, lpMask);
+            Reg::Muls(tmpReg, dim0Reg, lastDimInOffset, lpMask);
+            Reg::Muls(tmp1Reg, dim1Reg, last2ndDimInOffset, lpMask);
+            Reg::Muls(dstReg, dim2Reg, last3rdDimInOffset, lpMask);
+            Reg::Add(dstReg, dstReg, tmpReg, lpMask);
+            Reg::Add(dstReg, dstReg, tmp1Reg, lpMask);
+            Reg::DataCopy(idxAddr + (lpIdx + 1) * idxVLSize_, dstReg, lpMask);
         }
     }
 }

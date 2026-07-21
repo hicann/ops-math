@@ -266,14 +266,14 @@ private:
         __ubuf__ T* srcLeftDataAddr = srcAddr + inStart + leftUnalignUbStartIdx_;
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<T> vReg;
-            AscendC::MicroAPI::UnalignReg uReg;
-            AscendC::MicroAPI::UnalignReg uReg1;
+            AscendC::Reg::RegTensor<T> vReg;
+            AscendC::Reg::UnalignReg uReg;
+            AscendC::Reg::UnalignReg uReg1;
 
-            AscendC::MicroAPI::DataCopyUnAlignPre(uReg, srcLeftDataAddr);
-            AscendC::MicroAPI::DataCopyUnAlign(vReg, uReg, srcLeftDataAddr);
-            AscendC::MicroAPI::DataCopyUnAlign(srcAddr, vReg, uReg1, leftUnalignLen);
-            AscendC::MicroAPI::DataCopyUnAlignPost(srcAddr, uReg1, 0);
+            AscendC::Reg::DataCopyUnAlignPre(uReg, srcLeftDataAddr);
+            AscendC::Reg::DataCopyUnAlign(vReg, uReg, srcLeftDataAddr);
+            AscendC::Reg::DataCopyUnAlign(srcAddr, vReg, uReg1, leftUnalignLen);
+            AscendC::Reg::DataCopyUnAlignPost(srcAddr, uReg1, 0);
         }
     }
 

@@ -40,8 +40,8 @@ template <typename T>
 class SplitTinyShape {
 public:
     __aicore__ inline SplitTinyShape(){};
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR y, __tiling_data_ptr__ TriangulatorTinyTilingData* tilingDataPtr, TPipe* pipeIn);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, __tiling_data_ptr__ TriangulatorTinyTilingData* tilingDataPtr,
+                                TPipe* pipeIn);
     __aicore__ inline void Process();
     __aicore__ inline void CopyIn(const TinyBlockInfo& info);
     __aicore__ inline void CopyOut(const TinyBlockInfo& info);
@@ -69,8 +69,9 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void SplitTinyShape<T>::Init(
-    GM_ADDR x, GM_ADDR y, __tiling_data_ptr__ TriangulatorTinyTilingData* tilingDataPtr, TPipe* pipeIn)
+__aicore__ inline void SplitTinyShape<T>::Init(GM_ADDR x, GM_ADDR y,
+                                               __tiling_data_ptr__ TriangulatorTinyTilingData* tilingDataPtr,
+                                               TPipe* pipeIn)
 {
     pipe_ = pipeIn;
 
@@ -87,9 +88,8 @@ __aicore__ inline void SplitTinyShape<T>::Init(
     highInner_ = tilingDataPtr->highInner;
     highTail_ = tilingDataPtr->highTail;
     planeArea_ = tilingDataPtr->planeArea;
-    copyInParam_.dstStride =
-        GetVRegSize() / GetUbBlockSize() -
-        CeilDiv(static_cast<uint32_t>(planeArea_ * sizeof(T)), static_cast<uint32_t>(GetUbBlockSize()));
+    copyInParam_.dstStride = GetVRegSize() / GetUbBlockSize() - CeilDiv(static_cast<uint32_t>(planeArea_ * sizeof(T)),
+                                                                        static_cast<uint32_t>(GetUbBlockSize()));
     copyOutParam_.srcStride = copyInParam_.dstStride;
     copyInParam_.blockLen = planeArea_ * sizeof(T);
     copyOutParam_.blockLen = planeArea_ * sizeof(T);
@@ -167,37 +167,37 @@ __aicore__ inline void SplitTinyShape<T>::DoVectorCopy(const TinyBlockInfo& info
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<T> vreg;
-        AscendC::MicroAPI::RegTensor<T> dreg;
-        AscendC::MicroAPI::RegTensor<T> sreg;
+        AscendC::Reg::RegTensor<T> vreg;
+        AscendC::Reg::RegTensor<T> dreg;
+        AscendC::Reg::RegTensor<T> sreg;
 
-        AscendC::MicroAPI::MaskReg maskReg;
-        AscendC::MicroAPI::MaskReg maskRegD;
-        AscendC::MicroAPI::MaskReg maskRegQ;
-        AscendC::MicroAPI::MaskReg maskRegO;
-        AscendC::MicroAPI::MaskReg moveMask = AscendC::MicroAPI::CreateMask<T>();
+        AscendC::Reg::MaskReg maskReg;
+        AscendC::Reg::MaskReg maskRegD;
+        AscendC::Reg::MaskReg maskRegQ;
+        AscendC::Reg::MaskReg maskRegO;
+        AscendC::Reg::MaskReg moveMask = AscendC::Reg::CreateMask<T>();
 
-        AscendC::MicroAPI::Duplicate(sreg, 0);
+        AscendC::Reg::Duplicate(sreg, 0);
 
         if constexpr (sizeof(T) / sizeof(int8_t) == DOUBLE) {
-            AscendC::MicroAPI::DataCopy<uint8_t, AscendC::MicroAPI::MaskDist::DIST_US>(maskRegO, maskUbAddr);
+            AscendC::Reg::DataCopy<uint8_t, AscendC::Reg::MaskDist::DIST_US>(maskRegO, maskUbAddr);
         } else if constexpr (sizeof(T) / sizeof(int8_t) == QUADRUPLE) {
-            AscendC::MicroAPI::DataCopy(maskReg, maskUbAddr);
-            AscendC::MicroAPI::MaskUnPack(maskRegD, maskReg);
-            AscendC::MicroAPI::MaskUnPack(maskRegO, maskRegD);
+            AscendC::Reg::DataCopy(maskReg, maskUbAddr);
+            AscendC::Reg::MaskUnPack(maskRegD, maskReg);
+            AscendC::Reg::MaskUnPack(maskRegO, maskRegD);
         } else if constexpr (sizeof(T) / sizeof(int8_t) == OCTA) {
-            AscendC::MicroAPI::DataCopy(maskReg, maskUbAddr);
-            AscendC::MicroAPI::MaskUnPack(maskRegD, maskReg);
-            AscendC::MicroAPI::MaskUnPack(maskRegQ, maskRegD);
-            AscendC::MicroAPI::MaskUnPack(maskRegO, maskRegQ);
+            AscendC::Reg::DataCopy(maskReg, maskUbAddr);
+            AscendC::Reg::MaskUnPack(maskRegD, maskReg);
+            AscendC::Reg::MaskUnPack(maskRegQ, maskRegD);
+            AscendC::Reg::MaskUnPack(maskRegO, maskRegQ);
         } else {
-            AscendC::MicroAPI::DataCopy(maskRegO, maskUbAddr);
+            AscendC::Reg::DataCopy(maskRegO, maskUbAddr);
         }
 
         for (uint16_t i = 0; i < repeatTimes; i++) {
-            AscendC::MicroAPI::DataCopy<T, MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg, srcAddr, dataCount);
-            AscendC::MicroAPI::DataCopy(dstAddr, sreg, moveMask);
-            AscendC::MicroAPI::DataCopy<T, MicroAPI::PostLiteral::POST_MODE_UPDATE>(dstAddr, vreg, dataCount, maskRegO);
+            AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(vreg, srcAddr, dataCount);
+            AscendC::Reg::DataCopy(dstAddr, sreg, moveMask);
+            AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(dstAddr, vreg, dataCount, maskRegO);
         }
     }
     inQueue_.FreeTensor(xLocal);

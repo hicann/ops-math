@@ -491,13 +491,13 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<OutType> regData;
-            MicroAPI::UnalignReg uReg;
-            MicroAPI::MaskReg maskIdx = MicroAPI::UpdateMask<OutType>(newCnt);
+            Reg::RegTensor<OutType> regData;
+            Reg::UnalignReg uReg;
+            Reg::MaskReg maskIdx = Reg::UpdateMask<OutType>(newCnt);
 
-            MicroAPI::DataCopyUnAlignPre(uReg, newInAddr);
-            MicroAPI::DataCopyUnAlign(regData, uReg, newInAddr, newCnt);
-            MicroAPI::DataCopy(newOutAddr, regData, maskIdx);
+            Reg::DataCopyUnAlignPre(uReg, newInAddr);
+            Reg::DataCopyUnAlign(regData, uReg, newInAddr, newCnt);
+            Reg::DataCopy(newOutAddr, regData, maskIdx);
         }
     }
 
@@ -551,93 +551,92 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg maskIdx = MicroAPI::CreateMask<RangeType, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::RegTensor<RangeType> lineRange;
-            MicroAPI::RegTensor<RangeType> lineRangeNew;
-            MicroAPI::RegTensor<RangeType> lineRangeBk;
-            MicroAPI::MaskReg leftMask;
-            MicroAPI::RegTensor<RangeType> leftPadIdxReg;
-            MicroAPI::MaskReg rightMask;
-            MicroAPI::RegTensor<RangeType> rightPadIdxReg;
-            MicroAPI::UnalignReg uReg;
-            MicroAPI::UnalignReg uRegIn;
+            Reg::MaskReg maskIdx = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
+            Reg::RegTensor<RangeType> lineRange;
+            Reg::RegTensor<RangeType> lineRangeNew;
+            Reg::RegTensor<RangeType> lineRangeBk;
+            Reg::MaskReg leftMask;
+            Reg::RegTensor<RangeType> leftPadIdxReg;
+            Reg::MaskReg rightMask;
+            Reg::RegTensor<RangeType> rightPadIdxReg;
+            Reg::UnalignReg uReg;
+            Reg::UnalignReg uRegIn;
 
             // 先拼好-1轴的索引
-            MicroAPI::Arange(lineRange, 0);
-            MicroAPI::Adds(lineRange, lineRange, ((RangeType)-1) * lastLeftPadNum, maskIdx);
-            MicroAPI::CompareScalar<RangeType, CMPMODE::LT>(leftMask, lineRange, 0, maskIdx);
-            MicroAPI::Arange<RangeType, MicroAPI::IndexOrder::DECREASE_ORDER>(
-                leftPadIdxReg, lastLeftPadNum - decreaseOffset - modeOffset);
-            MicroAPI::Copy<RangeType, MicroAPI::MaskMergeMode::MERGING>(lineRange, leftPadIdxReg, leftMask);
+            Reg::Arange(lineRange, 0);
+            Reg::Adds(lineRange, lineRange, ((RangeType)-1) * lastLeftPadNum, maskIdx);
+            Reg::CompareScalar<RangeType, CMPMODE::LT>(leftMask, lineRange, 0, maskIdx);
+            Reg::Arange<RangeType, Reg::IndexOrder::DECREASE_ORDER>(leftPadIdxReg,
+                                                                    lastLeftPadNum - decreaseOffset - modeOffset);
+            Reg::Copy<RangeType, Reg::MaskMergeMode::MERGING>(lineRange, leftPadIdxReg, leftMask);
 
-            MicroAPI::Arange<RangeType, MicroAPI::IndexOrder::DECREASE_ORDER>(
+            Reg::Arange<RangeType, Reg::IndexOrder::DECREASE_ORDER>(
                 rightPadIdxReg, lastRightPadArangeStart - decreaseOffset + modeOffset);
-            MicroAPI::CompareScalar<RangeType, CMPMODE::LT>(rightMask, rightPadIdxReg, lastDimIdx + modeOffset,
-                                                            maskIdx);
-            MicroAPI::Copy<RangeType, MicroAPI::MaskMergeMode::MERGING>(lineRange, rightPadIdxReg, rightMask);
+            Reg::CompareScalar<RangeType, CMPMODE::LT>(rightMask, rightPadIdxReg, lastDimIdx + modeOffset, maskIdx);
+            Reg::Copy<RangeType, Reg::MaskMergeMode::MERGING>(lineRange, rightPadIdxReg, rightMask);
 
             // -3轴纯pad的索引, 包含末尾两根轴
             for (uint16_t i = 0; i < lastTwoDimLoops; i++) {
-                MicroAPI::Adds(lineRangeBk, lineRange, (RangeType)((lastTwoDimLoops - i - 1) * inStride1), maskIdx);
+                Reg::Adds(lineRangeBk, lineRange, (RangeType)((lastTwoDimLoops - i - 1) * inStride1), maskIdx);
                 // -2轴leftpad行数, 索引都一样
                 __local_mem__ RangeType* idxAddrTmp = idxAddr + i * outStride1;
                 for (uint16_t j = 0; j < last2LeftPadNum; j++) {
-                    MicroAPI::Adds(lineRangeNew, lineRangeBk,
-                                   (RangeType)((last2LeftPadNum - j - modeOffset) * lastInDimSize), maskIdx);
-                    MicroAPI::DataCopyUnAlign(idxAddrTmp, lineRangeNew, uReg, outStride2);
+                    Reg::Adds(lineRangeNew, lineRangeBk,
+                              (RangeType)((last2LeftPadNum - j - modeOffset) * lastInDimSize), maskIdx);
+                    Reg::DataCopyUnAlign(idxAddrTmp, lineRangeNew, uReg, outStride2);
                 }
-                MicroAPI::DataCopyUnAlignPost(idxAddrTmp, uReg, 0);
+                Reg::DataCopyUnAlignPost(idxAddrTmp, uReg, 0);
 
                 // -2 轴inputshape, 索引递增
                 __local_mem__ RangeType* idxAddrTmp1 = idxAddr + i * outStride1 + last2LeftPadNum * outStride2;
                 for (uint16_t j = 0; j < lastSecInDimSize; j++) {
-                    MicroAPI::Adds(lineRangeNew, lineRangeBk, (RangeType)(j * lastInDimSize), maskIdx);
-                    MicroAPI::DataCopyUnAlign(idxAddrTmp1, lineRangeNew, uReg, outStride2);
+                    Reg::Adds(lineRangeNew, lineRangeBk, (RangeType)(j * lastInDimSize), maskIdx);
+                    Reg::DataCopyUnAlign(idxAddrTmp1, lineRangeNew, uReg, outStride2);
                 }
-                MicroAPI::DataCopyUnAlignPost(idxAddrTmp1, uReg, 0);
+                Reg::DataCopyUnAlignPost(idxAddrTmp1, uReg, 0);
 
                 // -2轴rightpad行数, 索引都一样
-                MicroAPI::Adds(lineRangeNew, lineRangeBk, (RangeType)(last2DimIdx * lastInDimSize), maskIdx);
+                Reg::Adds(lineRangeNew, lineRangeBk, (RangeType)(last2DimIdx * lastInDimSize), maskIdx);
                 __local_mem__ RangeType* idxAddrTmp2 = idxAddr + i * outStride1 + last2LeftPadNum * outStride2 +
                                                        lastSecInDimSize * outStride2;
                 for (uint16_t j = 0; j < last2RightPadNum; j++) {
-                    MicroAPI::Adds(lineRangeBk, lineRangeNew, (RangeType)((-1) * (j + 1 - modeOffset) * lastInDimSize),
-                                   maskIdx);
-                    MicroAPI::DataCopyUnAlign(idxAddrTmp2, lineRangeBk, uReg, outStride2);
+                    Reg::Adds(lineRangeBk, lineRangeNew, (RangeType)((-1) * (j + 1 - modeOffset) * lastInDimSize),
+                              maskIdx);
+                    Reg::DataCopyUnAlign(idxAddrTmp2, lineRangeBk, uReg, outStride2);
                 }
-                MicroAPI::DataCopyUnAlignPost(idxAddrTmp2, uReg, 0);
+                Reg::DataCopyUnAlignPost(idxAddrTmp2, uReg, 0);
             }
 
             // -3轴有效输入的索引
             for (uint16_t i = 0; i < lastTwoDimLoops; i++) {
-                MicroAPI::Adds(lineRangeBk, lineRange, (RangeType)(i * inStride1), maskIdx);
+                Reg::Adds(lineRangeBk, lineRange, (RangeType)(i * inStride1), maskIdx);
                 // -2轴leftpad行数, 索引都一样
                 __local_mem__ RangeType* idxAddrTmp = idxAddr2 + i * outStride1;
                 for (uint16_t j = 0; j < last2LeftPadNum; j++) {
-                    MicroAPI::Adds(lineRangeNew, lineRangeBk,
-                                   (RangeType)((last2LeftPadNum - j - modeOffset) * lastInDimSize), maskIdx);
-                    MicroAPI::DataCopyUnAlign(idxAddrTmp, lineRangeNew, uReg, outStride2);
+                    Reg::Adds(lineRangeNew, lineRangeBk,
+                              (RangeType)((last2LeftPadNum - j - modeOffset) * lastInDimSize), maskIdx);
+                    Reg::DataCopyUnAlign(idxAddrTmp, lineRangeNew, uReg, outStride2);
                 }
-                MicroAPI::DataCopyUnAlignPost(idxAddrTmp, uReg, 0);
+                Reg::DataCopyUnAlignPost(idxAddrTmp, uReg, 0);
 
                 // -2 轴inputshape, 索引递增
                 __local_mem__ RangeType* idxAddrTmp1 = idxAddr2 + i * outStride1 + last2LeftPadNum * outStride2;
                 for (uint16_t j = 0; j < lastSecInDimSize; j++) {
-                    MicroAPI::Adds(lineRangeNew, lineRangeBk, (RangeType)(j * lastInDimSize), maskIdx);
-                    MicroAPI::DataCopyUnAlign(idxAddrTmp1, lineRangeNew, uReg, outStride2);
+                    Reg::Adds(lineRangeNew, lineRangeBk, (RangeType)(j * lastInDimSize), maskIdx);
+                    Reg::DataCopyUnAlign(idxAddrTmp1, lineRangeNew, uReg, outStride2);
                 }
-                MicroAPI::DataCopyUnAlignPost(idxAddrTmp1, uReg, 0);
+                Reg::DataCopyUnAlignPost(idxAddrTmp1, uReg, 0);
 
                 // -2轴rightpad行数, 索引都一样
-                MicroAPI::Adds(lineRangeNew, lineRangeBk, (RangeType)(last2DimIdx * lastInDimSize), maskIdx);
+                Reg::Adds(lineRangeNew, lineRangeBk, (RangeType)(last2DimIdx * lastInDimSize), maskIdx);
                 __local_mem__ RangeType* idxAddrTmp2 = idxAddr2 + i * outStride1 + last2LeftPadNum * outStride2 +
                                                        lastSecInDimSize * outStride2;
                 for (uint16_t j = 0; j < last2RightPadNum; j++) {
-                    MicroAPI::Adds(lineRangeBk, lineRangeNew, (RangeType)((-1) * (j + 1 - modeOffset) * lastInDimSize),
-                                   maskIdx);
-                    MicroAPI::DataCopyUnAlign(idxAddrTmp2, lineRangeBk, uReg, outStride2);
+                    Reg::Adds(lineRangeBk, lineRangeNew, (RangeType)((-1) * (j + 1 - modeOffset) * lastInDimSize),
+                              maskIdx);
+                    Reg::DataCopyUnAlign(idxAddrTmp2, lineRangeBk, uReg, outStride2);
                 }
-                MicroAPI::DataCopyUnAlignPost(idxAddrTmp2, uReg, 0);
+                Reg::DataCopyUnAlignPost(idxAddrTmp2, uReg, 0);
             }
         }
     }
@@ -661,98 +660,97 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg maskIdx = MicroAPI::CreateMask<RangeType, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::RegTensor<RangeType> lineRange;
-            MicroAPI::RegTensor<RangeType> lineRangeNew;
-            MicroAPI::MaskReg leftMask;
-            MicroAPI::RegTensor<RangeType> leftPadIdxReg;
-            MicroAPI::MaskReg rightMask;
-            MicroAPI::RegTensor<RangeType> rightPadIdxReg;
-            MicroAPI::UnalignReg uReg;
-            MicroAPI::UnalignReg uRegIn;
+            Reg::MaskReg maskIdx = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
+            Reg::RegTensor<RangeType> lineRange;
+            Reg::RegTensor<RangeType> lineRangeNew;
+            Reg::MaskReg leftMask;
+            Reg::RegTensor<RangeType> leftPadIdxReg;
+            Reg::MaskReg rightMask;
+            Reg::RegTensor<RangeType> rightPadIdxReg;
+            Reg::UnalignReg uReg;
+            Reg::UnalignReg uRegIn;
 
             // 先拼好-1轴的索引
-            MicroAPI::Arange(lineRange, 0);
+            Reg::Arange(lineRange, 0);
             // 先拷出去，防止索引尾部脏数据
-            MicroAPI::DataCopy(idxAddr, lineRange, maskIdx);
-            MicroAPI::DataCopy(idxAddr2, lineRange, maskIdx);
-            MicroAPI::LocalMemBar<MicroAPI::MemType::VEC_STORE, MicroAPI::MemType::VEC_STORE>();
+            Reg::DataCopy(idxAddr, lineRange, maskIdx);
+            Reg::DataCopy(idxAddr2, lineRange, maskIdx);
+            Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_STORE>();
 
-            MicroAPI::Adds(lineRange, lineRange, ((RangeType)-1) * lastLeftPadNum, maskIdx);
-            MicroAPI::CompareScalar<RangeType, CMPMODE::LT>(leftMask, lineRange, 0, maskIdx);
-            MicroAPI::Arange<RangeType, MicroAPI::IndexOrder::DECREASE_ORDER>(
-                leftPadIdxReg, lastLeftPadNum - decreaseOffset - modeOffset);
-            MicroAPI::Copy<RangeType, MicroAPI::MaskMergeMode::MERGING>(lineRange, leftPadIdxReg, leftMask);
+            Reg::Adds(lineRange, lineRange, ((RangeType)-1) * lastLeftPadNum, maskIdx);
+            Reg::CompareScalar<RangeType, CMPMODE::LT>(leftMask, lineRange, 0, maskIdx);
+            Reg::Arange<RangeType, Reg::IndexOrder::DECREASE_ORDER>(leftPadIdxReg,
+                                                                    lastLeftPadNum - decreaseOffset - modeOffset);
+            Reg::Copy<RangeType, Reg::MaskMergeMode::MERGING>(lineRange, leftPadIdxReg, leftMask);
 
-            MicroAPI::Arange<RangeType, MicroAPI::IndexOrder::DECREASE_ORDER>(
+            Reg::Arange<RangeType, Reg::IndexOrder::DECREASE_ORDER>(
                 rightPadIdxReg, lastRightPadArangeStart - decreaseOffset + modeOffset);
-            MicroAPI::CompareScalar<RangeType, CMPMODE::LT>(rightMask, rightPadIdxReg, lastDimIdx + modeOffset,
-                                                            maskIdx);
-            MicroAPI::Copy<RangeType, MicroAPI::MaskMergeMode::MERGING>(lineRange, rightPadIdxReg, rightMask);
+            Reg::CompareScalar<RangeType, CMPMODE::LT>(rightMask, rightPadIdxReg, lastDimIdx + modeOffset, maskIdx);
+            Reg::Copy<RangeType, Reg::MaskMergeMode::MERGING>(lineRange, rightPadIdxReg, rightMask);
 
             // -2轴leftpad行数, 索引都一样
             __local_mem__ RangeType* idxAddrTmp = idxAddr;
             for (uint16_t i = 0; i < lastDimsLeft; i++) {
                 RangeType loopStride = (RangeType)lastInDimSize *
                                        (lastDimsLeft - i - 1); // copyout需要带边界，故这里不区分mode
-                MicroAPI::Adds(lineRangeNew, lineRange, loopStride, maskIdx);
-                MicroAPI::DataCopyUnAlign(idxAddrTmp, lineRangeNew, uReg, lastOutDimSize);
+                Reg::Adds(lineRangeNew, lineRange, loopStride, maskIdx);
+                Reg::DataCopyUnAlign(idxAddrTmp, lineRangeNew, uReg, lastOutDimSize);
             }
-            MicroAPI::DataCopyUnAlignPost(idxAddrTmp, uReg, 0);
+            Reg::DataCopyUnAlignPost(idxAddrTmp, uReg, 0);
 
             // -2轴有效输入的索引
             __local_mem__ RangeType* idxAddrTmp2 = idxAddr2;
             for (uint16_t i = 0; i < lastDimsLeft; i++) {
                 RangeType loopStride = (RangeType)lastInDimSize * i;
-                MicroAPI::Adds(lineRangeNew, lineRange, loopStride, maskIdx);
-                MicroAPI::DataCopyUnAlign(idxAddrTmp2, lineRangeNew, uRegIn, lastOutDimSize);
+                Reg::Adds(lineRangeNew, lineRange, loopStride, maskIdx);
+                Reg::DataCopyUnAlign(idxAddrTmp2, lineRangeNew, uRegIn, lastOutDimSize);
             }
-            MicroAPI::DataCopyUnAlignPost(idxAddrTmp2, uRegIn, 0);
+            Reg::DataCopyUnAlignPost(idxAddrTmp2, uRegIn, 0);
         }
     }
 
     __aicore__ inline void VlInCopyProc(uint16_t inLoops, uint16_t lastInLoops, RangeType idxOffset, uint32_t maskValue,
                                         uint32_t lastInMaskValue, __local_mem__ T* curInAddr,
-                                        __local_mem__ T* curOutAddr, MicroAPI::RegTensor<RangeType>& regIdx,
+                                        __local_mem__ T* curOutAddr, Reg::RegTensor<RangeType>& regIdx,
                                         uint32_t idxPadOffset)
     {
-        MicroAPI::RegTensor<T> regData;
-        MicroAPI::RegTensor<T> regDataT;
-        MicroAPI::RegTensor<RangeType> regIdxBk;
-        MicroAPI::RegTensor<RangeType> regNewIdx;
-        MicroAPI::UnalignReg uReg;
+        Reg::RegTensor<T> regData;
+        Reg::RegTensor<T> regDataT;
+        Reg::RegTensor<RangeType> regIdxBk;
+        Reg::RegTensor<RangeType> regNewIdx;
+        Reg::UnalignReg uReg;
         uint32_t validMask = maskValue;
         if constexpr (sizeof(T) == 8) {
             validMask = maskValue * 2;
         }
-        MicroAPI::MaskReg maskIdx = MicroAPI::UpdateMask<RangeType>(validMask);
+        Reg::MaskReg maskIdx = Reg::UpdateMask<RangeType>(validMask);
 
         __local_mem__ T* outAddrTmp = curOutAddr;
-        MicroAPI::Adds(regIdxBk, regIdx, idxPadOffset, maskIdx);
+        Reg::Adds(regIdxBk, regIdx, idxPadOffset, maskIdx);
         for (uint16_t cpIdx = 0; cpIdx < inLoops; cpIdx++) {
-            MicroAPI::Adds(regNewIdx, regIdxBk, cpIdx * idxOffset, maskIdx);
-            MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType>&)regData, curInAddr,
-                                     (MicroAPI::RegTensor<IdxType>&)regNewIdx, maskIdx);
+            Reg::Adds(regNewIdx, regIdxBk, cpIdx * idxOffset, maskIdx);
+            Reg::DataCopyGather((Reg::RegTensor<CastType>&)regData, curInAddr, (Reg::RegTensor<IdxType>&)regNewIdx,
+                                maskIdx);
             if constexpr (sizeof(T) != 1) {
-                MicroAPI::DataCopyUnAlign(outAddrTmp, regData, uReg, maskValue);
+                Reg::DataCopyUnAlign(outAddrTmp, regData, uReg, maskValue);
             } else {
-                MicroAPI::Pack(regDataT, (MicroAPI::RegTensor<CastType>&)regData);
-                MicroAPI::DataCopyUnAlign(outAddrTmp, regDataT, uReg, maskValue);
+                Reg::Pack(regDataT, (Reg::RegTensor<CastType>&)regData);
+                Reg::DataCopyUnAlign(outAddrTmp, regDataT, uReg, maskValue);
             }
         }
-        MicroAPI::DataCopyUnAlignPost(outAddrTmp, uReg, 0);
+        Reg::DataCopyUnAlignPost(outAddrTmp, uReg, 0);
         for (uint16_t cpTailIdx = 0; cpTailIdx < lastInLoops; cpTailIdx++) {
             outAddrTmp = curOutAddr + inLoops * maskValue;
-            MicroAPI::Adds(regNewIdx, regIdxBk, inLoops * idxOffset, maskIdx);
-            MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType>&)regData, curInAddr,
-                                     (MicroAPI::RegTensor<IdxType>&)regNewIdx, maskIdx);
+            Reg::Adds(regNewIdx, regIdxBk, inLoops * idxOffset, maskIdx);
+            Reg::DataCopyGather((Reg::RegTensor<CastType>&)regData, curInAddr, (Reg::RegTensor<IdxType>&)regNewIdx,
+                                maskIdx);
             if constexpr (sizeof(T) != 1) {
-                MicroAPI::DataCopyUnAlign(outAddrTmp, regData, uReg, lastInMaskValue);
+                Reg::DataCopyUnAlign(outAddrTmp, regData, uReg, lastInMaskValue);
             } else {
-                MicroAPI::Pack(regDataT, (MicroAPI::RegTensor<CastType>&)regData);
-                MicroAPI::DataCopyUnAlign(outAddrTmp, regDataT, uReg, lastInMaskValue);
+                Reg::Pack(regDataT, (Reg::RegTensor<CastType>&)regData);
+                Reg::DataCopyUnAlign(outAddrTmp, regDataT, uReg, lastInMaskValue);
             }
-            MicroAPI::DataCopyUnAlignPost(outAddrTmp, uReg, 0);
+            Reg::DataCopyUnAlignPost(outAddrTmp, uReg, 0);
         }
     }
 
@@ -760,56 +758,56 @@ private:
     __aicore__ inline void VlPaddingCopyProc(uint16_t gatherLoops, uint16_t padLoops, uint16_t lastPadLoops,
                                              uint32_t maskValue, uint32_t lastPadMaskValue,
                                              __local_mem__ T* curPadInAddr, __local_mem__ T* curPadOutAddr,
-                                             MicroAPI::RegTensor<RangeType>& regIdxPad, uint32_t idxPadOffset,
+                                             Reg::RegTensor<RangeType>& regIdxPad, uint32_t idxPadOffset,
                                              RangeType idxOffset, uint16_t lastPadExcessIdx = 0)
     {
-        MicroAPI::RegTensor<T> regData;
-        MicroAPI::RegTensor<T> regDataT;
-        MicroAPI::RegTensor<RangeType> regIdxBk;
-        MicroAPI::RegTensor<RangeType> regNewIdx;
-        MicroAPI::RegTensor<RangeType> zeroIdxReg;
-        MicroAPI::Duplicate(zeroIdxReg, (RangeType)0);
-        MicroAPI::MaskReg zeroMask;
-        MicroAPI::UnalignReg uReg;
+        Reg::RegTensor<T> regData;
+        Reg::RegTensor<T> regDataT;
+        Reg::RegTensor<RangeType> regIdxBk;
+        Reg::RegTensor<RangeType> regNewIdx;
+        Reg::RegTensor<RangeType> zeroIdxReg;
+        Reg::Duplicate(zeroIdxReg, (RangeType)0);
+        Reg::MaskReg zeroMask;
+        Reg::UnalignReg uReg;
         uint32_t validMask = maskValue;
         uint32_t validLastMask = lastPadMaskValue;
         if constexpr (sizeof(T) == 8) {
             validMask = maskValue * 2;
             validLastMask = lastPadMaskValue * 2;
         }
-        MicroAPI::MaskReg maskIdx = MicroAPI::UpdateMask<RangeType>(validMask);
-        MicroAPI::MaskReg maskLastIdx = MicroAPI::UpdateMask<RangeType>(validLastMask);
+        Reg::MaskReg maskIdx = Reg::UpdateMask<RangeType>(validMask);
+        Reg::MaskReg maskLastIdx = Reg::UpdateMask<RangeType>(validLastMask);
 
         for (uint16_t gIdx = 0; gIdx < gatherLoops; gIdx++) {
-            MicroAPI::Adds(regIdxBk, regIdxPad, idxPadOffset, maskIdx);
+            Reg::Adds(regIdxBk, regIdxPad, idxPadOffset, maskIdx);
             // 完整vl循环
             __local_mem__ T* outAddrTmp = curPadOutAddr + lastPadLoops * lastPadMaskValue;
             for (uint16_t pIdx = 0; pIdx < padLoops; pIdx++) {
-                MicroAPI::Adds(regNewIdx, regIdxBk, (padLoops - pIdx - 1) * idxOffset, maskIdx);
+                Reg::Adds(regNewIdx, regIdxBk, (padLoops - pIdx - 1) * idxOffset, maskIdx);
                 // gather一次，copy多次
-                MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType>&)regData, curPadInAddr,
-                                         (MicroAPI::RegTensor<IdxType>&)regNewIdx, maskIdx);
+                Reg::DataCopyGather((Reg::RegTensor<CastType>&)regData, curPadInAddr,
+                                    (Reg::RegTensor<IdxType>&)regNewIdx, maskIdx);
                 if constexpr (sizeof(T) != 1) {
-                    MicroAPI::DataCopyUnAlign(outAddrTmp, regData, uReg, maskValue);
+                    Reg::DataCopyUnAlign(outAddrTmp, regData, uReg, maskValue);
                 } else {
-                    MicroAPI::Pack(regDataT, (MicroAPI::RegTensor<CastType>&)regData);
-                    MicroAPI::DataCopyUnAlign(outAddrTmp, regDataT, uReg, maskValue);
+                    Reg::Pack(regDataT, (Reg::RegTensor<CastType>&)regData);
+                    Reg::DataCopyUnAlign(outAddrTmp, regDataT, uReg, maskValue);
                 }
             }
-            MicroAPI::DataCopyUnAlignPost(outAddrTmp, uReg, 0);
+            Reg::DataCopyUnAlignPost(outAddrTmp, uReg, 0);
             // vl 剩余的循环
             for (uint16_t pTaiIdx = 0; pTaiIdx < lastPadLoops; pTaiIdx++) {
                 outAddrTmp = curPadOutAddr;
-                MicroAPI::Adds(regNewIdx, regIdxBk, padLoops * idxOffset - lastPadExcessIdx, maskLastIdx);
-                MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType>&)regData, curPadInAddr,
-                                         (MicroAPI::RegTensor<IdxType>&)regNewIdx, maskLastIdx);
+                Reg::Adds(regNewIdx, regIdxBk, padLoops * idxOffset - lastPadExcessIdx, maskLastIdx);
+                Reg::DataCopyGather((Reg::RegTensor<CastType>&)regData, curPadInAddr,
+                                    (Reg::RegTensor<IdxType>&)regNewIdx, maskLastIdx);
                 if constexpr (sizeof(T) != 1) {
-                    MicroAPI::DataCopyUnAlign(outAddrTmp, regData, uReg, lastPadMaskValue);
+                    Reg::DataCopyUnAlign(outAddrTmp, regData, uReg, lastPadMaskValue);
                 } else {
-                    MicroAPI::Pack(regDataT, (MicroAPI::RegTensor<CastType>&)regData);
-                    MicroAPI::DataCopyUnAlign(outAddrTmp, regDataT, uReg, lastPadMaskValue);
+                    Reg::Pack(regDataT, (Reg::RegTensor<CastType>&)regData);
+                    Reg::DataCopyUnAlign(outAddrTmp, regDataT, uReg, lastPadMaskValue);
                 }
-                MicroAPI::DataCopyUnAlignPost(outAddrTmp, uReg, 0);
+                Reg::DataCopyUnAlignPost(outAddrTmp, uReg, 0);
             }
         }
     }
@@ -838,8 +836,8 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<RangeType> regIdx;
-            MicroAPI::DataCopy(regIdx, idxAddrFw);
+            Reg::RegTensor<RangeType> regIdx;
+            Reg::DataCopy(regIdx, idxAddrFw);
             VlInCopyProc(copyInPadLoops, lastCopyInPadLoops, idxOffset, maskValue, lastCopyInMaskValue, inAddr, outAddr,
                          regIdx, 0);
         }
@@ -874,8 +872,8 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<RangeType> regIdxPad;
-            MicroAPI::DataCopy(regIdxPad, idxAddrBw);
+            Reg::RegTensor<RangeType> regIdxPad;
+            Reg::DataCopy(regIdxPad, idxAddrBw);
 
             VlPaddingCopyProc(1, copyInPadLoops, lastCopyInPadLoops, maskValue, lastCopyInMaskValue, inAddr, outAddr,
                               regIdxPad, 0, idxOffset, lastPadExcessIdx);
@@ -971,14 +969,14 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<RangeType> regIdxPad;
-            MicroAPI::RegTensor<RangeType> regIdx;
-            MicroAPI::DataCopy(regIdxPad, idxAddrBw);
-            MicroAPI::DataCopy(regIdx, idxAddrFw);
-            MicroAPI::RegTensor<RangeType> regIdxPadFixed;
+            Reg::RegTensor<RangeType> regIdxPad;
+            Reg::RegTensor<RangeType> regIdx;
+            Reg::DataCopy(regIdxPad, idxAddrBw);
+            Reg::DataCopy(regIdx, idxAddrFw);
+            Reg::RegTensor<RangeType> regIdxPadFixed;
 
-            MicroAPI::MaskReg maskIdx = MicroAPI::CreateMask<RangeType, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::Adds(regIdxPadFixed, regIdxPad, modeOffset, maskIdx);
+            Reg::MaskReg maskIdx = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
+            Reg::Adds(regIdxPadFixed, regIdxPad, modeOffset, maskIdx);
 
             // 该次Ub内C轴上的copyIn, VL切3维时退化为0
             for (uint16_t uiIdx = 0; uiIdx < ubAxisInCopyLoops; uiIdx++) {
@@ -1144,14 +1142,14 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<RangeType> regIdxPad;
-            MicroAPI::RegTensor<RangeType> regIdx;
-            MicroAPI::DataCopy(regIdxPad, idxPadAddr);
-            MicroAPI::DataCopy(regIdx, idxAddr);
-            MicroAPI::RegTensor<RangeType> regIdxPadFixed;
+            Reg::RegTensor<RangeType> regIdxPad;
+            Reg::RegTensor<RangeType> regIdx;
+            Reg::DataCopy(regIdxPad, idxPadAddr);
+            Reg::DataCopy(regIdx, idxAddr);
+            Reg::RegTensor<RangeType> regIdxPadFixed;
 
-            MicroAPI::MaskReg maskIdx = MicroAPI::CreateMask<RangeType, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::Adds(regIdxPadFixed, regIdxPad, modeHOffset, maskIdx);
+            Reg::MaskReg maskIdx = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
+            Reg::Adds(regIdxPadFixed, regIdxPad, modeHOffset, maskIdx);
 
             for (uint16_t nIdx = 0; nIdx < ubAxisInCopyLoops; nIdx++) {
                 uint16_t fixedIdx = 0;

@@ -45,8 +45,8 @@ __simt_callee__ __aicore__ inline void BoxMullerFloat(const float x0, const floa
     *f1 *= u2;
 }
 
-__simt_vf__ __aicore__
-LAUNCH_BOUND(THREAD_LAUNCH) inline void SimtBoxMuller(__ubuf__ float* yOutputTmp, const uint32_t calCount)
+__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_LAUNCH) inline void SimtBoxMuller(__ubuf__ float* yOutputTmp,
+                                                                             const uint32_t calCount)
 {
     int64_t groupOffset = threadIdx.x * GROUP_SIZE;
 
@@ -77,8 +77,8 @@ private:
     TBuf<QuePosition::VECCALC> uniformResult_;
     TQue<QuePosition::VECOUT, BUFFER_NUM> outQue_;
 
-    static constexpr MicroAPI::CastTrait castTraitTf = {
-        MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT, MicroAPI::MaskMergeMode::ZEROING};
+    static constexpr Reg::CastTrait castTraitTf = {Reg::RegLayout::ZERO, Reg::SatMode::NO_SAT,
+                                                   Reg::MaskMergeMode::ZEROING};
 };
 
 template <typename T, typename OFFSET_T>
@@ -108,16 +108,15 @@ __aicore__ inline void RandomStandardNormalV2Op<T, OFFSET_T>::Process()
         int64_t curOffSet = blockOffSet + idx * tiling_->singleBufferSize;
         LocalTensor<float> yOutputTmp = uniformResult_.Get<float>();
         uint16_t uniformResCount = Ops::Base::CeilAlign(currUbTilingSize, static_cast<OFFSET_T>(DOUBLE_UNIFORM_RESULT));
-        PhiloxRandom<10>(
-            yOutputTmp, {key_[0], key_[1]}, {counter_[0], counter_[1], counter_[2], counter_[3]}, uniformResCount);
-        asc_vf_call<SimtBoxMuller>(
-            dim3{USED_THREAD}, (__ubuf__ float*)(yOutputTmp.GetPhyAddr()), uniformResCount);
+        PhiloxRandom<10>(yOutputTmp, {key_[0], key_[1]}, {counter_[0], counter_[1], counter_[2], counter_[3]},
+                         uniformResCount);
+        asc_vf_call<SimtBoxMuller>(dim3{USED_THREAD}, (__ubuf__ float*)(yOutputTmp.GetPhyAddr()), uniformResCount);
         LocalTensor<T> Output = outQue_.AllocTensor<T>();
         RandomKernelBase::Float32Conversion(Output, yOutputTmp, currUbTilingSize);
         outQue_.EnQue(Output);
         LocalTensor<T> yOutput = outQue_.DeQue<T>();
-        RandomKernelBase::CopyOut(
-            yOutput, outputGm_, 1, static_cast<uint32_t>(currUbTilingSize * sizeof(T)), curOffSet);
+        RandomKernelBase::CopyOut(yOutput, outputGm_, 1, static_cast<uint32_t>(currUbTilingSize * sizeof(T)),
+                                  curOffSet);
         outQue_.FreeTensor(yOutput);
         groupCnt = currUbTilingSize / RESULT_ELEMENT_CNT;
         RandomKernelBaseOp::Skip(groupCnt);

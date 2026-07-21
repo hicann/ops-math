@@ -347,21 +347,21 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg maskMain = MicroAPI::CreateMask<RangeType, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::RegTensor<RangeType> indexReg;
-            MicroAPI::RegTensor<RangeType> validReg;
-            MicroAPI::UnalignReg uReg;
+            Reg::MaskReg maskMain = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
+            Reg::RegTensor<RangeType> indexReg;
+            Reg::RegTensor<RangeType> validReg;
+            Reg::UnalignReg uReg;
 
-            MicroAPI::Arange(indexReg, 0); // 0-128
-            MicroAPI::DataCopy(idxAddr, indexReg, maskMain);
-            MicroAPI::LocalMemBar<MicroAPI::MemType::VEC_STORE, MicroAPI::MemType::VEC_STORE>();
+            Reg::Arange(indexReg, 0); // 0-128
+            Reg::DataCopy(idxAddr, indexReg, maskMain);
+            Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_STORE>();
 
             for (uint16_t i = 0; i < lastTwoDimLoops; i++) {
                 for (uint16_t j = 0; j < lastSecInDimSize; j++) {
                     __local_mem__ RangeType* idxAddrTmp = idxAddr + leftPadNum + i * outStride1 + j * outStride2;
-                    MicroAPI::Arange(validReg, validBeginIdx + i * inStride1 + j * inStride2);
-                    MicroAPI::DataCopyUnAlign(idxAddrTmp, validReg, uReg, lastInDimSize);
-                    MicroAPI::DataCopyUnAlignPost(idxAddrTmp, uReg, 0);
+                    Reg::Arange(validReg, validBeginIdx + i * inStride1 + j * inStride2);
+                    Reg::DataCopyUnAlign(idxAddrTmp, validReg, uReg, lastInDimSize);
+                    Reg::DataCopyUnAlignPost(idxAddrTmp, uReg, 0);
                 }
             }
         }
@@ -390,27 +390,27 @@ private:
         */
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg mask;
-            MicroAPI::MaskReg maskMain = MicroAPI::CreateMask<RangeType, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::RegTensor<RangeType> indexReg;
-            MicroAPI::RegTensor<RangeType> validReg;
-            MicroAPI::RegTensor<RangeType> scatIdxReg;
-            MicroAPI::RegTensor<RangeType> tmpScatIdxReg;
-            MicroAPI::Arange(indexReg, 0); // b16:0-128; b64:0-32
-            MicroAPI::DataCopy(idxAddr, indexReg, maskMain);
-            MicroAPI::LocalMemBar<MicroAPI::MemType::VEC_STORE, MicroAPI::MemType::VEC_STORE>();
+            Reg::MaskReg mask;
+            Reg::MaskReg maskMain = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
+            Reg::RegTensor<RangeType> indexReg;
+            Reg::RegTensor<RangeType> validReg;
+            Reg::RegTensor<RangeType> scatIdxReg;
+            Reg::RegTensor<RangeType> tmpScatIdxReg;
+            Reg::Arange(indexReg, 0); // b16:0-128; b64:0-32
+            Reg::DataCopy(idxAddr, indexReg, maskMain);
+            Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_STORE>();
 
-            MicroAPI::Arange(validReg, beginIdx); // 128 129 ..
-            MicroAPI::Arange(scatIdxReg, scatBeginIdx);
+            Reg::Arange(validReg, beginIdx); // 128 129 ..
+            Reg::Arange(scatIdxReg, scatBeginIdx);
             for (uint16_t i = 0; i < lastDimsLeft; i++) {
                 uint32_t sreg0 = lastInDimSize * (lastDimsLeft - i);
-                mask = MicroAPI::UpdateMask<RangeType>(sreg0);
-                MicroAPI::Arange(tmpScatIdxReg, lastLeftPadNum + (lastDimsLeft - 1 - i) * allPadNum);
-                MicroAPI::Copy<RangeType, MicroAPI::MaskMergeMode::MERGING>(scatIdxReg, tmpScatIdxReg, mask);
+                mask = Reg::UpdateMask<RangeType>(sreg0);
+                Reg::Arange(tmpScatIdxReg, lastLeftPadNum + (lastDimsLeft - 1 - i) * allPadNum);
+                Reg::Copy<RangeType, Reg::MaskMergeMode::MERGING>(scatIdxReg, tmpScatIdxReg, mask);
             }
 
-            mask = MicroAPI::UpdateMask<RangeType>(scatterNum);
-            MicroAPI::DataCopyScatter(idxAddr, validReg, (MicroAPI::RegTensor<IdxType>&)scatIdxReg, mask);
+            mask = Reg::UpdateMask<RangeType>(scatterNum);
+            Reg::DataCopyScatter(idxAddr, validReg, (Reg::RegTensor<IdxType>&)scatIdxReg, mask);
         }
     }
 
@@ -447,54 +447,54 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<RangeType> regIdx;
-            MicroAPI::RegTensor<RangeType> regIdxBK;
-            MicroAPI::RegTensor<RangeType> regNewIdx;
-            MicroAPI::RegTensor<T> regData;
-            MicroAPI::RegTensor<T> regDataT;
-            MicroAPI::MaskReg maskIdx = MicroAPI::CreateMask<RangeType, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::MaskReg maskData;
-            MicroAPI::MaskReg pregT;
-            MicroAPI::UnalignReg uReg;
+            Reg::RegTensor<RangeType> regIdx;
+            Reg::RegTensor<RangeType> regIdxBK;
+            Reg::RegTensor<RangeType> regNewIdx;
+            Reg::RegTensor<T> regData;
+            Reg::RegTensor<T> regDataT;
+            Reg::MaskReg maskIdx = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
+            Reg::MaskReg maskData;
+            Reg::MaskReg pregT;
+            Reg::UnalignReg uReg;
 
-            MicroAPI::DataCopy(regIdx, idxAddr);
+            Reg::DataCopy(regIdx, idxAddr);
 
-            MicroAPI::Arange(regNewIdx, 0);
-            MicroAPI::CompareScalar<RangeType, CMPMODE::GE>(pregT, regIdx, validBegin, maskIdx);
+            Reg::Arange(regNewIdx, 0);
+            Reg::CompareScalar<RangeType, CMPMODE::GE>(pregT, regIdx, validBegin, maskIdx);
 
             for (uint16_t nIdx = 0; nIdx < axisVlO2; nIdx++) {
                 for (uint16_t cIdx = 0; cIdx < axisVlO1; cIdx++) {
                     __local_mem__ T* outAddrTmp = outAddr + nIdx * strideOutVlO2 + cIdx * strideOutVlO1;
                     RangeType addsScale = nIdx * strideInVlO2 + cIdx * strideInVlO1;
                     for (uint16_t hIdx = 0; hIdx < vlSplitLoopCnt; hIdx++) {
-                        MicroAPI::Adds(regIdxBK, regIdx, hIdx * idxOffset + addsScale, pregT);
-                        MicroAPI::Copy<RangeType, MicroAPI::MaskMergeMode::MERGING>(regNewIdx, regIdxBK, pregT);
+                        Reg::Adds(regIdxBK, regIdx, hIdx * idxOffset + addsScale, pregT);
+                        Reg::Copy<RangeType, Reg::MaskMergeMode::MERGING>(regNewIdx, regIdxBK, pregT);
 
-                        MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType>&)regData, inAddr,
-                                                 (MicroAPI::RegTensor<IdxType>&)regNewIdx, maskIdx);
+                        Reg::DataCopyGather((Reg::RegTensor<CastType>&)regData, inAddr,
+                                            (Reg::RegTensor<IdxType>&)regNewIdx, maskIdx);
                         if constexpr (sizeof(T) != 1) {
-                            // MicroAPI::DataCopy(outAddr + hIdx * maskValue, regData, maskData);
-                            MicroAPI::DataCopyUnAlign(outAddrTmp, regData, uReg, maskValue);
+                            // Reg::DataCopy(outAddr + hIdx * maskValue, regData, maskData);
+                            Reg::DataCopyUnAlign(outAddrTmp, regData, uReg, maskValue);
                         } else {
-                            MicroAPI::Pack(regDataT, (MicroAPI::RegTensor<CastType>&)regData);
-                            MicroAPI::DataCopyUnAlign(outAddrTmp, regDataT, uReg, maskValue);
+                            Reg::Pack(regDataT, (Reg::RegTensor<CastType>&)regData);
+                            Reg::DataCopyUnAlign(outAddrTmp, regDataT, uReg, maskValue);
                         }
                     }
-                    MicroAPI::DataCopyUnAlignPost(outAddrTmp, uReg, 0);
+                    Reg::DataCopyUnAlignPost(outAddrTmp, uReg, 0);
                     for (uint16_t hTail = 0; hTail < vlSplitTailLoopCnt; hTail++) {
                         outAddrTmp = outAddr + nIdx * strideOutVlO2 + cIdx * strideOutVlO1 + vlSplitLoopCnt * maskValue;
-                        MicroAPI::Adds(regIdxBK, regIdx, vlSplitLoopCnt * idxOffset + addsScale, pregT);
-                        MicroAPI::Copy<RangeType, MicroAPI::MaskMergeMode::MERGING>(regNewIdx, regIdxBK, pregT);
+                        Reg::Adds(regIdxBK, regIdx, vlSplitLoopCnt * idxOffset + addsScale, pregT);
+                        Reg::Copy<RangeType, Reg::MaskMergeMode::MERGING>(regNewIdx, regIdxBK, pregT);
 
-                        MicroAPI::DataCopyGather((MicroAPI::RegTensor<CastType>&)regData, inAddr,
-                                                 (MicroAPI::RegTensor<IdxType>&)regNewIdx, maskIdx);
+                        Reg::DataCopyGather((Reg::RegTensor<CastType>&)regData, inAddr,
+                                            (Reg::RegTensor<IdxType>&)regNewIdx, maskIdx);
                         if constexpr (sizeof(T) != 1) {
-                            MicroAPI::DataCopyUnAlign(outAddrTmp, regData, uReg, maskValueTail);
+                            Reg::DataCopyUnAlign(outAddrTmp, regData, uReg, maskValueTail);
                         } else {
-                            MicroAPI::Pack(regDataT, (MicroAPI::RegTensor<CastType>&)regData);
-                            MicroAPI::DataCopyUnAlign(outAddrTmp, regDataT, uReg, maskValueTail);
+                            Reg::Pack(regDataT, (Reg::RegTensor<CastType>&)regData);
+                            Reg::DataCopyUnAlign(outAddrTmp, regDataT, uReg, maskValueTail);
                         }
-                        MicroAPI::DataCopyUnAlignPost(outAddrTmp, uReg, 0);
+                        Reg::DataCopyUnAlignPost(outAddrTmp, uReg, 0);
                     }
                 }
             }

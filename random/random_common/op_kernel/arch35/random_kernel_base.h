@@ -20,8 +20,7 @@
 namespace RandomKernelBase {
 using namespace AscendC;
 
-static constexpr MicroAPI::CastTrait castTraitTf = {
-    MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT, MicroAPI::MaskMergeMode::ZEROING};
+static constexpr Reg::CastTrait castTraitTf = {Reg::RegLayout::ZERO, Reg::SatMode::NO_SAT, Reg::MaskMergeMode::ZEROING};
 
 static constexpr uint16_t ALG_KEY_SIZE = 2;
 static constexpr uint16_t ALG_COUNTER_SIZE = 4;
@@ -50,8 +49,8 @@ constexpr uint64_t VEC_8 = 8;
 constexpr uint64_t VEC_16 = 16;
 
 template <typename T>
-__aicore__ inline void CopyOut(
-    LocalTensor<T> yLocal, GlobalTensor<T> yGm, uint32_t burstNum, uint32_t busrtLength, int64_t gmOffset)
+__aicore__ inline void CopyOut(LocalTensor<T> yLocal, GlobalTensor<T> yGm, uint32_t burstNum, uint32_t busrtLength,
+                               int64_t gmOffset)
 {
     DataCopyExtParams copyParams;
     copyParams.blockCount = burstNum;
@@ -68,35 +67,35 @@ __aicore__ inline void Uint32ToFloat(LocalTensor<T>& yOutput, LocalTensor<uint32
 
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<int32_t> vReg0;
-        MicroAPI::RegTensor<int32_t> vReg1;
-        MicroAPI::RegTensor<int32_t> vReg2;
-        MicroAPI::RegTensor<int32_t> vReg3;
-        MicroAPI::RegTensor<int32_t> vReg4;
-        MicroAPI::RegTensor<float> vReg5;
-        MicroAPI::RegTensor<float> vReg6;
-        MicroAPI::MaskReg mask;
+        Reg::RegTensor<int32_t> vReg0;
+        Reg::RegTensor<int32_t> vReg1;
+        Reg::RegTensor<int32_t> vReg2;
+        Reg::RegTensor<int32_t> vReg3;
+        Reg::RegTensor<int32_t> vReg4;
+        Reg::RegTensor<float> vReg5;
+        Reg::RegTensor<float> vReg6;
+        Reg::MaskReg mask;
 
         uint32_t sReg1 = static_cast<uint32_t>(calCount);  // x
         uint32_t sReg2 = static_cast<uint32_t>(0x7fffffu); // 23 bit mantissa
         uint32_t exp = static_cast<uint32_t>(127);
         uint32_t sReg3 = exp << 23;
 
-        MicroAPI::MaskReg maskAll = MicroAPI::CreateMask<int32_t, MicroAPI::MaskPattern::ALL>();
-        MicroAPI::Duplicate<int32_t, MicroAPI::MaskMergeMode::ZEROING>(vReg1, sReg2, maskAll); //  1 = 0x7fffffu
-        MicroAPI::Duplicate<int32_t, MicroAPI::MaskMergeMode::ZEROING>(vReg3, sReg3, maskAll); // 3 = 127 << 23
+        Reg::MaskReg maskAll = Reg::CreateMask<int32_t, Reg::MaskPattern::ALL>();
+        Reg::Duplicate<int32_t, Reg::MaskMergeMode::ZEROING>(vReg1, sReg2, maskAll); //  1 = 0x7fffffu
+        Reg::Duplicate<int32_t, Reg::MaskMergeMode::ZEROING>(vReg3, sReg3, maskAll); // 3 = 127 << 23
         float sReg4 = static_cast<float>(-1.0);
         int32_t offSet = static_cast<int32_t>(INT32_ONE_REPEAT);
         for (uint16_t i = 0; i < static_cast<uint16_t>(repeatTimes); ++i) {
-            mask = MicroAPI::UpdateMask<float>(sReg1);
-            MicroAPI::DataCopy<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE, MicroAPI::LoadDist::DIST_NORM>(
-                vReg0, ubPhilox, offSet);
-            MicroAPI::And<int32_t, MicroAPI::MaskMergeMode::ZEROING>(vReg2, vReg0, vReg1, mask);
-            MicroAPI::Or<int32_t, MicroAPI::MaskMergeMode::ZEROING>(vReg4, vReg2, vReg3, mask);
-            vReg5 = (MicroAPI::RegTensor<float>&)vReg4;
-            MicroAPI::Adds<float, float, MicroAPI::MaskMergeMode::ZEROING>(vReg6, vReg5, sReg4, mask);
-            MicroAPI::DataCopy<float, MicroAPI::PostLiteral::POST_MODE_UPDATE, MicroAPI::StoreDist::DIST_NORM_B32>(
-                ubOut, vReg6, offSet, mask);
+            mask = Reg::UpdateMask<float>(sReg1);
+            Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE, Reg::LoadDist::DIST_NORM>(vReg0, ubPhilox,
+                                                                                                 offSet);
+            Reg::And<int32_t, Reg::MaskMergeMode::ZEROING>(vReg2, vReg0, vReg1, mask);
+            Reg::Or<int32_t, Reg::MaskMergeMode::ZEROING>(vReg4, vReg2, vReg3, mask);
+            vReg5 = (Reg::RegTensor<float>&)vReg4;
+            Reg::Adds<float, float, Reg::MaskMergeMode::ZEROING>(vReg6, vReg5, sReg4, mask);
+            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE, Reg::StoreDist::DIST_NORM_B32>(ubOut, vReg6,
+                                                                                                    offSet, mask);
         }
     }
 }
@@ -111,39 +110,39 @@ __aicore__ inline void Uint16ToHalf(LocalTensor<T>& yOutput, LocalTensor<uint32_
     SetCtrlSpr<60, 60>(0);
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<int32_t> vRegT;
-        MicroAPI::RegTensor<int16_t> vReg0;
-        MicroAPI::RegTensor<int16_t> vReg1;
-        MicroAPI::RegTensor<int16_t> vReg2;
-        MicroAPI::RegTensor<int16_t> vReg3;
-        MicroAPI::RegTensor<int16_t> vReg4;
-        MicroAPI::RegTensor<half> vReg5;
-        MicroAPI::RegTensor<half> vReg6;
-        MicroAPI::MaskReg mask;
+        Reg::RegTensor<int32_t> vRegT;
+        Reg::RegTensor<int16_t> vReg0;
+        Reg::RegTensor<int16_t> vReg1;
+        Reg::RegTensor<int16_t> vReg2;
+        Reg::RegTensor<int16_t> vReg3;
+        Reg::RegTensor<int16_t> vReg4;
+        Reg::RegTensor<half> vReg5;
+        Reg::RegTensor<half> vReg6;
+        Reg::MaskReg mask;
 
         uint32_t sReg1 = static_cast<uint32_t>(calCount);
         uint16_t sReg2 = static_cast<uint16_t>(0x3ffu);
         uint16_t exp = static_cast<uint16_t>(15);
         uint16_t sReg3 = exp << 10;
 
-        MicroAPI::MaskReg maskAll = MicroAPI::CreateMask<int32_t>();
-        MicroAPI::Duplicate<int16_t, MicroAPI::MaskMergeMode::ZEROING>(vReg1, sReg2, maskAll);
-        MicroAPI::Duplicate<int16_t, MicroAPI::MaskMergeMode::ZEROING>(vReg3, sReg3, maskAll);
+        Reg::MaskReg maskAll = Reg::CreateMask<int32_t>();
+        Reg::Duplicate<int16_t, Reg::MaskMergeMode::ZEROING>(vReg1, sReg2, maskAll);
+        Reg::Duplicate<int16_t, Reg::MaskMergeMode::ZEROING>(vReg3, sReg3, maskAll);
 
         half sReg4 = static_cast<half>(-1.0);
         int32_t offset = static_cast<int32_t>(INT32_ONE_REPEAT);
 
         for (uint16_t i = 0; i < static_cast<uint16_t>(repeatTimes); ++i) {
-            mask = MicroAPI::UpdateMask<float>(sReg1);
-            MicroAPI::DataCopy<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE, MicroAPI::LoadDist::DIST_NORM>(
-                vRegT, ubPhilox, offset);
-            MicroAPI::Cast<int16_t, int32_t, castTraitTf>(vReg0, vRegT, mask);
-            MicroAPI::And<int16_t, MicroAPI::MaskMergeMode::ZEROING>(vReg2, vReg0, vReg1, mask);
-            MicroAPI::Or<int16_t, MicroAPI::MaskMergeMode::ZEROING>(vReg4, vReg2, vReg3, mask);
-            vReg5 = (MicroAPI::RegTensor<half>&)vReg4;
-            MicroAPI::Adds<half, half, MicroAPI::MaskMergeMode::ZEROING>(vReg6, vReg5, sReg4, mask);
-            MicroAPI::DataCopy<half, MicroAPI::PostLiteral::POST_MODE_UPDATE, MicroAPI::StoreDist::DIST_PACK_B32>(
-                ubOut, vReg6, offset, mask);
+            mask = Reg::UpdateMask<float>(sReg1);
+            Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE, Reg::LoadDist::DIST_NORM>(vRegT, ubPhilox,
+                                                                                                 offset);
+            Reg::Cast<int16_t, int32_t, castTraitTf>(vReg0, vRegT, mask);
+            Reg::And<int16_t, Reg::MaskMergeMode::ZEROING>(vReg2, vReg0, vReg1, mask);
+            Reg::Or<int16_t, Reg::MaskMergeMode::ZEROING>(vReg4, vReg2, vReg3, mask);
+            vReg5 = (Reg::RegTensor<half>&)vReg4;
+            Reg::Adds<half, half, Reg::MaskMergeMode::ZEROING>(vReg6, vReg5, sReg4, mask);
+            Reg::DataCopy<half, Reg::PostLiteral::POST_MODE_UPDATE, Reg::StoreDist::DIST_PACK_B32>(ubOut, vReg6, offset,
+                                                                                                   mask);
         }
     }
 
@@ -151,8 +150,8 @@ __aicore__ inline void Uint16ToHalf(LocalTensor<T>& yOutput, LocalTensor<uint32_
 }
 
 template <typename T>
-__aicore__ inline void Uint16ToBfloat16(
-    LocalTensor<T>& yOutput, LocalTensor<uint32_t>& philoxRes, const uint32_t calCount)
+__aicore__ inline void Uint16ToBfloat16(LocalTensor<T>& yOutput, LocalTensor<uint32_t>& philoxRes,
+                                        const uint32_t calCount)
 {
     __ubuf__ int32_t* ubPhilox = (__ubuf__ int32_t*)philoxRes.GetPhyAddr();
     __ubuf__ bfloat16_t* ubOut = (__ubuf__ bfloat16_t*)yOutput.GetPhyAddr();
@@ -161,37 +160,37 @@ __aicore__ inline void Uint16ToBfloat16(
     SetCtrlSpr<60, 60>(0);
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<int32_t> vRegT;
-        MicroAPI::RegTensor<int16_t> vReg0;
-        MicroAPI::RegTensor<int16_t> vReg1;
-        MicroAPI::RegTensor<int16_t> vReg2;
-        MicroAPI::RegTensor<int16_t> vReg3;
-        MicroAPI::RegTensor<int16_t> vReg4;
-        MicroAPI::RegTensor<bfloat16_t> vReg5;
-        MicroAPI::RegTensor<bfloat16_t> vReg6;
+        Reg::RegTensor<int32_t> vRegT;
+        Reg::RegTensor<int16_t> vReg0;
+        Reg::RegTensor<int16_t> vReg1;
+        Reg::RegTensor<int16_t> vReg2;
+        Reg::RegTensor<int16_t> vReg3;
+        Reg::RegTensor<int16_t> vReg4;
+        Reg::RegTensor<bfloat16_t> vReg5;
+        Reg::RegTensor<bfloat16_t> vReg6;
 
         uint32_t sReg1 = static_cast<uint32_t>(calCount);
         uint16_t sReg2 = static_cast<uint16_t>(0x7fu); // 7 bit mantissa
         uint16_t exp = static_cast<uint16_t>(127);
         uint16_t sReg3 = exp << 7;
 
-        MicroAPI::MaskReg maskAll = MicroAPI::CreateMask<half, MicroAPI::MaskPattern::ALL>();
-        MicroAPI::Duplicate(vReg1, sReg2, maskAll);
-        MicroAPI::Duplicate(vReg3, sReg3, maskAll);
+        Reg::MaskReg maskAll = Reg::CreateMask<half, Reg::MaskPattern::ALL>();
+        Reg::Duplicate(vReg1, sReg2, maskAll);
+        Reg::Duplicate(vReg3, sReg3, maskAll);
         bfloat16_t sReg4 = static_cast<bfloat16_t>(-1.0);
-        MicroAPI::MaskReg mask;
+        Reg::MaskReg mask;
         int32_t offSet = static_cast<int32_t>(INT32_ONE_REPEAT);
         for (uint16_t i = 0; i < static_cast<uint16_t>(repeatTimes); ++i) {
-            mask = MicroAPI::UpdateMask<float>(sReg1);
-            MicroAPI::DataCopy<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE, MicroAPI::LoadDist::DIST_NORM>(
-                vRegT, ubPhilox, offSet);
-            MicroAPI::Cast<int16_t, int32_t, castTraitTf>(vReg0, vRegT, mask);
-            MicroAPI::And<int16_t, MicroAPI::MaskMergeMode::ZEROING>(vReg2, vReg0, vReg1, mask);
-            MicroAPI::Or<int16_t, MicroAPI::MaskMergeMode::ZEROING>(vReg4, vReg2, vReg3, mask);
-            vReg5 = (MicroAPI::RegTensor<bfloat16_t>&)vReg4;
-            MicroAPI::Adds<bfloat16_t, bfloat16_t, MicroAPI::MaskMergeMode::ZEROING>(vReg6, vReg5, sReg4, mask);
-            MicroAPI::DataCopy<bfloat16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE, MicroAPI::StoreDist::DIST_PACK_B32>(
-                ubOut, vReg6, offSet, mask);
+            mask = Reg::UpdateMask<float>(sReg1);
+            Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE, Reg::LoadDist::DIST_NORM>(vRegT, ubPhilox,
+                                                                                                 offSet);
+            Reg::Cast<int16_t, int32_t, castTraitTf>(vReg0, vRegT, mask);
+            Reg::And<int16_t, Reg::MaskMergeMode::ZEROING>(vReg2, vReg0, vReg1, mask);
+            Reg::Or<int16_t, Reg::MaskMergeMode::ZEROING>(vReg4, vReg2, vReg3, mask);
+            vReg5 = (Reg::RegTensor<bfloat16_t>&)vReg4;
+            Reg::Adds<bfloat16_t, bfloat16_t, Reg::MaskMergeMode::ZEROING>(vReg6, vReg5, sReg4, mask);
+            Reg::DataCopy<bfloat16_t, Reg::PostLiteral::POST_MODE_UPDATE, Reg::StoreDist::DIST_PACK_B32>(ubOut, vReg6,
+                                                                                                         offSet, mask);
         }
     }
 
@@ -211,8 +210,8 @@ __aicore__ inline void U32Conversion(LocalTensor<T>& yOutput, LocalTensor<uint32
 }
 
 template <typename T>
-__aicore__ inline void Float32Conversion(
-    LocalTensor<T> yOutput, LocalTensor<float> normalFloatResult, const uint32_t calCount)
+__aicore__ inline void Float32Conversion(LocalTensor<T> yOutput, LocalTensor<float> normalFloatResult,
+                                         const uint32_t calCount)
 {
     if constexpr (AscendC::IsSameType<T, float>::value) {
         DataCopy(yOutput, normalFloatResult, Ops::Base::CeilAlign(calCount, static_cast<uint32_t>(BLOCK_SIZE)));
@@ -229,54 +228,54 @@ __aicore__ inline void Float32Conversion(
  *   Y = sqrt(-2 * ln(U1)) * sin(2 * PI * U2)
  */
 template <typename T>
-__aicore__ inline void BoxMullerFloatSIMD(
-    LocalTensor<float>& yOutputTmp, LocalTensor<float> v1Result, LocalTensor<float> u2Result, const uint32_t calCount)
+__aicore__ inline void BoxMullerFloatSIMD(LocalTensor<float>& yOutputTmp, LocalTensor<float> v1Result,
+                                          LocalTensor<float> u2Result, const uint32_t calCount)
 {
     __ubuf__ float* uniformRes = (__ubuf__ float*)yOutputTmp.GetPhyAddr();
     __ubuf__ float* ubV1Out = (__ubuf__ float*)v1Result.GetPhyAddr();
     __ubuf__ float* ubU2Out = (__ubuf__ float*)u2Result.GetPhyAddr();
-    uint32_t repeatTimes =
-        Ops::Base::CeilDiv(calCount / DOUBLE_UNIFORM_RESULT, static_cast<uint32_t>(INT32_FLOAT32_ONE_REPEAT));
+    uint32_t repeatTimes = Ops::Base::CeilDiv(calCount / DOUBLE_UNIFORM_RESULT,
+                                              static_cast<uint32_t>(INT32_FLOAT32_ONE_REPEAT));
     uint32_t sreg1 = calCount;
 
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<float> vreg0;
-        MicroAPI::RegTensor<float> vreg1;
-        MicroAPI::RegTensor<float> vreg2;
-        MicroAPI::RegTensor<float> vreg3;
-        MicroAPI::RegTensor<float> vreg4;
-        MicroAPI::RegTensor<float> vreg5;
-        MicroAPI::RegTensor<float> vreg6;
-        MicroAPI::MaskReg mask;
+        Reg::RegTensor<float> vreg0;
+        Reg::RegTensor<float> vreg1;
+        Reg::RegTensor<float> vreg2;
+        Reg::RegTensor<float> vreg3;
+        Reg::RegTensor<float> vreg4;
+        Reg::RegTensor<float> vreg5;
+        Reg::RegTensor<float> vreg6;
+        Reg::MaskReg mask;
 
         float epsScalar = 1.0e-7f;
         float doublePiScalar = DOUBLE_MULTIPLE * PI;
         int32_t offset = static_cast<int32_t>(INT32_FLOAT32_ONE_REPEAT);
         for (uint16_t i = 0; i < static_cast<uint16_t>(repeatTimes); ++i) {
-            mask = MicroAPI::UpdateMask<float>(sreg1);
-            MicroAPI::DataCopy<float, MicroAPI::LoadDist::DIST_DINTLV_B32>(
-                vreg0, vreg1, uniformRes + i * offset * DOUBLE_UNIFORM_RESULT);
-            MicroAPI::Maxs(vreg2, vreg0, epsScalar, mask);
-            MicroAPI::Ln(vreg3, vreg2, mask);
-            MicroAPI::Muls(vreg4, vreg1, doublePiScalar, mask);
-            MicroAPI::Muls(vreg5, vreg3, -DOUBLE_MULTIPLE, mask);
-            MicroAPI::Sqrt(vreg6, vreg5, mask);
-            MicroAPI::DataCopy<float, MicroAPI::PostLiteral::POST_MODE_UPDATE>(ubV1Out, vreg4, offset, mask);
-            MicroAPI::DataCopy<float, MicroAPI::PostLiteral::POST_MODE_UPDATE>(ubU2Out, vreg6, offset, mask);
+            mask = Reg::UpdateMask<float>(sreg1);
+            Reg::DataCopy<float, Reg::LoadDist::DIST_DINTLV_B32>(vreg0, vreg1,
+                                                                 uniformRes + i * offset * DOUBLE_UNIFORM_RESULT);
+            Reg::Maxs(vreg2, vreg0, epsScalar, mask);
+            Reg::Ln(vreg3, vreg2, mask);
+            Reg::Muls(vreg4, vreg1, doublePiScalar, mask);
+            Reg::Muls(vreg5, vreg3, -DOUBLE_MULTIPLE, mask);
+            Reg::Sqrt(vreg6, vreg5, mask);
+            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(ubV1Out, vreg4, offset, mask);
+            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(ubU2Out, vreg6, offset, mask);
         }
     }
 }
 
 template <typename T>
-__aicore__ inline void BoxMullerMulSIMD(
-    LocalTensor<float>& yOutputTmp, LocalTensor<float> v1Result, LocalTensor<float> u2Result,
-    LocalTensor<float> yOutput, const uint32_t calCount)
+__aicore__ inline void BoxMullerMulSIMD(LocalTensor<float>& yOutputTmp, LocalTensor<float> v1Result,
+                                        LocalTensor<float> u2Result, LocalTensor<float> yOutput,
+                                        const uint32_t calCount)
 {
     Cos<float, false>(yOutputTmp, v1Result);
     Sin<float, false>(yOutput, v1Result);
-    uint32_t repeatTimes =
-        Ops::Base::CeilDiv(calCount / DOUBLE_UNIFORM_RESULT, static_cast<uint32_t>(INT32_FLOAT32_ONE_REPEAT));
+    uint32_t repeatTimes = Ops::Base::CeilDiv(calCount / DOUBLE_UNIFORM_RESULT,
+                                              static_cast<uint32_t>(INT32_FLOAT32_ONE_REPEAT));
 
     __ubuf__ float* ubSinResult = (__ubuf__ float*)yOutput.GetPhyAddr();
     __ubuf__ float* ubCosResult = (__ubuf__ float*)yOutputTmp.GetPhyAddr();
@@ -285,28 +284,28 @@ __aicore__ inline void BoxMullerMulSIMD(
 
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<float> vreg0;
-        MicroAPI::RegTensor<float> vreg1;
-        MicroAPI::RegTensor<float> vreg2;
-        MicroAPI::RegTensor<float> vreg3;
-        MicroAPI::RegTensor<float> vreg4;
-        MicroAPI::RegTensor<float> vreg5;
-        MicroAPI::MaskReg mask;
+        Reg::RegTensor<float> vreg0;
+        Reg::RegTensor<float> vreg1;
+        Reg::RegTensor<float> vreg2;
+        Reg::RegTensor<float> vreg3;
+        Reg::RegTensor<float> vreg4;
+        Reg::RegTensor<float> vreg5;
+        Reg::MaskReg mask;
 
         uint32_t sreg1 = static_cast<uint32_t>(calCount);
         int32_t offset = static_cast<int32_t>(INT32_FLOAT32_ONE_REPEAT);
         for (uint16_t i = 0; i < static_cast<uint16_t>(repeatTimes); ++i) {
-            mask = MicroAPI::UpdateMask<float>(sreg1);
-            MicroAPI::DataCopy<float, MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg0, ubSinResult, offset);
-            MicroAPI::DataCopy<float, MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg1, ubCosResult, offset);
-            MicroAPI::DataCopy<float, MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg2, ubU2Result, offset);
+            mask = Reg::UpdateMask<float>(sreg1);
+            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(vreg0, ubSinResult, offset);
+            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(vreg1, ubCosResult, offset);
+            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(vreg2, ubU2Result, offset);
 
-            MicroAPI::Mul(vreg3, vreg0, vreg2, mask);
-            MicroAPI::Mul(vreg4, vreg1, vreg2, mask);
+            Reg::Mul(vreg3, vreg0, vreg2, mask);
+            Reg::Mul(vreg4, vreg1, vreg2, mask);
 
-            MicroAPI::DataCopy<int32_t, MicroAPI::StoreDist::DIST_INTLV_B32>(
+            Reg::DataCopy<int32_t, Reg::StoreDist::DIST_INTLV_B32>(
                 reinterpret_cast<__ubuf__ int32_t*>(ubOut + i * offset * DOUBLE_UNIFORM_RESULT),
-                (MicroAPI::RegTensor<int32_t>&)(vreg3), (MicroAPI::RegTensor<int32_t>&)(vreg4), mask);
+                (Reg::RegTensor<int32_t>&)(vreg3), (Reg::RegTensor<int32_t>&)(vreg4), mask);
         }
     }
 }
@@ -463,12 +462,11 @@ __simt_callee__ __aicore__ inline void PhiloxRandomSimt(const uint32_t* key, con
 
 // 除数 (gridDimx * blockDim) 使用uint64快除接口， 提升性能
 template <int32_t STEP, int32_t ARANGE_MODE>
-__simt_callee__ __aicore__ inline void ThreadMappingAndSkip(
-    uint64_t idx, uint32_t* counter, uint64_t magic, uint64_t shift, uint64_t totalThreads)
+__simt_callee__ __aicore__ inline void ThreadMappingAndSkip(uint64_t idx, uint32_t* counter, uint64_t magic,
+                                                            uint64_t shift, uint64_t totalThreads)
 {
-    static_assert(
-        !(ARANGE_MODE == DIS_CONTINUOUS_USE && STEP != VEC_4),
-        "When ARANGE_MODE is DIS_CONTINUOUS_USE, STEP must be 4");
+    static_assert(!(ARANGE_MODE == DIS_CONTINUOUS_USE && STEP != VEC_4),
+                  "When ARANGE_MODE is DIS_CONTINUOUS_USE, STEP must be 4");
     uint64_t idxTmp = idx / STEP;
     uint64_t globalThreadIdx = 0;
     uint64_t repeat = Simt::UintDiv(idxTmp, magic, shift);
@@ -590,8 +588,8 @@ __aicore__ inline void RandomKernelBaseOp::Skip(const uint64_t count)
 __aicore__ inline void RandomKernelBaseOp::GenRandomSIMD(LocalTensor<uint32_t> randomLocal, const uint64_t count)
 {
     constexpr uint16_t kPhiloxRounds = 10;
-    PhiloxRandom<kPhiloxRounds>(
-        randomLocal, {key_[0], key_[1]}, {counter_[0], counter_[1], counter_[2], counter_[3]}, count);
+    PhiloxRandom<kPhiloxRounds>(randomLocal, {key_[0], key_[1]}, {counter_[0], counter_[1], counter_[2], counter_[3]},
+                                count);
 }
 
 constexpr uint32_t SIMT_STEP = 4;
@@ -670,8 +668,8 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(ThreadNum) inline void PhiloxSimtKernelDisco
 }
 
 template <typename Launcher>
-__aicore__ inline void ProcessWithSplitBlocks(
-    const RandomUnifiedSimtTilingDataStruct* __restrict tilingData, Launcher& launcher)
+__aicore__ inline void ProcessWithSplitBlocks(const RandomUnifiedSimtTilingDataStruct* __restrict tilingData,
+                                              Launcher& launcher)
 {
     for (int64_t blockIdx = 0; blockIdx < tilingData->splitBlockCount; blockIdx++) {
         const SplitBlockInfo& block = tilingData->splitBlocks[blockIdx];

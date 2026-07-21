@@ -37,14 +37,14 @@ public:
     __aicore__ inline void CalculateFullWIndex(__ubuf__ IndexType* indexLocalAddr, uint16_t& tmplSize);
     __aicore__ inline void findTargetSplit(uint16_t& gatherTmplsplit, bool& isEqual);
     __aicore__ inline void CopyOut(int64_t outindex, int32_t Count);
-    __aicore__ inline void ComputeOutIndex(
-        int64_t inputIndex, int64_t& outputIndex, uint16_t& gatherTmplsplit, int32_t& Count);
+    __aicore__ inline void ComputeOutIndex(int64_t inputIndex, int64_t& outputIndex, uint16_t& gatherTmplsplit,
+                                           int32_t& Count);
     __aicore__ inline void Process();
 
 private:
     template <typename IndexType>
-    __aicore__ inline void Gather(
-        LocalTensor<T>& xTensor, LocalTensor<T>& gatherTmpl, int32_t Count, uint16_t tmplSize, int32_t addrShift);
+    __aicore__ inline void Gather(LocalTensor<T>& xTensor, LocalTensor<T>& gatherTmpl, int32_t Count, uint16_t tmplSize,
+                                  int32_t addrShift);
 
 private:
     const RollTilingData* tilingData_;
@@ -187,8 +187,8 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::Process()
         int32_t CopyLoop = 1;
         int32_t loopSize = curUbFactor;
         if (!isEqual) {
-            CopyLoop =
-                curUbFactor / (tilingData_->strides[movTmplsplit] * tilingData_->shapes[movTmplsplit]); // 必然整除
+            CopyLoop = curUbFactor /
+                       (tilingData_->strides[movTmplsplit] * tilingData_->shapes[movTmplsplit]); // 必然整除
             loopSize = tilingData_->strides[movTmplsplit - 1];
         }
         CopyIn(curCoreBaseIndex_, curUbFactor);
@@ -225,8 +225,8 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::Process()
 
 template <typename T, bool isShiftW>
 template <typename IntType, typename IndexType, bool isShiftH>
-__aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullCHWIndex(
-    __ubuf__ IndexType* indexLocalAddr, uint16_t& tmplSize)
+__aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullCHWIndex(__ubuf__ IndexType* indexLocalAddr,
+                                                                          uint16_t& tmplSize)
 {
     int32_t shapesW = tilingData_->shapes[tilingData_->dimNum - 1];
     int32_t shapesH = tilingData_->shapes[tilingData_->dimNum - 2];
@@ -255,49 +255,49 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullCHWIndex(
     uint32_t shiftCHWSizeScalar = static_cast<uint32_t>(hwScalar) * static_cast<uint32_t>(shiftsC);
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<IndexType> indexVReg;
-        AscendC::MicroAPI::RegTensor<IntType> calculateVReg, helpCmpVReg, helpAddVReg, helpDivVReg;
-        AscendC::MicroAPI::MaskReg cmpResultMaskReg, helpAddCHWMaskReg, fullMaskReg;
-        AscendC::MicroAPI::UnalignReg u0;
+        AscendC::Reg::RegTensor<IndexType> indexVReg;
+        AscendC::Reg::RegTensor<IntType> calculateVReg, helpCmpVReg, helpAddVReg, helpDivVReg;
+        AscendC::Reg::MaskReg cmpResultMaskReg, helpAddCHWMaskReg, fullMaskReg;
+        AscendC::Reg::UnalignReg u0;
 
-        fullMaskReg = AscendC::MicroAPI::CreateMask<IndexType, AscendC::MicroAPI::MaskPattern::ALL>();
-        helpAddCHWMaskReg = AscendC::MicroAPI::UpdateMask<IndexType>(shiftCHWSizeScalar);
-        AscendC::MicroAPI::Duplicate(helpDivVReg, wScalar, fullMaskReg);
-        AscendC::MicroAPI::Arange(calculateVReg, startScalar);
+        fullMaskReg = AscendC::Reg::CreateMask<IndexType, AscendC::Reg::MaskPattern::ALL>();
+        helpAddCHWMaskReg = AscendC::Reg::UpdateMask<IndexType>(shiftCHWSizeScalar);
+        AscendC::Reg::Duplicate(helpDivVReg, wScalar, fullMaskReg);
+        AscendC::Reg::Arange(calculateVReg, startScalar);
         if constexpr (isShiftW) {
-            AscendC::MicroAPI::Div(helpCmpVReg, calculateVReg, helpDivVReg, fullMaskReg);
-            AscendC::MicroAPI::Muls(helpCmpVReg, helpCmpVReg, wScalar, fullMaskReg);
-            AscendC::MicroAPI::Adds(calculateVReg, calculateVReg, negShiftWScalar, fullMaskReg);
-            AscendC::MicroAPI::Compare<IntType, CMPMODE::LT>(cmpResultMaskReg, calculateVReg, helpCmpVReg, fullMaskReg);
-            AscendC::MicroAPI::Duplicate(helpAddVReg, wScalar, cmpResultMaskReg);
-            AscendC::MicroAPI::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
+            AscendC::Reg::Div(helpCmpVReg, calculateVReg, helpDivVReg, fullMaskReg);
+            AscendC::Reg::Muls(helpCmpVReg, helpCmpVReg, wScalar, fullMaskReg);
+            AscendC::Reg::Adds(calculateVReg, calculateVReg, negShiftWScalar, fullMaskReg);
+            AscendC::Reg::Compare<IntType, CMPMODE::LT>(cmpResultMaskReg, calculateVReg, helpCmpVReg, fullMaskReg);
+            AscendC::Reg::Duplicate(helpAddVReg, wScalar, cmpResultMaskReg);
+            AscendC::Reg::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
         }
         if constexpr (isShiftH) {
-            AscendC::MicroAPI::Duplicate(helpDivVReg, hwScalar, fullMaskReg);
-            AscendC::MicroAPI::Div(helpCmpVReg, calculateVReg, helpDivVReg, fullMaskReg);
-            AscendC::MicroAPI::Muls(helpCmpVReg, helpCmpVReg, hwScalar, fullMaskReg);
-            AscendC::MicroAPI::Adds(calculateVReg, calculateVReg, negShiftHWScalar, fullMaskReg);
-            AscendC::MicroAPI::Compare<IntType, CMPMODE::LT>(cmpResultMaskReg, calculateVReg, helpCmpVReg, fullMaskReg);
-            AscendC::MicroAPI::Duplicate(helpAddVReg, hwScalar, cmpResultMaskReg);
-            AscendC::MicroAPI::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
+            AscendC::Reg::Duplicate(helpDivVReg, hwScalar, fullMaskReg);
+            AscendC::Reg::Div(helpCmpVReg, calculateVReg, helpDivVReg, fullMaskReg);
+            AscendC::Reg::Muls(helpCmpVReg, helpCmpVReg, hwScalar, fullMaskReg);
+            AscendC::Reg::Adds(calculateVReg, calculateVReg, negShiftHWScalar, fullMaskReg);
+            AscendC::Reg::Compare<IntType, CMPMODE::LT>(cmpResultMaskReg, calculateVReg, helpCmpVReg, fullMaskReg);
+            AscendC::Reg::Duplicate(helpAddVReg, hwScalar, cmpResultMaskReg);
+            AscendC::Reg::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
         }
-        AscendC::MicroAPI::Adds(calculateVReg, calculateVReg, negShiftCHWScalar, fullMaskReg);
-        AscendC::MicroAPI::Duplicate(helpAddVReg, shapesLen, helpAddCHWMaskReg);
-        AscendC::MicroAPI::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
-        AscendC::MicroAPI::Copy(indexVReg, (MicroAPI::RegTensor<IndexType>&)calculateVReg);
-        AscendC::MicroAPI::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
+        AscendC::Reg::Adds(calculateVReg, calculateVReg, negShiftCHWScalar, fullMaskReg);
+        AscendC::Reg::Duplicate(helpAddVReg, shapesLen, helpAddCHWMaskReg);
+        AscendC::Reg::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
+        AscendC::Reg::Copy(indexVReg, (Reg::RegTensor<IndexType>&)calculateVReg);
+        AscendC::Reg::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
         for (uint16_t i = 1; i < loopSize; i++) {
-            AscendC::MicroAPI::Adds(indexVReg, indexVReg, copyLenth, fullMaskReg);
-            AscendC::MicroAPI::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
+            AscendC::Reg::Adds(indexVReg, indexVReg, copyLenth, fullMaskReg);
+            AscendC::Reg::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
         }
-        AscendC::MicroAPI::DataCopyUnAlignPost(indexLocalAddr, u0, 0);
+        AscendC::Reg::DataCopyUnAlignPost(indexLocalAddr, u0, 0);
     }
 }
 
 template <typename T, bool isShiftW>
 template <typename IntType, typename IndexType>
-__aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullHWIndex(
-    __ubuf__ IndexType* indexLocalAddr, uint16_t& tmplSize)
+__aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullHWIndex(__ubuf__ IndexType* indexLocalAddr,
+                                                                         uint16_t& tmplSize)
 {
     int32_t shapesW = tilingData_->shapes[tilingData_->dimNum - 1];
     int32_t shapseH = tilingData_->shapes[tilingData_->dimNum - 2];
@@ -318,39 +318,39 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullHWIndex(
     uint32_t shifthWSizeScalar = static_cast<uint32_t>(shiftsH) * static_cast<uint32_t>(shapesW);
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<IndexType> indexVReg;
-        AscendC::MicroAPI::RegTensor<IntType> calculateVReg, helpCmpVReg, helpAddVReg, helpDivVReg;
-        AscendC::MicroAPI::MaskReg cmpResultMaskReg, helpAddHWMaskReg, fullMaskReg;
-        AscendC::MicroAPI::UnalignReg u0;
+        AscendC::Reg::RegTensor<IndexType> indexVReg;
+        AscendC::Reg::RegTensor<IntType> calculateVReg, helpCmpVReg, helpAddVReg, helpDivVReg;
+        AscendC::Reg::MaskReg cmpResultMaskReg, helpAddHWMaskReg, fullMaskReg;
+        AscendC::Reg::UnalignReg u0;
 
-        fullMaskReg = AscendC::MicroAPI::CreateMask<IndexType, AscendC::MicroAPI::MaskPattern::ALL>();
-        helpAddHWMaskReg = AscendC::MicroAPI::UpdateMask<IndexType>(shifthWSizeScalar);
-        AscendC::MicroAPI::Duplicate(helpDivVReg, wScalar, fullMaskReg);
-        AscendC::MicroAPI::Arange(calculateVReg, startScalar);
+        fullMaskReg = AscendC::Reg::CreateMask<IndexType, AscendC::Reg::MaskPattern::ALL>();
+        helpAddHWMaskReg = AscendC::Reg::UpdateMask<IndexType>(shifthWSizeScalar);
+        AscendC::Reg::Duplicate(helpDivVReg, wScalar, fullMaskReg);
+        AscendC::Reg::Arange(calculateVReg, startScalar);
         if constexpr (isShiftW) {
-            AscendC::MicroAPI::Div(helpCmpVReg, calculateVReg, helpDivVReg, fullMaskReg);
-            AscendC::MicroAPI::Muls(helpCmpVReg, helpCmpVReg, wScalar, fullMaskReg);
-            AscendC::MicroAPI::Adds(calculateVReg, calculateVReg, negShiftWScalar, fullMaskReg);
-            AscendC::MicroAPI::Compare<IntType, CMPMODE::LT>(cmpResultMaskReg, calculateVReg, helpCmpVReg, fullMaskReg);
-            AscendC::MicroAPI::Duplicate(helpAddVReg, wScalar, cmpResultMaskReg);
-            AscendC::MicroAPI::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
+            AscendC::Reg::Div(helpCmpVReg, calculateVReg, helpDivVReg, fullMaskReg);
+            AscendC::Reg::Muls(helpCmpVReg, helpCmpVReg, wScalar, fullMaskReg);
+            AscendC::Reg::Adds(calculateVReg, calculateVReg, negShiftWScalar, fullMaskReg);
+            AscendC::Reg::Compare<IntType, CMPMODE::LT>(cmpResultMaskReg, calculateVReg, helpCmpVReg, fullMaskReg);
+            AscendC::Reg::Duplicate(helpAddVReg, wScalar, cmpResultMaskReg);
+            AscendC::Reg::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
         }
-        AscendC::MicroAPI::Adds(calculateVReg, calculateVReg, negShiftHWScalar, fullMaskReg);
-        AscendC::MicroAPI::Duplicate(helpAddVReg, hwLen, helpAddHWMaskReg);
-        AscendC::MicroAPI::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
-        AscendC::MicroAPI::Copy(indexVReg, (MicroAPI::RegTensor<IndexType>&)calculateVReg);
-        AscendC::MicroAPI::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
+        AscendC::Reg::Adds(calculateVReg, calculateVReg, negShiftHWScalar, fullMaskReg);
+        AscendC::Reg::Duplicate(helpAddVReg, hwLen, helpAddHWMaskReg);
+        AscendC::Reg::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
+        AscendC::Reg::Copy(indexVReg, (Reg::RegTensor<IndexType>&)calculateVReg);
+        AscendC::Reg::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
         for (uint16_t i = 1; i < loopSize; i++) {
-            AscendC::MicroAPI::Adds(indexVReg, indexVReg, copyLenth, fullMaskReg);
-            AscendC::MicroAPI::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
+            AscendC::Reg::Adds(indexVReg, indexVReg, copyLenth, fullMaskReg);
+            AscendC::Reg::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
         }
-        AscendC::MicroAPI::DataCopyUnAlignPost(indexLocalAddr, u0, 0);
+        AscendC::Reg::DataCopyUnAlignPost(indexLocalAddr, u0, 0);
     }
 }
 template <typename T, bool isShiftW>
 template <typename IntType, typename IndexType>
-__aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullWIndex(
-    __ubuf__ IndexType* indexLocalAddr, uint16_t& tmplSize)
+__aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullWIndex(__ubuf__ IndexType* indexLocalAddr,
+                                                                        uint16_t& tmplSize)
 {
     int64_t shapesW = tilingData_->shapes[tilingData_->dimNum - 1];
     int64_t shiftsW = tilingData_->shifts[tilingData_->dimNum - 1];
@@ -368,31 +368,31 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullWIndex(
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<IndexType> indexVReg;
-        AscendC::MicroAPI::RegTensor<IntType> calculateVReg, helpAddVReg;
-        AscendC::MicroAPI::MaskReg helpAddHWMaskReg, fullMaskReg;
-        AscendC::MicroAPI::UnalignReg u0;
+        AscendC::Reg::RegTensor<IndexType> indexVReg;
+        AscendC::Reg::RegTensor<IntType> calculateVReg, helpAddVReg;
+        AscendC::Reg::MaskReg helpAddHWMaskReg, fullMaskReg;
+        AscendC::Reg::UnalignReg u0;
 
-        fullMaskReg = AscendC::MicroAPI::CreateMask<IndexType, AscendC::MicroAPI::MaskPattern::ALL>();
-        helpAddHWMaskReg = AscendC::MicroAPI::UpdateMask<IndexType>(shiftwSizeScalar);
+        fullMaskReg = AscendC::Reg::CreateMask<IndexType, AscendC::Reg::MaskPattern::ALL>();
+        helpAddHWMaskReg = AscendC::Reg::UpdateMask<IndexType>(shiftwSizeScalar);
 
-        AscendC::MicroAPI::Arange(calculateVReg, startScalar);
+        AscendC::Reg::Arange(calculateVReg, startScalar);
         if constexpr (isShiftW) {
-            AscendC::MicroAPI::Adds(calculateVReg, calculateVReg, negShiftWScalar, fullMaskReg);
-            AscendC::MicroAPI::Duplicate(helpAddVReg, wScalar, helpAddHWMaskReg);
-            AscendC::MicroAPI::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
+            AscendC::Reg::Adds(calculateVReg, calculateVReg, negShiftWScalar, fullMaskReg);
+            AscendC::Reg::Duplicate(helpAddVReg, wScalar, helpAddHWMaskReg);
+            AscendC::Reg::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
         }
-        AscendC::MicroAPI::Copy(indexVReg, (MicroAPI::RegTensor<IndexType>&)calculateVReg);
+        AscendC::Reg::Copy(indexVReg, (Reg::RegTensor<IndexType>&)calculateVReg);
         if constexpr (isShiftW) {
-            AscendC::MicroAPI::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
+            AscendC::Reg::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
             for (uint16_t i = 1; i < loopSize; i++) {
-                AscendC::MicroAPI::Adds(indexVReg, indexVReg, copyLenth, fullMaskReg);
-                AscendC::MicroAPI::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
+                AscendC::Reg::Adds(indexVReg, indexVReg, copyLenth, fullMaskReg);
+                AscendC::Reg::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
             }
         } else {
-            AscendC::MicroAPI::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth * loopSize);
+            AscendC::Reg::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth * loopSize);
         }
-        AscendC::MicroAPI::DataCopyUnAlignPost(indexLocalAddr, u0, 0);
+        AscendC::Reg::DataCopyUnAlignPost(indexLocalAddr, u0, 0);
     }
 }
 template <typename T, bool isShiftW>
@@ -411,15 +411,16 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::findTargetSplit(uint16_t& mo
 }
 
 template <typename T, bool isShiftW>
-__aicore__ inline void RollGatherSimd<T, isShiftW>::ComputeOutIndex(
-    int64_t inputIndex, int64_t& outputIndex, uint16_t& movTmplsplit, int32_t& Count) //, int64_t& count)
+__aicore__ inline void RollGatherSimd<T, isShiftW>::ComputeOutIndex(int64_t inputIndex, int64_t& outputIndex,
+                                                                    uint16_t& movTmplsplit,
+                                                                    int32_t& Count) //, int64_t& count)
 {
     for (int64_t dim = 0; dim < tilingData_->dimNum; dim++) {
         inputIndices_[dim] = inputIndex / tilingData_->strides[dim];
         inputIndex = inputIndex % tilingData_->strides[dim];
         if (dim < movTmplsplit + 1) {
-            outputIndex +=
-                (inputIndices_[dim] + tilingData_->shifts[dim]) % tilingData_->shapes[dim] * tilingData_->strides[dim];
+            outputIndex += (inputIndices_[dim] + tilingData_->shifts[dim]) % tilingData_->shapes[dim] *
+                           tilingData_->strides[dim];
         }
     }
     int64_t currentPos = inputIndices_[movTmplsplit];
@@ -435,8 +436,8 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::ComputeOutIndex(
 
 template <typename T, bool isShiftW>
 template <typename IndexType>
-__aicore__ inline void RollGatherSimd<T, isShiftW>::Gather(
-    LocalTensor<T>& xTensor, LocalTensor<T>& gatherTmpl, int32_t Count, uint16_t tmplSize, int32_t addrShift)
+__aicore__ inline void RollGatherSimd<T, isShiftW>::Gather(LocalTensor<T>& xTensor, LocalTensor<T>& gatherTmpl,
+                                                           int32_t Count, uint16_t tmplSize, int32_t addrShift)
 {
     LocalTensor<T> AlienTensor = AlienBuf.AllocTensor<T>();
     auto dstPtr = (__ubuf__ T*)AlienTensor.GetPhyAddr();
@@ -446,29 +447,28 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::Gather(
     uint32_t tmpMaskNum = tmplSize;
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<IndexType> indexReg;
-        MicroAPI::RegTensor<T> dstReg0;
-        MicroAPI::RegTensor<T> dstReg1;
-        MicroAPI::MaskReg maskReg;
-        MicroAPI::UnalignReg u0;
+        Reg::RegTensor<IndexType> indexReg;
+        Reg::RegTensor<T> dstReg0;
+        Reg::RegTensor<T> dstReg1;
+        Reg::MaskReg maskReg;
+        Reg::UnalignReg u0;
         if constexpr (sizeof(T) == 1) {
-            maskReg = MicroAPI::UpdateMask<uint16_t>(tmpMaskNum);
+            maskReg = Reg::UpdateMask<uint16_t>(tmpMaskNum);
         } else {
-            maskReg = MicroAPI::UpdateMask<T>(tmpMaskNum);
+            maskReg = Reg::UpdateMask<T>(tmpMaskNum);
         }
-        MicroAPI::DataCopy(indexReg, indexPtr);
+        Reg::DataCopy(indexReg, indexPtr);
         for (uint16_t i = 0; i < loopSize; i++) {
             if constexpr (sizeof(T) == 1) {
-                MicroAPI::DataCopyGather(
-                    (MicroAPI::RegTensor<uint16_t>&)dstReg0, srcPtr + i * tmplSize, indexReg, maskReg);
-                MicroAPI::Pack<uint8_t, uint16_t, MicroAPI::HighLowPart::LOWEST>(
-                    (MicroAPI::RegTensor<uint8_t>&)dstReg1, (MicroAPI::RegTensor<uint16_t>&)dstReg0);
+                Reg::DataCopyGather((Reg::RegTensor<uint16_t>&)dstReg0, srcPtr + i * tmplSize, indexReg, maskReg);
+                Reg::Pack<uint8_t, uint16_t, Reg::HighLowPart::LOWEST>((Reg::RegTensor<uint8_t>&)dstReg1,
+                                                                       (Reg::RegTensor<uint16_t>&)dstReg0);
             } else {
-                MicroAPI::DataCopyGather(dstReg1, srcPtr + i * tmplSize, indexReg, maskReg);
+                Reg::DataCopyGather(dstReg1, srcPtr + i * tmplSize, indexReg, maskReg);
             }
-            MicroAPI::DataCopyUnAlign(dstPtr, (MicroAPI::RegTensor<T>&)dstReg1, u0, tmplSize);
+            Reg::DataCopyUnAlign(dstPtr, (Reg::RegTensor<T>&)dstReg1, u0, tmplSize);
         }
-        AscendC::MicroAPI::DataCopyUnAlignPost(dstPtr, u0, 0);
+        AscendC::Reg::DataCopyUnAlignPost(dstPtr, u0, 0);
     }
     AlienBuf.EnQue<T>(AlienTensor);
 }

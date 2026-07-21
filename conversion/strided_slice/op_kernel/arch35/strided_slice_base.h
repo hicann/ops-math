@@ -22,8 +22,7 @@
 #include "op_kernel/platform_util.h"
 #include "simt_api/asc_simt.h"
 
-namespace StridedSlice
-{
+namespace StridedSlice {
 using namespace AscendC;
 
 #ifdef __DAV_FPGA__
@@ -70,35 +69,34 @@ constexpr uint32_t NUM_TWO = 2;
 constexpr uint32_t DOUBLE_BUFFER = 2;
 
 template <typename T, typename U>
-class StridedSliceBase
-{
+class StridedSliceBase {
 protected:
     using RT = std::conditional_t<sizeof(T) != sizeof(uint64_t), T, uint32_t>;
 
 public:
     __aicore__ inline StridedSliceBase(){};
-    __aicore__ inline void ParseBaseTilingData(
-        GM_ADDR begin, const StridedSliceTilingData *tilingData, int64_t blockIdx);
-    __aicore__ inline void ParseBaseTilingDataV2(
-        GM_ADDR begin, const StridedSliceBaseTilingData *tilingData, int64_t blockIdx);
-    __aicore__ inline void ParseNDDMATilingData(
-        GM_ADDR begin, const StridedSliceNDDMATilingData *tilingData, int64_t blockIdx);
+    __aicore__ inline void ParseBaseTilingData(GM_ADDR begin, const StridedSliceTilingData* tilingData,
+                                               int64_t blockIdx);
+    __aicore__ inline void ParseBaseTilingDataV2(GM_ADDR begin, const StridedSliceBaseTilingData* tilingData,
+                                                 int64_t blockIdx);
+    __aicore__ inline void ParseNDDMATilingData(GM_ADDR begin, const StridedSliceNDDMATilingData* tilingData,
+                                                int64_t blockIdx);
     __aicore__ inline int64_t GetInputGmAddr(int64_t rowIdx) const;
     __aicore__ inline int64_t GetInputGmAddrAll(int64_t rowIdx) const;
     __aicore__ inline int64_t GetOutputGmAddr(int64_t rowIdx) const;
     __aicore__ inline int64_t GetOutputGmAddrAll(int64_t rowIdx) const;
-    __aicore__ inline void GetProcessRowsOffset(int64_t &rowsOffset, int64_t blockIdx) const;
-    __aicore__ inline void GetProcessRowsOffsetAll(int64_t &rowsOffset, int64_t blockIdx) const;
-    __aicore__ inline void CalcProcessLoopsNum(int64_t &curCoreLoopsNum, int64_t &ubSplitLoopNum, int64_t blockIdx);
-    __aicore__ inline void GetHandleRowsNum(int64_t &rowsNum, int64_t blockIdx) const;
-    __aicore__ inline void GetLastDimSplitLoopCnt(int64_t &loopCnt, int64_t blockIdx);
+    __aicore__ inline void GetProcessRowsOffset(int64_t& rowsOffset, int64_t blockIdx) const;
+    __aicore__ inline void GetProcessRowsOffsetAll(int64_t& rowsOffset, int64_t blockIdx) const;
+    __aicore__ inline void CalcProcessLoopsNum(int64_t& curCoreLoopsNum, int64_t& ubSplitLoopNum, int64_t blockIdx);
+    __aicore__ inline void GetHandleRowsNum(int64_t& rowsNum, int64_t blockIdx) const;
+    __aicore__ inline void GetLastDimSplitLoopCnt(int64_t& loopCnt, int64_t blockIdx);
     __aicore__ inline void CalcReorderAxisInfo(uint32_t axis0, uint32_t axis1, uint32_t axis2, uint32_t axis3BA);
     __aicore__ inline void CalcReorderAxisInfoDimsThree(uint32_t axis1, uint32_t axis2, uint32_t axis3BA);
     __aicore__ inline void CalcReorderAxisInfoDimsFour(uint32_t axis0, uint32_t axis1, uint32_t axis2,
                                                        uint32_t axis3BA);
-    __aicore__ inline void Reorder4Output(__local_mem__ T *outAddr);
-    __aicore__ inline void Reorder4OutputPhase1(__local_mem__ RT *reOutAddr, uint32_t rVLCnt);
-    __aicore__ inline void Reorder4OutputPhase2(__local_mem__ RT *reOutAddr, uint32_t rVLCnt);
+    __aicore__ inline void Reorder4Output(__local_mem__ T* outAddr);
+    __aicore__ inline void Reorder4OutputPhase1(__local_mem__ RT* reOutAddr, uint32_t rVLCnt);
+    __aicore__ inline void Reorder4OutputPhase2(__local_mem__ RT* reOutAddr, uint32_t rVLCnt);
 
 protected:
     template <typename T1>
@@ -161,7 +159,8 @@ protected:
 
 template <typename T, typename U>
 __aicore__ inline void StridedSliceBase<T, U>::ParseBaseTilingData(GM_ADDR begin,
-    const StridedSliceTilingData *tilingData, int64_t blockIdx)
+                                                                   const StridedSliceTilingData* tilingData,
+                                                                   int64_t blockIdx)
 {
     ubSize_ = tilingData->ubSize;
     realCoreNum_ = tilingData->realCoreNum;
@@ -177,9 +176,9 @@ __aicore__ inline void StridedSliceBase<T, U>::ParseBaseTilingData(GM_ADDR begin
         } else {
             int64_t realIdx = UNCONST_BEGIN_VALUE - tilingData->begin[i];
             begin_[i] = static_cast<int64_t>(((__gm__ U*)begin)[realIdx]);
-            int64_t curInShape = (i == inputDims_ - 1) ? tilingData->inputSteps[i] : 
-                (tilingData->inputSteps[i] / tilingData->inputSteps[i + 1]);
-            begin_[i] = begin_[i] < 0 ? (begin_[i] + curInShape): begin_[i];
+            int64_t curInShape = (i == inputDims_ - 1) ? tilingData->inputSteps[i] :
+                                                         (tilingData->inputSteps[i] / tilingData->inputSteps[i + 1]);
+            begin_[i] = begin_[i] < 0 ? (begin_[i] + curInShape) : begin_[i];
             if (begin_[i] < 0) {
                 begin_[i] = 0;
             } else if (begin_[i] >= curInShape) {
@@ -214,7 +213,8 @@ __aicore__ inline void StridedSliceBase<T, U>::ParseBaseTilingData(GM_ADDR begin
 
 template <typename T, typename U>
 __aicore__ inline void StridedSliceBase<T, U>::ParseBaseTilingDataV2(GM_ADDR begin,
-    const StridedSliceBaseTilingData *tilingData, int64_t blockIdx)
+                                                                     const StridedSliceBaseTilingData* tilingData,
+                                                                     int64_t blockIdx)
 {
     ubSize_ = tilingData->ubSize;
     realCoreNum_ = tilingData->realCoreNum;
@@ -231,8 +231,8 @@ __aicore__ inline void StridedSliceBase<T, U>::ParseBaseTilingDataV2(GM_ADDR beg
             int64_t realIdx = UNCONST_BEGIN_VALUE - tilingData->begin[i];
             begin_[i] = static_cast<int64_t>(((__gm__ U*)begin)[realIdx]);
             int64_t curInShape = (i == inputDims_ - 1) ? tilingData->inputSteps[i] :
-                (tilingData->inputSteps[i] / tilingData->inputSteps[i + 1]);
-            begin_[i] = begin_[i] < 0 ? (begin_[i] + curInShape): begin_[i];
+                                                         (tilingData->inputSteps[i] / tilingData->inputSteps[i + 1]);
+            begin_[i] = begin_[i] < 0 ? (begin_[i] + curInShape) : begin_[i];
             if (begin_[i] < 0) {
                 begin_[i] = 0;
             } else if (begin_[i] >= curInShape) {
@@ -260,7 +260,8 @@ __aicore__ inline void StridedSliceBase<T, U>::ParseBaseTilingDataV2(GM_ADDR beg
 
 template <typename T, typename U>
 __aicore__ inline void StridedSliceBase<T, U>::ParseNDDMATilingData(GM_ADDR begin,
-    const StridedSliceNDDMATilingData *tilingData, int64_t blockIdx)
+                                                                    const StridedSliceNDDMATilingData* tilingData,
+                                                                    int64_t blockIdx)
 {
     ParseBaseTilingDataV2(begin, &(tilingData->stridedSliceBaseTilingData), blockIdx);
     for (int32_t i = 0; i < STRIDED_SLICE_MAX_AXIS_NUM; i++) {
@@ -329,7 +330,7 @@ __aicore__ inline int64_t StridedSliceBase<T, U>::GetOutputGmAddrAll(int64_t row
 
 // 计算当前核处理的行的起始行号，即output中的第几行
 template <typename T, typename U>
-__aicore__ inline void StridedSliceBase<T, U>::GetProcessRowsOffset(int64_t &rowsOffset, int64_t blockIdx) const
+__aicore__ inline void StridedSliceBase<T, U>::GetProcessRowsOffset(int64_t& rowsOffset, int64_t blockIdx) const
 {
     // output: (6, 5, 4, 3)
     // blk切5，blkIndex=1, blkFactor=2;  blkSplitOutNum=ceil(5/2)=3
@@ -341,7 +342,7 @@ __aicore__ inline void StridedSliceBase<T, U>::GetProcessRowsOffset(int64_t &row
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceBase<T, U>::GetProcessRowsOffsetAll(int64_t &rowsOffset, int64_t blockIdx) const
+__aicore__ inline void StridedSliceBase<T, U>::GetProcessRowsOffsetAll(int64_t& rowsOffset, int64_t blockIdx) const
 {
     // 包含完整切分轴个数对应的起始行位置
     rowsOffset = blockIdx / blkSplitOutNum_ * rowsOffsetSteps_[blkIndex_];
@@ -354,8 +355,8 @@ __aicore__ inline void StridedSliceBase<T, U>::GetProcessRowsOffsetAll(int64_t &
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceBase<T, U>::CalcProcessLoopsNum(int64_t &curCoreLoopsNum, int64_t &ubSplitLoopNum,
-                                                                int64_t blockIdx)
+__aicore__ inline void StridedSliceBase<T, U>::CalcProcessLoopsNum(int64_t& curCoreLoopsNum, int64_t& ubSplitLoopNum,
+                                                                   int64_t blockIdx)
 {
     if ((blockIdx % blkSplitOutNum_ == blkSplitOutNum_ - 1) && (blkTailFactor_ != 0)) {
         curCoreLoopsNum = blkTailFactor_;
@@ -381,7 +382,7 @@ __aicore__ inline void StridedSliceBase<T, U>::CalcProcessLoopsNum(int64_t &curC
 
 // ub split last axis and blk split nlast axis
 template <typename T, typename U>
-__aicore__ inline void StridedSliceBase<T, U>::GetHandleRowsNum(int64_t &rowsNum, int64_t blockIdx) const
+__aicore__ inline void StridedSliceBase<T, U>::GetHandleRowsNum(int64_t& rowsNum, int64_t blockIdx) const
 {
     if ((blockIdx % blkSplitOutNum_ == blkSplitOutNum_ - 1) && (blkTailFactor_ != 0)) {
         rowsNum = blkTailFactor_;
@@ -396,7 +397,7 @@ __aicore__ inline void StridedSliceBase<T, U>::GetHandleRowsNum(int64_t &rowsNum
 
 // ub and blk all split last axis
 template <typename T, typename U>
-__aicore__ inline void StridedSliceBase<T, U>::GetLastDimSplitLoopCnt(int64_t &loopCnt, int64_t blockIdx)
+__aicore__ inline void StridedSliceBase<T, U>::GetLastDimSplitLoopCnt(int64_t& loopCnt, int64_t blockIdx)
 {
     if ((blockIdx % blkSplitOutNum_ == blkSplitOutNum_ - 1) && (blkTailFactor_ != 0)) {
         // blk/ub all split last axis
@@ -408,7 +409,7 @@ __aicore__ inline void StridedSliceBase<T, U>::GetLastDimSplitLoopCnt(int64_t &l
 
 template <typename T, typename U>
 __aicore__ inline void StridedSliceBase<T, U>::CalcReorderAxisInfoDimsThree(uint32_t axis1, uint32_t axis2,
-                                                                         uint32_t axis3BA)
+                                                                            uint32_t axis3BA)
 {
     auto lastTwoStride = strides_[inputDims_ - DIMS_2];
     auto lastThreeStride = strides_[inputDims_ - DIMS_3];
@@ -429,8 +430,8 @@ __aicore__ inline void StridedSliceBase<T, U>::CalcReorderAxisInfoDimsThree(uint
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceBase<T, U>::CalcReorderAxisInfoDimsFour(uint32_t axis0, uint32_t axis1, uint32_t axis2,
-                                                                        uint32_t axis3BA)
+__aicore__ inline void StridedSliceBase<T, U>::CalcReorderAxisInfoDimsFour(uint32_t axis0, uint32_t axis1,
+                                                                           uint32_t axis2, uint32_t axis3BA)
 {
     auto lastTwoStride = strides_[inputDims_ - DIMS_2];
     auto lastThreeStride = strides_[inputDims_ - DIMS_3];
@@ -476,7 +477,7 @@ __aicore__ inline void StridedSliceBase<T, U>::CalcReorderAxisInfoDimsFour(uint3
 
 template <typename T, typename U>
 __aicore__ inline void StridedSliceBase<T, U>::CalcReorderAxisInfo(uint32_t axis0, uint32_t axis1, uint32_t axis2,
-                                                                uint32_t axis3BA)
+                                                                   uint32_t axis3BA)
 {
     int64_t inUbDims_ = inputDims_ - ubIndex_;
     if (inUbDims_ == 1L) {
@@ -502,7 +503,7 @@ __aicore__ inline void StridedSliceBase<T, U>::CalcReorderAxisInfo(uint32_t axis
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceBase<T, U>::Reorder4OutputPhase1(__local_mem__ RT *reOutAddr, uint32_t rVLCnt)
+__aicore__ inline void StridedSliceBase<T, U>::Reorder4OutputPhase1(__local_mem__ RT* reOutAddr, uint32_t rVLCnt)
 {
     if (uAxis2_ <= 1) {
         return;
@@ -524,24 +525,24 @@ __aicore__ inline void StridedSliceBase<T, U>::Reorder4OutputPhase1(__local_mem_
 
     __VEC_SCOPE__
     {
-        MicroAPI::MaskReg mask;
-        MicroAPI::RegTensor<RT> regData0;
-        MicroAPI::RegTensor<RT> regData1;
-        MicroAPI::RegTensor<RT> regTmp;
+        Reg::MaskReg mask;
+        Reg::RegTensor<RT> regData0;
+        Reg::RegTensor<RT> regData1;
+        Reg::RegTensor<RT> regTmp;
         for (uint16_t axis3LpIdx = 0; axis3LpIdx < axis3LpCnt; axis3LpIdx++) {
-            mask = MicroAPI::UpdateMask<RT>(maskValue);
+            mask = Reg::UpdateMask<RT>(maskValue);
             auto reOutAddr1 = reOutAddr + axis2EndBase;
             for (uint16_t axis2Idx = 0; axis2Idx < halfAxis2; axis2Idx++) {
                 for (uint16_t axis1Idx = 0; axis1Idx < uAxis1; axis1Idx++) {
-                    auto areg =
-                        MicroAPI::CreateAddrReg<RT>(axis3LpIdx, rVLCnt, axis2Idx, axis2Offset, axis1Idx, axis1Offset);
-                    MicroAPI::DataCopy(regData0, reOutAddr, areg);
-                    MicroAPI::DataCopy(regData1, reOutAddr1, areg);
-                    MicroAPI::Copy(regTmp, regData0);
-                    MicroAPI::Copy(regData0, regData1);
-                    MicroAPI::Copy(regData1, regTmp);
-                    MicroAPI::DataCopy(reOutAddr, regData0, areg, mask);
-                    MicroAPI::DataCopy(reOutAddr1, regData1, areg, mask);
+                    auto areg = Reg::CreateAddrReg<RT>(axis3LpIdx, rVLCnt, axis2Idx, axis2Offset, axis1Idx,
+                                                       axis1Offset);
+                    Reg::DataCopy(regData0, reOutAddr, areg);
+                    Reg::DataCopy(regData1, reOutAddr1, areg);
+                    Reg::Copy(regTmp, regData0);
+                    Reg::Copy(regData0, regData1);
+                    Reg::Copy(regData1, regTmp);
+                    Reg::DataCopy(reOutAddr, regData0, areg, mask);
+                    Reg::DataCopy(reOutAddr1, regData1, areg, mask);
                 }
                 reOutAddr1 -= axis2RBOffset;
             }
@@ -550,7 +551,7 @@ __aicore__ inline void StridedSliceBase<T, U>::Reorder4OutputPhase1(__local_mem_
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceBase<T, U>::Reorder4OutputPhase2(__local_mem__ RT *reOutAddr, uint32_t rVLCnt)
+__aicore__ inline void StridedSliceBase<T, U>::Reorder4OutputPhase2(__local_mem__ RT* reOutAddr, uint32_t rVLCnt)
 {
     if (uAxis0_ <= 1) {
         return;
@@ -569,22 +570,22 @@ __aicore__ inline void StridedSliceBase<T, U>::Reorder4OutputPhase2(__local_mem_
 
     __VEC_SCOPE__
     {
-        MicroAPI::MaskReg mask;
-        MicroAPI::RegTensor<RT> regData0;
-        MicroAPI::RegTensor<RT> regData1;
-        MicroAPI::RegTensor<RT> regTmp;
+        Reg::MaskReg mask;
+        Reg::RegTensor<RT> regData0;
+        Reg::RegTensor<RT> regData1;
+        Reg::RegTensor<RT> regTmp;
         for (uint16_t axis0Idx = 0; axis0Idx < halfAxis0; axis0Idx++) {
             uint32_t maskValue = axis0Offset;
             for (uint16_t axis1LpIdx = 0; axis1LpIdx < axis1LpCnt; axis1LpIdx++) {
-                mask = MicroAPI::UpdateMask<RT>(maskValue);
-                auto areg = MicroAPI::CreateAddrReg<RT>(axis0Idx, axis0Offset, axis1LpIdx, rVLCnt);
-                MicroAPI::DataCopy(regData0, reOutAddr, areg);
-                MicroAPI::DataCopy(regData1, reOutAddr1, areg);
-                MicroAPI::Copy(regTmp, regData0);
-                MicroAPI::Copy(regData0, regData1);
-                MicroAPI::Copy(regData1, regTmp);
-                MicroAPI::DataCopy(reOutAddr, regData0, areg, mask);
-                MicroAPI::DataCopy(reOutAddr1, regData1, areg, mask);
+                mask = Reg::UpdateMask<RT>(maskValue);
+                auto areg = Reg::CreateAddrReg<RT>(axis0Idx, axis0Offset, axis1LpIdx, rVLCnt);
+                Reg::DataCopy(regData0, reOutAddr, areg);
+                Reg::DataCopy(regData1, reOutAddr1, areg);
+                Reg::Copy(regTmp, regData0);
+                Reg::Copy(regData0, regData1);
+                Reg::Copy(regData1, regTmp);
+                Reg::DataCopy(reOutAddr, regData0, areg, mask);
+                Reg::DataCopy(reOutAddr1, regData1, areg, mask);
             }
             reOutAddr1 -= axis0RBOffset;
         }
@@ -592,14 +593,14 @@ __aicore__ inline void StridedSliceBase<T, U>::Reorder4OutputPhase2(__local_mem_
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceBase<T, U>::Reorder4Output(__local_mem__ T *outAddr)
+__aicore__ inline void StridedSliceBase<T, U>::Reorder4Output(__local_mem__ T* outAddr)
 {
     if (uAxis0_ * uAxis1_ * uAxis2_ == 1U) {
         return;
     }
 
     uint32_t rVLCnt = (sizeof(T) != sizeof(RT)) ? NUM_TWO * vlCnt_ : vlCnt_;
-    auto reOutAddr = reinterpret_cast<__local_mem__ RT *>(outAddr);
+    auto reOutAddr = reinterpret_cast<__local_mem__ RT*>(outAddr);
     Reorder4OutputPhase1(reOutAddr, rVLCnt);
     Reorder4OutputPhase2(reOutAddr, rVLCnt);
 }

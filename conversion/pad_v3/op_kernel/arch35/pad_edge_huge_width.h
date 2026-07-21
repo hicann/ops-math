@@ -252,16 +252,16 @@ private:
             return;
         }
         if constexpr (sizeof(T) == B64_BYTES) {
-            PadBothSide<AscendC::MicroAPI::RegTraitNumTwo>(src, padParam, addition, additionLen, needPadRight_,
-                                                           padRightLen_, padRightValue_, repeatTimes_);
+            PadBothSide<AscendC::Reg::RegTraitNumTwo>(src, padParam, addition, additionLen, needPadRight_, padRightLen_,
+                                                      padRightValue_, repeatTimes_);
         } else {
-            PadBothSide<AscendC::MicroAPI::RegTraitNumOne>(src, padParam, addition, additionLen, needPadRight_,
-                                                           padRightLen_, padRightValue_, repeatTimes_);
+            PadBothSide<AscendC::Reg::RegTraitNumOne>(src, padParam, addition, additionLen, needPadRight_, padRightLen_,
+                                                      padRightValue_, repeatTimes_);
         }
         SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
     }
 
-    template <const AscendC::MicroAPI::RegTrait& Trait>
+    template <const AscendC::Reg::RegTrait& Trait>
     __aicore__ inline void PadBothSide(LocalTensor<T> dst, PadEdgeHugeParam& padParam, LocalTensor<T> addition,
                                        uint32_t additionLen, uint16_t npr, uint32_t prl, T prv, uint16_t rt)
     {
@@ -284,29 +284,29 @@ private:
 
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<T, Trait> vReg;
-            AscendC::MicroAPI::UnalignReg uReg;
+            AscendC::Reg::RegTensor<T, Trait> vReg;
+            AscendC::Reg::UnalignReg uReg;
 
             for (uint16_t k = 0; k < needPadLeft; k++) {
                 __ubuf__ T* outAddr = dstAddr + padWLOffset;
-                AscendC::MicroAPI::DataCopy(vReg, additionAddr);
-                AscendC::MicroAPI::DataCopyUnAlign(outAddr, vReg, uReg, padLeftSize);
-                AscendC::MicroAPI::DataCopyUnAlignPost(outAddr, uReg, 0);
+                AscendC::Reg::DataCopy(vReg, additionAddr);
+                AscendC::Reg::DataCopyUnAlign(outAddr, vReg, uReg, padLeftSize);
+                AscendC::Reg::DataCopyUnAlignPost(outAddr, uReg, 0);
             }
 
             for (uint16_t j = 0; j < needPadRight; j++) {
                 __ubuf__ T* outAddr = dstAddr + padWROffset;
-                AscendC::MicroAPI::Duplicate(vReg, padRightValue);
+                AscendC::Reg::Duplicate(vReg, padRightValue);
 
                 for (uint16_t k = 0; k < repeatTimes; k++) {
-                    AscendC::MicroAPI::DataCopyUnAlign(outAddr, vReg, uReg, additionLen);
+                    AscendC::Reg::DataCopyUnAlign(outAddr, vReg, uReg, additionLen);
                 }
 
                 for (uint16_t k = 0; k < needPadRightSurplus; k++) {
                     outAddr = dstAddr + padWROffset + repeatTimes * additionLen;
-                    AscendC::MicroAPI::DataCopyUnAlign(outAddr, vReg, uReg, padRightLen);
+                    AscendC::Reg::DataCopyUnAlign(outAddr, vReg, uReg, padRightLen);
                 }
-                AscendC::MicroAPI::DataCopyUnAlignPost(outAddr, uReg, 0);
+                AscendC::Reg::DataCopyUnAlignPost(outAddr, uReg, 0);
             }
         }
     }

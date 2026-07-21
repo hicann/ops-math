@@ -25,9 +25,8 @@ template <typename T, bool isSingleW = false>
 class DynPartWithHMC : public DynPartBase<T> {
 public:
     __aicore__ inline DynPartWithHMC(){};
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR partitions, GM_ADDR y, GM_ADDR yshape, GM_ADDR workspace,
-        const DynPartTilingData* tilingDataPtr, TPipe* pipeIn);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR partitions, GM_ADDR y, GM_ADDR yshape, GM_ADDR workspace,
+                                const DynPartTilingData* tilingDataPtr, TPipe* pipeIn);
     __aicore__ inline void Process();
 
 protected:
@@ -48,9 +47,9 @@ private:
 };
 
 template <typename T, bool isSingleW>
-__aicore__ inline void DynPartWithHMC<T, isSingleW>::Init(
-    GM_ADDR x, GM_ADDR partitions, GM_ADDR y, GM_ADDR yshape, GM_ADDR workspace, const DynPartTilingData* tilingDataPtr,
-    TPipe* pipeIn)
+__aicore__ inline void DynPartWithHMC<T, isSingleW>::Init(GM_ADDR x, GM_ADDR partitions, GM_ADDR y, GM_ADDR yshape,
+                                                          GM_ADDR workspace, const DynPartTilingData* tilingDataPtr,
+                                                          TPipe* pipeIn)
 {
     GM_ADDR usrWorkspace = GetUserWorkspace(workspace); // 获取用户workspace指针
     if (usrWorkspace == nullptr) {
@@ -60,8 +59,8 @@ __aicore__ inline void DynPartWithHMC<T, isSingleW>::Init(
     this->BaseInit(x, partitions, y, yshape, tilingDataPtr, pipeIn);
 
     // ping pong
-    uint32_t leftUBSize =
-        (tdPtr_->totalUBSize - this->coreWSAlign_ * sizeof(uint64_t) * NUM_TWO) / NUM_TWO / BLOCK_SIZE * BLOCK_SIZE;
+    uint32_t leftUBSize = (tdPtr_->totalUBSize - this->coreWSAlign_ * sizeof(uint64_t) * NUM_TWO) / NUM_TWO /
+                          BLOCK_SIZE * BLOCK_SIZE;
     ubPartLen_ = static_cast<uint32_t>(leftUBSize / sizeof(int32_t));
     this->bufPoolSync_.InitBuffer(pR1InQue_, NUM_TWO, leftUBSize);
     pInGM_.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(partitions));
@@ -84,8 +83,8 @@ __aicore__ inline void DynPartWithHMC<T, isSingleW>::Process()
             this->SinglePartProcess(this->pBaseQue_, begPart, endPart);
         }
         auto ubPartBase = this->pBaseQue_.template DeQue<uint64_t>();
-        this->RefreshOutputShapes(
-            ubPartBase, NUM_PARTITION_UNIT, static_cast<int64_t>(pLpIdx * NUM_PARTITION_UNIT * SHAPE_GAP));
+        this->RefreshOutputShapes(ubPartBase, NUM_PARTITION_UNIT,
+                                  static_cast<int64_t>(pLpIdx * NUM_PARTITION_UNIT * SHAPE_GAP));
         this->pBaseQue_.FreeTensor(ubPartBase);
     }
     if (partLeft > 0) {
@@ -98,15 +97,15 @@ __aicore__ inline void DynPartWithHMC<T, isSingleW>::Process()
             this->SinglePartProcess(this->pBaseQue_, begPart, endPart);
         }
         auto ubPartBase = this->pBaseQue_.template DeQue<uint64_t>();
-        this->RefreshOutputShapes(
-            ubPartBase, partLeft, static_cast<int64_t>(partLpCnt * NUM_PARTITION_UNIT * SHAPE_GAP));
+        this->RefreshOutputShapes(ubPartBase, partLeft,
+                                  static_cast<int64_t>(partLpCnt * NUM_PARTITION_UNIT * SHAPE_GAP));
         this->pBaseQue_.FreeTensor(ubPartBase);
     }
 }
 
 template <typename T, bool isSingleW>
-__aicore__ inline void DynPartWithHMC<T, isSingleW>::InnerProcess4CalcPartCnt(
-    uint32_t ubPartLen, int32_t begPart, int32_t endPart)
+__aicore__ inline void DynPartWithHMC<T, isSingleW>::InnerProcess4CalcPartCnt(uint32_t ubPartLen, int32_t begPart,
+                                                                              int32_t endPart)
 {
     auto ubPart = pR1InQue_.template DeQue<int32_t>();
     auto ubPartCnt = this->pCntQue_.template DeQue<uint64_t>();
@@ -125,23 +124,23 @@ __aicore__ inline void DynPartWithHMC<T, isSingleW>::InnerProcess4CalcPartCnt(
             RegTensor<int32_t> parts;
             RegTensor<int32_t> midPartCnt;
             RegTensor<int32_t> partCnt;
-            MicroAPI::Duplicate(partCnt, int32_t(0));
+            Reg::Duplicate(partCnt, int32_t(0));
             RegTensor<int32_t> allTensor;
-            MicroAPI::Duplicate(allTensor, int32_t(1));
+            Reg::Duplicate(allTensor, int32_t(1));
             MaskReg mask;
             MaskReg cmpMask;
-            MaskReg vl1Mask = CreateMask<int32_t, MicroAPI::MaskPattern::VL1>();
+            MaskReg vl1Mask = CreateMask<int32_t, Reg::MaskPattern::VL1>();
 
             for (uint16_t i = 0; i < pLpCntVF; ++i) {
                 mask = UpdateMask<int32_t>(partSize);
-                MicroAPI::DataCopy(parts, ptrPart + i * this->b32VLSize_);
-                MicroAPI::CompareScalar(cmpMask, parts, partIdx, mask);
-                MicroAPI::ReduceSum(midPartCnt, allTensor, cmpMask);
-                MicroAPI::Add(partCnt, partCnt, midPartCnt, vl1Mask);
+                Reg::DataCopy(parts, ptrPart + i * this->b32VLSize_);
+                Reg::CompareScalar(cmpMask, parts, partIdx, mask);
+                Reg::ReduceSum(midPartCnt, allTensor, cmpMask);
+                Reg::Add(partCnt, partCnt, midPartCnt, vl1Mask);
             }
             // partCnt must be less than max int32_t
-            MicroAPI::DataCopy<int32_t, MicroAPI::StoreDist::DIST_FIRST_ELEMENT_B32>(
-                ptrPartMid + modPartIdx * dFactor, partCnt, vl1Mask);
+            Reg::DataCopy<int32_t, Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(ptrPartMid + modPartIdx * dFactor, partCnt,
+                                                                           vl1Mask);
         }
     }
     Add(ubPartCnt, ubPartCnt, ubPartBase, this->coreWS_);
@@ -174,8 +173,8 @@ __aicore__ inline void DynPartWithHMC<T, isSingleW>::CalcPartCnt(int32_t begPart
     if (partLeft > 0) {
         auto ubPart = pR1InQue_.template AllocTensor<int32_t>();
         DataCopyExtParams copyParams{1, static_cast<uint32_t>(partLeft * sizeof(int32_t)), 0, 0, 0};
-        DataCopyPad(
-            ubPart, pInGM_[this->blockIdx_ * tdPtr_->hMSize + partLpCnt * ubPartLen_], copyParams, copyPadParams);
+        DataCopyPad(ubPart, pInGM_[this->blockIdx_ * tdPtr_->hMSize + partLpCnt * ubPartLen_], copyParams,
+                    copyPadParams);
         pR1InQue_.EnQue(ubPart);
         InnerProcess4CalcPartCnt(partLeft, begPart, endPart);
     }

@@ -35,8 +35,8 @@ private:
     using RangeType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>;
     using MaskType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), T, int32_t>;
     using IdxType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>;
-    using CastType_ =
-        std::conditional_t<sizeof(T) == 1, std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
+    using CastType_ = std::conditional_t<sizeof(T) == 1,
+                                         std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
     TPipe* pipe_ = nullptr;
     GlobalTensor<T> inputGm_;
     GlobalTensor<T> diagonalGm_;
@@ -60,10 +60,7 @@ private:
     uint64_t ubFactor_{0};
 
 public:
-    __aicore__ inline MatrixSetDiagNoCutWScatter(TPipe* pipe)
-    {
-        pipe_ = pipe;
-    }
+    __aicore__ inline MatrixSetDiagNoCutWScatter(TPipe* pipe) { pipe_ = pipe; }
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR diagonal, GM_ADDR y, const MatrixSetDiagTilingData* tilingData)
     {
@@ -85,9 +82,8 @@ public:
         pipe_->InitBuffer(
             inQue_, BUF_NUM,
             Ops::Base::CeilAlign(ubFactor_ * tailAxisDataSize_, static_cast<uint64_t>(ALIGN_NUM)) * sizeof(T));
-        pipe_->InitBuffer(
-            diagQue_, BUF_NUM,
-            Ops::Base::CeilAlign(ubFactor_ * diagLen_, static_cast<uint64_t>(ALIGN_NUM)) * sizeof(T));
+        pipe_->InitBuffer(diagQue_, BUF_NUM,
+                          Ops::Base::CeilAlign(ubFactor_ * diagLen_, static_cast<uint64_t>(ALIGN_NUM)) * sizeof(T));
     }
 
     __aicore__ inline void Process()
@@ -113,9 +109,8 @@ public:
         }
     }
 
-    __aicore__ inline void CopyIn(
-        const uint64_t inputAddr, const uint64_t diagAddr, const uint32_t inputProcessNum,
-        const uint32_t diagProcessNum)
+    __aicore__ inline void CopyIn(const uint64_t inputAddr, const uint64_t diagAddr, const uint32_t inputProcessNum,
+                                  const uint32_t diagProcessNum)
     {
         LocalTensor<T> inLocal = inQue_.AllocTensor<T>();
         LocalTensor<T> diagLocal = diagQue_.AllocTensor<T>();
@@ -132,8 +127,8 @@ public:
         diagQue_.EnQue(diagLocal);
     }
 
-    __aicore__ inline void ScatterAndCopyOut(
-        const uint64_t outAddr, uint32_t diagProcessNum, const uint32_t outProcessNum)
+    __aicore__ inline void ScatterAndCopyOut(const uint64_t outAddr, uint32_t diagProcessNum,
+                                             const uint32_t outProcessNum)
     {
         uint32_t vlLen = vlLen_;
         if constexpr (sizeof(T) == sizeof(int8_t)) {
@@ -155,33 +150,33 @@ public:
         diagQue_.FreeTensor(diagLocal);
     }
 
-    __aicore__ inline void VFProcess(
-        __local_mem__ T* xLocalPtr, __local_mem__ T* diagPtr, uint32_t diagNum, uint16_t loopNum, uint32_t vlLen)
+    __aicore__ inline void VFProcess(__local_mem__ T* xLocalPtr, __local_mem__ T* diagPtr, uint32_t diagNum,
+                                     uint16_t loopNum, uint32_t vlLen)
     {
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T> diagReg;
-            MicroAPI::RegTensor<RangeType_> indexReg;
-            MicroAPI::RegTensor<RangeType_> offsetReg1;
-            MicroAPI::RegTensor<RangeType_> offsetReg2;
-            MicroAPI::RegTensor<T> diagCastReg;
-            MicroAPI::MaskReg mask;
+            Reg::RegTensor<T> diagReg;
+            Reg::RegTensor<RangeType_> indexReg;
+            Reg::RegTensor<RangeType_> offsetReg1;
+            Reg::RegTensor<RangeType_> offsetReg2;
+            Reg::RegTensor<T> diagCastReg;
+            Reg::MaskReg mask;
             for (uint16_t i = 0; i < loopNum; i++) {
-                mask = MicroAPI::UpdateMask<MaskType_>(diagNum);
-                MicroAPI::LoadAlign(diagReg, diagPtr + i * vlLen);
-                MicroAPI::Arange(indexReg, static_cast<RangeType_>(i * vlLen));
-                MicroAPI::Duplicate(offsetReg1, diagLen_);
-                MicroAPI::Div(offsetReg1, indexReg, offsetReg1, mask);
-                MicroAPI::Muls(offsetReg2, offsetReg1, diagLen_, mask);
-                MicroAPI::Sub(offsetReg2, indexReg, offsetReg2, mask);
-                MicroAPI::Muls(indexReg, offsetReg2, xColNum_ + 1, mask);
-                MicroAPI::Muls(offsetReg1, offsetReg1, xColNum_ * xRowNum_, mask);
-                MicroAPI::Add(indexReg, indexReg, offsetReg1, mask);
+                mask = Reg::UpdateMask<MaskType_>(diagNum);
+                Reg::LoadAlign(diagReg, diagPtr + i * vlLen);
+                Reg::Arange(indexReg, static_cast<RangeType_>(i * vlLen));
+                Reg::Duplicate(offsetReg1, diagLen_);
+                Reg::Div(offsetReg1, indexReg, offsetReg1, mask);
+                Reg::Muls(offsetReg2, offsetReg1, diagLen_, mask);
+                Reg::Sub(offsetReg2, indexReg, offsetReg2, mask);
+                Reg::Muls(indexReg, offsetReg2, xColNum_ + 1, mask);
+                Reg::Muls(offsetReg1, offsetReg1, xColNum_ * xRowNum_, mask);
+                Reg::Add(indexReg, indexReg, offsetReg1, mask);
                 if constexpr (sizeof(T) != sizeof(int8_t)) {
-                    MicroAPI::Scatter(xLocalPtr, diagReg, (MicroAPI::RegTensor<IdxType_>&)indexReg, mask);
+                    Reg::Scatter(xLocalPtr, diagReg, (Reg::RegTensor<IdxType_>&)indexReg, mask);
                 } else {
-                    MicroAPI::UnPack((MicroAPI::RegTensor<CastType_>&)diagCastReg, diagReg);
-                    MicroAPI::Scatter(xLocalPtr, diagCastReg, (MicroAPI::RegTensor<IdxType_>&)indexReg, mask);
+                    Reg::UnPack((Reg::RegTensor<CastType_>&)diagCastReg, diagReg);
+                    Reg::Scatter(xLocalPtr, diagCastReg, (Reg::RegTensor<IdxType_>&)indexReg, mask);
                 }
             }
         }

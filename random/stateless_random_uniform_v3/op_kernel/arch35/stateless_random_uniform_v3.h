@@ -20,7 +20,8 @@ using namespace AscendC;
 template <typename T>
 class StatelessRandomUniformV3 : public RandomKernelBase::RandomKernelBaseOp {
 public:
-    __aicore__ inline StatelessRandomUniformV3(TPipe* pipeIn, const RandomUnifiedTilingDataStruct* __restrict tilingData)
+    __aicore__ inline StatelessRandomUniformV3(TPipe* pipeIn,
+                                               const RandomUnifiedTilingDataStruct* __restrict tilingData)
         : RandomKernelBaseOp(tilingData), pipe_(pipeIn){};
     __aicore__ inline void Init(GM_ADDR y, GM_ADDR key, GM_ADDR counter, GM_ADDR from, GM_ADDR to);
     __aicore__ inline void Process();
@@ -52,17 +53,18 @@ private:
     float from_{0};
     float to_{0};
 
-    static constexpr AscendC::MicroAPI::CastTrait castTraitB16ToB32 = {
-        AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::UNKNOWN,
-        AscendC::MicroAPI::MaskMergeMode::ZEROING, AscendC::RoundMode::UNKNOWN};
-    static constexpr AscendC::MicroAPI::CastTrait castTraitB32ToB16 = {
-        AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::NO_SAT,
-        AscendC::MicroAPI::MaskMergeMode::ZEROING, AscendC::RoundMode::CAST_RINT};
+    static constexpr AscendC::Reg::CastTrait castTraitB16ToB32 = {
+        AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::UNKNOWN, AscendC::Reg::MaskMergeMode::ZEROING,
+        AscendC::RoundMode::UNKNOWN};
+    static constexpr AscendC::Reg::CastTrait castTraitB32ToB16 = {
+        AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::NO_SAT, AscendC::Reg::MaskMergeMode::ZEROING,
+        AscendC::RoundMode::CAST_RINT};
 };
 
 template <typename T>
-__aicore__ inline void StatelessRandomUniformV3Simd::StatelessRandomUniformV3<T>::Init(
-    GM_ADDR y, GM_ADDR key, GM_ADDR counter, GM_ADDR from, GM_ADDR to)
+__aicore__ inline void StatelessRandomUniformV3Simd::StatelessRandomUniformV3<T>::Init(GM_ADDR y, GM_ADDR key,
+                                                                                       GM_ADDR counter, GM_ADDR from,
+                                                                                       GM_ADDR to)
 {
     // 基类完成：blockIdx_、curCoreProNum_、ubRepeatimes_ 初始化
     // 注意：VarsInit 也会从 tiling_ 拷贝 key/counter，但 tiling 中已置零，
@@ -99,10 +101,11 @@ __aicore__ inline void StatelessRandomUniformV3Simd::StatelessRandomUniformV3<T>
     to_ = toGm_(0);
 
     // V3 特有：Buffer 初始化
-    pipe_->InitBuffer(outQueY_, BUFFER_NUM,
+    pipe_->InitBuffer(
+        outQueY_, BUFFER_NUM,
         Ops::Base::CeilAlign(ubTilingSize_ * static_cast<uint32_t>(sizeof(T)), static_cast<uint32_t>(BLOCK_SIZE)));
-    pipe_->InitBuffer(philoxQueBuf_,
-        Ops::Base::CeilAlign(ubTilingSize_ * static_cast<uint32_t>(sizeof(uint32_t)), static_cast<uint32_t>(BLOCK_SIZE)));
+    pipe_->InitBuffer(philoxQueBuf_, Ops::Base::CeilAlign(ubTilingSize_ * static_cast<uint32_t>(sizeof(uint32_t)),
+                                                          static_cast<uint32_t>(BLOCK_SIZE)));
 }
 
 template <typename T>
@@ -141,47 +144,46 @@ __aicore__ inline void StatelessRandomUniformV3Simd::StatelessRandomUniformV3<T>
     float offsetVal = from_;
     uint32_t Count = calCount;
     // bf16 经 UNPACK 后占 32-bit 寄存器槽位，loopsize 按 float 计算；float/half 按自身 sizeof 计算
-    constexpr uint32_t elemSize = (AscendC::IsSameType<T, float>::value || AscendC::IsSameType<T, half>::value)
-                                  ? sizeof(T) : sizeof(float);
+    constexpr uint32_t elemSize = (AscendC::IsSameType<T, float>::value || AscendC::IsSameType<T, half>::value) ?
+                                      sizeof(T) :
+                                      sizeof(float);
     uint32_t loopsize = Ops::Base::GetVRegSize() / elemSize;
     uint16_t looptimes = Ops::Base::CeilDiv(Count, loopsize);
     __local_mem__ T* yOutputAddr = (__local_mem__ T*)yOutput.GetPhyAddr();
     __VEC_SCOPE__
     {
         if constexpr (AscendC::IsSameType<T, float>::value || AscendC::IsSameType<T, half>::value) {
-            MicroAPI::RegTensor<T> vReg0;
-            MicroAPI::RegTensor<T> vReg1;
-            MicroAPI::RegTensor<T> vReg2;
-            MicroAPI::MaskReg curMask;
-            MicroAPI::AddrReg aReg;
+            Reg::RegTensor<T> vReg0;
+            Reg::RegTensor<T> vReg1;
+            Reg::RegTensor<T> vReg2;
+            Reg::MaskReg curMask;
+            Reg::AddrReg aReg;
             for (uint16_t i = 0; i < looptimes; i++) {
-                curMask = AscendC::MicroAPI::UpdateMask<T>(Count);
-                aReg = AscendC::MicroAPI::CreateAddrReg<T>(i, loopsize);
-                AscendC::MicroAPI::DataCopy(vReg0, yOutputAddr, aReg);
-                AscendC::MicroAPI::Muls(vReg1, vReg0, rangeVal, curMask);
-                AscendC::MicroAPI::Adds(vReg2, vReg1, offsetVal, curMask);
-                AscendC::MicroAPI::DataCopy(yOutputAddr, vReg2, aReg, curMask);
+                curMask = AscendC::Reg::UpdateMask<T>(Count);
+                aReg = AscendC::Reg::CreateAddrReg<T>(i, loopsize);
+                AscendC::Reg::DataCopy(vReg0, yOutputAddr, aReg);
+                AscendC::Reg::Muls(vReg1, vReg0, rangeVal, curMask);
+                AscendC::Reg::Adds(vReg2, vReg1, offsetVal, curMask);
+                AscendC::Reg::DataCopy(yOutputAddr, vReg2, aReg, curMask);
             }
         } else {
             // bfloat16 路径：在 float32 中计算，与 V2 链对 bf16 selfRef 走 float32 路径一致
-            MicroAPI::RegTensor<T> vReg0;
-            MicroAPI::RegTensor<float> vReg1;
-            MicroAPI::RegTensor<float> vReg2;
-            MicroAPI::RegTensor<float> xFp32Inputvf;
-            MicroAPI::RegTensor<T> vRegOut;
-            MicroAPI::MaskReg curMask;
-            MicroAPI::AddrReg aReg;
+            Reg::RegTensor<T> vReg0;
+            Reg::RegTensor<float> vReg1;
+            Reg::RegTensor<float> vReg2;
+            Reg::RegTensor<float> xFp32Inputvf;
+            Reg::RegTensor<T> vRegOut;
+            Reg::MaskReg curMask;
+            Reg::AddrReg aReg;
             for (uint16_t i = 0; i < looptimes; i++) {
-                curMask = AscendC::MicroAPI::UpdateMask<float>(Count);
-                aReg = AscendC::MicroAPI::CreateAddrReg<T>(i, loopsize);
-                AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::LoadDist::DIST_UNPACK_B16>(
-                    vReg0, yOutputAddr, aReg);
-                AscendC::MicroAPI::Cast<float, T, castTraitB16ToB32>(xFp32Inputvf, vReg0, curMask);
-                AscendC::MicroAPI::Muls(vReg1, xFp32Inputvf, rangeVal, curMask);
-                AscendC::MicroAPI::Adds(vReg2, vReg1, offsetVal, curMask);
-                AscendC::MicroAPI::Cast<T, float, castTraitB32ToB16>(vRegOut, vReg2, curMask);
-                AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::StoreDist::DIST_PACK_B32>(
-                    yOutputAddr, vRegOut, aReg, curMask);
+                curMask = AscendC::Reg::UpdateMask<float>(Count);
+                aReg = AscendC::Reg::CreateAddrReg<T>(i, loopsize);
+                AscendC::Reg::DataCopy<T, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(vReg0, yOutputAddr, aReg);
+                AscendC::Reg::Cast<float, T, castTraitB16ToB32>(xFp32Inputvf, vReg0, curMask);
+                AscendC::Reg::Muls(vReg1, xFp32Inputvf, rangeVal, curMask);
+                AscendC::Reg::Adds(vReg2, vReg1, offsetVal, curMask);
+                AscendC::Reg::Cast<T, float, castTraitB32ToB16>(vRegOut, vReg2, curMask);
+                AscendC::Reg::DataCopy<T, AscendC::Reg::StoreDist::DIST_PACK_B32>(yOutputAddr, vRegOut, aReg, curMask);
             }
         }
     }
@@ -196,8 +198,9 @@ __aicore__ inline void StatelessRandomUniformV3Simd::StatelessRandomUniformV3<T>
     float toVal = to_;
     float negFromVal = -from_;
     uint32_t Count = calCount;
-    constexpr uint32_t elemSize = (AscendC::IsSameType<T, float>::value || AscendC::IsSameType<T, half>::value)
-                                  ? sizeof(T) : sizeof(float);
+    constexpr uint32_t elemSize = (AscendC::IsSameType<T, float>::value || AscendC::IsSameType<T, half>::value) ?
+                                      sizeof(T) :
+                                      sizeof(float);
     uint32_t loopsize = Ops::Base::GetVRegSize() / elemSize;
     uint16_t looptimes = Ops::Base::CeilDiv(Count, loopsize);
     __local_mem__ T* yOutputAddr = (__local_mem__ T*)yOutput.GetPhyAddr();
@@ -205,39 +208,37 @@ __aicore__ inline void StatelessRandomUniformV3Simd::StatelessRandomUniformV3<T>
     __VEC_SCOPE__
     {
         if constexpr (AscendC::IsSameType<T, float>::value || AscendC::IsSameType<T, half>::value) {
-            MicroAPI::RegTensor<T> vReg0, vReg1, vReg2, vReg3;
-            MicroAPI::MaskReg curMask;
-            MicroAPI::AddrReg aReg;
+            Reg::RegTensor<T> vReg0, vReg1, vReg2, vReg3;
+            Reg::MaskReg curMask;
+            Reg::AddrReg aReg;
             for (uint16_t i = 0; i < looptimes; i++) {
-                curMask = AscendC::MicroAPI::UpdateMask<T>(Count);
-                aReg = AscendC::MicroAPI::CreateAddrReg<T>(i, loopsize);
-                AscendC::MicroAPI::DataCopy(vReg0, yOutputAddr, aReg);
-                AscendC::MicroAPI::Muls(vReg1, vReg0, fromVal, curMask);
-                AscendC::MicroAPI::Adds(vReg2, vReg1, negFromVal, curMask);
-                AscendC::MicroAPI::Muls(vReg3, vReg0, toVal, curMask);
-                AscendC::MicroAPI::Sub(vReg1, vReg3, vReg2, curMask);
-                AscendC::MicroAPI::DataCopy(yOutputAddr, vReg1, aReg, curMask);
+                curMask = AscendC::Reg::UpdateMask<T>(Count);
+                aReg = AscendC::Reg::CreateAddrReg<T>(i, loopsize);
+                AscendC::Reg::DataCopy(vReg0, yOutputAddr, aReg);
+                AscendC::Reg::Muls(vReg1, vReg0, fromVal, curMask);
+                AscendC::Reg::Adds(vReg2, vReg1, negFromVal, curMask);
+                AscendC::Reg::Muls(vReg3, vReg0, toVal, curMask);
+                AscendC::Reg::Sub(vReg1, vReg3, vReg2, curMask);
+                AscendC::Reg::DataCopy(yOutputAddr, vReg1, aReg, curMask);
             }
         } else {
-            MicroAPI::RegTensor<T> vReg0;
-            MicroAPI::RegTensor<float> xFp32Inputvf;
-            MicroAPI::RegTensor<float> vReg1, vReg2, vReg3;
-            MicroAPI::RegTensor<T> vRegOut;
-            MicroAPI::MaskReg curMask;
-            MicroAPI::AddrReg aReg;
+            Reg::RegTensor<T> vReg0;
+            Reg::RegTensor<float> xFp32Inputvf;
+            Reg::RegTensor<float> vReg1, vReg2, vReg3;
+            Reg::RegTensor<T> vRegOut;
+            Reg::MaskReg curMask;
+            Reg::AddrReg aReg;
             for (uint16_t i = 0; i < looptimes; i++) {
-                curMask = AscendC::MicroAPI::UpdateMask<float>(Count);
-                aReg = AscendC::MicroAPI::CreateAddrReg<T>(i, loopsize);
-                AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::LoadDist::DIST_UNPACK_B16>(
-                    vReg0, yOutputAddr, aReg);
-                AscendC::MicroAPI::Cast<float, T, castTraitB16ToB32>(xFp32Inputvf, vReg0, curMask);
-                AscendC::MicroAPI::Muls(vReg1, xFp32Inputvf, fromVal, curMask);
-                AscendC::MicroAPI::Adds(vReg2, vReg1, negFromVal, curMask);
-                AscendC::MicroAPI::Muls(vReg3, xFp32Inputvf, toVal, curMask);
-                AscendC::MicroAPI::Sub(vReg1, vReg3, vReg2, curMask);
-                AscendC::MicroAPI::Cast<T, float, castTraitB32ToB16>(vRegOut, vReg1, curMask);
-                AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::StoreDist::DIST_PACK_B32>(
-                    yOutputAddr, vRegOut, aReg, curMask);
+                curMask = AscendC::Reg::UpdateMask<float>(Count);
+                aReg = AscendC::Reg::CreateAddrReg<T>(i, loopsize);
+                AscendC::Reg::DataCopy<T, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(vReg0, yOutputAddr, aReg);
+                AscendC::Reg::Cast<float, T, castTraitB16ToB32>(xFp32Inputvf, vReg0, curMask);
+                AscendC::Reg::Muls(vReg1, xFp32Inputvf, fromVal, curMask);
+                AscendC::Reg::Adds(vReg2, vReg1, negFromVal, curMask);
+                AscendC::Reg::Muls(vReg3, xFp32Inputvf, toVal, curMask);
+                AscendC::Reg::Sub(vReg1, vReg3, vReg2, curMask);
+                AscendC::Reg::Cast<T, float, castTraitB32ToB16>(vRegOut, vReg1, curMask);
+                AscendC::Reg::DataCopy<T, AscendC::Reg::StoreDist::DIST_PACK_B32>(yOutputAddr, vRegOut, aReg, curMask);
             }
         }
     }
@@ -247,8 +248,7 @@ template <typename T>
 __aicore__ inline void StatelessRandomUniformV3Simd::StatelessRandomUniformV3<T>::CopyOut()
 {
     LocalTensor<T> yOutput = outQueY_.DeQue<T>();
-    RandomKernelBase::CopyOut(yOutput, outputGm_, 1,
-        static_cast<uint32_t>(currUbTilingSize_ * sizeof(T)), currOffSet_);
+    RandomKernelBase::CopyOut(yOutput, outputGm_, 1, static_cast<uint32_t>(currUbTilingSize_ * sizeof(T)), currOffSet_);
     outQueY_.FreeTensor(yOutput);
 }
 } // namespace StatelessRandomUniformV3Simd

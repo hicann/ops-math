@@ -348,14 +348,14 @@ private:
             SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
         }
         if constexpr (sizeof(T) == B64_BYTES) {
-            PadRigthSide<AscendC::MicroAPI::RegTraitNumTwo>(src[additionOffset_], padParam);
+            PadRigthSide<AscendC::Reg::RegTraitNumTwo>(src[additionOffset_], padParam);
         } else {
-            PadRigthSide<AscendC::MicroAPI::RegTraitNumOne>(src[additionOffset_], padParam);
+            PadRigthSide<AscendC::Reg::RegTraitNumOne>(src[additionOffset_], padParam);
         }
         hasPadding = true;
     }
 
-    template <const AscendC::MicroAPI::RegTrait& Trait>
+    template <const AscendC::Reg::RegTrait& Trait>
     __aicore__ inline void PadRigthSide(const LocalTensor<T>& dst, PadNormalParam& padParam)
     {
         __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
@@ -376,48 +376,47 @@ private:
 
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<T, Trait> vReg;
-            AscendC::MicroAPI::RegTensor<T, Trait> vRegTmp;
-            AscendC::MicroAPI::MaskReg pMask;
-            AscendC::MicroAPI::MaskReg outMask;
-            AscendC::MicroAPI::MaskReg
-                maskAll = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL, Trait>();
+            AscendC::Reg::RegTensor<T, Trait> vReg;
+            AscendC::Reg::RegTensor<T, Trait> vRegTmp;
+            AscendC::Reg::MaskReg pMask;
+            AscendC::Reg::MaskReg outMask;
+            AscendC::Reg::MaskReg maskAll = AscendC::Reg::CreateMask<T, AscendC::Reg::MaskPattern::ALL, Trait>();
 
             uint32_t noPadLen = noPadRightSize;
             uint32_t outLen = BLK_ELEMS;
-            pMask = AscendC::MicroAPI::UpdateMask<T, Trait>(noPadLen);
-            AscendC::MicroAPI::MaskNot(pMask, pMask, maskAll);
-            outMask = AscendC::MicroAPI::UpdateMask<T, Trait>(outLen);
+            pMask = AscendC::Reg::UpdateMask<T, Trait>(noPadLen);
+            AscendC::Reg::MaskNot(pMask, pMask, maskAll);
+            outMask = AscendC::Reg::UpdateMask<T, Trait>(outLen);
             if constexpr (UB_AXES == 2) {
                 for (uint16_t n = 0; n < dimNNum; n++) {
-                    AscendC::MicroAPI::DataCopy(vReg, dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW);
+                    AscendC::Reg::DataCopy(vReg, dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW);
                     vRegTmp = vReg;
-                    Duplicate<T, AscendC::MicroAPI::MaskMergeMode::ZEROING, T>(vRegTmp, value, pMask);
+                    Duplicate<T, AscendC::Reg::MaskMergeMode::ZEROING, T>(vRegTmp, value, pMask);
                     Copy(vReg, vRegTmp, pMask);
-                    AscendC::MicroAPI::DataCopy(dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW, vReg, outMask);
+                    AscendC::Reg::DataCopy(dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW, vReg, outMask);
                 }
             } else if constexpr (UB_AXES == 3) {
                 for (uint16_t n = 0; n < dimNNum; n++) {
                     for (uint16_t c = 0; c < dimCNum; c++) {
-                        AscendC::MicroAPI::DataCopy(vReg,
-                                                    dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW + c * padHW);
+                        AscendC::Reg::DataCopy(vReg,
+                                               dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW + c * padHW);
                         vRegTmp = vReg;
-                        Duplicate<T, AscendC::MicroAPI::MaskMergeMode::ZEROING, T>(vRegTmp, value, pMask);
+                        Duplicate<T, AscendC::Reg::MaskMergeMode::ZEROING, T>(vRegTmp, value, pMask);
                         Copy(vReg, vRegTmp, pMask);
-                        AscendC::MicroAPI::DataCopy(dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW + c * padHW,
-                                                    vReg, outMask);
+                        AscendC::Reg::DataCopy(dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW + c * padHW, vReg,
+                                               outMask);
                     }
                 }
             } else {
                 for (uint16_t n = 0; n < dimNNum; n++) {
                     for (uint16_t c = 0; c < dimCNum; c++) {
                         for (uint16_t h = 0; h < dimHNum; h++) {
-                            AscendC::MicroAPI::DataCopy(
+                            AscendC::Reg::DataCopy(
                                 vReg, dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW + c * padHW + h * padW);
                             vRegTmp = vReg;
-                            Duplicate<T, AscendC::MicroAPI::MaskMergeMode::ZEROING, T>(vRegTmp, value, pMask);
+                            Duplicate<T, AscendC::Reg::MaskMergeMode::ZEROING, T>(vRegTmp, value, pMask);
                             Copy(vReg, vRegTmp, pMask);
-                            AscendC::MicroAPI::DataCopy(
+                            AscendC::Reg::DataCopy(
                                 dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW + c * padHW + h * padW, vReg,
                                 outMask);
                         }
