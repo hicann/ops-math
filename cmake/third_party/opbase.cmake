@@ -7,7 +7,7 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
-set(OPBASE_TAG_ID b70f5ef9eb67f02183b293cc4066cde734c8a070)
+set(OPBASE_TAG_ID cb63c8e2debd0724db73b85f9bba1c7d97a1fc47)
 
 if(EXISTS "${PROJECT_SOURCE_DIR}/../../ops-base")
   get_filename_component(OPBASE_SOURCE_PATH
