@@ -1083,16 +1083,31 @@ assemble_cmake_args() {
   if [[ -n $COMPUTE_UNIT ]]; then
     COMPUTE_UNIT=$(echo "$COMPUTE_UNIT" | tr '[:upper:]' '[:lower:]')
     found=0
+    best_match=""
+    best_match_len=0
     for support_unit in "${SUPPORT_COMPUTE_UNIT_SHORT[@]}"; do
       if [[ "$COMPUTE_UNIT" == "$support_unit" ]]; then
         COMPUTE_UNIT_SHORT=$support_unit
         found=1
         break
       fi
+      if [[ "$support_unit" == "$COMPUTE_UNIT"* ]] || [[ "$COMPUTE_UNIT" == "$support_unit"* ]]; then
+        local match_len=${#support_unit}
+        if [[ $match_len -gt $best_match_len ]]; then
+          best_match=$support_unit
+          best_match_len=$match_len
+        fi
+      fi
     done
     if [[ $found -eq 0 ]]; then
-      echo "soc only support : ${SUPPORT_COMPUTE_UNIT_SHORT[@]}"
-      exit 1
+      if [[ -n "$best_match" ]]; then
+        COMPUTE_UNIT_SHORT=$best_match
+        COMPUTE_UNIT=$best_match
+        found=1
+      else
+        echo "soc only support : ${SUPPORT_COMPUTE_UNIT_SHORT[@]}"
+        exit 1
+      fi
     fi
     echo "COMPUTE_UNIT: ${COMPUTE_UNIT}"
     CMAKE_ARGS="$CMAKE_ARGS -DASCEND_COMPUTE_UNIT=$COMPUTE_UNIT"
