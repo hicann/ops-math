@@ -18,9 +18,9 @@
 #include "coalesce_sparse.h"
 #endif
 
-extern "C" __global__ __aicore__ void coalesce_sparse(
-    GM_ADDR unique_len, GM_ADDR unique_indices, GM_ADDR indices, GM_ADDR values, GM_ADDR new_indices, GM_ADDR new_value,
-    GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void coalesce_sparse(GM_ADDR unique_len, GM_ADDR unique_indices, GM_ADDR indices,
+                                                      GM_ADDR values, GM_ADDR new_indices, GM_ADDR new_value,
+                                                      GM_ADDR workspace, GM_ADDR tiling)
 {
     GET_TILING_DATA(tilingData, tiling);
     const CoalesceSparseTilingData* __restrict tilingDevice = &tilingData;
@@ -51,7 +51,7 @@ extern "C" __global__ __aicore__ void coalesce_sparse(
         KernelCoalesceSparseSimt<int64_t, int32_t, half> op;
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
         op.Process();
-    } 
+    }
 #elif __CCE_AICORE__ == 310 && ORIG_DTYPE_UNIQUE_INDICES == DT_INT32 && ORIG_DTYPE_INDICES == DT_INT64
     if (TILING_KEY_IS(106)) {
         KernelCoalesceSparseSimt<int32_t, int64_t, float> op;
@@ -123,7 +123,7 @@ extern "C" __global__ __aicore__ void coalesce_sparse(
         KernelCoalesceSparse<int32_t, int64_t, half> op;
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
         op.Process();
-    } 
+    }
 #elif __CCE_AICORE__ == 220 && ORIG_DTYPE_UNIQUE_INDICES == DT_INT32 && ORIG_DTYPE_INDICES == DT_INT32
     if (TILING_KEY_IS(9)) {
         KernelCoalesceSparse<int32_t, int32_t, float> op;

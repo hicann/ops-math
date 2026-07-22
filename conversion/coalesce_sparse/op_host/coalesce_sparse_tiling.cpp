@@ -26,7 +26,7 @@ constexpr uint64_t FP32_ID = 0;
 constexpr uint64_t FP16_ID = 2;
 constexpr uint64_t KEY_MODE1 = 6;
 constexpr uint64_t KEY_MODE2 = 3;
-constexpr uint64_t ASCEND950_SIMT_TILING_OFFSET = 100; 
+constexpr uint64_t ASCEND950_SIMT_TILING_OFFSET = 100;
 constexpr uint64_t AILGN256 = 256;
 constexpr uint64_t AILGN32 = 32;
 constexpr uint64_t MAXRPTIME = 4096;
@@ -38,10 +38,10 @@ namespace optiling {
 class CoalesceSparseTiling {
 public:
     explicit CoalesceSparseTiling(gert::TilingContext* context) : TilingContext(context) {};
-    void TilingKeyCalcu(ge::DataType uniqueIndicesDtype, ge::DataType indicesDtype, 
-                        ge::DataType valuesDtype);
-    ge::graphStatus TilingDataCalcu(ge::DataType uniqueIndicesDtype, ge::DataType indicesDtype, 
-                         ge::DataType valuesDtype, const gert::Shape &indicesShape, const gert::Shape &valueShape);
+    void TilingKeyCalcu(ge::DataType uniqueIndicesDtype, ge::DataType indicesDtype, ge::DataType valuesDtype);
+    ge::graphStatus TilingDataCalcu(ge::DataType uniqueIndicesDtype, ge::DataType indicesDtype,
+                                    ge::DataType valuesDtype, const gert::Shape& indicesShape,
+                                    const gert::Shape& valueShape);
     ge::graphStatus Init();
     ge::graphStatus RunKernelTiling();
     void TilingDataPrint();
@@ -67,8 +67,9 @@ private:
     uint64_t deterministicFlag = 0;
 };
 
-void CoalesceSparseTiling::TilingKeyCalcu(ge::DataType uniqueIndicesDtype, ge::DataType indicesDtype, 
-                                          ge::DataType valuesDtype) {
+void CoalesceSparseTiling::TilingKeyCalcu(ge::DataType uniqueIndicesDtype, ge::DataType indicesDtype,
+                                          ge::DataType valuesDtype)
+{
     OP_LOGD(TilingContext, "GetTensorType.");
     OP_LOGD(TilingContext, "SetTilingKey.");
     auto platformInfo = TilingContext->GetPlatformInfo();
@@ -96,10 +97,12 @@ void CoalesceSparseTiling::TilingKeyCalcu(ge::DataType uniqueIndicesDtype, ge::D
     }
 }
 
-ge::graphStatus CoalesceSparseTiling::TilingDataCalcu(ge::DataType uniqueIndicesDtype, ge::DataType indicesDtype, 
-                                                      ge::DataType valuesDtype, const gert::Shape &indicesShape, 
-                                                      const gert::Shape &valueShape) {
+ge::graphStatus CoalesceSparseTiling::TilingDataCalcu(ge::DataType uniqueIndicesDtype, ge::DataType indicesDtype,
+                                                      ge::DataType valuesDtype, const gert::Shape& indicesShape,
+                                                      const gert::Shape& valueShape)
+{
     auto platformInfo = TilingContext->GetPlatformInfo();
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     uint64_t uniqueIndiceTypeSize = GetSizeByDataType(uniqueIndicesDtype);
     uint64_t indiceTypeSize = GetSizeByDataType(indicesDtype);
     uint64_t valueTypeSize = GetSizeByDataType(valuesDtype);
@@ -122,6 +125,15 @@ ge::graphStatus CoalesceSparseTiling::TilingDataCalcu(ge::DataType uniqueIndices
     if (taskTail == 0) {
         taskTail = taskNum;
     }
+    bool isAscend950 = ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_3510;
+    if (isAscend950) {
+        taskNum = (n + coreNum - 1) / coreNum;
+        usedCoreNum = (n + taskNum - 1) / taskNum;
+        taskTail = n % taskNum;
+        if (taskTail == 0) {
+            taskTail = taskNum;
+        }
+    }
     if (ret != 0) {
         usedCoreNum = 1;
         taskTail = n;
@@ -133,16 +145,13 @@ ge::graphStatus CoalesceSparseTiling::TilingDataCalcu(ge::DataType uniqueIndices
     }
     OP_LOGD(TilingContext, "Init ubSize.");
     uint64_t ubSize;
-    auto ascendcPlatform = platform_ascendc::PlatformAscendC(TilingContext->GetPlatformInfo());
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     uint64_t indexUb = ubSize - (moveValueLen * valueTypeSize / AILGN32 + 1) * AILGN32;
 
-    OP_CHECK_IF(
-        indiceTypeSize == 0, OP_LOGD(TilingContext, "Variale indiceTypeSize should not be 0."),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        indiceTypeSize > AILGN32 , OP_LOGD(TilingContext, "indiceTypeSize should not be greater than 32."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(indiceTypeSize == 0, OP_LOGD(TilingContext, "Variale indiceTypeSize should not be 0."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(indiceTypeSize > AILGN32, OP_LOGD(TilingContext, "indiceTypeSize should not be greater than 32."),
+                return ge::GRAPH_FAILED);
     uint64_t indicesSizeAlign32 = ((m - 1) / (AILGN32 / indiceTypeSize) + 1) * AILGN32;
     moveOneSize = (indexUb / (indicesSizeAlign32 + uniqueIndiceTypeSize)) / AILGN32 * AILGN32;
     if (moveOneSize >= MAXRPTIME) {
@@ -192,12 +201,12 @@ ge::graphStatus CoalesceSparseTiling::RunKernelTiling()
     TilingData.set_moveValueTail(moveValueTail);
     TilingData.set_deterministicFlag(deterministicFlag);
 
-    size_t sysWorkspaceSize = 16*1024*1024;
+    size_t sysWorkspaceSize = 16 * 1024 * 1024;
     size_t* currentWorkspace = TilingContext->GetWorkspaceSizes(1);
     currentWorkspace[0] = sysWorkspaceSize;
 
-    TilingData.SaveToBuffer(
-        TilingContext->GetRawTilingData()->GetData(), TilingContext->GetRawTilingData()->GetCapacity());
+    TilingData.SaveToBuffer(TilingContext->GetRawTilingData()->GetData(),
+                            TilingContext->GetRawTilingData()->GetCapacity());
     TilingContext->GetRawTilingData()->SetDataSize(TilingData.GetDataSize());
     TilingDataPrint();
     OP_LOGD(TilingContext, "Tiling end.");

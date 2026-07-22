@@ -21,49 +21,62 @@
 #include "simt_api/asc_fp16.h"
 
 using namespace AscendC;
-constexpr int64_t THREAD_NUM = 512;
+constexpr int64_t THREAD_NUM = 1024;
 
 template <typename uIdxType, typename idxType, typename dataType>
-__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void ValueAtomicAdd(__gm__ uIdxType* uniqueIndices, __gm__ idxType* indices, __gm__ dataType* values, __gm__ idxType* newIndices, __gm__ dataType* newValue, uint32_t taskLen, uint32_t m, uint32_t valueSize)
+__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void SetIndices(__gm__ uIdxType* uniqueIndices,
+                                                                       __gm__ idxType* indices,
+                                                                       __gm__ idxType* newIndices, uint32_t taskLen,
+                                                                       uint32_t m)
 {
-    for(uint32_t index = threadIdx.x; index < taskLen; index += blockDim.x) {
+    for (uint64_t index = threadIdx.x; index < static_cast<uint64_t>(taskLen) * m; index += blockDim.x) {
+        uint64_t outputIdx = *(uniqueIndices + (index / m));
+        __gm__ idxType* indices_base = (__gm__ idxType*)indices + index;
+        __gm__ idxType* newIndices_base = (__gm__ idxType*)newIndices + outputIdx * m + index % m;
+        asc_stcg(newIndices_base, asc_ldcg(indices_base));
+    }
+}
+
+template <typename uIdxType, typename idxType, typename dataType>
+__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void ValueAtomicAdd(__gm__ uIdxType* uniqueIndices,
+                                                                           __gm__ dataType* values,
+                                                                           __gm__ dataType* newValue, uint32_t taskLen,
+                                                                           uint32_t valueSize)
+{
+    for (uint64_t index = threadIdx.x; index < static_cast<uint64_t>(taskLen) * valueSize; index += blockDim.x) {
+        uint64_t outputIdx = *(uniqueIndices + (index / valueSize));
+        __gm__ dataType* values_base = (__gm__ dataType*)values + index;
+        __gm__ dataType* newValue_base = (__gm__ dataType*)newValue + outputIdx * valueSize + index % valueSize;
+        asc_atomic_add(newValue_base, asc_ldcg(values_base));
+    }
+}
+
+template <typename uIdxType, typename idxType, typename dataType>
+__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void SetIndicesDeterministic(__gm__ uIdxType* uniqueIndices,
+                                                                                    __gm__ idxType* indices,
+                                                                                    __gm__ idxType* newIndices,
+                                                                                    uint32_t taskLen, uint32_t m)
+{
+    for (uint32_t index = threadIdx.x; index < taskLen; index += blockDim.x) {
         uint32_t outputIdx = *(uniqueIndices + index);
         __gm__ idxType* indices_base = (__gm__ idxType*)indices + index * m;
-        __gm__ dataType* values_base = (__gm__ dataType*)values + index * valueSize;
         __gm__ idxType* newIndices_base = (__gm__ idxType*)newIndices + outputIdx * m;
-        __gm__ dataType* newValue_base = (__gm__ dataType*)newValue + outputIdx * valueSize;
         for (uint32_t m_iter = 0; m_iter < m; m_iter++) {
             asc_stcg(newIndices_base, asc_ldcg(indices_base));
             indices_base++;
             newIndices_base++;
         }
-        for (uint32_t v_iter = 0; v_iter < valueSize; v_iter++) {
-            asc_atomic_add(newValue_base, asc_ldcg(values_base));
-            values_base++;
-            newValue_base++;
-        }
     }
 }
 
 template <typename uIdxType, typename idxType, typename dataType>
-__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void SetIndices(__gm__ uIdxType* uniqueIndices, __gm__ idxType* indices, __gm__ idxType* newIndices,  uint32_t taskLen, uint32_t m)
+__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void ValueAtomicAddDeterministic(__gm__ uIdxType* uniqueIndices,
+                                                                                        __gm__ dataType* values,
+                                                                                        __gm__ dataType* newValue,
+                                                                                        uint32_t taskLen,
+                                                                                        uint32_t valueSize)
 {
-    for(uint32_t index = threadIdx.x; index < taskLen; index += blockDim.x) {
-        uint32_t outputIdx = *(uniqueIndices + index);
-        __gm__ idxType* indices_base = (__gm__ idxType*)indices + index * m;
-        __gm__ idxType* newIndices_base = (__gm__ idxType*)newIndices + outputIdx * m;
-        for (uint32_t m_iter = 0; m_iter < m; m_iter++) {
-            asc_stcg(newIndices_base, asc_ldcg(indices_base));
-            indices_base++;
-            newIndices_base++;
-        }
-    }
-}
-
-template <typename uIdxType, typename idxType, typename dataType>
-__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void ValueAtomicAddDeterministic(__gm__ uIdxType* uniqueIndices, __gm__ dataType* values, __gm__ dataType* newValue, uint32_t taskLen, uint32_t valueSize)
-{
-    for(uint32_t index = 0; index < taskLen; index += 1) {
+    for (uint32_t index = 0; index < taskLen; index += 1) {
         uint32_t outputIdx = *(uniqueIndices + index);
         __gm__ dataType* values_base = (__gm__ dataType*)values + index * valueSize;
         __gm__ dataType* newValue_base = (__gm__ dataType*)newValue + outputIdx * valueSize;
@@ -77,9 +90,8 @@ template <typename uIdxType, typename idxType, typename dataType>
 class KernelCoalesceSparseSimt {
 public:
     __aicore__ inline KernelCoalesceSparseSimt() = default;
-    __aicore__ inline void Init(
-        GM_ADDR uniqueIndices, GM_ADDR indices, GM_ADDR values, GM_ADDR newIndices, GM_ADDR newValue,
-        const CoalesceSparseTilingData* __restrict tilingData);
+    __aicore__ inline void Init(GM_ADDR uniqueIndices, GM_ADDR indices, GM_ADDR values, GM_ADDR newIndices,
+                                GM_ADDR newValue, const CoalesceSparseTilingData* __restrict tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -148,27 +160,15 @@ __aicore__ inline void KernelCoalesceSparseSimt<uIdxType, idxType, dataType>::Pr
     }
 
     if (deterministicFlag_ == 1) {
-        asc_vf_call<SetIndices<uIdxType, idxType, dataType>>(
-            dim3{THREAD_NUM, 1, 1},
-            uniqueIndicesAddr_,
-            indicesAddr_,
-            newIndicesAddr_,
-            taskLen_, m_);
+        asc_vf_call<SetIndicesDeterministic<uIdxType, idxType, dataType>>(dim3{THREAD_NUM, 1, 1}, uniqueIndicesAddr_,
+                                                                          indicesAddr_, newIndicesAddr_, taskLen_, m_);
         asc_vf_call<ValueAtomicAddDeterministic<uIdxType, idxType, dataType>>(
-            dim3{THREAD_NUM, 1, 1},
-            uniqueIndicesAddr_,
-            valuesAddr_,
-            newValueAddr_,
-            taskLen_, valueSize_);
+            dim3{THREAD_NUM, 1, 1}, uniqueIndicesAddr_, valuesAddr_, newValueAddr_, taskLen_, valueSize_);
     } else {
-        asc_vf_call<ValueAtomicAdd<uIdxType, idxType, dataType>>(
-            dim3{THREAD_NUM, 1, 1},
-            uniqueIndicesAddr_,
-            indicesAddr_,
-            valuesAddr_,
-            newIndicesAddr_,
-            newValueAddr_,
-            taskLen_, m_, valueSize_);
+        asc_vf_call<SetIndices<uIdxType, idxType, dataType>>(dim3{THREAD_NUM, 1, 1}, uniqueIndicesAddr_, indicesAddr_,
+                                                             newIndicesAddr_, taskLen_, m_);
+        asc_vf_call<ValueAtomicAdd<uIdxType, idxType, dataType>>(dim3{THREAD_NUM, 1, 1}, uniqueIndicesAddr_,
+                                                                 valuesAddr_, newValueAddr_, taskLen_, valueSize_);
     }
 }
 
