@@ -22,13 +22,11 @@ namespace RadixTopK {
 using namespace AscendC;
 
 template <typename T, bool largest>
-class RadixTopKUb : public RadixTopKBaseKernel<T, largest>
-{
+class RadixTopKUb : public RadixTopKBaseKernel<T, largest> {
     using Base = RadixTopKBaseKernel<T, largest>;
 
 public:
-    __aicore__ inline RadixTopKUb(TPipe &tpipe, const RadixTopKTilingData &tilingData)
-        : Base(tpipe, tilingData) {}
+    __aicore__ inline RadixTopKUb(TPipe& tpipe, const RadixTopKTilingData& tilingData) : Base(tpipe, tilingData) {}
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR k, GM_ADDR values, GM_ADDR indices, GM_ADDR workspace)
     {
@@ -38,9 +36,9 @@ public:
         this->kGm_.SetGlobalBuffer((__gm__ int32_t*)k);
         this->indexGm_.SetGlobalBuffer((__gm__ int32_t*)indices);
         // 当 k 大于 workspace 所需空间时复用最后一个 batch 的 indices 内存
-        __gm__ int32_t* wsPtr = this->tiling_.needWorkspace
-            ? ((__gm__ int32_t*)workspace)
-            : ((__gm__ int32_t*)indices + (this->batch_ - 1) * this->kValue_);
+        __gm__ int32_t* wsPtr = this->tiling_.needWorkspace ?
+                                    ((__gm__ int32_t*)workspace) :
+                                    ((__gm__ int32_t*)indices + (this->batch_ - 1) * this->kValue_);
         this->globalHistGm_.SetGlobalBuffer(wsPtr);
         this->boundaryBinCumSumGm_.SetGlobalBuffer(wsPtr + this->numValue_ * this->coreNum_);
         this->coreTopKGm_.SetGlobalBuffer(wsPtr + this->numValue_ * this->coreNum_ + this->coreNum_);
@@ -54,21 +52,19 @@ private:
     __aicore__ inline void InitParams();
     __aicore__ inline void InitBuffers();
     __aicore__ inline void ClearTileTopK();
-    __aicore__ inline void ClearHist(const int32_t &roundId);
-    __aicore__ inline bool Update(const int32_t &roundId);
+    __aicore__ inline void ClearHist(const int32_t& roundId);
+    __aicore__ inline bool Update(const int32_t& roundId);
     __aicore__ inline uint32_t CreateVecIndex4TopK();
-    __aicore__ inline void TileTopK(const uint64_t &batchId, const uint64_t &blockOffset);
+    __aicore__ inline void TileTopK(const uint64_t& batchId, const uint64_t& blockOffset);
 
-    __aicore__ inline void AddTileHistToTileTopK(LocalTensor<int32_t>& tileTopK,
-                                                  LocalTensor<int32_t>& tileHist,
-                                                  LocalTensor<int32_t>& globalHist);
-    __aicore__ inline void HandleLastRoundBoundary(
-        LocalTensor<int32_t>& tileHist, LocalTensor<int32_t>& tileTopK,
-        LocalTensor<int32_t>& resTensor, LocalTensor<float>& tileHistFp32);
+    __aicore__ inline void AddTileHistToTileTopK(LocalTensor<int32_t>& tileTopK, LocalTensor<int32_t>& tileHist,
+                                                 LocalTensor<int32_t>& globalHist);
+    __aicore__ inline void HandleLastRoundBoundary(LocalTensor<int32_t>& tileHist, LocalTensor<int32_t>& tileTopK,
+                                                   LocalTensor<int32_t>& resTensor, LocalTensor<float>& tileHistFp32);
 
-    uint32_t tempBufSize_;                    /**< 临时 buffer 大小（max(tileHistSize, cmpMaskSize)） */
-    TBuf<TPosition::VECCALC> tileTopKBuf_;    /**< tileTopK 计数器 UB buffer */
-    TBuf<TPosition::VECCALC> tempBuf_;        /**< 临时 buffer（复用为 tileHist / cmpMask / vecIndex） */
+    uint32_t tempBufSize_;                 /**< 临时 buffer 大小（max(tileHistSize, cmpMaskSize)） */
+    TBuf<TPosition::VECCALC> tileTopKBuf_; /**< tileTopK 计数器 UB buffer */
+    TBuf<TPosition::VECCALC> tempBuf_;     /**< 临时 buffer（复用为 tileHist / cmpMask / vecIndex） */
 };
 
 /**
@@ -129,13 +125,15 @@ __aicore__ inline void RadixTopKUb<T, largest>::ClearTileTopK()
  * @param roundId 当前轮 ID
  */
 template <typename T, bool largest>
-__aicore__ inline void RadixTopKUb<T, largest>::ClearHist(const int32_t &roundId)
+__aicore__ inline void RadixTopKUb<T, largest>::ClearHist(const int32_t& roundId)
 {
     LocalTensor<int32_t> tileHist = tempBuf_.Get<int32_t>();
     LocalTensor<int32_t> globalHist = this->globalHistBuf_.template Get<int32_t>();
+    PipeBarrier<PIPE_V>();
     if (roundId == this->round_ - 1) {
         Duplicate<int32_t>(tileHist, this->tileLen_, this->tileNum_);
         if (this->tailTileLen_ != this->tileLen_) {
+            VToSSync();
             tileHist.SetValue(this->tileNum_ - 1, this->tailTileLen_);
         }
         this->globalHistBoundaryNum_ = (this->tileNum_ - 1) * this->tileLen_ + this->tailTileLen_;
@@ -144,13 +142,14 @@ __aicore__ inline void RadixTopKUb<T, largest>::ClearHist(const int32_t &roundId
             Sub(tileHist, tileHist[this->boundaryBin * this->tileNumAlign_],
                 tileHist[this->boundaryBinPrev * this->tileNumAlign_], this->tileNum_);
         } else {
-            CopyData<int32_t>(tileHist,
-                tileHist[this->boundaryBin * this->tileNumAlign_], this->tileNum_);
+            CopyData<int32_t>(tileHist, tileHist[this->boundaryBin * this->tileNumAlign_], this->tileNum_);
         }
     }
+    MTE3ToSSync();
     globalHist.SetValue(0, this->globalHistBoundaryNum_);
-    Duplicate<int32_t>(tileHist[this->tileNumAlign_], 0,
-        (this->numValue_ - 1) * this->tileNumAlign_);
+    PipeBarrier<PIPE_V>();
+    SToVSync();
+    Duplicate<int32_t>(tileHist[this->tileNumAlign_], 0, (this->numValue_ - 1) * this->tileNumAlign_);
 }
 
 /**
@@ -188,15 +187,16 @@ __aicore__ inline void RadixTopKUb<T, largest>::SubProcess(uint64_t batchId)
             this->TwiddleInB16(curBuf, curTileLen);
             this->DoAndMask(curBuf, curTileLen);
             LocalTensor<int32_t> tileHist = tempBuf_.Get<int32_t>();
-            this->CalcCumsumHistogram16(curBuf, roundId, tileHist, tileId,
-                static_cast<int32_t>(this->tileNumAlign_), 0, curTileLen);
+            this->CalcCumsumHistogram16(curBuf, roundId, tileHist, tileId, static_cast<int32_t>(this->tileNumAlign_), 0,
+                                        curTileLen);
 
             PINGPONG_TILE_END(tileId);
         }
         this->template CopyOut2Ws<false>(this->numValue_, this->blockIdx_ * this->numValue_);
         SyncAll();
         // 找到topk，提前退出
-        if (Update(roundId)) break;
+        if (Update(roundId))
+            break;
         this->andMask16_ >>= BITS_PER_ROUND;
     }
     SyncAll();
@@ -209,7 +209,7 @@ __aicore__ inline void RadixTopKUb<T, largest>::SubProcess(uint64_t batchId)
  * @return true: 可提前退出（remainK_==0 或 roundId==0）
  */
 template <typename T, bool largest>
-__aicore__ inline bool RadixTopKUb<T, largest>::Update(const int32_t &roundId)
+__aicore__ inline bool RadixTopKUb<T, largest>::Update(const int32_t& roundId)
 {
     LocalTensor<int32_t> tileHist = tempBuf_.Get<int32_t>();
     LocalTensor<int32_t> resTensor = this->outIndexBuf_.template Get<int32_t>();
@@ -239,16 +239,17 @@ __aicore__ inline bool RadixTopKUb<T, largest>::Update(const int32_t &roundId)
         int32_t segSize = this->tileNum_ < safeSumTileNum ? this->tileNum_ : safeSumTileNum;
         for (int32_t segOff = 0; segOff < this->tileNum_; segOff += segSize) {
             int32_t curSegLen = AscendC::Std::min(segSize, static_cast<int32_t>(this->tileNum_ - segOff));
+            PipeBarrier<PIPE_V>();
             SToVSync();
             Cast(tileHistFp32, tileTopK[segOff], RoundMode::CAST_NONE, curSegLen);
+            PipeBarrier<PIPE_V>();
             ReduceSum(tileHistFp32, tileHistFp32, tileHistFp32, curSegLen);
             VToSSync();
             totalTileTopKInCore += static_cast<int32_t>(tileHistFp32.GetValue(0));
         }
         resTensor.SetValue(0, totalTileTopKInCore);
         SToMTE3Sync();
-        DataCopyExtParams coreTopKParams{
-            static_cast<uint16_t>(1), static_cast<uint32_t>(sizeof(int32_t) * 1), 0, 0, 0};
+        DataCopyExtParams coreTopKParams{static_cast<uint16_t>(1), static_cast<uint32_t>(sizeof(int32_t) * 1), 0, 0, 0};
         DataCopyPad(this->coreTopKGm_[this->blockIdx_], resTensor, coreTopKParams);
     }
 
@@ -262,14 +263,16 @@ __aicore__ inline bool RadixTopKUb<T, largest>::Update(const int32_t &roundId)
  * @param globalHist 全局直方图
  */
 template <typename T, bool largest>
-__aicore__ inline void RadixTopKUb<T, largest>::AddTileHistToTileTopK(
-    LocalTensor<int32_t>& tileTopK, LocalTensor<int32_t>& tileHist,
-    LocalTensor<int32_t>& globalHist)
+__aicore__ inline void RadixTopKUb<T, largest>::AddTileHistToTileTopK(LocalTensor<int32_t>& tileTopK,
+                                                                      LocalTensor<int32_t>& tileHist,
+                                                                      LocalTensor<int32_t>& globalHist)
 {
     if (globalHist(this->boundaryBin) == this->remainK_) {
+        PipeBarrier<PIPE_V>();
         Add(tileTopK, tileTopK, tileHist[this->boundaryBin * this->tileNumAlign_], this->tileNum_);
         this->totalDefinitelyInTopK_ += globalHist(this->boundaryBin);
     } else if (this->boundaryBinPrev < this->numValue_) {
+        PipeBarrier<PIPE_V>();
         Add(tileTopK, tileTopK, tileHist[this->boundaryBinPrev * this->tileNumAlign_], this->tileNum_);
         this->totalDefinitelyInTopK_ += globalHist(this->boundaryBinPrev);
     }
@@ -284,23 +287,25 @@ __aicore__ inline void RadixTopKUb<T, largest>::AddTileHistToTileTopK(
  * @param tileHistFp32 tileHist 的 fp32 视图
  */
 template <typename T, bool largest>
-__aicore__ inline void RadixTopKUb<T, largest>::HandleLastRoundBoundary(
-    LocalTensor<int32_t>& tileHist, LocalTensor<int32_t>& tileTopK,
-    LocalTensor<int32_t>& resTensor, LocalTensor<float>& tileHistFp32)
+__aicore__ inline void RadixTopKUb<T, largest>::HandleLastRoundBoundary(LocalTensor<int32_t>& tileHist,
+                                                                        LocalTensor<int32_t>& tileTopK,
+                                                                        LocalTensor<int32_t>& resTensor,
+                                                                        LocalTensor<float>& tileHistFp32)
 {
+    PipeBarrier<PIPE_V>();
     if (this->boundaryBinPrev < this->numValue_) {
-        Sub(resTensor,
-            tileHist[this->boundaryBin * this->tileNumAlign_],
+        Sub(resTensor, tileHist[this->boundaryBin * this->tileNumAlign_],
             tileHist[this->boundaryBinPrev * this->tileNumAlign_], this->tileNum_);
+        PipeBarrier<PIPE_V>();
         Cast(tileHistFp32, resTensor, RoundMode::CAST_NONE, this->tileNum_);
     } else {
-        Cast(tileHistFp32, tileHist[this->boundaryBin * this->tileNumAlign_],
-            RoundMode::CAST_NONE, this->tileNum_);
+        Cast(tileHistFp32, tileHist[this->boundaryBin * this->tileNumAlign_], RoundMode::CAST_NONE, this->tileNum_);
     }
     int32_t int32Align = BLOCK_SIZE / sizeof(int32_t);
     int32_t safeSumTileNum = FLOAT32_SAFE_INT / this->tileLen_ / int32Align * int32Align;
     int32_t segSize = this->tileNum_ < safeSumTileNum ? this->tileNum_ : safeSumTileNum;
     int32_t reduceSumValue = 0;
+    PipeBarrier<PIPE_V>();
     for (int32_t segOff = 0; segOff < this->tileNum_; segOff += segSize) {
         int32_t curSegLen = AscendC::Std::min(segSize, static_cast<int32_t>(this->tileNum_ - segOff));
         SToVSync();
@@ -342,16 +347,14 @@ template <typename T, bool largest>
 __aicore__ inline uint32_t RadixTopKUb<T, largest>::CreateVecIndex4TopK()
 {
     uint32_t cmpMaskSize = this->tileLen_ * sizeof(uint8_t) / BYTE_SIZE;
-    uint32_t maxIndexLen = Ops::Base::FloorDiv(tempBufSize_ - cmpMaskSize, BLOCK_SIZE) *
-        BLOCK_SIZE / sizeof(int32_t);
+    uint32_t maxIndexLen = Ops::Base::FloorDiv(tempBufSize_ - cmpMaskSize, BLOCK_SIZE) * BLOCK_SIZE / sizeof(int32_t);
     if (this->tileLen_ < maxIndexLen) {
         maxIndexLen = this->tileLen_;
     } else if (maxIndexLen < 512) {
         maxIndexLen = 0;
     }
     if (maxIndexLen > 0) {
-        LocalTensor<int32_t> vecIndex =
-            tempBuf_.GetWithOffset<int32_t>(maxIndexLen, cmpMaskSize);
+        LocalTensor<int32_t> vecIndex = tempBuf_.GetWithOffset<int32_t>(maxIndexLen, cmpMaskSize);
         Base::CreateVecIndex4TopK(maxIndexLen, vecIndex);
     }
     return maxIndexLen;
@@ -364,8 +367,7 @@ __aicore__ inline uint32_t RadixTopKUb<T, largest>::CreateVecIndex4TopK()
  * @param blockOffset 当前 core 在输入数据中的起始偏移
  */
 template <typename T, bool largest>
-__aicore__ inline void RadixTopKUb<T, largest>::TileTopK(
-    const uint64_t &batchId, const uint64_t &blockOffset)
+__aicore__ inline void RadixTopKUb<T, largest>::TileTopK(const uint64_t& batchId, const uint64_t& blockOffset)
 {
     LocalTensor<int32_t> tileTopK = tileTopKBuf_.Get<int32_t>();
     LocalTensor<int32_t> tmpLocal = tempBuf_.Get<int32_t>();
@@ -374,11 +376,12 @@ __aicore__ inline void RadixTopKUb<T, largest>::TileTopK(
     coreTopKOffset += batchIndexOffset;
 
     uint64_t firstId = 0;
-    while (firstId < this->tileNum_ && tileTopK.GetValue(firstId) <= 0) firstId++;
-    if (firstId >= this->tileNum_) return;
+    while (firstId < this->tileNum_ && tileTopK.GetValue(firstId) <= 0)
+        firstId++;
+    if (firstId >= this->tileNum_)
+        return;
 
-    uint64_t firstLen = (firstId == this->tileNum_ - 1) ?
-        this->tailTileLen_ : this->tileLen_;
+    uint64_t firstLen = (firstId == this->tileNum_ - 1) ? this->tailTileLen_ : this->tileLen_;
     this->CopyIn(this->xBufPing_, firstLen, blockOffset + firstId * this->tileLen_);
     uint32_t maxIndexLen = CreateVecIndex4TopK();
 
@@ -391,9 +394,9 @@ __aicore__ inline void RadixTopKUb<T, largest>::TileTopK(
         uint64_t tileOffset = tileBaseOffset + tileId * this->tileLen_;
 
         int32_t curTileK = tileTopK.GetValue(tileId);
-        PROCESS_ONE_TILE_TOPK_OR_SKIP(curTileK,
-            tempBuf_.GetWithOffset<int32_t>(maxIndexLen,
-                this->tileLen_ * sizeof(uint8_t) / BYTE_SIZE));
+        PipeBarrier<PIPE_V>();
+        PROCESS_ONE_TILE_TOPK_OR_SKIP(
+            curTileK, tempBuf_.GetWithOffset<int32_t>(maxIndexLen, this->tileLen_ * sizeof(uint8_t) / BYTE_SIZE));
 
         PINGPONG_TILE_END(tileId);
     }

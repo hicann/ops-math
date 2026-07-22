@@ -44,9 +44,8 @@ static constexpr uint32_t BITS_PER_ROUND = 2;
  * @param dataNum 复制数据量
  */
 template <typename IT>
-__aicore__ inline void CopyData(
-    const LocalTensor<IT> &dstTensor, const LocalTensor<IT> &srcTensor,
-    const uint64_t &dataNum)
+__aicore__ inline void CopyData(const LocalTensor<IT>& dstTensor, const LocalTensor<IT>& srcTensor,
+                                const uint64_t& dataNum)
 {
     uint64_t numPerRepeat = REPEAT_SIZE / sizeof(IT);
     uint64_t repeatTimes = dataNum / numPerRepeat;
@@ -55,8 +54,7 @@ __aicore__ inline void CopyData(
         Copy(dstTensor, srcTensor, numPerRepeat, repeatTimes, {1, 1, 8, 8});
     }
     if (remain > 0) {
-        Copy(dstTensor[repeatTimes * numPerRepeat], srcTensor[repeatTimes * numPerRepeat],
-             remain, 1, {1, 1, 8, 8});
+        Copy(dstTensor[repeatTimes * numPerRepeat], srcTensor[repeatTimes * numPerRepeat], remain, 1, {1, 1, 8, 8});
     }
 }
 
@@ -68,19 +66,18 @@ __aicore__ inline void CopyData(
  * @param baseDataNum 每段基础索引长度
  */
 template <typename IT>
-__aicore__ inline void CreateVecIndexDataByAdds(
-    const LocalTensor<IT> &dstTensor, const LocalTensor<IT> &srcTensor,
-    const uint32_t &dataNum, const uint32_t &baseDataNum)
+__aicore__ inline void CreateVecIndexDataByAdds(const LocalTensor<IT>& dstTensor, const LocalTensor<IT>& srcTensor,
+                                                const uint32_t& dataNum, const uint32_t& baseDataNum)
 {
     uint32_t repeatTimes = dataNum / baseDataNum;
     uint32_t remain = dataNum % baseDataNum;
     for (int i = 1; i < repeatTimes; i++) {
-        Adds(dstTensor[i * baseDataNum], srcTensor,
-             static_cast<IT>(i * baseDataNum), static_cast<int32_t>(baseDataNum));
+        Adds(dstTensor[i * baseDataNum], srcTensor, static_cast<IT>(i * baseDataNum),
+             static_cast<int32_t>(baseDataNum));
     }
     if (remain > 0) {
-        Adds(dstTensor[repeatTimes * baseDataNum], srcTensor,
-             static_cast<IT>(repeatTimes * baseDataNum), static_cast<int32_t>(remain));
+        Adds(dstTensor[repeatTimes * baseDataNum], srcTensor, static_cast<IT>(repeatTimes * baseDataNum),
+             static_cast<int32_t>(remain));
     }
 }
 
@@ -92,12 +89,12 @@ __aicore__ inline void CreateVecIndexDataByAdds(
  * @param baseDataNum 基索引长度
  */
 template <typename IT>
-__aicore__ inline void CreateVecIndexData(
-    const LocalTensor<IT> &dstTensor, const IT &firstValue,
-    const uint32_t &dataNum, const uint32_t &baseDataNum)
+__aicore__ inline void CreateVecIndexData(const LocalTensor<IT>& dstTensor, const IT& firstValue,
+                                          const uint32_t& dataNum, const uint32_t& baseDataNum)
 {
     CreateVecIndex(dstTensor, firstValue, baseDataNum);
-    if (dataNum == baseDataNum) return;
+    if (dataNum == baseDataNum)
+        return;
     CreateVecIndexDataByAdds(dstTensor, dstTensor, dataNum, baseDataNum);
 }
 
@@ -108,10 +105,11 @@ __aicore__ inline void CreateVecIndexData(
  * @param dataNum 需生成的索引总数
  */
 template <typename IT>
-__aicore__ inline void CreateVecIndexPerf(
-    const LocalTensor<IT> &dstTensor, const IT &firstValue, const uint32_t &dataNum)
+__aicore__ inline void CreateVecIndexPerf(const LocalTensor<IT>& dstTensor, const IT& firstValue,
+                                          const uint32_t& dataNum)
 {
-    if (dataNum == 0) return;
+    if (dataNum == 0)
+        return;
     if (dataNum < 32) {
         CreateVecIndexData<IT>(dstTensor, firstValue, dataNum, dataNum);
     } else if (dataNum < 256) {
@@ -130,10 +128,29 @@ __aicore__ inline void CreateVecIndexPerf(
  */
 __aicore__ inline void MTE3ToMTE2Sync()
 {
-    event_t eventIDMTE3ToMTE2 =
-        static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_MTE2));
+    event_t eventIDMTE3ToMTE2 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_MTE2));
     SetFlag<HardEvent::MTE3_MTE2>(eventIDMTE3ToMTE2);
     WaitFlag<HardEvent::MTE3_MTE2>(eventIDMTE3ToMTE2);
+}
+
+/**
+ * @brief MTE3 → S 同步
+ */
+__aicore__ inline void MTE3ToSSync()
+{
+    event_t eventIDMTE3ToS = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_S));
+    SetFlag<HardEvent::MTE3_S>(eventIDMTE3ToS);
+    WaitFlag<HardEvent::MTE3_S>(eventIDMTE3ToS);
+}
+
+/**
+ * @brief MTE3 → V 同步
+ */
+__aicore__ inline void MTE3ToVSync()
+{
+    event_t eventIDMTE3ToV = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_V));
+    SetFlag<HardEvent::MTE3_V>(eventIDMTE3ToV);
+    WaitFlag<HardEvent::MTE3_V>(eventIDMTE3ToV);
 }
 
 /**
@@ -141,8 +158,7 @@ __aicore__ inline void MTE3ToMTE2Sync()
  */
 __aicore__ inline void VToMTE2Sync()
 {
-    event_t eventIDVToMTE2 =
-        static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE2));
+    event_t eventIDVToMTE2 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE2));
     SetFlag<HardEvent::V_MTE2>(eventIDVToMTE2);
     WaitFlag<HardEvent::V_MTE2>(eventIDVToMTE2);
 }
@@ -152,8 +168,7 @@ __aicore__ inline void VToMTE2Sync()
  */
 __aicore__ inline void VToMTE3Sync()
 {
-    event_t eventIDVToMTE3 =
-        static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
+    event_t eventIDVToMTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
     SetFlag<HardEvent::V_MTE3>(eventIDVToMTE3);
     WaitFlag<HardEvent::V_MTE3>(eventIDVToMTE3);
 }
@@ -163,8 +178,7 @@ __aicore__ inline void VToMTE3Sync()
  */
 __aicore__ inline void VToSSync()
 {
-    event_t eventIDVToS =
-        static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
+    event_t eventIDVToS = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
     SetFlag<HardEvent::V_S>(eventIDVToS);
     WaitFlag<HardEvent::V_S>(eventIDVToS);
 }
@@ -174,8 +188,7 @@ __aicore__ inline void VToSSync()
  */
 __aicore__ inline void SToVSync()
 {
-    event_t eventIDSToV =
-        static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::S_V));
+    event_t eventIDSToV = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::S_V));
     SetFlag<HardEvent::S_V>(eventIDSToV);
     WaitFlag<HardEvent::S_V>(eventIDSToV);
 }
@@ -185,10 +198,19 @@ __aicore__ inline void SToVSync()
  */
 __aicore__ inline void SToMTE3Sync()
 {
-    event_t eventIDSToMTE3 =
-        static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::S_MTE3));
+    event_t eventIDSToMTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::S_MTE3));
     SetFlag<HardEvent::S_MTE3>(eventIDSToMTE3);
     WaitFlag<HardEvent::S_MTE3>(eventIDSToMTE3);
+}
+
+/**
+ * @brief S → MTE2 同步
+ */
+__aicore__ inline void SToMTE2Sync()
+{
+    event_t eventIDSToMTE2 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::S_MTE2));
+    SetFlag<HardEvent::S_MTE2>(eventIDSToMTE2);
+    WaitFlag<HardEvent::S_MTE2>(eventIDSToMTE2);
 }
 
 /**
@@ -196,8 +218,7 @@ __aicore__ inline void SToMTE3Sync()
  */
 __aicore__ inline void MTE2ToMTE3Sync()
 {
-    event_t eventIDMTE2ToMTE3 =
-        static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
+    event_t eventIDMTE2ToMTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
     SetFlag<HardEvent::MTE2_MTE3>(eventIDMTE2ToMTE3);
     WaitFlag<HardEvent::MTE2_MTE3>(eventIDMTE2ToMTE3);
 }
@@ -207,8 +228,7 @@ __aicore__ inline void MTE2ToMTE3Sync()
  */
 __aicore__ inline void MTE2ToVSync()
 {
-    event_t eventIDMTE2ToV =
-        static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
+    event_t eventIDMTE2ToV = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
     SetFlag<HardEvent::MTE2_V>(eventIDMTE2ToV);
     WaitFlag<HardEvent::MTE2_V>(eventIDMTE2ToV);
 }
@@ -218,8 +238,7 @@ __aicore__ inline void MTE2ToVSync()
  */
 __aicore__ inline void MTE2ToSSync()
 {
-    event_t eventIDMTE2ToS =
-        static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_S));
+    event_t eventIDMTE2ToS = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_S));
     SetFlag<HardEvent::MTE2_S>(eventIDMTE2ToS);
     WaitFlag<HardEvent::MTE2_S>(eventIDMTE2ToS);
 }
