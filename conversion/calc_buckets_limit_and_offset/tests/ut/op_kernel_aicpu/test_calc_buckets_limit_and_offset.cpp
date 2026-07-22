@@ -29,7 +29,7 @@ void CalcExpect(const NodeDef& node_def, int32_t expect_out1[], int32_t expect_o
     T* input2_data = (T*)input2->GetData();
     int64_t input0_num = input0->NumElements();
     int64_t input1_num = input1->NumElements();
-    int64_t input2_num = input1->NumElements();
+    int64_t input2_num = input2->NumElements();
     auto attrs = node_def.Attrs();
     int64_t total_limit = attrs["total_limit"]->GetInt();
     int32_t limit = 0;

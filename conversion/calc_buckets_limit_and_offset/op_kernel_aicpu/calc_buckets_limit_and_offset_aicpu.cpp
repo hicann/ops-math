@@ -45,6 +45,8 @@ uint32_t CalcBucketsLimitAndOffsetCpuKernel::InitParams(const CpuKernelContext& 
     auto attr = ctx.GetAttr("total_limit");
     KERNEL_CHECK_NULLPTR(attr, KERNEL_STATUS_PARAM_INVALID, "%s op get total_limit attr failed.", kOpName);
     total_limit_ = attr->GetInt();
+    KERNEL_CHECK_FALSE((total_limit_ >= 0), KERNEL_STATUS_PARAM_INVALID, "%s op total_limit should >= 0, but got %ld",
+                       kOpName, total_limit_);
     return KERNEL_STATUS_OK;
 }
 
@@ -64,7 +66,8 @@ uint32_t CalcBucketsLimitAndOffsetCpuKernel::DoCompute()
     const uint32_t input_num_2 = 2;
 
     for (int64_t i = 0; i < input_num_elements_[0]; ++i) {
-        if ((bucket_list[i] >= input_num_elements_[1]) || (bucket_list[i] >= input_num_elements_[input_num_2])) {
+        if ((bucket_list[i] < 0) || (bucket_list[i] >= input_num_elements_[1]) ||
+            (bucket_list[i] >= input_num_elements_[input_num_2])) {
             KERNEL_LOG_ERROR("%s op input0[%ld] = %d is out of range input1 num elements [0, %ld) "
                              "or input2 num elements [0, %ld).",
                              kOpName, i, bucket_list[i], input_num_elements_[1], input_num_elements_[2]);

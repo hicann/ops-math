@@ -109,23 +109,31 @@ class TEST_TOPK_UT : public testing::Test {};
     TEST_F(TEST_TOPK_UT, TestTopK_##aicpu_type##_SMALLEST_LAST_DIM)                                       \
     {                                                                                                     \
         vector<DataType> data_types = {aicpu_type, DT_INT32, aicpu_type, DT_INT32};                       \
-        vector<vector<int64_t>> shapes = {{2, 3, 4}, {}, {2, 2, 4}, {2, 2, 4}};                           \
+        vector<vector<int64_t>> shapes = {{2, 3, 4}, {}, {2, 3, 2}, {2, 3, 2}};                           \
         base_type input[24];                                                                              \
-        for (int i = 0; i < 24; i++) {                                                                    \
-            input[i] = static_cast<base_type>(0.0f);                                                      \
+        SetRandomValue<base_type>(input, 24);                                                             \
+        vector<ValueIndex<base_type>> output_expect(12);                                                  \
+        for (int r = 0; r < 6; r++) {                                                                     \
+            ValueIndex<base_type> row[4];                                                                 \
+            for (int j = 0; j < 4; j++) {                                                                 \
+                row[j].value = input[r * 4 + j];                                                          \
+                row[j].index = j;                                                                         \
+            }                                                                                             \
+            sort(row, row + 4, CompareAscending<base_type>);                                              \
+            for (int j = 0; j < 2; j++) {                                                                 \
+                output_expect[r * 2 + j] = row[j];                                                        \
+            }                                                                                             \
         }                                                                                                 \
-        vector<ValueIndex<base_type>> output_expect(16);                                                  \
-        for (int i = 0; i < 16; i++) {                                                                    \
-            output_expect[i].index = static_cast<base_type>(0.0f);                                        \
-            output_expect[i].value = static_cast<base_type>(0.0f);                                        \
-        }                                                                                                 \
-        sort(output_expect.begin(), output_expect.end(), CompareDescending<base_type>);                   \
         int32_t k = 2;                                                                                    \
-        base_type output_value[16] = {(base_type)0};                                                      \
-        int32_t output_index[16] = {0};                                                                   \
+        base_type output_value[12] = {(base_type)0};                                                      \
+        int32_t output_index[12] = {0};                                                                   \
         vector<void*> datas = {(void*)input, (void*)&k, (void*)output_value, (void*)output_index};        \
         CREATE_NODEDEF2(shapes, data_types, datas);                                                       \
         RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);                                                     \
+        for (int i = 0; i < 12; i++) {                                                                    \
+            EXPECT_EQ(output_value[i], output_expect[i].value);                                           \
+            EXPECT_EQ(output_index[i], output_expect[i].index);                                           \
+        }                                                                                                 \
     }                                                                                                     \
     TEST_F(TEST_TOPK_UT, TestTopK_##aicpu_type##SMALLEST)                                                 \
     {                                                                                                     \

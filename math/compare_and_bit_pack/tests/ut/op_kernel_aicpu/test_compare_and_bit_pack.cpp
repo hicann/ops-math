@@ -26,7 +26,7 @@ class TEST_COMPARE_AND_BIT_PACK_UT : public testing::Test {};
         .Input({"threshold", data_types[1], shapes[1], datas[1]})            \
         .Output({"output", data_types[2], shapes[2], datas[2]})
 
-TEST_F(TEST_COMPARE_AND_BIT_PACK_UT, INPUT_COMPLEX64_SUCCESS)
+TEST_F(TEST_COMPARE_AND_BIT_PACK_UT, INPUT_COMPLEX64_UNSUPPORTED)
 {
     vector<DataType> data_types = {DT_COMPLEX64, DT_COMPLEX64, DT_UINT8};
     vector<vector<int64_t>> shapes = {{1, 16}, {}, {1, 2}};
@@ -36,9 +36,6 @@ TEST_F(TEST_COMPARE_AND_BIT_PACK_UT, INPUT_COMPLEX64_SUCCESS)
     vector<void*> datas = {(void*)input0, (void*)&input1, (void*)output};
     CREATE_NODEDEF(shapes, data_types, datas);
     RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
-
-    uint8_t output_exp[2] = {98, 18};
-    bool compare = CompareResult(output, output_exp, 2);
 }
 
 TEST_F(TEST_COMPARE_AND_BIT_PACK_UT, INPUT_FLOAT16_SUCCESS)
@@ -66,7 +63,7 @@ TEST_F(TEST_COMPARE_AND_BIT_PACK_UT, INPUT_BOOL_SUCCESS)
     vector<vector<int64_t>> shapes = {{1, 16}, {}, {1, 2}};
     bool input0[16] = {false, true,  true,  false, false, false, true, false,
                        false, false, false, true,  false, false, true, false};
-    bool input1 = true;
+    bool input1 = false;
     uint8_t output[2] = {0};
     vector<void*> datas = {(void*)input0, (void*)&input1, (void*)output};
     CREATE_NODEDEF(shapes, data_types, datas);
@@ -74,7 +71,7 @@ TEST_F(TEST_COMPARE_AND_BIT_PACK_UT, INPUT_BOOL_SUCCESS)
 
     uint8_t output_exp[2] = {98, 18};
     bool compare = CompareResult(output, output_exp, 2);
-    EXPECT_EQ(compare, false);
+    EXPECT_EQ(compare, true);
 }
 
 TEST_F(TEST_COMPARE_AND_BIT_PACK_UT, INPUT_FLOAT_SUCCESS)
@@ -246,13 +243,13 @@ TEST_F(TEST_COMPARE_AND_BIT_PACK_UT, INPUT_0_SCALAR)
 TEST_F(TEST_COMPARE_AND_BIT_PACK_UT, INPUT_0_DIM_ERROR)
 {
     vector<DataType> data_types = {DT_DOUBLE, DT_DOUBLE, DT_UINT8};
-    vector<vector<int64_t>> shapes = {{1, 16}, {}, {1, 2}};
+    vector<vector<int64_t>> shapes = {{1, 17}, {}, {1, 2}};
     double input0[17] = {2.69160455, 4.97408142, 3.50928929, 2.11724898, 1.90514646, 1.87424379,
                          4.59832463, 2.95999397, 2.63020151, 1.23305568, 1.66515593, 4.14401462,
                          1.53567731, 2.29360969, 4.3461758,  1.57004211, 2.57004211};
     double input1 = 3.20928929;
     uint8_t output[2] = {0};
-    vector<void*> datas = {(void*)nullptr, (void*)&input1, (void*)output};
+    vector<void*> datas = {(void*)input0, (void*)&input1, (void*)output};
     CREATE_NODEDEF(shapes, data_types, datas);
     RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
 }
