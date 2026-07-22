@@ -1273,7 +1273,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI Core</td>
+    <td>AI Core/AI CPU</td>
     <td>返回两个张量元素之间的乘积结果组成的新张量。</td>
   </tr>
   <tr>
