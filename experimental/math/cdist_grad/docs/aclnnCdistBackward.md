@@ -33,7 +33,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnCdistBackwardGetWorkspaceSize”接口获取入参并根据流程计算所需workspace大小，再调用“aclnnCdistBackward”接口执行计算。
+每个算子分为[两段式接口](../../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnCdistBackwardGetWorkspaceSize”接口获取入参并根据流程计算所需workspace大小，再调用“aclnnCdistBackward”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnCdistBackwardGetWorkspaceSize(
@@ -49,16 +49,16 @@ aclnnStatus aclnnCdistBackwardGetWorkspaceSize(
 
 ```Cpp
 aclnnStatus aclnnCdistBackward(
-    void*          workspace, 
-    uint64_t       workspaceSize, 
-    aclOpExecutor *executor, 
+    void*          workspace,
+    uint64_t       workspaceSize,
+    aclOpExecutor *executor,
     aclrtStream    stream)
 ```
 
 ## aclnnCdistBackwardGetWorkspaceSize
 
 - **参数说明：**
-  
+
   <table style="undefined;table-layout: fixed; width: 1510px"><colgroup>
     <col style="width: 153px">
     <col style="width: 120px">
@@ -108,7 +108,7 @@ aclnnStatus aclnnCdistBackward(
         <td>数据类型与grad一致。</td>
         <td>FLOAT、FLOAT16、BFLOAT16</td>
         <td>ND</td>
-        <td>维度与grad相等，倒数第二维与grad的倒数第一维相等，倒数第一维与x1的倒数第一维相等，其余维度与grad应满足<a href="../../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+        <td>维度与grad相等，倒数第二维与grad的倒数第一维相等，倒数第一维与x1的倒数第一维相等，其余维度与grad应满足<a href="../../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
         <td>√</td>
       </tr>
       <tr>
@@ -164,11 +164,11 @@ aclnnStatus aclnnCdistBackward(
     </tbody>
     </table>
 - **返回值：**
-  
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
-  
+
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
+
   第一段接口完成入参校验，出现以下场景时报错：
-  
+
   <table style="undefined;table-layout: fixed; width: 1110px"><colgroup>
     <col style="width: 291px">
     <col style="width: 112px">
@@ -200,7 +200,7 @@ aclnnStatus aclnnCdistBackward(
 ## aclnnCdistBackward
 
 - **参数说明：**
-  
+
   <table style="undefined;table-layout: fixed; width: 1110px"><colgroup>
     <col style="width: 153px">
     <col style="width: 124px">
@@ -236,8 +236,8 @@ aclnnStatus aclnnCdistBackward(
     </tbody>
     </table>
 - **返回值：**
-  
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -245,7 +245,7 @@ aclnnStatus aclnnCdistBackward(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

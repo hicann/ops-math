@@ -51,7 +51,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnLogSumExpGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLogSumExp”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnLogSumExpGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLogSumExp”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnLogSumExpGetWorkspaceSize(
@@ -101,7 +101,7 @@ aclnnStatus aclnnLogSumExp(
       <td class="tg-0pky">self（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">公式中的x。</td>
-      <td class="tg-0pky">数据类型需要可转换成out的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">数据类型需要可转换成out的数据类型（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT、FLOAT16、BFLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">0-8</td>
@@ -134,7 +134,7 @@ aclnnStatus aclnnLogSumExp(
       <td class="tg-0pky">
         <ul>
           <li>若keepDim为true，除dim指定维度上的size为1以外，其余维度的shape需要与self保持一致；若keepDim为false，reduce轴的维度不保留，其余维度shape需要与self一致。</li>
-          <li>数据类型需要可转换成self的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</li>
+          <li>数据类型需要可转换成self的数据类型（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</li>
         </ul>
       </td>
       <td class="tg-0pky">FLOAT、FLOAT16、BFLOAT16</td>
@@ -170,7 +170,7 @@ aclnnStatus aclnnLogSumExp(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -255,7 +255,7 @@ aclnnStatus aclnnLogSumExp(
 
 - **返回值：**
 
-  - aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)
+  - aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)
 
 ## 约束说明
 
@@ -264,7 +264,7 @@ aclnnStatus aclnnLogSumExp(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

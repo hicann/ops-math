@@ -36,7 +36,7 @@
 - aclnnBitwiseAndTensorOut和aclnnInplaceBitwiseAndTensorOut实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnBitwiseAndTensorOut：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceBitwiseAndTensorOut：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnBitwiseAndTensorOutGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnBitwiseAndTensorOut"接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用"aclnnBitwiseAndTensorOutGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnBitwiseAndTensorOut"接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnBitwiseAndTensorOutGetWorkspaceSize(
@@ -101,7 +101,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>输入tensor，公式中的self。</td>
-      <td>数据类型需要与other的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。<br>shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>数据类型需要与other的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。<br>shape需要与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td>INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL</td>
       <td>ND</td>
       <td>0-8</td>
@@ -111,7 +111,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
       <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>输入tensor，公式中的other。</td>
-      <td>数据类型需要与self的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。<br>shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>数据类型需要与self的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。<br>shape需要与self满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td>INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL</td>
       <td>ND</td>
       <td>0-8</td>
@@ -121,7 +121,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>输出tensor，公式中的out。</td>
-      <td>数据类型需要是self与other推导之后可转换的数据类型。<br>shape需要是self与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>之后的shape。</td>
+      <td>数据类型需要是self与other推导之后可转换的数据类型。<br>shape需要是self与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>之后的shape。</td>
       <td>BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>0-8</td>
@@ -151,7 +151,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -232,7 +232,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceBitwiseAndTensorOutGetWorkspaceSize
 
@@ -264,7 +264,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
       <td>self（const aclTensor*）</td>
       <td>输入/输出</td>
       <td>输入和输出tensor，公式中的self。</td>
-      <td>数据类型需要与other的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。<br>shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>，并且broadcast后的shape需与原shape保持一致。</td>
+      <td>数据类型需要与other的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。<br>shape需要与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>，并且broadcast后的shape需与原shape保持一致。</td>
       <td>INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL</td>
       <td>ND</td>
       <td>0-8</td>
@@ -274,7 +274,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
       <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>输入tensor，公式中的other。</td>
-      <td>数据类型需要与selfRef的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。<br>shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>数据类型需要与selfRef的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。<br>shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td>INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL</td>
       <td>ND</td>
       <td>0-8</td>
@@ -304,7 +304,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -385,7 +385,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -395,7 +395,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

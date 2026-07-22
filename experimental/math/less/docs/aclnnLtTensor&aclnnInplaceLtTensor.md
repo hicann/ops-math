@@ -22,7 +22,7 @@
 
   - aclnnLtTensor：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceLtTensor：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnLtTensorGetWorkspaceSize”或者“aclnnInplaceLtTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLtTensor”或者“aclnnInplaceLtTensor”接口执行计算。
+- 每个算子分为[两段式接口](../../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnLtTensorGetWorkspaceSize”或者“aclnnInplaceLtTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLtTensor”或者“aclnnInplaceLtTensor”接口执行计算。
 
   * `aclnnStatus aclnnLtTensorGetWorkspaceSize(const aclTensor *self, const aclTensor *other, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
   * `aclnnStatus aclnnLtTensor(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -33,18 +33,18 @@
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入)：Device侧的aclTensor，数据类型需要与other满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/互推导关系.md)），shape需要与other满足[broadcast关系](../../../../docs/zh/context/broadcast关系.md)，shape维度不高于8维。支持[非连续的Tensor](../../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../../docs/zh/context/数据格式.md)支持ND。
+  - self(aclTensor*, 计算输入)：Device侧的aclTensor，数据类型需要与other满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/deduction_relationship.md)），shape需要与other满足[broadcast关系](../../../../docs/zh/context/broadcast_relationship.md)，shape维度不高于8维。支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND。
   数据类型支持FLOAT、FLOAT16、BFLOAT16、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、DOUBLE、BOOL。
-  - other(aclTensor*, 计算输入)：Device侧的aclTensor，数据类型需要与self满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/互推导关系.md)），shape需要与self的shape满足[broadcast关系](../../../../docs/zh/context/broadcast关系.md)，shape维度不高于8维。支持[非连续的Tensor](../../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../../docs/zh/context/数据格式.md)支持ND。
+  - other(aclTensor*, 计算输入)：Device侧的aclTensor，数据类型需要与self满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/deduction_relationship.md)），shape需要与self的shape满足[broadcast关系](../../../../docs/zh/context/broadcast_relationship.md)，shape维度不高于8维。支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND。
     数据类型支持FLOAT、FLOAT16、BFLOAT16、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、DOUBLE、BOOL。
-  - out(aclTensor \*, 计算输出)：Device侧的aclTensor，数据类型需要是BOOL可转换的数据类型[互转换关系](../../../../docs/zh/context/互转换关系.md), shape与self、other广播之后的shape（参见[broadcast关系](../../../../docs/zh/context/broadcast关系.md)）一致，shape维度不高于8维，支持[非连续的Tensor](../../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../../docs/zh/context/数据格式.md)支持ND。
+  - out(aclTensor \*, 计算输出)：Device侧的aclTensor，数据类型需要是BOOL可转换的数据类型[互转换关系](../../../../docs/zh/context/conversion_relationship.md), shape与self、other广播之后的shape（参见[broadcast关系](../../../../docs/zh/context/broadcast_relationship.md)）一致，shape维度不高于8维，支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND。
     数据类型支持FLOAT、FLOAT16、BFLOAT16、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、DOUBLE、BOOL、COMPLEX64、COMPLEX128。
   - workspaceSize(uint64_t \*, 出参)：返回用户需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor \*\*, 出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -126,22 +126,22 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceLtTensorGetWorkspaceSize
 
 - **参数说明：**
 
-  - selfRef(aclTensor*,计算输入|计算输出)：输入输出tensor，即公式中的self与out。Device侧的aclTensor，输入数据类型需要与other满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/互推导关系.md)），shape需要与other满足[broadcast关系](../../../../docs/zh/context/broadcast关系.md)，且broadcast后的shape需要与selfRef的shape一致。支持[非连续的Tensor](../../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../../docs/zh/context/数据格式.md)支持ND。
+  - selfRef(aclTensor*,计算输入|计算输出)：输入输出tensor，即公式中的self与out。Device侧的aclTensor，输入数据类型需要与other满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/deduction_relationship.md)），shape需要与other满足[broadcast关系](../../../../docs/zh/context/broadcast_relationship.md)，且broadcast后的shape需要与selfRef的shape一致。支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND。
     数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、DOUBLE、UINT16、UINT32、UINT64、BOOL、BFLOAT16。
-  - other(aclTensor*,计算输入)：Device侧的aclTensor，数据类型需要与selfRef满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/互推导关系.md)），shape需要与self满足[broadcast关系](../../../../docs/zh/context/broadcast关系.md)，且broadcast后的shape需要与selfRef的shape一致。支持[非连续的Tensor](../../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../../docs/zh/context/数据格式.md)支持ND。
+  - other(aclTensor*,计算输入)：Device侧的aclTensor，数据类型需要与selfRef满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/deduction_relationship.md)），shape需要与self满足[broadcast关系](../../../../docs/zh/context/broadcast_relationship.md)，且broadcast后的shape需要与selfRef的shape一致。支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND。
     数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、DOUBLE、UINT16、UINT32、UINT64、BOOL、BFLOAT16。
   - workspaceSize(uint64_t \*，出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor \*\*，出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -223,11 +223,11 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/compile_and_run_sample.md)。
 
 **aclnnLtTensor示例代码：**
 
@@ -311,7 +311,7 @@ struct LtTensorData {
 
 int CreateInputAndOutputTensors(LtTensorData& data) {
   auto ret = 0;
-  
+
   // 创建self aclTensor
   ret = CreateAclTensor(data.selfHostData, data.selfShape, &data.selfDeviceAddr, aclDataType::ACL_DOUBLE, &data.self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -321,33 +321,33 @@ int CreateInputAndOutputTensors(LtTensorData& data) {
   // 创建out aclTensor
   ret = CreateAclTensor(data.outHostData, data.outShape, &data.outDeviceAddr, aclDataType::ACL_DOUBLE, &data.out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  
+
   return ret;
 }
 
 int ExecuteLtTensorComputation(aclrtStream stream, LtTensorData& data) {
   auto ret = 0;
   aclOpExecutor* executor;
-  
+
   // 调用aclnnLtTensor第一段接口
   ret = aclnnLtTensorGetWorkspaceSize(data.self, data.other, data.out, &data.workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnLtTensorGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
-  
+
   // 根据第一段接口计算出的workspaceSize申请device内存
   data.workspaceAddr = nullptr;
   if (data.workspaceSize > 0) {
     ret = aclrtMalloc(&data.workspaceAddr, data.workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
   }
-  
+
   // 调用aclnnLtTensor第二段接口
   ret = aclnnLtTensor(data.workspaceAddr, data.workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnLtTensor failed. ERROR: %d\n", ret); return ret);
-  
+
   // 同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
-  
+
   return ret;
 }
 
@@ -381,22 +381,22 @@ void ReleaseResources(LtTensorData& data) {
 
 int ExecuteLtTensorOperator(aclrtStream stream) {
   LtTensorData data;
-  
+
   // 创建输入和输出张量
   auto ret = CreateInputAndOutputTensors(data);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  
+
   // 执行LtTensor算子操作
   ret = ExecuteLtTensorComputation(stream, data);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  
+
   // 处理并打印结果
   ret = ProcessAndPrintResults(data);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  
+
   // 释放资源
   ReleaseResources(data);
-  
+
   return 0;
 }
 
@@ -405,7 +405,7 @@ int main() {
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
-  
+
   // 执行InplaceLtScalar操作
   ret = ExecuteLtTensorOperator(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteInplaceLtScalarOperator failed. ERROR: %d\n", ret); return ret);
@@ -539,7 +539,7 @@ int main() {
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
-  
+
   // 执行InplaceLtScalar操作
   ret = ExecuteInplaceLtTensorOperator(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteInplaceLtScalarOperator failed. ERROR: %d\n", ret); return ret);

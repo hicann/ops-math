@@ -135,7 +135,7 @@ aclnnStatus aclnnSlogdet(
 
 - **返回值**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -191,7 +191,7 @@ aclnnStatus aclnnSlogdet(
 
 - **返回值**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -204,7 +204,7 @@ aclnnStatus aclnnSlogdet(
 
 ## 调用示例
 
-示例代码如下，仅供参考。完整可运行版本见 `experimental/math/slogdet/examples/test_aclnn_slogdet.cpp`（真机 NPU 已 PASS），具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考。完整可运行版本见 `experimental/math/slogdet/examples/test_aclnn_slogdet.cpp`（真机 NPU 已 PASS），具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/compile_and_run_sample.md)。
 
 > **链接注意（命中自定义 kernel 的关键）**：本算子的自定义 `libcust_opapi.so` 与上游 `libopapi.so` 都导出同名符号 `aclnnSlogdet` / `aclnnSlogdetGetWorkspaceSize`（上游为 `math/slogdet` 转发壳 → `LogMatrixDeterminant`）。编译示例时必须用 `-Wl,--no-as-needed ${CUSTOM_OP_LIBRARY}` 把自定义库置于链接命令最前（先于 `libopapi`），使其在 `DT_NEEDED` 中居首，运行时按 BFS 优先绑定到本算子的原生 AscendC kernel（`Slogdet`），否则会误绑上游 AICPU 转发实现。链接片段示例：
 >

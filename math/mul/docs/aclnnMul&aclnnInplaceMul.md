@@ -40,7 +40,7 @@ aclnnMul和aclnnInplaceMul实现相同的功能，使用区别如下，请根据
 - aclnnMul：需新建一个输出张量对象存储计算结果。
 - aclnnInplaceMul：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnMulGetWorkspaceSize”或者“aclnnInplaceMulGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMul”或者“aclnnInplaceMul”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnMulGetWorkspaceSize”或者“aclnnInplaceMulGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMul”或者“aclnnInplaceMul”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnMulGetWorkspaceSize(
@@ -105,7 +105,7 @@ aclnnStatus aclnnInplaceMul(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入`self`。</td>
-      <td>数据类型与other的数据类型需满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a> ，shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>数据类型与other的数据类型需满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a> ，shape需要与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
@@ -115,7 +115,7 @@ aclnnStatus aclnnInplaceMul(
       <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入`other`。</td>
-      <td>数据类型与self的数据类型需满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>，shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>数据类型与self的数据类型需满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>，shape需要与self满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
@@ -159,7 +159,7 @@ aclnnStatus aclnnInplaceMul(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现如下场景时报错：
 
@@ -238,7 +238,7 @@ aclnnStatus aclnnInplaceMul(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceMulGetWorkspaceSize
 
@@ -270,7 +270,7 @@ aclnnStatus aclnnInplaceMul(
       <td>selfRef（aclTensor*）</td>
       <td>输入|输出</td>
       <td>公式中的输入`self`与输出`out`。</td>
-      <td>数据类型需要与other的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>，且推导后的数据类型需支持转换到selfRef的数据类型。shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>，且broadcast后的shape需与selfRef的shape相等。</td>
+      <td>数据类型需要与other的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>，且推导后的数据类型需支持转换到selfRef的数据类型。shape需要与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>，且broadcast后的shape需与selfRef的shape相等。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
@@ -280,7 +280,7 @@ aclnnStatus aclnnInplaceMul(
       <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入`other`。</td>
-      <td>数据类型需要与selfRef的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>.md)），shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>数据类型需要与selfRef的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>.md)），shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
@@ -314,7 +314,7 @@ aclnnStatus aclnnInplaceMul(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现如下场景时报错：
 
@@ -393,7 +393,7 @@ aclnnStatus aclnnInplaceMul(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -405,7 +405,7 @@ aclnnStatus aclnnInplaceMul(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 **aclnnMul示例代码：**
 

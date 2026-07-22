@@ -43,7 +43,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用`aclnnSearchSortedGetWorkspaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnSearchSorted`接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用`aclnnSearchSortedGetWorkspaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnSearchSorted`接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnSearchSortedGetWorkspaceSize(
@@ -96,7 +96,7 @@ aclnnStatus aclnnSearchSorted(
       <td>sortedSequence（aclTensor*）</td>
       <td>输入</td>
       <td>已排序的输入张量。</td>
-      <td><ul><li>与<code>self</code>数据类型需满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</li><li>公式中的<code>N</code>为<code>sortedSequence</code>最内层长度，<code>sortedSequence<sub>j</sub></code>为最内层第<code>j</code>个元素。</li></ul></td>
+      <td><ul><li>与<code>self</code>数据类型需满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>。</li><li>公式中的<code>N</code>为<code>sortedSequence</code>最内层长度，<code>sortedSequence<sub>j</sub></code>为最内层第<code>j</code>个元素。</li></ul></td>
       <td>DOUBLE、FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64</td>
       <td>ND</td>
       <td>不超过8维</td>
@@ -106,7 +106,7 @@ aclnnStatus aclnnSearchSorted(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>待查找插入位置的输入张量。</td>
-      <td><ul><li>与<code>sortedSequence</code>数据类型需满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</li><li>公式中<code>x=self<sub>i</sub></code>，<code>i</code>为<code>self</code>中元素索引。</li></ul></td>
+      <td><ul><li>与<code>sortedSequence</code>数据类型需满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>。</li><li>公式中<code>x=self<sub>i</sub></code>，<code>i</code>为<code>self</code>中元素索引。</li></ul></td>
       <td>DOUBLE、FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64</td>
       <td>ND</td>
       <td>不超过8维</td>
@@ -176,7 +176,7 @@ aclnnStatus aclnnSearchSorted(
 
 - **返回值**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -262,7 +262,7 @@ aclnnStatus aclnnSearchSorted(
 
 - **返回值**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -270,7 +270,7 @@ aclnnStatus aclnnSearchSorted(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

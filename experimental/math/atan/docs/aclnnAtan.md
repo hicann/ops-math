@@ -18,7 +18,7 @@
 
 ## 函数原型
 
-- 每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnAtanGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnAtan”接口执行计算。
+- 每个算子分为[两段式接口](../../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnAtanGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnAtan”接口执行计算。
 
   - `aclnnStatus aclnnAtanGetWorkspaceSize(const aclTensor *input, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
   - `aclnnStatus aclnnAtan(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, const aclrtStream stream)`
@@ -26,21 +26,21 @@
 ## aclnnAtanGetWorkspaceSize
 
 - **参数说明**：
-  - input(aclTensor*，计算输入)：输入Tensor，Device侧的aclTensor，当类型为FLOAT16、BFLOAT16时，转化为FLOAT32进行运算，输出FLOAT32类型。支持[非连续的Tensor](../../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../../docs/zh/context/数据格式.md)支持ND，非连续的Tensor维度不大于8，且shape需要与out一致。
+  - input(aclTensor*，计算输入)：输入Tensor，Device侧的aclTensor，当类型为FLOAT16、BFLOAT16时，转化为FLOAT32进行运算，输出FLOAT32类型。支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND，非连续的Tensor维度不大于8，且shape需要与out一致。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
-  - out(aclTensor\*，计算输出)：输出Tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../../docs/zh/context/数据格式.md)支持ND，非连续的Tensor维度不大于8，且shape需要与input一致。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。   
+  - out(aclTensor\*，计算输出)：输出Tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND，非连续的Tensor维度不大于8，且shape需要与input一致。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
   - workspaceSize(uint64_t\*，出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor \*\*，出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   ```text
   第一段接口完成入参校验，出现以下场景时报错：
   161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 传入的input或out是空指针。
-  161002 (ACLNN_ERR_PARAM_INVALID)：1. input或out的数据类型不在支持的范围之内。                                   
+  161002 (ACLNN_ERR_PARAM_INVALID)：1. input或out的数据类型不在支持的范围之内。
                                    2. input和out的shape不一致。
                                    3. input或out的维数大于8。
   ```
@@ -48,19 +48,19 @@
 ## aclnnAtan
 
 - **参数说明**：
-  
+
   - workspace(void\*, 入参)：在Device侧申请的workspace内存地址。
   - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnAtanGetWorkspaceSize获取。
   - executor(aclOpExecutor\*, 入参)：op执行器，包含了算子计算流程。
   - stream(aclrtStream, 入参)：指定执行任务的Stream。
-  
+
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>
@@ -181,7 +181,7 @@ int main() {
   // 6. 释放aclTensor，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
   aclDestroyTensor(out);
-    
+
   // 7. 释放device资源，需要根据具体API的接口定义修改
   aclrtFree(selfDeviceAddr);
   aclrtFree(outDeviceAddr);

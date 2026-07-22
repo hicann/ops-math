@@ -39,7 +39,7 @@
 
   - aclnnClampMinTensor：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceClampMinTensor：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnClampMinTensorGetWorkspaceSize”或者“aclnnInplaceClampMinTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnClampMinTensor”或者“aclnnInplaceClampMinTensor”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnClampMinTensorGetWorkspaceSize”或者“aclnnInplaceClampMinTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnClampMinTensor”或者“aclnnInplaceClampMinTensor”接口执行计算。
 
 ```cpp
 aclnnStatus aclnnClampMinTensorGetWorkspaceSize(
@@ -104,7 +104,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
       <td class="tg-0pky">self（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入Tensor，需要进行限制的张量，即公式中的x<sub>i</sub>。</td>
-      <td class="tg-0pky">shape可以与clipValueMin进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与clipValueMin的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">shape可以与clipValueMin进行<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>，数据类型与clipValueMin的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -114,7 +114,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
       <td class="tg-0pky">clipValueMin（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入Tensor，对self的下界进行限制，公式中的min_value<sub>i</sub>。</td>
-      <td class="tg-0pky">shape可以与self进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与self的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">shape可以与self进行<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>，数据类型与self的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -124,7 +124,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
       <td class="tg-0lax">out（aclTensor*）</td>
       <td class="tg-0lax">输出</td>
       <td class="tg-0lax">公式中的y<sub>i</sub>。</td>
-      <td class="tg-0lax">shape是self和clipValueMin<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>的结果，数据类型需要是self、clipValueMin可转换的数据类型。</td>
+      <td class="tg-0lax">shape是self和clipValueMin<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>的结果，数据类型需要是self、clipValueMin可转换的数据类型。</td>
       <td class="tg-0lax">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0lax">ND</td>
       <td class="tg-0lax">1-8</td>
@@ -163,7 +163,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
@@ -234,7 +234,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceClampMinTensorGetWorkspaceSize
 
@@ -266,7 +266,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
       <td class="tg-0pky">selfRef（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入Tensor，需要进行限制的张量，即公式中的x<sub>i</sub>。</td>
-      <td class="tg-0pky">shape可以与clipValueMin进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与clipValueMin的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">shape可以与clipValueMin进行<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>，数据类型与clipValueMin的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -276,7 +276,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
       <td class="tg-0pky">clipValueMin（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入Tensor，对selfRef的下界进行限制，即公式中的min_value<sub>i</sub>。</td>
-      <td class="tg-0pky">shape可以与selfRef进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与self的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">shape可以与selfRef进行<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>，数据类型与self的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -311,13 +311,13 @@ aclnnStatus aclnnInplaceClampMinTensor(
   <!-- end id9 -->
   <!-- npu="950,A3,910b" id10 -->
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：
-    - selfRef和clipValueMin数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)）。
+    - selfRef和clipValueMin数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)）。
     - selfRef的数据类型不支持BOOL。
   <!-- end id10 -->
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
@@ -394,7 +394,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -403,7 +403,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 **aclnnClampMinTensor示例代码：**
 

@@ -32,7 +32,7 @@ $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnLeftShiftGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLeftShift”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnLeftShiftGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLeftShift”接口执行计算。
 
 ```c++
 aclnnStatus aclnnLeftShiftGetWorkspaceSize(
@@ -81,7 +81,7 @@ aclnnStatus aclnnLeftShift(
       <td>self</td>
       <td>输入</td>
       <td>需要进行按位左移的张量，公式中的self。</td>
-      <td>支持空Tensor。<br>数据类型与shiftBits的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" class="md-link">互推导关系</a>）。<br>shape需要与shiftBits满足<a href="../../../docs/zh/context/broadcast关系.md" class="md-link">broadcast关系</a>。</td>
+      <td>支持空Tensor。<br>数据类型与shiftBits的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/deduction_relationship.md" class="md-link">互推导关系</a>）。<br>shape需要与shiftBits满足<a href="../../../docs/zh/context/broadcast_relationship.md" class="md-link">broadcast关系</a>。</td>
       <td>INT8、INT16、INT32、INT64、<br>UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>0-8</td>
@@ -91,7 +91,7 @@ aclnnStatus aclnnLeftShift(
       <td>shiftBits</td>
       <td>输入</td>
       <td>左移操作数的张量，公式中的shiftBits。</td>
-      <td>支持空Tensor。<br>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" class="md-link">互推导关系</a>）。<br>shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" class="md-link">broadcast关系</a>。</td>
+      <td>支持空Tensor。<br>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/deduction_relationship.md" class="md-link">互推导关系</a>）。<br>shape需要与self满足<a href="../../../docs/zh/context/broadcast_relationship.md" class="md-link">broadcast关系</a>。</td>
       <td>INT8、INT16、INT32、INT64、<br>UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>0-8</td>
@@ -131,7 +131,7 @@ aclnnStatus aclnnLeftShift(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -214,7 +214,7 @@ aclnnStatus aclnnLeftShift(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -225,7 +225,7 @@ aclnnStatus aclnnLeftShift(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

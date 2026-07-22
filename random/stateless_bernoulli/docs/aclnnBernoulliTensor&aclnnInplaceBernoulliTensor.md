@@ -38,7 +38,7 @@
 
 ## 函数原型
 
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnBernoulliTensorGetWorkspaceSize”或者“aclnnInplaceBernoulliTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnBernoulliTensor”或者“aclnnInplaceBernoulliTensor”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnBernoulliTensorGetWorkspaceSize”或者“aclnnInplaceBernoulliTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnBernoulliTensor”或者“aclnnInplaceBernoulliTensor”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnBernoulliTensorGetWorkspaceSize(
@@ -117,7 +117,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
       <td>prob</td>
       <td>输入</td>
       <td>公式中的prob，Device侧的aclTensor</td>
-      <td>满足0≤prob≤1。<a href="../../../docs/zh/context/数据格式.md" target="_blank">数据格式</a>需要与self一致。</td>
+      <td>满足0≤prob≤1。<a href="../../../docs/zh/context/data_format.md" target="_blank">数据格式</a>需要与self一致。</td>
       <td>FLOAT16、FLOAT、DOUBLE</td>
       <td>ND</td>
       <td>0-8</td>
@@ -185,7 +185,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -264,7 +264,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
 
 - **返回值：**
 
-    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceBernoulliTensorGetWorkspaceSize
 
@@ -362,7 +362,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -435,7 +435,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
 
 - **返回值：**
 
-    aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+    aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -445,7 +445,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

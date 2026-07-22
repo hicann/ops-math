@@ -37,7 +37,7 @@
 - aclnnSin和aclnnInplaceSin实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnSin：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceSin：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnSinGetWorkspaceSize”或者“aclnnInplaceSinGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnSin”或者“aclnnInplaceSin”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnSinGetWorkspaceSize”或者“aclnnInplaceSinGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnSin”或者“aclnnInplaceSin”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnSinGetWorkspaceSize(
@@ -100,7 +100,7 @@ aclnnStatus aclnnInplaceSin(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>输入tensor。</td>
-      <td>shape需要与out一致，和out的数据类型满足数据类型<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。当输入的数据类型为INT8、INT16、INT32、INT64、UINT8、BOOL时，会转换为float数据类型做计算，计算结果转换成out的数据类型。</td>
+      <td>shape需要与out一致，和out的数据类型满足数据类型<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>。当输入的数据类型为INT8、INT16、INT32、INT64、UINT8、BOOL时，会转换为float数据类型做计算，计算结果转换成out的数据类型。</td>
       <td>INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
       <td>不大于8</td>
@@ -110,7 +110,7 @@ aclnnStatus aclnnInplaceSin(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>输出tensor。</td>
-      <td>和self的数据类型满足数据类型<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</td>
+      <td>和self的数据类型满足数据类型<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
       <td>需要与self一致</td>
@@ -144,7 +144,7 @@ aclnnStatus aclnnInplaceSin(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现如下场景时报错：
 
@@ -223,7 +223,7 @@ aclnnStatus aclnnInplaceSin(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceSinGetWorkspaceSize
 
@@ -290,7 +290,7 @@ aclnnStatus aclnnInplaceSin(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现如下场景时报错：
 
@@ -363,7 +363,7 @@ aclnnStatus aclnnInplaceSin(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -378,7 +378,7 @@ aclnnStatus aclnnInplaceSin(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

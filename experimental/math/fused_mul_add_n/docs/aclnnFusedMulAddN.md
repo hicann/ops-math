@@ -40,7 +40,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用 `aclnnFusedMulAddNGetWorkspaceSize` 接口获取入参并计算
+每个算子分为[两段式接口](../../../../docs/zh/context/two_phase_api.md)，必须先调用 `aclnnFusedMulAddNGetWorkspaceSize` 接口获取入参并计算
 本次 API 调用计算所需要的 workspace 大小，再调用 `aclnnFusedMulAddN` 接口执行计算。
 
 ```cpp
@@ -136,7 +136,7 @@ aclnnStatus aclnnFusedMulAddN(
 
 - **返回值**：
 
-  返回 `aclnnStatus` 状态码，具体参见 [aclnn 返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  返回 `aclnnStatus` 状态码，具体参见 [aclnn 返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -219,7 +219,7 @@ aclnnStatus aclnnFusedMulAddN(
 
 - **返回值**：
 
-  返回 `aclnnStatus` 状态码，具体参见 [aclnn 返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  返回 `aclnnStatus` 状态码，具体参见 [aclnn 返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 

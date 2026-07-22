@@ -22,21 +22,21 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnRoundGetWorkspaceSize”接口获取计算所需workspace大小及包含了算子计算流程的执行器，再调用“aclnnRound”接口执行计算
+每个算子分为[两段式接口](../../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnRoundGetWorkspaceSize”接口获取计算所需workspace大小及包含了算子计算流程的执行器，再调用“aclnnRound”接口执行计算
 
 ```c++
 aclnnStatus aclnnRoundGetWorkspaceSize(
-    const aclTensor* self, 
-    aclTensor* out, 
-    uint64_t* workspaceSize, 
+    const aclTensor* self,
+    aclTensor* out,
+    uint64_t* workspaceSize,
     aclOpExecutor** executor
 )
 ```
 
 ```c++
 aclnnStatus aclnnRound(
-    void* workspace, 
-    uint64_t workspaceSize, 
+    void* workspace,
+    uint64_t workspaceSize,
     aclOpExecutor* executor,
     const aclrtStream stream)
 ```
@@ -54,7 +54,7 @@ aclnnStatus aclnnRound(
 
 - 返回值：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnRound
 
@@ -69,7 +69,7 @@ aclnnStatus aclnnRound(
 
 - 返回值：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -77,7 +77,7 @@ aclnnStatus aclnnRound(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```c++
 /**
@@ -95,19 +95,19 @@ aclnnStatus aclnnRound(
  #include <vector>
  #include "acl/acl.h"
  #include "aclnn_round.h"
- 
+
  #define CHECK_RET(cond, return_expr) \
      do {                             \
          if (!(cond)) {               \
              return_expr;             \
          }                            \
      } while (0)
- 
+
  #define LOG_PRINT(message, ...)         \
      do {                                \
          printf(message, ##__VA_ARGS__); \
      } while (0)
- 
+
  int64_t GetShapeSize(const std::vector<int64_t>& shape)
  {
      int64_t shapeSize = 1;
@@ -116,7 +116,7 @@ aclnnStatus aclnnRound(
      }
      return shapeSize;
  }
- 
+
  void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr)
  {
      auto size = GetShapeSize(shape);
@@ -129,7 +129,7 @@ aclnnStatus aclnnRound(
          LOG_PRINT("mean result[%ld] is: %f\n", i, resultData[i]);
      }
  }
- 
+
  int Init(int32_t deviceId, aclrtStream* stream)
  {
      // 固定写法，初始化
@@ -141,7 +141,7 @@ aclnnStatus aclnnRound(
      CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtCreateStream failed. ERROR: %d\n", ret); return ret);
      return 0;
  }
- 
+
  template <typename T>
  int CreateAclTensor(
      const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr, aclDataType dataType,
@@ -154,20 +154,20 @@ aclnnStatus aclnnRound(
      // 3. 调用aclrtMemcpy将host侧数据拷贝到device侧内存上
      ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
      CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
- 
+
      // 计算连续tensor的strides
      std::vector<int64_t> strides(shape.size(), 1);
      for (int64_t i = shape.size() - 2; i >= 0; i--) {
          strides[i] = shape[i + 1] * strides[i + 1];
      }
- 
+
      // 调用aclCreateTensor接口创建aclTensor
      *tensor = aclCreateTensor(
          shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
          *deviceAddr);
      return 0;
  }
- 
+
  int main()
  {
      // 1. 调用acl进行device/stream初始化
@@ -175,17 +175,17 @@ aclnnStatus aclnnRound(
      aclrtStream stream;
      auto ret = Init(deviceId, &stream);
      CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
- 
+
      // 2. 构造输入与输出，需要根据API的接口自定义构造
      aclTensor* selfX = nullptr;
      void* selfXDeviceAddr = nullptr;
      // 构建输入数据x的张量形状
      std::vector<int64_t> selfXShape = {2,8};
      //初始化输入的x数据
-     std::vector<float> selfXHostData(16, 1); 
+     std::vector<float> selfXHostData(16, 1);
      // 对输入x的数据进行挨个赋值
      for (int i = 0; i < 16; i++) {
-        selfXHostData[i] = (static_cast<float>(rand()) / RAND_MAX) * 10.0f; 
+        selfXHostData[i] = (static_cast<float>(rand()) / RAND_MAX) * 10.0f;
      }
 
      // 打印输入数据，根据前置信息，输入数据维度为16，赋值后打印相应的数据信息
@@ -204,37 +204,37 @@ aclnnStatus aclnnRound(
      std::vector<float> outHostData(16, 1);  // 初始化输出数据
      ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
      CHECK_RET(ret == ACL_SUCCESS, return ret);
- 
+
      // 3. 调用CANN算子库API，需要修改为具体的Api名称
      uint64_t workspaceSize = 0;
      aclOpExecutor* executor;
- 
+
      // 4. 调用aclnnAddExample第一段接口
      ret = aclnnRoundGetWorkspaceSize(selfX,0, out, &workspaceSize, &executor);
      CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAddExampleGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
- 
+
      // 根据第一段接口计算出的workspaceSize申请device内存
      void* workspaceAddr = nullptr;
      if (workspaceSize > static_cast<uint64_t>(0)) {
          ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
          CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
      }
- 
+
      // 5. 调用aclnnAddExample第二段接口
      ret = aclnnRound(workspaceAddr, workspaceSize, executor, stream);
      CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAddExample failed. ERROR: %d\n", ret); return ret);
- 
+
      // 6. （固定写法）同步等待任务执行结束
      ret = aclrtSynchronizeStream(stream);
      CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
- 
+
      // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
      PrintOutResult(outShape, &outDeviceAddr);
- 
+
      // 7. 释放aclTensor，需要根据具体API的接口定义修改
      aclDestroyTensor(selfX);
      aclDestroyTensor(out);
- 
+
      // 8. 释放device资源
      aclrtFree(selfXDeviceAddr);
      aclrtFree(outDeviceAddr);
@@ -243,10 +243,10 @@ aclnnStatus aclnnRound(
      }
      aclrtDestroyStream(stream);
      aclrtResetDevice(deviceId);
- 
+
      // 9. acl去初始化
      aclFinalize();
- 
+
      return 0;
  }
 ```

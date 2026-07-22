@@ -39,7 +39,7 @@
   - aclnnClampMaxTensor：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceClampMaxTensor：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnClampMaxTensorGetWorkspaceSize”或者“aclnnInplaceClampMaxTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnClampMaxTensor”或者“aclnnInplaceClampMaxTensor”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnClampMaxTensorGetWorkspaceSize”或者“aclnnInplaceClampMaxTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnClampMaxTensor”或者“aclnnInplaceClampMaxTensor”接口执行计算。
 
 ```cpp
 aclnnStatus aclnnClampMaxTensorGetWorkspaceSize(
@@ -103,7 +103,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
       <td class="tg-0pky">self（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入tensor，需要进行限制的张量，即公式中的self<sub>i</sub>。</td>
-      <td class="tg-0pky">shape可以与max进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与max的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">shape可以与max进行<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>，数据类型与max的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -113,7 +113,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
       <td class="tg-0pky">max（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入tensor，对self的上界进行限制，即公式中的max<sub>i</sub>。</td>
-      <td class="tg-0pky">shape可以与self进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与self的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">shape可以与self进行<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>，数据类型与self的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -123,7 +123,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
       <td class="tg-0lax">out（aclTensor*）</td>
       <td class="tg-0lax">输出</td>
       <td class="tg-0lax">输出tensor，即公式中的out<sub>i</sub>。</td>
-      <td class="tg-0lax">shape需要是self与max <a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>之后的shape，且数据类型需要是self与max可转换的数据类型。</td>
+      <td class="tg-0lax">shape需要是self与max <a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>之后的shape，且数据类型需要是self与max可转换的数据类型。</td>
       <td class="tg-0lax">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0lax">ND</td>
       <td class="tg-0lax">1-8</td>
@@ -162,7 +162,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -189,7 +189,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
       <td class="tg-0pky">self、max和out的数据类型不在支持范围内。</td>
     </tr>
     <tr>
-      <td class="tg-0lax">self与max的shape不满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>关系，或<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>后的shape与输出out的shape不一致。</td>
+      <td class="tg-0lax">self与max的shape不满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>关系，或<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>后的shape与输出out的shape不一致。</td>
     </tr>
     <tr>
       <td class="tg-0lax">self与max类型推导失败，或推导类型无法转为out的数据类型。</td>
@@ -240,7 +240,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceClampMaxTensorGetWorkspaceSize
 
@@ -272,7 +272,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
       <td class="tg-0pky">selfRef（aclTensor*）</td>
       <td class="tg-0pky">输入/输出</td>
       <td class="tg-0pky">输入tensor，需要进行限制的张量，即公式中的self<sub>i</sub>与out<sub>i</sub>。</td>
-      <td class="tg-0pky">shape可以与max进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与max的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">shape可以与max进行<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>，数据类型与max的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -282,7 +282,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
       <td class="tg-0pky">max（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入tensor，对self的上界进行限制，即公式中的max<sub>i</sub>。</td>
-      <td class="tg-0pky">shape可以与selfRef进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与self的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">shape可以与selfRef进行<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>，数据类型与self的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -317,13 +317,13 @@ aclnnStatus aclnnInplaceClampMaxTensor(
   <!-- end id9 -->
   <!-- npu="950,A3,910b" id10 -->
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：
-    - selfRef和max数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)）。
+    - selfRef和max数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)）。
     - selfRef的数据类型不支持BOOL。
   <!-- end id10 -->
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -350,7 +350,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
       <td class="tg-0pky">selfRef与max的数据类型不在支持范围内。</td>
     </tr>
     <tr>
-      <td class="tg-0lax">selfRef与max的shape不满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>关系。</td>
+      <td class="tg-0lax">selfRef与max的shape不满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>关系。</td>
     </tr>
     <tr>
       <td class="tg-0lax">selfRef与max类型推导失败。</td>
@@ -404,7 +404,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -413,7 +413,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 **aclnnClampMaxTensor调用示例：**
 

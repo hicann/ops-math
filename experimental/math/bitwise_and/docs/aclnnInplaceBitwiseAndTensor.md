@@ -17,7 +17,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnInplaceBitwiseAndTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnInplaceBitwiseAndTensor”接口执行计算。
+每个算子分为[两段式接口](../../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnInplaceBitwiseAndTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnInplaceBitwiseAndTensor”接口执行计算。
 
 - `aclnnStatus aclnnInplaceBitwiseAndTensorGetWorkspaceSize(const aclTensor *selfRef, const aclTensor *other, uint64_t *workspaceSize, aclOpExecutor **executor)`
 - `aclnnStatus aclnnInplaceBitwiseAndTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
@@ -26,14 +26,14 @@
 
 - **参数说明：**
 
-  - selfRef(aclTensor*, 计算输入|计算输出)：输入和输出tensor，公式中的```selfRef```，数据类型支持INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL，且数据类型需要与other的数据类型满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/互推导关系.md)），shape需要与other满足[broadcast关系](../../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
-  - other(aclTensor*, 计算输入)：输入tensor，公式中的```other```，数据类型支持INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL，且数据类型需要与selfRef构成满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/互推导关系.md)），shape需要与selfRef满足[broadcast关系](../../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
+  - selfRef(aclTensor*, 计算输入|计算输出)：输入和输出tensor，公式中的```selfRef```，数据类型支持INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL，且数据类型需要与other的数据类型满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/deduction_relationship.md)），shape需要与other满足[broadcast关系](../../../../docs/zh/context/broadcast_relationship.md)。支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND，数据维度不支持8维以上。
+  - other(aclTensor*, 计算输入)：输入tensor，公式中的```other```，数据类型支持INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL，且数据类型需要与selfRef构成满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/deduction_relationship.md)），shape需要与selfRef满足[broadcast关系](../../../../docs/zh/context/broadcast_relationship.md)。支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND，数据维度不支持8维以上。
   - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor*, 出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   ```text
   第一段接口完成入参校验，出现以下场景时报错：
@@ -56,7 +56,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -65,7 +65,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>
@@ -96,13 +96,13 @@ int64_t GetShapeSize(const std::vector<int64_t>& shape) {
 int Init(int32_t deviceId, aclrtStream* stream) {
   // 固定写法，资源初始化
   auto ret = aclInit(nullptr);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclInit failed. ERROR: %d\n", ret); return ret); 
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclInit failed. ERROR: %d\n", ret); return ret);
   ret = aclrtSetDevice(deviceId);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSetDevice failed. ERROR: %d\n", ret); return ret);
   ret = aclrtCreateStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtCreateStream failed. ERROR: %d\n", ret); return ret);
 
-  
+
   return 0;
 }
 

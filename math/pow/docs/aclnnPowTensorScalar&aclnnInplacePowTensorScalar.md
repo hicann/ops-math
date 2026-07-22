@@ -41,7 +41,7 @@ aclnnPowTensorScalar和aclnnInplacePowTensorScalar实现相同的功能，使用
 
 - aclnnInplacePowTensorScalar：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用”aclnnPowTensorScalarGetWorkspaceSize”或者”aclnnInplacePowTensorScalarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用”aclnnPowTensorScalar”或者”aclnnInplacePowTensorScalar”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用”aclnnPowTensorScalarGetWorkspaceSize”或者”aclnnInplacePowTensorScalarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用”aclnnPowTensorScalar”或者”aclnnInplacePowTensorScalar”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnPowTensorScalarGetWorkspaceSize(
@@ -116,7 +116,7 @@ aclnnStatus aclnnInplacePowTensorScalar(
       <td>exponent（aclScalar*）</td>
       <td>输入</td>
       <td>公式中的输入exponent</td>
-      <td>数据类型不能和self的数据类型同时为BOOL。<br>self和exponent推导后的数据类型为整型时，exponent需要大于等于0。<br>exponent的值需要在self和exponent推导后的数据类型的取值范围内。（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）</td>
+      <td>数据类型不能和self的数据类型同时为BOOL。<br>self和exponent推导后的数据类型为整型时，exponent需要大于等于0。<br>exponent的值需要在self和exponent推导后的数据类型的取值范围内。（参见<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>）</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、BOOL、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>-</td>
       <td>-</td>
@@ -161,7 +161,7 @@ aclnnStatus aclnnInplacePowTensorScalar(
 
 - **返回值**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口会完成入参校验，出现以下场景时报错：
 
@@ -246,7 +246,7 @@ aclnnStatus aclnnInplacePowTensorScalar(
 
 - **返回值**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplacePowTensorScalarGetWorkspaceSize
 
@@ -288,7 +288,7 @@ aclnnStatus aclnnInplacePowTensorScalar(
         <td>exponent（aclScalar*）</td>
         <td>输入</td>
         <td>公式中的输入exponent</td>
-        <td>selfRef和exponent推导后的数据类型为整型时，exponent需要大于等于0。<br>exponent的值需要在selfRef和exponent推导后的数据类型的取值范围内。（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）</td>
+        <td>selfRef和exponent推导后的数据类型为整型时，exponent需要大于等于0。<br>exponent的值需要在selfRef和exponent推导后的数据类型的取值范围内。（参见<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>）</td>
         <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、INT16、BFLOAT16</td>
         <td>ND</td>
         <td>0-8</td>
@@ -319,7 +319,7 @@ aclnnStatus aclnnInplacePowTensorScalar(
 
 - **返回值**
 
-  aclnnStatus，返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus，返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口会完成入参校验，出现以下场景时报错：
 
@@ -401,7 +401,7 @@ aclnnStatus aclnnInplacePowTensorScalar(
 
 - **返回值**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -425,7 +425,7 @@ aclnnStatus aclnnInplacePowTensorScalar(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

@@ -40,7 +40,7 @@
   - aclnnClampMax：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceClampMax：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnClampMaxGetWorkspaceSize”或者“aclnnInplaceClampMaxGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnClampMax”或者“aclnnInplaceClampMax”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnClampMaxGetWorkspaceSize”或者“aclnnInplaceClampMaxGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnClampMax”或者“aclnnInplaceClampMax”接口执行计算。
 
 ```cpp
 aclnnStatus aclnnClampMaxGetWorkspaceSize(
@@ -105,7 +105,7 @@ aclnnStatus aclnnInplaceClampMax(
       <td class="tg-0pky">self（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">需要进行限制的Tensor，即公式中的x<sub>i</sub>。</td>
-      <td class="tg-0pky">数据类型与clipValueMax的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">数据类型与clipValueMax的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -115,7 +115,7 @@ aclnnStatus aclnnInplaceClampMax(
       <td class="tg-0pky">clipValueMax（aclScalar*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入scalar，对self的上界进行限制，即公式中的max。</td>
-      <td class="tg-0pky">且数据类型与self的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">且数据类型与self的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -125,7 +125,7 @@ aclnnStatus aclnnInplaceClampMax(
       <td class="tg-0pky">out（aclTensor*）</td>
       <td class="tg-0pky">输出</td>
       <td class="tg-0pky">输出限制后的Tensor，即公式中的y<sub>i</sub>。</td>
-      <td class="tg-0pky">shape和self保持一致，且数据类型需要是self、clipValueMax可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">shape和self保持一致，且数据类型需要是self、clipValueMax可转换的数据类型（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">与self保持一致</td>
@@ -160,14 +160,14 @@ aclnnStatus aclnnInplaceClampMax(
   <!-- end id7 -->
   <!-- npu="950,A3,910b" id8 -->
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：
-    - self和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)）。
+    - self和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)）。
     - out的数据类型需要是self、clipValueMax推导之后可转换的数据类型。
     - self和out的数据类型不支持BOOL。
   <!-- end id8 -->
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -245,7 +245,7 @@ aclnnStatus aclnnInplaceClampMax(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceClampMaxGetWorkspaceSize
 
@@ -277,7 +277,7 @@ aclnnStatus aclnnInplaceClampMax(
       <td class="tg-0pky">selfRef（aclTensor*）</td>
       <td class="tg-0pky">输入/输出</td>
       <td class="tg-0pky">需要进行限制的Tensor，即公式中的x<sub>i</sub>。</td>
-      <td class="tg-0pky">数据类型与clipValueMax的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">数据类型与clipValueMax的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -287,7 +287,7 @@ aclnnStatus aclnnInplaceClampMax(
       <td class="tg-0pky">clipValueMax（aclScalar*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入scalar，对self的上界进行限制，即公式中的max。</td>
-      <td class="tg-0pky">且数据类型与self的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">且数据类型与self的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -322,13 +322,13 @@ aclnnStatus aclnnInplaceClampMax(
   <!-- end id9 -->
   <!-- npu="950,A3,910b" id10 -->
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：
-    - selfRef和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)）。
+    - selfRef和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)）。
     - selfRef的数据类型不支持BOOL。
   <!-- end id10 -->
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
@@ -396,7 +396,7 @@ aclnnStatus aclnnInplaceClampMax(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -405,7 +405,7 @@ aclnnStatus aclnnInplaceClampMax(
 
 ## 调用示例
 
-以下示例代码仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+以下示例代码仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 **aclnnClampMax示例代码：**
 

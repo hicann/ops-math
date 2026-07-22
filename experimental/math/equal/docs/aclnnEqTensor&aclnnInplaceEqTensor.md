@@ -22,7 +22,7 @@
   - aclnnEqTensor：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceEqTensor：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-- 每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnEqTensorGetWorkspaceSize”或者“aclnnInplaceEqTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnEqTensor”或者“aclnnInplaceEqTensor”接口执行计算aclnnEqTensor。
+- 每个算子分为[两段式接口](../../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnEqTensorGetWorkspaceSize”或者“aclnnInplaceEqTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnEqTensor”或者“aclnnInplaceEqTensor”接口执行计算aclnnEqTensor。
 
 ```Cpp
 aclnnStatus aclnnEqTensorGetWorkspaceSize(
@@ -87,7 +87,7 @@ aclnnStatus aclnnInplaceEqTensor(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>输入tensor。</td>
-      <td><ul><li>数据类型需要与other满足数据类型推导规则（参见<a href="../../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li><li>shape需要与other满足<a href="../../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li></ul></td>
+      <td><ul><li>数据类型需要与other满足数据类型推导规则（参见<a href="../../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>）。</li><li>shape需要与other满足<a href="../../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</li></ul></td>
       <td>DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT32、UINT64</td>
       <td>ND</td>
       <td>不高于8维</td>
@@ -97,7 +97,7 @@ aclnnStatus aclnnInplaceEqTensor(
       <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>输入tensor。</td>
-      <td><ul><li>数据类型需要与self满足数据类型推导规则（参见<a href="../../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li><li>shape需要与self的shape满足<a href="../../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li></ul></td>
+      <td><ul><li>数据类型需要与self满足数据类型推导规则（参见<a href="../../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>）。</li><li>shape需要与self的shape满足<a href="../../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</li></ul></td>
       <td>DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT32、UINT64</td>
       <td>ND</td>
       <td>不高于8维</td>
@@ -107,7 +107,7 @@ aclnnStatus aclnnInplaceEqTensor(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>输出tensor。</td>
-      <td><ul><li>数据类型需要是BOOL可转换的数据类型<a href="../../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>。</li><li>shape与self、other广播之后的shape（参见<a href="../../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>）一致。</li></ul></td>
+      <td><ul><li>数据类型需要是BOOL可转换的数据类型<a href="../../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>。</li><li>shape与self、other广播之后的shape（参见<a href="../../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>）一致。</li></ul></td>
       <td>DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64、UINT32、UINT16</td>
       <td>ND</td>
       <td>不高于8维</td>
@@ -147,7 +147,7 @@ aclnnStatus aclnnInplaceEqTensor(
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -229,7 +229,7 @@ aclnnStatus aclnnInplaceEqTensor(
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceEqTensorGetWorkspaceSize
 
@@ -261,7 +261,7 @@ aclnnStatus aclnnInplaceEqTensor(
       <td>selfRef</td>
       <td>输入/输出</td>
       <td>输入输出tensor，即公式中的self与out。</td>
-      <td><ul><li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li><li>shape需要与other满足<a href="../../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li></ul></td>
+      <td><ul><li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>）。</li><li>shape需要与other满足<a href="../../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</li></ul></td>
       <td>DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT32、UINT64</td>
       <td>ND</td>
       <td>-</td>
@@ -271,7 +271,7 @@ aclnnStatus aclnnInplaceEqTensor(
       <td>other</td>
       <td>输入</td>
       <td>公式中的other。</td>
-      <td><ul><li>数据类型与selfRef的数据类型需满足数据类型推导规则（参见<a href="../../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li><li>shape需要与selfRef满足<a href="../../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li></ul></td>
+      <td><ul><li>数据类型与selfRef的数据类型需满足数据类型推导规则（参见<a href="../../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>）。</li><li>shape需要与selfRef满足<a href="../../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</li></ul></td>
       <td>DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT32、UINT64</td>
       <td>ND</td>
       <td>-</td>
@@ -309,7 +309,7 @@ aclnnStatus aclnnInplaceEqTensor(
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -394,7 +394,7 @@ aclnnStatus aclnnInplaceEqTensor(
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -403,7 +403,7 @@ aclnnStatus aclnnInplaceEqTensor(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/compile_and_run_sample.md)。
 
 **aclnnEqTensor示例代码：**
 

@@ -35,7 +35,7 @@ $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnGerGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnGer”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnGerGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnGer”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnGerGetWorkspaceSize(
@@ -84,7 +84,7 @@ aclnnStatus aclnnGer(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入self，外积计算的第一个向量。</td>
-      <td>self与vec2的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。</td>
+      <td>self与vec2的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>1</td>
@@ -94,7 +94,7 @@ aclnnStatus aclnnGer(
       <td>vec2（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入vec2，外积计算的第二个向量。</td>
-      <td>self与vec2的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。</td>
+      <td>self与vec2的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>1</td>
@@ -104,7 +104,7 @@ aclnnStatus aclnnGer(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>公式中的输出out，外积计算的结果。</td>
-      <td>数据类型是self与vec2<a href="../../../docs/zh/context/互推导关系.md" target="_blank">推导</a>之后<a href="../../../docs/zh/context/互转换关系.md" target="_blank">可转换</a>的数据类型。shape为{self.shape[0], vec2.shape[0]}。</td>
+      <td>数据类型是self与vec2<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">推导</a>之后<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">可转换</a>的数据类型。shape为{self.shape[0], vec2.shape[0]}。</td>
       <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>2</td>
@@ -139,7 +139,7 @@ aclnnStatus aclnnGer(
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口会完成入参校验，出现以下场景时报错：
 
@@ -223,7 +223,7 @@ aclnnStatus aclnnGer(
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -232,7 +232,7 @@ aclnnStatus aclnnGer(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

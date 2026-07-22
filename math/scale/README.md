@@ -113,7 +113,7 @@
 - axis取值范围为[-x_rank, x_rank)。
 - numAxes取值范围>=-1。
 - 仅支持ND格式。
-- 支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，非连续的Tensor维度不大于8。
+- 支持[非连续的Tensor](../../docs/zh/context/non_contiguous_tensor.md)，非连续的Tensor维度不大于8。
 
 ## 调用说明
 

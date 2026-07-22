@@ -298,5 +298,5 @@
 - [aclnnXLogYTensor&aclnnInplaceXLogYTensor](../../math/x_log_y/docs/aclnnXLogYTensor&aclnnInplaceXLogYTensor.md)
 - [aclRfft1D](../../math/rfft1_d/docs/aclRfft1D.md)
 - [aclStft](../../math/stft/docs/aclStft.md)
-- [编译与运行样例](context/编译与运行样例.md)
-- [aclnn返回码](context/aclnn返回码.md)
+- [编译与运行样例](context/compile_and_run_sample.md)
+- [aclnn返回码](context/aclnn_return_code.md)

@@ -37,7 +37,7 @@
 
 ## 函数原型
 
-  每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnLogAddExp2GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLogAddExp2”接口执行计算。
+  每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnLogAddExp2GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLogAddExp2”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnLogAddExp2GetWorkspaceSize(
@@ -88,8 +88,8 @@ aclnnStatus aclnnLogAddExp2(
       <td class="tg-0pky">公式中的x。</td>
       <td class="tg-0pky">
         <ul>
-          <li>数据类型需要可转换成out的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</li>
-          <li>self与other的shape满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+          <li>数据类型需要可转换成out的数据类型（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</li>
+          <li>self与other的shape满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</li>
         </ul>
       </td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、UINT8、INT8、UINT16、INT16、UINT32、INT32、UINT64、INT64、BOOL、BFLOAT16</td>
@@ -103,8 +103,8 @@ aclnnStatus aclnnLogAddExp2(
       <td class="tg-0pky">公式中的y。</td>
       <td class="tg-0pky">
         <ul>
-          <li>数据类型需要可转换成out的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</li>
-          <li>other与self的shape满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+          <li>数据类型需要可转换成out的数据类型（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</li>
+          <li>other与self的shape满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</li>
         </ul>
       </td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、UINT8、INT8、UINT16、INT16、UINT32、INT32、UINT64、INT64、BOOL、BFLOAT16</td>
@@ -150,7 +150,7 @@ aclnnStatus aclnnLogAddExp2(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现如下场景时报错：
 
@@ -232,7 +232,7 @@ aclnnStatus aclnnLogAddExp2(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -241,7 +241,7 @@ aclnnStatus aclnnLogAddExp2(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

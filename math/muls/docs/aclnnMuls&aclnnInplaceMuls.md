@@ -37,7 +37,7 @@
   - aclnnMuls：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceMuls：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnMulsGetWorkspaceSize”或者”aclnnInplaceMulsGetWorkspaceSize“接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMuls”或者”aclnnInplaceMuls“接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnMulsGetWorkspaceSize”或者”aclnnInplaceMulsGetWorkspaceSize“接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMuls”或者”aclnnInplaceMuls“接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnMulsGetWorkspaceSize(
@@ -102,7 +102,7 @@ aclnnStatus aclnnInplaceMuls(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入`self`。</td>
-      <td>与out的数据类型相同。与other满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。</td>
+      <td>与out的数据类型相同。与other满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16<br>注：</td>
       <td>ND</td>
       <td>不大于8</td>
@@ -112,7 +112,7 @@ aclnnStatus aclnnInplaceMuls(
       <td>other（aclScalar*）</td>
       <td>输入</td>
       <td>公式中的输入`other`。</td>
-      <td>与self满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。</td>
+      <td>与self满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>-</td>
       <td>-</td>
@@ -157,7 +157,7 @@ aclnnStatus aclnnInplaceMuls(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -236,7 +236,7 @@ aclnnStatus aclnnInplaceMuls(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceMulsGetWorkspaceSize
 
@@ -268,7 +268,7 @@ aclnnStatus aclnnInplaceMuls(
       <td>selfRef（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入`self`和输出`out`。</td>
-      <td>与other满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。</td>
+      <td>与other满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
       <td>不大于8</td>
@@ -309,7 +309,7 @@ aclnnStatus aclnnInplaceMuls(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -385,7 +385,7 @@ aclnnStatus aclnnInplaceMuls(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 

@@ -37,7 +37,7 @@
 - aclnnAddr和aclnnInplaceAddr实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnAddr：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceAddr：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnAddrGetWorkspaceSize"或者"aclnnInplaceAddrGetWorkspaceSize"接口获取入参并根据流程计算所需workspace大小，再调用"aclnnAddr"或者"aclnnInplaceAddr"接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用"aclnnAddrGetWorkspaceSize"或者"aclnnInplaceAddrGetWorkspaceSize"接口获取入参并根据流程计算所需workspace大小，再调用"aclnnAddr"或者"aclnnInplaceAddr"接口执行计算。
 
 ```cpp
 aclnnStatus aclnnAddrGetWorkspaceSize(
@@ -108,7 +108,7 @@ aclnnStatus aclnnInplaceAddr(
         <td>self (aclTensor*)</td>
         <td>输入</td>
         <td>外积扩展矩阵。</td>
-        <td>shape维度不能超过2，并且需要与vec1、vec2满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+        <td>shape维度不能超过2，并且需要与vec1、vec2满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
         <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
         <td>ND</td>
         <td>-</td>
@@ -118,7 +118,7 @@ aclnnStatus aclnnInplaceAddr(
         <td>vec1 (aclTensor*)</td>
         <td>输入</td>
         <td>外积入参第一向量，一维向量。</td>
-        <td>shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+        <td>shape需要与self满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
         <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
         <td>ND</td>
         <td>-</td>
@@ -128,7 +128,7 @@ aclnnStatus aclnnInplaceAddr(
         <td>vec2 (aclTensor*)</td>
         <td>输入</td>
         <td>外积入参第二向量，一维向量。</td>
-        <td>shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+        <td>shape需要与self满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
         <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
         <td>ND</td>
         <td>-</td>
@@ -192,7 +192,7 @@ aclnnStatus aclnnInplaceAddr(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -274,7 +274,7 @@ aclnnStatus aclnnInplaceAddr(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceAddrGetWorkspaceSize
 
@@ -306,7 +306,7 @@ aclnnStatus aclnnInplaceAddr(
         <td>selfRef (aclTensor*)</td>
         <td>输入/输出</td>
         <td>外积扩展矩阵及输出矩阵。</td>
-        <td>shape维度为2，不支持空Tensor，并且需要与vec1、vec2满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+        <td>shape维度为2，不支持空Tensor，并且需要与vec1、vec2满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
         <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
         <td>ND</td>
         <td>-</td>
@@ -316,7 +316,7 @@ aclnnStatus aclnnInplaceAddr(
         <td>vec1 (aclTensor*)</td>
         <td>输入</td>
         <td>外积入参第一向量，一维向量。</td>
-        <td>shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+        <td>shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
         <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
         <td>ND</td>
         <td>-</td>
@@ -326,7 +326,7 @@ aclnnStatus aclnnInplaceAddr(
         <td>vec2 (aclTensor*)</td>
         <td>输入</td>
         <td>外积入参第二向量，一维向量。</td>
-        <td>shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+        <td>shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
         <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
         <td>ND</td>
         <td>-</td>
@@ -380,7 +380,7 @@ aclnnStatus aclnnInplaceAddr(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -462,7 +462,7 @@ aclnnStatus aclnnInplaceAddr(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -471,7 +471,7 @@ aclnnStatus aclnnInplaceAddr(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

@@ -41,7 +41,7 @@ aclnnBitwiseOrScalar和aclnnInplaceBitwiseOrScalar实现相同的功能，使用
 - aclnnBitwiseOrScalar：需新建一个输出张量对象存储计算结果。
 - aclnnInplaceBitwiseOrScalar：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnBitwiseOrScalarGetWorkspaceSize"或者"aclnnInplaceBitwiseOrScalarGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnBitwiseOrScalar"或者"aclnnInplaceBitwiseOrScalar"接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用"aclnnBitwiseOrScalarGetWorkspaceSize"或者"aclnnInplaceBitwiseOrScalarGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnBitwiseOrScalar"或者"aclnnInplaceBitwiseOrScalar"接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnBitwiseOrScalarGetWorkspaceSize(
@@ -116,7 +116,7 @@ aclnnStatus aclnnInplaceBitwiseOrScalar(
       <td>other（aclScalar*）</td>
       <td>输入</td>
       <td>输入标量，与self进行按位或运算。</td>
-      <td>数据类型需与self满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</td>
+      <td>数据类型需与self满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>。</td>
       <td>BOOL、INT8、INT16、UINT16、INT32、INT64、UINT8、UINT32、UINT64</td>
       <td>-</td>
       <td>-</td>
@@ -155,7 +155,7 @@ aclnnStatus aclnnInplaceBitwiseOrScalar(
   </tbody></table>
 
   <!-- npu="950" id7 -->
-  - <term>Ascend 950PR/Ascend 950DT</term>：self和other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)。
+  - <term>Ascend 950PR/Ascend 950DT</term>：self和other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)。
   <!-- end id7 -->
   <!-- npu="A3,910b" id8 -->
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
@@ -170,7 +170,7 @@ aclnnStatus aclnnInplaceBitwiseOrScalar(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现如下场景时报错：
 
@@ -252,7 +252,7 @@ aclnnStatus aclnnInplaceBitwiseOrScalar(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceBitwiseOrScalarGetWorkspaceSize
 
@@ -294,7 +294,7 @@ aclnnStatus aclnnInplaceBitwiseOrScalar(
       <td>other（aclScalar*）</td>
       <td>输入</td>
       <td>输入标量，与selfRef进行按位或运算。</td>
-      <td>数据类型需与selfRef满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</td>
+      <td>数据类型需与selfRef满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>。</td>
       <td>BOOL、INT8、INT16、UINT16、INT32、INT64、UINT8、UINT32、UINT64</td>
       <td>-</td>
       <td>-</td>
@@ -323,7 +323,7 @@ aclnnStatus aclnnInplaceBitwiseOrScalar(
   </tbody></table>
 
   <!-- npu="950" id10 -->
-  - <term>Ascend 950PR/Ascend 950DT</term>：selfRef和other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)，且需要是推导之后可转换的数据类型。
+  - <term>Ascend 950PR/Ascend 950DT</term>：selfRef和other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)，且需要是推导之后可转换的数据类型。
   <!-- end id10 -->
   <!-- npu="A3,910b,910,310p" id11 -->
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：selfRef和other的数据类型不支持UINT32、UINT64。
@@ -331,7 +331,7 @@ aclnnStatus aclnnInplaceBitwiseOrScalar(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现如下场景时报错：
 
@@ -410,7 +410,7 @@ aclnnStatus aclnnInplaceBitwiseOrScalar(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -419,7 +419,7 @@ aclnnStatus aclnnInplaceBitwiseOrScalar(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

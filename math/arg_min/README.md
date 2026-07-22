@@ -17,23 +17,23 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../docs/zh/context/两段式接口.md)，必须先调用“aclnnArgMinGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnArgMin”接口执行计算。
+每个算子分为[两段式接口](../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnArgMinGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnArgMin”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnArgMinGetWorkspaceSize(
-  const aclTensor* self, 
-  int64_t          dim, 
-  bool             keepdim, 
-  aclTensor*       out, 
-  uint64_t*        workspaceSize, 
+  const aclTensor* self,
+  int64_t          dim,
+  bool             keepdim,
+  aclTensor*       out,
+  uint64_t*        workspaceSize,
   aclOpExecutor**  executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnArgMin(
-  void          *workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor, 
+  void          *workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor *executor,
   aclrtStream    stream)
 ```
 
@@ -125,13 +125,13 @@ aclnnStatus aclnnArgMin(
     </tr>
   </tbody>
   </table>
-  
+
   - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
   - <term>Atlas 推理系列产品</term>：不支持BFLOAT16数据类型。当self输入数据类型是INT8、INT16、INT32、INT64、UINT8时，输入张量shape的维度最大支持7维。
-    
+
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -210,7 +210,7 @@ aclnnStatus aclnnArgMin(
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 

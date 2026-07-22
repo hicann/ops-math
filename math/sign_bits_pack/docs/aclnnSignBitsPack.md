@@ -27,7 +27,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnSignBitsPackGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSignBitsPack”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnSignBitsPackGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSignBitsPack”接口执行计算。
 
 - `aclnnStatus aclnnSignBitsPackGetWorkspaceSize(const aclTensor* self, int64_t size, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
 
@@ -37,11 +37,11 @@
 
 - **参数说明**：
 
-  - self（aclTensor\*，计算输入）：表示用于计算的1D张量，Device侧的tensor，支持空tensor场景，数据类型支持FLOAT16和FLOAT，不支持Nan值输入。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。支持[数据格式](../../../docs/zh/context/数据格式.md)为ND。
+  - self（aclTensor\*，计算输入）：表示用于计算的1D张量，Device侧的tensor，支持空tensor场景，数据类型支持FLOAT16和FLOAT，不支持Nan值输入。支持[非连续的Tensor](../../../docs/zh/context/non_contiguous_tensor.md)。支持[数据格式](../../../docs/zh/context/data_format.md)为ND。
 
   - size（int64_t，计算输入）：表示处理维度，reshape时输出张量的第一个维度。
 
-  - out（aclTensor\*，计算输出）：输出的tensor，只支持二维，数据类型支持UINT8。输出out总长度在self元素个数不被8整除时为（self元素个数 // 8） + 1，在被8整除时为（self元素个数/8）。支持[数据格式](../../../docs/zh/context/数据格式.md)为ND。
+  - out（aclTensor\*，计算输出）：输出的tensor，只支持二维，数据类型支持UINT8。输出out总长度在self元素个数不被8整除时为（self元素个数 // 8） + 1，在被8整除时为（self元素个数/8）。支持[数据格式](../../../docs/zh/context/data_format.md)为ND。
 
   - workSpaceSize（uint64_t\*，出参）：返回需要在Device侧申请的workspace大小。
 
@@ -49,7 +49,7 @@
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -128,7 +128,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -138,7 +138,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

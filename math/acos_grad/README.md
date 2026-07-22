@@ -73,7 +73,7 @@
 - y与dy的shape必须完全一致。
 - y与dy的dtype必须完全一致。
 - 仅支持ND格式。
-- 支持 [非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，非连续的Tensor维度不大于8。
+- 支持 [非连续的Tensor](../../docs/zh/context/non_contiguous_tensor.md)，非连续的Tensor维度不大于8。
 
 ## 调用说明
 

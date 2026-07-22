@@ -51,7 +51,7 @@ aclnnTan和aclnnInplaceTan实现相同的功能，使用区别如下，请根据
 - aclnnTan：需新建一个输出张量对象存储计算结果。
 - aclnnInplaceTan：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnTanGetWorkspaceSize"或者"aclnnInplaceTanGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnTan"或者"aclnnInplaceTan"接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用"aclnnTanGetWorkspaceSize"或者"aclnnInplaceTanGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnTan"或者"aclnnInplaceTan"接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnTanGetWorkspaceSize(
@@ -114,7 +114,7 @@ aclnnStatus aclnnInplaceTan(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入self。</td>
-      <td>shape需要与out一致，和out的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</td>
+      <td>shape需要与out一致，和out的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
       <td>不大于8</td>
@@ -124,7 +124,7 @@ aclnnStatus aclnnInplaceTan(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>公式中的out。</td>
-      <td>shape需要与self一致，和self的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</td>
+      <td>shape需要与self一致，和self的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
@@ -158,7 +158,7 @@ aclnnStatus aclnnInplaceTan(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -185,7 +185,7 @@ aclnnStatus aclnnInplaceTan(
       <td>self的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>self不能转为out的数据类型，或self和out的数据类型不满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</td>
+      <td>self不能转为out的数据类型，或self和out的数据类型不满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>。</td>
     </tr>
     <tr>
       <td>self和out的维度大于8。</td>
@@ -237,7 +237,7 @@ aclnnStatus aclnnInplaceTan(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceTanGetWorkspaceSize
 
@@ -303,7 +303,7 @@ aclnnStatus aclnnInplaceTan(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -373,7 +373,7 @@ aclnnStatus aclnnInplaceTan(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -385,7 +385,7 @@ aclnnStatus aclnnInplaceTan(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 **aclnnTan接口调用示例：**
 

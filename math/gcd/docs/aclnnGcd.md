@@ -29,7 +29,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnGcdGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnGcd"接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用"aclnnGcdGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnGcd"接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnGcdGetWorkspaceSize(
@@ -78,7 +78,7 @@ aclnnStatus aclnnGcd(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>表示待转换的目标张量。</td>
-      <td>数据类型与other的数据类型需满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。shape与other的shape满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>数据类型与other的数据类型需满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。shape与other的shape满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td>UINT8、INT8、INT16、INT32、INT64</td>
       <td>ND</td>
       <td>1-8</td>
@@ -98,7 +98,7 @@ aclnnStatus aclnnGcd(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>self和other求最大公约数的结果。</td>
-      <td>数据类型是self与other推导之后可转换的数据类型。shape需要与self和other做<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>后的shape一致。</td>
+      <td>数据类型是self与other推导之后可转换的数据类型。shape需要与self和other做<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>后的shape一致。</td>
       <td>UINT8、INT8、UINT16、INT16、INT32、UINT32、INT64、UINT64</td>
       <td>ND</td>
       <td>1-8</td>
@@ -132,7 +132,7 @@ aclnnStatus aclnnGcd(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -168,7 +168,7 @@ aclnnStatus aclnnGcd(
       <td>self和other的shape不满足broadcast规则。</td>
     </tr>
     <tr>
-      <td>self和other进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>后的shape与out不一样。</td>
+      <td>self和other进行<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>后的shape与out不一样。</td>
     </tr>
   </tbody>
   </table>
@@ -214,7 +214,7 @@ aclnnStatus aclnnGcd(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -223,7 +223,7 @@ aclnnStatus aclnnGcd(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

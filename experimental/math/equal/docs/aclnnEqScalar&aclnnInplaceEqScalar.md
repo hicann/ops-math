@@ -22,7 +22,7 @@
   - aclnnEqScalar：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceEqScalar：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-- 每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnEqScalarGetWorkspaceSize”或者“aclnnInplaceEqScalarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnEqScalar”或者“aclnnInplaceEqScalar”接口执行计算。
+- 每个算子分为[两段式接口](../../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnEqScalarGetWorkspaceSize”或者“aclnnInplaceEqScalarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnEqScalar”或者“aclnnInplaceEqScalar”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnEqScalarGetWorkspaceSize(
@@ -107,7 +107,7 @@ aclnnStatus aclnnInplaceEqScalar(
       <td>out</td>
       <td>输出</td>
       <td>公式中的out。</td>
-      <td>数据类型BOOL可转换的数据类型（参见<a href="../../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td>数据类型BOOL可转换的数据类型（参见<a href="../../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td>DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64、UINT32、UINT16</td>
       <td>ND</td>
       <td>与self的shape一致</td>
@@ -137,20 +137,20 @@ aclnnStatus aclnnInplaceEqScalar(
   </table>
 
   - <term>Ascend 950PR/Ascend 950DT</term>：
-    - self与other满足[TensorScalar互推导关系](../../../../docs/zh/context/互推导关系.md)。
+    - self与other满足[TensorScalar互推导关系](../../../../docs/zh/context/deduction_relationship.md)。
     - self、other不支持UINT32数据类型。
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
-    - self与other满足[互推导关系](../../../../docs/zh/context/互推导关系.md)。
+    - self与other满足[互推导关系](../../../../docs/zh/context/deduction_relationship.md)。
     - self、other不支持UINT32、UINT64数据类型
     - out不支持UINT64、UINT32、UINT16数据类型。
   - <term>Atlas 训练系列产品</term>：
-    - self与other满足[互推导关系](../../../../docs/zh/context/互推导关系.md)。
+    - self与other满足[互推导关系](../../../../docs/zh/context/deduction_relationship.md)。
     - 不支持BFLOAT16数据类型。
     - out不支持UINT64、UINT32、UINT16、BFLOAT16数据类型。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -229,7 +229,7 @@ aclnnStatus aclnnInplaceEqScalar(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceEqScalarGetWorkspaceSize
 
@@ -301,18 +301,18 @@ aclnnStatus aclnnInplaceEqScalar(
   </table>
 
   - <term>Ascend 950PR/Ascend 950DT</term>：
-    - selfRef与other满足[TensorScalar互推导关系](../../../../docs/zh/context/互推导关系.md)。
+    - selfRef与other满足[TensorScalar互推导关系](../../../../docs/zh/context/deduction_relationship.md)。
     - selfRef、other不支持UINT32数据类型。
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
-    - selfRef与other满足[互推导关系](../../../../docs/zh/context/互推导关系.md)。
+    - selfRef与other满足[互推导关系](../../../../docs/zh/context/deduction_relationship.md)。
     - selfRef、other不支持UINT32、UINT64数据类型。
   - <term>Atlas 训练系列产品</term>：
-    - selfRef与other满足[互推导关系](../../../../docs/zh/context/互推导关系.md)。
+    - selfRef与other满足[互推导关系](../../../../docs/zh/context/deduction_relationship.md)。
     - 不支持BFLOAT16数据类型。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -388,7 +388,7 @@ aclnnStatus aclnnInplaceEqScalar(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -397,7 +397,7 @@ aclnnStatus aclnnInplaceEqScalar(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/compile_and_run_sample.md)。
 
 **aclnnEqScalar示例代码：**
 

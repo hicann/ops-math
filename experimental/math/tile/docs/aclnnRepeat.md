@@ -21,7 +21,7 @@
 
 ## 函数原型
 
-Tile 算子对应内置 aclnnRepeat 接口（[两段式接口](../../../../docs/zh/context/两段式接口.md)）：
+Tile 算子对应内置 aclnnRepeat 接口（[两段式接口](../../../../docs/zh/context/two_phase_api.md)）：
 
 ```cpp
 aclnnStatus aclnnRepeatGetWorkspaceSize(

@@ -29,13 +29,13 @@
 
   <!-- npu="950" id7 -->
   - <term>Ascend 950PR/Ascend 950DT</term>：
-    - 完成ND[数据格式](../../../docs/zh/context/数据格式.md)到指定C0大小的FRACTAL_NZ[数据格式](../../../docs/zh/context/数据格式.md)的转换功能，C0是FRACTAL_NZ[数据格式](../../../docs/zh/context/数据格式.md)最后一维的大小，C0由`additionalDtype`确定。
-    - 完成指定C0大小的FRACTAL_NZ[数据格式](../../../docs/zh/context/数据格式.md)到ND[数据格式](../../../docs/zh/context/数据格式.md)的转换功能，其中支持的NZ格式包括：FRACTAL_NZ、FRACTAL_NZ_C0_2、FRACTAL_NZ_C0_4、FRACTAL_NZ_C0_16、FRACTAL_NZ_C0_32。
+    - 完成ND[数据格式](../../../docs/zh/context/data_format.md)到指定C0大小的FRACTAL_NZ[数据格式](../../../docs/zh/context/data_format.md)的转换功能，C0是FRACTAL_NZ[数据格式](../../../docs/zh/context/data_format.md)最后一维的大小，C0由`additionalDtype`确定。
+    - 完成指定C0大小的FRACTAL_NZ[数据格式](../../../docs/zh/context/data_format.md)到ND[数据格式](../../../docs/zh/context/data_format.md)的转换功能，其中支持的NZ格式包括：FRACTAL_NZ、FRACTAL_NZ_C0_2、FRACTAL_NZ_C0_4、FRACTAL_NZ_C0_16、FRACTAL_NZ_C0_32。
   <!-- end id7 -->
   <!-- npu="A3,910b" id8 -->
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
-    - 完成ND←→[NZ](../../../docs/zh/context/数据格式.md)、NCL←→[NZ](../../../docs/zh/context/数据格式.md)、NCHW←→[NZ](../../../docs/zh/context/数据格式.md)、NCDHW←→[NZ](../../../docs/zh/context/数据格式.md)的转换功能。C0是[NZ](../../../docs/zh/context/数据格式.md)数据格式最后一维的大小。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast additionalDtype)。
-    - 完成NCDHW←→[NDC1HWC0](../../../docs/zh/context/数据格式.md)、NCDHW←→[FRACTAL_Z_3D](../../../docs/zh/context/数据格式.md)、NCHW←→[NC1HWC0](../../../docs/zh/context/数据格式.md)、NHWC←→[NC1HWC0](../../../docs/zh/context/数据格式.md)、NCHW←→[FRACTAL_Z](../../../docs/zh/context/数据格式.md)、HWCN←→[FRACTAL_Z](../../../docs/zh/context/数据格式.md)、NDHWC←→[NDC1HWC0](../../../docs/zh/context/数据格式.md)、DHWCN←→[FRACTAL_Z_3D](../../../docs/zh/context/数据格式.md)的转换功能。其中，C0与微架构强相关，该值等于cube单元的size，例如16。C1是将C维度按照C0切分：C1=C/C0，若结果不整除，最后一份数据需要padding到C0。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast additionalDtype)（例如FP16的additionalDtype枚举值为1，对应的数据FP16为2byte）。
+    - 完成ND←→[NZ](../../../docs/zh/context/data_format.md)、NCL←→[NZ](../../../docs/zh/context/data_format.md)、NCHW←→[NZ](../../../docs/zh/context/data_format.md)、NCDHW←→[NZ](../../../docs/zh/context/data_format.md)的转换功能。C0是[NZ](../../../docs/zh/context/data_format.md)数据格式最后一维的大小。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast additionalDtype)。
+    - 完成NCDHW←→[NDC1HWC0](../../../docs/zh/context/data_format.md)、NCDHW←→[FRACTAL_Z_3D](../../../docs/zh/context/data_format.md)、NCHW←→[NC1HWC0](../../../docs/zh/context/data_format.md)、NHWC←→[NC1HWC0](../../../docs/zh/context/data_format.md)、NCHW←→[FRACTAL_Z](../../../docs/zh/context/data_format.md)、HWCN←→[FRACTAL_Z](../../../docs/zh/context/data_format.md)、NDHWC←→[NDC1HWC0](../../../docs/zh/context/data_format.md)、DHWCN←→[FRACTAL_Z_3D](../../../docs/zh/context/data_format.md)的转换功能。其中，C0与微架构强相关，该值等于cube单元的size，例如16。C1是将C维度按照C0切分：C1=C/C0，若结果不整除，最后一份数据需要padding到C0。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast additionalDtype)（例如FP16的additionalDtype枚举值为1，对应的数据FP16为2byte）。
   <!-- end id8 -->
 
 - **计算流程**：
@@ -44,7 +44,7 @@
 
 ## 函数原型
 
-必须先调用`aclnnNpuFormatCastCalculateSizeAndFormat`计算出dstTensor的shape和实际数据格式，再调用[两段式接口](../../../docs/zh/context/两段式接口.md)。两段式接口先调用`aclnnNpuFormatCastGetWorkSpaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnNpuFormatCast`接口执行计算。
+必须先调用`aclnnNpuFormatCastCalculateSizeAndFormat`计算出dstTensor的shape和实际数据格式，再调用[两段式接口](../../../docs/zh/context/two_phase_api.md)。两段式接口先调用`aclnnNpuFormatCastGetWorkSpaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnNpuFormatCast`接口执行计算。
 
 ```c++
 aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(
@@ -172,7 +172,7 @@ aclnnStatus aclnnNpuFormatCast(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -298,7 +298,7 @@ aclnnStatus aclnnNpuFormatCast(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -386,7 +386,7 @@ aclnnStatus aclnnNpuFormatCast(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -400,7 +400,7 @@ aclnnStatus aclnnNpuFormatCast(
 
   - aclnnNpuFormatCastCalculateSizeAndFormat接口：
 
-      | srcTensor | srcTensor[数据格式](../../../docs/zh/context/数据格式.md) | dstFormat | additionalDtype              | actualFormat                    |
+      | srcTensor | srcTensor[数据格式](../../../docs/zh/context/data_format.md) | dstFormat | additionalDtype              | actualFormat                    |
       | --------- | -------------------------------------------------------- | --------- | ---------------------------- | ------------------------------- |
       | INT8      | ACL_FORMAT_ND(2) | ACL_FORMAT_FRACTAL_NZ(29) | ACL_INT8(2)                  | ACL_FORMAT_FRACTAL_NZ(29)       |
       | INT32     | ACL_FORMAT_ND(2) | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT16(1)、ACL_BF16(27) | ACL_FORMAT_FRACTAL_NZ_C0_16(50) |
@@ -437,7 +437,7 @@ aclnnStatus aclnnNpuFormatCast(
 
   - aclnnNpuFormatCastGetWorkspaceSize接口：
 
-      | srcTensor | dstTensor数据类型 | srcTensor[数据格式](../../../docs/zh/context/数据格式.md) | dstTensor[数据格式](../../../docs/zh/context/数据格式.md)            |
+      | srcTensor | dstTensor数据类型 | srcTensor[数据格式](../../../docs/zh/context/data_format.md) | dstTensor[数据格式](../../../docs/zh/context/data_format.md)            |
       | --------- | ----------------- | ------------------------------------------------------- | ------------------------------------------------------------------ |
       | INT8      | INT8              | ACL_FORMAT_ND(2) | ACL_FORMAT_FRACTAL_NZ(29)       |
       | INT32     | INT32             | ACL_FORMAT_ND(2) | ACL_FORMAT_FRACTAL_NZ_C0_16(50) |
@@ -483,8 +483,8 @@ aclnnStatus aclnnNpuFormatCast(
 
   - 当前不支持的特殊场景:
     - srcTensor的数据类型和additionalDtype相同，srcTensor格式为ND且类型为FLOAT16或BFLOAT16时，若维度表示为[k, n]，则k为1场景暂不支持。
-    - 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后，进行任何能修改张量的操作，如contiguous、pad、slice等;
-    - 当srcTensor的shape后两维任意一维度shape等于1场景，也不允许转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作，包括transpose。
+    - 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/data_format.md)FRACTAL_NZ后，进行任何能修改张量的操作，如contiguous、pad、slice等;
+    - 当srcTensor的shape后两维任意一维度shape等于1场景，也不允许转昇腾亲和[数据格式](../../../docs/zh/context/data_format.md)FRACTAL_NZ后再进行任何修改张量的操作，包括transpose。
   </details>
   <!-- end id15 -->
 
@@ -546,8 +546,8 @@ aclnnStatus aclnnNpuFormatCast(
       | ACL_INT8(2)、ACL_UINT8(4)、ACL_HIFLOAT8(34)    | 32 |
 
   - 当前不支持的特殊场景:
-    - 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后,进行任何能修改张量的操作，如contiguous、pad、slice等;
-    - 不允许转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作，包括transpose。
+    - 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/data_format.md)FRACTAL_NZ后,进行任何能修改张量的操作，如contiguous、pad、slice等;
+    - 不允许转昇腾亲和[数据格式](../../../docs/zh/context/data_format.md)FRACTAL_NZ后再进行任何修改张量的操作，包括transpose。
   </details>
   <!-- end id16 -->
 
@@ -556,7 +556,7 @@ aclnnStatus aclnnNpuFormatCast(
 <!-- npu="950" id17 -->
 - <term>Ascend 950PR/Ascend 950DT</term>：
 
-  示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+  示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
   ```Cpp
   #include <iostream>
@@ -753,7 +753,7 @@ aclnnStatus aclnnNpuFormatCast(
 <!-- npu="A3,910b" id18 -->
 - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
 
-  示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+  示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
   ```c++
   #include <iostream>

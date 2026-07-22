@@ -41,7 +41,7 @@ $$
 - aclnnNeTensor和aclnnInplaceNeTensor实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnNeTensor：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceNeTensor：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnNeTensorGetWorkspaceSize”或者“aclnnInplaceNeTensorGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnNeTensor”或者“aclnnInplaceNeTensor”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnNeTensorGetWorkspaceSize”或者“aclnnInplaceNeTensorGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnNeTensor”或者“aclnnInplaceNeTensor”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnNeTensorGetWorkspaceSize(
@@ -106,7 +106,7 @@ aclnnStatus aclnnInplaceNeTensor(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的self。</td>
-      <td>数据类型需要与other满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>，shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>数据类型需要与other满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>，shape需要与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td>DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64</td>
       <td>ND</td>
       <td>0-8</td>
@@ -116,7 +116,7 @@ aclnnStatus aclnnInplaceNeTensor(
       <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的other。</td>
-      <td>数据类型需要与other满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>，shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>数据类型需要与other满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>，shape需要与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td>DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64</td>
       <td>ND</td>
       <td>0-8</td>
@@ -126,7 +126,7 @@ aclnnStatus aclnnInplaceNeTensor(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>公式中的out。</td>
-      <td>数据类型需要是BOOL可转换的<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型</a>, shape与self、other广播之后的shape（参见<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>）。</td>
+      <td>数据类型需要是BOOL可转换的<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型</a>, shape与self、other广播之后的shape（参见<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>）。</td>
       <td>DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64、UINT32、UINT16</td>
       <td>ND</td>
       <td>0-8</td>
@@ -156,7 +156,7 @@ aclnnStatus aclnnInplaceNeTensor(
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -238,7 +238,7 @@ aclnnStatus aclnnInplaceNeTensor(
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceNeTensorGetWorkspaceSize
 
@@ -310,7 +310,7 @@ aclnnStatus aclnnInplaceNeTensor(
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -392,7 +392,7 @@ aclnnStatus aclnnInplaceNeTensor(
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -401,7 +401,7 @@ aclnnStatus aclnnInplaceNeTensor(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 **aclnnNeTensor&aclnnInplaceNeTensor接口调用示例代码：**
 

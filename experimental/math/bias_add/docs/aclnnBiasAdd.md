@@ -17,7 +17,7 @@ $$out_i = x_i + bias_{c(i)}$$
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用 `aclnnBiasAddGetWorkspaceSize` 接口获取入参并根据流程计算所需 workspace 大小，再调用 `aclnnBiasAdd` 接口执行计算。
+每个算子分为[两段式接口](../../../../docs/zh/context/two_phase_api.md)，必须先调用 `aclnnBiasAddGetWorkspaceSize` 接口获取入参并根据流程计算所需 workspace 大小，再调用 `aclnnBiasAdd` 接口执行计算。
 
 - `aclnnStatus aclnnBiasAddGetWorkspaceSize(const aclTensor *x, const aclTensor *bias, char *dataFormatOptional, const aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
 - `aclnnStatus aclnnBiasAdd(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`

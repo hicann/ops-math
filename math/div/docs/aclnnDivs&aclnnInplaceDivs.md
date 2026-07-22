@@ -39,7 +39,7 @@
 - aclnnDivs和aclnnInplaceDivs实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnDivs：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceDivs：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnDivsGetWorkspaceSize”或者“aclnnInplaceDivsGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnDivs”或者“aclnnInplaceDivs”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnDivsGetWorkspaceSize”或者“aclnnInplaceDivsGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnDivs”或者“aclnnInplaceDivs”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnDivsGetWorkspaceSize(
@@ -156,21 +156,21 @@ aclnnStatus aclnnInplaceDivs(
   <!-- npu="910" id7 -->
   - <term>Atlas 训练系列产品</term>：
     - self、out数据类型不支持BFLOAT16。
-    - self数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
+    - self数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/deduction_relationship.md)）。
   <!-- end id7 -->
   <!-- npu="A3,910b" id8 -->
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
-    - self数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
+    - self数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/deduction_relationship.md)）。
   <!-- end id8 -->
   <!-- npu="950" id9 -->
   - <term>Ascend 950PR/Ascend 950DT</term>：
     - out数据类型不支持INT32、INT64、INT16、INT8、UINT8、BOOL。
-    - self数据类型与other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)，推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
+    - self数据类型与other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)，推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
   <!-- end id9 -->
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -249,7 +249,7 @@ aclnnStatus aclnnInplaceDivs(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceDivsGetWorkspaceSize
 
@@ -323,22 +323,22 @@ aclnnStatus aclnnInplaceDivs(
   <!-- npu="910" id10 -->
   - <term>Atlas 训练系列产品</term>：
     - selfRef数据类型不支持BFLOAT16。
-    - selfRef数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
+    - selfRef数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/deduction_relationship.md)）。
   <!-- end id10 -->
   <!-- npu="A3,910b" id11 -->
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
-    - selfRef数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
+    - selfRef数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/deduction_relationship.md)）。
   <!-- end id11 -->
   <!-- npu="950" id12 -->
   - <term>Ascend 950PR/Ascend 950DT</term>：
     - selfRef数据类型不支持INT32、INT64、INT16、INT8、UINT8、BOOL。
-    - selfRef数据类型与other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/互推导关系.md)，推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
+    - selfRef数据类型与other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)，推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
 
   <!-- end id12 -->
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -414,7 +414,7 @@ aclnnStatus aclnnInplaceDivs(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -423,7 +423,7 @@ aclnnStatus aclnnInplaceDivs(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

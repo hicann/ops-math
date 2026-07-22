@@ -34,7 +34,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnInplaceBitwiseAndScalarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnInplaceBitwiseAndScalar”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnInplaceBitwiseAndScalarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnInplaceBitwiseAndScalar”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnInplaceBitwiseAndScalarGetWorkspaceSize(
@@ -82,7 +82,7 @@ aclnnStatus aclnnInplaceBitwiseAndScalar(
       <td>selfRef（aclTensor*）</td>
       <td>输入/输出</td>
       <td>公式中的selfRef。</td>
-      <td>数据类型与other的数据类型需满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>，且需要是推导之后可转换的数据类型。</td>
+      <td>数据类型与other的数据类型需满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>，且需要是推导之后可转换的数据类型。</td>
       <td>INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL</td>
       <td>ND</td>
       <td>0-8</td>
@@ -92,7 +92,7 @@ aclnnStatus aclnnInplaceBitwiseAndScalar(
       <td>other（aclScalar*）</td>
       <td>输入</td>
       <td>公式中的other。</td>
-      <td>数据类型与selfRef的数据类型需满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。</td>
+      <td>数据类型与selfRef的数据类型需满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。</td>
       <td>INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL</td>
       <td>-</td>
       <td>-</td>
@@ -122,7 +122,7 @@ aclnnStatus aclnnInplaceBitwiseAndScalar(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -199,7 +199,7 @@ aclnnStatus aclnnInplaceBitwiseAndScalar(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -208,7 +208,7 @@ aclnnStatus aclnnInplaceBitwiseAndScalar(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

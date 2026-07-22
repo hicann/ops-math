@@ -42,21 +42,21 @@ $$
     <tr>
       <td>input</td>
       <td>输入</td>
-      <td>表示底数。数据类型与exponent满足<a href ="../../docs/zh/context/TensorScalar互推导关系.md">TensorScalar互推导关系</a>。</td>
+      <td>表示底数。数据类型与exponent满足<a href ="../../docs/zh/context/deduction_relationship.md">TensorScalar互推导关系</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT16、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>exponent</td>
       <td>输入</td>
-      <td>表示指数。数据类型与input满足<a href ="../../docs/zh/context/TensorScalar互推导关系.md">TensorScalar互推导关系</a>。</td>
+      <td>表示指数。数据类型与input满足<a href ="../../docs/zh/context/deduction_relationship.md">TensorScalar互推导关系</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT16、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>out</td>
       <td>输出</td>
-      <td>表示input的exponent次幂。数据类型需要是input的数据类型与exponent的数据类型推导之后可转换的数据类型（参见<a href ="../../docs/zh/context/互转换关系.md">互转换关系</a>）。</td>
+      <td>表示input的exponent次幂。数据类型需要是input的数据类型与exponent的数据类型推导之后可转换的数据类型（参见<a href ="../../docs/zh/context/conversion_relationship.md">互转换关系</a>）。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT16、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
     </tr>

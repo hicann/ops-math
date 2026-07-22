@@ -37,7 +37,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnInplaceMaskedFillScalarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnInplaceMaskedFillScalar”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnInplaceMaskedFillScalarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnInplaceMaskedFillScalar”接口执行计算。
 
 ```cpp
 aclnnStatus aclnnInplaceMaskedFillScalarGetWorkspaceSize(
@@ -96,7 +96,7 @@ aclnnStatus aclnnInplaceMaskedFillScalar(
       <td>mask（aclTensor*）</td>
       <td>输入</td>
       <td>输入selfRef中需要被填充的mask标记。</td>
-      <td>shape与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>关系</td>
+      <td>shape与selfRef满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>关系</td>
       <td>BOOL</td>
       <td>ND</td>
       <td>-</td>
@@ -106,7 +106,7 @@ aclnnStatus aclnnInplaceMaskedFillScalar(
       <td>value（aclScalar*）</td>
       <td>输入</td>
       <td>用于填充的标量值。</td>
-      <td>数据类型需要可以推导到selfRef的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td>数据类型需要可以推导到selfRef的数据类型（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td>BOOL、INT8、INT32、INT64、FLOAT、FLOAT16、BFLOAT16</td>
       <td>-</td>
       <td>-</td>
@@ -140,7 +140,7 @@ aclnnStatus aclnnInplaceMaskedFillScalar(
 
 - **返回值**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
@@ -214,7 +214,7 @@ aclnnStatus aclnnInplaceMaskedFillScalar(
 
 - **返回值**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -223,7 +223,7 @@ aclnnStatus aclnnInplaceMaskedFillScalar(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

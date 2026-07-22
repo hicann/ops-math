@@ -36,7 +36,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用`aclnnTriangularSolveGetWorkspaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnTriangularSolve`接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用`aclnnTriangularSolveGetWorkspaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnTriangularSolve`接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnTriangularSolveGetWorkspaceSize(
@@ -90,7 +90,7 @@ aclnnStatus aclnnTriangularSolve(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的b，方程右端项。</td>
-      <td><ul><li>数据类型与A一致。</li><li>self[-2]=A[-2]。</li><li>除最后两个维度之外，A和self的其余维度满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>关系。</li></ul></td>
+      <td><ul><li>数据类型与A一致。</li><li>self[-2]=A[-2]。</li><li>除最后两个维度之外，A和self的其余维度满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>关系。</li></ul></td>
       <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>2-8</td>
@@ -100,7 +100,7 @@ aclnnStatus aclnnTriangularSolve(
       <td>A（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的A，系数矩阵。</td>
-      <td><ul><li>数据类型与self一致。</li><li>最后两个轴相等。</li><li>除最后两个维度之外，A和self的其余维度满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>关系。</li></ul></td>
+      <td><ul><li>数据类型与self一致。</li><li>最后两个轴相等。</li><li>除最后两个维度之外，A和self的其余维度满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>关系。</li></ul></td>
       <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>2-8</td>
@@ -140,7 +140,7 @@ aclnnStatus aclnnTriangularSolve(
       <td>xOut（aclTensor*）</td>
       <td>输出</td>
       <td>公式中的X，方程求解结果。</td>
-      <td><ul><li>数据类型与self一致。</li><li>shape需要与<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>后的A、b满足AX=b约束。</li><li>A和self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>关系之后的维度，最后一根轴dim=self[-1]。</li></ul></td>
+      <td><ul><li>数据类型与self一致。</li><li>shape需要与<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>后的A、b满足AX=b约束。</li><li>A和self满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>关系之后的维度，最后一根轴dim=self[-1]。</li></ul></td>
       <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>-</td>
@@ -150,7 +150,7 @@ aclnnStatus aclnnTriangularSolve(
       <td>mOut（aclTensor*）</td>
       <td>输出</td>
       <td>broadcast后A的上三角（下三角）拷贝。</td>
-      <td><ul><li>数据类型与self一致。</li><li>A和self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>关系之后的维度，最后一根轴dim=A[-1]。</li></ul></td>
+      <td><ul><li>数据类型与self一致。</li><li>A和self满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>关系之后的维度，最后一根轴dim=A[-1]。</li></ul></td>
       <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>-</td>
@@ -181,7 +181,7 @@ aclnnStatus aclnnTriangularSolve(
 
 - **返回值**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -255,7 +255,7 @@ aclnnStatus aclnnTriangularSolve(
 
 - **返回值**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -263,7 +263,7 @@ aclnnStatus aclnnTriangularSolve(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

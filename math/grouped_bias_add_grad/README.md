@@ -20,7 +20,7 @@
 &emsp;&emsp;(1)有可选输入groupIdxOptional，且groupIdxType为0时：
 
 $$
-out(G,H) = 
+out(G,H) =
 \begin{cases}
 \displaystyle
 \sum_{i = \mathrm{groupIdxOptional}(j-1)}^{\mathrm{groupIdxOptional}(j)}  \!\! \mathrm{gradY}(i, H), & 1 \leq j \leq G-1 \\[8pt]
@@ -36,7 +36,7 @@ groupIdx(i) = \sum_{i=0}^{j} groupIdxOptional(j), j=0...G
 $$
 
 $$
-out(G,H) = 
+out(G,H) =
 \left\{
 \begin{aligned}
 &\sum_{i\,=\,\mathrm{groupIdx}(j-1)}^{\mathrm{groupIdx}(j)} \!\! \mathrm{gradY}(i, H), && 1 \leq j \leq G-1 \\
@@ -75,7 +75,7 @@ $$
     <tr>
       <td>gradY</td>
       <td>输入</td>
-      <td>反向传播梯度，公式中的输入gradY。支持<a href="../../docs/zh/context/非连续的Tensor.md">非连续的Tensor</a>。</td>
+      <td>反向传播梯度，公式中的输入gradY。支持<a href="../../docs/zh/context/non_contiguous_tensor.md">非连续的Tensor</a>。</td>
       <td>FLOAT16、BFLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>

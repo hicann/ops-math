@@ -18,7 +18,7 @@ $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnTanhBackwardWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSWhere”接口执行计算。
+每个算子分为[两段式接口](../../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnTanhBackwardWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSWhere”接口执行计算。
 
 - `aclnnStatus aclnnTanhBackwardGetWorkspaceSize(const aclTensor* gradOutput, const aclTensor* output, aclTensor* gradInput, uint64_t* workspaceSize,aclOpExecutor** executor)`
 - `aclnnStatus aclnnTanhBackward(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
@@ -26,19 +26,19 @@ $$
 ## aclnnTanhBackwardGetWorkspaceSize
 
 * **参数说明**:
-  
+
   - gradOutput（aclTensor*, 计算输入）：公式中的输入`dy`，npu device侧的aclTensor，数据类型支持FLOAT、BFLOAT16、FLOAT16，且数据类型与output一致,shape与output相同。支持非连续的Tensor，数据格式支持ND。
-  
+
   - output（aclTensor*, 计算输入）：公式中的输入`y`，npu device侧的aclTensor，数据类型支持FLOAT、BFLOAT16、FLOAT16。支持非连续的Tensor，数据格式支持ND。
-  
+
   - gradInput（aclTensor \*, 计算输出）：公式中的输出`dx`，npu device侧的aclTensor，数据类型支持FLOAT、BFLOAT16、FLOAT16。支持非连续的Tensor，数据格式支持ND。
-  
+
   - workspaceSize（uint64_t \*, 出参）：返回需要在Device侧申请的workspace大小。
-  
+
   - executor（aclOpExecutor\*\*, 出参）：返回op执行器，包含了算子计算流程。
 
 * **返回值**：
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   ```text
   第一段接口完成入参校验，出现以下场景时报错：
@@ -51,14 +51,14 @@ $$
 ## aclnnTanhBackward
 
 * **参数说明**:
-  
+
   - workspace（void \*, 入参）：在Device侧申请的workspace内存地址。
   - workspaceSize（uint64_t, 入参）：在Device侧申请的workspace大小，由第一段接口aclnnSWhereGetWorkspaceSize获取。
   - executor(aclOpExecutor \*, 入参)：op执行器，包含了算子计算流程。
   - stream（aclrtStream, 入参）：指定执行任务的Stream。
 
 * **返回值**：
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -66,7 +66,7 @@ $$
 
 ## 调用说明
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```cpp
 #include <iostream>

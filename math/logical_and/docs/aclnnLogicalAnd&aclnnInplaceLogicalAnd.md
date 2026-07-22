@@ -43,7 +43,7 @@ $$
   - aclnnLogicalAnd：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceLogicalAnd：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnLogicalAndGetWorkspaceSize”或者“aclnnInplaceLogicalAndGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLogicalAnd”或者“aclnnInplaceLogicalAnd”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnLogicalAndGetWorkspaceSize”或者“aclnnInplaceLogicalAndGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLogicalAnd”或者“aclnnInplaceLogicalAnd”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnLogicalAndGetWorkspaceSize(
@@ -110,8 +110,8 @@ aclnnStatus aclnnInplaceLogicalAnd(
       <td class="tg-0pky">输入张量。</td>
       <td class="tg-0pky">
         <ul>
-          <li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li>
-          <li>shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+          <li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>）。</li>
+          <li>shape需要与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</li>
         </ul>
       </td>
       <td class="tg-0pky">FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16</td>
@@ -125,8 +125,8 @@ aclnnStatus aclnnInplaceLogicalAnd(
       <td class="tg-0pky">要计算与运算的张量。</td>
       <td class="tg-0pky">
         <ul>
-          <li>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li>
-          <li>shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+          <li>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>）。</li>
+          <li>shape需要与self满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</li>
         </ul>
       </td>
       <td class="tg-0pky">FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16</td>
@@ -172,7 +172,7 @@ aclnnStatus aclnnInplaceLogicalAnd(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -245,7 +245,7 @@ aclnnStatus aclnnInplaceLogicalAnd(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceLogicalAndGetWorkspaceSize
 
@@ -279,8 +279,8 @@ aclnnStatus aclnnInplaceLogicalAnd(
       <td class="tg-0pky">输入|输出张量。</td>
       <td class="tg-0pky">
         <ul>
-          <li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li>
-          <li>shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+          <li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>）。</li>
+          <li>shape需要与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</li>
           <li>broadcast后的shape与selfRef的shape一致。</li>
         </ul>
       </td>
@@ -295,8 +295,8 @@ aclnnStatus aclnnInplaceLogicalAnd(
       <td class="tg-0pky">要计算与运算的张量。</td>
       <td class="tg-0pky">
         <ul>
-          <li>数据类型与selfRef的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li>
-          <li>shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+          <li>数据类型与selfRef的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>）。</li>
+          <li>shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</li>
           <li>broadcast后的shape与selfRef的shape一致。</li>
         </ul>
       </td>
@@ -333,7 +333,7 @@ aclnnStatus aclnnInplaceLogicalAnd(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -409,7 +409,7 @@ aclnnStatus aclnnInplaceLogicalAnd(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -418,7 +418,7 @@ aclnnStatus aclnnInplaceLogicalAnd(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 **aclnnLogicalAnd示例代码：**
 

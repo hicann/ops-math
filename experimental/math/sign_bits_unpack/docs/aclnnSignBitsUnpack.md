@@ -17,7 +17,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnSignBitsUnpackGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSignBitsUnpack”接口执行计算。
+每个算子分为[两段式接口](../../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnSignBitsUnpackGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSignBitsUnpack”接口执行计算。
 
 - `aclnnStatus aclnnSignBitsUnpackGetWorkspaceSize(const aclTensor* self, int64_t size, aclDataType dtype, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
 - `aclnnStatus aclnnSignBitsUnpack(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
@@ -26,15 +26,15 @@
 
 - **参数说明：**
 
-  - self（aclTensor*, 计算输入）：表示用于计算的1D张量，Device侧的aclTensor，支持空tensor场景，数据类型支持UINT8，支持[非连续的Tensor](../../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../../docs/zh/context/数据格式.md)支持ND。
+  - self（aclTensor*, 计算输入）：表示用于计算的1D张量，Device侧的aclTensor，支持空tensor场景，数据类型支持UINT8，支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND。
   - size（int64_t, 入参）：表示维度处理，Host侧的整型，reshape时输出张量的第一个维度，数据类型支持INT64。
   - dtype（aclDataType, 入参）：表示量化输出Tensor的数据类型，支持ACL_FLOAT16、ACL_FLOAT。
-  - out（aclTensor*, 计算输出）：Device侧的aclTensor，数据类型支持FLOAT16、FLOAT，由dtype参数决定。[数据格式](../../../../docs/zh/context/数据格式.md)支持ND。支持[非连续的Tensor](../../../../docs/zh/context/非连续的Tensor.md)。
+  - out（aclTensor*, 计算输出）：Device侧的aclTensor，数据类型支持FLOAT16、FLOAT，由dtype参数决定。[数据格式](../../../../docs/zh/context/data_format.md)支持ND。支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)。
   - workspaceSize（uint64_t*, 出参）：返回需要在Device侧申请的workspace大小。
   - executor（aclOpExecutor**, 出参）：返回op执行器，包含了算子计算流程。
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -115,7 +115,7 @@
   </table>
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -124,7 +124,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <memory>

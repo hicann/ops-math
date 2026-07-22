@@ -67,7 +67,7 @@
 ## 约束说明
 
 - 数据类型需满足数据类型推导规则，推导后的数据类型需在支持的数据类型范围内。
-- self和other的shape必须满足 [广播规则](../../docs/zh/context/broadcast关系.md#广播规则)。
+- self和other的shape必须满足 [广播规则](../../docs/zh/context/broadcast_relationship.md#广播规则)。
 - 数据维度不支持8维以上。
 
 ## 调用说明

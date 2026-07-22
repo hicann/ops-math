@@ -37,7 +37,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnFmodTensorGetWorkspaceSize”或者”aclnnInplaceFmodTensorGetWorkspaceSize“接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnFmodTensor”或者”aclnnInplaceFmodTensor“接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnFmodTensorGetWorkspaceSize”或者”aclnnInplaceFmodTensorGetWorkspaceSize“接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnFmodTensor”或者”aclnnInplaceFmodTensor“接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnFmodTensorGetWorkspaceSize(
@@ -122,7 +122,7 @@ aclnnStatus aclnnInplaceFmodTensor(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>待进行Fmod计算的出参，公式中的out。</td>
-      <td>数据类型需要是self与other推导之后<a href="../../../docs/zh/context/互转换关系.md" target="_blank">可转换的数据类型</a>。shape需要与self一致。</td>
+      <td>数据类型需要是self与other推导之后<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">可转换的数据类型</a>。shape需要与self一致。</td>
       <td>DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、INT64、INT8、UINT8</td>
       <td>ND</td>
       <td>0-8</td>
@@ -153,7 +153,7 @@ aclnnStatus aclnnInplaceFmodTensor(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -189,7 +189,7 @@ aclnnStatus aclnnInplaceFmodTensor(
       <td>self和other的shape无法做broadcast。</td>
     </tr>
     <tr>
-      <td>out的shape不是self和other <a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>之后的shape。</td>
+      <td>out的shape不是self和other <a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>之后的shape。</td>
     </tr>
   </tbody>
   </table>
@@ -235,7 +235,7 @@ aclnnStatus aclnnInplaceFmodTensor(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceFmodTensorGetWorkspaceSize
 
@@ -312,7 +312,7 @@ aclnnStatus aclnnInplaceFmodTensor(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -348,7 +348,7 @@ aclnnStatus aclnnInplaceFmodTensor(
       <td>selfRef和other的shape无法做broadcast。</td>
     </tr>
     <tr>
-      <td><a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>后的shape需要与selfRef的shape一致。</td>
+      <td><a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>后的shape需要与selfRef的shape一致。</td>
     </tr>
   </tbody>
   </table>
@@ -394,7 +394,7 @@ aclnnStatus aclnnInplaceFmodTensor(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -403,7 +403,7 @@ aclnnStatus aclnnInplaceFmodTensor(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 **aclnnFmodTensor示例代码：**
 

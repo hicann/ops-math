@@ -24,7 +24,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnGeTensorGetWorkspaceSize”或者“aclnnInplaceGeTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnGeTensor”或者“aclnnInplaceGeTensor”接口执行计算。
+每个算子分为[两段式接口](../../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnGeTensorGetWorkspaceSize”或者“aclnnInplaceGeTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnGeTensor”或者“aclnnInplaceGeTensor”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnGeTensorGetWorkspaceSize(
@@ -99,7 +99,7 @@ aclnnStatus aclnnInplaceGeTensor(
       <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>参与GreaterEqual大小比较计算的输入张量，公式中的other。</td>
-      <td>Tensor类型，数据类型需要与self满足<a href="../../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>，shape需要与self的shape满足<a href="../../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>Tensor类型，数据类型需要与self满足<a href="../../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>，shape需要与self的shape满足<a href="../../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td>DOUBLE、FLOAT16、FLOAT32、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
@@ -142,7 +142,7 @@ aclnnStatus aclnnInplaceGeTensor(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -178,7 +178,7 @@ aclnnStatus aclnnInplaceGeTensor(
       <td>self和other的shape无法进行broadcast。</td>
     </tr>
     <tr>
-      <td>out的shape与<a href="../../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>后的shape不一致。</td>
+      <td>out的shape与<a href="../../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>后的shape不一致。</td>
     </tr>
   </tbody>
   </table>
@@ -224,7 +224,7 @@ aclnnStatus aclnnInplaceGeTensor(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceGeTensorGetWorkspaceSize
 
@@ -299,7 +299,7 @@ aclnnStatus aclnnInplaceGeTensor(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -326,13 +326,13 @@ aclnnStatus aclnnInplaceGeTensor(
       <td>selfRef和other的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>selfRef和other的数据类型无法进行<a href="../../../../docs/zh/context/互推导关系.md" target="_blank">推导</a>。</td>
+      <td>selfRef和other的数据类型无法进行<a href="../../../../docs/zh/context/deduction_relationship.md" target="_blank">推导</a>。</td>
     </tr>
     <tr>
       <td>selfRef和other的shape无法做broadcast。</td>
     </tr>
     <tr>
-      <td>selfRef和other做<a href="../../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>后的shape不等于selfRef的shape。</td>
+      <td>selfRef和other做<a href="../../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>后的shape不等于selfRef的shape。</td>
     </tr>
     <tr>
       <td>selfRef、other的维度大于8。</td>
@@ -381,7 +381,7 @@ aclnnStatus aclnnInplaceGeTensor(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -390,7 +390,7 @@ aclnnStatus aclnnInplaceGeTensor(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/compile_and_run_sample.md)。
 
 - <term>Ascend 950PR/Ascend 950DT</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term> aclnnGeTensor示例代码：
 

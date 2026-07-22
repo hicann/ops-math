@@ -48,7 +48,7 @@
 
 ## 函数原型
 
-算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnInplaceCopyGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnInplaceCopy”接口执行计算。
+算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnInplaceCopyGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnInplaceCopy”接口执行计算。
 
 ```cpp
 aclnnStatus aclnnInplaceCopyGetWorkspaceSize(
@@ -96,7 +96,7 @@ aclnnStatus aclnnInplaceCopy(
       <td class="tg-0pky">selfRef（aclTensor *）</td>
       <td class="tg-0pky">输入/输出</td>
       <td class="tg-0pky">公式中的selfRef。</td>
-      <td class="tg-0pky">注意目前只有selfRef为连续时，才支持复数间的拷贝，shape需要与src满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td class="tg-0pky">注意目前只有selfRef为连续时，才支持复数间的拷贝，shape需要与src满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td class="tg-0pky">INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、COMPLEX64、COMPLEX128、UINT16、UINT32、UINT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -106,7 +106,7 @@ aclnnStatus aclnnInplaceCopy(
       <td class="tg-0lax">src（aclTensor *）</td>
       <td class="tg-0lax">输入</td>
       <td class="tg-0lax">公式中的src。</td>
-      <td class="tg-0lax">注意目前只有selfRef为连续时，才支持复数间的拷贝，shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td class="tg-0lax">注意目前只有selfRef为连续时，才支持复数间的拷贝，shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td class="tg-0lax">INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、COMPLEX64、COMPLEX128、UINT16、UINT32、UINT64、BFLOAT16</td>
       <td class="tg-0lax">ND</td>
       <td class="tg-0lax">1-8</td>
@@ -136,7 +136,7 @@ aclnnStatus aclnnInplaceCopy(
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
     <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
@@ -213,7 +213,7 @@ aclnnStatus aclnnInplaceCopy(
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -231,7 +231,7 @@ aclnnStatus aclnnInplaceCopy(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

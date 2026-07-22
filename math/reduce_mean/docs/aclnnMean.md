@@ -34,7 +34,7 @@ $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnMeanGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMean”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnMeanGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMean”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnMeanGetWorkspaceSize(
@@ -88,7 +88,7 @@ aclnnStatus aclnnMean(
       <td class="tg-0pky">
         <ul>
           <li>输入为空tensor时，输出类型不能是复数类型COMPLEX64和COMPLEX128。</li>
-          <li>数据类型需要可转换成dtype的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）</li>
+          <li>数据类型需要可转换成dtype的数据类型（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）</li>
         </ul>
       </td>
       <td class="tg-0pky">FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、COMPLEX64、COMPLEX128</td>
@@ -120,7 +120,7 @@ aclnnStatus aclnnMean(
       <td class="tg-0pky">dtype（aclDataType）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">指定输出Tensor的数据类型。</td>
-      <td class="tg-0pky">数据类型需要可转换成out的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）</td>
+      <td class="tg-0pky">数据类型需要可转换成out的数据类型（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）</td>
       <td class="tg-0pky">FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、COMPLEX64、COMPLEX128</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
@@ -164,7 +164,7 @@ aclnnStatus aclnnMean(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -252,7 +252,7 @@ aclnnStatus aclnnMean(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -261,7 +261,7 @@ aclnnStatus aclnnMean(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>

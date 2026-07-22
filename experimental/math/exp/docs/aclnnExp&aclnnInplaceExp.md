@@ -20,36 +20,36 @@ $$
 - aclnnExp和aclnnInplaceExp实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnExp：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceExp：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用 “aclnnExpGetWorkspaceSize” 或者 “aclnnInplaceExpGetWorkspaceSize” 接口获取入参并根据计算流程计算所需workspace大小，再调用 “aclnnExp” 或者 “aclnnInplaceExp” 接口执行计算。
+- 每个算子分为[两段式接口](../../../../docs/zh/context/two_phase_api.md)，必须先调用 “aclnnExpGetWorkspaceSize” 或者 “aclnnInplaceExpGetWorkspaceSize” 接口获取入参并根据计算流程计算所需workspace大小，再调用 “aclnnExp” 或者 “aclnnInplaceExp” 接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnExpGetWorkspaceSize(
-  const aclTensor *self, 
-  aclTensor       *out, 
-  uint64_t        *workspaceSize, 
+  const aclTensor *self,
+  aclTensor       *out,
+  uint64_t        *workspaceSize,
   aclOpExecutor  **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnExp(
-  void          *workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor, 
+  void          *workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor *executor,
   aclrtStream    stream)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceExpGetWorkspaceSize(
-  aclTensor      *selfRef, 
-  uint64_t       *workspaceSize, 
+  aclTensor      *selfRef,
+  uint64_t       *workspaceSize,
   aclOpExecutor **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceExp(
-  void          *workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor, 
+  void          *workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor *executor,
   aclrtStream    stream)
 ```
 
@@ -124,7 +124,7 @@ aclnnStatus aclnnInplaceExp(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现如下场景时报错：
 
@@ -203,7 +203,7 @@ aclnnStatus aclnnInplaceExp(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceExpGetWorkspaceSize
 
@@ -266,7 +266,7 @@ aclnnStatus aclnnInplaceExp(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现如下场景时报错：
 
@@ -339,7 +339,7 @@ aclnnStatus aclnnInplaceExp(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
@@ -348,7 +348,7 @@ aclnnStatus aclnnInplaceExp(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
 #include <iostream>
@@ -449,7 +449,7 @@ int main() {
   // 调用aclnnExp第二段接口
   ret = aclnnExp(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnExp failed. ERROR: %d\n", ret); return ret);
-  
+
   uint64_t inplaceWorkspaceSize = 0;
   aclOpExecutor* inplaceExecutor;
   // 调用aclnnInplaceExp第一段接口
