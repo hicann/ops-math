@@ -14,7 +14,6 @@
 #include "../../random_common/arch35/random_kernel_base.h"
 #include "simt_api/asc_simt.h"
 
-
 namespace DropOutV3 {
 using namespace AscendC;
 using namespace RandomKernelBase;
@@ -36,17 +35,19 @@ template <typename T, typename U>
 class DropOutV3Impl {
 public:
     __aicore__ inline DropOutV3Impl(){};
-    __aicore__ inline void Init(GM_ADDR p, GM_ADDR mask, GM_ADDR workspace, const RandomUnifiedSimtTilingDataStruct *tilingData, TPipe *pipe);
-    __aicore__ inline void Process(GM_ADDR x, GM_ADDR y, GM_ADDR mask, const RandomUnifiedSimtTilingDataStruct *tilingData);
+    __aicore__ inline void Init(GM_ADDR p, GM_ADDR mask, GM_ADDR workspace,
+                                const RandomUnifiedSimtTilingDataStruct* tilingData, TPipe* pipe);
+    __aicore__ inline void Process(GM_ADDR x, GM_ADDR y, GM_ADDR mask,
+                                   const RandomUnifiedSimtTilingDataStruct* tilingData);
     __aicore__ inline void CopyInMask(const int64_t offset, const uint32_t count);
     __aicore__ inline void CompareMask(uint32_t count);
     __aicore__ inline void CopyOutMask(const int64_t offset, const uint32_t count);
-    __aicore__ inline void UpdateMask(const RandomUnifiedSimtTilingDataStruct *tilingData);
+    __aicore__ inline void UpdateMask(const RandomUnifiedSimtTilingDataStruct* tilingData);
     __aicore__ inline uint64_t GetVectorSize(uint64_t eleCount);
     __aicore__ inline bool IsProbEqual(float a, float b);
 
 private:
-    TPipe *pipe_;
+    TPipe* pipe_;
     GlobalTensor<uint8_t> maskGM_;
     GlobalTensor<uint8_t> maskWorkspace_;
     TQue<QuePosition::VECIN, NUM_2> maskInQueue_;
@@ -58,22 +59,23 @@ private:
 };
 
 template <typename T, typename U>
-__aicore__ inline void DropOutV3Impl<T, U>::Init(GM_ADDR p, GM_ADDR mask, GM_ADDR workspace, const RandomUnifiedSimtTilingDataStruct *tilingData, TPipe *pipe)
+__aicore__ inline void DropOutV3Impl<T, U>::Init(GM_ADDR p, GM_ADDR mask, GM_ADDR workspace,
+                                                 const RandomUnifiedSimtTilingDataStruct* tilingData, TPipe* pipe)
 {
     pipe_ = pipe;
     prob_ = tilingData->prob;
     maskGM_.SetGlobalBuffer((__gm__ uint8_t*)mask);
     maskWorkspace_.SetGlobalBuffer((__gm__ uint8_t*)workspace);
 
-    queSize_ = Ops::Base::FloorAlign((tilingData->ubSize / NUM_4) , static_cast<int64_t>(NUM_256));
+    queSize_ = Ops::Base::FloorAlign((tilingData->ubSize / NUM_4), static_cast<int64_t>(NUM_256));
     pipe_->InitBuffer(maskInQueue_, NUM_2, queSize_);
     pipe_->InitBuffer(maskOutQueue_, NUM_2, queSize_);
 }
 
 template <typename T, int32_t VEC>
 __simt_vf__ __aicore__ LAUNCH_BOUND(CORE_THREAD_NUM) inline void SimtDropOutVec(
-    __gm__ volatile T *inputGM, __gm__ volatile T *outputGM, __gm__ volatile uint8_t *maskGM, uint64_t totalThreads, uint64_t magic, uint64_t shift, 
-    int64_t elementNum, int64_t seed, int64_t offset, float p)
+    __gm__ volatile T* inputGM, __gm__ volatile T* outputGM, __gm__ volatile uint8_t* maskGM, uint64_t totalThreads,
+    uint64_t magic, uint64_t shift, int64_t elementNum, int64_t seed, int64_t offset, float p)
 {
     uint32_t key[ALG_KEY_SIZE] = {0, 0};
     uint32_t counter[ALG_COUNTER_SIZE] = {0, 0, 0, 0};
@@ -82,13 +84,13 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(CORE_THREAD_NUM) inline void SimtDropOutVec(
     PhiloxAlgParsInit(key, counter, seed, offset);
     int64_t idx = blockIdx.x * blockDim.x + threadIdx.x;
     int32_t randSize = (VEC + NUM_4 - 1) / NUM_4;
-    for (int64_t linearIndex = idx * VEC; linearIndex < elementNum; 
-         linearIndex += blockDim.x * gridDim.x * VEC) {
+    for (int64_t linearIndex = idx * VEC; linearIndex < elementNum; linearIndex += blockDim.x * gridDim.x * VEC) {
         float resultsAll[VEC_16] = {0.0};
         for (uint8_t randIdx = 0; randIdx < randSize; randIdx++) {
             uint32_t counterTmp[ALG_COUNTER_SIZE] = {0, 0, 0, 0};
             CopyArray<ALG_COUNTER_SIZE>(counterTmp, counter);
-            ThreadMappingAndSkip<VEC, CONTINUOUS_USE>(linearIndex + randIdx * NUM_4, counterTmp, magic, shift, totalThreads);
+            ThreadMappingAndSkip<VEC, CONTINUOUS_USE>(linearIndex + randIdx * NUM_4, counterTmp, magic, shift,
+                                                      totalThreads);
             float results[ALG_COUNTER_SIZE];
             PhiloxRandomSimt(key, counterTmp, results);
             for (uint8_t i = 0; i < NUM_4; i++) {
@@ -105,20 +107,21 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(CORE_THREAD_NUM) inline void SimtDropOutVec(
 }
 
 template <typename T>
-__simt_vf__ __aicore__ LAUNCH_BOUND(CORE_THREAD_NUM) inline void ProcessZero(__gm__ volatile T *outputGM, 
-    __gm__ volatile uint8_t *maskGM, int64_t elementNum)
+__simt_vf__ __aicore__ LAUNCH_BOUND(CORE_THREAD_NUM) inline void ProcessZero(__gm__ volatile T* outputGM,
+                                                                             __gm__ volatile uint8_t* maskGM,
+                                                                             int64_t elementNum)
 {
-    for (int64_t linearIndex = blockIdx.x * blockDim.x + threadIdx.x; linearIndex < elementNum; 
-        linearIndex += blockDim.x * gridDim.x) {
-            outputGM[linearIndex] = 0;
-            maskGM[linearIndex] = 0;
+    for (int64_t linearIndex = blockIdx.x * blockDim.x + threadIdx.x; linearIndex < elementNum;
+         linearIndex += blockDim.x * gridDim.x) {
+        outputGM[linearIndex] = 0;
+        maskGM[linearIndex] = 0;
     }
 }
 
 template <typename T>
 __simt_vf__ __aicore__ LAUNCH_BOUND(CORE_THREAD_NUM) inline void SimtDropOut(
-    __gm__ volatile T *inputGM, __gm__ volatile T *outputGM, __gm__ volatile uint8_t *maskGM, uint64_t totalThreads, uint64_t magic, uint64_t shift, 
-    int64_t elementNum, int64_t seed, int64_t offset, float p)
+    __gm__ volatile T* inputGM, __gm__ volatile T* outputGM, __gm__ volatile uint8_t* maskGM, uint64_t totalThreads,
+    uint64_t magic, uint64_t shift, int64_t elementNum, int64_t seed, int64_t offset, float p)
 {
     uint32_t key[ALG_KEY_SIZE] = {0, 0};
     uint32_t counter[ALG_COUNTER_SIZE] = {0, 0, 0, 0};
@@ -126,12 +129,12 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(CORE_THREAD_NUM) inline void SimtDropOut(
     PhiloxAlgParsInit(key, counter, seed, offset);
     int64_t idx = blockIdx.x * blockDim.x + threadIdx.x;
     int64_t repeatTime = (elementNum + totalThreads * UNROLL - 1) / (totalThreads * UNROLL);
-    for (int64_t loopIdx = 0; loopIdx < repeatTime; loopIdx++ ) {
-        for (int64_t linearIndex = idx; linearIndex < totalThreads; 
-            linearIndex += blockDim.x * gridDim.x) {
+    for (int64_t loopIdx = 0; loopIdx < repeatTime; loopIdx++) {
+        for (int64_t linearIndex = idx; linearIndex < totalThreads; linearIndex += blockDim.x * gridDim.x) {
             uint32_t counterTmp[ALG_COUNTER_SIZE] = {0, 0, 0, 0};
             CopyArray<ALG_COUNTER_SIZE>(counterTmp, counter);
-            ThreadMappingAndSkip<STEP, DIS_CONTINUOUS_USE>(linearIndex + totalThreads * UNROLL * loopIdx, counterTmp, magic, shift, totalThreads);
+            ThreadMappingAndSkip<STEP, DIS_CONTINUOUS_USE>(linearIndex + totalThreads * UNROLL * loopIdx, counterTmp,
+                                                           magic, shift, totalThreads);
             float results[ALG_COUNTER_SIZE];
             PhiloxRandomSimt(key, counterTmp, results);
             for (uint8_t iStep = 0; iStep < STEP; iStep++) {
@@ -151,19 +154,11 @@ template <typename T, typename U>
 __aicore__ inline void DropOutV3Impl<T, U>::CopyInMask(const int64_t offset, const uint32_t count)
 {
     LocalTensor<uint8_t> maskUb = maskInQueue_.AllocTensor<uint8_t>();
-    DataCopyExtParams copyParams {
-        static_cast<uint16_t>(1),
-        static_cast<uint32_t>(count * sizeof(uint8_t)),
-        static_cast<uint32_t>(0),
-        static_cast<uint32_t>(0),
-        static_cast<uint32_t>(0)
-    };
-    DataCopyPadExtParams<uint8_t> padParams {
-        true,
-        static_cast<uint8_t>(0),
-        static_cast<uint8_t>(Ops::Base::CeilAlign(count, NUM_8) - count),
-        static_cast<uint8_t>(0)
-    };
+    DataCopyExtParams copyParams{static_cast<uint16_t>(1), static_cast<uint32_t>(count * sizeof(uint8_t)),
+                                 static_cast<uint32_t>(0), static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
+    DataCopyPadExtParams<uint8_t> padParams{true, static_cast<uint8_t>(0),
+                                            static_cast<uint8_t>(Ops::Base::CeilAlign(count, NUM_8) - count),
+                                            static_cast<uint8_t>(0)};
 
     DataCopyPad(maskUb, maskWorkspace_[offset], copyParams, padParams);
     maskInQueue_.EnQue(maskUb);
@@ -186,23 +181,19 @@ template <typename T, typename U>
 __aicore__ inline void DropOutV3Impl<T, U>::CopyOutMask(const int64_t offset, const uint32_t count)
 {
     LocalTensor<uint8_t> maskOutputUb = maskOutQueue_.DeQue<uint8_t>();
-    DataCopyExtParams copyParamsMaskOut {
-        static_cast<uint16_t>(1),
-        static_cast<uint32_t>(Ops::Base::CeilDiv(count, NUM_8) * sizeof(uint8_t)),
-        static_cast<uint32_t>(0),
-        static_cast<uint32_t>(0),
-        static_cast<uint32_t>(0)
-    };
+    DataCopyExtParams copyParamsMaskOut{static_cast<uint16_t>(1),
+                                        static_cast<uint32_t>(Ops::Base::CeilDiv(count, NUM_8) * sizeof(uint8_t)),
+                                        static_cast<uint32_t>(0), static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
     DataCopyPad(maskGM_[offset / NUM_8], maskOutputUb, copyParamsMaskOut);
     maskOutQueue_.FreeTensor(maskOutputUb);
 }
 
 template <typename T, typename U>
-__aicore__ inline void DropOutV3Impl<T, U>::UpdateMask(const RandomUnifiedSimtTilingDataStruct *tilingData)
+__aicore__ inline void DropOutV3Impl<T, U>::UpdateMask(const RandomUnifiedSimtTilingDataStruct* tilingData)
 {
     int64_t valueSize = sizeof(uint8_t);
-    int64_t perCoreHandleMaskAlign =
-        Ops::Base::CeilAlign(Ops::Base::CeilDiv(tilingData->outputSize, tilingData->usedCoreNum), CORE_ALIGN_SIZE);
+    int64_t perCoreHandleMaskAlign = Ops::Base::CeilAlign(
+        Ops::Base::CeilDiv(tilingData->outputSize, tilingData->usedCoreNum), CORE_ALIGN_SIZE);
     int64_t simdBlockNum = Ops::Base::CeilDiv(tilingData->outputSize, perCoreHandleMaskAlign);
     if (blockIdx_ >= simdBlockNum) {
         return;
@@ -258,17 +249,33 @@ __aicore__ inline bool DropOutV3Impl<T, U>::IsProbEqual(float a, float b)
 }
 
 template <typename T, typename U>
-__aicore__ inline void DropOutV3Impl<T, U>::Process(
-    GM_ADDR x, GM_ADDR y, GM_ADDR mask, const RandomUnifiedSimtTilingDataStruct *tilingData)
+__aicore__ inline void DropOutV3Impl<T, U>::Process(GM_ADDR x, GM_ADDR y, GM_ADDR mask,
+                                                    const RandomUnifiedSimtTilingDataStruct* tilingData)
 {
     blockIdx_ = GetBlockIdx();
     if (blockIdx_ >= tilingData->usedCoreNum) {
         return;
     }
 
+    if (blockIdx_ == 0) {
+        constexpr int64_t BIT_NUMBER = 128;
+        constexpr int64_t UINT8_BIT_NUMBER = 8;
+        int64_t maskWrittenBytes = Ops::Base::CeilDiv(tilingData->outputSize, UINT8_BIT_NUMBER);
+        int64_t maskTotalBytes = Ops::Base::CeilAlign(tilingData->outputSize, BIT_NUMBER) / UINT8_BIT_NUMBER;
+        int64_t tailOffset = Ops::Base::FloorAlign(maskWrittenBytes, (int64_t)NUM_2);
+        int64_t tailBytes = maskTotalBytes - tailOffset;
+        if (tailBytes > 0) {
+            GlobalTensor<uint16_t> maskGmU16;
+            maskGmU16.SetGlobalBuffer((__gm__ uint16_t*)maskGM_.GetPhyAddr());
+            GlobalTensor<uint16_t> maskGmTail = maskGmU16[tailOffset / NUM_2];
+            Fill<uint16_t>(maskGmTail, tailBytes / NUM_2, 0);
+        }
+    }
+    SyncAll();
+
     if (IsProbEqual(prob_, 0.0f)) {
-        asc_vf_call<ProcessZero<T>>(dim3(CORE_THREAD_NUM),
-            (__gm__ volatile T*)y, (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()), tilingData->outputSize);
+        asc_vf_call<ProcessZero<T>>(dim3(CORE_THREAD_NUM), (__gm__ volatile T*)y,
+                                    (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()), tilingData->outputSize);
         SyncAll();
         UpdateMask(tilingData);
         return;
@@ -288,33 +295,37 @@ __aicore__ inline void DropOutV3Impl<T, U>::Process(
 
     switch (vecSize) {
         case VEC_16:
-            asc_vf_call<SimtDropOutVec<T,VEC_16>>(dim3(CORE_THREAD_NUM),
-                (__gm__ volatile T*)x, (__gm__ volatile T*)y, (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()),
-                totalThreads, magic, shift, tilingData->outputSize, tilingData->seed, tilingData->offset, prob_);
+            asc_vf_call<SimtDropOutVec<T, VEC_16>>(dim3(CORE_THREAD_NUM), (__gm__ volatile T*)x, (__gm__ volatile T*)y,
+                                                   (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()),
+                                                   totalThreads, magic, shift, tilingData->outputSize, tilingData->seed,
+                                                   tilingData->offset, prob_);
             break;
         case VEC_8:
-            asc_vf_call<SimtDropOutVec<T,VEC_8>>(dim3(CORE_THREAD_NUM),
-                (__gm__ volatile T*)x, (__gm__ volatile T*)y, (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()),
-                totalThreads, magic, shift, tilingData->outputSize, tilingData->seed, tilingData->offset, prob_);
+            asc_vf_call<SimtDropOutVec<T, VEC_8>>(dim3(CORE_THREAD_NUM), (__gm__ volatile T*)x, (__gm__ volatile T*)y,
+                                                  (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()), totalThreads,
+                                                  magic, shift, tilingData->outputSize, tilingData->seed,
+                                                  tilingData->offset, prob_);
             break;
         case VEC_4:
-            asc_vf_call<SimtDropOutVec<T,VEC_4>>(dim3(CORE_THREAD_NUM),
-                (__gm__ volatile T*)x, (__gm__ volatile T*)y, (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()),
-                totalThreads, magic, shift, tilingData->outputSize, tilingData->seed, tilingData->offset, prob_);
+            asc_vf_call<SimtDropOutVec<T, VEC_4>>(dim3(CORE_THREAD_NUM), (__gm__ volatile T*)x, (__gm__ volatile T*)y,
+                                                  (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()), totalThreads,
+                                                  magic, shift, tilingData->outputSize, tilingData->seed,
+                                                  tilingData->offset, prob_);
             break;
         case VEC_2:
-            asc_vf_call<SimtDropOutVec<T,VEC_2>>(dim3(CORE_THREAD_NUM),
-                (__gm__ volatile T*)x, (__gm__ volatile T*)y, (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()),
-                totalThreads, magic, shift, tilingData->outputSize, tilingData->seed, tilingData->offset, prob_);
+            asc_vf_call<SimtDropOutVec<T, VEC_2>>(dim3(CORE_THREAD_NUM), (__gm__ volatile T*)x, (__gm__ volatile T*)y,
+                                                  (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()), totalThreads,
+                                                  magic, shift, tilingData->outputSize, tilingData->seed,
+                                                  tilingData->offset, prob_);
             break;
         default:
-            asc_vf_call<SimtDropOut<T>>(dim3(CORE_THREAD_NUM),
-                (__gm__ volatile T*)x, (__gm__ volatile T*)y, (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()),
-                totalThreads, magic, shift, tilingData->outputSize, tilingData->seed, tilingData->offset, prob_);
+            asc_vf_call<SimtDropOut<T>>(dim3(CORE_THREAD_NUM), (__gm__ volatile T*)x, (__gm__ volatile T*)y,
+                                        (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()), totalThreads, magic,
+                                        shift, tilingData->outputSize, tilingData->seed, tilingData->offset, prob_);
             break;
     }
     SyncAll();
     UpdateMask(tilingData);
 }
-}  // namespace DropOutV3
-#endif  // DROP_OUT_V3_IMPL_H
+} // namespace DropOutV3
+#endif // DROP_OUT_V3_IMPL_H

@@ -22,14 +22,8 @@
 
 class DropOutV3TilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "DropOutV3TilingTest  SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "DropOutV3TilingTest  TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "DropOutV3TilingTest  SetUp" << std::endl; }
+    static void TearDownTestCase() { std::cout << "DropOutV3TilingTest  TearDown" << std::endl; }
 };
 
 TEST_F(DropOutV3TilingTest, drop_out_v3_tiling_ascendc_float_01)
@@ -46,10 +40,11 @@ TEST_F(DropOutV3TilingTest, drop_out_v3_tiling_ascendc_float_01)
     gert::TilingContextPara tilingContextPara(
         "DropOutV3", {{{{10, 13, 22, 43}, {10, 13, 22, 43}}, ge::DT_FLOAT, ge::FORMAT_ND}, noise, p, seed, offset},
         {{{{10, 13, 22, 43}, {10, 13, 22, 43}}, ge::DT_FLOAT, ge::FORMAT_ND},
-         {{{15376}, {15376}}, ge::DT_INT8, ge::FORMAT_ND}},
+         {{{15376}, {15376}}, ge::DT_UINT8, ge::FORMAT_ND}},
         &compileInfo);
     uint64_t expectTilingKey = 100;
-    string expectTilingData = "61 122980 8 4 229376 0 1056964608 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ";
+    string expectTilingData = "61 122980 8 4 229376 0 1056964608 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+                              "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {16900224};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

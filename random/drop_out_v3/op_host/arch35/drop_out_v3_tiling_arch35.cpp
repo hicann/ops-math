@@ -30,22 +30,36 @@ static constexpr uint16_t INPUT_IDX_P = 2;
 static constexpr uint16_t INPUT_IDX_SEED = 3;
 static constexpr uint16_t INPUT_IDX_OFFSET = 4;
 static constexpr uint16_t OUTPUT_IDX_Y = 0;
+static constexpr uint16_t OUTPUT_IDX_MASK = 1;
 static constexpr int64_t DCACHE_SIZE = 32768;
 static constexpr int64_t CORE_ALIGN_SIZE = 256;
 static constexpr int64_t ALIGNMENT_32 = 32;
 static constexpr int64_t OFFSET_LIMIT = 4;
+static constexpr int64_t MASK_ALIGN_SIZE = 128;
+static constexpr int64_t UINT8_BIT_SIZE = 8;
 
-OpTilingConfig DropOutV3Tiling::BuildOpConfig()
+OpTilingConfig DropOutV3Tiling::BuildOpConfig(gert::TilingContext* context)
 {
     OpTilingConfig config;
+
+    int64_t xSize = -1;
+    int64_t maskSize = -1;
+    if (context != nullptr) {
+        auto inputShape = context->GetRequiredInputShape(INPUT_IDX_X);
+        if (inputShape != nullptr) {
+            auto storageShape = inputShape->GetStorageShape();
+            xSize = storageShape.IsScalar() ? 1 : storageShape.GetShapeSize();
+            maskSize = Ops::Base::CeilAlign(xSize, MASK_ALIGN_SIZE) / UINT8_BIT_SIZE;
+        }
+    }
 
     config.inputCheckRules = {
         {INPUT_IDX_X, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {}, nullptr}},
         {INPUT_IDX_P, {{ge::DT_DOUBLE, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {}, nullptr}},
         {INPUT_IDX_SEED, {{ge::DT_INT32, ge::DT_INT64}, 1, {}, nullptr}},
         {INPUT_IDX_OFFSET, {{ge::DT_INT64}, 2, {}, nullptr}}};
-    config.outputCheckRules = {
-        {OUTPUT_IDX_Y, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {}, nullptr}}};
+    config.outputCheckRules = {{OUTPUT_IDX_Y, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, xSize, {}, nullptr}},
+                               {OUTPUT_IDX_MASK, {{ge::DT_UINT8}, maskSize, {}, nullptr}}};
 
     config.getOutputSize = [](gert::TilingContext* ctx, int64_t& size) {
         auto inputShape = ctx->GetRequiredInputShape(INPUT_IDX_X);
@@ -58,18 +72,19 @@ OpTilingConfig DropOutV3Tiling::BuildOpConfig()
     config.getSeedAndOffset = [](gert::TilingContext* ctx, int64_t& seed, int64_t& offset) {
         gert::Shape seedShape;
         auto ret = ExtractTensorValue(ctx, INPUT_IDX_SEED, seedShape);
-        OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
-            OP_LOGE(ctx->GetNodeName(), "get seed value failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(ctx->GetNodeName(), "get seed value failed"),
+                    return ge::GRAPH_FAILED);
         seed = static_cast<int64_t>(seedShape.GetDim(0));
         gert::Shape offsetShape;
         ret = ExtractTensorValue(ctx, INPUT_IDX_OFFSET, offsetShape);
-        OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
-            OP_LOGE(ctx->GetNodeName(), "get offset value failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(ctx->GetNodeName(), "get offset value failed"),
+                    return ge::GRAPH_FAILED);
         offset = static_cast<int64_t>(offsetShape.GetDim(1));
         if (offset % OFFSET_LIMIT != 0) {
             std::string valueStr = std::to_string(offset);
             std::string reasonMsg = "The offset must be a multiple of 4";
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(ctx->GetNodeName(), "input offset", valueStr.c_str(), reasonMsg.c_str());
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(ctx->GetNodeName(), "input offset", valueStr.c_str(),
+                                                  reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
         return ge::GRAPH_SUCCESS;
@@ -91,8 +106,8 @@ ge::graphStatus DropOutV3Tiling::UniqueProcess()
     if (pTensor->GetShapeSize() <= 0) {
         std::string valueStr = std::to_string(pTensor->GetShapeSize());
         std::string reasonMsg = "shape size of prob tensor must be greater than 0";
-        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
-            context_->GetNodeName(), "shape size of prob tensor", valueStr.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context_->GetNodeName(), "shape size of prob tensor",
+                                                  valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     auto pDescPtr = context_->GetRequiredInputDesc(INPUT_IDX_P);
@@ -120,9 +135,16 @@ ge::graphStatus DropOutV3Tiling::UniqueProcess()
         default: {
             std::string valueStr = Ops::Base::ToString(pDescPtr->GetDataType());
             std::string reasonMsg = "Unsupported p dtype";
-            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "input p", valueStr.c_str(), reasonMsg.c_str());
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "input p", valueStr.c_str(),
+                                                  reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
+    }
+    if (prob < 0.0f || prob > 1.0f) {
+        std::string valueStr = std::to_string(1.0f - prob);
+        std::string reasonMsg = "The value of p has to be between 0 and 1";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "input p", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
     }
     simtTilingData_.prob = prob;
 
