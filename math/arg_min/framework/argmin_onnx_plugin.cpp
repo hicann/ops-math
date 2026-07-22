@@ -12,6 +12,30 @@
 #include "stub_ops.h"
 #include "op_math_proto_extend.h"
 #include "math/arg_min/op_graph/arg_min_proto.h"
+#include "platform/soc_spec.h"
+#include <set>
+#include <cstdlib>
+
+extern "C" {
+typedef int32_t rtError_t;
+static const int32_t RT_ERROR_NONE = 0;
+rtError_t rtGetSocSpec(const char* label, const char* key, char* val, const uint32_t maxLen);
+}
+
+static bool IsRegBasePlatform()
+{
+    constexpr uint32_t maxLen = 32;
+    char archStr[maxLen] = {0};
+    if (rtGetSocSpec("version", "NpuArch", archStr, maxLen) != RT_ERROR_NONE) {
+        OP_LOGD("ArgMin", "IsRegBasePlatform: get soc spec failed.");
+        return false;
+    }
+    auto curArch = static_cast<NpuArch>(std::strtol(archStr, nullptr, 10));
+    const static std::set<NpuArch> regbaseArch = {NpuArch::DAV_3510, NpuArch::DAV_5102};
+    bool isRegbase = (regbaseArch.find(curArch) != regbaseArch.end());
+    OP_LOGD("ArgMin", "IsRegBasePlatform: curArch=%u, is_regbase=%d.", static_cast<uint32_t>(curArch), isRegbase);
+    return isRegbase;
+}
 
 using namespace ge;
 namespace domi {
@@ -77,10 +101,11 @@ static Status ParseOpToGraphArgMin(const Operator& op, Graph& graph)
     std::vector<std::pair<Operator, std::vector<size_t>>> outputs;
 
     auto const_op = op::Const((ori_name + "_const_data").c_str()).set_attr_value(axis);
+    auto outputDtype = IsRegBasePlatform() ? ge::DT_INT64 : ge::DT_INT32;
     auto argMin = op::ArgMin((ori_name + "_ArgMin").c_str())
                       .set_input_x(data0)
                       .set_input_dimension(const_op)
-                      .set_attr_dtype(ge::DT_INT32);
+                      .set_attr_dtype(outputDtype);
 
     if (keep_dims == 1) {
         auto data1 = op::Const((ori_name + "_data1").c_str()).set_attr_value(axis);
@@ -98,18 +123,13 @@ static Status ParseOpToGraphArgMin(const Operator& op, Graph& graph)
 // register ArgMin op info to GE
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::8::ArgMin"),
-                   ge::AscendString("ai.onnx::9::ArgMin"),
-                   ge::AscendString("ai.onnx::10::ArgMin"),
-                   ge::AscendString("ai.onnx::11::ArgMin"),
-                   ge::AscendString("ai.onnx::12::ArgMin"),
-                   ge::AscendString("ai.onnx::13::ArgMin"),
-                   ge::AscendString("ai.onnx::14::ArgMin"),
-                   ge::AscendString("ai.onnx::15::ArgMin"),
-                   ge::AscendString("ai.onnx::16::ArgMin"),
-                   ge::AscendString("ai.onnx::17::ArgMin"),
+    .OriginOpType({ge::AscendString("ai.onnx::8::ArgMin"), ge::AscendString("ai.onnx::9::ArgMin"),
+                   ge::AscendString("ai.onnx::10::ArgMin"), ge::AscendString("ai.onnx::11::ArgMin"),
+                   ge::AscendString("ai.onnx::12::ArgMin"), ge::AscendString("ai.onnx::13::ArgMin"),
+                   ge::AscendString("ai.onnx::14::ArgMin"), ge::AscendString("ai.onnx::15::ArgMin"),
+                   ge::AscendString("ai.onnx::16::ArgMin"), ge::AscendString("ai.onnx::17::ArgMin"),
                    ge::AscendString("ai.onnx::18::ArgMin")})
     .ParseParamsFn(ParseParamsArgMin)
     .ParseOpToGraphFn(ParseOpToGraphArgMin)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi
