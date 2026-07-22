@@ -277,8 +277,17 @@ aclnnStatus CommonLogicGeneralNormal(const aclTensor* mean, const aclTensor* std
         auto stateLessOut = l0op::StatelessRandomNormalV2(self, keyArr, counterArr, algTensor, uniqueExecutor.get());
         CHECK_RET(stateLessOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-        // 调用mul_算子kernel function(AI Core算子)
-        auto mulOut = l0op::Mul(stateLessOut, std, uniqueExecutor.get());
+        // 调用mul_算子kernel function(AI Core算子)，语义为 mulOut = std * stateLessOut。
+        // stateLessOut是刚分配、算完即弃的中间tensor，两个分支都想把乘法输出绑定到它以省内存，
+        // 但绑定机制不同，导致入参顺序相反：
+        //   - MulInplace 复用【第二个】入参的内存做输出，故把 stateLessOut 放第二位，直接就地写、不再分配；
+        //     前提是它已是完整shape且dtype能装下结果，即下面 canMulInplace 的两个条件。
+        //   - 普通 Mul 会新分配内存，其输出dtype取【第一个】入参，为让新内存对齐 stateLessOut 的 dtype，
+        //     故把 stateLessOut 放第一位。
+        bool canMulInplace = stateLessOut->GetViewShape() == out->GetViewShape() &&
+                             std->GetDataType() == stateLessOut->GetDataType();
+        auto mulOut = canMulInplace ? l0op::MulInplace(std, stateLessOut, uniqueExecutor.get()) :
+                                      l0op::Mul(stateLessOut, std, uniqueExecutor.get());
         CHECK_RET(mulOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
         // 如果类型不一致，先做类型提升，再进行ADD算子运算
@@ -295,7 +304,9 @@ aclnnStatus CommonLogicGeneralNormal(const aclTensor* mean, const aclTensor* std
         }
 
         // 调用add_算子kernel function(AI Core算子)
-        addOut = l0op::Add(mulOutCast, meanCast, uniqueExecutor.get());
+        // mulOutCast是中间tensor，复用其内存做输出，省一次内存分配。
+        // 上面的类型提升已保证meanCast与mulOutCast的dtype一致，且mean恒能广播进mulOutCast
+        addOut = l0op::AddInplace(meanCast, mulOutCast, uniqueExecutor.get());
     }
     CHECK_RET(addOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
     // 固定写法，将计算结果转换成输出self的数据类型

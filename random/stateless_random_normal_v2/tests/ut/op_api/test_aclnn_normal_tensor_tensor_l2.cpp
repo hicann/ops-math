@@ -15,20 +15,13 @@
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/tensor_desc.h"
 
-
 using namespace op;
 using namespace std;
 
 class l2_normal_tensor_tensor_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "l2_normal_tensor_tensor SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "l2_normal_tensor_tensor TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "l2_normal_tensor_tensor SetUp" << std::endl; }
+    static void TearDownTestCase() { std::cout << "l2_normal_tensor_tensor TearDown" << std::endl; }
 };
 
 // 入参总元素个数不一致的场景
@@ -164,6 +157,37 @@ TEST_F(l2_normal_tensor_tensor_test, case_mixed_dtype_ND_normal)
 {
     auto meanDesc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(0, 5);
     auto stdDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(0, 3);
+    auto outDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t seed = 1;
+    int64_t offset = 1;
+    auto ut = OP_API_UT(aclnnNormalTensorTensor, INPUT(meanDesc, stdDesc, seed, offset), OUTPUT(outDesc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 正常场景：mean需要向std广播。UT默认soc为ASCEND910B(DAV_2201)，走A2/A3分支。
+// stateLessOut取mean的shape{1,3}，与out的{2,3}不一致，Mul不能复用其内存，走非inplace回退；
+// Add侧则覆盖meanCast{1,3}广播进mulOutCast{2,3}
+TEST_F(l2_normal_tensor_tensor_test, case_broadcast_mean_ND_normal)
+{
+    auto meanDesc = TensorDesc({1, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(0, 5);
+    auto stdDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(0, 3);
+    auto outDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t seed = 1;
+    int64_t offset = 1;
+    auto ut = OP_API_UT(aclnnNormalTensorTensor, INPUT(meanDesc, stdDesc, seed, offset), OUTPUT(outDesc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 正常场景：std需要向mean广播。stateLessOut取mean的shape{2,3}，与out一致且dtype相同，
+// Mul可复用其内存走MulInplace
+TEST_F(l2_normal_tensor_tensor_test, case_broadcast_std_ND_normal)
+{
+    auto meanDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(0, 5);
+    auto stdDesc = TensorDesc({1, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(0, 3);
     auto outDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     int64_t seed = 1;
     int64_t offset = 1;
