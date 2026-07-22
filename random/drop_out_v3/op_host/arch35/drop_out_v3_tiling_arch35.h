@@ -23,14 +23,13 @@ namespace optiling {
 
 class DropOutV3Tiling : public RandomTilingArch35 {
 public:
-    explicit DropOutV3Tiling(gert::TilingContext* context)
-        : RandomTilingArch35(context, BuildOpConfig()) {}
+    explicit DropOutV3Tiling(gert::TilingContext* context) : RandomTilingArch35(context, BuildOpConfig(context)) {}
 
 protected:
     ge::graphStatus UniqueProcess() override;
 
 private:
-    static OpTilingConfig BuildOpConfig();
+    static OpTilingConfig BuildOpConfig(gert::TilingContext* context);
 };
 } // namespace optiling
 #endif // AIR_CXX_RUNTIME_V2_OP_IMPL_DROP_OUT_V3_H_
