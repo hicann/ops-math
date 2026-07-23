@@ -25,13 +25,13 @@
 #include "stateless_randperm_tiling_for_sort.h"
 #include "stateless_randperm_tiling_arch35.h"
 
-namespace optiling{
+namespace optiling {
 using namespace ge;
 using namespace Ops::Base;
 
-static constexpr int64_t SIMT_THREAD_NUM_512 = 512;         // SIMT启用的线程数
-static constexpr int64_t SIMT_THREAD_NUM_2048 = 2048;       // SIMT启用的线程数
-static constexpr int64_t SIMT_DCACHE_SIZE = 32 * 1024;  // 预留32KB作为SIMT的dcache
+static constexpr int64_t SIMT_THREAD_NUM_512 = 512;    // SIMT启用的线程数
+static constexpr int64_t SIMT_THREAD_NUM_2048 = 2048;  // SIMT启用的线程数
+static constexpr int64_t SIMT_DCACHE_SIZE = 32 * 1024; // 预留32KB作为SIMT的dcache
 static constexpr int64_t DOUBLE_BUFFER = 2;
 static constexpr int32_t BITS_8 = 8;
 static constexpr int32_t BITS_16 = 16;
@@ -41,19 +41,18 @@ static constexpr double CONST_12 = 12;
 static constexpr double CONST_6 = 6;
 
 static const std::set<ge::DataType> OUTPUT_DTYPE = {
-    ge::DT_INT64, ge::DT_INT32, ge::DT_INT16, ge::DT_UINT8, ge::DT_INT8,
-    ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16,
+    ge::DT_INT64, ge::DT_INT32, ge::DT_INT16, ge::DT_UINT8, ge::DT_INT8, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16,
 };
 
 static const std::map<ge::DataType, int64_t> maxValueMap = {
-    {ge::DT_INT64,      std::numeric_limits<int64_t>::max()},
-    {ge::DT_INT32,      std::numeric_limits<int32_t>::max()},
-    {ge::DT_INT16,      std::numeric_limits<int16_t>::max()},
-    {ge::DT_UINT8,      std::numeric_limits<uint8_t>::max()},
-    {ge::DT_INT8,       std::numeric_limits<int8_t>::max()},
-    {ge::DT_FLOAT,      std::numeric_limits<float>::max()},
-    {ge::DT_FLOAT16,    static_cast<int64_t>((2.0 - std::exp2(-10.0)) * std::exp2(15.0))},
-    {ge::DT_BF16,       static_cast<int64_t>((2.0 - std::exp2(-7.0)) * std::exp2(127.0))},
+    {ge::DT_INT64, std::numeric_limits<int64_t>::max()},
+    {ge::DT_INT32, std::numeric_limits<int32_t>::max()},
+    {ge::DT_INT16, std::numeric_limits<int16_t>::max()},
+    {ge::DT_UINT8, std::numeric_limits<uint8_t>::max()},
+    {ge::DT_INT8, std::numeric_limits<int8_t>::max()},
+    {ge::DT_FLOAT, std::numeric_limits<float>::max()},
+    {ge::DT_FLOAT16, static_cast<int64_t>((2.0 - std::exp2(-10.0)) * std::exp2(15.0))},
+    {ge::DT_BF16, static_cast<int64_t>((2.0 - std::exp2(-7.0)) * std::exp2(127.0))},
 };
 
 // 1、获取平台信息比如CoreNum、UB/L1/L0C资源大小
@@ -64,16 +63,15 @@ ge::graphStatus StatelessRandpermTiling::GetPlatformInfo()
 
     totalCoreNum_ = static_cast<int64_t>(compileInfo->totalCoreNum);
     ubSize_ = compileInfo->ubSize;
-    OP_CHECK_IF(ubSize_ <= 0,
-                OP_LOGE(opName_, "UB size is invalid."),
-                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ubSize_ <= 0, OP_LOGE(opName_, "UB size is invalid."), return ge::GRAPH_FAILED);
     OP_CHECK_IF(ubSize_ <= SIMT_DCACHE_SIZE,
                 OP_LOGE(opName_, "UB size %ld bytes must be greater than simt dcache size %ld bytes, please check.",
-                                 ubSize_, SIMT_DCACHE_SIZE),
+                        ubSize_, SIMT_DCACHE_SIZE),
                 return ge::GRAPH_FAILED);
     ubSize_ -= SIMT_DCACHE_SIZE;
-    OP_LOGI(opName_, "StatelessRandpermTiling::GetPlatformInfo ubSize_= %ld, simt dcache size = %ld, totalCoreNum_= %ld",
-                     ubSize_, SIMT_DCACHE_SIZE, totalCoreNum_);
+    OP_LOGI(opName_,
+            "StatelessRandpermTiling::GetPlatformInfo ubSize_= %ld, simt dcache size = %ld, totalCoreNum_= %ld",
+            ubSize_, SIMT_DCACHE_SIZE, totalCoreNum_);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -89,7 +87,7 @@ ge::graphStatus StatelessRandpermTiling::GetAttrs()
     if (dtypePtr == nullptr) {
         attrOutDtype_ = ge::DT_INT64;
         OP_LOGW(opName_, "[attr]dtype is not provided, set to default value %s.",
-                         Ops::Base::ToString(attrOutDtype_).c_str());
+                Ops::Base::ToString(attrOutDtype_).c_str());
     } else {
         attrOutDtype_ = *dtypePtr;
     }
@@ -136,9 +134,12 @@ ge::graphStatus StatelessRandpermTiling::GetInputN()
 
     // 值校验
     auto maxIter = maxValueMap.find(attrOutDtype_);
-    OP_CHECK_IF(maxIter == maxValueMap.end(),
-                OP_LOGE(opName_, "max value of [attr]dtype not found in."),
-                return ge::GRAPH_FAILED);
+    if (maxIter == maxValueMap.end()) {
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "attr dtype", ToString(attrOutDtype_).c_str(),
+                                              "attr dtype not supported, must be in [DT_INT64, DT_INT32, DT_INT16, "
+                                              "DT_UINT8, DT_INT8, DT_FLOAT, DT_FLOAT16, DT_BF16]");
+        return ge::GRAPH_FAILED;
+    }
     if (n_ > maxIter->second) {
         std::string valueStr = std::to_string(n_);
         std::string reasonMsg = "input n must not be greater than max value of [attr]dtype";
@@ -278,16 +279,12 @@ ge::graphStatus StatelessRandpermTiling::GetOutputY()
 // 2、获取INPUT/OUTPUT/ATTR信息
 ge::graphStatus StatelessRandpermTiling::GetShapeAttrsInfo()
 {
-    OP_CHECK_IF(GetAttrs(), 
-                OP_LOGE(opName_, "GetAttrs failed!"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(GetInputN() != ge::GRAPH_SUCCESS,
-                OP_LOGE(opName_, "GetInputN failed!"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(GetInputSeed() != ge::GRAPH_SUCCESS,
-                OP_LOGE(opName_, "GetInputSeed failed!"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(GetInputOffset() != ge::GRAPH_SUCCESS,
-                OP_LOGE(opName_, "GetInputOffset failed!"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(GetOutputY() != ge::GRAPH_SUCCESS,
-                OP_LOGE(opName_, "GetOutputY failed!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetAttrs(), OP_LOGE(opName_, "GetAttrs failed!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetInputN() != ge::GRAPH_SUCCESS, OP_LOGE(opName_, "GetInputN failed!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetInputSeed() != ge::GRAPH_SUCCESS, OP_LOGE(opName_, "GetInputSeed failed!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetInputOffset() != ge::GRAPH_SUCCESS, OP_LOGE(opName_, "GetInputOffset failed!"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetOutputY() != ge::GRAPH_SUCCESS, OP_LOGE(opName_, "GetOutputY failed!"), return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -320,15 +317,15 @@ void StatelessRandpermTiling::PhiloxRandomComputeBits()
 /*
  * sort-tiling桥接
  * 构造TilingContext，调用sort-tiling接口
- */ 
+ */
 ge::graphStatus StatelessRandpermTiling::SortTilingBridge()
 {
     auto indexDtype = (nIsInt32_ == 1) ? ge::DT_INT32 : ge::DT_INT64;
     gert::StorageShape storageShape({n_}, {n_});
     gert::StorageFormat storageFormat({ge::FORMAT_ND, ge::FORMAT_RESERVED, gert::ExpandDimsType()});
-    gert::Tensor xTensor(storageShape, storageFormat, randomDtype_);    // 根据randomBits选择
+    gert::Tensor xTensor(storageShape, storageFormat, randomDtype_); // 根据randomBits选择
     gert::Tensor yTensor(storageShape, storageFormat, randomDtype_);
-    gert::Tensor indexTensor(storageShape, storageFormat, indexDtype);    // 性能优化：小于int32最大值可以用int32计算
+    gert::Tensor indexTensor(storageShape, storageFormat, indexDtype); // 性能优化：小于int32最大值可以用int32计算
 
     auto workspaceSizeHolder = gert::ContinuousVector::Create<size_t>(1);
     auto wsPtr = reinterpret_cast<gert::ContinuousVector*>(workspaceSizeHolder.get());
@@ -338,46 +335,37 @@ ge::graphStatus StatelessRandpermTiling::SortTilingBridge()
 
     gert::OpTilingContextBuilder tilingBuilder;
     auto holder = tilingBuilder.OpName("StatelessRandpermTiling-Sort")
-                               .OpType("Sort")
-                               .IONum(1, 2)
-                               .AppendAttr(int64_t(-1))                            // [attr]axis
-                               .AppendAttr(false)                                  // [attr]descending
-                               .AppendAttr(true)                                   // [attr]stable
-                               .AppendAttr(static_cast<int64_t>(indexDtype))       // [attr]y2_dtype
-                               .TilingDataSize(sizeof(SortRegBaseTilingData))
-                               .Workspace(wsPtr)
-                               .CompileInfo(fakeCompileInfo)                       // sort-tiling未使用
-                               .Deterministic(1)                                   // sort-tiling未使用
-                               .PlatformInfo(platformInfo)
-                               .InputTensors({&xTensor})
-                               .OutputTensors({&yTensor, &indexTensor})
-                               .Build();
+                      .OpType("Sort")
+                      .IONum(1, 2)
+                      .AppendAttr(int64_t(-1))                      // [attr]axis
+                      .AppendAttr(false)                            // [attr]descending
+                      .AppendAttr(true)                             // [attr]stable
+                      .AppendAttr(static_cast<int64_t>(indexDtype)) // [attr]y2_dtype
+                      .TilingDataSize(sizeof(SortRegBaseTilingData))
+                      .Workspace(wsPtr)
+                      .CompileInfo(fakeCompileInfo) // sort-tiling未使用
+                      .Deterministic(1)             // sort-tiling未使用
+                      .PlatformInfo(platformInfo)
+                      .InputTensors({&xTensor})
+                      .OutputTensors({&yTensor, &indexTensor})
+                      .Build();
     auto sortTilingContext = holder.GetContext();
-    OP_CHECK_IF(sortTilingContext == nullptr,
-                OP_LOGE(opName_, "tilingBuilder failed."),
-                return GRAPH_FAILED);
+    OP_CHECK_IF(sortTilingContext == nullptr, OP_LOGE(opName_, "tilingBuilder failed."), return GRAPH_FAILED);
     auto ret = statelessRandpermTiling::SortTilingSimt(sortTilingContext, totalCoreNum_);
-    OP_CHECK_IF(ret != GRAPH_SUCCESS,
-                OP_LOGE(opName_, "SortTilingSimt failed."),
-                return GRAPH_FAILED);
-    sortTilingData_ = reinterpret_cast<SortRegBaseTilingDataForRandperm*>(sortTilingContext->GetTilingData<SortRegBaseTilingData>());
-    OP_CHECK_IF(sortTilingData_ == nullptr,
-                OP_LOGE(opName_, "sortTilingData is nullptr."),
-                return GRAPH_FAILED);
+    OP_CHECK_IF(ret != GRAPH_SUCCESS, OP_LOGE(opName_, "SortTilingSimt failed."), return GRAPH_FAILED);
+    sortTilingData_ = reinterpret_cast<SortRegBaseTilingDataForRandperm*>(
+        sortTilingContext->GetTilingData<SortRegBaseTilingData>());
+    OP_CHECK_IF(sortTilingData_ == nullptr, OP_LOGE(opName_, "sortTilingData is nullptr."), return GRAPH_FAILED);
     needCoreNumForSort_ = sortTilingContext->GetBlockDim();
     tilingKeyForSort_ = sortTilingContext->GetTilingKey();
     size_t* userWorkSpaceSize = sortTilingContext->GetWorkspaceSizes(1);
-    OP_CHECK_IF(userWorkSpaceSize == nullptr,
-                OP_LOGE(opName_, "userWorkSpaceSize is nullptr."),
-                return GRAPH_FAILED);
+    OP_CHECK_IF(userWorkSpaceSize == nullptr, OP_LOGE(opName_, "userWorkSpaceSize is nullptr."), return GRAPH_FAILED);
     workSpaceSizeForSort_ = userWorkSpaceSize[0];
     return GRAPH_SUCCESS;
 }
 
 // 3、是否使能该tiling模板
-bool StatelessRandpermTiling::IsCapable() {
-    return true;
-}
+bool StatelessRandpermTiling::IsCapable() { return true; }
 
 // 判断长度为n的tensor的地址偏移是否能被int32表示
 bool StatelessRandpermTiling::canUse32bitIndexing(int64_t len)
@@ -428,7 +416,7 @@ void StatelessRandpermTiling::ThreadBlockNumCalc(uint32_t threadNum, uint32_t& f
 {
     uint32_t baseTile = threadNum;
     uint32_t blockCount = CeilDiv(static_cast<uint32_t>(n_), baseTile);
-    factor = CeilDiv(blockCount, needCoreNumForSort_);     // 受sort限制
+    factor = CeilDiv(blockCount, needCoreNumForSort_); // 受sort限制
     uint32_t needCoreNum = CeilDiv(blockCount, factor);
     factorTail = blockCount - (needCoreNum - 1) * factor;
     return;
@@ -444,15 +432,14 @@ ge::graphStatus StatelessRandpermTiling::DoOpTiling()
 
     // 2、sort-tiling
     auto ret = SortTilingBridge();
-    OP_CHECK_IF(ret != GRAPH_SUCCESS,
-                OP_LOGE(opName_, "SortTilingBridge failed."),
-                return GRAPH_FAILED);
+    OP_CHECK_IF(ret != GRAPH_SUCCESS, OP_LOGE(opName_, "SortTilingBridge failed."), return GRAPH_FAILED);
 
     // 3、n值切分
     Int32IndexingSplit(n_, subNs_, subNSize_);
     if (subNSize_ > SUB_N_TILE_COUNT) {
         std::string valueStr = std::to_string(subNSize_);
-        std::string reasonMsg = "After n splits, the number of blocks should not exceed " + std::to_string(SUB_N_TILE_COUNT);
+        std::string reasonMsg = "After n splits, the number of blocks should not exceed " +
+                                std::to_string(SUB_N_TILE_COUNT);
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName_, "input tensor n", valueStr.c_str(), reasonMsg.c_str());
         return GRAPH_FAILED;
     }
@@ -468,16 +455,10 @@ ge::graphStatus StatelessRandpermTiling::DoOpTiling()
 }
 
 // 5、计算高阶API的TilingData
-ge::graphStatus StatelessRandpermTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus StatelessRandpermTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
 // 6、计算TilingKey
-uint64_t StatelessRandpermTiling::GetTilingKey() const
-{
-    return tilingKey_;
-}
+uint64_t StatelessRandpermTiling::GetTilingKey() const { return tilingKey_; }
 
 // 7、计算Workspace 大小
 ge::graphStatus StatelessRandpermTiling::GetWorkspaceSize()
@@ -508,7 +489,7 @@ void StatelessRandpermTiling::SetTilingData()
     tilingData_->realCoreNum = needCoreNumForSort_;
     tilingData_->subNTileCount = subNs_.size();
     for (size_t i = 0; i < subNs_.size(); i++) {
-        tilingData_->subNTile[i] = subNs_[i];       // 目前最大支持n为int32最大值的序列
+        tilingData_->subNTile[i] = subNs_[i]; // 目前最大支持n为int32最大值的序列
     }
 }
 
@@ -553,8 +534,7 @@ void StatelessRandpermTiling::DumpTilingInfo()
 
 static ge::graphStatus TilingStatelessRandperm(gert::TilingContext* context)
 {
-    OP_CHECK_IF(context == nullptr,
-                OP_LOGE("TilingStatelessRandperm", "Tiling context is nullptr!"),
+    OP_CHECK_IF(context == nullptr, OP_LOGE("TilingStatelessRandperm", "Tiling context is nullptr!"),
                 return ge::GRAPH_FAILED);
 
     OP_LOGD(context, "TilingStatelessRandperm enter");
@@ -568,11 +548,10 @@ static ge::graphStatus TilingStatelessRandperm(gert::TilingContext* context)
 
 static ge::graphStatus TilingPrepareForStatelessRandperm(gert::TilingParseContext* context)
 {
-    OP_CHECK_IF(context == nullptr,
-                OP_LOGE("TilingPrepareForStatelessRandperm", "Tiling context is nullptr!"),
+    OP_CHECK_IF(context == nullptr, OP_LOGE("TilingPrepareForStatelessRandperm", "Tiling context is nullptr!"),
                 return ge::GRAPH_FAILED);
     OP_LOGD(context->GetNodeName(), "TilingPrepareForStatelessRandperm start");
-    
+
     auto compileInfo = context->GetCompiledInfo<StatelessRandpermCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     auto platformInfo = context->GetPlatformInfo();
@@ -583,7 +562,7 @@ static ge::graphStatus TilingPrepareForStatelessRandperm(gert::TilingParseContex
     uint64_t ubSizePlatForm;
     ascPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSize = static_cast<int64_t>(ubSizePlatForm);
-    
+
     OP_LOGD(context->GetNodeName(), "TilingPrepareForStatelessRandperm end");
     return ge::GRAPH_SUCCESS;
 }
@@ -592,4 +571,4 @@ IMPL_OP_OPTILING(StatelessRandperm)
     .Tiling(TilingStatelessRandperm)
     .TilingParse<StatelessRandpermCompileInfo>(TilingPrepareForStatelessRandperm)
     .TilingInputsDataDependency({INPUT_IDX_N, INPUT_IDX_SEED, INPUT_IDX_OFFSET});
-}
+} // namespace optiling
