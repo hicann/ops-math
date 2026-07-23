@@ -119,14 +119,13 @@ __aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallA
     uint32_t aglinTileSizeCopy = alignSize_;
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<int32_t> vciTensor;
-        MicroAPI::RegTensor<int32_t> indexTensor;
-        MicroAPI::Arange(vciTensor, 0);
+        Reg::RegTensor<int32_t> vciTensor;
+        Reg::RegTensor<int32_t> indexTensor;
+        Reg::Arange(vciTensor, 0);
         for (uint16_t i = 0; i < repeatTime; i++) {
-            MicroAPI::MaskReg vciMask = MicroAPI::UpdateMask<uint32_t>(aglinTileSizeCopy);
-            MicroAPI::Adds(indexTensor, vciTensor, i * vfLenB32, vciMask);
-            MicroAPI::DataCopy<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(indexValuePtr, indexTensor, vfLenB32,
-                                                                                 vciMask);
+            Reg::MaskReg vciMask = Reg::UpdateMask<uint32_t>(aglinTileSizeCopy);
+            Reg::Adds(indexTensor, vciTensor, i * vfLenB32, vciMask);
+            Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(indexValuePtr, indexTensor, vfLenB32, vciMask);
         }
     }
 }

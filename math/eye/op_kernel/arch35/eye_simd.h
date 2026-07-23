@@ -23,7 +23,8 @@ using namespace AscendC;
 
 constexpr uint32_t VECTOR_LENGTH = 256U;
 
-template <typename T, typename U> class EyeKernelSimd {
+template <typename T, typename U>
+class EyeKernelSimd {
 public:
     __aicore__ inline EyeKernelSimd(const EyeForAscendCTilingData& tilingData, TPipe& pipe)
         : td_(tilingData), pipe_(pipe){};
@@ -38,14 +39,14 @@ private:
     GlobalTensor<T> y_;
     TQue<QuePosition::VECOUT, 1> zeroBuf_;
     TBuf<QuePosition::VECCALC> indexBuf_;
-    TPipe &pipe_;
+    TPipe& pipe_;
 
-    int64_t blockIdx_{ 0 };
-    int64_t loopNum_{ 0 };
-    int64_t ubProNum_{ 0 };
-    int64_t tailLoopLength_{ 0 };
-    int64_t curCoreData_{ 0 };
-    const EyeForAscendCTilingData &td_;
+    int64_t blockIdx_{0};
+    int64_t loopNum_{0};
+    int64_t ubProNum_{0};
+    int64_t tailLoopLength_{0};
+    int64_t curCoreData_{0};
+    const EyeForAscendCTilingData& td_;
 };
 
 template <typename T, typename U>
@@ -53,7 +54,7 @@ __aicore__ inline void EyeKernelSimd<T, U>::Init(GM_ADDR y)
 {
     ubProNum_ = td_.loopLength * td_.numRows * td_.numColumns;
 
-    y_.SetGlobalBuffer((__gm__ T *)(y));
+    y_.SetGlobalBuffer((__gm__ T*)(y));
     pipe_.InitBuffer(zeroBuf_, 1, ubProNum_ * sizeof(T));
     pipe_.InitBuffer(indexBuf_, VECTOR_LENGTH);
 
@@ -69,7 +70,7 @@ __aicore__ inline void EyeKernelSimd<T, U>::GenScatterIndex()
 {
     LocalTensor<U> indexLocal = indexBuf_.Get<U>();
     uint32_t vfLen = VECTOR_LENGTH / sizeof(U);
-    auto dstAddr = (__ubuf__ U *)indexLocal.GetPhyAddr();
+    auto dstAddr = (__ubuf__ U*)indexLocal.GetPhyAddr();
 
     uint32_t rows = td_.numRows;
     uint32_t cols = td_.numColumns;
@@ -80,43 +81,44 @@ __aicore__ inline void EyeKernelSimd<T, U>::GenScatterIndex()
 #endif
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<U> index;
-        MicroAPI::RegTensor<V> tmp;
-        MicroAPI::RegTensor<U> v0;
-        MicroAPI::RegTensor<U> v1;
-        MicroAPI::RegTensor<U> v2;
-        MicroAPI::RegTensor<U> vd1;
-        MicroAPI::RegTensor<U> vd2;
-        MicroAPI::RegTensor<U> vd3;
-        MicroAPI::RegTensor<U> vd4;
-        MicroAPI::RegTensor<U> vd5;
-        MicroAPI::RegTensor<U> vd6;
+        Reg::RegTensor<U> index;
+        Reg::RegTensor<V> tmp;
+        Reg::RegTensor<U> v0;
+        Reg::RegTensor<U> v1;
+        Reg::RegTensor<U> v2;
+        Reg::RegTensor<U> vd1;
+        Reg::RegTensor<U> vd2;
+        Reg::RegTensor<U> vd3;
+        Reg::RegTensor<U> vd4;
+        Reg::RegTensor<U> vd5;
+        Reg::RegTensor<U> vd6;
         uint32_t num = vfLen;
-        MicroAPI::MaskReg p0 = MicroAPI::UpdateMask<U>(num);
-        MicroAPI::Arange(tmp, 0);
-        index = (MicroAPI::RegTensor<U> &)tmp;
-        MicroAPI::Duplicate(v0, (U)(cols + 1), p0);
-        MicroAPI::Duplicate(v1, (U)(oneInBatchNum), p0);
-        MicroAPI::Duplicate(v2, (U)(rows * cols), p0);
-        MicroAPI::Div(vd2, index, v1, p0);
-        MicroAPI::Mul(vd3, vd2, v1, p0);
-        MicroAPI::Sub(vd4, index, vd3, p0);
+        Reg::MaskReg p0 = Reg::UpdateMask<U>(num);
+        Reg::Arange(tmp, 0);
+        index = (Reg::RegTensor<U>&)tmp;
+        Reg::Duplicate(v0, (U)(cols + 1), p0);
+        Reg::Duplicate(v1, (U)(oneInBatchNum), p0);
+        Reg::Duplicate(v2, (U)(rows * cols), p0);
+        Reg::Div(vd2, index, v1, p0);
+        Reg::Mul(vd3, vd2, v1, p0);
+        Reg::Sub(vd4, index, vd3, p0);
 
-        MicroAPI::Mul(vd5, vd2, v2, p0);
-        MicroAPI::Mul(vd1, vd4, v0, p0);
-        MicroAPI::Add(vd6, vd5, vd1, p0);
-        MicroAPI::DataCopy(dstAddr, vd6, p0);
+        Reg::Mul(vd5, vd2, v2, p0);
+        Reg::Mul(vd1, vd4, v0, p0);
+        Reg::Add(vd6, vd5, vd1, p0);
+        Reg::DataCopy(dstAddr, vd6, p0);
     }
 }
 
-template <typename T, typename U> __aicore__ inline void EyeKernelSimd<T, U>::GenEyeBuf()
+template <typename T, typename U>
+__aicore__ inline void EyeKernelSimd<T, U>::GenEyeBuf()
 {
     LocalTensor<U> indexLocal = indexBuf_.Get<U>();
     LocalTensor<T> tmpLocal = zeroBuf_.AllocTensor<T>();
     Duplicate(tmpLocal, static_cast<T>(0), ubProNum_);
     uint32_t vfLen = VECTOR_LENGTH / sizeof(U);
-    auto indexAddr = (__ubuf__ U *)indexLocal.GetPhyAddr();
-    auto zeroAddr = (__ubuf__ T *)tmpLocal.GetPhyAddr();
+    auto indexAddr = (__ubuf__ U*)indexLocal.GetPhyAddr();
+    auto zeroAddr = (__ubuf__ T*)tmpLocal.GetPhyAddr();
 
     uint32_t rows = td_.numRows;
     uint32_t cols = td_.numColumns;
@@ -134,19 +136,19 @@ template <typename T, typename U> __aicore__ inline void EyeKernelSimd<T, U>::Ge
         {
             uint32_t main = regFactor0 * oneInBatchNum;
             uint32_t tail = tailRegFactor0 * oneInBatchNum;
-            MicroAPI::MaskReg p0 = MicroAPI::UpdateMask<U>(main);
-            MicroAPI::MaskReg p1 = MicroAPI::UpdateMask<U>(tail);
-            MicroAPI::RegTensor<U> vd0;
-            MicroAPI::RegTensor<U> vd1;
-            MicroAPI::RegTensor<T> one;
-            MicroAPI::Duplicate(one, (T)(1), p0);
-            MicroAPI::DataCopy(vd0, indexAddr);
+            Reg::MaskReg p0 = Reg::UpdateMask<U>(main);
+            Reg::MaskReg p1 = Reg::UpdateMask<U>(tail);
+            Reg::RegTensor<U> vd0;
+            Reg::RegTensor<U> vd1;
+            Reg::RegTensor<T> one;
+            Reg::Duplicate(one, (T)(1), p0);
+            Reg::DataCopy(vd0, indexAddr);
             for (uint16_t i = 0; i < size0; i++) {
-                MicroAPI::Adds(vd1, vd0, (U)(i * stride), p0);
-                MicroAPI::DataCopyScatter(zeroAddr, one, vd1, p0);
+                Reg::Adds(vd1, vd0, (U)(i * stride), p0);
+                Reg::DataCopyScatter(zeroAddr, one, vd1, p0);
             }
-            MicroAPI::Adds(vd1, vd0, (U)(size0 * stride), p1);
-            MicroAPI::DataCopyScatter(zeroAddr, one, vd1, p1);
+            Reg::Adds(vd1, vd0, (U)(size0 * stride), p1);
+            Reg::DataCopyScatter(zeroAddr, one, vd1, p1);
         }
     } else {
         uint16_t regFactor1 = vfLen;
@@ -159,30 +161,31 @@ template <typename T, typename U> __aicore__ inline void EyeKernelSimd<T, U>::Ge
         {
             uint32_t main = regFactor1;
             uint32_t tail = tailRegFactor1;
-            MicroAPI::MaskReg p0 = MicroAPI::UpdateMask<U>(main);
-            MicroAPI::MaskReg p1 = MicroAPI::UpdateMask<U>(tail);
-            MicroAPI::RegTensor<U> vd0;
-            MicroAPI::RegTensor<U> vd1;
-            MicroAPI::RegTensor<U> vd2;
-            MicroAPI::RegTensor<U> index;
-            MicroAPI::RegTensor<T> one;
-            MicroAPI::Duplicate(one, (T)(1), p0);
-            MicroAPI::DataCopy(index, indexAddr);
+            Reg::MaskReg p0 = Reg::UpdateMask<U>(main);
+            Reg::MaskReg p1 = Reg::UpdateMask<U>(tail);
+            Reg::RegTensor<U> vd0;
+            Reg::RegTensor<U> vd1;
+            Reg::RegTensor<U> vd2;
+            Reg::RegTensor<U> index;
+            Reg::RegTensor<T> one;
+            Reg::Duplicate(one, (T)(1), p0);
+            Reg::DataCopy(index, indexAddr);
             for (uint16_t i = 0; i < size0; i++) {
-                MicroAPI::Adds(vd0, index, (U)(i * batchEleNum), p0);
+                Reg::Adds(vd0, index, (U)(i * batchEleNum), p0);
                 for (uint16_t j = 0; j < size1; j++) {
-                    MicroAPI::Adds(vd1, vd0, (U)(j * stride), p0);
-                    MicroAPI::DataCopyScatter(zeroAddr, one, vd1, p0);
+                    Reg::Adds(vd1, vd0, (U)(j * stride), p0);
+                    Reg::DataCopyScatter(zeroAddr, one, vd1, p0);
                 }
-                MicroAPI::Adds(vd2, vd0, (U)(size1 * stride), p1);
-                MicroAPI::DataCopyScatter(zeroAddr, one, vd2, p1);
+                Reg::Adds(vd2, vd0, (U)(size1 * stride), p1);
+                Reg::DataCopyScatter(zeroAddr, one, vd2, p1);
             }
         }
     }
     zeroBuf_.EnQue<T>(tmpLocal);
 }
 
-template <typename T, typename U> __aicore__ inline void EyeKernelSimd<T, U>::EyeCompute()
+template <typename T, typename U>
+__aicore__ inline void EyeKernelSimd<T, U>::EyeCompute()
 {
     if constexpr (IsSameType<U, uint32_t>::value) {
         GenScatterIndex<int32_t>();
@@ -193,8 +196,8 @@ template <typename T, typename U> __aicore__ inline void EyeKernelSimd<T, U>::Ey
     }
     GenEyeBuf();
     LocalTensor<T> srcLocal = zeroBuf_.DeQue<T>();
-    DataCopyExtParams copyParams = { static_cast<uint16_t>(1), static_cast<uint32_t>(ubProNum_ * sizeof(T)),
-        static_cast<uint32_t>(0), static_cast<uint32_t>(0), static_cast<uint32_t>(0) };
+    DataCopyExtParams copyParams = {static_cast<uint16_t>(1), static_cast<uint32_t>(ubProNum_ * sizeof(T)),
+                                    static_cast<uint32_t>(0), static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
 
     int64_t offset = blockIdx_ * td_.normBlockData * td_.numRows * td_.numColumns;
     for (int64_t i = 0; i < loopNum_; i++) {
@@ -207,7 +210,8 @@ template <typename T, typename U> __aicore__ inline void EyeKernelSimd<T, U>::Ey
     zeroBuf_.FreeTensor(srcLocal);
 }
 
-template <typename T, typename U> __aicore__ inline void EyeKernelSimd<T, U>::Process()
+template <typename T, typename U>
+__aicore__ inline void EyeKernelSimd<T, U>::Process()
 {
     if (blockIdx_ < td_.usedCoreNum) {
         EyeCompute();

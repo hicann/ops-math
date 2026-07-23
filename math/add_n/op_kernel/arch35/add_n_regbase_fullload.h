@@ -71,8 +71,8 @@ template <typename T>
 __aicore__ inline void AddNRegbaseFullLoad<T>::InitParams()
 {
     dim0Aline = (tilingData_.dim0 * sizeof(T) + (PADDING_NUM - 1)) / PADDING_NUM * PADDING_NUM / sizeof(T);
-    dimPadding =
-        (tilingData_.dim0 * sizeof(T) + (PADDING_NUM - 1)) / PADDING_NUM * PADDING_NUM / sizeof(T) - tilingData_.dim0;
+    dimPadding = (tilingData_.dim0 * sizeof(T) + (PADDING_NUM - 1)) / PADDING_NUM * PADDING_NUM / sizeof(T) -
+                 tilingData_.dim0;
 }
 
 template <typename T>
@@ -107,9 +107,8 @@ __aicore__ inline void AddNRegbaseFullLoad<T>::CopyInAndCompute(LocalTensor<T> y
     }
     for (int64_t i = 0; i < tilingData_.loopN; i++) {
         for (int64_t j = 1; j < GROUP_SIZE; j++) {
-            AddVF(
-                xLocal[i * GROUP_SIZE * dim0Aline + tilingData_.firstN * dim0Aline],
-                xLocal[i * GROUP_SIZE * dim0Aline + tilingData_.firstN * dim0Aline + j * dim0Aline]);
+            AddVF(xLocal[i * GROUP_SIZE * dim0Aline + tilingData_.firstN * dim0Aline],
+                  xLocal[i * GROUP_SIZE * dim0Aline + tilingData_.firstN * dim0Aline + j * dim0Aline]);
         }
         AddVF(xLocal, xLocal[i * GROUP_SIZE * dim0Aline + tilingData_.firstN * dim0Aline]);
     }
@@ -123,8 +122,8 @@ __aicore__ inline void AddNRegbaseFullLoad<T>::CopyIn()
     LocalTensor<T> xLocal = inQueue.template AllocTensor<T>();
     for (int64_t i = 0; i < tilingData_.sizeN; i++) {
         xGm.SetGlobalBuffer((__gm__ T*)inputList_.GetDataPtr<T>(i));
-        DataCopyExtParams copyParams = {
-            static_cast<uint16_t>(1), static_cast<uint32_t>(tilingData_.dim0 * sizeof(T)), 0, 0, 0};
+        DataCopyExtParams copyParams = {static_cast<uint16_t>(1), static_cast<uint32_t>(tilingData_.dim0 * sizeof(T)),
+                                        0, 0, 0};
         DataCopyPadExtParams<T> padParams{true, 0, static_cast<uint8_t>(dimPadding), 0};
         DataCopyPad(xLocal[i * dim0Aline], xGm, copyParams, padParams);
     }
@@ -135,8 +134,8 @@ template <typename T>
 __aicore__ inline void AddNRegbaseFullLoad<T>::CopyOut()
 {
     LocalTensor<T> yLocal = outQueue.template DeQue<T>();
-    DataCopyExtParams copyParams = {
-        static_cast<uint16_t>(1), static_cast<uint32_t>(tilingData_.dim0 * sizeof(T)), 0, 0, 0};
+    DataCopyExtParams copyParams = {static_cast<uint16_t>(1), static_cast<uint32_t>(tilingData_.dim0 * sizeof(T)), 0, 0,
+                                    0};
     DataCopyPad(yGm, yLocal, copyParams);
     outQueue.FreeTensor(yLocal);
 }
@@ -152,16 +151,16 @@ __aicore__ inline void AddNRegbaseFullLoad<T>::AddVF(LocalTensor<T> x1Local, Loc
     uint32_t sreg = static_cast<uint32_t>(dim0Aline);
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<T> vreg1;
-        AscendC::MicroAPI::RegTensor<T> vreg2;
-        AscendC::MicroAPI::RegTensor<T> vreg3;
-        AscendC::MicroAPI::MaskReg mask;
+        AscendC::Reg::RegTensor<T> vreg1;
+        AscendC::Reg::RegTensor<T> vreg2;
+        AscendC::Reg::RegTensor<T> vreg3;
+        AscendC::Reg::MaskReg mask;
         for (uint16_t i = 0; i < vfLoop; i++) {
-            mask = AscendC::MicroAPI::UpdateMask<T>(sreg);
-            AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::LoadDist::DIST_NORM>(vreg1, x1Addr + i * VL);
-            AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::LoadDist::DIST_NORM>(vreg2, x2Addr + i * VL);
-            AscendC::MicroAPI::Add(vreg3, vreg1, vreg2, mask);
-            AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::StoreDist::DIST_NORM>(x1Addr + i * VL, vreg3, mask);
+            mask = AscendC::Reg::UpdateMask<T>(sreg);
+            AscendC::Reg::DataCopy<T, AscendC::Reg::LoadDist::DIST_NORM>(vreg1, x1Addr + i * VL);
+            AscendC::Reg::DataCopy<T, AscendC::Reg::LoadDist::DIST_NORM>(vreg2, x2Addr + i * VL);
+            AscendC::Reg::Add(vreg3, vreg1, vreg2, mask);
+            AscendC::Reg::DataCopy<T, AscendC::Reg::StoreDist::DIST_NORM>(x1Addr + i * VL, vreg3, mask);
         }
     }
 }

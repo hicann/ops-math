@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -47,8 +47,7 @@ struct OnewaySklanskyProcessData {
 template <typename DataType, typename PromoteDataType>
 class CumsumOnewaySklansky : public CumsumBase<DataType> {
 public:
-    __aicore__ inline CumsumOnewaySklansky(TPipe& pipe) : CumsumBase<DataType>(pipe)
-    {}
+    __aicore__ inline CumsumOnewaySklansky(TPipe& pipe) : CumsumBase<DataType>(pipe) {}
     __aicore__ inline void BaseInit(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, const OnewaySklanskyInitData& param);
     __aicore__ inline void BaseProcessPre(const OnewaySklanskyProcessData& param);
     __aicore__ inline void BaseProcess();
@@ -60,8 +59,8 @@ private:
     __aicore__ inline void CopyInExclusive();
     __aicore__ inline void CopyInDataCast();
     __aicore__ inline void Compute();
-    __aicore__ inline void ComputeWithFlag(
-        int32_t addOffset, uint32_t realDupSize, __local_mem__ PromoteDataType* xBuf, int32_t flag);
+    __aicore__ inline void ComputeWithFlag(int32_t addOffset, uint32_t realDupSize, __local_mem__ PromoteDataType* xBuf,
+                                           int32_t flag);
     __aicore__ inline void ComputeInner(int32_t addLoop, uint32_t realDupSize);
 
 private:
@@ -96,8 +95,9 @@ private:
 };
 
 template <typename DataType, typename PromoteDataType>
-__aicore__ inline void CumsumOnewaySklansky<DataType, PromoteDataType>::BaseInit(
-    GM_ADDR x, GM_ADDR y, GM_ADDR workspace, const OnewaySklanskyInitData& param)
+__aicore__ inline void CumsumOnewaySklansky<DataType, PromoteDataType>::BaseInit(GM_ADDR x, GM_ADDR y,
+                                                                                 GM_ADDR workspace,
+                                                                                 const OnewaySklanskyInitData& param)
 {
     ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
     lenM_ = param.mLen;
@@ -146,9 +146,8 @@ __aicore__ inline void CumsumOnewaySklansky<DataType, PromoteDataType>::CopyIn()
         xGmOffset = (mOffset_ + i) * lenR_ * lenN_ + rOffset_ * lenN_ + nOffset_;
         copyRowOffset = Ops::Base::FloorDiv(i, mFold_);
         copyColOffset = i % mFold_;
-        DataCopyPad(
-            inTensorX_[copyRowOffset * rFactor_ * nAddFactor_ * mFold_ + copyColOffset * nAddFactor_],
-            this->xGm_[xGmOffset], copyParams, dataCopyPadExtParams);
+        DataCopyPad(inTensorX_[copyRowOffset * rFactor_ * nAddFactor_ * mFold_ + copyColOffset * nAddFactor_],
+                    this->xGm_[xGmOffset], copyParams, dataCopyPadExtParams);
     }
     CopyInDataCast();
 }
@@ -211,9 +210,8 @@ __aicore__ inline void CumsumOnewaySklansky<DataType, PromoteDataType>::CopyInDa
     WaitFlag<HardEvent::MTE2_V>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
 
     if constexpr (!IsSameType<DataType, PromoteDataType>::value) {
-        Cast(
-            inCastTensorX_, inTensorX_, RoundMode::CAST_NONE,
-            Ops::Base::CeilDiv(mFactor_, mFold_) * mFold_ * dupSize_ * rFactor_ / sizeof(DataType));
+        Cast(inCastTensorX_, inTensorX_, RoundMode::CAST_NONE,
+             Ops::Base::CeilDiv(mFactor_, mFold_) * mFold_ * dupSize_ * rFactor_ / sizeof(DataType));
         computerBuffer_ = inCastTensorX_;
     } else {
         computerBuffer_ = inTensorX_;
@@ -236,31 +234,29 @@ __aicore__ inline void CumsumOnewaySklansky<DataType, PromoteDataType>::ComputeW
 
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<PromoteDataType> x1RegTensor;
-        MicroAPI::RegTensor<PromoteDataType> x2RegTensor;
-        MicroAPI::MaskReg mask;
+        Reg::RegTensor<PromoteDataType> x1RegTensor;
+        Reg::RegTensor<PromoteDataType> x2RegTensor;
+        Reg::MaskReg mask;
         for (uint16_t i = 0; i < mLoop; i++) {
             uint32_t addTotal = realDupElem;
             for (uint16_t j = 0; j < nLoop; j++) {
-                mask = MicroAPI::UpdateMask<uint32_t>(addTotal);
+                mask = Reg::UpdateMask<uint32_t>(addTotal);
                 for (uint16_t m = 0; m < groupMainCount; m++) {
                     DataCopy(x1RegTensor, xBuf + j * ADD_ELEM + flag * m * addOffset + i * mFactor);
                     for (uint16_t n = 1; n <= addCount; n++) {
-                        DataCopy(
-                            x2RegTensor, xBuf + j * ADD_ELEM + flag * (m * addOffset + n * computeLen) + i * mFactor);
+                        DataCopy(x2RegTensor,
+                                 xBuf + j * ADD_ELEM + flag * (m * addOffset + n * computeLen) + i * mFactor);
                         Add(x2RegTensor, x1RegTensor, x2RegTensor, mask);
-                        DataCopy(
-                            xBuf + j * ADD_ELEM + flag * (m * addOffset + n * computeLen) + i * mFactor, x2RegTensor,
-                            mask);
+                        DataCopy(xBuf + j * ADD_ELEM + flag * (m * addOffset + n * computeLen) + i * mFactor,
+                                 x2RegTensor, mask);
                     }
                 }
 
                 for (uint16_t m = 0; m < groupTailCount; m++) {
                     DataCopy(x1RegTensor, xBuf + j * ADD_ELEM + flag * groupMainCount * addOffset + i * mFactor);
                     for (uint16_t n = 1; n <= addTailCount; n++) {
-                        DataCopy(
-                            x2RegTensor,
-                            xBuf + j * ADD_ELEM + flag * (groupMainCount * addOffset + n * computeLen) + i * mFactor);
+                        DataCopy(x2RegTensor, xBuf + j * ADD_ELEM +
+                                                  flag * (groupMainCount * addOffset + n * computeLen) + i * mFactor);
                         Add(x2RegTensor, x1RegTensor, x2RegTensor, mask);
                         DataCopy(
                             xBuf + j * ADD_ELEM + flag * (groupMainCount * addOffset + n * computeLen) + i * mFactor,
@@ -273,8 +269,8 @@ __aicore__ inline void CumsumOnewaySklansky<DataType, PromoteDataType>::ComputeW
 }
 
 template <typename DataType, typename PromoteDataType>
-__aicore__ inline void CumsumOnewaySklansky<DataType, PromoteDataType>::ComputeInner(
-    int32_t addLoop, uint32_t realDupSize)
+__aicore__ inline void CumsumOnewaySklansky<DataType, PromoteDataType>::ComputeInner(int32_t addLoop,
+                                                                                     uint32_t realDupSize)
 {
     int32_t startAddOffset = 0;
     int32_t addLoopPow = __CumsumUtil::CalPow2(addLoop);
@@ -286,8 +282,8 @@ __aicore__ inline void CumsumOnewaySklansky<DataType, PromoteDataType>::ComputeI
     groupMainCount_ = Ops::Base::FloorDiv(rFactor_, nextAddLoopPow);
     groupTailCount_ = (rFactor_ % nextAddLoopPow > addCount_) ? 1 : 0;
     addTailCount_ = rFactor_ - groupMainCount_ * nextAddLoopPow - addLoopPow;
-    __local_mem__ PromoteDataType* xBuf =
-        (__local_mem__ PromoteDataType*)computerBuffer_[startOffset + startAddOffset].GetPhyAddr();
+    __local_mem__ PromoteDataType* xBuf = (__local_mem__ PromoteDataType*)computerBuffer_[startOffset + startAddOffset]
+                                              .GetPhyAddr();
 
     int32_t flag = reverse_ ? -1 : 1;
     ComputeWithFlag(addOffset, realDupSize, xBuf, flag);
@@ -341,9 +337,8 @@ __aicore__ inline void CumsumOnewaySklansky<DataType, PromoteDataType>::BaseCopy
     LocalTensor<DataType> outputTensor = inTensorX_;
     if constexpr (!IsSameType<DataType, PromoteDataType>::value) {
         LocalTensor<DataType> castTmp = inCastTensorX_.template ReinterpretCast<DataType>();
-        Cast(
-            castTmp, inCastTensorX_, RoundMode::CAST_RINT,
-            Ops::Base::CeilDiv(mFactor_, mFold_) * mFold_ * dupSize_ * rFactor_ / sizeof(DataType));
+        Cast(castTmp, inCastTensorX_, RoundMode::CAST_RINT,
+             Ops::Base::CeilDiv(mFactor_, mFold_) * mFold_ * dupSize_ * rFactor_ / sizeof(DataType));
         outputTensor = castTmp;
     }
     SetFlag<HardEvent::V_MTE3>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
@@ -362,9 +357,9 @@ __aicore__ inline void CumsumOnewaySklansky<DataType, PromoteDataType>::BaseCopy
         yGmOffset = (mOffset_ + i) * lenR_ * lenN_ + rOffset_ * lenN_ + nOffset_;
         copyRowOffset = Ops::Base::FloorDiv(i, mFold_);
         copyColOffset = i % mFold_;
-        DataCopyPad(
-            this->yGm_[yGmOffset],
-            outputTensor[copyRowOffset * rFactor_ * nAddFactor_ * mFold_ + copyColOffset * nAddFactor_], copyParams);
+        DataCopyPad(this->yGm_[yGmOffset],
+                    outputTensor[copyRowOffset * rFactor_ * nAddFactor_ * mFold_ + copyColOffset * nAddFactor_],
+                    copyParams);
     }
 
     if constexpr (!IsSameType<DataType, PromoteDataType>::value) {

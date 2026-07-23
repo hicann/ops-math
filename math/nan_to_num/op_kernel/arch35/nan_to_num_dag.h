@@ -21,12 +21,12 @@
 #include "atvoss/util/placeholder.h"
 
 #ifdef __CCE_AICORE__
-constexpr static AscendC::MicroAPI::CastTrait castTrait0 = {
-    AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::UNKNOWN, AscendC::MicroAPI::MaskMergeMode::ZEROING,
-    AscendC::RoundMode::UNKNOWN};
-constexpr static AscendC::MicroAPI::CastTrait castTrait1 = {
-    AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::NO_SAT, AscendC::MicroAPI::MaskMergeMode::ZEROING,
-    AscendC::RoundMode::CAST_RINT};
+constexpr static AscendC::Reg::CastTrait castTrait0 = {AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::UNKNOWN,
+                                                       AscendC::Reg::MaskMergeMode::ZEROING,
+                                                       AscendC::RoundMode::UNKNOWN};
+constexpr static AscendC::Reg::CastTrait castTrait1 = {AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::NO_SAT,
+                                                       AscendC::Reg::MaskMergeMode::ZEROING,
+                                                       AscendC::RoundMode::CAST_RINT};
 #endif
 
 namespace NanToNumOp {
@@ -40,8 +40,8 @@ const uint32_t MIN_VALUE_FP32 = 0xff800000;
 
 template <class T>
 struct NanToNumCustom : public Vec::ElemwiseQuaternaryOP<T, T, float, float, float> {
-    __aicore__ inline NanToNumCustom(
-        LocalTensor<T>& dst, LocalTensor<T>& src, float nan, float posinf, float neginf, uint32_t count)
+    __aicore__ inline NanToNumCustom(LocalTensor<T>& dst, LocalTensor<T>& src, float nan, float posinf, float neginf,
+                                     uint32_t count)
     {
 #ifdef __CCE_AICORE__
         uint32_t dtypeSize = sizeof(float);
@@ -55,60 +55,59 @@ struct NanToNumCustom : public Vec::ElemwiseQuaternaryOP<T, T, float, float, flo
         minValue = *reinterpret_cast<const float*>(&MIN_VALUE_FP32);
         __ubuf__ T* srcAddr = (__ubuf__ T*)src.GetPhyAddr();
         __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
-        MicroAPI::RegTensor<float, MicroAPI::RegTraitNumOne> vregInput;
-        MicroAPI::RegTensor<float, MicroAPI::RegTraitNumOne> vregOutput;
-        MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregInput16;
-        MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregOutput16;
-        MicroAPI::RegTensor<float> nanTensor;
-        MicroAPI::RegTensor<float> posinfTensor;
-        MicroAPI::RegTensor<float> neginfTensor;
-        MicroAPI::MaskReg mask, cmpMaskNan, cmpMaskPosinf, cmpMaskNeginf;
+        Reg::RegTensor<float, Reg::RegTraitNumOne> vregInput;
+        Reg::RegTensor<float, Reg::RegTraitNumOne> vregOutput;
+        Reg::RegTensor<T, Reg::RegTraitNumOne> vregInput16;
+        Reg::RegTensor<T, Reg::RegTraitNumOne> vregOutput16;
+        Reg::RegTensor<float> nanTensor;
+        Reg::RegTensor<float> posinfTensor;
+        Reg::RegTensor<float> neginfTensor;
+        Reg::MaskReg mask, cmpMaskNan, cmpMaskPosinf, cmpMaskNeginf;
         if constexpr (std::is_same_v<T, float>) {
             __VEC_SCOPE__
             {
-                MicroAPI::Duplicate(nanTensor, nan);
-                MicroAPI::Duplicate(posinfTensor, posinf);
-                MicroAPI::Duplicate(neginfTensor, neginf);
+                Reg::Duplicate(nanTensor, nan);
+                Reg::Duplicate(posinfTensor, posinf);
+                Reg::Duplicate(neginfTensor, neginf);
 
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                    mask = MicroAPI::UpdateMask<float, MicroAPI::RegTraitNumOne>(count);
+                    mask = Reg::UpdateMask<float, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(
-                        vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
-                    MicroAPI::Compare<T, CMPMODE::NE>(cmpMaskNan, vregInput, vregInput, mask);
-                    MicroAPI::CompareScalar<T, CMPMODE::EQ>(cmpMaskPosinf, vregInput, maxValue, mask);
-                    MicroAPI::CompareScalar<T, CMPMODE::EQ>(cmpMaskNeginf, vregInput, minValue, mask);
-                    MicroAPI::Select<T>(vregOutput, nanTensor, vregInput, cmpMaskNan);
-                    MicroAPI::Select<T>(vregOutput, posinfTensor, vregOutput, cmpMaskPosinf);
-                    MicroAPI::Select<T>(vregOutput, neginfTensor, vregOutput, cmpMaskNeginf);
+                    Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                    Reg::Compare<T, CMPMODE::NE>(cmpMaskNan, vregInput, vregInput, mask);
+                    Reg::CompareScalar<T, CMPMODE::EQ>(cmpMaskPosinf, vregInput, maxValue, mask);
+                    Reg::CompareScalar<T, CMPMODE::EQ>(cmpMaskNeginf, vregInput, minValue, mask);
+                    Reg::Select<T>(vregOutput, nanTensor, vregInput, cmpMaskNan);
+                    Reg::Select<T>(vregOutput, posinfTensor, vregOutput, cmpMaskPosinf);
+                    Reg::Select<T>(vregOutput, neginfTensor, vregOutput, cmpMaskNeginf);
                     // OpCopyOut
-                    MicroAPI::DataCopy<T, MicroAPI::StoreDist::DIST_NORM_B32>(
-                        (__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
+                    Reg::DataCopy<T, Reg::StoreDist::DIST_NORM_B32>((__ubuf__ T*)(dstAddr + loopIdx * vlSize),
+                                                                    vregOutput, mask);
                 }
             }
         } else {
             __VEC_SCOPE__
             {
-                MicroAPI::Duplicate(nanTensor, nan);
-                MicroAPI::Duplicate(posinfTensor, posinf);
-                MicroAPI::Duplicate(neginfTensor, neginf);
+                Reg::Duplicate(nanTensor, nan);
+                Reg::Duplicate(posinfTensor, posinf);
+                Reg::Duplicate(neginfTensor, neginf);
 
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                    mask = MicroAPI::UpdateMask<float, MicroAPI::RegTraitNumOne>(count);
+                    mask = Reg::UpdateMask<float, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_UNPACK_B16>(
-                        vregInput16, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
-                    MicroAPI::Cast<float, T, castTrait0>(vregInput, vregInput16, mask);
-                    MicroAPI::Compare<float, CMPMODE::NE>(cmpMaskNan, vregInput, vregInput, mask);
-                    MicroAPI::CompareScalar<float, CMPMODE::EQ>(cmpMaskPosinf, vregInput, maxValue, mask);
-                    MicroAPI::CompareScalar<float, CMPMODE::EQ>(cmpMaskNeginf, vregInput, minValue, mask);
-                    MicroAPI::Select<float>(vregOutput, nanTensor, vregInput, cmpMaskNan);
-                    MicroAPI::Select<float>(vregOutput, posinfTensor, vregOutput, cmpMaskPosinf);
-                    MicroAPI::Select<float>(vregOutput, neginfTensor, vregOutput, cmpMaskNeginf);
-                    MicroAPI::Cast<T, float, castTrait1>(vregOutput16, vregOutput, mask);
+                    Reg::DataCopy<T, Reg::LoadDist::DIST_UNPACK_B16>(vregInput16,
+                                                                     (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                    Reg::Cast<float, T, castTrait0>(vregInput, vregInput16, mask);
+                    Reg::Compare<float, CMPMODE::NE>(cmpMaskNan, vregInput, vregInput, mask);
+                    Reg::CompareScalar<float, CMPMODE::EQ>(cmpMaskPosinf, vregInput, maxValue, mask);
+                    Reg::CompareScalar<float, CMPMODE::EQ>(cmpMaskNeginf, vregInput, minValue, mask);
+                    Reg::Select<float>(vregOutput, nanTensor, vregInput, cmpMaskNan);
+                    Reg::Select<float>(vregOutput, posinfTensor, vregOutput, cmpMaskPosinf);
+                    Reg::Select<float>(vregOutput, neginfTensor, vregOutput, cmpMaskNeginf);
+                    Reg::Cast<T, float, castTrait1>(vregOutput16, vregOutput, mask);
                     // OpCopyOut
-                    MicroAPI::DataCopy<T, MicroAPI::StoreDist::DIST_PACK_B32>(
-                        (__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput16, mask);
+                    Reg::DataCopy<T, Reg::StoreDist::DIST_PACK_B32>((__ubuf__ T*)(dstAddr + loopIdx * vlSize),
+                                                                    vregOutput16, mask);
                 }
             }
         }
@@ -120,9 +119,8 @@ struct NanToNumCustom : public Vec::ElemwiseQuaternaryOP<T, T, float, float, flo
 template <typename U>
 struct NanToNumDAG {
     using OpCopyIn0 = Bind<Vec::CopyIn<U>, Placeholder::In0<U>>;
-    using OpResult = Bind<
-        NanToNumCustom<U>, OpCopyIn0, Placeholder::Var<float, PLACEHOLDER_INDEX_0>,
-        Placeholder::Var<float, PLACEHOLDER_INDEX_1>, Placeholder::Var<float, PLACEHOLDER_INDEX_2>>;
+    using OpResult = Bind<NanToNumCustom<U>, OpCopyIn0, Placeholder::Var<float, PLACEHOLDER_INDEX_0>,
+                          Placeholder::Var<float, PLACEHOLDER_INDEX_1>, Placeholder::Var<float, PLACEHOLDER_INDEX_2>>;
     using OpCopyOut = Bind<Vec::CopyOut<U>, Placeholder::Out0<U>, OpResult>;
     using Outputs = Elems<OpCopyOut>;
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;

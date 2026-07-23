@@ -38,37 +38,35 @@ struct RintCalc : public Vec::ElemwiseUnaryOP<T, T> {
         __ubuf__ T* srcAddr = (__ubuf__ T*)src.GetPhyAddr();
         __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
 
-        MicroAPI::RegTensor<T> inputReg;
-        MicroAPI::RegTensor<T> outReg;
-        MicroAPI::MaskReg mask;
+        Reg::RegTensor<T> inputReg;
+        Reg::RegTensor<T> outReg;
+        Reg::MaskReg mask;
         if constexpr (std::is_same_v<T, float>) {
-            MicroAPI::RegTensor<uint32_t> resultReg;
+            Reg::RegTensor<uint32_t> resultReg;
             __VEC_SCOPE__
             {
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                    mask = MicroAPI::UpdateMask<T>(count);
-                    MicroAPI::LoadAlign(inputReg, srcAddr + loopIdx * vlSize);
-                    MicroAPI::Truncate<T, RoundMode::CAST_RINT, MicroAPI::MaskMergeMode::ZEROING>(outReg, inputReg,
-                                                                                                  mask);
-                    MicroAPI::Duplicate(resultReg, UINT32_SIGN, mask);
-                    MicroAPI::And(resultReg, resultReg, (MicroAPI::RegTensor<uint32_t>&)inputReg, mask);
-                    MicroAPI::Or(resultReg, resultReg, (MicroAPI::RegTensor<uint32_t>&)outReg, mask);
-                    MicroAPI::StoreAlign(dstAddr + loopIdx * vlSize, (MicroAPI::RegTensor<T>&)resultReg, mask);
+                    mask = Reg::UpdateMask<T>(count);
+                    Reg::LoadAlign(inputReg, srcAddr + loopIdx * vlSize);
+                    Reg::Truncate<T, RoundMode::CAST_RINT, Reg::MaskMergeMode::ZEROING>(outReg, inputReg, mask);
+                    Reg::Duplicate(resultReg, UINT32_SIGN, mask);
+                    Reg::And(resultReg, resultReg, (Reg::RegTensor<uint32_t>&)inputReg, mask);
+                    Reg::Or(resultReg, resultReg, (Reg::RegTensor<uint32_t>&)outReg, mask);
+                    Reg::StoreAlign(dstAddr + loopIdx * vlSize, (Reg::RegTensor<T>&)resultReg, mask);
                 }
             }
         } else {
-            MicroAPI::RegTensor<uint16_t> resultReg;
+            Reg::RegTensor<uint16_t> resultReg;
             __VEC_SCOPE__
             {
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                    mask = MicroAPI::UpdateMask<T>(count);
-                    MicroAPI::LoadAlign(inputReg, srcAddr + loopIdx * vlSize);
-                    MicroAPI::Truncate<T, RoundMode::CAST_RINT, MicroAPI::MaskMergeMode::ZEROING>(outReg, inputReg,
-                                                                                                  mask);
-                    MicroAPI::Duplicate(resultReg, UINT16_SIGN, mask);
-                    MicroAPI::And(resultReg, resultReg, (MicroAPI::RegTensor<uint16_t>&)inputReg, mask);
-                    MicroAPI::Or(resultReg, resultReg, (MicroAPI::RegTensor<uint16_t>&)outReg, mask);
-                    MicroAPI::StoreAlign(dstAddr + loopIdx * vlSize, (MicroAPI::RegTensor<T>&)resultReg, mask);
+                    mask = Reg::UpdateMask<T>(count);
+                    Reg::LoadAlign(inputReg, srcAddr + loopIdx * vlSize);
+                    Reg::Truncate<T, RoundMode::CAST_RINT, Reg::MaskMergeMode::ZEROING>(outReg, inputReg, mask);
+                    Reg::Duplicate(resultReg, UINT16_SIGN, mask);
+                    Reg::And(resultReg, resultReg, (Reg::RegTensor<uint16_t>&)inputReg, mask);
+                    Reg::Or(resultReg, resultReg, (Reg::RegTensor<uint16_t>&)outReg, mask);
+                    Reg::StoreAlign(dstAddr + loopIdx * vlSize, (Reg::RegTensor<T>&)resultReg, mask);
                 }
             }
         }

@@ -67,8 +67,8 @@ constexpr float CONST_NEG_INF = -INFINITY;
 
 template <typename T>
 struct Atan2Compute : public Vec::ElemwiseBinaryOP<float, float, float> {
-    __aicore__ inline Atan2Compute(
-        LocalTensor<float>& dst, LocalTensor<float>& src0, LocalTensor<float>& src1, uint32_t count)
+    __aicore__ inline Atan2Compute(LocalTensor<float>& dst, LocalTensor<float>& src0, LocalTensor<float>& src1,
+                                   uint32_t count)
     {
 #ifdef __CCE_AICORE__
         uint32_t dtypeSize = sizeof(float);
@@ -83,247 +83,236 @@ struct Atan2Compute : public Vec::ElemwiseBinaryOP<float, float, float> {
 
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg mask0 = MicroAPI::CreateMask<uint32_t>();
-            MicroAPI::RegTensor<uint32_t> floatSignMaskReg;
-            MicroAPI::RegTensor<uint32_t> floatOneMaskReg;
-            MicroAPI::RegTensor<float> floatZeroReg;
-            MicroAPI::RegTensor<float> floatNegZeroReg;
-            MicroAPI::RegTensor<float> floatMaxReg;
-            MicroAPI::RegTensor<float> piReg;
-            MicroAPI::RegTensor<float> negPiReg;
-            MicroAPI::RegTensor<float> piBy2Reg;
-            MicroAPI::RegTensor<float> negPiBy2Reg;
-            MicroAPI::RegTensor<float> piBy4Reg;
-            MicroAPI::RegTensor<float> negPiBy4Reg;
-            MicroAPI::RegTensor<float> pi3By4Reg;
-            MicroAPI::RegTensor<float> negPi3By4Reg;
-            MicroAPI::RegTensor<float> adjustReg;
-            MicroAPI::Duplicate(floatSignMaskReg, FLOAT_SIGN_MASK, mask0);
-            MicroAPI::Duplicate(floatOneMaskReg, FLOAT_ONE_MASK, mask0);
-            MicroAPI::Duplicate(floatZeroReg, 0.0f, mask0);
-            MicroAPI::Duplicate(floatMaxReg, GetMaxFloat<float>(), mask0);
-            MicroAPI::Duplicate(piReg, PI, mask0);
-            MicroAPI::Duplicate(negPiReg, -PI, mask0);
-            MicroAPI::Duplicate(piBy2Reg, PI_BY_2, mask0);
-            MicroAPI::Duplicate(negPiBy2Reg, -PI_BY_2, mask0);
-            MicroAPI::Duplicate(piBy4Reg, PI_BY_4, mask0);
-            MicroAPI::Duplicate(negPiBy4Reg, -PI_BY_4, mask0);
-            MicroAPI::Duplicate(pi3By4Reg, PI_3_4, mask0);
-            MicroAPI::Duplicate(negPi3By4Reg, -PI_3_4, mask0);
+            Reg::MaskReg mask0 = Reg::CreateMask<uint32_t>();
+            Reg::RegTensor<uint32_t> floatSignMaskReg;
+            Reg::RegTensor<uint32_t> floatOneMaskReg;
+            Reg::RegTensor<float> floatZeroReg;
+            Reg::RegTensor<float> floatNegZeroReg;
+            Reg::RegTensor<float> floatMaxReg;
+            Reg::RegTensor<float> piReg;
+            Reg::RegTensor<float> negPiReg;
+            Reg::RegTensor<float> piBy2Reg;
+            Reg::RegTensor<float> negPiBy2Reg;
+            Reg::RegTensor<float> piBy4Reg;
+            Reg::RegTensor<float> negPiBy4Reg;
+            Reg::RegTensor<float> pi3By4Reg;
+            Reg::RegTensor<float> negPi3By4Reg;
+            Reg::RegTensor<float> adjustReg;
+            Reg::Duplicate(floatSignMaskReg, FLOAT_SIGN_MASK, mask0);
+            Reg::Duplicate(floatOneMaskReg, FLOAT_ONE_MASK, mask0);
+            Reg::Duplicate(floatZeroReg, 0.0f, mask0);
+            Reg::Duplicate(floatMaxReg, GetMaxFloat<float>(), mask0);
+            Reg::Duplicate(piReg, PI, mask0);
+            Reg::Duplicate(negPiReg, -PI, mask0);
+            Reg::Duplicate(piBy2Reg, PI_BY_2, mask0);
+            Reg::Duplicate(negPiBy2Reg, -PI_BY_2, mask0);
+            Reg::Duplicate(piBy4Reg, PI_BY_4, mask0);
+            Reg::Duplicate(negPiBy4Reg, -PI_BY_4, mask0);
+            Reg::Duplicate(pi3By4Reg, PI_3_4, mask0);
+            Reg::Duplicate(negPi3By4Reg, -PI_3_4, mask0);
 
-            MicroAPI::RegTensor<float> addReg1; // 1.0f
-            MicroAPI::RegTensor<float> addReg3; // -1.0f / 3.0f
-            MicroAPI::RegTensor<float> addReg5; // 1.0f / 5.0f
-            MicroAPI::RegTensor<float> addReg7; // -1.0f / 7.0f
-            MicroAPI::RegTensor<float> addReg9; // 1.0f / 9.0f
-            MicroAPI::Duplicate(addReg1, 1.0f, mask0);
-            MicroAPI::Duplicate(addReg3, -1.0f / 3.0f, mask0);
-            MicroAPI::Duplicate(addReg5, 1.0f / 5.0f, mask0);
-            MicroAPI::Duplicate(addReg7, -1.0f / 7.0f, mask0);
-            MicroAPI::Duplicate(addReg9, 1.0f / 9.0f, mask0);
+            Reg::RegTensor<float> addReg1; // 1.0f
+            Reg::RegTensor<float> addReg3; // -1.0f / 3.0f
+            Reg::RegTensor<float> addReg5; // 1.0f / 5.0f
+            Reg::RegTensor<float> addReg7; // -1.0f / 7.0f
+            Reg::RegTensor<float> addReg9; // 1.0f / 9.0f
+            Reg::Duplicate(addReg1, 1.0f, mask0);
+            Reg::Duplicate(addReg3, -1.0f / 3.0f, mask0);
+            Reg::Duplicate(addReg5, 1.0f / 5.0f, mask0);
+            Reg::Duplicate(addReg7, -1.0f / 7.0f, mask0);
+            Reg::Duplicate(addReg9, 1.0f / 9.0f, mask0);
 
-            MicroAPI::RegTensor<float> x1Reg;
-            MicroAPI::RegTensor<float> x2Reg;
-            MicroAPI::RegTensor<float> yReg;
-            MicroAPI::RegTensor<float> xReg;
-            MicroAPI::MaskReg x1Mask;
-            MicroAPI::MaskReg x2Mask;
-            MicroAPI::MaskReg yMask;
-            MicroAPI::MaskReg mask;
+            Reg::RegTensor<float> x1Reg;
+            Reg::RegTensor<float> x2Reg;
+            Reg::RegTensor<float> yReg;
+            Reg::RegTensor<float> xReg;
+            Reg::MaskReg x1Mask;
+            Reg::MaskReg x2Mask;
+            Reg::MaskReg yMask;
+            Reg::MaskReg mask;
 
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                MicroAPI::Duplicate(adjustReg, 0.0f, mask0);
-                mask = MicroAPI::UpdateMask<float, MicroAPI::RegTraitNumOne>(count);
-                MicroAPI::DataCopy<float, MicroAPI::PostLiteral::POST_MODE_UPDATE>(x1Reg, src0Addr, vlSize);
-                MicroAPI::DataCopy<float, MicroAPI::PostLiteral::POST_MODE_UPDATE>(x2Reg, src1Addr, vlSize);
-                MicroAPI::Div(xReg, x1Reg, x2Reg, mask); // x1/x2
-                Atan(yReg, xReg, floatSignMaskReg, floatOneMaskReg, floatMaxReg,
-                    addReg1, addReg3, addReg5, addReg7, addReg9, mask);
+                Reg::Duplicate(adjustReg, 0.0f, mask0);
+                mask = Reg::UpdateMask<float, Reg::RegTraitNumOne>(count);
+                Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(x1Reg, src0Addr, vlSize);
+                Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(x2Reg, src1Addr, vlSize);
+                Reg::Div(xReg, x1Reg, x2Reg, mask); // x1/x2
+                Atan(yReg, xReg, floatSignMaskReg, floatOneMaskReg, floatMaxReg, addReg1, addReg3, addReg5, addReg7,
+                     addReg9, mask);
                 // add pi where x2<0 and x1>=0, -pi where x2<0 and x1<0
-                MicroAPI::CompareScalar<float, CMPMODE::LT>(x2Mask, x2Reg, 0.0f, mask); // x2 < 0
-                MicroAPI::CompareScalar<float, CMPMODE::GE>(x1Mask, x1Reg, 0.0f, mask); // x1 >= 0
-                MicroAPI::MaskAnd(yMask, x1Mask, x2Mask, mask);                         // x1 >=0 && x2 < 0
-                MicroAPI::Select(adjustReg, piReg, adjustReg, yMask);
-                MicroAPI::MaskNot(x1Mask, x1Mask, mask);        // x1 < 0
-                MicroAPI::MaskAnd(yMask, x1Mask, x2Mask, mask); // x1 < 0 && x2 < 0
-                MicroAPI::Select(adjustReg, negPiReg, adjustReg, yMask);
-                MicroAPI::Add(yReg, yReg, adjustReg, mask);
-                PostProcess(yReg, x1Reg, x2Reg, yMask, mask, floatSignMaskReg, floatOneMaskReg, floatZeroReg,
-                    piReg, negPiReg, piBy2Reg, negPiBy2Reg, piBy4Reg, negPiBy4Reg, pi3By4Reg, negPi3By4Reg);
-                MicroAPI::DataCopy<float, MicroAPI::PostLiteral::POST_MODE_UPDATE>(dstAddr, yReg, vlSize, mask);
+                Reg::CompareScalar<float, CMPMODE::LT>(x2Mask, x2Reg, 0.0f, mask); // x2 < 0
+                Reg::CompareScalar<float, CMPMODE::GE>(x1Mask, x1Reg, 0.0f, mask); // x1 >= 0
+                Reg::MaskAnd(yMask, x1Mask, x2Mask, mask);                         // x1 >=0 && x2 < 0
+                Reg::Select(adjustReg, piReg, adjustReg, yMask);
+                Reg::MaskNot(x1Mask, x1Mask, mask);        // x1 < 0
+                Reg::MaskAnd(yMask, x1Mask, x2Mask, mask); // x1 < 0 && x2 < 0
+                Reg::Select(adjustReg, negPiReg, adjustReg, yMask);
+                Reg::Add(yReg, yReg, adjustReg, mask);
+                PostProcess(yReg, x1Reg, x2Reg, yMask, mask, floatSignMaskReg, floatOneMaskReg, floatZeroReg, piReg,
+                            negPiReg, piBy2Reg, negPiBy2Reg, piBy4Reg, negPiBy4Reg, pi3By4Reg, negPi3By4Reg);
+                Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(dstAddr, yReg, vlSize, mask);
             }
         }
     }
 
-    __aicore__ inline void  PostProcess(
-        MicroAPI::RegTensor<float>& yReg, MicroAPI::RegTensor<float>& x1Reg,
-        MicroAPI::RegTensor<float>& x2Reg, MicroAPI::MaskReg& yMask,
-        MicroAPI::MaskReg& mask, MicroAPI::RegTensor<uint32_t>& floatSignMaskReg,
-        MicroAPI::RegTensor<uint32_t>& floatOneMaskReg, MicroAPI::RegTensor<float>& floatZeroReg,
-        MicroAPI::RegTensor<float>& piReg, MicroAPI::RegTensor<float>& negPiReg,
-        MicroAPI::RegTensor<float>& piBy2Reg, MicroAPI::RegTensor<float>& negPiBy2Reg,
-        MicroAPI::RegTensor<float>& piBy4Reg, MicroAPI::RegTensor<float>& negPiBy4Reg,
-        MicroAPI::RegTensor<float>& pi3By4Reg, MicroAPI::RegTensor<float>& negPi3By4Reg)
+    __aicore__ inline void PostProcess(Reg::RegTensor<float>& yReg, Reg::RegTensor<float>& x1Reg,
+                                       Reg::RegTensor<float>& x2Reg, Reg::MaskReg& yMask, Reg::MaskReg& mask,
+                                       Reg::RegTensor<uint32_t>& floatSignMaskReg,
+                                       Reg::RegTensor<uint32_t>& floatOneMaskReg, Reg::RegTensor<float>& floatZeroReg,
+                                       Reg::RegTensor<float>& piReg, Reg::RegTensor<float>& negPiReg,
+                                       Reg::RegTensor<float>& piBy2Reg, Reg::RegTensor<float>& negPiBy2Reg,
+                                       Reg::RegTensor<float>& piBy4Reg, Reg::RegTensor<float>& negPiBy4Reg,
+                                       Reg::RegTensor<float>& pi3By4Reg, Reg::RegTensor<float>& negPi3By4Reg)
     {
-        MicroAPI::RegTensor<float> xSignReg;
-        MicroAPI::MaskReg x1ZeroMask;
-        MicroAPI::MaskReg x1NegMask;
-        MicroAPI::MaskReg x1PosZeroMask;
-        MicroAPI::MaskReg x1NegZeroMask;
-        MicroAPI::MaskReg x1PosInfMask;
-        MicroAPI::MaskReg x1NegInfMask;
+        Reg::RegTensor<float> xSignReg;
+        Reg::MaskReg x1ZeroMask;
+        Reg::MaskReg x1NegMask;
+        Reg::MaskReg x1PosZeroMask;
+        Reg::MaskReg x1NegZeroMask;
+        Reg::MaskReg x1PosInfMask;
+        Reg::MaskReg x1NegInfMask;
 
-        MicroAPI::MaskReg x2ZeroMask;
-        MicroAPI::MaskReg x2NegMask;
-        MicroAPI::MaskReg x2PosMask;
-        MicroAPI::MaskReg x2NegZeroMask;
-        MicroAPI::MaskReg x2PosInfMask;
-        MicroAPI::MaskReg x2NegInfMask;
+        Reg::MaskReg x2ZeroMask;
+        Reg::MaskReg x2NegMask;
+        Reg::MaskReg x2PosMask;
+        Reg::MaskReg x2NegZeroMask;
+        Reg::MaskReg x2PosInfMask;
+        Reg::MaskReg x2NegInfMask;
 
-        MicroAPI::CompareScalar<float, CMPMODE::EQ>(x1ZeroMask, x1Reg, 0.0f, mask); // x1 = ±0.0
-        MicroAPI::And(
-            (MicroAPI::RegTensor<uint32_t>&)xSignReg, (MicroAPI::RegTensor<uint32_t>&)x1Reg, floatSignMaskReg,
-            mask); // 取x1符号位
-        MicroAPI::Or(
-            (MicroAPI::RegTensor<uint32_t>&)xSignReg, (MicroAPI::RegTensor<uint32_t>&)xSignReg, floatOneMaskReg,
-            mask); // +/- 1
-        MicroAPI::CompareScalar<float, CMPMODE::EQ>(x1NegMask, xSignReg, -1.0f, mask); // x1 is neg
-        MicroAPI::MaskAnd(x1NegZeroMask, x1ZeroMask, x1NegMask, mask);  // x1 = -0.0
-        MicroAPI::MaskXor(x1PosZeroMask, x1ZeroMask, x1NegZeroMask, mask);  // x1 = +0.0
-        
-        MicroAPI::CompareScalar<float, CMPMODE::EQ>(x2ZeroMask, x2Reg, 0.0f, mask); // x2 = ±0.0
-        MicroAPI::And(
-            (MicroAPI::RegTensor<uint32_t>&)xSignReg, (MicroAPI::RegTensor<uint32_t>&)x2Reg, floatSignMaskReg,
-            mask); // 取x2符号位
-        MicroAPI::Or(
-            (MicroAPI::RegTensor<uint32_t>&)xSignReg, (MicroAPI::RegTensor<uint32_t>&)xSignReg, floatOneMaskReg,
-            mask); // +/- 1
-        MicroAPI::CompareScalar<float, CMPMODE::EQ>(x2NegMask, xSignReg, -1.0f, mask); // x2 is neg
-        MicroAPI::MaskNot(x2PosMask, x2NegMask, mask); // x2 is pos
-        MicroAPI::MaskAnd(x2NegZeroMask, x2ZeroMask, x2NegMask, mask);  // x2 = -0.0 
+        Reg::CompareScalar<float, CMPMODE::EQ>(x1ZeroMask, x1Reg, 0.0f, mask); // x1 = ±0.0
+        Reg::And((Reg::RegTensor<uint32_t>&)xSignReg, (Reg::RegTensor<uint32_t>&)x1Reg, floatSignMaskReg,
+                 mask); // 取x1符号位
+        Reg::Or((Reg::RegTensor<uint32_t>&)xSignReg, (Reg::RegTensor<uint32_t>&)xSignReg, floatOneMaskReg,
+                mask);                                                            // +/- 1
+        Reg::CompareScalar<float, CMPMODE::EQ>(x1NegMask, xSignReg, -1.0f, mask); // x1 is neg
+        Reg::MaskAnd(x1NegZeroMask, x1ZeroMask, x1NegMask, mask);                 // x1 = -0.0
+        Reg::MaskXor(x1PosZeroMask, x1ZeroMask, x1NegZeroMask, mask);             // x1 = +0.0
+
+        Reg::CompareScalar<float, CMPMODE::EQ>(x2ZeroMask, x2Reg, 0.0f, mask); // x2 = ±0.0
+        Reg::And((Reg::RegTensor<uint32_t>&)xSignReg, (Reg::RegTensor<uint32_t>&)x2Reg, floatSignMaskReg,
+                 mask); // 取x2符号位
+        Reg::Or((Reg::RegTensor<uint32_t>&)xSignReg, (Reg::RegTensor<uint32_t>&)xSignReg, floatOneMaskReg,
+                mask);                                                            // +/- 1
+        Reg::CompareScalar<float, CMPMODE::EQ>(x2NegMask, xSignReg, -1.0f, mask); // x2 is neg
+        Reg::MaskNot(x2PosMask, x2NegMask, mask);                                 // x2 is pos
+        Reg::MaskAnd(x2NegZeroMask, x2ZeroMask, x2NegMask, mask);                 // x2 = -0.0
 
         // (x1 < 0 || x1 = -0.0) && x2 = -0.0 --> -pi/2; x1 = -0.0后续修正
-        MicroAPI::MaskAnd(yMask, x1NegMask, x2NegZeroMask, mask);
-        MicroAPI::Select(yReg, negPiBy2Reg, yReg, yMask);
+        Reg::MaskAnd(yMask, x1NegMask, x2NegZeroMask, mask);
+        Reg::Select(yReg, negPiBy2Reg, yReg, yMask);
 
         // (x1 > 0 || x1 = +0.0) && x2 = -0.0 --> pi/2; x1 = 0.0后续修正
-        MicroAPI::MaskNot(yMask, x1NegMask, mask); // x1 is pos
-        MicroAPI::MaskAnd(yMask, yMask, x2NegZeroMask, mask);
-        MicroAPI::Select(yReg, piBy2Reg, yReg, yMask);
-        
+        Reg::MaskNot(yMask, x1NegMask, mask); // x1 is pos
+        Reg::MaskAnd(yMask, yMask, x2NegZeroMask, mask);
+        Reg::Select(yReg, piBy2Reg, yReg, yMask);
+
         // x1 = -0.0 && (x2 < 0.0 || x2 = -0.0) --> -pi
-        MicroAPI::MaskAnd(yMask, x1NegZeroMask, x2NegMask, mask);
-        MicroAPI::Select(yReg, negPiReg, yReg, yMask);
+        Reg::MaskAnd(yMask, x1NegZeroMask, x2NegMask, mask);
+        Reg::Select(yReg, negPiReg, yReg, yMask);
 
         // x1 = -0.0 && (x2 > 0.0 || x2 = +0.0) --> -0.0
-        MicroAPI::MaskAnd(yMask, x1NegZeroMask, x2PosMask, mask);
-        MicroAPI::Select(yReg, (MicroAPI::RegTensor<float>&)floatSignMaskReg, yReg, yMask);
+        Reg::MaskAnd(yMask, x1NegZeroMask, x2PosMask, mask);
+        Reg::Select(yReg, (Reg::RegTensor<float>&)floatSignMaskReg, yReg, yMask);
 
         // x1 = 0.0 && (x2 < 0.0 || x2 = -0.0) --> pi
-        MicroAPI::MaskAnd(yMask, x1PosZeroMask, x2NegMask, mask);
-        MicroAPI::Select(yReg, piReg, yReg, yMask);
+        Reg::MaskAnd(yMask, x1PosZeroMask, x2NegMask, mask);
+        Reg::Select(yReg, piReg, yReg, yMask);
 
         // x1 = 0.0 && (x2 > 0.0 || x2 = +0.0) --> 0.0
-        MicroAPI::MaskAnd(yMask, x1PosZeroMask, x2PosMask, mask);
-        MicroAPI::Select(yReg, floatZeroReg, yReg, yMask);
+        Reg::MaskAnd(yMask, x1PosZeroMask, x2PosMask, mask);
+        Reg::Select(yReg, floatZeroReg, yReg, yMask);
 
-        MicroAPI::CompareScalar<float, CMPMODE::EQ>(x1PosInfMask, x1Reg, CONST_INF, mask); // x1 = +inf
-        MicroAPI::CompareScalar<float, CMPMODE::EQ>(x1NegInfMask, x1Reg, CONST_NEG_INF, mask); // x1 = -inf
-        MicroAPI::CompareScalar<float, CMPMODE::EQ>(x2PosInfMask, x2Reg, CONST_INF, mask); // x2 = +inf
-        MicroAPI::CompareScalar<float, CMPMODE::EQ>(x2NegInfMask, x2Reg, CONST_NEG_INF, mask); // x2 = -inf
+        Reg::CompareScalar<float, CMPMODE::EQ>(x1PosInfMask, x1Reg, CONST_INF, mask);     // x1 = +inf
+        Reg::CompareScalar<float, CMPMODE::EQ>(x1NegInfMask, x1Reg, CONST_NEG_INF, mask); // x1 = -inf
+        Reg::CompareScalar<float, CMPMODE::EQ>(x2PosInfMask, x2Reg, CONST_INF, mask);     // x2 = +inf
+        Reg::CompareScalar<float, CMPMODE::EQ>(x2NegInfMask, x2Reg, CONST_NEG_INF, mask); // x2 = -inf
 
         // x1 < 0 && x2 = inf --> -0.0 --> -0.0; x1 = -inf后续修正
-        MicroAPI::MaskAnd(yMask, x1NegMask, x2PosInfMask, mask);
-        MicroAPI::Select(yReg, (MicroAPI::RegTensor<float>&)floatSignMaskReg, yReg, yMask);
+        Reg::MaskAnd(yMask, x1NegMask, x2PosInfMask, mask);
+        Reg::Select(yReg, (Reg::RegTensor<float>&)floatSignMaskReg, yReg, yMask);
 
         // x1 = inf && x2 = inf --> pi/4
-        MicroAPI::MaskAnd(yMask, x1PosInfMask, x2PosInfMask, mask);
-        MicroAPI::Select(yReg, piBy4Reg, yReg, yMask);
+        Reg::MaskAnd(yMask, x1PosInfMask, x2PosInfMask, mask);
+        Reg::Select(yReg, piBy4Reg, yReg, yMask);
 
         // x1 = -inf && x2 = inf --> -pi/4
-        MicroAPI::MaskAnd(yMask, x1NegInfMask, x2PosInfMask, mask);
-        MicroAPI::Select(yReg, negPiBy4Reg, yReg, yMask);
+        Reg::MaskAnd(yMask, x1NegInfMask, x2PosInfMask, mask);
+        Reg::Select(yReg, negPiBy4Reg, yReg, yMask);
 
         // x1 = inf && x2 = -inf --> 3pi/4
-        MicroAPI::MaskAnd(yMask, x1PosInfMask, x2NegInfMask, mask);
-        MicroAPI::Select(yReg, pi3By4Reg, yReg, yMask);
+        Reg::MaskAnd(yMask, x1PosInfMask, x2NegInfMask, mask);
+        Reg::Select(yReg, pi3By4Reg, yReg, yMask);
 
         // x1 = -inf && x2 = -inf --> -3pi/4
-        MicroAPI::MaskAnd(yMask, x1NegInfMask, x2NegInfMask, mask);
-        MicroAPI::Select(yReg, negPi3By4Reg, yReg, yMask);
+        Reg::MaskAnd(yMask, x1NegInfMask, x2NegInfMask, mask);
+        Reg::Select(yReg, negPi3By4Reg, yReg, yMask);
     }
 
-    __aicore__ inline void TaylorSeriesExpansion(
-        MicroAPI::RegTensor<float>& yReg, MicroAPI::RegTensor<float>& xReg,
-        MicroAPI::RegTensor<float>& addReg1, MicroAPI::RegTensor<float>& addReg3,
-        MicroAPI::RegTensor<float>& addReg5, MicroAPI::RegTensor<float>& addReg7,
-        MicroAPI::RegTensor<float>& addReg9, MicroAPI::MaskReg& mask)
+    __aicore__ inline void TaylorSeriesExpansion(Reg::RegTensor<float>& yReg, Reg::RegTensor<float>& xReg,
+                                                 Reg::RegTensor<float>& addReg1, Reg::RegTensor<float>& addReg3,
+                                                 Reg::RegTensor<float>& addReg5, Reg::RegTensor<float>& addReg7,
+                                                 Reg::RegTensor<float>& addReg9, Reg::MaskReg& mask)
     {
         // x - 1/3*x^3 + 1/5*x^5 - 1/7*x^7 + 1/9*x^9 - 1/11*x^11 + 1/13*x^13
         // x(1 - x^2(1/3 - x^2(1/5 - x^2(1/7 - x^2(1/9 - x^2(1/11 - x^2/13))))))
-        MicroAPI::RegTensor<float> xSquarReg;
-        MicroAPI::Mul(xSquarReg, xReg, xReg, mask);
+        Reg::RegTensor<float> xSquarReg;
+        Reg::Mul(xSquarReg, xReg, xReg, mask);
 
-        MicroAPI::Duplicate(yReg, -1.0f / 11.0f, mask);
-        MicroAPI::Axpy(yReg, xSquarReg, 1.0f / 13.0f, mask);
-        MicroAPI::MulDstAdd(yReg, xSquarReg, addReg9, mask);
-        MicroAPI::MulDstAdd(yReg, xSquarReg, addReg7, mask);
-        MicroAPI::MulDstAdd(yReg, xSquarReg, addReg5, mask);
-        MicroAPI::MulDstAdd(yReg, xSquarReg, addReg3, mask);
-        MicroAPI::MulDstAdd(yReg, xSquarReg, addReg1, mask);
-        MicroAPI::Mul(yReg, yReg, xReg, mask);
+        Reg::Duplicate(yReg, -1.0f / 11.0f, mask);
+        Reg::Axpy(yReg, xSquarReg, 1.0f / 13.0f, mask);
+        Reg::MulDstAdd(yReg, xSquarReg, addReg9, mask);
+        Reg::MulDstAdd(yReg, xSquarReg, addReg7, mask);
+        Reg::MulDstAdd(yReg, xSquarReg, addReg5, mask);
+        Reg::MulDstAdd(yReg, xSquarReg, addReg3, mask);
+        Reg::MulDstAdd(yReg, xSquarReg, addReg1, mask);
+        Reg::Mul(yReg, yReg, xReg, mask);
     }
 
-    __aicore__ inline void AtanLT1(
-        MicroAPI::RegTensor<float>& yReg, MicroAPI::RegTensor<float>& xReg,
-        MicroAPI::RegTensor<float>& addReg1, MicroAPI::RegTensor<float>& addReg3,
-        MicroAPI::RegTensor<float>& addReg5, MicroAPI::RegTensor<float>& addReg7,
-        MicroAPI::RegTensor<float>& addReg9, MicroAPI::MaskReg& mask)
+    __aicore__ inline void AtanLT1(Reg::RegTensor<float>& yReg, Reg::RegTensor<float>& xReg,
+                                   Reg::RegTensor<float>& addReg1, Reg::RegTensor<float>& addReg3,
+                                   Reg::RegTensor<float>& addReg5, Reg::RegTensor<float>& addReg7,
+                                   Reg::RegTensor<float>& addReg9, Reg::MaskReg& mask)
     {
-        MicroAPI::RegTensor<float> tmpReg0;
-        MicroAPI::RegTensor<float> tmpReg1;
-        MicroAPI::Muls(tmpReg0, xReg, TAN_PI_BY_8, mask);
-        MicroAPI::Adds(tmpReg0, tmpReg0, 1.0f, mask);
-        MicroAPI::Adds(tmpReg1, xReg, -TAN_PI_BY_8, mask);
-        MicroAPI::Div(tmpReg0, tmpReg1, tmpReg0, mask);
-        MicroAPI::Abs(tmpReg1, tmpReg0, mask);
+        Reg::RegTensor<float> tmpReg0;
+        Reg::RegTensor<float> tmpReg1;
+        Reg::Muls(tmpReg0, xReg, TAN_PI_BY_8, mask);
+        Reg::Adds(tmpReg0, tmpReg0, 1.0f, mask);
+        Reg::Adds(tmpReg1, xReg, -TAN_PI_BY_8, mask);
+        Reg::Div(tmpReg0, tmpReg1, tmpReg0, mask);
+        Reg::Abs(tmpReg1, tmpReg0, mask);
         TaylorSeriesExpansion(tmpReg0, tmpReg1, addReg1, addReg3, addReg5, addReg7, addReg9, mask);
-        MicroAPI::Adds(tmpReg0, tmpReg0, PI_BY_8, mask);
+        Reg::Adds(tmpReg0, tmpReg0, PI_BY_8, mask);
         TaylorSeriesExpansion(tmpReg1, xReg, addReg1, addReg3, addReg5, addReg7, addReg9, mask);
-        MicroAPI::Min(yReg, tmpReg0, tmpReg1, mask);
+        Reg::Min(yReg, tmpReg0, tmpReg1, mask);
     }
 
-    __aicore__ inline void Atan(
-        MicroAPI::RegTensor<float>& yReg, MicroAPI::RegTensor<float>& xReg,
-        MicroAPI::RegTensor<uint32_t>& floatSignMaskReg, MicroAPI::RegTensor<uint32_t>& floatOneMaskReg,
-        MicroAPI::RegTensor<float>& thresholdReg, MicroAPI::RegTensor<float>& addReg1,
-        MicroAPI::RegTensor<float>& addReg3, MicroAPI::RegTensor<float>& addReg5,
-        MicroAPI::RegTensor<float>& addReg7, MicroAPI::RegTensor<float>& addReg9,
-        MicroAPI::MaskReg& mask)
+    __aicore__ inline void Atan(Reg::RegTensor<float>& yReg, Reg::RegTensor<float>& xReg,
+                                Reg::RegTensor<uint32_t>& floatSignMaskReg, Reg::RegTensor<uint32_t>& floatOneMaskReg,
+                                Reg::RegTensor<float>& thresholdReg, Reg::RegTensor<float>& addReg1,
+                                Reg::RegTensor<float>& addReg3, Reg::RegTensor<float>& addReg5,
+                                Reg::RegTensor<float>& addReg7, Reg::RegTensor<float>& addReg9, Reg::MaskReg& mask)
     {
-        MicroAPI::RegTensor<float> absReg;
-        MicroAPI::RegTensor<float> tmpReg0;
-        MicroAPI::RegTensor<float> tmpReg1;
-        MicroAPI::RegTensor<float> signReg;
-        MicroAPI::And(
-            (MicroAPI::RegTensor<uint32_t>&)signReg, (MicroAPI::RegTensor<uint32_t>&)xReg, floatSignMaskReg,
-            mask); // 取x2符号位
-        MicroAPI::Or(
-            (MicroAPI::RegTensor<uint32_t>&)signReg, (MicroAPI::RegTensor<uint32_t>&)signReg, floatOneMaskReg,
-            mask); // +/- 1
-        MicroAPI::Abs(absReg, xReg, mask);
-        MicroAPI::Min(absReg, absReg, thresholdReg, mask); // avoid overflow
+        Reg::RegTensor<float> absReg;
+        Reg::RegTensor<float> tmpReg0;
+        Reg::RegTensor<float> tmpReg1;
+        Reg::RegTensor<float> signReg;
+        Reg::And((Reg::RegTensor<uint32_t>&)signReg, (Reg::RegTensor<uint32_t>&)xReg, floatSignMaskReg,
+                 mask); // 取x2符号位
+        Reg::Or((Reg::RegTensor<uint32_t>&)signReg, (Reg::RegTensor<uint32_t>&)signReg, floatOneMaskReg,
+                mask); // +/- 1
+        Reg::Abs(absReg, xReg, mask);
+        Reg::Min(absReg, absReg, thresholdReg, mask); // avoid overflow
 
-        MicroAPI::Adds(tmpReg0, absReg, -1.0f, mask);
-        MicroAPI::Adds(tmpReg1, absReg, 1.0f, mask);
-        MicroAPI::Div(tmpReg0, tmpReg0, tmpReg1, mask);
-        MicroAPI::Abs(tmpReg1, tmpReg0, mask);
+        Reg::Adds(tmpReg0, absReg, -1.0f, mask);
+        Reg::Adds(tmpReg1, absReg, 1.0f, mask);
+        Reg::Div(tmpReg0, tmpReg0, tmpReg1, mask);
+        Reg::Abs(tmpReg1, tmpReg0, mask);
         AtanLT1(tmpReg0, tmpReg1, addReg1, addReg3, addReg5, addReg7, addReg9, mask);
-        MicroAPI::Adds(tmpReg0, tmpReg0, PI_BY_4, mask);
+        Reg::Adds(tmpReg0, tmpReg0, PI_BY_4, mask);
         AtanLT1(tmpReg1, absReg, addReg1, addReg3, addReg5, addReg7, addReg9, mask);
-        MicroAPI::Min(yReg, tmpReg0, tmpReg1, mask);
+        Reg::Min(yReg, tmpReg0, tmpReg1, mask);
         // recover sign
-        MicroAPI::Mul(yReg, yReg, signReg, mask);
+        Reg::Mul(yReg, yReg, signReg, mask);
 #endif
     }
 };

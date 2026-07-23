@@ -27,22 +27,24 @@ constexpr int64_t ONCE_ALGN_NUM_INT32 = 8;
 constexpr int64_t DB_BUFFER = 2;
 
 template <typename C, typename S>
-class LinSpaceDoubleCast
-{
+class LinSpaceDoubleCast {
 public:
     __aicore__ inline LinSpaceDoubleCast(){};
     __aicore__ inline void Init(GM_ADDR start, GM_ADDR stop, GM_ADDR num, GM_ADDR output, GM_ADDR workspace,
                                 const LinSpaceRegbaseTilingData* tilingData, TPipe* pipeIn);
     __aicore__ inline void Process(const LinSpaceRegbaseTilingData* tilingData);
+
 private:
     __aicore__ inline void Compute(int64_t loopIdx, int64_t dataCount);
-    __aicore__ inline void ComputeVf(const LocalTensor<S>& dstUb, const LocalTensor<C>& srcUb, int64_t loopIdx, uint32_t count, float offset);
+    __aicore__ inline void ComputeVf(const LocalTensor<S>& dstUb, const LocalTensor<C>& srcUb, int64_t loopIdx,
+                                     uint32_t count, float offset);
     __aicore__ inline void ComputeBackward(int64_t loopIdx, int64_t dataCount);
     __aicore__ inline void CopyOut(int64_t loopIdx, int64_t dataCount);
     __aicore__ inline void CopyOutBackward(int64_t loopIdx, int64_t dataCount);
     __aicore__ inline void CopyOutBackwardTail(int64_t loopIdx, int64_t dataCount);
     __aicore__ inline void GenSequence(int64_t dataCount);
     __aicore__ inline void GenLinSpace(int64_t loopCnt, int64_t tailOfCurCore, bool isForward);
+
 private:
     TPipe* pipe_;
     TQue<QuePosition::VECOUT, DB_BUFFER> outDataQueue_;
@@ -117,8 +119,8 @@ __aicore__ inline void LinSpaceDoubleCast<C, S>::GenSequence(int64_t dataCount)
 }
 
 template <typename C, typename S>
-__aicore__ inline void LinSpaceDoubleCast<C, S>::ComputeVf(
-    const LocalTensor<S>& dstUb, const LocalTensor<C>& srcUb, int64_t loopIdx, uint32_t count, float offset)
+__aicore__ inline void LinSpaceDoubleCast<C, S>::ComputeVf(const LocalTensor<S>& dstUb, const LocalTensor<C>& srcUb,
+                                                           int64_t loopIdx, uint32_t count, float offset)
 {
     uint32_t dtypeSize = sizeof(C);
     uint32_t VL = Ops::Base::GetVRegSize() / dtypeSize;
@@ -130,17 +132,17 @@ __aicore__ inline void LinSpaceDoubleCast<C, S>::ComputeVf(
     __local_mem__ S* dstAddr = (__local_mem__ S*)dstUb.GetPhyAddr();
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<C, AscendC::MicroAPI::RegTraitNumOne> vregInput;
-        AscendC::MicroAPI::RegTensor<C, AscendC::MicroAPI::RegTraitNumOne> vregAdd;
-        AscendC::MicroAPI::RegTensor<C, AscendC::MicroAPI::RegTraitNumOne> vregFloat;
-        AscendC::MicroAPI::MaskReg mask;
+        AscendC::Reg::RegTensor<C, AscendC::Reg::RegTraitNumOne> vregInput;
+        AscendC::Reg::RegTensor<C, AscendC::Reg::RegTraitNumOne> vregAdd;
+        AscendC::Reg::RegTensor<C, AscendC::Reg::RegTraitNumOne> vregFloat;
+        AscendC::Reg::MaskReg mask;
 
         for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-            mask = AscendC::MicroAPI::UpdateMask<C, AscendC::MicroAPI::RegTraitNumOne>(count);
-            AscendC::MicroAPI::DataCopy(vregInput, (__ubuf__ C*)(srcAddr + loopIdx * vlSize));
-            AscendC::MicroAPI::Adds(vregAdd, vregInput, offset, mask);
-            AscendC::MicroAPI::Duplicate(vregFloat, firstValue, mask);
-            AscendC::MicroAPI::Axpy(vregFloat, vregAdd, stepValue, mask);
+            mask = AscendC::Reg::UpdateMask<C, AscendC::Reg::RegTraitNumOne>(count);
+            AscendC::Reg::DataCopy(vregInput, (__ubuf__ C*)(srcAddr + loopIdx * vlSize));
+            AscendC::Reg::Adds(vregAdd, vregInput, offset, mask);
+            AscendC::Reg::Duplicate(vregFloat, firstValue, mask);
+            AscendC::Reg::Axpy(vregFloat, vregAdd, stepValue, mask);
             ops::StoreOneTensorForDtypeT<S>(dstAddr, vregFloat, mask, loopIdx * vlSize);
         }
     }
@@ -174,9 +176,8 @@ template <typename C, typename S>
 __aicore__ inline void LinSpaceDoubleCast<C, S>::CopyOut(int64_t loopIdx, int64_t dataCount)
 {
     LocalTensor<S> outDataUbForward = outDataQueue_.DeQue<S>();
-    DataCopyExtParams copyParamsYOut{
-        static_cast<uint16_t>(1), static_cast<uint32_t>(dataCount * sizeof(S)), static_cast<uint32_t>(0),
-        static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
+    DataCopyExtParams copyParamsYOut{static_cast<uint16_t>(1), static_cast<uint32_t>(dataCount * sizeof(S)),
+                                     static_cast<uint32_t>(0), static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
     DataCopyPad(outputGm_[loopIdx * curPerOfCore_], outDataUbForward, copyParamsYOut);
     outDataQueue_.FreeTensor(outDataUbForward);
 }
@@ -185,9 +186,8 @@ template <typename C, typename S>
 __aicore__ inline void LinSpaceDoubleCast<C, S>::CopyOutBackward(int64_t loopIdx, int64_t dataCount)
 {
     LocalTensor<S> outDataUbBackward = outDataQueue_.DeQue<S>();
-    DataCopyExtParams copyParamsYOut{
-        static_cast<uint16_t>(1), static_cast<uint32_t>(dataCount * sizeof(S)), static_cast<uint32_t>(0),
-        static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
+    DataCopyExtParams copyParamsYOut{static_cast<uint16_t>(1), static_cast<uint32_t>(dataCount * sizeof(S)),
+                                     static_cast<uint32_t>(0), static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
     DataCopyPad(outputGm_[curNumOfCore_ - ((loopIdx + 1) * curPerOfCore_)], outDataUbBackward, copyParamsYOut);
     outDataQueue_.FreeTensor(outDataUbBackward);
 }
@@ -196,9 +196,8 @@ template <typename C, typename S>
 __aicore__ inline void LinSpaceDoubleCast<C, S>::CopyOutBackwardTail(int64_t loopIdx, int64_t dataCount)
 {
     LocalTensor<S> outDataUbBackwardTail = outDataQueue_.DeQue<S>();
-    DataCopyExtParams copyParamsYOut{
-        static_cast<uint16_t>(1), static_cast<uint32_t>(dataCount * sizeof(S)), static_cast<uint32_t>(0),
-        static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
+    DataCopyExtParams copyParamsYOut{static_cast<uint16_t>(1), static_cast<uint32_t>(dataCount * sizeof(S)),
+                                     static_cast<uint32_t>(0), static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
     DataCopyPad(outputGm_[coreOffsetBackwardConvert_], outDataUbBackwardTail, copyParamsYOut);
     outDataQueue_.FreeTensor(outDataUbBackwardTail);
 }

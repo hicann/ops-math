@@ -34,9 +34,8 @@ constexpr int CAST_RINT_MODE = 1;
 
 template <class T>
 struct ModIntPostCompute : public Vec::ElemwiseTernaryOP<T, T, T, T> {
-    __aicore__ inline ModIntPostCompute(
-        const LocalTensor<T>& dst, const LocalTensor<T>& input1, const LocalTensor<T>& input2,
-        const LocalTensor<T>& div, const uint32_t& count)
+    __aicore__ inline ModIntPostCompute(const LocalTensor<T>& dst, const LocalTensor<T>& input1,
+                                        const LocalTensor<T>& input2, const LocalTensor<T>& div, const uint32_t& count)
     {
 #ifdef __CCE_AICORE__
         constexpr uint32_t VECTOR_LENGTH = Ops::Base::GetVRegSize();
@@ -49,31 +48,31 @@ struct ModIntPostCompute : public Vec::ElemwiseTernaryOP<T, T, T, T> {
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T> zeroValue;
-            MicroAPI::RegTensor<T> defaultValue;
-            MicroAPI::RegTensor<T> input1Value;
-            MicroAPI::RegTensor<T> input2Value;
-            MicroAPI::RegTensor<T> divValue;
-            MicroAPI::RegTensor<T> mulValue;
-            MicroAPI::RegTensor<T> subValue;
-            MicroAPI::RegTensor<T> resValue;
-            MicroAPI::MaskReg preg;
-            MicroAPI::MaskReg cmpValue;
+            Reg::RegTensor<T> zeroValue;
+            Reg::RegTensor<T> defaultValue;
+            Reg::RegTensor<T> input1Value;
+            Reg::RegTensor<T> input2Value;
+            Reg::RegTensor<T> divValue;
+            Reg::RegTensor<T> mulValue;
+            Reg::RegTensor<T> subValue;
+            Reg::RegTensor<T> resValue;
+            Reg::MaskReg preg;
+            Reg::MaskReg cmpValue;
             uint32_t sregMask = count;
 
-            MicroAPI::Duplicate(zeroValue, T(0));
-            MicroAPI::Duplicate(defaultValue, T(-1));
+            Reg::Duplicate(zeroValue, T(0));
+            Reg::Duplicate(defaultValue, T(-1));
 
             for (uint16_t j = 0; j < loopTimes; j++) {
-                preg = MicroAPI::UpdateMask<T>(sregMask);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(input2Value, input2Addr + VL_T * j);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(divValue, divAddr + VL_T * j);
-                MicroAPI::Mul(mulValue, input2Value, divValue, preg);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(input1Value, input1Addr + VL_T * j);
-                MicroAPI::Sub(subValue, input1Value, mulValue, preg);
-                MicroAPI::Compare<T, CMPMODE::NE>(cmpValue, input2Value, zeroValue, preg);
-                MicroAPI::Select(resValue, subValue, defaultValue, cmpValue);
-                MicroAPI::DataCopy<T, MicroAPI::StoreDist::DIST_NORM>(dstAddr + VL_T * j, resValue, preg);
+                preg = Reg::UpdateMask<T>(sregMask);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(input2Value, input2Addr + VL_T * j);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(divValue, divAddr + VL_T * j);
+                Reg::Mul(mulValue, input2Value, divValue, preg);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(input1Value, input1Addr + VL_T * j);
+                Reg::Sub(subValue, input1Value, mulValue, preg);
+                Reg::Compare<T, CMPMODE::NE>(cmpValue, input2Value, zeroValue, preg);
+                Reg::Select(resValue, subValue, defaultValue, cmpValue);
+                Reg::DataCopy<T, Reg::StoreDist::DIST_NORM>(dstAddr + VL_T * j, resValue, preg);
             }
         }
 #endif
@@ -82,9 +81,9 @@ struct ModIntPostCompute : public Vec::ElemwiseTernaryOP<T, T, T, T> {
 
 template <typename T1, typename T2>
 struct ModCastIntPostCompute : public Vec::ElemwiseTernaryOP<T1, T2, T2, T2> {
-    __aicore__ inline ModCastIntPostCompute(
-        const LocalTensor<T1>& dst, const LocalTensor<T2>& input1, const LocalTensor<T2>& input2,
-        const LocalTensor<T2>& div, const uint32_t& count)
+    __aicore__ inline ModCastIntPostCompute(const LocalTensor<T1>& dst, const LocalTensor<T2>& input1,
+                                            const LocalTensor<T2>& input2, const LocalTensor<T2>& div,
+                                            const uint32_t& count)
     {
 #ifdef __CCE_AICORE__
         constexpr uint32_t VECTOR_LENGTH = Ops::Base::GetVRegSize();
@@ -97,32 +96,32 @@ struct ModCastIntPostCompute : public Vec::ElemwiseTernaryOP<T1, T2, T2, T2> {
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T2> zeroValue;
-            MicroAPI::RegTensor<T2> defaultValue;
-            MicroAPI::RegTensor<T2> input1Value;
-            MicroAPI::RegTensor<T2> input2Value;
-            MicroAPI::RegTensor<T2> divValue;
-            MicroAPI::RegTensor<T2> mulValue;
-            MicroAPI::RegTensor<T2> subValue;
-            MicroAPI::RegTensor<T2> resValue;
-            MicroAPI::MaskReg preg;
-            MicroAPI::MaskReg cmpValue;
+            Reg::RegTensor<T2> zeroValue;
+            Reg::RegTensor<T2> defaultValue;
+            Reg::RegTensor<T2> input1Value;
+            Reg::RegTensor<T2> input2Value;
+            Reg::RegTensor<T2> divValue;
+            Reg::RegTensor<T2> mulValue;
+            Reg::RegTensor<T2> subValue;
+            Reg::RegTensor<T2> resValue;
+            Reg::MaskReg preg;
+            Reg::MaskReg cmpValue;
             uint32_t sregMask = count;
 
-            MicroAPI::Duplicate(zeroValue, T2(0));
-            MicroAPI::Duplicate(defaultValue, T2(-1));
+            Reg::Duplicate(zeroValue, T2(0));
+            Reg::Duplicate(defaultValue, T2(-1));
 
             for (uint16_t j = 0; j < loopTimes; j++) {
-                preg = MicroAPI::UpdateMask<T2>(sregMask);
-                MicroAPI::DataCopy<T2, MicroAPI::LoadDist::DIST_NORM>(input2Value, input2Addr + VL_T * j);
-                MicroAPI::DataCopy<T2, MicroAPI::LoadDist::DIST_NORM>(divValue, divAddr + VL_T * j);
-                MicroAPI::Mul(mulValue, input2Value, divValue, preg);
-                MicroAPI::DataCopy<T2, MicroAPI::LoadDist::DIST_NORM>(input1Value, input1Addr + VL_T * j);
-                MicroAPI::Sub(subValue, input1Value, mulValue, preg);
-                MicroAPI::Compare<T2, CMPMODE::NE>(cmpValue, input2Value, zeroValue, preg);
-                MicroAPI::Select(resValue, subValue, defaultValue, cmpValue);
-                MicroAPI::DataCopy<T1, MicroAPI::StoreDist::DIST_PACK_B16>(
-                    dstAddr + VL_T * j, (MicroAPI::RegTensor<T1>&)resValue, preg);
+                preg = Reg::UpdateMask<T2>(sregMask);
+                Reg::DataCopy<T2, Reg::LoadDist::DIST_NORM>(input2Value, input2Addr + VL_T * j);
+                Reg::DataCopy<T2, Reg::LoadDist::DIST_NORM>(divValue, divAddr + VL_T * j);
+                Reg::Mul(mulValue, input2Value, divValue, preg);
+                Reg::DataCopy<T2, Reg::LoadDist::DIST_NORM>(input1Value, input1Addr + VL_T * j);
+                Reg::Sub(subValue, input1Value, mulValue, preg);
+                Reg::Compare<T2, CMPMODE::NE>(cmpValue, input2Value, zeroValue, preg);
+                Reg::Select(resValue, subValue, defaultValue, cmpValue);
+                Reg::DataCopy<T1, Reg::StoreDist::DIST_PACK_B16>(dstAddr + VL_T * j, (Reg::RegTensor<T1>&)resValue,
+                                                                 preg);
             }
         }
 #endif
@@ -131,8 +130,8 @@ struct ModCastIntPostCompute : public Vec::ElemwiseTernaryOP<T1, T2, T2, T2> {
 
 #ifdef __CCE_AICORE__
 template <typename T>
-__simt_vf__ __aicore__
-    LAUNCH_BOUND(1024) inline void ModIntSimt(__ubuf__ T* dst, __ubuf__ T* src1, __ubuf__ T* src2, int count)
+__simt_vf__ __aicore__ LAUNCH_BOUND(1024) inline void ModIntSimt(__ubuf__ T* dst, __ubuf__ T* src1, __ubuf__ T* src2,
+                                                                 int count)
 {
     for (uint32_t index = static_cast<uint32_t>(threadIdx.x); index < count;
          index += static_cast<uint32_t>(blockDim.x)) {

@@ -29,8 +29,8 @@ using namespace AscendC;
 
 template <class T>
 struct XorCompute : public Vec::ElemwiseBinaryOP<T, T, T> {
-    __aicore__ inline XorCompute(
-        LocalTensor<T>& dst, LocalTensor<T>& inputX1, LocalTensor<T>& inputX2, const uint32_t& count)
+    __aicore__ inline XorCompute(LocalTensor<T>& dst, LocalTensor<T>& inputX1, LocalTensor<T>& inputX2,
+                                 const uint32_t& count)
     {
 #ifdef __CCE_AICORE__
         constexpr uint32_t VECTOR_LENGTH = GetVRegSize();
@@ -42,20 +42,20 @@ struct XorCompute : public Vec::ElemwiseBinaryOP<T, T, T> {
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T> src1Value;
-            MicroAPI::RegTensor<T> src2Value;
-            MicroAPI::RegTensor<T> resValue;
-            MicroAPI::MaskReg preg;
+            Reg::RegTensor<T> src1Value;
+            Reg::RegTensor<T> src2Value;
+            Reg::RegTensor<T> resValue;
+            Reg::MaskReg preg;
             uint32_t sregMask = count;
 
             for (uint16_t j = 0; j < loopTimes; j++) {
-                preg = MicroAPI::UpdateMask<T>(sregMask);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(src1Value, inputX1Addr + VL_T * j);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(src2Value, inputX2Addr + VL_T * j);
+                preg = Reg::UpdateMask<T>(sregMask);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(src1Value, inputX1Addr + VL_T * j);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(src2Value, inputX2Addr + VL_T * j);
 
-                MicroAPI::Xor(resValue, src1Value, src2Value, preg);
+                Reg::Xor(resValue, src1Value, src2Value, preg);
 
-                MicroAPI::DataCopy<T, MicroAPI::StoreDist::DIST_NORM>(dstAddr + VL_T * j, resValue, preg);
+                Reg::DataCopy<T, Reg::StoreDist::DIST_NORM>(dstAddr + VL_T * j, resValue, preg);
             }
         }
 #endif
@@ -63,19 +63,19 @@ struct XorCompute : public Vec::ElemwiseBinaryOP<T, T, T> {
 };
 
 namespace BitwiseXorOp {
-    using namespace AscendC;
-    template <typename T>
-    struct BitwiseXorCompute {
-        using InputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
-        using InputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
+using namespace AscendC;
+template <typename T>
+struct BitwiseXorCompute {
+    using InputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
+    using InputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
 
-        using OpBitwiseXorRes = Bind<XorCompute<T>, InputX1, InputX2>;
+    using OpBitwiseXorRes = Bind<XorCompute<T>, InputX1, InputX2>;
 
-        using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpBitwiseXorRes>;
+    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpBitwiseXorRes>;
 
-        using Outputs = Elems<OpCopyOut>;
-        using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
-        using OpDag = DAGSch<Outputs, void, MemCfg>;
-    };
-}
+    using Outputs = Elems<OpCopyOut>;
+    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
+    using OpDag = DAGSch<Outputs, void, MemCfg>;
+};
+} // namespace BitwiseXorOp
 #endif // BITWISE_XOR_DAG_H

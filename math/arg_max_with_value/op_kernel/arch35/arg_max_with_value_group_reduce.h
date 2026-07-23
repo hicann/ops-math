@@ -26,9 +26,8 @@ template <typename T1, typename T2, typename T3, bool withValue, bool isMin>
 class ArgMaxWithValueGroupReduce : public ArgMaxWithValueBase<T1, T2, T3, isMin> {
 public:
     __aicore__ inline ArgMaxWithValueGroupReduce(){};
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR indice, GM_ADDR values, GM_ADDR workspace, const ArgMaxWithValueTilingData* tilingData,
-        TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR indice, GM_ADDR values, GM_ADDR workspace,
+                                const ArgMaxWithValueTilingData* tilingData, TPipe* pipe);
     __aicore__ inline void Process();
 
 private:
@@ -41,8 +40,8 @@ private:
     __aicore__ inline void ProcessMultiCoreResult();
     __aicore__ inline void CopyInX(uint16_t copyNum);
     template <bool isAra>
-    __aicore__ inline void Compute(
-        uint64_t dimR, LocalTensor<T2>& indiceUb, LocalTensor<T1>& valuesUb, uint64_t offset);
+    __aicore__ inline void Compute(uint64_t dimR, LocalTensor<T2>& indiceUb, LocalTensor<T1>& valuesUb,
+                                   uint64_t offset);
     __aicore__ inline void CopyOut(uint64_t offset, uint64_t copyNum);
     __aicore__ inline void CopyInMultiCoreResult();
     template <typename T4>
@@ -54,8 +53,8 @@ private:
     __aicore__ inline void CopyOutWorkSpace(uint64_t offset, uint64_t copyNum);
     __aicore__ inline void ProcessRaSplit();
     __aicore__ inline void CopyInXSingleA(uint16_t copyNum, uint64_t aIdx);
-    __aicore__ inline void ComputeRa(
-        uint64_t dimR, LocalTensor<T2>& indiceUb, LocalTensor<T1>& valuesUb, uint64_t offset, uint64_t aIdx);
+    __aicore__ inline void ComputeRa(uint64_t dimR, LocalTensor<T2>& indiceUb, LocalTensor<T1>& valuesUb,
+                                     uint64_t offset, uint64_t aIdx);
     template <typename T4>
     __aicore__ inline void ComputeResultAllCore(uint64_t actualNextA);
     __aicore__ inline void ProcessMultiCoreResultAllCore();
@@ -208,15 +207,15 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
             ComputeRa(tiling_->cutRSize, indiceUb, valuesUb, nextAAlign_, a);
             if constexpr (IsSameType<T1, bfloat16_t>::value) {
                 LocalTensor<float> outUb32 = outBuf32.Get<float>();
-                this->template UpdateResult<float>(
-                    (__local_mem__ T2*)indiceUb[nextAAlign_].GetPhyAddr(),
-                    (__local_mem__ float*)outUb32[nextAAlign_].GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-                    (__local_mem__ float*)outUb32.GetPhyAddr(), tiling_->nextASize);
+                this->template UpdateResult<float>((__local_mem__ T2*)indiceUb[nextAAlign_].GetPhyAddr(),
+                                                   (__local_mem__ float*)outUb32[nextAAlign_].GetPhyAddr(),
+                                                   (__local_mem__ T2*)indiceUb.GetPhyAddr(),
+                                                   (__local_mem__ float*)outUb32.GetPhyAddr(), tiling_->nextASize);
             } else {
-                this->template UpdateResult<T1>(
-                    (__local_mem__ T2*)indiceUb[nextAAlign_].GetPhyAddr(),
-                    (__local_mem__ T1*)valuesUb[nextAAlign_].GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-                    (__local_mem__ T1*)valuesUb.GetPhyAddr(), tiling_->nextASize);
+                this->template UpdateResult<T1>((__local_mem__ T2*)indiceUb[nextAAlign_].GetPhyAddr(),
+                                                (__local_mem__ T1*)valuesUb[nextAAlign_].GetPhyAddr(),
+                                                (__local_mem__ T2*)indiceUb.GetPhyAddr(),
+                                                (__local_mem__ T1*)valuesUb.GetPhyAddr(), tiling_->nextASize);
             }
         }
         // tail r loop
@@ -226,17 +225,16 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
             if (loopR_ > 0) {
                 ComputeRa(tailR_, indiceUb, valuesUb, nextAAlign_, a);
                 if constexpr (!IsSameType<T1, bfloat16_t>::value) {
-                    this->template UpdateResult<T1>(
-                        (__local_mem__ T2*)indiceUb[nextAAlign_].GetPhyAddr(),
-                        (__local_mem__ T1*)valuesUb[nextAAlign_].GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-                        (__local_mem__ T1*)valuesUb.GetPhyAddr(), tiling_->nextASize);
+                    this->template UpdateResult<T1>((__local_mem__ T2*)indiceUb[nextAAlign_].GetPhyAddr(),
+                                                    (__local_mem__ T1*)valuesUb[nextAAlign_].GetPhyAddr(),
+                                                    (__local_mem__ T2*)indiceUb.GetPhyAddr(),
+                                                    (__local_mem__ T1*)valuesUb.GetPhyAddr(), tiling_->nextASize);
                 } else {
                     LocalTensor<float> outUb32 = outBuf32.Get<float>();
-                    this->template UpdateResult<float>(
-                        (__local_mem__ T2*)indiceUb[nextAAlign_].GetPhyAddr(),
-                        (__local_mem__ float*)outUb32[nextAAlign_].GetPhyAddr(),
-                        (__local_mem__ T2*)indiceUb.GetPhyAddr(), (__local_mem__ float*)outUb32.GetPhyAddr(),
-                        tiling_->nextASize);
+                    this->template UpdateResult<float>((__local_mem__ T2*)indiceUb[nextAAlign_].GetPhyAddr(),
+                                                       (__local_mem__ float*)outUb32[nextAAlign_].GetPhyAddr(),
+                                                       (__local_mem__ T2*)indiceUb.GetPhyAddr(),
+                                                       (__local_mem__ float*)outUb32.GetPhyAddr(), tiling_->nextASize);
                 }
             } else {
                 ComputeRa(tailR_, indiceUb, valuesUb, 0, a);
@@ -281,8 +279,8 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
 }
 
 template <typename T1, typename T2, typename T3, bool withValue, bool isMin>
-__aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>::CopyInXSingleA(
-    uint16_t copyNum, uint64_t aIdx)
+__aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>::CopyInXSingleA(uint16_t copyNum,
+                                                                                                uint64_t aIdx)
 {
     LocalTensor<T1> xUb = inQueueX_.AllocTensor<T1>();
     copyInParams_.blockCount = 1;
@@ -306,15 +304,15 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
         Compute<isAra>(tiling_->cutRSize, indiceUb, valuesUb, outAAlign_);
         if constexpr (IsSameType<T1, bfloat16_t>::value) {
             LocalTensor<float> outUb32 = outBuf32.Get<float>();
-            this->template UpdateResult<float>(
-                (__local_mem__ T2*)indiceUb[outAAlign_].GetPhyAddr(),
-                (__local_mem__ float*)outUb32[outAAlign_].GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-                (__local_mem__ float*)outUb32.GetPhyAddr(), outASize_);
+            this->template UpdateResult<float>((__local_mem__ T2*)indiceUb[outAAlign_].GetPhyAddr(),
+                                               (__local_mem__ float*)outUb32[outAAlign_].GetPhyAddr(),
+                                               (__local_mem__ T2*)indiceUb.GetPhyAddr(),
+                                               (__local_mem__ float*)outUb32.GetPhyAddr(), outASize_);
         } else {
-            this->template UpdateResult<T1>(
-                (__local_mem__ T2*)indiceUb[outAAlign_].GetPhyAddr(),
-                (__local_mem__ T1*)valuesUb[outAAlign_].GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-                (__local_mem__ T1*)valuesUb.GetPhyAddr(), outASize_);
+            this->template UpdateResult<T1>((__local_mem__ T2*)indiceUb[outAAlign_].GetPhyAddr(),
+                                            (__local_mem__ T1*)valuesUb[outAAlign_].GetPhyAddr(),
+                                            (__local_mem__ T2*)indiceUb.GetPhyAddr(),
+                                            (__local_mem__ T1*)valuesUb.GetPhyAddr(), outASize_);
         }
     }
 }
@@ -330,16 +328,16 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
         if (loopR_ > 0) {
             Compute<isAra>(tailR_, indiceUb, valuesUb, outAAlign_);
             if constexpr (!IsSameType<T1, bfloat16_t>::value) {
-                this->template UpdateResult<T1>(
-                    (__local_mem__ T2*)indiceUb[outAAlign_].GetPhyAddr(),
-                    (__local_mem__ T1*)valuesUb[outAAlign_].GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-                    (__local_mem__ T1*)valuesUb.GetPhyAddr(), outASize_);
+                this->template UpdateResult<T1>((__local_mem__ T2*)indiceUb[outAAlign_].GetPhyAddr(),
+                                                (__local_mem__ T1*)valuesUb[outAAlign_].GetPhyAddr(),
+                                                (__local_mem__ T2*)indiceUb.GetPhyAddr(),
+                                                (__local_mem__ T1*)valuesUb.GetPhyAddr(), outASize_);
             } else {
                 LocalTensor<float> outUb32 = outBuf32.Get<float>();
-                this->template UpdateResult<float>(
-                    (__local_mem__ T2*)indiceUb[outAAlign_].GetPhyAddr(),
-                    (__local_mem__ float*)outUb32[outAAlign_].GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-                    (__local_mem__ float*)outUb32.GetPhyAddr(), outASize_);
+                this->template UpdateResult<float>((__local_mem__ T2*)indiceUb[outAAlign_].GetPhyAddr(),
+                                                   (__local_mem__ float*)outUb32[outAAlign_].GetPhyAddr(),
+                                                   (__local_mem__ T2*)indiceUb.GetPhyAddr(),
+                                                   (__local_mem__ float*)outUb32.GetPhyAddr(), outASize_);
             }
         } else {
             Compute<isAra>(tailR_, indiceUb, valuesUb, 0);
@@ -416,25 +414,25 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
         uint64_t alignAR = CeilDivision(dimR * tiling_->nextASize, ELEMENT_PER_BLOCK) * ELEMENT_PER_BLOCK;
         Cast(xUb32, srcUb, RoundMode::CAST_NONE, alignAR);
         inQueueX_.FreeTensor(srcUb);
-        this->template ArgMaxRa<float, uint32_t>(
-            (__local_mem__ float*)outUb32[offset].GetPhyAddr(), (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
-            (__local_mem__ float*)xUb32.GetPhyAddr(), tiling_->nextASize, tiling_->nextASize, dimR,
-            blockOffset_ + loopOffset_);
+        this->template ArgMaxRa<float, uint32_t>((__local_mem__ float*)outUb32[offset].GetPhyAddr(),
+                                                 (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
+                                                 (__local_mem__ float*)xUb32.GetPhyAddr(), tiling_->nextASize,
+                                                 tiling_->nextASize, dimR, blockOffset_ + loopOffset_);
     } else if constexpr (IsSameType<T1, half>::value) {
-        this->template ArgMaxRa<T1, uint16_t>(
-            (__local_mem__ T1*)valuesUb[offset].GetPhyAddr(), (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), tiling_->nextASize, tiling_->nextASize, dimR,
-            blockOffset_ + loopOffset_);
+        this->template ArgMaxRa<T1, uint16_t>((__local_mem__ T1*)valuesUb[offset].GetPhyAddr(),
+                                              (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
+                                              (__local_mem__ T1*)srcUb.GetPhyAddr(), tiling_->nextASize,
+                                              tiling_->nextASize, dimR, blockOffset_ + loopOffset_);
     } else if constexpr (!IsSameType<T1, int64_t>::value) {
-        this->template ArgMaxRa<T1, uint32_t>(
-            (__local_mem__ T1*)valuesUb[offset].GetPhyAddr(), (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), tiling_->nextASize, tiling_->nextASize, dimR,
-            blockOffset_ + loopOffset_);
+        this->template ArgMaxRa<T1, uint32_t>((__local_mem__ T1*)valuesUb[offset].GetPhyAddr(),
+                                              (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
+                                              (__local_mem__ T1*)srcUb.GetPhyAddr(), tiling_->nextASize,
+                                              tiling_->nextASize, dimR, blockOffset_ + loopOffset_);
     } else if constexpr (IsSameType<T1, int64_t>::value) {
-        this->template ArgMaxRaInt64<int64_t, uint64_t>(
-            (__local_mem__ T1*)valuesUb[offset].GetPhyAddr(), (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), tiling_->nextASize, tiling_->nextASize, dimR,
-            blockOffset_ + loopOffset_);
+        this->template ArgMaxRaInt64<int64_t, uint64_t>((__local_mem__ T1*)valuesUb[offset].GetPhyAddr(),
+                                                        (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
+                                                        (__local_mem__ T1*)srcUb.GetPhyAddr(), tiling_->nextASize,
+                                                        tiling_->nextASize, dimR, blockOffset_ + loopOffset_);
     }
     if constexpr (!IsSameType<T1, bfloat16_t>::value) {
         inQueueX_.FreeTensor(srcUb);
@@ -443,8 +441,10 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
 
 template <typename T1, typename T2, typename T3, bool withValue, bool isMin>
 template <bool isAra>
-__aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>::Compute(
-    uint64_t dimR, LocalTensor<T2>& indiceUb, LocalTensor<T1>& valuesUb, uint64_t offset)
+__aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>::Compute(uint64_t dimR,
+                                                                                         LocalTensor<T2>& indiceUb,
+                                                                                         LocalTensor<T1>& valuesUb,
+                                                                                         uint64_t offset)
 {
     LocalTensor<T1> srcUb = inQueueX_.DeQue<T1>();
     if constexpr (isAra) {
@@ -530,26 +530,26 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<T4> vregValue0, vregValue1;
-        AscendC::MicroAPI::RegTensor<T2> vregIndices0, vregIndices1;
-        AscendC::MicroAPI::RegTensor<T2> indicesHigher0, indicesHigher1;
-        AscendC::MicroAPI::MaskReg mask, maskLower, maskHigher, cmpMask, nanMask, pregLower, pregHigher;
+        AscendC::Reg::RegTensor<T4> vregValue0, vregValue1;
+        AscendC::Reg::RegTensor<T2> vregIndices0, vregIndices1;
+        AscendC::Reg::RegTensor<T2> indicesHigher0, indicesHigher1;
+        AscendC::Reg::MaskReg mask, maskLower, maskHigher, cmpMask, nanMask, pregLower, pregHigher;
         for (uint16_t i = 0; i < loopA; i++) {
             auto tmpValuePtr = srcValuePtr + dimA;
             auto tmpIndicePtr = srcIndicePtr + dimA;
-            mask = AscendC::MicroAPI::UpdateMask<T4>(processA);
-            AscendC::MicroAPI::AddrReg valueOffset = AscendC::MicroAPI::CreateAddrReg<T4>(i, vl);
+            mask = AscendC::Reg::UpdateMask<T4>(processA);
+            AscendC::Reg::AddrReg valueOffset = AscendC::Reg::CreateAddrReg<T4>(i, vl);
             DataCopy(vregValue0, srcValuePtr, valueOffset);
-            AscendC::MicroAPI::AddrReg indicesOffset = AscendC::MicroAPI::CreateAddrReg<uint32_t>(i, vl);
+            AscendC::Reg::AddrReg indicesOffset = AscendC::Reg::CreateAddrReg<uint32_t>(i, vl);
             DataCopy(vregIndices0, srcIndicePtr, indicesOffset);
             if constexpr (IsSameType<T1, half>::value) {
-                maskLower = AscendC::MicroAPI::UpdateMask<T2>(sregMask);
-                maskHigher = AscendC::MicroAPI::UpdateMask<T2>(sregMask);
+                maskLower = AscendC::Reg::UpdateMask<T2>(sregMask);
+                maskHigher = AscendC::Reg::UpdateMask<T2>(sregMask);
                 DataCopy(indicesHigher0, srcIndicePtr + repeatElmB32, indicesOffset);
             }
             for (uint16_t j = 0; j < loopR; j++) {
-                AscendC::MicroAPI::AddrReg valueAreg = AscendC::MicroAPI::CreateAddrReg<T4>(i, vl, j, dimA);
-                AscendC::MicroAPI::AddrReg indicesAreg = AscendC::MicroAPI::CreateAddrReg<uint32_t>(i, vl, j, dimA);
+                AscendC::Reg::AddrReg valueAreg = AscendC::Reg::CreateAddrReg<T4>(i, vl, j, dimA);
+                AscendC::Reg::AddrReg indicesAreg = AscendC::Reg::CreateAddrReg<uint32_t>(i, vl, j, dimA);
                 DataCopy(vregValue1, tmpValuePtr, valueAreg);
                 if constexpr (isMin) {
                     Compare<T4, CMPMODE::LE>(cmpMask, vregValue0, vregValue1, mask);
@@ -557,11 +557,11 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
                     Compare<T4, CMPMODE::GE>(cmpMask, vregValue0, vregValue1, mask);
                 }
                 Compare<T4, CMPMODE::NE>(nanMask, vregValue0, vregValue0, mask);
-                AscendC::MicroAPI::MaskOr(cmpMask, cmpMask, nanMask, mask);
+                AscendC::Reg::MaskOr(cmpMask, cmpMask, nanMask, mask);
                 Select(vregValue0, vregValue0, vregValue1, cmpMask);
                 if constexpr (IsSameType<T1, half>::value) {
-                    AscendC::MicroAPI::MaskUnPack<AscendC::MicroAPI::HighLowPart::LOWEST>(pregLower, cmpMask);
-                    AscendC::MicroAPI::MaskUnPack<AscendC::MicroAPI::HighLowPart::HIGHEST>(pregHigher, cmpMask);
+                    AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::LOWEST>(pregLower, cmpMask);
+                    AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::HIGHEST>(pregHigher, cmpMask);
                     DataCopy(vregIndices1, tmpIndicePtr, indicesAreg);
                     DataCopy(indicesHigher1, tmpIndicePtr + repeatElmB32, indicesAreg);
                     Select(vregIndices0, vregIndices0, vregIndices1, pregLower);
@@ -611,13 +611,13 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<T4, AscendC::MicroAPI::RegTraitNumTwo> vregValue0, vregValue1;
-        AscendC::MicroAPI::RegTensor<T2, AscendC::MicroAPI::RegTraitNumTwo> vregIndices0, vregIndices1;
-        AscendC::MicroAPI::MaskReg mask, cmpMask;
+        AscendC::Reg::RegTensor<T4, AscendC::Reg::RegTraitNumTwo> vregValue0, vregValue1;
+        AscendC::Reg::RegTensor<T2, AscendC::Reg::RegTraitNumTwo> vregIndices0, vregIndices1;
+        AscendC::Reg::MaskReg mask, cmpMask;
         for (uint16_t i = 0; i < loopA; i++) {
             auto tmpValuePtr = srcValuePtr + dimA;
             auto tmpIndicePtr = srcIndicePtr + dimA;
-            mask = AscendC::MicroAPI::UpdateMask<uint32_t>(processA);
+            mask = AscendC::Reg::UpdateMask<uint32_t>(processA);
             DataCopy(vregValue0, (__local_mem__ T4*)srcValuePtr + i * vl);
             DataCopy(vregIndices0, (__local_mem__ T2*)srcIndicePtr + i * vl);
             for (uint16_t j = 0; j < loopR; j++) {
@@ -673,13 +673,13 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<T4, AscendC::MicroAPI::RegTraitNumTwo> vregValue0, vregValue1;
-        AscendC::MicroAPI::RegTensor<T2, AscendC::MicroAPI::RegTraitNumTwo> vregIndices0, vregIndices1;
-        AscendC::MicroAPI::MaskReg mask, cmpMask;
+        AscendC::Reg::RegTensor<T4, AscendC::Reg::RegTraitNumTwo> vregValue0, vregValue1;
+        AscendC::Reg::RegTensor<T2, AscendC::Reg::RegTraitNumTwo> vregIndices0, vregIndices1;
+        AscendC::Reg::MaskReg mask, cmpMask;
         for (uint16_t i = 0; i < loopA; i++) {
             auto tmpValuePtr = srcValuePtr + dimA;
             auto tmpIndicePtr = srcIndicePtr + dimIndicates;
-            mask = AscendC::MicroAPI::UpdateMask<uint32_t>(processA);
+            mask = AscendC::Reg::UpdateMask<uint32_t>(processA);
             DataCopy(vregValue0, (__local_mem__ T4*)srcValuePtr + i * vl);
             DataCopy(vregIndices0, (__local_mem__ T2*)srcIndicePtr + i * vl);
             for (uint16_t j = 0; j < loopR; j++) {
@@ -740,27 +740,26 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<T4> vregValue0, vregValue1;
-        AscendC::MicroAPI::RegTensor<T2> vregIndices0, vregIndices1;
-        AscendC::MicroAPI::RegTensor<T2> indicesHigher0, indicesHigher1;
-        AscendC::MicroAPI::MaskReg mask, maskLower, maskHigher, cmpMask, nanMask, pregLower, pregHigher;
+        AscendC::Reg::RegTensor<T4> vregValue0, vregValue1;
+        AscendC::Reg::RegTensor<T2> vregIndices0, vregIndices1;
+        AscendC::Reg::RegTensor<T2> indicesHigher0, indicesHigher1;
+        AscendC::Reg::MaskReg mask, maskLower, maskHigher, cmpMask, nanMask, pregLower, pregHigher;
         for (uint16_t i = 0; i < loopA; i++) {
             auto tmpValuePtr = srcValuePtr + dimA;
             auto tmpIndicePtr = srcIndicePtr + dimIndicates;
-            mask = AscendC::MicroAPI::UpdateMask<T4>(processA);
-            AscendC::MicroAPI::AddrReg valueOffset = AscendC::MicroAPI::CreateAddrReg<T4>(i, vl);
+            mask = AscendC::Reg::UpdateMask<T4>(processA);
+            AscendC::Reg::AddrReg valueOffset = AscendC::Reg::CreateAddrReg<T4>(i, vl);
             DataCopy(vregValue0, srcValuePtr, valueOffset);
-            AscendC::MicroAPI::AddrReg indicesOffset = AscendC::MicroAPI::CreateAddrReg<uint32_t>(i, vl);
+            AscendC::Reg::AddrReg indicesOffset = AscendC::Reg::CreateAddrReg<uint32_t>(i, vl);
             DataCopy(vregIndices0, srcIndicePtr, indicesOffset);
             if constexpr (IsSameType<T1, half>::value) {
-                maskLower = AscendC::MicroAPI::UpdateMask<T2>(sregMask);
-                maskHigher = AscendC::MicroAPI::UpdateMask<T2>(sregMask);
+                maskLower = AscendC::Reg::UpdateMask<T2>(sregMask);
+                maskHigher = AscendC::Reg::UpdateMask<T2>(sregMask);
                 DataCopy(indicesHigher0, srcIndicePtr + repeatElmB32, indicesOffset);
             }
             for (uint16_t j = 0; j < loopR; j++) {
-                AscendC::MicroAPI::AddrReg valueAreg = AscendC::MicroAPI::CreateAddrReg<T4>(i, vl, j, dimA);
-                AscendC::MicroAPI::AddrReg indicesAreg =
-                    AscendC::MicroAPI::CreateAddrReg<uint32_t>(i, vl, j, dimIndicates);
+                AscendC::Reg::AddrReg valueAreg = AscendC::Reg::CreateAddrReg<T4>(i, vl, j, dimA);
+                AscendC::Reg::AddrReg indicesAreg = AscendC::Reg::CreateAddrReg<uint32_t>(i, vl, j, dimIndicates);
                 DataCopy(vregValue1, tmpValuePtr, valueAreg);
                 if constexpr (isMin) {
                     Compare<T4, CMPMODE::LE>(cmpMask, vregValue0, vregValue1, mask);
@@ -768,11 +767,11 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
                     Compare<T4, CMPMODE::GE>(cmpMask, vregValue0, vregValue1, mask);
                 }
                 Compare<T4, CMPMODE::NE>(nanMask, vregValue0, vregValue0, mask);
-                AscendC::MicroAPI::MaskOr(cmpMask, cmpMask, nanMask, mask);
+                AscendC::Reg::MaskOr(cmpMask, cmpMask, nanMask, mask);
                 Select(vregValue0, vregValue0, vregValue1, cmpMask);
                 if constexpr (IsSameType<T1, half>::value) {
-                    AscendC::MicroAPI::MaskUnPack<AscendC::MicroAPI::HighLowPart::LOWEST>(pregLower, cmpMask);
-                    AscendC::MicroAPI::MaskUnPack<AscendC::MicroAPI::HighLowPart::HIGHEST>(pregHigher, cmpMask);
+                    AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::LOWEST>(pregLower, cmpMask);
+                    AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::HIGHEST>(pregHigher, cmpMask);
                     DataCopy(vregIndices1, tmpIndicePtr, indicesAreg);
                     DataCopy(indicesHigher1, tmpIndicePtr + repeatElmB32, indicesAreg);
                     Select(vregIndices0, vregIndices0, vregIndices1, pregLower);
@@ -875,8 +874,8 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
 }
 
 template <typename T1, typename T2, typename T3, bool withValue, bool isMin>
-__aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>::CopyOutWorkSpace(
-    uint64_t offset, uint64_t copyNum)
+__aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>::CopyOutWorkSpace(uint64_t offset,
+                                                                                                  uint64_t copyNum)
 {
     LocalTensor<T1> outValues = outQueueValues_.DeQue<T1>();
     LocalTensor<T2> outIndice = outQueueIndice_.DeQue<T2>();
@@ -900,8 +899,8 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
 }
 
 template <typename T1, typename T2, typename T3, bool withValue, bool isMin>
-__aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>::CopyOutWorkSpaceRow(
-    uint64_t aIdx, uint64_t coreIdx)
+__aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>::CopyOutWorkSpaceRow(uint64_t aIdx,
+                                                                                                     uint64_t coreIdx)
 {
     LocalTensor<T1> outValues = outQueueValues_.DeQue<T1>();
     LocalTensor<T2> outIndice = outQueueIndice_.DeQue<T2>();
@@ -913,8 +912,8 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
     uint64_t indiceBaseOffset = valueTotalBytes / sizeof(T2);
 
     uint64_t valueOffset = aIdx * tiling_->realCoreNum * nextAAlign128_ + coreIdx * nextAAlign128_;
-    uint64_t indiceOffset =
-        indiceBaseOffset + aIdx * tiling_->realCoreNum * indiceAlign128_ + coreIdx * indiceAlign128_;
+    uint64_t indiceOffset = indiceBaseOffset + aIdx * tiling_->realCoreNum * indiceAlign128_ +
+                            coreIdx * indiceAlign128_;
 
     DataCopyExtParams copyParams{1, 0, 0, 0, 0};
     copyParams.blockCount = 1;
@@ -939,8 +938,8 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
 }
 
 template <typename T1, typename T2, typename T3, bool withValue, bool isMin>
-__aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>::CopyOut(
-    uint64_t offset, uint64_t copyNum)
+__aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>::CopyOut(uint64_t offset,
+                                                                                         uint64_t copyNum)
 {
     LocalTensor<T1> outValues = outQueueValues_.DeQue<T1>();
     if constexpr (withValue) {

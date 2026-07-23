@@ -138,8 +138,8 @@ __aicore__ inline void AddNRegbase<T>::LoopProcess(int64_t index)
 }
 
 template <typename T>
-__aicore__ inline void AddNRegbase<T>::CopyInAndCompute(
-    LocalTensor<T> yLocal, int64_t base, int64_t loop, int64_t offset)
+__aicore__ inline void AddNRegbase<T>::CopyInAndCompute(LocalTensor<T> yLocal, int64_t base, int64_t loop,
+                                                        int64_t offset)
 {
     CopyInX1(base, offset);
     LocalTensor<T> x1Local = inQueue1.template DeQue<T>();
@@ -198,16 +198,16 @@ __aicore__ inline void AddNRegbase<T>::AddVF(LocalTensor<T> x1Local, LocalTensor
     uint32_t sreg = static_cast<uint32_t>(calcNum);
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<T> vreg1;
-        AscendC::MicroAPI::RegTensor<T> vreg2;
-        AscendC::MicroAPI::RegTensor<T> vreg3;
-        AscendC::MicroAPI::MaskReg mask;
+        AscendC::Reg::RegTensor<T> vreg1;
+        AscendC::Reg::RegTensor<T> vreg2;
+        AscendC::Reg::RegTensor<T> vreg3;
+        AscendC::Reg::MaskReg mask;
         for (uint16_t i = 0; i < vfLoop; i++) {
-            mask = AscendC::MicroAPI::UpdateMask<T>(sreg);
-            AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::LoadDist::DIST_NORM>(vreg1, x1Addr + i * VL);
-            AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::LoadDist::DIST_NORM>(vreg2, x2Addr + i * VL);
-            AscendC::MicroAPI::Add(vreg3, vreg1, vreg2, mask);
-            AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::StoreDist::DIST_NORM>(x1Addr + i * VL, vreg3, mask);
+            mask = AscendC::Reg::UpdateMask<T>(sreg);
+            AscendC::Reg::DataCopy<T, AscendC::Reg::LoadDist::DIST_NORM>(vreg1, x1Addr + i * VL);
+            AscendC::Reg::DataCopy<T, AscendC::Reg::LoadDist::DIST_NORM>(vreg2, x2Addr + i * VL);
+            AscendC::Reg::Add(vreg3, vreg1, vreg2, mask);
+            AscendC::Reg::DataCopy<T, AscendC::Reg::StoreDist::DIST_NORM>(x1Addr + i * VL, vreg3, mask);
         }
     }
 }

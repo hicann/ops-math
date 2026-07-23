@@ -29,11 +29,11 @@
 namespace RadixSortCommon {
 
 using namespace AscendC;
-using AscendC::MicroAPI::CreateMask;
-using AscendC::MicroAPI::MaskReg;
-using AscendC::MicroAPI::RegTensor;
-using AscendC::MicroAPI::StoreDist;
-using AscendC::MicroAPI::UpdateMask;
+using AscendC::Reg::CreateMask;
+using AscendC::Reg::MaskReg;
+using AscendC::Reg::RegTensor;
+using AscendC::Reg::StoreDist;
+using AscendC::Reg::UpdateMask;
 
 template <typename T1>
 __aicore__ inline void CopyDataIn(GlobalTensor<T1> inputX, LocalTensor<T1> xLocal, uint64_t tileOffset,
@@ -58,91 +58,75 @@ __aicore__ inline void ComputeSumChist(RegTensor<uint16_t>& chist0, RegTensor<ui
 {
     // chist is inclusive per-tile cumulative histogram. Subtract the current bin count to get the per-bin exclusive
     // offset used by the later scatter phase.
-    MicroAPI::RegTensor<uint16_t> excusiveSumZero, excusiveSumOne, zeroReg;
-    MicroAPI::Sub(excusiveSumZero, chist0, hist0, maskB16);
-    MicroAPI::Sub(excusiveSumOne, chist1, hist1, maskB16);
+    Reg::RegTensor<uint16_t> excusiveSumZero, excusiveSumOne, zeroReg;
+    Reg::Sub(excusiveSumZero, chist0, hist0, maskB16);
+    Reg::Sub(excusiveSumOne, chist1, hist1, maskB16);
 
     // Persist each tile's histogram and exclusive cumsum. ComputeOnePass reloads these after global bin offsets have
     // been accumulated across tiles/cores.
-    MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(histUbPtr, hist0, VF_LEN_B16, maskB16);
-    MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(histUbPtr, hist1, VF_LEN_B16, maskB16);
-    MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(histCumsumUbPtr, excusiveSumZero, VF_LEN_B16,
-                                                                          maskB16);
-    MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(histCumsumUbPtr, excusiveSumOne, VF_LEN_B16,
-                                                                          maskB16);
+    Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(histUbPtr, hist0, VF_LEN_B16, maskB16);
+    Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(histUbPtr, hist1, VF_LEN_B16, maskB16);
+    Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(histCumsumUbPtr, excusiveSumZero, VF_LEN_B16, maskB16);
+    Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(histCumsumUbPtr, excusiveSumOne, VF_LEN_B16, maskB16);
 
-    MicroAPI::Duplicate(zeroReg, 0, maskB16);
-    MicroAPI::RegTensor<uint32_t> sum0, sum1, sum2, sum3;
-    MicroAPI::Interleave((MicroAPI::RegTensor<uint16_t>&)sum0, (MicroAPI::RegTensor<uint16_t>&)sum1, excusiveSumZero,
-                         zeroReg);
-    MicroAPI::Interleave((MicroAPI::RegTensor<uint16_t>&)sum2, (MicroAPI::RegTensor<uint16_t>&)sum3, excusiveSumOne,
-                         zeroReg);
+    Reg::Duplicate(zeroReg, 0, maskB16);
+    Reg::RegTensor<uint32_t> sum0, sum1, sum2, sum3;
+    Reg::Interleave((Reg::RegTensor<uint16_t>&)sum0, (Reg::RegTensor<uint16_t>&)sum1, excusiveSumZero, zeroReg);
+    Reg::Interleave((Reg::RegTensor<uint16_t>&)sum2, (Reg::RegTensor<uint16_t>&)sum3, excusiveSumOne, zeroReg);
     if constexpr (sizeof(T3) == sizeof(uint32_t)) {
-        MicroAPI::RegTensor<uint32_t> sumIn0, sumIn1, sumIn2, sumIn3;
-        MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(sumIn0, blockExcusiveUbRPtr, VF_LEN_B32);
-        MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(sumIn1, blockExcusiveUbRPtr, VF_LEN_B32);
-        MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(sumIn2, blockExcusiveUbRPtr, VF_LEN_B32);
-        MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(sumIn3, blockExcusiveUbRPtr, VF_LEN_B32);
+        Reg::RegTensor<uint32_t> sumIn0, sumIn1, sumIn2, sumIn3;
+        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(sumIn0, blockExcusiveUbRPtr, VF_LEN_B32);
+        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(sumIn1, blockExcusiveUbRPtr, VF_LEN_B32);
+        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(sumIn2, blockExcusiveUbRPtr, VF_LEN_B32);
+        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(sumIn3, blockExcusiveUbRPtr, VF_LEN_B32);
         // Accumulate the current tile's exclusive cumsum into this core's block-level bin totals.
-        MicroAPI::Add(sumIn0, sumIn0, sum0, maskB32);
-        MicroAPI::Add(sumIn1, sumIn1, sum1, maskB32);
-        MicroAPI::Add(sumIn2, sumIn2, sum2, maskB32);
-        MicroAPI::Add(sumIn3, sumIn3, sum3, maskB32);
-        MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, sumIn0, VF_LEN_B32,
-                                                                              maskB32);
-        MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, sumIn1, VF_LEN_B32,
-                                                                              maskB32);
-        MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, sumIn2, VF_LEN_B32,
-                                                                              maskB32);
-        MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, sumIn3, VF_LEN_B32,
-                                                                              maskB32);
+        Reg::Add(sumIn0, sumIn0, sum0, maskB32);
+        Reg::Add(sumIn1, sumIn1, sum1, maskB32);
+        Reg::Add(sumIn2, sumIn2, sum2, maskB32);
+        Reg::Add(sumIn3, sumIn3, sum3, maskB32);
+        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, sumIn0, VF_LEN_B32, maskB32);
+        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, sumIn1, VF_LEN_B32, maskB32);
+        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, sumIn2, VF_LEN_B32, maskB32);
+        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, sumIn3, VF_LEN_B32, maskB32);
     } else {
-        MicroAPI::MaskReg maskB64 = MicroAPI::CreateMask<int64_t>();
-        MicroAPI::RegTensor<int64_t> sum0Int64, sum1Int64, sum2Int64, sum3Int64;
-        MicroAPI::RegTensor<int64_t> sum4Int64, sum5Int64, sum6Int64, sum7Int64;
-        MicroAPI::Interleave((MicroAPI::RegTensor<uint32_t>&)sum0Int64, (MicroAPI::RegTensor<uint32_t>&)sum1Int64, sum0,
-                             (MicroAPI::RegTensor<uint32_t>&)zeroReg);
-        MicroAPI::Interleave((MicroAPI::RegTensor<uint32_t>&)sum2Int64, (MicroAPI::RegTensor<uint32_t>&)sum3Int64, sum1,
-                             (MicroAPI::RegTensor<uint32_t>&)zeroReg);
-        MicroAPI::Interleave((MicroAPI::RegTensor<uint32_t>&)sum4Int64, (MicroAPI::RegTensor<uint32_t>&)sum5Int64, sum2,
-                             (MicroAPI::RegTensor<uint32_t>&)zeroReg);
-        MicroAPI::Interleave((MicroAPI::RegTensor<uint32_t>&)sum6Int64, (MicroAPI::RegTensor<uint32_t>&)sum7Int64, sum3,
-                             (MicroAPI::RegTensor<uint32_t>&)zeroReg);
-        MicroAPI::RegTensor<int64_t> int64In0, int64In1, int64In2, int64In3;
-        MicroAPI::RegTensor<int64_t> int64In4, int64In5, int64In6, int64In7;
-        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(int64In0, blockExcusiveUbRPtr, VF_LEN_B64);
-        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(int64In1, blockExcusiveUbRPtr, VF_LEN_B64);
-        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(int64In2, blockExcusiveUbRPtr, VF_LEN_B64);
-        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(int64In3, blockExcusiveUbRPtr, VF_LEN_B64);
-        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(int64In4, blockExcusiveUbRPtr, VF_LEN_B64);
-        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(int64In5, blockExcusiveUbRPtr, VF_LEN_B64);
-        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(int64In6, blockExcusiveUbRPtr, VF_LEN_B64);
-        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(int64In7, blockExcusiveUbRPtr, VF_LEN_B64);
+        Reg::MaskReg maskB64 = Reg::CreateMask<int64_t>();
+        Reg::RegTensor<int64_t> sum0Int64, sum1Int64, sum2Int64, sum3Int64;
+        Reg::RegTensor<int64_t> sum4Int64, sum5Int64, sum6Int64, sum7Int64;
+        Reg::Interleave((Reg::RegTensor<uint32_t>&)sum0Int64, (Reg::RegTensor<uint32_t>&)sum1Int64, sum0,
+                        (Reg::RegTensor<uint32_t>&)zeroReg);
+        Reg::Interleave((Reg::RegTensor<uint32_t>&)sum2Int64, (Reg::RegTensor<uint32_t>&)sum3Int64, sum1,
+                        (Reg::RegTensor<uint32_t>&)zeroReg);
+        Reg::Interleave((Reg::RegTensor<uint32_t>&)sum4Int64, (Reg::RegTensor<uint32_t>&)sum5Int64, sum2,
+                        (Reg::RegTensor<uint32_t>&)zeroReg);
+        Reg::Interleave((Reg::RegTensor<uint32_t>&)sum6Int64, (Reg::RegTensor<uint32_t>&)sum7Int64, sum3,
+                        (Reg::RegTensor<uint32_t>&)zeroReg);
+        Reg::RegTensor<int64_t> int64In0, int64In1, int64In2, int64In3;
+        Reg::RegTensor<int64_t> int64In4, int64In5, int64In6, int64In7;
+        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In0, blockExcusiveUbRPtr, VF_LEN_B64);
+        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In1, blockExcusiveUbRPtr, VF_LEN_B64);
+        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In2, blockExcusiveUbRPtr, VF_LEN_B64);
+        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In3, blockExcusiveUbRPtr, VF_LEN_B64);
+        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In4, blockExcusiveUbRPtr, VF_LEN_B64);
+        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In5, blockExcusiveUbRPtr, VF_LEN_B64);
+        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In6, blockExcusiveUbRPtr, VF_LEN_B64);
+        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In7, blockExcusiveUbRPtr, VF_LEN_B64);
         // Accumulate the current tile's exclusive cumsum into this core's block-level bin totals.
-        MicroAPI::Add(int64In0, int64In0, sum0Int64, maskB64);
-        MicroAPI::Add(int64In1, int64In1, sum1Int64, maskB64);
-        MicroAPI::Add(int64In2, int64In2, sum2Int64, maskB64);
-        MicroAPI::Add(int64In3, int64In3, sum3Int64, maskB64);
-        MicroAPI::Add(int64In4, int64In4, sum4Int64, maskB64);
-        MicroAPI::Add(int64In5, int64In5, sum5Int64, maskB64);
-        MicroAPI::Add(int64In6, int64In6, sum6Int64, maskB64);
-        MicroAPI::Add(int64In7, int64In7, sum7Int64, maskB64);
-        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In0, VF_LEN_B64,
-                                                                             maskB64);
-        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In1, VF_LEN_B64,
-                                                                             maskB64);
-        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In2, VF_LEN_B64,
-                                                                             maskB64);
-        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In3, VF_LEN_B64,
-                                                                             maskB64);
-        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In4, VF_LEN_B64,
-                                                                             maskB64);
-        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In5, VF_LEN_B64,
-                                                                             maskB64);
-        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In6, VF_LEN_B64,
-                                                                             maskB64);
-        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In7, VF_LEN_B64,
-                                                                             maskB64);
+        Reg::Add(int64In0, int64In0, sum0Int64, maskB64);
+        Reg::Add(int64In1, int64In1, sum1Int64, maskB64);
+        Reg::Add(int64In2, int64In2, sum2Int64, maskB64);
+        Reg::Add(int64In3, int64In3, sum3Int64, maskB64);
+        Reg::Add(int64In4, int64In4, sum4Int64, maskB64);
+        Reg::Add(int64In5, int64In5, sum5Int64, maskB64);
+        Reg::Add(int64In6, int64In6, sum6Int64, maskB64);
+        Reg::Add(int64In7, int64In7, sum7Int64, maskB64);
+        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In0, VF_LEN_B64, maskB64);
+        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In1, VF_LEN_B64, maskB64);
+        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In2, VF_LEN_B64, maskB64);
+        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In3, VF_LEN_B64, maskB64);
+        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In4, VF_LEN_B64, maskB64);
+        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In5, VF_LEN_B64, maskB64);
+        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In6, VF_LEN_B64, maskB64);
+        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In7, VF_LEN_B64, maskB64);
     }
 }
 
@@ -162,47 +146,44 @@ __aicore__ inline void GetGlobalExcusiveSumB32(LocalTensor<UT>& inputX, LocalTen
     uint32_t inputElementNum = currTileSize;
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<uint32_t> in0, in1, in2, in3;
-        MicroAPI::RegTensor<uint16_t> hist0, hist1, chist0, chist1;
-        MicroAPI::MaskReg histMask;
-        MicroAPI::MaskReg maskB32 = MicroAPI::CreateMask<uint32_t>();
-        MicroAPI::MaskReg maskB16 = MicroAPI::CreateMask<uint16_t>();
-        MicroAPI::Duplicate(hist0, 0, maskB16);
-        MicroAPI::Duplicate(hist1, 0, maskB16);
-        MicroAPI::Duplicate(chist0, 0, maskB16);
-        MicroAPI::Duplicate(chist1, 0, maskB16);
+        Reg::RegTensor<uint32_t> in0, in1, in2, in3;
+        Reg::RegTensor<uint16_t> hist0, hist1, chist0, chist1;
+        Reg::MaskReg histMask;
+        Reg::MaskReg maskB32 = Reg::CreateMask<uint32_t>();
+        Reg::MaskReg maskB16 = Reg::CreateMask<uint16_t>();
+        Reg::Duplicate(hist0, 0, maskB16);
+        Reg::Duplicate(hist1, 0, maskB16);
+        Reg::Duplicate(chist0, 0, maskB16);
+        Reg::Duplicate(chist1, 0, maskB16);
         for (uint16_t i = 0; i < repeatTime; i++) {
-            histMask = MicroAPI::UpdateMask<uint8_t>(inputElementNum);
+            histMask = Reg::UpdateMask<uint8_t>(inputElementNum);
             // Load four B32 vectors, shift out the current radix byte, then compact it to B8 for histogram/scatter.
-            MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(in0, inXPtr, VF_LEN_B32);
-            MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(in1, inXPtr, VF_LEN_B32);
-            MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(in2, inXPtr, VF_LEN_B32);
-            MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(in3, inXPtr, VF_LEN_B32);
-            MicroAPI::RegTensor<uint32_t> shift0, shift1, shift2, shift3;
-            MicroAPI::ShiftRights<uint32_t, int16_t>(shift0, in0, bitOffset, maskB32);
-            MicroAPI::ShiftRights<uint32_t, int16_t>(shift1, in1, bitOffset, maskB32);
-            MicroAPI::ShiftRights<uint32_t, int16_t>(shift2, in2, bitOffset, maskB32);
-            MicroAPI::ShiftRights<uint32_t, int16_t>(shift3, in3, bitOffset, maskB32);
-            MicroAPI::RegTensor<uint16_t> deInter0, deInter1, deInter2, deInter3;
-            MicroAPI::DeInterleave(deInter0, deInter1, (MicroAPI::RegTensor<uint16_t>&)shift0,
-                                   (MicroAPI::RegTensor<uint16_t>&)shift1);
-            MicroAPI::DeInterleave(deInter2, deInter3, (MicroAPI::RegTensor<uint16_t>&)shift2,
-                                   (MicroAPI::RegTensor<uint16_t>&)shift3);
+            Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(in0, inXPtr, VF_LEN_B32);
+            Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(in1, inXPtr, VF_LEN_B32);
+            Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(in2, inXPtr, VF_LEN_B32);
+            Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(in3, inXPtr, VF_LEN_B32);
+            Reg::RegTensor<uint32_t> shift0, shift1, shift2, shift3;
+            Reg::ShiftRights<uint32_t, int16_t>(shift0, in0, bitOffset, maskB32);
+            Reg::ShiftRights<uint32_t, int16_t>(shift1, in1, bitOffset, maskB32);
+            Reg::ShiftRights<uint32_t, int16_t>(shift2, in2, bitOffset, maskB32);
+            Reg::ShiftRights<uint32_t, int16_t>(shift3, in3, bitOffset, maskB32);
+            Reg::RegTensor<uint16_t> deInter0, deInter1, deInter2, deInter3;
+            Reg::DeInterleave(deInter0, deInter1, (Reg::RegTensor<uint16_t>&)shift0, (Reg::RegTensor<uint16_t>&)shift1);
+            Reg::DeInterleave(deInter2, deInter3, (Reg::RegTensor<uint16_t>&)shift2, (Reg::RegTensor<uint16_t>&)shift3);
 
-            MicroAPI::RegTensor<uint8_t> deInter0B8, deInter1B8;
-            MicroAPI::DeInterleave(deInter0B8, deInter1B8, (MicroAPI::RegTensor<uint8_t>&)deInter0,
-                                   (MicroAPI::RegTensor<uint8_t>&)deInter2);
-            MicroAPI::DataCopy<uint8_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(inputB8UbPtr, deInter0B8, VF_LEN_B8,
-                                                                                 histMask);
+            Reg::RegTensor<uint8_t> deInter0B8, deInter1B8;
+            Reg::DeInterleave(deInter0B8, deInter1B8, (Reg::RegTensor<uint8_t>&)deInter0,
+                              (Reg::RegTensor<uint8_t>&)deInter2);
+            Reg::DataCopy<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputB8UbPtr, deInter0B8, VF_LEN_B8, histMask);
             // Build both the frequency histogram and the inclusive cumulative histogram for this tile.
-            MicroAPI::Histograms<uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN0,
-                                 MicroAPI::HistogramsType::FREQUENCY>(hist0, deInter0B8, histMask);
-            MicroAPI::Histograms<uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN1,
-                                 MicroAPI::HistogramsType::FREQUENCY>(hist1, deInter0B8, histMask);
-            MicroAPI::Histograms<uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN0,
-                                 MicroAPI::HistogramsType::ACCUMULATE>(chist0, deInter0B8, histMask);
-            MicroAPI::Histograms<uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN1,
-                                 MicroAPI::HistogramsType::ACCUMULATE>(chist1, deInter0B8, histMask);
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::FREQUENCY>(
+                hist0, deInter0B8, histMask);
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN1, Reg::HistogramsType::FREQUENCY>(
+                hist1, deInter0B8, histMask);
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::ACCUMULATE>(
+                chist0, deInter0B8, histMask);
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN1, Reg::HistogramsType::ACCUMULATE>(
+                chist1, deInter0B8, histMask);
         }
         ComputeSumChist<T3>(chist0, chist1, hist0, hist1, maskB16, maskB32, blockExcusiveUbRPtr, blockExcusiveUbWPtr,
                             histUbPtr, histCumsumUbPtr);
@@ -225,65 +206,59 @@ __aicore__ inline void GetGlobalExcusiveSumB64(LocalTensor<UT>& inputX, LocalTen
     uint32_t inputElementNum = currTileSize;
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<uint64_t> in0, in1, in2, in3, in4, in5, in6, in7;
-        MicroAPI::RegTensor<uint16_t> hist0, hist1, chist0, chist1;
-        MicroAPI::MaskReg histMask;
-        MicroAPI::MaskReg maskB64 = MicroAPI::CreateMask<uint64_t>();
-        MicroAPI::MaskReg maskB32 = MicroAPI::CreateMask<uint32_t>();
-        MicroAPI::MaskReg maskB16 = MicroAPI::CreateMask<uint16_t>();
-        MicroAPI::Duplicate(hist0, 0, maskB16);
-        MicroAPI::Duplicate(hist1, 0, maskB16);
-        MicroAPI::Duplicate(chist0, 0, maskB16);
-        MicroAPI::Duplicate(chist1, 0, maskB16);
+        Reg::RegTensor<uint64_t> in0, in1, in2, in3, in4, in5, in6, in7;
+        Reg::RegTensor<uint16_t> hist0, hist1, chist0, chist1;
+        Reg::MaskReg histMask;
+        Reg::MaskReg maskB64 = Reg::CreateMask<uint64_t>();
+        Reg::MaskReg maskB32 = Reg::CreateMask<uint32_t>();
+        Reg::MaskReg maskB16 = Reg::CreateMask<uint16_t>();
+        Reg::Duplicate(hist0, 0, maskB16);
+        Reg::Duplicate(hist1, 0, maskB16);
+        Reg::Duplicate(chist0, 0, maskB16);
+        Reg::Duplicate(chist1, 0, maskB16);
         for (uint16_t i = 0; i < repeatTime; i++) {
-            histMask = MicroAPI::UpdateMask<uint8_t>(inputElementNum);
+            histMask = Reg::UpdateMask<uint8_t>(inputElementNum);
             // Load eight B64 vectors, shift out the current radix byte, then compact it to B8 for histogram/scatter.
-            MicroAPI::DataCopy<uint64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(in0, inXPtr, VF_LEN_B64);
-            MicroAPI::DataCopy<uint64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(in1, inXPtr, VF_LEN_B64);
-            MicroAPI::DataCopy<uint64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(in2, inXPtr, VF_LEN_B64);
-            MicroAPI::DataCopy<uint64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(in3, inXPtr, VF_LEN_B64);
-            MicroAPI::DataCopy<uint64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(in4, inXPtr, VF_LEN_B64);
-            MicroAPI::DataCopy<uint64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(in5, inXPtr, VF_LEN_B64);
-            MicroAPI::DataCopy<uint64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(in6, inXPtr, VF_LEN_B64);
-            MicroAPI::DataCopy<uint64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(in7, inXPtr, VF_LEN_B64);
-            MicroAPI::RegTensor<uint64_t> shift0, shift1, shift2, shift3, shift4, shift5, shift6, shift7;
-            MicroAPI::ShiftRights<uint64_t, int16_t>(shift0, in0, bitOffset, maskB64);
-            MicroAPI::ShiftRights<uint64_t, int16_t>(shift1, in1, bitOffset, maskB64);
-            MicroAPI::ShiftRights<uint64_t, int16_t>(shift2, in2, bitOffset, maskB64);
-            MicroAPI::ShiftRights<uint64_t, int16_t>(shift3, in3, bitOffset, maskB64);
-            MicroAPI::ShiftRights<uint64_t, int16_t>(shift4, in4, bitOffset, maskB64);
-            MicroAPI::ShiftRights<uint64_t, int16_t>(shift5, in5, bitOffset, maskB64);
-            MicroAPI::ShiftRights<uint64_t, int16_t>(shift6, in6, bitOffset, maskB64);
-            MicroAPI::ShiftRights<uint64_t, int16_t>(shift7, in7, bitOffset, maskB64);
-            MicroAPI::RegTensor<uint32_t> deInter0, deInter1, deInter2, deInter3, deInter4, deInter5, deInter6,
-                deInter7;
-            MicroAPI::DeInterleave(deInter0, deInter1, (MicroAPI::RegTensor<uint32_t>&)shift0,
-                                   (MicroAPI::RegTensor<uint32_t>&)shift1);
-            MicroAPI::DeInterleave(deInter2, deInter3, (MicroAPI::RegTensor<uint32_t>&)shift2,
-                                   (MicroAPI::RegTensor<uint32_t>&)shift3);
-            MicroAPI::DeInterleave(deInter4, deInter5, (MicroAPI::RegTensor<uint32_t>&)shift4,
-                                   (MicroAPI::RegTensor<uint32_t>&)shift5);
-            MicroAPI::DeInterleave(deInter6, deInter7, (MicroAPI::RegTensor<uint32_t>&)shift6,
-                                   (MicroAPI::RegTensor<uint32_t>&)shift7);
-            MicroAPI::RegTensor<uint16_t> deInter0B16, deInter1B16, deInter2B16, deInter3B16;
-            MicroAPI::DeInterleave(deInter0B16, deInter1B16, (MicroAPI::RegTensor<uint16_t>&)deInter0,
-                                   (MicroAPI::RegTensor<uint16_t>&)deInter2);
-            MicroAPI::DeInterleave(deInter2B16, deInter3B16, (MicroAPI::RegTensor<uint16_t>&)deInter4,
-                                   (MicroAPI::RegTensor<uint16_t>&)deInter6);
-            MicroAPI::RegTensor<uint8_t> deInter0B8, deInter1B8;
-            MicroAPI::DeInterleave(deInter0B8, deInter1B8, (MicroAPI::RegTensor<uint8_t>&)deInter0B16,
-                                   (MicroAPI::RegTensor<uint8_t>&)deInter2B16);
-            MicroAPI::DataCopy<uint8_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(inputB8UbPtr, deInter0B8, VF_LEN_B8,
-                                                                                 histMask);
+            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in0, inXPtr, VF_LEN_B64);
+            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in1, inXPtr, VF_LEN_B64);
+            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in2, inXPtr, VF_LEN_B64);
+            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in3, inXPtr, VF_LEN_B64);
+            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in4, inXPtr, VF_LEN_B64);
+            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in5, inXPtr, VF_LEN_B64);
+            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in6, inXPtr, VF_LEN_B64);
+            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in7, inXPtr, VF_LEN_B64);
+            Reg::RegTensor<uint64_t> shift0, shift1, shift2, shift3, shift4, shift5, shift6, shift7;
+            Reg::ShiftRights<uint64_t, int16_t>(shift0, in0, bitOffset, maskB64);
+            Reg::ShiftRights<uint64_t, int16_t>(shift1, in1, bitOffset, maskB64);
+            Reg::ShiftRights<uint64_t, int16_t>(shift2, in2, bitOffset, maskB64);
+            Reg::ShiftRights<uint64_t, int16_t>(shift3, in3, bitOffset, maskB64);
+            Reg::ShiftRights<uint64_t, int16_t>(shift4, in4, bitOffset, maskB64);
+            Reg::ShiftRights<uint64_t, int16_t>(shift5, in5, bitOffset, maskB64);
+            Reg::ShiftRights<uint64_t, int16_t>(shift6, in6, bitOffset, maskB64);
+            Reg::ShiftRights<uint64_t, int16_t>(shift7, in7, bitOffset, maskB64);
+            Reg::RegTensor<uint32_t> deInter0, deInter1, deInter2, deInter3, deInter4, deInter5, deInter6, deInter7;
+            Reg::DeInterleave(deInter0, deInter1, (Reg::RegTensor<uint32_t>&)shift0, (Reg::RegTensor<uint32_t>&)shift1);
+            Reg::DeInterleave(deInter2, deInter3, (Reg::RegTensor<uint32_t>&)shift2, (Reg::RegTensor<uint32_t>&)shift3);
+            Reg::DeInterleave(deInter4, deInter5, (Reg::RegTensor<uint32_t>&)shift4, (Reg::RegTensor<uint32_t>&)shift5);
+            Reg::DeInterleave(deInter6, deInter7, (Reg::RegTensor<uint32_t>&)shift6, (Reg::RegTensor<uint32_t>&)shift7);
+            Reg::RegTensor<uint16_t> deInter0B16, deInter1B16, deInter2B16, deInter3B16;
+            Reg::DeInterleave(deInter0B16, deInter1B16, (Reg::RegTensor<uint16_t>&)deInter0,
+                              (Reg::RegTensor<uint16_t>&)deInter2);
+            Reg::DeInterleave(deInter2B16, deInter3B16, (Reg::RegTensor<uint16_t>&)deInter4,
+                              (Reg::RegTensor<uint16_t>&)deInter6);
+            Reg::RegTensor<uint8_t> deInter0B8, deInter1B8;
+            Reg::DeInterleave(deInter0B8, deInter1B8, (Reg::RegTensor<uint8_t>&)deInter0B16,
+                              (Reg::RegTensor<uint8_t>&)deInter2B16);
+            Reg::DataCopy<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputB8UbPtr, deInter0B8, VF_LEN_B8, histMask);
             // Build both the frequency histogram and the inclusive cumulative histogram for this tile.
-            MicroAPI::Histograms<uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN0,
-                                 MicroAPI::HistogramsType::FREQUENCY>(hist0, deInter0B8, histMask);
-            MicroAPI::Histograms<uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN1,
-                                 MicroAPI::HistogramsType::FREQUENCY>(hist1, deInter0B8, histMask);
-            MicroAPI::Histograms<uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN0,
-                                 MicroAPI::HistogramsType::ACCUMULATE>(chist0, deInter0B8, histMask);
-            MicroAPI::Histograms<uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN1,
-                                 MicroAPI::HistogramsType::ACCUMULATE>(chist1, deInter0B8, histMask);
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::FREQUENCY>(
+                hist0, deInter0B8, histMask);
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN1, Reg::HistogramsType::FREQUENCY>(
+                hist1, deInter0B8, histMask);
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::ACCUMULATE>(
+                chist0, deInter0B8, histMask);
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN1, Reg::HistogramsType::ACCUMULATE>(
+                chist1, deInter0B8, histMask);
         }
         ComputeSumChist<T3>(chist0, chist1, hist0, hist1, maskB16, maskB32, blockExcusiveUbRPtr, blockExcusiveUbWPtr,
                             histUbPtr, histCumsumUbPtr);
@@ -306,37 +281,36 @@ __aicore__ inline void GetGlobalExcusiveSumB16(LocalTensor<UT>& inputX, LocalTen
     uint32_t inputElementNum = currTileSize;
     __VEC_SCOPE__
     {
-        MicroAPI::MaskReg histMask;
-        MicroAPI::RegTensor<uint16_t> in0, in1;
-        MicroAPI::RegTensor<uint16_t> shift0, shift1;
-        MicroAPI::RegTensor<uint16_t> hist0, hist1, chist0, chist1;
-        MicroAPI::MaskReg maskB32 = MicroAPI::CreateMask<uint32_t>();
-        MicroAPI::MaskReg maskB16 = MicroAPI::CreateMask<uint16_t>();
-        MicroAPI::Duplicate(hist0, 0, maskB16);
-        MicroAPI::Duplicate(hist1, 0, maskB16);
-        MicroAPI::Duplicate(chist0, 0, maskB16);
-        MicroAPI::Duplicate(chist1, 0, maskB16);
+        Reg::MaskReg histMask;
+        Reg::RegTensor<uint16_t> in0, in1;
+        Reg::RegTensor<uint16_t> shift0, shift1;
+        Reg::RegTensor<uint16_t> hist0, hist1, chist0, chist1;
+        Reg::MaskReg maskB32 = Reg::CreateMask<uint32_t>();
+        Reg::MaskReg maskB16 = Reg::CreateMask<uint16_t>();
+        Reg::Duplicate(hist0, 0, maskB16);
+        Reg::Duplicate(hist1, 0, maskB16);
+        Reg::Duplicate(chist0, 0, maskB16);
+        Reg::Duplicate(chist1, 0, maskB16);
         for (uint16_t i = 0; i < repeatTime; i++) {
-            histMask = MicroAPI::UpdateMask<uint8_t>(inputElementNum);
+            histMask = Reg::UpdateMask<uint8_t>(inputElementNum);
             // Load two B16 vectors, shift out the current radix byte, then compact it to B8 for histogram/scatter.
-            MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(in0, inputXValuePtr, VF_LEN_B16);
-            MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(in1, inputXValuePtr, VF_LEN_B16);
-            MicroAPI::ShiftRights<uint16_t, int16_t>(shift0, in0, bitOffset, maskB16);
-            MicroAPI::ShiftRights<uint16_t, int16_t>(shift1, in1, bitOffset, maskB16);
-            MicroAPI::RegTensor<uint8_t> deInter0B8, deInter1B8;
-            MicroAPI::DeInterleave(deInter0B8, deInter1B8, (MicroAPI::RegTensor<uint8_t>&)shift0,
-                                   (MicroAPI::RegTensor<uint8_t>&)shift1);
-            MicroAPI::DataCopy<uint8_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(inputB8UbPtr, deInter0B8, VF_LEN_B8,
-                                                                                 histMask);
+            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(in0, inputXValuePtr, VF_LEN_B16);
+            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(in1, inputXValuePtr, VF_LEN_B16);
+            Reg::ShiftRights<uint16_t, int16_t>(shift0, in0, bitOffset, maskB16);
+            Reg::ShiftRights<uint16_t, int16_t>(shift1, in1, bitOffset, maskB16);
+            Reg::RegTensor<uint8_t> deInter0B8, deInter1B8;
+            Reg::DeInterleave(deInter0B8, deInter1B8, (Reg::RegTensor<uint8_t>&)shift0,
+                              (Reg::RegTensor<uint8_t>&)shift1);
+            Reg::DataCopy<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputB8UbPtr, deInter0B8, VF_LEN_B8, histMask);
             // Build both the frequency histogram and the inclusive cumulative histogram for this tile.
-            MicroAPI::Histograms<uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN0,
-                                 MicroAPI::HistogramsType::FREQUENCY>(hist0, deInter0B8, histMask);
-            MicroAPI::Histograms<uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN1,
-                                 MicroAPI::HistogramsType::FREQUENCY>(hist1, deInter0B8, histMask);
-            MicroAPI::Histograms<uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN0,
-                                 MicroAPI::HistogramsType::ACCUMULATE>(chist0, deInter0B8, histMask);
-            MicroAPI::Histograms<uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN1,
-                                 MicroAPI::HistogramsType::ACCUMULATE>(chist1, deInter0B8, histMask);
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::FREQUENCY>(
+                hist0, deInter0B8, histMask);
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN1, Reg::HistogramsType::FREQUENCY>(
+                hist1, deInter0B8, histMask);
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::ACCUMULATE>(
+                chist0, deInter0B8, histMask);
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN1, Reg::HistogramsType::ACCUMULATE>(
+                chist1, deInter0B8, histMask);
         }
         ComputeSumChist<T3>(chist0, chist1, hist0, hist1, maskB16, maskB32, blockExcusiveUbRPtr, blockExcusiveUbWPtr,
                             histUbPtr, histCumsumUbPtr);
@@ -359,30 +333,29 @@ __aicore__ inline void GetGlobalExcusiveSumB8(LocalTensor<UT>& inputX, LocalTens
     uint32_t inputElementNum = currTileSize;
     __VEC_SCOPE__
     {
-        MicroAPI::MaskReg histMask;
-        MicroAPI::RegTensor<uint8_t> in0;
-        MicroAPI::RegTensor<uint16_t> hist0, hist1, chist0, chist1;
-        MicroAPI::RegTensor<uint16_t> chistVectorZero, chistVectorOne, zeroReg;
-        MicroAPI::MaskReg maskB32 = MicroAPI::CreateMask<uint32_t>();
-        MicroAPI::MaskReg maskB16 = MicroAPI::CreateMask<uint16_t>();
-        MicroAPI::Duplicate(hist0, 0, maskB16);
-        MicroAPI::Duplicate(hist1, 0, maskB16);
-        MicroAPI::Duplicate(chist0, 0, maskB16);
-        MicroAPI::Duplicate(chist1, 0, maskB16);
+        Reg::MaskReg histMask;
+        Reg::RegTensor<uint8_t> in0;
+        Reg::RegTensor<uint16_t> hist0, hist1, chist0, chist1;
+        Reg::RegTensor<uint16_t> chistVectorZero, chistVectorOne, zeroReg;
+        Reg::MaskReg maskB32 = Reg::CreateMask<uint32_t>();
+        Reg::MaskReg maskB16 = Reg::CreateMask<uint16_t>();
+        Reg::Duplicate(hist0, 0, maskB16);
+        Reg::Duplicate(hist1, 0, maskB16);
+        Reg::Duplicate(chist0, 0, maskB16);
+        Reg::Duplicate(chist1, 0, maskB16);
         for (uint16_t i = 0; i < repeatTime; i++) {
-            histMask = MicroAPI::UpdateMask<uint8_t>(inputElementNum);
+            histMask = Reg::UpdateMask<uint8_t>(inputElementNum);
             // B8 input already is the radix byte for this round; save it and build histogram/cumsum directly.
-            MicroAPI::DataCopy<uint8_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(in0, inXPtr, VF_LEN_B8);
-            MicroAPI::DataCopy<uint8_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(inputB8UbPtr, in0, VF_LEN_B8,
-                                                                                 histMask);
-            MicroAPI::Histograms<uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN0,
-                                 MicroAPI::HistogramsType::FREQUENCY>(hist0, in0, histMask);
-            MicroAPI::Histograms<uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN1,
-                                 MicroAPI::HistogramsType::FREQUENCY>(hist1, in0, histMask);
-            MicroAPI::Histograms<uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN0,
-                                 MicroAPI::HistogramsType::ACCUMULATE>(chist0, in0, histMask);
-            MicroAPI::Histograms<uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN1,
-                                 MicroAPI::HistogramsType::ACCUMULATE>(chist1, in0, histMask);
+            Reg::DataCopy<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(in0, inXPtr, VF_LEN_B8);
+            Reg::DataCopy<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputB8UbPtr, in0, VF_LEN_B8, histMask);
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::FREQUENCY>(hist0, in0,
+                                                                                                             histMask);
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN1, Reg::HistogramsType::FREQUENCY>(hist1, in0,
+                                                                                                             histMask);
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::ACCUMULATE>(
+                chist0, in0, histMask);
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN1, Reg::HistogramsType::ACCUMULATE>(
+                chist1, in0, histMask);
         }
         ComputeSumChist<T3>(chist0, chist1, hist0, hist1, maskB16, maskB32, blockExcusiveUbRPtr, blockExcusiveUbWPtr,
                             histUbPtr, histCumsumUbPtr);
@@ -730,87 +703,85 @@ public:
         //   3: reserved
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg predicateDefaultB16 = MicroAPI::CreateMask<uint16_t>();
-            MicroAPI::RegTensor<uint16_t> blockHistZero, blockHistOne;
-            MicroAPI::RegTensor<uint16_t> lookaheadOutZero, lookaheadOutOne, lookaheadOutTwo, lookaheadOutThree;
-            MicroAPI::RegTensor<uint16_t> zeroVector;
-            MicroAPI::Duplicate(zeroVector, 0, predicateDefaultB16);
-            MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(blockHistZero, blockHistPtr,
-                                                                                  VF_LEN_B16);
-            MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(blockHistOne, blockHistPtr,
-                                                                                  VF_LEN_B16);
+            Reg::MaskReg predicateDefaultB16 = Reg::CreateMask<uint16_t>();
+            Reg::RegTensor<uint16_t> blockHistZero, blockHistOne;
+            Reg::RegTensor<uint16_t> lookaheadOutZero, lookaheadOutOne, lookaheadOutTwo, lookaheadOutThree;
+            Reg::RegTensor<uint16_t> zeroVector;
+            Reg::Duplicate(zeroVector, 0, predicateDefaultB16);
+            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistZero, blockHistPtr, VF_LEN_B16);
+            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistOne, blockHistPtr, VF_LEN_B16);
             // Widen the uint16 histogram to T3 and set the aggregate-ready state bit before publishing to GM.
-            MicroAPI::Interleave(lookaheadOutZero, lookaheadOutOne, blockHistZero, zeroVector);
-            MicroAPI::Interleave(lookaheadOutTwo, lookaheadOutThree, blockHistOne, zeroVector);
+            Reg::Interleave(lookaheadOutZero, lookaheadOutOne, blockHistZero, zeroVector);
+            Reg::Interleave(lookaheadOutTwo, lookaheadOutThree, blockHistOne, zeroVector);
             if constexpr (IsSameType<T3, uint32_t>::value) {
-                MicroAPI::RegTensor<uint32_t> aggregateReadyMask;
-                MicroAPI::MaskReg predicateDefault = MicroAPI::CreateMask<uint32_t>();
-                MicroAPI::Duplicate(aggregateReadyMask, AGGREGATE_READY_MASK, predicateDefault);
-                MicroAPI::RegTensor<uint32_t> lookaheadOutZeroMask, lookaheadOutOneMask, lookaheadOutTwoMask,
+                Reg::RegTensor<uint32_t> aggregateReadyMask;
+                Reg::MaskReg predicateDefault = Reg::CreateMask<uint32_t>();
+                Reg::Duplicate(aggregateReadyMask, AGGREGATE_READY_MASK, predicateDefault);
+                Reg::RegTensor<uint32_t> lookaheadOutZeroMask, lookaheadOutOneMask, lookaheadOutTwoMask,
                     lookaheadOutThreeMask;
-                MicroAPI::Or(lookaheadOutZeroMask, (MicroAPI::RegTensor<uint32_t>&)lookaheadOutZero, aggregateReadyMask,
-                             predicateDefault);
-                MicroAPI::Or(lookaheadOutOneMask, (MicroAPI::RegTensor<uint32_t>&)lookaheadOutOne, aggregateReadyMask,
-                             predicateDefault);
-                MicroAPI::Or(lookaheadOutTwoMask, (MicroAPI::RegTensor<uint32_t>&)lookaheadOutTwo, aggregateReadyMask,
-                             predicateDefault);
-                MicroAPI::Or(lookaheadOutThreeMask, (MicroAPI::RegTensor<uint32_t>&)lookaheadOutThree,
-                             aggregateReadyMask, predicateDefault);
-                MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    blockHistWithFlagPtr, lookaheadOutZeroMask, VF_LEN_B32, predicateDefault);
-                MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    blockHistWithFlagPtr, lookaheadOutOneMask, VF_LEN_B32, predicateDefault);
-                MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    blockHistWithFlagPtr, lookaheadOutTwoMask, VF_LEN_B32, predicateDefault);
-                MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    blockHistWithFlagPtr, lookaheadOutThreeMask, VF_LEN_B32, predicateDefault);
+                Reg::Or(lookaheadOutZeroMask, (Reg::RegTensor<uint32_t>&)lookaheadOutZero, aggregateReadyMask,
+                        predicateDefault);
+                Reg::Or(lookaheadOutOneMask, (Reg::RegTensor<uint32_t>&)lookaheadOutOne, aggregateReadyMask,
+                        predicateDefault);
+                Reg::Or(lookaheadOutTwoMask, (Reg::RegTensor<uint32_t>&)lookaheadOutTwo, aggregateReadyMask,
+                        predicateDefault);
+                Reg::Or(lookaheadOutThreeMask, (Reg::RegTensor<uint32_t>&)lookaheadOutThree, aggregateReadyMask,
+                        predicateDefault);
+                Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistWithFlagPtr, lookaheadOutZeroMask,
+                                                                            VF_LEN_B32, predicateDefault);
+                Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistWithFlagPtr, lookaheadOutOneMask,
+                                                                            VF_LEN_B32, predicateDefault);
+                Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistWithFlagPtr, lookaheadOutTwoMask,
+                                                                            VF_LEN_B32, predicateDefault);
+                Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistWithFlagPtr, lookaheadOutThreeMask,
+                                                                            VF_LEN_B32, predicateDefault);
             } else {
-                MicroAPI::RegTensor<int64_t> aggregateReadyMask;
-                MicroAPI::MaskReg predicateDefault = MicroAPI::CreateMask<int64_t>();
-                MicroAPI::Duplicate(aggregateReadyMask, AGGREGATE_READY_MASK_B64, predicateDefault);
-                MicroAPI::RegTensor<uint16_t> lookaheadOutZeroB64A, lookaheadOutZeroB64B;
-                MicroAPI::RegTensor<uint16_t> lookaheadOutOneB64A, lookaheadOutOneB64B;
-                MicroAPI::RegTensor<uint16_t> lookaheadOutTwoB64A, lookaheadOutTwoB64B;
-                MicroAPI::RegTensor<uint16_t> lookaheadOutThreeB64A, lookaheadOutThreeB64B;
-                MicroAPI::Interleave(lookaheadOutZeroB64A, lookaheadOutZeroB64B, lookaheadOutZero, zeroVector);
-                MicroAPI::Interleave(lookaheadOutOneB64A, lookaheadOutOneB64B, lookaheadOutOne, zeroVector);
-                MicroAPI::Interleave(lookaheadOutTwoB64A, lookaheadOutTwoB64B, lookaheadOutTwo, zeroVector);
-                MicroAPI::Interleave(lookaheadOutThreeB64A, lookaheadOutThreeB64B, lookaheadOutThree, zeroVector);
-                MicroAPI::RegTensor<int64_t> lookaheadOutZeroMaskB64A, lookaheadOutZeroMaskB64B;
-                MicroAPI::RegTensor<int64_t> lookaheadOutOneMaskB64A, lookaheadOutOneMaskB64B;
-                MicroAPI::RegTensor<int64_t> lookaheadOutTwoMaskB64A, lookaheadOutTwoMaskB64B;
-                MicroAPI::RegTensor<int64_t> lookaheadOutThreeMaskB64A, lookaheadOutThreeMaskB64B;
-                MicroAPI::Or(lookaheadOutZeroMaskB64A, (MicroAPI::RegTensor<int64_t>&)lookaheadOutZeroB64A,
-                             aggregateReadyMask, predicateDefault);
-                MicroAPI::Or(lookaheadOutZeroMaskB64B, (MicroAPI::RegTensor<int64_t>&)lookaheadOutZeroB64B,
-                             aggregateReadyMask, predicateDefault);
-                MicroAPI::Or(lookaheadOutOneMaskB64A, (MicroAPI::RegTensor<int64_t>&)lookaheadOutOneB64A,
-                             aggregateReadyMask, predicateDefault);
-                MicroAPI::Or(lookaheadOutOneMaskB64B, (MicroAPI::RegTensor<int64_t>&)lookaheadOutOneB64B,
-                             aggregateReadyMask, predicateDefault);
-                MicroAPI::Or(lookaheadOutTwoMaskB64A, (MicroAPI::RegTensor<int64_t>&)lookaheadOutTwoB64A,
-                             aggregateReadyMask, predicateDefault);
-                MicroAPI::Or(lookaheadOutTwoMaskB64B, (MicroAPI::RegTensor<int64_t>&)lookaheadOutTwoB64B,
-                             aggregateReadyMask, predicateDefault);
-                MicroAPI::Or(lookaheadOutThreeMaskB64A, (MicroAPI::RegTensor<int64_t>&)lookaheadOutThreeB64A,
-                             aggregateReadyMask, predicateDefault);
-                MicroAPI::Or(lookaheadOutThreeMaskB64B, (MicroAPI::RegTensor<int64_t>&)lookaheadOutThreeB64B,
-                             aggregateReadyMask, predicateDefault);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                Reg::RegTensor<int64_t> aggregateReadyMask;
+                Reg::MaskReg predicateDefault = Reg::CreateMask<int64_t>();
+                Reg::Duplicate(aggregateReadyMask, AGGREGATE_READY_MASK_B64, predicateDefault);
+                Reg::RegTensor<uint16_t> lookaheadOutZeroB64A, lookaheadOutZeroB64B;
+                Reg::RegTensor<uint16_t> lookaheadOutOneB64A, lookaheadOutOneB64B;
+                Reg::RegTensor<uint16_t> lookaheadOutTwoB64A, lookaheadOutTwoB64B;
+                Reg::RegTensor<uint16_t> lookaheadOutThreeB64A, lookaheadOutThreeB64B;
+                Reg::Interleave(lookaheadOutZeroB64A, lookaheadOutZeroB64B, lookaheadOutZero, zeroVector);
+                Reg::Interleave(lookaheadOutOneB64A, lookaheadOutOneB64B, lookaheadOutOne, zeroVector);
+                Reg::Interleave(lookaheadOutTwoB64A, lookaheadOutTwoB64B, lookaheadOutTwo, zeroVector);
+                Reg::Interleave(lookaheadOutThreeB64A, lookaheadOutThreeB64B, lookaheadOutThree, zeroVector);
+                Reg::RegTensor<int64_t> lookaheadOutZeroMaskB64A, lookaheadOutZeroMaskB64B;
+                Reg::RegTensor<int64_t> lookaheadOutOneMaskB64A, lookaheadOutOneMaskB64B;
+                Reg::RegTensor<int64_t> lookaheadOutTwoMaskB64A, lookaheadOutTwoMaskB64B;
+                Reg::RegTensor<int64_t> lookaheadOutThreeMaskB64A, lookaheadOutThreeMaskB64B;
+                Reg::Or(lookaheadOutZeroMaskB64A, (Reg::RegTensor<int64_t>&)lookaheadOutZeroB64A, aggregateReadyMask,
+                        predicateDefault);
+                Reg::Or(lookaheadOutZeroMaskB64B, (Reg::RegTensor<int64_t>&)lookaheadOutZeroB64B, aggregateReadyMask,
+                        predicateDefault);
+                Reg::Or(lookaheadOutOneMaskB64A, (Reg::RegTensor<int64_t>&)lookaheadOutOneB64A, aggregateReadyMask,
+                        predicateDefault);
+                Reg::Or(lookaheadOutOneMaskB64B, (Reg::RegTensor<int64_t>&)lookaheadOutOneB64B, aggregateReadyMask,
+                        predicateDefault);
+                Reg::Or(lookaheadOutTwoMaskB64A, (Reg::RegTensor<int64_t>&)lookaheadOutTwoB64A, aggregateReadyMask,
+                        predicateDefault);
+                Reg::Or(lookaheadOutTwoMaskB64B, (Reg::RegTensor<int64_t>&)lookaheadOutTwoB64B, aggregateReadyMask,
+                        predicateDefault);
+                Reg::Or(lookaheadOutThreeMaskB64A, (Reg::RegTensor<int64_t>&)lookaheadOutThreeB64A, aggregateReadyMask,
+                        predicateDefault);
+                Reg::Or(lookaheadOutThreeMaskB64B, (Reg::RegTensor<int64_t>&)lookaheadOutThreeB64B, aggregateReadyMask,
+                        predicateDefault);
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockHistWithFlagPtr, lookaheadOutZeroMaskB64A, VF_LEN_B64, predicateDefault);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockHistWithFlagPtr, lookaheadOutZeroMaskB64B, VF_LEN_B64, predicateDefault);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockHistWithFlagPtr, lookaheadOutOneMaskB64A, VF_LEN_B64, predicateDefault);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockHistWithFlagPtr, lookaheadOutOneMaskB64B, VF_LEN_B64, predicateDefault);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockHistWithFlagPtr, lookaheadOutTwoMaskB64A, VF_LEN_B64, predicateDefault);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockHistWithFlagPtr, lookaheadOutTwoMaskB64B, VF_LEN_B64, predicateDefault);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockHistWithFlagPtr, lookaheadOutThreeMaskB64A, VF_LEN_B64, predicateDefault);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockHistWithFlagPtr, lookaheadOutThreeMaskB64B, VF_LEN_B64, predicateDefault);
             }
         }
@@ -860,68 +831,64 @@ public:
                 tilePrevHistValuePtrCopy = tilePrevHistValuePtr;
                 __VEC_SCOPE__
                 {
-                    MicroAPI::MaskReg pRegSelect;
-                    MicroAPI::MaskReg maskB32 = MicroAPI::CreateMask<uint32_t>();
-                    MicroAPI::RegTensor<uint32_t> notInitCount, aggReadyCount, prefixReadyCount;
-                    MicroAPI::Duplicate(notInitCount, 0, maskB32);
-                    MicroAPI::Duplicate(aggReadyCount, 0, maskB32);
-                    MicroAPI::Duplicate(prefixReadyCount, 0, maskB32);
-                    MicroAPI::RegTensor<uint32_t> onesVector, zerosVector;
-                    MicroAPI::Duplicate(onesVector, 1, maskB32);
-                    MicroAPI::Duplicate(zerosVector, 0, maskB32);
+                    Reg::MaskReg pRegSelect;
+                    Reg::MaskReg maskB32 = Reg::CreateMask<uint32_t>();
+                    Reg::RegTensor<uint32_t> notInitCount, aggReadyCount, prefixReadyCount;
+                    Reg::Duplicate(notInitCount, 0, maskB32);
+                    Reg::Duplicate(aggReadyCount, 0, maskB32);
+                    Reg::Duplicate(prefixReadyCount, 0, maskB32);
+                    Reg::RegTensor<uint32_t> onesVector, zerosVector;
+                    Reg::Duplicate(onesVector, 1, maskB32);
+                    Reg::Duplicate(zerosVector, 0, maskB32);
                     for (uint16_t i = 0; i < repeatTime; i++) {
-                        MicroAPI::RegTensor<T3> prevTileHistValue;
-                        MicroAPI::RegTensor<uint32_t> stateBitValue;
+                        Reg::RegTensor<T3> prevTileHistValue;
+                        Reg::RegTensor<uint32_t> stateBitValue;
                         if constexpr (IsSameType<T3, uint32_t>::value) {
-                            MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                            Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                                 prevTileHistValue, tilePrevHistValuePtr, VF_LEN_B32);
                             // The highest two bits carry the soft-sync state, the remaining bits carry the bin count.
-                            MicroAPI::ShiftRights<uint32_t, int16_t>(stateBitValue, prevTileHistValue,
-                                                                     STATE_BIT_SHF_VALUE, maskB32);
+                            Reg::ShiftRights<uint32_t, int16_t>(stateBitValue, prevTileHistValue, STATE_BIT_SHF_VALUE,
+                                                                maskB32);
                             pRegSelect = maskB32;
                         } else {
-                            MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                            Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                                 prevTileHistValue, tilePrevHistValuePtr, VF_LEN_B64);
-                            MicroAPI::MaskReg maskB64 = MicroAPI::CreateMask<int64_t>();
-                            MicroAPI::RegTensor<uint64_t> stateTmp;
+                            Reg::MaskReg maskB64 = Reg::CreateMask<int64_t>();
+                            Reg::RegTensor<uint64_t> stateTmp;
                             // The highest two bits carry the soft-sync state, the remaining bits carry the bin count.
-                            MicroAPI::ShiftRights<uint64_t, int16_t>(stateTmp,
-                                                                     (MicroAPI::RegTensor<uint64_t>&)prevTileHistValue,
-                                                                     STATE_BIT_SHF_VALUE_B64, maskB64);
-                            MicroAPI::Pack(stateBitValue, stateTmp);
-                            pRegSelect = MicroAPI::CreateMask<uint32_t, MicroAPI::MaskPattern::H>();
+                            Reg::ShiftRights<uint64_t, int16_t>(stateTmp, (Reg::RegTensor<uint64_t>&)prevTileHistValue,
+                                                                STATE_BIT_SHF_VALUE_B64, maskB64);
+                            Reg::Pack(stateBitValue, stateTmp);
+                            pRegSelect = Reg::CreateMask<uint32_t, Reg::MaskPattern::H>();
                         }
-                        MicroAPI::MaskReg maskNotInit;
-                        MicroAPI::RegTensor<uint32_t> maskNotInitCount;
-                        MicroAPI::CompareScalar<uint32_t, CMPMODE::EQ>(maskNotInit, stateBitValue, NOT_INIT_MODE,
-                                                                       pRegSelect);
-                        MicroAPI::Select(maskNotInitCount, onesVector, zerosVector, maskNotInit);
-                        MicroAPI::Add(notInitCount, notInitCount, maskNotInitCount, maskNotInit);
-                        MicroAPI::MaskReg maskAggReady;
-                        MicroAPI::RegTensor<uint32_t> maskAggReadyCount;
-                        MicroAPI::CompareScalar<uint32_t, CMPMODE::EQ>(maskAggReady, stateBitValue, AGG_READY_MODE,
-                                                                       pRegSelect);
-                        MicroAPI::Select(maskAggReadyCount, onesVector, zerosVector, maskAggReady);
-                        MicroAPI::Add(aggReadyCount, aggReadyCount, maskAggReadyCount, maskAggReady);
-                        MicroAPI::MaskReg maskPrefixReady;
-                        MicroAPI::RegTensor<uint32_t> maskPrefixReadyCount;
-                        MicroAPI::CompareScalar<uint32_t, CMPMODE::EQ>(maskPrefixReady, stateBitValue,
-                                                                       PREFIX_READY_MODE, pRegSelect);
-                        MicroAPI::Select(maskPrefixReadyCount, onesVector, zerosVector, maskPrefixReady);
-                        MicroAPI::Add(prefixReadyCount, prefixReadyCount, maskPrefixReadyCount, maskPrefixReady);
+                        Reg::MaskReg maskNotInit;
+                        Reg::RegTensor<uint32_t> maskNotInitCount;
+                        Reg::CompareScalar<uint32_t, CMPMODE::EQ>(maskNotInit, stateBitValue, NOT_INIT_MODE,
+                                                                  pRegSelect);
+                        Reg::Select(maskNotInitCount, onesVector, zerosVector, maskNotInit);
+                        Reg::Add(notInitCount, notInitCount, maskNotInitCount, maskNotInit);
+                        Reg::MaskReg maskAggReady;
+                        Reg::RegTensor<uint32_t> maskAggReadyCount;
+                        Reg::CompareScalar<uint32_t, CMPMODE::EQ>(maskAggReady, stateBitValue, AGG_READY_MODE,
+                                                                  pRegSelect);
+                        Reg::Select(maskAggReadyCount, onesVector, zerosVector, maskAggReady);
+                        Reg::Add(aggReadyCount, aggReadyCount, maskAggReadyCount, maskAggReady);
+                        Reg::MaskReg maskPrefixReady;
+                        Reg::RegTensor<uint32_t> maskPrefixReadyCount;
+                        Reg::CompareScalar<uint32_t, CMPMODE::EQ>(maskPrefixReady, stateBitValue, PREFIX_READY_MODE,
+                                                                  pRegSelect);
+                        Reg::Select(maskPrefixReadyCount, onesVector, zerosVector, maskPrefixReady);
+                        Reg::Add(prefixReadyCount, prefixReadyCount, maskPrefixReadyCount, maskPrefixReady);
                     }
-                    MicroAPI::ReduceSum(notInitCount, notInitCount, maskB32);
-                    MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE,
-                                       MicroAPI::StoreDist::DIST_FIRST_ELEMENT_B32>(ubFlagTensorPtr, notInitCount,
-                                                                                    HIST_MASK_OUT_LEN, maskB32);
-                    MicroAPI::ReduceSum(aggReadyCount, aggReadyCount, maskB32);
-                    MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE,
-                                       MicroAPI::StoreDist::DIST_FIRST_ELEMENT_B32>(ubFlagTensorPtr, aggReadyCount,
-                                                                                    HIST_MASK_OUT_LEN, maskB32);
-                    MicroAPI::ReduceSum(prefixReadyCount, prefixReadyCount, maskB32);
-                    MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE,
-                                       MicroAPI::StoreDist::DIST_FIRST_ELEMENT_B32>(ubFlagTensorPtr, prefixReadyCount,
-                                                                                    HIST_MASK_OUT_LEN, maskB32);
+                    Reg::ReduceSum(notInitCount, notInitCount, maskB32);
+                    Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE, Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(
+                        ubFlagTensorPtr, notInitCount, HIST_MASK_OUT_LEN, maskB32);
+                    Reg::ReduceSum(aggReadyCount, aggReadyCount, maskB32);
+                    Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE, Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(
+                        ubFlagTensorPtr, aggReadyCount, HIST_MASK_OUT_LEN, maskB32);
+                    Reg::ReduceSum(prefixReadyCount, prefixReadyCount, maskB32);
+                    Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE, Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(
+                        ubFlagTensorPtr, prefixReadyCount, HIST_MASK_OUT_LEN, maskB32);
                 }
                 event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
                 SetFlag<HardEvent::V_S>(eventId);
@@ -947,36 +914,36 @@ public:
             WaitFlag<HardEvent::S_V>(eventIdWaitV);
             __VEC_SCOPE__
             {
-                MicroAPI::MaskReg predicateDefault = MicroAPI::CreateMask<uint16_t>();
-                MicroAPI::RegTensor<T3> histMask;
+                Reg::MaskReg predicateDefault = Reg::CreateMask<uint16_t>();
+                Reg::RegTensor<T3> histMask;
                 if constexpr (IsSameType<T3, uint32_t>::value) {
-                    MicroAPI::Duplicate(histMask, VALUE_MASK, predicateDefault);
+                    Reg::Duplicate(histMask, VALUE_MASK, predicateDefault);
                     for (uint16_t i = 0; i < repeatTime; i++) {
-                        MicroAPI::RegTensor<uint32_t> nowTileHistVal, prevTileHistVal;
-                        MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                            nowTileHistVal, nowTileHistBufferPtr, VF_LEN_B32);
-                        MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                        Reg::RegTensor<uint32_t> nowTileHistVal, prevTileHistVal;
+                        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(nowTileHistVal,
+                                                                                    nowTileHistBufferPtr, VF_LEN_B32);
+                        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                             prevTileHistVal, tilePrevHistValuePtrCopy, VF_LEN_B32);
                         // Strip the state bits before adding the previous tile's histogram value.
-                        MicroAPI::And(nowTileHistVal, nowTileHistVal, histMask, predicateDefault);
-                        MicroAPI::And(prevTileHistVal, prevTileHistVal, histMask, predicateDefault);
-                        MicroAPI::Add(nowTileHistVal, nowTileHistVal, prevTileHistVal, predicateDefault);
-                        MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                        Reg::And(nowTileHistVal, nowTileHistVal, histMask, predicateDefault);
+                        Reg::And(prevTileHistVal, prevTileHistVal, histMask, predicateDefault);
+                        Reg::Add(nowTileHistVal, nowTileHistVal, prevTileHistVal, predicateDefault);
+                        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                             nowTileHistBufferPtrCopy, nowTileHistVal, VF_LEN_B32, predicateDefault);
                     }
                 } else {
-                    MicroAPI::Duplicate(histMask, VALUE_MASK_B64, predicateDefault);
+                    Reg::Duplicate(histMask, VALUE_MASK_B64, predicateDefault);
                     for (uint16_t i = 0; i < repeatTime; i++) {
-                        MicroAPI::RegTensor<int64_t> nowTileHistVal, prevTileHistVal;
-                        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                            nowTileHistVal, nowTileHistBufferPtr, VF_LEN_B64);
-                        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                        Reg::RegTensor<int64_t> nowTileHistVal, prevTileHistVal;
+                        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(nowTileHistVal, nowTileHistBufferPtr,
+                                                                                   VF_LEN_B64);
+                        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                             prevTileHistVal, tilePrevHistValuePtrCopy, VF_LEN_B64);
                         // Strip the state bits before adding the previous tile's histogram value.
-                        MicroAPI::And(nowTileHistVal, nowTileHistVal, histMask, predicateDefault);
-                        MicroAPI::And(prevTileHistVal, prevTileHistVal, histMask, predicateDefault);
-                        MicroAPI::Add(nowTileHistVal, nowTileHistVal, prevTileHistVal, predicateDefault);
-                        MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                        Reg::And(nowTileHistVal, nowTileHistVal, histMask, predicateDefault);
+                        Reg::And(prevTileHistVal, prevTileHistVal, histMask, predicateDefault);
+                        Reg::Add(nowTileHistVal, nowTileHistVal, prevTileHistVal, predicateDefault);
+                        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                             nowTileHistBufferPtrCopy, nowTileHistVal, VF_LEN_B64, predicateDefault);
                     }
                 }
@@ -1007,33 +974,33 @@ public:
         }
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T3> prefixReadyMask, prefixRemainMask;
-            MicroAPI::MaskReg predicateDefault = MicroAPI::CreateMask<T3>();
+            Reg::RegTensor<T3> prefixReadyMask, prefixRemainMask;
+            Reg::MaskReg predicateDefault = Reg::CreateMask<T3>();
             if constexpr (IsSameType<T3, uint32_t>::value) {
-                MicroAPI::Duplicate(prefixReadyMask, PREFIX_READY_MASK, predicateDefault);
-                MicroAPI::Duplicate(prefixRemainMask, VALUE_MASK, predicateDefault);
+                Reg::Duplicate(prefixReadyMask, PREFIX_READY_MASK, predicateDefault);
+                Reg::Duplicate(prefixRemainMask, VALUE_MASK, predicateDefault);
                 for (uint16_t repate = 0; repate < repeatTime; repate++) {
-                    MicroAPI::RegTensor<uint32_t> keyCumsumValue;
-                    MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(keyCumsumValue, histCumsumPtr,
-                                                                                          VF_LEN_B32);
+                    Reg::RegTensor<uint32_t> keyCumsumValue;
+                    Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(keyCumsumValue, histCumsumPtr,
+                                                                                VF_LEN_B32);
                     // Preserve the accumulated histogram value and publish the prefix-ready state bit.
-                    MicroAPI::And(keyCumsumValue, keyCumsumValue, prefixRemainMask, predicateDefault);
-                    MicroAPI::Or(keyCumsumValue, keyCumsumValue, prefixReadyMask, predicateDefault);
-                    MicroAPI::DataCopy<uint32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                        histCumsumPtrCopy, keyCumsumValue, VF_LEN_B32, predicateDefault);
+                    Reg::And(keyCumsumValue, keyCumsumValue, prefixRemainMask, predicateDefault);
+                    Reg::Or(keyCumsumValue, keyCumsumValue, prefixReadyMask, predicateDefault);
+                    Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(histCumsumPtrCopy, keyCumsumValue,
+                                                                                VF_LEN_B32, predicateDefault);
                 }
             } else {
-                MicroAPI::Duplicate(prefixReadyMask, PREFIX_READY_MASK_B64, predicateDefault);
-                MicroAPI::Duplicate(prefixRemainMask, VALUE_MASK_B64, predicateDefault);
+                Reg::Duplicate(prefixReadyMask, PREFIX_READY_MASK_B64, predicateDefault);
+                Reg::Duplicate(prefixRemainMask, VALUE_MASK_B64, predicateDefault);
                 for (uint16_t repate = 0; repate < repeatTime; repate++) {
-                    MicroAPI::RegTensor<int64_t> keyCumsumValue;
-                    MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(keyCumsumValue, histCumsumPtr,
-                                                                                         VF_LEN_B64);
+                    Reg::RegTensor<int64_t> keyCumsumValue;
+                    Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(keyCumsumValue, histCumsumPtr,
+                                                                               VF_LEN_B64);
                     // Preserve the accumulated histogram value and publish the prefix-ready state bit.
-                    MicroAPI::And(keyCumsumValue, keyCumsumValue, prefixRemainMask, predicateDefault);
-                    MicroAPI::Or(keyCumsumValue, keyCumsumValue, prefixReadyMask, predicateDefault);
-                    MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                        histCumsumPtrCopy, keyCumsumValue, VF_LEN_B64, predicateDefault);
+                    Reg::And(keyCumsumValue, keyCumsumValue, prefixRemainMask, predicateDefault);
+                    Reg::Or(keyCumsumValue, keyCumsumValue, prefixReadyMask, predicateDefault);
+                    Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histCumsumPtrCopy, keyCumsumValue,
+                                                                               VF_LEN_B64, predicateDefault);
                 }
             }
         }

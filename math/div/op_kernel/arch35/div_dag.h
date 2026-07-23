@@ -36,26 +36,24 @@ struct CastOverFlow : public Vec::ElemwiseUnaryOP<R, T> {
     {
 #ifdef __CCE_AICORE__
         SetCtrlSpr<SAT_POS, SAT_POS>(0);
-        constexpr static MicroAPI::CastTrait castTrait3 = {
-            MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT, MicroAPI::MaskMergeMode::ZEROING,
-            RoundMode::CAST_RINT};
+        constexpr static Reg::CastTrait castTrait3 = {Reg::RegLayout::ZERO, Reg::SatMode::NO_SAT,
+                                                      Reg::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T> vreg0;
-            MicroAPI::RegTensor<R> vreg1;
-            MicroAPI::MaskReg preg0;
+            Reg::RegTensor<T> vreg0;
+            Reg::RegTensor<R> vreg1;
+            Reg::MaskReg preg0;
             // sizeof(T) must > sizeof(R)
             uint32_t size = count;
             uint16_t vfLoopNum = (size + (VECTOR_REG_WIDTH / sizeof(T)) - 1) / (VECTOR_REG_WIDTH / sizeof(T));
             __local_mem__ T* bufferIn0Addr = (__local_mem__ T*)src.GetPhyAddr();
             __local_mem__ R* bufferOut0Addr = (__local_mem__ R*)dst.GetPhyAddr();
             for (uint16_t i = 0; i < vfLoopNum; i++) {
-                preg0 = MicroAPI::UpdateMask<T>(size);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(
-                    vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(T)));
-                MicroAPI::Cast<R, T, castTrait3>(vreg1, vreg0, preg0);
-                MicroAPI::DataCopy<R, MicroAPI::StoreDist::DIST_PACK_B16>(
-                    bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(T)), vreg1, preg0);
+                preg0 = Reg::UpdateMask<T>(size);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(T)));
+                Reg::Cast<R, T, castTrait3>(vreg1, vreg0, preg0);
+                Reg::DataCopy<R, Reg::StoreDist::DIST_PACK_B16>(bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(T)),
+                                                                vreg1, preg0);
             }
         }
         SetCtrlSpr<SAT_POS, SAT_POS>(1);

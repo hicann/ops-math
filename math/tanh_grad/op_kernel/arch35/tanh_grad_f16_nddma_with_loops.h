@@ -24,15 +24,15 @@ using AscendC::LocalTensor;
 using AscendC::TBuf;
 using AscendC::TPipe;
 using AscendC::TQue;
-using AscendC::MicroAPI::MaskReg;
-using AscendC::MicroAPI::RegTensor;
+using AscendC::Reg::MaskReg;
+using AscendC::Reg::RegTensor;
 
 // y is float16, dy is float16, z is float16, max dims in ub is 8 and nddma needs loops
 class TanhGradF16NddmaWithLoops {
 public:
     __aicore__ inline TanhGradF16NddmaWithLoops(){};
-    __aicore__ inline void Init(
-        GM_ADDR y, GM_ADDR dy, GM_ADDR z, GM_ADDR workspace, const TanhGradTilingData* tilingDataPtr, TPipe* pipePtr)
+    __aicore__ inline void Init(GM_ADDR y, GM_ADDR dy, GM_ADDR z, GM_ADDR workspace,
+                                const TanhGradTilingData* tilingDataPtr, TPipe* pipePtr)
     {
         pipePtr_ = pipePtr;
         tilingDataPtr_ = tilingDataPtr;
@@ -51,13 +51,13 @@ public:
         int64_t ubLoopNum = AscendC::GetBlockIdx() == AscendC::GetBlockNum() - 1 ? tilingDataPtr_->blockTail :
                                                                                    tilingDataPtr_->blockFormer;
         int64_t axesIndices[Ops::Base::BROADCAST_MAX_DIMS] = {0};
-        Ops::Base::BroadcastGetAxesIndices(
-            axesIndices, tilingDataPtr_->blockFormer * AscendC::GetBlockIdx(), tilingDataPtr_->outputDims,
-            tilingDataPtr_->ubSplitAxis, tilingDataPtr_->dimProductBeforeUbInner);
+        Ops::Base::BroadcastGetAxesIndices(axesIndices, tilingDataPtr_->blockFormer * AscendC::GetBlockIdx(),
+                                           tilingDataPtr_->outputDims, tilingDataPtr_->ubSplitAxis,
+                                           tilingDataPtr_->dimProductBeforeUbInner);
         for (int64_t ubLoopIdx = 0; ubLoopIdx < ubLoopNum; ubLoopIdx += 1) {
             if (ubLoopIdx != 0) {
-                Ops::Base::BroadcastUpdateAxesIndices(
-                    axesIndices, tilingDataPtr_->outputDims, tilingDataPtr_->ubSplitAxis, tilingDataPtr_->ubOuter);
+                Ops::Base::BroadcastUpdateAxesIndices(axesIndices, tilingDataPtr_->outputDims,
+                                                      tilingDataPtr_->ubSplitAxis, tilingDataPtr_->ubOuter);
             }
             int64_t ubSplitSize = axesIndices[tilingDataPtr_->ubSplitAxis] == tilingDataPtr_->ubOuter - 1 ?
                                       tilingDataPtr_->ubTail :
@@ -70,38 +70,38 @@ public:
     }
 
 private:
-    __aicore__ inline void CopyIn0(
-        int64_t ubSplitSize, const int64_t (&axesIndices)[Ops::Base::BROADCAST_MAX_DIMS], int64_t ubLoopIdx)
+    __aicore__ inline void CopyIn0(int64_t ubSplitSize, const int64_t (&axesIndices)[Ops::Base::BROADCAST_MAX_DIMS],
+                                   int64_t ubLoopIdx)
     {
         bufferIn0_ = queIn0_.AllocTensor<half>();
         if ((tilingDataPtr_->input0Strides[tilingDataPtr_->ubSplitAxis] != 0) ||
             (ubLoopIdx <= 1 ||
              (AscendC::GetBlockIdx() * tilingDataPtr_->blockFormer + ubLoopIdx) % tilingDataPtr_->ubOuter <= 1)) {
-            Ops::Base::BroadcastNddmaWithLoop(
-                inputGmY_, bufferIn0_, tilingDataPtr_->outputDims, tilingDataPtr_->outputStrides,
-                tilingDataPtr_->input0Strides, axesIndices, tilingDataPtr_->ubSplitAxis, tilingDataPtr_->shapeLen,
-                ubSplitSize, tilingDataPtr_->ubFormer);
+            Ops::Base::BroadcastNddmaWithLoop(inputGmY_, bufferIn0_, tilingDataPtr_->outputDims,
+                                              tilingDataPtr_->outputStrides, tilingDataPtr_->input0Strides, axesIndices,
+                                              tilingDataPtr_->ubSplitAxis, tilingDataPtr_->shapeLen, ubSplitSize,
+                                              tilingDataPtr_->ubFormer);
         }
         queIn0_.EnQue<half>(bufferIn0_);
     }
 
-    __aicore__ inline void CopyIn1(
-        int64_t ubSplitSize, const int64_t (&axesIndices)[Ops::Base::BROADCAST_MAX_DIMS], int64_t ubLoopIdx)
+    __aicore__ inline void CopyIn1(int64_t ubSplitSize, const int64_t (&axesIndices)[Ops::Base::BROADCAST_MAX_DIMS],
+                                   int64_t ubLoopIdx)
     {
         bufferIn1_ = queIn1_.AllocTensor<half>();
         if ((tilingDataPtr_->input1Strides[tilingDataPtr_->ubSplitAxis] != 0) ||
             (ubLoopIdx <= 1 ||
              (AscendC::GetBlockIdx() * tilingDataPtr_->blockFormer + ubLoopIdx) % tilingDataPtr_->ubOuter <= 1)) {
-            Ops::Base::BroadcastNddmaWithLoop(
-                inputGmDy_, bufferIn1_, tilingDataPtr_->outputDims, tilingDataPtr_->outputStrides,
-                tilingDataPtr_->input1Strides, axesIndices, tilingDataPtr_->ubSplitAxis, tilingDataPtr_->shapeLen,
-                ubSplitSize, tilingDataPtr_->ubFormer);
+            Ops::Base::BroadcastNddmaWithLoop(inputGmDy_, bufferIn1_, tilingDataPtr_->outputDims,
+                                              tilingDataPtr_->outputStrides, tilingDataPtr_->input1Strides, axesIndices,
+                                              tilingDataPtr_->ubSplitAxis, tilingDataPtr_->shapeLen, ubSplitSize,
+                                              tilingDataPtr_->ubFormer);
         }
         queIn1_.EnQue<half>(bufferIn1_);
     }
 
-    __aicore__ inline void Compute2(
-        int64_t ubSplitSize, const int64_t (&axesIndices)[Ops::Base::BROADCAST_MAX_DIMS], int64_t ubLoopIdx)
+    __aicore__ inline void Compute2(int64_t ubSplitSize, const int64_t (&axesIndices)[Ops::Base::BROADCAST_MAX_DIMS],
+                                    int64_t ubLoopIdx)
     {
         bufferIn0_ = queIn0_.DeQue<half>();
         bufferIn1_ = queIn1_.DeQue<half>();
@@ -126,21 +126,20 @@ private:
             __local_mem__ half* bufferIn1Addr = (__local_mem__ half*)bufferIn1_.GetPhyAddr();
             __local_mem__ half* bufferOut0Addr = (__local_mem__ half*)bufferOut0_.GetPhyAddr();
             for (uint16_t i = 0; i < vfLoopNum; i++) {
-                preg0 = AscendC::MicroAPI::UpdateMask<float>(size);
-                AscendC::MicroAPI::DataCopy<half, AscendC::MicroAPI::LoadDist::DIST_UNPACK_B16>(
+                preg0 = AscendC::Reg::UpdateMask<float>(size);
+                AscendC::Reg::DataCopy<half, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(
                     vreg0, bufferIn0Addr + i * (AscendC::VECTOR_REG_WIDTH / 4));
-                AscendC::MicroAPI::Cast<float, half, castTrait0>(vreg1, vreg0, preg0);
-                AscendC::MicroAPI::Duplicate<float, float>(vreg4, 1.0);
-                AscendC::MicroAPI::Muls<float, float, AscendC::MicroAPI::MaskMergeMode::ZEROING>(
-                    vreg2, vreg1, static_cast<float>(-1), preg0);
-                AscendC::MicroAPI::MulAddDst<float, AscendC::MicroAPI::MaskMergeMode::ZEROING>(
-                    vreg4, vreg2, vreg1, preg0);
-                AscendC::MicroAPI::DataCopy<half, AscendC::MicroAPI::LoadDist::DIST_UNPACK_B16>(
+                AscendC::Reg::Cast<float, half, castTrait0>(vreg1, vreg0, preg0);
+                AscendC::Reg::Duplicate<float, float>(vreg4, 1.0);
+                AscendC::Reg::Muls<float, float, AscendC::Reg::MaskMergeMode::ZEROING>(vreg2, vreg1,
+                                                                                       static_cast<float>(-1), preg0);
+                AscendC::Reg::MulAddDst<float, AscendC::Reg::MaskMergeMode::ZEROING>(vreg4, vreg2, vreg1, preg0);
+                AscendC::Reg::DataCopy<half, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(
                     vreg5, bufferIn1Addr + i * (AscendC::VECTOR_REG_WIDTH / 4));
-                AscendC::MicroAPI::Cast<float, half, castTrait0>(vreg6, vreg5, preg0);
-                AscendC::MicroAPI::Mul<float, AscendC::MicroAPI::MaskMergeMode::ZEROING>(vreg7, vreg4, vreg6, preg0);
-                AscendC::MicroAPI::Cast<half, float, castTrait1>(vreg8, vreg7, preg0);
-                AscendC::MicroAPI::DataCopy<half, AscendC::MicroAPI::StoreDist::DIST_PACK_B32>(
+                AscendC::Reg::Cast<float, half, castTrait0>(vreg6, vreg5, preg0);
+                AscendC::Reg::Mul<float, AscendC::Reg::MaskMergeMode::ZEROING>(vreg7, vreg4, vreg6, preg0);
+                AscendC::Reg::Cast<half, float, castTrait1>(vreg8, vreg7, preg0);
+                AscendC::Reg::DataCopy<half, AscendC::Reg::StoreDist::DIST_PACK_B32>(
                     bufferOut0Addr + i * (AscendC::VECTOR_REG_WIDTH / 4), vreg8, preg0);
             }
         }
@@ -149,16 +148,16 @@ private:
         queOut0_.EnQue<half>(bufferOut0_);
     }
 
-    __aicore__ inline void CopyOut3(
-        int64_t ubSplitSize, const int64_t (&axesIndices)[Ops::Base::BROADCAST_MAX_DIMS], int64_t ubLoopIdx)
+    __aicore__ inline void CopyOut3(int64_t ubSplitSize, const int64_t (&axesIndices)[Ops::Base::BROADCAST_MAX_DIMS],
+                                    int64_t ubLoopIdx)
     {
         bufferOut0_ = queOut0_.DeQue<half>();
         AscendC::DataCopyExtParams dataCopyExtParams;
         dataCopyExtParams.blockCount = 1;
-        dataCopyExtParams.blockLen =
-            ubSplitSize * tilingDataPtr_->outputStrides[tilingDataPtr_->ubSplitAxis] * sizeof(half);
-        int64_t gmOffset = Ops::Base::BroadcastGetGmOffset(
-            axesIndices, tilingDataPtr_->outputStrides, tilingDataPtr_->ubSplitAxis, tilingDataPtr_->ubFormer);
+        dataCopyExtParams.blockLen = ubSplitSize * tilingDataPtr_->outputStrides[tilingDataPtr_->ubSplitAxis] *
+                                     sizeof(half);
+        int64_t gmOffset = Ops::Base::BroadcastGetGmOffset(axesIndices, tilingDataPtr_->outputStrides,
+                                                           tilingDataPtr_->ubSplitAxis, tilingDataPtr_->ubFormer);
         AscendC::DataCopyPad(outputGmZ_[gmOffset], bufferOut0_[0], dataCopyExtParams);
         queOut0_.FreeTensor(bufferOut0_);
     }
@@ -175,12 +174,12 @@ private:
     LocalTensor<half> bufferIn0_;
     LocalTensor<half> bufferIn1_;
     LocalTensor<half> bufferOut0_;
-    constexpr static AscendC::MicroAPI::CastTrait castTrait0 = {
-        AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::UNKNOWN,
-        AscendC::MicroAPI::MaskMergeMode::ZEROING, AscendC::RoundMode::UNKNOWN};
-    constexpr static AscendC::MicroAPI::CastTrait castTrait1 = {
-        AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::NO_SAT,
-        AscendC::MicroAPI::MaskMergeMode::ZEROING, AscendC::RoundMode::CAST_RINT};
+    constexpr static AscendC::Reg::CastTrait castTrait0 = {
+        AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::UNKNOWN, AscendC::Reg::MaskMergeMode::ZEROING,
+        AscendC::RoundMode::UNKNOWN};
+    constexpr static AscendC::Reg::CastTrait castTrait1 = {AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::NO_SAT,
+                                                           AscendC::Reg::MaskMergeMode::ZEROING,
+                                                           AscendC::RoundMode::CAST_RINT};
 };
 
 } // namespace TanhGrad

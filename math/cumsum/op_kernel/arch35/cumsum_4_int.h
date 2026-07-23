@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@ public:
     using IdxType = std::conditional_t<sizeof(T) == 1, uint16_t, uint32_t>;
     using RangeType = std::conditional_t<sizeof(T) == 1, int16_t, int32_t>;
     using VLType = std::conditional_t<sizeof(T) == 1, uint16_t, T>;
-    using CastType =
-        std::conditional_t<sizeof(T) == 1, std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
+    using CastType = std::conditional_t<sizeof(T) == 1,
+                                        std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
 };
 
 template <typename T>
@@ -52,12 +52,12 @@ static __aicore__ inline void SetUBZero(const LocalTensor<T>& ubTensor, uint32_t
     __local_mem__ T* yPtr = (__local_mem__ T*)ubTensor.GetPhyAddr();
     __VEC_SCOPE__
     {
-        MicroAPI::MaskReg mask;
-        MicroAPI::RegTensor<T> zeros;
-        MicroAPI::Duplicate(zeros, (T)0);
+        Reg::MaskReg mask;
+        Reg::RegTensor<T> zeros;
+        Reg::Duplicate(zeros, (T)0);
         for (uint16_t i = 0; i < lpCnt; i++) {
-            mask = MicroAPI::UpdateMask<T>(len);
-            MicroAPI::DataCopy<T>(yPtr + i * regElem, zeros, mask);
+            mask = Reg::UpdateMask<T>(len);
+            Reg::DataCopy<T>(yPtr + i * regElem, zeros, mask);
         }
     }
 }
@@ -136,9 +136,9 @@ struct ExclusiveParams {
     bool isExc = false;
 };
 
-static __aicore__ inline void GetExclusiveInfo(
-    const Cum4IntTilingData* tilingPtr, uint32_t curBlockIdx, ExclusiveParams& excParams, uint32_t& firstRLen,
-    int64_t& rLpCnt, uint32_t& rLeft)
+static __aicore__ inline void GetExclusiveInfo(const Cum4IntTilingData* tilingPtr, uint32_t curBlockIdx,
+                                               ExclusiveParams& excParams, uint32_t& firstRLen, int64_t& rLpCnt,
+                                               uint32_t& rLeft)
 {
     if (tilingPtr->isExclusive) {
         excParams.excFactor = 1;
@@ -176,23 +176,22 @@ class DataCopyTDRightACum {
 public:
     __aicore__ inline DataCopyTDRightACum(const Cum4IntTilingData* tilingData, uint32_t blockIdx)
         : tilingPtr(tilingData), curBlockIdx(blockIdx){};
-    __aicore__ inline void CopyTDRightAProcess(
-        const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-        const LocalTensor<T>& outLocal);
+    __aicore__ inline void CopyTDRightAProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
+                                               const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal);
 
 private:
     __aicore__ inline void GetAxisLoopInfo();
-    __aicore__ inline void InnerProcess(
-        const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-        const LocalTensor<T>& outLocal, uint32_t rLen, uint32_t raLen, bool isExc = false);
-    __aicore__ inline void CumCopyTDRightA(
-        const LocalTensor<T>& inUB, const LocalTensor<T>& outUB, uint32_t rLen, uint32_t rightALen, bool isExc = false);
-    __aicore__ inline void ForwardProcess(
-        const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-        const LocalTensor<T>& outLocal, int64_t laLpIdx, int64_t raLpIdx, int64_t raSize);
-    __aicore__ inline void ReverseProcess(
-        const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-        const LocalTensor<T>& outLocal, int64_t laLpIdx, int64_t raLpIdx, int64_t raSize);
+    __aicore__ inline void InnerProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
+                                        const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal, uint32_t rLen,
+                                        uint32_t raLen, bool isExc = false);
+    __aicore__ inline void CumCopyTDRightA(const LocalTensor<T>& inUB, const LocalTensor<T>& outUB, uint32_t rLen,
+                                           uint32_t rightALen, bool isExc = false);
+    __aicore__ inline void ForwardProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
+                                          const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal,
+                                          int64_t laLpIdx, int64_t raLpIdx, int64_t raSize);
+    __aicore__ inline void ReverseProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
+                                          const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal,
+                                          int64_t laLpIdx, int64_t raLpIdx, int64_t raSize);
 
 private:
     static constexpr uint32_t regElem = GetVecLen() / sizeof(T);
@@ -235,8 +234,8 @@ __aicore__ inline void DataCopyTDRightACum<T>::GetAxisLoopInfo()
 }
 
 template <typename T>
-__aicore__ inline void DataCopyTDRightACum<T>::CumCopyTDRightA(
-    const LocalTensor<T>& inUB, const LocalTensor<T>& outUB, uint32_t rLen, uint32_t rightALen, bool isExc)
+__aicore__ inline void DataCopyTDRightACum<T>::CumCopyTDRightA(const LocalTensor<T>& inUB, const LocalTensor<T>& outUB,
+                                                               uint32_t rLen, uint32_t rightALen, bool isExc)
 {
     /*  1. The input data layout in UB as follow, support copy data A one time.
      *           |<---------- rOffset ------->|
@@ -266,30 +265,31 @@ __aicore__ inline void DataCopyTDRightACum<T>::CumCopyTDRightA(
 
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<T> xSrc;
-        MicroAPI::RegTensor<T> yDst;
-        MicroAPI::MaskReg mask;
+        Reg::RegTensor<T> xSrc;
+        Reg::RegTensor<T> yDst;
+        Reg::MaskReg mask;
         int32_t offset = 0;
         int32_t offset1 = 0;
         for (uint16_t aIdx = 0; aIdx < aLpCnt; aIdx++) {
-            mask = MicroAPI::UpdateMask<T>(rightALen);
+            mask = Reg::UpdateMask<T>(rightALen);
             offset1 = aIdx * regElem;
             // Get last loop backup result, the result is zero for first loop
-            MicroAPI::DataCopy<T>(yDst, dstPtr + bakBegAddr + offset1);
+            Reg::DataCopy<T>(yDst, dstPtr + bakBegAddr + offset1);
             for (uint16_t rIdx = 0; rIdx < rLpCnt; rIdx++) {
                 offset = offset1 + rIdx * rOffset;
-                MicroAPI::DataCopy<T>(xSrc, srcPtr + srcBegAddr + offset);
-                MicroAPI::Add(yDst, yDst, xSrc, mask);
-                MicroAPI::DataCopy<T>(dstPtr + dstBegAddr + offset, yDst, mask);
+                Reg::DataCopy<T>(xSrc, srcPtr + srcBegAddr + offset);
+                Reg::Add(yDst, yDst, xSrc, mask);
+                Reg::DataCopy<T>(dstPtr + dstBegAddr + offset, yDst, mask);
             }
         }
     }
 }
 
 template <typename T>
-__aicore__ inline void DataCopyTDRightACum<T>::InnerProcess(
-    const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-    const LocalTensor<T>& outLocal, uint32_t rLen, uint32_t raLen, bool isExc)
+__aicore__ inline void DataCopyTDRightACum<T>::InnerProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
+                                                            const LocalTensor<T>& inLocal,
+                                                            const LocalTensor<T>& outLocal, uint32_t rLen,
+                                                            uint32_t raLen, bool isExc)
 {
     if (rLen > 0) {
         CopyPara copyPara = {rLen, raLen, tilingPtr->rOffset, raLenBA, blockElem};
@@ -309,69 +309,68 @@ __aicore__ inline void DataCopyTDRightACum<T>::InnerProcess(
 }
 
 template <typename T>
-__aicore__ inline void DataCopyTDRightACum<T>::ForwardProcess(
-    const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-    const LocalTensor<T>& outLocal, int64_t laLpIdx, int64_t raLpIdx, int64_t raSize)
+__aicore__ inline void DataCopyTDRightACum<T>::ForwardProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
+                                                              const LocalTensor<T>& inLocal,
+                                                              const LocalTensor<T>& outLocal, int64_t laLpIdx,
+                                                              int64_t raLpIdx, int64_t raSize)
 {
     SetUBZero(outLocal, rSize * raLenBA);
     InsertSync(HardEvent::V_MTE2);
     if (rLpCnt > 0) {
-        gmOffset =
-            (laLpIdx * tilingPtr->laOffset + raLpIdx * tilingPtr->raLpUnit + curBlockIdx * tilingPtr->blockOffset -
-             excParams.excRFactor * tilingPtr->rOffset);
+        gmOffset = (laLpIdx * tilingPtr->laOffset + raLpIdx * tilingPtr->raLpUnit +
+                    curBlockIdx * tilingPtr->blockOffset - excParams.excRFactor * tilingPtr->rOffset);
         gmOutOffset = gmOffset + excParams.excRFactor * tilingPtr->rOffset;
         InnerProcess(inGM, outGM, inLocal, outLocal, firstRLen, raSize, excParams.isExc);
     }
     for (int64_t rLpIdx = 1; rLpIdx < rLpCnt; rLpIdx++) {
-        gmOffset =
-            (laLpIdx * tilingPtr->laOffset + raLpIdx * tilingPtr->raLpUnit + curBlockIdx * tilingPtr->blockOffset +
-             (rLpIdx * rSize - excParams.excFactor) * tilingPtr->rOffset);
+        gmOffset = (laLpIdx * tilingPtr->laOffset + raLpIdx * tilingPtr->raLpUnit +
+                    curBlockIdx * tilingPtr->blockOffset + (rLpIdx * rSize - excParams.excFactor) * tilingPtr->rOffset);
         gmOutOffset = gmOffset + excParams.excFactor * tilingPtr->rOffset;
         InnerProcess(inGM, outGM, inLocal, outLocal, rSize, raSize);
     }
     if (rLeft > 0) {
-        gmOffset =
-            (laLpIdx * tilingPtr->laOffset + raLpIdx * tilingPtr->raLpUnit + curBlockIdx * tilingPtr->blockOffset +
-             (rLpCnt * rSize - excParams.excFactor) * tilingPtr->rOffset);
+        gmOffset = (laLpIdx * tilingPtr->laOffset + raLpIdx * tilingPtr->raLpUnit +
+                    curBlockIdx * tilingPtr->blockOffset + (rLpCnt * rSize - excParams.excFactor) * tilingPtr->rOffset);
         gmOutOffset = gmOffset + excParams.excFactor * tilingPtr->rOffset;
         InnerProcess(inGM, outGM, inLocal, outLocal, rLeft, raSize);
     }
 }
 
 template <typename T>
-__aicore__ inline void DataCopyTDRightACum<T>::ReverseProcess(
-    const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-    const LocalTensor<T>& outLocal, int64_t laLpIdx, int64_t raLpIdx, int64_t raSize)
+__aicore__ inline void DataCopyTDRightACum<T>::ReverseProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
+                                                              const LocalTensor<T>& inLocal,
+                                                              const LocalTensor<T>& outLocal, int64_t laLpIdx,
+                                                              int64_t raLpIdx, int64_t raSize)
 {
     SetUBZero(outLocal, rSize * raLenBA);
     InsertSync(HardEvent::V_MTE2);
     if (rLpCnt > 0) {
-        gmOffset =
-            (laLpIdx * tilingPtr->laOffset + raLpIdx * tilingPtr->raLpUnit + curBlockIdx * tilingPtr->blockOffset +
-             (totalRSize - firstRLen + excParams.excRFactor) * tilingPtr->rOffset);
+        gmOffset = (laLpIdx * tilingPtr->laOffset + raLpIdx * tilingPtr->raLpUnit +
+                    curBlockIdx * tilingPtr->blockOffset +
+                    (totalRSize - firstRLen + excParams.excRFactor) * tilingPtr->rOffset);
         gmOutOffset = gmOffset - excParams.excFactor * tilingPtr->rOffset;
         InnerProcess(inGM, outGM, inLocal, outLocal, firstRLen, raSize, excParams.isExc);
     }
     for (int64_t rLpIdx = rLpCnt - 1; rLpIdx > 0; rLpIdx--) {
-        gmOffset =
-            (laLpIdx * tilingPtr->laOffset + raLpIdx * tilingPtr->raLpUnit + curBlockIdx * tilingPtr->blockOffset +
-             (rLpIdx * rSize + rLeft - rSize + excParams.excFactor) * tilingPtr->rOffset);
+        gmOffset = (laLpIdx * tilingPtr->laOffset + raLpIdx * tilingPtr->raLpUnit +
+                    curBlockIdx * tilingPtr->blockOffset +
+                    (rLpIdx * rSize + rLeft - rSize + excParams.excFactor) * tilingPtr->rOffset);
         gmOutOffset = gmOffset - excParams.excFactor * tilingPtr->rOffset;
         InnerProcess(inGM, outGM, inLocal, outLocal, rSize, raSize);
     }
     if (rLeft > 0) {
-        gmOffset =
-            (laLpIdx * tilingPtr->laOffset + raLpIdx * tilingPtr->raLpUnit + curBlockIdx * tilingPtr->blockOffset +
-             excParams.excFactor * tilingPtr->rOffset);
+        gmOffset = (laLpIdx * tilingPtr->laOffset + raLpIdx * tilingPtr->raLpUnit +
+                    curBlockIdx * tilingPtr->blockOffset + excParams.excFactor * tilingPtr->rOffset);
         gmOutOffset = gmOffset - excParams.excFactor * tilingPtr->rOffset;
         InnerProcess(inGM, outGM, inLocal, outLocal, rLeft, raSize);
     }
 }
 
 template <typename T>
-__aicore__ inline void DataCopyTDRightACum<T>::CopyTDRightAProcess(
-    const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-    const LocalTensor<T>& outLocal)
+__aicore__ inline void DataCopyTDRightACum<T>::CopyTDRightAProcess(const GlobalTensor<T>& inGM,
+                                                                   const GlobalTensor<T>& outGM,
+                                                                   const LocalTensor<T>& inLocal,
+                                                                   const LocalTensor<T>& outLocal)
 {
     GetAxisLoopInfo();
     GetExclusiveInfo(tilingPtr, curBlockIdx, excParams, firstRLen, rLpCnt, rLeft);
@@ -406,54 +405,56 @@ public:
         pipe->InitBuffer(idxBuf, regElem * sizeof(T) * 2);
         idxUB = idxBuf.Get<int32_t>();
     };
-    __aicore__ inline void CumGatherTDRightA(
-        const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal, uint32_t rLen, bool isExc = false);
-    __aicore__ inline void GatherRightATDLeftAProcess(
-        const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-        const LocalTensor<T>& outLocal);
-    __aicore__ inline void CumGatherRightATDR(
-        const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal, uint32_t rLen, bool isExc = false);
-    __aicore__ inline void NoSplitRInnerProcess(
-        const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-        const LocalTensor<T>& outLocal, int64_t rLen, bool isExc,
-        void (GatherCum<T>::*impl)(const LocalTensor<T>&, const LocalTensor<T>&, uint32_t, bool));
+    __aicore__ inline void CumGatherTDRightA(const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal,
+                                             uint32_t rLen, bool isExc = false);
+    __aicore__ inline void GatherRightATDLeftAProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
+                                                      const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal);
+    __aicore__ inline void CumGatherRightATDR(const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal,
+                                              uint32_t rLen, bool isExc = false);
+    __aicore__ inline void NoSplitRInnerProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
+                                                const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal,
+                                                int64_t rLen, bool isExc,
+                                                void (GatherCum<T>::*impl)(const LocalTensor<T>&, const LocalTensor<T>&,
+                                                                           uint32_t, bool));
     __aicore__ inline void GatherNoSplitRProcess(
         const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
         const LocalTensor<T>& outLocal,
-        void (GatherCum<T>::*func)(
-            const GlobalTensor<T>&, const GlobalTensor<T>&, const LocalTensor<T>&, const LocalTensor<T>&, int64_t, bool,
-            void (GatherCum<T>::*impl)(const LocalTensor<T>&, const LocalTensor<T>&, uint32_t, bool)),
+        void (GatherCum<T>::*func)(const GlobalTensor<T>&, const GlobalTensor<T>&, const LocalTensor<T>&,
+                                   const LocalTensor<T>&, int64_t, bool,
+                                   void (GatherCum<T>::*impl)(const LocalTensor<T>&, const LocalTensor<T>&, uint32_t,
+                                                              bool)),
         void (GatherCum<T>::*impl)(const LocalTensor<T>&, const LocalTensor<T>&, uint32_t, bool));
-    __aicore__ inline void Process(
-        const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-        const LocalTensor<T>& outLocal);
+    __aicore__ inline void Process(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
+                                   const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal);
     __aicore__ inline void KCheckBGC(uint32_t comCnt, uint32_t arSize);
 
 private:
     __aicore__ inline void GetAxisLoopInfo();
-    __aicore__ inline void CumGatherRightATDLeftA(
-        const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal, uint32_t leftALen, uint32_t rLen,
-        uint32_t laOffset, bool isExc = false);
-    __aicore__ inline void TDLeftAInnerProcess(
-        const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-        const LocalTensor<T>& outLocal, int64_t laLen, int64_t rLen, bool isExc = false);
+    __aicore__ inline void CumGatherRightATDLeftA(const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal,
+                                                  uint32_t leftALen, uint32_t rLen, uint32_t laOffset,
+                                                  bool isExc = false);
+    __aicore__ inline void TDLeftAInnerProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
+                                               const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal,
+                                               int64_t laLen, int64_t rLen, bool isExc = false);
     __aicore__ inline void CleanInputDirtyData(__local_mem__ T*& srcPtr, int32_t zeroBase, uint32_t leftSize);
-    __aicore__ inline void TDLeftAForwardProcess(
-        const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-        const LocalTensor<T>& outLocal, int64_t laLpIdx, int64_t laSize);
-    __aicore__ inline void TDLeftAReverseProcess(
-        const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-        const LocalTensor<T>& outLocal, int64_t laLpIdx, int64_t laSize);
-    __aicore__ inline void TDRReverseProcess(
-        __local_mem__ T*& srcPtr, __local_mem__ T*& dstPtr, uint16_t rLpNum, int32_t comRightA, int32_t splitRASize,
-        int32_t curBegAddrBase, int32_t curBakBegAdd, uint16_t sndRLpCnt, int32_t phs1SrcBegIdx, int32_t phs2SrcBegIdx,
-        int32_t phs1LpOffset, int32_t phs2LpOffset, int32_t phs2TLpOffset, int32_t bakBegAddr, int32_t phs1DstBegIdx,
-        int32_t phs2DstBegIdx, uint32_t comLpMaskVal, uint32_t sndLpLeftMaskVal);
-    __aicore__ inline void TDRForwardProcess(
-        __local_mem__ T*& srcPtr, __local_mem__ T*& dstPtr, uint16_t rLpNum, int32_t comRightA, int32_t splitRASize,
-        int32_t curBegAddrBase, int32_t curBakBegAdd, uint16_t sndRLpCnt, int32_t phs1SrcBegIdx, int32_t phs2SrcBegIdx,
-        int32_t phs1LpOffset, int32_t phs2LpOffset, int32_t phs2TLpOffset, int32_t bakBegAddr, int32_t phs1DstBegIdx,
-        int32_t phs2DstBegIdx, uint32_t comLpMaskVal, uint32_t sndLpLeftMaskVal);
+    __aicore__ inline void TDLeftAForwardProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
+                                                 const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal,
+                                                 int64_t laLpIdx, int64_t laSize);
+    __aicore__ inline void TDLeftAReverseProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
+                                                 const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal,
+                                                 int64_t laLpIdx, int64_t laSize);
+    __aicore__ inline void TDRReverseProcess(__local_mem__ T*& srcPtr, __local_mem__ T*& dstPtr, uint16_t rLpNum,
+                                             int32_t comRightA, int32_t splitRASize, int32_t curBegAddrBase,
+                                             int32_t curBakBegAdd, uint16_t sndRLpCnt, int32_t phs1SrcBegIdx,
+                                             int32_t phs2SrcBegIdx, int32_t phs1LpOffset, int32_t phs2LpOffset,
+                                             int32_t phs2TLpOffset, int32_t bakBegAddr, int32_t phs1DstBegIdx,
+                                             int32_t phs2DstBegIdx, uint32_t comLpMaskVal, uint32_t sndLpLeftMaskVal);
+    __aicore__ inline void TDRForwardProcess(__local_mem__ T*& srcPtr, __local_mem__ T*& dstPtr, uint16_t rLpNum,
+                                             int32_t comRightA, int32_t splitRASize, int32_t curBegAddrBase,
+                                             int32_t curBakBegAdd, uint16_t sndRLpCnt, int32_t phs1SrcBegIdx,
+                                             int32_t phs2SrcBegIdx, int32_t phs1LpOffset, int32_t phs2LpOffset,
+                                             int32_t phs2TLpOffset, int32_t bakBegAddr, int32_t phs1DstBegIdx,
+                                             int32_t phs2DstBegIdx, uint32_t comLpMaskVal, uint32_t sndLpLeftMaskVal);
 
 private:
     using IdxType = typename CumTypeBase<T>::IdxType;
@@ -486,25 +487,24 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void GatherCum<T>::Process(
-    const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-    const LocalTensor<T>& outLocal)
+__aicore__ inline void GatherCum<T>::Process(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
+                                             const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal)
 {
     if (tilingPtr->rOffset > halfRegElem ||
         (regElem / tilingPtr->rOffset >= tilingPtr->rLpUnit && tilingPtr->laLpUnit == 1)) {
-        GatherNoSplitRProcess(
-            inGM, outGM, inLocal, outLocal, &GatherCum<T>::NoSplitRInnerProcess, &GatherCum<T>::CumGatherTDRightA);
+        GatherNoSplitRProcess(inGM, outGM, inLocal, outLocal, &GatherCum<T>::NoSplitRInnerProcess,
+                              &GatherCum<T>::CumGatherTDRightA);
     } else if (tilingPtr->laLpUnit > 1) {
         GatherRightATDLeftAProcess(inGM, outGM, inLocal, outLocal);
     } else {
-        GatherNoSplitRProcess(
-            inGM, outGM, inLocal, outLocal, &GatherCum<T>::NoSplitRInnerProcess, &GatherCum<T>::CumGatherRightATDR);
+        GatherNoSplitRProcess(inGM, outGM, inLocal, outLocal, &GatherCum<T>::NoSplitRInnerProcess,
+                              &GatherCum<T>::CumGatherRightATDR);
     }
 }
 
 template <typename T>
-__aicore__ inline void GatherCum<T>::CumGatherTDRightA(
-    const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal, uint32_t rLen, bool isExc)
+__aicore__ inline void GatherCum<T>::CumGatherTDRightA(const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal,
+                                                       uint32_t rLen, bool isExc)
 {
     /*  1. The input data layout in UB as follow, support copy data RA one time.
      *           |<--  rightALen -->|
@@ -537,27 +537,25 @@ __aicore__ inline void GatherCum<T>::CumGatherTDRightA(
     }
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<T> xSrc;
-        MicroAPI::RegTensor<T> yDst;
-        MicroAPI::RegTensor<RangeType> gIdx;
-        MicroAPI::RegTensor<RangeType> sIdx;
-        MicroAPI::MaskReg idxMask = MicroAPI::CreateMask<RangeType, MicroAPI::MaskPattern::ALL>();
-        MicroAPI::MaskReg mask = MicroAPI::UpdateMask<T>(aSize);
+        Reg::RegTensor<T> xSrc;
+        Reg::RegTensor<T> yDst;
+        Reg::RegTensor<RangeType> gIdx;
+        Reg::RegTensor<RangeType> sIdx;
+        Reg::MaskReg idxMask = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
+        Reg::MaskReg mask = Reg::UpdateMask<T>(aSize);
 
         // get backup result of last loop
-        MicroAPI::Arange(gIdx, bakBegAddr);
-        MicroAPI::DataCopyGather(
-            (MicroAPI::RegTensor<CastType>&)yDst, dstPtr, (MicroAPI::RegTensor<IdxType>&)gIdx, mask);
+        Reg::Arange(gIdx, bakBegAddr);
+        Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, mask);
 
-        MicroAPI::Arange(gIdx, srcBegIdx);
-        MicroAPI::Arange(sIdx, dstBegIdx);
+        Reg::Arange(gIdx, srcBegIdx);
+        Reg::Arange(sIdx, dstBegIdx);
         for (uint16_t rIdx = 0; rIdx < rLpCnt; rIdx++) {
-            MicroAPI::DataCopyGather(
-                (MicroAPI::RegTensor<CastType>&)xSrc, srcPtr, (MicroAPI::RegTensor<IdxType>&)gIdx, mask);
-            MicroAPI::Add(yDst, yDst, xSrc, mask);
-            MicroAPI::DataCopyScatter(dstPtr, yDst, (MicroAPI::RegTensor<IdxType>&)sIdx, mask);
-            MicroAPI::Adds(gIdx, gIdx, lpOffset, idxMask);
-            MicroAPI::Adds(sIdx, sIdx, lpOffset, idxMask);
+            Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, mask);
+            Reg::Add(yDst, yDst, xSrc, mask);
+            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, mask);
+            Reg::Adds(gIdx, gIdx, lpOffset, idxMask);
+            Reg::Adds(sIdx, sIdx, lpOffset, idxMask);
         }
     }
 }
@@ -606,9 +604,10 @@ template <typename T>
 __aicore__ inline void GatherCum<T>::GatherNoSplitRProcess(
     const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
     const LocalTensor<T>& outLocal,
-    void (GatherCum<T>::*func)(
-        const GlobalTensor<T>&, const GlobalTensor<T>&, const LocalTensor<T>&, const LocalTensor<T>&, int64_t, bool,
-        void (GatherCum<T>::*impl)(const LocalTensor<T>&, const LocalTensor<T>&, uint32_t, bool)),
+    void (GatherCum<T>::*func)(const GlobalTensor<T>&, const GlobalTensor<T>&, const LocalTensor<T>&,
+                               const LocalTensor<T>&, int64_t, bool,
+                               void (GatherCum<T>::*impl)(const LocalTensor<T>&, const LocalTensor<T>&, uint32_t,
+                                                          bool)),
     void (GatherCum<T>::*impl)(const LocalTensor<T>&, const LocalTensor<T>&, uint32_t, bool))
 {
     GetAxisLoopInfo();
@@ -620,25 +619,22 @@ __aicore__ inline void GatherCum<T>::GatherNoSplitRProcess(
             InsertSync(HardEvent::V_MTE2);
             if (rLpCnt > 0) {
                 copyParams.blockLen = (uint32_t)tilingPtr->raLpUnit * firstRLen * sizeof(T);
-                gmOffset =
-                    (laLpIdx * tilingPtr->laOffset + curBlockIdx * tilingPtr->blockOffset -
-                     excParams.excRFactor * tilingPtr->rOffset);
+                gmOffset = (laLpIdx * tilingPtr->laOffset + curBlockIdx * tilingPtr->blockOffset -
+                            excParams.excRFactor * tilingPtr->rOffset);
                 gmOutOffset = gmOffset + excParams.excRFactor * tilingPtr->rOffset;
                 (this->*func)(inGM, outGM, inLocal, outLocal, firstRLen, excParams.isExc, impl);
             }
             copyParams.blockLen = (uint32_t)tilingPtr->raLpUnit * rSize * sizeof(T);
             for (int64_t rLpIdx = 1; rLpIdx < rLpCnt; rLpIdx++) {
-                gmOffset =
-                    (laLpIdx * tilingPtr->laOffset + curBlockIdx * tilingPtr->blockOffset +
-                     (rLpIdx * rSize - excParams.excFactor) * tilingPtr->rOffset);
+                gmOffset = (laLpIdx * tilingPtr->laOffset + curBlockIdx * tilingPtr->blockOffset +
+                            (rLpIdx * rSize - excParams.excFactor) * tilingPtr->rOffset);
                 gmOutOffset = gmOffset + excParams.excFactor * tilingPtr->rOffset;
                 (this->*func)(inGM, outGM, inLocal, outLocal, rSize, false, impl);
             }
             if (rLeft > 0) {
                 copyParams.blockLen = (uint32_t)tilingPtr->raLpUnit * rLeft * sizeof(T);
-                gmOffset =
-                    (laLpIdx * tilingPtr->laOffset + curBlockIdx * tilingPtr->blockOffset +
-                     (rLpCnt * rSize - excParams.excFactor) * tilingPtr->rOffset);
+                gmOffset = (laLpIdx * tilingPtr->laOffset + curBlockIdx * tilingPtr->blockOffset +
+                            (rLpCnt * rSize - excParams.excFactor) * tilingPtr->rOffset);
                 gmOutOffset = gmOffset + excParams.excFactor * tilingPtr->rOffset;
                 (this->*func)(inGM, outGM, inLocal, outLocal, rLeft, false, impl);
             }
@@ -649,25 +645,22 @@ __aicore__ inline void GatherCum<T>::GatherNoSplitRProcess(
             InsertSync(HardEvent::V_MTE2);
             if (rLpCnt > 0) {
                 copyParams.blockLen = (uint32_t)tilingPtr->raLpUnit * firstRLen * sizeof(T);
-                gmOffset =
-                    (laLpIdx * tilingPtr->laOffset + curBlockIdx * tilingPtr->blockOffset +
-                     (totalRSize - firstRLen) * tilingPtr->rOffset + excParams.excRFactor * tilingPtr->rOffset);
+                gmOffset = (laLpIdx * tilingPtr->laOffset + curBlockIdx * tilingPtr->blockOffset +
+                            (totalRSize - firstRLen) * tilingPtr->rOffset + excParams.excRFactor * tilingPtr->rOffset);
                 gmOutOffset = gmOffset - excParams.excFactor * tilingPtr->rOffset;
                 (this->*func)(inGM, outGM, inLocal, outLocal, firstRLen, excParams.isExc, impl);
             }
             copyParams.blockLen = (uint32_t)tilingPtr->raLpUnit * rSize * sizeof(T);
             for (int64_t rLpIdx = rLpCnt - 1; rLpIdx > 0; rLpIdx--) {
-                gmOffset =
-                    (laLpIdx * tilingPtr->laOffset + curBlockIdx * tilingPtr->blockOffset +
-                     (rLpIdx * rSize + rLeft - rSize + excParams.excFactor) * tilingPtr->rOffset);
+                gmOffset = (laLpIdx * tilingPtr->laOffset + curBlockIdx * tilingPtr->blockOffset +
+                            (rLpIdx * rSize + rLeft - rSize + excParams.excFactor) * tilingPtr->rOffset);
                 gmOutOffset = gmOffset - excParams.excFactor * tilingPtr->rOffset;
                 (this->*func)(inGM, outGM, inLocal, outLocal, rSize, false, impl);
             }
             if (rLeft > 0) {
                 copyParams.blockLen = (uint32_t)tilingPtr->raLpUnit * rLeft * sizeof(T);
-                gmOffset =
-                    (laLpIdx * tilingPtr->laOffset + curBlockIdx * tilingPtr->blockOffset +
-                     excParams.excFactor * tilingPtr->rOffset);
+                gmOffset = (laLpIdx * tilingPtr->laOffset + curBlockIdx * tilingPtr->blockOffset +
+                            excParams.excFactor * tilingPtr->rOffset);
                 gmOutOffset = gmOffset - excParams.excFactor * tilingPtr->rOffset;
                 (this->*func)(inGM, outGM, inLocal, outLocal, rLeft, false, impl);
             }
@@ -684,16 +677,16 @@ __aicore__ inline void GatherCum<T>::CleanInputDirtyData(__local_mem__ T*& srcPt
     }
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<RangeType> sIdx;
-        MicroAPI::Arange(sIdx, zeroBase);
-        MicroAPI::RegTensor<T> zeros;
-        MicroAPI::Duplicate(zeros, (T)0);
-        MicroAPI::MaskReg mask;
-        MicroAPI::MaskReg idxMask = MicroAPI::CreateMask<RangeType, MicroAPI::MaskPattern::ALL>();
+        Reg::RegTensor<RangeType> sIdx;
+        Reg::Arange(sIdx, zeroBase);
+        Reg::RegTensor<T> zeros;
+        Reg::Duplicate(zeros, (T)0);
+        Reg::MaskReg mask;
+        Reg::MaskReg idxMask = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
         for (uint16_t i = 0; i < lpCnt; i++) {
-            mask = MicroAPI::UpdateMask<T>(leftSize);
-            MicroAPI::DataCopyScatter(srcPtr, zeros, (MicroAPI::RegTensor<IdxType>&)sIdx, mask);
-            MicroAPI::Adds(sIdx, sIdx, regElem, idxMask);
+            mask = Reg::UpdateMask<T>(leftSize);
+            Reg::DataCopyScatter(srcPtr, zeros, (Reg::RegTensor<IdxType>&)sIdx, mask);
+            Reg::Adds(sIdx, sIdx, regElem, idxMask);
         }
     }
 }
@@ -708,100 +701,92 @@ __aicore__ inline void GatherCum<T>::TDRReverseProcess(
     int32_t rightALen = tilingPtr->raLpUnit;
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<T> xSrc;
-        MicroAPI::RegTensor<T> yDst;
-        MicroAPI::RegTensor<RangeType> gIdx;
-        MicroAPI::RegTensor<RangeType> sIdx;
-        MicroAPI::RegTensor<RangeType> tmp1;
-        MicroAPI::RegTensor<RangeType> tmp2;
-        MicroAPI::RegTensor<RangeType> gComIdx;
-        MicroAPI::MaskReg idxMask = MicroAPI::CreateMask<RangeType, MicroAPI::MaskPattern::ALL>();
+        Reg::RegTensor<T> xSrc;
+        Reg::RegTensor<T> yDst;
+        Reg::RegTensor<RangeType> gIdx;
+        Reg::RegTensor<RangeType> sIdx;
+        Reg::RegTensor<RangeType> tmp1;
+        Reg::RegTensor<RangeType> tmp2;
+        Reg::RegTensor<RangeType> gComIdx;
+        Reg::MaskReg idxMask = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
 
         // get gather index: i - i//k*k + i//k*n*k
-        MicroAPI::Arange(gIdx, (RangeType)0);
-        MicroAPI::Duplicate(tmp1, (RangeType)rightALen);
-        MicroAPI::Div(tmp1, gIdx, tmp1, idxMask);
-        MicroAPI::Muls(tmp2, tmp1, splitRASize, idxMask);
-        MicroAPI::Muls(tmp1, tmp1, (RangeType)rightALen, idxMask); // tmp1 is i//k*k
-        MicroAPI::Sub(gIdx, gIdx, tmp1, idxMask);
+        Reg::Arange(gIdx, (RangeType)0);
+        Reg::Duplicate(tmp1, (RangeType)rightALen);
+        Reg::Div(tmp1, gIdx, tmp1, idxMask);
+        Reg::Muls(tmp2, tmp1, splitRASize, idxMask);
+        Reg::Muls(tmp1, tmp1, (RangeType)rightALen, idxMask); // tmp1 is i//k*k
+        Reg::Sub(gIdx, gIdx, tmp1, idxMask);
         // the index result format is: (0, 1, 2, 0, 1, 2, 0, 1, 2, ...), concat last loop backup result
-        MicroAPI::Copy(gComIdx, gIdx); // backup gComIdx
+        Reg::Copy(gComIdx, gIdx); // backup gComIdx
         // the index result format is: (0, 1, 2, 6, 7, 8, ...)
-        MicroAPI::Add(gIdx, gIdx, tmp2, idxMask); // backup gIdx
+        Reg::Add(gIdx, gIdx, tmp2, idxMask); // backup gIdx
 
         // get last loop result
-        MicroAPI::RegTensor<T> bakSrc;
-        MicroAPI::RegTensor<RangeType> gBakIdx;
-        MicroAPI::Adds(gBakIdx, gComIdx, bakBegAddr, idxMask);
-        MicroAPI::MaskReg comMask = MicroAPI::UpdateMask<T>(comLpMaskVal);
-        MicroAPI::DataCopyGather(
-            (MicroAPI::RegTensor<CastType>&)bakSrc, dstPtr, (MicroAPI::RegTensor<IdxType>&)gBakIdx, comMask);
-        MicroAPI::LocalMemBar<MicroAPI::MemType::VEC_LOAD, MicroAPI::MemType::VEC_STORE>();
+        Reg::RegTensor<T> bakSrc;
+        Reg::RegTensor<RangeType> gBakIdx;
+        Reg::Adds(gBakIdx, gComIdx, bakBegAddr, idxMask);
+        Reg::MaskReg comMask = Reg::UpdateMask<T>(comLpMaskVal);
+        Reg::DataCopyGather((Reg::RegTensor<CastType>&)bakSrc, dstPtr, (Reg::RegTensor<IdxType>&)gBakIdx, comMask);
+        Reg::LocalMemBar<Reg::MemType::VEC_LOAD, Reg::MemType::VEC_STORE>();
 
         // first operation, split R
-        MicroAPI::Duplicate(yDst, (T)0, comMask);
-        MicroAPI::Copy(sIdx, gIdx);
-        MicroAPI::Adds(gIdx, gIdx, phs1SrcBegIdx, idxMask);
-        MicroAPI::Adds(sIdx, sIdx, phs1DstBegIdx, idxMask);
+        Reg::Duplicate(yDst, (T)0, comMask);
+        Reg::Copy(sIdx, gIdx);
+        Reg::Adds(gIdx, gIdx, phs1SrcBegIdx, idxMask);
+        Reg::Adds(sIdx, sIdx, phs1DstBegIdx, idxMask);
         for (uint16_t rIdx = 0; rIdx < rLpNum; rIdx++) {
-            MicroAPI::DataCopyGather(
-                (MicroAPI::RegTensor<CastType>&)xSrc, srcPtr, (MicroAPI::RegTensor<IdxType>&)gIdx, comMask);
-            MicroAPI::Add(yDst, yDst, xSrc, comMask);
-            MicroAPI::DataCopyScatter(dstPtr, yDst, (MicroAPI::RegTensor<IdxType>&)sIdx, comMask);
-            MicroAPI::Adds(gIdx, gIdx, phs1LpOffset, idxMask);
-            MicroAPI::Adds(sIdx, sIdx, phs1LpOffset, idxMask);
+            Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
+            Reg::Add(yDst, yDst, xSrc, comMask);
+            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
+            Reg::Adds(gIdx, gIdx, phs1LpOffset, idxMask);
+            Reg::Adds(sIdx, sIdx, phs1LpOffset, idxMask);
         }
-        MicroAPI::LocalMemBar<MicroAPI::MemType::VEC_STORE, MicroAPI::MemType::VEC_LOAD>();
+        Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
 
         // second operation, get result
-        MicroAPI::Copy(xSrc, bakSrc);
-        MicroAPI::Arange(sIdx, (RangeType)0);
-        MicroAPI::Copy(gIdx, sIdx);
-        MicroAPI::Adds(gIdx, gIdx, phs2SrcBegIdx, idxMask);
-        MicroAPI::Adds(sIdx, sIdx, phs2DstBegIdx, idxMask);
+        Reg::Copy(xSrc, bakSrc);
+        Reg::Arange(sIdx, (RangeType)0);
+        Reg::Copy(gIdx, sIdx);
+        Reg::Adds(gIdx, gIdx, phs2SrcBegIdx, idxMask);
+        Reg::Adds(sIdx, sIdx, phs2DstBegIdx, idxMask);
         // for exclusive is true
-        MicroAPI::Adds(gComIdx, gComIdx, phs2DstBegIdx, idxMask);
-        MicroAPI::MaskReg sndLpLeftMask = MicroAPI::UpdateMask<T>(sndLpLeftMaskVal);
+        Reg::Adds(gComIdx, gComIdx, phs2DstBegIdx, idxMask);
+        Reg::MaskReg sndLpLeftMask = Reg::UpdateMask<T>(sndLpLeftMaskVal);
 
         // first split RA of second phase
         for (uint16_t srIdx = 0; srIdx < sndRLpCnt; srIdx++) {
-            MicroAPI::Adds(gIdx, gIdx, phs2LpOffset, idxMask);
-            MicroAPI::Adds(sIdx, sIdx, phs2LpOffset, idxMask);
-            MicroAPI::DataCopyGather(
-                (MicroAPI::RegTensor<CastType>&)yDst, dstPtr, (MicroAPI::RegTensor<IdxType>&)gIdx, comMask);
-            MicroAPI::Add(yDst, yDst, xSrc, comMask);
-            MicroAPI::DataCopyScatter(dstPtr, yDst, (MicroAPI::RegTensor<IdxType>&)sIdx, comMask);
+            Reg::Adds(gIdx, gIdx, phs2LpOffset, idxMask);
+            Reg::Adds(sIdx, sIdx, phs2LpOffset, idxMask);
+            Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
+            Reg::Add(yDst, yDst, xSrc, comMask);
+            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
         }
-        MicroAPI::Adds(gIdx, gIdx, phs2TLpOffset, idxMask);
-        MicroAPI::Adds(sIdx, sIdx, phs2TLpOffset, idxMask);
-        MicroAPI::DataCopyGather(
-            (MicroAPI::RegTensor<CastType>&)yDst, dstPtr, (MicroAPI::RegTensor<IdxType>&)gIdx, sndLpLeftMask);
-        MicroAPI::Add(yDst, yDst, xSrc, sndLpLeftMask);
-        MicroAPI::DataCopyScatter(dstPtr, yDst, (MicroAPI::RegTensor<IdxType>&)sIdx, sndLpLeftMask);
-        MicroAPI::Adds(gComIdx, gComIdx, curBegAddrBase, idxMask);
-        MicroAPI::LocalMemBar<MicroAPI::MemType::VEC_STORE, MicroAPI::MemType::VEC_LOAD>();
-        MicroAPI::DataCopyGather(
-            (MicroAPI::RegTensor<CastType>&)xSrc, dstPtr, (MicroAPI::RegTensor<IdxType>&)gComIdx, comMask);
+        Reg::Adds(gIdx, gIdx, phs2TLpOffset, idxMask);
+        Reg::Adds(sIdx, sIdx, phs2TLpOffset, idxMask);
+        Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, sndLpLeftMask);
+        Reg::Add(yDst, yDst, xSrc, sndLpLeftMask);
+        Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, sndLpLeftMask);
+        Reg::Adds(gComIdx, gComIdx, curBegAddrBase, idxMask);
+        Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
+        Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, dstPtr, (Reg::RegTensor<IdxType>&)gComIdx, comMask);
 
         for (uint16_t comIdx = 1; comIdx < (uint16_t)comRightA; comIdx++) {
             for (uint16_t srIdx = 0; srIdx < sndRLpCnt; srIdx++) {
-                MicroAPI::Adds(gIdx, gIdx, phs2LpOffset, idxMask);
-                MicroAPI::Adds(sIdx, sIdx, phs2LpOffset, idxMask);
-                MicroAPI::DataCopyGather(
-                    (MicroAPI::RegTensor<CastType>&)yDst, dstPtr, (MicroAPI::RegTensor<IdxType>&)gIdx, comMask);
-                MicroAPI::Add(yDst, yDst, xSrc, comMask);
-                MicroAPI::DataCopyScatter(dstPtr, yDst, (MicroAPI::RegTensor<IdxType>&)sIdx, comMask);
+                Reg::Adds(gIdx, gIdx, phs2LpOffset, idxMask);
+                Reg::Adds(sIdx, sIdx, phs2LpOffset, idxMask);
+                Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
+                Reg::Add(yDst, yDst, xSrc, comMask);
+                Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
             }
-            MicroAPI::Adds(gIdx, gIdx, phs2TLpOffset, idxMask);
-            MicroAPI::Adds(sIdx, sIdx, phs2TLpOffset, idxMask);
-            MicroAPI::DataCopyGather(
-                (MicroAPI::RegTensor<CastType>&)yDst, dstPtr, (MicroAPI::RegTensor<IdxType>&)gIdx, sndLpLeftMask);
-            MicroAPI::Add(yDst, yDst, xSrc, sndLpLeftMask);
-            MicroAPI::DataCopyScatter(dstPtr, yDst, (MicroAPI::RegTensor<IdxType>&)sIdx, sndLpLeftMask);
-            MicroAPI::Adds(gComIdx, gComIdx, curBakBegAdd, idxMask);
-            MicroAPI::LocalMemBar<MicroAPI::MemType::VEC_STORE, MicroAPI::MemType::VEC_LOAD>();
-            MicroAPI::DataCopyGather(
-                (MicroAPI::RegTensor<CastType>&)xSrc, dstPtr, (MicroAPI::RegTensor<IdxType>&)gComIdx, comMask);
+            Reg::Adds(gIdx, gIdx, phs2TLpOffset, idxMask);
+            Reg::Adds(sIdx, sIdx, phs2TLpOffset, idxMask);
+            Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, sndLpLeftMask);
+            Reg::Add(yDst, yDst, xSrc, sndLpLeftMask);
+            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, sndLpLeftMask);
+            Reg::Adds(gComIdx, gComIdx, curBakBegAdd, idxMask);
+            Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
+            Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, dstPtr, (Reg::RegTensor<IdxType>&)gComIdx, comMask);
         }
     }
 }
@@ -816,107 +801,99 @@ __aicore__ inline void GatherCum<T>::TDRForwardProcess(
     int32_t rightALen = tilingPtr->raLpUnit;
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<T> xSrc;
-        MicroAPI::RegTensor<T> yDst;
-        MicroAPI::RegTensor<RangeType> gIdx;
-        MicroAPI::RegTensor<RangeType> sIdx;
-        MicroAPI::RegTensor<RangeType> tmp1;
-        MicroAPI::RegTensor<RangeType> tmp2;
-        MicroAPI::RegTensor<RangeType> gComIdx;
-        MicroAPI::MaskReg idxMask = MicroAPI::CreateMask<RangeType, MicroAPI::MaskPattern::ALL>();
+        Reg::RegTensor<T> xSrc;
+        Reg::RegTensor<T> yDst;
+        Reg::RegTensor<RangeType> gIdx;
+        Reg::RegTensor<RangeType> sIdx;
+        Reg::RegTensor<RangeType> tmp1;
+        Reg::RegTensor<RangeType> tmp2;
+        Reg::RegTensor<RangeType> gComIdx;
+        Reg::MaskReg idxMask = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
 
         // get gather index: i - i//k*k + i//k*n*k
-        MicroAPI::Arange(gIdx, (RangeType)0);
-        MicroAPI::Duplicate(tmp1, (RangeType)rightALen);
-        MicroAPI::Div(tmp1, gIdx, tmp1, idxMask);
-        MicroAPI::Muls(tmp2, tmp1, splitRASize, idxMask);
-        MicroAPI::Muls(tmp1, tmp1, (RangeType)rightALen, idxMask); // tmp1 is i//k*k
-        MicroAPI::Sub(gIdx, gIdx, tmp1, idxMask);
+        Reg::Arange(gIdx, (RangeType)0);
+        Reg::Duplicate(tmp1, (RangeType)rightALen);
+        Reg::Div(tmp1, gIdx, tmp1, idxMask);
+        Reg::Muls(tmp2, tmp1, splitRASize, idxMask);
+        Reg::Muls(tmp1, tmp1, (RangeType)rightALen, idxMask); // tmp1 is i//k*k
+        Reg::Sub(gIdx, gIdx, tmp1, idxMask);
         // the index result format is: (0, 1, 2, 0, 1, 2, 0, 1, 2, ...), concat last loop backup result
-        MicroAPI::Copy(gComIdx, gIdx); // backup gComIdx
+        Reg::Copy(gComIdx, gIdx); // backup gComIdx
         // the index result format is: (0, 1, 2, 6, 7, 8, ...)
-        MicroAPI::Add(gIdx, gIdx, tmp2, idxMask); // backup gIdx
+        Reg::Add(gIdx, gIdx, tmp2, idxMask); // backup gIdx
 
         // get last loop result
-        MicroAPI::RegTensor<T> bakSrc;
-        MicroAPI::RegTensor<RangeType> gBakIdx;
-        MicroAPI::Adds(gBakIdx, gComIdx, bakBegAddr, idxMask);
-        MicroAPI::MaskReg comMask = MicroAPI::UpdateMask<T>(comLpMaskVal);
-        MicroAPI::DataCopyGather(
-            (MicroAPI::RegTensor<CastType>&)bakSrc, dstPtr, (MicroAPI::RegTensor<IdxType>&)gBakIdx, comMask);
-        MicroAPI::LocalMemBar<MicroAPI::MemType::VEC_LOAD, MicroAPI::MemType::VEC_STORE>();
+        Reg::RegTensor<T> bakSrc;
+        Reg::RegTensor<RangeType> gBakIdx;
+        Reg::Adds(gBakIdx, gComIdx, bakBegAddr, idxMask);
+        Reg::MaskReg comMask = Reg::UpdateMask<T>(comLpMaskVal);
+        Reg::DataCopyGather((Reg::RegTensor<CastType>&)bakSrc, dstPtr, (Reg::RegTensor<IdxType>&)gBakIdx, comMask);
+        Reg::LocalMemBar<Reg::MemType::VEC_LOAD, Reg::MemType::VEC_STORE>();
 
         // first operation, split R
-        MicroAPI::Duplicate(yDst, (T)0, comMask);
-        MicroAPI::Copy(sIdx, gIdx);
-        MicroAPI::Adds(gIdx, gIdx, phs1SrcBegIdx, idxMask);
-        MicroAPI::Adds(sIdx, sIdx, phs1DstBegIdx, idxMask);
+        Reg::Duplicate(yDst, (T)0, comMask);
+        Reg::Copy(sIdx, gIdx);
+        Reg::Adds(gIdx, gIdx, phs1SrcBegIdx, idxMask);
+        Reg::Adds(sIdx, sIdx, phs1DstBegIdx, idxMask);
         for (uint16_t rIdx = 0; rIdx < rLpNum; rIdx++) {
-            MicroAPI::DataCopyGather(
-                (MicroAPI::RegTensor<CastType>&)xSrc, srcPtr, (MicroAPI::RegTensor<IdxType>&)gIdx, comMask);
-            MicroAPI::Add(yDst, yDst, xSrc, comMask);
-            MicroAPI::DataCopyScatter(dstPtr, yDst, (MicroAPI::RegTensor<IdxType>&)sIdx, comMask);
-            MicroAPI::Adds(gIdx, gIdx, phs1LpOffset, idxMask);
-            MicroAPI::Adds(sIdx, sIdx, phs1LpOffset, idxMask);
+            Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
+            Reg::Add(yDst, yDst, xSrc, comMask);
+            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
+            Reg::Adds(gIdx, gIdx, phs1LpOffset, idxMask);
+            Reg::Adds(sIdx, sIdx, phs1LpOffset, idxMask);
         }
-        MicroAPI::LocalMemBar<MicroAPI::MemType::VEC_STORE, MicroAPI::MemType::VEC_LOAD>();
+        Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
 
         // second operation, get result
-        MicroAPI::Copy(xSrc, bakSrc);
-        MicroAPI::Arange(sIdx, (RangeType)0);
-        MicroAPI::Copy(gIdx, sIdx);
-        MicroAPI::Adds(gIdx, gIdx, phs2SrcBegIdx, idxMask);
-        MicroAPI::Adds(sIdx, sIdx, phs2DstBegIdx, idxMask);
+        Reg::Copy(xSrc, bakSrc);
+        Reg::Arange(sIdx, (RangeType)0);
+        Reg::Copy(gIdx, sIdx);
+        Reg::Adds(gIdx, gIdx, phs2SrcBegIdx, idxMask);
+        Reg::Adds(sIdx, sIdx, phs2DstBegIdx, idxMask);
         // for exclusive is true
-        MicroAPI::Adds(gComIdx, gComIdx, phs2DstBegIdx, idxMask);
-        MicroAPI::MaskReg sndLpLeftMask = MicroAPI::UpdateMask<T>(sndLpLeftMaskVal);
+        Reg::Adds(gComIdx, gComIdx, phs2DstBegIdx, idxMask);
+        Reg::MaskReg sndLpLeftMask = Reg::UpdateMask<T>(sndLpLeftMaskVal);
 
         // first split RA of second phase
         for (uint16_t srIdx = 0; srIdx < sndRLpCnt; srIdx++) {
-            MicroAPI::DataCopyGather(
-                (MicroAPI::RegTensor<CastType>&)yDst, dstPtr, (MicroAPI::RegTensor<IdxType>&)gIdx, comMask);
-            MicroAPI::Add(yDst, yDst, xSrc, comMask);
-            MicroAPI::DataCopyScatter(dstPtr, yDst, (MicroAPI::RegTensor<IdxType>&)sIdx, comMask);
-            MicroAPI::Adds(gIdx, gIdx, phs2LpOffset, idxMask);
-            MicroAPI::Adds(sIdx, sIdx, phs2LpOffset, idxMask);
+            Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
+            Reg::Add(yDst, yDst, xSrc, comMask);
+            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
+            Reg::Adds(gIdx, gIdx, phs2LpOffset, idxMask);
+            Reg::Adds(sIdx, sIdx, phs2LpOffset, idxMask);
         }
-        MicroAPI::DataCopyGather(
-            (MicroAPI::RegTensor<CastType>&)yDst, dstPtr, (MicroAPI::RegTensor<IdxType>&)gIdx, sndLpLeftMask);
-        MicroAPI::Add(yDst, yDst, xSrc, sndLpLeftMask);
-        MicroAPI::DataCopyScatter(dstPtr, yDst, (MicroAPI::RegTensor<IdxType>&)sIdx, sndLpLeftMask);
-        MicroAPI::Adds(gIdx, gIdx, phs2TLpOffset, idxMask);
-        MicroAPI::Adds(sIdx, sIdx, phs2TLpOffset, idxMask);
-        MicroAPI::Adds(gComIdx, gComIdx, curBegAddrBase, idxMask);
-        MicroAPI::LocalMemBar<MicroAPI::MemType::VEC_STORE, MicroAPI::MemType::VEC_LOAD>();
-        MicroAPI::DataCopyGather(
-            (MicroAPI::RegTensor<CastType>&)xSrc, dstPtr, (MicroAPI::RegTensor<IdxType>&)gComIdx, comMask);
+        Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, sndLpLeftMask);
+        Reg::Add(yDst, yDst, xSrc, sndLpLeftMask);
+        Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, sndLpLeftMask);
+        Reg::Adds(gIdx, gIdx, phs2TLpOffset, idxMask);
+        Reg::Adds(sIdx, sIdx, phs2TLpOffset, idxMask);
+        Reg::Adds(gComIdx, gComIdx, curBegAddrBase, idxMask);
+        Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
+        Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, dstPtr, (Reg::RegTensor<IdxType>&)gComIdx, comMask);
 
         for (uint16_t comIdx = 1; comIdx < (uint16_t)comRightA; comIdx++) {
             for (uint16_t srIdx = 0; srIdx < sndRLpCnt; srIdx++) {
-                MicroAPI::DataCopyGather(
-                    (MicroAPI::RegTensor<CastType>&)yDst, dstPtr, (MicroAPI::RegTensor<IdxType>&)gIdx, comMask);
-                MicroAPI::Add(yDst, yDst, xSrc, comMask);
-                MicroAPI::DataCopyScatter(dstPtr, yDst, (MicroAPI::RegTensor<IdxType>&)sIdx, comMask);
-                MicroAPI::Adds(gIdx, gIdx, phs2LpOffset, idxMask);
-                MicroAPI::Adds(sIdx, sIdx, phs2LpOffset, idxMask);
+                Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
+                Reg::Add(yDst, yDst, xSrc, comMask);
+                Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
+                Reg::Adds(gIdx, gIdx, phs2LpOffset, idxMask);
+                Reg::Adds(sIdx, sIdx, phs2LpOffset, idxMask);
             }
-            MicroAPI::DataCopyGather(
-                (MicroAPI::RegTensor<CastType>&)yDst, dstPtr, (MicroAPI::RegTensor<IdxType>&)gIdx, sndLpLeftMask);
-            MicroAPI::Add(yDst, yDst, xSrc, sndLpLeftMask);
-            MicroAPI::DataCopyScatter(dstPtr, yDst, (MicroAPI::RegTensor<IdxType>&)sIdx, sndLpLeftMask);
-            MicroAPI::Adds(gIdx, gIdx, phs2TLpOffset, idxMask);
-            MicroAPI::Adds(sIdx, sIdx, phs2TLpOffset, idxMask);
-            MicroAPI::Adds(gComIdx, gComIdx, curBakBegAdd, idxMask);
-            MicroAPI::LocalMemBar<MicroAPI::MemType::VEC_STORE, MicroAPI::MemType::VEC_LOAD>();
-            MicroAPI::DataCopyGather(
-                (MicroAPI::RegTensor<CastType>&)xSrc, dstPtr, (MicroAPI::RegTensor<IdxType>&)gComIdx, comMask);
+            Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, sndLpLeftMask);
+            Reg::Add(yDst, yDst, xSrc, sndLpLeftMask);
+            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, sndLpLeftMask);
+            Reg::Adds(gIdx, gIdx, phs2TLpOffset, idxMask);
+            Reg::Adds(sIdx, sIdx, phs2TLpOffset, idxMask);
+            Reg::Adds(gComIdx, gComIdx, curBakBegAdd, idxMask);
+            Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
+            Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, dstPtr, (Reg::RegTensor<IdxType>&)gComIdx, comMask);
         }
     }
 }
 
 template <typename T>
-__aicore__ inline void GatherCum<T>::CumGatherRightATDR(
-    const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal, uint32_t rLen, bool isExc)
+__aicore__ inline void GatherCum<T>::CumGatherRightATDR(const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal,
+                                                        uint32_t rLen, bool isExc)
 {
     /*  1. The input data layout in UB as follow, support copy data RA one time.
      *           |<--  rightALen -->|
@@ -994,22 +971,20 @@ __aicore__ inline void GatherCum<T>::CumGatherRightATDR(
             CleanInputDirtyData(srcPtr, zeroBase, leftSize);
             PipeBarrier<PIPE_V>();
         }
-        TDRReverseProcess(
-            srcPtr, dstPtr, rLpNum, comRightA, splitRASize, curBegAddrBase, curBakBegAdd, sndRLpCnt, phs1SrcBegIdx,
-            phs2SrcBegIdx, phs1LpOffset, phs2LpOffset, phs2TLpOffset, bakBegAddr, phs1DstBegIdx, phs2DstBegIdx,
-            comLpMaskVal, sndLpLeftMaskVal);
+        TDRReverseProcess(srcPtr, dstPtr, rLpNum, comRightA, splitRASize, curBegAddrBase, curBakBegAdd, sndRLpCnt,
+                          phs1SrcBegIdx, phs2SrcBegIdx, phs1LpOffset, phs2LpOffset, phs2TLpOffset, bakBegAddr,
+                          phs1DstBegIdx, phs2DstBegIdx, comLpMaskVal, sndLpLeftMaskVal);
     } else {
-        TDRForwardProcess(
-            srcPtr, dstPtr, rLpNum, comRightA, splitRASize, curBegAddrBase, curBakBegAdd, sndRLpCnt, phs1SrcBegIdx,
-            phs2SrcBegIdx, phs1LpOffset, phs2LpOffset, phs2TLpOffset, bakBegAddr, phs1DstBegIdx, phs2DstBegIdx,
-            comLpMaskVal, sndLpLeftMaskVal);
+        TDRForwardProcess(srcPtr, dstPtr, rLpNum, comRightA, splitRASize, curBegAddrBase, curBakBegAdd, sndRLpCnt,
+                          phs1SrcBegIdx, phs2SrcBegIdx, phs1LpOffset, phs2LpOffset, phs2TLpOffset, bakBegAddr,
+                          phs1DstBegIdx, phs2DstBegIdx, comLpMaskVal, sndLpLeftMaskVal);
     }
 }
 
 template <typename T>
-__aicore__ inline void GatherCum<T>::CumGatherRightATDLeftA(
-    const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal, uint32_t leftALen, uint32_t rLen, uint32_t laOffset,
-    bool isExc)
+__aicore__ inline void GatherCum<T>::CumGatherRightATDLeftA(const LocalTensor<T>& inLocal,
+                                                            const LocalTensor<T>& outLocal, uint32_t leftALen,
+                                                            uint32_t rLen, uint32_t laOffset, bool isExc)
 {
     /*  1. The input data layout in UB as follow, support copy data RA or ARA one time.
      *           |<--  rightALen -->|
@@ -1062,76 +1037,72 @@ __aicore__ inline void GatherCum<T>::CumGatherRightATDLeftA(
 
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<T> xSrc;
-        MicroAPI::RegTensor<T> yDst;
-        MicroAPI::RegTensor<RangeType> gIdx;
-        MicroAPI::RegTensor<RangeType> gBakIdx;
-        MicroAPI::RegTensor<RangeType> tmp1;
-        MicroAPI::RegTensor<RangeType> tmp2;
-        MicroAPI::RegTensor<RangeType> sIdx;
-        MicroAPI::RegTensor<RangeType> sBakIdx;
-        MicroAPI::MaskReg idxMask = MicroAPI::CreateMask<RangeType, MicroAPI::MaskPattern::ALL>();
+        Reg::RegTensor<T> xSrc;
+        Reg::RegTensor<T> yDst;
+        Reg::RegTensor<RangeType> gIdx;
+        Reg::RegTensor<RangeType> gBakIdx;
+        Reg::RegTensor<RangeType> tmp1;
+        Reg::RegTensor<RangeType> tmp2;
+        Reg::RegTensor<RangeType> sIdx;
+        Reg::RegTensor<RangeType> sBakIdx;
+        Reg::MaskReg idxMask = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
 
         /* get Gather index: i - i // rightA * rightA + i // rightA * laOffset
          * the index like (0, 1, 2, 30, 31, 32, 60, 61, 62)
          */
-        MicroAPI::Arange(gIdx, (RangeType)0);
-        MicroAPI::Duplicate(tmp1, (RangeType)rightALen);
-        MicroAPI::Div(tmp1, gIdx, tmp1, idxMask);
-        MicroAPI::Muls(tmp2, tmp1, (RangeType)laOffset, idxMask);
-        MicroAPI::Muls(tmp1, tmp1, (RangeType)rightALen, idxMask);
-        MicroAPI::Sub(gIdx, gIdx, tmp1, idxMask);
-        MicroAPI::Add(gIdx, gIdx, tmp2, idxMask); // backup gIdx
-        MicroAPI::Copy(gBakIdx, gIdx);
-        MicroAPI::Copy(sIdx, gIdx);
-        MicroAPI::Copy(sBakIdx, gIdx);
-        MicroAPI::Adds(gBakIdx, gBakIdx, bakBegAddr, idxMask);
+        Reg::Arange(gIdx, (RangeType)0);
+        Reg::Duplicate(tmp1, (RangeType)rightALen);
+        Reg::Div(tmp1, gIdx, tmp1, idxMask);
+        Reg::Muls(tmp2, tmp1, (RangeType)laOffset, idxMask);
+        Reg::Muls(tmp1, tmp1, (RangeType)rightALen, idxMask);
+        Reg::Sub(gIdx, gIdx, tmp1, idxMask);
+        Reg::Add(gIdx, gIdx, tmp2, idxMask); // backup gIdx
+        Reg::Copy(gBakIdx, gIdx);
+        Reg::Copy(sIdx, gIdx);
+        Reg::Copy(sBakIdx, gIdx);
+        Reg::Adds(gBakIdx, gBakIdx, bakBegAddr, idxMask);
 
-        MicroAPI::Adds(gIdx, gIdx, srcBegAddr, idxMask);
-        MicroAPI::Adds(sIdx, sIdx, dstBegIdx, idxMask);
-        MicroAPI::MaskReg mMask = MicroAPI::UpdateMask<T>(mainComSize);
-        MicroAPI::MaskReg tMask = MicroAPI::UpdateMask<T>(tailComSize);
+        Reg::Adds(gIdx, gIdx, srcBegAddr, idxMask);
+        Reg::Adds(sIdx, sIdx, dstBegIdx, idxMask);
+        Reg::MaskReg mMask = Reg::UpdateMask<T>(mainComSize);
+        Reg::MaskReg tMask = Reg::UpdateMask<T>(tailComSize);
         for (uint16_t aIdx = 0; aIdx < aMainLpCnt; aIdx++) {
             // get backup result of last loop
-            MicroAPI::DataCopyGather(
-                (MicroAPI::RegTensor<CastType>&)yDst, dstPtr, (MicroAPI::RegTensor<IdxType>&)gBakIdx, mMask);
+            Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gBakIdx, mMask);
             for (uint16_t rIdx = 0; rIdx < rLpCnt; rIdx++) {
-                MicroAPI::DataCopyGather(
-                    (MicroAPI::RegTensor<CastType>&)xSrc, srcPtr, (MicroAPI::RegTensor<IdxType>&)gIdx, mMask);
-                MicroAPI::Add(yDst, yDst, xSrc, mMask);
-                MicroAPI::DataCopyScatter(dstPtr, yDst, (MicroAPI::RegTensor<IdxType>&)sIdx, mMask);
-                MicroAPI::Adds(gIdx, gIdx, lpOffset, idxMask);
-                MicroAPI::Adds(sIdx, sIdx, lpOffset, idxMask);
+                Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, mMask);
+                Reg::Add(yDst, yDst, xSrc, mMask);
+                Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, mMask);
+                Reg::Adds(gIdx, gIdx, lpOffset, idxMask);
+                Reg::Adds(sIdx, sIdx, lpOffset, idxMask);
             }
-            MicroAPI::Adds(gBakIdx, gBakIdx, aLpIdxOffset, idxMask);
-            MicroAPI::Adds(sBakIdx, sBakIdx, aLpIdxOffset, idxMask);
-            MicroAPI::Copy(gIdx, sBakIdx);
-            MicroAPI::Adds(sIdx, gIdx, dstBegIdx, idxMask);
-            MicroAPI::Adds(gIdx, gIdx, srcBegAddr, idxMask);
+            Reg::Adds(gBakIdx, gBakIdx, aLpIdxOffset, idxMask);
+            Reg::Adds(sBakIdx, sBakIdx, aLpIdxOffset, idxMask);
+            Reg::Copy(gIdx, sBakIdx);
+            Reg::Adds(sIdx, gIdx, dstBegIdx, idxMask);
+            Reg::Adds(gIdx, gIdx, srcBegAddr, idxMask);
         }
 
-        MicroAPI::DataCopyGather(
-            (MicroAPI::RegTensor<CastType>&)yDst, dstPtr, (MicroAPI::RegTensor<IdxType>&)gBakIdx, tMask);
+        Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gBakIdx, tMask);
         for (uint16_t rIdx = 0; rIdx < rLpCnt; rIdx++) {
-            MicroAPI::DataCopyGather(
-                (MicroAPI::RegTensor<CastType>&)xSrc, srcPtr, (MicroAPI::RegTensor<IdxType>&)gIdx, tMask);
-            MicroAPI::Add(yDst, yDst, xSrc, tMask);
-            MicroAPI::DataCopyScatter(dstPtr, yDst, (MicroAPI::RegTensor<IdxType>&)sIdx, tMask);
-            MicroAPI::Adds(gIdx, gIdx, lpOffset, idxMask);
-            MicroAPI::Adds(sIdx, sIdx, lpOffset, idxMask);
+            Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, tMask);
+            Reg::Add(yDst, yDst, xSrc, tMask);
+            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, tMask);
+            Reg::Adds(gIdx, gIdx, lpOffset, idxMask);
+            Reg::Adds(sIdx, sIdx, lpOffset, idxMask);
         }
     }
 }
 
 template <typename T>
-__aicore__ inline void GatherCum<T>::TDLeftAInnerProcess(
-    const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-    const LocalTensor<T>& outLocal, int64_t laLen, int64_t rLen, bool isExc)
+__aicore__ inline void GatherCum<T>::TDLeftAInnerProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
+                                                         const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal,
+                                                         int64_t laLen, int64_t rLen, bool isExc)
 {
     if (tilingPtr->laOffset != tilingPtr->rLpUnit * tilingPtr->rOffset || isBGC || isExc) {
         if (rLen > 0) {
-            CopyPara copyPara = {
-                laLen, static_cast<uint32_t>(rLen * tilingPtr->rOffset), tilingPtr->laOffset, arLenBA, blockElem};
+            CopyPara copyPara = {laLen, static_cast<uint32_t>(rLen * tilingPtr->rOffset), tilingPtr->laOffset, arLenBA,
+                                 blockElem};
             CumCopyIn(inLocal, inGM[gmOffset], copyPara);
             InsertSync(HardEvent::MTE2_V);
             CumGatherRightATDLeftA(inLocal, outLocal, laLen, rLen, arLenBA, isExc);
@@ -1141,83 +1112,79 @@ __aicore__ inline void GatherCum<T>::TDLeftAInnerProcess(
         if (isExc) {
             rLen += 1;
         }
-        CopyPara copyPara = {
-            laLen, static_cast<uint32_t>(rLen * tilingPtr->rOffset), tilingPtr->laOffset, arLenBA, blockElem};
+        CopyPara copyPara = {laLen, static_cast<uint32_t>(rLen * tilingPtr->rOffset), tilingPtr->laOffset, arLenBA,
+                             blockElem};
         CumCopyOut(outGM[gmOutOffset], outLocal, copyPara);
         InsertSync(HardEvent::MTE3_V);
     } else {
         uint32_t araLenBA = Ops::Base::CeilAlign(uint32_t(laLen * rLen * tilingPtr->rOffset), blockElem);
         if (rLen > 0) {
-            CopyPara copyPara = {
-                1, static_cast<uint32_t>(laLen * rLen * tilingPtr->rOffset), tilingPtr->laOffset, araLenBA, blockElem};
+            CopyPara copyPara = {1, static_cast<uint32_t>(laLen * rLen * tilingPtr->rOffset), tilingPtr->laOffset,
+                                 araLenBA, blockElem};
             CumCopyIn(inLocal, inGM[gmOffset], copyPara);
             InsertSync(HardEvent::MTE2_V);
             CumGatherRightATDLeftA(inLocal, outLocal, laLen, rLen, rLen * tilingPtr->rOffset, isExc);
             InsertSync(HardEvent::V_MTE2);
         }
         InsertSync(HardEvent::V_MTE3);
-        CopyPara copyPara = {
-            1, static_cast<uint32_t>(laLen * rLen * tilingPtr->rOffset), tilingPtr->laOffset, araLenBA, blockElem};
+        CopyPara copyPara = {1, static_cast<uint32_t>(laLen * rLen * tilingPtr->rOffset), tilingPtr->laOffset, araLenBA,
+                             blockElem};
         CumCopyOut(outGM[gmOutOffset], outLocal, copyPara);
         InsertSync(HardEvent::MTE3_V);
     }
 }
 
 template <typename T>
-__aicore__ inline void GatherCum<T>::TDLeftAForwardProcess(
-    const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-    const LocalTensor<T>& outLocal, int64_t laLpIdx, int64_t laSize)
+__aicore__ inline void GatherCum<T>::TDLeftAForwardProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
+                                                           const LocalTensor<T>& inLocal,
+                                                           const LocalTensor<T>& outLocal, int64_t laLpIdx,
+                                                           int64_t laSize)
 {
     SetUBZero(outLocal, tilingPtr->laLpUnit * arLenBA);
     InsertSync(HardEvent::V_MTE2);
     if (rLpCnt > 0) {
-        gmOffset =
-            (laLpIdx * tilingPtr->laOffset * tilingPtr->laLpUnit + curBlockIdx * tilingPtr->blockOffset -
-             excParams.excRFactor * tilingPtr->rOffset);
+        gmOffset = (laLpIdx * tilingPtr->laOffset * tilingPtr->laLpUnit + curBlockIdx * tilingPtr->blockOffset -
+                    excParams.excRFactor * tilingPtr->rOffset);
         gmOutOffset = gmOffset + excParams.excRFactor * tilingPtr->rOffset;
         TDLeftAInnerProcess(inGM, outGM, inLocal, outLocal, laSize, firstRLen, excParams.isExc);
     }
     for (int64_t rLpIdx = 1; rLpIdx < rLpCnt; rLpIdx++) {
-        gmOffset =
-            (laLpIdx * tilingPtr->laOffset * tilingPtr->laLpUnit + curBlockIdx * tilingPtr->blockOffset +
-             (rLpIdx * rSize - excParams.excFactor) * tilingPtr->rOffset);
+        gmOffset = (laLpIdx * tilingPtr->laOffset * tilingPtr->laLpUnit + curBlockIdx * tilingPtr->blockOffset +
+                    (rLpIdx * rSize - excParams.excFactor) * tilingPtr->rOffset);
         gmOutOffset = gmOffset + excParams.excFactor * tilingPtr->rOffset;
         TDLeftAInnerProcess(inGM, outGM, inLocal, outLocal, laSize, rSize);
     }
     if (rLeft > 0) {
-        gmOffset =
-            (laLpIdx * tilingPtr->laOffset * tilingPtr->laLpUnit + curBlockIdx * tilingPtr->blockOffset +
-             (rLpCnt * rSize - excParams.excFactor) * tilingPtr->rOffset);
+        gmOffset = (laLpIdx * tilingPtr->laOffset * tilingPtr->laLpUnit + curBlockIdx * tilingPtr->blockOffset +
+                    (rLpCnt * rSize - excParams.excFactor) * tilingPtr->rOffset);
         gmOutOffset = gmOffset + excParams.excFactor * tilingPtr->rOffset;
         TDLeftAInnerProcess(inGM, outGM, inLocal, outLocal, laSize, rLeft);
     }
 }
 
 template <typename T>
-__aicore__ inline void GatherCum<T>::TDLeftAReverseProcess(
-    const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-    const LocalTensor<T>& outLocal, int64_t laLpIdx, int64_t laSize)
+__aicore__ inline void GatherCum<T>::TDLeftAReverseProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
+                                                           const LocalTensor<T>& inLocal,
+                                                           const LocalTensor<T>& outLocal, int64_t laLpIdx,
+                                                           int64_t laSize)
 {
     SetUBZero(outLocal, tilingPtr->laLpUnit * arLenBA);
     InsertSync(HardEvent::V_MTE2);
     if (rLpCnt > 0) {
-        gmOffset =
-            (laLpIdx * tilingPtr->laOffset * tilingPtr->laLpUnit + curBlockIdx * tilingPtr->blockOffset +
-             (totalRSize - firstRLen) * tilingPtr->rOffset + excParams.excRFactor * tilingPtr->rOffset);
+        gmOffset = (laLpIdx * tilingPtr->laOffset * tilingPtr->laLpUnit + curBlockIdx * tilingPtr->blockOffset +
+                    (totalRSize - firstRLen) * tilingPtr->rOffset + excParams.excRFactor * tilingPtr->rOffset);
         gmOutOffset = gmOffset - excParams.excFactor * tilingPtr->rOffset;
         TDLeftAInnerProcess(inGM, outGM, inLocal, outLocal, laSize, firstRLen, excParams.isExc);
     }
     for (int64_t rLpIdx = rLpCnt - 1; rLpIdx > 0; rLpIdx--) {
-        gmOffset =
-            (laLpIdx * tilingPtr->laOffset * tilingPtr->laLpUnit + curBlockIdx * tilingPtr->blockOffset +
-             (rLpIdx * rSize + rLeft - rSize + excParams.excFactor) * tilingPtr->rOffset);
+        gmOffset = (laLpIdx * tilingPtr->laOffset * tilingPtr->laLpUnit + curBlockIdx * tilingPtr->blockOffset +
+                    (rLpIdx * rSize + rLeft - rSize + excParams.excFactor) * tilingPtr->rOffset);
         gmOutOffset = gmOffset - excParams.excFactor * tilingPtr->rOffset;
         TDLeftAInnerProcess(inGM, outGM, inLocal, outLocal, laSize, rSize);
     }
     if (rLeft > 0) {
-        gmOffset =
-            (laLpIdx * tilingPtr->laOffset * tilingPtr->laLpUnit + curBlockIdx * tilingPtr->blockOffset +
-             excParams.excFactor * tilingPtr->rOffset);
+        gmOffset = (laLpIdx * tilingPtr->laOffset * tilingPtr->laLpUnit + curBlockIdx * tilingPtr->blockOffset +
+                    excParams.excFactor * tilingPtr->rOffset);
         gmOutOffset = gmOffset - excParams.excFactor * tilingPtr->rOffset;
         TDLeftAInnerProcess(inGM, outGM, inLocal, outLocal, laSize, rLeft);
     }
@@ -1238,18 +1205,18 @@ __aicore__ inline void GatherCum<T>::KCheckBGC(uint32_t comCnt, uint32_t arSize)
 }
 
 template <typename T>
-__aicore__ inline void GatherCum<T>::GatherRightATDLeftAProcess(
-    const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM, const LocalTensor<T>& inLocal,
-    const LocalTensor<T>& outLocal)
+__aicore__ inline void GatherCum<T>::GatherRightATDLeftAProcess(const GlobalTensor<T>& inGM,
+                                                                const GlobalTensor<T>& outGM,
+                                                                const LocalTensor<T>& inLocal,
+                                                                const LocalTensor<T>& outLocal)
 {
     GetAxisLoopInfo();
     GetExclusiveInfo(tilingPtr, curBlockIdx, excParams, firstRLen, rLpCnt, rLeft);
 
     // to avoid bank group conflict
-    uint32_t comCnt =
-        ((regElem / int32_t(tilingPtr->raLpUnit) > uint32_t(tilingPtr->laLpUnit)) ?
-             uint32_t(tilingPtr->laLpUnit) :
-             regElem / int32_t(tilingPtr->raLpUnit));
+    uint32_t comCnt = ((regElem / int32_t(tilingPtr->raLpUnit) > uint32_t(tilingPtr->laLpUnit)) ?
+                           uint32_t(tilingPtr->laLpUnit) :
+                           regElem / int32_t(tilingPtr->raLpUnit));
     uint32_t tmpARSize = (tilingPtr->laOffset != tilingPtr->rLpUnit * tilingPtr->rOffset) ?
                              arLenBA :
                              uint32_t(tilingPtr->raLpUnit * rSize);
@@ -1366,16 +1333,15 @@ public:
 
 private:
     __aicore__ inline void GetPrevCore();
-    __aicore__ inline void GetPrevCoresResult(
-        LocalTensor<T>& midUB, LocalTensor<T>& inUB, int64_t laIdx, int64_t raIdx, uint32_t raSize);
-    __aicore__ inline void CrossCoreCum(
-        const LocalTensor<T>& inUB, const LocalTensor<T>& midUB, LocalTensor<T>& outUB, uint32_t rLen, uint32_t raSize);
-    __aicore__ inline void CrossCoreCum4BigRA(
-        const LocalTensor<T>& inUB, const LocalTensor<T>& midUB, LocalTensor<T>& outUB, uint32_t rLen, uint32_t raSize);
+    __aicore__ inline void GetPrevCoresResult(LocalTensor<T>& midUB, LocalTensor<T>& inUB, int64_t laIdx, int64_t raIdx,
+                                              uint32_t raSize);
+    __aicore__ inline void CrossCoreCum(const LocalTensor<T>& inUB, const LocalTensor<T>& midUB, LocalTensor<T>& outUB,
+                                        uint32_t rLen, uint32_t raSize);
+    __aicore__ inline void CrossCoreCum4BigRA(const LocalTensor<T>& inUB, const LocalTensor<T>& midUB,
+                                              LocalTensor<T>& outUB, uint32_t rLen, uint32_t raSize);
     __aicore__ inline void AfterProcess(LocalTensor<T>& inUB, LocalTensor<T>& outUB);
-    __aicore__ inline void InnerProcess4After(
-        LocalTensor<T>& inUB, LocalTensor<T>& outUB, LocalTensor<T>& midUB, int64_t laIdx, int64_t raIdx,
-        uint32_t raSize);
+    __aicore__ inline void InnerProcess4After(LocalTensor<T>& inUB, LocalTensor<T>& outUB, LocalTensor<T>& midUB,
+                                              int64_t laIdx, int64_t raIdx, uint32_t raSize);
 
 private:
     TBuf<QuePosition::VECCALC> midBuf;
@@ -1400,8 +1366,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void CumWithGroup<T>::Init(
-    GM_ADDR x, GM_ADDR y, const Cum4IntTilingData* tilingDataPtr, TPipe* pipeIn)
+__aicore__ inline void CumWithGroup<T>::Init(GM_ADDR x, GM_ADDR y, const Cum4IntTilingData* tilingDataPtr,
+                                             TPipe* pipeIn)
 {
     blockIdx = GetBlockIdx();
     inGM.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
@@ -1444,8 +1410,8 @@ __aicore__ inline void CumWithGroup<T>::GetPrevCore()
 }
 
 template <typename T>
-__aicore__ inline void CumWithGroup<T>::GetPrevCoresResult(
-    LocalTensor<T>& midUB, LocalTensor<T>& inUB, int64_t laIdx, int64_t raIdx, uint32_t raSize)
+__aicore__ inline void CumWithGroup<T>::GetPrevCoresResult(LocalTensor<T>& midUB, LocalTensor<T>& inUB, int64_t laIdx,
+                                                           int64_t raIdx, uint32_t raSize)
 {
     if (prevCoreCnt < 1) {
         return;
@@ -1454,14 +1420,13 @@ __aicore__ inline void CumWithGroup<T>::GetPrevCoresResult(
     uint32_t raBA = Ops::Base::CeilAlign(raSize, elemPerBlock);
 
     if (tilingPtr->isReverse) {
-        gmOffset =
-            (tilingPtr->ntcRLen * (blockIdx + 1) * tilingPtr->rOffset + laIdx * tilingPtr->laOffset +
-             raIdx * tilingPtr->raLpUnit);
+        gmOffset = (tilingPtr->ntcRLen * (blockIdx + 1) * tilingPtr->rOffset + laIdx * tilingPtr->laOffset +
+                    raIdx * tilingPtr->raLpUnit);
         CopyPara copyPara = {prevCoreCnt, raSize, tilingPtr->ntcRLen * tilingPtr->rOffset, raBA, elemPerBlock};
         CumCopyIn(inUB, outGM[gmOffset], copyPara);
     } else {
-        gmOffset =
-            ((tilingPtr->ntcRLen - 1) * tilingPtr->rOffset + laIdx * tilingPtr->laOffset + raIdx * tilingPtr->raLpUnit);
+        gmOffset = ((tilingPtr->ntcRLen - 1) * tilingPtr->rOffset + laIdx * tilingPtr->laOffset +
+                    raIdx * tilingPtr->raLpUnit);
         CopyPara copyPara = {prevCoreCnt, raSize, tilingPtr->ntcRLen * tilingPtr->rOffset, raBA, elemPerBlock};
         CumCopyIn(inUB, outGM[gmOffset], copyPara);
     }
@@ -1474,24 +1439,24 @@ __aicore__ inline void CumWithGroup<T>::GetPrevCoresResult(
     uint16_t raLpCnt_ = Ops::Base::CeilDiv(raSize, realRegElem);
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<T> src;
-        MicroAPI::RegTensor<T> dst;
-        MicroAPI::Duplicate(dst, (T)0);
-        MicroAPI::MaskReg mask;
+        Reg::RegTensor<T> src;
+        Reg::RegTensor<T> dst;
+        Reg::Duplicate(dst, (T)0);
+        Reg::MaskReg mask;
         for (uint16_t raIdx = 0; raIdx < raLpCnt_; raIdx++) {
-            mask = MicroAPI::UpdateMask<T>(rightALen);
+            mask = Reg::UpdateMask<T>(rightALen);
             for (uint16_t idx = 0; idx < prevCoreCnt; idx++) {
-                MicroAPI::DataCopy(src, inPtr + raIdx * realRegElem + idx * raBA);
-                MicroAPI::Add(dst, dst, src, mask);
+                Reg::DataCopy(src, inPtr + raIdx * realRegElem + idx * raBA);
+                Reg::Add(dst, dst, src, mask);
             }
-            MicroAPI::DataCopy<T>(midPtr + raIdx * realRegElem, dst, mask);
+            Reg::DataCopy<T>(midPtr + raIdx * realRegElem, dst, mask);
         }
     }
 }
 
 template <typename T>
-__aicore__ inline void CumWithGroup<T>::CrossCoreCum(
-    const LocalTensor<T>& inUB, const LocalTensor<T>& midUB, LocalTensor<T>& outUB, uint32_t rLen, uint32_t raSize)
+__aicore__ inline void CumWithGroup<T>::CrossCoreCum(const LocalTensor<T>& inUB, const LocalTensor<T>& midUB,
+                                                     LocalTensor<T>& outUB, uint32_t rLen, uint32_t raSize)
 {
     __local_mem__ T* srcPtr = (__local_mem__ T*)inUB.GetPhyAddr();
     __local_mem__ T* midPtr = (__local_mem__ T*)midUB.GetPhyAddr();
@@ -1517,42 +1482,39 @@ __aicore__ inline void CumWithGroup<T>::CrossCoreCum(
 
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<T> xSrc;
-        MicroAPI::RegTensor<T> yDst;
-        MicroAPI::RegTensor<T> mSrc;
-        MicroAPI::RegTensor<RangeType> gIdx;
-        MicroAPI::RegTensor<RangeType> gBakIdx;
-        MicroAPI::MaskReg idxMask = MicroAPI::CreateMask<RangeType, MicroAPI::MaskPattern::ALL>();
+        Reg::RegTensor<T> xSrc;
+        Reg::RegTensor<T> yDst;
+        Reg::RegTensor<T> mSrc;
+        Reg::RegTensor<RangeType> gIdx;
+        Reg::RegTensor<RangeType> gBakIdx;
+        Reg::MaskReg idxMask = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
 
-        MicroAPI::Arange(gIdx, (RangeType)0);
+        Reg::Arange(gIdx, (RangeType)0);
         // gather index: i - i // k * k
-        MicroAPI::Duplicate(gBakIdx, (RangeType)rightALen);
-        MicroAPI::Div(gBakIdx, gIdx, gBakIdx, idxMask);
-        MicroAPI::Muls(gBakIdx, gBakIdx, (RangeType)rightALen, idxMask);
-        MicroAPI::Sub(gBakIdx, gIdx, gBakIdx, idxMask);
+        Reg::Duplicate(gBakIdx, (RangeType)rightALen);
+        Reg::Div(gBakIdx, gIdx, gBakIdx, idxMask);
+        Reg::Muls(gBakIdx, gBakIdx, (RangeType)rightALen, idxMask);
+        Reg::Sub(gBakIdx, gIdx, gBakIdx, idxMask);
 
-        MicroAPI::MaskReg mMask = MicroAPI::UpdateMask<T>(mMaskVal);
+        Reg::MaskReg mMask = Reg::UpdateMask<T>(mMaskVal);
         // get last R result of previous cores
-        MicroAPI::DataCopyGather(
-            (MicroAPI::RegTensor<CastType>&)mSrc, midPtr, (MicroAPI::RegTensor<IdxType>&)gBakIdx, mMask);
+        Reg::DataCopyGather((Reg::RegTensor<CastType>&)mSrc, midPtr, (Reg::RegTensor<IdxType>&)gBakIdx, mMask);
         for (uint16_t rIdx = 0; rIdx < rLpCnt; rIdx++) {
-            MicroAPI::DataCopyGather(
-                (MicroAPI::RegTensor<CastType>&)xSrc, srcPtr, (MicroAPI::RegTensor<IdxType>&)gIdx, mMask);
-            MicroAPI::Add(yDst, xSrc, mSrc, mMask);
-            MicroAPI::DataCopyScatter(dstPtr, yDst, (MicroAPI::RegTensor<IdxType>&)gIdx, mMask);
-            MicroAPI::Adds(gIdx, gIdx, mComA, idxMask);
+            Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, mMask);
+            Reg::Add(yDst, xSrc, mSrc, mMask);
+            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)gIdx, mMask);
+            Reg::Adds(gIdx, gIdx, mComA, idxMask);
         }
-        MicroAPI::MaskReg tMask = MicroAPI::UpdateMask<T>(tMaskVal);
-        MicroAPI::DataCopyGather(
-            (MicroAPI::RegTensor<CastType>&)xSrc, srcPtr, (MicroAPI::RegTensor<IdxType>&)gIdx, tMask);
-        MicroAPI::Add(yDst, xSrc, mSrc, tMask);
-        MicroAPI::DataCopyScatter(dstPtr, yDst, (MicroAPI::RegTensor<IdxType>&)gIdx, tMask);
+        Reg::MaskReg tMask = Reg::UpdateMask<T>(tMaskVal);
+        Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, tMask);
+        Reg::Add(yDst, xSrc, mSrc, tMask);
+        Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)gIdx, tMask);
     }
 }
 
 template <typename T>
-__aicore__ inline void CumWithGroup<T>::CrossCoreCum4BigRA(
-    const LocalTensor<T>& inUB, const LocalTensor<T>& midUB, LocalTensor<T>& outUB, uint32_t rLen, uint32_t raSize)
+__aicore__ inline void CumWithGroup<T>::CrossCoreCum4BigRA(const LocalTensor<T>& inUB, const LocalTensor<T>& midUB,
+                                                           LocalTensor<T>& outUB, uint32_t rLen, uint32_t raSize)
 {
     __local_mem__ T* srcPtr = (__local_mem__ T*)inUB.GetPhyAddr();
     __local_mem__ T* midPtr = (__local_mem__ T*)midUB.GetPhyAddr();
@@ -1564,29 +1526,30 @@ __aicore__ inline void CumWithGroup<T>::CrossCoreCum4BigRA(
     uint32_t raBA = Ops::Base::CeilAlign(raSize, elemPerBlock);
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<T> xSrc;
-        MicroAPI::RegTensor<T> yDst;
-        MicroAPI::RegTensor<T> mSrc;
-        MicroAPI::MaskReg mask;
+        Reg::RegTensor<T> xSrc;
+        Reg::RegTensor<T> yDst;
+        Reg::RegTensor<T> mSrc;
+        Reg::MaskReg mask;
 
         // get last R result of previous cores
-        MicroAPI::DataCopy(mSrc, midPtr);
+        Reg::DataCopy(mSrc, midPtr);
         uint32_t offset = 0;
         for (uint16_t raIdx = 0; raIdx < raLpCnt; raIdx++) {
-            mask = MicroAPI::UpdateMask<T>(rightALen);
+            mask = Reg::UpdateMask<T>(rightALen);
             for (uint16_t rIdx = 0; rIdx < rLpCnt; rIdx++) {
                 offset = raIdx * realRegElem + rIdx * raBA;
-                MicroAPI::DataCopy(xSrc, srcPtr + offset);
-                MicroAPI::Add(yDst, xSrc, mSrc, mask);
-                MicroAPI::DataCopy(dstPtr + offset, yDst, mask);
+                Reg::DataCopy(xSrc, srcPtr + offset);
+                Reg::Add(yDst, xSrc, mSrc, mask);
+                Reg::DataCopy(dstPtr + offset, yDst, mask);
             }
         }
     }
 }
 
 template <typename T>
-__aicore__ inline void CumWithGroup<T>::InnerProcess4After(
-    LocalTensor<T>& inUB, LocalTensor<T>& outUB, LocalTensor<T>& midUB, int64_t laIdx, int64_t raIdx, uint32_t raSize)
+__aicore__ inline void CumWithGroup<T>::InnerProcess4After(LocalTensor<T>& inUB, LocalTensor<T>& outUB,
+                                                           LocalTensor<T>& midUB, int64_t laIdx, int64_t raIdx,
+                                                           uint32_t raSize)
 {
     GetPrevCoresResult(midUB, inUB, laIdx, raIdx, raSize);
     uint32_t ubGap = Ops::Base::CeilAlign(raSize, elemPerBlock);
@@ -1598,9 +1561,8 @@ __aicore__ inline void CumWithGroup<T>::InnerProcess4After(
         if (!isBigRA) {
             DataCopyExtParams copyParams{1, 0, 0, 0, 0};
             for (uint16_t rLpIdx = 0; rLpIdx < rLpCnt; rLpIdx++) {
-                gmOffset =
-                    (laIdx * tilingPtr->laOffset + rLpIdx * tilingPtr->rLpUnit * tilingPtr->rOffset +
-                     raIdx * tilingPtr->raLpUnit + blockIdx * tilingPtr->blockOffset);
+                gmOffset = (laIdx * tilingPtr->laOffset + rLpIdx * tilingPtr->rLpUnit * tilingPtr->rOffset +
+                            raIdx * tilingPtr->raLpUnit + blockIdx * tilingPtr->blockOffset);
                 copyParams.blockLen = uint32_t(tilingPtr->rLpUnit * raSize * sizeof(T));
                 DataCopyPad(inUB, outGM[gmOffset], copyParams, padParams);
                 InsertSync(HardEvent::MTE2_V);
@@ -1611,9 +1573,8 @@ __aicore__ inline void CumWithGroup<T>::InnerProcess4After(
                 InsertSync(HardEvent::MTE3_V);
             }
             if (rLeft > 0) {
-                gmOffset =
-                    (laIdx * tilingPtr->laOffset + rLpCnt * tilingPtr->rLpUnit * tilingPtr->rOffset +
-                     raIdx * tilingPtr->raLpUnit + blockIdx * tilingPtr->blockOffset);
+                gmOffset = (laIdx * tilingPtr->laOffset + rLpCnt * tilingPtr->rLpUnit * tilingPtr->rOffset +
+                            raIdx * tilingPtr->raLpUnit + blockIdx * tilingPtr->blockOffset);
                 copyParams.blockLen = uint32_t(rLeft * raSize * sizeof(T));
                 DataCopyPad(inUB, outGM[gmOffset], copyParams, padParams);
                 InsertSync(HardEvent::MTE2_V);
@@ -1626,9 +1587,8 @@ __aicore__ inline void CumWithGroup<T>::InnerProcess4After(
             InsertSync(HardEvent::MTE3_MTE2);
         } else {
             for (uint16_t rLpIdx = 0; rLpIdx < rLpCnt; rLpIdx++) {
-                gmOffset =
-                    (laIdx * tilingPtr->laOffset + rLpIdx * tilingPtr->rLpUnit * tilingPtr->rOffset +
-                     raIdx * tilingPtr->raLpUnit + blockIdx * tilingPtr->blockOffset);
+                gmOffset = (laIdx * tilingPtr->laOffset + rLpIdx * tilingPtr->rLpUnit * tilingPtr->rOffset +
+                            raIdx * tilingPtr->raLpUnit + blockIdx * tilingPtr->blockOffset);
                 CopyPara copyInPara = {tilingPtr->rLpUnit, raSize, tilingPtr->rOffset, ubGap, elemPerBlock};
                 CumCopyIn(inUB, outGM[gmOffset], copyInPara);
                 InsertSync(HardEvent::MTE2_V);
@@ -1640,9 +1600,8 @@ __aicore__ inline void CumWithGroup<T>::InnerProcess4After(
                 InsertSync(HardEvent::MTE3_V);
             }
             if (rLeft > 0) {
-                gmOffset =
-                    (laIdx * tilingPtr->laOffset + rLpCnt * tilingPtr->rLpUnit * tilingPtr->rOffset +
-                     raIdx * tilingPtr->raLpUnit + blockIdx * tilingPtr->blockOffset);
+                gmOffset = (laIdx * tilingPtr->laOffset + rLpCnt * tilingPtr->rLpUnit * tilingPtr->rOffset +
+                            raIdx * tilingPtr->raLpUnit + blockIdx * tilingPtr->blockOffset);
                 CopyPara copyInPara = {rLeft, raSize, tilingPtr->rOffset, ubGap, elemPerBlock};
                 CumCopyIn(inUB, outGM[gmOffset], copyInPara);
                 InsertSync(HardEvent::MTE2_V);

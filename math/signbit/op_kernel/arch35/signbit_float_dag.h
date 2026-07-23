@@ -43,21 +43,21 @@ struct FloatComputeCustom : public Vec::ElemwiseUnaryOP<uint8_t, T> {
         __ubuf__ T* src1Addr = (__ubuf__ T*)src1.GetPhyAddr();
         __ubuf__ uint8_t* dstAddr = (__ubuf__ uint8_t*)dst.GetPhyAddr();
 
-        AscendC::MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregInput1;
-        AscendC::MicroAPI::RegTensor<uint32_t, MicroAPI::RegTraitNumOne> vregOutput;
-        AscendC::MicroAPI::MaskReg mask;
+        AscendC::Reg::RegTensor<T, Reg::RegTraitNumOne> vregInput1;
+        AscendC::Reg::RegTensor<uint32_t, Reg::RegTraitNumOne> vregOutput;
+        AscendC::Reg::MaskReg mask;
         __VEC_SCOPE__
         {
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                mask = AscendC::MicroAPI::UpdateMask<T, MicroAPI::RegTraitNumOne>(count);
+                mask = AscendC::Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                 // OpCopyIn
-                AscendC::MicroAPI::DataCopy(vregInput1, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
+                AscendC::Reg::DataCopy(vregInput1, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
 
-                AscendC::MicroAPI::ShiftRights<uint32_t, int16_t>(
-                    vregOutput, (MicroAPI::RegTensor<uint32_t>&)vregInput1, STATE_BIT_SHF_VALUE, mask);
+                AscendC::Reg::ShiftRights<uint32_t, int16_t>(vregOutput, (Reg::RegTensor<uint32_t>&)vregInput1,
+                                                             STATE_BIT_SHF_VALUE, mask);
                 // OpCopyOut
-                AscendC::MicroAPI::DataCopy<uint8_t, MicroAPI::StoreDist::DIST_PACK4_B32>(
-                    dstAddr + loopIdx * vlSize, (MicroAPI::RegTensor<uint8_t>&)vregOutput, mask);
+                AscendC::Reg::DataCopy<uint8_t, Reg::StoreDist::DIST_PACK4_B32>(
+                    dstAddr + loopIdx * vlSize, (Reg::RegTensor<uint8_t>&)vregOutput, mask);
             }
         }
 #endif
@@ -77,27 +77,27 @@ struct DoubleComputeCustom : public Vec::ElemwiseUnaryOP<uint8_t, T> {
         __ubuf__ T* src1Addr = (__ubuf__ T*)src1.GetPhyAddr();
         __ubuf__ uint8_t* dstAddr = (__ubuf__ uint8_t*)dst.GetPhyAddr();
 
-        AscendC::MicroAPI::RegTensor<uint64_t, MicroAPI::RegTraitNumOne> vregOutput;
-        AscendC::MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregInput1;
-        AscendC::MicroAPI::MaskReg tmpMask;
-        AscendC::MicroAPI::MaskReg mask;
+        AscendC::Reg::RegTensor<uint64_t, Reg::RegTraitNumOne> vregOutput;
+        AscendC::Reg::RegTensor<T, Reg::RegTraitNumOne> vregInput1;
+        AscendC::Reg::MaskReg tmpMask;
+        AscendC::Reg::MaskReg mask;
         uint32_t countTmp = count;
-        MicroAPI::RegTensor<uint32_t, MicroAPI::RegTraitNumOne> tmpReg;
+        Reg::RegTensor<uint32_t, Reg::RegTraitNumOne> tmpReg;
         __VEC_SCOPE__
         {
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                mask = AscendC::MicroAPI::UpdateMask<T, MicroAPI::RegTraitNumOne>(count);
+                mask = AscendC::Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                 // OpCopyIn
-                AscendC::MicroAPI::DataCopy(vregInput1, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
+                AscendC::Reg::DataCopy(vregInput1, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
 
-                AscendC::MicroAPI::ShiftRights<uint64_t, int16_t>(
-                    vregOutput, (MicroAPI::RegTensor<uint64_t>&)vregInput1, DOUBLE_STATE_BIT_SHF_VALUE, mask);
-                MicroAPI::Pack<uint32_t, uint64_t, MicroAPI::HighLowPart::LOWEST>(tmpReg, vregOutput);
-                MicroAPI::Pack<MicroAPI::HighLowPart::LOWEST>(tmpMask, mask);
+                AscendC::Reg::ShiftRights<uint64_t, int16_t>(vregOutput, (Reg::RegTensor<uint64_t>&)vregInput1,
+                                                             DOUBLE_STATE_BIT_SHF_VALUE, mask);
+                Reg::Pack<uint32_t, uint64_t, Reg::HighLowPart::LOWEST>(tmpReg, vregOutput);
+                Reg::Pack<Reg::HighLowPart::LOWEST>(tmpMask, mask);
 
                 // OpCopyOut
-                AscendC::MicroAPI::DataCopy<uint8_t, MicroAPI::StoreDist::DIST_PACK4_B32>(
-                    dstAddr + loopIdx * vlSize, (MicroAPI::RegTensor<uint8_t>&)tmpReg, tmpMask);
+                AscendC::Reg::DataCopy<uint8_t, Reg::StoreDist::DIST_PACK4_B32>(
+                    dstAddr + loopIdx * vlSize, (Reg::RegTensor<uint8_t>&)tmpReg, tmpMask);
             }
         }
 #endif

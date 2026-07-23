@@ -34,9 +34,8 @@ constexpr float INF_CONST = INFINITY;
 
 template <int equalNan>
 struct NanEqualCompare : public Vec::ElemwiseQuaternaryOP<uint8_t, float, float, float, float> {
-    __aicore__ inline NanEqualCompare(
-        LocalTensor<uint8_t>& dst, LocalTensor<float>& src1, LocalTensor<float>& src2, float rtol, float atol,
-        uint32_t count)
+    __aicore__ inline NanEqualCompare(LocalTensor<uint8_t>& dst, LocalTensor<float>& src1, LocalTensor<float>& src2,
+                                      float rtol, float atol, uint32_t count)
     {
 #ifdef __CCE_AICORE__
         uint32_t dtypeSize = sizeof(float);
@@ -49,117 +48,117 @@ struct NanEqualCompare : public Vec::ElemwiseQuaternaryOP<uint8_t, float, float,
         __ubuf__ float* src2Addr = (__ubuf__ float*)src2.GetPhyAddr();
         __ubuf__ uint8_t* dstAddr = (__ubuf__ uint8_t*)dst.GetPhyAddr();
 
-        MicroAPI::RegTensor<float> x1Reg;
-        MicroAPI::RegTensor<float> x2Reg;
-        MicroAPI::RegTensor<float> absSubReg;
-        MicroAPI::RegTensor<float> x2AbsReg;
-        MicroAPI::RegTensor<float> rtolTmpReg;
-        MicroAPI::RegTensor<float> rtolReg;
-        MicroAPI::RegTensor<uint8_t> resultReg;
-        MicroAPI::RegTensor<float> regTensorInfinity;
-        MicroAPI::RegTensor<uint8_t> regTensorOne;
-        MicroAPI::RegTensor<uint8_t> regTensorZero;
-        MicroAPI::RegTensor<uint32_t> reguint32;
-        MicroAPI::RegTensor<uint16_t> reguint16;
-        MicroAPI::RegTensor<uint8_t> reguint8;
+        Reg::RegTensor<float> x1Reg;
+        Reg::RegTensor<float> x2Reg;
+        Reg::RegTensor<float> absSubReg;
+        Reg::RegTensor<float> x2AbsReg;
+        Reg::RegTensor<float> rtolTmpReg;
+        Reg::RegTensor<float> rtolReg;
+        Reg::RegTensor<uint8_t> resultReg;
+        Reg::RegTensor<float> regTensorInfinity;
+        Reg::RegTensor<uint8_t> regTensorOne;
+        Reg::RegTensor<uint8_t> regTensorZero;
+        Reg::RegTensor<uint32_t> reguint32;
+        Reg::RegTensor<uint16_t> reguint16;
+        Reg::RegTensor<uint8_t> reguint8;
         // mask最多8个
-        MicroAPI::MaskReg mask;
+        Reg::MaskReg mask;
         // 计算结果1、2使用
-        MicroAPI::MaskReg equalCmpMask; // 计算结果1,最后处理
-        MicroAPI::MaskReg tmpMask1;
-        MicroAPI::MaskReg tmpMask2;
-        MicroAPI::MaskReg bothNanMask; // 计算结果2
+        Reg::MaskReg equalCmpMask; // 计算结果1,最后处理
+        Reg::MaskReg tmpMask1;
+        Reg::MaskReg tmpMask2;
+        Reg::MaskReg bothNanMask; // 计算结果2
         // 计算结果3、4使用
-        MicroAPI::MaskReg funcCmpMask; // 计算结果3
-        MicroAPI::MaskReg finiteMask;  // 计算结果4
+        Reg::MaskReg funcCmpMask; // 计算结果3
+        Reg::MaskReg finiteMask;  // 计算结果4
         // 最后处理
-        MicroAPI::MaskReg resultMask;
+        Reg::MaskReg resultMask;
 
         if constexpr (equalNan == 1) {
             __VEC_SCOPE__
             {
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                    mask = MicroAPI::UpdateMask<float, MicroAPI::RegTraitNumOne>(count);
-                    MicroAPI::Duplicate(regTensorOne, (uint8_t)1.0, mask);
-                    MicroAPI::Duplicate(regTensorZero, (uint8_t)0.0, mask);
-                    MicroAPI::DataCopy(x1Reg, (__ubuf__ float*)(src1Addr + loopIdx * vlSize));
-                    MicroAPI::DataCopy(x2Reg, (__ubuf__ float*)(src2Addr + loopIdx * vlSize));
+                    mask = Reg::UpdateMask<float, Reg::RegTraitNumOne>(count);
+                    Reg::Duplicate(regTensorOne, (uint8_t)1.0, mask);
+                    Reg::Duplicate(regTensorZero, (uint8_t)0.0, mask);
+                    Reg::DataCopy(x1Reg, (__ubuf__ float*)(src1Addr + loopIdx * vlSize));
+                    Reg::DataCopy(x2Reg, (__ubuf__ float*)(src2Addr + loopIdx * vlSize));
 
                     // 计算结果1——equalCmpMask
-                    MicroAPI::Compare<float, CMPMODE::EQ>(equalCmpMask, x1Reg, x2Reg, mask);
+                    Reg::Compare<float, CMPMODE::EQ>(equalCmpMask, x1Reg, x2Reg, mask);
 
                     // x1x2和自己对比，输出False的位置，为Nan的位置
-                    MicroAPI::Compare<float, CMPMODE::NE>(tmpMask1, x1Reg, x1Reg, mask);
-                    MicroAPI::Compare<float, CMPMODE::NE>(tmpMask2, x2Reg, x2Reg, mask);
+                    Reg::Compare<float, CMPMODE::NE>(tmpMask1, x1Reg, x1Reg, mask);
+                    Reg::Compare<float, CMPMODE::NE>(tmpMask2, x2Reg, x2Reg, mask);
                     // MaskAnd取x1x2都是Nan的位置---------------
-                    MicroAPI::MaskAnd(bothNanMask, tmpMask1, tmpMask2, mask);
+                    Reg::MaskAnd(bothNanMask, tmpMask1, tmpMask2, mask);
                     // MaskOr取计算结果1、4都为True的位置，结果存储到tmpMask2
-                    MicroAPI::MaskOr(tmpMask2, bothNanMask, equalCmpMask, mask);
+                    Reg::MaskOr(tmpMask2, bothNanMask, equalCmpMask, mask);
 
                     // 计算结果3
-                    MicroAPI::FusedAbsSub(absSubReg, x1Reg, x2Reg, mask); // 中间结果
-                    MicroAPI::Abs(x2AbsReg, x2Reg, mask);
-                    MicroAPI::Muls(rtolTmpReg, x2AbsReg, rtol, mask);
-                    MicroAPI::Adds(rtolReg, rtolTmpReg, atol, mask);
-                    MicroAPI::Compare<float, CMPMODE::LE>(funcCmpMask, absSubReg, rtolReg, mask);
+                    Reg::FusedAbsSub(absSubReg, x1Reg, x2Reg, mask); // 中间结果
+                    Reg::Abs(x2AbsReg, x2Reg, mask);
+                    Reg::Muls(rtolTmpReg, x2AbsReg, rtol, mask);
+                    Reg::Adds(rtolReg, rtolTmpReg, atol, mask);
+                    Reg::Compare<float, CMPMODE::LE>(funcCmpMask, absSubReg, rtolReg, mask);
 
                     // 计算结果4
-                    MicroAPI::Duplicate(regTensorInfinity, (float)INF_CONST, mask);
-                    MicroAPI::Compare<float, CMPMODE::LT>(finiteMask, x2AbsReg, regTensorInfinity, mask);
+                    Reg::Duplicate(regTensorInfinity, (float)INF_CONST, mask);
+                    Reg::Compare<float, CMPMODE::LT>(finiteMask, x2AbsReg, regTensorInfinity, mask);
 
                     // 其他处理
                     // 符合公式且有限
-                    MicroAPI::MaskAnd(tmpMask1, funcCmpMask, finiteMask, mask);
+                    Reg::MaskAnd(tmpMask1, funcCmpMask, finiteMask, mask);
                     // 符合上一条或者完全一致
-                    MicroAPI::MaskOr(resultMask, tmpMask2, tmpMask1, mask);
+                    Reg::MaskOr(resultMask, tmpMask2, tmpMask1, mask);
 
-                    MicroAPI::Select(resultReg, regTensorOne, regTensorZero, resultMask);
-                    MicroAPI::Pack(reguint16, (AscendC::MicroAPI::RegTensor<uint32_t>&)resultReg);
-                    MicroAPI::Pack(reguint8, reguint16);
+                    Reg::Select(resultReg, regTensorOne, regTensorZero, resultMask);
+                    Reg::Pack(reguint16, (AscendC::Reg::RegTensor<uint32_t>&)resultReg);
+                    Reg::Pack(reguint8, reguint16);
 
-                    AscendC::MicroAPI::MaskPack<AscendC::MicroAPI::HighLowPart::LOWEST>(tmpMask1, mask);
-                    AscendC::MicroAPI::MaskPack<AscendC::MicroAPI::HighLowPart::LOWEST>(mask, tmpMask1);
+                    AscendC::Reg::MaskPack<AscendC::Reg::HighLowPart::LOWEST>(tmpMask1, mask);
+                    AscendC::Reg::MaskPack<AscendC::Reg::HighLowPart::LOWEST>(mask, tmpMask1);
                     // OpCopyOut
-                    MicroAPI::DataCopy((__ubuf__ uint8_t*)(dstAddr + loopIdx * vlSize), reguint8, mask);
+                    Reg::DataCopy((__ubuf__ uint8_t*)(dstAddr + loopIdx * vlSize), reguint8, mask);
                 }
             }
         } else {
             __VEC_SCOPE__
             {
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                    mask = MicroAPI::UpdateMask<float, MicroAPI::RegTraitNumOne>(count);
-                    MicroAPI::Duplicate(regTensorOne, (uint8_t)1.0f, mask);
-                    MicroAPI::Duplicate(regTensorZero, (uint8_t)0.0f, mask);
-                    MicroAPI::DataCopy(x1Reg, (__ubuf__ float*)(src1Addr + loopIdx * vlSize));
-                    MicroAPI::DataCopy(x2Reg, (__ubuf__ float*)(src2Addr + loopIdx * vlSize));
+                    mask = Reg::UpdateMask<float, Reg::RegTraitNumOne>(count);
+                    Reg::Duplicate(regTensorOne, (uint8_t)1.0f, mask);
+                    Reg::Duplicate(regTensorZero, (uint8_t)0.0f, mask);
+                    Reg::DataCopy(x1Reg, (__ubuf__ float*)(src1Addr + loopIdx * vlSize));
+                    Reg::DataCopy(x2Reg, (__ubuf__ float*)(src2Addr + loopIdx * vlSize));
                     // 计算结果1——equalCmpMask
-                    MicroAPI::Compare<float, CMPMODE::EQ>(equalCmpMask, x1Reg, x2Reg, mask);
+                    Reg::Compare<float, CMPMODE::EQ>(equalCmpMask, x1Reg, x2Reg, mask);
 
                     // 计算结果3
-                    MicroAPI::FusedAbsSub(absSubReg, x1Reg, x2Reg, mask); // 中间结果
-                    MicroAPI::Abs(x2AbsReg, x2Reg, mask);
-                    MicroAPI::Muls(rtolTmpReg, x2AbsReg, rtol, mask);
-                    MicroAPI::Adds(rtolReg, rtolTmpReg, atol, mask);
-                    MicroAPI::Compare<float, CMPMODE::LE>(funcCmpMask, absSubReg, rtolReg, mask);
+                    Reg::FusedAbsSub(absSubReg, x1Reg, x2Reg, mask); // 中间结果
+                    Reg::Abs(x2AbsReg, x2Reg, mask);
+                    Reg::Muls(rtolTmpReg, x2AbsReg, rtol, mask);
+                    Reg::Adds(rtolReg, rtolTmpReg, atol, mask);
+                    Reg::Compare<float, CMPMODE::LE>(funcCmpMask, absSubReg, rtolReg, mask);
 
                     // 计算结果4
-                    MicroAPI::Duplicate(regTensorInfinity, (float)INF_CONST, mask);
-                    MicroAPI::Compare<float, CMPMODE::LT>(finiteMask, x2AbsReg, regTensorInfinity, mask);
+                    Reg::Duplicate(regTensorInfinity, (float)INF_CONST, mask);
+                    Reg::Compare<float, CMPMODE::LT>(finiteMask, x2AbsReg, regTensorInfinity, mask);
 
                     // 其他处理
                     // 符合公式且有限
-                    MicroAPI::MaskAnd(tmpMask1, funcCmpMask, finiteMask, mask);
+                    Reg::MaskAnd(tmpMask1, funcCmpMask, finiteMask, mask);
                     // 符合上一条或者完全一致
-                    MicroAPI::MaskOr(resultMask, equalCmpMask, tmpMask1, mask);
+                    Reg::MaskOr(resultMask, equalCmpMask, tmpMask1, mask);
 
-                    MicroAPI::Select(resultReg, regTensorOne, regTensorZero, resultMask);
-                    MicroAPI::Pack(reguint16, (AscendC::MicroAPI::RegTensor<uint32_t>&)resultReg);
-                    MicroAPI::Pack(reguint8, reguint16);
-                    AscendC::MicroAPI::MaskPack<AscendC::MicroAPI::HighLowPart::LOWEST>(tmpMask1, mask);
-                    AscendC::MicroAPI::MaskPack<AscendC::MicroAPI::HighLowPart::LOWEST>(mask, tmpMask1);
+                    Reg::Select(resultReg, regTensorOne, regTensorZero, resultMask);
+                    Reg::Pack(reguint16, (AscendC::Reg::RegTensor<uint32_t>&)resultReg);
+                    Reg::Pack(reguint8, reguint16);
+                    AscendC::Reg::MaskPack<AscendC::Reg::HighLowPart::LOWEST>(tmpMask1, mask);
+                    AscendC::Reg::MaskPack<AscendC::Reg::HighLowPart::LOWEST>(mask, tmpMask1);
 
                     // OpCopyOut
-                    MicroAPI::DataCopy((__ubuf__ uint8_t*)(dstAddr + loopIdx * vlSize), reguint8, mask);
+                    Reg::DataCopy((__ubuf__ uint8_t*)(dstAddr + loopIdx * vlSize), reguint8, mask);
                 }
             }
         }

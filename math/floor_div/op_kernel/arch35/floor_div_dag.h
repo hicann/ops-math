@@ -42,25 +42,24 @@ struct CastOverFlow : public Vec::ElemwiseUnaryOP<R, T> {
     {
 #ifdef __CCE_AICORE__
         SetCtrlSpr<SAT_POS, SAT_POS>(0);
-        constexpr static MicroAPI::CastTrait castTrait3 = {MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT,
-                                                           MicroAPI::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
+        constexpr static Reg::CastTrait castTrait3 = {Reg::RegLayout::ZERO, Reg::SatMode::NO_SAT,
+                                                      Reg::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T> vreg0;
-            MicroAPI::RegTensor<R> vreg1;
-            MicroAPI::MaskReg preg0;
+            Reg::RegTensor<T> vreg0;
+            Reg::RegTensor<R> vreg1;
+            Reg::MaskReg preg0;
             // sizeof(T) must > sizeof(R)
             uint32_t size = count;
             uint16_t vfLoopNum = (size + (VECTOR_REG_WIDTH / sizeof(T)) - 1) / (VECTOR_REG_WIDTH / sizeof(T));
             __local_mem__ T* bufferIn0Addr = (__local_mem__ T*)src.GetPhyAddr();
             __local_mem__ R* bufferOut0Addr = (__local_mem__ R*)dst.GetPhyAddr();
             for (uint16_t i = 0; i < vfLoopNum; i++) {
-                preg0 = MicroAPI::UpdateMask<T>(size);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(
-                    vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(T)));
-                MicroAPI::Cast<R, T, castTrait3>(vreg1, vreg0, preg0);
-                MicroAPI::DataCopy<R, MicroAPI::StoreDist::DIST_PACK_B16>(
-                    bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(T)), vreg1, preg0);
+                preg0 = Reg::UpdateMask<T>(size);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(T)));
+                Reg::Cast<R, T, castTrait3>(vreg1, vreg0, preg0);
+                Reg::DataCopy<R, Reg::StoreDist::DIST_PACK_B16>(bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(T)),
+                                                                vreg1, preg0);
             }
         }
         SetCtrlSpr<SAT_POS, SAT_POS>(1);
@@ -142,60 +141,58 @@ struct FloorDivIntS8PostCompute : public Vec::ElemwiseTernaryOP<T1, T2, T2, T2> 
         __local_mem__ T1* dstAddr = (__local_mem__ T1*)dst.GetPhyAddr();
         uint16_t loopTimes = (count + VL_T - 1) / VL_T;
 
-        constexpr static MicroAPI::CastTrait castTraitT2ToHalf = {MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT,
-                                                                  MicroAPI::MaskMergeMode::ZEROING,
-                                                                  RoundMode::CAST_ROUND};
-        constexpr static MicroAPI::CastTrait castTraitHalfToInt8 = {
-            MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT, MicroAPI::MaskMergeMode::ZEROING,
-            RoundMode::CAST_RINT};
+        constexpr static Reg::CastTrait castTraitT2ToHalf = {Reg::RegLayout::ZERO, Reg::SatMode::NO_SAT,
+                                                             Reg::MaskMergeMode::ZEROING, RoundMode::CAST_ROUND};
+        constexpr static Reg::CastTrait castTraitHalfToInt8 = {Reg::RegLayout::ZERO, Reg::SatMode::NO_SAT,
+                                                               Reg::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T2> zeroValue;
-            MicroAPI::RegTensor<T2> oneValue;
-            MicroAPI::RegTensor<T2> signValue;
-            MicroAPI::RegTensor<T2> input1Value;
-            MicroAPI::RegTensor<T2> input2Value;
-            MicroAPI::RegTensor<T2> divValue;
-            MicroAPI::RegTensor<T2> mulValue;
-            MicroAPI::RegTensor<T2> subValue;
-            MicroAPI::RegTensor<T2> resValue;
-            MicroAPI::RegTensor<T2> subValue1;
-            MicroAPI::RegTensor<half> halfValue;
-            MicroAPI::RegTensor<T1> int8Value;
-            MicroAPI::RegTensor<T2> input1SignValue;
-            MicroAPI::RegTensor<T2> input2SignValue;
+            Reg::RegTensor<T2> zeroValue;
+            Reg::RegTensor<T2> oneValue;
+            Reg::RegTensor<T2> signValue;
+            Reg::RegTensor<T2> input1Value;
+            Reg::RegTensor<T2> input2Value;
+            Reg::RegTensor<T2> divValue;
+            Reg::RegTensor<T2> mulValue;
+            Reg::RegTensor<T2> subValue;
+            Reg::RegTensor<T2> resValue;
+            Reg::RegTensor<T2> subValue1;
+            Reg::RegTensor<half> halfValue;
+            Reg::RegTensor<T1> int8Value;
+            Reg::RegTensor<T2> input1SignValue;
+            Reg::RegTensor<T2> input2SignValue;
 
-            MicroAPI::MaskReg preg;
-            MicroAPI::MaskReg negValue;
-            MicroAPI::MaskReg signNegValue;
-            MicroAPI::MaskReg resMaskValue;
+            Reg::MaskReg preg;
+            Reg::MaskReg negValue;
+            Reg::MaskReg signNegValue;
+            Reg::MaskReg resMaskValue;
             uint32_t sregMask = count;
 
-            MicroAPI::Duplicate(zeroValue, T2(0));
-            MicroAPI::Duplicate(oneValue, T2(1));
-            MicroAPI::Duplicate(signValue, T2(DIV_B16_SIGN));
+            Reg::Duplicate(zeroValue, T2(0));
+            Reg::Duplicate(oneValue, T2(1));
+            Reg::Duplicate(signValue, T2(DIV_B16_SIGN));
 
             for (uint16_t j = 0; j < loopTimes; j++) {
-                preg = MicroAPI::UpdateMask<T2>(sregMask);
-                MicroAPI::DataCopy<T2, MicroAPI::LoadDist::DIST_NORM>(input2Value, input2Addr + VL_T * j);
-                MicroAPI::DataCopy<T2, MicroAPI::LoadDist::DIST_NORM>(divValue, divAddr + VL_T * j);
-                MicroAPI::Mul(mulValue, input2Value, divValue, preg);
-                MicroAPI::DataCopy<T2, MicroAPI::LoadDist::DIST_NORM>(input1Value, input1Addr + VL_T * j);
-                MicroAPI::Sub(subValue, input1Value, mulValue, preg);
-                MicroAPI::Compare<T2, CMPMODE::NE>(negValue, subValue, zeroValue, preg);
+                preg = Reg::UpdateMask<T2>(sregMask);
+                Reg::DataCopy<T2, Reg::LoadDist::DIST_NORM>(input2Value, input2Addr + VL_T * j);
+                Reg::DataCopy<T2, Reg::LoadDist::DIST_NORM>(divValue, divAddr + VL_T * j);
+                Reg::Mul(mulValue, input2Value, divValue, preg);
+                Reg::DataCopy<T2, Reg::LoadDist::DIST_NORM>(input1Value, input1Addr + VL_T * j);
+                Reg::Sub(subValue, input1Value, mulValue, preg);
+                Reg::Compare<T2, CMPMODE::NE>(negValue, subValue, zeroValue, preg);
 
-                MicroAPI::And(input1SignValue, input1Value, signValue, preg);
-                MicroAPI::And(input2SignValue, input2Value, signValue, preg);
-                MicroAPI::Compare<T2, CMPMODE::NE>(signNegValue, input1SignValue, input2SignValue, preg);
+                Reg::And(input1SignValue, input1Value, signValue, preg);
+                Reg::And(input2SignValue, input2Value, signValue, preg);
+                Reg::Compare<T2, CMPMODE::NE>(signNegValue, input1SignValue, input2SignValue, preg);
 
-                MicroAPI::MaskAnd(resMaskValue, signNegValue, negValue, preg);
-                MicroAPI::Sub(subValue1, divValue, oneValue, preg);
-                MicroAPI::Select(resValue, subValue1, divValue, resMaskValue);
+                Reg::MaskAnd(resMaskValue, signNegValue, negValue, preg);
+                Reg::Sub(subValue1, divValue, oneValue, preg);
+                Reg::Select(resValue, subValue1, divValue, resMaskValue);
 
-                MicroAPI::Cast<half, T2, castTraitT2ToHalf>(halfValue, resValue, preg);
-                MicroAPI::Cast<T1, half, castTraitHalfToInt8>(int8Value, halfValue, preg);
-                MicroAPI::DataCopy<T1, MicroAPI::StoreDist::DIST_PACK_B16>(dstAddr + VL_T * j, int8Value, preg);
+                Reg::Cast<half, T2, castTraitT2ToHalf>(halfValue, resValue, preg);
+                Reg::Cast<T1, half, castTraitHalfToInt8>(int8Value, halfValue, preg);
+                Reg::DataCopy<T1, Reg::StoreDist::DIST_PACK_B16>(dstAddr + VL_T * j, int8Value, preg);
             }
         }
         SetCtrlSpr<SAT_POS, SAT_POS>(1);

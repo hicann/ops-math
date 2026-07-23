@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -48,8 +48,7 @@ struct TwowaySklanskyProcessData {
 template <typename DataType, typename PromoteDataType>
 class CumsumTwowaySklansky : public CumsumBase<DataType> {
 public:
-    __aicore__ inline CumsumTwowaySklansky(TPipe& pipe) : CumsumBase<DataType>(pipe)
-    {}
+    __aicore__ inline CumsumTwowaySklansky(TPipe& pipe) : CumsumBase<DataType>(pipe) {}
     constexpr static uint32_t BLOCK_SIZE = Ops::Base::GetUbBlockSize();
     constexpr static uint32_t MAX_N = 32; // 双向折叠场景下，N最大尾32
     constexpr static uint32_t VL_SIZE = Ops::Base::GetVRegSize();
@@ -69,8 +68,8 @@ public:
 private:
     __aicore__ inline void CopyIn();
     __aicore__ inline void CalcAddFactorIndex();
-    __aicore__ inline void SetCopyParam(
-        int32_t iter, uint32_t rCountReal, uint32_t& ubOffset, int64_t& gmOffset, DataCopyExtParams& dataCopyParams);
+    __aicore__ inline void SetCopyParam(int32_t iter, uint32_t rCountReal, uint32_t& ubOffset, int64_t& gmOffset,
+                                        DataCopyExtParams& dataCopyParams);
     __aicore__ inline void VfNoAlignCopyOut(uint32_t dirtyDataNum, uint32_t actualNum);
     __aicore__ inline void Compute();
     __aicore__ inline void FirstSkalansky();
@@ -78,9 +77,9 @@ private:
     __aicore__ inline void VfGatherBeforeSecondSkalansky();
     __aicore__ inline void SecondSkalansky();
     __aicore__ inline void VfSecondAdd(int32_t k, uint16_t startOffset, uint16_t addCircle, uint16_t addOffset);
-    __aicore__ inline void VfSecondVLBuffer(
-        __ubuf__ PromoteDataType* secondfoldPtr, __ubuf__ PromoteDataType* addFactorDataPtr, uint16_t startOffset,
-        uint16_t addCircle, uint16_t addOffset);
+    __aicore__ inline void VfSecondVLBuffer(__ubuf__ PromoteDataType* secondfoldPtr,
+                                            __ubuf__ PromoteDataType* addFactorDataPtr, uint16_t startOffset,
+                                            uint16_t addCircle, uint16_t addOffset);
 
 private:
     TwowaySklanskyInitData initData_;
@@ -111,8 +110,9 @@ private:
 };
 
 template <typename DataType, typename PromoteDataType>
-__aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::BaseInit(
-    GM_ADDR x, GM_ADDR y, GM_ADDR workspace, const TwowaySklanskyInitData& initData)
+__aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::BaseInit(GM_ADDR x, GM_ADDR y,
+                                                                                 GM_ADDR workspace,
+                                                                                 const TwowaySklanskyInitData& initData)
 {
     CumsumBase<DataType>::Init(x, y);
     initData_ = initData;
@@ -142,9 +142,9 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::BaseProc
     processData_ = processData;
     reverseFlag_ = processData_.isReverse ? -1 : 1;
     // gm offset 计算公式：offsetM * lenR * lenN + offsetR * lenN + offsetN
-    nAlignBlockElem_ =
-        Ops::Base::CeilAlign(static_cast<uint32_t>(processData_.ubFactorN * sizeof(DataType)), BLOCK_SIZE) /
-        sizeof(DataType);
+    nAlignBlockElem_ = Ops::Base::CeilAlign(static_cast<uint32_t>(processData_.ubFactorN * sizeof(DataType)),
+                                            BLOCK_SIZE) /
+                       sizeof(DataType);
     outputOffset_ = processData_.offsetM * initData_.lenR * initData_.lenN + processData_.offsetR * initData_.lenN +
                     processData_.offsetN;
     // 根据isOffsetChange和isReverse来调整offsetR
@@ -183,8 +183,10 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::CalcAddF
 }
 
 template <typename DataType, typename PromoteDataType>
-__aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::SetCopyParam(
-    int32_t iter, uint32_t rCountReal, uint32_t& ubOffset, int64_t& gmOffset, DataCopyExtParams& dataCopyParams)
+__aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::SetCopyParam(int32_t iter, uint32_t rCountReal,
+                                                                                     uint32_t& ubOffset,
+                                                                                     int64_t& gmOffset,
+                                                                                     DataCopyExtParams& dataCopyParams)
 {
     ubOffset = iter * nAlignBlockElem_;
     dataCopyParams.blockCount = processData_.rFoldAfterSize; // 每次搬运rSize行数据
@@ -250,14 +252,14 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::CopyIn()
         int32_t fullReapeatCount = processData_.rFoldAfterSize / MAX_REPEAT_TIME;
         for (int32_t i = 0; i < fullReapeatCount; i++) {
             int32_t offset = i * MAX_REPEAT_TIME_ELEM;
-            Cast(
-                foldBuffer_[offset], oriFoldBuffer_[offset], RoundMode::CAST_NONE, mask, MAX_REPEAT_TIME, {1, 1, 8, 4});
+            Cast(foldBuffer_[offset], oriFoldBuffer_[offset], RoundMode::CAST_NONE, mask, MAX_REPEAT_TIME,
+                 {1, 1, 8, 4});
         }
         int32_t tailReapeatTime = processData_.rFoldAfterSize - fullReapeatCount * MAX_REPEAT_TIME;
         if (tailReapeatTime > 0) {
             int32_t offset = fullReapeatCount * MAX_REPEAT_TIME_ELEM;
-            Cast(
-                foldBuffer_[offset], oriFoldBuffer_[offset], RoundMode::CAST_NONE, mask, tailReapeatTime, {1, 1, 8, 4});
+            Cast(foldBuffer_[offset], oriFoldBuffer_[offset], RoundMode::CAST_NONE, mask, tailReapeatTime,
+                 {1, 1, 8, 4});
         }
     }
 }
@@ -271,19 +273,20 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::Compute(
 }
 
 template <typename DataType, typename PromoteDataType>
-__aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfNoAlignCopyOut(uint32_t dirtyDataNum, uint32_t actualNum)
+__aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfNoAlignCopyOut(uint32_t dirtyDataNum,
+                                                                                         uint32_t actualNum)
 {
     __ubuf__ DataType* outputPtr = (__ubuf__ DataType*)outputLocal_.GetPhyAddr();
     __ubuf__ DataType* outNoAlignPtr = (__ubuf__ DataType*)outNoAlignBuffer_.GetPhyAddr();
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::MaskReg p0 = AscendC::MicroAPI::CreateMask<DataType, AscendC::MicroAPI::MaskPattern::ALL>();
-        AscendC::MicroAPI::UnalignReg u0;
-        AscendC::MicroAPI::RegTensor<DataType> outNoAlignReg;
+        AscendC::Reg::MaskReg p0 = AscendC::Reg::CreateMask<DataType, AscendC::Reg::MaskPattern::ALL>();
+        AscendC::Reg::UnalignReg u0;
+        AscendC::Reg::RegTensor<DataType> outNoAlignReg;
         auto srcUbT = outputPtr + dirtyDataNum; // 非对齐的有效数据
-        AscendC::MicroAPI::DataCopyUnAlignPre(u0, srcUbT);
-        AscendC::MicroAPI::DataCopyUnAlign(outNoAlignReg, u0, srcUbT);
-        AscendC::MicroAPI::DataCopy(outNoAlignPtr, outNoAlignReg, p0);
+        AscendC::Reg::DataCopyUnAlignPre(u0, srcUbT);
+        AscendC::Reg::DataCopyUnAlign(outNoAlignReg, u0, srcUbT);
+        AscendC::Reg::DataCopy(outNoAlignPtr, outNoAlignReg, p0);
     }
     DataCopyExtParams dataCopyNoAlignParams;
     dataCopyNoAlignParams.blockCount = 1;
@@ -316,18 +319,18 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::BaseCopy
     dataCopyParams.dstStride = 0;
     if (processData_.isReverse) {
         if (processData_.rFoldCount > kMinMultiFoldCount) {
-            dirtyDataNum =
-                processData_.ubFactorN * (processData_.rFoldCount * processData_.rFoldAfterSize - processData_.ubFactorR);
+            dirtyDataNum = processData_.ubFactorN *
+                           (processData_.rFoldCount * processData_.rFoldAfterSize - processData_.ubFactorR);
         }
         if (dirtyDataNum > 0) {
             uint32_t remainder = dirtyDataNum % mixDataLen;
             VfNoAlignCopyOut(dirtyDataNum, mixDataLen - remainder);
-            
+
             uint32_t effectiveDataHead = dirtyDataNum + (mixDataLen - remainder);
             outputOffset_ = outputOffset_ + (mixDataLen - remainder); // 调整输出起始位置到对齐
             ubOffset = effectiveDataHead;
-            dataCopyParams.blockLen =
-                (processData_.ubFactorN * processData_.ubFactorR - (mixDataLen - remainder)) * sizeof(DataType);
+            dataCopyParams.blockLen = (processData_.ubFactorN * processData_.ubFactorR - (mixDataLen - remainder)) *
+                                      sizeof(DataType);
         }
     }
 
@@ -358,8 +361,10 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::FirstSka
 }
 
 template <typename DataType, typename PromoteDataType>
-__aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfFirstAdd(
-    uint16_t startOffset, uint16_t addCircle, uint16_t addCount, uint16_t addOffset)
+__aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfFirstAdd(uint16_t startOffset,
+                                                                                   uint16_t addCircle,
+                                                                                   uint16_t addCount,
+                                                                                   uint16_t addOffset)
 {
     int32_t reverseFlag = reverseFlag_;
     uint32_t addReg1Offset = 0;
@@ -368,20 +373,19 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfFirstA
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::MaskReg p0 =
-            AscendC::MicroAPI::CreateMask<PromoteDataType, AscendC::MicroAPI::MaskPattern::ALL>();
-        AscendC::MicroAPI::RegTensor<PromoteDataType> sumReg;
-        AscendC::MicroAPI::RegTensor<PromoteDataType> addReg1;
-        AscendC::MicroAPI::RegTensor<PromoteDataType> addReg2;
+        AscendC::Reg::MaskReg p0 = AscendC::Reg::CreateMask<PromoteDataType, AscendC::Reg::MaskPattern::ALL>();
+        AscendC::Reg::RegTensor<PromoteDataType> sumReg;
+        AscendC::Reg::RegTensor<PromoteDataType> addReg1;
+        AscendC::Reg::RegTensor<PromoteDataType> addReg2;
 
         for (uint16_t m = 0; m < addCircle; m++) {
             addReg1Offset = (startOffset + reverseFlag * m * addOffset) * VL_ELEM;
             for (uint16_t n = 0; n < addCount; n++) {
                 addReg2Offset = (startOffset + reverseFlag * (m * addOffset + n + 1)) * VL_ELEM;
-                AscendC::MicroAPI::DataCopy(addReg1, foldPtr + addReg1Offset);
-                AscendC::MicroAPI::DataCopy(addReg2, foldPtr + addReg2Offset);
-                AscendC::MicroAPI::Add(sumReg, addReg1, addReg2, p0);
-                AscendC::MicroAPI::DataCopy(foldPtr + addReg2Offset, sumReg, p0);
+                AscendC::Reg::DataCopy(addReg1, foldPtr + addReg1Offset);
+                AscendC::Reg::DataCopy(addReg2, foldPtr + addReg2Offset);
+                AscendC::Reg::Add(sumReg, addReg1, addReg2, p0);
+                AscendC::Reg::DataCopy(foldPtr + addReg2Offset, sumReg, p0);
             }
         }
     }
@@ -393,8 +397,9 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfGather
     int32_t nSize = processData_.ubFactorN;
     int32_t reverseFlag = reverseFlag_;
     uint32_t dstOffset = 0;
-    uint32_t baseOffset = processData_.rFoldCount * foldOneElem_ < numAlignBlock_ ? 0:
-        processData_.rFoldCount * foldOneElem_ - numAlignBlock_;
+    uint32_t baseOffset = processData_.rFoldCount * foldOneElem_ < numAlignBlock_ ?
+                              0 :
+                              processData_.rFoldCount * foldOneElem_ - numAlignBlock_;
     uint32_t dstBaseOffset = processData_.isReverse ? baseOffset : 0;
     uint32_t num = foldOneElem_;
     uint32_t numAlignBlock = numAlignBlock_;
@@ -406,35 +411,34 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfGather
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::MaskReg p0;
-        AscendC::MicroAPI::MaskReg p1;
-        AscendC::MicroAPI::RegTensor<int32_t> indexReg;
-        AscendC::MicroAPI::RegTensor<int32_t> tmp;
-        AscendC::MicroAPI::RegTensor<int32_t> tmp1;
-        AscendC::MicroAPI::RegTensor<int32_t> tmp2;
-        AscendC::MicroAPI::RegTensor<int32_t> subReg;
-        AscendC::MicroAPI::RegTensor<int32_t> addReg;
-        AscendC::MicroAPI::RegTensor<int32_t> loopAddReg;
-        AscendC::MicroAPI::RegTensor<int32_t> nReg;
-        AscendC::MicroAPI::RegTensor<PromoteDataType> dstReg;
+        AscendC::Reg::MaskReg p0;
+        AscendC::Reg::MaskReg p1;
+        AscendC::Reg::RegTensor<int32_t> indexReg;
+        AscendC::Reg::RegTensor<int32_t> tmp;
+        AscendC::Reg::RegTensor<int32_t> tmp1;
+        AscendC::Reg::RegTensor<int32_t> tmp2;
+        AscendC::Reg::RegTensor<int32_t> subReg;
+        AscendC::Reg::RegTensor<int32_t> addReg;
+        AscendC::Reg::RegTensor<int32_t> loopAddReg;
+        AscendC::Reg::RegTensor<int32_t> nReg;
+        AscendC::Reg::RegTensor<PromoteDataType> dstReg;
 
-        p0 = AscendC::MicroAPI::UpdateMask<int32_t>(num);
-        uint32_t num1 = foldOneElem_;                  // num被当成引用传给了p0，每次update都会减256B
-        AscendC::MicroAPI::Duplicate(nReg, nSize, p0); // [9 9 9 9 9 ...]
+        p0 = AscendC::Reg::UpdateMask<int32_t>(num);
+        uint32_t num1 = foldOneElem_;             // num被当成引用传给了p0，每次update都会减256B
+        AscendC::Reg::Duplicate(nReg, nSize, p0); // [9 9 9 9 9 ...]
         for (uint16_t i = 0; i < times; i++) {
-            AscendC::MicroAPI::Arange(indexReg, i * VL_ELEM);         // [0 1 2 3 4 5 ...]
-            AscendC::MicroAPI::Div(tmp, indexReg, nReg, p0);          // [0000...1111...66667]
-            AscendC::MicroAPI::Muls(tmp1, tmp, (int32_t)VL_ELEM, p0); // [000..64...448]
-            AscendC::MicroAPI::Mul(subReg, tmp, nReg, p0);            // [000...99999.....63]
-            AscendC::MicroAPI::Sub(tmp2, indexReg, subReg, p0);       // [0123...0123...0123..]
-            AscendC::MicroAPI::Add(addReg, tmp1, tmp2, p0);           // [0123...64,65....]
-            p1 = AscendC::MicroAPI::UpdateMask<int32_t>(num1);
+            AscendC::Reg::Arange(indexReg, i * VL_ELEM);         // [0 1 2 3 4 5 ...]
+            AscendC::Reg::Div(tmp, indexReg, nReg, p0);          // [0000...1111...66667]
+            AscendC::Reg::Muls(tmp1, tmp, (int32_t)VL_ELEM, p0); // [000..64...448]
+            AscendC::Reg::Mul(subReg, tmp, nReg, p0);            // [000...99999.....63]
+            AscendC::Reg::Sub(tmp2, indexReg, subReg, p0);       // [0123...0123...0123..]
+            AscendC::Reg::Add(addReg, tmp1, tmp2, p0);           // [0123...64,65....]
+            p1 = AscendC::Reg::UpdateMask<int32_t>(num1);
             for (uint16_t j = 0; j < foldCount; j++) {
-                AscendC::MicroAPI::Adds(loopAddReg, addReg, (int32_t)nAlignBlockElem_ * j, p0);
-                AscendC::MicroAPI::DataCopyGather(
-                    dstReg, srcPtr, (AscendC::MicroAPI::RegTensor<uint32_t>&)loopAddReg, p1);
+                AscendC::Reg::Adds(loopAddReg, addReg, (int32_t)nAlignBlockElem_ * j, p0);
+                AscendC::Reg::DataCopyGather(dstReg, srcPtr, (AscendC::Reg::RegTensor<uint32_t>&)loopAddReg, p1);
                 dstOffset = dstBaseOffset + i * VL_ELEM + reverseFlag * j * numAlignBlock;
-                AscendC::MicroAPI::DataCopy(dstPtr + dstOffset, dstReg, p1);
+                AscendC::Reg::DataCopy(dstPtr + dstOffset, dstReg, p1);
             }
         }
     }
@@ -459,8 +463,9 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::SecondSk
 }
 
 template <typename DataType, typename PromoteDataType>
-__aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfSecondAdd(
-    int32_t k, uint16_t startOffset, uint16_t addCircle, uint16_t addOffset)
+__aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfSecondAdd(int32_t k, uint16_t startOffset,
+                                                                                    uint16_t addCircle,
+                                                                                    uint16_t addOffset)
 {
     uint32_t num = foldOneElem_;
     uint32_t baseNum = num * __CumsumUtil::CalPow2(k);
@@ -476,20 +481,19 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfSecond
 
     __ubuf__ PromoteDataType* secondfoldPtr = (__ubuf__ PromoteDataType*)secondfoldBuffer_.GetPhyAddr();
     __ubuf__ int32_t* addFactorIndexPtr = (__ubuf__ int32_t*)secondSkalanskyAddFactorIndexBuffer_.GetPhyAddr();
-    __ubuf__ PromoteDataType* addFactorDataPtr =
-        (__ubuf__ PromoteDataType*)secondSkalanskyAddFactorDataBuffer_.GetPhyAddr();
+    __ubuf__ PromoteDataType* addFactorDataPtr = (__ubuf__ PromoteDataType*)
+                                                     secondSkalanskyAddFactorDataBuffer_.GetPhyAddr();
 
     VfSecondVLBuffer(secondfoldPtr, addFactorDataPtr, startOffset, addCircle, addOffset);
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::MaskReg p0 =
-            AscendC::MicroAPI::CreateMask<PromoteDataType, AscendC::MicroAPI::MaskPattern::ALL>();
-        AscendC::MicroAPI::MaskReg p1;
-        AscendC::MicroAPI::MaskReg p2;
-        AscendC::MicroAPI::RegTensor<PromoteDataType> addDataReg;
-        AscendC::MicroAPI::RegTensor<int32_t> addFactorIndexReg;
-        AscendC::MicroAPI::RegTensor<PromoteDataType> addFactorDataReg;
+        AscendC::Reg::MaskReg p0 = AscendC::Reg::CreateMask<PromoteDataType, AscendC::Reg::MaskPattern::ALL>();
+        AscendC::Reg::MaskReg p1;
+        AscendC::Reg::MaskReg p2;
+        AscendC::Reg::RegTensor<PromoteDataType> addDataReg;
+        AscendC::Reg::RegTensor<int32_t> addFactorIndexReg;
+        AscendC::Reg::RegTensor<PromoteDataType> addFactorDataReg;
 
         for (uint16_t m = 0; m < addCircle; m++) {
             uint32_t baseNum1 = baseNum;
@@ -500,36 +504,32 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfSecond
             // 主块
             for (uint16_t i = 0; i < loopMain; i++) {
                 for (uint16_t j = 0; j < indexLoopCount_; j++) {
-                    p1 = AscendC::MicroAPI::UpdateMask<int32_t>(baseNum1);
+                    p1 = AscendC::Reg::UpdateMask<int32_t>(baseNum1);
                     // 连续搬入AddFactor的index和data
-                    AscendC::MicroAPI::AddrReg addrOffset =
-                        AscendC::MicroAPI::CreateAddrReg<PromoteDataType>(j, VL_ELEM);
-                    AscendC::MicroAPI::DataCopy(addFactorIndexReg, addFactorIndexPtr, addrOffset);
-                    AscendC::MicroAPI::Adds(addFactorIndexReg, addFactorIndexReg, m * VL_ELEM * 2, p0);
-                    AscendC::MicroAPI::DataCopyGather(
-                        addFactorDataReg, addFactorDataPtr, (AscendC::MicroAPI::RegTensor<uint32_t>&)addFactorIndexReg,
-                        p0);
+                    AscendC::Reg::AddrReg addrOffset = AscendC::Reg::CreateAddrReg<PromoteDataType>(j, VL_ELEM);
+                    AscendC::Reg::DataCopy(addFactorIndexReg, addFactorIndexPtr, addrOffset);
+                    AscendC::Reg::Adds(addFactorIndexReg, addFactorIndexReg, m * VL_ELEM * 2, p0);
+                    AscendC::Reg::DataCopyGather(addFactorDataReg, addFactorDataPtr,
+                                                 (AscendC::Reg::RegTensor<uint32_t>&)addFactorIndexReg, p0);
                     int32_t addDataOffset = addDataMainReserveOffset + (i * indexLoopCount_ + j) * VL_ELEM;
-                    AscendC::MicroAPI::DataCopy(addDataReg, secondfoldPtr + addDataOffset);     // 连续对齐搬入addData
-                    AscendC::MicroAPI::Add(addDataReg, addDataReg, addFactorDataReg, p1);       // Add
-                    AscendC::MicroAPI::DataCopy(secondfoldPtr + addDataOffset, addDataReg, p1); // 搬出
+                    AscendC::Reg::DataCopy(addDataReg, secondfoldPtr + addDataOffset);     // 连续对齐搬入addData
+                    AscendC::Reg::Add(addDataReg, addDataReg, addFactorDataReg, p1);       // Add
+                    AscendC::Reg::DataCopy(secondfoldPtr + addDataOffset, addDataReg, p1); // 搬出
                 }
             }
             // 尾块，只需执行一次即可
             for (uint16_t i = 0; i < loopTail; i++) {
                 for (uint16_t j = 0; j < indexLoopCountTail; j++) {
-                    p2 = AscendC::MicroAPI::UpdateMask<int32_t>(baseNum2);
-                    AscendC::MicroAPI::AddrReg addrOffset =
-                        AscendC::MicroAPI::CreateAddrReg<PromoteDataType>(j, VL_ELEM);
-                    AscendC::MicroAPI::DataCopy(addFactorIndexReg, addFactorIndexPtr, addrOffset);
-                    AscendC::MicroAPI::Adds(addFactorIndexReg, addFactorIndexReg, m * VL_ELEM * 2, p0);
-                    AscendC::MicroAPI::DataCopyGather(
-                        addFactorDataReg, addFactorDataPtr, (AscendC::MicroAPI::RegTensor<uint32_t>&)addFactorIndexReg,
-                        p0);
+                    p2 = AscendC::Reg::UpdateMask<int32_t>(baseNum2);
+                    AscendC::Reg::AddrReg addrOffset = AscendC::Reg::CreateAddrReg<PromoteDataType>(j, VL_ELEM);
+                    AscendC::Reg::DataCopy(addFactorIndexReg, addFactorIndexPtr, addrOffset);
+                    AscendC::Reg::Adds(addFactorIndexReg, addFactorIndexReg, m * VL_ELEM * 2, p0);
+                    AscendC::Reg::DataCopyGather(addFactorDataReg, addFactorDataPtr,
+                                                 (AscendC::Reg::RegTensor<uint32_t>&)addFactorIndexReg, p0);
                     int32_t addDataOffset = addDataTailReserveOffset + (i * indexLoopCount_ + j) * VL_ELEM;
-                    AscendC::MicroAPI::DataCopy(addDataReg, secondfoldPtr + addDataOffset);
-                    AscendC::MicroAPI::Add(addDataReg, addDataReg, addFactorDataReg, p2);
-                    AscendC::MicroAPI::DataCopy(secondfoldPtr + addDataOffset, addDataReg, p2);
+                    AscendC::Reg::DataCopy(addDataReg, secondfoldPtr + addDataOffset);
+                    AscendC::Reg::Add(addDataReg, addDataReg, addFactorDataReg, p2);
+                    AscendC::Reg::DataCopy(secondfoldPtr + addDataOffset, addDataReg, p2);
                 }
             }
         }
@@ -546,37 +546,36 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfSecond
     int32_t nSize = processData_.ubFactorN;
     int32_t singleRemainder = VL_ELEM % processData_.ubFactorN;
     uint16_t innerLoop = 2;
-    int32_t ReserveStartOffset =
-        processData_.isReverse ? 0 : processData_.ubFactorN * (processData_.rFoldAfterSize - 1);
+    int32_t ReserveStartOffset = processData_.isReverse ? 0 :
+                                                          processData_.ubFactorN * (processData_.rFoldAfterSize - 1);
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::MaskReg p0 =
-            AscendC::MicroAPI::CreateMask<PromoteDataType, AscendC::MicroAPI::MaskPattern::ALL>();
-        AscendC::MicroAPI::RegTensor<int32_t> indexReg;
-        AscendC::MicroAPI::RegTensor<int32_t> tmp;
-        AscendC::MicroAPI::RegTensor<int32_t> tmp1;
-        AscendC::MicroAPI::RegTensor<int32_t> tmp2;
-        AscendC::MicroAPI::RegTensor<int32_t> tmp3;
-        AscendC::MicroAPI::RegTensor<int32_t> nReg;
-        AscendC::MicroAPI::RegTensor<int32_t> secondFoldReg;
-        AscendC::MicroAPI::RegTensor<PromoteDataType> addFactorDataReg;
+        AscendC::Reg::MaskReg p0 = AscendC::Reg::CreateMask<PromoteDataType, AscendC::Reg::MaskPattern::ALL>();
+        AscendC::Reg::RegTensor<int32_t> indexReg;
+        AscendC::Reg::RegTensor<int32_t> tmp;
+        AscendC::Reg::RegTensor<int32_t> tmp1;
+        AscendC::Reg::RegTensor<int32_t> tmp2;
+        AscendC::Reg::RegTensor<int32_t> tmp3;
+        AscendC::Reg::RegTensor<int32_t> nReg;
+        AscendC::Reg::RegTensor<int32_t> secondFoldReg;
+        AscendC::Reg::RegTensor<PromoteDataType> addFactorDataReg;
 
         for (uint16_t m = 0; m < addCircle; m++) {
             int32_t startIdx = 0;
             int32_t addFactorDataStart = (startOffset + reverseFlag * m * addOffset) * num;
-            AscendC::MicroAPI::Duplicate(nReg, nSize, p0); // [9 9 9 9 9 ...]
-            for (uint16_t i = 0; i < innerLoop; i++) {     // buffer 长度 256B * 2
-                AscendC::MicroAPI::Arange(indexReg, startIdx);
-                AscendC::MicroAPI::Div(tmp, indexReg, nReg, p0);          // [0000...1111...66667]
-                AscendC::MicroAPI::Muls(tmp1, tmp, (int32_t)VL_ELEM, p0); // [000..64...448]
-                AscendC::MicroAPI::Mul(tmp3, tmp, nReg, p0);              // [000...99999.....63]
-                AscendC::MicroAPI::Sub(tmp2, indexReg, tmp3, p0);         // [0123...0123...0123..]
-                AscendC::MicroAPI::Adds(secondFoldReg, tmp2, addFactorDataStart + ReserveStartOffset, p0);
-                AscendC::MicroAPI::DataCopyGather(
-                    addFactorDataReg, secondfoldPtr, (AscendC::MicroAPI::RegTensor<uint32_t>&)secondFoldReg, p0);
-                AscendC::MicroAPI::DataCopy(
-                    addFactorDataPtr + (int32_t)VL_ELEM * 2 * m + (int32_t)VL_ELEM * i, addFactorDataReg, p0);
+            AscendC::Reg::Duplicate(nReg, nSize, p0);  // [9 9 9 9 9 ...]
+            for (uint16_t i = 0; i < innerLoop; i++) { // buffer 长度 256B * 2
+                AscendC::Reg::Arange(indexReg, startIdx);
+                AscendC::Reg::Div(tmp, indexReg, nReg, p0);          // [0000...1111...66667]
+                AscendC::Reg::Muls(tmp1, tmp, (int32_t)VL_ELEM, p0); // [000..64...448]
+                AscendC::Reg::Mul(tmp3, tmp, nReg, p0);              // [000...99999.....63]
+                AscendC::Reg::Sub(tmp2, indexReg, tmp3, p0);         // [0123...0123...0123..]
+                AscendC::Reg::Adds(secondFoldReg, tmp2, addFactorDataStart + ReserveStartOffset, p0);
+                AscendC::Reg::DataCopyGather(addFactorDataReg, secondfoldPtr,
+                                             (AscendC::Reg::RegTensor<uint32_t>&)secondFoldReg, p0);
+                AscendC::Reg::DataCopy(addFactorDataPtr + (int32_t)VL_ELEM * 2 * m + (int32_t)VL_ELEM * i,
+                                       addFactorDataReg, p0);
                 startIdx = startIdx + singleRemainder;
             }
         }

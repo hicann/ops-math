@@ -38,9 +38,9 @@ class GroupedBiasAddGradSplitH {
     constexpr static int64_t BUFFER_NUM = 4;
 
 #ifdef __CCE_AICORE__
-    constexpr static AscendC::MicroAPI::CastTrait castTrait0 = {
-        AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::UNKNOWN,
-        AscendC::MicroAPI::MaskMergeMode::ZEROING, AscendC::RoundMode::UNKNOWN};
+    constexpr static AscendC::Reg::CastTrait castTrait0 = {
+        AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::UNKNOWN, AscendC::Reg::MaskMergeMode::ZEROING,
+        AscendC::RoundMode::UNKNOWN};
 #endif
 
 public:
@@ -238,16 +238,16 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyDataIn(int64_t offset
 
             uint32_t sreg = static_cast<uint32_t>(count);
 
-            AscendC::MicroAPI::MaskReg mask;
-            AscendC::MicroAPI::RegTensor<T> aReg;
-            AscendC::MicroAPI::RegTensor<PromoteDataT> bReg;
+            AscendC::Reg::MaskReg mask;
+            AscendC::Reg::RegTensor<T> aReg;
+            AscendC::Reg::RegTensor<PromoteDataT> bReg;
 
             for (uint16_t i = 0; i < loops; i++) {
-                mask = AscendC::MicroAPI::UpdateMask<PromoteDataT>(sreg);
-                AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::LoadDist::DIST_UNPACK_B16>(
+                mask = AscendC::Reg::UpdateMask<PromoteDataT>(sreg);
+                AscendC::Reg::DataCopy<T, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(
                     aReg, (__local_mem__ T*)src + i * loopsStride);
-                AscendC::MicroAPI::Cast<PromoteDataT, T, castTrait0>(bReg, aReg, mask);
-                AscendC::MicroAPI::DataCopy(dst + i * loopsStride, bReg, mask);
+                AscendC::Reg::Cast<PromoteDataT, T, castTrait0>(bReg, aReg, mask);
+                AscendC::Reg::DataCopy(dst + i * loopsStride, bReg, mask);
             }
         }
         xQue_.EnQue<PromoteDataT>(xTensor_);
@@ -566,15 +566,15 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::UpdateCacheAux(const int6
 
         uint32_t sreg = static_cast<uint32_t>(count);
 
-        AscendC::MicroAPI::RegTensor<PromoteDataT> aReg, bReg;
-        AscendC::MicroAPI::MaskReg pMask;
+        AscendC::Reg::RegTensor<PromoteDataT> aReg, bReg;
+        AscendC::Reg::MaskReg pMask;
 
         for (uint16_t i = 0; i < outerLoopTimes; ++i) { // outerLoopTimes is dimH size
-            pMask = AscendC::MicroAPI::UpdateMask<PromoteDataT>(sreg);
+            pMask = AscendC::Reg::UpdateMask<PromoteDataT>(sreg);
             DataCopy(aReg, (__local_mem__ PromoteDataT*)src + i * outerLoopStride);
             for (uint16_t j = 0; j < innerLoopTimes; ++j) {
                 DataCopy(bReg, (__local_mem__ PromoteDataT*)dst + i * outerLoopStride + j * innerLoopStride);
-                Add<PromoteDataT, AscendC::MicroAPI::MaskMergeMode::ZEROING>(aReg, aReg, bReg, pMask);
+                Add<PromoteDataT, AscendC::Reg::MaskMergeMode::ZEROING>(aReg, aReg, bReg, pMask);
             }
             DataCopy((__local_mem__ PromoteDataT*)cah + i * outerLoopStride, aReg, pMask);
         }

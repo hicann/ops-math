@@ -18,42 +18,42 @@
 
 namespace AscendcCast {
 template <int t>
-__aicore__ constexpr inline AscendC::MicroAPI::LoadDist ToLoadDist()
+__aicore__ constexpr inline AscendC::Reg::LoadDist ToLoadDist()
 {
     if constexpr (t == CAST_MODE_REG_COPYIN_NORM) {
-        return AscendC::MicroAPI::LoadDist::DIST_NORM;
+        return AscendC::Reg::LoadDist::DIST_NORM;
     } else if constexpr (t == CAST_MODE_REG_COPYIN_DS_B8) {
-        return AscendC::MicroAPI::LoadDist::DIST_DS_B8;
+        return AscendC::Reg::LoadDist::DIST_DS_B8;
     } else if constexpr (t == CAST_MODE_REG_COPYIN_DS_B16) {
-        return AscendC::MicroAPI::LoadDist::DIST_DS_B16;
+        return AscendC::Reg::LoadDist::DIST_DS_B16;
     } else if constexpr (t == CAST_MODE_REG_COPYIN_UNPACK_B8) {
-        return AscendC::MicroAPI::LoadDist::DIST_UNPACK_B8;
+        return AscendC::Reg::LoadDist::DIST_UNPACK_B8;
     } else if constexpr (t == CAST_MODE_REG_COPYIN_UNPACK_B16) {
-        return AscendC::MicroAPI::LoadDist::DIST_UNPACK_B16;
+        return AscendC::Reg::LoadDist::DIST_UNPACK_B16;
     } else if constexpr (t == CAST_MODE_REG_COPYIN_UNPACK_B32) {
-        return AscendC::MicroAPI::LoadDist::DIST_UNPACK_B32;
+        return AscendC::Reg::LoadDist::DIST_UNPACK_B32;
     } else if constexpr (t == CAST_MODE_REG_COPYIN_UNPACK4_B8) {
-        return AscendC::MicroAPI::LoadDist::DIST_UNPACK4_B8;
+        return AscendC::Reg::LoadDist::DIST_UNPACK4_B8;
     }
 
-    return AscendC::MicroAPI::LoadDist::DIST_NORM;
+    return AscendC::Reg::LoadDist::DIST_NORM;
 }
 
 template <int t>
-__aicore__ constexpr inline AscendC::MicroAPI::StoreDist ToStoreDist()
+__aicore__ constexpr inline AscendC::Reg::StoreDist ToStoreDist()
 {
     if constexpr (t == CAST_MODE_REG_COPYOUT_NORM) {
-        return AscendC::MicroAPI::StoreDist::DIST_NORM;
+        return AscendC::Reg::StoreDist::DIST_NORM;
     } else if constexpr (t == CAST_MODE_REG_COPYOUT_PACK_B16) {
-        return AscendC::MicroAPI::StoreDist::DIST_PACK_B16;
+        return AscendC::Reg::StoreDist::DIST_PACK_B16;
     } else if constexpr (t == CAST_MODE_REG_COPYOUT_PACK_B32) {
-        return AscendC::MicroAPI::StoreDist::DIST_PACK_B32;
+        return AscendC::Reg::StoreDist::DIST_PACK_B32;
     } else if constexpr (t == CAST_MODE_REG_COPYOUT_PACK_B64) {
-        return AscendC::MicroAPI::StoreDist::DIST_PACK_B64;
+        return AscendC::Reg::StoreDist::DIST_PACK_B64;
     } else if constexpr (t == CAST_MODE_REG_COPYOUT_PACK4_B32) {
-        return AscendC::MicroAPI::StoreDist::DIST_PACK4_B32;
+        return AscendC::Reg::StoreDist::DIST_PACK4_B32;
     }
-    return AscendC::MicroAPI::StoreDist::DIST_NORM;
+    return AscendC::Reg::StoreDist::DIST_NORM;
 }
 
 template <int t>
@@ -80,9 +80,9 @@ __aicore__ constexpr inline AscendC::RoundMode ToRoundMode()
     }
     return AscendC::RoundMode::CAST_NONE;
 }
-}
+} // namespace AscendcCast
 
-template<int id>
+template <int id>
 __global__ __aicore__ void cast(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     GET_TILING_DATA(tilingData, tiling);
@@ -130,18 +130,23 @@ __global__ __aicore__ void cast(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR
         constexpr AscendC::RoundMode rMode2 = AscendcCast::ToRoundMode<castMode2>();
         op.Init(x, y, rMode1, rMode2, &tilingData, &pipe);
         op.Process();
-    } else if constexpr (templateId == CAST_TEMPLATE_MIRCRO_INOUT ||
-        templateId == CAST_TEMPLATE_MIRCRO_CAST || templateId == CAST_TEMPLATE_MIRCRO_CAST_INTER ||
-        templateId == CAST_TEMPLATE_MIRCRO_CAST_DEINTER || templateId == CAST_TEMPLATE_MIRCRO_CAST_CAST_DEINTER ||
-        templateId == CAST_TEMPLATE_MIRCRO_CAST_CAST || templateId == CAST_TEMPLATE_MIRCRO_CAST_INTER_CAST ||
-        templateId == CAST_TEMPLATE_MIRCRO_CAST_DEINTER_CAST || templateId == CAST_TEMPLATE_MIRCRO_CAST_CAST_DEINTER_CAST ||
-        templateId == CAST_TEMPLATE_MIRCRO_CAST_INTER_CAST_CAST || templateId == CAST_TEMPLATE_MIRCRO_DEINTER_SHIFT) {
-        constexpr AscendC::MicroAPI::LoadDist ldDist = AscendcCast::ToLoadDist<regCopyInMode>();
-        constexpr AscendC::MicroAPI::StoreDist stDist = AscendcCast::ToStoreDist<regCopyOutMode>();
+    } else if constexpr (templateId == CAST_TEMPLATE_MIRCRO_INOUT || templateId == CAST_TEMPLATE_MIRCRO_CAST ||
+                         templateId == CAST_TEMPLATE_MIRCRO_CAST_INTER ||
+                         templateId == CAST_TEMPLATE_MIRCRO_CAST_DEINTER ||
+                         templateId == CAST_TEMPLATE_MIRCRO_CAST_CAST_DEINTER ||
+                         templateId == CAST_TEMPLATE_MIRCRO_CAST_CAST ||
+                         templateId == CAST_TEMPLATE_MIRCRO_CAST_INTER_CAST ||
+                         templateId == CAST_TEMPLATE_MIRCRO_CAST_DEINTER_CAST ||
+                         templateId == CAST_TEMPLATE_MIRCRO_CAST_CAST_DEINTER_CAST ||
+                         templateId == CAST_TEMPLATE_MIRCRO_CAST_INTER_CAST_CAST ||
+                         templateId == CAST_TEMPLATE_MIRCRO_DEINTER_SHIFT) {
+        constexpr AscendC::Reg::LoadDist ldDist = AscendcCast::ToLoadDist<regCopyInMode>();
+        constexpr AscendC::Reg::StoreDist stDist = AscendcCast::ToStoreDist<regCopyOutMode>();
         constexpr AscendC::RoundMode rMode1 = AscendcCast::ToRoundMode<castMode1>();
         constexpr AscendC::RoundMode rMode2 = AscendcCast::ToRoundMode<castMode2>();
-        AscendcCast::CastMicro<templateId, dTypeX, dTypeY, mapInType, mapMidType, mapOutType,
-            ldDist, stDist, rMode1, rMode2> op;
+        AscendcCast::CastMicro<templateId, dTypeX, dTypeY, mapInType, mapMidType, mapOutType, ldDist, stDist, rMode1,
+                               rMode2>
+            op;
         op.Init(x, y, &tilingData, &pipe);
         op.Process();
     }

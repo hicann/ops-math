@@ -35,21 +35,21 @@ struct AddCustom : public Vec::ElemwiseBinaryOP<T, T, T> {
         __ubuf__ T* src2Addr = (__ubuf__ T*)src2.GetPhyAddr();
         __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
 
-        MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregInput1;
-        MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregInput2;
-        MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregOutput;
-        MicroAPI::MaskReg mask;
+        Reg::RegTensor<T, Reg::RegTraitNumOne> vregInput1;
+        Reg::RegTensor<T, Reg::RegTraitNumOne> vregInput2;
+        Reg::RegTensor<T, Reg::RegTraitNumOne> vregOutput;
+        Reg::MaskReg mask;
         __VEC_SCOPE__
         {
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                mask = MicroAPI::UpdateMask<T, MicroAPI::RegTraitNumOne>(count);
+                mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                 // OpCopyIn
-                MicroAPI::DataCopy(vregInput1, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
-                MicroAPI::DataCopy(vregInput2, (__ubuf__ T*)(src2Addr + loopIdx * vlSize));
+                Reg::DataCopy(vregInput1, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
+                Reg::DataCopy(vregInput2, (__ubuf__ T*)(src2Addr + loopIdx * vlSize));
 
-                MicroAPI::Add(vregOutput, vregInput1, vregInput2, mask);
+                Reg::Add(vregOutput, vregInput1, vregInput2, mask);
                 // OpCopyOut
-                MicroAPI::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
+                Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
             }
         }
 #endif

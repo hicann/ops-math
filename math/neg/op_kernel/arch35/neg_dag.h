@@ -35,18 +35,18 @@ struct NegCustom : public Ops::Base::Vec::ElemwiseUnaryOP<T, T> {
             __ubuf__ T* srcAddr = (__ubuf__ T*)src.GetPhyAddr();
             __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
 
-            AscendC::MicroAPI::RegTensor<T, AscendC::MicroAPI::RegTraitNumOne> vregInput;
-            AscendC::MicroAPI::RegTensor<T, AscendC::MicroAPI::RegTraitNumOne> vregOutput;
-            AscendC::MicroAPI::MaskReg mask;
+            AscendC::Reg::RegTensor<T, AscendC::Reg::RegTraitNumOne> vregInput;
+            AscendC::Reg::RegTensor<T, AscendC::Reg::RegTraitNumOne> vregOutput;
+            AscendC::Reg::MaskReg mask;
 
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                mask = AscendC::MicroAPI::UpdateMask<T, AscendC::MicroAPI::RegTraitNumOne>(count);
+                mask = AscendC::Reg::UpdateMask<T, AscendC::Reg::RegTraitNumOne>(count);
                 // OpCopyIn0
-                AscendC::MicroAPI::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                AscendC::Reg::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
 
-                AscendC::MicroAPI::Neg(vregOutput, vregInput, mask);
+                AscendC::Reg::Neg(vregOutput, vregInput, mask);
                 // OpCopyOut
-                AscendC::MicroAPI::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
+                AscendC::Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
             }
         }
 #endif

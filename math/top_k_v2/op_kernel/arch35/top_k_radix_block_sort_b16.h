@@ -21,23 +21,23 @@ using namespace topkV2;
 template <typename T, typename UNSINGED_TYPE, int32_t NUM_PASS, bool IS_DESCEND, typename T_INDEX>
 struct RadixBlockSortSimdB16 {
 public:
-    __aicore__ inline RadixBlockSortSimdB16()
-    {}
-    __aicore__ inline void GetGlobalExcusiveSum(
-        LocalTensor<uint16_t> inputX, LocalTensor<T_INDEX> blockExcusive, uint32_t numTileData);
-    __aicore__ inline void GetBlockExcusiveSum(
-        LocalTensor<uint16_t> inputX, LocalTensor<uint8_t> inputXBitValue, LocalTensor<uint8_t> inputXBitValueCopy,
-        LocalTensor<uint16_t> blockExcusive, LocalTensor<uint16_t> blockHist, int32_t round, uint32_t numTileData);
-    __aicore__ inline void TwiddleInB16(
-        LocalTensor<T> inputX, LocalTensor<UNSINGED_TYPE> uintInputX, uint32_t numTileData);
-    __aicore__ inline void TwiddleOutB16(
-        LocalTensor<UNSINGED_TYPE> uintInputX, LocalTensor<T> inputX, uint32_t numTileData);
-    __aicore__ inline void TwiddleInFp16(
-        LocalTensor<T> inputX, LocalTensor<UNSINGED_TYPE> uintInputX, uint32_t numTileData);
-    __aicore__ inline void TwiddleOutFp16(
-        LocalTensor<UNSINGED_TYPE> uintInputX, LocalTensor<T> inputX, uint32_t numTileData);
-    __aicore__ inline void ReverseInputData(
-        LocalTensor<UNSINGED_TYPE> inputX, LocalTensor<UNSINGED_TYPE> reverseInputX, uint32_t numTileData);
+    __aicore__ inline RadixBlockSortSimdB16() {}
+    __aicore__ inline void GetGlobalExcusiveSum(LocalTensor<uint16_t> inputX, LocalTensor<T_INDEX> blockExcusive,
+                                                uint32_t numTileData);
+    __aicore__ inline void GetBlockExcusiveSum(LocalTensor<uint16_t> inputX, LocalTensor<uint8_t> inputXBitValue,
+                                               LocalTensor<uint8_t> inputXBitValueCopy,
+                                               LocalTensor<uint16_t> blockExcusive, LocalTensor<uint16_t> blockHist,
+                                               int32_t round, uint32_t numTileData);
+    __aicore__ inline void TwiddleInB16(LocalTensor<T> inputX, LocalTensor<UNSINGED_TYPE> uintInputX,
+                                        uint32_t numTileData);
+    __aicore__ inline void TwiddleOutB16(LocalTensor<UNSINGED_TYPE> uintInputX, LocalTensor<T> inputX,
+                                         uint32_t numTileData);
+    __aicore__ inline void TwiddleInFp16(LocalTensor<T> inputX, LocalTensor<UNSINGED_TYPE> uintInputX,
+                                         uint32_t numTileData);
+    __aicore__ inline void TwiddleOutFp16(LocalTensor<UNSINGED_TYPE> uintInputX, LocalTensor<T> inputX,
+                                          uint32_t numTileData);
+    __aicore__ inline void ReverseInputData(LocalTensor<UNSINGED_TYPE> inputX, LocalTensor<UNSINGED_TYPE> reverseInputX,
+                                            uint32_t numTileData);
 };
 
 template <typename T, typename UNSINGED_TYPE, int32_t NUM_PASS, bool IS_DESCEND, typename T_INDEX>
@@ -52,160 +52,149 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
     uint16_t repateTime = (numTileData + ONE_TIMES_B16_NUM - 1) / ONE_TIMES_B16_NUM;
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<uint16_t> inputVectorOne;
-        MicroAPI::RegTensor<uint16_t> histVectorZero, histVectorOne;
-        MicroAPI::RegTensor<uint16_t> chistVectorZero, chistVectorOne;
-        MicroAPI::RegTensor<uint16_t> zeroVector;
-        MicroAPI::MaskReg predicateDefault = MicroAPI::CreateMask<uint32_t>();
-        MicroAPI::MaskReg predicateDefaultB16 = MicroAPI::CreateMask<uint16_t>();
-        MicroAPI::Duplicate(zeroVector, 0, predicateDefaultB16);
+        Reg::RegTensor<uint16_t> inputVectorOne;
+        Reg::RegTensor<uint16_t> histVectorZero, histVectorOne;
+        Reg::RegTensor<uint16_t> chistVectorZero, chistVectorOne;
+        Reg::RegTensor<uint16_t> zeroVector;
+        Reg::MaskReg predicateDefault = Reg::CreateMask<uint32_t>();
+        Reg::MaskReg predicateDefaultB16 = Reg::CreateMask<uint16_t>();
+        Reg::Duplicate(zeroVector, 0, predicateDefaultB16);
         for (uint16_t round = 0; round < loopTime; round++) {
-            MicroAPI::Duplicate(histVectorZero, 0, predicateDefaultB16);
-            MicroAPI::Duplicate(histVectorOne, 0, predicateDefaultB16);
-            MicroAPI::Duplicate(chistVectorZero, 0, predicateDefaultB16);
-            MicroAPI::Duplicate(chistVectorOne, 0, predicateDefaultB16);
+            Reg::Duplicate(histVectorZero, 0, predicateDefaultB16);
+            Reg::Duplicate(histVectorOne, 0, predicateDefaultB16);
+            Reg::Duplicate(chistVectorZero, 0, predicateDefaultB16);
+            Reg::Duplicate(chistVectorOne, 0, predicateDefaultB16);
             uint32_t inputElementNum = numTileData;
             int16_t bitOffset = round * SHIFT_BIT_NUM;
             __local_mem__ uint16_t* inputXValuePtrCopy = inputXValuePtr;
             // calc hist/excusive
             for (uint16_t i = 0; i < repateTime; i++) {
-                MicroAPI::MaskReg histMask = MicroAPI::UpdateMask<uint16_t>(inputElementNum);
+                Reg::MaskReg histMask = Reg::UpdateMask<uint16_t>(inputElementNum);
                 // load input
-                MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    inputVectorOne, inputXValuePtrCopy, ONE_TIMES_B16_NUM);
+                Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtrCopy,
+                                                                            ONE_TIMES_B16_NUM);
                 // vshr
-                MicroAPI::RegTensor<uint16_t> shiftVecOne;
-                MicroAPI::ShiftRights<uint16_t, int16_t>(shiftVecOne, inputVectorOne, bitOffset, predicateDefaultB16);
+                Reg::RegTensor<uint16_t> shiftVecOne;
+                Reg::ShiftRights<uint16_t, int16_t>(shiftVecOne, inputVectorOne, bitOffset, predicateDefaultB16);
                 // 256 uint8 num
                 // get 256 8bit
-                MicroAPI::RegTensor<uint8_t> shiftVecU8LowBit, shiftVecU8HighBit;
-                MicroAPI::DeInterleave(
-                    shiftVecU8LowBit, shiftVecU8HighBit, (MicroAPI::RegTensor<uint8_t>&)shiftVecOne,
-                    (MicroAPI::RegTensor<uint8_t>&)zeroVector);
+                Reg::RegTensor<uint8_t> shiftVecU8LowBit, shiftVecU8HighBit;
+                Reg::DeInterleave(shiftVecU8LowBit, shiftVecU8HighBit, (Reg::RegTensor<uint8_t>&)shiftVecOne,
+                                  (Reg::RegTensor<uint8_t>&)zeroVector);
                 // copy u16 mask
-                MicroAPI::MaskReg maskU8;
-                MicroAPI::MaskPack(maskU8, histMask);
+                Reg::MaskReg maskU8;
+                Reg::MaskPack(maskU8, histMask);
                 // get hist
-                MicroAPI::Histograms<
-                    uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN0, MicroAPI::HistogramsType::FREQUENCY>(
+                Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::FREQUENCY>(
                     histVectorZero, shiftVecU8LowBit, maskU8);
-                MicroAPI::Histograms<
-                    uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN1, MicroAPI::HistogramsType::FREQUENCY>(
+                Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN1, Reg::HistogramsType::FREQUENCY>(
                     histVectorOne, shiftVecU8LowBit, maskU8);
                 // get cusum
-                MicroAPI::Histograms<
-                    uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN0, MicroAPI::HistogramsType::ACCUMULATE>(
+                Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::ACCUMULATE>(
                     chistVectorZero, shiftVecU8LowBit, maskU8);
-                MicroAPI::Histograms<
-                    uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN1, MicroAPI::HistogramsType::ACCUMULATE>(
+                Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN1, Reg::HistogramsType::ACCUMULATE>(
                     chistVectorOne, shiftVecU8LowBit, maskU8);
             }
             // get excusive sum
-            MicroAPI::RegTensor<uint16_t> excusiveSumZero, excusiveSumOne;
-            MicroAPI::Sub(excusiveSumZero, chistVectorZero, histVectorZero, predicateDefaultB16);
-            MicroAPI::Sub(excusiveSumOne, chistVectorOne, histVectorOne, predicateDefaultB16);
+            Reg::RegTensor<uint16_t> excusiveSumZero, excusiveSumOne;
+            Reg::Sub(excusiveSumZero, chistVectorZero, histVectorZero, predicateDefaultB16);
+            Reg::Sub(excusiveSumOne, chistVectorOne, histVectorOne, predicateDefaultB16);
             // case B16 to B32
-            MicroAPI::RegTensor<int32_t> excusiveSumZeroB32, excusiveSumOneB32, excusiveSumTwoB32, excusiveSumThreeB32;
-            MicroAPI::Interleave(
-                (MicroAPI::RegTensor<uint16_t>&)excusiveSumZeroB32, (MicroAPI::RegTensor<uint16_t>&)excusiveSumOneB32,
-                excusiveSumZero, zeroVector);
-            MicroAPI::Interleave(
-                (MicroAPI::RegTensor<uint16_t>&)excusiveSumTwoB32, (MicroAPI::RegTensor<uint16_t>&)excusiveSumThreeB32,
-                excusiveSumOne, zeroVector);
+            Reg::RegTensor<int32_t> excusiveSumZeroB32, excusiveSumOneB32, excusiveSumTwoB32, excusiveSumThreeB32;
+            Reg::Interleave((Reg::RegTensor<uint16_t>&)excusiveSumZeroB32, (Reg::RegTensor<uint16_t>&)excusiveSumOneB32,
+                            excusiveSumZero, zeroVector);
+            Reg::Interleave((Reg::RegTensor<uint16_t>&)excusiveSumTwoB32,
+                            (Reg::RegTensor<uint16_t>&)excusiveSumThreeB32, excusiveSumOne, zeroVector);
             if constexpr (IsSameType<T_INDEX, int32_t>::value) {
                 // load global excusive
-                MicroAPI::RegTensor<int32_t> excusiveSumGlobalZero, excusiveSumGlobalOne, excusiveSumGlobalTwo,
+                Reg::RegTensor<int32_t> excusiveSumGlobalZero, excusiveSumGlobalOne, excusiveSumGlobalTwo,
                     excusiveSumGlobalThree;
-                MicroAPI::DataCopy<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    excusiveSumGlobalZero, blockExcusivePtrRead, ONE_TIMES_B32_NUM);
-                MicroAPI::DataCopy<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    excusiveSumGlobalOne, blockExcusivePtrRead, ONE_TIMES_B32_NUM);
-                MicroAPI::DataCopy<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    excusiveSumGlobalTwo, blockExcusivePtrRead, ONE_TIMES_B32_NUM);
-                MicroAPI::DataCopy<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    excusiveSumGlobalThree, blockExcusivePtrRead, ONE_TIMES_B32_NUM);
+                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalZero, blockExcusivePtrRead,
+                                                                           ONE_TIMES_B32_NUM);
+                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalOne, blockExcusivePtrRead,
+                                                                           ONE_TIMES_B32_NUM);
+                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalTwo, blockExcusivePtrRead,
+                                                                           ONE_TIMES_B32_NUM);
+                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalThree, blockExcusivePtrRead,
+                                                                           ONE_TIMES_B32_NUM);
                 // add block ans to global excusive
-                MicroAPI::Add(excusiveSumGlobalZero, excusiveSumGlobalZero, excusiveSumZeroB32, predicateDefault);
-                MicroAPI::Add(excusiveSumGlobalOne, excusiveSumGlobalOne, excusiveSumOneB32, predicateDefault);
-                MicroAPI::Add(excusiveSumGlobalTwo, excusiveSumGlobalTwo, excusiveSumTwoB32, predicateDefault);
-                MicroAPI::Add(excusiveSumGlobalThree, excusiveSumGlobalThree, excusiveSumThreeB32, predicateDefault);
+                Reg::Add(excusiveSumGlobalZero, excusiveSumGlobalZero, excusiveSumZeroB32, predicateDefault);
+                Reg::Add(excusiveSumGlobalOne, excusiveSumGlobalOne, excusiveSumOneB32, predicateDefault);
+                Reg::Add(excusiveSumGlobalTwo, excusiveSumGlobalTwo, excusiveSumTwoB32, predicateDefault);
+                Reg::Add(excusiveSumGlobalThree, excusiveSumGlobalThree, excusiveSumThreeB32, predicateDefault);
                 // vsts to global
-                MicroAPI::DataCopy<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    blockExcusivePtrWrite, excusiveSumGlobalZero, ONE_TIMES_B32_NUM, predicateDefault);
-                MicroAPI::DataCopy<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    blockExcusivePtrWrite, excusiveSumGlobalOne, ONE_TIMES_B32_NUM, predicateDefault);
-                MicroAPI::DataCopy<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    blockExcusivePtrWrite, excusiveSumGlobalTwo, ONE_TIMES_B32_NUM, predicateDefault);
-                MicroAPI::DataCopy<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusivePtrWrite, excusiveSumGlobalZero,
+                                                                           ONE_TIMES_B32_NUM, predicateDefault);
+                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusivePtrWrite, excusiveSumGlobalOne,
+                                                                           ONE_TIMES_B32_NUM, predicateDefault);
+                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusivePtrWrite, excusiveSumGlobalTwo,
+                                                                           ONE_TIMES_B32_NUM, predicateDefault);
+                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockExcusivePtrWrite, excusiveSumGlobalThree, ONE_TIMES_B32_NUM, predicateDefault);
             } else {
                 // cast B32 to B64
-                MicroAPI::RegTensor<int64_t> excusiveSumZeroB64A, excusiveSumZeroB64B, excusiveSumOneB64A,
+                Reg::RegTensor<int64_t> excusiveSumZeroB64A, excusiveSumZeroB64B, excusiveSumOneB64A,
                     excusiveSumOneB64B;
-                MicroAPI::RegTensor<int64_t> excusiveSumTwoB64A, excusiveSumTwoB64B, excusiveSumThreeB64A,
+                Reg::RegTensor<int64_t> excusiveSumTwoB64A, excusiveSumTwoB64B, excusiveSumThreeB64A,
                     excusiveSumThreeB64B;
-                MicroAPI::Interleave(
-                    (MicroAPI::RegTensor<uint16_t>&)excusiveSumZeroB64A,
-                    (MicroAPI::RegTensor<uint16_t>&)excusiveSumZeroB64B,
-                    (MicroAPI::RegTensor<uint16_t>&)excusiveSumZeroB32, zeroVector);
-                MicroAPI::Interleave(
-                    (MicroAPI::RegTensor<uint16_t>&)excusiveSumOneB64A,
-                    (MicroAPI::RegTensor<uint16_t>&)excusiveSumOneB64B,
-                    (MicroAPI::RegTensor<uint16_t>&)excusiveSumOneB32, zeroVector);
-                MicroAPI::Interleave(
-                    (MicroAPI::RegTensor<uint16_t>&)excusiveSumTwoB64A,
-                    (MicroAPI::RegTensor<uint16_t>&)excusiveSumTwoB64B,
-                    (MicroAPI::RegTensor<uint16_t>&)excusiveSumTwoB32, zeroVector);
-                MicroAPI::Interleave(
-                    (MicroAPI::RegTensor<uint16_t>&)excusiveSumThreeB64A,
-                    (MicroAPI::RegTensor<uint16_t>&)excusiveSumThreeB64B,
-                    (MicroAPI::RegTensor<uint16_t>&)excusiveSumThreeB32, zeroVector);
+                Reg::Interleave((Reg::RegTensor<uint16_t>&)excusiveSumZeroB64A,
+                                (Reg::RegTensor<uint16_t>&)excusiveSumZeroB64B,
+                                (Reg::RegTensor<uint16_t>&)excusiveSumZeroB32, zeroVector);
+                Reg::Interleave((Reg::RegTensor<uint16_t>&)excusiveSumOneB64A,
+                                (Reg::RegTensor<uint16_t>&)excusiveSumOneB64B,
+                                (Reg::RegTensor<uint16_t>&)excusiveSumOneB32, zeroVector);
+                Reg::Interleave((Reg::RegTensor<uint16_t>&)excusiveSumTwoB64A,
+                                (Reg::RegTensor<uint16_t>&)excusiveSumTwoB64B,
+                                (Reg::RegTensor<uint16_t>&)excusiveSumTwoB32, zeroVector);
+                Reg::Interleave((Reg::RegTensor<uint16_t>&)excusiveSumThreeB64A,
+                                (Reg::RegTensor<uint16_t>&)excusiveSumThreeB64B,
+                                (Reg::RegTensor<uint16_t>&)excusiveSumThreeB32, zeroVector);
                 // load global excusive
-                MicroAPI::RegTensor<int64_t> excusiveSumGlobalZeroA, excusiveSumGlobalZeroB, excusiveSumGlobalOneA,
+                Reg::RegTensor<int64_t> excusiveSumGlobalZeroA, excusiveSumGlobalZeroB, excusiveSumGlobalOneA,
                     excusiveSumGlobalOneB;
-                MicroAPI::RegTensor<int64_t> excusiveSumGlobalTwoA, excusiveSumGlobalTwoB, excusiveSumGlobalThreeA,
+                Reg::RegTensor<int64_t> excusiveSumGlobalTwoA, excusiveSumGlobalTwoB, excusiveSumGlobalThreeA,
                     excusiveSumGlobalThreeB;
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    excusiveSumGlobalZeroA, blockExcusivePtrRead, ONE_TIMES_B64_NUM);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    excusiveSumGlobalZeroB, blockExcusivePtrRead, ONE_TIMES_B64_NUM);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    excusiveSumGlobalOneA, blockExcusivePtrRead, ONE_TIMES_B64_NUM);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    excusiveSumGlobalOneB, blockExcusivePtrRead, ONE_TIMES_B64_NUM);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    excusiveSumGlobalTwoA, blockExcusivePtrRead, ONE_TIMES_B64_NUM);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    excusiveSumGlobalTwoB, blockExcusivePtrRead, ONE_TIMES_B64_NUM);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    excusiveSumGlobalThreeA, blockExcusivePtrRead, ONE_TIMES_B64_NUM);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    excusiveSumGlobalThreeB, blockExcusivePtrRead, ONE_TIMES_B64_NUM);
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalZeroA, blockExcusivePtrRead,
+                                                                           ONE_TIMES_B64_NUM);
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalZeroB, blockExcusivePtrRead,
+                                                                           ONE_TIMES_B64_NUM);
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalOneA, blockExcusivePtrRead,
+                                                                           ONE_TIMES_B64_NUM);
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalOneB, blockExcusivePtrRead,
+                                                                           ONE_TIMES_B64_NUM);
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalTwoA, blockExcusivePtrRead,
+                                                                           ONE_TIMES_B64_NUM);
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalTwoB, blockExcusivePtrRead,
+                                                                           ONE_TIMES_B64_NUM);
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalThreeA,
+                                                                           blockExcusivePtrRead, ONE_TIMES_B64_NUM);
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalThreeB,
+                                                                           blockExcusivePtrRead, ONE_TIMES_B64_NUM);
                 // add block ans to global excusive
-                MicroAPI::Add(excusiveSumGlobalZeroA, excusiveSumGlobalZeroA, excusiveSumZeroB64A, predicateDefault);
-                MicroAPI::Add(excusiveSumGlobalZeroB, excusiveSumGlobalZeroB, excusiveSumZeroB64B, predicateDefault);
-                MicroAPI::Add(excusiveSumGlobalOneA, excusiveSumGlobalOneA, excusiveSumOneB64A, predicateDefault);
-                MicroAPI::Add(excusiveSumGlobalOneB, excusiveSumGlobalOneB, excusiveSumOneB64B, predicateDefault);
-                MicroAPI::Add(excusiveSumGlobalTwoA, excusiveSumGlobalTwoA, excusiveSumTwoB64A, predicateDefault);
-                MicroAPI::Add(excusiveSumGlobalTwoB, excusiveSumGlobalTwoB, excusiveSumTwoB64B, predicateDefault);
-                MicroAPI::Add(excusiveSumGlobalThreeA, excusiveSumGlobalThreeA, excusiveSumThreeB64A, predicateDefault);
-                MicroAPI::Add(excusiveSumGlobalThreeB, excusiveSumGlobalThreeB, excusiveSumThreeB64B, predicateDefault);
+                Reg::Add(excusiveSumGlobalZeroA, excusiveSumGlobalZeroA, excusiveSumZeroB64A, predicateDefault);
+                Reg::Add(excusiveSumGlobalZeroB, excusiveSumGlobalZeroB, excusiveSumZeroB64B, predicateDefault);
+                Reg::Add(excusiveSumGlobalOneA, excusiveSumGlobalOneA, excusiveSumOneB64A, predicateDefault);
+                Reg::Add(excusiveSumGlobalOneB, excusiveSumGlobalOneB, excusiveSumOneB64B, predicateDefault);
+                Reg::Add(excusiveSumGlobalTwoA, excusiveSumGlobalTwoA, excusiveSumTwoB64A, predicateDefault);
+                Reg::Add(excusiveSumGlobalTwoB, excusiveSumGlobalTwoB, excusiveSumTwoB64B, predicateDefault);
+                Reg::Add(excusiveSumGlobalThreeA, excusiveSumGlobalThreeA, excusiveSumThreeB64A, predicateDefault);
+                Reg::Add(excusiveSumGlobalThreeB, excusiveSumGlobalThreeB, excusiveSumThreeB64B, predicateDefault);
                 // vsts to global
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockExcusivePtrWrite, excusiveSumGlobalZeroA, ONE_TIMES_B64_NUM, predicateDefault);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockExcusivePtrWrite, excusiveSumGlobalZeroB, ONE_TIMES_B64_NUM, predicateDefault);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    blockExcusivePtrWrite, excusiveSumGlobalOneA, ONE_TIMES_B64_NUM, predicateDefault);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    blockExcusivePtrWrite, excusiveSumGlobalOneB, ONE_TIMES_B64_NUM, predicateDefault);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    blockExcusivePtrWrite, excusiveSumGlobalTwoA, ONE_TIMES_B64_NUM, predicateDefault);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    blockExcusivePtrWrite, excusiveSumGlobalTwoB, ONE_TIMES_B64_NUM, predicateDefault);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusivePtrWrite, excusiveSumGlobalOneA,
+                                                                           ONE_TIMES_B64_NUM, predicateDefault);
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusivePtrWrite, excusiveSumGlobalOneB,
+                                                                           ONE_TIMES_B64_NUM, predicateDefault);
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusivePtrWrite, excusiveSumGlobalTwoA,
+                                                                           ONE_TIMES_B64_NUM, predicateDefault);
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusivePtrWrite, excusiveSumGlobalTwoB,
+                                                                           ONE_TIMES_B64_NUM, predicateDefault);
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockExcusivePtrWrite, excusiveSumGlobalThreeA, ONE_TIMES_B64_NUM, predicateDefault);
-                MicroAPI::DataCopy<int64_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
+                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockExcusivePtrWrite, excusiveSumGlobalThreeB, ONE_TIMES_B64_NUM, predicateDefault);
             }
         }
@@ -226,68 +215,63 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
     __local_mem__ uint16_t* blockHistPtr = (__ubuf__ uint16_t*)blockHist.GetPhyAddr();
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<uint16_t> inputVectorOne;
-        MicroAPI::RegTensor<uint16_t> histVectorZero, histVectorOne;
-        MicroAPI::RegTensor<uint16_t> chistVectorZero, chistVectorOne;
-        MicroAPI::RegTensor<uint16_t> zeroVector;
-        MicroAPI::MaskReg predicateDefault = MicroAPI::CreateMask<uint32_t>();
-        MicroAPI::MaskReg predicateDefaultB16 = MicroAPI::CreateMask<uint16_t>();
-        MicroAPI::Duplicate(zeroVector, 0, predicateDefaultB16);
-        MicroAPI::Duplicate(histVectorZero, 0, predicateDefaultB16);
-        MicroAPI::Duplicate(histVectorOne, 0, predicateDefaultB16);
-        MicroAPI::Duplicate(chistVectorZero, 0, predicateDefaultB16);
-        MicroAPI::Duplicate(chistVectorOne, 0, predicateDefaultB16);
+        Reg::RegTensor<uint16_t> inputVectorOne;
+        Reg::RegTensor<uint16_t> histVectorZero, histVectorOne;
+        Reg::RegTensor<uint16_t> chistVectorZero, chistVectorOne;
+        Reg::RegTensor<uint16_t> zeroVector;
+        Reg::MaskReg predicateDefault = Reg::CreateMask<uint32_t>();
+        Reg::MaskReg predicateDefaultB16 = Reg::CreateMask<uint16_t>();
+        Reg::Duplicate(zeroVector, 0, predicateDefaultB16);
+        Reg::Duplicate(histVectorZero, 0, predicateDefaultB16);
+        Reg::Duplicate(histVectorOne, 0, predicateDefaultB16);
+        Reg::Duplicate(chistVectorZero, 0, predicateDefaultB16);
+        Reg::Duplicate(chistVectorOne, 0, predicateDefaultB16);
         uint32_t inputElementNum = numTileData;
         for (uint16_t i = 0; i < repateTime; i++) {
-            MicroAPI::MaskReg histMask = MicroAPI::UpdateMask<uint16_t>(inputElementNum);
+            Reg::MaskReg histMask = Reg::UpdateMask<uint16_t>(inputElementNum);
             // load input
-            MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                inputVectorOne, inputXValuePtr, ONE_TIMES_B16_NUM);
+            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtr,
+                                                                        ONE_TIMES_B16_NUM);
             // vshr
-            MicroAPI::RegTensor<uint16_t> shiftVecOne;
-            MicroAPI::ShiftRights<uint16_t, int16_t>(shiftVecOne, inputVectorOne, bitOffset, predicateDefaultB16);
+            Reg::RegTensor<uint16_t> shiftVecOne;
+            Reg::ShiftRights<uint16_t, int16_t>(shiftVecOne, inputVectorOne, bitOffset, predicateDefaultB16);
             // 256 uint8 num
             // get 256 8bit
-            MicroAPI::RegTensor<uint8_t> shiftVecU8LowBit, shiftVecU8HighBit;
-            MicroAPI::DeInterleave(
-                shiftVecU8LowBit, shiftVecU8HighBit, (MicroAPI::RegTensor<uint8_t>&)shiftVecOne,
-                (MicroAPI::RegTensor<uint8_t>&)zeroVector);
+            Reg::RegTensor<uint8_t> shiftVecU8LowBit, shiftVecU8HighBit;
+            Reg::DeInterleave(shiftVecU8LowBit, shiftVecU8HighBit, (Reg::RegTensor<uint8_t>&)shiftVecOne,
+                              (Reg::RegTensor<uint8_t>&)zeroVector);
             // copy u16 mask
-            MicroAPI::MaskReg maskU8;
-            MicroAPI::MaskPack(maskU8, histMask);
-            MicroAPI::DataCopy<uint8_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                inputX8BitValuePtr, shiftVecU8LowBit, ONE_TIMES_B16_NUM, maskU8);
-            MicroAPI::DataCopy<uint8_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                inputX8BitValueCopyPtr, shiftVecU8LowBit, ONE_TIMES_B16_NUM, maskU8);
+            Reg::MaskReg maskU8;
+            Reg::MaskPack(maskU8, histMask);
+            Reg::DataCopy<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputX8BitValuePtr, shiftVecU8LowBit,
+                                                                       ONE_TIMES_B16_NUM, maskU8);
+            Reg::DataCopy<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputX8BitValueCopyPtr, shiftVecU8LowBit,
+                                                                       ONE_TIMES_B16_NUM, maskU8);
             // get hist
-            MicroAPI::Histograms<
-                uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN0, MicroAPI::HistogramsType::FREQUENCY>(
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::FREQUENCY>(
                 histVectorZero, shiftVecU8LowBit, maskU8);
-            MicroAPI::Histograms<
-                uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN1, MicroAPI::HistogramsType::FREQUENCY>(
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN1, Reg::HistogramsType::FREQUENCY>(
                 histVectorOne, shiftVecU8LowBit, maskU8);
             // get cusum
-            MicroAPI::Histograms<
-                uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN0, MicroAPI::HistogramsType::ACCUMULATE>(
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::ACCUMULATE>(
                 chistVectorZero, shiftVecU8LowBit, maskU8);
-            MicroAPI::Histograms<
-                uint8_t, uint16_t, MicroAPI::HistogramsBinType::BIN1, MicroAPI::HistogramsType::ACCUMULATE>(
+            Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN1, Reg::HistogramsType::ACCUMULATE>(
                 chistVectorOne, shiftVecU8LowBit, maskU8);
         }
         // get excusive sum
-        MicroAPI::RegTensor<uint16_t> excusiveSumZero, excusiveSumOne;
-        MicroAPI::Sub(excusiveSumZero, chistVectorZero, histVectorZero, predicateDefaultB16);
-        MicroAPI::Sub(excusiveSumOne, chistVectorOne, histVectorOne, predicateDefaultB16);
+        Reg::RegTensor<uint16_t> excusiveSumZero, excusiveSumOne;
+        Reg::Sub(excusiveSumZero, chistVectorZero, histVectorZero, predicateDefaultB16);
+        Reg::Sub(excusiveSumOne, chistVectorOne, histVectorOne, predicateDefaultB16);
         // store escusive sum to ub
-        MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-            blockExcusiveLocalPtr, excusiveSumZero, ONE_TIMES_B16_NUM, predicateDefaultB16);
-        MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-            blockExcusiveLocalPtr, excusiveSumOne, ONE_TIMES_B16_NUM, predicateDefaultB16);
+        Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveLocalPtr, excusiveSumZero,
+                                                                    ONE_TIMES_B16_NUM, predicateDefaultB16);
+        Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveLocalPtr, excusiveSumOne,
+                                                                    ONE_TIMES_B16_NUM, predicateDefaultB16);
         // store hist to ub
-        MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-            blockHistPtr, histVectorZero, ONE_TIMES_B16_NUM, predicateDefaultB16);
-        MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-            blockHistPtr, histVectorOne, ONE_TIMES_B16_NUM, predicateDefaultB16);
+        Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistPtr, histVectorZero, ONE_TIMES_B16_NUM,
+                                                                    predicateDefaultB16);
+        Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistPtr, histVectorOne, ONE_TIMES_B16_NUM,
+                                                                    predicateDefaultB16);
     }
 }
 
@@ -300,22 +284,22 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
     uint16_t repateTime = (numTileData + ONE_TIMES_B16_NUM - 1) / ONE_TIMES_B16_NUM;
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<uint16_t> inputVectorOne;
-        MicroAPI::RegTensor<uint16_t> xorValueVector;
-        MicroAPI::MaskReg predicateDefaultB16 = MicroAPI::CreateMask<uint16_t>();
-        MicroAPI::Duplicate(xorValueVector, XOR_OP_VALUE_B16, predicateDefaultB16);
+        Reg::RegTensor<uint16_t> inputVectorOne;
+        Reg::RegTensor<uint16_t> xorValueVector;
+        Reg::MaskReg predicateDefaultB16 = Reg::CreateMask<uint16_t>();
+        Reg::Duplicate(xorValueVector, XOR_OP_VALUE_B16, predicateDefaultB16);
         uint32_t inputElementNum = numTileData;
         for (uint16_t i = 0; i < repateTime; i++) {
-            MicroAPI::MaskReg xorMask = MicroAPI::UpdateMask<uint16_t>(inputElementNum);
+            Reg::MaskReg xorMask = Reg::UpdateMask<uint16_t>(inputElementNum);
             // load input
-            MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                inputVectorOne, inputXValuePtr, ONE_TIMES_B16_NUM);
+            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtr,
+                                                                        ONE_TIMES_B16_NUM);
             // vxor
-            MicroAPI::RegTensor<uint16_t> xorVectorZero;
-            MicroAPI::Xor(xorVectorZero, inputVectorOne, xorValueVector, xorMask);
+            Reg::RegTensor<uint16_t> xorVectorZero;
+            Reg::Xor(xorVectorZero, inputVectorOne, xorValueVector, xorMask);
             // sts
-            MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                uintInputXValuePtr, xorVectorZero, ONE_TIMES_B16_NUM, xorMask);
+            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(uintInputXValuePtr, xorVectorZero,
+                                                                        ONE_TIMES_B16_NUM, xorMask);
         }
     }
     if (IS_DESCEND) {
@@ -335,22 +319,22 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
     }
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<uint16_t> inputVectorOne;
-        MicroAPI::RegTensor<uint16_t> xorValueVector;
-        MicroAPI::MaskReg predicateDefaultB16 = MicroAPI::CreateMask<uint16_t>();
-        MicroAPI::Duplicate(xorValueVector, XOR_OP_VALUE_B16, predicateDefaultB16);
+        Reg::RegTensor<uint16_t> inputVectorOne;
+        Reg::RegTensor<uint16_t> xorValueVector;
+        Reg::MaskReg predicateDefaultB16 = Reg::CreateMask<uint16_t>();
+        Reg::Duplicate(xorValueVector, XOR_OP_VALUE_B16, predicateDefaultB16);
         uint32_t inputElementNum = numTileData;
         for (uint16_t i = 0; i < repateTime; i++) {
-            MicroAPI::MaskReg xorMask = MicroAPI::UpdateMask<uint16_t>(inputElementNum);
+            Reg::MaskReg xorMask = Reg::UpdateMask<uint16_t>(inputElementNum);
             // load input
-            MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                inputVectorOne, uinputXValuePtr, ONE_TIMES_B16_NUM);
+            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, uinputXValuePtr,
+                                                                        ONE_TIMES_B16_NUM);
             // vxor
-            MicroAPI::RegTensor<uint16_t> xorVectorZero;
-            MicroAPI::Xor(xorVectorZero, inputVectorOne, xorValueVector, xorMask);
+            Reg::RegTensor<uint16_t> xorVectorZero;
+            Reg::Xor(xorVectorZero, inputVectorOne, xorValueVector, xorMask);
             // sts
-            MicroAPI::DataCopy<int16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                inputXValuePtr, (MicroAPI::RegTensor<int16_t>&)xorVectorZero, ONE_TIMES_B16_NUM, xorMask);
+            Reg::DataCopy<int16_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                inputXValuePtr, (Reg::RegTensor<int16_t>&)xorVectorZero, ONE_TIMES_B16_NUM, xorMask);
         }
     }
 }
@@ -364,33 +348,33 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
     uint16_t repateTime = (numTileData + ONE_TIMES_B16_NUM - 1) / ONE_TIMES_B16_NUM;
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<uint16_t> inputVectorOne;
-        MicroAPI::RegTensor<uint16_t> xorMaskVector, vandMask;
-        MicroAPI::MaskReg predicateDefaultB16 = MicroAPI::CreateMask<uint16_t>();
-        MicroAPI::Duplicate(xorMaskVector, LOWEST_KEY_VALUE_B16, predicateDefaultB16);
-        MicroAPI::Duplicate(vandMask, XOR_OP_VALUE_B16, predicateDefaultB16);
+        Reg::RegTensor<uint16_t> inputVectorOne;
+        Reg::RegTensor<uint16_t> xorMaskVector, vandMask;
+        Reg::MaskReg predicateDefaultB16 = Reg::CreateMask<uint16_t>();
+        Reg::Duplicate(xorMaskVector, LOWEST_KEY_VALUE_B16, predicateDefaultB16);
+        Reg::Duplicate(vandMask, XOR_OP_VALUE_B16, predicateDefaultB16);
         uint32_t inputElementNum = numTileData;
         for (uint16_t i = 0; i < repateTime; i++) {
-            MicroAPI::MaskReg xorMask = MicroAPI::UpdateMask<uint16_t>(inputElementNum);
+            Reg::MaskReg xorMask = Reg::UpdateMask<uint16_t>(inputElementNum);
             // load input
-            MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                inputVectorOne, inputXValuePtr, ONE_TIMES_B16_NUM);
+            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtr,
+                                                                        ONE_TIMES_B16_NUM);
             // vxor
-            MicroAPI::RegTensor<uint16_t> andValueOne;
-            MicroAPI::And(andValueOne, inputVectorOne, vandMask, predicateDefaultB16);
+            Reg::RegTensor<uint16_t> andValueOne;
+            Reg::And(andValueOne, inputVectorOne, vandMask, predicateDefaultB16);
             // not equal
-            MicroAPI::MaskReg cmpValueOne;
-            MicroAPI::CompareScalar<uint16_t, CMPMODE::NE>(
-                cmpValueOne, andValueOne, ZERO_VALUE_FLAG_B16, predicateDefaultB16);
+            Reg::MaskReg cmpValueOne;
+            Reg::CompareScalar<uint16_t, CMPMODE::NE>(cmpValueOne, andValueOne, ZERO_VALUE_FLAG_B16,
+                                                      predicateDefaultB16);
             // vsel
-            MicroAPI::RegTensor<uint16_t> finalMaskOne;
-            MicroAPI::Select(finalMaskOne, xorMaskVector, vandMask, cmpValueOne);
+            Reg::RegTensor<uint16_t> finalMaskOne;
+            Reg::Select(finalMaskOne, xorMaskVector, vandMask, cmpValueOne);
             // vxor
-            MicroAPI::RegTensor<uint16_t> xorVectorOne;
-            MicroAPI::Xor(xorVectorOne, inputVectorOne, finalMaskOne, predicateDefaultB16);
+            Reg::RegTensor<uint16_t> xorVectorOne;
+            Reg::Xor(xorVectorOne, inputVectorOne, finalMaskOne, predicateDefaultB16);
             // sts
-            MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                uinputXValuePtr, xorVectorOne, ONE_TIMES_B16_NUM, xorMask);
+            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(uinputXValuePtr, xorVectorOne,
+                                                                        ONE_TIMES_B16_NUM, xorMask);
         }
     }
     if (IS_DESCEND) {
@@ -410,33 +394,33 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
     }
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<uint16_t> inputVectorOne;
-        MicroAPI::RegTensor<uint16_t> xorMaskVector, vandMask;
-        MicroAPI::MaskReg predicateDefaultB16 = MicroAPI::CreateMask<uint16_t>();
-        MicroAPI::Duplicate(xorMaskVector, LOWEST_KEY_VALUE_B16, predicateDefaultB16);
-        MicroAPI::Duplicate(vandMask, XOR_OP_VALUE_B16, predicateDefaultB16);
+        Reg::RegTensor<uint16_t> inputVectorOne;
+        Reg::RegTensor<uint16_t> xorMaskVector, vandMask;
+        Reg::MaskReg predicateDefaultB16 = Reg::CreateMask<uint16_t>();
+        Reg::Duplicate(xorMaskVector, LOWEST_KEY_VALUE_B16, predicateDefaultB16);
+        Reg::Duplicate(vandMask, XOR_OP_VALUE_B16, predicateDefaultB16);
         uint32_t inputElementNum = numTileData;
         for (uint16_t i = 0; i < repateTime; i++) {
-            MicroAPI::MaskReg xorMask = MicroAPI::UpdateMask<uint16_t>(inputElementNum);
+            Reg::MaskReg xorMask = Reg::UpdateMask<uint16_t>(inputElementNum);
             // load input
-            MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                inputVectorOne, uinputXValuePtr, ONE_TIMES_B16_NUM);
+            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, uinputXValuePtr,
+                                                                        ONE_TIMES_B16_NUM);
             // and
-            MicroAPI::RegTensor<uint16_t> andValueZero;
-            MicroAPI::And(andValueZero, inputVectorOne, vandMask, xorMask);
+            Reg::RegTensor<uint16_t> andValueZero;
+            Reg::And(andValueZero, inputVectorOne, vandMask, xorMask);
             // not equal
-            MicroAPI::MaskReg cmpValueZero;
-            MicroAPI::CompareScalar<uint16_t, CMPMODE::NE>(
-                cmpValueZero, andValueZero, ZERO_VALUE_FLAG_B16, predicateDefaultB16);
+            Reg::MaskReg cmpValueZero;
+            Reg::CompareScalar<uint16_t, CMPMODE::NE>(cmpValueZero, andValueZero, ZERO_VALUE_FLAG_B16,
+                                                      predicateDefaultB16);
             // vsel
-            MicroAPI::RegTensor<uint16_t> finalMaskOne;
-            MicroAPI::Select(finalMaskOne, xorMaskVector, vandMask, cmpValueZero);
+            Reg::RegTensor<uint16_t> finalMaskOne;
+            Reg::Select(finalMaskOne, xorMaskVector, vandMask, cmpValueZero);
             // vxor
-            MicroAPI::RegTensor<uint16_t> xorVectorZero;
-            MicroAPI::Xor(xorVectorZero, inputVectorOne, xorMaskVector, predicateDefaultB16);
+            Reg::RegTensor<uint16_t> xorVectorZero;
+            Reg::Xor(xorVectorZero, inputVectorOne, xorMaskVector, predicateDefaultB16);
             // sts
-            MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                inputXValuePtr, xorVectorZero, ONE_TIMES_B16_NUM, xorMask);
+            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputXValuePtr, xorVectorZero,
+                                                                        ONE_TIMES_B16_NUM, xorMask);
         }
     }
 }
@@ -452,19 +436,19 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
     __VEC_SCOPE__
     {
         uint32_t inputElementNum = numTileData;
-        MicroAPI::RegTensor<uint16_t> inputVectorOne;
-        MicroAPI::RegTensor<uint16_t> vnotVectorZero;
-        MicroAPI::MaskReg predicateDefaultB16 = MicroAPI::CreateMask<uint16_t>();
+        Reg::RegTensor<uint16_t> inputVectorOne;
+        Reg::RegTensor<uint16_t> vnotVectorZero;
+        Reg::MaskReg predicateDefaultB16 = Reg::CreateMask<uint16_t>();
         for (uint16_t i = 0; i < repateTime; i++) {
-            MicroAPI::MaskReg vnotMask = MicroAPI::UpdateMask<uint16_t>(inputElementNum);
+            Reg::MaskReg vnotMask = Reg::UpdateMask<uint16_t>(inputElementNum);
             // load input
-            MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                inputVectorOne, inputXValuePtrCopy, ONE_TIMES_B16_NUM);
+            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtrCopy,
+                                                                        ONE_TIMES_B16_NUM);
             // reverse op
-            MicroAPI::Not(vnotVectorZero, inputVectorOne, vnotMask);
+            Reg::Not(vnotVectorZero, inputVectorOne, vnotMask);
             // sts
-            MicroAPI::DataCopy<uint16_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                reverseInputXPtr, vnotVectorZero, ONE_TIMES_B16_NUM, vnotMask);
+            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(reverseInputXPtr, vnotVectorZero,
+                                                                        ONE_TIMES_B16_NUM, vnotMask);
         }
     }
 }

@@ -1,5 +1,5 @@
 /**
-  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -21,8 +21,7 @@
 #include "atvoss/util/placeholder.h"
 #include "atvoss/reduce/reduce_operator.h"
 
-namespace Dot
-{
+namespace Dot {
 using namespace Ops::Base;
 
 template <class R, class T>
@@ -38,14 +37,14 @@ struct CastInt : public Vec::ElemwiseUnaryOP<R, T> {
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T> srcValue;
-            MicroAPI::MaskReg preg;
+            Reg::RegTensor<T> srcValue;
+            Reg::MaskReg preg;
             uint32_t sregMask = count;
             for (uint16_t j = 0; j < loopTimes; j++) {
-                preg = MicroAPI::UpdateMask<uint32_t>(sregMask);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(srcValue, srcAddr + VL_B32 * j);
-                MicroAPI::DataCopy<R, MicroAPI::StoreDist::DIST_PACK4_B32>(dstAddr + VL_B32 * j,
-                                                                           (MicroAPI::RegTensor<R>&)srcValue, preg);
+                preg = Reg::UpdateMask<uint32_t>(sregMask);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(srcValue, srcAddr + VL_B32 * j);
+                Reg::DataCopy<R, Reg::StoreDist::DIST_PACK4_B32>(dstAddr + VL_B32 * j, (Reg::RegTensor<R>&)srcValue,
+                                                                 preg);
             }
         }
 #endif
@@ -80,6 +79,6 @@ struct DotDag {
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
     using OpDag = DAGSch<Outputs, void, MemCfg>;
 };
-}  // namespace Dot
+} // namespace Dot
 
 #endif

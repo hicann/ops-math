@@ -36,14 +36,13 @@
 
 #ifdef __CCE_AICORE__
 namespace PowerOp {
-namespace MicroAPI = AscendC::MicroAPI;
 // 输入侧 Cast trait：fp16/bf16 升 fp32，无饱和、零填充未触及的 lane。
-constexpr static MicroAPI::CastTrait POWER_CAST_TRAIT_IN = {
-    MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::UNKNOWN, MicroAPI::MaskMergeMode::ZEROING,
+constexpr static AscendC::Reg::CastTrait POWER_CAST_TRAIT_IN = {
+    AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::UNKNOWN, AscendC::Reg::MaskMergeMode::ZEROING,
     AscendC::RoundMode::UNKNOWN};
 // 输出侧 Cast trait：fp32 降回 fp16/bf16，启用饱和与就近偶舍入。
-constexpr static MicroAPI::CastTrait POWER_CAST_TRAIT_OUT = {
-    MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT, MicroAPI::MaskMergeMode::ZEROING,
+constexpr static AscendC::Reg::CastTrait POWER_CAST_TRAIT_OUT = {
+    AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::NO_SAT, AscendC::Reg::MaskMergeMode::ZEROING,
     AscendC::RoundMode::CAST_RINT};
 } // namespace PowerOp
 #endif
@@ -86,8 +85,8 @@ constexpr int POWER_VAR_IDX_3 = 3;
 // ----------------------------------------------------------------------------
 template <class T>
 struct MulAddDstScalar : public Vec::ElemwiseTernaryOP<T, T, T, T> {
-    __aicore__ inline MulAddDstScalar(
-        LocalTensor<T>& dst, LocalTensor<T>& src, T scaleScalar, T shiftScalar, uint32_t count)
+    __aicore__ inline MulAddDstScalar(LocalTensor<T>& dst, LocalTensor<T>& src, T scaleScalar, T shiftScalar,
+                                      uint32_t count)
     {
 #ifdef __CCE_AICORE__
         // 第 1 步：dst = shift  （广播 shift 标量到所有 lanes，作为 Axpy 的累加初值）
@@ -121,15 +120,15 @@ struct MulAddDstScalar : public Vec::ElemwiseTernaryOP<T, T, T, T> {
 //     y         = select(mask_zero, zeroVal, tmp)
 //
 // 实现要点：
-//   - 在一个 __VEC_SCOPE__ 内串联 Abs/Log/Mul/Exp/Compare/Select 等 MicroAPI，
+//   - 在一个 __VEC_SCOPE__ 内串联 Abs/Log/Mul/Exp/Compare/Select 等 Reg，
 //     全程使用 RegTensor 寄存器中间量，避免落 UB；
 //   - 严格遵循需求中的“先按 base>0 分支选 posVal/negVal，再按 base==0 覆盖为 zeroVal”
 //     两次 Compare+Select 的合并逻辑。
 // ----------------------------------------------------------------------------
 template <int zeroIsPos>
 struct PowerGenericCompute : public Vec::ElemwiseTernaryOP<float, float, float, float> {
-    __aicore__ inline PowerGenericCompute(
-        LocalTensor<float>& dst, LocalTensor<float>& base, float power, float negScalar, uint32_t count)
+    __aicore__ inline PowerGenericCompute(LocalTensor<float>& dst, LocalTensor<float>& base, float power,
+                                          float negScalar, uint32_t count)
     {
 #ifdef __CCE_AICORE__
         // vl = 单条向量寄存器一次能处理的 fp32 元素数；loopNum = 向上取整的 batch 数。
@@ -138,13 +137,13 @@ struct PowerGenericCompute : public Vec::ElemwiseTernaryOP<float, float, float, 
         const uint16_t loopNum = (count + vl - 1) / vl;
 
         __ubuf__ float* baseAddr = (__ubuf__ float*)base.GetPhyAddr();
-        __ubuf__ float* dstAddr  = (__ubuf__ float*)dst.GetPhyAddr();
+        __ubuf__ float* dstAddr = (__ubuf__ float*)dst.GetPhyAddr();
 
         // 常量寄存器源：0 和 +inf。
         constexpr float ZERO_F = 0.0f;
-        constexpr float INF_F  = __builtin_inff();  // base == 0 且 power < 0 的取值（IEEE）
+        constexpr float INF_F = __builtin_inff(); // base == 0 且 power < 0 的取值（IEEE）
 
-        // 寄存器拓扑：只需 3 个 RegTensor 即可承接完整数据流（依赖 MicroAPI
+        // 寄存器拓扑：只需 3 个 RegTensor 即可承接完整数据流（依赖 Reg
         // Abs/Log/Exp/Muls/Select 全部支持 dst 与 src 同寄存器的 in-place 写）：
         //   regBase   : 输入 base，必须存活到 base>0、base==0 两次 Compares
         //   regMain   : 主路径 |base|→log→×power→exp 全部在该寄存器上 in-place 推进，
@@ -153,49 +152,49 @@ struct PowerGenericCompute : public Vec::ElemwiseTernaryOP<float, float, float, 
         //   regBranch : 先承载 rawExp*negScalar (负底数分支)，Select#1 in-place
         //               写回得到 tmp，Select#2 in-place 写回得到最终结果，
         //               最后 DataCopy 出 UB
-        MicroAPI::RegTensor<float> regBase;
-        MicroAPI::RegTensor<float> regMain;
-        MicroAPI::RegTensor<float> regBranch;
-        MicroAPI::MaskReg mask;     // 当前 batch 的尾元素 mask
-        MicroAPI::MaskReg maskPos;  // base > 0
-        MicroAPI::MaskReg maskZero; // base == 0
+        AscendC::Reg::RegTensor<float> regBase;
+        AscendC::Reg::RegTensor<float> regMain;
+        AscendC::Reg::RegTensor<float> regBranch;
+        AscendC::Reg::MaskReg mask;     // 当前 batch 的尾元素 mask
+        AscendC::Reg::MaskReg maskPos;  // base > 0
+        AscendC::Reg::MaskReg maskZero; // base == 0
 
         __VEC_SCOPE__
         {
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                 // 更新尾元素 mask 并把当前 batch 的 base 搬入寄存器。
-                mask = MicroAPI::UpdateMask<float, MicroAPI::RegTraitNumOne>(count);
-                MicroAPI::DataCopy(regBase, (__ubuf__ float*)(baseAddr + loopIdx * vl));
+                mask = AscendC::Reg::UpdateMask<float, AscendC::Reg::RegTraitNumOne>(count);
+                AscendC::Reg::DataCopy(regBase, (__ubuf__ float*)(baseAddr + loopIdx * vl));
 
                 // ----- 主路径：rawExp = exp(power * log(|base|))，全程 in-place 复用 regMain -----
-                MicroAPI::Abs (regMain, regBase, mask);              // regMain = |base|
-                MicroAPI::Log (regMain, regMain, mask);              // regMain = log(|base|)
-                MicroAPI::Muls(regMain, regMain, power, mask);       // regMain = power * log(|base|)
-                MicroAPI::Exp (regMain, regMain, mask);              // regMain = rawExp
+                AscendC::Reg::Abs(regMain, regBase, mask);         // regMain = |base|
+                AscendC::Reg::Log(regMain, regMain, mask);         // regMain = log(|base|)
+                AscendC::Reg::Muls(regMain, regMain, power, mask); // regMain = power * log(|base|)
+                AscendC::Reg::Exp(regMain, regMain, mask);         // regMain = rawExp
 
                 // ----- 负底数分支：regBranch = rawExp * negScalar -----
                 // 整数幂 power：negScalar 为 ±1，结果即 (-1)^power * rawExp；
                 // 非整数 power：negScalar 为 NaN（host 端预置），结果为 NaN（实数域未定义）。
-                MicroAPI::Muls(regBranch, regMain, negScalar, mask);
+                AscendC::Reg::Muls(regBranch, regMain, negScalar, mask);
 
                 // ----- 第 1 次合并：tmp = (base > 0 ? rawExp : negVal)，结果就地写回 regBranch -----
-                MicroAPI::Compares<float, AscendC::CMPMODE::GT>(maskPos, regBase, ZERO_F, mask);
-                MicroAPI::Select(regBranch, regMain, regBranch, maskPos);
+                AscendC::Reg::Compares<float, AscendC::CMPMODE::GT>(maskPos, regBase, ZERO_F, mask);
+                AscendC::Reg::Select(regBranch, regMain, regBranch, maskPos);
 
                 // 至此 regMain 中的 rawExp 已用完，复用为 zeroBcast（base==0 时的取值）。
                 // zeroIsPos 在编译期已知，编译器会消去未走的 if 分支。
                 if constexpr (zeroIsPos == 1) {
-                    MicroAPI::Duplicate(regMain, ZERO_F, mask);
+                    AscendC::Reg::Duplicate(regMain, ZERO_F, mask);
                 } else {
-                    MicroAPI::Duplicate(regMain, INF_F, mask);
+                    AscendC::Reg::Duplicate(regMain, INF_F, mask);
                 }
 
                 // ----- 第 2 次合并：y = (base == 0 ? zeroBcast : tmp)，结果就地写回 regBranch -----
-                MicroAPI::Compares<float, AscendC::CMPMODE::EQ>(maskZero, regBase, ZERO_F, mask);
-                MicroAPI::Select(regBranch, regMain, regBranch, maskZero);
+                AscendC::Reg::Compares<float, AscendC::CMPMODE::EQ>(maskZero, regBase, ZERO_F, mask);
+                AscendC::Reg::Select(regBranch, regMain, regBranch, maskZero);
 
                 // 把当前 batch 的最终结果写回 UB。
-                MicroAPI::DataCopy((__ubuf__ float*)(dstAddr + loopIdx * vl), regBranch, mask);
+                AscendC::Reg::DataCopy((__ubuf__ float*)(dstAddr + loopIdx * vl), regBranch, mask);
             }
         }
 #endif
@@ -254,10 +253,8 @@ template <typename U, typename T = float>
 struct PowerLinearDag {
     using OpCopyIn = Bind<Vec::CopyIn<U>, Placeholder::In0<U>>;
     using OpCastIn = Bind<Vec::Cast<T, U, POWER_CAST_MODE_NONE>, OpCopyIn>;
-    using OpBase = Bind<
-        MulAddDstScalar<T>, OpCastIn,
-        Placeholder::Var<T, POWER_VAR_IDX_0>,   // scale
-        Placeholder::Var<T, POWER_VAR_IDX_1>>;  // shift
+    using OpBase = Bind<MulAddDstScalar<T>, OpCastIn, Placeholder::Var<T, POWER_VAR_IDX_0>, // scale
+                        Placeholder::Var<T, POWER_VAR_IDX_1>>;                              // shift
     using OpCastOut = Bind<Vec::Cast<U, T, POWER_CAST_MODE_RINT>, OpBase>;
     using OpCopyOut = Bind<Vec::CopyOut<U>, Placeholder::Out0<U>, OpCastOut>;
 
@@ -276,11 +273,9 @@ template <typename U, typename T = float>
 struct PowerSquareDag {
     using OpCopyIn = Bind<Vec::CopyIn<U>, Placeholder::In0<U>>;
     using OpCastIn = Bind<Vec::Cast<T, U, POWER_CAST_MODE_NONE>, OpCopyIn>;
-    using OpBase = Bind<
-        MulAddDstScalar<T>, OpCastIn,
-        Placeholder::Var<T, POWER_VAR_IDX_0>,
-        Placeholder::Var<T, POWER_VAR_IDX_1>>;
-    using OpSquare = Bind<Vec::Mul<T>, OpBase, OpBase>;   // base * base
+    using OpBase = Bind<MulAddDstScalar<T>, OpCastIn, Placeholder::Var<T, POWER_VAR_IDX_0>,
+                        Placeholder::Var<T, POWER_VAR_IDX_1>>;
+    using OpSquare = Bind<Vec::Mul<T>, OpBase, OpBase>; // base * base
     using OpCastOut = Bind<Vec::Cast<U, T, POWER_CAST_MODE_RINT>, OpSquare>;
     using OpCopyOut = Bind<Vec::CopyOut<U>, Placeholder::Out0<U>, OpCastOut>;
 
@@ -300,12 +295,10 @@ template <typename U, typename T = float>
 struct PowerCubeDag {
     using OpCopyIn = Bind<Vec::CopyIn<U>, Placeholder::In0<U>>;
     using OpCastIn = Bind<Vec::Cast<T, U, POWER_CAST_MODE_NONE>, OpCopyIn>;
-    using OpBase = Bind<
-        MulAddDstScalar<T>, OpCastIn,
-        Placeholder::Var<T, POWER_VAR_IDX_0>,
-        Placeholder::Var<T, POWER_VAR_IDX_1>>;
-    using OpSquare = Bind<Vec::Mul<T>, OpBase, OpBase>;     // base^2
-    using OpCube = Bind<Vec::Mul<T>, OpSquare, OpBase>;     // base^3
+    using OpBase = Bind<MulAddDstScalar<T>, OpCastIn, Placeholder::Var<T, POWER_VAR_IDX_0>,
+                        Placeholder::Var<T, POWER_VAR_IDX_1>>;
+    using OpSquare = Bind<Vec::Mul<T>, OpBase, OpBase>; // base^2
+    using OpCube = Bind<Vec::Mul<T>, OpSquare, OpBase>; // base^3
     using OpCastOut = Bind<Vec::Cast<U, T, POWER_CAST_MODE_RINT>, OpCube>;
     using OpCopyOut = Bind<Vec::CopyOut<U>, Placeholder::Out0<U>, OpCastOut>;
 
@@ -332,14 +325,10 @@ template <typename U, int zeroIsPos, typename T = float>
 struct PowerGenericDag {
     using OpCopyIn = Bind<Vec::CopyIn<U>, Placeholder::In0<U>>;
     using OpCastIn = Bind<Vec::Cast<T, U, POWER_CAST_MODE_NONE>, OpCopyIn>;
-    using OpBase = Bind<
-        MulAddDstScalar<T>, OpCastIn,
-        Placeholder::Var<T, POWER_VAR_IDX_0>,    // scale
-        Placeholder::Var<T, POWER_VAR_IDX_1>>;   // shift
-    using OpGeneric = Bind<
-        PowerGenericCompute<zeroIsPos>, OpBase,
-        Placeholder::Var<T, POWER_VAR_IDX_2>,    // power
-        Placeholder::Var<T, POWER_VAR_IDX_3>>;   // negScalar
+    using OpBase = Bind<MulAddDstScalar<T>, OpCastIn, Placeholder::Var<T, POWER_VAR_IDX_0>,              // scale
+                        Placeholder::Var<T, POWER_VAR_IDX_1>>;                                           // shift
+    using OpGeneric = Bind<PowerGenericCompute<zeroIsPos>, OpBase, Placeholder::Var<T, POWER_VAR_IDX_2>, // power
+                           Placeholder::Var<T, POWER_VAR_IDX_3>>;                                        // negScalar
     using OpCastOut = Bind<Vec::Cast<U, T, POWER_CAST_MODE_RINT>, OpGeneric>;
     using OpCopyOut = Bind<Vec::CopyOut<U>, Placeholder::Out0<U>, OpCastOut>;
 

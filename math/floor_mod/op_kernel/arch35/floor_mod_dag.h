@@ -41,15 +41,15 @@ constexpr uint64_t FMOD_B64_SIGN = 0x8000000000000000;
 constexpr uint64_t FMOD_B64_MAX = 0Xffffffffffffffff;
 
 #ifdef __CCE_AICORE__
-constexpr static MicroAPI::CastTrait castTrait1 = {
-    MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT, MicroAPI::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
+constexpr static Reg::CastTrait castTrait1 = {Reg::RegLayout::ZERO, Reg::SatMode::NO_SAT, Reg::MaskMergeMode::ZEROING,
+                                              RoundMode::CAST_RINT};
 
 #endif
 
 template <class T>
 struct FmodPostCompute : public Vec::ElemwiseBinaryOP<T, T, T> {
-    __aicore__ inline FmodPostCompute(
-        LocalTensor<T>& dst, LocalTensor<T>& fmodRes, LocalTensor<T>& inputX2, const uint32_t& count)
+    __aicore__ inline FmodPostCompute(LocalTensor<T>& dst, LocalTensor<T>& fmodRes, LocalTensor<T>& inputX2,
+                                      const uint32_t& count)
     {
 #ifdef __CCE_AICORE__
         constexpr uint32_t VECTOR_LENGTH = GetVRegSize();
@@ -61,39 +61,39 @@ struct FmodPostCompute : public Vec::ElemwiseBinaryOP<T, T, T> {
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T> zeroValue;
-            MicroAPI::RegTensor<T> fmodResValue;
-            MicroAPI::RegTensor<T> inputX2Value;
-            MicroAPI::RegTensor<T> addValue;
-            MicroAPI::RegTensor<T> resValue;
+            Reg::RegTensor<T> zeroValue;
+            Reg::RegTensor<T> fmodResValue;
+            Reg::RegTensor<T> inputX2Value;
+            Reg::RegTensor<T> addValue;
+            Reg::RegTensor<T> resValue;
 
-            MicroAPI::RegTensor<uint32_t> signValue;
-            MicroAPI::RegTensor<uint32_t> fmodSignValue;
-            MicroAPI::RegTensor<uint32_t> inputX2signValue;
+            Reg::RegTensor<uint32_t> signValue;
+            Reg::RegTensor<uint32_t> fmodSignValue;
+            Reg::RegTensor<uint32_t> inputX2signValue;
 
-            MicroAPI::MaskReg preg;
-            MicroAPI::MaskReg negValue;
-            MicroAPI::MaskReg signNegValue;
-            MicroAPI::MaskReg resMaskValue;
+            Reg::MaskReg preg;
+            Reg::MaskReg negValue;
+            Reg::MaskReg signNegValue;
+            Reg::MaskReg resMaskValue;
             uint32_t sregMask = count;
 
-            MicroAPI::Duplicate(zeroValue, T(0));
-            MicroAPI::Duplicate(signValue, FMOD_B32_SIGN);
+            Reg::Duplicate(zeroValue, T(0));
+            Reg::Duplicate(signValue, FMOD_B32_SIGN);
 
             for (uint16_t j = 0; j < loopTimes; j++) {
-                preg = MicroAPI::UpdateMask<T>(sregMask);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(fmodResValue, fmodResAddr + VL_T * j);
-                MicroAPI::Compare<T, CMPMODE::NE>(negValue, fmodResValue, zeroValue, preg);
+                preg = Reg::UpdateMask<T>(sregMask);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(fmodResValue, fmodResAddr + VL_T * j);
+                Reg::Compare<T, CMPMODE::NE>(negValue, fmodResValue, zeroValue, preg);
 
-                MicroAPI::And(fmodSignValue, (MicroAPI::RegTensor<uint32_t>&)fmodResValue, signValue, preg);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(inputX2Value, inputX2Addr + VL_T * j);
-                MicroAPI::Add(addValue, fmodResValue, inputX2Value, preg);
-                MicroAPI::And(inputX2signValue, (MicroAPI::RegTensor<uint32_t>&)inputX2Value, signValue, preg);
-                MicroAPI::Compare<uint32_t, CMPMODE::NE>(signNegValue, fmodSignValue, inputX2signValue, preg);
+                Reg::And(fmodSignValue, (Reg::RegTensor<uint32_t>&)fmodResValue, signValue, preg);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(inputX2Value, inputX2Addr + VL_T * j);
+                Reg::Add(addValue, fmodResValue, inputX2Value, preg);
+                Reg::And(inputX2signValue, (Reg::RegTensor<uint32_t>&)inputX2Value, signValue, preg);
+                Reg::Compare<uint32_t, CMPMODE::NE>(signNegValue, fmodSignValue, inputX2signValue, preg);
 
-                MicroAPI::MaskAnd(resMaskValue, signNegValue, negValue, preg);
-                MicroAPI::Select(resValue, addValue, fmodResValue, resMaskValue);
-                MicroAPI::DataCopy<T, MicroAPI::StoreDist::DIST_NORM>(dstAddr + VL_T * j, resValue, preg);
+                Reg::MaskAnd(resMaskValue, signNegValue, negValue, preg);
+                Reg::Select(resValue, addValue, fmodResValue, resMaskValue);
+                Reg::DataCopy<T, Reg::StoreDist::DIST_NORM>(dstAddr + VL_T * j, resValue, preg);
             }
         }
 #endif
@@ -102,8 +102,8 @@ struct FmodPostCompute : public Vec::ElemwiseBinaryOP<T, T, T> {
 
 template <class T1, class T2>
 struct FmodCastFloatPostCompute : public Vec::ElemwiseBinaryOP<T1, T2, T2> {
-    __aicore__ inline FmodCastFloatPostCompute(
-        LocalTensor<T1>& dst, LocalTensor<T2>& fmodRes, LocalTensor<T2>& inputX2, const uint32_t& count)
+    __aicore__ inline FmodCastFloatPostCompute(LocalTensor<T1>& dst, LocalTensor<T2>& fmodRes, LocalTensor<T2>& inputX2,
+                                               const uint32_t& count)
     {
 #ifdef __CCE_AICORE__
         constexpr uint32_t VECTOR_LENGTH = GetVRegSize();
@@ -115,41 +115,41 @@ struct FmodCastFloatPostCompute : public Vec::ElemwiseBinaryOP<T1, T2, T2> {
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T2> zeroValue;
-            MicroAPI::RegTensor<T2> fmodResValue;
-            MicroAPI::RegTensor<T2> inputX2Value;
-            MicroAPI::RegTensor<T2> addValue;
-            MicroAPI::RegTensor<T2> resValue;
-            MicroAPI::RegTensor<T1> resCastValue;
+            Reg::RegTensor<T2> zeroValue;
+            Reg::RegTensor<T2> fmodResValue;
+            Reg::RegTensor<T2> inputX2Value;
+            Reg::RegTensor<T2> addValue;
+            Reg::RegTensor<T2> resValue;
+            Reg::RegTensor<T1> resCastValue;
 
-            MicroAPI::RegTensor<uint32_t> signValue;
-            MicroAPI::RegTensor<uint32_t> fmodSignValue;
-            MicroAPI::RegTensor<uint32_t> inputX2signValue;
+            Reg::RegTensor<uint32_t> signValue;
+            Reg::RegTensor<uint32_t> fmodSignValue;
+            Reg::RegTensor<uint32_t> inputX2signValue;
 
-            MicroAPI::MaskReg preg;
-            MicroAPI::MaskReg negValue;
-            MicroAPI::MaskReg signNegValue;
-            MicroAPI::MaskReg resMaskValue;
+            Reg::MaskReg preg;
+            Reg::MaskReg negValue;
+            Reg::MaskReg signNegValue;
+            Reg::MaskReg resMaskValue;
             uint32_t sregMask = count;
 
-            MicroAPI::Duplicate(zeroValue, T2(0));
-            MicroAPI::Duplicate(signValue, FMOD_B32_SIGN);
+            Reg::Duplicate(zeroValue, T2(0));
+            Reg::Duplicate(signValue, FMOD_B32_SIGN);
 
             for (uint16_t j = 0; j < loopTimes; j++) {
-                preg = MicroAPI::UpdateMask<T2>(sregMask);
-                MicroAPI::DataCopy<T2, MicroAPI::LoadDist::DIST_NORM>(fmodResValue, fmodResAddr + VL_T * j);
-                MicroAPI::Compare<T2, CMPMODE::NE>(negValue, fmodResValue, zeroValue, preg);
+                preg = Reg::UpdateMask<T2>(sregMask);
+                Reg::DataCopy<T2, Reg::LoadDist::DIST_NORM>(fmodResValue, fmodResAddr + VL_T * j);
+                Reg::Compare<T2, CMPMODE::NE>(negValue, fmodResValue, zeroValue, preg);
 
-                MicroAPI::And(fmodSignValue, (MicroAPI::RegTensor<uint32_t>&)fmodResValue, signValue, preg);
-                MicroAPI::DataCopy<T2, MicroAPI::LoadDist::DIST_NORM>(inputX2Value, inputX2Addr + VL_T * j);
-                MicroAPI::Add(addValue, fmodResValue, inputX2Value, preg);
-                MicroAPI::And(inputX2signValue, (MicroAPI::RegTensor<uint32_t>&)inputX2Value, signValue, preg);
-                MicroAPI::Compare<uint32_t, CMPMODE::NE>(signNegValue, fmodSignValue, inputX2signValue, preg);
+                Reg::And(fmodSignValue, (Reg::RegTensor<uint32_t>&)fmodResValue, signValue, preg);
+                Reg::DataCopy<T2, Reg::LoadDist::DIST_NORM>(inputX2Value, inputX2Addr + VL_T * j);
+                Reg::Add(addValue, fmodResValue, inputX2Value, preg);
+                Reg::And(inputX2signValue, (Reg::RegTensor<uint32_t>&)inputX2Value, signValue, preg);
+                Reg::Compare<uint32_t, CMPMODE::NE>(signNegValue, fmodSignValue, inputX2signValue, preg);
 
-                MicroAPI::MaskAnd(resMaskValue, signNegValue, negValue, preg);
-                MicroAPI::Select(resValue, addValue, fmodResValue, resMaskValue);
-                MicroAPI::Cast<T1, float, castTrait1>(resCastValue, resValue, preg);
-                MicroAPI::DataCopy<T1, MicroAPI::StoreDist::DIST_PACK_B32>(dstAddr + VL_T * j, resCastValue, preg);
+                Reg::MaskAnd(resMaskValue, signNegValue, negValue, preg);
+                Reg::Select(resValue, addValue, fmodResValue, resMaskValue);
+                Reg::Cast<T1, float, castTrait1>(resCastValue, resValue, preg);
+                Reg::DataCopy<T1, Reg::StoreDist::DIST_PACK_B32>(dstAddr + VL_T * j, resCastValue, preg);
             }
         }
 #endif
@@ -158,8 +158,8 @@ struct FmodCastFloatPostCompute : public Vec::ElemwiseBinaryOP<T1, T2, T2> {
 
 template <class T>
 struct FmodIntPostCompute : public Vec::ElemwiseTernaryOP<T, T, T, T> {
-    __aicore__ inline FmodIntPostCompute(
-        LocalTensor<T>& dst, LocalTensor<T>& input1, LocalTensor<T>& input2, LocalTensor<T>& div, const uint32_t& count)
+    __aicore__ inline FmodIntPostCompute(LocalTensor<T>& dst, LocalTensor<T>& input1, LocalTensor<T>& input2,
+                                         LocalTensor<T>& div, const uint32_t& count)
     {
 #ifdef __CCE_AICORE__
         constexpr uint32_t VECTOR_LENGTH = GetVRegSize();
@@ -172,51 +172,51 @@ struct FmodIntPostCompute : public Vec::ElemwiseTernaryOP<T, T, T, T> {
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T> zeroValue;
-            MicroAPI::RegTensor<T> defaultValue;
-            MicroAPI::RegTensor<T> signValue;
-            MicroAPI::RegTensor<T> input1Value;
-            MicroAPI::RegTensor<T> input2Value;
-            MicroAPI::RegTensor<T> divValue;
-            MicroAPI::RegTensor<T> mulValue;
-            MicroAPI::RegTensor<T> subValue;
-            MicroAPI::RegTensor<T> modValue;
-            MicroAPI::RegTensor<T> modSignValue;
-            MicroAPI::RegTensor<T> addValue;
-            MicroAPI::RegTensor<T> input2SignValue;
-            MicroAPI::RegTensor<T> resValue;
+            Reg::RegTensor<T> zeroValue;
+            Reg::RegTensor<T> defaultValue;
+            Reg::RegTensor<T> signValue;
+            Reg::RegTensor<T> input1Value;
+            Reg::RegTensor<T> input2Value;
+            Reg::RegTensor<T> divValue;
+            Reg::RegTensor<T> mulValue;
+            Reg::RegTensor<T> subValue;
+            Reg::RegTensor<T> modValue;
+            Reg::RegTensor<T> modSignValue;
+            Reg::RegTensor<T> addValue;
+            Reg::RegTensor<T> input2SignValue;
+            Reg::RegTensor<T> resValue;
 
-            MicroAPI::MaskReg preg;
-            MicroAPI::MaskReg cmpValue;
-            MicroAPI::MaskReg negValue;
-            MicroAPI::MaskReg signNegValue;
-            MicroAPI::MaskReg resMaskValue;
+            Reg::MaskReg preg;
+            Reg::MaskReg cmpValue;
+            Reg::MaskReg negValue;
+            Reg::MaskReg signNegValue;
+            Reg::MaskReg resMaskValue;
             uint32_t sregMask = count;
 
-            MicroAPI::Duplicate(zeroValue, T(0));
-            MicroAPI::Duplicate(defaultValue, T(-1));
-            MicroAPI::Duplicate(signValue, FMOD_B32_SIGN);
+            Reg::Duplicate(zeroValue, T(0));
+            Reg::Duplicate(defaultValue, T(-1));
+            Reg::Duplicate(signValue, FMOD_B32_SIGN);
 
             for (uint16_t j = 0; j < loopTimes; j++) {
                 // handel -1
-                preg = MicroAPI::UpdateMask<T>(sregMask);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(input2Value, input2Addr + VL_T * j);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(divValue, divAddr + VL_T * j);
-                MicroAPI::Mul(mulValue, input2Value, divValue, preg);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(input1Value, input1Addr + VL_T * j);
-                MicroAPI::Sub(subValue, input1Value, mulValue, preg);
-                MicroAPI::Compare<T, CMPMODE::NE>(cmpValue, input2Value, zeroValue, preg);
-                MicroAPI::Select(modValue, subValue, defaultValue, cmpValue);
+                preg = Reg::UpdateMask<T>(sregMask);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(input2Value, input2Addr + VL_T * j);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(divValue, divAddr + VL_T * j);
+                Reg::Mul(mulValue, input2Value, divValue, preg);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(input1Value, input1Addr + VL_T * j);
+                Reg::Sub(subValue, input1Value, mulValue, preg);
+                Reg::Compare<T, CMPMODE::NE>(cmpValue, input2Value, zeroValue, preg);
+                Reg::Select(modValue, subValue, defaultValue, cmpValue);
 
                 // post handel
-                MicroAPI::Add(addValue, modValue, input2Value, preg);
-                MicroAPI::Compare<T, CMPMODE::NE>(negValue, modValue, zeroValue, preg);
-                MicroAPI::And(input2SignValue, input2Value, signValue, preg);
-                MicroAPI::And(modSignValue, modValue, signValue, preg);
-                MicroAPI::Compare<T, CMPMODE::NE>(signNegValue, modSignValue, input2SignValue, preg);
-                MicroAPI::MaskAnd(resMaskValue, signNegValue, negValue, preg);
-                MicroAPI::Select(resValue, addValue, modValue, resMaskValue);
-                MicroAPI::DataCopy<T, MicroAPI::StoreDist::DIST_NORM>(dstAddr + VL_T * j, resValue, preg);
+                Reg::Add(addValue, modValue, input2Value, preg);
+                Reg::Compare<T, CMPMODE::NE>(negValue, modValue, zeroValue, preg);
+                Reg::And(input2SignValue, input2Value, signValue, preg);
+                Reg::And(modSignValue, modValue, signValue, preg);
+                Reg::Compare<T, CMPMODE::NE>(signNegValue, modSignValue, input2SignValue, preg);
+                Reg::MaskAnd(resMaskValue, signNegValue, negValue, preg);
+                Reg::Select(resValue, addValue, modValue, resMaskValue);
+                Reg::DataCopy<T, Reg::StoreDist::DIST_NORM>(dstAddr + VL_T * j, resValue, preg);
             }
         }
 #endif
@@ -225,8 +225,8 @@ struct FmodIntPostCompute : public Vec::ElemwiseTernaryOP<T, T, T, T> {
 
 #ifdef __CCE_AICORE__
 template <typename T>
-__simt_vf__ __aicore__
-    LAUNCH_BOUND(1024) inline void FloorModInt_1(__ubuf__ T* dst, __ubuf__ T* src1, __ubuf__ T* src2, int count)
+__simt_vf__ __aicore__ LAUNCH_BOUND(1024) inline void FloorModInt_1(__ubuf__ T* dst, __ubuf__ T* src1, __ubuf__ T* src2,
+                                                                    int count)
 {
     for (uint32_t index = static_cast<uint32_t>(threadIdx.x); index < count;
          index += static_cast<uint32_t>(blockDim.x)) {

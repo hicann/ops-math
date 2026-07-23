@@ -10,7 +10,7 @@
 
 /*!
  * \file cdist_grad_operator.h
- * \brief Custom Vec operators for cdist_grad — Compare+Select via MicroAPI
+ * \brief Custom Vec operators for cdist_grad — Compare+Select via Reg
  *
  * By encapsulating CompareScalar + Select inside a single Vec operator node,
  * we avoid the multi-consumer buffer conflicts that occur when Compare and Select
@@ -51,38 +51,36 @@ struct CdistGradSignOp : public Vec::ElemwiseUnaryOP<PromoteT, PromoteT> {
             __ubuf__ PromoteT* srcAddr = (__ubuf__ PromoteT*)src.GetPhyAddr();
             __ubuf__ PromoteT* dstAddr = (__ubuf__ PromoteT*)dst.GetPhyAddr();
 
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregSrc;
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregDst;
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregOne;
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregNegOne;
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregZero;
-            AscendC::MicroAPI::MaskReg opMask;
-            AscendC::MicroAPI::MaskReg posMask;
-            AscendC::MicroAPI::MaskReg negMask;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregSrc;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregDst;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregOne;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregNegOne;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregZero;
+            AscendC::Reg::MaskReg opMask;
+            AscendC::Reg::MaskReg posMask;
+            AscendC::Reg::MaskReg negMask;
 
-            AscendC::MicroAPI::Duplicate(vregOne, static_cast<PromoteT>(1.0));
-            AscendC::MicroAPI::Duplicate(vregNegOne, static_cast<PromoteT>(-1.0));
-            AscendC::MicroAPI::Duplicate(vregZero, static_cast<PromoteT>(0.0));
+            AscendC::Reg::Duplicate(vregOne, static_cast<PromoteT>(1.0));
+            AscendC::Reg::Duplicate(vregNegOne, static_cast<PromoteT>(-1.0));
+            AscendC::Reg::Duplicate(vregZero, static_cast<PromoteT>(0.0));
 
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                opMask = AscendC::MicroAPI::UpdateMask<PromoteT, AscendC::MicroAPI::RegTraitNumOne>(count);
+                opMask = AscendC::Reg::UpdateMask<PromoteT, AscendC::Reg::RegTraitNumOne>(count);
 
-                AscendC::MicroAPI::DataCopy(vregSrc, srcAddr + loopIdx * vlSize);
+                AscendC::Reg::DataCopy(vregSrc, srcAddr + loopIdx * vlSize);
 
                 // posMask = (x > 0)
-                AscendC::MicroAPI::CompareScalar<PromoteT, CMPMODE::GT>(posMask, vregSrc, static_cast<PromoteT>(0),
-                                                                        opMask);
+                AscendC::Reg::CompareScalar<PromoteT, CMPMODE::GT>(posMask, vregSrc, static_cast<PromoteT>(0), opMask);
                 // negMask = (x < 0)
-                AscendC::MicroAPI::CompareScalar<PromoteT, CMPMODE::LT>(negMask, vregSrc, static_cast<PromoteT>(0),
-                                                                        opMask);
+                AscendC::Reg::CompareScalar<PromoteT, CMPMODE::LT>(negMask, vregSrc, static_cast<PromoteT>(0), opMask);
 
                 // Select(dst, true_val, false_val, mask): mask=1 → true_val, mask=0 → false_val
                 // Step 1: posMask=1 → 1.0, posMask=0 → 0.0
-                AscendC::MicroAPI::Select(vregDst, vregOne, vregZero, posMask);
+                AscendC::Reg::Select(vregDst, vregOne, vregZero, posMask);
                 // Step 2: negMask=1 → -1.0, negMask=0 → keep step1 result
-                AscendC::MicroAPI::Select(vregDst, vregNegOne, vregDst, negMask);
+                AscendC::Reg::Select(vregDst, vregNegOne, vregDst, negMask);
 
-                AscendC::MicroAPI::DataCopy(dstAddr + loopIdx * vlSize, vregDst, opMask);
+                AscendC::Reg::DataCopy(dstAddr + loopIdx * vlSize, vregDst, opMask);
             }
         }
 #endif
@@ -112,34 +110,33 @@ struct CdistGradMaskEQOp : public Vec::ElemwiseBinaryOP<PromoteT, PromoteT, Prom
             __ubuf__ PromoteT* src2Addr = (__ubuf__ PromoteT*)src2.GetPhyAddr();
             __ubuf__ PromoteT* dstAddr = (__ubuf__ PromoteT*)dst.GetPhyAddr();
 
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregA;
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregB;
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregDiff;
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregOne;
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregZero;
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregResult;
-            AscendC::MicroAPI::MaskReg opMask;
-            AscendC::MicroAPI::MaskReg eqMask;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregA;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregB;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregDiff;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregOne;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregZero;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregResult;
+            AscendC::Reg::MaskReg opMask;
+            AscendC::Reg::MaskReg eqMask;
 
-            AscendC::MicroAPI::Duplicate(vregOne, static_cast<PromoteT>(1.0));
-            AscendC::MicroAPI::Duplicate(vregZero, static_cast<PromoteT>(0.0));
+            AscendC::Reg::Duplicate(vregOne, static_cast<PromoteT>(1.0));
+            AscendC::Reg::Duplicate(vregZero, static_cast<PromoteT>(0.0));
 
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                opMask = AscendC::MicroAPI::UpdateMask<PromoteT, AscendC::MicroAPI::RegTraitNumOne>(count);
+                opMask = AscendC::Reg::UpdateMask<PromoteT, AscendC::Reg::RegTraitNumOne>(count);
 
-                AscendC::MicroAPI::DataCopy(vregA, src1Addr + loopIdx * vlSize);
-                AscendC::MicroAPI::DataCopy(vregB, src2Addr + loopIdx * vlSize);
+                AscendC::Reg::DataCopy(vregA, src1Addr + loopIdx * vlSize);
+                AscendC::Reg::DataCopy(vregB, src2Addr + loopIdx * vlSize);
 
                 // diff = a - b
-                AscendC::MicroAPI::Sub(vregDiff, vregA, vregB, opMask);
+                AscendC::Reg::Sub(vregDiff, vregA, vregB, opMask);
 
                 // eqMask = (diff == 0)  i.e. a == b
-                AscendC::MicroAPI::CompareScalar<PromoteT, CMPMODE::EQ>(eqMask, vregDiff, static_cast<PromoteT>(0),
-                                                                        opMask);
+                AscendC::Reg::CompareScalar<PromoteT, CMPMODE::EQ>(eqMask, vregDiff, static_cast<PromoteT>(0), opMask);
 
                 // vregResult = 1.0 where eqMask=1(a==b), 0.0 where eqMask=0(a!=b)
-                AscendC::MicroAPI::Select(vregResult, vregOne, vregZero, eqMask);
-                AscendC::MicroAPI::DataCopy(dstAddr + loopIdx * vlSize, vregResult, opMask);
+                AscendC::Reg::Select(vregResult, vregOne, vregZero, eqMask);
+                AscendC::Reg::DataCopy(dstAddr + loopIdx * vlSize, vregResult, opMask);
             }
         }
 #endif
@@ -168,28 +165,27 @@ struct CdistGradMaskNEZeroOp : public Vec::ElemwiseUnaryOP<PromoteT, PromoteT> {
             __ubuf__ PromoteT* inputAddr = (__ubuf__ PromoteT*)src.GetPhyAddr();
             __ubuf__ PromoteT* outputAddr = (__ubuf__ PromoteT*)dst.GetPhyAddr();
 
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregIn;
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregValOne;
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregValZero;
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregOut;
-            AscendC::MicroAPI::MaskReg cmpMask;
-            AscendC::MicroAPI::MaskReg zeroMask;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregIn;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregValOne;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregValZero;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregOut;
+            AscendC::Reg::MaskReg cmpMask;
+            AscendC::Reg::MaskReg zeroMask;
 
-            AscendC::MicroAPI::Duplicate(vregValOne, static_cast<PromoteT>(1.0));
-            AscendC::MicroAPI::Duplicate(vregValZero, static_cast<PromoteT>(0.0));
+            AscendC::Reg::Duplicate(vregValOne, static_cast<PromoteT>(1.0));
+            AscendC::Reg::Duplicate(vregValZero, static_cast<PromoteT>(0.0));
 
             for (uint16_t idx = 0; idx < loopCnt; idx++) {
-                cmpMask = AscendC::MicroAPI::UpdateMask<PromoteT, AscendC::MicroAPI::RegTraitNumOne>(count);
+                cmpMask = AscendC::Reg::UpdateMask<PromoteT, AscendC::Reg::RegTraitNumOne>(count);
 
-                AscendC::MicroAPI::DataCopy(vregIn, inputAddr + idx * vlLen);
+                AscendC::Reg::DataCopy(vregIn, inputAddr + idx * vlLen);
 
                 // zeroMask = (x == 0)
-                AscendC::MicroAPI::CompareScalar<PromoteT, CMPMODE::EQ>(zeroMask, vregIn, static_cast<PromoteT>(0),
-                                                                        cmpMask);
+                AscendC::Reg::CompareScalar<PromoteT, CMPMODE::EQ>(zeroMask, vregIn, static_cast<PromoteT>(0), cmpMask);
 
                 // vregOut = 0.0 where zeroMask=1(x==0), 1.0 where zeroMask=0(x!=0)
-                AscendC::MicroAPI::Select(vregOut, vregValZero, vregValOne, zeroMask);
-                AscendC::MicroAPI::DataCopy(outputAddr + idx * vlLen, vregOut, cmpMask);
+                AscendC::Reg::Select(vregOut, vregValZero, vregValOne, zeroMask);
+                AscendC::Reg::DataCopy(outputAddr + idx * vlLen, vregOut, cmpMask);
             }
         }
 #endif
@@ -220,28 +216,28 @@ struct CdistGradSelectZeroOp : public Vec::ElemwiseBinaryOP<PromoteT, PromoteT, 
             __ubuf__ PromoteT* condAddr = (__ubuf__ PromoteT*)cond.GetPhyAddr();
             __ubuf__ PromoteT* dstAddr = (__ubuf__ PromoteT*)dst.GetPhyAddr();
 
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregSrc;
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregCond;
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregZero;
-            AscendC::MicroAPI::RegTensor<PromoteT, AscendC::MicroAPI::RegTraitNumOne> vregOut;
-            AscendC::MicroAPI::MaskReg opMask;
-            AscendC::MicroAPI::MaskReg zeroMask;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregSrc;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregCond;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregZero;
+            AscendC::Reg::RegTensor<PromoteT, AscendC::Reg::RegTraitNumOne> vregOut;
+            AscendC::Reg::MaskReg opMask;
+            AscendC::Reg::MaskReg zeroMask;
 
-            AscendC::MicroAPI::Duplicate(vregZero, static_cast<PromoteT>(0.0));
+            AscendC::Reg::Duplicate(vregZero, static_cast<PromoteT>(0.0));
 
             for (uint16_t idx = 0; idx < loopCnt; idx++) {
-                opMask = AscendC::MicroAPI::UpdateMask<PromoteT, AscendC::MicroAPI::RegTraitNumOne>(count);
+                opMask = AscendC::Reg::UpdateMask<PromoteT, AscendC::Reg::RegTraitNumOne>(count);
 
-                AscendC::MicroAPI::DataCopy(vregSrc, srcAddr + idx * vlLen);
-                AscendC::MicroAPI::DataCopy(vregCond, condAddr + idx * vlLen);
+                AscendC::Reg::DataCopy(vregSrc, srcAddr + idx * vlLen);
+                AscendC::Reg::DataCopy(vregCond, condAddr + idx * vlLen);
 
                 // zeroMask = (cond == 0)
-                AscendC::MicroAPI::CompareScalar<PromoteT, CMPMODE::EQ>(zeroMask, vregCond, static_cast<PromoteT>(0),
-                                                                        opMask);
+                AscendC::Reg::CompareScalar<PromoteT, CMPMODE::EQ>(zeroMask, vregCond, static_cast<PromoteT>(0),
+                                                                   opMask);
 
                 // dst = 0.0 where zeroMask=1(cdist==0), src where zeroMask=0(cdist!=0)
-                AscendC::MicroAPI::Select(vregOut, vregZero, vregSrc, zeroMask);
-                AscendC::MicroAPI::DataCopy(dstAddr + idx * vlLen, vregOut, opMask);
+                AscendC::Reg::Select(vregOut, vregZero, vregSrc, zeroMask);
+                AscendC::Reg::DataCopy(dstAddr + idx * vlLen, vregOut, opMask);
             }
         }
 #endif

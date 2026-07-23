@@ -15,12 +15,10 @@
 #ifndef ASCENDC_POW_POWS_FLOAT_H_
 #define ASCENDC_POW_POWS_FLOAT_H_
 
-namespace Pow
-{
+namespace Pow {
 using namespace AscendC;
 template <typename T1, typename T2>
-class PowTensorScalarFloat
-{
+class PowTensorScalarFloat {
 public:
     __aicore__ inline PowTensorScalarFloat(){};
 
@@ -249,10 +247,10 @@ public:
                     vecBaseQue.FreeTensor(srcLocal);
                     LocalTensor<float> powerTensor = tmp2Tensor.Get<float>();
                     Power<float, false, powsConfig_>(powerTensor, castTensor, expValue,
-                                                 static_cast<uint32_t>(curDataLength));
+                                                     static_cast<uint32_t>(curDataLength));
                     LocalTensor<T1> dstLocal = vecPowQue.AllocTensor<T1>();
-                    RoundMode b16RoundMode =
-                        IsSameType<T1, bfloat16_t>::value ? RoundMode::CAST_RINT : RoundMode::CAST_NONE;
+                    RoundMode b16RoundMode = IsSameType<T1, bfloat16_t>::value ? RoundMode::CAST_RINT :
+                                                                                 RoundMode::CAST_NONE;
                     Cast(dstLocal, powerTensor, b16RoundMode, static_cast<uint32_t>(curDataLength));
                     vecPowQue.EnQue(dstLocal);
                     vecPowQue.DeQue<T1>();
@@ -302,41 +300,41 @@ private:
         __VEC_SCOPE__
         {
             if constexpr (sizeof(T1) == sizeof(float)) {
-                MicroAPI::RegTensor<float> vreg0;
-                MicroAPI::RegTensor<float> vreg1;
-                MicroAPI::MaskReg preg0;
+                Reg::RegTensor<float> vreg0;
+                Reg::RegTensor<float> vreg1;
+                Reg::MaskReg preg0;
                 uint32_t size = dataLength;
-                uint16_t vfLoopNum =
-                    (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) / (VECTOR_REG_WIDTH / sizeof(float));
+                uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) /
+                                     (VECTOR_REG_WIDTH / sizeof(float));
                 __local_mem__ float* bufferIn0Addr = (__local_mem__ float*)srcTensor.GetPhyAddr();
                 __local_mem__ float* bufferOut0Addr = (__local_mem__ float*)dstTensor.GetPhyAddr();
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
-                    preg0 = MicroAPI::UpdateMask<float>(size);
-                    MicroAPI::DataCopy<float, MicroAPI::LoadDist::DIST_NORM>(
+                    preg0 = Reg::UpdateMask<float>(size);
+                    Reg::DataCopy<float, Reg::LoadDist::DIST_NORM>(
                         vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)));
-                    MicroAPI::Sqrt<float, MicroAPI::MaskMergeMode::ZEROING>(vreg1, vreg0, preg0);
-                    MicroAPI::DataCopy<float, MicroAPI::StoreDist::DIST_NORM_B32>(
+                    Reg::Sqrt<float, Reg::MaskMergeMode::ZEROING>(vreg1, vreg0, preg0);
+                    Reg::DataCopy<float, Reg::StoreDist::DIST_NORM_B32>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)), vreg1, preg0);
                 }
             } else {
-                MicroAPI::RegTensor<T1> vreg0;
-                MicroAPI::RegTensor<float> vreg1;
-                MicroAPI::RegTensor<float> vreg2;
-                MicroAPI::RegTensor<T1> vreg3;
-                MicroAPI::MaskReg preg0;
+                Reg::RegTensor<T1> vreg0;
+                Reg::RegTensor<float> vreg1;
+                Reg::RegTensor<float> vreg2;
+                Reg::RegTensor<T1> vreg3;
+                Reg::MaskReg preg0;
                 uint32_t size = dataLength;
-                uint16_t vfLoopNum =
-                    (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) / (VECTOR_REG_WIDTH / sizeof(float));
+                uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) /
+                                     (VECTOR_REG_WIDTH / sizeof(float));
                 __local_mem__ T1* bufferIn0Addr = (__local_mem__ T1*)srcTensor.GetPhyAddr();
                 __local_mem__ T1* bufferOut0Addr = (__local_mem__ T1*)dstTensor.GetPhyAddr();
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
-                    preg0 = MicroAPI::UpdateMask<float>(size);
-                    MicroAPI::DataCopy<T1, MicroAPI::LoadDist::DIST_UNPACK_B16>(
+                    preg0 = Reg::UpdateMask<float>(size);
+                    Reg::DataCopy<T1, Reg::LoadDist::DIST_UNPACK_B16>(
                         vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)));
-                    MicroAPI::Cast<float, T1, castTrait0>(vreg1, vreg0, preg0);
-                    MicroAPI::Sqrt<float, MicroAPI::MaskMergeMode::ZEROING>(vreg2, vreg1, preg0);
-                    MicroAPI::Cast<T1, float, castTrait1>(vreg3, vreg2, preg0);
-                    MicroAPI::DataCopy<T1, MicroAPI::StoreDist::DIST_PACK_B32>(
+                    Reg::Cast<float, T1, castTrait0>(vreg1, vreg0, preg0);
+                    Reg::Sqrt<float, Reg::MaskMergeMode::ZEROING>(vreg2, vreg1, preg0);
+                    Reg::Cast<T1, float, castTrait1>(vreg3, vreg2, preg0);
+                    Reg::DataCopy<T1, Reg::StoreDist::DIST_PACK_B32>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)), vreg3, preg0);
                 }
             }
@@ -348,51 +346,49 @@ private:
         __VEC_SCOPE__
         {
             if constexpr (sizeof(T1) == sizeof(float)) {
-                MicroAPI::RegTensor<float> vreg0;
-                MicroAPI::RegTensor<float> vreg1;
-                MicroAPI::RegTensor<float> vreg2;
-                MicroAPI::RegTensor<float> vreg3;
-                MicroAPI::MaskReg preg0;
+                Reg::RegTensor<float> vreg0;
+                Reg::RegTensor<float> vreg1;
+                Reg::RegTensor<float> vreg2;
+                Reg::RegTensor<float> vreg3;
+                Reg::MaskReg preg0;
                 uint32_t size = dataLength;
-                uint16_t vfLoopNum =
-                    (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) / (VECTOR_REG_WIDTH / sizeof(float));
+                uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) /
+                                     (VECTOR_REG_WIDTH / sizeof(float));
                 __local_mem__ float* bufferIn0Addr = (__local_mem__ float*)srcTensor.GetPhyAddr();
                 __local_mem__ float* bufferOut0Addr = (__local_mem__ float*)dstTensor.GetPhyAddr();
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
-                    preg0 = MicroAPI::UpdateMask<float>(size);
-                    MicroAPI::DataCopy<float, MicroAPI::LoadDist::DIST_NORM>(
+                    preg0 = Reg::UpdateMask<float>(size);
+                    Reg::DataCopy<float, Reg::LoadDist::DIST_NORM>(
                         vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)));
-                    MicroAPI::Duplicate<float, MicroAPI::MaskMergeMode::ZEROING>(vreg1, static_cast<float>(1.0f),
-                                                                                 preg0);
-                    MicroAPI::Sqrt<float, MicroAPI::MaskMergeMode::ZEROING>(vreg2, vreg0, preg0);
-                    MicroAPI::Div<float, MicroAPI::MaskMergeMode::ZEROING>(vreg3, vreg1, vreg2, preg0);
-                    MicroAPI::DataCopy<float, MicroAPI::StoreDist::DIST_NORM_B32>(
+                    Reg::Duplicate<float, Reg::MaskMergeMode::ZEROING>(vreg1, static_cast<float>(1.0f), preg0);
+                    Reg::Sqrt<float, Reg::MaskMergeMode::ZEROING>(vreg2, vreg0, preg0);
+                    Reg::Div<float, Reg::MaskMergeMode::ZEROING>(vreg3, vreg1, vreg2, preg0);
+                    Reg::DataCopy<float, Reg::StoreDist::DIST_NORM_B32>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)), vreg3, preg0);
                 }
             } else {
-                MicroAPI::RegTensor<T1> vreg0;
-                MicroAPI::RegTensor<float> vreg1;
-                MicroAPI::RegTensor<float> vreg2;
-                MicroAPI::RegTensor<float> vreg3;
-                MicroAPI::RegTensor<float> vreg4;
-                MicroAPI::RegTensor<T1> vreg5;
-                MicroAPI::MaskReg preg0;
+                Reg::RegTensor<T1> vreg0;
+                Reg::RegTensor<float> vreg1;
+                Reg::RegTensor<float> vreg2;
+                Reg::RegTensor<float> vreg3;
+                Reg::RegTensor<float> vreg4;
+                Reg::RegTensor<T1> vreg5;
+                Reg::MaskReg preg0;
                 uint32_t size = dataLength;
-                uint16_t vfLoopNum =
-                    (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) / (VECTOR_REG_WIDTH / sizeof(float));
+                uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) /
+                                     (VECTOR_REG_WIDTH / sizeof(float));
                 __local_mem__ T1* bufferIn0Addr = (__local_mem__ T1*)srcTensor.GetPhyAddr();
                 __local_mem__ T1* bufferOut0Addr = (__local_mem__ T1*)dstTensor.GetPhyAddr();
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
-                    preg0 = MicroAPI::UpdateMask<float>(size);
-                    MicroAPI::DataCopy<T1, MicroAPI::LoadDist::DIST_UNPACK_B16>(
+                    preg0 = Reg::UpdateMask<float>(size);
+                    Reg::DataCopy<T1, Reg::LoadDist::DIST_UNPACK_B16>(
                         vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)));
-                    MicroAPI::Cast<float, T1, castTrait0>(vreg1, vreg0, preg0);
-                    MicroAPI::Duplicate<float, MicroAPI::MaskMergeMode::ZEROING>(vreg2, static_cast<float>(1.0f),
-                                                                                 preg0);
-                    MicroAPI::Sqrt<float, MicroAPI::MaskMergeMode::ZEROING>(vreg3, vreg1, preg0);
-                    MicroAPI::Div<float, MicroAPI::MaskMergeMode::ZEROING>(vreg4, vreg2, vreg3, preg0);
-                    MicroAPI::Cast<T1, float, castTrait1>(vreg5, vreg4, preg0);
-                    MicroAPI::DataCopy<T1, MicroAPI::StoreDist::DIST_PACK_B32>(
+                    Reg::Cast<float, T1, castTrait0>(vreg1, vreg0, preg0);
+                    Reg::Duplicate<float, Reg::MaskMergeMode::ZEROING>(vreg2, static_cast<float>(1.0f), preg0);
+                    Reg::Sqrt<float, Reg::MaskMergeMode::ZEROING>(vreg3, vreg1, preg0);
+                    Reg::Div<float, Reg::MaskMergeMode::ZEROING>(vreg4, vreg2, vreg3, preg0);
+                    Reg::Cast<T1, float, castTrait1>(vreg5, vreg4, preg0);
+                    Reg::DataCopy<T1, Reg::StoreDist::DIST_PACK_B32>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)), vreg5, preg0);
                 }
             }
@@ -404,41 +400,41 @@ private:
         __VEC_SCOPE__
         {
             if constexpr (sizeof(T1) == sizeof(float)) {
-                MicroAPI::RegTensor<float> vreg0;
-                MicroAPI::RegTensor<float> vreg1;
-                MicroAPI::MaskReg preg0;
+                Reg::RegTensor<float> vreg0;
+                Reg::RegTensor<float> vreg1;
+                Reg::MaskReg preg0;
                 uint32_t size = dataLength;
-                uint16_t vfLoopNum =
-                    (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) / (VECTOR_REG_WIDTH / sizeof(float));
+                uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) /
+                                     (VECTOR_REG_WIDTH / sizeof(float));
                 __local_mem__ float* bufferIn0Addr = (__local_mem__ float*)srcTensor.GetPhyAddr();
                 __local_mem__ float* bufferOut0Addr = (__local_mem__ float*)dstTensor.GetPhyAddr();
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
-                    preg0 = MicroAPI::UpdateMask<float>(size);
-                    MicroAPI::DataCopy<float, MicroAPI::LoadDist::DIST_NORM>(
+                    preg0 = Reg::UpdateMask<float>(size);
+                    Reg::DataCopy<float, Reg::LoadDist::DIST_NORM>(
                         vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)));
-                    MicroAPI::Mul<float, MicroAPI::MaskMergeMode::ZEROING>(vreg1, vreg0, vreg0, preg0);
-                    MicroAPI::DataCopy<float, MicroAPI::StoreDist::DIST_NORM_B32>(
+                    Reg::Mul<float, Reg::MaskMergeMode::ZEROING>(vreg1, vreg0, vreg0, preg0);
+                    Reg::DataCopy<float, Reg::StoreDist::DIST_NORM_B32>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)), vreg1, preg0);
                 }
             } else {
-                MicroAPI::RegTensor<T1> vreg0;
-                MicroAPI::RegTensor<float> vreg1;
-                MicroAPI::RegTensor<float> vreg2;
-                MicroAPI::RegTensor<T1> vreg3;
-                MicroAPI::MaskReg preg0;
+                Reg::RegTensor<T1> vreg0;
+                Reg::RegTensor<float> vreg1;
+                Reg::RegTensor<float> vreg2;
+                Reg::RegTensor<T1> vreg3;
+                Reg::MaskReg preg0;
                 uint32_t size = dataLength;
-                uint16_t vfLoopNum =
-                    (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) / (VECTOR_REG_WIDTH / sizeof(float));
+                uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) /
+                                     (VECTOR_REG_WIDTH / sizeof(float));
                 __local_mem__ T1* bufferIn0Addr = (__local_mem__ T1*)srcTensor.GetPhyAddr();
                 __local_mem__ T1* bufferOut0Addr = (__local_mem__ T1*)dstTensor.GetPhyAddr();
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
-                    preg0 = MicroAPI::UpdateMask<float>(size);
-                    MicroAPI::DataCopy<T1, MicroAPI::LoadDist::DIST_UNPACK_B16>(
+                    preg0 = Reg::UpdateMask<float>(size);
+                    Reg::DataCopy<T1, Reg::LoadDist::DIST_UNPACK_B16>(
                         vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)));
-                    MicroAPI::Cast<float, T1, castTrait0>(vreg1, vreg0, preg0);
-                    MicroAPI::Mul<float, MicroAPI::MaskMergeMode::ZEROING>(vreg2, vreg1, vreg1, preg0);
-                    MicroAPI::Cast<T1, float, castTrait1>(vreg3, vreg2, preg0);
-                    MicroAPI::DataCopy<T1, MicroAPI::StoreDist::DIST_PACK_B32>(
+                    Reg::Cast<float, T1, castTrait0>(vreg1, vreg0, preg0);
+                    Reg::Mul<float, Reg::MaskMergeMode::ZEROING>(vreg2, vreg1, vreg1, preg0);
+                    Reg::Cast<T1, float, castTrait1>(vreg3, vreg2, preg0);
+                    Reg::DataCopy<T1, Reg::StoreDist::DIST_PACK_B32>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)), vreg3, preg0);
                 }
             }
@@ -450,45 +446,45 @@ private:
         __VEC_SCOPE__
         {
             if constexpr (sizeof(T1) == sizeof(float)) {
-                MicroAPI::RegTensor<float> vreg0;
-                MicroAPI::RegTensor<float> vreg1;
-                MicroAPI::RegTensor<float> vreg2;
-                MicroAPI::MaskReg preg0;
+                Reg::RegTensor<float> vreg0;
+                Reg::RegTensor<float> vreg1;
+                Reg::RegTensor<float> vreg2;
+                Reg::MaskReg preg0;
                 uint32_t size = dataLength;
-                uint16_t vfLoopNum =
-                    (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) / (VECTOR_REG_WIDTH / sizeof(float));
+                uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) /
+                                     (VECTOR_REG_WIDTH / sizeof(float));
                 __local_mem__ float* bufferIn0Addr = (__local_mem__ float*)srcTensor.GetPhyAddr();
                 __local_mem__ float* bufferOut0Addr = (__local_mem__ float*)dstTensor.GetPhyAddr();
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
-                    preg0 = MicroAPI::UpdateMask<float>(size);
-                    MicroAPI::DataCopy<float, MicroAPI::LoadDist::DIST_NORM>(
+                    preg0 = Reg::UpdateMask<float>(size);
+                    Reg::DataCopy<float, Reg::LoadDist::DIST_NORM>(
                         vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)));
-                    MicroAPI::Mul<float, MicroAPI::MaskMergeMode::ZEROING>(vreg1, vreg0, vreg0, preg0);
-                    MicroAPI::Mul<float, MicroAPI::MaskMergeMode::ZEROING>(vreg2, vreg1, vreg0, preg0);
-                    MicroAPI::DataCopy<float, MicroAPI::StoreDist::DIST_NORM_B32>(
+                    Reg::Mul<float, Reg::MaskMergeMode::ZEROING>(vreg1, vreg0, vreg0, preg0);
+                    Reg::Mul<float, Reg::MaskMergeMode::ZEROING>(vreg2, vreg1, vreg0, preg0);
+                    Reg::DataCopy<float, Reg::StoreDist::DIST_NORM_B32>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)), vreg2, preg0);
                 }
             } else {
-                MicroAPI::RegTensor<T1> vreg0;
-                MicroAPI::RegTensor<float> vreg1;
-                MicroAPI::RegTensor<float> vreg2;
-                MicroAPI::RegTensor<float> vreg3;
-                MicroAPI::RegTensor<T1> vreg4;
-                MicroAPI::MaskReg preg0;
+                Reg::RegTensor<T1> vreg0;
+                Reg::RegTensor<float> vreg1;
+                Reg::RegTensor<float> vreg2;
+                Reg::RegTensor<float> vreg3;
+                Reg::RegTensor<T1> vreg4;
+                Reg::MaskReg preg0;
                 uint32_t size = dataLength;
-                uint16_t vfLoopNum =
-                    (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) / (VECTOR_REG_WIDTH / sizeof(float));
+                uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) /
+                                     (VECTOR_REG_WIDTH / sizeof(float));
                 __local_mem__ T1* bufferIn0Addr = (__local_mem__ T1*)srcTensor.GetPhyAddr();
                 __local_mem__ T1* bufferOut0Addr = (__local_mem__ T1*)dstTensor.GetPhyAddr();
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
-                    preg0 = MicroAPI::UpdateMask<float>(size);
-                    MicroAPI::DataCopy<T1, MicroAPI::LoadDist::DIST_UNPACK_B16>(
+                    preg0 = Reg::UpdateMask<float>(size);
+                    Reg::DataCopy<T1, Reg::LoadDist::DIST_UNPACK_B16>(
                         vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)));
-                    MicroAPI::Cast<float, T1, castTrait0>(vreg1, vreg0, preg0);
-                    MicroAPI::Mul<float, MicroAPI::MaskMergeMode::ZEROING>(vreg2, vreg1, vreg1, preg0);
-                    MicroAPI::Mul<float, MicroAPI::MaskMergeMode::ZEROING>(vreg3, vreg2, vreg1, preg0);
-                    MicroAPI::Cast<T1, float, castTrait1>(vreg4, vreg3, preg0);
-                    MicroAPI::DataCopy<T1, MicroAPI::StoreDist::DIST_PACK_B32>(
+                    Reg::Cast<float, T1, castTrait0>(vreg1, vreg0, preg0);
+                    Reg::Mul<float, Reg::MaskMergeMode::ZEROING>(vreg2, vreg1, vreg1, preg0);
+                    Reg::Mul<float, Reg::MaskMergeMode::ZEROING>(vreg3, vreg2, vreg1, preg0);
+                    Reg::Cast<T1, float, castTrait1>(vreg4, vreg3, preg0);
+                    Reg::DataCopy<T1, Reg::StoreDist::DIST_PACK_B32>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)), vreg4, preg0);
                 }
             }
@@ -499,47 +495,47 @@ private:
     {
         __VEC_SCOPE__
         {
-            static constexpr MicroAPI::DivSpecificMode divMode = {MicroAPI::MaskMergeMode::ZEROING, true};
+            static constexpr Reg::DivSpecificMode divMode = {Reg::MaskMergeMode::ZEROING, true};
             if constexpr (sizeof(T1) == sizeof(float)) {
-                MicroAPI::RegTensor<float> vreg0;
-                MicroAPI::RegTensor<float> vreg1;
-                MicroAPI::RegTensor<float> vreg2;
-                MicroAPI::MaskReg preg0;
+                Reg::RegTensor<float> vreg0;
+                Reg::RegTensor<float> vreg1;
+                Reg::RegTensor<float> vreg2;
+                Reg::MaskReg preg0;
                 uint32_t size = dataLength;
-                uint16_t vfLoopNum =
-                    (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) / (VECTOR_REG_WIDTH / sizeof(float));
+                uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) /
+                                     (VECTOR_REG_WIDTH / sizeof(float));
                 __local_mem__ float* bufferIn0Addr = (__local_mem__ float*)srcTensor.GetPhyAddr();
                 __local_mem__ float* bufferOut0Addr = (__local_mem__ float*)dstTensor.GetPhyAddr();
-                MicroAPI::Duplicate(vreg0, 1.0f);
+                Reg::Duplicate(vreg0, 1.0f);
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
-                    preg0 = MicroAPI::UpdateMask<float>(size);
-                    MicroAPI::DataCopy<float, MicroAPI::LoadDist::DIST_NORM>(
+                    preg0 = Reg::UpdateMask<float>(size);
+                    Reg::DataCopy<float, Reg::LoadDist::DIST_NORM>(
                         vreg1, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)));
-                    MicroAPI::Div<float, &divMode>(vreg2, vreg0, vreg1, preg0);
-                    MicroAPI::DataCopy<float, MicroAPI::StoreDist::DIST_NORM_B32>(
+                    Reg::Div<float, &divMode>(vreg2, vreg0, vreg1, preg0);
+                    Reg::DataCopy<float, Reg::StoreDist::DIST_NORM_B32>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)), vreg2, preg0);
                 }
             } else {
-                MicroAPI::RegTensor<float> vreg0;
-                MicroAPI::RegTensor<T1> vreg1;
-                MicroAPI::RegTensor<float> vreg2;
-                MicroAPI::RegTensor<float> vreg3;
-                MicroAPI::RegTensor<T1> vreg4;
-                MicroAPI::MaskReg preg0;
+                Reg::RegTensor<float> vreg0;
+                Reg::RegTensor<T1> vreg1;
+                Reg::RegTensor<float> vreg2;
+                Reg::RegTensor<float> vreg3;
+                Reg::RegTensor<T1> vreg4;
+                Reg::MaskReg preg0;
                 uint32_t size = dataLength;
-                uint16_t vfLoopNum =
-                    (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) / (VECTOR_REG_WIDTH / sizeof(float));
+                uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) /
+                                     (VECTOR_REG_WIDTH / sizeof(float));
                 __local_mem__ T1* bufferIn0Addr = (__local_mem__ T1*)srcTensor.GetPhyAddr();
                 __local_mem__ T1* bufferOut0Addr = (__local_mem__ T1*)dstTensor.GetPhyAddr();
-                MicroAPI::Duplicate(vreg0, 1.0f);
+                Reg::Duplicate(vreg0, 1.0f);
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
-                    preg0 = MicroAPI::UpdateMask<float>(size);
-                    MicroAPI::DataCopy<T1, MicroAPI::LoadDist::DIST_UNPACK_B16>(
+                    preg0 = Reg::UpdateMask<float>(size);
+                    Reg::DataCopy<T1, Reg::LoadDist::DIST_UNPACK_B16>(
                         vreg1, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)));
-                    MicroAPI::Cast<float, T1, castTrait0>(vreg2, vreg1, preg0);
-                    MicroAPI::Div<float, &divMode>(vreg3, vreg0, vreg2, preg0);
-                    MicroAPI::Cast<T1, float, castTrait1>(vreg4, vreg3, preg0);
-                    MicroAPI::DataCopy<T1, MicroAPI::StoreDist::DIST_PACK_B32>(
+                    Reg::Cast<float, T1, castTrait0>(vreg2, vreg1, preg0);
+                    Reg::Div<float, &divMode>(vreg3, vreg0, vreg2, preg0);
+                    Reg::Cast<T1, float, castTrait1>(vreg4, vreg3, preg0);
+                    Reg::DataCopy<T1, Reg::StoreDist::DIST_PACK_B32>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)), vreg4, preg0);
                 }
             }
@@ -550,54 +546,54 @@ private:
     {
         __VEC_SCOPE__
         {
-            static constexpr MicroAPI::DivSpecificMode divMode = {MicroAPI::MaskMergeMode::ZEROING, true};
+            static constexpr Reg::DivSpecificMode divMode = {Reg::MaskMergeMode::ZEROING, true};
 
             if constexpr (sizeof(T1) == sizeof(float)) {
                 // duplicate 1
-                MicroAPI::RegTensor<float> vreg0;
-                MicroAPI::RegTensor<float> vreg1;
-                MicroAPI::RegTensor<float> vreg2;
-                MicroAPI::RegTensor<float> vreg3;
-                MicroAPI::MaskReg preg0;
+                Reg::RegTensor<float> vreg0;
+                Reg::RegTensor<float> vreg1;
+                Reg::RegTensor<float> vreg2;
+                Reg::RegTensor<float> vreg3;
+                Reg::MaskReg preg0;
                 uint32_t size = dataLength;
-                uint16_t vfLoopNum =
-                    (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) / (VECTOR_REG_WIDTH / sizeof(float));
+                uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) /
+                                     (VECTOR_REG_WIDTH / sizeof(float));
                 __local_mem__ float* bufferIn0Addr = (__local_mem__ float*)srcTensor.GetPhyAddr();
                 __local_mem__ float* bufferOut0Addr = (__local_mem__ float*)dstTensor.GetPhyAddr();
-                MicroAPI::Duplicate(vreg0, 1.0f);
+                Reg::Duplicate(vreg0, 1.0f);
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
-                    preg0 = MicroAPI::UpdateMask<float>(size);
-                    MicroAPI::DataCopy<float, MicroAPI::LoadDist::DIST_NORM>(
+                    preg0 = Reg::UpdateMask<float>(size);
+                    Reg::DataCopy<float, Reg::LoadDist::DIST_NORM>(
                         vreg1, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)));
-                    MicroAPI::Mul<float, MicroAPI::MaskMergeMode::ZEROING>(vreg2, vreg1, vreg1, preg0);
-                    MicroAPI::Div<float, &divMode>(vreg3, vreg0, vreg2, preg0);
-                    MicroAPI::DataCopy<float, MicroAPI::StoreDist::DIST_NORM_B32>(
+                    Reg::Mul<float, Reg::MaskMergeMode::ZEROING>(vreg2, vreg1, vreg1, preg0);
+                    Reg::Div<float, &divMode>(vreg3, vreg0, vreg2, preg0);
+                    Reg::DataCopy<float, Reg::StoreDist::DIST_NORM_B32>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)), vreg3, preg0);
                 }
             } else {
                 // duplicate 1
-                MicroAPI::RegTensor<float> vreg0;
-                MicroAPI::RegTensor<T1> vreg1;
-                MicroAPI::RegTensor<float> vreg2;
-                MicroAPI::RegTensor<float> vreg3;
-                MicroAPI::RegTensor<float> vreg4;
-                MicroAPI::RegTensor<T1> vreg5;
-                MicroAPI::MaskReg preg0;
+                Reg::RegTensor<float> vreg0;
+                Reg::RegTensor<T1> vreg1;
+                Reg::RegTensor<float> vreg2;
+                Reg::RegTensor<float> vreg3;
+                Reg::RegTensor<float> vreg4;
+                Reg::RegTensor<T1> vreg5;
+                Reg::MaskReg preg0;
                 uint32_t size = dataLength;
-                uint16_t vfLoopNum =
-                    (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) / (VECTOR_REG_WIDTH / sizeof(float));
+                uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(float)) - 1) /
+                                     (VECTOR_REG_WIDTH / sizeof(float));
                 __local_mem__ T1* bufferIn0Addr = (__local_mem__ T1*)srcTensor.GetPhyAddr();
                 __local_mem__ T1* bufferOut0Addr = (__local_mem__ T1*)dstTensor.GetPhyAddr();
-                MicroAPI::Duplicate(vreg0, 1.0f);
+                Reg::Duplicate(vreg0, 1.0f);
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
-                    preg0 = MicroAPI::UpdateMask<float>(size);
-                    MicroAPI::DataCopy<T1, MicroAPI::LoadDist::DIST_UNPACK_B16>(
+                    preg0 = Reg::UpdateMask<float>(size);
+                    Reg::DataCopy<T1, Reg::LoadDist::DIST_UNPACK_B16>(
                         vreg1, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)));
-                    MicroAPI::Cast<float, T1, castTrait0>(vreg2, vreg1, preg0);
-                    MicroAPI::Mul<float, MicroAPI::MaskMergeMode::ZEROING>(vreg3, vreg2, vreg2, preg0);
-                    MicroAPI::Div<float, &divMode>(vreg4, vreg0, vreg3, preg0);
-                    MicroAPI::Cast<T1, float, castTrait1>(vreg5, vreg4, preg0);
-                    MicroAPI::DataCopy<T1, MicroAPI::StoreDist::DIST_PACK_B32>(
+                    Reg::Cast<float, T1, castTrait0>(vreg2, vreg1, preg0);
+                    Reg::Mul<float, Reg::MaskMergeMode::ZEROING>(vreg3, vreg2, vreg2, preg0);
+                    Reg::Div<float, &divMode>(vreg4, vreg0, vreg3, preg0);
+                    Reg::Cast<T1, float, castTrait1>(vreg5, vreg4, preg0);
+                    Reg::DataCopy<T1, Reg::StoreDist::DIST_PACK_B32>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(float)), vreg5, preg0);
                 }
             }
@@ -627,11 +623,11 @@ private:
     float expValue;
 
     // cast info
-    constexpr static MicroAPI::CastTrait castTrait0 = {MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::UNKNOWN,
-                                                       MicroAPI::MaskMergeMode::ZEROING, RoundMode::UNKNOWN};
-    constexpr static MicroAPI::CastTrait castTrait1 = {MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT,
-                                                       MicroAPI::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
+    constexpr static Reg::CastTrait castTrait0 = {Reg::RegLayout::ZERO, Reg::SatMode::UNKNOWN,
+                                                  Reg::MaskMergeMode::ZEROING, RoundMode::UNKNOWN};
+    constexpr static Reg::CastTrait castTrait1 = {Reg::RegLayout::ZERO, Reg::SatMode::NO_SAT,
+                                                  Reg::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
     constexpr static PowerConfig powsConfig_ = {PowerAlgo::DOUBLE_FLOAT_TECH};
 };
-}  // namespace Pow
-#endif  // ASCENDC_POW_POWS_FLOAT_H_
+} // namespace Pow
+#endif // ASCENDC_POW_POWS_FLOAT_H_

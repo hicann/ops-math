@@ -47,17 +47,17 @@ struct AbsGradCustom : public Vec::ElemwiseBinaryOP<T, T, T> {
     {
 #ifdef __CCE_AICORE__
         // 寄存器定义
-        MicroAPI::RegTensor<T> vY;
-        MicroAPI::RegTensor<T> vDy;
-        MicroAPI::RegTensor<T> vSign;
-        MicroAPI::RegTensor<T> vResult;
-        MicroAPI::RegTensor<T> vZero;
-        MicroAPI::RegTensor<T> vOne;
-        MicroAPI::RegTensor<T> vNegOne;
-        MicroAPI::MaskReg preg;
-        MicroAPI::MaskReg pregZero;
-        MicroAPI::MaskReg pregPos;
-        MicroAPI::MaskReg pregNeg;
+        Reg::RegTensor<T> vY;
+        Reg::RegTensor<T> vDy;
+        Reg::RegTensor<T> vSign;
+        Reg::RegTensor<T> vResult;
+        Reg::RegTensor<T> vZero;
+        Reg::RegTensor<T> vOne;
+        Reg::RegTensor<T> vNegOne;
+        Reg::MaskReg preg;
+        Reg::MaskReg pregZero;
+        Reg::MaskReg pregPos;
+        Reg::MaskReg pregNeg;
 
         uint32_t sreg = (uint32_t)count;
         constexpr uint32_t vflen = AscendC::VECTOR_REG_WIDTH / sizeof(T);
@@ -88,7 +88,7 @@ struct AbsGradCustom : public Vec::ElemwiseBinaryOP<T, T, T> {
             }
 
             for (uint16_t i = 0; i < repeatTime; i++) {
-                preg = MicroAPI::UpdateMask<T, MicroAPI::RegTraitNumOne>(sreg);
+                preg = Reg::UpdateMask<T, Reg::RegTraitNumOne>(sreg);
 
                 // 加载输入数据
                 Reg::LoadAlign(vY, yAddr + i * vflen);

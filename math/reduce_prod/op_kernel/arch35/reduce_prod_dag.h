@@ -25,8 +25,7 @@
 #include "op_kernel/platform_util.h"
 #endif
 
-namespace ReduceProd
-{
+namespace ReduceProd {
 using namespace AscendC;
 using namespace Ops::Base;
 
@@ -43,14 +42,14 @@ struct CastInt : public Vec::ElemwiseUnaryOP<R, T> {
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T> srcValue;
-            MicroAPI::MaskReg preg;
+            Reg::RegTensor<T> srcValue;
+            Reg::MaskReg preg;
             uint32_t sregMask = count;
             for (uint16_t j = 0; j < loopTimes; j++) {
-                preg = MicroAPI::UpdateMask<uint16_t>(sregMask);
-                MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(srcValue, srcAddr + VL_B16 * j);
-                MicroAPI::DataCopy<R, MicroAPI::StoreDist::DIST_PACK_B16>(dstAddr + VL_B16 * j,
-                                                                          (MicroAPI::RegTensor<R>&)srcValue, preg);
+                preg = Reg::UpdateMask<uint16_t>(sregMask);
+                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(srcValue, srcAddr + VL_B16 * j);
+                Reg::DataCopy<R, Reg::StoreDist::DIST_PACK_B16>(dstAddr + VL_B16 * j, (Reg::RegTensor<R>&)srcValue,
+                                                                preg);
             }
         }
 #endif
@@ -80,6 +79,6 @@ struct ReduceProdI8Dag {
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
     using OpDag = DAGSch<Outputs, void, MemCfg>;
 };
-}  // namespace ReduceProd
+} // namespace ReduceProd
 
 #endif

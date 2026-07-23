@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
- /*!
+/*!
  * \file reciprocal_dag.h
  * \brief
  */
@@ -19,44 +19,46 @@
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
-namespace ReciprocalDag{
+namespace ReciprocalDag {
 using namespace Ops::Base;
 
 constexpr int CastModeBf16ToFp32 = 0;
 constexpr int CastModeFp32ToBf16 = 1;
 
-template<class T>
+template <class T>
 struct ReciprocalDagCustom : public Vec::ElemwiseUnaryOP<T, T> {
-    __aicore__ inline ReciprocalDagCustom(LocalTensor<T> &dst, LocalTensor<T> &src, uint32_t count) {
-        #ifdef __CCE_AICORE__
+    __aicore__ inline ReciprocalDagCustom(LocalTensor<T>& dst, LocalTensor<T>& src, uint32_t count)
+    {
+#ifdef __CCE_AICORE__
         uint32_t dtypeSize = sizeof(T);
         uint32_t VL = AscendC::VECTOR_REG_WIDTH / dtypeSize;
         uint16_t loopNum = CeilDivision(count, VL);
         uint32_t vlSize = VL;
-        __VEC_SCOPE__ {
+        __VEC_SCOPE__
+        {
             __ubuf__ T* srcAddr = (__ubuf__ T*)src.GetPhyAddr();
             __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
 
-            static constexpr AscendC::MicroAPI::DivSpecificMode mode = {AscendC::MicroAPI::MaskMergeMode::ZEROING, true};
+            static constexpr AscendC::Reg::DivSpecificMode mode = {AscendC::Reg::MaskMergeMode::ZEROING, true};
 
-            AscendC::MicroAPI::RegTensor<T, AscendC::MicroAPI::RegTraitNumOne> vregInput;
-            AscendC::MicroAPI::RegTensor<T, AscendC::MicroAPI::RegTraitNumOne> ones;
-            AscendC::MicroAPI::RegTensor<T, AscendC::MicroAPI::RegTraitNumOne> vregOutput;
-            AscendC::MicroAPI::MaskReg mask;
+            AscendC::Reg::RegTensor<T, AscendC::Reg::RegTraitNumOne> vregInput;
+            AscendC::Reg::RegTensor<T, AscendC::Reg::RegTraitNumOne> ones;
+            AscendC::Reg::RegTensor<T, AscendC::Reg::RegTraitNumOne> vregOutput;
+            AscendC::Reg::MaskReg mask;
 
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                mask = AscendC::MicroAPI::UpdateMask<T, AscendC::MicroAPI::RegTraitNumOne>(count);
+                mask = AscendC::Reg::UpdateMask<T, AscendC::Reg::RegTraitNumOne>(count);
                 // OpCopyIn0
-                AscendC::MicroAPI::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                AscendC::Reg::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
                 // compute reciprocal
-                AscendC::MicroAPI::Duplicate(ones, (T)1.0, mask);
-                AscendC::MicroAPI::Div<T, &mode>(vregOutput, ones, vregInput, mask);
+                AscendC::Reg::Duplicate(ones, (T)1.0, mask);
+                AscendC::Reg::Div<T, &mode>(vregOutput, ones, vregInput, mask);
 
                 // OpCopyOut
-                AscendC::MicroAPI::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
+                AscendC::Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
             }
         }
-        #endif
+#endif
     }
 };
 
@@ -70,12 +72,11 @@ struct ReciprocalDag {
     using Cast1 = Bind<Vec::Cast<T, float, CastModeFp32ToBf16>, OpReciprocal>;
     using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, Cast1>;
     // 指定输出节点
-    using Outputs = Elems<OpCopyOut>;  // 设置输出
+    using Outputs = Elems<OpCopyOut>; // 设置输出
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
     using OpDag = DAGSch<Outputs, void, MemCfg>;
 };
 
-}; //namespace ReciprocalDag
+}; // namespace ReciprocalDag
 
-#endif  // CANN_CUSTOM_OPS_RECIPROCAL_DAG_H
-
+#endif // CANN_CUSTOM_OPS_RECIPROCAL_DAG_H

@@ -40,36 +40,36 @@ struct RightShiftCustom8 : public Vec::ElemwiseBinaryOP<T, T, T> {
         __ubuf__ T* src2Addr = (__ubuf__ T*)src2.GetPhyAddr();
         __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
 
-        MicroAPI::RegTensor<T> xReg;
-        MicroAPI::RegTensor<T> yReg;
-        MicroAPI::RegTensor<T> zReg;
-        MicroAPI::RegTensor<T> zeroReg;
-        MicroAPI::RegTensor<T> sizeReg;
+        Reg::RegTensor<T> xReg;
+        Reg::RegTensor<T> yReg;
+        Reg::RegTensor<T> zReg;
+        Reg::RegTensor<T> zeroReg;
+        Reg::RegTensor<T> sizeReg;
 
-        MicroAPI::MaskReg mask;
-        MicroAPI::MaskReg calcMask;
+        Reg::MaskReg mask;
+        Reg::MaskReg calcMask;
 
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg scalarMaskReg = MicroAPI::CreateMask<T, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::Duplicate(zeroReg, digitZero, scalarMaskReg);
-            MicroAPI::Duplicate(sizeReg, rightShifts, scalarMaskReg);
+            Reg::MaskReg scalarMaskReg = Reg::CreateMask<T, Reg::MaskPattern::ALL>();
+            Reg::Duplicate(zeroReg, digitZero, scalarMaskReg);
+            Reg::Duplicate(sizeReg, rightShifts, scalarMaskReg);
 
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                mask = MicroAPI::UpdateMask<T, MicroAPI::RegTraitNumOne>(count);
-                MicroAPI::DataCopy(xReg, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
-                MicroAPI::DataCopy(yReg, (__ubuf__ T*)(src2Addr + loopIdx * vlSize));
+                mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
+                Reg::DataCopy(xReg, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
+                Reg::DataCopy(yReg, (__ubuf__ T*)(src2Addr + loopIdx * vlSize));
 
                 if constexpr (std::is_same_v<T, int8_t>) {
-                    MicroAPI::Compare<T, CMPMODE::GE>(calcMask, yReg, zeroReg, mask);
-                    MicroAPI::Select(yReg, yReg, zeroReg, calcMask);
-                    MicroAPI::ShiftRight(zReg, xReg, (MicroAPI::RegTensor<T>&)yReg, mask);
+                    Reg::Compare<T, CMPMODE::GE>(calcMask, yReg, zeroReg, mask);
+                    Reg::Select(yReg, yReg, zeroReg, calcMask);
+                    Reg::ShiftRight(zReg, xReg, (Reg::RegTensor<T>&)yReg, mask);
                 } else if constexpr (std::is_same_v<T, uint8_t>) {
-                    MicroAPI::Compare<T, CMPMODE::LE>(calcMask, yReg, sizeReg, mask);
-                    MicroAPI::Select(yReg, yReg, sizeReg, calcMask);
-                    MicroAPI::ShiftRight(zReg, xReg, (MicroAPI::RegTensor<int8_t>&)yReg, mask);
+                    Reg::Compare<T, CMPMODE::LE>(calcMask, yReg, sizeReg, mask);
+                    Reg::Select(yReg, yReg, sizeReg, calcMask);
+                    Reg::ShiftRight(zReg, xReg, (Reg::RegTensor<int8_t>&)yReg, mask);
                 }
-                MicroAPI::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), zReg, mask);
+                Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), zReg, mask);
             }
         }
 #endif
@@ -78,8 +78,8 @@ struct RightShiftCustom8 : public Vec::ElemwiseBinaryOP<T, T, T> {
 
 template <typename T>
 struct RightShiftCustom16 : public Vec::ElemwiseBinaryOP<T, T, T> {
-    __aicore__ inline RightShiftCustom16(
-        LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2, uint32_t count)
+    __aicore__ inline RightShiftCustom16(LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2,
+                                         uint32_t count)
     {
 #ifdef __CCE_AICORE__
         uint32_t dtypeSize = sizeof(T);
@@ -94,36 +94,36 @@ struct RightShiftCustom16 : public Vec::ElemwiseBinaryOP<T, T, T> {
         __ubuf__ T* src2Addr = (__ubuf__ T*)src2.GetPhyAddr();
         __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
 
-        MicroAPI::RegTensor<T> xReg;
-        MicroAPI::RegTensor<T> yReg;
-        MicroAPI::RegTensor<T> zReg;
-        MicroAPI::RegTensor<T> zeroReg;
-        MicroAPI::RegTensor<T> sizeReg;
+        Reg::RegTensor<T> xReg;
+        Reg::RegTensor<T> yReg;
+        Reg::RegTensor<T> zReg;
+        Reg::RegTensor<T> zeroReg;
+        Reg::RegTensor<T> sizeReg;
 
-        MicroAPI::MaskReg mask;
-        MicroAPI::MaskReg calcMask;
+        Reg::MaskReg mask;
+        Reg::MaskReg calcMask;
 
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg scalarMaskReg = MicroAPI::CreateMask<T, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::Duplicate(zeroReg, digitZero, scalarMaskReg);
-            MicroAPI::Duplicate(sizeReg, rightShifts, scalarMaskReg);
+            Reg::MaskReg scalarMaskReg = Reg::CreateMask<T, Reg::MaskPattern::ALL>();
+            Reg::Duplicate(zeroReg, digitZero, scalarMaskReg);
+            Reg::Duplicate(sizeReg, rightShifts, scalarMaskReg);
 
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                mask = MicroAPI::UpdateMask<T, MicroAPI::RegTraitNumOne>(count);
-                MicroAPI::DataCopy(xReg, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
-                MicroAPI::DataCopy(yReg, (__ubuf__ T*)(src2Addr + loopIdx * vlSize));
+                mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
+                Reg::DataCopy(xReg, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
+                Reg::DataCopy(yReg, (__ubuf__ T*)(src2Addr + loopIdx * vlSize));
 
                 if constexpr (std::is_same_v<T, int16_t>) {
-                    MicroAPI::Compare<T, CMPMODE::GE>(calcMask, yReg, zeroReg, mask);
-                    MicroAPI::Select(yReg, yReg, zeroReg, calcMask);
-                    MicroAPI::ShiftRight(zReg, xReg, (MicroAPI::RegTensor<T>&)yReg, mask);
+                    Reg::Compare<T, CMPMODE::GE>(calcMask, yReg, zeroReg, mask);
+                    Reg::Select(yReg, yReg, zeroReg, calcMask);
+                    Reg::ShiftRight(zReg, xReg, (Reg::RegTensor<T>&)yReg, mask);
                 } else if constexpr (std::is_same_v<T, uint16_t>) {
-                    MicroAPI::Compare<T, CMPMODE::LE>(calcMask, yReg, sizeReg, mask);
-                    MicroAPI::Select(yReg, yReg, sizeReg, calcMask);
-                    MicroAPI::ShiftRight(zReg, xReg, (MicroAPI::RegTensor<int16_t>&)yReg, mask);
+                    Reg::Compare<T, CMPMODE::LE>(calcMask, yReg, sizeReg, mask);
+                    Reg::Select(yReg, yReg, sizeReg, calcMask);
+                    Reg::ShiftRight(zReg, xReg, (Reg::RegTensor<int16_t>&)yReg, mask);
                 }
-                MicroAPI::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), zReg, mask);
+                Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), zReg, mask);
             }
         }
 #endif
@@ -132,8 +132,8 @@ struct RightShiftCustom16 : public Vec::ElemwiseBinaryOP<T, T, T> {
 
 template <typename T>
 struct RightShiftCustom32 : public Vec::ElemwiseBinaryOP<T, T, T> {
-    __aicore__ inline RightShiftCustom32(
-        LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2, uint32_t count)
+    __aicore__ inline RightShiftCustom32(LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2,
+                                         uint32_t count)
     {
 #ifdef __CCE_AICORE__
         uint32_t dtypeSize = sizeof(T);
@@ -148,36 +148,36 @@ struct RightShiftCustom32 : public Vec::ElemwiseBinaryOP<T, T, T> {
         __ubuf__ T* src2Addr = (__ubuf__ T*)src2.GetPhyAddr();
         __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
 
-        MicroAPI::RegTensor<T> xReg;
-        MicroAPI::RegTensor<T> yReg;
-        MicroAPI::RegTensor<T> zReg;
-        MicroAPI::RegTensor<T> zeroReg;
-        MicroAPI::RegTensor<T> sizeReg;
+        Reg::RegTensor<T> xReg;
+        Reg::RegTensor<T> yReg;
+        Reg::RegTensor<T> zReg;
+        Reg::RegTensor<T> zeroReg;
+        Reg::RegTensor<T> sizeReg;
 
-        MicroAPI::MaskReg mask;
-        MicroAPI::MaskReg calcMask;
+        Reg::MaskReg mask;
+        Reg::MaskReg calcMask;
 
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg scalarMaskReg = MicroAPI::CreateMask<T, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::Duplicate(zeroReg, digitZero, scalarMaskReg);
-            MicroAPI::Duplicate(sizeReg, rightShifts, scalarMaskReg);
+            Reg::MaskReg scalarMaskReg = Reg::CreateMask<T, Reg::MaskPattern::ALL>();
+            Reg::Duplicate(zeroReg, digitZero, scalarMaskReg);
+            Reg::Duplicate(sizeReg, rightShifts, scalarMaskReg);
 
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                mask = MicroAPI::UpdateMask<T, MicroAPI::RegTraitNumOne>(count);
-                MicroAPI::DataCopy(xReg, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
-                MicroAPI::DataCopy(yReg, (__ubuf__ T*)(src2Addr + loopIdx * vlSize));
+                mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
+                Reg::DataCopy(xReg, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
+                Reg::DataCopy(yReg, (__ubuf__ T*)(src2Addr + loopIdx * vlSize));
 
                 if constexpr (std::is_same_v<T, int32_t>) {
-                    MicroAPI::Compare<T, CMPMODE::GE>(calcMask, yReg, zeroReg, mask);
-                    MicroAPI::Select(yReg, yReg, zeroReg, calcMask);
-                    MicroAPI::ShiftRight(zReg, xReg, (MicroAPI::RegTensor<T>&)yReg, mask);
+                    Reg::Compare<T, CMPMODE::GE>(calcMask, yReg, zeroReg, mask);
+                    Reg::Select(yReg, yReg, zeroReg, calcMask);
+                    Reg::ShiftRight(zReg, xReg, (Reg::RegTensor<T>&)yReg, mask);
                 } else if constexpr (std::is_same_v<T, uint32_t>) {
-                    MicroAPI::Compare<T, CMPMODE::LE>(calcMask, yReg, sizeReg, mask);
-                    MicroAPI::Select(yReg, yReg, sizeReg, calcMask);
-                    MicroAPI::ShiftRight(zReg, xReg, (MicroAPI::RegTensor<int32_t>&)yReg, mask);
+                    Reg::Compare<T, CMPMODE::LE>(calcMask, yReg, sizeReg, mask);
+                    Reg::Select(yReg, yReg, sizeReg, calcMask);
+                    Reg::ShiftRight(zReg, xReg, (Reg::RegTensor<int32_t>&)yReg, mask);
                 }
-                MicroAPI::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), zReg, mask);
+                Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), zReg, mask);
             }
         }
 #endif
@@ -186,8 +186,8 @@ struct RightShiftCustom32 : public Vec::ElemwiseBinaryOP<T, T, T> {
 
 template <typename T>
 struct RightShiftCustom64 : public Vec::ElemwiseBinaryOP<T, T, T> {
-    __aicore__ inline RightShiftCustom64(
-        LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2, uint32_t count)
+    __aicore__ inline RightShiftCustom64(LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2,
+                                         uint32_t count)
     {
 #ifdef __CCE_AICORE__
         uint32_t dtypeSize = sizeof(T);
@@ -202,36 +202,36 @@ struct RightShiftCustom64 : public Vec::ElemwiseBinaryOP<T, T, T> {
         __ubuf__ T* src2Addr = (__ubuf__ T*)src2.GetPhyAddr();
         __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
 
-        MicroAPI::RegTensor<T> xReg;
-        MicroAPI::RegTensor<T> yReg;
-        MicroAPI::RegTensor<T> zReg;
-        MicroAPI::RegTensor<T> zeroReg;
-        MicroAPI::RegTensor<T> sizeReg;
+        Reg::RegTensor<T> xReg;
+        Reg::RegTensor<T> yReg;
+        Reg::RegTensor<T> zReg;
+        Reg::RegTensor<T> zeroReg;
+        Reg::RegTensor<T> sizeReg;
 
-        MicroAPI::MaskReg mask;
-        MicroAPI::MaskReg calcMask;
+        Reg::MaskReg mask;
+        Reg::MaskReg calcMask;
 
         __VEC_SCOPE__
         {
-            MicroAPI::MaskReg scalarMaskReg = MicroAPI::CreateMask<T, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::Duplicate(zeroReg, digitZero, scalarMaskReg);
-            MicroAPI::Duplicate(sizeReg, rightShifts, scalarMaskReg);
+            Reg::MaskReg scalarMaskReg = Reg::CreateMask<T, Reg::MaskPattern::ALL>();
+            Reg::Duplicate(zeroReg, digitZero, scalarMaskReg);
+            Reg::Duplicate(sizeReg, rightShifts, scalarMaskReg);
 
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                mask = MicroAPI::UpdateMask<T, MicroAPI::RegTraitNumOne>(count);
-                MicroAPI::DataCopy(xReg, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
-                MicroAPI::DataCopy(yReg, (__ubuf__ T*)(src2Addr + loopIdx * vlSize));
+                mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
+                Reg::DataCopy(xReg, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
+                Reg::DataCopy(yReg, (__ubuf__ T*)(src2Addr + loopIdx * vlSize));
 
                 if constexpr (std::is_same_v<T, int64_t>) {
-                    MicroAPI::Compare<T, CMPMODE::GE>(calcMask, yReg, zeroReg, mask);
-                    MicroAPI::Select(yReg, yReg, zeroReg, calcMask);
-                    MicroAPI::ShiftRight(zReg, xReg, (MicroAPI::RegTensor<T>&)yReg, mask);
+                    Reg::Compare<T, CMPMODE::GE>(calcMask, yReg, zeroReg, mask);
+                    Reg::Select(yReg, yReg, zeroReg, calcMask);
+                    Reg::ShiftRight(zReg, xReg, (Reg::RegTensor<T>&)yReg, mask);
                 } else if constexpr (std::is_same_v<T, uint64_t>) {
-                    MicroAPI::Compare<T, CMPMODE::LE>(calcMask, yReg, sizeReg, mask);
-                    MicroAPI::Select(yReg, yReg, sizeReg, calcMask);
-                    MicroAPI::ShiftRight(zReg, xReg, (MicroAPI::RegTensor<int64_t>&)yReg, mask);
+                    Reg::Compare<T, CMPMODE::LE>(calcMask, yReg, sizeReg, mask);
+                    Reg::Select(yReg, yReg, sizeReg, calcMask);
+                    Reg::ShiftRight(zReg, xReg, (Reg::RegTensor<int64_t>&)yReg, mask);
                 }
-                MicroAPI::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), zReg, mask);
+                Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), zReg, mask);
             }
         }
 #endif

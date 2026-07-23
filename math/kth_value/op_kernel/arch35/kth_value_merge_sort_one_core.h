@@ -133,14 +133,13 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
     uint32_t alignSizeCopy = alignSize_;
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<int32_t> vciTensor;
-        MicroAPI::RegTensor<int32_t> indexTensor;
-        MicroAPI::Arange(vciTensor, 0);
+        Reg::RegTensor<int32_t> vciTensor;
+        Reg::RegTensor<int32_t> indexTensor;
+        Reg::Arange(vciTensor, 0);
         for (uint16_t i = 0; i < repeatTime; ++i) {
-            MicroAPI::MaskReg mask = MicroAPI::UpdateMask<uint32_t>(alignSizeCopy);
-            MicroAPI::Adds(indexTensor, vciTensor, i * vfLenB32, mask);
-            MicroAPI::DataCopy<int32_t, MicroAPI::PostLiteral::POST_MODE_UPDATE>(indexValuePtr, indexTensor, vfLenB32,
-                                                                                 mask);
+            Reg::MaskReg mask = Reg::UpdateMask<uint32_t>(alignSizeCopy);
+            Reg::Adds(indexTensor, vciTensor, i * vfLenB32, mask);
+            Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(indexValuePtr, indexTensor, vfLenB32, mask);
         }
     }
 }

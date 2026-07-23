@@ -24,14 +24,14 @@ using AscendC::LocalTensor;
 using AscendC::TBuf;
 using AscendC::TPipe;
 using AscendC::TQue;
-using AscendC::MicroAPI::MaskReg;
-using AscendC::MicroAPI::RegTensor;
+using AscendC::Reg::MaskReg;
+using AscendC::Reg::RegTensor;
 // x is bfloat16, y is bfloat16
 class FloorBf16 {
 public:
     __aicore__ inline FloorBf16(){};
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR y, GM_ADDR workspace, const FloorTilingData* tilingDataPtr, TPipe* pipePtr)
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, const FloorTilingData* tilingDataPtr,
+                                TPipe* pipePtr)
     {
         pipePtr_ = pipePtr;
         tilingDataPtr_ = tilingDataPtr;
@@ -89,18 +89,17 @@ private:
             __local_mem__ bfloat16_t* bufferIn0Addr = (__local_mem__ bfloat16_t*)bufferIn0_.GetPhyAddr();
             __local_mem__ bfloat16_t* bufferOut0Addr = (__local_mem__ bfloat16_t*)bufferOut0_.GetPhyAddr();
             for (uint16_t i = 0; i < vfLoopNum; i++) {
-                preg0 = AscendC::MicroAPI::UpdateMask<bfloat16_t>(size);
-                AscendC::MicroAPI::DataCopy<bfloat16_t, AscendC::MicroAPI::LoadDist::DIST_NORM>(
+                preg0 = AscendC::Reg::UpdateMask<bfloat16_t>(size);
+                AscendC::Reg::DataCopy<bfloat16_t, AscendC::Reg::LoadDist::DIST_NORM>(
                     vreg0, bufferIn0Addr + i * (AscendC::VECTOR_REG_WIDTH / sizeof(half)));
-                AscendC::MicroAPI::Truncate<
-                    bfloat16_t, AscendC::RoundMode::CAST_FLOOR, AscendC::MicroAPI::MaskMergeMode::ZEROING>(
-                    vreg1, vreg0, preg0);
-                AscendC::MicroAPI::Duplicate(vreg2, BF16_SIGN1, preg0);
-                AscendC::MicroAPI::Duplicate(vreg3, BF16_SIGN2, preg0);
-                AscendC::MicroAPI::And(vreg2, vreg2, (RegTensor<uint16_t>&)vreg0, preg0);
-                AscendC::MicroAPI::And(vreg3, vreg3, (RegTensor<uint16_t>&)vreg1, preg0);
-                AscendC::MicroAPI::Or(vreg3, vreg2, vreg3, preg0);
-                AscendC::MicroAPI::DataCopy<bfloat16_t, AscendC::MicroAPI::StoreDist::DIST_NORM_B16>(
+                AscendC::Reg::Truncate<bfloat16_t, AscendC::RoundMode::CAST_FLOOR,
+                                       AscendC::Reg::MaskMergeMode::ZEROING>(vreg1, vreg0, preg0);
+                AscendC::Reg::Duplicate(vreg2, BF16_SIGN1, preg0);
+                AscendC::Reg::Duplicate(vreg3, BF16_SIGN2, preg0);
+                AscendC::Reg::And(vreg2, vreg2, (RegTensor<uint16_t>&)vreg0, preg0);
+                AscendC::Reg::And(vreg3, vreg3, (RegTensor<uint16_t>&)vreg1, preg0);
+                AscendC::Reg::Or(vreg3, vreg2, vreg3, preg0);
+                AscendC::Reg::DataCopy<bfloat16_t, AscendC::Reg::StoreDist::DIST_NORM_B16>(
                     bufferOut0Addr + i * (AscendC::VECTOR_REG_WIDTH / sizeof(half)), (RegTensor<bfloat16_t>&)vreg3,
                     preg0);
             }
@@ -130,9 +129,9 @@ private:
     TQue<AscendC::QuePosition::VECOUT, 1> queOut0_;
     LocalTensor<bfloat16_t> bufferIn0_;
     LocalTensor<bfloat16_t> bufferOut0_;
-    constexpr static AscendC::MicroAPI::CastTrait castTrait0 = {
-        AscendC::MicroAPI::RegLayout::UNKNOWN, AscendC::MicroAPI::SatMode::NO_SAT,
-        AscendC::MicroAPI::MaskMergeMode::ZEROING, AscendC::RoundMode::CAST_FLOOR};
+    constexpr static AscendC::Reg::CastTrait castTrait0 = {
+        AscendC::Reg::RegLayout::UNKNOWN, AscendC::Reg::SatMode::NO_SAT, AscendC::Reg::MaskMergeMode::ZEROING,
+        AscendC::RoundMode::CAST_FLOOR};
 };
 
 } // namespace Floor

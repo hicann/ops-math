@@ -41,59 +41,61 @@ constexpr int32_t ConstTwo = 2;
 
 template <typename T>
 struct RoundIntCustom : public Vec::ElemwiseTernaryOP<T, T, T, T> {
-    __aicore__ inline RoundIntCustom(LocalTensor<T> &dst, LocalTensor<T> &src, LocalTensor<T> &abs, 
-                                     const T& power,  uint32_t count) {
+    __aicore__ inline RoundIntCustom(LocalTensor<T>& dst, LocalTensor<T>& src, LocalTensor<T>& abs, const T& power,
+                                     uint32_t count)
+    {
 #ifdef __CCE_AICORE__
         uint32_t vl = VECTOR_REG_WIDTH / sizeof(T);
         uint16_t loopNum = (count + vl - 1) / vl;
         __ubuf__ T* srcAddr = (__ubuf__ T*)src.GetPhyAddr();
         __ubuf__ T* absAddr = (__ubuf__ T*)abs.GetPhyAddr();
         __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
-        
-        MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregInput;
-        MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregPow;
-        MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregDupZero;
-        MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregDupOne;
-        MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregDiv;
-        MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregMul;
-        MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregReUse;
-        MicroAPI::MaskReg mask;
-        MicroAPI::MaskReg cmpMaskReg0;
-        MicroAPI::MaskReg cmpMaskReg1;
-        if constexpr(std::is_same_v<T, int32_t>) {
-            __VEC_SCOPE__ {
-                MicroAPI::Duplicate(vregDupZero, ConstZero);
-                MicroAPI::Duplicate(vregDupOne, ConstOne);
-                MicroAPI::Duplicate(vregPow, power);
+
+        Reg::RegTensor<T, Reg::RegTraitNumOne> vregInput;
+        Reg::RegTensor<T, Reg::RegTraitNumOne> vregPow;
+        Reg::RegTensor<T, Reg::RegTraitNumOne> vregDupZero;
+        Reg::RegTensor<T, Reg::RegTraitNumOne> vregDupOne;
+        Reg::RegTensor<T, Reg::RegTraitNumOne> vregDiv;
+        Reg::RegTensor<T, Reg::RegTraitNumOne> vregMul;
+        Reg::RegTensor<T, Reg::RegTraitNumOne> vregReUse;
+        Reg::MaskReg mask;
+        Reg::MaskReg cmpMaskReg0;
+        Reg::MaskReg cmpMaskReg1;
+        if constexpr (std::is_same_v<T, int32_t>) {
+            __VEC_SCOPE__
+            {
+                Reg::Duplicate(vregDupZero, ConstZero);
+                Reg::Duplicate(vregDupOne, ConstOne);
+                Reg::Duplicate(vregPow, power);
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                    mask = MicroAPI::UpdateMask<T, MicroAPI::RegTraitNumOne>(count);
+                    mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    MicroAPI::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vl));
-                    MicroAPI::DataCopy(vregReUse, (__ubuf__ T*)(absAddr + loopIdx * vl));
-                    
-                    MicroAPI::Div(vregDiv, vregReUse, vregPow, mask);
-                    MicroAPI::Mul(vregMul, vregDiv, vregPow, mask);
-                    MicroAPI::Sub(vregReUse, vregReUse, vregMul, mask);
-                    MicroAPI::Muls(vregMul, vregReUse, ConstTwo, mask);
-                    
+                    Reg::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vl));
+                    Reg::DataCopy(vregReUse, (__ubuf__ T*)(absAddr + loopIdx * vl));
+
+                    Reg::Div(vregDiv, vregReUse, vregPow, mask);
+                    Reg::Mul(vregMul, vregDiv, vregPow, mask);
+                    Reg::Sub(vregReUse, vregReUse, vregMul, mask);
+                    Reg::Muls(vregMul, vregReUse, ConstTwo, mask);
+
                     // + 1
-                    MicroAPI::CompareScalar<T, CMPMODE::EQ>(cmpMaskReg0, vregMul, power, mask);
-                    MicroAPI::And(vregReUse, vregDiv, vregDupOne, mask);
-                    MicroAPI::CompareScalar<T, CMPMODE::EQ>(cmpMaskReg1, vregReUse, ConstOne, mask);
-                    MicroAPI::MaskAnd(cmpMaskReg0, cmpMaskReg0, cmpMaskReg1, mask);
-                    MicroAPI::CompareScalar<T, CMPMODE::GT>(cmpMaskReg1, vregMul, power, mask);
-                    MicroAPI::MaskOr(cmpMaskReg0, cmpMaskReg0, cmpMaskReg1, mask);
-                    MicroAPI::Select(vregMul, vregDupOne, vregDupZero, cmpMaskReg0);
-                    MicroAPI::Add(vregMul, vregDiv, vregMul, mask);
-                    
-                    MicroAPI::CompareScalar<T, CMPMODE::LT>(cmpMaskReg0, vregInput, ConstZero, mask);
-                    MicroAPI::Neg(vregReUse, vregDupOne, mask);
-                    MicroAPI::Select(vregDiv, vregReUse, vregDupOne, cmpMaskReg0);
-                    MicroAPI::Mul(vregMul, vregMul, vregDiv, mask);
-                    MicroAPI::Mul(vregReUse, vregMul, vregPow, mask);
-                    
+                    Reg::CompareScalar<T, CMPMODE::EQ>(cmpMaskReg0, vregMul, power, mask);
+                    Reg::And(vregReUse, vregDiv, vregDupOne, mask);
+                    Reg::CompareScalar<T, CMPMODE::EQ>(cmpMaskReg1, vregReUse, ConstOne, mask);
+                    Reg::MaskAnd(cmpMaskReg0, cmpMaskReg0, cmpMaskReg1, mask);
+                    Reg::CompareScalar<T, CMPMODE::GT>(cmpMaskReg1, vregMul, power, mask);
+                    Reg::MaskOr(cmpMaskReg0, cmpMaskReg0, cmpMaskReg1, mask);
+                    Reg::Select(vregMul, vregDupOne, vregDupZero, cmpMaskReg0);
+                    Reg::Add(vregMul, vregDiv, vregMul, mask);
+
+                    Reg::CompareScalar<T, CMPMODE::LT>(cmpMaskReg0, vregInput, ConstZero, mask);
+                    Reg::Neg(vregReUse, vregDupOne, mask);
+                    Reg::Select(vregDiv, vregReUse, vregDupOne, cmpMaskReg0);
+                    Reg::Mul(vregMul, vregMul, vregDiv, mask);
+                    Reg::Mul(vregReUse, vregMul, vregPow, mask);
+
                     // OpCopyOut
-                    MicroAPI::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vl), (MicroAPI::RegTensor<T> &)vregReUse, mask);
+                    Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vl), (Reg::RegTensor<T>&)vregReUse, mask);
                 }
             }
         }
@@ -101,50 +103,53 @@ struct RoundIntCustom : public Vec::ElemwiseTernaryOP<T, T, T, T> {
     }
 };
 
-template<class T>
+template <class T>
 struct RoundCustom : public Vec::ElemwiseUnaryOP<T, T> {
-    __aicore__ inline RoundCustom(LocalTensor<T> &dst, LocalTensor<T> &src, uint32_t count) {
+    __aicore__ inline RoundCustom(LocalTensor<T>& dst, LocalTensor<T>& src, uint32_t count)
+    {
 #ifdef __CCE_AICORE__
         uint32_t vl = VECTOR_REG_WIDTH / sizeof(T);
         uint16_t loopNum = (count + vl - 1) / vl;
         __ubuf__ T* srcAddr = (__ubuf__ T*)src.GetPhyAddr();
         __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
 
-        MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregInput;
-        MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregOutput;
-        MicroAPI::MaskReg mask;
-        if constexpr(std::is_same_v<T, float>) {
-            MicroAPI::RegTensor<uint32_t, MicroAPI::RegTraitNumOne> vregOutInt;
-            __VEC_SCOPE__ {
+        Reg::RegTensor<T, Reg::RegTraitNumOne> vregInput;
+        Reg::RegTensor<T, Reg::RegTraitNumOne> vregOutput;
+        Reg::MaskReg mask;
+        if constexpr (std::is_same_v<T, float>) {
+            Reg::RegTensor<uint32_t, Reg::RegTraitNumOne> vregOutInt;
+            __VEC_SCOPE__
+            {
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                    mask = MicroAPI::UpdateMask<T, MicroAPI::RegTraitNumOne>(count);
+                    mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    MicroAPI::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vl));
+                    Reg::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vl));
 
-                    MicroAPI::Truncate<T, RoundMode::CAST_RINT, MicroAPI::MaskMergeMode::ZEROING>(vregOutput, vregInput, mask);
-                    MicroAPI::Duplicate(vregOutInt, UINT32_SIGN, mask);
-                    MicroAPI::And(vregOutInt, vregOutInt, (MicroAPI::RegTensor<uint32_t> &)vregInput, mask);
-                    MicroAPI::Or(vregOutInt, vregOutInt, (MicroAPI::RegTensor<uint32_t> &)vregOutput, mask);
+                    Reg::Truncate<T, RoundMode::CAST_RINT, Reg::MaskMergeMode::ZEROING>(vregOutput, vregInput, mask);
+                    Reg::Duplicate(vregOutInt, UINT32_SIGN, mask);
+                    Reg::And(vregOutInt, vregOutInt, (Reg::RegTensor<uint32_t>&)vregInput, mask);
+                    Reg::Or(vregOutInt, vregOutInt, (Reg::RegTensor<uint32_t>&)vregOutput, mask);
 
                     // OpCopyOut
-                    MicroAPI::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vl), (MicroAPI::RegTensor<T> &)vregOutInt, mask);
+                    Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vl), (Reg::RegTensor<T>&)vregOutInt, mask);
                 }
             }
         } else {
-            MicroAPI::RegTensor<uint16_t, MicroAPI::RegTraitNumOne> vregOutInt;
-            __VEC_SCOPE__ {
+            Reg::RegTensor<uint16_t, Reg::RegTraitNumOne> vregOutInt;
+            __VEC_SCOPE__
+            {
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                    mask = MicroAPI::UpdateMask<T, MicroAPI::RegTraitNumOne>(count);
+                    mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    MicroAPI::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vl));
+                    Reg::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vl));
 
-                    MicroAPI::Truncate<T, RoundMode::CAST_RINT, MicroAPI::MaskMergeMode::ZEROING>(vregOutput, vregInput, mask);
-                    MicroAPI::Duplicate(vregOutInt, UINT16_SIGN, mask);
-                    MicroAPI::And(vregOutInt, vregOutInt, (MicroAPI::RegTensor<uint16_t> &)vregInput, mask);
-                    MicroAPI::Or(vregOutInt, vregOutInt, (MicroAPI::RegTensor<uint16_t> &)vregOutput, mask);
+                    Reg::Truncate<T, RoundMode::CAST_RINT, Reg::MaskMergeMode::ZEROING>(vregOutput, vregInput, mask);
+                    Reg::Duplicate(vregOutInt, UINT16_SIGN, mask);
+                    Reg::And(vregOutInt, vregOutInt, (Reg::RegTensor<uint16_t>&)vregInput, mask);
+                    Reg::Or(vregOutInt, vregOutInt, (Reg::RegTensor<uint16_t>&)vregOutput, mask);
 
                     // OpCopyOut
-                    MicroAPI::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vl), (MicroAPI::RegTensor<T> &)vregOutInt, mask);
+                    Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vl), (Reg::RegTensor<T>&)vregOutInt, mask);
                 }
             }
         }
@@ -184,7 +189,7 @@ struct RoundIntNegativeDecimalsInf {
     using OpCompareGreaterThanNum = Bind<Vec::Compare<uint8_t, U, COMPARE_MODE_GT>, OpAbs, Placeholder::Var<U, 1>>;
     using OpCompareEqualMin = Bind<Vec::Compare<uint8_t, U, COMPARE_MODE_EQ>, OpCopyIn0, ConstValueMin>;
     using OpMaskOr = Bind<Vec::Or<uint8_t>, OpCompareGreaterThanNum, OpCompareEqualMin>;
-    
+
     using OpSelect = Bind<Vec::Select<uint8_t, U, SELECT_MODE_VS>, OpMaskOr, ConstValueMin, OpRes>;
 
     using OpCopyOut = Bind<Vec::CopyOut<U>, Placeholder::Out0<U>, OpSelect>;
@@ -231,16 +236,16 @@ struct RoundIntNegativeDecimalsNine {
     using OpSelect = Bind<Vec::Select<uint8_t, U, SELECT_MODE_VS>, OpCompareLowerThanZero, ConstValueNegOne, OpDupOne>;
     using OpAbs = Bind<Vec::Abs<U>, OpCopyIn0>;
 
-    //0~500000000          = 0
-    //500000001~1499999999 = 1000000000
-    //1500000000~          = 2000000000
+    // 0~500000000          = 0
+    // 500000001~1499999999 = 1000000000
+    // 1500000000~          = 2000000000
     using OpCompareGreaterThan5Y = Bind<Vec::Compare<uint8_t, U, COMPARE_MODE_GT>, OpAbs, ConstValue5Y>;
     using OpSelect2 = Bind<Vec::Select<uint8_t, U, SELECT_MODE_VS>, OpCompareGreaterThan5Y, ConstValue10Y, OpDupZero>;
     using OpCompareGreaterEqual15Y = Bind<Vec::Compare<uint8_t, U, COMPARE_MODE_GE>, OpAbs, ConstValue15Y>;
     using OpSelect3 = Bind<Vec::Select<uint8_t, U, SELECT_MODE_VS>, OpCompareGreaterEqual15Y, ConstValue20Y, OpSelect2>;
     using OpMul = Bind<Vec::Mul<U>, OpSelect, OpSelect3>;
 
-    using OpCompareEqualMin = Bind<Vec::Compare<uint8_t, U, COMPARE_MODE_EQ>, OpCopyIn0, ConstValueMin>;    
+    using OpCompareEqualMin = Bind<Vec::Compare<uint8_t, U, COMPARE_MODE_EQ>, OpCopyIn0, ConstValueMin>;
     using OpSelect4 = Bind<Vec::Select<uint8_t, U, SELECT_MODE_VS>, OpCompareEqualMin, ConstValueNeg20Y, OpMul>;
 
     using OpCopyOut = Bind<Vec::CopyOut<U>, Placeholder::Out0<U>, OpSelect4>;
@@ -312,4 +317,4 @@ struct RoundNegativeDecimals {
 
 } // namespace RoundDag
 
-#endif  // CANN_CUSTOM_OPS_ROUND_DAG_H
+#endif // CANN_CUSTOM_OPS_ROUND_DAG_H

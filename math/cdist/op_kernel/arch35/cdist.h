@@ -27,7 +27,6 @@ namespace NsCdist {
 
 using namespace AscendC;
 
-
 template <typename T>
 class Cdist {
 public:
@@ -44,20 +43,28 @@ private:
     __aicore__ inline void CastXToB32();
     __aicore__ inline void Compute();
     __aicore__ inline void ComputeSplitM();
-    __aicore__ inline void ProcessSplitM(uint32_t bOffset, uint32_t pOffset, uint32_t rOffsetBlock, uint32_t blockFactorR);
-    __aicore__ inline void ProcessNoSplitM(uint32_t bOffset, uint32_t pOffset, uint32_t rOffsetBlock, uint32_t blockFactorR);
+    __aicore__ inline void ProcessSplitM(uint32_t bOffset, uint32_t pOffset, uint32_t rOffsetBlock,
+                                         uint32_t blockFactorR);
+    __aicore__ inline void ProcessNoSplitM(uint32_t bOffset, uint32_t pOffset, uint32_t rOffsetBlock,
+                                           uint32_t blockFactorR);
     __aicore__ inline void CalSplitMResult(int32_t processNum);
-    __aicore__ inline void ComputeOneSize(__local_mem__ float *srcPtrX1, __local_mem__ float *srcPtrX2, __local_mem__ float *dstPtr);
+    __aicore__ inline void ComputeOneSize(__local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
+                                          __local_mem__ float* dstPtr);
     __aicore__ inline void ComputePNorm2(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-        __local_mem__ float *srcPtrX1, __local_mem__ float *srcPtrX2, __local_mem__ float *dstPtr);
+                                         __local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
+                                         __local_mem__ float* dstPtr);
     __aicore__ inline void ComputePNorm1(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-        __local_mem__ float *srcPtrX1, __local_mem__ float *srcPtrX2, __local_mem__ float *dstPtr);
+                                         __local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
+                                         __local_mem__ float* dstPtr);
     __aicore__ inline void ComputePNorm0(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-        __local_mem__ float *srcPtrX1, __local_mem__ float *srcPtrX2, __local_mem__ float *dstPtr);
+                                         __local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
+                                         __local_mem__ float* dstPtr);
     __aicore__ inline void ComputePNormInf(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-        __local_mem__ float *srcPtrX1, __local_mem__ float *srcPtrX2, __local_mem__ float *dstPtr);
+                                           __local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
+                                           __local_mem__ float* dstPtr);
     __aicore__ inline void ComputePNormOther(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-        __local_mem__ float *srcPtrX1, __local_mem__ float *srcPtrX2, __local_mem__ float *dstPtr);
+                                             __local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
+                                             __local_mem__ float* dstPtr);
 
 private:
     constexpr static int32_t BUFFER_NUM = 2;
@@ -143,8 +150,7 @@ __aicore__ inline void Cdist<T>::Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, const C
     yGM_.SetGlobalBuffer((__gm__ T*)y);
     if (ubLoopNumM_ == 1) {
         ubFactorMAlign_ = ((ubFactorM_ * sizeof(T) + BLOCK_SIZE - 1) / BLOCK_SIZE * BLOCK_SIZE) / sizeof(T);
-    }
-    else {
+    } else {
         ubFactorMAlign_ = ubFactorM_;
     }
     ubFactorRAlign_ = ((ubFactorR_ * sizeof(T) + BLOCK_SIZE - 1) / BLOCK_SIZE * BLOCK_SIZE) / sizeof(T);
@@ -211,7 +217,8 @@ __aicore__ inline void Cdist<T>::CopyInX1(uint32_t Offset)
 {
     LocalTensor<T> x1Local = x1Queue_.AllocTensor<T>();
     copyInParamsX1_.blockCount = static_cast<uint16_t>(pSize_);
-    copyInParamsX1_.blockLen = (ubLoopNumM_ == 1) ? static_cast<uint32_t>(M_ * sizeof(T)) : static_cast<uint32_t>(mSize_ * sizeof(T)); // unit Byte
+    copyInParamsX1_.blockLen = (ubLoopNumM_ == 1) ? static_cast<uint32_t>(M_ * sizeof(T)) :
+                                                    static_cast<uint32_t>(mSize_ * sizeof(T));             // unit Byte
     copyInParamsX1_.srcStride = (ubLoopNumM_ == 1) ? 0 : static_cast<uint32_t>((M_ - mSize_) * sizeof(T)); // unit Byte
     copyInParamsX1_.dstStride = 0; // unit block(32byte)
     loopParamX1_.loop1Size = static_cast<uint32_t>(bSize_);
@@ -221,7 +228,7 @@ __aicore__ inline void Cdist<T>::CopyInX1(uint32_t Offset)
     loopParamX1_.loop1DstStride = static_cast<uint64_t>((pSize_ * MAlign_) * sizeof(T));
     loopParamX1_.loop2DstStride = 0;
     SetLoopModePara(loopParamX1_, DataCopyMVType::OUT_TO_UB);
-    DataCopyPad(x1Local,x1GM_[Offset],copyInParamsX1_,padParams_);
+    DataCopyPad(x1Local, x1GM_[Offset], copyInParamsX1_, padParams_);
     ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
     x1Queue_.EnQue(x1Local);
 }
@@ -231,7 +238,8 @@ __aicore__ inline void Cdist<T>::CopyInX2(uint32_t Offset)
 {
     LocalTensor<T> x2Local = x2Queue_.AllocTensor<T>();
     copyInParamsX2_.blockCount = static_cast<uint16_t>(rSize_);
-    copyInParamsX2_.blockLen = (ubLoopNumM_ == 1) ? static_cast<uint32_t>(M_ * sizeof(T)) : static_cast<uint32_t>(mSize_ * sizeof(T)); // unit Byte
+    copyInParamsX2_.blockLen = (ubLoopNumM_ == 1) ? static_cast<uint32_t>(M_ * sizeof(T)) :
+                                                    static_cast<uint32_t>(mSize_ * sizeof(T));             // unit Byte
     copyInParamsX2_.srcStride = (ubLoopNumM_ == 1) ? 0 : static_cast<uint32_t>((M_ - mSize_) * sizeof(T)); // unit Byte
     copyInParamsX2_.dstStride = 0; // unit block(32byte)
     loopParamX2_.loop1Size = static_cast<uint32_t>(bSize_);
@@ -241,7 +249,7 @@ __aicore__ inline void Cdist<T>::CopyInX2(uint32_t Offset)
     loopParamX2_.loop1DstStride = static_cast<uint64_t>((rSize_ * MAlign_) * sizeof(T));
     loopParamX2_.loop2DstStride = 0;
     SetLoopModePara(loopParamX2_, DataCopyMVType::OUT_TO_UB);
-    DataCopyPad(x2Local,x2GM_[Offset],copyInParamsX2_,padParams_);
+    DataCopyPad(x2Local, x2GM_[Offset], copyInParamsX2_, padParams_);
     ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
     x2Queue_.EnQue(x2Local);
 }
@@ -316,9 +324,9 @@ __aicore__ inline void Cdist<T>::Compute()
         x2Local = x2Queue_.DeQue<T>();
         yFp32_ = yQueue_.DeQue<float>();
     }
-    auto *srcPtrX1 = (__local_mem__ float *)x1Local.GetPhyAddr();
-    auto *srcPtrX2 = (__local_mem__ float *)x2Local.GetPhyAddr();
-    auto *dstPtr = (__local_mem__ float *)yFp32_.GetPhyAddr();
+    auto* srcPtrX1 = (__local_mem__ float*)x1Local.GetPhyAddr();
+    auto* srcPtrX2 = (__local_mem__ float*)x2Local.GetPhyAddr();
+    auto* dstPtr = (__local_mem__ float*)yFp32_.GetPhyAddr();
     ComputeOneSize(srcPtrX1, srcPtrX2, dstPtr);
     if constexpr (sizeof(T) != sizeof(float)) {
         yCastQueue_.EnQue(yFp32_);
@@ -347,9 +355,9 @@ __aicore__ inline void Cdist<T>::ComputeSplitM()
         yFp32_ = yQueue_.DeQue<float>();
     }
     tmpLocal_ = tmpQueue_.DeQue<float>();
-    auto *dstPtr = (__local_mem__ float *)tmpLocal_.GetPhyAddr();
-    auto *srcPtrX1 = (__local_mem__ float *)x1LocalSplitM.GetPhyAddr();
-    auto *srcPtrX2 = (__local_mem__ float *)x2LocalSplitM.GetPhyAddr();
+    auto* dstPtr = (__local_mem__ float*)tmpLocal_.GetPhyAddr();
+    auto* srcPtrX1 = (__local_mem__ float*)x1LocalSplitM.GetPhyAddr();
+    auto* srcPtrX2 = (__local_mem__ float*)x2LocalSplitM.GetPhyAddr();
     ComputeOneSize(srcPtrX1, srcPtrX2, dstPtr);
     if (p_ == static_cast<float>(INFINITY)) {
         Max(yFp32_, tmpLocal_, yFp32_, processNum);
@@ -369,12 +377,13 @@ __aicore__ inline void Cdist<T>::ComputeSplitM()
 }
 
 template <typename T>
-__aicore__ inline void Cdist<T>::ComputeOneSize(__local_mem__ float *srcPtrX1, __local_mem__ float *srcPtrX2, __local_mem__ float *dstPtr)
+__aicore__ inline void Cdist<T>::ComputeOneSize(__local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
+                                                __local_mem__ float* dstPtr)
 {
     uint16_t M = (ubLoopNumM_ == 1) ? M_ : mSize_;
     uint16_t loopNumM = M / vlLen_;
     uint32_t tailNumM = M - vlLen_ * loopNumM;
-    for(uint32_t b = 0; b < bSize_; b++){
+    for (uint32_t b = 0; b < bSize_; b++) {
         for (uint32_t p = 0; p < pSize_; p++) {
             for (uint32_t r = 0; r < rSize_; r++) {
                 if (p_ == 2.0f) {
@@ -395,258 +404,268 @@ __aicore__ inline void Cdist<T>::ComputeOneSize(__local_mem__ float *srcPtrX1, _
 
 template <typename T>
 __aicore__ inline void Cdist<T>::ComputePNorm2(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-    __local_mem__ float *srcPtrX1, __local_mem__ float *srcPtrX2, __local_mem__ float *dstPtr)
+                                               __local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
+                                               __local_mem__ float* dstPtr)
 {
     uint32_t maksTailNumNorm2 = tailNumM;
     uint32_t maskOneNumNorm2 = BASE_ONE;
-    __local_mem__ float * yOffsetNorm2 = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
+    __local_mem__ float* yOffsetNorm2 = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<float> x1RegNorm2;
-        MicroAPI::RegTensor<float> x2RegNorm2;
-        MicroAPI::RegTensor<float> subRegNorm2;
-        MicroAPI::RegTensor<float> mulRegNorm2;
-        MicroAPI::RegTensor<float> sumRegNorm2;
-        MicroAPI::RegTensor<float> resultRegNorm2;
-        MicroAPI::RegTensor<float> dstRegNorm2;
-        MicroAPI::MaskReg maskAllNorm2 = MicroAPI::CreateMask<float, MicroAPI::MaskPattern::ALL>();
-        MicroAPI::MaskReg maskTailNorm2;
-        MicroAPI::MaskReg maskOneNorm2;
-        MicroAPI::UnalignRegForStore uRegNorm2;
-        maskTailNorm2 = MicroAPI::UpdateMask<float>(maksTailNumNorm2);
-        maskOneNorm2 = MicroAPI::UpdateMask<float>(maskOneNumNorm2);
-        static constexpr MicroAPI::SqrtSpecificMode modesqrt = {MicroAPI::MaskMergeMode::ZEROING, true, SqrtAlgo::PRECISION_0ULP_FTZ_FALSE};
-        MicroAPI::Duplicate(dstRegNorm2, (float)0);
+        Reg::RegTensor<float> x1RegNorm2;
+        Reg::RegTensor<float> x2RegNorm2;
+        Reg::RegTensor<float> subRegNorm2;
+        Reg::RegTensor<float> mulRegNorm2;
+        Reg::RegTensor<float> sumRegNorm2;
+        Reg::RegTensor<float> resultRegNorm2;
+        Reg::RegTensor<float> dstRegNorm2;
+        Reg::MaskReg maskAllNorm2 = Reg::CreateMask<float, Reg::MaskPattern::ALL>();
+        Reg::MaskReg maskTailNorm2;
+        Reg::MaskReg maskOneNorm2;
+        Reg::UnalignRegForStore uRegNorm2;
+        maskTailNorm2 = Reg::UpdateMask<float>(maksTailNumNorm2);
+        maskOneNorm2 = Reg::UpdateMask<float>(maskOneNumNorm2);
+        static constexpr Reg::SqrtSpecificMode modesqrt = {Reg::MaskMergeMode::ZEROING, true,
+                                                           SqrtAlgo::PRECISION_0ULP_FTZ_FALSE};
+        Reg::Duplicate(dstRegNorm2, (float)0);
         for (uint16_t m = 0; m < loopNumM; m++) {
-            __local_mem__ float * x1OffsetNorm2 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
-            __local_mem__ float * x2OffsetNorm2 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
-            MicroAPI::LoadAlign(x1RegNorm2, x1OffsetNorm2);
-            MicroAPI::LoadAlign(x2RegNorm2, x2OffsetNorm2);
-            MicroAPI::Sub(subRegNorm2, x1RegNorm2, x2RegNorm2, maskAllNorm2);
-            MicroAPI::Mul(mulRegNorm2, subRegNorm2, subRegNorm2, maskAllNorm2);
-            MicroAPI::ReduceSum(sumRegNorm2, mulRegNorm2, maskAllNorm2);
-            MicroAPI::Add(dstRegNorm2, dstRegNorm2, sumRegNorm2, maskOneNorm2);
+            __local_mem__ float* x1OffsetNorm2 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
+            __local_mem__ float* x2OffsetNorm2 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
+            Reg::LoadAlign(x1RegNorm2, x1OffsetNorm2);
+            Reg::LoadAlign(x2RegNorm2, x2OffsetNorm2);
+            Reg::Sub(subRegNorm2, x1RegNorm2, x2RegNorm2, maskAllNorm2);
+            Reg::Mul(mulRegNorm2, subRegNorm2, subRegNorm2, maskAllNorm2);
+            Reg::ReduceSum(sumRegNorm2, mulRegNorm2, maskAllNorm2);
+            Reg::Add(dstRegNorm2, dstRegNorm2, sumRegNorm2, maskOneNorm2);
         }
-        __local_mem__ float * x1OffsetNorm2 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
-        __local_mem__ float * x2OffsetNorm2 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
-        MicroAPI::LoadAlign(x1RegNorm2, x1OffsetNorm2);
-        MicroAPI::LoadAlign(x2RegNorm2, x2OffsetNorm2);
-        MicroAPI::Sub(subRegNorm2, x1RegNorm2, x2RegNorm2, maskTailNorm2);
-        MicroAPI::Mul(mulRegNorm2, subRegNorm2, subRegNorm2, maskTailNorm2);
-        MicroAPI::ReduceSum(sumRegNorm2, mulRegNorm2, maskTailNorm2);
-        MicroAPI::Add(dstRegNorm2, dstRegNorm2, sumRegNorm2, maskOneNorm2);
+        __local_mem__ float* x1OffsetNorm2 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
+        __local_mem__ float* x2OffsetNorm2 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
+        Reg::LoadAlign(x1RegNorm2, x1OffsetNorm2);
+        Reg::LoadAlign(x2RegNorm2, x2OffsetNorm2);
+        Reg::Sub(subRegNorm2, x1RegNorm2, x2RegNorm2, maskTailNorm2);
+        Reg::Mul(mulRegNorm2, subRegNorm2, subRegNorm2, maskTailNorm2);
+        Reg::ReduceSum(sumRegNorm2, mulRegNorm2, maskTailNorm2);
+        Reg::Add(dstRegNorm2, dstRegNorm2, sumRegNorm2, maskOneNorm2);
         if (ubLoopNumM_ == 1) {
-            MicroAPI::Sqrt<float, &modesqrt>(resultRegNorm2, dstRegNorm2, maskOneNorm2);
-            MicroAPI::StoreUnAlign(yOffsetNorm2, resultRegNorm2, uRegNorm2, BASE_ONE);
+            Reg::Sqrt<float, &modesqrt>(resultRegNorm2, dstRegNorm2, maskOneNorm2);
+            Reg::StoreUnAlign(yOffsetNorm2, resultRegNorm2, uRegNorm2, BASE_ONE);
         } else {
-            MicroAPI::StoreUnAlign(yOffsetNorm2, dstRegNorm2, uRegNorm2, BASE_ONE);
+            Reg::StoreUnAlign(yOffsetNorm2, dstRegNorm2, uRegNorm2, BASE_ONE);
         }
-        MicroAPI::StoreUnAlignPost(yOffsetNorm2, uRegNorm2, 0);
+        Reg::StoreUnAlignPost(yOffsetNorm2, uRegNorm2, 0);
     }
 }
 
 template <typename T>
 __aicore__ inline void Cdist<T>::ComputePNorm1(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-    __local_mem__ float *srcPtrX1, __local_mem__ float *srcPtrX2, __local_mem__ float *dstPtr)
+                                               __local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
+                                               __local_mem__ float* dstPtr)
 {
-    uint32_t maksTailNumNorm1= tailNumM;
+    uint32_t maksTailNumNorm1 = tailNumM;
     uint32_t maskOneNumNorm1 = BASE_ONE;
-    __local_mem__ float * yOffsetNorm1 = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
+    __local_mem__ float* yOffsetNorm1 = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<float> x1RegNorm1;
-        MicroAPI::RegTensor<float> x2RegNorm1;
-        MicroAPI::RegTensor<float> subRegNorm1;
-        MicroAPI::RegTensor<float> absRegNorm1;
-        MicroAPI::RegTensor<float> sumRegNorm1;
-        MicroAPI::RegTensor<float> dstRegNorm1;
-        MicroAPI::MaskReg maskAllNorm1 = MicroAPI::CreateMask<float, MicroAPI::MaskPattern::ALL>();
-        MicroAPI::MaskReg maskTailNorm1;
-        MicroAPI::MaskReg maskOneNorm1;
-        MicroAPI::UnalignRegForStore uRegNorm1;
-        maskTailNorm1 = MicroAPI::UpdateMask<float>(maksTailNumNorm1);
-        maskOneNorm1 = MicroAPI::UpdateMask<float>(maskOneNumNorm1);
-        MicroAPI::Duplicate(dstRegNorm1, (float)0 );
+        Reg::RegTensor<float> x1RegNorm1;
+        Reg::RegTensor<float> x2RegNorm1;
+        Reg::RegTensor<float> subRegNorm1;
+        Reg::RegTensor<float> absRegNorm1;
+        Reg::RegTensor<float> sumRegNorm1;
+        Reg::RegTensor<float> dstRegNorm1;
+        Reg::MaskReg maskAllNorm1 = Reg::CreateMask<float, Reg::MaskPattern::ALL>();
+        Reg::MaskReg maskTailNorm1;
+        Reg::MaskReg maskOneNorm1;
+        Reg::UnalignRegForStore uRegNorm1;
+        maskTailNorm1 = Reg::UpdateMask<float>(maksTailNumNorm1);
+        maskOneNorm1 = Reg::UpdateMask<float>(maskOneNumNorm1);
+        Reg::Duplicate(dstRegNorm1, (float)0);
         for (uint16_t m = 0; m < loopNumM; m++) {
-            __local_mem__ float * x1OffsetNorm1 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
-            __local_mem__ float * x2OffsetNorm1 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
-            MicroAPI::LoadAlign(x1RegNorm1, x1OffsetNorm1);
-            MicroAPI::LoadAlign(x2RegNorm1, x2OffsetNorm1);
-            MicroAPI::Sub(subRegNorm1, x1RegNorm1, x2RegNorm1, maskAllNorm1);
-            MicroAPI::Abs(absRegNorm1, subRegNorm1, maskAllNorm1);
-            MicroAPI::ReduceSum(sumRegNorm1, absRegNorm1, maskAllNorm1);
-            MicroAPI::Add(dstRegNorm1, dstRegNorm1, sumRegNorm1, maskOneNorm1);
+            __local_mem__ float* x1OffsetNorm1 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
+            __local_mem__ float* x2OffsetNorm1 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
+            Reg::LoadAlign(x1RegNorm1, x1OffsetNorm1);
+            Reg::LoadAlign(x2RegNorm1, x2OffsetNorm1);
+            Reg::Sub(subRegNorm1, x1RegNorm1, x2RegNorm1, maskAllNorm1);
+            Reg::Abs(absRegNorm1, subRegNorm1, maskAllNorm1);
+            Reg::ReduceSum(sumRegNorm1, absRegNorm1, maskAllNorm1);
+            Reg::Add(dstRegNorm1, dstRegNorm1, sumRegNorm1, maskOneNorm1);
         }
-        __local_mem__ float * x1OffsetNorm1 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
-        __local_mem__ float * x2OffsetNorm1 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
-        MicroAPI::LoadAlign(x1RegNorm1, x1OffsetNorm1);
-        MicroAPI::LoadAlign(x2RegNorm1, x2OffsetNorm1);
-        MicroAPI::Sub(subRegNorm1, x1RegNorm1, x2RegNorm1, maskTailNorm1);
-        MicroAPI::Abs(absRegNorm1, subRegNorm1, maskTailNorm1);
-        MicroAPI::ReduceSum(sumRegNorm1, absRegNorm1, maskTailNorm1);
-        MicroAPI::Add(dstRegNorm1, dstRegNorm1, sumRegNorm1, maskOneNorm1);
-        MicroAPI::StoreUnAlign(yOffsetNorm1, dstRegNorm1, uRegNorm1, BASE_ONE);
-        MicroAPI::StoreUnAlignPost(yOffsetNorm1, uRegNorm1, 0);
+        __local_mem__ float* x1OffsetNorm1 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
+        __local_mem__ float* x2OffsetNorm1 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
+        Reg::LoadAlign(x1RegNorm1, x1OffsetNorm1);
+        Reg::LoadAlign(x2RegNorm1, x2OffsetNorm1);
+        Reg::Sub(subRegNorm1, x1RegNorm1, x2RegNorm1, maskTailNorm1);
+        Reg::Abs(absRegNorm1, subRegNorm1, maskTailNorm1);
+        Reg::ReduceSum(sumRegNorm1, absRegNorm1, maskTailNorm1);
+        Reg::Add(dstRegNorm1, dstRegNorm1, sumRegNorm1, maskOneNorm1);
+        Reg::StoreUnAlign(yOffsetNorm1, dstRegNorm1, uRegNorm1, BASE_ONE);
+        Reg::StoreUnAlignPost(yOffsetNorm1, uRegNorm1, 0);
     }
 }
 
 template <typename T>
 __aicore__ inline void Cdist<T>::ComputePNorm0(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-    __local_mem__ float *srcPtrX1, __local_mem__ float *srcPtrX2, __local_mem__ float *dstPtr)
+                                               __local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
+                                               __local_mem__ float* dstPtr)
 {
     uint32_t maksTailNumNorm0 = tailNumM;
     uint32_t maskOneNumNorm0 = BASE_ONE;
-    __local_mem__ float * yOffsetNorm0 = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
+    __local_mem__ float* yOffsetNorm0 = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<float> x1RegNorm0;
-        MicroAPI::RegTensor<float> x2RegNorm0;
-        MicroAPI::RegTensor<float> subRegNorm0;
-        MicroAPI::RegTensor<float> absRegNorm0;
-        MicroAPI::RegTensor<float> castRegNorm0;
-        MicroAPI::RegTensor<float> minRegNorm0;
-        MicroAPI::RegTensor<float> sumRegNorm0;
-        MicroAPI::RegTensor<float> dstRegNorm0;
-        MicroAPI::MaskReg maskAllNorm0 = MicroAPI::CreateMask<float, MicroAPI::MaskPattern::ALL>();
-        MicroAPI::MaskReg maskTailNorm0;
-        MicroAPI::MaskReg maskOneNorm0;
-        MicroAPI::UnalignRegForStore uRegNorm0;
-        maskTailNorm0 = MicroAPI::UpdateMask<float>(maksTailNumNorm0);
-        maskOneNorm0 = MicroAPI::UpdateMask<float>(maskOneNumNorm0);
-        MicroAPI::Duplicate(dstRegNorm0, (float)0 );
+        Reg::RegTensor<float> x1RegNorm0;
+        Reg::RegTensor<float> x2RegNorm0;
+        Reg::RegTensor<float> subRegNorm0;
+        Reg::RegTensor<float> absRegNorm0;
+        Reg::RegTensor<float> castRegNorm0;
+        Reg::RegTensor<float> minRegNorm0;
+        Reg::RegTensor<float> sumRegNorm0;
+        Reg::RegTensor<float> dstRegNorm0;
+        Reg::MaskReg maskAllNorm0 = Reg::CreateMask<float, Reg::MaskPattern::ALL>();
+        Reg::MaskReg maskTailNorm0;
+        Reg::MaskReg maskOneNorm0;
+        Reg::UnalignRegForStore uRegNorm0;
+        maskTailNorm0 = Reg::UpdateMask<float>(maksTailNumNorm0);
+        maskOneNorm0 = Reg::UpdateMask<float>(maskOneNumNorm0);
+        Reg::Duplicate(dstRegNorm0, (float)0);
         for (uint16_t m = 0; m < loopNumM; m++) {
-            __local_mem__ float * x1OffsetNorm0 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
-            __local_mem__ float * x2OffsetNorm0 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
-            MicroAPI::LoadAlign(x1RegNorm0, x1OffsetNorm0);
-            MicroAPI::LoadAlign(x2RegNorm0, x2OffsetNorm0);
-            MicroAPI::Sub(subRegNorm0, x1RegNorm0, x2RegNorm0, maskAllNorm0);
-            MicroAPI::Abs(absRegNorm0, subRegNorm0, maskAllNorm0);
-            MicroAPI::Truncate<float, RoundMode::CAST_CEIL, MicroAPI::MaskMergeMode::ZEROING>(castRegNorm0, absRegNorm0, maskAllNorm0);
-            MicroAPI::Mins(minRegNorm0, castRegNorm0, (float)1, maskAllNorm0);
-            MicroAPI::ReduceSum(sumRegNorm0, minRegNorm0, maskAllNorm0);
-            MicroAPI::Add(dstRegNorm0, dstRegNorm0, sumRegNorm0, maskOneNorm0);
+            __local_mem__ float* x1OffsetNorm0 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
+            __local_mem__ float* x2OffsetNorm0 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
+            Reg::LoadAlign(x1RegNorm0, x1OffsetNorm0);
+            Reg::LoadAlign(x2RegNorm0, x2OffsetNorm0);
+            Reg::Sub(subRegNorm0, x1RegNorm0, x2RegNorm0, maskAllNorm0);
+            Reg::Abs(absRegNorm0, subRegNorm0, maskAllNorm0);
+            Reg::Truncate<float, RoundMode::CAST_CEIL, Reg::MaskMergeMode::ZEROING>(castRegNorm0, absRegNorm0,
+                                                                                    maskAllNorm0);
+            Reg::Mins(minRegNorm0, castRegNorm0, (float)1, maskAllNorm0);
+            Reg::ReduceSum(sumRegNorm0, minRegNorm0, maskAllNorm0);
+            Reg::Add(dstRegNorm0, dstRegNorm0, sumRegNorm0, maskOneNorm0);
         }
-        __local_mem__ float * x1OffsetNorm0 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
-        __local_mem__ float * x2OffsetNorm0 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
-        MicroAPI::LoadAlign(x1RegNorm0, x1OffsetNorm0);
-        MicroAPI::LoadAlign(x2RegNorm0, x2OffsetNorm0);
-        MicroAPI::Sub(subRegNorm0, x1RegNorm0, x2RegNorm0, maskTailNorm0);
-        MicroAPI::Abs(absRegNorm0, subRegNorm0, maskTailNorm0);
-        MicroAPI::Truncate<float, RoundMode::CAST_CEIL, MicroAPI::MaskMergeMode::ZEROING>(castRegNorm0, absRegNorm0, maskTailNorm0);
-        MicroAPI::Mins(minRegNorm0, castRegNorm0, (float)1, maskTailNorm0);
-        MicroAPI::ReduceSum(sumRegNorm0, minRegNorm0, maskTailNorm0);
-        MicroAPI::Add(dstRegNorm0, dstRegNorm0, sumRegNorm0, maskOneNorm0);
-        MicroAPI::StoreUnAlign(yOffsetNorm0, dstRegNorm0, uRegNorm0, BASE_ONE);
-        MicroAPI::StoreUnAlignPost(yOffsetNorm0, uRegNorm0, 0);
+        __local_mem__ float* x1OffsetNorm0 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
+        __local_mem__ float* x2OffsetNorm0 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
+        Reg::LoadAlign(x1RegNorm0, x1OffsetNorm0);
+        Reg::LoadAlign(x2RegNorm0, x2OffsetNorm0);
+        Reg::Sub(subRegNorm0, x1RegNorm0, x2RegNorm0, maskTailNorm0);
+        Reg::Abs(absRegNorm0, subRegNorm0, maskTailNorm0);
+        Reg::Truncate<float, RoundMode::CAST_CEIL, Reg::MaskMergeMode::ZEROING>(castRegNorm0, absRegNorm0,
+                                                                                maskTailNorm0);
+        Reg::Mins(minRegNorm0, castRegNorm0, (float)1, maskTailNorm0);
+        Reg::ReduceSum(sumRegNorm0, minRegNorm0, maskTailNorm0);
+        Reg::Add(dstRegNorm0, dstRegNorm0, sumRegNorm0, maskOneNorm0);
+        Reg::StoreUnAlign(yOffsetNorm0, dstRegNorm0, uRegNorm0, BASE_ONE);
+        Reg::StoreUnAlignPost(yOffsetNorm0, uRegNorm0, 0);
     }
 }
 
 template <typename T>
-__aicore__ inline void Cdist<T>::ComputePNormInf(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-    __local_mem__ float *srcPtrX1, __local_mem__ float *srcPtrX2, __local_mem__ float *dstPtr)
+__aicore__ inline void Cdist<T>::ComputePNormInf(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM,
+                                                 uint32_t tailNumM, __local_mem__ float* srcPtrX1,
+                                                 __local_mem__ float* srcPtrX2, __local_mem__ float* dstPtr)
 {
     uint32_t maksTailNumNormInf = tailNumM;
     uint32_t maskOneNumNormInf = BASE_ONE;
-    __local_mem__ float * yOffsetNormInf = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
+    __local_mem__ float* yOffsetNormInf = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<float> x1RegNormInf;
-        MicroAPI::RegTensor<float> x2RegNormInf;
-        MicroAPI::RegTensor<float> subRegNormInf;
-        MicroAPI::RegTensor<float> absRegNormInf;
-        MicroAPI::RegTensor<float> maxRegNormInf;
-        MicroAPI::RegTensor<float> dstRegNormInf;
-        MicroAPI::MaskReg maskAllNormInf = MicroAPI::CreateMask<float, MicroAPI::MaskPattern::ALL>();
-        MicroAPI::MaskReg maskTailNormInf;
-        MicroAPI::MaskReg maskOneNormInf;
-        MicroAPI::UnalignRegForStore uRegNormInf;
-        maskTailNormInf = MicroAPI::UpdateMask<float>(maksTailNumNormInf);
-        maskOneNormInf = MicroAPI::UpdateMask<float>(maskOneNumNormInf);
-        MicroAPI::Duplicate(dstRegNormInf, (float)0 );
+        Reg::RegTensor<float> x1RegNormInf;
+        Reg::RegTensor<float> x2RegNormInf;
+        Reg::RegTensor<float> subRegNormInf;
+        Reg::RegTensor<float> absRegNormInf;
+        Reg::RegTensor<float> maxRegNormInf;
+        Reg::RegTensor<float> dstRegNormInf;
+        Reg::MaskReg maskAllNormInf = Reg::CreateMask<float, Reg::MaskPattern::ALL>();
+        Reg::MaskReg maskTailNormInf;
+        Reg::MaskReg maskOneNormInf;
+        Reg::UnalignRegForStore uRegNormInf;
+        maskTailNormInf = Reg::UpdateMask<float>(maksTailNumNormInf);
+        maskOneNormInf = Reg::UpdateMask<float>(maskOneNumNormInf);
+        Reg::Duplicate(dstRegNormInf, (float)0);
         for (uint16_t m = 0; m < loopNumM; m++) {
-            __local_mem__ float * x1OffsetNormInf = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
-            __local_mem__ float * x2OffsetNormInf = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
-            MicroAPI::LoadAlign(x1RegNormInf, x1OffsetNormInf);
-            MicroAPI::LoadAlign(x2RegNormInf, x2OffsetNormInf);
-            MicroAPI::Sub(subRegNormInf, x1RegNormInf, x2RegNormInf, maskAllNormInf);
-            MicroAPI::Abs(absRegNormInf, subRegNormInf, maskAllNormInf);
-            MicroAPI::ReduceMax(maxRegNormInf, absRegNormInf, maskAllNormInf);
-            MicroAPI::Max(dstRegNormInf, maxRegNormInf, dstRegNormInf, maskOneNormInf);
+            __local_mem__ float* x1OffsetNormInf = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
+            __local_mem__ float* x2OffsetNormInf = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
+            Reg::LoadAlign(x1RegNormInf, x1OffsetNormInf);
+            Reg::LoadAlign(x2RegNormInf, x2OffsetNormInf);
+            Reg::Sub(subRegNormInf, x1RegNormInf, x2RegNormInf, maskAllNormInf);
+            Reg::Abs(absRegNormInf, subRegNormInf, maskAllNormInf);
+            Reg::ReduceMax(maxRegNormInf, absRegNormInf, maskAllNormInf);
+            Reg::Max(dstRegNormInf, maxRegNormInf, dstRegNormInf, maskOneNormInf);
         }
-        __local_mem__ float * x1OffsetNormInf = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
-        __local_mem__ float * x2OffsetNormInf = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
-        MicroAPI::LoadAlign(x1RegNormInf, x1OffsetNormInf);
-        MicroAPI::LoadAlign(x2RegNormInf, x2OffsetNormInf);
-        MicroAPI::Sub(subRegNormInf, x1RegNormInf, x2RegNormInf, maskTailNormInf);
-        MicroAPI::Abs(absRegNormInf, subRegNormInf, maskAllNormInf);
-        MicroAPI::ReduceMax(maxRegNormInf, absRegNormInf, maskAllNormInf);
-        MicroAPI::Max(dstRegNormInf, maxRegNormInf, dstRegNormInf, maskOneNormInf);
-        MicroAPI::StoreUnAlign(yOffsetNormInf, dstRegNormInf, uRegNormInf, BASE_ONE);
-        MicroAPI::StoreUnAlignPost(yOffsetNormInf, uRegNormInf, 0);
+        __local_mem__ float* x1OffsetNormInf = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
+        __local_mem__ float* x2OffsetNormInf = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
+        Reg::LoadAlign(x1RegNormInf, x1OffsetNormInf);
+        Reg::LoadAlign(x2RegNormInf, x2OffsetNormInf);
+        Reg::Sub(subRegNormInf, x1RegNormInf, x2RegNormInf, maskTailNormInf);
+        Reg::Abs(absRegNormInf, subRegNormInf, maskAllNormInf);
+        Reg::ReduceMax(maxRegNormInf, absRegNormInf, maskAllNormInf);
+        Reg::Max(dstRegNormInf, maxRegNormInf, dstRegNormInf, maskOneNormInf);
+        Reg::StoreUnAlign(yOffsetNormInf, dstRegNormInf, uRegNormInf, BASE_ONE);
+        Reg::StoreUnAlignPost(yOffsetNormInf, uRegNormInf, 0);
     }
 }
 
 template <typename T>
-__aicore__ inline void Cdist<T>::ComputePNormOther(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-    __local_mem__ float *srcPtrX1, __local_mem__ float *srcPtrX2, __local_mem__ float *dstPtr)
+__aicore__ inline void Cdist<T>::ComputePNormOther(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM,
+                                                   uint32_t tailNumM, __local_mem__ float* srcPtrX1,
+                                                   __local_mem__ float* srcPtrX2, __local_mem__ float* dstPtr)
 {
     uint32_t maksTailNum = tailNumM;
     uint32_t maskOneNum = BASE_ONE;
-    __local_mem__ float * yOffset = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
+    __local_mem__ float* yOffset = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
     __VEC_SCOPE__
     {
-        MicroAPI::RegTensor<float> x1Reg;
-        MicroAPI::RegTensor<float> x2Reg;
-        MicroAPI::RegTensor<float> subReg;
-        MicroAPI::RegTensor<float> absReg;
-        MicroAPI::RegTensor<float> logReg;
-        MicroAPI::RegTensor<float> mulReg;
-        MicroAPI::RegTensor<float> expReg;
-        MicroAPI::RegTensor<float> sumReg;
-        MicroAPI::RegTensor<float> resultReg;
-        MicroAPI::RegTensor<float> dstReg;
-        MicroAPI::MaskReg maskAll = MicroAPI::CreateMask<float, MicroAPI::MaskPattern::ALL>();
-        MicroAPI::MaskReg maskTail;
-        MicroAPI::MaskReg maskOne;
-        MicroAPI::UnalignRegForStore uReg;
-        maskTail = MicroAPI::UpdateMask<float>(maksTailNum);
-        maskOne = MicroAPI::UpdateMask<float>(maskOneNum);
-        MicroAPI::Duplicate(dstReg, (float)0);
-        static constexpr MicroAPI::ExpSpecificMode modeexp = {MicroAPI::MaskMergeMode::ZEROING,ExpAlgo::PRECISION_1ULP_FTZ_FALSE};
-        static constexpr MicroAPI::LogSpecificMode modelog = {MicroAPI::MaskMergeMode::ZEROING,LogAlgo::PRECISION_1ULP_FTZ_FALSE};
+        Reg::RegTensor<float> x1Reg;
+        Reg::RegTensor<float> x2Reg;
+        Reg::RegTensor<float> subReg;
+        Reg::RegTensor<float> absReg;
+        Reg::RegTensor<float> logReg;
+        Reg::RegTensor<float> mulReg;
+        Reg::RegTensor<float> expReg;
+        Reg::RegTensor<float> sumReg;
+        Reg::RegTensor<float> resultReg;
+        Reg::RegTensor<float> dstReg;
+        Reg::MaskReg maskAll = Reg::CreateMask<float, Reg::MaskPattern::ALL>();
+        Reg::MaskReg maskTail;
+        Reg::MaskReg maskOne;
+        Reg::UnalignRegForStore uReg;
+        maskTail = Reg::UpdateMask<float>(maksTailNum);
+        maskOne = Reg::UpdateMask<float>(maskOneNum);
+        Reg::Duplicate(dstReg, (float)0);
+        static constexpr Reg::ExpSpecificMode modeexp = {Reg::MaskMergeMode::ZEROING,
+                                                         ExpAlgo::PRECISION_1ULP_FTZ_FALSE};
+        static constexpr Reg::LogSpecificMode modelog = {Reg::MaskMergeMode::ZEROING,
+                                                         LogAlgo::PRECISION_1ULP_FTZ_FALSE};
         for (uint16_t m = 0; m < loopNumM; m++) {
-            __local_mem__ float * x1Offset = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
-            __local_mem__ float * x2Offset = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
-            MicroAPI::LoadAlign(x1Reg, x1Offset);
-            MicroAPI::LoadAlign(x2Reg, x2Offset);
-            MicroAPI::Sub(subReg, x1Reg, x2Reg, maskAll);
-            MicroAPI::Abs(absReg, subReg, maskAll);
-            MicroAPI::Log<float, &modelog>(logReg, absReg, maskAll);
-            MicroAPI::Muls(mulReg, logReg, (float)p_, maskAll);
-            MicroAPI::Exp<float, &modeexp>(expReg, mulReg, maskAll);
-            MicroAPI::ReduceSum(sumReg, expReg, maskAll);
-            MicroAPI::Add(dstReg, dstReg, sumReg, maskOne);
+            __local_mem__ float* x1Offset = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
+            __local_mem__ float* x2Offset = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
+            Reg::LoadAlign(x1Reg, x1Offset);
+            Reg::LoadAlign(x2Reg, x2Offset);
+            Reg::Sub(subReg, x1Reg, x2Reg, maskAll);
+            Reg::Abs(absReg, subReg, maskAll);
+            Reg::Log<float, &modelog>(logReg, absReg, maskAll);
+            Reg::Muls(mulReg, logReg, (float)p_, maskAll);
+            Reg::Exp<float, &modeexp>(expReg, mulReg, maskAll);
+            Reg::ReduceSum(sumReg, expReg, maskAll);
+            Reg::Add(dstReg, dstReg, sumReg, maskOne);
         }
-        __local_mem__ float * x1Offset = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
-        __local_mem__ float * x2Offset = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
-        MicroAPI::LoadAlign(x1Reg, x1Offset);
-        MicroAPI::LoadAlign(x2Reg, x2Offset);
-        MicroAPI::Sub(subReg, x1Reg, x2Reg, maskTail);
-        MicroAPI::Abs(absReg, subReg, maskTail);
-        MicroAPI::Log<float, &modelog>(logReg, absReg, maskTail);
-        MicroAPI::Muls(mulReg, logReg, (float)p_, maskTail);
-        MicroAPI::Exp<float, &modeexp>(expReg, mulReg, maskTail);
-        MicroAPI::ReduceSum(sumReg, expReg, maskTail);
-        MicroAPI::Add(dstReg, dstReg, sumReg, maskOne);
+        __local_mem__ float* x1Offset = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
+        __local_mem__ float* x2Offset = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
+        Reg::LoadAlign(x1Reg, x1Offset);
+        Reg::LoadAlign(x2Reg, x2Offset);
+        Reg::Sub(subReg, x1Reg, x2Reg, maskTail);
+        Reg::Abs(absReg, subReg, maskTail);
+        Reg::Log<float, &modelog>(logReg, absReg, maskTail);
+        Reg::Muls(mulReg, logReg, (float)p_, maskTail);
+        Reg::Exp<float, &modeexp>(expReg, mulReg, maskTail);
+        Reg::ReduceSum(sumReg, expReg, maskTail);
+        Reg::Add(dstReg, dstReg, sumReg, maskOne);
         if (ubLoopNumM_ == 1) {
-            MicroAPI::Log<float, &modelog>(logReg, dstReg, maskOne);
-            MicroAPI::Muls(mulReg, logReg, (float)(1 / p_), maskOne);
-            MicroAPI::Exp<float, &modeexp>(expReg, mulReg, maskOne);
-            MicroAPI::StoreUnAlign(yOffset, expReg, uReg, BASE_ONE);
+            Reg::Log<float, &modelog>(logReg, dstReg, maskOne);
+            Reg::Muls(mulReg, logReg, (float)(1 / p_), maskOne);
+            Reg::Exp<float, &modeexp>(expReg, mulReg, maskOne);
+            Reg::StoreUnAlign(yOffset, expReg, uReg, BASE_ONE);
         } else {
-            MicroAPI::StoreUnAlign(yOffset, dstReg, uReg, BASE_ONE);
+            Reg::StoreUnAlign(yOffset, dstReg, uReg, BASE_ONE);
         }
-        MicroAPI::StoreUnAlignPost(yOffset, uReg, 0);
+        Reg::StoreUnAlignPost(yOffset, uReg, 0);
     }
 }
 
@@ -656,11 +675,11 @@ __aicore__ inline void Cdist<T>::CalSplitMResult(int32_t processNum)
     if (p_ == 2.0f) {
         if constexpr (sizeof(T) != sizeof(float)) {
             yFp32_ = yCastQueue_.DeQue<float>();
-            Sqrt<float,sqrtConfig>(yFp32_, yFp32_, processNum);
+            Sqrt<float, sqrtConfig>(yFp32_, yFp32_, processNum);
             yCastQueue_.EnQue(yFp32_);
         } else {
             yFp32_ = yQueue_.DeQue<float>();
-            Sqrt<float,sqrtConfig>(yFp32_, yFp32_, processNum);
+            Sqrt<float, sqrtConfig>(yFp32_, yFp32_, processNum);
             yQueue_.EnQue(yFp32_);
         }
     }
@@ -668,13 +687,13 @@ __aicore__ inline void Cdist<T>::CalSplitMResult(int32_t processNum)
         if constexpr (sizeof(T) != sizeof(float)) {
             yFp32_ = yCastQueue_.DeQue<float>();
             Ln<float, lnConfig>(yFp32_, yFp32_, processNum);
-            Muls(yFp32_, yFp32_, (float)(1/p_), processNum);
+            Muls(yFp32_, yFp32_, (float)(1 / p_), processNum);
             Exp<float, expConfig>(yFp32_, yFp32_, processNum);
             yCastQueue_.EnQue(yFp32_);
         } else {
             yFp32_ = yQueue_.DeQue<float>();
             Ln<float, lnConfig>(yFp32_, yFp32_, processNum);
-            Muls(yFp32_, yFp32_, (float)(1/p_), processNum);
+            Muls(yFp32_, yFp32_, (float)(1 / p_), processNum);
             Exp<float, expConfig>(yFp32_, yFp32_, processNum);
             yQueue_.EnQue(yFp32_);
         }
@@ -682,7 +701,8 @@ __aicore__ inline void Cdist<T>::CalSplitMResult(int32_t processNum)
 }
 
 template <typename T>
-__aicore__ inline void Cdist<T>::ProcessNoSplitM(uint32_t bOffset, uint32_t pOffset, uint32_t rOffsetBlock, uint32_t blockFactorR)
+__aicore__ inline void Cdist<T>::ProcessNoSplitM(uint32_t bOffset, uint32_t pOffset, uint32_t rOffsetBlock,
+                                                 uint32_t blockFactorR)
 {
     uint32_t offsetX1 = 0;
     uint32_t offsetX2 = 0;
@@ -712,7 +732,8 @@ __aicore__ inline void Cdist<T>::ProcessNoSplitM(uint32_t bOffset, uint32_t pOff
 }
 
 template <typename T>
-__aicore__ inline void Cdist<T>::ProcessSplitM(uint32_t bOffset, uint32_t pOffset, uint32_t rOffsetBlock, uint32_t blockFactorR)
+__aicore__ inline void Cdist<T>::ProcessSplitM(uint32_t bOffset, uint32_t pOffset, uint32_t rOffsetBlock,
+                                               uint32_t blockFactorR)
 {
     uint32_t offsetX1 = 0;
     uint32_t offsetX2 = 0;
@@ -773,18 +794,18 @@ __aicore__ inline void Cdist<T>::Process()
     uint32_t pBlockIdx = prBlockIdx / blockNumR;
     uint32_t rBlockIdx = prBlockIdx % blockNumR;
     blockFactorB = (bBlockIdx < blockMainNumB_) ? blockMainFactorB_ : blockTailFactorB_;
-    bOffsetBlock = (bBlockIdx < blockMainNumB_)
-                        ? blockMainFactorB_ * bBlockIdx
-                        : blockMainFactorB_ * blockMainNumB_ + (bBlockIdx - blockMainNumB_) * blockTailFactorB_;
+    bOffsetBlock = (bBlockIdx < blockMainNumB_) ?
+                       blockMainFactorB_ * bBlockIdx :
+                       blockMainFactorB_ * blockMainNumB_ + (bBlockIdx - blockMainNumB_) * blockTailFactorB_;
     blockFactorR = (rBlockIdx < blockMainNumR_) ? blockMainFactorR_ : blockTailFactorR_;
-    rOffsetBlock = (rBlockIdx < blockMainNumR_)
-                        ? blockMainFactorR_ * rBlockIdx
-                        : blockMainFactorR_ * blockMainNumR_ + (rBlockIdx - blockMainNumR_) * blockTailFactorR_;
+    rOffsetBlock = (rBlockIdx < blockMainNumR_) ?
+                       blockMainFactorR_ * rBlockIdx :
+                       blockMainFactorR_ * blockMainNumR_ + (rBlockIdx - blockMainNumR_) * blockTailFactorR_;
     blockFactorP = (pBlockIdx < blockMainNumP_) ? blockMainFactorP_ : blockTailFactorP_;
-    pOffsetBlock = (pBlockIdx < blockMainNumP_)
-                        ? blockMainFactorP_ * pBlockIdx
-                        : blockMainFactorP_ * blockMainNumP_ + (pBlockIdx - blockMainNumP_) * blockTailFactorP_;
-    for(uint32_t bIdx = 0; bIdx < ubLoopNumB_; bIdx++){
+    pOffsetBlock = (pBlockIdx < blockMainNumP_) ?
+                       blockMainFactorP_ * pBlockIdx :
+                       blockMainFactorP_ * blockMainNumP_ + (pBlockIdx - blockMainNumP_) * blockTailFactorP_;
+    for (uint32_t bIdx = 0; bIdx < ubLoopNumB_; bIdx++) {
         bOffset = bOffsetBlock + bIdx * ubFactorB_;
         bSize_ = (bIdx == ubLoopNumB_ - 1) ? (blockFactorB - ubFactorB_ * bIdx) : ubFactorB_;
         if (bSize_ == 0) {

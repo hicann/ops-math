@@ -22,12 +22,12 @@
 #include "atvoss/util/elems.h"
 
 #ifdef __CCE_AICORE__
-constexpr static AscendC::MicroAPI::CastTrait castTrait0 = {
-    AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::UNKNOWN, AscendC::MicroAPI::MaskMergeMode::ZEROING,
-    AscendC::RoundMode::UNKNOWN};
-constexpr static AscendC::MicroAPI::CastTrait castTrait1 = {
-    AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::NO_SAT, AscendC::MicroAPI::MaskMergeMode::ZEROING,
-    AscendC::RoundMode::CAST_RINT};
+constexpr static AscendC::Reg::CastTrait castTrait0 = {AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::UNKNOWN,
+                                                       AscendC::Reg::MaskMergeMode::ZEROING,
+                                                       AscendC::RoundMode::UNKNOWN};
+constexpr static AscendC::Reg::CastTrait castTrait1 = {AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::NO_SAT,
+                                                       AscendC::Reg::MaskMergeMode::ZEROING,
+                                                       AscendC::RoundMode::CAST_RINT};
 #endif
 
 namespace ExpDag {
@@ -50,43 +50,42 @@ struct ExpCustom : public Vec::ElemwiseUnaryOP<T, T> {
         __ubuf__ T* srcAddr = (__ubuf__ T*)src.GetPhyAddr();
         __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
 
-        AscendC::MicroAPI::RegTensor<float, AscendC::MicroAPI::RegTraitNumOne> vregInput;
-        AscendC::MicroAPI::RegTensor<float, AscendC::MicroAPI::RegTraitNumOne> vregOutput;
-        AscendC::MicroAPI::MaskReg mask;
+        AscendC::Reg::RegTensor<float, AscendC::Reg::RegTraitNumOne> vregInput;
+        AscendC::Reg::RegTensor<float, AscendC::Reg::RegTraitNumOne> vregOutput;
+        AscendC::Reg::MaskReg mask;
 
         if constexpr (std::is_same_v<T, float>) {
             __VEC_SCOPE__
             {
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                    mask = MicroAPI::UpdateMask<float, MicroAPI::RegTraitNumOne>(count);
+                    mask = Reg::UpdateMask<float, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_NORM>(
-                        vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                    Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
 
-                    MicroAPI::Exp(vregOutput, vregInput, mask);
+                    Reg::Exp(vregOutput, vregInput, mask);
                     // OpCopyOut
-                    MicroAPI::DataCopy<T, MicroAPI::StoreDist::DIST_NORM_B32>(
-                        (__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
+                    Reg::DataCopy<T, Reg::StoreDist::DIST_NORM_B32>((__ubuf__ T*)(dstAddr + loopIdx * vlSize),
+                                                                    vregOutput, mask);
                 }
             }
         } else {
-            MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregInput16;
-            MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregOutput16;
+            Reg::RegTensor<T, Reg::RegTraitNumOne> vregInput16;
+            Reg::RegTensor<T, Reg::RegTraitNumOne> vregOutput16;
             __VEC_SCOPE__
             {
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                    mask = MicroAPI::UpdateMask<float, MicroAPI::RegTraitNumOne>(count);
+                    mask = Reg::UpdateMask<float, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    MicroAPI::DataCopy<T, MicroAPI::LoadDist::DIST_UNPACK_B16>(
-                        vregInput16, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
-                    MicroAPI::Cast<float, T, castTrait0>(vregInput, vregInput16, mask);
+                    Reg::DataCopy<T, Reg::LoadDist::DIST_UNPACK_B16>(vregInput16,
+                                                                     (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                    Reg::Cast<float, T, castTrait0>(vregInput, vregInput16, mask);
 
-                    MicroAPI::Exp(vregOutput, vregInput, mask);
+                    Reg::Exp(vregOutput, vregInput, mask);
 
-                    MicroAPI::Cast<T, float, castTrait1>(vregOutput16, vregOutput, mask);
+                    Reg::Cast<T, float, castTrait1>(vregOutput16, vregOutput, mask);
                     // OpCopyOut
-                    MicroAPI::DataCopy<T, MicroAPI::StoreDist::DIST_PACK_B32>(
-                        (__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput16, mask);
+                    Reg::DataCopy<T, Reg::StoreDist::DIST_PACK_B32>((__ubuf__ T*)(dstAddr + loopIdx * vlSize),
+                                                                    vregOutput16, mask);
                 }
             }
         }

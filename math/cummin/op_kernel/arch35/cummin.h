@@ -33,17 +33,17 @@ constexpr static uint32_t BUFFER_NUM = 1;
 constexpr static uint32_t THREAD_DIM = 2048;
 
 template <typename X, typename ARGMIN>
-__simt_vf__ LAUNCH_BOUND(THREAD_DIM) void SimtCompute(
-    __gm__ X* xGm, __gm__ X* yGm, __gm__ ARGMIN* argminGm, int64_t M, int64_t R, int64_t N, int64_t count)
+__simt_vf__ LAUNCH_BOUND(THREAD_DIM) void SimtCompute(__gm__ X* xGm, __gm__ X* yGm, __gm__ ARGMIN* argminGm, int64_t M,
+                                                      int64_t R, int64_t N, int64_t count)
 {
     const int64_t threadNum = blockDim.x;
 
     const int64_t RN = R * N;
     int64_t blockId = threadIdx.x;
-    int64_t idx = (blockId / N) * RN + (blockId % N); 
+    int64_t idx = (blockId / N) * RN + (blockId % N);
 
-    while (idx < count) { 
-        X minVal = xGm[idx];         
+    while (idx < count) {
+        X minVal = xGm[idx];
         ARGMIN minIdx = static_cast<ARGMIN>(0);
 
         yGm[idx] = minVal;
@@ -81,18 +81,16 @@ public:
     __aicore__ inline void CopyIn(LocalTensor<X>& tensor, uint16_t copyRows, uint32_t dataNum, int64_t xOffset);
 
     template <typename C>
-    __aicore__ inline void CopyOut(
-        GlobalTensor<C>& gm, LocalTensor<C>& tensor, uint16_t copyRows, uint32_t dataNum, int64_t offset,
-        bool needcast);
+    __aicore__ inline void CopyOut(GlobalTensor<C>& gm, LocalTensor<C>& tensor, uint16_t copyRows, uint32_t dataNum,
+                                   int64_t offset, bool needcast);
 
     __aicore__ inline void ComputeM();
     __aicore__ inline void ComputeSimT();
     __aicore__ inline void ComputeR(CumminSplitInfo info);
     __aicore__ inline void ComputeN(CumminSplitInfo info);
     __aicore__ inline void ComputeReservedM(GM_ADDR x, GM_ADDR y, GM_ADDR argmin);
-    __aicore__ inline void DoCompare(
-        int64_t computeTimes, int64_t offset, int64_t regComputeTimes, uint32_t reservedRegComputeTimes,
-        int32_t duplicate);
+    __aicore__ inline void DoCompare(int64_t computeTimes, int64_t offset, int64_t regComputeTimes,
+                                     uint32_t reservedRegComputeTimes, int32_t duplicate);
 
 public:
     TPipe& tpipe;
@@ -176,7 +174,8 @@ __aicore__ inline void Cummin<X, ARGMIN>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR arg
 }
 
 template <typename X, typename ARGMIN>
- __aicore__ inline void Cummin<X, ARGMIN>::InitForSimT(GM_ADDR x, GM_ADDR y, GM_ADDR argmin) {
+__aicore__ inline void Cummin<X, ARGMIN>::InitForSimT(GM_ADDR x, GM_ADDR y, GM_ADDR argmin)
+{
     blockId = GetBlockIdx();
     blockCount = GetBlockNum();
     M = tiling.M;
@@ -187,18 +186,20 @@ template <typename X, typename ARGMIN>
     auto offset = 0;
     if (blockId < ReservedM) {
         computeM = computeM + 1;
-        offset = blockId * computeM * N * R ;
+        offset = blockId * computeM * N * R;
     } else {
         offset = blockId * computeM * N * R + ReservedM * N * R;
     }
     computeCountForSimt = computeM * N * R;
     InitGMBuffers(x, y, argmin, offset);
- }
+}
 
- template <typename X, typename ARGMIN>
- __aicore__ inline void Cummin<X, ARGMIN>::ComputeSimT() {
-    asc_vf_call<SimtCompute<X, ARGMIN>>(dim3(THREAD_DIM), (__gm__ X*)(xGm.GetPhyAddr()), (__gm__ X*)(yGm.GetPhyAddr()), (__gm__ ARGMIN*)(argminGm.GetPhyAddr()), M, R, N, computeCountForSimt);
- }
+template <typename X, typename ARGMIN>
+__aicore__ inline void Cummin<X, ARGMIN>::ComputeSimT()
+{
+    asc_vf_call<SimtCompute<X, ARGMIN>>(dim3(THREAD_DIM), (__gm__ X*)(xGm.GetPhyAddr()), (__gm__ X*)(yGm.GetPhyAddr()),
+                                        (__gm__ ARGMIN*)(argminGm.GetPhyAddr()), M, R, N, computeCountForSimt);
+}
 
 template <typename X, typename ARGMIN>
 __aicore__ inline void Cummin<X, ARGMIN>::InitGMBuffers(GM_ADDR x, GM_ADDR y, GM_ADDR argmin, int64_t offset)
@@ -257,8 +258,8 @@ __aicore__ inline void Cummin<X, ARGMIN>::InsertSync(const HardEvent& event)
 }
 
 template <typename X, typename ARGMIN>
-__aicore__ inline void Cummin<X, ARGMIN>::CopyIn(
-    LocalTensor<X>& tensor, uint16_t copyRows, uint32_t dataNum, int64_t xOffset)
+__aicore__ inline void Cummin<X, ARGMIN>::CopyIn(LocalTensor<X>& tensor, uint16_t copyRows, uint32_t dataNum,
+                                                 int64_t xOffset)
 {
     InsertSync(HardEvent::MTE3_MTE2);
     DataCopyPadExtParams<X> dataCopyPadExtParams = {false, 0, 0, 0};
@@ -269,8 +270,8 @@ __aicore__ inline void Cummin<X, ARGMIN>::CopyIn(
 
 template <typename X, typename ARGMIN>
 template <typename C>
-__aicore__ inline void Cummin<X, ARGMIN>::CopyOut(
-    GlobalTensor<C>& gm, LocalTensor<C>& tensor, uint16_t copyRows, uint32_t dataNum, int64_t offset, bool needCast)
+__aicore__ inline void Cummin<X, ARGMIN>::CopyOut(GlobalTensor<C>& gm, LocalTensor<C>& tensor, uint16_t copyRows,
+                                                  uint32_t dataNum, int64_t offset, bool needCast)
 {
     uint32_t size = sizeof(C);
     if (needCast) {
@@ -376,14 +377,12 @@ __aicore__ inline void Cummin<X, ARGMIN>::ComputeN(CumminSplitInfo info)
                 auto offset = i * R * N + j * info.computeN + k * N;
                 if (k == 0) {
                     CopyIn(tmpXTensor, static_cast<uint16_t>(1), length, offset);
-                    Duplicate<int32_t>(
-                        tmpArgminTensor, 0,
-                        Ops::Base::CeilAlign(length, static_cast<int64_t>(VREGTENSOR_SIZE / dSize)));
+                    Duplicate<int32_t>(tmpArgminTensor, 0,
+                                       Ops::Base::CeilAlign(length, static_cast<int64_t>(VREGTENSOR_SIZE / dSize)));
                     CopyOut(yGm, tmpXTensor, 1, length, offset, false);
                     if (needCast) {
-                        DataCopy(
-                            argminTensor[castOffset], tmpArgminTensor,
-                            Ops::Base::CeilAlign(length, static_cast<int64_t>(VREGTENSOR_SIZE / dSize)));
+                        DataCopy(argminTensor[castOffset], tmpArgminTensor,
+                                 Ops::Base::CeilAlign(length, static_cast<int64_t>(VREGTENSOR_SIZE / dSize)));
                         CopyOut(argminGm, argminTensor, 1, length, offset, needCast);
                     } else {
                         CopyOut(argminGm, tmpArgminTensor, 1, length, offset, needCast);
@@ -417,8 +416,8 @@ __aicore__ inline void Cummin<X, ARGMIN>::ComputeReservedM(GM_ADDR x, GM_ADDR y,
 }
 
 template <typename X, typename ARGMIN>
-__aicore__ inline void Cummin<X, ARGMIN>::DoCompare(
-    int64_t computeTimes, int64_t offset, int64_t regComputeTimes, uint32_t reservedRegComputeTimes, int32_t duplicate)
+__aicore__ inline void Cummin<X, ARGMIN>::DoCompare(int64_t computeTimes, int64_t offset, int64_t regComputeTimes,
+                                                    uint32_t reservedRegComputeTimes, int32_t duplicate)
 {
     __VEC_SCOPE__
     {
@@ -428,81 +427,79 @@ __aicore__ inline void Cummin<X, ARGMIN>::DoCompare(
         __local_mem__ int32_t* argminAddr = (__local_mem__ int32_t*)argminTensor.GetPhyAddr() + offset + castOffset;
 
         if constexpr (sizeof(X) == 4) {
-            MicroAPI::RegTensor<X> xReg;
-            MicroAPI::RegTensor<X> yReg;
-            MicroAPI::RegTensor<int32_t> argminReg;
-            MicroAPI::RegTensor<int32_t> dupReg;
-            AscendC::MicroAPI::MaskReg yMaskReg =
-                AscendC::MicroAPI::CreateMask<X, AscendC::MicroAPI::MaskPattern::ALL>();
+            Reg::RegTensor<X> xReg;
+            Reg::RegTensor<X> yReg;
+            Reg::RegTensor<int32_t> argminReg;
+            Reg::RegTensor<int32_t> dupReg;
+            AscendC::Reg::MaskReg yMaskReg = AscendC::Reg::CreateMask<X, AscendC::Reg::MaskPattern::ALL>();
 
-            AscendC::MicroAPI::MaskReg cmpReg;
+            AscendC::Reg::MaskReg cmpReg;
             for (int i = 0; i < regComputeTimes; i++) {
                 if (i == regComputeTimes - 1 && reservedRegComputeTimes != 0) {
-                    yMaskReg = MicroAPI::UpdateMask<X>(reservedRegComputeTimes);
+                    yMaskReg = Reg::UpdateMask<X>(reservedRegComputeTimes);
                 }
                 int64_t tmpOffset = i * VREGTENSOR_SIZE / dSize;
-                AscendC::MicroAPI::DataCopy(xReg, selectXAddr + tmpOffset);
-                AscendC::MicroAPI::DataCopy(argminReg, selectargminAddr + tmpOffset);
+                AscendC::Reg::DataCopy(xReg, selectXAddr + tmpOffset);
+                AscendC::Reg::DataCopy(argminReg, selectargminAddr + tmpOffset);
                 for (int j = 0; j < computeTimes; j++) {
                     auto yOffset = tmpOffset + j * allocLength;
-                    AscendC::MicroAPI::DataCopy(yReg, yAddr + yOffset);
-                    AscendC::MicroAPI::Duplicate(dupReg, j + duplicate);
-                    AscendC::MicroAPI::Compare<X, CMPMODE::LT>(cmpReg, xReg, yReg, yMaskReg);
-                    AscendC::MicroAPI::Select(xReg, xReg, yReg, cmpReg);
-                    AscendC::MicroAPI::Select(argminReg, argminReg, dupReg, cmpReg);
-                    AscendC::MicroAPI::DataCopy(yAddr + yOffset, xReg, yMaskReg);
-                    AscendC::MicroAPI::DataCopy(argminAddr + yOffset, argminReg, yMaskReg);
+                    AscendC::Reg::DataCopy(yReg, yAddr + yOffset);
+                    AscendC::Reg::Duplicate(dupReg, j + duplicate);
+                    AscendC::Reg::Compare<X, CMPMODE::LT>(cmpReg, xReg, yReg, yMaskReg);
+                    AscendC::Reg::Select(xReg, xReg, yReg, cmpReg);
+                    AscendC::Reg::Select(argminReg, argminReg, dupReg, cmpReg);
+                    AscendC::Reg::DataCopy(yAddr + yOffset, xReg, yMaskReg);
+                    AscendC::Reg::DataCopy(argminAddr + yOffset, argminReg, yMaskReg);
                 }
-                AscendC::MicroAPI::DataCopy(selectXAddr + tmpOffset, xReg, yMaskReg);
-                AscendC::MicroAPI::DataCopy(selectargminAddr + tmpOffset, argminReg, yMaskReg);
+                AscendC::Reg::DataCopy(selectXAddr + tmpOffset, xReg, yMaskReg);
+                AscendC::Reg::DataCopy(selectargminAddr + tmpOffset, argminReg, yMaskReg);
             }
         } else {
-            MicroAPI::RegTensor<X> xReg;
-            MicroAPI::RegTensor<X> yReg;
-            MicroAPI::RegTensor<int32_t> argminReg1;
-            MicroAPI::RegTensor<int32_t> argminReg2;
-            MicroAPI::RegTensor<int32_t> dupReg;
-            AscendC::MicroAPI::MaskReg yMaskReg =
-                AscendC::MicroAPI::CreateMask<X, AscendC::MicroAPI::MaskPattern::ALL>();
+            Reg::RegTensor<X> xReg;
+            Reg::RegTensor<X> yReg;
+            Reg::RegTensor<int32_t> argminReg1;
+            Reg::RegTensor<int32_t> argminReg2;
+            Reg::RegTensor<int32_t> dupReg;
+            AscendC::Reg::MaskReg yMaskReg = AscendC::Reg::CreateMask<X, AscendC::Reg::MaskPattern::ALL>();
 
-            AscendC::MicroAPI::MaskReg argminMaskReg1;
-            AscendC::MicroAPI::MaskReg argminMaskReg2;
-            AscendC::MicroAPI::UnPack<AscendC::MicroAPI::HighLowPart::LOWEST>(argminMaskReg1, yMaskReg);
-            AscendC::MicroAPI::UnPack<AscendC::MicroAPI::HighLowPart::HIGHEST>(argminMaskReg2, yMaskReg);
+            AscendC::Reg::MaskReg argminMaskReg1;
+            AscendC::Reg::MaskReg argminMaskReg2;
+            AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::LOWEST>(argminMaskReg1, yMaskReg);
+            AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::HIGHEST>(argminMaskReg2, yMaskReg);
 
-            AscendC::MicroAPI::MaskReg cmpReg;
-            AscendC::MicroAPI::MaskReg cmpReg1;
-            AscendC::MicroAPI::MaskReg cmpReg2;
+            AscendC::Reg::MaskReg cmpReg;
+            AscendC::Reg::MaskReg cmpReg1;
+            AscendC::Reg::MaskReg cmpReg2;
             for (int i = 0; i < regComputeTimes; i++) {
                 if (i == regComputeTimes - 1 && reservedRegComputeTimes != 0) {
-                    yMaskReg = MicroAPI::UpdateMask<X>(reservedRegComputeTimes);
-                    AscendC::MicroAPI::UnPack<AscendC::MicroAPI::HighLowPart::LOWEST>(argminMaskReg1, yMaskReg);
-                    AscendC::MicroAPI::UnPack<AscendC::MicroAPI::HighLowPart::HIGHEST>(argminMaskReg2, yMaskReg);
+                    yMaskReg = Reg::UpdateMask<X>(reservedRegComputeTimes);
+                    AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::LOWEST>(argminMaskReg1, yMaskReg);
+                    AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::HIGHEST>(argminMaskReg2, yMaskReg);
                 }
                 int64_t tmpOffset = i * VREGTENSOR_SIZE / dSize;
-                AscendC::MicroAPI::DataCopy(xReg, selectXAddr + tmpOffset);
-                AscendC::MicroAPI::DataCopy(argminReg1, selectargminAddr + tmpOffset);
-                AscendC::MicroAPI::DataCopy(argminReg2, selectargminAddr + tmpOffset + 64);
+                AscendC::Reg::DataCopy(xReg, selectXAddr + tmpOffset);
+                AscendC::Reg::DataCopy(argminReg1, selectargminAddr + tmpOffset);
+                AscendC::Reg::DataCopy(argminReg2, selectargminAddr + tmpOffset + 64);
                 for (int j = 0; j < computeTimes; j++) {
                     auto yOffset = tmpOffset + j * allocLength;
-                    AscendC::MicroAPI::DataCopy(yReg, yAddr + yOffset);
-                    AscendC::MicroAPI::Duplicate(dupReg, j + duplicate);
+                    AscendC::Reg::DataCopy(yReg, yAddr + yOffset);
+                    AscendC::Reg::Duplicate(dupReg, j + duplicate);
 
-                    AscendC::MicroAPI::Compare<X, CMPMODE::LT>(cmpReg, xReg, yReg, yMaskReg);
-                    AscendC::MicroAPI::UnPack<AscendC::MicroAPI::HighLowPart::LOWEST>(cmpReg1, cmpReg);
-                    AscendC::MicroAPI::UnPack<AscendC::MicroAPI::HighLowPart::HIGHEST>(cmpReg2, cmpReg);
+                    AscendC::Reg::Compare<X, CMPMODE::LT>(cmpReg, xReg, yReg, yMaskReg);
+                    AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::LOWEST>(cmpReg1, cmpReg);
+                    AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::HIGHEST>(cmpReg2, cmpReg);
 
-                    AscendC::MicroAPI::Select(xReg, xReg, yReg, cmpReg);
-                    AscendC::MicroAPI::Select(argminReg1, argminReg1, dupReg, cmpReg1);
-                    AscendC::MicroAPI::Select(argminReg2, argminReg2, dupReg, cmpReg2);
+                    AscendC::Reg::Select(xReg, xReg, yReg, cmpReg);
+                    AscendC::Reg::Select(argminReg1, argminReg1, dupReg, cmpReg1);
+                    AscendC::Reg::Select(argminReg2, argminReg2, dupReg, cmpReg2);
 
-                    AscendC::MicroAPI::DataCopy(yAddr + yOffset, xReg, yMaskReg);
-                    AscendC::MicroAPI::DataCopy(argminAddr + yOffset, argminReg1, argminMaskReg1);
-                    AscendC::MicroAPI::DataCopy(argminAddr + yOffset + 64, argminReg2, argminMaskReg2);
+                    AscendC::Reg::DataCopy(yAddr + yOffset, xReg, yMaskReg);
+                    AscendC::Reg::DataCopy(argminAddr + yOffset, argminReg1, argminMaskReg1);
+                    AscendC::Reg::DataCopy(argminAddr + yOffset + 64, argminReg2, argminMaskReg2);
                 }
-                AscendC::MicroAPI::DataCopy(selectXAddr + tmpOffset, xReg, yMaskReg);
-                AscendC::MicroAPI::DataCopy(selectargminAddr + tmpOffset, argminReg1, argminMaskReg1);
-                AscendC::MicroAPI::DataCopy(selectargminAddr + tmpOffset + 64, argminReg2, argminMaskReg2);
+                AscendC::Reg::DataCopy(selectXAddr + tmpOffset, xReg, yMaskReg);
+                AscendC::Reg::DataCopy(selectargminAddr + tmpOffset, argminReg1, argminMaskReg1);
+                AscendC::Reg::DataCopy(selectargminAddr + tmpOffset + 64, argminReg2, argminMaskReg2);
             }
         }
     }

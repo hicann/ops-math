@@ -38,47 +38,43 @@ struct CeilCustom : public Vec::ElemwiseUnaryOP<T, T> {
         __ubuf__ T* srcAddr = (__ubuf__ T*)src.GetPhyAddr();
         __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
 
-        MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregInput;
-        MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> vregOutput;
-        MicroAPI::MaskReg mask;
+        Reg::RegTensor<T, Reg::RegTraitNumOne> vregInput;
+        Reg::RegTensor<T, Reg::RegTraitNumOne> vregOutput;
+        Reg::MaskReg mask;
         if constexpr (std::is_same_v<T, float>) {
-            MicroAPI::RegTensor<uint32_t, MicroAPI::RegTraitNumOne> vregOutInt;
+            Reg::RegTensor<uint32_t, Reg::RegTraitNumOne> vregOutInt;
             __VEC_SCOPE__
             {
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                    mask = MicroAPI::UpdateMask<T, MicroAPI::RegTraitNumOne>(count);
+                    mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    MicroAPI::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                    Reg::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
 
-                    MicroAPI::Truncate<T, RoundMode::CAST_CEIL, MicroAPI::MaskMergeMode::ZEROING>(
-                        vregOutput, vregInput, mask);
-                    MicroAPI::Duplicate(vregOutInt, UINT32_SIGN, mask);
-                    MicroAPI::And(vregOutInt, vregOutInt, (MicroAPI::RegTensor<uint32_t>&)vregInput, mask);
-                    MicroAPI::Or(vregOutInt, vregOutInt, (MicroAPI::RegTensor<uint32_t>&)vregOutput, mask);
+                    Reg::Truncate<T, RoundMode::CAST_CEIL, Reg::MaskMergeMode::ZEROING>(vregOutput, vregInput, mask);
+                    Reg::Duplicate(vregOutInt, UINT32_SIGN, mask);
+                    Reg::And(vregOutInt, vregOutInt, (Reg::RegTensor<uint32_t>&)vregInput, mask);
+                    Reg::Or(vregOutInt, vregOutInt, (Reg::RegTensor<uint32_t>&)vregOutput, mask);
 
                     // OpCopyOut
-                    MicroAPI::DataCopy(
-                        (__ubuf__ T*)(dstAddr + loopIdx * vlSize), (MicroAPI::RegTensor<T>&)vregOutInt, mask);
+                    Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), (Reg::RegTensor<T>&)vregOutInt, mask);
                 }
             }
         } else {
-            MicroAPI::RegTensor<uint16_t, MicroAPI::RegTraitNumOne> vregOutInt;
+            Reg::RegTensor<uint16_t, Reg::RegTraitNumOne> vregOutInt;
             __VEC_SCOPE__
             {
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                    mask = MicroAPI::UpdateMask<T, MicroAPI::RegTraitNumOne>(count);
+                    mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    MicroAPI::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                    Reg::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
 
-                    MicroAPI::Truncate<T, RoundMode::CAST_CEIL, MicroAPI::MaskMergeMode::ZEROING>(
-                        vregOutput, vregInput, mask);
-                    MicroAPI::Duplicate(vregOutInt, UINT16_SIGN, mask);
-                    MicroAPI::And(vregOutInt, vregOutInt, (MicroAPI::RegTensor<uint16_t>&)vregInput, mask);
-                    MicroAPI::Or(vregOutInt, vregOutInt, (MicroAPI::RegTensor<uint16_t>&)vregOutput, mask);
+                    Reg::Truncate<T, RoundMode::CAST_CEIL, Reg::MaskMergeMode::ZEROING>(vregOutput, vregInput, mask);
+                    Reg::Duplicate(vregOutInt, UINT16_SIGN, mask);
+                    Reg::And(vregOutInt, vregOutInt, (Reg::RegTensor<uint16_t>&)vregInput, mask);
+                    Reg::Or(vregOutInt, vregOutInt, (Reg::RegTensor<uint16_t>&)vregOutput, mask);
 
                     // OpCopyOut
-                    MicroAPI::DataCopy(
-                        (__ubuf__ T*)(dstAddr + loopIdx * vlSize), (MicroAPI::RegTensor<T>&)vregOutInt, mask);
+                    Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), (Reg::RegTensor<T>&)vregOutInt, mask);
                 }
             }
         }

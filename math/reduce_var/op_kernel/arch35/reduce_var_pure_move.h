@@ -20,24 +20,22 @@
 namespace ReduceOpTmpl {
 using namespace AscendC;
 
-template<typename T>
+template <typename T>
 class ReduceVarPureMove {
 public:
-    __aicore__ inline ReduceVarPureMove() {};
-    __aicore__ inline void InitTiling(const ReduceVarTilingData* tilingData) {
-        tiling_ = tilingData;
-    }
+    __aicore__ inline ReduceVarPureMove(){};
+    __aicore__ inline void InitTiling(const ReduceVarTilingData* tilingData) { tiling_ = tilingData; }
     __aicore__ inline void Init(TPipe* pipeIn, GM_ADDR x, GM_ADDR var, GM_ADDR mean);
     __aicore__ inline void Process();
 
 private:
     __aicore__ inline void ProcessPerCore();
-    __aicore__ inline void VFPureMove(__local_mem__ T *meanLocalAddr, __local_mem__ T *varLocalAddr,
-        uint32_t calCount, float varScale);
+    __aicore__ inline void VFPureMove(__local_mem__ T* meanLocalAddr, __local_mem__ T* varLocalAddr, uint32_t calCount,
+                                      float varScale);
 
 private:
     int64_t blockIdx_ = 0;
-    TPipe *pipe_ = nullptr;
+    TPipe* pipe_ = nullptr;
 
     GlobalTensor<T> inputGM_;
     GlobalTensor<T> varGM_;
@@ -76,7 +74,7 @@ template <typename T>
 __aicore__ inline void ReduceVarPureMove<T>::Process()
 {
     loopStartIdx_ = blockIdx_ * tiling_->reduceOpTiling.factorACntPerCore;
-    loopEndIdx_ = loopStartIdx_ + tiling_->reduceOpTiling.factorACntPerCore;              
+    loopEndIdx_ = loopStartIdx_ + tiling_->reduceOpTiling.factorACntPerCore;
     if (unlikely(loopEndIdx_ > tiling_->reduceOpTiling.factorATotalCnt)) {
         loopEndIdx_ = tiling_->reduceOpTiling.factorATotalCnt;
     }
@@ -86,29 +84,27 @@ __aicore__ inline void ReduceVarPureMove<T>::Process()
 }
 
 template <typename T>
-__aicore__ inline void ReduceVarPureMove<T>::VFPureMove(__local_mem__ T *meanLocalAddr,
-    __local_mem__ T *varLocalAddr,
-    uint32_t calCount,
-    float varScale)
+__aicore__ inline void ReduceVarPureMove<T>::VFPureMove(__local_mem__ T* meanLocalAddr, __local_mem__ T* varLocalAddr,
+                                                        uint32_t calCount, float varScale)
 {
     uint16_t loopCount = Ops::Base::CeilDiv(calCount, ReduceOpTmpl::VL_FP32);
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<float> meanReg;
-        AscendC::MicroAPI::RegTensor<float> varReg;
-        
-        AscendC::MicroAPI::MaskReg pregLoop;
+        AscendC::Reg::RegTensor<float> meanReg;
+        AscendC::Reg::RegTensor<float> varReg;
+
+        AscendC::Reg::MaskReg pregLoop;
         uint32_t sreg0 = calCount;
         for (uint16_t index = 0; index < loopCount; index++) {
-            pregLoop = AscendC::MicroAPI::UpdateMask<float>(sreg0);
+            pregLoop = AscendC::Reg::UpdateMask<float>(sreg0);
             // ub -> regTensor
             ReduceOpTmpl::LoadOneTensorForDtypeT<T>(meanLocalAddr, meanReg, pregLoop, index * VL_FP32);
             // sub
-            AscendC::MicroAPI::Sub(varReg, meanReg, meanReg, pregLoop);
+            AscendC::Reg::Sub(varReg, meanReg, meanReg, pregLoop);
             // mul
-            AscendC::MicroAPI::Mul(varReg, varReg, varReg, pregLoop);
+            AscendC::Reg::Mul(varReg, varReg, varReg, pregLoop);
             // muls
-            AscendC::MicroAPI::Muls(varReg, varReg, varScale, pregLoop);
+            AscendC::Reg::Muls(varReg, varReg, varScale, pregLoop);
             // regTensor -> ub
             ReduceOpTmpl::StoreOneTensorForDtypeT<T>(varLocalAddr, varReg, pregLoop, index * VL_FP32);
         }
@@ -128,8 +124,8 @@ __aicore__ inline void ReduceVarPureMove<T>::ProcessPerCore()
 
         LocalTensor<T> meanLocalIn = meanBuf_.Get<T>();
         LocalTensor<T> varLocalIn = varBuf_.Get<T>();
-        __local_mem__ T *meanLocalAddr = (__local_mem__ T *)meanLocalIn.GetPhyAddr();
-        __local_mem__ T *varLocalAddr = (__local_mem__ T *)varLocalIn.GetPhyAddr();
+        __local_mem__ T* meanLocalAddr = (__local_mem__ T*)meanLocalIn.GetPhyAddr();
+        __local_mem__ T* varLocalAddr = (__local_mem__ T*)varLocalIn.GetPhyAddr();
 
         int32_t calCount = static_cast<int32_t>(copyElementNum);
         float varScale = static_cast<float>(tiling_->varFactor);
@@ -138,11 +134,11 @@ __aicore__ inline void ReduceVarPureMove<T>::ProcessPerCore()
         }
 
         DataCopyPad(meanLocalIn, inputGM_[loopIdx * tiling_->reduceOpTiling.ubFactorA], copyOutParams_, padParams_);
-        
+
         Ops::Base::ReduceOpTmpl::SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
         VFPureMove(meanLocalAddr, varLocalAddr, static_cast<uint32_t>(calCount), varScale);
         Ops::Base::ReduceOpTmpl::SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
-        
+
         if (tiling_->isMeanOut != 0) {
             DataCopyPad(meanGM_[loopIdx * tiling_->reduceOpTiling.ubFactorA], meanLocalIn, copyOutParams_);
         }
@@ -151,6 +147,6 @@ __aicore__ inline void ReduceVarPureMove<T>::ProcessPerCore()
         Ops::Base::ReduceOpTmpl::SetEvent<HardEvent::MTE3_MTE2>(HardEvent::MTE3_MTE2);
     }
 }
-}
+} // namespace ReduceOpTmpl
 
-#endif  // REDUCE_VAR_PURE_MOVE_H
+#endif // REDUCE_VAR_PURE_MOVE_H

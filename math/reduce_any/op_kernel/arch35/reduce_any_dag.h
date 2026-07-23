@@ -29,38 +29,38 @@ namespace ReduceAny {
 using namespace Ops::Base;
 using OutDtype = uint8_t;
 
- template <typename T, typename R>
- struct CastB32Any : public Vec::ElemwiseUnaryOP<T, R> {
-     __aicore__ inline CastB32Any(const LocalTensor<T>& dst, const LocalTensor<R>& src, const uint32_t& count)
-     {
- #ifdef __CCE_AICORE__
-         constexpr uint32_t VECTOR_LENGTH = GetVRegSize();
-         constexpr uint32_t VL_B32 = VECTOR_LENGTH / sizeof(T);
-         __local_mem__ R* srcAddr = (__local_mem__ R*)src.GetPhyAddr();
-         __local_mem__ T* dstAddr = (__local_mem__ T*)dst.GetPhyAddr();
-         uint16_t loopTimes = CeilDiv(count, VL_B32);
-         uint32_t InSize = count;
-         uint32_t OutSize = count;
-         __VEC_SCOPE__
-         {
-             MicroAPI::RegTensor<R> srcReg;
-             MicroAPI::RegTensor<T> dstReg;
-             MicroAPI::MaskReg cmpMask;
-             MicroAPI::MaskReg InMask;
-             MicroAPI::MaskReg OutMask;
-             for (uint16_t j = 0; j < loopTimes; j++) {
-                 InMask = MicroAPI::UpdateMask<R>(InSize);
-                 OutMask = MicroAPI::UpdateMask<T>(OutSize);
-                 MicroAPI::DataCopy<R, MicroAPI::PostLiteral::POST_MODE_UPDATE>(srcReg, srcAddr, VL_B32);
-                 MicroAPI::Compares<R, CMPMODE::NE>(cmpMask, srcReg, 0.0f, InMask);
-                 MicroAPI::Duplicate(dstReg, 0);
-                 MicroAPI::Duplicate(dstReg, 1, cmpMask);
-                 MicroAPI::DataCopy<T, MicroAPI::PostLiteral::POST_MODE_UPDATE>(dstAddr, dstReg, VL_B32, OutMask);
-             }
-         }
- #endif
-     }
- };
+template <typename T, typename R>
+struct CastB32Any : public Vec::ElemwiseUnaryOP<T, R> {
+    __aicore__ inline CastB32Any(const LocalTensor<T>& dst, const LocalTensor<R>& src, const uint32_t& count)
+    {
+#ifdef __CCE_AICORE__
+        constexpr uint32_t VECTOR_LENGTH = GetVRegSize();
+        constexpr uint32_t VL_B32 = VECTOR_LENGTH / sizeof(T);
+        __local_mem__ R* srcAddr = (__local_mem__ R*)src.GetPhyAddr();
+        __local_mem__ T* dstAddr = (__local_mem__ T*)dst.GetPhyAddr();
+        uint16_t loopTimes = CeilDiv(count, VL_B32);
+        uint32_t InSize = count;
+        uint32_t OutSize = count;
+        __VEC_SCOPE__
+        {
+            Reg::RegTensor<R> srcReg;
+            Reg::RegTensor<T> dstReg;
+            Reg::MaskReg cmpMask;
+            Reg::MaskReg InMask;
+            Reg::MaskReg OutMask;
+            for (uint16_t j = 0; j < loopTimes; j++) {
+                InMask = Reg::UpdateMask<R>(InSize);
+                OutMask = Reg::UpdateMask<T>(OutSize);
+                Reg::DataCopy<R, Reg::PostLiteral::POST_MODE_UPDATE>(srcReg, srcAddr, VL_B32);
+                Reg::Compares<R, CMPMODE::NE>(cmpMask, srcReg, 0.0f, InMask);
+                Reg::Duplicate(dstReg, 0);
+                Reg::Duplicate(dstReg, 1, cmpMask);
+                Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(dstAddr, dstReg, VL_B32, OutMask);
+            }
+        }
+#endif
+    }
+};
 
 template <typename T, typename PromteT>
 struct ReduceAnyDagB32 {

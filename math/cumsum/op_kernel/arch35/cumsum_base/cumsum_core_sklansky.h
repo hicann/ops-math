@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -56,8 +56,7 @@ public:
     };
 
 public:
-    __aicore__ inline CumsumCoreSklansky(TPipe& pipe) : CumsumBase<T>(pipe)
-    {}
+    __aicore__ inline CumsumCoreSklansky(TPipe& pipe) : CumsumBase<T>(pipe) {}
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const CumsumSklanskyTilingData* td);
 
@@ -76,14 +75,14 @@ private:
 
     __aicore__ inline CumsumIterGroupTiling& JudgeIterGroupTiling(CumsumSklanskyItersTiling& ssiTiling);
 
-    __aicore__ inline int64_t CalcIterGroupCoreStart(
-        CumsumSklanskyItersTiling& ssiTiling, CumsumIterGroupTiling& iterGroupTiling);
+    __aicore__ inline int64_t CalcIterGroupCoreStart(CumsumSklanskyItersTiling& ssiTiling,
+                                                     CumsumIterGroupTiling& iterGroupTiling);
 
-    __aicore__ inline void CalcUbLoopInfo(
-        CumsumIterGroupTiling& iterGroupTiling, int32_t& ubLoop, int32_t& ubFactor, int32_t& ubTailFactor);
+    __aicore__ inline void CalcUbLoopInfo(CumsumIterGroupTiling& iterGroupTiling, int32_t& ubLoop, int32_t& ubFactor,
+                                          int32_t& ubTailFactor);
 
-    __aicore__ inline void SetCopyParam(
-        bool isUbTail, int32_t ubFactor, int32_t ubTailFactor, DataCopyExtParams& copyParam);
+    __aicore__ inline void SetCopyParam(bool isUbTail, int32_t ubFactor, int32_t ubTailFactor,
+                                        DataCopyExtParams& copyParam);
 
     __aicore__ inline void Mte2AddData(int64_t addDataStart, DataCopyExtParams& copyParam);
 
@@ -115,7 +114,7 @@ private:
     TBuf<> addFactor_;       // 前一R分组中的最大值的一行
     TBuf<> addData_;         // 与前一R分组中的最大值的一行，进行行相加的每一行数据
     TBuf<> addFactorCasted_; // 前一R分组中的最大值的一行，精度提升后
-    TBuf<> addDataCasted_;   // 与前一R分组中的最大值的一行，进行行相加的每一行数据，精度提升后
+    TBuf<> addDataCasted_; // 与前一R分组中的最大值的一行，进行行相加的每一行数据，精度提升后
     TBuf<> addFactorOffset_; // 每次copy addFactor数据的偏移量
 
     static constexpr MultiCopyConfig nddmaConfig_ = {false};
@@ -135,15 +134,15 @@ __aicore__ inline void CumsumCoreSklansky<T, PromtT>::Init(GM_ADDR x, GM_ADDR y,
     coreSsPara_.coreGroupCoreNum = td->coreGroupCoreNum;
     coreSsPara_.sklanskyItersCount = td->sklanskyItersCount;
     coreSsPara_.mCoreOffset = this->blockIdx_ / (coreSsPara_.nBorrowLen * coreSsPara_.coreGroupCoreNum);
-    coreSsPara_.nCoreOffset =
-        (this->blockIdx_ - coreSsPara_.nBorrowLen * coreSsPara_.coreGroupCoreNum * coreSsPara_.mCoreOffset) /
-        coreSsPara_.coreGroupCoreNum;
+    coreSsPara_.nCoreOffset = (this->blockIdx_ -
+                               coreSsPara_.nBorrowLen * coreSsPara_.coreGroupCoreNum * coreSsPara_.mCoreOffset) /
+                              coreSsPara_.coreGroupCoreNum;
     coreSsPara_.mOffset = coreSsPara_.mCoreOffset * coreSsPara_.rLen * coreSsPara_.nLen;
     coreSsPara_.nOffset = coreSsPara_.nCoreOffset * td->nBlockPara.blockFactor;
     coreSsPara_.isTailN = (coreSsPara_.nCoreOffset == coreSsPara_.nBorrowLen - 1);
     coreSsPara_.nFactor = coreSsPara_.isTailN ? td->nBlockPara.blockTailFactor : td->nBlockPara.blockFactor;
-    coreSsPara_.addFactorRepeatTimes =
-        coreSsPara_.isTailN ? td->addFactorRepeatTimesTail : td->addFactorRepeatTimesMain;
+    coreSsPara_.addFactorRepeatTimes = coreSsPara_.isTailN ? td->addFactorRepeatTimesTail :
+                                                             td->addFactorRepeatTimesMain;
     coreSsPara_.sklanskyItersTiling[0] = td->sklanskyItersTiling0;
     coreSsPara_.sklanskyItersTiling[1] = td->sklanskyItersTiling1;
     coreSsPara_.sklanskyItersTiling[2] = td->sklanskyItersTiling2;
@@ -207,10 +206,10 @@ __aicore__ inline void CumsumCoreSklansky<T, PromtT>::PreProcess()
 template <typename T, typename PromtT>
 __aicore__ inline bool CumsumCoreSklansky<T, PromtT>::CalcIterGroupOffset(int32_t ssi)
 {
-    iterGroupOffset_ =
-        (this->blockIdx_ - coreSsPara_.nBorrowLen * coreSsPara_.coreGroupCoreNum * coreSsPara_.mCoreOffset -
-         coreSsPara_.coreGroupCoreNum * coreSsPara_.nCoreOffset) /
-        coreSsPara_.sklanskyItersTiling[ssi].iterGroupCoreNum;
+    iterGroupOffset_ = (this->blockIdx_ -
+                        coreSsPara_.nBorrowLen * coreSsPara_.coreGroupCoreNum * coreSsPara_.mCoreOffset -
+                        coreSsPara_.coreGroupCoreNum * coreSsPara_.nCoreOffset) /
+                       coreSsPara_.sklanskyItersTiling[ssi].iterGroupCoreNum;
 
     // 每一组分到的核可能用不完，用不完的核轮空跳过。当前核的组偏移大于组数，则跳过
     if (iterGroupOffset_ > coreSsPara_.sklanskyItersTiling[ssi].iterGroupCount - 1) {
@@ -234,10 +233,10 @@ __aicore__ inline void CumsumCoreSklansky<T, PromtT>::CopyInAddFactor(int32_t ss
                    1) *
                   coreSsPara_.nLen;
     } else {
-        rOffset =
-            (coreSsPara_.rLen - (ssiTiling.iterGroupStartOffset + iterGroupOffset_ * ssiTiling.iterGroupAddOffset + 1) *
-                                    coreSsPara_.rFactor) *
-            coreSsPara_.nLen;
+        rOffset = (coreSsPara_.rLen -
+                   (ssiTiling.iterGroupStartOffset + iterGroupOffset_ * ssiTiling.iterGroupAddOffset + 1) *
+                       coreSsPara_.rFactor) *
+                  coreSsPara_.nLen;
     }
 
     int64_t addFactorOffset = coreSsPara_.mOffset + rOffset + coreSsPara_.nOffset;
@@ -266,9 +265,8 @@ __aicore__ inline void CumsumCoreSklansky<T, PromtT>::DoDtypeCastAddFactorIfNeed
         return;
     }
 
-    Cast(
-        addFactorCasted_.Get<PromtT>(), addFactor_.Get<T>(), RoundMode::CAST_NONE,
-        coreSsPara_.nFactor * coreSsPara_.addFactorRepeatTimes);
+    Cast(addFactorCasted_.Get<PromtT>(), addFactor_.Get<T>(), RoundMode::CAST_NONE,
+         coreSsPara_.nFactor * coreSsPara_.addFactorRepeatTimes);
 }
 
 /* UB上轮询处理add数据，分为5步
@@ -284,9 +282,10 @@ __aicore__ inline void CumsumCoreSklansky<T, PromtT>::LoopAddData(int32_t ssi)
     CumsumIterGroupTiling& iterGroupTiling = JudgeIterGroupTiling(ssiTiling);
 
     // 计算当前核在每一行迭代中的某一组中组内的核偏移
-    iterGroupInnerOffset_ =
-        this->blockIdx_ - coreSsPara_.nBorrowLen * coreSsPara_.coreGroupCoreNum * coreSsPara_.mCoreOffset -
-        coreSsPara_.coreGroupCoreNum * coreSsPara_.nCoreOffset - ssiTiling.iterGroupCoreNum * iterGroupOffset_;
+    iterGroupInnerOffset_ = this->blockIdx_ -
+                            coreSsPara_.nBorrowLen * coreSsPara_.coreGroupCoreNum * coreSsPara_.mCoreOffset -
+                            coreSsPara_.coreGroupCoreNum * coreSsPara_.nCoreOffset -
+                            ssiTiling.iterGroupCoreNum * iterGroupOffset_;
 
     // 如果当前核不需要处理数据，轮空，直接返回。这种场景不存在，这里只是做异常保护
     if (iterGroupInnerOffset_ >= iterGroupTiling.iterGroupMainBlockCount + iterGroupTiling.iterGroupTailBlockCount) {
@@ -351,8 +350,8 @@ __aicore__ inline CumsumIterGroupTiling& CumsumCoreSklansky<T, PromtT>::JudgeIte
 }
 
 template <typename T, typename PromtT>
-__aicore__ inline int64_t CumsumCoreSklansky<T, PromtT>::CalcIterGroupCoreStart(
-    CumsumSklanskyItersTiling& ssiTiling, CumsumIterGroupTiling& iterGroupTiling)
+__aicore__ inline int64_t CumsumCoreSklansky<T, PromtT>::CalcIterGroupCoreStart(CumsumSklanskyItersTiling& ssiTiling,
+                                                                                CumsumIterGroupTiling& iterGroupTiling)
 {
     /* 计算当前核在每一行迭代中的某一组中组内的核偏移，单位是元素个数 */
     int64_t iterGroupCoreOffset = 0;
@@ -371,8 +370,8 @@ __aicore__ inline int64_t CumsumCoreSklansky<T, PromtT>::CalcIterGroupCoreStart(
         iterGroupStart = (iterGroupOffset_ * ssiTiling.iterGroupAddOffset + ssiTiling.iterGroupAddCount) *
                          coreSsPara_.rFactor * coreSsPara_.nLen;
     } else {
-        int64_t rOffset =
-            coreSsPara_.rLen - (iterGroupOffset_ + 1) * ssiTiling.iterGroupAddOffset * coreSsPara_.rFactor;
+        int64_t rOffset = coreSsPara_.rLen -
+                          (iterGroupOffset_ + 1) * ssiTiling.iterGroupAddOffset * coreSsPara_.rFactor;
         if (rOffset < 0) {
             iterGroupStart = 0;
         } else {
@@ -385,8 +384,9 @@ __aicore__ inline int64_t CumsumCoreSklansky<T, PromtT>::CalcIterGroupCoreStart(
 }
 
 template <typename T, typename PromtT>
-__aicore__ inline void CumsumCoreSklansky<T, PromtT>::CalcUbLoopInfo(
-    CumsumIterGroupTiling& iterGroupTiling, int32_t& ubLoop, int32_t& ubFactor, int32_t& ubTailFactor)
+__aicore__ inline void CumsumCoreSklansky<T, PromtT>::CalcUbLoopInfo(CumsumIterGroupTiling& iterGroupTiling,
+                                                                     int32_t& ubLoop, int32_t& ubFactor,
+                                                                     int32_t& ubTailFactor)
 {
     if (iterGroupInnerOffset_ < iterGroupTiling.iterGroupMainBlockCount) { // 主核
         ubLoop = iterGroupTiling.iterGroupMainCoreUbFactorCount;
@@ -400,8 +400,8 @@ __aicore__ inline void CumsumCoreSklansky<T, PromtT>::CalcUbLoopInfo(
 }
 
 template <typename T, typename PromtT>
-__aicore__ inline void CumsumCoreSklansky<T, PromtT>::SetCopyParam(
-    bool isUbTail, int32_t ubFactor, int32_t ubTailFactor, DataCopyExtParams& copyParam)
+__aicore__ inline void CumsumCoreSklansky<T, PromtT>::SetCopyParam(bool isUbTail, int32_t ubFactor,
+                                                                   int32_t ubTailFactor, DataCopyExtParams& copyParam)
 {
     copyParam.blockCount = ubFactor;
     if (isUbTail) { // UB尾块
@@ -430,9 +430,8 @@ __aicore__ inline void CumsumCoreSklansky<T, PromtT>::DoDtypeCastAddDataIfNeed(D
         return;
     }
 
-    Cast(
-        addDataCasted_.Get<PromtT>(), addData_.Get<T>(), RoundMode::CAST_NONE,
-        copyParam.blockCount * copyParam.blockLen / sizeof(T));
+    Cast(addDataCasted_.Get<PromtT>(), addData_.Get<T>(), RoundMode::CAST_NONE,
+         copyParam.blockCount * copyParam.blockLen / sizeof(T));
 }
 
 template <typename T, typename PromtT>
@@ -461,9 +460,8 @@ __aicore__ inline void CumsumCoreSklansky<T, PromtT>::DoAddTailN(DataCopyExtPara
     } else {
         addFactor = (__ubuf__ PromtT*)addFactorCasted_.Get<PromtT>().GetPhyAddr();
         addData = (__ubuf__ PromtT*)addDataCasted_.Get<PromtT>().GetPhyAddr();
-        addLoop = Ops::Base::CeilDiv(
-            copyParam.blockCount * copyParam.blockLen / sizeof(T) * sizeof(PromtT),
-            static_cast<uint64_t>(Ops::Base::GetVRegSize()));
+        addLoop = Ops::Base::CeilDiv(copyParam.blockCount * copyParam.blockLen / sizeof(T) * sizeof(PromtT),
+                                     static_cast<uint64_t>(Ops::Base::GetVRegSize()));
         addTotal = copyParam.blockCount * copyParam.blockLen / sizeof(T) * sizeof(PromtT) / sizeof(PromtT);
     }
 
@@ -475,23 +473,23 @@ __aicore__ inline void CumsumCoreSklansky<T, PromtT>::DoAddTailN(DataCopyExtPara
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::MaskReg p0 = AscendC::MicroAPI::CreateMask<PromtT, AscendC::MicroAPI::MaskPattern::ALL>();
-        AscendC::MicroAPI::MaskReg mask;
-        AscendC::MicroAPI::RegTensor<uint32_t> addFactorIndexRegTensor;
-        AscendC::MicroAPI::RegTensor<PromtT> addFactorRegTensor;
-        AscendC::MicroAPI::RegTensor<PromtT> addDataRegTensor;
+        AscendC::Reg::MaskReg p0 = AscendC::Reg::CreateMask<PromtT, AscendC::Reg::MaskPattern::ALL>();
+        AscendC::Reg::MaskReg mask;
+        AscendC::Reg::RegTensor<uint32_t> addFactorIndexRegTensor;
+        AscendC::Reg::RegTensor<PromtT> addFactorRegTensor;
+        AscendC::Reg::RegTensor<PromtT> addDataRegTensor;
         for (uint16_t i = 0; i < addFactorCircleLoop - 1; i++) {
             for (uint16_t j = 0; j < addFactorCircleCount_; j++) {
                 // 搬入addFactor
-                AscendC::MicroAPI::AddrReg addrReg = AscendC::MicroAPI::CreateAddrReg<uint32_t>(j, vlElementCount);
-                AscendC::MicroAPI::DataCopy(addFactorIndexRegTensor, addFactorOffset, addrReg);
-                AscendC::MicroAPI::DataCopyGather(addFactorRegTensor, addFactor, addFactorIndexRegTensor, p0);
+                AscendC::Reg::AddrReg addrReg = AscendC::Reg::CreateAddrReg<uint32_t>(j, vlElementCount);
+                AscendC::Reg::DataCopy(addFactorIndexRegTensor, addFactorOffset, addrReg);
+                AscendC::Reg::DataCopyGather(addFactorRegTensor, addFactor, addFactorIndexRegTensor, p0);
 
                 // 对齐连续搬入addData
                 DataCopy(addDataRegTensor, addData + (i * addFactorCircleCount_ + j) * vlElementCount);
 
                 // Add
-                mask = AscendC::MicroAPI::UpdateMask<uint32_t>(addTotal);
+                mask = AscendC::Reg::UpdateMask<uint32_t>(addTotal);
                 Add(addDataRegTensor, addFactorRegTensor, addDataRegTensor, mask);
 
                 // 对齐连续搬出addData
@@ -502,19 +500,21 @@ __aicore__ inline void CumsumCoreSklansky<T, PromtT>::DoAddTailN(DataCopyExtPara
         // 尾块，只需执行一次
         for (uint16_t j = 0; j < addFactorCircleCountTail; j++) {
             // 搬入addFactor
-            AscendC::MicroAPI::AddrReg addrReg = AscendC::MicroAPI::CreateAddrReg<uint32_t>(j, vlElementCount);
-            AscendC::MicroAPI::DataCopy(addFactorIndexRegTensor, addFactorOffset, addrReg);
-            AscendC::MicroAPI::DataCopyGather(addFactorRegTensor, addFactor, addFactorIndexRegTensor, p0);
+            AscendC::Reg::AddrReg addrReg = AscendC::Reg::CreateAddrReg<uint32_t>(j, vlElementCount);
+            AscendC::Reg::DataCopy(addFactorIndexRegTensor, addFactorOffset, addrReg);
+            AscendC::Reg::DataCopyGather(addFactorRegTensor, addFactor, addFactorIndexRegTensor, p0);
 
             // 对齐连续搬入addData
-            DataCopy(addDataRegTensor, addData + ((addFactorCircleLoop - 1) * addFactorCircleCount_ + j) * vlElementCount);
+            DataCopy(addDataRegTensor,
+                     addData + ((addFactorCircleLoop - 1) * addFactorCircleCount_ + j) * vlElementCount);
 
             // Add
-            mask = AscendC::MicroAPI::UpdateMask<uint32_t>(addTotalTail);
+            mask = AscendC::Reg::UpdateMask<uint32_t>(addTotalTail);
             Add(addDataRegTensor, addFactorRegTensor, addDataRegTensor, mask);
 
             // 对齐连续搬出addData
-            DataCopy(addData + ((addFactorCircleLoop - 1) * addFactorCircleCount_ + j) * vlElementCount, addDataRegTensor, mask);
+            DataCopy(addData + ((addFactorCircleLoop - 1) * addFactorCircleCount_ + j) * vlElementCount,
+                     addDataRegTensor, mask);
         }
     } // __VEC_SCOPE__
 }
@@ -559,9 +559,8 @@ __aicore__ inline void CumsumCoreSklansky<T, PromtT>::DoDtypeCastBackAddDataIfNe
         return;
     }
 
-    Cast(
-        addData_.Get<T>(), addDataCasted_.Get<PromtT>(), RoundMode::CAST_RINT,
-        copyParam.blockCount * copyParam.blockLen / sizeof(T));
+    Cast(addData_.Get<T>(), addDataCasted_.Get<PromtT>(), RoundMode::CAST_RINT,
+         copyParam.blockCount * copyParam.blockLen / sizeof(T));
 }
 
 template <typename T, typename PromtT>

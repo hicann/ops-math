@@ -96,30 +96,30 @@ private:
         if constexpr (InnerPattern::TailA) {
             __VEC_SCOPE__
             {
-                AscendC::MicroAPI::RegTensor<T, AscendC::MicroAPI::RegTraitNumOne> vreg;
-                AscendC::MicroAPI::MaskReg mask;
+                AscendC::Reg::RegTensor<T, AscendC::Reg::RegTraitNumOne> vreg;
+                AscendC::Reg::MaskReg mask;
                 for (uint16_t i = 0; i < dimR - 1; ++i) {
                     uint32_t scalar = dimA;
                     for (uint16_t j = 0; j < loopA; ++j) {
-                        AscendC::MicroAPI::DataCopy(vreg, dstAddr + i * dimA + j * VL_LEN / sizeof(T));
-                        auto mask = AscendC::MicroAPI::UpdateMask<T, AscendC::MicroAPI::RegTraitNumOne>(scalar);
-                        AscendC::MicroAPI::DataCopy(dstAddr + (i + 1) * dimA + j * VL_LEN / sizeof(T), vreg, mask);
+                        AscendC::Reg::DataCopy(vreg, dstAddr + i * dimA + j * VL_LEN / sizeof(T));
+                        auto mask = AscendC::Reg::UpdateMask<T, AscendC::Reg::RegTraitNumOne>(scalar);
+                        AscendC::Reg::DataCopy(dstAddr + (i + 1) * dimA + j * VL_LEN / sizeof(T), vreg, mask);
                     }
                 }
             }
         } else {
             __VEC_SCOPE__
             {
-                AscendC::MicroAPI::RegTensor<T, AscendC::MicroAPI::RegTraitNumOne> vregSrc, vregDst;
-                AscendC::MicroAPI::MaskReg maskFull = MicroAPI::CreateMask<T, MicroAPI::MaskPattern::ALL>();
-                AscendC::MicroAPI::MaskReg mask;
+                AscendC::Reg::RegTensor<T, AscendC::Reg::RegTraitNumOne> vregSrc, vregDst;
+                AscendC::Reg::MaskReg maskFull = Reg::CreateMask<T, Reg::MaskPattern::ALL>();
+                AscendC::Reg::MaskReg mask;
                 for (uint16_t i = 0; i < dimA; ++i) {
-                    AscendC::MicroAPI::DataCopy(vregSrc, dstAddr + i * dimR);
+                    AscendC::Reg::DataCopy(vregSrc, dstAddr + i * dimR);
                     uint32_t scalar = dimR;
                     for (uint16_t j = 0; j < loopR; ++j) {
-                        AscendC::MicroAPI::Duplicate(vregDst, vregSrc, maskFull);
-                        auto mask = AscendC::MicroAPI::UpdateMask<T, AscendC::MicroAPI::RegTraitNumOne>(scalar);
-                        AscendC::MicroAPI::DataCopy(dstAddr + i * dimR + j * VL_LEN / sizeof(T), vregDst, mask);
+                        AscendC::Reg::Duplicate(vregDst, vregSrc, maskFull);
+                        auto mask = AscendC::Reg::UpdateMask<T, AscendC::Reg::RegTraitNumOne>(scalar);
+                        AscendC::Reg::DataCopy(dstAddr + i * dimR + j * VL_LEN / sizeof(T), vregDst, mask);
                     }
                 }
             }
@@ -127,7 +127,7 @@ private:
     }
 
     /**
-     * \brief Process NaN->0 replacement on UB data using MicroAPI vector registers.
+     * \brief Process NaN->0 replacement on UB data using Reg vector registers.
      *
      * Uses Compare(x, x, EQ) to detect NaN (IEEE 754: NaN != NaN -> mask=0, normal == normal -> mask=1).
      * Then Select(data, data, 0, mask): mask=1(normal)->keep data, mask=0(NaN)->replace with 0.
@@ -146,30 +146,30 @@ private:
 
         __VEC_SCOPE__
         {
-            MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> dataReg;
-            MicroAPI::RegTensor<T, MicroAPI::RegTraitNumOne> zeroReg;
-            MicroAPI::MaskReg cmpMask;
-            MicroAPI::MaskReg opMask;
+            Reg::RegTensor<T, Reg::RegTraitNumOne> dataReg;
+            Reg::RegTensor<T, Reg::RegTraitNumOne> zeroReg;
+            Reg::MaskReg cmpMask;
+            Reg::MaskReg opMask;
 
-            MicroAPI::Duplicate(zeroReg, static_cast<T>(0));
+            Reg::Duplicate(zeroReg, static_cast<T>(0));
 
             for (uint16_t i = 0; i < loopNum; i++) {
                 uint32_t count = (i == loopNum - 1) ?
                                      static_cast<uint32_t>(elemCount - static_cast<uint64_t>(i) * vLElems) :
                                      vLElems;
-                opMask = MicroAPI::UpdateMask<T, MicroAPI::RegTraitNumOne>(count);
+                opMask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
 
                 // Load data from UB to VR
-                MicroAPI::DataCopy(dataReg, dataAddr + i * vLElems);
+                Reg::DataCopy(dataReg, dataAddr + i * vLElems);
 
                 // Compare(x, x, EQ): NaN != NaN -> mask=0, normal == normal -> mask=1
-                MicroAPI::Compare<T, CMPMODE::EQ>(cmpMask, dataReg, dataReg, opMask);
+                Reg::Compare<T, CMPMODE::EQ>(cmpMask, dataReg, dataReg, opMask);
 
                 // Select: mask=1(normal) -> data, mask=0(NaN) -> 0
-                MicroAPI::Select(dataReg, dataReg, zeroReg, cmpMask);
+                Reg::Select(dataReg, dataReg, zeroReg, cmpMask);
 
                 // Store back to UB
-                MicroAPI::DataCopy(dataAddr + i * vLElems, dataReg, opMask);
+                Reg::DataCopy(dataAddr + i * vLElems, dataReg, opMask);
             }
         }
     }
@@ -287,11 +287,11 @@ public:
     {
         PromteT padValue = this->template GetPaddingValue<PromteT>();
         if constexpr (IsB64<PromteT>()) {
-            DoPadding<AscendC::MicroAPI::RegTraitNumTwo, true, Pattern, InputT, PromteT>(
-                (__ubuf__ PromteT*)dst.GetPhyAddr(), padValue, shape, padding);
+            DoPadding<AscendC::Reg::RegTraitNumTwo, true, Pattern, InputT, PromteT>((__ubuf__ PromteT*)dst.GetPhyAddr(),
+                                                                                    padValue, shape, padding);
         } else {
-            DoPadding<AscendC::MicroAPI::RegTraitNumOne, true, Pattern, InputT, PromteT>(
-                (__ubuf__ PromteT*)dst.GetPhyAddr(), padValue, shape, padding);
+            DoPadding<AscendC::Reg::RegTraitNumOne, true, Pattern, InputT, PromteT>((__ubuf__ PromteT*)dst.GetPhyAddr(),
+                                                                                    padValue, shape, padding);
         }
 
         // PadValue 在数据搬运(CopyInWithMoveAlign)和 padding 完成后、reduce 计算前调用，

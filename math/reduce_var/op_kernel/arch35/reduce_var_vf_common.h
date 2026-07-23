@@ -20,22 +20,21 @@
 #include "op_kernel/platform_util.h"
 #include "op_kernel/math_util.h"
 
-namespace ReduceOpTmpl
-{
+namespace ReduceOpTmpl {
 using namespace AscendC;
 
-using AscendC::MicroAPI::Cast;
-using AscendC::MicroAPI::CreateMask;
-using AscendC::MicroAPI::DataCopy;
-using AscendC::MicroAPI::LoadDist;
-using AscendC::MicroAPI::LocalMemBar;
-using AscendC::MicroAPI::MaskMergeMode;
-using AscendC::MicroAPI::MaskReg;
-using AscendC::MicroAPI::MemType;
-using AscendC::MicroAPI::RegTensor;
-using AscendC::MicroAPI::StoreDist;
-using AscendC::MicroAPI::UpdateMask;
-using AscendC::MicroAPI::MaskPattern;
+using AscendC::Reg::Cast;
+using AscendC::Reg::CreateMask;
+using AscendC::Reg::DataCopy;
+using AscendC::Reg::LoadDist;
+using AscendC::Reg::LocalMemBar;
+using AscendC::Reg::MaskMergeMode;
+using AscendC::Reg::MaskPattern;
+using AscendC::Reg::MaskReg;
+using AscendC::Reg::MemType;
+using AscendC::Reg::RegTensor;
+using AscendC::Reg::StoreDist;
+using AscendC::Reg::UpdateMask;
 
 constexpr uint32_t VL_FP32 = Ops::Base::GetVRegSize() / sizeof(float);
 constexpr int32_t DICHOTOMY_ADD_COEFF = 2;
@@ -56,13 +55,12 @@ __aicore__ inline uint64_t FindNextPower2(const uint64_t value)
     }
 }
 
-constexpr static AscendC::MicroAPI::CastTrait castTraitB162B32 = {AscendC::MicroAPI::RegLayout::ZERO,
-                                                                  AscendC::MicroAPI::SatMode::UNKNOWN,
-                                                                  MaskMergeMode::ZEROING, AscendC::RoundMode::UNKNOWN};
+constexpr static AscendC::Reg::CastTrait castTraitB162B32 = {
+    AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::UNKNOWN, MaskMergeMode::ZEROING, AscendC::RoundMode::UNKNOWN};
 
-constexpr static AscendC::MicroAPI::CastTrait castTraitB322B16 = {
-    AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::NO_SAT, MaskMergeMode::ZEROING,
-    AscendC::RoundMode::CAST_RINT};
+constexpr static AscendC::Reg::CastTrait castTraitB322B16 = {AscendC::Reg::RegLayout::ZERO,
+                                                             AscendC::Reg::SatMode::NO_SAT, MaskMergeMode::ZEROING,
+                                                             AscendC::RoundMode::CAST_RINT};
 
 template <typename T>
 __aicore__ inline void LoadOneTensorForDtypeT(__local_mem__ T* input, RegTensor<float>& dst, MaskReg& preg,
@@ -82,28 +80,27 @@ __aicore__ inline void LoadOneTensorForDtypeT(__local_mem__ T* input, RegTensor<
 }
 
 template <typename T>
-__aicore__ inline void LoadTwoTensorForDtypeT(__local_mem__ T *src1, __local_mem__ T *src2, RegTensor<float> &dst1,
-        RegTensor<float> &dst2, MaskReg &dst1Preg, MaskReg &dst2Preg, uint32_t src1Offset, uint32_t src2Offset)
+__aicore__ inline void LoadTwoTensorForDtypeT(__local_mem__ T* src1, __local_mem__ T* src2, RegTensor<float>& dst1,
+                                              RegTensor<float>& dst2, MaskReg& dst1Preg, MaskReg& dst2Preg,
+                                              uint32_t src1Offset, uint32_t src2Offset)
 {
     if constexpr (IsSameType<T, half>::value) {
         RegTensor<half> xFp16Q;
         RegTensor<half> xFp16R;
-        DataCopy<half, LoadDist::DIST_UNPACK_B16>(xFp16Q, ((__local_mem__ half *)(src1) + (src1Offset)));
-        DataCopy<half, LoadDist::DIST_UNPACK_B16>(xFp16R, ((__local_mem__ half *)(src2) + (src2Offset)));
+        DataCopy<half, LoadDist::DIST_UNPACK_B16>(xFp16Q, ((__local_mem__ half*)(src1) + (src1Offset)));
+        DataCopy<half, LoadDist::DIST_UNPACK_B16>(xFp16R, ((__local_mem__ half*)(src2) + (src2Offset)));
         Cast<float, half, castTraitB162B32>(dst1, xFp16Q, dst1Preg);
         Cast<float, half, castTraitB162B32>(dst2, xFp16R, dst2Preg);
     } else if constexpr (IsSameType<T, bfloat16_t>::value) {
         RegTensor<bfloat16_t> xFp16Q;
         RegTensor<bfloat16_t> xFp16R;
-        DataCopy<bfloat16_t, LoadDist::DIST_UNPACK_B16>(xFp16Q,
-            ((__local_mem__ bfloat16_t *)(src1) + (src1Offset)));
-        DataCopy<bfloat16_t, LoadDist::DIST_UNPACK_B16>(xFp16R,
-            ((__local_mem__ bfloat16_t *)(src2) + (src2Offset)));
+        DataCopy<bfloat16_t, LoadDist::DIST_UNPACK_B16>(xFp16Q, ((__local_mem__ bfloat16_t*)(src1) + (src1Offset)));
+        DataCopy<bfloat16_t, LoadDist::DIST_UNPACK_B16>(xFp16R, ((__local_mem__ bfloat16_t*)(src2) + (src2Offset)));
         Cast<float, bfloat16_t, castTraitB162B32>(dst1, xFp16Q, dst1Preg);
         Cast<float, bfloat16_t, castTraitB162B32>(dst2, xFp16R, dst2Preg);
     } else {
-        DataCopy(dst1, ((__local_mem__ float *)(src1) + (src1Offset)));
-        DataCopy(dst2, ((__local_mem__ float *)(src2) + (src2Offset)));
+        DataCopy(dst1, ((__local_mem__ float*)(src1) + (src1Offset)));
+        DataCopy(dst2, ((__local_mem__ float*)(src2) + (src2Offset)));
     }
 }
 
@@ -131,7 +128,7 @@ __aicore__ inline void DichotomyAdd(RegTensor<float>& dstReg, __local_mem__ floa
     RegTensor<float> tmpReg2;
     RegTensor<float> tmpReg3;
     LocalMemBar<MemType::VEC_STORE, MemType::VEC_LOAD>();
-    MaskReg pregMain = CreateMask<float, AscendC::MicroAPI::MaskPattern::ALL>();
+    MaskReg pregMain = CreateMask<float, AscendC::Reg::MaskPattern::ALL>();
     for (uint16_t k = 0; k < outerLoop; k++) {
         innerLoop = innerLoop / DICHOTOMY_ADD_COEFF;
         for (uint16_t i = 0; i < innerLoop; i++) {
@@ -140,7 +137,7 @@ __aicore__ inline void DichotomyAdd(RegTensor<float>& dstReg, __local_mem__ floa
             Add(tmpReg3, tmpReg1, tmpReg2, pregMain);
             DataCopy(src + i * VL_FP32, tmpReg3, pregMain);
         }
-        AscendC::MicroAPI::LocalMemBar<MemType::VEC_STORE, MemType::VEC_LOAD>();
+        AscendC::Reg::LocalMemBar<MemType::VEC_STORE, MemType::VEC_LOAD>();
     }
     uint32_t sreg0 = lastNum;
     MaskReg pregLoop = UpdateMask<float>(sreg0);
@@ -165,5 +162,5 @@ __aicore__ inline void StoreOneElementForDtypeT(__local_mem__ T* output, RegTens
         DataCopy<float, StoreDist::DIST_FIRST_ELEMENT_B32>((__local_mem__ float*)(output) + offset, src, preg);
     }
 }
-}  // namespace ReduceOpTmpl
-#endif  // _REDUCE_VAR_VF_COMMON_H_
+} // namespace ReduceOpTmpl
+#endif // _REDUCE_VAR_VF_COMMON_H_

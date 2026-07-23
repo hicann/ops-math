@@ -10,9 +10,9 @@
 
 /*!
  * \file cdist_grad_dag.h
- * \brief cdist_grad dag — six DAGs, Compare+Select via custom MicroAPI operators
+ * \brief cdist_grad dag — six DAGs, Compare+Select via custom Reg operators
  *
- * Custom operators (MicroAPI CompareScalar + Select, avoids DAG multi-consumer):
+ * Custom operators (Reg CompareScalar + Select, avoids DAG multi-consumer):
  *   CdistGradSignOp:       sign(x) via GT/LT compare → 1.0 / -1.0 / 0.0
  *   CdistGradMaskEQOp:     a == b ? 1.0 : 0.0 via Sub + EQ compare
  *   CdistGradMaskNEZeroOp: x != 0 ? 1.0 : 0.0 via EQ compare (inverted)
@@ -69,7 +69,7 @@ struct CdistGradP0Dag {
 
 // ---------------------------------------------------------------------------
 // CdistGradP1Dag — p == 1
-// sign = CdistGradSignOp(diff)   via MicroAPI CompareScalar GT/LT + Select
+// sign = CdistGradSignOp(diff)   via Reg CompareScalar GT/LT + Select
 // result = grad * sign
 // ---------------------------------------------------------------------------
 template <typename T, typename PromoteT>
@@ -99,7 +99,7 @@ struct CdistGradP1Dag {
 
 // ---------------------------------------------------------------------------
 // CdistGradP2Dag — p == 2
-// mask = CdistGradMaskNEZeroOp(cdist)   via MicroAPI
+// mask = CdistGradMaskNEZeroOp(cdist)   via Reg
 // result = grad * diff / (cdist + eps) * mask
 // Matches PyTorch: dist == 0 ? 0 : grad * diff / dist
 // ---------------------------------------------------------------------------
@@ -242,8 +242,8 @@ struct CdistGradLargePDag {
 
 // ---------------------------------------------------------------------------
 // CdistGradInfDag — p == inf
-// sign = CdistGradSignOp(diff)       via MicroAPI CompareScalar GT/LT + Select
-// mask = CdistGradMaskEQOp(|diff|, cdist)  via MicroAPI Sub + CompareScalar EQ + Select
+// sign = CdistGradSignOp(diff)       via Reg CompareScalar GT/LT + Select
+// mask = CdistGradMaskEQOp(|diff|, cdist)  via Reg Sub + CompareScalar EQ + Select
 // result = grad * sign * mask
 // ---------------------------------------------------------------------------
 template <typename T, typename PromoteT>
@@ -263,10 +263,10 @@ struct CdistGradInfDag {
     using InfDiff = Bind<Vec::Sub<PromoteT>, InfCastX1, InfCastX2>;
     using InfDiffAbs = Bind<Vec::Abs<PromoteT>, InfDiff>;
 
-    // sign = MicroAPI sign(diff)
+    // sign = Reg sign(diff)
     using InfSign = Bind<CdistGradSignOp<PromoteT>, InfDiff>;
 
-    // mask = MicroAPI (|diff| == cdist) ? 1.0 : 0.0
+    // mask = Reg (|diff| == cdist) ? 1.0 : 0.0
     using InfMask = Bind<CdistGradMaskEQOp<PromoteT>, InfDiffAbs, InfCastCdist>;
 
     // result = grad * sign * mask

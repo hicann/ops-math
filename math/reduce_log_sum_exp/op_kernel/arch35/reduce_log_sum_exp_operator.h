@@ -27,17 +27,15 @@ using namespace Ops::Base::Vec;
 using namespace Ops::Base;
 
 template <typename PromteT>
-class ReduceLogSumExpOp : public Ops::Base::Vec::ReduceSumOp<PromteT>
-{
+class ReduceLogSumExpOp : public Ops::Base::Vec::ReduceSumOp<PromteT> {
 public:
-    __aicore__ inline ReduceLogSumExpOp()
-    {}
+    __aicore__ inline ReduceLogSumExpOp() {}
 
 #ifdef __CCE_AICORE__
 private:
     template <typename T, class V>
     __aicore__ inline void SetCopyInAndLoopParams(DataCopyExtParams& copyInParams, LoopModeParams& loopParams,
-                                                         const V& view, bool isAxisA)
+                                                  const V& view, bool isAxisA)
     {
         copyInParams.blockCount = isAxisA ? 1 : view.axis[CONST1].repeat;
         copyInParams.blockLen = view.axis[CONST0].repeat * sizeof(T);
@@ -53,9 +51,8 @@ private:
     }
 
     template <typename T, class V>
-    __aicore__ inline void CopyInLoop(const LocalTensor<T>& dst, const GlobalTensor<T>& src,
-                                            const V& view, const DataCopyExtParams& copyInParams,
-                                            const DataCopyPadExtParams<T>& padParams)
+    __aicore__ inline void CopyInLoop(const LocalTensor<T>& dst, const GlobalTensor<T>& src, const V& view,
+                                      const DataCopyExtParams& copyInParams, const DataCopyPadExtParams<T>& padParams)
     {
         if (view.axisSize <= CONST4) {
             AscendC::DataCopyPad(dst, src[view.addr], copyInParams, padParams);
@@ -64,14 +61,12 @@ private:
                 for (uint64_t j = 0; j < view.axis[CONST6].repeat; ++j) {
                     for (uint64_t k = 0; k < view.axis[CONST5].repeat; ++k) {
                         for (uint64_t l = 0; l < view.axis[CONST4].repeat; ++l) {
-                            const int64_t dstStride = i * view.axis[CONST7].dstStride + 
+                            const int64_t dstStride = i * view.axis[CONST7].dstStride +
                                                       j * view.axis[CONST6].dstStride +
-                                                      k * view.axis[CONST5].dstStride +
-                                                      l * view.axis[CONST4].dstStride;
+                                                      k * view.axis[CONST5].dstStride + l * view.axis[CONST4].dstStride;
                             const int64_t srcStride = i * view.axis[CONST7].srcStride +
                                                       j * view.axis[CONST6].srcStride +
-                                                      k * view.axis[CONST5].srcStride +
-                                                      l * view.axis[CONST4].srcStride;
+                                                      k * view.axis[CONST5].srcStride + l * view.axis[CONST4].srcStride;
                             AscendC::DataCopyPad(dst[dstStride], src[view.addr + srcStride], copyInParams, padParams);
                         }
                     }
@@ -88,30 +83,30 @@ private:
         if constexpr (InnerPattern::TailA) {
             __VEC_SCOPE__
             {
-                AscendC::MicroAPI::RegTensor<T, AscendC::MicroAPI::RegTraitNumOne> vreg;
-                AscendC::MicroAPI::MaskReg mask;
+                AscendC::Reg::RegTensor<T, AscendC::Reg::RegTraitNumOne> vreg;
+                AscendC::Reg::MaskReg mask;
                 for (uint16_t i = 0; i < dimR - 1; ++i) {
                     uint32_t scalar = dimA;
                     for (uint16_t j = 0; j < loopA; ++j) {
-                        AscendC::MicroAPI::DataCopy(vreg, dstAddr + i * dimA + j * VL_LEN / sizeof(T));
-                        auto mask = AscendC::MicroAPI::UpdateMask<T, AscendC::MicroAPI::RegTraitNumOne>(scalar);
-                        AscendC::MicroAPI::DataCopy(dstAddr + (i + 1) * dimA + j * VL_LEN / sizeof(T), vreg, mask);
+                        AscendC::Reg::DataCopy(vreg, dstAddr + i * dimA + j * VL_LEN / sizeof(T));
+                        auto mask = AscendC::Reg::UpdateMask<T, AscendC::Reg::RegTraitNumOne>(scalar);
+                        AscendC::Reg::DataCopy(dstAddr + (i + 1) * dimA + j * VL_LEN / sizeof(T), vreg, mask);
                     }
                 }
             }
         } else {
             __VEC_SCOPE__
             {
-                AscendC::MicroAPI::RegTensor<T, AscendC::MicroAPI::RegTraitNumOne> vregSrc, vregDst;
-                AscendC::MicroAPI::MaskReg maskFull = MicroAPI::CreateMask<T, MicroAPI::MaskPattern::ALL>();
-                AscendC::MicroAPI::MaskReg mask;
+                AscendC::Reg::RegTensor<T, AscendC::Reg::RegTraitNumOne> vregSrc, vregDst;
+                AscendC::Reg::MaskReg maskFull = Reg::CreateMask<T, Reg::MaskPattern::ALL>();
+                AscendC::Reg::MaskReg mask;
                 for (uint16_t i = 0; i < dimA; ++i) {
-                    AscendC::MicroAPI::DataCopy(vregSrc, dstAddr + i * dimR);
+                    AscendC::Reg::DataCopy(vregSrc, dstAddr + i * dimR);
                     uint32_t scalar = dimR;
                     for (uint16_t j = 0; j < loopR; ++j) {
-                        AscendC::MicroAPI::Duplicate(vregDst, vregSrc, maskFull);
-                        auto mask = AscendC::MicroAPI::UpdateMask<T, AscendC::MicroAPI::RegTraitNumOne>(scalar);
-                        AscendC::MicroAPI::DataCopy(dstAddr + i * dimR + j * VL_LEN / sizeof(T), vregDst, mask);
+                        AscendC::Reg::Duplicate(vregDst, vregSrc, maskFull);
+                        auto mask = AscendC::Reg::UpdateMask<T, AscendC::Reg::RegTraitNumOne>(scalar);
+                        AscendC::Reg::DataCopy(dstAddr + i * dimR + j * VL_LEN / sizeof(T), vregDst, mask);
                     }
                 }
             }
@@ -129,7 +124,7 @@ public:
         for (int32_t i = 0; i < view.axisSize; i++) {
             addrOffset += view.axis[i].start * view.axis[i].srcStride;
         }
-        view.addr = addrOffset;  // 搬运地址
+        view.addr = addrOffset; // 搬运地址
         if constexpr (pos == 0) {
             SetCopyInAndLoopParams<T>(copyInParams, loopParams, view, false);
             SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
@@ -184,7 +179,7 @@ public:
                         }
                     }
                 }
-                
+
                 SetCopyInAndLoopParams<T>(copyInParams, loopParams, viewCopy, true);
                 SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
                 CopyInLoop<T>(dst, src, viewCopy, copyInParams, padParams);
@@ -208,16 +203,16 @@ public:
     {
         PromteT padValue = this->template GetPaddingValue<PromteT>();
         if constexpr (IsB64<PromteT>()) {
-            DoPadding<AscendC::MicroAPI::RegTraitNumTwo, true, Pattern, InputT, PromteT>(
-                (__ubuf__ PromteT*)dst.GetPhyAddr(), padValue, shape, padding);
+            DoPadding<AscendC::Reg::RegTraitNumTwo, true, Pattern, InputT, PromteT>((__ubuf__ PromteT*)dst.GetPhyAddr(),
+                                                                                    padValue, shape, padding);
         } else {
-            DoPadding<AscendC::MicroAPI::RegTraitNumOne, true, Pattern, InputT, PromteT>(
-                (__ubuf__ PromteT*)dst.GetPhyAddr(), padValue, shape, padding);
+            DoPadding<AscendC::Reg::RegTraitNumOne, true, Pattern, InputT, PromteT>((__ubuf__ PromteT*)dst.GetPhyAddr(),
+                                                                                    padValue, shape, padding);
         }
     }
 #endif
 };
-} // namespace Vec
+} // namespace ReduceLogSumExpVec
 } // namespace AscendC
 
-#endif  // CANN_CUSTOM_OPS_REDUCE_LOG_SUM_EXP_OPERATOR_H
+#endif // CANN_CUSTOM_OPS_REDUCE_LOG_SUM_EXP_OPERATOR_H

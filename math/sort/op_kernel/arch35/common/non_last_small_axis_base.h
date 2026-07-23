@@ -37,9 +37,9 @@ constexpr uint32_t NON_LAST_MERGE_SORT_ALIGN = 32;
  * @tparam Derived CRTP derived type
  * @tparam T Input/output storage data type
  * @tparam SortT Data type used by the Sort API
- * @tparam RangeType MicroAPI register index arithmetic type
- * @tparam IdxType MicroAPI gather index type
- * @tparam CastType MicroAPI register data type used during transpose
+ * @tparam RangeType Reg register index arithmetic type
+ * @tparam IdxType Reg gather index type
+ * @tparam CastType Reg register data type used during transpose
  * @tparam IsDescend Sort order: true for descending, false for ascending
  * @tparam UseMergeSort Whether to use MERGE_SORT instead of RADIX_SORT for row sorting
  * @tparam IsBf16Merge Whether bf16 input needs an intermediate cast buffer for merge-sort path
@@ -198,36 +198,34 @@ protected:
         uint32_t outputValueAxisElems = IsBf16Merge ? this->inputValueAxisElems_ : this->valueAxisElems_;
         __VEC_SCOPE__
         {
-            AscendC::MicroAPI::RegTensor<CastType> dataReg;
-            AscendC::MicroAPI::RegTensor<RangeType> baseIdxReg;
-            AscendC::MicroAPI::RegTensor<RangeType> idxReg;
-            AscendC::MicroAPI::MaskReg
-                idxMask = AscendC::MicroAPI::CreateMask<RangeType, AscendC::MicroAPI::MaskPattern::ALL>();
+            AscendC::Reg::RegTensor<CastType> dataReg;
+            AscendC::Reg::RegTensor<RangeType> baseIdxReg;
+            AscendC::Reg::RegTensor<RangeType> idxReg;
+            AscendC::Reg::MaskReg idxMask = AscendC::Reg::CreateMask<RangeType, AscendC::Reg::MaskPattern::ALL>();
 
-            AscendC::MicroAPI::Arange(baseIdxReg, 0);
-            AscendC::MicroAPI::Muls(baseIdxReg, baseIdxReg, ToRangeScalar(this->inputRowElems_), idxMask);
+            AscendC::Reg::Arange(baseIdxReg, 0);
+            AscendC::Reg::Muls(baseIdxReg, baseIdxReg, ToRangeScalar(this->inputRowElems_), idxMask);
             for (uint16_t axisBase = 0; axisBase < this->axisLen_;
                  axisBase = static_cast<uint16_t>(axisBase + vlSize)) {
                 uint32_t curCount = this->axisLen_ - axisBase;
                 if (curCount > vlSize) {
                     curCount = vlSize;
                 }
-                AscendC::MicroAPI::MaskReg dataMask = AscendC::MicroAPI::UpdateMask<CastType>(curCount);
-                AscendC::MicroAPI::Adds(idxReg, baseIdxReg, ToRangeScalar(axisBase * this->inputRowElems_), idxMask);
+                AscendC::Reg::MaskReg dataMask = AscendC::Reg::UpdateMask<CastType>(curCount);
+                AscendC::Reg::Adds(idxReg, baseIdxReg, ToRangeScalar(axisBase * this->inputRowElems_), idxMask);
                 for (uint16_t inner = 0; inner < curInnerChunk; ++inner) {
                     // Gather: read data from inputAddr using transpose indices in idxReg
-                    AscendC::MicroAPI::DataCopyGather(dataReg, inputAddr + inner,
-                                                      (AscendC::MicroAPI::RegTensor<IdxType>&)idxReg, dataMask);
+                    AscendC::Reg::DataCopyGather(dataReg, inputAddr + inner, (AscendC::Reg::RegTensor<IdxType>&)idxReg,
+                                                 dataMask);
                     if constexpr (sizeof(T) != 1) {
                         // Non-int8: write directly to UB output address
-                        AscendC::MicroAPI::DataCopy(outputAddr + inner * outputValueAxisElems + axisBase, dataReg,
-                                                    dataMask);
+                        AscendC::Reg::DataCopy(outputAddr + inner * outputValueAxisElems + axisBase, dataReg, dataMask);
                     } else {
                         // int8: pack into b16 for compact UB write
                         __local_mem__ CastType* outputAddrB16 = reinterpret_cast<__local_mem__ CastType*>(
                             outputAddr + inner * outputValueAxisElems + axisBase);
-                        AscendC::MicroAPI::DataCopy<CastType, AscendC::MicroAPI::StoreDist::DIST_PACK_B16>(
-                            outputAddrB16, dataReg, dataMask);
+                        AscendC::Reg::DataCopy<CastType, AscendC::Reg::StoreDist::DIST_PACK_B16>(outputAddrB16, dataReg,
+                                                                                                 dataMask);
                     }
                 }
             }
