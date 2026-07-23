@@ -19,8 +19,8 @@ using namespace op;
 namespace l0op {
 OP_TYPE_REGISTER(Erfc);
 
-static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
+static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT,
+                                                                              op::DataType::DT_FLOAT16};
 
 static const std::initializer_list<op::DataType> AICORE_910B_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
@@ -28,8 +28,7 @@ static const std::initializer_list<op::DataType> AICORE_910B_DTYPE_SUPPORT_LIST 
 static bool IsAiCoreSupport(const aclTensor* self)
 {
     if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-        IsRegBase()) {
+        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase()) {
         return CheckType(self->GetDataType(), AICORE_910B_DTYPE_SUPPORT_LIST);
     }
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
@@ -40,9 +39,8 @@ static const aclTensor* ErfcAiCore(const aclTensor* self, aclTensor* out, aclOpE
     L0_DFX(ErfcAiCore, self, out);
 
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Erfc, OP_INPUT(self), OP_OUTPUT(out));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "Erfc ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "Erfc ADD_TO_LAUNCHER_LIST_AICORE failed."),
+             return nullptr);
     return out;
 }
 
@@ -52,9 +50,8 @@ static const aclTensor* ErfcAiCpu(const aclTensor* self, aclTensor* out, aclOpEx
 
     static internal::AicpuTaskSpace space("Erfc", ge::DEPEND_IN_SHAPE, true);
     auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Erfc, OP_ATTR_NAMES(), OP_INPUT(self), OP_OUTPUT(out));
-    OP_CHECK(
-        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ErfcAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
-        return nullptr);
+    OP_CHECK(ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ErfcAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
+             return nullptr);
     return out;
 }
 

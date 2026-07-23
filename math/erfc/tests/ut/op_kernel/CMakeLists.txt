@@ -8,22 +8,9 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-# 设置算子定义时支持的芯片类型
-set(SUPPORT_COMPUTE_UNIT "ascend950" "mc62")
-# 设置每种芯片类型对应的tiling文件目录，即采用op_host目录下哪个文件夹下的tiling文件编译
-set(SUPPORT_TILING_DIR "arch35" "arch35")
-add_all_modules_sources(OPTYPE erfc ACLNNTYPE aclnn_exclude COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT} TILING_DIR ${SUPPORT_TILING_DIR})
-
-add_kernel_sources(
-    KERNEL_SRC arch35/erfc.cpp
-    COMPUTE_UNITS ascend950
-    AUTO_SYNC false
-    OPTIONS "--cce-simd-vf-fusion=true" "--cce-no-dcache-flush"
-)
-
-add_kernel_sources(
-    KERNEL_SRC arch35/erfc.cpp
-    COMPUTE_UNITS mc62
-    AUTO_SYNC false
-    OPTIONS "--cce-no-dcache-flush"
-)
+if (UT_TEST_ALL OR OP_KERNEL_UT)
+    set(erfc_tiling_files
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/arch35/erfc_tiling_arch35.cpp
+        )
+    AddOpTestCase(erfc "ascend950" "-DDTYPE_X=float" "${erfc_tiling_files}")
+endif()

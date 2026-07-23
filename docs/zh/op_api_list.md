@@ -121,7 +121,7 @@
 | [aclnnEqTensor&aclnnInplaceEqTensor](../../math/equal/docs/aclnnEqTensor&aclnnInplaceEqTensor.md) | 计算两个Tensor中的元素是否相等，返回一个Tensor，self=other的为True(1.)，否则为False(0.)。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnEqual](../../math/tensor_equal/docs/aclnnEqual.md)               | 计算两个Tensor是否有相同的大小和元素，返回一个Bool类型。     | 默认确定性实现| 默认确定性实现  |
 | [aclnnErf&aclnnInplaceErf](../../math/erf/docs/aclnnErf&aclnnInplaceErf.md) | 返回输入Tensor中每个元素对应的误差函数的值。                 | 默认确定性实现| 默认确定性实现|
-| [aclnnErfc&aclnnInplaceErfc](../../math/erfc/docs/aclnnErfc&aclnnInplaceErfc.md) | 返回输入Tensor中每个元素对应的误差互补函数的值。             | 默认确定性实现| - |
+| [aclnnErfc&aclnnInplaceErfc](../../math/erfc/docs/aclnnErfc&aclnnInplaceErfc.md) | 返回输入Tensor中每个元素对应的误差互补函数的值。             | 默认确定性实现| 默认确定性实现 |
 | [aclnnExp&aclnnInplaceExp](../../math/exp/docs/aclnnExp&aclnnInplaceExp.md) | 返回一个新的张量，该张量的每个元素都是输入张量对应元素的指数。 | 默认确定性实现| 默认确定性实现|
 | [aclnnExp2&aclnnInplaceExp2](../../math/pow/docs/aclnnExp2&aclnnInplaceExp2.md) | self每个元素作为基数2的幂完成计算。                          | 默认确定性实现| 默认确定性实现 |
 | [aclnnExpand](../../math/expand/docs/aclnnExpand.md)            | 将输入张量self广播成指定size的张量。                         | 默认确定性实现| 默认确定性实现|

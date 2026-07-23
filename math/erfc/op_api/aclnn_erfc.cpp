@@ -87,8 +87,8 @@ static aclnnStatus CheckInplaceParamsErfc(const aclTensor* selfRef)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnErfcGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnErfcGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                      aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnErfc, DFX_IN(self), DFX_OUT(out));
     // 固定写法，创建OpExecutor
@@ -134,8 +134,8 @@ aclnnStatus aclnnErfcGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceErfcGetWorkspaceSize(
-    const aclTensor* selfRef, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceErfcGetWorkspaceSize(const aclTensor* selfRef, uint64_t* workspaceSize,
+                                             aclOpExecutor** executor)
 {
     auto out = const_cast<aclTensor*>(selfRef);
     auto ret = CheckInplaceParamsErfc(selfRef);

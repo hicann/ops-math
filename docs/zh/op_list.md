@@ -739,12 +739,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/erfc/README.md">erfc</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回输入张量中每个元素对应的互补误差函数的值</td>
   </tr>
   <tr>
     <td>math</td>
