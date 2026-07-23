@@ -70,6 +70,20 @@ protected:
                                              LocalTensor<T3> blockDataInGlobalPos, LocalTensor<uint32_t> blockHistFlag,
                                              LocalTensor<uint16_t> blockHist, uint32_t round, T3 tileDataStart,
                                              uint32_t cureTileSize, uint32_t sortLoopRound);
+    __aicore__ inline void ScatterOutB8Int32(LocalTensor<T1> xInputValueLocal, LocalTensor<uint32_t> sortedIndexLocal,
+                                             LocalTensor<uint32_t> xInputIndexLocal,
+                                             LocalTensor<uint8_t> sortedValueLocal,
+                                             LocalTensor<uint16_t> blockExcusiveSum,
+                                             LocalTensor<T3> blockDataInGlobalPos, LocalTensor<uint32_t> blockHistFlag,
+                                             LocalTensor<uint16_t> blockHist, uint32_t round, T3 tileDataStart,
+                                             uint32_t cureTileSize, uint32_t sortLoopRound);
+    __aicore__ inline void ScatterOutB8Int64(LocalTensor<T1> xInputValueLocal, LocalTensor<uint32_t> sortedIndexLocal,
+                                             LocalTensor<uint32_t> xInputIndexLocal,
+                                             LocalTensor<uint8_t> sortedValueLocal,
+                                             LocalTensor<uint16_t> blockExcusiveSum,
+                                             LocalTensor<T3> blockDataInGlobalPos, LocalTensor<uint32_t> blockHistFlag,
+                                             LocalTensor<uint16_t> blockHist, uint32_t round, T3 tileDataStart,
+                                             uint32_t cureTileSize, uint32_t sortLoopRound);
     __aicore__ inline void ScatterOutInt32(LocalTensor<T1> xInputValueLocal, LocalTensor<uint32_t> sortedIndexLocal,
                                            LocalTensor<uint32_t> xInputIndexLocal,
                                            LocalTensor<uint8_t> sortedValueLocal,
@@ -442,6 +456,70 @@ __aicore__ inline void KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend>::Sc
 }
 
 template <typename T1, typename T2, typename UT, typename T3, uint64_t isDescend>
+__aicore__ inline void KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend>::ScatterOutB8Int32(
+    LocalTensor<T1> xInputValueLocal, LocalTensor<uint32_t> sortedIndexLocal, LocalTensor<uint32_t> xInputIndexLocal,
+    LocalTensor<uint8_t> sortedValueLocal, LocalTensor<uint16_t> blockExcusiveSum, LocalTensor<T3> blockDataInGlobalPos,
+    LocalTensor<uint32_t> blockHistFlag, LocalTensor<uint16_t> blockHist, uint32_t round, T3 tileDataStart,
+    uint32_t cureTileSize, uint32_t sortLoopRound)
+{
+    uint32_t unSortId = this->blockIdx_ / this->lastDimRealCore_;
+    uint64_t outputXUnsortedAxisOffset = static_cast<uint64_t>(unSortId) * static_cast<uint64_t>(this->totalDataNum_);
+    uint64_t unSortIdOffset = static_cast<uint64_t>(unSortId) * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM;
+    uint64_t outputRow = static_cast<uint64_t>(sortLoopRound) * this->unsortedDimParallel_ + unSortId;
+    bool writeKthOutput = writeKthOutput_ && outputRow < static_cast<uint64_t>(this->unsortedDimNum_);
+    if (writeKthOutput) {
+        asc_vf_call<CopyOutKthGm<T1, uint32_t, T3, int64_t, 0>>(
+            dim3(THREAD_DIM_NUM), tileDataStart, unSortIdOffset, kthIndex_, outputRow,
+            (__ubuf__ uint16_t*)(blockExcusiveSum.GetPhyAddr()), (__gm__ T3*)(this->excusiveBinsGmWk_.GetPhyAddr()),
+            (__ubuf__ T3*)(blockDataInGlobalPos.GetPhyAddr()), (__ubuf__ uint32_t*)(sortedIndexLocal.GetPhyAddr()),
+            (__ubuf__ uint32_t*)(xInputIndexLocal.GetPhyAddr()), (__ubuf__ T1*)(xInputValueLocal.GetPhyAddr()),
+            (__ubuf__ T3*)(blockHistFlag.GetPhyAddr()), (__ubuf__ uint16_t*)(blockHist.GetPhyAddr()),
+            (__gm__ T1*)(kthValueGm_.GetPhyAddr()), (__gm__ int64_t*)(kthIndexGm_.GetPhyAddr()));
+    } else {
+        asc_vf_call<CopyOutGm<T1, uint32_t, T3, uint32_t, 0>>(
+            dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize, outputXUnsortedAxisOffset, unSortIdOffset,
+            (__ubuf__ uint16_t*)(blockExcusiveSum.GetPhyAddr()), (__gm__ T3*)(this->excusiveBinsGmWk_.GetPhyAddr()),
+            (__ubuf__ T3*)(blockDataInGlobalPos.GetPhyAddr()), (__ubuf__ uint32_t*)(sortedIndexLocal.GetPhyAddr()),
+            (__ubuf__ uint32_t*)(xInputIndexLocal.GetPhyAddr()), (__ubuf__ uint8_t*)(sortedValueLocal.GetPhyAddr()),
+            (__ubuf__ T1*)(xInputValueLocal.GetPhyAddr()), (__ubuf__ T3*)(blockHistFlag.GetPhyAddr()),
+            (__ubuf__ uint16_t*)(blockHist.GetPhyAddr()), (__gm__ uint32_t*)(this->idxDbGm_.Alternate().GetPhyAddr()),
+            (__gm__ T1*)(this->inputXDbGm_.Alternate().GetPhyAddr()));
+    }
+}
+
+template <typename T1, typename T2, typename UT, typename T3, uint64_t isDescend>
+__aicore__ inline void KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend>::ScatterOutB8Int64(
+    LocalTensor<T1> xInputValueLocal, LocalTensor<uint32_t> sortedIndexLocal, LocalTensor<uint32_t> xInputIndexLocal,
+    LocalTensor<uint8_t> sortedValueLocal, LocalTensor<uint16_t> blockExcusiveSum, LocalTensor<T3> blockDataInGlobalPos,
+    LocalTensor<uint32_t> blockHistFlag, LocalTensor<uint16_t> blockHist, uint32_t round, T3 tileDataStart,
+    uint32_t cureTileSize, uint32_t sortLoopRound)
+{
+    uint32_t unSortId = this->blockIdx_ / this->lastDimRealCore_;
+    uint64_t outputXUnsortedAxisOffset = static_cast<uint64_t>(unSortId) * static_cast<uint64_t>(this->totalDataNum_);
+    uint64_t unSortIdOffset = static_cast<uint64_t>(unSortId) * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM;
+    uint64_t outputRow = static_cast<uint64_t>(sortLoopRound) * this->unsortedDimParallel_ + unSortId;
+    bool writeKthOutput = writeKthOutput_ && outputRow < static_cast<uint64_t>(this->unsortedDimNum_);
+    if (writeKthOutput) {
+        asc_vf_call<CopyOutKthGm<T1, T2, T3, T2, 0>>(
+            dim3(THREAD_DIM_NUM), tileDataStart, unSortIdOffset, kthIndex_, outputRow,
+            (__ubuf__ uint16_t*)(blockExcusiveSum.GetPhyAddr()), (__gm__ T3*)(this->excusiveBinsGmWk_.GetPhyAddr()),
+            (__ubuf__ T3*)(blockDataInGlobalPos.GetPhyAddr()), (__ubuf__ uint32_t*)(sortedIndexLocal.GetPhyAddr()),
+            (__ubuf__ T3*)(xInputIndexLocal.GetPhyAddr()), (__ubuf__ T1*)(xInputValueLocal.GetPhyAddr()),
+            (__ubuf__ T3*)(blockHistFlag.GetPhyAddr()), (__ubuf__ uint16_t*)(blockHist.GetPhyAddr()),
+            (__gm__ T1*)(kthValueGm_.GetPhyAddr()), (__gm__ T2*)(kthIndexGm_.GetPhyAddr()));
+    } else {
+        asc_vf_call<CopyOutGm<T1, T2, T3, T2, 0>>(
+            dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize, outputXUnsortedAxisOffset, unSortIdOffset,
+            (__ubuf__ uint16_t*)(blockExcusiveSum.GetPhyAddr()), (__gm__ T3*)(this->excusiveBinsGmWk_.GetPhyAddr()),
+            (__ubuf__ T3*)(blockDataInGlobalPos.GetPhyAddr()), (__ubuf__ uint32_t*)(sortedIndexLocal.GetPhyAddr()),
+            (__ubuf__ T3*)(xInputIndexLocal.GetPhyAddr()), (__ubuf__ uint8_t*)(sortedValueLocal.GetPhyAddr()),
+            (__ubuf__ T1*)(xInputValueLocal.GetPhyAddr()), (__ubuf__ T3*)(blockHistFlag.GetPhyAddr()),
+            (__ubuf__ uint16_t*)(blockHist.GetPhyAddr()), (__gm__ T2*)(this->idxDbGm_.Alternate().GetPhyAddr()),
+            (__gm__ T1*)(this->inputXDbGm_.Alternate().GetPhyAddr()));
+    }
+}
+
+template <typename T1, typename T2, typename UT, typename T3, uint64_t isDescend>
 __aicore__ inline void KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend>::ScatterKeysGlobal(
     LocalTensor<T1> xInputValueLocal, LocalTensor<uint32_t> sortedIndexLocal, LocalTensor<uint32_t> xInputIndexLocal,
     LocalTensor<uint8_t> sortedValueLocal, LocalTensor<uint16_t> blockExcusiveSum, LocalTensor<T3> blockDataInGlobalPos,
@@ -449,61 +527,15 @@ __aicore__ inline void KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend>::Sc
     uint32_t cureTileSize, uint32_t sortLoopRound)
 {
     if constexpr (sizeof(T1) == sizeof(int8_t)) {
-        // int8时只循环一次,所以scatter时肯定要按照输出数据类型
-        uint32_t unSortId = this->blockIdx_ / this->lastDimRealCore_;
-        uint64_t outputXUnsortedAxisOffset = static_cast<uint64_t>(unSortId) *
-                                             static_cast<uint64_t>(this->totalDataNum_);
-        uint64_t unSortIdOffset = static_cast<uint64_t>(unSortId) * RADIX_SORT_NUM * sizeof(T1) +
-                                  round * RADIX_SORT_NUM;
-        uint64_t outputRow = static_cast<uint64_t>(sortLoopRound) * this->unsortedDimParallel_ + unSortId;
-        bool writeKthOutput = writeKthOutput_ && outputRow < static_cast<uint64_t>(this->unsortedDimNum_);
+        // One-byte input has a single radix pass, so scatter directly with the selected index width.
         if constexpr (IsSameType<T3, uint32_t>::value) {
-            if (writeKthOutput) {
-                asc_vf_call<CopyOutKthGm<T1, uint32_t, T3, int64_t, 0>>(
-                    dim3(THREAD_DIM_NUM), tileDataStart, unSortIdOffset, kthIndex_, outputRow,
-                    (__ubuf__ uint16_t*)(blockExcusiveSum.GetPhyAddr()),
-                    (__gm__ T3*)(this->excusiveBinsGmWk_.GetPhyAddr()),
-                    (__ubuf__ T3*)(blockDataInGlobalPos.GetPhyAddr()),
-                    (__ubuf__ uint32_t*)(sortedIndexLocal.GetPhyAddr()),
-                    (__ubuf__ uint32_t*)(xInputIndexLocal.GetPhyAddr()), (__ubuf__ T1*)(xInputValueLocal.GetPhyAddr()),
-                    (__ubuf__ T3*)(blockHistFlag.GetPhyAddr()), (__ubuf__ uint16_t*)(blockHist.GetPhyAddr()),
-                    (__gm__ T1*)(kthValueGm_.GetPhyAddr()), (__gm__ int64_t*)(kthIndexGm_.GetPhyAddr()));
-            } else {
-                asc_vf_call<CopyOutGm<T1, uint32_t, T3, uint32_t, 0>>(
-                    dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize, outputXUnsortedAxisOffset, unSortIdOffset,
-                    (__ubuf__ uint16_t*)(blockExcusiveSum.GetPhyAddr()),
-                    (__gm__ T3*)(this->excusiveBinsGmWk_.GetPhyAddr()),
-                    (__ubuf__ T3*)(blockDataInGlobalPos.GetPhyAddr()),
-                    (__ubuf__ uint32_t*)(sortedIndexLocal.GetPhyAddr()),
-                    (__ubuf__ uint32_t*)(xInputIndexLocal.GetPhyAddr()),
-                    (__ubuf__ uint8_t*)(sortedValueLocal.GetPhyAddr()), (__ubuf__ T1*)(xInputValueLocal.GetPhyAddr()),
-                    (__ubuf__ T3*)(blockHistFlag.GetPhyAddr()), (__ubuf__ uint16_t*)(blockHist.GetPhyAddr()),
-                    (__gm__ uint32_t*)(this->idxDbGm_.Alternate().GetPhyAddr()),
-                    (__gm__ T1*)(this->inputXDbGm_.Alternate().GetPhyAddr()));
-            }
+            ScatterOutB8Int32(xInputValueLocal, sortedIndexLocal, xInputIndexLocal, sortedValueLocal, blockExcusiveSum,
+                              blockDataInGlobalPos, blockHistFlag, blockHist, round, tileDataStart, cureTileSize,
+                              sortLoopRound);
         } else {
-            if (writeKthOutput) {
-                asc_vf_call<CopyOutKthGm<T1, T2, T3, T2, 0>>(
-                    dim3(THREAD_DIM_NUM), tileDataStart, unSortIdOffset, kthIndex_, outputRow,
-                    (__ubuf__ uint16_t*)(blockExcusiveSum.GetPhyAddr()),
-                    (__gm__ T3*)(this->excusiveBinsGmWk_.GetPhyAddr()),
-                    (__ubuf__ T3*)(blockDataInGlobalPos.GetPhyAddr()),
-                    (__ubuf__ uint32_t*)(sortedIndexLocal.GetPhyAddr()), (__ubuf__ T3*)(xInputIndexLocal.GetPhyAddr()),
-                    (__ubuf__ T1*)(xInputValueLocal.GetPhyAddr()), (__ubuf__ T3*)(blockHistFlag.GetPhyAddr()),
-                    (__ubuf__ uint16_t*)(blockHist.GetPhyAddr()), (__gm__ T1*)(kthValueGm_.GetPhyAddr()),
-                    (__gm__ T2*)(kthIndexGm_.GetPhyAddr()));
-            } else {
-                asc_vf_call<CopyOutGm<T1, T2, T3, T2, 0>>(
-                    dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize, outputXUnsortedAxisOffset, unSortIdOffset,
-                    (__ubuf__ uint16_t*)(blockExcusiveSum.GetPhyAddr()),
-                    (__gm__ T3*)(this->excusiveBinsGmWk_.GetPhyAddr()),
-                    (__ubuf__ T3*)(blockDataInGlobalPos.GetPhyAddr()),
-                    (__ubuf__ uint32_t*)(sortedIndexLocal.GetPhyAddr()), (__ubuf__ T3*)(xInputIndexLocal.GetPhyAddr()),
-                    (__ubuf__ uint8_t*)(sortedValueLocal.GetPhyAddr()), (__ubuf__ T1*)(xInputValueLocal.GetPhyAddr()),
-                    (__ubuf__ T3*)(blockHistFlag.GetPhyAddr()), (__ubuf__ uint16_t*)(blockHist.GetPhyAddr()),
-                    (__gm__ T2*)(this->idxDbGm_.Alternate().GetPhyAddr()),
-                    (__gm__ T1*)(this->inputXDbGm_.Alternate().GetPhyAddr()));
-            }
+            ScatterOutB8Int64(xInputValueLocal, sortedIndexLocal, xInputIndexLocal, sortedValueLocal, blockExcusiveSum,
+                              blockDataInGlobalPos, blockHistFlag, blockHist, round, tileDataStart, cureTileSize,
+                              sortLoopRound);
         }
     } else if constexpr (sizeof(T2) == sizeof(int32_t)) {
         // 输出idx本省就是int32，无需cast

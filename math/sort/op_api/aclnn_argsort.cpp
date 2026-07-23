@@ -234,7 +234,7 @@ aclnnStatus aclnnArgsortGetWorkspaceSize(const aclTensor* self, int64_t dim, boo
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnArgsort(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+aclnnStatus aclnnArgsort(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnArgsort);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

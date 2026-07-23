@@ -118,6 +118,32 @@ const SmallAxisRule* FindSmallAxisRule(ge::DataType dataType)
 
 bool UseTwoStageRankInverse(uint32_t axisLen) { return axisLen <= TWO_STAGE_RANK_INVERSE_MAX_N; }
 
+static bool ComputeBf16InsertionBytesPerSeg(uint32_t axisLen, uint64_t idxBytes, uint32_t blockUbSize,
+                                            uint64_t& bytesPerSeg)
+{
+    uint64_t castRawBytes = 0U;
+    if (ge::MulOverflow(axisLen, sizeof(int16_t), castRawBytes)) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeInsertionBytesPerSeg", "axisLen", std::to_string(axisLen).c_str(),
+                                              "The value of axisLen must not cause cast raw byte size overflow.");
+        return false;
+    }
+    uint64_t castBytes = Ops::Base::CeilAlign<uint64_t>(castRawBytes, blockUbSize);
+    if (castBytes == 0) {
+        return false;
+    }
+    uint64_t castRowElems = castBytes / sizeof(int16_t);
+    uint64_t valueBytes = 0U;
+    if (ge::MulOverflow(castRowElems, sizeof(float), valueBytes) ||
+        ge::AddOverflow(valueBytes, idxBytes, bytesPerSeg) || ge::AddOverflow(bytesPerSeg, castBytes, bytesPerSeg)) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            "ComputeInsertionBytesPerSeg", "bytesPerSeg",
+            (std::to_string(castRowElems) + ", " + std::to_string(idxBytes) + ", " + std::to_string(castBytes)).c_str(),
+            "The value of bf16 bytesPerSeg must not overflow.");
+        return false;
+    }
+    return true;
+}
+
 uint32_t ComputeInsertionBytesPerSeg(ge::DataType dataType, uint32_t axisLen, uint32_t dtypeSize,
                                      uint32_t indexDtypeSize, uint32_t blockUbSize)
 {
@@ -140,29 +166,8 @@ uint32_t ComputeInsertionBytesPerSeg(ge::DataType dataType, uint32_t axisLen, ui
                                               "The value of valueBytes plus idxBytes must not overflow.");
         return 0;
     }
-    if (dataType == ge::DT_BF16) {
-        uint64_t castRawBytes = 0U;
-        if (ge::MulOverflow(axisLen, sizeof(int16_t), castRawBytes)) {
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeInsertionBytesPerSeg", "axisLen",
-                                                  std::to_string(axisLen).c_str(),
-                                                  "The value of axisLen must not cause cast raw byte size overflow.");
-            return 0;
-        }
-        uint64_t castBytes = Ops::Base::CeilAlign<uint64_t>(castRawBytes, blockUbSize);
-        if (castBytes == 0) {
-            return 0;
-        }
-        uint64_t castRowElems = castBytes / sizeof(int16_t);
-        if (ge::MulOverflow(castRowElems, sizeof(float), valueBytes) ||
-            ge::AddOverflow(valueBytes, idxBytes, bytesPerSeg) ||
-            ge::AddOverflow(bytesPerSeg, castBytes, bytesPerSeg)) {
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-                "ComputeInsertionBytesPerSeg", "bytesPerSeg",
-                (std::to_string(castRowElems) + ", " + std::to_string(idxBytes) + ", " + std::to_string(castBytes))
-                    .c_str(),
-                "The value of bf16 bytesPerSeg must not overflow.");
-            return 0;
-        }
+    if (dataType == ge::DT_BF16 && !ComputeBf16InsertionBytesPerSeg(axisLen, idxBytes, blockUbSize, bytesPerSeg)) {
+        return 0;
     }
     if (bytesPerSeg > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeInsertionBytesPerSeg", "bytesPerSeg",
