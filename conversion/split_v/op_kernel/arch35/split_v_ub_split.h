@@ -62,10 +62,13 @@ private:
     constexpr static int64_t BLOCK_ELENUM = Ops::Base::GetUbBlockSize() / sizeof(T);
     constexpr static int64_t MAX_COPY_NUM = MAX_COPY_BYTE / sizeof(T);
     const SplitVTilingData* tilingData_;
-    TQue<QuePosition::VECIN, 1> inQueueX_;
-    TQue<QuePosition::VECOUT, 1> outQueueY_;
+    // 手动 ping-pong: in/out 各 2 物理块, tileIdx_&1 选块, 裸指针 gather 绕过 TQue 依赖追踪,
+    // 故跨 tile 复用依赖全部由显式 HardEvent 接管, 不再使用 TQue
+    TBuf<> inXBuf_;
+    TBuf<> outYBuf_;
     TBuf<> splitBuf_;
     TBuf<> splitBufInt32_;
+    LocalTensor<T> inTensorX_;
     LocalTensor<T> yLocal_;
     LocalTensor<int64_t> splitOffsetLocal_;
     LocalTensor<int32_t> splitOffsetLocalInt32_;
@@ -89,6 +92,27 @@ private:
     int64_t curProcessSplit_ = 0;
     int64_t curNOffset_ = 0;
     int64_t curSplitOffset_ = 0;
+
+    // ping-pong 驱动: 每个 n-tile 递增; in/out 各 2 物理块, i = tileIdx_ & 1
+    int64_t tileIdx_ = 0;
+    // out buffer 仅 gather 路径使用; 记录每个 out 块在途(set 未 wait)的 MTE3_V 数, 精确匹配 set/wait
+    int64_t outPending_[2] = {0, 0};
+
+    // event id 静态分配 (参考 im2col_gather_cut_hw.h ping-pong)
+    // IN reuse(MTE3_MTE2):  in[i] 上一轮 MTE3 读完 -> 下一轮 MTE2 可覆盖写
+    constexpr static event_t EVT_IN_REUSE_0 = static_cast<event_t>(EVENT_ID0);
+    constexpr static event_t EVT_IN_REUSE_1 = static_cast<event_t>(EVENT_ID1);
+    // OUT reuse(MTE3_V): out[i] 上一轮 MTE3 读完 -> 下一轮 V(gather) 可覆盖写
+    constexpr static event_t EVT_OUT_REUSE_0 = static_cast<event_t>(EVENT_ID2);
+    constexpr static event_t EVT_OUT_REUSE_1 = static_cast<event_t>(EVENT_ID3);
+    // gather 同 tile: MTE2_V (in 写完 -> gather 读)
+    constexpr static event_t EVT_M2V_0 = static_cast<event_t>(EVENT_ID4);
+    constexpr static event_t EVT_M2V_1 = static_cast<event_t>(EVENT_ID5);
+    // gather 同 tile: V_MTE3 (gather 写完 -> out 读)
+    constexpr static event_t EVT_VM3_0 = static_cast<event_t>(EVENT_ID6);
+    constexpr static event_t EVT_VM3_1 = static_cast<event_t>(EVENT_ID7);
+    // Once 路径同 tile: MTE2_MTE3 (in 写完 -> MTE3 直接搬出); 与其他 HardEvent 类型同号 id 物理独立
+    constexpr static event_t EVT_M2M3 = static_cast<event_t>(EVENT_ID0);
 
     DataCopyPadExtParams<T> padParams = {false, 0, 0, 0};
 };
@@ -367,9 +391,11 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::Init(GM_ADDR x, GM_ADDR y, GM_ADD
     splitOffsetLocal_ = splitBuf_.template Get<int64_t>();
     int32_t ubSize = ((tilingData_->ubSize - splitBufSize - splitBufSizeInt32) / SPLIT_UB_NUM / ONE_BLOCK_UB) *
                      ONE_BLOCK_UB;
+    // ping-pong: in/out 各分配 bufferNum 块, ubSizeNum_ 为单块元素数(兼作子块偏移)
     ubSizeNum_ = ubSize / sizeof(T);
-    pipe_.InitBuffer(inQueueX_, bufferNum, ubSize);
-    pipe_.InitBuffer(outQueueY_, bufferNum, ubSize);
+    pipe_.InitBuffer(inXBuf_, ubSize * bufferNum);
+    pipe_.InitBuffer(outYBuf_, ubSize * bufferNum);
+    inTensorX_ = inXBuf_.template Get<T>();
     xGm.SetGlobalBuffer((__gm__ T*)x);
     inputList_ = ListTensorDesc(reinterpret_cast<__gm__ void*>(y));
 }
@@ -401,15 +427,14 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::OnceCopyOut(int32_t curNFactorBeg
     copyParams.blockLen = curSplitNSize * sizeof(T);
     copyParams.srcStride = 0;
     copyParams.dstStride = stride * sizeof(T);
-    event_t eventID1 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
-    SetFlag<HardEvent::MTE2_MTE3>(eventID1);
-    WaitFlag<HardEvent::MTE2_MTE3>(eventID1);
+    // Once 路径无 V: 读 xUb 的是 MTE3(DataCopyPad), 而开头 WaitFlag<MTE2_V> 只挡 V pipe(此路径空转),
+    // MTE3 与 MTE2 无同步会踩踏 xUb; 就地 MTE2_MTE3 保证 MTE2 写完再 MTE3 读, 立即闭合无残留
+    SetFlag<HardEvent::MTE2_MTE3>(EVT_M2M3);
+    WaitFlag<HardEvent::MTE2_MTE3>(EVT_M2M3);
     DataCopyPad(yGm, xUb, copyParams);
-    event_t eventID2 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_MTE2));
-    SetFlag<HardEvent::MTE3_MTE2>(eventID2);
-    WaitFlag<HardEvent::MTE3_MTE2>(eventID2);
-    outQueueY_.FreeTensor(yLocal_);
-    inQueueX_.FreeTensor(xUb);
+    // Once 路径无 V: in 读者即 MTE3, MTE3 完成 => in 可被下一轮同块覆盖; 延迟 wait 让下一 tile in 预取并行
+    event_t inReuse = (tileIdx_ & 1) ? EVT_IN_REUSE_1 : EVT_IN_REUSE_0;
+    SetFlag<HardEvent::MTE3_MTE2>(inReuse);
 }
 
 template <typename T, typename U, typename Y>
@@ -444,6 +469,17 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::AllCopyOut(int64_t mOffset, int64
     int64_t ubOffset = 0;
     int64_t mnAlignSize = 0;
     curNOffset_ = splitStartOffset;
+    // ping-pong: 当前 tile 用 i = tileIdx_ & 1 的 in/out 子块
+    int32_t ppIdx = static_cast<int32_t>(tileIdx_ & 1);
+    // out[i] 复用依赖: 上一轮同块 MTE3 out 读完 -> 本轮 V(gather) 可覆盖写; pending>0 才有在途 event 需 wait
+    if (outPending_[ppIdx] > 0) {
+        event_t outReuse = ppIdx ? EVT_OUT_REUSE_1 : EVT_OUT_REUSE_0;
+        WaitFlag<HardEvent::MTE3_V>(outReuse);
+        outPending_[ppIdx]--;
+    }
+    // in[i] 就绪: UbProcess 发 in(MTE2) 后 set MTE2_V; gather 读 in 前必须 wait
+    event_t m2vEvt = ppIdx ? EVT_M2V_1 : EVT_M2V_0;
+    WaitFlag<HardEvent::MTE2_V>(m2vEvt);
     if (curProcessSplit_ - 1 >= 0) {
         preSize = curSplitOffset_ - curNiSize;
     }
@@ -497,9 +533,10 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::AllCopyOut(int64_t mOffset, int64
         }
 
         yGm.SetGlobalBuffer(GetTensorAddr(curProcessSplit_, startFirstOffset));
-        event_t eventID1 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
-        SetFlag<HardEvent::V_MTE3>(eventID1);
-        WaitFlag<HardEvent::V_MTE3>(eventID1);
+        // 同 tile 同 out buffer 真依赖: V(gather) 写完 yLocal_[ubOffset] -> MTE3 读出; 立即 set+wait
+        event_t vm3Evt = ppIdx ? EVT_VM3_1 : EVT_VM3_0;
+        SetFlag<HardEvent::V_MTE3>(vm3Evt);
+        WaitFlag<HardEvent::V_MTE3>(vm3Evt);
         if (curNOffset_ == splitStartOffset || curSplitOffset_ >= splitEndLine_) {
             DataCopyOutGm(mUbFactorNow, curSplitNSize, stride, ubOffset);
         } else {
@@ -516,12 +553,15 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::AllCopyOut(int64_t mOffset, int64
             curSplitOffset_ += CurSplitSize(curProcessSplit_);
         }
     }
-    event_t eventID2 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_MTE2));
-    SetFlag<HardEvent::MTE3_MTE2>(eventID2);
-    WaitFlag<HardEvent::MTE3_MTE2>(eventID2);
+    // 延迟释放: 只 set 不立即 wait, 让下一 tile 的 in(MTE2) 预取与本轮 out(MTE3) 跨物理块并行
+    // in[i] 复用: 本轮 MTE3(out) 完成 => in 已被 gather 读完(V_MTE3 保证) => 下一轮同块 MTE2 可覆盖
+    event_t inReuse = ppIdx ? EVT_IN_REUSE_1 : EVT_IN_REUSE_0;
+    SetFlag<HardEvent::MTE3_MTE2>(inReuse);
+    // out[i] 复用: 本轮 MTE3(out) 完成 => 下一轮同块 V(gather) 可覆盖写 out
+    event_t outReuse = ppIdx ? EVT_OUT_REUSE_1 : EVT_OUT_REUSE_0;
+    SetFlag<HardEvent::MTE3_V>(outReuse);
+    outPending_[ppIdx]++;
     curNOffset_ = splitEndLine_;
-    outQueueY_.FreeTensor(yLocal_);
-    inQueueX_.FreeTensor(xUb);
 }
 
 template <typename T, typename U, typename Y>
@@ -535,7 +575,6 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::UbProcess(int32_t mTimes, int32_t
             mUbFactorNow = mBlockFactorNow - mUbFactor * (mTimes - 1);
         }
         int32_t curNFactorBeginSplit = tilingData_->nBlockSplitOffset[blockIdx_];
-        int32_t curNFactorEndSplit = tilingData_->nBlockSplitOffset[blockIdx_];
         int32_t curNFactor = 0;
         int32_t endLinePosition = curNFactorBeginSplit;
         curProcessSplit_ = tilingData_->nBlockSplitOffset[blockIdx_];
@@ -549,13 +588,21 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::UbProcess(int32_t mTimes, int32_t
             if (nBlockOffset_ + nOffset + curNFactor > tilingData_->nSize) {
                 curNFactor = tilingData_->nSize - nBlockOffset_ - nOffset;
             }
-            LocalTensor<T> xUb = inQueueX_.AllocTensor<T>();
-            yLocal_ = outQueueY_.AllocTensor<T>();
+            int32_t ppIdx = static_cast<int32_t>(tileIdx_ & 1);
+            // in[i] 复用依赖: 上一轮同块 MTE3(out) 读完 => 本轮 MTE2 可覆盖写 in; tile>=2 才有前置
+            if (tileIdx_ >= 2) {
+                event_t inReuse = ppIdx ? EVT_IN_REUSE_1 : EVT_IN_REUSE_0;
+                WaitFlag<HardEvent::MTE3_MTE2>(inReuse);
+            }
+            LocalTensor<T> xUb = inTensorX_[ppIdx * ubSizeNum_];
+            yLocal_ = outYBuf_.template Get<T>()[ppIdx * ubSizeNum_];
             int64_t mOffset = m * mUbFactor;
             DataCopyIn(mOffset, nOffset, curNFactor, mUbFactorNow, xUb);
-            inQueueX_.EnQue(xUb);
-            LocalTensor<T> xUbSize = inQueueX_.DeQue<T>();
-            AllCopyOut(mOffset, nOffset, curNFactor, mUbFactorNow, nowBlockEnd, xUbSize);
+            // in 就绪信号: gather 路径的 V 和 Once 路径的 MTE3 都靠此 wait 确认 in 写完
+            event_t m2vEvt = ppIdx ? EVT_M2V_1 : EVT_M2V_0;
+            SetFlag<HardEvent::MTE2_V>(m2vEvt);
+            AllCopyOut(mOffset, nOffset, curNFactor, mUbFactorNow, nowBlockEnd, xUb);
+            tileIdx_++;
         }
     }
 }
@@ -566,6 +613,9 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::Process()
     if (blockIdx_ >= tilingData_->realCoreNum) {
         return;
     }
+    tileIdx_ = 0;
+    outPending_[0] = 0;
+    outPending_[1] = 0;
     if (tilingData_->isInt32 == 1) {
         DataCopyExtParams copyParams;
         DataCopyPadExtParams<int32_t> padParamsIdx = {false, 0, 0, 0};
@@ -649,6 +699,22 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::Process()
     }
     int64_t nowBlockEnd = nBlockOffset_ + nBlockFactorNow;
     UbProcess(mTimes, mUbFactor, nBlockFactorNow, mBlockFactorNow, nUbFactor, nowBlockEnd);
+    // 收尾: 清空最后最多 2 个在途 tile 的延迟 event, 避免 event 悬挂
+    // IN reuse: 最后 2 个 tile 各 set 了一个 MTE3_MTE2, 需 wait 清掉(tile>=2 才有悬挂)
+    int64_t totalTiles = tileIdx_;
+    for (int64_t k = 1; k <= 2 && k <= totalTiles; k++) {
+        int32_t ppIdx = static_cast<int32_t>((totalTiles - k) & 1);
+        event_t inReuse = ppIdx ? EVT_IN_REUSE_1 : EVT_IN_REUSE_0;
+        WaitFlag<HardEvent::MTE3_MTE2>(inReuse);
+    }
+    // OUT reuse: 仅 gather 路径 set 过, 按 outPending_ 精确匹配剩余在途 event
+    for (int32_t ppIdx = 0; ppIdx < 2; ppIdx++) {
+        while (outPending_[ppIdx] > 0) {
+            event_t outReuse = ppIdx ? EVT_OUT_REUSE_1 : EVT_OUT_REUSE_0;
+            WaitFlag<HardEvent::MTE3_V>(outReuse);
+            outPending_[ppIdx]--;
+        }
+    }
 }
 } // namespace SplitV
 #endif // namespace SplitV

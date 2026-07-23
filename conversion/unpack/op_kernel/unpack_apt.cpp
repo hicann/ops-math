@@ -11,6 +11,8 @@
 #include <cstdint>
 #include "../split_v/arch35/split_v_pure_copy_same_len.h"
 #include "../split_v/arch35/split_v_ub_split_same_len.h"
+#include "../split_v/arch35/split_v_ub_split_same_len_small_g.h"
+#include "../split_v/arch35/split_v_ub_split_same_len_deinterleave.h"
 #include "kernel_operator.h"
 
 using namespace AscendC;
@@ -18,9 +20,10 @@ using namespace Ops::Base;
 
 #define TILING_KEY_PURE_MOVE_SAME_LEN 100
 #define TILING_KEY_UB_SPLIT_SAME_LEN 101
+#define TILING_KEY_UB_SPLIT_SAME_LEN_SMALL_G 111
+#define TILING_KEY_UB_SPLIT_SAME_LEN_DEINTERLEAVE 112
 
-extern "C" __global__ __aicore__ void unpack(GM_ADDR x, GM_ADDR y,
-                                            GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void unpack(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     GET_TILING_DATA(tilingData, tiling);
@@ -64,6 +67,52 @@ extern "C" __global__ __aicore__ void unpack(GM_ADDR x, GM_ADDR y,
         }
         if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
             SplitV::SplitVUbSplitSameLen<uint64_t, uint32_t, int32_t> op(pipe);
+            op.Init(x, y, &tilingData);
+            op.Process();
+        }
+    } else if (TILING_KEY_IS(TILING_KEY_UB_SPLIT_SAME_LEN_SMALL_G)) {
+        TPipe pipe;
+        GET_TILING_DATA_WITH_STRUCT(SplitVTilingData, tilingData, tiling);
+        if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
+            SplitV::SplitVUbSplitSameLenSmallG<uint8_t, uint16_t, int16_t> op(pipe);
+            op.Init(x, y, &tilingData);
+            op.Process();
+        }
+        if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
+            SplitV::SplitVUbSplitSameLenSmallG<uint16_t, uint16_t, int16_t> op(pipe);
+            op.Init(x, y, &tilingData);
+            op.Process();
+        }
+        if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
+            SplitV::SplitVUbSplitSameLenSmallG<uint32_t, uint32_t, int32_t> op(pipe);
+            op.Init(x, y, &tilingData);
+            op.Process();
+        }
+        if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
+            SplitV::SplitVUbSplitSameLenSmallG<uint64_t, uint32_t, int32_t> op(pipe);
+            op.Init(x, y, &tilingData);
+            op.Process();
+        }
+    } else if (TILING_KEY_IS(TILING_KEY_UB_SPLIT_SAME_LEN_DEINTERLEAVE)) {
+        TPipe pipe;
+        GET_TILING_DATA_WITH_STRUCT(SplitVTilingData, tilingData, tiling);
+        if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
+            SplitV::SplitVUbSplitSameLenDeinterleave<uint8_t> op(pipe);
+            op.Init(x, y, &tilingData);
+            op.Process();
+        }
+        if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
+            SplitV::SplitVUbSplitSameLenDeinterleave<uint16_t> op(pipe);
+            op.Init(x, y, &tilingData);
+            op.Process();
+        }
+        if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
+            SplitV::SplitVUbSplitSameLenDeinterleave<uint32_t> op(pipe);
+            op.Init(x, y, &tilingData);
+            op.Process();
+        }
+        if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
+            SplitV::SplitVUbSplitSameLenDeinterleave<uint64_t> op(pipe);
             op.Init(x, y, &tilingData);
             op.Process();
         }
