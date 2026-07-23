@@ -72,7 +72,7 @@ merge_ops_lists() {
     local list1="$1"
     local list2="$2"
     local merged=""
-    
+
     for op in ${list1//,/ }; do
         if [[ -z "${merged}" ]]; then
             merged="${op}"
@@ -80,7 +80,7 @@ merge_ops_lists() {
             merged="${merged},${op}"
         fi
     done
-    
+
     for op in ${list2//,/ }; do
         if [[ -z "${merged}" ]]; then
             merged="${op}"
@@ -88,7 +88,7 @@ merge_ops_lists() {
             merged="${merged},${op}"
         fi
     done
-    
+
     echo "${merged}"
 }
 
@@ -266,20 +266,20 @@ check_precision_status() {
 check_plugin_assets() {
     local plugin_path="$1"
     local op_name="$2"
-    
+
     local assets_path="${plugin_path}/assets"
-    
+
     if [[ ! -d "${assets_path}" ]]; then
         print_warning "assets directory not found for ${op_name}: ${assets_path}"
         return 1
     fi
-    
+
     local py_files=$(find "${assets_path}" -maxdepth 1 -name "*.py" -type f 2>/dev/null | head -1)
     if [[ -z "${py_files}" ]]; then
         print_warning "No .py files found in assets directory for ${op_name}: ${assets_path}"
         return 1
     fi
-    
+
     return 0
 }
 
@@ -343,12 +343,54 @@ run_aclnn_test() {
     local test_csv="$2"
     local ops_test_path="$3"
 
+    if [[ ! -f "${test_csv}" ]]; then
+        print_warning "Test csv file not found: ${test_csv}, skipping this test case"
+        return 0
+    fi
+
+    if [[ ! -d "${ops_test_path}" ]]; then
+        print_warning "Plugin directory not found: ${ops_test_path}, skipping this test case"
+        return 0
+    fi
+
+    if ! check_plugin_assets "${ops_test_path}" "${op_name}"; then
+        return 0
+    fi
+
+    local testcase_name=$(basename "${test_csv}" .csv)
+    if [[ "${test_csv}" == */arch3[0-9]/* || "${test_csv}" == */arch2[0-9]/* ]]; then
+        testcase_name="$(basename "$(dirname "${test_csv}")")_${testcase_name}"
+    fi
+    local log_op_dir="${log_path}/${op_name}"
+    mkdir -p "${log_op_dir}"
+
+    print_msg "Running aclnn test for ${op_name}, testcase: ${testcase_name}"
+
+    cd "${ttk_path}"
+
+    local cmd="python3 -m ttk aclnn -i ${test_csv} -o ${log_op_dir}/${testcase_name}_result.csv --plugin ${ops_test_path} --pc=8 --warmup=false"
+    print_msg "Executing: ${cmd}"
+
     local start_time=$(date +%s)
-    print_warning "aclnn test not implemented yet for ${op_name}"
+    set +e
+    ${cmd} 2>&1 | tee "${log_op_dir}/${testcase_name}_run.log" > /dev/null
+    local test_failed=${PIPESTATUS[0]}
+    set -e
     local end_time=$(date +%s)
     local elapsed=$((end_time - start_time))
-    print_msg "aclnn test elapsed: ${elapsed}s"
-    return 0
+
+    if [[ ${test_failed} -ne 0 ]]; then
+        print_error "aclnn test failed for ${op_name}, testcase: ${testcase_name}, elapsed: ${elapsed}s"
+    else
+        print_msg "aclnn test completed for ${op_name}, testcase: ${testcase_name}, elapsed: ${elapsed}s"
+    fi
+
+    local result_csv="${log_op_dir}/${testcase_name}_result.csv"
+    echo "${result_csv}"
+
+    if [[ ${test_failed} -ne 0 ]]; then
+        return 1
+    fi
 }
 
 run_e2e_test() {
