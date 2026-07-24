@@ -13,7 +13,7 @@
 set(SUPPORT_COMPUTE_UNIT "ascend950")
 # 设置每种芯片类型对应的tiling文件目录，即采用op_host目录下哪个文件夹下的tiling文件编译
 set(SUPPORT_TILING_DIR "arch35")
-add_all_modules_sources(OPTYPE trans_data ACLNNTYPE aclnn_exclude COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT} TILING_DIR ${SUPPORT_TILING_DIR} DISABLE_IN_OPP TRUE)
+add_all_modules_sources(OPTYPE trans_data ACLNNTYPE aclnn_exclude COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT} TILING_DIR ${SUPPORT_TILING_DIR} DISABLE_IN_OPP TRUE HOSTCPU TRUE)
 
 # format_transfer 辅助源文件不匹配 *_aicpu.cpp glob，需显式追加到已创建的 OBJECT 目标
 # DISABLE_AICPU 时 add_all_modules_sources 不会创建 AICPU 目标，无需追加
@@ -28,6 +28,10 @@ if(NOT DISABLE_AICPU)
     endif()
     if(TARGET trans_data_cases_obj)
       target_sources(trans_data_cases_obj PRIVATE ${TRANS_DATA_FT_SRCS})
+    endif()
+    # 常量折叠（HOSTCPU）目标：format_transfer 也需追加到 host 侧 x86 OBJECT
+    if(TARGET trans_data_host_const_obj)
+      target_sources(trans_data_host_const_obj PRIVATE ${TRANS_DATA_FT_SRCS})
     endif()
   endif()
 endif()

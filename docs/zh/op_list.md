@@ -2833,7 +2833,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI Core</td>
+    <td>AI Core/AI CPU</td>
     <td>实现张量的数据格式转换。</td>
   </tr>
   <tr>

@@ -226,6 +226,25 @@ TEST_F(TEST_TRANS_DATA_UT, nchw_to_c1hwc0_float_success)
     VerifyDataInOutput(src, dst);
 }
 
+// ---------- NewCompute: NCDHW→FRACTAL_Z_3D ----------
+TEST_F(TEST_TRANS_DATA_UT, ncdhw_to_fractal_z_3d_float_success)
+{
+    // NCDHW [1,1,1,1,16] → FRACTAL_Z_3D: dst_shape=[16,1,16,16], dst_size=4096
+    std::vector<int64_t> src_shape = {1, 1, 1, 1, 16};
+    std::vector<int64_t> dst_shape = {16, 1, 16, 16};
+    std::vector<float> src(16);
+    for (int i = 0; i < 16; ++i) {
+        src[i] = static_cast<float>(i + 1);
+    }
+    std::vector<float> dst(4096, 0.0f);
+
+    auto node_def = BuildTransDataNode(DT_FLOAT, FORMAT_NCDHW, FORMAT_FRACTAL_Z_3D, src_shape, dst_shape, src.data(),
+                                       dst.data(), "NCDHW", "FRACTAL_Z_3D");
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    VerifyDataInOutput(src, dst);
+}
+
 // ---------- Compute 分支2: HWCN→FRACTAL_Z_C04 → HandleHwcnToFzC04 ----------
 TEST_F(TEST_TRANS_DATA_UT, hwcn_to_fractal_z_c04_float_success)
 {
@@ -307,6 +326,139 @@ TEST_F(TEST_TRANS_DATA_UT, nhwc_to_fractal_z_float_success)
 
     auto node_def = BuildTransDataNode(DT_FLOAT, FORMAT_NHWC, FORMAT_FRACTAL_Z, src_shape, dst_shape, src.data(),
                                        dst.data(), "NHWC", "FRACTAL_Z");
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    VerifyDataInOutput(src, dst);
+}
+
+// ---------- NewCompute: DHWCN→FRACTAL_Z_3D ----------
+TEST_F(TEST_TRANS_DATA_UT, dhwcn_to_fractal_z_3d_float_success)
+{
+    // DHWCN [1,1,1,1,16] → FRACTAL_Z_3D [1,1,16,16]
+    std::vector<int64_t> src_shape = {1, 1, 1, 1, 16};
+    std::vector<int64_t> dst_shape = {1, 1, 16, 16};
+    std::vector<float> src(16);
+    for (int i = 0; i < 16; ++i) {
+        src[i] = static_cast<float>(i + 1);
+    }
+    std::vector<float> dst(256, 0.0f);
+
+    auto node_def = BuildTransDataNode(DT_FLOAT, FORMAT_DHWCN, FORMAT_FRACTAL_Z_3D, src_shape, dst_shape, src.data(),
+                                       dst.data(), "DHWCN", "FRACTAL_Z_3D");
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    VerifyDataInOutput(src, dst);
+}
+
+// ---------- NewCompute: NDHWC→FRACTAL_Z_3D ----------
+TEST_F(TEST_TRANS_DATA_UT, ndhwc_to_fractal_z_3d_float_success)
+{
+    // NDHWC [1,1,1,1,16] → FRACTAL_Z_3D [1,1,16,16]
+    std::vector<int64_t> src_shape = {1, 1, 1, 1, 16};
+    std::vector<int64_t> dst_shape = {1, 1, 16, 16};
+    std::vector<float> src(16);
+    for (int i = 0; i < 16; ++i) {
+        src[i] = static_cast<float>(i + 1);
+    }
+    std::vector<float> dst(256, 0.0f);
+
+    auto node_def = BuildTransDataNode(DT_FLOAT, FORMAT_NDHWC, FORMAT_FRACTAL_Z_3D, src_shape, dst_shape, src.data(),
+                                       dst.data(), "NDHWC", "FRACTAL_Z_3D");
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    VerifyDataInOutput(src, dst);
+}
+
+// ---------- NewCompute: FRACTAL_NZ→NCHW (反向) ----------
+TEST_F(TEST_TRANS_DATA_UT, fractal_nz_to_nchw_float_success)
+{
+    // FRACTAL_NZ [1,1,1,1,16,16] → NCHW [1,1,16,16]
+    std::vector<int64_t> src_shape = {1, 1, 1, 1, 16, 16};
+    std::vector<int64_t> dst_shape = {1, 1, 16, 16};
+    std::vector<float> src(256);
+    for (int i = 0; i < 256; ++i) {
+        src[i] = static_cast<float>(i + 1);
+    }
+    std::vector<float> dst(256, 0.0f);
+
+    auto node_def = BuildTransDataNode(DT_FLOAT, FORMAT_FRACTAL_NZ, FORMAT_NCHW, src_shape, dst_shape, src.data(),
+                                       dst.data(), "FRACTAL_NZ", "NCHW");
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    VerifyDataInOutput(src, dst);
+}
+
+// ---------- NewCompute: HWCN→NCHW (格式互换) ----------
+TEST_F(TEST_TRANS_DATA_UT, hwcn_to_nchw_float_success)
+{
+    // HWCN [1,1,1,4] → NCHW [4,1,1,1]
+    std::vector<int64_t> src_shape = {1, 1, 1, 4};
+    std::vector<int64_t> dst_shape = {4, 1, 1, 1};
+    std::vector<float> src(4);
+    for (int i = 0; i < 4; ++i) {
+        src[i] = static_cast<float>(i + 1);
+    }
+    std::vector<float> dst(4, 0.0f);
+
+    auto node_def = BuildTransDataNode(DT_FLOAT, FORMAT_HWCN, FORMAT_NCHW, src_shape, dst_shape, src.data(), dst.data(),
+                                       "HWCN", "NCHW");
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    VerifyDataInOutput(src, dst);
+}
+
+// ---------- NewCompute: NCHW→HWCN (格式互换反向) ----------
+TEST_F(TEST_TRANS_DATA_UT, nchw_to_hwcn_float_success)
+{
+    // NCHW [4,1,1,1] → HWCN [1,1,1,4]
+    std::vector<int64_t> src_shape = {4, 1, 1, 1};
+    std::vector<int64_t> dst_shape = {1, 1, 1, 4};
+    std::vector<float> src(4);
+    for (int i = 0; i < 4; ++i) {
+        src[i] = static_cast<float>(i + 1);
+    }
+    std::vector<float> dst(4, 0.0f);
+
+    auto node_def = BuildTransDataNode(DT_FLOAT, FORMAT_NCHW, FORMAT_HWCN, src_shape, dst_shape, src.data(), dst.data(),
+                                       "NCHW", "HWCN");
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    VerifyDataInOutput(src, dst);
+}
+
+// ---------- NewCompute: NCDHW→NDC1HWC0 ----------
+TEST_F(TEST_TRANS_DATA_UT, ncdhw_to_ndc1hwc0_float_success)
+{
+    // NCDHW [1,1,1,1,16] → NDC1HWC0 [1,1,1,1,16,16]
+    std::vector<int64_t> src_shape = {1, 1, 1, 1, 16};
+    std::vector<int64_t> dst_shape = {1, 1, 1, 1, 16, 16};
+    std::vector<float> src(16);
+    for (int i = 0; i < 16; ++i) {
+        src[i] = static_cast<float>(i + 1);
+    }
+    std::vector<float> dst(256, 0.0f);
+
+    auto node_def = BuildTransDataNode(DT_FLOAT, FORMAT_NCDHW, FORMAT_NDC1HWC0, src_shape, dst_shape, src.data(),
+                                       dst.data(), "NCDHW", "NDC1HWC0");
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    VerifyDataInOutput(src, dst);
+}
+
+// ---------- NewCompute: NDHWC→NDC1HWC0 ----------
+TEST_F(TEST_TRANS_DATA_UT, ndhwc_to_ndc1hwc0_float_success)
+{
+    // NDHWC [1,1,1,16,1]: n=1,d=1,h=1,w=16,c=1 → NDC1HWC0 [1,1,1,1,16,16]
+    std::vector<int64_t> src_shape = {1, 1, 1, 16, 1};
+    std::vector<int64_t> dst_shape = {1, 1, 1, 1, 16, 16};
+    std::vector<float> src(16);
+    for (int i = 0; i < 16; ++i) {
+        src[i] = static_cast<float>(i + 1);
+    }
+    std::vector<float> dst(256, 0.0f);
+
+    auto node_def = BuildTransDataNode(DT_FLOAT, FORMAT_NDHWC, FORMAT_NDC1HWC0, src_shape, dst_shape, src.data(),
+                                       dst.data(), "NDHWC", "NDC1HWC0");
     RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
 
     VerifyDataInOutput(src, dst);
