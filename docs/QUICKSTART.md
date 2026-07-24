@@ -24,11 +24,7 @@
 
 - CANNLab云开发环境：
 
-   默认提供最新版本CANN包配套的项目源码，进入源码目录，\$\{gitCode\_id\}替换为开发者个人gitCode账号。
-
-   ```bash
-   cd /mnt/workspace/gitCode/${gitCode_id}/ops-math
-   ```
+   默认提供最新版本CANN包配套的项目源码，资源一般在`/mnt/workspace/gitCode`目录，请进入目标分支源码目录。
 
 - 非CANNLab云开发环境：
 
@@ -174,7 +170,7 @@ __aicore__ inline void AddExample<T>::Compute(int64_t currentNum)
 
 请在`examples/add_example/op_kernel/add_example.h`中进行代码修改。
 
-* **printf**
+- **printf**
 
   该接口支持打印Scalar类型数据，如整数、字符型、布尔型等，详细介绍请参见[《Ascend C API》](https://hiascend.com/document/redirect/CannCommunityAscendCApi)中“算子调测API > printf”。
 
@@ -186,7 +182,7 @@ __aicore__ inline void AddExample<T>::Compute(int64_t currentNum)
   AscendC::PRINTF("Tiling blockLength is %lld\n", blockLength_);
   ```
 
-* **DumpTensor**
+- **DumpTensor**
 
   该接口支持Dump指定Tensor的内容，同时支持打印自定义附加信息，比如当前行号等，详细介绍请参见[《Ascend C API》](https://hiascend.com/document/redirect/CannCommunityAscendCApi)中“算子调测API > DumpTensor”。
 

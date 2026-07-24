@@ -3,7 +3,7 @@
 `out = input · (cos(angle) + i·sin(angle))`，input(abs)/angle 为 fp32 可广播，out 为 complex64。
 对齐基准：`cann/ops-math` 的 `math/complex/op_host/op_api/aclnn_polar.cpp`（l0 拼接版）。
 
-## 文件构成（与 S8 case_910b/<Op>/ 完全一致）
+## 文件构成（与 S8 case_910b/\<Op\>/ 完全一致）
 
 | 文件 | 来源 | 说明 |
 |---|---|---|
