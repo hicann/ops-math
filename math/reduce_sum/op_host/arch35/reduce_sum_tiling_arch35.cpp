@@ -29,6 +29,7 @@ static constexpr int32_t SIZE8 = 8;
 static constexpr int32_t SIZE4 = 4;
 static constexpr int32_t SIZE2 = 2;
 static constexpr int32_t SIZE1 = 1;
+static constexpr int32_t BATCH_INVARIANT_LEVEL = 3;
 static ge::graphStatus DoTiling(gert::TilingContext* context, ReduceOpInputParam& opInput, ReduceTilingKey& key)
 {
     ge::graphStatus status = ge::GRAPH_FAILED;
@@ -56,8 +57,8 @@ static ge::graphStatus Tiling4ReduceSum(gert::TilingContext* context)
 
     ReduceOpInputParam opInput;
     ReduceTilingKey key;
-    // 获取确定性级别，如果为2（暂定）开启batch一致性
-    if (context->GetDeterministicLevel() == 2) {
+    // 获取确定性级别，如果为3开启batch一致性
+    if (context->GetDeterministicLevel() == BATCH_INVARIANT_LEVEL) {
         key.batchInvariant = 1;
     }
     OP_CHECK_IF((ReduceOpTmpl::GetInputParam(context, opInput, 0, 1, 0, key) == ge::GRAPH_FAILED),
