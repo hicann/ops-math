@@ -61,28 +61,19 @@ __aicore__ inline int64_t AlignAllocN(int64_t n, int64_t elemSize)
 
 // UB offsets for tiling arrays (in elements)
 static constexpr uint32_t OFF_BCAST_SHAPE = 0;
-static constexpr uint32_t OFF_X1_STRIDES  = MAX_NDIM;
-static constexpr uint32_t OFF_X2_STRIDES  = 2 * MAX_NDIM;
-static constexpr uint32_t UB_TOTAL_ELEMS  = 3 * MAX_NDIM;
+static constexpr uint32_t OFF_X1_STRIDES = MAX_NDIM;
+static constexpr uint32_t OFF_X2_STRIDES = 2 * MAX_NDIM;
+static constexpr uint32_t UB_TOTAL_ELEMS = 3 * MAX_NDIM;
 
 // SIMT VF kernel: each warp processes one output element
 // R006: ThreadNum template parameter for __launch_bounds__
 // R003: UB arrays use UbT (int32_t for 32-bit path, int64_t for 64-bit path)
 template <typename T1, typename T2, typename T, typename IdxT, uint32_t ThreadNum>
-__simt_vf__ __aicore__ __launch_bounds__(ThreadNum)
-inline void OpCosineSimilaritySimtKernel(
-    IdxT totalOutputElements,
-    IdxT reduceSize,
-    IdxT innerSize,
-    float eps,
-    int32_t ndim,
-    int32_t reduceDim,
+__simt_vf__ __aicore__ __launch_bounds__(ThreadNum) inline void OpCosineSimilaritySimtKernel(
+    IdxT totalOutputElements, IdxT reduceSize, IdxT innerSize, float eps, int32_t ndim, int32_t reduceDim,
     __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubBroadcastShape,
     __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubX1Strides,
-    __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubX2Strides,
-    __gm__ T1* x1,
-    __gm__ T2* x2,
-    __gm__ T* output)
+    __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubX2Strides, __gm__ T1* x1, __gm__ T2* x2, __gm__ T* output)
 {
     using UbT = typename UbIdxTypeTraits<IdxT>::UbT;
     uint32_t tid = static_cast<uint32_t>(threadIdx.x);
@@ -93,17 +84,16 @@ inline void OpCosineSimilaritySimtKernel(
     IdxT reduceStride = static_cast<IdxT>(ubX1Strides[reduceDim]);
     IdxT x2ReduceStride = static_cast<IdxT>(ubX2Strides[reduceDim]);
 
-    for (IdxT outIdx = static_cast<IdxT>(blockIdx.x) * numWarps + warpId;
-         outIdx < totalOutputElements;
-         outIdx += static_cast<IdxT>(gridDim.x) * numWarps)
-    {
+    for (IdxT outIdx = static_cast<IdxT>(blockIdx.x) * numWarps + warpId; outIdx < totalOutputElements;
+         outIdx += static_cast<IdxT>(gridDim.x) * numWarps) {
         // Decompose outIdx to coordinates (skip reduceDim)
         IdxT baseOffsetX1 = 0;
         IdxT baseOffsetX2 = 0;
         IdxT rem = outIdx;
 
         for (int32_t d = ndim - 1; d >= 0; d--) {
-            if (d == reduceDim) continue;
+            if (d == reduceDim)
+                continue;
             IdxT dimSize = static_cast<IdxT>(ubBroadcastShape[d]);
             // Protection against division by zero
             if (dimSize == 0) {
@@ -118,8 +108,29 @@ inline void OpCosineSimilaritySimtKernel(
         // Warp-collaborative accumulation along reduce dimension
         // Use float32 accumulators for all dtype combinations
         float w12 = 0.0f;
-        float w1  = 0.0f;
-        float w2  = 0.0f;
+        float w1 = 0.0f;
+        float w2 = 0.0f;
+
+        // 先计算 norm
+        for (IdxT r = static_cast<IdxT>(laneId); r < reduceSize; r += WARP_SIZE) {
+            IdxT offsetX1 = baseOffsetX1 + r * reduceStride;
+            IdxT offsetX2 = baseOffsetX2 + r * x2ReduceStride;
+
+            // Explicit float32 conversion for all input types
+            float v1 = static_cast<float>(x1[offsetX1]);
+            float v2 = static_cast<float>(x2[offsetX2]);
+
+            w1 += v1 * v1;
+            w2 += v2 * v2;
+        }
+
+        w1 = asc_reduce_add(w1);
+        w2 = asc_reduce_add(w2);
+
+        float norm1 = sqrtf(w1);
+        float norm2 = sqrtf(w2);
+        norm1 = (norm1 > eps) ? norm1 : eps;
+        norm2 = (norm2 > eps) ? norm2 : eps;
 
         for (IdxT r = static_cast<IdxT>(laneId); r < reduceSize; r += WARP_SIZE) {
             IdxT offsetX1 = baseOffsetX1 + r * reduceStride;
@@ -129,45 +140,34 @@ inline void OpCosineSimilaritySimtKernel(
             float v1 = static_cast<float>(x1[offsetX1]);
             float v2 = static_cast<float>(x2[offsetX2]);
 
-            w12 += v1 * v2;
-            w1  += v1 * v1;
-            w2  += v2 * v2;
+            w12 += (v1 / norm1) * (v2 / norm2);
         }
 
         // Warp-level reduction (float32)
         w12 = asc_reduce_add(w12);
-        w1  = asc_reduce_add(w1);
-        w2  = asc_reduce_add(w2);
 
         // Lane 0 computes final result
         if (laneId == 0) {
-            float norm1 = sqrtf(w1);
-            float norm2 = sqrtf(w2);
-            norm1 = (norm1 > eps) ? norm1 : eps;
-            norm2 = (norm2 > eps) ? norm2 : eps;
-            float result = w12 / (norm1 * norm2);
-            output[outIdx] = static_cast<T>(result);
+            output[outIdx] = static_cast<T>(w12);
         }
     }
 }
 
 // Process entry: sets up UB and launches VF kernel
 template <typename T1, typename T2, typename T, typename IdxT>
-__aicore__ inline void Process(
-    GM_ADDR inputX1, GM_ADDR inputX2, GM_ADDR outputY,
-    GM_ADDR workspace, const CosineSimilarityTilingData* tilingData)
+__aicore__ inline void Process(GM_ADDR inputX1, GM_ADDR inputX2, GM_ADDR outputY, GM_ADDR workspace,
+                               const CosineSimilarityTilingData* tilingData)
 {
     using UbT = typename UbIdxTypeTraits<IdxT>::UbT;
     constexpr uint32_t threadNum = UbIdxTypeTraits<IdxT>::threadNum;
 
     __gm__ T1* x1Gm = (__gm__ T1*)inputX1;
     __gm__ T2* x2Gm = (__gm__ T2*)inputX2;
-    __gm__ T*  yGm  = (__gm__ T*)outputY;
+    __gm__ T* yGm = (__gm__ T*)outputY;
 
     // R003: Allocate UB with type-appropriate element size
     LocalMemAllocator<AscendC::Hardware::UB> ubAlloc;
-    LocalTensor<UbT> ubBuf = ubAlloc.Alloc<UbT>(
-        AlignAllocN(UB_TOTAL_ELEMS, sizeof(UbT)));
+    LocalTensor<UbT> ubBuf = ubAlloc.Alloc<UbT>(AlignAllocN(UB_TOTAL_ELEMS, sizeof(UbT)));
 
     // Copy tiling data to UB (cast from int64_t to UbT)
     for (int32_t d = 0; d < tilingData->ndim; d++) {
@@ -184,20 +184,11 @@ __aicore__ inline void Process(
 
     // R006: Launch with type-appropriate thread count
     asc_vf_call<OpCosineSimilaritySimtKernel<T1, T2, T, IdxT, threadNum>>(
-        dim3(threadNum),
-        static_cast<IdxT>(tilingData->totalOutputElements),
-        static_cast<IdxT>(tilingData->reduceSize),
-        static_cast<IdxT>(tilingData->innerSize),
-        tilingData->eps,
-        tilingData->ndim,
-        tilingData->reduceDim,
-        ubShapePtr,
-        ubX1Ptr,
-        ubX2Ptr,
-        x1Gm, x2Gm, yGm
-    );
+        dim3(threadNum), static_cast<IdxT>(tilingData->totalOutputElements), static_cast<IdxT>(tilingData->reduceSize),
+        static_cast<IdxT>(tilingData->innerSize), tilingData->eps, tilingData->ndim, tilingData->reduceDim, ubShapePtr,
+        ubX1Ptr, ubX2Ptr, x1Gm, x2Gm, yGm);
 }
 
-}  // namespace NsCosineSimilarity
+} // namespace NsCosineSimilarity
 
-#endif  // COSINE_SIMILARITY_SIMT_H_
+#endif // COSINE_SIMILARITY_SIMT_H_

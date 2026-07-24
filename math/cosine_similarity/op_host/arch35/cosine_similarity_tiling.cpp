@@ -42,8 +42,8 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
     return ge::GRAPH_SUCCESS;
 }
 
-static void ComputeBroadcastStrides(const gert::Shape& origShape, int32_t ndim,
-    const int64_t* broadcastShape, int64_t* strides)
+static void ComputeBroadcastStrides(const gert::Shape& origShape, int32_t ndim, const int64_t* broadcastShape,
+                                    int64_t* strides)
 {
     (void)broadcastShape;
     int32_t origNdim = static_cast<int32_t>(origShape.GetDimNum());
@@ -61,8 +61,8 @@ static void ComputeBroadcastStrides(const gert::Shape& origShape, int32_t ndim,
     }
 }
 
-static ge::graphStatus ComputeCosineSimilarityTiling(gert::TilingContext* context,
-    CosineSimilarityTilingData* tiling, int64_t coreNum)
+static ge::graphStatus ComputeCosineSimilarityTiling(gert::TilingContext* context, CosineSimilarityTilingData* tiling,
+                                                     int64_t coreNum)
 {
     // Get input shapes
     auto x1Input = context->GetInputShape(0);
@@ -77,11 +77,10 @@ static ge::graphStatus ComputeCosineSimilarityTiling(gert::TilingContext* contex
     int32_t x2Nd = static_cast<int32_t>(x2Shape.GetDimNum());
     int32_t ndim = (x1Nd > x2Nd) ? x1Nd : x2Nd;
 
-    if (ndim > MAX_DIMS) {
-        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
-            context->GetNodeName(), "x1 and x2",
-            (std::to_string(x1Nd) + " and " + std::to_string(x2Nd)).c_str(),
-            "broadcast ndim must not exceed 8");
+    if (ndim < 1 || ndim > MAX_DIMS) {
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(context->GetNodeName(), "x1 and x2",
+                                                  (std::to_string(x1Nd) + " and " + std::to_string(x2Nd)).c_str(),
+                                                  "shape dim must be in range [1, 8]");
         return ge::GRAPH_FAILED;
     }
 
@@ -91,6 +90,18 @@ static ge::graphStatus ComputeCosineSimilarityTiling(gert::TilingContext* contex
     for (int32_t d = 0; d < ndim; d++) {
         int64_t s1 = (d < x1Offset) ? 1 : x1Shape.GetDim(d - x1Offset);
         int64_t s2 = (d < x2Offset) ? 1 : x2Shape.GetDim(d - x2Offset);
+        if (s1 <= 0 || s2 <= 0) {
+            std::string shapeMsg = std::to_string(s1) + " and " + std::to_string(s2);
+            OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x1 and x2", shapeMsg.c_str(),
+                                                   ("shape dim value must be > 0 at dim " + std::to_string(d)).c_str());
+            return ge::GRAPH_FAILED;
+        }
+        if (s1 != s2 && s1 != 1 && s2 != 1) {
+            std::string shapeMsg = std::to_string(s1) + " and " + std::to_string(s2);
+            OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x1 and x2", shapeMsg.c_str(),
+                                                   ("shapes not broadcastable at dim " + std::to_string(d)).c_str());
+            return ge::GRAPH_FAILED;
+        }
         tiling->broadcastShape[d] = (s1 > s2) ? s1 : s2;
     }
 
@@ -107,9 +118,8 @@ static ge::graphStatus ComputeCosineSimilarityTiling(gert::TilingContext* contex
         dim += ndim;
     }
     if (dim < 0 || dim >= ndim) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context->GetNodeName(), "dim", std::to_string(dim).c_str(),
-            ("dim must be in range [0, " + std::to_string(ndim) + ")").c_str());
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "dim", std::to_string(dim).c_str(),
+                                              ("dim must be in range [0, " + std::to_string(ndim) + ")").c_str());
         return ge::GRAPH_FAILED;
     }
     tiling->reduceDim = dim;
@@ -143,10 +153,8 @@ static ge::graphStatus ComputeCosineSimilarityTiling(gert::TilingContext* contex
         bool canMergeOuter = (outerCount >= 2);
         if (canMergeOuter) {
             for (int32_t d = 0; d < dim - 1; d++) {
-                bool x1Contig = (tiling->x1Strides[d] ==
-                    tiling->x1Strides[d + 1] * tiling->broadcastShape[d + 1]);
-                bool x2Contig = (tiling->x2Strides[d] ==
-                    tiling->x2Strides[d + 1] * tiling->broadcastShape[d + 1]);
+                bool x1Contig = (tiling->x1Strides[d] == tiling->x1Strides[d + 1] * tiling->broadcastShape[d + 1]);
+                bool x2Contig = (tiling->x2Strides[d] == tiling->x2Strides[d + 1] * tiling->broadcastShape[d + 1]);
                 if (!x1Contig || !x2Contig) {
                     canMergeOuter = false;
                     break;
@@ -158,10 +166,8 @@ static ge::graphStatus ComputeCosineSimilarityTiling(gert::TilingContext* contex
         bool canMergeInner = (innerCount >= 2);
         if (canMergeInner) {
             for (int32_t d = dim + 1; d < ndim - 1; d++) {
-                bool x1Contig = (tiling->x1Strides[d] ==
-                    tiling->x1Strides[d + 1] * tiling->broadcastShape[d + 1]);
-                bool x2Contig = (tiling->x2Strides[d] ==
-                    tiling->x2Strides[d + 1] * tiling->broadcastShape[d + 1]);
+                bool x1Contig = (tiling->x1Strides[d] == tiling->x1Strides[d + 1] * tiling->broadcastShape[d + 1]);
+                bool x2Contig = (tiling->x2Strides[d] == tiling->x2Strides[d + 1] * tiling->broadcastShape[d + 1]);
                 if (!x1Contig || !x2Contig) {
                     canMergeInner = false;
                     break;
@@ -269,37 +275,30 @@ static ge::graphStatus CosineSimilarityTilingFunc(gert::TilingContext* context)
 {
     uint64_t ubSize;
     int64_t coreNum;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     CosineSimilarityTilingData* tiling = context->GetTilingData<CosineSimilarityTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(CosineSimilarityTilingData), 0, sizeof(CosineSimilarityTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(CosineSimilarityTilingData), 0, sizeof(CosineSimilarityTilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        ComputeCosineSimilarityTiling(context, tiling, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "ComputeCosineSimilarityTiling error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ComputeCosineSimilarityTiling(context, tiling, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "ComputeCosineSimilarityTiling error"), return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     context->SetBlockDim(tiling->needCoreNum);
     OP_CHECK_IF((ubSize <= DCACHE_SIZE + STATIC_UB_ESTIMATE),
-        OP_LOGE(context, "ubSize %lu <= DCACHE_SIZE + STATIC_UB_ESTIMATE", ubSize),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context, "ubSize %lu <= DCACHE_SIZE + STATIC_UB_ESTIMATE", ubSize), return ge::GRAPH_FAILED);
     auto res = context->SetLocalMemorySize(static_cast<uint32_t>(ubSize - DCACHE_SIZE - STATIC_UB_ESTIMATE));
-    OP_CHECK_IF((res != ge::GRAPH_SUCCESS),
-        OP_LOGE(context, "SetLocalMemorySize failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((res != ge::GRAPH_SUCCESS), OP_LOGE(context, "SetLocalMemorySize failed"), return ge::GRAPH_FAILED);
 
     // Set tiling key based on index width
-    uint64_t tilingKey = (tiling->totalOutputElements <= static_cast<int64_t>(INT32_MAX))
-        ? static_cast<uint64_t>(COSINE_SIMILARITY_TPL_KEY_32BIT)
-        : static_cast<uint64_t>(COSINE_SIMILARITY_TPL_KEY_64BIT);
+    uint64_t tilingKey = (tiling->totalOutputElements <= static_cast<int64_t>(INT32_MAX)) ?
+                             static_cast<uint64_t>(COSINE_SIMILARITY_TPL_KEY_32BIT) :
+                             static_cast<uint64_t>(COSINE_SIMILARITY_TPL_KEY_64BIT);
     context->SetTilingKey(tilingKey);
 
     return ge::GRAPH_SUCCESS;
@@ -314,4 +313,4 @@ IMPL_OP_OPTILING(CosineSimilarity)
     .Tiling(CosineSimilarityTilingFunc)
     .TilingParse<CosineSimilarityCompileInfo>(TilingParseForCosineSimilarity);
 
-}  // namespace optiling
+} // namespace optiling
