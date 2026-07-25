@@ -323,8 +323,8 @@
 | [aclnnWeightQuantPreprocess](../../conversion/weight_quant_preprocess/docs/aclnnWeightQuantPreprocess.md) | 完成伪量化Matmul的参数预处理。 | - | 默认确定性实现 |
 | [aclnnXlog1py](../../math/xlog1py/docs/aclnnXlog1py.md) | 计算x * log(1 + y)，当x == 0时结果为0。支持broadcast。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnAmpUpdateScale](../../math/amp_update_scale/docs/aclnnAmpUpdateScale.md) | 实现AMP训练中的动态Scale更新逻辑。 | 默认确定性实现 | 默认确定性实现 |
-| [aclnnXLogYScalarOther&aclnnInplaceXLogYScalarOther](../../math/x_log_y/docs/aclnnXLogYScalarOther&aclnnInplaceXLogYScalarOther.md) | 计算self * log(other)的结果。                                | 默认确定性实现| - |
-| [aclnnXLogYScalarSelf](../../math/x_log_y/docs/aclnnXLogYScalarSelf.md) | 计算self * log(other)的结果。                                | 默认确定性实现| - |
-| [aclnnXLogYTensor&aclnnInplaceXLogYTensor](../../math/x_log_y/docs/aclnnXLogYTensor&aclnnInplaceXLogYTensor.md) | 计算self * log(other)的结果。                                | 默认确定性实现| - |
+| [aclnnXLogYScalarOther&aclnnInplaceXLogYScalarOther](../../math/xlogy/docs/aclnnXLogYScalarOther&aclnnInplaceXLogYScalarOther.md) | 计算self * log(other)的结果。                                | 默认确定性实现| - |
+| [aclnnXLogYScalarSelf](../../math/xlogy/docs/aclnnXLogYScalarSelf.md) | 计算self * log(other)的结果。                                | 默认确定性实现| - |
+| [aclnnXLogYTensor&aclnnInplaceXLogYTensor](../../math/xlogy/docs/aclnnXLogYTensor&aclnnInplaceXLogYTensor.md) | 计算self * log(other)的结果。                                | 默认确定性实现| - |
 | [aclRfft1D](../../math/rfft1_d/docs/aclRfft1D.md)               | 对输入张量self进行RFFT（傅里叶变换）计算，输出是一个包含非负频率的复数张量。 | 默认确定性实现| - |
 | [aclStft](../../math/stft/docs/aclStft.md)                      | 计算输入在滑动窗口内的傅里叶变换。                           | 默认确定性实现| - |

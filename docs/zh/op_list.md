@@ -2198,7 +2198,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/x_log_y/README.md">x_log_y</a></td>
+    <td><a href="../../math/xlogy/README.md">x_log_y</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>

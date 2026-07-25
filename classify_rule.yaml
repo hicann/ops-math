@@ -172,6 +172,7 @@ math@ops-math:
         - ops/ops-math/math/pows/op_host/
         - ops/ops-math/math/pows/op_host/op_api/
         - ops/ops-math/math/pows/op_kernel/
+        - ops/ops-math/math/radix_top_k/
         - ops/ops-math/math/range/op_api/
         - ops/ops-math/math/real/op_api/
         - ops/ops-math/math/real_div/op_api/
@@ -229,8 +230,7 @@ math@ops-math:
         - ops/ops-math/math/topk/op_host/op_api/
         - ops/ops-math/math/trunc/op_api/
         - ops/ops-math/math/truncate_div/op_api/
-        - ops/ops-math/math/x_log_y/op_host/op_api/
-        - ops/ops-math/math/xlog1py/op_api/
+        - ops/ops-math/math/xlogy/op_api/
       opensource_style: null
       kernel_style: null
     unrelease:
@@ -371,6 +371,7 @@ math@ops-math:
         - ops/ops-math/math/pow/tests/
         - ops/ops-math/math/pows/examples/
         - ops/ops-math/math/pows/tests/
+        - ops/ops-math/math/radix_top_k/tests/
         - ops/ops-math/math/range/examples/
         - ops/ops-math/math/range/tests/
         - ops/ops-math/math/real/examples/
@@ -427,10 +428,8 @@ math@ops-math:
         - ops/ops-math/math/tensor_equal/tests/
         - ops/ops-math/math/topk/examples/
         - ops/ops-math/math/topk/tests/
-        - ops/ops-math/math/x_log_y/examples/
-        - ops/ops-math/math/x_log_y/tests/
-        - ops/ops-math/math/xlog1py/examples/
-        - ops/ops-math/math/xlog1py/tests/
+        - ops/ops-math/math/xlogy/examples/
+        - ops/ops-math/math/xlogy/tests/
       non_delivery: null
       open_source: null
 
