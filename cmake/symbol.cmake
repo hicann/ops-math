@@ -550,6 +550,7 @@ function(gen_onnx_plugin_symbol)
             -Wl,--whole-archive
             rt2_registry_static
             -Wl,--no-whole-archive
+            -Wl,-Bsymbolic
             unified_dlog
             $<$<CONFIG:Release>:-s>
     )
@@ -598,6 +599,7 @@ function(gen_tf_plugin_symbol)
             -Wl,--whole-archive
             rt2_registry_static
             -Wl,--no-whole-archive
+            -Wl,-Bsymbolic
             unified_dlog
             $<$<CONFIG:Release>:-s>
   )
