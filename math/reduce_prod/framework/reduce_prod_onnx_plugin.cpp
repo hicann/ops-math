@@ -112,10 +112,16 @@ static Status ParseParamsReduceProd13(const Message* op_src, ge::Operator& op_de
     op_dest.SetAttr("original_type", "ai.onnx::13::ReduceProd");
 
     int input_size = node->input_size();
+    std::vector<int> axes = {};
     bool keep_dims = true;
     int noop_with_empty_axes = 0;
     for (const auto& attr : node->attribute()) {
-        if (attr.name() == "keepdims" && attr.type() == ge::onnx::AttributeProto::INT) {
+        // 兼容版本13后，任然会有将axes作为属性传入的情况
+        if (attr.name() == "axes" && attr.type() == ge::onnx::AttributeProto::INTS) {
+            for (int i = 0; i < attr.ints_size(); i++) {
+                axes.push_back(attr.ints(i));
+            }
+        } else if (attr.name() == "keepdims" && attr.type() == ge::onnx::AttributeProto::INT) {
             keep_dims = (attr.i() == 1);
         } else if (attr.name() == "noop_with_empty_axes" && attr.type() == ge::onnx::AttributeProto::INT) {
             noop_with_empty_axes = attr.i();
@@ -125,11 +131,15 @@ static Status ParseParamsReduceProd13(const Message* op_src, ge::Operator& op_de
     // opset 13+: axes changed from attribute to input.
     // When input_size == 1, there is no axes input; store an empty axes tensor
     // so ParseOpToGraph can retrieve it via GetAttr and pass to Const.
-    std::vector<int> axes = {};
-    std::vector<int64_t> dims = {0};
+    int num = axes.size();
+    std::vector<int64_t> dims = {};
+    if (num != 0) {
+        dims.push_back(num);
+    } else {
+        dims.push_back(0);
+    }
     ge::Tensor axes_tensor = Vec2Tensor(axes, dims, ge::DT_INT32, ge::FORMAT_NCHW);
     op_dest.SetAttr("axes", axes_tensor);
-
     op_dest.SetAttr("name", node->name());
     op_dest.SetAttr("input_size", input_size);
     op_dest.SetAttr("keep_dims", keep_dims);
@@ -216,20 +226,18 @@ static Status ParseOpToGraphReduceProd13(const Operator& op, Graph& graph)
 // register ReduceProd op info to GE
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType(
-        {ge::AscendString("ai.onnx::8::ReduceProd"), ge::AscendString("ai.onnx::9::ReduceProd"),
-         ge::AscendString("ai.onnx::10::ReduceProd"), ge::AscendString("ai.onnx::11::ReduceProd"),
-         ge::AscendString("ai.onnx::12::ReduceProd")})
+    .OriginOpType({ge::AscendString("ai.onnx::8::ReduceProd"), ge::AscendString("ai.onnx::9::ReduceProd"),
+                   ge::AscendString("ai.onnx::10::ReduceProd"), ge::AscendString("ai.onnx::11::ReduceProd"),
+                   ge::AscendString("ai.onnx::12::ReduceProd")})
     .ParseParamsFn(ParseParamsReduceProd)
     .ParseOpToGraphFn(ParseOpToGraphReduceProd)
     .ImplyType(ImplyType::TVM);
 
 REGISTER_CUSTOM_OP("ReduceProd")
     .FrameworkType(ONNX)
-    .OriginOpType(
-        {ge::AscendString("ai.onnx::13::ReduceProd"), ge::AscendString("ai.onnx::14::ReduceProd"),
-         ge::AscendString("ai.onnx::15::ReduceProd"), ge::AscendString("ai.onnx::16::ReduceProd"),
-         ge::AscendString("ai.onnx::17::ReduceProd"), ge::AscendString("ai.onnx::18::ReduceProd")})
+    .OriginOpType({ge::AscendString("ai.onnx::13::ReduceProd"), ge::AscendString("ai.onnx::14::ReduceProd"),
+                   ge::AscendString("ai.onnx::15::ReduceProd"), ge::AscendString("ai.onnx::16::ReduceProd"),
+                   ge::AscendString("ai.onnx::17::ReduceProd"), ge::AscendString("ai.onnx::18::ReduceProd")})
     .ParseParamsFn(ParseParamsReduceProd13)
     .ParseOpToGraphFn(ParseOpToGraphReduceProd13)
     .ImplyType(ImplyType::TVM);

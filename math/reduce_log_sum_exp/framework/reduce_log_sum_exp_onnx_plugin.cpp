@@ -78,8 +78,9 @@ static Status ParseOpToGraphReduceLogSumExp(const ge::Operator& op, Graph& graph
     }
 
     auto data1 = op::Const((ori_name + "_data1").c_str()).set_attr_value(axes);
-    auto reduce_log_sum_exp =
-        op::ReduceLogSumExp((ori_name + "_ReduceLogSumExp").c_str()).set_input_x(data0).set_input_axes(data1);
+    auto reduce_log_sum_exp = op::ReduceLogSumExp((ori_name + "_ReduceLogSumExp").c_str())
+                                  .set_input_x(data0)
+                                  .set_input_axes(data1);
 
     bool keep_dims = false;
     if (op.GetAttr("keep_dims", keep_dims) != SUCCESS) {
@@ -106,9 +107,15 @@ static Status ParseParamsReduceLogSumExp13(const Message* op_src, ge::Operator& 
     op_dest.SetAttr("original_type", "ai.onnx::13::ReduceLogSumExp");
 
     int input_size = node->input_size();
+    std::vector<int> axes = {};
     bool keep_dims = true;
     for (const auto& attr : node->attribute()) {
-        if (attr.name() == "keepdims" && attr.type() == ge::onnx::AttributeProto::INT) {
+        // 兼容版本13后，任然会有将axes作为属性传入的情况
+        if (attr.name() == "axes" && attr.type() == ge::onnx::AttributeProto::INTS) {
+            for (int i = 0; i < attr.ints_size(); i++) {
+                axes.push_back(attr.ints(i));
+            }
+        } else if (attr.name() == "keepdims" && attr.type() == ge::onnx::AttributeProto::INT) {
             keep_dims = (attr.i() == 1);
         }
     }
@@ -116,11 +123,15 @@ static Status ParseParamsReduceLogSumExp13(const Message* op_src, ge::Operator& 
     // opset 13+: axes changed from attribute to input.
     // When input_size == 1, there is no axes input; store an empty axes tensor
     // so ParseOpToGraph can retrieve it via GetAttr and pass to Const.
-    std::vector<int> axes = {};
-    std::vector<int64_t> dims = {0};
+    int num = axes.size();
+    std::vector<int64_t> dims = {};
+    if (num != 0) {
+        dims.push_back(num);
+    } else {
+        dims.push_back(0);
+    }
     ge::Tensor axes_tensor = Vec2Tensor(axes, dims, ge::DT_INT32, ge::FORMAT_NCHW);
     op_dest.SetAttr("axes", axes_tensor);
-
     op_dest.SetAttr("name", node->name());
     op_dest.SetAttr("input_size", input_size);
     op_dest.SetAttr("keep_dims", keep_dims);
@@ -198,20 +209,18 @@ static Status ParseOpToGraphReduceLogSumExp13(const Operator& op, Graph& graph)
 // register ReduceLogSumExp op info to GE
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType(
-        {ge::AscendString("ai.onnx::8::ReduceLogSumExp"), ge::AscendString("ai.onnx::9::ReduceLogSumExp"),
-         ge::AscendString("ai.onnx::10::ReduceLogSumExp"), ge::AscendString("ai.onnx::11::ReduceLogSumExp"),
-         ge::AscendString("ai.onnx::12::ReduceLogSumExp")})
+    .OriginOpType({ge::AscendString("ai.onnx::8::ReduceLogSumExp"), ge::AscendString("ai.onnx::9::ReduceLogSumExp"),
+                   ge::AscendString("ai.onnx::10::ReduceLogSumExp"), ge::AscendString("ai.onnx::11::ReduceLogSumExp"),
+                   ge::AscendString("ai.onnx::12::ReduceLogSumExp")})
     .ParseParamsFn(ParseParamsReduceLogSumExp)
     .ParseOpToGraphFn(ParseOpToGraphReduceLogSumExp)
     .ImplyType(ImplyType::TVM);
 
 REGISTER_CUSTOM_OP("ReduceLogSumExp")
     .FrameworkType(ONNX)
-    .OriginOpType(
-        {ge::AscendString("ai.onnx::13::ReduceLogSumExp"), ge::AscendString("ai.onnx::14::ReduceLogSumExp"),
-         ge::AscendString("ai.onnx::15::ReduceLogSumExp"), ge::AscendString("ai.onnx::16::ReduceLogSumExp"),
-         ge::AscendString("ai.onnx::17::ReduceLogSumExp"), ge::AscendString("ai.onnx::18::ReduceLogSumExp")})
+    .OriginOpType({ge::AscendString("ai.onnx::13::ReduceLogSumExp"), ge::AscendString("ai.onnx::14::ReduceLogSumExp"),
+                   ge::AscendString("ai.onnx::15::ReduceLogSumExp"), ge::AscendString("ai.onnx::16::ReduceLogSumExp"),
+                   ge::AscendString("ai.onnx::17::ReduceLogSumExp"), ge::AscendString("ai.onnx::18::ReduceLogSumExp")})
     .ParseParamsFn(ParseParamsReduceLogSumExp13)
     .ParseOpToGraphFn(ParseOpToGraphReduceLogSumExp13)
     .ImplyType(ImplyType::TVM);
