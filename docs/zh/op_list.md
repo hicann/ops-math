@@ -978,6 +978,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/histogram_fixed_width/README.md">histogram_fixed_width</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>计算张量直方图。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/histogram_v2/README.md">histogram_v2</a></td>
     <td>√</td>
     <td>√</td>
