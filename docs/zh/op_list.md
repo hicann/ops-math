@@ -1778,6 +1778,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/get_dynamic_dims/README.md">get_dynamic_dims</a></td>
+    <td>√</td>
+    <td>×</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CPU</td>
+    <td>根据shape_info中标记的未知维度，从动态输入张量中提取实际维度值并输出。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/shape/README.md">shape</a></td>
     <td>×</td>
     <td>√</td>
