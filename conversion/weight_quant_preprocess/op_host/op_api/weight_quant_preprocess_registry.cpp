@@ -27,6 +27,7 @@
 
 namespace {
 
+static constexpr size_t DIMS_1 = 1;
 static constexpr size_t DIMS_2 = 2;
 static constexpr size_t DIMS_3 = 3;
 static constexpr size_t DIMS_4 = 4;
@@ -260,15 +261,15 @@ static aclnnStatus CheckBiasOptionalViewShape(const QuantContext& ctx)
     auto biasViewShape = ctx.biasOptional->GetViewShape();
     auto weightViewShape = ctx.weight->GetViewShape();
 
-    OP_CHECK(biasViewShape.GetDimNum() == DIMS_2,
-             OP_LOGE_FOR_INVALID_SHAPEDIM("weight_quant_preprocess", "biasOptional",
-                                          std::to_string(biasViewShape.GetDimNum()).c_str(), "2"),
-             return ACLNN_ERR_PARAM_INVALID);
-
     size_t weightViewDim = weightViewShape.GetDimNum();
     int64_t n = weightViewShape.GetDim(weightViewDim - IDX_1);
 
     if constexpr (isGmm) {
+        OP_CHECK(biasViewShape.GetDimNum() == DIMS_2,
+                 OP_LOGE_FOR_INVALID_SHAPEDIM("weight_quant_preprocess", "biasOptional",
+                                              std::to_string(biasViewShape.GetDimNum()).c_str(), "2"),
+                 return ACLNN_ERR_PARAM_INVALID);
+
         int64_t g = weightViewShape.GetDim(IDX_0);
         OP_CHECK(biasViewShape.GetDim(IDX_0) == g && biasViewShape.GetDim(IDX_1) == n,
                  OP_LOGE_FOR_INVALID_SHAPE(
@@ -276,10 +277,19 @@ static aclnnStatus CheckBiasOptionalViewShape(const QuantContext& ctx)
                      (std::string("(") + std::to_string(g) + ", " + std::to_string(n) + ")").c_str()),
                  return ACLNN_ERR_PARAM_INVALID);
     } else {
-        OP_CHECK(biasViewShape.GetDim(IDX_0) == 1 && biasViewShape.GetDim(IDX_1) == n,
-                 OP_LOGE_FOR_INVALID_SHAPE("weight_quant_preprocess", "biasOptional",
-                                           op::ToString(biasViewShape).GetString(),
-                                           (std::string("(1, ") + std::to_string(n) + ")").c_str()),
+        size_t biasViewDim = biasViewShape.GetDimNum();
+        OP_CHECK(biasViewDim == DIMS_1 || biasViewDim == DIMS_2,
+                 OP_LOGE_FOR_INVALID_SHAPEDIM("weight_quant_preprocess", "biasOptional",
+                                              std::to_string(biasViewDim).c_str(), "1 or 2"),
+                 return ACLNN_ERR_PARAM_INVALID);
+
+        bool isValidShape = biasViewDim == DIMS_1 ?
+                                biasViewShape.GetDim(IDX_0) == n :
+                                biasViewShape.GetDim(IDX_0) == 1 && biasViewShape.GetDim(IDX_1) == n;
+        OP_CHECK(isValidShape,
+                 OP_LOGE_FOR_INVALID_SHAPE(
+                     "weight_quant_preprocess", "biasOptional", op::ToString(biasViewShape).GetString(),
+                     (std::string("(") + std::to_string(n) + ") or (1, " + std::to_string(n) + ")").c_str()),
                  return ACLNN_ERR_PARAM_INVALID);
     }
 
@@ -679,7 +689,7 @@ const std::unordered_map<NpuArch, std::vector<DataFlowEntry>> NPU_DATA_FLOW_REGI
             CheckWeightScaleTrans<IDX_0>, // 校验 weightScale 的第 0 维和第 1 维是否转置
             CheckWeightOffsetOptionalNull, CheckBiasOptionalNotEmpty, CheckBiasOptionalFormatND,
             CheckBiasOptionalDtype<op::DataType::DT_FLOAT16, op::DataType::DT_BF16>, // 支持 bias 数据类型 FP16/BF16
-            CheckBiasOptionalViewShape<false>, // false 表示非 GMM 场景，bias shape 要求 (1, n)
+            CheckBiasOptionalViewShape<false>, // false 表示非 GMM 场景，bias shape 要求 (n) 或 (1, n)
             CheckBiasOptionalContiguous,
             CheckKGroupSizeMx, // Mx 场景要求 kGroupSize 为 32
             CheckOutWeightNotNullEmpty, CheckOutWeightDtypeSame, CheckOutWeightViewShapeSame,

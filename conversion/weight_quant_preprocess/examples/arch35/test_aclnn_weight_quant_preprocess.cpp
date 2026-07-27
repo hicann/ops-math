@@ -74,6 +74,7 @@ private:
     bool deviceSet_ = false;
 };
 
+// WeightQuantPreprocess currently supports Ascend 950 only.
 int main()
 {
     int32_t deviceId = 0;
