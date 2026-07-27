@@ -664,5 +664,6 @@
     {"name":"StatelessUniform", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"RadixTopK", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : false},
     {"name":"Rint", "compute_units": ["ascend950"], "auto_sync" : false},
-    {"name":"Tan", "compute_units": ["mc62"], "compile_options": {"mc62": ["--cce-no-dcache-flush"]}}
+    {"name":"Tan", "compute_units": ["mc62"], "compile_options": {"mc62": ["--cce-no-dcache-flush"]}},
+    {"name":"ProdVirialSeA", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": ""}
 ]

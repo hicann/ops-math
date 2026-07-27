@@ -3257,6 +3257,16 @@
       <td>实现AMP训练中的动态Scale更新，根据当前scale值、growth_tracker计数器以及是否发现Inf/NaN，动态调整loss scale大小。</td>
   </tr>
   <tr>
+      <td>math</td>
+      <td><a href="../../math/prod_virial_se_a/README.md">prod_virial_se_a</a></td>
+      <td>√</td>
+      <td>√</td>
+      <td>×</td>
+      <td>√</td>
+      <td>AI Core</td>
+      <td>计算深度势能模型中基于SE原子嵌入描述符的A类型位力张量。</td>
+  </tr>
+  <tr>
     <td>random</td>
     <td><a href="../../random/stateless_uniform/README.md">stateless_uniform</a></td>
     <td>√</td>
