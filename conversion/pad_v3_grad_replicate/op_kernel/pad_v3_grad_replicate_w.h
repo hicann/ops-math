@@ -21,12 +21,14 @@
 using namespace AscendC;
 
 template <typename T>
-class PadV3GradReplicateW {
+class PadV3GradReplicateW : public PadV3GradReplicateKernelBase<T, PadV3GradReplicateW<T>> {
+    using base = PadV3GradReplicateKernelBase<T, PadV3GradReplicateW<T>>;
+    friend base;
+
 public:
     __aicore__ inline PadV3GradReplicateW(){};
-    __aicore__ inline void Init(
-        const PadV3GradReplicateTilingData& __restrict tilingData, GM_ADDR x, GM_ADDR padding, GM_ADDR y,
-        GM_ADDR workspace);
+    __aicore__ inline void Init(const PadV3GradReplicateTilingData& __restrict tilingData, GM_ADDR x, GM_ADDR padding,
+                                GM_ADDR y, GM_ADDR workspace);
     __aicore__ inline void InitBuffer(TPipe* inputPipe);
     __aicore__ inline void CopyGm2UBWhole(const int64_t offset, const int64_t copyCount);
     __aicore__ inline void CopyGm2UB(const int64_t offset1, const int64_t offset2, const int64_t copyCount);
@@ -46,78 +48,26 @@ private:
     TQue<QuePosition::VECOUT, BUFFER_NUM> yOutQueue;
     TBuf<TPosition::VECCALC> floatCastResBuf;
 
-    uint32_t batch = 0;
-    uint32_t ncPerCore = 0;
-    uint32_t tailNC = 0;
-    uint32_t height = 0;
-    uint32_t width = 0;
-    uint32_t alignHeight = 0;
-    uint32_t alignWidth = 0;
-    uint32_t outHeight = 0;
-    uint32_t outWidth = 0;
-    uint32_t alignOutHeight = 0;
-    uint32_t alignOutWidth = 0;
-    uint32_t padTop = 0;
-    uint32_t padBottom = 0;
-    uint32_t padLeft = 0;
-    uint32_t padRight = 0;
-    uint32_t blockNum = 0;
-    uint32_t ubFactorElement = 0;
-    uint32_t batchOffset = 0;
-    uint32_t blockIdx = 0;
-    uint32_t perBlockCount = 0;
-    int64_t baseGradGmOffset = 0;
-    int64_t gradGmOffset = 0;
-    int64_t baseGmOffset = 0;
-    int64_t xGmOffset = 0;
-    int64_t batchStride = 0;
-    int64_t outBatchStride = 0;
     uint32_t wCalCount = 0;
     event_t eventId0;
     event_t eventId1;
     event_t eventId2;
     event_t eventId3;
     static constexpr bool isCastFp32 = AscendC::IsSameType<T, bfloat16_t>::value || AscendC::IsSameType<T, half>::value;
-    GlobalTensor<T> mGmX;
-    GlobalTensor<T> mGmY;
-    GlobalTensor<T> mGmWorkspace;
 };
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateW<T>::Init(
-    const PadV3GradReplicateTilingData& __restrict tilingData, GM_ADDR x, GM_ADDR padding, GM_ADDR y, GM_ADDR workspace)
+__aicore__ inline void PadV3GradReplicateW<T>::Init(const PadV3GradReplicateTilingData& __restrict tilingData,
+                                                    GM_ADDR x, GM_ADDR padding, GM_ADDR y, GM_ADDR workspace)
 {
-    batch = tilingData.batch;
-    ncPerCore = tilingData.ncPerCore;
-    tailNC = tilingData.tailNC;
-    height = tilingData.height;
-    width = tilingData.width;
-    outHeight = tilingData.outHeight;
-    outWidth = tilingData.outWidth;
-    alignHeight = tilingData.alignHeight;
-    alignWidth = tilingData.alignWidth;
-    alignOutHeight = tilingData.alignOutHeight;
-    alignOutWidth = tilingData.alignOutWidth;
-    padTop = tilingData.padTop;
-    padBottom = tilingData.padBottom;
-    padLeft = tilingData.padLeft;
-    padRight = tilingData.padRight;
-    blockNum = tilingData.blockNum;
-    ubFactorElement = tilingData.ubFactorElement;
+    base::Init(tilingData, x, padding, y, workspace);
+    this->batchStride = this->width;
+    this->outBatchStride = this->outWidth;
     wCalCount = tilingData.wCalCount;
-
-    batchStride = width;
-    outBatchStride = outWidth;
-    blockIdx = GetBlockIdx();
-    perBlockCount = BLOCK_BYTES / sizeof(T);
     eventId0 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::S_MTE2));
     eventId1 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_MTE2));
     eventId2 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::S_MTE3));
     eventId3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::S_MTE3));
-
-    mGmX.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
-    mGmY.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(y));
-    mGmWorkspace.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(workspace));
 }
 
 // init used buffer
@@ -127,11 +77,11 @@ __aicore__ inline void PadV3GradReplicateW<T>::InitBuffer(TPipe* inputPipe)
     pipe = inputPipe;
     if constexpr (isCastFp32) {
         pipe->InitBuffer(xInQueue, BUFFER_NUM, wCalCount * sizeof(T) * CONST_VALUE_2);
-        pipe->InitBuffer(yOutQueue, BUFFER_NUM, ubFactorElement * sizeof(T));
-        pipe->InitBuffer(floatCastResBuf, ubFactorElement * sizeof(float));
+        pipe->InitBuffer(yOutQueue, BUFFER_NUM, this->ubFactorElement * sizeof(T));
+        pipe->InitBuffer(floatCastResBuf, this->ubFactorElement * sizeof(float));
     } else {
         pipe->InitBuffer(xInQueue, BUFFER_NUM, wCalCount * sizeof(T) * CONST_VALUE_2);
-        pipe->InitBuffer(yOutQueue, BUFFER_NUM, ubFactorElement * sizeof(T));
+        pipe->InitBuffer(yOutQueue, BUFFER_NUM, this->ubFactorElement * sizeof(T));
     }
 }
 
@@ -140,61 +90,61 @@ __aicore__ inline void PadV3GradReplicateW<T>::CopyGm2UBWhole(const int64_t offs
 {
     LocalTensor<T> dataLocal = xInQueue.AllocTensor<T>();
     DataCopyExtParams copyParams{1, (uint32_t)(copyCount * sizeof(T)), 0, 0, 0};
-    DataCopyPadExtParams<T> padParams{true, 0, (uint8_t)(CeilAlign(copyCount, perBlockCount) - copyCount), (T)0};
+    DataCopyPadExtParams<T> padParams{true, 0, (uint8_t)(CeilAlign(copyCount, this->perBlockCount) - copyCount), (T)0};
 
-    DataCopyPad(dataLocal, mGmX[offset], copyParams, padParams);
+    DataCopyPad(dataLocal, this->mGmX[offset], copyParams, padParams);
     xInQueue.EnQue(dataLocal);
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateW<T>::CopyGm2UB(
-    const int64_t offset1, const int64_t offset2, const int64_t copyCount)
+__aicore__ inline void PadV3GradReplicateW<T>::CopyGm2UB(const int64_t offset1, const int64_t offset2,
+                                                         const int64_t copyCount)
 {
     LocalTensor<T> dataLocal = xInQueue.AllocTensor<T>();
     DataCopyExtParams copyParams{1, (uint32_t)(copyCount * sizeof(T)), 0, 0, 0};
-    DataCopyPadExtParams<T> padParams{true, 0, (uint8_t)(CeilAlign(copyCount, perBlockCount) - copyCount), (T)0};
+    DataCopyPadExtParams<T> padParams{true, 0, (uint8_t)(CeilAlign(copyCount, this->perBlockCount) - copyCount), (T)0};
 
-    DataCopyPad(dataLocal[0], mGmX[offset1], copyParams, padParams);
+    DataCopyPad(dataLocal[0], this->mGmX[offset1], copyParams, padParams);
     PipeBarrier<PIPE_MTE2>();
-    DataCopyPad(dataLocal[copyCount], mGmX[offset2], copyParams, padParams);
+    DataCopyPad(dataLocal[copyCount], this->mGmX[offset2], copyParams, padParams);
     xInQueue.EnQue(dataLocal);
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateW<T>::CopyWorkspace2Out(
-    const int64_t offset1, const int64_t offset2, const int64_t copyCount)
+__aicore__ inline void PadV3GradReplicateW<T>::CopyWorkspace2Out(const int64_t offset1, const int64_t offset2,
+                                                                 const int64_t copyCount)
 {
     LocalTensor<T> dataLocal = yOutQueue.AllocTensor<T>();
     DataCopyExtParams copyParams{1, (uint32_t)(copyCount * sizeof(T)), 0, 0, 0};
-    DataCopyPadExtParams<T> padParams{true, 0, (uint8_t)(CeilAlign(copyCount, perBlockCount) - copyCount), (T)0};
+    DataCopyPadExtParams<T> padParams{true, 0, (uint8_t)(CeilAlign(copyCount, this->perBlockCount) - copyCount), (T)0};
     WaitFlag<HardEvent::S_MTE2>(eventId0);
     WaitFlag<HardEvent::MTE3_MTE2>(eventId1);
-    DataCopyPad(dataLocal, mGmWorkspace[offset1], copyParams, padParams);
+    DataCopyPad(dataLocal, this->mGmWorkspace[offset1], copyParams, padParams);
     SetFlag<HardEvent::S_MTE2>(eventId0);
     event_t eventID = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
     SetFlag<HardEvent::MTE2_MTE3>(eventID);
     WaitFlag<HardEvent::MTE2_MTE3>(eventID);
     WaitFlag<HardEvent::S_MTE3>(eventId2);
-    DataCopyPad(mGmY[offset2], dataLocal, copyParams);
+    DataCopyPad(this->mGmY[offset2], dataLocal, copyParams);
     SetFlag<HardEvent::S_MTE3>(eventId2);
     SetFlag<HardEvent::MTE3_MTE2>(eventId1);
     yOutQueue.FreeTensor(dataLocal);
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateW<T>::CopyInAndOut2Gm(
-    const int64_t offset1, const int64_t offset2, const int64_t calCount)
+__aicore__ inline void PadV3GradReplicateW<T>::CopyInAndOut2Gm(const int64_t offset1, const int64_t offset2,
+                                                               const int64_t calCount)
 {
     LocalTensor<T> dstLocal = yOutQueue.AllocTensor<T>();
     DataCopyExtParams copyParams{1, (uint32_t)(calCount * sizeof(T)), 0, 0, 0};
-    DataCopyPadExtParams<T> padParams{true, 0, (uint8_t)(CeilAlign(calCount, perBlockCount) - calCount), (T)0};
+    DataCopyPadExtParams<T> padParams{true, 0, (uint8_t)(CeilAlign(calCount, this->perBlockCount) - calCount), (T)0};
     WaitFlag<HardEvent::S_MTE2>(eventId0);
-    DataCopyPad(dstLocal, mGmX[offset1], copyParams, padParams);
+    DataCopyPad(dstLocal, this->mGmX[offset1], copyParams, padParams);
     event_t eventID = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
     SetFlag<HardEvent::MTE2_MTE3>(eventID);
     WaitFlag<HardEvent::MTE2_MTE3>(eventID);
     WaitFlag<HardEvent::S_MTE3>(eventId2);
-    DataCopyPad(mGmY[offset2], dstLocal, copyParams);
+    DataCopyPad(this->mGmY[offset2], dstLocal, copyParams);
     yOutQueue.FreeTensor(dstLocal);
     SetFlag<HardEvent::S_MTE2>(eventId0);
     SetFlag<HardEvent::S_MTE3>(eventId2);
@@ -205,7 +155,7 @@ __aicore__ inline void PadV3GradReplicateW<T>::CopyOut2Workspace(const int64_t o
 {
     LocalTensor<T> yLocal = yOutQueue.DeQue<T>();
     DataCopyExtParams copyParams{1, (uint32_t)(CONST_VALUE_2 * calCount * sizeof(T)), 0, 0, 0};
-    DataCopyPad(mGmWorkspace[offset], yLocal, copyParams); // 拷贝到workspace，注意计算偏移
+    DataCopyPad(this->mGmWorkspace[offset], yLocal, copyParams); // 拷贝到workspace，注意计算偏移
     yOutQueue.FreeTensor(yLocal);
 }
 
@@ -220,24 +170,24 @@ __aicore__ inline void PadV3GradReplicateW<T>::ComputeWGrad(const int32_t calCou
     T val4;
     T tmp1;
     T tmp2;
-    for (size_t i = 0; i < padLeft; i++) {
-        val1 = xLocal.GetValue(i);       // index
-        val2 = xLocal.GetValue(padLeft); // index 边缘轴
+    for (size_t i = 0; i < this->padLeft; i++) {
+        val1 = xLocal.GetValue(i);             // index
+        val2 = xLocal.GetValue(this->padLeft); // index 边缘轴
         if constexpr (AscendC::IsSameType<T, half>::value) {
             tmp1 = (T)((float)val1 + (float)val2);
-            xLocal.SetValue(padLeft, tmp1);
+            xLocal.SetValue(this->padLeft, tmp1);
         } else {
-            xLocal.SetValue(padLeft, val1 + val2);
+            xLocal.SetValue(this->padLeft, val1 + val2);
         }
     }
-    for (size_t i = 0; i < padRight; i++) {
-        val3 = xLocal.GetValue(CONST_VALUE_2 * calCount - 1 - i);        // index
-        val4 = xLocal.GetValue(CONST_VALUE_2 * calCount - 1 - padRight); // index 边缘轴
+    for (size_t i = 0; i < this->padRight; i++) {
+        val3 = xLocal.GetValue(CONST_VALUE_2 * calCount - 1 - i);              // index
+        val4 = xLocal.GetValue(CONST_VALUE_2 * calCount - 1 - this->padRight); // index 边缘轴
         if constexpr (AscendC::IsSameType<T, half>::value) {
             tmp2 = (T)((float)val3 + (float)val4);
-            xLocal.SetValue(CONST_VALUE_2 * calCount - 1 - padRight, tmp2);
+            xLocal.SetValue(CONST_VALUE_2 * calCount - 1 - this->padRight, tmp2);
         } else {
-            xLocal.SetValue(CONST_VALUE_2 * calCount - 1 - padRight, val3 + val4);
+            xLocal.SetValue(CONST_VALUE_2 * calCount - 1 - this->padRight, val3 + val4);
         }
     }
     DataCopy(yLocal, xLocal, CONST_VALUE_2 * calCount);
@@ -256,15 +206,15 @@ __aicore__ inline void PadV3GradReplicateW<T>::ComputeWGradF16(const int32_t cal
     float val3;
     float val4;
     Cast(floatTensor, xLocal, RoundMode::CAST_NONE, CONST_VALUE_2 * calCount);
-    for (size_t i = 0; i < padLeft; i++) {
-        val1 = floatTensor.GetValue(i);       // index
-        val2 = floatTensor.GetValue(padLeft); // index 边缘轴
-        floatTensor.SetValue(padLeft, val1 + val2);
+    for (size_t i = 0; i < this->padLeft; i++) {
+        val1 = floatTensor.GetValue(i);             // index
+        val2 = floatTensor.GetValue(this->padLeft); // index 边缘轴
+        floatTensor.SetValue(this->padLeft, val1 + val2);
     }
-    for (size_t i = 0; i < padRight; i++) {
-        val3 = floatTensor.GetValue(CONST_VALUE_2 * calCount - 1 - i);        // index
-        val4 = floatTensor.GetValue(CONST_VALUE_2 * calCount - 1 - padRight); // index 边缘轴
-        floatTensor.SetValue(CONST_VALUE_2 * calCount - 1 - padRight, val3 + val4);
+    for (size_t i = 0; i < this->padRight; i++) {
+        val3 = floatTensor.GetValue(CONST_VALUE_2 * calCount - 1 - i);              // index
+        val4 = floatTensor.GetValue(CONST_VALUE_2 * calCount - 1 - this->padRight); // index 边缘轴
+        floatTensor.SetValue(CONST_VALUE_2 * calCount - 1 - this->padRight, val3 + val4);
     }
     Cast(yLocal, floatTensor, RoundMode::CAST_ROUND, CONST_VALUE_2 * calCount);
     yOutQueue.EnQue(yLocal);
@@ -283,24 +233,24 @@ __aicore__ inline void PadV3GradReplicateW<T>::ComputeWGradWhole(const int32_t c
     T val4;
     T tmp1;
     T tmp2;
-    for (size_t i = 0; i < padLeft; i++) {
-        val1 = xLocal.GetValue(i);       // index
-        val2 = xLocal.GetValue(padLeft); // index 边缘轴
+    for (size_t i = 0; i < this->padLeft; i++) {
+        val1 = xLocal.GetValue(i);             // index
+        val2 = xLocal.GetValue(this->padLeft); // index 边缘轴
         if constexpr (AscendC::IsSameType<T, half>::value) {
             tmp1 = (T)((float)val1 + (float)val2);
-            xLocal.SetValue(padLeft, tmp1);
+            xLocal.SetValue(this->padLeft, tmp1);
         } else {
-            xLocal.SetValue(padLeft, val1 + val2);
+            xLocal.SetValue(this->padLeft, val1 + val2);
         }
     }
-    for (size_t i = 0; i < padRight; i++) {
-        val3 = xLocal.GetValue(width - 1 - i);        // index
-        val4 = xLocal.GetValue(width - 1 - padRight); // index 边缘轴
+    for (size_t i = 0; i < this->padRight; i++) {
+        val3 = xLocal.GetValue(this->width - 1 - i);              // index
+        val4 = xLocal.GetValue(this->width - 1 - this->padRight); // index 边缘轴
         if constexpr (AscendC::IsSameType<T, half>::value) {
             tmp2 = (T)((float)val3 + (float)val4);
-            xLocal.SetValue(width - 1 - padRight, tmp2);
+            xLocal.SetValue(this->width - 1 - this->padRight, tmp2);
         } else {
-            xLocal.SetValue(width - 1 - padRight, val3 + val4);
+            xLocal.SetValue(this->width - 1 - this->padRight, val3 + val4);
         }
     }
     DataCopy(yLocal, xLocal, CONST_VALUE_2 * calCount);
@@ -319,15 +269,15 @@ __aicore__ inline void PadV3GradReplicateW<T>::ComputeWGradWholeF16(const int32_
     float val3;
     float val4;
     Cast(floatTensor, xLocal, RoundMode::CAST_NONE, CONST_VALUE_2 * calCount);
-    for (size_t i = 0; i < padLeft; i++) {
-        val1 = floatTensor.GetValue(i);       // index
-        val2 = floatTensor.GetValue(padLeft); // index 边缘轴
-        floatTensor.SetValue(padLeft, val1 + val2);
+    for (size_t i = 0; i < this->padLeft; i++) {
+        val1 = floatTensor.GetValue(i);             // index
+        val2 = floatTensor.GetValue(this->padLeft); // index 边缘轴
+        floatTensor.SetValue(this->padLeft, val1 + val2);
     }
-    for (size_t i = 0; i < padRight; i++) {
-        val3 = floatTensor.GetValue(width - 1 - i);        // index
-        val4 = floatTensor.GetValue(width - 1 - padRight); // index 边缘轴
-        floatTensor.SetValue(width - 1 - padRight, val3 + val4);
+    for (size_t i = 0; i < this->padRight; i++) {
+        val3 = floatTensor.GetValue(this->width - 1 - i);              // index
+        val4 = floatTensor.GetValue(this->width - 1 - this->padRight); // index 边缘轴
+        floatTensor.SetValue(this->width - 1 - this->padRight, val3 + val4);
     }
     Cast(yLocal, floatTensor, RoundMode::CAST_ROUND, CONST_VALUE_2 * calCount);
     yOutQueue.EnQue(yLocal);
@@ -338,8 +288,6 @@ __aicore__ inline void PadV3GradReplicateW<T>::ComputeWGradWholeF16(const int32_
 template <typename T>
 __aicore__ inline void PadV3GradReplicateW<T>::Process()
 {
-    uint32_t loopNC = 0;
-    int64_t ncOffset;
     int64_t gmXOffset;
     int64_t gmXOffset1;
     int64_t gmXOffset2;
@@ -354,25 +302,17 @@ __aicore__ inline void PadV3GradReplicateW<T>::Process()
     int64_t workspaceOffset2;
     int64_t workspaceOffset3;
     int64_t calCount = wCalCount;
-    int64_t dataCountOneLine = width - CONST_VALUE_2 * calCount; // 中间body部分，不参与计算，复制即可
+    int64_t dataCountOneLine = this->width - CONST_VALUE_2 * calCount; // 中间body部分，不参与计算，复制即可
     // 对齐场景下，ubFactorElement应为16的倍数
-    uint32_t copyTimesOneLine = CeilDiv(dataCountOneLine, ubFactorElement); // ubFactorElement：一行元素个数
-
-    if (blockIdx < tailNC) {
-        loopNC = ncPerCore + 1;
-        ncOffset = blockIdx * loopNC;
-    } else {
-        loopNC = ncPerCore;
-        ncOffset = blockIdx * ncPerCore + tailNC;
-    }
+    uint32_t copyTimesOneLine = CeilDiv(dataCountOneLine, this->ubFactorElement); // ubFactorElement：一行元素个数
     // 场景1：输入shape的W维度不超过2 * wCalCount，可以完全将整行搬到ub上，进行累加计算
-    if (width <= CONST_VALUE_2 * wCalCount) {
-        for (size_t loop = 0; loop < loopNC; loop++) {
-            gmXOffset = loop * batchStride + ncOffset * batchStride;
-            workspaceOffset = blockIdx * CONST_VALUE_2 * calCount; // workspace上的64空间
+    if (this->width <= CONST_VALUE_2 * wCalCount) {
+        for (size_t loop = 0; loop < this->loopNC; loop++) {
+            gmXOffset = loop * this->batchStride + this->ncOffset * this->batchStride;
+            workspaceOffset = this->blockIdx * CONST_VALUE_2 * calCount; // workspace上的64空间
             SetFlag<HardEvent::S_MTE2>(eventId0);
             WaitFlag<HardEvent::S_MTE2>(eventId0);
-            CopyGm2UBWhole(gmXOffset, width);
+            CopyGm2UBWhole(gmXOffset, this->width);
             // 左右两侧分别进行累加计算到edge
             if constexpr (isCastFp32) {
                 ComputeWGradWholeF16(calCount);
@@ -382,14 +322,14 @@ __aicore__ inline void PadV3GradReplicateW<T>::Process()
             // ub一共64列搬运到workspce上
             CopyOut2Workspace(workspaceOffset, calCount);
             // 计算需要搬出的worksapce偏移，需要搬出的起始位置，即左侧边缘行
-            workspaceOffsetOut = padLeft + blockIdx * CONST_VALUE_2 * calCount;
+            workspaceOffsetOut = this->padLeft + this->blockIdx * CONST_VALUE_2 * calCount;
             SetFlag<HardEvent::S_MTE2>(eventId0);
             // 计算搬出到gm上的偏移，outWidth左侧的起始位置，index0
-            gmYOffset = loop * outBatchStride + ncOffset * outBatchStride;
+            gmYOffset = loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
             SetFlag<HardEvent::S_MTE3>(eventId2);
             // workspace -> ub -> gm
             SetFlag<HardEvent::MTE3_MTE2>(eventId1);
-            CopyWorkspace2Out(workspaceOffsetOut, gmYOffset, outWidth);
+            CopyWorkspace2Out(workspaceOffsetOut, gmYOffset, this->outWidth);
             WaitFlag<HardEvent::S_MTE2>(eventId0);
             WaitFlag<HardEvent::S_MTE3>(eventId2);
             WaitFlag<HardEvent::MTE3_MTE2>(eventId1);
@@ -397,12 +337,12 @@ __aicore__ inline void PadV3GradReplicateW<T>::Process()
         return;
     }
     // 场景2：输入shape的W维度大于2 * wCalCount，需要分为padLeft、padRight和body三部分进行处理
-    for (size_t loop = 0; loop < loopNC; loop++) {
-        int64_t copyCount = ubFactorElement;
-        gmXOffset1 = loop * batchStride + ncOffset * batchStride; // 包含padLeft的最左侧32列起始位置
-        gmXOffset2 =
-            (width - calCount) + loop * batchStride + ncOffset * batchStride; // 包含padRight的最右侧32列起始位置
-        workspaceOffset1 = blockIdx * CONST_VALUE_2 * calCount;               // workspace上的64空间
+    for (size_t loop = 0; loop < this->loopNC; loop++) {
+        int64_t copyCount = this->ubFactorElement;
+        gmXOffset1 = loop * this->batchStride + this->ncOffset * this->batchStride; // 包含padLeft的最左侧32列起始位置
+        gmXOffset2 = (this->width - calCount) + loop * this->batchStride +
+                     this->ncOffset * this->batchStride;              // 包含padRight的最右侧32列起始位置
+        workspaceOffset1 = this->blockIdx * CONST_VALUE_2 * calCount; // workspace上的64空间
         // 左右两侧分别搬运到UB上
         SetFlag<HardEvent::S_MTE2>(eventId0);
         WaitFlag<HardEvent::S_MTE2>(eventId0);
@@ -417,37 +357,39 @@ __aicore__ inline void PadV3GradReplicateW<T>::Process()
         CopyOut2Workspace(workspaceOffset1, calCount);
         // 计算需要搬出的worksapce偏移
         // 左侧需要搬出的起始位置，即左侧边缘行~index31
-        workspaceOffset2 = padLeft + blockIdx * CONST_VALUE_2 * calCount;
+        workspaceOffset2 = this->padLeft + this->blockIdx * CONST_VALUE_2 * calCount;
         // 右侧需要搬出的起始位置，即index32~右侧边缘行
-        workspaceOffset3 = calCount + blockIdx * CONST_VALUE_2 * calCount;
+        workspaceOffset3 = calCount + this->blockIdx * CONST_VALUE_2 * calCount;
         SetFlag<HardEvent::S_MTE2>(eventId0);
         // 计算搬出到gm上的偏移
         // outWidth左侧的起始位置，index0
-        gmYOffset1 = loop * outBatchStride + ncOffset * outBatchStride;
+        gmYOffset1 = loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
         // outWidth右侧的起始位置，(outWidth - calCount + padRight)
-        gmYOffset2 = (outWidth - calCount + padRight) + loop * outBatchStride + ncOffset * outBatchStride;
+        gmYOffset2 = (this->outWidth - calCount + this->padRight) + loop * this->outBatchStride +
+                     this->ncOffset * this->outBatchStride;
         SetFlag<HardEvent::S_MTE3>(eventId2);
         // 左侧workspace -> ub -> gm
         SetFlag<HardEvent::MTE3_MTE2>(eventId1);
-        CopyWorkspace2Out(workspaceOffset2, gmYOffset1, calCount - padLeft);
+        CopyWorkspace2Out(workspaceOffset2, gmYOffset1, calCount - this->padLeft);
         WaitFlag<HardEvent::MTE3_MTE2>(eventId1);
         // 右侧workspace -> ub -> gm
         SetFlag<HardEvent::MTE3_MTE2>(eventId1);
-        CopyWorkspace2Out(workspaceOffset3, gmYOffset2, calCount - padRight);
+        CopyWorkspace2Out(workspaceOffset3, gmYOffset2, calCount - this->padRight);
         WaitFlag<HardEvent::S_MTE2>(eventId0);
         WaitFlag<HardEvent::S_MTE3>(eventId2);
         WaitFlag<HardEvent::MTE3_MTE2>(eventId1);
         // 处理中间body，搬入ub再搬出到gm即可，不做计算
         for (size_t time = 0; time < copyTimesOneLine; time++) {
             if (time == copyTimesOneLine - 1) {
-                copyCount = dataCountOneLine - (copyTimesOneLine - 1) * ubFactorElement; // 尾块搬运数量
+                copyCount = dataCountOneLine - (copyTimesOneLine - 1) * this->ubFactorElement; // 尾块搬运数量
             }
             // 输入body的起始位置
-            gmXOffset3 = calCount + time * ubFactorElement + loop * batchStride + ncOffset * batchStride;
+            gmXOffset3 = calCount + time * this->ubFactorElement + loop * this->batchStride +
+                         this->ncOffset * this->batchStride;
             SetFlag<HardEvent::S_MTE2>(eventId0);
             // 输出body的起始位置
-            gmYOffset3 =
-                (calCount - padLeft) + time * ubFactorElement + loop * outBatchStride + ncOffset * outBatchStride;
+            gmYOffset3 = (calCount - this->padLeft) + time * this->ubFactorElement + loop * this->outBatchStride +
+                         this->ncOffset * this->outBatchStride;
             PipeBarrier<PIPE_ALL>();
             SetFlag<HardEvent::S_MTE3>(eventId2);
             CopyInAndOut2Gm(gmXOffset3, gmYOffset3, copyCount);

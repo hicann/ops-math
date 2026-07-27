@@ -21,12 +21,9 @@
 using namespace AscendC;
 
 template <typename T>
-class PadV3GradReplicateHWMini {
+class PadV3GradReplicateHWMini : public PadV3GradReplicateKernelBase<T, PadV3GradReplicateHWMini<T>> {
 public:
     __aicore__ inline PadV3GradReplicateHWMini(){};
-    __aicore__ inline void Init(
-        const PadV3GradReplicateTilingData& __restrict tilingData, GM_ADDR x, GM_ADDR padding, GM_ADDR y,
-        GM_ADDR workspace);
     __aicore__ inline void InitBuffer(TPipe* inputPipe);
     __aicore__ inline void CopyIn(const int32_t loop);
     __aicore__ inline void Compute();
@@ -45,76 +42,8 @@ private:
     LocalTensor<float> floatTransposeData;
     LocalTensor<float> floatTenosr;
 
-    uint32_t batch = 0;
-    uint32_t ncPerCore = 0;
-    uint32_t tailNC = 0;
-    uint32_t height = 0;
-    uint32_t width = 0;
-    uint32_t alignHeight = 0;
-    uint32_t alignWidth = 0;
-    uint32_t outHeight = 0;
-    uint32_t outWidth = 0;
-    uint32_t alignOutHeight = 0;
-    uint32_t alignOutWidth = 0;
-    uint32_t padTop = 0;
-    uint32_t padBottom = 0;
-    uint32_t padLeft = 0;
-    uint32_t padRight = 0;
-    uint32_t blockNum = 0;
-    uint32_t ubFactorElement = 0;
-    uint32_t blockIdx = 0;
-    uint32_t perBlockCount = 0;
-    uint64_t workspacePerCore = 0;
-    int64_t batchStride = 0;
-    int64_t outBatchStride = 0;
-    uint32_t loopNC = 0;
-    int64_t ncOffset = 0;
     static constexpr bool isCastFp32 = AscendC::IsSameType<T, bfloat16_t>::value || AscendC::IsSameType<T, half>::value;
-    GlobalTensor<T> mGmX;
-    GlobalTensor<T> mGmY;
-    GlobalTensor<T> mGmWorkspace;
 };
-
-template <typename T>
-__aicore__ inline void PadV3GradReplicateHWMini<T>::Init(
-    const PadV3GradReplicateTilingData& __restrict tilingData, GM_ADDR x, GM_ADDR padding, GM_ADDR y, GM_ADDR workspace)
-{
-    batch = tilingData.batch;
-    ncPerCore = tilingData.ncPerCore;
-    tailNC = tilingData.tailNC;
-    height = tilingData.height;
-    width = tilingData.width;
-    outHeight = tilingData.outHeight;
-    outWidth = tilingData.outWidth;
-    alignHeight = tilingData.alignHeight;
-    alignWidth = tilingData.alignWidth;
-    alignOutHeight = tilingData.alignOutHeight;
-    alignOutWidth = tilingData.alignOutWidth;
-    padTop = tilingData.padTop;
-    padBottom = tilingData.padBottom;
-    padLeft = tilingData.padLeft;
-    padRight = tilingData.padRight;
-    blockNum = tilingData.blockNum;
-    ubFactorElement = tilingData.ubFactorElement;
-    workspacePerCore = tilingData.workspacePerCore / sizeof(T);
-
-    batchStride = height * width;
-    outBatchStride = outHeight * outWidth;
-    blockIdx = GetBlockIdx();
-    perBlockCount = BLOCK_BYTES / sizeof(T);
-
-    if (blockIdx < tailNC) {
-        loopNC = ncPerCore + 1;
-        ncOffset = blockIdx * loopNC;
-    } else {
-        loopNC = ncPerCore;
-        ncOffset = blockIdx * ncPerCore + tailNC;
-    }
-
-    mGmX.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
-    mGmY.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(y));
-    mGmWorkspace.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(workspace));
-}
 
 // init used buffer
 template <typename T>
@@ -122,27 +51,28 @@ __aicore__ inline void PadV3GradReplicateHWMini<T>::InitBuffer(TPipe* inputPipe)
 {
     pipe = inputPipe;
     if constexpr (isCastFp32) {
-        pipe->InitBuffer(xInQueue, 1, ubFactorElement * sizeof(T) * MINI_SHAPE_MAX_ROWS);
-        pipe->InitBuffer(yOutQueue, 1, ubFactorElement * sizeof(T) * MINI_SHAPE_MAX_ROWS);
-        pipe->InitBuffer(transposeBuf, ubFactorElement * sizeof(float) * MINI_SHAPE_MAX_ROWS);
-        pipe->InitBuffer(floatCastResBuf, ubFactorElement * sizeof(float) * MINI_SHAPE_MAX_ROWS);
+        pipe->InitBuffer(xInQueue, 1, this->ubFactorElement * sizeof(T) * MINI_SHAPE_MAX_ROWS);
+        pipe->InitBuffer(yOutQueue, 1, this->ubFactorElement * sizeof(T) * MINI_SHAPE_MAX_ROWS);
+        pipe->InitBuffer(transposeBuf, this->ubFactorElement * sizeof(float) * MINI_SHAPE_MAX_ROWS);
+        pipe->InitBuffer(floatCastResBuf, this->ubFactorElement * sizeof(float) * MINI_SHAPE_MAX_ROWS);
     } else {
-        pipe->InitBuffer(xInQueue, 1, ubFactorElement * sizeof(T) * MINI_SHAPE_MAX_ROWS);
-        pipe->InitBuffer(yOutQueue, 1, ubFactorElement * sizeof(T) * MINI_SHAPE_MAX_ROWS);
-        pipe->InitBuffer(transposeBuf, ubFactorElement * sizeof(T) * MINI_SHAPE_MAX_ROWS);
+        pipe->InitBuffer(xInQueue, 1, this->ubFactorElement * sizeof(T) * MINI_SHAPE_MAX_ROWS);
+        pipe->InitBuffer(yOutQueue, 1, this->ubFactorElement * sizeof(T) * MINI_SHAPE_MAX_ROWS);
+        pipe->InitBuffer(transposeBuf, this->ubFactorElement * sizeof(T) * MINI_SHAPE_MAX_ROWS);
     }
 }
 
 template <typename T>
 __aicore__ inline void PadV3GradReplicateHWMini<T>::CopyIn(const int32_t loop)
 {
-    DataCopyExtParams copyParams{1, (uint32_t)(width * sizeof(T)), 0, 0, 0};
-    DataCopyPadExtParams<T> padParams{true, 0, (uint8_t)(CeilAlign(width, perBlockCount) - width), (T)0};
+    DataCopyExtParams copyParams{1, (uint32_t)(this->width * sizeof(T)), 0, 0, 0};
+    DataCopyPadExtParams<T> padParams{true, 0, (uint8_t)(CeilAlign(this->width, this->perBlockCount) - this->width),
+                                      (T)0};
     LocalTensor<T> xLocal = xInQueue.AllocTensor<T>();
     int64_t offset = 0;
-    for (size_t i = 0; i < height; i++) {
-        offset = i * width + loop * batchStride + ncOffset * batchStride;
-        DataCopyPad(xLocal[i * ubFactorElement], mGmX[offset], copyParams, padParams);
+    for (size_t i = 0; i < this->height; i++) {
+        offset = i * this->width + loop * this->batchStride + this->ncOffset * this->batchStride;
+        DataCopyPad(xLocal[i * this->ubFactorElement], this->mGmX[offset], copyParams, padParams);
     }
     xInQueue.EnQue(xLocal);
 }
@@ -154,8 +84,8 @@ __aicore__ inline void PadV3GradReplicateHWMini<T>::Compute()
     uint64_t dstLocalList0[16];
     uint64_t srcLocalList1[16];
     uint64_t dstLocalList1[16];
-    size_t fp16TransTimes = CeilDiv(alignWidth, HALF_BLOCK_NUM);
-    size_t fp32TransTimes = CeilDiv(alignWidth, FLOAT_BLOCK_NUM);
+    size_t fp16TransTimes = CeilDiv(this->alignWidth, HALF_BLOCK_NUM);
+    size_t fp32TransTimes = CeilDiv(this->alignWidth, FLOAT_BLOCK_NUM);
     size_t fp16TransBackTimes = CeilDiv(MINI_SHAPE_MAX_ROWS, HALF_BLOCK_NUM);
     size_t fp32TransBackTimes = CeilDiv(MINI_SHAPE_MAX_ROWS, FLOAT_BLOCK_NUM);
     LocalTensor<T> xLocal = xInQueue.DeQue<T>();
@@ -168,107 +98,109 @@ __aicore__ inline void PadV3GradReplicateHWMini<T>::Compute()
     transDataParams.srcRepStride = 0;
 
     // compute h grad
-    for (size_t i = 0; i < padTop; i++) {
-        Add(xLocal[padTop * ubFactorElement], xLocal[i * ubFactorElement], xLocal[padTop * ubFactorElement],
-            ubFactorElement);
+    for (size_t i = 0; i < this->padTop; i++) {
+        Add(xLocal[this->padTop * this->ubFactorElement], xLocal[i * this->ubFactorElement],
+            xLocal[this->padTop * this->ubFactorElement], this->ubFactorElement);
     }
-    for (size_t i = 0; i < padBottom; i++) {
-        Add(xLocal[(height - 1 - padBottom) * ubFactorElement], xLocal[(height - 1 - i) * ubFactorElement],
-            xLocal[(height - 1 - padBottom) * ubFactorElement], ubFactorElement);
+    for (size_t i = 0; i < this->padBottom; i++) {
+        Add(xLocal[(this->height - 1 - this->padBottom) * this->ubFactorElement],
+            xLocal[(this->height - 1 - i) * this->ubFactorElement],
+            xLocal[(this->height - 1 - this->padBottom) * this->ubFactorElement], this->ubFactorElement);
     }
-    DataCopy(xLocal, xLocal[padTop * ubFactorElement], outHeight * ubFactorElement);
+    DataCopy(xLocal, xLocal[this->padTop * this->ubFactorElement], this->outHeight * this->ubFactorElement);
     if constexpr (AscendC::IsSameType<T, half>::value) {
         for (size_t time = 0; time < fp16TransTimes; time++) {
             for (int i = 0; i < HALF_BLOCK_NUM; i++) {
-                srcLocalList0[i] = (uint64_t)(xLocal[i * ubFactorElement + time * HALF_BLOCK_NUM].GetPhyAddr());
-                dstLocalList0[i] =
-                    (uint64_t)(transposeData[i * MINI_SHAPE_MAX_ROWS + time * MINI_SHAPE_MAX_ROWS * HALF_BLOCK_NUM]
-                                   .GetPhyAddr());
+                srcLocalList0[i] = (uint64_t)(xLocal[i * this->ubFactorElement + time * HALF_BLOCK_NUM].GetPhyAddr());
+                dstLocalList0[i] = (uint64_t)(transposeData[i * MINI_SHAPE_MAX_ROWS +
+                                                            time * MINI_SHAPE_MAX_ROWS * HALF_BLOCK_NUM]
+                                                  .GetPhyAddr());
             }
             transDataParams.repeatTimes = MINI_SHAPE_MAX_ROWS / TRANSDATA_BASE_H;
-            transDataParams.srcRepStride = ubFactorElement;
+            transDataParams.srcRepStride = this->ubFactorElement;
             transDataParams.dstRepStride = 1;
             TransDataTo5HD<T>(dstLocalList0, srcLocalList0, transDataParams);
         }
         // compute w grad
-        for (size_t i = 0; i < padLeft; i++) {
-            Add(transposeData[padLeft * MINI_SHAPE_MAX_ROWS], transposeData[i * MINI_SHAPE_MAX_ROWS],
-                transposeData[padLeft * MINI_SHAPE_MAX_ROWS], MINI_SHAPE_MAX_ROWS);
+        for (size_t i = 0; i < this->padLeft; i++) {
+            Add(transposeData[this->padLeft * MINI_SHAPE_MAX_ROWS], transposeData[i * MINI_SHAPE_MAX_ROWS],
+                transposeData[this->padLeft * MINI_SHAPE_MAX_ROWS], MINI_SHAPE_MAX_ROWS);
         }
-        for (size_t i = 0; i < padRight; i++) {
-            Add(transposeData[(width - 1 - padRight) * MINI_SHAPE_MAX_ROWS],
-                transposeData[(width - 1 - i) * MINI_SHAPE_MAX_ROWS],
-                transposeData[(width - 1 - padRight) * MINI_SHAPE_MAX_ROWS], MINI_SHAPE_MAX_ROWS);
+        for (size_t i = 0; i < this->padRight; i++) {
+            Add(transposeData[(this->width - 1 - this->padRight) * MINI_SHAPE_MAX_ROWS],
+                transposeData[(this->width - 1 - i) * MINI_SHAPE_MAX_ROWS],
+                transposeData[(this->width - 1 - this->padRight) * MINI_SHAPE_MAX_ROWS], MINI_SHAPE_MAX_ROWS);
         }
-        DataCopy(
-            transposeData, transposeData[padLeft * MINI_SHAPE_MAX_ROWS],
-            (width - padLeft - padRight) * MINI_SHAPE_MAX_ROWS);
+        DataCopy(transposeData, transposeData[this->padLeft * MINI_SHAPE_MAX_ROWS],
+                 (this->width - this->padLeft - this->padRight) * MINI_SHAPE_MAX_ROWS);
         for (size_t time = 0; time < fp16TransBackTimes; time++) {
             for (int i = 0; i < HALF_BLOCK_NUM; i++) {
-                srcLocalList1[i] =
-                    (uint64_t)(transposeData[i * MINI_SHAPE_MAX_ROWS + time * HALF_BLOCK_NUM].GetPhyAddr());
-                dstLocalList1[i] =
-                    (uint64_t)(xLocal[i * ubFactorElement + time * ubFactorElement * HALF_BLOCK_NUM].GetPhyAddr());
+                srcLocalList1[i] = (uint64_t)(transposeData[i * MINI_SHAPE_MAX_ROWS + time * HALF_BLOCK_NUM]
+                                                  .GetPhyAddr());
+                dstLocalList1[i] = (uint64_t)(xLocal[i * this->ubFactorElement +
+                                                     time * this->ubFactorElement * HALF_BLOCK_NUM]
+                                                  .GetPhyAddr());
             }
-            transDataParams.repeatTimes = ubFactorElement / TRANSDATA_BASE_H;
+            transDataParams.repeatTimes = this->ubFactorElement / TRANSDATA_BASE_H;
             transDataParams.srcRepStride = MINI_SHAPE_MAX_ROWS;
             transDataParams.dstRepStride = 1;
             TransDataTo5HD<T>(dstLocalList1, srcLocalList1, transDataParams);
         }
-        DataCopy(yLocal, xLocal, MINI_SHAPE_MAX_ROWS * ubFactorElement);
+        DataCopy(yLocal, xLocal, MINI_SHAPE_MAX_ROWS * this->ubFactorElement);
         xInQueue.FreeTensor(xLocal);
         yOutQueue.EnQue(yLocal);
     } else {
         for (size_t time = 0; time < fp32TransTimes; time++) {
             for (int i = 0; i < HALF_BLOCK_NUM; i++) {
-                srcLocalList0[i] = (uint64_t)(xLocal[i * ubFactorElement + time * FLOAT_BLOCK_NUM].GetPhyAddr());
+                srcLocalList0[i] = (uint64_t)(xLocal[i * this->ubFactorElement + time * FLOAT_BLOCK_NUM].GetPhyAddr());
             }
             for (int i = 0; i < FLOAT_BLOCK_NUM; i++) {
-                dstLocalList0[CONST_VALUE_2 * i] =
-                    (uint64_t)(transposeData[i * MINI_SHAPE_MAX_ROWS + time * MINI_SHAPE_MAX_ROWS * FLOAT_BLOCK_NUM]
-                                   .GetPhyAddr());
-                dstLocalList0[CONST_VALUE_2 * i + 1] =
-                    (uint64_t)(transposeData
-                                   [i * MINI_SHAPE_MAX_ROWS + time * MINI_SHAPE_MAX_ROWS * FLOAT_BLOCK_NUM +
-                                    FLOAT_BLOCK_NUM]
-                                       .GetPhyAddr());
+                dstLocalList0[CONST_VALUE_2 *
+                              i] = (uint64_t)(transposeData[i * MINI_SHAPE_MAX_ROWS +
+                                                            time * MINI_SHAPE_MAX_ROWS * FLOAT_BLOCK_NUM]
+                                                  .GetPhyAddr());
+                dstLocalList0[CONST_VALUE_2 * i +
+                              1] = (uint64_t)(transposeData[i * MINI_SHAPE_MAX_ROWS +
+                                                            time * MINI_SHAPE_MAX_ROWS * FLOAT_BLOCK_NUM +
+                                                            FLOAT_BLOCK_NUM]
+                                                  .GetPhyAddr());
             }
             transDataParams.repeatTimes = MINI_SHAPE_MAX_ROWS / TRANSDATA_BASE_H;
-            transDataParams.srcRepStride = CONST_VALUE_2 * ubFactorElement;
+            transDataParams.srcRepStride = CONST_VALUE_2 * this->ubFactorElement;
             transDataParams.dstRepStride = CONST_VALUE_2;
             TransDataTo5HD<T>(dstLocalList0, srcLocalList0, transDataParams);
         }
-        for (size_t i = 0; i < padLeft; i++) {
-            Add(transposeData[padLeft * MINI_SHAPE_MAX_ROWS], transposeData[i * MINI_SHAPE_MAX_ROWS],
-                transposeData[padLeft * MINI_SHAPE_MAX_ROWS], MINI_SHAPE_MAX_ROWS);
+        for (size_t i = 0; i < this->padLeft; i++) {
+            Add(transposeData[this->padLeft * MINI_SHAPE_MAX_ROWS], transposeData[i * MINI_SHAPE_MAX_ROWS],
+                transposeData[this->padLeft * MINI_SHAPE_MAX_ROWS], MINI_SHAPE_MAX_ROWS);
         }
-        for (size_t i = 0; i < padRight; i++) {
-            Add(transposeData[(width - 1 - padRight) * MINI_SHAPE_MAX_ROWS],
-                transposeData[(width - 1 - i) * MINI_SHAPE_MAX_ROWS],
-                transposeData[(width - 1 - padRight) * MINI_SHAPE_MAX_ROWS], MINI_SHAPE_MAX_ROWS);
+        for (size_t i = 0; i < this->padRight; i++) {
+            Add(transposeData[(this->width - 1 - this->padRight) * MINI_SHAPE_MAX_ROWS],
+                transposeData[(this->width - 1 - i) * MINI_SHAPE_MAX_ROWS],
+                transposeData[(this->width - 1 - this->padRight) * MINI_SHAPE_MAX_ROWS], MINI_SHAPE_MAX_ROWS);
         }
-        DataCopy(
-            transposeData, transposeData[padLeft * MINI_SHAPE_MAX_ROWS],
-            (width - padLeft - padRight) * MINI_SHAPE_MAX_ROWS);
+        DataCopy(transposeData, transposeData[this->padLeft * MINI_SHAPE_MAX_ROWS],
+                 (this->width - this->padLeft - this->padRight) * MINI_SHAPE_MAX_ROWS);
         for (size_t time = 0; time < fp32TransBackTimes; time++) {
             for (int i = 0; i < HALF_BLOCK_NUM; i++) {
-                srcLocalList1[i] =
-                    (uint64_t)(transposeData[MINI_SHAPE_MAX_ROWS * i + time * FLOAT_BLOCK_NUM].GetPhyAddr());
+                srcLocalList1[i] = (uint64_t)(transposeData[MINI_SHAPE_MAX_ROWS * i + time * FLOAT_BLOCK_NUM]
+                                                  .GetPhyAddr());
             }
             for (int i = 0; i < FLOAT_BLOCK_NUM; i++) {
-                dstLocalList1[CONST_VALUE_2 * i] =
-                    (uint64_t)(xLocal[i * ubFactorElement + time * ubFactorElement * FLOAT_BLOCK_NUM]
-                                   .GetPhyAddr()); // 每行首地址
-                dstLocalList1[CONST_VALUE_2 * i + 1] =
-                    (uint64_t)(xLocal[i * ubFactorElement + time * ubFactorElement * FLOAT_BLOCK_NUM + FLOAT_BLOCK_NUM]
-                                   .GetPhyAddr()); // 每行首地址
+                dstLocalList1[CONST_VALUE_2 * i] = (uint64_t)(xLocal[i * this->ubFactorElement +
+                                                                     time * this->ubFactorElement * FLOAT_BLOCK_NUM]
+                                                                  .GetPhyAddr()); // 每行首地址
+                dstLocalList1[CONST_VALUE_2 * i +
+                              1] = (uint64_t)(xLocal[i * this->ubFactorElement +
+                                                     time * this->ubFactorElement * FLOAT_BLOCK_NUM + FLOAT_BLOCK_NUM]
+                                                  .GetPhyAddr()); // 每行首地址
             }
-            transDataParams.repeatTimes = ubFactorElement / TRANSDATA_BASE_H;
+            transDataParams.repeatTimes = this->ubFactorElement / TRANSDATA_BASE_H;
             transDataParams.srcRepStride = CONST_VALUE_2 * MINI_SHAPE_MAX_ROWS;
             transDataParams.dstRepStride = CONST_VALUE_2;
             TransDataTo5HD<T>(dstLocalList1, srcLocalList1, transDataParams);
         }
-        DataCopy(yLocal, xLocal, MINI_SHAPE_MAX_ROWS * ubFactorElement);
+        DataCopy(yLocal, xLocal, MINI_SHAPE_MAX_ROWS * this->ubFactorElement);
         xInQueue.FreeTensor(xLocal);
         yOutQueue.EnQue(yLocal);
     }
@@ -281,7 +213,7 @@ __aicore__ inline void PadV3GradReplicateHWMini<T>::ComputeF16()
     uint64_t dstLocalList0[16];
     uint64_t srcLocalList1[16];
     uint64_t dstLocalList1[16];
-    size_t fp32TransTimes = CeilDiv(alignWidth, FLOAT_BLOCK_NUM);
+    size_t fp32TransTimes = CeilDiv(this->alignWidth, FLOAT_BLOCK_NUM);
     size_t fp32TransBackTimes = CeilDiv(MINI_SHAPE_MAX_ROWS, FLOAT_BLOCK_NUM);
     LocalTensor<T> xLocal = xInQueue.DeQue<T>();
     LocalTensor<T> yLocal = yOutQueue.AllocTensor<T>();
@@ -291,68 +223,71 @@ __aicore__ inline void PadV3GradReplicateHWMini<T>::ComputeF16()
     transDataParams.repeatTimes = 1;
     transDataParams.dstRepStride = 0;
     transDataParams.srcRepStride = 0;
-    Cast(floatTenosr, xLocal, RoundMode::CAST_NONE, ubFactorElement * MINI_SHAPE_MAX_ROWS);
+    Cast(floatTenosr, xLocal, RoundMode::CAST_NONE, this->ubFactorElement * MINI_SHAPE_MAX_ROWS);
     // compute h grad
-    for (size_t i = 0; i < padTop; i++) {
-        Add(floatTenosr[padTop * ubFactorElement], floatTenosr[i * ubFactorElement],
-            floatTenosr[padTop * ubFactorElement], ubFactorElement);
+    for (size_t i = 0; i < this->padTop; i++) {
+        Add(floatTenosr[this->padTop * this->ubFactorElement], floatTenosr[i * this->ubFactorElement],
+            floatTenosr[this->padTop * this->ubFactorElement], this->ubFactorElement);
     }
-    for (size_t i = 0; i < padBottom; i++) {
-        Add(floatTenosr[(height - 1 - padBottom) * ubFactorElement], floatTenosr[(height - 1 - i) * ubFactorElement],
-            floatTenosr[(height - 1 - padBottom) * ubFactorElement], ubFactorElement);
+    for (size_t i = 0; i < this->padBottom; i++) {
+        Add(floatTenosr[(this->height - 1 - this->padBottom) * this->ubFactorElement],
+            floatTenosr[(this->height - 1 - i) * this->ubFactorElement],
+            floatTenosr[(this->height - 1 - this->padBottom) * this->ubFactorElement], this->ubFactorElement);
     }
-    DataCopy(floatTenosr, floatTenosr[padTop * ubFactorElement], outHeight * ubFactorElement);
+    DataCopy(floatTenosr, floatTenosr[this->padTop * this->ubFactorElement], this->outHeight * this->ubFactorElement);
 
     for (size_t time = 0; time < fp32TransTimes; time++) {
         for (int i = 0; i < HALF_BLOCK_NUM; i++) {
-            srcLocalList0[i] = (uint64_t)(floatTenosr[i * ubFactorElement + time * FLOAT_BLOCK_NUM].GetPhyAddr());
+            srcLocalList0[i] = (uint64_t)(floatTenosr[i * this->ubFactorElement + time * FLOAT_BLOCK_NUM].GetPhyAddr());
         }
         for (int i = 0; i < FLOAT_BLOCK_NUM; i++) {
-            dstLocalList0[CONST_VALUE_2 * i] =
-                (uint64_t)(floatTransposeData[i * MINI_SHAPE_MAX_ROWS + time * MINI_SHAPE_MAX_ROWS * FLOAT_BLOCK_NUM]
-                               .GetPhyAddr()); // 每行首地址
-            dstLocalList0[CONST_VALUE_2 * i + 1] =
-                (uint64_t)(floatTransposeData
-                               [i * MINI_SHAPE_MAX_ROWS + time * MINI_SHAPE_MAX_ROWS * FLOAT_BLOCK_NUM +
-                                FLOAT_BLOCK_NUM]
-                                   .GetPhyAddr()); // 每行首地址
+            dstLocalList0[CONST_VALUE_2 *
+                          i] = (uint64_t)(floatTransposeData[i * MINI_SHAPE_MAX_ROWS +
+                                                             time * MINI_SHAPE_MAX_ROWS * FLOAT_BLOCK_NUM]
+                                              .GetPhyAddr()); // 每行首地址
+            dstLocalList0[CONST_VALUE_2 * i +
+                          1] = (uint64_t)(floatTransposeData[i * MINI_SHAPE_MAX_ROWS +
+                                                             time * MINI_SHAPE_MAX_ROWS * FLOAT_BLOCK_NUM +
+                                                             FLOAT_BLOCK_NUM]
+                                              .GetPhyAddr()); // 每行首地址
         }
         transDataParams.repeatTimes = MINI_SHAPE_MAX_ROWS / TRANSDATA_BASE_H;
-        transDataParams.srcRepStride = CONST_VALUE_2 * ubFactorElement;
+        transDataParams.srcRepStride = CONST_VALUE_2 * this->ubFactorElement;
         transDataParams.dstRepStride = CONST_VALUE_2;
         TransDataTo5HD<float>(dstLocalList0, srcLocalList0, transDataParams);
     }
-    for (size_t i = 0; i < padLeft; i++) {
-        Add(floatTransposeData[padLeft * MINI_SHAPE_MAX_ROWS], floatTransposeData[i * MINI_SHAPE_MAX_ROWS],
-            floatTransposeData[padLeft * MINI_SHAPE_MAX_ROWS], MINI_SHAPE_MAX_ROWS);
+    for (size_t i = 0; i < this->padLeft; i++) {
+        Add(floatTransposeData[this->padLeft * MINI_SHAPE_MAX_ROWS], floatTransposeData[i * MINI_SHAPE_MAX_ROWS],
+            floatTransposeData[this->padLeft * MINI_SHAPE_MAX_ROWS], MINI_SHAPE_MAX_ROWS);
     }
-    for (size_t i = 0; i < padRight; i++) {
-        Add(floatTransposeData[(width - 1 - padRight) * MINI_SHAPE_MAX_ROWS],
-            floatTransposeData[(width - 1 - i) * MINI_SHAPE_MAX_ROWS],
-            floatTransposeData[(width - 1 - padRight) * MINI_SHAPE_MAX_ROWS], MINI_SHAPE_MAX_ROWS);
+    for (size_t i = 0; i < this->padRight; i++) {
+        Add(floatTransposeData[(this->width - 1 - this->padRight) * MINI_SHAPE_MAX_ROWS],
+            floatTransposeData[(this->width - 1 - i) * MINI_SHAPE_MAX_ROWS],
+            floatTransposeData[(this->width - 1 - this->padRight) * MINI_SHAPE_MAX_ROWS], MINI_SHAPE_MAX_ROWS);
     }
-    DataCopy(
-        floatTransposeData, floatTransposeData[padLeft * MINI_SHAPE_MAX_ROWS],
-        (width - padLeft - padRight) * MINI_SHAPE_MAX_ROWS);
+    DataCopy(floatTransposeData, floatTransposeData[this->padLeft * MINI_SHAPE_MAX_ROWS],
+             (this->width - this->padLeft - this->padRight) * MINI_SHAPE_MAX_ROWS);
 
     for (size_t time = 0; time < fp32TransBackTimes; time++) {
         for (int i = 0; i < HALF_BLOCK_NUM; i++) {
-            srcLocalList1[i] =
-                (uint64_t)(floatTransposeData[MINI_SHAPE_MAX_ROWS * i + time * FLOAT_BLOCK_NUM].GetPhyAddr());
+            srcLocalList1[i] = (uint64_t)(floatTransposeData[MINI_SHAPE_MAX_ROWS * i + time * FLOAT_BLOCK_NUM]
+                                              .GetPhyAddr());
         }
         for (int i = 0; i < FLOAT_BLOCK_NUM; i++) {
-            dstLocalList1[CONST_VALUE_2 * i] =
-                (uint64_t)(floatTenosr[i * ubFactorElement + time * ubFactorElement * FLOAT_BLOCK_NUM].GetPhyAddr());
-            dstLocalList1[CONST_VALUE_2 * i + 1] =
-                (uint64_t)(floatTenosr[i * ubFactorElement + time * ubFactorElement * FLOAT_BLOCK_NUM + FLOAT_BLOCK_NUM]
-                               .GetPhyAddr());
+            dstLocalList1[CONST_VALUE_2 * i] = (uint64_t)(floatTenosr[i * this->ubFactorElement +
+                                                                      time * this->ubFactorElement * FLOAT_BLOCK_NUM]
+                                                              .GetPhyAddr());
+            dstLocalList1[CONST_VALUE_2 * i +
+                          1] = (uint64_t)(floatTenosr[i * this->ubFactorElement +
+                                                      time * this->ubFactorElement * FLOAT_BLOCK_NUM + FLOAT_BLOCK_NUM]
+                                              .GetPhyAddr());
         }
-        transDataParams.repeatTimes = ubFactorElement / TRANSDATA_BASE_H;
+        transDataParams.repeatTimes = this->ubFactorElement / TRANSDATA_BASE_H;
         transDataParams.srcRepStride = CONST_VALUE_2 * MINI_SHAPE_MAX_ROWS;
         transDataParams.dstRepStride = CONST_VALUE_2;
         TransDataTo5HD<float>(dstLocalList1, srcLocalList1, transDataParams);
     }
-    Cast(yLocal, floatTenosr, RoundMode::CAST_RINT, ubFactorElement * MINI_SHAPE_MAX_ROWS);
+    Cast(yLocal, floatTenosr, RoundMode::CAST_RINT, this->ubFactorElement * MINI_SHAPE_MAX_ROWS);
     xInQueue.FreeTensor(xLocal);
     yOutQueue.EnQue(yLocal);
 }
@@ -361,11 +296,11 @@ template <typename T>
 __aicore__ inline void PadV3GradReplicateHWMini<T>::CopyOut(const int32_t loop)
 {
     LocalTensor<T> yLocal = yOutQueue.DeQue<T>();
-    DataCopyExtParams copyParams{1, (uint32_t)(outWidth * sizeof(T)), 0, 0, 0};
+    DataCopyExtParams copyParams{1, (uint32_t)(this->outWidth * sizeof(T)), 0, 0, 0};
     int64_t offset = 0;
-    for (size_t i = 0; i < outHeight; i++) {
-        offset = i * outWidth + loop * outBatchStride + ncOffset * outBatchStride;
-        DataCopyPad(mGmY[offset], yLocal[i * ubFactorElement], copyParams);
+    for (size_t i = 0; i < this->outHeight; i++) {
+        offset = i * this->outWidth + loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
+        DataCopyPad(this->mGmY[offset], yLocal[i * this->ubFactorElement], copyParams);
     }
     yOutQueue.FreeTensor(yLocal);
 }
@@ -379,7 +314,7 @@ __aicore__ inline void PadV3GradReplicateHWMini<T>::Process()
     } else {
         transposeData = transposeBuf.Get<T>();
     }
-    for (size_t loop = 0; loop < loopNC; loop++) {
+    for (size_t loop = 0; loop < this->loopNC; loop++) {
         CopyIn(loop);
         if constexpr (isCastFp32) {
             ComputeF16();
