@@ -19,17 +19,16 @@
 using namespace std;
 using namespace ge;
 
+constexpr int64_t K_DEFAULT_CORE_NUM = 64;
+constexpr uint64_t K_DEFAULT_UB_SIZE = 262144;
+constexpr uint32_t K_DEFAULT_TILING_DATA_SIZE = 4096;
+constexpr size_t K_EXPECT_WORKSPACE = 16777216;
+
 class SparseBincountTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "SparseBincountTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "SparseBincountTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "SparseBincountTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "SparseBincountTiling TearDown" << std::endl; }
 };
 
 std::map<std::string, std::string> soc_version_infos = {{"Short_SoC_version", "Ascend950"}};
@@ -43,28 +42,27 @@ TEST_F(SparseBincountTiling, sparse_bincount_1d_with_weights)
 {
     struct SparseBincountCompileInfo {
     } compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "SparseBincount",
-        {
-            {{{4, 1}, {4, 1}}, ge::DT_INT64, ge::FORMAT_ND},   // indices
-            {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND},          // values
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},          // dense_shape
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},          // size
-            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},          // weights
-        },
-        {
-            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},          // output
-        },
-        {
-            /* attrs: binary_output=false (default) */
-        },
-        &compileInfo,
-        64,     // number of cores
-        262144, // ub size
-        4096);  // max tiling data size
-    uint64_t expectTilingKey = 5;  // schMode = is1D(1)*4 + binary(0)*2 + weights(1) = 5
+    gert::TilingContextPara tilingContextPara("SparseBincount",
+                                              {
+                                                  {{{4, 1}, {4, 1}}, ge::DT_INT64, ge::FORMAT_ND}, // indices
+                                                  {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND},       // values
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},       // dense_shape
+                                                  {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},       // size
+                                                  {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},       // weights
+                                              },
+                                              {
+                                                  {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
+                                              },
+                                              {
+                                                  /* attrs: binary_output=false (default) */
+                                              },
+                                              &compileInfo,
+                                              K_DEFAULT_CORE_NUM,          // number of cores
+                                              K_DEFAULT_UB_SIZE,           // ub size
+                                              K_DEFAULT_TILING_DATA_SIZE); // max tiling data size
+    uint64_t expectTilingKey = 5; // schMode = is1D(1)*4 + binary(0)*2 + weights(1) = 5
     string expectTilingData = "4 1 1 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {K_EXPECT_WORKSPACE};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
@@ -76,28 +74,25 @@ TEST_F(SparseBincountTiling, sparse_bincount_nd_with_weights)
 {
     struct SparseBincountCompileInfo {
     } compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "SparseBincount",
-        {
-            {{{4, 2}, {4, 2}}, ge::DT_INT64, ge::FORMAT_ND},   // indices
-            {{{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND},          // values
-            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},          // dense_shape
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},          // size
-            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},          // weights
-        },
-        {
-            {{{4, 8}, {4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},   // output
-        },
-        {
-            /* attrs: binary_output=false (default) */
-        },
-        &compileInfo,
-        64,
-        262144,
-        4096);
-    uint64_t expectTilingKey = 1;  // schMode = is1D(0)*4 + binary(0)*2 + weights(1) = 1
+    gert::TilingContextPara tilingContextPara("SparseBincount",
+                                              {
+                                                  {{{4, 2}, {4, 2}}, ge::DT_INT64, ge::FORMAT_ND}, // indices
+                                                  {{{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND},       // values
+                                                  {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},       // dense_shape
+                                                  {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},       // size
+                                                  {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},       // weights
+                                              },
+                                              {
+                                                  {{{4, 8}, {4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
+                                              },
+                                              {
+                                                  /* attrs: binary_output=false (default) */
+                                              },
+                                              &compileInfo, K_DEFAULT_CORE_NUM, K_DEFAULT_UB_SIZE,
+                                              K_DEFAULT_TILING_DATA_SIZE);
+    uint64_t expectTilingKey = 1; // schMode = is1D(0)*4 + binary(0)*2 + weights(1) = 1
     string expectTilingData = "4 2 2 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {K_EXPECT_WORKSPACE};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
@@ -109,27 +104,254 @@ TEST_F(SparseBincountTiling, sparse_bincount_1d_no_weights)
 {
     struct SparseBincountCompileInfo {
     } compileInfo;
+    gert::TilingContextPara tilingContextPara("SparseBincount",
+                                              {
+                                                  {{{4, 1}, {4, 1}}, ge::DT_INT64, ge::FORMAT_ND}, // indices
+                                                  {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND},       // values
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},       // dense_shape
+                                                  {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},       // size
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},       // weights (empty)
+                                              },
+                                              {
+                                                  {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
+                                              },
+                                              {
+                                                  /* attrs: binary_output=false (default) */
+                                              },
+                                              &compileInfo, K_DEFAULT_CORE_NUM, K_DEFAULT_UB_SIZE,
+                                              K_DEFAULT_TILING_DATA_SIZE);
+    uint64_t expectTilingKey = 4; // schMode = is1D(1)*4 + binary(0)*2 + weights(0) = 4
+    string expectTilingData = "4 1 1 ";
+    std::vector<size_t> expectWorkspaces = {K_EXPECT_WORKSPACE};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+// ======================================================================
+// Negative test cases: input validation (dtype, rank, shape consistency)
+// ======================================================================
+
+// ---------- dtype validation ----------
+
+TEST_F(SparseBincountTiling, sparse_bincount_invalid_indices_dtype)
+{
+    struct SparseBincountCompileInfo {
+    } compileInfo;
     gert::TilingContextPara tilingContextPara(
         "SparseBincount",
         {
-            {{{4, 1}, {4, 1}}, ge::DT_INT64, ge::FORMAT_ND},   // indices
-            {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND},          // values
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},          // dense_shape
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},          // size
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},          // weights (empty)
+            {{{4, 1}, {4, 1}}, ge::DT_INT32, ge::FORMAT_ND}, // indices: bad dtype (INT32 != INT64)
+            {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND},       // values
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},       // dense_shape
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},       // size
+            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},       // weights
         },
         {
-            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},          // output
+            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
+        },
+        {}, &compileInfo, K_DEFAULT_CORE_NUM, K_DEFAULT_UB_SIZE, K_DEFAULT_TILING_DATA_SIZE);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(SparseBincountTiling, sparse_bincount_invalid_values_dtype)
+{
+    struct SparseBincountCompileInfo {
+    } compileInfo;
+    gert::TilingContextPara tilingContextPara(
+        "SparseBincount",
+        {
+            {{{4, 1}, {4, 1}}, ge::DT_INT64, ge::FORMAT_ND}, // indices
+            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},       // values: bad dtype (FLOAT != INT32/INT64)
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},       // dense_shape
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},       // size
+            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},       // weights
         },
         {
-            /* attrs: binary_output=false (default) */
+            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
         },
-        &compileInfo,
-        64,
-        262144,
-        4096);
-    uint64_t expectTilingKey = 4;  // schMode = is1D(1)*4 + binary(0)*2 + weights(0) = 4
-    string expectTilingData = "4 1 1 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+        {}, &compileInfo, K_DEFAULT_CORE_NUM, K_DEFAULT_UB_SIZE, K_DEFAULT_TILING_DATA_SIZE);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(SparseBincountTiling, sparse_bincount_invalid_dense_shape_dtype)
+{
+    struct SparseBincountCompileInfo {
+    } compileInfo;
+    gert::TilingContextPara tilingContextPara(
+        "SparseBincount",
+        {
+            {{{4, 1}, {4, 1}}, ge::DT_INT64, ge::FORMAT_ND}, // indices
+            {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND},       // values
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},       // dense_shape: bad dtype (INT32 != INT64)
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},       // size
+            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},       // weights
+        },
+        {
+            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
+        },
+        {}, &compileInfo, K_DEFAULT_CORE_NUM, K_DEFAULT_UB_SIZE, K_DEFAULT_TILING_DATA_SIZE);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(SparseBincountTiling, sparse_bincount_invalid_size_dtype)
+{
+    struct SparseBincountCompileInfo {
+    } compileInfo;
+    gert::TilingContextPara tilingContextPara(
+        "SparseBincount",
+        {
+            {{{4, 1}, {4, 1}}, ge::DT_INT64, ge::FORMAT_ND}, // indices
+            {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND},       // values
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},       // dense_shape
+            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},       // size: bad dtype (FLOAT != INT32/INT64)
+            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},       // weights
+        },
+        {
+            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
+        },
+        {}, &compileInfo, K_DEFAULT_CORE_NUM, K_DEFAULT_UB_SIZE, K_DEFAULT_TILING_DATA_SIZE);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(SparseBincountTiling, sparse_bincount_invalid_weights_dtype)
+{
+    struct SparseBincountCompileInfo {
+    } compileInfo;
+    gert::TilingContextPara tilingContextPara(
+        "SparseBincount",
+        {
+            {{{4, 1}, {4, 1}}, ge::DT_INT64, ge::FORMAT_ND}, // indices
+            {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND},       // values
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},       // dense_shape
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},       // size
+            {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND},       // weights: bad dtype (INT32 != FLOAT)
+        },
+        {
+            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
+        },
+        {}, &compileInfo, K_DEFAULT_CORE_NUM, K_DEFAULT_UB_SIZE, K_DEFAULT_TILING_DATA_SIZE);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// ---------- rank validation ----------
+
+TEST_F(SparseBincountTiling, sparse_bincount_invalid_indices_rank)
+{
+    struct SparseBincountCompileInfo {
+    } compileInfo;
+    gert::TilingContextPara tilingContextPara(
+        "SparseBincount",
+        {
+            {{{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND}, // indices: bad rank (1D != 2D)
+            {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND}, // values
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND}, // dense_shape
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND}, // size
+            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND}, // weights
+        },
+        {
+            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
+        },
+        {}, &compileInfo, K_DEFAULT_CORE_NUM, K_DEFAULT_UB_SIZE, K_DEFAULT_TILING_DATA_SIZE);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(SparseBincountTiling, sparse_bincount_invalid_values_rank)
+{
+    struct SparseBincountCompileInfo {
+    } compileInfo;
+    gert::TilingContextPara tilingContextPara(
+        "SparseBincount",
+        {
+            {{{4, 1}, {4, 1}}, ge::DT_INT64, ge::FORMAT_ND}, // indices
+            {{{4, 1}, {4, 1}}, ge::DT_INT32, ge::FORMAT_ND}, // values: bad rank (2D != 1D)
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},       // dense_shape
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},       // size
+            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},       // weights
+        },
+        {
+            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
+        },
+        {}, &compileInfo, K_DEFAULT_CORE_NUM, K_DEFAULT_UB_SIZE, K_DEFAULT_TILING_DATA_SIZE);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(SparseBincountTiling, sparse_bincount_invalid_dense_shape_rank)
+{
+    struct SparseBincountCompileInfo {
+    } compileInfo;
+    gert::TilingContextPara tilingContextPara(
+        "SparseBincount",
+        {
+            {{{4, 1}, {4, 1}}, ge::DT_INT64, ge::FORMAT_ND}, // indices
+            {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND},       // values
+            {{{1, 1}, {1, 1}}, ge::DT_INT64, ge::FORMAT_ND}, // dense_shape: bad rank (2D != 1D)
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},       // size
+            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},       // weights
+        },
+        {
+            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
+        },
+        {}, &compileInfo, K_DEFAULT_CORE_NUM, K_DEFAULT_UB_SIZE, K_DEFAULT_TILING_DATA_SIZE);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// ---------- shape consistency validation ----------
+
+TEST_F(SparseBincountTiling, sparse_bincount_invalid_n_consistency)
+{
+    struct SparseBincountCompileInfo {
+    } compileInfo;
+    gert::TilingContextPara tilingContextPara(
+        "SparseBincount",
+        {
+            {{{5, 1}, {5, 1}}, ge::DT_INT64, ge::FORMAT_ND}, // indices: N=5 != values N=4
+            {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND},       // values
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},       // dense_shape
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},       // size
+            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},       // weights
+        },
+        {
+            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
+        },
+        {}, &compileInfo, K_DEFAULT_CORE_NUM, K_DEFAULT_UB_SIZE, K_DEFAULT_TILING_DATA_SIZE);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(SparseBincountTiling, sparse_bincount_invalid_r_consistency)
+{
+    struct SparseBincountCompileInfo {
+    } compileInfo;
+    gert::TilingContextPara tilingContextPara(
+        "SparseBincount",
+        {
+            {{{4, 2}, {4, 2}}, ge::DT_INT64, ge::FORMAT_ND}, // indices: R=2 != dense_shape R=1
+            {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND},       // values
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},       // dense_shape
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},       // size
+            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},       // weights
+        },
+        {
+            {{{4, 8}, {4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
+        },
+        {}, &compileInfo, K_DEFAULT_CORE_NUM, K_DEFAULT_UB_SIZE, K_DEFAULT_TILING_DATA_SIZE);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(SparseBincountTiling, sparse_bincount_invalid_weights_consistency)
+{
+    struct SparseBincountCompileInfo {
+    } compileInfo;
+    gert::TilingContextPara tilingContextPara(
+        "SparseBincount",
+        {
+            {{{4, 1}, {4, 1}}, ge::DT_INT64, ge::FORMAT_ND}, // indices
+            {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND},       // values
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},       // dense_shape
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},       // size
+            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},       // weights: N=3 != values N=4
+        },
+        {
+            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
+        },
+        {}, &compileInfo, K_DEFAULT_CORE_NUM, K_DEFAULT_UB_SIZE, K_DEFAULT_TILING_DATA_SIZE);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
