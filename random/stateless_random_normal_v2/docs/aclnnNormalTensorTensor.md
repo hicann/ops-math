@@ -238,7 +238,7 @@ aclnnStatus aclnnNormalTensorTensor(
   - aclnnNormalTensorTensor默认确定性实现。
 
 <!-- npu="950" id7 -->
-- <term>Ascend 950PR/Ascend 950DT</term>：offset必须为4的倍数。
+- <term>Ascend 950PR/Ascend 950DT</term>：通过aclnnSetPytorchRandom设置对标PyTorch模式时，offset必须为4的倍数。
 
 <!-- end id7 -->
 

@@ -246,7 +246,7 @@ aclnnStatus aclnnInplaceRandomTensor(
 
 <!-- npu="950" id7 -->
 - <term>Ascend 950PR/Ascend 950DT</term>：
-  - offset必须为4的倍数。
+  - 通过aclnnSetPytorchRandom设置对标PyTorch模式时，offset必须为4的倍数。
   - from必须小于to，且from/to-1指定范围不可超出self数据类型的范围。
 
 <!-- end id7 -->
