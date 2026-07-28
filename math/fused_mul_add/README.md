@@ -72,6 +72,7 @@
 ## 约束说明
 
 - x1、x2、x3、y必须为同一种数据类型，不支持混合数据类型。
+- x1、x2、x3的维度数（rank）均不能超过8，超过时在tiling阶段校验失败。
 - 支持任意NumPy广播形态（含标量、单维broadcast、跨rank broadcast），支持动态shape与动态rank。
 
 ## 实现方案

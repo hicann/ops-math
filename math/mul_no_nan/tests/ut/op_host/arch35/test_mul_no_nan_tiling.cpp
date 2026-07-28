@@ -18,14 +18,8 @@ using namespace ge;
 
 class MulNoNanTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "MulNoNanTilingTest SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "MulNoNanTilingTest TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "MulNoNanTilingTest SetUp" << std::endl; }
+    static void TearDownTestCase() { std::cout << "MulNoNanTilingTest TearDown" << std::endl; }
 };
 
 // All cases use ExecuteTestCaseForEle with key/data checks disabled, because
@@ -37,16 +31,15 @@ protected:
 TEST_F(MulNoNanTilingTest, same_shape_fp16)
 {
     optiling::MulNoNanCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "MulNoNan",
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("MulNoNan",
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -54,16 +47,15 @@ TEST_F(MulNoNanTilingTest, same_shape_fp16)
 TEST_F(MulNoNanTilingTest, same_shape_fp32)
 {
     optiling::MulNoNanCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "MulNoNan",
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("MulNoNan",
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -71,16 +63,15 @@ TEST_F(MulNoNanTilingTest, same_shape_fp32)
 TEST_F(MulNoNanTilingTest, same_shape_int32)
 {
     optiling::MulNoNanCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "MulNoNan",
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{16, 16}, {16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("MulNoNan",
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
+                                     {{{16, 16}, {16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -88,16 +79,15 @@ TEST_F(MulNoNanTilingTest, same_shape_int32)
 TEST_F(MulNoNanTilingTest, same_shape_bf16)
 {
     optiling::MulNoNanCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "MulNoNan",
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{16, 16}, {16, 16}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("MulNoNan",
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_BF16, ge::FORMAT_ND},
+                                     {{{16, 16}, {16, 16}}, ge::DT_BF16, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_BF16, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -105,16 +95,15 @@ TEST_F(MulNoNanTilingTest, same_shape_bf16)
 TEST_F(MulNoNanTilingTest, axis_broadcast_fp16)
 {
     optiling::MulNoNanCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "MulNoNan",
-        {
-            {{{16, 1}, {16, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{1, 16}, {1, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("MulNoNan",
+                                 {
+                                     {{{16, 1}, {16, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{1, 16}, {1, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -122,16 +111,15 @@ TEST_F(MulNoNanTilingTest, axis_broadcast_fp16)
 TEST_F(MulNoNanTilingTest, cross_rank_broadcast_fp32)
 {
     optiling::MulNoNanCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "MulNoNan",
-        {
-            {{{3, 4, 5}, {3, 4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4, 5}, {4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{3, 4, 5}, {3, 4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("MulNoNan",
+                                 {
+                                     {{{3, 4, 5}, {3, 4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{4, 5}, {4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{3, 4, 5}, {3, 4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -139,16 +127,15 @@ TEST_F(MulNoNanTilingTest, cross_rank_broadcast_fp32)
 TEST_F(MulNoNanTilingTest, x2_scalar_fp32)
 {
     optiling::MulNoNanCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "MulNoNan",
-        {
-            {{{32, 64}, {32, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{32, 64}, {32, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("MulNoNan",
+                                 {
+                                     {{{32, 64}, {32, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{32, 64}, {32, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -156,16 +143,15 @@ TEST_F(MulNoNanTilingTest, x2_scalar_fp32)
 TEST_F(MulNoNanTilingTest, x1_scalar_bf16)
 {
     optiling::MulNoNanCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "MulNoNan",
-        {
-            {{{1}, {1}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{32, 64}, {32, 64}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{32, 64}, {32, 64}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("MulNoNan",
+                                 {
+                                     {{{1}, {1}}, ge::DT_BF16, ge::FORMAT_ND},
+                                     {{{32, 64}, {32, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{32, 64}, {32, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -173,16 +159,15 @@ TEST_F(MulNoNanTilingTest, x1_scalar_bf16)
 TEST_F(MulNoNanTilingTest, large_tensor_fp32)
 {
     optiling::MulNoNanCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "MulNoNan",
-        {
-            {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("MulNoNan",
+                                 {
+                                     {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -190,16 +175,15 @@ TEST_F(MulNoNanTilingTest, large_tensor_fp32)
 TEST_F(MulNoNanTilingTest, tiny_tensor_int32)
 {
     optiling::MulNoNanCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "MulNoNan",
-        {
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("MulNoNan",
+                                 {
+                                     {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                     {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -207,16 +191,15 @@ TEST_F(MulNoNanTilingTest, tiny_tensor_int32)
 TEST_F(MulNoNanTilingTest, dtype_mismatch_failed)
 {
     optiling::MulNoNanCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "MulNoNan",
-        {
-            {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("MulNoNan",
+                                 {
+                                     {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_FAILED, false, 0, false, "", {});
 }
 
@@ -225,14 +208,64 @@ TEST_F(MulNoNanTilingTest, dtype_mismatch_failed)
 TEST_F(MulNoNanTilingTest, unsupported_double_failed)
 {
     optiling::MulNoNanCompileInfo compileInfo = {64, 245760};
+    gert::TilingContextPara para("MulNoNan",
+                                 {
+                                     {{{8}, {8}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                     {{{8}, {8}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{8}, {8}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
+    ExecuteTestCaseForEle(para, ge::GRAPH_FAILED, false, 0, false, "", {});
+}
+
+// Case 13: 8D inputs -> success (8 is the inclusive upper bound on dim num).
+TEST_F(MulNoNanTilingTest, max_dim_num_8d_fp32)
+{
+    optiling::MulNoNanCompileInfo compileInfo = {64, 245760};
     gert::TilingContextPara para(
         "MulNoNan",
         {
-            {{{8}, {8}}, ge::DT_DOUBLE, ge::FORMAT_ND},
-            {{{8}, {8}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+            {{{2, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         {
-            {{{8}, {8}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+            {{{2, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
+}
+
+// Case 14: 9D x1 -> failure (dim num exceeds 8).
+TEST_F(MulNoNanTilingTest, x1_dim_num_over_8_failed)
+{
+    optiling::MulNoNanCompileInfo compileInfo = {64, 245760};
+    gert::TilingContextPara para(
+        "MulNoNan",
+        {
+            {{{2, 1, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2, 1, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{2, 1, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    ExecuteTestCaseForEle(para, ge::GRAPH_FAILED, false, 0, false, "", {});
+}
+
+// Case 15: 9D x2 only -> failure (every input is checked, not just x1).
+TEST_F(MulNoNanTilingTest, x2_dim_num_over_8_failed)
+{
+    optiling::MulNoNanCompileInfo compileInfo = {64, 245760};
+    gert::TilingContextPara para(
+        "MulNoNan",
+        {
+            {{{2}, {2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2, 1, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{2, 1, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_FAILED, false, 0, false, "", {});

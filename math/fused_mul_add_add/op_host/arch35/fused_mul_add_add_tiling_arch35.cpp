@@ -26,20 +26,17 @@ using namespace ge;
 namespace optiling {
 
 constexpr static uint64_t FUSED_MUL_ADD_ADD_COMMON_TILING_PRIORITY = 0;
+constexpr static size_t FUSED_MUL_ADD_ADD_MAX_DIM_NUM = 8;
+constexpr static size_t FUSED_MUL_ADD_ADD_INPUT_NUM = 4;
+static const char* FUSED_MUL_ADD_ADD_INPUT_NAMES[FUSED_MUL_ADD_ADD_INPUT_NUM] = {"x1", "x2", "x3", "x4"};
 
-ge::graphStatus FusedMulAddAddTiling::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus FusedMulAddAddTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
-bool FusedMulAddAddTiling::IsCapable()
-{
-    return true;
-}
+bool FusedMulAddAddTiling::IsCapable() { return true; }
 
-bool FusedMulAddAddTiling::CheckDtype(
-    const ge::DataType& x1Dtype, const ge::DataType& x2Dtype, const ge::DataType& x3Dtype,
-    const ge::DataType& x4Dtype, const ge::DataType& outputDtype) const
+bool FusedMulAddAddTiling::CheckDtype(const ge::DataType& x1Dtype, const ge::DataType& x2Dtype,
+                                      const ge::DataType& x3Dtype, const ge::DataType& x4Dtype,
+                                      const ge::DataType& outputDtype) const
 {
     if (x1Dtype != x2Dtype || x1Dtype != x3Dtype || x1Dtype != x4Dtype || x1Dtype != outputDtype) {
         std::string reasonMsg = "The dtypes of x1, x2, x3, x4 and y must all be the same. Got " +
@@ -55,8 +52,31 @@ bool FusedMulAddAddTiling::CheckDtype(
     return true;
 }
 
+bool FusedMulAddAddTiling::CheckShape() const
+{
+    for (size_t i = 0; i < FUSED_MUL_ADD_ADD_INPUT_NUM; i++) {
+        auto inputShape = context_->GetInputShape(i);
+        OP_CHECK_IF(inputShape == nullptr,
+                    OP_LOGE(context_->GetNodeName(), "The shape of %s is nullptr.", FUSED_MUL_ADD_ADD_INPUT_NAMES[i]),
+                    return false);
+        size_t dimNum = inputShape->GetStorageShape().GetDimNum();
+        if (dimNum > FUSED_MUL_ADD_ADD_MAX_DIM_NUM) {
+            std::string reasonMsg = "The dim num must be no more than " +
+                                    std::to_string(FUSED_MUL_ADD_ADD_MAX_DIM_NUM) + ".";
+            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), FUSED_MUL_ADD_ADD_INPUT_NAMES[i],
+                                                     std::to_string(dimNum), reasonMsg);
+            return false;
+        }
+    }
+    return true;
+}
+
 ge::graphStatus FusedMulAddAddTiling::DoOpTiling()
 {
+    if (!CheckShape()) {
+        return ge::GRAPH_FAILED;
+    }
+
     auto x1Desc = context_->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, x1Desc);
     ge::DataType x1Dtype = x1Desc->GetDataType();
@@ -91,39 +111,23 @@ ge::graphStatus FusedMulAddAddTiling::DoOpTiling()
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(
-            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(x1Dtype).c_str(),
-            "float16, float32, int32");
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(x1Dtype).c_str(),
+                                  "float16, float32, int32");
         return ge::GRAPH_FAILED;
     }
 
     return ret;
 }
 
-ge::graphStatus FusedMulAddAddTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus FusedMulAddAddTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t FusedMulAddAddTiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t FusedMulAddAddTiling::GetTilingKey() const { return tilingKey; }
 
-ge::graphStatus FusedMulAddAddTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus FusedMulAddAddTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus FusedMulAddAddTiling::PostTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus FusedMulAddAddTiling::PostTiling() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus FusedMulAddAddTiling::GetPlatformInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus FusedMulAddAddTiling::GetPlatformInfo() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus TilingForFusedMulAddAdd(gert::TilingContext* context)
 {

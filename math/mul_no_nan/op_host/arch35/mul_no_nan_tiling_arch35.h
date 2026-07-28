@@ -24,8 +24,7 @@ namespace optiling {
 
 class MulNoNanTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit MulNoNanTiling(gert::TilingContext* context) : TilingBaseClass(context)
-    {}
+    explicit MulNoNanTiling(gert::TilingContext* context) : TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;
@@ -40,6 +39,7 @@ protected:
 private:
     uint64_t tilingKey = 0;
     bool CheckDtype(const ge::DataType& x1Dtype, const ge::DataType& x2Dtype, const ge::DataType& outputDtype) const;
+    bool CheckShape() const;
 };
 
 struct MulNoNanCompileInfo {

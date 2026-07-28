@@ -26,19 +26,16 @@ using namespace ge;
 namespace optiling {
 
 constexpr static uint64_t MUL_NO_NAN_COMMON_TILING_PRIORITY = 0;
+constexpr static size_t MUL_NO_NAN_MAX_DIM_NUM = 8;
+constexpr static size_t MUL_NO_NAN_INPUT_NUM = 2;
+static const char* MUL_NO_NAN_INPUT_NAMES[MUL_NO_NAN_INPUT_NUM] = {"x1", "x2"};
 
-ge::graphStatus MulNoNanTiling::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus MulNoNanTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
-bool MulNoNanTiling::IsCapable()
-{
-    return true;
-}
+bool MulNoNanTiling::IsCapable() { return true; }
 
-bool MulNoNanTiling::CheckDtype(
-    const ge::DataType& x1Dtype, const ge::DataType& x2Dtype, const ge::DataType& outputDtype) const
+bool MulNoNanTiling::CheckDtype(const ge::DataType& x1Dtype, const ge::DataType& x2Dtype,
+                                const ge::DataType& outputDtype) const
 {
     if (x1Dtype != x2Dtype || x1Dtype != outputDtype) {
         std::string reasonMsg = "The dtypes of x1, x2 and y must all be the same. Got " +
@@ -52,8 +49,30 @@ bool MulNoNanTiling::CheckDtype(
     return true;
 }
 
+bool MulNoNanTiling::CheckShape() const
+{
+    for (size_t i = 0; i < MUL_NO_NAN_INPUT_NUM; i++) {
+        auto inputShape = context_->GetInputShape(i);
+        OP_CHECK_IF(inputShape == nullptr,
+                    OP_LOGE(context_->GetNodeName(), "The shape of %s is nullptr.", MUL_NO_NAN_INPUT_NAMES[i]),
+                    return false);
+        size_t dimNum = inputShape->GetStorageShape().GetDimNum();
+        if (dimNum > MUL_NO_NAN_MAX_DIM_NUM) {
+            std::string reasonMsg = "The dim num must be no more than " + std::to_string(MUL_NO_NAN_MAX_DIM_NUM) + ".";
+            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), MUL_NO_NAN_INPUT_NAMES[i],
+                                                     std::to_string(dimNum), reasonMsg);
+            return false;
+        }
+    }
+    return true;
+}
+
 ge::graphStatus MulNoNanTiling::DoOpTiling()
 {
+    if (!CheckShape()) {
+        return ge::GRAPH_FAILED;
+    }
+
     auto x1Desc = context_->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, x1Desc);
     ge::DataType x1Dtype = x1Desc->GetDataType();
@@ -82,44 +101,28 @@ ge::graphStatus MulNoNanTiling::DoOpTiling()
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else if (x1Dtype == ge::DT_BF16) {
-        Ops::Base::BroadcastBaseTiling<MulNoNanOp::MulNoNanFloatCast<Ops::Base::bfloat16_t, float>::OpDag> brcBaseTiling(
-            context_);
+        Ops::Base::BroadcastBaseTiling<MulNoNanOp::MulNoNanFloatCast<Ops::Base::bfloat16_t, float>::OpDag>
+            brcBaseTiling(context_);
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(
-            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(x1Dtype).c_str(),
-            "float16, float32, int32, bfloat16");
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(x1Dtype).c_str(),
+                                  "float16, float32, int32, bfloat16");
         return ge::GRAPH_FAILED;
     }
 
     return ret;
 }
 
-ge::graphStatus MulNoNanTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus MulNoNanTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t MulNoNanTiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t MulNoNanTiling::GetTilingKey() const { return tilingKey; }
 
-ge::graphStatus MulNoNanTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus MulNoNanTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus MulNoNanTiling::PostTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus MulNoNanTiling::PostTiling() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus MulNoNanTiling::GetPlatformInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus MulNoNanTiling::GetPlatformInfo() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus TilingForMulNoNan(gert::TilingContext* context)
 {
@@ -149,9 +152,7 @@ ge::graphStatus TilingPrepareForMulNoNan(gert::TilingParseContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_OPTILING(MulNoNan)
-    .Tiling(TilingForMulNoNan)
-    .TilingParse<MulNoNanCompileInfo>(TilingPrepareForMulNoNan);
+IMPL_OP_OPTILING(MulNoNan).Tiling(TilingForMulNoNan).TilingParse<MulNoNanCompileInfo>(TilingPrepareForMulNoNan);
 
 REGISTER_OPS_TILING_TEMPLATE(MulNoNan, MulNoNanTiling, MUL_NO_NAN_COMMON_TILING_PRIORITY);
 } // namespace optiling

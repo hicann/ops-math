@@ -18,14 +18,8 @@ using namespace ge;
 
 class FusedMulAddAddTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "FusedMulAddAddTilingTest SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "FusedMulAddAddTilingTest TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "FusedMulAddAddTilingTest SetUp" << std::endl; }
+    static void TearDownTestCase() { std::cout << "FusedMulAddAddTilingTest TearDown" << std::endl; }
 };
 
 // All cases use ExecuteTestCaseForEle with key/data checks disabled, because
@@ -37,18 +31,17 @@ protected:
 TEST_F(FusedMulAddAddTilingTest, same_shape_fp16)
 {
     optiling::FusedMulAddAddCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "FusedMulAddAdd",
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("FusedMulAddAdd",
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -56,18 +49,17 @@ TEST_F(FusedMulAddAddTilingTest, same_shape_fp16)
 TEST_F(FusedMulAddAddTilingTest, same_shape_fp32)
 {
     optiling::FusedMulAddAddCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "FusedMulAddAdd",
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("FusedMulAddAdd",
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -75,18 +67,17 @@ TEST_F(FusedMulAddAddTilingTest, same_shape_fp32)
 TEST_F(FusedMulAddAddTilingTest, same_shape_int32)
 {
     optiling::FusedMulAddAddCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "FusedMulAddAdd",
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{16, 16}, {16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{16, 16}, {16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{16, 16}, {16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("FusedMulAddAdd",
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
+                                     {{{16, 16}, {16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
+                                     {{{16, 16}, {16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
+                                     {{{16, 16}, {16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_INT32, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -94,18 +85,17 @@ TEST_F(FusedMulAddAddTilingTest, same_shape_int32)
 TEST_F(FusedMulAddAddTilingTest, axis_broadcast_fp16)
 {
     optiling::FusedMulAddAddCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "FusedMulAddAdd",
-        {
-            {{{16, 1}, {16, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{1, 16}, {1, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("FusedMulAddAdd",
+                                 {
+                                     {{{16, 1}, {16, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{1, 16}, {1, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -113,18 +103,17 @@ TEST_F(FusedMulAddAddTilingTest, axis_broadcast_fp16)
 TEST_F(FusedMulAddAddTilingTest, cross_rank_broadcast_fp32)
 {
     optiling::FusedMulAddAddCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "FusedMulAddAdd",
-        {
-            {{{3, 4, 5}, {3, 4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4, 5}, {4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{5}, {5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{3, 4, 5}, {3, 4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("FusedMulAddAdd",
+                                 {
+                                     {{{3, 4, 5}, {3, 4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{4, 5}, {4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{5}, {5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{3, 4, 5}, {3, 4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -132,18 +121,17 @@ TEST_F(FusedMulAddAddTilingTest, cross_rank_broadcast_fp32)
 TEST_F(FusedMulAddAddTilingTest, scalar_broadcast_fp16)
 {
     optiling::FusedMulAddAddCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "FusedMulAddAdd",
-        {
-            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("FusedMulAddAdd",
+                                 {
+                                     {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -151,18 +139,17 @@ TEST_F(FusedMulAddAddTilingTest, scalar_broadcast_fp16)
 TEST_F(FusedMulAddAddTilingTest, large_tensor_fp32)
 {
     optiling::FusedMulAddAddCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "FusedMulAddAdd",
-        {
-            {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("FusedMulAddAdd",
+                                 {
+                                     {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -170,18 +157,17 @@ TEST_F(FusedMulAddAddTilingTest, large_tensor_fp32)
 TEST_F(FusedMulAddAddTilingTest, tiny_tensor_int32)
 {
     optiling::FusedMulAddAddCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "FusedMulAddAdd",
-        {
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("FusedMulAddAdd",
+                                 {
+                                     {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                     {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                     {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                     {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -189,18 +175,17 @@ TEST_F(FusedMulAddAddTilingTest, tiny_tensor_int32)
 TEST_F(FusedMulAddAddTilingTest, x4_scalar_fp32)
 {
     optiling::FusedMulAddAddCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "FusedMulAddAdd",
-        {
-            {{{32, 64}, {32, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{32, 64}, {32, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{32, 64}, {32, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{32, 64}, {32, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("FusedMulAddAdd",
+                                 {
+                                     {{{32, 64}, {32, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{32, 64}, {32, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{32, 64}, {32, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{32, 64}, {32, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
 }
 
@@ -208,18 +193,17 @@ TEST_F(FusedMulAddAddTilingTest, x4_scalar_fp32)
 TEST_F(FusedMulAddAddTilingTest, dtype_mismatch_x2_failed)
 {
     optiling::FusedMulAddAddCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "FusedMulAddAdd",
-        {
-            {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("FusedMulAddAdd",
+                                 {
+                                     {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_FAILED, false, 0, false, "", {});
 }
 
@@ -227,18 +211,17 @@ TEST_F(FusedMulAddAddTilingTest, dtype_mismatch_x2_failed)
 TEST_F(FusedMulAddAddTilingTest, dtype_mismatch_x4_failed)
 {
     optiling::FusedMulAddAddCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "FusedMulAddAdd",
-        {
-            {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("FusedMulAddAdd",
+                                 {
+                                     {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_FAILED, false, 0, false, "", {});
 }
 
@@ -246,18 +229,17 @@ TEST_F(FusedMulAddAddTilingTest, dtype_mismatch_x4_failed)
 TEST_F(FusedMulAddAddTilingTest, output_dtype_mismatch_failed)
 {
     optiling::FusedMulAddAddCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara para(
-        "FusedMulAddAdd",
-        {
-            {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara para("FusedMulAddAdd",
+                                 {
+                                     {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                     {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_FAILED, false, 0, false, "", {});
 }
 
@@ -265,16 +247,72 @@ TEST_F(FusedMulAddAddTilingTest, output_dtype_mismatch_failed)
 TEST_F(FusedMulAddAddTilingTest, unsupported_bf16_failed)
 {
     optiling::FusedMulAddAddCompileInfo compileInfo = {64, 245760};
+    gert::TilingContextPara para("FusedMulAddAdd",
+                                 {
+                                     {{{8}, {8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                     {{{8}, {8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                     {{{8}, {8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                     {{{8}, {8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{8}, {8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                 },
+                                 &compileInfo);
+    ExecuteTestCaseForEle(para, ge::GRAPH_FAILED, false, 0, false, "", {});
+}
+
+// Case 14: 8D inputs -> success (8 is the inclusive upper bound on dim num).
+TEST_F(FusedMulAddAddTilingTest, max_dim_num_8d_fp32)
+{
+    optiling::FusedMulAddAddCompileInfo compileInfo = {64, 245760};
     gert::TilingContextPara para(
         "FusedMulAddAdd",
         {
-            {{{8}, {8}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{8}, {8}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{8}, {8}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{8}, {8}}, ge::DT_BF16, ge::FORMAT_ND},
+            {{{2, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         {
-            {{{8}, {8}}, ge::DT_BF16, ge::FORMAT_ND},
+            {{{2, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    ExecuteTestCaseForEle(para, ge::GRAPH_SUCCESS, false, 0, false, "", {16777216});
+}
+
+// Case 15: 9D x1 -> failure (dim num exceeds 8).
+TEST_F(FusedMulAddAddTilingTest, x1_dim_num_over_8_failed)
+{
+    optiling::FusedMulAddAddCompileInfo compileInfo = {64, 245760};
+    gert::TilingContextPara para(
+        "FusedMulAddAdd",
+        {
+            {{{2, 1, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2, 1, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2, 1, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2, 1, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{2, 1, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    ExecuteTestCaseForEle(para, ge::GRAPH_FAILED, false, 0, false, "", {});
+}
+
+// Case 16: 9D x4 only -> failure (every input is checked, not just x1).
+TEST_F(FusedMulAddAddTilingTest, x4_dim_num_over_8_failed)
+{
+    optiling::FusedMulAddAddCompileInfo compileInfo = {64, 245760};
+    gert::TilingContextPara para(
+        "FusedMulAddAdd",
+        {
+            {{{2}, {2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2}, {2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2}, {2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2, 1, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{2, 1, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         &compileInfo);
     ExecuteTestCaseForEle(para, ge::GRAPH_FAILED, false, 0, false, "", {});
