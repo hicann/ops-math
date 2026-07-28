@@ -57,14 +57,72 @@ REGISTER_TILING_DATA_CLASS(Trilu, TriangulatorTilingData)
 
 constexpr int64_t TRILU_UPPER_VALUE = 100;
 
+static bool IsSupportedXDtype(ge::DataType dtype)
+{
+    switch (dtype) {
+        case ge::DT_BF16:
+        case ge::DT_FLOAT16:
+        case ge::DT_FLOAT:
+        case ge::DT_INT64:
+        case ge::DT_UINT64:
+        case ge::DT_INT32:
+        case ge::DT_UINT32:
+        case ge::DT_INT16:
+        case ge::DT_UINT16:
+        case ge::DT_INT8:
+        case ge::DT_UINT8:
+        case ge::DT_DOUBLE:
+        case ge::DT_COMPLEX32:
+        case ge::DT_COMPLEX64:
+        case ge::DT_BOOL:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static ge::graphStatus ValidateDtypes(gert::TilingContext* context)
+{
+    const auto* xDesc = context->GetInputDesc(INDEX_X);
+    OP_CHECK_NULL_WITH_CONTEXT(context, xDesc);
+    const ge::DataType xDtype = xDesc->GetDataType();
+    if (!IsSupportedXDtype(xDtype)) {
+        OP_LOGE(context->GetNodeName(),
+                "Input x has dtype %s (%d); allowed dtypes are {BF16, FLOAT16, FLOAT, INT64, UINT64, INT32, "
+                "UINT32, INT16, UINT16, INT8, UINT8, DOUBLE, COMPLEX32, COMPLEX64, BOOL}.",
+                Ops::Base::ToString(xDtype).c_str(), static_cast<int32_t>(xDtype));
+        return ge::GRAPH_FAILED;
+    }
+
+    const auto* kDesc = context->GetInputDesc(INDEX_K);
+    if (kDesc == nullptr) {
+        return ge::GRAPH_SUCCESS;
+    }
+    const ge::DataType kDtype = kDesc->GetDataType();
+    if (kDtype != ge::DT_INT32 && kDtype != ge::DT_INT64) {
+        OP_LOGE(context->GetNodeName(), "Input k has dtype %s (%d); allowed dtypes are {INT32, INT64}.",
+                Ops::Base::ToString(kDtype).c_str(), static_cast<int32_t>(kDtype));
+        return ge::GRAPH_FAILED;
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
 static ge::graphStatus TriluTilingFunc(gert::TilingContext* context)
 {
+    if (ValidateDtypes(context) != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
+
     context->GetWorkspaceSizes(1);
 
     const auto* attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
     const int64_t* upperPtr = attrs->GetAttrPointer<int64_t>(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, upperPtr);
+    if (*upperPtr != 0 && *upperPtr != 1) {
+        OP_LOGE(context->GetNodeName(), "The attr upper must be 0 or 1, but got %ld.", *upperPtr);
+        return ge::GRAPH_FAILED;
+    }
     bool isUpper = (*upperPtr != 0);
 
     ge::graphStatus ret;

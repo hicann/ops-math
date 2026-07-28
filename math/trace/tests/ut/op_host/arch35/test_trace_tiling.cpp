@@ -21,18 +21,73 @@ using namespace ge;
 
 class TraceTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "TraceTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "TraceTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "TraceTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "TraceTiling TearDown" << std::endl; }
 };
 
 static std::map<std::string, std::string> soc_version_infos = {{"Short_SoC_version", "Ascend950"}};
+
+struct TraceDtypeCase {
+    ge::DataType inputDtype;
+    ge::DataType outputDtype;
+    const char* name;
+};
+
+static void ExecuteDtypeTest(ge::DataType inputDtype, ge::DataType outputDtype, ge::graphStatus expectedStatus)
+{
+    struct TraceCompileInfo {
+    } compileInfo;
+    gert::TilingContextPara tilingContextPara("Trace",
+                                              {
+                                                  {{{4, 4}, {4, 4}}, inputDtype, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{}, {}}, outputDtype, ge::FORMAT_ND},
+                                              },
+                                              {}, &compileInfo, 1, 262144, 4096);
+    if (expectedStatus == ge::GRAPH_SUCCESS) {
+        ExecuteTestCase(tilingContextPara, expectedStatus, 0, "4 5 ", {16777216});
+        return;
+    }
+    ExecuteTestCase(tilingContextPara, expectedStatus);
+}
+
+TEST_F(TraceTiling, trace_graph_supported_dtypes)
+{
+    const std::vector<TraceDtypeCase> cases = {
+        {ge::DT_COMPLEX64, ge::DT_COMPLEX64, "COMPLEX64"},
+        {ge::DT_FLOAT, ge::DT_FLOAT, "FLOAT"},
+        {ge::DT_FLOAT16, ge::DT_FLOAT16, "FLOAT16"},
+        {ge::DT_BF16, ge::DT_BF16, "BF16"},
+        {ge::DT_INT8, ge::DT_INT64, "INT8"},
+        {ge::DT_INT16, ge::DT_INT64, "INT16"},
+        {ge::DT_INT32, ge::DT_INT64, "INT32"},
+        {ge::DT_INT64, ge::DT_INT64, "INT64"},
+        {ge::DT_UINT8, ge::DT_INT64, "UINT8"},
+        {ge::DT_UINT16, ge::DT_INT64, "UINT16"},
+        {ge::DT_UINT32, ge::DT_INT64, "UINT32"},
+        {ge::DT_UINT64, ge::DT_UINT64, "UINT64"},
+        {ge::DT_BOOL, ge::DT_INT64, "BOOL"},
+    };
+    for (const auto& testCase : cases) {
+        SCOPED_TRACE(testCase.name);
+        ExecuteDtypeTest(testCase.inputDtype, testCase.outputDtype, ge::GRAPH_SUCCESS);
+    }
+}
+
+TEST_F(TraceTiling, trace_rejects_aclnn_only_and_unsupported_dtypes)
+{
+    const std::vector<TraceDtypeCase> cases = {
+        {ge::DT_DOUBLE, ge::DT_DOUBLE, "DOUBLE"},
+        {ge::DT_COMPLEX128, ge::DT_COMPLEX128, "COMPLEX128"},
+        {ge::DT_STRING, ge::DT_STRING, "STRING"},
+    };
+    for (const auto& testCase : cases) {
+        SCOPED_TRACE(testCase.name);
+        ExecuteDtypeTest(testCase.inputDtype, testCase.outputDtype, ge::GRAPH_FAILED);
+    }
+}
 
 TEST_F(TraceTiling, trace_float32_4x4)
 {

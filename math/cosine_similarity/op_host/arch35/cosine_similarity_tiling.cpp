@@ -42,22 +42,31 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
     return ge::GRAPH_SUCCESS;
 }
 
-static void ComputeBroadcastStrides(const gert::Shape& origShape, int32_t ndim, const int64_t* broadcastShape,
-                                    int64_t* strides)
+static ge::graphStatus ValidateDtypes(gert::TilingContext* context)
 {
-    (void)broadcastShape;
-    int32_t origNdim = static_cast<int32_t>(origShape.GetDimNum());
-    int32_t offset = ndim - origNdim;
+    const auto* x1Desc = context->GetInputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, x1Desc);
+    const auto* x2Desc = context->GetInputDesc(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, x2Desc);
+    OP_CHECK_IF(x1Desc->GetDataType() != ge::DT_FLOAT,
+                OP_LOGE(context, "input_x1 dtype %d is invalid; allowed dtypes: {FLOAT}",
+                        static_cast<int32_t>(x1Desc->GetDataType())),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(x2Desc->GetDataType() != ge::DT_FLOAT,
+                OP_LOGE(context, "input_x2 dtype %d is invalid; allowed dtypes: {FLOAT}",
+                        static_cast<int32_t>(x2Desc->GetDataType())),
+                return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
 
+static void FillCommonShapeAndStrides(const gert::Shape& commonShape, int32_t ndim, CosineSimilarityTilingData* tiling)
+{
     int64_t stride = 1;
     for (int32_t d = ndim - 1; d >= 0; d--) {
-        int32_t origD = d - offset;
-        if (origD < 0 || origShape.GetDim(origD) == 1) {
-            strides[d] = 0;
-        } else {
-            strides[d] = stride;
-            stride *= origShape.GetDim(origD);
-        }
+        tiling->broadcastShape[d] = commonShape.GetDim(d);
+        tiling->x1Strides[d] = stride;
+        tiling->x2Strides[d] = stride;
+        stride *= commonShape.GetDim(d);
     }
 }
 
@@ -72,11 +81,17 @@ static ge::graphStatus ComputeCosineSimilarityTiling(gert::TilingContext* contex
     OP_CHECK_NULL_WITH_CONTEXT(context, x2Input);
     auto x2Shape = x2Input->GetStorageShape();
 
-    // Compute broadcast shape
+    // The two inputs must have exactly the same rank before any per-dimension access.
     int32_t x1Nd = static_cast<int32_t>(x1Shape.GetDimNum());
     int32_t x2Nd = static_cast<int32_t>(x2Shape.GetDimNum());
-    int32_t ndim = (x1Nd > x2Nd) ? x1Nd : x2Nd;
+    if (x1Nd != x2Nd) {
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(context->GetNodeName(), "x1 and x2",
+                                                  (std::to_string(x1Nd) + " and " + std::to_string(x2Nd)).c_str(),
+                                                  "input ranks must be equal");
+        return ge::GRAPH_FAILED;
+    }
 
+    int32_t ndim = x1Nd;
     if (ndim < 1 || ndim > MAX_DIMS) {
         OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(context->GetNodeName(), "x1 and x2",
                                                   (std::to_string(x1Nd) + " and " + std::to_string(x2Nd)).c_str(),
@@ -85,25 +100,25 @@ static ge::graphStatus ComputeCosineSimilarityTiling(gert::TilingContext* contex
     }
 
     tiling->ndim = ndim;
-    int32_t x1Offset = ndim - x1Nd;
-    int32_t x2Offset = ndim - x2Nd;
     for (int32_t d = 0; d < ndim; d++) {
-        int64_t s1 = (d < x1Offset) ? 1 : x1Shape.GetDim(d - x1Offset);
-        int64_t s2 = (d < x2Offset) ? 1 : x2Shape.GetDim(d - x2Offset);
+        int64_t s1 = x1Shape.GetDim(d);
+        int64_t s2 = x2Shape.GetDim(d);
         if (s1 <= 0 || s2 <= 0) {
             std::string shapeMsg = std::to_string(s1) + " and " + std::to_string(s2);
             OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x1 and x2", shapeMsg.c_str(),
                                                    ("shape dim value must be > 0 at dim " + std::to_string(d)).c_str());
             return ge::GRAPH_FAILED;
         }
-        if (s1 != s2 && s1 != 1 && s2 != 1) {
+        if (s1 != s2) {
             std::string shapeMsg = std::to_string(s1) + " and " + std::to_string(s2);
             OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x1 and x2", shapeMsg.c_str(),
-                                                   ("shapes not broadcastable at dim " + std::to_string(d)).c_str());
+                                                   ("input shapes must be equal at dim " + std::to_string(d)).c_str());
             return ge::GRAPH_FAILED;
         }
-        tiling->broadcastShape[d] = (s1 > s2) ? s1 : s2;
     }
+    // Keep the existing TilingData ABI. The legacy field names now carry only the
+    // common shape and two identical contiguous strides; no broadcast semantics remain.
+    FillCommonShapeAndStrides(x1Shape, ndim, tiling);
 
     // Get and normalize dim attribute
     int32_t dim = 1;
@@ -127,116 +142,16 @@ static ge::graphStatus ComputeCosineSimilarityTiling(gert::TilingContext* contex
     // Compute outer/reduce/inner sizes
     int64_t outerSize = 1;
     for (int32_t d = 0; d < dim; d++) {
-        outerSize *= tiling->broadcastShape[d];
+        outerSize *= x1Shape.GetDim(d);
     }
-    tiling->reduceSize = tiling->broadcastShape[dim];
+    tiling->reduceSize = x1Shape.GetDim(dim);
     int64_t innerSize = 1;
     for (int32_t d = dim + 1; d < ndim; d++) {
-        innerSize *= tiling->broadcastShape[d];
+        innerSize *= x1Shape.GetDim(d);
     }
     tiling->outerSize = outerSize;
     tiling->innerSize = innerSize;
     tiling->totalOutputElements = outerSize * innerSize;
-
-    // Compute broadcast strides
-    ComputeBroadcastStrides(x1Shape, ndim, tiling->broadcastShape, tiling->x1Strides);
-    ComputeBroadcastStrides(x2Shape, ndim, tiling->broadcastShape, tiling->x2Strides);
-
-    // R005: Try to merge consecutive contiguous axes around reduceDim
-    // Outer axes: 0..dim-1, Inner axes: dim+1..ndim-1
-    // Only merge if strides are contiguous for both inputs
-    {
-        int32_t outerCount = dim;
-        int32_t innerCount = ndim - dim - 1;
-
-        // Check if outer axes can be merged (need >= 2 axes)
-        bool canMergeOuter = (outerCount >= 2);
-        if (canMergeOuter) {
-            for (int32_t d = 0; d < dim - 1; d++) {
-                bool x1Contig = (tiling->x1Strides[d] == tiling->x1Strides[d + 1] * tiling->broadcastShape[d + 1]);
-                bool x2Contig = (tiling->x2Strides[d] == tiling->x2Strides[d + 1] * tiling->broadcastShape[d + 1]);
-                if (!x1Contig || !x2Contig) {
-                    canMergeOuter = false;
-                    break;
-                }
-            }
-        }
-
-        // Check if inner axes can be merged (need >= 2 axes)
-        bool canMergeInner = (innerCount >= 2);
-        if (canMergeInner) {
-            for (int32_t d = dim + 1; d < ndim - 1; d++) {
-                bool x1Contig = (tiling->x1Strides[d] == tiling->x1Strides[d + 1] * tiling->broadcastShape[d + 1]);
-                bool x2Contig = (tiling->x2Strides[d] == tiling->x2Strides[d + 1] * tiling->broadcastShape[d + 1]);
-                if (!x1Contig || !x2Contig) {
-                    canMergeInner = false;
-                    break;
-                }
-            }
-        }
-
-        // Apply merging if either side can be merged
-        if (canMergeOuter || canMergeInner) {
-            int64_t newShape[MAX_DIMS] = {};
-            int64_t newX1Strides[MAX_DIMS] = {};
-            int64_t newX2Strides[MAX_DIMS] = {};
-            int32_t newNdim = 0;
-            int32_t newReduceDim = 0;
-
-            // Build merged outer dimension(s)
-            if (canMergeOuter) {
-                newShape[newNdim] = outerSize;
-                newX1Strides[newNdim] = tiling->x1Strides[dim - 1];
-                newX2Strides[newNdim] = tiling->x2Strides[dim - 1];
-                newNdim++;
-            } else {
-                // Keep outer axes as-is
-                for (int32_t d = 0; d < dim; d++) {
-                    newShape[newNdim] = tiling->broadcastShape[d];
-                    newX1Strides[newNdim] = tiling->x1Strides[d];
-                    newX2Strides[newNdim] = tiling->x2Strides[d];
-                    newNdim++;
-                }
-            }
-
-            // Reduce dimension
-            newReduceDim = newNdim;
-            newShape[newNdim] = tiling->broadcastShape[dim];
-            newX1Strides[newNdim] = tiling->x1Strides[dim];
-            newX2Strides[newNdim] = tiling->x2Strides[dim];
-            newNdim++;
-
-            // Build merged inner dimension(s)
-            if (canMergeInner) {
-                newShape[newNdim] = innerSize;
-                newX1Strides[newNdim] = tiling->x1Strides[ndim - 1];
-                newX2Strides[newNdim] = tiling->x2Strides[ndim - 1];
-                newNdim++;
-            } else {
-                // Keep inner axes as-is
-                for (int32_t d = dim + 1; d < ndim; d++) {
-                    newShape[newNdim] = tiling->broadcastShape[d];
-                    newX1Strides[newNdim] = tiling->x1Strides[d];
-                    newX2Strides[newNdim] = tiling->x2Strides[d];
-                    newNdim++;
-                }
-            }
-
-            // Update tiling data with merged dimensions
-            tiling->ndim = newNdim;
-            tiling->reduceDim = newReduceDim;
-            for (int32_t d = 0; d < newNdim; d++) {
-                tiling->broadcastShape[d] = newShape[d];
-                tiling->x1Strides[d] = newX1Strides[d];
-                tiling->x2Strides[d] = newX2Strides[d];
-            }
-            for (int32_t d = newNdim; d < MAX_DIMS; d++) {
-                tiling->broadcastShape[d] = 0;
-                tiling->x1Strides[d] = 0;
-                tiling->x2Strides[d] = 0;
-            }
-        }
-    }
 
     // Get eps attribute
     float eps = 1e-8f;
@@ -273,6 +188,9 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 
 static ge::graphStatus CosineSimilarityTilingFunc(gert::TilingContext* context)
 {
+    OP_CHECK_IF(ValidateDtypes(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "ValidateDtypes error"),
+                return ge::GRAPH_FAILED);
+
     uint64_t ubSize;
     int64_t coreNum;
     OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,

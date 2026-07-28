@@ -23,18 +23,9 @@ using namespace std;
 
 class l2_trace_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_trace_test SetUp" << endl;
-    }
-    static void TearDownTestCase()
-    {
-        cout << "l2_trace_test TearDown" << endl;
-    }
-    void TearDown() override
-    {
-        op::SetPlatformNpuArch(NpuArch::DAV_2201);
-    }
+    static void SetUpTestCase() { cout << "l2_trace_test SetUp" << endl; }
+    static void TearDownTestCase() { cout << "l2_trace_test TearDown" << endl; }
+    void TearDown() override { op::SetPlatformNpuArch(NpuArch::DAV_2201); }
 };
 
 TEST_F(l2_trace_test, case_fp32_4x4)
@@ -50,10 +41,11 @@ TEST_F(l2_trace_test, case_fp32_4x4)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(l2_trace_test, case_fp16_8x8)
+TEST_F(l2_trace_test, case_fp16_value_and_dtype)
 {
     op::SetPlatformNpuArch(NpuArch::DAV_2201);
-    auto selfDesc = TensorDesc({8, 8}, ACL_FLOAT16, ACL_FORMAT_ND);
+    auto selfDesc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND)
+                        .Value(vector<float>{1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f});
     auto outDesc = TensorDesc({}, ACL_FLOAT16, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnTrace, INPUT(selfDesc), OUTPUT(outDesc));
@@ -76,10 +68,37 @@ TEST_F(l2_trace_test, case_int32_3x5)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(l2_trace_test, case_bf16_4x4)
+TEST_F(l2_trace_test, case_bf16_value_and_dtype)
 {
     op::SetPlatformNpuArch(NpuArch::DAV_2201);
-    auto selfDesc = TensorDesc({4, 4}, ACL_BF16, ACL_FORMAT_ND);
+    auto selfDesc = TensorDesc({3, 2}, ACL_BF16, ACL_FORMAT_ND)
+                        .Value(vector<float>{1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f});
+    auto outDesc = TensorDesc({}, ACL_BF16, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnTrace, INPUT(selfDesc), OUTPUT(outDesc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(l2_trace_test, case_empty_fp16_value_and_dtype)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
+    auto selfDesc = TensorDesc({0, 4}, ACL_FLOAT16, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({}, ACL_FLOAT16, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnTrace, INPUT(selfDesc), OUTPUT(outDesc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(l2_trace_test, case_empty_bf16_value_and_dtype)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
+    auto selfDesc = TensorDesc({3, 0}, ACL_BF16, ACL_FORMAT_ND);
     auto outDesc = TensorDesc({}, ACL_BF16, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnTrace, INPUT(selfDesc), OUTPUT(outDesc));

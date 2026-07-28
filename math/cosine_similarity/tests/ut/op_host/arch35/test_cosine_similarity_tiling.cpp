@@ -28,6 +28,22 @@ protected:
 
 static std::map<std::string, std::string> soc_versions_infos = {{"Short_SoC_version", "Ascend950PR"}};
 
+static void ExecuteInvalidDtypeTestCase(ge::DataType x1Dtype, ge::DataType x2Dtype)
+{
+    struct CosineSimilarityCompileInfo {
+    } compileInfo;
+    gert::TilingContextPara tilingContextPara("CosineSimilarity",
+                                              {
+                                                  {{{4, 8}, {4, 8}}, x1Dtype, ge::FORMAT_ND},
+                                                  {{{4, 8}, {4, 8}}, x2Dtype, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo, 64, 262144, 4096);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
 TEST_F(CosineSimilarityTiling, cosine_similarity_float32)
 {
     struct CosineSimilarityCompileInfo {
@@ -48,6 +64,39 @@ TEST_F(CosineSimilarityTiling, cosine_similarity_float32)
     string expectTilingData = "1 4 8 1 4 9431665783 1 4 8 0 0 0 0 0 0 8 1 0 0 0 0 0 0 8 1 0 0 0 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {16777728};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(CosineSimilarityTiling, cosine_similarity_fail_float16_inputs)
+{
+    ExecuteInvalidDtypeTestCase(ge::DT_FLOAT16, ge::DT_FLOAT16);
+}
+
+TEST_F(CosineSimilarityTiling, cosine_similarity_fail_int32_inputs)
+{
+    ExecuteInvalidDtypeTestCase(ge::DT_INT32, ge::DT_INT32);
+}
+
+TEST_F(CosineSimilarityTiling, cosine_similarity_fail_mixed_float_and_float16_inputs)
+{
+    ExecuteInvalidDtypeTestCase(ge::DT_FLOAT, ge::DT_FLOAT16);
+}
+
+TEST_F(CosineSimilarityTiling, cosine_similarity_same_shape_success)
+{
+    struct CosineSimilarityCompileInfo {
+    } compileInfo;
+    gert::TilingContextPara tilingContextPara("CosineSimilarity",
+                                              {
+                                                  {{{2, 3, 4}, {2, 3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{2, 3, 4}, {2, 3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{2, 4}, {2, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo, 64, 262144, 4096);
+    uint64_t expectTilingKey = 0;
+    std::vector<size_t> expectWorkspaces = {16777728};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
 TEST_F(CosineSimilarityTiling, cosine_similarity_fail_zero_dim)
@@ -77,6 +126,54 @@ TEST_F(CosineSimilarityTiling, cosine_similarity_fail_zero_element_shape)
                                               },
                                               {
                                                   {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo, 64, 262144, 4096);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(CosineSimilarityTiling, cosine_similarity_fail_same_rank_different_shape)
+{
+    struct CosineSimilarityCompileInfo {
+    } compileInfo;
+    gert::TilingContextPara tilingContextPara("CosineSimilarity",
+                                              {
+                                                  {{{2, 3, 4}, {2, 3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{2, 1, 4}, {2, 1, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{2, 4}, {2, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo, 64, 262144, 4096);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(CosineSimilarityTiling, cosine_similarity_fail_different_rank)
+{
+    struct CosineSimilarityCompileInfo {
+    } compileInfo;
+    gert::TilingContextPara tilingContextPara("CosineSimilarity",
+                                              {
+                                                  {{{2, 3, 4}, {2, 3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{3, 4}, {3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{2, 4}, {2, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo, 64, 262144, 4096);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(CosineSimilarityTiling, cosine_similarity_fail_multiple_one_dims_different_shape)
+{
+    struct CosineSimilarityCompileInfo {
+    } compileInfo;
+    gert::TilingContextPara tilingContextPara("CosineSimilarity",
+                                              {
+                                                  {{{2, 1, 4, 1}, {2, 1, 4, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1, 1, 4, 1}, {1, 1, 4, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{2, 4, 1}, {2, 4, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                               },
                                               &compileInfo, 64, 262144, 4096);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);

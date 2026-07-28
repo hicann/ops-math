@@ -46,7 +46,7 @@ $$
     <tr>
       <td>x</td>
       <td>输入</td>
-      <td>待进行三角掩码计算的入参，最后两维为矩阵。</td>
+      <td>待进行三角掩码计算的入参，rank至少为2，最后两维为矩阵。</td>
       <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、COMPLEX32、COMPLEX64</td>
       <td>ND</td>
     </tr>
@@ -77,7 +77,8 @@ $$
 
 ## 约束说明
 
-- 输入输出支持任意维度（ND格式），最后两维构成矩阵。
+- 输入`x`必须满足`rank >= 2`（ND格式），最后两维构成矩阵。
+- 不支持0D和1D输入；此类输入在Tiling阶段返回`GRAPH_FAILED`。
 
 ## 调用说明
 

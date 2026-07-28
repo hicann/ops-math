@@ -14,12 +14,12 @@ import torch
 
 __golden__ = {
     "kernel": {"trace": "trace_golden"},
-    "aclnn": {"aclnnTrace": "aclnn_trace_golden"}
+    "aclnn": {"aclnnTrace": "aclnn_trace_golden"},
 }
 
 
 def trace_golden(x, **kwargs):
-    '''
+    """
     Golden function for trace.
     All the parameters (names and order) follow @trace_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
@@ -30,41 +30,54 @@ def trace_golden(x, **kwargs):
 
     Returns:
         Output tensor
-    '''
+    """
     x_dtype = x.dtype
+    output_dtype = None
+    declared_output_dtypes = kwargs.get("output_dtypes")
+    if declared_output_dtypes:
+        declared_output_dtype = declared_output_dtypes[0]
+        try:
+            output_dtype = np.dtype(declared_output_dtype)
+        except (TypeError, ValueError):
+            # Some environments expose bfloat16 through an extended numpy dtype.
+            # In that case x.dtype is already the dtype required by the OpDef.
+            output_dtype = None
 
     # torch.trace() on CPU does not support float16/bfloat16/uint16/uint32/bool.
     # Strategy: compute in a compatible dtype, then convert result back.
     if x_dtype.name in ("bfloat16", "float16"):
-        # bf16/fp16: compute in float32, result stays as float32 numpy
-        # (numpy has no bfloat16; TTK framework handles bf16 conversion)
+        # bf16/fp16: accumulate in float32, then return the declared output dtype.
         x_fp32 = x.astype(np.float32)
-        x_torch = torch.from_numpy(x_fp32)  # float32 tensor
+        x_torch = torch.from_numpy(x_fp32)
         result = torch.trace(x_torch)
-        output = result.numpy()  # float32 numpy scalar
+        target_dtype = output_dtype if output_dtype is not None else x_dtype
+        output = result.numpy().astype(target_dtype, copy=False)
     elif x_dtype.name in ("uint16", "uint32", "bool"):
         # uint16/uint32/bool: convert to int64 for computation
         x_i64 = x.astype(np.int64)
         x_torch = torch.from_numpy(x_i64)
         result = torch.trace(x_torch)
-        output = result.numpy()  # int64 numpy scalar
+        output = result.numpy()
     else:
         # float32, float64, int8, int16, int32, int64, uint8, complex64, complex128
         x_torch = torch.from_numpy(x)
         result = torch.trace(x_torch)
         output = result.numpy()
 
+    if output_dtype is not None and output.dtype != output_dtype:
+        output = output.astype(output_dtype, copy=False)
+
     return output
 
 
 def _aclnn_trace_impl(self_tensor):
     """Common implementation for aclnnTrace.
-    
+
     torch.trace() on CPU does not support float16/bfloat16/uint16/uint32/bool.
     Compute in a compatible dtype instead.
     """
     if self_tensor.dtype in (torch.float16, torch.bfloat16):
-        # Compute in float32, keep result as float32
+        # Accumulate in float32. aclnn_trace_golden casts to out.dtype below.
         return torch.trace(self_tensor.to(torch.float32))
     elif self_tensor.dtype == torch.bool:
         return torch.trace(self_tensor.to(torch.int64))
@@ -75,7 +88,7 @@ def _aclnn_trace_impl(self_tensor):
 
 
 def aclnn_trace_golden(selfT, out, **kwargs):
-    '''
+    """
     Aclnn golden for aclnnTrace.
     All the parameters (name & order) follow \
         function `aclnnTraceGetWorkspaceSize` in @aclnn_trace.h \
@@ -89,7 +102,7 @@ def aclnn_trace_golden(selfT, out, **kwargs):
 
     Returns:
         Output tensors.
-    '''
+    """
     if isinstance(selfT, np.ndarray):
         self_dtype = selfT.dtype
         if self_dtype.name in ("bfloat16", "float16"):
@@ -108,6 +121,10 @@ def aclnn_trace_golden(selfT, out, **kwargs):
     result = _aclnn_trace_impl(self_torch)
 
     if isinstance(out, np.ndarray):
-        return result.numpy() if not isinstance(result, np.ndarray) else result
-    else:
-        return result
+        if isinstance(result, torch.Tensor):
+            result = result.detach().cpu().numpy()
+        return np.asarray(result).astype(out.dtype, copy=False)
+
+    if isinstance(result, np.ndarray):
+        result = torch.from_numpy(result)
+    return result.to(dtype=out.dtype)

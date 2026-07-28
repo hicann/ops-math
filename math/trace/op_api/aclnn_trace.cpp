@@ -42,12 +42,19 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST =
     op::DataType::DT_COMPLEX128, op::DataType::DT_INT32,   op::DataType::DT_INT64,  op::DataType::DT_INT16,
     op::DataType::DT_INT8,       op::DataType::DT_UINT8,   op::DataType::DT_BOOL,   op::DataType::DT_BF16};
 
+static const std::initializer_list<op::DataType> ASCEND950_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_FLOAT,      op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64,
+    op::DataType::DT_COMPLEX128, op::DataType::DT_INT32,   op::DataType::DT_INT64,  op::DataType::DT_INT16,
+    op::DataType::DT_INT8,       op::DataType::DT_UINT8,   op::DataType::DT_BOOL,   op::DataType::DT_BF16};
+
 static const size_t DIM_SUPPORT_ONLY = 2;
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510) {
+        return ASCEND950_DTYPE_SUPPORT_LIST;
+    } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+               GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_SUPPORT_LIST;
@@ -85,9 +92,8 @@ static bool CheckParamValid(const aclTensor* self, const aclTensor* out)
 
     dim = out->GetViewShape().GetDimNum();
     if (dim != 0) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "expected 0D output tensor, but got %s tensor.",
-            op::ToString(out->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "expected 0D output tensor, but got %s tensor.",
+                op::ToString(out->GetViewShape()).GetString());
         return false;
     }
     return true;
@@ -107,8 +113,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnTraceGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnTraceGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                       aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
@@ -133,9 +139,9 @@ aclnnStatus aclnnTraceGetWorkspaceSize(
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
         auto inputdtype = selfContiguous->GetDataType();
-        bool isNeedCast = (inputdtype == DataType::DT_FLOAT16);
-        auto selfCast =
-            isNeedCast ? l0op::Cast(selfContiguous, DataType::DT_FLOAT, uniqueExecutor.get()) : selfContiguous;
+        bool isNeedCast = (inputdtype == DataType::DT_FLOAT16 || inputdtype == DataType::DT_BF16);
+        auto selfCast = isNeedCast ? l0op::Cast(selfContiguous, DataType::DT_FLOAT, uniqueExecutor.get()) :
+                                     selfContiguous;
         CHECK_RET(selfCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
         // 调用trace进行计算

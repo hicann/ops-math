@@ -16,7 +16,7 @@
 - 算子功能：
   Trace算子用于计算矩阵从左上角开始的主对角线元素的和。
 
-- 计算公式：  
+- 计算公式：
 
   $$
   out=sum(diag(self))
@@ -44,14 +44,14 @@
       <td>self</td>
       <td>输入</td>
       <td>表示输入张量，公式中的输入self。</td>
-      <td>BFLOAT16、FLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128、INT32、INT64、INT16、INT8、UINT8、BOOL</td>
+      <td>BFLOAT16、FLOAT16、FLOAT32、COMPLEX64、INT32、INT64、INT16、INT8、UINT8、BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>out</td>
       <td>输出</td>
       <td>表示输出张量，公式中的输出out。</td>
-      <td>BFLOAT16、FLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128、INT64</td>
+      <td>BFLOAT16、FLOAT16、FLOAT32、COMPLEX64、INT64</td>
       <td>ND</td>
     </tr>
   </tbody>
@@ -59,7 +59,12 @@
 
 ## 约束说明
 
-无
+1. `self` 必须为2D Tensor。
+2. 图模式输出为0D标量。
+3. ACLNN调用时，`out` 必须为0D Tensor。
+4. 对于形状为 $(M, N)$ 的非方阵，累加的对角线长度为 $\min(M, N)$。
+5. 非2D输入或ACLNN调用时非0D输出会返回参数错误。
+6. 支持空2D Tensor，结果为0D标量0。
 
 ## 调用说明
 

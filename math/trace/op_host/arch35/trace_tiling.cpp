@@ -34,9 +34,50 @@ constexpr uint32_t STATIC_UB_ESTIMATE = 0;
 
 struct TraceCompileInfo {};
 
+static bool IsSupportedGraphInputDtype(ge::DataType dtype)
+{
+    switch (dtype) {
+        case ge::DT_COMPLEX64:
+        case ge::DT_FLOAT:
+        case ge::DT_FLOAT16:
+        case ge::DT_BF16:
+        case ge::DT_INT8:
+        case ge::DT_INT16:
+        case ge::DT_INT32:
+        case ge::DT_INT64:
+        case ge::DT_UINT8:
+        case ge::DT_UINT16:
+        case ge::DT_UINT32:
+        case ge::DT_UINT64:
+        case ge::DT_BOOL:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static ge::graphStatus ValidateInputDtype(gert::TilingContext* context)
+{
+    const auto* inputDesc = context->GetInputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
+    const ge::DataType inputDtype = inputDesc->GetDataType();
+    OP_CHECK_IF(!IsSupportedGraphInputDtype(inputDtype),
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+                    context->GetNodeName(), "x", std::string(ge::TypeUtils::DataTypeToSerialString(inputDtype)),
+                    "Allowed dtypes are COMPLEX64, FLOAT, FLOAT16, BF16, INT8, INT16, INT32, INT64, "
+                    "UINT8, UINT16, UINT32, UINT64, BOOL"),
+                return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
+
 static ge::graphStatus TraceTilingFunc(gert::TilingContext* context)
 {
-    // 1. Get platform info
+    // 1. Validate Graph input dtype before accessing shape or writing tiling results
+    if (ValidateInputDtype(context) != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
+
+    // 2. Get platform info
     fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
@@ -44,58 +85,51 @@ static ge::graphStatus TraceTilingFunc(gert::TilingContext* context)
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     OP_CHECK_IF(ubSize == 0, OP_LOGE(context, "ubSize is 0"), return ge::GRAPH_FAILED);
 
-    // 2. Get input shape
+    // 3. Get input shape
     auto inputShape = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputShape);
     auto storageShape = inputShape->GetStorageShape();
 
-    // 3. Dimension check (must be 2D)
+    // 4. Dimension check (must be 2D)
     if (storageShape.GetDimNum() != 2) {
         OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-            context->GetNodeName(), "x",
-            std::to_string(storageShape.GetDimNum()).c_str(),
-            "trace expects a 2D matrix");
+            context->GetNodeName(), "x", std::to_string(storageShape.GetDimNum()).c_str(), "trace expects a 2D matrix");
         return ge::GRAPH_FAILED;
     }
 
     int64_t M = storageShape.GetDim(0);
     int64_t N = storageShape.GetDim(1);
 
-    // 4. Compute tiling parameters
+    // 5. Compute tiling parameters
     int64_t diagSize = (M < N) ? M : N;
-    int64_t stride0 = N;  // Row stride for contiguous tensor
-    int64_t stride1 = 1;  // Column stride for contiguous tensor
+    int64_t stride0 = N; // Row stride for contiguous tensor
+    int64_t stride1 = 1; // Column stride for contiguous tensor
     int64_t diagStride = stride0 + stride1;
 
-    // 5. Set tiling data
+    // 6. Set tiling data
     TraceTilingData* tiling = context->GetTilingData<TraceTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(TraceTilingData), 0, sizeof(TraceTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(TraceTilingData), 0, sizeof(TraceTilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
     tiling->diagSize = diagSize;
     tiling->diagStride = diagStride;
 
-    // 6. Set block dim (single core)
+    // 7. Set block dim (single core)
     context->SetBlockDim(1);
 
-    // 7. Set workspace (system workspace only)
+    // 8. Set workspace (system workspace only)
     uint64_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
     size_t* ws = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, ws);
     ws[0] = static_cast<size_t>(sysWorkspaceSize);
 
-    // 8. Set local memory size
+    // 9. Set local memory size
     OP_CHECK_IF((ubSize <= DCACHE_SIZE + STATIC_UB_ESTIMATE),
-        OP_LOGE(context, "ubSize %lu <= DCACHE_SIZE + STATIC_UB_ESTIMATE", ubSize),
-        return ge::GRAPH_FAILED);
-    auto res = context->SetLocalMemorySize(
-        static_cast<uint32_t>(ubSize - DCACHE_SIZE - STATIC_UB_ESTIMATE));
-    OP_CHECK_IF((res != ge::GRAPH_SUCCESS),
-        OP_LOGE(context, "SetLocalMemorySize failed"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context, "ubSize %lu <= DCACHE_SIZE + STATIC_UB_ESTIMATE", ubSize), return ge::GRAPH_FAILED);
+    auto res = context->SetLocalMemorySize(static_cast<uint32_t>(ubSize - DCACHE_SIZE - STATIC_UB_ESTIMATE));
+    OP_CHECK_IF((res != ge::GRAPH_SUCCESS), OP_LOGE(context, "SetLocalMemorySize failed"), return ge::GRAPH_FAILED);
 
-    // 9. Set tiling key (single mode, dtype handled by DTYPE_X macro)
+    // 10. Set tiling key (single mode, dtype handled by DTYPE_X macro)
     context->SetTilingKey(GET_TPL_TILING_KEY(TRACE_TPL_MODE_DEFAULT));
 
     return ge::GRAPH_SUCCESS;
@@ -106,7 +140,5 @@ static ge::graphStatus TilingParseForTrace([[maybe_unused]] gert::TilingParseCon
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_OPTILING(Trace)
-    .Tiling(TraceTilingFunc)
-    .TilingParse<TraceCompileInfo>(TilingParseForTrace);
-}  // namespace optiling
+IMPL_OP_OPTILING(Trace).Tiling(TraceTilingFunc).TilingParse<TraceCompileInfo>(TilingParseForTrace);
+} // namespace optiling
