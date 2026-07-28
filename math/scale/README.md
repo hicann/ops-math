@@ -83,7 +83,13 @@
     <tr>
       <td>num_axes</td>
       <td>属性</td>
-      <td>指定进行scale的轴长度。取值范围>=-1，-1表示从axis轴scale到最后一轴。</td>
+      <td>
+        <ul>
+          <li>指定进行scale的轴长度，取值范围大于等于-1。axis为负数时，先将axis归一化为x_rank + axis，以下axis均指归一化后的值。</li>
+          <li>当scale_from_blob为True时：num_axes为-1表示从axis轴scale到最后一轴，scale的rank必须等于x_rank - axis；num_axes为0表示scale为0维Tensor；num_axes大于0时，axis + num_axes不能大于x_rank，且scale的rank必须等于num_axes。scale各维度必须与x从axis开始的对应维度相等。</li>
+          <li>当scale_from_blob为False时，num_axes不参与scale的shape推导。</li>
+        </ul>
+      </td>
       <td>INT64</td>
       <td>-</td>
     </tr>
