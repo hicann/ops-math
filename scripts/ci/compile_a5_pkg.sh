@@ -118,9 +118,11 @@ execute_run_file() {
         return 1
     fi
     chmod +x "${run_files[0]}"
-    cmd=""${run_files[0]}" --install-path="/tmp" --force"
+    cmd=""${run_files[0]}" --install-path="/tmp""
     if [ $pkg_type == "builtin" ];then
         cmd+=" --full"
+    else
+        cmd+=" --force"
     fi
     echo $cmd
     if ! eval "$cmd"; then
