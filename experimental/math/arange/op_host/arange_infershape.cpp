@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -21,9 +21,12 @@ namespace ops {
 
 static ge::graphStatus InferShapeArange(gert::InferShapeContext* context)
 {
+    OP_CHECK_IF(context == nullptr, OP_LOGE("Arange", "InferShapeArange: context is nullptr"), return ge::GRAPH_FAILED);
     OP_LOGD(context->GetNodeName(), "Begin to do InferShapeArange");
 
     gert::Shape* y_shape = context->GetOutputShape(0);
+    OP_CHECK_IF(y_shape == nullptr, OP_LOGE("Arange", "InferShapeArange: output shape is nullptr"),
+                return ge::GRAPH_FAILED);
     y_shape->SetDimNum(1);
     y_shape->SetDim(0, -1);
 
