@@ -85,8 +85,8 @@ static std::tuple<aclTensor*, aclTensor*> KthValueAiCore(const aclTensor* self, 
     auto rank = static_cast<int64_t>(self->GetViewShape().GetDimNum());
     auto normDim = dim < 0 ? dim + rank : dim;
     auto outShape = MakeKthShape(self->GetViewShape(), normDim);
-    auto values = executor->AllocTensor(outShape, self->GetDataType(), self->GetViewFormat());
-    auto indices = executor->AllocTensor(outShape, op::DataType::DT_INT64, self->GetViewFormat());
+    auto values = executor->AllocTensor(outShape, self->GetDataType(), op::Format::FORMAT_ND);
+    auto indices = executor->AllocTensor(outShape, op::DataType::DT_INT64, op::Format::FORMAT_ND);
     OP_CHECK_NULL(values, return {});
     OP_CHECK_NULL(indices, return {});
 
