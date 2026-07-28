@@ -8,3 +8,4 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 add_modules_sources(OPTYPE dsa_random_uniform ACLNNTYPE aclnn)
+add_dependent_ops(random_common)
