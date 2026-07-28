@@ -185,7 +185,7 @@
 | [aclnnLgamma](../../math/lgamma/docs/aclnnLgamma.md)           | 为输入张量的每一个元素进行lgamma数学运算。           | 默认确定性实现| 默认确定性实现 |
 | [aclnnLinalgCholesky](../../math/cholesky/docs/aclnnLinalgCholesky.md)     | 计算实数对称正定矩阵的Cholesky分解。             | 默认确定性实现| - |
 | [aclnnLinalgCross](../../math/cross/docs/aclnnLinalgCross.md)     | 对输入Tensor完成linear_cross运算。             | 默认确定性实现| 默认确定性实现 |
-| [aclnnLinalgQr](../../math/linalg_qr/docs/aclnnLinalgQr.md)     | 对输入Tensor进行正交分解。             | 默认确定性实现| 默认确定性实现 |
+| [aclnnLinalgQr](../../math/qr/docs/aclnnLinalgQr.md)     | 对输入Tensor进行正交分解。             | 默认确定性实现| 默认确定性实现 |
 | [aclnnLinspace](../../math/lin_space/docs/aclnnLinspace.md)     | 生成一个等间隔数值序列。                                     | 默认确定性实现| 默认确定性实现 |
 | [aclnnLog&aclnnInplaceLog](../../math/log/docs/aclnnLog&aclnnInplaceLog.md) | 完成自然对数的计算                                           | 默认确定性实现| 默认确定性实现|
 | [aclnnLog2&aclnnInplaceLog2](../../math/log/docs/aclnnLog2&aclnnInplaceLog2.md) | 完成以2为底的对数计算                                        | 默认确定性实现| 默认确定性实现|
@@ -239,7 +239,7 @@
 | [aclnnPrecisionCompare](../../math/precision_compare/docs/aclnnPrecisionCompare.md)           | 计算两个Tensor元素是否相同，进行精度比对，返回算子执行的状态码，不会触发管理面故障上报。                               | 默认确定性实现| 默认确定性实现  |
 | [aclnnProd](../../math/reduce_prod/docs/aclnnProd.md)           | 回输入tensor中所有元素的乘积。                               | 默认确定性实现| 默认确定性实现|
 | [aclnnProdDim](../../math/reduce_prod/docs/aclnnProdDim.md)     | 返回输入tensor给定维度上每行的乘积。                         | 默认确定性实现| 默认确定性实现|
-| [aclnnQr](../../math/q_r/docs/aclnnQr.md)     | 对输入Tensor进行正交分解。                         | 默认确定性实现| - |
+| [aclnnQr](../../math/qr/docs/aclnnQr.md)     | 对输入Tensor进行正交分解。                         | 默认确定性实现| - |
 | [aclnnInplaceRandomWithoutFromTo](../../random/dsa_random_uniform/docs/aclnnInplaceRandomWithoutFromTo.md)     | 给定seed/offset(int64),默认从 [0, DTYPE_MAX_VALUE] 的离散均匀分布中采样整数填充selfRef张量。                         | -|  默认确定性实现 |
 | [aclnnInplaceRandomWithoutFromToTensor](../../random/dsa_random_uniform/docs/aclnnInplaceRandomWithoutFromToTensor.md)     | 给定seed/offset(tensor),默认从 [0, DTYPE_MAX_VALUE] 的离散均匀分布中采样整数填充selfRef张量。                         | -|  默认确定性实现 |
 | [aclnnRandperm](../../random/stateless_randperm/docs/aclnnRandperm.md)     | 返回从0到n-1的整数随机排列。                         | 默认确定性实现|  默认确定性实现 |

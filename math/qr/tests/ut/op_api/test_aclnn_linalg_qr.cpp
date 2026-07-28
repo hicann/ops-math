@@ -12,7 +12,7 @@
 #include <array>
 #include "gtest/gtest.h"
 
-#include "math/linalg_qr/op_host/op_api/aclnn_linalg_qr.h"
+#include "math/qr/op_api/aclnn_linalg_qr.h"
 
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/scalar_desc.h"
@@ -41,7 +41,6 @@ TEST_F(l2_linalg_qr_test, case_normal)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
     // // SAMPLE: precision simulate
 }
-
 
 // 空tensor 场景一：最后一个维度为0 mode为complete
 TEST_F(l2_linalg_qr_test, case_empty_n_false)
@@ -140,13 +139,7 @@ TEST_F(l2_linalg_qr_test, case_nullptr)
 // check dtype valid
 TEST_F(l2_linalg_qr_test, case_dtype_valid)
 {
-    vector<aclDataType> ValidList = {
-        ACL_FLOAT,
-        ACL_FLOAT16,
-        ACL_DOUBLE,
-        ACL_COMPLEX64,
-        ACL_COMPLEX128,
-        ACL_INT32};
+    vector<aclDataType> ValidList = {ACL_FLOAT, ACL_FLOAT16, ACL_DOUBLE, ACL_COMPLEX64, ACL_COMPLEX128, ACL_INT32};
     int length = ValidList.size();
     for (int i = 0; i < length; i++) {
         auto self_desc = TensorDesc({1, 1, 4, 4}, ValidList[i], ACL_FORMAT_ND)
@@ -170,13 +163,7 @@ TEST_F(l2_linalg_qr_test, case_dtype_valid)
 // check different dtype between input and output
 TEST_F(l2_linalg_qr_test, case_dtype_diff)
 {
-    vector<aclDataType> ValidList = {
-        ACL_FLOAT,
-        ACL_FLOAT16,
-        ACL_DOUBLE,
-        ACL_COMPLEX64,
-        ACL_COMPLEX128,
-        ACL_INT32};
+    vector<aclDataType> ValidList = {ACL_FLOAT, ACL_FLOAT16, ACL_DOUBLE, ACL_COMPLEX64, ACL_COMPLEX128, ACL_INT32};
     int length = ValidList.size();
     auto self_desc = TensorDesc({1, 1, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND)
                          .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
@@ -199,19 +186,10 @@ TEST_F(l2_linalg_qr_test, case_dtype_diff)
 // check format
 TEST_F(l2_linalg_qr_test, case_format_valid)
 {
-    vector<aclFormat> ValidList = {
-        ACL_FORMAT_NCHW,
-        ACL_FORMAT_NHWC,
-        ACL_FORMAT_ND,
-        ACL_FORMAT_NC1HWC0,
-        ACL_FORMAT_FRACTAL_Z,
-        ACL_FORMAT_NC1HWC0_C04,
-        ACL_FORMAT_HWCN,
-        ACL_FORMAT_NDHWC,
-        ACL_FORMAT_FRACTAL_NZ,
-        ACL_FORMAT_NCDHW,
-        ACL_FORMAT_NDC1HWC0,
-        ACL_FRACTAL_Z_3D};
+    vector<aclFormat> ValidList = {ACL_FORMAT_NCHW,    ACL_FORMAT_NHWC,      ACL_FORMAT_ND,
+                                   ACL_FORMAT_NC1HWC0, ACL_FORMAT_FRACTAL_Z, ACL_FORMAT_NC1HWC0_C04,
+                                   ACL_FORMAT_HWCN,    ACL_FORMAT_NDHWC,     ACL_FORMAT_FRACTAL_NZ,
+                                   ACL_FORMAT_NCDHW,   ACL_FORMAT_NDC1HWC0,  ACL_FRACTAL_Z_3D};
     int length = ValidList.size();
     int64_t mode = 0;
     for (int i = 0; i < length; i++) {
@@ -230,8 +208,7 @@ TEST_F(l2_linalg_qr_test, case_format_valid)
 // checkshape dim < 2
 TEST_F(l2_linalg_qr_test, case_dim_smaller_2)
 {
-    auto self_desc = TensorDesc({4}, ACL_FLOAT, ACL_FORMAT_ND)
-                         .Value(vector<float>{1, 2, 3, 4});
+    auto self_desc = TensorDesc({4}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4});
     int64_t mode = 0;
     auto q_desc = TensorDesc(self_desc).Precision(0.0001, 0.0001);
     auto r_desc = TensorDesc(self_desc).Precision(0.0001, 0.0001);
@@ -246,8 +223,7 @@ TEST_F(l2_linalg_qr_test, case_dim_smaller_2)
 // checkshape dim > 8
 TEST_F(l2_linalg_qr_test, case_dim_greater_8)
 {
-    auto self_desc = TensorDesc({1, 1, 1, 1, 1, 1, 1, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND)
-                         .Value(vector<float>{1, 2, 3, 4});
+    auto self_desc = TensorDesc({1, 1, 1, 1, 1, 1, 1, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4});
     int64_t mode = 0;
     auto q_desc = TensorDesc(self_desc).Precision(0.0001, 0.0001);
     auto r_desc = TensorDesc(self_desc).Precision(0.0001, 0.0001);
@@ -262,8 +238,7 @@ TEST_F(l2_linalg_qr_test, case_dim_greater_8)
 // checkshape mode = complete
 TEST_F(l2_linalg_qr_test, case_shape_mode_complete)
 {
-    auto self_desc = TensorDesc({1, 1, 4, 2}, ACL_FLOAT, ACL_FORMAT_ND)
-                         .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8});
+    auto self_desc = TensorDesc({1, 1, 4, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8});
     int64_t mode = 1;
     auto q_desc = TensorDesc({1, 1, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
     auto r_desc = TensorDesc({1, 1, 4, 2}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
@@ -287,8 +262,7 @@ TEST_F(l2_linalg_qr_test, case_shape_mode_complete)
 // checkshape mode = reduced
 TEST_F(l2_linalg_qr_test, case_shape_mode_reduced)
 {
-    auto self_desc = TensorDesc({1, 1, 4, 2}, ACL_FLOAT, ACL_FORMAT_ND)
-                         .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8});
+    auto self_desc = TensorDesc({1, 1, 4, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8});
     int64_t mode = 0;
     auto q_desc = TensorDesc({1, 1, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
     auto r_desc = TensorDesc({1, 1, 4, 2}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
@@ -327,8 +301,7 @@ TEST_F(l2_linalg_qr_test, case_not_contiguous)
 // checkshape mode = r
 TEST_F(l2_linalg_qr_test, case_shape_mode_r)
 {
-    auto self_desc = TensorDesc({1, 1, 4, 2}, ACL_FLOAT, ACL_FORMAT_ND)
-                         .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8});
+    auto self_desc = TensorDesc({1, 1, 4, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8});
     int64_t mode = 2;
     auto q_desc = TensorDesc({1, 1, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
     auto r_desc = TensorDesc({1, 1, 4, 2}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);

@@ -144,7 +144,6 @@ math@ops-math:
         - ops/ops-math/math/log_add_exp/op_api/
         - ops/ops-math/math/log_add_exp/op_host/arch35/
         - ops/ops-math/math/log1p/op_api/
-        - ops/ops-math/math/log1p/op_host/op_api/
         - ops/ops-math/math/logical_and/op_api/
         - ops/ops-math/math/logical_not/op_api/
         - ops/ops-math/math/logical_or/op_api/
@@ -226,7 +225,6 @@ math@ops-math:
         - ops/ops-math/math/tanh/op_api/
         - ops/ops-math/math/tanh_grad/op_api/
         - ops/ops-math/math/tensor_equal/op_api/
-        - ops/ops-math/math/tensor_equal/op_host/op_api/
         - ops/ops-math/math/topk/op_api/
         - ops/ops-math/math/trunc/op_api/
         - ops/ops-math/math/truncate_div/op_api/

@@ -1168,7 +1168,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/linalg_qr/README.md">linalg_qr</a></td>
+    <td><a href="../../math/qr/README.md">linalg_qr</a></td>
     <td> </td>
     <td> </td>
     <td> </td>
@@ -1478,7 +1478,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/q_r/README.md">q_r</a></td>
+    <td><a href="../../math/qr/README.md">q_r</a></td>
     <td> </td>
     <td> </td>
     <td> </td>
