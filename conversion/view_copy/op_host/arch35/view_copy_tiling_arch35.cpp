@@ -340,18 +340,6 @@ inline static bool checkOffsetAndStride(int64_t offset, std::vector<int64_t> str
     return false;
 }
 
-inline static bool checkWrittenToSameDstPosition(const std::vector<int64_t>& dstSize,
-                                                 const std::vector<int64_t>& dstStride)
-{
-    // 此时dstSize、dstStride大小必然是相同的。
-    for (size_t i = 0; i < dstStride.size(); i++) {
-        if (dstSize[i] > 1 && dstStride[i] == 0) {
-            return true;
-        }
-    }
-    return false;
-}
-
 inline static ge::graphStatus CheckSizeAndStrideBasic(const gert::TilingContext* context,
                                                       const ViewCopyTilingParam& tilingParam)
 {
@@ -408,13 +396,6 @@ inline static ge::graphStatus CheckOffsetAndStrideBound(const gert::TilingContex
                                                         const ViewCopyTilingParam& tilingParam, int64_t dstTensorSize,
                                                         int64_t srcTensorSize)
 {
-    OP_CHECK_IF(checkWrittenToSameDstPosition(tilingParam.dstSize, tilingParam.dstStride),
-                OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
-                    context->GetNodeName(), "dst_size, dst_stride",
-                    (VectorToString(tilingParam.dstSize) + ", " + VectorToString(tilingParam.dstStride)).c_str(),
-                    "If the value of an axis of dst_size is greater than 1, the value of this axis of dst_stride must "
-                    "not be 0."),
-                return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         checkOffsetAndStride(tilingParam.dstStorageOffset, tilingParam.dstStride, tilingParam.dstSize, dstTensorSize),
         OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
