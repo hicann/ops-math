@@ -31,142 +31,183 @@ namespace optiling {
 
 using namespace Ops::Math::OpTiling;
 
-constexpr uint32_t DCACHE_SIZE = 128 * 1024; // 恢复128KB（单VF方案不再需要大UB）
+constexpr uint32_t DCACHE_SIZE = 128 * 1024;
 constexpr uint32_t STATIC_UB_ESTIMATE = 0;
 constexpr int64_t VIRIAL_DIM = 9;
 constexpr int64_t DESCRPT_PER_NEI = 4;
 
 struct ProdVirialSeACompileInfo {};
 
-// 获取平台信息
 static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& ubSize, int64_t& coreNum)
 {
     fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
     coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(coreNum == 0, OP_LOGE(context, "coreNum is 0"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(coreNum == 0, OP_LOGE_FOR_INVALID_VALUE(context->GetNodeName(), "coreNum", "0", "non-zero"),
+                return ge::GRAPH_FAILED);
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
-    OP_CHECK_IF(ubSize == 0, OP_LOGE(context, "ubSize is 0"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ubSize == 0, OP_LOGE_FOR_INVALID_VALUE(context->GetNodeName(), "ubSize", "0", "non-zero"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
-// 校验属性和 dtype 一致性
 static ge::graphStatus ValidateAttrsAndDtype(gert::TilingContext* context, int64_t nASel, int64_t nRSel)
 {
-    // 校验：n_a_sel + n_r_sel > 0
-    OP_CHECK_IF(nASel + nRSel <= 0,
-                OP_LOGE(context, "n_a_sel + n_r_sel must be > 0, got n_a_sel=%ld n_r_sel=%ld", nASel, nRSel),
-                return ge::GRAPH_FAILED);
+    const char* opName = context->GetNodeName();
+
     OP_CHECK_IF(nASel < 0 || nRSel < 0,
-                OP_LOGE(context, "n_a_sel and n_r_sel must be >= 0, got n_a_sel=%ld n_r_sel=%ld", nASel, nRSel),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                    opName, "n_a_sel, n_r_sel",
+                    ("n_a_sel=" + std::to_string(nASel) + ", n_r_sel=" + std::to_string(nRSel)).c_str(),
+                    "n_a_sel and n_r_sel must be >= 0"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(nASel + nRSel <= 0,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                    opName, "n_a_sel, n_r_sel",
+                    ("n_a_sel=" + std::to_string(nASel) + ", n_r_sel=" + std::to_string(nRSel)).c_str(),
+                    "n_a_sel + n_r_sel must be > 0"),
                 return ge::GRAPH_FAILED);
 
-    // 校验：dtype 一致性（net_deriv, in_deriv, rij）
     auto netDerivDtype = context->GetInputDesc(0)->GetDataType();
     auto inDerivDtype = context->GetInputDesc(1)->GetDataType();
     auto rijDtype = context->GetInputDesc(2)->GetDataType();
     OP_CHECK_IF(netDerivDtype != inDerivDtype || netDerivDtype != rijDtype,
-                OP_LOGE(context, "net_deriv, in_deriv, rij dtype must be the same"), return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(opName, "net_deriv, in_deriv and rij",
+                                                       (ge::TypeUtils::DataTypeToSerialString(netDerivDtype) + ", " +
+                                                        ge::TypeUtils::DataTypeToSerialString(inDerivDtype) + ", " +
+                                                        ge::TypeUtils::DataTypeToSerialString(rijDtype))
+                                                           .c_str(),
+                                                       "Dtypes of net_deriv, in_deriv and rij must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
-// 校验输入第0维（nframes）一致性（SE §1.4 要求）
 static ge::graphStatus ValidateInputDim0Consistency(gert::TilingContext* context, int64_t nframes)
 {
+    const char* opName = context->GetNodeName();
     const auto& inDerivShape = context->GetInputShape(1)->GetStorageShape();
     const auto& rijShape = context->GetInputShape(2)->GetStorageShape();
     const auto& nlistShape = context->GetInputShape(3)->GetStorageShape();
-    OP_CHECK_IF(
-        inDerivShape.GetDim(0) != nframes,
-        OP_LOGE(context, "in_deriv.shape[0]=%ld must equal net_deriv.shape[0]=%ld", inDerivShape.GetDim(0), nframes),
-        return ge::GRAPH_FAILED);
+
+    OP_CHECK_IF(inDerivShape.GetDim(0) != nframes,
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(opName, "in_deriv and net_deriv",
+                                                       ("in_deriv.shape[0]=" + std::to_string(inDerivShape.GetDim(0)) +
+                                                        ", net_deriv.shape[0]=" + std::to_string(nframes))
+                                                           .c_str(),
+                                                       "in_deriv.shape[0] must equal net_deriv.shape[0]"),
+                return ge::GRAPH_FAILED);
     OP_CHECK_IF(rijShape.GetDim(0) != nframes,
-                OP_LOGE(context, "rij.shape[0]=%ld must equal net_deriv.shape[0]=%ld", rijShape.GetDim(0), nframes),
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(opName, "rij and net_deriv",
+                                                       ("rij.shape[0]=" + std::to_string(rijShape.GetDim(0)) +
+                                                        ", net_deriv.shape[0]=" + std::to_string(nframes))
+                                                           .c_str(),
+                                                       "rij.shape[0] must equal net_deriv.shape[0]"),
                 return ge::GRAPH_FAILED);
     OP_CHECK_IF(nlistShape.GetDim(0) != nframes,
-                OP_LOGE(context, "nlist.shape[0]=%ld must equal net_deriv.shape[0]=%ld", nlistShape.GetDim(0), nframes),
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(opName, "nlist and net_deriv",
+                                                       ("nlist.shape[0]=" + std::to_string(nlistShape.GetDim(0)) +
+                                                        ", net_deriv.shape[0]=" + std::to_string(nframes))
+                                                           .c_str(),
+                                                       "nlist.shape[0] must equal net_deriv.shape[0]"),
                 return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
-// 校验输出 shape（910b 兼容）
 static ge::graphStatus ValidateOutputShapes(gert::TilingContext* context, int64_t nframes, int64_t nall)
 {
-    // 校验：nall > 0（910b 兼容）
-    OP_CHECK_IF(nall <= 0, OP_LOGE(context, "nall must be > 0, got %ld", nall), return ge::GRAPH_FAILED);
+    const char* opName = context->GetNodeName();
 
-    // 校验：atom_virial.shape[1] % 9 == 0（910b 兼容）
+    OP_CHECK_IF(nall <= 0,
+                OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(opName, "atom_virial", std::to_string(nall).c_str(),
+                                                          "nall (natoms[1]) must be > 0"),
+                return ge::GRAPH_FAILED);
+
     const auto& atomVirialShape = context->GetOutputShape(1)->GetStorageShape();
     OP_CHECK_IF(atomVirialShape.GetDim(1) % VIRIAL_DIM != 0,
-                OP_LOGE(context, "atom_virial.shape[1] must be divisible by 9, got %ld", atomVirialShape.GetDim(1)),
+                OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(opName, "atom_virial",
+                                                      ("[" + std::to_string(atomVirialShape.GetDim(0)) + ", " +
+                                                       std::to_string(atomVirialShape.GetDim(1)) + "]")
+                                                          .c_str(),
+                                                      "atom_virial.shape[1] must be divisible by 9"),
                 return ge::GRAPH_FAILED);
 
-    // 校验：virial shape == [nframes, 9]（910b 兼容）
     const auto& virialShape = context->GetOutputShape(0)->GetStorageShape();
-    OP_CHECK_IF(virialShape.GetDim(0) != nframes || virialShape.GetDim(1) != VIRIAL_DIM,
-                OP_LOGE(context, "virial shape must be [%ld, 9], got [%ld, %ld]", nframes, virialShape.GetDim(0),
-                        virialShape.GetDim(1)),
-                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        virialShape.GetDim(0) != nframes || virialShape.GetDim(1) != VIRIAL_DIM,
+        OP_LOGE_FOR_INVALID_SHAPE(
+            opName, "virial",
+            ("[" + std::to_string(virialShape.GetDim(0)) + ", " + std::to_string(virialShape.GetDim(1)) + "]").c_str(),
+            ("[" + std::to_string(nframes) + ", " + std::to_string(VIRIAL_DIM) + "]").c_str()),
+        return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
-// 获取 shape 和属性信息
 static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& nframes, int64_t& nloc, int64_t& nall,
                                          int64_t& nnei, int64_t& ndescrpt)
 {
-    // 获取 net_deriv shape
+    const char* opName = context->GetNodeName();
+
     const auto& netDerivShape = context->GetInputShape(0)->GetStorageShape();
     nframes = netDerivShape.GetDim(0);
     int64_t netDerivDim1 = netDerivShape.GetDim(1);
 
-    // 获取属性（GetAttrPointer 返回指针，需解引用）
     auto attrs = context->GetAttrs();
-    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
+    OP_CHECK_IF(attrs == nullptr,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName, "attrs", "nullptr", "failed to get attrs"),
+                return ge::GRAPH_FAILED);
     const int64_t* nASelPtr = attrs->GetAttrPointer<int64_t>(0);
     const int64_t* nRSelPtr = attrs->GetAttrPointer<int64_t>(1);
-    OP_CHECK_NULL_WITH_CONTEXT(context, nASelPtr);
-    OP_CHECK_NULL_WITH_CONTEXT(context, nRSelPtr);
+    OP_CHECK_IF(nASelPtr == nullptr,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName, "n_a_sel", "nullptr", "failed to get n_a_sel attr"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(nRSelPtr == nullptr,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName, "n_r_sel", "nullptr", "failed to get n_r_sel attr"),
+                return ge::GRAPH_FAILED);
     int64_t nASel = *nASelPtr;
     int64_t nRSel = *nRSelPtr;
 
-    // 校验属性和 dtype
     OP_CHECK_IF(ValidateAttrsAndDtype(context, nASel, nRSel) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "ValidateAttrsAndDtype error"), return ge::GRAPH_FAILED);
+                OP_LOGE(context, "ValidateAttrsAndDtype failed"), return ge::GRAPH_FAILED);
 
-    // 校验输入第0维（nframes）一致性（SE §1.4 要求）
     OP_CHECK_IF(ValidateInputDim0Consistency(context, nframes) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "ValidateInputDim0Consistency error"), return ge::GRAPH_FAILED);
+                OP_LOGE(context, "ValidateInputDim0Consistency failed"), return ge::GRAPH_FAILED);
 
     nnei = nASel + nRSel;
     ndescrpt = nnei * DESCRPT_PER_NEI;
 
-    // 从 net_deriv shape 反推 nloc：net_deriv_dim1 = nloc * nnei * 4
-    OP_CHECK_IF(ndescrpt == 0, OP_LOGE(context, "ndescrpt is 0, nnei=%ld", nnei), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ndescrpt == 0,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                    opName, "ndescrpt", std::to_string(ndescrpt).c_str(),
+                    ("ndescrpt (nnei * 4) must not be 0, nnei=" + std::to_string(nnei)).c_str()),
+                return ge::GRAPH_FAILED);
+
     OP_CHECK_IF(
         netDerivDim1 % ndescrpt != 0,
-        OP_LOGE(context, "net_deriv.shape[1]=%ld must be divisible by ndescrpt=%ld (nnei*4), n_a_sel=%ld n_r_sel=%ld",
-                netDerivDim1, ndescrpt, nASel, nRSel),
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+            opName, "net_deriv", ("[" + std::to_string(nframes) + ", " + std::to_string(netDerivDim1) + "]").c_str(),
+            ("net_deriv.shape[1]=" + std::to_string(netDerivDim1) +
+             " must be divisible by ndescrpt=" + std::to_string(ndescrpt) +
+             " (nnei*4), n_a_sel=" + std::to_string(nASel) + ", n_r_sel=" + std::to_string(nRSel))
+                .c_str()),
         return ge::GRAPH_FAILED);
     nloc = netDerivDim1 / ndescrpt;
 
-    // 从输出 shape 获取 nall（atom_virial shape[1] = nall * 9）
     const auto& atomVirialShape = context->GetOutputShape(1)->GetStorageShape();
     nall = atomVirialShape.GetDim(1) / VIRIAL_DIM;
 
-    // 校验输出 shape
     OP_CHECK_IF(ValidateOutputShapes(context, nframes, nall) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "ValidateOutputShapes error"), return ge::GRAPH_FAILED);
+                OP_LOGE(context, "ValidateOutputShapes failed"), return ge::GRAPH_FAILED);
 
-    // 校验：natoms size >= 3（910b 兼容）
     const auto& natomsShape = context->GetInputShape(4)->GetStorageShape();
-    OP_CHECK_IF(natomsShape.GetShapeSize() < 3,
-                OP_LOGE(context, "natoms size must be >= 3, got %ld", natomsShape.GetShapeSize()),
-                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        natomsShape.GetShapeSize() < 3,
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(opName, "natoms", std::to_string(natomsShape.GetShapeSize()).c_str(),
+                                                  "natoms size must be >= 3, i.e., at least [nloc, nall, ...]"),
+        return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
-// 获取 Workspace 大小
 static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 {
     int64_t userWorkspaceSize = 0;
@@ -178,28 +219,23 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-// Tiling 主函数
 static ge::graphStatus ProdVirialSeATilingFunc(gert::TilingContext* context)
 {
-    // 1. 获取平台信息
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
     OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+                OP_LOGE(context, "GetPlatformInfo failed"), return ge::GRAPH_FAILED);
 
-    // 2. 获取 shape 和属性信息
     int64_t nframes = 0, nloc = 0, nall = 0, nnei = 0, ndescrpt = 0;
     OP_CHECK_IF(GetShapeAttrsInfo(context, nframes, nloc, nall, nnei, ndescrpt) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+                OP_LOGE(context, "GetShapeAttrsInfo failed"), return ge::GRAPH_FAILED);
 
-    // 3. 核数切分（帧间并行）
     int64_t perCoreFrames = Ops::Base::CeilDiv(nframes, coreNum);
     if (perCoreFrames < 1) {
         perCoreFrames = 1;
     }
     int64_t needCoreNum = Ops::Base::CeilDiv(nframes, perCoreFrames);
 
-    // 4. 设置 TilingData
     ProdVirialSeATilingData* tiling = context->GetTilingData<ProdVirialSeATilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
     OP_CHECK_IF(memset_s(tiling, sizeof(ProdVirialSeATilingData), 0, sizeof(ProdVirialSeATilingData)) != EOK,
@@ -214,20 +250,18 @@ static ge::graphStatus ProdVirialSeATilingFunc(gert::TilingContext* context)
     tiling->ndescrpt = static_cast<int32_t>(ndescrpt);
     tiling->atomVirialTotal = nframes * nall * VIRIAL_DIM;
 
-    // 5. 设置 BlockDim
     context->SetBlockDim(static_cast<int32_t>(needCoreNum));
 
-    // 6. 设置 LocalMemory（UB）
     OP_CHECK_IF(ubSize <= DCACHE_SIZE + STATIC_UB_ESTIMATE,
-                OP_LOGE(context, "ubSize %lu <= DCACHE_SIZE + STATIC_UB_ESTIMATE", ubSize), return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_VALUE(context->GetNodeName(), "ubSize", std::to_string(ubSize).c_str(),
+                                          "greater than DCACHE_SIZE + STATIC_UB_ESTIMATE"),
+                return ge::GRAPH_FAILED);
     auto res = context->SetLocalMemorySize(static_cast<uint32_t>(ubSize - DCACHE_SIZE - STATIC_UB_ESTIMATE));
     OP_CHECK_IF(res != ge::GRAPH_SUCCESS, OP_LOGE(context, "SetLocalMemorySize failed"), return ge::GRAPH_FAILED);
 
-    // 7. Workspace
-    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize failed"),
                 return ge::GRAPH_FAILED);
 
-    // 8. TilingKey（单一场景，不枚举 dtype）
     context->SetTilingKey(GET_TPL_TILING_KEY(PROD_VIRIAL_SE_A_TPL_SCH_MODE_DEFAULT));
 
     return ge::GRAPH_SUCCESS;
