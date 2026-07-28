@@ -17,7 +17,7 @@
 #include "math/real_div/op_api/realdiv.h"
 #include "math/log/op_api/log.h"
 #include "math/arg_max_v2/op_api/argmax_v2.h"
-#include "math/topk/op_host/op_api/topk.h"
+#include "math/topk/op_api/topk.h"
 #include "math/cumsum/op_api/cumsum.h"
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
 #include "random/dsa_random_uniform/op_host/op_api/dsa_random_uniform.h"

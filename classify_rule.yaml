@@ -55,7 +55,7 @@ math@ops-math:
         - ops/ops-math/math/addcdiv/op_api/
         - ops/ops-math/math/addcmul/op_api/
         - ops/ops-math/math/addr/op_api/
-        - ops/ops-math/math/affine_grid/op_host/op_api/
+        - ops/ops-math/math/affine_grid/op_api/
         - ops/ops-math/math/amp_update_scale/op_kernel/
         - ops/ops-math/math/angle_v2/op_kernel/
         - ops/ops-math/math/arg_max_v2/op_api/
@@ -74,10 +74,9 @@ math@ops-math:
         - ops/ops-math/math/bias_add_grad/op_kernel/
         - ops/ops-math/math/bincount/op_api/
         - ops/ops-math/math/bitwise_and/op_api/
-        - ops/ops-math/math/bitwise_not/op_host/op_api/
+        - ops/ops-math/math/bitwise_not/op_api/
         - ops/ops-math/math/bitwise_or/op_api/
         - ops/ops-math/math/bitwise_xor/op_api/
-        - ops/ops-math/math/bitwise_xor/op_host/op_api/
         - ops/ops-math/math/cast/op_api/
         - ops/ops-math/math/cdist/op_api/
         - ops/ops-math/math/cdist/op_kernel/
@@ -86,7 +85,7 @@ math@ops-math:
         - ops/ops-math/math/cdist_grad/op_kernel/
         - ops/ops-math/math/ceil/op_api/
         - ops/ops-math/math/cholesky/op_host/
-        - ops/ops-math/math/cholesky/op_host/op_api/
+        - ops/ops-math/math/cholesky/op_api/
         - ops/ops-math/math/cholesky/op_kernel/
         - ops/ops-math/math/complex/op_api/
         - ops/ops-math/math/complex/op_host/arch35/
@@ -95,16 +94,16 @@ math@ops-math:
         - ops/ops-math/math/cosh/op_api/
         - ops/ops-math/math/cross/op_api/
         - ops/ops-math/math/cross/op_host/arch35/
-        - ops/ops-math/math/cummax/op_host/op_api/
+        - ops/ops-math/math/cummax/op_api/
         - ops/ops-math/math/cummin/op_api/
         - ops/ops-math/math/cummin/op_host/arch35/
-        - ops/ops-math/math/cumprod/op_host/op_api/
+        - ops/ops-math/math/cumprod/op_api/
         - ops/ops-math/math/cumsum/op_api/
         - ops/ops-math/math/div/op_api/
         - ops/ops-math/math/dot/op_api/
         - ops/ops-math/math/equal/op_api/
         - ops/ops-math/math/erf/op_api/
-        - ops/ops-math/math/erfc/op_host/op_api/
+        - ops/ops-math/math/erfc/op_api/
         - ops/ops-math/math/exp/op_api/
         - ops/ops-math/math/expand/op_api/
         - ops/ops-math/math/expint/op_kernel/
@@ -120,6 +119,7 @@ math@ops-math:
         - ops/ops-math/math/grouped_bias_add_grad/op_api/
         - ops/ops-math/math/grouped_bias_add_grad/op_host/arch32/
         - ops/ops-math/math/grouped_bias_add_grad/op_kernel/arch32/
+        - ops/ops-math/math/histogram_v2/op_api/
         - ops/ops-math/math/histogram_v2/op_kernel/
         - ops/ops-math/math/invert/op_api/
         - ops/ops-math/math/is_close/op_api/
@@ -138,7 +138,7 @@ math@ops-math:
         - ops/ops-math/math/less/op_api/
         - ops/ops-math/math/less_equal/op_api/
         - ops/ops-math/math/lin_space/op_host/
-        - ops/ops-math/math/lin_space/op_host/op_api/
+        - ops/ops-math/math/lin_space/op_api/
         - ops/ops-math/math/lin_space/op_kernel/
         - ops/ops-math/math/log/op_api/
         - ops/ops-math/math/log_add_exp/op_api/
@@ -158,19 +158,19 @@ math@ops-math:
         - ops/ops-math/math/nan_to_num/op_api/
         - ops/ops-math/math/neg/op_api/
         - ops/ops-math/math/non_finite_check/op_host/
-        - ops/ops-math/math/non_finite_check/op_host/op_api/
+        - ops/ops-math/math/non_finite_check/op_api/
         - ops/ops-math/math/non_finite_check/op_kernel/
         - ops/ops-math/math/not_equal/op_api/
         - ops/ops-math/math/one_hot/op_api/
         - ops/ops-math/math/ones_like/op_api/
         - ops/ops-math/math/ones_like/op_kernel/
-        - ops/ops-math/math/pdist/op_host/op_api/
+        - ops/ops-math/math/pdist/op_api/
         - ops/ops-math/math/polar/op_api/
         - ops/ops-math/math/polar/op_host/arch35/
         - ops/ops-math/math/polar/op_kernel/
         - ops/ops-math/math/pow/op_api/
         - ops/ops-math/math/pows/op_host/
-        - ops/ops-math/math/pows/op_host/op_api/
+        - ops/ops-math/math/pows/op_api/
         - ops/ops-math/math/pows/op_kernel/
         - ops/ops-math/math/radix_top_k/
         - ops/ops-math/math/range/op_api/
@@ -185,19 +185,19 @@ math@ops-math:
         - ops/ops-math/math/reduce_max/op_api/
         - ops/ops-math/math/reduce_mean/op_api/
         - ops/ops-math/math/reduce_mean_with_count/op_host/arch35/
-        - ops/ops-math/math/reduce_mean_with_count/op_host/op_api/
+        - ops/ops-math/math/reduce_mean_with_count/op_api/
         - ops/ops-math/math/reduce_mean_with_count/op_kernel/
         - ops/ops-math/math/reduce_min/op_api/
         - ops/ops-math/math/reduce_nansum/op_api/
         - ops/ops-math/math/reduce_nansum/op_host/arch35/
         - ops/ops-math/math/reduce_prod/op_api/
         - ops/ops-math/math/reduce_std_v2/op_api/
-        - ops/ops-math/math/reduce_std_v2_update/op_host/op_api/
-        - ops/ops-math/math/reduce_std_with_mean/op_host/op_api/
+        - ops/ops-math/math/reduce_std_v2_update/op_api/
+        - ops/ops-math/math/reduce_std_with_mean/op_api/
         - ops/ops-math/math/reduce_sum/op_api/
         - ops/ops-math/math/reduce_var/op_api/
         - ops/ops-math/math/rfft1_d/op_host/
-        - ops/ops-math/math/rfft1_d/op_host/op_api/
+        - ops/ops-math/math/rfft1_d/op_api/
         - ops/ops-math/math/rfft1_d/op_kernel/
         - ops/ops-math/math/right_shift/op_api/
         - ops/ops-math/math/round/op_api/
@@ -208,14 +208,14 @@ math@ops-math:
         - ops/ops-math/math/shape/op_host/
         - ops/ops-math/math/sign/op_api/
         - ops/ops-math/math/sign/op_kernel/
-        - ops/ops-math/math/sign_bits_pack/op_host/op_api/
-        - ops/ops-math/math/sign_bits_unpack/op_host/op_api/
+        - ops/ops-math/math/sign_bits_pack/op_api/
+        - ops/ops-math/math/sign_bits_unpack/op_api/
         - ops/ops-math/math/signbit/op_api/
         - ops/ops-math/math/sin/op_api/
         - ops/ops-math/math/sinc/op_api/
         - ops/ops-math/math/sinh/op_api/
         - ops/ops-math/math/sinkhorn/op_host/
-        - ops/ops-math/math/sinkhorn/op_host/op_api/
+        - ops/ops-math/math/sinkhorn/op_api/
         - ops/ops-math/math/sinkhorn/op_kernel/
         - ops/ops-math/math/sort/op_api/
         - ops/ops-math/math/sqrt/op_api/
@@ -227,7 +227,7 @@ math@ops-math:
         - ops/ops-math/math/tanh_grad/op_api/
         - ops/ops-math/math/tensor_equal/op_api/
         - ops/ops-math/math/tensor_equal/op_host/op_api/
-        - ops/ops-math/math/topk/op_host/op_api/
+        - ops/ops-math/math/topk/op_api/
         - ops/ops-math/math/trunc/op_api/
         - ops/ops-math/math/truncate_div/op_api/
         - ops/ops-math/math/xlogy/op_api/
@@ -467,8 +467,8 @@ HPTG5@ops-math:
         - ops/ops-math/math/histogram_v2/op_host/histogram_v2_op_tiling.cpp
         - ops/ops-math/math/histogram_v2/op_host/histogram_v2_simt_tiling.cpp
         - ops/ops-math/math/histogram_v2/op_host/histogram_v2_tiling.h
-        - ops/ops-math/math/histogram_v2/op_host/op_api/aclnn_histc.cpp
-        - ops/ops-math/math/histogram_v2/op_host/op_api/histogram.cpp
+        - ops/ops-math/math/histogram_v2/op_api/aclnn_histc.cpp
+        - ops/ops-math/math/histogram_v2/op_api/histogram.cpp
       opensource_style: null
       kernel_style: null
     unrelease:

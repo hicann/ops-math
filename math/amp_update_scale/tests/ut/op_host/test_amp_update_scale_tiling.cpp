@@ -16,45 +16,36 @@
 
 using namespace std;
 using namespace ge;
-using optiling::AmpUpdateScaleCompileInfo;
+
+struct AmpUpdateScaleCompileInfo {};
 
 class AmpUpdateScaleTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AmpUpdateScaleTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "AmpUpdateScaleTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "AmpUpdateScaleTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "AmpUpdateScaleTiling TearDown" << std::endl; }
 };
 
 TEST_F(AmpUpdateScaleTilingTest, amp_update_scale_fp32_basic)
 {
     AmpUpdateScaleCompileInfo compileInfo;
 
-    gert::TilingContextPara tilingContextPara(
-        "AmpUpdateScale",
-        {
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {"growth_factor", ge::AnyValue::CreateFrom<ge::AnyValue::FLOAT>(2.0f)},
-            {"backoff_factor", ge::AnyValue::CreateFrom<ge::AnyValue::FLOAT>(0.5f)},
-            {"growth_interval", ge::AnyValue::CreateFrom<ge::AnyValue::INT>(5)},
-        },
-        &compileInfo,
-        40,
-        196608,
-        4096);
+    gert::TilingContextPara tilingContextPara("AmpUpdateScale",
+                                              {
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {"growth_factor", Ops::Math::AnyValue::CreateFrom<float>(2.0f)},
+                                                  {"backoff_factor", Ops::Math::AnyValue::CreateFrom<float>(0.5f)},
+                                                  {"growth_interval", Ops::Math::AnyValue::CreateFrom<int64_t>(5)},
+                                              },
+                                              &compileInfo, 40, 196608, 4096);
 
     uint64_t expectTilingKey = 0;
     std::vector<size_t> expectWorkspaces = {0};
@@ -65,26 +56,22 @@ TEST_F(AmpUpdateScaleTilingTest, amp_update_scale_fp16_basic)
 {
     AmpUpdateScaleCompileInfo compileInfo;
 
-    gert::TilingContextPara tilingContextPara(
-        "AmpUpdateScale",
-        {
-            {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {"growth_factor", ge::AnyValue::CreateFrom<ge::AnyValue::FLOAT>(2.0f)},
-            {"backoff_factor", ge::AnyValue::CreateFrom<ge::AnyValue::FLOAT>(0.5f)},
-            {"growth_interval", ge::AnyValue::CreateFrom<ge::AnyValue::INT>(3)},
-        },
-        &compileInfo,
-        40,
-        196608,
-        4096);
+    gert::TilingContextPara tilingContextPara("AmpUpdateScale",
+                                              {
+                                                  {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {"growth_factor", Ops::Math::AnyValue::CreateFrom<float>(2.0f)},
+                                                  {"backoff_factor", Ops::Math::AnyValue::CreateFrom<float>(0.5f)},
+                                                  {"growth_interval", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+                                              },
+                                              &compileInfo, 40, 196608, 4096);
 
     uint64_t expectTilingKey = 1;
     std::vector<size_t> expectWorkspaces = {0};
@@ -95,26 +82,22 @@ TEST_F(AmpUpdateScaleTilingTest, amp_update_scale_bf16_basic)
 {
     AmpUpdateScaleCompileInfo compileInfo;
 
-    gert::TilingContextPara tilingContextPara(
-        "AmpUpdateScale",
-        {
-            {{{1}, {1}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{1}, {1}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {"growth_factor", ge::AnyValue::CreateFrom<ge::AnyValue::FLOAT>(2.0f)},
-            {"backoff_factor", ge::AnyValue::CreateFrom<ge::AnyValue::FLOAT>(0.5f)},
-            {"growth_interval", ge::AnyValue::CreateFrom<ge::AnyValue::INT>(10)},
-        },
-        &compileInfo,
-        40,
-        196608,
-        4096);
+    gert::TilingContextPara tilingContextPara("AmpUpdateScale",
+                                              {
+                                                  {{{1}, {1}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1}, {1}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {"growth_factor", Ops::Math::AnyValue::CreateFrom<float>(2.0f)},
+                                                  {"backoff_factor", Ops::Math::AnyValue::CreateFrom<float>(0.5f)},
+                                                  {"growth_interval", Ops::Math::AnyValue::CreateFrom<int64_t>(10)},
+                                              },
+                                              &compileInfo, 40, 196608, 4096);
 
     uint64_t expectTilingKey = 2;
     std::vector<size_t> expectWorkspaces = {0};

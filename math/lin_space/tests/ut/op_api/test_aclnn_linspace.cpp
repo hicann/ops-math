@@ -12,7 +12,7 @@
 #include <vector>
 #include "gtest/gtest.h"
 
-#include "math/lin_space/op_host/op_api/aclnn_linspace.h"
+#include "math/lin_space/op_api/aclnn_linspace.h"
 
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"
@@ -43,7 +43,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_input_uint8)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 // 输入int8
@@ -61,7 +60,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_input_int8)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 // 输入int32
@@ -79,7 +77,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_input_int32)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 // 输入int64
@@ -114,7 +111,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_output_int64)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 // 输入float16
@@ -149,7 +145,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_input_float)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 // 输出float
@@ -167,7 +162,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_output_float)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 // 输出complex64
@@ -236,10 +230,9 @@ TEST_F(l2_linspace_test, aclnnLinspace_steps_0)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
-// 输入out != step 
+// 输入out != step
 TEST_F(l2_linspace_test, aclnnLinspace_steps_out)
 {
     auto start = ScalarDesc(static_cast<float>(3));
@@ -254,7 +247,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_steps_out)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-
 }
 
 // 输入step = 1
@@ -272,7 +264,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_steps_1)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 // start 空指针
@@ -326,7 +317,7 @@ TEST_F(l2_linspace_test, aclnnLinspace_start_greater_than_end)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-// step = -2 
+// step = -2
 TEST_F(l2_linspace_test, aclnnLinspace_steps_less_than_0)
 {
     auto start = ScalarDesc(static_cast<int>(3));

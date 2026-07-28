@@ -9,7 +9,7 @@
  */
 
 #include "aclnn_var_mean.h"
-#include "math/reduce_std_v2_update/op_host/op_api/reduce_std_v2_update.h"
+#include "math/reduce_std_v2_update/op_api/reduce_std_v2_update.h"
 #include "math/reduce_mean/op_api/reduce_mean.h"
 #include "reduce_var.h"
 #include "aclnn_kernels/reshape.h"
@@ -39,13 +39,14 @@ extern "C" {
 #endif
 
 // 算子支持的所有dtype
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT,
+                                                                       op::DataType::DT_FLOAT16};
 
 static const std::initializer_list<op::DataType> ARCH3510_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
-static const std::initializer_list<DataType>& GetDtypeSupportList() {
+static const std::initializer_list<DataType>& GetDtypeSupportList()
+{
     if (IsRegBase()) {
         return ARCH3510_DTYPE_SUPPORT_LIST;
     } else {
@@ -53,7 +54,8 @@ static const std::initializer_list<DataType>& GetDtypeSupportList() {
     }
 }
 
-static bool CheckDtypeValid(const aclTensor* self, aclTensor* meanOut, aclTensor* varOut) {
+static bool CheckDtypeValid(const aclTensor* self, aclTensor* meanOut, aclTensor* varOut)
+{
     auto dtypeSupportList = GetDtypeSupportList();
     OP_CHECK_DTYPE_NOT_SUPPORT(self, dtypeSupportList, return false);
     OP_CHECK_DTYPE_NOT_SUPPORT(meanOut, dtypeSupportList, return false);
@@ -61,7 +63,8 @@ static bool CheckDtypeValid(const aclTensor* self, aclTensor* meanOut, aclTensor
     return true;
 }
 
-static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim) {
+static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim)
+{
     auto selfViewShape = self->GetViewShape();
     auto selfDimNum = static_cast<int64_t>(selfViewShape.GetDimNum());
     // self为标量时，dim range [-1, 0]
@@ -73,14 +76,14 @@ static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim) {
     uint64_t dimMask[64] = {0};
     for (size_t i = 0; i < dim->Size(); i++) {
         if (dim->operator[](i) >= selfDimNum || dim->operator[](i) < (-selfDimNum)) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Provided dim %ld must be in the range of [%ld, %ld].",
-                dim->operator[](i), -selfDimNum, selfDimNum - 1);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Provided dim %ld must be in the range of [%ld, %ld].", dim->operator[](i),
+                    -selfDimNum, selfDimNum - 1);
             return false;
         }
         if (dim->operator[](i) < 0) {
             if (dimMask[selfDimNum + dim->operator[](i)] == 1) {
                 OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim %ld appears multiple times in the list of dims.",
-                    selfDimNum + dim->operator[](i));
+                        selfDimNum + dim->operator[](i));
                 return false;
             }
             dimMask[selfDimNum + dim->operator[](i)] = 1;
@@ -95,8 +98,9 @@ static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim) {
     return true;
 }
 
-static bool CheckShape(const aclTensor* self, const aclIntArray* dim, bool keepdim,
-                       aclTensor* meanOut, aclTensor* varOut) {
+static bool CheckShape(const aclTensor* self, const aclIntArray* dim, bool keepdim, aclTensor* meanOut,
+                       aclTensor* varOut)
+{
     OP_CHECK_MAX_DIM(self, MAX_SUPPORT_DIMS_NUMS, return false);
 
     op::Shape reduceShape = ReduceShapeGetWithVar(self, dim, keepdim);
@@ -107,8 +111,9 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* dim, bool keepd
     return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* dim, bool keepdim,
-                               aclTensor* meanOut, aclTensor* varOut) {
+static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* dim, bool keepdim, aclTensor* meanOut,
+                               aclTensor* varOut)
+{
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull3Tensor(self, meanOut, varOut), ACLNN_ERR_PARAM_NULLPTR);
 
@@ -123,9 +128,9 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* dim, bo
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus aclnnVarMeanImplUnify(const aclTensor *self, const aclIntArray *dim, int64_t correction,
-    bool keepdim, aclTensor *varOut, aclTensor *meanOut, uint64_t* workspaceSize,
-    UniqueExecutor &uniqueExecutor, aclOpExecutor **executor)
+static aclnnStatus aclnnVarMeanImplUnify(const aclTensor* self, const aclIntArray* dim, int64_t correction,
+                                         bool keepdim, aclTensor* varOut, aclTensor* meanOut, uint64_t* workspaceSize,
+                                         UniqueExecutor& uniqueExecutor, aclOpExecutor** executor)
 {
     bool isMeanOut = true;
     auto reduceVarOut = l0op::ReduceVar(self, dim, correction, keepdim, isMeanOut, uniqueExecutor.get());
@@ -151,10 +156,10 @@ static aclnnStatus aclnnVarMeanImplUnify(const aclTensor *self, const aclIntArra
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnVarMeanGetWorkspaceSize(const aclTensor* self, const aclIntArray* dim,
-                                         int64_t correction, bool keepdim,
-                                         aclTensor* varOut, aclTensor* meanOut,
-                                         uint64_t* workspaceSize, aclOpExecutor** executor) {
+aclnnStatus aclnnVarMeanGetWorkspaceSize(const aclTensor* self, const aclIntArray* dim, int64_t correction,
+                                         bool keepdim, aclTensor* varOut, aclTensor* meanOut, uint64_t* workspaceSize,
+                                         aclOpExecutor** executor)
+{
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
     L2_DFX_PHASE_1(aclnnVarMean, DFX_IN(self, dim, correction, keepdim), DFX_OUT(varOut, meanOut));
@@ -200,8 +205,8 @@ aclnnStatus aclnnVarMeanGetWorkspaceSize(const aclTensor* self, const aclIntArra
     CHECK_RET(selfReformat != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     if (IsRegBase()) {
-        return aclnnVarMeanImplUnify(selfReformat, dimArray, correction, keepdim, varOut, meanOut,
-                                     workspaceSize, uniqueExecutor, executor);
+        return aclnnVarMeanImplUnify(selfReformat, dimArray, correction, keepdim, varOut, meanOut, workspaceSize,
+                                     uniqueExecutor, executor);
     }
 
     // 调用mean算子kernel
@@ -265,8 +270,8 @@ aclnnStatus aclnnVarMeanGetWorkspaceSize(const aclTensor* self, const aclIntArra
     }
 
     // 调用算子完成方差计算
-    auto varOpOut = l0op::ReduceStdV2UpdateCorrection(selfReformat, meanOpOut, dimArray,
-                                                      correction, keepdim, uniqueExecutor.get());
+    auto varOpOut = l0op::ReduceStdV2UpdateCorrection(selfReformat, meanOpOut, dimArray, correction, keepdim,
+                                                      uniqueExecutor.get());
     CHECK_RET(varOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 固定写法，将计算结果转换成输出out的数据类型
@@ -284,7 +289,8 @@ aclnnStatus aclnnVarMeanGetWorkspaceSize(const aclTensor* self, const aclIntArra
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnVarMean(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream) {
+aclnnStatus aclnnVarMean(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+{
     L2_DFX_PHASE_2(aclnnVarMean);
     // 固定写法，调用框架能力，完成计算
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

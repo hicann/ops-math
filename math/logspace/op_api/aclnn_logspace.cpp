@@ -24,63 +24,66 @@
 #include "opdev/op_dfx.h"
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
-#include "math/lin_space/op_host/op_api/linspace.h"
+#include "math/lin_space/op_api/linspace.h"
 #include "math/pow/op_api/pow.h"
 
 using namespace op;
 
 static const std::initializer_list<DataType> LOGSPACE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16
-};
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
-static bool CheckNotNull(const aclScalar *start, const aclScalar *end, const aclTensor* result){
+static bool CheckNotNull(const aclScalar* start, const aclScalar* end, const aclTensor* result)
+{
     OP_CHECK_NULL(start, return false);
     OP_CHECK_NULL(end, return false);
-    OP_CHECK_NULL(result,return false);
+    OP_CHECK_NULL(result, return false);
     return true;
 }
 
-static bool CheckDtypeValid(const aclTensor* result){
+static bool CheckDtypeValid(const aclTensor* result)
+{
     DataType result_dtype = result->GetDataType();
-    return std::find(LOGSPACE_DTYPE_SUPPORT_LIST.begin(),
-                    LOGSPACE_DTYPE_SUPPORT_LIST.end(),
-                    result_dtype) != LOGSPACE_DTYPE_SUPPORT_LIST.end();
+    return std::find(LOGSPACE_DTYPE_SUPPORT_LIST.begin(), LOGSPACE_DTYPE_SUPPORT_LIST.end(), result_dtype) !=
+           LOGSPACE_DTYPE_SUPPORT_LIST.end();
 }
 
-static bool CheckStepsValid(int64_t steps){
+static bool CheckStepsValid(int64_t steps)
+{
     if (steps < 0) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,"LogSpace requires non-negative steps, given steps is %ld", steps);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "LogSpace requires non-negative steps, given steps is %ld", steps);
         return false;
     }
     return true;
 }
 
-static aclnnStatus CheckParams(const aclScalar *start, const aclScalar *end, int64_t steps, const aclTensor *result){
-    CHECK_RET(CheckNotNull(start, end, result),ACLNN_ERR_INNER_NULLPTR);
-    //检查数据类型支持
+static aclnnStatus CheckParams(const aclScalar* start, const aclScalar* end, int64_t steps, const aclTensor* result)
+{
+    CHECK_RET(CheckNotNull(start, end, result), ACLNN_ERR_INNER_NULLPTR);
+    // 检查数据类型支持
     CHECK_RET(CheckDtypeValid(result), ACLNN_ERR_PARAM_INVALID);
-    //检查steps有效性
+    // 检查steps有效性
     CHECK_RET(CheckStepsValid(steps), ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
 
-static const aclTensor* ScalarToTensor(const aclScalar *other, const op::DataType dataType, aclOpExecutor *executor)
+static const aclTensor* ScalarToTensor(const aclScalar* other, const op::DataType dataType, aclOpExecutor* executor)
 {
     auto otherTensor = executor->ConvertToTensor(other, dataType);
     return otherTensor;
 }
 
-aclnnStatus aclnnLogSpaceGetWorkspaceSize(const aclScalar *start, const aclScalar *end, int64_t steps, double base, const aclTensor *result,
-                                                uint64_t *workspaceSize, aclOpExecutor **executor){
+aclnnStatus aclnnLogSpaceGetWorkspaceSize(const aclScalar* start, const aclScalar* end, int64_t steps, double base,
+                                          const aclTensor* result, uint64_t* workspaceSize, aclOpExecutor** executor)
+{
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
-    L2_DFX_PHASE_1(aclnnLogSpace, DFX_IN(start, end, steps, base),DFX_OUT(result));
+    L2_DFX_PHASE_1(aclnnLogSpace, DFX_IN(start, end, steps, base), DFX_OUT(result));
 
     auto uniqueExecutor = CREATE_EXECUTOR();
-    CHECK_RET(uniqueExecutor.get() != nullptr,ACLNN_ERR_INNER_CREATE_EXECUTOR);
+    CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
     auto ret = CheckParams(start, end, steps, result);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
-    //如果steps为0，直接返回空张量
+    // 如果steps为0，直接返回空张量
     if (steps == 0) {
         *workspaceSize = 0;
         uniqueExecutor.ReleaseTo(executor);
@@ -134,7 +137,8 @@ aclnnStatus aclnnLogSpaceGetWorkspaceSize(const aclScalar *start, const aclScala
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnLogSpace(void* workspace, uint64_t workspaceSize, aclOpExecutor *executor, const aclrtStream stream){
+aclnnStatus aclnnLogSpace(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+{
     L2_DFX_PHASE_2(aclnnLogSpace);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
