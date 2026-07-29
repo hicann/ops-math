@@ -918,6 +918,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/get_shape/README.md">get_shape</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>获取一个或多个输入 tensor 的 shape 信息，按输入顺序将各维度的尺寸值拼接为一维 int32 tensor 输出。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/greater/README.md">greater</a></td>
     <td>√</td>
     <td>√</td>
