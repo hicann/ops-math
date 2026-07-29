@@ -494,12 +494,14 @@
    find_library(GRAPH_LIBRARY_DIR libgraph.so "${ASCEND_PATH}/compiler/lib64/stub")
    find_library(GE_RUNNER_LIBRARY_DIR libge_runner.so "${ASCEND_PATH}/compiler/lib64/stub")
    find_library(GRAPH_BASE_LIBRARY_DIR libgraph_base.so "${ASCEND_PATH}/compiler/lib64")
+   find_library(GE_COMPILER_LIBRARY_DIR libge_compiler.so "${ASCEND_PATH}/compiler/lib64")
 
    # 链接所需的动态库
    target_link_libraries(test_geir_add_example PRIVATE
         ${GRAPH_LIBRARY_DIR}
         ${GE_RUNNER_LIBRARY_DIR}
         ${GRAPH_BASE_LIBRARY_DIR}
+        ${GE_COMPILER_LIBRARY_DIR}
    )
 
    # 设置头文件路径
