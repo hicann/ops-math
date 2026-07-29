@@ -12,15 +12,31 @@
  * \file reduce_min_infershape.cpp
  * \brief
  */
-#include "op_host/infershape_reduce_util.h"
+#include "common/inc/op_host/infershape_reduce_util.h"
 #include "register/op_impl_registry.h"
+
+using namespace ge;
+using namespace Ops::Math;
 
 namespace ops {
 static ge::graphStatus InferShape4ReduceMin(gert::InferShapeContext* context)
 {
-    OP_LOGD("Begin InferShape4ReduceMin.");
-    return Ops::Base::InferShape4Reduce(context);
+    return InferShape4ReduceCommon(context, "InferShape4ReduceMin");
 }
 
-IMPL_OP_INFERSHAPE(ReduceMin).InferShape(InferShape4ReduceMin).InputsDataDependency({1});
+static ge::graphStatus InferShapeRange4ReduceMin(gert::InferShapeRangeContext* context)
+{
+    return InferShapeRange4ReduceCommon(context, "InferShapeRange4ReduceMin");
+}
+
+static ge::graphStatus InferDataTypeForReduceMin(gert::InferDataTypeContext* context)
+{
+    return InferDataType4ReduceCommon(context, "InferDataTypeForReduceMin");
+}
+
+IMPL_OP_INFERSHAPE(ReduceMin)
+    .InferShape(InferShape4ReduceMin)
+    .InferShapeRange(InferShapeRange4ReduceMin)
+    .InferDataType(InferDataTypeForReduceMin)
+    .InputsDataDependency({1});
 } // namespace ops

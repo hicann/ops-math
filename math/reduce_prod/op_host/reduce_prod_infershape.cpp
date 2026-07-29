@@ -13,17 +13,31 @@
  * \brief
  */
 
-#include "op_host/infershape_reduce_util.h"
+#include "common/inc/op_host/infershape_reduce_util.h"
 #include "register/op_impl_registry.h"
 
 using namespace ge;
-using namespace Ops::Base;
+using namespace Ops::Math;
 
 namespace ops {
 static ge::graphStatus InferShape4ReduceProd(gert::InferShapeContext* context)
 {
-    return Ops::Base::InferShape4Reduce(context);
+    return InferShape4ReduceCommon(context, "InferShape4ReduceProd");
 }
 
-IMPL_OP_INFERSHAPE(ReduceProd).InferShape(InferShape4ReduceProd).InputsDataDependency({1});
+static ge::graphStatus InferShapeRange4ReduceProd(gert::InferShapeRangeContext* context)
+{
+    return InferShapeRange4ReduceCommon(context, "InferShapeRange4ReduceProd");
+}
+
+static ge::graphStatus InferDataTypeForReduceProd(gert::InferDataTypeContext* context)
+{
+    return InferDataType4ReduceCommon(context, "InferDataTypeForReduceProd");
+}
+
+IMPL_OP_INFERSHAPE(ReduceProd)
+    .InferShape(InferShape4ReduceProd)
+    .InferShapeRange(InferShapeRange4ReduceProd)
+    .InferDataType(InferDataTypeForReduceProd)
+    .InputsDataDependency({1});
 } // namespace ops

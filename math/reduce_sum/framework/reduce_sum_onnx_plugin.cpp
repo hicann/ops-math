@@ -15,20 +15,6 @@ using namespace ge;
 using ge::Operator;
 
 namespace domi {
-static Status GetInputTensorDimNum(const Operator& data_op, int64_t& dim_num)
-{
-    ge::TensorDesc input_desc = data_op.GetInputDesc(0);
-    auto shape = input_desc.GetShape();
-    if (shape.GetDimNum() <= 0) {
-        OP_LOGE("GetInputTensorDimNum", "Get input shape is invalid.");
-        return FAILED;
-    }
-
-    dim_num = shape.GetDimNum();
-    OP_LOGI(GetOpName(data_op).c_str(), "GetInputTensorDimNum is: %ld", dim_num);
-    return SUCCESS;
-}
-
 static Status parse_params_reduce_sum(const Message* op_src, ge::Operator& op_dest)
 {
     const ge::onnx::NodeProto* node = dynamic_cast<const ge::onnx::NodeProto*>(op_src);
@@ -79,47 +65,26 @@ static Status ParseOpToGraphReduceSum(const Operator& op, Graph& graph)
     }
 
     auto data0 = op::Data((ori_name + "_data0").c_str()).set_attr_index(0);
-    ge::Tensor value;
-    if (op.GetAttr("axes", value) != SUCCESS) {
-        OP_LOGE(GetOpName(op).c_str(), "get value from op failed");
+    ge::Tensor axes;
+    if (op.GetAttr("axes", axes) != SUCCESS) {
+        OP_LOGE(GetOpName(op).c_str(), "get axes from op failed");
         return FAILED;
     }
 
-    if (value.GetSize() == 0) {
-        int64_t input_dim_num = 0;
-        if (GetInputTensorDimNum(op, input_dim_num) != SUCCESS) {
-            OP_LOGE(GetOpName(op).c_str(), "Failed to get input tensor dimensions");
-            return FAILED;
-        }
-        std::vector<int64_t> v_axes;
-        for (int64_t i = 0; i < input_dim_num; ++i) {
-            v_axes.push_back(i);
-        }
-        int num = v_axes.size();
-        std::vector<int64_t> dims = {};
-        if (num != 0) {
-            dims.push_back(num);
-        }
-        OP_LOGI(GetOpName(op).c_str(), "num is: %d, dims is: %d", num, dims.size());
-        value = Vec2Tensor(v_axes, dims, ge::DT_INT64);
-    }
-
-    auto data1 = op::Const((ori_name + "_data1").c_str()).set_attr_value(value);
+    auto data1 = op::Const((ori_name + "_data1").c_str()).set_attr_value(axes);
     auto reducesum = op::ReduceSum((ori_name + "_ReduceSum").c_str()).set_input_x(data0).set_input_axes(data1);
 
-    bool flag = false;
-    if (op.GetAttr("keep_dims", flag) != SUCCESS) {
-        ge::AscendString op_name;
-        (void)op.GetName(op_name);
-        OP_LOGE(op_name.GetString(), "get keep_dims from op failed");
+    bool keep_dims = false;
+    if (op.GetAttr("keep_dims", keep_dims) != SUCCESS) {
+        OP_LOGE(GetOpName(op).c_str(), "get keep_dims from op failed");
         return FAILED;
     }
-    reducesum.set_attr_keep_dims(flag);
+    reducesum.set_attr_keep_dims(keep_dims);
 
     std::vector<Operator> inputs{data0};
-    std::vector<std::pair<Operator, std::vector<size_t> > > output_indexs;
-    output_indexs.emplace_back(reducesum, vector<std::size_t>{0});
-    graph.SetInputs(inputs).SetOutputs(output_indexs);
+    std::vector<std::pair<Operator, std::vector<size_t> > > outputs;
+    outputs.emplace_back(reducesum, vector<std::size_t>{0});
+    graph.SetInputs(inputs).SetOutputs(outputs);
     return SUCCESS;
 }
 

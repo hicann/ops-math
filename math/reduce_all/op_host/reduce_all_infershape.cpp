@@ -9,17 +9,35 @@
  */
 
 /*!
- * \file reduce_infer.cc
+ * \file reduce_all_infershape.cpp
  * \brief
  */
 #include "register/op_impl_registry.h"
-#include "op_host/infershape_reduce_util.h"
+#include "common/inc/op_host/infershape_reduce_util.h"
 
+using namespace ge;
+using namespace Ops::Math;
 namespace ops {
 static ge::graphStatus InferShape4ReduceAll(gert::InferShapeContext* context)
 {
-    return Ops::Base::InferShape4Reduce(context);
+    return InferShape4ReduceCommon(context, "InferShape4ReduceAll", false);
 }
 
-IMPL_OP_INFERSHAPE(ReduceAll).InferShape(InferShape4ReduceAll).InputsDataDependency({1});
+static ge::graphStatus InferShapeRange4ReduceAll(gert::InferShapeRangeContext* context)
+{
+    return InferShapeRange4ReduceCommon(context, "InferShapeRange4ReduceAll");
+}
+
+static ge::graphStatus InferDataType4ReduceAll(gert::InferDataTypeContext* context)
+{
+    OP_LOGI(context->GetNodeName(), "Begin InferDataType4ReduceAll.");
+    context->SetOutputDataType(0, DT_BOOL);
+    return ge::GRAPH_SUCCESS;
+}
+
+IMPL_OP_INFERSHAPE(ReduceAll)
+    .InferShape(InferShape4ReduceAll)
+    .InferShapeRange(InferShapeRange4ReduceAll)
+    .InferDataType(InferDataType4ReduceAll)
+    .InputsDataDependency({1});
 } // namespace ops

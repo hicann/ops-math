@@ -8,15 +8,36 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+/*!
+ * \file reduce_any_infershape.cpp
+ * \brief
+ */
 #include "register/op_impl_registry.h"
-#include "op_host/infershape_reduce_util.h"
+#include "common/inc/op_host/infershape_reduce_util.h"
 
+using namespace ge;
+using namespace Ops::Math;
 namespace ops {
 static ge::graphStatus InferShape4ReduceAny(gert::InferShapeContext* context)
 {
-    return Ops::Base::InferShape4Reduce(context);
+    return InferShape4ReduceCommon(context, "InferShape4ReduceAny", false);
 }
 
-IMPL_OP_INFERSHAPE(ReduceAny).InferShape(InferShape4ReduceAny).InputsDataDependency({1});
+static ge::graphStatus InferShapeRange4ReduceAny(gert::InferShapeRangeContext* context)
+{
+    return InferShapeRange4ReduceCommon(context, "InferShapeRange4ReduceAny");
+}
 
+static ge::graphStatus InferDataType4ReduceAny(gert::InferDataTypeContext* context)
+{
+    OP_LOGI(context->GetNodeName(), "Begin InferDataType4ReduceAny.");
+    context->SetOutputDataType(0, DT_BOOL);
+    return ge::GRAPH_SUCCESS;
+}
+
+IMPL_OP_INFERSHAPE(ReduceAny)
+    .InferShape(InferShape4ReduceAny)
+    .InferShapeRange(InferShapeRange4ReduceAny)
+    .InferDataType(InferDataType4ReduceAny)
+    .InputsDataDependency({1});
 } // namespace ops

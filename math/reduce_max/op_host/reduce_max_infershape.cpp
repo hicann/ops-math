@@ -12,19 +12,31 @@
  * \file reduce_max_infershape.cpp
  * \brief
  */
-#include "op_host/infershape_reduce_util.h"
+#include "common/inc/op_host/infershape_reduce_util.h"
 #include "register/op_impl_registry.h"
 
 using namespace ge;
+using namespace Ops::Math;
 namespace ops {
 
 static ge::graphStatus InferShape4ReduceMax(gert::InferShapeContext* context)
 {
-    OP_LOGD("Begin InferShape4ReduceMax.");
-    return Ops::Base::InferShape4Reduce(context);
+    return InferShape4ReduceCommon(context, "InferShape4ReduceMax");
+}
+
+static ge::graphStatus InferShapeRange4ReduceMax(gert::InferShapeRangeContext* context)
+{
+    return InferShapeRange4ReduceCommon(context, "InferShapeRange4ReduceMax");
+}
+
+static ge::graphStatus InferDataTypeForReduceMax(gert::InferDataTypeContext* context)
+{
+    return InferDataType4ReduceCommon(context, "InferDataTypeForReduceMax");
 }
 
 IMPL_OP_INFERSHAPE(ReduceMax)
     .InferShape(InferShape4ReduceMax)
+    .InferShapeRange(InferShapeRange4ReduceMax)
+    .InferDataType(InferDataTypeForReduceMax)
     .InputsDataDependency({1});
-}  // namespace ops
+} // namespace ops
