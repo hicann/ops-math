@@ -117,6 +117,7 @@
 | [aclnnDropoutGenMaskV2](../../random/dsa_gen_bit_mask/docs/aclnnDropoutGenMaskV2.md)         | 训练过程中，按照概率prob生成mask，用于元素置零。 | 默认确定性实现| 默认确定性实现  |
 | [aclnnDropoutGenMaskV2Tensor](../../random/dsa_gen_bit_mask/docs/aclnnDropoutGenMaskV2Tensor.md)         | 训练过程中，按照概率prob生成mask，用于元素置零。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnDropoutV3](../../random/drop_out_v3/docs/aclnnDropoutV3.md)         | 按照概率p随机将输入中的元素置零，并将输出按照1/(1-p)的比例缩放。 | 默认确定性实现| 默认确定性实现  |
+| [aclnnDropoutV3Grad](../../random/drop_out_v3_grad/docs/aclnnDropoutV3Grad.md)         | 按照传入mask将输入中的元素置零，并将输出按照scale的比例缩放。 | -| 默认确定性实现  |
 | [aclnnEqScalar&aclnnInplaceEqScalar](../../math/equal/docs/aclnnEqScalar&aclnnInplaceEqScalar.md) | 计算self中的元素的值与other的值是否相等，将self每个元素与other的值的比较结果写入out中。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnEqTensor&aclnnInplaceEqTensor](../../math/equal/docs/aclnnEqTensor&aclnnInplaceEqTensor.md) | 计算两个Tensor中的元素是否相等，返回一个Tensor，self=other的为True(1.)，否则为False(0.)。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnEqual](../../math/tensor_equal/docs/aclnnEqual.md)               | 计算两个Tensor是否有相同的大小和元素，返回一个Bool类型。     | 默认确定性实现| 默认确定性实现  |

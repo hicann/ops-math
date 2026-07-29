@@ -28,6 +28,7 @@ ops_math:
       - "*/*/op_api/**/*.h"
       - "*/*/op_graph/**/*.h"
       - "random/drop_out_v3"
+      - "random/drop_out_v3_grad"
       - "random/stateless_random_uniform_v2"
       - "random/random_standard_normal_v2"
       - "common/inc/op_api/aclnn_check.h"
@@ -1132,6 +1133,9 @@ VC6@ops-math:
         # drop_out_do_mask
         - ops/ops-math/random/drop_out_do_mask/op_host/
         - ops/ops-math/random/drop_out_do_mask/op_kernel/
+        # drop_out_v3_grad
+        - ops/ops-math/random/drop_out_v3_grad/op_host/
+        - ops/ops-math/random/drop_out_v3_grad/op_kernel/
         # stateless_drop_out_gen_mask
         - ops/ops-math/random/stateless_drop_out_gen_mask/op_host/
         - ops/ops-math/random/stateless_drop_out_gen_mask/op_kernel/
@@ -1192,6 +1196,9 @@ VC6@ops-math:
         # drop_out_do_mask
         - ops/ops-math/random/drop_out_do_mask/examples/
         - ops/ops-math/random/drop_out_do_mask/tests/
+        # drop_out_v3_grad
+        - ops/ops-math/random/drop_out_v3_grad/examples/
+        - ops/ops-math/random/drop_out_v3_grad/tests/
         # stateless_drop_out_gen_mask
         - ops/ops-math/random/stateless_drop_out_gen_mask/tests/
         # stateless_random_normal_v2
@@ -1502,6 +1509,9 @@ conversion@ops-math:
         - ops/ops-math/random/drop_out_do_mask/op_api/
         - ops/ops-math/random/drop_out_do_mask/README.md
         - ops/ops-math/random/drop_out_do_mask/op_graph/
+        - ops/ops-math/random/drop_out_v3_grad/docs/
+        - ops/ops-math/random/drop_out_v3_grad/op_api/
+        - ops/ops-math/random/drop_out_v3_grad/README.md
         - ops/ops-math/random/stateless_drop_out_gen_mask/op_api/
         - ops/ops-math/random/stateless_drop_out_gen_mask/README.md
         - ops/ops-math/random/stateless_drop_out_gen_mask/op_graph/

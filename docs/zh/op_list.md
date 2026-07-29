@@ -3118,6 +3118,16 @@
   </tr>
   <tr>
     <td>random</td>
+    <td><a href="../../random/drop_out_v3_grad/README.md">drop_out_v3_grad</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>DropOut反向算子，根据mask和scale计算输入梯度。</td>
+  </tr>
+  <tr>
+    <td>random</td>
     <td><a href="../../random/dsa_gen_bit_mask/README.md">dsa_gen_bit_mask</a></td>
     <td> </td>
     <td> </td>
