@@ -429,10 +429,10 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
                                               (__local_mem__ T1*)srcUb.GetPhyAddr(), tiling_->nextASize,
                                               tiling_->nextASize, dimR, blockOffset_ + loopOffset_);
     } else if constexpr (IsSameType<T1, int64_t>::value) {
-        this->template ArgMaxRaInt64<int64_t, uint64_t>((__local_mem__ T1*)valuesUb[offset].GetPhyAddr(),
-                                                        (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
-                                                        (__local_mem__ T1*)srcUb.GetPhyAddr(), tiling_->nextASize,
-                                                        tiling_->nextASize, dimR, blockOffset_ + loopOffset_);
+        this->template ArgMaxAraUnAlignInt64<int64_t, uint64_t>(
+            (__local_mem__ T1*)valuesUb[offset].GetPhyAddr(), (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
+            (__local_mem__ T1*)srcUb.GetPhyAddr(), 1, dimR, tiling_->nextASize, tiling_->nextASize, tiling_->nextASize,
+            blockOffset_ + loopOffset_);
     }
     if constexpr (!IsSameType<T1, bfloat16_t>::value) {
         inQueueX_.FreeTensor(srcUb);

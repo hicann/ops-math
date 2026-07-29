@@ -23,13 +23,11 @@ namespace ArgMaxWithValue {
 using namespace AscendC;
 
 template <typename T1, typename T2, typename T3, bool withValue, bool isMin>
-class ArgMaxWithValueArACutAAndNextA : public ArgMaxWithValueBase<T1, T2, T3, isMin>
-{
+class ArgMaxWithValueArACutAAndNextA : public ArgMaxWithValueBase<T1, T2, T3, isMin> {
 public:
     __aicore__ inline ArgMaxWithValueArACutAAndNextA(){};
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR indice, GM_ADDR values, GM_ADDR workspace, const ArgMaxWithValueTilingData* tilingData,
-        TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR indice, GM_ADDR values, GM_ADDR workspace,
+                                const ArgMaxWithValueTilingData* tilingData, TPipe* pipe);
     __aicore__ inline void Process();
 
 private:
@@ -38,22 +36,22 @@ private:
     __aicore__ inline void InitLoopParams();
     // 各个层级的Process函数
     __aicore__ inline void ProcessInALoop(uint64_t aUbStart, uint64_t aUbLength); // 第一重循环体
-    __aicore__ inline void ProcessInANextALoop(
-        uint64_t aUbStart, uint64_t aUbLength, uint64_t nextAUbStart, uint64_t nextAUbLength); // 第二重循环体
+    __aicore__ inline void ProcessInANextALoop(uint64_t aUbStart, uint64_t aUbLength, uint64_t nextAUbStart,
+                                               uint64_t nextAUbLength); // 第二重循环体
     // 拷入拷出函数
-    __aicore__ inline void CopyInX(
-        uint64_t aUbStart, uint64_t nextAUbStart, uint64_t rUbStart, uint64_t aUbLength, uint64_t nextAUbLength,
-        uint64_t rUbLength, uint64_t nextAAlign);
-    __aicore__ inline void CopyOutValueAndIndices(
-        uint64_t aUbStart, uint64_t nextAUbStart, uint64_t aUbLength, uint64_t nextAUbLength, uint64_t nextAAlign);
+    __aicore__ inline void CopyInX(uint64_t aUbStart, uint64_t nextAUbStart, uint64_t rUbStart, uint64_t aUbLength,
+                                   uint64_t nextAUbLength, uint64_t rUbLength, uint64_t nextAAlign);
+    __aicore__ inline void CopyInXFlat(uint64_t aUbStart, uint64_t aUbLength);
+    __aicore__ inline void ProcessFlat(uint64_t aUbStart, uint64_t aUbLength);
+    __aicore__ inline void CopyOutValueAndIndices(uint64_t aUbStart, uint64_t nextAUbStart, uint64_t aUbLength,
+                                                  uint64_t nextAUbLength, uint64_t nextAAlign);
     // 计算函数
-    __aicore__ inline void Compute(
-        LocalTensor<T2>& indiceUb, LocalTensor<T1>& valuesUb, LocalTensor<T2>& tempIndiceUb,
-        LocalTensor<T1>& tempValueUb, uint64_t aUbStart, uint64_t aUbLength, uint64_t nextAUbStart,
-        uint64_t nextAUbLength, uint64_t nextAAlign);
-    __aicore__ inline void ComputeVF(
-        LocalTensor<T1>& srcUb, LocalTensor<T2>& indiceUb, LocalTensor<T1>& valuesUb, uint32_t aUbLength, uint32_t nextAUbLength,
-        uint32_t nextAAlign, uint32_t rUbLength, uint32_t startR);
+    __aicore__ inline void Compute(LocalTensor<T2>& indiceUb, LocalTensor<T1>& valuesUb, LocalTensor<T2>& tempIndiceUb,
+                                   LocalTensor<T1>& tempValueUb, uint64_t aUbStart, uint64_t aUbLength,
+                                   uint64_t nextAUbStart, uint64_t nextAUbLength, uint64_t nextAAlign);
+    __aicore__ inline void ComputeVF(LocalTensor<T1>& srcUb, LocalTensor<T2>& indiceUb, LocalTensor<T1>& valuesUb,
+                                     uint32_t aUbLength, uint32_t nextAUbLength, uint32_t srcDimA1, uint32_t dstDimA1,
+                                     uint32_t rUbLength, uint32_t startR);
 
 private:
     constexpr static uint64_t MIN_DTYPE_SIZE = sizeof(T1) > sizeof(T3) ? sizeof(T3) : sizeof(T1);
@@ -78,6 +76,7 @@ private:
     uint64_t ubFactorNextA_ = 0;
     uint64_t ubFactorR_ = 0;
     uint64_t ubFactorNextAAlign_ = 0;
+    uint8_t useFlatPath_ = 0;
 
     // tiling params
     const ArgMaxWithValueTilingData* tilingData_;
@@ -99,8 +98,9 @@ __aicore__ inline void ArgMaxWithValueArACutAAndNextA<T1, T2, T3, withValue, isM
 }
 
 template <typename T1, typename T2, typename T3, bool withValue, bool isMin>
-__aicore__ inline void ArgMaxWithValueArACutAAndNextA<T1, T2, T3, withValue, isMin>::InitAllGlobalBuffer(
-    GM_ADDR x, GM_ADDR indice, GM_ADDR values)
+__aicore__ inline void ArgMaxWithValueArACutAAndNextA<T1, T2, T3, withValue, isMin>::InitAllGlobalBuffer(GM_ADDR x,
+                                                                                                         GM_ADDR indice,
+                                                                                                         GM_ADDR values)
 {
     indiceGm_.SetGlobalBuffer((__gm__ T3*)indice);
     xGm_.SetGlobalBuffer((__gm__ T1*)x);
@@ -132,7 +132,11 @@ __aicore__ inline void ArgMaxWithValueArACutAAndNextA<T1, T2, T3, withValue, isM
     ubFactorA_ = tilingData_->cutASize;
     ubFactorNextA_ = tilingData_->cutNextASize;
     ubFactorR_ = tilingData_->cutRSize;
+    useFlatPath_ = tilingData_->useFlatPath;
     ubFactorNextAAlign_ = Ops::Base::CeilAlign<int64_t>(ubFactorNextA_, BLOCK_SIZE / MIN_DTYPE_SIZE);
+    if (useFlatPath_) {
+        ubFactorR_ = tilingData_->rSize;
+    }
 
     // 初始化输入输出Buffer
     pipe_->InitBuffer(inQueueX_, VALUE_TWO, ubFactorA_ * ubFactorR_ * ubFactorNextAAlign_ * sizeof(T1));
@@ -157,13 +161,17 @@ __aicore__ inline void ArgMaxWithValueArACutAAndNextA<T1, T2, T3, withValue, isM
     for (uint64_t aLoopIdx = 0; aLoopIdx < aLoopCount; aLoopIdx++) {
         uint64_t aUbStart = aBlockStart_ + aLoopIdx * ubFactorA_;
         uint64_t aUbLength = (aLoopIdx == aLoopCount - 1) ? (aBlockLength_ - aLoopIdx * ubFactorA_) : ubFactorA_;
-        ProcessInALoop(aUbStart, aUbLength);
+        if (useFlatPath_) {
+            ProcessFlat(aUbStart, aUbLength);
+        } else {
+            ProcessInALoop(aUbStart, aUbLength);
+        }
     }
 }
 
 template <typename T1, typename T2, typename T3, bool withValue, bool isMin>
-__aicore__ inline void ArgMaxWithValueArACutAAndNextA<T1, T2, T3, withValue, isMin>::ProcessInALoop(
-    uint64_t aUbStart, uint64_t aUbLength)
+__aicore__ inline void ArgMaxWithValueArACutAAndNextA<T1, T2, T3, withValue, isMin>::ProcessInALoop(uint64_t aUbStart,
+                                                                                                    uint64_t aUbLength)
 {
     uint64_t aNextALoopCount = Ops::Base::CeilDiv(nextABlockLength_, ubFactorNextA_);
     for (uint64_t nextALoopIdx = 0; nextALoopIdx < aNextALoopCount; nextALoopIdx++) {
@@ -187,10 +195,55 @@ __aicore__ inline void ArgMaxWithValueArACutAAndNextA<T1, T2, T3, withValue, isM
     // 在R轴进行循环
     uint64_t nextAAlign = Ops::Base::CeilAlign<uint64_t>(nextAUbLength, BLOCK_SIZE / MIN_DTYPE_SIZE);
     if constexpr (IsSameType<T2, T3>::value) {
-        Compute(indiceUb, valuesUb, tempIndiceUb, tempValueUb, aUbStart, aUbLength, nextAUbStart, nextAUbLength, nextAAlign);
+        Compute(indiceUb, valuesUb, tempIndiceUb, tempValueUb, aUbStart, aUbLength, nextAUbStart, nextAUbLength,
+                nextAAlign);
     } else {
         LocalTensor<T2> castUb = castIndice_.Get<T2>();
-        Compute(castUb, valuesUb, tempIndiceUb, tempValueUb, aUbStart, aUbLength, nextAUbStart, nextAUbLength, nextAAlign);
+        Compute(castUb, valuesUb, tempIndiceUb, tempValueUb, aUbStart, aUbLength, nextAUbStart, nextAUbLength,
+                nextAAlign);
+        Cast(indiceUb, castUb, RoundMode::CAST_NONE, aUbLength * nextAAlign);
+    }
+    outQueueIndice_.EnQue(indiceUb);
+    outQueueValues_.EnQue(valuesUb);
+    CopyOutValueAndIndices(aUbStart, nextAUbStart, aUbLength, nextAUbLength, nextAAlign);
+}
+
+template <typename T1, typename T2, typename T3, bool withValue, bool isMin>
+__aicore__ inline void ArgMaxWithValueArACutAAndNextA<T1, T2, T3, withValue, isMin>::CopyInXFlat(uint64_t aUbStart,
+                                                                                                 uint64_t aUbLength)
+{
+    LocalTensor<T1> xLocal = inQueueX_.AllocTensor<T1>();
+    DataCopyExtParams copyExtParams;
+    copyExtParams.blockCount = 1;
+    copyExtParams.blockLen = aUbLength * tilingData_->rSize * tilingData_->nextASize * sizeof(T1);
+    copyExtParams.srcStride = 0;
+    copyExtParams.dstStride = 0;
+    DataCopyPadExtParams<T1> padParams{false, 0, 0, 0};
+    DataCopyPad(xLocal, xGm_[aUbStart * tilingData_->rSize * tilingData_->nextASize], copyExtParams, padParams);
+    inQueueX_.EnQue(xLocal);
+}
+
+template <typename T1, typename T2, typename T3, bool withValue, bool isMin>
+__aicore__ inline void ArgMaxWithValueArACutAAndNextA<T1, T2, T3, withValue, isMin>::ProcessFlat(uint64_t aUbStart,
+                                                                                                 uint64_t aUbLength)
+{
+    uint64_t nextAUbStart = nextABlockStart_;
+    uint64_t nextAUbLength = nextABlockLength_;
+    uint64_t nextAAlign = ubFactorNextAAlign_;
+    LocalTensor<T3> indiceUb = outQueueIndice_.AllocTensor<T3>();
+    LocalTensor<T1> valuesUb = outQueueValues_.AllocTensor<T1>();
+    if constexpr (IsSameType<T2, T3>::value) {
+        CopyInXFlat(aUbStart, aUbLength);
+        LocalTensor<T1> xLocal = inQueueX_.DeQue<T1>();
+        ComputeVF(xLocal, indiceUb, valuesUb, aUbLength, nextAUbLength, nextAUbLength, nextAAlign, tilingData_->rSize,
+                  0);
+        inQueueX_.FreeTensor(xLocal);
+    } else {
+        CopyInXFlat(aUbStart, aUbLength);
+        LocalTensor<T1> xLocal = inQueueX_.DeQue<T1>();
+        LocalTensor<T2> castUb = castIndice_.Get<T2>();
+        ComputeVF(xLocal, castUb, valuesUb, aUbLength, nextAUbLength, nextAUbLength, nextAAlign, tilingData_->rSize, 0);
+        inQueueX_.FreeTensor(xLocal);
         Cast(indiceUb, castUb, RoundMode::CAST_NONE, aUbLength * nextAAlign);
     }
     outQueueIndice_.EnQue(indiceUb);
@@ -226,7 +279,7 @@ __aicore__ inline void ArgMaxWithValueArACutAAndNextA<T1, T2, T3, withValue, isM
         xLocal,
         xGm_[aUbStart * tilingData_->rSize * tilingData_->nextASize + rUbStart * tilingData_->nextASize + nextAUbStart],
         copyExtParams, copyPadExtParams);
-     ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
+    ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
     inQueueX_.template EnQue(xLocal);
 }
 
@@ -243,7 +296,7 @@ __aicore__ inline void ArgMaxWithValueArACutAAndNextA<T1, T2, T3, withValue, isM
     DataCopyPad(indiceGm_[aUbStart * tilingData_->nextASize + nextAUbStart], outputIndice, copyIndicesExtParams);
     outQueueIndice_.FreeTensor(outputIndice);
     LocalTensor<T1> outputValues = outQueueValues_.template DeQue<T1>();
-    if constexpr(withValue) {
+    if constexpr (withValue) {
         DataCopyExtParams copyXExtParams;
         copyXExtParams.blockCount = aUbLength;
         copyXExtParams.blockLen = nextAUbLength * sizeof(T1);
@@ -264,14 +317,15 @@ __aicore__ inline void ArgMaxWithValueArACutAAndNextA<T1, T2, T3, withValue, isM
     uint64_t rUbLength = rLoopCount != 1 ? ubFactorR_ : tilingData_->rSize;
     CopyInX(aUbStart, aUbLength, nextAUbStart, nextAUbLength, rUbStart, rUbLength, nextAAlign);
     LocalTensor<T1> xLocal = inQueueX_.template DeQue<T1>();
-    ComputeVF(xLocal, indiceUb, valuesUb, aUbLength, nextAUbLength, nextAAlign, rUbLength, 0);
+    ComputeVF(xLocal, indiceUb, valuesUb, aUbLength, nextAUbLength, nextAAlign, nextAAlign, rUbLength, 0);
     inQueueX_.FreeTensor(xLocal);
     for (uint64_t rLoopIdx = 1; rLoopIdx < rLoopCount; rLoopIdx++) {
         rUbStart = rLoopIdx * ubFactorR_;
         rUbLength = (rLoopIdx != rLoopCount - 1) ? ubFactorR_ : tilingData_->rSize - rLoopIdx * ubFactorR_;
         CopyInX(aUbStart, aUbLength, nextAUbStart, nextAUbLength, rUbStart, rUbLength, nextAAlign);
         xLocal = inQueueX_.template DeQue<T1>();
-        ComputeVF(xLocal, tempIndiceUb, tempValueUb, aUbLength, nextAUbLength, nextAAlign, rUbLength, rLoopIdx * ubFactorR_);
+        ComputeVF(xLocal, tempIndiceUb, tempValueUb, aUbLength, nextAUbLength, nextAAlign, nextAAlign, rUbLength,
+                  rLoopIdx * ubFactorR_);
         inQueueX_.FreeTensor(xLocal);
         this->template UpdateResult<T1, false>(
             (__local_mem__ T2*)tempIndiceUb.GetPhyAddr(), (__local_mem__ T1*)tempValueUb.GetPhyAddr(),
@@ -281,21 +335,21 @@ __aicore__ inline void ArgMaxWithValueArACutAAndNextA<T1, T2, T3, withValue, isM
 
 template <typename T1, typename T2, typename T3, bool withValue, bool isMin>
 __aicore__ inline void ArgMaxWithValueArACutAAndNextA<T1, T2, T3, withValue, isMin>::ComputeVF(
-    LocalTensor<T1>& srcUb, LocalTensor<T2>& indiceUb, LocalTensor<T1>& valuesUb, uint32_t aUbLength, uint32_t nextAUbLength,
-    uint32_t nextAAlign, uint32_t rUbLength, uint32_t startR)
+    LocalTensor<T1>& srcUb, LocalTensor<T2>& indiceUb, LocalTensor<T1>& valuesUb, uint32_t aUbLength,
+    uint32_t nextAUbLength, uint32_t srcDimA1, uint32_t dstDimA1, uint32_t rUbLength, uint32_t startR)
 {
     if constexpr (IsSameType<T1, int64_t>::value) {
-        this->template ArgMaxAraInt64<int64_t, uint64_t>(
+        this->template ArgMaxAraUnAlignInt64<int64_t, uint64_t>(
             (__local_mem__ T1*)valuesUb.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), aUbLength, rUbLength, nextAAlign, startR);
+            (__local_mem__ T1*)srcUb.GetPhyAddr(), aUbLength, rUbLength, nextAUbLength, srcDimA1, dstDimA1, startR);
     } else if constexpr (IsSameType<T1, half>::value || IsSameType<T1, bfloat16_t>::value) {
-        this->template ArgMaxAra<T1, uint16_t>(
+        this->template ArgMaxAraUnAlign<T1, uint16_t>(
             (__local_mem__ T1*)valuesUb.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), aUbLength, rUbLength, nextAAlign, startR);
+            (__local_mem__ T1*)srcUb.GetPhyAddr(), aUbLength, rUbLength, nextAUbLength, srcDimA1, dstDimA1, startR);
     } else {
-        this->template ArgMaxAra<T1, uint32_t>(
+        this->template ArgMaxAraUnAlign<T1, uint32_t>(
             (__local_mem__ T1*)valuesUb.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), aUbLength, rUbLength, nextAAlign, startR);
+            (__local_mem__ T1*)srcUb.GetPhyAddr(), aUbLength, rUbLength, nextAUbLength, srcDimA1, dstDimA1, startR);
     }
 }
 

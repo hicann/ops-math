@@ -34,6 +34,7 @@ static const uint64_t PROCESS_SIZE = 1024;
 static const uint64_t VL_SIZE = 256;
 static const uint64_t ALIGN_128 = 128;
 static const uint64_t MIN_CUT_SIZE = 128;
+static const uint64_t COMPACT_NEXTA_BYTES = 64;
 static const uint64_t MAX_NEXTA_SIZE = 32;
 static const uint64_t BLOCK_SIZE = 32;
 static const uint64_t MAX_VALUE_UINT16 = std::numeric_limits<uint16_t>::max();
@@ -48,6 +49,7 @@ ge::graphStatus ArgCommonBaseTiling::Init(const uint64_t& coreNum, const uint64_
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Start init ArgCommonBaseTiling.");
     coreNum_ = coreNum;
+    originCoreNum_ = coreNum; // 保存物理核数，GROUP_REDUCE 全链路使用
     if (coreNum_ == 0) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "coreNum",
                                               std::to_string(coreNum_).c_str(),
@@ -252,12 +254,19 @@ ge::graphStatus ArgCommonBaseTiling::SetShapeInfo()
     tilingData_.set_aSize(aSize);
     tilingData_.set_nextASize(nextASize);
     tilingData_.set_rSize(xShape.GetDim(dimension_));
+
+    // 动态核数：每 4KB 输入数据启用一个核（空/负 tensor 已在上文 return）。
+    // originCoreNum_ 保留物理核数供 GROUP_REDUCE 全链路使用。
+    uint64_t dataBytes = aSize * nextASize * static_cast<uint64_t>(xShape.GetDim(dimension_)) * eleLenInBytes_;
+    uint64_t dynamicCore = Ops::Base::CeilDiv(dataBytes, MAX_SIZE_USING_SINGLE_CORE);
+    coreNum_ = std::max(static_cast<uint64_t>(1), std::min(dynamicCore, originCoreNum_));
+
     // 新增性能分支
     SetShapeInfoHighPerf();
 
     if ((dimension_ == xDimNum_ - 1 || nextASize == static_cast<uint64_t>(1)) &&
         (tilingKey_ == static_cast<uint64_t>(ArgMaxWithValueTilingMode::GROUP_REDUCE)) &&
-        aSize > AR_BLOCK_NUM_FACTOR * coreNum_) {
+        aSize > AR_BLOCK_NUM_FACTOR * originCoreNum_) {
         tilingKey_ = static_cast<uint64_t>(ArgMaxWithValueTilingMode::AR_CUT_A);
     }
 
@@ -284,8 +293,11 @@ void ArgCommonBaseTiling::SetShapeInfoHighPerf()
             tilingKey_ = static_cast<uint64_t>(ArgMaxWithValueTilingMode::RA_CUT_A);
         }
     } else if (tilingData_.get_nextASize() == 1) { // AR场景
+        // ArgMaxGatherRa 的 gather 步长 = R*eleBytes；当其 32B 对齐时产生 UB bank 冲突，
+        // 故排除 R*eleBytes 为 32 倍数的场景，回退 AR_CUT_A(ArgMaxV1 非 gather)。
         if ((tilingData_.get_rSize() * eleLenInBytes_ < vRegSize_) &&
-            (tilingData_.get_aSize() * eleLenInBytes_ >= coreNum_ * vRegSize_)) {
+            (tilingData_.get_aSize() * eleLenInBytes_ >= coreNum_ * vRegSize_) &&
+            ((tilingData_.get_rSize() * eleLenInBytes_) % BLOCK_SIZE != 0)) {
             tilingKey_ = static_cast<uint64_t>(ArgMaxWithValueTilingMode::AR_GATHER);
         }
     } else if (allASize * eleLenInBytes_ >= coreNum_ * vRegSize_) { // ARA场景
@@ -296,12 +308,13 @@ void ArgCommonBaseTiling::SetShapeInfoHighPerf()
     }
 
     // GroupReduce方案，处理R很大，A轴较小的场景，R的范围不超过int32最大值
-    if ((tilingData_.get_rSize() * eleLenInBytes_ >= coreNum_ * VL_SIZE) &&
+    // GROUP_REDUCE 有全核 SyncAll 同步，核数判断/分核/workspace 全链路使用 originCoreNum_ 保证自洽
+    if ((tilingData_.get_rSize() * eleLenInBytes_ >= originCoreNum_ * VL_SIZE) &&
         (tilingData_.get_rSize() < MAX_VALUE_INT32) &&
-        ((tilingData_.get_nextASize() == 1 && tilingData_.get_aSize() < coreNum_) ||
-         (tilingData_.get_nextASize() > 1 && allASize < coreNum_ * VALUE_TWO))) {
+        ((tilingData_.get_nextASize() == 1 && tilingData_.get_aSize() < originCoreNum_) ||
+         (tilingData_.get_nextASize() > 1 && allASize < originCoreNum_ * VALUE_TWO))) {
         uint64_t outAAlign = Ops::Base::CeilDiv(allASize, elementPerBlock_) * elementPerBlock_;
-        uint64_t workSpaceSize = outAAlign * VALUE_TWO * sizeof(int32_t) * coreNum_;
+        uint64_t workSpaceSize = outAAlign * VALUE_TWO * sizeof(int32_t) * originCoreNum_;
         if (ge::DT_INT64 == valueDtype_) {
             workSpaceSize = workSpaceSize * VALUE_TWO;
         }
@@ -310,10 +323,16 @@ void ArgCommonBaseTiling::SetShapeInfoHighPerf()
     }
 
     // ARA A轴和ANEXT轴分核方案，处理A和NEXTA较大场景
+    // nextA 不切核时 (aSize > coreNum) 门槛放宽到 64B，切核时保持 MIN_CUT_SIZE
+    // int64 暂未做 compact 优化，不适用放宽
     if (static_cast<uint64_t>(tilingKey_) == static_cast<uint64_t>(ArgMaxWithValueTilingMode::ARA_CUT_A) &&
-        allASize * eleLenInBytes_ >= coreNum_ * MIN_CUT_SIZE &&
-        tilingData_.get_nextASize() * eleLenInBytes_ >= MIN_CUT_SIZE) {
-        tilingKey_ = static_cast<uint64_t>(ArgMaxWithValueTilingMode::ARA_CUT_A_AND_NEXT_A);
+        allASize * eleLenInBytes_ >= coreNum_ * MIN_CUT_SIZE) {
+        uint64_t minNextABytes = (tilingData_.get_aSize() > coreNum_ && valueDtype_ != ge::DT_INT64) ?
+                                     COMPACT_NEXTA_BYTES :
+                                     MIN_CUT_SIZE;
+        if (tilingData_.get_nextASize() * eleLenInBytes_ >= minNextABytes) {
+            tilingKey_ = static_cast<uint64_t>(ArgMaxWithValueTilingMode::ARA_CUT_A_AND_NEXT_A);
+        }
     }
 }
 
@@ -325,11 +344,7 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfo()
         return ge::GRAPH_SUCCESS;
     }
 
-    uint64_t xDataSize = tilingData_.get_aSize() * tilingData_.get_rSize() * tilingData_.get_nextASize() *
-                         indexDtypeSize_;
-    if (xDataSize < MAX_SIZE_USING_SINGLE_CORE) {
-        coreNum_ = static_cast<uint64_t>(1);
-    }
+    // 动态核数已在 SetShapeInfo 前移计算（每 4KB 一核），此处不再单独判断单核。
 
     switch (tilingKey_) {
         case static_cast<uint64_t>(ArgMaxWithValueTilingMode::COPY_ONLY):
@@ -448,7 +463,7 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForAr()
 ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForArACutAAndNextA()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering ArgCommonBaseTiling CalcSplitInfoForArACutAAndNextA.");
-    // 首先关于A分核
+    // A 轴分核
     blkFactor_ = Ops::Base::CeilDiv(static_cast<uint64_t>(tilingData_.get_aSize()), coreNum_);
     auto blkNumA = Ops::Base::CeilDiv(static_cast<uint64_t>(tilingData_.get_aSize()), blkFactor_);
     blkTailFactor_ = tilingData_.get_aSize() - (blkNumA - 1) * blkFactor_;
@@ -457,40 +472,71 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForArACutAAndNextA()
                                               "The value of blkNumA must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
-    // 然后关于ANext分核
-    auto blkNumANext = std::min(static_cast<uint64_t>(tilingData_.get_nextASize()), coreNum_ / blkNumA);
-    blkFactor2nd_ = Ops::Base::CeilDiv(static_cast<uint64_t>(tilingData_.get_nextASize()), blkNumANext);
-    blkNumANext = Ops::Base::CeilDiv(static_cast<uint64_t>(tilingData_.get_nextASize()), blkFactor2nd_);
-    blkTailFactor2nd_ = tilingData_.get_nextASize() - (blkNumANext - 1) * blkFactor2nd_;
-    realCoreNum_ = blkNumA * blkNumANext;
-    // 最后进行切UB
-    // 输入：x(a1 * r * a2Align * T1size * 2)
-    // 输出：y(a1 * a2Align * T1size * 2), indices(a1 * a2Align * T3size * 2)
-    // 中间局部reduce结果：y_temp, indices_temp, cast_temp
-    // 两个大小为(a1 * a2Align * T2size)，一个大小为(a1 * a2Align * T1size)
-    // UB大小为：a1 * a2Align * (r * T1Size_ * 2 + 3 * T1Size + 2 * t3Size + 2 * T2Size)
     uint64_t minDtypeSize = std::min(valueDtypeSize_, indiceDtypeSize_);
-    // 首先保证nextA最大
-    uint64_t usableUbSize = ubSize_ - MAX_EXTRA_BLOCK * BLOCK_SIZE;
-    cutNextASize_ = Ops::Base::FloorDiv(
-        usableUbSize, DOUBLE_BUFFER_NUM * (valueDtypeSize_ + valueDtypeSize_ + indiceDtypeSize_) + valueDtypeSize_ +
-                          t2Size_ + t2Size_);
-    cutNextASize_ = std::max(cutNextASize_, static_cast<uint16_t>(1));
-    cutNextASize_ = std::min(static_cast<uint64_t>(cutNextASize_), blkFactor2nd_);
     if (minDtypeSize == static_cast<uint64_t>(0)) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "minDtypeSize",
                                               std::to_string(minDtypeSize).c_str(),
                                               "The value of minDtypeSize must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
-    // 然后保证R最大
+    // 优先尝试 flat-copy 路径
+    uint64_t nextAAlign = Ops::Base::CeilAlign(tilingData_.get_nextASize(), BLOCK_SIZE / minDtypeSize);
+    uint64_t ubNeededFlat = DOUBLE_BUFFER_NUM * tilingData_.get_rSize() * nextAAlign * valueDtypeSize_ +
+                            VALUE_TWO * nextAAlign * (valueDtypeSize_ + indiceDtypeSize_) +
+                            nextAAlign * (valueDtypeSize_ + t2Size_);
+    if (ubNeededFlat <= ubSize_ - MAX_EXTRA_BLOCK * BLOCK_SIZE) {
+        return CalcSplitInfoForArACutAAndNextAFlat(blkNumA, nextAAlign);
+    }
+    return CalcSplitInfoForArACutAAndNextANormal(blkNumA, minDtypeSize);
+}
+
+ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForArACutAAndNextAFlat(uint64_t blkNumA, uint64_t nextAAlign)
+{
+    useFlatPath_ = 1;
+    blkFactor2nd_ = tilingData_.get_nextASize();
+    blkTailFactor2nd_ = blkFactor2nd_;
+    blkNum2nd_ = 1;
+    realCoreNum_ = blkNumA;
+    cutNextASize_ = static_cast<uint16_t>(tilingData_.get_nextASize());
+    cutRSize_ = static_cast<uint16_t>(tilingData_.get_rSize());
+    uint64_t usableUbSize = ubSize_ - MAX_EXTRA_BLOCK * BLOCK_SIZE;
+    uint64_t oneRowUb = DOUBLE_BUFFER_NUM * tilingData_.get_rSize() * nextAAlign * valueDtypeSize_ +
+                        VALUE_TWO * nextAAlign * (valueDtypeSize_ + indiceDtypeSize_) +
+                        nextAAlign * (valueDtypeSize_ + t2Size_);
+    if (oneRowUb == 0) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "oneRowUb",
+                                              "oneRowUb must be greater than 0.", "");
+        return ge::GRAPH_FAILED;
+    }
+    cutASize_ = static_cast<uint16_t>(usableUbSize / oneRowUb);
+    cutASize_ = std::max(cutASize_, static_cast<uint16_t>(1));
+    cutASize_ = std::min(static_cast<uint64_t>(cutASize_), blkFactor_);
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForArACutAAndNextANormal(uint64_t blkNumA, uint64_t minDtypeSize)
+{
+    // ANext 分核
+    auto blkNumANext = std::min(static_cast<uint64_t>(tilingData_.get_nextASize()), coreNum_ / blkNumA);
+    blkFactor2nd_ = Ops::Base::CeilDiv(static_cast<uint64_t>(tilingData_.get_nextASize()), blkNumANext);
+    blkNumANext = Ops::Base::CeilDiv(static_cast<uint64_t>(tilingData_.get_nextASize()), blkFactor2nd_);
+    blkTailFactor2nd_ = tilingData_.get_nextASize() - (blkNumANext - 1) * blkFactor2nd_;
+    realCoreNum_ = blkNumA * blkNumANext;
+    // 切 nextA
+    uint64_t usableUbSize = ubSize_ - MAX_EXTRA_BLOCK * BLOCK_SIZE;
+    cutNextASize_ = Ops::Base::FloorDiv(
+        usableUbSize, DOUBLE_BUFFER_NUM * (valueDtypeSize_ + valueDtypeSize_ + indiceDtypeSize_) + valueDtypeSize_ +
+                          t2Size_ + t2Size_);
+    cutNextASize_ = std::max(cutNextASize_, static_cast<uint16_t>(1));
+    cutNextASize_ = std::min(static_cast<uint64_t>(cutNextASize_), blkFactor2nd_);
+    // 切 R
     uint64_t nextAAlign = Ops::Base::CeilAlign(static_cast<uint64_t>(cutNextASize_), BLOCK_SIZE / minDtypeSize);
     usableUbSize = Ops::Base::FloorDiv(ubSize_, nextAAlign) - TEMP_BUFFER_NUM * valueDtypeSize_ -
                    DOUBLE_BUFFER_NUM * (t2Size_ + indiceDtypeSize_);
     cutRSize_ = Ops::Base::FloorDiv(usableUbSize, DOUBLE_BUFFER_NUM * valueDtypeSize_);
     cutRSize_ = std::max(cutRSize_, static_cast<uint16_t>(1));
     cutRSize_ = std::min(static_cast<uint64_t>(cutRSize_), tilingData_.get_rSize());
-    // 最后取A
+    // 取 A
     uint64_t oneRAUbSize = nextAAlign *
                            (DOUBLE_BUFFER_NUM * cutRSize_ * valueDtypeSize_ + TEMP_BUFFER_NUM * valueDtypeSize_ +
                             DOUBLE_BUFFER_NUM * indiceDtypeSize_ + DOUBLE_BUFFER_NUM * t2Size_);
@@ -517,7 +563,10 @@ void ArgCommonBaseTiling::CalcCutRA()
 {
     uint64_t vlCnt = vRegSize_ / eleLenInBytes_;
     uint64_t allASize = tilingData_.get_aSize() * tilingData_.get_nextASize();
-    uint64_t maxCutNextA = allASize / coreNum_;
+    // 前移 realCoreNum_：allASize 不足满核时按实际任务数（吸收原 MODE5/105），
+    // 分母用 realCoreNum_ 避免 allASize<=coreNum_ 时 maxCutNextA=0 报错。
+    realCoreNum_ = allASize <= coreNum_ ? allASize : coreNum_;
+    uint64_t maxCutNextA = allASize / realCoreNum_;
     maxCutNextA = std::min(maxCutNextA, tilingData_.get_nextASize());
     uint64_t cutNextASize = std::min(ubElement_ / tilingData_.get_rSize(), PROCESS_SIZE);
     cutNextASize = cutNextASize <= MIN_CUT_SIZE / eleLenInBytes_ ? MIN_CUT_SIZE / eleLenInBytes_ : cutNextASize;
@@ -538,7 +587,6 @@ void ArgCommonBaseTiling::CalcCutRA()
     }
     cutNextASize_ = static_cast<uint16_t>(cutNextASize);
     cutRSize_ = static_cast<uint16_t>(rTempSize);
-    realCoreNum_ = coreNum_;
     blkFactor_ = tilingData_.get_aSize() * Ops::Base::CeilDiv(tilingData_.get_nextASize(), cutNextASize) / realCoreNum_;
     blkTailFactor_ = tilingData_.get_aSize() * Ops::Base::CeilDiv(tilingData_.get_nextASize(), cutNextASize) %
                      realCoreNum_;
@@ -548,16 +596,15 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForArA()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering ArgCommonBaseTiling CalcSplitInfoForArA.");
     uint64_t arSize = tilingData_.get_rSize() * tilingData_.get_nextASize();
-    uint64_t allASize = tilingData_.get_aSize() * tilingData_.get_nextASize();
     // After axis combination, the dimension is recorded as A * R * nextA.
     if (tilingData_.get_aSize() >= coreNum_ && arSize <= ubElement_) { // 切A，A大于核数且R * nextA 在UB全载
-        if (tilingData_.get_nextASize() * eleLenInBytes_ < MAX_NEXTA_SIZE) {
+        if (tilingData_.get_nextASize() * eleLenInBytes_ < MAX_NEXTA_SIZE * VALUE_TWO) {
             aRaMode_ = static_cast<uint64_t>(ARAMode::ARA_MODE1);
         } else {
             aRaMode_ = static_cast<uint64_t>(ARAMode::ARA_MODE2);
         }
         CalcCutA();
-    } else if (tilingData_.get_aSize() >= coreNum_ && tilingData_.get_nextASize() * eleLenInBytes_ <=
+    } else if (tilingData_.get_aSize() >= coreNum_ && tilingData_.get_nextASize() * eleLenInBytes_ <
                                                           MAX_NEXTA_SIZE) { // nextA较小且R * nextA UB放不下的场景，切R
         aRaMode_ = static_cast<uint64_t>(ARAMode::ARA_MODE3);
         CalcCutA();
@@ -566,29 +613,10 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForArA()
         rTempSize = std::min(rTempSize, tilingData_.get_rSize());
         cutRSize_ = static_cast<uint16_t>(rTempSize);
         cutASize_ = static_cast<uint16_t>(1);
-    } else if (allASize > coreNum_) { // 双切分，UB切R和nextA，A * nextA大于核数
+    } else { // 其余所有 ARA 场景统一走 MODE4（吸收原 MODE5/105 与 MODE6/106）
+        // CalcCutRA 已修复 allASize<=coreNum_ 的分核，并按 R 是否放得下自动全载/切 R 迭代
         aRaMode_ = static_cast<uint64_t>(ARAMode::ARA_MODE4);
         CalcCutRA();
-        // R轴在UB能放下，且不满足以上条件，优先切nextA
-    } else if (tilingData_.get_rSize() < ubElement_ && tilingData_.get_rSize() < MAX_VALUE_UINT16) {
-        aRaMode_ = static_cast<uint64_t>(ARAMode::ARA_MODE5);
-        realCoreNum_ = allASize <= coreNum_ ? allASize : coreNum_;
-        uint64_t cutNextASize = std::min(ubElement_ / tilingData_.get_rSize(), PROCESS_SIZE);
-        cutNextASize = CalcCutNextA(cutNextASize);
-        blkFactor_ = tilingData_.get_aSize() * Ops::Base::CeilDiv(tilingData_.get_nextASize(), cutNextASize) /
-                     realCoreNum_;
-        blkTailFactor_ = tilingData_.get_aSize() * Ops::Base::CeilDiv(tilingData_.get_nextASize(), cutNextASize) %
-                         realCoreNum_;
-        cutNextASize_ = static_cast<uint16_t>(cutNextASize);
-        cutRSize_ = static_cast<uint16_t>(tilingData_.get_rSize());
-    } else { // 不满足以上条件，保底模版，R轴UB放不下，A和nextA切为1，R轴动态计算切分大小
-        aRaMode_ = static_cast<uint64_t>(ARAMode::ARA_MODE6);
-        realCoreNum_ = allASize <= coreNum_ ? allASize : coreNum_;
-        blkFactor_ = tilingData_.get_aSize() * tilingData_.get_nextASize() / realCoreNum_;
-        blkTailFactor_ = tilingData_.get_aSize() * tilingData_.get_nextASize() % realCoreNum_;
-        uint64_t rTempSize = std::min(ubElement_, MAX_VALUE_UINT16);
-        uint64_t cutNum = Ops::Base::CeilDiv(tilingData_.get_rSize(), rTempSize);
-        cutRSize_ = static_cast<uint16_t>(Ops::Base::CeilDiv(tilingData_.get_rSize(), cutNum));
     }
     return ge::GRAPH_SUCCESS;
 }
@@ -753,7 +781,7 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForGroupReduce()
     uint64_t nextAAlign = Ops::Base::CeilDiv(nextASize, elementPerBlock_) * elementPerBlock_;
     uint64_t outAAlign = Ops::Base::CeilDiv(allASize, elementPerBlock_) * elementPerBlock_;
 
-    realCoreNum_ = coreNum_;
+    realCoreNum_ = originCoreNum_; // GROUP_REDUCE 全核 SyncAll，使用物理核数
     if (realCoreNum_ > rSize) {
         realCoreNum_ = rSize;
     }
@@ -802,7 +830,7 @@ ge::graphStatus ArgCommonBaseTiling::CalcGroupReduceArBranch(uint64_t aSize, uin
     uint64_t allASize = aSize * nextASize;
     uint64_t vlCnt = vRegSize_ / eleLenInBytes_;
 
-    uint64_t workSpaceSize = outAAlign * VALUE_TWO * sizeof(int32_t) * coreNum_;
+    uint64_t workSpaceSize = outAAlign * VALUE_TWO * sizeof(int32_t) * originCoreNum_;
     if (ge::DT_INT64 == valueDtype_) {
         workSpaceSize = workSpaceSize * VALUE_TWO;
     }
@@ -878,7 +906,9 @@ ge::graphStatus ArgCommonBaseTiling::TryRouteAraMode4()
                 return ge::GRAPH_FAILED;
             }
         } else {
-            if (tilingData_.get_rSize() / coreNum_ * tilingData_.get_nextASize() * eleLenInBytes_ >= CUTR_MIN_MOV) {
+            // 改道 GROUP_REDUCE：全核 SyncAll，门槛用 originCoreNum_ 与后续分核口径一致
+            if (tilingData_.get_rSize() / originCoreNum_ * tilingData_.get_nextASize() * eleLenInBytes_ >=
+                CUTR_MIN_MOV) {
                 tilingKey_ = static_cast<uint64_t>(ArgMaxWithValueTilingMode::GROUP_REDUCE);
                 if (CalcSplitInfoForGroupReduce() != ge::GRAPH_SUCCESS) {
                     return ge::GRAPH_FAILED;
@@ -908,6 +938,7 @@ void ArgCommonBaseTiling::FillTilingData()
     tilingData_.set_cutAPerLoop(cutAPerLoop_);
     tilingData_.set_isRaSplit(isRaSplit_);
     tilingData_.set_gatherBlockSize(gatherBlockSize_);
+    tilingData_.set_useFlatPath(useFlatPath_);
 
     tilingData_.SaveToBuffer(tilingContext_->GetRawTilingData()->GetData(),
                              tilingContext_->GetRawTilingData()->GetCapacity());

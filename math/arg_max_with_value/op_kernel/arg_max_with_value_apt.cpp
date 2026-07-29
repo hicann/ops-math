@@ -33,7 +33,7 @@
 using namespace ArgMaxWithValue;
 
 extern "C" __global__ __aicore__ void arg_max_with_value(GM_ADDR x, GM_ADDR indice, GM_ADDR values, GM_ADDR workspace,
-    GM_ADDR tiling)
+                                                         GM_ADDR tiling)
 {
     if (workspace == nullptr) {
         return;

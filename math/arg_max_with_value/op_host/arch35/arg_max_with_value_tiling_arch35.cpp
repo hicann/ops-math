@@ -19,6 +19,6 @@ namespace optiling {
 
 class ArgMaxWithValueTiling : public ArgCommonBaseTiling {
 public:
-    explicit ArgMaxWithValueTiling(gert::TilingContext *context) : ArgCommonBaseTiling(context){};
+    explicit ArgMaxWithValueTiling(gert::TilingContext* context) : ArgCommonBaseTiling(context) {};
 };
 } // namespace optiling

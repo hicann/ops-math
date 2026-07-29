@@ -26,13 +26,13 @@ class ArgMaxWithValueArGather : public ArgMaxWithValueBase<T1, T2, T3, isMin> {
 public:
     __aicore__ inline ArgMaxWithValueArGather(){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR indice, GM_ADDR values, GM_ADDR workspace,
-        const ArgMaxWithValueTilingData *tilingData, TPipe *pipe);
+                                const ArgMaxWithValueTilingData* tilingData, TPipe* pipe);
     __aicore__ inline void Process();
 
 private:
     __aicore__ inline void CopyIn(uint16_t copyNum);
-    __aicore__ inline void Compute(uint64_t index, uint16_t processNum, LocalTensor<T2> &indiceUb,
-        LocalTensor<T1> &valuesUb);
+    __aicore__ inline void Compute(uint64_t index, uint16_t processNum, LocalTensor<T2>& indiceUb,
+                                   LocalTensor<T1>& valuesUb);
     __aicore__ inline void CopyOut(uint64_t offset, uint64_t copyNum);
 
     constexpr static uint32_t BUFFER_NUM = 2;
@@ -61,7 +61,7 @@ private:
     uint64_t loopR_ = 0;
     uint64_t tailR_ = 0;
     // tiling params
-    const ArgMaxWithValueTilingData *tiling_;
+    const ArgMaxWithValueTilingData* tiling_;
     uint64_t blkFactor_ = 0;
     uint64_t blkTailFactor_ = 0;
     uint64_t realCoreNum_ = 0;
@@ -69,18 +69,19 @@ private:
     uint16_t cutASize_ = 0;
 
     // datacopy params
-    DataCopyPadExtParams<T1> padParams_{ false, 0, 0, 0 };
-    DataCopyExtParams copyInParams_{ 1, 0, 0, 0, 0 };
+    DataCopyPadExtParams<T1> padParams_{false, 0, 0, 0};
+    DataCopyExtParams copyInParams_{1, 0, 0, 0, 0};
 };
 
 template <typename T1, typename T2, typename T3, bool withValue, bool isMin>
-__aicore__ inline void ArgMaxWithValueArGather<T1, T2, T3, withValue, isMin>::Init(GM_ADDR x, GM_ADDR indice,
-    GM_ADDR values, GM_ADDR workspace, const ArgMaxWithValueTilingData *tilingData, TPipe *pipe)
+__aicore__ inline void ArgMaxWithValueArGather<T1, T2, T3, withValue, isMin>::Init(
+    GM_ADDR x, GM_ADDR indice, GM_ADDR values, GM_ADDR workspace, const ArgMaxWithValueTilingData* tilingData,
+    TPipe* pipe)
 {
     blockIdx_ = GetBlockIdx();
-    xGm_.SetGlobalBuffer((__gm__ T1 *)x);
-    indiceGm_.SetGlobalBuffer((__gm__ T3 *)indice);
-    valuesGm_.SetGlobalBuffer((__gm__ T1 *)values);
+    xGm_.SetGlobalBuffer((__gm__ T1*)x);
+    indiceGm_.SetGlobalBuffer((__gm__ T3*)indice);
+    valuesGm_.SetGlobalBuffer((__gm__ T1*)values);
     tiling_ = tilingData;
     blkFactor_ = tiling_->blkFactor;
     blkTailFactor_ = tiling_->blkTailFactor;
@@ -167,24 +168,30 @@ __aicore__ inline void ArgMaxWithValueArGather<T1, T2, T3, withValue, isMin>::Co
 
 template <typename T1, typename T2, typename T3, bool withValue, bool isMin>
 __aicore__ inline void ArgMaxWithValueArGather<T1, T2, T3, withValue, isMin>::Compute(uint64_t index,
-    uint16_t processNum, LocalTensor<T2> &indiceUb, LocalTensor<T1> &valuesUb)
+                                                                                      uint16_t processNum,
+                                                                                      LocalTensor<T2>& indiceUb,
+                                                                                      LocalTensor<T1>& valuesUb)
 {
     LocalTensor<T1> srcUb = inQueueX_.DeQue<T1>();
     if constexpr (IsSameType<T1, bfloat16_t>::value) {
         LocalTensor<float> xUb32 = xBuf32.Get<float>();
         LocalTensor<float> outUb32 = outBuf32.Get<float>();
         Cast(xUb32, srcUb, RoundMode::CAST_NONE, processNum * rSize_);
-        this->template ArgMaxGatherRa<float, uint32_t, int32_t>((__local_mem__ float *)outUb32.GetPhyAddr(),
-            (__local_mem__ T2 *)indiceUb.GetPhyAddr(), (__local_mem__ float *)xUb32.GetPhyAddr(), processNum, rSize_);
+        this->template ArgMaxGatherRa<float, uint32_t, int32_t>(
+            (__local_mem__ float*)outUb32.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
+            (__local_mem__ float*)xUb32.GetPhyAddr(), processNum, rSize_);
     } else if constexpr (IsSameType<T1, half>::value) {
-        this->template ArgMaxGatherRa<half, uint16_t, int16_t>((__local_mem__ T1 *)valuesUb.GetPhyAddr(),
-            (__local_mem__ T2 *)indiceUb.GetPhyAddr(), (__local_mem__ T1 *)srcUb.GetPhyAddr(), processNum, rSize_);
+        this->template ArgMaxGatherRa<half, uint16_t, int16_t>(
+            (__local_mem__ T1*)valuesUb.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
+            (__local_mem__ T1*)srcUb.GetPhyAddr(), processNum, rSize_);
     } else if constexpr (IsSameType<T1, float>::value || IsSameType<T1, int32_t>::value) {
-        this->template ArgMaxGatherRa<T1, uint32_t, int32_t>((__local_mem__ T1 *)valuesUb.GetPhyAddr(),
-            (__local_mem__ T2 *)indiceUb.GetPhyAddr(), (__local_mem__ T1 *)srcUb.GetPhyAddr(), processNum, rSize_);
+        this->template ArgMaxGatherRa<T1, uint32_t, int32_t>((__local_mem__ T1*)valuesUb.GetPhyAddr(),
+                                                             (__local_mem__ T2*)indiceUb.GetPhyAddr(),
+                                                             (__local_mem__ T1*)srcUb.GetPhyAddr(), processNum, rSize_);
     } else if constexpr (IsSameType<T1, int64_t>::value) {
-        this->template ArgMaxGatherRaInt64<T1, uint64_t, int64_t>((__local_mem__ T1 *)valuesUb.GetPhyAddr(),
-            (__local_mem__ T2 *)indiceUb.GetPhyAddr(), (__local_mem__ T1 *)srcUb.GetPhyAddr(), processNum, rSize_);
+        this->template ArgMaxGatherRaInt64<T1, uint64_t, int64_t>(
+            (__local_mem__ T1*)valuesUb.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
+            (__local_mem__ T1*)srcUb.GetPhyAddr(), processNum, rSize_);
     }
     inQueueX_.FreeTensor(srcUb);
 }

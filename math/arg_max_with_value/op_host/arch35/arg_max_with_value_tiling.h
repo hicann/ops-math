@@ -17,7 +17,5 @@
 
 #include "arg_common_base_tiling.h"
 
-namespace optiling {
-
-}  // namespace optiling
-#endif  // OPS_BUILT_IN_OP_TILING_RUNTIME_ARG_MAX_WITH_VALUE_H_
+namespace optiling {} // namespace optiling
+#endif                // OPS_BUILT_IN_OP_TILING_RUNTIME_ARG_MAX_WITH_VALUE_H_

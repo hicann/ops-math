@@ -24,31 +24,28 @@ namespace optiling {
 using namespace ge;
 using namespace std;
 
-enum class TilingMode{
-  TILING_MODE_INVAID = -1,
-  TILING_MODE_LAST_LESS_SEGMENT_LEN = 0,
-  TILING_MODE_LAST_OVER_DATA_VECTOR,
-  TILING_MODE_LAST_LESS_DATA_VECTOR,
-  TILING_MODE_LAST_OVER_SEGMENT_LEN,
-  TILING_MODE_LAST_AXIS_VCMP,
-  TILING_MODE_LAST_LESS_BLOCK,
-  TILING_MODE_NLAST_CUT_FIRST_DIM,
-  TILING_MODE_NLAST_CUT_FIRST_DIM_AXIS_LESS,
-  TILING_MODE_NLAST_FP_ALIGN,
-  TILING_MODE_NLAST_CUT_LAST_DIM,
-  TILING_MODE_NLAST_CUT_LAST_DIM_AXIS_LESS,
-  TILING_MODE_NLAST_CUT_FIRST_AND_LAST_DIM,
-  TILING_MODE_NLAST_CUT_FIRST_AND_LAST_DIM_LONG_AXIS,
-  TILING_MODE_NLAST_CUT_FIRST_AND_LAST_DIM_SHORT_AXIS,
-  TILING_MODE_NO_COMPUTE
+enum class TilingMode {
+    TILING_MODE_INVAID = -1,
+    TILING_MODE_LAST_LESS_SEGMENT_LEN = 0,
+    TILING_MODE_LAST_OVER_DATA_VECTOR,
+    TILING_MODE_LAST_LESS_DATA_VECTOR,
+    TILING_MODE_LAST_OVER_SEGMENT_LEN,
+    TILING_MODE_LAST_AXIS_VCMP,
+    TILING_MODE_LAST_LESS_BLOCK,
+    TILING_MODE_NLAST_CUT_FIRST_DIM,
+    TILING_MODE_NLAST_CUT_FIRST_DIM_AXIS_LESS,
+    TILING_MODE_NLAST_FP_ALIGN,
+    TILING_MODE_NLAST_CUT_LAST_DIM,
+    TILING_MODE_NLAST_CUT_LAST_DIM_AXIS_LESS,
+    TILING_MODE_NLAST_CUT_FIRST_AND_LAST_DIM,
+    TILING_MODE_NLAST_CUT_FIRST_AND_LAST_DIM_LONG_AXIS,
+    TILING_MODE_NLAST_CUT_FIRST_AND_LAST_DIM_SHORT_AXIS,
+    TILING_MODE_NO_COMPUTE
 };
 
-const std::map<ge::DataType, int64_t> kDtypeSize {
-  {ge::DT_FLOAT16, 2},
-  {ge::DT_FLOAT, 4},
-  {ge::DT_INT32, 4},
-  {ge::DT_BF16, 4}, // converted to fp32 when calculated
-  {ge::DT_INT64, 8},
+const std::map<ge::DataType, int64_t> kDtypeSize{
+    {ge::DT_FLOAT16, 2}, {ge::DT_FLOAT, 4}, {ge::DT_INT32, 4}, {ge::DT_BF16, 4}, // converted to fp32 when calculated
+    {ge::DT_INT64, 8},
 };
 
 const int64_t MAX_SEGMENT_LEN = static_cast<int64_t>(2048) * 4;
@@ -69,25 +66,26 @@ const int64_t BYTE_BIT_RATIO = 8;
 const int64_t NANO_BLOCK_SIZE = 16;
 
 struct Argparams {
-  int64_t input_dims;
-  int64_t axis;
-  int64_t data_calc_each_block;
-  int64_t data_calc_each_vector;
-  int64_t data_move_each_block;
-  int64_t data_move_each_vector;
-  int64_t out_move_each_block;
-  int64_t out_move_each_vector;
-  int64_t segment;
-  ge::DataType x_in_dtype;
-  ge::DataType index_out_dtype;
+    int64_t input_dims;
+    int64_t axis;
+    int64_t data_calc_each_block;
+    int64_t data_calc_each_vector;
+    int64_t data_move_each_block;
+    int64_t data_move_each_vector;
+    int64_t out_move_each_block;
+    int64_t out_move_each_vector;
+    int64_t segment;
+    ge::DataType x_in_dtype;
+    ge::DataType index_out_dtype;
 };
 
-ge::graphStatus ArgOpsTiling(gert::TilingContext* context) {
-  OP_LOGD(context->GetNodeName(), "ArgOpsTiling running begin");
-  auto compile_info = reinterpret_cast<const ArgOpsCompileInfo*>(context->GetCompileInfo());
-  OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
-  return ArgOpsTilingForAscendC(context, compile_info->coreNum, compile_info->ubSize,
-                                  compile_info->with_value, compile_info->vRegSize);
+ge::graphStatus ArgOpsTiling(gert::TilingContext* context)
+{
+    OP_LOGD(context->GetNodeName(), "ArgOpsTiling running begin");
+    auto compile_info = reinterpret_cast<const ArgOpsCompileInfo*>(context->GetCompileInfo());
+    OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
+    return ArgOpsTilingForAscendC(context, compile_info->coreNum, compile_info->ubSize, compile_info->with_value,
+                                  compile_info->vRegSize);
 }
 
 ge::graphStatus TilingPrepareForArgOpsAscendC(gert::TilingParseContext* context)
@@ -100,36 +98,38 @@ ge::graphStatus TilingPrepareForArgOpsAscendC(gert::TilingParseContext* context)
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     ci->coreNum = ascendcPlatform.GetCoreNumAiv();
     if (ci->coreNum <= 0) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "coreNum",
-            std::to_string(ci->coreNum).c_str(), "The value of coreNum must be greater than 0.");
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "coreNum", std::to_string(ci->coreNum).c_str(),
+                                              "The value of coreNum must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     ci->ubSize = ubSize;
     if (ci->ubSize <= 0) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ubSize",
-            std::to_string(ci->ubSize).c_str(), "The value of ubSize must be greater than 0.");
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ubSize", std::to_string(ci->ubSize).c_str(),
+                                              "The value of ubSize must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus TilingPrepareForArgOps(gert::TilingParseContext* context) {
-  auto compile_info = context->GetCompiledInfo<ArgOpsCompileInfo>();
-  OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
-  compile_info->with_value = false;
-  compile_info->vRegSize = static_cast<uint64_t>(Ops::Base::GetVRegSize(context));
-  TilingPrepareForArgOpsAscendC(context);
-  return ge::GRAPH_SUCCESS;
+ge::graphStatus TilingPrepareForArgOps(gert::TilingParseContext* context)
+{
+    auto compile_info = context->GetCompiledInfo<ArgOpsCompileInfo>();
+    OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
+    compile_info->with_value = false;
+    compile_info->vRegSize = static_cast<uint64_t>(Ops::Base::GetVRegSize(context));
+    TilingPrepareForArgOpsAscendC(context);
+    return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus TilingPrepareForArgWithValueOps(gert::TilingParseContext* context) {
-  auto compile_info = context->GetCompiledInfo<ArgOpsCompileInfo>();
-  OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
-  compile_info->with_value = true;
-  compile_info->vRegSize = static_cast<uint64_t>(Ops::Base::GetVRegSize(context));
-  TilingPrepareForArgOpsAscendC(context);
-  return ge::GRAPH_SUCCESS;
+ge::graphStatus TilingPrepareForArgWithValueOps(gert::TilingParseContext* context)
+{
+    auto compile_info = context->GetCompiledInfo<ArgOpsCompileInfo>();
+    OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
+    compile_info->with_value = true;
+    compile_info->vRegSize = static_cast<uint64_t>(Ops::Base::GetVRegSize(context));
+    TilingPrepareForArgOpsAscendC(context);
+    return ge::GRAPH_SUCCESS;
 }
-}  // namespace optiling
+} // namespace optiling

@@ -21,9 +21,8 @@
 #include "tiling/tiling_api.h"
 
 namespace optiling {
-ge::graphStatus ArgOpsTilingForAscendC(
-    gert::TilingContext* context, const uint64_t& coreNum, const uint64_t& ubSize, bool withValue,
-    const uint64_t& vRegSize);
+ge::graphStatus ArgOpsTilingForAscendC(gert::TilingContext* context, const uint64_t& coreNum, const uint64_t& ubSize,
+                                       bool withValue, const uint64_t& vRegSize);
 
 BEGIN_TILING_DATA_DEF(ArgMaxWithValueTilingData)
 TILING_DATA_FIELD_DEF(uint64_t, aSize);
@@ -44,12 +43,13 @@ TILING_DATA_FIELD_DEF(uint16_t, loopANum);
 TILING_DATA_FIELD_DEF(uint16_t, cutAPerLoop);
 TILING_DATA_FIELD_DEF(uint8_t, isRaSplit);
 TILING_DATA_FIELD_DEF(uint16_t, gatherBlockSize);
+TILING_DATA_FIELD_DEF(uint8_t, useFlatPath);
 TILING_DATA_FIELD_DEF(uint64_t, workSpaceSize);
 END_TILING_DATA_DEF;
 
 class ArgCommonBaseTiling {
 public:
-    explicit ArgCommonBaseTiling(gert::TilingContext* context) : tilingContext_(context){};
+    explicit ArgCommonBaseTiling(gert::TilingContext* context) : tilingContext_(context) {};
     ge::graphStatus Init(const uint64_t& coreNum, const uint64_t& ubSize, const uint64_t& vRegSize);
     ge::graphStatus RunArgMaxTiling(bool withValue);
 
@@ -62,15 +62,17 @@ private:
     ge::graphStatus CalcSplitInfoForArA();
     ge::graphStatus CalcSplitInfoForArAAndTryMode4();
     ge::graphStatus CalcSplitInfoForArACutAAndNextA();
+    ge::graphStatus CalcSplitInfoForArACutAAndNextAFlat(uint64_t blkNumA, uint64_t nextAAlign);
+    ge::graphStatus CalcSplitInfoForArACutAAndNextANormal(uint64_t blkNumA, uint64_t minDtypeSize);
     ge::graphStatus CalcSplitInfoForGatherRa();
     ge::graphStatus CalcSplitInfoForGatherArA();
     ge::graphStatus CalcSplitInfoForRa();
     ge::graphStatus CalcSplitInfoForCopyOnly();
     ge::graphStatus CalcSplitInfoForGroupReduce();
-    ge::graphStatus CalcGroupReduceArBranch(
-        uint64_t aSize, uint64_t nextASize, uint64_t outAAlign, uint64_t maxBlkPerCore, bool& fallbackToRa);
-    ge::graphStatus CalcGroupReduceRaBranch(
-        uint64_t aSize, uint64_t nextASize, uint64_t nextAAlign, uint64_t maxBlkPerCore);
+    ge::graphStatus CalcGroupReduceArBranch(uint64_t aSize, uint64_t nextASize, uint64_t outAAlign,
+                                            uint64_t maxBlkPerCore, bool& fallbackToRa);
+    ge::graphStatus CalcGroupReduceRaBranch(uint64_t aSize, uint64_t nextASize, uint64_t nextAAlign,
+                                            uint64_t maxBlkPerCore);
     void AddExtraBufferNeed(uint64_t& fixedNeed, int& isBfloatNum, uint64_t alignSize);
     ge::graphStatus TryRouteAraMode4();
     void SetShapeInfoHighPerf();
@@ -87,6 +89,7 @@ private:
     int64_t xDimNum_ = 1;
     int64_t dimension_ = 0;
     uint64_t coreNum_ = 0;
+    uint64_t originCoreNum_ = 0; // 物理核数(不随每4KB一核的动态核数变化)，GROUP_REDUCE 全链路使用
     uint64_t ubSize_ = 0;
     uint64_t realCoreNum_ = 1;
     uint64_t tilingKey_ = 0;
@@ -117,6 +120,7 @@ private:
     uint16_t cutAPerLoop_ = 1;
     uint8_t isRaSplit_ = 0;
     uint16_t gatherBlockSize_ = 1;
+    uint8_t useFlatPath_ = 0;
 };
 
 struct ArgMaxWithValueCompileInfo {
@@ -124,8 +128,7 @@ struct ArgMaxWithValueCompileInfo {
     uint64_t ubSize = 0;
 };
 
-enum class ArgMaxWithValueTilingMode : uint64_t
-{
+enum class ArgMaxWithValueTilingMode : uint64_t {
     AR_CUT_A = 10001,             // AR
     ARA_CUT_A = 10002,            // ARA
     ARA_CUT_A_AND_NEXT_A = 10012, // ARA 双轴切核
@@ -136,8 +139,7 @@ enum class ArgMaxWithValueTilingMode : uint64_t
     GROUP_REDUCE = 30001          // Group Reduce
 };
 
-enum class ARAMode : uint64_t
-{
+enum class ARAMode : uint64_t {
     ARA_MODE1 = 101,
     ARA_MODE2 = 102,
     ARA_MODE3 = 103,

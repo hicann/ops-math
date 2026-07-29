@@ -15,7 +15,5 @@
 #include "arg_max_with_value_tiling.h"
 
 namespace optiling {
-IMPL_OP_OPTILING(ArgMaxWithValue)
-    .Tiling(ArgOpsTiling)
-    .TilingParse<ArgOpsCompileInfo>(TilingPrepareForArgWithValueOps);
-}  // namespace optiling
+IMPL_OP_OPTILING(ArgMaxWithValue).Tiling(ArgOpsTiling).TilingParse<ArgOpsCompileInfo>(TilingPrepareForArgWithValueOps);
+} // namespace optiling

@@ -26,7 +26,7 @@ class ArgMaxWithValueCopy : public ArgMaxWithValueBase<T1, T2, T2, isMin> {
 public:
     __aicore__ inline ArgMaxWithValueCopy(){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR indice, GM_ADDR values, GM_ADDR workspace,
-        const ArgMaxWithValueTilingData *tilingData, TPipe *pipe);
+                                const ArgMaxWithValueTilingData* tilingData, TPipe* pipe);
     __aicore__ inline void Process();
 
 private:
@@ -50,19 +50,21 @@ private:
     uint64_t blockOffset_ = 0;
     uint64_t blkProcessNum_ = 0;
     // tiling params
-    const ArgMaxWithValueTilingData *tiling_;
+    const ArgMaxWithValueTilingData* tiling_;
     // datacopy params
-    DataCopyPadExtParams<T1> padParams_{ false, 0, 0, 0 };
-    DataCopyExtParams copyInParams_{ 1, 0, 0, 0, 0 };
+    DataCopyPadExtParams<T1> padParams_{false, 0, 0, 0};
+    DataCopyExtParams copyInParams_{1, 0, 0, 0, 0};
 };
 
 template <typename T1, typename T2, bool withValue, bool isMin>
 __aicore__ inline void ArgMaxWithValueCopy<T1, T2, withValue, isMin>::Init(GM_ADDR x, GM_ADDR indice, GM_ADDR values,
-    GM_ADDR workspace, const ArgMaxWithValueTilingData *tilingData, TPipe *pipe)
+                                                                           GM_ADDR workspace,
+                                                                           const ArgMaxWithValueTilingData* tilingData,
+                                                                           TPipe* pipe)
 {
-    xGm_.SetGlobalBuffer((__gm__ T1 *)x);
-    indiceGm_.SetGlobalBuffer((__gm__ T2 *)indice);
-    valuesGm_.SetGlobalBuffer((__gm__ T1 *)values);
+    xGm_.SetGlobalBuffer((__gm__ T1*)x);
+    indiceGm_.SetGlobalBuffer((__gm__ T2*)indice);
+    valuesGm_.SetGlobalBuffer((__gm__ T1*)values);
     tiling_ = tilingData;
 
     uint64_t alignNum = CeilDivision(tiling_->cutASize, ELEMENT_PER_BLCK) * ELEMENT_PER_BLCK;
@@ -107,7 +109,7 @@ __aicore__ inline void ArgMaxWithValueCopy<T1, T2, withValue, isMin>::Process()
     outQueueIndice_.EnQue(indiceUb);
     LocalTensor<T2> outIndice = outQueueIndice_.DeQue<T2>();
 
-    DataCopyExtParams copyOutIndiceParams{ 1, 0, 0, 0, 0 };
+    DataCopyExtParams copyOutIndiceParams{1, 0, 0, 0, 0};
     copyOutIndiceParams.blockCount = 1;
     copyOutIndiceParams.blockLen = processSize_ * sizeof(T2);
     copyOutIndiceParams.srcStride = 0;
@@ -145,7 +147,7 @@ __aicore__ inline void ArgMaxWithValueCopy<T1, T2, withValue, isMin>::CopyOut(ui
     event_t eventIdMte2ToMte3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
     SetFlag<HardEvent::MTE2_MTE3>(eventIdMte2ToMte3);
     WaitFlag<HardEvent::MTE2_MTE3>(eventIdMte2ToMte3);
-    DataCopyExtParams copyOutValuesParams{ 1, 0, 0, 0, 0 };
+    DataCopyExtParams copyOutValuesParams{1, 0, 0, 0, 0};
     copyOutValuesParams.blockCount = 1;
     copyOutValuesParams.blockLen = copyNum * sizeof(T1);
     copyOutValuesParams.srcStride = 0;
