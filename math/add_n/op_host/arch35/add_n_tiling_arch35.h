@@ -40,8 +40,8 @@ END_TILING_DATA_DEF;
 REGISTER_TILING_DATA_CLASS(AddN, AddNTilingData)
 
 struct AddNCompileInfo {
-    uint64_t coreNum;
-    uint64_t ubSize;
+    uint64_t coreNum = 0;
+    uint64_t ubSize = 0;
 };
 } // namespace optiling
 #endif // OPS_BUILD_IN_OP_TILING_RUNTIME_ADD_N_TILING_H

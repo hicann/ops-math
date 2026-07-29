@@ -21,8 +21,7 @@
 namespace optiling {
 using namespace Ops::Base;
 
-class IsFiniteRegbaseTiling
-{
+class IsFiniteRegbaseTiling {
 public:
     explicit IsFiniteRegbaseTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
@@ -36,9 +35,9 @@ protected:
 private:
     EleBaseTilingDataV2* tiling_ = nullptr;
     uint64_t dType = 0;
-    gert::TilingContext* tilingContext;
-    ge::DataType inputDtype;
-    ge::DataType outputDtype;
+    gert::TilingContext* tilingContext = nullptr;
+    ge::DataType inputDtype = ge::DT_UNDEFINED;
+    ge::DataType outputDtype = ge::DT_UNDEFINED;
 };
 
 struct IsFiniteCompileInfoArch35 {

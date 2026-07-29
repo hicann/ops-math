@@ -25,8 +25,7 @@ struct TruncCompileInfo {
     uint64_t ubSize = 0;
 };
 
-class TruncTiling
-{
+class TruncTiling {
 public:
     explicit TruncTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
@@ -34,15 +33,15 @@ public:
 protected:
     ge::graphStatus CalcOutputDtype();
     ge::graphStatus CalcInputDtype();
-    ge::graphStatus CheckShape();
+    ge::graphStatus CheckShape() const;
     ge::graphStatus SetTilingData();
 
 private:
-    gert::TilingContext* tilingContext;
+    gert::TilingContext* tilingContext = nullptr;
     ge::DataType outputDtype = ge::DT_UNDEFINED;
     ge::DataType inputDtype = ge::DT_UNDEFINED;
     uint64_t dType = 0;
     TruncTilingData* tiling = nullptr;
 };
-}  // namespace optiling
-#endif  // OPS_BUILD_IN_OP_TILING_RUNTIME_TRUNC_TILING_H
+} // namespace optiling
+#endif // OPS_BUILD_IN_OP_TILING_RUNTIME_TRUNC_TILING_H

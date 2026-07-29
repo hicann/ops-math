@@ -23,15 +23,15 @@
 namespace optiling {
 extern void Tiling4Round();
 extern void TilingPrepareForRound();
-}
+} // namespace optiling
 
 namespace optiling {
 using namespace Ops::Base;
 
 struct RoundCompileInfo {
-    uint64_t coreNum;
-    uint64_t ubSize;
+    uint64_t coreNum = 0;
+    uint64_t ubSize = 0;
 };
 
-}  // namespace optiling
-#endif  // OPS_BUILD_IN_OP_TILING_RUNTIME_ROUND_TILING_H
+} // namespace optiling
+#endif // OPS_BUILD_IN_OP_TILING_RUNTIME_ROUND_TILING_H

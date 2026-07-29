@@ -59,7 +59,9 @@ ge::graphStatus SignTiling::SetTilingData()
     } else if (this->outputDtype == ge::DT_INT64) {
         tilingKey = SIGN_KEY_INT64;
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT, INT32, INT64");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y",
+                                  ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+                                  "FLOAT16, BF16, FLOAT, INT32, INT64");
         return ge::GRAPH_FAILED;
     }
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);
@@ -76,7 +78,7 @@ ge::graphStatus SignTiling::CalcInputDtype()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus SignTiling::CheckOutputShape()
+ge::graphStatus SignTiling::CheckOutputShape() const
 {
     auto xStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, xStorageShape);
@@ -86,27 +88,26 @@ ge::graphStatus SignTiling::CheckOutputShape()
     const gert::Shape& inputShape = Ops::Base::EnsureNotScalar(xStorageShape->GetStorageShape());
     const gert::Shape& outputShape = Ops::Base::EnsureNotScalar(yStorageShape->GetStorageShape());
 
-    OP_CHECK_IF(
-        (inputShape != outputShape),
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-            tilingContext->GetNodeName(), "x, y",
-            (Ops::Base::ToString(inputShape) + ", " + Ops::Base::ToString(outputShape)).c_str(),
-            "The shapes of x and y must be the same"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((inputShape != outputShape),
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "x, y",
+                    (Ops::Base::ToString(inputShape) + ", " + Ops::Base::ToString(outputShape)).c_str(),
+                    "The shapes of x and y must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus SignTiling::CheckOutputDtype()
+ge::graphStatus SignTiling::CheckOutputDtype() const
 {
     auto inputDesc = tilingContext->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
-    OP_CHECK_IF(
-        this->outputDtype != inputDesc->GetDataType(),
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            tilingContext->GetNodeName(), "x, y",
-            std::string(ge::TypeUtils::DataTypeToSerialString(inputDesc->GetDataType())) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(this->outputDtype)),
-            "The dtypes of x and y must be the same"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(this->outputDtype != inputDesc->GetDataType(),
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "x, y",
+                    std::string(ge::TypeUtils::DataTypeToSerialString(inputDesc->GetDataType())) + ", " +
+                        std::string(ge::TypeUtils::DataTypeToSerialString(this->outputDtype)),
+                    "The dtypes of x and y must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -117,14 +118,12 @@ ge::graphStatus SignTiling::RunTiling()
     tiling = tilingContext->GetTilingData<SignTilingData>();
     // 获取tiling计算所需参数
     ge::graphStatus baseTilingResult = CalcOutputDtype();
-    OP_CHECK_IF(
-        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckOutputShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckOutputDtype() == ge::GRAPH_FAILED,
+                OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckOutputShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"),
+                return ge::GRAPH_FAILED);
     if (this->outputDtype == ge::DT_FLOAT16) {
         baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<half>::OpDag>(tiling->baseTiling);
     } else if (this->outputDtype == ge::DT_FLOAT) {
@@ -136,20 +135,21 @@ ge::graphStatus SignTiling::RunTiling()
     } else if (this->outputDtype == ge::DT_INT64) {
         baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForInt64<int64_t>::OpDag>(tiling->baseTiling);
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT, INT32, INT64");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y",
+                                  ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+                                  "FLOAT16, BF16, FLOAT, INT32, INT64");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(
-        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
+                return ge::GRAPH_FAILED);
     baseTilingResult = SetTilingData();
     return baseTilingResult;
 }
 
 static ge::graphStatus TilingForSign(gert::TilingContext* tilingContextGen)
 {
-    OP_CHECK_IF(
-        tilingContextGen == nullptr, OP_LOGE("TilingForSign", "Tiling context is null"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(tilingContextGen == nullptr, OP_LOGE("TilingForSign", "Tiling context is null"),
+                return ge::GRAPH_FAILED);
     OP_LOGD(tilingContextGen->GetNodeName(), "TilingForSign is running.");
     auto compileInfo = reinterpret_cast<const ElewiseCompileInfo*>(tilingContextGen->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);

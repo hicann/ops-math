@@ -57,14 +57,14 @@ public:
 
 protected:
     ge::graphStatus CalcOutputDtype();
-    ge::graphStatus CheckOutputDtype();
-    ge::graphStatus CheckOutputShape();
+    ge::graphStatus CheckOutputDtype() const;
+    ge::graphStatus CheckOutputShape() const;
 
 private:
     ge::DataType outputDtype = ge::DT_UNDEFINED;
     uint32_t numBlocks = 0;
     int64_t outputSize = 0;
-    gert::TilingContext* tilingContext;
+    gert::TilingContext* tilingContext = nullptr;
     uint64_t tilingKey = 0;
 };
 
@@ -76,21 +76,21 @@ ge::graphStatus NegTiling::CalcOutputDtype()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus NegTiling::CheckOutputDtype()
+ge::graphStatus NegTiling::CheckOutputDtype() const
 {
     auto inputDesc = tilingContext->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
-    OP_CHECK_IF(
-        this->outputDtype != inputDesc->GetDataType(),
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            tilingContext->GetNodeName(), "x, y",
-            std::string(ge::TypeUtils::DataTypeToSerialString(inputDesc->GetDataType())) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(this->outputDtype)),
-            "The dtypes of x and y must be the same"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(this->outputDtype != inputDesc->GetDataType(),
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "x, y",
+                    std::string(ge::TypeUtils::DataTypeToSerialString(inputDesc->GetDataType())) + ", " +
+                        std::string(ge::TypeUtils::DataTypeToSerialString(this->outputDtype)),
+                    "The dtypes of x and y must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus NegTiling::CheckOutputShape()
+ge::graphStatus NegTiling::CheckOutputShape() const
 {
     const auto inputDsc = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDsc);
@@ -100,13 +100,12 @@ ge::graphStatus NegTiling::CheckOutputShape()
     gert::Shape inputShape = inputDsc->GetStorageShape();
     gert::Shape outputShape = outputDsc->GetStorageShape();
     // check the input shape and output shape are the same
-    OP_CHECK_IF(
-        (inputShape != outputShape),
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-            tilingContext->GetNodeName(), "x, y",
-            (Ops::Base::ToString(inputShape) + ", " + Ops::Base::ToString(outputShape)).c_str(),
-            "The shapes of x and y must be the same"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((inputShape != outputShape),
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "x, y",
+                    (Ops::Base::ToString(inputShape) + ", " + Ops::Base::ToString(outputShape)).c_str(),
+                    "The shapes of x and y must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -117,14 +116,14 @@ ge::graphStatus NegTiling::RunTiling()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tiling);
     // 获取tiling计算所需的参数
     ge::graphStatus status = CalcOutputDtype();
-    OP_CHECK_IF(
-        status != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext->GetNodeName(), "Get output dtype failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(status != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext->GetNodeName(), "Get output dtype failed"),
+                return ge::GRAPH_FAILED);
     status = CheckOutputDtype();
-    OP_CHECK_IF(
-        status != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext->GetNodeName(), "CheckOutputDtype failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(status != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext->GetNodeName(), "CheckOutputDtype failed"),
+                return ge::GRAPH_FAILED);
     status = CheckOutputShape();
-    OP_CHECK_IF(
-        status != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext->GetNodeName(), "CheckOutputShape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(status != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext->GetNodeName(), "CheckOutputShape failed"),
+                return ge::GRAPH_FAILED);
 
     if (this->outputDtype == ge::DT_FLOAT16) {
         status = elewiseBaseTiling.DoTiling<NegDag::NegNoCast<half>::OpDag>(tiling->baseTiling);
@@ -145,16 +144,14 @@ ge::graphStatus NegTiling::RunTiling()
         status = elewiseBaseTiling.DoTiling<NegDag::NegNoCast<int64_t>::OpDag>(tiling->baseTiling);
         tilingKey = GET_TPL_TILING_KEY(tiling->baseTiling.scheMode, NEG_TPL_INT64);
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(
-            tilingContext->GetNodeName(), "y",
-            ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
-            "FLOAT16, BF16, FLOAT, INT32, INT8, INT64");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y",
+                                  ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+                                  "FLOAT16, BF16, FLOAT, INT32, INT8, INT64");
         return ge::GRAPH_FAILED;
     }
 
-    OP_CHECK_IF(
-        status != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext->GetNodeName(), "ElewiseBaseTiling do tiling failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(status != ge::GRAPH_SUCCESS,
+                OP_LOGE(tilingContext->GetNodeName(), "ElewiseBaseTiling do tiling failed"), return ge::GRAPH_FAILED);
 
     return SetTilingData();
 }

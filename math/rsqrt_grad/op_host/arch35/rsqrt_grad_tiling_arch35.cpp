@@ -29,14 +29,12 @@
 
 using namespace RsqrtGradOp;
 
-namespace optiling
-{
+namespace optiling {
 using namespace Ops::Base;
 
 const int64_t ASCEND_WORKSPACE = static_cast<int64_t>(16) * 1024 * 1024;
 
-class RsqrtGradTiling
-{
+class RsqrtGradTiling {
 public:
     explicit RsqrtGradTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
@@ -44,10 +42,10 @@ public:
 protected:
     ge::graphStatus CalcOutputDtype();
     ge::graphStatus CalcInputDtype();
-    ge::graphStatus CheckShape();
+    ge::graphStatus CheckShape() const;
 
 private:
-    gert::TilingContext* tilingContext;
+    gert::TilingContext* tilingContext = nullptr;
     ge::DataType outputDtype = ge::DT_UNDEFINED;
     ge::DataType inputDtype = ge::DT_UNDEFINED;
     ge::DataType inputDtype1 = ge::DT_UNDEFINED;
@@ -66,12 +64,16 @@ ge::graphStatus RsqrtGradTiling::CalcInputDtype()
     this->inputDtype1 = inputDesc1->GetDataType();
 
     OP_CHECK_IF(this->inputDtype1 != this->inputDtype,
-               OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "y, dy", std::string(ge::TypeUtils::DataTypeToSerialString(this->inputDtype)) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(this->inputDtype1)), "The dtypes of y and dy must be the same"),
-               return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "y, dy",
+                    std::string(ge::TypeUtils::DataTypeToSerialString(this->inputDtype)) + ", " +
+                        std::string(ge::TypeUtils::DataTypeToSerialString(this->inputDtype1)),
+                    "The dtypes of y and dy must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus RsqrtGradTiling::CheckShape()
+ge::graphStatus RsqrtGradTiling::CheckShape() const
 {
     auto yStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, yStorageShape);
@@ -85,12 +87,18 @@ ge::graphStatus RsqrtGradTiling::CheckShape()
     const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(zStorageShape->GetStorageShape());
 
     OP_CHECK_IF(inputYShape != inputDYShape,
-               OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "y, dy", (Ops::Base::ToString(inputYShape) + ", " + Ops::Base::ToString(inputDYShape)).c_str(), "The shapes of y and dy must be the same"),
-               return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "y, dy",
+                    (Ops::Base::ToString(inputYShape) + ", " + Ops::Base::ToString(inputDYShape)).c_str(),
+                    "The shapes of y and dy must be the same"),
+                return ge::GRAPH_FAILED);
 
     OP_CHECK_IF(inputYShape != outputZShape,
-               OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "y, z", (Ops::Base::ToString(inputYShape) + ", " + Ops::Base::ToString(outputZShape)).c_str(), "The shapes of y and z must be the same"),
-               return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "y, z",
+                    (Ops::Base::ToString(inputYShape) + ", " + Ops::Base::ToString(outputZShape)).c_str(),
+                    "The shapes of y and z must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -101,8 +109,12 @@ ge::graphStatus RsqrtGradTiling::CalcOutputDtype()
     this->outputDtype = outputDesc->GetDataType();
 
     OP_CHECK_IF(this->outputDtype != this->inputDtype,
-               OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "y, z", std::string(ge::TypeUtils::DataTypeToSerialString(this->inputDtype)) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(this->outputDtype)), "The dtypes of y and z must be the same"),
-               return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "y, z",
+                    std::string(ge::TypeUtils::DataTypeToSerialString(this->inputDtype)) + ", " +
+                        std::string(ge::TypeUtils::DataTypeToSerialString(this->outputDtype)),
+                    "The dtypes of y and z must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -111,17 +123,17 @@ ge::graphStatus RsqrtGradTiling::RunTiling()
     OP_LOGD(tilingContext->GetNodeName(), "RsqrtGradTiling RunTiling enter.");
 
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-    OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"),
+                return ge::GRAPH_FAILED);
     OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"),
-               return ge::GRAPH_FAILED);
+                return ge::GRAPH_FAILED);
 
     tiling = tilingContext->GetTilingData<RsqrtGradTilingData>();
-OP_CHECK_IF((tiling == nullptr),
-                     OP_LOGE_FOR_INVALID_VALUE(tilingContext->GetNodeName(), "tiling_data", "nullptr", "not nullptr"),
-                     return ge::GRAPH_FAILED);
+    OP_CHECK_IF((tiling == nullptr),
+                OP_LOGE_FOR_INVALID_VALUE(tilingContext->GetNodeName(), "tiling_data", "nullptr", "not nullptr"),
+                return ge::GRAPH_FAILED);
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     if (this->outputDtype == ge::DT_FLOAT16) {
@@ -140,11 +152,13 @@ OP_CHECK_IF((tiling == nullptr),
         dType = TPL_INT32;
         baseTilingResult = elewiseBaseTiling.DoTiling<RsqrtGradWithDiv<int32_t>::OpDag>(tiling->baseTiling);
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "z", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT, INT8, INT32");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "z",
+                                  ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+                                  "FLOAT16, BF16, FLOAT, INT8, INT32");
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(baseTilingResult != ge::GRAPH_SUCCESS,
-               OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"), return ge::GRAPH_FAILED);
+                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"), return ge::GRAPH_FAILED);
 
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
@@ -157,7 +171,7 @@ OP_CHECK_IF((tiling == nullptr),
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus TilingPrepareForRsqrtGrad(gert::TilingParseContext *context)
+static ge::graphStatus TilingPrepareForRsqrtGrad(gert::TilingParseContext* context)
 {
     auto compileInfoPtr = context->GetCompiledInfo<RsqrtGradCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfoPtr);
@@ -179,4 +193,4 @@ static ge::graphStatus Tiling4RsqrtGrad(gert::TilingContext* tilingContextGen)
 }
 
 IMPL_OP_OPTILING(RsqrtGrad).Tiling(Tiling4RsqrtGrad).TilingParse<RsqrtGradCompileInfo>(TilingPrepareForRsqrtGrad);
-}  // namespace optiling
+} // namespace optiling

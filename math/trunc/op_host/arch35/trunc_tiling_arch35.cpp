@@ -45,14 +45,17 @@ ge::graphStatus TruncTiling::CalcInputDtype()
     auto inputDesc = tilingContext->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
     this->inputDtype = inputDesc->GetDataType();
-    OP_CHECK_IF(
-        this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT &&
-            this->inputDtype != ge::DT_INT8 && this->inputDtype != ge::DT_UINT8 && this->inputDtype != ge::DT_INT32,
-        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "x", ge::TypeUtils::DataTypeToSerialString(this->inputDtype), "FLOAT16, BF16, FLOAT, INT8, UINT8, INT32"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 &&
+                    this->inputDtype != ge::DT_FLOAT && this->inputDtype != ge::DT_INT8 &&
+                    this->inputDtype != ge::DT_UINT8 && this->inputDtype != ge::DT_INT32,
+                OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "x",
+                                          ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
+                                          "FLOAT16, BF16, FLOAT, INT8, UINT8, INT32"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus TruncTiling::CheckShape()
+ge::graphStatus TruncTiling::CheckShape() const
 {
     OP_LOGD(tilingContext->GetNodeName(), "TruncTiling CheckShape enter.");
     auto inputStorageShape = tilingContext->GetInputShape(0);
@@ -63,9 +66,12 @@ ge::graphStatus TruncTiling::CheckShape()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
     const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
-    OP_CHECK_IF(
-        inputYShape != outputZShape, OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x, y", (Ops::Base::ToString(inputYShape) + ", " + Ops::Base::ToString(outputZShape)).c_str(), "The shapes of x and y must be the same"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputYShape != outputZShape,
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "x, y",
+                    (Ops::Base::ToString(inputYShape) + ", " + Ops::Base::ToString(outputZShape)).c_str(),
+                    "The shapes of x and y must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -75,9 +81,13 @@ ge::graphStatus TruncTiling::CalcOutputDtype()
     auto outputDesc = tilingContext->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
-    OP_CHECK_IF(
-        this->outputDtype != this->inputDtype,
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x, y", std::string(ge::TypeUtils::DataTypeToSerialString(this->inputDtype)) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(this->outputDtype)), "The dtypes of x and y must be the same"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(this->outputDtype != this->inputDtype,
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "x, y",
+                    std::string(ge::TypeUtils::DataTypeToSerialString(this->inputDtype)) + ", " +
+                        std::string(ge::TypeUtils::DataTypeToSerialString(this->outputDtype)),
+                    "The dtypes of x and y must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -85,14 +95,12 @@ ge::graphStatus TruncTiling::RunTiling()
 {
     OP_LOGD(tilingContext->GetNodeName(), "TruncTiling RunTiling enter.");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-    OP_CHECK_IF(
-        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"),
+                return ge::GRAPH_FAILED);
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     tiling = tilingContext->GetTilingData<TruncTilingData>();
@@ -115,12 +123,13 @@ ge::graphStatus TruncTiling::RunTiling()
         dType = TPL_INT32;
         baseTilingResult = elewiseBaseTiling.DoTiling<TruncOp::TruncDAGInt<int32_t>::OpDag>(tiling->baseTiling);
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT, INT8, UINT8, INT32");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y",
+                                  ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+                                  "FLOAT16, BF16, FLOAT, INT8, UINT8, INT32");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(
-        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
+                return ge::GRAPH_FAILED);
 
     return SetTilingData();
 }
@@ -132,10 +141,7 @@ static ge::graphStatus TilingForTrunc(gert::TilingContext* tilingContextGen)
     return baseOpTiling.RunTiling();
 }
 
-ge::graphStatus TilingPrepareForTrunc([[maybe_unused]] gert::TilingParseContext* context)
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus TilingPrepareForTrunc([[maybe_unused]] gert::TilingParseContext* context) { return ge::GRAPH_SUCCESS; }
 
 IMPL_OP_OPTILING(Trunc).Tiling(TilingForTrunc).TilingParse<TruncCompileInfo>(TilingPrepareForTrunc);
 } // namespace optiling

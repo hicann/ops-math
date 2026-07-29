@@ -35,7 +35,7 @@ protected:
 
 private:
     ge::DataType outputDtype = ge::DT_UNDEFINED;
-    gert::TilingContext* tilingContext;
+    gert::TilingContext* tilingContext = nullptr;
 };
 
 } // namespace optiling

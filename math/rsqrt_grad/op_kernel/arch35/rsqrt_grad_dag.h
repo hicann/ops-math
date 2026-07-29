@@ -20,9 +20,8 @@
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
-using namespace Ops::Base;
-
 namespace RsqrtGradDag {
+using namespace Ops::Base;
 
 #ifdef __CCE_AICORE__
 constexpr static Reg::CastTrait cutsomCastTrait0 = {
@@ -170,53 +169,53 @@ template <typename T>
 struct RsqrtGradDAG {
     using ConstValue = MAKE_CONST(float, -0.5);
 
-    using OpCopyIn0 = Bind<Vec::CopyIn<T>, Placeholder::In0<T>>;
-    using OpCopyIn1 = Bind<Vec::CopyIn<T>, Placeholder::In1<T>>;
+    using OpCopyIn0 = Ops::Base::Bind<Ops::Base::Vec::CopyIn<T>, Ops::Base::Placeholder::In0<T>>;
+    using OpCopyIn1 = Ops::Base::Bind<Ops::Base::Vec::CopyIn<T>, Ops::Base::Placeholder::In1<T>>;
 
-    using OpMul0 = Bind<Vec::Mul<T>, OpCopyIn1, OpCopyIn0>;
-    using OpMul1 = Bind<Vec::Mul<T>, OpCopyIn0, OpCopyIn0>;
-    using OpMuls = Bind<Vec::Muls<T>, OpMul0, ConstValue>;
-    using OpMul2 = Bind<Vec::Mul<T>, OpMuls, OpMul1>;
+    using OpMul0 = Ops::Base::Bind<Ops::Base::Vec::Mul<T>, OpCopyIn1, OpCopyIn0>;
+    using OpMul1 = Ops::Base::Bind<Ops::Base::Vec::Mul<T>, OpCopyIn0, OpCopyIn0>;
+    using OpMuls = Ops::Base::Bind<Ops::Base::Vec::Muls<T>, OpMul0, ConstValue>;
+    using OpMul2 = Ops::Base::Bind<Ops::Base::Vec::Mul<T>, OpMuls, OpMul1>;
 
-    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpMul2>;
+    using OpCopyOut = Ops::Base::Bind<Ops::Base::Vec::CopyOut<T>, Ops::Base::Placeholder::Out0<T>, OpMul2>;
 
-    using Outputs = Elems<OpCopyOut>;
-    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
-    using OpDag = DAGSch<Outputs, void, MemCfg>;
+    using Outputs = Ops::Base::Elems<OpCopyOut>;
+    using MemCfg = Ops::Base::MemOptCfg<Ops::Base::MemLevel::LEVEL_2>;
+    using OpDag = Ops::Base::DAGSch<Outputs, void, MemCfg>;
 };
 
 template <typename T>
 struct RsqrtGradInt8 {
-    using OpCopyIn0 = Bind<Vec::CopyIn<T>, Placeholder::In0<T>>;
-    using OpCopyIn1 = Bind<Vec::CopyIn<T>, Placeholder::In1<T>>;
+    using OpCopyIn0 = Ops::Base::Bind<Ops::Base::Vec::CopyIn<T>, Ops::Base::Placeholder::In0<T>>;
+    using OpCopyIn1 = Ops::Base::Bind<Ops::Base::Vec::CopyIn<T>, Ops::Base::Placeholder::In1<T>>;
 
     // do compute with custom op
-    using OpRes = Bind<RsqrtGradDag::RsqrtGradB8<T>, OpCopyIn0, OpCopyIn1>;
-    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpRes>;
+    using OpRes = Ops::Base::Bind<RsqrtGradDag::RsqrtGradB8<T>, OpCopyIn0, OpCopyIn1>;
+    using OpCopyOut = Ops::Base::Bind<Ops::Base::Vec::CopyOut<T>, Ops::Base::Placeholder::Out0<T>, OpRes>;
 
-    using Outputs = Elems<OpCopyOut>;
-    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
-    using OpDag = DAGSch<Outputs, void, MemCfg>;
+    using Outputs = Ops::Base::Elems<OpCopyOut>;
+    using MemCfg = Ops::Base::MemOptCfg<Ops::Base::MemLevel::LEVEL_2>;
+    using OpDag = Ops::Base::DAGSch<Outputs, void, MemCfg>;
 }; // int8 compute dag
 
 template <typename T>
 struct RsqrtGradWithDiv {
     using ConstValue = MAKE_CONST(float, -2);
 
-    using OpCopyIn0 = Bind<Vec::CopyIn<T>, Placeholder::In0<T>>;
-    using OpCopyIn1 = Bind<Vec::CopyIn<T>, Placeholder::In1<T>>;
+    using OpCopyIn0 = Ops::Base::Bind<Ops::Base::Vec::CopyIn<T>, Ops::Base::Placeholder::In0<T>>;
+    using OpCopyIn1 = Ops::Base::Bind<Ops::Base::Vec::CopyIn<T>, Ops::Base::Placeholder::In1<T>>;
 
     // use div instead of muls
-    using OpMul0 = Bind<Vec::Mul<T>, OpCopyIn1, OpCopyIn0>;
-    using OpMul1 = Bind<Vec::Mul<T>, OpCopyIn0, OpCopyIn0>;
-    using OpDivs = Bind<RsqrtGradDag::DivsCustom<T>, OpMul0, ConstValue>;
-    using OpMul2 = Bind<Vec::Mul<T>, OpDivs, OpMul1>;
+    using OpMul0 = Ops::Base::Bind<Ops::Base::Vec::Mul<T>, OpCopyIn1, OpCopyIn0>;
+    using OpMul1 = Ops::Base::Bind<Ops::Base::Vec::Mul<T>, OpCopyIn0, OpCopyIn0>;
+    using OpDivs = Ops::Base::Bind<RsqrtGradDag::DivsCustom<T>, OpMul0, ConstValue>;
+    using OpMul2 = Ops::Base::Bind<Ops::Base::Vec::Mul<T>, OpDivs, OpMul1>;
 
-    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpMul2>;
+    using OpCopyOut = Ops::Base::Bind<Ops::Base::Vec::CopyOut<T>, Ops::Base::Placeholder::Out0<T>, OpMul2>;
 
-    using Outputs = Elems<OpCopyOut>;
-    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
-    using OpDag = DAGSch<Outputs, void, MemCfg>;
+    using Outputs = Ops::Base::Elems<OpCopyOut>;
+    using MemCfg = Ops::Base::MemOptCfg<Ops::Base::MemLevel::LEVEL_2>;
+    using OpDag = Ops::Base::DAGSch<Outputs, void, MemCfg>;
 }; // int32 compute dag
 
 #endif // CANN_CUSTOM_OPS_RSQRT_GRAD_DAG_H

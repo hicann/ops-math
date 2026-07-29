@@ -19,7 +19,6 @@
 #include "atvoss/elewise/elewise_tiling.h"
 #include "../../op_kernel/abs_struct.h"
 
-
 namespace optiling {
 using namespace AbsNs;
 using namespace Ops::Base;
@@ -31,7 +30,7 @@ struct AbsCompileInfo {
 
 class AbsTiling {
 public:
-    explicit AbsTiling(gert::TilingContext *context) : tilingContext(context){};
+    explicit AbsTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
 
 protected:
@@ -39,11 +38,11 @@ protected:
     ge::graphStatus SetTilingData();
 
 private:
-    gert::TilingContext *tilingContext;
+    gert::TilingContext* tilingContext = nullptr;
     ge::DataType outputDtype = ge::DT_UNDEFINED;
     ge::DataType inputDtype = ge::DT_UNDEFINED;
     AbsTilingData* tiling = nullptr;
 };
 
-}  // namespace optiling
-#endif  // OPS_MATH_ABS_OP_HOST_ABS_TILING_ARCH35_H
+} // namespace optiling
+#endif // OPS_MATH_ABS_OP_HOST_ABS_TILING_ARCH35_H

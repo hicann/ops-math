@@ -43,8 +43,7 @@ struct FloorCompileInfo {
 
 class FloorTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit FloorTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit FloorTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;
@@ -55,12 +54,12 @@ protected:
     uint64_t GetTilingKey() const override;
     ge::graphStatus GetWorkspaceSize() override;
     ge::graphStatus PostTiling() override;
-    std::string ToString(FloorTilingData& paramTilingData);
+    std::string ToString(FloorTilingData& paramTilingData) const;
 
 private:
-    uint64_t GetOpKey(ge::DataType xDtype, ge::DataType yDtype);
-    uint64_t GenerateTilingKey(uint64_t innerKey);
-    std::map<uint64_t, ComputeParams> GetComputeMap(uint64_t paramOpKey);
+    uint64_t GetOpKey(ge::DataType xDtype, ge::DataType yDtype) const;
+    uint64_t GenerateTilingKey(uint64_t innerKey) const;
+    std::map<uint64_t, ComputeParams> GetComputeMap(uint64_t paramOpKey) const;
 
     FloorTilingData tilingData;
     uint64_t opKey = 0;

@@ -25,10 +25,9 @@
 
 #include <iostream>
 
-namespace optiling
-{
+namespace optiling {
 const int64_t ASCEND_WORKSPACE = 16777216; // 16M
-const int64_t ASCEND_API_BUFFER = 122880; //120K
+const int64_t ASCEND_API_BUFFER = 122880;  // 120K
 const int64_t DCACHE_SIZE = 32768;
 
 ge::graphStatus SinTiling::SetTilingData()
@@ -48,8 +47,9 @@ ge::graphStatus SinTiling::SetTilingData()
     auto platformInfo = tilingContext->GetPlatformInfo();
     if (platformInfo == nullptr) {
         auto compileInfoPtr = tilingContext->GetCompileInfo<SinCompileInfo>();
-        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE_FOR_INVALID_VALUE(tilingContext->GetNodeName(), "compile_info", "nullptr", "not nullptr"),
-                        return ge::GRAPH_FAILED);
+        OP_CHECK_IF(compileInfoPtr == nullptr,
+                    OP_LOGE_FOR_INVALID_VALUE(tilingContext->GetNodeName(), "compile_info", "nullptr", "not nullptr"),
+                    return ge::GRAPH_FAILED);
         ubSize = compileInfoPtr->ubSize;
     } else {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
@@ -57,7 +57,7 @@ ge::graphStatus SinTiling::SetTilingData()
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
         ubSize = ubSizePlatForm;
     }
-    tilingContext->SetLocalMemorySize(static_cast<uint32_t>(ubSize-DCACHE_SIZE));
+    tilingContext->SetLocalMemorySize(static_cast<uint32_t>(ubSize - DCACHE_SIZE));
     return ge::GRAPH_SUCCESS;
 }
 
@@ -69,12 +69,13 @@ ge::graphStatus SinTiling::CalcInputDtype()
     this->inputDtype = inputDesc->GetDataType();
     OP_CHECK_IF(
         this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT,
-        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "x", ge::TypeUtils::DataTypeToSerialString(this->inputDtype), "FLOAT16, BF16, FLOAT"),
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "x",
+                                  ge::TypeUtils::DataTypeToSerialString(this->inputDtype), "FLOAT16, BF16, FLOAT"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus SinTiling::CheckShape()
+ge::graphStatus SinTiling::CheckShape() const
 {
     OP_LOGD(tilingContext->GetNodeName(), "SinTiling CheckShape enter.");
     auto inputStorageShape = tilingContext->GetInputShape(0);
@@ -86,8 +87,11 @@ ge::graphStatus SinTiling::CheckShape()
     const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(inputYShape != outputZShape,
-               OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x, y", (Ops::Base::ToString(inputYShape) + ", " + Ops::Base::ToString(outputZShape)).c_str(), "The shapes of x and y must be the same"),
-               return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "x, y",
+                    (Ops::Base::ToString(inputYShape) + ", " + Ops::Base::ToString(outputZShape)).c_str(),
+                    "The shapes of x and y must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -98,42 +102,51 @@ ge::graphStatus SinTiling::CalcOutputDtype()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
     OP_CHECK_IF(this->outputDtype != this->inputDtype,
-               OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x, y", std::string(ge::TypeUtils::DataTypeToSerialString(this->outputDtype)) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(this->inputDtype)), "The dtypes of x and y must be the same"),
-               return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "x, y",
+                    std::string(ge::TypeUtils::DataTypeToSerialString(this->outputDtype)) + ", " +
+                        std::string(ge::TypeUtils::DataTypeToSerialString(this->inputDtype)),
+                    "The dtypes of x and y must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus SinTiling::RunTiling()
 {
     OP_LOGD(tilingContext->GetNodeName(), "SinTiling RunTiling enter.");
-    ElewiseBaseTiling elewiseBaseTiling(tilingContext);
+    Ops::Base::ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     tiling = tilingContext->GetTilingData<SinNs::SinTilingData>();
 
     OP_CHECK_IF(tiling == nullptr,
-               OP_LOGE_FOR_INVALID_VALUE(tilingContext->GetNodeName(), "tiling_data", "nullptr", "not nullptr"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"), return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_VALUE(tilingContext->GetNodeName(), "tiling_data", "nullptr", "not nullptr"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"),
+                return ge::GRAPH_FAILED);
     OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"),
-               return ge::GRAPH_FAILED);
+                return ge::GRAPH_FAILED);
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     if (this->outputDtype == ge::DT_FLOAT16) {
         dType = TPL_FP16;
-        baseTilingResult = elewiseBaseTiling.DoTiling<SinOp::SinDAG<Ops::Base::half>::OpDag>(tiling->baseTiling, ASCEND_API_BUFFER + DCACHE_SIZE);
+        baseTilingResult = elewiseBaseTiling.DoTiling<SinOp::SinDAG<Ops::Base::half>::OpDag>(
+            tiling->baseTiling, ASCEND_API_BUFFER + DCACHE_SIZE);
     } else if (this->outputDtype == ge::DT_BF16) {
         dType = TPL_BF16;
-        baseTilingResult = elewiseBaseTiling.DoTiling<SinOp::SinDAG<bfloat16_t>::OpDag>(tiling->baseTiling, ASCEND_API_BUFFER + DCACHE_SIZE);
+        baseTilingResult = elewiseBaseTiling.DoTiling<SinOp::SinDAG<Ops::Base::bfloat16_t>::OpDag>(
+            tiling->baseTiling, ASCEND_API_BUFFER + DCACHE_SIZE);
     } else if (this->outputDtype == ge::DT_FLOAT) {
         dType = TPL_FP32;
-        baseTilingResult = elewiseBaseTiling.DoTiling<SinOp::SinDAG<float>::OpDag>(tiling->baseTiling, ASCEND_API_BUFFER + DCACHE_SIZE);
+        baseTilingResult = elewiseBaseTiling.DoTiling<SinOp::SinDAG<float>::OpDag>(tiling->baseTiling,
+                                                                                   ASCEND_API_BUFFER + DCACHE_SIZE);
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y",
+                                  ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
+                return ge::GRAPH_FAILED);
 
     return SetTilingData();
 }
@@ -160,6 +173,5 @@ static ge::graphStatus TilingPrepareForSin(gert::TilingParseContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-
 IMPL_OP_OPTILING(Sin).Tiling(Tiling4Sin).TilingParse<SinCompileInfo>(TilingPrepareForSin);
-}  // namespace optiling
+} // namespace optiling

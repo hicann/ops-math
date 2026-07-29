@@ -15,32 +15,30 @@
 
 #ifndef OPS_OP_TILING_RUNTIME_RECIPROCAL_TILING_H
 #define OPS_OP_TILING_RUNTIME_RECIPROCAL_TILING_H
- 
+
 #include "register/tilingdata_base.h"
 #include "../../op_kernel/arch35/reciprocal_tiling_struct.h"
 #include "atvoss/elewise/elewise_tiling.h"
- 
+
 namespace optiling {
 
-class ReciprocalTiling
-{
+class ReciprocalTiling {
 public:
-	explicit ReciprocalTiling(gert::TilingContext* context) : tilingContext(context) {};
-	ge::graphStatus RunTiling();
-	ReciprocalNs::ReciprocalTilingData *tiling = nullptr;
+    explicit ReciprocalTiling(gert::TilingContext* context) : tilingContext(context) {};
+    ge::graphStatus RunTiling();
+    ReciprocalNs::ReciprocalTilingData* tiling = nullptr;
 
 protected:
-	ge::graphStatus CalcOutputDtype();
-	ge::graphStatus CalcInputDtype();
-	ge::graphStatus CheckShape();
-	ge::graphStatus SetTilingData();
+    ge::graphStatus CalcOutputDtype();
+    ge::graphStatus CalcInputDtype();
+    ge::graphStatus CheckShape() const;
+    ge::graphStatus SetTilingData();
 
 private:
-	gert::TilingContext* tilingContext;
-	ge::DataType outputDtype = ge::DT_UNDEFINED;
-	ge::DataType inputDtype = ge::DT_UNDEFINED;
-	uint64_t dType = 0;
+    gert::TilingContext* tilingContext = nullptr;
+    ge::DataType outputDtype = ge::DT_UNDEFINED;
+    ge::DataType inputDtype = ge::DT_UNDEFINED;
+    uint64_t dType = 0;
 };
-}	// namespace optiling
-#endif  // OPS_OP_TILING_RUNTIME_RECIPROCAL_TILING_H
-
+} // namespace optiling
+#endif // OPS_OP_TILING_RUNTIME_RECIPROCAL_TILING_H

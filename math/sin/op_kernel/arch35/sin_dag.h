@@ -15,35 +15,36 @@
 
 #ifndef CANN_CUSTOM_OPS_SIN_DAG_H
 #define CANN_CUSTOM_OPS_SIN_DAG_H
- 
+
 #include "atvoss/util/dag.h"
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
-namespace SinOp
-{
+namespace SinOp {
 using namespace AscendC;
 const int CAST_MODE_NONE = 0;
 const int CAST_MODE_RINT = 1;
 constexpr uint32_t THREAD_NUM = 1024;
 
 #ifdef __CCE_AICORE__
-template<typename T>
-__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void SinSimtCompute(__ubuf__ T* x, __ubuf__ T* y, const int64_t totalNum)
+template <typename T>
+__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void SinSimtCompute(__ubuf__ T* x, __ubuf__ T* y,
+                                                                           const int64_t totalNum)
 {
-    for(int64_t i = threadIdx.x; i < totalNum; i += blockDim.x){
+    for (int64_t i = threadIdx.x; i < totalNum; i += blockDim.x) {
         y[i] = Simt::Sin(x[i]);
     }
 }
 #endif
 
-template<class T>
+template <class T>
 struct SinCustom : public Ops::Base::Vec::ElemwiseUnaryOP<T, T> {
-    __aicore__ inline SinCustom(LocalTensor<T> &dst, LocalTensor<T> &src, uint32_t count) {
+    __aicore__ inline SinCustom(Ops::Base::LocalTensor<T>& dst, Ops::Base::LocalTensor<T>& src, uint32_t count)
+    {
 #ifdef __CCE_AICORE__
         __ubuf__ T* srcAddr = (__ubuf__ T*)src.GetPhyAddr();
         __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
-        Simt::VF_CALL<SinSimtCompute<T>>(Simt::Dim3(THREAD_NUM),srcAddr,dstAddr,count);
+        Simt::VF_CALL<SinSimtCompute<T>>(Simt::Dim3(THREAD_NUM), srcAddr, dstAddr, count);
 #endif
     }
 };
@@ -60,5 +61,5 @@ struct SinDAG {
     using MemCfg = Ops::Base::MemOptCfg<Ops::Base::MemLevel::LEVEL_2>;
     using OpDag = Ops::Base::DAGSch<Outputs, void, MemCfg>;
 };
-}
-#endif  // CANN_CUSTOM_OPS_SIN_DAG_H
+} // namespace SinOp
+#endif // CANN_CUSTOM_OPS_SIN_DAG_H

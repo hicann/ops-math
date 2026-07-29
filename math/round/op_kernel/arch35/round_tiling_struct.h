@@ -15,8 +15,8 @@
 
 struct RoundTilingData {
     Ops::Base::EleBaseTilingData baseTiling;
-    float decimals;
-    int32_t power;
-    int32_t num;
+    float decimals = 0.0f;
+    int32_t power = 0;
+    int32_t num = 0;
 };
 #endif

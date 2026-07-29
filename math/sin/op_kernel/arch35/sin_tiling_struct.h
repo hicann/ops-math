@@ -13,12 +13,10 @@
 
 #include "atvoss/elewise/elewise_base_struct.h"
 
-using namespace Ops::Base;
-
 namespace SinNs {
-    struct SinTilingData {
-        EleBaseTilingData baseTiling;
-    };
-}
+struct SinTilingData {
+    Ops::Base::EleBaseTilingData baseTiling;
+};
+} // namespace SinNs
 
 #endif

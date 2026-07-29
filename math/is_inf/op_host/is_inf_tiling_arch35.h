@@ -21,8 +21,7 @@
 namespace optiling {
 using namespace Ops::Base;
 
-class IsInfRegbaseTiling
-{
+class IsInfRegbaseTiling {
 public:
     explicit IsInfRegbaseTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
@@ -34,9 +33,9 @@ protected:
     ge::graphStatus SetTilingData();
 
 private:
-    gert::TilingContext* tilingContext;
-    ge::DataType inputDtype;
-    ge::DataType outputDtype;
+    gert::TilingContext* tilingContext = nullptr;
+    ge::DataType inputDtype = ge::DT_UNDEFINED;
+    ge::DataType outputDtype = ge::DT_UNDEFINED;
     EleBaseTilingDataV2* tiling_ = nullptr;
 };
 } // namespace optiling

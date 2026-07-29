@@ -24,8 +24,8 @@
 namespace optiling {
 
 struct CastCompileInfo {
-    uint64_t coreNum;
-    uint64_t ubSize;
+    uint64_t coreNum = 0;
+    uint64_t ubSize = 0;
 };
 
 BEGIN_TILING_DATA_DEF(CastTilingData)
@@ -48,33 +48,38 @@ END_TILING_DATA_DEF;
 REGISTER_TILING_DATA_CLASS(Cast, CastTilingData);
 
 struct CastMapSt {
-    ge::DataType srcType_; // key1
-    ge::DataType dstType_; // key2
+    ge::DataType srcType_ = ge::DT_UNDEFINED; // key1
+    ge::DataType dstType_ = ge::DT_UNDEFINED; // key2
 
-    uint8_t id_;
-    uint8_t srcMapType_;
-    uint8_t dstMapType_;
-    uint8_t midType_;
+    uint8_t id_ = 0;
+    uint8_t srcMapType_ = 0;
+    uint8_t dstMapType_ = 0;
+    uint8_t midType_ = 0;
 
-    uint8_t castMode1_;
-    uint8_t castMode2_;
-    uint8_t regCopyInMode_;
-    uint8_t regCopyOutMode_;
+    uint8_t castMode1_ = 0;
+    uint8_t castMode2_ = 0;
+    uint8_t regCopyInMode_ = 0;
+    uint8_t regCopyOutMode_ = 0;
 
     CastMapSt() {}
-    CastMapSt(ge::DataType srcType, ge::DataType dstType, uint8_t id,
-        uint8_t srcMapType, uint8_t dstMapType, uint8_t midType,
-        uint8_t castMode1, uint8_t castMode2,
-        uint8_t regCopyInMode, uint8_t regCopyOutMode)
-        : srcType_(srcType), dstType_(dstType), id_(id), srcMapType_(srcMapType),
-        dstMapType_(dstMapType), midType_(midType), castMode1_(castMode1), castMode2_(castMode2),
-        regCopyInMode_(regCopyInMode), regCopyOutMode_(regCopyOutMode) {}
+    CastMapSt(ge::DataType srcType, ge::DataType dstType, uint8_t id, uint8_t srcMapType, uint8_t dstMapType,
+              uint8_t midType, uint8_t castMode1, uint8_t castMode2, uint8_t regCopyInMode, uint8_t regCopyOutMode)
+        : srcType_(srcType),
+          dstType_(dstType),
+          id_(id),
+          srcMapType_(srcMapType),
+          dstMapType_(dstMapType),
+          midType_(midType),
+          castMode1_(castMode1),
+          castMode2_(castMode2),
+          regCopyInMode_(regCopyInMode),
+          regCopyOutMode_(regCopyOutMode)
+    {}
 };
 
 class CastTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit CastTiling(gert::TilingContext *context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit CastTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;
@@ -94,22 +99,21 @@ protected:
     ge::graphStatus PostTiling() override;
 
 private:
-    int64_t GetUbCopyStep(uint8_t inType, uint8_t outType,
-        uint8_t copyType, int64_t &oneLoopCopyInBitSize);
-    int64_t GetDtypeBitSize(uint8_t dtype);
-    int64_t GetGeDtypeBitSize(ge::DataType dtype);
+    int64_t GetUbCopyStep(uint8_t inType, uint8_t outType, uint8_t copyType, int64_t& oneLoopCopyInBitSize) const;
+    int64_t GetDtypeBitSize(uint8_t dtype) const;
+    int64_t GetGeDtypeBitSize(ge::DataType dtype) const;
     int64_t GetUbFormer(int64_t inputTypeBitSize, int64_t outputTypeBitSize);
-    bool IsSimt();
-    ge::DataType TransAclToGeDataType(int32_t aclType);
+    bool IsSimt() const;
+    ge::DataType TransAclToGeDataType(int32_t aclType) const;
 
-    int64_t coreNum_{ 0 };      // syscfg
-    int64_t ubSize_{ 0 };       // syscfg unit: Byte
-    int64_t vlBitSize_{2048};       // 2048 unit: bit
-    int64_t shapeSize_ {0};
+    int64_t coreNum_{0};      // syscfg
+    int64_t ubSize_{0};       // syscfg unit: Byte
+    int64_t vlBitSize_{2048}; // 2048 unit: bit
+    int64_t shapeSize_{0};
 
     CastTilingData tilingData_;
     CastMapSt policy_;
 };
 
-}  // namespace optiling
-#endif  // OPS_BUILD_IN_OP_TILING_RUNTIME_CAST_TILING_H
+} // namespace optiling
+#endif // OPS_BUILD_IN_OP_TILING_RUNTIME_CAST_TILING_H

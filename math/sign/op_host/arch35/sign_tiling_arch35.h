@@ -31,14 +31,14 @@ public:
 
 protected:
     ge::graphStatus CalcOutputDtype();
-    ge::graphStatus CheckOutputDtype();
+    ge::graphStatus CheckOutputDtype() const;
     ge::graphStatus CalcInputDtype();
-    ge::graphStatus CheckOutputShape();
+    ge::graphStatus CheckOutputShape() const;
     std::string DataTypeToSerialString(ge::DataType type);
     ge::graphStatus SetTilingData();
 
 private:
-    gert::TilingContext* tilingContext;
+    gert::TilingContext* tilingContext = nullptr;
     ge::DataType outputDtype = ge::DT_UNDEFINED;
     ge::DataType inputDtype = ge::DT_UNDEFINED;
     SignTilingData* tiling = nullptr;

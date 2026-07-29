@@ -14,7 +14,7 @@
 #include "atvoss/elewise/elewise_base_struct.h"
 
 struct RsqrtGradTilingData {
-    EleBaseTilingData baseTiling;
+    Ops::Base::EleBaseTilingData baseTiling;
 };
 
 #endif

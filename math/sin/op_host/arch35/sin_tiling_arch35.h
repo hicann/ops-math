@@ -22,12 +22,11 @@
 namespace optiling {
 
 struct SinCompileInfo {
-    uint64_t coreNum;
-    uint64_t ubSize;
+    uint64_t coreNum = 0;
+    uint64_t ubSize = 0;
 };
 
-class SinTiling
-{
+class SinTiling {
 public:
     explicit SinTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
@@ -35,15 +34,15 @@ public:
 protected:
     ge::graphStatus CalcOutputDtype();
     ge::graphStatus CalcInputDtype();
-    ge::graphStatus CheckShape();
+    ge::graphStatus CheckShape() const;
     ge::graphStatus SetTilingData();
 
 private:
     SinNs::SinTilingData* tiling = nullptr;
-    gert::TilingContext* tilingContext;
+    gert::TilingContext* tilingContext = nullptr;
     ge::DataType outputDtype = ge::DT_UNDEFINED;
     ge::DataType inputDtype = ge::DT_UNDEFINED;
     uint64_t dType = 0;
 };
-}  // namespace optiling
-#endif  // OPS_BUILD_IN_OP_TILING_RUNTIME_SIN_REGBASE_OPTILING_H
+} // namespace optiling
+#endif // OPS_BUILD_IN_OP_TILING_RUNTIME_SIN_REGBASE_OPTILING_H

@@ -19,9 +19,9 @@
 namespace optiling {
 
 struct MaskedScaleCompileInfo {
-    uint64_t coreNum;
-    uint64_t ubSize;
+    uint64_t coreNum = 0;
+    uint64_t ubSize = 0;
 };
 
-}  // namespace optiling
-#endif  // OPS_OP_TILING_RUNTIME_MASKED_SCALE_TILING_H
+} // namespace optiling
+#endif // OPS_OP_TILING_RUNTIME_MASKED_SCALE_TILING_H

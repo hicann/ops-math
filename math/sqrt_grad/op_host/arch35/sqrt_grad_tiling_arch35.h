@@ -22,8 +22,8 @@
 #include "math/sqrt_grad/op_kernel/arch35/sqrt_grad_tiling_struct.h"
 namespace optiling {
 struct SqrtGradCompileInfo {
-    uint64_t coreNum;
-    uint64_t ubSize;
+    uint64_t coreNum = 0;
+    uint64_t ubSize = 0;
 };
 } // namespace optiling
 #endif // OPS_BUILD_IN_OP_TILING_RUNTIME_SQRT_GRAD_TILING_H

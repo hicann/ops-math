@@ -21,6 +21,7 @@
 #include "arch35/rsqrt_grad_tilingdata.h"
 
 using namespace RsqrtGradOp;
+using namespace Ops::Base;
 
 namespace AscendC {
 template <uint64_t schMode, uint64_t dType>
@@ -54,4 +55,4 @@ __global__ __aicore__ void rsqrt_grad(GM_ADDR y, GM_ADDR dy, GM_ADDR z, GM_ADDR 
     }
     return;
 }
-}
+} // namespace AscendC

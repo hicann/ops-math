@@ -26,35 +26,26 @@ namespace IsFiniteNs {
 #define IS_FINITE_TPL_BF16 40
 
 ASCENDC_TPL_ARGS_DECL(IsFinite,
-    ASCENDC_TPL_DTYPE_DECL(D_T_X, IS_FINITE_TPL_FP16, IS_FINITE_TPL_BF16, IS_FINITE_TPL_FP32),
-    ASCENDC_TPL_DTYPE_DECL(D_T_Y, IS_FINITE_TPL_BOOL),
-);
+                      ASCENDC_TPL_DTYPE_DECL(D_T_X, IS_FINITE_TPL_FP16, IS_FINITE_TPL_BF16, IS_FINITE_TPL_FP32),
+                      ASCENDC_TPL_DTYPE_DECL(D_T_Y, IS_FINITE_TPL_BOOL), );
 
-ASCENDC_TPL_SEL(
-    ASCENDC_TPL_ARGS_SEL(
-     ASCENDC_TPL_DTYPE_SEL(D_T_X, IS_FINITE_TPL_FP16),
-     ASCENDC_TPL_DTYPE_SEL(D_T_Y, IS_FINITE_TPL_BOOL),
-    ),
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DTYPE_SEL(D_T_X, IS_FINITE_TPL_FP16),
+                                     ASCENDC_TPL_DTYPE_SEL(D_T_Y, IS_FINITE_TPL_BOOL), ),
 #if !(defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113))
-    ASCENDC_TPL_ARGS_SEL(
-     ASCENDC_TPL_DTYPE_SEL(D_T_X, IS_FINITE_TPL_BF16),
-     ASCENDC_TPL_DTYPE_SEL(D_T_Y, IS_FINITE_TPL_BOOL),
-    ),
+                ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DTYPE_SEL(D_T_X, IS_FINITE_TPL_BF16),
+                                     ASCENDC_TPL_DTYPE_SEL(D_T_Y, IS_FINITE_TPL_BOOL), ),
 #endif
-    ASCENDC_TPL_ARGS_SEL(
-     ASCENDC_TPL_DTYPE_SEL(D_T_X, IS_FINITE_TPL_FP32),
-     ASCENDC_TPL_DTYPE_SEL(D_T_Y, IS_FINITE_TPL_BOOL),
-    )
-);
+                ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DTYPE_SEL(D_T_X, IS_FINITE_TPL_FP32),
+                                     ASCENDC_TPL_DTYPE_SEL(D_T_Y, IS_FINITE_TPL_BOOL), ));
 
 struct IsFiniteTilingData {
-  uint32_t usableUbSize;
-  uint32_t needCoreNum;
-  uint64_t totalDataCount;
-  uint64_t perCoreDataCount;
-  uint64_t tailDataCoreNum;
-  uint64_t lastCoreDataCount;
+    uint32_t usableUbSize = 0;
+    uint32_t needCoreNum = 0;
+    uint64_t totalDataCount = 0;
+    uint64_t perCoreDataCount = 0;
+    uint64_t tailDataCoreNum = 0;
+    uint64_t lastCoreDataCount = 0;
 };
 
-}
+} // namespace IsFiniteNs
 #endif // IS_FINITE_STRUCT_H

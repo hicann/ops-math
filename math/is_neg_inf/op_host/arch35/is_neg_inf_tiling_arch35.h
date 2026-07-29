@@ -20,8 +20,8 @@
 namespace optiling {
 
 struct IsNegInfCompileInfo {
-    uint64_t coreNum;
-    uint64_t ubSize;
+    uint64_t coreNum = 0;
+    uint64_t ubSize = 0;
 };
 
 class IsNegInfRegbaseTiling {
@@ -32,11 +32,11 @@ public:
 protected:
     ge::graphStatus CalcOutputDtype();
     ge::graphStatus CalcInputDtype();
-    ge::graphStatus CheckShape();
+    ge::graphStatus CheckShape() const;
 
 private:
     uint64_t dType = 0;
-    gert::TilingContext* tilingContext;
+    gert::TilingContext* tilingContext = nullptr;
     ge::DataType inputDtype = ge::DT_UNDEFINED;
     ge::DataType outputDtype = ge::DT_UNDEFINED;
 };

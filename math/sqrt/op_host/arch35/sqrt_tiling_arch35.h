@@ -17,8 +17,8 @@ namespace optiling {
 using namespace Ops::Base;
 
 struct SqrtCompileInfo {
-    uint64_t coreNum;
-    uint64_t ubSize;
+    uint64_t coreNum = 0;
+    uint64_t ubSize = 0;
 };
 
 class SqrtTiling {
@@ -29,13 +29,13 @@ public:
 protected:
     ge::graphStatus CalcOutputDtype();
     ge::graphStatus CalcInputDtype();
-    ge::graphStatus CheckShape();
+    ge::graphStatus CheckShape() const;
 
 private:
-    gert::TilingContext *tilingContext;
+    gert::TilingContext* tilingContext = nullptr;
     ge::DataType inputDtype = ge::DT_UNDEFINED;
     ge::DataType outputDtype = ge::DT_UNDEFINED;
     uint64_t dType = 0;
 };
-}  // namespace optiling
+} // namespace optiling
 #endif // OPS_BUILD_IN_OP_TILING_RUNTIME_SQRT_TILING_H

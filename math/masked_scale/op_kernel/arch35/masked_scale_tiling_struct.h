@@ -17,8 +17,8 @@ namespace MaskedScaleNs {
 
 struct MaskedScaleTilingData {
     Ops::Base::EleBaseTilingData baseTiling;
-    float scale;
+    float scale = 0.0f;
 };
 
-}
+} // namespace MaskedScaleNs
 #endif // MASKED_SCALE_TILING_STRUCT_H

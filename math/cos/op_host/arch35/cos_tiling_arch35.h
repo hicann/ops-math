@@ -20,24 +20,23 @@
 
 namespace optiling {
 
-class CosTiling
-{
+class CosTiling {
 public:
     explicit CosTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
-    CosTilingData *tiling = nullptr;
+    CosTilingData* tiling = nullptr;
 
 protected:
     ge::graphStatus CalcOutputDtype();
     ge::graphStatus CalcInputDtype();
-    ge::graphStatus CheckShape();
+    ge::graphStatus CheckShape() const;
     ge::graphStatus SetTilingData();
 
 private:
-    gert::TilingContext* tilingContext;
+    gert::TilingContext* tilingContext = nullptr;
     ge::DataType outputDtype = ge::DT_UNDEFINED;
     ge::DataType inputDtype = ge::DT_UNDEFINED;
     uint64_t dType = 0;
 };
-}  // namespace optiling
-#endif  // OPS_MATH_COS_OP_HOST_COS_TILING_ARCH35_H_
+} // namespace optiling
+#endif // OPS_MATH_COS_OP_HOST_COS_TILING_ARCH35_H_

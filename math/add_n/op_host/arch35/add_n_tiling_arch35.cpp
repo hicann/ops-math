@@ -43,7 +43,7 @@ protected:
     ge::graphStatus CheckOpParam();
 
 private:
-    gert::TilingContext* tilingContext;
+    gert::TilingContext* tilingContext = nullptr;
     int64_t coreNum_{0};
     int64_t ubSize_{0};
 
@@ -97,11 +97,11 @@ ge::graphStatus AddNTiling::GetCompileInfo()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, compileInfo);
     coreNum_ = compileInfo->coreNum;
     ubSize_ = compileInfo->ubSize;
-    OP_CHECK_IF(
-        (coreNum_ <= 0 || ubSize_ <= 0),
-        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
-            tilingContext->GetNodeName(), "coreNum,ubSize", std::to_string(coreNum_)+","+std::to_string(ubSize_),"The values of coreNum,ubSize must be greater than 0"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((coreNum_ <= 0 || ubSize_ <= 0),
+                OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(tilingContext->GetNodeName(), "coreNum,ubSize",
+                                                       std::to_string(coreNum_) + "," + std::to_string(ubSize_),
+                                                       "The values of coreNum,ubSize must be greater than 0"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -116,23 +116,23 @@ ge::graphStatus AddNTiling::CheckDtype()
         OP_CHECK_NULL_WITH_CONTEXT(tilingContext, x2Desc);
         auto x2Dtype = x2Desc->GetDataType();
 
-        OP_CHECK_IF(
-            x1Dtype != x2Dtype, OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x[0], x[i]",
-                                                                        ge::TypeUtils::DataTypeToSerialString(x1Dtype) + ", " +
-                                                                        ge::TypeUtils::DataTypeToSerialString(x2Dtype),
-                                                                        "The dtypes of x[0] and x[i] must be the same"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(x1Dtype != x2Dtype,
+                    OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x[0], x[i]",
+                                                           ge::TypeUtils::DataTypeToSerialString(x1Dtype) + ", " +
+                                                               ge::TypeUtils::DataTypeToSerialString(x2Dtype),
+                                                           "The dtypes of x[0] and x[i] must be the same"),
+                    return ge::GRAPH_FAILED);
     }
 
     auto yDesc = tilingContext->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, yDesc);
     auto yDtype = yDesc->GetDataType();
-    OP_CHECK_IF(
-        x1Dtype != yDtype, OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "x,y",
-                                                                  ge::TypeUtils::DataTypeToSerialString(x1Dtype) + ", " +                                                          
-                                                                  ge::TypeUtils::DataTypeToSerialString(yDtype),
-                                                                  "The dtypes of x and y must be the same"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(x1Dtype != yDtype,
+                OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "x,y",
+                                                      ge::TypeUtils::DataTypeToSerialString(x1Dtype) + ", " +
+                                                          ge::TypeUtils::DataTypeToSerialString(yDtype),
+                                                      "The dtypes of x and y must be the same"),
+                return ge::GRAPH_FAILED);
 
     dtypeSize_ = ge::GetSizeByDataType(yDtype);
 
@@ -151,23 +151,24 @@ ge::graphStatus AddNTiling::CheckShape()
         auto xTensorShape2Ptr = tilingContext->GetDynamicInputShape(0, i);
         OP_CHECK_NULL_WITH_CONTEXT(tilingContext, xTensorShape2Ptr);
         auto xTensorShape2 = xTensorShape2Ptr->GetStorageShape();
-        OP_CHECK_IF(
-            xTensorShape2 != xTensorShape1,
-            OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x[0], x[i]",
-                                                    (Ops::Base::ToString(xTensorShape1) + ", " + Ops::Base::ToString(xTensorShape2)).c_str(),
-                                                    "The shapes of x[0] and x[i] must be the same"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(xTensorShape2 != xTensorShape1,
+                    OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                        tilingContext->GetNodeName(), "x[0], x[i]",
+                        (Ops::Base::ToString(xTensorShape1) + ", " + Ops::Base::ToString(xTensorShape2)).c_str(),
+                        "The shapes of x[0] and x[i] must be the same"),
+                    return ge::GRAPH_FAILED);
     }
 
     // check output shape
     auto yShapePtr = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, yShapePtr);
     auto yShape = yShapePtr->GetStorageShape();
-    OP_CHECK_IF(
-        xTensorShape1 != yShape,
-        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(tilingContext->GetNodeName(), "x,y", (Ops::Base::ToString(xTensorShape1) + ", " + Ops::Base::ToString(yShape)).c_str(),
-                                               "The shapes of x and y must be the same"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(xTensorShape1 != yShape,
+                OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+                    tilingContext->GetNodeName(), "x,y",
+                    (Ops::Base::ToString(xTensorShape1) + ", " + Ops::Base::ToString(yShape)).c_str(),
+                    "The shapes of x and y must be the same"),
+                return ge::GRAPH_FAILED);
     shape_ = yShape;
 
     return ge::GRAPH_SUCCESS;
@@ -200,23 +201,22 @@ ge::graphStatus AddNTiling::CalcTiling()
         firstN_ = (firstSize <= 1) ? firstSize + GROUP_SIZE : firstSize;
         loopN_ = (sizeN_ - firstN_) / GROUP_SIZE;
     }
-    OP_CHECK_IF(
-        (WriteTilingData(elewiseTilingData) != ge::GRAPH_SUCCESS),
-        OP_LOGE(tilingContext->GetNodeName(), "Do AddNTiling WriteTilingData Failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((WriteTilingData(elewiseTilingData) != ge::GRAPH_SUCCESS),
+                OP_LOGE(tilingContext->GetNodeName(), "Do AddNTiling WriteTilingData Failed."),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus AddNTiling::WriteTilingData(const Ops::Base::ElewiseTilingData& elewiseTilingData)
 {
-    OP_LOGD(
-        tilingContext->GetNodeName(),
-        "tilingdata is dim0:%ld, blockFormer:%ld, blockNum:%ld, ubFormer:%ld,"
-        "ubLoopOfFormerBlock:%ld, ubLoopOfTailBlock:%ld, ubTailOfFormerBlock:%ld, ubTailOfTailBlock:%ld,"
-        "elemNum:%ld, sizeN:%ld, firstN:%ld, loopN:%ld",
-        elewiseTilingData.dim0, elewiseTilingData.blockFormer, elewiseTilingData.blockNum, elewiseTilingData.ubFormer,
-        elewiseTilingData.ubLoopOfFormerBlock, elewiseTilingData.ubLoopOfTailBlock,
-        elewiseTilingData.ubTailOfFormerBlock, elewiseTilingData.ubTailOfTailBlock, elewiseTilingData.elemNum, sizeN_,
-        firstN_, loopN_);
+    OP_LOGD(tilingContext->GetNodeName(),
+            "tilingdata is dim0:%ld, blockFormer:%ld, blockNum:%ld, ubFormer:%ld,"
+            "ubLoopOfFormerBlock:%ld, ubLoopOfTailBlock:%ld, ubTailOfFormerBlock:%ld, ubTailOfTailBlock:%ld,"
+            "elemNum:%ld, sizeN:%ld, firstN:%ld, loopN:%ld",
+            elewiseTilingData.dim0, elewiseTilingData.blockFormer, elewiseTilingData.blockNum,
+            elewiseTilingData.ubFormer, elewiseTilingData.ubLoopOfFormerBlock, elewiseTilingData.ubLoopOfTailBlock,
+            elewiseTilingData.ubTailOfFormerBlock, elewiseTilingData.ubTailOfTailBlock, elewiseTilingData.elemNum,
+            sizeN_, firstN_, loopN_);
 
     tiling.set_dim0(elewiseTilingData.dim0);
     tiling.set_blockFormer(elewiseTilingData.blockFormer);
@@ -231,13 +231,11 @@ ge::graphStatus AddNTiling::WriteTilingData(const Ops::Base::ElewiseTilingData& 
     tiling.set_firstN(firstN_);
     tiling.set_loopN(loopN_);
 
-    OP_CHECK_IF(
-        (SetTilingData() != ge::GRAPH_SUCCESS),
-        OP_LOGE(tilingContext->GetNodeName(), "Do AddNTiling SetTilingData Failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((SetTilingData() != ge::GRAPH_SUCCESS),
+                OP_LOGE(tilingContext->GetNodeName(), "Do AddNTiling SetTilingData Failed."), return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        (SetTilingKey() != ge::GRAPH_SUCCESS),
-        OP_LOGE(tilingContext->GetNodeName(), "Do AddNTiling SetTilingKey Failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((SetTilingKey() != ge::GRAPH_SUCCESS),
+                OP_LOGE(tilingContext->GetNodeName(), "Do AddNTiling SetTilingKey Failed."), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -249,9 +247,8 @@ ge::graphStatus AddNTiling::CheckOpParam()
     auto anchorInstanceInfo = computeNodeInfo->GetInputInstanceInfo(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, anchorInstanceInfo);
     uint32_t inputNum = anchorInstanceInfo->GetInstanceNum();
-    OP_CHECK_IF(
-        inputNum == 0, OP_LOGE_FOR_INVALID_VALUE(tilingContext->GetNodeName(), "x", "0", ">= 1"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputNum == 0, OP_LOGE_FOR_INVALID_VALUE(tilingContext->GetNodeName(), "x", "0", ">= 1"),
+                return ge::GRAPH_FAILED);
 
     // get attr N
     auto attrs = tilingContext->GetAttrs();
@@ -259,35 +256,32 @@ ge::graphStatus AddNTiling::CheckOpParam()
     const auto* attrN = attrs->GetAttrPointer<int32_t>(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, attrN);
     sizeN_ = static_cast<int64_t>(*attrN);
-    OP_CHECK_IF(
-        sizeN_ != static_cast<int64_t>(inputNum),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext->GetNodeName(), "N", std::to_string(sizeN_)+","+std::to_string(static_cast<int64_t>(inputNum)), "The value of N must be the tensor number of x"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(sizeN_ != static_cast<int64_t>(inputNum),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                    tilingContext->GetNodeName(), "N",
+                    std::to_string(sizeN_) + "," + std::to_string(static_cast<int64_t>(inputNum)),
+                    "The value of N must be the tensor number of x"),
+                return ge::GRAPH_FAILED);
 
     // check shape
-    OP_CHECK_IF(
-        CheckShape() != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckShape() != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"),
+                return ge::GRAPH_FAILED);
     // check dtype
-    OP_CHECK_IF(
-        CheckDtype() != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext->GetNodeName(), "check dtype failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckDtype() != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext->GetNodeName(), "check dtype failed"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus AddNTiling::RunTiling()
 {
-    OP_CHECK_IF(
-        (GetCompileInfo() != ge::GRAPH_SUCCESS),
-        OP_LOGE(tilingContext->GetNodeName(), "Do AddNTiling GetCompileInfo Failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((GetCompileInfo() != ge::GRAPH_SUCCESS),
+                OP_LOGE(tilingContext->GetNodeName(), "Do AddNTiling GetCompileInfo Failed."), return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        (CheckOpParam() != ge::GRAPH_SUCCESS),
-        OP_LOGE(tilingContext->GetNodeName(), "Do AddNTiling CheckOpParam Failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((CheckOpParam() != ge::GRAPH_SUCCESS),
+                OP_LOGE(tilingContext->GetNodeName(), "Do AddNTiling CheckOpParam Failed."), return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        CalcTiling() != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext->GetNodeName(), "calculate tiling failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcTiling() != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext->GetNodeName(), "calculate tiling failed"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
