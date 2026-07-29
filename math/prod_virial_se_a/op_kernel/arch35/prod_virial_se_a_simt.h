@@ -212,7 +212,7 @@ __aicore__ inline void Process(GM_ADDR net_deriv, GM_ADDR in_deriv, GM_ADDR rij,
     __gm__ T* atomVirialGm = (__gm__ T*)atom_virial;
 
     // 分配 UB float32 buffer 用于 atom_virial 高精度累加
-    LocalMemAllocator<Hardware::UB> ubAlloc;
+    LocalMemAllocator<AscendC::Hardware::UB> ubAlloc;
     uint32_t bufElems = static_cast<uint32_t>(tilingData->nall) * VIRIAL_ELEM_NUM;
     bufElems = (bufElems + 7) & ~7u; // 32 字节对齐
     LocalTensor<float> avBufTensor = ubAlloc.Alloc<float>(bufElems);
