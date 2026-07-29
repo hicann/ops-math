@@ -2357,7 +2357,7 @@
     <td>创建一个以输入数组为对角线元素的平铺对角矩阵。</td>
   </tr>
   <tr>
-    <td>math</td>
+    <td>conversion</td>
     <td><a href="../../conversion/diag_v2/README.md">diag_v2</a></td>
     <td>√</td>
     <td>√</td>

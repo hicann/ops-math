@@ -56,6 +56,17 @@ bash build.sh --help
 | --ophost         | 可选     | 编译libophost_math.so库，不可与--pkg、--ops同时使用。                                     |
 | --opapi          | 可选     | 编译libopapi_math.so库，不可与--pkg、--ops同时使用。                                      |
 | --opgraph        | 可选     | 编译libopgraph_math.so库，不可与--pkg、--ops同时使用。                                    |
+| --onnxplugin     | 可选     | 编译liboponnx_plugin_math.so库。                                                          |
+| --tfplugin       | 可选     | 编译liboptf_plugin_math.so库。                                                            |
+| --aicpu          | 可选     | 仅编译AICPU相关任务。                                                                      |
+| --noaicpu        | 可选     | 禁用AICPU相关编译。                                                                        |
+| --opkernel_aicpu | 可选     | 编译AICPU算子内核。                                                                        |
+| --build-type     | 可选     | 指定构建类型，支持Release/Debug，默认为Release。                                              |
+| --module_extension | 可选   | 指定额外的模块扩展目录，用于扫描新增的算子定义文件（_def.cpp）。                                   |
+| --example_name   | 可选     | 配合--run_example使用，指定单独编译执行的样例名称。                                              |
+| --rule_launch    | 可选     | 指定CMake的RULE_LAUNCH_COMPILE和RULE_LAUNCH_LINK命令（如ccache等编译加速工具）。                |
+| --gtest_filter   | 可选     | 指定gtest过滤模式，仅运行匹配模式的UT用例，如：--gtest_filter=AddTest*。                          |
+| --ccache         | 可选     | 启用或禁用ccache编译加速，取值为on/off/true/false/disable，默认为on。                             |
 | --run_example    | 可选     | 编译指定算子及模式的样例并执行编译后的可执行文件。                                                    |
 | --simulator      | 可选     | 启用仿真器模式执行--run_example任务。仿真模式下，会根据soc_version链接对应的仿真库。          |
 | --genop          | 可选     | 创建AI Core自定义算子初始目录。                                                          |
