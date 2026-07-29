@@ -17,6 +17,7 @@
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/tensor_desc.h"
+#include "opdev/platform.h"
 #include <cstdlib>
 #include <ctime>
 
@@ -52,6 +53,8 @@ TEST_F(l2_sinkhorn_test, aclnnSinkhorn_float_8_2)
 
 TEST_F(l2_sinkhorn_test, ascend910B2_aclnnSinkhorn_bf16_8_2)
 {
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
+
     const vector<int64_t>& costShape = {8, 2};
     aclDataType dType = ACL_BF16;
     aclFormat dFormat = ACL_FORMAT_ND;
