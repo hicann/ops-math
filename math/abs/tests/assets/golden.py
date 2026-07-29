@@ -10,34 +10,44 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 import numpy as np
+import torch
 
 __golden__ = {
-  	"kernel": {
-  	    "abs": "abs_golden"
-  	}
+    "kernel": {"abs": "abs_golden"},
+    "aclnn": {"aclnnAbs": "aclnn_abs_golden"},
 }
- 	 
-def abs_golden(x,
-               **kwargs):
-    '''
+
+
+def abs_golden(x, **kwargs):
+    """
     Kernel golden for abs.
     All the parameters follow @abs_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
-    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes, 
- 	    input_formats, output_formats, input_ori_formats, output_ori_formats,
- 	    input_dtypes, output_dtypes.
- 	'''
+    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
+             input_formats, output_formats, input_ori_formats, output_ori_formats,
+             input_dtypes, output_dtypes.
+    """
     ori_dtype = kwargs.get("input_dtypes", ["float32"])[0]
     input_x_dtype = x.dtype
-    
-    if ori_dtype and "complex32" in str(ori_dtype).lower():    
+
+    if ori_dtype and "complex32" in str(ori_dtype).lower():
         real, imag = np.split(x, 2, axis=-1)
         res = np.sqrt(real * real + imag * imag)
         return res
-    elif ori_dtype and "bfloat16" in str(ori_dtype).lower():  
+    elif ori_dtype and "bfloat16" in str(ori_dtype).lower():
         x = np.float32(x)
         return np.abs(x).astype(input_x_dtype, copy=False)
     else:
         return np.abs(x)
 
-    
+
+def aclnn_abs_golden(selfT, out=None, **kwargs):
+    """
+    Aclnn golden for aclnnAbs.
+    Parameters follow @aclnnAbsGetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+
+    kwargs may contain: tensor_dtypes, tensor_formats, scalar_dtypes,
+                        use_torch, short_soc_version, testcase_name.
+    """
+    return torch.abs(selfT)
