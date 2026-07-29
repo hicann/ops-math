@@ -9,12 +9,12 @@
  */
 
 /*!
- * \file matrix_set_diag_tilingkey.h
+ * \file matrix_set_diag_v2_tilingkey.h
  * \brief
  */
 
-#ifndef _MATRIX_SET_DIAG_TILING_KEY_H_
-#define _MATRIX_SET_DIAG_TILING_KEY_H_
+#ifndef _MATRIX_SET_DIAG_V2_TILING_KEY_H_
+#define _MATRIX_SET_DIAG_V2_TILING_KEY_H_
 
 #include "ascendc/host_api/tiling/template_argument.h"
 
@@ -24,7 +24,7 @@
 #define TPL_WAY_SIMT 3
 #define TPL_WAY_V1 4
 
-ASCENDC_TPL_ARGS_DECL(MatrixSetDiag,
+ASCENDC_TPL_ARGS_DECL(MatrixSetDiagV2,
                       // 实现路径
                       ASCENDC_TPL_UINT_DECL(Way, 8, ASCENDC_TPL_UI_LIST, TPL_WAY_DEFAULT, TPL_WAY_GATHER,
                                             TPL_WAY_SCATTER, TPL_WAY_SIMT, TPL_WAY_V1),
@@ -40,6 +40,11 @@ ASCENDC_TPL_SEL(
     ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(Way, ASCENDC_TPL_UI_LIST, TPL_WAY_V1),
                          ASCENDC_TPL_BOOL_SEL(IsVLFullLoad, 0), ASCENDC_TPL_BOOL_SEL(isBigShape, 0),
                          ASCENDC_TPL_BOOL_SEL(IsCutTail, 1), ),
+    // V2 切尾轴
+    ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(Way, ASCENDC_TPL_UI_LIST, TPL_WAY_DEFAULT),
+                         ASCENDC_TPL_BOOL_SEL(IsVLFullLoad, 0),
+                         // SIMT 参数
+                         ASCENDC_TPL_BOOL_SEL(isBigShape, 0, 1), ASCENDC_TPL_BOOL_SEL(IsCutTail, 1), ),
     // 非尾轴
     ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(Way, ASCENDC_TPL_UI_LIST, TPL_WAY_GATHER, TPL_WAY_SCATTER, TPL_WAY_SIMT),
                          ASCENDC_TPL_BOOL_SEL(IsVLFullLoad, 0, 1),

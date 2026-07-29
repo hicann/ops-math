@@ -19,15 +19,15 @@
 #include "kernel_operator.h"
 #include "op_kernel/platform_util.h"
 #include "op_kernel/math_util.h"
-#include "matrix_set_diag_tilingdata.h"
+#include "matrix_set_diag_v2_tilingdata.h"
 
 namespace MSD {
 using namespace AscendC;
 
 template <typename T>
-class MatrixSetDiagCutWScatter {
+class MatrixSetDiagCutTailScatter {
 private:
-    constexpr static uint32_t ALIGN_NUM = 32 / sizeof(T);
+    constexpr static uint32_t ALIGN_NUM = Ops::Base::GetUbBlockSize() / sizeof(T);
     constexpr static int32_t BUF_NUM = 2; // double buffer
     constexpr static uint32_t NUM_2 = 2;
     constexpr static uint32_t BUFIDX_BIT0 = 1; // 区分奇偶性，用于double buffer同步
@@ -63,7 +63,7 @@ private:
     uint16_t vlLen_ = Ops::Base::GetVRegSize() / sizeof(T);
 
 public:
-    __aicore__ inline MatrixSetDiagCutWScatter(TPipe* pipe) { pipe_ = pipe; }
+    __aicore__ inline MatrixSetDiagCutTailScatter(TPipe* pipe) : pipe_(pipe){};
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR diagonal, GM_ADDR y, const MatrixSetDiagTilingData* tilingData)
     {
