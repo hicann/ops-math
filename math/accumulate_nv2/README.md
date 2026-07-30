@@ -62,7 +62,6 @@ $$y = \sum_{i=0}^{N-1} x_i$$
 
 ## 约束说明
 
-- 确定性计算：aclnnSum默认确定性实现。
 - 输入tensors列表中各tensor的shape需满足broadcast关系，broadcast后的shape需与输出y的shape一致。
 - 输入tensors与输出的数据类型需相同。
 

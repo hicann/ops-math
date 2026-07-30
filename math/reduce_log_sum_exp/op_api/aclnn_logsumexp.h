@@ -21,12 +21,12 @@ extern "C" {
  * @brief aclnnLogSumExp的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_math
  * @param [in] self: npu
- * npu device侧的aclTensor，数据类型支持FLOAT16、BFLOAT16、FLOAT32
- * 支持非连续的Tensor，数据格式支持ND、NCHW、NHWC、HWCN、NDHWC、NCDHW。
+ * npu device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL。
+ * 支持非连续的Tensor，数据格式支持ND。
  * @param [in] dim: 需要做logsumexp的维度，数据类型INT64
  * @param [in] keepDim: 是否缩减维度
  * @param [in] out: npu
- * npu device侧的aclTensor，数据类型支持FLOAT16、BFLOAT16、FLOAT32，数据格式支持ND、NCHW、NHWC、HWCN、NDHWC、NCDHW，
+ * npu device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16，数据格式支持ND，
  * 且数据格式需要与self一致。
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
@@ -51,4 +51,4 @@ ACLNN_API aclnnStatus aclnnLogSumExp(void* workspace, uint64_t workspaceSize, ac
 }
 #endif
 
-#endif  // OP_API_INC_LOGSUMEXP_H_
+#endif // OP_API_INC_LOGSUMEXP_H_

@@ -24,15 +24,9 @@ using namespace std;
 
 class aclnn_logsumexp_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "aclnn_logsumexp_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "aclnn_logsumexp_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "aclnn_logsumexp_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "aclnn_logsumexp_test TearDown" << endl; }
 };
 
 // data为空指针
@@ -232,7 +226,7 @@ TEST_F(aclnn_logsumexp_test, case_13)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-// dim为空
+// dim为空且out shape不匹配
 TEST_F(aclnn_logsumexp_test, case_14)
 {
     auto xDesc = TensorDesc({2, 4}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(1, 8);
@@ -362,6 +356,38 @@ TEST_F(aclnn_logsumexp_test, case_21)
 
 // 负数维度测试
 TEST_F(aclnn_logsumexp_test, case_22)
+{
+    auto xDesc = TensorDesc({2, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-5, 5);
+    auto dim = IntArrayDesc(vector<int64_t>{-2});
+    bool keep_dim = false;
+    aclDataType dType = ACL_FLOAT;
+    const vector<int64_t>& outShape = {2, 4};
+    auto outTensorDesc = TensorDesc(outShape, dType, ACL_FORMAT_ND).ValidCount(8);
+    auto ut = OP_API_UT(aclnnLogSumExp, INPUT(xDesc, dim, keep_dim), OUTPUT(outTensorDesc));
+
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// dim为空，对所有维度做reduce，输出为标量
+TEST_F(aclnn_logsumexp_test, case_23)
+{
+    auto xDesc = TensorDesc({2, 4}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(1, 8);
+    auto dim = IntArrayDesc(vector<int64_t>{});
+    bool keep_dim = false;
+    aclDataType dType = ACL_FLOAT;
+    const vector<int64_t>& outShape = {};
+    auto outTensorDesc = TensorDesc(outShape, dType, ACL_FORMAT_ND).ValidCount(1);
+    auto ut = OP_API_UT(aclnnLogSumExp, INPUT(xDesc, dim, keep_dim), OUTPUT(outTensorDesc));
+
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 负数维度且out shape不匹配
+TEST_F(aclnn_logsumexp_test, case_24)
 {
     auto xDesc = TensorDesc({2, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-5, 5);
     auto dim = IntArrayDesc(vector<int64_t>{-2});
