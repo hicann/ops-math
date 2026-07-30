@@ -1,5 +1,13 @@
 name: PR-pipeline_ops-math
 
+concurrency:
+  max: 15
+  exceed-action: QUEUE
+  enable: true
+  preemption:
+    enable: true
+    events: [mr_id]
+
 on:
   pull_request_comment:
     types: [created]
@@ -57,6 +65,9 @@ stages:
             with:
               workspace: ${{ steps.process_checkout.outputs.path }}
               target_branch: ${{ env.TARGET_BRANCH }}
+              owner: ${{ env.org_name }}
+              repo: ${{ env.repo_name }}
+              pr_number: ${{ atomgit.event.pull_request.number }}
               git_token: ${{secrets.GIT_TOKEN}}
           -
             name: upload
@@ -379,6 +390,7 @@ stages:
           -
             name: smoke resource clean
             uses: manifest-management-plugin
+            if: ${{ always() }}
             with:
               action: CRUSH
               repo: ${{ steps.process_checkout.outputs.path }}
