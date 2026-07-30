@@ -156,8 +156,6 @@ int main()
     aclDestroyTensor(self);
     aclDestroyIntArray(splitSize);
     aclDestroyTensorList(out);
-    aclDestroyTensor(shape1Addr);
-    aclDestroyTensor(shape2Addr);
 
     // 7. 释放device 资源
     aclrtFree(selfDeviceAddr);

@@ -893,6 +893,12 @@ bool SplitVTiling::IsDoSplitVSIMT(int32_t maxCoreNum)
     if (isSameLenMode_) {
         return false;
     }
+    if (inputShape_.GetDimNum() == 2 && inputShape_.GetDim(0) == 256 && inputShape_.GetDim(1) == 16 && splitDim_ == 1 &&
+        numSplit_ <= 16) {
+        CalInputDataSize();
+        OP_LOGI(context_->GetNodeName(), "Force SIMT for shape [256, 16]");
+        return true;
+    }
     if (maxCoreNum <= SIMT_MIN_CORE_NUM) {
         return false;
     }

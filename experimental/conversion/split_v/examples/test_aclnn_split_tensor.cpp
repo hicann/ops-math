@@ -151,8 +151,6 @@ int main()
     // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
     aclDestroyTensor(self);
     aclDestroyTensorList(out);
-    aclDestroyTensor(shape1Addr);
-    aclDestroyTensor(shape2Addr);
 
     // 7. 释放device 资源
     aclrtFree(selfDeviceAddr);
