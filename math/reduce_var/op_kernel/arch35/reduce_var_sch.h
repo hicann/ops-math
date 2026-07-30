@@ -16,18 +16,17 @@
 #ifndef _REDUCE_VAR_SCH_H_
 #define _REDUCE_VAR_SCH_H_
 #include "atvoss/reduce/reduce_sch_aux_util.h"
+#include "reduce_var_struct.h"
 #include "reduce_var_welford.h"
 #include "reduce_var_twopass.h"
 
-namespace ReduceOpTmpl
-{
-template <typename DataType, typename PromoteDataType, bool isContiguous, bool batchInvariant, uint32_t PatternID, uint32_t LoopARCount,
+namespace ReduceOpTmpl {
+template <typename DataType, typename PromoteDataType, bool batchInvariant, uint32_t PatternID, uint32_t LoopARCount,
           uint32_t LoopInnerARCount, bool isStd = false>
-class ReduceVarSch
-{
+class ReduceVarSch {
 public:
-    constexpr static Ops::Base::ReduceOpTmpl::ReduceSchLoopInfo SchLoopInfo =
-        Ops::Base::ReduceOpTmpl::GetSchLoopInfo<PatternID, LoopARCount, LoopInnerARCount>();
+    constexpr static Ops::Base::ReduceOpTmpl::ReduceSchLoopInfo
+        SchLoopInfo = Ops::Base::ReduceOpTmpl::GetSchLoopInfo<PatternID, LoopARCount, LoopInnerARCount>();
     using Pattern = typename Ops::Base::ReduceOpTmpl::__reducePattern::GetPattern<SchLoopInfo.patternID>::T;
     using InnerPattern = typename Ops::Base::ReduceOpTmpl::__reducePattern::GetPattern<SchLoopInfo.innerPatternID>::T;
     constexpr static int32_t Dim = Pattern::Dim;
@@ -36,10 +35,9 @@ public:
     constexpr static int32_t VL_LENGTH_B = Ops::Base::GetVRegSize();
     constexpr static uint64_t BLOCK_SIZE_BYTE = Ops::Base::GetUbBlockSize();
     constexpr static int32_t POST_BUF_SIZE = 8 * 1024;
-    constexpr static int32_t FLOAT32_INF = 0x7F800000;  // inf
-    constexpr static uint32_t MAX_NDDMA_DIM = 4;
+    constexpr static int32_t FLOAT32_INF = 0x7F800000; // inf
     constexpr static uint32_t WELFORD_GROUP_NUM = 8;
-    constexpr static uint32_t MAX_INNER_A = 512;  // Bytes, 按PromoteDataType计算
+    constexpr static uint32_t MAX_INNER_A = 512; // Bytes, 按PromoteDataType计算
     constexpr static uint32_t MAX_INNER_A_NUM = MAX_INNER_A / sizeof(PromoteDataType);
     constexpr static uint32_t GROUP_CACHE_BUF_SIZE = (WELFORD_GROUP_NUM + 1) * MAX_INNER_A;
 
@@ -54,15 +52,14 @@ private:
     GlobalTensor<DataType> meanGM_;
     GlobalTensor<PromoteDataType> workspace_;
 
-    LocalTensor<PromoteDataType> tMeanTensor_;  // welford cache var buf
-    LocalTensor<PromoteDataType> tVarTensor_;   // welford cache mean buf
+    LocalTensor<PromoteDataType> tMeanTensor_; // welford cache var buf
+    LocalTensor<PromoteDataType> tVarTensor_;  // welford cache mean buf
     LocalTensor<PromoteDataType> tDichAddTensor_;
     LocalTensor<PromoteDataType> tCountTensor_;
-    LocalTensor<PromoteDataType> tGroupMeanTensor_;  // welford group cache mean buf
-    LocalTensor<PromoteDataType> tGroupVarTensor_;   // welford group cache var buf
+    LocalTensor<PromoteDataType> tGroupMeanTensor_; // welford group cache mean buf
+    LocalTensor<PromoteDataType> tGroupVarTensor_;  // welford group cache var buf
 
     const ReduceVarTilingData* tiling_ = nullptr;
-    const ReduceVarTilingDataStru* tilingOp_ = nullptr;
 
 private:
     uint64_t lastRAxisLen_ = 0;
@@ -80,13 +77,18 @@ private:
     uint64_t loopREndIndex_ = 0;
     uint64_t lastRAxisNum_ = 0;
     uint64_t loopRAxisStep_ = 0;
-    uint64_t splitRAxisTail_ = 0;  // R轴的ub切分的尾块
+    uint64_t splitRAxisTail_ = 0; // R轴的ub切分的尾块
     uint64_t ubFactorR_ = 0;
 
-    int64_t rCount_ = 0;             // r loop count
-    int64_t lastReduceTailR_ = 0;    // ubRfactor存在尾块时, welford尾块的长度
-    uint32_t loopLastRCnt_ = 1;      // 单次ub内，总共包含多少个lastR
-    uint32_t loopWelfTailRCnt_ = 1;  // 单次ub内，welford尾块包含多少个lastR
+    int64_t rCount_ = 0;            // r loop count
+    int64_t lastReduceTailR_ = 0;   // ubRfactor存在尾块时, welford尾块的长度
+    int64_t lastReduceMainR_ = 0;   // welford主块的真实R长度（TailA invert finalize 用）
+    uint32_t loopLastRCnt_ = 1;     // 单次ub内，总共包含多少个lastR
+    uint32_t loopWelfTailRCnt_ = 1; // 单次ub内，welford尾块包含多少个lastR
+    // NDDMA 转置模板 (CopyInWithNddmaInvert) 的行 stride（主块几何）。
+    // 尾块 R 变短不能改变 slab 行 stride，否则主尾块 lane 对不齐；
+    // 每次 Welford 调用的首次 CopyInX（必为主块或全尾块场景的首块）在 CalcInnerShape 时刷新
+    uint32_t invOtherAlign_ = 0;
 
     uint64_t aOutBurstLen_ = 0;
     uint64_t aOutNBurst_ = 0;
@@ -96,23 +98,28 @@ private:
     int32_t dstGroupGroupIdx_ = 0;
     bool isInvert_ = false;
 
+    // NDDMA 转置模板 (CopyInWithNddmaInvert) 下 UB 内真实数据数（不含 pad）
+    // outer==1 短路分支：ubRealABundle_ = 转置后 slab 行数，ubRealRBundle_ = 每行真实数据数
+    //   （!TailA: 行=R, 每行=A；TailA: 行=A, 每行=R）
+    // 多维分支：ubRealABundle_ = 所有 A 轴 repeat 乘积，ubRealRBundle_ = 所有 R 轴 repeat 乘积
+    // shape.value[1] 是含 pad 的 inner row stride（otherAlign），不能当真实 R 长度用
+    uint32_t ubRealABundle_ = 0;
+    uint32_t ubRealRBundle_ = 0;
+    uint32_t dbgPeelCnt_ = 0; // DEBUG: peel 分支打印次数限制
+
     struct {
         uint64_t start = 0;
-        uint64_t stride = 1;  // 拷贝步长
+        uint64_t stride = 1; // 拷贝步长
     } iterAddr_[Dim];
 
 public:
-    __aicore__ inline explicit ReduceVarSch(const ReduceVarTilingData* tiling)
-    {
-        tiling_ = tiling;
-        tilingOp_ = &(tiling_->reduceOpTiling);
-    };
+    __aicore__ inline explicit ReduceVarSch(const ReduceVarTilingData* tiling) { tiling_ = tiling; };
 
     __aicore__ inline void Init(TPipe* pipeIn, GM_ADDR x, GM_ADDR var, GM_ADDR mean, GM_ADDR workspace)
     {
         pipe_ = pipeIn;
         blockIdx_ = GetBlockIdx();
-        basicBlockLen_ = tilingOp_->basicBlock;
+        basicBlockLen_ = tiling_->basicBlock;
 
         inputGM_.SetGlobalBuffer((__gm__ DataType*)x);
         varGM_.SetGlobalBuffer((__gm__ DataType*)var);
@@ -123,21 +130,23 @@ public:
 
         pipe_->InitBuffer(inputQueue_, BUFFER_NUM, basicBlockLen_);
         // resultBlock 是按fp32预留的, 为单个mean/var的大小，mean + var, 开db
-        pipe_->InitBuffer(outQueue_, BUFFER_NUM, tilingOp_->resultBlock * Ops::Base::ReduceOpTmpl::CONST2);
+        pipe_->InitBuffer(outQueue_, BUFFER_NUM, tiling_->resultBlock * Ops::Base::ReduceOpTmpl::CONST2);
 
         int64_t totalBufSize = 0;
         int64_t tmpCacheBufNum = 0;
         if constexpr (IsSameType<PromoteDataType, DataType>::value) {
             // dichotomyAddBuf_ 后续可以优化成只有一半
             //               meanBuf_         varBuf_      dichotomyAddBuf_    tCountBuff_
-            totalBufSize = basicBlockLen_ + basicBlockLen_ + basicBlockLen_ + basicBlockLen_ / Ops::Base::ReduceOpTmpl::CONST2;
+            totalBufSize = basicBlockLen_ + basicBlockLen_ + basicBlockLen_ +
+                           basicBlockLen_ / Ops::Base::ReduceOpTmpl::CONST2;
             tmpCacheBufNum = basicBlockLen_ / sizeof(PromoteDataType);
         } else {
-            totalBufSize = (basicBlockLen_ + basicBlockLen_ + basicBlockLen_) * Ops::Base::ReduceOpTmpl::CONST2 + basicBlockLen_;
+            totalBufSize = (basicBlockLen_ + basicBlockLen_ + basicBlockLen_) * Ops::Base::ReduceOpTmpl::CONST2 +
+                           basicBlockLen_;
             tmpCacheBufNum = basicBlockLen_ * Ops::Base::ReduceOpTmpl::CONST2 / sizeof(PromoteDataType);
         }
 
-        totalBufSize += GROUP_CACHE_BUF_SIZE * Ops::Base::ReduceOpTmpl::CONST2;  // CONST2: groupMeanBuf_ + groupVarBuf_
+        totalBufSize += GROUP_CACHE_BUF_SIZE * Ops::Base::ReduceOpTmpl::CONST2; // CONST2: groupMeanBuf_ + groupVarBuf_
         pipe_->InitBuffer(buf_, totalBufSize);
 
         tMeanTensor_ = buf_.Get<PromoteDataType>();
@@ -148,10 +157,10 @@ public:
         tGroupVarTensor_ = tGroupMeanTensor_[GROUP_CACHE_BUF_SIZE / sizeof(PromoteDataType)];
 
         for (uint64_t i = 0; i < Dim; i++) {
-            iterAddr_[i].stride = tilingOp_->shape[i];
+            iterAddr_[i].stride = tiling_->shape[i];
         }
 
-        lastRAxisLen_ = tilingOp_->shape[Dim - 1];
+        lastRAxisLen_ = tiling_->shape[Dim - 1];
         lastRAxisLenAlign_ = Ops::Base::CeilAlign(lastRAxisLen_, (BLOCK_SIZE_BYTE / sizeof(DataType)));
     }
 
@@ -180,7 +189,7 @@ public:
     __aicore__ inline void ProcessNormal()
     {
         SetLoopRangeNormal();
-        rCount_ = tilingOp_->factorRCntPerCore;
+        rCount_ = tiling_->factorRCntPerCore;
         for (uint64_t i = loopAStartIndex_; i < loopAEndIndex_; i++) {
             CalcIterA<SchLoopInfo.loopACount>(i);
             IterateInnerA<0, SchLoopInfo.loopInnerACount>();
@@ -197,11 +206,11 @@ public:
     __aicore__ inline void ProcessGroupPhase2()
     {
         ubFactorA_ = ELEMENT_ONE_REPEAT_COMPUTE;
-        ubFactorR_ = tilingOp_->groupR;
+        ubFactorR_ = tiling_->groupR;
 
         int32_t blockIdx = GetBlockIdx();
-        int64_t factorATotalCnt = Ops::Base::CeilDiv(tilingOp_->outSize, static_cast<uint64_t>(ubFactorA_));
-        int64_t factorACntPerCore = Ops::Base::CeilDiv(factorATotalCnt, static_cast<int64_t>(tilingOp_->coreNum));
+        int64_t factorATotalCnt = Ops::Base::CeilDiv(tiling_->outSize, static_cast<uint64_t>(ubFactorA_));
+        int64_t factorACntPerCore = Ops::Base::CeilDiv(factorATotalCnt, static_cast<int64_t>(tiling_->coreNum));
 
         int64_t loopAStartIndex = blockIdx * factorACntPerCore;
         int64_t loopAEndIndex = loopAStartIndex + factorACntPerCore;
@@ -221,26 +230,26 @@ public:
     __aicore__ inline void SetLoopRangeNormal()
     {
         int32_t blockId = GetBlockIdx();
-        loopAStartIndex_ = blockId * tilingOp_->factorACntPerCore;
-        loopAEndIndex_ = loopAStartIndex_ + tilingOp_->factorACntPerCore;
-        if (unlikely(loopAEndIndex_ > tilingOp_->factorATotalCnt)) {
-            loopAEndIndex_ = tilingOp_->factorATotalCnt;
+        loopAStartIndex_ = blockId * tiling_->factorACntPerCore;
+        loopAEndIndex_ = loopAStartIndex_ + tiling_->factorACntPerCore;
+        if (unlikely(loopAEndIndex_ > tiling_->factorATotalCnt)) {
+            loopAEndIndex_ = tiling_->factorATotalCnt;
         }
         constexpr int32_t aAxisIdx = SchLoopInfo.loopACount - 1;
         constexpr int32_t aAxis = SchLoopInfo.loopAAxis[aAxisIdx];
-        loopAAxisStep_ = Ops::Base::CeilDiv(tilingOp_->shape[aAxis], tilingOp_->ubFactorA);
+        loopAAxisStep_ = Ops::Base::CeilDiv(tiling_->shape[aAxis], tiling_->ubFactorA);
 
         // R轴可以全载时 loopInnerRCount 为 0, ubFactorR 为 1
         if constexpr (SchLoopInfo.loopInnerRCount > 0) {
             constexpr int32_t rAxisIdx = SchLoopInfo.loopInnerRCount - 1;
             constexpr int32_t rAxis = SchLoopInfo.loopInnerRAxis[rAxisIdx];
-            lastRAxisNum_ = tilingOp_->shape[rAxis];
-            loopRAxisStep_ = Ops::Base::CeilDiv(lastRAxisNum_, tilingOp_->ubFactorR);
-            splitRAxisTail_ = tilingOp_->shape[rAxis] % tilingOp_->ubFactorR;
+            lastRAxisNum_ = tiling_->shape[rAxis];
+            loopRAxisStep_ = Ops::Base::CeilDiv(lastRAxisNum_, tiling_->ubFactorR);
+            splitRAxisTail_ = tiling_->shape[rAxis] % tiling_->ubFactorR;
         }
 
-        ubFactorA_ = tilingOp_->ubFactorA;
-        ubFactorR_ = tilingOp_->ubFactorR;
+        ubFactorA_ = tiling_->ubFactorA;
+        ubFactorR_ = tiling_->ubFactorR;
     }
 
     template <int32_t LoopAIdx>
@@ -252,7 +261,7 @@ public:
                 // 切分轴
                 auto cur = step % loopAAxisStep_;
                 iterAddr_[axis].start = cur * ubFactorA_;
-                iterAddr_[axis].stride = tilingOp_->shape[axis] - iterAddr_[axis].start;
+                iterAddr_[axis].stride = tiling_->shape[axis] - iterAddr_[axis].start;
                 if (likely(iterAddr_[axis].stride >= ubFactorA_)) {
                     iterAddr_[axis].stride = ubFactorA_;
                 }
@@ -261,9 +270,9 @@ public:
                     CalcIterA<LoopAIdx - 1>(step / loopAAxisStep_);
                 }
             } else {
-                iterAddr_[axis].start = step % tilingOp_->shape[axis];
+                iterAddr_[axis].start = step % tiling_->shape[axis];
                 iterAddr_[axis].stride = 1;
-                CalcIterA<LoopAIdx - 1>(step / tilingOp_->shape[axis]);
+                CalcIterA<LoopAIdx - 1>(step / tiling_->shape[axis]);
             }
         }
     }
@@ -288,14 +297,14 @@ public:
             }
         } else {
             constexpr int32_t axis = SchLoopInfo.loopInnerAAxis[start];
-            uint64_t shape = tilingOp_->shape[axis];
-            if constexpr (start + 1 == end) {  // 为最内轴
+            uint64_t shape = tiling_->shape[axis];
+            if constexpr (start + 1 == end) { // 为最内轴
                 uint64_t loopSize = shape / ubFactorA_;
                 uint64_t tail = shape - loopSize * ubFactorA_;
                 iterAddr_[axis].start = 0;
                 iterAddr_[axis].stride = ubFactorA_;
 
-                for (uint64_t i = 0; i < loopSize; i++) {  // 整块
+                for (uint64_t i = 0; i < loopSize; i++) { // 整块
                     IterateInnerA<start + 1, end>();
                     iterAddr_[axis].start += ubFactorA_;
                 }
@@ -325,7 +334,7 @@ public:
         __local_mem__ float* dichotomyAddAddr = (__local_mem__ float*)tDichAddTensor_.GetPhyAddr();
 
         LocalTensor<DataType> outMeanTensor = outQueue_.AllocTensor<DataType>();
-        LocalTensor<DataType> outVarTensor = outMeanTensor[tilingOp_->resultBlock / sizeof(DataType)];
+        LocalTensor<DataType> outVarTensor = outMeanTensor[tiling_->resultBlock / sizeof(DataType)];
         __local_mem__ DataType* outMeanAddr = (__local_mem__ DataType*)outMeanTensor.GetPhyAddr();
         __local_mem__ DataType* outVarAddr = (__local_mem__ DataType*)outVarTensor.GetPhyAddr();
 
@@ -333,18 +342,47 @@ public:
         float meanScale = tiling_->meanFactor;
 
         if constexpr (!InnerPattern::TailA) {
-            if (lastRAxisLen_ % (BLOCK_SIZE_BYTE / sizeof(DataType)) == 0 || Dim == Ops::Base::ReduceOpTmpl::CONST2) {
-                uint32_t realRLen = (Dim == Ops::Base::ReduceOpTmpl::CONST2) ? (uint32_t)lastRAxisLen_ : (uint32_t)shape.value[1];
+            if (tiling_->isInvert == 1) {
+                // AR→RA: UB data is transposed, call RA VF with swapped shape
+                VFMeanVarTwoPassRA<DataType, isStd>(xLocal, tDichAddTensor_, tMeanTensor_, tVarTensor_, outMeanTensor,
+                                                    outVarTensor, shape.value[1], shape.value[0], varScale);
+            } else {
+                // NDDMA: 所有 R 合并后连续存放，只在尾部 pad 一次 -> UB 里 R 数据紧密相邻
+                // 非 NDDMA: 每个最内 R 段单独 pad 到 32B -> UB 里段间有 pad 空洞
+                // 因此判断"是否可走 AR(无每段 pad)分支"需要区分两种情况:
+                //   NDDMA:      合并后 R 连续, 总是可走 AR (仅尾 pad 为 0, 不影响求和)
+                //   非 NDDMA:   仅当每段本身对齐时可走 AR, 否则必须走 ARPad
+                bool useARBranch = (tiling_->useNddma == 1) ||
+                                   (lastRAxisLen_ % (BLOCK_SIZE_BYTE / sizeof(DataType)) == 0) ||
+                                   (Dim == Ops::Base::ReduceOpTmpl::CONST2);
+                if (useARBranch) {
+                    uint32_t realRLen;
+                    if (Dim == Ops::Base::ReduceOpTmpl::CONST2) {
+                        realRLen = (uint32_t)lastRAxisLen_;
+                    } else if (tiling_->useNddma == 1) {
+                        // NDDMA: shape.value[1] 是尾 pad 后的总长, 真数据数 = lastR * loopCnt
+                        realRLen = (uint32_t)(lastRAxisLen_ * loopLastRCnt_);
+                    } else {
+                        realRLen = (uint32_t)shape.value[1];
+                    }
+                    VFMeanVarTwoPassAR<DataType, isStd>(xLocal, dichotomyAddAddr, outMeanAddr, outVarAddr,
+                                                        shape.value[0], shape.value[1], realRLen, varScale);
+                } else {
+                    VFMeanVarTwoPassARPad<DataType, isStd>(
+                        xLocal, dichotomyAddAddr, outMeanAddr, outVarAddr, shape.value[0], shape.value[1],
+                        lastRAxisLen_ * loopLastRCnt_, varScale, lastRAxisLen_, lastRAxisLenAlign_, loopLastRCnt_);
+                }
+            }
+        } else {
+            if (tiling_->isInvert == 1) {
+                // RA→AR: UB data is transposed, call AR VF with swapped shape
+                uint32_t realRLen = (uint32_t)(lastRAxisLen_ * loopLastRCnt_);
                 VFMeanVarTwoPassAR<DataType, isStd>(xLocal, dichotomyAddAddr, outMeanAddr, outVarAddr, shape.value[0],
                                                     shape.value[1], realRLen, varScale);
             } else {
-                VFMeanVarTwoPassARPad<DataType, isStd>(xLocal, dichotomyAddAddr, outMeanAddr, outVarAddr,
-                                                       shape.value[0], shape.value[1], lastRAxisLen_ * loopLastRCnt_,
-                                                       varScale, lastRAxisLen_, lastRAxisLenAlign_, loopLastRCnt_);
+                VFMeanVarTwoPassRA<DataType, isStd>(xLocal, tDichAddTensor_, tMeanTensor_, tVarTensor_, outMeanTensor,
+                                                    outVarTensor, shape.value[1], shape.value[0], varScale);
             }
-        } else {
-            VFMeanVarTwoPassRA<DataType, isStd>(xLocal, tDichAddTensor_, tMeanTensor_, tVarTensor_, outMeanTensor,
-                                                outVarTensor, shape.value[1], shape.value[0], varScale);
         }
 
         inputQueue_.FreeTensor(inputUb);
@@ -359,7 +397,7 @@ public:
             uint64_t start = cur * ubFactorR_;
             constexpr auto axis = SchLoopInfo.loopRAxis[SchLoopInfo.loopRCount - 1];
             // 特例: R场景，前63个核处理128个数, 最后一个核处理 16个数，这里会把最后一个核的16当做尾块，其实是整块
-            if (tilingOp_->shape[axis] - start < ubFactorR_) {
+            if (tiling_->shape[axis] - start < ubFactorR_) {
                 return true;
             }
         } else {
@@ -373,7 +411,8 @@ public:
     }
 
     __aicore__ inline void WelfordUpdate(Ops::Base::ReduceOpTmpl::Shape<InnerPattern::Dim>& shape,
-        LocalTensor<float>& tMeanTensor, LocalTensor<float>& tVarTensor, int64_t& count, int64_t& tailsNum)
+                                         LocalTensor<float>& tMeanTensor, LocalTensor<float>& tVarTensor,
+                                         int64_t& count, int64_t& tailsNum)
     {
         Ops::Base::ReduceOpTmpl::SliceView<Ops::Base::ReduceOpTmpl::MAX_DIM> view;
         __local_mem__ float* meanBufAddr = (__local_mem__ float*)tMeanTensor.GetPhyAddr();
@@ -433,8 +472,15 @@ public:
                         processNum = static_cast<uint32_t>(shape.value[0] * shape.value[1]);
                         VFWelfordParallelUpdateWithInit(xLocal, meanBufAddr, varBufAddr, processNum, scale);
                     } else {
-                        processNum = static_cast<uint32_t>(lastReduceTailR_ * shape.value[1]);
-                        VFWelfordParallelUpdate(xLocal, meanBufAddr, varBufAddr, processNum, scale);
+                        if (tiling_->useNddma == 1 && tiling_->isInvert == 1) {
+                            // 同 WelfordUpdateGroups: slab 几何主尾一致，尾块只更新每行真实 lane
+                            VFWelfordParallelUpdateARWithTail(xLocal, meanBufAddr, varBufAddr, ubRealABundle_,
+                                                              static_cast<uint32_t>(shape.value[1]), ubRealRBundle_,
+                                                              scale);
+                        } else {
+                            processNum = static_cast<uint32_t>(lastReduceTailR_ * shape.value[1]);
+                            VFWelfordParallelUpdate(xLocal, meanBufAddr, varBufAddr, processNum, scale);
+                        }
                     }
                 }
                 inputQueue_.FreeTensor(inputUb);
@@ -443,7 +489,8 @@ public:
     }
 
     __aicore__ inline void WelfordUpdateGroups(Ops::Base::ReduceOpTmpl::Shape<InnerPattern::Dim>& shape,
-        LocalTensor<float>& tMeanTensor, LocalTensor<float>& tVarTensor, int64_t& count, int64_t& tailsNum)
+                                               LocalTensor<float>& tMeanTensor, LocalTensor<float>& tVarTensor,
+                                               int64_t& count, int64_t& tailsNum)
     {
         Ops::Base::ReduceOpTmpl::SliceView<Ops::Base::ReduceOpTmpl::MAX_DIM> view;
         __local_mem__ float* meanBufAddr = (__local_mem__ float*)tMeanTensor.GetPhyAddr();
@@ -483,13 +530,11 @@ public:
                 updateCycleCnt = 0;
             }
         }
-
         if (updateCycleCnt != 0) {
             VFWelfordParallelFinalizeGroups(shape, false, tMeanTensor, tVarTensor, tGroupMeanTensor_, tGroupVarTensor_,
                                             updateCycleCnt);
             updateCycleCnt = 0;
         }
-
         if (hasTail == true) {
             for (int64_t i = 0; i < rCount_; i++) {
                 if (CheckTailWelford(i) == false) {
@@ -508,17 +553,32 @@ public:
                         processNum = static_cast<uint32_t>(shape.value[0] * shape.value[1]);
                         VFWelfordParallelUpdateWithInit(xLocal, meanBufAddr, varBufAddr, processNum, scale);
                     } else {
-                        VFWelfordParallelUpdateARWithTail(
-                            xLocal, meanBufAddr, varBufAddr, static_cast<uint32_t>(shape.value[0]),
-                            static_cast<uint32_t>(shape.value[1]), static_cast<uint32_t>(lastReduceTailR_), scale);
+                        // NDDMA 转置模板: 使用真实 A 数据数作为 aNum, ubRealRBundle_ 作为 rNum（真实 R 长度）
+                        //   rStride 仍需为 shape.value[1]（含 pad 的 row stride）以匹配 UB 布局
+                        uint32_t tailAWithTail = (tiling_->useNddma == 1 && tiling_->isInvert == 1) ?
+                                                     ubRealABundle_ :
+                                                     static_cast<uint32_t>(shape.value[0]);
+                        uint32_t tailRealTail = (tiling_->useNddma == 1 && tiling_->isInvert == 1) ?
+                                                    ubRealRBundle_ :
+                                                    static_cast<uint32_t>(lastReduceTailR_);
+                        VFWelfordParallelUpdateARWithTail(xLocal, meanBufAddr, varBufAddr, tailAWithTail,
+                                                          static_cast<uint32_t>(shape.value[1]), tailRealTail, scale);
                     }
                 } else {
                     if (updateCycleCnt == 1) {
                         processNum = static_cast<uint32_t>(shape.value[0] * shape.value[1]);
                         VFWelfordParallelUpdateWithInit(xLocal, meanBufAddr, varBufAddr, processNum, scale);
                     } else {
-                        processNum = static_cast<uint32_t>(lastReduceTailR_ * shape.value[1]);
-                        VFWelfordParallelUpdate(xLocal, meanBufAddr, varBufAddr, processNum, scale);
+                        if (tiling_->useNddma == 1 && tiling_->isInvert == 1) {
+                            // NDDMA 转置模板: slab 几何 [行, 主块行stride] 主尾一致，
+                            // 尾块只更新每行前 ubRealRBundle_ 个真实 lane（pad lane 保留主块统计量）
+                            VFWelfordParallelUpdateARWithTail(xLocal, meanBufAddr, varBufAddr, ubRealABundle_,
+                                                              static_cast<uint32_t>(shape.value[1]), ubRealRBundle_,
+                                                              scale);
+                        } else {
+                            processNum = static_cast<uint32_t>(lastReduceTailR_ * shape.value[1]);
+                            VFWelfordParallelUpdate(xLocal, meanBufAddr, varBufAddr, processNum, scale);
+                        }
                     }
                 }
                 inputQueue_.FreeTensor(inputUb);
@@ -529,7 +589,6 @@ public:
                     updateCycleCnt = 0;
                 }
             }
-
             if (updateCycleCnt != 0) {
                 VFWelfordParallelFinalizeGroups(shape, true, tMeanTensor, tVarTensor, tGroupMeanTensor_,
                                                 tGroupVarTensor_, updateCycleCnt);
@@ -539,8 +598,7 @@ public:
     }
 
     __aicore__ inline void VFWelfordParallelFinalizeGroups(Ops::Base::ReduceOpTmpl::Shape<InnerPattern::Dim>& shape,
-                                                           bool isTail,
-                                                           LocalTensor<float>& tMeanTensor,
+                                                           bool isTail, LocalTensor<float>& tMeanTensor,
                                                            LocalTensor<float>& tVarTensor,
                                                            LocalTensor<float>& groupMeanTensor,
                                                            LocalTensor<float>& groupVarTensor, uint32_t updateCycleCnt)
@@ -548,10 +606,10 @@ public:
         __local_mem__ float* meanBufAddr = (__local_mem__ float*)tMeanTensor.GetPhyAddr();
         __local_mem__ float* varBufAddr = (__local_mem__ float*)tVarTensor.GetPhyAddr();
 
-        __local_mem__ float* groupMeanBufAddr =
-            (__local_mem__ float*)groupMeanTensor.GetPhyAddr() + rCntGroupIdx_ * MAX_INNER_A_NUM;
-        __local_mem__ float* groupVarBufAddr =
-            (__local_mem__ float*)groupVarTensor.GetPhyAddr() + rCntGroupIdx_ * MAX_INNER_A_NUM;
+        __local_mem__ float* groupMeanBufAddr = (__local_mem__ float*)groupMeanTensor.GetPhyAddr() +
+                                                rCntGroupIdx_ * MAX_INNER_A_NUM;
+        __local_mem__ float* groupVarBufAddr = (__local_mem__ float*)groupVarTensor.GetPhyAddr() +
+                                               rCntGroupIdx_ * MAX_INNER_A_NUM;
 
         // LocalTensor<float> tDichTensor = dichotomyAddBuf_.Get<float>();
         __local_mem__ float* dichotomyAddLocal = (__local_mem__ float*)tDichAddTensor_.GetPhyAddr();
@@ -565,19 +623,27 @@ public:
             // 1. ub切尾轴时  r实际长度 = lastReduceTailR_ = splitRAxisTail_;
             // 2. ub不切尾轴但尾轴本身是对齐的: r实际长度 = lastRAxisLen_ * loopWelfTailRCnt_
             // 3. ub不切尾轴且尾轴本身非对齐的: r实际长度 = lastRAxisLen_ * loopWelfTailRCnt_
+            // NDDMA: 所有 R 合并后连续存放 (仅尾部 pad 一次) -> UB 里 R 连续, 可走 Align 分支
+            //        但 rNum 需用真实数据数 (lastRAxisLen_ * loopLastRCnt_) 作为除数, rStride 保持 shape.value[1]
             bool isLastAlign = ((Ops::Base::ReduceOpTmpl::IsLoopSpliteRAxis<&SchLoopInfo>(Dim - 1)) ||
-                                (tilingOp_->shape[Dim - 1] % (BLOCK_SIZE_BYTE / sizeof(DataType)) == 0));
+                                (tiling_->useNddma == 1) ||
+                                (tiling_->shape[Dim - 1] % (BLOCK_SIZE_BYTE / sizeof(DataType)) == 0));
             if (isLastAlign) {
                 if (isTail) {
-                    rNum = (Ops::Base::ReduceOpTmpl::IsLoopSpliteRAxis<&SchLoopInfo>(Dim - 1)) ? splitRAxisTail_
-                                                                                   : lastRAxisLen_ * loopWelfTailRCnt_;
+                    rNum = (Ops::Base::ReduceOpTmpl::IsLoopSpliteRAxis<&SchLoopInfo>(Dim - 1)) ?
+                               splitRAxisTail_ :
+                               lastRAxisLen_ * loopWelfTailRCnt_;
+                } else if (tiling_->useNddma == 1) {
+                    // NDDMA 非 isTail: shape.value[1] 含尾 pad, 真数据数 = lastR * loopCnt
+                    rNum = static_cast<uint32_t>(lastRAxisLen_ * loopLastRCnt_);
                 }
+
                 rCntGroupWelford_[rCntGroupIdx_] = static_cast<uint32_t>(rNum * updateCycleCnt);
                 rCntGroupIdx_ = isInvert_ ? (rCntGroupIdx_ - 1) : (rCntGroupIdx_ + 1);
 
                 // 没有尾块, 没有pad, meanScale = (1.0f * updateCycleCnt) / (1.0 * rNum * updateCycleCnt)
-                float meanScale =
-                    (rNum == 0) ? 1.0f : (1.0f * updateCycleCnt) / static_cast<float>(rNum * updateCycleCnt);
+                float meanScale = (rNum == 0) ? 1.0f :
+                                                (1.0f * updateCycleCnt) / static_cast<float>(rNum * updateCycleCnt);
 
                 // 不带pad
                 VFWelfordParallelFinalizeARAlign<float, isStd, true>(meanBufAddr, varBufAddr, dichotomyAddLocal,
@@ -591,6 +657,7 @@ public:
                     realR = lastRAxisLen_ * loopWelfTailRCnt_;
                     lastRLoops = loopWelfTailRCnt_;
                 }
+
                 rCntGroupWelford_[rCntGroupIdx_] = static_cast<uint32_t>(realR * updateCycleCnt);
                 rCntGroupIdx_ = isInvert_ ? (rCntGroupIdx_ - 1) : (rCntGroupIdx_ + 1);
 
@@ -602,24 +669,50 @@ public:
                     1.0f, meanScale, updateCycleCnt, lastRAxisLen_, lastRAxisLenAlign_, lastRLoops);
             }
         } else {
-            // dichotomyAddLocal RA场景下空间分配
-            __local_mem__ float* tmpCountLocal = (__local_mem__ float*)tCountTensor_.GetPhyAddr();
-            uint32_t RNum = isTail ? lastReduceTailR_ : shape.value[0];
-            uint32_t ANum = shape.value[1];
+            if (tiling_->isInvert == 1) {
+                // RA→AR 转置: UB 布局 [A, R_align], reduce 沿新尾轴 R, pad 仅存在于每行末尾。
+                //   aNum = A（shape.value[0]，主尾块一致）
+                //   rNum = 每行真实 R 数据数（ubRealRBundle_ 由 CopyIn 按块刷新：主组=主块R, 尾组=尾块R），
+                //          不能用 shape.value[1]（含 pad），否则把 pad lane 的脏统计量加进结果
+                //   rStride = 行 stride（shape.value[1]，slab 几何主尾一致）
+                uint32_t aNum = static_cast<uint32_t>(shape.value[0]);
+                uint32_t rNum = ubRealRBundle_;
+                uint32_t rStride = static_cast<uint32_t>(shape.value[1]);
+                LocalTensor<float> dstGroupMeanInv = groupMeanTensor[rCntGroupIdx_ * MAX_INNER_A_NUM];
+                LocalTensor<float> dstGroupVarInv = groupVarTensor[rCntGroupIdx_ * MAX_INNER_A_NUM];
+                __local_mem__ float* dstGroupMeanAddrInv = (__local_mem__ float*)dstGroupMeanInv.GetPhyAddr();
+                __local_mem__ float* dstGroupVarAddrInv = (__local_mem__ float*)dstGroupVarInv.GetPhyAddr();
 
-            int64_t tailRNum = 0;
-            int64_t addCnt = updateCycleCnt;
-            int64_t addTailCnt = updateCycleCnt;  // welford 累加次数, addTailCnt >= addCnt
-            CaculateCountBuf(tmpCountLocal, RNum, tailRNum, addCnt, addTailCnt);
+                rCntGroupWelford_[rCntGroupIdx_] = rNum * updateCycleCnt;
+                rCntGroupIdx_ = isInvert_ ? (rCntGroupIdx_ - 1) : (rCntGroupIdx_ + 1);
 
-            float meanScale = (updateCycleCnt * RNum == 0) ? 1.0f : 1.0f / static_cast<float>(updateCycleCnt * RNum);
-            LocalTensor<float> dstGroupMean = groupMeanTensor[rCntGroupIdx_ * MAX_INNER_A_NUM];
-            LocalTensor<float> dstGroupVar = groupVarTensor[rCntGroupIdx_ * MAX_INNER_A_NUM];
-            VFWelfordFinalizeRA<float, isStd, true>(RNum, ANum, tMeanTensor, tVarTensor, tmpCountLocal, dstGroupMean,
-                                                    dstGroupVar, dichotomyAddLocal, meanScale, 1.0f);
+                float meanScale = (rNum == 0) ? 1.0f :
+                                                (1.0f * updateCycleCnt) / static_cast<float>(rNum * updateCycleCnt);
 
-            rCntGroupWelford_[rCntGroupIdx_] = static_cast<uint32_t>(RNum * updateCycleCnt);
-            rCntGroupIdx_ = isInvert_ ? (rCntGroupIdx_ - 1) : (rCntGroupIdx_ + 1);
+                VFWelfordParallelFinalizeARAlign<float, isStd, true>(meanBufAddr, varBufAddr, dichotomyAddLocal,
+                                                                     dstGroupMeanAddrInv, dstGroupVarAddrInv, aNum,
+                                                                     rNum, rStride, 1.0f, meanScale, updateCycleCnt);
+            } else {
+                // dichotomyAddLocal RA场景下空间分配
+                __local_mem__ float* tmpCountLocal = (__local_mem__ float*)tCountTensor_.GetPhyAddr();
+                uint32_t RNum = isTail ? lastReduceTailR_ : shape.value[0];
+                uint32_t ANum = shape.value[1];
+
+                int64_t tailRNum = 0;
+                int64_t addCnt = updateCycleCnt;
+                int64_t addTailCnt = updateCycleCnt; // welford 累加次数, addTailCnt >= addCnt
+                CaculateCountBuf(tmpCountLocal, RNum, tailRNum, addCnt, addTailCnt);
+
+                float meanScale = (updateCycleCnt * RNum == 0) ? 1.0f :
+                                                                 1.0f / static_cast<float>(updateCycleCnt * RNum);
+                LocalTensor<float> dstGroupMean = groupMeanTensor[rCntGroupIdx_ * MAX_INNER_A_NUM];
+                LocalTensor<float> dstGroupVar = groupVarTensor[rCntGroupIdx_ * MAX_INNER_A_NUM];
+                VFWelfordFinalizeRA<float, isStd, true>(RNum, ANum, tMeanTensor, tVarTensor, tmpCountLocal,
+                                                        dstGroupMean, dstGroupVar, dichotomyAddLocal, meanScale, 1.0f);
+
+                rCntGroupWelford_[rCntGroupIdx_] = static_cast<uint32_t>(RNum * updateCycleCnt);
+                rCntGroupIdx_ = isInvert_ ? (rCntGroupIdx_ - 1) : (rCntGroupIdx_ + 1);
+            }
         }
 
         if ((isInvert_ && rCntGroupIdx_ <= 0) || (!isInvert_ && rCntGroupIdx_ >= WELFORD_GROUP_NUM)) {
@@ -663,7 +756,7 @@ public:
     __aicore__ inline void WelfordFinalizeGroup()
     {
         LocalTensor<T> outMeanTensor = outQueue_.AllocTensor<T>();
-        LocalTensor<T> outVarTensor = outMeanTensor[tilingOp_->resultBlock / sizeof(T)];
+        LocalTensor<T> outVarTensor = outMeanTensor[tiling_->resultBlock / sizeof(T)];
         __local_mem__ T* outMeanAddr = (__local_mem__ T*)outMeanTensor.GetPhyAddr();
         __local_mem__ T* outVarAddr = (__local_mem__ T*)outVarTensor.GetPhyAddr();
 
@@ -676,7 +769,7 @@ public:
 
         float meanScale = tiling_->meanFactor;
         if constexpr (SchLoopInfo.loopRCount > 0) {
-            meanScale = 1.0f / static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tilingOp_->groupR]);
+            meanScale = 1.0f / static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tiling_->groupR]);
         }
 
         // RA finalize
@@ -701,22 +794,23 @@ public:
 
         LocalTensor<float> srcGroupMean = tGroupMeanTensor_[startIdx * MAX_INNER_A_NUM];
         LocalTensor<float> srcGroupVar = tGroupVarTensor_[startIdx * MAX_INNER_A_NUM];
+
         VFWelfordFinalizeRA<T, isStd, isM2Out>(RNum, ANum, srcGroupMean, srcGroupVar, tmpCountLocal, outMeanTensor,
                                                outVarTensor, dichotomyAddLocal, meanScale, varScale);
-
         outQueue_.EnQue(outMeanTensor);
     }
 
     template <typename T, bool isM2Out = false>
-    __aicore__ inline void WelfordFinalize(Ops::Base::ReduceOpTmpl::Shape<InnerPattern::Dim>& shape,
-        int64_t count, int64_t tailsNum, LocalTensor<float>& tMeanTensor, LocalTensor<float>& tVarTensor)
+    __aicore__ inline void WelfordFinalize(Ops::Base::ReduceOpTmpl::Shape<InnerPattern::Dim>& shape, int64_t count,
+                                           int64_t tailsNum, LocalTensor<float>& tMeanTensor,
+                                           LocalTensor<float>& tVarTensor)
     {
         __local_mem__ float* dichotomyAddLocal = (__local_mem__ float*)tDichAddTensor_.GetPhyAddr();
         __local_mem__ float* meanBufAddr = (__local_mem__ float*)tMeanTensor.GetPhyAddr();
         __local_mem__ float* varBufAddr = (__local_mem__ float*)tVarTensor.GetPhyAddr();
 
         LocalTensor<T> outMeanTensor = outQueue_.AllocTensor<T>();
-        LocalTensor<T> outVarTensor = outMeanTensor[tilingOp_->resultBlock / sizeof(T)];
+        LocalTensor<T> outVarTensor = outMeanTensor[tiling_->resultBlock / sizeof(T)];
         __local_mem__ T* outMeanAddr = (__local_mem__ T*)outMeanTensor.GetPhyAddr();
         __local_mem__ T* outVarAddr = (__local_mem__ T*)outVarTensor.GetPhyAddr();
 
@@ -737,13 +831,20 @@ public:
             }
 
             bool isLastAlign = ((Ops::Base::ReduceOpTmpl::IsLoopSpliteRAxis<&SchLoopInfo>(Dim - 1)) ||
-                                (tilingOp_->shape[Dim - 1] % (BLOCK_SIZE_BYTE / sizeof(DataType)) == 0));
+                                (tiling_->useNddma == 1) ||
+                                (tiling_->shape[Dim - 1] % (BLOCK_SIZE_BYTE / sizeof(DataType)) == 0));
+            // NDDMA 场景: shape.value[1] 是尾 pad 后总长, rNum 需修正为真实数据数 (rStride 保持 shape.value[1])
+            if (tiling_->useNddma == 1 && !(Ops::Base::ReduceOpTmpl::IsLoopSpliteRAxis<&SchLoopInfo>(Dim - 1)) &&
+                count != tailsNum) {
+                rNum = static_cast<uint32_t>(lastRAxisLen_ * loopLastRCnt_);
+            }
+
             float meanScale = tiling_->meanFactor;
             if (tailsNum == 0) {
-                meanScale = (float)count * tiling_->meanFactor;  // 无尾块场景, meanscale需要乘以count
+                meanScale = (float)count * tiling_->meanFactor; // 无尾块场景, meanscale需要乘以count
                 if constexpr (SchLoopInfo.loopRCount > 0) {
-                    meanScale =
-                        float(count) / static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tilingOp_->groupR]);
+                    meanScale = float(count) /
+                                static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tiling_->groupR]);
                 }
                 if (isLastAlign) {
                     // 不带pad
@@ -759,7 +860,7 @@ public:
             } else if (isLastAlign) {
                 meanScale = tiling_->meanFactor;
                 if constexpr (SchLoopInfo.loopRCount > 0) {
-                    meanScale = 1.0f / static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tilingOp_->groupR]);
+                    meanScale = 1.0f / static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tiling_->groupR]);
                 }
                 VFWelfordParallelFinalizeARNonAlign<T, isStd, isM2Out>(
                     meanBufAddr, varBufAddr, dichotomyAddLocal, outMeanAddr, outVarAddr, aNum, rNum, rStride, varScale,
@@ -767,7 +868,7 @@ public:
             } else {
                 meanScale = tiling_->meanFactor;
                 if constexpr (SchLoopInfo.loopRCount > 0) {
-                    meanScale = 1.0f / static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tilingOp_->groupR]);
+                    meanScale = 1.0f / static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tiling_->groupR]);
                 }
                 VFWelfordParallelFinalizeARNonAlignPad<T, isStd, isM2Out>(
                     tMeanTensor, tVarTensor, tDichAddTensor_, outMeanTensor, outVarTensor, aNum, rNum, rStride,
@@ -775,6 +876,45 @@ public:
                     lastRAxisLenAlign_, loopLastRCnt_);
             }
         } else {
+            // TailA + isInvert==1: 数据已被 CopyInWithNddmaInvert 转置为 AR 布局
+            //   post-swap shape: shape.value[0]=A, shape.value[1]=R_aligned
+            //   走 AR 分支, 与非 invert 的 !TailA 路径对称
+            if (tiling_->isInvert == 1) {
+                uint32_t aNum = static_cast<uint32_t>(shape.value[0]);
+                uint32_t rNum = 0;
+                uint32_t rStride = static_cast<uint32_t>(shape.value[1]);
+                // TailA invert: UB 布局 [A, R_align]，reduce 沿新尾轴 R。
+                // rNum 必须用真实 R 数据数（loopLastRCnt_/loopWelfTailRCnt_ 仅在 CalcInnerShapeLastR 中
+                // 赋值，TailA 场景恒为 1，不可用）：主块=lastReduceMainR_，全尾块=lastReduceTailR_
+                if (count == tailsNum) {
+                    tailsNum = 0;
+                    rNum = static_cast<uint32_t>(lastReduceTailR_);
+                } else {
+                    rNum = static_cast<uint32_t>(lastReduceMainR_);
+                }
+                float meanScale = tiling_->meanFactor;
+                if (tailsNum == 0) {
+                    meanScale = (float)count * tiling_->meanFactor;
+                    if constexpr (SchLoopInfo.loopRCount > 0) {
+                        meanScale = float(count) /
+                                    static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tiling_->groupR]);
+                    }
+                    VFWelfordParallelFinalizeARAlign<T, isStd, isM2Out>(meanBufAddr, varBufAddr, dichotomyAddLocal,
+                                                                        outMeanAddr, outVarAddr, aNum, rNum, rStride,
+                                                                        varScale, meanScale, count);
+                } else {
+                    meanScale = tiling_->meanFactor;
+                    if constexpr (SchLoopInfo.loopRCount > 0) {
+                        meanScale = 1.0f /
+                                    static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tiling_->groupR]);
+                    }
+                    VFWelfordParallelFinalizeARNonAlign<T, isStd, isM2Out>(
+                        meanBufAddr, varBufAddr, dichotomyAddLocal, outMeanAddr, outVarAddr, aNum, rNum, rStride,
+                        varScale, meanScale, count - tailsNum, count, lastReduceTailR_);
+                }
+                outQueue_.EnQue(outMeanTensor);
+                return;
+            }
             // dichotomyAddLocal RA场景下空间分配
             __local_mem__ float* tmpCountLocal = (__local_mem__ float*)tCountTensor_.GetPhyAddr();
             uint32_t RNum = shape.value[0];
@@ -785,12 +925,12 @@ public:
             }
             int64_t tailRNum = (tailsNum == 0) ? 0 : lastReduceTailR_;
             int64_t addCnt = count - tailsNum;
-            int64_t addTailCnt = count;  // welford 累加次数, addTailCnt >= addCnt
+            int64_t addTailCnt = count; // welford 累加次数, addTailCnt >= addCnt
             CaculateCountBuf(tmpCountLocal, RNum, tailRNum, addCnt, addTailCnt);
 
             float meanScale = tiling_->meanFactor;
             if constexpr (SchLoopInfo.loopRCount > 0) {
-                meanScale = 1.0f / static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tilingOp_->groupR]);
+                meanScale = 1.0f / static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tiling_->groupR]);
             }
             VFWelfordFinalizeRA<T, isStd, isM2Out>(RNum, ANum, tMeanTensor, tVarTensor, tmpCountLocal, outMeanTensor,
                                                    outVarTensor, dichotomyAddLocal, meanScale, varScale);
@@ -828,7 +968,7 @@ public:
     {
         int32_t blockIdx = GetBlockIdx();
         uint64_t startWs = (blockIdx * factorACntPerCore + loopAIdx) * ubFactorA_;
-        int64_t realAnum = tilingOp_->outSize - static_cast<int64_t>(startWs);
+        int64_t realAnum = tiling_->outSize - static_cast<int64_t>(startWs);
         if (realAnum <= 0) {
             return;
         }
@@ -838,22 +978,22 @@ public:
 
         __local_mem__ float* dichotomyAddAddr = (__local_mem__ float*)tDichAddTensor_.GetPhyAddr();
         LocalTensor<DataType> outMeanTensor = outQueue_.AllocTensor<DataType>();
-        LocalTensor<DataType> outVarTensor = outMeanTensor[tilingOp_->resultBlock / sizeof(DataType)];
+        LocalTensor<DataType> outVarTensor = outMeanTensor[tiling_->resultBlock / sizeof(DataType)];
 
-        uint64_t asize = Ops::Base::CeilAlign(tilingOp_->outSize, static_cast<uint64_t>(ELEMENT_ONE_REPEAT_COMPUTE));
+        uint64_t asize = Ops::Base::CeilAlign(tiling_->outSize, static_cast<uint64_t>(ELEMENT_ONE_REPEAT_COMPUTE));
         uint64_t varOffset = static_cast<uint64_t>(tiling_->workSpaceSize) / sizeof(PromoteDataType);
         float varScale = (tiling_->correctionInvalid == 1) ? (*((float*)&FLOAT32_INF)) : tiling_->varFactor;
 
         Ops::Base::ReduceOpTmpl::SetEvent<HardEvent::V_S>(HardEvent::V_S);
         __local_mem__ float* groupCountBufAddr = (__local_mem__ float*)tCountTensor_.GetPhyAddr();
-        for (int i = 0; i < tilingOp_->groupR; i++) {
+        for (int i = 0; i < tiling_->groupR; i++) {
             float reduceCnt = static_cast<float>(tiling_->reduceCntEachGroupR[i]);
             tCountTensor_.SetValue(i, reduceCnt);
         }
 
         DataCopyPadExtParams<PromoteDataType> padParams{true, 0, 0, static_cast<PromoteDataType>(0.0)};
         DataCopyExtParams copyInParams = {1, 1, 0, 0, 0};
-        copyInParams.blockCount = tilingOp_->groupR;
+        copyInParams.blockCount = tiling_->groupR;
         copyInParams.blockLen = ubFactorA_ * sizeof(PromoteDataType);
         copyInParams.srcStride = (asize - ubFactorA_) * sizeof(PromoteDataType);
 
@@ -865,12 +1005,12 @@ public:
         Ops::Base::ReduceOpTmpl::SetEvent<HardEvent::S_V>(HardEvent::S_V);
 
         VFWelfordFinalizeRA<DataType, isStd, false>(
-            static_cast<uint32_t>(tilingOp_->groupR), static_cast<uint32_t>(ubFactorA_), tMeanTensor_, tVarTensor_,
+            static_cast<uint32_t>(tiling_->groupR), static_cast<uint32_t>(ubFactorA_), tMeanTensor_, tVarTensor_,
             groupCountBufAddr, outMeanTensor, outVarTensor, dichotomyAddAddr, tiling_->meanFactor, varScale);
 
         outQueue_.EnQue(outMeanTensor);
         outMeanTensor = outQueue_.DeQue<DataType>();
-        outVarTensor = outMeanTensor[tilingOp_->resultBlock / sizeof(DataType)];
+        outVarTensor = outMeanTensor[tiling_->resultBlock / sizeof(DataType)];
 
         DataCopyExtParams copyOutParams = {1, 1, 0, 0, 0};
         copyOutParams.blockCount = 1;
@@ -887,11 +1027,11 @@ public:
     __aicore__ inline void SetLoopRangeGroup()
     {
         int32_t blockId = GetBlockIdx();
-        loopRStartIndex_ = blockId / tilingOp_->groupR * tilingOp_->factorRTotalCnt +
-                           blockId % tilingOp_->groupR * tilingOp_->factorRCntPerCore;
-        loopREndIndex_ = loopRStartIndex_ + tilingOp_->factorRCntPerCore;
-        uint64_t maxRCnt = (blockId / tilingOp_->groupR + 1) * tilingOp_->factorRTotalCnt;
-        uint64_t totalCnt = tilingOp_->factorATotalCnt * tilingOp_->factorRTotalCnt;
+        loopRStartIndex_ = blockId / tiling_->groupR * tiling_->factorRTotalCnt +
+                           blockId % tiling_->groupR * tiling_->factorRCntPerCore;
+        loopREndIndex_ = loopRStartIndex_ + tiling_->factorRCntPerCore;
+        uint64_t maxRCnt = (blockId / tiling_->groupR + 1) * tiling_->factorRTotalCnt;
+        uint64_t totalCnt = tiling_->factorATotalCnt * tiling_->factorRTotalCnt;
         maxRCnt = maxRCnt > totalCnt ? totalCnt : maxRCnt;
         if (unlikely(loopRStartIndex_ > maxRCnt)) {
             loopRStartIndex_ = maxRCnt;
@@ -902,22 +1042,22 @@ public:
 
         constexpr int32_t rAxisIdx = SchLoopInfo.loopRCount - 1;
         constexpr int32_t rAxis = SchLoopInfo.loopRAxis[rAxisIdx];
-        loopRAxisStep_ = Ops::Base::CeilDiv(tilingOp_->shape[rAxis], tilingOp_->ubFactorR);  // 切分轴Rfactor的个数
-        splitRAxisTail_ = tilingOp_->shape[rAxis] % tilingOp_->ubFactorR;
+        loopRAxisStep_ = Ops::Base::CeilDiv(tiling_->shape[rAxis], tiling_->ubFactorR); // 切分轴Rfactor的个数
+        splitRAxisTail_ = tiling_->shape[rAxis] % tiling_->ubFactorR;
 
         if constexpr (SchLoopInfo.loopACount > 0) {
             constexpr int32_t aAxisIdx = SchLoopInfo.loopACount - 1;
             constexpr int32_t aAxis = SchLoopInfo.loopAAxis[aAxisIdx];
-            loopAAxisStep_ = Ops::Base::CeilDiv(tilingOp_->shape[aAxis], tilingOp_->ubFactorA);
+            loopAAxisStep_ = Ops::Base::CeilDiv(tiling_->shape[aAxis], tiling_->ubFactorA);
         }
 
-        ubFactorA_ = tilingOp_->ubFactorA;
-        ubFactorR_ = tilingOp_->ubFactorR;
+        ubFactorA_ = tiling_->ubFactorA;
+        ubFactorR_ = tiling_->ubFactorR;
     }
 
-    __aicore__ inline void CopyInX(
-        int64_t index, Ops::Base::ReduceOpTmpl::SliceView<Ops::Base::ReduceOpTmpl::MAX_DIM>& view,
-        Ops::Base::ReduceOpTmpl::Shape<InnerPattern::Dim>& shape, bool& calcShape)
+    __aicore__ inline void CopyInX(int64_t index,
+                                   Ops::Base::ReduceOpTmpl::SliceView<Ops::Base::ReduceOpTmpl::MAX_DIM>& view,
+                                   Ops::Base::ReduceOpTmpl::Shape<InnerPattern::Dim>& shape, bool& calcShape)
     {
         LocalTensor<DataType> inputTensor = inputQueue_.AllocTensor<DataType>();
 
@@ -933,7 +1073,6 @@ public:
             CalcInnerShape(view, shape);
             calcShape = false;
         }
-
         CopyIn(view, inputTensor);
         inputQueue_.EnQue(inputTensor);
     }
@@ -948,7 +1087,7 @@ public:
                     constexpr auto axis = SchLoopInfo.loopRAxis[SchLoopInfo.loopRCount - 1];
                     auto cur = temp % loopRAxisStep_;
                     iterAddr_[axis].start = cur * ubFactorR_;
-                    iterAddr_[axis].stride = tilingOp_->shape[axis] - iterAddr_[axis].start;
+                    iterAddr_[axis].stride = tiling_->shape[axis] - iterAddr_[axis].start;
                     if (likely(iterAddr_[axis].stride >= ubFactorR_)) {
                         iterAddr_[axis].stride = ubFactorR_;
                     }
@@ -958,15 +1097,15 @@ public:
                     if (Ops::Base::ReduceOpTmpl::IsLoopSpliteAAxis<&SchLoopInfo>(axis)) {
                         auto cur = temp % loopAAxisStep_;
                         iterAddr_[axis].start = cur * ubFactorA_;
-                        iterAddr_[axis].stride = tilingOp_->shape[axis] - iterAddr_[axis].start;
+                        iterAddr_[axis].stride = tiling_->shape[axis] - iterAddr_[axis].start;
                         if (likely(iterAddr_[axis].stride >= ubFactorA_)) {
                             iterAddr_[axis].stride = ubFactorA_;
                         }
                         temp = temp / loopAAxisStep_;
                     } else {
-                        iterAddr_[axis].start = temp % tilingOp_->shape[axis];
+                        iterAddr_[axis].start = temp % tiling_->shape[axis];
                         iterAddr_[axis].stride = 1;
-                        temp = temp / tilingOp_->shape[axis];
+                        temp = temp / tiling_->shape[axis];
                     }
                 }
             }
@@ -982,15 +1121,15 @@ public:
                 // 最内层循环
                 auto cur = basicBlockIdx % loopRAxisStep_;
                 iterAddr_[axis].start = cur * ubFactorR_;
-                iterAddr_[axis].stride = tilingOp_->shape[axis] - iterAddr_[axis].start;
+                iterAddr_[axis].stride = tiling_->shape[axis] - iterAddr_[axis].start;
                 if (likely(iterAddr_[axis].stride >= ubFactorR_)) {
                     iterAddr_[axis].stride = ubFactorR_;
                 }
                 CalcInnerIterR<LoopInnerRIdx - 1>(basicBlockIdx / loopRAxisStep_);
             } else {
-                iterAddr_[axis].start = basicBlockIdx % tilingOp_->shape[axis];
+                iterAddr_[axis].start = basicBlockIdx % tiling_->shape[axis];
                 iterAddr_[axis].stride = 1;
-                CalcInnerIterR<LoopInnerRIdx - 1>(basicBlockIdx / tilingOp_->shape[axis]);
+                CalcInnerIterR<LoopInnerRIdx - 1>(basicBlockIdx / tiling_->shape[axis]);
             }
         }
     }
@@ -999,20 +1138,24 @@ public:
     {
         uint64_t addrOffset = 0;
         for (int32_t i = 0; i < Dim; i++) {
-            addrOffset += iterAddr_[i].start * tilingOp_->stride[i];
+            addrOffset += iterAddr_[i].start * tiling_->stride[i];
         }
 
-        constexpr static auto burstLenAxis = Dim - 1;  // 获取搬运的最内轴的循环轴
-        view.addr = addrOffset;                        // 搬运地址
-        view.axis[0].repeat = Ops::Base::ReduceOpTmpl::GetBurstLen<&SchLoopInfo, burstLenAxis>(iterAddr_, tilingOp_);
-        view.axisSize = 1;  // 一次搬运时的循环轴个数
+        constexpr static auto burstLenAxis = Dim - 1; // 获取搬运的最内轴的循环轴
+        view.addr = addrOffset;                       // 搬运地址
+        view.axis[0].repeat = Ops::Base::ReduceOpTmpl::GetBurstLen<&SchLoopInfo, burstLenAxis>(iterAddr_, tiling_);
+        // burst 轴恒为 GM 最内轴：补全其轴类型（默认 0 会被误判为 R 轴，
+        // TailA invert 时最内轴为 A，会导致 invDstStride/bundle 计算错误）
+        view.axis[0].idx = burstLenAxis;
+        view.axis[0].isAxisA = Ops::Base::ReduceOpTmpl::IsAxisA<Pattern::FirstA>(burstLenAxis);
+        view.axisSize = 1; // 一次搬运时的循环轴个数
 
         if constexpr (burstLenAxis > 0) {
             int32_t axis = burstLenAxis;
             for (int32_t i = 1; i < Dim; i++) {
                 view.axisSize = i + 1;
                 view.axis[i].repeat = Ops::Base::ReduceOpTmpl::GetRepeatStride<&SchLoopInfo>(
-                    axis - 1, iterAddr_, tilingOp_, view.axis[i].srcStride);
+                    axis - 1, iterAddr_, tiling_, view.axis[i].srcStride);
                 view.axis[i].idx = axis - 1;
                 view.axis[i].isAxisA = Ops::Base::ReduceOpTmpl::IsAxisA<Pattern::FirstA>(view.axis[i].idx);
                 if (view.axis[i].idx <= 0) {
@@ -1023,14 +1166,19 @@ public:
         }
     }
 
-    __aicore__ inline void CalcInnerShapeLastR(Ops::Base::ReduceOpTmpl::SliceView<Ops::Base::ReduceOpTmpl::MAX_DIM>& view,
-                                               Ops::Base::ReduceOpTmpl::Shape<InnerPattern::Dim>& shape)
+    __aicore__ inline void CalcInnerShapeLastR(
+        Ops::Base::ReduceOpTmpl::SliceView<Ops::Base::ReduceOpTmpl::MAX_DIM>& view,
+        Ops::Base::ReduceOpTmpl::Shape<InnerPattern::Dim>& shape)
     {
-        int64_t value = Ops::Base::CeilAlign(view.axis[0].repeat, BLOCK_SIZE_BYTE / sizeof(DataType));
-        lastReduceTailR_ = value;  // 不切最后一根轴时，取对齐后的大小
+        // NDDMA: innermost R no per-element CeilAlign, bundle then block-align at end
+        int64_t value = tiling_->useNddma == 1 ?
+                            view.axis[0].repeat :
+                            Ops::Base::CeilAlign(view.axis[0].repeat, BLOCK_SIZE_BYTE / sizeof(DataType));
+        lastReduceTailR_ = value;
         if (Ops::Base::ReduceOpTmpl::IsLoopSpliteRAxis<&SchLoopInfo>(Dim - 1)) {
-            value = Ops::Base::CeilAlign(ubFactorR_, BLOCK_SIZE_BYTE / sizeof(DataType));
-            lastReduceTailR_ = splitRAxisTail_;  // 尾轴reduce且ub切分最后一根轴,则取实际的大小,不做对齐
+            value = tiling_->useNddma == 1 ? ubFactorR_ :
+                                             Ops::Base::CeilAlign(ubFactorR_, BLOCK_SIZE_BYTE / sizeof(DataType));
+            lastReduceTailR_ = splitRAxisTail_;
         }
         loopLastRCnt_ = 1;
         loopWelfTailRCnt_ = 1;
@@ -1049,6 +1197,12 @@ public:
                 loopLastRCnt_ = loopLastRCnt_ * view.axis[i].repeat;
             }
         }
+        if (tiling_->useNddma == 1 && tiling_->isInvert == 0) {
+            // NDDMA: CeilAlign after bundling all R axes as a single block
+            // 仅非 invert 时需要补齐 inner dim；invert 路径 R 变为 outer dim，由 CopyIn 侧 otherAlign 保证 inner dim
+            // 对齐
+            value = Ops::Base::CeilAlign(static_cast<uint64_t>(value), BLOCK_SIZE_BYTE / sizeof(DataType));
+        }
         shape.value[InnerPattern::Dim - 1] = value;
         for (uint64_t i = 1; i < view.axisSize; i++) {
             if (view.axis[i].isAxisA) {
@@ -1057,23 +1211,37 @@ public:
             }
         }
         shape.value[InnerPattern::Dim - Ops::Base::ReduceOpTmpl::CONST2] = value / shape.value[InnerPattern::Dim - 1];
+        if (tiling_->isInvert == 1) {
+            // AR→RA: swap inner/outer dims so VF sees transposed layout
+            auto aBundled = shape.value[InnerPattern::Dim - Ops::Base::ReduceOpTmpl::CONST2];
+            shape.value[InnerPattern::Dim - Ops::Base::ReduceOpTmpl::CONST2] = shape.value[InnerPattern::Dim -
+                                                                                           1]; // R→outer
+            // 补齐inner dim使其与CopyIn dstStride一致，保证VF DataCopy访问每row起始地址32B对齐
+            shape.value[InnerPattern::Dim - 1] = Ops::Base::CeilAlign(
+                static_cast<uint64_t>(aBundled), BLOCK_SIZE_BYTE / sizeof(DataType)); // A_aligned→inner
+            invOtherAlign_ = shape.value[InnerPattern::Dim - 1]; // 转置行 stride（主块几何）
+            aOutBurstLen_ = aBundled;
+            aOutNBurst_ = 1;
+        }
     }
 
-    __aicore__ inline void CalcInnerShapeLastA(Ops::Base::ReduceOpTmpl::SliceView<Ops::Base::ReduceOpTmpl::MAX_DIM>& view,
-                                               Ops::Base::ReduceOpTmpl::Shape<InnerPattern::Dim>& shape)
+    __aicore__ inline void CalcInnerShapeLastA(
+        Ops::Base::ReduceOpTmpl::SliceView<Ops::Base::ReduceOpTmpl::MAX_DIM>& view,
+        Ops::Base::ReduceOpTmpl::Shape<InnerPattern::Dim>& shape)
     {
-        int64_t value = tiling_->useNddma == 1
-                            ? view.axis[0].repeat
-                            : Ops::Base::CeilAlign(view.axis[0].repeat, BLOCK_SIZE_BYTE / sizeof(DataType));
+        int64_t value = tiling_->useNddma == 1 ?
+                            view.axis[0].repeat :
+                            Ops::Base::CeilAlign(view.axis[0].repeat, BLOCK_SIZE_BYTE / sizeof(DataType));
         aOutBurstLen_ = view.axis[0].repeat;
         if (Ops::Base::ReduceOpTmpl::IsLoopSpliteRAxis<&SchLoopInfo>(Dim - 1)) {
-            value =
-                tiling_->useNddma == 1 ? ubFactorA_ : Ops::Base::CeilAlign(ubFactorA_, BLOCK_SIZE_BYTE / sizeof(DataType));
+            value = tiling_->useNddma == 1 ? ubFactorA_ :
+                                             Ops::Base::CeilAlign(ubFactorA_, BLOCK_SIZE_BYTE / sizeof(DataType));
             aOutBurstLen_ = ubFactorA_;
         }
 
         aOutNBurst_ = 1;
         lastReduceTailR_ = 1;
+        lastReduceMainR_ = 1;
         for (uint64_t i = 1; i < view.axisSize; i++) {
             if (view.axis[i].isAxisA) {
                 view.axis[i].dstStride = value;
@@ -1084,13 +1252,18 @@ public:
         if (tiling_->useNddma == 1) {
             aOutNBurst_ = 1;
             aOutBurstLen_ = value;
-            value = Ops::Base::CeilAlign(static_cast<uint64_t>(value), BLOCK_SIZE_BYTE / sizeof(DataType));
+            if (tiling_->isInvert == 0) {
+                // 仅非 invert 时补齐 inner dim；invert 路径该维度变为 outer，对齐由 CopyIn 侧 otherAlign 保证
+                value = Ops::Base::CeilAlign(static_cast<uint64_t>(value), BLOCK_SIZE_BYTE / sizeof(DataType));
+            }
         }
         shape.value[InnerPattern::Dim - 1] = value;
         for (uint64_t i = 1; i < view.axisSize; i++) {
             if (!view.axis[i].isAxisA) {
                 view.axis[i].dstStride = value;
                 value = value * view.axis[i].repeat;
+                // 本函数仅在每次 Welford 调用的首个块（主块）执行，repeat 即主块长度
+                lastReduceMainR_ = lastReduceMainR_ * view.axis[i].repeat;
                 if (Ops::Base::ReduceOpTmpl::IsLoopSpliteRAxis<&SchLoopInfo>(view.axis[i].idx)) {
                     lastReduceTailR_ = lastReduceTailR_ * splitRAxisTail_;
                 } else {
@@ -1099,6 +1272,18 @@ public:
             }
         }
         shape.value[InnerPattern::Dim - Ops::Base::ReduceOpTmpl::CONST2] = value / shape.value[InnerPattern::Dim - 1];
+        if (tiling_->isInvert == 1) {
+            // RA→AR: swap inner/outer dims so VF sees transposed layout
+            auto rBundled = shape.value[InnerPattern::Dim - Ops::Base::ReduceOpTmpl::CONST2];
+            shape.value[InnerPattern::Dim - Ops::Base::ReduceOpTmpl::CONST2] = shape.value[InnerPattern::Dim -
+                                                                                           1]; // A→outer
+            // 补齐inner dim使其与CopyIn dstStride一致，保证VF DataCopy访问每row起始地址32B对齐
+            shape.value[InnerPattern::Dim - 1] = Ops::Base::CeilAlign(
+                static_cast<uint64_t>(rBundled), BLOCK_SIZE_BYTE / sizeof(DataType)); // R_aligned→inner
+            invOtherAlign_ = shape.value[InnerPattern::Dim - 1]; // 转置行 stride（主块几何）
+            // aOutBurstLen_ already holds correct A count, keep it
+            aOutNBurst_ = 1;
+        }
     }
 
     __aicore__ inline void CalcInnerShape(Ops::Base::ReduceOpTmpl::SliceView<Ops::Base::ReduceOpTmpl::MAX_DIM>& view,
@@ -1111,33 +1296,323 @@ public:
         }
     }
 
-    __aicore__ inline void CopyInWithNddma(const Ops::Base::ReduceOpTmpl::SliceView<Ops::Base::ReduceOpTmpl::MAX_DIM>& view,
-                                           LocalTensor<DataType>& ubTensor)
+    __aicore__ inline void CopyInWithNddma(
+        const Ops::Base::ReduceOpTmpl::SliceView<Ops::Base::ReduceOpTmpl::MAX_DIM>& view,
+        LocalTensor<DataType>& ubTensor)
     {
-        static constexpr MultiCopyConfig config = {false};
-        MultiCopyParams<DataType, MAX_NDDMA_DIM> paramsMain;
-        paramsMain.constantValue = 0;
-        paramsMain.loopInfo.loopSize[0] = view.axis[0].repeat;
-        paramsMain.loopInfo.loopSrcStride[0] = 1;
-        paramsMain.loopInfo.loopDstStride[0] = 1;
-        paramsMain.loopInfo.loopLpSize[0] = 0;
-        paramsMain.loopInfo.loopRpSize[0] = 0;
-        for (uint32_t i = 1; i < MAX_NDDMA_DIM; i++) {
-            paramsMain.loopInfo.loopSize[i] = view.axis[i].repeat;
-            paramsMain.loopInfo.loopSrcStride[i] = view.axis[i].srcStride;
-            paramsMain.loopInfo.loopDstStride[i] = view.axis[i].dstStride;
-            paramsMain.loopInfo.loopLpSize[i] = 0;
-            paramsMain.loopInfo.loopRpSize[i] = 0;
+        // Step 1: Compute outer dimension product (axes beyond the first 2)
+        uint64_t outer = 1;
+        for (int32_t i = Ops::Base::ReduceOpTmpl::CONST2; i < view.axisSize; i++) {
+            outer *= view.axis[i].repeat;
         }
 
-        DataCopy<DataType, MAX_NDDMA_DIM, config>(ubTensor, inputGM_[view.addr], paramsMain);
+        if (outer == 1) {
+            // Step 2: Only 2 dims, fall back to DataCopyPad
+            DataCopyPadExtParams<DataType> padParams{true, 0, 0, static_cast<DataType>(0.0)};
+            DataCopyExtParams copyInParams;
+            copyInParams.blockCount = view.axis[1].repeat;
+            copyInParams.blockLen = view.axis[0].repeat * sizeof(DataType);
+            copyInParams.srcStride = (view.axis[1].srcStride - view.axis[0].repeat) * sizeof(DataType);
+            copyInParams.dstStride = (view.axis[1].dstStride - view.axis[0].repeat) * sizeof(DataType) /
+                                     BLOCK_SIZE_BYTE;
+            DataCopyPad(ubTensor, inputGM_[view.addr], copyInParams, padParams);
+            return;
+        }
+
+        // Step 3: Multi-dimensional NDDMA dispatch based on Dim
+        static constexpr MultiCopyConfig config = {false, 0, 0, false};
+
+        if constexpr (Dim <= 4) {
+            if constexpr (Dim == 3) {
+                MultiCopyLoopInfo<3> loopInfo = {
+                    .loopSrcStride = {1, view.axis[1].srcStride, view.axis[2].srcStride},
+                    .loopDstStride = {1, static_cast<uint32_t>(view.axis[1].dstStride),
+                                      static_cast<uint32_t>(view.axis[2].dstStride)},
+                    .loopSize = {static_cast<uint32_t>(view.axis[0].repeat), static_cast<uint32_t>(view.axis[1].repeat),
+                                 static_cast<uint32_t>(view.axis[2].repeat)},
+                    .loopLpSize = {0, 0, 0},
+                    .loopRpSize = {0, 0, 0}};
+                MultiCopyParams<DataType, 3> params = {loopInfo, 0};
+                DataCopy<DataType, 3, config>(ubTensor, inputGM_[view.addr], params);
+            } else {
+                // Dim == 4 (Dim == 1 or 2 already handled by outer == 1)
+                MultiCopyLoopInfo<4> loopInfo = {
+                    .loopSrcStride = {1, view.axis[1].srcStride, view.axis[2].srcStride, view.axis[3].srcStride},
+                    .loopDstStride = {1, static_cast<uint32_t>(view.axis[1].dstStride),
+                                      static_cast<uint32_t>(view.axis[2].dstStride),
+                                      static_cast<uint32_t>(view.axis[3].dstStride)},
+                    .loopSize = {static_cast<uint32_t>(view.axis[0].repeat), static_cast<uint32_t>(view.axis[1].repeat),
+                                 static_cast<uint32_t>(view.axis[2].repeat),
+                                 static_cast<uint32_t>(view.axis[3].repeat)},
+                    .loopLpSize = {0, 0, 0, 0},
+                    .loopRpSize = {0, 0, 0, 0}};
+                MultiCopyParams<DataType, 4> params = {loopInfo, 0};
+                DataCopy<DataType, 4, config>(ubTensor, inputGM_[view.addr], params);
+            }
+        } else {
+            // Dim >= 5: inner 5 dims via NDDMA, outer dims via for loops
+            MultiCopyLoopInfo<5> loopInfo = {
+                .loopSrcStride = {1, view.axis[1].srcStride, view.axis[2].srcStride, view.axis[3].srcStride,
+                                  view.axis[4].srcStride},
+                .loopDstStride = {1, static_cast<uint32_t>(view.axis[1].dstStride),
+                                  static_cast<uint32_t>(view.axis[2].dstStride),
+                                  static_cast<uint32_t>(view.axis[3].dstStride),
+                                  static_cast<uint32_t>(view.axis[4].dstStride)},
+                .loopSize = {static_cast<uint32_t>(view.axis[0].repeat), static_cast<uint32_t>(view.axis[1].repeat),
+                             static_cast<uint32_t>(view.axis[2].repeat), static_cast<uint32_t>(view.axis[3].repeat),
+                             static_cast<uint32_t>(view.axis[4].repeat)},
+                .loopLpSize = {0, 0, 0, 0, 0},
+                .loopRpSize = {0, 0, 0, 0, 0}};
+            MultiCopyParams<DataType, 5> params = {loopInfo, 0};
+            for (int32_t i = 0; i < view.axis[5].repeat; i++) {
+                for (int32_t j = 0; j < view.axis[6].repeat; j++) {
+                    for (int32_t k = 0; k < view.axis[7].repeat; k++) {
+                        int64_t dstStride = i * view.axis[5].dstStride + j * view.axis[6].dstStride +
+                                            k * view.axis[7].dstStride;
+                        int64_t srcStride = i * view.axis[5].srcStride + j * view.axis[6].srcStride +
+                                            k * view.axis[7].srcStride;
+                        DataCopy<DataType, 5, config>(ubTensor[dstStride], inputGM_[view.addr + srcStride], params);
+                    }
+                }
+            }
+        }
+    }
+
+    __aicore__ inline void CopyInWithNddmaInvert(
+        const Ops::Base::ReduceOpTmpl::SliceView<Ops::Base::ReduceOpTmpl::MAX_DIM>& view,
+        LocalTensor<DataType>& ubTensor)
+    {
+        static constexpr MultiCopyConfig config = {false, 0, 0, false};
+
+        // Step 1: bundle 所有 R / A 轴 repeat, 重算每根 axis 的 dstStride
+        uint32_t tailBundle = 1;  // 所有 R 轴 repeat 乘积
+        uint32_t otherBundle = 1; // 所有 A 轴 repeat 乘积
+        for (int32_t i = 0; i < view.axisSize; i++) {
+            if (view.axis[i].isAxisA) {
+                otherBundle *= static_cast<uint32_t>(view.axis[i].repeat);
+            } else {
+                tailBundle *= static_cast<uint32_t>(view.axis[i].repeat);
+            }
+        }
+        // 记录真实 A/R 数据数（不含 pad）供 WelfordUpdate / WelfordUpdateGroups / Finalize 使用
+        // 多维分支语义 = 轴类型乘积：ubRealABundle_ = 所有 A 轴 repeat 乘积，ubRealRBundle_ = 所有 R 轴 repeat 乘积
+        // （TailA 转置后布局为 [A 行 × R 列]，恰好对应 VFWelfordParallelUpdateARWithTail 的 (ANum, realRLen)）
+        ubRealABundle_ = otherBundle;
+        ubRealRBundle_ = tailBundle;
+        // 行 stride 必须用主块几何（首次 CopyInX 时由 CalcInnerShape 按 pattern 缓存）：
+        //   !TailA = align(A bundle)，TailA = align(R bundle)；
+        // 尾块 axis 变短不能改变 slab 行 stride，否则主尾块 lane 对不齐
+        uint32_t otherAlign = invOtherAlign_;
+
+        uint32_t invDstStride[Ops::Base::ReduceOpTmpl::MAX_DIM] = {0};
+        uint32_t aSeen = 1;
+        uint32_t rSeen = 1;
+        for (int32_t i = 0; i < view.axisSize; i++) {
+            if constexpr (InnerPattern::TailA) {
+                // RA→AR: R 轴落 inner（连续），A 轴落 outer（步长 otherAlign 按 A 轴累积）
+                if (view.axis[i].isAxisA) {
+                    invDstStride[i] = otherAlign * aSeen;
+                    aSeen *= static_cast<uint32_t>(view.axis[i].repeat);
+                } else {
+                    invDstStride[i] = rSeen;
+                    rSeen *= static_cast<uint32_t>(view.axis[i].repeat);
+                }
+            } else {
+                // AR→RA: A 轴落 inner（连续），R 轴落 outer（步长 otherAlign 按 R 轴累积）
+                if (view.axis[i].isAxisA) {
+                    invDstStride[i] = aSeen;
+                    aSeen *= static_cast<uint32_t>(view.axis[i].repeat);
+                } else {
+                    invDstStride[i] = otherAlign * rSeen;
+                    rSeen *= static_cast<uint32_t>(view.axis[i].repeat);
+                }
+            }
+        }
+
+        uint32_t srcStrideL1 = static_cast<uint32_t>(view.axis[1].srcStride);
+
+        // Step 2: 计算外层维度累积（axis[2] 之后所有轴的 repeat 乘积）
+        uint64_t outer = 1;
+        for (int32_t i = Ops::Base::ReduceOpTmpl::CONST2; i < view.axisSize; i++) {
+            outer *= view.axis[i].repeat;
+        }
+
+        if (outer == 1) {
+            // Step 2: 只有 2 根轴 (axis[0], axis[1])，直接 3-layer 转置搬运
+            uint32_t tailBundle = static_cast<uint32_t>(view.axis[0].repeat);
+            uint32_t otherBundle = static_cast<uint32_t>(view.axis[1].repeat);
+            uint32_t srcStrideL1 = static_cast<uint32_t>(view.axis[1].srcStride);
+            // 行 stride 必须用主块几何（首次 CopyInX 时由 CalcInnerShape 缓存）：
+            // 尾块 axis 变短不能改变 slab 行 stride，否则主尾块 lane 对不齐
+            uint32_t otherAlign = invOtherAlign_;
+            // 短路分支同样刷新真实数据数：转置后 axis[0] 落 outer（slab 行数），
+            // axis[1] 落 inner（每行真实数据数）。!TailA: 行=R, 每行=A；TailA: 行=A, 每行=R
+            ubRealABundle_ = tailBundle;  // slab 行数
+            ubRealRBundle_ = otherBundle; // 每行真实数据数
+            MultiCopyLoopInfo<3> loopInfo = {.loopSrcStride = {1, srcStrideL1, 1},
+                                             .loopDstStride = {1, 1, otherAlign},
+                                             .loopSize = {1, otherBundle, tailBundle},
+                                             .loopLpSize = {0, 0, 0},
+                                             .loopRpSize = {0, 0, 0}};
+            MultiCopyParams<DataType, 3> params = {loopInfo, 0};
+            DataCopy<DataType, 3, config>(ubTensor, inputGM_[view.addr], params);
+            return;
+        }
+
+        // Step 3: 多维分发
+        // TailA (RA→AR)：dst 连续轴(R)放低 loop 层、dst 散射轴(A)放高 loop 层，L0 退化(size=1)。
+        // 与 outer==1 短路分支及 CopyInWithNddma 同一硬件范式（所有已验证路径 loopDstStride[0]==1）；
+        // L0 散射（dstStride!=1）会导致 NDDMA 拷贝截断（实测 2322 元素只搬入前 1318 个）
+        if constexpr (InnerPattern::TailA) {
+            constexpr int32_t innerAxes = (Dim >= 5) ? 4 : Dim; // NDDMA 内层轴数（+1 退化层后 <=5 层）
+            uint32_t lvlSize[5] = {1, 1, 1, 1, 1};
+            uint32_t lvlSrc[5] = {1, 1, 1, 1, 1};
+            uint32_t lvlDst[5] = {1, 1, 1, 1, 1};
+            int32_t lvl = 1;
+            for (int32_t i = 0; i < innerAxes; i++) { // R 轴 → 低层（dst 连续）
+                if (!view.axis[i].isAxisA) {
+                    lvlSize[lvl] = static_cast<uint32_t>(view.axis[i].repeat);
+                    lvlSrc[lvl] = (i == 0) ? 1 : static_cast<uint32_t>(view.axis[i].srcStride);
+                    lvlDst[lvl] = invDstStride[i];
+                    lvl++;
+                }
+            }
+            for (int32_t i = 0; i < innerAxes; i++) { // A 轴 → 高层（dst 散射 otherAlign*aSeen）
+                if (view.axis[i].isAxisA) {
+                    lvlSize[lvl] = static_cast<uint32_t>(view.axis[i].repeat);
+                    lvlSrc[lvl] = (i == 0) ? 1 : static_cast<uint32_t>(view.axis[i].srcStride);
+                    lvlDst[lvl] = invDstStride[i];
+                    lvl++;
+                }
+            }
+            if constexpr (Dim == 3) {
+                // TailA 时 axis[0] 恒为 GM 最内 A 轴。NDDMA 多维描述符仅在「低层 dst 连续 + 仅 1 个
+                // 散射层」结构下验证可靠（同 outer==1 短路分支）；存在第 2 根 A 轴（[A,R,A]/[R,A,A]，
+                // 两根 A 轴均为 dst 散射层）时，4 层描述符实测拷贝错乱（如 [3,258,3] 切分只搬入部分
+                // 数据，UB 后部残留脏数据）。故将第 2 根 A 轴剥离为 for 循环，使单次拷贝退化为
+                // 与 outer==1 短路分支完全同构的 3 层结构 {退化层, R 连续层, A 散射层(otherAlign)}
+                constexpr int32_t peelIdx = Pattern::FirstA ? 2 : 1; // 第 2 根 A 轴在 view 中的下标
+                if (view.axis[peelIdx].isAxisA) {
+                    constexpr int32_t rIdx = (peelIdx == 2) ? 1 : 2; // R 轴在 view 中的下标
+                    MultiCopyLoopInfo<3> loopInfo = {
+                        .loopSrcStride = {1, static_cast<uint32_t>(view.axis[rIdx].srcStride), 1},
+                        .loopDstStride = {1, 1, otherAlign},
+                        .loopSize = {1, static_cast<uint32_t>(view.axis[rIdx].repeat),
+                                     static_cast<uint32_t>(view.axis[0].repeat)},
+                        .loopLpSize = {0, 0, 0},
+                        .loopRpSize = {0, 0, 0}};
+                    MultiCopyParams<DataType, 3> params = {loopInfo, 0};
+                    // ===== DEBUG BEGIN: sentinel 铺底 + 参数打印，定位 NDDMA 落盘位置 =====
+                    // ===== DEBUG END =====
+                    for (uint32_t k = 0; k < static_cast<uint32_t>(view.axis[peelIdx].repeat); k++) {
+                        DataCopy<DataType, 3, config>(ubTensor[k * invDstStride[peelIdx]],
+                                                      inputGM_[view.addr + k * view.axis[peelIdx].srcStride], params);
+                    }
+                    if (blockIdx_ == 0 && dbgPeelCnt_ == 1) {
+                        dbgPeelCnt_ = 2; // per-k 打印只保留第一次
+                    }
+                } else {
+                    // [R,R,A]：仅 1 根 A 散射层，维持 4 层单拷贝
+                    MultiCopyLoopInfo<4> loopInfo = {.loopSrcStride = {lvlSrc[0], lvlSrc[1], lvlSrc[2], lvlSrc[3]},
+                                                     .loopDstStride = {lvlDst[0], lvlDst[1], lvlDst[2], lvlDst[3]},
+                                                     .loopSize = {lvlSize[0], lvlSize[1], lvlSize[2], lvlSize[3]},
+                                                     .loopLpSize = {0, 0, 0, 0},
+                                                     .loopRpSize = {0, 0, 0, 0}};
+                    MultiCopyParams<DataType, 4> params = {loopInfo, 0};
+                    DataCopy<DataType, 4, config>(ubTensor, inputGM_[view.addr], params);
+                }
+            } else if constexpr (Dim == 4) {
+                MultiCopyLoopInfo<5> loopInfo = {
+                    .loopSrcStride = {lvlSrc[0], lvlSrc[1], lvlSrc[2], lvlSrc[3], lvlSrc[4]},
+                    .loopDstStride = {lvlDst[0], lvlDst[1], lvlDst[2], lvlDst[3], lvlDst[4]},
+                    .loopSize = {lvlSize[0], lvlSize[1], lvlSize[2], lvlSize[3], lvlSize[4]},
+                    .loopLpSize = {0, 0, 0, 0, 0},
+                    .loopRpSize = {0, 0, 0, 0, 0}};
+                MultiCopyParams<DataType, 5> params = {loopInfo, 0};
+                DataCopy<DataType, 5, config>(ubTensor, inputGM_[view.addr], params);
+            } else {
+                // Dim >= 5: 内 5 层 NDDMA（退化 L0 + axis[0..3]），剩余 axis[4..7] 外层 for 循环
+                MultiCopyLoopInfo<5> loopInfo = {
+                    .loopSrcStride = {lvlSrc[0], lvlSrc[1], lvlSrc[2], lvlSrc[3], lvlSrc[4]},
+                    .loopDstStride = {lvlDst[0], lvlDst[1], lvlDst[2], lvlDst[3], lvlDst[4]},
+                    .loopSize = {lvlSize[0], lvlSize[1], lvlSize[2], lvlSize[3], lvlSize[4]},
+                    .loopLpSize = {0, 0, 0, 0, 0},
+                    .loopRpSize = {0, 0, 0, 0, 0}};
+                MultiCopyParams<DataType, 5> params = {loopInfo, 0};
+                for (int32_t i = 0; i < view.axis[4].repeat; i++) {
+                    for (int32_t j = 0; j < view.axis[5].repeat; j++) {
+                        for (int32_t k = 0; k < view.axis[6].repeat; k++) {
+                            for (int32_t m = 0; m < view.axis[7].repeat; m++) {
+                                int64_t srcOff = i * view.axis[4].srcStride + j * view.axis[5].srcStride +
+                                                 k * view.axis[6].srcStride + m * view.axis[7].srcStride;
+                                int64_t dstOff = i * invDstStride[4] + j * invDstStride[5] + k * invDstStride[6] +
+                                                 m * invDstStride[7];
+                                DataCopy<DataType, 5, config>(ubTensor[dstOff], inputGM_[view.addr + srcOff], params);
+                            }
+                        }
+                    }
+                }
+            }
+            return;
+        }
+
+        // !TailA (AR→RA): 与历史实现逐位一致 —— axis[0](R) 落 L0 按 otherAlign 散射、axis[1](A) 连续
+        if constexpr (Dim == 3) {
+            MultiCopyLoopInfo<3> loopInfo = {
+                .loopSrcStride = {1, srcStrideL1, static_cast<uint32_t>(view.axis[2].srcStride)},
+                .loopDstStride = {invDstStride[0], invDstStride[1], invDstStride[2]},
+                .loopSize = {static_cast<uint32_t>(view.axis[0].repeat), static_cast<uint32_t>(view.axis[1].repeat),
+                             static_cast<uint32_t>(view.axis[2].repeat)},
+                .loopLpSize = {0, 0, 0},
+                .loopRpSize = {0, 0, 0}};
+            MultiCopyParams<DataType, 3> params = {loopInfo, 0};
+            DataCopy<DataType, 3, config>(ubTensor, inputGM_[view.addr], params);
+        } else if constexpr (Dim == 4) {
+            MultiCopyLoopInfo<4> loopInfo = {
+                .loopSrcStride = {1, srcStrideL1, static_cast<uint32_t>(view.axis[2].srcStride),
+                                  static_cast<uint32_t>(view.axis[3].srcStride)},
+                .loopDstStride = {invDstStride[0], invDstStride[1], invDstStride[2], invDstStride[3]},
+                .loopSize = {static_cast<uint32_t>(view.axis[0].repeat), static_cast<uint32_t>(view.axis[1].repeat),
+                             static_cast<uint32_t>(view.axis[2].repeat), static_cast<uint32_t>(view.axis[3].repeat)},
+                .loopLpSize = {0, 0, 0, 0},
+                .loopRpSize = {0, 0, 0, 0}};
+            MultiCopyParams<DataType, 4> params = {loopInfo, 0};
+            DataCopy<DataType, 4, config>(ubTensor, inputGM_[view.addr], params);
+        } else {
+            // Dim >= 5: 内 5 层 NDDMA (axis[0..4]) + 外层 axis[5..7] for 循环
+            MultiCopyLoopInfo<5> loopInfo = {
+                .loopSrcStride = {1, srcStrideL1, static_cast<uint32_t>(view.axis[2].srcStride),
+                                  static_cast<uint32_t>(view.axis[3].srcStride),
+                                  static_cast<uint32_t>(view.axis[4].srcStride)},
+                .loopDstStride = {invDstStride[0], invDstStride[1], invDstStride[2], invDstStride[3], invDstStride[4]},
+                .loopSize = {static_cast<uint32_t>(view.axis[0].repeat), static_cast<uint32_t>(view.axis[1].repeat),
+                             static_cast<uint32_t>(view.axis[2].repeat), static_cast<uint32_t>(view.axis[3].repeat),
+                             static_cast<uint32_t>(view.axis[4].repeat)},
+                .loopLpSize = {0, 0, 0, 0, 0},
+                .loopRpSize = {0, 0, 0, 0, 0}};
+            MultiCopyParams<DataType, 5> params = {loopInfo, 0};
+            for (int32_t i = 0; i < view.axis[5].repeat; i++) {
+                for (int32_t j = 0; j < view.axis[6].repeat; j++) {
+                    for (int32_t k = 0; k < view.axis[7].repeat; k++) {
+                        int64_t srcOff = i * view.axis[5].srcStride + j * view.axis[6].srcStride +
+                                         k * view.axis[7].srcStride;
+                        int64_t dstOff = i * invDstStride[5] + j * invDstStride[6] + k * invDstStride[7];
+                        DataCopy<DataType, 5, config>(ubTensor[dstOff], inputGM_[view.addr + srcOff], params);
+                    }
+                }
+            }
+        }
     }
 
     __aicore__ inline void CopyIn(const Ops::Base::ReduceOpTmpl::SliceView<Ops::Base::ReduceOpTmpl::MAX_DIM>& view,
                                   LocalTensor<DataType>& ubTensor)
     {
         if (tiling_->useNddma == 1) {
-            CopyInWithNddma(view, ubTensor);
+            if (tiling_->isInvert == 1) {
+                CopyInWithNddmaInvert(view, ubTensor);
+            } else {
+                CopyInWithNddma(view, ubTensor);
+            }
             return;
         }
 
@@ -1147,12 +1622,12 @@ public:
         copyInParams.blockLen = view.axis[0].repeat * sizeof(DataType);
         copyInParams.srcStride = (view.axis[1].srcStride - view.axis[0].repeat) * sizeof(DataType);
         copyInParams.dstStride = (view.axis[1].dstStride - view.axis[0].repeat) * sizeof(DataType) /
-                                 BLOCK_SIZE_BYTE;  // unit block(32byte) "gap"
+                                 BLOCK_SIZE_BYTE; // unit block(32byte) "gap"
         LoopModeParams loopParams;
-        loopParams.loop1Size = view.axis[2].repeat; // 2: the second-to-last dim
+        loopParams.loop1Size = view.axis[2].repeat;                            // 2: the second-to-last dim
         loopParams.loop1SrcStride = view.axis[2].srcStride * sizeof(DataType); // 2: the second-to-last dim
         loopParams.loop1DstStride = view.axis[2].dstStride * sizeof(DataType); // 2: the second-to-last dim
-        loopParams.loop2Size = view.axis[3].repeat; // 3: the third-to-last dim
+        loopParams.loop2Size = view.axis[3].repeat;                            // 3: the third-to-last dim
         loopParams.loop2SrcStride = view.axis[3].srcStride * sizeof(DataType); // 3: the third-to-last dim
         loopParams.loop2DstStride = view.axis[3].dstStride * sizeof(DataType); // 3: the third-to-last dim
 
@@ -1182,11 +1657,11 @@ public:
         constexpr int32_t axis = Pattern::FirstA ? 0 : 1;
         uint64_t addrOffset = 0;
         for (int32_t i = axis; i < Dim; i += Ops::Base::ReduceOpTmpl::CONST2) {
-            addrOffset += iterAddr_[i].start * tilingOp_->dstStride[i];
+            addrOffset += iterAddr_[i].start * tiling_->dstStride[i];
         }
 
         LocalTensor<DataType> outMeanTensor = outQueue_.DeQue<DataType>();
-        LocalTensor<DataType> outVarTensor = outMeanTensor[tilingOp_->resultBlock / sizeof(DataType)];
+        LocalTensor<DataType> outVarTensor = outMeanTensor[tiling_->resultBlock / sizeof(DataType)];
 
         DataCopyExtParams copyOutParams = {1, 1, 0, 0, 0};
 
@@ -1194,8 +1669,13 @@ public:
             copyOutParams.blockCount = aOutNBurst_;
             copyOutParams.blockLen = aOutBurstLen_ * sizeof(DataType);
         } else {
-            copyOutParams.blockCount = 1;
-            copyOutParams.blockLen = shape.value[0] * sizeof(DataType);
+            if (tiling_->isInvert == 1) {
+                copyOutParams.blockCount = aOutNBurst_;
+                copyOutParams.blockLen = aOutBurstLen_ * sizeof(DataType);
+            } else {
+                copyOutParams.blockCount = 1;
+                copyOutParams.blockLen = shape.value[0] * sizeof(DataType);
+            }
         }
 
         DataCopyPad(varGM_[addrOffset], outVarTensor, copyOutParams);
@@ -1209,7 +1689,7 @@ public:
     __aicore__ inline void CopyOutGroup(const Ops::Base::ReduceOpTmpl::Shape<InnerPattern::Dim>& shape)
     {
         LocalTensor<PromoteDataType> outMeanTensor = outQueue_.DeQue<PromoteDataType>();
-        LocalTensor<PromoteDataType> outVarTensor = outMeanTensor[tilingOp_->resultBlock / sizeof(PromoteDataType)];
+        LocalTensor<PromoteDataType> outVarTensor = outMeanTensor[tiling_->resultBlock / sizeof(PromoteDataType)];
 
         // CopyOut As RA Pattern
         int32_t blockId = GetBlockIdx();
@@ -1222,8 +1702,13 @@ public:
             uint64_t withPadNum = Ops::Base::CeilAlign(aOutBurstLen_, BLOCK_SIZE_BYTE / sizeof(DataType));
             copyOutParams.srcStride = (withPadNum - aOutBurstLen_) * sizeof(PromoteDataType) / BLOCK_SIZE_BYTE;
         } else {
-            copyOutParams.blockLen = shape.value[0] * sizeof(PromoteDataType);
-            copyOutParams.blockCount = 1;
+            if (tiling_->isInvert == 1) {
+                copyOutParams.blockLen = aOutBurstLen_ * sizeof(PromoteDataType);
+                copyOutParams.blockCount = aOutNBurst_;
+            } else {
+                copyOutParams.blockLen = shape.value[0] * sizeof(PromoteDataType);
+                copyOutParams.blockCount = 1;
+            }
         }
         int32_t axis = Pattern::FirstA ? 0 : 1;
         if constexpr (SchLoopInfo.loopACount > 0) {
@@ -1233,17 +1718,16 @@ public:
         uint64_t addrOffset = 0;
         if constexpr (SchLoopInfo.loopInnerACount > 0) {
             for (int32_t i = axis; i < Dim; i += Ops::Base::ReduceOpTmpl::CONST2) {
-                addrOffset += iterAddr_[i].start * tilingOp_->dstStride[i];
+                addrOffset += iterAddr_[i].start * tiling_->dstStride[i];
             }
         }
 
-        uint64_t aSize = Ops::Base::CeilAlign(tilingOp_->outSize, static_cast<uint64_t>(ELEMENT_ONE_REPEAT_COMPUTE));
+        uint64_t aSize = Ops::Base::CeilAlign(tiling_->outSize, static_cast<uint64_t>(ELEMENT_ONE_REPEAT_COMPUTE));
         uint64_t axisStep = SchLoopInfo.loopACount > 0 ? loopAAxisStep_ : 1;
-        uint64_t addr =
-            (blockId % tilingOp_->groupR) * aSize +                                         // group offset
-            (blockId / (tilingOp_->groupR * axisStep)) * tilingOp_->shape[axis] * innerA +  // all A Axis offset
-            (blockId / tilingOp_->groupR % axisStep) * ubFactorA_ * innerA +                // split A Axis offset
-            addrOffset;                                                                     // innerA offset
+        uint64_t addr = (blockId % tiling_->groupR) * aSize +                                      // group offset
+                        (blockId / (tiling_->groupR * axisStep)) * tiling_->shape[axis] * innerA + // all A Axis offset
+                        (blockId / tiling_->groupR % axisStep) * ubFactorA_ * innerA + // split A Axis offset
+                        addrOffset;                                                    // innerA offset
 
         uint64_t varOffset = static_cast<uint64_t>(tiling_->workSpaceSize) / sizeof(PromoteDataType);
         DataCopyPad(workspace_[addr], outMeanTensor, copyOutParams);
@@ -1252,5 +1736,5 @@ public:
         outQueue_.FreeTensor(outMeanTensor);
     }
 };
-}  // namespace ReduceOpTmpl
-#endif  // _REDUCE_VAR_SCH_H_
+} // namespace ReduceOpTmpl
+#endif // _REDUCE_VAR_SCH_H_

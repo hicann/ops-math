@@ -15,6 +15,7 @@
 #ifndef REDUCE_VAR_PURE_MOVE_H
 #define REDUCE_VAR_PURE_MOVE_H
 
+#include "reduce_var_struct.h"
 #include "reduce_var_vf_common.h"
 
 namespace ReduceOpTmpl {
@@ -66,20 +67,20 @@ __aicore__ inline void ReduceVarPureMove<T>::Init(TPipe* pipeIn, GM_ADDR x, GM_A
     if (mean != nullptr) {
         meanGM_.SetGlobalBuffer((__gm__ T*)mean);
     }
-    pipe_->InitBuffer(meanBuf_, tiling_->reduceOpTiling.basicBlock);
-    pipe_->InitBuffer(varBuf_, tiling_->reduceOpTiling.basicBlock);
+    pipe_->InitBuffer(meanBuf_, tiling_->basicBlock);
+    pipe_->InitBuffer(varBuf_, tiling_->basicBlock);
 }
 
 template <typename T>
 __aicore__ inline void ReduceVarPureMove<T>::Process()
 {
-    loopStartIdx_ = blockIdx_ * tiling_->reduceOpTiling.factorACntPerCore;
-    loopEndIdx_ = loopStartIdx_ + tiling_->reduceOpTiling.factorACntPerCore;
-    if (unlikely(loopEndIdx_ > tiling_->reduceOpTiling.factorATotalCnt)) {
-        loopEndIdx_ = tiling_->reduceOpTiling.factorATotalCnt;
+    loopStartIdx_ = blockIdx_ * tiling_->factorACntPerCore;
+    loopEndIdx_ = loopStartIdx_ + tiling_->factorACntPerCore;
+    if (unlikely(loopEndIdx_ > tiling_->factorATotalCnt)) {
+        loopEndIdx_ = tiling_->factorATotalCnt;
     }
 
-    tailLoopLen_ = tiling_->reduceOpTiling.outSize % tiling_->reduceOpTiling.ubFactorA;
+    tailLoopLen_ = tiling_->outSize % tiling_->ubFactorA;
     ProcessPerCore();
 }
 
@@ -90,21 +91,21 @@ __aicore__ inline void ReduceVarPureMove<T>::VFPureMove(__local_mem__ T* meanLoc
     uint16_t loopCount = Ops::Base::CeilDiv(calCount, ReduceOpTmpl::VL_FP32);
     __VEC_SCOPE__
     {
-        AscendC::Reg::RegTensor<float> meanReg;
-        AscendC::Reg::RegTensor<float> varReg;
+        AscendC::MicroAPI::RegTensor<float> meanReg;
+        AscendC::MicroAPI::RegTensor<float> varReg;
 
-        AscendC::Reg::MaskReg pregLoop;
+        AscendC::MicroAPI::MaskReg pregLoop;
         uint32_t sreg0 = calCount;
         for (uint16_t index = 0; index < loopCount; index++) {
-            pregLoop = AscendC::Reg::UpdateMask<float>(sreg0);
+            pregLoop = AscendC::MicroAPI::UpdateMask<float>(sreg0);
             // ub -> regTensor
             ReduceOpTmpl::LoadOneTensorForDtypeT<T>(meanLocalAddr, meanReg, pregLoop, index * VL_FP32);
             // sub
-            AscendC::Reg::Sub(varReg, meanReg, meanReg, pregLoop);
+            AscendC::MicroAPI::Sub(varReg, meanReg, meanReg, pregLoop);
             // mul
-            AscendC::Reg::Mul(varReg, varReg, varReg, pregLoop);
+            AscendC::MicroAPI::Mul(varReg, varReg, varReg, pregLoop);
             // muls
-            AscendC::Reg::Muls(varReg, varReg, varScale, pregLoop);
+            AscendC::MicroAPI::Muls(varReg, varReg, varScale, pregLoop);
             // regTensor -> ub
             ReduceOpTmpl::StoreOneTensorForDtypeT<T>(varLocalAddr, varReg, pregLoop, index * VL_FP32);
         }
@@ -114,9 +115,9 @@ __aicore__ inline void ReduceVarPureMove<T>::VFPureMove(__local_mem__ T* meanLoc
 template <typename T>
 __aicore__ inline void ReduceVarPureMove<T>::ProcessPerCore()
 {
-    int64_t copyElementNum = tiling_->reduceOpTiling.ubFactorA;
+    int64_t copyElementNum = tiling_->ubFactorA;
     for (int64_t loopIdx = loopStartIdx_; loopIdx < loopEndIdx_; loopIdx++) {
-        if (loopIdx == tiling_->reduceOpTiling.factorATotalCnt - 1 && tailLoopLen_ != 0) {
+        if (loopIdx == tiling_->factorATotalCnt - 1 && tailLoopLen_ != 0) {
             copyElementNum = tailLoopLen_;
         }
 
@@ -133,17 +134,17 @@ __aicore__ inline void ReduceVarPureMove<T>::ProcessPerCore()
             varScale = static_cast<float>(NAN);
         }
 
-        DataCopyPad(meanLocalIn, inputGM_[loopIdx * tiling_->reduceOpTiling.ubFactorA], copyOutParams_, padParams_);
+        DataCopyPad(meanLocalIn, inputGM_[loopIdx * tiling_->ubFactorA], copyOutParams_, padParams_);
 
         Ops::Base::ReduceOpTmpl::SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
         VFPureMove(meanLocalAddr, varLocalAddr, static_cast<uint32_t>(calCount), varScale);
         Ops::Base::ReduceOpTmpl::SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
 
         if (tiling_->isMeanOut != 0) {
-            DataCopyPad(meanGM_[loopIdx * tiling_->reduceOpTiling.ubFactorA], meanLocalIn, copyOutParams_);
+            DataCopyPad(meanGM_[loopIdx * tiling_->ubFactorA], meanLocalIn, copyOutParams_);
         }
 
-        DataCopyPad(varGM_[loopIdx * tiling_->reduceOpTiling.ubFactorA], varLocalIn, copyOutParams_);
+        DataCopyPad(varGM_[loopIdx * tiling_->ubFactorA], varLocalIn, copyOutParams_);
         Ops::Base::ReduceOpTmpl::SetEvent<HardEvent::MTE3_MTE2>(HardEvent::MTE3_MTE2);
     }
 }

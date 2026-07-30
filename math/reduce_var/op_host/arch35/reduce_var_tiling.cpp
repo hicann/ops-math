@@ -73,8 +73,8 @@ void ReduceVarTiling::MakeWrapDim(const std::vector<int64_t>& shape, std::vector
     std::sort(axes.begin(), axes.end());
 }
 
-void ReduceVarTiling::AssembleUnit(
-    Ops::Base::ReduceTilingUnit& unit, int32_t idx, uint64_t inner, uint64_t outer, uint64_t step)
+void ReduceVarTiling::AssembleUnit(Ops::Base::ReduceTilingUnit& unit, int32_t idx, uint64_t inner, uint64_t outer,
+                                   uint64_t step)
 {
     unit.idx = idx;
     unit.inner = inner;
@@ -86,18 +86,17 @@ ge::graphStatus ReduceVarTiling::ReduceVarGetInputParams(Ops::Base::ReduceOpInpu
 {
     OP_CHECK_IF(
         (Ops::Base::ReduceOpTmpl::GetInputDtype(context_, INPUT_INDEX_X, inputParam.inputDtype) == ge::GRAPH_FAILED),
-        OP_LOGE(context_->GetNodeName(), "ReduceOp get x input dtype failed"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context_->GetNodeName(), "ReduceOp get x input dtype failed"), return ge::GRAPH_FAILED);
 
     static const std::vector<ge::DataType> supDtypes = {ge::DT_FLOAT16, ge::DT_BF16, ge::DT_FLOAT};
     OP_CHECK_IF((std::find(supDtypes.begin(), supDtypes.end(), inputParam.inputDtype) == supDtypes.end()),
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x", Ops::Base::ToString(inputParam.inputDtype),
-            "The dtype of x must be within the range {DT_FLOAT16, DT_BF16, DT_FLOAT}"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+                    context_->GetNodeName(), "x", Ops::Base::ToString(inputParam.inputDtype),
+                    "The dtype of x must be within the range {DT_FLOAT16, DT_BF16, DT_FLOAT}"),
+                return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        (Ops::Base::ReduceOpTmpl::GetInputShape(context_, INPUT_INDEX_X, inputParam.shape) == ge::GRAPH_FAILED),
-        OP_LOGE(context_->GetNodeName(), "ReduceOp get x input shape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((Ops::Base::ReduceOpTmpl::GetInputShape(context_, INPUT_INDEX_X, inputParam.shape) == ge::GRAPH_FAILED),
+                OP_LOGE(context_->GetNodeName(), "ReduceOp get x input shape failed"), return ge::GRAPH_FAILED);
 
     inputParam.promoteDtpye = GetPromoteType(inputParam.inputDtype);
 
@@ -127,11 +126,12 @@ ge::graphStatus ReduceVarTiling::ReduceVarGetInputParams(Ops::Base::ReduceOpInpu
         inputParam.axes.resize(dimSize);
         for (size_t i = 0; i < dimSize; i++) {
             OP_CHECK_IF(!ops::IsDimValid(inputDimNum, dimData[i]),
-                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "dim",
-                    std::to_string(dimData[i]).c_str(),
-                    ("Each value of dim must be [-" + std::to_string(inputDimNum) + ", " +
-                     std::to_string(inputDimNum) + ")").c_str()),
-                return ge::GRAPH_FAILED);
+                        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                            context_->GetNodeName(), "dim", std::to_string(dimData[i]).c_str(),
+                            ("Each value of dim must be [-" + std::to_string(inputDimNum) + ", " +
+                             std::to_string(inputDimNum) + ")")
+                                .c_str()),
+                        return ge::GRAPH_FAILED);
             inputParam.axes[i] = dimData[i];
             if (dimData[i] < 0) {
                 inputParam.axes[i] = dimData[i] + inputDimNum;
@@ -160,15 +160,15 @@ void ReduceVarTiling::ReduceVarCalcInput(const Ops::Base::ReduceOpInputParam& in
     }
 
     OP_LOGI(context_->GetNodeName(),
-        "correction:%ld isMeanOut:%ld correctionInvalid:%ld totalReduceSize:%ld "
-        "inputParam.axes:%s inputParam.shape:%s varFactor:%f meanFactor:%f",
-        correction_, isMeanOut_, correctionInvalid_, totalReduceSize_, ss.str().c_str(),
-        Ops::Base::ReduceOpTmpl::VectorToString(inputParam.shape).c_str(), varFactor_, meanFactor_);
+            "correction:%ld isMeanOut:%ld correctionInvalid:%ld totalReduceSize:%ld "
+            "inputParam.axes:%s inputParam.shape:%s varFactor:%f meanFactor:%f",
+            correction_, isMeanOut_, correctionInvalid_, totalReduceSize_, ss.str().c_str(),
+            Ops::Base::ReduceOpTmpl::VectorToString(inputParam.shape).c_str(), varFactor_, meanFactor_);
 }
 
 void ReduceVarTiling::SetReduceCntEachGroupR()
 {
-    uint64_t groupR = tilingData_->groupR;
+    uint64_t groupR = reduceVarTilingData_->groupR;
     if (groupR <= 1) {
         return;
     }
@@ -177,10 +177,10 @@ void ReduceVarTiling::SetReduceCntEachGroupR()
 
     uint64_t loopRStart;
     uint64_t loopREnd;
-    uint64_t maxRCnt = tilingData_->factorRTotalCnt;
-    uint64_t rCntPerCore = tilingData_->factorRCntPerCore;
-    uint64_t* shape = tilingData_->shape;
-    uint64_t factorR = tilingData_->ubFactorR;
+    uint64_t maxRCnt = reduceVarTilingData_->factorRTotalCnt;
+    uint64_t rCntPerCore = reduceVarTilingData_->factorRCntPerCore;
+    uint64_t* shape = reduceVarTilingData_->shape;
+    uint64_t factorR = reduceVarTilingData_->ubFactorR;
     uint64_t rStepNum = unitR_.idx < 0 ? 1 : Ops::Base::CeilDiv(shape[unitR_.idx], factorR);
     uint64_t start = 0;
     uint64_t stride = 0;
@@ -206,43 +206,12 @@ void ReduceVarTiling::SetReduceCntEachGroupR()
             reduceCntEachGroupR[groupIdx] += stride * innerUbRCnt_;
         }
     }
-    OP_LOGI(
-        context_->GetNodeName(), "reduceCntEachGroupR:%s innerUbRCnt_:%lu",
-        Ops::Base::ReduceOpTmpl::VectorToString(reduceCntEachGroupR, groupR).c_str(), innerUbRCnt_);
+    OP_LOGI(context_->GetNodeName(), "reduceCntEachGroupR:%s innerUbRCnt_:%lu",
+            Ops::Base::ReduceOpTmpl::VectorToString(reduceCntEachGroupR, groupR).c_str(), innerUbRCnt_);
 
-    reduceVarTilingData_->set_reduceCntEachGroupR(reduceCntEachGroupR);
-}
-
-void ReduceVarTiling::SetUseNddma()
-{
-    reduceVarTilingData_->set_useNddma(0);
-    if (tilingData_->groupR > 1U) {
-        return;
+    for (uint64_t i = 0; i < groupR; i++) {
+        reduceVarTilingData_->reduceCntEachGroupR[i] = reduceCntEachGroupR[i];
     }
-    if (dimNum_ != SIZE3) {
-        return;
-    }
-
-    uint64_t dSize = ge::GetSizeByDataType(opInput_.inputDtype);
-    OP_CHECK_IF(dSize == 0,
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
-            Ops::Base::ToString(opInput_.inputDtype).c_str(), "The dtype size of x must be greater than 0"),
-        return);
-    uint64_t dataBlockSize = compileInfo_.ubBlockSize / dSize;
-
-    // 暂时只放开ARA且后两维都较小的场景。 尾轴reduce场景kernel实现较复杂，暂时先不做
-    uint64_t* shape = tilingData_->shape;
-    if (shape[dimNum_ - 1] >= dataBlockSize || shape[dimNum_ - SIZE2] >= dataBlockSize) {
-        return;
-    }
-
-    // 4096: 64*64
-    if (shape[0] < NDDMA_MAX_A_NUM) {
-        return;
-    }
-
-    reduceVarTilingData_->set_useNddma(1);
-    OP_LOGD(context_->GetNodeName(), "use nddma");
 }
 
 void ReduceVarTiling::ComputeInnerUbRCnt(const uint64_t* shape)
@@ -257,49 +226,15 @@ void ReduceVarTiling::ComputeInnerUbRCnt(const uint64_t* shape)
     }
 }
 
-void ReduceVarTiling::ConvertReduceOpTilingData(ReduceVarTilingDataStru* dst, const Ops::Base::ReduceOpTilingData* src)
-{
-    dst->set_factorACntPerCore(src->factorACntPerCore);
-    dst->set_factorATotalCnt(src->factorATotalCnt);
-    dst->set_ubFactorA(src->ubFactorA);
-    dst->set_factorRCntPerCore(src->factorRCntPerCore);
-    dst->set_factorRTotalCnt(src->factorRTotalCnt);
-    dst->set_ubFactorR(src->ubFactorR);
-    dst->set_groupR(src->groupR);
-    dst->set_outSize(src->outSize);
-    dst->set_basicBlock(src->basicBlock);
-    dst->set_resultBlock(src->resultBlock);
-    dst->set_coreNum(src->coreNum);
-    dst->set_useNddma(src->useNddma);
-    dst->set_meanVar(src->meanVar);
-    uint64_t shape[Ops::Base::ReduceOpTmpl::MAX_DIM] = {0};
-    uint64_t stride[Ops::Base::ReduceOpTmpl::MAX_DIM] = {0};
-    uint64_t dstStride[Ops::Base::ReduceOpTmpl::MAX_DIM] = {0};
-    for (int32_t i = 0; i < Ops::Base::ReduceOpTmpl::MAX_DIM; i++) {
-        shape[i] = src->shape[i];
-        stride[i] = src->stride[i];
-        dstStride[i] = src->dstStride[i];
-    }
-    dst->set_shape(shape);
-    dst->set_stride(stride);
-    dst->set_dstStride(dstStride);
-}
-
 void ReduceVarTiling::SetReduceVarTilingData()
 {
     SetReduceCntEachGroupR();
-    SetUseNddma();
-    ConvertReduceOpTilingData(&reduceVarTilingData_->reduceOpTiling, tilingData_);
-    reduceVarTilingData_->set_correction(correction_);
-    reduceVarTilingData_->set_correctionInvalid(correctionInvalid_);
-    reduceVarTilingData_->set_isMeanOut(isMeanOut_);
-    reduceVarTilingData_->set_workSpaceSize(static_cast<int64_t>(workSpaceSize_));
-    reduceVarTilingData_->set_varFactor(static_cast<float>(varFactor_));
-    reduceVarTilingData_->set_meanFactor(static_cast<float>(meanFactor_));
-
-    reduceVarTilingData_->SaveToBuffer(
-        context_->GetRawTilingData()->GetData(), context_->GetRawTilingData()->GetCapacity());
-    context_->GetRawTilingData()->SetDataSize(reduceVarTilingData_->GetDataSize());
+    reduceVarTilingData_->correction = correction_;
+    reduceVarTilingData_->correctionInvalid = correctionInvalid_;
+    reduceVarTilingData_->isMeanOut = isMeanOut_;
+    reduceVarTilingData_->workSpaceSize = static_cast<int64_t>(workSpaceSize_);
+    reduceVarTilingData_->varFactor = static_cast<float>(varFactor_);
+    reduceVarTilingData_->meanFactor = static_cast<float>(meanFactor_);
 }
 
 void ReduceVarTiling::CalcUserBasicBlock(bool patternA)
@@ -326,11 +261,12 @@ void ReduceVarTiling::CalcUserBasicBlock(bool patternA)
 
     // R全载: maxout = x / R, var + mean共2份out, 按fp32预留(ReduceSum高阶api可直接输出到out上), 输出开db
     double tmpIn = static_cast<double>(ubAvilSize * SIZE2) /
-        (static_cast<double>(BUFFER_NUM * SIZE2 + SIZE4 * welfordCacheTimes + welfordCacheTimes * SIZE3) +
-         static_cast<double>(BUFFER_NUM * SIZE2 * SIZE2 * welfordCacheTimes) / static_cast<double>(totalReduceSize_));
+                   (static_cast<double>(BUFFER_NUM * SIZE2 + SIZE4 * welfordCacheTimes + welfordCacheTimes * SIZE3) +
+                    static_cast<double>(BUFFER_NUM * SIZE2 * SIZE2 * welfordCacheTimes) /
+                        static_cast<double>(totalReduceSize_));
     // resultBlock_表示输出的大小, 按fp32预留
-    resultBlock_ = static_cast<uint64_t>(
-        static_cast<double>(tmpIn) * static_cast<double>(welfordCacheTimes) / static_cast<double>(totalReduceSize_));
+    resultBlock_ = static_cast<uint64_t>(static_cast<double>(tmpIn) * static_cast<double>(welfordCacheTimes) /
+                                         static_cast<double>(totalReduceSize_));
     resultBlock_ = Ops::Base::FloorAlign(resultBlock_, compileInfo_.cacheLineSize);
     // 尾轴A=2，fp16场景, 计算cacheline切分时是会多切一点的，会导致尾轴pad后，ub内的A超过MAX_INNER_A
     // resultBlock_ 也作为groupreduce第一阶段的输出，要按fp32预留
@@ -355,8 +291,8 @@ void ReduceVarTiling::CalcUserBasicBlock(bool patternA)
 void ReduceVarTiling::CalcUserWorkSpace()
 {
     size_t* workspaces = context_->GetWorkspaceSizes(1);
-    uint64_t groupR = tilingData_->groupR;
-    uint64_t outSize = tilingData_->outSize;
+    uint64_t groupR = reduceVarTilingData_->groupR;
+    uint64_t outSize = reduceVarTilingData_->outSize;
     int32_t size = ge::GetSizeByDataType(opInput_.promoteDtpye);
     if (groupR > 1UL) {
         workSpaceSize_ = compileInfo_.vectorCoreNum * Ops::Base::CeilAlign(outSize * size, compileInfo_.cacheLineSize);
@@ -371,66 +307,53 @@ ge::graphStatus ReduceVarTiling::PrepareCompileInfo()
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo_.vectorCoreNum = ascendcPlatform.GetCoreNumAiv();
     OP_CHECK_IF((compileInfo_.vectorCoreNum == 0UL),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "vectorCoreNum",
-            std::to_string(compileInfo_.vectorCoreNum).c_str(),
-            "The value of vectorCoreNum must be greater than 0"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "vectorCoreNum",
+                                                      std::to_string(compileInfo_.vectorCoreNum).c_str(),
+                                                      "The value of vectorCoreNum must be greater than 0"),
+                return ge::GRAPH_FAILED);
 
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     OP_CHECK_IF(ubSize <= Ops::Base::CACHE_BUF_SIZE,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize",
-            std::to_string(compileInfo_.ubSize).c_str(),
-            ("The value of ubSize must be greater than " + std::to_string(Ops::Base::CACHE_BUF_SIZE)).c_str()),
-        return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                    context_->GetNodeName(), "ubSize", std::to_string(compileInfo_.ubSize).c_str(),
+                    ("The value of ubSize must be greater than " + std::to_string(Ops::Base::CACHE_BUF_SIZE)).c_str()),
+                return ge::GRAPH_FAILED);
     compileInfo_.ubSize = ubSize;
 
     compileInfo_.cacheLineSize = Ops::Base::GetCacheLineSize(context_);
     OP_CHECK_IF(compileInfo_.cacheLineSize == 0UL,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "cacheLineSize",
-            std::to_string(compileInfo_.cacheLineSize).c_str(),
-            "The value of cacheLineSize must be greater than 0"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "cacheLineSize",
+                                                      std::to_string(compileInfo_.cacheLineSize).c_str(),
+                                                      "The value of cacheLineSize must be greater than 0"),
+                return ge::GRAPH_FAILED);
 
     compileInfo_.ubBlockSize = Ops::Base::GetUbBlockSize(context_);
     OP_CHECK_IF(compileInfo_.ubBlockSize == 0UL,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubBlockSize",
-            std::to_string(compileInfo_.ubBlockSize).c_str(),
-            "The value of ubBlockSize must be greater than 0"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubBlockSize",
+                                                      std::to_string(compileInfo_.ubBlockSize).c_str(),
+                                                      "The value of ubBlockSize must be greater than 0"),
+                return ge::GRAPH_FAILED);
 
     compileInfo_.vRegSize = Ops::Base::GetVRegSize(context_);
     OP_CHECK_IF(compileInfo_.vRegSize == 0UL,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "vRegSize",
-            std::to_string(compileInfo_.vRegSize).c_str(),
-            "The value of vRegSize must be greater than 0"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "vRegSize",
+                                                      std::to_string(compileInfo_.vRegSize).c_str(),
+                                                      "The value of vRegSize must be greater than 0"),
+                return ge::GRAPH_FAILED);
 
-    OP_LOGD(
-        context_->GetNodeName(), "GetCoreNum:%lu, ubSize:%lu, cacheLineSize:%lu, ubBlockSize:%lu, vRegSize:%lu",
-        compileInfo_.vectorCoreNum, compileInfo_.ubSize, compileInfo_.cacheLineSize, compileInfo_.ubBlockSize,
-        compileInfo_.vRegSize);
+    OP_LOGD(context_->GetNodeName(), "GetCoreNum:%lu, ubSize:%lu, cacheLineSize:%lu, ubBlockSize:%lu, vRegSize:%lu",
+            compileInfo_.vectorCoreNum, compileInfo_.ubSize, compileInfo_.cacheLineSize, compileInfo_.ubBlockSize,
+            compileInfo_.vRegSize);
 
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus ReduceVarTiling::PreProcessOptionalParam()
-{
-    if (tilingData_ == nullptr) {
-        tilingData_ = context_->GetTilingData<Ops::Base::ReduceOpTilingData>();
-        OP_CHECK_IF(tilingData_ == nullptr, OP_LOGE(context_->GetNodeName(), "get tilingdata ptr failed"),
-            return ge::GRAPH_FAILED);
-    }
-    OP_CHECK_IF(
-        (memset_s(tilingData_, sizeof(Ops::Base::ReduceOpTilingData), 0, sizeof(Ops::Base::ReduceOpTilingData)) != EOK),
-        OP_LOGE(context_->GetNodeName(), "memset tilingdata failed"), return ge::GRAPH_FAILED);
-
-    return PrepareCompileInfo();
-}
+ge::graphStatus ReduceVarTiling::PreProcessOptionalParam() { return PrepareCompileInfo(); }
 
 // elimniate dim and axes where dim = 1
-void ReduceVarTiling::EliminateOne(
-    const std::vector<int64_t>& oriShape, std::vector<int64_t>& axes, uint64_t* shape, int32_t& shapeSize)
+void ReduceVarTiling::EliminateOne(const std::vector<int64_t>& oriShape, std::vector<int64_t>& axes, uint64_t* shape,
+                                   int32_t& shapeSize)
 {
     int32_t dstIdx = 1; // shape中第一个数给了1, 跳过第一个数
     for (size_t i = 0; i < axes.size(); i++) {
@@ -454,8 +377,8 @@ void ReduceVarTiling::EliminateOne(
     }
     shapeSize = dstIdx;
     OP_LOGD(context_->GetNodeName(), "after EliminateOne, shape is:%s, axes:%s",
-        Ops::Base::ReduceOpTmpl::VectorToString(shape, shapeSize).c_str(),
-        Ops::Base::ReduceOpTmpl::VectorToString(axes).c_str());
+            Ops::Base::ReduceOpTmpl::VectorToString(shape, shapeSize).c_str(),
+            Ops::Base::ReduceOpTmpl::VectorToString(axes).c_str());
 }
 
 // merge continuous r axes and a axes
@@ -490,12 +413,12 @@ void ReduceVarTiling::MergeAxis(std::vector<int64_t>& axes, uint64_t* shape, int
     }
     shapeSize = tmpSize;
     OP_LOGD(context_->GetNodeName(), "after MergeAxis, shape is:%s, axes:%s",
-        Ops::Base::ReduceOpTmpl::VectorToString(shape, shapeSize).c_str(),
-        Ops::Base::ReduceOpTmpl::VectorToString(axes).c_str());
+            Ops::Base::ReduceOpTmpl::VectorToString(shape, shapeSize).c_str(),
+            Ops::Base::ReduceOpTmpl::VectorToString(axes).c_str());
 }
 
-void ReduceVarTiling::TransformShape(
-    const std::vector<int64_t>& oriShape, std::vector<int64_t>& axes, uint64_t* shape, int32_t& shapeSize)
+void ReduceVarTiling::TransformShape(const std::vector<int64_t>& oriShape, std::vector<int64_t>& axes, uint64_t* shape,
+                                     int32_t& shapeSize)
 {
     shape[0] = 1UL;
     EliminateOne(oriShape, axes, shape, shapeSize);
@@ -567,12 +490,14 @@ bool ReduceVarTiling::IsAxisA(int32_t idx)
  * cacheLine切分找到axis:1, step:10, outer:4
  */
 template <class Pattern>
-void ReduceVarTiling::ComputeCacheLineBlock(const uint64_t* shape) {
+void ReduceVarTiling::ComputeCacheLineBlock(const uint64_t* shape)
+{
     uint64_t dSize = ge::GetSizeByDataType(opInput_.inputDtype);
     OP_CHECK_IF(dSize == 0,
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
-            Ops::Base::ToString(opInput_.inputDtype).c_str(), "The dtype size of x must be greater than 0"),
-        return);
+                OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
+                                                      Ops::Base::ToString(opInput_.inputDtype).c_str(),
+                                                      "The dtype size of x must be greater than 0"),
+                return);
     uint64_t cacheSize = compileInfo_.cacheLineSize / dSize;
     uint64_t ubBlockSize = compileInfo_.ubBlockSize / dSize;
     uint64_t cacheLineShape = 1, cacheLineStep = 1, cacheLineOuter = 1;
@@ -614,8 +539,9 @@ void ReduceVarTiling::ComputeCacheLineBlock(const uint64_t* shape) {
     cBlock_.cacheLineOuter = cacheLineOuter;
     cBlock_.aSize = aInCacheLine;
     cBlock_.rSize = rInCacheLine;
-    OP_LOGD(context_->GetNodeName(), "cacheLine Block axis:%d, cacheLineStep:%lu, cacheLineOuter:%lu, aSize:%lu, rSize:%lu",
-        cBlock_.axis, cBlock_.cacheLineStep, cBlock_.cacheLineOuter, cBlock_.aSize, cBlock_.rSize);
+    OP_LOGD(context_->GetNodeName(),
+            "cacheLine Block axis:%d, cacheLineStep:%lu, cacheLineOuter:%lu, aSize:%lu, rSize:%lu", cBlock_.axis,
+            cBlock_.cacheLineStep, cBlock_.cacheLineOuter, cBlock_.aSize, cBlock_.rSize);
 }
 
 template <class Pattern>
@@ -627,14 +553,15 @@ ge::graphStatus ReduceVarTiling::ComputeEmptyTiling(uint64_t* shape)
             outSize *= shape[dim];
         }
     }
-    tilingData_->outSize = outSize;
+    reduceVarTilingData_->outSize = outSize;
     context_->SetBlockDim(compileInfo_.vectorCoreNum);
     if (outSize == 0UL) {
         return ge::GRAPH_SUCCESS;
     }
 
     uint64_t ubAvilSize = compileInfo_.ubSize - Ops::Base::CACHE_BUF_SIZE;
-    basicBlock_ = Ops::Base::FloorAlign(ubAvilSize / Ops::Base::ReduceOpTmpl::CONST2, compileInfo_.vRegSize); // double buffer
+    basicBlock_ = Ops::Base::FloorAlign(ubAvilSize / Ops::Base::ReduceOpTmpl::CONST2,
+                                        compileInfo_.vRegSize); // double buffer
     uint64_t newshape[Ops::Base::ReduceOpTmpl::MAX_DIM] = {outSize};
     // 空tensor去除R轴后，作为全A的pattern计算切分
     ComputeCacheLineBlock<Ops::Base::ReduceOpTmpl::__reducePattern::A>(newshape);
@@ -694,9 +621,10 @@ void ReduceVarTiling::ComputeUnitA(const uint64_t* shape)
     uint64_t outerA = unitA_.outer;
     uint64_t innerA = unitA_.inner;
     uint64_t maxCacheA = MAX_INNER_A / maxInputBytes_;
-    uint64_t maxInnerA =
-        (Pattern::ID == Ops::Base::ReduceOpTmpl::PATTERN_A) ? basicBlock_ * Ratio() / maxInputBytes_ : maxCacheA;
-    uint64_t stepLen = (Pattern::ID == Ops::Base::ReduceOpTmpl::PATTERN_A) ? A_STEP_LEN : 1; // 纯A的步长为4, 减少循环次数
+    uint64_t maxInnerA = (Pattern::ID == Ops::Base::ReduceOpTmpl::PATTERN_A) ? basicBlock_ * Ratio() / maxInputBytes_ :
+                                                                               maxCacheA;
+    uint64_t stepLen = (Pattern::ID == Ops::Base::ReduceOpTmpl::PATTERN_A) ? A_STEP_LEN :
+                                                                             1; // 纯A的步长为4, 减少循环次数
     bool basicSplitA = IsAxisA<Pattern>(axisInCacheLine);
     uint64_t bBlockNum = basicBlock_ * Ratio() / maxInputBytes_;
     uint64_t step = 1;
@@ -715,8 +643,8 @@ void ReduceVarTiling::ComputeUnitA(const uint64_t* shape)
                 aSize = (cBlock_.aSize / cBlock_.cacheLineStep) * std::min(cBlock_.cacheLineStep * s, shape[iA]);
             }
             if (aSize <= maxInnerA && aSize * cBlock_.rSize <= bBlockNum) {
-                uint64_t tempCoreNum =
-                    (tmpOuterA * unitR_.outer) / Ops::Base::CeilDiv(tmpOuterA * unitR_.outer, compileInfo_.vectorCoreNum);
+                uint64_t tempCoreNum = (tmpOuterA * unitR_.outer) /
+                                       Ops::Base::CeilDiv(tmpOuterA * unitR_.outer, compileInfo_.vectorCoreNum);
                 tempCoreNum = tempCoreNum > tmpOuterA ? Ops::Base::FloorAlign(tempCoreNum, tmpOuterA) : tempCoreNum;
                 double rate = static_cast<double>(tempCoreNum) / static_cast<double>(compileInfo_.vectorCoreNum);
                 maxStep = (Pattern::ID == Ops::Base::ReduceOpTmpl::PATTERN_A) ?
@@ -770,7 +698,8 @@ void ReduceVarTiling::ComputeUnitR(const uint64_t* shape)
         step = std::min(bBlockNum / (innerA * innerR * cBlock_.aSize * cBlock_.rSize), axisLen);
         for (uint64_t s = step; s > 1UL; s--) {
             auto tmpOuterR = outerR / axisLen * Ops::Base::CeilDiv(axisLen, s);
-            uint64_t tempCoreNum = (outerA * tmpOuterR) / Ops::Base::CeilDiv(outerA * tmpOuterR, compileInfo_.vectorCoreNum);
+            uint64_t tempCoreNum = (outerA * tmpOuterR) /
+                                   Ops::Base::CeilDiv(outerA * tmpOuterR, compileInfo_.vectorCoreNum);
             tempCoreNum = tempCoreNum > outerA ? Ops::Base::FloorAlign(tempCoreNum, outerA) : tempCoreNum;
             double rate = static_cast<double>(tempCoreNum) / static_cast<double>(compileInfo_.vectorCoreNum);
             if (rate > THRES_HOLD) {
@@ -813,9 +742,8 @@ void ReduceVarTiling::ComputeProgressUnitA(const uint64_t* shape)
             uint64_t tmpOuterA = outerA / axisLen * Ops::Base::CeilDiv(axisLen, s);
             double rate = static_cast<double>(tmpOuterA) /
                           static_cast<double>(Ops::Base::CeilAlign(tmpOuterA, compileInfo_.vectorCoreNum));
-            bool isContinue =
-                (rate > THRES_HOLD && tmpInnerA * innerR * cBlock_.aSize * cBlock_.rSize <= bBlockNum &&
-                 tmpInnerA * cBlock_.aSize <= maxInnerA);
+            bool isContinue = (rate > THRES_HOLD && tmpInnerA * innerR * cBlock_.aSize * cBlock_.rSize <= bBlockNum &&
+                               tmpInnerA * cBlock_.aSize <= maxInnerA);
             if (isContinue) {
                 continue;
             } else {
@@ -842,9 +770,10 @@ int32_t ReduceVarTiling::IsUseNddma(const uint64_t* shape)
     int32_t axis = cBlock_.axis;
     uint64_t dSize = ge::GetSizeByDataType(opInput_.inputDtype);
     OP_CHECK_IF(dSize == 0,
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
-            Ops::Base::ToString(opInput_.inputDtype).c_str(), "The dtype size of x must be greater than 0"),
-        return 0);
+                OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
+                                                      Ops::Base::ToString(opInput_.inputDtype).c_str(),
+                                                      "The dtype size of x must be greater than 0"),
+                return 0);
     uint64_t ubBlockSize = compileInfo_.ubBlockSize / dSize;
     if (shape[static_cast<uint64_t>(Pattern::Dim - 1)] >= ubBlockSize) {
         // last dim 大于ubblock, 不做NDDMA
@@ -855,7 +784,7 @@ int32_t ReduceVarTiling::IsUseNddma(const uint64_t* shape)
         return 1;
     }
     if (Pattern::TailA) {
-        uint64_t factorA = tilingData_->ubFactorA;
+        uint64_t factorA = reduceVarTilingData_->ubFactorA;
         for (auto iA = unitA_.idx + AXES_STEP; iA < Pattern::Dim; iA += AXES_STEP) {
             factorA = factorA * shape[iA];
         }
@@ -864,7 +793,7 @@ int32_t ReduceVarTiling::IsUseNddma(const uint64_t* shape)
             return 0;
         }
     } else {
-        uint64_t factorR = tilingData_->ubFactorR;
+        uint64_t factorR = reduceVarTilingData_->ubFactorR;
         for (auto iR = unitR_.idx + AXES_STEP; iR < Pattern::Dim; iR += AXES_STEP) {
             factorR = factorR * shape[iR];
         }
@@ -877,21 +806,64 @@ int32_t ReduceVarTiling::IsUseNddma(const uint64_t* shape)
 }
 
 template <class Pattern>
+int32_t ReduceVarTiling::IsInvert(const uint64_t* shape)
+{
+    // Only valid when NDDMA is enabled (checked at call site)
+    // VL/2 = 128B threshold, elements = 128B / sizeof(inputDtype)
+    if constexpr (Pattern::TailA) {
+        return 0;
+    }
+
+    uint32_t vlBytes = Ops::Base::GetVRegSize(context_);
+    uint32_t thresholdBytes = vlBytes / 2; // 128B
+    uint32_t inputSize = ge::GetSizeByDataType(opInput_.inputDtype);
+    if (inputSize == 0) {
+        return 0;
+    }
+    uint32_t threshold = thresholdBytes / inputSize; // FP32: 32, FP16/BF16: 64
+
+    // UB-resident A-axis bundle
+    uint64_t aBundled = reduceVarTilingData_->ubFactorA;
+    for (auto iA = unitA_.idx + AXES_STEP; iA < Pattern::Dim; iA += AXES_STEP) {
+        aBundled *= shape[iA];
+    }
+    // UB-resident R-axis bundle
+    uint64_t rBundled = reduceVarTilingData_->ubFactorR;
+    for (auto iR = unitR_.idx + AXES_STEP; iR < Pattern::Dim; iR += AXES_STEP) {
+        rBundled *= shape[iR];
+    }
+
+    uint64_t tailBundled = Pattern::TailA ? aBundled : rBundled;
+    uint64_t otherBundled = Pattern::TailA ? rBundled : aBundled;
+    OP_LOGI(context_->GetNodeName(), "tailBundled:%u, otherBundled %u", tailBundled, otherBundled);
+
+    // Condition 1: tail axis shorter than threshold
+    if (tailBundled >= threshold) {
+        return 0;
+    }
+    // Condition 2: other axis big enough to fill vector lanes
+    if (otherBundled < threshold) {
+        return 0;
+    }
+    return 1;
+}
+
+template <class Pattern>
 void ReduceVarTiling::ComputeStride(const uint64_t* shape)
 {
     uint64_t s = 1UL;
     uint64_t ds = 1UL;
     for (int32_t dim = Pattern::Dim - 1; dim > -1; dim--) {
-        tilingData_->stride[dim] = s;
-        tilingData_->dstStride[dim] = ds;
+        reduceVarTilingData_->stride[dim] = s;
+        reduceVarTilingData_->dstStride[dim] = ds;
         s *= shape[dim];
         if (IsAxisA<Pattern>(dim)) {
             ds *= shape[dim];
         }
     }
     double meanVar = static_cast<double>(1) / static_cast<double>(s / ds);
-    tilingData_->outSize = ds;
-    tilingData_->meanVar = static_cast<float>(meanVar);
+    reduceVarTilingData_->outSize = ds;
+    reduceVarTilingData_->meanVar = static_cast<float>(meanVar);
 }
 
 template <class Pattern>
@@ -913,38 +885,42 @@ void ReduceVarTiling::SetTilingData(const uint64_t* shape)
         }
     }
 
-    tilingData_->ubFactorA = factorA;
+    reduceVarTilingData_->ubFactorA = factorA;
     uint64_t factorACntPerCore = Ops::Base::CeilDiv(unitA_.outer, numBlocks);
-    tilingData_->factorACntPerCore = factorACntPerCore;
-    tilingData_->factorATotalCnt = unitA_.outer;
+    reduceVarTilingData_->factorACntPerCore = factorACntPerCore;
+    reduceVarTilingData_->factorATotalCnt = unitA_.outer;
 
-    tilingData_->ubFactorR = factorR;
+    reduceVarTilingData_->ubFactorR = factorR;
     uint64_t factorRCntPerCore = Ops::Base::CeilDiv(unitR_.outer, Ops::Base::CeilDiv(numBlocks, unitA_.outer));
-    tilingData_->factorRCntPerCore = factorRCntPerCore;
-    tilingData_->factorRTotalCnt = unitR_.outer;
-    tilingData_->groupR = Ops::Base::CeilDiv(unitR_.outer, factorRCntPerCore);
-    if (tilingData_->groupR > 1) {
+    reduceVarTilingData_->factorRCntPerCore = factorRCntPerCore;
+    reduceVarTilingData_->factorRTotalCnt = unitR_.outer;
+    reduceVarTilingData_->groupR = Ops::Base::CeilDiv(unitR_.outer, factorRCntPerCore);
+    if (reduceVarTilingData_->groupR > 1) {
         OP_CHECK_IF(context_->SetScheduleMode(1) != ge::GRAPH_SUCCESS,
-                    OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"),
-                    return );
+                    OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"), return);
     }
-    OP_CHECK_IF(
-        (memcpy_s(tilingData_->shape, sizeof(tilingData_->shape), shape, sizeof(tilingData_->shape)) != EOK),
-        OP_LOGE(context_->GetNodeName(), "memcpy shape failed"), return);
-    tilingData_->basicBlock = basicBlock_;
-    tilingData_->resultBlock = resultBlock_;
-    tilingData_->coreNum = static_cast<int32_t>(compileInfo_.vectorCoreNum);
-    tilingData_->useNddma = IsUseNddma<Pattern>(shape);
+    OP_CHECK_IF((memcpy_s(reduceVarTilingData_->shape, sizeof(reduceVarTilingData_->shape), shape,
+                          sizeof(reduceVarTilingData_->shape)) != EOK),
+                OP_LOGE(context_->GetNodeName(), "memcpy shape failed"), return);
+    reduceVarTilingData_->basicBlock = basicBlock_;
+    reduceVarTilingData_->resultBlock = resultBlock_;
+    reduceVarTilingData_->coreNum = static_cast<int32_t>(compileInfo_.vectorCoreNum);
+    reduceVarTilingData_->useNddma = IsUseNddma<Pattern>(shape);
+    reduceVarTilingData_->isInvert = reduceVarTilingData_->useNddma ? static_cast<uint8_t>(IsInvert<Pattern>(shape)) :
+                                                                      static_cast<uint8_t>(0);
+    OP_LOGI(context_->GetNodeName(), "isInvert:%u", reduceVarTilingData_->isInvert);
+
     ComputeStride<Pattern>(shape);
 
-    uint32_t realCore = Ops::Base::CeilDiv(unitA_.outer, factorACntPerCore) * Ops::Base::CeilDiv(unitR_.outer, factorRCntPerCore);
+    uint32_t realCore = Ops::Base::CeilDiv(unitA_.outer, factorACntPerCore) *
+                        Ops::Base::CeilDiv(unitR_.outer, factorRCntPerCore);
     context_->SetBlockDim(realCore);
 }
 
 template <class Pattern>
 void ReduceVarTiling::SetTilingKey()
 {
-    uint64_t groupR = tilingData_->groupR;
+    uint64_t groupR = reduceVarTilingData_->groupR;
     int32_t aCount = 0;
     int32_t rCount = 0;
     int32_t innerACount = 0;
@@ -967,7 +943,7 @@ void ReduceVarTiling::SetTilingKey()
     tilingKey_.loopARCount = static_cast<uint32_t>(aCount * Ops::Base::ReduceOpTmpl::CONST10 + rCount);
     tilingKey_.loopInnerARCount = static_cast<uint32_t>(innerACount * Ops::Base::ReduceOpTmpl::CONST10 + innerRCount);
     OP_LOGI(context_->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u", tilingKey_.patternID,
-        tilingKey_.loopARCount, tilingKey_.loopInnerARCount);
+            tilingKey_.loopARCount, tilingKey_.loopInnerARCount);
 }
 
 template <class Pattern>
@@ -975,9 +951,10 @@ uint64_t ReduceVarTiling::CaculateReduceSize(const uint64_t* shape)
 {
     uint64_t dSize = ge::GetSizeByDataType(opInput_.inputDtype);
     OP_CHECK_IF(dSize == 0,
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
-            Ops::Base::ToString(opInput_.inputDtype).c_str(), "The dtype size of x must be greater than 0"),
-        return 1);
+                OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
+                                                      Ops::Base::ToString(opInput_.inputDtype).c_str(),
+                                                      "The dtype size of x must be greater than 0"),
+                return 1);
     uint64_t ubBlockSize = compileInfo_.ubBlockSize / dSize;
     int32_t dim = Pattern::TailA ? Pattern::Dim - AXES_STEP : Pattern::Dim - Ops::Base::ReduceOpTmpl::CONST1;
     uint64_t r = 1;
@@ -999,11 +976,12 @@ uint64_t ReduceVarTiling::Ratio()
 template <class Pattern>
 ge::graphStatus ReduceVarTiling::CalcBasicBlock()
 {
-    OP_CHECK_IF(compileInfo_.ubSize <= Ops::Base::CACHE_BUF_SIZE + opInput_.reservedSize,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize",
-            std::to_string(compileInfo_.ubSize).c_str(),
-            ("The ubSize must be greater than " +
-             std::to_string(Ops::Base::CACHE_BUF_SIZE + opInput_.reservedSize)).c_str()),
+    OP_CHECK_IF(
+        compileInfo_.ubSize <= Ops::Base::CACHE_BUF_SIZE + opInput_.reservedSize,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "ubSize", std::to_string(compileInfo_.ubSize).c_str(),
+            ("The ubSize must be greater than " + std::to_string(Ops::Base::CACHE_BUF_SIZE + opInput_.reservedSize))
+                .c_str()),
         return ge::GRAPH_FAILED);
 
     CalcUserBasicBlock(Pattern::ID == Ops::Base::ReduceOpTmpl::PATTERN_A);
@@ -1015,18 +993,19 @@ ge::graphStatus ReduceVarTiling::AxesCheck(const std::vector<int64_t>& shape, co
 {
     int64_t shapeSize = static_cast<int64_t>(shape.size());
     int64_t axesSize = static_cast<int64_t>(axes.size());
-    OP_CHECK_IF((axesSize > shapeSize),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "dimSize",
-            std::to_string(axesSize).c_str(),
+    OP_CHECK_IF(
+        (axesSize > shapeSize),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "dimSize", std::to_string(axesSize).c_str(),
             ("The value of dimSize must be less than or equal to shapeSize " + std::to_string(shapeSize)).c_str()),
         return ge::GRAPH_FAILED);
 
     for (int64_t i = 0; i < axesSize; i++) {
         OP_CHECK_IF((axes[i] >= shapeSize || axes[i] < 0),
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "dim",
-                std::to_string(axes[i]).c_str(),
-                ("Each value of dim must be [0, " + std::to_string(shapeSize) + ")").c_str()),
-            return ge::GRAPH_FAILED);
+                    OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                        context_->GetNodeName(), "dim", std::to_string(axes[i]).c_str(),
+                        ("Each value of dim must be [0, " + std::to_string(shapeSize) + ")").c_str()),
+                    return ge::GRAPH_FAILED);
     }
     return ge::GRAPH_SUCCESS;
 }
@@ -1035,23 +1014,23 @@ ge::graphStatus ReduceVarTiling::ParamCheck(Ops::Base::ReduceOpInputParam& opInp
 {
     int32_t dtypeSize = ge::GetSizeByDataType(opInput.inputDtype);
     OP_CHECK_IF(dtypeSize <= 0,
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
-            Ops::Base::ToString(opInput.inputDtype).c_str(), "The dtype size of x must be greater than 0"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
+                                                      Ops::Base::ToString(opInput.inputDtype).c_str(),
+                                                      "The dtype size of x must be greater than 0"),
+                return ge::GRAPH_FAILED);
     OP_LOGD(context_->GetNodeName(), "origin shape is:%s, axes:%s",
-        Ops::Base::ReduceOpTmpl::VectorToString(opInput.shape).c_str(),
-        Ops::Base::ReduceOpTmpl::VectorToString(opInput.axes).c_str());
+            Ops::Base::ReduceOpTmpl::VectorToString(opInput.shape).c_str(),
+            Ops::Base::ReduceOpTmpl::VectorToString(opInput.axes).c_str());
     MakeWrapDim(opInput.shape, opInput.axes);
     OP_CHECK_IF((AxesCheck(opInput.shape, opInput.axes) == ge::GRAPH_FAILED),
-        OP_LOGE(context_->GetNodeName(), "illegal axes"), return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "illegal axes"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus ReduceVarTiling::DoTiling(Ops::Base::ReduceOpInputParam& opInput, Ops::Base::ReduceTilingKey& key)
 {
     OP_CHECK_IF((ParamCheck(opInput) != ge::GRAPH_SUCCESS),
-        OP_LOGE(context_->GetNodeName(), "Do tiling param check failed"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "Do tiling param check failed"), return ge::GRAPH_FAILED);
 
     opInput_ = opInput;
     if (maxInputBytes_ == 0UL && opInput_.promoteDtpye != ge::DT_UNDEFINED) {
@@ -1059,8 +1038,8 @@ ge::graphStatus ReduceVarTiling::DoTiling(Ops::Base::ReduceOpInputParam& opInput
     }
 
     OP_CHECK_IF((PreProcessOptionalParam() != ge::GRAPH_SUCCESS),
-        OP_LOGE(context_->GetNodeName(), "Do tiling preprocess optional param failed"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "Do tiling preprocess optional param failed"),
+                return ge::GRAPH_FAILED);
 
     DoReduceTiling(key);
 
@@ -1084,8 +1063,8 @@ ge::graphStatus ReduceVarTiling::ComputeTiling(uint64_t* shape)
     // 先计算cacheline切分, 再进行basicBlock_和resultBlock_的计算
     ComputeCacheLineBlockAndUnit<Pattern>(shape);
     OP_CHECK_IF((CalcBasicBlock<Pattern>() == ge::GRAPH_FAILED),
-        OP_LOGE(context_->GetNodeName(), "calc basic block failed, maybe unsupport ubsize"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "calc basic block failed, maybe unsupport ubsize"),
+                return ge::GRAPH_FAILED);
 
     ComputeUnitA<Pattern>(shape);
 
@@ -1094,8 +1073,8 @@ ge::graphStatus ReduceVarTiling::ComputeTiling(uint64_t* shape)
     ComputeProgressUnitA<Pattern>(shape);
 
     OP_LOGI(context_->GetNodeName(),
-        "tiling step outerA:%lu, innerA:%lu, stepA:%lu, idxA:%d, outerR:%lu, innerR:%lu, stepR:%lu, idxR:%d",
-        unitA_.outer, unitA_.inner, unitA_.step, unitA_.idx, unitR_.outer, unitR_.inner, unitR_.step, unitR_.idx);
+            "tiling step outerA:%lu, innerA:%lu, stepA:%lu, idxA:%d, outerR:%lu, innerR:%lu, stepR:%lu, idxR:%d",
+            unitA_.outer, unitA_.inner, unitA_.step, unitA_.idx, unitR_.outer, unitR_.inner, unitR_.step, unitR_.idx);
 
     SetTilingData<Pattern>(shape);
     SetTilingKey<Pattern>();
@@ -1105,19 +1084,17 @@ ge::graphStatus ReduceVarTiling::ComputeTiling(uint64_t* shape)
 void ReduceVarTiling::PrintTilingData()
 {
     OP_LOGI(context_->GetNodeName(),
-        "TilingData: factorACntPerCore:%lu, factorATotalCnt:%lu, ubFactorA:%lu, factorRCntPerCore:%lu, "
-        "factorRTotalCnt:%lu, ubFactorR:%lu, groupR:%lu, outSize:%lu, basicBlock:%lu, resultBlock:%lu, "
-        "meanVar:%lf, numBlocks:%u",
-        tilingData_->factorACntPerCore, tilingData_->factorATotalCnt, tilingData_->ubFactorA,
-        tilingData_->factorRCntPerCore, tilingData_->factorRTotalCnt, tilingData_->ubFactorR, tilingData_->groupR,
-        tilingData_->outSize, tilingData_->basicBlock, tilingData_->resultBlock, tilingData_->meanVar,
-        context_->GetBlockDim());
+            "TilingData: factorACntPerCore:%lu, factorATotalCnt:%lu, ubFactorA:%lu, factorRCntPerCore:%lu, "
+            "factorRTotalCnt:%lu, ubFactorR:%lu, groupR:%lu, outSize:%lu, basicBlock:%lu, resultBlock:%lu, "
+            "meanVar:%lf, numBlocks:%u",
+            reduceVarTilingData_->factorACntPerCore, reduceVarTilingData_->factorATotalCnt,
+            reduceVarTilingData_->ubFactorA, reduceVarTilingData_->factorRCntPerCore,
+            reduceVarTilingData_->factorRTotalCnt, reduceVarTilingData_->ubFactorR, reduceVarTilingData_->groupR,
+            reduceVarTilingData_->outSize, reduceVarTilingData_->basicBlock, reduceVarTilingData_->resultBlock,
+            reduceVarTilingData_->meanVar, context_->GetBlockDim());
 }
 
-void ReduceVarTiling::GetTilingKey(Ops::Base::ReduceTilingKey& key)
-{
-    key = tilingKey_;
-}
+void ReduceVarTiling::GetTilingKey(Ops::Base::ReduceTilingKey& key) { key = tilingKey_; }
 
 void ReduceVarTiling::DoReduceTiling(Ops::Base::ReduceTilingKey& key)
 {
@@ -1145,10 +1122,9 @@ ge::graphStatus ReduceVarTiling::RunTiling(Ops::Base::ReduceTilingKey& key)
 
     // 基类 ReduceOpTiling 的 Run
     OP_CHECK_IF((DoTiling(inputParam, key) == ge::GRAPH_FAILED),
-        OP_LOGE(context_->GetNodeName(), "ReduceVarTiling Run failed"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "ReduceVarTiling Run failed"), return ge::GRAPH_FAILED);
 
-    ComputeInnerUbRCnt(tilingData_->shape);
+    ComputeInnerUbRCnt(reduceVarTilingData_->shape);
     SetReduceVarTilingData();
 
     return ge::GRAPH_SUCCESS;
@@ -1160,17 +1136,16 @@ static ge::graphStatus Tiling4ReduceVar(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     Ops::Base::ReduceTilingKey key;
-    ReduceVarTilingData tilingData;
-    Ops::Base::ReduceOpTilingData reduceTiling;
-    ReduceVarTiling tiling(context, compileInfo, &tilingData, &reduceTiling);
+    auto* tilingData = context->GetTilingData<ReduceVarTilingData>();
+    OP_CHECK_NULL_WITH_CONTEXT(context, tilingData);
+    *tilingData = ReduceVarTilingData{};
+    ReduceVarTiling tiling(context, compileInfo, tilingData);
     OP_CHECK_IF((tiling.RunTiling(key) != ge::GRAPH_SUCCESS),
-        OP_LOGE(context->GetNodeName(), "RunTiling Failed for ReduceVar"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context->GetNodeName(), "RunTiling Failed for ReduceVar"), return ge::GRAPH_FAILED);
     uint64_t tilingKey;
-    GEN_REDUCE_TILING_KEY(tilingKey, key);
-    OP_LOGI(
-        context->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u, Tiling Key is:%lu", key.patternID,
-        key.loopARCount, key.loopInnerARCount, tilingKey);
+    GEN_REDUCE_VAR_TILING_KEY(tilingKey, key);
+    OP_LOGI(context->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u, Tiling Key is:%lu",
+            key.patternID, key.loopARCount, key.loopInnerARCount, tilingKey);
     context->SetTilingKey(tilingKey);
     return ge::GRAPH_SUCCESS;
 }

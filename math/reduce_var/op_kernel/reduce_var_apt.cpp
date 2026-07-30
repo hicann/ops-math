@@ -15,6 +15,7 @@
 #include <cmath>
 #include "atvoss/reduce/reduce_sch.h"
 #include "atvoss/reduce/reduce_operator.h"
+#include "arch35/reduce_var_struct.h"
 #include "arch35/reduce_var_tiling_key.h"
 #include "arch35/reduce_var_empty.h"
 #include "arch35/reduce_var_pure_move.h"
@@ -23,12 +24,13 @@
 using namespace ReduceOpTmpl;
 using namespace AscendC;
 
-template <REDUCE_TPL_PARAM>
+template <REDUCE_VAR_TPL_PARAM>
 __global__ __aicore__ void reduce_var(GM_ADDR x, GM_ADDR var, GM_ADDR mean, GM_ADDR workspace, GM_ADDR tiling)
 {
     TPipe pipe;
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
-    GET_TILING_DATA(tilingData, tiling);
+    REGISTER_TILING_DEFAULT(ReduceVarTilingData);
+    GET_TILING_DATA_WITH_STRUCT(ReduceVarTilingData, tilingData, tiling);
     using PromoteType = Ops::Base::ReduceOpTmpl::__reduceType::GetPromoteType<DTYPE_X>::T;
     if constexpr (PatternID == 0 && LoopARCount == 0 && LoopInnerARCount == 0) {
         using Op = ReduceVarEmpty<DTYPE_X>;
@@ -43,7 +45,7 @@ __global__ __aicore__ void reduce_var(GM_ADDR x, GM_ADDR var, GM_ADDR mean, GM_A
         op.Init(&pipe, x, var, mean);
         op.Process();
     } else {
-        using Op = ReduceVarSch<DTYPE_X, PromoteType, REDUCE_TPL_VALUE, false>;
+        using Op = ReduceVarSch<DTYPE_X, PromoteType, REDUCE_VAR_TPL_VALUE, false>;
         Op op(&tilingData);
         op.Init(&pipe, x, var, mean, workspace);
         op.Process();

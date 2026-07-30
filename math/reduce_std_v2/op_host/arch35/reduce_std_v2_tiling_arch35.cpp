@@ -18,32 +18,32 @@
 #include "math/reduce_std_v2/op_kernel/arch35/reduce_std_v2_tiling_key.h"
 
 namespace optiling {
-static ge::graphStatus Tiling4ReduceStdV2(gert::TilingContext* context) {
+static ge::graphStatus Tiling4ReduceStdV2(gert::TilingContext* context)
+{
     auto compileInfo = reinterpret_cast<const ReduceVarCompileInfo*>(context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     Ops::Base::ReduceTilingKey key;
-    ReduceVarTilingData tilingData;
-    Ops::Base::ReduceOpTilingData reduceTiling;
-    ReduceVarTiling tiling(context, compileInfo, &tilingData, &reduceTiling);
+    auto* tilingData = context->GetTilingData<ReduceVarTilingData>();
+    OP_CHECK_NULL_WITH_CONTEXT(context, tilingData);
+    *tilingData = ReduceVarTilingData{};
+    ReduceVarTiling tiling(context, compileInfo, tilingData);
     OP_CHECK_IF((tiling.RunTiling(key) != ge::GRAPH_SUCCESS),
-        OP_LOGE(context->GetNodeName(), "RunTiling Failed for ReduceStdV2"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context->GetNodeName(), "RunTiling Failed for ReduceStdV2"), return ge::GRAPH_FAILED);
     uint64_t tilingKey;
-    GEN_REDUCE_TILING_KEY(tilingKey, key);
+    GEN_REDUCE_STD_V2_TILING_KEY(tilingKey, key);
     OP_LOGI(context->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u, Tiling Key is:%lu",
-        key.patternID, key.loopARCount, key.loopInnerARCount, tilingKey);
+            key.patternID, key.loopARCount, key.loopInnerARCount, tilingKey);
     context->SetTilingKey(tilingKey);
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus TilingPrepare4ReduceStdV2(gert::TilingParseContext* context) {
+static ge::graphStatus TilingPrepare4ReduceStdV2(gert::TilingParseContext* context)
+{
     OP_CHECK_IF((context == nullptr), OP_LOGE(context->GetNodeName(), "context is nil"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_OPTILING(ReduceStdV2)
-    .Tiling(Tiling4ReduceStdV2)
-    .TilingParse<ReduceVarCompileInfo>(TilingPrepare4ReduceStdV2);
+IMPL_OP_OPTILING(ReduceStdV2).Tiling(Tiling4ReduceStdV2).TilingParse<ReduceVarCompileInfo>(TilingPrepare4ReduceStdV2);
 
-}
+} // namespace optiling
