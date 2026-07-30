@@ -888,7 +888,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/fused_mul_add_nl2loss/README.md">fused_mul_add_nl2loss</a></td>
+    <td><a href="../../math/fused_mul_addn_l2loss/README.md">fused_mul_addn_l2loss</a></td>
     <td>√</td>
     <td>√</td>
     <td>×</td>
