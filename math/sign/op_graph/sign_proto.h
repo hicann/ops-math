@@ -24,8 +24,8 @@ namespace ge {
 *@brief Computes the sign  of "x". \n
 
 *@par Inputs:
-* x:An ND Tensor of type bfloat16, float16, float32, int32, int64, double,
-*     complex64, complex128. \n
+* x:An ND Tensor of type bfloat16, float16, float32, int32, int64, int8, int16, uint8,
+*     uint16, uint32, uint64, double, complex64, complex128. \n
 
 *@par Outputs:
 *y:An ND Tensor with same type as "x". \n
@@ -34,8 +34,10 @@ namespace ge {
 *Compatible with the TensorFlow operator Sign.
 */
 REG_OP(Sign)
-    .INPUT(x, TensorType({DT_FLOAT16, DT_BF16, DT_FLOAT, DT_DOUBLE, DT_INT32, DT_INT64, DT_COMPLEX64, DT_COMPLEX128}))
-    .OUTPUT(y, TensorType({DT_FLOAT16, DT_BF16, DT_FLOAT, DT_DOUBLE, DT_INT32, DT_INT64, DT_COMPLEX64, DT_COMPLEX128}))
+    .INPUT(x, TensorType({DT_FLOAT16, DT_BF16, DT_FLOAT, DT_DOUBLE, DT_INT32, DT_INT64, DT_INT8, DT_INT16, DT_UINT8,
+                          DT_UINT16, DT_UINT32, DT_UINT64, DT_COMPLEX64, DT_COMPLEX128}))
+    .OUTPUT(y, TensorType({DT_FLOAT16, DT_BF16, DT_FLOAT, DT_DOUBLE, DT_INT32, DT_INT64, DT_INT8, DT_INT16, DT_UINT8,
+                           DT_UINT16, DT_UINT32, DT_UINT64, DT_COMPLEX64, DT_COMPLEX128}))
     .OP_END_FACTORY_REG(Sign)
 
 } // namespace ge

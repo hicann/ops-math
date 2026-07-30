@@ -121,8 +121,8 @@ struct SignCustomInt64 : public Vec::ElemwiseUnaryOP<T, T> {
 
                 AscendC::Reg::Sub(vregOutput, vregLeft, vregRight, mask);
                 // OpCopyOut
-                AscendC::Reg::DataCopy<int64_t, AscendC::Reg::StoreDist::DIST_NORM>(
-                    (__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
+                AscendC::Reg::DataCopy<T, AscendC::Reg::StoreDist::DIST_NORM>((__ubuf__ T*)(dstAddr + loopIdx * vlSize),
+                                                                              vregOutput, mask);
             }
         }
 #endif

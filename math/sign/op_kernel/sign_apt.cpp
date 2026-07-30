@@ -61,6 +61,36 @@ extern "C" __global__ __aicore__ void sign(GM_ADDR x, GM_ADDR y, GM_ADDR workspa
         sch.Init(x, y);
         sch.Process();
         return;
+    } else if (TILING_KEY_IS(106UL)) {
+        ElementwiseSch<0UL, SignDag::SignForNumber<int8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.Init(x, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(111UL)) {
+        ElementwiseSch<0UL, SignDag::SignForNumber<int16_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.Init(x, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(107UL)) {
+        ElementwiseSch<0UL, SignDag::SignForNumber<uint8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.Init(x, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(108UL)) {
+        ElementwiseSch<0UL, SignDag::SignForNumber<uint16_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.Init(x, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(109UL)) {
+        ElementwiseSch<0UL, SignDag::SignForNumber<uint32_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.Init(x, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(110UL)) {
+        ElementwiseSch<0UL, SignDag::SignForInt64<uint64_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.Init(x, y);
+        sch.Process();
+        return;
     }
     return;
 }

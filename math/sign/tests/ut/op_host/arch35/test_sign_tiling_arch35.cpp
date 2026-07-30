@@ -19,73 +19,63 @@ using namespace ge;
 
 class SignTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "SignTilingTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "SignTilingTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "SignTilingTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "SignTilingTest TearDown" << std::endl; }
 };
 
 TEST_F(SignTilingTest, test_tiling_failed_dtype_input_output_diff_006)
 {
     optiling::ElewiseCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "Sign",
-        {
-            {{{64}, {64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{64}, {64}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Sign",
+                                              {
+                                                  {{{64}, {64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{64}, {64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
 TEST_F(SignTilingTest, test_tiling_failed_shape_input_output_diff_007)
 {
     optiling::ElewiseCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "Sign",
-        {
-            {{{64}, {64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{32}, {32}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Sign",
+                                              {
+                                                  {{{64}, {64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{32}, {32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
 TEST_F(SignTilingTest, test_tiling_failed_empty_tensor_008)
 {
     optiling::ElewiseCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "Sign",
-        {
-            {{{1, 0, 2, 64}, {1, 0, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 0, 2, 64}, {1, 0, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Sign",
+                                              {
+                                                  {{{1, 0, 2, 64}, {1, 0, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 0, 2, 64}, {1, 0, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
 TEST_F(SignTilingTest, test_tiling_failed_unsupport_input_009)
 {
     optiling::ElewiseCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "Sign",
-        {
-            {{{64}, {64}}, ge::DT_INT8, ge::FORMAT_ND},
-        },
-        {
-            {{{64}, {64}}, ge::DT_INT8, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Sign",
+                                              {
+                                                  {{{64}, {64}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{64}, {64}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
