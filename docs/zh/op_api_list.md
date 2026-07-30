@@ -156,7 +156,7 @@
 | [aclnnInplaceBitwiseAndScalar](../../math/bitwise_and/docs/aclnnInplaceBitwiseAndScalar.md) | 计算输入tensor中每个元素和输入标量other的按位与结果。输入的tensor与other必须是整型或者BOOL型变量。当输入为BOOL型时，计算逻辑与的结果。             | 默认确定性实现| 默认确定性实现 |
 | [aclnnInplaceBitwiseAndTensor](../../math/bitwise_and/docs/aclnnInplaceBitwiseAndTensor.md) | 输入为BOOL型tensor时，进行逻辑与运算；输入为INT型时，进行位与运算。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnInplaceCopy](../../conversion/view_copy/docs/aclnnInplaceCopy.md) | 将src中的元素复制到selfRef张量中并返回selfRef。              | 默认确定性实现| 默认确定性实现|
-| [aclnnInplaceFillDiagonal](../../conversion/fill_diagonal_v2/docs/aclnnInplaceFillDiagonal.md) | 以fillValue填充tensor对角线。                                | 默认确定性实现| - |
+| [aclnnInplaceFillDiagonal](../../conversion/fill_diagonal_v2/docs/aclnnInplaceFillDiagonal.md) | 以fillValue填充tensor对角线。                                | 默认确定性实现| 默认确定性实现 |
 | [aclnnInplaceFillScalar](../../conversion/fill/docs/aclnnInplaceFillScalar.md) | 对tensor填充指定标量。                                       | 默认确定性实现| 默认确定性实现|
 | [aclnnInplaceFillTensor](../../conversion/fill/docs/aclnnInplaceFillTensor.md) | 对selfRef张量填充value， value是张量。                       | 默认确定性实现| 默认确定性实现|
 | [aclnnInplaceMaskedFillScalar](../../conversion/masked_fill/docs/aclnnInplaceMaskedFillScalar.md) | 用value填充selfRef里面与mask矩阵中值为true的位置相对应的元素。 | 默认确定性实现| 默认确定性实现|
