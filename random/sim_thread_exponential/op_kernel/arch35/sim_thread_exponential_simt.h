@@ -26,17 +26,15 @@ struct ExponentialTransform {
     float lambda_;
     float halfEpsilon_;
 
-    __aicore__ ExponentialTransform(float lambda) : lambda_(lambda), halfEpsilon_(1.1920929e-07f / 2.0f)
-    {}
+    __aicore__ ExponentialTransform(float lambda) : lambda_(lambda), halfEpsilon_(1.1920929e-07f / 2.0f) {}
 
-    __simt_callee__ __aicore__ inline void operator()(
-        __gm__ volatile T* outputGm, uint64_t li, const uint32_t* results, uint32_t iStep,
-        [[maybe_unused]] uint32_t unroll = 1)
+    __simt_callee__ __aicore__ inline void operator()(__gm__ volatile T* outputGm, uint64_t li, const uint32_t* results,
+                                                      uint32_t iStep, [[maybe_unused]] uint32_t unroll = 1)
     {
         float u = results[iStep] * RAND_2POW32_INV + RAND_2POW32_INV_HALF;
         float logVal = (u >= 1.0f - halfEpsilon_) ? -halfEpsilon_ : AscendC::Simt::Log(u);
         float x = -1.0f / lambda_ * logVal;
-        outputGm[li] = static_cast<T>(x);
+        *const_cast<__gm__ T*>(&outputGm[li]) = static_cast<T>(x);
     }
 };
 
@@ -50,9 +48,8 @@ struct ExponentialLauncher {
         : seed_(seed), lambda_(lambda), baseAddr_(baseAddr)
     {}
 
-    __aicore__ inline void operator()(
-        const ExecutionPolicyKernel& policy, int64_t gmOffset, int64_t kernelOffset, int64_t numel, int64_t grid,
-        int64_t totalThreads)
+    __aicore__ inline void operator()(const ExecutionPolicyKernel& policy, int64_t gmOffset, int64_t kernelOffset,
+                                      int64_t numel, int64_t grid, int64_t totalThreads)
     {
         __gm__ volatile T* gmPtr = (__gm__ volatile T*)baseAddr_ + gmOffset;
         ExponentialTransform<T> transform(lambda_);

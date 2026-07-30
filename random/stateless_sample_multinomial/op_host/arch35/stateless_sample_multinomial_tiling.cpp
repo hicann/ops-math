@@ -33,40 +33,28 @@ OpTilingConfig StatelessSampleMultinomialTiling::BuildOpConfig()
 {
     OpTilingConfig config;
 
-    config.inputCheckRules = {
-        {INPUT_IDX_X, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {}, nullptr}},
-        {INPUT_IDX_SEED, {{ge::DT_INT64}, 1, {}, nullptr}},
-        {INPUT_IDX_OFFSET, {{ge::DT_INT64}, 1, {}, nullptr}}};
-    config.outputCheckRules = {
-        {OUTPUT_IDX_Y, {{ge::DT_INT64}, -1, {}, nullptr}}};
+    config.inputCheckRules = {{INPUT_IDX_X, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {}, nullptr}},
+                              {INPUT_IDX_SEED, {{ge::DT_INT64}, 1, {}, nullptr}},
+                              {INPUT_IDX_OFFSET, {{ge::DT_INT64}, 1, {}, nullptr}}};
+    config.outputCheckRules = {{OUTPUT_IDX_Y, {{ge::DT_INT64}, -1, {}, nullptr}}};
 
     config.getOutputSize = [](gert::TilingContext* ctx, int64_t& size) {
         auto xShape = ctx->GetInputShape(INPUT_IDX_X);
-        OP_CHECK_IF(xShape == nullptr,
-            OP_LOGE(ctx->GetNodeName(), "get x shape failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(xShape == nullptr, OP_LOGE(ctx->GetNodeName(), "get x shape failed"), return ge::GRAPH_FAILED);
         int64_t numDist = (xShape->GetStorageShape().GetDimNum() == 2) ? xShape->GetStorageShape().GetDim(0) : 1;
-        auto numsamplesPtr = ctx->GetAttrs()->GetInt(0);    // attr index 0: "num_samples"
-        OP_CHECK_IF(numsamplesPtr == nullptr,
-            OP_LOGE(ctx->GetNodeName(), "get num_samples attr failed"), return ge::GRAPH_FAILED);
+        auto numsamplesPtr = ctx->GetAttrs()->GetInt(0); // attr index 0: "num_samples"
+        OP_CHECK_IF(numsamplesPtr == nullptr, OP_LOGE(ctx->GetNodeName(), "get num_samples attr failed"),
+                    return ge::GRAPH_FAILED);
         int64_t realSize = numDist * (*numsamplesPtr);
         size = (realSize + RANDOM_NUM_PER_COUNTER - 1) / RANDOM_NUM_PER_COUNTER;
         return ge::GRAPH_SUCCESS;
     };
 
-    config.getSeedAndOffset = [](gert::TilingContext* ctx, int64_t& seed, int64_t& offset) {
-        gert::Shape seedShape;
-        auto ret = ExtractTensorValue(ctx, INPUT_IDX_SEED, seedShape);
-        OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
-            OP_LOGE(ctx->GetNodeName(), "get seed value failed"), return ge::GRAPH_FAILED);
-        seed = static_cast<int64_t>(seedShape.GetDim(0));
-        gert::Shape offsetShape;
-        ret = ExtractTensorValue(ctx, INPUT_IDX_OFFSET, offsetShape);
-        OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
-            OP_LOGE(ctx->GetNodeName(), "get offset value failed"), return ge::GRAPH_FAILED);
-        offset = static_cast<int64_t>(offsetShape.GetDim(0));
-        OP_CHECK_IF(offset % RANDOM_NUM_PER_COUNTER != 0,
-            OP_LOGE(ctx->GetNodeName(), "The offset must be a multiple of 4, but got %ld", offset),
-            return ge::GRAPH_FAILED);
+    // seed/offset are device-computed (offset is an l0op::Add output) with no host value at
+    // tiling time; reading them faults. Tiling stores 0; the kernel reads real values from GM.
+    config.getSeedAndOffset = [](gert::TilingContext* /*ctx*/, int64_t& seed, int64_t& offset) {
+        seed = 0;
+        offset = 0;
         return ge::GRAPH_SUCCESS;
     };
 
@@ -87,14 +75,16 @@ ge::graphStatus StatelessSampleMultinomialTiling::UniqueProcess()
     int64_t numCategories = xShape->GetStorageShape().GetDim(xShape->GetStorageShape().GetDimNum() - 1);
 
     auto numsamplesPtr = context_->GetAttrs()->GetInt(0);
-    OP_CHECK_IF(numsamplesPtr == nullptr,
-        OP_LOGE(context_->GetNodeName(), "get num_samples attr failed"), return ge::GRAPH_FAILED);
-    simtTilingData_.from = *numsamplesPtr;  // num_samples
-    simtTilingData_.extraInt64Param1 = numDist * (*numsamplesPtr);  // numDist * numsamples
-    simtTilingData_.range = static_cast<uint64_t>(numCategories);   // numCategories
-    simtTilingData_.splitBlockCount =
-        (static_cast<uint64_t>(numDist) * static_cast<uint64_t>(numCategories) > UINT32_MAX ||
-         static_cast<uint64_t>(simtTilingData_.extraInt64Param1) > UINT32_MAX) ? 1 : 0; // index type uint64 or uint32
+    OP_CHECK_IF(numsamplesPtr == nullptr, OP_LOGE(context_->GetNodeName(), "get num_samples attr failed"),
+                return ge::GRAPH_FAILED);
+    simtTilingData_.from = *numsamplesPtr;                         // num_samples
+    simtTilingData_.extraInt64Param1 = numDist * (*numsamplesPtr); // numDist * numsamples
+    simtTilingData_.range = static_cast<uint64_t>(numCategories);  // numCategories
+    simtTilingData_.splitBlockCount = (static_cast<uint64_t>(numDist) * static_cast<uint64_t>(numCategories) >
+                                           UINT32_MAX ||
+                                       static_cast<uint64_t>(simtTilingData_.extraInt64Param1) > UINT32_MAX) ?
+                                          1 :
+                                          0; // index type uint64 or uint32
 
     return ge::GRAPH_SUCCESS;
 }

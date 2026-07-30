@@ -31,14 +31,9 @@ using namespace op;
 namespace l0op {
 
 OP_TYPE_REGISTER(StatelessSampleMultinomial);
-OP_TYPE_REGISTER(SimThreadExponential);
 
-const aclTensor* StatelessSampleMultinomial(
-    const aclTensor* xTensor,
-    const aclTensor* seedTensor,
-    const aclTensor* offsetTensor,
-    int64_t numsamples,
-    aclOpExecutor* executor)
+const aclTensor* StatelessSampleMultinomial(const aclTensor* xTensor, const aclTensor* seedTensor,
+                                            const aclTensor* offsetTensor, int64_t numsamples, aclOpExecutor* executor)
 {
     L0_DFX(StatelessSampleMultinomial, xTensor, seedTensor, offsetTensor);
 
@@ -49,34 +44,9 @@ const aclTensor* StatelessSampleMultinomial(
     aclTensor* out = executor->AllocTensor(outShape, DataType::DT_INT64, xTensor->GetViewFormat());
     CHECK_RET(out != nullptr, nullptr);
 
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(
-        StatelessSampleMultinomial,
-        OP_ATTR_NAMES({"num_samples"}),
-        OP_INPUT(xTensor, seedTensor, offsetTensor),
-        OP_OUTPUT(out),
-        OP_ATTR(numsamples));
-    CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
-
-    return out;
-}
-
-const aclTensor* Run950AicoreExponentialWithoutReplacement(
-    const aclTensor* self, int64_t seed, int64_t offset, float lambd, aclOpExecutor* executor)
-{
-    aclTensor* out = executor->AllocTensor(self->GetViewShape(), self->GetDataType(), self->GetViewFormat());
-    CHECK_RET(out != nullptr, nullptr);
-
-    auto shape = self->GetViewShape();
-    int64_t count = 1;
-    for (size_t i = 0; i < shape.GetDimNum(); i++) {
-        count *= shape.GetDim(i);
-    }
-
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(
-        SimThreadExponential,
-        OP_INPUT(out),
-        OP_OUTPUT(out),
-        OP_ATTR(count, lambd, seed, offset));
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(StatelessSampleMultinomial, OP_ATTR_NAMES({"num_samples"}),
+                                           OP_INPUT(xTensor, seedTensor, offsetTensor), OP_OUTPUT(out),
+                                           OP_ATTR(numsamples));
     CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
 
     return out;

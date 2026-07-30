@@ -3218,6 +3218,16 @@
   </tr>
   <tr>
     <td>random</td>
+    <td><a href="../../random/stateless_exponential/README.md">stateless_exponential</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>生成指数分布的随机数。</td>
+  </tr>
+  <tr>
+    <td>random</td>
     <td><a href="../../random/stateless_random/README.md">stateless_random</a></td>
     <td>√</td>
     <td>√</td>

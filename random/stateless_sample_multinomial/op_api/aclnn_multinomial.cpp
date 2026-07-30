@@ -9,6 +9,7 @@
  */
 #include "aclnn_multinomial.h"
 #include "stateless_sample_multinomial.h"
+#include "random/stateless_exponential/op_api/stateless_exponential.h"
 #include "multinomial_with_replacement.h"
 #include "math/reduce_sum/op_api/reduce_sum_op.h"
 #include "math/abs/op_api/abs.h"
@@ -315,69 +316,6 @@ static const aclTensor* Run950AicoreMultinomialWithReplacement(const aclTensor* 
     return multinomialOut;
 }
 
-static const aclTensor* RunDavidMultinomialReplaceMent(const aclTensor* selfContiguous, int64_t numsamples,
-                                                       const aclTensor* randomUniform, const aclTensor* out,
-                                                       aclOpExecutor* executor)
-{
-    // trun weight into probability
-    int64_t dimNum = static_cast<int64_t>(selfContiguous->GetViewShape().GetDimNum());
-    int64_t lastDim = MakeWrapDim(-1, dimNum);
-    const int64_t dim[] = {lastDim};
-    auto dimArray = executor->AllocIntArray(dim, 1);
-
-    auto dType = selfContiguous->GetDataType();
-    auto computeDtype = (dType == DataType::DT_BF16 || dType == DataType::DT_FLOAT16) ? DataType::DT_FLOAT : dType;
-
-    const aclTensor* selfCompute = (dType != computeDtype) ? l0op::Cast(selfContiguous, computeDtype, executor) :
-                                                             selfContiguous;
-
-    auto sumSelf = l0op::ReduceSumOp(selfCompute, dimArray, true, executor);
-    CHECK_RET(sumSelf != nullptr, nullptr);
-
-    auto divSumSelf = l0op::RealDiv(selfCompute, sumSelf, executor);
-    CHECK_RET(divSumSelf != nullptr, nullptr);
-
-    // trun probability into point on [0, 1], shape = original_shape + {1}
-    const aclTensor* dimTensor = nullptr;
-    if (lastDim == 0 || lastDim > INT32_MAX) {
-        dimTensor = executor->ConvertToTensor(&lastDim, 1, DataType::DT_INT64);
-    } else {
-        dimTensor = executor->ConvertToTensor(&lastDim, 1, DataType::DT_INT32);
-    }
-    CHECK_RET(dimTensor != nullptr, nullptr);
-    auto accumSelf = l0op::Cumsum(divSumSelf, dimTensor, executor);
-    CHECK_RET(accumSelf != nullptr, nullptr);
-
-    auto unsqueezeAccum = l0op::UnsqueezeNd(accumSelf, -1, executor);
-    CHECK_RET(unsqueezeAccum != nullptr, nullptr);
-
-    auto randomCompute = (randomUniform->GetDataType() != computeDtype) ?
-                             l0op::Cast(randomUniform, computeDtype, executor) :
-                             randomUniform;
-    CHECK_RET(randomCompute != nullptr, nullptr);
-
-    int64_t newShape[dimNum + 1];
-    newShape[0] = numsamples;
-    for (int64_t i = 0; i < dimNum; i++) {
-        newShape[i] = 1;
-    }
-    newShape[dimNum] = numsamples;
-    auto newShapeArray = executor->AllocIntArray(newShape, dimNum + 1);
-    auto reshapeRandom = l0op::Reshape(randomCompute, newShapeArray, executor);
-    CHECK_RET(reshapeRandom != nullptr, nullptr);
-
-    // caculate the point RandomUniform on interval unsqueezeAccum
-    auto greaterEqual = l0op::GreaterEqual(reshapeRandom, unsqueezeAccum, executor);
-    CHECK_RET(greaterEqual != nullptr, nullptr);
-
-    auto castGreaterEqual = l0op::Cast(greaterEqual, out->GetDataType(), executor);
-    CHECK_RET(castGreaterEqual != nullptr, nullptr);
-
-    auto multinomialOut = l0op::ReduceSumOp(castGreaterEqual, dimArray, false, executor);
-    CHECK_RET(multinomialOut != nullptr, nullptr);
-    return multinomialOut;
-}
-
 const aclTensor* GetRandomUniformNoReplaceMent(const aclTensor* selfContiguous, const int64_t seed,
                                                const int64_t offset, aclOpExecutor* executor)
 {
@@ -435,85 +373,6 @@ static const aclTensor* Run950AicoreMultinomialWithoutReplacement(const aclTenso
         auto topkOut = l0op::Topk(divExponential, numsamples, lastDim, true, true, op::DataType::DT_INT64, executor);
         multinomialOut = l0op::Cast(std::get<1>(topkOut), op::DataType::DT_INT64, executor);
     }
-    CHECK_RET(multinomialOut != nullptr, nullptr);
-    return multinomialOut;
-}
-
-static const aclTensor* RunDavidMultinomialNoReplaceMent(const aclTensor* selfContiguous, int64_t numsamples,
-                                                         const aclTensor* randomUniform, const aclTensor* out,
-                                                         aclOpExecutor* executor)
-{
-    auto dType = selfContiguous->GetDataType();
-    auto computeDtype = (dType == DataType::DT_BF16 || dType == DataType::DT_FLOAT16) ? DataType::DT_FLOAT : dType;
-
-    const aclTensor* selfCompute = (dType != computeDtype) ? l0op::Cast(selfContiguous, computeDtype, executor) :
-                                                             selfContiguous;
-    CHECK_RET(selfCompute != nullptr, nullptr);
-
-    auto randomCompute = (randomUniform->GetDataType() != computeDtype) ?
-                             l0op::Cast(randomUniform, computeDtype, executor) :
-                             randomUniform;
-    CHECK_RET(randomCompute != nullptr, nullptr);
-
-    const aclTensor* oneTensor;
-    const aclTensor* positiveMinTensor;
-    if (computeDtype == DataType::DT_DOUBLE) {
-        const double one = 1.0;
-        oneTensor = executor->ConvertToTensor(&one, 1, DataType::DT_DOUBLE);
-        const double positiveMin = 1e-7;
-        positiveMinTensor = executor->ConvertToTensor(&positiveMin, 1, DataType::DT_DOUBLE);
-    } else {
-        const float one = 1.0f;
-        oneTensor = executor->ConvertToTensor(&one, 1, DataType::DT_FLOAT);
-        const float positiveMin = 1e-7f;
-        positiveMinTensor = executor->ConvertToTensor(&positiveMin, 1, DataType::DT_FLOAT);
-    }
-
-    auto subRandom = l0op::Sub(oneTensor, randomCompute, executor);
-    CHECK_RET(subRandom != nullptr, nullptr);
-
-    const float logBase = -1.0f;
-    const float logScale = 1.0f;
-    const float logShift = 0.0f;
-    auto logRandom = l0op::Log(subRandom, logBase, logScale, logShift, executor);
-    CHECK_RET(logRandom != nullptr, nullptr);
-
-    auto absLog = l0op::Abs(logRandom, executor);
-    CHECK_RET(absLog != nullptr, nullptr);
-
-    auto exponential = l0op::Add(absLog, positiveMinTensor, executor);
-    CHECK_RET(exponential != nullptr, nullptr);
-
-    auto divExponential = l0op::RealDiv(selfCompute, exponential, executor);
-    CHECK_RET(divExponential != nullptr, nullptr);
-
-    int64_t dimNum = static_cast<int64_t>(selfContiguous->GetViewShape().GetDimNum());
-    int64_t lastDim = MakeWrapDim(-1, dimNum);
-
-    // 获取索引并进行结果排序
-    const aclTensor* multinomialOutInt32 = nullptr;
-    if (numsamples == 1) {
-        multinomialOutInt32 = l0op::ArgMaxV2(divExponential, lastDim, true, executor);
-        CHECK_RET(multinomialOutInt32 != nullptr, nullptr);
-    } else {
-        auto topkOut = l0op::Topk(divExponential, numsamples, lastDim, true, true, op::DataType::DT_INT32, executor);
-        auto indicesUnsorted = std::get<1>(topkOut);
-        CHECK_RET(indicesUnsorted != nullptr, nullptr);
-
-        // Sort Indices: Cast(int32->fp32) -> TopK(ascending) -> Cast(fp32->int32)
-        auto indicesFloat = l0op::Cast(indicesUnsorted, DataType::DT_FLOAT, executor);
-        CHECK_RET(indicesFloat != nullptr, nullptr);
-
-        auto sortedTopk = l0op::Topk(indicesFloat, numsamples, lastDim, false, true, op::DataType::DT_INT32, executor);
-        auto sortedValues = std::get<0>(sortedTopk);
-        CHECK_RET(sortedValues != nullptr, nullptr);
-
-        multinomialOutInt32 = l0op::Cast(sortedValues, DataType::DT_INT32, executor);
-        CHECK_RET(multinomialOutInt32 != nullptr, nullptr);
-    }
-
-    // 转换到输出类型（INT64）
-    auto multinomialOut = l0op::Cast(multinomialOutInt32, out->GetDataType(), executor);
     CHECK_RET(multinomialOut != nullptr, nullptr);
     return multinomialOut;
 }
@@ -599,8 +458,21 @@ aclnnStatus aclnnMultinomialGetWorkspaceSize(const aclTensor* self, int64_t nums
                                                           uniqueExecutor.get());
     } else if (!replacement || numsamples == 1) {
         if (IsRegBase()) {
-            auto exp1Random = l0op::Run950AicoreExponentialWithoutReplacement(selfContiguous, seed, offset, 1.0f,
-                                                                              uniqueExecutor.get());
+            // StatelessExponential takes tensor seed/offset; convert the scalar ones here.
+            aclIntArray* seedList = uniqueExecutor->AllocIntArray(&seed, 1);
+            CHECK_RET(seedList != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            auto seedTensor = uniqueExecutor->ConvertToTensor(seedList, op::DataType::DT_INT64);
+            CHECK_RET(seedTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            aclIntArray* offsetList = uniqueExecutor->AllocIntArray(&offset, 1);
+            CHECK_RET(offsetList != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            auto offsetTensor = uniqueExecutor->ConvertToTensor(offsetList, op::DataType::DT_INT64);
+            CHECK_RET(offsetTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            // Pre-allocate a buffer filled in-place so the original weights (selfContiguous) are preserved.
+            auto expInput = uniqueExecutor->AllocTensor(selfContiguous->GetViewShape(), selfContiguous->GetDataType(),
+                                                        selfContiguous->GetViewFormat());
+            CHECK_RET(expInput != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            auto exp1Random = l0op::StatelessExponential(expInput, seedTensor, offsetTensor, 1.0f,
+                                                         uniqueExecutor.get());
             CHECK_RET(exp1Random != nullptr, ACLNN_ERR_PARAM_NULLPTR);
             multinomialOut = Run950AicoreMultinomialWithoutReplacement(selfContiguous, numsamples, exp1Random,
                                                                        uniqueExecutor.get());
@@ -613,9 +485,13 @@ aclnnStatus aclnnMultinomialGetWorkspaceSize(const aclTensor* self, int64_t nums
     } else {
         if (IsRegBase()) {
             aclIntArray* seedList = uniqueExecutor->AllocIntArray(&seed, 1);
+            CHECK_RET(seedList != nullptr, ACLNN_ERR_INNER_NULLPTR);
             auto seedTensor = uniqueExecutor->ConvertToTensor(seedList, op::DataType::DT_INT64);
+            CHECK_RET(seedTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
             aclIntArray* offsetList = uniqueExecutor->AllocIntArray(&offset, 1);
+            CHECK_RET(offsetList != nullptr, ACLNN_ERR_INNER_NULLPTR);
             auto offsetTensor = uniqueExecutor->ConvertToTensor(offsetList, op::DataType::DT_INT64);
+            CHECK_RET(offsetTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
             multinomialOut = Run950AicoreMultinomialWithReplacement(selfContiguous, numsamples, seedTensor,
                                                                     offsetTensor, uniqueExecutor.get());
         } else {
@@ -640,64 +516,6 @@ aclnnStatus aclnnMultinomial(void* workspace, uint64_t workspaceSize, aclOpExecu
 {
     L2_DFX_PHASE_2(aclnnMultinomial);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
-}
-
-static std::pair<const aclTensor*, const aclTensor*> BuildDavidCounter(const aclTensor* seedTensor,
-                                                                       const aclTensor* offsetTensor, int64_t offset,
-                                                                       aclOpExecutor* executor)
-{
-    auto seedU64 = l0op::Cast(seedTensor, op::DataType::DT_UINT64, executor);
-    if (seedU64 == nullptr)
-        return {nullptr, nullptr};
-    auto offsetU64 = l0op::Cast(offsetTensor, op::DataType::DT_UINT64, executor);
-    if (offsetU64 == nullptr)
-        return {nullptr, nullptr};
-
-    FVector<int64_t> offsetVector{0, static_cast<int64_t>(offset)};
-    aclIntArray* offsetList = executor->AllocIntArray(offsetVector.data(), 2);
-    auto tmpTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_UINT64);
-    auto resultAddOut = l0op::Add(offsetU64, tmpTensor, executor);
-    if (resultAddOut == nullptr)
-        return {nullptr, nullptr};
-
-    return {seedU64, resultAddOut};
-}
-
-static const aclTensor* GetDavidRandomUniformReplaceMentTensor(const aclTensor* selfContiguous, int64_t numsamples,
-                                                               const aclTensor* seedTensor,
-                                                               const aclTensor* offsetTensor, int64_t offset,
-                                                               aclOpExecutor* executor)
-{
-    auto [seedU64, resultAddOut] = BuildDavidCounter(seedTensor, offsetTensor, offset, executor);
-    CHECK_RET(seedU64 != nullptr && resultAddOut != nullptr, nullptr);
-
-    const int64_t randAShape[] = {numsamples};
-    auto randAShapeArray = executor->AllocIntArray(randAShape, 1);
-    op::Shape shape;
-    op::ToShape(randAShapeArray->GetData(), randAShapeArray->Size(), shape);
-    auto shapeTensor = executor->AllocTensor(shape, selfContiguous->GetDataType(), selfContiguous->GetViewFormat());
-    CHECK_RET(shapeTensor != nullptr, nullptr);
-
-    int32_t alg = 1;
-    auto randomUniform = l0op::StatelessRandomUniformV2(shapeTensor, seedU64, resultAddOut, alg, executor);
-    CHECK_RET(randomUniform != nullptr, nullptr);
-    return randomUniform;
-}
-
-static const aclTensor* GetDavidRandomUniformNoReplaceMentTensor(const aclTensor* selfContiguous,
-                                                                 const aclTensor* seedTensor,
-                                                                 const aclTensor* offsetTensor, int64_t offset,
-                                                                 aclOpExecutor* executor)
-{
-    auto [seedU64, resultAddOut] = BuildDavidCounter(seedTensor, offsetTensor, offset, executor);
-    CHECK_RET(seedU64 != nullptr && resultAddOut != nullptr, nullptr);
-
-    int32_t alg = 1;
-    auto statelessUniform = l0op::StatelessRandomUniformV2(selfContiguous, seedU64, resultAddOut, alg, executor);
-    CHECK_RET(statelessUniform != nullptr, nullptr);
-    auto randomUniform = l0op::Cast(statelessUniform, DataType::DT_FLOAT, executor);
-    CHECK_RET(randomUniform != nullptr, nullptr);
-    return randomUniform;
 }
 
 static const aclTensor* AddOffsetTensor(const aclTensor* offsetTensor, int64_t offset, aclOpExecutor* executor)
@@ -743,7 +561,7 @@ aclnnStatus aclnnMultinomialTensorGetWorkspaceSize(const aclTensor* self, int64_
     CHECK_RET(offsetAddOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     const aclTensor* multinomialOut;
-    if (!CheckSocVersionGe910B() || selfSize <= CPU_NPU_BOUNDARY) {
+    if (UseAicpuPath(self, selfSize)) {
         multinomialOut = l0op::MultinomialWithReplacementTensor(selfContiguous, numsamples, replacement, seedTensor,
                                                                 offsetAddOut, uniqueExecutor.get());
     } else if (!replacement || numsamples == 1) {
@@ -755,11 +573,14 @@ aclnnStatus aclnnMultinomialTensorGetWorkspaceSize(const aclTensor* self, int64_
             multinomialOut = RunMultinomialNoReplaceMent(selfContiguous, numsamples, randomUniform, out,
                                                          uniqueExecutor.get());
         } else {
-            randomUniform = GetDavidRandomUniformNoReplaceMentTensor(selfContiguous, seedTensor, offsetTensor, offset,
-                                                                     uniqueExecutor.get());
-            CHECK_RET(randomUniform != nullptr, ACLNN_ERR_INNER_NULLPTR);
-            multinomialOut = RunDavidMultinomialNoReplaceMent(selfContiguous, numsamples, randomUniform, out,
-                                                              uniqueExecutor.get());
+            auto expInput = uniqueExecutor->AllocTensor(selfContiguous->GetViewShape(), selfContiguous->GetDataType(),
+                                                        selfContiguous->GetViewFormat());
+            CHECK_RET(expInput != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            auto exp1Random = l0op::StatelessExponential(expInput, seedTensor, offsetAddOut, 1.0f,
+                                                         uniqueExecutor.get());
+            CHECK_RET(exp1Random != nullptr, ACLNN_ERR_PARAM_NULLPTR);
+            multinomialOut = Run950AicoreMultinomialWithoutReplacement(selfContiguous, numsamples, exp1Random,
+                                                                       uniqueExecutor.get());
         }
     } else {
         const aclTensor* randomUniform = nullptr;
@@ -770,11 +591,9 @@ aclnnStatus aclnnMultinomialTensorGetWorkspaceSize(const aclTensor* self, int64_
             multinomialOut = RunMultinomialReplaceMent(selfContiguous, numsamples, randomUniform, out,
                                                        uniqueExecutor.get());
         } else {
-            randomUniform = GetDavidRandomUniformReplaceMentTensor(selfContiguous, numsamples, seedTensor, offsetTensor,
-                                                                   offset, uniqueExecutor.get());
-            CHECK_RET(randomUniform != nullptr, ACLNN_ERR_INNER_NULLPTR);
-            multinomialOut = RunDavidMultinomialReplaceMent(selfContiguous, numsamples, randomUniform, out,
-                                                            uniqueExecutor.get());
+            // RegBase: use the fused 950 AICore kernel directly (offsetAddOut already carries offsetTensor + offset).
+            multinomialOut = Run950AicoreMultinomialWithReplacement(selfContiguous, numsamples, seedTensor,
+                                                                    offsetAddOut, uniqueExecutor.get());
         }
     }
     CHECK_RET(multinomialOut != nullptr, ACLNN_ERR_PARAM_NULLPTR);

@@ -32,26 +32,8 @@ namespace l0op {
  * @param executor      Op executor
  * @return Output tensor with shape {numDist, numsamples}, dtype DT_INT64
  */
-const aclTensor* StatelessSampleMultinomial(
-    const aclTensor* xTensor,
-    const aclTensor* seedTensor,
-    const aclTensor* offsetTensor,
-    int64_t numsamples,
-    aclOpExecutor* executor);
-
-/**
- * @brief Generate exponential random samples on 950 AICore for multinomial without replacement.
- *        Uses SimThreadExponential kernel with Philox RNG (offset aligned to 4).
- *
- * @param self          Input tensor, determines output shape and dtype
- * @param seed          RNG seed (scalar)
- * @param offset        RNG offset (scalar, will be aligned to multiple of 4)
- * @param lambd         Lambda parameter for exponential distribution
- * @param executor      Op executor
- * @return Output tensor with same shape and dtype as self
- */
-const aclTensor* Run950AicoreExponentialWithoutReplacement(
-    const aclTensor* self, int64_t seed, int64_t offset, float lambd, aclOpExecutor* executor);
+const aclTensor* StatelessSampleMultinomial(const aclTensor* xTensor, const aclTensor* seedTensor,
+                                            const aclTensor* offsetTensor, int64_t numsamples, aclOpExecutor* executor);
 
 } // namespace l0op
 

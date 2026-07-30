@@ -19,8 +19,8 @@ using namespace StatelessSampleMultinomial;
 
 #define STATELESS_SAMPLE_MULTINOMIAL_DEFAULT_TILING_KEY 100
 
-__global__ __aicore__ void stateless_sample_multinomial(
-    GM_ADDR x, GM_ADDR seed, GM_ADDR offset, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void stateless_sample_multinomial(GM_ADDR x, GM_ADDR seed, GM_ADDR offset, GM_ADDR y,
+                                                        GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(RandomUnifiedSimtTilingDataStruct);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
@@ -29,7 +29,7 @@ __global__ __aicore__ void stateless_sample_multinomial(
 
     if (TILING_KEY_IS(STATELESS_SAMPLE_MULTINOMIAL_DEFAULT_TILING_KEY)) {
         StatelessSampleMultinomialOp<DTYPE_X> op;
-        op.Init(y, x, workspace, &tilingData, &pipe);
+        op.Init(y, x, seed, offset, workspace, &tilingData, &pipe);
         op.Process();
     }
 }
