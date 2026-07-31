@@ -153,13 +153,6 @@ aclnnStatus aclnnInplaceAtan2(
     </tr>
   </tbody></table>
 
-  <!-- npu="950" id7 -->
-  - <term>Ascend 950PR/Ascend 950DT</term>：
-    - self和other数据类型支持BFLOAT16、FLOAT16、FLOAT32；
-    - out数据类型支持BFLOAT16、FLOAT16、FLOAT32。
-
-  <!-- end id7 -->
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
@@ -310,11 +303,6 @@ aclnnStatus aclnnInplaceAtan2(
       <td>-</td>
     </tr>
   </tbody></table>
-
-  <!-- npu="950" id8 -->
-  - <term>Ascend 950PR/Ascend 950DT</term>：selfRef和other数据类型支持BFLOAT16、FLOAT16、FLOAT32。
-
-  <!-- end id8 -->
 
 - **返回值：**
 
