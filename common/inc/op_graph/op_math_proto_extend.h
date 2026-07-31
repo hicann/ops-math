@@ -992,27 +992,6 @@ REG_OP(ExpandDims)
     .OP_END_FACTORY_REG(SignBitsPack)
 
     /**
-    * @brief SignBitsUnpack.
-
-    * @par Inputs:
-    * one input, including:
-    * x: A 1D Tensor of uint8.
-
-    * @par Attributes:
-    * @li size: dim of out put tensor, defaults to 1. Must be int type.
-    * @li dtype: dtype of out put tensor: DT_FLOAT(0) or DT_FLOAT16(1).
-
-    * @par Outputs:
-    * y: A 2D Tensor of type float32 (float16) with shape (size, (x.shape * 8) / size),
-    */
-    REG_OP(SignBitsUnpack)
-    .INPUT(x, TensorType({DT_UINT8}))
-    .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16}))
-    .REQUIRED_ATTR(size, Int)
-    .REQUIRED_ATTR(dtype, Type)
-    .OP_END_FACTORY_REG(SignBitsUnpack)
-
-    /**
     * @brief Assigns "value" to the sliced l-value reference of "var".
     * The values of "value" are assigned to the positions in the variable. "var"
     * that are selected by the slice parameters. The slice parameters "begin, "end",

@@ -1839,12 +1839,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/sign_bits_unpack/README.md">sign_bits_unpack</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>将UINT8类型的1-bit Adam符号位拆包为FLOAT32或FLOAT16类型的张量。</td>
   </tr>
   <tr>
     <td>math</td>
