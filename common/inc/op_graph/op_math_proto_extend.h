@@ -885,47 +885,6 @@ REG_OP(ExpandDims)
     .OP_END_FACTORY_REG(RandomChoiceWithMask)
 
     /**
-    * @brief Calculates the standard deviation or the variance of Tensors with the average value.
-
-    * @par Inputs:
-    * Two inputs, including:
-    * @li x: A Tensor. Must be one of the following types: float16, float32, bfloat16. \n
-    * @li mean: A Tensor. It's the mean of X. Has the same shape and type as "x" \n
-
-    * @par Attributes:
-    * Five Attributes, including:
-    * @li dim: The dimensions to reduce. A required listint.
-    *     Must be in the range [-rank(x), rank(x)).
-    * @li if_std: An optional bool. Defaults to "False".
-    *     If "True", Calculate the standard deviation
-    *     If "False", Calculate the variance
-    * @li unbiased: An optional bool. Defaults to "True".
-    *     If "True", Use Bessel Correction.
-    *     If "False", Do not use Bessel Correction. \n
-    * @li keepdim: An optional bool. Defaults to "False".
-    *     If "True", Keep the original tensor dimension.
-    *     If "False", Do not keep the original tensor dimension. \n
-    * @li correction: An optional int. Defaults to 1.
-    *     If unbiased is "True", use Bessel Correction. \n
-
-    * @par Outputs:
-    * @li output_var: A Tensor. It's the standard deviation or the variance of X. Has the same type as "x".
-
-    * @par Third-party framework compatibility
-    * Compatible with the Pytorch operator Var_mean.
-    */
-    REG_OP(ReduceStdV2Update)
-    .INPUT(x, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16}))
-    .INPUT(mean, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16}))
-    .OUTPUT(output_var, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16}))
-    .REQUIRED_ATTR(dim, ListInt)
-    .ATTR(if_std, Bool, false)
-    .ATTR(unbiased, Bool, true)
-    .ATTR(keepdim, Bool, false)
-    .ATTR(correction, Int, 1)
-    .OP_END_FACTORY_REG(ReduceStdV2Update)
-
-    /**
     * @brief Calculates the standard deviation of Tensors.
 
     * @par Inputs:

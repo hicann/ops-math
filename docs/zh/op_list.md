@@ -1649,12 +1649,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/reduce_std_v2_update/README.md">reduce_std_v2_update</a></td>
+    <td>√</td>
+    <td>√</td>
     <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>接收原始输入和预计算均值，沿指定维度归约计算方差或标准差，支持贝塞尔校正与keepdim。</td>
   </tr>
   <tr>
     <td>math</td>
