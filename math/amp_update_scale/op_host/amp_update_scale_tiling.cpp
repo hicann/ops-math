@@ -27,6 +27,15 @@ constexpr uint64_t GROWTH_INTERVAL = 2;
 constexpr uint64_t TILING_KEY_FLOAT = 0;
 constexpr uint64_t TILING_KEY_FLOAT16 = 1;
 constexpr uint64_t TILING_KEY_BF16 = 2;
+const gert::Shape g_vec_1_shape = {1};
+
+static inline const gert::Shape& EnsureNotScalar(const gert::Shape& in_shape)
+{
+    if (in_shape.GetDimNum() == 0) {
+        return g_vec_1_shape;
+    }
+    return in_shape;
+}
 } // namespace
 
 namespace optiling {
@@ -77,7 +86,7 @@ ge::graphStatus AmpUpdateScaleTiling::Init()
     for (int i = 0; i < kInputNum; i++) {
         auto inputShape = TilingContext->GetInputShape(i);
         OP_CHECK_NULL_WITH_CONTEXT(TilingContext, inputShape);
-        auto storageShape = inputShape->GetStorageShape();
+        auto storageShape = EnsureNotScalar(inputShape->GetStorageShape());
         OP_CHECK_IF(storageShape.GetDimNum() != kScalarDimNum,
                     OP_LOGE_FOR_INVALID_SHAPEDIM(TilingContext->GetNodeName(), kInputNames[i],
                                                  std::to_string(storageShape.GetDimNum()).c_str(), "scalar [1]"),

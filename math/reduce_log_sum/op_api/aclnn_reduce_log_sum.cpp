@@ -34,8 +34,8 @@ extern "C" {
 constexpr size_t MAX_MASK_LEN = 64;
 
 // 根据API定义，需要列出所能支持的所有dtype
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT};
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT16,
+                                                                       op::DataType::DT_FLOAT};
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_950 = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16};
 
@@ -89,14 +89,14 @@ static bool CheckAxesValid(const aclTensor* data, const aclIntArray* axes)
     for (size_t i = 0; i < axes->Size(); i++) {
         int64_t curDim = (*axes)[i];
         if (curDim >= dataDimNum || curDim < (-dataDimNum)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "Provided axes %ld not in the range of input tensor size %ld.", curDim,
-                dataDimNum);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Provided axes %ld not in the range of input tensor size %ld.", curDim,
+                    dataDimNum);
             return false;
         }
         uint64_t index = GetPosDim(curDim, dataDimNum);
         if (axesMask[index]) {
             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Axes %lu appears multiple times in the list of axes", index);
+            return false;
         }
         axesMask.set(index);
     }
@@ -147,9 +147,9 @@ static aclnnStatus FillScalar(aclTensor* reduce, float val, aclOpExecutor* execu
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnReduceLogSumGetWorkspaceSize(
-    const aclTensor* data, const aclIntArray* axes, bool keepDims, bool noopWithEmptyAxes, aclTensor* reduce,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnReduceLogSumGetWorkspaceSize(const aclTensor* data, const aclIntArray* axes, bool keepDims,
+                                              bool noopWithEmptyAxes, aclTensor* reduce, uint64_t* workspaceSize,
+                                              aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnReduceLogSum, DFX_IN(data, axes, keepDims, noopWithEmptyAxes), DFX_OUT(reduce));
 
@@ -173,7 +173,7 @@ aclnnStatus aclnnReduceLogSumGetWorkspaceSize(
 
     op::Shape shape = data->GetViewShape();
 
-    //固定写法，将输入的data转换成连续的tensor
+    // 固定写法，将输入的data转换成连续的tensor
     auto dataContiguous = l0op::Contiguous(data, uniqueExecutor.get());
     const aclTensor* reduceOut = nullptr;
 
@@ -189,10 +189,10 @@ aclnnStatus aclnnReduceLogSumGetWorkspaceSize(
             axes = uniqueExecutor.get()->AllocIntArray(appendDim.data(), axesDum);
             reduceOut = l0op::ReduceLogSum(dataContiguous, axes, keepDims, uniqueExecutor.get());
         } else {
-            //固定写法，将计算结果拷贝到输出reduce上，reduce可能是非连续的tensor
+            // 固定写法，将计算结果拷贝到输出reduce上，reduce可能是非连续的tensor
             auto viewCopyResult = l0op::ViewCopy(dataContiguous, reduce, uniqueExecutor.get());
             CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-            //固定写法，获取计算过程中需要使用的workspace大小
+            // 固定写法，获取计算过程中需要使用的workspace大小
             *workspaceSize = uniqueExecutor->GetWorkspaceSize();
             uniqueExecutor.ReleaseTo(executor);
             return ACLNN_SUCCESS;
@@ -204,10 +204,10 @@ aclnnStatus aclnnReduceLogSumGetWorkspaceSize(
     CHECK_RET(reduceOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
     CHECK_RET(CheckShapeAndScalarSame(reduceOut, reduce), ACLNN_ERR_PARAM_INVALID);
 
-    //固定写法，将计算结果拷贝到输出reduce上，reduce可能是非连续的tensor
+    // 固定写法，将计算结果拷贝到输出reduce上，reduce可能是非连续的tensor
     auto viewCopyResult = l0op::ViewCopy(reduceOut, reduce, uniqueExecutor.get());
     CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    //固定写法，获取计算过程中需要使用的workspace大小
+    // 固定写法，获取计算过程中需要使用的workspace大小
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
     uniqueExecutor.ReleaseTo(executor);
     return ACLNN_SUCCESS;
