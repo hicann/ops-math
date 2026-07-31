@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
 #include "cpu_types.h"
 #include "log.h"
@@ -410,5 +411,5 @@ void TopKPQDistanceV2CpuKernel::SortHeap(Item<T> arr_ptr[], const int32_t n) con
     }
 }
 
-REGISTER_CPU_KERNEL(kTopKPQDistanceV2, TopKPQDistanceV2CpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kTopKPQDistanceV2, TopKPQDistanceV2CpuKernel);
 } // namespace aicpu

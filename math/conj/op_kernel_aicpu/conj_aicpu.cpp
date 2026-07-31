@@ -11,6 +11,7 @@
 
 #include <complex>
 
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
 #include "cpu_types.h"
 #include "log.h"
@@ -89,5 +90,5 @@ uint32_t Conj::ConjCompute(const CpuKernelContext& ctx) const
     return KERNEL_STATUS_OK;
 }
 
-REGISTER_CPU_KERNEL(kConj, Conj);
+OPS_MATH_REGISTER_CPU_KERNELV2(kConj, Conj);
 } // namespace aicpu

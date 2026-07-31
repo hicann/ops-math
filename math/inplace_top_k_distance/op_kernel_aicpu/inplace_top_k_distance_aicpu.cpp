@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <string>
 
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
 #include "cpu_types.h"
 #include "log.h"
@@ -199,5 +200,5 @@ uint32_t InplaceTopKDistanceCpuKernel::ModifyInput(const std::vector<Item<T>>& i
     return KERNEL_STATUS_OK;
 }
 
-REGISTER_CPU_KERNEL(kInplaceTopKDistance, InplaceTopKDistanceCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kInplaceTopKDistance, InplaceTopKDistanceCpuKernel);
 } // namespace aicpu
