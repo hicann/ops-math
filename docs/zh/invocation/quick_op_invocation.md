@@ -394,12 +394,16 @@
    bash run.sh
    ```
 
-    默认在当前执行路径`/build/bin`下生成可执行文件${test_aclnn_op_name}。运行结果以test\_aclnn\_add\_ example为例：
+    默认在当前执行路径`/build/bin`下生成可执行文件`${test_aclnn_op_name}`。运行结果以`test_aclnn_add_example`为例：
 
-   ```bash
-   mean result[2046] is 2.000000
-   mean result[2047] is 2.000000
+   ```text
+   Print the first 10 groups of data:
+   add_example first input[0] is: 1.000000, second input[0] is: -257.000000, result[0] is: -256.000000
+   add_example first input[1] is: 2.000000, second input[1] is: 608.000000, result[1] is: 610.000000
+   ...
    ```
+
+   以上为当前样例使用固定随机数种子`42`时的示例输出，`result[i]`为`first input[i]`与`second input[i]`逐元素相加的结果。
 
 ### GE图模式
 

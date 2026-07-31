@@ -97,11 +97,13 @@ export LD_LIBRARY_PATH=${ASCEND_HOME_PATH}/opp/vendors/custom_math/op_api/lib:${
 bash build.sh --run_example add_example eager cust --vendor_name=custom
 ```
 
-预期输出：打印算子`AddExample`的加法计算结果，表明算子已成功部署并正确执行。样例输入由代码固定生成（`selfX`为递增序列、`selfY`为随机数），输出格式如下：
+预期输出：打印算子`AddExample`的加法计算结果，表明算子已成功部署并正确执行。样例中第一个输入从 1.0 开始递增，第二个输入使用固定随机数种子 42 生成，因此请以实际运行值为准；每组结果应等于两个输入之和。
 
-add_example first input[0] is: 1.000000, second input[0] is: (随机值), result[0] is: (Add结果)
-add_example first input[1] is: 2.000000, second input[1] is: (随机值), result[1] is: (Add结果)
+```text
+Print the first 10 groups of data:
+add_example first input[0] is: ..., second input[0] is: ..., result[0] is: ...
 ...
+```
 
 ## 二、算子开发
 
@@ -152,11 +154,11 @@ __aicore__ inline void AddExample<T>::Compute(int64_t currentNum)
     bash build.sh --run_example add_example eager cust --vendor_name=custom
     ```
 
-4. **成功标志**：输出结果变成乘法结果（`result = 第一个输入 × 第二个输入`），输出格式如下：
+4. **成功标志**：输出结果变成乘法结果，每组结果应等于两个输入之积。输入数据仍沿用样例中的递增序列和固定随机数种子 42，请以实际运行值为准。
 
-    ```bash
-    add_example first input[0] is: 1.000000, second input[0] is: (随机值), result[0] is: (Mul结果)
-    add_example first input[1] is: 2.000000, second input[1] is: (随机值), result[1] is: (Mul结果)
+    ```text
+    Print the first 10 groups of data:
+    add_example first input[0] is: ..., second input[0] is: ..., result[0] is: ...
     ...
     ```
 
@@ -216,34 +218,33 @@ __aicore__ inline void AddExample<T>::Compute(int64_t currentNum)
 
 ## 四、算子验证
 
-本阶段通过修改AddExample算子example样例中的输入数据，验证该算子在多种场景下的功能正确性。
+本阶段通过修改AddExample算子example样例中的输入数据，验证该算子在当前支持场景下的功能正确性。
 
 ### 1.修改测试输入
 
-找到并编辑`AddExample`的`ops-math/examples/add_example/examples/test_aclnn_add_example.cpp`，修改输入张量的形状和数值。
+找到并编辑`AddExample`的`ops-math/examples/add_example/examples/test_aclnn_add_example.cpp`，修改输入张量的数值。
 
-**修改输入/输出数据**：修改输入、输出的shape信息，以及初始化数据，构造相应的输入、输出tensor。
+**修改输入数据**：保持当前支持的 shape 不变，修改初始化数据，构造更有区分度的输入 tensor。
 
 ```c++
-int main() {
-    // ...初始化代码 ...
+int main()
+{
+    // ... 初始化代码 ...
 
     // === ① 修改selfX的输入 ===
-    // 修改前：shape = {32, 4, 4, 4}，数值为从1.0开始、步长为1的递增序列
-    // 修改后：将输入shape改为 {8, 8, 8, 8}，并填充不同的测试数据
-    std::vector<int64_t> selfXShape = {8, 8, 8, 8};
-    std::vector<float> selfXHostData(4096); // 4096 = 8 * 8 * 8 *8
-    // 可使用循环填充更有区分度的数据，例如递增序列
-    for (int i = 0; i < 4096; ++i) {
-        selfXHostData[i] = static_cast<float>(i % 10); // 填充0-9的循环值
+    std::vector<int64_t> selfXShape = {32, 4, 4, 4};
+    std::vector<float> selfXHostData(2048);
+    // 将源码中从1.0开始的递增序列改为0-9循环值
+    for (int64_t i = 0; i < static_cast<int64_t>(selfXHostData.size()); ++i) {
+        selfXHostData[i] = static_cast<float>(i % 10);
     }
-    // === ② 参考selfX，同理修改selfY（第二个输入）与out（输出）的shape及数据 ===
+    // === ② 参考selfX修改selfYHostData；输出变量为out/outShape ===
 
-    // ...后续执行代码 ...
+    // ... 后续执行代码 ...
 }
 ```
 
-> **注意**：修改shape时需同步修改对应host侧数据vector的长度（本例`selfX`、`selfY`、`out`三者的vector长度都要从默认的2048改为4096 = 8×8×8×8），并保证三者shape一致，否则会出现数据越界或结果不匹配。
+> **注意**：当前示例算子未进行 shape、dtype 全泛化，其他输入场景可能不受支持。除非同步扩展 Tiling 和 Kernel 的支持范围，否则请勿修改示例中的 shape。
 
 ### 2.重新编译并验证
 

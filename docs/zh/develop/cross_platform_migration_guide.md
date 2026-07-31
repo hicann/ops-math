@@ -269,20 +269,27 @@ __simd_vf__ __aicore__ void GatherProcess(ubuf int8_t* curYAddr, uint16_t repeat
 ```
 
 ```cpp
-// 数据聚合
-__VEC_SCOPE__
+// 数据聚合。各地址、循环次数和输出块步长由调用者根据实际切分及UB布局传入。
+__simd_vf__ __aicore__ void GatherData(
+    ubuf int32_t* curYAddr, ubuf int32_t* curXAddr, ubuf uint32_t* indicesAddr,
+    uint16_t indicesLoopNum, uint16_t blockStride)
 {
-    MicroAPI::RegTensor<uint32_t> indicesReg;
-    MicroAPI::RegTensor<int32_t> vd0;
+    __VEC_SCOPE__
+    {
+        MicroAPI::RegTensor<uint32_t> indicesReg;
+        MicroAPI::RegTensor<int32_t> vd0;
+        MicroAPI::MaskReg preg =
+            MicroAPI::CreateMask<int32_t, MicroAPI::MaskPattern::ALL>();
 
-    for (uint16_t indices = 0; indices < indicesLoopNum; indices++) {
-        // 加载索引（E2B分发模式：将标量广播到向量）
-        MicroAPI::DataCopy<uint32_t, MicroAPI::LoadDist::DIST_E2B_B32>(indicesReg, indicesAddr);
-        // 根据索引进行Gather数据聚合
-        MicroAPI::DataCopyGather(vd0, curXAddr, indicesReg, preg);
-        // 数据块拷贝输出
-        MicroAPI::DataCopy<int32_t, MicroAPI::DataCopyMode::DATA_BLOCK_COPY>(
-            curYAddr, vd0, blockStride, preg);
+        for (uint16_t indices = 0; indices < indicesLoopNum; indices++) {
+            // 加载索引（E2B分发模式：将标量广播到向量）
+            MicroAPI::DataCopy<uint32_t, MicroAPI::LoadDist::DIST_E2B_B32>(indicesReg, indicesAddr);
+            // 根据索引进行Gather数据聚合
+            MicroAPI::DataCopyGather(vd0, curXAddr, indicesReg, preg);
+            // blockStride表示相邻输出数据块在UB中的步长，由调用者按输出布局传入
+            MicroAPI::StoreAlign<int32_t, MicroAPI::DataCopyMode::DATA_BLOCK_COPY>(
+                curYAddr, vd0, blockStride, preg);
+        }
     }
 }
 ```

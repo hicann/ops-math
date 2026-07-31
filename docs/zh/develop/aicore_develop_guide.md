@@ -259,6 +259,7 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context){
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
     currentWorkspace[0] = WS_SYS_SIZE;
+    return ge::GRAPH_SUCCESS;
 }
 
 // 3.Tiling注册入口
@@ -487,10 +488,10 @@ __aicore__ inline void AddExample<T>::Process()
 
    ```bash
    # 编译指定算子，如bash build.sh --pkg --ops=add_example -j16
-   bash build.sh --pkg --soc=${soc_version} --vendor_name=${vendor_name} --ops=${op_list} [-j${n}]
+   bash build.sh --pkg --soc=${soc_version} --vendor_name=${vendor_name} --ops=${op_list} -j${n}
 
    # 编译experimental目录下指定算子
-   bash build.sh --pkg --soc=${soc_version} --vendor_name=${vendor_name} --ops=${op_list} [--experimental] [-j${n}]
+   bash build.sh --pkg --soc=${soc_version} --vendor_name=${vendor_name} --ops=${op_list} --experimental -j${n}
    ```
 
    - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2系列产品使用"ascend910b"（默认），Atlas A3系列产品使用"ascend910_93"，Ascend 950PR/Ascend 950DT产品使用"ascend950"。

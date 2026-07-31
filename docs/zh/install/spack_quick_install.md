@@ -41,7 +41,7 @@ Spack软件包默认安装路径在$SPACK_INSTALL_DIR/spack/opt，可以通过�
 #普通用户
 spack config --scope user add "config:install_tree:root:$HOME/.spack"
 #root管理员
-spack config --scope user add "config:install_tree:root:/opt/spack"
+spack config --scope system add "config:install_tree:root:/opt/spack"
 ```
 
 普通用户建议使用个人home下目录，避免被其他用户修改导致环境不稳定
