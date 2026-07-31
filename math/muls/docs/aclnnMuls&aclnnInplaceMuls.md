@@ -102,7 +102,7 @@ aclnnStatus aclnnInplaceMuls(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入`self`。</td>
-      <td>与out的数据类型相同。与other满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。</td>
+      <td>与other满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16<br>注：</td>
       <td>ND</td>
       <td>不大于8</td>
@@ -122,7 +122,7 @@ aclnnStatus aclnnInplaceMuls(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>公式中的输出`out`。</td>
-      <td>与self的数据类型相同。shape与self的shape相等。</td>
+      <td>数据类型需要是self与other推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。shape与self的shape相等。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
       <td>与self相同</td>
@@ -179,12 +179,15 @@ aclnnStatus aclnnInplaceMuls(
       <td>传入的self、other、out是空指针时。</td>
     </tr>
     <tr>
-      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="4">161002</td>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
       <td>self和out的数据类型不在支持的范围内时。</td>
     </tr>
     <tr>
       <td>self和other无法做数据类型推导。</td>
+    </tr>
+    <tr>
+      <td>推导出的数据类型无法转换为指定输出out的类型。</td>
     </tr>
     <tr>
       <td>self与out的shape不一致。</td>
