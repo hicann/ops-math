@@ -3048,6 +3048,16 @@
   </tr>
   <tr>
     <td>conversion</td>
+    <td><a href="../../conversion/matrix_diag_part/README.md">matrix_diag_part</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>返回批处理张量最内层矩阵的主对角线元素。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
     <td><a href="../../conversion/matrix_diag_v3/README.md">matrix_diag_v3</a></td>
     <td>√</td>
     <td>×</td>
