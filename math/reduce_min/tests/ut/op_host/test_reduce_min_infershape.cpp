@@ -307,7 +307,7 @@ TEST_F(ReduceMinTest, ReduceMin_int64_neg_axes_keepdims_false)
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-// ==================== 无效axes数据类型 (DT_FLOAT) → GRAPH_FAILED ====================
+// ==================== 非int32/int64 axes dtype → 视为非const，保守推导 ====================
 TEST_F(ReduceMinTest, ReduceMin_invalid_axes_dtype)
 {
     std::vector<float> axesValue = {1.0f, 2.0f};
@@ -322,7 +322,8 @@ TEST_F(ReduceMinTest, ReduceMin_invalid_axes_dtype)
         },
         {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
          gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
-    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
+    std::vector<std::vector<int64_t>> expectOutputShape = {{-1, -1, -1, -1}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 // ==================== 无效axes范围 (axis超出维度范围) → GRAPH_FAILED ====================

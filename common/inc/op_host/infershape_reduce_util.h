@@ -177,35 +177,39 @@ static ge::graphStatus DoInferShapeReduce(gert::InferShapeContext* context, cons
                 return ge::GRAPH_FAILED);
 
     auto axesDtype = axesTensor->GetDataType();
-    OP_CHECK_IF(axesDtype != ge::DT_INT32 && axesDtype != ge::DT_INT64,
-                OP_LOGE(context->GetNodeName(), "axes datatype %s must in (int32, int64)", ToString(axesDtype).c_str()),
-                return ge::GRAPH_FAILED);
-
     // --- 场景2: axes非静态常量，保守推导 ---
     if (axesDtype == ge::DT_INT32) {
         const int32_t* axesData = axesTensor->GetData<int32_t>();
         if (axesData == nullptr) {
-            OP_LOGI(context->GetNodeName(), "axes is not const, do conservative infer");
+            OP_LOGW(context->GetNodeName(), "axes is not const, do conservative infer");
+            auto ret = InferShape4ReduceWithoutAxes(inShape, outShape, keepDims, axesDim0);
+            OP_LOGI(context->GetNodeName(), "outShape = %s", ToString(*outShape).c_str());
+            return ret;
+        }
+    } else if (axesDtype == ge::DT_INT64) {
+        const int64_t* axesData = axesTensor->GetData<int64_t>();
+        if (axesData == nullptr) {
+            OP_LOGW(context->GetNodeName(), "axes is not const, do conservative infer");
             auto ret = InferShape4ReduceWithoutAxes(inShape, outShape, keepDims, axesDim0);
             OP_LOGI(context->GetNodeName(), "outShape = %s", ToString(*outShape).c_str());
             return ret;
         }
     } else {
-        const int64_t* axesData = axesTensor->GetData<int64_t>();
-        if (axesData == nullptr) {
-            OP_LOGI(context->GetNodeName(), "axes is not const, do conservative infer");
-            auto ret = InferShape4ReduceWithoutAxes(inShape, outShape, keepDims, axesDim0);
-            OP_LOGI(context->GetNodeName(), "outShape = %s", ToString(*outShape).c_str());
-            return ret;
-        }
+        OP_LOGW(context->GetNodeName(), "axes dtype not in (int32,int64), is not const, do conservative infer");
+        auto ret = InferShape4ReduceWithoutAxes(inShape, outShape, keepDims, axesDim0);
+        OP_LOGI(context->GetNodeName(), "outShape = %s", ToString(*outShape).c_str());
+        return ret;
     }
 
     // --- 场景3: axes为静态常量，精确推导 ---
     ge::graphStatus ret;
     if (axesDtype == ge::DT_INT32) {
         ret = ReduceDims<int32_t>(inShape, axesTensor, axesDim0, keepDims, outShape);
-    } else {
+    } else if (axesDtype == ge::DT_INT64) {
         ret = ReduceDims<int64_t>(inShape, axesTensor, axesDim0, keepDims, outShape);
+    } else {
+        OP_LOGE(context->GetNodeName(), "const axes data type %s must in (int32, int64)", ToString(axesDtype).c_str());
+        return ge::GRAPH_FAILED;
     }
     OP_LOGI(context->GetNodeName(), "outShape = %s", ToString(*outShape).c_str());
     return ret;
