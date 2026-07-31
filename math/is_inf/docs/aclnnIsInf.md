@@ -101,7 +101,7 @@ aclnnStatus aclnnIsInf(
       <td>BOOL</td>
       <td>ND</td>
       <td>0-8</td>
-      <td>√</td>
+      <td>×</td>
     </tr>
     <tr>
       <td>workspaceSize</td>
