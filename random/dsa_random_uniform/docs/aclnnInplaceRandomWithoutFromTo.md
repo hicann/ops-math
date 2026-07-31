@@ -83,7 +83,7 @@ aclnnStatus aclnnInplaceRandomWithoutFromTo(
       <td class="tg-0pky">BFLOAT16、FLOAT16、FLOAT32、INT32、INT64、INT16、INT8、UINT8、BOOL</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">0-8</td>
-      <td class="tg-0pky">×</td>
+      <td class="tg-0pky">√</td>
     </tr>
     <tr>
       <td class="tg-0pky">seed（int64_t）</td>

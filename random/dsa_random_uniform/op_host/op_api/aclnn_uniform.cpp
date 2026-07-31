@@ -236,7 +236,7 @@ aclnnStatus aclnnInplaceUniformGetWorkspaceSize(const aclTensor* selfRef, double
                                                 uint64_t offset, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceUniform, DFX_IN(selfRef, from, to, seed, offset), DFX_OUT(selfRef));
-
+    auto out = const_cast<aclTensor*>(selfRef);
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
@@ -249,17 +249,20 @@ aclnnStatus aclnnInplaceUniformGetWorkspaceSize(const aclTensor* selfRef, double
         return ACLNN_SUCCESS;
     }
 
+    auto selfContiguous = l0op::Contiguous(selfRef, uniqueExecutor.get());
+    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_PARAM_NULLPTR);
+
     const aclTensor* computeOut = nullptr;
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201) {
-        auto inputShape = op::ToShapeVector(selfRef->GetViewShape());
+        auto inputShape = op::ToShapeVector(selfContiguous->GetViewShape());
         auto inputShapeArray = uniqueExecutor.get()->AllocIntArray(inputShape.data(), inputShape.size());
         CHECK_RET(inputShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        op::DataType dtype = selfRef->GetDataType();
+        op::DataType dtype = selfContiguous->GetDataType();
         aclScalar* fromScalar = nullptr;
         aclScalar* toScalar = nullptr;
         if (dtype == op::DataType::DT_FLOAT16 || dtype == op::DataType::DT_BF16) {
-            fromScalar = CreateScalar(static_cast<float>(from), selfRef->GetDataType(), uniqueExecutor.get());
-            toScalar = CreateScalar(static_cast<float>(to), selfRef->GetDataType(), uniqueExecutor.get());
+            fromScalar = CreateScalar(static_cast<float>(from), selfContiguous->GetDataType(), uniqueExecutor.get());
+            toScalar = CreateScalar(static_cast<float>(to), selfContiguous->GetDataType(), uniqueExecutor.get());
         } else {
             fromScalar = uniqueExecutor.get()->AllocScalar(static_cast<float>(from));
             toScalar = uniqueExecutor.get()->AllocScalar(static_cast<float>(to));
@@ -268,14 +271,14 @@ aclnnStatus aclnnInplaceUniformGetWorkspaceSize(const aclTensor* selfRef, double
         CHECK_RET(toScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
         computeOut = l0op::DSARandomUniform(inputShapeArray, seed, offset, fromScalar, toScalar, uniqueExecutor.get());
     } else {
-        computeOut = uniformDavidPath(selfRef, seed, offset, from, to, uniqueExecutor.get());
+        computeOut = uniformDavidPath(selfContiguous, seed, offset, from, to, uniqueExecutor.get());
     }
     CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    auto castOut = l0op::Cast(computeOut, selfRef->GetDataType(), uniqueExecutor.get());
+    auto castOut = l0op::Cast(computeOut, out->GetDataType(), uniqueExecutor.get());
     CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    auto viewCopyResult = l0op::ViewCopy(castOut, selfRef, uniqueExecutor.get());
+    auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
     CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
@@ -291,7 +294,7 @@ aclnnStatus aclnnInplaceUniformTensorGetWorkspaceSize(const aclTensor* selfRef, 
 {
     L2_DFX_PHASE_1(aclnnInplaceUniformTensor, DFX_IN(selfRef, from, to, seedTensor, offsetTensor, offset),
                    DFX_OUT(selfRef));
-
+    auto out = const_cast<aclTensor*>(selfRef);
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
@@ -304,17 +307,19 @@ aclnnStatus aclnnInplaceUniformTensorGetWorkspaceSize(const aclTensor* selfRef, 
         return ACLNN_SUCCESS;
     }
 
+    auto selfContiguous = l0op::Contiguous(selfRef, uniqueExecutor.get());
+    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_PARAM_NULLPTR);
     const aclTensor* computeOut = nullptr;
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201) {
-        auto inputShape = op::ToShapeVector(selfRef->GetViewShape());
+        auto inputShape = op::ToShapeVector(selfContiguous->GetViewShape());
         auto inputShapeArray = uniqueExecutor.get()->AllocIntArray(inputShape.data(), inputShape.size());
         CHECK_RET(inputShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        op::DataType dtype = selfRef->GetDataType();
+        op::DataType dtype = selfContiguous->GetDataType();
         aclScalar* fromScalar = nullptr;
         aclScalar* toScalar = nullptr;
         if (dtype == op::DataType::DT_FLOAT16 || dtype == op::DataType::DT_BF16) {
-            fromScalar = CreateScalar(static_cast<float>(from), selfRef->GetDataType(), uniqueExecutor.get());
-            toScalar = CreateScalar(static_cast<float>(to), selfRef->GetDataType(), uniqueExecutor.get());
+            fromScalar = CreateScalar(static_cast<float>(from), selfContiguous->GetDataType(), uniqueExecutor.get());
+            toScalar = CreateScalar(static_cast<float>(to), selfContiguous->GetDataType(), uniqueExecutor.get());
         } else {
             fromScalar = uniqueExecutor.get()->AllocScalar(static_cast<float>(from));
             toScalar = uniqueExecutor.get()->AllocScalar(static_cast<float>(to));
@@ -328,14 +333,15 @@ aclnnStatus aclnnInplaceUniformTensorGetWorkspaceSize(const aclTensor* selfRef, 
     } else {
         ret = CheckSeedOffsetDtype(seedTensor, offsetTensor);
         CHECK_RET(ret == ACLNN_SUCCESS, ret);
-        computeOut = uniformTensorDavidPath(selfRef, seedTensor, offsetTensor, offset, from, to, uniqueExecutor.get());
+        computeOut = uniformTensorDavidPath(selfContiguous, seedTensor, offsetTensor, offset, from, to,
+                                            uniqueExecutor.get());
     }
     CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    auto castOut = l0op::Cast(computeOut, selfRef->GetDataType(), uniqueExecutor.get());
+    auto castOut = l0op::Cast(computeOut, out->GetDataType(), uniqueExecutor.get());
     CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    auto viewCopyResult = l0op::ViewCopy(castOut, selfRef, uniqueExecutor.get());
+    auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
     CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();

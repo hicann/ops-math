@@ -84,7 +84,7 @@ aclnnStatus aclnnInplaceRandomWithoutFromToTensor(
       <td>BFLOAT16、FLOAT16、FLOAT32、INT32、INT64、INT16、INT8、UINT8、BOOL</td>
       <td>ND</td>
       <td>0-8</td>
-      <td>×</td>
+      <td>√</td>
     </tr>
     <tr>
       <td>seedTensor</td>

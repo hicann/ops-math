@@ -22,15 +22,9 @@ using namespace std;
 
 class l2_random_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_random_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "l2_random_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "l2_random_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "l2_random_test TearDown" << endl; }
 };
 
 TEST_F(l2_random_test, aclnnInplaceRandom_3_4_float_nd)
@@ -179,7 +173,7 @@ TEST_F(l2_random_test, aclnnInplaceRandom_case14)
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_ERR_INNER_NULLPTR);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 }
 
 TEST_F(l2_random_test, ascend910B2_aclnnInplaceRandom_5_4_float32_not_contiguous)
@@ -277,7 +271,7 @@ TEST_F(l2_random_test, aclnnInplaceRandomTensor_3_4_float_nd)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceRandomTensor,
-        INPUT(selfTensorDesc, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT(selfTensorDesc, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -296,7 +290,7 @@ TEST_F(l2_random_test, aclnnInplaceRandomTensor_3_4_float16_nd)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceRandomTensor,
-        INPUT(selfTensorDesc, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT(selfTensorDesc, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -315,7 +309,7 @@ TEST_F(l2_random_test, aclnnInplaceRandomTensor_3_4_bf16_nd)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceRandomTensor,
-        INPUT(selfTensorDesc, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT(selfTensorDesc, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -334,7 +328,7 @@ TEST_F(l2_random_test, aclnnInplaceRandomTensor_3_4_double_nd)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceRandomTensor,
-        INPUT(selfTensorDesc, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT(selfTensorDesc, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -353,7 +347,7 @@ TEST_F(l2_random_test, aclnnInplaceRandomTensor_3_4_bool_nd)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceRandomTensor,
-        INPUT(selfTensorDesc, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT(selfTensorDesc, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -372,7 +366,7 @@ TEST_F(l2_random_test, aclnnInplaceRandomTensor_invalid_from_ge_to)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceRandomTensor,
-        INPUT(selfTensorDesc, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT(selfTensorDesc, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -390,11 +384,11 @@ TEST_F(l2_random_test, aclnnInplaceRandomTensor_input_nullptr)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceRandomTensor,
-        INPUT((aclTensor*)nullptr, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT((aclTensor*)nullptr, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_ERR_INNER_NULLPTR);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 }
 
 // 异常场景：超过8维
@@ -409,7 +403,7 @@ TEST_F(l2_random_test, aclnnInplaceRandomTensor_invalid_shape_9_dims)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceRandomTensor,
-        INPUT(selfTensorDesc, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT(selfTensorDesc, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -428,7 +422,7 @@ TEST_F(l2_random_test, aclnnInplaceRandomTensor_3_4_float_with_offset)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceRandomTensor,
-        INPUT(selfTensorDesc, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT(selfTensorDesc, from, to, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
