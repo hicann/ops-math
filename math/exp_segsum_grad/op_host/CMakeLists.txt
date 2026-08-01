@@ -10,10 +10,12 @@
 
 add_modules_sources(OPTYPE exp_segsum_grad ACLNNTYPE aclnn_exclude)
 
-if("${ASCEND_COMPUTE_UNIT}" STREQUAL "ascend950" AND TARGET ${OPHOST_NAME}_tiling_obj)
-    target_sources(${OPHOST_NAME}_tiling_obj PRIVATE
+add_tiling_modules()
+if("${ASCEND_COMPUTE_UNIT}" STREQUAL "ascend950")
+    set(EXP_SEGSUM_GRAD_TILING_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/arch35/exp_segsum_grad_tiling_arch35.cpp)
-    get_target_property(EXP_SEGSUM_GRAD_TILING_SRCS ${OPHOST_NAME}_tiling_obj SOURCES)
-    list(REMOVE_ITEM EXP_SEGSUM_GRAD_TILING_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/exp_segsum_grad_tiling.cpp")
-    set_property(TARGET ${OPHOST_NAME}_tiling_obj PROPERTY SOURCES ${EXP_SEGSUM_GRAD_TILING_SRCS})
+else()
+    set(EXP_SEGSUM_GRAD_TILING_SRC
+        ${CMAKE_CURRENT_SOURCE_DIR}/arch22/exp_segsum_grad_tiling.cpp)
 endif()
+target_sources(${OPHOST_NAME}_tiling_obj PRIVATE ${EXP_SEGSUM_GRAD_TILING_SRC})

@@ -23,7 +23,6 @@
 #include "platform/platform_info.h"
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
-#include "../../../../op_host/exp_segsum_grad_tiling.h"
 #include "../../../../op_kernel/arch35/exp_segsum_grad_tiling_data.h"
 
 using namespace ge;
@@ -37,6 +36,8 @@ constexpr uint64_t EXP_SEGSUM_GRAD_ARCH35_TILING_KEY_SMALL = 1;
 constexpr size_t EXP_SEGSUM_GRAD_A2_WORKSPACE_SIZE = 32 * 1024 * 1024;
 constexpr size_t EXP_SEGSUM_GRAD_ARCH35_SYS_WORKSPACE_SIZE = 16 * 1024 * 1024;
 constexpr int64_t EXP_SEGSUM_GRAD_ARCH35_FP32_SLIDE_SIZE = 10912;
+
+struct ExpSegsumGradCompileInfoArch35 {};
 
 bool IsAscend950Build() { return std::string(EXP_SEGSUM_GRAD_ARCH35_STR(BUILD_SOC_VERSION)) == "ascend950"; }
 
@@ -121,7 +122,7 @@ protected:
 
 TEST_F(ExpSegsumGradTilingArch35Test, small_fp32_uses_arch35_tiling_data)
 {
-    optiling::ExpSegsumGradCompileInfo compileInfo = {1, 10};
+    ExpSegsumGradCompileInfoArch35 compileInfo = {};
     auto tilingContextPara = MakeTilingPara({1, 1, 12, 12}, ge::DT_FLOAT, &compileInfo);
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -142,7 +143,7 @@ TEST_F(ExpSegsumGradTilingArch35Test, small_fp32_uses_arch35_tiling_data)
 
 TEST_F(ExpSegsumGradTilingArch35Test, multi_batch_splits_across_ascend950_cores)
 {
-    optiling::ExpSegsumGradCompileInfo compileInfo = {1, 10};
+    ExpSegsumGradCompileInfoArch35 compileInfo = {};
     auto tilingContextPara = MakeTilingPara({65, 1, 12, 12}, ge::DT_FLOAT, &compileInfo);
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -160,7 +161,7 @@ TEST_F(ExpSegsumGradTilingArch35Test, multi_batch_splits_across_ascend950_cores)
 
 TEST_F(ExpSegsumGradTilingArch35Test, empty_batch_keeps_valid_block_dim)
 {
-    optiling::ExpSegsumGradCompileInfo compileInfo = {1, 10};
+    ExpSegsumGradCompileInfoArch35 compileInfo = {};
     auto tilingContextPara = MakeTilingPara({0, 1, 12, 12}, ge::DT_FLOAT, &compileInfo);
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));

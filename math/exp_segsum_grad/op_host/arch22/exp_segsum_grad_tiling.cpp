@@ -1,16 +1,16 @@
 /**
- * This program is free software, you can redistribute it and/or modify it.
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 /*!
  * \file exp_segsum_grad_tiling.cpp
- * \brief
+ * \brief arch22 / Ascend910B tiling implementation for ExpSegsumGrad.
  */
 #include "register/tilingdata_base.h"
 #include "log/log.h"
@@ -39,7 +39,7 @@ constexpr uint8_t SCHEDULE_MODE = 1; // batchmode模式，核间同步算子需�
 
 class ExpSegsumGradTiling {
 public:
-    explicit ExpSegsumGradTiling(gert::TilingContext* context) : tilingContext(context){};
+    explicit ExpSegsumGradTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunBigKernelTiling();
 
 private:
@@ -116,8 +116,8 @@ void ExpSegsumGradTiling::GetTilingKey(uint64_t ubSizePlatform)
     auto shape = ge::Shape({rowNum, colNum});
     uint32_t maxValue = 0;
     uint32_t minValue = 0;
-    AscendC::GetReduceSumMaxMinTmpSize(
-        shape, ge::DataType::DT_FLOAT, AscendC::ReducePattern::AR, true, false, maxValue, minValue);
+    AscendC::GetReduceSumMaxMinTmpSize(shape, ge::DataType::DT_FLOAT, AscendC::ReducePattern::AR, true, false, maxValue,
+                                       minValue);
     if (minValue > REDUCE_SUM_SIZE) {
         int64_t size = CeilA2B(CeilA2B(minValue - REDUCE_SUM_SIZE, TENSOR_NUM), BLOCK) * BLOCK;
         maxSlideSize = maxSlideSize - size / GetDataTypeSize();
@@ -181,8 +181,8 @@ void ExpSegsumGradTiling::FillTilingData()
         tilingContext->SetScheduleMode(SCHEDULE_MODE);
     }
 
-    tilingData.SaveToBuffer(
-        tilingContext->GetRawTilingData()->GetData(), tilingContext->GetRawTilingData()->GetCapacity());
+    tilingData.SaveToBuffer(tilingContext->GetRawTilingData()->GetData(),
+                            tilingContext->GetRawTilingData()->GetCapacity());
     tilingContext->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
 }
 
@@ -203,15 +203,13 @@ static ge::graphStatus TilingPrepare4ExpSegsumGrad(gert::TilingParseContext* con
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
     compileInfo->ubSize = ubSize;
 
-    OP_CHECK_IF(
-        compileInfo->coreNum <= 0,
-        OP_LOGE(
-            context->GetNodeName(), "ExpSegsumGrad GetHardwareInfo Failed, vectorCoreNum: %u", compileInfo->coreNum),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(compileInfo->coreNum <= 0,
+                OP_LOGE(context->GetNodeName(), "ExpSegsumGrad GetHardwareInfo Failed, vectorCoreNum: %u",
+                        compileInfo->coreNum),
+                return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         compileInfo->ubSize <= 0,
-        OP_LOGE(
-            context->GetNodeName(), "ExpSegsumGrad GetHardwareInfo Failed, ubSize: %lu", compileInfo->ubSize),
+        OP_LOGE(context->GetNodeName(), "ExpSegsumGrad GetHardwareInfo Failed, ubSize: %lu", compileInfo->ubSize),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
