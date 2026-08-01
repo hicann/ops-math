@@ -253,7 +253,7 @@
 | [aclnnReflectionPad1d](../../conversion/mirror_pad/docs/aclnnReflectionPad1d.md) | 使用输入边界的反射填充输入tensor。                           | 默认确定性实现| 默认确定性实现|
 | [aclnnReflectionPad1dBackward](../../conversion/pad_v4_grad/docs/aclnnReflectionPad1dBackward.md) | reflection_pad1d的反向传播，前向计算参考aclnnReflectionPad1d。 | 默认确定性实现| 默认确定性实现|
 | [aclnnReflectionPad2d](../../conversion/mirror_pad/docs/aclnnReflectionPad2d.md) | 使用输入边界的反射填充输入tensor。                           | 默认确定性实现| 默认确定性实现|
-| [aclnnReflectionPad2dBackward](../../conversion/pad_v4_grad/docs/aclnnReflectionPad2dBackward.md) | reflection_pad2d的反向传播，前向计算参考aclnnReflectionPad2d。 | 默认确定性实现| 默认确定性实现|
+| [aclnnReflectionPad2dBackward](../../conversion/pad_v3_grad_replicate/docs/aclnnReflectionPad2dBackward.md) | reflection_pad2d的反向传播，前向计算参考aclnnReflectionPad2d。 | 默认确定性实现| 默认确定性实现|
 | [aclnnReflectionPad3d](../../conversion/mirror_pad/docs/aclnnReflectionPad3d.md) | 3D反射填充。             | 默认确定性实现| 默认确定性实现|
 | [aclnnReflectionPad3dBackward](../../conversion/reflection_pad3d_grad/docs/aclnnReflectionPad3dBackward.md) | 计算aclnnReflectionPad3d api的反向传播。                     | 默认确定性实现| 默认确定性实现|
 | [aclnnRemainderScalarTensor](../../math/floor_mod/docs/aclnnRemainderScalarTensor.md) | 将scalar self进行broadcast成和tensor other一样shape的tensor以后，其中的每个元素都转换为除以other的对应元素以后得到的余数。 | 默认确定性实现| 默认确定性实现 |

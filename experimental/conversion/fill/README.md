@@ -51,6 +51,9 @@
 <table>
     <th>目录</th><th>描述</th>
     <tr>
-        <td><a href="./examples/test_aclnn_fill.cpp"> test_aclnn_fill.cpp</a></td><td>通过aclnn调用的方式调用Fill算子。</td>
+        <td><a href="./examples/test_aclnn_fill_scalar.cpp"> test_aclnn_fill_scalar.cpp</a></td><td>通过aclnn调用的方式调用Fill算子（scalar 入参）。</td>
+    </tr>
+    <tr>
+        <td><a href="./examples/test_aclnn_fill_tensor.cpp"> test_aclnn_fill_tensor.cpp</a></td><td>通过aclnn调用的方式调用Fill算子（tensor 入参）。</td>
     </tr>
 </table>
