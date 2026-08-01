@@ -571,33 +571,6 @@ REG_OP(ExpandDims)
     .OP_END_FACTORY_REG(Cumprod)
 
     /**
-    * @brief Computes the cumulative log sum exp of the tensor "x" along "axis" .
-
-    * @par Inputs:
-    * Two inputs, including:
-    * @li x: A Tensor. Must be one of the following types: float32, float16.
-    * @li axis A Tensor of type int32 or int16. Defaults to "0".
-    *
-    * @par Attributes:
-    * @li exclusive: If "False", performs inclusive CumulativeLogsumexp,
-    * which means that the first element of the input is identical to the first element of the output.
-    * If "True", performs exclusive CumulativeLogsumexp.
-    * @li reverse: A bool. Defaults to "False".
-    *
-    * @par Outputs:
-    * y: A Tensor. Has the same type as "x".
-    * @par Third-party framework compatibility
-    * Compatible with the TensorFlow operator Cumsum.
-    */
-    REG_OP(CumulativeLogsumexp)
-    .INPUT(x, TensorType({DT_DOUBLE, DT_FLOAT, DT_FLOAT16}))
-    .INPUT(axis, TensorType({DT_INT32, DT_INT16}))
-    .OUTPUT(y, TensorType({DT_DOUBLE, DT_FLOAT, DT_FLOAT16}))
-    .ATTR(exclusive, Bool, false)
-    .ATTR(reverse, Bool, false)
-    .OP_END_FACTORY_REG(CumulativeLogsumexp)
-
-    /**
     * @brief Generate DSA random bit mask for dropout. \n
 
     * @par Inputs:

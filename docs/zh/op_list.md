@@ -608,6 +608,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/cumulative_logsumexp/README.md">cumulative_logsumexp</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>对输入张量沿指定维度计算累积log-sum-exp。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/cumsum/README.md">cumsum</a></td>
     <td>√</td>
     <td>√</td>
