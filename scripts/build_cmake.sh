@@ -54,7 +54,9 @@ assemble_cmake_args() {
     custom_cmake_args
   fi
   if [[ "$ENABLE_PACKAGE" == "TRUE" ]]; then
-    CMAKE_ARGS="$CMAKE_ARGS -DENABLE_PACKAGE=TRUE"
+    local cmake_pkg_type="${PACKAGE_TYPE}"
+    [[ "${PACKAGE_TYPE}" == "all" ]] && cmake_pkg_type="run"
+    CMAKE_ARGS="$CMAKE_ARGS -DENABLE_PACKAGE=TRUE -DPACKAGE_TYPE=${cmake_pkg_type}"
   fi
   if [[ "$ENABLE_EXPERIMENTAL" == "TRUE" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DENABLE_EXPERIMENTAL=TRUE"

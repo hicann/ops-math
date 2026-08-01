@@ -20,6 +20,7 @@ SUPPORTED_LONG_OPTS=(
   "ophost" "opapi" "opgraph"
   "run_example" "genop=" "genop_aicpu=" "experimental" "cann_3rd_lib_path" "mssanitizer" "oom" "onnxplugin" "tfplugin"
   "dump_cce" "bisheng_flags=" "kernel_template_input=" "module_extension=" "example_name=" "rule_launch=" "gtest_filter=" "ccache="
+  "pkg-type="
 )
 
 dotted_line="----------------------------------------------------------------"
@@ -103,4 +104,12 @@ check_option_validity() {
   fi
 
   return 0
+}
+
+check_pkg_type() {
+  local pkg_type="$1"
+  if [[ "$pkg_type" != "run" && "$pkg_type" != "rpm" && "$pkg_type" != "deb" && "$pkg_type" != "all" ]]; then
+    echo "[ERROR] --pkg-type only supports run/rpm/deb/all, got: $pkg_type"
+    exit 1
+  fi
 }

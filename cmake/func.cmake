@@ -118,7 +118,7 @@ function(add_infer_modules)
       ${OPHOST_NAME}_infer_obj
       PRIVATE $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx17,intf_pub_cxx17>>
               $<BUILD_INTERFACE:dlog_headers>
-              $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>> 
+              $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>>
               $<$<TARGET_EXISTS:opbase_infer_objs>:$<TARGET_OBJECTS:opbase_infer_objs>>
       )
   endif()
@@ -148,7 +148,7 @@ function(add_tiling_modules)
       PRIVATE $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx17,intf_pub_cxx17>>
               $<BUILD_INTERFACE:dlog_headers>
               $<$<TARGET_EXISTS:${COMMON_NAME}_obj>:$<TARGET_OBJECTS:${COMMON_NAME}_obj>>
-              $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>> 
+              $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>>
               $<$<TARGET_EXISTS:opbase_tiling_objs>:$<TARGET_OBJECTS:opbase_tiling_objs>>
               tiling_api
       )
@@ -220,9 +220,9 @@ function(add_aicpu_cust_kernel_modules op_name aicpu_sources)
               Eigen3::Eigen
       )
     if (NOT (UT_TEST_ALL OR OP_KERNEL_AICPU_UT))
-      set_property(TARGET ${target_name} PROPERTY 
+      set_property(TARGET ${target_name} PROPERTY
         CXX_COMPILER_LAUNCHER ${ASCEND_DIR}/toolkit/toolchain/hcc/bin/aarch64-target-linux-gnu-g++)
-    endif()    
+    endif()
     target_sources(${target_name} PRIVATE ${aicpu_sources})
     if (NOT ${target_name} IN_LIST AICPU_CUST_OBJ_TARGETS)
       set(AICPU_CUST_OBJ_TARGETS ${AICPU_CUST_OBJ_TARGETS} ${target_name} CACHE INTERNAL "All aicpu cust obj targets")
@@ -287,7 +287,7 @@ function(add_op_graph_modules)
       ${GRAPH_PLUGIN_NAME}_obj
       PRIVATE $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx17,intf_pub_cxx17>>
               $<BUILD_INTERFACE:dlog_headers>
-              $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>> 
+              $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>>
               $<$<TARGET_EXISTS:opbase_infer_objs>:$<TARGET_OBJECTS:opbase_infer_objs>>
       )
   endif()
@@ -310,8 +310,6 @@ function(add_onnx_plugin_modules)
     target_include_directories(${ONNX_PLUGIN_NAME}_obj
       PRIVATE
       ${OP_PROTO_INCLUDE}
-      ${HOST_PROTOC_SRC}
-      ${HOST_PROTOC_PATH}
       ${PROTOBUF_INCLUDE_DIRS}
       ${CMAKE_BINARY_DIR}/proto
       ${ONNX_PLUGIN_COMMON_INCLUDE}
@@ -335,8 +333,9 @@ function(add_onnx_plugin_modules)
       ${ONNX_PLUGIN_NAME}_obj
       PRIVATE $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx14,intf_pub_cxx14>>
               $<BUILD_INTERFACE:dlog_headers>
-              $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>> 
+              $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>>
               json
+              ascend_protobuf_static_headers
       )
   endif()
 endfunction()
@@ -365,7 +364,7 @@ macro(add_modules_sources)
     # NEED_COMPILE_OPS 为空表示全部编译
     return()
   endif()
-  
+
   if(OP_NAME IN_LIST COMPILED_OPS)
     # 已经编译过，忽略
     message(STATUS "already compiled ${OP_NAME}, skip")
@@ -442,7 +441,7 @@ macro(add_modules_sources)
           target_sources(${OPHOST_NAME}_opdef_${AclnnType}_obj INTERFACE ${OPDEF_SRCS})
         endif()
       else()
-        message(FATAL_ERROR "ACLNN TYPE UNSPPORTED, ONLY SUPPORT aclnn/aclnn_inner/aclnn_exclude")
+        message(FATAL_ERROR "ACLNN TYPE UNSUPPORTED, ONLY SUPPORT aclnn/aclnn_inner/aclnn_exclude")
       endif()
     endforeach()
   else()
@@ -678,7 +677,7 @@ macro(add_all_modules_sources)
           target_sources(${OPHOST_NAME}_opdef_${AclnnType}_obj INTERFACE ${OPDEF_SRCS})
         endif()
       else()
-        message(FATAL_ERROR "ACLNN TYPE UNSPPORTED, ONLY SUPPORT aclnn/aclnn_inner/aclnn_exclude")
+        message(FATAL_ERROR "ACLNN TYPE UNSUPPORTED, ONLY SUPPORT aclnn/aclnn_inner/aclnn_exclude")
       endif()
     endforeach()
   else()
@@ -788,13 +787,13 @@ endfunction()
 # [COMPUTE_UNITS ascendxx]          soc版本，支持配置多个unit，缺省为配置所有的soc（支持单独配置soc，单独配置优先级更高）
 # [SIMPLIFIED_KEY 0/None]           缺省为0，最终的编译参数则是--simplified_key_mode=0，若设置为None，则不会携带该参数
 # [AUTO_SYNC false]                 同步选项，缺省为true
-# [IMPL_MODE high_performance]      高性能模式，缺省为high_performance[,optional] [optional]是可选的 
+# [IMPL_MODE high_performance]      高性能模式，缺省为high_performance[,optional] [optional]是可选的
 # [OPTIONS "option1" "option2"]     其他编译选项
 function(add_kernel_sources)
   set(oneValueArgs KERNEL_SRC SIMPLIFIED_KEY AUTO_SYNC IMPL_MODE)
   set(multiValueArgs COMPUTE_UNITS OPTIONS)
   cmake_parse_arguments(MODULE "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-  
+
   set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/op_kernel)
   get_filename_component(PARENT_DIR ${SOURCE_DIR} DIRECTORY)
   get_filename_component(OP_NAME ${PARENT_DIR} NAME)
@@ -935,7 +934,7 @@ endfunction()
 function(check_compiled_ops)
   message(STATUS "Ops for this compilation contains: ${COMPILED_OPS}")
   if(COMPILED_OPS STREQUAL "")
-    message(FATAL_ERROR "Specified ops not found in this depository, please check --ops paramater")
+    message(FATAL_ERROR "Specified ops not found in this depository, please check --ops parameter")
   endif()
 
   # 未指定算子，全部编译
@@ -958,11 +957,11 @@ function(check_compiled_ops)
   list(JOIN not_compiled_ops "," not_compiled_ops_str)
   if(ENABLE_EXPERIMENTAL)
     message(FATAL_ERROR
-      "Specified ops(${not_compiled_ops_str}) not found in experimental, please check --ops paramater"
+      "Specified ops(${not_compiled_ops_str}) not found in experimental, please check --ops parameter"
     )
   else()
     message(FATAL_ERROR
-      "Specified ops(${not_compiled_ops_str}) not found in this depository, please check --ops paramater"
+      "Specified ops(${not_compiled_ops_str}) not found in this depository, please check --ops parameter"
     )
   endif()
 endfunction()
@@ -1019,7 +1018,7 @@ function(protobuf_generate_external comp c_var h_var)
 
     if (_add_target)
       add_custom_target(
-        ${comp} DEPENDS ${${c_var}} ${${h_var}}) 
+        ${comp} DEPENDS ${${c_var}} ${${h_var}})
     endif()
 
     set_source_files_properties(${${c_var}} ${${h_var}} PROPERTIES GENERATED TRUE)
@@ -1056,7 +1055,7 @@ function(init_tf_plugin_modules)
     return()
   endif()
 
-  # 条件满足，生成 TF protobuf  
+  # 条件满足，生成 TF protobuf
   set(tf_proto_srcs
     ${ASCEND_DIR}/include/proto/ge_ir.proto
   )
@@ -1076,8 +1075,6 @@ function(init_tf_plugin_modules)
   target_include_directories(${TF_PLUGIN_NAME}_obj
     PRIVATE
     ${OP_PROTO_INCLUDE}
-    ${HOST_PROTOC_SRC}
-    ${HOST_PROTOC_PATH}
     ${PROTOBUF_INCLUDE_DIRS}
     ${CMAKE_BINARY_DIR}/proto
     ${TF_PLUGIN_COMMON_INCLUDE}
@@ -1094,6 +1091,7 @@ function(init_tf_plugin_modules)
     PRIVATE $<BUILD_INTERFACE:intf_pub_cxx17>
             $<BUILD_INTERFACE:dlog_headers>
             json
+            ascend_protobuf_static_headers
   )
 endfunction()
 

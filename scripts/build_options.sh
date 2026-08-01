@@ -19,6 +19,7 @@ usage() {
         echo "Package Build Options:"
         echo $dotted_line
         echo "    --pkg                  Build run package with kernel bin"
+        echo "    --pkg-type=<TYPE>      Specify package type(TYPE options: run/rpm/deb/all), Default: run"
         echo "    --static               Build static library package"
         echo "    --jit                  Build run package without kernel bin"
         echo "    --soc=soc_version      Compile for specified Ascend SoC"
@@ -42,6 +43,8 @@ usage() {
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --pkg --soc=ascend910b --vendor_name=customize -j16 -O3"
+        echo "    bash build.sh --pkg --pkg-type=deb --soc=ascend910b"
+        echo "    bash build.sh --pkg --pkg-type=rpm --soc=ascend910b"
         echo "    bash build.sh --pkg --ops=add,sub --build-type=Debug"
         echo "    bash build.sh --pkg --static --soc=ascend910b"
         echo "    bash build.sh --pkg --experimental --soc=ascend910b"
@@ -284,6 +287,7 @@ usage() {
   echo "    --opkernel build binary kernel"
   echo "    --opkernel_aicpu build aicpu kernel"
   echo "    --pkg build run package with kernel bin"
+  echo "    --pkg-type=<TYPE> Specify package type(TYPE options: run/rpm/deb), Default: run"
   echo "    --build-type specify build-type (Type options: Release/Debug), Default:Release"
   echo "    --static build static library package"
   echo "    --experimental Build experimental version"
@@ -420,6 +424,26 @@ check_param() {
   if [[ "$ENABLE_SIMULATOR" == "TRUE" && -z "$COMPUTE_UNIT" ]]; then
     echo "[ERROR] --simulator requires --soc parameter to be specified"
     exit 1
+  fi
+
+  if [[ "$PACKAGE_TYPE_SET" == "TRUE" && "$ENABLE_PACKAGE" != "TRUE" ]]; then
+    echo "[ERROR] --pkg-type can only be used with --pkg"
+    exit 1
+  fi
+
+  if [[ "$PACKAGE_TYPE" != "run" && "$PACKAGE_TYPE" != "all" ]]; then
+    if [[ "$ENABLE_STATIC" == "TRUE" ]]; then
+      echo "[ERROR] --pkg-type=${PACKAGE_TYPE} cannot be used with --static"
+      exit 1
+    fi
+    if [[ "$ENABLE_JIT" == "TRUE" ]]; then
+      echo "[ERROR] --pkg-type=${PACKAGE_TYPE} cannot be used with --jit"
+      exit 1
+    fi
+    if [[ "$ENABLE_CUSTOM" == "TRUE" ]]; then
+      echo "[ERROR] --pkg-type=${PACKAGE_TYPE} only supports built-in ops-math packages; do not use --ops, --vendor_name, or --experimental"
+      exit 1
+    fi
   fi
 
   if [[ "$ENABLE_SIMULATOR" == "TRUE" && "$EXAMPLE_MODE" == "graph" ]]; then
@@ -582,6 +606,8 @@ checkopts() {
   EXAMPLE_MODE=""
   SINGLE_EXAMPLE=""
   BUILD_TYPE="Release"
+  PACKAGE_TYPE="run"
+  PACKAGE_TYPE_SET=FALSE
   USE_CMD="$*"
   BISHENG_FLAGS=""
   KERNEL_TEMPLATE_INPUT=""
@@ -636,6 +662,13 @@ checkopts() {
       if ! check_option_validity "$arg"; then
         echo "[ERROR] Invalid param $arg, Use 'bash build.sh --help' for more information."
         exit 1
+      fi
+      if [[ "$arg" == "--pkg-type" ]]; then
+        echo "[ERROR] --pkg-type requires a value: run/rpm/deb/all"
+        exit 1
+      fi
+      if [[ "$arg" == --pkg-type=* ]]; then
+        check_pkg_type "${arg#*=}"
       fi
     fi
   done
@@ -709,6 +742,11 @@ checkopts() {
           ;;
         build-type=*)
           BUILD_TYPE=${OPTARG#*=}
+          ;;
+        pkg-type=*)
+          PACKAGE_TYPE=${OPTARG#*=}
+          check_pkg_type "${PACKAGE_TYPE}"
+          PACKAGE_TYPE_SET=TRUE
           ;;
         module_extension=*)
           MODULE_EXT=${OPTARG#*=}

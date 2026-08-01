@@ -150,8 +150,74 @@ build_package() {
     cmake --build . --target build_es_math -- ${VERBOSE} -j $THREAD_NUM
     [ $? -ne 0 ] && echo "[ERROR] target:build_es_math compile failed!" && exit 1
   fi
-  cmake --build . --target package -- ${VERBOSE} -j $THREAD_NUM
+
+  if [[ "${PACKAGE_TYPE}" == "all" ]]; then
+    local saved_pkg_type="${PACKAGE_TYPE}"
+    for PACKAGE_TYPE in run rpm deb; do
+      clean_rpm_deb_package
+      cmake -DPACKAGE_TYPE="${PACKAGE_TYPE}" "${BUILD_PATH}" > /dev/null 2>&1
+      cmake --build . --target package -- ${VERBOSE} -j $THREAD_NUM
+      if [ $? -ne 0 ]; then
+        echo "[ERROR] target:package (${PACKAGE_TYPE}) build failed!"
+        exit 1
+      fi
+      collect_rpm_deb_package
+    done
+    PACKAGE_TYPE="${saved_pkg_type}"
+  else
+    clean_rpm_deb_package
+    cmake --build . --target package -- ${VERBOSE} -j $THREAD_NUM
+    if [ $? -ne 0 ]; then
+      echo "[ERROR] target:package build failed!"
+      exit 1
+    fi
+    collect_rpm_deb_package
+  fi
   echo "--------------- build package end ---------------"
+}
+
+find_rpm_deb_package() {
+  if [[ "$PACKAGE_TYPE" == "run" ]]; then
+    return 0
+  fi
+
+  find "${BUILD_PATH}" -type f -name "cann-ops-math*.${PACKAGE_TYPE}" | sort
+}
+
+clean_rpm_deb_package() {
+  if [[ "$PACKAGE_TYPE" == "run" ]]; then
+    return 0
+  fi
+
+  local package_files=()
+  while IFS= read -r package_file; do
+    package_files+=("${package_file}")
+  done < <(find_rpm_deb_package)
+
+  if [[ ${#package_files[@]} -eq 0 ]]; then
+    return 0
+  fi
+
+  for package_file in "${package_files[@]}"; do
+    rm -f "${package_file}"
+    echo "[INFO] Removed stale package artifact: ${package_file}"
+  done
+}
+
+collect_rpm_deb_package() {
+  if [[ "$PACKAGE_TYPE" == "run" ]]; then
+    return 0
+  fi
+
+  local package_files=()
+  while IFS= read -r package_file; do
+    package_files+=("${package_file}")
+  done < <(find_rpm_deb_package)
+
+  for package_file in "${package_files[@]}"; do
+    cp -f "${package_file}" "${BUILD_OUT_PATH}/"
+    echo "[INFO] Package artifact copied to ${BUILD_OUT_PATH}/$(basename "${package_file}")"
+  done
 }
 
 build_package_static() {
