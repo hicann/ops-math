@@ -8,7 +8,17 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 if(UT_TEST_ALL OR OP_HOST_UT)
-    add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    if("${ASCEND_COMPUTE_UNIT}" STREQUAL "ascend950")
+        if(NOT TARGET ${OP_TILING_MODULE_NAME}_cases_obj)
+            add_library(${OP_TILING_MODULE_NAME}_cases_obj OBJECT)
+        endif()
+        target_sources(${OP_TILING_MODULE_NAME}_cases_obj PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/arch35/test_exp_segsum_grad_tiling_arch35.cpp)
+        target_compile_definitions(${OP_TILING_MODULE_NAME}_cases_obj
+            PRIVATE BUILD_SOC_VERSION=${ASCEND_COMPUTE_UNIT})
+    else()
+        add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    endif()
 endif()
 
 file(GLOB CURRENT_DIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)

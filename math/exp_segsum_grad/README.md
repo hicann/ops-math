@@ -4,7 +4,7 @@
 
 |产品             |  是否支持  |
 |:-------------------------|:----------:|
-|  <term>Ascend 950PR/Ascend 950DT</term>   |     ×    |
+|  <term>Ascend 950PR/Ascend 950DT</term>   |     √    |
 |  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     √    |
 |  <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |     √    |
 |  <term>Atlas 200I/500 A2 推理产品</term>    |     ×    |
@@ -17,13 +17,13 @@
 - 计算公式（以5D输入为例）:
 
   1. 输入gradOutput（N1,N2,N3,N4,N4）与输入gradSelf（正向的输出）相乘。
-     
+
      $$
      out\_mul = gradOutput * gradSelf
      $$
   2. 生成（N4,N4）类型为bool的三角矩阵A，上三角为True，下三角为False，对角线为True。
   3. 用0填充输入$out\_mul$里面与矩阵A中值为True的位置相对应的元素。
-    
+
      $$
      out\_mul_i=
      \begin{cases}out\_mul_i,\quad A_i==False
@@ -32,14 +32,14 @@
      $$
   4. 对out_mul的倒数第二维进行倒序生成out_flip。
   5. 以$out\_flip$的倒数第二维进行cumsum累加。从维度视角来看的某个元素（其它维度下标不变，当前维度下标依次递增），$out\_cumsum\_{i}$是输出张量中对应位置的元素。
-     
+
      $$
      out\_cumsum_{i} = out\_flip_{1} + out\_flip_{2} + out\_flip_{3} + ...... + out\_flip_{i}
      $$
   6. 对$out\_cumsum$的-2维进行倒序生成out_flip2。
   7. 生成（N4,N4）类型为bool的三角矩阵B，上三角为True，下三角为False，对角线为True。
   8. 用0填充$out\_flip2$里面与矩阵B中值为True的位置相对应的元素。
-    
+
      $$
      out\_flip2_i=
      \begin{cases}out\_flip2_i,\quad B_i==False
