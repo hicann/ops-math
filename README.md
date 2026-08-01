@@ -2,6 +2,7 @@
 
 ## 🔥Latest News
 
+- [2026/07] 新增支持Ascend 950系列[算子及新特性](https://gitcode.com/cann/ops-math/wiki/Ascend950重点特性与本仓算子样例介绍.md)，涵盖CumulativeLogSumExp、MatrixSetDiagV2、DropoutV3Grad、SignBitsUnpack、ProdVirialSeA等算子；引入FLOAT8/FLOAT4低精度类型支持、Philox PRNG随机数生成、Reg接口迁移等新特性。
 - [2026/01] 新增[QuickStart](docs/QUICKSTART.md)，指导新手零基础入门算子项目部署（支持Docker环境）、算子开发和贡献流程。
 - [2025/12] 开源算子支持Ascend 950PR/Ascend 950DT，可以通过CANN Simulator仿真工具开发调试；在add算子中增加了<<<>>>kernel异构调用示例，方便用户自定义使用；在多个类别中新支持算子[concat](conversion/concat/)、[lerp](math/lerp/)、[drop_out_v3](random/drop_out_v3/)等。
 - [2025/11] 完善多个算子README描述，改进算子开发实例文档及example。
