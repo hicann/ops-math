@@ -62,31 +62,33 @@ if (TARGET ${OPHOST_NAME}_opapi_obj OR TARGET opbuild_gen_aclnn_all)
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin_tmp)
 endif ()
 
-add_custom_target(${OPSTATIC_NAME})
-foreach (compute_unit ${ASCEND_COMPUTE_UNIT})
-    set(RESOURCE_PATH ${CMAKE_BINARY_DIR}/bin_tmp/${compute_unit}/aclnnop_resource)
-    file(GLOB RESOURCE_CPP ${RESOURCE_PATH}/*.cpp)
-    if (RESOURCE_CPP)
-        add_library(resource_${compute_unit}_static STATIC ${RESOURCE_CPP})
-        target_include_directories(resource_${compute_unit}_static PRIVATE
-                ${OPAPI_INCLUDE})
+if (TARGET ${OPHOST_NAME}_static OR TARGET ${OPAPI_NAME}_static)
+    add_custom_target(${OPSTATIC_NAME})
+    foreach (compute_unit ${ASCEND_COMPUTE_UNIT})
+        set(RESOURCE_PATH ${CMAKE_BINARY_DIR}/bin_tmp/${compute_unit}/aclnnop_resource)
+        file(GLOB RESOURCE_CPP ${RESOURCE_PATH}/*.cpp)
+        if (RESOURCE_CPP)
+            add_library(resource_${compute_unit}_static STATIC ${RESOURCE_CPP})
+            target_include_directories(resource_${compute_unit}_static PRIVATE
+                    ${OPAPI_INCLUDE})
 
-        set_target_properties(resource_${compute_unit}_static PROPERTIES
-                ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin_tmp/${compute_unit}
-                OUTPUT_NAME resource_static)
-        add_dependencies(${OPSTATIC_NAME} resource_${compute_unit}_static)
-        add_custom_command(TARGET ${OPSTATIC_NAME}
-                PRE_BUILD
-                COMMAND ${CMAKE_AR} x ${CMAKE_BINARY_DIR}/lib${OPHOST_NAME}_static.a
-                COMMAND ${CMAKE_AR} x libresource_static.a
-                COMMAND ${CMAKE_AR} x ${CMAKE_BINARY_DIR}/lib${OPAPI_NAME}_static.a
-                COMMAND ${CMAKE_AR} qcs lib${OPSTATIC_NAME}.a *.o
-                COMMAND rm *.o
-                WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin_tmp/${compute_unit})
-        if (ENABLE_PACKAGE)
-            install(FILES ${CMAKE_BINARY_DIR}/bin_tmp/${compute_unit}/lib${OPSTATIC_NAME}.a
-                    DESTINATION ${CMAKE_BINARY_DIR}/static_library_files/lib64
-                    OPTIONAL)
+            set_target_properties(resource_${compute_unit}_static PROPERTIES
+                    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin_tmp/${compute_unit}
+                    OUTPUT_NAME resource_static)
+            add_dependencies(${OPSTATIC_NAME} resource_${compute_unit}_static)
+            add_custom_command(TARGET ${OPSTATIC_NAME}
+                    PRE_BUILD
+                    COMMAND ${CMAKE_AR} x ${CMAKE_BINARY_DIR}/lib${OPHOST_NAME}_static.a
+                    COMMAND ${CMAKE_AR} x libresource_static.a
+                    COMMAND ${CMAKE_AR} x ${CMAKE_BINARY_DIR}/lib${OPAPI_NAME}_static.a
+                    COMMAND ${CMAKE_AR} qcs lib${OPSTATIC_NAME}.a *.o
+                    COMMAND rm *.o
+                    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin_tmp/${compute_unit})
+            if (ENABLE_PACKAGE)
+                install(FILES ${CMAKE_BINARY_DIR}/bin_tmp/${compute_unit}/lib${OPSTATIC_NAME}.a
+                        DESTINATION ${CMAKE_BINARY_DIR}/static_library_files/lib64
+                        OPTIONAL)
+            endif ()
         endif ()
-    endif ()
-endforeach ()
+    endforeach ()
+endif ()
