@@ -484,10 +484,8 @@ HPTG3@ops-math:
         - ops/ops-math/math/adjacent_difference/op_api/adjacent_difference.h
         - ops/ops-math/math/adjacent_difference/op_graph/adjacent_difference_graph_infer.cpp
         - ops/ops-math/math/adjacent_difference/op_graph/adjacent_difference_proto.h
-        - ops/ops-math/math/adjacent_difference/op_graph/fusion_pass/.gitkeep
         - ops/ops-math/math/adjacent_difference/op_host/arch35/
         - ops/ops-math/math/adjacent_difference/op_host/config/ascend950/
-        - ops/ops-math/math/adjacent_difference/op_host/op_api/adjacent_difference.h
         - ops/ops-math/math/adjacent_difference/op_host/adjacent_difference_def.cpp
         - ops/ops-math/math/adjacent_difference/op_host/adjacent_difference_infershape.cpp
         - ops/ops-math/math/adjacent_difference/op_kernel/arch35/
@@ -498,9 +496,7 @@ HPTG3@ops-math:
         - ops/ops-math/math/bincount/op_kernel/arch35/
         - ops/ops-math/math/bincount/op_kernel/bincount.cpp
         - ops/ops-math/conversion/clip_by_value/CMakeLists.txt
-        - ops/ops-math/conversion/clip_by_value/op_host/arch35/clip_by_value_single_dim_tiling.cpp
         - ops/ops-math/conversion/clip_by_value/op_host/arch35/clip_by_value_tiling.cpp
-        - ops/ops-math/conversion/clip_by_value/op_host/arch35/clip_by_value_ub_broadcast_tiling.cpp
         - ops/ops-math/conversion/clip_by_value_v2/op_host/arch35/clip_by_value_v2_tiling.cpp
 
       opensource_style: null
