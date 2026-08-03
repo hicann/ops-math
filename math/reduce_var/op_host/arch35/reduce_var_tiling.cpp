@@ -788,7 +788,7 @@ int32_t ReduceVarTiling::IsUseNddma(const uint64_t* shape)
         for (auto iA = unitA_.idx + AXES_STEP; iA < Pattern::Dim; iA += AXES_STEP) {
             factorA = factorA * shape[iA];
         }
-        if (factorA > ubBlockSize) {
+        if (factorA > ubBlockSize * 2) {
             // 转置后A轴乘积大于ubblock, 不做NDDMA
             return 0;
         }
@@ -797,7 +797,7 @@ int32_t ReduceVarTiling::IsUseNddma(const uint64_t* shape)
         for (auto iR = unitR_.idx + AXES_STEP; iR < Pattern::Dim; iR += AXES_STEP) {
             factorR = factorR * shape[iR];
         }
-        if (factorR > ubBlockSize) {
+        if (factorR > ubBlockSize * 2) {
             // 转置后R轴乘积大于ubblock, 不做NDDMA
             return 0;
         }
@@ -810,10 +810,6 @@ int32_t ReduceVarTiling::IsInvert(const uint64_t* shape)
 {
     // Only valid when NDDMA is enabled (checked at call site)
     // VL/2 = 128B threshold, elements = 128B / sizeof(inputDtype)
-    if constexpr (Pattern::TailA) {
-        return 0;
-    }
-
     uint32_t vlBytes = Ops::Base::GetVRegSize(context_);
     uint32_t thresholdBytes = vlBytes / 2; // 128B
     uint32_t inputSize = ge::GetSizeByDataType(opInput_.inputDtype);
