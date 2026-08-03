@@ -92,6 +92,16 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* out)
     return true;
 }
 
+static bool CheckNotNullTensor(const aclTensor* self, const aclTensor* seedTensor, const aclTensor* offsetTensor,
+                               const aclTensor* out)
+{
+    OP_CHECK_NULL(self, return false);
+    OP_CHECK_NULL(seedTensor, return false);
+    OP_CHECK_NULL(offsetTensor, return false);
+    OP_CHECK_NULL(out, return false);
+    return true;
+}
+
 static inline int64_t MakeWrapDim(int64_t dim, int64_t dimPostExpr)
 {
     // support dim=0
@@ -192,7 +202,7 @@ static aclnnStatus CheckParams(const aclTensor* self, int64_t numsamples, bool r
 static aclnnStatus CheckParamsTensor(const aclTensor* self, int64_t numsamples, bool replacement,
                                      const aclTensor* seedTensor, const aclTensor* offsetTensor, const aclTensor* out)
 {
-    CHECK_RET(CheckNotNull(self, out), ACLNN_ERR_PARAM_NULLPTR);
+    CHECK_RET(CheckNotNullTensor(self, seedTensor, offsetTensor, out), ACLNN_ERR_PARAM_NULLPTR);
     CHECK_RET(CheckDtypeValidTensor(self, seedTensor, offsetTensor, out), ACLNN_ERR_PARAM_INVALID);
     CHECK_RET(CheckShape(self, numsamples, out), ACLNN_ERR_PARAM_INVALID);
     CHECK_RET(CheckValueRange(self, numsamples, replacement), ACLNN_ERR_PARAM_INVALID);
