@@ -84,15 +84,6 @@ aclTensor* tensor = aclCreateTensor(
 ### 完整示例参考
 
 - **aclnn 调用示例**：`examples/test_aclnn_tan.cpp`
-- **GE IR 图模式示例**：`examples/test_geir_tan.cpp`
-
-运行示例：
-
-```bash
-cd examples
-bash run.sh              # 运行 aclnn 调用示例（默认）
-bash run.sh --graph      # 运行图模式 (GE IR) 调用示例
-```
 
 ## 精度说明
 
@@ -129,18 +120,10 @@ bash build/custom_opp_ubuntu_aarch64.run
 
 ## 测试方法
 
-### 运行 UT（单元测试）
-
 ```bash
-cd tests/ut
-bash run.sh
-```
-
-### 运行 ST（系统测试）
-
-```bash
-cd tests/st
-bash run.sh
+bash build.sh --soc=ascend910b --pkg -a    # 编译 + UT + ST
+bash build.sh --soc=ascend910b --pkg -u    # 编译 + 仅 UT
+bash build.sh --soc=ascend910b --pkg -s    # 编译 + 仅 ST
 ```
 
 全量 56 条测试用例（36 条 float32 + 20 条 float16）。
@@ -149,14 +132,6 @@ ST 测试支持两种模式：
 
 - **Mock 模式**（CPU Golden）：无需 NPU，用于开发验证
 - **真实 NPU 模式**：需要 NPU 设备，验证实际精度
-
-### 一键编译 + 测试
-
-```bash
-bash build.sh --soc=ascend910b --pkg -a    # 编译 + UT + ST
-bash build.sh --soc=ascend910b --pkg -u    # 编译 + 仅 UT
-bash build.sh --soc=ascend910b --pkg -s    # 编译 + 仅 ST
-```
 
 ## 目录结构
 
@@ -169,45 +144,20 @@ ops/tan/
 │   ├── CMakeLists.txt
 │   ├── tan_def.cpp                        # 算子定义（aclnn API 注册）
 │   ├── tan_infershape.cpp                 # InferShape（输出 shape = 输入 shape）
-│   └── arch32/
-│       └── tan_tiling.cpp                 # Tiling 实现（多核切分 + UB 切分）
+│   └── tan_tiling.cpp                     # Tiling 实现（多核切分 + UB 切分）
 ├── op_kernel/                             # Device 侧实现
-│   ├── CMakeLists.txt
-│   ├── tan_arch32.cpp                     # Kernel 入口（模板分发）
-│   └── arch32/
-│       ├── tan.h                          # Kernel 实现（核心计算逻辑）
-│       ├── tan_tiling_data.h              # Tiling 数据结构
-│       └── tan_tiling_key.h               # Tiling Key 定义
+│   ├── tan.cpp                            # Kernel 入口（模板分发）
+│   ├── tan.h                              # Kernel 实现（核心计算逻辑）
+│   ├── tan_tiling_data.h                  # Tiling 数据结构
+│   └── tan_tiling_key.h                   # Tiling Key 定义
 ├── op_graph/
 │   └── tan_proto.h                        # GE IR 算子原型注册
 ├── examples/                              # 调用示例
-│   ├── CMakeLists.txt                     # aclnn 模式构建脚本
-│   ├── CMakeLists_geir.txt                # GE IR 模式构建脚本
-│   ├── run.sh                             # 统一运行脚本（--eager / --graph）
-│   ├── test_aclnn_tan.cpp                 # aclnn 调用示例
-│   └── test_geir_tan.cpp                  # GE IR 图模式调用示例
-├── tests/
-│   ├── st/                                # 系统测试
-│   │   ├── test_aclnn_tan.cpp             # ST 测试工程（56 条用例）
-│   │   ├── CMakeLists.txt
-│   │   └── run.sh                         # ST 运行脚本
-│   └── ut/                                # 单元测试
-│       ├── run.sh                         # UT 运行脚本
-│       ├── CMakeLists.txt
-│       └── op_host/
-│           ├── CMakeLists.txt
-│           ├── test_op_host_main.cpp
-│           ├── test_tan_infershape.cpp    # InferShape UT
-│           └── test_tan_tiling.cpp        # Tiling UT
+│   └── test_aclnn_tan.cpp                 # aclnn 调用示例
 ├── docs/
-│   ├── aclnnTan.md                        # aclnn API 接口文档
-│   ├── REQUIREMENT_ANALYSIS.md            # 需求分析文档
-│   ├── DETAILED_DESIGN.md                 # 详细设计文档
-│   ├── TEST_DESIGN.md                     # 测试设计文档
-│   ├── PRECISION_VERIFICATION_REPORT.md   # 精度验收报告
-│   └── DEVELOPMENT_LOG.md                 # 开发日志
-└── build/                                 # 编译输出目录
-    └── custom_opp_ubuntu_aarch64.run      # 算子包
+│   └── aclnnTan.md                        # aclnn API 接口文档
+└── tests/                                 # 测试目录（UT/ST 通过 build.sh 驱动）
+    └── .gitkeep
 ```
 
 ## 实现说明

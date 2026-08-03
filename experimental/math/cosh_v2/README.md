@@ -137,11 +137,8 @@ export LD_LIBRARY_PATH=<安装路径>/vendors/cosh_v2_custom/op_api/lib/:$LD_LIB
 ### 运行单元测试 (UT)
 
 ```bash
-# 方法一：通过 build.sh
+# 通过 build.sh 运行
 bash build.sh --soc=ascend910b -u
-
-# 方法二：直接运行
-cd tests/ut && ./run.sh
 ```
 
 UT 测试内容：
@@ -152,13 +149,10 @@ UT 测试内容：
 ### 运行系统测试 (ST)
 
 ```bash
-# 方法一：通过 build.sh（需先安装算子包）
+# 通过 build.sh 运行（需先安装算子包）
 bash build.sh --soc=ascend910b -s
 
-# 方法二：直接运行
-cd tests/st && bash run.sh
-
-# 方法三：一次性运行全部测试
+# 一次性运行全部测试
 bash build.sh --soc=ascend910b -a
 ```
 
@@ -167,13 +161,6 @@ ST 测试内容：
 - 端到端 ACLNN 接口调用，在真实 NPU 上执行
 - 71 条用例覆盖 3 种 dtype、1D~8D 维度、特殊值、边界值
 - 精度对比 CPU golden (std::cosh)
-
-### 测试用例文件
-
-| 文件 | 说明 |
-|------|------|
-| `tests/st/testcases/l0_test_cases.csv` | L0 门槛用例 23 条 |
-| `tests/st/testcases/l1_test_cases.csv` | L1 功能用例 500 条 |
 
 ## 实现要点
 
