@@ -1488,6 +1488,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/prod_force_se_a/README.md">prod_force_se_a</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>DeepPot-SE模型的反向力计算算子。将神经网络对描述符的导数与描述符对坐标的导数逐元素相乘后归约累加，得到每个原子的三维力向量。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/prod_env_mat_a_calc_rij/README.md">prod_env_mat_a_calc_rij</a></td>
     <td>√</td>
     <td>√</td>
