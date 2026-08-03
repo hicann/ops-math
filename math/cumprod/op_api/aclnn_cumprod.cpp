@@ -103,13 +103,15 @@ static aclnnStatus doGetWorkspaceSize(aclTensor* input, const aclScalar* inputDi
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
-    // 检查Format
-    if (input->GetStorageFormat() != Format::FORMAT_ND) {
-        OP_LOGW("Format only support ND");
-    }
+
     // 参数检查
     auto ret = CheckParams(input, out, inputDim, workspaceSize);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
+
+    // 检查Format
+    if (IsPrivateFormat(input->GetStorageFormat())) {
+        OP_LOGW("Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
+    }
 
     auto tensorType = op::ToOpDataType(dtype);
     if (tensorType == DataType::DT_UNDEFINED) {
