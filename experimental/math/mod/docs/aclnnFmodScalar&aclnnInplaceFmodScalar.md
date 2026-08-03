@@ -29,4 +29,4 @@ aclnnStatus aclnnInplaceFmodScalar(
 
 ## 样例
 
-见 `examples/test_aclnn_fmod_scalar.cpp`。
+见 `../examples/test_aclnn_fmod_scalar.cpp`。

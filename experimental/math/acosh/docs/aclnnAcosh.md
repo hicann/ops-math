@@ -181,7 +181,7 @@ aclnnStatus aclnnAcosh(
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/compile_and_run_sample.md)。
 
-完整示例代码见 `examples/test_aclnn_acosh.cpp`，以下为核心调用流程：
+完整示例代码见 `../examples/test_aclnn_acosh.cpp`，以下为核心调用流程：
 
 ```cpp
 #include "acl/acl.h"

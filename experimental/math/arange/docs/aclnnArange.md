@@ -227,7 +227,7 @@ aclnnStatus aclnnArange(
 
 ## 调用示例
 
-示例代码如下，仅供参考。完整示例见本算子 `examples/test_aclnn_arange.cpp`，可通过 `bash build.sh --run_example arange eager cust --vendor_name=custom --experimental` 编译并运行。
+示例代码如下，仅供参考。完整示例见本算子 `../examples/test_aclnn_arange.cpp`，可通过 `bash build.sh --run_example arange eager cust --vendor_name=custom --experimental` 编译并运行。
 
 示例展示 `aclnnArangeGetWorkspaceSize` + `aclnnArange` 两段式核心流程，覆盖 FLOAT 升序、FLOAT 负 step 降序、INT8 窄整型升序三组代表用例。**关键点**：`start`/`end`/`step` 用 `aclCreateScalar` 构造为 Host 侧标量；调用方按 `N = ceil((end-start)/step)` 计算元素个数并据此构造一维 `out` 张量（算子侧不计算、不校验 N）；其余 dtype（float16/bfloat16/uint8/int16）按相同模式替换 `aclDataType` 与标量/输出元素类型即可。
 

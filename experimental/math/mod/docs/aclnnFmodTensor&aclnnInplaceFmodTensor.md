@@ -29,4 +29,4 @@ aclnnStatus aclnnInplaceFmodTensor(
 
 ## 样例
 
-见 `examples/test_aclnn_fmod_tensor.cpp`。
+见 `../examples/test_aclnn_fmod_tensor.cpp`。
