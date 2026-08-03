@@ -17,26 +17,17 @@
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/tensor_desc.h"
 
-using namespace std;
-
 class l2_normal_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "normal_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { std::cout << "normal_test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "normal_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { std::cout << "normal_test TearDown" << std::endl; }
 };
 
 // 0维场景
 TEST_F(l2_normal_test, case_0_dim_float_NCHW)
 {
     auto tensor_desc = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_NCHW);
-    auto out_tensor_desc = TensorDesc(tensor_desc);
     float mean = 1.;
     float std = 2.;
     int64_t seed = 1;
@@ -53,7 +44,6 @@ TEST_F(l2_normal_test, case_0_dim_float_NCHW)
 TEST_F(l2_normal_test, case_4_dim_float_NCHW)
 {
     auto tensor_desc = TensorDesc({3, 4, 4, 3}, ACL_FLOAT, ACL_FORMAT_NCHW);
-    auto out_tensor_desc = TensorDesc(tensor_desc);
     float mean = 1.;
     float std = 2.;
     int64_t seed = 1;
@@ -103,7 +93,6 @@ TEST_F(l2_normal_test, case_1_1_float_NCHW)
 TEST_F(l2_normal_test, case_3_4_5_float_ND)
 {
     auto tensor_desc = TensorDesc({3, 4, 5}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto out_tensor_desc = TensorDesc(tensor_desc);
     float mean = 1.;
     float std = 2.;
     int64_t seed = 1;
@@ -120,7 +109,6 @@ TEST_F(l2_normal_test, case_3_4_5_float_ND)
 TEST_F(l2_normal_test, case_3_4_5_float16_ND)
 {
     auto tensor_desc = TensorDesc({3, 4, 5}, ACL_FLOAT16, ACL_FORMAT_ND);
-    auto out_tensor_desc = TensorDesc(tensor_desc);
     float mean = 1.;
     float std = 2.;
     int64_t seed = 1;
@@ -137,7 +125,6 @@ TEST_F(l2_normal_test, case_3_4_5_float16_ND)
 TEST_F(l2_normal_test, case_3_4_5_float_NCHW)
 {
     auto tensor_desc = TensorDesc({3, 4, 5}, ACL_FLOAT, ACL_FORMAT_NCHW);
-    auto out_tensor_desc = TensorDesc(tensor_desc);
     float mean = 1.;
     float std = 2.;
     int64_t seed = 1;
@@ -154,7 +141,6 @@ TEST_F(l2_normal_test, case_3_4_5_float_NCHW)
 TEST_F(l2_normal_test, case_3_4_5_float_NHWC)
 {
     auto tensor_desc = TensorDesc({3, 4, 5}, ACL_FLOAT, ACL_FORMAT_NHWC);
-    auto out_tensor_desc = TensorDesc(tensor_desc);
     float mean = 1.;
     float std = 2.;
     int64_t seed = 1;
@@ -171,7 +157,6 @@ TEST_F(l2_normal_test, case_3_4_5_float_NHWC)
 TEST_F(l2_normal_test, case_3_4_5_float_HWCN)
 {
     auto tensor_desc = TensorDesc({3, 4, 5}, ACL_FLOAT, ACL_FORMAT_HWCN);
-    auto out_tensor_desc = TensorDesc(tensor_desc);
     float mean = 1.;
     float std = 2.;
     int64_t seed = 1;
@@ -188,7 +173,6 @@ TEST_F(l2_normal_test, case_3_4_5_float_HWCN)
 TEST_F(l2_normal_test, case_3_4_5_float_NDHWC)
 {
     auto tensor_desc = TensorDesc({3, 4, 5}, ACL_FLOAT, ACL_FORMAT_NDHWC);
-    auto out_tensor_desc = TensorDesc(tensor_desc);
     float mean = 1.;
     float std = 2.;
     int64_t seed = 1;
@@ -205,7 +189,6 @@ TEST_F(l2_normal_test, case_3_4_5_float_NDHWC)
 TEST_F(l2_normal_test, case_3_4_5_float_NCDHW)
 {
     auto tensor_desc = TensorDesc({3, 4, 5}, ACL_FLOAT, ACL_FORMAT_NCDHW);
-    auto out_tensor_desc = TensorDesc(tensor_desc);
     float mean = 1.;
     float std = 2.;
     int64_t seed = 1;
@@ -222,7 +205,6 @@ TEST_F(l2_normal_test, case_3_4_5_float_NCDHW)
 TEST_F(l2_normal_test, case_3_4_5_float_std_equal_zeros_ND)
 {
     auto tensor_desc = TensorDesc({3, 4, 5}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto out_tensor_desc = TensorDesc(tensor_desc);
     float mean = 0;
     float std = 0;
     int64_t seed = 1;
@@ -239,7 +221,6 @@ TEST_F(l2_normal_test, case_3_4_5_float_std_equal_zeros_ND)
 TEST_F(l2_normal_test, case_3_4_5_float_std_less_zeros_ND)
 {
     auto tensor_desc = TensorDesc({3, 4, 5}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto out_tensor_desc = TensorDesc(tensor_desc);
     float mean = 0;
     float std = -2;
     int64_t seed = 1;
@@ -249,7 +230,7 @@ TEST_F(l2_normal_test, case_3_4_5_float_std_less_zeros_ND)
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
 //-----------------------------------------------------------------
@@ -257,7 +238,6 @@ TEST_F(l2_normal_test, case_3_4_5_float_std_less_zeros_ND)
 TEST_F(l2_normal_test, case_3_4_5_int16_ND)
 {
     auto tensor_desc = TensorDesc({3, 4, 5}, ACL_INT16, ACL_FORMAT_NCDHW);
-    auto out_tensor_desc = TensorDesc(tensor_desc);
     float mean = 1.;
     float std = 2.;
     int64_t seed = 1;
@@ -274,7 +254,6 @@ TEST_F(l2_normal_test, case_3_4_5_int16_ND)
 TEST_F(l2_normal_test, case_3_4_5_int32_ND)
 {
     auto tensor_desc = TensorDesc({3, 4, 5}, ACL_INT32, ACL_FORMAT_NCDHW);
-    auto out_tensor_desc = TensorDesc(tensor_desc);
     float mean = 1.;
     float std = 2.;
     int64_t seed = 1;
@@ -291,7 +270,6 @@ TEST_F(l2_normal_test, case_3_4_5_int32_ND)
 TEST_F(l2_normal_test, case_3_4_5_int64_ND)
 {
     auto tensor_desc = TensorDesc({3, 4, 5}, ACL_INT64, ACL_FORMAT_NCDHW);
-    auto out_tensor_desc = TensorDesc(tensor_desc);
     float mean = 1.;
     float std = 2.;
     int64_t seed = 1;
@@ -308,7 +286,6 @@ TEST_F(l2_normal_test, case_3_4_5_int64_ND)
 TEST_F(l2_normal_test, case_3_4_5_uint86_ND)
 {
     auto tensor_desc = TensorDesc({3, 4, 5}, ACL_UINT8, ACL_FORMAT_NCDHW);
-    auto out_tensor_desc = TensorDesc(tensor_desc);
     float mean = 1.;
     float std = 2.;
     int64_t seed = 1;
@@ -325,7 +302,6 @@ TEST_F(l2_normal_test, case_3_4_5_uint86_ND)
 TEST_F(l2_normal_test, case_3_4_5_bool_ND)
 {
     auto tensor_desc = TensorDesc({3, 4, 5}, ACL_BOOL, ACL_FORMAT_NCDHW);
-    auto out_tensor_desc = TensorDesc(tensor_desc);
     float mean = 1.;
     float std = 2.;
     int64_t seed = 1;
@@ -413,7 +389,7 @@ TEST_F(l2_normal_test, case_normalTensor_3_4_float_ND)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceNormalTensor,
-        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -432,7 +408,7 @@ TEST_F(l2_normal_test, case_normalTensor_3_4_5_float16_ND)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceNormalTensor,
-        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -451,7 +427,7 @@ TEST_F(l2_normal_test, case_normalTensor_3_4_bf16_ND)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceNormalTensor,
-        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -470,7 +446,7 @@ TEST_F(l2_normal_test, case_normalTensor_3_4_double_ND)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceNormalTensor,
-        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -489,7 +465,7 @@ TEST_F(l2_normal_test, case_normalTensor_3_4_int32_ND)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceNormalTensor,
-        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -508,11 +484,11 @@ TEST_F(l2_normal_test, case_normalTensor_std_less_zeros)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceNormalTensor,
-        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
 // 异常场景：self为nullptr
@@ -526,7 +502,7 @@ TEST_F(l2_normal_test, case_normalTensor_self_nullptr)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceNormalTensor,
-        INPUT((aclTensor*)nullptr, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT((aclTensor*)nullptr, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -545,7 +521,7 @@ TEST_F(l2_normal_test, case_normalTensor_9_dim_invalid)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceNormalTensor,
-        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -564,7 +540,7 @@ TEST_F(l2_normal_test, case_normalTensor_3_4_float_with_offset)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceNormalTensor,
-        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -583,7 +559,7 @@ TEST_F(l2_normal_test, case_normalTensor_std_equal_zero)
     auto offsetTensorDesc = TensorDesc({1}, ACL_INT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnInplaceNormalTensor,
-        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
+                        INPUT(tensor_desc, mean, std, seedTensorDesc, offsetTensorDesc, offset), OUTPUT());
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);

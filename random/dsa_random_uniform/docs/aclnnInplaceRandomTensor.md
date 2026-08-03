@@ -85,7 +85,7 @@ aclnnStatus aclnnInplaceRandomTensor(
       <td>BFLOAT16、FLOAT16、FLOAT32、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>0-8</td>
-      <td>√</td>
+      <td>×</td>
     </tr>
     <tr>
       <td>from</td>
@@ -159,10 +159,6 @@ aclnnStatus aclnnInplaceRandomTensor(
     </tr>
   </tbody></table>
 
-<!-- npu="950" id8 -->
-  - <term>Ascend 950PR/Ascend 950DT</term>：数据类型不支持COMPLEX64、COMPLEX128。
-  <!-- end id8 -->
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
@@ -195,7 +191,7 @@ aclnnStatus aclnnInplaceRandomTensor(
       <td>from大于等于to。</td>
     </tr>
     <tr>
-      <td>selfRef的shape超过8维。</td>
+      <td>to-1超过selfRef数据类型的取值范围。</td>
     </tr>
   </tbody>
   </table>
@@ -250,7 +246,7 @@ aclnnStatus aclnnInplaceRandomTensor(
 
 <!-- npu="950" id7 -->
 - <term>Ascend 950PR/Ascend 950DT</term>：
-  - 通过aclnnSetPytorchRandom设置对标PyTorch模式时，offset必须为4的倍数。
+  - offset必须为4的倍数。
   - from必须小于to，且from/to-1指定范围不可超出self数据类型的范围。
 
 <!-- end id7 -->

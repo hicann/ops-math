@@ -172,10 +172,12 @@ aclnnStatus aclnnInplaceNormal(
   <tbody>
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
-      <td rowspan="2">161001</td>
+      <td>161001</td>
       <td>传入的selfRef为空指针。</td>
     </tr>
     <tr>
+      <td>ACLNN_ERR_PARAM_INVALID</td>
+      <td>161002</td>
       <td>传入的std小于0。</td>
     </tr>
     <tr>
@@ -241,7 +243,7 @@ aclnnStatus aclnnInplaceNormal(
   - aclnnInplaceNormal默认确定性实现。
 
 <!-- npu="950" id8 -->
-- <term>Ascend 950PR/Ascend 950DT</term>：通过aclnnSetPytorchRandom设置对标PyTorch模式时，offset必须为4的倍数。
+- <term>Ascend 950PR/Ascend 950DT</term>：offset必须为4的倍数。
 
 <!-- end id8 -->
 

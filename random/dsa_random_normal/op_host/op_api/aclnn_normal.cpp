@@ -30,7 +30,6 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
-#include "opdev/platform.h"
 #include "../../../random_common/op_api/aclnn_set_pytorch_random.h"
 
 using namespace op;
@@ -52,13 +51,7 @@ static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = 
 static const std::initializer_list<op::DataType> OUTPUT_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_DOUBLE, op::DataType::DT_BF16};
 
-static inline bool CheckSocVersionIsSupportBf16(void)
-{
-    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
-    return curArch == NpuArch::DAV_2201 || IsRegBase(curArch);
-}
-
-static inline bool CheckSocVersionIsSupportDSA(void)
+static inline bool CheckSocVersionIsSupportBf16()
 {
     auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
     return curArch == NpuArch::DAV_2201 || IsRegBase(curArch);
@@ -91,13 +84,9 @@ static inline bool CheckDtypeValid(const aclTensor* self)
     return true;
 }
 
-static inline bool CheckNotNull(const aclTensor* self, float std)
+static inline bool CheckNotNull(const aclTensor* self)
 {
     OP_CHECK_NULL(self, return false);
-    if (std < 0) {
-        OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "Normal expects std >= 0.0, but found std [%f].", std);
-        return false;
-    }
     return true;
 }
 
@@ -114,12 +103,18 @@ static inline bool CheckDimValid(const aclTensor* self)
 static aclnnStatus CheckParams(const aclTensor* self, const float std)
 {
     // 1. 检查参数是否为空指针
-    CHECK_RET(CheckNotNull(self, std), ACLNN_ERR_PARAM_NULLPTR);
+    CHECK_RET(CheckNotNull(self), ACLNN_ERR_PARAM_NULLPTR);
 
-    // 2. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
+    // 2. 检查std是否合法
+    if (std < 0) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Normal expects std >= 0.0, but found std [%f].", std);
+        return ACLNN_ERR_PARAM_INVALID;
+    }
+
+    // 3. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
     CHECK_RET(CheckDtypeValid(self), ACLNN_ERR_PARAM_INVALID);
 
-    // 3. 检查self维度是否满足要求
+    // 4. 检查self维度是否满足要求
     CHECK_RET(CheckDimValid(self), ACLNN_ERR_PARAM_INVALID);
 
     return ACLNN_SUCCESS;
