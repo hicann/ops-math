@@ -26,6 +26,8 @@ namespace NsExpint {
 using namespace AscendC;
 
 constexpr float EULER_GAMMA = 0.5772156649015329f;
+constexpr float FP16_MAX_VALUE = 65504.0f;
+constexpr float BF16_MAX_VALUE = 3.38953138927157e+38f;
 
 static constexpr float A1[6] = {
     -5.350447357812542947283E0f, 2.185049168816613393830E2f,  -4.176572384826693777058E3f,
@@ -148,7 +150,15 @@ class ExpintKernel {
     static constexpr int64_t CMP_ALIGN = 64;          // 256 bytes / 4 bytes per float
     static constexpr int64_t MASK_ELEM_PER_FLOAT = 8; // sizeof(float) / sizeof(uint8_t)
     static constexpr int64_t MASK_ALIGN = 32;         // mask buffer alignment in bytes
-    static constexpr float NEAR_ZERO_THRESHOLD = 1e-10f;
+    static constexpr float EXP_CLAMP = 88.0f;         // exp(88) < FLT_MAX, exp(89) > FLT_MAX
+    static constexpr float ONE = 1.0f;                // multiplicative identity / reciprocal numerator
+    static constexpr float ZERO = 0.0f;               // additive identity / zero boundary
+    static constexpr float INTERVAL_BOUND_2 = 2.0f;   // Interval 1/2 boundary
+    static constexpr float INTERVAL_BOUND_4 = 4.0f;   // Interval 2/3 boundary
+    static constexpr float INTERVAL_BOUND_8 = 8.0f;   // Interval 3/4 boundary
+    static constexpr float INTERVAL_BOUND_16 = 16.0f; // Interval 4/5 boundary
+    static constexpr float INTERVAL_BOUND_32 = 32.0f; // Interval 5/6 boundary
+    static constexpr float INTERVAL_BOUND_64 = 64.0f; // Interval 6/7 boundary
 
 public:
     __aicore__ inline ExpintKernel() {}
@@ -158,13 +168,10 @@ public:
 
 private:
     __aicore__ inline void CopyIn(int64_t progress, int64_t currentNum);
-    __aicore__ inline void Compute(LocalTensor<float> xLocal, LocalTensor<float> yLocal, int64_t count);
+    __aicore__ inline void Compute(LocalTensor<float> xInput, LocalTensor<float> yLocal, int64_t count);
+    template <size_t N>
     __aicore__ inline void HornerEval(LocalTensor<float> acc, LocalTensor<float> scratch, LocalTensor<float> var,
-                                      const float* coeffs, int degree, int64_t n);
-    __aicore__ inline void ComputeRationalInterval(LocalTensor<float> xFp32, const float* A, int degA, const float* B,
-                                                   int degB, float threshold, int64_t n);
-    __aicore__ inline void ComputeInterval1(LocalTensor<float> xFp32, int64_t n);
-    __aicore__ inline void ApplyBoundaries(LocalTensor<float> xFp32, int64_t n);
+                                      const float (&coeffs)[N], int64_t n);
     __aicore__ inline void CopyOut(int64_t progress, int64_t currentNum);
     __aicore__ inline void ProcessFp32(int64_t loopCount);
     __aicore__ inline void ProcessFp16Bf16(int64_t loopCount);
@@ -178,10 +185,11 @@ private:
 
     TBuf<TPosition::VECCALC> tmpBuf1;
     TBuf<TPosition::VECCALC> tmpBuf2;
-    TBuf<TPosition::VECCALC> resultBuf;
     TBuf<TPosition::VECCALC> oldResultBuf;
     TBuf<TPosition::VECCALC> scratchBuf;
     TBuf<TPosition::VECCALC> maskBuf;
+    TBuf<TPosition::VECCALC> initBuf;
+    TBuf<TPosition::VECCALC> xClampedBuf;
 
     TBuf<TPosition::VECCALC> castInBuf;
     TBuf<TPosition::VECCALC> resultFp32Buf;
@@ -208,10 +216,14 @@ __aicore__ inline void ExpintKernel<T>::Init(GM_ADDR x, GM_ADDR y, const ExpintT
 
     pipe.InitBuffer(tmpBuf1, alignedUbLength_ * sizeof(float));
     pipe.InitBuffer(tmpBuf2, alignedUbLength_ * sizeof(float));
-    pipe.InitBuffer(resultBuf, alignedUbLength_ * sizeof(float));
     pipe.InitBuffer(oldResultBuf, alignedUbLength_ * sizeof(float));
     pipe.InitBuffer(scratchBuf, alignedUbLength_ * sizeof(float));
+    pipe.InitBuffer(xClampedBuf, alignedUbLength_ * sizeof(float));
     pipe.InitBuffer(maskBuf, ((alignedUbLength_ / MASK_ELEM_PER_FLOAT + MASK_ALIGN - 1) / MASK_ALIGN) * MASK_ALIGN);
+
+    if constexpr (std::is_same_v<T, float>) {
+        pipe.InitBuffer(initBuf, alignedUbLength_ * sizeof(float));
+    }
 
     if constexpr (NEED_CAST) {
         pipe.InitBuffer(castInBuf, alignedUbLength_ * sizeof(float));
@@ -246,75 +258,145 @@ __aicore__ inline void ExpintKernel<T>::CopyOut(int64_t progress, int64_t curren
 }
 
 template <typename T>
+template <size_t N>
 __aicore__ inline void ExpintKernel<T>::HornerEval(LocalTensor<float> acc, LocalTensor<float> scratch,
-                                                   LocalTensor<float> var, const float* coeffs, int degree, int64_t n)
+                                                   LocalTensor<float> var, const float (&coeffs)[N], int64_t n)
 {
     Duplicate(acc, coeffs[0], n);
-    for (int i = 1; i <= degree; i++) {
+    for (size_t i = 1; i < N; i++) {
         Mul(scratch, acc, var, n);
         Adds(acc, scratch, coeffs[i], n);
     }
 }
 
 template <typename T>
-__aicore__ inline void ExpintKernel<T>::ComputeRationalInterval(LocalTensor<float> xFp32, const float* A, int degA,
-                                                                const float* B, int degB, float threshold, int64_t n)
+__aicore__ inline void ExpintKernel<T>::Compute(LocalTensor<float> xInput, LocalTensor<float> yLocal, int64_t count)
 {
     LocalTensor<float> tmp1 = tmpBuf1.Get<float>();
     LocalTensor<float> tmp2 = tmpBuf2.Get<float>();
-    LocalTensor<float> result = resultBuf.Get<float>();
-    LocalTensor<float> oldResult = oldResultBuf.Get<float>();
     LocalTensor<float> scratch = scratchBuf.Get<float>();
+
+    int64_t n = ((count + CMP_ALIGN - 1) / CMP_ALIGN) * CMP_ALIGN;
+
+    // Use yLocal directly as result buffer (separate result TBuf has issues on Ascend950)
+    LocalTensor<float>& result = yLocal;
+    LocalTensor<float> oldResult = oldResultBuf.Get<float>();
     LocalTensor<uint8_t> mask = maskBuf.Get<uint8_t>();
 
-    DataCopy(oldResult, result, n);
-    Duplicate(tmp1, 1.0f, n);
-    Div(result, tmp1, xFp32, n);
-    HornerEval(tmp1, tmp2, result, A, degA, n);
-    HornerEval(tmp2, scratch, result, B, degB, n);
+    // Clamp x to EXP_CLAMP to prevent exp(x) overflow in float32
+    LocalTensor<float> xFp32 = xClampedBuf.Get<float>();
+    Duplicate(tmp1, EXP_CLAMP, n);
+    Compare(mask, xInput, tmp1, CMPMODE::GT, n);
+    Select(xFp32, mask, tmp1, xInput, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
+
+    // Interval 7 (x >= 64): asymptotic expansion
+    Duplicate(tmp1, ONE, n);
+    Div(result, tmp1, xFp32, n);              // w = 1/x
+    HornerEval(tmp1, tmp2, result, A7, n);    // P7(w)
+    HornerEval(tmp2, scratch, result, B7, n); // Q7(w)
+    Div(scratch, tmp1, tmp2, n);              // P7/Q7
+    Exp(tmp2, xFp32, n);                      // e^x
+    Div(tmp1, tmp2, xFp32, n);                // e^x/x
+    Mul(tmp2, result, scratch, n);            // w * P7/Q7
+    Adds(tmp2, tmp2, ONE, n);                 // w * P7/Q7 + 1
+    Mul(result, tmp1, tmp2, n);               // e^x/x * (w*P7/Q7 + 1)
+
+    // Intervals 6-2: rational approximation with Select merge
+    // Interval 6 (32 <= x < 64)
+    Adds(oldResult, result, ZERO, n);
+    Duplicate(tmp1, ONE, n);
+    Div(result, tmp1, xFp32, n); // w = 1/x
+    HornerEval(tmp1, tmp2, result, A6, n);
+    HornerEval(tmp2, scratch, result, B6, n);
     Div(scratch, tmp1, tmp2, n);
     Exp(tmp2, xFp32, n);
     Div(tmp1, tmp2, xFp32, n);
     Mul(tmp2, result, scratch, n);
-    Adds(tmp2, tmp2, 1.0f, n);
+    Adds(tmp2, tmp2, ONE, n);
     Mul(result, tmp1, tmp2, n);
-    Duplicate(tmp1, threshold, n);
+    Duplicate(tmp1, INTERVAL_BOUND_64, n);
     Compare(mask, xFp32, tmp1, CMPMODE::LT, n);
     Select(result, mask, result, oldResult, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
-}
 
-template <typename T>
-__aicore__ inline void ExpintKernel<T>::ComputeInterval1(LocalTensor<float> xFp32, int64_t n)
-{
-    LocalTensor<float> tmp1 = tmpBuf1.Get<float>();
-    LocalTensor<float> tmp2 = tmpBuf2.Get<float>();
-    LocalTensor<float> result = resultBuf.Get<float>();
-    LocalTensor<float> oldResult = oldResultBuf.Get<float>();
-    LocalTensor<float> scratch = scratchBuf.Get<float>();
-    LocalTensor<uint8_t> mask = maskBuf.Get<uint8_t>();
+    // Interval 5 (16 <= x < 32)
+    Adds(oldResult, result, ZERO, n);
+    Duplicate(tmp1, ONE, n);
+    Div(result, tmp1, xFp32, n);
+    HornerEval(tmp1, tmp2, result, A5, n);
+    HornerEval(tmp2, scratch, result, B5, n);
+    Div(scratch, tmp1, tmp2, n);
+    Exp(tmp2, xFp32, n);
+    Div(tmp1, tmp2, xFp32, n);
+    Mul(tmp2, result, scratch, n);
+    Adds(tmp2, tmp2, ONE, n);
+    Mul(result, tmp1, tmp2, n);
+    Duplicate(tmp1, INTERVAL_BOUND_32, n);
+    Compare(mask, xFp32, tmp1, CMPMODE::LT, n);
+    Select(result, mask, result, oldResult, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
 
-    HornerEval(tmp1, tmp2, xFp32, A1, 5, n);
-    DataCopy(scratch, result, n);
-    HornerEval(tmp2, oldResult, xFp32, B1, 6, n);
+    // Interval 4 (8 <= x < 16)
+    Adds(oldResult, result, ZERO, n);
+    Duplicate(tmp1, ONE, n);
+    Div(result, tmp1, xFp32, n);
+    HornerEval(tmp1, tmp2, result, A4, n);
+    HornerEval(tmp2, scratch, result, B4, n);
+    Div(scratch, tmp1, tmp2, n);
+    Exp(tmp2, xFp32, n);
+    Div(tmp1, tmp2, xFp32, n);
+    Mul(tmp2, result, scratch, n);
+    Adds(tmp2, tmp2, ONE, n);
+    Mul(result, tmp1, tmp2, n);
+    Duplicate(tmp1, INTERVAL_BOUND_16, n);
+    Compare(mask, xFp32, tmp1, CMPMODE::LT, n);
+    Select(result, mask, result, oldResult, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
+
+    // Interval 3 (4 <= x < 8)
+    Adds(oldResult, result, ZERO, n);
+    Duplicate(tmp1, ONE, n);
+    Div(result, tmp1, xFp32, n);
+    HornerEval(tmp1, tmp2, result, A3, n);
+    HornerEval(tmp2, scratch, result, B3, n);
+    Div(scratch, tmp1, tmp2, n);
+    Exp(tmp2, xFp32, n);
+    Div(tmp1, tmp2, xFp32, n);
+    Mul(tmp2, result, scratch, n);
+    Adds(tmp2, tmp2, ONE, n);
+    Mul(result, tmp1, tmp2, n);
+    Duplicate(tmp1, INTERVAL_BOUND_8, n);
+    Compare(mask, xFp32, tmp1, CMPMODE::LT, n);
+    Select(result, mask, result, oldResult, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
+
+    // Interval 2 (2 <= x < 4)
+    Adds(oldResult, result, ZERO, n);
+    Duplicate(tmp1, ONE, n);
+    Div(result, tmp1, xFp32, n);
+    HornerEval(tmp1, tmp2, result, A2, n);
+    HornerEval(tmp2, scratch, result, B2, n);
+    Div(scratch, tmp1, tmp2, n);
+    Exp(tmp2, xFp32, n);
+    Div(tmp1, tmp2, xFp32, n);
+    Mul(tmp2, result, scratch, n);
+    Adds(tmp2, tmp2, ONE, n);
+    Mul(result, tmp1, tmp2, n);
+    Duplicate(tmp1, INTERVAL_BOUND_4, n);
+    Compare(mask, xFp32, tmp1, CMPMODE::LT, n);
+    Select(result, mask, result, oldResult, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
+
+    // Interval 1 (0 < x < 2): Ei(x) = gamma + ln(x) + x * P1(x)/Q1(x)
+    HornerEval(tmp1, tmp2, xFp32, A1, n);
+    Adds(scratch, result, ZERO, n);
+    HornerEval(tmp2, oldResult, xFp32, B1, n);
     Div(oldResult, tmp1, tmp2, n);
     Mul(tmp1, oldResult, xFp32, n);
     Adds(tmp1, tmp1, EULER_GAMMA, n);
     Ln(tmp2, xFp32, n);
     Add(oldResult, tmp1, tmp2, n);
-    Duplicate(tmp1, 2.0f, n);
+    Duplicate(tmp1, INTERVAL_BOUND_2, n);
     Compare(mask, xFp32, tmp1, CMPMODE::LT, n);
     Select(result, mask, oldResult, scratch, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
-}
 
-template <typename T>
-__aicore__ inline void ExpintKernel<T>::ApplyBoundaries(LocalTensor<float> xFp32, int64_t n)
-{
-    LocalTensor<float> tmp1 = tmpBuf1.Get<float>();
-    LocalTensor<float> result = resultBuf.Get<float>();
-    LocalTensor<float> scratch = scratchBuf.Get<float>();
-    LocalTensor<uint8_t> mask = maskBuf.Get<uint8_t>();
-
-    Duplicate(tmp1, 0.0f, n);
+    // ApplyBoundaries
+    Duplicate(tmp1, ZERO, n);
     Compare(mask, xFp32, tmp1, CMPMODE::LT, n);
     Duplicate(tmp1, std::numeric_limits<float>::quiet_NaN(), n);
     Select(result, mask, tmp1, result, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
@@ -323,43 +405,11 @@ __aicore__ inline void ExpintKernel<T>::ApplyBoundaries(LocalTensor<float> xFp32
     Compare(mask, xFp32, tmp1, CMPMODE::EQ, n);
     Select(result, mask, tmp1, result, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
 
-    Duplicate(tmp1, NEAR_ZERO_THRESHOLD, n);
-    Abs(scratch, xFp32, n);
-    Compare(mask, scratch, tmp1, CMPMODE::LE, n);
+    // x == 0 -> -inf (exact comparison)
+    Duplicate(tmp1, ZERO, n);
+    Compare(mask, xFp32, tmp1, CMPMODE::EQ, n);
     Duplicate(tmp1, -std::numeric_limits<float>::infinity(), n);
     Select(result, mask, tmp1, result, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
-}
-
-template <typename T>
-__aicore__ inline void ExpintKernel<T>::Compute(LocalTensor<float> xFp32, LocalTensor<float> yLocal, int64_t count)
-{
-    LocalTensor<float> tmp1 = tmpBuf1.Get<float>();
-    LocalTensor<float> tmp2 = tmpBuf2.Get<float>();
-    LocalTensor<float> result = resultBuf.Get<float>();
-    LocalTensor<float> scratch = scratchBuf.Get<float>();
-
-    int64_t n = ((count + CMP_ALIGN - 1) / CMP_ALIGN) * CMP_ALIGN;
-
-    Duplicate(tmp1, 1.0f, n);
-    Div(result, tmp1, xFp32, n);
-    HornerEval(tmp1, tmp2, result, A7, 8, n);
-    HornerEval(tmp2, scratch, result, B7, 9, n);
-    Div(scratch, tmp1, tmp2, n);
-    Exp(tmp2, xFp32, n);
-    Div(tmp1, tmp2, xFp32, n);
-    Mul(tmp2, result, scratch, n);
-    Adds(tmp2, tmp2, 1.0f, n);
-    Mul(result, tmp1, tmp2, n);
-
-    ComputeRationalInterval(xFp32, A6, 5, B6, 5, 64.0f, n);
-    ComputeRationalInterval(xFp32, A5, 7, B5, 8, 32.0f, n);
-    ComputeRationalInterval(xFp32, A4, 9, B4, 9, 16.0f, n);
-    ComputeRationalInterval(xFp32, A3, 7, B3, 8, 8.0f, n);
-    ComputeRationalInterval(xFp32, A2, 7, B2, 7, 4.0f, n);
-
-    ComputeInterval1(xFp32, n);
-    ApplyBoundaries(xFp32, n);
-    DataCopy(yLocal, result, count);
 }
 
 template <typename T>
@@ -367,13 +417,24 @@ __aicore__ inline void ExpintKernel<T>::ProcessFp32(int64_t loopCount)
 {
     for (int64_t i = 0; i < loopCount; i++) {
         int64_t currentNum = (i == (loopCount - 1)) ? (blockLength_ - ubLength_ * i) : ubLength_;
-        CopyIn(i, currentNum);
+        int64_t alignedCount = ((currentNum + CMP_ALIGN - 1) / CMP_ALIGN) * CMP_ALIGN;
 
-        LocalTensor<float> xLocal = inputQueue.template DeQue<float>();
+        LocalTensor<float> xFp32 = initBuf.Get<float>();
+        Duplicate(xFp32, ONE, alignedCount);
+        SetFlag<HardEvent::V_MTE2>(0);
+        WaitFlag<HardEvent::V_MTE2>(0);
+        DataCopyParams copyParams;
+        copyParams.blockCount = 1;
+        copyParams.blockLen = currentNum * sizeof(float);
+        copyParams.srcStride = 0;
+        copyParams.dstStride = 0;
+        DataCopyPad(xFp32, inputGM[i * ubLength_], copyParams, {false, 0, 0, 0});
+        SetFlag<HardEvent::MTE2_V>(0);
+        WaitFlag<HardEvent::MTE2_V>(0);
+
         LocalTensor<float> yLocal = outputQueue.template AllocTensor<float>();
-        Compute(xLocal, yLocal, currentNum);
+        Compute(xFp32, yLocal, currentNum);
         outputQueue.template EnQue<float>(yLocal);
-        inputQueue.FreeTensor(xLocal);
 
         CopyOut(i, currentNum);
     }
@@ -390,11 +451,26 @@ __aicore__ inline void ExpintKernel<T>::ProcessFp16Bf16(int64_t loopCount)
 
         LocalTensor<float> xFp32 = castInBuf.Get<float>();
         int64_t alignedCount = ((currentNum + CMP_ALIGN - 1) / CMP_ALIGN) * CMP_ALIGN;
-        Duplicate(xFp32, 1.0f, alignedCount);
+        Duplicate(xFp32, ONE, alignedCount);
         Cast<float, T>(xFp32, xInput, RoundMode::CAST_NONE, currentNum);
 
         LocalTensor<float> resultFp32 = resultFp32Buf.Get<float>();
         Compute(xFp32, resultFp32, currentNum);
+
+        // Clamp float32 result to target dtype range to prevent Cast overflow to inf
+        LocalTensor<float> clampVal = castInBuf.Get<float>();
+        LocalTensor<uint8_t> clampMask = maskBuf.Get<uint8_t>();
+        float maxVal;
+        if constexpr (std::is_same_v<T, half>) {
+            maxVal = FP16_MAX_VALUE;
+        } else {
+            maxVal = BF16_MAX_VALUE;
+        }
+        Duplicate(clampVal, maxVal, alignedCount);
+        Compare(clampMask, resultFp32, clampVal, CMPMODE::GT, alignedCount);
+        LocalTensor<float> clampTmp = oldResultBuf.Get<float>();
+        Select(clampTmp, clampMask, clampVal, resultFp32, SELMODE::VSEL_TENSOR_TENSOR_MODE, alignedCount);
+        Adds(resultFp32, clampTmp, ZERO, alignedCount);
 
         LocalTensor<T> yOutput = outputQueue.template AllocTensor<T>();
         Cast<T, float>(yOutput, resultFp32, RoundMode::CAST_ROUND, currentNum);
