@@ -2476,6 +2476,16 @@
     <td>AI Core</td>
     <td>Stack Ball Query是KNN的替代方案，用于查找点p1指定半径范围内的所有点（在实现中设置了K的上限）。</td>
   </tr>
+    <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/ball_query/README.md">ball_query</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>Ball Query用于查找点p1指定球半径范围内的所有点（在实现中设置了K的上限）。</td>
+  </tr>
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/slice_write/README.md">slice_write</a></td>
