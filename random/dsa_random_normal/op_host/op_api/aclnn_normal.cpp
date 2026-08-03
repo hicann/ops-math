@@ -353,6 +353,11 @@ aclnnStatus aclnnInplaceNormalTensorGetWorkspaceSize(const aclTensor* selfRef, f
 
     L2_DFX_PHASE_1(aclnnInplaceNormalTensor, DFX_IN(selfRef, mean, std, seedTensor, offsetTensor, offset),
                    DFX_OUT(selfRef));
+
+    // 检查seedTensor和offsetTensor是否为空指针
+    OP_CHECK_NULL(seedTensor, return ACLNN_ERR_PARAM_NULLPTR);
+    OP_CHECK_NULL(offsetTensor, return ACLNN_ERR_PARAM_NULLPTR);
+
     auto out = const_cast<aclTensor*>(selfRef);
 
     // 固定写法，创建OpExecutor

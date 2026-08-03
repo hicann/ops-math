@@ -183,6 +183,16 @@ aclnnStatus aclnnInplaceNormalTensor(
       <td>传入的selfRef为空指针。</td>
     </tr>
     <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的seedTensor为空指针。</td>
+    </tr>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的offsetTensor为空指针。</td>
+    </tr>
+    <tr>
       <td>ACLNN_ERR_PARAM_INVALID</td>
       <td>161002</td>
       <td>传入的std小于0。</td>
