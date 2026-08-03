@@ -13,6 +13,7 @@
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <unsupported/Eigen/SpecialFunctions>
 
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
 #include "cpu_types.h"
 #include "log.h"
@@ -129,5 +130,5 @@ uint32_t ZetaCpuKernel::Compute(CpuKernelContext& ctx)
     return detail::CheckZeta(ctx) ? static_cast<uint32_t>(KERNEL_STATUS_PARAM_INVALID) : detail::ComputeZeta(ctx);
 }
 
-REGISTER_CPU_KERNEL(kZeta, ZetaCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kZeta, ZetaCpuKernel);
 } // namespace aicpu

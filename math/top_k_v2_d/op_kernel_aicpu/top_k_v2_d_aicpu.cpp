@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "Eigen/Core"
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
 #include "cpu_types.h"
 #include "utils/kernel_util.h"
@@ -568,5 +569,5 @@ KernelStatus TopkV2DCpuKernel::GetInputAndCheck(const CpuKernelContext& ctx)
     return KERNEL_STATUS_OK;
 }
 
-REGISTER_CPU_KERNEL(TOPKV2D, TopkV2DCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(TOPKV2D, TopkV2DCpuKernel);
 } // namespace aicpu

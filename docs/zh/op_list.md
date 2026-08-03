@@ -2160,7 +2160,7 @@
     <td>math</td>
     <td><a href="../../math/top_k_pq_distance/README.md">top_k_pq_distance</a></td>
     <td>×</td>
-    <td>×</td>
+    <td>√</td>
     <td>×</td>
     <td>√</td>
     <td>AI CPU</td>
@@ -2260,7 +2260,7 @@
     <td>math</td>
     <td><a href="../../math/zeta/README.md">zeta</a></td>
     <td>×</td>
-    <td>×</td>
+    <td>√</td>
     <td>×</td>
     <td>√</td>
     <td>AI CPU</td>
