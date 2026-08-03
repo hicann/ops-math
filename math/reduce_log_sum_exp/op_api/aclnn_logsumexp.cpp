@@ -221,9 +221,15 @@ aclnnStatus aclnnLogSumExpGetWorkspaceSize(const aclTensor* self, const aclIntAr
     }
 
     // 检查Format
-    if (self->GetStorageFormat() != Format::FORMAT_ND) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND");
-        return ACLNN_ERR_PARAM_INVALID;
+    if (op::IsPrivateFormat(self->GetStorageFormat())) {
+        if (IsRegBase()) {
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW, self [%s]",
+                    ToString(self->GetStorageFormat()).GetString());
+            return ACLNN_ERR_PARAM_INVALID;
+        } else {
+            OP_LOGW("Format of self gets [%s], this format may lead to precision failure.",
+                    ToString(self->GetStorageFormat()).GetString());
+        }
     }
 
     // 将输入self转换成连续的tensor
