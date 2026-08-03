@@ -1444,7 +1444,7 @@ __aicore__ inline void ArgMaxWithValueBase<T1, T2, T3, isMin>::ArgMaxAraUnAlignC
 
             // merge chain0 vs chain1: strict > tie(idx_le) > NaN(idx_le)
             if constexpr (isMin) {
-                AscendC::MicroAPI::Compare<T4, CMPMODE::LT>(mergeMask, vregC1Val, vregVal0, maskM);
+                AscendC::MicroAPI::Compare<T4, CMPMODE::LT>(mergeMask, vregVal0, vregC1Val, maskM);
             } else {
                 AscendC::MicroAPI::Compare<T4, CMPMODE::GT>(mergeMask, vregVal0, vregC1Val, maskM);
             }
