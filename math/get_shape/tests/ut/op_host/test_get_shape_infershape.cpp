@@ -10,6 +10,7 @@
 
 #include <gtest/gtest.h>
 #include <iostream>
+#include <array>
 #include "infershape_context_faker.h"
 #include "base/registry/op_impl_space_registry_v2.h"
 
@@ -77,7 +78,7 @@ TEST_F(GetShapeInferShapeTest, TwoInputs_2D_And_3D)
     EXPECT_EQ(ToVector(*holder.GetContext()->GetOutputShape(0)), std::vector<int64_t>({5}));
 }
 
-TEST_F(GetShapeInferShapeTest, ScalarInput)
+TEST_F(GetShapeInferShapeTest, ScalarInput_Fail)
 {
     auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
     auto inferShapeFunc = spaceRegistry->GetOpImpl("GetShape")->infer_shape;
@@ -96,8 +97,7 @@ TEST_F(GetShapeInferShapeTest, ScalarInput)
                       .OutputShapes({&output_shape})
                       .Build();
 
-    EXPECT_EQ(inferShapeFunc(holder.GetContext()), ge::GRAPH_SUCCESS);
-    EXPECT_EQ(ToVector(*holder.GetContext()->GetOutputShape(0)), std::vector<int64_t>({0}));
+    EXPECT_EQ(inferShapeFunc(holder.GetContext()), ge::GRAPH_FAILED);
 }
 
 TEST_F(GetShapeInferShapeTest, VectorInput)

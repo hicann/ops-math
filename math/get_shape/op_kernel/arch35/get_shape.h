@@ -45,9 +45,7 @@ __aicore__ inline void KernelGetShape::Init(GM_ADDR x, GM_ADDR y, const GetShape
     pipe_.InitBuffer(outQueue_, GetShapeConst::BUFFER_NUM, GetShapeConst::MAX_TOTAL_DIM * sizeof(int32_t));
 
     inputNum_ = static_cast<uint32_t>(tilingData.inputNum);
-    if (inputNum_ == 0 || inputNum_ > static_cast<uint32_t>(GetShapeConst::MAX_INPUT_NUM)) {
-        inputNum_ = 0;
-        totalDimNum_ = 0;
+    if (inputNum_ == 0) {
         return;
     }
 

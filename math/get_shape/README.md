@@ -46,7 +46,7 @@
     <tr>
       <td>x</td>
       <td>动态输入</td>
-      <td>待获取 shape 信息的输入 tensor 列表，由属性 N 指定数量。</td>
+      <td>待获取 shape 信息的输入 tensor 列表。</td>
       <td>DOUBLE、FLOAT、FLOAT16、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、BOOL</td>
       <td>ND</td>
     </tr>
@@ -61,9 +61,8 @@
 
 ## 约束说明
 
-- 输入 tensor 数量 N 取值范围为 1 ~ 128。
 - 每个输入 tensor 的 rank 不超过 8。
-- 所有输入 tensor 的 rank 之和（即输出长度）不超过 128。
+- 所有输入 tensor 的 rank 之和（即输出长度）不超过 128，且大于 0（不允许所有输入均为 scalar）。
 - 输出 dtype 固定为 INT32，不可配置。
 - 输入仅支持 ND 格式。
 

@@ -16,7 +16,6 @@
 namespace GetShapeConst {
 constexpr int64_t MAX_TOTAL_DIM = 128;
 constexpr int64_t MAX_DIM_PER_TENSOR = 8;
-constexpr int64_t MAX_INPUT_NUM = 128;
 constexpr int32_t BUFFER_NUM = 1;
 } // namespace GetShapeConst
 
