@@ -70,7 +70,7 @@ tbetoolkits-*.log
 third_party/
 oat_reports/
 
-log/
+/log/
 # OpenCode 配置
 .opencode/
 .claude/
