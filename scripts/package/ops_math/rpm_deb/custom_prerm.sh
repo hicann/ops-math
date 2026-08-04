@@ -23,11 +23,11 @@ rm -rf "${WHL_INSTALL_DIR_PATH}/es_math-"*.dist-info 2>/dev/null
 rm -f "${sourcedir}/opp/built-in/op_impl/ai_core/tbe/impl/ops_math/__init__.py"
 rm -f "${sourcedir}/opp/built-in/op_impl/ai_core/tbe/impl/ops_math/dynamic/__init__.py"
 
-rmdir "${WHL_INSTALL_DIR_PATH}" 2>/dev/null
+[ -d "${WHL_INSTALL_DIR_PATH}" ] && rmdir "${WHL_INSTALL_DIR_PATH}" 2>/dev/null || true
 parent=$(dirname "${WHL_INSTALL_DIR_PATH}")
-[ -d "${parent}" ] && rm -rf "${parent}" 2>/dev/null
+[ -d "${parent}" ] && rmdir "${parent}" 2>/dev/null || true
 
-rm -f "${sourcedir}"/ops_math/es_packages/whl/*.whl 2>/dev/null
-rmdir "${sourcedir}"/ops_math/es_packages/whl 2>/dev/null
-rmdir "${sourcedir}"/ops_math/es_packages 2>/dev/null
-rmdir "${sourcedir}"/ops_math 2>/dev/null
+rm -f "${sourcedir}"/ops_math/es_packages/whl/*.whl 2>/dev/null || true
+[ -d "${sourcedir}"/ops_math/es_packages/whl ] && rmdir "${sourcedir}"/ops_math/es_packages/whl 2>/dev/null || true
+[ -d "${sourcedir}"/ops_math/es_packages ] && rmdir "${sourcedir}"/ops_math/es_packages 2>/dev/null || true
+[ -d "${sourcedir}"/ops_math ] && rmdir "${sourcedir}"/ops_math 2>/dev/null || true
