@@ -783,32 +783,12 @@ int32_t ReduceVarTiling::IsUseNddma(const uint64_t* shape)
         // cacheline 切分最后两维之外，使用NDDMA
         return 1;
     }
-    if (Pattern::TailA) {
-        uint64_t factorA = reduceVarTilingData_->ubFactorA;
-        for (auto iA = unitA_.idx + AXES_STEP; iA < Pattern::Dim; iA += AXES_STEP) {
-            factorA = factorA * shape[iA];
-        }
-        if (factorA > ubBlockSize * 2) {
-            // 转置后A轴乘积大于ubblock, 不做NDDMA
-            return 0;
-        }
-    } else {
-        uint64_t factorR = reduceVarTilingData_->ubFactorR;
-        for (auto iR = unitR_.idx + AXES_STEP; iR < Pattern::Dim; iR += AXES_STEP) {
-            factorR = factorR * shape[iR];
-        }
-        if (factorR > ubBlockSize * 2) {
-            // 转置后R轴乘积大于ubblock, 不做NDDMA
-            return 0;
-        }
-    }
     return 1;
 }
 
 template <class Pattern>
 int32_t ReduceVarTiling::IsInvert(const uint64_t* shape)
 {
-    // Only valid when NDDMA is enabled (checked at call site)
     // VL/2 = 128B threshold, elements = 128B / sizeof(inputDtype)
     uint32_t vlBytes = Ops::Base::GetVRegSize(context_);
     uint32_t thresholdBytes = vlBytes / 2; // 128B
@@ -904,7 +884,8 @@ void ReduceVarTiling::SetTilingData(const uint64_t* shape)
     reduceVarTilingData_->useNddma = IsUseNddma<Pattern>(shape);
     reduceVarTilingData_->isInvert = reduceVarTilingData_->useNddma ? static_cast<uint8_t>(IsInvert<Pattern>(shape)) :
                                                                       static_cast<uint8_t>(0);
-    OP_LOGI(context_->GetNodeName(), "isInvert:%u", reduceVarTilingData_->isInvert);
+    OP_LOGI(context_->GetNodeName(), "isNddma %u isInvert:%u", reduceVarTilingData_->useNddma,
+            reduceVarTilingData_->isInvert);
 
     ComputeStride<Pattern>(shape);
 
