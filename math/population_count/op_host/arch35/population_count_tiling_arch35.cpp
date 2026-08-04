@@ -19,10 +19,10 @@
 
 namespace optiling {
 
-using Ops::Base::CeilDiv;
 using Ops::Base::CeilAlign;
-using Ops::Base::FloorDiv;
+using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
@@ -35,7 +35,8 @@ constexpr int64_t UB_BYTES_PER_ELEM_DOUBLE = 8;
 
 static const gert::Shape g_vec_1_shape = {1};
 
-static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape) {
+static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape)
+{
     if (in_shape.GetDimNum() == 0) {
         return g_vec_1_shape;
     }
@@ -66,10 +67,10 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
     dataType = inputDesc->GetDataType();
-    OP_CHECK_IF(supportedDtype.count(dataType) == 0,
-                OP_LOGE(context, "PopulationCount: invalid input dtype %d (must be INT16/UINT16)",
-                        static_cast<int>(dataType)),
-                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        supportedDtype.count(dataType) == 0,
+        OP_LOGE(context, "PopulationCount: invalid input dtype %d (must be INT16/UINT16)", static_cast<int>(dataType)),
+        return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -81,40 +82,33 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus HandleEmptyTensor(gert::TilingContext* context, ge::DataType dataType)
+static ge::graphStatus HandleEmptyTensor(gert::TilingContext* context)
 {
     PopulationCountTilingData* tiling = context->GetTilingData<PopulationCountTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(PopulationCountTilingData), 0, sizeof(PopulationCountTilingData)) != EOK,
-        OP_LOGE(context, "memset tiling data error (empty tensor)"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(PopulationCountTilingData), 0, sizeof(PopulationCountTilingData)) != EOK,
+                OP_LOGE(context, "memset tiling data error (empty tensor)"), return ge::GRAPH_FAILED);
 
     size_t* workspace = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, workspace);
     workspace[0] = WS_SYS_SIZE;
 
     context->SetBlockDim(1);
-    uint32_t dTypeX = static_cast<uint32_t>(dataType);
     uint64_t useDoubleBuffer = 0U;
-    ASCENDC_TPL_SEL_PARAM(context, dTypeX, useDoubleBuffer);
+    ASCENDC_TPL_SEL_PARAM(context, useDoubleBuffer);
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus ComputeTilingParams(gert::TilingContext* context, int64_t totalIdx,
-                                           uint64_t ubSize, int64_t coreNum, ge::DataType dataType)
+static ge::graphStatus ComputeTilingParams(gert::TilingContext* context, int64_t totalIdx, uint64_t ubSize,
+                                           int64_t coreNum)
 {
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     PopulationCountTilingData* tiling = context->GetTilingData<PopulationCountTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(PopulationCountTilingData), 0, sizeof(PopulationCountTilingData)) != EOK,
-        OP_LOGE(context, "memset tiling data error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(PopulationCountTilingData), 0, sizeof(PopulationCountTilingData)) != EOK,
+                OP_LOGE(context, "memset tiling data error"), return ge::GRAPH_FAILED);
 
     tiling->totalNum = totalIdx;
 
@@ -129,8 +123,7 @@ static ge::graphStatus ComputeTilingParams(gert::TilingContext* context, int64_t
 
     context->SetBlockDim(std::max<int64_t>(usedCoreNum, 1));
 
-    uint32_t dTypeX = static_cast<uint32_t>(dataType);
-    ASCENDC_TPL_SEL_PARAM(context, dTypeX, useDoubleBuffer);
+    ASCENDC_TPL_SEL_PARAM(context, useDoubleBuffer);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -138,22 +131,18 @@ static ge::graphStatus PopulationCountTilingFunc(gert::TilingContext* context)
 {
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     int64_t totalIdx = 0;
     ge::DataType dataType = ge::DT_UNDEFINED;
-    OP_CHECK_IF(
-        GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeAttrsInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     if (totalIdx == 0) {
-        return HandleEmptyTensor(context, dataType);
+        return HandleEmptyTensor(context);
     }
-    return ComputeTilingParams(context, totalIdx, ubSize, coreNum, dataType);
+    return ComputeTilingParams(context, totalIdx, ubSize, coreNum);
 }
 
 static ge::graphStatus TilingParseForPopulationCount([[maybe_unused]] gert::TilingParseContext* context)

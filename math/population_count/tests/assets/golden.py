@@ -12,45 +12,70 @@
 """
 PopulationCount kernel-direct golden.
 
-Uses a NumPy byte lookup table as the golden reference.
+Uses TensorFlow's direct competitor tf.raw_ops.PopulationCount as the golden
+reference. TensorFlow runs in a subprocess to avoid loading it into the TTK
+process together with Torch/Torch-NPU.
 Formula: y = sum(bit_i(x)), i in [0, 15]
   x : int16 or uint16 input
   y : uint8 population count in [0, 16]
-
-The kernel test context supplies NumPy arrays. Counting the raw bytes preserves
-the two's-complement bit representation of signed int16 inputs.
 """
 
-from types import SimpleNamespace
+import os
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
 
 import numpy as np
 
 
-_BYTE_POPCOUNT = np.array(
-    [bin(value).count("1") for value in range(256)],
-    dtype=np.uint8,
-)
+__golden__ = {"kernel": {"population_count": "population_count_golden"}}
 
 
-__golden__ = {
-    "kernel": {
-        "population_count": "population_count_golden",
-    }
-}
+_GOLDEN_PYTHON_ENV = "POPULATION_COUNT_GOLDEN_PYTHON"
+_TF_SCRIPT = r"""
+import os
+import sys
+
+import numpy as np
+
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
+os.environ.setdefault("TF_ENABLE_ONEDNN_OPTS", "0")
+
+import tensorflow as tf
+
+with np.load(sys.argv[1]) as input_data:
+    x = input_data["x"]
+
+result = tf.raw_ops.PopulationCount(x=tf.convert_to_tensor(x))
+np.save(sys.argv[2], result.numpy())
+"""
 
 
 def population_count_golden(x, **kwargs):
+    """
+    Kernel golden for population_count.
+    All the parameters follow @population_count_def.cpp without outputs.
+    All the input Tensors are numpy.ndarray.
+    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
+             input_formats, output_formats, input_ori_formats, output_ori_formats,
+             input_dtypes, output_dtypes.
+    """
     del kwargs
-    context = SimpleNamespace(input_arrays=(x,))
-    return _population_count(context)
+    with tempfile.TemporaryDirectory(prefix="population_count_golden_") as temp_dir:
+        input_path = Path(temp_dir) / "input.npz"
+        output_path = Path(temp_dir) / "output.npy"
+        np.savez(input_path, x=np.asarray(x))
 
-
-def _population_count(context):
-    arrs = context.input_arrays
-    x = arrs[0]
-
-    # Count each byte independently so signed inputs keep their original bits.
-    x_bytes = np.ascontiguousarray(x).view(np.uint8)
-    x_bytes = x_bytes.reshape(x.size, x.dtype.itemsize)
-    result = _BYTE_POPCOUNT[x_bytes].sum(axis=1, dtype=np.uint8)
-    return result.reshape(x.shape)
+        worker_env = os.environ.copy()
+        worker_env.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
+        worker_env.setdefault("TF_ENABLE_ONEDNN_OPTS", "0")
+        python_executable = worker_env.get(_GOLDEN_PYTHON_ENV, sys.executable)
+        subprocess.run(
+            [python_executable, "-c", _TF_SCRIPT, str(input_path), str(output_path)],
+            check=True,
+            env=worker_env,
+            timeout=180,
+        )
+        return np.load(output_path).astype(np.uint8, copy=False)

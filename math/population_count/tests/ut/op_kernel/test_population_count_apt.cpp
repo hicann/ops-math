@@ -54,7 +54,7 @@ TEST_F(PopulationCountKernelTest, test_all_zeros)
     tilingData->ubFactor = numElements;
 
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
-    ICPU_RUN_KF((population_count<int16_t, 0>), blockDim, x, y, workspace, tiling);
+    ICPU_RUN_KF((population_count<0>), blockDim, x, y, workspace, tiling);
 
     uint8_t* yData = reinterpret_cast<uint8_t*>(y);
     for (size_t i = 0; i < numElements; ++i) {
@@ -84,7 +84,7 @@ TEST_F(PopulationCountKernelTest, test_empty_tensor)
     tilingData->ubFactor = 0;
 
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
-    ICPU_RUN_KF((population_count<int16_t, 0>), blockDim, x, y, workspace, tiling);
+    ICPU_RUN_KF((population_count<0>), blockDim, x, y, workspace, tiling);
 
     AscendC::GmFree(x);
     AscendC::GmFree(y);
@@ -114,7 +114,7 @@ TEST_F(PopulationCountKernelTest, test_double_buffer_zeros)
     tilingData->ubFactor = 1024;
 
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
-    ICPU_RUN_KF((population_count<int16_t, 1>), blockDim, x, y, workspace, tiling);
+    ICPU_RUN_KF((population_count<1>), blockDim, x, y, workspace, tiling);
 
     uint8_t* yData = reinterpret_cast<uint8_t*>(y);
     for (size_t i = 0; i < numElements; ++i) {

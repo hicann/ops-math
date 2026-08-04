@@ -24,6 +24,8 @@
  *   5) Failure paths:
  *        - shape mismatch (different sizes) → GRAPH_FAILED
  *        - unsupported dtype (DT_DOUBLE)    → GRAPH_FAILED
+ *        - input dtype mismatch             → GRAPH_FAILED
+ *        - output dtype mismatch            → GRAPH_FAILED
  *
  * Platform constants (UT faker): coreNum=64, ubSize=262144, ubBlockSize=32.
  *
@@ -45,21 +47,15 @@
 
 namespace optiling {
 struct AcoshGradCompileInfo {};
-}  // namespace optiling
+} // namespace optiling
 
 using namespace std;
 
 class AcoshGradTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AcoshGradTilingTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "AcoshGradTilingTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "AcoshGradTilingTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "AcoshGradTilingTest TearDown" << std::endl; }
 };
 
 // ===========================================================================
@@ -70,16 +66,15 @@ protected:
 TEST_F(AcoshGradTilingTest, test_tiling_fp32_multi_core_001)
 {
     optiling::AcoshGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "AcoshGrad",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},  // y
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},  // dy
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},  // z
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AcoshGrad",
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND}, // y
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND}, // dy
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND}, // z
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "8192 128 7264 ";
     std::vector<size_t> expectWorkspaces = {0};
@@ -92,16 +87,15 @@ TEST_F(AcoshGradTilingTest, test_tiling_fp32_multi_core_001)
 TEST_F(AcoshGradTilingTest, test_tiling_fp16_multi_core_002)
 {
     optiling::AcoshGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "AcoshGrad",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AcoshGrad",
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "8192 128 10912 ";
     std::vector<size_t> expectWorkspaces = {0};
@@ -114,16 +108,15 @@ TEST_F(AcoshGradTilingTest, test_tiling_fp16_multi_core_002)
 TEST_F(AcoshGradTilingTest, test_tiling_bf16_multi_core_003)
 {
     optiling::AcoshGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "AcoshGrad",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AcoshGrad",
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "8192 128 10912 ";
     std::vector<size_t> expectWorkspaces = {0};
@@ -137,16 +130,15 @@ TEST_F(AcoshGradTilingTest, test_tiling_bf16_multi_core_003)
 TEST_F(AcoshGradTilingTest, test_tiling_fp32_small_tail_004)
 {
     optiling::AcoshGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "AcoshGrad",
-        {
-            {{{7}, {7}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{7}, {7}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{7}, {7}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AcoshGrad",
+                                              {
+                                                  {{{7}, {7}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{7}, {7}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{7}, {7}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "7 32 7264 ";
     std::vector<size_t> expectWorkspaces = {0};
@@ -160,16 +152,15 @@ TEST_F(AcoshGradTilingTest, test_tiling_fp32_small_tail_004)
 TEST_F(AcoshGradTilingTest, test_tiling_fp16_unalign_005)
 {
     optiling::AcoshGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "AcoshGrad",
-        {
-            {{{17}, {17}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{17}, {17}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{17}, {17}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AcoshGrad",
+                                              {
+                                                  {{{17}, {17}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{17}, {17}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{17}, {17}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "17 32 10912 ";
     std::vector<size_t> expectWorkspaces = {0};
@@ -183,16 +174,15 @@ TEST_F(AcoshGradTilingTest, test_tiling_fp16_unalign_005)
 TEST_F(AcoshGradTilingTest, test_tiling_fp32_large_multi_core_006)
 {
     optiling::AcoshGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "AcoshGrad",
-        {
-            {{{416910}, {416910}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{416910}, {416910}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{416910}, {416910}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AcoshGrad",
+                                              {
+                                                  {{{416910}, {416910}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{416910}, {416910}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{416910}, {416910}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "416910 6528 7264 ";
     std::vector<size_t> expectWorkspaces = {0};
@@ -206,16 +196,15 @@ TEST_F(AcoshGradTilingTest, test_tiling_fp32_large_multi_core_006)
 TEST_F(AcoshGradTilingTest, test_tiling_fp16_2d_large_multi_core_007)
 {
     optiling::AcoshGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "AcoshGrad",
-        {
-            {{{60882, 23}, {60882, 23}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{60882, 23}, {60882, 23}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{60882, 23}, {60882, 23}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AcoshGrad",
+                                              {
+                                                  {{{60882, 23}, {60882, 23}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{60882, 23}, {60882, 23}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{60882, 23}, {60882, 23}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "1400286 21888 10912 ";
     std::vector<size_t> expectWorkspaces = {0};
@@ -228,16 +217,15 @@ TEST_F(AcoshGradTilingTest, test_tiling_fp16_2d_large_multi_core_007)
 TEST_F(AcoshGradTilingTest, test_tiling_empty_fp32_008)
 {
     optiling::AcoshGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "AcoshGrad",
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AcoshGrad",
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
@@ -250,16 +238,15 @@ TEST_F(AcoshGradTilingTest, test_tiling_empty_fp32_008)
 TEST_F(AcoshGradTilingTest, test_tiling_empty_bf16_009)
 {
     optiling::AcoshGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "AcoshGrad",
-        {
-            {{{0, 8}, {0, 8}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{0, 8}, {0, 8}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{0, 8}, {0, 8}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AcoshGrad",
+                                              {
+                                                  {{{0, 8}, {0, 8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{0, 8}, {0, 8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0, 8}, {0, 8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
@@ -272,16 +259,15 @@ TEST_F(AcoshGradTilingTest, test_tiling_empty_bf16_009)
 TEST_F(AcoshGradTilingTest, test_tiling_fail_shape_mismatch_010)
 {
     optiling::AcoshGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "AcoshGrad",
-        {
-            {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{8}, {8}},   ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AcoshGrad",
+                                              {
+                                                  {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "";
     std::vector<size_t> expectWorkspaces = {0};
@@ -294,16 +280,57 @@ TEST_F(AcoshGradTilingTest, test_tiling_fail_shape_mismatch_010)
 TEST_F(AcoshGradTilingTest, test_tiling_fail_unsupported_dtype_011)
 {
     optiling::AcoshGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "AcoshGrad",
-        {
-            {{{8}, {8}}, ge::DT_DOUBLE, ge::FORMAT_ND},
-            {{{8}, {8}}, ge::DT_DOUBLE, ge::FORMAT_ND},
-        },
-        {
-            {{{8}, {8}}, ge::DT_DOUBLE, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AcoshGrad",
+                                              {
+                                                  {{{8}, {8}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                                  {{{8}, {8}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8}, {8}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
+    string expectTilingData = "";
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+// ===========================================================================
+// 12) FAIL: y/dy dtype mismatch → GRAPH_FAILED
+// ===========================================================================
+TEST_F(AcoshGradTilingTest, test_tiling_fail_input_dtype_mismatch_012)
+{
+    optiling::AcoshGradCompileInfo compileInfo;
+    gert::TilingContextPara tilingContextPara("AcoshGrad",
+                                              {
+                                                  {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
+    string expectTilingData = "";
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+// ===========================================================================
+// 13) FAIL: y/z dtype mismatch → GRAPH_FAILED
+// ===========================================================================
+TEST_F(AcoshGradTilingTest, test_tiling_fail_output_dtype_mismatch_013)
+{
+    optiling::AcoshGradCompileInfo compileInfo;
+    gert::TilingContextPara tilingContextPara("AcoshGrad",
+                                              {
+                                                  {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "";
     std::vector<size_t> expectWorkspaces = {0};

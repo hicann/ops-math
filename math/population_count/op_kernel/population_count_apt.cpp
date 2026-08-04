@@ -12,7 +12,7 @@
 
 #include "arch35/population_count.h"
 
-template <typename D_T_X, uint32_t BUFFER_MODE>
+template <uint32_t BUFFER_MODE>
 __global__ __aicore__ void population_count(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(PopulationCountTilingData);
@@ -22,7 +22,7 @@ __global__ __aicore__ void population_count(GM_ADDR x, GM_ADDR y, GM_ADDR worksp
         return;
     }
 
-    NsPopulationCount::PopulationCount<D_T_X, BUFFER_MODE> op;
+    NsPopulationCount::PopulationCount<DTYPE_X, BUFFER_MODE> op;
     op.Init(x, y, &tilingData);
     op.Process();
 }

@@ -18,7 +18,7 @@
  * \brief PopulationCount SWAR kernel implementation (arch35)
  *
  * Template parameters:
- *   - D_T_X:       input dtype (int16_t / uint16_t)
+ *   - T:           input dtype (int16_t / uint16_t)
  *   - BUFFER_MODE: 0 = single buffer, 1 = double buffer
  *
  * Algorithm: 16-bit SWAR popcount (4 steps + high-byte mask):
@@ -53,7 +53,7 @@ namespace NsPopulationCount {
 
 using namespace AscendC;
 
-template <typename D_T_X, uint32_t BUFFER_MODE>
+template <typename T, uint32_t BUFFER_MODE>
 class PopulationCount {
     static constexpr int32_t BUFFER_NUM = BUFFER_MODE ? 2 : 1;
 
@@ -70,20 +70,20 @@ private:
 
 private:
     TPipe pipe;
-    TQue<QuePosition::VECIN,  BUFFER_NUM> inputQueueX;
+    TQue<QuePosition::VECIN, BUFFER_NUM> inputQueueX;
     TQue<QuePosition::VECOUT, BUFFER_NUM> outputQueueY;
     TBuf<QuePosition::VECCALC> tmpBuf;
 
-    GlobalTensor<D_T_X>   inputGMX;
+    GlobalTensor<T> inputGMX;
     GlobalTensor<uint8_t> outputGMY;
 
     int64_t blockLength_ = 0;
-    int64_t ubLength_    = 0;
+    int64_t ubLength_ = 0;
 };
 
-template <typename D_T_X, uint32_t BUFFER_MODE>
-__aicore__ inline void PopulationCount<D_T_X, BUFFER_MODE>::Init(
-    GM_ADDR x, GM_ADDR y, const PopulationCountTilingData* tilingData)
+template <typename T, uint32_t BUFFER_MODE>
+__aicore__ inline void PopulationCount<T, BUFFER_MODE>::Init(GM_ADDR x, GM_ADDR y,
+                                                             const PopulationCountTilingData* tilingData)
 {
     int64_t blockIdx = AscendC::GetBlockIdx();
     int64_t remainderLength = tilingData->totalNum - tilingData->blockFactor * blockIdx;
@@ -93,51 +93,51 @@ __aicore__ inline void PopulationCount<D_T_X, BUFFER_MODE>::Init(
     }
     ubLength_ = tilingData->ubFactor;
 
-    inputGMX.SetGlobalBuffer((__gm__ D_T_X*)x + tilingData->blockFactor * blockIdx, blockLength_);
+    inputGMX.SetGlobalBuffer((__gm__ T*)x + tilingData->blockFactor * blockIdx, blockLength_);
     outputGMY.SetGlobalBuffer((__gm__ uint8_t*)y + tilingData->blockFactor * blockIdx, blockLength_);
 
-    pipe.InitBuffer(inputQueueX,  BUFFER_NUM, ubLength_ * sizeof(D_T_X));
+    pipe.InitBuffer(inputQueueX, BUFFER_NUM, ubLength_ * sizeof(T));
     pipe.InitBuffer(outputQueueY, BUFFER_NUM, ubLength_ * sizeof(uint8_t));
     // tmpBuf holds intermediate SWAR results as uint16
     pipe.InitBuffer(tmpBuf, ubLength_ * sizeof(uint16_t));
 }
 
-template <typename D_T_X, uint32_t BUFFER_MODE>
-__aicore__ inline void PopulationCount<D_T_X, BUFFER_MODE>::CopyIn(int64_t progress, int64_t currentNum)
+template <typename T, uint32_t BUFFER_MODE>
+__aicore__ inline void PopulationCount<T, BUFFER_MODE>::CopyIn(int64_t progress, int64_t currentNum)
 {
-    AscendC::LocalTensor<D_T_X> xLocal = inputQueueX.template AllocTensor<D_T_X>();
+    AscendC::LocalTensor<T> xLocal = inputQueueX.template AllocTensor<T>();
     AscendC::DataCopyParams copyParams;
     copyParams.blockCount = 1;
-    copyParams.blockLen   = static_cast<uint32_t>(currentNum * sizeof(D_T_X));
-    copyParams.srcStride  = 0;
-    copyParams.dstStride  = 0;
+    copyParams.blockLen = static_cast<uint32_t>(currentNum * sizeof(T));
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
     AscendC::DataCopyPad(xLocal, inputGMX[progress * ubLength_], copyParams, {false, 0, 0, 0});
     inputQueueX.EnQue(xLocal);
 }
 
-template <typename D_T_X, uint32_t BUFFER_MODE>
-__aicore__ inline void PopulationCount<D_T_X, BUFFER_MODE>::CopyOut(int64_t progress, int64_t currentNum)
+template <typename T, uint32_t BUFFER_MODE>
+__aicore__ inline void PopulationCount<T, BUFFER_MODE>::CopyOut(int64_t progress, int64_t currentNum)
 {
     AscendC::LocalTensor<uint8_t> yLocal = outputQueueY.template DeQue<uint8_t>();
     AscendC::DataCopyParams copyParams;
     copyParams.blockCount = 1;
-    copyParams.blockLen   = static_cast<uint32_t>(currentNum * sizeof(uint8_t));
-    copyParams.srcStride  = 0;
-    copyParams.dstStride  = 0;
+    copyParams.blockLen = static_cast<uint32_t>(currentNum * sizeof(uint8_t));
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
     AscendC::DataCopyPad(outputGMY[progress * ubLength_], yLocal, copyParams);
     outputQueueY.FreeTensor(yLocal);
 }
 
-template <typename D_T_X, uint32_t BUFFER_MODE>
-__aicore__ inline void PopulationCount<D_T_X, BUFFER_MODE>::Compute(int64_t currentNum)
+template <typename T, uint32_t BUFFER_MODE>
+__aicore__ inline void PopulationCount<T, BUFFER_MODE>::Compute(int64_t currentNum)
 {
-    AscendC::LocalTensor<D_T_X>   xLocal = inputQueueX.template DeQue<D_T_X>();
+    AscendC::LocalTensor<T> xLocal = inputQueueX.template DeQue<T>();
     AscendC::LocalTensor<uint8_t> yLocal = outputQueueY.template AllocTensor<uint8_t>();
-    AscendC::LocalTensor<uint16_t> tmp   = tmpBuf.Get<uint16_t>();
+    AscendC::LocalTensor<uint16_t> tmp = tmpBuf.Get<uint16_t>();
 
     // Reinterpret int16 -> uint16 to force logical right shift
     AscendC::LocalTensor<uint16_t> u;
-    if constexpr (std::is_same_v<D_T_X, int16_t>) {
+    if constexpr (std::is_same_v<T, int16_t>) {
         u = xLocal.template ReinterpretCast<uint16_t>();
     } else {
         u = xLocal;
@@ -153,7 +153,7 @@ __aicore__ inline void PopulationCount<D_T_X, BUFFER_MODE>::Compute(int64_t curr
     // SWAR step 2: u = (u & 0x3333) + ((u >> 2) & 0x3333)
     AscendC::ShiftRight(tmp, u, static_cast<uint16_t>(2), count);
     AscendC::Ands(tmp, tmp, static_cast<uint16_t>(0x3333), count);
-    AscendC::Ands(u,   u,   static_cast<uint16_t>(0x3333), count);
+    AscendC::Ands(u, u, static_cast<uint16_t>(0x3333), count);
     AscendC::Add(u, u, tmp, count);
 
     // SWAR step 3: u = (u + (u >> 4)) & 0x0F0F
@@ -182,8 +182,8 @@ __aicore__ inline void PopulationCount<D_T_X, BUFFER_MODE>::Compute(int64_t curr
     inputQueueX.FreeTensor(xLocal);
 }
 
-template <typename D_T_X, uint32_t BUFFER_MODE>
-__aicore__ inline void PopulationCount<D_T_X, BUFFER_MODE>::Process()
+template <typename T, uint32_t BUFFER_MODE>
+__aicore__ inline void PopulationCount<T, BUFFER_MODE>::Process()
 {
     if (blockLength_ <= 0 || ubLength_ <= 0) {
         return;

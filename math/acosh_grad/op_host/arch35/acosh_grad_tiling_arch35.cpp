@@ -26,23 +26,24 @@
 
 namespace optiling {
 
-using Ops::Base::CeilDiv;
 using Ops::Base::CeilAlign;
-using Ops::Base::FloorDiv;
+using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
 constexpr size_t WORKSPACE_NUM = 1;
-constexpr int64_t DOUBLE_BUF_TENSOR_COUNT = 6;  // 3 queues × 2 slots
-constexpr int64_t WORK_BUF_COUNT = 3;            // 3 份 FP32 中间 buffer
-constexpr int64_t MIN_SPLIT_THRESHOLD = 1024;    // 双缓冲阈值
+constexpr int64_t DOUBLE_BUF_TENSOR_COUNT = 6; // 3 queues × 2 slots
+constexpr int64_t WORK_BUF_COUNT = 3;          // 3 份 FP32 中间 buffer
+constexpr int64_t MIN_SPLIT_THRESHOLD = 1024;  // 双缓冲阈值
 constexpr int64_t TYPE_SIZE_FP16 = 2;
 constexpr int64_t TYPE_SIZE_FP32 = 4;
 
 static const gert::Shape g_vec_1_shape = {1};
 
-static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape) {
+static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape)
+{
     if (in_shape.GetDimNum() == 0) {
         return g_vec_1_shape;
     }
@@ -76,18 +77,29 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* 
     auto outShapeZ = EnsureNotScalar(outZ->GetStorageShape());
 
     // shape 校验：y.shape == dy.shape == z.shape
-    OP_CHECK_IF(
-        inputShapeY.GetShapeSize() != inputShapeDy.GetShapeSize() ||
-            inputShapeY.GetShapeSize() != outShapeZ.GetShapeSize(),
-        OP_LOGE(context, "AcoshGrad: shape mismatch: y=%ld, dy=%ld, z=%ld",
-                inputShapeY.GetShapeSize(), inputShapeDy.GetShapeSize(), outShapeZ.GetShapeSize()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputShapeY.GetShapeSize() != inputShapeDy.GetShapeSize() ||
+                    inputShapeY.GetShapeSize() != outShapeZ.GetShapeSize(),
+                OP_LOGE(context, "AcoshGrad: shape mismatch: y=%ld, dy=%ld, z=%ld", inputShapeY.GetShapeSize(),
+                        inputShapeDy.GetShapeSize(), outShapeZ.GetShapeSize()),
+                return ge::GRAPH_FAILED);
 
     *totalIdx = inputShapeY.GetShapeSize();
 
-    auto inputDesc = context->GetInputDesc(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
-    *dataType = inputDesc->GetDataType();
+    const auto* inputYDesc = context->GetInputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputYDesc);
+    const auto* inputDyDesc = context->GetInputDesc(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputDyDesc);
+    const auto* outputZDesc = context->GetOutputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, outputZDesc);
+
+    const ge::DataType yDtype = inputYDesc->GetDataType();
+    const ge::DataType dyDtype = inputDyDesc->GetDataType();
+    const ge::DataType zDtype = outputZDesc->GetDataType();
+    OP_CHECK_IF(yDtype != dyDtype || yDtype != zDtype,
+                OP_LOGE(context, "AcoshGrad: dtype mismatch: y=%d, dy=%d, z=%d", static_cast<int>(yDtype),
+                        static_cast<int>(dyDtype), static_cast<int>(zDtype)),
+                return ge::GRAPH_FAILED);
+    *dataType = yDtype;
 
     // 迭代二：支持 FP16、BF16、FP32
     const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT16, ge::DT_BF16, ge::DT_FLOAT};
@@ -111,28 +123,24 @@ static ge::graphStatus AcoshGradTilingFunc(gert::TilingContext* context)
     // 1. 获取平台信息
     uint64_t ubSize;
     int64_t coreNum;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, &ubSize, &coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, &ubSize, &coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     // 2. 获取 shape/属性
     int64_t totalIdx;
     ge::DataType dataType;
-    OP_CHECK_IF(
-        GetShapeAttrsInfo(context, &totalIdx, &dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetShapeAttrsInfo(context, &totalIdx, &dataType) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     // 3. Workspace
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     // 4. 设置 TilingData
     AcoshGradTilingData* tiling = context->GetTilingData<AcoshGradTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(AcoshGradTilingData), 0, sizeof(AcoshGradTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(AcoshGradTilingData), 0, sizeof(AcoshGradTilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     // 空 Tensor 检查
     if (totalIdx == 0) {
@@ -175,8 +183,6 @@ static ge::graphStatus TilingParseForAcoshGrad([[maybe_unused]] gert::TilingPars
 
 struct AcoshGradCompileInfo {};
 
-IMPL_OP_OPTILING(AcoshGrad)
-    .Tiling(AcoshGradTilingFunc)
-    .TilingParse<AcoshGradCompileInfo>(TilingParseForAcoshGrad);
+IMPL_OP_OPTILING(AcoshGrad).Tiling(AcoshGradTilingFunc).TilingParse<AcoshGradCompileInfo>(TilingParseForAcoshGrad);
 
 } // namespace optiling

@@ -14,78 +14,58 @@ aclnnScale golden: y = x * scale [+ bias]
 
 scale/bias broadcast against x at [axis : axis+span], rest dims size 1.
 scaleFromBlob=True : span = numAxes (numAxes==-1 -> to last axis; 0 -> scale shape [1])
-scaleFromBlob=False: span = rank(scale) (numAxes ignored)
-Mirrors kernel-direct golden so aclnn / kernel cross-check stays consistent.
+scaleFromBlob=False: span = rank(scale) (numAxes ignored).
 """
 
-from types import SimpleNamespace
-
-import numpy as np
+import torch
 
 
-__golden__ = {
-    "aclnn": {
-        "aclnnScale": "scale_golden",
-    }
-}
+__golden__ = {"aclnn": {"aclnnScale": "scale_golden"}}
 
 
-def _align(x_shape, axis, span, t):
+def _align(x_shape, axis, span, tensor):
     rank = len(x_shape)
     if axis < 0:
         axis += rank
     bshape = [1] * rank
-    flat = np.asarray(t).reshape(-1)
-    n = flat.size
+    flat = tensor.reshape(-1)
     bshape[axis : axis + span] = list(x_shape[axis : axis + span])
-    if int(np.prod(bshape)) != n:
+    if torch.Size(bshape).numel() != flat.numel():
         bshape = [1] * rank
     return flat.reshape(bshape)
 
 
-def scale_golden(x, scale, bias, axis, numAxes, scaleFromBlob, y, **kwargs):
+def scale_golden(x, scale, bias, axis, numAxes, scaleFromBlob, y=None, **kwargs):
+    """
+    Aclnn golden for aclnnScale.
+    Parameters follow @aclnnScaleGetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+
+    kwargs may contain: tensor_dtypes, tensor_formats, scalar_dtypes,
+                        use_torch, short_soc_version, testcase_name.
+    """
     del y, kwargs
-    context = SimpleNamespace(
-        tensors=(x, scale, bias),
-        attributes={
-            "axis": axis,
-            "numAxes": numAxes,
-            "scaleFromBlob": scaleFromBlob,
-        },
-    )
-    return _scale(context)
-
-
-def _scale(context):
-    import torch
-
-    x = context.tensors[0].to(torch.float32).numpy()
-    scale = context.tensors[1].to(torch.float32).numpy()
-    bias = (
-        context.tensors[2].to(torch.float32).numpy()
-        if len(context.tensors) > 2 and context.tensors[2] is not None
-        else None
-    )
-    if bias is not None and bias.size == 0:
+    output_dtype = x.dtype
+    x = x.to(torch.float32)
+    scale = scale.to(torch.float32)
+    bias = bias.to(torch.float32) if bias is not None else None
+    if bias is not None and bias.numel() == 0:
         bias = None  # 空 bias 张量(shape含0)视为无 bias
 
-    attr = context.attributes or {}
-    axis = int(attr.get("axis", 1))
-    num_axes = int(attr.get("numAxes", attr.get("num_axes", 1)))
-    from_blob = bool(attr.get("scaleFromBlob", attr.get("scale_from_blob", True)))
+    axis = int(axis)
+    num_axes = int(numAxes)
+    from_blob = bool(scaleFromBlob)
 
-    rank = len(x.shape)
+    rank = x.dim()
     a = axis + rank if axis < 0 else axis
     if from_blob:
         span = (rank - a) if num_axes == -1 else num_axes
     else:
-        span = scale.ndim
+        span = scale.dim()
     span = max(0, min(span, rank - a))
 
     s = _align(x.shape, a, span, scale)
-    y = x * s
+    result = torch.mul(x, s)
     if bias is not None:
-        y = y + _align(x.shape, a, span, bias)
-    return torch.from_numpy(np.asarray(y, dtype=np.float32)).to(
-        context.tensors[0].dtype
-    )
+        result = torch.add(result, _align(x.shape, a, span, bias))
+    return result.to(output_dtype)
