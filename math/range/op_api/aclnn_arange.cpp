@@ -65,14 +65,14 @@ static const std::initializer_list<DataType> ASCEND910B_OUTPUT_DTYPE_SUPPORT_LIS
 static bool CheckDtypeValid(const aclScalar* start, const aclScalar* end, const aclScalar* step, const aclTensor* out)
 {
     // 获取芯片类型，判断芯片是否为Ascend910B
-    bool isAscend910BSocVersion =
-        (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-         IsRegBase());
-    const std::initializer_list<op::DataType> CURRENT_INPUT_DTYPE_SUPPORT_LIST =
-        isAscend910BSocVersion ? ASCEND910B_INPUT_DTYPE_SUPPORT_LIST : ASCEND910_INPUT_DTYPE_SUPPORT_LIST;
-    const std::initializer_list<op::DataType> CURRENT_OUTPUT_DTYPE_SUPPORT_LIST =
-        isAscend910BSocVersion ? ASCEND910B_OUTPUT_DTYPE_SUPPORT_LIST : ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST;
+    bool isAscend910BSocVersion = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+                                   GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase());
+    const std::initializer_list<op::DataType>
+        CURRENT_INPUT_DTYPE_SUPPORT_LIST = isAscend910BSocVersion ? ASCEND910B_INPUT_DTYPE_SUPPORT_LIST :
+                                                                    ASCEND910_INPUT_DTYPE_SUPPORT_LIST;
+    const std::initializer_list<op::DataType>
+        CURRENT_OUTPUT_DTYPE_SUPPORT_LIST = isAscend910BSocVersion ? ASCEND910B_OUTPUT_DTYPE_SUPPORT_LIST :
+                                                                     ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST;
 
     // 检查start的数据类型是否在算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(start, CURRENT_INPUT_DTYPE_SUPPORT_LIST, return false);
@@ -89,8 +89,8 @@ static bool CheckDtypeValid(const aclScalar* start, const aclScalar* end, const 
     return true;
 }
 
-inline static aclnnStatus CheckStepCorrect(
-    const aclScalar* start, const aclScalar* end, const aclScalar* step, const aclTensor* out)
+inline static aclnnStatus CheckStepCorrect(const aclScalar* start, const aclScalar* end, const aclScalar* step,
+                                           const aclTensor* out)
 {
     DataType outType = out->GetDataType();
     switch (outType) {
@@ -101,10 +101,9 @@ inline static aclnnStatus CheckStepCorrect(
             float endValueFloat = end->ToFloat();
             float stepValueFloat = step->ToFloat();
             if (CheckStep<float>(startValueFloat, endValueFloat, stepValueFloat) != ACLNN_SUCCESS) {
-                OP_LOGE(
-                    ACLNN_ERR_PARAM_INVALID,
-                    "upper bound and lower bound inconsistent with step sign. start:%f, end:%f, step:%f.",
-                    startValueFloat, endValueFloat, stepValueFloat);
+                OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                        "upper bound and lower bound inconsistent with step sign. start:%f, end:%f, step:%f.",
+                        startValueFloat, endValueFloat, stepValueFloat);
                 return ACLNN_ERR_PARAM_INVALID;
             }
             break;
@@ -114,10 +113,9 @@ inline static aclnnStatus CheckStepCorrect(
             double endValueDouble = end->ToDouble();
             double stepValueDouble = step->ToDouble();
             if (CheckStep<double>(startValueDouble, endValueDouble, stepValueDouble) != ACLNN_SUCCESS) {
-                OP_LOGE(
-                    ACLNN_ERR_PARAM_INVALID,
-                    "upper bound and lower bound inconsistent with step sign. start:%lf, end:%lf, step:%lf.",
-                    startValueDouble, endValueDouble, stepValueDouble);
+                OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                        "upper bound and lower bound inconsistent with step sign. start:%lf, end:%lf, step:%lf.",
+                        startValueDouble, endValueDouble, stepValueDouble);
                 return ACLNN_ERR_PARAM_INVALID;
             }
             break;
@@ -128,10 +126,9 @@ inline static aclnnStatus CheckStepCorrect(
             int64_t endValueInt64 = end->ToInt64();
             int64_t stepValueInt64 = step->ToInt64();
             if (CheckStep<int64_t>(startValueInt64, endValueInt64, stepValueInt64) != ACLNN_SUCCESS) {
-                OP_LOGE(
-                    ACLNN_ERR_PARAM_INVALID,
-                    "upper bound and lower bound inconsistent with step sign. start:%ld, end:%ld, step:%ld.",
-                    startValueInt64, endValueInt64, stepValueInt64);
+                OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                        "upper bound and lower bound inconsistent with step sign. start:%ld, end:%ld, step:%ld.",
+                        startValueInt64, endValueInt64, stepValueInt64);
                 return ACLNN_ERR_PARAM_INVALID;
             }
             break;
@@ -163,11 +160,11 @@ static bool CheckNotNull(const aclScalar* start, const aclScalar* end, const acl
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclScalar* start, const aclScalar* end, const aclScalar* step, const aclTensor* out)
+static aclnnStatus CheckParams(const aclScalar* start, const aclScalar* end, const aclScalar* step,
+                               const aclTensor* out)
 {
     // 1. 检查参数是否为空指针
-    CHECK_RET(CheckNotNull(start, end, step, out), ACLNN_ERR_INNER_NULLPTR);
+    CHECK_RET(CheckNotNull(start, end, step, out), ACLNN_ERR_PARAM_NULLPTR);
     // 2. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
     CHECK_RET(CheckDtypeValid(start, end, step, out), ACLNN_ERR_PARAM_INVALID);
     // 3. 检查输入的数据的值是否合理
@@ -175,9 +172,8 @@ static aclnnStatus CheckParams(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnArangeGetWorkspaceSize(
-    const aclScalar* start, const aclScalar* end, const aclScalar* step, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnArangeGetWorkspaceSize(const aclScalar* start, const aclScalar* end, const aclScalar* step,
+                                        aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnArange, DFX_IN(start, end, step), DFX_OUT(out));
 
