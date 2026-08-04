@@ -11,93 +11,39 @@
 #include <gtest/gtest.h>
 #include <iostream>
 #include "infershape_context_faker.h"
-#include "base/registry/op_impl_space_registry_v2.h"
+#include "infershape_case_executor.h"
 
 class MaskedSelectv3InferTest : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "MaskedSelectv3 Proto Test SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() { std::cout << "MaskedSelectv3 Proto Test SetUp" << std::endl; }
 
-  static void TearDownTestCase() {
-    std::cout << "MaskedSelectv3 Proto Test TearDown" << std::endl;
-  }
+    static void TearDownTestCase() { std::cout << "MaskedSelectv3 Proto Test TearDown" << std::endl; }
 };
 
-static std::vector<int64_t> ToVectorForMaskedSelectv3(const gert::Shape& shape)
+TEST_F(MaskedSelectv3InferTest, infershape_1d_fp16)
 {
-    size_t shapeSize = shape.GetDimNum();
-    std::vector<int64_t> shapeVec(shapeSize, 0);
-    for (size_t i = 0; i < shapeSize; i++) {
-        shapeVec[i] = shape.GetDim(i);
-    }
-    return shapeVec;
+    gert::InfershapeContextPara infershapeContextPara(
+        "MaskedSelect", {{{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND}, {{{8}, {8}}, ge::DT_BOOL, ge::FORMAT_ND}},
+        {{{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND}});
+    std::vector<std::vector<int64_t>> expectOutputShape = {{-1}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-static void ExeTestCaseForMaskedSelectv3(
-    const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
-    const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
-    gert::StorageShape& outStorageShape,
-    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
+TEST_F(MaskedSelectv3InferTest, infershape_4d_fp32)
 {
-    // 从vector中取出对应参数（保持原顺序）
-    const auto& selfStorageShape = inputShapes[0];
-    const auto& maskedStorageShape = inputShapes[1];
-    
-    ge::DataType input1Dtype = dtypes[0];
-    ge::DataType input2Dtype = dtypes[1];
-    ge::DataType outputDtype = dtypes[2];
-
-    /* make infershape context */
-    std::vector<gert::Tensor *> inputTensors = {
-        (gert::Tensor *)&selfStorageShape,
-        (gert::Tensor *)&maskedStorageShape
-    };
-    std::vector<gert::StorageShape *> outputShapes = {&outStorageShape};
-    auto contextHolder = gert::InferShapeContextFaker()
-        .SetOpType("MaskedSelectV3")
-        .NodeIoNum(2, 1)
-        .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(1, input2Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .InputTensors(inputTensors)
-        .OutputShapes(outputShapes)
-        .Build();
-
-    /* get infershape func */
-    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
-    auto inferShapeFunc = spaceRegistry->GetOpImpl("MaskedSelectV3")->infer_shape;
+    gert::InfershapeContextPara infershapeContextPara("MaskedSelect",
+                                                      {{{{2, 4, 6, 8}, {2, 4, 6, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                       {{{2, 4, 6, 8}, {2, 4, 6, 8}}, ge::DT_BOOL, ge::FORMAT_ND}},
+                                                      {{{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND}});
+    std::vector<std::vector<int64_t>> expectOutputShape = {{-1}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-TEST_F(MaskedSelectv3InferTest, MaskedSelectv3_infershape_test)
+TEST_F(MaskedSelectv3InferTest, infershape_int32)
 {
-    size_t size1 = 2;
-    size_t size2 = 4;
-    size_t size3 = 6;
-    size_t size4 = 8;
-    size_t size5 = 10;
-    size_t size6 = 12;
-    size_t size7 = 15;
-    size_t size8 = 16;
-    int64_t size9 = -1;
-
-    // 用vector存储同类型参数（顺序与原参数列表一致）
-    std::vector<gert::StorageShape> inputShapes = {
-        {{size1, size2, size3, size4, size5, size6, size7, size8}, 
-        {size1, size2, size3, size4, size5, size6, size7, size8}},    // self_shape
-        {{size1, size2, size3, size4, size5, size6, size7, size8}, 
-        {size1, size2, size3, size4, size5, size6, size7, size8}}                  // masked_shape
-    };
-    std::vector<ge::DataType> dtypes = {
-        ge::DT_INT64,  // input1Dtype
-        ge::DT_BOOL,    // input2Dtype
-        ge::DT_INT64   // outputDtype
-    };
-
-    std::vector<int64_t> expectResult = {size1, size2, size3, size4, size5, size6, size7, size8};
-    gert::StorageShape outStorageShape = {};
-
-    // 简化后的函数调用
-    ExeTestCaseForMaskedSelectv3(inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS);
+    gert::InfershapeContextPara infershapeContextPara(
+        "MaskedSelect", {{{{16}, {16}}, ge::DT_INT32, ge::FORMAT_ND}, {{{16}, {16}}, ge::DT_BOOL, ge::FORMAT_ND}},
+        {{{{}, {}}, ge::DT_INT32, ge::FORMAT_ND}});
+    std::vector<std::vector<int64_t>> expectOutputShape = {{-1}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
-// masked_select_v3为第三类算子，infershape在kernel内推导，host侧推导输出为动态shape，此测试值判断动态infershape是否正常
