@@ -10,6 +10,9 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------s.
 
+set -e
+set -o pipefail
+
 echo "ge_st_rt2: ${ge_st_rt2}"
 echo "GIT_TARGET_BRANCH: ${GIT_TARGET_BRANCH}"
 echo "OS_TYPE: ${OS_TYPE}"
@@ -18,8 +21,6 @@ echo "task_name: ${task_name}"
 ########
 # Init #
 ########
-set -e
-set -o pipefail
 
 function LOG_HEAD() {
     local assert_msg=${1}
@@ -47,7 +48,7 @@ function DP_ASSERT_EQUAL() {
 }
 
 export REPOSITORY_NAME="ops-math"
-
+rm -rf /home/jenkins/opensource/json
 echo $(grep -E "^VERSION_ID=" /etc/os-release | cut -d'"' -f2)
 export PATH=/opt/buildtools/python-3.10.2/bin:$PATH
 if [[ "${task_name}" == *ubuntu24* ]]; then

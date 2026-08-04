@@ -58,6 +58,7 @@ tar -zxf "${DOWNLOAD_FILE}"
 export ASCEND_GLOBAL_LOG_LEVEL=2
 export ASCEND_SLOG_PRINT_TO_STDOUT=0
 
+rm -rf /home/jenkins/opensource/json
 source /usr/local/Ascend/cann/set_env.sh
 # ==============================
 # 运行测试主循环
