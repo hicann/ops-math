@@ -2285,8 +2285,8 @@
     <td>√</td>
     <td>AI Core</td>
     <td>将张量填充为全零。</td>
-  </tr>
-  <tr>
+   </tr>
+   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/calc_buckets_limit_and_offset/README.md">calc_buckets_limit_and_offset</a></td>
     <td>√</td>
@@ -2945,8 +2945,8 @@
     <td>√</td>
     <td>AI Core</td>
     <td>按照指定的起始、结束位置和步长，从输入张量中提取子张量。</td>
-  </tr>
-  <tr>
+   </tr>
+   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/tensor_move/README.md">tensor_move</a></td>
     <td>√</td>
@@ -2955,6 +2955,16 @@
     <td>√</td>
     <td>AI Core</td>
     <td>将输入tensor的值搬运到输出tensor中。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/tensor_redirect/README.md">tensor_redirect</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>将输入张量的数据逐bit拷贝到输出张量，恒等映射。</td>
   </tr>
   <tr>
     <td>conversion</td>
