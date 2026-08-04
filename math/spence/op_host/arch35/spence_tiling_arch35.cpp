@@ -22,12 +22,14 @@
 #include "../../op_kernel/arch35/spence_tiling_data.h"
 #include "../../op_kernel/arch35/spence_tiling_key.h"
 
+using Ops::Base::ToString;
+
 namespace optiling {
 
-using Ops::Base::CeilDiv;
 using Ops::Base::CeilAlign;
-using Ops::Base::FloorDiv;
+using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
@@ -38,10 +40,12 @@ constexpr int64_t FP16_ELEM_BYTES = 2;
 constexpr int64_t BITS_PER_BYTE = 8;
 constexpr int64_t MIN_TILING_BITS = 32768;
 constexpr int64_t UB_ALIGN_BYTES = 256;
+constexpr size_t MAX_DIM_NUM = 8; // max supported dim num
 
 static const gert::Shape g_vec_1_shape = {1};
 
-static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape) {
+static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape)
+{
     if (in_shape.GetDimNum() == 0) {
         return g_vec_1_shape;
     }
@@ -65,14 +69,22 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* 
     auto inputX = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
     auto inputShapeX = EnsureNotScalar(inputX->GetStorageShape());
-
     *dim0 = inputShapeX.GetShapeSize();
 
-    const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
+    OP_CHECK_IF(inputShapeX.GetDimNum() > MAX_DIM_NUM,
+                OP_LOGE(context, "Spence: x dim num %zu must be less than or equal to 8.", inputShapeX.GetDimNum()),
+                return ge::GRAPH_FAILED);
+
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
     *dataType = inputDesc->GetDataType();
-    OP_CHECK_IF(supportedDtype.count(*dataType) == 0, OP_LOGE(context, "invalid dtype"), return ge::GRAPH_FAILED);
+
+    const std::set<ge::DataType> supportedDtypes = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
+    OP_CHECK_IF(supportedDtypes.count(*dataType) == 0,
+                OP_LOGE(context, "Spence: x has incorrect dtype %s. It should be DT_FLOAT, DT_FLOAT16, DT_BF16.",
+                        ToString(*dataType).c_str()),
+                return ge::GRAPH_FAILED);
+
     return ge::GRAPH_SUCCESS;
 }
 
@@ -84,15 +96,12 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus InitTilingDataAndEmptyCheck(gert::TilingContext* context, SpenceTilingData* tiling,
-    int64_t dim0, ge::DataType dataType, bool& isEmpty);
-static void ComputeCoreTiling(gert::TilingContext* context, int64_t dim0, int64_t elemBytes,
-    int64_t coreNum, SpenceTilingData* tiling,
-    int64_t& blockFormer, int64_t& blockNum, int64_t& usedCoreNum);
-static void ComputeUbTiling(uint64_t ubSize, ge::DataType dataType, int64_t elemBits,
-    SpenceTilingData* tiling);
-static void ComputeBlockDetails(int64_t dim0, int64_t blockFormer, int64_t blockNum,
-    SpenceTilingData* tiling);
+static ge::graphStatus InitTilingDataAndEmptyCheck(gert::TilingContext* context, SpenceTilingData* tiling, int64_t dim0,
+                                                   ge::DataType dataType, bool& isEmpty);
+static void ComputeCoreTiling(gert::TilingContext* context, int64_t dim0, int64_t elemBytes, int64_t coreNum,
+                              SpenceTilingData* tiling, int64_t& blockFormer, int64_t& blockNum, int64_t& usedCoreNum);
+static void ComputeUbTiling(uint64_t ubSize, ge::DataType dataType, int64_t elemBits, SpenceTilingData* tiling);
+static void ComputeBlockDetails(int64_t dim0, int64_t blockFormer, int64_t blockNum, SpenceTilingData* tiling);
 
 static ge::graphStatus SpenceTilingFunc(gert::TilingContext* context)
 {
@@ -100,31 +109,27 @@ static ge::graphStatus SpenceTilingFunc(gert::TilingContext* context)
     // 1. Get platform info
     uint64_t ubSize;
     int64_t coreNum;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, &ubSize, &coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, &ubSize, &coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     // 2. Get shape/dtype info
     int64_t dim0;
     ge::DataType dataType = ge::DT_FLOAT;
-    OP_CHECK_IF(
-        GetShapeAttrsInfo(context, &dim0, &dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetShapeAttrsInfo(context, &dim0, &dataType) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     // 3. Workspace
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     SpenceTilingData* tiling = context->GetTilingData<SpenceTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
     bool isEmpty = false;
-    OP_CHECK_IF(
-        InitTilingDataAndEmptyCheck(context, tiling, dim0, dataType, isEmpty) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "init tiling data error"), return ge::GRAPH_FAILED);
-    if (isEmpty) { return ge::GRAPH_SUCCESS; }
+    OP_CHECK_IF(InitTilingDataAndEmptyCheck(context, tiling, dim0, dataType, isEmpty) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "init tiling data error"), return ge::GRAPH_FAILED);
+    if (isEmpty) {
+        return ge::GRAPH_SUCCESS;
+    }
 
     int64_t elemBytes = FP32_ELEM_BYTES;
     if (dataType == ge::DT_FLOAT16 || dataType == ge::DT_BF16) {
@@ -132,8 +137,7 @@ static ge::graphStatus SpenceTilingFunc(gert::TilingContext* context)
     }
 
     int64_t blockFormer, blockNum, usedCoreNum;
-    ComputeCoreTiling(context, dim0, elemBytes, coreNum, tiling,
-                      blockFormer, blockNum, usedCoreNum);
+    ComputeCoreTiling(context, dim0, elemBytes, coreNum, tiling, blockFormer, blockNum, usedCoreNum);
 
     int64_t elemBits = elemBytes * BITS_PER_BYTE;
     ComputeUbTiling(ubSize, dataType, elemBits, tiling);
@@ -145,12 +149,11 @@ static ge::graphStatus SpenceTilingFunc(gert::TilingContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus InitTilingDataAndEmptyCheck(gert::TilingContext* context, SpenceTilingData* tiling,
-    int64_t dim0, ge::DataType dataType, bool& isEmpty)
+static ge::graphStatus InitTilingDataAndEmptyCheck(gert::TilingContext* context, SpenceTilingData* tiling, int64_t dim0,
+                                                   ge::DataType dataType, bool& isEmpty)
 {
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(SpenceTilingData), 0, sizeof(SpenceTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(SpenceTilingData), 0, sizeof(SpenceTilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
     tiling->dim0 = dim0;
     tiling->dtype = static_cast<int32_t>(dataType);
     if (dim0 == 0) {
@@ -161,9 +164,8 @@ static ge::graphStatus InitTilingDataAndEmptyCheck(gert::TilingContext* context,
     return ge::GRAPH_SUCCESS;
 }
 
-static void ComputeCoreTiling(gert::TilingContext* context, int64_t dim0, int64_t elemBytes,
-    int64_t coreNum, SpenceTilingData* tiling,
-    int64_t& blockFormer, int64_t& blockNum, int64_t& usedCoreNum)
+static void ComputeCoreTiling(gert::TilingContext* context, int64_t dim0, int64_t elemBytes, int64_t coreNum,
+                              SpenceTilingData* tiling, int64_t& blockFormer, int64_t& blockNum, int64_t& usedCoreNum)
 {
     int64_t elemBits = elemBytes * BITS_PER_BYTE;
     int64_t calcCoreNum = (dim0 * elemBits + MIN_TILING_BITS - 1) / MIN_TILING_BITS;
@@ -182,21 +184,20 @@ static void ComputeCoreTiling(gert::TilingContext* context, int64_t dim0, int64_
     tiling->blockNum = blockNum;
 }
 
-static void ComputeUbTiling(uint64_t ubSize, ge::DataType dataType, int64_t elemBits,
-    SpenceTilingData* tiling)
+static void ComputeUbTiling(uint64_t ubSize, ge::DataType dataType, int64_t elemBits, SpenceTilingData* tiling)
 {
-    int64_t bufferDivisor = (dataType == ge::DT_FLOAT)
-        ? (2 * FP32_ELEM_BYTES)
-        : (2 * FP16_ELEM_BYTES + 2 * FP32_ELEM_BYTES);
+    int64_t bufferDivisor = (dataType == ge::DT_FLOAT) ? (2 * FP32_ELEM_BYTES) :
+                                                         (2 * FP16_ELEM_BYTES + 2 * FP32_ELEM_BYTES);
     int64_t maxElemNum = (static_cast<int64_t>(ubSize) * BITS_PER_BYTE) / bufferDivisor;
     int64_t alignFactor = UB_ALIGN_BYTES * BITS_PER_BYTE / elemBits;
     int64_t ubFormer = FloorAlign(maxElemNum, alignFactor);
-    if (ubFormer < 1) { ubFormer = 1; }
+    if (ubFormer < 1) {
+        ubFormer = 1;
+    }
     tiling->ubFormer = ubFormer;
 }
 
-static void ComputeBlockDetails(int64_t dim0, int64_t blockFormer, int64_t blockNum,
-    SpenceTilingData* tiling)
+static void ComputeBlockDetails(int64_t dim0, int64_t blockFormer, int64_t blockNum, SpenceTilingData* tiling)
 {
     int64_t ubFormer = tiling->ubFormer;
     int64_t formerBlockElems = blockFormer;
@@ -206,7 +207,9 @@ static void ComputeBlockDetails(int64_t dim0, int64_t blockFormer, int64_t block
         tiling->ubTailOfFormerBlock = ubFormer;
     }
     int64_t tailBlockElems = dim0 - blockFormer * (blockNum - 1);
-    if (tailBlockElems <= 0) { tailBlockElems = blockFormer; }
+    if (tailBlockElems <= 0) {
+        tailBlockElems = blockFormer;
+    }
     tiling->ubLoopOfTailBlock = CeilDiv(tailBlockElems, ubFormer);
     tiling->ubTailOfTailBlock = tailBlockElems - ubFormer * (tiling->ubLoopOfTailBlock - 1);
     if (tiling->ubTailOfTailBlock == 0) {

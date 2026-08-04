@@ -24,6 +24,8 @@
 #include "math/bessel_i0e/op_kernel/arch35/bessel_i0e_tiling_data.h"
 #include "math/bessel_i0e/op_kernel/arch35/bessel_i0e_tiling_key.h"
 
+using Ops::Base::ToString;
+
 namespace optiling {
 
 using Ops::Base::CeilAlign;
@@ -39,6 +41,7 @@ constexpr size_t WORKSPACE_NUM = 1;
 // FP16/BF16 路径实际分配 9 个 buffer：1 VECIN + 5 VECCALC + 2 extra VECCALC + 1 VECOUT
 // 使用 11 作为除数（留安全余量），确保 9 * (ubSize/11) < ubSize
 constexpr int64_t BUFFER_NUM_FP32 = 11;
+constexpr size_t MAX_DIM_NUM = 8; // max supported dim num
 
 static const gert::Shape g_vec_1_shape = {1};
 
@@ -69,16 +72,22 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* 
     auto inputX = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
     auto inputShapeX = EnsureNotScalar(inputX->GetStorageShape());
-
     *totalIdx = inputShapeX.GetShapeSize();
 
-    const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16};
+    OP_CHECK_IF(inputShapeX.GetDimNum() > MAX_DIM_NUM,
+                OP_LOGE(context, "BesselI0e: x dim num %zu must be less than or equal to 8.", inputShapeX.GetDimNum()),
+                return ge::GRAPH_FAILED);
+
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
     *dataType = inputDesc->GetDataType();
-    OP_CHECK_IF(supportedDtype.count(*dataType) == 0,
-                OP_LOGE(context, "BesselI0e: unsupported dtype=%d", static_cast<int>(*dataType)),
+
+    const std::set<ge::DataType> supportedDtypes = {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16};
+    OP_CHECK_IF(supportedDtypes.count(*dataType) == 0,
+                OP_LOGE(context, "BesselI0e: x has incorrect dtype %s. It should be DT_FLOAT16, DT_FLOAT, DT_BF16.",
+                        ToString(*dataType).c_str()),
                 return ge::GRAPH_FAILED);
+
     return ge::GRAPH_SUCCESS;
 }
 

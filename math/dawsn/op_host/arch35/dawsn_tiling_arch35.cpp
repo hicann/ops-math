@@ -22,31 +22,35 @@
 #include "../../op_kernel/arch35/dawsn_tiling_data.h"
 #include "../../op_kernel/arch35/dawsn_tiling_key.h"
 
+using Ops::Base::ToString;
+
 namespace optiling {
 
-using Ops::Base::CeilDiv;
 using Ops::Base::CeilAlign;
-using Ops::Base::FloorDiv;
+using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
 constexpr size_t WORKSPACE_NUM = 1;
-constexpr int64_t MIN_TILING_BITS = 32768;       // 4KB per core minimum, in bits
-constexpr int64_t ELEM_ALIGN_FACTOR = 512;       // multi-core element alignment
-constexpr int64_t ALIGN_256_BYTES = 256;         // UB alignment in bytes
-constexpr int64_t BITS_PER_BYTE = 8;             // bits per byte
+constexpr int64_t MIN_TILING_BITS = 32768; // 4KB per core minimum, in bits
+constexpr int64_t ELEM_ALIGN_FACTOR = 512; // multi-core element alignment
+constexpr int64_t ALIGN_256_BYTES = 256;   // UB alignment in bytes
+constexpr int64_t BITS_PER_BYTE = 8;       // bits per byte
+constexpr size_t MAX_DIM_NUM = 8;          // max supported dim num
 
 // Buffer planning constants for GetBufferDivisor
-constexpr int64_t FP32_REG_BUF_COUNT = 7;        // FP32 path: 6 RegTensor buffers + x/y buffers
-constexpr int64_t FP32_MASK_BYTES = 1;           // mask buffer size per element
-constexpr int64_t FP16_ELEM_BYTES = 2;           // half/bf16 element size in bytes
-constexpr int64_t FP16_ORIG_BUF_COUNT = 2;       // FP16/BF16: 2 original dtype buffers
-constexpr int64_t FP16_FP32_BUF_COUNT = 5;       // FP16/BF16: 5 FP32 intermediate buffers
+constexpr int64_t FP32_REG_BUF_COUNT = 7;  // FP32 path: 6 RegTensor buffers + x/y buffers
+constexpr int64_t FP32_MASK_BYTES = 1;     // mask buffer size per element
+constexpr int64_t FP16_ELEM_BYTES = 2;     // half/bf16 element size in bytes
+constexpr int64_t FP16_ORIG_BUF_COUNT = 2; // FP16/BF16: 2 original dtype buffers
+constexpr int64_t FP16_FP32_BUF_COUNT = 5; // FP16/BF16: 5 FP32 intermediate buffers
 
 static const gert::Shape g_vec_1_shape = {1};
 
-static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape) {
+static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape)
+{
     if (in_shape.GetDimNum() == 0) {
         return g_vec_1_shape;
     }
@@ -70,14 +74,22 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* 
     auto inputX = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
     auto inputShapeX = EnsureNotScalar(inputX->GetStorageShape());
-
     *totalIdx = inputShapeX.GetShapeSize();
 
-    const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
+    OP_CHECK_IF(inputShapeX.GetDimNum() > MAX_DIM_NUM,
+                OP_LOGE(context, "Dawsn: x dim num %zu must be less than or equal to 8.", inputShapeX.GetDimNum()),
+                return ge::GRAPH_FAILED);
+
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
     *dataType = inputDesc->GetDataType();
-    OP_CHECK_IF(supportedDtype.count(*dataType) == 0, OP_LOGE(context, "invalid dtype"), return ge::GRAPH_FAILED);
+
+    const std::set<ge::DataType> supportedDtypes = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
+    OP_CHECK_IF(supportedDtypes.count(*dataType) == 0,
+                OP_LOGE(context, "Dawsn: x has incorrect dtype %s. It should be DT_FLOAT, DT_FLOAT16, DT_BF16.",
+                        ToString(*dataType).c_str()),
+                return ge::GRAPH_FAILED);
+
     return ge::GRAPH_SUCCESS;
 }
 
@@ -92,10 +104,14 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 static int64_t GetElemBytes(ge::DataType dtype)
 {
     switch (dtype) {
-        case ge::DT_FLOAT16: return 2;
-        case ge::DT_BF16:    return 2;
-        case ge::DT_FLOAT:   return 4;
-        default:             return 4;
+        case ge::DT_FLOAT16:
+            return 2;
+        case ge::DT_BF16:
+            return 2;
+        case ge::DT_FLOAT:
+            return 4;
+        default:
+            return 4;
     }
 }
 
@@ -115,8 +131,8 @@ static int64_t GetBufferDivisor(ge::DataType dtype)
     }
 }
 
-static void ComputeTilingParams(int64_t totalIdx, int64_t availableCoreNum, uint64_t ubSize,
-                                ge::DataType dataType, DawsnTilingData* tiling)
+static void ComputeTilingParams(int64_t totalIdx, int64_t availableCoreNum, uint64_t ubSize, ge::DataType dataType,
+                                DawsnTilingData* tiling)
 {
     int64_t elemBytes = GetElemBytes(dataType);
     int64_t minDtypeBits = elemBytes * BITS_PER_BYTE;
@@ -124,8 +140,8 @@ static void ComputeTilingParams(int64_t totalIdx, int64_t availableCoreNum, uint
     // Multi-core splitting
     int64_t coreNum = (totalIdx * minDtypeBits + MIN_TILING_BITS - 1) / MIN_TILING_BITS;
     coreNum = std::min(coreNum, availableCoreNum);
-    int64_t blockFormer = ((totalIdx + coreNum - 1) / coreNum + ELEM_ALIGN_FACTOR - 1) /
-                           ELEM_ALIGN_FACTOR * ELEM_ALIGN_FACTOR;
+    int64_t blockFormer = ((totalIdx + coreNum - 1) / coreNum + ELEM_ALIGN_FACTOR - 1) / ELEM_ALIGN_FACTOR *
+                          ELEM_ALIGN_FACTOR;
     int64_t blockNum = (totalIdx + blockFormer - 1) / blockFormer;
 
     // UB splitting
@@ -162,30 +178,24 @@ static ge::graphStatus DawsnTilingFunc(gert::TilingContext* context)
     // 1. Get platform info
     uint64_t ubSize;
     int64_t availableCoreNum;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, &ubSize, &availableCoreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, &ubSize, &availableCoreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     // 2. Get shape and dtype info
     int64_t totalIdx;
     ge::DataType dataType = ge::DT_FLOAT;
-    OP_CHECK_IF(
-        GetShapeAttrsInfo(context, &totalIdx, &dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetShapeAttrsInfo(context, &totalIdx, &dataType) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     // 3. Set workspace
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     // 4. Get tiling data pointer
     DawsnTilingData* tiling = context->GetTilingData<DawsnTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(DawsnTilingData), 0, sizeof(DawsnTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(DawsnTilingData), 0, sizeof(DawsnTilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     // Empty tensor check
     if (totalIdx == 0) {
