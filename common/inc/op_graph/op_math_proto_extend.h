@@ -1010,33 +1010,6 @@ REG_OP(ExpandDims)
     .OP_END_FACTORY_REG(TruncatedNormal)
 
     /**
-    *@brief Returns x1 + x2 element-wise.
-
-    *@par Inputs:
-    * @li x1: A tensor. Must be one of the following types: bfloat16, float16, float32, float64,
-    *     uint8, int8, int16, int32, int64, complex64, complex128.
-    * @li x2: A tensor of the same dtype as "x1".
-    *
-    *@attention Constraints:
-    * AddV2 supports broadcasting.
-    *
-    *@par Outputs:
-    * y: A tensor. Has the same dtype as "x1".
-    *
-    *@par Third-party framework compatibility
-    *Compatible with the TensorFlow operator AddV2.
-    *
-    */
-    REG_OP(AddV2)
-    .INPUT(x1, TensorType({DT_FLOAT, DT_INT32, DT_INT64, DT_FLOAT16, DT_INT16, DT_INT8, DT_UINT8, DT_DOUBLE,
-                           DT_COMPLEX64, DT_BF16, DT_COMPLEX128}))
-    .INPUT(x2, TensorType({DT_FLOAT, DT_INT32, DT_INT64, DT_FLOAT16, DT_INT16, DT_INT8, DT_UINT8, DT_DOUBLE,
-                           DT_COMPLEX64, DT_BF16, DT_COMPLEX128}))
-    .OUTPUT(y, TensorType({DT_FLOAT, DT_INT32, DT_INT64, DT_FLOAT16, DT_INT16, DT_INT8, DT_UINT8, DT_DOUBLE,
-                           DT_COMPLEX64, DT_BF16, DT_COMPLEX128}))
-    .OP_END_FACTORY_REG(AddV2)
-
-    /**
     *@brief Calculate the P-norm distance between vectors  function. \n
 
     *@par Inputs:
