@@ -17,10 +17,8 @@
 
 #include "register/tilingdata_base.h"
 #include "atvoss/elewise/elewise_tiling.h"
-#include "../../op_kernel/abs_struct.h"
 
 namespace optiling {
-using namespace AbsNs;
 using namespace Ops::Base;
 
 struct AbsCompileInfo {
@@ -35,13 +33,12 @@ public:
 
 protected:
     ge::graphStatus CalcOutputDtype();
-    ge::graphStatus SetTilingData();
+    ge::graphStatus SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling);
 
 private:
     gert::TilingContext* tilingContext = nullptr;
     ge::DataType outputDtype = ge::DT_UNDEFINED;
     ge::DataType inputDtype = ge::DT_UNDEFINED;
-    AbsTilingData* tiling = nullptr;
 };
 
 } // namespace optiling

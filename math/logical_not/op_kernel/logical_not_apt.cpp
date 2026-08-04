@@ -15,7 +15,7 @@
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
 #include "arch35/logical_not_dag.h"
-#include "atvoss/elewise/elewise_sch.h"
+#include "atvoss/elewise/elewise_sch_16b.h"
 #include "atvoss/util/dfx.h"
 
 using namespace AscendC;
@@ -23,8 +23,8 @@ using namespace Ops::Base;
 
 #define LOGICAL_NOT_DEFAULT_BOOL_TILING_KEY 101UL
 
-__global__ __aicore__ void logical_not(GM_ADDR x, GM_ADDR y, GM_ADDR workspace,
-                                                  GM_ADDR tiling) {
+__global__ __aicore__ void logical_not(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+{
     if (workspace == nullptr) {
         return;
     }
@@ -33,12 +33,11 @@ __global__ __aicore__ void logical_not(GM_ADDR x, GM_ADDR y, GM_ADDR workspace,
     if (userWS == nullptr) {
         return;
     }
-    REGISTER_TILING_DEFAULT(EleBaseTilingDataV2);
-    GET_TILING_DATA_WITH_STRUCT(EleBaseTilingDataV2, tilingData, tiling);
+    REGISTER_TILING_DEFAULT(EleBaseTilingData16B);
+    GET_TILING_DATA_PTR_WITH_STRUCT(EleBaseTilingData16B, tilingData, tiling);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-    TPipe pipe;
     if (TILING_KEY_IS(LOGICAL_NOT_DEFAULT_BOOL_TILING_KEY)) {
-        ElementwiseSch<0UL, LogicalNotOp::LogicalNotDag<int8_t>::OpDag> sch(&tilingData, &pipe);
+        ElementwiseSch16B<0UL, LogicalNotOp::LogicalNotDag<int8_t>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
     }

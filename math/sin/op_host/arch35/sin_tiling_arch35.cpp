@@ -30,7 +30,7 @@ const int64_t ASCEND_WORKSPACE = 16777216; // 16M
 const int64_t ASCEND_API_BUFFER = 122880;  // 120K
 const int64_t DCACHE_SIZE = 32768;
 
-ge::graphStatus SinTiling::SetTilingData()
+ge::graphStatus SinTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling)
 {
     OP_LOGD(tilingContext->GetNodeName(), "SinTiling SetTilingData enter.");
 
@@ -38,10 +38,10 @@ ge::graphStatus SinTiling::SetTilingData()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = static_cast<size_t>(ASCEND_WORKSPACE);
 
-    const uint64_t tilingKey = GET_TPL_TILING_KEY(tiling->baseTiling.scheMode, dType);
+    const uint64_t tilingKey = GET_TPL_TILING_KEY(1, dType);
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);
     tilingContext->SetTilingKey(tilingKey);
-    tilingContext->SetBlockDim(tiling->baseTiling.blockNum);
+    tilingContext->SetBlockDim(elewiseBaseTiling.GetBlockDim());
 
     uint64_t ubSize = 0;
     auto platformInfo = tilingContext->GetPlatformInfo();
@@ -115,11 +115,8 @@ ge::graphStatus SinTiling::RunTiling()
 {
     OP_LOGD(tilingContext->GetNodeName(), "SinTiling RunTiling enter.");
     Ops::Base::ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-    tiling = tilingContext->GetTilingData<SinNs::SinTilingData>();
+    auto tiling = tilingContext->GetTilingData<EleBaseTilingData16B>();
 
-    OP_CHECK_IF(tiling == nullptr,
-                OP_LOGE_FOR_INVALID_VALUE(tilingContext->GetNodeName(), "tiling_data", "nullptr", "not nullptr"),
-                return ge::GRAPH_FAILED);
     OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
                 return ge::GRAPH_FAILED);
     OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"),
@@ -131,14 +128,14 @@ ge::graphStatus SinTiling::RunTiling()
     if (this->outputDtype == ge::DT_FLOAT16) {
         dType = TPL_FP16;
         baseTilingResult = elewiseBaseTiling.DoTiling<SinOp::SinDAG<Ops::Base::half>::OpDag>(
-            tiling->baseTiling, ASCEND_API_BUFFER + DCACHE_SIZE);
+            *tiling, ASCEND_API_BUFFER + DCACHE_SIZE);
     } else if (this->outputDtype == ge::DT_BF16) {
         dType = TPL_BF16;
         baseTilingResult = elewiseBaseTiling.DoTiling<SinOp::SinDAG<Ops::Base::bfloat16_t>::OpDag>(
-            tiling->baseTiling, ASCEND_API_BUFFER + DCACHE_SIZE);
+            *tiling, ASCEND_API_BUFFER + DCACHE_SIZE);
     } else if (this->outputDtype == ge::DT_FLOAT) {
         dType = TPL_FP32;
-        baseTilingResult = elewiseBaseTiling.DoTiling<SinOp::SinDAG<float>::OpDag>(tiling->baseTiling,
+        baseTilingResult = elewiseBaseTiling.DoTiling<SinOp::SinDAG<float>::OpDag>(*tiling,
                                                                                    ASCEND_API_BUFFER + DCACHE_SIZE);
     } else {
         OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y",
@@ -148,7 +145,7 @@ ge::graphStatus SinTiling::RunTiling()
     OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
                 return ge::GRAPH_FAILED);
 
-    return SetTilingData();
+    return SetTilingData(elewiseBaseTiling);
 }
 
 static ge::graphStatus Tiling4Sin(gert::TilingContext* tilingContextGen)

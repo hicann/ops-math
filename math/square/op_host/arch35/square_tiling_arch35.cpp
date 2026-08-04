@@ -88,7 +88,7 @@ ge::graphStatus SquareTiling::CheckShape() const
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus SquareTiling::SetTilingData()
+ge::graphStatus SquareTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling)
 {
     if (this->outputDtype == ge::DT_FLOAT16) {
         tilingKey = TILING_KEY_FP16;
@@ -106,6 +106,12 @@ ge::graphStatus SquareTiling::SetTilingData()
                                   "FLOAT16, BF16, FLOAT, INT32, INT64");
         return ge::GRAPH_FAILED;
     }
+    OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%ld.", tilingKey);
+    tilingContext->SetTilingKey(tilingKey);
+    tilingContext->SetBlockDim(elewiseBaseTiling.GetBlockDim());
+    size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
+    currentWorkspace[0] = 16 * 1024 * 1024;
     return ge::GRAPH_SUCCESS;
 }
 
@@ -123,20 +129,23 @@ ge::graphStatus SquareTiling::RunTiling()
     status = CheckShape();
     OP_CHECK_IF(status == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"),
                 return ge::GRAPH_FAILED);
-    status = SetTilingData();
-    OP_CHECK_IF(status == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "SetTilingData failed"),
-                return ge::GRAPH_FAILED);
-    tiling = (tilingContext->GetTilingData<SquareTilingData>());
-    if (tilingKey == TILING_KEY_FP16) {
-        status = elewiseBaseTiling.DoTiling<SquareOp<half>::OpDag>(tiling->baseTiling);
-    } else if (tilingKey == TILING_KEY_BF16) {
-        status = elewiseBaseTiling.DoTiling<SquareOp<half>::OpDag>(tiling->baseTiling);
-    } else if (tilingKey == TILING_KEY_FP32) {
-        status = elewiseBaseTiling.DoTiling<SquareOp<float>::OpDag>(tiling->baseTiling);
-    } else if (tilingKey == TILING_KEY_INT32) {
-        status = elewiseBaseTiling.DoTiling<SquareOp<int32_t>::OpDag>(tiling->baseTiling);
-    } else if (tilingKey == TILING_KEY_INT64) {
-        status = elewiseBaseTiling.DoTiling<SquareOp<int64_t>::OpDag>(tiling->baseTiling);
+
+    auto tiling = tilingContext->GetTilingData<EleBaseTilingData16B>();
+    if (this->outputDtype == ge::DT_FLOAT16) {
+        tilingKey = TILING_KEY_FP16;
+        status = elewiseBaseTiling.DoTiling<SquareOp<half>::OpDag>(*tiling);
+    } else if (this->outputDtype == ge::DT_BF16) {
+        tilingKey = TILING_KEY_BF16;
+        status = elewiseBaseTiling.DoTiling<SquareOp<half>::OpDag>(*tiling);
+    } else if (this->outputDtype == ge::DT_FLOAT) {
+        tilingKey = TILING_KEY_FP32;
+        status = elewiseBaseTiling.DoTiling<SquareOp<float>::OpDag>(*tiling);
+    } else if (this->outputDtype == ge::DT_INT32) {
+        tilingKey = TILING_KEY_INT32;
+        status = elewiseBaseTiling.DoTiling<SquareOp<int32_t>::OpDag>(*tiling);
+    } else if (this->outputDtype == ge::DT_INT64) {
+        tilingKey = TILING_KEY_INT64;
+        status = elewiseBaseTiling.DoTiling<SquareOp<int64_t>::OpDag>(*tiling);
     } else {
         OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "z",
                                   ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
@@ -146,16 +155,7 @@ ge::graphStatus SquareTiling::RunTiling()
     OP_CHECK_IF(status == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
                 return ge::GRAPH_FAILED);
 
-    OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%ld.", tilingKey);
-    tilingContext->SetTilingKey(tilingKey);
-    tilingContext->SetBlockDim(tiling->baseTiling.blockNum);
-    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tilingContext->GetRawTilingData());
-    size_t usrWorkspaceSize = 0;
-    size_t sysWorkspaceSize = 16 * 1024 * 1024;
-    size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
-    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
-    currentWorkspace[0] = sysWorkspaceSize + usrWorkspaceSize;
-    return ge::GRAPH_SUCCESS;
+    return SetTilingData(elewiseBaseTiling);
 }
 
 static ge::graphStatus Tiling4Square(gert::TilingContext* tilingContext)

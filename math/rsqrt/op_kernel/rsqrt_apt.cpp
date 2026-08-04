@@ -8,49 +8,47 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
- /*!
+/*!
  * \file rsqrt.cpp
  * \brief
  */
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
-#include "atvoss/elewise/elewise_sch.h"
+#include "atvoss/elewise/elewise_sch_16b.h"
 #include "atvoss/util/dfx.h"
 #include "arch35/rsqrt.h"
 
 using namespace AscendC;
 using namespace Ops::Base;
 
-extern "C" __global__ __aicore__ void rsqrt(GM_ADDR x, GM_ADDR y,
-                                          GM_ADDR workspace, GM_ADDR tiling) 
+extern "C" __global__ __aicore__ void rsqrt(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
-  if (workspace == nullptr) {
+    if (workspace == nullptr) {
+        return;
+    }
+    SetSysWorkspace(workspace);
+    GM_ADDR userWS = GetUserWorkspace(workspace);
+    if (userWS == nullptr) {
+        return;
+    }
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
+    REGISTER_TILING_DEFAULT(EleBaseTilingData16B);
+    GET_TILING_DATA_PTR_WITH_STRUCT(EleBaseTilingData16B, tilingData, tiling);
+    if (TILING_KEY_IS(101UL)) {
+        ElementwiseSch16B<0UL, RsqrtDag::RsqrtOp<half>::OpDag> sch(tilingData);
+        sch.Init(x, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(102UL)) {
+        ElementwiseSch16B<0UL, RsqrtDag::RsqrtOp<bfloat16_t>::OpDag> sch(tilingData);
+        sch.Init(x, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(103UL)) {
+        ElementwiseSch16B<0UL, RsqrtDag::RsqrtOp<float>::OpDag> sch(tilingData);
+        sch.Init(x, y);
+        sch.Process();
+        return;
+    }
     return;
-  }
-  SetSysWorkspace(workspace);
-  GM_ADDR userWS = GetUserWorkspace(workspace);
-  if (userWS == nullptr) {
-    return;
-  }
-  KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-  REGISTER_TILING_DEFAULT(EleBaseTilingDataV2);
-  GET_TILING_DATA_WITH_STRUCT(EleBaseTilingDataV2, tilingData, tiling);
-  TPipe pipe;
-  if (TILING_KEY_IS(101UL)) {
-    ElementwiseSch<0UL, RsqrtDag::RsqrtOp<half>::OpDag> sch(&tilingData, &pipe); 
-    sch.Init(x, y);
-    sch.Process();
-    return;
-  } else if (TILING_KEY_IS(102UL)) {
-    ElementwiseSch<0UL, RsqrtDag::RsqrtOp<bfloat16_t>::OpDag> sch(&tilingData, &pipe);
-    sch.Init(x, y);
-    sch.Process();
-    return;
-  } else if (TILING_KEY_IS(103UL)) {
-    ElementwiseSch<0UL, RsqrtDag::RsqrtOp<float>::OpDag> sch(&tilingData, &pipe); 
-    sch.Init(x, y);
-    sch.Process();
-    return;
-  }  
-  return;
 }

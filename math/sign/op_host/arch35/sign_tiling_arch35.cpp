@@ -45,7 +45,7 @@ ge::graphStatus SignTiling::CalcOutputDtype()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus SignTiling::SetTilingData()
+ge::graphStatus SignTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling)
 {
     OP_LOGD(tilingContext->GetNodeName(), "SignTiling SetTilingData enter.");
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tilingContext->GetRawTilingData());
@@ -84,7 +84,7 @@ ge::graphStatus SignTiling::SetTilingData()
     }
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);
     tilingContext->SetTilingKey(tilingKey);
-    tilingContext->SetBlockDim(tiling->baseTiling.blockNum);
+    tilingContext->SetBlockDim(elewiseBaseTiling.GetBlockDim());
     return ge::GRAPH_SUCCESS;
 }
 
@@ -133,7 +133,7 @@ ge::graphStatus SignTiling::RunTiling()
 {
     OP_LOGD(tilingContext->GetNodeName(), "SignTiling RunTiling enter.");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-    tiling = tilingContext->GetTilingData<SignTilingData>();
+    auto tiling = tilingContext->GetTilingData<EleBaseTilingData16B>();
     // 获取tiling计算所需参数
     ge::graphStatus baseTilingResult = CalcOutputDtype();
     OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
@@ -143,27 +143,27 @@ ge::graphStatus SignTiling::RunTiling()
     OP_CHECK_IF(CheckOutputShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"),
                 return ge::GRAPH_FAILED);
     if (this->outputDtype == ge::DT_FLOAT16) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<half>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<half>::OpDag>(*tiling);
     } else if (this->outputDtype == ge::DT_FLOAT) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<float>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<float>::OpDag>(*tiling);
     } else if (this->outputDtype == ge::DT_BF16) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForBf<half>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForBf<half>::OpDag>(*tiling);
     } else if (this->outputDtype == ge::DT_INT32) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<int32_t>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<int32_t>::OpDag>(*tiling);
     } else if (this->outputDtype == ge::DT_INT64) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForInt64<int64_t>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForInt64<int64_t>::OpDag>(*tiling);
     } else if (this->outputDtype == ge::DT_INT8) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<int8_t>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<int8_t>::OpDag>(*tiling);
     } else if (this->outputDtype == ge::DT_INT16) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<int16_t>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<int16_t>::OpDag>(*tiling);
     } else if (this->outputDtype == ge::DT_UINT8) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<uint8_t>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<uint8_t>::OpDag>(*tiling);
     } else if (this->outputDtype == ge::DT_UINT16) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<uint16_t>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<uint16_t>::OpDag>(*tiling);
     } else if (this->outputDtype == ge::DT_UINT32) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<uint32_t>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<uint32_t>::OpDag>(*tiling);
     } else if (this->outputDtype == ge::DT_UINT64) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForInt64<uint64_t>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForInt64<uint64_t>::OpDag>(*tiling);
     } else {
         OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y",
                                   ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
@@ -172,7 +172,7 @@ ge::graphStatus SignTiling::RunTiling()
     }
     OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
                 return ge::GRAPH_FAILED);
-    baseTilingResult = SetTilingData();
+    baseTilingResult = SetTilingData(elewiseBaseTiling);
     return baseTilingResult;
 }
 

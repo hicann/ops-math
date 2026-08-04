@@ -27,19 +27,16 @@
 namespace optiling {
 const size_t ASCEND_WORKSPACE = 16777216; // 16M
 
-ge::graphStatus CeilTiling::SetTilingData()
+ge::graphStatus CeilTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling)
 {
-    auto rawTilingData = tilingContext->GetRawTilingData();
-    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, rawTilingData);
-
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = ASCEND_WORKSPACE;
 
-    const uint64_t tilingKey = GET_TPL_TILING_KEY(static_cast<uint64_t>(tiling->baseTiling.scheMode), dType);
+    const uint64_t tilingKey = GET_TPL_TILING_KEY(1, dType);
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);
     tilingContext->SetTilingKey(tilingKey);
-    tilingContext->SetBlockDim(tiling->baseTiling.blockNum);
+    tilingContext->SetBlockDim(elewiseBaseTiling.GetBlockDim());
     return ge::GRAPH_SUCCESS;
 }
 
@@ -105,16 +102,16 @@ ge::graphStatus CeilTiling::RunTiling()
                 return ge::GRAPH_FAILED);
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
-    tiling = tilingContext->GetTilingData<CeilTilingData>();
+    auto tiling = tilingContext->GetTilingData<EleBaseTilingData16B>();
     if (this->outputDtype == ge::DT_FLOAT16) {
         dType = TPL_FP16;
-        baseTilingResult = elewiseBaseTiling.DoTiling<CeilOp::CeilDAG<half>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<CeilOp::CeilDAG<half>::OpDag>(*tiling);
     } else if (this->outputDtype == ge::DT_BF16) {
         dType = TPL_BF16;
-        baseTilingResult = elewiseBaseTiling.DoTiling<CeilOp::CeilDAG<bfloat16_t>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<CeilOp::CeilDAG<bfloat16_t>::OpDag>(*tiling);
     } else if (this->outputDtype == ge::DT_FLOAT) {
         dType = TPL_FP32;
-        baseTilingResult = elewiseBaseTiling.DoTiling<CeilOp::CeilDAG<float>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<CeilOp::CeilDAG<float>::OpDag>(*tiling);
     } else {
         OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y",
                                   ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT");
@@ -123,7 +120,7 @@ ge::graphStatus CeilTiling::RunTiling()
     OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
                 return ge::GRAPH_FAILED);
 
-    return SetTilingData();
+    return SetTilingData(elewiseBaseTiling);
 }
 
 static ge::graphStatus Tiling4Ceil(gert::TilingContext* tilingContextGen)

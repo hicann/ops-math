@@ -22,7 +22,6 @@
 #include "util/math_util.h"
 #include "atvoss/elewise/elewise_tiling.h"
 #include "atvoss/elewise/elewise_base_struct.h"
-#include "math/neg/op_kernel/arch35/neg_tiling_struct.h"
 #include "math/neg/op_kernel/arch35/neg_dag.h"
 #include "math/neg/op_kernel/arch35/neg_struct.h"
 
@@ -52,8 +51,7 @@ class NegTiling {
 public:
     explicit NegTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
-    ge::graphStatus SetTilingData();
-    NegTilingData* tiling = nullptr;
+    ge::graphStatus SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling);
 
 protected:
     ge::graphStatus CalcOutputDtype();
@@ -112,7 +110,7 @@ ge::graphStatus NegTiling::CheckOutputShape() const
 ge::graphStatus NegTiling::RunTiling()
 {
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-    tiling = tilingContext->GetTilingData<NegTilingData>();
+    auto tiling = tilingContext->GetTilingData<EleBaseTilingData16B>();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tiling);
     // 获取tiling计算所需的参数
     ge::graphStatus status = CalcOutputDtype();
@@ -126,23 +124,23 @@ ge::graphStatus NegTiling::RunTiling()
                 return ge::GRAPH_FAILED);
 
     if (this->outputDtype == ge::DT_FLOAT16) {
-        status = elewiseBaseTiling.DoTiling<NegDag::NegNoCast<half>::OpDag>(tiling->baseTiling);
-        tilingKey = GET_TPL_TILING_KEY(tiling->baseTiling.scheMode, NEG_TPL_FP16);
+        status = elewiseBaseTiling.DoTiling<NegDag::NegNoCast<half>::OpDag>(*tiling);
+        tilingKey = GET_TPL_TILING_KEY(1, NEG_TPL_FP16);
     } else if (this->outputDtype == ge::DT_BF16) {
-        status = elewiseBaseTiling.DoTiling<NegDag::NegNeedCast<bfloat16_t>::OpDag>(tiling->baseTiling);
-        tilingKey = GET_TPL_TILING_KEY(tiling->baseTiling.scheMode, NEG_TPL_BF16);
+        status = elewiseBaseTiling.DoTiling<NegDag::NegNeedCast<bfloat16_t>::OpDag>(*tiling);
+        tilingKey = GET_TPL_TILING_KEY(1, NEG_TPL_BF16);
     } else if (this->outputDtype == ge::DT_FLOAT) {
-        status = elewiseBaseTiling.DoTiling<NegDag::NegNoCast<float>::OpDag>(tiling->baseTiling);
-        tilingKey = GET_TPL_TILING_KEY(tiling->baseTiling.scheMode, NEG_TPL_FP32);
+        status = elewiseBaseTiling.DoTiling<NegDag::NegNoCast<float>::OpDag>(*tiling);
+        tilingKey = GET_TPL_TILING_KEY(1, NEG_TPL_FP32);
     } else if (this->outputDtype == ge::DT_INT32) {
-        status = elewiseBaseTiling.DoTiling<NegDag::NegNoCast<int32_t>::OpDag>(tiling->baseTiling);
-        tilingKey = GET_TPL_TILING_KEY(tiling->baseTiling.scheMode, NEG_TPL_INT32);
+        status = elewiseBaseTiling.DoTiling<NegDag::NegNoCast<int32_t>::OpDag>(*tiling);
+        tilingKey = GET_TPL_TILING_KEY(1, NEG_TPL_INT32);
     } else if (this->outputDtype == ge::DT_INT8) {
-        status = elewiseBaseTiling.DoTiling<NegDag::NegNoCast<int8_t>::OpDag>(tiling->baseTiling);
-        tilingKey = GET_TPL_TILING_KEY(tiling->baseTiling.scheMode, NEG_TPL_INT8);
+        status = elewiseBaseTiling.DoTiling<NegDag::NegNoCast<int8_t>::OpDag>(*tiling);
+        tilingKey = GET_TPL_TILING_KEY(1, NEG_TPL_INT8);
     } else if (this->outputDtype == ge::DT_INT64) {
-        status = elewiseBaseTiling.DoTiling<NegDag::NegNoCast<int64_t>::OpDag>(tiling->baseTiling);
-        tilingKey = GET_TPL_TILING_KEY(tiling->baseTiling.scheMode, NEG_TPL_INT64);
+        status = elewiseBaseTiling.DoTiling<NegDag::NegNoCast<int64_t>::OpDag>(*tiling);
+        tilingKey = GET_TPL_TILING_KEY(1, NEG_TPL_INT64);
     } else {
         OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y",
                                   ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
@@ -153,13 +151,13 @@ ge::graphStatus NegTiling::RunTiling()
     OP_CHECK_IF(status != ge::GRAPH_SUCCESS,
                 OP_LOGE(tilingContext->GetNodeName(), "ElewiseBaseTiling do tiling failed"), return ge::GRAPH_FAILED);
 
-    return SetTilingData();
+    return SetTilingData(elewiseBaseTiling);
 }
 
-ge::graphStatus NegTiling::SetTilingData()
+ge::graphStatus NegTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling)
 {
     tilingContext->SetTilingKey(tilingKey);
-    tilingContext->SetBlockDim(tiling->baseTiling.blockNum);
+    tilingContext->SetBlockDim(elewiseBaseTiling.GetBlockDim());
     auto rawTilingData = tilingContext->GetRawTilingData();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, rawTilingData);
     size_t usrWorkspaceSize = 0;

@@ -13,8 +13,10 @@
  * \brief
  */
 #include "log1p_tiling_arch35.h"
+#include <graph/utils/type_utils.h>
 #include "log/log.h"
 #include "register/op_impl_registry.h"
+#include "tiling/platform/platform_ascendc.h"
 #include "op_host/tiling_base_util.h"
 #include "atvoss/elewise/elewise_tiling.h"
 #include "math/log1p/op_kernel/arch35/log1p_dag.h"
@@ -24,7 +26,7 @@ using namespace Ops::Base;
 namespace optiling {
 const int64_t ASCEND_WORKSPACE = static_cast<int64_t>(16) * 1024 * 1024;
 
-ge::graphStatus Log1pTiling::SetTilingData()
+ge::graphStatus Log1pTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling)
 {
     OP_LOGD(tilingContext->GetNodeName(), "Log1pTiling SetTilingData enter.");
 
@@ -32,10 +34,10 @@ ge::graphStatus Log1pTiling::SetTilingData()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = static_cast<size_t>(ASCEND_WORKSPACE);
 
-    const uint64_t tilingKey = GET_TPL_TILING_KEY(static_cast<uint64_t>(tiling->baseTiling.scheMode), dType);
+    const uint64_t tilingKey = GET_TPL_TILING_KEY(1, dType);
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);
     tilingContext->SetTilingKey(tilingKey);
-    tilingContext->SetBlockDim(tiling->baseTiling.blockNum);
+    tilingContext->SetBlockDim(elewiseBaseTiling.GetBlockDim());
     return ge::GRAPH_SUCCESS;
 }
 
@@ -99,19 +101,18 @@ ge::graphStatus Log1pTiling::RunTiling()
                 return ge::GRAPH_FAILED);
     OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"),
                 return ge::GRAPH_FAILED);
-    tiling = tilingContext->GetTilingData<Log1pNs::Log1pTilingData>();
-    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tiling);
+    auto tiling = tilingContext->GetTilingData<EleBaseTilingData16B>();
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     if (this->outputDtype == ge::DT_FLOAT16) {
         dType = TPL_FP16;
-        baseTilingResult = elewiseBaseTiling.DoTiling<Log1pOp::Log1pDAG<half>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<Log1pOp::Log1pDAG<half>::OpDag>(*tiling);
     } else if (this->outputDtype == ge::DT_BF16) {
         dType = TPL_BF16;
-        baseTilingResult = elewiseBaseTiling.DoTiling<Log1pOp::Log1pDAG<bfloat16_t>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<Log1pOp::Log1pDAG<bfloat16_t>::OpDag>(*tiling);
     } else if (this->outputDtype == ge::DT_FLOAT) {
         dType = TPL_FP32;
-        baseTilingResult = elewiseBaseTiling.DoTiling<Log1pOp::Log1pDAG<float>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<Log1pOp::Log1pDAG<float>::OpDag>(*tiling);
     } else {
         OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y",
                                   ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT");
@@ -120,7 +121,7 @@ ge::graphStatus Log1pTiling::RunTiling()
     OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
                 return ge::GRAPH_FAILED);
 
-    return SetTilingData();
+    return SetTilingData(elewiseBaseTiling);
 }
 
 static ge::graphStatus TilingPrepareForLog1p(gert::TilingParseContext* context)

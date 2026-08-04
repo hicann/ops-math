@@ -17,10 +17,8 @@
 
 #include "register/tilingdata_base.h"
 #include "atvoss/elewise/elewise_tiling.h"
-#include "../../op_kernel/arch35/ceil_tiling_struct.h"
 
 namespace optiling {
-using namespace CeilNs;
 using namespace Ops::Base;
 
 struct CeilCompileInfo {
@@ -32,13 +30,12 @@ class CeilTiling {
 public:
     explicit CeilTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
-    CeilTilingData* tiling = nullptr;
 
 protected:
     ge::graphStatus CalcOutputDtype();
     ge::graphStatus CalcInputDtype();
     ge::graphStatus CheckShape() const;
-    ge::graphStatus SetTilingData();
+    ge::graphStatus SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling);
 
 private:
     gert::TilingContext* tilingContext = nullptr;

@@ -18,11 +18,9 @@
 #include "register/tilingdata_base.h"
 #include "register/op_impl_registry.h"
 #include "atvoss/elewise/elewise_tiling.h"
-#include "../../op_kernel/sign_struct.h"
 
 namespace optiling {
 using namespace Ops::Base;
-using namespace SignNs;
 
 class SignTiling {
 public:
@@ -35,13 +33,12 @@ protected:
     ge::graphStatus CalcInputDtype();
     ge::graphStatus CheckOutputShape() const;
     std::string DataTypeToSerialString(ge::DataType type);
-    ge::graphStatus SetTilingData();
+    ge::graphStatus SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling);
 
 private:
     gert::TilingContext* tilingContext = nullptr;
     ge::DataType outputDtype = ge::DT_UNDEFINED;
     ge::DataType inputDtype = ge::DT_UNDEFINED;
-    SignTilingData* tiling = nullptr;
 };
 
 } // namespace optiling

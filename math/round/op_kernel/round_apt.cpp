@@ -10,50 +10,52 @@
 
 /* !
  * \file round.cpp
- * \brief 
+ * \brief
  */
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
 #include "arch35/round_dag.h"
 #include "arch35/round_struct.h"
-#include "atvoss/elewise/elewise_sch.h"
+#include "atvoss/elewise/elewise_sch_with_scalar.h"
 #include "atvoss/util/dfx.h"
-#include "arch35/round_tiling_struct.h"
 
 using namespace AscendC;
 using namespace RoundOp;
 using namespace Ops::Base;
 
 template <uint64_t schMode, uint64_t dType, typename DtypeX>
-__global__ __aicore__ void RoundKernelI(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling) {
+__global__ __aicore__ void RoundKernelI(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+{
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-    REGISTER_TILING_DEFAULT(RoundTilingData);
-    GET_TILING_DATA_WITH_STRUCT(RoundTilingData, tilingData, tiling);
-    TPipe pipe;
+    REGISTER_TILING_DEFAULT(EleBaseTilingData32B);
+    GET_TILING_DATA_PTR_WITH_STRUCT(EleBaseTilingData32B, tilingData, tiling);
 
     if constexpr (dType == static_cast<uint64_t>(ROUND_TPL_INT32)) {
-        ElementwiseSch<schMode, typename RoundDag::RoundInt<int32_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSchWithScalar<EleBaseTilingData32B, schMode, typename RoundDag::RoundInt<int32_t>::OpDag> sch(
+            tilingData);
         sch.Init(x, y);
         sch.Process();
     } else if constexpr (dType == static_cast<uint64_t>(ROUND_TPL_INT32_CONST)) {
-        ElementwiseSch<schMode, typename RoundDag::RoundIntConst<int32_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-        sch.template SetVar<int, 0>(tilingData.num);
+        ElementwiseSchWithScalar<EleBaseTilingData32B, schMode, typename RoundDag::RoundIntConst<int32_t>::OpDag> sch(
+            tilingData);
         sch.Init(y);
         sch.Process();
-    }  else if constexpr (dType == static_cast<uint64_t>(ROUND_TPL_INT32_NEG_NINE)) {
-        ElementwiseSch<schMode, typename RoundDag::RoundIntNegativeDecimalsNine<int32_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+    } else if constexpr (dType == static_cast<uint64_t>(ROUND_TPL_INT32_NEG_NINE)) {
+        ElementwiseSchWithScalar<EleBaseTilingData32B, schMode,
+                                 typename RoundDag::RoundIntNegativeDecimalsNine<int32_t>::OpDag>
+            sch(tilingData);
         sch.Init(x, y);
         sch.Process();
     } else if constexpr (dType == static_cast<uint64_t>(ROUND_TPL_INT32_NEGINF)) {
-        ElementwiseSch<schMode, typename RoundDag::RoundIntNegativeDecimalsInf<int32_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-        sch.template SetVar<int, 0>(tilingData.power);
-        sch.template SetVar<int, 1>(tilingData.num);
+        ElementwiseSchWithScalar<EleBaseTilingData32B, schMode,
+                                 typename RoundDag::RoundIntNegativeDecimalsInf<int32_t>::OpDag>
+            sch(tilingData);
         sch.Init(x, y);
         sch.Process();
     } else if constexpr (dType == static_cast<uint64_t>(ROUND_TPL_INT32_NEG)) {
-        ElementwiseSch<schMode, typename RoundDag::RoundIntNegativeDecimals<int32_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-        sch.template SetVar<int, 0>(tilingData.power);
-        sch.template SetVar<int, 1>(tilingData.num);
+        ElementwiseSchWithScalar<EleBaseTilingData32B, schMode,
+                                 typename RoundDag::RoundIntNegativeDecimals<int32_t>::OpDag>
+            sch(tilingData);
         sch.Init(x, y);
         sch.Process();
     }
@@ -62,28 +64,30 @@ __global__ __aicore__ void RoundKernelI(GM_ADDR x, GM_ADDR y, GM_ADDR workspace,
 }
 
 template <uint64_t schMode, uint64_t dType, typename DtypeX>
-__global__ __aicore__ void RoundKernelF(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling) {
+__global__ __aicore__ void RoundKernelF(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+{
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-    REGISTER_TILING_DEFAULT(RoundTilingData);
-    GET_TILING_DATA_WITH_STRUCT(RoundTilingData, tilingData, tiling);
-    TPipe pipe;
+    REGISTER_TILING_DEFAULT(EleBaseTilingData32B);
+    GET_TILING_DATA_PTR_WITH_STRUCT(EleBaseTilingData32B, tilingData, tiling);
 
     if constexpr (dType == static_cast<uint64_t>(ROUND_TPL_ZERO)) {
-        ElementwiseSch<schMode, typename RoundDag::RoundZero<DtypeX>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSchWithScalar<EleBaseTilingData32B, schMode, typename RoundDag::RoundZero<DtypeX>::OpDag> sch(
+            tilingData);
         sch.Init(x, y);
         sch.Process();
     } else if constexpr (dType == static_cast<uint64_t>(ROUND_TPL_POSITIVE_DECIMALS)) {
-        ElementwiseSch<schMode, typename RoundDag::RoundPositiveDecimals<DtypeX>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-        sch.template SetVar<float, 0>(tilingData.decimals);
+        ElementwiseSchWithScalar<EleBaseTilingData32B, schMode, typename RoundDag::RoundPositiveDecimals<DtypeX>::OpDag>
+            sch(tilingData);
         sch.Init(x, y);
         sch.Process();
     } else if constexpr (dType == static_cast<uint64_t>(ROUND_TPL_NEGATIVE_DECIMALS)) {
-        ElementwiseSch<schMode, typename RoundDag::RoundNegativeDecimals<DtypeX>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-        sch.template SetVar<float, 0>(tilingData.decimals);
+        ElementwiseSchWithScalar<EleBaseTilingData32B, schMode, typename RoundDag::RoundNegativeDecimals<DtypeX>::OpDag>
+            sch(tilingData);
         sch.Init(x, y);
         sch.Process();
     } else if constexpr (dType == static_cast<uint64_t>(ROUND_TPL_NAN_DECIMALS)) {
-        ElementwiseSch<schMode, typename RoundDag::RoundNan<DtypeX>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSchWithScalar<EleBaseTilingData32B, schMode, typename RoundDag::RoundNan<DtypeX>::OpDag> sch(
+            tilingData);
         sch.Init(y);
         sch.Process();
     }
@@ -92,7 +96,8 @@ __global__ __aicore__ void RoundKernelF(GM_ADDR x, GM_ADDR y, GM_ADDR workspace,
 }
 
 template <uint64_t schMode, uint64_t dType>
-__global__ __aicore__ void round(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling) {
+__global__ __aicore__ void round(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+{
     if constexpr (std::is_same<DTYPE_X, int32_t>::value) {
         RoundKernelI<schMode, dType, DTYPE_X>(x, y, workspace, tiling);
     } else {

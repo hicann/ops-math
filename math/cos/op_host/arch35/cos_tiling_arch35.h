@@ -16,21 +16,20 @@
 #define OPS_MATH_COS_OP_HOST_COS_ARCH35_H_
 
 #include "atvoss/elewise/elewise_tiling.h"
-#include "math/cos/op_kernel/arch35/cos_tilingdata.h"
 
 namespace optiling {
+using namespace Ops::Base;
 
 class CosTiling {
 public:
     explicit CosTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
-    CosTilingData* tiling = nullptr;
 
 protected:
     ge::graphStatus CalcOutputDtype();
     ge::graphStatus CalcInputDtype();
     ge::graphStatus CheckShape() const;
-    ge::graphStatus SetTilingData();
+    ge::graphStatus SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling);
 
 private:
     gert::TilingContext* tilingContext = nullptr;

@@ -45,39 +45,34 @@ class RoundTiling {
 public:
     explicit RoundTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
-    RoundTilingData* tiling_ = nullptr;
 
 protected:
     ge::graphStatus CalcOutputDtype();
     ge::graphStatus CalcInputDtype();
     ge::graphStatus CheckShape() const;
-    ge::graphStatus SetTilingData();
-    ge::graphStatus DoTilingF(bool decimalsNeg, bool decimalsNan);
+    ge::graphStatus SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling);
+    ge::graphStatus DoTilingF(bool decimalsNeg, bool decimalsNan, float decimalsVal);
     ge::graphStatus DoTilingI(int64_t decimals);
 
 private:
     uint64_t dType = 0;
-    uint64_t schMode = 0;
     gert::TilingContext* tilingContext = nullptr;
     ge::DataType outputDtype = ge::DT_UNDEFINED;
     ge::DataType inputDtype = ge::DT_UNDEFINED;
 };
 
-ge::graphStatus RoundTiling::SetTilingData()
+ge::graphStatus RoundTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling)
 {
     OP_LOGD(tilingContext->GetNodeName(), "RoundTiling SetTilingData enter.");
-    auto rawTilingData = tilingContext->GetRawTilingData();
-    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, rawTilingData);
 
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = static_cast<size_t>(ASCEND_WORKSPACE);
 
-    schMode = tiling_->baseTiling.scheMode;
-    const uint64_t tilingKey = GET_TPL_TILING_KEY(schMode, dType);
+    const uint64_t tilingKey = GET_TPL_TILING_KEY(1, dType);
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);
     tilingContext->SetTilingKey(tilingKey);
-    tilingContext->SetBlockDim(tiling_->baseTiling.blockNum);
+    tilingContext->SetBlockDim(elewiseBaseTiling.GetBlockDim());
     return ge::GRAPH_SUCCESS;
 }
 
@@ -135,62 +130,62 @@ ge::graphStatus RoundTiling::CalcOutputDtype()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus RoundTiling::DoTilingF(bool decimalsNeg, bool decimalsNan)
+ge::graphStatus RoundTiling::DoTilingF(bool decimalsNeg, bool decimalsNan, float decimalsVal)
 {
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     if (this->outputDtype == ge::DT_FLOAT16) {
-        if (tiling_->decimals == DEFAULT_FP32_ZERO) {
+        if (decimalsVal == DEFAULT_FP32_ZERO) {
             dType = static_cast<uint64_t>(ROUND_TPL_ZERO);
-            baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundZero<half>::OpDag>(tiling_->baseTiling);
+            baseTilingResult = elewiseBaseTiling.DoTiling32B<RoundDag::RoundZero<half>::OpDag>();
         } else if (decimalsNeg) {
             dType = static_cast<uint64_t>(ROUND_TPL_NEGATIVE_DECIMALS);
-            baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundNegativeDecimals<half>::OpDag>(
-                tiling_->baseTiling);
+            baseTilingResult = elewiseBaseTiling.DoTiling32B<RoundDag::RoundNegativeDecimals<half>::OpDag>();
+            elewiseBaseTiling.SetScalar<float>(decimalsVal);
         } else if (decimalsNan) {
             dType = static_cast<uint64_t>(ROUND_TPL_NAN_DECIMALS);
-            baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundNan<half>::OpDag>(tiling_->baseTiling);
+            baseTilingResult = elewiseBaseTiling.DoTiling32B<RoundDag::RoundNan<half>::OpDag>();
         } else {
             dType = static_cast<uint64_t>(ROUND_TPL_POSITIVE_DECIMALS);
-            baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundPositiveDecimals<half>::OpDag>(
-                tiling_->baseTiling);
+            baseTilingResult = elewiseBaseTiling.DoTiling32B<RoundDag::RoundPositiveDecimals<half>::OpDag>();
+            elewiseBaseTiling.SetScalar<float>(decimalsVal);
         }
     } else if (this->outputDtype == ge::DT_BF16) {
-        if (tiling_->decimals == DEFAULT_FP32_ZERO) {
+        if (decimalsVal == DEFAULT_FP32_ZERO) {
             dType = static_cast<uint64_t>(ROUND_TPL_ZERO);
-            baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundZero<bfloat16_t>::OpDag>(tiling_->baseTiling);
+            baseTilingResult = elewiseBaseTiling.DoTiling32B<RoundDag::RoundZero<bfloat16_t>::OpDag>();
         } else if (decimalsNeg) {
             dType = static_cast<uint64_t>(ROUND_TPL_NEGATIVE_DECIMALS);
-            baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundNegativeDecimals<bfloat16_t>::OpDag>(
-                tiling_->baseTiling);
+            baseTilingResult = elewiseBaseTiling.DoTiling32B<RoundDag::RoundNegativeDecimals<bfloat16_t>::OpDag>();
+            elewiseBaseTiling.SetScalar<float>(decimalsVal);
         } else if (decimalsNan) {
             dType = static_cast<uint64_t>(ROUND_TPL_NAN_DECIMALS);
-            baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundNan<bfloat16_t>::OpDag>(tiling_->baseTiling);
+            baseTilingResult = elewiseBaseTiling.DoTiling32B<RoundDag::RoundNan<bfloat16_t>::OpDag>();
         } else {
             dType = static_cast<uint64_t>(ROUND_TPL_POSITIVE_DECIMALS);
-            baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundPositiveDecimals<bfloat16_t>::OpDag>(
-                tiling_->baseTiling);
+            baseTilingResult = elewiseBaseTiling.DoTiling32B<RoundDag::RoundPositiveDecimals<bfloat16_t>::OpDag>();
+            elewiseBaseTiling.SetScalar<float>(decimalsVal);
         }
     } else if (this->outputDtype == ge::DT_FLOAT) {
-        if (tiling_->decimals == DEFAULT_FP32_ZERO) {
+        if (decimalsVal == DEFAULT_FP32_ZERO) {
             dType = static_cast<uint64_t>(ROUND_TPL_ZERO);
-            baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundZero<float>::OpDag>(tiling_->baseTiling);
+            baseTilingResult = elewiseBaseTiling.DoTiling32B<RoundDag::RoundZero<float>::OpDag>();
         } else if (decimalsNeg) {
             dType = static_cast<uint64_t>(ROUND_TPL_NEGATIVE_DECIMALS);
-            baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundNegativeDecimals<float>::OpDag>(
-                tiling_->baseTiling);
+            baseTilingResult = elewiseBaseTiling.DoTiling32B<RoundDag::RoundNegativeDecimals<float>::OpDag>();
+            elewiseBaseTiling.SetScalar<float>(decimalsVal);
         } else if (decimalsNan) {
             dType = static_cast<uint64_t>(ROUND_TPL_NAN_DECIMALS);
-            baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundNan<float>::OpDag>(tiling_->baseTiling);
+            baseTilingResult = elewiseBaseTiling.DoTiling32B<RoundDag::RoundNan<float>::OpDag>();
         } else {
             dType = static_cast<uint64_t>(ROUND_TPL_POSITIVE_DECIMALS);
-            baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundPositiveDecimals<float>::OpDag>(
-                tiling_->baseTiling);
+            baseTilingResult = elewiseBaseTiling.DoTiling32B<RoundDag::RoundPositiveDecimals<float>::OpDag>();
+            elewiseBaseTiling.SetScalar<float>(decimalsVal);
         }
     }
     OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
                 OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTilingF failed"), return ge::GRAPH_FAILED);
-    return ge::GRAPH_SUCCESS;
+    return SetTilingData(elewiseBaseTiling);
 }
 
 ge::graphStatus RoundTiling::DoTilingI(int64_t decimals)
@@ -200,46 +195,45 @@ ge::graphStatus RoundTiling::DoTilingI(int64_t decimals)
 
     if (decimals >= DEFAULT_ZERO) {
         dType = static_cast<uint64_t>(ROUND_TPL_INT32);
-        baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundInt<int32_t>::OpDag>(tiling_->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling32B<RoundDag::RoundInt<int32_t>::OpDag>();
     }
     if ((decimals < DEFAULT_ZERO) && (decimals > DEFAULT_NEG_NINE)) {
-        tiling_->power = powerArr[llabs(static_cast<int32_t>(decimals))];
-        tiling_->num = numArr[llabs(static_cast<int32_t>(decimals))];
+        int32_t power = powerArr[llabs(static_cast<int32_t>(decimals))];
+        int32_t num = numArr[llabs(static_cast<int32_t>(decimals))];
         if (llabs(static_cast<int32_t>(decimals)) & 1) {
             dType = static_cast<uint64_t>(ROUND_TPL_INT32_NEGINF);
-            baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundIntNegativeDecimalsInf<int32_t>::OpDag>(
-                tiling_->baseTiling);
+            baseTilingResult = elewiseBaseTiling.DoTiling32B<RoundDag::RoundIntNegativeDecimalsInf<int32_t>::OpDag>();
+            elewiseBaseTiling.SetScalar<int32_t>(power);
+            elewiseBaseTiling.SetScalar<int32_t>(num);
         } else {
             dType = static_cast<uint64_t>(ROUND_TPL_INT32_NEG);
-            baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundIntNegativeDecimals<int32_t>::OpDag>(
-                tiling_->baseTiling);
+            baseTilingResult = elewiseBaseTiling.DoTiling32B<RoundDag::RoundIntNegativeDecimals<int32_t>::OpDag>();
+            elewiseBaseTiling.SetScalar<int32_t>(power);
+            elewiseBaseTiling.SetScalar<int32_t>(num);
         }
     }
     if (decimals == DEFAULT_NEG_NINE) {
         dType = static_cast<uint64_t>(ROUND_TPL_INT32_NEG_NINE);
-        baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundIntNegativeDecimalsNine<int32_t>::OpDag>(
-            tiling_->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling32B<RoundDag::RoundIntNegativeDecimalsNine<int32_t>::OpDag>();
     }
     if (decimals < DEFAULT_NEG_NINE) {
-        tiling_->num = static_cast<int32_t>(DEFAULT_FP32_ZERO);
+        int32_t num = static_cast<int32_t>(DEFAULT_FP32_ZERO);
         if (decimals < DEFAULT_NEG_MAX) {
-            tiling_->num = static_cast<int32_t>(DEFAULT_FP32_MIN);
+            num = static_cast<int32_t>(DEFAULT_FP32_MIN);
         }
         dType = static_cast<uint64_t>(ROUND_TPL_INT32_CONST);
-        baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundIntConst<int>::OpDag>(tiling_->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling32B<RoundDag::RoundIntConst<int>::OpDag>();
+        elewiseBaseTiling.SetScalar<int32_t>(num);
     }
 
     OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
                 OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTilingInt failed"), return ge::GRAPH_FAILED);
-    return ge::GRAPH_SUCCESS;
+    return SetTilingData(elewiseBaseTiling);
 }
 
 ge::graphStatus RoundTiling::RunTiling()
 {
     OP_LOGD(tilingContext->GetNodeName(), "RoundTiling RunTiling enter.");
-
-    tiling_ = tilingContext->GetTilingData<RoundTilingData>();
-    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tiling_);
 
     OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input x dtype failed"),
                 return ge::GRAPH_FAILED);
@@ -256,29 +250,25 @@ ge::graphStatus RoundTiling::RunTiling()
                 return ge::GRAPH_FAILED);
 
     if (this->outputDtype == ge::DT_INT32) {
-        DoTilingI(*decimalsPtr);
+        return DoTilingI(*decimalsPtr);
     } else {
         bool decimalsNeg = false;
         bool decimalsNan = false;
-
-        tiling_->decimals = DEFAULT_FP32_ZERO;
+        float decimalsVal = DEFAULT_FP32_ZERO;
         if (*decimalsPtr < DEFAULT_ZERO) {
             decimalsNeg = true;
         }
         if (*decimalsPtr != DEFAULT_ZERO) {
             if (llabs(*decimalsPtr) > DEFAULT_THIRTY_EIGHT) {
-                tiling_->decimals = DEFAULT_INF;
+                decimalsVal = DEFAULT_INF;
                 decimalsNan = true;
                 decimalsNeg = false;
             } else {
-                tiling_->decimals = pow(DEFAULT_TEN, llabs(*decimalsPtr));
+                decimalsVal = pow(DEFAULT_TEN, llabs(*decimalsPtr));
             }
         }
-        DoTilingF(decimalsNeg, decimalsNan);
+        return DoTilingF(decimalsNeg, decimalsNan, decimalsVal);
     }
-
-    SetTilingData();
-    return ge::GRAPH_SUCCESS;
 }
 
 static ge::graphStatus TilingPrepareForRound(gert::TilingParseContext* context)

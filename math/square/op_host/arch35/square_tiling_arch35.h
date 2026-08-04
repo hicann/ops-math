@@ -17,10 +17,8 @@
 #define OPS_BUILD_IN_OP_TILING_RUNTIME_SQUARE_TILING_H
 #include "register/tilingdata_base.h"
 #include "atvoss/elewise/elewise_tiling.h"
-#include "../../op_kernel/arch35/square_tiling_struct.h"
 
 namespace optiling {
-using namespace SquareNs;
 using namespace Ops::Base;
 
 class SquareTiling {
@@ -29,7 +27,7 @@ public:
     ge::graphStatus RunTiling();
 
 protected:
-    ge::graphStatus SetTilingData();
+    ge::graphStatus SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling);
     ge::graphStatus CalcInputDtype();
     ge::graphStatus CalcOutputDtype();
     ge::graphStatus CheckShape() const;
@@ -39,7 +37,6 @@ private:
     ge::DataType inputDtype = ge::DT_UNDEFINED;
     ge::DataType outputDtype = ge::DT_UNDEFINED;
     gert::TilingContext* tilingContext = nullptr;
-    SquareTilingData* tiling = nullptr;
 };
 } // namespace optiling
 

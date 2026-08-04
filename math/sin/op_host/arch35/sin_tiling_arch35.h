@@ -17,9 +17,9 @@
 
 #include "register/tilingdata_base.h"
 #include "atvoss/elewise/elewise_tiling.h"
-#include "../../op_kernel/arch35/sin_tiling_struct.h"
 
 namespace optiling {
+using namespace Ops::Base;
 
 struct SinCompileInfo {
     uint64_t coreNum = 0;
@@ -35,10 +35,9 @@ protected:
     ge::graphStatus CalcOutputDtype();
     ge::graphStatus CalcInputDtype();
     ge::graphStatus CheckShape() const;
-    ge::graphStatus SetTilingData();
+    ge::graphStatus SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling);
 
 private:
-    SinNs::SinTilingData* tiling = nullptr;
     gert::TilingContext* tilingContext = nullptr;
     ge::DataType outputDtype = ge::DT_UNDEFINED;
     ge::DataType inputDtype = ge::DT_UNDEFINED;

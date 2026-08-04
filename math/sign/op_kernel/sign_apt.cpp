@@ -15,12 +15,10 @@
 #include "arch35/sign.h"
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
-#include "atvoss/elewise/elewise_sch.h"
+#include "atvoss/elewise/elewise_sch_16b.h"
 #include "atvoss/elewise/elewise_base_struct.h"
-#include "sign_struct.h"
 
 using namespace Ops::Base;
-using namespace SignNs;
 
 extern "C" __global__ __aicore__ void sign(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
@@ -33,61 +31,60 @@ extern "C" __global__ __aicore__ void sign(GM_ADDR x, GM_ADDR y, GM_ADDR workspa
         return;
     }
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-    REGISTER_TILING_DEFAULT(SignTilingData);
-    GET_TILING_DATA_WITH_STRUCT(SignTilingData, tilingData, tiling);
-    TPipe pipe;
+    REGISTER_TILING_DEFAULT(EleBaseTilingData16B);
+    GET_TILING_DATA_PTR_WITH_STRUCT(EleBaseTilingData16B, tilingData, tiling);
     if (TILING_KEY_IS(101UL)) {
-        ElementwiseSch<0UL, SignDag::SignForNumber<half>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSch16B<0UL, SignDag::SignForNumber<half>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
         return;
     } else if (TILING_KEY_IS(102UL)) {
-        ElementwiseSch<0UL, SignDag::SignForBf<bfloat16_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSch16B<0UL, SignDag::SignForBf<bfloat16_t>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
         return;
     } else if (TILING_KEY_IS(103UL)) {
-        ElementwiseSch<0UL, SignDag::SignForNumber<float>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSch16B<0UL, SignDag::SignForNumber<float>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
         return;
     } else if (TILING_KEY_IS(104UL)) {
-        ElementwiseSch<0UL, SignDag::SignForNumber<int32_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSch16B<0UL, SignDag::SignForNumber<int32_t>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
         return;
     } else if (TILING_KEY_IS(105UL)) {
-        ElementwiseSch<0UL, SignDag::SignForInt64<int64_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSch16B<0UL, SignDag::SignForInt64<int64_t>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
         return;
     } else if (TILING_KEY_IS(106UL)) {
-        ElementwiseSch<0UL, SignDag::SignForNumber<int8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSch16B<0UL, SignDag::SignForNumber<int8_t>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
         return;
     } else if (TILING_KEY_IS(111UL)) {
-        ElementwiseSch<0UL, SignDag::SignForNumber<int16_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSch16B<0UL, SignDag::SignForNumber<int16_t>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
         return;
     } else if (TILING_KEY_IS(107UL)) {
-        ElementwiseSch<0UL, SignDag::SignForNumber<uint8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSch16B<0UL, SignDag::SignForNumber<uint8_t>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
         return;
     } else if (TILING_KEY_IS(108UL)) {
-        ElementwiseSch<0UL, SignDag::SignForNumber<uint16_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSch16B<0UL, SignDag::SignForNumber<uint16_t>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
         return;
     } else if (TILING_KEY_IS(109UL)) {
-        ElementwiseSch<0UL, SignDag::SignForNumber<uint32_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSch16B<0UL, SignDag::SignForNumber<uint32_t>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
         return;
     } else if (TILING_KEY_IS(110UL)) {
-        ElementwiseSch<0UL, SignDag::SignForInt64<uint64_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSch16B<0UL, SignDag::SignForInt64<uint64_t>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
         return;

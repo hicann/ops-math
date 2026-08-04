@@ -15,12 +15,10 @@
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
 #include "arch35/square_dag.h"
-#include "atvoss/elewise/elewise_sch.h"
+#include "atvoss/elewise/elewise_sch_16b.h"
 #include "atvoss/util/dfx.h"
-#include "arch35/square_tiling_struct.h"
 
 using namespace Ops::Base;
-using namespace SquareNs;
 
 extern "C" __global__ __aicore__ void square(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
@@ -33,31 +31,30 @@ extern "C" __global__ __aicore__ void square(GM_ADDR x, GM_ADDR y, GM_ADDR works
         return;
     }
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-    REGISTER_TILING_DEFAULT(SquareTilingData);
-    GET_TILING_DATA_WITH_STRUCT(SquareTilingData, tilingData, tiling);
-    TPipe pipe;
+    REGISTER_TILING_DEFAULT(EleBaseTilingData16B);
+    GET_TILING_DATA_PTR_WITH_STRUCT(EleBaseTilingData16B, tilingData, tiling);
     if (TILING_KEY_IS(1UL)) {
-        ElementwiseSch<0UL, SquareOp<half>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSch16B<0UL, SquareOp<half>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
         return;
     } else if (TILING_KEY_IS(2UL)) {
-        ElementwiseSch<0UL, SquareOp<bfloat16_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSch16B<0UL, SquareOp<bfloat16_t>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
         return;
     } else if (TILING_KEY_IS(3UL)) {
-        ElementwiseSch<0UL, SquareOp<float>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSch16B<0UL, SquareOp<float>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
         return;
     } else if (TILING_KEY_IS(4UL)) {
-        ElementwiseSch<0UL, SquareOp<int32_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSch16B<0UL, SquareOp<int32_t>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
         return;
     } else if (TILING_KEY_IS(5UL)) {
-        ElementwiseSch<0UL, SquareOp<int64_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        ElementwiseSch16B<0UL, SquareOp<int64_t>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
         return;

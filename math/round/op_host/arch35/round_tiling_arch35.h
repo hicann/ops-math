@@ -17,7 +17,6 @@
 
 #include "register/tilingdata_base.h"
 #include "atvoss/elewise/elewise_tiling.h"
-#include "../../op_kernel/arch35/round_tiling_struct.h"
 
 // 声明具有外部链接的对象或函数
 namespace optiling {

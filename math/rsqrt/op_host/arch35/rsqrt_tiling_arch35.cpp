@@ -31,7 +31,7 @@ const uint64_t RSQRT_KEY_FP16 = 101UL;
 const uint64_t RSQRT_KEY_BF16 = 102UL;
 const uint64_t RSQRT_KEY_FP32 = 103UL;
 
-ge::graphStatus RsqrtTiling::SetTilingData()
+ge::graphStatus RsqrtTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling)
 {
     OP_LOGD(tilingContext->GetNodeName(), "RsqrtTiling SetTilingData enter.");
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tilingContext->GetRawTilingData());
@@ -53,7 +53,7 @@ ge::graphStatus RsqrtTiling::SetTilingData()
     }
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);
     tilingContext->SetTilingKey(tilingKey);
-    tilingContext->SetBlockDim(tiling_->blockNum);
+    tilingContext->SetBlockDim(elewiseBaseTiling.GetBlockDim());
     return ge::GRAPH_SUCCESS;
 }
 
@@ -114,7 +114,7 @@ ge::graphStatus RsqrtTiling::RunTiling()
     OP_CHECK_IF(tilingContext == nullptr, OP_LOGE("RunTiling", "Tiling context is null"), return ge::GRAPH_FAILED);
     OP_LOGD(tilingContext->GetNodeName(), "RsqrtTiling RunTiling enter.");
     Ops::Base::ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-    tiling_ = tilingContext->GetTilingData<EleBaseTilingDataV2>();
+    auto tiling = tilingContext->GetTilingData<EleBaseTilingData16B>();
     OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
                 return ge::GRAPH_FAILED);
     OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"),
@@ -123,12 +123,12 @@ ge::graphStatus RsqrtTiling::RunTiling()
                 return ge::GRAPH_FAILED);
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     if (this->outputDtype == ge::DT_FLOAT16) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<RsqrtDag::RsqrtOp<half>::OpDag>(*tiling_);
+        baseTilingResult = elewiseBaseTiling.DoTiling<RsqrtDag::RsqrtOp<half>::OpDag>(*tiling);
     } else if (this->outputDtype == ge::DT_BF16) {
         baseTilingResult = elewiseBaseTiling.DoTiling<RsqrtDag::RsqrtOp<half>::OpDag>(
-            *tiling_); // bfloat16类型host没定义
+            *tiling); // bfloat16类型host没定义
     } else if (this->outputDtype == ge::DT_FLOAT) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<RsqrtDag::RsqrtOp<float>::OpDag>(*tiling_);
+        baseTilingResult = elewiseBaseTiling.DoTiling<RsqrtDag::RsqrtOp<float>::OpDag>(*tiling);
     } else {
         OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y",
                                   ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT");
@@ -136,7 +136,7 @@ ge::graphStatus RsqrtTiling::RunTiling()
     }
     OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
                 return ge::GRAPH_FAILED);
-    baseTilingResult = SetTilingData();
+    baseTilingResult = SetTilingData(elewiseBaseTiling);
     return baseTilingResult;
 }
 

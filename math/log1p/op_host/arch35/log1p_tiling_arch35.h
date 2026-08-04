@@ -15,10 +15,11 @@
 #ifndef OPS_OP_TILING_RUNTIME_LOG1P_TILING_H
 #define OPS_OP_TILING_RUNTIME_LOG1P_TILING_H
 
-#include "op_host/tiling_base_class.h"
-#include "../../op_kernel/arch35/log1p_tiling_struct.h"
+#include "register/tilingdata_base.h"
+#include "atvoss/elewise/elewise_tiling.h"
 
 namespace optiling {
+using namespace Ops::Base;
 
 struct Log1pCompileInfo {
     uint64_t coreNum = 0;
@@ -29,13 +30,12 @@ class Log1pTiling {
 public:
     explicit Log1pTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
-    Log1pNs::Log1pTilingData* tiling = nullptr;
 
 protected:
     ge::graphStatus CalcOutputDtype();
     ge::graphStatus CalcInputDtype();
     ge::graphStatus CheckShape() const;
-    ge::graphStatus SetTilingData();
+    ge::graphStatus SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling);
 
 private:
     gert::TilingContext* tilingContext = nullptr;
