@@ -160,6 +160,52 @@ TEST_F(TriluTiling, trilu_rejects_x_complex128)
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
+TEST_F(TriluTiling, trilu_accepts_k_shape_one)
+{
+    optiling::TriluCompileInfo compileInfo = {64, 245760};
+    int64_t kValue = 0;
+    auto tilingContextPara = CreateTriluContext(
+        ge::DT_FLOAT, {{{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &kValue}}, &compileInfo);
+    TilingInfo tilingInfo;
+    EXPECT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+}
+
+TEST_F(TriluTiling, trilu_accepts_k_shape_one_one)
+{
+    optiling::TriluCompileInfo compileInfo = {64, 245760};
+    int64_t kValue = 0;
+    auto tilingContextPara = CreateTriluContext(
+        ge::DT_FLOAT, {{{{1, 1}, {1, 1}}, ge::DT_INT64, ge::FORMAT_ND, true, &kValue}}, &compileInfo);
+    TilingInfo tilingInfo;
+    EXPECT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+}
+
+TEST_F(TriluTiling, trilu_rejects_k_empty)
+{
+    optiling::TriluCompileInfo compileInfo = {64, 245760};
+    auto tilingContextPara = CreateTriluContext(ge::DT_FLOAT, {{{{0}, {0}}, ge::DT_INT64, ge::FORMAT_ND}},
+                                                &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(TriluTiling, trilu_rejects_k_multi_element)
+{
+    optiling::TriluCompileInfo compileInfo = {64, 245760};
+    int64_t kValue[2] = {0, 1};
+    auto tilingContextPara = CreateTriluContext(ge::DT_FLOAT, {{{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, kValue}},
+                                                &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(TriluTiling, trilu_rejects_k_shape_one_two)
+{
+    optiling::TriluCompileInfo compileInfo = {64, 245760};
+    int64_t kValue[2] = {0, 1};
+    auto tilingContextPara = CreateTriluContext(
+        ge::DT_FLOAT, {{{{1, 2}, {1, 2}}, ge::DT_INT64, ge::FORMAT_ND, true, kValue}}, &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
 TEST_F(TriluTiling, trilu_rejects_invalid_k_dtypes)
 {
     const std::vector<ge::DataType> invalidDtypes = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};

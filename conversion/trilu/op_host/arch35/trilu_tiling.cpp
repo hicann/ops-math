@@ -18,6 +18,8 @@
  * the hundreds digit. Requires dimNum>=2 (aligned with tril/triu).
  */
 
+#include <string>
+
 #include "conversion/triu/op_host/arch35/triu_tiling.h"
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
@@ -87,21 +89,29 @@ static ge::graphStatus ValidateDtypes(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, xDesc);
     const ge::DataType xDtype = xDesc->GetDataType();
     if (!IsSupportedXDtype(xDtype)) {
-        OP_LOGE(context->GetNodeName(),
-                "Input x has dtype %s (%d); allowed dtypes are {BF16, FLOAT16, FLOAT, INT64, UINT64, INT32, "
-                "UINT32, INT16, UINT16, INT8, UINT8, DOUBLE, COMPLEX32, COMPLEX64, BOOL}.",
-                Ops::Base::ToString(xDtype).c_str(), static_cast<int32_t>(xDtype));
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context->GetNodeName(), "x", Ops::Base::ToString(xDtype).c_str(),
+            "The dtype of x must be within the range [DT_BF16, DT_FLOAT16, DT_FLOAT, DT_INT64, DT_UINT64, "
+            "DT_INT32, DT_UINT32, DT_INT16, DT_UINT16, DT_INT8, DT_UINT8, DT_DOUBLE, DT_COMPLEX32, DT_COMPLEX64, "
+            "DT_BOOL].");
         return ge::GRAPH_FAILED;
     }
 
-    const auto* kDesc = context->GetInputDesc(INDEX_K);
-    if (kDesc == nullptr) {
+    const auto* kTensor = context->GetOptionalInputTensor(INDEX_K);
+    if (kTensor == nullptr) {
         return ge::GRAPH_SUCCESS;
     }
-    const ge::DataType kDtype = kDesc->GetDataType();
+    const ge::DataType kDtype = kTensor->GetDataType();
     if (kDtype != ge::DT_INT32 && kDtype != ge::DT_INT64) {
-        OP_LOGE(context->GetNodeName(), "Input k has dtype %s (%d); allowed dtypes are {INT32, INT64}.",
-                Ops::Base::ToString(kDtype).c_str(), static_cast<int32_t>(kDtype));
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "k", Ops::Base::ToString(kDtype).c_str(),
+                                              "The dtype of k must be within the range [DT_INT32, DT_INT64].");
+        return ge::GRAPH_FAILED;
+    }
+
+    const int64_t kNumel = kTensor->GetShapeSize();
+    if (kNumel != 1) {
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context->GetNodeName(), "k", std::to_string(kNumel).c_str(),
+                                                  "The shape size of k must be 1.");
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -120,7 +130,8 @@ static ge::graphStatus TriluTilingFunc(gert::TilingContext* context)
     const int64_t* upperPtr = attrs->GetAttrPointer<int64_t>(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, upperPtr);
     if (*upperPtr != 0 && *upperPtr != 1) {
-        OP_LOGE(context->GetNodeName(), "The attr upper must be 0 or 1, but got %ld.", *upperPtr);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "upper", std::to_string(*upperPtr).c_str(),
+                                              "The value of upper must be 0 or 1.");
         return ge::GRAPH_FAILED;
     }
     bool isUpper = (*upperPtr != 0);

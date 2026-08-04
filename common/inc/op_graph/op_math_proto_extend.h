@@ -415,9 +415,9 @@ REG_OP(ExpandDims)
     .OPTIONAL_INPUT(k, "T_K")
     .ATTR(upper, Int, 0)
     .OUTPUT(y, "T")
-    .DATATYPE(T, TensorType({DT_FLOAT16, DT_BF16, DT_FLOAT, DT_DOUBLE, DT_INT32, DT_UINT8, DT_INT16, DT_INT8, DT_INT64,
-                             DT_QINT8, DT_QUINT8, DT_QINT32, DT_QUINT16, DT_QINT16, DT_UINT16, DT_UINT32, DT_UINT64,
-                             DT_BOOL}))
+    .DATATYPE(T, TensorType({DT_FLOAT16, DT_BF16,   DT_FLOAT,  DT_DOUBLE, DT_INT32,     DT_UINT8,    DT_INT16,
+                             DT_INT8,    DT_INT64,  DT_QINT8,  DT_QUINT8, DT_QINT32,    DT_QUINT16,  DT_QINT16,
+                             DT_UINT16,  DT_UINT32, DT_UINT64, DT_BOOL,   DT_COMPLEX32, DT_COMPLEX64}))
     .DATATYPE(T_K, TensorType({DT_INT32, DT_INT64}))
     .OP_END_FACTORY_REG(Trilu)
 
