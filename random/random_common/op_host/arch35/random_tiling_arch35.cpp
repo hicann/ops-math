@@ -224,7 +224,7 @@ ge::graphStatus CalcExecutionPoliciesForBlocks(RandomUnifiedSimtTilingDataStruct
 
 ge::graphStatus RandomTilingParseArch35(gert::TilingParseContext* context, const std::string& operatorName)
 {
-    OP_LOGD(context, "Entering RandomTilingArch35  operator name : %s", operatorName);
+    OP_LOGD(context, "Entering RandomTilingArch35  operator name : %s", operatorName.c_str());
     auto compileInfo = context->GetCompiledInfo<RandomOperatorCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     auto platformInfo = context->GetPlatformInfo();
@@ -345,7 +345,7 @@ ge::graphStatus RandomTilingArch35::DoTiling()
         "RandomTiling", "%s",
         (config_.kernelMode == RandomKernelMode::SIMD ? tilingData_.DumpTilingInfo() : simtTilingData_.DumpTilingInfo())
             .c_str());
-    OP_LOGD(opName_, "Tiling success for op: %s", opName_);
+    OP_LOGD(opName_, "Tiling success for op: %s", opName_.c_str());
     return ge::GRAPH_SUCCESS;
 }
 
