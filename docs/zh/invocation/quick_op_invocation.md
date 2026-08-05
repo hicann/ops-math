@@ -43,12 +43,12 @@
     # bash build.sh --experimental --run_example abs eager cust --vendor_name=custom
     ```
 
-  - \$\{op\}：表示待执行算子，算子名小写下划线形式，如abs。
-  - \$\{mode\}：表示调用方式，目前支持eager（aclnn调用）、graph（图模式调用）。
-  - \$\{pkg_mode\}：表示包模式，目前仅支持cust，即自定义算子包。
-  - \$\{vendor\_name\}（可选）：与构建的自定义算子包设置一致，默认名为custom。
-  - \$\{soc_version\}（可选）：表示NPU型号。
-  - \$\{experimental\}（可选）：表示执行用户保存在experimental贡献目录下的算子。
+  - \$\{op}：表示待执行算子，算子名小写下划线形式，如abs。
+  - \$\{mode}：表示调用方式，目前支持eager（aclnn调用）、graph（图模式调用）。
+  - \$\{pkg_mode}：表示包模式，目前仅支持cust，即自定义算子包。
+  - \$\{vendor_name}（可选）：与构建的自定义算子包设置一致，默认名为custom。
+  - \$\{soc_version}（可选）：表示NPU型号。
+  - \$\{experimental}（可选）：表示执行用户保存在experimental贡献目录下的算子。
 
     说明：\$\{mode\}为graph时，不指定\$\{pkg_mode\}和\$\{vendor\_name\}
 
@@ -170,7 +170,7 @@
 
    为方便理解，以`AddExample`算子为例，调用脚本如下，仅供参考，全量代码参见[test_aclnn_add_example.cpp](../../../examples/add_example/examples/test_aclnn_add_example.cpp)。
 
-   ```Cpp
+   ```cpp
    int main()
    {
        // 1.调用acl进行device/stream初始化
@@ -254,7 +254,7 @@
 
     - **调用自定义算子**：依赖自定义算子包
 
-        ```bash
+        ```cmake
         cmake_minimum_required(VERSION 3.14)
         # 设置工程名
         project(ACLNN_EXAMPLE)
@@ -327,39 +327,39 @@
         # 设置C++编译标准
         add_compile_options(-std=c++11)
         
-		# 设置编译输出目录为当前目录下的bin文件夹
+        # 设置编译输出目录为当前目录下的bin文件夹
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  "./bin")
         
-		# 设置调试和发布模式的编译选项
+        # 设置调试和发布模式的编译选项
         set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -O0 -g -Wall")
         set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -O2 -Wall")
         
-		# 添加可执行文件（自定义：替换为实际调用算子的*.cpp文件）
+        # 添加可执行文件（自定义：替换为实际调用算子的*.cpp文件）
         add_executable(${test_aclnn_op_name}
         ${test_aclnn_op_name}.cpp)
         
-		# ASCEND_PATH（如遇CANN包路径有误，请根据实际路径修改）
+        # ASCEND_PATH（如遇CANN包路径有误，请根据实际路径修改）
         if(NOT "$ENV{ASCEND_HOME_PATH}" STREQUAL "")
             set(ASCEND_PATH $ENV{ASCEND_HOME_PATH})
         else()
             set(ASCEND_PATH "/usr/local/Ascend/cann")
         endif()
         
-		# 设置头文件路径
+        # 设置头文件路径
         set(INCLUDE_BASE_DIR "${ASCEND_PATH}/include")
         include_directories(
             ${INCLUDE_BASE_DIR}
             ${ASCEND_PATH}/include/aclnnop
         )
         
-		# 链接所需的动态库（自定义：替换为实际算子可执行文件）
+        # 链接所需的动态库（自定义：替换为实际算子可执行文件）
         target_link_libraries(${test_aclnn_op_name} PRIVATE
             ${ASCEND_PATH}/lib64/libascendcl.so
             ${ASCEND_PATH}/lib64/libnnopbase.so
             ${ASCEND_PATH}/lib64/libopapi_math.so            # 链接内置算子库文件
         )
         
-		# 安装目标文件到bin目录（自定义：替换为实际算子可执行文件）  
+        # 安装目标文件到bin目录（自定义：替换为实际算子可执行文件）  
         install(TARGETS ${test_aclnn_op_name} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
         ```
     
@@ -394,11 +394,11 @@
    bash run.sh
    ```
 
-    默认在当前执行路径`/build/bin`下生成可执行文件${test_aclnn_op_name}。运行结果以test\_aclnn\_add\_ example为例：
+    默认在当前执行路径`/build/bin`下生成可执行文件${test_aclnn_op_name}。运行结果以test\_aclnn\_add\_example为例：
 
-   ```
-   mean result[2046] is 2.000000
-   mean result[2047] is 2.000000
+   ```text
+   add result[2046] is 2.000000
+   add result[2047] is 2.000000
    ```
 
 ### GE图模式
@@ -419,7 +419,7 @@
 
    在目标算子`examples`目录下，新建调用脚本test\_geir\_\$\{op\_name\}.cpp，\$\{op\_name\}表示目标算子名。以`AddExample`算子为例，调用脚本如下，仅供参考，全量代码参见[test_geir_add_example.cpp](../../../examples/add_example/examples/test_geir_add_example.cpp)。
 
-   ```CPP
+   ```cpp
    int main() {
        // 1.创建图对象
        Graph graph(graphName);
@@ -466,7 +466,7 @@
 
    在test\_geir\_\$\{op\_name\}.cpp同级目录下创建CMakeLists.txt文件，以`AddExample`算子为例，示例如下，请根据实际情况自行修改。
 
-    ```bash
+    ```cmake
    cmake_minimum_required(VERSION 3.14)
     
    # 设置工程名
@@ -544,6 +544,6 @@
 
     默认在当前执行路径`/build/bin`下生成可执行文件test\_geir\_add\_example，运行结果如下：
 
-    ```
+    ```bash
     INFO - [XIR]: Finalize ir graph session success
     ```

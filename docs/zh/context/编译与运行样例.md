@@ -7,7 +7,7 @@
 
 ## 编译前准备
 
-本章以开发和运行环境合设场景为例，即带AI处理器的机器既作为开发环境又作为运行环境。该场景下，代码开发和代码运行在同一台机器上。这里以**Abs算子**为例，其他算子的调用逻辑、流程、编译脚本与Abs算子大致一样，请根据实际情况自行修改API调用脚本（\*.cpp）和编译脚本(CMakeLists)。
+本章以开发和运行环境合设场景为例，即带AI处理器的机器既作为开发环境又作为运行环境。该场景下，代码开发和代码运行在同一台机器上。这里以**Abs算子**为例，其他算子的调用逻辑、流程、编译脚本与Abs算子大致一样，请根据实际情况自行修改API调用脚本（\*.cpp）和编译脚本（CMakeLists）。
 
 - **示例代码**
 
@@ -17,7 +17,7 @@
 
     CMake文件示例如下，请根据实际情况修改：
 
-    ```bash
+    ```cmake
     # Copyright (c) Huawei Technologies Co., Ltd. 2019. All rights reserved.
 
     # CMake lowest version requirement
@@ -62,7 +62,7 @@
 
     对于集合通信和MatMul计算融合、并行的算子，统称为通算融合算子（简称MC2算子），包括AllGatherMatmul、AlltoAllAllGatherBatchMatMul、BatchMatMulReduceScatterAlltoAll、MatmulAllReduce、MatmulAllReduceAddRmsNorm、MatmulReduceScatter等。调用该类算子API时，一般会涉及多线程和HCCL（Huawei Collective Communication Library，集合通信库），因此CMake文件需要额外导入如下内容，否则无法成功编译。
 
-  ```text
+  ```cmake
   # 设置链接的库文件路径
   find_package(Threads REQUIRED)
   target_link_libraries(opapi_test PRIVATE
@@ -135,7 +135,7 @@
         CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAbsGetWorkspaceSize failed. ERROR: %d.\n[ERROR msg]%s", ret, aclGetRecentErrMsg()); return ret);
         ```
 
-        上述构造空指针问题获取报错信息示例如下:
+        上述构造空指针问题获取报错信息示例如下：
 
         ```bash
         aclnnAbsGetWorkspaceSize failed. ERROR: 161001

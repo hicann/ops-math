@@ -13,7 +13,7 @@
 | json | 3.11.3 | [json-3.11.3.tar.gz](https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/json/json-3.11.3.tar.gz) |
 | makeself | 2.5.0 | [makeself-release-2.5.0-patch1.tar.gz](https://gitcode.com/cann-src-third-party/makeself/releases/download/release-2.5.0-patch1.0/makeself-release-2.5.0-patch1.tar.gz) |
 | eigen | 5.0.0 | [eigen-5.0.0.tar.gz](https://gitcode.com/cann-src-third-party/eigen/releases/download/5.0.0-h0.trunk/eigen-5.0.0.tar.gz) |
-| protobuf | 25.1.0 | [protobuf-25.1.tar.gz](https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz) |
+| protobuf | 25.1 | [protobuf-25.1.tar.gz](https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz) |
 | abseil-cpp | 20230802.1 | [abseil-cpp-20230802.1.tar.gz](https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20230802.1/abseil-cpp-20230802.1.tar.gz) |
 | opbase(自CANN 9.0.0及以后版本需要下载) | master | [opbase](https://gitcode.com/cann/opbase) |
 | cann-cmake | master-016 | [cmake-master-016.tar.gz](https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/cmake/cmake-master-016.tar.gz) |
@@ -165,7 +165,7 @@
 
     \$\{static\_lib\_path\}表示静态库解压路径。解压后目录结构如下：
 
-    ```
+    ```text
     ├── cann-${soc_name}-ops-math-static_${cann_version}_linux-${arch}
     │   ├── lib64
     │   │   ├── libcann_math_static.a               # 静态库文件
@@ -203,10 +203,12 @@
 
 2. **查看产物位置**
 
-    执行命令
+    执行命令：
+
     ```bash
     spack location -i cann-ops-math
     ```
+
     此处产物指run包，实际上run包已自动安装到`$ASCEND_HOME_PATH`中，在代码根目录下的build_out目录下亦可找到run包
 
 3. **（可选）卸载自定义算子包。**
@@ -244,10 +246,12 @@
 
 2. **查看产物位置**
 
-    执行命令
+    执行命令：
+
     ```bash
     spack location -i cann-ops-math
     ```
+
     此处产物指run包，实际上run包已自动安装到`$ASCEND_HOME_PATH`中，在代码根目录下的build_out目录下亦可找到run包
 
 3. **（可选）卸载ops-math包**
@@ -276,12 +280,15 @@
     ```bash
     ==> cann-ops-math: Successfully installed cann-ops-math-master-xxxxxxxxxxxxxxxxx
     ```
+
 2. **查看产物位置**
 
-    执行命令
+    执行命令：
+
     ```bash
     spack location -i cann-ops-math
     ```
+
     此处产物指tar包，在代码根目录下的build_out目录下亦可找到tar包
 
 3. **解压ops-math静态库**
@@ -294,7 +301,7 @@
 
     \$\{static\_lib\_path\}表示静态库解压路径。解压后目录结构如下：
 
-    ```
+    ```text
     ├── cann-${soc_name}-ops-math-static_${cann_version}_linux-${arch}
     │   ├── lib64
     │   │   ├── libcann_math_static.a               # 静态库文件

@@ -7,12 +7,15 @@
 ### 1.本地快速搭建环境并构建
 
 #### 方法一、运行一键式脚本快速构建
+
 prepare_cann_env.sh会一键式搭建Spack环境并安装ops-math的全部依赖
+
 ```bash
 # 进入代码根目录
 cd ${local_repo_path}/ops-math
 source spack/prepare_cann_env.sh
 ```
+
 #### 方法二、手动配置环境（适合高级用户或自定义配置）
 
 如果您希望更精细地控制环境配置，可以按照以下步骤手动配置：
@@ -42,7 +45,7 @@ spack config --scope user add "config:install_tree:root:/opt/spack"
 ```
 
 普通用户建议使用个人home下目录，避免被其他用户修改导致环境不稳定
-管理员建议使用全局路径，便于使用[Spack串联能力](https://spack.readthedocs.io/en/latest/chain.html)统一安装软件提供给其他用户使用:
+管理员建议使用全局路径，便于使用[Spack串联能力](https://spack.readthedocs.io/en/latest/chain.html)统一安装软件提供给其他用户使用：
 
 ##### 步骤3：添加外部已安装工具到Spack环境中
 
@@ -52,7 +55,7 @@ spack compiler find  # 配置本地已安装的编译器，如gcc
 
 ##### 步骤4：配置Spack官方仓库gitcode镜像源
 
-Spack默认官方仓库地址为[github地址](https://github.com/spack/spack-packages.git),可以通过如下方式修改默认官方仓库，使用GitCode镜像源起到加速作用：
+Spack默认官方仓库地址为[Spack官方github地址](https://github.com/spack/spack-packages),可以通过如下方式修改默认官方仓库，使用GitCode镜像源起到加速作用：
 修改~/.spack目录下的repos.yaml，如不存在则新建该文件，写入以下内容
 
 ```yaml
@@ -131,41 +134,51 @@ spack location -i cann-ops-math
 ## 二、修改代码后重新构建
 
 ### 1.卸载已构建的产物
+
 ```bash
 spack uninstall -y cann-ops-math
 ```
+
 ### 2.移除已有变体并添加新变体
 
 如果想指定不同的构建参数，可通过更换Spack包变体来实现
 （不更改构建参数，可跳过此步骤）
+
 ```bash
 spack change cann-ops-math@master +pkg +jit soc=ascend910b # 举例
 ```
+
 ### 3.重新进行依赖解析
+
 ```bash
 spack concretize -f
 ```
+
 ### 4.重新构建
+
 ```bash
 spack install
 ```
+
 ## 三、重新进入Spack环境
 
 开启新终端需要重新进入Spack环境
+
 ```bash
 spack env activate cann-dev-env
 ```
+
 ## 四、清理环境或卸载Spack
 
 如果不想继续使用Spack，可使用`prepare_cann_env.sh`的clean参数卸载Spack并通过**重启终端**来清理环境变量
+
 ```bash
-source prepare_cann_env.sh clean
+source spack/prepare_cann_env.sh clean
 ```
 
 ## 五、ops-math的Spack构建变体
 
 通过`spack info cann-ops-math`命令可以查看ops-math支持的参数，变体具体含义请参考[build.md](./build.md#参数说明).
-
 
 ## 六、Spack开发与调试命令指导
 
@@ -184,7 +197,7 @@ spack find                              #列出所有软件包
 spack find -L                           #显示完整哈希
 spack find <package-name>               #按包名过滤，不提供则为全部包
 spack find --deps <package-name>        #显示该包的依赖树
-spack find --explicit <package-name>    #显示手动安装的定级包 缩写：-e
+spack find --explicit <package-name>    #显示手动安装的顶级包 缩写：-e
 spack find -p <package-name>            #显示完整安装路径
 spack find -lv <package-name>           #显示完整哈希和变体信息
 
@@ -213,7 +226,7 @@ spack versions <package-name>
 
 #清除Spack构建缓存：
 spack clean
-spack clean -all   #将旧源码与旧构建记录及缓存全部清除，慎用
+spack clean --all   #将旧源码与旧构建记录及缓存全部清除，慎用
 
 #查看当前软件包信息：查看该软件包所有支持的版本，Spack默认倾向于最新版本
 spack info <package-name>
@@ -285,17 +298,21 @@ $HOME/spack
 #Spack环境目录：
 $HOME/spack/var/spack/environments
 ```
+
 ## 八、FAQ
 
 ### 1.执行prepare_cann_env.sh出现报错怎么办
-如果机器在以前安装过Spack可能会导致环境变量或配置文件残留，可在备份关键数据后执行```source prepare_cann_env.sh clean```并重启终端后重新执行
+
+如果机器在以前安装过Spack可能会导致环境变量或配置文件残留，可在备份关键数据后执行```source spack/prepare_cann_env.sh clean```并重启终端后重新执行
 
 ### 2.安装过程中出现ssl类报错怎么办
+
 此类报错是由于机器缺少相关证书导致，请自行配置证书并重新运行
 
 ### 3.不想使用Spack了如何卸载
-执行```source prepare_cann_env.sh clean```可自动卸载Spack，root用户还需要执行```rm -rf /opt/spack```卸载所有Spack软件包
+
+执行```source spack/prepare_cann_env.sh clean```可自动卸载Spack，root用户还需要执行```rm -rf /opt/spack```卸载所有Spack软件包
 
 ## 九、更多Spack操作请参考官方文档
 
-https://spack.readthedocs.io/en/latest/
+[Spack 官方文档](https://spack.readthedocs.io/en/latest/)
