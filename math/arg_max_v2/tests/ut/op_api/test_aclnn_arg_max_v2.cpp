@@ -108,3 +108,185 @@ TEST_F(l2_arg_max_v2_test, case_arg_max_v2_nullptr)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 }
+
+// test unsupported dtype
+TEST_F(l2_arg_max_v2_test, case_arg_max_v2_unsupported_dtype)
+{
+    auto self_tensor_desc = TensorDesc({3, 3, 3}, ACL_BOOL, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
+    auto out_tensor_desc = TensorDesc({3, 3}, ACL_INT64, ACL_FORMAT_ND);
+    int64_t dim = 2;
+    bool keepdim = false;
+    auto ut = OP_API_UT(aclnnArgMax, INPUT(self_tensor_desc, dim, keepdim), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+// test dim out of range
+TEST_F(l2_arg_max_v2_test, case_arg_max_v2_dim_out_of_range)
+{
+    auto self_tensor_desc = TensorDesc({3, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
+    auto out_tensor_desc = TensorDesc({3, 3}, ACL_INT64, ACL_FORMAT_ND);
+    int64_t dim = 5;
+    bool keepdim = false;
+    auto ut = OP_API_UT(aclnnArgMax, INPUT(self_tensor_desc, dim, keepdim), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+// test negative dim
+TEST_F(l2_arg_max_v2_test, case_arg_max_v2_neg_dim)
+{
+    auto self_tensor_desc = TensorDesc({3, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
+    auto out_tensor_desc = TensorDesc({3, 3}, ACL_INT64, ACL_FORMAT_ND);
+    int64_t dim = -1;
+    bool keepdim = false;
+    auto ut = OP_API_UT(aclnnArgMax, INPUT(self_tensor_desc, dim, keepdim), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// test bf16
+TEST_F(l2_arg_max_v2_test, case_arg_max_v2_bf16)
+{
+    auto self_tensor_desc = TensorDesc({3, 3, 3}, ACL_BF16, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
+    auto out_tensor_desc = TensorDesc({3, 3}, ACL_INT64, ACL_FORMAT_ND);
+    int64_t dim = 2;
+    bool keepdim = false;
+    auto ut = OP_API_UT(aclnnArgMax, INPUT(self_tensor_desc, dim, keepdim), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// test int8
+TEST_F(l2_arg_max_v2_test, case_arg_max_v2_int8)
+{
+    auto self_tensor_desc = TensorDesc({3, 3, 3}, ACL_INT8, ACL_FORMAT_ND).ValueRange(-10, 10);
+    auto out_tensor_desc = TensorDesc({3, 3}, ACL_INT64, ACL_FORMAT_ND);
+    int64_t dim = 2;
+    bool keepdim = false;
+    auto ut = OP_API_UT(aclnnArgMax, INPUT(self_tensor_desc, dim, keepdim), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// test int32 output
+TEST_F(l2_arg_max_v2_test, case_arg_max_v2_int32_input)
+{
+    auto self_tensor_desc = TensorDesc({3, 3, 3}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-10, 10);
+    auto out_tensor_desc = TensorDesc({3, 3}, ACL_INT32, ACL_FORMAT_ND);
+    int64_t dim = 2;
+    bool keepdim = false;
+    auto ut = OP_API_UT(aclnnArgMax, INPUT(self_tensor_desc, dim, keepdim), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// test int64 input
+TEST_F(l2_arg_max_v2_test, case_arg_max_v2_int64)
+{
+    auto self_tensor_desc = TensorDesc({3, 3, 3}, ACL_INT64, ACL_FORMAT_ND).ValueRange(-10, 10);
+    auto out_tensor_desc = TensorDesc({3, 3}, ACL_INT64, ACL_FORMAT_ND);
+    int64_t dim = 2;
+    bool keepdim = false;
+    auto ut = OP_API_UT(aclnnArgMax, INPUT(self_tensor_desc, dim, keepdim), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// test uint8
+TEST_F(l2_arg_max_v2_test, case_arg_max_v2_uint8)
+{
+    auto self_tensor_desc = TensorDesc({3, 3, 3}, ACL_UINT8, ACL_FORMAT_ND).ValueRange(0, 10);
+    auto out_tensor_desc = TensorDesc({3, 3}, ACL_INT64, ACL_FORMAT_ND);
+    int64_t dim = 2;
+    bool keepdim = false;
+    auto ut = OP_API_UT(aclnnArgMax, INPUT(self_tensor_desc, dim, keepdim), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// test double
+TEST_F(l2_arg_max_v2_test, case_arg_max_v2_double)
+{
+    auto self_tensor_desc = TensorDesc({3, 3, 3}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
+    auto out_tensor_desc = TensorDesc({3, 3}, ACL_INT64, ACL_FORMAT_ND);
+    int64_t dim = 2;
+    bool keepdim = false;
+    auto ut = OP_API_UT(aclnnArgMax, INPUT(self_tensor_desc, dim, keepdim), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// test int16
+TEST_F(l2_arg_max_v2_test, case_arg_max_v2_int16)
+{
+    auto self_tensor_desc = TensorDesc({3, 3, 3}, ACL_INT16, ACL_FORMAT_ND).ValueRange(-10, 10);
+    auto out_tensor_desc = TensorDesc({3, 3}, ACL_INT64, ACL_FORMAT_ND);
+    int64_t dim = 2;
+    bool keepdim = false;
+    auto ut = OP_API_UT(aclnnArgMax, INPUT(self_tensor_desc, dim, keepdim), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// test empty tensor
+TEST_F(l2_arg_max_v2_test, case_arg_max_v2_empty)
+{
+    auto self_tensor_desc = TensorDesc({0, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto out_tensor_desc = TensorDesc({0, 3}, ACL_INT64, ACL_FORMAT_ND);
+    int64_t dim = 0;
+    bool keepdim = false;
+    auto ut = OP_API_UT(aclnnArgMax, INPUT(self_tensor_desc, dim, keepdim), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// test 8 dims reshape (non-float)
+TEST_F(l2_arg_max_v2_test, case_arg_max_v2_8d_int32)
+{
+    auto self_tensor_desc = TensorDesc({1, 1, 1, 1, 1, 1, 1, 3}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-10, 10);
+    auto out_tensor_desc = TensorDesc({1, 1, 1, 1, 1, 1, 1}, ACL_INT64, ACL_FORMAT_ND);
+    int64_t dim = 7;
+    bool keepdim = false;
+    auto ut = OP_API_UT(aclnnArgMax, INPUT(self_tensor_desc, dim, keepdim), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// test 8 dims reshape with dim > 5
+TEST_F(l2_arg_max_v2_test, case_arg_max_v2_8d_int32_dim_high)
+{
+    auto self_tensor_desc = TensorDesc({1, 1, 1, 1, 1, 1, 3, 1}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-10, 10);
+    auto out_tensor_desc = TensorDesc({1, 1, 1, 1, 1, 1, 1}, ACL_INT64, ACL_FORMAT_ND);
+    int64_t dim = 6;
+    bool keepdim = false;
+    auto ut = OP_API_UT(aclnnArgMax, INPUT(self_tensor_desc, dim, keepdim), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// test 8 dims float (no reshape needed)
+TEST_F(l2_arg_max_v2_test, case_arg_max_v2_8d_float)
+{
+    auto self_tensor_desc = TensorDesc({1, 1, 1, 1, 1, 1, 1, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
+    auto out_tensor_desc = TensorDesc({1, 1, 1, 1, 1, 1, 1}, ACL_INT64, ACL_FORMAT_ND);
+    int64_t dim = 7;
+    bool keepdim = false;
+    auto ut = OP_API_UT(aclnnArgMax, INPUT(self_tensor_desc, dim, keepdim), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
