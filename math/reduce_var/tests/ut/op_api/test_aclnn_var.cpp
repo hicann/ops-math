@@ -15,18 +15,13 @@
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/op_api_ut.h"
+#include "opdev/platform.h"
 
 class l2_var_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "l2_var_test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "l2_var_test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "l2_var_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "l2_var_test TearDown" << std::endl; }
 };
 
 // 正常场景_float32_dim为0_keepdim为true
@@ -525,6 +520,7 @@ TEST_F(l2_var_test, var_dim_negative_correction_0)
 // 正常场景_float16_dim为1_4_keepdim为true
 TEST_F(l2_var_test, ascend950_var_dtype_float16_dim_1_4)
 {
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
     auto selfDesc = TensorDesc({1, 2, 6, 2, 4}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-2, 2);
     auto dimDesc = IntArrayDesc(vector<int64_t>{1, 4});
     bool unbiased = true;
@@ -535,11 +531,13 @@ TEST_F(l2_var_test, ascend950_var_dtype_float16_dim_1_4)
 
     uint64_t workspaceSize = 0;
     ut.TestGetWorkspaceSize(&workspaceSize);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 }
 
 // 正常场景_float16_dim为1_4_keepdim为true
 TEST_F(l2_var_test, ascend950_var_dtype_float16_dim_1_4_correction)
 {
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
     auto selfDesc = TensorDesc({1, 2, 6, 2, 4}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-2, 2);
     auto dimDesc = IntArrayDesc(vector<int64_t>{1, 4});
     bool unbiased = true;
@@ -550,6 +548,7 @@ TEST_F(l2_var_test, ascend950_var_dtype_float16_dim_1_4_correction)
 
     uint64_t workspaceSize = 0;
     ut.TestGetWorkspaceSize(&workspaceSize);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
 }
 
 // shapeProd==1 && shapeProd<=correction 返回NAN场景
