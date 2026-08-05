@@ -15,7 +15,7 @@
    $HOME/ascend/log/debug/plog/plog-pid_*.log
    ```
 
-   开启环境变量ASCEND_SLOG_PRINT_TO_STDOUT可以将log日志直接打屏显示(1:开启打屏，0：关闭打屏)，配置示例如下：
+   开启环境变量ASCEND_SLOG_PRINT_TO_STDOUT可以将log日志直接打屏显示(1：开启打屏，0：关闭打屏)，配置示例如下：
 
    ```bash
    export ASCEND_SLOG_PRINT_TO_STDOUT=1
@@ -28,7 +28,7 @@
    通过aclGetRecentErrMsg接口（[《Runtime运行时 API》](https://hiascend.com/document/redirect/CannCommunityRuntimeApi)）获取aclnn接口调用过程中的异常信息，使用方法如下：
 
    ```bash
-   printf(aclGetRecentErrMsg());
+   printf("%s",aclGetRecentErrMsg());
    ```
 
    打印错误信息样例如下：
@@ -82,11 +82,11 @@
 
   可通过如下宏打印算子执行过程中的日志信息，包括DEBUG、INFO、WARN、ERROR级别日志。
 
-  ```Cpp
-  KERNEL_LOG_DEBUG(fmt, …)      // fmt参数表示格式控制字符串
-  KERNEL_LOG_INFO(fmt, …)
-  KERNEL_LOG_WARN(fmt, …)
-  KERNEL_LOG_ERROR(fmt, …)      // 默认打印ERROR级别日志
+  ```c++
+  KERNEL_LOG_DEBUG(fmt, ...)      // fmt参数表示格式控制字符串
+  KERNEL_LOG_INFO(fmt, ...)
+  KERNEL_LOG_WARN(fmt, ...)
+  KERNEL_LOG_ERROR(fmt, ...)      // 默认打印ERROR级别日志
   ```
 
   如需打印非ERROR级别日志，需提前配置环境变量`ASCEND_GLOBAL_LOG_LEVEL`，具体使用方法参见[《环境变量参考》](https://hiascend.com/document/redirect/CannCommunityEnvRef)。
@@ -106,7 +106,7 @@
 
   int64_t num_elements = input0->NumElements();
   // 打印输入元素个数
-  KERNEL_LOG_INFO("Num of elements is %ld", data_size);
+  KERNEL_LOG_INFO("Num of elements is %ld", num_elements);
   ```
 
 ## 性能调优
@@ -162,15 +162,15 @@
 
    执行仿真命令，生成仿真数据
 
-   ```
-   cannsim record ./test_aclnn_add_example -s Ascend950 --gen-report
-   ```
+      ```bash
+      cannsim record ./test_aclnn_add_example -s Ascend950 --gen-report
+      ```
 
    仿真结果在本项目`examples/add_example/examples/build/bin/cannsim_*/report/results/kernel_*/core_*`目录，流水相关文件为：
 
-   ```
-   trace_core0.json
-   ```
+      ```text
+      trace_core0.json
+      ```
 
    在Chrome浏览器中输入“chrome://tracing”地址，并将生成的指令流水图文件（trace_core0.json）拖到空白处打开，具体参数介绍参考CANN Simulator中[“仿真结果解析说明”](./cann_sim.md#仿真结果解析说明)章节。
 

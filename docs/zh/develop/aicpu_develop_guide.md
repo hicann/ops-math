@@ -115,7 +115,7 @@ Kernel一共需要两个交付件：```${op_name}_aicpu.cpp``` ```${op_name}_aic
 Kernel实现的第一步，需在头文件```op_kernel_aicpu/${op_name}_aicpu.h```进行算子类的声明，算子类需继承CpuKernel基类。
 如需查看详细实现，请参考[add_example_aicpu.h](../../../scripts/opgen/template/add_example_aicpu/op_kernel_aicpu/add_example_aicpu.h)。
 
-```CPP
+```cpp
 // 1、算子类声明
 // 包含AI CPU基础库头文件
 #include "cpu_kernel.h"
@@ -169,7 +169,7 @@ uint32_t AddExampleCpuKernel::Compute(CpuKernelContext& ctx) {
   // 获取input tensor的数据地址，例如输入的数据类型是int32
   auto input0_data = reinterpret_cast<int32_t*>(input0->GetData());
   // 获取tensor的shape
-  auto input0_shape = input0->GetTensorShape();
+  auto tensor_shape = input0->GetTensorShape();
 
   // 获取output tensor的数据地址，例如输出的数据类型是int32
   auto y = reinterpret_cast<int32_t*>(output->GetData());
@@ -180,7 +180,7 @@ uint32_t AddExampleCpuKernel::Compute(CpuKernelContext& ctx) {
     case DT_FLOAT:
       return AddCompute<float>(...);
     case DT_INT32:
-      return AddCompute<int32>(...);
+      return AddCompute<int32_t>(...);
       ....
     default : return PARAM_INVALID;
   }

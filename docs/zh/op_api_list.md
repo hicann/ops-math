@@ -78,7 +78,7 @@
 | [aclnnCast](../../math/cast/docs/aclnnCast.md)                  | 实现张量数据类型转换。                                       | 默认确定性实现| 默认确定性实现|
 | [aclnnCat](../../conversion/concat_d/docs/aclnnCat.md)            | 将tensors中所有tensor按照维度dim进行级联。    | 默认确定性实现| 默认确定性实现  |
 | [aclnnCdist](../../math/cdist/docs/aclnnCdist.md)            | 计算两个向量集合中每个点之间的p范数距离。    | 默认确定性实现| - |
-| [aclnnCdistBackward](../../math/cdist_grad/docs/aclnnCdistBackward.md)            | 完成aclnnCdist的反向    | 默认确定性实现| 默认确定性实现 |
+| [aclnnCdistBackward](../../math/cdist_grad/docs/aclnnCdistBackward.md)            | 完成aclnnCdist的反向。    | 默认确定性实现| 默认确定性实现 |
 | [aclnnCeil&aclnnInplaceCeil](../../math/ceil/docs/aclnnCeil&aclnnInplaceCeil.md) | 返回输入tensor中每个元素向上取整的结果。                     | 默认确定性实现| 默认确定性实现|
 | [aclnnChannelShuffle](../../conversion/transpose/docs/aclnnChannelShuffle.md) | 将(\*, C, H, W)张量的channels分成g个组，然后将每个通道组中的通道进行随机重排，最后将所有通道合并输出，同时保持最终输出张量的shape和输入张量保持一致。 | 默认确定性实现| 默认确定性实现|
 | [aclnnChunkCat](../../conversion/chunk_cat/docs/aclnnChunkCat.md) | 将tensors中所有tensor先按照维度dim切分为numChunks块，再按照dim后一维进行级联，最后转换为out的数据类型。 | 默认确定性实现| 默认确定性实现|
@@ -238,11 +238,11 @@
 | [aclnnPowTensorScalar&aclnnInplacePowTensorScalar](../../math/pow/docs/aclnnPowTensorScalar&aclnnInplacePowTensorScalar.md) | exponent每个元素作为input对应元素的幂完成计算。              | 默认确定性实现| 默认确定性实现 |
 | [aclnnPowTensorTensor&aclnnInplacePowTensorTensor](../../math/pow/docs/aclnnPowTensorTensor&aclnnInplacePowTensorTensor.md) | exponent每个元素作为input对应元素的幂完成计算。              | 默认确定性实现| 默认确定性实现 |
 | [aclnnPrecisionCompare](../../math/precision_compare/docs/aclnnPrecisionCompare.md)           | 计算两个Tensor元素是否相同，进行精度比对，返回算子执行的状态码，不会触发管理面故障上报。                               | 默认确定性实现| 默认确定性实现  |
-| [aclnnProd](../../math/reduce_prod/docs/aclnnProd.md)           | 回输入tensor中所有元素的乘积。                               | 默认确定性实现| 默认确定性实现|
+| [aclnnProd](../../math/reduce_prod/docs/aclnnProd.md)           | 返回输入tensor中所有元素的乘积。                               | 默认确定性实现| 默认确定性实现|
 | [aclnnProdDim](../../math/reduce_prod/docs/aclnnProdDim.md)     | 返回输入tensor给定维度上每行的乘积。                         | 默认确定性实现| 默认确定性实现|
 | [aclnnQr](../../math/qr/docs/aclnnQr.md)     | 对输入Tensor进行正交分解。                         | 默认确定性实现| - |
-| [aclnnInplaceRandomWithoutFromTo](../../random/dsa_random_uniform/docs/aclnnInplaceRandomWithoutFromTo.md)     | 给定seed/offset(int64),默认从 [0, DTYPE_MAX_VALUE] 的离散均匀分布中采样整数填充selfRef张量。                         | -|  默认确定性实现 |
-| [aclnnInplaceRandomWithoutFromToTensor](../../random/dsa_random_uniform/docs/aclnnInplaceRandomWithoutFromToTensor.md)     | 给定seed/offset(tensor),默认从 [0, DTYPE_MAX_VALUE] 的离散均匀分布中采样整数填充selfRef张量。                         | -|  默认确定性实现 |
+| [aclnnInplaceRandomWithoutFromTo](../../random/dsa_random_uniform/docs/aclnnInplaceRandomWithoutFromTo.md)     | 给定seed/offset(int64),默认从 [0, DTYPE_MAX_VALUE] 的离散均匀分布中采样整数填充selfRef张量。                         | - |  默认确定性实现 |
+| [aclnnInplaceRandomWithoutFromToTensor](../../random/dsa_random_uniform/docs/aclnnInplaceRandomWithoutFromToTensor.md)     | 给定seed/offset(tensor),默认从 [0, DTYPE_MAX_VALUE] 的离散均匀分布中采样整数填充selfRef张量。                         | - |  默认确定性实现 |
 | [aclnnRandperm](../../random/stateless_randperm/docs/aclnnRandperm.md)     | 返回从0到n-1的整数随机排列。                         | 默认确定性实现|  默认确定性实现 |
 | [aclnnRange](../../math/range/docs/aclnnRange.md)               | 从start起始到end结束按照step的间隔取值。                     | 默认确定性实现| 默认确定性实现 |
 | [aclnnReal](../../math/real/docs/aclnnReal.md)                  | 为输入张量的每一个元素取实数部分。                           | 默认确定性实现| - |

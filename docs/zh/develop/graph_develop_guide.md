@@ -26,7 +26,7 @@ InferShape函数的作用是根据输入的shape推导输出的shape。
 
 示例如下，`AddExample`算子完整代码请参考`examples/add_example/op_host`下[add_example_infershape.cpp](../../../examples/add_example/op_host/add_example_infershape.cpp)。
 
-```C++
+```cpp
 // AddExample算子逻辑是两个数相加，因此输出shape与输入shape一致
 static ge::graphStatus InferShapeAddExample(gert::InferShapeContext* context)
 {
@@ -56,7 +56,7 @@ InferDataType函数的作用是根据输入的DataType推导输出的DataType。
 
 示例如下，`AddExample`算子完整代码请参考`examples/add_example/op_graph`下[add_example_graph_infer.cpp](../../../examples/add_example/op_graph/add_example_graph_infer.cpp)。
 
-```C++
+```cpp
 // AddExample算子逻辑是两个数相加，因此输出dataType与输入dataType一致
 static ge::graphStatus InferDataTypeAddExample(gert::InferDataTypeContext* context)
 {
@@ -115,7 +115,7 @@ IMPL_OP(AddExample).InferDataType(InferDataTypeAddExample);
 
 示例代码如下，展示了如何注册`AddExample`算子：
 
-```CPP
+```cpp
 REG_OP(AddExample)
     .INPUT(x1, TensorType({DT_FLOAT}))
     .INPUT(x2, TensorType({DT_FLOAT}))

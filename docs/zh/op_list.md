@@ -604,7 +604,7 @@
     <td>×</td>
     <td>×</td>
     <td>AI Core</td>
-    <td>计算Tensor（A）中每个元素和Tensor（B）中对应位置的元素的按位或。</td>
+    <td>计算self中的累积最小值，并返回最小值以及对应的索引。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1944,7 +1944,7 @@
     <td>√</td>
     <td>√</td>
     <td>AI Core/AI CPU</td>
-    <td>该算子对输入的每个元素进行正弦后输出。</td>
+    <td>该算子对输入的每个元素进行双曲正弦操作后输出。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -2134,7 +2134,7 @@
     <td>√</td>
     <td>√</td>
     <td>AI Core/AI CPU</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>对输入tensor沿着repeats中对每个维度指定的复制次数进行复制。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -2214,7 +2214,7 @@
     <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>对输入Tensor截取整数部分。</td>
+    <td>求解一个具有方形上或下三角形可逆矩阵A和多个右侧b的方程组。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -2264,7 +2264,7 @@
     <td>×</td>
     <td>×</td>
     <td>AI Core</td>
-    <td>将输入的张量沿指定轴重复多次，但不进行广播。</td>
+    <td>计算x1 * log(x2)，逐元素运算，支持广播</td>
   </tr>
   <tr>
     <td>math</td>
@@ -2288,7 +2288,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/zero_op/README.md">zeros_like</a></td>
+    <td><a href="../../math/zero_op/README.md">zero_op</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -2634,7 +2634,7 @@
     <td>×</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>允许用户通过制定新的形状和步长来创建一个与原张量共享相同数据内存的张量视图。</td>
+    <td>允许用户通过指定新的形状和步长来创建一个与原张量共享相同数据内存的张量视图。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -3024,7 +3024,7 @@
     <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>完成张量转置。</td>
+    <td>将输入的self张量的最后二维（按shape从左向右数）沿对角线的左下部分置零。参数diagonal可正可负，默认为零，正数表示主对角线向右上方向移动，负数表示主对角线向左下方向移动。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -3274,7 +3274,7 @@
     <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>根据随机种子和随机便宜量和保活系数生成随机掩码mask。</td>
+    <td>根据随机种子和随机偏移量和保活系数生成随机掩码mask。</td>
   </tr>
   <tr>
     <td>random</td>
@@ -3304,7 +3304,7 @@
     <td>×</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>根据输入x中值为true，选择出对应索引列表，其次根据seed, offset调用philox_random生成索引列表长度个随机数，利用随机数对索引列表做洗牌算法，得到随机交换后得索引列表，返回count个。</td>
+    <td>根据输入x中值为true，选择出对应索引列表，其次根据seed, offset调用philox_random生成索引列表长度个随机数，利用随机数对索引列表做洗牌算法，得到随机交换后的索引列表，返回count个。</td>
   </tr>
   <tr>
     <td>random</td>

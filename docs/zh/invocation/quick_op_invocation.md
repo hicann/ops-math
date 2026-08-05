@@ -43,12 +43,12 @@
     # bash build.sh --experimental --run_example abs eager cust --vendor_name=custom
     ```
 
-  - \$\{op\}：表示待执行算子，算子名小写下划线形式，如abs。
-  - \$\{mode\}：表示调用方式，目前支持eager（aclnn调用）、graph（图模式调用）。
-  - \$\{pkg_mode\}：表示包模式，目前仅支持cust，即自定义算子包。
-  - \$\{vendor\_name\}（可选）：与构建的自定义算子包设置一致，默认名为custom。
-  - \$\{soc_version\}（可选）：表示NPU型号。
-  - \$\{experimental\}（可选）：表示执行用户保存在experimental贡献目录下的算子。
+  - $\{op\}：表示待执行算子，算子名小写下划线形式，如abs。
+  - $\{mode\}：表示调用方式，目前支持eager（aclnn调用）、graph（图模式调用）。
+  - $\{pkg_mode\}：表示包模式，目前仅支持cust，即自定义算子包。
+  - $\{vendor\_name\}（可选）：与构建的自定义算子包设置一致，默认名为custom。
+  - $\{soc_version\}（可选）：表示NPU型号。
+  - $\{experimental\}（可选）：表示执行用户保存在experimental贡献目录下的算子。
 
     说明：\$\{mode\}为graph时，不指定\$\{pkg_mode\}和\$\{vendor\_name\}
 
@@ -170,7 +170,7 @@
 
    为方便理解，以`AddExample`算子为例，调用脚本如下，仅供参考，全量代码参见[test_aclnn_add_example.cpp](../../../examples/add_example/examples/test_aclnn_add_example.cpp)。
 
-   ```Cpp
+   ```cpp
    int main()
    {
        // 1.调用acl进行device/stream初始化
@@ -254,7 +254,7 @@
 
     - **调用自定义算子**：依赖自定义算子包
 
-        ```bash
+        ```cmake
         cmake_minimum_required(VERSION 3.14)
         # 设置工程名
         project(ACLNN_EXAMPLE)
@@ -423,7 +423,7 @@
 
    在目标算子`examples`目录下，新建调用脚本test\_geir\_\$\{op\_name\}.cpp，\$\{op\_name\}表示目标算子名。以`AddExample`算子为例，调用脚本如下，仅供参考，全量代码参见[test_geir_add_example.cpp](../../../examples/add_example/examples/test_geir_add_example.cpp)。
 
-   ```CPP
+   ```cpp
    int main() {
        // 1.创建图对象
        Graph graph(graphName);
@@ -470,7 +470,7 @@
 
    在test\_geir\_\$\{op\_name\}.cpp同级目录下创建CMakeLists.txt文件，以`AddExample`算子为例，示例如下，请根据实际情况自行修改。
 
-    ```bash
+    ```cmake
    cmake_minimum_required(VERSION 3.14)
 
    # 设置工程名
