@@ -74,13 +74,19 @@ ge::graphStatus FusedMulAddNL2lossTiling::DoTiling()
     OP_CHECK_NULL_WITH_CONTEXT(context_, inputX1Shape);
     auto shapeX1 = inputX1Shape->GetStorageShape();
     int64_t totalN = shapeX1.GetShapeSize();
-    OP_CHECK_IF(totalN <= 0, OP_LOGE(context_, "invalid total elements %ld", totalN), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(totalN <= 0,
+                OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context_->GetNodeName(), "x1", std::to_string(totalN).c_str(),
+                                                          "total elements must be greater than 0"),
+                return ge::GRAPH_FAILED);
 
     // 对齐 910b verifier：x2 必须与 x1 元素数一致（kernel 按同一 N 索引 x2）
     auto inputX2Shape = context_->GetInputShape(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, inputX2Shape);
     int64_t totalX2 = inputX2Shape->GetStorageShape().GetShapeSize();
-    OP_CHECK_IF(totalX2 != totalN, OP_LOGE(context_, "x2 elements %ld != x1 elements %ld", totalX2, totalN),
+    std::string x2Reason = "elements must equal x1 elements (" + std::to_string(totalN) + ")";
+    OP_CHECK_IF(totalX2 != totalN,
+                OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context_->GetNodeName(), "x2",
+                                                          std::to_string(totalX2).c_str(), x2Reason.c_str()),
                 return ge::GRAPH_FAILED);
 
     // UB tile 宽度：fp32 路径 3 队列×双缓冲×4B + reduceTmp 4B = 28B/elem；
