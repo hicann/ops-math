@@ -119,6 +119,7 @@
 - axis取值范围为[-x_rank, x_rank)。
 - numAxes取值范围>=-1。
 - 仅支持ND格式。
+- 当前不支持GE IR动态Rank场景（输入Shape声明为`[-2]`）。
 - 支持[非连续的Tensor](../../docs/zh/context/non_contiguous_tensor.md)，非连续的Tensor维度不大于8。
 
 ## 调用说明
