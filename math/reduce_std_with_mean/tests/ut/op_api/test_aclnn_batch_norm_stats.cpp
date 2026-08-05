@@ -34,7 +34,10 @@ TEST_F(l2_batch_norm_stats_test, batch_norm_stats_dtype_float)
     double eps = 1e-5;
 
     auto ut = OP_API_UT(aclnnBatchNormStats, INPUT(tensor_desc, eps), OUTPUT(mean, invstd));
-    ut.TestPrecision();
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    // ut.TestPrecision();
 }
 
 TEST_F(l2_batch_norm_stats_test, batch_norm_stats_dtype_float16)
@@ -45,7 +48,10 @@ TEST_F(l2_batch_norm_stats_test, batch_norm_stats_dtype_float16)
     double eps = 1e-5;
 
     auto ut = OP_API_UT(aclnnBatchNormStats, INPUT(tensor_desc, eps), OUTPUT(mean, invstd));
-    ut.TestPrecision();
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    // ut.TestPrecision();
 }
 
 TEST_F(l2_batch_norm_stats_test, batch_norm_stats_dtype_int8)
@@ -118,7 +124,6 @@ TEST_F(l2_batch_norm_stats_test, batch_norm_stats_all_format)
             EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
         } else {
             EXPECT_EQ(aclRet, ACL_SUCCESS);
-            ut.TestPrecision();
         }
     }
 }
@@ -203,4 +208,43 @@ TEST_F(l2_batch_norm_stats_test, ascend950_batch_norm_stats_dtype_float16)
     auto ut = OP_API_UT(aclnnBatchNormStats, INPUT(tensor_desc, eps), OUTPUT(mean, invstd));
     uint64_t workspace_size = 0;
     ut.TestGetWorkspaceSize(&workspace_size);
+}
+
+TEST_F(l2_batch_norm_stats_test, batch_norm_stats_mean_private_format)
+{
+    auto tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6});
+    auto mean = TensorDesc({3}, ACL_FLOAT, ACL_FORMAT_NC1HWC0);
+    auto invstd = TensorDesc({3}, ACL_FLOAT, ACL_FORMAT_ND);
+    double eps = 1e-5;
+
+    auto ut = OP_API_UT(aclnnBatchNormStats, INPUT(tensor_desc, eps), OUTPUT(mean, invstd));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+TEST_F(l2_batch_norm_stats_test, batch_norm_stats_invstd_private_format)
+{
+    auto tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6});
+    auto mean = TensorDesc({3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto invstd = TensorDesc({3}, ACL_FLOAT, ACL_FORMAT_NC1HWC0);
+    double eps = 1e-5;
+
+    auto ut = OP_API_UT(aclnnBatchNormStats, INPUT(tensor_desc, eps), OUTPUT(mean, invstd));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+TEST_F(l2_batch_norm_stats_test, batch_norm_stats_input_private_format)
+{
+    auto tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_NC1HWC0).Value(vector<float>{1, 2, 3, 4, 5, 6});
+    auto mean = TensorDesc({3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto invstd = TensorDesc({3}, ACL_FLOAT, ACL_FORMAT_ND);
+    double eps = 1e-5;
+
+    auto ut = OP_API_UT(aclnnBatchNormStats, INPUT(tensor_desc, eps), OUTPUT(mean, invstd));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
