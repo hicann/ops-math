@@ -13,15 +13,4 @@
 #ifndef __FRESNEL_SIN_TILING_KEY_H__
 #define __FRESNEL_SIN_TILING_KEY_H__
 
-#include "ascendc/host_api/tiling/template_argument.h"
-
-// 3 TilingKeys: FP32, FP16, BF16
-// D_T_X maps to the input/output data type
-ASCENDC_TPL_ARGS_DECL(FresnelSin,
-                      ASCENDC_TPL_DATATYPE_DECL(D_T_X, C_DT_FLOAT, C_DT_FLOAT16, C_DT_BF16, ASCENDC_TPL_INPUT(0)));
-
-ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT)),
-                ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT16)),
-                ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_BF16)), );
-
 #endif

@@ -12,13 +12,12 @@
 
 #include "arch35/fresnel_sin.h"
 
-template <typename T>
 __global__ __aicore__ void fresnel_sin(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     REGISTER_TILING_DEFAULT(FresnelSinTilingData);
     GET_TILING_DATA_WITH_STRUCT(FresnelSinTilingData, tilingData, tiling);
-    NsFresnelSin::FresnelSin<T> op;
+    NsFresnelSin::FresnelSin<DTYPE_X> op;
     op.Init(x, y, &tilingData);
     op.Process();
 }

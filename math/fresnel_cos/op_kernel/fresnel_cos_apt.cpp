@@ -13,16 +13,17 @@
 /*!
  * \file fresnel_cos_apt.cpp
  * \brief FresnelCos 算子 kernel 入口（arch35 架构，DAV_3510）
+ *
+ * def 驱动 dtype 模式：无模板参数，dtype 由 DTYPE_X 宏自动注入。
  */
 
 #include "arch35/fresnel_cos_kernel.h"
 
-template <typename D_T_X>
 __global__ __aicore__ void fresnel_cos(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(FresnelCosTilingData);
     GET_TILING_DATA_WITH_STRUCT(FresnelCosTilingData, tilingData, tiling);
-    NsFresnelCos::FresnelCosKernel<D_T_X> op;
+    NsFresnelCos::FresnelCosKernel<DTYPE_X> op;
     op.Init(x, y, workspace, &tilingData);
     op.Process();
 }

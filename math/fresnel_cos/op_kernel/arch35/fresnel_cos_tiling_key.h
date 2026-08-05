@@ -14,24 +14,11 @@
  * \file fresnel_cos_tiling_key.h
  * \brief FresnelCos TilingKey 模板参数定义（arch35 / DAV_3510 / RegBase）
  *
- * TilingKey 划分依据：输入 dtype
- *   - C_DT_FLOAT16 → TILING_KEY_FP16  (half Cast→FP32→Cast)
- *   - C_DT_FLOAT   → TILING_KEY_FP32  (float 直接计算)
- *   - C_DT_BF16    → TILING_KEY_BF16  (bfloat16 Cast→FP32→Cast)
- *
- * 使用模板编程方式 ASCENDC_TPL_SEL_PARAM，禁止 TILING_KEY_IS 宏。
+ * def 驱动 dtype 模式：dtype 由 def.cpp DataTypeList 声明，构建系统通过
+ * -DDTYPE_X 宏注入。无需额外 tiling key 参数。
  */
 
 #ifndef __FRESNEL_COS_TILING_KEY_H__
 #define __FRESNEL_COS_TILING_KEY_H__
-
-#include "ascendc/host_api/tiling/template_argument.h"
-
-ASCENDC_TPL_ARGS_DECL(FresnelCos,
-                      ASCENDC_TPL_DATATYPE_DECL(D_T_X, C_DT_FLOAT, C_DT_FLOAT16, C_DT_BF16, ASCENDC_TPL_INPUT(0)));
-
-ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT)),
-                ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT16)),
-                ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_BF16)), );
 
 #endif

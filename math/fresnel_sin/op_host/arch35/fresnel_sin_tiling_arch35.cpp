@@ -15,7 +15,6 @@
 #include "op_common/op_host/util/math_util.h"
 #include "op_common/op_host/util/platform_util.h"
 #include "../../op_kernel/arch35/fresnel_sin_tiling_data.h"
-#include "../../op_kernel/arch35/fresnel_sin_tiling_key.h"
 #include "log/log.h"
 
 namespace optiling {
@@ -43,6 +42,7 @@ constexpr int64_t FP16_ELEM_BYTES = 2;
 //   float32: 256/4 = 64 elements; float16/bf16: 256/2 = 128 elements
 constexpr int64_t CMP_ALIGN_FP32 = 64;
 constexpr int64_t CMP_ALIGN_FP16 = 128;
+constexpr size_t MAX_DIM_NUM = 8;
 
 static const gert::Shape g_vec_1_shape = {1};
 
@@ -75,12 +75,23 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* 
     OP_CHECK_NULL_WITH_CONTEXT(context, outY);
 
     *totalIdx = inputShapeX.GetShapeSize();
+
+    OP_CHECK_IF(inputShapeX.GetDimNum() > MAX_DIM_NUM,
+                OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "x",
+                                                         std::to_string(inputShapeX.GetDimNum()).c_str(),
+                                                         "The dim num of x must be less than or equal to 8"),
+                return ge::GRAPH_FAILED);
+
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
     *dataType = inputDesc->GetDataType();
 
     const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
-    OP_CHECK_IF(supportedDtype.count(*dataType) == 0, OP_LOGE(context, "invalid dtype"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        supportedDtype.count(*dataType) == 0,
+        OP_LOGE_WITH_INVALID_INPUT_DTYPE(context->GetNodeName(), "x", "unsupported", "DT_FLOAT, DT_FLOAT16, DT_BF16"),
+        return ge::GRAPH_FAILED);
+
     return ge::GRAPH_SUCCESS;
 }
 
@@ -115,7 +126,6 @@ static ge::graphStatus FresnelSinTilingFunc(gert::TilingContext* context)
 
     if (totalIdx == 0) {
         context->SetBlockDim(1);
-        ASCENDC_TPL_SEL_PARAM(context, static_cast<uint32_t>(dataType));
         return ge::GRAPH_SUCCESS;
     }
 
@@ -134,7 +144,6 @@ static ge::graphStatus FresnelSinTilingFunc(gert::TilingContext* context)
     tiling->ubFactor = FloorAlign(FloorDiv(static_cast<int64_t>(ubSize), bytesPerElem), cmpAlign);
 
     context->SetBlockDim(usedCoreNum);
-    ASCENDC_TPL_SEL_PARAM(context, static_cast<uint32_t>(dataType));
     return ge::GRAPH_SUCCESS;
 }
 

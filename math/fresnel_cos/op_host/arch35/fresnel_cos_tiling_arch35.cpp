@@ -20,7 +20,6 @@
 #include "op_common/op_host/util/math_util.h"
 #include "op_common/op_host/util/platform_util.h"
 #include "../../op_kernel/arch35/fresnel_cos_tiling_data.h"
-#include "../../op_kernel/arch35/fresnel_cos_tiling_key.h"
 
 // Compatibility macros
 #ifndef OP_CHECK_NULL_WITH_CONTEXT
@@ -49,9 +48,9 @@ using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
 using Ops::Base::FloorDiv;
 
-constexpr int64_t MIN_TILING_BITS = 32768;    // 4KB in bits
-constexpr int64_t ELEM_ALIGN = 512;           // multi-core element alignment
-constexpr int64_t UB_ALIGN_BYTES = 256;       // UB alignment
+constexpr int64_t MIN_TILING_BITS = 32768; // 4KB in bits
+constexpr int64_t ELEM_ALIGN = 512;        // multi-core element alignment
+constexpr int64_t UB_ALIGN_BYTES = 256;    // UB alignment
 constexpr size_t WORKSPACE_NUM = 1;
 constexpr int64_t NUM_CALC_BUFFERS = 8;       // FP32 working buffers (b0~b7)
 constexpr int64_t NUM_MASK_BUFFERS = 4;       // mask buffers (mask, maskPInf, maskInf, maskSign)
@@ -62,6 +61,7 @@ constexpr int64_t NUM_IO_BUFFERS = 2;         // 1*In + 1*Out
 constexpr int64_t MIN_UB_FORMER_DEFAULT = 64; // minimum UB block elements
 constexpr int32_t MIN_CORE_NUM = 1;           // minimum core number
 constexpr int64_t MIN_ALIGN = 1;              // minimum alignment value
+constexpr size_t MAX_DIM_NUM = 8;
 
 static const gert::Shape g_vec_1_shape = {1};
 
@@ -103,11 +103,21 @@ static ge::graphStatus GetShapeDtypeInfo(gert::TilingContext* ctx, int64_t* tota
     auto shX = EnsureNotScalar(inX->GetStorageShape());
     *total = shX.GetShapeSize();
 
+    OP_CHECK_IF(
+        shX.GetDimNum() > MAX_DIM_NUM,
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(ctx->GetNodeName(), "x", std::to_string(shX.GetDimNum()).c_str(),
+                                                 "The dim num of x must be less than or equal to 8"),
+        return ge::GRAPH_FAILED);
+
     auto inDesc = ctx->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(ctx, inDesc);
     *dt = inDesc->GetDataType();
     const std::set<ge::DataType> supported = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
-    OP_CHECK_IF(supported.count(*dt) == 0, OP_LOGE(ctx, "unsupported dtype"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        supported.count(*dt) == 0,
+        OP_LOGE_WITH_INVALID_INPUT_DTYPE(ctx->GetNodeName(), "x", "unsupported", "DT_FLOAT, DT_FLOAT16, DT_BF16"),
+        return ge::GRAPH_FAILED);
+
     return ge::GRAPH_SUCCESS;
 }
 
@@ -196,7 +206,6 @@ static ge::graphStatus FresnelCosTilingFunc(gert::TilingContext* ctx)
         td->dim0 = 0;
         td->coreNum = 0;
         ctx->SetBlockDim(MIN_CORE_NUM);
-        ASCENDC_TPL_SEL_PARAM(ctx, static_cast<uint32_t>(dt));
         return ge::GRAPH_SUCCESS;
     }
 
@@ -212,9 +221,8 @@ static ge::graphStatus FresnelCosTilingFunc(gert::TilingContext* ctx)
     // 7. loop / tail
     ComputeLoopTail(total, td);
 
-    // 8. set block dim and TilingKey
+    // 8. set block dim
     ctx->SetBlockDim(td->blockNum);
-    ASCENDC_TPL_SEL_PARAM(ctx, static_cast<uint32_t>(dt));
 
     return ge::GRAPH_SUCCESS;
 }
