@@ -35,18 +35,11 @@ static constexpr uint32_t THREAD_NUM = 512;
 
 // VF kernel: Grid-Stride loop over non-zero elements
 template <typename T>
-__simt_vf__ __aicore__ __launch_bounds__(THREAD_NUM)
-inline void OpSparseReshapeSimtKernel(
-    int64_t nnz, int32_t inputRank, int32_t outputRank,
-    __ubuf__ int64_t* inputStrides,
-    __ubuf__ int64_t* outputStrides,
-    __ubuf__ uint64_t* divMagic,
-    __ubuf__ uint64_t* divShift,
-    __gm__ T* indices,
-    __gm__ T* yIndices)
+__simt_vf__ __aicore__ __launch_bounds__(THREAD_NUM) inline void OpSparseReshapeSimtKernel(
+    int64_t nnz, int32_t inputRank, int32_t outputRank, __ubuf__ int64_t* inputStrides, __ubuf__ int64_t* outputStrides,
+    __ubuf__ uint64_t* divMagic, __ubuf__ uint64_t* divShift, __gm__ T* indices, __gm__ T* yIndices)
 {
-    for (int64_t i = static_cast<int64_t>(blockIdx.x * blockDim.x + threadIdx.x);
-         i < nnz;
+    for (int64_t i = static_cast<int64_t>(blockIdx.x * blockDim.x + threadIdx.x); i < nnz;
          i += static_cast<int64_t>(blockDim.x * gridDim.x)) {
         int64_t flatId = 0;
         for (int32_t j = 0; j < inputRank; j++) {
@@ -54,8 +47,7 @@ inline void OpSparseReshapeSimtKernel(
         }
         for (int32_t j = 0; j < outputRank; j++) {
             int64_t quotient = static_cast<int64_t>(
-                Simt::UintDiv<uint64_t>(
-                    static_cast<uint64_t>(flatId), divMagic[j], divShift[j]));
+                Simt::UintDiv<uint64_t>(static_cast<uint64_t>(flatId), divMagic[j], divShift[j]));
             yIndices[i * outputRank + j] = static_cast<T>(quotient);
             flatId = flatId - quotient * outputStrides[j];
         }
@@ -64,8 +56,7 @@ inline void OpSparseReshapeSimtKernel(
 
 // Helper: write y_shape to GM (scalar scope)
 template <typename T>
-__aicore__ inline void WriteYShape(GM_ADDR y_shape,
-    const SparseReshapeTilingData* td)
+__aicore__ inline void WriteYShape(GM_ADDR y_shape, const SparseReshapeTilingData* td)
 {
     __gm__ T* yShapeGm = (__gm__ T*)y_shape;
     for (int32_t d = 0; d < td->outputRank; d++) {
@@ -75,11 +66,9 @@ __aicore__ inline void WriteYShape(GM_ADDR y_shape,
 
 // Helper: prepare UB data and launch VF
 template <typename T>
-__aicore__ inline void PrepareAndLaunchVF(
-    GM_ADDR indices, GM_ADDR y_indices,
-    const SparseReshapeTilingData* td)
+__aicore__ inline void PrepareAndLaunchVF(GM_ADDR indices, GM_ADDR y_indices, const SparseReshapeTilingData* td)
 {
-    LocalMemAllocator<Hardware::UB> ubAlloc;
+    LocalMemAllocator<AscendC::Hardware::UB> ubAlloc;
     LocalTensor<int64_t> inStridesUb = ubAlloc.Alloc<int64_t>(MAX_RANK);
     LocalTensor<int64_t> outStridesUb = ubAlloc.Alloc<int64_t>(MAX_RANK);
     LocalTensor<uint64_t> divMagicUb = ubAlloc.Alloc<uint64_t>(MAX_RANK);
@@ -91,8 +80,7 @@ __aicore__ inline void PrepareAndLaunchVF(
         outStridesUb.SetValue(d, td->outputStrides[d]);
         uint64_t magic = 0;
         uint64_t shift = 0;
-        GetUintDivMagicAndShift<uint64_t>(magic, shift,
-            static_cast<uint64_t>(td->outputStrides[d]));
+        GetUintDivMagicAndShift<uint64_t>(magic, shift, static_cast<uint64_t>(td->outputStrides[d]));
         divMagicUb.SetValue(d, magic);
         divShiftUb.SetValue(d, shift);
     }
@@ -100,13 +88,9 @@ __aicore__ inline void PrepareAndLaunchVF(
     __gm__ T* indicesGm = (__gm__ T*)indices;
     __gm__ T* yIndicesGm = (__gm__ T*)y_indices;
     asc_vf_call<OpSparseReshapeSimtKernel<T>>(
-        dim3(THREAD_NUM),
-        td->nnz, td->inputRank, td->outputRank,
-        (__ubuf__ int64_t*)inStridesUb.GetPhyAddr(),
-        (__ubuf__ int64_t*)outStridesUb.GetPhyAddr(),
-        (__ubuf__ uint64_t*)divMagicUb.GetPhyAddr(),
-        (__ubuf__ uint64_t*)divShiftUb.GetPhyAddr(),
-        indicesGm, yIndicesGm);
+        dim3(THREAD_NUM), td->nnz, td->inputRank, td->outputRank, (__ubuf__ int64_t*)inStridesUb.GetPhyAddr(),
+        (__ubuf__ int64_t*)outStridesUb.GetPhyAddr(), (__ubuf__ uint64_t*)divMagicUb.GetPhyAddr(),
+        (__ubuf__ uint64_t*)divShiftUb.GetPhyAddr(), indicesGm, yIndicesGm);
 }
 
 // Main Process function
@@ -114,16 +98,16 @@ __aicore__ inline void PrepareAndLaunchVF(
 // reshape via grid-stride partitioning. The previous identity fast path (scalar
 // copy) had a multi-core race condition where all cores copied all elements.
 template <typename T>
-__aicore__ inline void Process(GM_ADDR indices, GM_ADDR shape, GM_ADDR new_shape,
-                                GM_ADDR y_indices, GM_ADDR y_shape,
-                                GM_ADDR workspace,
-                                const SparseReshapeTilingData* td)
+__aicore__ inline void Process(GM_ADDR indices, GM_ADDR shape, GM_ADDR new_shape, GM_ADDR y_indices, GM_ADDR y_shape,
+                               GM_ADDR workspace, const SparseReshapeTilingData* td)
 {
     WriteYShape<T>(y_shape, td);
-    if (td->nnz == 0) { return; }
+    if (td->nnz == 0) {
+        return;
+    }
     PrepareAndLaunchVF<T>(indices, y_indices, td);
 }
 
-}  // namespace NsSparseReshape
+} // namespace NsSparseReshape
 
-#endif  // SPARSE_RESHAPE_SIMT_H_
+#endif // SPARSE_RESHAPE_SIMT_H_
