@@ -38,8 +38,8 @@ static const int64_t FLOAT_BYTE = 4;
 static const int64_t FLOAT_BIT = 32;
 
 // 根据API定义，需要列出所能支持的所有dtype
-static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
+static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT,
+                                                                                 op::DataType::DT_FLOAT16};
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
@@ -84,10 +84,7 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* mask, const 
     return true;
 }
 
-static bool IsDoubleEqual(double f1, double f2)
-{
-    return std::abs(f1 - f2) <= std::numeric_limits<double>::epsilon();
-}
+static bool IsDoubleEqual(double f1, double f2) { return std::abs(f1 - f2) <= std::numeric_limits<double>::epsilon(); }
 
 static inline bool CheckProbability(double prob)
 {
@@ -115,16 +112,13 @@ static bool CheckShape(const aclTensor* self, const aclTensor* mask, const aclTe
 
 static inline aclnnStatus CheckParams(const aclTensor* self, const aclTensor* mask, double prob, const aclTensor* out)
 {
-    // 1. 检查参数是否为空指针
-    CHECK_RET(CheckNotNull(self, mask, out), ACLNN_ERR_PARAM_NULLPTR);
-
-    // 2. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
+    // 1. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
     CHECK_RET(CheckDtypeValid(self, mask, out), ACLNN_ERR_PARAM_INVALID);
 
-    // 3. 检查p是否符合规则
+    // 2. 检查p是否符合规则
     CHECK_RET(CheckProbability(prob), ACLNN_ERR_PARAM_INVALID);
 
-    // 4. 检查输出输出shape
+    // 3. 检查输出shape
     CHECK_RET(CheckShape(self, mask, out), ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
@@ -138,8 +132,8 @@ static inline const aclIntArray* GenerateShapeIntArray(const op::Shape& shape, a
     return executor->AllocIntArray(shapeVector.data(), shapeVector.size());
 }
 
-static inline const aclTensor* DoMask(
-    const aclTensor* inputContiguous, const aclTensor* mask, double prob, aclOpExecutor* executor)
+static inline const aclTensor* DoMask(const aclTensor* inputContiguous, const aclTensor* mask, double prob,
+                                      aclOpExecutor* executor)
 {
     if (IsDoubleEqual(prob, 0.0)) {
         return inputContiguous;
@@ -147,33 +141,35 @@ static inline const aclTensor* DoMask(
         return l0op::ZerosLike(inputContiguous, executor);
     } else {
         FVector<float> probVector = {static_cast<float>(1 - prob)};
-        auto probTensor =
-            executor->ConvertToTensor(probVector.data(), probVector.size(), inputContiguous->GetDataType());
+        auto probTensor = executor->ConvertToTensor(probVector.data(), probVector.size(),
+                                                    inputContiguous->GetDataType());
         return l0op::DropoutDoMask(inputContiguous, mask, probTensor, executor);
     }
 }
 
-aclnnStatus aclnnDropoutDoMaskGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* mask, double prob, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnDropoutDoMaskGetWorkspaceSize(const aclTensor* self, const aclTensor* mask, double prob,
+                                               aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnDropoutDoMask, DFX_IN(self, mask, prob), DFX_OUT(out));
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
+    // 判空检查
+    CHECK_RET(CheckNotNull(self, mask, out), ACLNN_ERR_PARAM_NULLPTR);
+
     if (self->IsEmpty()) {
         *workspaceSize = 0;
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }
-    
+
     if (mask->IsEmpty()) {
         *workspaceSize = 0;
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }
-    
+
     // 固定写法，参数检查
     auto ret = CheckParams(self, mask, prob, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
