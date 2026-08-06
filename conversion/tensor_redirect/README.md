@@ -69,4 +69,4 @@ $$outputX_i = x_i$$
 
 | 调用方式 | 调用样例 | 说明 |
 |--------------|--------|------|
-| 图模式调用 | - | 通过[算子IR](./op_graph/tensor_redirect_proto.h)构图方式调用TensorRedirect算子。 |
+| 图模式调用 | [test_geir_tensor_redirect](./examples/test_geir_tensor_redirect.cpp) | 通过[算子IR](./op_graph/tensor_redirect_proto.h)构图方式调用TensorRedirect算子。 |
