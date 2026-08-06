@@ -2498,6 +2498,26 @@
   </tr>
   <tr>
     <td>conversion</td>
+    <td><a href="../../conversion/slice_last_dim/README.md">slice_last_dim</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>对输入张量的最后一维进行切片，通过start、end指定切片范围，stride指定步长。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/slice_with_axes/README.md">slice_with_axes</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>沿指定axes从输入张量中提取切片，每个axis由offsets指定起始位置、size指定切片长度。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
     <td><a href="../../conversion/slice_write/README.md">slice_write</a></td>
     <td>×</td>
     <td>×</td>
