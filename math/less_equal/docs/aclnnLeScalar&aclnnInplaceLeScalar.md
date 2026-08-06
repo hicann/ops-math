@@ -561,12 +561,12 @@ int main() {
   if (!(cond)) {                     \
     return_expr;                     \
   }                                  \
- } while(0)
+ } while (0)
 
 #define LOG_PRINT(message, ...)   \
  do {                             \
   printf(message, ##__VA_ARGS__); \
- } while(0)
+ } while (0)
 
 int64_t GetShapeSize(const std::vector<int64_t>& shape) {
   int64_t shape_size = 1;

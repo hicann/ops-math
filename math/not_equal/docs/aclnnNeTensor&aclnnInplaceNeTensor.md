@@ -29,11 +29,11 @@
 - 计算公式：
 
 $$
-out_i​=(self_i \ne other_i)?[1]:[0]
+out_i​=(self_i \ne other_i)?[1]: [0]
 $$
 
 $$
-selfRef_i​=(selfRef_i\ \ne other_i)\ ?\  [1]:[0]
+selfRef_i​=(selfRef_i\ \ne other_i)\ ?\  [1]: [0]
 $$
 
 ## 函数原型
