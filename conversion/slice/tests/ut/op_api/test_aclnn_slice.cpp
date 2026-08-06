@@ -12,10 +12,13 @@
 #include <vector>
 #include "gtest/gtest.h"
 #include "../../../op_api/aclnn_slice.h"
+#include "../../../op_api/slice.h"
+#include "op_api_ut_common/array_desc.h"
 #include "op_api_ut_common/inner/types.h"
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/tensor_desc.h"
+#include "opdev/make_op_executor.h"
 #include "opdev/platform.h"
 
 using namespace op;
@@ -23,15 +26,9 @@ using namespace std;
 
 class l2_slice_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_slice_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "l2_slice_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "l2_slice_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "l2_slice_test TearDown" << endl; }
 };
 
 TEST_F(l2_slice_test, test0)
@@ -354,4 +351,82 @@ TEST_F(l2_slice_test, aclnnSlice_multi_dim)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(l2_slice_test, slice_l0op_float32)
+{
+    auto self = TensorDesc({6, 4}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
+    auto uniqueExecutor = CREATE_EXECUTOR();
+    ASSERT_NE(uniqueExecutor.get(), nullptr);
+
+    auto offsets = IntArrayDesc(vector<int64_t>{0, 0});
+    auto size = IntArrayDesc(vector<int64_t>{3, 4});
+    auto result = l0op::Slice(self.ToAclTypeRawPtr(), offsets.ToAclTypeRawPtr(), size.ToAclTypeRawPtr(),
+                              uniqueExecutor.get());
+    EXPECT_NE(result, nullptr);
+}
+
+TEST_F(l2_slice_test, slice_l0op_float16)
+{
+    auto self = TensorDesc({6, 4}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-1, 1);
+    auto uniqueExecutor = CREATE_EXECUTOR();
+    ASSERT_NE(uniqueExecutor.get(), nullptr);
+
+    auto offsets = IntArrayDesc(vector<int64_t>{0, 0});
+    auto size = IntArrayDesc(vector<int64_t>{3, 4});
+    auto result = l0op::Slice(self.ToAclTypeRawPtr(), offsets.ToAclTypeRawPtr(), size.ToAclTypeRawPtr(),
+                              uniqueExecutor.get());
+    EXPECT_NE(result, nullptr);
+}
+
+TEST_F(l2_slice_test, slice_l0op_negative_offset)
+{
+    auto self = TensorDesc({6, 4}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
+    auto uniqueExecutor = CREATE_EXECUTOR();
+    ASSERT_NE(uniqueExecutor.get(), nullptr);
+
+    auto offsets = IntArrayDesc(vector<int64_t>{-3, 0});
+    auto size = IntArrayDesc(vector<int64_t>{-1, 4});
+    auto result = l0op::Slice(self.ToAclTypeRawPtr(), offsets.ToAclTypeRawPtr(), size.ToAclTypeRawPtr(),
+                              uniqueExecutor.get());
+    EXPECT_NE(result, nullptr);
+}
+
+TEST_F(l2_slice_test, slice_l0op_aicpu_dtype)
+{
+    auto self = TensorDesc({6, 4}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-1, 1);
+    auto uniqueExecutor = CREATE_EXECUTOR();
+    ASSERT_NE(uniqueExecutor.get(), nullptr);
+
+    auto offsets = IntArrayDesc(vector<int64_t>{0, 0});
+    auto size = IntArrayDesc(vector<int64_t>{3, 4});
+    auto result = l0op::Slice(self.ToAclTypeRawPtr(), offsets.ToAclTypeRawPtr(), size.ToAclTypeRawPtr(),
+                              uniqueExecutor.get());
+    EXPECT_NE(result, nullptr);
+}
+
+TEST_F(l2_slice_test, slice_l0op_slicev2_both_align_last_dim)
+{
+    auto self = TensorDesc({1, 16385, 128}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
+    auto uniqueExecutor = CREATE_EXECUTOR();
+    ASSERT_NE(uniqueExecutor.get(), nullptr);
+
+    auto offsets = IntArrayDesc(vector<int64_t>{0, 0, 8});
+    auto size = IntArrayDesc(vector<int64_t>{1, 16385, 64});
+    auto result = l0op::Slice(self.ToAclTypeRawPtr(), offsets.ToAclTypeRawPtr(), size.ToAclTypeRawPtr(),
+                              uniqueExecutor.get());
+    EXPECT_NE(result, nullptr);
+}
+
+TEST_F(l2_slice_test, slice_l0op_slicev2_out_of_range)
+{
+    auto self = TensorDesc({6, 4}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
+    auto uniqueExecutor = CREATE_EXECUTOR();
+    ASSERT_NE(uniqueExecutor.get(), nullptr);
+
+    auto offsets = IntArrayDesc(vector<int64_t>{0, 0});
+    auto size = IntArrayDesc(vector<int64_t>{10, 4});
+    auto result = l0op::Slice(self.ToAclTypeRawPtr(), offsets.ToAclTypeRawPtr(), size.ToAclTypeRawPtr(),
+                              uniqueExecutor.get());
+    EXPECT_NE(result, nullptr);
 }
