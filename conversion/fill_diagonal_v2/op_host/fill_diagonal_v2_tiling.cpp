@@ -19,6 +19,8 @@
 #include "platform/platform_infos_def.h"
 #include "fill_diagonal_v2_tiling.h"
 
+constexpr size_t MAX_DIM_NUM = 8;
+
 namespace optiling {
 inline ge::graphStatus SetTilingKey4FillDiagonalV2(gert::TilingContext* context, uint64_t step, uint64_t end, bool wrap)
 {
@@ -66,6 +68,32 @@ static ge::graphStatus Tiling4FillDiagonalV2(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, attrPtr);
     auto shape = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, shape);
+
+    OP_CHECK_IF(shape->GetStorageShape().GetDimNum() > MAX_DIM_NUM,
+                OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "x",
+                                                         std::to_string(shape->GetStorageShape().GetDimNum()).c_str(),
+                                                         "The dim num of x must be less than or equal to 8"),
+                return ge::GRAPH_FAILED);
+
+    auto inputDesc = context->GetInputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
+    auto dtype = inputDesc->GetDataType();
+    const std::set<ge::DataType> supportedDtypes = {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_DOUBLE, ge::DT_UINT8,
+                                                    ge::DT_BOOL,    ge::DT_INT8,  ge::DT_INT16,  ge::DT_INT32,
+                                                    ge::DT_BF16,    ge::DT_INT64};
+    OP_CHECK_IF(supportedDtypes.count(dtype) == 0,
+                OP_LOGE_WITH_INVALID_INPUT_DTYPE(context->GetNodeName(), "x", Ops::Base::ToString(dtype).c_str(),
+                                                 "DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_UINT8, DT_BOOL, DT_INT8, "
+                                                 "DT_INT16, DT_INT32, DT_BFLOAT16, DT_INT64"),
+                return ge::GRAPH_FAILED);
+
+    auto fillValueDesc = context->GetInputDesc(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, fillValueDesc);
+    OP_CHECK_IF(fillValueDesc->GetDataType() != dtype,
+                OP_LOGE(context->GetNodeName(), "fill_value dtype %s must be same as x dtype %s",
+                        Ops::Base::ToString(fillValueDesc->GetDataType()).c_str(), Ops::Base::ToString(dtype).c_str()),
+                return ge::GRAPH_FAILED);
+
     uint64_t totalLength = 1;
     for (size_t i = 0; i < shape->GetStorageShape().GetDimNum(); ++i) {
         totalLength *= shape->GetStorageShape().GetDim(i);

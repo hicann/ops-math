@@ -31,6 +31,7 @@ constexpr size_t WORKSPACE_NUM = 1;
 constexpr int64_t BUFFER_NUM_FP32 = 8;
 constexpr int64_t BUFFER_NUM_FP16 = 10;
 constexpr int64_t SELECT_RESERVED_BYTES = 8192;
+constexpr size_t MAX_DIM_NUM = 8;
 
 static const gert::Shape g_vec_1_shape = {1};
 
@@ -60,6 +61,21 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* 
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
     auto inputShapeX = EnsureNotScalar(inputX->GetStorageShape());
 
+    OP_CHECK_IF(inputShapeX.GetDimNum() > MAX_DIM_NUM,
+                OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "x",
+                                                         std::to_string(inputShapeX.GetDimNum()).c_str(),
+                                                         "The dim num of x must be less than or equal to 8"),
+                return ge::GRAPH_FAILED);
+
+    auto outY = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, outY);
+    auto outShapeY = EnsureNotScalar(outY->GetStorageShape());
+
+    OP_CHECK_IF(inputShapeX.GetShapeSize() != outShapeY.GetShapeSize(),
+                OP_LOGE(context, "Expint: input and output shape size mismatch: x=%ld, y=%ld",
+                        inputShapeX.GetShapeSize(), outShapeY.GetShapeSize()),
+                return ge::GRAPH_FAILED);
+
     *totalIdx = inputShapeX.GetShapeSize();
 
     const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16};
@@ -67,7 +83,9 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* 
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
     *dataType = inputDesc->GetDataType();
     OP_CHECK_IF(supportedDtype.count(*dataType) == 0,
-                OP_LOGE(context, "Expint: unsupported dtype=%d", static_cast<int>(*dataType)), return ge::GRAPH_FAILED);
+                OP_LOGE_WITH_INVALID_INPUT_DTYPE(context->GetNodeName(), "x", Ops::Base::ToString(*dataType).c_str(),
+                                                 "DT_FLOAT16, DT_FLOAT, DT_BFLOAT16"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
