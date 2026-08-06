@@ -8,11 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-/**
- * NOTE: Portions of this code were AI-generated and have been
- * technically reviewed for functional accuracy and security
- */
-
 /*!
  * \file log_space_tiling_data.h
  * \brief LogSpace TilingData 结构体定义
@@ -29,7 +24,28 @@ struct LogSpaceTilingData {
     uint32_t ubChunk = 0;     // 单次搬运粒度（fp32 元素数）
     uint32_t reserved = 0;    // 对齐占位（保证 float 字段 4B 对齐）
     float startF = 0.0f;
-    float stepF = 0.0f;   // (end-start)/(steps-1), steps==1 时为 0
-    float logBase = 0.0f; // ln(base)
+    float stepF = 0.0f;     // (end-start)/(steps-1), steps==1 时为 0
+    float logBase = 0.0f;   // ln(base)
+    float startValF = 0.0f; // host 用 double pow 算好的 base^start，供 kernel 端点精确覆写
+    float endValF = 0.0f;   // host 用 double pow 算好的 base^end
+    // 整型路径用 double-float(fp32 pair)在 arg 空间(arg = x*ln(base))算准指数：arg = argStart + g*stepLn。
+    // host 用 double 算 argStart=start*ln(base)、stepLn=step*ln(base)，各拆成 hi+lo 两个 fp32。
+    float argStartHi = 0.0f;
+    float argStartLo = 0.0f;
+    float stepLnHi = 0.0f;
+    float stepLnLo = 0.0f;
+    // 整数幂精确覆写表：落在整数指数(网格点)的元素，df 的 exp 会下溢到整数下方(如 10^1->9.9999,
+    // 整型 TRUNC 成 9)。host 用 double pow 精确算 base^m 经 tiling 下发，kernel 对这些元素 SetValue 覆写。
+    float stepLoX = 0.0f;     // x 空间 step 的 double-float 低位（定位网格点用，大 case 需高精度）
+    int32_t nmin = 0;         // 幂表起始指数 m
+    int32_t nCount = 0;       // 幂表条目数（<=96，0 表示禁用整数幂覆写）
+    float baseN[96] = {0.0f}; // baseN[k] = (float)pow(base, nmin+k)
+    // [df-V] 大值 int8/uint8：用向量单元的 double-float exp 算高精度参考 expBase（标量精度不够）。
+    int32_t useDfV = 0;      // 1=启用 df-V（仅 int8/uint8 且值 ∈ (2^24,2^32)）
+    float rfHi[12] = {0.0f}; // 1/k! 的 fp32 高位（k=0..11，向量泰勒 exp 用）
+    float rfLo[12] = {0.0f}; // 1/k! 的 double-float 低位
+    // df-V 递推：expBase[c]=expBase[c-1]·const，const=base^(ubChunk·step) → df-exp 整核只算 1 次
+    float constHi = 0.0f;
+    float constLo = 0.0f;
 };
 #endif

@@ -9,11 +9,6 @@
  */
 
 /**
- * NOTE: Portions of this code were AI-generated and have been
- * technically reviewed for functional accuracy and security
- */
-
-/**
  * @file aclnn_log_space.h
  * @brief ACLNN L2 API - LogSpace
  */
@@ -40,12 +35,12 @@ extern "C" {
  * @param workspaceSize [out]
  * @param executor [out]
  */
-ACLNN_API aclnnStatus aclnnLogSpaceGetWorkspaceSize(
-    const aclScalar* start, const aclScalar* end, int64_t steps, double base, const aclTensor* result,
-    uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnLogSpaceGetWorkspaceSize(const aclScalar* start, const aclScalar* end, int64_t steps,
+                                                    double base, const aclTensor* result, uint64_t* workspaceSize,
+                                                    aclOpExecutor** executor);
 
-ACLNN_API aclnnStatus
-aclnnLogSpace(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnLogSpace(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                    aclrtStream stream);
 
 #ifdef __cplusplus
 }

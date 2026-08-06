@@ -8,16 +8,11 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-/**
- * NOTE: Portions of this code were AI-generated and have been
- * technically reviewed for functional accuracy and security
- */
-
 /*!
  * \file log_space_tiling.cpp
- * \brief LogSpace Tiling 实现（arch35 / ascend950）
+ * \brief LogSpace Tiling 实现（Ascend950 / Atlas A2/A3：ascend910b / ascend910_93）
  *
- * 完整实现 6 个 TilingKey（fp32/fp16/bf16 × NORMAL/SINGLE）。
+ * 覆盖 14 个 TilingKey（7 种输出 dtype × NORMAL/SINGLE）。
  * Tiling 按输出 dtype 计算 stepF/logBase/分核策略，TilingKey 通过 (D_T_Y, MODE) 二元组下发。
  */
 
@@ -52,34 +47,32 @@ constexpr int ATTR_IDX_BASE = 3;
 constexpr uint32_t MODE_NORMAL = 0;
 constexpr uint32_t MODE_SINGLE = 1;
 
-static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& ubSize, int64_t& coreNum)
+// 平台信息 + 工作空间一次性初始化：取平台句柄与 workspace 指针 → 置 workspace（本算子无需额外
+// workspace，置 0）→ 从平台对象读 UB 容量与 AIV 核数并一并校验。把两处上下文查询合并，避免在主
+// Tiling 流程里散落多次 context 访问，核数/UB 的取用也集中在一处。
+static ge::graphStatus PrepareContext(gert::TilingContext* context, uint64_t& ubSize, int64_t& coreNum)
 {
     fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);
-    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
-    coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(coreNum == 0, OP_LOGE(context, "coreNum is 0"), return ge::GRAPH_FAILED);
-    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
-    OP_CHECK_IF(ubSize == 0, OP_LOGE(context, "ubSize is 0"), return ge::GRAPH_FAILED);
-    return ge::GRAPH_SUCCESS;
-}
+    size_t* wsSizes = context->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, wsSizes);
+    wsSizes[0] = WS_SYS_SIZE;
 
-static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
-{
-    size_t* currentWorkspace = context->GetWorkspaceSizes(1);
-    OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
-    currentWorkspace[0] = WS_SYS_SIZE;
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
+    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
+    coreNum = ascendcPlatform.GetCoreNumAiv();
+    OP_CHECK_IF(ubSize == 0 || coreNum == 0,
+                OP_LOGE(context, "invalid platform: ubSize=%lu coreNum=%ld", ubSize, coreNum), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 static ge::graphStatus LogSpaceTilingFunc(gert::TilingContext* context)
 {
-    // 1. 平台信息
+    // 1. 平台信息 + 工作空间
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(PrepareContext(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "PrepareContext error"),
+                return ge::GRAPH_FAILED);
 
     // 2. 属性
     auto attrs = context->GetAttrs();
@@ -109,25 +102,28 @@ static ge::graphStatus LogSpaceTilingFunc(gert::TilingContext* context)
     auto outDesc = context->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, outDesc);
     ge::DataType dtype = outDesc->GetDataType();
-    OP_CHECK_IF(
-        dtype != ge::DT_FLOAT && dtype != ge::DT_FLOAT16 && dtype != ge::DT_BF16,
-        OP_LOGE(context, "unsupported dtype %d", static_cast<int>(dtype)), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(dtype != ge::DT_FLOAT && dtype != ge::DT_FLOAT16 && dtype != ge::DT_BF16 && dtype != ge::DT_INT8 &&
+                    dtype != ge::DT_INT16 && dtype != ge::DT_INT32 && dtype != ge::DT_UINT8,
+                OP_LOGE(context, "unsupported dtype %d", static_cast<int>(dtype)), return ge::GRAPH_FAILED);
 
-    // 4. 工作空间
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
-
-    // 5. 填充 TilingData
+    // 4. 填充 TilingData
     LogSpaceTilingData* tiling = context->GetTilingData<LogSpaceTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(LogSpaceTilingData), 0, sizeof(LogSpaceTilingData)) != EOK,
-        OP_LOGE(context, "memset tiling data failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(LogSpaceTilingData), 0, sizeof(LogSpaceTilingData)) != EOK,
+                OP_LOGE(context, "memset tiling data failed"), return ge::GRAPH_FAILED);
 
     tiling->totalLen = static_cast<uint64_t>(steps);
     tiling->startF = startF;
     tiling->logBase = std::log(baseF);
+    // 整型路径 arg 空间 double-float 系数：argStart = start*ln(base)（double 计算后拆 hi/lo 两个 fp32）。
+    const double lnBaseD = std::log(static_cast<double>(baseF));
+    const double argStartD = static_cast<double>(startF) * lnBaseD;
+    tiling->argStartHi = static_cast<float>(argStartD);
+    tiling->argStartLo = static_cast<float>(argStartD - static_cast<double>(tiling->argStartHi));
+    // 端点值用 double std::pow 精确算好（与验收 golden 的 numpy base**linspace 同口径，整数幂精确），
+    // 避免设备 fp32 exp(k·ln base) 对整数幂的不稳定上/下溢。kernel 端点直接落型这两个值。
+    tiling->startValF = static_cast<float>(std::pow(static_cast<double>(baseF), static_cast<double>(startF)));
+    tiling->endValF = static_cast<float>(std::pow(static_cast<double>(baseF), static_cast<double>(endF)));
     tiling->ubChunk = static_cast<uint32_t>(UB_CHUNK_ELEMS);
 
     uint32_t mode = MODE_NORMAL;
@@ -162,13 +158,68 @@ static ge::graphStatus LogSpaceTilingFunc(gert::TilingContext* context)
         tiling->tailTileLen = static_cast<uint32_t>(tailLen);
         tiling->tailCoreIdx = static_cast<uint32_t>(useCores - 1);
         tiling->stepF = (endF - startF) / static_cast<float>(steps - 1);
+        // 整型 arg 空间步长（double 算后拆 hi/lo）：stepLn = step*ln(base)
+        const double stepD = (static_cast<double>(endF) - static_cast<double>(startF)) / static_cast<double>(steps - 1);
+        const double stepLnD = stepD * lnBaseD;
+        tiling->stepLnHi = static_cast<float>(stepLnD);
+        tiling->stepLnLo = static_cast<float>(stepLnD - static_cast<double>(tiling->stepLnHi));
+        // x 空间 step 的 double-float 低位（kernel 用 df 算准 chunk 基址 xBase，定位整数指数网格点）
+        tiling->stepLoX = static_cast<float>(stepD - static_cast<double>(tiling->stepF));
+        // 整数幂精确覆写表（仅整型输出需要：fp 路径 CAST_RINT 对 9.9999 会就近舍入到 10，不受下溢影响）。
+        // m ∈ [floor(min(start,end)), ceil(max(start,end))]，baseN[k]=double pow(base, nmin+k)。
+        const bool isIntOut = (dtype == ge::DT_INT8 || dtype == ge::DT_INT16 || dtype == ge::DT_INT32 ||
+                               dtype == ge::DT_UINT8);
+        if (isIntOut) {
+            const double lo = (startF < endF) ? static_cast<double>(startF) : static_cast<double>(endF);
+            const double hi = (startF < endF) ? static_cast<double>(endF) : static_cast<double>(startF);
+            const int64_t nmin = static_cast<int64_t>(std::floor(lo));
+            const int64_t nmax = static_cast<int64_t>(std::ceil(hi));
+            int64_t cnt = nmax - nmin + 1;
+            if (cnt >= 1 && cnt <= 96) { // 范围在 96 内才启用，超出则禁用（极端大动态范围，整数幂多溢出）
+                tiling->nmin = static_cast<int32_t>(nmin);
+                tiling->nCount = static_cast<int32_t>(cnt);
+                for (int64_t k = 0; k < cnt; ++k) {
+                    tiling->baseN[k] = static_cast<float>(
+                        std::pow(static_cast<double>(baseF), static_cast<double>(nmin + k)));
+                }
+            }
+            // [df-V 门控] int8/uint8 值 ∈ (2^24, 2^32)：fp32 算 V 不足以让 mod256 准，用向量 df-exp。
+            if (dtype == ge::DT_INT8 || dtype == ge::DT_UINT8) {
+                const double vS = std::pow(static_cast<double>(baseF), static_cast<double>(startF));
+                const double vE = std::pow(static_cast<double>(baseF), static_cast<double>(endF));
+                const double mx = (std::fabs(vS) > std::fabs(vE)) ? std::fabs(vS) : std::fabs(vE);
+                // 值 > 2^24 即启用：[2^24,2^31] 是敏感区(mod256≠0,需精确)；值 ≥2^31 fp32 是 256 倍数 → mod=0(kernel
+                // 直接置 0)。
+                if (mx > 16777216.0) {
+                    tiling->useDfV = 1;
+                }
+            }
+            // df-V 的向量 df-exp 是每 chunk 固定开销 → 放大 chunk 减少调用次数（UB: 4×8192×4B + 队列 ≈ 145KB<192KB）
+            if (tiling->useDfV) {
+                tiling->ubChunk = 4096; // chunk 跨度越小 → 每元素 ebH·s 的 fp32 舍入误差越小（int8 严阈值需要）
+                // 递推等比常数 const = base^(ubChunk·step) = exp(ubChunk·stepLn)，df-exp 整核只算 1 次
+                const double cD = std::exp(static_cast<double>(tiling->ubChunk) * stepLnD);
+                tiling->constHi = static_cast<float>(cD);
+                tiling->constLo = static_cast<float>(cD - static_cast<double>(tiling->constHi));
+            }
+            // 1/k! 的 double-float 常数（向量泰勒 exp 用，host 精确算）
+            double fact = 1.0;
+            for (int k = 0; k < 12; ++k) {
+                if (k >= 2) {
+                    fact *= static_cast<double>(k);
+                }
+                const double rf = 1.0 / fact;
+                tiling->rfHi[k] = static_cast<float>(rf);
+                tiling->rfLo[k] = static_cast<float>(rf - static_cast<double>(tiling->rfHi[k]));
+            }
+        }
         mode = MODE_NORMAL;
         usedCoreNum = useCores;
     }
 
     context->SetBlockDim(static_cast<uint32_t>(usedCoreNum));
 
-    // 6. TilingKey 选择：D_T_Y × MODE
+    // 5. TilingKey 选择：D_T_Y × MODE
     uint32_t dTypeY = static_cast<uint32_t>(dtype);
     ASCENDC_TPL_SEL_PARAM(context, dTypeY, mode);
 

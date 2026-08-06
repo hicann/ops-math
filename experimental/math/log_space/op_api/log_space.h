@@ -9,11 +9,6 @@
  */
 
 /**
- * NOTE: Portions of this code were AI-generated and have been
- * technically reviewed for functional accuracy and security
- */
-
-/**
  * @file log_space.h
  * @brief ACLNN L0 API - LogSpace
  */
@@ -24,8 +19,8 @@
 
 namespace l0op {
 
-const aclTensor* LogSpace(
-    float startF, float endF, int64_t steps, float baseF, const aclTensor* result, aclOpExecutor* executor);
+const aclTensor* LogSpace(float startF, float endF, int64_t steps, float baseF, const aclTensor* result,
+                          aclOpExecutor* executor);
 
 } // namespace l0op
 

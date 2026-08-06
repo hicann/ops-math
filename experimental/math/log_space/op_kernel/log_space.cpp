@@ -8,14 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-/**
- * NOTE: Portions of this code were AI-generated and have been
- * technically reviewed for functional accuracy and security
- */
-
 /*!
  * \file log_space.cpp
- * \brief LogSpace Kernel 入口（arch35 / ascend950）
+ * \brief LogSpace Kernel 入口（Ascend950 / Atlas A2/A3：ascend910b / ascend910_93）
  *
  * 模板参数（与 log_space_tiling_key.h 对应）：
  *   - D_T_Y: 输出 dtype

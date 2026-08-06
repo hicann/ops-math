@@ -9,11 +9,6 @@
  */
 
 /**
- * NOTE: Portions of this code were AI-generated and have been
- * technically reviewed for functional accuracy and security
- */
-
-/**
  * @file test_aclnn_log_space.cpp
  * @brief LogSpace 算子 aclnn 两段式调用示例
  *
@@ -22,10 +17,15 @@
  *   steps == 1: out[0] = base^start
  *   steps == 0: 空 Tensor，不下发 Kernel
  *
- * 本示例依次执行 3 组用例，覆盖 FLOAT / FLOAT16 / BFLOAT16 三种输出 dtype：
+ * 本示例覆盖 FLOAT / FLOAT16 / BFLOAT16 / int8 / int16 / int32 / uint8 七种输出 dtype：
  *   Case1: dtype=FLOAT    start=0.0 end=2.0  steps=5  base=10.0  -> [1, 10, 100, 1000, 10000]
  *   Case2: dtype=FLOAT16  start=-1.0 end=1.0 steps=5  base=2.0   -> [0.5, ~0.707, 1.0, ~1.414, 2.0]
  *   Case3: dtype=BFLOAT16 start=0.0 end=3.0  steps=4  base=10.0  -> [1, 10, 100, 1000]
+ *   Case4: dtype=INT32    start=0.0 end=5.0  steps=6  base=2.0   -> [1, 2, 4, 8, 16, 32]
+ *   Case5: dtype=INT16    start=0.0 end=4.0  steps=5  base=3.0   -> [1, 3, 9, 27, 81]
+ *   Case6: dtype=INT8     start=0.0 end=6.0  steps=7  base=2.0   -> [1, 2, 4, 8, 16, 32, 64]
+ *   Case7: dtype=UINT8    start=0.0 end=6.0  steps=7  base=2.0   -> [1, 2, 4, 8, 16, 32, 64]
+ *   (整型 = trunc(base^x)，向零取整；取值域均落在各 dtype 范围内避免饱和)
  */
 
 #include <cstdint>
@@ -98,9 +98,8 @@ struct ExampleCase {
 static int RunOne(const ExampleCase& c, aclrtStream stream)
 {
     printf("\n========================================\n");
-    printf(
-        "[%s] dtype=%d start=%g end=%g steps=%lld base=%g\n", c.name.c_str(), (int)c.dtype, c.start, c.end,
-        (long long)c.steps, c.base);
+    printf("[%s] dtype=%d start=%g end=%g steps=%lld base=%g\n", c.name.c_str(), (int)c.dtype, c.start, c.end,
+           (long long)c.steps, c.base);
     printf("========================================\n");
 
     // 1) 构造 start / end aclScalar (ACL_FLOAT)
@@ -111,7 +110,31 @@ static int RunOne(const ExampleCase& c, aclrtStream stream)
     CHECK_RET(startScalar && endScalar, "aclCreateScalar failed");
 
     // 2) 分配 result Device 内存 + 创建 aclTensor
-    size_t elem_size = (c.dtype == ACL_FLOAT) ? sizeof(float) : sizeof(uint16_t);
+    size_t elem_size = sizeof(float);
+    switch (c.dtype) {
+        case ACL_FLOAT:
+            elem_size = sizeof(float);
+            break;
+        case ACL_FLOAT16:
+        case ACL_BF16:
+            elem_size = sizeof(uint16_t);
+            break;
+        case ACL_INT32:
+            elem_size = sizeof(int32_t);
+            break;
+        case ACL_INT16:
+            elem_size = sizeof(int16_t);
+            break;
+        case ACL_INT8:
+            elem_size = sizeof(int8_t);
+            break;
+        case ACL_UINT8:
+            elem_size = sizeof(uint8_t);
+            break;
+        default:
+            elem_size = sizeof(float);
+            break;
+    }
     int64_t shape[1] = {c.steps};
     int64_t strides[1] = {1};
     size_t buf_size = static_cast<size_t>(c.steps) * elem_size;
@@ -123,15 +146,15 @@ static int RunOne(const ExampleCase& c, aclrtStream stream)
     CHECK_RET(ret == ACL_SUCCESS, "aclrtMalloc result failed: %d", ret);
     aclrtMemset(result_dev, buf_size, 0, buf_size);
 
-    aclTensor* resultTensor =
-        aclCreateTensor(shape, 1, c.dtype, strides, 0, aclFormat::ACL_FORMAT_ND, shape, 1, result_dev);
+    aclTensor* resultTensor = aclCreateTensor(shape, 1, c.dtype, strides, 0, aclFormat::ACL_FORMAT_ND, shape, 1,
+                                              result_dev);
     CHECK_RET(resultTensor != nullptr, "aclCreateTensor failed");
 
     // 3) 调用第一段接口 GetWorkspaceSize
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor = nullptr;
-    ret =
-        aclnnLogSpaceGetWorkspaceSize(startScalar, endScalar, c.steps, c.base, resultTensor, &workspaceSize, &executor);
+    ret = aclnnLogSpaceGetWorkspaceSize(startScalar, endScalar, c.steps, c.base, resultTensor, &workspaceSize,
+                                        &executor);
     CHECK_RET(ret == ACL_SUCCESS, "aclnnLogSpaceGetWorkspaceSize failed: %d", ret);
     printf("  workspaceSize = %llu\n", (unsigned long long)workspaceSize);
 
@@ -156,15 +179,22 @@ static int RunOne(const ExampleCase& c, aclrtStream stream)
 
     printf("  result = [");
     for (int64_t i = 0; i < c.steps; ++i) {
-        float v = 0.0f;
+        const char* sep = (i == 0 ? "" : ", ");
         if (c.dtype == ACL_FLOAT) {
-            v = reinterpret_cast<const float*>(host_buf.data())[i];
+            printf("%s%g", sep, reinterpret_cast<const float*>(host_buf.data())[i]);
         } else if (c.dtype == ACL_FLOAT16) {
-            v = Fp16ToFloat(reinterpret_cast<const uint16_t*>(host_buf.data())[i]);
-        } else {
-            v = Bf16ToFloat(reinterpret_cast<const uint16_t*>(host_buf.data())[i]);
+            printf("%s%g", sep, Fp16ToFloat(reinterpret_cast<const uint16_t*>(host_buf.data())[i]));
+        } else if (c.dtype == ACL_BF16) {
+            printf("%s%g", sep, Bf16ToFloat(reinterpret_cast<const uint16_t*>(host_buf.data())[i]));
+        } else if (c.dtype == ACL_INT32) {
+            printf("%s%d", sep, reinterpret_cast<const int32_t*>(host_buf.data())[i]);
+        } else if (c.dtype == ACL_INT16) {
+            printf("%s%d", sep, static_cast<int>(reinterpret_cast<const int16_t*>(host_buf.data())[i]));
+        } else if (c.dtype == ACL_INT8) {
+            printf("%s%d", sep, static_cast<int>(reinterpret_cast<const int8_t*>(host_buf.data())[i]));
+        } else if (c.dtype == ACL_UINT8) {
+            printf("%s%u", sep, static_cast<unsigned>(reinterpret_cast<const uint8_t*>(host_buf.data())[i]));
         }
-        printf("%s%g", (i == 0 ? "" : ", "), v);
     }
     printf("]\n");
 
@@ -195,6 +225,22 @@ int main(int /*argc*/, char** /*argv*/)
         {"Case1_FLOAT", ACL_FLOAT, 0.0, 2.0, 5, 10.0},
         {"Case2_FLOAT16", ACL_FLOAT16, -1.0, 1.0, 5, 2.0},
         {"Case3_BFLOAT16", ACL_BF16, 0.0, 3.0, 4, 10.0},
+        {"Case4_INT32", ACL_INT32, 0.0, 5.0, 6, 2.0},
+        {"Case5_INT16", ACL_INT16, 0.0, 4.0, 5, 3.0},
+        {"Case6_INT8", ACL_INT8, 0.0, 6.0, 7, 2.0},
+        {"Case7_UINT8", ACL_UINT8, 0.0, 6.0, 7, 2.0},
+        // 分数指数（测向零取整 CAST_TRUNC，对齐 torch .to(int)）
+        {"Case8_INT32_frac", ACL_INT32, 0.0, 3.0, 7,
+         2.0}, // 2^[0,.5,1,1.5,2,2.5,3]=[1,1.41,2,2.83,4,5.66,8] -> [1,1,2,2,4,5,8]
+        {"Case9_INT16_neg", ACL_INT16, -2.0, 2.0, 5, 10.0}, // 10^[-2,-1,0,1,2]=[.01,.1,1,10,100] -> [0,0,1,10,100]
+        {"Case10_INT8_frac", ACL_INT8, 0.0, 3.0, 7, 2.0},   // -> [1,1,2,2,4,5,8]
+        {"Case11_UINT8_frac", ACL_UINT8, 0.0, 4.0, 9, 2.0}, // 2^[0,.5,..,4] -> [1,1,2,2,4,5,8,11,16]
+        // 边界：steps==1 (SINGLE 模式，整型也走 half 中转) / steps==0 (空 tensor)
+        {"Case12_INT8_s1", ACL_INT8, 2.5, 2.5, 1, 2.0},   // 2^2.5=5.66 -> [5]
+        {"Case13_FP32_s1", ACL_FLOAT, 2.0, 2.0, 1, 10.0}, // 10^2 -> [100]
+        {"Case14_INT32_s0", ACL_INT32, 0.0, 1.0, 0, 2.0}, // 空 tensor -> []
+        // 注：torch.logspace(dtype=uint8) 在 start<0 时报溢出（torch 在 uint8 里算指数）；
+        //     本算子以 fp32 算指数，能正确处理负 start（如 uint8/start=-1 得 [0,1,2,4,8]），但无 torch golden 可比。
     };
 
     int failed = 0;
