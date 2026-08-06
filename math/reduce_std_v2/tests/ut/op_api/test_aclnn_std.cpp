@@ -15,31 +15,25 @@
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/op_api_ut.h"
+#include "opdev/platform.h"
 
 class l2_std_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "l2_std_test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "l2_std_test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "l2_std_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "l2_std_test TearDown" << std::endl; }
 
 public:
     template <typename T>
-    int CreateAclScalarTensor(
-        const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr, aclDataType dataType,
-        aclTensor** tensor)
+    int CreateAclScalarTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr,
+                              aclDataType dataType, aclTensor** tensor)
     {
         std::vector<int64_t> strides(shape.size(), 1);
         for (int64_t i = shape.size() - 2; i >= 0; i--) {
             strides[i] = shape[i + 1] * strides[i + 1];
         }
-        *tensor = aclCreateTensor(
-            0, 0, dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+        *tensor = aclCreateTensor(0, 0, dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+                                  shape.size(), nullptr);
         return 0;
     }
 };
@@ -587,6 +581,7 @@ TEST_F(l2_std_test, l2_std_self_scalar_tensor_keepdim)
 // 950
 TEST_F(l2_std_test, ascend950_normal_dtype_float16_format_hwcn_dim_2_keepdim_true)
 {
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
     auto selfDesc = TensorDesc({1, 2, 6, 4}, ACL_FLOAT16, ACL_FORMAT_HWCN).ValueRange(-2, 2);
     auto dimDesc = IntArrayDesc(vector<int64_t>{2});
     int64_t correction = 1;
@@ -597,6 +592,7 @@ TEST_F(l2_std_test, ascend950_normal_dtype_float16_format_hwcn_dim_2_keepdim_tru
 
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
@@ -663,7 +659,6 @@ TEST_F(l2_std_test, normal_neg_dim_convert)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
-
 
 // correction > 1 且 shapeProd < correction 返回INF
 TEST_F(l2_std_test, normal_correction_above_shape_prod)
