@@ -436,9 +436,9 @@ __aicore__ inline void RadixSortTopK<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_
         topkValueInput_ = 0;
     }
     // tile id
-    uint32_t startTileId = GetBlockIdx() % lastDimRealCore_;
     uint32_t cumSumBinOffset = unsortedAxisId * topkV2::RADIX_SORT_BIN_NUM;
     uint32_t inputXUnsortedAxisOffset = unsortedAxisId * totalDataNum_;
+    uint32_t startTileId = GetBlockIdx() % lastDimRealCore_;
     // local buffer
     LocalTensor<int32_t> tileCusumBuffer = blockCumSumTbuf_.Get<int32_t>();
     LocalTensor<T> xLocal;
@@ -939,18 +939,7 @@ __aicore__ inline void RadixSortTopK<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_
     GlobalTensor<T> inputX, uint64_t tileOffset, uint32_t currTileSize)
 {
     LocalTensor<T> xLocal = inQueueX_.AllocTensor<T>();
-    uint32_t currTileSizeAlign = ROUND_UP_AGLIN(currTileSize * sizeof(T)) / sizeof(T);
-    DataCopyPadExtParams<T> padParams;
-    padParams.isPad = true;
-    padParams.rightPadding = currTileSizeAlign - currTileSize;
-    padParams.paddingValue = static_cast<T>(0);
-    DataCopyExtParams dataCopyParam;
-    dataCopyParam.blockCount = 1;
-    dataCopyParam.blockLen = currTileSize * sizeof(T);
-    dataCopyParam.srcStride = 0;
-    dataCopyParam.dstStride = 0;
-    DataCopyPad(xLocal, inputX[tileOffset], dataCopyParam, padParams);
-    inQueueX_.EnQue(xLocal);
+    CopyDataInWithReuseBuffer(inputX, xLocal, tileOffset, currTileSize);
 }
 
 template <typename T, typename UNSIGNED_TYPE, int32_t NUM_PASS, bool IS_LARGEST, bool IS_SORT, typename T_INDEX,
@@ -960,16 +949,16 @@ __aicore__ inline void RadixSortTopK<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_
                                                                uint64_t gmOffset, uint32_t currTileSize)
 {
     uint32_t currTileSizeAlign = ROUND_UP_AGLIN(currTileSize * sizeof(T)) / sizeof(T);
-    DataCopyPadExtParams<T> padParams;
-    padParams.isPad = true;
-    padParams.rightPadding = currTileSizeAlign - currTileSize;
-    padParams.paddingValue = static_cast<T>(0);
+    DataCopyPadExtParams<T> copyDataToUbpadParams;
+    copyDataToUbpadParams.isPad = true;
+    copyDataToUbpadParams.rightPadding = currTileSizeAlign - currTileSize;
+    copyDataToUbpadParams.paddingValue = static_cast<T>(0);
     DataCopyExtParams dataCopyParam;
     dataCopyParam.blockCount = 1;
     dataCopyParam.blockLen = currTileSize * sizeof(T);
     dataCopyParam.srcStride = 0;
     dataCopyParam.dstStride = 0;
-    DataCopyPad(localTensorBuffer, inputX[gmOffset], dataCopyParam, padParams);
+    DataCopyPad(localTensorBuffer, inputX[gmOffset], dataCopyParam, copyDataToUbpadParams);
 }
 
 template <typename T, typename UNSIGNED_TYPE, int32_t NUM_PASS, bool IS_LARGEST, bool IS_SORT, typename T_INDEX,
@@ -1058,17 +1047,17 @@ __aicore__ inline void RadixSortTopK<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_
                                                                    uint32_t numTileData)
 {
     if constexpr (topkV2::is_same<uint64_t, T>::value) {
-        RadixBlockSortSimdB64<T, uint64_t, NUM_PASS, IS_LARGEST, T_INDEX> radixBlockSort;
-        radixBlockSort.ReverseInputData(inputX, reverseInputX, numTileData);
+        RadixBlockSortSimdB64<T, uint64_t, NUM_PASS, IS_LARGEST, T_INDEX> radixBlockSortSimdB64;
+        radixBlockSortSimdB64.ReverseInputData(inputX, reverseInputX, numTileData);
     } else if constexpr (topkV2::is_same<uint32_t, T>::value) {
-        RadixBlockSortSimdB32<T, uint32_t, NUM_PASS, IS_LARGEST, T_INDEX> radixBlockSort;
-        radixBlockSort.ReverseInputData(inputX, reverseInputX, numTileData);
+        RadixBlockSortSimdB32<T, uint32_t, NUM_PASS, IS_LARGEST, T_INDEX> radixBlockSortSimdB32;
+        radixBlockSortSimdB32.ReverseInputData(inputX, reverseInputX, numTileData);
     } else if constexpr (topkV2::is_same<uint16_t, T>::value) {
-        RadixBlockSortSimdB16<T, uint16_t, NUM_PASS, IS_LARGEST, T_INDEX> radixBlockSort;
-        radixBlockSort.ReverseInputData(inputX, reverseInputX, numTileData);
+        RadixBlockSortSimdB16<T, uint16_t, NUM_PASS, IS_LARGEST, T_INDEX> radixBlockSortSimdB16;
+        radixBlockSortSimdB16.ReverseInputData(inputX, reverseInputX, numTileData);
     } else if constexpr (topkV2::is_same<uint8_t, T>::value) {
-        RadixBlockSortSimdB8<T, uint8_t, NUM_PASS, IS_LARGEST, T_INDEX> radixBlockSort;
-        radixBlockSort.ReverseInputData(inputX, reverseInputX, numTileData);
+        RadixBlockSortSimdB8<T, uint8_t, NUM_PASS, IS_LARGEST, T_INDEX> radixBlockSortSimdB8;
+        radixBlockSortSimdB8.ReverseInputData(inputX, reverseInputX, numTileData);
     }
 }
 

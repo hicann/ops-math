@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -24,15 +24,9 @@ using namespace AscendC;
 using namespace topkV2;
 template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO>
 struct RadixSortTopKSingleBlock : public RadixSortTopKBase<T, T_INDEX, T_INDEX_TO> {
-    __aicore__ inline RadixSortTopKSingleBlock() {};
-    __aicore__ inline void Init(
-        GM_ADDR inputValue,
-        GM_ADDR k,
-        GM_ADDR value,
-        GM_ADDR indices,
-        GM_ADDR workSpace,
-        const TopKV2TilingDataSimd* tilingData,
-        TPipe* tPipe);
+    __aicore__ inline RadixSortTopKSingleBlock(){};
+    __aicore__ inline void Init(GM_ADDR inputValue, GM_ADDR k, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace,
+                                const TopKV2TilingDataSimd* topkV2TilingData, TPipe* tPipe);
     __aicore__ inline void Process();
 
 private:
@@ -53,20 +47,15 @@ private:
 
 template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO>
 __aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO>::Init(
-    GM_ADDR inputValue,
-    GM_ADDR k,
-    GM_ADDR value,
-    GM_ADDR indices,
-    GM_ADDR workSpace,
-    const TopKV2TilingDataSimd* tilingData,
-    TPipe* tPipe)
+    GM_ADDR inputValue, GM_ADDR k, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace,
+    const TopKV2TilingDataSimd* topkV2TilingData, TPipe* tPipe)
 {
-    this->BaseInit(inputValue, k, value, indices, tilingData, tPipe);
+    this->BaseInit(inputValue, k, value, indices, topkV2TilingData, tPipe);
 
-    unsortedDimParallel_ = tilingData->unsortedDimParallel;
-    batchNumInUb_ = tilingData->batchNumInUb;
-    tailLoopBatchNum_ = tilingData->tailLoopBatchNum;
-    tailBatchNum_ = tilingData->tailBatchNum;
+    unsortedDimParallel_ = topkV2TilingData->unsortedDimParallel;
+    batchNumInUb_ = topkV2TilingData->batchNumInUb;
+    tailLoopBatchNum_ = topkV2TilingData->tailLoopBatchNum;
+    tailBatchNum_ = topkV2TilingData->tailBatchNum;
 
     this->tPipe_->InitBuffer(this->inputXQue_, 1, batchNumInUb_ * ROUND_UP_AGLIN(this->numTileData_) * sizeof(T));
     this->tPipe_->InitBuffer(this->valuesQue_, 1, batchNumInUb_ * ROUND_UP_AGLIN(this->k_ * sizeof(T)));
@@ -78,13 +67,14 @@ __aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS
 template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO>
 __aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO>::Process()
 {
-    for(int32_t i = 0; i < this->sortLoopTimes_; i++) {
+    for (int32_t i = 0; i < this->sortLoopTimes_; i++) {
         ProcessSingleTime(i);
     }
 }
 
 template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO>
-__aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO>::CopyIn(uint64_t offset, uint32_t count, uint32_t parallelBatchNum)
+__aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO>::CopyIn(
+    uint64_t offset, uint32_t count, uint32_t parallelBatchNum)
 {
     LocalTensor<T> xLocal = this->inputXQue_.template AllocTensor<T>();
     uint32_t countAlign = ROUND_UP_AGLIN(count);
@@ -109,14 +99,16 @@ __aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS
 }
 
 template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO>
-__aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO>::ProcessSingleTime(int32_t loopTime)
+__aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX,
+                                                T_INDEX_TO>::ProcessSingleTime(int32_t loopTime)
 {
     if (this->blockIndex_ >= unsortedDimParallel_) {
         return;
     }
 
     // 最后一次循环，没有用满核，直接返回
-    if (loopTime == this->sortLoopTimes_ - 1 && tailLoopBatchNum_ == 0 && tailBatchNum_ != 0 && this->blockIndex_ >= tailBatchNum_) {
+    if (loopTime == this->sortLoopTimes_ - 1 && tailLoopBatchNum_ == 0 && tailBatchNum_ != 0 &&
+        this->blockIndex_ >= tailBatchNum_) {
         return;
     }
 
@@ -130,10 +122,12 @@ __aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS
     if (loopTime == this->sortLoopTimes_ - 1 && (tailLoopBatchNum_ != 0 || tailBatchNum_ != 0)) {
         parallelBatchNum = tailLoopBatchNum_;
         parallelBatchNum = this->blockIndex_ < tailBatchNum_ ? parallelBatchNum + 1 : parallelBatchNum;
-        tileOffset = this->blockIndex_ < tailBatchNum_ ? this->blockIndex_ * parallelBatchNum * this->numTileData_ :
-                                                        (this->blockIndex_ * parallelBatchNum + tailBatchNum_) * this->numTileData_;
-        outTileOffset = this->blockIndex_ < tailBatchNum_ ? this->blockIndex_ * parallelBatchNum * this->k_ :
-                                                        (this->blockIndex_ * parallelBatchNum + tailBatchNum_) * this->k_;
+        tileOffset = this->blockIndex_ < tailBatchNum_ ?
+                         this->blockIndex_ * parallelBatchNum * this->numTileData_ :
+                         (this->blockIndex_ * parallelBatchNum + tailBatchNum_) * this->numTileData_;
+        outTileOffset = this->blockIndex_ < tailBatchNum_ ?
+                            this->blockIndex_ * parallelBatchNum * this->k_ :
+                            (this->blockIndex_ * parallelBatchNum + tailBatchNum_) * this->k_;
     }
 
     CopyIn(loopOffset + tileOffset, this->numTileData_, parallelBatchNum);
@@ -147,7 +141,7 @@ __aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS
     topKInfo.outter = 1;
     topKInfo.inner = aglinNum;
     topKInfo.n = this->numTileData_;
-    
+
     AscendC::LocalTensor<T> valuesLocal = this->valuesQue_.template AllocTensor<T>();
     AscendC::LocalTensor<T_INDEX_TO> indicesLocal = this->indicesQue_.template AllocTensor<T_INDEX_TO>();
     AscendC::LocalTensor<uint8_t> tmpBuffer = this->topKApiTmpTBuf_.template Get<uint8_t>();
@@ -158,20 +152,13 @@ __aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS
                                                               indicesLocal.template ReinterpretCast<int32_t>();
     for (int16_t i = 0; i < parallelBatchNum; i++) {
         AscendC::TopK<T, false, false, false, TopKMode::TOPK_NORMAL, topkConfig>(
-                valuesLocal[i * aglinValuesOffset],
-                indicesOutTmp[i * aglinIndicesOffset],
-                xLocal[i * aglinNum],
-                this->srcIndexLocal,
-                emptyFinishLocal,
-                tmpBuffer,
-                static_cast<int32_t>(this->k_),
-                emptyTopkTiling,
-                topKInfo,
-                IS_LARGEST);
+            valuesLocal[i * aglinValuesOffset], indicesOutTmp[i * aglinIndicesOffset], xLocal[i * aglinNum],
+            this->srcIndexLocal, emptyFinishLocal, tmpBuffer, static_cast<int32_t>(this->k_), emptyTopkTiling, topKInfo,
+            IS_LARGEST);
     }
     if (needsCast) {
         AscendC::Cast(indicesLocal, indicesOutTmp, RoundMode::CAST_NONE,
-            static_cast<int32_t>(parallelBatchNum * aglinIndicesOffset));
+                      static_cast<int32_t>(parallelBatchNum * aglinIndicesOffset));
         this->indicesOutTbuf_.FreeTensor(indicesOutTmp);
     }
     this->valuesQue_.template EnQue<T>(valuesLocal);
@@ -182,12 +169,13 @@ __aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS
 }
 
 template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO>
-__aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO>::CopyOut(uint64_t offset, uint32_t parallelBatchNum)
+__aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO>::CopyOut(
+    uint64_t offset, uint32_t parallelBatchNum)
 {
     // copy sorted value
     AscendC::LocalTensor<T> valuesLocal = this->valuesQue_.template DeQue<T>();
     AscendC::DataCopyExtParams dataCopyParamValue{static_cast<uint16_t>(parallelBatchNum),
-                                                static_cast<uint32_t>(this->k_ * sizeof(T)), 0, 0, 0};
+                                                  static_cast<uint32_t>(this->k_ * sizeof(T)), 0, 0, 0};
     AscendC::DataCopyPad(this->valuesGm_[offset], valuesLocal, dataCopyParamValue);
     this->valuesQue_.template FreeTensor(valuesLocal);
 
@@ -195,10 +183,10 @@ __aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS
     uint32_t aglinIndicesOffset = ROUND_UP_AGLIN(this->k_ * sizeof(int32_t)) / sizeof(int32_t);
     uint32_t blockCastIntervalBytes = (aglinIndicesOffset - this->k_) * sizeof(T_INDEX_TO);
     bool needsCast = IsSameType<T_INDEX_TO, int64_t>::value;
-    uint32_t srcStride = needsCast &&  blockCastIntervalBytes >= topkV2::UB_AGLIN_VALUE && parallelBatchNum >= 2 ? 1 : 0;
+    uint32_t srcStride = needsCast && blockCastIntervalBytes >= topkV2::UB_AGLIN_VALUE && parallelBatchNum >= 2 ? 1 : 0;
     AscendC::LocalTensor<T_INDEX_TO> indicesLocal = this->indicesQue_.template DeQue<T_INDEX_TO>();
-    AscendC::DataCopyExtParams dataCopyParamIndex{static_cast<uint16_t>(parallelBatchNum),
-                                                static_cast<uint32_t>(this->k_ * sizeof(T_INDEX_TO)), srcStride, 0, 0};
+    AscendC::DataCopyExtParams dataCopyParamIndex{
+        static_cast<uint16_t>(parallelBatchNum), static_cast<uint32_t>(this->k_ * sizeof(T_INDEX_TO)), srcStride, 0, 0};
     AscendC::DataCopyPad(this->indicesGm_[offset], indicesLocal, dataCopyParamIndex);
     this->indicesQue_.template FreeTensor(indicesLocal);
 }

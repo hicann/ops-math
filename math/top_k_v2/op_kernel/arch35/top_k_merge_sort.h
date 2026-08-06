@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -22,34 +22,21 @@ namespace topkV2 {
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
 struct MergeSort {
     __aicore__ inline MergeSort() {}
-    __aicore__ inline void Init(
-        GM_ADDR inputValue,
-        GM_ADDR value,
-        GM_ADDR indices,
-        GM_ADDR workSpace,
-        const TILING_DATA_TYPE* tilingData,
-        TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR inputValue, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace,
+                                const TILING_DATA_TYPE* tilingData, TPipe* pipe);
     __aicore__ inline void ProcessSort();
     __aicore__ inline void ProcessSingleBlockSort(GlobalTensor<T> inputX);
-    __aicore__ inline void CopyDataIn(
-        GlobalTensor<T> inputX,
-        uint64_t tileOffset,
-        uint32_t currTileSize,
-        uint32_t oneCoreRowNum);
-    __aicore__ inline void CopyValue2Gm(
-        uint64_t gmOffset,
-        uint64_t tileOffset,
-        uint32_t ouputLastDimValue,
-        uint32_t oneCoreRowNum);
+    __aicore__ inline void CopyDataIn(GlobalTensor<T> inputX, uint64_t tileOffset, uint32_t currTileSize,
+                                      uint32_t oneCoreRowNum);
+    __aicore__ inline void CopyValue2Gm(uint64_t gmOffset, uint64_t tileOffset, uint32_t ouputLastDimValue,
+                                        uint32_t oneCoreRowNum);
+
 protected:
     __aicore__ inline void InitTilingData(const TILING_DATA_TYPE* tilingData);
-    __aicore__ inline void InitBuffers(
-        GM_ADDR inputValue,
-        GM_ADDR value,
-        GM_ADDR indices,
-        GM_ADDR workSpace,
-        TPipe* pipe);
+    __aicore__ inline void InitBuffers(GM_ADDR inputValue, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace,
+                                       TPipe* pipe);
     __aicore__ inline void InitVbs(TPipe* pipe);
+
 public:
     TQue<QuePosition::VECIN, DOUBLE_BUFFER> inQueueX_;
     TQue<QuePosition::VECOUT, DOUBLE_BUFFER> outValueQueue_;
@@ -78,11 +65,7 @@ public:
 
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
 __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::Init(
-    GM_ADDR inputValue,
-    GM_ADDR value,
-    GM_ADDR indices,
-    GM_ADDR workSpace,
-    const TILING_DATA_TYPE* tilingData,
+    GM_ADDR inputValue, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace, const TILING_DATA_TYPE* tilingData,
     TPipe* pipe)
 {
     InitTilingData(tilingData);
@@ -92,7 +75,8 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
 }
 
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
-__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::InitTilingData(const TILING_DATA_TYPE* tilingData)
+__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::InitTilingData(
+    const TILING_DATA_TYPE* tilingData)
 {
     // 尾轴size 512
     outputLastDimValue_ = tilingData->outputLastDimValue;
@@ -107,8 +91,8 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
 }
 
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
-__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::InitBuffers(GM_ADDR inputValue,
-    GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace, TPipe* pipe)
+__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::InitBuffers(
+    GM_ADDR inputValue, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace, TPipe* pipe)
 {
     inputValueGm_.SetGlobalBuffer((__gm__ T*)(inputValue));
     outValueGm_.SetGlobalBuffer((__gm__ T*)(value));
@@ -132,7 +116,7 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
 __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::ProcessSort()
 {
-    for(int32_t i = 0; i < sortLoopTimes_; i++) {
+    for (int32_t i = 0; i < sortLoopTimes_; i++) {
         sortLoopRound_ = i;
         uint64_t loopOffset = i * unsortedDimParallel_ * oneCoreRowNum_ * numTileData_;
         ProcessSingleBlockSort(inputValueGm_[loopOffset]);
@@ -140,7 +124,8 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
 }
 
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
-__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::ProcessSingleBlockSort(GlobalTensor<T> inputX)
+__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::ProcessSingleBlockSort(
+    GlobalTensor<T> inputX)
 {
     uint32_t tileId = GetBlockIdx();
     uint32_t unsortedDimIndex = (GetBlockIdx() + sortLoopRound_ * unsortedDimParallel_) * oneCoreRowNum_;
@@ -166,17 +151,16 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     CopyDataIn(inputX, tileOffset, numTileData_, nowCoreRealRowNum);
     AscendC::LocalTensor<T> xLocal = inQueueX_.DeQue<T>();
     if constexpr (is_same<bfloat16_t, T>::value) {
-        vbsSort.VbsMergeSortBf16(xLocal, sortedValueLocal, sortedValueIndexLocal,
-                                 numTileData_, nowCoreRealRowNum);
+        vbsSort.VbsMergeSortBf16(xLocal, sortedValueLocal, sortedValueIndexLocal, numTileData_, nowCoreRealRowNum);
     } else {
-        vbsSort.VbsMergeSort(xLocal, sortedValueLocal, sortedValueIndexLocal,
-                             numTileData_, nowCoreRealRowNum);
+        vbsSort.VbsMergeSort(xLocal, sortedValueLocal, sortedValueIndexLocal, numTileData_, nowCoreRealRowNum);
     }
     // 支持int64,此时把sort后的int32_t索引改为int64_t即可，里面的计算都用offset控制，输出再cast回去int32_t和int64_t即可
     if constexpr (is_same<int64_t, INDEX_TYPE>::value) {
-        AscendC::LocalTensor<int32_t> sortedValueIndexInt32Local = sortedValueIndexLocal.template ReinterpretCast<int32_t>();
-        AscendC::Cast(sortedValueIndexInt64Local, sortedValueIndexInt32Local,
-            AscendC::RoundMode::CAST_NONE, nowCoreRealRowNum * ROUND_UP_AGLIN(numTileData_));
+        AscendC::LocalTensor<int32_t> sortedValueIndexInt32Local = sortedValueIndexLocal
+                                                                       .template ReinterpretCast<int32_t>();
+        AscendC::Cast(sortedValueIndexInt64Local, sortedValueIndexInt32Local, AscendC::RoundMode::CAST_NONE,
+                      nowCoreRealRowNum * ROUND_UP_AGLIN(numTileData_));
         outIndexQueue_.EnQue<int64_t>(sortedValueIndexInt64Local);
     } else {
         outIndexQueue_.EnQue<uint32_t>(sortedValueIndexLocal);
@@ -192,10 +176,7 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
 
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
 __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::CopyDataIn(
-    GlobalTensor<T> inputX,
-    uint64_t tileOffset,
-    uint32_t currTileSize,
-    uint32_t oneCoreRowNum)
+    GlobalTensor<T> inputX, uint64_t tileOffset, uint32_t currTileSize, uint32_t oneCoreRowNum)
 {
     LocalTensor<T> xLocal = inQueueX_.AllocTensor<T>();
     uint32_t aglinOneRowTileSize = ROUND_UP_AGLIN(currTileSize);
@@ -206,8 +187,7 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     SetFlag<HardEvent::V_MTE2>(eventId);
     WaitFlag<HardEvent::V_MTE2>(eventId);
     uint32_t currTileSizeAlign = ROUND_UP_AGLIN(currTileSize * sizeof(T)) / sizeof(T);
-    uint32_t dstStride =
-        ((aglinOneRowTileSize - currTileSizeAlign) * sizeof(T)) / UB_AGLIN_VALUE;
+    uint32_t dstStride = ((aglinOneRowTileSize - currTileSizeAlign) * sizeof(T)) / UB_AGLIN_VALUE;
     DataCopyPadExtParams<T> padParams;
     padParams.isPad = true;
     padParams.rightPadding = currTileSizeAlign - currTileSize;
@@ -223,44 +203,35 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
 
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
 __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::CopyValue2Gm(
-    uint64_t gmOffset,
-    uint64_t tileOffset,
-    uint32_t outputLastDimValue,
-    uint32_t oneCoreRowNum)
+    uint64_t gmOffset, uint64_t tileOffset, uint32_t outputLastDimValue, uint32_t oneCoreRowNum)
 {
     uint32_t aglinOneRowTileSize = ROUND_UP_AGLIN(numTileData_);
     // value stride
     uint32_t currTileSizeAlign = ROUND_UP_AGLIN(outputLastDimValue * sizeof(T)) / sizeof(T);
-    uint32_t ubStrideValue =
-        ((aglinOneRowTileSize - currTileSizeAlign) * sizeof(T)) / UB_AGLIN_VALUE;
+    uint32_t ubStrideValue = ((aglinOneRowTileSize - currTileSizeAlign) * sizeof(T)) / UB_AGLIN_VALUE;
     // index stride
-    uint32_t currSrcTileIndexSizeAlign =
-        ROUND_UP_AGLIN(outputLastDimValue * sizeof(int32_t)) / sizeof(int32_t);
-    uint32_t ubSrcStrideIndex =
-        ((aglinOneRowTileSize - currSrcTileIndexSizeAlign) * sizeof(int32_t)) / UB_AGLIN_VALUE;
+    uint32_t currSrcTileIndexSizeAlign = ROUND_UP_AGLIN(outputLastDimValue * sizeof(int32_t)) / sizeof(int32_t);
+    uint32_t ubSrcStrideIndex = ((aglinOneRowTileSize - currSrcTileIndexSizeAlign) * sizeof(int32_t)) / UB_AGLIN_VALUE;
 
-    uint32_t currTileIndexSizeAlign =
-        ROUND_UP_AGLIN(outputLastDimValue * sizeof(INDEX_TYPE)) / sizeof(INDEX_TYPE);
-    uint32_t ubStrideIndex =
-        ((aglinOneRowTileSize - currTileIndexSizeAlign) * sizeof(INDEX_TYPE)) / UB_AGLIN_VALUE;
+    uint32_t currTileIndexSizeAlign = ROUND_UP_AGLIN(outputLastDimValue * sizeof(INDEX_TYPE)) / sizeof(INDEX_TYPE);
+    uint32_t ubStrideIndex = ((aglinOneRowTileSize - currTileIndexSizeAlign) * sizeof(INDEX_TYPE)) / UB_AGLIN_VALUE;
     // copy result out
     AscendC::LocalTensor<T> outValueLocal = outValueQueue_.DeQue<T>();
     AscendC::LocalTensor<INDEX_TYPE> outIndexLocal = outIndexQueue_.DeQue<INDEX_TYPE>();
-    AscendC::DataCopyExtParams dataCopyParamValue{
-        static_cast<uint16_t>(oneCoreRowNum),
-        static_cast<uint32_t>(outputLastDimValue * sizeof(T)),
-        ubStrideValue, 0, 0};
+    AscendC::DataCopyExtParams dataCopyParamValue{static_cast<uint16_t>(oneCoreRowNum),
+                                                  static_cast<uint32_t>(outputLastDimValue * sizeof(T)), ubStrideValue,
+                                                  0, 0};
     AscendC::DataCopyPad(outValueGm_[gmOffset + tileOffset], outValueLocal, dataCopyParamValue);
-    
+
     AscendC::DataCopyExtParams dataCopyParamIndex{
-        static_cast<uint16_t>(oneCoreRowNum),   // 连续数据块的个数
-        static_cast<uint32_t>(outputLastDimValue * sizeof(INDEX_TYPE)), // 每个连续传输数据块的长度，长度为Byte 
-        ubStrideIndex,   // 源操作数，相邻连续数据块的间隔
+        static_cast<uint16_t>(oneCoreRowNum),                           // 连续数据块的个数
+        static_cast<uint32_t>(outputLastDimValue * sizeof(INDEX_TYPE)), // 每个连续传输数据块的长度，长度为Byte
+        ubStrideIndex,                                                  // 源操作数，相邻连续数据块的间隔
         0, // 目的操作数，相邻连续数据块的间隔
-        0}; 
+        0};
     AscendC::DataCopyPad(outIndexGm_[gmOffset + tileOffset], outIndexLocal, dataCopyParamIndex);
     outIndexQueue_.FreeTensor(outIndexLocal);
     outValueQueue_.FreeTensor(outValueLocal);
 }
-}
+} // namespace topkV2
 #endif

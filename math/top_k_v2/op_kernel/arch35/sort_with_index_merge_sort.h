@@ -9,9 +9,9 @@
  */
 
 /*!
-* \file sort_with_index_merge_sort.h
-* \brief sort_with_index mergesort mode impl
-*/
+ * \file sort_with_index_merge_sort.h
+ * \brief sort_with_index mergesort mode impl
+ */
 
 #ifndef SORT_WITH_INDEX_MERGE_SORT_TOP_K_H
 #define SORT_WITH_INDEX_MERGE_SORT_TOP_K_H
@@ -22,9 +22,10 @@ using namespace AscendC;
 using namespace SortWithIndex;
 
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
-class SortWithIndexMergeSort: public SortWithIndex::MergeSortWithIndex<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE> {
+class SortWithIndexMergeSort
+    : public SortWithIndex::MergeSortWithIndex<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE> {
 public:
-    __aicore__ inline SortWithIndexMergeSort(){}
+    __aicore__ inline SortWithIndexMergeSort() {}
     __aicore__ inline void Init(GM_ADDR inputValue, GM_ADDR presetIndex, GM_ADDR value, GM_ADDR indices,
                                 GM_ADDR workSpace, const TILING_DATA_TYPE* tilingData, TPipe* pipe);
     __aicore__ inline void InitTilingData(const TILING_DATA_TYPE* tilingData);
@@ -40,16 +41,13 @@ __aicore__ inline void SortWithIndexMergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE,
     this->InitBuffers(inputValue, value, indices, workSpace, pipe);
     this->presetIndexGm_.SetGlobalBuffer((__gm__ INDEX_TYPE*)(presetIndex));
     // vbs init
-    this->vbsSortMe.SetPipe(pipe);
-    this->vbsSortMe.MergeSortInitBuffer(
-        this->numTileData_,
-        this->oneCoreRowNum_,
-        this->mergSortAcApiNeedBufferSize_);
+    this->vbsSortMe.SetPipePtr(pipe);
+    this->vbsSortMe.InitMergeSortBuffer(this->numTileData_, this->oneCoreRowNum_, this->mergSortAcApiNeedBufferSize_);
 }
 
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
-__aicore__ inline void SortWithIndexMergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::
-    InitTilingData(const TILING_DATA_TYPE* tilingData)
+__aicore__ inline void SortWithIndexMergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST,
+                                              INDEX_TYPE>::InitTilingData(const TILING_DATA_TYPE* tilingData)
 {
     // 尾轴size 512
     this->outputLastDimValue_ = tilingData->outputLastDimValueForSort;
@@ -70,11 +68,11 @@ __aicore__ inline void SortWithIndexMergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE,
         return;
     }
 
-    for (int32_t i = 0; i < this->sortLoopTimes_; i++) { 
+    for (int32_t i = 0; i < this->sortLoopTimes_; i++) {
         this->sortLoopRound_ = i;
         uint64_t loopOffset = i * this->unsortedDimParallel_ * this->oneCoreRowNum_ * this->numTileData_;
         this->ProcessSingleBlockSort(this->inputValueGm_[loopOffset], this->presetIndexGm_[loopOffset]);
     }
 }
-    
+
 #endif // SORT_WITH_INDEX_MERGE_SORT_TOP_K_H

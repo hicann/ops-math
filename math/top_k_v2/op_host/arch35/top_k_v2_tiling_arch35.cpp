@@ -1613,15 +1613,15 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
 ge::graphStatus TilingPrepareForTopKV2(gert::TilingParseContext* context)
 {
     OP_LOGI(context->GetNodeName(), "AscendC Tiling starting GRAPH_SUCCESS");
-    auto compileInfo = context->GetCompiledInfo<TopKV2CompileInfo>();
-    OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
-    auto platformInfo = context->GetPlatformInfo();
-    OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
-    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
-    compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF((compileInfo->coreNum <= 0),
+    auto tilingCompileInfo = context->GetCompiledInfo<TopKV2CompileInfo>();
+    OP_CHECK_NULL_WITH_CONTEXT(context, tilingCompileInfo);
+    auto platInfo = context->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(context, platInfo);
+    platform_ascendc::PlatformAscendC ascendPlatform(platInfo);
+    tilingCompileInfo->coreNum = ascendPlatform.GetCoreNumAiv();
+    OP_CHECK_IF(tilingCompileInfo->coreNum <= 0,
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "coreNum",
-                                                      std::to_string(compileInfo->coreNum).c_str(),
+                                                      std::to_string(tilingCompileInfo->coreNum).c_str(),
                                                       "The value of coreNum must be greater than 0."),
                 return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;

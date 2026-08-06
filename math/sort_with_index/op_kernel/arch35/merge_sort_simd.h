@@ -23,140 +23,137 @@ namespace SortWithIndex {
 using namespace AscendC;
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND>
-struct KernelVbsMergeSort {
+struct MergeSortKernel {
 public:
-    __aicore__ inline KernelVbsMergeSort() {}
-    __aicore__ inline void MergeSortInitBuffer(uint32_t currTileSize, uint32_t oneCoreRowNum,
-                                               uint32_t mergSortAcApiNeedBufferSize);
-    __aicore__ inline void VbsMergeSort(LocalTensor<T> xLocal, LocalTensor<T> sortedValueLocal,
-                                        LocalTensor<uint32_t> sortedValueIndexLocal, uint32_t currTileSize,
-                                        uint32_t nowCoreRealRowNum);
-    __aicore__ inline void VbsMergeSortBf16(LocalTensor<bfloat16_t> xLocal, LocalTensor<T> sortedValueLocal,
-                                            LocalTensor<uint32_t> sortedValueIndexLocal, uint32_t currTileSize,
-                                            uint32_t nowCoreRealRowNum);
-    __aicore__ inline void flipSignBit(LocalTensor<CONVERT_TYPE> xLocal, uint32_t offsetOneRow, uint32_t aglinTileSize);
-    __aicore__ inline void SetPipe(TPipe* pipe) { Ppipe = pipe; }
+    __aicore__ inline MergeSortKernel() {}
+    __aicore__ inline void InitMergeSortBuffer(uint32_t tileDataSize, uint32_t coreRowNum, uint32_t mergeSortBufSize);
+    __aicore__ inline void DoMergeSort(LocalTensor<T> inputLocal, LocalTensor<T> sortedValLocal,
+                                       LocalTensor<uint32_t> sortedIdxLocal, uint32_t tileDataSize,
+                                       uint32_t realRowNum);
+    __aicore__ inline void DoMergeSortBf16(LocalTensor<bfloat16_t> inputLocal, LocalTensor<T> sortedValLocal,
+                                           LocalTensor<uint32_t> sortedIdxLocal, uint32_t tileDataSize,
+                                           uint32_t realRowNum);
+    __aicore__ inline void FlipSignBit(LocalTensor<CONVERT_TYPE> inputLocal, uint32_t rowOff, uint32_t alignTileSz);
+    __aicore__ inline void SetPipePtr(TPipe* pipe) { pipePtr_ = pipe; }
 
 public:
-    TPipe* Ppipe = nullptr;
+    TPipe* pipePtr_ = nullptr;
     // merg sort
-    TBuf<TPosition::VECCALC> contCatTmpTbuf_;
-    TBuf<TPosition::VECCALC> indeXLocalTbuf_;
-    TBuf<TPosition::VECCALC> sortedTmpLocalTbuf_;
-    TBuf<TPosition::VECCALC> sortedLocalResTbuf_;
-    TBuf<TPosition::VECCALC> xLocalCastTbuf_;
-    TBuf<TPosition::VECCALC> sortedValueLocalCastTbuf_;
-    LocalTensor<uint32_t> indexLocal_;
+    TBuf<TPosition::VECCALC> concatTmpBuf_;
+    TBuf<TPosition::VECCALC> idxLocalBuf_;
+    TBuf<TPosition::VECCALC> sortedTmpBuf_;
+    TBuf<TPosition::VECCALC> sortedResBuf_;
+    TBuf<TPosition::VECCALC> xCastBuf_;
+    TBuf<TPosition::VECCALC> sortedValCastBuf_;
+    LocalTensor<uint32_t> idxLocal_;
 };
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND>
-__aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND>::MergeSortInitBuffer(
-    uint32_t currTileSize, uint32_t oneCoreRowNum, uint32_t mergSortAcApiNeedBufferSize)
+__aicore__ inline void MergeSortKernel<T, CONVERT_TYPE, IS_DESCEND>::InitMergeSortBuffer(uint32_t tileDataSize,
+                                                                                         uint32_t coreRowNum,
+                                                                                         uint32_t mergeSortBufSize)
 {
-    uint32_t aglinTileSize = ((currTileSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE) * UB_AGLIN_VALUE;
-    uint32_t byteSize = 8;
-    uint32_t tmpBufferSize = aglinTileSize * byteSize;
-    Ppipe->InitBuffer(indeXLocalTbuf_, ROUND_UP_AGLIN(aglinTileSize * sizeof(uint32_t)));
-    Ppipe->InitBuffer(contCatTmpTbuf_, ROUND_UP_AGLIN(mergSortAcApiNeedBufferSize));
-    Ppipe->InitBuffer(sortedTmpLocalTbuf_, ROUND_UP_AGLIN(tmpBufferSize * sizeof(CONVERT_TYPE)));
-    Ppipe->InitBuffer(sortedLocalResTbuf_, ROUND_UP_AGLIN(tmpBufferSize * sizeof(CONVERT_TYPE)));
-    Ppipe->InitBuffer(xLocalCastTbuf_, ROUND_UP_AGLIN(aglinTileSize * sizeof(CONVERT_TYPE)) * oneCoreRowNum);
-    Ppipe->InitBuffer(sortedValueLocalCastTbuf_, ROUND_UP_AGLIN(aglinTileSize * sizeof(CONVERT_TYPE)) * oneCoreRowNum);
-    indexLocal_ = indeXLocalTbuf_.AllocTensor<uint32_t>();
-    // init indexLocal value
-    __local_mem__ int32_t* indexValuePtr = (__ubuf__ int32_t*)indexLocal_.GetPhyAddr();
-    uint16_t repateTime = (aglinTileSize + ONE_TIMES_B32_NUM - 1) / ONE_TIMES_B32_NUM;
-    uint32_t aglinTileSizeCopy = aglinTileSize;
+    uint32_t alignTileSize = ((tileDataSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE) * UB_AGLIN_VALUE;
+    uint32_t elemBytes = 8;
+    uint32_t tmpBufSize = alignTileSize * elemBytes;
+    pipePtr_->InitBuffer(idxLocalBuf_, ROUND_UP_AGLIN(alignTileSize * sizeof(uint32_t)));
+    pipePtr_->InitBuffer(concatTmpBuf_, ROUND_UP_AGLIN(mergeSortBufSize));
+    pipePtr_->InitBuffer(sortedTmpBuf_, ROUND_UP_AGLIN(tmpBufSize * sizeof(CONVERT_TYPE)));
+    pipePtr_->InitBuffer(sortedResBuf_, ROUND_UP_AGLIN(tmpBufSize * sizeof(CONVERT_TYPE)));
+    pipePtr_->InitBuffer(xCastBuf_, ROUND_UP_AGLIN(alignTileSize * sizeof(CONVERT_TYPE)) * coreRowNum);
+    pipePtr_->InitBuffer(sortedValCastBuf_, ROUND_UP_AGLIN(alignTileSize * sizeof(CONVERT_TYPE)) * coreRowNum);
+    idxLocal_ = idxLocalBuf_.AllocTensor<uint32_t>();
+    // init idxLocal_ value
+    __local_mem__ int32_t* idxValPtr = (__ubuf__ int32_t*)idxLocal_.GetPhyAddr();
+    uint16_t repeatCnt = (alignTileSize + ONE_TIMES_B32_NUM - 1) / ONE_TIMES_B32_NUM;
+    uint32_t alignTileSizeCp = alignTileSize;
     __VEC_SCOPE__
     {
-        Reg::RegTensor<int32_t> vciTensor;
-        Reg::RegTensor<int32_t> indexTensor;
-        Reg::Arange(vciTensor, 0);
-        for (uint16_t i = 0; i < repateTime; i++) {
-            Reg::MaskReg vciMask = Reg::UpdateMask<uint32_t>(aglinTileSizeCopy);
-            Reg::Adds(indexTensor, vciTensor, i * ONE_TIMES_B32_NUM, vciMask);
-            Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(indexValuePtr, indexTensor, ONE_TIMES_B32_NUM,
-                                                                       vciMask);
+        Reg::RegTensor<int32_t> vciReg;
+        Reg::RegTensor<int32_t> idxReg;
+        Reg::Arange(vciReg, 0);
+        for (uint16_t i = 0; i < repeatCnt; i++) {
+            Reg::MaskReg vciMsk = Reg::UpdateMask<uint32_t>(alignTileSizeCp);
+            Reg::Adds(idxReg, vciReg, i * ONE_TIMES_B32_NUM, vciMsk);
+            Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(idxValPtr, idxReg, ONE_TIMES_B32_NUM, vciMsk);
         }
     }
 }
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND>
-__aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND>::VbsMergeSort(
-    LocalTensor<T> xLocal, LocalTensor<T> sortedValueLocal, LocalTensor<uint32_t> sortedValueIndexLocal,
-    uint32_t currTileSize, uint32_t nowCoreRealRowNum)
+__aicore__ inline void MergeSortKernel<T, CONVERT_TYPE, IS_DESCEND>::DoMergeSort(LocalTensor<T> inputLocal,
+                                                                                 LocalTensor<T> sortedValLocal,
+                                                                                 LocalTensor<uint32_t> sortedIdxLocal,
+                                                                                 uint32_t tileDataSize,
+                                                                                 uint32_t realRowNum)
 {
-    uint32_t aglinTileSize = ((currTileSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE) * UB_AGLIN_VALUE;
-    uint32_t sortRepeatTimes = (aglinTileSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE;
-    uint32_t concatRepeatTimes = (aglinTileSize + CONCAT_AGLIN_VALUE - 1) / CONCAT_AGLIN_VALUE;
-    uint32_t extractRepeatTimes = (aglinTileSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE;
+    uint32_t alignTileSize = ((tileDataSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE) * UB_AGLIN_VALUE;
+    uint32_t sortRepeatCnt = (alignTileSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE;
+    uint32_t concatRepeatCnt = (alignTileSize + CONCAT_AGLIN_VALUE - 1) / CONCAT_AGLIN_VALUE;
+    uint32_t extractRepeatCnt = (alignTileSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE;
 
-    AscendC::LocalTensor<CONVERT_TYPE> concatTmpLocal = contCatTmpTbuf_.Get<CONVERT_TYPE>();
-    AscendC::LocalTensor<CONVERT_TYPE> sortedLocal = sortedLocalResTbuf_.Get<CONVERT_TYPE>();
-    AscendC::LocalTensor<CONVERT_TYPE> sortTmpLocal = sortedTmpLocalTbuf_.Get<CONVERT_TYPE>();
-    for (int32_t round = 0; round < nowCoreRealRowNum; round++) {
-        uint32_t offsetOneRow = round * aglinTileSize;
+    AscendC::LocalTensor<CONVERT_TYPE> concatTmp = concatTmpBuf_.Get<CONVERT_TYPE>();
+    AscendC::LocalTensor<CONVERT_TYPE> sortedRes = sortedResBuf_.Get<CONVERT_TYPE>();
+    AscendC::LocalTensor<CONVERT_TYPE> sortTmp = sortedTmpBuf_.Get<CONVERT_TYPE>();
+    for (int32_t rowRound = 0; rowRound < realRowNum; rowRound++) {
+        uint32_t rowOffset = rowRound * alignTileSize;
         if constexpr (!IS_DESCEND) {
-            flipSignBit(xLocal, offsetOneRow, aglinTileSize);
+            FlipSignBit(inputLocal, rowOffset, alignTileSize);
         }
-        AscendC::LocalTensor<CONVERT_TYPE> concatLocal;
-        AscendC::Concat(concatLocal, xLocal[offsetOneRow], concatTmpLocal, concatRepeatTimes);
+        AscendC::LocalTensor<CONVERT_TYPE> concatOut;
+        AscendC::Concat(concatOut, inputLocal[rowOffset], concatTmp, concatRepeatCnt);
         // sort API中，index必须是int32_t
-        AscendC::Sort<CONVERT_TYPE, true>(sortedLocal, concatLocal, indexLocal_, sortTmpLocal, sortRepeatTimes);
+        AscendC::Sort<CONVERT_TYPE, true>(sortedRes, concatOut, idxLocal_, sortTmp, sortRepeatCnt);
         // 处理sort后的结果数据，输出排序后的value和index
-        AscendC::Extract(sortedValueLocal[offsetOneRow], sortedValueIndexLocal[offsetOneRow], sortedLocal,
-                         extractRepeatTimes);
+        AscendC::Extract(sortedValLocal[rowOffset], sortedIdxLocal[rowOffset], sortedRes, extractRepeatCnt);
         if constexpr (!IS_DESCEND) {
-            flipSignBit(sortedValueLocal, offsetOneRow, aglinTileSize);
+            FlipSignBit(sortedValLocal, rowOffset, alignTileSize);
         }
     }
 }
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND>
-__aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND>::VbsMergeSortBf16(
-    LocalTensor<bfloat16_t> xLocal, LocalTensor<T> sortedValueLocal, LocalTensor<uint32_t> sortedValueIndexLocal,
-    uint32_t currTileSize, uint32_t nowCoreRealRowNum)
+__aicore__ inline void MergeSortKernel<T, CONVERT_TYPE, IS_DESCEND>::DoMergeSortBf16(
+    LocalTensor<bfloat16_t> inputLocal, LocalTensor<T> sortedValLocal, LocalTensor<uint32_t> sortedIdxLocal,
+    uint32_t tileDataSize, uint32_t realRowNum)
 {
-    uint32_t aglinTileSize = ((currTileSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE) * UB_AGLIN_VALUE;
-    uint32_t sortRepeatTimes = (aglinTileSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE;
-    uint32_t concatRepeatTimes = (aglinTileSize + CONCAT_AGLIN_VALUE - 1) / CONCAT_AGLIN_VALUE;
-    uint32_t extractRepeatTimes = (aglinTileSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE;
+    uint32_t alignTileSize = ((tileDataSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE) * UB_AGLIN_VALUE;
+    uint32_t sortRepeatCnt = (alignTileSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE;
+    uint32_t concatRepeatCnt = (alignTileSize + CONCAT_AGLIN_VALUE - 1) / CONCAT_AGLIN_VALUE;
+    uint32_t extractRepeatCnt = (alignTileSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE;
 
-    AscendC::LocalTensor<CONVERT_TYPE> concatTmpLocal = contCatTmpTbuf_.Get<CONVERT_TYPE>();
-    AscendC::LocalTensor<CONVERT_TYPE> sortedLocal = sortedLocalResTbuf_.Get<CONVERT_TYPE>();
-    AscendC::LocalTensor<CONVERT_TYPE> sortTmpLocal = sortedTmpLocalTbuf_.Get<CONVERT_TYPE>();
-    AscendC::LocalTensor<CONVERT_TYPE> xLocalCast = xLocalCastTbuf_.Get<CONVERT_TYPE>();
-    AscendC::LocalTensor<CONVERT_TYPE> sortedValueLocalCast = sortedValueLocalCastTbuf_.Get<CONVERT_TYPE>();
-    AscendC::Cast(xLocalCast, xLocal, AscendC::RoundMode::CAST_NONE, aglinTileSize * nowCoreRealRowNum);
-    for (int32_t round = 0; round < nowCoreRealRowNum; round++) {
-        uint32_t offsetOneRow = round * aglinTileSize;
+    AscendC::LocalTensor<CONVERT_TYPE> concatTmp = concatTmpBuf_.Get<CONVERT_TYPE>();
+    AscendC::LocalTensor<CONVERT_TYPE> sortedRes = sortedResBuf_.Get<CONVERT_TYPE>();
+    AscendC::LocalTensor<CONVERT_TYPE> sortTmp = sortedTmpBuf_.Get<CONVERT_TYPE>();
+    AscendC::LocalTensor<CONVERT_TYPE> xCastLocal = xCastBuf_.Get<CONVERT_TYPE>();
+    AscendC::LocalTensor<CONVERT_TYPE> sortedValCast = sortedValCastBuf_.Get<CONVERT_TYPE>();
+    AscendC::Cast(xCastLocal, inputLocal, AscendC::RoundMode::CAST_NONE, alignTileSize * realRowNum);
+    for (int32_t rowRound = 0; rowRound < realRowNum; rowRound++) {
+        uint32_t rowOffset = rowRound * alignTileSize;
         if constexpr (!IS_DESCEND) {
-            flipSignBit(xLocalCast, offsetOneRow, aglinTileSize);
+            FlipSignBit(xCastLocal, rowOffset, alignTileSize);
         }
-        AscendC::LocalTensor<CONVERT_TYPE> concatLocal;
-        AscendC::Concat(concatLocal, xLocalCast[offsetOneRow], concatTmpLocal, concatRepeatTimes);
-        AscendC::Sort<CONVERT_TYPE, true>(sortedLocal, concatLocal, indexLocal_, sortTmpLocal, sortRepeatTimes);
-        AscendC::Extract(sortedValueLocalCast[offsetOneRow], sortedValueIndexLocal[offsetOneRow], sortedLocal,
-                         extractRepeatTimes);
+        AscendC::LocalTensor<CONVERT_TYPE> concatOut;
+        AscendC::Concat(concatOut, xCastLocal[rowOffset], concatTmp, concatRepeatCnt);
+        AscendC::Sort<CONVERT_TYPE, true>(sortedRes, concatOut, idxLocal_, sortTmp, sortRepeatCnt);
+        AscendC::Extract(sortedValCast[rowOffset], sortedIdxLocal[rowOffset], sortedRes, extractRepeatCnt);
         if constexpr (!IS_DESCEND) {
-            flipSignBit(sortedValueLocalCast, offsetOneRow, aglinTileSize);
+            FlipSignBit(sortedValCast, rowOffset, alignTileSize);
         }
     }
-    AscendC::Cast(sortedValueLocal, sortedValueLocalCast, AscendC::RoundMode::CAST_RINT,
-                  aglinTileSize * nowCoreRealRowNum);
+    AscendC::Cast(sortedValLocal, sortedValCast, AscendC::RoundMode::CAST_RINT, alignTileSize * realRowNum);
 }
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND>
-__aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND>::flipSignBit(LocalTensor<CONVERT_TYPE> xLocal,
-                                                                                    uint32_t offsetOneRow,
-                                                                                    uint32_t aglinTileSize)
+__aicore__ inline void MergeSortKernel<T, CONVERT_TYPE, IS_DESCEND>::FlipSignBit(LocalTensor<CONVERT_TYPE> inputLocal,
+                                                                                 uint32_t rowOff, uint32_t alignTileSz)
 {
-    if constexpr (is_same<float, CONVERT_TYPE>::value) {
-        AscendC::LocalTensor<int32_t> castTensor = xLocal[offsetOneRow].template ReinterpretCast<int32_t>();
-        AscendC::Adds(castTensor, castTensor, XOR_OP_VALUE_FP, aglinTileSize);
-    } else if constexpr (is_same<half, CONVERT_TYPE>::value) {
-        AscendC::LocalTensor<int16_t> castTensor = xLocal[offsetOneRow].template ReinterpretCast<int16_t>();
-        AscendC::Adds(castTensor, castTensor, XOR_OP_VALUE_HALF, aglinTileSize);
+    if constexpr (SortIsSame<float, CONVERT_TYPE>::value) {
+        AscendC::LocalTensor<int32_t> castTns = inputLocal[rowOff].template ReinterpretCast<int32_t>();
+        AscendC::Adds(castTns, castTns, XOR_OP_VALUE_FP, alignTileSz);
+    } else if constexpr (SortIsSame<half, CONVERT_TYPE>::value) {
+        AscendC::LocalTensor<int16_t> castTns = inputLocal[rowOff].template ReinterpretCast<int16_t>();
+        AscendC::Adds(castTns, castTns, XOR_OP_VALUE_HALF, alignTileSz);
     }
 }
 } // namespace SortWithIndex

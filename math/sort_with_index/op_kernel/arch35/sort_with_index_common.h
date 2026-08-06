@@ -19,15 +19,15 @@
 namespace SortWithIndex {
 
 template <typename Tp, Tp v>
-struct integral_constant {
+struct SortIntegralConstant {
     static constexpr Tp value = v;
 };
-using true_type = integral_constant<bool, true>;
-using false_type = integral_constant<bool, false>;
+using SortTrueType = SortIntegralConstant<bool, true>;
+using SortFalseType = SortIntegralConstant<bool, false>;
 template <typename, typename>
-struct is_same : public false_type {};
+struct SortIsSame : public SortFalseType {};
 template <typename Tp>
-struct is_same<Tp, Tp> : public true_type {};
+struct SortIsSame<Tp, Tp> : public SortTrueType {};
 
 template <typename T>
 __aicore__ inline T SortGetMin(T left, T right)
@@ -52,14 +52,14 @@ struct SortWithIndexTilingDataSimt {
     int64_t lastAxisNum;
     uint32_t keyParams0;
     uint32_t keyParams1;
-    uint32_t keyParams2;    
+    uint32_t keyParams2;
     uint32_t keyParams3;
     uint32_t keyParams4;
     uint32_t keyParams5;
     uint32_t tmpUbSize;
-    uint32_t modeType;        
+    uint32_t modeType;
 };
 #endif
 
-}
+} // namespace SortWithIndex
 #endif
