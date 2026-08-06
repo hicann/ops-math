@@ -30,7 +30,7 @@ struct AddsCompileInfo {
 
 class AddsTiling {
 public:
-    explicit AddsTiling(gert::TilingContext *context) : tilingContext(context){};
+    explicit AddsTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
     AddsTilingData* tiling = nullptr;
 
@@ -41,9 +41,9 @@ protected:
 private:
     ge::graphStatus CheckShape();
 
-    gert::TilingContext *tilingContext;
-    ge::DataType outputDtype;
+    gert::TilingContext* tilingContext;
+    ge::DataType outputDtype = ge::DT_UNDEFINED;
 };
 
-}  // namespace optiling
-#endif  // OPS_BUILD_IN_OP_TILING_RUNTIME_ADDS_TILING_H
+} // namespace optiling
+#endif // OPS_BUILD_IN_OP_TILING_RUNTIME_ADDS_TILING_H
