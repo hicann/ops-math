@@ -353,8 +353,6 @@ static aclnnStatus CheckGetWorkSpaceSizeInputs(const aclTensor* srcTensor, aclTe
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     OP_CHECK(IsRegBase() || socVersion == SocVersion::ASCEND910_93 || socVersion == SocVersion::ASCEND910B,
              OP_LOGW("Only support Ascend950/ASCEND910_93/ASCEND910B"), return ACLNN_ERR_RUNTIME_ERROR);
-    CHECK_RET(srcTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_RET(dstTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
     OP_CHECK(IsContiguous(srcTensor),
              OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(ACLNN_NAME, "srcTensor", "non-contiguous",
                                                    "srcTensor must be contiguous."),
@@ -1098,6 +1096,8 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(const aclTensor* srcTensor, aclTe
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
+    CHECK_RET(srcTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    CHECK_RET(dstTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
     auto ret = CheckGetWorkSpaceSizeInputs(srcTensor, dstTensor);
     op::Format srcFormat = srcTensor->GetStorageFormat();
     op::Format dstFormat = dstTensor->GetStorageFormat();
