@@ -18,6 +18,7 @@
 #include "platform/platform_ascendc.h"
 #include "util/math_util.h"
 #include "coalesce_sparse_tiling.h"
+#include "aclnn/opdev/platform.h"
 
 namespace {
 constexpr uint64_t INT64_ID = 0;
@@ -74,7 +75,7 @@ void CoalesceSparseTiling::TilingKeyCalcu(ge::DataType uniqueIndicesDtype, ge::D
     OP_LOGD(TilingContext, "SetTilingKey.");
     auto platformInfo = TilingContext->GetPlatformInfo();
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
-    bool isAscend950 = ascendcPlatform.GetSocVersion() == platform_ascendc::SocVersion::ASCEND950;
+    bool isAscend950 = ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_3510;
     if (uniqueIndicesDtype == ge::DT_INT64) {
         tiling_key = INT64_ID * KEY_MODE1;
     } else {
