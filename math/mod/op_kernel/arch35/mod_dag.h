@@ -40,10 +40,10 @@ struct ModIntPostCompute : public Vec::ElemwiseTernaryOP<T, T, T, T> {
 #ifdef __CCE_AICORE__
         constexpr uint32_t VECTOR_LENGTH = Ops::Base::GetVRegSize();
         constexpr uint32_t VL_T = VECTOR_LENGTH / sizeof(T);
-        __local_mem__ T* input1Addr = (__local_mem__ T*)input1.GetPhyAddr();
-        __local_mem__ T* input2Addr = (__local_mem__ T*)input2.GetPhyAddr();
-        __local_mem__ T* divAddr = (__local_mem__ T*)div.GetPhyAddr();
-        __local_mem__ T* dstAddr = (__local_mem__ T*)dst.GetPhyAddr();
+        __ubuf__ T* input1Addr = (__ubuf__ T*)input1.GetPhyAddr();
+        __ubuf__ T* input2Addr = (__ubuf__ T*)input2.GetPhyAddr();
+        __ubuf__ T* divAddr = (__ubuf__ T*)div.GetPhyAddr();
+        __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
         uint16_t loopTimes = Ops::Base::CeilDiv(count, VL_T);
 
         __VEC_SCOPE__
@@ -65,14 +65,14 @@ struct ModIntPostCompute : public Vec::ElemwiseTernaryOP<T, T, T, T> {
 
             for (uint16_t j = 0; j < loopTimes; j++) {
                 preg = Reg::UpdateMask<T>(sregMask);
-                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(input2Value, input2Addr + VL_T * j);
-                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(divValue, divAddr + VL_T * j);
+                Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(input2Value, input2Addr + VL_T * j);
+                Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(divValue, divAddr + VL_T * j);
                 Reg::Mul(mulValue, input2Value, divValue, preg);
-                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(input1Value, input1Addr + VL_T * j);
+                Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(input1Value, input1Addr + VL_T * j);
                 Reg::Sub(subValue, input1Value, mulValue, preg);
                 Reg::Compare<T, CMPMODE::NE>(cmpValue, input2Value, zeroValue, preg);
                 Reg::Select(resValue, subValue, defaultValue, cmpValue);
-                Reg::DataCopy<T, Reg::StoreDist::DIST_NORM>(dstAddr + VL_T * j, resValue, preg);
+                Reg::StoreAlign<T, Reg::StoreDist::DIST_NORM>(dstAddr + VL_T * j, resValue, preg);
             }
         }
 #endif
@@ -88,10 +88,10 @@ struct ModCastIntPostCompute : public Vec::ElemwiseTernaryOP<T1, T2, T2, T2> {
 #ifdef __CCE_AICORE__
         constexpr uint32_t VECTOR_LENGTH = Ops::Base::GetVRegSize();
         constexpr uint32_t VL_T = VECTOR_LENGTH / sizeof(T2);
-        __local_mem__ T2* input1Addr = (__local_mem__ T2*)input1.GetPhyAddr();
-        __local_mem__ T2* input2Addr = (__local_mem__ T2*)input2.GetPhyAddr();
-        __local_mem__ T2* divAddr = (__local_mem__ T2*)div.GetPhyAddr();
-        __local_mem__ T1* dstAddr = (__local_mem__ T1*)dst.GetPhyAddr();
+        __ubuf__ T2* input1Addr = (__ubuf__ T2*)input1.GetPhyAddr();
+        __ubuf__ T2* input2Addr = (__ubuf__ T2*)input2.GetPhyAddr();
+        __ubuf__ T2* divAddr = (__ubuf__ T2*)div.GetPhyAddr();
+        __ubuf__ T1* dstAddr = (__ubuf__ T1*)dst.GetPhyAddr();
         uint16_t loopTimes = CeilDiv(count, VL_T);
 
         __VEC_SCOPE__
@@ -113,15 +113,15 @@ struct ModCastIntPostCompute : public Vec::ElemwiseTernaryOP<T1, T2, T2, T2> {
 
             for (uint16_t j = 0; j < loopTimes; j++) {
                 preg = Reg::UpdateMask<T2>(sregMask);
-                Reg::DataCopy<T2, Reg::LoadDist::DIST_NORM>(input2Value, input2Addr + VL_T * j);
-                Reg::DataCopy<T2, Reg::LoadDist::DIST_NORM>(divValue, divAddr + VL_T * j);
+                Reg::LoadAlign<T2, Reg::LoadDist::DIST_NORM>(input2Value, input2Addr + VL_T * j);
+                Reg::LoadAlign<T2, Reg::LoadDist::DIST_NORM>(divValue, divAddr + VL_T * j);
                 Reg::Mul(mulValue, input2Value, divValue, preg);
-                Reg::DataCopy<T2, Reg::LoadDist::DIST_NORM>(input1Value, input1Addr + VL_T * j);
+                Reg::LoadAlign<T2, Reg::LoadDist::DIST_NORM>(input1Value, input1Addr + VL_T * j);
                 Reg::Sub(subValue, input1Value, mulValue, preg);
                 Reg::Compare<T2, CMPMODE::NE>(cmpValue, input2Value, zeroValue, preg);
                 Reg::Select(resValue, subValue, defaultValue, cmpValue);
-                Reg::DataCopy<T1, Reg::StoreDist::DIST_PACK_B16>(dstAddr + VL_T * j, (Reg::RegTensor<T1>&)resValue,
-                                                                 preg);
+                Reg::StoreAlign<T1, Reg::StoreDist::DIST_PACK_B16>(dstAddr + VL_T * j, (Reg::RegTensor<T1>&)resValue,
+                                                                   preg);
             }
         }
 #endif

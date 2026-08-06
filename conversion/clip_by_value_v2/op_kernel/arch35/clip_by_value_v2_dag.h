@@ -31,10 +31,10 @@ struct ClipByValueV2Fused : public Vec::ElemwiseTernaryOP<T, T, T, T> {
                                          LocalTensor<T>& clipValueMax, const uint32_t& count)
     {
 #ifdef __CCE_AICORE__
-        __local_mem__ T* dstAddr = (__local_mem__ T*)dst.GetPhyAddr();
-        __local_mem__ T* xAddr = (__local_mem__ T*)x.GetPhyAddr();
-        __local_mem__ T* minAddr = (__local_mem__ T*)clipValueMin.GetPhyAddr();
-        __local_mem__ T* maxAddr = (__local_mem__ T*)clipValueMax.GetPhyAddr();
+        __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
+        __ubuf__ T* xAddr = (__ubuf__ T*)x.GetPhyAddr();
+        __ubuf__ T* minAddr = (__ubuf__ T*)clipValueMin.GetPhyAddr();
+        __ubuf__ T* maxAddr = (__ubuf__ T*)clipValueMax.GetPhyAddr();
 
         if constexpr (std::is_same_v<T, int64_t>) {
             constexpr uint32_t vl = AscendC::VECTOR_REG_WIDTH_2XVL / sizeof(int64_t);
@@ -52,12 +52,12 @@ struct ClipByValueV2Fused : public Vec::ElemwiseTernaryOP<T, T, T, T> {
                 for (uint16_t idx = 0; idx < loopNum; idx++) {
                     const uint32_t offset = idx * vl;
                     mask = Reg::UpdateMask<int64_t, Reg::RegTraitNumTwo>(remain);
-                    Reg::DataCopy<int64_t, Reg::LoadDist::DIST_NORM>(xReg, xAddr + offset);
-                    Reg::DataCopy<int64_t, Reg::LoadDist::DIST_NORM>(minReg, minAddr + offset);
+                    Reg::LoadAlign<int64_t, Reg::LoadDist::DIST_NORM>(xReg, xAddr + offset);
+                    Reg::LoadAlign<int64_t, Reg::LoadDist::DIST_NORM>(minReg, minAddr + offset);
                     Reg::Max<int64_t, Reg::MaskMergeMode::ZEROING>(resReg, xReg, minReg, mask);
-                    Reg::DataCopy<int64_t, Reg::LoadDist::DIST_NORM>(maxReg, maxAddr + offset);
+                    Reg::LoadAlign<int64_t, Reg::LoadDist::DIST_NORM>(maxReg, maxAddr + offset);
                     Reg::Min<int64_t, Reg::MaskMergeMode::ZEROING>(resReg, resReg, maxReg, mask);
-                    Reg::DataCopy<int64_t, Reg::StoreDist::DIST_NORM>(dstAddr + offset, resReg, mask);
+                    Reg::StoreAlign<int64_t, Reg::StoreDist::DIST_NORM>(dstAddr + offset, resReg, mask);
                 }
             }
         } else {
@@ -76,12 +76,12 @@ struct ClipByValueV2Fused : public Vec::ElemwiseTernaryOP<T, T, T, T> {
                 for (uint16_t idx = 0; idx < loopNum; idx++) {
                     const uint32_t offset = idx * vl;
                     mask = Reg::UpdateMask<T>(remain);
-                    Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(xReg, xAddr + offset);
-                    Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(minReg, minAddr + offset);
+                    Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(xReg, xAddr + offset);
+                    Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(minReg, minAddr + offset);
                     Reg::Max<T, Reg::MaskMergeMode::ZEROING>(resReg, xReg, minReg, mask);
-                    Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(maxReg, maxAddr + offset);
+                    Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(maxReg, maxAddr + offset);
                     Reg::Min<T, Reg::MaskMergeMode::ZEROING>(resReg, resReg, maxReg, mask);
-                    Reg::DataCopy<T, Reg::StoreDist::DIST_NORM>(dstAddr + offset, resReg, mask);
+                    Reg::StoreAlign<T, Reg::StoreDist::DIST_NORM>(dstAddr + offset, resReg, mask);
                 }
             }
         }

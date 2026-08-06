@@ -43,9 +43,9 @@ struct LogicalOrFloatCustom : public Vec::ElemwiseBinaryOP<uint8_t, T, T> {
         constexpr uint32_t VECTOR_LENGTH = GetVRegSize();
         constexpr uint32_t VL_T = VECTOR_LENGTH / sizeof(T);
 
-        __local_mem__ T* src1Addr = (__local_mem__ T*)src1.GetPhyAddr();
-        __local_mem__ T* src2Addr = (__local_mem__ T*)src2.GetPhyAddr();
-        __local_mem__ uint8_t* dstAddr = (__local_mem__ uint8_t*)dst.GetPhyAddr();
+        __ubuf__ T* src1Addr = (__ubuf__ T*)src1.GetPhyAddr();
+        __ubuf__ T* src2Addr = (__ubuf__ T*)src2.GetPhyAddr();
+        __ubuf__ uint8_t* dstAddr = (__ubuf__ uint8_t*)dst.GetPhyAddr();
 
         uint16_t loopTimes = (count + VL_T - 1) / VL_T;
         uint32_t sregMask = count;
@@ -64,8 +64,8 @@ struct LogicalOrFloatCustom : public Vec::ElemwiseBinaryOP<uint8_t, T, T> {
             for (uint16_t j = 0; j < loopTimes; j++) {
                 preg = Reg::UpdateMask<T>(sregMask);
                 // 以浮点类型 T 加载输入
-                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(src1Value, src1Addr + VL_T * j);
-                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(src2Value, src2Addr + VL_T * j);
+                Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(src1Value, src1Addr + VL_T * j);
+                Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(src2Value, src2Addr + VL_T * j);
 
                 // 位OR操作：当作对应位宽的整形处理
                 Reg::Or((Reg::RegTensor<IntT>&)orRes, (Reg::RegTensor<IntT>&)src1Value,
@@ -81,9 +81,9 @@ struct LogicalOrFloatCustom : public Vec::ElemwiseBinaryOP<uint8_t, T, T> {
 
                 // 存储uint8 BOOL结果
                 if constexpr (sizeof(T) == sizeof(half)) {
-                    Reg::DataCopy<uint8_t, Reg::StoreDist::DIST_PACK_B16>(dstAddr + VL_T * j, dstReg, preg);
+                    Reg::StoreAlign<uint8_t, Reg::StoreDist::DIST_PACK_B16>(dstAddr + VL_T * j, dstReg, preg);
                 } else {
-                    Reg::DataCopy<uint8_t, Reg::StoreDist::DIST_PACK4_B32>(dstAddr + VL_T * j, dstReg, preg);
+                    Reg::StoreAlign<uint8_t, Reg::StoreDist::DIST_PACK4_B32>(dstAddr + VL_T * j, dstReg, preg);
                 }
             }
         }

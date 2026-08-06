@@ -51,12 +51,12 @@ struct FloatComputeCustom : public Vec::ElemwiseUnaryOP<uint8_t, T> {
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                 mask = AscendC::Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                 // OpCopyIn
-                AscendC::Reg::DataCopy(vregInput1, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
+                AscendC::Reg::LoadAlign(vregInput1, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
 
                 AscendC::Reg::ShiftRights<uint32_t, int16_t>(vregOutput, (Reg::RegTensor<uint32_t>&)vregInput1,
                                                              STATE_BIT_SHF_VALUE, mask);
                 // OpCopyOut
-                AscendC::Reg::DataCopy<uint8_t, Reg::StoreDist::DIST_PACK4_B32>(
+                AscendC::Reg::StoreAlign<uint8_t, Reg::StoreDist::DIST_PACK4_B32>(
                     dstAddr + loopIdx * vlSize, (Reg::RegTensor<uint8_t>&)vregOutput, mask);
             }
         }
@@ -88,7 +88,7 @@ struct DoubleComputeCustom : public Vec::ElemwiseUnaryOP<uint8_t, T> {
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                 mask = AscendC::Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                 // OpCopyIn
-                AscendC::Reg::DataCopy(vregInput1, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
+                AscendC::Reg::LoadAlign(vregInput1, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
 
                 AscendC::Reg::ShiftRights<uint64_t, int16_t>(vregOutput, (Reg::RegTensor<uint64_t>&)vregInput1,
                                                              DOUBLE_STATE_BIT_SHF_VALUE, mask);
@@ -96,7 +96,7 @@ struct DoubleComputeCustom : public Vec::ElemwiseUnaryOP<uint8_t, T> {
                 Reg::Pack<Reg::HighLowPart::LOWEST>(tmpMask, mask);
 
                 // OpCopyOut
-                AscendC::Reg::DataCopy<uint8_t, Reg::StoreDist::DIST_PACK4_B32>(
+                AscendC::Reg::StoreAlign<uint8_t, Reg::StoreDist::DIST_PACK4_B32>(
                     dstAddr + loopIdx * vlSize, (Reg::RegTensor<uint8_t>&)tmpReg, tmpMask);
             }
         }

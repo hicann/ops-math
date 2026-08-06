@@ -203,14 +203,14 @@ private:
                 uint32_t size = dataLength;
                 uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(T1)) - 1) /
                                      (VECTOR_REG_WIDTH / sizeof(T1));
-                __local_mem__ T1* bufferIn0Addr = (__local_mem__ T1*)srcTensor.GetPhyAddr();
-                __local_mem__ T1* bufferOut0Addr = (__local_mem__ T1*)dstTensor.GetPhyAddr();
+                __ubuf__ T1* bufferIn0Addr = (__ubuf__ T1*)srcTensor.GetPhyAddr();
+                __ubuf__ T1* bufferOut0Addr = (__ubuf__ T1*)dstTensor.GetPhyAddr();
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
                     preg0 = Reg::UpdateMask<T1>(size);
-                    Reg::DataCopy<T1, Reg::LoadDist::DIST_NORM>(vreg0,
-                                                                bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(T1)));
+                    Reg::LoadAlign<T1, Reg::LoadDist::DIST_NORM>(vreg0,
+                                                                 bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(T1)));
                     Reg::Mul<T1, Reg::MaskMergeMode::ZEROING>(vreg1, vreg0, vreg0, preg0);
-                    Reg::DataCopy<T1, Reg::StoreDist::DIST_NORM_B32>(
+                    Reg::StoreAlign<T1, Reg::StoreDist::DIST_NORM_B32>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(T1)), vreg1, preg0);
                 }
             } else if constexpr (IsSameType<T1, uint8_t>::value) {
@@ -224,18 +224,18 @@ private:
                 uint32_t size = dataLength;
                 uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(uint16_t)) - 1) /
                                      (VECTOR_REG_WIDTH / sizeof(uint16_t));
-                __local_mem__ T1* bufferIn0Addr = (__local_mem__ T1*)srcTensor.GetPhyAddr();
-                __local_mem__ T1* bufferOut0Addr = (__local_mem__ T1*)dstTensor.GetPhyAddr();
+                __ubuf__ T1* bufferIn0Addr = (__ubuf__ T1*)srcTensor.GetPhyAddr();
+                __ubuf__ T1* bufferOut0Addr = (__ubuf__ T1*)dstTensor.GetPhyAddr();
                 Reg::Duplicate(scalar0, uint16_t(255));
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
                     preg0 = Reg::UpdateMask<uint16_t>(size);
-                    Reg::DataCopy<T1, Reg::LoadDist::DIST_UNPACK_B8>(
+                    Reg::LoadAlign<T1, Reg::LoadDist::DIST_UNPACK_B8>(
                         vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(uint16_t)));
                     Reg::Cast<uint16_t, T1, castTrait0>(vreg1, vreg0, preg0);
                     Reg::Mul<uint16_t, Reg::MaskMergeMode::ZEROING>(vreg2, vreg1, vreg1, preg0);
                     Reg::And<uint16_t, Reg::MaskMergeMode::ZEROING>(vreg3, vreg2, scalar0, preg0);
                     Reg::Cast<T1, uint16_t, castTrait1>(vreg4, vreg3, preg0);
-                    Reg::DataCopy<T1, Reg::StoreDist::DIST_PACK_B16>(
+                    Reg::StoreAlign<T1, Reg::StoreDist::DIST_PACK_B16>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(uint16_t)), vreg4, preg0);
                 }
             } else {
@@ -250,19 +250,19 @@ private:
                 uint32_t size = dataLength;
                 uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(int16_t)) - 1) /
                                      (VECTOR_REG_WIDTH / sizeof(int16_t));
-                __local_mem__ T1* bufferIn0Addr = (__local_mem__ T1*)srcTensor.GetPhyAddr();
-                __local_mem__ T1* bufferOut0Addr = (__local_mem__ T1*)dstTensor.GetPhyAddr();
+                __ubuf__ T1* bufferIn0Addr = (__ubuf__ T1*)srcTensor.GetPhyAddr();
+                __ubuf__ T1* bufferOut0Addr = (__ubuf__ T1*)dstTensor.GetPhyAddr();
                 Reg::Duplicate(scalar0, int16_t(255));
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
                     preg0 = Reg::UpdateMask<int16_t>(size);
-                    Reg::DataCopy<T1, Reg::LoadDist::DIST_UNPACK_B8>(
+                    Reg::LoadAlign<T1, Reg::LoadDist::DIST_UNPACK_B8>(
                         vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(int16_t)));
                     Reg::Cast<int16_t, T1, castTrait0>(vreg1, vreg0, preg0);
                     Reg::Mul<int16_t, Reg::MaskMergeMode::ZEROING>(vreg2, vreg1, vreg1, preg0);
                     Reg::And<int16_t, Reg::MaskMergeMode::ZEROING>(vreg3, vreg2, scalar0, preg0);
                     Reg::Cast<half, int16_t, castTrait2>(vreg4, vreg3, preg0);
                     Reg::Cast<T1, half, castTrait3>(vreg5, vreg4, preg0);
-                    Reg::DataCopy<T1, Reg::StoreDist::DIST_PACK_B16>(
+                    Reg::StoreAlign<T1, Reg::StoreDist::DIST_PACK_B16>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(int16_t)), vreg5, preg0);
                 }
             }
@@ -285,15 +285,15 @@ private:
                 uint32_t size = dataLength;
                 uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(T1)) - 1) /
                                      (VECTOR_REG_WIDTH / sizeof(T1));
-                __local_mem__ T1* bufferIn0Addr = (__local_mem__ T1*)srcTensor.GetPhyAddr();
-                __local_mem__ T1* bufferOut0Addr = (__local_mem__ T1*)dstTensor.GetPhyAddr();
+                __ubuf__ T1* bufferIn0Addr = (__ubuf__ T1*)srcTensor.GetPhyAddr();
+                __ubuf__ T1* bufferOut0Addr = (__ubuf__ T1*)dstTensor.GetPhyAddr();
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
                     preg0 = Reg::UpdateMask<T1>(size);
-                    Reg::DataCopy<T1, Reg::LoadDist::DIST_NORM>(vreg0,
-                                                                bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(T1)));
+                    Reg::LoadAlign<T1, Reg::LoadDist::DIST_NORM>(vreg0,
+                                                                 bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(T1)));
                     Reg::Mul<T1, Reg::MaskMergeMode::ZEROING>(vreg1, vreg0, vreg0, preg0);
                     Reg::Mul<T1, Reg::MaskMergeMode::ZEROING>(vreg2, vreg1, vreg0, preg0);
-                    Reg::DataCopy<T1, Reg::StoreDist::DIST_NORM_B32>(
+                    Reg::StoreAlign<T1, Reg::StoreDist::DIST_NORM_B32>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(T1)), vreg2, preg0);
                 }
             } else if constexpr (IsSameType<T1, uint8_t>::value) {
@@ -308,19 +308,19 @@ private:
                 uint32_t size = dataLength;
                 uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(uint16_t)) - 1) /
                                      (VECTOR_REG_WIDTH / sizeof(uint16_t));
-                __local_mem__ T1* bufferIn0Addr = (__local_mem__ T1*)srcTensor.GetPhyAddr();
-                __local_mem__ T1* bufferOut0Addr = (__local_mem__ T1*)dstTensor.GetPhyAddr();
+                __ubuf__ T1* bufferIn0Addr = (__ubuf__ T1*)srcTensor.GetPhyAddr();
+                __ubuf__ T1* bufferOut0Addr = (__ubuf__ T1*)dstTensor.GetPhyAddr();
                 Reg::Duplicate(scalar0, uint16_t(255));
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
                     preg0 = Reg::UpdateMask<uint16_t>(size);
-                    Reg::DataCopy<T1, Reg::LoadDist::DIST_UNPACK_B8>(
+                    Reg::LoadAlign<T1, Reg::LoadDist::DIST_UNPACK_B8>(
                         vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(uint16_t)));
                     Reg::Cast<uint16_t, T1, castTrait0>(vreg1, vreg0, preg0);
                     Reg::Mul<uint16_t, Reg::MaskMergeMode::ZEROING>(vreg2, vreg1, vreg1, preg0);
                     Reg::Mul<uint16_t, Reg::MaskMergeMode::ZEROING>(vreg3, vreg2, vreg1, preg0);
                     Reg::And<uint16_t, Reg::MaskMergeMode::ZEROING>(vreg4, vreg3, scalar0, preg0);
                     Reg::Cast<T1, uint16_t, castTrait1>(vreg5, vreg4, preg0);
-                    Reg::DataCopy<T1, Reg::StoreDist::DIST_PACK_B16>(
+                    Reg::StoreAlign<T1, Reg::StoreDist::DIST_PACK_B16>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(uint16_t)), vreg5, preg0);
                 }
             } else {
@@ -336,12 +336,12 @@ private:
                 uint32_t size = dataLength;
                 uint16_t vfLoopNum = (dataLength + (VECTOR_REG_WIDTH / sizeof(int16_t)) - 1) /
                                      (VECTOR_REG_WIDTH / sizeof(int16_t));
-                __local_mem__ T1* bufferIn0Addr = (__local_mem__ T1*)srcTensor.GetPhyAddr();
-                __local_mem__ T1* bufferOut0Addr = (__local_mem__ T1*)dstTensor.GetPhyAddr();
+                __ubuf__ T1* bufferIn0Addr = (__ubuf__ T1*)srcTensor.GetPhyAddr();
+                __ubuf__ T1* bufferOut0Addr = (__ubuf__ T1*)dstTensor.GetPhyAddr();
                 Reg::Duplicate(scalar0, int16_t(255));
                 for (uint16_t i = 0; i < vfLoopNum; i++) {
                     preg0 = Reg::UpdateMask<int16_t>(size);
-                    Reg::DataCopy<T1, Reg::LoadDist::DIST_UNPACK_B8>(
+                    Reg::LoadAlign<T1, Reg::LoadDist::DIST_UNPACK_B8>(
                         vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(int16_t)));
                     Reg::Cast<int16_t, T1, castTrait0>(vreg1, vreg0, preg0);
                     Reg::Mul<int16_t, Reg::MaskMergeMode::ZEROING>(vreg2, vreg1, vreg1, preg0);
@@ -349,7 +349,7 @@ private:
                     Reg::And<int16_t, Reg::MaskMergeMode::ZEROING>(vreg4, vreg3, scalar0, preg0);
                     Reg::Cast<half, int16_t, castTrait2>(vreg5, vreg4, preg0);
                     Reg::Cast<T1, half, castTrait3>(vreg6, vreg5, preg0);
-                    Reg::DataCopy<T1, Reg::StoreDist::DIST_PACK_B16>(
+                    Reg::StoreAlign<T1, Reg::StoreDist::DIST_PACK_B16>(
                         bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(int16_t)), vreg6, preg0);
                 }
             }

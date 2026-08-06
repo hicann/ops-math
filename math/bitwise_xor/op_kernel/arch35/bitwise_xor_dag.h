@@ -35,9 +35,9 @@ struct XorCompute : public Vec::ElemwiseBinaryOP<T, T, T> {
 #ifdef __CCE_AICORE__
         constexpr uint32_t VECTOR_LENGTH = GetVRegSize();
         constexpr uint32_t VL_T = VECTOR_LENGTH / sizeof(T);
-        __local_mem__ T* inputX1Addr = (__local_mem__ T*)inputX1.GetPhyAddr();
-        __local_mem__ T* inputX2Addr = (__local_mem__ T*)inputX2.GetPhyAddr();
-        __local_mem__ T* dstAddr = (__local_mem__ T*)dst.GetPhyAddr();
+        __ubuf__ T* inputX1Addr = (__ubuf__ T*)inputX1.GetPhyAddr();
+        __ubuf__ T* inputX2Addr = (__ubuf__ T*)inputX2.GetPhyAddr();
+        __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
         uint16_t loopTimes = CeilDiv(count, VL_T);
 
         __VEC_SCOPE__
@@ -50,12 +50,12 @@ struct XorCompute : public Vec::ElemwiseBinaryOP<T, T, T> {
 
             for (uint16_t j = 0; j < loopTimes; j++) {
                 preg = Reg::UpdateMask<T>(sregMask);
-                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(src1Value, inputX1Addr + VL_T * j);
-                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(src2Value, inputX2Addr + VL_T * j);
+                Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(src1Value, inputX1Addr + VL_T * j);
+                Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(src2Value, inputX2Addr + VL_T * j);
 
                 Reg::Xor(resValue, src1Value, src2Value, preg);
 
-                Reg::DataCopy<T, Reg::StoreDist::DIST_NORM>(dstAddr + VL_T * j, resValue, preg);
+                Reg::StoreAlign<T, Reg::StoreDist::DIST_NORM>(dstAddr + VL_T * j, resValue, preg);
             }
         }
 #endif

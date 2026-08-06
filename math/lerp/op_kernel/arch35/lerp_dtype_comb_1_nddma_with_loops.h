@@ -147,19 +147,19 @@ private:
             uint16_t vfLoopNum = (ubSplitSize * tilingDataPtr_->outputStrides[tilingDataPtr_->ubSplitAxis] +
                                   (AscendC::VECTOR_REG_WIDTH / 4) - 1) /
                                  (AscendC::VECTOR_REG_WIDTH / 4);
-            __local_mem__ float* bufferIn0Addr = (__local_mem__ float*)bufferIn0_.GetPhyAddr();
-            __local_mem__ half* bufferIn1Addr = (__local_mem__ half*)bufferIn1_.GetPhyAddr();
-            __local_mem__ half* bufferIn2Addr = (__local_mem__ half*)bufferIn2_.GetPhyAddr();
-            __local_mem__ half* bufferOut0Addr = (__local_mem__ half*)bufferOut0_.GetPhyAddr();
+            __ubuf__ float* bufferIn0Addr = (__ubuf__ float*)bufferIn0_.GetPhyAddr();
+            __ubuf__ half* bufferIn1Addr = (__ubuf__ half*)bufferIn1_.GetPhyAddr();
+            __ubuf__ half* bufferIn2Addr = (__ubuf__ half*)bufferIn2_.GetPhyAddr();
+            __ubuf__ half* bufferOut0Addr = (__ubuf__ half*)bufferOut0_.GetPhyAddr();
             for (uint16_t i = 0; i < vfLoopNum; i++) {
                 preg0 = AscendC::Reg::UpdateMask<float>(size);
-                AscendC::Reg::DataCopy<float, AscendC::Reg::LoadDist::DIST_NORM>(
+                AscendC::Reg::LoadAlign<float, AscendC::Reg::LoadDist::DIST_NORM>(
                     vreg0, bufferIn0Addr + i * (AscendC::VECTOR_REG_WIDTH / 4));
-                AscendC::Reg::CompareScalar<float, AscendC::CMPMODE::LT>(preg97, vreg0, static_cast<float>(0.5), preg0);
-                AscendC::Reg::DataCopy<half, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(
+                AscendC::Reg::Compares<float, AscendC::CMPMODE::LT>(preg97, vreg0, static_cast<float>(0.5), preg0);
+                AscendC::Reg::LoadAlign<half, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(
                     vreg1, bufferIn1Addr + i * (AscendC::VECTOR_REG_WIDTH / 4));
                 AscendC::Reg::Cast<float, half, castTrait0>(vreg2, vreg1, preg0);
-                AscendC::Reg::DataCopy<half, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(
+                AscendC::Reg::LoadAlign<half, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(
                     vreg3, bufferIn2Addr + i * (AscendC::VECTOR_REG_WIDTH / 4));
                 AscendC::Reg::Cast<float, half, castTrait0>(vreg4, vreg3, preg0);
                 AscendC::Reg::Sub<float, AscendC::Reg::MaskMergeMode::ZEROING>(vreg5, vreg2, vreg4, preg0);
@@ -168,7 +168,7 @@ private:
                 AscendC::Reg::MulAddDst<float, AscendC::Reg::MaskMergeMode::ZEROING>(vreg2, vreg7, vreg5, preg0);
                 AscendC::Reg::Select<float>(vreg8, vreg4, vreg2, preg97);
                 AscendC::Reg::Cast<half, float, castTrait1>(vreg9, vreg8, preg0);
-                AscendC::Reg::DataCopy<half, AscendC::Reg::StoreDist::DIST_PACK_B32>(
+                AscendC::Reg::StoreAlign<half, AscendC::Reg::StoreDist::DIST_PACK_B32>(
                     bufferOut0Addr + i * (AscendC::VECTOR_REG_WIDTH / 4), vreg9, preg0);
             }
         }

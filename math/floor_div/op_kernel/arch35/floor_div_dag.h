@@ -52,14 +52,14 @@ struct CastOverFlow : public Vec::ElemwiseUnaryOP<R, T> {
             // sizeof(T) must > sizeof(R)
             uint32_t size = count;
             uint16_t vfLoopNum = (size + (VECTOR_REG_WIDTH / sizeof(T)) - 1) / (VECTOR_REG_WIDTH / sizeof(T));
-            __local_mem__ T* bufferIn0Addr = (__local_mem__ T*)src.GetPhyAddr();
-            __local_mem__ R* bufferOut0Addr = (__local_mem__ R*)dst.GetPhyAddr();
+            __ubuf__ T* bufferIn0Addr = (__ubuf__ T*)src.GetPhyAddr();
+            __ubuf__ R* bufferOut0Addr = (__ubuf__ R*)dst.GetPhyAddr();
             for (uint16_t i = 0; i < vfLoopNum; i++) {
                 preg0 = Reg::UpdateMask<T>(size);
-                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(T)));
+                Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(T)));
                 Reg::Cast<R, T, castTrait3>(vreg1, vreg0, preg0);
-                Reg::DataCopy<R, Reg::StoreDist::DIST_PACK_B16>(bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(T)),
-                                                                vreg1, preg0);
+                Reg::StoreAlign<R, Reg::StoreDist::DIST_PACK_B16>(bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(T)),
+                                                                  vreg1, preg0);
             }
         }
         SetCtrlSpr<SAT_POS, SAT_POS>(1);
@@ -135,10 +135,10 @@ struct FloorDivIntS8PostCompute : public Vec::ElemwiseTernaryOP<T1, T2, T2, T2> 
 #ifdef __CCE_AICORE__
         SetCtrlSpr<SAT_POS, SAT_POS>(0);
         constexpr uint32_t VL_T = VECTOR_REG_WIDTH / sizeof(T2);
-        __local_mem__ T2* input1Addr = (__local_mem__ T2*)input1.GetPhyAddr();
-        __local_mem__ T2* input2Addr = (__local_mem__ T2*)input2.GetPhyAddr();
-        __local_mem__ T2* divAddr = (__local_mem__ T2*)div.GetPhyAddr();
-        __local_mem__ T1* dstAddr = (__local_mem__ T1*)dst.GetPhyAddr();
+        __ubuf__ T2* input1Addr = (__ubuf__ T2*)input1.GetPhyAddr();
+        __ubuf__ T2* input2Addr = (__ubuf__ T2*)input2.GetPhyAddr();
+        __ubuf__ T2* divAddr = (__ubuf__ T2*)div.GetPhyAddr();
+        __ubuf__ T1* dstAddr = (__ubuf__ T1*)dst.GetPhyAddr();
         uint16_t loopTimes = (count + VL_T - 1) / VL_T;
 
         constexpr static Reg::CastTrait castTraitT2ToHalf = {Reg::RegLayout::ZERO, Reg::SatMode::NO_SAT,
@@ -175,10 +175,10 @@ struct FloorDivIntS8PostCompute : public Vec::ElemwiseTernaryOP<T1, T2, T2, T2> 
 
             for (uint16_t j = 0; j < loopTimes; j++) {
                 preg = Reg::UpdateMask<T2>(sregMask);
-                Reg::DataCopy<T2, Reg::LoadDist::DIST_NORM>(input2Value, input2Addr + VL_T * j);
-                Reg::DataCopy<T2, Reg::LoadDist::DIST_NORM>(divValue, divAddr + VL_T * j);
+                Reg::LoadAlign<T2, Reg::LoadDist::DIST_NORM>(input2Value, input2Addr + VL_T * j);
+                Reg::LoadAlign<T2, Reg::LoadDist::DIST_NORM>(divValue, divAddr + VL_T * j);
                 Reg::Mul(mulValue, input2Value, divValue, preg);
-                Reg::DataCopy<T2, Reg::LoadDist::DIST_NORM>(input1Value, input1Addr + VL_T * j);
+                Reg::LoadAlign<T2, Reg::LoadDist::DIST_NORM>(input1Value, input1Addr + VL_T * j);
                 Reg::Sub(subValue, input1Value, mulValue, preg);
                 Reg::Compare<T2, CMPMODE::NE>(negValue, subValue, zeroValue, preg);
 
@@ -186,13 +186,13 @@ struct FloorDivIntS8PostCompute : public Vec::ElemwiseTernaryOP<T1, T2, T2, T2> 
                 Reg::And(input2SignValue, input2Value, signValue, preg);
                 Reg::Compare<T2, CMPMODE::NE>(signNegValue, input1SignValue, input2SignValue, preg);
 
-                Reg::MaskAnd(resMaskValue, signNegValue, negValue, preg);
+                Reg::And(resMaskValue, signNegValue, negValue, preg);
                 Reg::Sub(subValue1, divValue, oneValue, preg);
                 Reg::Select(resValue, subValue1, divValue, resMaskValue);
 
                 Reg::Cast<half, T2, castTraitT2ToHalf>(halfValue, resValue, preg);
                 Reg::Cast<T1, half, castTraitHalfToInt8>(int8Value, halfValue, preg);
-                Reg::DataCopy<T1, Reg::StoreDist::DIST_PACK_B16>(dstAddr + VL_T * j, int8Value, preg);
+                Reg::StoreAlign<T1, Reg::StoreDist::DIST_PACK_B16>(dstAddr + VL_T * j, int8Value, preg);
             }
         }
         SetCtrlSpr<SAT_POS, SAT_POS>(1);

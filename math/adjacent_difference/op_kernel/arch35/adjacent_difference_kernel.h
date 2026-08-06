@@ -128,10 +128,10 @@ public:
     __aicore__ inline void adjacentDifference64(LocalTensor<EQS_TYPE>& x1Local, LocalTensor<int32_t>& outTensor,
                                                 uint32_t copyLen, uint16_t& nLoop, uint32_t& alignPosition)
     {
-        __local_mem__ EQS_TYPE* sourceX1 = (__ubuf__ EQS_TYPE*)x1Local.GetPhyAddr();
-        __local_mem__ int32_t* dstAddr = sizeof(OUT_TYPE) == sizeof(int64_t) ?
-                                             (__ubuf__ int32_t*)outTensor.GetPhyAddr(alignPosition) :
-                                             (__ubuf__ int32_t*)outTensor.GetPhyAddr();
+        __ubuf__ EQS_TYPE* sourceX1 = (__ubuf__ EQS_TYPE*)x1Local.GetPhyAddr();
+        __ubuf__ int32_t* dstAddr = sizeof(OUT_TYPE) == sizeof(int64_t) ?
+                                        (__ubuf__ int32_t*)outTensor.GetPhyAddr(alignPosition) :
+                                        (__ubuf__ int32_t*)outTensor.GetPhyAddr();
         __VEC_SCOPE__
         {
             uint32_t inputElementNum = copyLen;
@@ -143,20 +143,20 @@ public:
                 Reg::MaskReg mask = Reg::UpdateMask<EQS_TYPE>(inputElementNum);
                 AscendC::Reg::RegTensor<EQS_TYPE> regX1, regX2;
                 AscendC::Reg::RegTensor<int32_t> regY;
-                AscendC::Reg::UnalignReg u0;
+                AscendC::Reg::UnalignRegForLoad u0;
                 AscendC::Reg::MaskReg cmpMaskReg, lowerCmpMaskReg, lowerMaskReg;
-                DataCopy(regX1, sourceX1 + i * vLength_);
-                AscendC::Reg::DataCopyUnAlignPre(u0, sourceX1 + 1 + i * vLength_);
-                AscendC::Reg::DataCopyUnAlign(regX2, u0, sourceX1 + 1 + i * vLength_);
+                LoadAlign(regX1, sourceX1 + i * vLength_);
+                AscendC::Reg::LoadUnAlignPre(u0, sourceX1 + 1 + i * vLength_);
+                AscendC::Reg::LoadUnAlign(regX2, u0, sourceX1 + 1 + i * vLength_);
 
                 AscendC::Reg::Compare<INPUT_TYPE, CMPMODE::NE>(cmpMaskReg, (Reg::RegTensor<INPUT_TYPE>&)regX1,
                                                                (Reg::RegTensor<INPUT_TYPE>&)regX2, mask);
-                AscendC::Reg::MaskPack<AscendC::Reg::HighLowPart::LOWEST>(lowerCmpMaskReg, cmpMaskReg);
+                AscendC::Reg::Pack<AscendC::Reg::HighLowPart::LOWEST>(lowerCmpMaskReg, cmpMaskReg);
 
                 AscendC::Reg::Select(regY, regOne, regZero, lowerCmpMaskReg);
 
-                AscendC::Reg::MaskPack<AscendC::Reg::HighLowPart::LOWEST>(lowerMaskReg, mask);
-                AscendC::Reg::DataCopy(dstAddr + i * vLength_, regY, lowerMaskReg);
+                AscendC::Reg::Pack<AscendC::Reg::HighLowPart::LOWEST>(lowerMaskReg, mask);
+                AscendC::Reg::StoreAlign(dstAddr + i * vLength_, regY, lowerMaskReg);
             }
         }
     }
@@ -164,10 +164,10 @@ public:
     __aicore__ inline void adjacentDifference32(LocalTensor<EQS_TYPE>& x1Local, LocalTensor<int32_t>& outTensor,
                                                 uint32_t copyLen, uint16_t& nLoop, uint32_t& alignPosition)
     {
-        __local_mem__ EQS_TYPE* sourceX1 = (__ubuf__ EQS_TYPE*)x1Local.GetPhyAddr();
-        __local_mem__ int32_t* dstAddr = sizeof(OUT_TYPE) == sizeof(int64_t) ?
-                                             (__ubuf__ int32_t*)outTensor.GetPhyAddr(alignPosition) :
-                                             (__ubuf__ int32_t*)outTensor.GetPhyAddr();
+        __ubuf__ EQS_TYPE* sourceX1 = (__ubuf__ EQS_TYPE*)x1Local.GetPhyAddr();
+        __ubuf__ int32_t* dstAddr = sizeof(OUT_TYPE) == sizeof(int64_t) ?
+                                        (__ubuf__ int32_t*)outTensor.GetPhyAddr(alignPosition) :
+                                        (__ubuf__ int32_t*)outTensor.GetPhyAddr();
         __VEC_SCOPE__
         {
             AscendC::Reg::RegTensor<int32_t> regZero, regOne;
@@ -179,16 +179,16 @@ public:
                 Reg::MaskReg mask = Reg::UpdateMask<EQS_TYPE>(inputElementNum);
                 AscendC::Reg::RegTensor<EQS_TYPE> regX1, regX2;
                 AscendC::Reg::RegTensor<int32_t> regY;
-                AscendC::Reg::UnalignReg u0;
+                AscendC::Reg::UnalignRegForLoad u0;
                 AscendC::Reg::MaskReg cmpMaskReg;
-                DataCopy(regX1, sourceX1 + i * vLength_);
-                AscendC::Reg::DataCopyUnAlignPre(u0, sourceX1 + 1 + i * vLength_);
-                AscendC::Reg::DataCopyUnAlign(regX2, u0, sourceX1 + 1 + i * vLength_);
+                LoadAlign(regX1, sourceX1 + i * vLength_);
+                AscendC::Reg::LoadUnAlignPre(u0, sourceX1 + 1 + i * vLength_);
+                AscendC::Reg::LoadUnAlign(regX2, u0, sourceX1 + 1 + i * vLength_);
 
                 AscendC::Reg::Compare<INPUT_TYPE, CMPMODE::NE>(cmpMaskReg, (Reg::RegTensor<INPUT_TYPE>&)regX1,
                                                                (Reg::RegTensor<INPUT_TYPE>&)regX2, mask);
                 AscendC::Reg::Select(regY, regOne, regZero, cmpMaskReg);
-                AscendC::Reg::DataCopy(dstAddr + i * vLength_, regY, mask);
+                AscendC::Reg::StoreAlign(dstAddr + i * vLength_, regY, mask);
             }
         }
     }
@@ -196,10 +196,10 @@ public:
     __aicore__ inline void adjacentDifference16(LocalTensor<EQS_TYPE>& x1Local, LocalTensor<int32_t>& outTensor,
                                                 uint32_t copyLen, uint16_t& nLoop, uint32_t& alignPosition)
     {
-        __local_mem__ EQS_TYPE* sourceX1 = (__ubuf__ EQS_TYPE*)x1Local.GetPhyAddr();
-        __local_mem__ int32_t* dstAddr = sizeof(OUT_TYPE) == sizeof(int64_t) ?
-                                             (__ubuf__ int32_t*)outTensor.GetPhyAddr(alignPosition) :
-                                             (__ubuf__ int32_t*)outTensor.GetPhyAddr();
+        __ubuf__ EQS_TYPE* sourceX1 = (__ubuf__ EQS_TYPE*)x1Local.GetPhyAddr();
+        __ubuf__ int32_t* dstAddr = sizeof(OUT_TYPE) == sizeof(int64_t) ?
+                                        (__ubuf__ int32_t*)outTensor.GetPhyAddr(alignPosition) :
+                                        (__ubuf__ int32_t*)outTensor.GetPhyAddr();
         __VEC_SCOPE__
         {
             uint32_t inputElementNum = copyLen;
@@ -211,24 +211,24 @@ public:
                 Reg::MaskReg mask = Reg::UpdateMask<EQS_TYPE>(inputElementNum);
                 AscendC::Reg::RegTensor<EQS_TYPE> regX1, regX2;
                 AscendC::Reg::RegTensor<int32_t> lowerRegY, higherRegY;
-                AscendC::Reg::UnalignReg u0;
+                AscendC::Reg::UnalignRegForLoad u0;
                 AscendC::Reg::MaskReg cmpMaskReg, lowerCmpMaskReg, highCmpMaskReg, lowerMaskReg, higherMaskReg;
-                DataCopy(regX1, sourceX1 + i * vLength_);
-                AscendC::Reg::DataCopyUnAlignPre(u0, sourceX1 + 1 + i * vLength_);
-                AscendC::Reg::DataCopyUnAlign(regX2, u0, sourceX1 + 1 + i * vLength_);
+                LoadAlign(regX1, sourceX1 + i * vLength_);
+                AscendC::Reg::LoadUnAlignPre(u0, sourceX1 + 1 + i * vLength_);
+                AscendC::Reg::LoadUnAlign(regX2, u0, sourceX1 + 1 + i * vLength_);
 
                 AscendC::Reg::Compare<INPUT_TYPE, CMPMODE::NE>(cmpMaskReg, (Reg::RegTensor<INPUT_TYPE>&)regX1,
                                                                (Reg::RegTensor<INPUT_TYPE>&)regX2, mask);
-                AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::LOWEST>(lowerCmpMaskReg, cmpMaskReg);
-                AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::HIGHEST>(highCmpMaskReg, cmpMaskReg);
+                AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::LOWEST>(lowerCmpMaskReg, cmpMaskReg);
+                AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::HIGHEST>(highCmpMaskReg, cmpMaskReg);
 
                 AscendC::Reg::Select(lowerRegY, regOne, regZero, lowerCmpMaskReg);
                 AscendC::Reg::Select(higherRegY, regOne, regZero, highCmpMaskReg);
 
-                AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::LOWEST>(lowerMaskReg, mask);
-                AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::HIGHEST>(higherMaskReg, mask);
-                AscendC::Reg::DataCopy(dstAddr + i * vLength_, lowerRegY, lowerMaskReg);
-                AscendC::Reg::DataCopy(dstAddr + i * vLength_ + vLength_ / 2, higherRegY, higherMaskReg);
+                AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::LOWEST>(lowerMaskReg, mask);
+                AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::HIGHEST>(higherMaskReg, mask);
+                AscendC::Reg::StoreAlign(dstAddr + i * vLength_, lowerRegY, lowerMaskReg);
+                AscendC::Reg::StoreAlign(dstAddr + i * vLength_ + vLength_ / 2, higherRegY, higherMaskReg);
             }
         }
     }
@@ -236,10 +236,10 @@ public:
     __aicore__ inline void adjacentDifference8(LocalTensor<EQS_TYPE>& x1Local, LocalTensor<int32_t>& outTensor,
                                                uint32_t copyLen, uint16_t& nLoop, uint32_t& alignPosition)
     {
-        __local_mem__ EQS_TYPE* sourceX1 = (__ubuf__ EQS_TYPE*)x1Local.GetPhyAddr();
-        __local_mem__ int32_t* dstAddr = sizeof(OUT_TYPE) == sizeof(int64_t) ?
-                                             (__ubuf__ int32_t*)outTensor.GetPhyAddr(alignPosition) :
-                                             (__ubuf__ int32_t*)outTensor.GetPhyAddr();
+        __ubuf__ EQS_TYPE* sourceX1 = (__ubuf__ EQS_TYPE*)x1Local.GetPhyAddr();
+        __ubuf__ int32_t* dstAddr = sizeof(OUT_TYPE) == sizeof(int64_t) ?
+                                        (__ubuf__ int32_t*)outTensor.GetPhyAddr(alignPosition) :
+                                        (__ubuf__ int32_t*)outTensor.GetPhyAddr();
         __VEC_SCOPE__
         {
             Reg::MaskReg maskRegInt32 = Reg::CreateMask<int32_t>();
@@ -251,41 +251,41 @@ public:
                 Reg::MaskReg mask = Reg::UpdateMask<EQS_TYPE>(inputElementNum);
                 AscendC::Reg::RegTensor<EQS_TYPE> regX1, regX2;
                 AscendC::Reg::RegTensor<int32_t> lowerLowerRegY, lowerHigherRegY, highLowerRegY, highHigherRegY;
-                AscendC::Reg::UnalignReg u0;
+                AscendC::Reg::UnalignRegForLoad u0;
                 AscendC::Reg::MaskReg cmpMaskReg, lowerCmpMaskReg, lowerLowerCmpMaskReg, lowerHighCmpMaskReg,
                     highCmpMaskReg, highLowerCmpMaskReg, highHighCmpMaskReg, lowerMaskReg, lowerLowerMaskReg,
                     lowerHighMaskReg, higherMaskReg, highLowerMaskReg, highHighMaskReg;
-                DataCopy(regX1, sourceX1 + i * vLength_);
-                AscendC::Reg::DataCopyUnAlignPre(u0, sourceX1 + 1 + i * vLength_);
-                AscendC::Reg::DataCopyUnAlign(regX2, u0, sourceX1 + 1 + i * vLength_);
+                LoadAlign(regX1, sourceX1 + i * vLength_);
+                AscendC::Reg::LoadUnAlignPre(u0, sourceX1 + 1 + i * vLength_);
+                AscendC::Reg::LoadUnAlign(regX2, u0, sourceX1 + 1 + i * vLength_);
 
                 AscendC::Reg::Compare<INPUT_TYPE, CMPMODE::NE>(cmpMaskReg, (Reg::RegTensor<INPUT_TYPE>&)regX1,
                                                                (Reg::RegTensor<INPUT_TYPE>&)regX2, mask);
-                AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::LOWEST>(lowerCmpMaskReg, cmpMaskReg);
-                AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::LOWEST>(lowerLowerCmpMaskReg, lowerCmpMaskReg);
-                AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::HIGHEST>(lowerHighCmpMaskReg, lowerCmpMaskReg);
+                AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::LOWEST>(lowerCmpMaskReg, cmpMaskReg);
+                AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::LOWEST>(lowerLowerCmpMaskReg, lowerCmpMaskReg);
+                AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::HIGHEST>(lowerHighCmpMaskReg, lowerCmpMaskReg);
 
-                AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::HIGHEST>(highCmpMaskReg, cmpMaskReg);
-                AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::LOWEST>(highLowerCmpMaskReg, highCmpMaskReg);
-                AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::HIGHEST>(highHighCmpMaskReg, highCmpMaskReg);
+                AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::HIGHEST>(highCmpMaskReg, cmpMaskReg);
+                AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::LOWEST>(highLowerCmpMaskReg, highCmpMaskReg);
+                AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::HIGHEST>(highHighCmpMaskReg, highCmpMaskReg);
 
                 AscendC::Reg::Select(lowerLowerRegY, regOne, regZero, lowerLowerCmpMaskReg);
                 AscendC::Reg::Select(lowerHigherRegY, regOne, regZero, lowerHighCmpMaskReg);
                 AscendC::Reg::Select(highLowerRegY, regOne, regZero, highLowerCmpMaskReg);
                 AscendC::Reg::Select(highHigherRegY, regOne, regZero, highHighCmpMaskReg);
 
-                AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::LOWEST>(lowerMaskReg, mask);
-                AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::LOWEST>(lowerLowerMaskReg, lowerMaskReg);
-                AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::HIGHEST>(lowerHighMaskReg, lowerMaskReg);
+                AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::LOWEST>(lowerMaskReg, mask);
+                AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::LOWEST>(lowerLowerMaskReg, lowerMaskReg);
+                AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::HIGHEST>(lowerHighMaskReg, lowerMaskReg);
 
-                AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::HIGHEST>(higherMaskReg, mask);
-                AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::LOWEST>(highLowerMaskReg, higherMaskReg);
-                AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::HIGHEST>(highHighMaskReg, higherMaskReg);
+                AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::HIGHEST>(higherMaskReg, mask);
+                AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::LOWEST>(highLowerMaskReg, higherMaskReg);
+                AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::HIGHEST>(highHighMaskReg, higherMaskReg);
 
-                AscendC::Reg::DataCopy(dstAddr + i * vLength_, lowerLowerRegY, lowerLowerMaskReg);
-                AscendC::Reg::DataCopy(dstAddr + i * vLength_ + vLength_ / 4, lowerHigherRegY, lowerHighMaskReg);
-                AscendC::Reg::DataCopy(dstAddr + i * vLength_ + 2 * vLength_ / 4, highLowerRegY, highLowerMaskReg);
-                AscendC::Reg::DataCopy(dstAddr + i * vLength_ + 3 * vLength_ / 4, highHigherRegY, highHighMaskReg);
+                AscendC::Reg::StoreAlign(dstAddr + i * vLength_, lowerLowerRegY, lowerLowerMaskReg);
+                AscendC::Reg::StoreAlign(dstAddr + i * vLength_ + vLength_ / 4, lowerHigherRegY, lowerHighMaskReg);
+                AscendC::Reg::StoreAlign(dstAddr + i * vLength_ + 2 * vLength_ / 4, highLowerRegY, highLowerMaskReg);
+                AscendC::Reg::StoreAlign(dstAddr + i * vLength_ + 3 * vLength_ / 4, highHigherRegY, highHighMaskReg);
             }
         }
     }
