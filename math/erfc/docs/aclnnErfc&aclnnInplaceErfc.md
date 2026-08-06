@@ -141,7 +141,7 @@ aclnnStatus aclnnInplaceErfc(
   </tbody></table>
 
   <!-- npu="950,A3" id7 -->
-  - <term>Ascend 950PR/Ascend 950DT、Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：self额外支持BFLOAT16，out额外支持BFLOAT16。
+  - <term>Ascend 950PR/Ascend 950DT</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：self额外支持BFLOAT16，out额外支持BFLOAT16。
   <!-- end id7 -->
 
 - **返回值：**
@@ -286,7 +286,7 @@ aclnnStatus aclnnInplaceErfc(
   </tbody></table>
 
   <!-- npu="950,A3" id8 -->
-  - <term>Ascend 950PR/Ascend 950DT、Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：selfRef额外支持BFLOAT16。
+  - <term>Ascend 950PR/Ascend 950DT</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：selfRef额外支持BFLOAT16。
   <!-- end id8 -->
 
 - **返回值：**

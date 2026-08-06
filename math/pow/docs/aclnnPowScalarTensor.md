@@ -11,7 +11,7 @@
 - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
 <!-- end id2 -->
 <!-- npu="910b" id3 -->
-- <term>Atlas A2 训练系列产品/Atla A2 推理系列产品</term>：支持
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
 <!-- end id3 -->
 <!-- npu="310b" id4 -->
 - <term>Atlas 200I/500 A2 推理产品</term>：支持
@@ -35,13 +35,13 @@ $$
 
 - 算子约束：INT32整型计算在如下范围以外的场景，会出现超时。
 
-  | shape  | exponent_value|
+  |shape|exponent_value|
   |----|----|
-  |<=100000（十万） |-200000000~200000000(两亿)|
-  |<=1000000（百万） |-20000000~20000000(两千万)|
-  |<=10000000（千万） |-2000000~2000000(两百万)|
-  |<=100000000（亿） |-200000~200000(二十万)|
-  |<=1000000000（十亿） |-20000~20000(两万)|
+  |<=100000（十万）|-200000000~200000000(两亿)|
+  |<=1000000（百万）|-20000000~20000000(两千万)|
+  |<=10000000（千万）|-2000000~2000000(两百万)|
+  |<=100000000（亿）|-200000~200000(二十万)|
+  |<=1000000000（十亿）|-20000~20000(两万)|
 
 ## 函数原型
 
@@ -94,7 +94,7 @@ aclnnStatus aclnnPowScalarTensor(
         <td>self（aclScalar*）</td>
         <td>输入</td>
         <td>pow运算中的底数，公式中的x</td>
-      <td>数据类型与exponent满足<a href ="../../../docs/zh/context/deduction_relationship.md">TensorScalar互推导关系</a>。</td>
+        <td>数据类型与exponent满足<a href ="../../../docs/zh/context/deduction_relationship.md">TensorScalar互推导关系</a>。</td>
         <td>FLOAT、FLOAT16、DOUBLE、INT16、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
         <td>-</td>
         <td>-</td>
@@ -104,7 +104,7 @@ aclnnStatus aclnnPowScalarTensor(
         <td>exponent（aclTensor*）</td>
         <td>输入</td>
         <td>pow运算中的指数，公式中的exponent</td>
-      <td>数据类型与self满足<a href ="../../../docs/zh/context/deduction_relationship.md">TensorScalar互推导关系</a>。</td>
+        <td>数据类型与self满足<a href ="../../../docs/zh/context/deduction_relationship.md">TensorScalar互推导关系</a>。</td>
         <td>FLOAT、FLOAT16、DOUBLE、INT16、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
         <td>ND</td>
         <td>不高于8维</td>
@@ -114,7 +114,7 @@ aclnnStatus aclnnPowScalarTensor(
         <td>out（aclTensor*）</td>
         <td>输出</td>
         <td>pow运算中的指数输出，公式中的out</td>
-      <td>数据类型需要是self的数据类型与exponent的数据类型推导之后可转换的数据类型（参见<a href ="../../../docs/zh/context/conversion_relationship.md">互转换关系</a>）。</td>
+        <td>数据类型需要是self的数据类型与exponent的数据类型推导之后可转换的数据类型（参见<a href ="../../../docs/zh/context/conversion_relationship.md">互转换关系</a>）。</td>
         <td>FLOAT、FLOAT16、DOUBLE、INT16、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16、UINT16、UINT32、UINT64</td>
         <td>ND</td>
         <td>与exponent保持一致</td>

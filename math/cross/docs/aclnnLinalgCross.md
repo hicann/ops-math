@@ -86,9 +86,7 @@ aclnnStatus aclnnLinalgCross(
       <td>输入</td>
       <td>公式中的self。</td>
       <td>数据类型与other和out一致。需与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>，且shape在dim指定的轴广播后的值为3。</td>
-      <td>
-        <term> INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128</term>
-      </td>
+      <td>INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -98,9 +96,7 @@ aclnnStatus aclnnLinalgCross(
       <td>输入</td>
       <td>公式中的other。</td>
       <td>数据类型与self和out一致。需与self满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
-      <td>
-        <term> INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128</term>
-      </td>
+      <td>INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -120,9 +116,7 @@ aclnnStatus aclnnLinalgCross(
       <td>输出</td>
       <td>公式中的out。</td>
       <td>数据类型与self和other一致。shape需要与self和other broadcast后的shape一致。</td>
-      <td>
-        <term> INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128</term>
-      </td>
+      <td>INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>-</td>
       <td>√</td>
@@ -150,7 +144,7 @@ aclnnStatus aclnnLinalgCross(
   </tbody></table>
 
   <!-- npu="910" id7 -->
-  - <term>Atlas 训练系列产品：</term>不支持BFLOAT16。
+  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16。
   <!-- end id7 -->
 
 - **返回值：**
@@ -244,8 +238,7 @@ aclnnStatus aclnnLinalgCross(
 
 ## 约束说明
 
-- 确定性计算：
-  - aclnnLinalgCross默认确定性实现。
+确定性计算：aclnnLinalgCross默认确定性实现。
 
 ## 调用示例
 

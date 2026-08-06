@@ -106,9 +106,7 @@ aclnnStatus aclnnInplaceLerps(
       <td>输入</td>
       <td>公式中的输入start。</td>
       <td>数据类型与end一致。shape需要与end满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
-      <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
-      </td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -118,9 +116,7 @@ aclnnStatus aclnnInplaceLerps(
       <td>输入</td>
       <td>公式中的输入end。</td>
       <td>数据类型与self一致。shape需要与self满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
-      <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
-      </td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -140,9 +136,7 @@ aclnnStatus aclnnInplaceLerps(
       <td>输出</td>
       <td>公式中的out。</td>
       <td>shape需要与self和end broadcast后的shape一致。</td>
-      <td>
-        <term> FLOAT、FLOAT16、BFLOAT16、DOUBLE</term>
-      </td>
+      <td>FLOAT、FLOAT16、BFLOAT16、DOUBLE</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -287,9 +281,7 @@ aclnnStatus aclnnInplaceLerps(
       <td>输入/输出</td>
       <td>公式中的输入start和输出out。</td>
       <td>数据类型与end一致。shape需要与end满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>，且broadcast后的shape与selfRef一致。</td>
-      <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
-      </td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -299,9 +291,7 @@ aclnnStatus aclnnInplaceLerps(
       <td>输入</td>
       <td>公式中的输入end。</td>
       <td>数据类型与selfRef一致。shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
-      <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
-      </td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>

@@ -107,9 +107,7 @@ aclnnStatus aclnnInplaceLog10(
       <td>输入</td>
       <td>公式中的self。</td>
       <td>-</td>
-      <td>
-        <term> INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX64、COMPLEX128</term>
-      </td>
+      <td>INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -119,9 +117,7 @@ aclnnStatus aclnnInplaceLog10(
       <td>输出</td>
       <td>公式中的out。</td>
       <td>当self为支持的整型或布尔类型时，out必须为FLOAT类型，其余支持类型out应该和self保持dtype一致。数据shape与self一致。</td>
-      <td>
-        <term> FLOAT、FLOAT16、BFLOAT16、COMPLEX64、COMPLEX128</term>
-      </td>
+      <td>FLOAT、FLOAT16、BFLOAT16、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -259,9 +255,7 @@ aclnnStatus aclnnInplaceLog10(
       <td>输入/输出</td>
       <td>公式中的selfRef。</td>
       <td>-</td>
-      <td>
-        <term> FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX64、COMPLEX128</term>
-      </td>
+      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -364,8 +358,7 @@ aclnnStatus aclnnInplaceLog10(
 
 ## 约束说明
 
-- 确定性计算：
-  - aclnnLog10&aclnnInplaceLog10默认确定性实现。
+确定性计算：aclnnLog10&aclnnInplaceLog10默认确定性实现。
 
 ## 调用示例
 
@@ -645,5 +638,4 @@ int main() {
   aclFinalize();
   return 0;
 }
-
 ```
