@@ -489,7 +489,7 @@ int main() {
   void* inplaceWorkspaceAddr = nullptr;
   if (inplaceWorkspaceSize > 0) {
     ret = aclrtMalloc(&inplaceWorkspaceAddr, inplaceWorkspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret;);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
   }
   // 调用aclnnInplaceSin第二段接口
   ret = aclnnInplaceSin(inplaceWorkspaceAddr, inplaceWorkspaceSize, inplaceExecutor, stream);
