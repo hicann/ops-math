@@ -120,6 +120,35 @@ static aclnnStatus CheckParams(const aclTensor* self, const float std)
     return ACLNN_SUCCESS;
 }
 
+static inline bool CheckSeedOffsetDtypeValid(const aclTensor* seedTensor, const aclTensor* offsetTensor)
+{
+    OP_CHECK_DTYPE_NOT_MATCH(seedTensor, op::DataType::DT_INT64, return false);
+    OP_CHECK_DTYPE_NOT_MATCH(offsetTensor, op::DataType::DT_INT64, return false);
+    return true;
+}
+
+static inline bool CheckSeedOffsetShapeValid(const aclTensor* seedTensor, const aclTensor* offsetTensor)
+{
+    // md 要求 seedTensor/offsetTensor 的 shape 均为 [1]
+    op::Shape expectShape;
+    expectShape.SetDimNum(1);
+    expectShape.SetDim(0, 1);
+    OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(seedTensor, expectShape, return false);
+    OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(offsetTensor, expectShape, return false);
+    return true;
+}
+
+/**
+ * seedTensor/offsetTensor dtype + shape 校验
+ */
+static aclnnStatus CheckSeedOffsetParams(const aclTensor* seedTensor, const aclTensor* offsetTensor)
+{
+    CHECK_RET(CheckSeedOffsetDtypeValid(seedTensor, offsetTensor), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckSeedOffsetShapeValid(seedTensor, offsetTensor), ACLNN_ERR_PARAM_INVALID);
+
+    return ACLNN_SUCCESS;
+}
+
 static aclTensor* ProcessOffsetTensor(const aclTensor* offsetTensor, int64_t offset, aclOpExecutor* executor)
 {
     FVector<int64_t> tmpVector = {static_cast<int64_t>(offset)};
@@ -357,6 +386,10 @@ aclnnStatus aclnnInplaceNormalTensorGetWorkspaceSize(const aclTensor* selfRef, f
     // 检查seedTensor和offsetTensor是否为空指针
     OP_CHECK_NULL(seedTensor, return ACLNN_ERR_PARAM_NULLPTR);
     OP_CHECK_NULL(offsetTensor, return ACLNN_ERR_PARAM_NULLPTR);
+
+    // 检查seedTensor和offsetTensor的dtype/shape是否合法
+    auto seedOffsetRet = CheckSeedOffsetParams(seedTensor, offsetTensor);
+    CHECK_RET(seedOffsetRet == ACLNN_SUCCESS, seedOffsetRet);
 
     auto out = const_cast<aclTensor*>(selfRef);
 
