@@ -218,6 +218,11 @@ aclnnStatus aclnnSearchSortedsGetWorkspaceSize(const aclTensor* sortedSequence, 
 
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
+
+    OP_CHECK_NULL(sortedSequence, return ACLNN_ERR_PARAM_NULLPTR);
+    OP_CHECK_NULL(self, return ACLNN_ERR_PARAM_NULLPTR);
+    OP_CHECK_NULL(out, return ACLNN_ERR_PARAM_NULLPTR);
+
     const aclTensor* selfTensor = nullptr;
     try {
         float selfValue = self->ToFloat();
