@@ -34,12 +34,7 @@ extern "C" {
 #define MAX_ADDR_INPUT_DIMS_NUMS 2
 #define DEFAULT_OUTER_VEC_DIMS_NUMS 1
 
-enum OuterExpandMode
-{
-    All,
-    IgnoreInput,
-    IgnoreInputScaling
-};
+enum OuterExpandMode { All, IgnoreInput, IgnoreInputScaling };
 
 static const std::initializer_list<DataType> ASCEND910_DTYPE_SUPPORT_LIST = {
     DataType::DT_DOUBLE, DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_INT64, DataType::DT_INT32,
@@ -71,8 +66,8 @@ static bool IsSupportAddr(op::DataType hightDtype)
     return false;
 }
 
-static bool CheckBetaAndAlphaDtyeValid(
-    const aclScalar* beta, const aclScalar* alpha, DataType highDtype, bool allIntInputs)
+static bool CheckBetaAndAlphaDtyeValid(const aclScalar* beta, const aclScalar* alpha, DataType highDtype,
+                                       bool allIntInputs)
 {
     // beta和alpha为bool类型值时，其他入参只能是bool类型
     if (beta && highDtype != DataType::DT_BOOL && beta->GetDataType() == DataType::DT_BOOL) {
@@ -87,14 +82,14 @@ static bool CheckBetaAndAlphaDtyeValid(
 
     // 如果输入都是整型tensor，那beta和alpha不能是浮点型数
     if (allIntInputs && beta && !IsIntegralType(beta->GetDataType(), true)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "For integral input tensors, argument beta must not be a floating point number");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "For integral input tensors, argument beta must not be a floating point number");
         return false;
     }
 
     if (allIntInputs && alpha && !IsIntegralType(alpha->GetDataType(), true)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "For integral input tensors, argument alpha must not be a floating point number");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "For integral input tensors, argument alpha must not be a floating point number");
         return false;
     }
 
@@ -121,9 +116,8 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* vec1, const acl
     return true;
 }
 
-static bool CheckDtypeValid(
-    const aclTensor* self, const aclTensor* vec1, const aclTensor* vec2, const aclScalar* beta, const aclScalar* alpha,
-    aclTensor* out)
+static bool CheckDtypeValid(const aclTensor* self, const aclTensor* vec1, const aclTensor* vec2, const aclScalar* beta,
+                            const aclScalar* alpha, aclTensor* out)
 {
     const auto& supportList = GetDtypeSupportList();
     // 检查self的数据类型是否在支持列表内
@@ -150,9 +144,8 @@ static bool CheckDtypeValid(
 
     // 检查beta和alpha dtype是否符合要求
     auto hightDtype = op::PromoteType(self->GetDataType(), op::PromoteType(vec2->GetDataType(), vec1->GetDataType()));
-    bool allIntInputs =
-        (IsIntegralType(self->GetDataType(), true) && IsIntegralType(vec1->GetDataType(), true) &&
-         IsIntegralType(vec2->GetDataType(), true));
+    bool allIntInputs = (IsIntegralType(self->GetDataType(), true) && IsIntegralType(vec1->GetDataType(), true) &&
+                         IsIntegralType(vec2->GetDataType(), true));
     auto optValid = CheckBetaAndAlphaDtyeValid(beta, alpha, hightDtype, allIntInputs);
     CHECK_RET(optValid, false);
 
@@ -176,27 +169,24 @@ static bool CheckShape(const aclTensor* self, const aclTensor* vec1, const aclTe
     op::Shape outerShape = {(vec1->GetViewShape())[0], (vec2->GetViewShape())[0]};
     op::Shape broadcastShape = self->GetViewShape();
     if (self != out && !BroadcastInferShape(self->GetViewShape(), outerShape, broadcastShape)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "the size of tensor self %s must match the size of tensor outer %s.",
-            op::ToString(self->GetViewShape()).GetString(), op::ToString(outerShape).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "the size of tensor self %s must match the size of tensor outer %s.",
+                op::ToString(self->GetViewShape()).GetString(), op::ToString(outerShape).GetString());
         return false;
     }
 
     // broadcast之后的tensor size必须要与外积相同
     if (broadcastShape != outerShape) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "size mismatch, input: %s, v1: %s, v2: %s",
-            op::ToString(broadcastShape).GetString(), op::ToString(vec1->GetViewShape()).GetString(),
-            op::ToString(vec2->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "size mismatch, input: %s, v1: %s, v2: %s",
+                op::ToString(broadcastShape).GetString(), op::ToString(vec1->GetViewShape()).GetString(),
+                op::ToString(vec2->GetViewShape()).GetString());
         return false;
     }
 
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclTensor* vec1, const aclTensor* vec2, const aclScalar* beta, const aclScalar* alpha,
-    aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* vec1, const aclTensor* vec2,
+                               const aclScalar* beta, const aclScalar* alpha, aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, vec1, vec2, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -210,8 +200,8 @@ static aclnnStatus CheckParams(
     return ACLNN_SUCCESS;
 }
 
-static const aclTensor* addrStubMul(
-    const aclTensor* left, const aclTensor* right, DataType highDtype, aclOpExecutor* executor)
+static const aclTensor* addrStubMul(const aclTensor* left, const aclTensor* right, DataType highDtype,
+                                    aclOpExecutor* executor)
 {
     const aclTensor* mulOut = nullptr;
     if (highDtype == DataType::DT_BOOL) {
@@ -223,8 +213,8 @@ static const aclTensor* addrStubMul(
     return mulOut;
 }
 
-static const aclTensor* addrStubAdd(
-    const aclTensor* left, const aclTensor* right, DataType highDtype, aclOpExecutor* executor)
+static const aclTensor* addrStubAdd(const aclTensor* left, const aclTensor* right, DataType highDtype,
+                                    aclOpExecutor* executor)
 {
     const aclTensor* addOut = nullptr;
     if (highDtype == DataType::DT_BOOL) {
@@ -236,8 +226,8 @@ static const aclTensor* addrStubAdd(
     return addOut;
 }
 
-static aclnnStatus addrOutHandle(
-    const aclTensor* outCalcuResult, aclTensor* out, aclOpExecutor* executor, DataType hightDtype)
+static aclnnStatus addrOutHandle(const aclTensor* outCalcuResult, aclTensor* out, aclOpExecutor* executor,
+                                 DataType hightDtype)
 {
     OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(out, outCalcuResult->GetViewShape(), return ACLNN_ERR_PARAM_INVALID);
     // 输出类型转换成out dtype类型
@@ -258,9 +248,9 @@ static aclnnStatus addrOutHandle(
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus addrStub(
-    const aclTensor* selfCast, const aclTensor* vec1Cast, const aclTensor* vec2Cast, const aclScalar* beta,
-    const aclScalar* alpha, aclTensor* out, aclOpExecutor* executor, const op::DataType& hightDtype)
+static aclnnStatus addrStub(const aclTensor* selfCast, const aclTensor* vec1Cast, const aclTensor* vec2Cast,
+                            const aclScalar* beta, const aclScalar* alpha, aclTensor* out, aclOpExecutor* executor,
+                            const op::DataType& hightDtype)
 {
     // vec1要转置下，从1行m列扩展成m行1列，才能进行外积运算；vec2相应的也扩展成1行n列的二维tensor
     auto vecMul1 = vecUnsqueezeWithDim(vec1Cast, 1, executor);
@@ -268,18 +258,18 @@ static aclnnStatus addrStub(
     auto vecMul2 = vecUnsqueezeWithDim(vec2Cast, 0, executor);
     CHECK_RET(vecMul2 != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    // 计算vec1和vec2外积
-    auto outerVec = addrStubMul(vecMul1, vecMul2, hightDtype, executor);
-    CHECK_RET(outerVec != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 处理外积比例因子, alpha * outer(vec1, vec2)
+    // 处理比例因子，alpha * vec1
     // alpha为nullptr，以默认值做处理
-    auto mulOuterVec = (const aclTensor*)outerVec;
+    auto alphaMulVec1 = vecMul1;
     if (alpha != nullptr && alpha->ToFloat() != 1) {
         auto alphaTensor = executor->ConvertToTensor(alpha, hightDtype);
-        mulOuterVec = addrStubMul(outerVec, alphaTensor, hightDtype, executor);
-        CHECK_RET(mulOuterVec != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        alphaMulVec1 = addrStubMul(alphaTensor, vecMul1, hightDtype, executor);
+        CHECK_RET(alphaMulVec1 != nullptr, ACLNN_ERR_INNER_NULLPTR);
     }
+
+    // 计算外积
+    auto outerVec = addrStubMul(alphaMulVec1, vecMul2, hightDtype, executor);
+    CHECK_RET(outerVec != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 处理扩展矩阵, beta * self + alpha * outer(vec1, vec2)
     OuterExpandMode expandMode = All;
@@ -294,7 +284,7 @@ static aclnnStatus addrStub(
     }
 
     if (expandMode == IgnoreInput) {
-        return addrOutHandle(mulOuterVec, out, executor, DataType::DT_MAX);
+        return addrOutHandle(outerVec, out, executor, DataType::DT_MAX);
     }
 
     auto selfScaling = selfCast;
@@ -304,14 +294,13 @@ static aclnnStatus addrStub(
         CHECK_RET(selfScaling != nullptr, ACLNN_ERR_INNER_NULLPTR);
     }
 
-    auto addrOut = addrStubAdd(selfScaling, mulOuterVec, hightDtype, executor);
+    auto addrOut = addrStubAdd(selfScaling, outerVec, hightDtype, executor);
     CHECK_RET(addrOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
     return addrOutHandle(addrOut, out, executor, DataType::DT_MAX);
 }
 
-static aclnnStatus addrProc(
-    const aclTensor* self, const aclTensor* vec1, const aclTensor* vec2, const aclScalar* beta, const aclScalar* alpha,
-    aclTensor* out, aclOpExecutor* executor)
+static aclnnStatus addrProc(const aclTensor* self, const aclTensor* vec1, const aclTensor* vec2, const aclScalar* beta,
+                            const aclScalar* alpha, aclTensor* out, aclOpExecutor* executor)
 {
     // 计算输入最高类型
     auto hightDtype = op::PromoteType(self->GetDataType(), op::PromoteType(vec2->GetDataType(), vec1->GetDataType()));
@@ -356,9 +345,9 @@ static aclnnStatus addrProc(
     }
 }
 
-aclnnStatus aclnnAddrGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* vec1, const aclTensor* vec2, const aclScalar* betaOptional,
-    const aclScalar* alphaOptional, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnAddrGetWorkspaceSize(const aclTensor* self, const aclTensor* vec1, const aclTensor* vec2,
+                                      const aclScalar* betaOptional, const aclScalar* alphaOptional, aclTensor* out,
+                                      uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAddr, DFX_IN(self, vec1, vec2, betaOptional, alphaOptional), DFX_OUT(out));
 
@@ -394,12 +383,12 @@ aclnnStatus aclnnAddr(void* workspace, uint64_t workspaceSize, aclOpExecutor* ex
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceAddrGetWorkspaceSize(
-    aclTensor* selfRef, const aclTensor* vec1, const aclTensor* vec2, const aclScalar* betaOptional,
-    const aclScalar* alphaOptional, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceAddrGetWorkspaceSize(aclTensor* selfRef, const aclTensor* vec1, const aclTensor* vec2,
+                                             const aclScalar* betaOptional, const aclScalar* alphaOptional,
+                                             uint64_t* workspaceSize, aclOpExecutor** executor)
 {
-    return aclnnAddrGetWorkspaceSize(
-        selfRef, vec1, vec2, betaOptional, alphaOptional, selfRef, workspaceSize, executor);
+    return aclnnAddrGetWorkspaceSize(selfRef, vec1, vec2, betaOptional, alphaOptional, selfRef, workspaceSize,
+                                     executor);
 }
 
 aclnnStatus aclnnInplaceAddr(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
