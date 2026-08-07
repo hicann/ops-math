@@ -4,7 +4,7 @@
 
 | 产品                                              | 是否支持 |
 |:------------------------------------------------| :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>          |    ×     |
+| <term>Ascend 950PR/Ascend 950DT</term>          |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>    |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>    |    √     |
 | <term>Atlas 200I/500 A2 推理产品</term>             |    ×     |
@@ -16,7 +16,7 @@
 ## 功能说明
 
 - 算子功能：
-  
+
   对于输入feeds，根据输入feeds_repeat_times,将对应的feeds的第0维上的数据复制对应的次数，并将输出y的第0维padding到output_feeds_size的大小
 
 ## 参数说明
