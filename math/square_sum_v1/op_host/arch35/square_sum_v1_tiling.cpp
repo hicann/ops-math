@@ -16,70 +16,161 @@
 #include "log/log.h"
 #include "../../op_kernel/square_sum_v1_dag.h"
 #include "../../op_kernel/square_sum_v1_tiling_key.h"
+#include "../../op_kernel/square_sum_v1_tiling_data.h"
+#include "square_sum_v1_tiling.h"
 #include "atvoss/reduce/reduce_tiling.h"
+#include "atvoss/elewise/elewise_tiling.h"
+#include "op_host/tiling_base_util.h"
 
 using namespace ge;
 using namespace Ops::Base;
 
 namespace optiling {
+static const int64_t ASCEND_WORKSPACE = 16 * 1024 * 1024;
 static constexpr int32_t SIZE4 = 4;
 static constexpr int32_t SIZE2 = 2;
 
-static ge::graphStatus DoTilingAscendC(gert::TilingContext* context, ReduceOpInputParam& opInput, ReduceTilingKey& key)
+class SquareSumV1Tiling {
+public:
+    explicit SquareSumV1Tiling(gert::TilingContext* context) : tilingContext_(context) {};
+    ge::graphStatus RunTiling(const ReduceOpCompileInfo* compileInfo);
+
+protected:
+    ge::graphStatus DoEleTiling(ReduceOpInputParam& opInput);
+    ge::graphStatus DoReduceTiling(ReduceOpInputParam& opInput, ReduceTilingKey& key,
+                                   const ReduceOpCompileInfo* compileInfo);
+    ge::graphStatus SetTilingData();
+
+private:
+    gert::TilingContext* tilingContext_;
+    SquareSumV1TilingKey key_;
+    SquareSumV1TilingData* tilingData_ = nullptr;
+};
+
+ge::graphStatus SquareSumV1Tiling::SetTilingData()
+{
+    OP_LOGD(tilingContext_->GetNodeName(), "Enter SetTilingData");
+    uint64_t tilingKey;
+    GEN_REDUCE_TILING_KEY(tilingKey, key_.reduceTiling, key_.noop);
+    OP_LOGI(tilingContext_->GetNodeName(),
+            "patternID:%u, loopARCount:%u, loopInnerARCount:%u, noop:%u, Tiling Key is:%lu",
+            key_.reduceTiling.patternID, key_.reduceTiling.loopARCount, key_.reduceTiling.loopInnerARCount, key_.noop,
+            tilingKey);
+    if (key_.noop == 1) {
+        size_t* currentWorkspace = tilingContext_->GetWorkspaceSizes(1);
+        currentWorkspace[0] = ASCEND_WORKSPACE;
+        tilingContext_->SetBlockDim(tilingData_->elewiseTiling.blockNum);
+    }
+    tilingContext_->SetTilingKey(tilingKey);
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus SquareSumV1Tiling::DoEleTiling(ReduceOpInputParam& opInput)
+{
+    ElewiseBaseTiling eleBaseTiling(tilingContext_);
+    ge::graphStatus status = ge::GRAPH_FAILED;
+    if (ge::GetSizeByDataType(opInput.inputDtype) == SIZE4) {
+        status = eleBaseTiling.DoTiling<SquareSumV1::SquareSumV1NoopDag<float, float>::OpDag>(
+            tilingData_->elewiseTiling);
+    } else if (ge::GetSizeByDataType(opInput.inputDtype) == SIZE2) {
+        status = eleBaseTiling.DoTiling<SquareSumV1::SquareSumV1NoopDag<half, float>::OpDag>(
+            tilingData_->elewiseTiling);
+    } else {
+        OP_CHECK_IF(
+            (status == ge::GRAPH_FAILED),
+            OP_LOGE_FOR_INVALID_DTYPE(tilingContext_->GetNodeName(), "x",
+                                      Ops::Base::ToString(opInput.inputDtype).c_str(), "bfloat16, float16 or float"),
+            return ge::GRAPH_FAILED);
+    }
+    return status;
+}
+
+ge::graphStatus SquareSumV1Tiling::DoReduceTiling(ReduceOpInputParam& opInput, ReduceTilingKey& key,
+                                                  const ReduceOpCompileInfo* compileInfo)
 {
     ge::graphStatus status = ge::GRAPH_FAILED;
     if (ge::GetSizeByDataType(opInput.inputDtype) == SIZE4) {
-        status = Tiling4ReduceOp<SquareSumV1::SquareSumV1Dag<float, float>::OpDag>(context, opInput, key);
+        status = Tiling4ReduceOp<SquareSumV1::SquareSumV1Dag<float, float>::OpDag>(
+            tilingContext_, opInput, key, compileInfo, &(tilingData_->reduceTiling));
     } else if (ge::GetSizeByDataType(opInput.inputDtype) == SIZE2) {
-        status = Tiling4ReduceOp<SquareSumV1::SquareSumV1Dag<half, float>::OpDag>(context, opInput, key);
+        status = Tiling4ReduceOp<SquareSumV1::SquareSumV1Dag<half, float>::OpDag>(
+            tilingContext_, opInput, key, compileInfo, &(tilingData_->reduceTiling));
     }
     OP_CHECK_IF(
         (status == ge::GRAPH_FAILED),
-        OP_LOGE_FOR_INVALID_DTYPE(
-            context->GetNodeName(), "x", Ops::Base::ToString(opInput.inputDtype).c_str(), "bfloat16, float16 or float"),
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext_->GetNodeName(), "x", Ops::Base::ToString(opInput.inputDtype).c_str(),
+                                  "bfloat16, float16 or float"),
         return ge::GRAPH_FAILED);
     return status;
 }
 
-static ge::graphStatus Tiling4SquareSumV1AscendC(gert::TilingContext* context)
+ge::graphStatus SquareSumV1Tiling::RunTiling(const ReduceOpCompileInfo* compileInfo)
 {
+    tilingData_ = tilingContext_->GetTilingData<SquareSumV1TilingData>();
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, tilingData_);
+
     ReduceOpInputParam opInput;
-    OP_CHECK_IF(
-        (ReduceOpTmpl::GetInputParam(context, opInput, 0) == ge::GRAPH_FAILED),
-        OP_LOGE(context->GetNodeName(), "ReduceOp get x input failed"), return ge::GRAPH_FAILED);
-    auto attrs = context->GetAttrs();
-    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
+    bool isNoop = false;
+    OP_CHECK_IF((ReduceOpTmpl::GetInputParam(tilingContext_, opInput, 0) == ge::GRAPH_FAILED),
+                OP_LOGE(tilingContext_->GetNodeName(), "ReduceOp get x input failed"), return ge::GRAPH_FAILED);
+    auto out = tilingContext_->GetOutputShape(0);
+    OP_CHECK_IF(out == nullptr, OP_LOGE(tilingContext_, "out is nullptr"), return ge::GRAPH_FAILED);
+    gert::Shape outShape = EnsureNotScalar(out->GetStorageShape());
+    if (outShape.GetShapeSize() == 1L) {
+        opInput.axes.resize(opInput.shape.size());
+        for (size_t i = 0; i < opInput.shape.size(); i++) {
+            opInput.axes[i] = i;
+        }
+        isNoop = false;
+    }
+    auto attrs = tilingContext_->GetAttrs();
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, attrs);
     auto axis = attrs->GetAttrPointer<gert::ContinuousVector>(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, axis);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, axis);
     auto axisData = static_cast<const int64_t*>(axis->GetData());
     if (axis->GetSize() == 0) {
-        for (size_t i = 0; i < opInput.shape.size(); i++) {
-            opInput.axes.push_back(i);
+        const bool isNoopWithEmpty = *(attrs->GetAttrPointer<bool>(2));
+        isNoop = isNoopWithEmpty ? true : false;
+        if (!isNoopWithEmpty) {
+            opInput.axes.resize(opInput.shape.size());
+            for (size_t i = 0; i < opInput.shape.size(); i++) {
+                opInput.axes[i] = i;
+            }
         }
     } else {
         size_t size = axis->GetSize();
+        opInput.axes.resize(size);
         for (size_t i = 0; i < size; i++) {
-            opInput.axes.push_back(axisData[i]);
+            opInput.axes[i] = axisData[i];
         }
+        isNoop = false;
     }
-    ReduceTilingKey key;
-    OP_CHECK_IF(
-        (DoTilingAscendC(context, opInput, key) == ge::GRAPH_FAILED),
-        OP_LOGE(context->GetNodeName(), "DoTiling Failed for SquareSumV1"), return ge::GRAPH_FAILED);
-    uint64_t tilingKey;
-    GEN_REDUCE_TILING_KEY(tilingKey, key);
-    OP_LOGI(
-        context->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u, Tiling Key is:%lu", key.patternID,
-        key.loopARCount, key.loopInnerARCount, tilingKey);
-    context->SetTilingKey(tilingKey);
-    return ge::GRAPH_SUCCESS;
+    key_.noop = isNoop ? 1 : 0;
+    if (isNoop) {
+        OP_CHECK_IF((DoEleTiling(opInput) == ge::GRAPH_FAILED),
+                    OP_LOGE(tilingContext_->GetNodeName(), "DoEleTiling Failed for SquareSumV1"),
+                    return ge::GRAPH_FAILED);
+    } else {
+        OP_CHECK_IF((DoReduceTiling(opInput, key_.reduceTiling, compileInfo) == ge::GRAPH_FAILED),
+                    OP_LOGE(tilingContext_->GetNodeName(), "DoReduceTiling Failed for SquareSumV1"),
+                    return ge::GRAPH_FAILED);
+    }
+    return SetTilingData();
 }
 
 ge::graphStatus Tiling4SquareSumV1(gert::TilingContext* context)
 {
+    OP_LOGD("SquareSumV1Tiling", "Enter Tiling4SquareSumV1");
+    if (context == nullptr) {
+        OP_LOGE("SquareSumV1Tiling", "Tiling context is null");
+        return ge::GRAPH_FAILED;
+    }
+
     auto compileInfo = reinterpret_cast<const ReduceOpCompileInfo*>(context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
-    return Tiling4SquareSumV1AscendC(context);
+
+    SquareSumV1Tiling tiling(context);
+    return tiling.RunTiling(compileInfo);
 }
 
 static ge::graphStatus TilingPrepareForSquareSumV1([[maybe_unused]] gert::TilingParseContext* context)

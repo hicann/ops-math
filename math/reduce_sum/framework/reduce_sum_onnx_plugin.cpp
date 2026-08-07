@@ -46,6 +46,8 @@ static Status parse_params_reduce_sum(const Message* op_src, ge::Operator& op_de
     std::vector<int64_t> dims = {};
     if (num != 0) {
         dims.push_back(num);
+    } else {
+        dims.push_back(0);
     }
     ge::Tensor tensor = Vec2Tensor(v_axes, dims, ge::DT_INT32);
 
@@ -80,6 +82,7 @@ static Status ParseOpToGraphReduceSum(const Operator& op, Graph& graph)
         return FAILED;
     }
     reducesum.set_attr_keep_dims(keep_dims);
+    reducesum.set_attr_noop_with_empty_axes(false);
 
     std::vector<Operator> inputs{data0};
     std::vector<std::pair<Operator, std::vector<size_t> > > outputs;

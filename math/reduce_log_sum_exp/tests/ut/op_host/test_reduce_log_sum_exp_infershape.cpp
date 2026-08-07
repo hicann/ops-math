@@ -36,7 +36,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_const_infer_1)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{3, 1, 1, 16}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -54,7 +55,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_const_infer_2)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{3, 16}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -72,7 +74,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_const_infer_scalar)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -90,13 +93,15 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_scalar_keepdims_true)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-// ==================== 空axes (dimNum==1, dim0==0), 无noop属性, 默认allReduce, keep_dims=true ====================
-TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_empty_axes_allreduce_keepdims_true)
+// ==================== 空axes (dimNum==1, dim0==0), noop_with_empty_axes=true(默认) ====================
+// 输出shape与输入相同
+TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_empty_axes_noop_true)
 {
     gert::InfershapeContextPara infershapeContextPara(
         "ReduceLogSumExp",
@@ -107,8 +112,9 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_empty_axes_allreduce_keepdims_true)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
-    std::vector<std::vector<int64_t>> expectOutputShape = {{1, 1, 1, 1}};
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+    std::vector<std::vector<int64_t>> expectOutputShape = {{3, 5, 16, 16}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
@@ -125,7 +131,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_empty_axes_noop_false_keepdims_true)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{1, 1, 1, 1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -143,7 +150,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_empty_axes_noop_false_keepdims_false
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -161,7 +169,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_empty_axes_noop_true_scalar)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(true))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -179,13 +188,15 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_empty_axes_noop_false_scalar)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-// ==================== axes维度为1且大小为0, 无noop属性, 默认allReduce, keep_dims=false ====================
-TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_zero_dim_axes_allreduce_keepdims_false)
+// ==================== axes维度为1且大小为0, noop_with_empty_axes=true ====================
+// shape[0] axes, 等同于空axes, noop=true, 输出shape与输入相同
+TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_zero_dim_axes_noop_true)
 {
     std::vector<int32_t> axesValue = {};
     gert::InfershapeContextPara infershapeContextPara(
@@ -197,8 +208,9 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_zero_dim_axes_allreduce_keepdims_fal
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false))});
-    std::vector<std::vector<int64_t>> expectOutputShape = {{}};
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+    std::vector<std::vector<int64_t>> expectOutputShape = {{3, 5, 16, 16}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
@@ -216,7 +228,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_zero_dim_axes_noop_false_keepdims_fa
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -234,7 +247,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_int64_keepdims_true)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{3, 1, 1, 16}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -252,7 +266,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_int64_keepdims_false)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{3, 16}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -270,7 +285,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_int64_neg_axes_keepdims_true)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{3, 5, 1, 1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -288,7 +304,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_int64_neg_axes_keepdims_false)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{3, 16}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -306,7 +323,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_invalid_axes_dtype)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{-1, -1, -1, -1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -324,7 +342,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_invalid_axes_bounds)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
 }
 
@@ -341,7 +360,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_invalid_axes_bounds_neg)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
 }
 
@@ -358,7 +378,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_invalid_axes_bounds_scalar)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
 }
 
@@ -375,7 +396,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_all_dims_keepdims_true)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{1, 1, 1, 1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -393,7 +415,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_all_dims_keepdims_false)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -411,7 +434,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_1d_keepdims_true)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -429,7 +453,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_1d_keepdims_false)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -447,7 +472,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_single_axis_keepdims_true)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{3, 1, 16, 16}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -465,7 +491,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_single_axis_keepdims_false)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{3, 16, 16}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -483,7 +510,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_dynamic_keepdims_true)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{3, -1, 1, 16}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -501,7 +529,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_dynamic_keepdims_false)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{3, 16, 16}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -519,7 +548,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_neg_axes_keepdims_true)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{3, 5, 1, 1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -537,7 +567,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_int64_5d_keepdims_true)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{1, 2, 1, 4, 1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -555,7 +586,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_int64_5d_keepdims_false)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{1, 2, 4}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -573,13 +605,14 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_int64_scalar_keepdims_true)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-// ==================== axes维度大于1 (2D tensor) → GRAPH_FAILED ====================
-TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_invalid_axes_dimnum)
+// ==================== axes维度大于1 (2D tensor) → 铺平为1D, 正常常量推导 ====================
+TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_multi_dim_axes_flatten)
 {
     std::vector<int32_t> axesValue = {1, 2};
     gert::InfershapeContextPara infershapeContextPara(
@@ -591,8 +624,10 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_invalid_axes_dimnum)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))});
-    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
+    std::vector<std::vector<int64_t>> expectOutputShape = {{3, 1, 1, 16}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 // ==================== 未知秩输入 ({-2}) → 输出 {-2} ====================
@@ -608,7 +643,8 @@ TEST_F(ReduceLogSumExpTest, ReduceLogSumExp_unknown_rank)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false))});
+        {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{-2}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }

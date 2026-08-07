@@ -20,8 +20,7 @@
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 
-namespace optiling
-{
+namespace optiling {
 using namespace Ops::Base;
 static constexpr int32_t SIZE4 = 4;
 static constexpr int32_t SIZE2 = 2;
@@ -33,11 +32,10 @@ static ge::graphStatus DoTiling(gert::TilingContext* context, ReduceOpInputParam
     } else if (ge::GetSizeByDataType(opInput.inputDtype) == SIZE2) {
         status = Tiling4ReduceOp<ReduceLogSumExp::ReduceLogSumExpDag<half>::OpDag>(context, opInput, key);
     }
-    OP_CHECK_IF(
-        (status == ge::GRAPH_FAILED),
-        OP_LOGE_FOR_INVALID_DTYPE(
-            context->GetNodeName(), "x", Ops::Base::ToString(opInput.inputDtype).c_str(), "bfloat16, float16 or float"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((status == ge::GRAPH_FAILED),
+                OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "x", Ops::Base::ToString(opInput.inputDtype).c_str(),
+                                          "bfloat16, float16 or float"),
+                return ge::GRAPH_FAILED);
     return status;
 }
 
@@ -45,16 +43,27 @@ ge::graphStatus Tiling4ReduceLogSumExp(gert::TilingContext* context)
 {
     auto compileInfo = static_cast<const ReduceOpCompileInfo*>(context->GetCompileInfo());
     OP_CHECK_IF(compileInfo == nullptr, OP_LOGE(context->GetNodeName(), "CompileInfo is nullptr"),
-                    return ge::GRAPH_FAILED);
+                return ge::GRAPH_FAILED);
 
     ReduceOpInputParam opInput;
     OP_CHECK_IF((ReduceOpTmpl::GetInputParam(context, opInput, 0, 1, 0) == ge::GRAPH_FAILED),
-                    OP_LOGE(context->GetNodeName(), "ReduceOp get x input param failed"),
-                    return ge::GRAPH_FAILED);
+                OP_LOGE(context->GetNodeName(), "ReduceOp get x input param failed"), return ge::GRAPH_FAILED);
+
+    if (opInput.axes.empty()) {
+        auto attrs = context->GetAttrs();
+        OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
+        const bool isNoopWithEmpty = *(attrs->GetAttrPointer<bool>(1));
+        if (!isNoopWithEmpty) {
+            opInput.axes.resize(opInput.shape.size());
+            for (size_t i = 0; i < opInput.shape.size(); i++) {
+                opInput.axes[i] = i;
+            }
+        }
+    }
+
     ReduceTilingKey key;
     OP_CHECK_IF((DoTiling(context, opInput, key) == ge::GRAPH_FAILED),
-                    OP_LOGE(context->GetNodeName(), "DoTiling Failed for ReduceLogSumExp"),
-                    return ge::GRAPH_FAILED);
+                OP_LOGE(context->GetNodeName(), "DoTiling Failed for ReduceLogSumExp"), return ge::GRAPH_FAILED);
     uint64_t tilingKey;
     GEN_REDUCE_TILING_KEY(tilingKey, key);
     OP_LOGI(context->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u, Tiling Key is:%lu",
@@ -65,7 +74,7 @@ ge::graphStatus Tiling4ReduceLogSumExp(gert::TilingContext* context)
 
 ge::graphStatus TilingPrepare4ReduceLogSumExp(gert::TilingParseContext* context)
 {
-    (void) context;
+    (void)context;
     return ge::GRAPH_SUCCESS;
 }
 
@@ -73,4 +82,4 @@ IMPL_OP_OPTILING(ReduceLogSumExp)
     .Tiling(Tiling4ReduceLogSumExp)
     .TilingParse<ReduceOpCompileInfo>(TilingPrepare4ReduceLogSumExp)
     .TilingInputsDataDependency({1});
-}  // namespace optiling
+} // namespace optiling

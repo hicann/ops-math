@@ -29,7 +29,12 @@ namespace ge {
 * @par Attributes:
 * Two attributes, including: \n
 * @li axis: A required listint, specifies the dimensions to reduce.
-* @li keep_dims: A optional bool, specifying whether to keep dimensions for the output Tensor. Defaults to "false". \n
+* @li keep_dims: A optional bool, specifying whether to keep dimensions for the output Tensor. Defaults to "false".
+* @li noop_with_empty_axes: An optional bool. Defaults to "false" .
+* - If true, when axes = [], not reduce.
+* - If false, when axes = [], reduce all.
+* This attribute is valid only for Ascend950 AI Processors and later products. \n
+
 
 * @par Outputs:
 * y: A ND Tensor. Has the same dtype as "x".
@@ -42,6 +47,7 @@ REG_OP(SquareSumV1)
     .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16}))
     .REQUIRED_ATTR(axis, ListInt)
     .ATTR(keep_dims, Bool, false)
+    .ATTR(noop_with_empty_axes, Bool, false)
     .OP_END_FACTORY_REG(SquareSumV1)
 
 } // namespace ge

@@ -608,8 +608,8 @@ TEST_F(ReduceProdTest, ReduceProd_int64_scalar_keepdims_true)
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-// ==================== axes维度大于1 (2D tensor) → GRAPH_FAILED ====================
-TEST_F(ReduceProdTest, ReduceProd_invalid_axes_dimnum)
+// ==================== axes维度大于1 (2D tensor) → 铺平为1D, 正常常量推导 ====================
+TEST_F(ReduceProdTest, ReduceProd_multi_dim_axes_flatten)
 {
     std::vector<int32_t> axesValue = {1, 2};
     gert::InfershapeContextPara infershapeContextPara(
@@ -623,7 +623,8 @@ TEST_F(ReduceProdTest, ReduceProd_invalid_axes_dimnum)
         },
         {gert::InfershapeContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
          gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
-    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
+    std::vector<std::vector<int64_t>> expectOutputShape = {{3, 1, 1, 16}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 // ==================== 未知秩输入 ({-2}) → 输出 {-2} ====================

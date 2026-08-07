@@ -19,17 +19,11 @@ using namespace std;
 
 class SquareSumV1Tiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "SquareSumV1Tiling SetUp" << std::endl;
-    }
-
-    static void TearDownTestCase()
-    {
-        std::cout << "SquareSumV1Tiling TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "SquareSumV1Tiling SetUp" << std::endl; }
+    static void TearDownTestCase() { std::cout << "SquareSumV1Tiling TearDown" << std::endl; }
 };
 
+// ==================== 正常reduce: 单轴, keep_dims=true ====================
 TEST_F(SquareSumV1Tiling, test_SquareSumV1Tiling_0)
 {
     Ops::Base::ReduceOpCompileInfo compileInfo = {64, 262144};
@@ -39,16 +33,18 @@ TEST_F(SquareSumV1Tiling, test_SquareSumV1Tiling_0)
             {{{100, 48}, {100, 48}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         {
-            {{{48}, {48}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{100, 1}, {100, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         {gert::TilingContextPara::OpAttr("axis", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1})),
-         gert::TilingContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true))},
+         gert::TilingContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::TilingContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    uint64_t expectTilingKey = 5143;
+    uint64_t expectTilingKey = 10285;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
+// ==================== 正常reduce: 全轴归约→标量, keep_dims=false ====================
 TEST_F(SquareSumV1Tiling, test_SquareSumV1Tiling_1)
 {
     Ops::Base::ReduceOpCompileInfo compileInfo = {64, 262144};
@@ -60,53 +56,74 @@ TEST_F(SquareSumV1Tiling, test_SquareSumV1Tiling_1)
         {
             {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {
-            gert::TilingContextPara::OpAttr(
-                "axis", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({0, 1, 2, 3})),
-        },
+        {gert::TilingContextPara::OpAttr("axis", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({0, 1, 2, 3})),
+         gert::TilingContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::TilingContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    uint64_t expectTilingKey = 6167;
+    uint64_t expectTilingKey = 12333;
     std::vector<size_t> expectWorkspaces = {16793600};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
+// ==================== 正常reduce: 多轴 ====================
 TEST_F(SquareSumV1Tiling, test_SquareSumV1Tiling_2)
 {
     Ops::Base::ReduceOpCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara(
         "SquareSumV1",
         {
-            {{{16, 16, 16, 16}, {16, 16, 16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{20, 32, 64, 16}, {20, 32, 64, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         {
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{32, 16}, {32, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {
-            gert::TilingContextPara::OpAttr(
-                "axis", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({0, 1, 2, 3})),
-        },
+        {gert::TilingContextPara::OpAttr("axis", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({0, 2})),
+         gert::TilingContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::TilingContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    uint64_t expectTilingKey = 6167;
-    std::vector<size_t> expectWorkspaces = {16793600};
+    uint64_t expectTilingKey = 48449;
+    std::vector<size_t> expectWorkspaces = {16908288};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
+// ==================== 空axis + noop = true: noReduce elewise tiling ====================
 TEST_F(SquareSumV1Tiling, test_SquareSumV1Tiling_3)
 {
     Ops::Base::ReduceOpCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara(
         "SquareSumV1",
         {
-            {{{16, 16, 16, 16}, {16, 16, 16, 16}}, ge::DT_FLOAT, ge::FORMAT_FRACTAL_NZ},
+            {{{20, 32, 64, 16}, {20, 32, 64, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         {
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_NCHW},
+            {{{20, 32, 64, 16}, {20, 32, 64, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {
-            gert::TilingContextPara::OpAttr("axis", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({0, 1})),
-        },
+        {gert::TilingContextPara::OpAttr("axis", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({})),
+         gert::TilingContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::TilingContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    uint64_t expectTilingKey = 11817;
-    std::vector<size_t> expectWorkspaces = {16842752};
+    uint64_t expectTilingKey = 67108865;
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+}
+
+// ==================== 空axis + noop = false: allReduce reduce tiling ====================
+TEST_F(SquareSumV1Tiling, test_SquareSumV1Tiling_4)
+{
+    Ops::Base::ReduceOpCompileInfo compileInfo = {64, 262144};
+    gert::TilingContextPara tilingContextPara(
+        "SquareSumV1",
+        {
+            {{{20, 32, 64, 16}, {20, 32, 64, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 1, 1, 1}, {1, 1, 1, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {gert::TilingContextPara::OpAttr("axis", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({})),
+         gert::TilingContextPara::OpAttr("keep_dims", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::TilingContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))},
+        &compileInfo);
+    uint64_t expectTilingKey = 12333;
+    std::vector<size_t> expectWorkspaces = {16793600};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }

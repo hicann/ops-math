@@ -29,6 +29,7 @@ public:
 
         this->Attr("axis").AttrType(REQUIRED).ListInt();
         this->Attr("keep_dims").AttrType(OPTIONAL).Bool(false);
+        this->Attr("noop_with_empty_axes").AttrType(OPTIONAL).Bool(false);
 
         OpAICoreConfig aicoreConfig;
         aicoreConfig.DynamicCompileStaticFlag(true)

@@ -33,7 +33,11 @@ namespace ge {
 *
 * @par Attributes:
 * keep_dims: An optional bool. If "true", retains reduced dimensions with length 1. Defaults to "false" . \n
-*
+* noop_with_empty_axes: An optional bool. Defaults to "false" .
+* - If true, when axes = [], not reduce.
+* - If false, when axes = [], reduce all.
+* This attribute is valid only for Ascend950 AI Processors and later products.
+
 * @par Outputs:
 * y: The reduced tensor. Has the same type and format as input "x" . \n
 *
@@ -45,6 +49,7 @@ REG_OP(ReduceLogSumExp)
     .INPUT(axes, TensorType({DT_INT32, DT_INT64}))
     .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16}))
     .ATTR(keep_dims, Bool, false)
+    .ATTR(noop_with_empty_axes, Bool, false)
     .OP_END_FACTORY_REG(ReduceLogSumExp)
 } // namespace ge
 

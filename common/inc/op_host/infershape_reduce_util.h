@@ -96,14 +96,14 @@ static ge::graphStatus ProcessEmptyAxesWithNoopWithEmptyAxes(gert::InferShapeCon
 }
 
 template <typename T>
-ge::graphStatus ReduceDimsWithKeepDims(const gert::Shape* xShape, const T* axesDims, int32_t axesDim0,
+ge::graphStatus ReduceDimsWithKeepDims(const gert::Shape* xShape, const T* axesDims, int32_t axesShapeSize,
                                        gert::Shape* outputShape)
 {
     T dimNum = xShape->GetDimNum();
     const bool isScalar = xShape->GetDimNum() == 0;
     dimNum = isScalar ? 1 : dimNum;
     *outputShape = *xShape;
-    for (int32_t i = 0; i < axesDim0; i++) {
+    for (int32_t i = 0; i < axesShapeSize; i++) {
         OP_CHECK_IF((!CheckAxisBounds<T, T>(dimNum, axesDims[i])), OP_LOGE("reduce", "axesDims is invalid"),
                     return ge::GRAPH_FAILED);
         if (isScalar) {
@@ -118,14 +118,14 @@ ge::graphStatus ReduceDimsWithKeepDims(const gert::Shape* xShape, const T* axesD
 }
 
 template <typename T>
-ge::graphStatus ReduceDimsWithoutKeepDims(const gert::Shape* xShape, const T* axesDims, int32_t axesDim0,
+ge::graphStatus ReduceDimsWithoutKeepDims(const gert::Shape* xShape, const T* axesDims, int32_t axesShapeSize,
                                           gert::Shape* outputShape)
 {
     T dimNum = xShape->GetDimNum();
     outputShape->SetDimNum(0);
     for (T j = 0; j < dimNum; j++) {
         bool reduceFlag = false;
-        for (int32_t i = 0; i < axesDim0; i++) {
+        for (int32_t i = 0; i < axesShapeSize; i++) {
             OP_CHECK_IF((!CheckAxisBounds<T, T>(dimNum, axesDims[i])), OP_LOGE("reduce", "axesDims is invalid"),
                         return ge::GRAPH_FAILED);
             T dim = axesDims[i] < 0 ? axesDims[i] + dimNum : axesDims[i];
@@ -144,14 +144,14 @@ ge::graphStatus ReduceDimsWithoutKeepDims(const gert::Shape* xShape, const T* ax
 }
 
 template <typename T>
-ge::graphStatus ReduceDims(const gert::Shape* xShape, const gert::Tensor* axesTensor, int32_t axesDim0,
+ge::graphStatus ReduceDims(const gert::Shape* xShape, const gert::Tensor* axesTensor, int32_t axesShapeSize,
                            const bool keepDims, gert::Shape* outputShape)
 {
     const T* axesDims = axesTensor->GetData<T>();
     if (keepDims) {
-        return ReduceDimsWithKeepDims<T>(xShape, axesDims, axesDim0, outputShape);
+        return ReduceDimsWithKeepDims<T>(xShape, axesDims, axesShapeSize, outputShape);
     }
-    return ReduceDimsWithoutKeepDims<T>(xShape, axesDims, axesDim0, outputShape);
+    return ReduceDimsWithoutKeepDims<T>(xShape, axesDims, axesShapeSize, outputShape);
 }
 
 static ge::graphStatus DoInferShapeReduce(gert::InferShapeContext* context, const gert::Shape* inShape,
@@ -160,21 +160,19 @@ static ge::graphStatus DoInferShapeReduce(gert::InferShapeContext* context, cons
 {
     auto axesShape = axesTensor->GetStorageShape();
     auto axesDimNum = axesShape.GetDimNum();
+    auto axesShapeSize = axesShape.GetShapeSize();
     auto axesDim0 = (axesDimNum == 1) ? axesShape.GetDim(0) : ((axesDimNum == 0) ? 1 : 0);
 
-    OP_LOGI(context->GetNodeName(), "axesShape = %s, axesDimNum = %zu, axesDim0 = %" PRId64,
-            ToString(axesShape).c_str(), axesDimNum, axesDim0);
+    OP_LOGI(context->GetNodeName(),
+            "axesShape = %s, axesDimNum = %zu, axesDim0 = %" PRId64 ", axesShapeSize = %" PRId64,
+            ToString(axesShape).c_str(), axesDimNum, axesDim0, axesShapeSize);
 
     // --- 场景1: axes为空tensor，走noop/allReduce ---
-    if (axesDimNum == 1 && axesDim0 == 0) {
+    if ((axesDimNum == 1 && axesDim0 == 0) || axesShapeSize == 0) {
         auto ret = ProcessEmptyAxesWithNoopWithEmptyAxes(context, inShape, outShape, keepDims, noopWithEmptyAxes);
         OP_LOGI(context->GetNodeName(), "outShape = %s", ToString(*outShape).c_str());
         return ret;
     }
-
-    OP_CHECK_IF(axesDimNum != 0 && axesDimNum != 1,
-                OP_LOGE(context->GetNodeName(), "axes must be 0-D or 1-D tensor, but got %zu-D", axesDimNum),
-                return ge::GRAPH_FAILED);
 
     auto axesDtype = axesTensor->GetDataType();
     // --- 场景2: axes非静态常量，保守推导 ---
@@ -204,9 +202,9 @@ static ge::graphStatus DoInferShapeReduce(gert::InferShapeContext* context, cons
     // --- 场景3: axes为静态常量，精确推导 ---
     ge::graphStatus ret;
     if (axesDtype == ge::DT_INT32) {
-        ret = ReduceDims<int32_t>(inShape, axesTensor, axesDim0, keepDims, outShape);
+        ret = ReduceDims<int32_t>(inShape, axesTensor, axesShapeSize, keepDims, outShape);
     } else if (axesDtype == ge::DT_INT64) {
-        ret = ReduceDims<int64_t>(inShape, axesTensor, axesDim0, keepDims, outShape);
+        ret = ReduceDims<int64_t>(inShape, axesTensor, axesShapeSize, keepDims, outShape);
     } else {
         OP_LOGE(context->GetNodeName(), "const axes data type %s must in (int32, int64)", ToString(axesDtype).c_str());
         return ge::GRAPH_FAILED;
@@ -215,7 +213,7 @@ static ge::graphStatus DoInferShapeReduce(gert::InferShapeContext* context, cons
     return ret;
 }
 
-static ge::graphStatus InferShape4ReduceCommon(gert::InferShapeContext* context, const char* opName,
+inline ge::graphStatus InferShape4ReduceCommon(gert::InferShapeContext* context, const char* opName,
                                                bool hasNoopAttr = true)
 {
     OP_LOGI(context->GetNodeName(), "Begin %s.", opName);

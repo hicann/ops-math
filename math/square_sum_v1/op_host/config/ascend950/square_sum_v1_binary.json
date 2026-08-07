@@ -37,6 +37,11 @@
           "name": "keep_dims",
           "dtype": "bool",
           "value": null
+        },
+        {
+          "name": "noop_with_empty_axes",
+          "dtype": "bool",
+          "value": null
         }
       ]
     },
@@ -76,6 +81,11 @@
           "name": "keep_dims",
           "dtype": "bool",
           "value": null
+        },
+        {
+          "name": "noop_with_empty_axes",
+          "dtype": "bool",
+          "value": null
         }
       ]
     },
@@ -113,6 +123,11 @@
         },
         {
           "name": "keep_dims",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "noop_with_empty_axes",
           "dtype": "bool",
           "value": null
         }

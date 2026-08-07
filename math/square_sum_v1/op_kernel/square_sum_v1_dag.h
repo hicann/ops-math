@@ -25,6 +25,17 @@ namespace SquareSumV1 {
 using namespace Ops::Base;
 
 template <typename T, typename PromteT>
+struct SquareSumV1NoopDag {
+    using OpCopyIn0 = Bind<Vec::CopyIn<T>, Placeholder::In0<T>>;
+    using Cast0 = Bind<Vec::Cast<PromteT, T, 0>, OpCopyIn0>;
+    using OpSquare = Bind<Vec::Mul<PromteT>, Cast0, Cast0>;
+    using Cast1 = Bind<Vec::Cast<T, PromteT, 1>, OpSquare>;
+    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, Cast1>;
+    using Outputs = Elems<OpCopyOut>;
+    using OpDag = DAGSch<Outputs>;
+};
+
+template <typename T, typename PromteT>
 struct SquareSumV1Dag {
     using OpCopyIn0 = Bind<Vec::CopyIn<T>, Placeholder::In0<T>>;
     using Cast0 = Bind<Vec::Cast<PromteT, T, 0>, OpCopyIn0>;

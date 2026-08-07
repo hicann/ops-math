@@ -35,9 +35,6 @@ static Status ParseParamsReduceLogSumExp(const Message* op_src, ge::Operator& op
         } else if (attr.name() == "keepdims" && attr.type() == ge::onnx::AttributeProto::INT) {
             keep_dims = (attr.i() == 1);
         }
-        if (attr.name() == "noop_with_empty_axes" && attr.type() == ge::onnx::AttributeProto::INT && attr.i() == 1) {
-            OP_LOGW(GetOpName(op_dest).c_str(), "Only support noop_with_empty_axes=0, but 1 is obtained now");
-        }
     }
 
     int num = v_axes.size();
@@ -88,6 +85,7 @@ static Status ParseOpToGraphReduceLogSumExp(const ge::Operator& op, Graph& graph
         return FAILED;
     }
     reduce_log_sum_exp.set_attr_keep_dims(keep_dims);
+    reduce_log_sum_exp.set_attr_noop_with_empty_axes(false);
 
     std::vector<ge::Operator> inputs{data0};
     std::vector<std::pair<ge::Operator, std::vector<size_t> > > outputs;
@@ -109,6 +107,7 @@ static Status ParseParamsReduceLogSumExp13(const Message* op_src, ge::Operator& 
     int input_size = node->input_size();
     std::vector<int> axes = {};
     bool keep_dims = true;
+    int noop_with_empty_axes = 0;
     for (const auto& attr : node->attribute()) {
         // 兼容版本13后，任然会有将axes作为属性传入的情况
         if (attr.name() == "axes" && attr.type() == ge::onnx::AttributeProto::INTS) {
@@ -117,6 +116,8 @@ static Status ParseParamsReduceLogSumExp13(const Message* op_src, ge::Operator& 
             }
         } else if (attr.name() == "keepdims" && attr.type() == ge::onnx::AttributeProto::INT) {
             keep_dims = (attr.i() == 1);
+        } else if (attr.name() == "noop_with_empty_axes" && attr.type() == ge::onnx::AttributeProto::INT) {
+            noop_with_empty_axes = attr.i();
         }
     }
 
@@ -135,6 +136,7 @@ static Status ParseParamsReduceLogSumExp13(const Message* op_src, ge::Operator& 
     op_dest.SetAttr("name", node->name());
     op_dest.SetAttr("input_size", input_size);
     op_dest.SetAttr("keep_dims", keep_dims);
+    op_dest.SetAttr("noop_with_empty_axes", noop_with_empty_axes);
     return SUCCESS;
 }
 
@@ -143,6 +145,7 @@ struct ReduceLogSumExp13Prop {
     std::string ori_name;
     bool keep_dims = false;
     int input_num = 1;
+    int empty_axes = 0;
 };
 
 Status GetProperty(const Operator& op, ReduceLogSumExp13Prop& prop)
@@ -159,6 +162,11 @@ Status GetProperty(const Operator& op, ReduceLogSumExp13Prop& prop)
 
     if (op.GetAttr("input_size", prop.input_num) != SUCCESS) {
         OP_LOGE(GetOpName(op).c_str(), "get input_num from op failed");
+        return FAILED;
+    }
+
+    if (op.GetAttr("noop_with_empty_axes", prop.empty_axes) != SUCCESS) {
+        OP_LOGE(GetOpName(op).c_str(), "get attribute noop_with_empty_axes failed");
         return FAILED;
     }
     return SUCCESS;
@@ -184,7 +192,8 @@ static Status ParseOpToGraphReduceLogSumExp13(const Operator& op, Graph& graph)
         auto reduce_log_sum_exp = op::ReduceLogSumExp((prop.ori_name + "_ReduceLogSumExp").c_str())
                                       .set_input_x(data0)
                                       .set_input_axes(data1)
-                                      .set_attr_keep_dims(prop.keep_dims);
+                                      .set_attr_keep_dims(prop.keep_dims)
+                                      .set_attr_noop_with_empty_axes(prop.empty_axes);
         std::vector<Operator> inputs{data0};
         std::vector<std::pair<Operator, std::vector<size_t> > > output_indexs;
         output_indexs.emplace_back(reduce_log_sum_exp, vector<std::size_t>{0});
@@ -194,7 +203,8 @@ static Status ParseOpToGraphReduceLogSumExp13(const Operator& op, Graph& graph)
         auto reduce_log_sum_exp = op::ReduceLogSumExp((prop.ori_name + "_ReduceLogSumExp").c_str())
                                       .set_input_x(data0)
                                       .set_input_axes(data1)
-                                      .set_attr_keep_dims(prop.keep_dims);
+                                      .set_attr_keep_dims(prop.keep_dims)
+                                      .set_attr_noop_with_empty_axes(prop.empty_axes);
         std::vector<Operator> inputs{data0, data1};
         std::vector<std::pair<Operator, std::vector<size_t> > > output_indexs;
         output_indexs.emplace_back(reduce_log_sum_exp, vector<std::size_t>{0});

@@ -20,7 +20,7 @@ using namespace Ops::Math;
 namespace ops {
 static ge::graphStatus InferShape4ReduceLogSumExp(gert::InferShapeContext* context)
 {
-    return InferShape4ReduceCommon(context, "InferShape4ReduceLogSumExp", false);
+    return InferShape4ReduceCommon(context, "InferShape4ReduceLogSumExp");
 }
 
 static ge::graphStatus InferShapeRange4ReduceLogSumExp(gert::InferShapeRangeContext* context)
