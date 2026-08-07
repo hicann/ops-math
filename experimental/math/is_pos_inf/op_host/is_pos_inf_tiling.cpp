@@ -10,7 +10,7 @@
 
 #include "log/log.h"
 #include "register/op_impl_registry.h"
-#include "torch_extension/tiling_utils.h"
+#include "torch_extension/tiling_utils_math.h"
 #include "tiling/platform/platform_ascendc.h"
 
 #include "../op_kernel/is_pos_inf_tiling_data.h"
@@ -43,7 +43,8 @@ static const gert::Shape& EnsureNotScalar(const gert::Shape& shape)
     return shape;
 }
 
-static graphStatus GetPlatformInfo(gert::TilingContext* context, int64_t& coreNum, uint64_t& ubSize, uint32_t& wsSysSize)
+static graphStatus GetPlatformInfo(gert::TilingContext* context, int64_t& coreNum, uint64_t& ubSize,
+                                   uint32_t& wsSysSize)
 {
     fe::PlatFormInfos* platformInfo = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
@@ -88,8 +89,8 @@ static int64_t GetTypeSize(DataType dtype)
     }
 }
 
-static graphStatus ValidateInput(
-    gert::TilingContext* context, int64_t& totalLength, int64_t& dtypeSize, IsPosInfDtypeId& dtypeId)
+static graphStatus ValidateInput(gert::TilingContext* context, int64_t& totalLength, int64_t& dtypeSize,
+                                 IsPosInfDtypeId& dtypeId)
 {
     auto inputShape = context->GetInputShape(IDX_SELF);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputShape);
@@ -126,16 +127,9 @@ static graphStatus InitWorkspaceAndTiling(gert::TilingContext* context, uint32_t
     return GRAPH_SUCCESS;
 }
 
-static graphStatus ComputeTilePolicy(int64_t totalLength,
-                                     int64_t dtypeSize,
-                                     IsPosInfDtypeId dtypeId,
-                                     int64_t coreNum,
-                                     uint64_t ubSize,
-                                     int64_t& usedCoreNum,
-                                     int64_t& formerNum,
-                                     int64_t& formerLength,
-                                     int64_t& tailLength,
-                                     int64_t& tileLength)
+static graphStatus ComputeTilePolicy(int64_t totalLength, int64_t dtypeSize, IsPosInfDtypeId dtypeId, int64_t coreNum,
+                                     uint64_t ubSize, int64_t& usedCoreNum, int64_t& formerNum, int64_t& formerLength,
+                                     int64_t& tailLength, int64_t& tileLength)
 {
     if (totalLength <= 0) {
         return GRAPH_SUCCESS;
@@ -157,8 +151,7 @@ static graphStatus ComputeTilePolicy(int64_t totalLength,
         return GRAPH_FAILED;
     }
     int64_t totalLengthCore = (totalLength + coreNum - 1) / coreNum;
-    int64_t totalLengthCoreAlign =
-        ((totalLengthCore + cacheLineElements - 1) / cacheLineElements) * cacheLineElements;
+    int64_t totalLengthCoreAlign = ((totalLengthCore + cacheLineElements - 1) / cacheLineElements) * cacheLineElements;
     if (totalLengthCoreAlign == 0) {
         return GRAPH_FAILED;
     }
@@ -190,13 +183,8 @@ static graphStatus ComputeTilePolicy(int64_t totalLength,
     return GRAPH_SUCCESS;
 }
 
-static graphStatus SaveTilingData(gert::TilingContext* context,
-                                  gert::TilingData* tiling,
-                                  int64_t usedCoreNum,
-                                  int64_t formerNum,
-                                  int64_t formerLength,
-                                  int64_t tailLength,
-                                  int64_t tileLength,
+static graphStatus SaveTilingData(gert::TilingContext* context, gert::TilingData* tiling, int64_t usedCoreNum,
+                                  int64_t formerNum, int64_t formerLength, int64_t tailLength, int64_t tileLength,
                                   IsPosInfDtypeId dtypeId)
 {
     IsPosInfTilingData tilingData;
@@ -234,17 +222,14 @@ static graphStatus IsPosInfTilingFunc(gert::TilingContext* context)
     int64_t formerLength = 0;
     int64_t tailLength = 0;
     int64_t tileLength = 0;
-    OP_CHECK_IF(ComputeTilePolicy(totalLength, dtypeSize, dtypeId, coreNum, ubSize, usedCoreNum,
-                                  formerNum, formerLength, tailLength, tileLength) != GRAPH_SUCCESS,
+    OP_CHECK_IF(ComputeTilePolicy(totalLength, dtypeSize, dtypeId, coreNum, ubSize, usedCoreNum, formerNum,
+                                  formerLength, tailLength, tileLength) != GRAPH_SUCCESS,
                 OP_LOGE(context, "ComputeTilePolicy failed"), return GRAPH_FAILED);
 
     return SaveTilingData(context, tiling, usedCoreNum, formerNum, formerLength, tailLength, tileLength, dtypeId);
 }
 
-static graphStatus TilingParseForIsPosInf([[maybe_unused]] gert::TilingParseContext* context)
-{
-    return GRAPH_SUCCESS;
-}
+static graphStatus TilingParseForIsPosInf([[maybe_unused]] gert::TilingParseContext* context) { return GRAPH_SUCCESS; }
 
 IMPL_OP_OPTILING(IsPosInf).Tiling(IsPosInfTilingFunc).TilingParse<IsPosInfCompileInfo>(TilingParseForIsPosInf);
-}
+} // namespace optiling

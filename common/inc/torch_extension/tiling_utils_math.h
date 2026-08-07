@@ -9,12 +9,12 @@
  */
 
 /*!
- * \file tiling_util.h
+ * \file tiling_utils_math.h
  * \brief
  */
 
-#ifndef TILING_UTILS_H
-#define TILING_UTILS_H
+#ifndef TILING_UTILS_MATH_H
+#define TILING_UTILS_MATH_H
 
 #include <stdexcept>
 
@@ -75,4 +75,4 @@ public:
     }
 };
 
-#endif // TILING_UTILS_H
+#endif // TILING_UTILS_MATH_H

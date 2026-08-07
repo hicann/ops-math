@@ -21,7 +21,7 @@
 
 #include "../op_kernel/mod_tiling_data.h"
 #include "../op_kernel/mod_tiling_key.h"
-#include "torch_extension/tiling_utils.h"
+#include "torch_extension/tiling_utils_math.h"
 #include "op_host/tiling_base_util.h"
 
 using namespace ge;
@@ -108,18 +108,16 @@ static ge::graphStatus TilingPrepare4ModTiling(gert::TilingParseContext* context
     uint64_t ubSizePlatForm;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSize = static_cast<int64_t>(ubSizePlatForm);
-    OP_CHECK_IF(
-        (compileInfo->totalCoreNum <= 0 || compileInfo->ubSize <= 0),
-        OP_LOGE(
-            context, "Mod GetHardwareInfo Failed, vectorCoreNum:%d, ubSize:%ld.", compileInfo->totalCoreNum,
-            compileInfo->ubSize),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->totalCoreNum <= 0 || compileInfo->ubSize <= 0),
+                OP_LOGE(context, "Mod GetHardwareInfo Failed, vectorCoreNum:%d, ubSize:%ld.", compileInfo->totalCoreNum,
+                        compileInfo->ubSize),
+                return ge::GRAPH_FAILED);
     OP_LOGD(context, "Get totalCoreNum:%d, ubSize:%ld", compileInfo->totalCoreNum, compileInfo->ubSize);
     return ge::GRAPH_SUCCESS;
 }
 
-static void SetTilingKeyParams(
-    ge::DataType dtype, uint32_t& dTypeX1, uint32_t& dTypeX2, uint32_t& dTypeY, uint32_t& ubDivider)
+static void SetTilingKeyParams(ge::DataType dtype, uint32_t& dTypeX1, uint32_t& dTypeX2, uint32_t& dTypeY,
+                               uint32_t& ubDivider)
 {
     if (dtype == ge::DataType::DT_FLOAT) {
         dTypeX1 = MOD_TPL_FP32;
@@ -149,9 +147,8 @@ static void SetTilingKeyParams(
     }
 }
 
-static ge::graphStatus CheckModTilingContext(
-    gert::TilingContext* tilingContext, const ModCompileInfo*& compileInfo, const gert::StorageShape*& shape,
-    const gert::StorageShape*& otherShape)
+static ge::graphStatus CheckModTilingContext(gert::TilingContext* tilingContext, const ModCompileInfo*& compileInfo,
+                                             const gert::StorageShape*& shape, const gert::StorageShape*& otherShape)
 {
     OP_CHECK_IF(tilingContext == nullptr, OP_LOGE("ModTiling", "tiling context is nullptr"), return ge::GRAPH_FAILED);
     OP_LOGD(tilingContext, "Entering ModTilingForGe");
@@ -167,8 +164,8 @@ static ge::graphStatus CheckModTilingContext(
     return ge::GRAPH_SUCCESS;
 }
 
-static void SetInput2ShapeInfo(
-    ModNs::ModTilingData* tilingData, const gert::Shape& input1StorageShape, const gert::Shape& input2StorageShape)
+static void SetInput2ShapeInfo(ModNs::ModTilingData* tilingData, const gert::Shape& input1StorageShape,
+                               const gert::Shape& input2StorageShape)
 {
     tilingData->isInput2Scalar = (input2StorageShape.GetShapeSize() == 1);
     tilingData->dimNum = static_cast<uint32_t>(input1StorageShape.GetDimNum());
@@ -214,8 +211,8 @@ static ge::graphStatus ModTilingForGe(gert::TilingContext* tilingContext)
     uint32_t D_T_X1, D_T_X2, D_T_Y, ubDivider;
     ge::DataType dtype_x = tilingContext->GetInputDesc(0)->GetDataType();
     SetTilingKeyParams(dtype_x, D_T_X1, D_T_X2, D_T_Y, ubDivider);
-    ModNs::ModTiling::ModCommonTiling<gert::Shape>(
-        shape->GetStorageShape(), *tilingData, compileInfo->totalCoreNum, compileInfo->ubSize, ubDivider);
+    ModNs::ModTiling::ModCommonTiling<gert::Shape>(shape->GetStorageShape(), *tilingData, compileInfo->totalCoreNum,
+                                                   compileInfo->ubSize, ubDivider);
     SetInput2ShapeInfo(tilingData, shape->GetStorageShape(), otherShape->GetStorageShape());
     tilingContext->SetBlockDim(tilingData->needCoreNum);
 

@@ -21,7 +21,7 @@
 
 #include "../op_kernel/floor_mod_tiling_data.h"
 #include "../op_kernel/floor_mod_tiling_key.h"
-#include "torch_extension/tiling_utils.h"
+#include "torch_extension/tiling_utils_math.h"
 #include "op_host/tiling_base_util.h"
 
 using namespace ge;
@@ -36,8 +36,8 @@ public:
     constexpr static int64_t RESERVERD_UB_SIZE = 1024;
 
     template <typename T>
-    static void FloorModCommonTiling(
-        T x, FloorModTilingData& tilingData, uint32_t coreNum, uint64_t ubSize, uint32_t ubDivider)
+    static void FloorModCommonTiling(T x, FloorModTilingData& tilingData, uint32_t coreNum, uint64_t ubSize,
+                                     uint32_t ubDivider)
     {
         if (ubDivider == 0) {
             return;
@@ -109,18 +109,16 @@ static ge::graphStatus TilingPrepare4FloorModTiling(gert::TilingParseContext* co
     uint64_t ubSizePlatForm;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSize = static_cast<int64_t>(ubSizePlatForm);
-    OP_CHECK_IF(
-        (compileInfo->totalCoreNum <= 0 || compileInfo->ubSize <= 0),
-        OP_LOGE(
-            context, "FloorMod GetHardwareInfo Failed, vectorCoreNum:%d, ubSize:%ld.", compileInfo->totalCoreNum,
-            compileInfo->ubSize),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->totalCoreNum <= 0 || compileInfo->ubSize <= 0),
+                OP_LOGE(context, "FloorMod GetHardwareInfo Failed, vectorCoreNum:%d, ubSize:%ld.",
+                        compileInfo->totalCoreNum, compileInfo->ubSize),
+                return ge::GRAPH_FAILED);
     OP_LOGD(context, "Get totalCoreNum:%d, ubSize:%ld", compileInfo->totalCoreNum, compileInfo->ubSize);
     return ge::GRAPH_SUCCESS;
 }
 
-static void SetTilingKeyParams(
-    ge::DataType dtype, uint32_t& dTypeX1, uint32_t& dTypeX2, uint32_t& dTypeY, uint32_t& ubDivider)
+static void SetTilingKeyParams(ge::DataType dtype, uint32_t& dTypeX1, uint32_t& dTypeX2, uint32_t& dTypeY,
+                               uint32_t& ubDivider)
 {
     if (dtype == ge::DataType::DT_FLOAT) {
         dTypeX1 = FLOOR_MOD_TPL_FP32;
@@ -152,8 +150,8 @@ static void SetTilingKeyParams(
 
 static ge::graphStatus FloorModTilingForGe(gert::TilingContext* tilingContext)
 {
-    OP_CHECK_IF(
-        tilingContext == nullptr, OP_LOGE("FloorModTiling", "tiling context is nullptr"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(tilingContext == nullptr, OP_LOGE("FloorModTiling", "tiling context is nullptr"),
+                return ge::GRAPH_FAILED);
     OP_LOGD(tilingContext, "Entering FloorModTilingForGe");
     auto compileInfo = reinterpret_cast<const FloorModCompileInfo*>(tilingContext->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, compileInfo);
