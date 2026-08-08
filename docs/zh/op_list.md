@@ -189,12 +189,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/affine_grid">affine_grid</a></td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
+    <td>×</td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>给定一组3维的仿射参数矩阵(theta)以及输出图像的大小(size)，生成一个2D或3D的网格。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -604,7 +604,7 @@
     <td>×</td>
     <td>×</td>
     <td>AI Core</td>
-    <td>计算self中的累积最小值，并返回最小值以及对应的索引。</td>
+    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1279,12 +1279,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/logspace">logspace</a></td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
+    <td>×</td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>创建一个大小为steps的一维张量，其值在base^start到base^end上对数尺度上均匀间隔。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1294,7 +1294,7 @@
     <td>×</td>
     <td>×</td>
     <td>AI Core</td>
-    <td>完成elementwise计算。</td>
+    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1489,12 +1489,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/precision_compare">precision_compare</a></td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
+    <td>×</td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>计算两个Tensor元素是否相同，进行精度比对，返回算子执行的状态码。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1878,13 +1878,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/signbit">signbit</a></td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
+    <td><a href="../../math/signbit/README.md">signbit</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>判断输入self中的每个元素符号位是否为1，返回一个Tensor。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1959,12 +1959,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/slogdet/README.md">slogdet</a></td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
+    <td>×</td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>计算输入self的行列式的符号和自然对数。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -2079,12 +2079,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/svd/README.md">svd</a></td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
+    <td>×</td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>计算一个或多个矩阵的奇异值分解。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -2149,12 +2149,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/top_k_v2/README.md">top_k_v2</a></td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>返回输入Tensor在指定维度上的k个极值及索引，支持通过输入Tensor指定k值。</td>
   </tr>
   <tr>
     <td>math</td>
