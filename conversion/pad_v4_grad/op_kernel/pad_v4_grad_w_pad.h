@@ -22,31 +22,28 @@ class PadV4GradPadW : public PadV4GradBase<T> {
 public:
     __aicore__ inline PadV4GradPadW(){};
     __aicore__ inline void InitBuffer(TPipe* inputPipe);
-    __aicore__ inline void CopyGm2UB(
-        TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, const int64_t offset1, const int64_t offset2,
-        const int64_t copyCount);
-    __aicore__ inline void ComputeWGrad(
-        TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue,
-        const int32_t calCount);
-    __aicore__ inline void Bf16ComputeWGrad(
-        TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue,
-        const int32_t calCount, const int32_t castCount, LocalTensor<float> castTensor);
+    __aicore__ inline void CopyGm2UB(TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, const int64_t offset1,
+                                     const int64_t offset2, const int64_t copyCount);
+    __aicore__ inline void ComputeWGrad(TQue<QuePosition::VECIN, BUFFER_NUM>& inQue,
+                                        TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue, const int32_t calCount);
+    __aicore__ inline void Bf16ComputeWGrad(TQue<QuePosition::VECIN, BUFFER_NUM>& inQue,
+                                            TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue, const int32_t calCount,
+                                            const int32_t castCount, LocalTensor<float> castTensor);
     __aicore__ inline void Process();
     __aicore__ inline void CopyIn(const int64_t copyCount, const int64_t offset);
-    __aicore__ inline void Compute(
-        TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue,
-        const int64_t copyCount);
+    __aicore__ inline void Compute(TQue<QuePosition::VECIN, BUFFER_NUM>& inQue,
+                                   TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue, const int64_t copyCount);
     __aicore__ inline void CopyOut(const int64_t copyCount, const int64_t offset);
-    __aicore__ inline void CopyInFromWs(
-        TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, const int64_t copyCount, const int64_t offset);
-    __aicore__ inline void Copy2Ws(
-        TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue, const int64_t copyCount, const int64_t offset);
-    __aicore__ inline void CopyWs2Out(
-        TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue, const int64_t copyCount, const int64_t offset);
-    __aicore__ inline void CopyAndComputeWGrad(
-        TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue);
-    __aicore__ inline void CopyMiddleToOut(
-        TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue);
+    __aicore__ inline void CopyInFromWs(TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, const int64_t copyCount,
+                                        const int64_t offset);
+    __aicore__ inline void Copy2Ws(TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue, const int64_t copyCount,
+                                   const int64_t offset);
+    __aicore__ inline void CopyWs2Out(TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue, const int64_t copyCount,
+                                      const int64_t offset);
+    __aicore__ inline void CopyAndComputeWGrad(TQue<QuePosition::VECIN, BUFFER_NUM>& inQue,
+                                               TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue);
+    __aicore__ inline void CopyMiddleToOut(TQue<QuePosition::VECIN, BUFFER_NUM>& inQue,
+                                           TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue);
 
 private:
     TPipe* pipe;
@@ -85,8 +82,8 @@ __aicore__ inline void PadV4GradPadW<T>::InitBuffer(TPipe* inputPipe)
 }
 
 template <typename T>
-__aicore__ inline void PadV4GradPadW<T>::CopyGm2UB(
-    TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, const int64_t offset1, const int64_t offset2, const int64_t copyCount)
+__aicore__ inline void PadV4GradPadW<T>::CopyGm2UB(TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, const int64_t offset1,
+                                                   const int64_t offset2, const int64_t copyCount)
 {
     int32_t alignCopyCount = this->CeilAlign(copyCount, this->perBlockCount);
     DataCopyExtParams copyParams{1, (uint32_t)(copyCount * sizeof(T)), 0, 0, 0};
@@ -98,8 +95,8 @@ __aicore__ inline void PadV4GradPadW<T>::CopyGm2UB(
 }
 
 template <typename T>
-__aicore__ inline void PadV4GradPadW<T>::CopyInFromWs(
-    TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, const int64_t copyCount, const int64_t offset)
+__aicore__ inline void PadV4GradPadW<T>::CopyInFromWs(TQue<QuePosition::VECIN, BUFFER_NUM>& inQue,
+                                                      const int64_t copyCount, const int64_t offset)
 {
     int32_t alignCopyCount = this->CeilAlign(copyCount, this->perBlockCount);
     LocalTensor<T> xLocal = inQue.AllocTensor<T>();
@@ -121,8 +118,8 @@ __aicore__ inline void PadV4GradPadW<T>::CopyIn(const int64_t copyCount, const i
 }
 
 template <typename T>
-__aicore__ inline void PadV4GradPadW<T>::Compute(
-    TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue, const int64_t copyCount)
+__aicore__ inline void PadV4GradPadW<T>::Compute(TQue<QuePosition::VECIN, BUFFER_NUM>& inQue,
+                                                 TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue, const int64_t copyCount)
 {
     int32_t alignCopyCount = this->CeilAlign(copyCount, this->perBlockCount);
     LocalTensor<T> yLocal = outQue.AllocTensor<T>();
@@ -133,8 +130,8 @@ __aicore__ inline void PadV4GradPadW<T>::Compute(
 }
 
 template <typename T>
-__aicore__ inline void PadV4GradPadW<T>::Copy2Ws(
-    TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue, const int64_t copyCount, const int64_t offset)
+__aicore__ inline void PadV4GradPadW<T>::Copy2Ws(TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue, const int64_t copyCount,
+                                                 const int64_t offset)
 {
     int32_t alignCopyCount = this->CeilAlign(copyCount, this->perBlockCount);
     DataCopyExtParams copyParams{1, (uint32_t)(copyCount * sizeof(T)), 0, 0, 0};
@@ -144,8 +141,8 @@ __aicore__ inline void PadV4GradPadW<T>::Copy2Ws(
 }
 
 template <typename T>
-__aicore__ inline void PadV4GradPadW<T>::CopyWs2Out(
-    TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue, const int64_t copyCount, const int64_t offset)
+__aicore__ inline void PadV4GradPadW<T>::CopyWs2Out(TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue,
+                                                    const int64_t copyCount, const int64_t offset)
 {
     int32_t alignCopyCount = this->CeilAlign(copyCount, this->perBlockCount);
     DataCopyExtParams copyParams{1, (uint32_t)(copyCount * sizeof(T)), 0, 0, 0};
@@ -165,8 +162,9 @@ __aicore__ inline void PadV4GradPadW<T>::CopyOut(const int64_t copyCount, const 
 }
 
 template <typename T>
-__aicore__ inline void PadV4GradPadW<T>::ComputeWGrad(
-    TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue, const int32_t calCount)
+__aicore__ inline void PadV4GradPadW<T>::ComputeWGrad(TQue<QuePosition::VECIN, BUFFER_NUM>& inQue,
+                                                      TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue,
+                                                      const int32_t calCount)
 {
     LocalTensor<T> xLocal = inQue.DeQue<T>();
     LocalTensor<T> yLocal = outQue.AllocTensor<T>();
@@ -177,24 +175,24 @@ __aicore__ inline void PadV4GradPadW<T>::ComputeWGrad(
     T tmp1;
     T tmp2;
     // compute grad
-    for (size_t i = 0; i < this->wPad1; i++) {
+    for (size_t i = 0; i < this->padLeft; i++) {
         val1 = xLocal.GetValue(i);
-        val2 = xLocal.GetValue(2 * this->wPad1 - i);
+        val2 = xLocal.GetValue(2 * this->padLeft - i);
         if constexpr (AscendC::IsSameType<T, half>::value) {
             tmp1 = (T)((float)val1 + (float)val2);
-            xLocal.SetValue(2 * this->wPad1 - i, tmp1);
+            xLocal.SetValue(2 * this->padLeft - i, tmp1);
         } else {
-            xLocal.SetValue(2 * this->wPad1 - i, val1 + val2);
+            xLocal.SetValue(2 * this->padLeft - i, val1 + val2);
         }
     }
-    for (size_t i = 0; i < this->wPad2; i++) {
+    for (size_t i = 0; i < this->padRight; i++) {
         val3 = xLocal.GetValue(2 * calCount - 1 - i);
-        val4 = xLocal.GetValue(2 * calCount - 1 - 2 * this->wPad2 + i);
+        val4 = xLocal.GetValue(2 * calCount - 1 - 2 * this->padRight + i);
         if constexpr (AscendC::IsSameType<T, half>::value) {
             tmp2 = (T)((float)val3 + (float)val4);
-            xLocal.SetValue(2 * calCount - 1 - 2 * this->wPad2 + i, tmp2);
+            xLocal.SetValue(2 * calCount - 1 - 2 * this->padRight + i, tmp2);
         } else {
-            xLocal.SetValue(2 * calCount - 1 - 2 * this->wPad2 + i, val3 + val4);
+            xLocal.SetValue(2 * calCount - 1 - 2 * this->padRight + i, val3 + val4);
         }
     }
     DataCopy(yLocal, xLocal, 2 * calCount);
@@ -203,9 +201,10 @@ __aicore__ inline void PadV4GradPadW<T>::ComputeWGrad(
 }
 
 template <typename T>
-__aicore__ inline void PadV4GradPadW<T>::Bf16ComputeWGrad(
-    TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue, const int32_t calCount,
-    const int32_t castCount, LocalTensor<float> castTensor)
+__aicore__ inline void PadV4GradPadW<T>::Bf16ComputeWGrad(TQue<QuePosition::VECIN, BUFFER_NUM>& inQue,
+                                                          TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue,
+                                                          const int32_t calCount, const int32_t castCount,
+                                                          LocalTensor<float> castTensor)
 {
     LocalTensor<T> xLocal = inQue.DeQue<T>();
     LocalTensor<T> yLocal = outQue.AllocTensor<T>();
@@ -215,15 +214,15 @@ __aicore__ inline void PadV4GradPadW<T>::Bf16ComputeWGrad(
     float val4;
     Cast(castTensor, xLocal, RoundMode::CAST_NONE, castCount);
     // compute grad
-    for (size_t i = 0; i < this->wPad1; i++) {
+    for (size_t i = 0; i < this->padLeft; i++) {
         val1 = castTensor.GetValue(i);
-        val2 = castTensor.GetValue(2 * this->wPad1 - i);
-        castTensor.SetValue(2 * this->wPad1 - i, val1 + val2);
+        val2 = castTensor.GetValue(2 * this->padLeft - i);
+        castTensor.SetValue(2 * this->padLeft - i, val1 + val2);
     }
-    for (size_t i = 0; i < this->wPad2; i++) {
+    for (size_t i = 0; i < this->padRight; i++) {
         val3 = castTensor.GetValue(2 * calCount - 1 - i);
-        val4 = castTensor.GetValue(2 * calCount - 1 - 2 * this->wPad2 + i);
-        castTensor.SetValue(2 * calCount - 1 - 2 * this->wPad2 + i, val3 + val4);
+        val4 = castTensor.GetValue(2 * calCount - 1 - 2 * this->padRight + i);
+        castTensor.SetValue(2 * calCount - 1 - 2 * this->padRight + i, val3 + val4);
     }
     Cast(yLocal, castTensor, RoundMode::CAST_ROUND, castCount);
     outQue.EnQue(yLocal);
@@ -231,27 +230,27 @@ __aicore__ inline void PadV4GradPadW<T>::Bf16ComputeWGrad(
 }
 
 template <typename T>
-__aicore__ inline void PadV4GradPadW<T>::CopyAndComputeWGrad(
-    TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue)
+__aicore__ inline void PadV4GradPadW<T>::CopyAndComputeWGrad(TQue<QuePosition::VECIN, BUFFER_NUM>& inQue,
+                                                             TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue)
 {
     DataCopyPadExtParams<T> padParams = {false, 0, 0, 0};
-    int64_t wPad1CountAlign= this->CeilAlign(2 * this->wPad1 + 1, this->perBlockCount);
-    bool isWPad1Full = this->wPad1 == (this->outWidth - 1);
-    bool isWPad2Full = this->wPad2 == (this->outWidth - 1);
+    int64_t padLeftCountAlign = this->CeilAlign(2 * this->padLeft + 1, this->perBlockCount);
+    bool ispadLeftFull = this->padLeft == (this->outWidth - 1);
+    bool ispadRightFull = this->padRight == (this->outWidth - 1);
     for (size_t loop = 0; loop < this->loopNC; loop++) {
         int64_t gmXOffset1 = loop * this->batchStride + this->ncOffset * this->batchStride;
         int64_t gmYOffset1 = loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
-        int64_t gmXOffset2 =
-            (this->width - 2 * this->wPad2 - 1) + loop * this->batchStride + this->ncOffset * this->batchStride;
+        int64_t gmXOffset2 = (this->width - 2 * this->padRight - 1) + loop * this->batchStride +
+                             this->ncOffset * this->batchStride;
 
-        int64_t gmYOffset2 = (this->outWidth - this->wPad2 - 1) + loop * this->outBatchStride +
-                        this->ncOffset * this->outBatchStride;
-        // wpad1
-        DataCopyExtParams copyParamswPad1 = {1, (uint32_t)((2 * this->wPad1 + 1) * sizeof(T)), 0, 0, 0};
-        DataCopyExtParams copyParamswPad2 = {1, (uint32_t)((2 * this->wPad2 + 1) * sizeof(T)), 0, 0, 0};
+        int64_t gmYOffset2 = (this->outWidth - this->padRight - 1) + loop * this->outBatchStride +
+                             this->ncOffset * this->outBatchStride;
+        // padLeft
+        DataCopyExtParams copyParamspadLeft = {1, (uint32_t)((2 * this->padLeft + 1) * sizeof(T)), 0, 0, 0};
+        DataCopyExtParams copyParamspadRight = {1, (uint32_t)((2 * this->padRight + 1) * sizeof(T)), 0, 0, 0};
         LocalTensor<T> xLocal = inQue.AllocTensor<T>();
-        DataCopyPad(xLocal, this->mGmX[gmXOffset1], copyParamswPad1, padParams);
-        DataCopyPad(xLocal[wPad1CountAlign], this->mGmX[gmXOffset2], copyParamswPad2, padParams);
+        DataCopyPad(xLocal, this->mGmX[gmXOffset1], copyParamspadLeft, padParams);
+        DataCopyPad(xLocal[padLeftCountAlign], this->mGmX[gmXOffset2], copyParamspadRight, padParams);
         inQue.EnQue(xLocal);
         xLocal = inQue.DeQue<T>();
         LocalTensor<T> yLocal = outQue.AllocTensor<T>();
@@ -259,69 +258,69 @@ __aicore__ inline void PadV4GradPadW<T>::CopyAndComputeWGrad(
         WaitFlag<HardEvent::MTE2_S>(MTE2ToSEvent);
         T val1;
         T val2;
-        yLocal.SetValue(0, xLocal.GetValue(this->wPad1));
-        for (size_t i = 0; i < this->wPad1; i++) {
+        yLocal.SetValue(0, xLocal.GetValue(this->padLeft));
+        for (size_t i = 0; i < this->padLeft; i++) {
             val1 = xLocal.GetValue(i);
-            val2 = xLocal.GetValue(2 * this->wPad1 - i);
-            yLocal.SetValue(this->wPad1 - i, (T)((float)val1 + (float)val2));
+            val2 = xLocal.GetValue(2 * this->padLeft - i);
+            yLocal.SetValue(this->padLeft - i, (T)((float)val1 + (float)val2));
         }
-        int64_t overLapCont = (int64_t)this->wPad1 + this->wPad2 + 2 - this->outWidth;
+        int64_t overLapCont = (int64_t)this->padLeft + this->padRight + 2 - this->outWidth;
         overLapCont = overLapCont > 0 ? overLapCont : 0;
-        overLapCont = isWPad2Full ? (this->wPad1 + 1) : overLapCont;
-        overLapCont = isWPad1Full ? this->wPad2 : overLapCont;
-        int64_t overLapOffset = this->wPad1 + 1 - overLapCont;
-        overLapOffset = isWPad1Full ? overLapOffset - 1 : overLapOffset;
-        overLapOffset = isWPad2Full ? 0 : overLapOffset;
+        overLapCont = ispadRightFull ? (this->padLeft + 1) : overLapCont;
+        overLapCont = ispadLeftFull ? this->padRight : overLapCont;
+        int64_t overLapOffset = this->padLeft + 1 - overLapCont;
+        overLapOffset = ispadLeftFull ? overLapOffset - 1 : overLapOffset;
+        overLapOffset = ispadRightFull ? 0 : overLapOffset;
         for (size_t i = 0; i < overLapCont; i++) {
             val1 = yLocal.GetValue(i + overLapOffset);
-            val2 = xLocal.GetValue(wPad1CountAlign + 2 * this->wPad2 - i);
-            yLocal.SetValue(wPad1CountAlign + i, (T)((float)val1 + (float)val2));
+            val2 = xLocal.GetValue(padLeftCountAlign + 2 * this->padRight - i);
+            yLocal.SetValue(padLeftCountAlign + i, (T)((float)val1 + (float)val2));
         }
-        for (size_t i = overLapCont; i < this->wPad2; i++) {
-            val1 = xLocal.GetValue(wPad1CountAlign + i);
-            val2 = xLocal.GetValue(wPad1CountAlign + 2 * this->wPad2 - i);
-            yLocal.SetValue(wPad1CountAlign + i, (T)((float)val1 + (float)val2));
+        for (size_t i = overLapCont; i < this->padRight; i++) {
+            val1 = xLocal.GetValue(padLeftCountAlign + i);
+            val2 = xLocal.GetValue(padLeftCountAlign + 2 * this->padRight - i);
+            yLocal.SetValue(padLeftCountAlign + i, (T)((float)val1 + (float)val2));
         }
-        if (isWPad1Full) {
-            yLocal.SetValue(wPad1CountAlign + this->wPad2, yLocal.GetValue(this->wPad1));
+        if (ispadLeftFull) {
+            yLocal.SetValue(padLeftCountAlign + this->padRight, yLocal.GetValue(this->padLeft));
         } else {
-            yLocal.SetValue(wPad1CountAlign + this->wPad2, xLocal.GetValue(wPad1CountAlign + this->wPad2));
+            yLocal.SetValue(padLeftCountAlign + this->padRight, xLocal.GetValue(padLeftCountAlign + this->padRight));
         }
-        
+
         SetFlag<HardEvent::S_MTE3>(SToMTE3Event);
         WaitFlag<HardEvent::S_MTE3>(SToMTE3Event);
         outQue.EnQue(yLocal);
         inQue.FreeTensor(xLocal);
         yLocal = outQue.DeQue<T>();
-        DataCopyExtParams copyParamswPad1Out = {1, (uint32_t)((this->wPad1 + 1) * sizeof(T)), 0, 0, 0};
-        DataCopyExtParams copyParamswPad2Out = {1, (uint32_t)((this->wPad2 + 1) * sizeof(T)), 0, 0, 0};
-        DataCopyPad(this->mGmY[gmYOffset1], yLocal, copyParamswPad1Out);
+        DataCopyExtParams copyParamspadLeftOut = {1, (uint32_t)((this->padLeft + 1) * sizeof(T)), 0, 0, 0};
+        DataCopyExtParams copyParamspadRightOut = {1, (uint32_t)((this->padRight + 1) * sizeof(T)), 0, 0, 0};
+        DataCopyPad(this->mGmY[gmYOffset1], yLocal, copyParamspadLeftOut);
         PipeBarrier<PIPE_MTE3>();
-        DataCopyPad(this->mGmY[gmYOffset2], yLocal[wPad1CountAlign], copyParamswPad2Out);
+        DataCopyPad(this->mGmY[gmYOffset2], yLocal[padLeftCountAlign], copyParamspadRightOut);
         outQue.FreeTensor(yLocal);
     }
 }
 
 template <typename T>
-__aicore__ inline void PadV4GradPadW<T>::CopyMiddleToOut(
-    TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue)
+__aicore__ inline void PadV4GradPadW<T>::CopyMiddleToOut(TQue<QuePosition::VECIN, BUFFER_NUM>& inQue,
+                                                         TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue)
 {
     DataCopyPadExtParams<T> padParams = {false, 0, 0, 0};
-    int64_t middleCont = (int64_t)this->outWidth - this->wPad1 - this->wPad2 - 2;
+    int64_t middleCont = (int64_t)this->outWidth - this->padLeft - this->padRight - 2;
     middleCont = middleCont > 0 ? middleCont : 0;
     if (middleCont > 0) {
         int64_t copyTimesOneLine = this->CeilDiv(middleCont, this->ubFactorElement);
-        
+
         for (size_t loop = 0; loop < this->loopNC; loop++) {
             int64_t copyCount = this->ubFactorElement;
             for (size_t time = 0; time < copyTimesOneLine; time++) {
                 if (time == copyTimesOneLine - 1) {
                     copyCount = middleCont - (copyTimesOneLine - 1) * this->ubFactorElement;
                 }
-                int64_t gmXOffset3 = 2 * this->wPad1 + 1 + time * this->ubFactorElement + loop * this->batchStride +
-                                this->ncOffset * this->batchStride;
-                int64_t gmYOffset3 = this->wPad1 + 1 + time * this->ubFactorElement +
-                                loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
+                int64_t gmXOffset3 = 2 * this->padLeft + 1 + time * this->ubFactorElement + loop * this->batchStride +
+                                     this->ncOffset * this->batchStride;
+                int64_t gmYOffset3 = this->padLeft + 1 + time * this->ubFactorElement + loop * this->outBatchStride +
+                                     this->ncOffset * this->outBatchStride;
                 DataCopyExtParams copyParams = {1, (uint32_t)(copyCount * sizeof(T)), 0, 0, 0};
                 LocalTensor<T> xLocal = xInQueue2.AllocTensor<T>();
                 DataCopyPad(xLocal, this->mGmX[gmXOffset3], copyParams, padParams);
@@ -363,7 +362,7 @@ __aicore__ inline void PadV4GradPadW<T>::Process()
     if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
         smallFloatTenosr = smallFloatCastResBuf.Get<float>();
         largeFloatTenosr = largeFloatCastResBuf.Get<float>();
-        if (this->wPad1 < W_PAD_LOWER_LIMIT && this->wPad2 < W_PAD_LOWER_LIMIT) {
+        if (this->padLeft < W_PAD_LOWER_LIMIT && this->padRight < W_PAD_LOWER_LIMIT) {
             dataCountOneLine = this->width - 2 * calCount;
             copyTimesOneLine = this->CeilDiv(dataCountOneLine, this->ubFactorElement);
             for (size_t loop = 0; loop < this->loopNC; loop++) {
@@ -371,30 +370,30 @@ __aicore__ inline void PadV4GradPadW<T>::Process()
                 gmXOffset1 = loop * this->batchStride + this->ncOffset * this->batchStride;
                 gmXOffset2 = (this->width - calCount) + loop * this->batchStride + this->ncOffset * this->batchStride;
                 workspaceOffset1 = this->blockIdx * 2 * calCount;
-                workspaceOffset2 = this->wPad1 + this->blockIdx * 2 * calCount;
+                workspaceOffset2 = this->padLeft + this->blockIdx * 2 * calCount;
                 workspaceOffset3 = calCount + this->blockIdx * 2 * calCount;
                 gmYOffset1 = loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
-                gmYOffset3 = (this->outWidth - calCount + this->wPad2) + loop * this->outBatchStride +
+                gmYOffset3 = (this->outWidth - calCount + this->padRight) + loop * this->outBatchStride +
                              this->ncOffset * this->outBatchStride;
                 CopyGm2UB(xInQueue1, gmXOffset1, gmXOffset2, calCount);
                 Bf16ComputeWGrad(xInQueue1, yOutQueue1, calCount, 2 * CAL_COUNT, smallFloatTenosr);
                 Copy2Ws(yOutQueue1, 2 * calCount, workspaceOffset1);
                 SetFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
                 WaitFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
-                CopyInFromWs(xInQueue1, calCount - this->wPad1, workspaceOffset2);
-                Compute(xInQueue1, yOutQueue1, calCount - this->wPad1);
-                CopyWs2Out(yOutQueue1, calCount - this->wPad1, gmYOffset1);
-                CopyInFromWs(xInQueue1, calCount - this->wPad2, workspaceOffset3);
-                Compute(xInQueue1, yOutQueue1, calCount - this->wPad2);
-                CopyWs2Out(yOutQueue1, calCount - this->wPad2, gmYOffset3);
+                CopyInFromWs(xInQueue1, calCount - this->padLeft, workspaceOffset2);
+                Compute(xInQueue1, yOutQueue1, calCount - this->padLeft);
+                CopyWs2Out(yOutQueue1, calCount - this->padLeft, gmYOffset1);
+                CopyInFromWs(xInQueue1, calCount - this->padRight, workspaceOffset3);
+                Compute(xInQueue1, yOutQueue1, calCount - this->padRight);
+                CopyWs2Out(yOutQueue1, calCount - this->padRight, gmYOffset3);
                 for (size_t time = 0; time < copyTimesOneLine; time++) {
                     if (time == copyTimesOneLine - 1) {
                         copyCount = dataCountOneLine - (copyTimesOneLine - 1) * this->ubFactorElement;
                     }
                     gmXOffset3 = calCount + time * this->ubFactorElement + loop * this->batchStride +
                                  this->ncOffset * this->batchStride;
-                    gmYOffset2 = (calCount - this->wPad1) + time * this->ubFactorElement + loop * this->outBatchStride +
-                                 this->ncOffset * this->outBatchStride;
+                    gmYOffset2 = (calCount - this->padLeft) + time * this->ubFactorElement +
+                                 loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
                     CopyIn(copyCount, gmXOffset3);
                     Compute(xInQueue2, yOutQueue2, copyCount);
                     CopyOut(copyCount, gmYOffset2);
@@ -406,32 +405,32 @@ __aicore__ inline void PadV4GradPadW<T>::Process()
             for (size_t loop = 0; loop < this->loopNC; loop++) {
                 copyCount = this->ubFactorElement;
                 gmXOffset1 = loop * this->batchStride + this->ncOffset * this->batchStride;
-                gmXOffset2 =
-                    (this->width - largePadcalCount) + loop * this->batchStride + this->ncOffset * this->batchStride;
+                gmXOffset2 = (this->width - largePadcalCount) + loop * this->batchStride +
+                             this->ncOffset * this->batchStride;
                 workspaceOffset1 = this->blockIdx * 2 * largePadcalCount;
-                workspaceOffset2 = this->wPad1 + this->blockIdx * 2 * largePadcalCount;
+                workspaceOffset2 = this->padLeft + this->blockIdx * 2 * largePadcalCount;
                 workspaceOffset3 = largePadcalCount + this->blockIdx * 2 * largePadcalCount;
                 gmYOffset1 = loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
-                gmYOffset3 = (this->outWidth - largePadcalCount + this->wPad2) + loop * this->outBatchStride +
+                gmYOffset3 = (this->outWidth - largePadcalCount + this->padRight) + loop * this->outBatchStride +
                              this->ncOffset * this->outBatchStride;
                 CopyGm2UB(xInQueue2, gmXOffset1, gmXOffset2, largePadcalCount);
                 Bf16ComputeWGrad(xInQueue2, yOutQueue2, largePadcalCount, this->ubFactorElement, largeFloatTenosr);
                 Copy2Ws(yOutQueue2, 2 * largePadcalCount, workspaceOffset1);
                 SetFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
                 WaitFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
-                CopyInFromWs(xInQueue2, largePadcalCount - this->wPad1, workspaceOffset2);
-                Compute(xInQueue2, yOutQueue2, largePadcalCount - this->wPad1);
-                CopyWs2Out(yOutQueue2, largePadcalCount - this->wPad1, gmYOffset1);
-                CopyInFromWs(xInQueue2, largePadcalCount - this->wPad2, workspaceOffset3);
-                Compute(xInQueue2, yOutQueue2, largePadcalCount - this->wPad2);
-                CopyWs2Out(yOutQueue2, largePadcalCount - this->wPad2, gmYOffset3);
+                CopyInFromWs(xInQueue2, largePadcalCount - this->padLeft, workspaceOffset2);
+                Compute(xInQueue2, yOutQueue2, largePadcalCount - this->padLeft);
+                CopyWs2Out(yOutQueue2, largePadcalCount - this->padLeft, gmYOffset1);
+                CopyInFromWs(xInQueue2, largePadcalCount - this->padRight, workspaceOffset3);
+                Compute(xInQueue2, yOutQueue2, largePadcalCount - this->padRight);
+                CopyWs2Out(yOutQueue2, largePadcalCount - this->padRight, gmYOffset3);
                 for (size_t time = 0; time < copyTimesOneLine; time++) {
                     if (time == copyTimesOneLine - 1) {
                         copyCount = dataCountOneLine - (copyTimesOneLine - 1) * this->ubFactorElement;
                     }
                     gmXOffset3 = largePadcalCount + time * this->ubFactorElement + loop * this->batchStride +
                                  this->ncOffset * this->batchStride;
-                    gmYOffset2 = (largePadcalCount - this->wPad1) + time * this->ubFactorElement +
+                    gmYOffset2 = (largePadcalCount - this->padLeft) + time * this->ubFactorElement +
                                  loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
                     CopyIn(copyCount, gmXOffset3);
                     Compute(xInQueue2, yOutQueue2, copyCount);

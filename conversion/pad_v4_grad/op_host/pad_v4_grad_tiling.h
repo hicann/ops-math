@@ -30,10 +30,10 @@ TILING_DATA_FIELD_DEF(uint32_t, outHeight);
 TILING_DATA_FIELD_DEF(uint32_t, outWidth);
 TILING_DATA_FIELD_DEF(uint32_t, alignOutHeight);
 TILING_DATA_FIELD_DEF(uint32_t, alignOutWidth);
-TILING_DATA_FIELD_DEF(int32_t, hPad1);
-TILING_DATA_FIELD_DEF(int32_t, hPad2);
-TILING_DATA_FIELD_DEF(int32_t, wPad1);
-TILING_DATA_FIELD_DEF(int32_t, wPad2);
+TILING_DATA_FIELD_DEF(int32_t, padTop);
+TILING_DATA_FIELD_DEF(int32_t, padBottom);
+TILING_DATA_FIELD_DEF(int32_t, padLeft);
+TILING_DATA_FIELD_DEF(int32_t, padRight);
 TILING_DATA_FIELD_DEF(uint32_t, blockNum);
 TILING_DATA_FIELD_DEF(uint32_t, ubFactorElement);
 TILING_DATA_FIELD_DEF(uint32_t, ncPerCore);
@@ -61,11 +61,11 @@ struct InputParamsInfo {
     uint32_t outWidth = 0;
     uint32_t alignOutHeight = 0;
     uint32_t alignOutWidth = 0;
-    int32_t hPad1 = 0;
-    int32_t hPad2 = 0;
-    int32_t wPad1 = 0;
-    int32_t wPad2 = 0;
-    uint32_t mode = 0;
+    int32_t padTop = 0;
+    int32_t padBottom = 0;
+    int32_t padLeft = 0;
+    int32_t padRight = 0;
+    uint32_t mode = 1;
     uint32_t dtype = 1; // 1:float32; 2:float16; 3:bfloat16
 };
 } // namespace optiling

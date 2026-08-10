@@ -19,8 +19,7 @@
 using namespace AscendC;
 
 template <typename T>
-class ReflectionPad3dGrad
-{
+class ReflectionPad3dGrad {
 public:
     const static int32_t BUFFER_NUM = 2;
     const static uint32_t BLOCK_BYTES = 32;
@@ -68,12 +67,10 @@ private:
     uint32_t curOutDepth;
 
 public:
-    __aicore__ inline ReflectionPad3dGrad()
-    {}
+    __aicore__ inline ReflectionPad3dGrad() {}
 
-    __aicore__ inline void Init(
-        const ReflectionPad3dGradTilingData& __restrict tilingData, GM_ADDR x, GM_ADDR padding, GM_ADDR y,
-        GM_ADDR userWS)
+    __aicore__ inline void Init(const ReflectionPad3dGradTilingData& __restrict tilingData, GM_ADDR x, GM_ADDR padding,
+                                GM_ADDR y, GM_ADDR userWS)
     {
         batch = tilingData.batch;
         channel = tilingData.channel;
@@ -98,42 +95,16 @@ public:
         ubFactorElement = tilingData.ubFactorElement;
         blockIdx = GetBlockIdx();
         perBlockCount = BLOCK_BYTES / sizeof(T);
-
         gmWorkSpaceOffset_1 = 0;
         gmWorkSpaceOffset_2 = Mymax(alignHeight, alignWidth) * MAX_LINE;
-        if (blockIdx < tailNC) {
-            loopNC = ncPerCore + 1;
-            ncOffset = blockIdx * loopNC;
-        } else {
-            loopNC = ncPerCore;
-            ncOffset = blockIdx * ncPerCore + tailNC;
-        }
-        curDepth = depth;
-        curOutDepth = outDepth;
-        if (dPad1 == 0 && dPad2 == 0) {
-            curDepth = 1;
-            curOutDepth = 1;
-        }
+        InitBlockHelper(tailNC, ncPerCore, blockIdx, depth, outDepth, dPad1, dPad2, loopNC, ncOffset, curDepth,
+                        curOutDepth);
         InitBuff(x, y, userWS);
     }
 
     __aicore__ inline void ClearOutput(GM_ADDR y)
     {
-        int64_t totaldata = batch * channel * outDepth * outHeight * outWidth;
-        int64_t preLen = totaldata / blockNum;
-        int64_t tailLen = totaldata % blockNum;
-        int64_t curLen = preLen;
-        int64_t curOffset = blockIdx * preLen;
-        if (blockIdx < tailLen) {
-            curLen = preLen + 1;
-            curOffset = blockIdx * curLen;
-        } else {
-            curLen = preLen;
-            curOffset = blockIdx * preLen + tailLen;
-        }
-        yGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(y) + curOffset);
-        InitGlobalMemory<T>(yGm, curLen, 0);
-        SyncAll();
+        ClearOutputHelper<T>(yGm, y, batch, channel, outDepth, outHeight, outWidth, blockNum, blockIdx);
     }
 
     __aicore__ inline void InitBuff(GM_ADDR x, GM_ADDR y, GM_ADDR userWS)
@@ -141,8 +112,8 @@ public:
         ClearOutput(y);
         xGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x) + ncOffset * curDepth * height * width);
         yGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(y) + ncOffset * curOutDepth * outHeight * outWidth);
-        workspaceGm.SetGlobalBuffer(
-            reinterpret_cast<__gm__ T*>(userWS) + Mymax(alignHeight, alignWidth) * WORK_SPACE_PART * blockIdx);
+        workspaceGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(userWS) +
+                                    Mymax(alignHeight, alignWidth) * WORK_SPACE_PART * blockIdx);
         pipe.InitBuffer(inQueueX, BUFFER_NUM, (ubFactorElement * sizeof(T)));
         pipe.InitBuffer(outQueueY, BUFFER_NUM, (ubFactorElement * sizeof(T)));
         if constexpr (std::is_same<T, bfloat16_t>::value || std::is_same<T, half>::value) {
@@ -175,22 +146,22 @@ public:
     __aicore__ inline void BigProcess();
 
 private:
-    __aicore__ inline void CopyInSmall(
-        const int64_t offset, const int64_t calH, const int64_t calW, const int64_t srcStride);
+    __aicore__ inline void CopyInSmall(const int64_t offset, const int64_t calH, const int64_t calW,
+                                       const int64_t srcStride);
 
-    __aicore__ inline void ComputeSmall(
-        size_t hPad1Mask, size_t hPad2Mask, size_t wPad1Mask, size_t wPad2Mask, const int32_t calH, const int32_t calW);
+    __aicore__ inline void ComputeSmall(size_t hPad1Mask, size_t hPad2Mask, size_t wPad1Mask, size_t wPad2Mask,
+                                        const int32_t calH, const int32_t calW);
     template <typename T1>
-    __aicore__ inline void ComputeSmallBasic(
-        LocalTensor<T1>& tLocal, LocalTensor<T1>& xLocal, size_t hPad1Mask, size_t hPad2Mask, size_t wPad1Mask,
-        size_t wPad2Mask, const int32_t calH, const int32_t calW);
+    __aicore__ inline void ComputeSmallBasic(LocalTensor<T1>& tLocal, LocalTensor<T1>& xLocal, size_t hPad1Mask,
+                                             size_t hPad2Mask, size_t wPad1Mask, size_t wPad2Mask, const int32_t calH,
+                                             const int32_t calW);
 
-    __aicore__ inline void CopyOutSmall(
-        const int64_t offset, const int64_t srcOffset, const bool isAtomicAdd, const int32_t calH, const int32_t calW,
-        const int32_t alignTransCalW, const int32_t dstStride);
+    __aicore__ inline void CopyOutSmall(const int64_t offset, const int64_t srcOffset, const bool isAtomicAdd,
+                                        const int32_t calH, const int32_t calW, const int32_t alignTransCalW,
+                                        const int32_t dstStride);
     template <typename T1>
-    __aicore__ inline void TransoseSmall(
-        LocalTensor<T1>& dstLocal, LocalTensor<T1>& srcLocal, const int32_t calH, const int32_t calW);
+    __aicore__ inline void TransoseSmall(LocalTensor<T1>& dstLocal, LocalTensor<T1>& srcLocal, const int32_t calH,
+                                         const int32_t calW);
 
     __aicore__ inline void MidProcessTopBottom(size_t i, size_t loop, uint32_t cur_D, bool isAtomicAdd);
 
@@ -198,8 +169,8 @@ private:
 
     __aicore__ inline void MidProcessMid(size_t i, size_t loop, uint32_t cur_D, bool isAtomicAdd);
 
-    __aicore__ inline void CopyIn(
-        GlobalTensor<T>& srcGm, const int64_t srcOffset, const int64_t calH, const int64_t calW);
+    __aicore__ inline void CopyIn(GlobalTensor<T>& srcGm, const int64_t srcOffset, const int64_t calH,
+                                  const int64_t calW);
 
     __aicore__ inline void CopyInBasic(LocalTensor<T>& dstLocal, GlobalTensor<T>& srcGm, CopyInParam param);
 

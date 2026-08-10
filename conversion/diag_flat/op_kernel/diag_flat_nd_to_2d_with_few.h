@@ -17,16 +17,16 @@
 
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
+#include "diag_flat_common.h"
 
 using namespace AscendC;
 
 namespace DiagFlat {
 
 template <typename T>
-class DiagFlatNDTo2DWithFew
-{
+class DiagFlatNDTo2DWithFew {
 public:
-    __aicore__ inline DiagFlatNDTo2DWithFew(AscendC::TPipe *p) : pipe(p){};
+    __aicore__ inline DiagFlatNDTo2DWithFew(AscendC::TPipe* p) : pipe(p){};
     __aicore__ inline void Init(GM_ADDR input, GM_ADDR output, GM_ADDR workspace,
                                 const DiagV2TilingData* __restrict__ tilingData);
     __aicore__ inline void Process();
@@ -34,8 +34,6 @@ public:
 private:
     __aicore__ inline void ParseTilingData(const DiagV2TilingData* __restrict__ tilingData);
     __aicore__ inline void ClearOuput();
-    template <typename U>
-    __aicore__ inline void MemSetZero(GlobalTensor<U> gmTensor, int64_t size);
     __aicore__ inline void InitGm(GM_ADDR output, GM_ADDR workspace);
     __aicore__ inline void CopyIn(int64_t iter, int64_t rollback);
     __aicore__ inline void Compute();
@@ -45,7 +43,8 @@ private:
     __aicore__ inline void GmSetZero(GM_ADDR output);
     __aicore__ inline static constexpr bool IsDataCopyPadSupport()
     {
-#if __CCE_AICORE__ == 220 || __CCE_AICORE__ == 310 || (defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113))
+#if __CCE_AICORE__ == 220 || __CCE_AICORE__ == 310 || \
+    (defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113))
         return true;
 #else
         return false;
@@ -53,7 +52,7 @@ private:
     };
 
 private:
-    TPipe *pipe;
+    TPipe* pipe;
     TQue<QuePosition::VECIN, 1> inputQueue_;
     TQue<QuePosition::VECOUT, 1> outputQueue_;
     GlobalTensor<T> gmInput_;
@@ -139,12 +138,12 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::GmSetZero(GM_ADDR output)
             lastCleanNum = (lastCleanNum + ONCE_HANDLE_NUM - 1) / ONCE_HANDLE_NUM * ONCE_HANDLE_NUM;
         }
         gmOutput_.SetGlobalBuffer((__gm__ T*)output + (GetBlockIdx() * newCleanNum) - bkOffset);
-        MemSetZero<T>(gmOutput_, lastCleanNum);
+        DiagFlatMemSetZero<T>(pipe, gmOutput_, lastCleanNum);
 
         // main core
     } else if (GetBlockIdx() < usedCoreNum) {
         gmOutput_.SetGlobalBuffer((__gm__ T*)output + (GetBlockIdx() * newCleanNum));
-        MemSetZero<T>(gmOutput_, newCleanNum);
+        DiagFlatMemSetZero<T>(pipe, gmOutput_, newCleanNum);
     }
 }
 
@@ -155,7 +154,7 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::InitGm(GM_ADDR output, GM_ADDR 
     constexpr int32_t EACH_CORE_HANDLE_NUM = 32 / sizeof(int32_t);
     syncGlobal_.SetGlobalBuffer((__gm__ int32_t*)workspace, totalCoreNum_ * 32 / sizeof(int32_t));
 
-    MemSetZero<int32_t>(syncGlobal_, totalCoreNum_ * EACH_CORE_HANDLE_NUM);
+    DiagFlatMemSetZero<int32_t>(pipe, syncGlobal_, totalCoreNum_ * EACH_CORE_HANDLE_NUM);
 
     // set workspace for sync
     pipe->InitBuffer(workQueue_, 1, totalCoreNum_ * 8 * sizeof(int32_t));
@@ -177,8 +176,8 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::InitGm(GM_ADDR output, GM_ADDR 
 }
 
 template <typename T>
-__aicore__ inline void DiagFlatNDTo2DWithFew<T>::Init(
-    GM_ADDR input, GM_ADDR output, GM_ADDR workspace, const DiagV2TilingData* __restrict__ tilingData)
+__aicore__ inline void DiagFlatNDTo2DWithFew<T>::Init(GM_ADDR input, GM_ADDR output, GM_ADDR workspace,
+                                                      const DiagV2TilingData* __restrict__ tilingData)
 {
     // get tiling data
     ParseTilingData(tilingData);
@@ -190,9 +189,8 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::Init(
 
     // init gmInput_ gmOutput_
     gmInput_.SetGlobalBuffer((__gm__ T*)input);
-    gmOutput_.SetGlobalBuffer(
-        (__gm__ T*)output + (offset_ > 0 ? 0 : abs(offset_)) * (inputNum_ + abs(offset_)),
-        (inputNum_ + abs(offset_)) * (inputNum_ + abs(offset_)));
+    gmOutput_.SetGlobalBuffer((__gm__ T*)output + (offset_ > 0 ? 0 : abs(offset_)) * (inputNum_ + abs(offset_)),
+                              (inputNum_ + abs(offset_)) * (inputNum_ + abs(offset_)));
 
     pipe->InitBuffer(inputQueue_, 1, ONCE_HANDLE_NUM * sizeof(T));
     pipe->InitBuffer(outputQueue_, 1, ONCE_HANDLE_NUM * ONCE_HANDLE_NUM * sizeof(T));
@@ -228,7 +226,8 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::CopyOut(int64_t iter)
     int64_t gmOffset = 0;
     int64_t width = inputNum_ + abs(offset_);
     for (int64_t i = 0; i < ONCE_HANDLE_NUM; i++) {
-        PipeBarrier<PIPE_MTE3>();;
+        PipeBarrier<PIPE_MTE3>();
+        ;
         int64_t rowIdx = iter * ONCE_HANDLE_NUM + i;
         gmOffset = width * rowIdx + (offset_ > 0 ? offset_ : 0) + iter * ONCE_HANDLE_NUM;
         DataCopy(gmOutput_[gmOffset], ubOutput[ONCE_HANDLE_NUM * i], ONCE_HANDLE_NUM);
@@ -323,42 +322,6 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::ClearOuput()
         Duplicate(ubOutputCast[mask * i], scalarValue, mask, repeatTimes, dstBlockStride, dstRepeatStride);
     }
     outputQueue_.EnQue<T>(ubOutput);
-}
-
-template <typename T>
-template <typename U>
-__aicore__ inline void DiagFlatNDTo2DWithFew<T>::MemSetZero(GlobalTensor<U> gmTensor, int64_t size)
-{
-    if (g_coreType == AIC) {
-        return;
-    }
-    int64_t int16Size = (size * sizeof(U) + sizeof(int16_t) - 1) / sizeof(int16_t);
-    LocalTensor<int16_t> popBuffer;
-    bool ret = PopStackBuffer<int16_t, TPosition::LCM>(popBuffer);
-    uint32_t maxBurstSize = (MAX_REPEAT_TIMES * ONE_BLK_SIZE) / sizeof(int16_t);
-    uint32_t popSize = popBuffer.GetSize() >= maxBurstSize ? maxBurstSize : popBuffer.GetSize();
-    uint32_t round = int16Size / popSize;
-    uint32_t tail = int16Size % popSize;
-    uint32_t roundSize = round != 0 ? popSize : 0;
-    AscendC::Duplicate<int16_t>(popBuffer, static_cast<int16_t>(0), popSize);
-    event_t eventIDVToMTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
-    SetFlag<HardEvent::V_MTE3>(eventIDVToMTE3);
-    WaitFlag<HardEvent::V_MTE3>(eventIDVToMTE3);
-    uint32_t comOffset = 0;
-    // compute the main block
-    for (int index = 0; index < round; ++index) {
-        DataCopyUB2GMImpl(
-            (__gm__ int16_t*)gmTensor.GetPhyAddr() + comOffset, (__ubuf__ int16_t*)popBuffer.GetPhyAddr(),
-            {1, static_cast<uint16_t>((roundSize * sizeof(int16_t) + ONE_BLK_SIZE - 1) / (ONE_BLK_SIZE)), 0, 0});
-        comOffset += roundSize;
-    }
-    // compute the tail block
-    if (tail != 0) {
-        comOffset = round * roundSize;
-        DataCopyUB2GMImpl(
-            (__gm__ int16_t*)gmTensor.GetPhyAddr() + comOffset, (__ubuf__ int16_t*)popBuffer.GetPhyAddr(),
-            {1, static_cast<uint16_t>((tail * sizeof(int16_t) + ONE_BLK_SIZE - 1) / ONE_BLK_SIZE), 0, 0});
-    }
 }
 
 } // namespace DiagFlat

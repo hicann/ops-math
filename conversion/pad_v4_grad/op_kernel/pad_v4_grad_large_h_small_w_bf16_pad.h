@@ -61,9 +61,9 @@ __aicore__ inline void PadV4GradLargeHSmallWBf16<T>::CopyOut2Gm(const int32_t ba
     int64_t gmYOffset2 = 0;
     DataCopyExtParams copyParams{1, (uint32_t)(this->outWidth * sizeof(T)), 0, 0, 0};
     LocalTensor<T> yLocal = yOutQueue.DeQue<T>();
-    if (cycles <= COPY_ROWS_AND_COLS - this->hPad2) {
-        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
-            gmYOffset1 = this->outWidth * (this->outHeight - (COPY_ROWS_AND_COLS - this->hPad2) + i) +
+    if (cycles <= COPY_ROWS_AND_COLS - this->padBottom) {
+        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padBottom; i++) {
+            gmYOffset1 = this->outWidth * (this->outHeight - (COPY_ROWS_AND_COLS - this->padBottom) + i) +
                          batchIdx * this->outBatchStride + this->ncOffset * this->outBatchStride;
             DataCopyPad(this->mGmY[gmYOffset1], yLocal[i * SMALL_WIDTH_LIMIT], copyParams);
         }
@@ -113,16 +113,17 @@ __aicore__ inline void PadV4GradLargeHSmallWBf16<T>::implTransposeAndCompute(con
         transDataParams.dstRepStride = TRANSDATA_BASE_H / FLOAT_BLOCK_NUM;
         TransDataTo5HD<float>(xDstLocalList0, xSrcLocalList0, transDataParams);
     }
-    for (size_t i = 0; i < this->wPad1; i++) {
-        Add(transposeData[(2 * this->wPad1 - i) * this->ubFactorElement], transposeData[i * this->ubFactorElement],
-            transposeData[(2 * this->wPad1 - i) * this->ubFactorElement], this->ubFactorElement);
+    for (size_t i = 0; i < this->padLeft; i++) {
+        Add(transposeData[(2 * this->padLeft - i) * this->ubFactorElement], transposeData[i * this->ubFactorElement],
+            transposeData[(2 * this->padLeft - i) * this->ubFactorElement], this->ubFactorElement);
     }
-    for (size_t i = 0; i < this->wPad2; i++) {
-        Add(transposeData[(this->width - 2 * this->wPad2 - 1 + i) * this->ubFactorElement],
+    for (size_t i = 0; i < this->padRight; i++) {
+        Add(transposeData[(this->width - 2 * this->padRight - 1 + i) * this->ubFactorElement],
             transposeData[(this->width - 1 - i) * this->ubFactorElement],
-            transposeData[(this->width - 2 * this->wPad2 - 1 + i) * this->ubFactorElement], this->ubFactorElement);
+            transposeData[(this->width - 2 * this->padRight - 1 + i) * this->ubFactorElement], this->ubFactorElement);
     }
-    DataCopy(transposeData, transposeData[this->wPad1 * this->ubFactorElement], this->outWidth * this->ubFactorElement);
+    DataCopy(transposeData, transposeData[this->padLeft * this->ubFactorElement],
+             this->outWidth * this->ubFactorElement);
 
     for (size_t time = 0; time < this->ubFactorElement / FLOAT_BLOCK_NUM; time++) {
         for (size_t i = 0; i < HALF_BLOCK_NUM; i++) {
@@ -156,18 +157,18 @@ __aicore__ inline void PadV4GradLargeHSmallWBf16<T>::ComputeHGrad(const int32_t 
     Cast(floatTenosr, xLocal, RoundMode::CAST_NONE, this->ubFactorElement * SMALL_WIDTH_LIMIT);
     // compute grad
     if (flag == 0) {
-        for (size_t i = 0; i < this->hPad1; i++) {
-            Add(floatTenosr[(2 * this->hPad1 - i) * SMALL_WIDTH_LIMIT], floatTenosr[i * SMALL_WIDTH_LIMIT],
-                floatTenosr[(2 * this->hPad1 - i) * SMALL_WIDTH_LIMIT], calCount);
+        for (size_t i = 0; i < this->padTop; i++) {
+            Add(floatTenosr[(2 * this->padTop - i) * SMALL_WIDTH_LIMIT], floatTenosr[i * SMALL_WIDTH_LIMIT],
+                floatTenosr[(2 * this->padTop - i) * SMALL_WIDTH_LIMIT], calCount);
         }
         Cast(yLocal, floatTenosr, RoundMode::CAST_RINT, this->ubFactorElement * SMALL_WIDTH_LIMIT);
-        DataCopy(yLocal, yLocal[this->hPad1 * SMALL_WIDTH_LIMIT],
-                 (COPY_ROWS_AND_COLS - this->hPad1) * SMALL_WIDTH_LIMIT);
+        DataCopy(yLocal, yLocal[this->padTop * SMALL_WIDTH_LIMIT],
+                 (COPY_ROWS_AND_COLS - this->padTop) * SMALL_WIDTH_LIMIT);
     } else {
-        for (size_t i = 0; i < this->hPad2; i++) {
-            Add(floatTenosr[(COPY_ROWS_AND_COLS - 2 * this->hPad2 - 1 + i) * SMALL_WIDTH_LIMIT],
+        for (size_t i = 0; i < this->padBottom; i++) {
+            Add(floatTenosr[(COPY_ROWS_AND_COLS - 2 * this->padBottom - 1 + i) * SMALL_WIDTH_LIMIT],
                 floatTenosr[(COPY_ROWS_AND_COLS - 1 - i) * SMALL_WIDTH_LIMIT],
-                floatTenosr[(COPY_ROWS_AND_COLS - 2 * this->hPad2 - 1 + i) * SMALL_WIDTH_LIMIT], calCount);
+                floatTenosr[(COPY_ROWS_AND_COLS - 2 * this->padBottom - 1 + i) * SMALL_WIDTH_LIMIT], calCount);
         }
         Cast(yLocal, floatTenosr, RoundMode::CAST_RINT, this->ubFactorElement * SMALL_WIDTH_LIMIT);
     }

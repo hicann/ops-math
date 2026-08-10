@@ -19,18 +19,12 @@
 #include "tikicpulib.h"
 #include "tiling_data_def.h"
 
-extern "C" __global__ __aicore__ void pad_v4_grad(
-    GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
+extern "C" __global__ __aicore__ void pad_v4_grad(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR workspace,
+                                                  GM_ADDR tiling);
 class pad_v4_grad_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "pad_v4_grad SetUp\n" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "pad_v4_grad TearDown\n" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "pad_v4_grad SetUp\n" << std::endl; }
+    static void TearDownTestCase() { std::cout << "pad_v4_grad TearDown\n" << std::endl; }
 };
 
 TEST_F(pad_v4_grad_test, test_bfloat16_case1)
@@ -40,10 +34,10 @@ TEST_F(pad_v4_grad_test, test_bfloat16_case1)
     uint32_t C = 1;
     uint32_t H = 64;
     uint32_t W = 64;
-    uint32_t hPad1 = 0;
-    uint32_t hPad2 = 0;
-    uint32_t wPad1 = 1;
-    uint32_t wPad2 = 1;
+    uint32_t padTop = 0;
+    uint32_t padBottom = 0;
+    uint32_t padLeft = 1;
+    uint32_t padRight = 1;
     uint32_t numBlocks = 8;
     uint32_t ubSize = 192 * 1024 - 11 * 1024;
     size_t sysWorkspaceSize = 16 * 1024 * 1024;
@@ -52,7 +46,7 @@ TEST_F(pad_v4_grad_test, test_bfloat16_case1)
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingSize);
     size_t x_size = N * C * H * W * sizeof(float);
     size_t padding_size = 4 * sizeof(int32_t);
-    size_t dx_size = N * C * H * (W - wPad1 - wPad2) * sizeof(float);
+    size_t dx_size = N * C * H * (W - padLeft - padRight) * sizeof(float);
 
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(x_size);
     uint8_t* padding = (uint8_t*)AscendC::GmAlloc(padding_size);
@@ -69,10 +63,10 @@ TEST_F(pad_v4_grad_test, test_bfloat16_case1)
     tilingData->outWidth = 62;
     tilingData->alignOutHeight = 64;
     tilingData->alignOutWidth = 64;
-    tilingData->hPad1 = 0;
-    tilingData->hPad2 = 0;
-    tilingData->wPad1 = 1;
-    tilingData->wPad2 = 1;
+    tilingData->padTop = 0;
+    tilingData->padBottom = 0;
+    tilingData->padLeft = 1;
+    tilingData->padRight = 1;
     tilingData->blockNum = 1;
     tilingData->ubFactorElement = 112;
     tilingData->ncPerCore = 1;
@@ -98,10 +92,10 @@ TEST_F(pad_v4_grad_test, test_bfloat16_case2)
     uint32_t C = 1;
     uint32_t H = 16;
     uint32_t W = 530;
-    uint32_t hPad1 = 0;
-    uint32_t hPad2 = 0;
-    uint32_t wPad1 = 1;
-    uint32_t wPad2 = 1;
+    uint32_t padTop = 0;
+    uint32_t padBottom = 0;
+    uint32_t padLeft = 1;
+    uint32_t padRight = 1;
     uint32_t numBlocks = 48;
     uint32_t ubSize = 192 * 1024 - 11 * 1024;
     size_t sysWorkspaceSize = 16 * 1024 * 1024;
@@ -110,7 +104,7 @@ TEST_F(pad_v4_grad_test, test_bfloat16_case2)
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingSize);
     size_t x_size = N * C * H * W * 2;
     size_t padding_size = 4 * sizeof(int32_t);
-    size_t dx_size = N * C * H * (W - wPad1 - wPad2) * 2;
+    size_t dx_size = N * C * H * (W - padLeft - padRight) * 2;
 
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(x_size);
     uint8_t* padding = (uint8_t*)AscendC::GmAlloc(padding_size);
@@ -127,10 +121,10 @@ TEST_F(pad_v4_grad_test, test_bfloat16_case2)
     tilingData->outWidth = 528;
     tilingData->alignOutHeight = 16;
     tilingData->alignOutWidth = 528;
-    tilingData->hPad1 = 0;
-    tilingData->hPad2 = 0;
-    tilingData->wPad1 = 1;
-    tilingData->wPad2 = 1;
+    tilingData->padTop = 0;
+    tilingData->padBottom = 0;
+    tilingData->padLeft = 1;
+    tilingData->padRight = 1;
     tilingData->blockNum = 16;
     tilingData->ubFactorElement = 15360;
     tilingData->ncPerCore = 1;
@@ -156,10 +150,10 @@ TEST_F(pad_v4_grad_test, test_bfloat16_case3)
     uint32_t C = 1;
     uint32_t H = 200;
     uint32_t W = 200;
-    uint32_t hPad1 = 1;
-    uint32_t hPad2 = 1;
-    uint32_t wPad1 = 0;
-    uint32_t wPad2 = 0;
+    uint32_t padTop = 1;
+    uint32_t padBottom = 1;
+    uint32_t padLeft = 0;
+    uint32_t padRight = 0;
     uint32_t numBlocks = 48;
     uint32_t ubSize = 192 * 1024 - 11 * 1024;
     size_t sysWorkspaceSize = 16 * 1024 * 1024;
@@ -168,7 +162,7 @@ TEST_F(pad_v4_grad_test, test_bfloat16_case3)
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingSize);
     size_t x_size = N * C * H * W * 2;
     size_t padding_size = 4 * sizeof(int32_t);
-    size_t dx_size = N * C * H * (W - wPad1 - wPad2) * 2;
+    size_t dx_size = N * C * H * (W - padLeft - padRight) * 2;
 
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(x_size);
     uint8_t* padding = (uint8_t*)AscendC::GmAlloc(padding_size);
@@ -185,10 +179,10 @@ TEST_F(pad_v4_grad_test, test_bfloat16_case3)
     tilingData->outWidth = 200;
     tilingData->alignOutHeight = 208;
     tilingData->alignOutWidth = 208;
-    tilingData->hPad1 = 1;
-    tilingData->hPad2 = 1;
-    tilingData->wPad1 = 0;
-    tilingData->wPad2 = 0;
+    tilingData->padTop = 1;
+    tilingData->padBottom = 1;
+    tilingData->padLeft = 0;
+    tilingData->padRight = 0;
     tilingData->blockNum = 1;
     tilingData->ubFactorElement = 7680;
     tilingData->ncPerCore = 1;
@@ -214,10 +208,10 @@ TEST_F(pad_v4_grad_test, test_bfloat16_case4)
     uint32_t C = 1;
     uint32_t H = 150;
     uint32_t W = 30;
-    uint32_t hPad1 = 3;
-    uint32_t hPad2 = 5;
-    uint32_t wPad1 = 3;
-    uint32_t wPad2 = 1;
+    uint32_t padTop = 3;
+    uint32_t padBottom = 5;
+    uint32_t padLeft = 3;
+    uint32_t padRight = 1;
     uint32_t numBlocks = 48;
     uint32_t ubSize = 192 * 1024 - 11 * 1024;
     size_t sysWorkspaceSize = 16 * 1024 * 1024;
@@ -226,7 +220,7 @@ TEST_F(pad_v4_grad_test, test_bfloat16_case4)
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingSize);
     size_t x_size = N * C * H * W * 2;
     size_t padding_size = 4 * sizeof(int32_t);
-    size_t dx_size = N * C * H * (W - wPad1 - wPad2) * 2;
+    size_t dx_size = N * C * H * (W - padLeft - padRight) * 2;
 
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(x_size);
     uint8_t* padding = (uint8_t*)AscendC::GmAlloc(padding_size);
@@ -243,10 +237,10 @@ TEST_F(pad_v4_grad_test, test_bfloat16_case4)
     tilingData->outWidth = 26;
     tilingData->alignOutHeight = 144;
     tilingData->alignOutWidth = 32;
-    tilingData->hPad1 = 3;
-    tilingData->hPad2 = 5;
-    tilingData->wPad1 = 3;
-    tilingData->wPad2 = 1;
+    tilingData->padTop = 3;
+    tilingData->padBottom = 5;
+    tilingData->padLeft = 3;
+    tilingData->padRight = 1;
     tilingData->blockNum = 1;
     tilingData->ubFactorElement = 112;
     tilingData->ncPerCore = 1;
@@ -272,10 +266,10 @@ TEST_F(pad_v4_grad_test, test_bfloat16_case5)
     uint32_t C = 1;
     uint32_t H = 16;
     uint32_t W = 530;
-    uint32_t hPad1 = 1;
-    uint32_t hPad2 = 1;
-    uint32_t wPad1 = 1;
-    uint32_t wPad2 = 1;
+    uint32_t padTop = 1;
+    uint32_t padBottom = 1;
+    uint32_t padLeft = 1;
+    uint32_t padRight = 1;
     uint32_t numBlocks = 48;
     uint32_t ubSize = 192 * 1024 - 11 * 1024;
     size_t sysWorkspaceSize = 16 * 1024 * 1024;
@@ -284,7 +278,7 @@ TEST_F(pad_v4_grad_test, test_bfloat16_case5)
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingSize);
     size_t x_size = N * C * H * W * 2;
     size_t padding_size = 4 * sizeof(int32_t);
-    size_t dx_size = N * C * H * (W - wPad1 - wPad2) * 2;
+    size_t dx_size = N * C * H * (W - padLeft - padRight) * 2;
 
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(x_size);
     uint8_t* padding = (uint8_t*)AscendC::GmAlloc(padding_size);
@@ -301,10 +295,10 @@ TEST_F(pad_v4_grad_test, test_bfloat16_case5)
     tilingData->outWidth = 528;
     tilingData->alignOutHeight = 16;
     tilingData->alignOutWidth = 528;
-    tilingData->hPad1 = 1;
-    tilingData->hPad2 = 1;
-    tilingData->wPad1 = 1;
-    tilingData->wPad2 = 1;
+    tilingData->padTop = 1;
+    tilingData->padBottom = 1;
+    tilingData->padLeft = 1;
+    tilingData->padRight = 1;
     tilingData->blockNum = 1;
     tilingData->ubFactorElement = 240;
     tilingData->ncPerCore = 1;

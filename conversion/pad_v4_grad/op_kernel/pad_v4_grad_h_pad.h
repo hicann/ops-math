@@ -56,8 +56,8 @@ __aicore__ inline void PadV4GradPadH<T>::InitBuffer(TPipe* inputPipe)
 }
 
 template <typename T>
-__aicore__ inline void PadV4GradPadH<T>::CopyGm2UB(
-    const int64_t offset1, const int64_t offset2, const int64_t copyCount)
+__aicore__ inline void PadV4GradPadH<T>::CopyGm2UB(const int64_t offset1, const int64_t offset2,
+                                                   const int64_t copyCount)
 {
     LocalTensor<T> dataLocal = xInQueue.AllocTensor<T>();
     int32_t alignCopyCount = this->CeilAlign(copyCount, this->perBlockCount);
@@ -134,7 +134,7 @@ __aicore__ inline void PadV4GradPadH<T>::Process()
     int64_t calCount = 0;
     int64_t copyCount = 0;
     int64_t firstAndLastRowCopyCount = 0;
-    int64_t midDataCount = this->width * (this->height - (1 + 2 * this->hPad2) - (2 * this->hPad1 + 1));
+    int64_t midDataCount = this->width * (this->height - (1 + 2 * this->padBottom) - (2 * this->padTop + 1));
     uint32_t copyTimesOneRow1 = this->CeilDiv(this->width, this->ubFactorElement);
     uint32_t copyTimesOneRow2 = this->CeilDiv(this->width, 2 * this->ubFactorElement);
     uint32_t copyTimesMidData = this->CeilDiv(midDataCount, 2 * this->ubFactorElement);
@@ -150,26 +150,27 @@ __aicore__ inline void PadV4GradPadH<T>::Process()
             if (time == copyTimesOneRow1 - 1) {
                 calCount = this->width - (copyTimesOneRow1 - 1) * this->ubFactorElement;
             }
-            for (size_t i = 0; i < this->hPad1; i++) {
+            for (size_t i = 0; i < this->padTop; i++) {
                 // 搬两行
                 gmXOffset1 = i * this->width + time * this->ubFactorElement + loop * this->batchStride +
                              this->ncOffset * this->batchStride;
-                gmXOffset2 = (2 * this->hPad1 - i) * this->width + time * this->ubFactorElement +
+                gmXOffset2 = (2 * this->padTop - i) * this->width + time * this->ubFactorElement +
                              loop * this->batchStride + this->ncOffset * this->batchStride;
-                gmYOffset1 = (this->hPad1 - i) * this->width + time * this->ubFactorElement +
+                gmYOffset1 = (this->padTop - i) * this->width + time * this->ubFactorElement +
                              loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
 
                 CopyGm2UB(gmXOffset1, gmXOffset2, calCount);
                 ComputeHGrad(calCount);
                 CopyOut(calCount, gmYOffset1);
             }
-            for (size_t j = 0; j < this->hPad2; j++) {
+            for (size_t j = 0; j < this->padBottom; j++) {
                 // 搬两行
-                gmXOffset3 = ((this->height - 2 * this->hPad2 - 1) + j) * this->width + time * this->ubFactorElement +
-                             loop * this->batchStride + this->ncOffset * this->batchStride;
+                gmXOffset3 = ((this->height - 2 * this->padBottom - 1) + j) * this->width +
+                             time * this->ubFactorElement + loop * this->batchStride +
+                             this->ncOffset * this->batchStride;
                 gmXOffset4 = (this->height - 1 - j) * this->width + time * this->ubFactorElement +
                              loop * this->batchStride + this->ncOffset * this->batchStride;
-                gmYOffset2 = (this->outHeight - this->hPad2 - 1 + j) * this->width + time * this->ubFactorElement +
+                gmYOffset2 = (this->outHeight - this->padBottom - 1 + j) * this->width + time * this->ubFactorElement +
                              loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
                 CopyGm2UB(gmXOffset3, gmXOffset4, calCount);
                 ComputeHGrad(calCount);
@@ -182,9 +183,9 @@ __aicore__ inline void PadV4GradPadH<T>::Process()
             if (time == copyTimesMidData - 1) {
                 copyCount = midDataCount - (copyTimesMidData - 1) * this->ubFactorElement * 2;
             }
-            gmXOffset5 = (2 * this->hPad1 + 1) * this->width + time * this->ubFactorElement * 2 +
+            gmXOffset5 = (2 * this->padTop + 1) * this->width + time * this->ubFactorElement * 2 +
                          loop * this->batchStride + this->ncOffset * this->batchStride;
-            gmYOffset3 = (this->hPad1 + 1) * this->width + time * this->ubFactorElement * 2 +
+            gmYOffset3 = (this->padTop + 1) * this->width + time * this->ubFactorElement * 2 +
                          loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
             CopyIn(copyCount, gmXOffset5);
             Compute(copyCount);
@@ -194,11 +195,11 @@ __aicore__ inline void PadV4GradPadH<T>::Process()
             if (time == copyTimesOneRow2 - 1) {
                 firstAndLastRowCopyCount = this->width - (copyTimesOneRow2 - 1) * this->ubFactorElement * 2;
             }
-            gmXOffset6 = this->hPad1 * this->width + time * this->ubFactorElement * 2 + loop * this->batchStride +
+            gmXOffset6 = this->padTop * this->width + time * this->ubFactorElement * 2 + loop * this->batchStride +
                          this->ncOffset * this->batchStride;
-            gmYOffset4 =
-                time * this->ubFactorElement * 2 + loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
-            gmXOffset7 = (this->height - this->hPad2 - 1) * this->width + time * this->ubFactorElement * 2 +
+            gmYOffset4 = time * this->ubFactorElement * 2 + loop * this->outBatchStride +
+                         this->ncOffset * this->outBatchStride;
+            gmXOffset7 = (this->height - this->padBottom - 1) * this->width + time * this->ubFactorElement * 2 +
                          loop * this->batchStride + this->ncOffset * this->batchStride;
             gmYOffset5 = (this->outHeight - 1) * this->width + time * this->ubFactorElement * 2 +
                          loop * this->outBatchStride + this->ncOffset * this->outBatchStride;

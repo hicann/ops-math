@@ -58,9 +58,9 @@ __aicore__ inline void PadV4GradLargeHSmallW<T>::CopyOut2Gm(const int32_t batchI
     int64_t gmYOffset2 = 0;
     DataCopyExtParams copyParams{1, (uint32_t)(this->outWidth * sizeof(T)), 0, 0, 0};
     LocalTensor<T> transposeData = transposeQue.DeQue<T>();
-    if (cycles <= COPY_ROWS_AND_COLS - this->hPad2) {
-        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
-            gmYOffset1 = this->outWidth * (this->outHeight - (COPY_ROWS_AND_COLS - this->hPad2) + i) +
+    if (cycles <= COPY_ROWS_AND_COLS - this->padBottom) {
+        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padBottom; i++) {
+            gmYOffset1 = this->outWidth * (this->outHeight - (COPY_ROWS_AND_COLS - this->padBottom) + i) +
                          batchIdx * this->outBatchStride + this->ncOffset * this->outBatchStride;
             DataCopyPad(this->mGmY[gmYOffset1], transposeData[i * SMALL_WIDTH_LIMIT], copyParams);
         }
@@ -105,16 +105,18 @@ __aicore__ inline void PadV4GradLargeHSmallW<T>::implTransposeAndCompute(const i
             TransDataTo5HD<T>(xDstLocalList0, xSrcLocalList0, transDataParams);
         }
 
-        for (size_t i = 0; i < this->wPad1; i++) {
-            Add(transposeData[(2 * this->wPad1 - i) * this->ubFactorElement], transposeData[i * this->ubFactorElement],
-                transposeData[(2 * this->wPad1 - i) * this->ubFactorElement], this->ubFactorElement);
+        for (size_t i = 0; i < this->padLeft; i++) {
+            Add(transposeData[(2 * this->padLeft - i) * this->ubFactorElement],
+                transposeData[i * this->ubFactorElement],
+                transposeData[(2 * this->padLeft - i) * this->ubFactorElement], this->ubFactorElement);
         }
-        for (size_t i = 0; i < this->wPad2; i++) {
-            Add(transposeData[(this->width - 2 * this->wPad2 - 1 + i) * this->ubFactorElement],
+        for (size_t i = 0; i < this->padRight; i++) {
+            Add(transposeData[(this->width - 2 * this->padRight - 1 + i) * this->ubFactorElement],
                 transposeData[(this->width - 1 - i) * this->ubFactorElement],
-                transposeData[(this->width - 2 * this->wPad2 - 1 + i) * this->ubFactorElement], this->ubFactorElement);
+                transposeData[(this->width - 2 * this->padRight - 1 + i) * this->ubFactorElement],
+                this->ubFactorElement);
         }
-        DataCopy(transposeData, transposeData[this->wPad1 * this->ubFactorElement],
+        DataCopy(transposeData, transposeData[this->padLeft * this->ubFactorElement],
                  this->outWidth * this->ubFactorElement);
         for (size_t time = 0; time < loopTimes; time++) {
             for (int i = 0; i < HALF_BLOCK_NUM; i++) {
@@ -150,16 +152,18 @@ __aicore__ inline void PadV4GradLargeHSmallW<T>::implTransposeAndCompute(const i
             transDataParams.dstRepStride = TRANSDATA_BASE_H / FLOAT_BLOCK_NUM;
             TransDataTo5HD<T>(xDstLocalList0, xSrcLocalList0, transDataParams);
         }
-        for (size_t i = 0; i < this->wPad1; i++) {
-            Add(transposeData[(2 * this->wPad1 - i) * this->ubFactorElement], transposeData[i * this->ubFactorElement],
-                transposeData[(2 * this->wPad1 - i) * this->ubFactorElement], this->ubFactorElement);
+        for (size_t i = 0; i < this->padLeft; i++) {
+            Add(transposeData[(2 * this->padLeft - i) * this->ubFactorElement],
+                transposeData[i * this->ubFactorElement],
+                transposeData[(2 * this->padLeft - i) * this->ubFactorElement], this->ubFactorElement);
         }
-        for (size_t i = 0; i < this->wPad2; i++) {
-            Add(transposeData[(this->width - 2 * this->wPad2 - 1 + i) * this->ubFactorElement],
+        for (size_t i = 0; i < this->padRight; i++) {
+            Add(transposeData[(this->width - 2 * this->padRight - 1 + i) * this->ubFactorElement],
                 transposeData[(this->width - 1 - i) * this->ubFactorElement],
-                transposeData[(this->width - 2 * this->wPad2 - 1 + i) * this->ubFactorElement], this->ubFactorElement);
+                transposeData[(this->width - 2 * this->padRight - 1 + i) * this->ubFactorElement],
+                this->ubFactorElement);
         }
-        DataCopy(transposeData, transposeData[this->wPad1 * this->ubFactorElement],
+        DataCopy(transposeData, transposeData[this->padLeft * this->ubFactorElement],
                  this->outWidth * this->ubFactorElement);
 
         for (size_t time = 0; time < this->ubFactorElement / FLOAT_BLOCK_NUM; time++) {
@@ -194,19 +198,19 @@ __aicore__ inline void PadV4GradLargeHSmallW<T>::ComputeHGrad(const int32_t calC
     LocalTensor<T> yLocal = yOutQueue.AllocTensor<T>();
     // compute grad
     if (flag == 0) {
-        for (size_t i = 0; i < this->hPad1; i++) {
-            Add(xLocal[(2 * this->hPad1 - i) * SMALL_WIDTH_LIMIT], xLocal[i * SMALL_WIDTH_LIMIT],
-                xLocal[(2 * this->hPad1 - i) * SMALL_WIDTH_LIMIT], calCount);
+        for (size_t i = 0; i < this->padTop; i++) {
+            Add(xLocal[(2 * this->padTop - i) * SMALL_WIDTH_LIMIT], xLocal[i * SMALL_WIDTH_LIMIT],
+                xLocal[(2 * this->padTop - i) * SMALL_WIDTH_LIMIT], calCount);
         }
-        DataCopy(yLocal, xLocal[this->hPad1 * SMALL_WIDTH_LIMIT],
-                 (COPY_ROWS_AND_COLS - this->hPad1) * SMALL_WIDTH_LIMIT);
+        DataCopy(yLocal, xLocal[this->padTop * SMALL_WIDTH_LIMIT],
+                 (COPY_ROWS_AND_COLS - this->padTop) * SMALL_WIDTH_LIMIT);
     } else {
-        for (size_t i = 0; i < this->hPad2; i++) {
-            Add(xLocal[(COPY_ROWS_AND_COLS - 2 * this->hPad2 - 1 + i) * SMALL_WIDTH_LIMIT],
+        for (size_t i = 0; i < this->padBottom; i++) {
+            Add(xLocal[(COPY_ROWS_AND_COLS - 2 * this->padBottom - 1 + i) * SMALL_WIDTH_LIMIT],
                 xLocal[(COPY_ROWS_AND_COLS - 1 - i) * SMALL_WIDTH_LIMIT],
-                xLocal[(COPY_ROWS_AND_COLS - 2 * this->hPad2 - 1 + i) * SMALL_WIDTH_LIMIT], calCount);
+                xLocal[(COPY_ROWS_AND_COLS - 2 * this->padBottom - 1 + i) * SMALL_WIDTH_LIMIT], calCount);
         }
-        DataCopy(yLocal, xLocal, (COPY_ROWS_AND_COLS - this->hPad2) * SMALL_WIDTH_LIMIT);
+        DataCopy(yLocal, xLocal, (COPY_ROWS_AND_COLS - this->padBottom) * SMALL_WIDTH_LIMIT);
     }
     xInQueue.FreeTensor(xLocal);
     yOutQueue.EnQue(yLocal);

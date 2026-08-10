@@ -69,6 +69,20 @@ public:
     __aicore__ inline void ProcessSmallHLargeWLoopBody(uint32_t copyTimesOneRow, uint32_t copyMidDataTimes,
                                                        event_t mte3ToMte2Event);
 
+    // Wrapper methods for PadSmallHLargeWLoopBodyImpl CRTP dispatch
+    __aicore__ inline void ComputeCopy(const int32_t copyCount) { static_cast<DerivedT*>(this)->Compute(copyCount); }
+    __aicore__ inline void ImplTransposeAndCompute(const int64_t transCount, const int32_t flag)
+    {
+        static_cast<DerivedT*>(this)->ImplTransposeAndCompute(transCount, flag);
+    }
+    __aicore__ inline void ImplTransposeAndCompute(const int64_t transCount)
+    {
+        static_cast<DerivedT*>(this)->ImplTransposeAndCompute(transCount);
+    }
+    __aicore__ inline uint32_t GetPadLeft() const { return this->padLeft; }
+    __aicore__ inline uint32_t GetPadRight() const { return this->padRight; }
+    __aicore__ inline uint32_t GetPadLeftMultiplier() const { return CONST_VALUE_2; }
+
 protected:
     uint32_t batch = 0;
     uint32_t ncPerCore = 0;

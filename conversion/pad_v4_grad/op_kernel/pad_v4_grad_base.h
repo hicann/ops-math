@@ -70,6 +70,20 @@ public:
     __aicore__ inline void ProcessSmallHLargeWPadLoopBody(uint32_t copyTimesOneRow, uint32_t copyMidDataTimes,
                                                           event_t mte3ToMte2Event);
 
+    // Wrapper methods for PadSmallHLargeWLoopBodyImpl CRTP dispatch
+    __aicore__ inline void ComputeCopy(const int32_t copyCount) { this->compute(copyCount); }
+    __aicore__ inline void ImplTransposeAndCompute(const int64_t transCount, const int32_t flag)
+    {
+        static_cast<DerivedT*>(this)->implTransposeAndCompute(transCount, flag);
+    }
+    __aicore__ inline void ImplTransposeAndCompute(const int64_t transCount)
+    {
+        static_cast<DerivedT*>(this)->implTransposeAndCompute(transCount);
+    }
+    __aicore__ inline uint32_t GetPadLeft() const { return this->padLeft; }
+    __aicore__ inline uint32_t GetPadRight() const { return this->padRight; }
+    __aicore__ inline uint32_t GetPadLeftMultiplier() const { return 2; }
+
     // Copy methods shared between h_w_pad and h_w_bf16_pad (CRTP dispatch)
     __aicore__ inline void CopyGm2UB(const int32_t cycleIdx, const int64_t copyCount, const int32_t batchIdx,
                                      const int64_t ncOffset, const int32_t flag);
@@ -97,6 +111,18 @@ public:
     __aicore__ inline void CopyWs2UB(const int32_t batchIdx, const int64_t copyCount, const int32_t flag);
     __aicore__ inline void CopyOut2Workspace(const int32_t tIdx, const int64_t calCount);
 
+    // Common implTransposeAndCompute for h_w_pad and small_h_large_w_pad (CRTP dispatch)
+    __aicore__ inline void ImplTransposeAndComputeCommon(const int64_t transCount, const int32_t flag);
+
+    // Common bf16 transpose helpers for h_w_bf16_pad and small_h_large_w_bf16_pad (CRTP dispatch)
+    __aicore__ inline void Bf16TransDataForward(TransDataTo5HDParams& transDataParams, uint64_t* xSrcLocalList0,
+                                                uint64_t* xDstLocalList0, LocalTensor<float>& floatTenosr,
+                                                LocalTensor<float>& transposeData, uint32_t loopTimes);
+    __aicore__ inline void Bf16PadReflectW(LocalTensor<float>& transposeData, const int32_t flag);
+    __aicore__ inline void Bf16TransDataBackward(TransDataTo5HDParams& transDataParams, uint64_t* xSrcLocalList1,
+                                                 uint64_t* xDstLocalList1, LocalTensor<float>& floatTenosr,
+                                                 LocalTensor<float>& transposeData);
+
 public:
     uint32_t batch = 0;
     uint32_t ncPerCore = 0;
@@ -109,10 +135,10 @@ public:
     uint32_t outWidth = 0;
     uint32_t alignOutHeight = 0;
     uint32_t alignOutWidth = 0;
-    uint32_t hPad1 = 0;
-    uint32_t hPad2 = 0;
-    uint32_t wPad1 = 0;
-    uint32_t wPad2 = 0;
+    uint32_t padTop = 0;
+    uint32_t padBottom = 0;
+    uint32_t padLeft = 0;
+    uint32_t padRight = 0;
     uint32_t blockNum = 0;
     uint32_t ubFactorElement = 0;
     uint32_t blockIdx = 0;
@@ -144,10 +170,10 @@ __aicore__ inline void PadV4GradBase<T, DerivedT>::Init(const PadV4GradTilingDat
     alignWidth = tilingData.alignWidth;
     alignOutHeight = tilingData.alignOutHeight;
     alignOutWidth = tilingData.alignOutWidth;
-    hPad1 = tilingData.hPad1;
-    hPad2 = tilingData.hPad2;
-    wPad1 = tilingData.wPad1;
-    wPad2 = tilingData.wPad2;
+    padTop = tilingData.padTop;
+    padBottom = tilingData.padBottom;
+    padLeft = tilingData.padLeft;
+    padRight = tilingData.padRight;
     blockNum = tilingData.blockNum;
     ubFactorElement = tilingData.ubFactorElement;
     wPadCopyCount = tilingData.wPadCopyCount;
@@ -197,7 +223,7 @@ __aicore__ inline void PadV4GradBase<T, DerivedT>::ProcessHWPadLoopBody(uint32_t
         }
         SetFlag<HardEvent::MTE3_MTE2>(mte3ToMte2Event);
         WaitFlag<HardEvent::MTE3_MTE2>(mte3ToMte2Event);
-        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad1; i++) {
+        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padTop; i++) {
             copyCount1 = COPY_ROWS_AND_COLS * this->ubFactorElement;
             for (size_t j = 0; j < copyMidDataTimes; j++) {
                 if (j == copyMidDataTimes - 1) {
@@ -206,14 +232,14 @@ __aicore__ inline void PadV4GradBase<T, DerivedT>::ProcessHWPadLoopBody(uint32_t
                 }
                 workspaceOffset1 = COPY_ROWS_AND_COLS + j * this->ubFactorElement * COPY_ROWS_AND_COLS +
                                    i * this->width + this->blockIdx * this->workspacePerCore;
-                gmYOffset1 = COPY_ROWS_AND_COLS - this->wPad1 + j * this->ubFactorElement * COPY_ROWS_AND_COLS +
+                gmYOffset1 = COPY_ROWS_AND_COLS - this->padLeft + j * this->ubFactorElement * COPY_ROWS_AND_COLS +
                              i * this->outWidth + loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
                 static_cast<DerivedT*>(this)->CopyIn(copyCount1, workspaceOffset1);
                 static_cast<DerivedT*>(this)->compute(this->ubFactorElement * COPY_ROWS_AND_COLS);
                 static_cast<DerivedT*>(this)->CopyOut(copyCount1, gmYOffset1);
             }
         }
-        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
+        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padBottom; i++) {
             copyCount2 = COPY_ROWS_AND_COLS * this->ubFactorElement;
             for (size_t j = 0; j < copyMidDataTimes; j++) {
                 if (j == copyMidDataTimes - 1) {
@@ -221,10 +247,10 @@ __aicore__ inline void PadV4GradBase<T, DerivedT>::ProcessHWPadLoopBody(uint32_t
                                  (copyMidDataTimes - 1) * this->ubFactorElement * COPY_ROWS_AND_COLS;
                 }
                 workspaceOffset2 = COPY_ROWS_AND_COLS + j * this->ubFactorElement * COPY_ROWS_AND_COLS +
-                                   (i + COPY_ROWS_AND_COLS - this->hPad1) * this->width +
+                                   (i + COPY_ROWS_AND_COLS - this->padTop) * this->width +
                                    this->blockIdx * this->workspacePerCore;
-                gmYOffset2 = COPY_ROWS_AND_COLS - this->wPad1 +
-                             (this->outHeight - (COPY_ROWS_AND_COLS - this->hPad2) + i) * this->outWidth +
+                gmYOffset2 = COPY_ROWS_AND_COLS - this->padLeft +
+                             (this->outHeight - (COPY_ROWS_AND_COLS - this->padBottom) + i) * this->outWidth +
                              j * this->ubFactorElement * COPY_ROWS_AND_COLS + loop * this->outBatchStride +
                              this->ncOffset * this->outBatchStride;
                 static_cast<DerivedT*>(this)->CopyIn(copyCount2, workspaceOffset2);
@@ -265,7 +291,7 @@ __aicore__ inline void PadV4GradBase<T, DerivedT>::ProcessHWPadLoopBody(uint32_t
                 gmXOffset1 = COPY_ROWS_AND_COLS + rowIdx * this->width +
                              i * this->ubFactorElement * COPY_ROWS_AND_COLS + loop * this->batchStride +
                              this->ncOffset * this->batchStride;
-                gmYOffset3 = (COPY_ROWS_AND_COLS - this->wPad1) + (rowIdx - this->hPad1) * this->outWidth +
+                gmYOffset3 = (COPY_ROWS_AND_COLS - this->padLeft) + (rowIdx - this->padTop) * this->outWidth +
                              i * this->ubFactorElement * COPY_ROWS_AND_COLS + loop * this->outBatchStride +
                              this->ncOffset * this->outBatchStride;
                 static_cast<DerivedT*>(this)->CopyInFromGm(copyCount, gmXOffset1);
@@ -276,6 +302,7 @@ __aicore__ inline void PadV4GradBase<T, DerivedT>::ProcessHWPadLoopBody(uint32_t
     }
 }
 
+// ========== ProcessLargeHSmallWPadLoopBody (shared implementation) ==========
 template <typename T, typename DerivedT>
 __aicore__ inline void PadV4GradBase<T, DerivedT>::ProcessLargeHSmallWPadLoopBody(int64_t calCount,
                                                                                   uint32_t transTimesOneCol,
@@ -340,7 +367,7 @@ __aicore__ inline void PadV4GradBase<T, DerivedT>::ProcessSmallHLargeWPadLoopBod
                 }
                 workspaceOffset = COPY_ROWS_AND_COLS + j * this->ubFactorElement * SMALL_HEIGHT_LIMIT +
                                   i * this->width + this->blockIdx * this->workspacePerCore;
-                gmYOffset = COPY_ROWS_AND_COLS - this->wPad1 + j * this->ubFactorElement * SMALL_HEIGHT_LIMIT +
+                gmYOffset = COPY_ROWS_AND_COLS - this->padLeft + j * this->ubFactorElement * SMALL_HEIGHT_LIMIT +
                             i * this->outWidth + loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
                 static_cast<DerivedT*>(this)->CopyIn(copyCount, workspaceOffset);
                 static_cast<DerivedT*>(this)->compute(this->ubFactorElement * SMALL_HEIGHT_LIMIT);
@@ -415,34 +442,34 @@ __aicore__ inline void PadV4GradBase<T, DerivedT>::CopyGmAndWorkspace2UB1(const 
     int64_t xGmOffset;
     LocalTensor<T> xLocal = static_cast<DerivedT*>(this)->xInQueue.template AllocTensor<T>();
     if (flag == 0) {
-        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad1; i++) {
+        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padTop; i++) {
             workspaceOffset1 = i * this->width + this->blockIdx * this->workspacePerCore;
             DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmWorkspace[workspaceOffset1], copyParams, padParams);
         }
         for (size_t i = COPY_ROWS_AND_COLS; i < this->height - COPY_ROWS_AND_COLS; i++) {
             xGmOffset = i * this->width + batchIdx * this->batchStride + ncOffset * this->batchStride;
-            DataCopyPad(xLocal[(i - this->hPad1) * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset], copyParams, padParams);
+            DataCopyPad(xLocal[(i - this->padTop) * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset], copyParams, padParams);
         }
-        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
-            workspaceOffset2 = (i + COPY_ROWS_AND_COLS - this->hPad1) * this->width +
+        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padBottom; i++) {
+            workspaceOffset2 = (i + COPY_ROWS_AND_COLS - this->padTop) * this->width +
                                this->blockIdx * this->workspacePerCore;
-            DataCopyPad(xLocal[(this->outHeight - (COPY_ROWS_AND_COLS - this->hPad2) + i) * COPY_ROWS_AND_COLS],
+            DataCopyPad(xLocal[(this->outHeight - (COPY_ROWS_AND_COLS - this->padBottom) + i) * COPY_ROWS_AND_COLS],
                         this->mGmWorkspace[workspaceOffset2], copyParams, padParams);
         }
     } else {
-        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad1; i++) {
+        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padTop; i++) {
             workspaceOffset1 = (i + 1) * this->width - COPY_ROWS_AND_COLS + this->blockIdx * this->workspacePerCore;
             DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmWorkspace[workspaceOffset1], copyParams, padParams);
         }
         for (size_t i = COPY_ROWS_AND_COLS; i < this->height - COPY_ROWS_AND_COLS; i++) {
             xGmOffset = (i + 1) * this->width - COPY_ROWS_AND_COLS + batchIdx * this->batchStride +
                         ncOffset * this->batchStride;
-            DataCopyPad(xLocal[(i - this->hPad1) * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset], copyParams, padParams);
+            DataCopyPad(xLocal[(i - this->padTop) * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset], copyParams, padParams);
         }
-        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
-            workspaceOffset2 = (i + COPY_ROWS_AND_COLS - this->hPad1 + 1) * this->width - COPY_ROWS_AND_COLS +
+        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padBottom; i++) {
+            workspaceOffset2 = (i + COPY_ROWS_AND_COLS - this->padTop + 1) * this->width - COPY_ROWS_AND_COLS +
                                this->blockIdx * this->workspacePerCore;
-            DataCopyPad(xLocal[(this->outHeight - (COPY_ROWS_AND_COLS - this->hPad2) + i) * COPY_ROWS_AND_COLS],
+            DataCopyPad(xLocal[(this->outHeight - (COPY_ROWS_AND_COLS - this->padBottom) + i) * COPY_ROWS_AND_COLS],
                         this->mGmWorkspace[workspaceOffset2], copyParams, padParams);
         }
     }
@@ -474,13 +501,13 @@ __aicore__ inline void PadV4GradBase<T, DerivedT>::CopyGmAndWorkspace2UB2(const 
     if (flag == 0) {
         if (transBlkIdx == 0) {
             for (size_t i = 0; i < this->ubFactorElement; i++) {
-                xGmOffset1 = (i + this->hPad1) * this->width + batchIdx * this->batchStride +
+                xGmOffset1 = (i + this->padTop) * this->width + batchIdx * this->batchStride +
                              ncOffset * this->batchStride;
                 DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset1], copyParams, padParams);
             }
             PipeBarrier<PIPE_MTE2>();
             ;
-            for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad1; i++) {
+            for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padTop; i++) {
                 workspaceOffset1 = i * this->width + this->blockIdx * this->workspacePerCore;
                 DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmWorkspace[workspaceOffset1], copyParams,
                             padParams);
@@ -488,30 +515,30 @@ __aicore__ inline void PadV4GradBase<T, DerivedT>::CopyGmAndWorkspace2UB2(const 
 
         } else if (transBlkIdx > 0 && transBlkIdx < transTimes - 1) {
             for (size_t i = 0; i < this->ubFactorElement; i++) {
-                xGmOffset2 = (this->ubFactorElement * transBlkIdx + this->hPad1 + i) * this->width +
+                xGmOffset2 = (this->ubFactorElement * transBlkIdx + this->padTop + i) * this->width +
                              batchIdx * this->batchStride + ncOffset * this->batchStride;
                 DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset2], copyParams, padParams);
             }
         } else if (transBlkIdx == transTimes - 1) {
-            if (cycles <= COPY_ROWS_AND_COLS - this->hPad2) {
-                for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
-                    workspaceOffset2 = (i + COPY_ROWS_AND_COLS - this->hPad1) * this->width +
+            if (cycles <= COPY_ROWS_AND_COLS - this->padBottom) {
+                for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padBottom; i++) {
+                    workspaceOffset2 = (i + COPY_ROWS_AND_COLS - this->padTop) * this->width +
                                        this->blockIdx * this->workspacePerCore;
                     DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmWorkspace[workspaceOffset2], copyParams,
                                 padParams);
                 }
             } else {
                 for (size_t i = 0; i < cycles; i++) {
-                    xGmOffset3 = (i + (transTimes - 1) * this->ubFactorElement + this->hPad1) * this->width +
+                    xGmOffset3 = (i + (transTimes - 1) * this->ubFactorElement + this->padTop) * this->width +
                                  batchIdx * this->batchStride + ncOffset * this->batchStride;
                     DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset3], copyParams, padParams);
                 }
                 PipeBarrier<PIPE_MTE2>();
                 ;
-                for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
-                    workspaceOffset3 = (i + COPY_ROWS_AND_COLS - this->hPad1) * this->width +
+                for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padBottom; i++) {
+                    workspaceOffset3 = (i + COPY_ROWS_AND_COLS - this->padTop) * this->width +
                                        this->blockIdx * this->workspacePerCore;
-                    DataCopyPad(xLocal[(cycles - (COPY_ROWS_AND_COLS - this->hPad2) + i) * COPY_ROWS_AND_COLS],
+                    DataCopyPad(xLocal[(cycles - (COPY_ROWS_AND_COLS - this->padBottom) + i) * COPY_ROWS_AND_COLS],
                                 this->mGmWorkspace[workspaceOffset3], copyParams, padParams);
                 }
             }
@@ -519,13 +546,13 @@ __aicore__ inline void PadV4GradBase<T, DerivedT>::CopyGmAndWorkspace2UB2(const 
     } else {
         if (transBlkIdx == 0) {
             for (size_t i = 0; i < this->ubFactorElement; i++) {
-                xGmOffset4 = (i + this->hPad1 + 1) * this->width - 16 + batchIdx * this->batchStride +
+                xGmOffset4 = (i + this->padTop + 1) * this->width - 16 + batchIdx * this->batchStride +
                              ncOffset * this->batchStride;
                 DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset4], copyParams, padParams);
             }
             PipeBarrier<PIPE_MTE2>();
             ;
-            for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad1; i++) {
+            for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padTop; i++) {
                 workspaceOffset4 = (i + 1) * this->width - 16 + this->blockIdx * this->workspacePerCore;
                 DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmWorkspace[workspaceOffset4], copyParams,
                             padParams);
@@ -533,30 +560,30 @@ __aicore__ inline void PadV4GradBase<T, DerivedT>::CopyGmAndWorkspace2UB2(const 
 
         } else if (transBlkIdx > 0 && transBlkIdx < transTimes - 1) {
             for (size_t i = 0; i < this->ubFactorElement; i++) {
-                xGmOffset5 = (this->ubFactorElement * transBlkIdx + this->hPad1 + i + 1) * this->width - 16 +
+                xGmOffset5 = (this->ubFactorElement * transBlkIdx + this->padTop + i + 1) * this->width - 16 +
                              batchIdx * this->batchStride + ncOffset * this->batchStride;
                 DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset5], copyParams, padParams);
             }
         } else if (transBlkIdx == transTimes - 1) {
-            if (cycles <= COPY_ROWS_AND_COLS - this->hPad2) {
-                for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
-                    workspaceOffset5 = (i + COPY_ROWS_AND_COLS + 1 - this->hPad1) * this->width - 16 +
+            if (cycles <= COPY_ROWS_AND_COLS - this->padBottom) {
+                for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padBottom; i++) {
+                    workspaceOffset5 = (i + COPY_ROWS_AND_COLS + 1 - this->padTop) * this->width - 16 +
                                        this->blockIdx * this->workspacePerCore;
                     DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmWorkspace[workspaceOffset5], copyParams,
                                 padParams);
                 }
             } else {
                 for (size_t i = 0; i < cycles; i++) {
-                    xGmOffset6 = (i + (transTimes - 1) * this->ubFactorElement + this->hPad1 + 1) * this->width - 16 +
+                    xGmOffset6 = (i + (transTimes - 1) * this->ubFactorElement + this->padTop + 1) * this->width - 16 +
                                  batchIdx * this->batchStride + ncOffset * this->batchStride;
                     DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset6], copyParams, padParams);
                 }
                 PipeBarrier<PIPE_MTE2>();
                 ;
-                for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
-                    workspaceOffset6 = (i + COPY_ROWS_AND_COLS + 1 - this->hPad1) * this->width - 16 +
+                for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padBottom; i++) {
+                    workspaceOffset6 = (i + COPY_ROWS_AND_COLS + 1 - this->padTop) * this->width - 16 +
                                        this->blockIdx * this->workspacePerCore;
-                    DataCopyPad(xLocal[(cycles - (COPY_ROWS_AND_COLS - this->hPad2) + i) * COPY_ROWS_AND_COLS],
+                    DataCopyPad(xLocal[(cycles - (COPY_ROWS_AND_COLS - this->padBottom) + i) * COPY_ROWS_AND_COLS],
                                 this->mGmWorkspace[workspaceOffset6], copyParams, padParams);
                 }
             }
@@ -573,13 +600,13 @@ __aicore__ inline void PadV4GradBase<T, DerivedT>::CopyOut2Workspace(const int32
     DataCopyExtParams copyParams{1, (uint32_t)(calCount * sizeof(T)), 0, 0, 0};
     LocalTensor<T> yLocal = static_cast<DerivedT*>(this)->yOutQueue.template DeQue<T>();
     if (flag == 0) {
-        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad1; i++) {
+        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padTop; i++) {
             workspaceOffset = i * this->width + tIdx * this->ubFactorElement + this->blockIdx * this->workspacePerCore;
             DataCopyPad(this->mGmWorkspace[workspaceOffset], yLocal[i * this->ubFactorElement], copyParams);
         }
     } else {
-        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
-            workspaceOffset = (COPY_ROWS_AND_COLS - this->hPad1 + i) * this->width + tIdx * this->ubFactorElement +
+        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padBottom; i++) {
+            workspaceOffset = (COPY_ROWS_AND_COLS - this->padTop + i) * this->width + tIdx * this->ubFactorElement +
                               this->blockIdx * this->workspacePerCore;
             DataCopyPad(this->mGmWorkspace[workspaceOffset], yLocal[i * this->ubFactorElement], copyParams);
         }
@@ -650,18 +677,18 @@ __aicore__ inline void PadV4GradBase<T, DerivedT>::CopyGmAndWs2UB1(const int32_t
     int64_t workspaceOffset2;
     int64_t xGmOffset;
     LocalTensor<T> xLocal = static_cast<DerivedT*>(this)->xInQueue.template AllocTensor<T>();
-    for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad1; i++) {
+    for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padTop; i++) {
         workspaceOffset1 = i * this->width + this->blockIdx * this->workspacePerCore;
         DataCopyPad(xLocal[i * SMALL_WIDTH_LIMIT], this->mGmWorkspace[workspaceOffset1], copyParams, padParams);
     }
     for (size_t i = COPY_ROWS_AND_COLS; i < this->height - COPY_ROWS_AND_COLS; i++) {
         xGmOffset = i * this->width + batchIdx * this->batchStride + this->ncOffset * this->batchStride;
-        DataCopyPad(xLocal[(i - this->hPad1) * SMALL_WIDTH_LIMIT], this->mGmX[xGmOffset], copyParams, padParams);
+        DataCopyPad(xLocal[(i - this->padTop) * SMALL_WIDTH_LIMIT], this->mGmX[xGmOffset], copyParams, padParams);
     }
-    for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
-        workspaceOffset2 = (i + COPY_ROWS_AND_COLS - this->hPad1) * this->width +
+    for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padBottom; i++) {
+        workspaceOffset2 = (i + COPY_ROWS_AND_COLS - this->padTop) * this->width +
                            this->blockIdx * this->workspacePerCore;
-        DataCopyPad(xLocal[(this->outHeight - (COPY_ROWS_AND_COLS - this->hPad2) + i) * SMALL_WIDTH_LIMIT],
+        DataCopyPad(xLocal[(this->outHeight - (COPY_ROWS_AND_COLS - this->padBottom) + i) * SMALL_WIDTH_LIMIT],
                     this->mGmWorkspace[workspaceOffset2], copyParams, padParams);
     }
     static_cast<DerivedT*>(this)->xInQueue.EnQue(xLocal);
@@ -684,42 +711,42 @@ __aicore__ inline void PadV4GradBase<T, DerivedT>::CopyGmAndWorkspace2UB2(const 
 
     if (transBlkIdx == 0) {
         for (size_t i = 0; i < this->ubFactorElement; i++) {
-            xGmOffset1 = (i + this->hPad1) * this->width + batchIdx * this->batchStride +
+            xGmOffset1 = (i + this->padTop) * this->width + batchIdx * this->batchStride +
                          this->ncOffset * this->batchStride;
             DataCopyPad(xLocal[i * SMALL_WIDTH_LIMIT], this->mGmX[xGmOffset1], copyParams, padParams);
         }
         PipeBarrier<PIPE_MTE2>();
         ;
-        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad1; i++) {
+        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padTop; i++) {
             workspaceOffset1 = i * this->width + this->blockIdx * this->workspacePerCore;
             DataCopyPad(xLocal[i * SMALL_WIDTH_LIMIT], this->mGmWorkspace[workspaceOffset1], copyParams, padParams);
         }
 
     } else if (transBlkIdx > 0 && transBlkIdx < transTimes - 1) {
         for (size_t i = 0; i < this->ubFactorElement; i++) {
-            xGmOffset2 = (this->ubFactorElement * transBlkIdx + this->hPad1 + i) * this->width +
+            xGmOffset2 = (this->ubFactorElement * transBlkIdx + this->padTop + i) * this->width +
                          batchIdx * this->batchStride + this->ncOffset * this->batchStride;
             DataCopyPad(xLocal[i * SMALL_WIDTH_LIMIT], this->mGmX[xGmOffset2], copyParams, padParams);
         }
     } else if (transBlkIdx == transTimes - 1) {
-        if (cycles <= COPY_ROWS_AND_COLS - this->hPad2) {
-            for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
-                workspaceOffset2 = (i + COPY_ROWS_AND_COLS - this->hPad1) * this->width +
+        if (cycles <= COPY_ROWS_AND_COLS - this->padBottom) {
+            for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padBottom; i++) {
+                workspaceOffset2 = (i + COPY_ROWS_AND_COLS - this->padTop) * this->width +
                                    this->blockIdx * this->workspacePerCore;
                 DataCopyPad(xLocal[i * SMALL_WIDTH_LIMIT], this->mGmWorkspace[workspaceOffset2], copyParams, padParams);
             }
         } else {
             for (size_t i = 0; i < cycles; i++) {
-                xGmOffset3 = (i + (transTimes - 1) * this->ubFactorElement + this->hPad1) * this->width +
+                xGmOffset3 = (i + (transTimes - 1) * this->ubFactorElement + this->padTop) * this->width +
                              batchIdx * this->batchStride + this->ncOffset * this->batchStride;
                 DataCopyPad(xLocal[i * SMALL_WIDTH_LIMIT], this->mGmX[xGmOffset3], copyParams, padParams);
             }
             PipeBarrier<PIPE_MTE2>();
             ;
-            for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
-                workspaceOffset3 = (i + COPY_ROWS_AND_COLS - this->hPad1) * this->width +
+            for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padBottom; i++) {
+                workspaceOffset3 = (i + COPY_ROWS_AND_COLS - this->padTop) * this->width +
                                    this->blockIdx * this->workspacePerCore;
-                DataCopyPad(xLocal[(cycles - (COPY_ROWS_AND_COLS - this->hPad2) + i) * SMALL_WIDTH_LIMIT],
+                DataCopyPad(xLocal[(cycles - (COPY_ROWS_AND_COLS - this->padBottom) + i) * SMALL_WIDTH_LIMIT],
                             this->mGmWorkspace[workspaceOffset3], copyParams, padParams);
             }
         }
@@ -735,13 +762,13 @@ __aicore__ inline void PadV4GradBase<T, DerivedT>::CopyOut2Ws(const int64_t calC
     DataCopyExtParams copyParams{1, (uint32_t)(calCount * sizeof(T)), 0, 0, 0};
     LocalTensor<T> yLocal = static_cast<DerivedT*>(this)->yOutQueue.template DeQue<T>();
     if (flag == 0) {
-        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad1; i++) {
+        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padTop; i++) {
             workspaceOffset = i * this->width + this->blockIdx * this->workspacePerCore;
             DataCopyPad(this->mGmWorkspace[workspaceOffset], yLocal[i * SMALL_WIDTH_LIMIT], copyParams);
         }
     } else {
-        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
-            workspaceOffset = (COPY_ROWS_AND_COLS - this->hPad1 + i) * this->width +
+        for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->padBottom; i++) {
+            workspaceOffset = (COPY_ROWS_AND_COLS - this->padTop + i) * this->width +
                               this->blockIdx * this->workspacePerCore;
             DataCopyPad(this->mGmWorkspace[workspaceOffset], yLocal[i * SMALL_WIDTH_LIMIT], copyParams);
         }
@@ -800,6 +827,196 @@ __aicore__ inline void PadV4GradBase<T, DerivedT>::CopyOut2Workspace(const int32
         DataCopyPad(this->mGmWorkspace[workspaceOffset], yLocal[i * this->ubFactorElement], copyParams);
     }
     static_cast<DerivedT*>(this)->yOutQueue.FreeTensor(yLocal);
+}
+
+// ========== Common ImplTransposeAndCompute for h_w_pad and small_h_large_w_pad ==========
+template <typename T, typename DerivedT>
+__aicore__ inline void PadV4GradBase<T, DerivedT>::ImplTransposeAndComputeCommon(const int64_t transCount,
+                                                                                 const int32_t flag)
+{
+    uint32_t loopTimes = this->CeilDiv(transCount, TRANSDATA_BASE_H);
+    uint64_t xSrcLocalList0[16];
+    uint64_t xDstLocalList0[16];
+    uint64_t xSrcLocalList1[16];
+    uint64_t xDstLocalList1[16];
+    LocalTensor<T> xLocal = static_cast<DerivedT*>(this)->xInQueue.template DeQue<T>();
+    LocalTensor<T> transposeData = static_cast<DerivedT*>(this)->transposeQue.template AllocTensor<T>();
+    TransDataTo5HDParams transDataParams;
+    transDataParams.dstHighHalf = false;
+    transDataParams.srcHighHalf = false;
+    transDataParams.repeatTimes = 1;
+    transDataParams.dstRepStride = 0;
+    transDataParams.srcRepStride = 0;
+    if constexpr (AscendC::IsSameType<T, half>::value) {
+        for (int i = 0; i < HALF_BLOCK_NUM; i++) {
+            xSrcLocalList0[i] = (uint64_t)(xLocal[COPY_ROWS_AND_COLS * i].GetPhyAddr());
+            xDstLocalList0[i] = (uint64_t)(transposeData[COPY_ROWS_AND_COLS * i * loopTimes].GetPhyAddr());
+            xSrcLocalList1[i] = (uint64_t)(transposeData[COPY_ROWS_AND_COLS * i * loopTimes].GetPhyAddr());
+            xDstLocalList1[i] = (uint64_t)(xLocal[COPY_ROWS_AND_COLS * i].GetPhyAddr());
+        }
+        transDataParams.repeatTimes = loopTimes;
+        transDataParams.srcRepStride = TRANSDATA_BASE_H * COPY_ROWS_AND_COLS * sizeof(T) / DATA_BLOCK_BYTES;
+        transDataParams.dstRepStride = 1;
+        TransDataTo5HD<T>(xDstLocalList0, xSrcLocalList0, transDataParams);
+        if (flag == 0) {
+            for (size_t i = 0; i < this->padLeft; i++) {
+                Add(transposeData[(2 * this->padLeft - i) * this->ubFactorElement],
+                    transposeData[i * this->ubFactorElement],
+                    transposeData[(2 * this->padLeft - i) * this->ubFactorElement], this->ubFactorElement);
+            }
+            DataCopy(transposeData, transposeData[this->padLeft * this->ubFactorElement],
+                     (COPY_ROWS_AND_COLS - this->padLeft) * this->ubFactorElement);
+
+        } else {
+            for (size_t i = 0; i < this->padRight; i++) {
+                Add(transposeData[(COPY_ROWS_AND_COLS - 2 * this->padRight - 1 + i) * this->ubFactorElement],
+                    transposeData[(COPY_ROWS_AND_COLS - 1 - i) * this->ubFactorElement],
+                    transposeData[(COPY_ROWS_AND_COLS - 2 * this->padRight - 1 + i) * this->ubFactorElement],
+                    this->ubFactorElement);
+            }
+        }
+        transDataParams.srcRepStride = 1;
+        transDataParams.dstRepStride = TRANSDATA_BASE_H * COPY_ROWS_AND_COLS * sizeof(T) / DATA_BLOCK_BYTES;
+        TransDataTo5HD<T>(xDstLocalList1, xSrcLocalList1, transDataParams);
+        DataCopy(transposeData, xLocal, COPY_ROWS_AND_COLS * this->ubFactorElement);
+        static_cast<DerivedT*>(this)->xInQueue.FreeTensor(xLocal);
+        static_cast<DerivedT*>(this)->transposeQue.EnQue(transposeData);
+    } else {
+        for (size_t time = 0; time < COPY_ROWS_AND_COLS / FLOAT_BLOCK_NUM; time++) {
+            for (size_t i = 0; i < HALF_BLOCK_NUM; i++) {
+                xSrcLocalList0[i] = (uint64_t)(xLocal[COPY_ROWS_AND_COLS * i + FLOAT_BLOCK_NUM * time].GetPhyAddr());
+            }
+            for (size_t i = 0; i < FLOAT_BLOCK_NUM; i++) {
+                xDstLocalList0[2 * i] = (uint64_t)(transposeData[i * this->ubFactorElement +
+                                                                 FLOAT_BLOCK_NUM * this->ubFactorElement * time]
+                                                       .GetPhyAddr());
+                xDstLocalList0[2 * i + 1] = (uint64_t)(transposeData[i * this->ubFactorElement +
+                                                                     FLOAT_BLOCK_NUM * this->ubFactorElement * time +
+                                                                     FLOAT_BLOCK_NUM]
+                                                           .GetPhyAddr());
+            }
+            transDataParams.repeatTimes = loopTimes;
+            transDataParams.srcRepStride = TRANSDATA_BASE_H * COPY_ROWS_AND_COLS * sizeof(T) / DATA_BLOCK_BYTES;
+            transDataParams.dstRepStride = COPY_ROWS_AND_COLS / FLOAT_BLOCK_NUM;
+            TransDataTo5HD<T>(xDstLocalList0, xSrcLocalList0, transDataParams);
+        }
+        if (flag == 0) {
+            for (size_t i = 0; i < this->padLeft; i++) {
+                Add(transposeData[(2 * this->padLeft - i) * this->ubFactorElement],
+                    transposeData[i * this->ubFactorElement],
+                    transposeData[(2 * this->padLeft - i) * this->ubFactorElement], this->ubFactorElement);
+            }
+            DataCopy(transposeData, transposeData[this->padLeft * this->ubFactorElement],
+                     (COPY_ROWS_AND_COLS - this->padLeft) * this->ubFactorElement);
+
+        } else {
+            for (size_t i = 0; i < this->padRight; i++) {
+                Add(transposeData[(COPY_ROWS_AND_COLS - 2 * this->padRight - 1 + i) * this->ubFactorElement],
+                    transposeData[(COPY_ROWS_AND_COLS - 1 - i) * this->ubFactorElement],
+                    transposeData[(COPY_ROWS_AND_COLS - 2 * this->padRight - 1 + i) * this->ubFactorElement],
+                    this->ubFactorElement);
+            }
+        }
+        for (size_t time = 0; time < this->ubFactorElement / FLOAT_BLOCK_NUM; time++) {
+            for (size_t i = 0; i < HALF_BLOCK_NUM; i++) {
+                xSrcLocalList1[i] = (uint64_t)(transposeData[this->ubFactorElement * i + time * FLOAT_BLOCK_NUM]
+                                                   .GetPhyAddr());
+            }
+            for (size_t i = 0; i < FLOAT_BLOCK_NUM; i++) {
+                xDstLocalList1[2 * i] = (uint64_t)(xLocal[COPY_ROWS_AND_COLS * i +
+                                                          time * COPY_ROWS_AND_COLS * FLOAT_BLOCK_NUM]
+                                                       .GetPhyAddr());
+                xDstLocalList1[2 * i +
+                               1] = (uint64_t)(xLocal[COPY_ROWS_AND_COLS * i +
+                                                      time * COPY_ROWS_AND_COLS * FLOAT_BLOCK_NUM + FLOAT_BLOCK_NUM]
+                                                   .GetPhyAddr());
+            }
+            transDataParams.repeatTimes = 1;
+            transDataParams.srcRepStride = 0;
+            transDataParams.dstRepStride = 0;
+            TransDataTo5HD<T>(xDstLocalList1, xSrcLocalList1, transDataParams);
+        }
+        DataCopy(transposeData, xLocal, COPY_ROWS_AND_COLS * this->ubFactorElement);
+        static_cast<DerivedT*>(this)->xInQueue.FreeTensor(xLocal);
+        static_cast<DerivedT*>(this)->transposeQue.EnQue(transposeData);
+    }
+}
+
+// ========== Common bf16 transpose helpers for h_w_bf16_pad and small_h_large_w_bf16_pad ==========
+template <typename T, typename DerivedT>
+__aicore__ inline void PadV4GradBase<T, DerivedT>::Bf16TransDataForward(
+    TransDataTo5HDParams& transDataParams, uint64_t* xSrcLocalList0, uint64_t* xDstLocalList0,
+    LocalTensor<float>& floatTenosr, LocalTensor<float>& transposeData, uint32_t loopTimes)
+{
+    for (size_t time = 0; time < COPY_ROWS_AND_COLS / FLOAT_BLOCK_NUM; time++) {
+        for (size_t i = 0; i < HALF_BLOCK_NUM; i++) {
+            xSrcLocalList0[i] = (uint64_t)(floatTenosr[COPY_ROWS_AND_COLS * i + FLOAT_BLOCK_NUM * time].GetPhyAddr());
+        }
+        for (size_t i = 0; i < FLOAT_BLOCK_NUM; i++) {
+            xDstLocalList0[2 * i] = (uint64_t)(transposeData[i * this->ubFactorElement +
+                                                             FLOAT_BLOCK_NUM * this->ubFactorElement * time]
+                                                   .GetPhyAddr());
+            xDstLocalList0[2 * i + 1] = (uint64_t)(transposeData[i * this->ubFactorElement +
+                                                                 FLOAT_BLOCK_NUM * this->ubFactorElement * time +
+                                                                 FLOAT_BLOCK_NUM]
+                                                       .GetPhyAddr());
+        }
+        transDataParams.repeatTimes = loopTimes;
+        transDataParams.srcRepStride = TRANSDATA_BASE_H * COPY_ROWS_AND_COLS * sizeof(float) / DATA_BLOCK_BYTES;
+        transDataParams.dstRepStride = COPY_ROWS_AND_COLS / FLOAT_BLOCK_NUM;
+        TransDataTo5HD<float>(xDstLocalList0, xSrcLocalList0, transDataParams);
+    }
+}
+
+template <typename T, typename DerivedT>
+__aicore__ inline void PadV4GradBase<T, DerivedT>::Bf16PadReflectW(LocalTensor<float>& transposeData,
+                                                                   const int32_t flag)
+{
+    if (flag == 0) {
+        for (size_t i = 0; i < this->padLeft; i++) {
+            Add(transposeData[(2 * this->padLeft - i) * this->ubFactorElement],
+                transposeData[i * this->ubFactorElement],
+                transposeData[(2 * this->padLeft - i) * this->ubFactorElement], this->ubFactorElement);
+        }
+        DataCopy(transposeData, transposeData[this->padLeft * this->ubFactorElement],
+                 (COPY_ROWS_AND_COLS - this->padLeft) * this->ubFactorElement);
+
+    } else {
+        for (size_t i = 0; i < this->padRight; i++) {
+            Add(transposeData[(COPY_ROWS_AND_COLS - 2 * this->padRight - 1 + i) * this->ubFactorElement],
+                transposeData[(COPY_ROWS_AND_COLS - 1 - i) * this->ubFactorElement],
+                transposeData[(COPY_ROWS_AND_COLS - 2 * this->padRight - 1 + i) * this->ubFactorElement],
+                this->ubFactorElement);
+        }
+    }
+}
+
+template <typename T, typename DerivedT>
+__aicore__ inline void PadV4GradBase<T, DerivedT>::Bf16TransDataBackward(TransDataTo5HDParams& transDataParams,
+                                                                         uint64_t* xSrcLocalList1,
+                                                                         uint64_t* xDstLocalList1,
+                                                                         LocalTensor<float>& floatTenosr,
+                                                                         LocalTensor<float>& transposeData)
+{
+    for (size_t time = 0; time < this->ubFactorElement / FLOAT_BLOCK_NUM; time++) {
+        for (size_t i = 0; i < HALF_BLOCK_NUM; i++) {
+            xSrcLocalList1[i] = (uint64_t)(transposeData[this->ubFactorElement * i + time * FLOAT_BLOCK_NUM]
+                                               .GetPhyAddr());
+        }
+        for (size_t i = 0; i < FLOAT_BLOCK_NUM; i++) {
+            xDstLocalList1[2 * i] = (uint64_t)(floatTenosr[COPY_ROWS_AND_COLS * i +
+                                                           time * COPY_ROWS_AND_COLS * FLOAT_BLOCK_NUM]
+                                                   .GetPhyAddr());
+            xDstLocalList1[2 * i +
+                           1] = (uint64_t)(floatTenosr[COPY_ROWS_AND_COLS * i +
+                                                       time * COPY_ROWS_AND_COLS * FLOAT_BLOCK_NUM + FLOAT_BLOCK_NUM]
+                                               .GetPhyAddr());
+        }
+        transDataParams.repeatTimes = 1;
+        transDataParams.srcRepStride = 0;
+        transDataParams.dstRepStride = 0;
+        TransDataTo5HD<float>(xDstLocalList1, xSrcLocalList1, transDataParams);
+    }
 }
 
 #endif // _PAD_V4_GRAD_BASE_H_
