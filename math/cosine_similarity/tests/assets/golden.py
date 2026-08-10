@@ -10,70 +10,46 @@
 # ----------------------------------------------------------------------------
 
 import numpy as np
-import torch
-
-__golden__ = {
-    "kernel": {"cosine_similarity": "cosine_similarity_golden"},
-    "aclnn": {"aclnnCosineSimilarity": "aclnn_cosine_similarity_golden"}
-}
 
 
-def cosine_similarity_golden(input_x1, input_x2, *, dim=1, eps=1e-8, **kwargs):
-    '''
-    Golden function for cosine_similarity.
-    All the parameters (names and order) follow @cosine_similarity_def.cpp without outputs.
-    All the input Tensors are numpy.ndarray.
-
-    Args:
-        **kwargs: {input,output}_{dtypes,ori_shapes,formats,ori_formats},
-                  full_soc_version, short_soc_version, testcase_name
-
-    Returns:
-        Output tensor
-    '''
-    # Save original output dtype (only float32 is supported)
-    out_dtype = input_x1.dtype
-
-    x1_torch = torch.from_numpy(np.ascontiguousarray(input_x1)).float()
-    x2_torch = torch.from_numpy(np.ascontiguousarray(input_x2)).float()
-
-    result = torch.nn.functional.cosine_similarity(x1_torch, x2_torch, dim=dim, eps=eps)
-    result_np = result.numpy().astype(out_dtype, copy=False)
-
-    return result_np
+def _dtype(x):
+    return str(x.dtype).split(".")[-1]
 
 
-def aclnn_cosine_similarity_golden(inputX1, inputX2, dim, eps, outputY, **kwargs):
-    '''
-    Aclnn golden for aclnnCosineSimilarity.
-    All the parameters (name & order) follow \
-        function `aclnnCosineSimilarityGetWorkspaceSize` in @aclnn_cosine_similarity.h \
-        without `workspaceSize` & `executor`.
-    When all dtypes are natively supported by torch, \
-        the Tensors in the parameters are all torch.Tensor. \
-        Conversely, when not, the Tensors in the parameters are all numpy.ndarray.
+def _validate(input_x1, input_x2, dim, eps):
+    if input_x1.shape != input_x2.shape:
+        raise ValueError(
+            f"input_x1 and input_x2 must have the same shape, got {input_x1.shape} and {input_x2.shape}"
+        )
+    if not 1 <= input_x1.ndim <= 8 or any(size == 0 for size in input_x1.shape):
+        raise ValueError(
+            f"inputs must have rank 1-8 without zero dimensions, got {input_x1.shape}"
+        )
+    if not -input_x1.ndim <= dim < input_x1.ndim:
+        raise ValueError(
+            f"dim must be in [{-input_x1.ndim}, {input_x1.ndim - 1}], got {dim}"
+        )
+    if eps < 0:
+        raise ValueError(f"eps must be non-negative, got {eps}")
+    if _dtype(input_x1) != _dtype(input_x2) or _dtype(input_x1) not in (
+        "float32",
+        "float64",
+    ):
+        raise TypeError(
+            "CosineSimilarity expects float32 inputs or their promoted float64 golden inputs"
+        )
 
-    Args:
-        kwargs: tensor_{dtypes, formats}, scalar_dtypes, short_soc_version, testcase_name
 
-    Returns:
-        Output tensors.
-    '''
-    if isinstance(inputX1, np.ndarray):
-        x1_torch = torch.from_numpy(np.ascontiguousarray(inputX1)).float()
-        x2_torch = torch.from_numpy(np.ascontiguousarray(inputX2)).float()
-    else:
-        x1_torch = inputX1.float()
-        x2_torch = inputX2.float()
+class CosineSimilaritySpec:
+    def golden(input_x1, input_x2, *, dim=1, eps=1e-8, **kwargs):
+        import torch
 
-    dim_val = dim.item() if hasattr(dim, 'item') else int(dim)
-    eps_val = eps.item() if hasattr(eps, 'item') else float(eps)
+        _validate(input_x1, input_x2, dim, eps)
+        x1 = torch.from_numpy(np.ascontiguousarray(input_x1))
+        x2 = torch.from_numpy(np.ascontiguousarray(input_x2))
+        return torch.nn.functional.cosine_similarity(x1, x2, dim=dim, eps=eps).numpy()
 
-    result = torch.nn.functional.cosine_similarity(x1_torch, x2_torch, dim=dim_val, eps=eps_val)
+    tolerance = {"float32": {"standard": "stat_rel_err"}}
 
-    # Convert back to output dtype
-    if isinstance(outputY, np.ndarray):
-        out_dtype = outputY.dtype
-        return result.numpy().astype(out_dtype, copy=False)
-    else:
-        return result.to(outputY.dtype)
+
+__spec__ = {"cosine_similarity": "CosineSimilaritySpec"}

@@ -105,6 +105,22 @@ __simt_vf__ __aicore__ __launch_bounds__(ThreadNum) inline void OpCosineSimilari
             baseOffsetX2 += coord * static_cast<IdxT>(ubX2Strides[d]);
         }
 
+        // A singleton vector has norm abs(v). Avoid v * v here because a
+        // finite FLT_MAX value would overflow before sqrt and incorrectly
+        // produce a zero cosine result.
+        if (reduceSize == static_cast<IdxT>(1)) {
+            if (laneId == 0) {
+                float v1 = static_cast<float>(x1[baseOffsetX1]);
+                float v2 = static_cast<float>(x2[baseOffsetX2]);
+                float norm1 = fabsf(v1);
+                float norm2 = fabsf(v2);
+                norm1 = (norm1 > eps) ? norm1 : eps;
+                norm2 = (norm2 > eps) ? norm2 : eps;
+                output[outIdx] = static_cast<T>((v1 / norm1) * (v2 / norm2));
+            }
+            continue;
+        }
+
         // Warp-collaborative accumulation along reduce dimension
         // Use float32 accumulators for all dtype combinations
         float w12 = 0.0f;
