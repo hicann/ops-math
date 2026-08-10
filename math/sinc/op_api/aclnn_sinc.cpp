@@ -115,6 +115,7 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
 
 static aclnnStatus CheckInplaceParams(const aclTensor* self)
 {
+    OP_CHECK_NULL(self, return ACLNN_ERR_INNER_NULLPTR);
     CHECK_RET(CheckInplaceDtypeValid(self), ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
