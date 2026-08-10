@@ -50,19 +50,6 @@ struct AddWithCastCompute {
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
     using OpDag = DAGSch<Outputs, void, MemCfg>;
 };
-
-template <typename T1, typename T2>
-struct AddMixDtypeCompute {
-    using OpInputX1 = Bind<Vec::CopyInBrc<T1>, Placeholder::In0<T1>>;
-    using OpInputX2 = Bind<Vec::CopyInBrc<T2>, Placeholder::In1<T2>>;
-    using OpCastX1 = Bind<Vec::Cast<float, T1, CAST_NONE_MODE>, OpInputX1>;
-    using OpCastX2 = Bind<Vec::Cast<float, T2, CAST_NONE_MODE>, OpInputX2>;
-    using OpAddRes = Bind<Vec::Add<float>, OpCastX1, OpCastX2>;
-    using OpCopyOut = Bind<Vec::CopyOut<float>, Placeholder::Out0<float>, OpAddRes>;
-    using Outputs = Elems<OpCopyOut>;
-    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
-    using OpDag = DAGSch<Outputs, void, MemCfg>;
-};
 } // namespace AddV2Op
 
 #endif // ADD_V2_DAG_H

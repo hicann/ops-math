@@ -16,33 +16,36 @@
 
 namespace ops {
 namespace {
-#define ADD_V2_FORMAT_LIST                                                                                    \
-    {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, \
-     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND}
+#define ADD_V2_FORMAT_LIST                                                      \
+    {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, \
+     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND}
 } // namespace
 
 class AddV2 : public OpDef {
 public:
     explicit AddV2(const char* name) : OpDef(name)
     {
+        // 9 组同 dtype 组合。canonical AddV2 Verifier（canndev
+        // elewise_calculation_ops.cc 的 CheckTwoInputDtypeSame）要求 x1/x2 同
+        // dtype，异类型组合在 GE 图通路上不可达，故不注册。
         this->Input("x1")
             .ParamType(REQUIRED)
             .DataType({ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT32, ge::DT_INT16, ge::DT_UINT8, ge::DT_INT8,
-                       ge::DT_INT64, ge::DT_COMPLEX64, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16, ge::DT_FLOAT})
+                       ge::DT_INT64, ge::DT_COMPLEX64})
             .Format(ADD_V2_FORMAT_LIST)
             .UnknownShapeFormat(ADD_V2_FORMAT_LIST)
             .AutoContiguous();
         this->Input("x2")
             .ParamType(REQUIRED)
             .DataType({ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT32, ge::DT_INT16, ge::DT_UINT8, ge::DT_INT8,
-                       ge::DT_INT64, ge::DT_COMPLEX64, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16})
+                       ge::DT_INT64, ge::DT_COMPLEX64})
             .Format(ADD_V2_FORMAT_LIST)
             .UnknownShapeFormat(ADD_V2_FORMAT_LIST)
             .AutoContiguous();
         this->Output("y")
             .ParamType(REQUIRED)
             .DataType({ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT32, ge::DT_INT16, ge::DT_UINT8, ge::DT_INT8,
-                       ge::DT_INT64, ge::DT_COMPLEX64, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
+                       ge::DT_INT64, ge::DT_COMPLEX64})
             .Format(ADD_V2_FORMAT_LIST)
             .UnknownShapeFormat(ADD_V2_FORMAT_LIST)
             .AutoContiguous();

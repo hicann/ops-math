@@ -114,7 +114,7 @@
     <td>×</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>对两个输入张量执行逐元素加法，兼容TensorFlow AddV2语义，bool输入按logical_or处理，支持广播。</td>
+    <td>对两个输入张量执行逐元素加法，兼容TensorFlow AddV2语义，支持广播与空Tensor。</td>
   </tr>
   <tr>
     <td>math</td>

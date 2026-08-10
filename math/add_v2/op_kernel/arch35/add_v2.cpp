@@ -22,28 +22,29 @@ using namespace Ops::Base;
 using namespace AscendC;
 using namespace AddV2Op;
 
-template <uint64_t schMode>
+template <uint64_t schMode, uint64_t userDef>
 __global__ __aicore__ void add_v2(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
-    constexpr bool isMixDtype = (std::is_same<DTYPE_X1, half>::value && std::is_same<DTYPE_X2, float>::value) ||
-                                (std::is_same<DTYPE_X1, float>::value && std::is_same<DTYPE_X2, half>::value) ||
-                                (std::is_same<DTYPE_X1, bfloat16_t>::value && std::is_same<DTYPE_X2, float>::value) ||
-                                (std::is_same<DTYPE_X1, float>::value && std::is_same<DTYPE_X2, bfloat16_t>::value);
-    constexpr bool isNeedCast = (std::is_same<DTYPE_X1, half>::value || std::is_same<DTYPE_X1, bfloat16_t>::value ||
-                                 std::is_same<DTYPE_X1, float>::value) &&
-                                (!isMixDtype);
-
-    if constexpr (isMixDtype) {
-        using OpDag = AddMixDtypeCompute<DTYPE_X1, DTYPE_X2>::OpDag;
-        BroadcastSch<schMode, OpDag> sch(tiling);
-        sch.Process(x1, x2, y);
-    } else if constexpr (isNeedCast) {
-        using OpDag = AddWithCastCompute<DTYPE_X1>::OpDag;
-        BroadcastSch<schMode, OpDag> sch(tiling);
-        sch.Process(x1, x2, y);
+    if constexpr (userDef == 1) {
+        // 空 Tensor：y 的元素个数为 0，没有任何数据需要搬运或写回，直接返回。
+        // Tiling 侧已把 blockDim 设为 1，这里只是把这一个核空转掉。
+        // 这一次 GET_TILING_DATA_WITH_STRUCT 不能省：opc 靠它反推本模板实例的 tiling
+        // 结构体大小，分支里不引用任何结构体会导致 tiling_struct_size 未定义而编译失败。
+        GET_TILING_DATA_WITH_STRUCT(AddV2EmptyTilingData, emptyTilingData, tiling);
+        return;
     } else {
-        using OpDag = AddWithoutCastCompute<DTYPE_X1>::OpDag;
-        BroadcastSch<schMode, OpDag> sch(tiling);
-        sch.Process(x1, x2, y);
+        // 仅注册同 dtype 组合，DTYPE_X1 与 DTYPE_X2 恒等
+        constexpr bool isNeedCast = std::is_same<DTYPE_X1, half>::value || std::is_same<DTYPE_X1, bfloat16_t>::value ||
+                                    std::is_same<DTYPE_X1, float>::value;
+
+        if constexpr (isNeedCast) {
+            using OpDag = AddWithCastCompute<DTYPE_X1>::OpDag;
+            BroadcastSch<schMode, OpDag> sch(tiling);
+            sch.Process(x1, x2, y);
+        } else {
+            using OpDag = AddWithoutCastCompute<DTYPE_X1>::OpDag;
+            BroadcastSch<schMode, OpDag> sch(tiling);
+            sch.Process(x1, x2, y);
+        }
     }
 }

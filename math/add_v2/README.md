@@ -54,32 +54,25 @@ x1 shape (3, 1), x2 shape (1, 4) -> y shape (3, 4)
     <tr>
       <td>x2</td>
       <td>输入</td>
-      <td>加法运算的第二个输入张量，公式中的x2_i。</td>
+      <td>加法运算的第二个输入张量，公式中的x2_i。数据类型需与x1一致。</td>
       <td>BFLOAT16、FLOAT16、FLOAT、INT32、INT16、UINT8、INT8、INT64、COMPLEX64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
-      <td>加法运算的输出张量，公式中的y_i。同类型输入时输出类型与输入一致；混合精度输入时输出为类型提升后的结果。</td>
+      <td>加法运算的输出张量，公式中的y_i。数据类型与x1一致。</td>
       <td>BFLOAT16、FLOAT16、FLOAT、INT32、INT16、UINT8、INT8、INT64、COMPLEX64</td>
       <td>ND</td>
     </tr>
   </tbody></table>
 
-混合精度组合（x1 dtype, x2 dtype -> y dtype）：
-
-| x1          | x2          | y      |
-|-------------|-------------|--------|
-| FLOAT16     | FLOAT       | FLOAT  |
-| FLOAT       | FLOAT16     | FLOAT  |
-| BFLOAT16    | FLOAT       | FLOAT  |
-| FLOAT       | BFLOAT16    | FLOAT  |
-
 ## 约束说明
 
 - 输入x1和x2的shape需满足广播规则。
+- 输入x1和x2的数据类型需相同，不支持混合数据类型输入。
 - 输入数据类型需在支持列表内，不支持DOUBLE、COMPLEX128、BOOL、COMPLEX32。
+- 支持空Tensor。当输出y的元素个数为0时，算子不下发有效计算，直接返回成功。
 
 ## 调用说明
 

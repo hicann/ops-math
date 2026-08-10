@@ -13,6 +13,7 @@
  * \brief TensorRedirect op_host Tiling UT
  */
 
+#include <cstdint>
 #include <cstring>
 #include <vector>
 
@@ -284,6 +285,36 @@ TEST_F(TensorRedirectTilingTest, tiling_check_shape_mismatch_rank_same_numel_fai
                                  {{yShape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &g_compileInfo,
                                  static_cast<uint64_t>(PLAT_CORE_NUM), static_cast<uint64_t>(PLAT_UB_SIZE));
     ExecuteTestCase(para, ge::GRAPH_FAILED, EXPECT_TILING_KEY, std::vector<size_t>{});
+}
+
+// concrete shape 含 -1（动态占位符穿透到 Tiling）→ 必须拦截，
+// 否则 GetShapeSize() 返回负 numel，绕过 numel==0 守卫并算出 usedCoreNum==0
+TEST_F(TensorRedirectTilingTest, tiling_check_negative_dim_minus1_failed)
+{
+    gert::StorageShape shape = {{-1, 32}, {-1, 32}};
+    ExecuteTestCase(MakePara(shape, ge::DT_FLOAT16), ge::GRAPH_FAILED, EXPECT_TILING_KEY, std::vector<size_t>{});
+}
+
+// concrete shape 含 -2（unknown rank 占位符）→ 必须拦截
+TEST_F(TensorRedirectTilingTest, tiling_check_negative_dim_minus2_failed)
+{
+    gert::StorageShape shape = {{-2}, {-2}};
+    ExecuteTestCase(MakePara(shape, ge::DT_FLOAT16), ge::GRAPH_FAILED, EXPECT_TILING_KEY, std::vector<size_t>{});
+}
+
+// 负维出现在非首维 → 逐维校验须覆盖全部维度，而不只是 dim0
+TEST_F(TensorRedirectTilingTest, tiling_check_negative_dim_at_last_axis_failed)
+{
+    gert::StorageShape shape = {{4, 8, -1}, {4, 8, -1}};
+    ExecuteTestCase(MakePara(shape, ge::DT_FLOAT16), ge::GRAPH_FAILED, EXPECT_TILING_KEY, std::vector<size_t>{});
+}
+
+// 维度乘积溢出 int64_t：GetShapeSize() 返回 kInvalidDimValue(INT64_MIN)，
+// 该哨兵不是错误码，必须由 Tiling 显式拦截
+TEST_F(TensorRedirectTilingTest, tiling_check_shape_size_overflow_failed)
+{
+    gert::StorageShape shape = {{INT64_MAX, 2}, {INT64_MAX, 2}};
+    ExecuteTestCase(MakePara(shape, ge::DT_FLOAT16), ge::GRAPH_FAILED, EXPECT_TILING_KEY, std::vector<size_t>{});
 }
 
 // 三、多核切分核心路径

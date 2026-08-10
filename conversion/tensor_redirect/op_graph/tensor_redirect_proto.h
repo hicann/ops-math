@@ -30,12 +30,15 @@ namespace ge {
 * output_x: A ND Tensor. Has the same dtype and format as "x". \n
 
 */
+#ifndef OPS_PROTO_DEF_TENSORREDIRECT
+#define OPS_PROTO_DEF_TENSORREDIRECT
 REG_OP(TensorRedirect)
     .INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT8, DT_INT32, DT_UINT8, DT_INT64, DT_INT16, DT_UINT16, DT_UINT64,
                           DT_UINT32, DT_BF16}))
     .OUTPUT(output_x, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT8, DT_INT32, DT_UINT8, DT_INT64, DT_INT16, DT_UINT16,
                                   DT_UINT64, DT_UINT32, DT_BF16}))
     .OP_END_FACTORY_REG(TensorRedirect)
+#endif
 
 } // namespace ge
 #endif // OP_PROTO_TENSOR_REDIRECT_H_

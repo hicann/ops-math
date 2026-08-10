@@ -22,6 +22,13 @@
 using namespace std;
 using namespace ge;
 
+// 空 Tensor 分支的 tiling key = 65550 = 0x1000E：
+//   低 16 位 0x000E = 14，是 schMode 999 在 BRC_TEMP_SCH_MODE_KEY_DECL 取值表
+//                     (1,2,101,102,103,104,109,201,202,301,302,303,304,305,999) 里的序号；
+//   第 16 位 = userDef = 1。
+// 常规通路是 userDef = 0，所以高位为 0，原有用例的 key 不受影响（仍为 8）。
+static constexpr uint64_t ADD_V2_UT_EMPTY_TILING_KEY = 65550;
+
 class AddV2Tiling : public testing::Test {
 protected:
     static void SetUpTestCase() { std::cout << "AddV2Tiling SetUp" << std::endl; }
@@ -127,4 +134,77 @@ TEST_F(AddV2Tiling, add_v2_tiling_invalid_dtype)
                                               },
                                               &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// ── 空 Tensor ──────────────────────────────────────────────────────────────
+// ATVOSS 的 BroadcastBaseTiling 在合轴后显式拒绝 0 元素，空 Tensor 必须走
+// 自定义模板分支（schMode 999 + userDef 1），blockDim = 1，kernel 侧直接返回。
+TEST_F(AddV2Tiling, add_v2_tiling_empty_1d)
+{
+    optiling::AddV2CompileInfoArch35 compileInfo = {64, 245760};
+    gert::TilingContextPara tilingContextPara("AddV2",
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = ADD_V2_UT_EMPTY_TILING_KEY;
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+}
+
+TEST_F(AddV2Tiling, add_v2_tiling_empty_2d)
+{
+    optiling::AddV2CompileInfoArch35 compileInfo = {64, 245760};
+    gert::TilingContextPara tilingContextPara("AddV2",
+                                              {
+                                                  {{{0, 3}, {0, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{0, 3}, {0, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0, 3}, {0, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = ADD_V2_UT_EMPTY_TILING_KEY;
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+}
+
+// 空张量 + 广播：x1 空、x2 是标量，输出仍为空
+TEST_F(AddV2Tiling, add_v2_tiling_empty_broadcast)
+{
+    optiling::AddV2CompileInfoArch35 compileInfo = {64, 245760};
+    gert::TilingContextPara tilingContextPara("AddV2",
+                                              {
+                                                  {{{0, 3}, {0, 3}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{1, 3}, {1, 3}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0, 3}, {0, 3}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = ADD_V2_UT_EMPTY_TILING_KEY;
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+}
+
+// 高维中间维为 0
+TEST_F(AddV2Tiling, add_v2_tiling_empty_highrank)
+{
+    optiling::AddV2CompileInfoArch35 compileInfo = {64, 245760};
+    gert::TilingContextPara tilingContextPara("AddV2",
+                                              {
+                                                  {{{2, 0, 4}, {2, 0, 4}}, ge::DT_INT8, ge::FORMAT_ND},
+                                                  {{{2, 0, 4}, {2, 0, 4}}, ge::DT_INT8, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{2, 0, 4}, {2, 0, 4}}, ge::DT_INT8, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = ADD_V2_UT_EMPTY_TILING_KEY;
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }

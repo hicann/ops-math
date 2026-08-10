@@ -25,16 +25,19 @@ def add_v2_golden(x1, x2, **kwargs):
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
     """
+    # 仅注册同 dtype 组合，x1/x2 dtype 恒等，输出 dtype 与 x1 一致
     dtype = x1.dtype
+    if str(x2.dtype) != str(dtype):
+        raise ValueError(
+            f"add_v2 only supports identical input dtypes, got x1={dtype}, x2={x2.dtype}"
+        )
+    # torch 无原生 bfloat16 numpy 视图，先升 float32 计算再还原
     if "bfloat16" in str(dtype):
         x1 = x1.astype("float32")
         x2 = x2.astype("float32")
     x = torch.from_numpy(x1)
     y = torch.from_numpy(x2)
-    if "bool" in str(dtype):
-        res = torch.logical_or(x, y).numpy()
-    else:
-        res = torch.add(x, y).numpy()
+    res = torch.add(x, y).numpy()
     if "bfloat16" in str(dtype):
         res = res.astype(dtype)
 

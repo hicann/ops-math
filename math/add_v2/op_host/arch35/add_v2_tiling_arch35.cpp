@@ -35,6 +35,11 @@ namespace optiling {
 
 constexpr int64_t ASCEND_WORKSPACE = 16777216; // 16M
 
+// 自定义模板分支：空 Tensor 走 schMode 999 + userDef 1，见 add_v2_struct_arch35.h
+constexpr uint64_t ADD_V2_SCH_MODE_EMPTY = 999;
+constexpr uint64_t ADD_V2_USER_DEF_NORMAL = 0;
+constexpr uint64_t ADD_V2_USER_DEF_EMPTY = 1;
+
 class AddV2TilingArch35 {
 public:
     explicit AddV2TilingArch35(gert::TilingContext* context) : tilingContext(context) {};
@@ -43,12 +48,40 @@ public:
 protected:
     ge::graphStatus CalcDtype();
     ge::graphStatus CheckShape() const;
-    bool IsMixedDtype(const ge::DataType& d0, const ge::DataType& d1) const;
+    ge::graphStatus CheckDtype() const;
+    ge::graphStatus SetWorkspace() const;
+    ge::graphStatus HandleEmptyTensor() const;
 
 private:
     ge::DataType inputDtype = ge::DT_UNDEFINED;
     gert::TilingContext* tilingContext;
 };
+
+ge::graphStatus AddV2TilingArch35::SetWorkspace() const
+{
+    size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
+    currentWorkspace[0] = static_cast<uint64_t>(ASCEND_WORKSPACE);
+    return ge::GRAPH_SUCCESS;
+}
+
+// 空 Tensor 早返回。ATVOSS 的 BroadcastBaseTiling 在合轴之后会显式拒绝 0 元素
+// （broadcast_tiling.h: "tensor check is empty, check failed"），不能落到 DoTiling，
+// 因此这里自己出一份 tiling：blockDim = 1，tilingKey 选自定义分支，kernel 侧直接返回。
+ge::graphStatus AddV2TilingArch35::HandleEmptyTensor() const
+{
+    OP_LOGD(tilingContext, "AddV2: empty tensor, skip kernel computation.");
+    OP_CHECK_IF(SetWorkspace() != ge::GRAPH_SUCCESS,
+                OP_LOGE(tilingContext, "AddV2: set workspace failed (empty tensor)."), return ge::GRAPH_FAILED);
+
+    auto* tilingData = tilingContext->GetTilingData<AddV2EmptyTilingData>();
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tilingData);
+    tilingData->numel = 0;
+
+    tilingContext->SetBlockDim(1);
+    tilingContext->SetTilingKey(GET_TPL_TILING_KEY(ADD_V2_SCH_MODE_EMPTY, ADD_V2_USER_DEF_EMPTY));
+    return ge::GRAPH_SUCCESS;
+}
 
 ge::graphStatus AddV2TilingArch35::CalcDtype()
 {
@@ -69,10 +102,20 @@ ge::graphStatus AddV2TilingArch35::CheckShape() const
     return ge::GRAPH_SUCCESS;
 }
 
-bool AddV2TilingArch35::IsMixedDtype(const ge::DataType& d0, const ge::DataType& d1) const
+// 仅注册同 dtype 组合（canonical AddV2 Verifier 亦要求 x1/x2 同 dtype）
+ge::graphStatus AddV2TilingArch35::CheckDtype() const
 {
-    return (d0 == ge::DT_FLOAT16 && d1 == ge::DT_FLOAT) || (d0 == ge::DT_FLOAT && d1 == ge::DT_FLOAT16) ||
-           (d0 == ge::DT_BF16 && d1 == ge::DT_FLOAT) || (d0 == ge::DT_FLOAT && d1 == ge::DT_BF16);
+    auto input1Desc = tilingContext->GetInputDesc(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, input1Desc);
+    ge::DataType input1Dtype = input1Desc->GetDataType();
+    OP_CHECK_IF(input1Dtype != this->inputDtype,
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x1 and x2",
+                                                       (ge::TypeUtils::DataTypeToSerialString(this->inputDtype) +
+                                                        " and " + ge::TypeUtils::DataTypeToSerialString(input1Dtype))
+                                                           .c_str(),
+                                                       "x1 and x2 must have the same dtype"),
+                return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus AddV2TilingArch35::RunTiling()
@@ -87,61 +130,60 @@ ge::graphStatus AddV2TilingArch35::RunTiling()
                                                       "input shape check failed"),
                 return ge::GRAPH_FAILED);
 
-    auto input1Desc = tilingContext->GetInputDesc(1);
-    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, input1Desc);
-    ge::DataType input1Dtype = input1Desc->GetDataType();
-    bool isMixedDtype = IsMixedDtype(this->inputDtype, input1Dtype);
+    OP_CHECK_IF(CheckDtype() == ge::GRAPH_FAILED,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext->GetNodeName(), "input dtype", "invalid",
+                                                      "input dtype check failed"),
+                return ge::GRAPH_FAILED);
+
+    // y 的元素个数为 0 即空 Tensor（广播规则下 0 只能与 0 或 1 相配，输出空 <=> 有输入为空）。
+    auto outputY = tilingContext->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputY);
+    int64_t numel = outputY->GetStorageShape().GetShapeSize();
+    // GetShapeSize() 在维度乘积溢出 int64_t 时返回 kInvalidDimValue（负数）而不报错，
+    // 必须在 numel == 0 判断之前拦掉，否则负的 numel 会被当成非空穿透到 DoTiling。
+    OP_CHECK_IF(numel < 0,
+                OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(tilingContext->GetNodeName(), "y",
+                                                      Ops::Base::ToString(outputY->GetStorageShape()).c_str(),
+                                                      "the product of all dims overflows int64_t"),
+                return ge::GRAPH_FAILED);
+    if (numel == 0) {
+        return HandleEmptyTensor();
+    }
 
     ge::graphStatus ret = ge::GRAPH_FAILED;
     uint64_t tilingKey = 0;
-    if (isMixedDtype && input1Dtype == ge::DT_FLOAT && this->inputDtype == ge::DT_FLOAT16) {
-        BroadcastBaseTiling<AddMixDtypeCompute<half, float>::OpDag> brcBaseTiling(tilingContext);
-        ret = brcBaseTiling.DoTiling();
-        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
-    } else if (isMixedDtype && input1Dtype == ge::DT_FLOAT && this->inputDtype == ge::DT_BF16) {
-        BroadcastBaseTiling<AddMixDtypeCompute<bfloat16_t, float>::OpDag> brcBaseTiling(tilingContext);
-        ret = brcBaseTiling.DoTiling();
-        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
-    } else if (isMixedDtype && this->inputDtype == ge::DT_FLOAT && input1Dtype == ge::DT_FLOAT16) {
-        BroadcastBaseTiling<AddMixDtypeCompute<float, half>::OpDag> brcBaseTiling(tilingContext);
-        ret = brcBaseTiling.DoTiling();
-        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
-    } else if (isMixedDtype && this->inputDtype == ge::DT_FLOAT && input1Dtype == ge::DT_BF16) {
-        BroadcastBaseTiling<AddMixDtypeCompute<float, bfloat16_t>::OpDag> brcBaseTiling(tilingContext);
-        ret = brcBaseTiling.DoTiling();
-        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
-    } else if (this->inputDtype == ge::DT_FLOAT16) {
+    if (this->inputDtype == ge::DT_FLOAT16) {
         BroadcastBaseTiling<AddWithCastCompute<half>::OpDag> brcBaseTiling(tilingContext);
         ret = brcBaseTiling.DoTiling();
-        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), ADD_V2_USER_DEF_NORMAL);
     } else if (this->inputDtype == ge::DT_BF16) {
         BroadcastBaseTiling<AddWithCastCompute<bfloat16_t>::OpDag> brcBaseTiling(tilingContext);
         ret = brcBaseTiling.DoTiling();
-        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), ADD_V2_USER_DEF_NORMAL);
     } else if (this->inputDtype == ge::DT_FLOAT) {
         BroadcastBaseTiling<AddWithCastCompute<float>::OpDag> brcBaseTiling(tilingContext);
         ret = brcBaseTiling.DoTiling();
-        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), ADD_V2_USER_DEF_NORMAL);
     } else if (this->inputDtype == ge::DT_INT64 || this->inputDtype == ge::DT_COMPLEX64) {
         BroadcastBaseTiling<AddWithoutCastCompute<int64_t>::OpDag> brcBaseTiling(tilingContext);
         ret = brcBaseTiling.DoTiling();
-        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), ADD_V2_USER_DEF_NORMAL);
     } else if (this->inputDtype == ge::DT_UINT8) {
         BroadcastBaseTiling<AddWithoutCastCompute<uint8_t>::OpDag> brcBaseTiling(tilingContext);
         ret = brcBaseTiling.DoTiling();
-        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), ADD_V2_USER_DEF_NORMAL);
     } else if (this->inputDtype == ge::DT_INT8) {
         BroadcastBaseTiling<AddWithoutCastCompute<int8_t>::OpDag> brcBaseTiling(tilingContext);
         ret = brcBaseTiling.DoTiling();
-        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), ADD_V2_USER_DEF_NORMAL);
     } else if (this->inputDtype == ge::DT_INT32) {
         BroadcastBaseTiling<AddWithoutCastCompute<int32_t>::OpDag> brcBaseTiling(tilingContext);
         ret = brcBaseTiling.DoTiling();
-        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), ADD_V2_USER_DEF_NORMAL);
     } else if (this->inputDtype == ge::DT_INT16) {
         BroadcastBaseTiling<AddWithoutCastCompute<int16_t>::OpDag> brcBaseTiling(tilingContext);
         ret = brcBaseTiling.DoTiling();
-        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), ADD_V2_USER_DEF_NORMAL);
     } else {
         OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "x1",
                                   ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
@@ -153,9 +195,8 @@ ge::graphStatus AddV2TilingArch35::RunTiling()
                                                       "broadcastBaseTiling failed"),
                 return ge::GRAPH_FAILED);
 
-    size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
-    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
-    currentWorkspace[0] = static_cast<uint64_t>(ASCEND_WORKSPACE);
+    OP_CHECK_IF(SetWorkspace() != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext, "AddV2: set workspace failed."),
+                return ge::GRAPH_FAILED);
 
     OP_LOGD(tilingContext, "[TilingData] : tilingKey=%lu", tilingKey);
     tilingContext->SetTilingKey(tilingKey);

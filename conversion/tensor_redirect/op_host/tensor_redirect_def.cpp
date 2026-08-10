@@ -41,7 +41,9 @@ public:
             .DynamicRankSupportFlag(true)   // dynamic rank
             .DynamicShapeSupportFlag(true)  // 动态 shape
             .NeedCheckSupportFlag(false)
-            .PrecisionReduceFlag(true) // 恒等拷贝无计算，不改变 bit-exact 口径
+            // 恒等拷贝语义要求逐 bit 相等（含负零/NaN payload/非规格化数），
+            // 不允许 allow_mix_precision 下把 FP32 节点降为 FP16
+            .PrecisionReduceFlag(false)
             .ExtendCfgInfo("op.pattern", "formatAgnostic")
             .ExtendCfgInfo("opFile.value", "tensor_redirect_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);

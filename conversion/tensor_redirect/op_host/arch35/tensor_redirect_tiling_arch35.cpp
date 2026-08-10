@@ -90,6 +90,16 @@ static ge::graphStatus CheckTensorRedirectShape(const gert::TilingContext* conte
                                                          "rank must be within [1, 8]"),
                 return ge::GRAPH_FAILED);
 
+    // CheckDim: Tiling 是外部输入边界，concrete shape 的每一维必须非负；
+    // -1/-2 等动态占位符或非法负值不能进入切分计算
+    for (size_t i = 0; i < xRank; ++i) {
+        OP_CHECK_IF(
+            xShape.GetDim(i) < 0,
+            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON("TensorRedirect", "x", std::to_string(xShape.GetDim(i)).c_str(),
+                                                     "every dim of the concrete shape must be non-negative"),
+            return ge::GRAPH_FAILED);
+    }
+
     auto yShapePtr = context->GetOutputShape(INDEX_OUTPUT_X);
     OP_CHECK_NULL_WITH_CONTEXT(context, yShapePtr);
     auto yShape = yShapePtr->GetStorageShape();
@@ -227,6 +237,14 @@ static ge::graphStatus Tiling4TensorRedirect(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, xShapePtr);
     // 1D 线性展平，不解释 stride/rank
     int64_t numel = xShapePtr->GetStorageShape().GetShapeSize();
+
+    // 溢出防护：GetShapeSize() 在维度乘积溢出 int64_t 时返回 kInvalidDimValue，不会自行报错。
+    // 必须在 numel == 0 判断之前拦截，否则负的 numel 会穿透到 DoTiling 产生 usedCoreNum == 0。
+    OP_CHECK_IF(numel < 0,
+                OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON("TensorRedirect", "x",
+                                                      Ops::Base::ToString(xShapePtr->GetStorageShape()).c_str(),
+                                                      "the product of all dims overflows int64_t"),
+                return ge::GRAPH_FAILED);
 
     // 空 Tensor 早返回
     if (numel == 0) {

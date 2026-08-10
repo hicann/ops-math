@@ -17,17 +17,7 @@
 
 using namespace ge;
 namespace ops {
-static constexpr size_t TENSOR_REDIRECT_IN_X_IDX = 0;
-static constexpr size_t TENSOR_REDIRECT_OUT_Y_IDX = 0;
-
-static ge::graphStatus InferDataType4TensorRedirect(gert::InferDataTypeContext* context)
-{
-    context->SetOutputDataType(TENSOR_REDIRECT_OUT_Y_IDX, context->GetInputDataType(TENSOR_REDIRECT_IN_X_IDX));
-    return ge::GRAPH_SUCCESS;
-}
-
-// output_x 与 x 同 shape/dtype（same-as-input）
-IMPL_OP_INFERSHAPE(TensorRedirect)
-    .InferShape(Ops::Base::InferShape4Elewise)
-    .InferDataType(InferDataType4TensorRedirect);
+// output_x 与 x 同 shape（same-as-input）
+// InferDataType 仅图场景使用，交付在 op_graph/tensor_redirect_graph_infer.cpp
+IMPL_OP_INFERSHAPE(TensorRedirect).InferShape(Ops::Base::InferShape4Elewise);
 } // namespace ops
