@@ -21,14 +21,8 @@
 
 class CircularPadTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "CircularPadTiling  SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "CircularPadTiling  TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "CircularPadTiling  SetUp" << std::endl; }
+    static void TearDownTestCase() { std::cout << "CircularPadTiling  TearDown" << std::endl; }
 };
 
 // Scenario: 3D input with large positive paddings and FP16 dtype, expect successful tiling
@@ -36,14 +30,13 @@ TEST_F(CircularPadTiling, circular_pad_tiling_test_success)
 {
     optiling::Tiling4CircularPadCommonCompileInfo compileInfo = {64, 262144, 16777216};
     std::vector<int64_t> constValue = {1, 1, 100, 100, 100, 100};
-    gert::TilingContextPara tilingContextPara(
-        "CircularPad",
-        {{{{1, 1, 300, 300}, {1, 1, 300, 300}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-         {{{6}, {6}}, ge::DT_INT64, ge::FORMAT_ND, true, constValue.data()}},
-        {
-            {{{1, 3, 500, 500}, {1, 3, 500, 500}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("CircularPad",
+                                              {{{{1, 1, 300, 300}, {1, 1, 300, 300}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {{{6}, {6}}, ge::DT_INT64, ge::FORMAT_ND, true, constValue.data()}},
+                                              {
+                                                  {{{1, 3, 500, 500}, {1, 3, 500, 500}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
 
     uint64_t expectTilingKey = 322;
     std::string expectTilingData = "300 300 500 500 100 100 100 100 1 1 1 3 0 1 67200 ";
@@ -56,14 +49,13 @@ TEST_F(CircularPadTiling, circular_pad_tiling_test_failed)
 {
     optiling::Tiling4CircularPadCommonCompileInfo compileInfo = {64, 262144, 16777216};
     std::vector<int64_t> constValue = {1, 1, 100, 100, 100, 100};
-    gert::TilingContextPara tilingContextPara(
-        "CircularPad",
-        {{{{1, 1, 300, 300}, {1, 1, 300, 300}}, ge::DT_INT64, ge::FORMAT_ND},
-         {{{6}, {6}}, ge::DT_INT64, ge::FORMAT_ND, true, constValue.data()}},
-        {
-            {{{1, 1, 500, 500}, {1, 1, 500, 500}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("CircularPad",
+                                              {{{{1, 1, 300, 300}, {1, 1, 300, 300}}, ge::DT_INT64, ge::FORMAT_ND},
+                                               {{{6}, {6}}, ge::DT_INT64, ge::FORMAT_ND, true, constValue.data()}},
+                                              {
+                                                  {{{1, 1, 500, 500}, {1, 1, 500, 500}}, ge::DT_INT64, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
@@ -197,6 +189,36 @@ TEST_F(CircularPadTiling, circular_pad_left_right_both_positive_left_exceeds_inp
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
+// Scenario: left > inputW and right == 0, expect failure (issue #2484)
+TEST_F(CircularPadTiling, circular_pad_left_exceeds_inputw_right_zero)
+{
+    optiling::Tiling4CircularPadCommonCompileInfo compileInfo = {64, 262144, 16777216};
+    std::vector<int64_t> constValue = {1, 1, 1, 1, 10, 0};
+    gert::TilingContextPara tilingContextPara("CircularPad",
+                                              {{{{2, 10, 8}, {2, 10, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {{{6}, {6}}, ge::DT_INT64, ge::FORMAT_ND, true, constValue.data()}},
+                                              {
+                                                  {{{2, 4, 12, 18}, {2, 4, 12, 18}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// Scenario: right > inputW and left == 0, expect failure (issue #2484)
+TEST_F(CircularPadTiling, circular_pad_right_exceeds_inputw_left_zero)
+{
+    optiling::Tiling4CircularPadCommonCompileInfo compileInfo = {64, 262144, 16777216};
+    std::vector<int64_t> constValue = {1, 1, 1, 1, 0, 10};
+    gert::TilingContextPara tilingContextPara("CircularPad",
+                                              {{{{2, 10, 8}, {2, 10, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {{{6}, {6}}, ge::DT_INT64, ge::FORMAT_ND, true, constValue.data()}},
+                                              {
+                                                  {{{2, 4, 12, 18}, {2, 4, 12, 18}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
 // Scenario: left positive and right negative, left exceeds inputW+right, expect failure
 TEST_F(CircularPadTiling, circular_pad_left_pos_right_neg_left_exceeds_combined)
 {
@@ -287,6 +309,36 @@ TEST_F(CircularPadTiling, circular_pad_top_bottom_both_positive_top_exceeds_inpu
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
+// Scenario: top > inputH and bottom == 0, expect failure (issue #2484)
+TEST_F(CircularPadTiling, circular_pad_top_exceeds_inputh_bottom_zero)
+{
+    optiling::Tiling4CircularPadCommonCompileInfo compileInfo = {64, 262144, 16777216};
+    std::vector<int64_t> constValue = {1, 1, 12, 0, 1, 1};
+    gert::TilingContextPara tilingContextPara("CircularPad",
+                                              {{{{2, 10, 8}, {2, 10, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {{{6}, {6}}, ge::DT_INT64, ge::FORMAT_ND, true, constValue.data()}},
+                                              {
+                                                  {{{2, 4, 22, 10}, {2, 4, 22, 10}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// Scenario: bottom > inputH and top == 0, expect failure (issue #2484)
+TEST_F(CircularPadTiling, circular_pad_bottom_exceeds_inputh_top_zero)
+{
+    optiling::Tiling4CircularPadCommonCompileInfo compileInfo = {64, 262144, 16777216};
+    std::vector<int64_t> constValue = {1, 1, 0, 12, 1, 1};
+    gert::TilingContextPara tilingContextPara("CircularPad",
+                                              {{{{2, 10, 8}, {2, 10, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {{{6}, {6}}, ge::DT_INT64, ge::FORMAT_ND, true, constValue.data()}},
+                                              {
+                                                  {{{2, 4, 22, 10}, {2, 4, 22, 10}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
 // Scenario: top positive and bottom negative, top exceeds inputH+bottom, expect failure
 TEST_F(CircularPadTiling, circular_pad_top_pos_bottom_neg_top_exceeds_combined)
 {
@@ -372,6 +424,36 @@ TEST_F(CircularPadTiling, circular_pad_front_back_both_positive_front_exceeds_in
                                                {{{6}, {6}}, ge::DT_INT64, ge::FORMAT_ND, true, constValue.data()}},
                                               {
                                                   {{{2, 6, 12, 10}, {2, 6, 12, 10}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// Scenario: front > inputL and back == 0, expect failure (issue #2484)
+TEST_F(CircularPadTiling, circular_pad_front_exceeds_inputl_back_zero)
+{
+    optiling::Tiling4CircularPadCommonCompileInfo compileInfo = {64, 262144, 16777216};
+    std::vector<int64_t> constValue = {3, 0, 1, 1, 1, 1};
+    gert::TilingContextPara tilingContextPara("CircularPad",
+                                              {{{{2, 10, 8}, {2, 10, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {{{6}, {6}}, ge::DT_INT64, ge::FORMAT_ND, true, constValue.data()}},
+                                              {
+                                                  {{{2, 5, 12, 10}, {2, 5, 12, 10}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// Scenario: back > inputL and front == 0, expect failure (issue #2484)
+TEST_F(CircularPadTiling, circular_pad_back_exceeds_inputl_front_zero)
+{
+    optiling::Tiling4CircularPadCommonCompileInfo compileInfo = {64, 262144, 16777216};
+    std::vector<int64_t> constValue = {0, 3, 1, 1, 1, 1};
+    gert::TilingContextPara tilingContextPara("CircularPad",
+                                              {{{{2, 10, 8}, {2, 10, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {{{6}, {6}}, ge::DT_INT64, ge::FORMAT_ND, true, constValue.data()}},
+                                              {
+                                                  {{{2, 5, 12, 10}, {2, 5, 12, 10}}, ge::DT_FLOAT16, ge::FORMAT_ND},
                                               },
                                               &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);

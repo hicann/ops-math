@@ -31,7 +31,7 @@ constexpr int64_t TYPE_MODE5 = 5;
 ge::graphStatus CircularPadTiling::CheckLeftAndRight()
 {
     std::stringstream ss;
-    if (left > 0 && right > 0 && (left > inputW || right > inputW)) {
+    if ((left > 0 && left > inputW) || (right > 0 && right > inputW)) {
         ss << "left/right should not be greater than inputW," << "when left/right is greater than 0.";
         OP_LOGE(context_->GetNodeName(), "%s", ss.str().c_str());
         return ge::GRAPH_FAILED;
@@ -56,7 +56,7 @@ ge::graphStatus CircularPadTiling::CheckLeftAndRight()
 ge::graphStatus CircularPadTiling::CheckTopAndBottom()
 {
     std::stringstream ss;
-    if (top > 0 && bottom > 0 && (top > inputH || bottom > inputH)) {
+    if ((top > 0 && top > inputH) || (bottom > 0 && bottom > inputH)) {
         ss << "top/bottom should not be greater than inputH," << "when top/bottom is greater than 0.";
         OP_LOGE(context_->GetNodeName(), "%s", ss.str().c_str());
         return ge::GRAPH_FAILED;
@@ -81,7 +81,7 @@ ge::graphStatus CircularPadTiling::CheckTopAndBottom()
 ge::graphStatus CircularPadTiling::CheckFrontAndBack()
 {
     std::stringstream ss;
-    if (front > 0 && back > 0 && (front > inputL || back > inputL)) {
+    if ((front > 0 && front > inputL) || (back > 0 && back > inputL)) {
         ss << "front/back should not be greater than inputL," << "when front/back is greater than 0.";
         OP_LOGE(context_->GetNodeName(), "%s", ss.str().c_str());
         return ge::GRAPH_FAILED;
@@ -225,11 +225,10 @@ static ge::graphStatus TilingPrepare4CircularPad(gert::TilingParseContext* conte
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->coreNum <= 0),
-        OP_LOGE(
-            context->GetNodeName(), "Get core num failed, core num: %u", static_cast<uint32_t>(compileInfo->coreNum)),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->coreNum <= 0),
+                OP_LOGE(context->GetNodeName(), "Get core num failed, core num: %u",
+                        static_cast<uint32_t>(compileInfo->coreNum)),
+                return ge::GRAPH_FAILED);
 
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, compileInfo->ubSize);
     OP_CHECK_IF(
