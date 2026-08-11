@@ -86,7 +86,7 @@ aclnnStatus aclnnInplaceMaskedFillScalar(
       <td>selfRef（aclTensor*）</td>
       <td>输入/输出</td>
       <td>输入输出tensor</td>
-      <td>被填充的张量。</td>
+      <td>被填充的张量。shape需等于selfRef与mask进行broadcast后的shape。</td>
       <td>BOOL、INT8、INT32、INT64、FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
@@ -166,7 +166,7 @@ aclnnStatus aclnnInplaceMaskedFillScalar(
       <td>selfRef和mask的数据类型和数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>selfRef和mask的shape无法做broadcast。</td>
+      <td>selfRef和mask的shape无法做broadcast，或selfRef的shape不等于二者broadcast后的shape。</td>
     </tr>
     <tr>
       <td>value的数据类型不能转为selfRef的数据类型。</td>
