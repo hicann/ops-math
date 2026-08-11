@@ -40,6 +40,10 @@ public:
     constexpr static uint32_t MAX_INNER_A = 512; // Bytes, 按PromoteDataType计算
     constexpr static uint32_t MAX_INNER_A_NUM = MAX_INNER_A / sizeof(PromoteDataType);
     constexpr static uint32_t GROUP_CACHE_BUF_SIZE = (WELFORD_GROUP_NUM + 1) * MAX_INNER_A;
+    // NDDMA 多维搬运的循环层数：3/4/5 分别对应 Dim==3/4/5(或退化外层后内层为 5) 时的内层 NDDMA 维度数
+    constexpr static int32_t NDDMA_LOOP_DIM3 = 3;
+    constexpr static int32_t NDDMA_LOOP_DIM4 = 4;
+    constexpr static int32_t NDDMA_LOOP_DIM5 = 5;
 
 private:
     TPipe* pipe_ = nullptr;
@@ -1426,7 +1430,7 @@ public:
 
         if constexpr (Dim <= 4) {
             if constexpr (Dim == 3) {
-                MultiCopyLoopInfo<3> loopInfo = {
+                MultiCopyLoopInfo<NDDMA_LOOP_DIM3> loopInfo = {
                     .loopSrcStride = {1, view.axis[1].srcStride, view.axis[2].srcStride},
                     .loopDstStride = {1, static_cast<uint32_t>(view.axis[1].dstStride),
                                       static_cast<uint32_t>(view.axis[2].dstStride)},
@@ -1434,11 +1438,11 @@ public:
                                  static_cast<uint32_t>(view.axis[2].repeat)},
                     .loopLpSize = {0, 0, 0},
                     .loopRpSize = {0, 0, 0}};
-                MultiCopyParams<DataType, 3> params = {loopInfo, 0};
-                DataCopy<DataType, 3, config>(ubTensor, inputGM_[view.addr], params);
+                MultiCopyParams<DataType, NDDMA_LOOP_DIM3> params = {loopInfo, 0};
+                DataCopy<DataType, NDDMA_LOOP_DIM3, config>(ubTensor, inputGM_[view.addr], params);
             } else {
                 // Dim == 4 (Dim == 1 or 2 already handled by outer == 1)
-                MultiCopyLoopInfo<4> loopInfo = {
+                MultiCopyLoopInfo<NDDMA_LOOP_DIM4> loopInfo = {
                     .loopSrcStride = {1, view.axis[1].srcStride, view.axis[2].srcStride, view.axis[3].srcStride},
                     .loopDstStride = {1, static_cast<uint32_t>(view.axis[1].dstStride),
                                       static_cast<uint32_t>(view.axis[2].dstStride),
@@ -1448,12 +1452,12 @@ public:
                                  static_cast<uint32_t>(view.axis[3].repeat)},
                     .loopLpSize = {0, 0, 0, 0},
                     .loopRpSize = {0, 0, 0, 0}};
-                MultiCopyParams<DataType, 4> params = {loopInfo, 0};
-                DataCopy<DataType, 4, config>(ubTensor, inputGM_[view.addr], params);
+                MultiCopyParams<DataType, NDDMA_LOOP_DIM4> params = {loopInfo, 0};
+                DataCopy<DataType, NDDMA_LOOP_DIM4, config>(ubTensor, inputGM_[view.addr], params);
             }
         } else {
             // Dim >= 5: inner 5 dims via NDDMA, outer dims via for loops
-            MultiCopyLoopInfo<5> loopInfo = {
+            MultiCopyLoopInfo<NDDMA_LOOP_DIM5> loopInfo = {
                 .loopSrcStride = {1, view.axis[1].srcStride, view.axis[2].srcStride, view.axis[3].srcStride,
                                   view.axis[4].srcStride},
                 .loopDstStride = {1, static_cast<uint32_t>(view.axis[1].dstStride),
@@ -1465,7 +1469,7 @@ public:
                              static_cast<uint32_t>(view.axis[4].repeat)},
                 .loopLpSize = {0, 0, 0, 0, 0},
                 .loopRpSize = {0, 0, 0, 0, 0}};
-            MultiCopyParams<DataType, 5> params = {loopInfo, 0};
+            MultiCopyParams<DataType, NDDMA_LOOP_DIM5> params = {loopInfo, 0};
             for (int32_t i = 0; i < view.axis[5].repeat; i++) {
                 for (int32_t j = 0; j < view.axis[6].repeat; j++) {
                     for (int32_t k = 0; k < view.axis[7].repeat; k++) {
@@ -1473,7 +1477,8 @@ public:
                                             k * view.axis[7].dstStride;
                         int64_t srcStride = i * view.axis[5].srcStride + j * view.axis[6].srcStride +
                                             k * view.axis[7].srcStride;
-                        DataCopy<DataType, 5, config>(ubTensor[dstStride], inputGM_[view.addr + srcStride], params);
+                        DataCopy<DataType, NDDMA_LOOP_DIM5, config>(ubTensor[dstStride],
+                                                                    inputGM_[view.addr + srcStride], params);
                     }
                 }
             }
@@ -1549,13 +1554,13 @@ public:
                 ubRealABundle_ = otherBundle; // axis[1] = A
                 ubRealRBundle_ = tailBundle;  // axis[0] = R
             }
-            MultiCopyLoopInfo<3> loopInfo = {.loopSrcStride = {1, srcStrideL1, 1},
-                                             .loopDstStride = {1, 1, otherAlign},
-                                             .loopSize = {1, otherBundle, tailBundle},
-                                             .loopLpSize = {0, 0, 0},
-                                             .loopRpSize = {0, 0, 0}};
-            MultiCopyParams<DataType, 3> params = {loopInfo, 0};
-            DataCopy<DataType, 3, config>(ubTensor, inputGM_[view.addr], params);
+            MultiCopyLoopInfo<NDDMA_LOOP_DIM3> loopInfo = {.loopSrcStride = {1, srcStrideL1, 1},
+                                                           .loopDstStride = {1, 1, otherAlign},
+                                                           .loopSize = {1, otherBundle, tailBundle},
+                                                           .loopLpSize = {0, 0, 0},
+                                                           .loopRpSize = {0, 0, 0}};
+            MultiCopyParams<DataType, NDDMA_LOOP_DIM3> params = {loopInfo, 0};
+            DataCopy<DataType, NDDMA_LOOP_DIM3, config>(ubTensor, inputGM_[view.addr], params);
             return;
         }
 
@@ -1586,46 +1591,48 @@ public:
                 constexpr int32_t peelIdx = Pattern::FirstA ? 2 : 1; // 第 2 根 A 轴在 view 中的下标
                 if (view.axis[peelIdx].isAxisA) {
                     constexpr int32_t rIdx = (peelIdx == 2) ? 1 : 2; // R 轴在 view 中的下标
-                    MultiCopyLoopInfo<3> loopInfo = {
+                    MultiCopyLoopInfo<NDDMA_LOOP_DIM3> loopInfo = {
                         .loopSrcStride = {1, static_cast<uint32_t>(view.axis[rIdx].srcStride), 1},
                         .loopDstStride = {1, 1, otherAlign},
                         .loopSize = {1, static_cast<uint32_t>(view.axis[rIdx].repeat),
                                      static_cast<uint32_t>(view.axis[0].repeat)},
                         .loopLpSize = {0, 0, 0},
                         .loopRpSize = {0, 0, 0}};
-                    MultiCopyParams<DataType, 3> params = {loopInfo, 0};
+                    MultiCopyParams<DataType, NDDMA_LOOP_DIM3> params = {loopInfo, 0};
                     for (uint32_t k = 0; k < static_cast<uint32_t>(view.axis[peelIdx].repeat); k++) {
-                        DataCopy<DataType, 3, config>(ubTensor[k * invDstStride[peelIdx]],
-                                                      inputGM_[view.addr + k * view.axis[peelIdx].srcStride], params);
+                        DataCopy<DataType, NDDMA_LOOP_DIM3, config>(
+                            ubTensor[k * invDstStride[peelIdx]], inputGM_[view.addr + k * view.axis[peelIdx].srcStride],
+                            params);
                     }
                 } else {
                     // [R,R,A]：仅 1 根 A 散射层，维持 4 层单拷贝
-                    MultiCopyLoopInfo<4> loopInfo = {.loopSrcStride = {lvlSrc[0], lvlSrc[1], lvlSrc[2], lvlSrc[3]},
-                                                     .loopDstStride = {lvlDst[0], lvlDst[1], lvlDst[2], lvlDst[3]},
-                                                     .loopSize = {lvlSize[0], lvlSize[1], lvlSize[2], lvlSize[3]},
-                                                     .loopLpSize = {0, 0, 0, 0},
-                                                     .loopRpSize = {0, 0, 0, 0}};
-                    MultiCopyParams<DataType, 4> params = {loopInfo, 0};
-                    DataCopy<DataType, 4, config>(ubTensor, inputGM_[view.addr], params);
+                    MultiCopyLoopInfo<NDDMA_LOOP_DIM4> loopInfo = {
+                        .loopSrcStride = {lvlSrc[0], lvlSrc[1], lvlSrc[2], lvlSrc[3]},
+                        .loopDstStride = {lvlDst[0], lvlDst[1], lvlDst[2], lvlDst[3]},
+                        .loopSize = {lvlSize[0], lvlSize[1], lvlSize[2], lvlSize[3]},
+                        .loopLpSize = {0, 0, 0, 0},
+                        .loopRpSize = {0, 0, 0, 0}};
+                    MultiCopyParams<DataType, NDDMA_LOOP_DIM4> params = {loopInfo, 0};
+                    DataCopy<DataType, NDDMA_LOOP_DIM4, config>(ubTensor, inputGM_[view.addr], params);
                 }
             } else if constexpr (Dim == 4) {
-                MultiCopyLoopInfo<5> loopInfo = {
+                MultiCopyLoopInfo<NDDMA_LOOP_DIM5> loopInfo = {
                     .loopSrcStride = {lvlSrc[0], lvlSrc[1], lvlSrc[2], lvlSrc[3], lvlSrc[4]},
                     .loopDstStride = {lvlDst[0], lvlDst[1], lvlDst[2], lvlDst[3], lvlDst[4]},
                     .loopSize = {lvlSize[0], lvlSize[1], lvlSize[2], lvlSize[3], lvlSize[4]},
                     .loopLpSize = {0, 0, 0, 0, 0},
                     .loopRpSize = {0, 0, 0, 0, 0}};
-                MultiCopyParams<DataType, 5> params = {loopInfo, 0};
-                DataCopy<DataType, 5, config>(ubTensor, inputGM_[view.addr], params);
+                MultiCopyParams<DataType, NDDMA_LOOP_DIM5> params = {loopInfo, 0};
+                DataCopy<DataType, NDDMA_LOOP_DIM5, config>(ubTensor, inputGM_[view.addr], params);
             } else {
                 // Dim >= 5: 内 5 层 NDDMA（退化 L0 + axis[0..3]），剩余 axis[4..7] 外层 for 循环
-                MultiCopyLoopInfo<5> loopInfo = {
+                MultiCopyLoopInfo<NDDMA_LOOP_DIM5> loopInfo = {
                     .loopSrcStride = {lvlSrc[0], lvlSrc[1], lvlSrc[2], lvlSrc[3], lvlSrc[4]},
                     .loopDstStride = {lvlDst[0], lvlDst[1], lvlDst[2], lvlDst[3], lvlDst[4]},
                     .loopSize = {lvlSize[0], lvlSize[1], lvlSize[2], lvlSize[3], lvlSize[4]},
                     .loopLpSize = {0, 0, 0, 0, 0},
                     .loopRpSize = {0, 0, 0, 0, 0}};
-                MultiCopyParams<DataType, 5> params = {loopInfo, 0};
+                MultiCopyParams<DataType, NDDMA_LOOP_DIM5> params = {loopInfo, 0};
                 for (int32_t i = 0; i < view.axis[4].repeat; i++) {
                     for (int32_t j = 0; j < view.axis[5].repeat; j++) {
                         for (int32_t k = 0; k < view.axis[6].repeat; k++) {
@@ -1634,7 +1641,8 @@ public:
                                                  k * view.axis[6].srcStride + m * view.axis[7].srcStride;
                                 int64_t dstOff = i * invDstStride[4] + j * invDstStride[5] + k * invDstStride[6] +
                                                  m * invDstStride[7];
-                                DataCopy<DataType, 5, config>(ubTensor[dstOff], inputGM_[view.addr + srcOff], params);
+                                DataCopy<DataType, NDDMA_LOOP_DIM5, config>(ubTensor[dstOff],
+                                                                            inputGM_[view.addr + srcOff], params);
                             }
                         }
                     }
@@ -1645,17 +1653,17 @@ public:
 
         // !TailA (AR→RA): 与历史实现逐位一致 —— axis[0](R) 落 L0 按 otherAlign 散射、axis[1](A) 连续
         if constexpr (Dim == 3) {
-            MultiCopyLoopInfo<3> loopInfo = {
+            MultiCopyLoopInfo<NDDMA_LOOP_DIM3> loopInfo = {
                 .loopSrcStride = {1, srcStrideL1, static_cast<uint32_t>(view.axis[2].srcStride)},
                 .loopDstStride = {invDstStride[0], invDstStride[1], invDstStride[2]},
                 .loopSize = {static_cast<uint32_t>(view.axis[0].repeat), static_cast<uint32_t>(view.axis[1].repeat),
                              static_cast<uint32_t>(view.axis[2].repeat)},
                 .loopLpSize = {0, 0, 0},
                 .loopRpSize = {0, 0, 0}};
-            MultiCopyParams<DataType, 3> params = {loopInfo, 0};
-            DataCopy<DataType, 3, config>(ubTensor, inputGM_[view.addr], params);
+            MultiCopyParams<DataType, NDDMA_LOOP_DIM3> params = {loopInfo, 0};
+            DataCopy<DataType, NDDMA_LOOP_DIM3, config>(ubTensor, inputGM_[view.addr], params);
         } else if constexpr (Dim == 4) {
-            MultiCopyLoopInfo<4> loopInfo = {
+            MultiCopyLoopInfo<NDDMA_LOOP_DIM4> loopInfo = {
                 .loopSrcStride = {1, srcStrideL1, static_cast<uint32_t>(view.axis[2].srcStride),
                                   static_cast<uint32_t>(view.axis[3].srcStride)},
                 .loopDstStride = {invDstStride[0], invDstStride[1], invDstStride[2], invDstStride[3]},
@@ -1663,11 +1671,11 @@ public:
                              static_cast<uint32_t>(view.axis[2].repeat), static_cast<uint32_t>(view.axis[3].repeat)},
                 .loopLpSize = {0, 0, 0, 0},
                 .loopRpSize = {0, 0, 0, 0}};
-            MultiCopyParams<DataType, 4> params = {loopInfo, 0};
-            DataCopy<DataType, 4, config>(ubTensor, inputGM_[view.addr], params);
+            MultiCopyParams<DataType, NDDMA_LOOP_DIM4> params = {loopInfo, 0};
+            DataCopy<DataType, NDDMA_LOOP_DIM4, config>(ubTensor, inputGM_[view.addr], params);
         } else {
             // Dim >= 5: 内 5 层 NDDMA (axis[0..4]) + 外层 axis[5..7] for 循环
-            MultiCopyLoopInfo<5> loopInfo = {
+            MultiCopyLoopInfo<NDDMA_LOOP_DIM5> loopInfo = {
                 .loopSrcStride = {1, srcStrideL1, static_cast<uint32_t>(view.axis[2].srcStride),
                                   static_cast<uint32_t>(view.axis[3].srcStride),
                                   static_cast<uint32_t>(view.axis[4].srcStride)},
@@ -1677,14 +1685,15 @@ public:
                              static_cast<uint32_t>(view.axis[4].repeat)},
                 .loopLpSize = {0, 0, 0, 0, 0},
                 .loopRpSize = {0, 0, 0, 0, 0}};
-            MultiCopyParams<DataType, 5> params = {loopInfo, 0};
+            MultiCopyParams<DataType, NDDMA_LOOP_DIM5> params = {loopInfo, 0};
             for (int32_t i = 0; i < view.axis[5].repeat; i++) {
                 for (int32_t j = 0; j < view.axis[6].repeat; j++) {
                     for (int32_t k = 0; k < view.axis[7].repeat; k++) {
                         int64_t srcOff = i * view.axis[5].srcStride + j * view.axis[6].srcStride +
                                          k * view.axis[7].srcStride;
                         int64_t dstOff = i * invDstStride[5] + j * invDstStride[6] + k * invDstStride[7];
-                        DataCopy<DataType, 5, config>(ubTensor[dstOff], inputGM_[view.addr + srcOff], params);
+                        DataCopy<DataType, NDDMA_LOOP_DIM5, config>(ubTensor[dstOff], inputGM_[view.addr + srcOff],
+                                                                    params);
                     }
                 }
             }
