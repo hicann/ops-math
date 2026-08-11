@@ -59,13 +59,13 @@ static bool IsAiCoreSupport(const aclTensor* self)
 }
 
 // AICORE算子kernel
-static const aclTensor* ZerosLikeAiCore(const aclTensor* self, aclTensor* zeroslike_out, aclOpExecutor* executor)
+static const aclTensor* ZerosLikeAiCore(const aclTensor* self, aclTensor* zeroslikeOut, aclOpExecutor* executor)
 {
     L0_DFX(ZerosLikeAiCore, self);
-    auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(ZerosLike, OP_INPUT(self), OP_OUTPUT(zeroslike_out));
-    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
-        retAicore != ACLNN_SUCCESS, return nullptr, "ZerosLike ADD_TO_LAUNCHER_LIST_AICORE failed.");
-    return zeroslike_out;
+    auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(ZerosLike, OP_INPUT(self), OP_OUTPUT(zeroslikeOut));
+    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
+                                         "ZerosLike ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    return zeroslikeOut;
 }
 
 static bool CheckDim(const aclTensor* self)
@@ -77,7 +77,7 @@ static bool CheckDim(const aclTensor* self)
 }
 
 // AICPU算子kernel
-static const aclTensor* ZerosLikeAiCpu(const aclTensor* self, aclTensor* zeroslike_out, aclOpExecutor* executor)
+static const aclTensor* ZerosLikeAiCpu(const aclTensor* self, aclTensor* zeroslikeOut, aclOpExecutor* executor)
 {
     L0_DFX(ZerosLikeAiCpu, self);
     if (!CheckDim(self)) {
@@ -85,26 +85,39 @@ static const aclTensor* ZerosLikeAiCpu(const aclTensor* self, aclTensor* zerosli
     }
 
     static internal::AicpuTaskSpace space("ZerosLike", ge::DEPEND_IN_SHAPE, true);
-    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(ZerosLike, OP_ATTR_NAMES(), OP_INPUT(self), OP_OUTPUT(zeroslike_out));
+    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(ZerosLike, OP_ATTR_NAMES(), OP_INPUT(self), OP_OUTPUT(zeroslikeOut));
     CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
-    return zeroslike_out;
+    return zeroslikeOut;
 }
 
 const aclTensor* ZerosLike(const aclTensor* self, aclOpExecutor* executor)
 {
-    auto zeroslike_out = executor->AllocTensor(self->GetStorageShape(), self->GetDataType(), self->GetStorageFormat());
-    if (zeroslike_out == nullptr) {
+    auto zeroslikeOut = executor->AllocTensor(self->GetStorageShape(), self->GetDataType(), self->GetStorageFormat());
+    if (zeroslikeOut == nullptr) {
         OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ZerosLike out tensor alloc failed");
         return nullptr;
     }
-    if (zeroslike_out->IsEmpty()) {
-        return zeroslike_out;
+    if (zeroslikeOut->IsEmpty()) {
+        return zeroslikeOut;
     }
     if (IsAiCoreSupport(self)) {
-        return ZerosLikeAiCore(self, zeroslike_out, executor);
+        return ZerosLikeAiCore(self, zeroslikeOut, executor);
     } else {
-        return ZerosLikeAiCpu(self, zeroslike_out, executor);
+        return ZerosLikeAiCpu(self, zeroslikeOut, executor);
     }
+}
+
+const aclTensor* InplaceZerosLike(const aclTensor* self, aclOpExecutor* executor)
+{
+    L0_DFX(InplaceZerosLike, self);
+    auto zeroslikeOut = const_cast<aclTensor*>(self);
+    if (zeroslikeOut->IsEmpty()) {
+        return zeroslikeOut;
+    }
+    if (IsAiCoreSupport(self)) {
+        return ZerosLikeAiCore(self, zeroslikeOut, executor);
+    }
+    return ZerosLikeAiCpu(self, zeroslikeOut, executor);
 }
 
 } // namespace l0op
