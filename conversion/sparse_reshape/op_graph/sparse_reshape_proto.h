@@ -12,8 +12,8 @@
  * \file sparse_reshape_proto.h
  * \brief Operator registration for SparseReshape
  */
-#ifndef SPARSE_RESHAPE_PROTO_H_
-#define SPARSE_RESHAPE_PROTO_H_
+#ifndef OPS_PROTO_DEF_SPARSERESHAPE
+#define OPS_PROTO_DEF_SPARSERESHAPE
 
 #include "graph/operator_reg.h"
 
@@ -42,4 +42,4 @@ REG_OP(SparseReshape)
     .OUTPUT(y_shape, TensorType({DT_INT32, DT_INT64}))
     .OP_END_FACTORY_REG(SparseReshape)
 } // namespace ge
-#endif // SPARSE_RESHAPE_PROTO_H_
+#endif // OPS_PROTO_DEF_SPARSERESHAPE
