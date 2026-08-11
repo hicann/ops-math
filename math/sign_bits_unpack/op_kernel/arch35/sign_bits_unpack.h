@@ -15,15 +15,17 @@
  * \brief SignBitsUnpack AscendC kernel (arch35/DAV_3510)
  *
  * Algorithm:
- *   VSEL_CMPMASK_SPR on arch35 reads the selMask byte bits in LSB-first order,
- *   which matches the LSB-first spec for this operator:
+ *   VSEL_TENSOR_TENSOR_MODE on arch35 consumes consecutive selMask bytes in
+ *   LSB-first order, which matches the LSB-first spec for this operator:
  *   - bit 0 (LSB) controls output element 0
  *   - bit 1 controls output element 1
  *   - ...
  *   - bit 7 (MSB) controls output element 7
  *
  *   For bit=1: select posLocal (+1.0); for bit=0: select negLocal (-1.0).
- *   No bit-reversal is needed.
+ *   No bit-reversal is needed. Tensor-tensor mode is required so vector
+ *   repeats advance through every packed mask group instead of reusing the
+ *   first group.
  */
 #ifndef SIGN_BITS_UNPACK_H
 #define SIGN_BITS_UNPACK_H
@@ -122,11 +124,11 @@ __aicore__ inline void SignBitsUnpackKernel<T1, T2>::Compute(int64_t actualOutEl
 
     if constexpr (std::is_same_v<T2, half>) {
         auto outLocal = outQueue.template AllocTensor<half>();
-        AscendC::Select(outLocal, inLocal, posLocal, negLocal, AscendC::SELMODE::VSEL_CMPMASK_SPR, nElems);
+        AscendC::Select(outLocal, inLocal, posLocal, negLocal, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, nElems);
         outQueue.template EnQue<half>(outLocal);
     } else {
         auto outLocal = outQueue.template AllocTensor<float>();
-        AscendC::Select(posLocal, inLocal, posLocal, negLocal, AscendC::SELMODE::VSEL_CMPMASK_SPR, nElems);
+        AscendC::Select(posLocal, inLocal, posLocal, negLocal, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, nElems);
         AscendC::Cast(outLocal, posLocal, AscendC::RoundMode::CAST_NONE, nElems);
         outQueue.template EnQue<float>(outLocal);
     }

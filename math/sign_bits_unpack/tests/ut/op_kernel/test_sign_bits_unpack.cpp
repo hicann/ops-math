@@ -57,12 +57,13 @@ struct KernelBuffers {
     uint8_t* tiling;
 };
 
-void SetTilingData(uint8_t* tiling, uint64_t totalNum, uint64_t blockFactor, uint64_t size)
+void SetTilingData(uint8_t* tiling, uint64_t totalNum, uint64_t blockFactor, uint64_t size,
+                   uint64_t ubFactor = UB_FACTOR)
 {
     auto* data = reinterpret_cast<SignBitsUnpackTilingData*>(tiling);
     data->totalNum = totalNum;
     data->blockFactor = blockFactor;
-    data->ubFactor = UB_FACTOR;
+    data->ubFactor = ubFactor;
     data->size = size;
     data->enableDump = 0;
     data->dumpFlag = 0;
@@ -115,6 +116,40 @@ TEST_F(SignBitsUnpackKernelTest, float16_known_bit_patterns)
     KernelBuffers buffers(inputData.size(), sizeof(half));
     std::memcpy(buffers.input, inputData.data(), inputData.size());
     SetTilingData(buffers.tiling, inputData.size(), inputData.size(), 4);
+
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
+    ICPU_RUN_KF(sign_bits_unpack_half_for_test, 1, buffers.input, buffers.output, buffers.workspace, buffers.tiling);
+
+    ExpectUnpacked(inputData.data(), reinterpret_cast<const half*>(buffers.output), inputData.size());
+}
+
+TEST_F(SignBitsUnpackKernelTest, float32_consumes_all_mask_groups_in_one_ub_iteration)
+{
+    constexpr uint64_t largeUbFactor = 512;
+    std::array<uint8_t, largeUbFactor / 8> inputData = {};
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = static_cast<uint8_t>(i * 37U + 11U);
+    }
+    KernelBuffers buffers(inputData.size(), sizeof(float));
+    std::memcpy(buffers.input, inputData.data(), inputData.size());
+    SetTilingData(buffers.tiling, inputData.size(), inputData.size(), 1, largeUbFactor);
+
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
+    ICPU_RUN_KF(sign_bits_unpack, 1, buffers.input, buffers.output, buffers.workspace, buffers.tiling);
+
+    ExpectUnpacked(inputData.data(), reinterpret_cast<const float*>(buffers.output), inputData.size());
+}
+
+TEST_F(SignBitsUnpackKernelTest, float16_consumes_all_mask_groups_in_one_ub_iteration)
+{
+    constexpr uint64_t largeUbFactor = 512;
+    std::array<uint8_t, largeUbFactor / 8> inputData = {};
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = static_cast<uint8_t>(i * 53U + 7U);
+    }
+    KernelBuffers buffers(inputData.size(), sizeof(half));
+    std::memcpy(buffers.input, inputData.data(), inputData.size());
+    SetTilingData(buffers.tiling, inputData.size(), inputData.size(), 1, largeUbFactor);
 
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_RUN_KF(sign_bits_unpack_half_for_test, 1, buffers.input, buffers.output, buffers.workspace, buffers.tiling);
