@@ -28,7 +28,6 @@ using namespace Ops::Base;
 namespace SignbitFloatOp {
 constexpr int CAST_NONE_MODE = 0;
 const int16_t STATE_BIT_SHF_VALUE = 31;
-const int16_t DOUBLE_STATE_BIT_SHF_VALUE = 63;
 
 template <class T>
 struct FloatComputeCustom : public Vec::ElemwiseUnaryOP<uint8_t, T> {
@@ -69,35 +68,28 @@ struct DoubleComputeCustom : public Vec::ElemwiseUnaryOP<uint8_t, T> {
     __aicore__ inline DoubleComputeCustom(LocalTensor<uint8_t>& dst, LocalTensor<T>& src1, uint32_t count)
     {
 #ifdef __CCE_AICORE__
-        constexpr uint32_t VECTOR_LENGTH = GetVRegSize();
         uint32_t dtypeSize = sizeof(T);
-        uint32_t vl = VECTOR_LENGTH / dtypeSize;
+        uint32_t vl = AscendC::VECTOR_REG_WIDTH_2XVL / dtypeSize;
         uint16_t loopNum = CeilDivision(count, vl);
-        uint32_t vlSize = vl;
         __ubuf__ T* src1Addr = (__ubuf__ T*)src1.GetPhyAddr();
         __ubuf__ uint8_t* dstAddr = (__ubuf__ uint8_t*)dst.GetPhyAddr();
 
-        AscendC::Reg::RegTensor<uint64_t, Reg::RegTraitNumOne> vregOutput;
-        AscendC::Reg::RegTensor<T, Reg::RegTraitNumOne> vregInput1;
-        AscendC::Reg::MaskReg tmpMask;
+        AscendC::Reg::RegTensor<T, Reg::RegTraitNumTwo> vregInput1;
         AscendC::Reg::MaskReg mask;
-        uint32_t countTmp = count;
         Reg::RegTensor<uint32_t, Reg::RegTraitNumOne> tmpReg;
         __VEC_SCOPE__
         {
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
-                mask = AscendC::Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
+                mask = AscendC::Reg::UpdateMask<T, Reg::RegTraitNumTwo>(count);
                 // OpCopyIn
-                AscendC::Reg::LoadAlign(vregInput1, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
+                AscendC::Reg::LoadAlign(vregInput1, (__ubuf__ T*)(src1Addr + loopIdx * vl));
 
-                AscendC::Reg::ShiftRights<uint64_t, int16_t>(vregOutput, (Reg::RegTensor<uint64_t>&)vregInput1,
-                                                             DOUBLE_STATE_BIT_SHF_VALUE, mask);
-                Reg::Pack<uint32_t, uint64_t, Reg::HighLowPart::LOWEST>(tmpReg, vregOutput);
-                Reg::Pack<Reg::HighLowPart::LOWEST>(tmpMask, mask);
+                AscendC::Reg::ShiftRights<uint32_t, int16_t>(tmpReg, (Reg::RegTensor<uint32_t>&)vregInput1.reg[1],
+                                                             STATE_BIT_SHF_VALUE, mask);
 
                 // OpCopyOut
                 AscendC::Reg::StoreAlign<uint8_t, Reg::StoreDist::DIST_PACK4_B32>(
-                    dstAddr + loopIdx * vlSize, (Reg::RegTensor<uint8_t>&)tmpReg, tmpMask);
+                    dstAddr + loopIdx * vl, (Reg::RegTensor<uint8_t>&)tmpReg, mask);
             }
         }
 #endif
