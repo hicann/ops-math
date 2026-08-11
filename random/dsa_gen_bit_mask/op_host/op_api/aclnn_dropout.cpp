@@ -25,6 +25,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "dropout_common.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -38,8 +39,8 @@ static const int64_t FLOAT_BYTE = 4;
 static const int64_t FLOAT_BIT = 32;
 
 // 根据API定义，需要列出所能支持的所有dtype
-static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
+static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT,
+                                                                                 op::DataType::DT_FLOAT16};
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
@@ -113,7 +114,7 @@ static void CheckFormat(const aclTensor* input)
     // 检查format，若是NZ格式，则添加警告
     if (input->GetStorageFormat() == Format::FORMAT_FRACTAL_NZ) {
         OP_LOGW("Format of input gets [%s], this format may lead to precision failure.",
-        op::ToString(input->GetStorageFormat()).GetString());
+                op::ToString(input->GetStorageFormat()).GetString());
     }
 }
 
@@ -154,8 +155,8 @@ static inline int64_t InferDSAOutShape(const aclIntArray* shapeArray)
     return (size + BIT_NUMBER - 1) / BIT_NUMBER * BIT_NUMBER / UINT8_BIT_NUMBER / FLOAT_BYTE;
 }
 
-static const aclTensor* ComputeMask(
-    const aclTensor* input, double p, int64_t seed, int64_t offset, aclTensor* maskOut, aclOpExecutor* executor)
+static const aclTensor* ComputeMask(const aclTensor* input, double p, int64_t seed, int64_t offset, aclTensor* maskOut,
+                                    aclOpExecutor* executor)
 {
     FVector<int64_t> seedVector = {seed};
     auto seedTensor = executor->ConvertToTensor(seedVector.data(), seedVector.size(), op::DataType::DT_INT64);
@@ -178,34 +179,23 @@ static const aclTensor* ComputeMask(
         l0op::DSAGenBitMask(shapeSize * FLOAT_BIT, seed, offset, dropout, outTensorTemp, executor);
         return maskOut;
     } else {
-        return l0op::StatelessDropoutGenMask(
-            shapeIntArray, probTensor, seedTensor, seed1Tensor, offsetTensor, executor);
+        return l0op::StatelessDropoutGenMask(shapeIntArray, probTensor, seedTensor, seed1Tensor, offsetTensor,
+                                             executor);
     }
 }
 
-static bool IsDoubleEqual(double f1, double f2)
-{
-    return std::abs(f1 - f2) <= std::numeric_limits<double>::epsilon();
-}
-
-static inline const aclTensor* DoMask(
-    const aclTensor* inputContiguous, const aclTensor* mask, double p, bool train, aclOpExecutor* executor)
+static inline const aclTensor* DoMaskWithTrain(const aclTensor* inputContiguous, const aclTensor* mask, double p,
+                                               bool train, aclOpExecutor* executor)
 {
     if (IsDoubleEqual(p, 0.0) || !train) {
         return inputContiguous;
-    } else if (IsDoubleEqual(p, 1.0)) {
-        return l0op::ZerosLike(inputContiguous, executor);
-    } else {
-        FVector<float> probVector = {static_cast<float>(1 - p)};
-        auto probTensor =
-            executor->ConvertToTensor(probVector.data(), probVector.size(), inputContiguous->GetDataType());
-        return l0op::DropoutDoMask(inputContiguous, mask, probTensor, executor);
     }
+    return DoMask(inputContiguous, mask, p, executor);
 }
 
-aclnnStatus aclnnDropoutGetWorkspaceSize(
-    const aclTensor* input, double p, bool train, int64_t seed, int64_t offset, aclTensor* out, aclTensor* maskOut,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnDropoutGetWorkspaceSize(const aclTensor* input, double p, bool train, int64_t seed, int64_t offset,
+                                         aclTensor* out, aclTensor* maskOut, uint64_t* workspaceSize,
+                                         aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnDropout, DFX_IN(input, p, train, seed, offset), DFX_OUT(out, maskOut));
     // 固定写法，创建OpExecutor
@@ -237,7 +227,7 @@ aclnnStatus aclnnDropoutGetWorkspaceSize(
     CHECK_RET(inputContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 进行do mask
-    auto doMaskOut = DoMask(inputContiguous, mask, p, train, uniqueExecutor.get());
+    auto doMaskOut = DoMaskWithTrain(inputContiguous, mask, p, train, uniqueExecutor.get());
     CHECK_RET(doMaskOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 固定写法，将计算结果转换成输出out的数据类型

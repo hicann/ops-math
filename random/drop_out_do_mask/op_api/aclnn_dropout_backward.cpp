@@ -23,6 +23,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "random/dsa_gen_bit_mask/op_host/op_api/dropout_common.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -34,8 +35,8 @@ static const int64_t BIT_NUMBER = 128;
 static const int64_t UINT8_BIT_NUMBER = 8;
 
 // 根据API定义，需要列出所能支持的所有dtype
-static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
+static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT,
+                                                                                 op::DataType::DT_FLOAT16};
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
@@ -80,15 +81,7 @@ static bool CheckDtypeValid(const aclTensor* gradOutput, const aclTensor* mask, 
     return true;
 }
 
-static bool IsDoubleEqual(double f1, double f2)
-{
-    return std::abs(f1 - f2) <= std::numeric_limits<double>::epsilon();
-}
-
-static inline double ComputeProb(double scale)
-{
-    return IsDoubleEqual(scale, 0.0) ? 1 : (1 - 1 / scale);
-}
+static inline double ComputeProb(double scale) { return IsDoubleEqual(scale, 0.0) ? 1 : (1 - 1 / scale); }
 
 static inline bool CheckProbability(double scale)
 {
@@ -144,24 +137,8 @@ static inline const aclTensor* GenerateShapeTensor(op::Shape shape, aclOpExecuto
     return executor->ConvertToTensor(shapeVector.data(), shapeVector.size(), DataType::DT_INT64);
 }
 
-static inline const aclTensor* DoMask(
-    const aclTensor* inputContiguous, const aclTensor* mask, double p, aclOpExecutor* executor)
-{
-    if (IsDoubleEqual(p, 0.0)) {
-        return inputContiguous;
-    } else if (IsDoubleEqual(p, 1.0)) {
-        return l0op::ZerosLike(inputContiguous, executor);
-    } else {
-        FVector<float> probVector = {static_cast<float>(1 - p)};
-        auto probTensor =
-            executor->ConvertToTensor(probVector.data(), probVector.size(), inputContiguous->GetDataType());
-        return l0op::DropoutDoMask(inputContiguous, mask, probTensor, executor);
-    }
-}
-
-aclnnStatus aclnnDropoutBackwardGetWorkspaceSize(
-    const aclTensor* gradOutput, const aclTensor* mask, double scale, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnDropoutBackwardGetWorkspaceSize(const aclTensor* gradOutput, const aclTensor* mask, double scale,
+                                                 aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnDropoutBackward, DFX_IN(gradOutput, mask, scale), DFX_OUT(out));
     // 固定写法，创建OpExecutor

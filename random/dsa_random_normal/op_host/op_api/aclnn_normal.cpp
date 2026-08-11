@@ -8,29 +8,13 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "acl/acl_rt.h"
 #include "aclnn_normal.h"
-#include "math/add/op_api/add.h"
 #include "math/mul/op_api/mul.h"
 #include "random/stateless_random_normal_v2/op_api/stateless_random_normal_v2.h"
 #include "random/stateless_random_normal_v3/op_api/stateless_random_normal_v3.h"
 #include "random/stateless_normal/op_api/stateless_normal.h"
 #include "dsa_random_normal.h"
-#include "../../../../conversion/concat_d/op_api/concat_d.h"
-#include "opdev/platform.h"
-#include "aclnn_kernels/cast.h"
-#include "aclnn_kernels/contiguous.h"
-#include "aclnn_kernels/common/op_error_check.h"
-#include "op_api/aclnn_check.h"
-#include "opdev/common_types.h"
-#include "opdev/data_type_utils.h"
-#include "opdev/format_utils.h"
-#include "opdev/op_dfx.h"
-#include "opdev/op_executor.h"
-#include "opdev/op_log.h"
-#include "opdev/shape_utils.h"
-#include "opdev/tensor_view_utils.h"
-#include "../../../random_common/op_api/aclnn_set_pytorch_random.h"
+#include "../../../random_common/op_api/random_common_utils.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -149,24 +133,48 @@ static aclnnStatus CheckSeedOffsetParams(const aclTensor* seedTensor, const aclT
     return ACLNN_SUCCESS;
 }
 
-static aclTensor* ProcessOffsetTensor(const aclTensor* offsetTensor, int64_t offset, aclOpExecutor* executor)
+// 前置公共处理：将输入 self 转换成连续的 tensor，非要求输出转换为 FLOAT
+static const aclTensor* PrepareContiguousOutput(const aclTensor* selfRef, aclOpExecutor* executor)
 {
-    FVector<int64_t> tmpVector = {static_cast<int64_t>(offset)};
-    auto offsetTmpTensor = executor->ConvertToTensor(tmpVector.data(), tmpVector.size(), offsetTensor->GetDataType());
-    CHECK_RET(offsetTmpTensor != nullptr, nullptr);
-    auto offsetAddOut = l0op::Add(offsetTensor, offsetTmpTensor, executor);
-    CHECK_RET(offsetAddOut != nullptr, nullptr);
-    // concat
-    FVector<int64_t> zeroVector = {static_cast<int64_t>(0)};
-    auto zeroTensor = executor->ConvertToTensor(zeroVector.data(), zeroVector.size(), offsetTensor->GetDataType());
-    CHECK_RET(zeroTensor != nullptr, nullptr);
-    FVector<const aclTensor*> tensorListOnce;
-    tensorListOnce.emplace_back(zeroTensor);
-    tensorListOnce.emplace_back(offsetAddOut);
-    auto tensorList = executor->AllocTensorList(tensorListOnce.data(), tensorListOnce.size());
-    auto concatTensor = l0op::ConcatD(tensorList, 0, executor);
+    auto selfContiguous = l0op::Contiguous(selfRef, executor);
+    CHECK_RET(selfContiguous != nullptr, nullptr);
 
-    return concatTensor;
+    if (!CheckType(selfContiguous->GetDataType(), OUTPUT_SUPPORT_LIST)) {
+        selfContiguous = l0op::Cast(selfContiguous, static_cast<op::DataType>(ACL_FLOAT), executor);
+        CHECK_RET(selfContiguous != nullptr, nullptr);
+    }
+    return selfContiguous;
+}
+
+// DSA 路径公共处理：分配 inputShapeArray、meanScalar、stdScalar
+static aclnnStatus AllocDSANormalParams(const aclTensor* selfContiguous, float mean, float std, aclOpExecutor* executor,
+                                        aclIntArray*& inputShapeArray, aclScalar*& meanScalar, aclScalar*& stdScalar)
+{
+    auto inputShape = op::ToShapeVector(selfContiguous->GetViewShape());
+    inputShapeArray = executor->AllocIntArray(inputShape.data(), inputShape.size());
+    CHECK_RET(inputShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    meanScalar = executor->AllocScalar(mean);
+    CHECK_RET(meanScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    stdScalar = executor->AllocScalar(std);
+    CHECK_RET(stdScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    return ACLNN_SUCCESS;
+}
+
+// 后置公共处理：将计算结果转换成输出 self 的数据类型并拷贝到输出 self 上，获取 workspace 大小
+static aclnnStatus PostProcessInplaceNormal(aclTensor* out, const aclTensor* computeOut, aclOpExecutor* executor,
+                                            uint64_t* workspaceSize)
+{
+    CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    auto castOut = l0op::Cast(computeOut, out->GetDataType(), executor);
+    CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    // self可能是非连续的tensor
+    auto viewCopyResult = l0op::ViewCopy(castOut, out, executor);
+    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    *workspaceSize = executor->GetWorkspaceSize();
+    return ACLNN_SUCCESS;
 }
 
 // DT_DOUBLE 路径：StatelessRandomNormalV2 + Mul(std) + Add(mean)
@@ -335,41 +343,25 @@ aclnnStatus aclnnInplaceNormalGetWorkspaceSize(const aclTensor* selfRef, float m
         return ACLNN_SUCCESS;
     }
 
-    // 固定写法，将输入self转换成连续的tensor
-    auto selfContiguous = l0op::Contiguous(selfRef, uniqueExecutor.get());
+    // 固定写法，将输入self转换成连续的tensor，非要求输出转换为FLOAT
+    auto selfContiguous = PrepareContiguousOutput(selfRef, uniqueExecutor.get());
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 非要求输出转换为FLOAT
-    if (!CheckType(selfContiguous->GetDataType(), OUTPUT_SUPPORT_LIST)) {
-        selfContiguous = l0op::Cast(selfContiguous, static_cast<op::DataType>(ACL_FLOAT), uniqueExecutor.get());
-        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    }
 
     const aclTensor* computeOut = nullptr;
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201) {
-        auto inputShape = op::ToShapeVector(selfContiguous->GetViewShape());
-        auto inputShapeArray = uniqueExecutor.get()->AllocIntArray(inputShape.data(), inputShape.size());
-        CHECK_RET(inputShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        auto meanScalar = uniqueExecutor.get()->AllocScalar(mean);
-        CHECK_RET(meanScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        auto stdScalar = uniqueExecutor.get()->AllocScalar(std);
-        CHECK_RET(stdScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        aclIntArray* inputShapeArray = nullptr;
+        aclScalar* meanScalar = nullptr;
+        aclScalar* stdScalar = nullptr;
+        ret = AllocDSANormalParams(selfContiguous, mean, std, uniqueExecutor.get(), inputShapeArray, meanScalar,
+                                   stdScalar);
+        CHECK_RET(ret == ACLNN_SUCCESS, ret);
         computeOut = l0op::DSARandomNormal(inputShapeArray, seed, offset, meanScalar, stdScalar, uniqueExecutor.get());
     } else {
         computeOut = normalDavidPath(selfContiguous, seed, offset, mean, std, uniqueExecutor.get());
     }
-    CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    ret = PostProcessInplaceNormal(out, computeOut, uniqueExecutor.get(), workspaceSize);
+    CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
-    // 固定写法，将计算结果转换成输出self的数据类型
-    auto castOut = l0op::Cast(computeOut, out->GetDataType(), uniqueExecutor.get());
-    CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 固定写法，将计算结果拷贝到输出self上，self可能是非连续的tensor
-    auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
-    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 固定写法，获取计算过程中需要使用的workspace大小
-    *workspaceSize = uniqueExecutor->GetWorkspaceSize();
     uniqueExecutor.ReleaseTo(executor);
     return ACLNN_SUCCESS;
 }
@@ -409,25 +401,18 @@ aclnnStatus aclnnInplaceNormalTensorGetWorkspaceSize(const aclTensor* selfRef, f
         return ACLNN_SUCCESS;
     }
 
-    // 固定写法，将输入self转换成连续的tensor
-    auto selfContiguous = l0op::Contiguous(selfRef, uniqueExecutor.get());
+    // 固定写法，将输入self转换成连续的tensor，非要求输出转换为FLOAT
+    auto selfContiguous = PrepareContiguousOutput(selfRef, uniqueExecutor.get());
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 非要求输出转换为FLOAT
-    if (!CheckType(selfContiguous->GetDataType(), OUTPUT_SUPPORT_LIST)) {
-        selfContiguous = l0op::Cast(selfContiguous, static_cast<op::DataType>(ACL_FLOAT), uniqueExecutor.get());
-        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    }
 
     const aclTensor* computeOut = nullptr;
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201) {
-        auto inputShape = op::ToShapeVector(selfContiguous->GetViewShape());
-        auto inputShapeArray = uniqueExecutor.get()->AllocIntArray(inputShape.data(), inputShape.size());
-        CHECK_RET(inputShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        auto meanScalar = uniqueExecutor.get()->AllocScalar(mean);
-        CHECK_RET(meanScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        auto stdScalar = uniqueExecutor.get()->AllocScalar(std);
-        CHECK_RET(stdScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        aclIntArray* inputShapeArray = nullptr;
+        aclScalar* meanScalar = nullptr;
+        aclScalar* stdScalar = nullptr;
+        ret = AllocDSANormalParams(selfContiguous, mean, std, uniqueExecutor.get(), inputShapeArray, meanScalar,
+                                   stdScalar);
+        CHECK_RET(ret == ACLNN_SUCCESS, ret);
         auto concatTensor = ProcessOffsetTensor(offsetTensor, offset, uniqueExecutor.get());
         CHECK_RET(concatTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
         computeOut = l0op::DSARandomNormalTensor(inputShapeArray, seedTensor, concatTensor, meanScalar, stdScalar,
@@ -436,18 +421,9 @@ aclnnStatus aclnnInplaceNormalTensorGetWorkspaceSize(const aclTensor* selfRef, f
         computeOut = normalTensorDavidPath(selfContiguous, seedTensor, offsetTensor, offset, mean, std,
                                            uniqueExecutor.get());
     }
-    CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    ret = PostProcessInplaceNormal(out, computeOut, uniqueExecutor.get(), workspaceSize);
+    CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
-    // 固定写法，将计算结果转换成输出self的数据类型
-    auto castOut = l0op::Cast(computeOut, out->GetDataType(), uniqueExecutor.get());
-    CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 固定写法，将计算结果拷贝到输出self上，self可能是非连续的tensor
-    auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
-    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 固定写法，获取计算过程中需要使用的workspace大小
-    *workspaceSize = uniqueExecutor->GetWorkspaceSize();
     uniqueExecutor.ReleaseTo(executor);
     return ACLNN_SUCCESS;
 }

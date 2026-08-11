@@ -25,6 +25,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "random/dsa_gen_bit_mask/op_host/op_api/dropout_common.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -84,8 +85,6 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* mask, const 
     return true;
 }
 
-static bool IsDoubleEqual(double f1, double f2) { return std::abs(f1 - f2) <= std::numeric_limits<double>::epsilon(); }
-
 static inline bool CheckProbability(double prob)
 {
     if (prob > 1 || prob < 0) {
@@ -130,21 +129,6 @@ static inline const aclIntArray* GenerateShapeIntArray(const op::Shape& shape, a
         shapeVector.push_back(shape.GetDim(i));
     }
     return executor->AllocIntArray(shapeVector.data(), shapeVector.size());
-}
-
-static inline const aclTensor* DoMask(const aclTensor* inputContiguous, const aclTensor* mask, double prob,
-                                      aclOpExecutor* executor)
-{
-    if (IsDoubleEqual(prob, 0.0)) {
-        return inputContiguous;
-    } else if (IsDoubleEqual(prob, 1.0)) {
-        return l0op::ZerosLike(inputContiguous, executor);
-    } else {
-        FVector<float> probVector = {static_cast<float>(1 - prob)};
-        auto probTensor = executor->ConvertToTensor(probVector.data(), probVector.size(),
-                                                    inputContiguous->GetDataType());
-        return l0op::DropoutDoMask(inputContiguous, mask, probTensor, executor);
-    }
 }
 
 aclnnStatus aclnnDropoutDoMaskGetWorkspaceSize(const aclTensor* self, const aclTensor* mask, double prob,

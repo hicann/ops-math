@@ -34,6 +34,7 @@
 #include "opdev/platform.h"
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
+#include "dropout_common.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -47,8 +48,8 @@ static const int8_t MAX_MASK_NUM = -1;
 
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> MASK_DTYPE_SUPPORT_LIST = {op::DataType::DT_UINT8};
-static const std::initializer_list<op::DataType> P_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT16, op::DataType::DT_BF16, op::DataType::DT_FLOAT};
+static const std::initializer_list<op::DataType> P_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT16,
+                                                                         op::DataType::DT_BF16, op::DataType::DT_FLOAT};
 
 static inline bool CheckNotNull(const aclIntArray* input, const aclTensor* out)
 {
@@ -124,25 +125,6 @@ static inline aclnnStatus CheckParams(const aclIntArray* shape, double prob, con
     return ACLNN_SUCCESS;
 }
 
-static inline const aclTensor* FillScalar(const aclTensor* out, int8_t val, aclOpExecutor* executor)
-{
-    auto maskShape = out->GetViewShape();
-    FVector<int64_t> maskShapeVector;
-    for (size_t i = 0; i < maskShape.GetDimNum(); i++) {
-        maskShapeVector.push_back(maskShape.GetDim(i));
-    }
-    auto dims = executor->ConvertToTensor(maskShapeVector.data(), maskShapeVector.size(), DataType::DT_INT64);
-    auto shapeArray = executor->AllocIntArray(maskShapeVector.data(), maskShapeVector.size());
-
-    FVector<int8_t> valVector = {val};
-    auto valTensor = executor->ConvertToTensor(valVector.data(), valVector.size(), op::DataType::DT_INT8);
-    auto mask = l0op::Fill(dims, valTensor, shapeArray, executor);
-    CHECK_RET(mask != nullptr, nullptr);
-    mask->SetFromWorkspace(false);
-    mask->SetStorageAddr(out->GetStorageAddr());
-    return out;
-}
-
 static aclScalar* CreateDropout(float prob, op::DataType dtype, aclOpExecutor* executor)
 {
     op::fp16_t ratioF16;
@@ -158,15 +140,14 @@ static aclScalar* CreateDropout(float prob, op::DataType dtype, aclOpExecutor* e
         case op::DataType::DT_FLOAT:
             return executor->AllocScalar(prob);
         default:
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "Scalar p not implemented for %s, should be in dtype support list %s.",
-                op::ToString(dtype).GetString(), op::ToString(P_DTYPE_SUPPORT_LIST).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Scalar p not implemented for %s, should be in dtype support list %s.",
+                    op::ToString(dtype).GetString(), op::ToString(P_DTYPE_SUPPORT_LIST).GetString());
             return nullptr;
     }
 }
 
-static const aclTensor* ComputeStatelessMask(
-    const aclIntArray* shape, double prob, int64_t seed, int64_t offset, aclOpExecutor* executor)
+static const aclTensor* ComputeStatelessMask(const aclIntArray* shape, double prob, int64_t seed, int64_t offset,
+                                             aclOpExecutor* executor)
 {
     FVector<int64_t> seedVector = {seed};
     aclIntArray* seedList = executor->AllocIntArray(seedVector.data(), seedVector.size());
@@ -180,14 +161,14 @@ static const aclTensor* ComputeStatelessMask(
     aclIntArray* offsetList = executor->AllocIntArray(offsetVector.data(), offsetVector.size());
     auto offsetTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_INT64);
 
-    auto probTensor =
-        executor->ConvertToTensor(executor->AllocScalar(static_cast<float>(1 - prob)), op::DataType::DT_FLOAT);
+    auto probTensor = executor->ConvertToTensor(executor->AllocScalar(static_cast<float>(1 - prob)),
+                                                op::DataType::DT_FLOAT);
 
     return l0op::StatelessDropoutGenMask(shape, probTensor, seedTensor, seed1Tensor, offsetTensor, executor);
 }
 
-static const aclTensor* ComputeMask(
-    const aclIntArray* shape, double prob, int64_t seed, int64_t offset, aclTensor* out, aclOpExecutor* executor)
+static const aclTensor* ComputeMask(const aclIntArray* shape, double prob, int64_t seed, int64_t offset, aclTensor* out,
+                                    aclOpExecutor* executor)
 {
     auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
     if (curArch == NpuArch::DAV_2201) {
@@ -210,8 +191,8 @@ static const aclTensor* ComputeMask(
     }
 }
 
-static const aclTensor* ComputeMaskV2(
-    const aclIntArray* shape, double prob, int64_t seed, int64_t offset, op::DataType dtype, aclOpExecutor* executor)
+static const aclTensor* ComputeMaskV2(const aclIntArray* shape, double prob, int64_t seed, int64_t offset,
+                                      op::DataType dtype, aclOpExecutor* executor)
 {
     auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
     if (curArch == NpuArch::DAV_2201) {
@@ -244,9 +225,9 @@ static aclTensor* ProcessOffsetTensor(const aclTensor* offsetTensor, int64_t off
     return concatTensor;
 }
 
-static const aclTensor* ComputeMaskV2Tensor(
-    const aclIntArray* shape, double prob, const aclTensor* seedTensor, const aclTensor* offsetTensor, int64_t offset,
-    op::DataType dtype, aclOpExecutor* executor)
+static const aclTensor* ComputeMaskV2Tensor(const aclIntArray* shape, double prob, const aclTensor* seedTensor,
+                                            const aclTensor* offsetTensor, int64_t offset, op::DataType dtype,
+                                            aclOpExecutor* executor)
 {
     if (IsRegBase()) {
         FVector<int64_t> seed1Vector = {0};
@@ -259,7 +240,8 @@ static const aclTensor* ComputeMaskV2Tensor(
         auto offset1Tensor = l0op::Add(offsetTensor, tmpTensor, executor);
         CHECK_RET(offset1Tensor != nullptr, nullptr);
 
-        auto probTensor = executor->ConvertToTensor(executor->AllocScalar(static_cast<float>(1 - prob)), op::DataType::DT_FLOAT);
+        auto probTensor = executor->ConvertToTensor(executor->AllocScalar(static_cast<float>(1 - prob)),
+                                                    op::DataType::DT_FLOAT);
 
         return l0op::StatelessDropoutGenMask(shape, probTensor, seedTensor, seed1Tensor, offset1Tensor, executor);
     } else {
@@ -272,29 +254,8 @@ static const aclTensor* ComputeMaskV2Tensor(
     }
 }
 
-static bool IsDoubleEqual(double f1, double f2)
-{
-    return std::abs(f1 - f2) <= std::numeric_limits<double>::epsilon();
-}
-
-static inline const aclTensor* DoMask(
-    const aclTensor* inputContiguous, const aclTensor* mask, double prob, aclOpExecutor* executor)
-{
-    if (IsDoubleEqual(prob, 0)) {
-        return inputContiguous;
-    } else if (IsDoubleEqual(prob, 1)) {
-        return l0op::ZerosLike(inputContiguous, executor);
-    } else {
-        FVector<float> probVector = {static_cast<float>(1 - prob)};
-        auto probTensor =
-            executor->ConvertToTensor(probVector.data(), probVector.size(), inputContiguous->GetDataType());
-        return l0op::DropoutDoMask(inputContiguous, mask, probTensor, executor);
-    }
-}
-
-aclnnStatus aclnnDropoutGenMaskGetWorkspaceSize(
-    const aclIntArray* shape, double prob, int64_t seed, int64_t offset, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnDropoutGenMaskGetWorkspaceSize(const aclIntArray* shape, double prob, int64_t seed, int64_t offset,
+                                                aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnDropoutGenMask, DFX_IN(shape, prob, seed, offset), DFX_OUT(out));
     // 固定写法，创建OpExecutor
@@ -338,9 +299,9 @@ aclnnStatus aclnnDropoutGenMask(void* workspace, uint64_t workspaceSize, aclOpEx
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnDropoutGenMaskV2GetWorkspaceSize(
-    const aclIntArray* shape, double prob, int64_t seed, int64_t offset, aclDataType probDataType, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnDropoutGenMaskV2GetWorkspaceSize(const aclIntArray* shape, double prob, int64_t seed, int64_t offset,
+                                                  aclDataType probDataType, aclTensor* out, uint64_t* workspaceSize,
+                                                  aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnDropoutGenMaskV2, DFX_IN(shape, prob, seed, offset, probDataType), DFX_OUT(out));
     // 固定写法，创建OpExecutor
@@ -388,12 +349,13 @@ aclnnStatus aclnnDropoutGenMaskV2(void* workspace, uint64_t workspaceSize, aclOp
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnDropoutGenMaskV2TensorGetWorkspaceSize(
-    const aclIntArray* shape, double prob, const aclTensor* seedTensor, const aclTensor* offsetTensor, int64_t offset,
-    aclDataType probDataType, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnDropoutGenMaskV2TensorGetWorkspaceSize(const aclIntArray* shape, double prob,
+                                                        const aclTensor* seedTensor, const aclTensor* offsetTensor,
+                                                        int64_t offset, aclDataType probDataType, aclTensor* out,
+                                                        uint64_t* workspaceSize, aclOpExecutor** executor)
 {
-    L2_DFX_PHASE_1(
-        aclnnDropoutGenMaskV2Tensor, DFX_IN(shape, prob, seedTensor, offsetTensor, offset, probDataType), DFX_OUT(out));
+    L2_DFX_PHASE_1(aclnnDropoutGenMaskV2Tensor, DFX_IN(shape, prob, seedTensor, offsetTensor, offset, probDataType),
+                   DFX_OUT(out));
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
@@ -432,8 +394,8 @@ aclnnStatus aclnnDropoutGenMaskV2TensorGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnDropoutGenMaskV2Tensor(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnDropoutGenMaskV2Tensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                        aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnDropoutGenMaskV2Tensor);
     // 固定写法，调用框架能力，完成计算

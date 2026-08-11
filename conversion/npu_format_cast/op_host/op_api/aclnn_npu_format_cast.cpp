@@ -662,8 +662,8 @@ aclnnStatus CalcToNd(const aclTensor* srcTensor, [[maybe_unused]] int additional
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus CalcNCDHWToNDC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape,
-                                uint64_t* dstShapeSize, int* actualFormat)
+// 根据A矩阵和B矩阵数据类型计算实际转换成私有格式后的C0大小
+static int64_t GetC0ByAdditionalDtype(const aclTensor* srcTensor, int additionalDtype)
 {
     int64_t C0 = C0_SIZE;
     DataType srcDtype = srcTensor->GetDataType();
@@ -672,6 +672,32 @@ aclnnStatus CalcNCDHWToNDC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int
     } else {
         C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
     }
+    return C0;
+}
+
+// 申请dstShape数组内存，由上层调用者释放
+static aclnnStatus AllocDstShape(int64_t** dstShape, uint64_t* dstShapeSize, const std::initializer_list<int64_t>& dims,
+                                 const char* formatName)
+{
+    *dstShapeSize = dims.size();
+    try {
+        *dstShape = new int64_t[dims.size()];
+        uint64_t idx = 0;
+        for (auto dim : dims) {
+            (*dstShape)[idx] = dim;
+            ++idx;
+        }
+    } catch (...) {
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for %s", formatName);
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus CalcNCDHWToNDC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape,
+                                uint64_t* dstShapeSize, int* actualFormat)
+{
+    int64_t C0 = GetC0ByAdditionalDtype(srcTensor, additionalDtype);
     auto viewShape = srcTensor->GetViewShape();
     int64_t N = viewShape.GetDim(0);
     int64_t C = viewShape.GetDim(1);
@@ -680,12 +706,9 @@ aclnnStatus CalcNCDHWToNDC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int
     int64_t W = viewShape.GetDim(4);
     int64_t C1 = CeilDiv(C, C0);
 
-    *dstShapeSize = DIMS_SIX; // 6HD
-    try {
-        *dstShape = new int64_t[6]{N, D, C1, H, W, C0};
-    } catch (...) {
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for NDC1HWC0");
-        return ACLNN_ERR_RUNTIME_ERROR;
+    aclnnStatus ret = AllocDstShape(dstShape, dstShapeSize, {N, D, C1, H, W, C0}, "NDC1HWC0"); // 6HD
+    if (ret != ACLNN_SUCCESS) {
+        return ret;
     }
     *actualFormat = op::Format::FORMAT_NDC1HWC0;
     return ACLNN_SUCCESS;
@@ -694,13 +717,7 @@ aclnnStatus CalcNCDHWToNDC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int
 aclnnStatus CalcNDHWCToNDC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape,
                                 uint64_t* dstShapeSize, int* actualFormat)
 {
-    int64_t C0 = C0_SIZE;
-    DataType srcDtype = srcTensor->GetDataType();
-    if (static_cast<op::DataType>(additionalDtype) == srcDtype) {
-        C0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
-    } else {
-        C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
-    }
+    int64_t C0 = GetC0ByAdditionalDtype(srcTensor, additionalDtype);
     auto viewShape = srcTensor->GetViewShape();
     int64_t N = viewShape.GetDim(0);
     int64_t D = viewShape.GetDim(1);
@@ -709,12 +726,9 @@ aclnnStatus CalcNDHWCToNDC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int
     int64_t C = viewShape.GetDim(4);
     int64_t C1 = CeilDiv(C, C0);
 
-    *dstShapeSize = DIMS_SIX; // 6HD
-    try {
-        *dstShape = new int64_t[6]{N, D, C1, H, W, C0};
-    } catch (...) {
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for NDC1HWC0");
-        return ACLNN_ERR_RUNTIME_ERROR;
+    aclnnStatus ret = AllocDstShape(dstShape, dstShapeSize, {N, D, C1, H, W, C0}, "NDC1HWC0"); // 6HD
+    if (ret != ACLNN_SUCCESS) {
+        return ret;
     }
     *actualFormat = op::Format::FORMAT_NDC1HWC0;
     return ACLNN_SUCCESS;
@@ -723,13 +737,7 @@ aclnnStatus CalcNDHWCToNDC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int
 aclnnStatus CalcNCHWToNC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape,
                               uint64_t* dstShapeSize, int* actualFormat)
 {
-    int64_t C0 = C0_SIZE;
-    DataType srcDtype = srcTensor->GetDataType();
-    if (static_cast<op::DataType>(additionalDtype) == srcDtype) {
-        C0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
-    } else {
-        C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
-    }
+    int64_t C0 = GetC0ByAdditionalDtype(srcTensor, additionalDtype);
     auto viewShape = srcTensor->GetViewShape();
     int64_t N = viewShape.GetDim(0);
     int64_t C = viewShape.GetDim(1);
@@ -737,12 +745,9 @@ aclnnStatus CalcNCHWToNC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int a
     int64_t W = viewShape.GetDim(3);
     int64_t C1 = CeilDiv(C, C0);
 
-    *dstShapeSize = DIMS_FIVE; // 5HD
-    try {
-        *dstShape = new int64_t[5]{N, C1, H, W, C0};
-    } catch (...) {
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for NC1HWC0");
-        return ACLNN_ERR_RUNTIME_ERROR;
+    aclnnStatus ret = AllocDstShape(dstShape, dstShapeSize, {N, C1, H, W, C0}, "NC1HWC0"); // 5HD
+    if (ret != ACLNN_SUCCESS) {
+        return ret;
     }
     *actualFormat = op::Format::FORMAT_NC1HWC0;
     return ACLNN_SUCCESS;
@@ -751,13 +756,7 @@ aclnnStatus CalcNCHWToNC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int a
 aclnnStatus CalcNHWCToNC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape,
                               uint64_t* dstShapeSize, int* actualFormat)
 {
-    int64_t C0 = C0_SIZE;
-    DataType srcDtype = srcTensor->GetDataType();
-    if (static_cast<op::DataType>(additionalDtype) == srcDtype) {
-        C0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
-    } else {
-        C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
-    }
+    int64_t C0 = GetC0ByAdditionalDtype(srcTensor, additionalDtype);
     auto viewShape = srcTensor->GetViewShape();
     int64_t N = viewShape.GetDim(0);
     int64_t H = viewShape.GetDim(1);
@@ -765,12 +764,9 @@ aclnnStatus CalcNHWCToNC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int a
     int64_t C = viewShape.GetDim(3);
     int64_t C1 = CeilDiv(C, C0);
 
-    *dstShapeSize = DIMS_FIVE; // 5HD
-    try {
-        *dstShape = new int64_t[5]{N, C1, H, W, C0};
-    } catch (...) {
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for NC1HWC0");
-        return ACLNN_ERR_RUNTIME_ERROR;
+    aclnnStatus ret = AllocDstShape(dstShape, dstShapeSize, {N, C1, H, W, C0}, "NC1HWC0"); // 5HD
+    if (ret != ACLNN_SUCCESS) {
+        return ret;
     }
     *actualFormat = op::Format::FORMAT_NC1HWC0;
     return ACLNN_SUCCESS;
@@ -779,14 +775,8 @@ aclnnStatus CalcNHWCToNC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int a
 aclnnStatus CalcNCHWToFRACTALZ(const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape,
                                uint64_t* dstShapeSize, int* actualFormat)
 {
-    int64_t C0 = C0_SIZE;
+    int64_t C0 = GetC0ByAdditionalDtype(srcTensor, additionalDtype);
     int64_t N0 = N0_SIZE; // 私有格式的分形要求
-    DataType srcDtype = srcTensor->GetDataType();
-    if (static_cast<op::DataType>(additionalDtype) == srcDtype) {
-        C0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
-    } else {
-        C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
-    }
     auto viewShape = srcTensor->GetViewShape();
     int64_t N = viewShape.GetDim(0);
     int64_t C = viewShape.GetDim(1);
@@ -795,12 +785,9 @@ aclnnStatus CalcNCHWToFRACTALZ(const aclTensor* srcTensor, [[maybe_unused]] int 
     int64_t C1 = CeilDiv(C, C0);
     int64_t N1 = CeilDiv(N, N0);
 
-    *dstShapeSize = DIMS_FOUR; // FRACTAL_Z
-    try {
-        *dstShape = new int64_t[4]{C1 * H * W, N1, N0, C0};
-    } catch (...) {
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for FRACTAL_Z");
-        return ACLNN_ERR_RUNTIME_ERROR;
+    aclnnStatus ret = AllocDstShape(dstShape, dstShapeSize, {C1 * H * W, N1, N0, C0}, "FRACTAL_Z"); // FRACTAL_Z
+    if (ret != ACLNN_SUCCESS) {
+        return ret;
     }
     *actualFormat = op::Format::FORMAT_FRACTAL_Z;
     return ACLNN_SUCCESS;
@@ -809,14 +796,8 @@ aclnnStatus CalcNCHWToFRACTALZ(const aclTensor* srcTensor, [[maybe_unused]] int 
 aclnnStatus CalcHWCNToFRACTALZ(const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape,
                                uint64_t* dstShapeSize, int* actualFormat)
 {
-    int64_t C0 = C0_SIZE;
+    int64_t C0 = GetC0ByAdditionalDtype(srcTensor, additionalDtype);
     int64_t N0 = N0_SIZE; // 私有格式的分形要求
-    DataType srcDtype = srcTensor->GetDataType();
-    if (static_cast<op::DataType>(additionalDtype) == srcDtype) {
-        C0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
-    } else {
-        C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
-    }
     auto viewShape = srcTensor->GetViewShape();
     int64_t H = viewShape.GetDim(0);
     int64_t W = viewShape.GetDim(1);
@@ -824,12 +805,10 @@ aclnnStatus CalcHWCNToFRACTALZ(const aclTensor* srcTensor, [[maybe_unused]] int 
     int64_t N = viewShape.GetDim(3);
     int64_t C1 = CeilDiv(C, C0);
     int64_t N1 = CeilDiv(N, N0);
-    *dstShapeSize = DIMS_FOUR; // FRACTAL_Z
-    try {
-        *dstShape = new int64_t[4]{C1 * H * W, N1, N0, C0};
-    } catch (...) {
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for FRACTAL_Z");
-        return ACLNN_ERR_RUNTIME_ERROR;
+
+    aclnnStatus ret = AllocDstShape(dstShape, dstShapeSize, {C1 * H * W, N1, N0, C0}, "FRACTAL_Z"); // FRACTAL_Z
+    if (ret != ACLNN_SUCCESS) {
+        return ret;
     }
     *actualFormat = op::Format::FORMAT_FRACTAL_Z;
     return ACLNN_SUCCESS;
@@ -838,13 +817,7 @@ aclnnStatus CalcHWCNToFRACTALZ(const aclTensor* srcTensor, [[maybe_unused]] int 
 aclnnStatus CalcNCDHWToFZ3D(const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape,
                             uint64_t* dstShapeSize, int* actualFormat)
 {
-    int64_t C0 = C0_SIZE;
-    DataType srcDtype = srcTensor->GetDataType();
-    if (static_cast<op::DataType>(additionalDtype) == srcDtype) {
-        C0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
-    } else {
-        C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
-    }
+    int64_t C0 = GetC0ByAdditionalDtype(srcTensor, additionalDtype);
     auto viewShape = srcTensor->GetViewShape();
     int64_t N = viewShape.GetDim(0);
     int64_t C = viewShape.GetDim(1);
@@ -855,12 +828,9 @@ aclnnStatus CalcNCDHWToFZ3D(const aclTensor* srcTensor, [[maybe_unused]] int add
     int64_t C1 = CeilDiv(C, C0);
     int64_t N1 = CeilDiv(N, N0);
 
-    *dstShapeSize = DIMS_FOUR; // FZ3D
-    try {
-        *dstShape = new int64_t[4]{D * C1 * H * W, N1, N0, C0};
-    } catch (...) {
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for FZ3D");
-        return ACLNN_ERR_RUNTIME_ERROR;
+    aclnnStatus ret = AllocDstShape(dstShape, dstShapeSize, {D * C1 * H * W, N1, N0, C0}, "FZ3D"); // FZ3D
+    if (ret != ACLNN_SUCCESS) {
+        return ret;
     }
     *actualFormat = op::Format::FORMAT_FRACTAL_Z_3D;
     return ACLNN_SUCCESS;
@@ -869,14 +839,8 @@ aclnnStatus CalcNCDHWToFZ3D(const aclTensor* srcTensor, [[maybe_unused]] int add
 aclnnStatus CalcDHWCNToFZ3D(const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape,
                             uint64_t* dstShapeSize, int* actualFormat)
 {
-    int64_t C0 = C0_SIZE;
+    int64_t C0 = GetC0ByAdditionalDtype(srcTensor, additionalDtype);
     int64_t N0 = N0_SIZE; // 私有格式的分形要求
-    DataType srcDtype = srcTensor->GetDataType();
-    if (static_cast<op::DataType>(additionalDtype) == srcDtype) {
-        C0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
-    } else {
-        C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
-    }
     auto viewShape = srcTensor->GetViewShape();
     int64_t D = viewShape.GetDim(0);
     int64_t H = viewShape.GetDim(1);
@@ -886,12 +850,9 @@ aclnnStatus CalcDHWCNToFZ3D(const aclTensor* srcTensor, [[maybe_unused]] int add
     int64_t C1 = CeilDiv(C, C0);
     int64_t N1 = CeilDiv(N, N0);
 
-    *dstShapeSize = DIMS_FOUR; // FZ3D
-    try {
-        *dstShape = new int64_t[4]{D * C1 * H * W, N1, N0, C0};
-    } catch (...) {
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for FZ3D");
-        return ACLNN_ERR_RUNTIME_ERROR;
+    aclnnStatus ret = AllocDstShape(dstShape, dstShapeSize, {D * C1 * H * W, N1, N0, C0}, "FZ3D"); // FZ3D
+    if (ret != ACLNN_SUCCESS) {
+        return ret;
     }
     *actualFormat = op::Format::FORMAT_FRACTAL_Z_3D;
     return ACLNN_SUCCESS;
@@ -907,12 +868,9 @@ aclnnStatus CalcToNCDHW(const aclTensor* srcTensor, [[maybe_unused]] int additio
     int64_t H = viewShape.GetDim(3);
     int64_t W = viewShape.GetDim(4);
 
-    *dstShapeSize = DIMS_FIVE; // 5HD
-    try {
-        *dstShape = new int64_t[5]{N, C, D, H, W};
-    } catch (...) {
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for NCDHW");
-        return ACLNN_ERR_RUNTIME_ERROR;
+    aclnnStatus ret = AllocDstShape(dstShape, dstShapeSize, {N, C, D, H, W}, "NCDHW"); // 5HD
+    if (ret != ACLNN_SUCCESS) {
+        return ret;
     }
     *actualFormat = op::Format::FORMAT_NCDHW;
     return ACLNN_SUCCESS;
@@ -927,12 +885,9 @@ aclnnStatus CalcToNCHW(const aclTensor* srcTensor, [[maybe_unused]] int addition
     int64_t H = viewShape.GetDim(2);
     int64_t W = viewShape.GetDim(3);
 
-    *dstShapeSize = DIMS_FOUR; // NCHW
-    try {
-        *dstShape = new int64_t[4]{N, C, H, W};
-    } catch (...) {
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for NCHW");
-        return ACLNN_ERR_RUNTIME_ERROR;
+    aclnnStatus ret = AllocDstShape(dstShape, dstShapeSize, {N, C, H, W}, "NCHW"); // NCHW
+    if (ret != ACLNN_SUCCESS) {
+        return ret;
     }
     *actualFormat = op::Format::FORMAT_NCHW;
     return ACLNN_SUCCESS;
@@ -947,12 +902,9 @@ aclnnStatus CalcToNHWC(const aclTensor* srcTensor, [[maybe_unused]] int addition
     int64_t W = viewShape.GetDim(2);
     int64_t C = viewShape.GetDim(3);
 
-    *dstShapeSize = DIMS_FOUR; // NHWC
-    try {
-        *dstShape = new int64_t[4]{N, C, H, W};
-    } catch (...) {
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for NHWC");
-        return ACLNN_ERR_RUNTIME_ERROR;
+    aclnnStatus ret = AllocDstShape(dstShape, dstShapeSize, {N, C, H, W}, "NHWC"); // NHWC
+    if (ret != ACLNN_SUCCESS) {
+        return ret;
     }
     *actualFormat = op::Format::FORMAT_NHWC;
     return ACLNN_SUCCESS;
@@ -967,12 +919,9 @@ aclnnStatus CalcToHWCN(const aclTensor* srcTensor, [[maybe_unused]] int addition
     int64_t C = viewShape.GetDim(2);
     int64_t N = viewShape.GetDim(3);
 
-    *dstShapeSize = DIMS_FOUR; // HWCN
-    try {
-        *dstShape = new int64_t[4]{H, W, C, N};
-    } catch (...) {
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for HWCN");
-        return ACLNN_ERR_RUNTIME_ERROR;
+    aclnnStatus ret = AllocDstShape(dstShape, dstShapeSize, {H, W, C, N}, "HWCN"); // HWCN
+    if (ret != ACLNN_SUCCESS) {
+        return ret;
     }
     *actualFormat = op::Format::FORMAT_HWCN;
     return ACLNN_SUCCESS;
@@ -988,12 +937,9 @@ aclnnStatus CalcToDHWCN(const aclTensor* srcTensor, [[maybe_unused]] int additio
     int64_t C = viewShape.GetDim(3);
     int64_t N = viewShape.GetDim(4);
 
-    *dstShapeSize = DIMS_FIVE; // DHWCN
-    try {
-        *dstShape = new int64_t[5]{D, H, W, C, N};
-    } catch (...) {
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for DHWCN");
-        return ACLNN_ERR_RUNTIME_ERROR;
+    aclnnStatus ret = AllocDstShape(dstShape, dstShapeSize, {D, H, W, C, N}, "DHWCN"); // DHWCN
+    if (ret != ACLNN_SUCCESS) {
+        return ret;
     }
     *actualFormat = op::Format::FORMAT_DHWCN;
     return ACLNN_SUCCESS;
@@ -1009,12 +955,9 @@ aclnnStatus CalcToNDHWC(const aclTensor* srcTensor, [[maybe_unused]] int additio
     int64_t W = viewShape.GetDim(3);
     int64_t C = viewShape.GetDim(4);
 
-    *dstShapeSize = DIMS_FIVE; // NDHWC
-    try {
-        *dstShape = new int64_t[5]{N, D, H, W, C};
-    } catch (...) {
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for NDHWC");
-        return ACLNN_ERR_RUNTIME_ERROR;
+    aclnnStatus ret = AllocDstShape(dstShape, dstShapeSize, {N, D, H, W, C}, "NDHWC"); // NDHWC
+    if (ret != ACLNN_SUCCESS) {
+        return ret;
     }
     *actualFormat = op::Format::FORMAT_NDHWC;
     return ACLNN_SUCCESS;

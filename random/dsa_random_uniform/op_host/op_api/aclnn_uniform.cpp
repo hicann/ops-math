@@ -7,32 +7,15 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#include "acl/acl_rt.h"
 #include "aclnn_uniform.h"
 #include "random/stateless_random_uniform_v2/op_api/stateless_random_uniform_v2.h"
 #include "random/stateless_random_uniform_v3/op_api/stateless_random_uniform_v3.h"
 #include "random/stateless_uniform/op_api/stateless_uniform.h"
 #include "dsa_random_uniform.h"
-#include "aclnn_kernels/cast.h"
 #include "math/muls/op_api/muls.h"
-#include "math/add/op_api/add.h"
-#include "../../../../conversion/concat_d/op_api/concat_d.h"
 #include "../../../../conversion/pack/op_api/pack.h"
-#include "aclnn_kernels/contiguous.h"
-#include "aclnn_kernels/common/op_error_check.h"
-#include "op_api/aclnn_check.h"
 #include "op_api/op_api_def.h"
-#include "opdev/platform.h"
-#include "aclnn/aclnn_base.h"
-#include "opdev/common_types.h"
-#include "opdev/shape_utils.h"
-#include "opdev/data_type_utils.h"
-#include "opdev/format_utils.h"
-#include "opdev/op_dfx.h"
-#include "opdev/op_executor.h"
-#include "opdev/op_log.h"
-#include "opdev/tensor_view_utils.h"
-#include "../../../random_common/op_api/aclnn_set_pytorch_random.h"
+#include "../../../random_common/op_api/random_common_utils.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -124,25 +107,39 @@ static aclScalar* CreateScalar(float input, op::DataType dtype, aclOpExecutor* e
     }
 }
 
-static aclTensor* ProcessOffsetTensor(const aclTensor* offsetTensor, int64_t offset, aclOpExecutor* executor)
+// 公共处理：根据 dtype 创建 from/to 标量（FLOAT16/BF16 需按目标精度创建）
+static aclnnStatus CreateFromToScalars(const aclTensor* selfContiguous, double from, double to, aclOpExecutor* executor,
+                                       aclScalar*& fromScalar, aclScalar*& toScalar)
 {
-    FVector<int64_t> tmpVector = {static_cast<int64_t>(offset)};
-    auto offsetTmpTensor = executor->ConvertToTensor(tmpVector.data(), tmpVector.size(), offsetTensor->GetDataType());
-    CHECK_RET(offsetTmpTensor != nullptr, nullptr);
-    auto offsetAddOut = l0op::Add(offsetTensor, offsetTmpTensor, executor);
-    CHECK_RET(offsetAddOut != nullptr, nullptr);
-    // concat
-    FVector<int64_t> zeroVector = {static_cast<int64_t>(0)};
-    auto zeroTensor = executor->ConvertToTensor(zeroVector.data(), zeroVector.size(), offsetTensor->GetDataType());
-    CHECK_RET(zeroTensor != nullptr, nullptr);
-    FVector<const aclTensor*> tensorListOnce;
-    tensorListOnce.emplace_back(zeroTensor);
-    tensorListOnce.emplace_back(offsetAddOut);
-    auto tensorList = executor->AllocTensorList(tensorListOnce.data(), tensorListOnce.size());
-    auto concatTensor = l0op::ConcatD(tensorList, 0, executor);
-    CHECK_RET(concatTensor != nullptr, nullptr);
+    op::DataType dtype = selfContiguous->GetDataType();
+    fromScalar = nullptr;
+    toScalar = nullptr;
+    if (dtype == op::DataType::DT_FLOAT16 || dtype == op::DataType::DT_BF16) {
+        fromScalar = CreateScalar(static_cast<float>(from), selfContiguous->GetDataType(), executor);
+        toScalar = CreateScalar(static_cast<float>(to), selfContiguous->GetDataType(), executor);
+    } else {
+        fromScalar = executor->AllocScalar(static_cast<float>(from));
+        toScalar = executor->AllocScalar(static_cast<float>(to));
+    }
+    CHECK_RET(fromScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    CHECK_RET(toScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    return ACLNN_SUCCESS;
+}
 
-    return concatTensor;
+// 后置公共处理：将计算结果转换成输出 self 的数据类型并拷贝到输出 self 上，获取 workspace 大小
+static aclnnStatus PostProcessInplaceUniform(aclTensor* out, const aclTensor* computeOut, aclOpExecutor* executor,
+                                             uint64_t* workspaceSize)
+{
+    CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    auto castOut = l0op::Cast(computeOut, out->GetDataType(), executor);
+    CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    auto viewCopyResult = l0op::ViewCopy(castOut, out, executor);
+    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    *workspaceSize = executor->GetWorkspaceSize();
+    return ACLNN_SUCCESS;
 }
 
 // DT_DOUBLE 路径：StatelessRandomUniformV2 + Muls(to-from) + Add(from)
@@ -257,31 +254,17 @@ aclnnStatus aclnnInplaceUniformGetWorkspaceSize(const aclTensor* selfRef, double
         auto inputShape = op::ToShapeVector(selfContiguous->GetViewShape());
         auto inputShapeArray = uniqueExecutor.get()->AllocIntArray(inputShape.data(), inputShape.size());
         CHECK_RET(inputShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        op::DataType dtype = selfContiguous->GetDataType();
         aclScalar* fromScalar = nullptr;
         aclScalar* toScalar = nullptr;
-        if (dtype == op::DataType::DT_FLOAT16 || dtype == op::DataType::DT_BF16) {
-            fromScalar = CreateScalar(static_cast<float>(from), selfContiguous->GetDataType(), uniqueExecutor.get());
-            toScalar = CreateScalar(static_cast<float>(to), selfContiguous->GetDataType(), uniqueExecutor.get());
-        } else {
-            fromScalar = uniqueExecutor.get()->AllocScalar(static_cast<float>(from));
-            toScalar = uniqueExecutor.get()->AllocScalar(static_cast<float>(to));
-        }
-        CHECK_RET(fromScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        CHECK_RET(toScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        ret = CreateFromToScalars(selfContiguous, from, to, uniqueExecutor.get(), fromScalar, toScalar);
+        CHECK_RET(ret == ACLNN_SUCCESS, ret);
         computeOut = l0op::DSARandomUniform(inputShapeArray, seed, offset, fromScalar, toScalar, uniqueExecutor.get());
     } else {
         computeOut = uniformDavidPath(selfContiguous, seed, offset, from, to, uniqueExecutor.get());
     }
-    CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    ret = PostProcessInplaceUniform(out, computeOut, uniqueExecutor.get(), workspaceSize);
+    CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
-    auto castOut = l0op::Cast(computeOut, out->GetDataType(), uniqueExecutor.get());
-    CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
-    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    *workspaceSize = uniqueExecutor->GetWorkspaceSize();
     uniqueExecutor.ReleaseTo(executor);
 
     return ACLNN_SUCCESS;
@@ -314,18 +297,10 @@ aclnnStatus aclnnInplaceUniformTensorGetWorkspaceSize(const aclTensor* selfRef, 
         auto inputShape = op::ToShapeVector(selfContiguous->GetViewShape());
         auto inputShapeArray = uniqueExecutor.get()->AllocIntArray(inputShape.data(), inputShape.size());
         CHECK_RET(inputShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        op::DataType dtype = selfContiguous->GetDataType();
         aclScalar* fromScalar = nullptr;
         aclScalar* toScalar = nullptr;
-        if (dtype == op::DataType::DT_FLOAT16 || dtype == op::DataType::DT_BF16) {
-            fromScalar = CreateScalar(static_cast<float>(from), selfContiguous->GetDataType(), uniqueExecutor.get());
-            toScalar = CreateScalar(static_cast<float>(to), selfContiguous->GetDataType(), uniqueExecutor.get());
-        } else {
-            fromScalar = uniqueExecutor.get()->AllocScalar(static_cast<float>(from));
-            toScalar = uniqueExecutor.get()->AllocScalar(static_cast<float>(to));
-        }
-        CHECK_RET(fromScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        CHECK_RET(toScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        ret = CreateFromToScalars(selfContiguous, from, to, uniqueExecutor.get(), fromScalar, toScalar);
+        CHECK_RET(ret == ACLNN_SUCCESS, ret);
         auto concatTensor = ProcessOffsetTensor(offsetTensor, offset, uniqueExecutor.get());
         CHECK_RET(concatTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
         computeOut = l0op::DSARandomUniformTensor(inputShapeArray, seedTensor, concatTensor, fromScalar, toScalar,
@@ -336,15 +311,9 @@ aclnnStatus aclnnInplaceUniformTensorGetWorkspaceSize(const aclTensor* selfRef, 
         computeOut = uniformTensorDavidPath(selfContiguous, seedTensor, offsetTensor, offset, from, to,
                                             uniqueExecutor.get());
     }
-    CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    ret = PostProcessInplaceUniform(out, computeOut, uniqueExecutor.get(), workspaceSize);
+    CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
-    auto castOut = l0op::Cast(computeOut, out->GetDataType(), uniqueExecutor.get());
-    CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
-    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    *workspaceSize = uniqueExecutor->GetWorkspaceSize();
     uniqueExecutor.ReleaseTo(executor);
 
     return ACLNN_SUCCESS;
