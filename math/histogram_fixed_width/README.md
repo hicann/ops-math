@@ -9,10 +9,11 @@
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> | √　　　　|
 | <term>Atlas 200I/500 A2 推理产品</term>　　　　　　　　　| ×　　　　|
 | <term>Atlas 推理系列产品</term>　　　　　　　　　　　　　| √　　　　|
+| <term>Atlas 训练系列产品</term>                      |    ×     |
 
 ## 功能说明
 
-- 算子功能：计算张量直方图。与TensorFlow的`histogram_fixed_width`算子兼容。
+- 算子功能：计算张量直方图。与TensorFlow的histogram_fixed_width算子兼容。
 - 计算公式：以range=[min,max]作为统计上下限，在min和max之间划出等宽的数量为nbins的区间，统计张量x中元素在各个区间的数量。小于min的元素会被统计到第一个区间，大于max的元素会被统计到最后一个区间。
 
 ## 参数说明
@@ -26,7 +27,7 @@
 
 ## 约束说明
 
-无
+输入张量range的max必须大于min，否则报错。
 
 ## 调用说明
 

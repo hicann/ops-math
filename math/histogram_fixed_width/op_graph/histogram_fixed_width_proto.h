@@ -29,9 +29,6 @@ namespace ge {
 *@par Outputs:
 * y: A 1-D Tensor of type int32 with shape [nbins], the histogram result. \n
 
-*@par Constraints:
-* If min == max, the operator will adjust min to min + 1 to trigger HistogramV2 error. \n
-
 *@par Third-party framework compatibility
 * Compatible with the TensorFlow operator HistogramFixedWidth.
 */
