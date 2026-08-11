@@ -239,8 +239,7 @@ aclnnStatus aclnnCumsum(
 
 ## 约束说明
 
-- 确定性计算：
-  - aclnnCumsum默认确定性实现。
+- 确定性计算：aclnnCumsum默认确定性实现。
 
 - 由于aclnnCumsum遇到输入数据与输出数据类型不一致的情况时，会在计算前调用Cast将输入数据类型转换为输出数据类型，因此在这种情况下，需要遵循Cast算子约束，具体参见[aclnnCast](../../../math/cast/docs/aclnnCast.md)。
 

@@ -35,16 +35,32 @@ $$
 
 每个算子分为[两段式接口](./../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnDigammaGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnDigamma”接口执行计算。
 
-- `aclnnStatus aclnnDigammaGetWorkspaceSize(const aclTensor *self, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnDigamma(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnDigammaGetWorkspaceSize(
+  const aclTensor *self,
+  aclTensor       *out,
+  uint64_t        *workspaceSize,
+  aclOpExecutor  **executor)
+```
+
+```Cpp
+aclnnStatus aclnnDigamma(
+  void          *workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor *executor,
+  aclrtStream    stream)
+```
 
 ## aclnnDigammaGetWorkspaceSize
 
 - **参数说明：**
-  - self(aclTensor*，计算输入): Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE，支持[非连续的Tensor](./../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](./../../../docs/zh/context/data_format.md)支持ND。
-  - out(aclTensor\*，计算输出): Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE，支持[非连续的Tensor](./../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](./../../../docs/zh/context/data_format.md)支持ND。
-  - workspaceSize(uint64_t\*，出参): 返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor\*\*，出参): 返回op执行器，包含了算子计算流程。
+
+  | 参数名 | 输入/输出 | 描述 |
+  | --- | --- | --- |
+  | self | 输入 | Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE，支持[非连续的Tensor](./../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](./../../../docs/zh/context/data_format.md)支持ND。 |
+  | out | 输出 | Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE，支持[非连续的Tensor](./../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](./../../../docs/zh/context/data_format.md)支持ND。 |
+  | workspaceSize | 输出 | 返回需要在Device侧申请的workspace大小。 |
+  | executor | 输出 | 返回op执行器，包含了算子计算流程。 |
 
 - **返回值：**
 
@@ -61,10 +77,13 @@ $$
 ## aclnnDigamma
 
 - **参数说明：**
-  - workspace(void \*，入参): 在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t，入参): 在Device侧申请的workspace大小，由第一段接口aclnnDigammaGetWorkspaceSize获取。
-  - executor(aclOpExecutor \*，入参): op执行器，包含了算子计算流程。
-  - stream(aclrtStream，入参): 指定执行任务的Stream。
+
+  | 参数名 | 输入/输出 | 描述 |
+  | --- | --- | --- |
+  | workspace | 输入 | 在Device侧申请的workspace内存地址。 |
+  | workspaceSize | 输入 | 在Device侧申请的workspace大小，由第一段接口aclnnDigammaGetWorkspaceSize获取。 |
+  | executor | 输入 | op执行器，包含了算子计算流程。 |
+  | stream | 输入 | 指定执行任务的Stream。 |
 
 - **返回值：**
 

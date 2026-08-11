@@ -14,13 +14,13 @@
 ## 功能说明
 
 - 算子功能：对输入张量 `x` 沿 `axis` 指定维度计算累积 log-sum-exp，并将结果保存到输出张量 `y` 中。
-- 计算公式：设 `i` 是 `axis` 维度上的下标，`S_i` 是参与第 `i` 个输出元素计算的前缀或后缀下标集合，则：
+- 计算公式：设 $i$ 是 `axis` 维度上的下标，$S_i$ 是参与第 $i$ 个输出元素计算的前缀或后缀下标集合，则：
 
 $$
 y_i = \log \sum_{j \in S_i} e^{x_j}
 $$
 
-当 `exclusive` 为 `false` 时，`S_i` 包含当前位置；当 `exclusive` 为 `true` 时，`S_i` 不包含当前位置。当 `reverse` 为 `false` 时按下标递增方向累积；当 `reverse` 为 `true` 时按下标递减方向累积。
+当 `exclusive` 为 `false` 时，$S_i$ 包含当前位置；当 `exclusive` 为 `true` 时，$S_i$ 不包含当前位置。当 `reverse` 为 `false` 时按下标递增方向累积；当 `reverse` 为 `true` 时按下标递减方向累积。
 
 ## 参数说明
 

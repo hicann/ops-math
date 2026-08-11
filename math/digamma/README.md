@@ -42,14 +42,14 @@ $$
     <tr>
       <td>x</td>
       <td>输入</td>
-      <td>公式中的输入张量x1。</td>
+      <td>公式中的输入张量x<sub>i</sub>。</td>
       <td>FLOAT、FLOAT16、DOUBLE</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
-      <td>公式中的输出张量y。</td>
+      <td>公式中的输出张量y<sub>i</sub>。</td>
       <td>FLOAT、FLOAT16、DOUBLE</td>
       <td>ND</td>
     </tr>
@@ -63,4 +63,4 @@ $$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                             |
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_digamma](./examples/test_aclnn_digamma.cpp) | 通过[aclnnDigamma](./docs/aclnnDigamma.md)接口方式调用digamma算子。|  
+| aclnn调用 | [test_aclnn_digamma](./examples/test_aclnn_digamma.cpp) | 通过[aclnnDigamma](./docs/aclnnDigamma.md)接口方式调用digamma算子。|
