@@ -95,7 +95,7 @@ aclnnStatus aclnnRoll(
       <td>输入</td>
       <td>输入的原始数据。</td>
       <td>-</td>
-      <td>BFLOAT16、FLOAT16、FLOAT32、INT8、UINT8、INT32、INT64、UINT32、BOOL、INT16</td>
+      <td>BFLOAT16、FLOAT16、FLOAT32、INT8、UINT8、INT32、INT64、UINT32、BOOL、INT16、COMPLEX64</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -125,7 +125,7 @@ aclnnStatus aclnnRoll(
       <td>输出</td>
       <td>滚动处理后的输出数据。</td>
       <td>-</td>
-      <td>BFLOAT16、FLOAT16、FLOAT32、INT8、UINT8、INT32、INT64、UINT32、BOOL、INT16</td>
+      <td>BFLOAT16、FLOAT16、FLOAT32、INT8、UINT8、INT32、INT64、UINT32、BOOL、INT16、COMPLEX64</td>
       <td>ND</td>
       <td>0-8</td>
       <td>-</td>
@@ -151,6 +151,19 @@ aclnnStatus aclnnRoll(
       <td>-</td>
     </tr>
   </tbody></table>
+
+  <!-- npu="A3" id7 -->
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型不支持COMPLEX64。
+  <!-- end id7 -->
+  <!-- npu="910b" id8 -->
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型不支持COMPLEX64。
+  <!-- end id8 -->
+  <!-- npu="310p" id9 -->
+  - <term>Atlas 推理系列产品</term>：数据类型不支持COMPLEX64。
+  <!-- end id9 -->
+  <!-- npu="910" id10 -->
+  - <term>Atlas 训练系列产品</term>：数据类型不支持COMPLEX64。
+  <!-- end id10 -->
 
 - **返回值**
 

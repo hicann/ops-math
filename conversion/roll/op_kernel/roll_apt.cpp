@@ -30,6 +30,9 @@
 
 using namespace Roll;
 
+// complex64(8字节)与int64等宽，roll为纯数据搬运，统一按int64处理
+using KernelT = std::conditional_t<sizeof(DTYPE_X) == sizeof(int64_t), int64_t, DTYPE_X>;
+
 __global__ __aicore__ void roll(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
@@ -37,25 +40,24 @@ __global__ __aicore__ void roll(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR
     GET_TILING_DATA_WITH_STRUCT(RollTilingData, tilingData, tiling);
     TPipe pipe;
     if (TILING_KEY_IS(TILING_KEY_FOR_SIMD_SMALL_TAIL_SHIFTW)) {
-        RollGatherSimd<DTYPE_X, true> rollSimd(&pipe, &tilingData);
+        RollGatherSimd<KernelT, true> rollSimd(&pipe, &tilingData);
         rollSimd.Init(x, y, workspace);
         rollSimd.Process();
     } else if (TILING_KEY_IS(TILING_KEY_FOR_SIMD_SMALL_TAIL_NOT_SHIFTW)) {
-        RollGatherSimd<DTYPE_X, false> rollSimd(&pipe, &tilingData);
+        RollGatherSimd<KernelT, false> rollSimd(&pipe, &tilingData);
         rollSimd.Init(x, y, workspace);
         rollSimd.Process();
     } else if (TILING_KEY_IS(TILING_KEY_FOR_SIMD_BEFOR_H)) {
-        RollUnaliegnedSimd<DTYPE_X> rollSimd(&pipe, &tilingData);
+        RollUnaliegnedSimd<KernelT> rollSimd(&pipe, &tilingData);
         rollSimd.Init(x, y, workspace);
         rollSimd.Process();
     } else if (TILING_KEY_IS(TILING_KEY_FOR_SIMD_AFTER_H_ALIGN)) {
-        RollHSplitSimd<DTYPE_X> rollSimd(&pipe, &tilingData);
+        RollHSplitSimd<KernelT> rollSimd(&pipe, &tilingData);
         rollSimd.Init(x, y, workspace);
         rollSimd.Process();
-    } else if (
-        TILING_KEY_IS(TILING_KEY_FOR_SIMD_AFTER_H_UNALIGN) || TILING_KEY_IS(TILING_KEY_FOR_SIMD_SPLIT_W) ||
-        TILING_KEY_IS(TILING_KEY_FOR_SIMD_ONE_DIM)) {
-        RollSimd<DTYPE_X> rollSimd(&pipe, &tilingData);
+    } else if (TILING_KEY_IS(TILING_KEY_FOR_SIMD_AFTER_H_UNALIGN) || TILING_KEY_IS(TILING_KEY_FOR_SIMD_SPLIT_W) ||
+               TILING_KEY_IS(TILING_KEY_FOR_SIMD_ONE_DIM)) {
+        RollSimd<KernelT> rollSimd(&pipe, &tilingData);
         rollSimd.Init(x, y, workspace);
         rollSimd.Process();
     } else if (TILING_KEY_IS(TILING_KEY_FOR_SIMD_NONE_TENSOR)) {

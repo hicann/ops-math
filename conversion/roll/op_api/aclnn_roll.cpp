@@ -39,28 +39,35 @@ static const std::initializer_list<op::DataType> ASCEND910_DTYPE_DTYPE_SUPPORT_L
     op::DataType::DT_INT32, op::DataType::DT_UINT32,  op::DataType::DT_BOOL, op::DataType::DT_INT64};
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT8,
-    op::DataType::DT_UINT8, op::DataType::DT_INT32,   op::DataType::DT_UINT32,
-    op::DataType::DT_BOOL,  op::DataType::DT_INT64,   op::DataType::DT_BF16, op::DataType::DT_INT16};
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT8, op::DataType::DT_UINT8,
+    op::DataType::DT_INT32, op::DataType::DT_UINT32,  op::DataType::DT_BOOL, op::DataType::DT_INT64,
+    op::DataType::DT_BF16,  op::DataType::DT_INT16};
+
+static const std::initializer_list<op::DataType> ASCEND950_DTYPE_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT8,     op::DataType::DT_UINT8,
+    op::DataType::DT_INT32, op::DataType::DT_UINT32,  op::DataType::DT_BOOL,     op::DataType::DT_INT64,
+    op::DataType::DT_BF16,  op::DataType::DT_INT16,   op::DataType::DT_COMPLEX64};
 
 /* *
- * l1: ASCEND910B、ASCEND910_93 或者 ASCEND950 芯片，该算子支持的数据类型列表
+ * l1: ASCEND910B、ASCEND910_93 芯片，该算子支持的数据类型列表
  * l2: 其他芯片，该算子支持的数据类型列表
+ * 950(RegBase)在l1基础上额外支持complex64
  */
-static const std::initializer_list<DataType>& GetDtypeSupportListV1(
-    const std::initializer_list<op::DataType>& l1, const std::initializer_list<op::DataType>& l2)
+static const std::initializer_list<DataType>& GetDtypeSupportListV1(const std::initializer_list<op::DataType>& l1,
+                                                                    const std::initializer_list<op::DataType>& l2)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-        IsRegBase()) {
+    if (IsRegBase()) {
+        return ASCEND950_DTYPE_DTYPE_SUPPORT_LIST;
+    } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+               GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
         return l1;
     } else {
         return l2;
     }
 }
 
-static inline bool CheckNotNull(
-    const aclTensor* x, const aclIntArray* shifts, const aclIntArray* dims, const aclTensor* out)
+static inline bool CheckNotNull(const aclTensor* x, const aclIntArray* shifts, const aclIntArray* dims,
+                                const aclTensor* out)
 {
     OP_CHECK_NULL(x, return false);
     OP_CHECK_NULL(shifts, return false);
@@ -71,8 +78,8 @@ static inline bool CheckNotNull(
 
 static inline bool CheckDtypeValid(const aclTensor* x, const aclTensor* out)
 {
-    const auto& supportList =
-        GetDtypeSupportListV1(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST);
+    const auto& supportList = GetDtypeSupportListV1(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST,
+                                                    ASCEND910_DTYPE_DTYPE_SUPPORT_LIST);
     OP_CHECK_DTYPE_NOT_SUPPORT(x, supportList, return false);
     OP_CHECK_DTYPE_NOT_SUPPORT(out, supportList, return false);
     OP_CHECK_DTYPE_NOT_MATCH(x, out->GetDataType(), return false);
@@ -88,8 +95,8 @@ static inline bool CheckShape(const aclTensor* x, const aclTensor* out)
 static inline bool CheckArraySize(const aclIntArray* shifts, const aclIntArray* dims)
 {
     if (shifts->Size() != dims->Size() && dims->Size() != 0U) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "The size of shifts and dims should be the same when the size of dims is not 0.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "The size of shifts and dims should be the same when the size of dims is not 0.");
         return false;
     }
 
@@ -122,8 +129,8 @@ static inline bool CheckTensorDimSize(const aclTensor* x)
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* x, const aclIntArray* shifts, const aclIntArray* dims, const aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* x, const aclIntArray* shifts, const aclIntArray* dims,
+                               const aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(x, shifts, dims, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -189,14 +196,12 @@ static const aclTensor* roll_transpose(const aclTensor* self, int64_t axis, int6
 }
 
 // 处理0维tensor场景：dims必须为size 0, shifts必须为size 1。
-static aclnnStatus HandleDimZeroTensor(
-    const aclTensor* self, const aclIntArray* shifts, const aclIntArray* dims, const aclTensor* out,
-    aclOpExecutor* executor)
+static aclnnStatus HandleDimZeroTensor(const aclTensor* self, const aclIntArray* shifts, const aclIntArray* dims,
+                                       const aclTensor* out, aclOpExecutor* executor)
 {
     if (dims->Size() != 0 || shifts->Size() != 1) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "When tensor x has no dimensions, shifts should be size 1, dims should be size 0.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "When tensor x has no dimensions, shifts should be size 1, dims should be size 0.");
         return ACLNN_ERR_PARAM_INVALID;
     }
 
@@ -206,9 +211,8 @@ static aclnnStatus HandleDimZeroTensor(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnRollGetWorkspaceSize(
-    const aclTensor* x, const aclIntArray* shifts, const aclIntArray* dims, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnRollGetWorkspaceSize(const aclTensor* x, const aclIntArray* shifts, const aclIntArray* dims,
+                                      aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 

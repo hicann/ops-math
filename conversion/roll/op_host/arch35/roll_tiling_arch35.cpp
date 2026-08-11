@@ -42,8 +42,9 @@ constexpr uint64_t TILING_KEY_FOR_EMPTY_TENSOR = 60000;
 constexpr size_t RESERVED_WORKSPACE_SIZE = static_cast<size_t>(16 * 1024 * 1024);
 constexpr int64_t SIMT_DCACHE_SIZE = static_cast<int64_t>(64 * 1024);
 
-static const std::vector<ge::DataType> X_SUPPORT_DTYPE = {ge::DT_INT8,  ge::DT_UINT8,   ge::DT_INT32, ge::DT_UINT32,
-                                                          ge::DT_INT64, ge::DT_FLOAT16, ge::DT_BF16,  ge::DT_FLOAT};
+static const std::vector<ge::DataType> X_SUPPORT_DTYPE = {ge::DT_INT8,   ge::DT_UINT8, ge::DT_INT32,
+                                                          ge::DT_UINT32, ge::DT_INT64, ge::DT_FLOAT16,
+                                                          ge::DT_BF16,   ge::DT_FLOAT, ge::DT_COMPLEX64};
 
 inline static int64_t Mod(int64_t a, int64_t b)
 {
@@ -74,8 +75,8 @@ ge::graphStatus RollTilingClass::GetPlatformInfo()
     if (cacheLineSize_ == 0LL) {
         std::string valueMsg = "0";
         std::string reasonMsg = "Failed to get cacheLine size";
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "cacheLineSize",
-            valueMsg.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "cacheLineSize", valueMsg.c_str(),
+                                              reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     vectorSize_ = static_cast<int64_t>(Ops::Base::GetVRegSize(context_));
@@ -83,8 +84,8 @@ ge::graphStatus RollTilingClass::GetPlatformInfo()
     if (vectorSize_ == 0LL) {
         std::string valueMsg = "0";
         std::string reasonMsg = "Failed to get vector size";
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "vectorSize",
-            valueMsg.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "vectorSize", valueMsg.c_str(),
+                                              reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -117,8 +118,7 @@ ge::graphStatus RollTilingClass::CheckAndGetInputParam()
     if (xShape != yShape) {
         std::string shapeMsg = Ops::Base::ToString(xShape) + " and " + Ops::Base::ToString(yShape);
         std::string reasonMsg = "Input x shape should be equal to output y shape";
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context_->GetNodeName(), "x and y",
-            shapeMsg.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context_->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     dimNum_ = xShape.GetDimNum();
@@ -131,8 +131,7 @@ ge::graphStatus RollTilingClass::CheckAndGetInputParam()
     if (dimNum_ > MAX_DIM_NUM) {
         std::string dimMsg = std::to_string(dimNum_);
         std::string reasonMsg = "should be less than or equal to 8 dims";
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "x",
-            dimMsg.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "x", dimMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -159,8 +158,8 @@ ge::graphStatus RollTilingClass::CheckAttr()
         if (shiftsSize > 1) {
             std::string valueMsg = std::to_string(shiftsSize);
             std::string reasonMsg = "shifts size should be 1 when dims is empty";
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "shifts",
-                valueMsg.c_str(), reasonMsg.c_str());
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "shifts", valueMsg.c_str(),
+                                                  reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
         dimNum_ = 1;
@@ -171,8 +170,8 @@ ge::graphStatus RollTilingClass::CheckAttr()
         if (shiftsSize != dimsSize) {
             std::string valuesMsg = std::to_string(shiftsSize) + " and " + std::to_string(dimsSize);
             std::string reasonMsg = "the size of shifts should be equal to the size of dims";
-            OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context_->GetNodeName(), "shifts and dims",
-                valuesMsg.c_str(), reasonMsg.c_str());
+            OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context_->GetNodeName(), "shifts and dims", valuesMsg.c_str(),
+                                                   reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
         const int64_t* dimsData = reinterpret_cast<const int64_t*>(dimsListPtr_->GetData());
@@ -182,9 +181,8 @@ ge::graphStatus RollTilingClass::CheckAttr()
             if (dimData >= dimNum_ || dimData < -dimNum_) {
                 std::string valueMsg = std::to_string(dimData);
                 std::string correctMsg = "in range of [" + std::to_string(-dimNum_) + ", " +
-                    std::to_string(dimNum_ - 1) + "]";
-                OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "dims",
-                    valueMsg.c_str(), correctMsg.c_str());
+                                         std::to_string(dimNum_ - 1) + "]";
+                OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "dims", valueMsg.c_str(), correctMsg.c_str());
                 return ge::GRAPH_FAILED;
             }
             if (dimData < 0) {
@@ -193,7 +191,7 @@ ge::graphStatus RollTilingClass::CheckAttr()
             shifts_[dimData] = Mod(shifts_[dimData] + shiftData, shapes_[dimData]);
         }
     }
-    MergeAxes(shapes_, shifts_, dimNum_); // 合并连续的0轴
+    MergeAxes(shapes_, shifts_, dimNum_);      // 合并连续的0轴
     RemoveShapeOne(shapes_, shifts_, dimNum_); // 移除为1的shape
     strides_[dimNum_ - 1] = 1;
     for (int32_t i = dimNum_ - CONSTANT_TWO; i >= 0; --i) {
@@ -258,7 +256,7 @@ void RollTilingClass::MergeAxes(int64_t shape[], int64_t shifts[], int64_t& dimN
 
 void RollTilingClass::RemoveShapeOne(int64_t shape[], int64_t shifts[], int64_t& dimNum)
 {
-    if(dimNum <= 1) {
+    if (dimNum <= 1) {
         return;
     }
 
@@ -266,15 +264,15 @@ void RollTilingClass::RemoveShapeOne(int64_t shape[], int64_t shifts[], int64_t&
     int64_t new_shift[dimNum];
     int64_t new_size = 0;
 
-    for(int32_t i = 0; i < dimNum; ++i) {
-        if(shape[i] > 1) {
+    for (int32_t i = 0; i < dimNum; ++i) {
+        if (shape[i] > 1) {
             new_shape[new_size] = shape[i];
             new_shift[new_size] = shifts[i];
             new_size++;
         }
     }
 
-    for(int32_t i = 0; i < new_size; ++i) {
+    for (int32_t i = 0; i < new_size; ++i) {
         shape[i] = new_shape[i];
         shifts[i] = new_shift[i];
     }
@@ -405,8 +403,8 @@ void RollTilingClass::SplitUb(UbParam& ubparam, bool isTail)
     OP_LOGD(context_, "UbTailFactor is: %ld", ubparam.UbTailFactor);
 }
 
-void RollTilingClass::upDateParam(
-    int64_t index, int64_t srcOffset, int64_t blockCount, int64_t blockLen, int64_t srcStride, int64_t dstOffset)
+void RollTilingClass::upDateParam(int64_t index, int64_t srcOffset, int64_t blockCount, int64_t blockLen,
+                                  int64_t srcStride, int64_t dstOffset)
 {
     moveparam.srcOffset[index] = srcOffset;
     moveparam.blockCount[index] = blockCount;
@@ -516,10 +514,9 @@ ge::graphStatus RollTilingClass::DoOpTiling()
         tilingKey = TILING_KEY_FOR_SIMD_SPLIT_W;
         // 重新切核
         SplitCoreforSimd();
-    } else if (
-        (ubparam.UbSplitAxis == dimNum_ - 2 &&
-         ((shapes_[dimNum_ - 1] - shifts_[dimNum_ - 1]) * dtypeSize_ % ALIGN_BYTE == 0)) ||
-        (ubparam.UbSplitAxis == dimNum_ - 2 && (shifts_[dimNum_ - 1] == 0))) {
+    } else if ((ubparam.UbSplitAxis == dimNum_ - 2 &&
+                ((shapes_[dimNum_ - 1] - shifts_[dimNum_ - 1]) * dtypeSize_ % ALIGN_BYTE == 0)) ||
+               (ubparam.UbSplitAxis == dimNum_ - 2 && (shifts_[dimNum_ - 1] == 0))) {
         // 切到H轴且shift W对齐，dimNum_ - 2 表示H轴
         tilingKey = TILING_KEY_FOR_SIMD_AFTER_H_ALIGN;
     } else {
@@ -570,9 +567,8 @@ ge::graphStatus RollTilingClass::PostTiling()
     context_->SetTilingKey(GetTilingKey());
     if (tilingKey == TILING_KEY_FOR_EMPTY_TENSOR) {
         context_->SetBlockDim(needCoreNum_);
-    } else if (
-        tilingKey == TILING_KEY_FOR_SIMD_ONE_DIM || tilingKey == TILING_KEY_FOR_SIMD_SPLIT_W ||
-        tilingKey == TILING_KEY_FOR_SIMD_AFTER_H_UNALIGN) {
+    } else if (tilingKey == TILING_KEY_FOR_SIMD_ONE_DIM || tilingKey == TILING_KEY_FOR_SIMD_SPLIT_W ||
+               tilingKey == TILING_KEY_FOR_SIMD_AFTER_H_UNALIGN) {
         context_->SetBlockDim(needCoreNum_);
     } else {
         context_->SetBlockDim(blockCount_);
@@ -595,23 +591,21 @@ void RollTilingClass::PrintTiling() const
 
     OP_LOGD(context_, "Roll tilingKey is %ld", tilingKey);
 
-    OP_LOGD(
-        context_,
-        "Roll tilingData: blockCount = %ld, blockFactor = %ld, blockTailFactor = %ld, "
-        "blockSplitAxis = %ld",
-        tilingData_->blockCount, tilingData_->blockFactor, tilingData_->blockTailFactor, tilingData_->blockSplitAxis);
+    OP_LOGD(context_,
+            "Roll tilingData: blockCount = %ld, blockFactor = %ld, blockTailFactor = %ld, "
+            "blockSplitAxis = %ld",
+            tilingData_->blockCount, tilingData_->blockFactor, tilingData_->blockTailFactor,
+            tilingData_->blockSplitAxis);
 
-    OP_LOGD(
-        context_,
-        "Roll tilingData->mainCoreubparam: UbSplitAxis = %ld, UbCount = %ld, UbFactor = %ld, UbTailFactor = %ld",
-        tilingData_->mainCoreUbParam.UbSplitAxis, tilingData_->mainCoreUbParam.UbCount,
-        tilingData_->mainCoreUbParam.UbFactor, tilingData_->mainCoreUbParam.UbTailFactor);
+    OP_LOGD(context_,
+            "Roll tilingData->mainCoreubparam: UbSplitAxis = %ld, UbCount = %ld, UbFactor = %ld, UbTailFactor = %ld",
+            tilingData_->mainCoreUbParam.UbSplitAxis, tilingData_->mainCoreUbParam.UbCount,
+            tilingData_->mainCoreUbParam.UbFactor, tilingData_->mainCoreUbParam.UbTailFactor);
 
-    OP_LOGD(
-        context_,
-        "Roll tilingData->tailCoreubparam: UbSplitAxis = %ld, UbCount = %ld, UbFactor = %ld, UbTailFactor = %ld",
-        tilingData_->tailCoreUbParam.UbSplitAxis, tilingData_->tailCoreUbParam.UbCount,
-        tilingData_->tailCoreUbParam.UbFactor, tilingData_->tailCoreUbParam.UbTailFactor);
+    OP_LOGD(context_,
+            "Roll tilingData->tailCoreubparam: UbSplitAxis = %ld, UbCount = %ld, UbFactor = %ld, UbTailFactor = %ld",
+            tilingData_->tailCoreUbParam.UbSplitAxis, tilingData_->tailCoreUbParam.UbCount,
+            tilingData_->tailCoreUbParam.UbFactor, tilingData_->tailCoreUbParam.UbTailFactor);
 
     for (int64_t i = 0; i < moveparam.mte3Count; i++) {
         OP_LOGD(
@@ -624,31 +618,26 @@ void RollTilingClass::PrintTiling() const
             tilingData_->moveparam.srcStride[i], i, tilingData_->moveparam.dstOffset[i]);
     }
 
-    OP_LOGD(
-        context_,
-        "Roll tilingdata is: needCoreNum = %ld, dimNum = %ld, basicElements = %ld, maxElements = "
-        "%ld, perCoreElements = %ld, lastCoreElements = %ld",
-        tilingData_->needCoreNum, tilingData_->dimNum, tilingData_->basicElements, tilingData_->maxElements,
-        tilingData_->perCoreElements, tilingData_->lastCoreElements);
+    OP_LOGD(context_,
+            "Roll tilingdata is: needCoreNum = %ld, dimNum = %ld, basicElements = %ld, maxElements = "
+            "%ld, perCoreElements = %ld, lastCoreElements = %ld",
+            tilingData_->needCoreNum, tilingData_->dimNum, tilingData_->basicElements, tilingData_->maxElements,
+            tilingData_->perCoreElements, tilingData_->lastCoreElements);
     for (int32_t i = 0; i < dimNum_; i++) {
-        OP_LOGD(
-            context_, "shape[%d] is: %ld, shifts[%d] is: %ld, strides[%d] is: %ld", i, tilingData_->shapes[i], i,
-            tilingData_->shifts[i], i, tilingData_->strides[i]);
+        OP_LOGD(context_, "shape[%d] is: %ld, shifts[%d] is: %ld, strides[%d] is: %ld", i, tilingData_->shapes[i], i,
+                tilingData_->shifts[i], i, tilingData_->strides[i]);
     }
     return;
 }
 
-uint64_t RollTilingClass::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t RollTilingClass::GetTilingKey() const { return tilingKey; }
 
 ge::graphStatus RollTilingArch35(gert::TilingContext* context)
 {
     OP_LOGI(context->GetNodeName(), "tiling running.");
 
-    const RollCompileInfoArch35* compile_info =
-        reinterpret_cast<const RollCompileInfoArch35*>(context->GetCompileInfo());
+    const RollCompileInfoArch35* compile_info = reinterpret_cast<const RollCompileInfoArch35*>(
+        context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
     OP_LOGD(context->GetNodeName(), "runing regbase soc version tiling func");
     RollTilingClass tiling(context);

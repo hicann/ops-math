@@ -22,8 +22,8 @@ extern "C" {
  * @domain aclnn_math
  *
  * 算子功能： 对输入Tensor完成roll操作
- * @param [in] x: device侧的aclTensor，数据类型支持BFLOAT16,FLOAT16, FLOAT32, INT8, UINT8, INT32, UINT32，BOOL。支持
- * [非连续的Tensor](#)，数据格式支持ND（[参考](#)）。
+ * @param [in] x: device侧的aclTensor，数据类型支持BFLOAT16,FLOAT16, FLOAT32, INT8, UINT8, INT32, UINT32，BOOL, INT64,
+ * COMPLEX64。支持 [非连续的Tensor](#)，数据格式支持ND（[参考](#)）。
  * @param [in] shifts: int64的数组，数组长度与dims保持一致。
  * @param [in] dims: int64的数组，数组长度与shifts保持一致，取值范围在[-x.dim(), x.dim() -
  * 1]之内，例如：x的维度是4，则取值范 围在[-4, 3]。
@@ -32,9 +32,8 @@ extern "C" {
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码
  */
-ACLNN_API aclnnStatus aclnnRollGetWorkspaceSize(
-    const aclTensor* x, const aclIntArray* shifts, const aclIntArray* dims, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnRollGetWorkspaceSize(const aclTensor* x, const aclIntArray* shifts, const aclIntArray* dims,
+                                                aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief: aclnnRoll的第二段接口，用于执行计算

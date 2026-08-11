@@ -312,6 +312,45 @@
           "value": null
         }
       ]
+    },
+    {
+      "bin_filename": "Roll_04f85ec7fac053bb23792c17c5c6c714",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "complex64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "complex64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "shifts",
+          "dtype": "list_int",
+          "value": null
+        },
+        {
+          "name": "dims",
+          "dtype": "list_int",
+          "value": null
+        }
+      ]
     }
   ]
 }
