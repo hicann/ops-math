@@ -1,12 +1,12 @@
 /**
-  * Copyright (c) 2026 Huawei Technologies Co., Ltd.
-  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
-  * CANN Open Software License Agreement Version 2.0 (the "License").
-  * Please refer to the License for details. You may not use this file except in compliance with the License.
-  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
-  * See LICENSE in the root of the software repository for the full text of the License.
-  */
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include "aclnn_std.h"
 #include <bitset>
 #include "reduce_std_v2.h"
@@ -35,25 +35,25 @@ extern "C" {
 #endif
 
 /* Std 算子的完整计算流程如下:
-  *                   self
-  *                    |
-  *          Contiguous(workspace_0)
-  *                    |
-  *           ReduceMean(workspace_1)
-  *                    |
-  *       ReduceStdWithMean(workspace_2)
-  *                    |
-  *             Cast(workspace_3)
-  *                    |
-  *                ViewCopy
-  *                    |
-  *                 result
-  */
+ *                   self
+ *                    |
+ *          Contiguous(workspace_0)
+ *                    |
+ *           ReduceMean(workspace_1)
+ *                    |
+ *       ReduceStdWithMean(workspace_2)
+ *                    |
+ *             Cast(workspace_3)
+ *                    |
+ *                ViewCopy
+ *                    |
+ *                 result
+ */
 
 constexpr size_t MAX_MASK_LEN = 64;
 // 根据API定义，需要列出所能支持的所有dtype
-static const std::initializer_list<op::DataType> ASCEND910_DTYPE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
+static const std::initializer_list<op::DataType> ASCEND910_DTYPE_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT,
+                                                                                       op::DataType::DT_FLOAT16};
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
@@ -61,8 +61,7 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     // 检查self的数据类型是否在std算子的支持列表内
-    auto supportList =
-        GetDtypeSupportListV2(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST);
+    auto supportList = GetDtypeSupportListV2(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST);
     OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
 
     // 检查out的数据类型是否在std算子的支持列表内
@@ -91,16 +90,15 @@ static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim)
     for (size_t i = 0; i < dim->Size(); i++) {
         // dim值不能超出范围
         if (dim->operator[](i) >= selfDimNum || dim->operator[](i) < (-selfDimNum)) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Provided dim %ld must be in the range of [%ld, %ld].",
-                dim->operator[](i), -selfDimNum, selfDimNum - 1);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Provided dim %ld must be in the range of [%ld, %ld].", dim->operator[](i),
+                    -selfDimNum, selfDimNum - 1);
             return false;
         }
         // dim值可以为负
         if (dim->operator[](i) < 0) {
             if (dimMask[selfDimNum + dim->operator[](i)] == 1) {
-                OP_LOGE(
-                    ACLNN_ERR_PARAM_INVALID, "Dim %ld appears multiple times in the list of dims.",
-                    selfDimNum + dim->operator[](i));
+                OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim %ld appears multiple times in the list of dims.",
+                        selfDimNum + dim->operator[](i));
                 return false;
             } else {
                 dimMask[selfDimNum + dim->operator[](i)] = 1;
@@ -109,8 +107,7 @@ static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim)
         }
         // dim值不能重复
         if (dimMask[dim->operator[](i)] == 1) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "Dim %ld appears multiple times in the list of dims.", dim->operator[](i));
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim %ld appears multiple times in the list of dims.", dim->operator[](i));
             return false;
         } else {
             dimMask[dim->operator[](i)] = 1;
@@ -152,8 +149,7 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* dim, const bool
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclIntArray* dim, const bool keepdim, aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* dim, const bool keepdim, aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull2Tensor(self, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -207,7 +203,8 @@ static aclIntArray* ConvToNotNegDim(const aclTensor* self, const aclIntArray* di
 }
 
 static aclnnStatus aclnnStdV2ImplUnify(const aclTensor* self, const aclIntArray* dim, int64_t correction, bool keepdim,
-    aclTensor* out, uint64_t* workspaceSize, UniqueExecutor& uniqueExecutor, aclOpExecutor** executor)
+                                       aclTensor* out, uint64_t* workspaceSize, UniqueExecutor& uniqueExecutor,
+                                       aclOpExecutor** executor)
 {
     bool isMeanOut = false;
     auto reduceStdV2Out = l0op::ReduceStdV2(self, dim, correction, keepdim, isMeanOut, uniqueExecutor.get());
@@ -227,7 +224,7 @@ static aclnnStatus aclnnStdV2ImplUnify(const aclTensor* self, const aclIntArray*
 }
 
 aclnnStatus aclnnStdGetWorkspaceSize(const aclTensor* self, const aclIntArray* dim, const int64_t correction,
-    bool keepdim, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+                                     bool keepdim, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
@@ -244,7 +241,7 @@ aclnnStatus aclnnStdGetWorkspaceSize(const aclTensor* self, const aclIntArray* d
 
     if (self->GetViewShape().GetDimNum() == 0) {
         int64_t selfShapeValue[1] = {1};
-        aclIntArray *selfShape = uniqueExecutor.get()->AllocIntArray(selfShapeValue, 1);
+        aclIntArray* selfShape = uniqueExecutor.get()->AllocIntArray(selfShapeValue, 1);
         CHECK_RET(selfShape != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto selfReshapeI = l0op::Reshape(self, selfShape, uniqueExecutor.get());
         CHECK_RET(selfReshapeI != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -264,7 +261,8 @@ aclnnStatus aclnnStdGetWorkspaceSize(const aclTensor* self, const aclIntArray* d
     if (selfReshape->IsEmpty()) {
         // 空tensor填充NAN
         ret = CheckFillScalarShapeStdAndVar(out, NAN, uniqueExecutor.get());
-        *workspaceSize = 0UL;
+        CHECK_RET(ret == ACLNN_SUCCESS, ret);
+        *workspaceSize = uniqueExecutor->GetWorkspaceSize();
         uniqueExecutor.ReleaseTo(executor);
         return ret;
     }
@@ -274,14 +272,16 @@ aclnnStatus aclnnStdGetWorkspaceSize(const aclTensor* self, const aclIntArray* d
     if ((shapeProd == 1) && (shapeProd <= correction)) {
         // 单元素规约且自由度小于等于0时返回NAN
         ret = CheckFillScalarShapeStdAndVar(out, NAN, uniqueExecutor.get());
-        *workspaceSize = 0UL;
+        CHECK_RET(ret == ACLNN_SUCCESS, ret);
+        *workspaceSize = uniqueExecutor->GetWorkspaceSize();
         uniqueExecutor.ReleaseTo(executor);
         return ret;
     }
     if ((shapeProd > 1) && (correction > 1) && (shapeProd <= correction)) {
         // 多元素规约且correction覆盖规约元素个数时返回INF
         ret = CheckFillScalarShapeStdAndVar(out, INFINITY, uniqueExecutor.get());
-        *workspaceSize = 0UL;
+        CHECK_RET(ret == ACLNN_SUCCESS, ret);
+        *workspaceSize = uniqueExecutor->GetWorkspaceSize();
         uniqueExecutor.ReleaseTo(executor);
         return ret;
     }
@@ -293,8 +293,8 @@ aclnnStatus aclnnStdGetWorkspaceSize(const aclTensor* self, const aclIntArray* d
     if (IsRegBase()) {
         auto selfReformat = l0op::ReFormat(selfContiguous, Format::FORMAT_ND);
         CHECK_RET(selfReformat != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        return aclnnStdV2ImplUnify(
-            selfReformat, dimArray, correction, keepdim, out, workspaceSize, uniqueExecutor, executor);
+        return aclnnStdV2ImplUnify(selfReformat, dimArray, correction, keepdim, out, workspaceSize, uniqueExecutor,
+                                   executor);
     }
 
     // 调用Mean算子kernel
@@ -307,8 +307,8 @@ aclnnStatus aclnnStdGetWorkspaceSize(const aclTensor* self, const aclIntArray* d
     const aclTensor* stdWithMeanOpOut = nullptr;
     bool invert = false;
     float eps = 0.001f;
-    stdWithMeanOpOut = l0op::ReduceStdWithMean(
-        selfContiguous, meanOpOut, dimArray, correction, keepdim, invert, eps, uniqueExecutor.get());
+    stdWithMeanOpOut = l0op::ReduceStdWithMean(selfContiguous, meanOpOut, dimArray, correction, keepdim, invert, eps,
+                                               uniqueExecutor.get());
     CHECK_RET(stdWithMeanOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 固定写法，将计算结果转换成输出out的数据类型
@@ -321,7 +321,7 @@ aclnnStatus aclnnStdGetWorkspaceSize(const aclTensor* self, const aclIntArray* d
 
     // 固定写法，获取计算过程中需要使用的workspace大小
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
-    uniqueExecutor.ReleaseTo(executor);  // 需要把 uniqueExecutor持有executor转移给executor
+    uniqueExecutor.ReleaseTo(executor); // 需要把 uniqueExecutor持有executor转移给executor
     return ACLNN_SUCCESS;
 }
 
