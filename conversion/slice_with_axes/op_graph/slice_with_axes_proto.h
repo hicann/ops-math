@@ -36,6 +36,8 @@ namespace ge {
 *@par Third-party framework compatibility
 * Compatible with the TensorFlow operator Slice.
 */
+#ifndef OPS_PROTO_DEF_SLICEWITHAXES
+#define OPS_PROTO_DEF_SLICEWITHAXES
 REG_OP(SliceWithAxes)
     .INPUT(x, TensorType::BasicType())
     .INPUT(offsets, TensorType::IndexNumberType())
@@ -43,5 +45,6 @@ REG_OP(SliceWithAxes)
     .OUTPUT(y, TensorType::BasicType())
     .REQUIRED_ATTR(axes, ListInt)
     .OP_END_FACTORY_REG(SliceWithAxes)
+#endif
 } // namespace ge
 #endif

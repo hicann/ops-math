@@ -36,6 +36,8 @@ namespace ge {
 *@par Third-party framework compatibility
 * No compatibility
 */
+#ifndef OPS_PROTO_DEF_SLICELASTDIM
+#define OPS_PROTO_DEF_SLICELASTDIM
 REG_OP(SliceLastDim)
     .INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_INT8, DT_INT16, DT_INT32, DT_INT64}))
     .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_INT8, DT_INT16, DT_INT32, DT_INT64}))
@@ -43,5 +45,6 @@ REG_OP(SliceLastDim)
     .REQUIRED_ATTR(end, Int)
     .ATTR(stride, Int, 1)
     .OP_END_FACTORY_REG(SliceLastDim)
+#endif
 } // namespace ge
 #endif

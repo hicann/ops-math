@@ -39,6 +39,8 @@ namespace ge {
 *
 */
 
+#ifndef OPS_PROTO_DEF_DATACOMPARE
+#define OPS_PROTO_DEF_DATACOMPARE
 REG_OP(DataCompare)
     .INPUT(x1, TensorType({DT_BF16, DT_FLOAT16, DT_FLOAT, DT_INT8, DT_UINT8, DT_INT32}))
     .INPUT(x2, TensorType({DT_BF16, DT_FLOAT16, DT_FLOAT, DT_INT8, DT_UINT8, DT_INT32}))
@@ -46,6 +48,7 @@ REG_OP(DataCompare)
     .ATTR(atol, Float, 1e-5f)
     .ATTR(rtol, Float, 1e-3f)
     .OP_END_FACTORY_REG(DataCompare)
+#endif
 
 } // namespace ge
 
