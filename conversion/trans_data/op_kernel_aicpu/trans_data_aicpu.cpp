@@ -12,6 +12,7 @@
 #include <algorithm>
 
 #include "Eigen/Core"
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_types.h"
 #include "format_transfer/format_transfer_utils.h"
 #include "format_transfer/formats_definitions.h"
@@ -713,5 +714,5 @@ int64_t TransDataCpuKernel::GetCubeSizeByDataType(DataType data_type)
         return kCubeSize;
     }
 }
-REGISTER_CPU_KERNEL(kTransData, TransDataCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kTransData, TransDataCpuKernel);
 } // namespace aicpu

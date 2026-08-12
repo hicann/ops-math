@@ -16,15 +16,16 @@ class GreaterEqual : public OpDef {
 public:
     explicit GreaterEqual(const char* name) : OpDef(name)
     {
-        this->Input("x1").DataType(
-            {ge::DT_DOUBLE, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT16, ge::DT_INT32, ge::DT_INT64, ge::DT_INT8,
-             ge::DT_UINT16, ge::DT_UINT32, ge::DT_UINT64, ge::DT_UINT8});
-        this->Input("x2").DataType(
-            {ge::DT_DOUBLE, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT16, ge::DT_INT32, ge::DT_INT64, ge::DT_INT8,
-             ge::DT_UINT16, ge::DT_UINT32, ge::DT_UINT64, ge::DT_UINT8});
+        this->Input("x1").DataType({ge::DT_DOUBLE, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT16, ge::DT_INT32,
+                                    ge::DT_INT64, ge::DT_INT8, ge::DT_UINT16, ge::DT_UINT32, ge::DT_UINT64,
+                                    ge::DT_UINT8});
+        this->Input("x2").DataType({ge::DT_DOUBLE, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT16, ge::DT_INT32,
+                                    ge::DT_INT64, ge::DT_INT8, ge::DT_UINT16, ge::DT_UINT32, ge::DT_UINT64,
+                                    ge::DT_UINT8});
         this->Output("y").DataType({ge::DT_BOOL});
 
         ApplyMathAicpuDefaultCfg(*this);
+        this->AICPU().ExtendCfgInfo(OP_INFO_OPS_FLAG.c_str(), OPEN_OPS_FLAG.c_str());
     }
 };
 

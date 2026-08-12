@@ -13,6 +13,7 @@
 #include <map>
 #include <vector>
 
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
 #include "utils/eigen_tensor.h"
 
@@ -33,9 +34,8 @@ template <typename IndexT>
 uint32_t NormalizeExpandShape(std::vector<IndexT>& input_shape, std::vector<IndexT>& target_shape)
 {
     if (target_shape.size() < input_shape.size()) {
-        KERNEL_LOG_ERROR(
-            "Param error, target rank [%zu] cannot be less than input rank [%zu].",
-            target_shape.size(), input_shape.size());
+        KERNEL_LOG_ERROR("Param error, target rank [%zu] cannot be less than input rank [%zu].", target_shape.size(),
+                         input_shape.size());
         return aicpu::KERNEL_STATUS_PARAM_INVALID;
     }
 
@@ -46,8 +46,8 @@ uint32_t NormalizeExpandShape(std::vector<IndexT>& input_shape, std::vector<Inde
 
     for (size_t i = 0; i < target_shape.size(); ++i) {
         if (target_shape[i] < static_cast<IndexT>(-1)) {
-            KERNEL_LOG_ERROR(
-                "Param error, target_shape[%zu] [%ld] is invalid.", i, static_cast<int64_t>(target_shape[i]));
+            KERNEL_LOG_ERROR("Param error, target_shape[%zu] [%ld] is invalid.", i,
+                             static_cast<int64_t>(target_shape[i]));
             return aicpu::KERNEL_STATUS_PARAM_INVALID;
         }
 
@@ -71,9 +71,8 @@ uint32_t NormalizeExpandShape(std::vector<IndexT>& input_shape, std::vector<Inde
 
         if (!aicpu::IsValueEqual<IndexT>(input_shape[i], static_cast<IndexT>(1)) &&
             !aicpu::IsValueEqual<IndexT>(input_shape[i], target_shape[i])) {
-            KERNEL_LOG_ERROR(
-                "Param error, input_shape[%zu] [%ld] cannot broadcast to target_shape[%zu] [%ld].", i,
-                static_cast<int64_t>(input_shape[i]), i, static_cast<int64_t>(target_shape[i]));
+            KERNEL_LOG_ERROR("Param error, input_shape[%zu] [%ld] cannot broadcast to target_shape[%zu] [%ld].", i,
+                             static_cast<int64_t>(input_shape[i]), i, static_cast<int64_t>(target_shape[i]));
             return aicpu::KERNEL_STATUS_PARAM_INVALID;
         }
     }
@@ -82,9 +81,8 @@ uint32_t NormalizeExpandShape(std::vector<IndexT>& input_shape, std::vector<Inde
 }
 
 template <typename T, typename IndexT>
-uint32_t CalculateOutIndex(
-    const std::vector<T>& input_values, std::vector<T>& output_values, const std::vector<IndexT>& input_shape,
-    uint64_t copy_size, uint64_t expand_factor)
+uint32_t CalculateOutIndex(const std::vector<T>& input_values, std::vector<T>& output_values,
+                           const std::vector<IndexT>& input_shape, uint64_t copy_size, uint64_t expand_factor)
 {
     uint64_t input_size = 1;
     for (auto dim : input_shape) {
@@ -94,18 +92,16 @@ uint32_t CalculateOutIndex(
     uint64_t copy_num = input_size / copy_size;
     for (uint64_t i = 0; i < copy_num; ++i) {
         for (uint64_t j = 0; j < expand_factor; ++j) {
-            output_values.insert(
-                output_values.end(), input_values.begin() + (i * copy_size),
-                input_values.begin() + ((i + 1) * copy_size));
+            output_values.insert(output_values.end(), input_values.begin() + (i * copy_size),
+                                 input_values.begin() + ((i + 1) * copy_size));
         }
     }
     return aicpu::KERNEL_STATUS_OK;
 }
 
 template <typename T, typename IndexT>
-uint32_t CopyExpandIndex(
-    const std::vector<T>& input_values, std::vector<T>& output_values, const std::vector<IndexT>& input_shape,
-    const std::vector<IndexT>& target_shape)
+uint32_t CopyExpandIndex(const std::vector<T>& input_values, std::vector<T>& output_values,
+                         const std::vector<IndexT>& input_shape, const std::vector<IndexT>& target_shape)
 {
     output_values.clear();
     uint64_t expand_factor = 1;
@@ -115,14 +111,13 @@ uint32_t CopyExpandIndex(
     for (int64_t i = static_cast<int64_t>(input_shape.size()) - 1; i >= 0; --i) {
         if (!aicpu::IsValueEqual<IndexT>(input_shape[static_cast<size_t>(i)], target_shape[static_cast<size_t>(i)])) {
             if (!aicpu::IsValueEqual<IndexT>(input_shape[static_cast<size_t>(i)], static_cast<IndexT>(1))) {
-                KERNEL_LOG_ERROR(
-                    "Param error, input_shape[%ld] != 1 when input_shape[%ld] != target_shape[%ld].", i, i, i);
+                KERNEL_LOG_ERROR("Param error, input_shape[%ld] != 1 when input_shape[%ld] != target_shape[%ld].", i, i,
+                                 i);
                 return aicpu::KERNEL_STATUS_PARAM_INVALID;
             }
             if (target_shape[static_cast<size_t>(i)] < 0) {
-                KERNEL_LOG_ERROR(
-                    "Param error, target_shape[%ld] is invalid at axis[%ld].",
-                    static_cast<int64_t>(target_shape[static_cast<size_t>(i)]), i);
+                KERNEL_LOG_ERROR("Param error, target_shape[%ld] is invalid at axis[%ld].",
+                                 static_cast<int64_t>(target_shape[static_cast<size_t>(i)]), i);
                 return aicpu::KERNEL_STATUS_PARAM_INVALID;
             }
             expand_factor = static_cast<uint64_t>(target_shape[static_cast<size_t>(i)]);
@@ -150,9 +145,9 @@ uint32_t CopyExpandIndex(
 }
 
 template <typename T, typename IndexT>
-uint32_t GetExpandIndex(
-    const std::vector<T>& input_values, std::vector<T>& output_values, const std::vector<IndexT>& input_shape,
-    const std::vector<IndexT>& target_shape, std::vector<IndexT>& expanded_shape)
+uint32_t GetExpandIndex(const std::vector<T>& input_values, std::vector<T>& output_values,
+                        const std::vector<IndexT>& input_shape, const std::vector<IndexT>& target_shape,
+                        std::vector<IndexT>& expanded_shape)
 {
     IndexT expand_factor = static_cast<IndexT>(1);
     uint64_t break_axis = 0;
@@ -160,8 +155,8 @@ uint32_t GetExpandIndex(
     for (int64_t i = static_cast<int64_t>(input_shape.size()) - 1; i >= 0; --i) {
         if (!aicpu::IsValueEqual<IndexT>(input_shape[static_cast<size_t>(i)], target_shape[static_cast<size_t>(i)])) {
             if (!aicpu::IsValueEqual<IndexT>(input_shape[static_cast<size_t>(i)], static_cast<IndexT>(1))) {
-                KERNEL_LOG_ERROR(
-                    "Param error, input_shape[%ld] != 1 when input_shape[%ld] != target_shape[%ld].", i, i, i);
+                KERNEL_LOG_ERROR("Param error, input_shape[%ld] != 1 when input_shape[%ld] != target_shape[%ld].", i, i,
+                                 i);
                 return aicpu::KERNEL_STATUS_PARAM_INVALID;
             }
             expand_factor = target_shape[static_cast<size_t>(i)];
@@ -180,9 +175,8 @@ uint32_t GetExpandIndex(
 }
 
 template <typename T, typename IndexT>
-uint32_t ExpandByLayer(
-    std::vector<T> input_values, std::vector<T>& output_values, std::vector<IndexT> input_shape,
-    const std::vector<IndexT>& target_shape)
+uint32_t ExpandByLayer(std::vector<T> input_values, std::vector<T>& output_values, std::vector<IndexT> input_shape,
+                       const std::vector<IndexT>& target_shape)
 {
     std::vector<IndexT> expanded_shape;
     bool need_continue = true;
@@ -207,9 +201,9 @@ uint32_t ExpandByLayer(
 }
 
 template <typename T, typename IndexT>
-uint32_t PrepareExpandShape(
-    std::vector<T>& input_values, std::vector<IndexT>& input_shape, std::vector<IndexT>& target_shape,
-    const std::vector<int64_t>& origin_shape, const T* input_data)
+uint32_t PrepareExpandShape(std::vector<T>& input_values, std::vector<IndexT>& input_shape,
+                            std::vector<IndexT>& target_shape, const std::vector<int64_t>& origin_shape,
+                            const T* input_data)
 {
     for (auto dim : origin_shape) {
         input_shape.push_back(static_cast<IndexT>(dim));
@@ -358,5 +352,5 @@ uint32_t ExpandCpuKernel::Compute(CpuKernelContext& ctx)
     }
 }
 
-REGISTER_CPU_KERNEL(kExpand, ExpandCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kExpand, ExpandCpuKernel);
 } // namespace aicpu

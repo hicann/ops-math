@@ -13,6 +13,7 @@
 #include <cstdint>
 
 #include "Eigen/Dense"
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
 #include "cpu_types.h"
 #include "kernel_util.h"
@@ -34,8 +35,8 @@ uint32_t CeilCpuKernel::Compute(CpuKernelContext& ctx)
         return KERNEL_STATUS_PARAM_INVALID;
     }
     if (ctx.GetOutputsSize() != K_CEIL_OUTPUT_DESC_NUM) {
-        KERNEL_LOG_ERROR(
-            "Ceil node output size should be %zu, but get %u", K_CEIL_OUTPUT_DESC_NUM, ctx.GetOutputsSize());
+        KERNEL_LOG_ERROR("Ceil node output size should be %zu, but get %u", K_CEIL_OUTPUT_DESC_NUM,
+                         ctx.GetOutputsSize());
         return KERNEL_STATUS_PARAM_INVALID;
     }
     Tensor* x = ctx.Input(0);
@@ -87,5 +88,5 @@ uint32_t CeilCpuKernel::ComputeCeil(Tensor* x, Tensor* y, uint64_t data_size, co
     return KERNEL_STATUS_OK;
 }
 
-REGISTER_CPU_KERNEL(CEIL, CeilCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(CEIL, CeilCpuKernel);
 } // namespace aicpu
