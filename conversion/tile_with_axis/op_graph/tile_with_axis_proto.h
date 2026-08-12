@@ -41,6 +41,9 @@ namespace ge {
 * @par Third-party framework compatibility
 * Compatible with the Caffe operator Tile.
 */
+
+#ifndef OPS_PROTO_DEF_TILEWITHAXIS
+#define OPS_PROTO_DEF_TILEWITHAXIS
 REG_OP(TileWithAxis)
     .INPUT(x, TensorType({DT_BF16, DT_FLOAT16, DT_FLOAT, DT_INT64, DT_INT32, DT_INT16, DT_INT8, DT_UINT64, DT_UINT32,
                           DT_UINT16, DT_UINT8}))
@@ -48,7 +51,9 @@ REG_OP(TileWithAxis)
                            DT_UINT16, DT_UINT8}))
     .ATTR(axis, Int, 1)
     .REQUIRED_ATTR(tiles, Int)
-    .OP_END_FACTORY_REG(TileWithAxis)
+    .OP_END_FACTORY_REG(TileWithAxis);
+
+#endif
 } // namespace ge
 
 #endif // OPS_OP_PROTO_TILE_WITH_AXIS_H_

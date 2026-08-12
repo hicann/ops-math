@@ -36,12 +36,17 @@ namespace ge {
 * @par Third-party framework compatibility
 * Compatible with the TensorFlow operator ScatterUpdate.
 */
+
+#ifndef OPS_PROTO_DEF_MATRIXSETDIAGV2
+#define OPS_PROTO_DEF_MATRIXSETDIAGV2
 REG_OP(MatrixSetDiagV2)
     .INPUT(input, TensorType::BasicType())
     .INPUT(diagonal, TensorType::BasicType())
     .INPUT(k, TensorType({DT_INT32}))
     .OUTPUT(output, TensorType::BasicType())
-    .OP_END_FACTORY_REG(MatrixSetDiagV2)
+    .OP_END_FACTORY_REG(MatrixSetDiagV2);
+
+#endif
 } // namespace ge
 
 #endif

@@ -32,6 +32,9 @@ namespace ge {
 *@par Third-party framework compatibility
 * Compatible with the TensorFlow operator HistogramFixedWidth.
 */
+
+#ifndef OPS_PROTO_DEF_HISTOGRAMFIXEDWIDTH
+#define OPS_PROTO_DEF_HISTOGRAMFIXEDWIDTH
 REG_OP(HistogramFixedWidth)
     .INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT32, DT_INT64}))
     .INPUT(range, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT32, DT_INT64}))
@@ -40,6 +43,7 @@ REG_OP(HistogramFixedWidth)
     .ATTR(dtype, Int, 3)
     .OP_END_FACTORY_REG(HistogramFixedWidth);
 
+#endif
 } // namespace ge
 
 #endif // OP_PROTO_HISTOGRAM_FIXED_WIDTH_PROTO_H_

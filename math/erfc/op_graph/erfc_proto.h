@@ -33,9 +33,14 @@ namespace ge {
 * Compatible with the TensorFlow operator Erfc.
 */
 
+#ifndef OPS_PROTO_DEF_ERFC
+#define OPS_PROTO_DEF_ERFC
 REG_OP(Erfc)
     .INPUT(x, TensorType({FloatingDataType, DT_BF16}))
     .OUTPUT(y, TensorType({FloatingDataType, DT_BF16}))
-    .OP_END_FACTORY_REG(Erfc)
+    .OP_END_FACTORY_REG(Erfc);
+
+#endif
 } // namespace ge
+
 #endif // OPS_MATH_ERFC_PROTO_H_
