@@ -43,6 +43,8 @@ namespace ge {
  *@par Third-party framework compatibility
  *Compatible with the DeepMD-kit ProdVirialSeA operator.
  */
+#ifndef OPS_PROTO_DEF_PRODVIRIALSEA
+#define OPS_PROTO_DEF_PRODVIRIALSEA
 REG_OP(ProdVirialSeA)
     .INPUT(net_deriv, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE}))
     .INPUT(in_deriv, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE}))
@@ -54,6 +56,7 @@ REG_OP(ProdVirialSeA)
     .REQUIRED_ATTR(n_a_sel, Int)
     .REQUIRED_ATTR(n_r_sel, Int)
     .OP_END_FACTORY_REG(ProdVirialSeA)
+#endif
 
 } // namespace ge
 
