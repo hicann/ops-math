@@ -30,6 +30,8 @@ namespace ge {
 *@par Outputs:
 * @li y: An ND Tensor. Same dtype and shape as broadcasted inputs.
 */
+#ifndef OPS_PROTO_DEF_CLIPBYNORMNODIVSUM
+#define OPS_PROTO_DEF_CLIPBYNORMNODIVSUM
 REG_OP(ClipByNormNoDivSum)
     .INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT}))
     .INPUT(greater_zeros, TensorType({DT_FLOAT16, DT_FLOAT}))
@@ -37,6 +39,7 @@ REG_OP(ClipByNormNoDivSum)
     .INPUT(maximum_ones, TensorType({DT_FLOAT16, DT_FLOAT}))
     .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT}))
     .OP_END_FACTORY_REG(ClipByNormNoDivSum)
+#endif
 
 } // namespace ge
 #endif // CANNDEV_CLIP_BY_NORM_NO_DIV_SUM_PROTO_H
