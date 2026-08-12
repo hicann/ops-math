@@ -41,6 +41,8 @@ namespace ge {
  *@par Third-party framework compatibility
  *Compatible with the TensorFlow operator SparseBincount.
  */
+#ifndef OPS_PROTO_DEF_SPARSEBINCOUNT
+#define OPS_PROTO_DEF_SPARSEBINCOUNT
 REG_OP(SparseBincount)
     .INPUT(indices, TensorType({DT_INT64}))
     .INPUT(values, TensorType({DT_INT32, DT_INT64}))
@@ -50,6 +52,7 @@ REG_OP(SparseBincount)
     .ATTR(binary_output, Bool, false)
     .OUTPUT(output, TensorType({DT_INT32, DT_INT64, DT_FLOAT, DT_DOUBLE}))
     .OP_END_FACTORY_REG(SparseBincount)
+#endif
 
 } // namespace ge
 
