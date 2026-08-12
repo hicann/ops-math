@@ -68,6 +68,7 @@ static constexpr size_t kAttrCorrectionIdx = 4;
 // pattern 上限
 static constexpr int32_t kMinAxisNum = 2;
 static constexpr int32_t kMaxAxisNum = MAX_PATTERN_RANK;
+static constexpr size_t kMaxSupportedRank = 8; // README 接口约束：x 为 0-8 维 ND
 
 // UB 分配预算常量
 static constexpr int64_t kCacheBufBytes = 16 * 1024; // cacheBuf 固定 16 KB
@@ -189,14 +190,18 @@ static ge::graphStatus GetShapeDtypeAndAttrs(gert::TilingContext* context, Reduc
     OP_CHECK_NULL_WITH_CONTEXT(context, xShapePtr);
     const gert::Shape& xS = xShapePtr->GetStorageShape();
     const size_t rank = xS.GetDimNum();
+    OP_CHECK_IF(rank > kMaxSupportedRank, OP_LOGE(context, "x rank=%zu exceeds supported range [0, 8]", rank),
+                return ge::GRAPH_FAILED);
     ctx.xShape.clear();
     if (rank == 0) {
         // Scalar (0-D) 归一化为 1 元素 1-D
         ctx.xShape.push_back(1);
     } else {
         for (size_t i = 0; i < rank; ++i) {
-            OP_CHECK_IF(xS.GetDim(i) < 0, OP_LOGE(context, "x dim[%zu]=%ld is negative", i, xS.GetDim(i)),
-                        return ge::GRAPH_FAILED);
+            OP_CHECK_IF(
+                xS.GetDim(i) < 0,
+                OP_LOGE(context, "x dim[%zu]=%ld is negative; input name=x, legal range=[0, +inf)", i, xS.GetDim(i)),
+                return ge::GRAPH_FAILED);
             ctx.xShape.push_back(xS.GetDim(i));
         }
     }
@@ -206,32 +211,55 @@ static ge::graphStatus GetShapeDtypeAndAttrs(gert::TilingContext* context, Reduc
     OP_CHECK_NULL_WITH_CONTEXT(context, meanShapePtr);
     const gert::Shape& meanS = meanShapePtr->GetStorageShape();
     if (meanS.GetDimNum() != rank) {
-        OP_LOGE(context, "mean rank=%zu != x rank=%zu", meanS.GetDimNum(), rank);
+        OP_LOGE(context, "mean rank=%zu != x rank=%zu; input name=mean, legal relation=mean rank must equal x rank",
+                meanS.GetDimNum(), rank);
         return ge::GRAPH_FAILED;
     }
     for (size_t i = 0; i < rank; ++i) {
         if (meanS.GetDim(i) != xS.GetDim(i)) {
-            OP_LOGE(context, "mean dim[%zu]=%ld != x dim[%zu]=%ld (shape_mismatch, mean 须已 Expand 广播)", i,
-                    meanS.GetDim(i), i, xS.GetDim(i));
+            OP_LOGE(context,
+                    "mean dim[%zu]=%ld != x dim[%zu]=%ld (shape_mismatch, mean 须已 Expand 广播); input name=mean, "
+                    "legal relation=mean shape must equal x shape",
+                    i, meanS.GetDim(i), i, xS.GetDim(i));
             return ge::GRAPH_FAILED;
         }
     }
 
     auto xDesc = context->GetInputDesc(kInputXIdx);
     OP_CHECK_NULL_WITH_CONTEXT(context, xDesc);
+    const auto xFormat = xDesc->GetFormat().GetStorageFormat();
+    OP_CHECK_IF(xFormat != ge::FORMAT_ND,
+                OP_LOGE(context, "x format %d is unsupported; only ND is supported", static_cast<int>(xFormat)),
+                return ge::GRAPH_FAILED);
     ctx.xDtype = xDesc->GetDataType();
     const std::set<ge::DataType> kSupported = {ge::DT_FLOAT16, ge::DT_BF16, ge::DT_FLOAT};
     OP_CHECK_IF(kSupported.count(ctx.xDtype) == 0,
                 OP_LOGE(context, "unsupported x dtype %d (expect fp16/bf16/fp32)", static_cast<int>(ctx.xDtype)),
                 return ge::GRAPH_FAILED);
 
-    // mean dtype 须与 x dtype 一致
+    // mean dtype 须在支持集合内，且与 x dtype 一致
     auto meanDesc = context->GetInputDesc(kInputMeanIdx);
     OP_CHECK_NULL_WITH_CONTEXT(context, meanDesc);
-    OP_CHECK_IF(meanDesc->GetDataType() != ctx.xDtype,
-                OP_LOGE(context, "mean dtype %d != x dtype %d", static_cast<int>(meanDesc->GetDataType()),
-                        static_cast<int>(ctx.xDtype)),
+    const auto meanFormat = meanDesc->GetFormat().GetStorageFormat();
+    OP_CHECK_IF(meanFormat != ge::FORMAT_ND,
+                OP_LOGE(context, "mean format %d is unsupported; only ND is supported", static_cast<int>(meanFormat)),
                 return ge::GRAPH_FAILED);
+    const auto meanDtype = meanDesc->GetDataType();
+    OP_CHECK_IF(kSupported.count(meanDtype) == 0,
+                OP_LOGE(context, "unsupported mean dtype %d (expect fp16/bf16/fp32)", static_cast<int>(meanDtype)),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(meanDtype != ctx.xDtype,
+                OP_LOGE(context, "mean dtype %d != x dtype %d; legal relation=mean dtype must equal x dtype",
+                        static_cast<int>(meanDtype), static_cast<int>(ctx.xDtype)),
+                return ge::GRAPH_FAILED);
+
+    auto outputDesc = context->GetOutputDesc(kOutputIdx);
+    OP_CHECK_NULL_WITH_CONTEXT(context, outputDesc);
+    const auto outputFormat = outputDesc->GetFormat().GetStorageFormat();
+    OP_CHECK_IF(
+        outputFormat != ge::FORMAT_ND,
+        OP_LOGE(context, "output_var format %d is unsupported; only ND is supported", static_cast<int>(outputFormat)),
+        return ge::GRAPH_FAILED);
     ctx.dtypeSize = static_cast<int64_t>(ge::GetSizeByDataType(ctx.xDtype));
 
     // 属性解析

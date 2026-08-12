@@ -63,6 +63,19 @@ using std::map;
 using std::string;
 using std::vector;
 
+static string ShapeToString(const vector<int64_t>& shape)
+{
+    string result = "[";
+    for (size_t i = 0; i < shape.size(); ++i) {
+        if (i != 0) {
+            result += ",";
+        }
+        result += std::to_string(shape[i]);
+    }
+    result += "]";
+    return result;
+}
+
 string GetTime()
 {
     time_t timep;
@@ -254,8 +267,8 @@ int RunTestCase(const char* testName, bool if_std, bool unbiased, bool keepdim, 
 
     // ---- 结果验证
     bool passed = true;
-    if (output.empty()) {
-        printf("%s - ERROR - No output\n", GetTime().c_str());
+    if (output.size() != 1) {
+        printf("%s - ERROR - Expected exactly one output, got %zu\n", GetTime().c_str(), output.size());
         passed = false;
     } else {
         int64_t n = M * N;
@@ -266,10 +279,40 @@ int RunTestCase(const char* testName, bool if_std, bool unbiased, bool keepdim, 
         std::vector<float> hGolden(static_cast<size_t>(outNum));
         ComputeGolden(hX.data(), hMean.data(), hGolden.data(), M, N, dimArr[0], correction, if_std);
 
+        const TensorDesc outputDesc = output[0].GetTensorDesc();
+        const ge::Shape outputShape = outputDesc.GetShape();
+        if (outputDesc.GetDataType() != DT_FLOAT) {
+            printf("%s - ERROR - Output dtype mismatch: expected DT_FLOAT, got %d\n", GetTime().c_str(),
+                   static_cast<int>(outputDesc.GetDataType()));
+            passed = false;
+        }
+        if (outputShape.GetDimNum() != outShape.size()) {
+            printf("%s - ERROR - Output rank mismatch: expected %zu, got %zu\n", GetTime().c_str(), outShape.size(),
+                   outputShape.GetDimNum());
+            passed = false;
+        } else {
+            for (size_t i = 0; i < outShape.size(); ++i) {
+                if (outputShape.GetDim(i) != outShape[i]) {
+                    printf("%s - ERROR - Output dim %zu mismatch: expected %ld, got %ld\n", GetTime().c_str(), i,
+                           outShape[i], outputShape.GetDim(i));
+                    passed = false;
+                }
+            }
+        }
+
+        const int64_t outRealNum = outputShape.GetShapeSize();
+        if (outRealNum != outNum) {
+            printf("%s - ERROR - Output element count mismatch: expected %ld, got %ld\n", GetTime().c_str(), outNum,
+                   outRealNum);
+            passed = false;
+        }
+        const size_t expectedBytes = static_cast<size_t>(outNum) * sizeof(float);
         const float* outData = reinterpret_cast<const float*>(output[0].GetData());
-        int64_t outRealNum = output[0].GetTensorDesc().GetShape().GetShapeSize();
-        if (outRealNum <= 0)
-            outRealNum = outNum;
+        if (outData == nullptr || output[0].GetSize() != expectedBytes) {
+            printf("%s - ERROR - Output buffer mismatch: expected %zu bytes, got %zu\n", GetTime().c_str(),
+                   expectedBytes, output[0].GetSize());
+            passed = false;
+        }
 
         std::cout << "--- " << testName << ": float32, if_std=" << (if_std ? "true" : "false")
                   << ", correction=" << correction << ", keepdim=" << (keepdim ? "true" : "false") << ", dim=["
@@ -277,17 +320,21 @@ int RunTestCase(const char* testName, bool if_std, bool unbiased, bool keepdim, 
         std::cout << "  output shape size = " << outRealNum << std::endl;
 
         const float rtol = 1e-4f, atol = 1e-4f;
-        int64_t cmpNum = std::min<int64_t>(outRealNum, outNum);
-        for (int64_t i = 0; i < cmpNum; ++i) {
-            float err = std::abs(outData[i] - hGolden[i]);
-            bool ok = (err <= atol + rtol * std::abs(hGolden[i]));
-            if (!ok)
-                passed = false;
-            std::cout << "  out[" << i << "]=" << outData[i] << " (expected " << hGolden[i] << ", err " << err
-                      << (ok ? " OK" : " FAIL") << ")" << std::endl;
+        if (passed && outData != nullptr && outRealNum == outNum) {
+            for (int64_t i = 0; i < outNum; ++i) {
+                float err = std::abs(outData[i] - hGolden[i]);
+                bool ok = std::isfinite(outData[i]) && (err <= atol + rtol * std::abs(hGolden[i]));
+                if (!ok)
+                    passed = false;
+                std::cout << "  out[" << i << "]=" << outData[i] << " (expected " << hGolden[i] << ", err " << err
+                          << (ok ? " OK" : " FAIL") << ")" << std::endl;
+            }
         }
     }
 
+    if (passed) {
+        std::cout << "Shape, dtype and values PASSED for " << ShapeToString(outShape) << std::endl;
+    }
     std::cout << (passed ? "[PASS]" : "[FAIL]") << " " << testName << std::endl << std::endl;
     delete session;
     return passed ? SUCCESS : FAILED;
@@ -295,6 +342,9 @@ int RunTestCase(const char* testName, bool if_std, bool unbiased, bool keepdim, 
 
 int main(int argc, char* argv[])
 {
+    (void)argc;
+    (void)argv;
+
     printf("%s - INFO - Start to initialize ge\n", GetTime().c_str());
     std::map<AscendString, AscendString> global_options = {{"ge.exec.deviceId", "0"}, {"ge.graphRunMode", "1"}};
     Status ret = ge::GEInitialize(global_options);
@@ -320,12 +370,19 @@ int main(int argc, char* argv[])
     std::vector<int64_t> outShape2 = {M, 1};
     int r2 = RunTestCase("GEIR_Test2_std", true, true, true, 1, dimArr, tensorShape, outShape2, M, 1);
 
-    bool allPassed = (r1 == SUCCESS && r2 == SUCCESS);
-    std::cout << (allPassed ? "[PASS] All GE IR tests passed." : "[FAIL] Some GE IR tests failed.") << std::endl;
-
     printf("%s - INFO - Finalize ge\n", GetTime().c_str());
-    ge::GEFinalize();
+    ret = ge::GEFinalize();
+    if (ret != SUCCESS) {
+        printf("%s - ERROR - Finalize ge failed\n", GetTime().c_str());
+        return FAILED;
+    }
     printf("%s - INFO - Finalize ge success\n", GetTime().c_str());
+
+    const bool allPassed = (r1 == SUCCESS && r2 == SUCCESS);
+    std::cout << (allPassed ? "[PASS] All GE IR tests passed." : "[FAIL] Some GE IR tests failed.") << std::endl;
+    if (allPassed) {
+        std::cout << "ReduceStdV2Update static GEIR verification PASSED" << std::endl;
+    }
 
     return allPassed ? SUCCESS : FAILED;
 }
