@@ -40,6 +40,8 @@ namespace ge {
 *@par Third-party framework compatibility
 *Compatible with the PyTorch operator CosineSimilarity. \n
 */
+#ifndef OPS_PROTO_DEF_COSINESIMILARITY
+#define OPS_PROTO_DEF_COSINESIMILARITY
 REG_OP(CosineSimilarity)
     .INPUT(input_x1, TensorType({DT_FLOAT}))  /* "First operand." */
     .INPUT(input_x2, TensorType({DT_FLOAT}))  /* "Second operand." */
@@ -47,6 +49,7 @@ REG_OP(CosineSimilarity)
     .ATTR(dim, Int, 1)
     .ATTR(eps, Float, 1e-8f)
     .OP_END_FACTORY_REG(CosineSimilarity)
+#endif
 
 } // namespace ge
 

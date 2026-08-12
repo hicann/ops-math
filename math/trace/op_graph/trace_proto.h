@@ -27,20 +27,25 @@ namespace ge {
 
 * @par Inputs:
 * x: A Tensor. Must be one of the following types:complex128, complex64, float64, float32, float16, bool,
-*                                                 int8, uint8, int16, uint16, int32, uint32, int64, uint64, bfloat16,. \n
+*                                                 int8, uint8, int16, uint16, int32, uint32, int64, uint64, bfloat16,.
+\n
 
 * @par Outputs:
-* y: A Tensor. Must be one of the following types:complex128, complex64, float64, float32, float16, int64, uint64, bfloat16. \n
+* y: A Tensor. Must be one of the following types:complex128, complex64, float64, float32, float16, int64, uint64,
+bfloat16. \n
 
 * @par Third-party framework compatibility
 * Compatible with the Pytorch operator Trace.
 */
 
+#ifndef OPS_PROTO_DEF_TRACE
+#define OPS_PROTO_DEF_TRACE
 REG_OP(Trace)
-    .INPUT(x, TensorType({DT_COMPLEX128, DT_COMPLEX64, DT_DOUBLE, DT_FLOAT, DT_FLOAT16, DT_BOOL, DT_INT8,
-                          DT_UINT8, DT_INT16, DT_UINT16, DT_INT32, DT_UINT32, DT_INT64, DT_UINT64, DT_BF16}))
+    .INPUT(x, TensorType({DT_COMPLEX128, DT_COMPLEX64, DT_DOUBLE, DT_FLOAT, DT_FLOAT16, DT_BOOL, DT_INT8, DT_UINT8,
+                          DT_INT16, DT_UINT16, DT_INT32, DT_UINT32, DT_INT64, DT_UINT64, DT_BF16}))
     .OUTPUT(y, TensorType({DT_COMPLEX128, DT_COMPLEX64, DT_DOUBLE, DT_FLOAT, DT_FLOAT16, DT_INT64, DT_UINT64, DT_BF16}))
     .OP_END_FACTORY_REG(Trace)
+#endif
 
 } // namespace ge
 

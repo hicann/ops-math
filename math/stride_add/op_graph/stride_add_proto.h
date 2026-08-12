@@ -41,14 +41,17 @@ namespace ge {
 * y:  A ND Tensor of the same dtype as "x1", and the same shape as "x1",
 * except for the C1 value. Record the result after adding. \n
 */
+#ifndef OPS_PROTO_DEF_STRIDEADD
+#define OPS_PROTO_DEF_STRIDEADD
 REG_OP(StrideAdd)
-    .INPUT(x1, TensorType({ DT_FLOAT, DT_FLOAT16, DT_BF16 }))
-    .INPUT(x2, TensorType({ DT_FLOAT, DT_FLOAT16, DT_BF16 }))
-    .OUTPUT(y, TensorType({ DT_FLOAT, DT_FLOAT16, DT_BF16 }))
+    .INPUT(x1, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16}))
+    .INPUT(x2, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16}))
+    .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16}))
     .REQUIRED_ATTR(x1_c1_offset, Int)
     .REQUIRED_ATTR(x2_c1_offset, Int)
     .REQUIRED_ATTR(c1_len, Int)
     .OP_END_FACTORY_REG(StrideAdd)
+#endif
 
 } // namespace ge
 
