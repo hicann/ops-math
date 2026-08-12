@@ -258,7 +258,8 @@ aclnnStatus aclnnStdGetWorkspaceSize(const aclTensor* self, const aclIntArray* d
     if (selfReshape->IsEmpty()) {
         // 空tensor填充NAN
         ret = CheckFillScalarShapeStdAndVar(out, NAN, uniqueExecutor.get());
-        *workspaceSize = 0UL;
+        CHECK_RET(ret == ACLNN_SUCCESS, ret);
+        *workspaceSize = uniqueExecutor->GetWorkspaceSize();
         uniqueExecutor.ReleaseTo(executor);
         return ret;
     }
@@ -269,14 +270,16 @@ aclnnStatus aclnnStdGetWorkspaceSize(const aclTensor* self, const aclIntArray* d
     if ((shapeProd == 1) && (shapeProd <= correction)) {
         // 返回NAN
         ret = CheckFillScalarShapeStdAndVar(out, NAN, uniqueExecutor.get());
-        *workspaceSize = 0UL;
+        CHECK_RET(ret == ACLNN_SUCCESS, ret);
+        *workspaceSize = uniqueExecutor->GetWorkspaceSize();
         uniqueExecutor.ReleaseTo(executor);
         return ret;
     }
     if ((correction > 1) && (shapeProd <= correction)) {
         // 返回INF
         ret = CheckFillScalarShapeStdAndVar(out, INFINITY, uniqueExecutor.get());
-        *workspaceSize = 0UL;
+        CHECK_RET(ret == ACLNN_SUCCESS, ret);
+        *workspaceSize = uniqueExecutor->GetWorkspaceSize();
         uniqueExecutor.ReleaseTo(executor);
         return ret;
     }
