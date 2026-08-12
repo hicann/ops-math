@@ -25,11 +25,13 @@ namespace ge {
  * @par Third-party framework compatibility
  * Compatible with the TensorFlow operator MatrixDiagPart.
  */
+#ifndef OPS_PROTO_DEF_MATRIXDIAGPART
+#define OPS_PROTO_DEF_MATRIXDIAGPART
 REG_OP(MatrixDiagPart)
     .INPUT(x, TensorType::BasicType())
     .OUTPUT(y, TensorType::BasicType())
     .OP_END_FACTORY_REG(MatrixDiagPart)
-
+#endif
 } // namespace ge
 
 #endif // OPS_MATH_CONVERSION_MATRIX_DIAG_PART_OP_GRAPH_MATRIX_DIAG_PART_PROTO_H_
