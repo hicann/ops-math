@@ -34,17 +34,17 @@ static const int X1_HOP = 160;
 static const int TYPE_SIZE = 4; // float32
 static const int BLOCK_SIZE = 32;
 static const int PACKAGE_SIZE = 128;
-static const int MAX_CACHE_SIZE = 500 * 1024 * 1024;                   // 500MB
+static const int64_t DEFAULT_MAX_CACHE_SIZE = 500 * 1024 * 1024;       // 500MB
 static const uint64_t MAX_GM_SIZE = (uint64_t)35 * 1024 * 1024 * 1024; // 35GB
 
-bool IsStftAiCoreSupported(
-    const aclTensor* self, const aclTensor* window, int64_t nFft, int64_t hopLength, int64_t winLength, bool normalized,
-    bool onesided, bool returnComplex)
+bool IsStftAiCoreSupported(const aclTensor* self, const aclTensor* window, int64_t nFft, int64_t hopLength,
+                           int64_t winLength, bool normalized, bool onesided, bool returnComplex)
 {
     (void)winLength;
     bool res = false;
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion != SocVersion::ASCEND910B && socVersion != SocVersion::ASCEND910_93) {
+    if (socVersion != SocVersion::ASCEND910B && socVersion != SocVersion::ASCEND910_93 &&
+        socVersion != SocVersion::ASCEND950) {
         return res;
     }
     op::Shape shape = self->GetViewShape();
@@ -56,16 +56,16 @@ bool IsStftAiCoreSupported(
     }
     int64_t matmulN = (len - nFft) / hopLength + 1;
     int64_t matmulM = onesided ? nFft / 2 + 1 : nFft;
-    int alignNum =
-        (nFft == X1_NFFT && hopLength == X1_HOP && normalized == false && onesided == true && returnComplex == false) ?
-            BLOCK_SIZE / TYPE_SIZE :
-            PACKAGE_SIZE / TYPE_SIZE;
+    int alignNum = (nFft == X1_NFFT && hopLength == X1_HOP && normalized == false && onesided == true &&
+                    returnComplex == false) ?
+                       BLOCK_SIZE / TYPE_SIZE :
+                       PACKAGE_SIZE / TYPE_SIZE;
     int64_t nFftAlign = (nFft + alignNum - 1) / alignNum * alignNum;
     int64_t cacheSize = (matmulM * nFftAlign) * TYPE_SIZE * 2;
     // gm size = input + output + splitWindow workspace + matmul workspace
     uint64_t gmSize = batch * len * TYPE_SIZE + batch * matmulM * matmulN * 2 * TYPE_SIZE +
                       batch * matmulN * nFftAlign * TYPE_SIZE + batch * matmulM * matmulN * 2 * TYPE_SIZE;
-    if (cacheSize <= MAX_CACHE_SIZE && gmSize <= MAX_GM_SIZE && self->GetDataType() == op::DataType::DT_FLOAT) {
+    if (cacheSize <= DEFAULT_MAX_CACHE_SIZE && gmSize <= MAX_GM_SIZE && self->GetDataType() == op::DataType::DT_FLOAT) {
         if (window == nullptr || window->GetDataType() == op::DataType::DT_FLOAT) {
             res = true;
         }
@@ -74,9 +74,9 @@ bool IsStftAiCoreSupported(
 }
 
 // AICORE算子kernel
-static const aclTensor* StftAiCore(
-    const aclTensor* self, const aclTensor* plan, const aclTensor* window, aclTensor* out, int64_t nFft,
-    int64_t hopLength, int64_t winLength, bool normalized, bool onesided, bool returnComplex, aclOpExecutor* executor)
+static const aclTensor* StftAiCore(const aclTensor* self, const aclTensor* plan, const aclTensor* window,
+                                   aclTensor* out, int64_t nFft, int64_t hopLength, int64_t winLength, bool normalized,
+                                   bool onesided, bool returnComplex, aclOpExecutor* executor)
 {
     L0_DFX(StftAiCore, self, plan, window, nFft, hopLength, winLength, normalized, onesided, returnComplex, out);
 
@@ -85,15 +85,15 @@ static const aclTensor* StftAiCore(
         STFT, OP_ATTR_NAMES({"hop_length", "win_length", "normalized", "onesided", "return_complex", "n_fft"}),
         OP_INPUT(self, plan, window), OP_OUTPUT(out),
         OP_ATTR(hopLength, winLength, normalized, onesided, returnComplex, nFft));
-    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
-        retAiCore != ACLNN_SUCCESS, return nullptr, "STFT ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAiCore != ACLNN_SUCCESS, return nullptr,
+                                         "STFT ADD_TO_LAUNCHER_LIST_AICORE failed.");
     return out;
 }
 
 // AICPU算子kernel
-static const aclTensor* StftAiCpu(
-    const aclTensor* self, const aclTensor* window, aclTensor* out, int64_t nFft, int64_t hopLength, int64_t winLength,
-    bool normalized, bool onesided, bool returnComplex, aclOpExecutor* executor)
+static const aclTensor* StftAiCpu(const aclTensor* self, const aclTensor* window, aclTensor* out, int64_t nFft,
+                                  int64_t hopLength, int64_t winLength, bool normalized, bool onesided,
+                                  bool returnComplex, aclOpExecutor* executor)
 {
     L0_DFX(StftAiCpu, self, window, nFft, hopLength, winLength, normalized, onesided, returnComplex, out);
 
@@ -131,8 +131,8 @@ static op::DataType GetOutputTypeByInput(const aclTensor* self, bool returnCompl
     return outputType;
 }
 
-static op::Shape GetOutputShape(
-    const aclTensor* self, int64_t nFft, int64_t hopLength, bool onesided, bool returnComplex)
+static op::Shape GetOutputShape(const aclTensor* self, int64_t nFft, int64_t hopLength, bool onesided,
+                                bool returnComplex)
 {
     op::Shape shape = self->GetViewShape();
     int64_t batch = shape.GetDimNum() == 2 ? shape.GetDim(0) : 0;
@@ -158,9 +158,9 @@ static op::Shape GetOutputShape(
     return outputShape;
 }
 
-const aclTensor* Stft(
-    const aclTensor* self, const aclTensor* plan, const aclTensor* window, int64_t nFft, int64_t hopLength,
-    int64_t winLength, bool normalized, bool onesided, bool returnComplex, aclOpExecutor* executor)
+const aclTensor* Stft(const aclTensor* self, const aclTensor* plan, const aclTensor* window, int64_t nFft,
+                      int64_t hopLength, int64_t winLength, bool normalized, bool onesided, bool returnComplex,
+                      aclOpExecutor* executor)
 {
     op::Shape outShape = GetOutputShape(self, nFft, hopLength, onesided, returnComplex);
     op::DataType outType = GetOutputTypeByInput(self, returnComplex);
@@ -169,8 +169,8 @@ const aclTensor* Stft(
     CHECK_RET(out != nullptr, nullptr);
 
     if (IsStftAiCoreSupported(self, window, nFft, hopLength, winLength, normalized, onesided, returnComplex)) {
-        return StftAiCore(
-            self, plan, window, out, nFft, hopLength, winLength, normalized, onesided, returnComplex, executor);
+        return StftAiCore(self, plan, window, out, nFft, hopLength, winLength, normalized, onesided, returnComplex,
+                          executor);
     } else {
         return StftAiCpu(self, window, out, nFft, hopLength, winLength, normalized, onesided, returnComplex, executor);
     }

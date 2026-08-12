@@ -15,7 +15,8 @@
 
 #include <cmath>
 #include <mutex>
-#include <map>
+#include <list>
+#include <unordered_map>
 #include <string>
 #include "aclnn_kernels/contiguous.h"
 #include "opdev/op_log.h"
@@ -40,7 +41,6 @@ static const uint64_t STFT_MAX_INPUT_DIM = 2;
 static const uint64_t STFT_WINDOW_DIM = 1;
 static const uint64_t STFT_MIN_OUTPUT_DIM = 2;
 static const uint64_t STFT_MAX_OUTPUT_DIM = 4;
-static const uint64_t ROW_NUM_FOR_32 = 32;
 static const int64_t PAD_VALUE = 0;
 static const std::string PAD_MODE = "constant";
 static const float K2PI = 6.2831853071795864769252867665590057683943388f;
@@ -48,7 +48,7 @@ static const int QUADRANT_ONE = 1;
 static const int QUADRANT_TWO = 2;
 static const int QUADRANT_FOUR = 4;
 static const int REAL_IMAG_NUM = 2;
-static const int DEVICE_MAX_CACHE_NUM = 5;
+static const int64_t DEFAULT_DFT_CACHE_MAX_MEMORY = 8LL * 1024 * 1024 * 1024; // 8GB，可覆盖nFft到32768的所有常见尺度
 static const int FP32_DIVIDE_FP16 = 2;
 static const int FP16_NUM_PER_BLOCK = 16;
 static const int X1_NFFT = 400;
@@ -65,88 +65,121 @@ static const int FP32_BYTES = 4;
 static const std::initializer_list<DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_DOUBLE, DataType::DT_COMPLEX64, DataType::DT_COMPLEX128};
 
-struct PlanCacheKey {
-    int64_t row;
-    int64_t col;
-    int64_t hopLength;
-    int64_t winLength;
-    bool normalized;
-    bool onesided;
-    bool returnComplex;
+// DFT矩阵缓存键：DFT矩阵元素值W[k,n]=exp(-j*2π*k*n/nFft)仅由K和nFft决定，
+// 矩阵物理布局(列数colSizeAlign)由nfftAlignBytes决定。
+// hopLength/winLength/normalized/onesided/returnComplex仅通过nfftAlignBytes间接影响矩阵布局，
+// nfftAlignBytes只有2种取值(32或128)，因此4字段键可完整覆盖8字段的所有场景。
+struct DftCacheKey {
+    int64_t K;              // onesided ? (nFft/2+1) : nFft，决定矩阵行数和元素值
+    int64_t nFft;           // 决定矩阵元素值
+    int64_t nfftAlignBytes; // 决定colSizeAlign(矩阵物理列数/padding)，仅32或128两种取值
     int32_t deviceId;
-};
 
-struct PlanCacheKeyHash {
-    std::size_t operator()(const PlanCacheKey& key) const
+    bool operator==(const DftCacheKey& other) const
     {
-        return static_cast<std::size_t>(
-            ((static_cast<uint64_t>(key.row) << ROW_NUM_FOR_32) | (static_cast<uint64_t>(key.col) & 0xffffffff)) +
-            static_cast<uint64_t>(key.hopLength) + static_cast<uint64_t>(key.winLength) + key.normalized +
-            key.onesided + key.returnComplex + static_cast<uint64_t>(key.deviceId));
+        return K == other.K && nFft == other.nFft && nfftAlignBytes == other.nfftAlignBytes &&
+               deviceId == other.deviceId;
     }
 };
 
-struct PlanCacheKeyEqual {
-    bool operator()(const PlanCacheKey& lhs, const PlanCacheKey& rhs) const
+struct DftCacheKeyHash {
+    std::size_t operator()(const DftCacheKey& key) const
     {
-        return (lhs.row == rhs.row) && (lhs.col == rhs.col) && (lhs.hopLength == rhs.hopLength) &&
-               (lhs.winLength == rhs.winLength) && (lhs.normalized == rhs.normalized) &&
-               (lhs.onesided == rhs.onesided) && (lhs.returnComplex == rhs.returnComplex) &&
-               (lhs.deviceId == rhs.deviceId);
+        return std::hash<int64_t>()(key.K) ^ (std::hash<int64_t>()(key.nFft) << 1) ^
+               (std::hash<int64_t>()(key.nfftAlignBytes) << 2) ^ std::hash<int32_t>()(key.deviceId);
     }
 };
 
-class StftSingleton {
-private:
-    std::mutex cacheNumMutex;
-    std::mutex planCacheMutex;
+// DFT矩阵缓存条目
+struct DftCacheEntry {
+    void* devicePtr;    // NPU上的DFT矩阵指针
+    int64_t matrixSize; // 矩阵占用的显存大小（字节）
+};
 
-    std::map<int32_t, int> deviceCacheNum;
-    std::unordered_map<PlanCacheKey, void*, PlanCacheKeyHash, PlanCacheKeyEqual> planCache;
-
+// DFT矩阵缓存：基于LRU淘汰策略，按总显存预算控制容量
+// 缓存仅服务于AiCore路径（AiCpu路径不构造DFT矩阵）
+class DftMatrixCache {
 public:
-    static StftSingleton& GetInstance()
+    static DftMatrixCache& GetInstance()
     {
-        static StftSingleton instance;
+        static DftMatrixCache instance;
         return instance;
     }
 
-    void addCacheNum(int32_t deviceId)
+    // 查找缓存，命中时更新LRU顺序
+    void* Find(int64_t K, int64_t nFft, int64_t nfftAlignBytes, int32_t deviceId)
     {
-        std::lock_guard<std::mutex> lock(cacheNumMutex);
-        deviceCacheNum[deviceId]++;
-    }
-
-    int findCacheNum(int32_t deviceId)
-    {
-        std::lock_guard<std::mutex> lock(cacheNumMutex);
-        return deviceCacheNum[deviceId];
-    }
-
-    void addPlanCache(
-        int64_t rowSize, int64_t colSize, int64_t hopLength, int64_t winLength, bool normalized, bool onesided,
-        bool returnComplex, int32_t deviceId, void* planDevice)
-    {
-        std::lock_guard<std::mutex> lock(planCacheMutex);
-        PlanCacheKey key = {rowSize, colSize, hopLength, winLength, normalized, onesided, returnComplex, deviceId};
-        auto it = planCache.find(key);
-        if (it == planCache.end()) {
-            planCache[key] = planDevice;
+        std::lock_guard<std::mutex> lock(mutex_);
+        DftCacheKey key = {K, nFft, nfftAlignBytes, deviceId};
+        auto it = cacheMap_.find(key);
+        if (it == cacheMap_.end()) {
+            return nullptr;
         }
+        // 命中：移到LRU链表头部（最近使用）
+        lruList_.splice(lruList_.begin(), lruList_, it->second.lruIt);
+        return it->second.entry.devicePtr;
     }
 
-    void* findPlanCache(
-        int64_t rowSize, int64_t colSize, int64_t hopLength, int64_t winLength, bool normalized, bool onesided,
-        bool returnComplex, int32_t deviceId)
+    // 插入缓存，返回true表示已缓存，false表示不缓存（矩阵太大）
+    bool Insert(int64_t K, int64_t nFft, int64_t nfftAlignBytes, int32_t deviceId, void* devicePtr, int64_t matrixSize)
     {
-        std::lock_guard<std::mutex> lock(planCacheMutex);
-        PlanCacheKey key = {rowSize, colSize, hopLength, winLength, normalized, onesided, returnComplex, deviceId};
-        auto it = planCache.find(key);
-        if (it != planCache.end()) {
-            return it->second;
+        std::lock_guard<std::mutex> lock(mutex_);
+        DftCacheKey key = {K, nFft, nfftAlignBytes, deviceId};
+
+        // 如果已存在，更新LRU顺序
+        auto it = cacheMap_.find(key);
+        if (it != cacheMap_.end()) {
+            lruList_.splice(lruList_.begin(), lruList_, it->second.lruIt);
+            return true;
         }
-        return nullptr;
+
+        // 大矩阵直通：单矩阵超过预算50%时不缓存
+        // 避免一个大矩阵占满预算，导致其他小矩阵全部被淘汰
+        if (matrixSize > maxMemory_ / 2) {
+            return false;
+        }
+
+        // 淘汰直到有足够空间
+        while (usedMemory_ + matrixSize > maxMemory_ && !lruList_.empty()) {
+            EvictOne();
+        }
+
+        // 插入新条目
+        lruList_.push_front(key);
+        CacheMapValue value;
+        value.entry = {devicePtr, matrixSize};
+        value.lruIt = lruList_.begin();
+        cacheMap_[key] = value;
+        usedMemory_ += matrixSize;
+        return true;
     }
+
+private:
+    DftMatrixCache() : maxMemory_(DEFAULT_DFT_CACHE_MAX_MEMORY), usedMemory_(0) {}
+
+    void EvictOne()
+    {
+        // 淘汰LRU链表尾部（最久未使用）
+        auto& evictKey = lruList_.back();
+        auto it = cacheMap_.find(evictKey);
+        if (it != cacheMap_.end()) {
+            usedMemory_ -= it->second.entry.matrixSize;
+            // 注意：devicePtr的释放由executor管理，这里仅从缓存索引中移除
+            cacheMap_.erase(it);
+        }
+        lruList_.pop_back();
+    }
+
+    struct CacheMapValue {
+        DftCacheEntry entry;
+        std::list<DftCacheKey>::iterator lruIt;
+    };
+
+    std::mutex mutex_;
+    int64_t maxMemory_;              // 显存预算上限
+    int64_t usedMemory_;             // 当前已用显存
+    std::list<DftCacheKey> lruList_; // LRU链表，头部=最近使用
+    std::unordered_map<DftCacheKey, CacheMapValue, DftCacheKeyHash> cacheMap_;
 };
 
 static int64_t nFftToAlign(const aclTensor* self, int64_t nfft, int alignBytes)
@@ -274,8 +307,8 @@ static bool CheckFormat(const aclTensor* self)
     return true;
 }
 
-static op::Shape GetOutputShape(
-    const aclTensor* self, bool onesided, bool returnComplex, int64_t hopLength, int64_t nFft)
+static op::Shape GetOutputShape(const aclTensor* self, bool onesided, bool returnComplex, int64_t hopLength,
+                                int64_t nFft)
 {
     op::Shape selfShape = self->GetViewShape();
     auto dimNum = selfShape.GetDimNum();
@@ -302,9 +335,8 @@ static op::Shape GetOutputShape(
     return outShape;
 }
 
-static bool CheckShape(
-    const aclTensor* self, const aclTensor* out, const aclTensor* window, int64_t hopLength, int64_t winLength,
-    int64_t nFft, bool onesided, bool returnComplex)
+static bool CheckShape(const aclTensor* self, const aclTensor* out, const aclTensor* window, int64_t hopLength,
+                       int64_t winLength, int64_t nFft, bool onesided, bool returnComplex)
 {
     // input dim: 1~2
     OP_CHECK_MIN_DIM(self, STFT_MIN_INPUT_DIM, return false);
@@ -363,7 +395,8 @@ static bool CheckShape(
 static bool CheckPlatform()
 {
     if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
+        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
         return true;
     } else {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "STFT is not supported on this platform");
@@ -371,9 +404,8 @@ static bool CheckPlatform()
     }
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclTensor* out, const aclTensor* window, int64_t hopLength, int64_t winLength,
-    int64_t nFft, bool onesided, bool returnComplex)
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out, const aclTensor* window, int64_t hopLength,
+                               int64_t winLength, int64_t nFft, bool onesided, bool returnComplex)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -385,15 +417,14 @@ static aclnnStatus CheckParams(
     CHECK_RET(CheckFormat(self), ACLNN_ERR_PARAM_INVALID);
 
     // 4. 检查shape是否满足约束
-    CHECK_RET(
-        CheckShape(self, out, window, hopLength, winLength, nFft, onesided, returnComplex), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckShape(self, out, window, hopLength, winLength, nFft, onesided, returnComplex),
+              ACLNN_ERR_PARAM_INVALID);
 
     return ACLNN_SUCCESS;
 }
 
-static const aclTensor* GeneratePadWindow(
-    const aclTensor* self, const aclTensor* window, int64_t winLength, int64_t nFft, int nfftAlignBytes,
-    aclOpExecutor* executor)
+static const aclTensor* GeneratePadWindow(const aclTensor* self, const aclTensor* window, int64_t winLength,
+                                          int64_t nFft, int nfftAlignBytes, aclOpExecutor* executor)
 {
     int64_t left = (nFft - winLength) / 2;
 
@@ -422,18 +453,19 @@ static const aclTensor* GeneratePadWindow(
     return l0op::PadV3(window, padTensor, valueTensor, PAD_MODE, true, executor);
 }
 
-static const aclTensor* GenerateDftMatrix(
-    const aclTensor* self, int64_t rowSize, int64_t colSize, int64_t hopLength, int64_t winLength, bool normalized,
-    bool onesided, bool returnComplex, int nfftAlignBytes, aclOpExecutor* executor)
+static const aclTensor* GenerateDftMatrix(const aclTensor* self, int64_t rowSize, int64_t colSize, int nfftAlignBytes,
+                                          aclOpExecutor* executor)
 {
     // colSize按照block对齐，即(K, nFft) -> (K, nFft_align)
     int64_t colSizeAlign = nFftToAlign(self, colSize, nfftAlignBytes);
     auto deviceId = GetCurrentPlatformInfo().GetDeviceId();
-    void* planDevice = StftSingleton::GetInstance().findPlanCache(
-        rowSize, colSize, hopLength, winLength, normalized, onesided, returnComplex, deviceId);
+    // 缓存键：DFT矩阵由K(rowSize)、nFft(colSize)、nfftAlignBytes(决定物理布局)唯一确定
+    void* planDevice = DftMatrixCache::GetInstance().Find(rowSize, colSize, nfftAlignBytes, deviceId);
 
     // 命中plan cache
     if (planDevice != nullptr) {
+        OP_LOGI("DftMatrix cache HIT: K=%lld, nFft=%lld, alignBytes=%d, deviceId=%d", (long long)rowSize,
+                (long long)colSize, nfftAlignBytes, deviceId);
         auto dft = executor->AllocTensor({REAL_IMAG_NUM, rowSize, colSizeAlign}, op::DataType::DT_FLOAT);
         dft->SetFromWorkspace(false);
         dft->SetStorageAddr(planDevice);
@@ -442,6 +474,8 @@ static const aclTensor* GenerateDftMatrix(
     }
 
     // 未命中plan cache
+    OP_LOGI("DftMatrix cache MISS: K=%lld, nFft=%lld, alignBytes=%d, deviceId=%d, constructing matrix...",
+            (long long)rowSize, (long long)colSize, nfftAlignBytes, deviceId);
     auto dftMatrix = executor->AllocHostTensor({2, rowSize, colSizeAlign}, op::DataType::DT_FLOAT);
     float* addrReal = static_cast<float*>(dftMatrix->GetStorageAddr());
     float* addrImag = static_cast<float*>(dftMatrix->GetStorageAddr()) + rowSize * colSizeAlign;
@@ -468,33 +502,29 @@ static const aclTensor* GenerateDftMatrix(
         }
     }
 
-    const aclTensor* deviceTensor = nullptr;
-    auto deviceIdCacheNum = StftSingleton::GetInstance().findCacheNum(deviceId);
-    // 判断当前device上plan cache个数是否达到上限
-    if (deviceIdCacheNum < DEVICE_MAX_CACHE_NUM) {
-        StftSingleton::GetInstance().addCacheNum(deviceId);
-        deviceTensor = op::CopyToNpuSync(dftMatrix, executor);
-        CHECK_RET(deviceTensor != nullptr, nullptr);
-        StftSingleton::GetInstance().addPlanCache(
-            rowSize, colSize, hopLength, winLength, normalized, onesided, returnComplex, deviceId,
-            deviceTensor->GetData());
-        planDevice = deviceTensor->GetData();
-    } else {
-        deviceTensor = op::CopyToNpu(dftMatrix, executor);
-        CHECK_RET(deviceTensor != nullptr, nullptr);
-    }
+    // 同步拷贝到NPU
+    auto deviceTensor = op::CopyToNpuSync(dftMatrix, executor);
+    CHECK_RET(deviceTensor != nullptr, nullptr);
+
+    // 计算矩阵大小并尝试缓存（大矩阵可能不被缓存）
+    int64_t matrixSize = 2 * rowSize * colSizeAlign * sizeof(float);
+    bool cached = DftMatrixCache::GetInstance().Insert(rowSize, colSize, nfftAlignBytes, deviceId,
+                                                       deviceTensor->GetData(), matrixSize);
+    OP_LOGI("DftMatrix constructed: K=%lld, nFft=%lld, matrixSize=%lldMB, cached=%s", (long long)rowSize,
+            (long long)colSize, (long long)(matrixSize / 1024 / 1024), cached ? "yes" : "no(too large)");
 
     return deviceTensor;
 }
 
-aclnnStatus aclStftGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* windowOptional, aclTensor* out, int64_t nFft, int64_t hopLength,
-    int64_t winLength, bool normalized, bool onesided, bool returnComplex, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclStftGetWorkspaceSize(const aclTensor* self, const aclTensor* windowOptional, aclTensor* out,
+                                    int64_t nFft, int64_t hopLength, int64_t winLength, bool normalized, bool onesided,
+                                    bool returnComplex, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
-    L2_DFX_PHASE_1(
-        aclStft, DFX_IN(self, windowOptional, nFft, hopLength, winLength, normalized, onesided, returnComplex),
-        DFX_OUT(out));
+    OP_LOGI("aclStftGetWorkspaceSize ENTER: nFft=%lld, hopLength=%lld, winLength=%lld, onesided=%d, returnComplex=%d",
+            (long long)nFft, (long long)hopLength, (long long)winLength, onesided, returnComplex);
+    L2_DFX_PHASE_1(aclStft,
+                   DFX_IN(self, windowOptional, nFft, hopLength, winLength, normalized, onesided, returnComplex),
+                   DFX_OUT(out));
 
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -520,25 +550,25 @@ aclnnStatus aclStftGetWorkspaceSize(
     auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    if (!l0op::IsStftAiCoreSupported(
-            selfContiguous, windowOptional, nFft, hopLength, winLength, normalized, onesided, returnComplex)) {
+    if (!l0op::IsStftAiCoreSupported(selfContiguous, windowOptional, nFft, hopLength, winLength, normalized, onesided,
+                                     returnComplex)) {
         // aicpu
-        OP_LOGD("Stft: aicpu");
-        auto stftResult = l0op::Stft(
-            selfContiguous, nullptr, windowOptional, nFft, hopLength, winLength, normalized, onesided, returnComplex,
-            uniqueExecutor.get());
+        OP_LOGI("aclStft path=AiCpu: nFft=%lld, hopLength=%lld, winLength=%lld, onesided=%d, returnComplex=%d",
+                (long long)nFft, (long long)hopLength, (long long)winLength, onesided, returnComplex);
+        auto stftResult = l0op::Stft(selfContiguous, nullptr, windowOptional, nFft, hopLength, winLength, normalized,
+                                     onesided, returnComplex, uniqueExecutor.get());
         CHECK_RET(stftResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
         auto viewCopyResult = l0op::ViewCopy(stftResult, out, uniqueExecutor.get());
         CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
     } else {
         // window length < nFft, need to pad window
-        OP_LOGD("Stft: aicore");
+        OP_LOGI("aclStft path=AiCore: nFft=%lld, hopLength=%lld, winLength=%lld, onesided=%d, returnComplex=%d",
+                (long long)nFft, (long long)hopLength, (long long)winLength, onesided, returnComplex);
         const aclTensor* windowPad;
         int64_t nFftAlign = nFftToAlign(self, nFft, nfftAlignBytes);
         if (winLength < nFftAlign) {
-            windowPad =
-                GeneratePadWindow(self, windowOptional, winLength, nFft, nfftAlignBytes, uniqueExecutor.get());
+            windowPad = GeneratePadWindow(self, windowOptional, winLength, nFft, nfftAlignBytes, uniqueExecutor.get());
         } else {
             windowPad = windowOptional;
         }
@@ -546,25 +576,21 @@ aclnnStatus aclStftGetWorkspaceSize(
         // 生成辅助矩阵W：w_real（K，N）+ w_imag（K，N）
         const int64_t K = onesided ? (nFft / 2) + 1 : nFft;
         const int64_t N = nFft;
-        const aclTensor* dftMatrix = GenerateDftMatrix(
-            self, K, N, hopLength, winLength, normalized, onesided, returnComplex, nfftAlignBytes,
-            uniqueExecutor.get());
+        const aclTensor* dftMatrix = GenerateDftMatrix(self, K, N, nfftAlignBytes, uniqueExecutor.get());
 
         const aclTensor* stftResult;
         if (nFft == X1_NFFT && hopLength == X1_HOP && normalized == false && onesided == true &&
             returnComplex == false) {
             // mul(dftMatrix, windowPad)
-            const aclTensor* w =
-                windowPad == nullptr ? dftMatrix : l0op::Mul(dftMatrix, windowPad, uniqueExecutor.get());
+            const aclTensor* w = windowPad == nullptr ? dftMatrix :
+                                                        l0op::Mul(dftMatrix, windowPad, uniqueExecutor.get());
             // stft
-            stftResult = l0op::Stft(
-                selfContiguous, w, nullptr, nFft, hopLength, winLength, normalized, onesided, returnComplex,
-                uniqueExecutor.get());
+            stftResult = l0op::Stft(selfContiguous, w, nullptr, nFft, hopLength, winLength, normalized, onesided,
+                                    returnComplex, uniqueExecutor.get());
         } else {
             // stft
-            stftResult = l0op::Stft(
-                selfContiguous, dftMatrix, windowPad, nFft, hopLength, winLength, normalized, onesided, returnComplex,
-                uniqueExecutor.get());
+            stftResult = l0op::Stft(selfContiguous, dftMatrix, windowPad, nFft, hopLength, winLength, normalized,
+                                    onesided, returnComplex, uniqueExecutor.get());
         }
         CHECK_RET(stftResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 

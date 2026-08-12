@@ -47,22 +47,61 @@ constexpr uint32_t TILING_KEY_FLOAT16 = 3;
 constexpr uint32_t CORE_COEFF = 2;
 constexpr uint32_t INVALID_CORES_NUM = 0x5A5A5A5A;
 constexpr uint8_t SCHEDULE_MODE_ALL_CORE = 1; // 全核启动
-std::map<int, std::vector<int>> g_factorsMap = {
-    {50, {50, 25, 10, 5, 2, 1}},
-    {48, {48, 24, 12, 8, 6, 4, 2, 1}},
-    {40, {40, 20, 10, 8, 5, 4, 2, 1}},
-    {25, {25, 5, 1}},
-    {24, {24, 12, 6, 4, 2, 1}},
-    {20, {20, 10, 5, 4, 2, 1}},
-    {16, {16, 8, 4, 2, 1}},
-    {12, {12, 6, 2, 1}},
-    {10, {10, 5, 2, 1}},
-    {8, {8, 4, 2, 1}},
-    {6, {6, 1}},
-    {5, {5, 1}},
-    {4, {4, 2, 1}},
-    {2, {2, 1}},
-    {1, {1}}};
+// g_factorsMap：核数 -> 因子降序列表。递归切分过程中每一步的 coresLeft
+// 都必须在此 map 中，故需补齐 56/28 递归中间态出现的质数因子 7 与 14。
+std::map<int, std::vector<int>> g_factorsMap = {{64, {64, 32, 16, 8, 4, 2, 1}},    // ascend950 64核
+                                                {56, {56, 28, 14, 8, 7, 4, 2, 1}}, // ascend950 56核
+                                                {50, {50, 25, 10, 5, 2, 1}},
+                                                {48, {48, 24, 12, 8, 6, 4, 2, 1}},
+                                                {40, {40, 20, 10, 8, 5, 4, 2, 1}},
+                                                {32, {32, 16, 8, 4, 2, 1}},
+                                                {28, {28, 14, 7, 4, 2, 1}},
+                                                {25, {25, 5, 1}},
+                                                {24, {24, 12, 6, 4, 2, 1}},
+                                                {20, {20, 10, 5, 4, 2, 1}},
+                                                {16, {16, 8, 4, 2, 1}},
+                                                {14, {14, 7, 2, 1}},
+                                                {12, {12, 6, 2, 1}},
+                                                {10, {10, 5, 2, 1}},
+                                                {8, {8, 4, 2, 1}},
+                                                {7, {7, 1}},
+                                                {6, {6, 1}},
+                                                {5, {5, 1}},
+                                                {4, {4, 2, 1}},
+                                                {2, {2, 1}},
+                                                {1, {1}}};
+
+// 动态计算 value 的所有因子降序列表（含 value 和 1），O(sqrt(n)) 复杂度。
+// 用于 g_factorsMap 未命中时兜底，使任意核数自动适配。
+static std::vector<int> GetFactors(int32_t value)
+{
+    std::vector<int> big;
+    std::vector<int> small;
+    for (int32_t i = 1; i * i <= value; i++) {
+        if (value % i == 0) {
+            small.push_back(i);
+            if (i != value / i) {
+                big.push_back(value / i);
+            }
+        }
+    }
+    // big 升序，倒序拼接到 small 后得到整体降序
+    for (int j = static_cast<int>(big.size()) - 1; j >= 0; j--) {
+        small.push_back(big[j]);
+    }
+    return small;
+}
+
+// 优先查 g_factorsMap，未命中则动态计算。返回因子降序列表（含自身和1）。
+static std::vector<int> GetFactorsWithFallback(int32_t coresNum)
+{
+    auto iter = g_factorsMap.find(coresNum);
+    if (iter != g_factorsMap.end()) {
+        return iter->second;
+    }
+    OP_LOGW("STFT", "coresNum %d not in g_factorsMap, fallback to dynamic GetFactors.", coresNum);
+    return GetFactors(coresNum);
+}
 
 static inline int32_t CeilDiv(int a, int b)
 {
@@ -74,8 +113,7 @@ static inline int32_t CeilDiv(int a, int b)
 
 class STFTGeneralizedTiling : public STFTBaseTiling {
 public:
-    explicit STFTGeneralizedTiling(gert::TilingContext* context) : STFTBaseTiling(context)
-    {}
+    explicit STFTGeneralizedTiling(gert::TilingContext* context) : STFTBaseTiling(context) {}
 
 protected:
     bool IsCapable() override;
@@ -111,8 +149,8 @@ private:
     STFTGeneralizedTilingData tilingData;
 
     matmul_tiling::DataType GetMatmulDataType(ge::DataType inputDtype) const;
-    void SetMatmulTiling(
-        matmul_tiling::MatmulApiTiling& tilingApi, int m, int n, int k, int kAlign, TCubeTiling& mmTiling);
+    void SetMatmulTiling(matmul_tiling::MatmulApiTiling& tilingApi, int m, int n, int k, int kAlign,
+                         TCubeTiling& mmTiling);
     uint32_t CalcMaskUBSize(uint32_t memHasUsed) const;
     uint32_t CalcCopyUBSize() const;
     uint32_t CalcComplexUBLoop() const;
@@ -166,12 +204,8 @@ void STFTGeneralizedTiling::GetPlanSplitStrategy()
 uint32_t STFTGeneralizedTiling::SplitCoresOnB(uint32_t coresNum)
 {
     uint32_t coresLeft = coresNum;
-    auto iter = g_factorsMap.find(coresNum);
-    OP_CHECK_IF(
-        iter == g_factorsMap.end(), OP_LOGE(context_->GetNodeName(), "invalid coresNum %u", coresNum),
-        return INVALID_CORES_NUM);
+    std::vector<int> factors = GetFactorsWithFallback(coresNum);
 
-    std::vector<int> factors = iter->second;
     for (size_t i = 0; i < factors.size(); i++) {
         if (batch / factors[i] >= 1) {
             bCoreNum = factors[i];
@@ -187,12 +221,8 @@ uint32_t STFTGeneralizedTiling::SplitCoresOnB(uint32_t coresNum)
 uint32_t STFTGeneralizedTiling::SplitCoresOnM(uint32_t coresNum)
 {
     uint32_t coresLeft = coresNum;
-    auto iter = g_factorsMap.find(coresNum);
-    OP_CHECK_IF(
-        iter == g_factorsMap.end(), OP_LOGE(context_->GetNodeName(), "invalid coresNum %u", coresNum),
-        return INVALID_CORES_NUM);
+    std::vector<int> factors = GetFactorsWithFallback(coresNum);
 
-    std::vector<int> factors = iter->second;
     for (size_t i = 0; i < factors.size(); i++) {
         if (matmulM / factors[i] >= 1) {
             mCoreNum = factors[i];
@@ -208,16 +238,10 @@ uint32_t STFTGeneralizedTiling::SplitCoresOnM(uint32_t coresNum)
 uint32_t STFTGeneralizedTiling::SplitCoresOnN(uint32_t coresNum)
 {
     uint32_t coresLeft = coresNum;
-    auto iter = g_factorsMap.find(coresNum);
-    OP_CHECK_IF(
-        iter == g_factorsMap.end(), OP_LOGE(context_->GetNodeName(), "invalid coresNum %u", coresNum),
-        return INVALID_CORES_NUM);
-
-    std::vector<int> factors = iter->second;
+    std::vector<int> factors = GetFactorsWithFallback(coresNum);
     uint32_t typeSize = ge::GetSizeByDataType(dtype);
-    OP_CHECK_IF(
-        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
+                return ge::GRAPH_FAILED);
     nCoreNum = 0;
     for (size_t i = 0; i < factors.size(); i++) {
         int n = 1;
@@ -373,12 +397,7 @@ uint32_t STFTGeneralizedTiling::SplitCoresMNBlanced()
     uint32_t mCoreNumNeedSplit;
     uint32_t nCoreNumNeedSplit;
 
-    auto iter = g_factorsMap.find(aivCoreNum);
-    OP_CHECK_IF(
-        iter == g_factorsMap.end(), OP_LOGE(context_->GetNodeName(), "invalid aivCoreNum %ld", aivCoreNum),
-        return INVALID_CORES_NUM);
-
-    std::vector<int> factors = iter->second;
+    std::vector<int> factors = GetFactorsWithFallback(aivCoreNum);
     for (size_t i = 0; i < factors.size(); i++) {
         int64_t curMatmulCost = CalcMatmulCost(factors[i], aivCoreNum / factors[i]);
         if (curMatmulCost < matmulCostMin) {
@@ -392,18 +411,18 @@ uint32_t STFTGeneralizedTiling::SplitCoresMNBlanced()
         return 0;
     }
     uint32_t coresLeft = SplitCoresOnM(mCoreNumNeedSplit);
-    OP_CHECK_IF(
-        coresLeft == INVALID_CORES_NUM, OP_LOGE(context_->GetNodeName(), "split M failed"), return INVALID_CORES_NUM);
+    OP_CHECK_IF(coresLeft == INVALID_CORES_NUM, OP_LOGE(context_->GetNodeName(), "split M failed"),
+                return INVALID_CORES_NUM);
 
     coresLeft = SplitCoresOnB(nCoreNumNeedSplit);
-    OP_CHECK_IF(
-        coresLeft == INVALID_CORES_NUM, OP_LOGE(context_->GetNodeName(), "split B failed"), return INVALID_CORES_NUM);
+    OP_CHECK_IF(coresLeft == INVALID_CORES_NUM, OP_LOGE(context_->GetNodeName(), "split B failed"),
+                return INVALID_CORES_NUM);
 
     OP_CHECK_IF(coresLeft == 1, SetN(), return 1);
 
     coresLeft = SplitCoresOnN(coresLeft);
-    OP_CHECK_IF(
-        coresLeft == INVALID_CORES_NUM, OP_LOGE(context_->GetNodeName(), "split N failed"), return INVALID_CORES_NUM);
+    OP_CHECK_IF(coresLeft == INVALID_CORES_NUM, OP_LOGE(context_->GetNodeName(), "split N failed"),
+                return INVALID_CORES_NUM);
     return 1;
 }
 
@@ -417,18 +436,12 @@ bool STFTGeneralizedTiling::SplitCores()
     }
 
     uint32_t typeSize = ge::GetSizeByDataType(dtype);
-    OP_CHECK_IF(
-        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
+                return ge::GRAPH_FAILED);
     bCoreNum = 1;
     mCoreNum = 1;
     nCoreNum = 1;
-    auto iter = g_factorsMap.find(aivCoreNum);
-    OP_CHECK_IF(
-        iter == g_factorsMap.end(), OP_LOGE(context_->GetNodeName(), "invalid aivCoreNum %ld", aivCoreNum),
-        return false);
-
-    std::vector<int> factors = iter->second;
+    std::vector<int> factors = GetFactorsWithFallback(aivCoreNum);
     for (size_t i = 0; i < factors.size(); i++) {
         if (batch % factors[i] == 0 && bCoreNum == 1) {
             bCoreNum = factors[i];
@@ -457,17 +470,13 @@ bool STFTGeneralizedTiling::SplitCores()
     return SplitCoresOnBMN();
 }
 
-bool STFTGeneralizedTiling::IsCapable()
-{
-    return true;
-}
+bool STFTGeneralizedTiling::IsCapable() { return true; }
 
 uint32_t STFTGeneralizedTiling::CalcMaskUBSize(uint32_t memHasUsed) const
 {
     uint32_t typeSize = ge::GetSizeByDataType(dtype);
-    OP_CHECK_IF(
-        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
+                return ge::GRAPH_FAILED);
     uint32_t ubLeft = ubSize - memHasUsed;
     uint32_t count = ubLeft / (4 * typeSize + DWORD_SIZE * 2);
     uint32_t maskUBSize = count * DWORD_SIZE / 2 / BLOCK_SIZE * BLOCK_SIZE * 2;
@@ -477,9 +486,8 @@ uint32_t STFTGeneralizedTiling::CalcMaskUBSize(uint32_t memHasUsed) const
 uint32_t STFTGeneralizedTiling::CalcCopyUBSize() const
 {
     uint32_t typeSize = ge::GetSizeByDataType(dtype);
-    OP_CHECK_IF(
-        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
+                return ge::GRAPH_FAILED);
     uint32_t ubLeft = ubSize - GATHER_MASK_UB_SIZE;
     uint32_t count = GATHER_MASK_UB_SIZE / DWORD_SIZE;
     uint32_t copyUBSize = (ubLeft - (4 * typeSize + 2 * DWORD_SIZE) * count) / BLOCK_SIZE * BLOCK_SIZE;
@@ -489,9 +497,8 @@ uint32_t STFTGeneralizedTiling::CalcCopyUBSize() const
 uint32_t STFTGeneralizedTiling::CalcComplexCopyUBSize() const
 {
     uint32_t typeSize = ge::GetSizeByDataType(dtype);
-    OP_CHECK_IF(
-        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
+                return ge::GRAPH_FAILED);
     uint32_t ubLeft = ubSize - GATHER_MASK_COMPLEX_UB_SIZE;
     uint32_t count = GATHER_MASK_COMPLEX_UB_SIZE / DWORD_SIZE;
     uint32_t copyUBSize = (ubLeft - (4 * typeSize + 2 * DWORD_SIZE) * count) / BLOCK_SIZE * BLOCK_SIZE;
@@ -501,9 +508,8 @@ uint32_t STFTGeneralizedTiling::CalcComplexCopyUBSize() const
 uint32_t STFTGeneralizedTiling::CalcComplexUBLoop() const
 {
     uint32_t typeSize = ge::GetSizeByDataType(dtype);
-    OP_CHECK_IF(
-        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
+                return ge::GRAPH_FAILED);
     uint32_t copyUBSize = CalcComplexCopyUBSize() / 2;
     uint32_t ubLoop = 1;
     uint32_t ubFormer;
@@ -589,9 +595,8 @@ ge::graphStatus STFTGeneralizedTiling::DoOpTiling()
     tilingData.set_inputSize(inputSize);
     tilingData.set_nfft(nfft);
     uint32_t typeSize = ge::GetSizeByDataType(dtype);
-    OP_CHECK_IF(
-        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
+                return ge::GRAPH_FAILED);
     nfftAlign = (nfft * typeSize + PACKAGE_SIZE - 1) / PACKAGE_SIZE * PACKAGE_SIZE / typeSize;
     tilingData.set_nfftAlign(nfftAlign);
     tilingData.set_hopLength(hop);
@@ -603,9 +608,8 @@ ge::graphStatus STFTGeneralizedTiling::DoOpTiling()
 
     if (dtype == ge::DataType::DT_COMPLEX64) {
         uint32_t ubLoop = CalcComplexUBLoop();
-        OP_CHECK_IF(
-            (ubLoop <= 0), OP_LOGE(context_->GetNodeName(), "ubLoop is invalid %u, please check.", ubLoop),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((ubLoop <= 0), OP_LOGE(context_->GetNodeName(), "ubLoop is invalid %u, please check.", ubLoop),
+                    return ge::GRAPH_FAILED);
         tilingData.set_nFactorUbLoop(ubLoop);
         uint32_t ubFormer = (nfftAlign + ubLoop - 1) / ubLoop;
         tilingData.set_nFactorUbFormer(ubFormer);
@@ -633,8 +637,8 @@ matmul_tiling::DataType STFTGeneralizedTiling::GetMatmulDataType(ge::DataType in
     return mtype;
 }
 
-void STFTGeneralizedTiling::SetMatmulTiling(
-    matmul_tiling::MatmulApiTiling& tilingApi, int m, int n, int k, int kAlign, TCubeTiling& mmTiling)
+void STFTGeneralizedTiling::SetMatmulTiling(matmul_tiling::MatmulApiTiling& tilingApi, int m, int n, int k, int kAlign,
+                                            TCubeTiling& mmTiling)
 {
     m *= IMAG_AND_REAL;
     matmul_tiling::TPosition leftPos = matmul_tiling::TPosition::GM;
@@ -726,24 +730,24 @@ ge::graphStatus STFTGeneralizedTiling::GetWorkspaceSize()
     // 第0块workspace用于存储按照窗口拆分之后的input data
     // 按照nfft block对齐之后的大小
     uint64_t typeSize = ge::GetSizeByDataType(dtype);
-    OP_CHECK_IF(
-        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %lu, please check.", typeSize),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %lu, please check.", typeSize),
+                return ge::GRAPH_FAILED);
 
-    size_t splitWindowWorkspaceSize =
-        ((typeSize * batch * matmulN * nfftAlign + WORKSPACE_ALIGN_SIZE - 1) / WORKSPACE_ALIGN_SIZE) *
-        WORKSPACE_ALIGN_SIZE;
+    size_t splitWindowWorkspaceSize = ((typeSize * batch * matmulN * nfftAlign + WORKSPACE_ALIGN_SIZE - 1) /
+                                       WORKSPACE_ALIGN_SIZE) *
+                                      WORKSPACE_ALIGN_SIZE;
 
     // 第一块workspace用于存储input data和plan mm运算之后的结果
-    size_t matmulWorkspaceSize =
-        ((typeSize * batch * matmulN * matmulM * 2 + WORKSPACE_ALIGN_SIZE - 1) / WORKSPACE_ALIGN_SIZE) *
-        WORKSPACE_ALIGN_SIZE;
+    size_t matmulWorkspaceSize = ((typeSize * batch * matmulN * matmulM * 2 + WORKSPACE_ALIGN_SIZE - 1) /
+                                  WORKSPACE_ALIGN_SIZE) *
+                                 WORKSPACE_ALIGN_SIZE;
 
-    size_t planWorkspaceSize =
-        ((typeSize * matmulM * nfftAlign * 2 + WORKSPACE_ALIGN_SIZE - 1) / WORKSPACE_ALIGN_SIZE) * WORKSPACE_ALIGN_SIZE;
+    size_t planWorkspaceSize = ((typeSize * matmulM * nfftAlign * 2 + WORKSPACE_ALIGN_SIZE - 1) /
+                                WORKSPACE_ALIGN_SIZE) *
+                               WORKSPACE_ALIGN_SIZE;
 
-    workspaceSize_ =
-        splitWindowWorkspaceSize + matmulWorkspaceSize + planWorkspaceSize + sysWorkspaceSize + EXTRA_WORKSPACE_SIZE;
+    workspaceSize_ = splitWindowWorkspaceSize + matmulWorkspaceSize + planWorkspaceSize + sysWorkspaceSize +
+                     EXTRA_WORKSPACE_SIZE;
     return ge::GRAPH_SUCCESS;
 }
 
