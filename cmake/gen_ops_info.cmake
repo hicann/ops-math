@@ -236,7 +236,7 @@ endfunction()
 # ${CMAKE_BINARY_DIR}/binary/${compute_unit}
 # ######################################################################################################################
 function(generate_bin_scripts)
-  set(oneValueArgs TARGET OP_NAME OPS_INFO_DIR COMPUTE_UNIT OUT_DIR)
+  set(oneValueArgs TARGET OP_NAME OP_TYPE OPS_INFO_DIR COMPUTE_UNIT OUT_DIR)
   cmake_parse_arguments(GENBIN "" "${oneValueArgs}" "" ${ARGN})
   file(MAKE_DIRECTORY ${GENBIN_OUT_DIR}/gen)
   file(MAKE_DIRECTORY ${GENBIN_OUT_DIR}/gen/${GENBIN_OP_NAME})
@@ -246,15 +246,15 @@ function(generate_bin_scripts)
     COMMAND
       ${ASCEND_PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/util/ascendc_bin_param_build.py
       ${GENBIN_OPS_INFO_DIR}/aic-${GENBIN_COMPUTE_UNIT}-ops-info.ini ${GENBIN_OUT_DIR}/gen/${GENBIN_OP_NAME}
-      ${GENBIN_COMPUTE_UNIT} --opc-config-file ${ASCEND_AUTOGEN_PATH}/${CUSTOM_OPC_OPTIONS} --ops ${GENBIN_OP_NAME}
+      ${GENBIN_COMPUTE_UNIT} --opc-config-file ${ASCEND_AUTOGEN_PATH}/${CUSTOM_OPC_OPTIONS} --ops ${GENBIN_OP_TYPE}
     COMMAND
       ${ASCEND_PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/util/ascendc_bin_param_build.py
       ${GENBIN_OPS_INFO_DIR}/inner/aic-${GENBIN_COMPUTE_UNIT}-ops-info.ini ${GENBIN_OUT_DIR}/gen/${GENBIN_OP_NAME}
-      ${GENBIN_COMPUTE_UNIT} --opc-config-file ${ASCEND_AUTOGEN_PATH}/${CUSTOM_OPC_OPTIONS} --ops ${GENBIN_OP_NAME}
+      ${GENBIN_COMPUTE_UNIT} --opc-config-file ${ASCEND_AUTOGEN_PATH}/${CUSTOM_OPC_OPTIONS} --ops ${GENBIN_OP_TYPE}
     COMMAND
       ${ASCEND_PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/util/ascendc_bin_param_build.py
       ${GENBIN_OPS_INFO_DIR}/exc/aic-${GENBIN_COMPUTE_UNIT}-ops-info.ini ${GENBIN_OUT_DIR}/gen/${GENBIN_OP_NAME}
-      ${GENBIN_COMPUTE_UNIT} --opc-config-file ${ASCEND_AUTOGEN_PATH}/${CUSTOM_OPC_OPTIONS} --ops ${GENBIN_OP_NAME}
+      ${GENBIN_COMPUTE_UNIT} --opc-config-file ${ASCEND_AUTOGEN_PATH}/${CUSTOM_OPC_OPTIONS} --ops ${GENBIN_OP_TYPE}
     COMMAND
       ${ASCEND_PYTHON_EXECUTABLE} ${OPS_KERNEL_BINARY_SCRIPT}/merge_ops_config_json.py
           ${GENBIN_OUT_DIR}/gen/${GENBIN_OP_NAME}
@@ -352,7 +352,7 @@ function(prepare_compile_from_config)
     )
     add_dependencies(gen_opc_info_${CONFCMP_COMPUTE_UNIT} merge_ini_${compute_unit})
   endif()
-  
+
   add_custom_target(config_compile_${CONFCMP_COMPUTE_UNIT}_${CONFCMP_OP_NAME}
     COMMAND ${_ASCENDC_ENV_VAR} bash ${OPS_KERNEL_BINARY_SCRIPT}/build_binary_opc_gen_task.sh
             ${CONFCMP_OP_TYPE}
@@ -497,7 +497,7 @@ endfunction()
 function(gen_ops_info_and_python)
   gen_aclnn_with_opdef()
   if(NOT TARGET opbuild_custom_gen_aclnn_all)
-    message(STATUS "no need build binary, for all the ops donot have any operator def")
+    message(STATUS "no need build binary, for all the ops do not have any operator def")
     return()
   endif()
 
@@ -586,7 +586,7 @@ function(gen_ops_info_and_python)
 
         # generate opc shell scripts for autogen binary config ops
         generate_bin_scripts(
-          TARGET gen_bin_scripts OP_NAME ${op_name} OPS_INFO_DIR ${ASCEND_AUTOGEN_PATH} COMPUTE_UNIT ${compute_unit}
+          TARGET gen_bin_scripts OP_NAME ${op_name} OP_TYPE ${op_type} OPS_INFO_DIR ${ASCEND_AUTOGEN_PATH} COMPUTE_UNIT ${compute_unit}
           OUT_DIR ${CMAKE_BINARY_DIR}/binary/${compute_unit}
           )
         set(binary_json ${OP_DIR}/op_host/config/${compute_unit}/${op_name}_binary.json)

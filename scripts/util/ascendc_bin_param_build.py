@@ -17,38 +17,14 @@ import json
 import hashlib
 import re
 from collections import defaultdict
-from typing import Dict, List, Set, Tuple
+from typing import Dict, Set
 
 import const_var
 import opdesc_parser
- 
+
 PYF_PATH = os.path.dirname(os.path.realpath(__file__))
 
-
-def convert_to_camel(op_names: str):
-    """
-    convert op_name(snake format) to op_type(camel format)
-    """
-    op_names = op_names.strip()
-    if "," in op_names:
-        op_names = op_names.split(",")
-    elif ";" in op_names:
-        op_names = op_names.split(";")
-    else:
-        op_names = [op_names]
-
-    op_types = []
-    for name in op_names:
-        op_type = ""
-        words = name.split("_")
-        if len(words) > 1:
-            for word in words:
-                op_type += word.strip().capitalize()
-        else:
-            op_type = name.capitalize()
-        op_types.append(op_type)
-    return op_types
-
+# fmt: off
 
 class BinParamBuilder(opdesc_parser.OpDesc):
     def __init__(self: any, op_type: str):
@@ -74,7 +50,7 @@ class BinParamBuilder(opdesc_parser.OpDesc):
 
     def gen_input_json(self: any):
         key_map = {}
-        if len(self.input_dtype) == 0 and len(self.output_dtype) == 0: 
+        if len(self.input_dtype) == 0 and len(self.output_dtype) == 0:
             count = 1
         else:
             if len(self.input_dtype) == 0:
@@ -195,7 +171,7 @@ class BinParamBuilder(opdesc_parser.OpDesc):
         if plog_stdout is None:
             build_cmd_var += const_var.SET_PLOG_STDOUT
         build_cmd_var += const_var.SRC_ENV
-        build_cmd_var += bin_cmd_str.format(fun=self.op_intf, soc=hard_soc, param=param_file, 
+        build_cmd_var += bin_cmd_str.format(fun=self.op_intf, soc=hard_soc, param=param_file,
                                            impl='high_performance,optional')
         enable_tiling_keys = False
         if self.tiling_keys:
@@ -343,9 +319,10 @@ if __name__ == '__main__':
     args = parse_args(sys.argv)
     if len(args.argv) <= 3:
         raise RuntimeError('arguments must greater than 3')
-    ops = convert_to_camel(args.ops)
+    ops = [args.ops]
     gen_bin_param_file(args.argv[1],
                     args.argv[2],
                     args.argv[3],
                     opc_config_file=args.opc_config_file,
                     ops=ops)
+# fmt: on
