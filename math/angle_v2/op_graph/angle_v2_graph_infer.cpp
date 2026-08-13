@@ -30,6 +30,8 @@ static ge::graphStatus AngleV2InferDataTypeFunc(gert::InferDataTypeContext* cont
 
     if (inputDtype == ge::DT_FLOAT16) {
         context->SetOutputDataType(Y_IDX, inputDtype);
+    } else if (inputDtype == ge::DT_BF16) {
+        context->SetOutputDataType(Y_IDX, inputDtype);
     } else {
         context->SetOutputDataType(Y_IDX, ge::DT_FLOAT);
     }

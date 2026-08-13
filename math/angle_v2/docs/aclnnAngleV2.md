@@ -92,7 +92,7 @@ aclnnStatus aclnnAngleV2(
       <td>输出</td>
       <td>待进行angle计算的出参，公式中的out。</td>
       <td>shape与x相同。</td>
-      <td>FLOAT16、FLOAT</td>
+      <td>FLOAT16、FLOAT、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -119,10 +119,6 @@ aclnnStatus aclnnAngleV2(
     </tr>
   </tbody>
   </table>
-
-  <!-- npu="A3,910b" id7 -->
-  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：x数据类型不支持BFLOAT16。
-  <!-- end id7 -->
 
 - **返回值：**
 

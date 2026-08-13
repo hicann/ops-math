@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file angle_v2_tiling.cpp
@@ -38,8 +38,7 @@ constexpr int64_t SIZE_OF_B32 = 4;
 constexpr int64_t BYTE_BLOCK = 32;
 constexpr int64_t BYTE_REPEAT = 256;                 // The amount of data that can be processed by a repeat.
 constexpr int64_t SELECT_MODE_GE_ZERO_TMP_UB = 8000; // select mode 2 need 8000B
-class AngleV2Tiling
-{
+class AngleV2Tiling {
 public:
     explicit AngleV2Tiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus Init();
@@ -66,7 +65,7 @@ private:
     int64_t totalLengthAligned = 0; // length to align 32B
     uint64_t ubSizePlatForm = 0UL;
     int64_t bytesPerData = 0;
-    platform_ascendc::SocVersion socVersion = platform_ascendc::SocVersion::ASCEND910B;
+    NpuArch npuArch = NpuArch::DAV_2201;
 };
 
 void AngleV2Tiling::GetUsedBytesPerDataInKernel(ge::DataType dType)
@@ -78,6 +77,7 @@ void AngleV2Tiling::GetUsedBytesPerDataInKernel(ge::DataType dType)
     int64_t bytesI64 = 8;
     int64_t coefficentTwo = 2;
     int64_t coefficentThree = 3;
+    int64_t coefficentFive = 5;
     int64_t coefficentTen = 10;
     switch (dType) {
         case ge::DT_COMPLEX64:
@@ -116,8 +116,20 @@ void AngleV2Tiling::GetUsedBytesPerDataInKernel(ge::DataType dType)
             // one masks(uint8) and two localTensor(float32) are used for calculate the ouput
             bytesPerData += bytesI8 + bytesI32 * coefficentTwo;
             break;
+        case ge::DT_BF16:
+            // Double buffer for input and output (both bfloat16)
+            bytesPerData = bytesI16 * coefficentTwo + bytesI16 * coefficentTwo + bytesI8;
+
+            // Additional buffer size depends on chip:
+            // - ASCEND910B / ASCEND910_93 uses 5 float32 local tensors (zero, pi, nan, cast*2)
+            // - Other chips (e.g., ASCEND950) use 5 bfloat16 local tensors
+            bytesPerData += (npuArch == NpuArch::DAV_2201) ?
+                                bytesI32 * coefficentFive // 910B/910_93: 5 float32 tensors for calculation
+                                :
+                                bytesI16 * coefficentThree; // 950: 5 bfloat16 tensors for calculation
+            break;
         default:
-            // double buffer for input(float16/bfloat16) and output(float16/bfloat16)
+            // double buffer for input(float16) and output(float16)
             bytesPerData = bytesI16 * coefficentTwo + bytesI16 * coefficentTwo;
             // one masks(uint8) and three localTensor(float16) are used for calculate the ouput
             bytesPerData += bytesI8 + bytesI16 * coefficentThree;
@@ -163,7 +175,7 @@ void AngleV2Tiling::SetTilingKeyMode(ge::DataType dType)
 
 int64_t AngleV2Tiling::GetNeedCoreNum(const int64_t coreNumPlatform, ge::DataType dType)
 {
-    if (dType == ge::DT_FLOAT16 || dType == ge::DT_BF16) {
+    if (dType == ge::DT_FLOAT16 || (dType == ge::DT_BF16 && npuArch != NpuArch::DAV_2201)) {
         dataPerRepeat = BYTE_REPEAT / SIZE_OF_B16;
     } else {
         dataPerRepeat = BYTE_REPEAT / SIZE_OF_B32;
@@ -210,11 +222,11 @@ void AngleV2Tiling::CalTilingAligned(ge::DataType dType)
     formerLength = ((blockNum + coreNum - 1) / coreNum) * alignNum;
     tailLength = (blockNum / coreNum) * alignNum;
 
-    if (socVersion == platform_ascendc::SocVersion::ASCEND910) {
+    if (npuArch == NpuArch::DAV_1001) { // Ascend910
         tileLength = static_cast<int64_t>(ubSizePlatForm) / bytesPerData / dataPerRepeat * dataPerRepeat;
     } else {
-        tileLength = (static_cast<int64_t>(ubSizePlatForm) - SELECT_MODE_GE_ZERO_TMP_UB) /
-                     bytesPerData / dataPerRepeat * dataPerRepeat;
+        tileLength = (static_cast<int64_t>(ubSizePlatForm) - SELECT_MODE_GE_ZERO_TMP_UB) / bytesPerData /
+                     dataPerRepeat * dataPerRepeat;
     }
 }
 
@@ -234,16 +246,16 @@ ge::graphStatus AngleV2Tiling::Init()
         return ge::GRAPH_FAILED;
     }
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
-    socVersion = ascendcPlatform.GetSocVersion();
+    npuArch = ascendcPlatform.GetCurNpuArch();
 
     if (xShape.GetDimNum() > 8) {
-        if (socVersion == platform_ascendc::SocVersion::ASCEND950) {
+        if (npuArch == NpuArch::DAV_3510) { // Ascend950
             OP_LOGE(tilingContext, "AngleV2 only support tensor with dim num <= 8, but input dim num is %zu.",
-                xShape.GetDimNum());
+                    xShape.GetDimNum());
             return ge::GRAPH_FAILED;
         } else {
             OP_LOGW(tilingContext, "AngleV2 only support tensor with dim num <= 8, but input dim num is %zu.",
-                xShape.GetDimNum());
+                    xShape.GetDimNum());
         }
     }
     coreNum = ascendcPlatform.GetCoreNumAiv();
@@ -320,8 +332,8 @@ static ge::graphStatus TilingPrepareForAngleV2(gert::TilingParseContext* context
     uint64_t ubSizePlatForm;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSizePlatForm = static_cast<int64_t>(ubSizePlatForm);
-    OP_CHECK_IF(
-        (compileInfo->ubSizePlatForm <= 0), OP_LOGE(context, "Failed to get ub size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->ubSizePlatForm <= 0), OP_LOGE(context, "Failed to get ub size."),
+                return ge::GRAPH_FAILED);
     OP_LOGD(context, "ub_size_platform is %lu.", compileInfo->ubSizePlatForm);
     uint64_t totalUbSize = 0;
     platformInfo->GetLocalMemSize(fe::LocalMemType::UB, totalUbSize);

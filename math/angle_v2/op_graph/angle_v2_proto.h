@@ -21,21 +21,20 @@ namespace ge {
 * @brief  Computes the element_wise angle(in radians) of the given input tensor.
 
 * @par Inputs:
-* x: A ND tensor of type float16, float, complex64, bool, uint8, int8, int16, int32, int64. \n
+* x: A ND tensor of type float16, float, complex64, bool, uint8, int8, int16, int32, int64, bfloat16. \n
 *
 * @par Outputs:
-* y: A ND tensor of type float16, float32. \n
+* y: A ND tensor of type float16, float32, bfloat16. \n
 *
 * @par Third-party framework compatibility
 * Compatible with the Pytorch operator Angle. \n
 */
 REG_OP(AngleV2)
-    .INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT, DT_COMPLEX64, DT_BOOL, DT_UINT8,
-                          DT_INT8, DT_INT16, DT_INT32, DT_INT64}))
-    .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT}))
+    .INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT, DT_COMPLEX64, DT_BOOL, DT_UINT8, DT_INT8, DT_INT16, DT_INT32, DT_INT64,
+                          DT_BF16}))
+    .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16}))
     .OP_END_FACTORY_REG(AngleV2)
 
-}  // namespace ge
+} // namespace ge
 
-
-#endif  // OP_PROTO_ANGLE_V2_H_
+#endif // OP_PROTO_ANGLE_V2_H_

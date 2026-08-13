@@ -45,14 +45,14 @@ $$
       <td>x</td>
       <td>输入</td>
       <td>待进行angle计算的入参，公式中的input<sub>i</sub>。</td>
-      <td>FLOAT16, FLOAT, COMPLEX64, BOOL, UINT8, INT8, INT16, INT32, INT64</td>
+      <td>FLOAT16, FLOAT, COMPLEX64, BOOL, UINT8, INT8, INT16, INT32, INT64, BFLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
       <td>待进行angle计算的出参，公式中的output<sub>i</sub>。</td>
-      <td>FLOAT16, FLOAT</td>
+      <td>FLOAT16, FLOAT, BFLOAT16</td>
       <td>ND</td>
     </tr>
   </tbody></table>
