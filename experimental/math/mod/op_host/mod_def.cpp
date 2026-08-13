@@ -11,31 +11,30 @@
 /*!
  * \file mod_def.cpp
  * \brief
-*/
+ */
+#include <vector>
 #include "register/op_def_registry.h"
 
 namespace ops {
+// The kernel only exposes same-dtype prototypes. Cross-dtype inputs are promoted and cast by aclnn before Mod.
+// Positional vectors remain one-to-one: lane k = (x1[k], x2[k], y[k]).
+static const std::vector<ge::DataType> kModX1 = {ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT32, ge::DT_INT16};
+static const std::vector<ge::DataType> kModX2 = kModX1;
+static const std::vector<ge::DataType> kModY = kModX1;
+static const std::vector<ge::Format> kModFmt(kModX1.size(), ge::FORMAT_ND);
+
 class Mod : public OpDef {
 public:
     explicit Mod(const char* name) : OpDef(name)
     {
-        this->Input("x1")
-            .ParamType(REQUIRED)
-            .DataType({ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT32})
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
-        this->Input("x2")
-            .ParamType(REQUIRED)
-            .DataType({ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT32})
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
-        this->Output("y")
-            .ParamType(REQUIRED)
-            .DataType({ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT32})
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
-            
-        this->AICore().AddConfig("ascend910b"); // 其他的soc版本补充部分配置项
+        this->Input("x1").ParamType(REQUIRED).DataType(kModX1).Format(kModFmt).UnknownShapeFormat(kModFmt);
+        this->Input("x2").ParamType(REQUIRED).DataType(kModX2).Format(kModFmt).UnknownShapeFormat(kModFmt);
+
+        this->Output("y").ParamType(REQUIRED).DataType(kModY).Format(kModFmt).UnknownShapeFormat(kModFmt);
+
+        // 仅注册 Atlas A2 / A3 (均 arch22 / DAV_2201)
+        this->AICore().AddConfig("ascend910b");
+        this->AICore().AddConfig("ascend910_93");
     }
 };
 OP_ADD(Mod); // 添加算子信息库

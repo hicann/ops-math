@@ -14,6 +14,7 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
+// AICPU-aware same-dtype entry: out dtype = self->GetDataType().
 const aclTensor* Mod(const aclTensor* input, const aclTensor* other, aclOpExecutor* executor);
 } // namespace l0op
 

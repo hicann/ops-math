@@ -23,6 +23,7 @@
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/op_dfx.h"
 #include "opdev/op_executor.h"
+#include "opdev/platform.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -31,28 +32,28 @@ extern "C" {
 
 static const std::initializer_list<op::DataType> ASCEND910_DTYPE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_DOUBLE, op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_INT32,
-    op::DataType::DT_INT64, op::DataType::DT_INT8, op::DataType::DT_UINT8};
+    op::DataType::DT_INT64,  op::DataType::DT_INT8,    op::DataType::DT_UINT8};
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_DOUBLE, op::DataType::DT_BF16, op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT,
-    op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_INT8, op::DataType::DT_UINT8};
+    op::DataType::DT_DOUBLE, op::DataType::DT_BF16,  op::DataType::DT_FLOAT16,
+    op::DataType::DT_FLOAT,  op::DataType::DT_INT32, op::DataType::DT_INT64,
+    op::DataType::DT_INT8,   op::DataType::DT_UINT8, op::DataType::DT_INT16}; // int16 同 dtype lane 的 L2 门控 (A2)
 static const std::initializer_list<op::DataType> ASCEND310P_DTYPE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_DOUBLE, op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_INT32,
-    op::DataType::DT_INT64, op::DataType::DT_INT8, op::DataType::DT_UINT8};
+    op::DataType::DT_INT64,  op::DataType::DT_INT8,    op::DataType::DT_UINT8};
 static const std::initializer_list<DataType> emptyDtypes = {};
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_COMPLEX = {
-    op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_COMPLEX = {op::DataType::DT_COMPLEX64,
+                                                                               op::DataType::DT_COMPLEX128};
 
-static const std::initializer_list<DataType>& GetDtypeSupportList(SocVersion socVersion)
+static const std::initializer_list<DataType>& GetDtypeSupportList(NpuArch npuArch)
 {
-    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-    IsRegBase()) {
+    if (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch)) {
         return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
-    } else if (socVersion == SocVersion::ASCEND910) {
+    } else if (npuArch == NpuArch::DAV_2002) {
         return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
-    } else if (socVersion == SocVersion::ASCEND310P) {
+    } else if (npuArch == NpuArch::DAV_1001) {
         return ASCEND310P_DTYPE_DTYPE_SUPPORT_LIST;
     } else {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "support for %s is not implemented", op::ToString(socVersion).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "support for npu arch %u is not implemented", static_cast<uint32_t>(npuArch));
         return emptyDtypes;
     }
 }
@@ -126,7 +127,8 @@ static inline DataType PromoteTypeScalarV35(const op::DataType tensorDtype, cons
 // tensor + scalar混合场景下，推导出应该cast的dtype (并不是promoteType)
 static inline DataType PromoteTypeScalar(const op::DataType selfDtype, const op::DataType otherDtype)
 {
-    if (IsRegBase()) {
+    auto npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
         return PromoteTypeScalarV35(selfDtype, otherDtype);
     }
 
@@ -142,8 +144,15 @@ static inline DataType PromoteTypeScalar(const op::DataType selfDtype, const op:
 
 static inline bool IsAiCoreComputeDtype(const op::DataType dtype)
 {
-    return dtype == op::DataType::DT_BF16 || dtype == op::DataType::DT_FLOAT16 ||
-           dtype == op::DataType::DT_FLOAT || dtype == op::DataType::DT_INT32;
+    // DT_INT16 is an A2/A3 same-dtype kernel lane. Mixed inputs are normalized to one of these dtypes in aclnn.
+    return dtype == op::DataType::DT_BF16 || dtype == op::DataType::DT_FLOAT16 || dtype == op::DataType::DT_FLOAT ||
+           dtype == op::DataType::DT_INT32 || dtype == op::DataType::DT_INT16;
+}
+
+static inline bool IsInt16OutComputeDtype(const op::DataType dtype)
+{
+    return dtype == op::DataType::DT_FLOAT || dtype == op::DataType::DT_FLOAT16 || dtype == op::DataType::DT_BF16 ||
+           dtype == op::DataType::DT_INT16;
 }
 
 static inline bool IsNarrowIntegerDtype(const op::DataType dtype)
@@ -153,8 +162,29 @@ static inline bool IsNarrowIntegerDtype(const op::DataType dtype)
 
 static inline bool IsIntegerScalarDtype(const op::DataType dtype)
 {
-    return dtype == op::DataType::DT_INT8 || dtype == op::DataType::DT_UINT8 ||
-           dtype == op::DataType::DT_INT32 || dtype == op::DataType::DT_INT64;
+    return dtype == op::DataType::DT_INT8 || dtype == op::DataType::DT_UINT8 || dtype == op::DataType::DT_INT32 ||
+           dtype == op::DataType::DT_INT64;
+}
+
+static inline bool NeedsFp32CastBridge(const op::DataType srcDtype, const op::DataType dstDtype)
+{
+    return (srcDtype == op::DataType::DT_INT16 && dstDtype == op::DataType::DT_BF16) ||
+           (srcDtype == op::DataType::DT_BF16 && dstDtype == op::DataType::DT_INT16);
+}
+
+// DAV_2201 has no AiCore Cast lane directly between int16 and bf16. Both directions are value-equivalent through
+// fp32: int16/bf16 -> fp32 is exact, and only the final Cast performs the same narrowing as the direct conversion.
+static const aclTensor* CastWithFp32Bridge(const aclTensor* input, const op::DataType dstDtype, aclOpExecutor* executor)
+{
+    if (input->GetDataType() == dstDtype) {
+        return input;
+    }
+    if (!NeedsFp32CastBridge(input->GetDataType(), dstDtype)) {
+        return l0op::Cast(input, dstDtype, executor);
+    }
+    auto fp32 = l0op::Cast(input, op::DataType::DT_FLOAT, executor);
+    CHECK_RET(fp32 != nullptr, nullptr);
+    return l0op::Cast(fp32, dstDtype, executor);
 }
 
 static inline DataType SelectAiCoreComputeDtype(const op::DataType promoteType, const op::DataType outDtype)
@@ -165,9 +195,8 @@ static inline DataType SelectAiCoreComputeDtype(const op::DataType promoteType, 
     return promoteType;
 }
 
-static inline DataType SelectAiCoreScalarComputeDtype(
-    const op::DataType castDtype, const op::DataType selfDtype, const op::DataType scalarDtype,
-    const op::DataType outDtype)
+static inline DataType SelectAiCoreScalarComputeDtype(const op::DataType castDtype, const op::DataType selfDtype,
+                                                      const op::DataType scalarDtype, const op::DataType outDtype)
 {
     if (IsAiCoreComputeDtype(outDtype)) {
         return outDtype;
@@ -182,10 +211,7 @@ static inline DataType SelectAiCoreScalarComputeDtype(
 }
 
 // 得到tensor的维度数
-static inline int64_t GetTensorDimNum(const aclTensor* self)
-{
-    return (int64_t)(self->GetViewShape().GetDimNum());
-}
+static inline int64_t GetTensorDimNum(const aclTensor* self) { return (int64_t)(self->GetViewShape().GetDimNum()); }
 
 // Tensor self, Tensor other 检查参数是否为空指针
 static aclnnStatus CheckNotNullTensorTensor(const aclTensor* self, const aclTensor* other, const aclTensor* out)
@@ -211,24 +237,35 @@ static bool CheckPromoteType(const op::DataType selfDtype, const op::DataType ot
     // 检查self和other能否做数据类型推导
     auto promoteType = op::PromoteType(selfDtype, otherDtype);
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "self dtype %s and other dtype %s can not promote dtype.",
-            op::ToString(selfDtype).GetString(), op::ToString(otherDtype).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self dtype %s and other dtype %s can not promote dtype.",
+                op::ToString(selfDtype).GetString(), op::ToString(otherDtype).GetString());
         return false;
     }
 
-    // 判断self和other推导出的数据类型能cast成out
-    OP_CHECK_RESULT_DTYPE_CAST_FAILED(promoteType, outDtype, return false);
+    // out=int16 is an added aclnn contract. Compute at the promoted dtype and narrow only with the final Cast.
+    // Keep the accepted promotion set constrained to the task-book dtypes instead of relying on CanCast, which
+    // would also admit unrelated integer promotion types.
+    if (outDtype == op::DataType::DT_INT16) {
+        if (!IsInt16OutComputeDtype(promoteType)) {
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "out dtype int16 is only supported when promote dtype is in {float32,float16,bfloat16,int16}, "
+                    "but got promote dtype %s.",
+                    op::ToString(promoteType).GetString());
+            return false;
+        }
+    } else {
+        // 判断self和other推导出的数据类型能cast成out
+        OP_CHECK_RESULT_DTYPE_CAST_FAILED(promoteType, outDtype, return false);
+    }
 
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    auto DTYPE_SUPPORT_LIST = GetDtypeSupportList(socVersion);
+    auto npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    auto DTYPE_SUPPORT_LIST = GetDtypeSupportList(npuArch);
     if (DTYPE_SUPPORT_LIST.size() == 0) {
         return false;
     }
     if (!CheckType(promoteType, DTYPE_SUPPORT_LIST)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Promote type %s should be in dtype support list [%s].",
-            op::ToString(promoteType).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Promote type %s should be in dtype support list [%s].",
+                op::ToString(promoteType).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
         return false;
     }
 
@@ -236,8 +273,8 @@ static bool CheckPromoteType(const op::DataType selfDtype, const op::DataType ot
 }
 
 // 1. self和other没有complex  2. self能cast成castDtype  3. castDtype为算子支持的数据类型  4. castDtype能cast成out
-static bool CheckPromoteTypeTensorScalar(
-    const op::DataType selfDtype, const op::DataType otherDtype, const op::DataType outDtype)
+static bool CheckPromoteTypeTensorScalar(const op::DataType selfDtype, const op::DataType otherDtype,
+                                         const op::DataType outDtype)
 {
     // 检查self和other没有为complex
     if (CheckType(selfDtype, DTYPE_SUPPORT_LIST_COMPLEX) || CheckType(otherDtype, DTYPE_SUPPORT_LIST_COMPLEX)) {
@@ -250,24 +287,34 @@ static bool CheckPromoteTypeTensorScalar(
     OP_CHECK_RESULT_DTYPE_CAST_FAILED(selfDtype, castDtype, return false);
 
     // castDtype的数据类型属于支持的数据类型
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    auto DTYPE_SUPPORT_LIST = GetDtypeSupportList(socVersion);
+    auto npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    auto DTYPE_SUPPORT_LIST = GetDtypeSupportList(npuArch);
     if (DTYPE_SUPPORT_LIST.size() == 0) {
         return false;
     }
     if (!CheckType(castDtype, DTYPE_SUPPORT_LIST)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "expected dtype %s should be in dtype support list [%s].",
-            op::ToString(castDtype).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "expected dtype %s should be in dtype support list [%s].",
+                op::ToString(castDtype).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
         return false;
     }
 
-    // castDtype的数据类型能cast成out
-    OP_CHECK_RESULT_DTYPE_CAST_FAILED(castDtype, outDtype, return false);
+    // Keep out=int16 aligned with the tensor path: calculate at castDtype and narrow only with the final Cast.
+    // The accepted cast dtype set is limited to the task-book dtypes.
+    if (outDtype == op::DataType::DT_INT16) {
+        if (!IsInt16OutComputeDtype(castDtype)) {
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "out dtype int16 is only supported when cast dtype is in {float32,float16,bfloat16,int16}, "
+                    "but got cast dtype %s.",
+                    op::ToString(castDtype).GetString());
+            return false;
+        }
+    } else {
+        // castDtype的数据类型能cast成out
+        OP_CHECK_RESULT_DTYPE_CAST_FAILED(castDtype, outDtype, return false);
+    }
 
     return true;
 }
-
 
 // tensor维度数不能超过8维
 static inline bool CheckTensorDimSize(const aclTensor* self)
@@ -276,13 +323,13 @@ static inline bool CheckTensorDimSize(const aclTensor* self)
     return true;
 }
 
-
 // other must be broadcastable to self, and out must keep self shape.
 static bool CheckBroadcastShape(const aclTensor* self, const aclTensor* other, const aclTensor* out, bool isInplace)
 {
     (void)isInplace;
     op::Shape broadcastShape;
-    if (IsRegBase()) {
+    auto npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
         OP_CHECK_BROADCAST_AND_INFER_SHAPE(self, other, broadcastShape, return false);
     } else {
         OP_CHECK_BROADCAST(self, other, return false);
@@ -290,15 +337,13 @@ static bool CheckBroadcastShape(const aclTensor* self, const aclTensor* other, c
     }
 
     if (broadcastShape != self->GetViewShape()) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-            "Broadcast shape %s should be equal to self shape %s.",
-            op::ToString(broadcastShape).GetString(), op::ToString(self->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast shape %s should be equal to self shape %s.",
+                op::ToString(broadcastShape).GetString(), op::ToString(self->GetViewShape()).GetString());
         return false;
     }
     if (out->GetViewShape() != self->GetViewShape()) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-            "out shape %s should be equal to self shape %s.",
-            op::ToString(out->GetViewShape()).GetString(), op::ToString(self->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "out shape %s should be equal to self shape %s.",
+                op::ToString(out->GetViewShape()).GetString(), op::ToString(self->GetViewShape()).GetString());
         return false;
     }
     return true;
@@ -355,8 +400,8 @@ static aclIntArray* GetTensorShape(const aclTensor* self, aclOpExecutor* executo
 }
 
 // broadcast成对应shape
-static const aclTensor* BroadcastTensor(
-    const aclTensor* x, const aclTensor* out, const aclIntArray* broadcastShape, aclOpExecutor* executor)
+static const aclTensor* BroadcastTensor(const aclTensor* x, const aclTensor* out, const aclIntArray* broadcastShape,
+                                        aclOpExecutor* executor)
 {
     // 涉及3维->4维，4维->5维，因此都reformat成ND
     x = l0op::ReFormat(x, op::Format::FORMAT_ND);
@@ -383,9 +428,8 @@ static const aclTensor* BroadcastTensor(
     return x;
 }
 
-static aclnnStatus FmodMainProcess(
-    const aclTensor* selfContiguous, const aclTensor* otherContiguous, const aclTensor* out, bool needUnsqueeze,
-    aclOpExecutor* executor)
+static aclnnStatus FmodMainProcess(const aclTensor* selfContiguous, const aclTensor* otherContiguous,
+                                   const aclTensor* out, bool needUnsqueeze, aclOpExecutor* executor)
 {
     auto fmodOut = l0op::Mod(selfContiguous, otherContiguous, executor);
     CHECK_RET(fmodOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -414,9 +458,8 @@ static aclnnStatus CheckParamsTensorScalarCommon(const aclTensor* self, const ac
     // 2. self和out的shape一致
     OP_CHECK_SHAPE_NOT_EQUAL(self, out, return ACLNN_ERR_PARAM_INVALID);
     // 3. self和other没有complex + self能cast成castDtype + castDtype为算子支持的数据类型 + castDtype能cast成out
-    CHECK_RET(
-        CheckPromoteTypeTensorScalar(self->GetDataType(), other->GetDataType(), out->GetDataType()),
-        ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckPromoteTypeTensorScalar(self->GetDataType(), other->GetDataType(), out->GetDataType()),
+              ACLNN_ERR_PARAM_INVALID);
     // 4. 维度数不能超过8维
     CHECK_RET(CheckTensorDimSize(self), ACLNN_ERR_PARAM_INVALID);
     CHECK_RET(CheckTensorDimSize(out), ACLNN_ERR_PARAM_INVALID);
@@ -471,8 +514,8 @@ static aclnnStatus CheckParamsInplaceTensorScalar(const aclTensor* self, const a
 }
 
 // 提取SetWorkspaceAndRelease逻辑
-static aclnnStatus SetWorkspaceAndRelease(
-    UniqueExecutor& uniqueExecutor, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus SetWorkspaceAndRelease(UniqueExecutor& uniqueExecutor, uint64_t* workspaceSize,
+                                          aclOpExecutor** executor)
 {
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
     uniqueExecutor.ReleaseTo(executor);
@@ -480,21 +523,50 @@ static aclnnStatus SetWorkspaceAndRelease(
 }
 
 // 提取RunFmodProcessAndRelease逻辑，消除else分支重复
-static aclnnStatus RunFmodProcessAndRelease(
-    const aclTensor* self, const aclTensor* other, const aclTensor* out,
-    UniqueExecutor& uniqueExecutor, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus RunFmodProcessAndRelease(const aclTensor* self, const aclTensor* other, const aclTensor* out,
+                                            UniqueExecutor& uniqueExecutor, uint64_t* workspaceSize,
+                                            aclOpExecutor** executor)
 {
     bool needUnsqueeze = (GetTensorDimNum(out) == 0);
-    auto fmodRes =
-        FmodMainProcess(self, other, out, needUnsqueeze, uniqueExecutor.get());
+    auto fmodRes = FmodMainProcess(self, other, out, needUnsqueeze, uniqueExecutor.get());
     CHECK_RET(fmodRes == ACLNN_SUCCESS, fmodRes);
 
     return SetWorkspaceAndRelease(uniqueExecutor, workspaceSize, executor);
 }
 
+static const aclTensor* ComputeTensorModOut(const aclTensor* selfContiguous, const aclTensor* otherContiguous,
+                                            const op::DataType modComputeType, aclOpExecutor* executor)
+{
+    auto selfCasted = CastWithFp32Bridge(selfContiguous, modComputeType, executor);
+    CHECK_RET(selfCasted != nullptr, nullptr);
+    auto otherCasted = CastWithFp32Bridge(otherContiguous, modComputeType, executor);
+    CHECK_RET(otherCasted != nullptr, nullptr);
+    return l0op::Mod(selfCasted, otherCasted, executor);
+}
+
+static aclnnStatus RunAiCoreTensorPath(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                       const op::DataType promoteType, const op::DataType computeType,
+                                       UniqueExecutor& uniqueExecutor, uint64_t* workspaceSize,
+                                       aclOpExecutor** executor)
+{
+    const auto modComputeType = IsAiCoreComputeDtype(promoteType) ? promoteType : computeType;
+    auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
+    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto otherContiguous = l0op::Contiguous(other, uniqueExecutor.get());
+    CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    const aclTensor* modOpOut = ComputeTensorModOut(selfContiguous, otherContiguous, modComputeType,
+                                                    uniqueExecutor.get());
+    CHECK_RET(modOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto castOut = CastWithFp32Bridge(modOpOut, out->GetDataType(), uniqueExecutor.get());
+    CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
+    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    return SetWorkspaceAndRelease(uniqueExecutor, workspaceSize, executor);
+}
+
 // Tensor self, Tensor other
-aclnnStatus ExecFmodTensorGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus ExecFmodTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                           uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
@@ -509,46 +581,35 @@ aclnnStatus ExecFmodTensorGetWorkspaceSize(
     auto promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
     auto computeType = SelectAiCoreComputeDtype(promoteType, out->GetDataType());
     if (IsAiCoreComputeDtype(computeType)) {
-        auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
-        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        auto selfCasted = l0op::Cast(selfContiguous, computeType, uniqueExecutor.get());
-        CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        auto otherContiguous = l0op::Contiguous(other, uniqueExecutor.get());
-        CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        auto otherCasted = l0op::Cast(otherContiguous, computeType, uniqueExecutor.get());
-        CHECK_RET(otherCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        auto modOpOut = l0op::Mod(selfCasted, otherCasted, uniqueExecutor.get());
-        CHECK_RET(modOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        auto castOut = l0op::Cast(modOpOut, out->GetDataType(), uniqueExecutor.get());
-        CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
-        CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        return SetWorkspaceAndRelease(uniqueExecutor, workspaceSize, executor);
-    } else {
-        auto selfContiguous = InitializeTensor(self, promoteType, uniqueExecutor.get());
-        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        auto otherContiguous = InitializeTensor(other, promoteType, uniqueExecutor.get());
-        CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        // 需要做broadcast
-        auto broadcastShape = GetTensorShape(out, uniqueExecutor.get());
-        selfContiguous = BroadcastTensor(selfContiguous, out, broadcastShape, uniqueExecutor.get());
-        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        otherContiguous = BroadcastTensor(otherContiguous, out, broadcastShape, uniqueExecutor.get());
-        CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        return RunFmodProcessAndRelease(
-            selfContiguous, otherContiguous, out, uniqueExecutor, workspaceSize, executor);
+        // Prefer the natural promote type whenever it has a same-dtype AiCore lane. This keeps narrow outputs
+        // (especially out=int16) from changing the arithmetic dtype; the output is cast only after Mod.
+        return RunAiCoreTensorPath(self, other, out, promoteType, computeType, uniqueExecutor, workspaceSize, executor);
     }
+    auto selfContiguous = InitializeTensor(self, promoteType, uniqueExecutor.get());
+    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto otherContiguous = InitializeTensor(other, promoteType, uniqueExecutor.get());
+    CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto broadcastShape = GetTensorShape(out, uniqueExecutor.get());
+    selfContiguous = BroadcastTensor(selfContiguous, out, broadcastShape, uniqueExecutor.get());
+    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    otherContiguous = BroadcastTensor(otherContiguous, out, broadcastShape, uniqueExecutor.get());
+    CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    return RunFmodProcessAndRelease(selfContiguous, otherContiguous, out, uniqueExecutor, workspaceSize, executor);
+}
+
+static const aclTensor* ComputeScalarModOut(const aclTensor* selfContiguous, const aclScalar* other,
+                                            const op::DataType modComputeType, aclOpExecutor* executor)
+{
+    auto selfCasted = CastWithFp32Bridge(selfContiguous, modComputeType, executor);
+    CHECK_RET(selfCasted != nullptr, nullptr);
+    auto otherTensor = executor->ConvertToTensor(other, modComputeType);
+    CHECK_RET(otherTensor != nullptr, nullptr);
+    return l0op::Mod(selfCasted, otherTensor, executor);
 }
 
 // Tensor self, Scalar other
-static aclnnStatus FmodScalarGetWorkspaceSizeCommon(
-    const aclTensor* self, const aclScalar* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus FmodScalarGetWorkspaceSizeCommon(const aclTensor* self, const aclScalar* other, aclTensor* out,
+                                                    uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     auto ret = CheckParamsTensorScalar(self, other, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
@@ -563,21 +624,19 @@ static aclnnStatus FmodScalarGetWorkspaceSizeCommon(
         return ACLNN_SUCCESS;
     }
     auto castDtype = PromoteTypeScalar(self->GetDataType(), other->GetDataType());
-    auto computeType = SelectAiCoreScalarComputeDtype(
-        castDtype, self->GetDataType(), other->GetDataType(), out->GetDataType());
+    auto computeType = SelectAiCoreScalarComputeDtype(castDtype, self->GetDataType(), other->GetDataType(),
+                                                      out->GetDataType());
     if (IsAiCoreComputeDtype(computeType)) {
+        // castDtype is the tensor-scalar promotion result. Keep the arithmetic at that dtype when a same-dtype
+        // AiCore lane exists, then cast only the Mod result to out.
+        const auto modComputeType = IsAiCoreComputeDtype(castDtype) ? castDtype : computeType;
         auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        auto selfCasted = l0op::Cast(selfContiguous, computeType, uniqueExecutor.get());
-        CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-        auto otherTensor = uniqueExecutor.get()->ConvertToTensor(other, computeType);
-        CHECK_RET(otherTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        auto modOpOut = l0op::Mod(selfCasted, otherTensor, uniqueExecutor.get());
+        const aclTensor* modOpOut = ComputeScalarModOut(selfContiguous, other, modComputeType, uniqueExecutor.get());
         CHECK_RET(modOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-        auto castOut = l0op::Cast(modOpOut, out->GetDataType(), uniqueExecutor.get());
+        auto castOut = CastWithFp32Bridge(modOpOut, out->GetDataType(), uniqueExecutor.get());
         CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
         CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -592,50 +651,49 @@ static aclnnStatus FmodScalarGetWorkspaceSizeCommon(
         otherContiguous = l0op::BroadcastTo(otherContiguous, selfShape, uniqueExecutor.get());
         CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-        return RunFmodProcessAndRelease(
-            selfContiguous, otherContiguous, out, uniqueExecutor, workspaceSize, executor);
+        return RunFmodProcessAndRelease(selfContiguous, otherContiguous, out, uniqueExecutor, workspaceSize, executor);
     }
 }
 
-static aclnnStatus FmodInplaceScalarGetWorkspaceSizeCommon(
-    aclTensor* selfRef, const aclScalar* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus FmodInplaceScalarGetWorkspaceSizeCommon(aclTensor* selfRef, const aclScalar* other,
+                                                           uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     auto ret = CheckParamsInplaceTensorScalar(selfRef, other, selfRef);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
     return FmodScalarGetWorkspaceSizeCommon(selfRef, other, selfRef, workspaceSize, executor);
 }
 
-ACLNN_API aclnnStatus aclnnFmodScalarGetWorkspaceSize(
-    const aclTensor* self, const aclScalar* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+ACLNN_API aclnnStatus aclnnFmodScalarGetWorkspaceSize(const aclTensor* self, const aclScalar* other, aclTensor* out,
+                                                      uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnFmodScalar, DFX_IN(self, other), DFX_OUT(out));
     return FmodScalarGetWorkspaceSizeCommon(self, other, out, workspaceSize, executor);
 }
 
-ACLNN_API aclnnStatus aclnnFmodScalar(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+ACLNN_API aclnnStatus aclnnFmodScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                      aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnFmodScalar);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-ACLNN_API aclnnStatus aclnnInplaceFmodScalarGetWorkspaceSize(
-    aclTensor* selfRef, const aclScalar* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+ACLNN_API aclnnStatus aclnnInplaceFmodScalarGetWorkspaceSize(aclTensor* selfRef, const aclScalar* other,
+                                                             uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceFmodScalar, DFX_IN(selfRef, other), DFX_OUT(selfRef));
     return FmodInplaceScalarGetWorkspaceSizeCommon(selfRef, other, workspaceSize, executor);
 }
 
-ACLNN_API aclnnStatus aclnnInplaceFmodScalar(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+ACLNN_API aclnnStatus aclnnInplaceFmodScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                             aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnInplaceFmodScalar);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
 // 非inplace
-ACLNN_API aclnnStatus aclnnFmodTensorGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+ACLNN_API aclnnStatus aclnnFmodTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                                      uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnFmodTensor, DFX_IN(self, other), DFX_OUT(out));
     auto ret = CheckParamsTensorTensor(self, other, out);
@@ -644,8 +702,8 @@ ACLNN_API aclnnStatus aclnnFmodTensorGetWorkspaceSize(
 }
 
 // inplace
-ACLNN_API aclnnStatus aclnnInplaceFmodTensorGetWorkspaceSize(
-    aclTensor* selfRef, const aclTensor* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+ACLNN_API aclnnStatus aclnnInplaceFmodTensorGetWorkspaceSize(aclTensor* selfRef, const aclTensor* other,
+                                                             uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceFmodTensor, DFX_IN(selfRef, other), DFX_OUT(selfRef));
     auto out = const_cast<aclTensor*>(selfRef);
@@ -655,16 +713,16 @@ ACLNN_API aclnnStatus aclnnInplaceFmodTensorGetWorkspaceSize(
 }
 
 // Tensor self, Tensor other
-ACLNN_API aclnnStatus aclnnFmodTensor(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+ACLNN_API aclnnStatus aclnnFmodTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                      aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnFmodTensor);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
 // Tensor self, Tensor other
-ACLNN_API aclnnStatus aclnnInplaceFmodTensor(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+ACLNN_API aclnnStatus aclnnInplaceFmodTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                             aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnInplaceFmodTensor);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

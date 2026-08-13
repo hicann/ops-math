@@ -1,5 +1,11 @@
 # Mod
 
+## 贡献说明
+
+| 贡献者 | 贡献方 | 贡献算子 | 贡献时间 | 贡献内容 |
+| ---- | ---- | ---- | ---- | ---- |
+| Admin05210 | 个人开发者 | Mod | 2026/07/16 | Mod算子增强：新增INT16同/混合数据类型计算支持、大商场景数值稳定性增强、连续核与广播路径优化 |
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -23,6 +29,8 @@
   out_{i} = self_{i} - (other \times trunc(self_{i}/other))
   $$
 
+- 精度说明：针对 self/other 商值较大（大 \|self/other\|）的场景，AICore 计算路径引入了数值稳定性增强算法，相比朴素截断取余（trunc-mod）实现降低了大商场景下的精度损失风险；该增强与 INT16/混合数据类型能力一并限定于 Atlas A2/A3（其余产品的既有算法与精度行为不变）。
+
 ## 参数说明
 
 <table style="undefined;table-layout: fixed; width: 980px"><colgroup>
@@ -45,28 +53,30 @@
       <td>self</td>
       <td>输入</td>
       <td>待进行mod计算的入参，公式中的self_i。</td>
-      <td>BFLOAT16、FLOAT16、FLOAT32、INT32</td>
+      <td>BFLOAT16、FLOAT16、FLOAT32、INT32、INT16*</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>other</td>
       <td>输入</td>
       <td>待进行mod计算的入参，公式中的other。</td>
-      <td>BFLOAT16、FLOAT16、FLOAT32、INT32</td>
+      <td>BFLOAT16、FLOAT16、FLOAT32、INT32、INT16*</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>out</td>
       <td>输出</td>
       <td>待进行mod计算的出参，公式中的out_i。</td>
-      <td>BFLOAT16、FLOAT16、FLOAT32、INT32</td>
+      <td>BFLOAT16、FLOAT16、FLOAT32、INT32、INT16*</td>
       <td>ND</td>
     </tr>
   </tbody></table>
 
+\* INT16 同数据类型计算，以及 self/other 分别为 INT16 与 BFLOAT16/FLOAT16/FLOAT32 的混合数据类型计算，仅 Atlas A2 训练系列产品/Atlas A2 推理系列产品、Atlas A3 训练系列产品/Atlas A3 推理系列产品支持；其余产品不适用（BFLOAT16/FLOAT16/FLOAT32/INT32 的既有支持不受影响）。
+
 ## 约束说明
 
-1. aclnn 层支持 DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、INT64、INT8、UINT8 类型推导；AICore kernel 覆盖 BFLOAT16、FLOAT16、FLOAT32、INT32，其余类型走 AICPU fallback。
+1. aclnn 层支持 DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、INT64、INT8、UINT8、INT16 类型推导；AICore kernel 覆盖 BFLOAT16、FLOAT16、FLOAT32、INT32，其余类型走 AICPU fallback。其中 **INT16 同数据类型计算、以及 INT16 与 BFLOAT16/FLOAT16/FLOAT32 的混合数据类型计算为 Atlas A2/Atlas A3 专属增强**（由 AICore 支持）；其余产品上该增强不适用，已有的 BFLOAT16/FLOAT16/FLOAT32/INT32 同数据类型计算及 DOUBLE/INT64/INT8/UINT8 的 AICPU 回退行为保持不变。
 2. self和out的shape必须一致。
 3. 数据维度不支持8维以上。
 

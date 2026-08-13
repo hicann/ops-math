@@ -9,8 +9,9 @@
  */
 
 /*!
- * \file mod_infer.cpp
- * \brief
+ * \file mod_infershape.cpp
+ * \brief Shape inference for the Mod operator: the remainder result adopts the
+ *        dividend (self) shape once the divisor (other) is broadcastable onto it.
  */
 #include "register/op_impl_registry.h"
 #include "log/log.h"
@@ -47,20 +48,19 @@ static ge::graphStatus InferShape4Mod(gert::InferShapeContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Begin to do InferShape4Mod");
 
-    // get input shapes
+    // self (x1) is the dividend; other (x2) is the divisor and must broadcast onto self
     const gert::Shape* xShape = context->GetInputShape(IDX_0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
     const gert::Shape* otherShape = context->GetInputShape(IDX_1);
     OP_CHECK_NULL_WITH_CONTEXT(context, otherShape);
-    OP_CHECK_IF(
-        !CanBroadcastOtherToSelf(xShape, otherShape), OP_LOGE(context, "other shape can not broadcast to self shape."),
-        return GRAPH_FAILED);
+    OP_CHECK_IF(!CanBroadcastOtherToSelf(xShape, otherShape),
+                OP_LOGE(context, "other shape can not broadcast to self shape."), return GRAPH_FAILED);
 
-    // get output shapes
+    // the remainder preserves the dividend layout, so the result handle follows self
     gert::Shape* yShape = context->GetOutputShape(IDX_0);
     OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
 
-    // 填充输出shape大小
+    // adopt self's shape for the Mod output
     *yShape = *xShape;
     OP_LOGD(context->GetNodeName(), "End to do InferShape4Mod");
     return GRAPH_SUCCESS;

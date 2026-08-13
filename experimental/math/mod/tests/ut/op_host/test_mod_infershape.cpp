@@ -17,60 +17,56 @@ class ModInfershape : public testing::Test {};
 
 TEST_F(ModInfershape, same_shape_float)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Mod",
-        {
-            {{{4, 3, 4}, {4, 3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4, 3, 4}, {4, 3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Mod",
+                                                      {
+                                                          {{{4, 3, 4}, {4, 3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{4, 3, 4}, {4, 3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {{4, 3, 4}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 TEST_F(ModInfershape, broadcast_to_self_shape)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Mod",
-        {
-            {{{2, 3, 5}, {2, 3, 5}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{1, 3, 1}, {1, 3, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Mod",
+                                                      {
+                                                          {{{2, 3, 5}, {2, 3, 5}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{1, 3, 1}, {1, 3, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {{2, 3, 5}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 TEST_F(ModInfershape, int32_one_dim)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Mod",
-        {
-            {{{64}, {64}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{64}, {64}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Mod",
+                                                      {
+                                                          {{{64}, {64}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                          {{{64}, {64}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {{64}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 TEST_F(ModInfershape, incompatible_shapes_keep_self_shape)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Mod",
-        {
-            {{{2, 3}, {2, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4, 5}, {4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Mod",
+                                                      {
+                                                          {{{2, 3}, {2, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{4, 5}, {4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {{}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
 }
