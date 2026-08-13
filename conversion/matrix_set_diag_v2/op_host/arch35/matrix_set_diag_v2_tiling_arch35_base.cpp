@@ -33,6 +33,12 @@ static constexpr int32_t MAX_UB_SCATTER_ELEMENT_NUM = std::numeric_limits<int16_
 
 static constexpr int64_t MAX_UINT32_NUM = std::numeric_limits<uint32_t>::max();
 static constexpr uint64_t MAX_DIAG_SIZE = 64 * 1024U;
+// 单字节数据类型(dSize==1)的UB空间扩容倍数
+static constexpr int32_t D_SIZE_EXPAND_TIMES = 2;
+// 减半因子
+static constexpr uint64_t HALVE_FACTOR = 2;
+// 小数据类型(1~2字节)的最大字节数
+static constexpr int64_t MAX_SMALL_DTYPE_SIZE = 2;
 // SIMT 常量
 static constexpr int64_t MAX_SHAPE_SIZE_FOR_SIMT = 1024;
 
@@ -44,7 +50,7 @@ static constexpr int32_t MAX_UB_SCATTER_ELEMENT_NUM_V1 = std::numeric_limits<uin
 void MatrixSetDiagTilingBase::CalcInputInfo()
 {
     if (inputInfo_.dSize == 1) {
-        dSizeExpand_ = 2;
+        dSizeExpand_ = D_SIZE_EXPAND_TIMES;
     }
     diagDataSize_ = inputInfo_.diagNum * inputInfo_.maxDiagLen;
     tailAxisDataSize_ = inputInfo_.xColNum * inputInfo_.xRowNum;
@@ -153,8 +159,8 @@ ge::graphStatus MatrixSetDiagTilingBase::Tiling4CutTail()
     auto tilingData = context_->GetTilingData<MSDV2CutTailTilingData>();
     CalculateCutTailTilingParams(ubMaxInputxSize, tilingData);
 
-    if (realCoreNum_ <= coreNum_ / 2) {
-        CalculateCutTailTilingParams(ubMaxInputxSize / 2, tilingData);
+    if (realCoreNum_ <= coreNum_ / HALVE_FACTOR) {
+        CalculateCutTailTilingParams(ubMaxInputxSize / HALVE_FACTOR, tilingData);
     }
 
     // 打印
@@ -260,7 +266,7 @@ void MatrixSetDiagTilingBase::CalculateUbFactorAndCheck(uint64_t validBufSize)
                                     validBufSize;
     ubFactor_ = ubComputeBufSize / totalTailSize;
 
-    if (inputInfo_.dSize <= 2 && way_ != TPL_WAY_SIMT) {
+    if (inputInfo_.dSize <= MAX_SMALL_DTYPE_SIZE && way_ != TPL_WAY_SIMT) {
         uint64_t tailFactor = (tailAxisDataSize_ > diagDataSize_) ? tailAxisDataSize_ : diagDataSize_;
         ubFactor_ = ubFactor_ * tailFactor < MAX_UB_SCATTER_ELEMENT_NUM ? ubFactor_ :
                                                                           MAX_UB_SCATTER_ELEMENT_NUM / tailFactor;
@@ -328,8 +334,9 @@ ge::graphStatus MatrixSetDiagTilingBase::DoOpTiling()
     bufferSize_ = ubSize_ / BUFFER_NUM;
     OP_LOGI(context_, "bufferSize_ %lu, totalTailSize %lu, tailAxisDataSize_ %d, diagDataSize_ %d, inputInfo_.dSize %d",
             bufferSize_, totalTailSize, tailAxisDataSize_, diagDataSize_, inputInfo_.dSize);
-    if (totalTailSize >= bufferSize_ || (inputInfo_.dSize <= 2 && (tailAxisDataSize_ >= MAX_UB_SCATTER_ELEMENT_NUM ||
-                                                                   diagDataSize_ >= MAX_UB_SCATTER_ELEMENT_NUM))) {
+    if (totalTailSize >= bufferSize_ ||
+        (inputInfo_.dSize <= MAX_SMALL_DTYPE_SIZE &&
+         (tailAxisDataSize_ >= MAX_UB_SCATTER_ELEMENT_NUM || diagDataSize_ >= MAX_UB_SCATTER_ELEMENT_NUM))) {
         return Tiling4CutTail();
     } else {
         return Tiling4NoCutTail();
@@ -341,7 +348,7 @@ ge::graphStatus MatrixSetDiagTilingBase::Tiling4CutW()
     isCutTail_ = true;
     CalUbFactor();
     OP_CHECK_IF((ubFactor_ == 0U), OP_LOGE(context_, "ubFactor is 0"), return ge::GRAPH_FAILED);
-    if (inputInfo_.dSize <= 2) {
+    if (inputInfo_.dSize <= MAX_SMALL_DTYPE_SIZE) {
         ubFactor_ = ubFactor_ < MAX_UB_SCATTER_ELEMENT_NUM_V1 ? ubFactor_ : MAX_UB_SCATTER_ELEMENT_NUM_V1;
     }
     ubPerTail_ = Ops::Base::CeilDiv(tailAxisDataSize_, ubFactor_);

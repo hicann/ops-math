@@ -151,7 +151,6 @@ public:
             SetWaitEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3, buf_idx);
             CopyOut(inLocal[(buf_idx & 1) * oneTailSize_], curMergeDimIdx * tailAxisDataSize_, inputLen);
         }
-        // indexQue_.FreeTensor(idxLocal);
     }
 
     __aicore__ inline void CopyIn(const LocalTensor<T>& inLocal, const LocalTensor<T>& diagLocal,

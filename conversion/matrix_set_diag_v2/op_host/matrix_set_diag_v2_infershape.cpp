@@ -8,12 +8,13 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <algorithm>
+
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 #include "op_api/op_util.h"
 #include "op_host/util/const_util.h"
 #include "op_host/util/shape_util.h"
-#include <algorithm>
 #include "common/inc/op_host/math_log.h"
 
 namespace ops {
@@ -26,6 +27,8 @@ static constexpr size_t OUTPUT_IDX_Y = 0;
 
 static constexpr uint8_t MIN_INPUT_DIMNUM = 2;
 static constexpr uint8_t MAX_K_DIMNUM = 2;
+// 尾轴(行、列)维度数
+static constexpr size_t TAIL_AXIS_DIM_NUM = 2;
 
 class MatrixSetDiagV2InferShapeHelper {
 public:
@@ -97,7 +100,7 @@ ge::graphStatus MatrixSetDiagV2InferShapeHelper::CheckK()
         upper_ = lower_;
     }
 
-    row_ = xShape_->GetDim(xDimNum_ - 2);
+    row_ = xShape_->GetDim(xDimNum_ - TAIL_AXIS_DIM_NUM);
     col_ = xShape_->GetDim(xDimNum_ - 1);
     OP_CHECK_IF(row_ != ge::UNKNOWN_DIM && lower_ <= -row_,
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "k", Ops::Base::ToString(kVec_),
@@ -186,7 +189,7 @@ ge::graphStatus MatrixSetDiagV2InferShapeHelper::SetOutputShape()
     *yShape_ = *xShape_;
 
     // 根据 diag shape 推导
-    for (size_t i = 0; i < xDimNum_ - 2; i++) {
+    for (size_t i = 0; i < xDimNum_ - TAIL_AXIS_DIM_NUM; i++) {
         if (diagShape_->GetDim(i) == ge::UNKNOWN_DIM) {
             continue;
         }
