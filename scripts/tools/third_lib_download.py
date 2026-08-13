@@ -74,7 +74,7 @@ if __name__ == "__main__":
             "https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/"
             "20230802.1/abseil-cpp-20230802.1.tar.gz"
         ),
-        "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/cmake/cmake-master-046.tar.gz",
+        "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/cmake/cmake-master-049.tar.gz",
     ]
 
     failed_downloads = down_files_native(my_urls)
