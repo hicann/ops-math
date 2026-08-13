@@ -29,6 +29,7 @@
  * 覆盖：
  *   Test 1 - FP32, if_std=false（方差）, unbiased=true, dim=[1], keepdim=false
  *   Test 2 - FP32, if_std=true（标准差）, correction=1, dim=[1], keepdim=true
+ *   输入共 128 个元素，覆盖 Arch35 寄存器 API 多轮 mask 计算路径。
  *
  * 编译：参见 CMakeLists.txt   运行：参见 run.sh
  *   ⚠ GE IR 执行触发 TBE 动态编译，需系统 Python 3.9（见 run.sh 环境设置）。
@@ -85,13 +86,20 @@ string GetTime()
     return tmp;
 }
 
-// ---- 测试数据：x shape [4,8]
-static const int64_t M = 4;
-static const int64_t N = 8;
-static const float xData[M * N] = {
-    1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f, 9.f,
-    0.f, 1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f,
-};
+// ---- 测试数据：x shape [8,16]，总元素数 128 > 单轮 FP32 mask 容量 64
+static const int64_t M = 8;
+static const int64_t N = 16;
+
+static std::vector<float> MakeInputData()
+{
+    std::vector<float> data(static_cast<size_t>(M * N));
+    for (int64_t i = 0; i < M; ++i) {
+        for (int64_t j = 0; j < N; ++j) {
+            data[static_cast<size_t>(i * N + j)] = static_cast<float>((i * 7 + j * 3) % 17 - 8) * 0.25f;
+        }
+    }
+    return data;
+}
 
 // ---- 计算 mean 并广播到 x 的 shape（dim=1，沿列归约）
 static void ComputeMeanBroadcast(const float* x, float* mean, int64_t rows, int64_t cols, int64_t dim)
@@ -164,7 +172,7 @@ int CreateGraph(DataType inDtype, bool if_std, bool unbiased, bool keepdim, int6
     dataX.update_input_desc_x(xDesc);
     dataX.update_output_desc_y(xDesc);
 
-    std::vector<float> hX(xData, xData + n);
+    std::vector<float> hX = MakeInputData();
     uint32_t dataLen = static_cast<uint32_t>(n) * sizeof(float);
     Tensor xTensor(xDesc, reinterpret_cast<uint8_t*>(hX.data()), dataLen);
     input.push_back(xTensor);
@@ -272,7 +280,7 @@ int RunTestCase(const char* testName, bool if_std, bool unbiased, bool keepdim, 
         passed = false;
     } else {
         int64_t n = M * N;
-        std::vector<float> hX(xData, xData + n);
+        std::vector<float> hX = MakeInputData();
         std::vector<float> hMean(n, 0.f);
         ComputeMeanBroadcast(hX.data(), hMean.data(), M, N, dimArr[0]);
 
@@ -360,12 +368,12 @@ int main(int argc, char* argv[])
     std::vector<int64_t> dimArr = {1};
 
     // Test 1: if_std=false（方差）, unbiased=true (correction=1), keepdim=false, dim=[1]
-    //   output shape = [4], expected var = [6.0, 6.0, 6.0, 0.0]
+    //   output shape = [8]
     std::vector<int64_t> outShape1 = {M};
     int r1 = RunTestCase("GEIR_Test1_var", false, true, false, 1, dimArr, tensorShape, outShape1, M, 0);
 
     // Test 2: if_std=true（标准差）, unbiased=true (correction=1), keepdim=true, dim=[1]
-    //   output shape = [4,1], expected std = [2.44949, 2.44949, 2.44949, 0.0]
+    //   output shape = [8,1]
     //   注：tiling 中 unbiased=false 会强制 correction=0，故 unbiased=true 与 correction=1 配合使用
     std::vector<int64_t> outShape2 = {M, 1};
     int r2 = RunTestCase("GEIR_Test2_std", true, true, true, 1, dimArr, tensorShape, outShape2, M, 1);

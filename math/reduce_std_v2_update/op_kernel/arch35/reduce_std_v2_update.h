@@ -57,6 +57,7 @@ constexpr uint32_t kRepF32 = kVlBytes / sizeof(float); // = 64
 constexpr uint16_t kRepF32U = static_cast<uint16_t>(kRepF32);
 constexpr uint32_t kBlockBytes = 32;                        // 32B
 constexpr uint32_t kBlockF32 = kBlockBytes / sizeof(float); // = 8
+// UpdateMask updates its scalar argument by reference; callers must not decrement the remaining count again.
 
 // UB 内一根轴的描述（innermost-first 排列）
 struct UBAxisDesc {
@@ -741,7 +742,6 @@ __aicore__ inline void ReduceStdV2UpdateKernel<DType, isTailR>::PreElewiseSubSqu
             AscendC::Reg::Sub(diff, xF32, mF32, mask); // diff = x - mean
             AscendC::Reg::Mul(sq, diff, diff, mask);   // sq  = diff × diff（square）
             AscendC::Reg::StoreAlign(dstPtr + off, sq, mask);
-            remaining = (remaining > kRepF32) ? (remaining - kRepF32) : 0;
         }
     }
 }
@@ -787,7 +787,6 @@ __aicore__ inline void ReduceStdV2UpdateKernel<DType, isTailR>::ClearChunkExtens
                                   static_cast<int32_t>(r) * static_cast<int32_t>(kRepF32);
                     auto mask = AscendC::Reg::UpdateMask<float>(remaining);
                     AscendC::Reg::StoreAlign(base + off, idReg, mask);
-                    remaining = (remaining > kRepF32) ? (remaining - kRepF32) : 0;
                 }
             }
         }
@@ -807,7 +806,6 @@ __aicore__ inline void ReduceStdV2UpdateKernel<DType, isTailR>::ClearChunkExtens
                 int32_t off = static_cast<int32_t>(startElem) + static_cast<int32_t>(i) * static_cast<int32_t>(kRepF32);
                 mask = AscendC::Reg::UpdateMask<float>(remaining);
                 AscendC::Reg::StoreAlign(base + off, idReg, mask);
-                remaining = (remaining > kRepF32) ? (remaining - kRepF32) : 0;
             }
         }
     }
@@ -839,7 +837,6 @@ __aicore__ inline void ReduceStdV2UpdateKernel<DType, isTailR>::MergeTmpBufVf()
             AscendC::Reg::LoadAlign(bReg, p1 + off);
             AscendC::Reg::Add(aReg, aReg, bReg, mask);
             AscendC::Reg::StoreAlign(p0 + off, aReg, mask);
-            remaining = (remaining > kRepF32) ? (remaining - kRepF32) : 0;
         }
     }
 }
@@ -889,7 +886,6 @@ __aicore__ inline void ReduceStdV2UpdateKernel<DType, isTailR>::ClearCacheTreeVf
             int32_t off = static_cast<int32_t>(i) * static_cast<int32_t>(kRepF32);
             mask = AscendC::Reg::UpdateMask<float>(remaining);
             AscendC::Reg::StoreAlign(base + off, zReg, mask);
-            remaining = (remaining > kRepF32) ? (remaining - kRepF32) : 0;
         }
     }
 }
@@ -929,7 +925,6 @@ __aicore__ inline void ReduceStdV2UpdateKernel<DType, isTailR>::DoCachingVf(uint
                 AscendC::Reg::Add(aReg, aReg, bReg, mask);
             }
             AscendC::Reg::StoreAlign(cachePtr + levelOff + off, aReg, mask);
-            remaining = (remaining > kRepF32) ? (remaining - kRepF32) : 0;
         }
     }
 }
@@ -971,7 +966,6 @@ __aicore__ inline void ReduceStdV2UpdateKernel<DType, isTailR>::PostElewiseVar(i
                 AscendC::Reg::Cast<D_T, float, kCastTraitFromFp32>(b16Reg, f32Reg, mask);
                 AscendC::Reg::StoreAlign<D_T, AscendC::Reg::StoreDist::DIST_PACK_B32>(outPtr + off, b16Reg, mask);
             }
-            remaining = (remaining > kRepF32) ? (remaining - kRepF32) : 0;
         }
     }
     outQue_.EnQue(outLocal);
@@ -1017,7 +1011,6 @@ __aicore__ inline void ReduceStdV2UpdateKernel<DType, isTailR>::PostElewiseStd(i
                 AscendC::Reg::Cast<D_T, float, kCastTraitFromFp32>(b16Reg, f32Reg, mask);
                 AscendC::Reg::StoreAlign<D_T, AscendC::Reg::StoreDist::DIST_PACK_B32>(outPtr + off, b16Reg, mask);
             }
-            remaining = (remaining > kRepF32) ? (remaining - kRepF32) : 0;
         }
     }
     outQue_.EnQue(outLocal);
@@ -1249,7 +1242,8 @@ __aicore__ inline void ReduceStdV2UpdateKernel<DType, isTailR>::Phase1OutputToWo
             ext.blockCount = 1;
             ext.srcStride = 0;
         } else {
-            int64_t bsElem = kBlockBytes / static_cast<int64_t>(sizeof(float));
+            // The cache's tail-A pitch inherits the input tile alignment, even though its elements are fp32.
+            int64_t bsElem = kBlockBytes / static_cast<int64_t>(sizeof(D_T));
             int64_t lastASizeAlign = ((lastASize + bsElem - 1) / bsElem) * bsElem;
             ext.blockLen = static_cast<uint32_t>(lastASize * static_cast<int64_t>(sizeof(float)));
             ext.blockCount = static_cast<uint16_t>(aLen * innerAProd_ / lastASize);
@@ -1372,7 +1366,6 @@ __aicore__ inline void ReduceStdV2UpdateKernel<DType, isTailR>::Phase2Process()
                         AscendC::Reg::StoreAlign<D_T, AscendC::Reg::StoreDist::DIST_PACK_B32>(dstPtr + off, b16Reg,
                                                                                               mask);
                     }
-                    remaining = (remaining > kRepF32) ? (remaining - kRepF32) : 0;
                 }
             }
             outQue_.EnQue(outLocal);

@@ -57,6 +57,7 @@ public:
     static constexpr uint32_t kVlBytes = 256;
     static constexpr uint32_t kRepF32 = kVlBytes / sizeof(float); // = 64
     static constexpr uint16_t kRepF32U = static_cast<uint16_t>(kRepF32);
+    // UpdateMask updates its scalar argument by reference; do not decrement it again.
 
     __aicore__ inline ReduceStdV2UpdateEmptyKernel() {}
 
@@ -134,7 +135,6 @@ private:
                 const int32_t off = static_cast<int32_t>(i) * static_cast<int32_t>(kRepF32);
                 mask = AscendC::Reg::UpdateMask<float>(remaining);
                 AscendC::Reg::StoreAlign(tmpPtr + off, f32Reg, mask);
-                remaining = (remaining > kRepF32) ? (remaining - kRepF32) : 0;
             }
         }
 
@@ -160,7 +160,6 @@ private:
                     AscendC::Reg::Cast<D_T, float, kCastTraitFromFp32>(b16Reg, f32Reg, mask);
                     AscendC::Reg::StoreAlign<D_T, AscendC::Reg::StoreDist::DIST_PACK_B32>(outPtr + off, b16Reg, mask);
                 }
-                remaining = (remaining > kRepF32) ? (remaining - kRepF32) : 0;
             }
         }
         outQue_.EnQue(outLocal);
