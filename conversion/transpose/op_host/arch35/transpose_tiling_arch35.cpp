@@ -429,17 +429,17 @@ void TransposeNddmaTiling::FindSplitFactorByRateNLast(int64_t currentSplitIndex,
     }
 }
 
-void TransposeNddmaTiling::FindSplitFactorByMultiplesLast(int64_t currentSplitIndex, int64_t currentShapeDim,
+void TransposeNddmaTiling::FindSplitFactorByMultiplesLast(int64_t currentSplitIndex, int64_t currentInShapeDim,
                                                           int64_t remainingTotalElment, int64_t coreNumMultiples)
 {
     splitInfo_.outCutIndex = currentSplitIndex;
     int64_t bestI = 1;
     for (int64_t i = 1; i <= splitInfo_.outUbElement; i++) {
-        int64_t coreNumNew = remainingTotalElment * Ops::Base::CeilDiv(currentShapeDim, i);
+        int64_t coreNumNew = remainingTotalElment * Ops::Base::CeilDiv(currentInShapeDim, i);
         if ((Ops::Base::FloorDiv(coreNumNew, coreNum_) == coreNumMultiples) &&
             !UbOutOfBoundCheck(currentSplitIndex, i, true)) {
             splitInfo_.outUbFactor = i;
-            splitInfo_.outTailFactor = currentShapeDim % i;
+            splitInfo_.outTailFactor = currentInShapeDim % i;
             splitInfo_.outUbActual *= i;
             return;
         }
@@ -448,7 +448,7 @@ void TransposeNddmaTiling::FindSplitFactorByMultiplesLast(int64_t currentSplitIn
         }
     }
     splitInfo_.outUbFactor = bestI;
-    splitInfo_.outTailFactor = currentShapeDim % bestI;
+    splitInfo_.outTailFactor = currentInShapeDim % bestI;
     splitInfo_.outUbActual *= bestI;
 }
 

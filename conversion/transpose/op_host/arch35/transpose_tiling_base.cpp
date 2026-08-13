@@ -23,6 +23,7 @@
 #include <iostream>
 #include <math.h>
 #include <climits>
+#include <functional>
 
 using namespace std;
 using namespace gert;
@@ -56,8 +57,6 @@ static bool IsAllOne(const ShapeInfo& shapeInfo)
                        [](const int64_t& item) { return item == 1; });
 }
 
-static int DecreaseCompare(const void* a, const void* b) { return (*(int64_t*)b - *(int64_t*)a); }
-
 static void CalcOutShape(ShapeInfo& shapeInfo)
 {
     const vector<int64_t>& inShape = shapeInfo.reducedInShape;
@@ -87,7 +86,8 @@ void RemoveAxisV2(ShapeInfo& shapeInfo)
     }
 
     vector<int64_t>& shape = shapeInfo.reducedInShape;
-    int64_t delPerm[TRANSPOSE_MAX_AXIS_NUM];
+    vector<int64_t> delPerm;
+    delPerm.reserve(TRANSPOSE_MAX_AXIS_NUM);
     int64_t newPerm[TRANSPOSE_MAX_AXIS_NUM];
     int64_t shapeSize = 0;
     int64_t delPermSize = 0;
@@ -99,13 +99,14 @@ void RemoveAxisV2(ShapeInfo& shapeInfo)
         } else {
             for (int64_t j = 0; j < dim; j++) {
                 if (shapeInfo.perm[j] == i) {
-                    delPerm[delPermSize++] = shapeInfo.perm[j];
+                    delPerm.push_back(shapeInfo.perm[j]);
+                    delPermSize++;
                 }
             }
         }
     }
 
-    qsort(reinterpret_cast<void*>(&delPerm[0]), delPermSize, sizeof(int64_t), DecreaseCompare);
+    std::sort(delPerm.begin(), delPerm.begin() + delPermSize, std::greater<int64_t>());
 
     for (int64_t i = 0; i < dim; i++) {
         bool delFlag = false;

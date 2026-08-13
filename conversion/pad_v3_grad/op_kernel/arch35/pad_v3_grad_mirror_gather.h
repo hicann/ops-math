@@ -79,6 +79,7 @@ private:
     constexpr static int64_t ZERO_PAD_CNT = 8;          ///< 零填充元素数（用于无效索引指向）
 
     constexpr static bool IS_REFLECT = modeName == 2; ///< 是否为 Reflect 模式
+    constexpr static int64_t REFLECT_FACTOR = 2;      ///< 镜像反射系数（new = 2*boundary - old）
 
     /**
      * @brief 外轴映射信息结构体
@@ -274,10 +275,10 @@ private:
         int64_t dstRow;
         if (isLeftPad) {
             srcRow = padCount - 1 - padRow;
-            dstRow = IS_REFLECT ? (2 * leftPadH - srcRow) : (2 * leftPadH - 1 - srcRow);
+            dstRow = IS_REFLECT ? (REFLECT_FACTOR * leftPadH - srcRow) : (REFLECT_FACTOR * leftPadH - 1 - srcRow);
         } else {
             srcRow = leftPadH + outH + padRow;
-            dstRow = IS_REFLECT ? (leftPadH + outH - 2 - padRow) : (leftPadH + outH - 1 - padRow);
+            dstRow = IS_REFLECT ? (leftPadH + outH - REFLECT_FACTOR - padRow) : (leftPadH + outH - 1 - padRow);
         }
         srcRowOffset = srcRow * width;
         dstRowOffset = dstRow * width;
