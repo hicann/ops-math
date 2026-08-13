@@ -26,10 +26,13 @@ namespace ge {
  * @par Outputs:
  * @li y: A ND Tensor. Same type and shape as x.
  */
+#ifndef OPS_PROTO_DEF_DAWSN
+#define OPS_PROTO_DEF_DAWSN
 REG_OP(Dawsn)
     .INPUT(x, TensorType({DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE}))
     .OUTPUT(y, TensorType({DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE}))
     .OP_END_FACTORY_REG(Dawsn)
+#endif
 
 } // namespace ge
 

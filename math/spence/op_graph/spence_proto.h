@@ -23,18 +23,21 @@
 namespace ge {
 
 /**
-*@brief Computes the Spence function (dilogarithm): S(x) = -integral_0^x ln(1-t)/t dt.
-*@par Inputs:
-*One input:
+ *@brief Computes the Spence function (dilogarithm): S(x) = -integral_0^x ln(1-t)/t dt.
+ *@par Inputs:
+ *One input:
  * @li x: A ND Tensor. Must be one of the following types: float16, float32, float64, bfloat16.
  *
  *@par Outputs:
  *y: A ND Tensor. Same type as x.
  */
+#ifndef OPS_PROTO_DEF_SPENCE
+#define OPS_PROTO_DEF_SPENCE
 REG_OP(Spence)
     .INPUT(x, TensorType({DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE}))
     .OUTPUT(y, TensorType({DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE}))
     .OP_END_FACTORY_REG(Spence)
+#endif
 
 } // namespace ge
 
