@@ -81,4 +81,4 @@ $$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_dot](./examples/test_aclnn_dot.cpp) | 通过[aclnnAbs](./docs/aclnnDot.md)接口方式调用Dot算子。 |
+| aclnn调用 | [test_aclnn_dot](./examples/test_aclnn_dot.cpp) | 通过[aclnnDot](./docs/aclnnDot.md)接口方式调用Dot算子。 |
