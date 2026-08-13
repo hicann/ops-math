@@ -30,7 +30,6 @@
 #include "op_api/aclnn_check.h"
 #include <iostream>
 
-
 using namespace op;
 #ifdef __cplusplus
 extern "C" {
@@ -57,9 +56,8 @@ static bool CheckDtypeValid(const aclTensorList* tensors, const aclTensor* out)
     const auto& dTypeSupportList = GetSupportDtypeList(npuArch);
     op::DataType inputType = (*tensors)[0]->GetDataType();
     if (!CheckType(inputType, dTypeSupportList)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "tensor %lu not implemented for %s, should be in dtype support list %s.", 0,
-            op::ToString(inputType).GetString(), op::ToString(dTypeSupportList).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "tensor %lu not implemented for %s, should be in dtype support list %s.", 0,
+                op::ToString(inputType).GetString(), op::ToString(dTypeSupportList).GetString());
         return false;
     }
     for (uint64_t i = 1; i < tensors->Size(); i++) {
@@ -69,7 +67,7 @@ static bool CheckDtypeValid(const aclTensorList* tensors, const aclTensor* out)
         }
     }
     OP_CHECK_DTYPE_NOT_SUPPORT(out, dTypeSupportList, return false);
-    if (inputType == DataType::DT_FLOAT && out->GetDataType() != DataType::DT_FLOAT) {    
+    if (inputType == DataType::DT_FLOAT && out->GetDataType() != DataType::DT_FLOAT) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "output dtype must be float when input dtype is float.");
         return false;
     }
@@ -125,10 +123,11 @@ static aclnnStatus CheckParams(const aclTensorList* tensors, const aclTensor* ou
     return ACLNN_SUCCESS;
 }
 
-const aclTensor* MergeLastDims(const aclTensor* tensor, int64_t dim, aclOpExecutor* executor) {
+const aclTensor* MergeLastDims(const aclTensor* tensor, int64_t dim, aclOpExecutor* executor)
+{
     op::Shape shapeTensor = tensor->GetViewShape();
     int64_t dimNum = shapeTensor.GetDimNum();
-    
+
     op::Shape newShape;
     for (int64_t i = 0; i <= dim; i++) {
         newShape.AppendDim(static_cast<int64_t>(shapeTensor.GetDim(i)));
@@ -145,7 +144,8 @@ const aclTensor* MergeLastDims(const aclTensor* tensor, int64_t dim, aclOpExecut
     return reshapeTensor;
 }
 
-const aclTensor* PostProcess(const aclTensor* tensor, const aclTensor* out, aclOpExecutor* executor) {
+const aclTensor* PostProcess(const aclTensor* tensor, const aclTensor* out, aclOpExecutor* executor)
+{
     auto reFormatTensor = executor->CreateView(tensor, tensor->GetViewShape(), tensor->GetViewOffset());
     reFormatTensor->SetViewFormat(out->GetViewFormat());
     reFormatTensor->SetOriginalFormat(out->GetOriginalFormat());
@@ -153,8 +153,8 @@ const aclTensor* PostProcess(const aclTensor* tensor, const aclTensor* out, aclO
     return reFormatTensor;
 }
 
-static aclnnStatus ProcessOneTensor(const aclTensorList* tensors, int64_t dim, int64_t numChunks,
-                                    aclTensor* out, aclOpExecutor* executor)
+static aclnnStatus ProcessOneTensor(const aclTensorList* tensors, int64_t dim, int64_t numChunks, aclTensor* out,
+                                    aclOpExecutor* executor)
 {
     auto concatTensor = l0op::ChunkCat(tensors, dim, numChunks, out->GetDataType(), executor);
     CHECK_RET(concatTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -165,11 +165,11 @@ static aclnnStatus ProcessOneTensor(const aclTensorList* tensors, int64_t dim, i
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus SplitToChunkCat(const aclTensorList* tensors, int64_t dim, int64_t numChunks,
-                                 aclTensor* out, aclOpExecutor* executor)
+static aclnnStatus SplitToChunkCat(const aclTensorList* tensors, int64_t dim, int64_t numChunks, aclTensor* out,
+                                   aclOpExecutor* executor)
 {
     op::FVector<const aclTensor*> tensorListA;
-    auto outType = out ->GetDataType();
+    auto outType = out->GetDataType();
     for (uint64_t i = 0; i < tensors->Size(); i++) {
         if (!(*tensors)[i]->IsEmpty()) {
             auto contiguous = l0op::Contiguous((*tensors)[i], executor);
@@ -214,15 +214,19 @@ static aclnnStatus SplitToChunkCat(const aclTensorList* tensors, int64_t dim, in
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnChunkCatGetWorkspaceSize(
-    const aclTensorList* tensors, int64_t dim, int64_t numChunks, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnChunkCatGetWorkspaceSize(const aclTensorList* tensors, int64_t dim, int64_t numChunks, aclTensor* out,
+                                          uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnChunkCat, DFX_IN(tensors, dim, numChunks), DFX_OUT(out));
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
     if (dim != 0) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "dim only support 0 now.");
+        return ACLNN_ERR_PARAM_INVALID;
+    }
+    if (tensors == nullptr) {
+        OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "tensors is nullptr.");
+        return ACLNN_ERR_PARAM_NULLPTR;
     }
     if (tensors->Size() == 0) {
         uniqueExecutor.ReleaseTo(executor);
