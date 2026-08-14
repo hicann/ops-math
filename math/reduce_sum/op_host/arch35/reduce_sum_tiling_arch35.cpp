@@ -94,5 +94,8 @@ static ge::graphStatus TilingPrepare4ReduceSum(gert::TilingParseContext* context
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_OPTILING(ReduceSum).Tiling(Tiling4ReduceSum).TilingParse<ReduceOpCompileInfo>(TilingPrepare4ReduceSum);
+IMPL_OP_OPTILING(ReduceSum)
+    .Tiling(Tiling4ReduceSum)
+    .TilingParse<ReduceOpCompileInfo>(TilingPrepare4ReduceSum)
+    .TilingInputsDataDependency({1});
 } // namespace optiling

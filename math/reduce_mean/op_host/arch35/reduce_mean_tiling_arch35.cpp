@@ -93,5 +93,8 @@ static ge::graphStatus TilingPrepare4ReduceMean(gert::TilingParseContext* contex
 }
 
 // register tiling interface of the ReduceMean op.
-IMPL_OP_OPTILING(ReduceMean).Tiling(Tiling4ReduceMean).TilingParse<ReduceOpCompileInfo>(TilingPrepare4ReduceMean);
+IMPL_OP_OPTILING(ReduceMean)
+    .Tiling(Tiling4ReduceMean)
+    .TilingParse<ReduceOpCompileInfo>(TilingPrepare4ReduceMean)
+    .TilingInputsDataDependency({1});
 } // namespace optiling
