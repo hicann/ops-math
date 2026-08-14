@@ -87,7 +87,6 @@ $$
 - `out`的数据类型必须与`dtype`参数一致。
 - 数据格式仅支持ND。
 - 支持空tensor场景。
-- 支持[非连续的Tensor](../../docs/zh/context/non_contiguous_tensor.md)。
 - 确定性计算：aclnnSignBitsUnpack默认确定性实现。
 
 ## 调用说明
