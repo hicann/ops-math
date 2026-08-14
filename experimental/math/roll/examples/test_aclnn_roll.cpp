@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <cstring>
 #include <iostream>
 #include <vector>
 
@@ -15,16 +16,23 @@
 #include "aclnnop/aclnn_roll.h"
 
 #define CHECK_RET(cond, return_expr) \
-  do {                               \
-    if (!(cond)) {                   \
-      return_expr;                   \
-    }                                \
-  } while (0)
+    do {                             \
+        if (!(cond)) {               \
+            return_expr;             \
+        }                            \
+    } while (0)
 
-#define LOG_PRINT(message, ...)     \
-  do {                              \
-    printf(message, ##__VA_ARGS__); \
-  } while (0)
+#define LOG_PRINT(message, ...)         \
+    do {                                \
+        printf(message, ##__VA_ARGS__); \
+    } while (0)
+
+struct Complex64 {
+    float real;
+    float imag;
+};
+
+static_assert(sizeof(Complex64) == 8, "Complex64 must occupy exactly 8 bytes.");
 
 int64_t GetShapeSize(const std::vector<int64_t>& shape)
 {
@@ -47,11 +55,8 @@ int Init(int32_t deviceId, aclrtStream* stream)
 }
 
 template <typename T>
-int CreateAclTensor(const std::vector<T>& hostData,
-                    const std::vector<int64_t>& shape,
-                    void** deviceAddr,
-                    aclDataType dataType,
-                    aclTensor** tensor)
+int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr,
+                    aclDataType dataType, aclTensor** tensor)
 {
     auto size = GetShapeSize(shape) * static_cast<int64_t>(sizeof(T));
     auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -64,8 +69,8 @@ int CreateAclTensor(const std::vector<T>& hostData,
         strides[static_cast<size_t>(i)] = shape[static_cast<size_t>(i + 1)] * strides[static_cast<size_t>(i + 1)];
     }
 
-    *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, ACL_FORMAT_ND,
-                              shape.data(), shape.size(), *deviceAddr);
+    *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, ACL_FORMAT_ND, shape.data(),
+                              shape.size(), *deviceAddr);
     return 0;
 }
 
@@ -78,16 +83,18 @@ int main()
 
     std::vector<int64_t> xShape = {2, 3};
     std::vector<int64_t> yShape = {2, 3};
-    std::vector<float> xHostData = {0, 1, 2, 3, 4, 5};
-    std::vector<float> yHostData(6, 0);
+    std::vector<Complex64> xHostData = {
+        {0.0F, 10.0F}, {1.0F, 11.0F}, {2.0F, 12.0F}, {3.0F, 13.0F}, {4.0F, 14.0F}, {5.0F, 15.0F},
+    };
+    std::vector<Complex64> yHostData(6, {0.0F, 0.0F});
 
     void* xDeviceAddr = nullptr;
     void* yDeviceAddr = nullptr;
     aclTensor* x = nullptr;
     aclTensor* y = nullptr;
-    ret = CreateAclTensor(xHostData, xShape, &xDeviceAddr, ACL_FLOAT, &x);
+    ret = CreateAclTensor(xHostData, xShape, &xDeviceAddr, ACL_COMPLEX64, &x);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-    ret = CreateAclTensor(yHostData, yShape, &yDeviceAddr, ACL_FLOAT, &y);
+    ret = CreateAclTensor(yHostData, yShape, &yDeviceAddr, ACL_COMPLEX64, &y);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     std::vector<int64_t> shiftsData = {1};
@@ -112,13 +119,18 @@ int main()
     ret = aclrtSynchronizeStream(stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
-    std::vector<float> resultData(yHostData.size(), 0);
+    std::vector<Complex64> resultData(yHostData.size(), {0.0F, 0.0F});
     ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), yDeviceAddr,
                       resultData.size() * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
     for (size_t i = 0; i < resultData.size(); ++i) {
-        LOG_PRINT("result[%zu] is: %f\n", i, resultData[i]);
+        LOG_PRINT("result[%zu] is: (%f, %f)\n", i, resultData[i].real, resultData[i].imag);
     }
+    const std::vector<Complex64> expected = {
+        {2.0F, 12.0F}, {0.0F, 10.0F}, {1.0F, 11.0F}, {5.0F, 15.0F}, {3.0F, 13.0F}, {4.0F, 14.0F},
+    };
+    const bool resultOk = std::memcmp(resultData.data(), expected.data(), expected.size() * sizeof(Complex64)) == 0;
+    LOG_PRINT("complex64 bit-exact check: %s\n", resultOk ? "PASS" : "FAIL");
 
     aclDestroyIntArray(shifts);
     aclDestroyIntArray(dims);
@@ -132,5 +144,5 @@ int main()
     aclrtDestroyStream(stream);
     aclrtResetDevice(deviceId);
     aclFinalize();
-    return 0;
+    return resultOk ? 0 : 1;
 }

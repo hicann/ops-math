@@ -13,5 +13,9 @@ if (UT_TEST_ALL OR OP_KERNEL_UT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/roll_tiling.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/roll_infershape.cpp
         )
-    AddOpTestCase(roll "ascend910b" "-DDTYPE_X=float" "${roll_tiling_files}")
+    set(roll_soc_versions ascend910b ascend910_93)
+    if("${ASCEND_COMPUTE_UNIT}" IN_LIST roll_soc_versions)
+        AddOpTestCase(roll "${ASCEND_COMPUTE_UNIT}" "-DDTYPE_X=complex64 -DORIG_DTYPE_X=DT_COMPLEX64"
+                      "${roll_tiling_files}")
+    endif()
 endif()

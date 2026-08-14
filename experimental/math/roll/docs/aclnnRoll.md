@@ -5,6 +5,8 @@
 | 产品 | 是否支持 |
 | :--- | :---: |
 | Atlas A2 训练系列产品 | 支持 |
+| Atlas A3 训练系列产品 | 支持 |
+| Atlas A5 训练系列产品 | 支持 |
 
 ## 功能说明
 
@@ -40,7 +42,7 @@ aclnnStatus aclnnRoll(
 
 | 参数名 | 输入/输出 | 描述 | 数据类型 | 数据格式 | 维度 |
 | --- | --- | --- | --- | --- | --- |
-| x | 输入 | 输入张量 | uint8, int8, bfloat16, float16, float32, int32, uint32 | ND | 0-8 维 |
+| x | 输入 | 输入张量 | bool, uint8, int8, bfloat16, float16, float32, int32, uint32, complex64 | ND | 0-8 维 |
 | shifts | 输入 | 每个目标维度上的循环位移量 | aclIntArray* | - | - |
 | dims | 输入 | 循环位移维度，可省略或传空数组 | aclIntArray* | - | - |
 | out | 输出 | 输出张量，shape 和 dtype 与 x 一致 | 与 x 相同 | ND | 0-8 维 |
@@ -75,7 +77,7 @@ aclnnStatus aclnnRoll(
 ## 约束说明
 
 - 仅支持 `ND`。
-- 仅支持 `uint8`、`int8`、`bfloat16`、`float16`、`float32`、`int32`、`uint32`。
+- 仅支持 `bool`、`uint8`、`int8`、`bfloat16`、`float16`、`float32`、`int32`、`uint32`、`complex64`。
 - 0 维输入时，`shifts` 长度必须为 1，且 `dims` 为空。
 - 非连续输入会先整理为连续视图后执行。
 - 非连续输出会在算子结果生成后做回写。

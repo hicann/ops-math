@@ -24,7 +24,6 @@ constexpr int64_t OUTPUT_Y_IDX = 0;
 constexpr int64_t ATTR_SHIFTS_IDX = 0;
 constexpr int64_t ATTR_DIMS_IDX = 1;
 constexpr size_t WORKSPACE_SIZE = 0;
-constexpr int64_t GM_BLOCK_BYTES = 32;
 constexpr int64_t GM_BANDWIDTH_ALIGN_BYTES = 512;
 constexpr int64_t UB_BYTES = 64 * 1024;
 
@@ -87,6 +86,7 @@ ge::graphStatus FillWorkspace(gert::TilingContext* context)
 int64_t GetDataTypeSize(ge::DataType dataType)
 {
     switch (dataType) {
+        case ge::DT_BOOL:
         case ge::DT_UINT8:
         case ge::DT_INT8:
             return 1;
@@ -97,16 +97,11 @@ int64_t GetDataTypeSize(ge::DataType dataType)
         case ge::DT_INT32:
         case ge::DT_UINT32:
             return 4;
+        case ge::DT_COMPLEX64:
+            return 8;
         default:
             return 1;
     }
-}
-
-const gert::Shape& GetLogicalShape(const gert::StorageShape* storageShape)
-{
-    const gert::Shape& physicalShape = storageShape->GetStorageShape();
-    const gert::Shape& logicalShape = storageShape->GetShape();
-    return physicalShape.GetDimNum() == 0 && logicalShape.GetDimNum() > 0 ? logicalShape : physicalShape;
 }
 
 ge::graphStatus TilingPrepareForRoll(gert::TilingParseContext* context)
@@ -124,14 +119,21 @@ ge::graphStatus RollTiling(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
     OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
 
-    const gert::Shape& shape = GetLogicalShape(xShape);
-    const gert::Shape& outShape = GetLogicalShape(yShape);
+    const gert::Shape& shape = yShape->GetOriginShape();
     if (shape.GetDimNum() > static_cast<int64_t>(ROLL_MAX_DIM_NUM)) {
         OP_LOGE(context, "Roll supports at most %u dims.", ROLL_MAX_DIM_NUM);
         return ge::GRAPH_FAILED;
     }
-    if (shape != outShape) {
-        OP_LOGE(context, "Input and output shape must be the same.");
+    const gert::Shape& xStorageShape = xShape->GetStorageShape();
+    const gert::Shape& yStorageShape = yShape->GetStorageShape();
+    const gert::Shape& xDataShape = xStorageShape.GetDimNum() == 0 && xShape->GetOriginShape().GetDimNum() > 0 ?
+                                        xShape->GetOriginShape() :
+                                        xStorageShape;
+    const gert::Shape& yDataShape = yStorageShape.GetDimNum() == 0 && shape.GetDimNum() > 0 ? shape : yStorageShape;
+    const int64_t inputElements = xDataShape.GetDimNum() == 0 ? 1 : xDataShape.GetShapeSize();
+    const int64_t outputElements = yDataShape.GetDimNum() == 0 ? 1 : yDataShape.GetShapeSize();
+    if (inputElements != outputElements) {
+        OP_LOGE(context, "Input and output element counts must be the same.");
         return ge::GRAPH_FAILED;
     }
 
@@ -142,6 +144,11 @@ ge::graphStatus RollTiling(gert::TilingContext* context)
     auto dimsAttr = attrs->GetAttrPointer<gert::ContinuousVector>(ATTR_DIMS_IDX);
     const auto* xDesc = context->GetInputDesc(INPUT_X_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context, xDesc);
+    const int64_t gmBlockBytes = static_cast<int64_t>(Ops::Base::GetUbBlockSize(context));
+    if (gmBlockBytes <= 0) {
+        OP_LOGE(context, "Failed to get UB block size.");
+        return ge::GRAPH_FAILED;
+    }
 
     RollTilingData* tilingData = context->GetTilingData<RollTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tilingData);
@@ -193,9 +200,8 @@ ge::graphStatus RollTiling(gert::TilingContext* context)
                 if (dim < 0) {
                     dim += originalDimNum;
                 }
-                tilingData->shifts[dim] =
-                    PositiveMod(tilingData->shifts[dim] + PositiveMod(shifts[i], tilingData->shapes[dim]),
-                                tilingData->shapes[dim]);
+                tilingData->shifts[dim] = PositiveMod(
+                    tilingData->shifts[dim] + PositiveMod(shifts[i], tilingData->shapes[dim]), tilingData->shapes[dim]);
             }
         }
     }
@@ -232,9 +238,9 @@ ge::graphStatus RollTiling(gert::TilingContext* context)
     int64_t blockDim = 1;
     int64_t perCoreElements = 0;
     if (totalNum > 0) {
-        const int64_t elementsPerBlock = std::max<int64_t>(GM_BLOCK_BYTES / std::max<int64_t>(typeSize, 1), 1);
-        const int64_t elementsPerBandwidthBlock =
-            std::max<int64_t>(GM_BANDWIDTH_ALIGN_BYTES / std::max<int64_t>(typeSize, 1), elementsPerBlock);
+        const int64_t elementsPerBlock = std::max<int64_t>(gmBlockBytes / std::max<int64_t>(typeSize, 1), 1);
+        const int64_t elementsPerBandwidthBlock = std::max<int64_t>(
+            GM_BANDWIDTH_ALIGN_BYTES / std::max<int64_t>(typeSize, 1), elementsPerBlock);
         const int64_t rawPerCore = (totalNum + coreNum - 1) / coreNum;
         const int64_t totalBytes = totalNum * typeSize;
         int64_t alignElements = elementsPerBlock;
@@ -254,21 +260,21 @@ ge::graphStatus RollTiling(gert::TilingContext* context)
                 }
                 if (xDesc->GetDataType() == ge::DT_BF16 && tilingData->activeDimCount > 1 &&
                     tilingData->shapes[lastActiveDim] == 3 && totalBytes >= 512 && totalBytes <= 4096) {
-                    alignElements = std::max<int64_t>(
-                        alignElements, Lcm(elementsPerBlock, tilingData->shapes[lastActiveDim]));
+                    alignElements = std::max<int64_t>(alignElements,
+                                                      Lcm(elementsPerBlock, tilingData->shapes[lastActiveDim]));
                 }
                 if (xDesc->GetDataType() == ge::DT_UINT8 && tilingData->shapes[lastActiveDim] <= 64) {
-                    alignElements = std::max<int64_t>(
-                        alignElements, Lcm(elementsPerBlock, tilingData->shapes[lastActiveDim]));
+                    alignElements = std::max<int64_t>(alignElements,
+                                                      Lcm(elementsPerBlock, tilingData->shapes[lastActiveDim]));
                     if (tilingData->activeDimCount > 1 && tilingData->dimNum >= 6) {
                         int64_t minActiveStride = 0;
                         for (int64_t dim = 0; dim < lastActiveDim; ++dim) {
                             if (tilingData->shifts[dim] == 0 || tilingData->strides[dim] > 4096) {
                                 continue;
                             }
-                            minActiveStride = minActiveStride == 0 ? tilingData->strides[dim]
-                                                                    : std::min<int64_t>(minActiveStride,
-                                                                                        tilingData->strides[dim]);
+                            minActiveStride = minActiveStride == 0 ?
+                                                  tilingData->strides[dim] :
+                                                  std::min<int64_t>(minActiveStride, tilingData->strides[dim]);
                         }
                         if (minActiveStride > 0) {
                             alignElements = std::max<int64_t>(alignElements, minActiveStride);
@@ -276,25 +282,27 @@ ge::graphStatus RollTiling(gert::TilingContext* context)
                     }
                 }
             } else if (lastActiveDim >= 0) {
-                const int64_t rollBlockElements = tilingData->shapes[lastActiveDim] * tilingData->strides[lastActiveDim];
-                const bool splitHugeLeadingDimRoll =
-                    tilingData->activeDimCount == 1 && lastActiveDim == 0 &&
-                    totalNum >= coreNum * elementsPerBlock * 16;
+                const int64_t rollBlockElements = tilingData->shapes[lastActiveDim] *
+                                                  tilingData->strides[lastActiveDim];
+                const bool splitHugeLeadingDimRoll = tilingData->activeDimCount == 1 && lastActiveDim == 0 &&
+                                                     totalNum >= coreNum * elementsPerBlock * 16;
                 const bool splitHugeTwoWayRoll = tilingData->activeDimCount == 1 &&
                                                  tilingData->shapes[lastActiveDim] == 2 &&
                                                  tilingData->strides[lastActiveDim] >= 4096;
-                const bool splitHugeInnerAlignedRoll =
-                    tilingData->activeDimCount == 1 &&
-                    tilingData->strides[lastActiveDim] * typeSize % GM_BLOCK_BYTES == 0 &&
-                    rollBlockElements > rawPerCore;
-                const bool splitHugeFp16MiddleRoll =
-                    xDesc->GetDataType() == ge::DT_FLOAT16 && tilingData->activeDimCount == 1 && lastActiveDim > 0 &&
-                    lastActiveDim < tilingData->dimNum - 1 && rollBlockElements > rawPerCore &&
-                    totalNum * typeSize >= 64 * 1024 * 1024;
-                const bool splitFp16MultiLargeInnerRoll =
-                    xDesc->GetDataType() == ge::DT_FLOAT16 && tilingData->activeDimCount > 1 &&
-                    tilingData->dimNum > 2 && tilingData->strides[lastActiveDim] >= elementsPerBandwidthBlock &&
-                    totalNum * typeSize >= 16 * 1024 * 1024;
+                const bool splitHugeInnerAlignedRoll = tilingData->activeDimCount == 1 &&
+                                                       tilingData->strides[lastActiveDim] * typeSize % gmBlockBytes ==
+                                                           0 &&
+                                                       rollBlockElements > rawPerCore;
+                const bool splitHugeFp16MiddleRoll = xDesc->GetDataType() == ge::DT_FLOAT16 &&
+                                                     tilingData->activeDimCount == 1 && lastActiveDim > 0 &&
+                                                     lastActiveDim < tilingData->dimNum - 1 &&
+                                                     rollBlockElements > rawPerCore &&
+                                                     totalNum * typeSize >= 64 * 1024 * 1024;
+                const bool splitFp16MultiLargeInnerRoll = xDesc->GetDataType() == ge::DT_FLOAT16 &&
+                                                          tilingData->activeDimCount > 1 && tilingData->dimNum > 2 &&
+                                                          tilingData->strides[lastActiveDim] >=
+                                                              elementsPerBandwidthBlock &&
+                                                          totalNum * typeSize >= 16 * 1024 * 1024;
                 if ((splitHugeInnerAlignedRoll || splitHugeFp16MiddleRoll) && !splitHugeTwoWayRoll &&
                     !splitHugeLeadingDimRoll) {
                     alignElements = std::max<int64_t>(alignElements, tilingData->strides[lastActiveDim]);
@@ -303,11 +311,13 @@ ge::graphStatus RollTiling(gert::TilingContext* context)
                 } else if (!splitHugeLeadingDimRoll && !splitHugeTwoWayRoll) {
                     alignElements = std::max<int64_t>(alignElements, rollBlockElements);
                 }
-                const bool splitLargeByInner =
-                    tilingData->activeDimCount == 1 && tilingData->dimNum > 2 && splitHugeLeadingDimRoll &&
-                    (xDesc->GetDataType() == ge::DT_UINT8 || xDesc->GetDataType() == ge::DT_INT32) &&
-                    totalNum * typeSize >= 16 * 1024 * 1024 &&
-                    !(tilingData->dimNum == 2 && tilingData->strides[lastActiveDim] == 10000);
+                const bool splitLargeByInner = tilingData->activeDimCount == 1 && tilingData->dimNum > 2 &&
+                                               splitHugeLeadingDimRoll &&
+                                               (xDesc->GetDataType() == ge::DT_UINT8 ||
+                                                xDesc->GetDataType() == ge::DT_INT32) &&
+                                               totalNum * typeSize >= 16 * 1024 * 1024 &&
+                                               !(tilingData->dimNum == 2 &&
+                                                 tilingData->strides[lastActiveDim] == 10000);
                 if (splitLargeByInner) {
                     alignElements = std::max<int64_t>(alignElements, elementsPerBandwidthBlock);
                 }
@@ -315,25 +325,28 @@ ge::graphStatus RollTiling(gert::TilingContext* context)
         }
         perCoreElements = ((rawPerCore + alignElements - 1) / alignElements) * alignElements;
         blockDim = (totalNum + perCoreElements - 1) / perCoreElements;
-        const bool isTinyTwoDimUint8Last =
-            xDesc->GetDataType() == ge::DT_UINT8 && tilingData->dimNum == 2 && tilingData->activeDimCount == 1 &&
-            tilingData->activeDim == tilingData->dimNum - 1;
-        const bool skipSingleCoreForTinyNarrowLast =
-            isTinyTwoDimUint8Last &&
-            ((totalBytes >= 2048 && totalBytes <= 4096 && tilingData->shapes[tilingData->activeDim] >= 2 &&
-              tilingData->shapes[tilingData->activeDim] <= 8) ||
-             (totalBytes < 2048 && tilingData->shapes[tilingData->activeDim] >= 2 &&
-              tilingData->shapes[tilingData->activeDim] <= 3 && tilingData->shapes[0] >= 64));
+        const bool isTinyTwoDimUint8Last = xDesc->GetDataType() == ge::DT_UINT8 && tilingData->dimNum == 2 &&
+                                           tilingData->activeDimCount == 1 &&
+                                           tilingData->activeDim == tilingData->dimNum - 1;
+        const bool skipSingleCoreForTinyNarrowLast = isTinyTwoDimUint8Last &&
+                                                     ((totalBytes >= 2048 && totalBytes <= 4096 &&
+                                                       tilingData->shapes[tilingData->activeDim] >= 2 &&
+                                                       tilingData->shapes[tilingData->activeDim] <= 8) ||
+                                                      (totalBytes < 2048 &&
+                                                       tilingData->shapes[tilingData->activeDim] >= 2 &&
+                                                       tilingData->shapes[tilingData->activeDim] <= 3 &&
+                                                       tilingData->shapes[0] >= 64));
         int64_t lastActiveDimForTiny = -1;
         for (int64_t dim = 0; dim < tilingData->dimNum; ++dim) {
             if (tilingData->shifts[dim] != 0) {
                 lastActiveDimForTiny = dim;
             }
         }
-        const bool skipSingleCoreForTinyBf16Last =
-            xDesc->GetDataType() == ge::DT_BF16 && tilingData->activeDimCount > 1 &&
-            lastActiveDimForTiny == tilingData->dimNum - 1 && tilingData->shapes[lastActiveDimForTiny] == 3 &&
-            totalBytes >= 512 && totalBytes <= 4096;
+        const bool skipSingleCoreForTinyBf16Last = xDesc->GetDataType() == ge::DT_BF16 &&
+                                                   tilingData->activeDimCount > 1 &&
+                                                   lastActiveDimForTiny == tilingData->dimNum - 1 &&
+                                                   tilingData->shapes[lastActiveDimForTiny] == 3 && totalBytes >= 512 &&
+                                                   totalBytes <= 4096;
         if (totalBytes <= 4096 && !skipSingleCoreForTinyNarrowLast && !skipSingleCoreForTinyBf16Last) {
             blockDim = 1;
             perCoreElements = totalNum;

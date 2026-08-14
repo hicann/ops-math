@@ -33,3 +33,23 @@ TEST_F(RollInfershape, roll_infershape_basic)
     };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
+
+TEST_F(RollInfershape, roll_infershape_complex64)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Roll",
+        {
+            {{{2, 3, 4}, {2, 3, 4}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
+        },
+        {
+            gert::InfershapeContextPara::OpAttr("shifts", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1})),
+            gert::InfershapeContextPara::OpAttr("dims", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1})),
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {2, 3, 4},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}

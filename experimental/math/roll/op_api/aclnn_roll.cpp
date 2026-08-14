@@ -35,9 +35,9 @@ namespace {
 constexpr size_t MAX_SUPPORT_DIMS_NUMS = 8;
 
 const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_UINT8,   op::DataType::DT_INT8,  op::DataType::DT_BF16,
-    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_INT32,
-    op::DataType::DT_UINT32};
+    op::DataType::DT_BOOL,  op::DataType::DT_UINT8,   op::DataType::DT_INT8,
+    op::DataType::DT_BF16,  op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT,
+    op::DataType::DT_INT32, op::DataType::DT_UINT32,  op::DataType::DT_COMPLEX64};
 
 bool CheckNotNull(const aclTensor* x, const aclIntArray* shifts, const aclIntArray* dims, const aclTensor* out)
 {
@@ -68,13 +68,14 @@ bool CheckDtypeValid(const aclTensor* x, const aclTensor* out)
 
 bool CheckFormatValid(const aclTensor* x, const aclTensor* out)
 {
-    constexpr auto supportedFormat = op::Format::FORMAT_ND;
-    if (x->GetViewFormat() != supportedFormat || x->GetStorageFormat() != supportedFormat) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input x only supports ND format.");
+    if (op::IsPrivateFormat(x->GetStorageFormat())) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input x does not support private storage format [%s].",
+                op::ToString(x->GetStorageFormat()).GetString());
         return false;
     }
-    if (out->GetViewFormat() != supportedFormat || out->GetStorageFormat() != supportedFormat) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Output out only supports ND format.");
+    if (op::IsPrivateFormat(out->GetStorageFormat())) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Output out does not support private storage format [%s].",
+                op::ToString(out->GetStorageFormat()).GetString());
         return false;
     }
     return true;
@@ -185,12 +186,8 @@ aclnnStatus CheckParams(const aclTensor* x, const aclIntArray* shifts, const acl
 }
 } // namespace
 
-extern "C" aclnnStatus aclnnRollGetWorkspaceSize(const aclTensor* x,
-                                                 const aclIntArray* shifts,
-                                                 const aclIntArray* dims,
-                                                 aclTensor* out,
-                                                 uint64_t* workspaceSize,
-                                                 aclOpExecutor** executor)
+extern "C" aclnnStatus aclnnRollGetWorkspaceSize(const aclTensor* x, const aclIntArray* shifts, const aclIntArray* dims,
+                                                 aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
     L2_DFX_PHASE_1(aclnnRoll, DFX_IN(x, shifts, dims), DFX_OUT(out));

@@ -21,10 +21,7 @@ using namespace op;
 
 class test_aclnn_roll : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
-    }
+    static void SetUpTestCase() { op::SetPlatformSocVersion(op::SocVersion::ASCEND910B); }
 };
 
 TEST_F(test_aclnn_roll, case_basic_float)
@@ -46,6 +43,45 @@ TEST_F(test_aclnn_roll, case_dims_empty)
     auto yDesc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto shifts = IntArrayDesc(std::vector<int64_t>{2});
     auto dims = IntArrayDesc(std::vector<int64_t>{});
+
+    auto ut = OP_API_UT(aclnnRoll, INPUT(xDesc, shifts, dims), OUTPUT(yDesc));
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+}
+
+TEST_F(test_aclnn_roll, case_complex64)
+{
+    auto xDesc = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND);
+    auto yDesc = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND);
+    auto shifts = IntArrayDesc(std::vector<int64_t>{1});
+    auto dims = IntArrayDesc(std::vector<int64_t>{1});
+
+    auto ut = OP_API_UT(aclnnRoll, INPUT(xDesc, shifts, dims), OUTPUT(yDesc));
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+}
+
+TEST_F(test_aclnn_roll, case_bool)
+{
+    auto xDesc = TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND);
+    auto yDesc = TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND);
+    auto shifts = IntArrayDesc(std::vector<int64_t>{1});
+    auto dims = IntArrayDesc(std::vector<int64_t>{1});
+
+    auto ut = OP_API_UT(aclnnRoll, INPUT(xDesc, shifts, dims), OUTPUT(yDesc));
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+}
+
+TEST_F(test_aclnn_roll, case_complex64_rank3)
+{
+    auto xDesc = TensorDesc({2, 3, 4}, ACL_COMPLEX64, ACL_FORMAT_NCL);
+    auto yDesc = TensorDesc({2, 3, 4}, ACL_COMPLEX64, ACL_FORMAT_NCL);
+    auto shifts = IntArrayDesc(std::vector<int64_t>{1, -2});
+    auto dims = IntArrayDesc(std::vector<int64_t>{0, 2});
 
     auto ut = OP_API_UT(aclnnRoll, INPUT(xDesc, shifts, dims), OUTPUT(yDesc));
     uint64_t workspaceSize = 0;

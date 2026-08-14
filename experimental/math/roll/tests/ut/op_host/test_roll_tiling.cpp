@@ -82,3 +82,28 @@ TEST_F(RollTiling, flatten_roll_when_dims_empty)
     EXPECT_EQ(data->strides[0], 1);
     EXPECT_EQ(data->shifts[0], 5);
 }
+
+TEST_F(RollTiling, complex64_uses_eight_byte_elements)
+{
+    RollCompileInfoForTest compileInfo = {64};
+    gert::TilingContextPara tilingContextPara(
+        "Roll",
+        {
+            {{{2, 3}, {2, 3}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
+        },
+        {
+            {{{2, 3}, {6}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
+        },
+        {
+            gert::TilingContextPara::OpAttr("shifts", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1})),
+            gert::TilingContextPara::OpAttr("dims", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1})),
+        },
+        &compileInfo);
+
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    auto* data = reinterpret_cast<const RollTilingData*>(tilingInfo.tilingData.get());
+    EXPECT_EQ(data->totalNum, 6);
+    EXPECT_EQ(data->ubElements, 64 * 1024 / 8);
+    EXPECT_GT(data->usedCoreNum, 0);
+}

@@ -18,13 +18,14 @@
 
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
+#include "op_kernel/platform_util.h"
 #include "roll_tiling_data.h"
 
 namespace RollKernel {
 using namespace AscendC;
 
 constexpr int32_t ROLL_BUFFER_NUM = 1;
-constexpr int64_t ROLL_GM_BLOCK_BYTES = 32;
+constexpr int64_t ROLL_GM_BLOCK_BYTES = Ops::Base::GetUbBlockSize();
 constexpr int64_t ROLL_STRIDED_SEGMENT_MIN_BYTES = 12;
 constexpr int64_t ROLL_MAX_DATACOPY_BLOCK_COUNT = 4095;
 constexpr int64_t ROLL_FLAT_PATCH_MAX_BLOCK_BYTES = 768;
@@ -41,25 +42,18 @@ private:
     __aicore__ inline int64_t ComputeSourceRowIndex(int64_t outputRowIndex) const;
     __aicore__ inline int64_t ComputeContiguousSourceRowRun(int64_t outputRowIndex, int64_t maxRows) const;
     __aicore__ inline int64_t ComputeSourceBlockIndex(int64_t outputBlockIndex, int64_t lastActiveDim) const;
-    __aicore__ inline int64_t ComputeContiguousSourceBlockRun(
-        int64_t outputBlockIndex, int64_t maxBlocks, int64_t lastActiveDim) const;
+    __aicore__ inline int64_t ComputeContiguousSourceBlockRun(int64_t outputBlockIndex, int64_t maxBlocks,
+                                                              int64_t lastActiveDim) const;
     __aicore__ inline int64_t ComputeInputIndex(int64_t outputIndex) const;
     __aicore__ inline void CopySegmentByScalar(int64_t dstIndex, int64_t srcIndex, int64_t elementCount);
     __aicore__ inline void CopySegmentBySourceAligned(int64_t dstIndex, int64_t srcIndex, int64_t elementCount);
-    __aicore__ inline void CopyStridedSourceSegments(
-        int64_t dstIndex, int64_t srcIndex, int64_t segmentElements, int64_t strideElements, int64_t segmentCount);
-    __aicore__ inline bool CopyStridedSingleElementByRowGather(int64_t dstIndex,
-                                                               int64_t srcBlockBase,
-                                                               int64_t sourceOffset,
-                                                               int64_t blockSize,
-                                                               int64_t blockCount,
-                                                               bool preferRowGatherPatch);
-    __aicore__ inline bool CopyBlockRollByFlatPatch(int64_t dstIndex,
-                                                    int64_t srcIndex,
-                                                    int64_t blockSize,
-                                                    int64_t firstElements,
-                                                    int64_t secondElements,
-                                                    int64_t blockCount);
+    __aicore__ inline void CopyStridedSourceSegments(int64_t dstIndex, int64_t srcIndex, int64_t segmentElements,
+                                                     int64_t strideElements, int64_t segmentCount);
+    __aicore__ inline bool CopyStridedSingleElementByRowGather(int64_t dstIndex, int64_t srcBlockBase,
+                                                               int64_t sourceOffset, int64_t blockSize,
+                                                               int64_t blockCount, bool preferRowGatherPatch);
+    __aicore__ inline bool CopyBlockRollByFlatPatch(int64_t dstIndex, int64_t srcIndex, int64_t blockSize,
+                                                    int64_t firstElements, int64_t secondElements, int64_t blockCount);
     __aicore__ inline void CopySegment(int64_t dstIndex, int64_t srcIndex, int64_t elementCount);
     __aicore__ inline void CopyIdentity();
     __aicore__ inline void CopyFlattenRoll();
@@ -68,17 +62,18 @@ private:
     __aicore__ inline void CopyLastDimRoll();
     __aicore__ inline void CopyLastDimRollByRows();
     __aicore__ inline void CopyLastDimFullRows(int64_t dstIndex, int64_t rowCount);
-    __aicore__ inline void CopyRowsRollInUb(
-        LocalTensor<T>& outLocal, LocalTensor<T>& inLocal, int64_t rowCount, int64_t dimSize,
-        int64_t alignedRowElements, int64_t shift);
+    __aicore__ inline void CopyRowsRollInUb(LocalTensor<T>& outLocal, LocalTensor<T>& inLocal, int64_t rowCount,
+                                            int64_t dimSize, int64_t alignedRowElements, int64_t shift);
     __aicore__ inline void CopyLastDimFullRowsBySegments(int64_t dstIndex, int64_t rowCount);
-    __aicore__ inline void CopyMultiDimLastDimFullRowsFromSource(int64_t dstIndex, int64_t srcRowIndex, int64_t rowCount);
-    __aicore__ inline void CopyMultiDimLastDimFullRowsBySegments(int64_t dstIndex, int64_t srcRowIndex, int64_t rowCount);
+    __aicore__ inline void CopyMultiDimLastDimFullRowsFromSource(int64_t dstIndex, int64_t srcRowIndex,
+                                                                 int64_t rowCount);
+    __aicore__ inline void CopyMultiDimLastDimFullRowsBySegments(int64_t dstIndex, int64_t srcRowIndex,
+                                                                 int64_t rowCount);
     __aicore__ inline void CopyMultiDimLastDimFullRows(int64_t dstIndex, int64_t rowCount);
     __aicore__ inline void CopyMultiDimLastDimRollByRows();
     __aicore__ inline void CopyMultiDimNonLastBlockPartial(int64_t lastActiveDim, int64_t& dstIndex, int64_t& remain);
-    __aicore__ inline void CopyMultiDimNonLastFullBlocks(
-        int64_t lastActiveDim, int64_t dstIndex, int64_t srcBlockIndex, int64_t blockCount);
+    __aicore__ inline void CopyMultiDimNonLastFullBlocks(int64_t lastActiveDim, int64_t dstIndex, int64_t srcBlockIndex,
+                                                         int64_t blockCount);
     __aicore__ inline void CopyMultiDimNonLastRollByBlocks(int64_t lastActiveDim);
     __aicore__ inline void CopyLastDimPartial(int64_t& dstIndex, int64_t& remain);
     __aicore__ inline void CopySingleDimRoll();
@@ -109,10 +104,10 @@ __aicore__ inline void Roll<T>::Init(GM_ADDR x, GM_ADDR y, const RollTilingData*
     yGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(y));
 
     const int64_t blockIdx = static_cast<int64_t>(GetBlockIdx());
-    const int64_t perCoreElements =
-        tilingData_->perCoreElements > 0 ? tilingData_->perCoreElements : tilingData_->blockFactor;
-    const int64_t lastCoreElements =
-        tilingData_->lastCoreElements > 0 ? tilingData_->lastCoreElements : perCoreElements;
+    const int64_t perCoreElements = tilingData_->perCoreElements > 0 ? tilingData_->perCoreElements :
+                                                                       tilingData_->blockFactor;
+    const int64_t lastCoreElements = tilingData_->lastCoreElements > 0 ? tilingData_->lastCoreElements :
+                                                                         perCoreElements;
     startIndex_ = blockIdx * perCoreElements;
     if (blockIdx >= tilingData_->usedCoreNum) {
         elementCount_ = 0;
@@ -202,8 +197,8 @@ __aicore__ inline int64_t Roll<T>::ComputeSourceBlockIndex(int64_t outputBlockIn
 }
 
 template <typename T>
-__aicore__ inline int64_t Roll<T>::ComputeContiguousSourceBlockRun(
-    int64_t outputBlockIndex, int64_t maxBlocks, int64_t lastActiveDim) const
+__aicore__ inline int64_t Roll<T>::ComputeContiguousSourceBlockRun(int64_t outputBlockIndex, int64_t maxBlocks,
+                                                                   int64_t lastActiveDim) const
 {
     if (maxBlocks <= 1) {
         return 1;
@@ -336,17 +331,26 @@ __aicore__ inline void Roll<T>::CopySegmentBySourceAligned(int64_t dstIndex, int
 }
 
 template <typename T>
-__aicore__ inline void Roll<T>::CopyStridedSourceSegments(
-    int64_t dstIndex, int64_t srcIndex, int64_t segmentElements, int64_t strideElements, int64_t segmentCount)
+__aicore__ inline void Roll<T>::CopyStridedSourceSegments(int64_t dstIndex, int64_t srcIndex, int64_t segmentElements,
+                                                          int64_t strideElements, int64_t segmentCount)
 {
     if (segmentElements <= 0 || segmentCount <= 0) {
         return;
     }
     const int64_t typeBytes = static_cast<int64_t>(sizeof(T));
+    if (segmentElements > ubElements_) {
+        for (int64_t segment = 0; segment < segmentCount; ++segment) {
+            CopySegment(dstIndex + segment * strideElements, srcIndex + segment * strideElements, segmentElements);
+        }
+        return;
+    }
+    const int64_t elementsPerBlock = ROLL_GM_BLOCK_BYTES / typeBytes;
+    const int64_t alignedSegmentElements = ((segmentElements + elementsPerBlock - 1) / elementsPerBlock) *
+                                           elementsPerBlock;
     int64_t copiedSegments = 0;
     while (copiedSegments < segmentCount) {
         int64_t currentSegments = segmentCount - copiedSegments;
-        const int64_t maxSegments = ubElements_ / segmentElements;
+        const int64_t maxSegments = ubElements_ / alignedSegmentElements;
         if (currentSegments > maxSegments) {
             currentSegments = maxSegments;
         }
@@ -382,9 +386,9 @@ __aicore__ inline void Roll<T>::CopyStridedSourceSegments(
 }
 
 template <typename T>
-__aicore__ inline bool Roll<T>::CopyStridedSingleElementByRowGather(
-    int64_t dstIndex, int64_t srcBlockBase, int64_t sourceOffset, int64_t blockSize, int64_t blockCount,
-    bool preferRowGatherPatch)
+__aicore__ inline bool Roll<T>::CopyStridedSingleElementByRowGather(int64_t dstIndex, int64_t srcBlockBase,
+                                                                    int64_t sourceOffset, int64_t blockSize,
+                                                                    int64_t blockCount, bool preferRowGatherPatch)
 {
     if (!preferRowGatherPatch || sizeof(T) != 1 || blockCount <= 1 || blockSize <= 0 || blockSize > 64 ||
         sourceOffset < 0 || sourceOffset >= blockSize) {
@@ -393,10 +397,10 @@ __aicore__ inline bool Roll<T>::CopyStridedSingleElementByRowGather(
     if (tilingData_->dimNum == 2 && blockSize == 31) {
         return false;
     }
-    const bool useRankGt2NarrowLayout =
-        tilingData_->dimNum > 2 && (blockSize == 7 || (blockSize >= 15 && blockSize <= 31));
-    const int64_t alignedBlockElements =
-        ((blockSize + ROLL_GM_BLOCK_BYTES - 1) / ROLL_GM_BLOCK_BYTES) * ROLL_GM_BLOCK_BYTES;
+    const bool useRankGt2NarrowLayout = tilingData_->dimNum > 2 &&
+                                        (blockSize == 7 || (blockSize >= 15 && blockSize <= 31));
+    const int64_t alignedBlockElements = ((blockSize + ROLL_GM_BLOCK_BYTES - 1) / ROLL_GM_BLOCK_BYTES) *
+                                         ROLL_GM_BLOCK_BYTES;
     if (alignedBlockElements <= 0 || alignedBlockElements > ubElements_) {
         return false;
     }
@@ -408,9 +412,9 @@ __aicore__ inline bool Roll<T>::CopyStridedSingleElementByRowGather(
         maxRows = ROLL_MAX_DATACOPY_BLOCK_COUNT;
     }
     if (blockSize >= 15 && blockSize <= 31) {
-        const int64_t rowGatherCap = tilingData_->dimNum == 2 && blockSize == 31
-                                         ? 256
-                                         : (blockSize == 31 ? 384 : (tilingData_->dimNum == 2 ? 512 : 1024));
+        const int64_t rowGatherCap = tilingData_->dimNum == 2 && blockSize == 31 ?
+                                         256 :
+                                         (blockSize == 31 ? 384 : (tilingData_->dimNum == 2 ? 512 : 1024));
         if (maxRows > rowGatherCap) {
             maxRows = rowGatherCap;
         }
@@ -459,12 +463,19 @@ __aicore__ inline bool Roll<T>::CopyStridedSingleElementByRowGather(
 }
 
 template <typename T>
-__aicore__ inline bool Roll<T>::CopyBlockRollByFlatPatch(
-    int64_t dstIndex, int64_t srcIndex, int64_t blockSize, int64_t firstElements, int64_t secondElements,
-    int64_t blockCount)
+__aicore__ inline bool Roll<T>::CopyBlockRollByFlatPatch(int64_t dstIndex, int64_t srcIndex, int64_t blockSize,
+                                                         int64_t firstElements, int64_t secondElements,
+                                                         int64_t blockCount)
 {
+#if defined(ORIG_DTYPE_X) && ORIG_DTYPE_X == DT_COMPLEX64
+    return false;
+#endif
+    if (tilingData_->activeDimCount > 1) {
+        return false;
+    }
     const int64_t typeBytes = static_cast<int64_t>(sizeof(T));
-    if (blockCount <= 0 || blockSize <= 0 || blockSize > ubElements_ || blockSize * typeBytes > ROLL_FLAT_PATCH_MAX_BLOCK_BYTES ||
+    if (blockCount <= 0 || blockSize <= 0 || blockSize > ubElements_ ||
+        blockSize * typeBytes > ROLL_FLAT_PATCH_MAX_BLOCK_BYTES ||
         blockCount * blockSize * typeBytes < ROLL_FLAT_PATCH_MIN_TOTAL_BYTES) {
         return false;
     }
@@ -514,7 +525,8 @@ __aicore__ inline void Roll<T>::CopySegment(int64_t dstIndex, int64_t srcIndex, 
         return;
     }
     const int64_t typeBytes = static_cast<int64_t>(sizeof(T));
-    const int64_t minStridedBytes = ROLL_STRIDED_SEGMENT_MIN_BYTES > typeBytes ? ROLL_STRIDED_SEGMENT_MIN_BYTES : typeBytes;
+    const int64_t minStridedBytes = ROLL_STRIDED_SEGMENT_MIN_BYTES > typeBytes ? ROLL_STRIDED_SEGMENT_MIN_BYTES :
+                                                                                 typeBytes;
     if (elementCount * typeBytes >= minStridedBytes) {
         CopySegmentBySourceAligned(dstIndex, srcIndex, elementCount);
     } else {
@@ -615,9 +627,8 @@ __aicore__ inline void Roll<T>::CopyLastDimFullRows(int64_t dstIndex, int64_t ro
 }
 
 template <typename T>
-__aicore__ inline void Roll<T>::CopyRowsRollInUb(
-    LocalTensor<T>& outLocal, LocalTensor<T>& inLocal, int64_t rowCount, int64_t dimSize,
-    int64_t alignedRowElements, int64_t shift)
+__aicore__ inline void Roll<T>::CopyRowsRollInUb(LocalTensor<T>& outLocal, LocalTensor<T>& inLocal, int64_t rowCount,
+                                                 int64_t dimSize, int64_t alignedRowElements, int64_t shift)
 {
     auto inPtr = (__ubuf__ T*)inLocal.GetPhyAddr();
     auto outPtr = (__ubuf__ T*)outLocal.GetPhyAddr();
@@ -646,8 +657,8 @@ __aicore__ inline void Roll<T>::CopyLastDimFullRowsBySegments(int64_t dstIndex, 
 }
 
 template <typename T>
-__aicore__ inline void Roll<T>::CopyMultiDimLastDimFullRowsFromSource(
-    int64_t dstIndex, int64_t srcRowIndex, int64_t rowCount)
+__aicore__ inline void Roll<T>::CopyMultiDimLastDimFullRowsFromSource(int64_t dstIndex, int64_t srcRowIndex,
+                                                                      int64_t rowCount)
 {
     const int64_t dimSize = tilingData_->shapes[tilingData_->dimNum - 1];
     const int64_t shift = tilingData_->shifts[tilingData_->dimNum - 1];
@@ -683,8 +694,8 @@ __aicore__ inline void Roll<T>::CopyMultiDimLastDimFullRowsFromSource(
 }
 
 template <typename T>
-__aicore__ inline void Roll<T>::CopyMultiDimLastDimFullRowsBySegments(
-    int64_t dstIndex, int64_t srcRowIndex, int64_t rowCount)
+__aicore__ inline void Roll<T>::CopyMultiDimLastDimFullRowsBySegments(int64_t dstIndex, int64_t srcRowIndex,
+                                                                      int64_t rowCount)
 {
     const int64_t dimSize = tilingData_->shapes[tilingData_->dimNum - 1];
     const int64_t shift = tilingData_->shifts[tilingData_->dimNum - 1];
@@ -848,8 +859,8 @@ __aicore__ inline void Roll<T>::CopyMultiDimLastDimRollByRows()
 }
 
 template <typename T>
-__aicore__ inline void Roll<T>::CopyMultiDimNonLastBlockPartial(
-    int64_t lastActiveDim, int64_t& dstIndex, int64_t& remain)
+__aicore__ inline void Roll<T>::CopyMultiDimNonLastBlockPartial(int64_t lastActiveDim, int64_t& dstIndex,
+                                                                int64_t& remain)
 {
     const int64_t inner = tilingData_->strides[lastActiveDim];
     const int64_t dimSize = tilingData_->shapes[lastActiveDim];
@@ -880,8 +891,8 @@ __aicore__ inline void Roll<T>::CopyMultiDimNonLastBlockPartial(
 }
 
 template <typename T>
-__aicore__ inline void Roll<T>::CopyMultiDimNonLastFullBlocks(
-    int64_t lastActiveDim, int64_t dstIndex, int64_t srcBlockIndex, int64_t blockCount)
+__aicore__ inline void Roll<T>::CopyMultiDimNonLastFullBlocks(int64_t lastActiveDim, int64_t dstIndex,
+                                                              int64_t srcBlockIndex, int64_t blockCount)
 {
     const int64_t inner = tilingData_->strides[lastActiveDim];
     const int64_t dimSize = tilingData_->shapes[lastActiveDim];
@@ -984,7 +995,7 @@ __aicore__ inline void Roll<T>::CopySingleDimFullBlocks(int64_t dstIndex, int64_
     const int64_t blockSize = tilingData_->dimSize * tilingData_->innerSize;
     const int64_t firstElements = tilingData_->activeShift * tilingData_->innerSize;
     const int64_t secondElements = blockSize - firstElements;
-    const int64_t srcIndex = ComputeInputIndex(dstIndex);
+    const int64_t srcIndex = dstIndex;
     if (CopyBlockRollByFlatPatch(dstIndex, srcIndex, blockSize, firstElements, secondElements, blockCount)) {
         return;
     }
@@ -1166,8 +1177,7 @@ __aicore__ inline void Roll<T>::Process()
     } else if (tilingData_->activeDimCount == 1 && tilingData_->activeDim == 0 && tilingData_->innerSize > 0 &&
                (tilingData_->dimNum == 2 || tilingData_->dimSize <= 4 ||
                 (IsSameType<T, uint8_t>::value && tilingData_->dimNum > 2 &&
-                 tilingData_->innerSize % ROLL_GM_BLOCK_BYTES == 0 &&
-                 tilingData_->totalNum >= 32 * 1024 * 1024)) &&
+                 tilingData_->innerSize % ROLL_GM_BLOCK_BYTES == 0 && tilingData_->totalNum >= 32 * 1024 * 1024)) &&
                !(sizeof(T) == 1 && tilingData_->dimNum == 2 && tilingData_->innerSize == 127)) {
         CopyLeadingDimRollBySource();
     } else if (tilingData_->activeDimCount == 1 && tilingData_->innerSize == 1 &&
