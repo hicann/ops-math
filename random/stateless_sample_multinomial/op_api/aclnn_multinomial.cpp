@@ -376,7 +376,7 @@ static const aclTensor* Run950AicoreMultinomialWithoutReplacement(const aclTenso
 
     const aclTensor* multinomialOut = nullptr;
     if (numsamples == 1) {
-        auto argmaxOut = l0op::ArgMaxV2(divExponential, lastDim, true, executor);
+        auto argmaxOut = l0op::ArgMaxV2(divExponential, lastDim, true, op::DataType::DT_INT64, executor);
         CHECK_RET(argmaxOut != nullptr, nullptr);
         multinomialOut = l0op::Cast(argmaxOut, op::DataType::DT_INT64, executor);
     } else {
@@ -422,7 +422,7 @@ const aclTensor* RunMultinomialNoReplaceMent(const aclTensor* selfContiguous, in
     int64_t lastDim = MakeWrapDim(-1, dimNum);
     const aclTensor* multinomialOutInt32;
     if (numsamples == 1) {
-        multinomialOutInt32 = l0op::ArgMaxV2(divExponential, lastDim, true, executor);
+        multinomialOutInt32 = l0op::ArgMaxV2(divExponential, lastDim, true, out->GetDataType(), executor);
     } else {
         auto topkOut = l0op::Topk(divExponential, numsamples, lastDim, true, true, op::DataType::DT_INT32, executor);
         multinomialOutInt32 = std::get<1>(topkOut);
