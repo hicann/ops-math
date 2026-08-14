@@ -152,6 +152,25 @@ TEST_F(MatrixSetDiagTilingTest, test_tiling_failed_diag_len_invalid)
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
+TEST_F(MatrixSetDiagTilingTest, test_tiling_failed_diag_len_overflow)
+{
+    // UINT32_MAX + 4 = 4294967299, static_cast<uint32_t> truncates to 3
+    // condition1 (maxDiagLen != min(row, col)): 3 != min(3, 4294967299) = 3 -> FALSE
+    // condition2 (maxDiagLen_u32 != maxDiagLen_u64): 3 != 4294967299 -> TRUE (truncation detected)
+    MatrixSetDiagCompileInfo compileInfo = {};
+    constexpr int64_t overflowDim = 4294967299LL;
+    gert::TilingContextPara tilingContextPara("MatrixSetDiag",
+                                              {
+                                                  {{{3, overflowDim}, {3, overflowDim}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{overflowDim}, {overflowDim}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{3, overflowDim}, {3, overflowDim}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
 TEST_F(MatrixSetDiagTilingTest, test_tiling_failed_batch_dim_invalid)
 {
     MatrixSetDiagCompileInfo compileInfo = {};

@@ -112,8 +112,10 @@ ge::graphStatus MatrixSetDiagTiling::ParamCheck()
 
     inputInfo_.xColNum = inputShapeVal.GetDim(dimNum_ - COL_DIM_OFFSET);
     inputInfo_.xRowNum = inputShapeVal.GetDim(dimNum_ - ROW_DIM_OFFSET);
-    inputInfo_.maxDiagLen = static_cast<size_t>(diagShapeVal.GetDim(diagDimNum_ - 1));
-    OP_CHECK_IF(inputInfo_.maxDiagLen != std::min(inputInfo_.xColNum, inputInfo_.xRowNum),
+    uint64_t maxDiagLen = diagShapeVal.GetDim(diagDimNum_ - 1);
+    inputInfo_.maxDiagLen = static_cast<uint32_t>(maxDiagLen);
+    OP_CHECK_IF((inputInfo_.maxDiagLen != std::min(inputInfo_.xColNum, inputInfo_.xRowNum)) ||
+                    (inputInfo_.maxDiagLen != maxDiagLen),
                 OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "diagonal",
                                                       Ops::Base::ToString(diagShapeVal).c_str(),
                                                       "diagonal length must equal min(row, col) of input"),

@@ -938,6 +938,9 @@ VC5@ops-math:
         # depth_to_space
         - ops/ops-math/conversion/depth_to_space/op_host/
         - ops/ops-math/conversion/depth_to_space/op_kernel/
+        # matrix_set_diag_v2
+        - ops/ops-math/conversion/matrix_set_diag_v2/op_host/
+        - ops/ops-math/conversion/matrix_set_diag_v2/op_kernel/
         # mirror_pad
         - ops/ops-math/conversion/mirror_pad/op_host/
         - ops/ops-math/conversion/mirror_pad/op_kernel/
@@ -1010,6 +1013,9 @@ VC5@ops-math:
         - ops/ops-math/conversion/depth_to_space/examples/*.cpp
         - ops/ops-math/conversion/depth_to_space/tests/**/*.cpp
         - ops/ops-math/conversion/depth_to_space/tests/**/*.py
+        # matrix_set_diag_v2
+        - ops/ops-math/conversion/matrix_set_diag_v2/examples/
+        - ops/ops-math/conversion/matrix_set_diag_v2/tests/
         # mirror_pad
         - ops/ops-math/conversion/mirror_pad/examples/
         - ops/ops-math/conversion/mirror_pad/tests/
@@ -1096,6 +1102,9 @@ VC5@ops-math:
       - ops/ops-math/conversion/pad_v2/op_kernel/
       - ops/ops-math/conversion/pad_v2/op_host/arch35/
       - ops/ops-math/conversion/pad_v2/op_host/pad_v2_def.cpp
+      - ops/ops-math/conversion/matrix_set_diag_v2/op_kernel/
+      - ops/ops-math/conversion/matrix_set_diag_v2/op_host/arch35/
+      - ops/ops-math/conversion/matrix_set_diag_v2/op_host/matrix_set_diag_v2_def.cpp
       - ops/ops-math/conversion/mirror_pad/op_kernel/
       - ops/ops-math/conversion/mirror_pad/op_host/arch35/
       - ops/ops-math/conversion/mirror_pad/op_host/mirror_pad_def.cpp
