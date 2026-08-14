@@ -33,7 +33,22 @@ using namespace AscendC;
 
 static constexpr uint32_t THREAD_NUM = 512;
 
-// VF kernel: Grid-Stride loop over non-zero elements
+// VF kernel (identity): direct copy indices, no flat index computation
+template <typename T>
+__simt_vf__ __aicore__ __launch_bounds__(THREAD_NUM) inline void OpSparseReshapeIdentitySimtKernel(int64_t nnz,
+                                                                                                   int32_t rank,
+                                                                                                   __gm__ T* indices,
+                                                                                                   __gm__ T* yIndices)
+{
+    for (int64_t i = static_cast<int64_t>(blockIdx.x * blockDim.x + threadIdx.x); i < nnz;
+         i += static_cast<int64_t>(blockDim.x * gridDim.x)) {
+        for (int32_t j = 0; j < rank; j++) {
+            yIndices[i * rank + j] = indices[i * rank + j];
+        }
+    }
+}
+
+// VF kernel (non-identity): flat index computation + UintDiv decomposition
 template <typename T>
 __simt_vf__ __aicore__ __launch_bounds__(THREAD_NUM) inline void OpSparseReshapeSimtKernel(
     int64_t nnz, int32_t inputRank, int32_t outputRank, __ubuf__ int64_t* inputStrides, __ubuf__ int64_t* outputStrides,
@@ -68,6 +83,13 @@ __aicore__ inline void WriteYShape(GM_ADDR y_shape, const SparseReshapeTilingDat
 template <typename T>
 __aicore__ inline void PrepareAndLaunchVF(GM_ADDR indices, GM_ADDR y_indices, const SparseReshapeTilingData* td)
 {
+    __gm__ T* indicesGm = (__gm__ T*)indices;
+    __gm__ T* yIndicesGm = (__gm__ T*)y_indices;
+    if (td->isIdentityReshape) {
+        asc_vf_call<OpSparseReshapeIdentitySimtKernel<T>>(dim3(THREAD_NUM), td->nnz, td->inputRank, indicesGm,
+                                                          yIndicesGm);
+        return;
+    }
     LocalMemAllocator<AscendC::Hardware::UB> ubAlloc;
     LocalTensor<int64_t> inStridesUb = ubAlloc.Alloc<int64_t>(MAX_RANK);
     LocalTensor<int64_t> outStridesUb = ubAlloc.Alloc<int64_t>(MAX_RANK);
@@ -85,8 +107,6 @@ __aicore__ inline void PrepareAndLaunchVF(GM_ADDR indices, GM_ADDR y_indices, co
         divShiftUb.SetValue(d, shift);
     }
     DataSyncBarrier<MemDsbT::UB>();
-    __gm__ T* indicesGm = (__gm__ T*)indices;
-    __gm__ T* yIndicesGm = (__gm__ T*)y_indices;
     asc_vf_call<OpSparseReshapeSimtKernel<T>>(
         dim3(THREAD_NUM), td->nnz, td->inputRank, td->outputRank, (__ubuf__ int64_t*)inStridesUb.GetPhyAddr(),
         (__ubuf__ int64_t*)outStridesUb.GetPhyAddr(), (__ubuf__ uint64_t*)divMagicUb.GetPhyAddr(),
@@ -94,9 +114,9 @@ __aicore__ inline void PrepareAndLaunchVF(GM_ADDR indices, GM_ADDR y_indices, co
 }
 
 // Main Process function
-// Always use VF kernel path: it correctly handles both identity and non-identity
-// reshape via grid-stride partitioning. The previous identity fast path (scalar
-// copy) had a multi-core race condition where all cores copied all elements.
+// VF kernel handles both paths via grid-stride partitioning (no multi-core race):
+// - isIdentityReshape==1: direct copy indices, skip flat index computation
+// - isIdentityReshape==0: flat index + UintDiv decomposition
 template <typename T>
 __aicore__ inline void Process(GM_ADDR indices, GM_ADDR shape, GM_ADDR new_shape, GM_ADDR y_indices, GM_ADDR y_shape,
                                GM_ADDR workspace, const SparseReshapeTilingData* td)
