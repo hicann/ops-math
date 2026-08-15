@@ -823,8 +823,7 @@ aclnnStatus aclnnDivModGetWorkspaceSize(const aclTensor* self, const aclTensor* 
         if (isInTruncDtypeMapping(self->GetDataType(), other->GetDataType())) {
             divOpOut = l0op::TruncateDiv(selfCasted, otherCasted, uniqueExecutor.get());
         } else {
-            op::DataType promoteType;
-            promoteType = InferDivModeDtype(self->GetDataType(), other->GetDataType(), mode);
+            op::DataType promoteType = InferDivModeDtype(self->GetDataType(), other->GetDataType(), mode);
             bool needToFloat = (promoteType == op::DataType::DT_BOOL);
             promoteType = needToFloat ? op::DataType::DT_FLOAT : promoteType;
             auto complexRet = CheckDivModComplexDtype(promoteType, mode);
@@ -942,8 +941,7 @@ aclnnStatus aclnnDivModsGetWorkspaceSize(const aclTensor* self, const aclScalar*
             CHECK_RET(otherConvert != nullptr, ACLNN_ERR_INNER_NULLPTR);
             divOpOut = l0op::TruncateDiv(selfContiguous, otherConvert, uniqueExecutor.get());
         } else {
-            op::DataType promoteType;
-            promoteType = InferDivsModeDtype(self->GetDataType(), other->GetDataType(), mode);
+            op::DataType promoteType = InferDivsModeDtype(self->GetDataType(), other->GetDataType(), mode);
             bool needToFloat = (promoteType == op::DataType::DT_BOOL);
             promoteType = needToFloat ? op::DataType::DT_FLOAT : promoteType;
             auto complexRet = CheckDivModComplexDtype(promoteType, mode);

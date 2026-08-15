@@ -24,16 +24,17 @@
 using namespace Ops::Base::ReduceOpTmpl;
 using namespace AscendC;
 
-#define CDIST_GRAD_LAUNCH(DagT, ...)                                            \
-    using _CGOp = ReduceSch<REDUCE_TPL_VALUE, DagT::OpDag>;                    \
-    _CGOp _cgOp(&tilingData.reduceTiling);                                      \
-    _cgOp.Init(&pipe, __VA_ARGS__);                                             \
-    _cgOp.Process(static_cast<DTYPE_GRAD>(0))
+#define CDIST_GRAD_LAUNCH(DagT, ...)                            \
+    do {                                                        \
+        using _CGOp = ReduceSch<REDUCE_TPL_VALUE, DagT::OpDag>; \
+        _CGOp _cgOp(&tilingData.reduceTiling);                  \
+        _cgOp.Init(&pipe, __VA_ARGS__);                         \
+        _cgOp.Process(static_cast<DTYPE_GRAD>(0));              \
+    } while (0)
 
 template <REDUCE_TPL_PARAM, int32_t normMode>
-__global__ __aicore__ void cdist_grad(
-    GM_ADDR grad, GM_ADDR x1, GM_ADDR x2, GM_ADDR cdist,
-    GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void cdist_grad(GM_ADDR grad, GM_ADDR x1, GM_ADDR x2, GM_ADDR cdist, GM_ADDR y, GM_ADDR workspace,
+                                      GM_ADDR tiling)
 {
     if (g_coreType == AIC) {
         return;
@@ -57,15 +58,13 @@ __global__ __aicore__ void cdist_grad(
         using Dag = CdistGrad::CdistGradInfDag<DTYPE_GRAD, PromoteType>;
         CDIST_GRAD_LAUNCH(Dag, grad, x1, x2, cdist, y, userWS);
     } else if constexpr (normMode == CdistGrad::NORM_MODE_LARGE_P) {
-        using OpLp = ReduceSch<REDUCE_TPL_VALUE,
-            CdistGrad::CdistGradLargePDag<DTYPE_GRAD, PromoteType>::OpDag>;
+        using OpLp = ReduceSch<REDUCE_TPL_VALUE, CdistGrad::CdistGradLargePDag<DTYPE_GRAD, PromoteType>::OpDag>;
         OpLp opLp(&tilingData.reduceTiling);
         opLp.template SetVar<PromoteType, 0>(static_cast<PromoteType>(tilingData.powCdist));
         opLp.Init(&pipe, grad, x1, x2, cdist, y, userWS);
         opLp.Process(static_cast<DTYPE_GRAD>(0));
     } else if constexpr (normMode == CdistGrad::NORM_MODE_P0) {
-        using OpP0 = ReduceSch<REDUCE_TPL_VALUE,
-            CdistGrad::CdistGradP0Dag<DTYPE_GRAD, PromoteType>::OpDag>;
+        using OpP0 = ReduceSch<REDUCE_TPL_VALUE, CdistGrad::CdistGradP0Dag<DTYPE_GRAD, PromoteType>::OpDag>;
         OpP0 opP0(&tilingData.reduceTiling);
         opP0.template SetVar<PromoteType, 0>(static_cast<PromoteType>(0.0f));
         // P0 DAG uses only In0, Out0 — no In1/In2/In3
@@ -79,8 +78,7 @@ __global__ __aicore__ void cdist_grad(
         CDIST_GRAD_LAUNCH(Dag, grad, x1, x2, cdist, y, userWS);
     } else {
         // NORM_MODE_GENERAL: 0 < p < 2, p != 1
-        using Op = ReduceSch<REDUCE_TPL_VALUE,
-            CdistGrad::CdistGradDag<DTYPE_GRAD, PromoteType>::OpDag>;
+        using Op = ReduceSch<REDUCE_TPL_VALUE, CdistGrad::CdistGradDag<DTYPE_GRAD, PromoteType>::OpDag>;
         Op op(&tilingData.reduceTiling);
         op.template SetVar<PromoteType, 0>(static_cast<PromoteType>(tilingData.powCdist));
         op.Init(&pipe, grad, x1, x2, cdist, y, userWS);
