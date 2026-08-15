@@ -17,9 +17,9 @@
 
 #include "platform/platform_info.h"
 #include "register/op_impl_registry.h"
-#include "register/tilingdata_base.h"
 #include "op_host/tiling_base_class.h"
 #include "log/log.h"
+#include "math/cast/op_kernel/arch35/cast_tiling_data.h"
 
 namespace optiling {
 
@@ -27,25 +27,6 @@ struct CastCompileInfo {
     uint64_t coreNum = 0;
     uint64_t ubSize = 0;
 };
-
-BEGIN_TILING_DATA_DEF(CastTilingData)
-TILING_DATA_FIELD_DEF(int64_t, blockNum);    // 启动多少核处理
-TILING_DATA_FIELD_DEF(int64_t, ubFormer);    // 一次ub处理的个数，开db后ub按照一半算
-TILING_DATA_FIELD_DEF(int64_t, blockFormer); // 整核处理的个数
-
-TILING_DATA_FIELD_DEF(int64_t, ubLoopOfFormerBlock);
-TILING_DATA_FIELD_DEF(int64_t, ubLoopOfTailBlock);
-TILING_DATA_FIELD_DEF(int64_t, ubTailOfFormerBlock);
-TILING_DATA_FIELD_DEF(int64_t, ubTailOfTailBlock);
-
-TILING_DATA_FIELD_DEF(int64_t, regCopyInStep);  // ub搬入reg，ub的步长
-TILING_DATA_FIELD_DEF(int64_t, regCopyOutStep); // reg搬出到ub，ub的步长
-TILING_DATA_FIELD_DEF(int64_t, ubFormerRegLoop);
-TILING_DATA_FIELD_DEF(int64_t, ubTailOfFormerRegLoop);
-TILING_DATA_FIELD_DEF(int64_t, ubTailOfTailRegLoop);
-END_TILING_DATA_DEF;
-
-REGISTER_TILING_DATA_CLASS(Cast, CastTilingData);
 
 struct CastMapSt {
     ge::DataType srcType_ = ge::DT_UNDEFINED; // key1
@@ -99,7 +80,6 @@ protected:
     ge::graphStatus PostTiling() override;
 
 private:
-    int64_t GetUbCopyStep(uint8_t inType, uint8_t outType, uint8_t copyType, int64_t& oneLoopCopyInBitSize) const;
     int64_t GetDtypeBitSize(uint8_t dtype) const;
     int64_t GetGeDtypeBitSize(ge::DataType dtype) const;
     int64_t GetUbFormer(int64_t inputTypeBitSize, int64_t outputTypeBitSize);
@@ -110,8 +90,9 @@ private:
     int64_t ubSize_{0};       // syscfg unit: Byte
     int64_t vlBitSize_{2048}; // 2048 unit: bit
     int64_t shapeSize_{0};
+    int64_t usedCoreNum_{0}; // computed core num to use
+    int64_t ubFormer_{0};    // computed ub former
 
-    CastTilingData tilingData_;
     CastMapSt policy_;
 };
 

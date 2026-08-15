@@ -24,7 +24,6 @@ namespace optiling {
 using namespace ge;
 
 constexpr int64_t CAST_PACK2 = 2;
-constexpr int64_t CAST_PACK4 = 4;
 
 constexpr int64_t B2_BITS = 2;
 constexpr int64_t B4_BITS = 4;
@@ -303,52 +302,6 @@ int64_t CastTiling::GetGeDtypeBitSize(ge::DataType dtype) const
     return 0;
 }
 
-int64_t CastTiling::GetUbCopyStep(uint8_t inType, uint8_t outType, uint8_t copyType,
-                                  int64_t& oneLoopCopyInBitSize) const
-{
-    if (copyType == CAST_MODE_REG_COPYIN_NORM) {
-        int64_t inSize = GetDtypeBitSize(inType);
-        OP_CHECK_IF(inSize == 0,
-                    OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "inSize", std::to_string(inSize), "not 0"),
-                    return -1);
-        oneLoopCopyInBitSize = vlBitSize_;
-        return oneLoopCopyInBitSize / inSize;
-    } else if (copyType == CAST_MODE_REG_COPYIN_DS_B8) {
-        oneLoopCopyInBitSize = vlBitSize_ * CAST_PACK2;
-        return oneLoopCopyInBitSize / B8_BITS;
-    } else if (copyType == CAST_MODE_REG_COPYIN_DS_B16) {
-        oneLoopCopyInBitSize = vlBitSize_ * CAST_PACK2;
-        return oneLoopCopyInBitSize / B16_BITS;
-    } else if (copyType == CAST_MODE_REG_COPYIN_UNPACK_B8) {
-        oneLoopCopyInBitSize = vlBitSize_ / CAST_PACK2;
-        return oneLoopCopyInBitSize / B8_BITS;
-    } else if (copyType == CAST_MODE_REG_COPYIN_UNPACK_B16) {
-        oneLoopCopyInBitSize = vlBitSize_ / CAST_PACK2;
-        return oneLoopCopyInBitSize / B16_BITS;
-    } else if (copyType == CAST_MODE_REG_COPYIN_UNPACK_B32) {
-        oneLoopCopyInBitSize = vlBitSize_ / CAST_PACK2;
-        return oneLoopCopyInBitSize / B32_BITS;
-    } else if (copyType == CAST_MODE_REG_COPYIN_UNPACK4_B8) {
-        oneLoopCopyInBitSize = vlBitSize_ / CAST_PACK4;
-        return oneLoopCopyInBitSize / B8_BITS;
-    } else if (copyType == CAST_MODE_REG_COPYOUT_NORM) {
-        int64_t outSize = GetDtypeBitSize(outType);
-        OP_CHECK_IF(outSize == 0,
-                    OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "outSize", std::to_string(outSize), "not 0"),
-                    return -1);
-        return vlBitSize_ / outSize;
-    } else if (copyType == CAST_MODE_REG_COPYOUT_PACK_B16) {
-        return vlBitSize_ / B16_BITS / CAST_PACK2;
-    } else if (copyType == CAST_MODE_REG_COPYOUT_PACK_B32) {
-        return vlBitSize_ / B32_BITS / CAST_PACK2;
-    } else if (copyType == CAST_MODE_REG_COPYOUT_PACK_B64) {
-        return vlBitSize_ / B64_BITS / CAST_PACK2;
-    } else if (copyType == CAST_MODE_REG_COPYOUT_PACK4_B32) {
-        return vlBitSize_ / B32_BITS / CAST_PACK4;
-    }
-    return 0;
-}
-
 ge::graphStatus CastTiling::DoOpTiling()
 {
     int64_t inputTypeBitSize = GetGeDtypeBitSize(policy_.srcType_);
@@ -363,8 +316,8 @@ ge::graphStatus CastTiling::DoOpTiling()
                                           std::to_string(outputTypeBitSize), "not 0"),
                 return ge::GRAPH_FAILED);
 
-    uint64_t ubFormer = GetUbFormer(inputTypeBitSize, outputTypeBitSize);
-    OP_CHECK_IF(ubFormer == 0,
+    ubFormer_ = GetUbFormer(inputTypeBitSize, outputTypeBitSize);
+    OP_CHECK_IF(ubFormer_ == 0,
                 OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "ubSize", std::to_string(ubSize_), "greater than 0"),
                 return ge::GRAPH_FAILED);
 
@@ -377,72 +330,11 @@ ge::graphStatus CastTiling::DoOpTiling()
                                           std::to_string(coreNum) + "," + std::to_string(coreNum_),
                                           "in the range [1, sys_core_num]"),
                 return ge::GRAPH_FAILED);
-
-    int64_t blockFormer = ((shapeSize_ + coreNum - 1) / coreNum + B7_BITS) / B8_BITS * B8_BITS;
-    int64_t blockNum = (shapeSize_ + blockFormer - 1) / blockFormer;
-    int64_t blockTail = shapeSize_ - (blockNum - 1) * blockFormer;
-
-    int64_t ubLoopOfFormerBlock = (blockFormer + ubFormer - 1) / ubFormer;
-    int64_t ubLoopOfTailBlock = (blockTail + ubFormer - 1) / ubFormer;
-    int64_t ubTailOfFormerBlock = blockFormer - (ubLoopOfFormerBlock - 1) * ubFormer;
-    int64_t ubTailOfTailBlock = blockTail - (ubLoopOfTailBlock - 1) * ubFormer;
-
-    tilingData_.set_blockNum(blockNum);
-    tilingData_.set_ubFormer(ubFormer);
-    tilingData_.set_blockFormer(blockFormer);
-    tilingData_.set_ubLoopOfFormerBlock(ubLoopOfFormerBlock);
-    tilingData_.set_ubLoopOfTailBlock(ubLoopOfTailBlock);
-    tilingData_.set_ubTailOfFormerBlock(ubTailOfFormerBlock);
-    tilingData_.set_ubTailOfTailBlock(ubTailOfTailBlock);
-
-    int64_t oneLoopCopyInBitSize = 0;
-    int64_t inStep = GetUbCopyStep(policy_.srcMapType_, policy_.dstMapType_, policy_.regCopyInMode_,
-                                   oneLoopCopyInBitSize);
-    OP_CHECK_IF(inStep == -1,
-                OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "inStep", std::to_string(inStep), "not -1"),
-                return ge::GRAPH_FAILED);
-    tilingData_.set_regCopyInStep(inStep);
-    int64_t noUse = 0;
-    int64_t outStep = GetUbCopyStep(policy_.srcMapType_, policy_.dstMapType_, policy_.regCopyOutMode_, noUse);
-    OP_CHECK_IF(outStep == -1,
-                OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "outStep", std::to_string(outStep), "not -1"),
-                return ge::GRAPH_FAILED);
-    tilingData_.set_regCopyOutStep(outStep);
-
-    int64_t ubFormerRegLoop = 0;
-    int64_t ubTailOfFormerRegLoop = 0;
-    int64_t ubTailOfTailRegLoop = 0;
-    if (oneLoopCopyInBitSize != 0) {
-        if (policy_.id_ == CAST_TEMPLATE_MIRCRO_CAST_DEINTER || policy_.id_ == CAST_TEMPLATE_MIRCRO_CAST_DEINTER_CAST ||
-            policy_.id_ == CAST_TEMPLATE_MIRCRO_CAST_CAST_DEINTER_CAST ||
-            policy_.id_ == CAST_TEMPLATE_MIRCRO_DEINTER_SHIFT) {
-            // once load two reg len
-            int64_t doubleCopyInBitSize = oneLoopCopyInBitSize + oneLoopCopyInBitSize;
-            ubFormerRegLoop = (ubFormer * inputTypeBitSize + doubleCopyInBitSize - 1) / doubleCopyInBitSize;
-            ubTailOfFormerRegLoop = (ubTailOfFormerBlock * inputTypeBitSize + doubleCopyInBitSize - 1) /
-                                    doubleCopyInBitSize;
-            ubTailOfTailRegLoop = (ubTailOfTailBlock * inputTypeBitSize + doubleCopyInBitSize - 1) /
-                                  doubleCopyInBitSize;
-        } else {
-            ubFormerRegLoop = (ubFormer * inputTypeBitSize + oneLoopCopyInBitSize - 1) / oneLoopCopyInBitSize;
-            ubTailOfFormerRegLoop = (ubTailOfFormerBlock * inputTypeBitSize + oneLoopCopyInBitSize - 1) /
-                                    oneLoopCopyInBitSize;
-            ubTailOfTailRegLoop = (ubTailOfTailBlock * inputTypeBitSize + oneLoopCopyInBitSize - 1) /
-                                  oneLoopCopyInBitSize;
-        }
-    }
-    tilingData_.set_ubFormerRegLoop(ubFormerRegLoop);
-    tilingData_.set_ubTailOfFormerRegLoop(ubTailOfFormerRegLoop);
-    tilingData_.set_ubTailOfTailRegLoop(ubTailOfTailRegLoop);
+    usedCoreNum_ = coreNum;
 
     OP_LOGD(context_->GetNodeName(),
-            "cast do tiling finish. coreNum: %ld ubSize: %ld vlBit: %ld "
-            "blockNum: %ld ubFormer: %ld blockFormer: %ld ubLoopOfFormerBlock: %ld "
-            "ubLoopOfTailBlock: %ld ubTailOfFormerBlock: %ld ubTailOfTailBlock: %ld inStep: %ld outStep: %ld "
-            "ubFormerRegLoop: %ld ubTailOfFormerRegLoop: %ld ubTailOfTailRegLoop: %ld oneLoopCopyInBitSize: %ld",
-            coreNum_, ubSize_, vlBitSize_, blockNum, ubFormer, blockFormer, ubLoopOfFormerBlock, ubLoopOfTailBlock,
-            ubTailOfFormerBlock, ubTailOfTailBlock, inStep, outStep, ubFormerRegLoop, ubTailOfFormerRegLoop,
-            ubTailOfTailRegLoop, oneLoopCopyInBitSize);
+            "cast do tiling finish. coreNum: %ld ubSize: %ld vlBit: %ld shapeSize: %ld usedCoreNum: %ld ubFormer: %ld",
+            coreNum_, ubSize_, vlBitSize_, shapeSize_, usedCoreNum_, ubFormer_);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -462,22 +354,28 @@ ge::graphStatus CastTiling::GetWorkspaceSize()
 
 ge::graphStatus CastTiling::PostTiling()
 {
-    OP_CHECK_IF(tilingData_.GetDataSize() > context_->GetRawTilingData()->GetCapacity(),
+    OP_CHECK_IF(static_cast<size_t>(sizeof(CastTilingData)) > context_->GetRawTilingData()->GetCapacity(),
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-                    context_->GetNodeName(), "tiling_data_size", std::to_string(tilingData_.GetDataSize()),
+                    context_->GetNodeName(), "tiling_data_size", std::to_string(sizeof(CastTilingData)),
                     "The value of tiling_data_size must be less than or equal to capacity"),
                 return ge::GRAPH_FAILED);
+
+    CastTilingData* tiling = context_->GetTilingData<CastTilingData>();
+    OP_CHECK_NULL_WITH_CONTEXT(context_, tiling);
+    tiling->shapeSize = shapeSize_;
+    tiling->coreNum = static_cast<int32_t>(usedCoreNum_);
+    tiling->ubFormer = static_cast<int32_t>(ubFormer_);
+
+    int64_t blockFormer = ((shapeSize_ + usedCoreNum_ - 1) / usedCoreNum_ + B7_BITS) / B8_BITS * B8_BITS;
+    int64_t blockNum = (shapeSize_ + blockFormer - 1) / blockFormer;
 
     size_t* currentWorkspace = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, currentWorkspace);
     currentWorkspace[0] = workspaceSize_;
 
-    tilingData_.SaveToBuffer(context_->GetRawTilingData()->GetData(), context_->GetRawTilingData()->GetCapacity());
-    context_->GetRawTilingData()->SetDataSize(tilingData_.GetDataSize());
-
     uint64_t tilingKey = GetTilingKey();
     context_->SetTilingKey(tilingKey);
-    context_->SetBlockDim(tilingData_.get_blockNum());
+    context_->SetBlockDim(blockNum);
     return ge::GRAPH_SUCCESS;
 }
 

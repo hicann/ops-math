@@ -17,6 +17,7 @@
 #define CANN_CUSTOM_OPS_CAST_IMPL_H
 
 #include "kernel_operator.h"
+#include "cast_tiling_data.h"
 namespace AscendcCast {
 using namespace AscendC;
 using AscendC::Reg::LoadDist;
@@ -121,24 +122,138 @@ constexpr int64_t UB_BLOCK_ALIGN_MINUS_ONE = 31;
 constexpr int16_t B4_MASK = 0x000F;
 constexpr int16_t SHIFT_FOUR_BITS = 4;
 
+constexpr int64_t VL_BIT_SIZE = 2048;
+constexpr int64_t B4_BITS = 4;
+constexpr int64_t B12_BITS = 12;
+constexpr int64_t B13_BITS = 13;
+constexpr int64_t B16_BITS = 16;
+constexpr int64_t B32_BITS = 32;
+constexpr int64_t B64_BITS = 64;
+constexpr int64_t CAST_PACK2 = 2;
+constexpr int64_t CAST_PACK4 = 4;
+
+__aicore__ constexpr inline int64_t GetTplBitSize(int dtype)
+{
+    if (dtype == CAST_TPL_UINT1) {
+        return 1;
+    } else if (dtype == CAST_TPL_BOOL || dtype == CAST_TPL_INT8 || dtype == CAST_TPL_UINT8 ||
+               dtype == CAST_TPL_FLOAT8_E4M3FN || dtype == CAST_TPL_FLOAT8_E5M2 || dtype == CAST_TPL_HIFLOAT8) {
+        return B8_BITS;
+    } else if (dtype == CAST_TPL_UINT16 || dtype == CAST_TPL_INT16 || dtype == CAST_TPL_FLOAT16 ||
+               dtype == CAST_TPL_BF16) {
+        return B16_BITS;
+    } else if (dtype == CAST_TPL_COMPLEX32 || dtype == CAST_TPL_FLOAT || dtype == CAST_TPL_INT32 ||
+               dtype == CAST_TPL_UINT32) {
+        return B32_BITS;
+    } else if (dtype == CAST_TPL_COMPLEX64 || dtype == CAST_TPL_INT64 || dtype == CAST_TPL_DOUBLE) {
+        return B64_BITS;
+    } else if (dtype == CAST_TPL_FLOAT4_E2M1 || dtype == CAST_TPL_FLOAT4_E1M2 || dtype == CAST_TPL_INT4) {
+        return B4_BITS;
+    }
+    return 0;
+}
+
+__aicore__ constexpr inline int64_t GetGeBitSize(int dtype)
+{
+    if (dtype == DT_UINT1) {
+        return 1;
+    } else if (dtype == DT_BOOL || dtype == DT_INT8 || dtype == DT_UINT8 || dtype == DT_FLOAT8_E4M3FN ||
+               dtype == DT_FLOAT8_E5M2 || dtype == DT_HIFLOAT8) {
+        return B8_BITS;
+    } else if (dtype == DT_UINT16 || dtype == DT_INT16 || dtype == DT_FLOAT16 || dtype == DT_BF16) {
+        return B16_BITS;
+    } else if (dtype == DT_COMPLEX32 || dtype == DT_FLOAT || dtype == DT_INT32 || dtype == DT_UINT32) {
+        return B32_BITS;
+    } else if (dtype == DT_COMPLEX64 || dtype == DT_INT64 || dtype == DT_DOUBLE) {
+        return B64_BITS;
+    } else if (dtype == DT_FLOAT4_E2M1 || dtype == DT_FLOAT4_E1M2 || dtype == DT_INT4) {
+        return B4_BITS;
+    }
+    return 0;
+}
+
+struct UbCopyStepResult {
+    int64_t step;
+    int64_t oneLoopCopyInBitSize;
+};
+
+__aicore__ constexpr inline UbCopyStepResult GetUbCopyInStep(int copyMode, int inType)
+{
+    if (copyMode == CAST_MODE_REG_COPYIN_NORM) {
+        return {VL_BIT_SIZE / GetTplBitSize(inType), VL_BIT_SIZE};
+    } else if (copyMode == CAST_MODE_REG_COPYIN_DS_B8) {
+        return {VL_BIT_SIZE * CAST_PACK2 / B8_BITS, VL_BIT_SIZE * CAST_PACK2};
+    } else if (copyMode == CAST_MODE_REG_COPYIN_DS_B16) {
+        return {VL_BIT_SIZE * CAST_PACK2 / B16_BITS, VL_BIT_SIZE * CAST_PACK2};
+    } else if (copyMode == CAST_MODE_REG_COPYIN_UNPACK_B8) {
+        return {VL_BIT_SIZE / CAST_PACK2 / B8_BITS, VL_BIT_SIZE / CAST_PACK2};
+    } else if (copyMode == CAST_MODE_REG_COPYIN_UNPACK_B16) {
+        return {VL_BIT_SIZE / CAST_PACK2 / B16_BITS, VL_BIT_SIZE / CAST_PACK2};
+    } else if (copyMode == CAST_MODE_REG_COPYIN_UNPACK_B32) {
+        return {VL_BIT_SIZE / CAST_PACK2 / B32_BITS, VL_BIT_SIZE / CAST_PACK2};
+    } else if (copyMode == CAST_MODE_REG_COPYIN_UNPACK4_B8) {
+        return {VL_BIT_SIZE / CAST_PACK4 / B8_BITS, VL_BIT_SIZE / CAST_PACK4};
+    }
+    return {0, 0};
+}
+
+__aicore__ constexpr inline int64_t GetUbCopyOutStep(int copyMode, int outType)
+{
+    if (copyMode == CAST_MODE_REG_COPYOUT_NORM) {
+        return VL_BIT_SIZE / GetTplBitSize(outType);
+    } else if (copyMode == CAST_MODE_REG_COPYOUT_PACK_B16) {
+        return VL_BIT_SIZE / B16_BITS / CAST_PACK2;
+    } else if (copyMode == CAST_MODE_REG_COPYOUT_PACK_B32) {
+        return VL_BIT_SIZE / B32_BITS / CAST_PACK2;
+    } else if (copyMode == CAST_MODE_REG_COPYOUT_PACK_B64) {
+        return VL_BIT_SIZE / B64_BITS / CAST_PACK2;
+    } else if (copyMode == CAST_MODE_REG_COPYOUT_PACK4_B32) {
+        return VL_BIT_SIZE / B32_BITS / CAST_PACK4;
+    }
+    return 0;
+}
+
+struct CastDerivedTiling {
+    int64_t blockFormer;
+    int64_t blockNum;
+    int64_t blockTail;
+    int64_t ubLoopOfFormerBlock;
+    int64_t ubLoopOfTailBlock;
+    int64_t ubTailOfFormerBlock;
+    int64_t ubTailOfTailBlock;
+};
+
+__aicore__ inline CastDerivedTiling ComputeCastDerivedTiling(int64_t shapeSize, int64_t coreNum, int64_t ubFormer)
+{
+    CastDerivedTiling d;
+    d.blockFormer = ((shapeSize + coreNum - 1) / coreNum + B7_BITS) / B8_BITS * B8_BITS;
+    d.blockNum = (shapeSize + d.blockFormer - 1) / d.blockFormer;
+    d.blockTail = shapeSize - (d.blockNum - 1) * d.blockFormer;
+    d.ubLoopOfFormerBlock = (d.blockFormer + ubFormer - 1) / ubFormer;
+    d.ubLoopOfTailBlock = (d.blockTail + ubFormer - 1) / ubFormer;
+    d.ubTailOfFormerBlock = d.blockFormer - (d.ubLoopOfFormerBlock - 1) * ubFormer;
+    d.ubTailOfTailBlock = d.blockTail - (d.ubLoopOfTailBlock - 1) * ubFormer;
+    return d;
+}
+
 // CAST_TEMPLATE_DIRECT_CAST
 template <typename ST, typename DT>
 class CastDirect {
 public:
     __aicore__ inline CastDirect(){};
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, RoundMode roundMode, const CastTilingData* tilingData,
-                                TPipe* pipePtr);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, RoundMode roundMode,
+                                __tiling_data_ptr__ CastTilingData* tilingData, TPipe* pipePtr);
     __aicore__ inline void Process();
 
     constexpr static int32_t bufferNum_ = 2;
 
 protected:
     __aicore__ inline void CopyIn(const int64_t& gmOffset);
-    __aicore__ inline void Compute(const int64_t& len);
+    __aicore__ inline void Compute(int64_t len);
     __aicore__ inline void CopyOut(const int64_t& gmOffset);
 
 protected:
-    const CastTilingData* tilingData_{nullptr};
+    __tiling_data_ptr__ CastTilingData* tilingData_{nullptr};
     RoundMode rMode_{RoundMode::CAST_NONE};
     TPipe* pipe_{nullptr};
     TQue<QuePosition::VECIN, 1> inQueueX_;
@@ -149,18 +264,21 @@ protected:
     DataCopyPadExtParams<ST> padParams_;
     DataCopyExtParams dataCopyOutParams_;
     int64_t blockIdx_{0};
+    CastDerivedTiling derived_{};
 };
 
 template <typename ST, typename DT>
 __aicore__ inline void CastDirect<ST, DT>::Init(GM_ADDR x, GM_ADDR y, RoundMode roundMode,
-                                                const CastTilingData* tilingData, TPipe* pipePtr)
+                                                __tiling_data_ptr__ CastTilingData* tilingData, TPipe* pipePtr)
 {
     tilingData_ = tilingData;
     pipe_ = pipePtr;
     rMode_ = roundMode;
     blockIdx_ = GetBlockIdx();
 
-    int64_t gmBlockOffset = blockIdx_ * tilingData_->blockFormer;
+    derived_ = ComputeCastDerivedTiling(tilingData_->shapeSize, tilingData_->coreNum, tilingData_->ubFormer);
+
+    int64_t gmBlockOffset = blockIdx_ * derived_.blockFormer;
     xGm_.SetGlobalBuffer((__gm__ ST*)x + gmBlockOffset);
     yGm_.SetGlobalBuffer((__gm__ DT*)y + gmBlockOffset);
 
@@ -191,7 +309,7 @@ __aicore__ inline void CastDirect<ST, DT>::CopyIn(const int64_t& gmOffset)
 }
 
 template <typename ST, typename DT>
-__aicore__ inline void CastDirect<ST, DT>::Compute(const int64_t& len)
+__aicore__ inline void CastDirect<ST, DT>::Compute(int64_t len)
 {
     auto xLocal = inQueueX_.template DeQue<ST>();
     auto yLocal = outQueue_.template AllocTensor<DT>();
@@ -211,9 +329,9 @@ __aicore__ inline void CastDirect<ST, DT>::CopyOut(const int64_t& gmOffset)
 template <typename ST, typename DT>
 __aicore__ inline void CastDirect<ST, DT>::Process()
 {
-    bool isLastBlockFlag = (blockIdx_ == tilingData_->blockNum - 1);
-    int64_t loopNum = isLastBlockFlag ? tilingData_->ubLoopOfTailBlock : tilingData_->ubLoopOfFormerBlock;
-    int64_t tailNum = isLastBlockFlag ? tilingData_->ubTailOfTailBlock : tilingData_->ubTailOfFormerBlock;
+    bool isLastBlockFlag = (blockIdx_ == derived_.blockNum - 1);
+    int64_t loopNum = isLastBlockFlag ? derived_.ubLoopOfTailBlock : derived_.ubLoopOfFormerBlock;
+    int64_t tailNum = isLastBlockFlag ? derived_.ubTailOfTailBlock : derived_.ubTailOfFormerBlock;
 
     int64_t gmOffset = 0;
     dataCopyInParams_.blockLen = tilingData_->ubFormer * sizeof(ST);
@@ -237,7 +355,7 @@ template <typename ST>
 class CastDstBool {
 public:
     __aicore__ inline CastDstBool(){};
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const CastTilingData* tilingData, TPipe* pipePtr);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, __tiling_data_ptr__ CastTilingData* tilingData, TPipe* pipePtr);
     __aicore__ inline void Process();
 
     constexpr static int32_t bufferNum_ = 2;
@@ -245,11 +363,11 @@ public:
 
 protected:
     __aicore__ inline void CopyIn(const int64_t& gmOffset);
-    __aicore__ inline void Compute(const int64_t& len);
+    __aicore__ inline void Compute(int64_t len);
     __aicore__ inline void CopyOut(const int64_t& gmOffset);
 
 protected:
-    const CastTilingData* tilingData_{nullptr};
+    __tiling_data_ptr__ CastTilingData* tilingData_{nullptr};
     TPipe* pipe_{nullptr};
     TQue<QuePosition::VECIN, 1> inQueueX_;
     TQue<QuePosition::VECOUT, 1> outQueue_;
@@ -262,16 +380,20 @@ protected:
     DataCopyExtParams dataCopyOutParams_;
     int64_t blockIdx_{0};
     LocalTensor<int8_t> boolZeroTensor_;
+    CastDerivedTiling derived_{};
 };
 
 template <typename ST>
-__aicore__ inline void CastDstBool<ST>::Init(GM_ADDR x, GM_ADDR y, const CastTilingData* tilingData, TPipe* pipePtr)
+__aicore__ inline void CastDstBool<ST>::Init(GM_ADDR x, GM_ADDR y, __tiling_data_ptr__ CastTilingData* tilingData,
+                                             TPipe* pipePtr)
 {
     tilingData_ = tilingData;
     pipe_ = pipePtr;
     blockIdx_ = GetBlockIdx();
 
-    int64_t gmBlockOffset = blockIdx_ * tilingData_->blockFormer;
+    derived_ = ComputeCastDerivedTiling(tilingData_->shapeSize, tilingData_->coreNum, tilingData_->ubFormer);
+
+    int64_t gmBlockOffset = blockIdx_ * derived_.blockFormer;
     xGm_.SetGlobalBuffer((__gm__ ST*)x + gmBlockOffset);
     yGm_.SetGlobalBuffer((__gm__ int8_t*)y + gmBlockOffset);
 
@@ -283,7 +405,8 @@ __aicore__ inline void CastDstBool<ST>::Init(GM_ADDR x, GM_ADDR y, const CastTil
     pipe_->InitBuffer(boolZeroBuf_, tilingData_->ubFormer * sizeof(int8_t));
     boolZeroTensor_ = boolZeroBuf_.Get<int8_t>();
     int8_t boolZero = 0;
-    Duplicate(boolZeroTensor_, boolZero, tilingData_->ubFormer);
+    int32_t ubFormer = tilingData_->ubFormer;
+    Duplicate(boolZeroTensor_, boolZero, ubFormer);
 
     dataCopyInParams_.blockCount = 1;
     dataCopyInParams_.blockLen = 0;
@@ -309,7 +432,7 @@ __aicore__ inline void CastDstBool<ST>::CopyIn(const int64_t& gmOffset)
 }
 
 template <typename ST>
-__aicore__ inline void CastDstBool<ST>::Compute(const int64_t& len)
+__aicore__ inline void CastDstBool<ST>::Compute(int64_t len)
 {
     auto xLocal = inQueueX_.template DeQue<ST>();
     auto maskTensor = maskBuf_.Get<uint8_t>();
@@ -332,9 +455,9 @@ __aicore__ inline void CastDstBool<ST>::CopyOut(const int64_t& gmOffset)
 template <typename ST>
 __aicore__ inline void CastDstBool<ST>::Process()
 {
-    bool isLastBlockFlag = (blockIdx_ == tilingData_->blockNum - 1);
-    int64_t loopNum = isLastBlockFlag ? tilingData_->ubLoopOfTailBlock : tilingData_->ubLoopOfFormerBlock;
-    int64_t tailNum = isLastBlockFlag ? tilingData_->ubTailOfTailBlock : tilingData_->ubTailOfFormerBlock;
+    bool isLastBlockFlag = (blockIdx_ == derived_.blockNum - 1);
+    int64_t loopNum = isLastBlockFlag ? derived_.ubLoopOfTailBlock : derived_.ubLoopOfFormerBlock;
+    int64_t tailNum = isLastBlockFlag ? derived_.ubTailOfTailBlock : derived_.ubTailOfFormerBlock;
 
     int64_t gmOffset = 0;
     dataCopyInParams_.blockLen = tilingData_->ubFormer * sizeof(ST);
@@ -358,18 +481,18 @@ template <typename DT>
 class CastThrough {
 public:
     __aicore__ inline CastThrough(){};
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const CastTilingData* tilingData, TPipe* pipePtr);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, __tiling_data_ptr__ CastTilingData* tilingData, TPipe* pipePtr);
     __aicore__ inline void Process();
 
     constexpr static int32_t bufferNum_ = 2;
 
 protected:
     __aicore__ inline void CopyIn(const int64_t& gmOffset);
-    __aicore__ inline void Compute(const int64_t& len);
+    __aicore__ inline void Compute(int64_t len);
     __aicore__ inline void CopyOut(const int64_t& gmOffset);
 
 protected:
-    const CastTilingData* tilingData_{nullptr};
+    __tiling_data_ptr__ CastTilingData* tilingData_{nullptr};
     TPipe* pipe_{nullptr};
     TQue<QuePosition::VECIN, 1> inQueueX_;
     TQue<QuePosition::VECOUT, 1> outQueue_;
@@ -378,16 +501,20 @@ protected:
     DataCopyExtParams dataCopyParams_;
     DataCopyPadExtParams<DT> padParams_;
     int64_t blockIdx_{0};
+    CastDerivedTiling derived_{};
 };
 
 template <typename DT>
-__aicore__ inline void CastThrough<DT>::Init(GM_ADDR x, GM_ADDR y, const CastTilingData* tilingData, TPipe* pipePtr)
+__aicore__ inline void CastThrough<DT>::Init(GM_ADDR x, GM_ADDR y, __tiling_data_ptr__ CastTilingData* tilingData,
+                                             TPipe* pipePtr)
 {
     tilingData_ = tilingData;
     pipe_ = pipePtr;
     blockIdx_ = GetBlockIdx();
 
-    int64_t gmBlockOffset = blockIdx_ * tilingData_->blockFormer;
+    derived_ = ComputeCastDerivedTiling(tilingData_->shapeSize, tilingData_->coreNum, tilingData_->ubFormer);
+
+    int64_t gmBlockOffset = blockIdx_ * derived_.blockFormer;
     xGm_.SetGlobalBuffer((__gm__ DT*)x + gmBlockOffset);
     yGm_.SetGlobalBuffer((__gm__ DT*)y + gmBlockOffset);
 
@@ -413,7 +540,7 @@ __aicore__ inline void CastThrough<DT>::CopyIn(const int64_t& gmOffset)
 }
 
 template <typename DT>
-__aicore__ inline void CastThrough<DT>::Compute(const int64_t& len)
+__aicore__ inline void CastThrough<DT>::Compute(int64_t len)
 {
     auto xLocal = inQueueX_.template DeQue<DT>();
     auto yLocal = outQueue_.template AllocTensor<DT>();
@@ -433,9 +560,9 @@ __aicore__ inline void CastThrough<DT>::CopyOut(const int64_t& gmOffset)
 template <typename DT>
 __aicore__ inline void CastThrough<DT>::Process()
 {
-    bool isLastBlockFlag = (blockIdx_ == tilingData_->blockNum - 1);
-    int64_t loopNum = isLastBlockFlag ? tilingData_->ubLoopOfTailBlock : tilingData_->ubLoopOfFormerBlock;
-    int64_t tailNum = isLastBlockFlag ? tilingData_->ubTailOfTailBlock : tilingData_->ubTailOfFormerBlock;
+    bool isLastBlockFlag = (blockIdx_ == derived_.blockNum - 1);
+    int64_t loopNum = isLastBlockFlag ? derived_.ubLoopOfTailBlock : derived_.ubLoopOfFormerBlock;
+    int64_t tailNum = isLastBlockFlag ? derived_.ubTailOfTailBlock : derived_.ubTailOfFormerBlock;
 
     int64_t gmOffset = 0;
     dataCopyParams_.blockLen = tilingData_->ubFormer * sizeof(DT);
@@ -457,18 +584,18 @@ template <typename DT>
 class CastUint1 {
 public:
     __aicore__ inline CastUint1(){};
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const CastTilingData* tilingData, TPipe* pipePtr);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, __tiling_data_ptr__ CastTilingData* tilingData, TPipe* pipePtr);
     __aicore__ inline void Process();
 
     constexpr static int32_t bufferNum_ = 2;
 
 protected:
     __aicore__ inline void CopyIn(const int64_t& gmOffset);
-    __aicore__ inline void Compute(const int64_t& len);
+    __aicore__ inline void Compute(int64_t len);
     __aicore__ inline void CopyOut(const int64_t& gmOffset);
 
 protected:
-    const CastTilingData* tilingData_{nullptr};
+    __tiling_data_ptr__ CastTilingData* tilingData_{nullptr};
     TPipe* pipe_{nullptr};
     TQue<QuePosition::VECIN, 1> inQueueX_;
     TQue<QuePosition::VECOUT, 1> outQueue_;
@@ -480,18 +607,22 @@ protected:
     DataCopyExtParams dataCopyOutParams_;
     int64_t blockIdx_{0};
     LocalTensor<DT> oneTensor_;
+    CastDerivedTiling derived_{};
 };
 
 template <typename DT>
-__aicore__ inline void CastUint1<DT>::Init(GM_ADDR x, GM_ADDR y, const CastTilingData* tilingData, TPipe* pipePtr)
+__aicore__ inline void CastUint1<DT>::Init(GM_ADDR x, GM_ADDR y, __tiling_data_ptr__ CastTilingData* tilingData,
+                                           TPipe* pipePtr)
 {
     tilingData_ = tilingData;
     pipe_ = pipePtr;
     blockIdx_ = GetBlockIdx();
 
-    int64_t blockFormerByte = tilingData_->blockFormer / B8_BITS;
+    derived_ = ComputeCastDerivedTiling(tilingData_->shapeSize, tilingData_->coreNum, tilingData_->ubFormer);
+
+    int64_t blockFormerByte = derived_.blockFormer / B8_BITS;
     int64_t gmInBlockOffset = blockIdx_ * blockFormerByte;
-    int64_t gmOutBlockOffset = blockIdx_ * tilingData_->blockFormer;
+    int64_t gmOutBlockOffset = blockIdx_ * derived_.blockFormer;
     xGm_.SetGlobalBuffer((__gm__ uint8_t*)x + gmInBlockOffset);
     yGm_.SetGlobalBuffer((__gm__ DT*)y + gmOutBlockOffset);
 
@@ -501,7 +632,8 @@ __aicore__ inline void CastUint1<DT>::Init(GM_ADDR x, GM_ADDR y, const CastTilin
     pipe_->InitBuffer(oneBuf_, tilingData_->ubFormer * sizeof(DT));
     oneTensor_ = oneBuf_.Get<DT>();
     DT oneValue = 1;
-    Duplicate(oneTensor_, oneValue, tilingData_->ubFormer);
+    int32_t ubFormer = tilingData_->ubFormer;
+    Duplicate(oneTensor_, oneValue, ubFormer);
 
     dataCopyInParams_.blockCount = 1;
     dataCopyInParams_.blockLen = 0;
@@ -527,7 +659,7 @@ __aicore__ inline void CastUint1<DT>::CopyIn(const int64_t& gmOffset)
 }
 
 template <typename DT>
-__aicore__ inline void CastUint1<DT>::Compute(const int64_t& len)
+__aicore__ inline void CastUint1<DT>::Compute(int64_t len)
 {
     auto xLocal = inQueueX_.template DeQue<uint8_t>();
     auto yLocal = outQueue_.template AllocTensor<DT>();
@@ -548,9 +680,9 @@ __aicore__ inline void CastUint1<DT>::CopyOut(const int64_t& gmOffset)
 template <typename DT>
 __aicore__ inline void CastUint1<DT>::Process()
 {
-    bool isLastBlockFlag = (blockIdx_ == tilingData_->blockNum - 1);
-    int64_t loopNum = isLastBlockFlag ? tilingData_->ubLoopOfTailBlock : tilingData_->ubLoopOfFormerBlock;
-    int64_t tailNum = isLastBlockFlag ? tilingData_->ubTailOfTailBlock : tilingData_->ubTailOfFormerBlock;
+    bool isLastBlockFlag = (blockIdx_ == derived_.blockNum - 1);
+    int64_t loopNum = isLastBlockFlag ? derived_.ubLoopOfTailBlock : derived_.ubLoopOfFormerBlock;
+    int64_t tailNum = isLastBlockFlag ? derived_.ubTailOfTailBlock : derived_.ubTailOfFormerBlock;
 
     int64_t gmOffset = 0;
     dataCopyInParams_.blockLen = tilingData_->ubFormer / B8_BITS;
@@ -575,18 +707,18 @@ class CastTwo {
 public:
     __aicore__ inline CastTwo(){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, RoundMode roundMode1, RoundMode roundMode2,
-                                const CastTilingData* tilingData, TPipe* pipePtr);
+                                __tiling_data_ptr__ CastTilingData* tilingData, TPipe* pipePtr);
     __aicore__ inline void Process();
 
     constexpr static int32_t bufferNum_ = 2;
 
 protected:
     __aicore__ inline void CopyIn(const int64_t& gmOffset);
-    __aicore__ inline void Compute(const int64_t& len);
+    __aicore__ inline void Compute(int64_t len);
     __aicore__ inline void CopyOut(const int64_t& gmOffset);
 
 protected:
-    const CastTilingData* tilingData_{nullptr};
+    __tiling_data_ptr__ CastTilingData* tilingData_{nullptr};
     TPipe* pipe_{nullptr};
     TQue<QuePosition::VECIN, 1> inQueueX_;
     TQue<QuePosition::VECOUT, 1> outQueue_;
@@ -599,11 +731,12 @@ protected:
     DataCopyPadExtParams<ST> padParams_;
     DataCopyExtParams dataCopyOutParams_;
     int64_t blockIdx_{0};
+    CastDerivedTiling derived_{};
 };
 
 template <typename ST, typename MT, typename DT>
 __aicore__ inline void CastTwo<ST, MT, DT>::Init(GM_ADDR x, GM_ADDR y, RoundMode roundMode1, RoundMode roundMode2,
-                                                 const CastTilingData* tilingData, TPipe* pipePtr)
+                                                 __tiling_data_ptr__ CastTilingData* tilingData, TPipe* pipePtr)
 {
     tilingData_ = tilingData;
     pipe_ = pipePtr;
@@ -611,7 +744,9 @@ __aicore__ inline void CastTwo<ST, MT, DT>::Init(GM_ADDR x, GM_ADDR y, RoundMode
     rMode2_ = roundMode2;
     blockIdx_ = GetBlockIdx();
 
-    int64_t gmBlockOffset = blockIdx_ * tilingData_->blockFormer;
+    derived_ = ComputeCastDerivedTiling(tilingData_->shapeSize, tilingData_->coreNum, tilingData_->ubFormer);
+
+    int64_t gmBlockOffset = blockIdx_ * derived_.blockFormer;
     xGm_.SetGlobalBuffer((__gm__ ST*)x + gmBlockOffset);
     yGm_.SetGlobalBuffer((__gm__ DT*)y + gmBlockOffset);
 
@@ -643,7 +778,7 @@ __aicore__ inline void CastTwo<ST, MT, DT>::CopyIn(const int64_t& gmOffset)
 }
 
 template <typename ST, typename MT, typename DT>
-__aicore__ inline void CastTwo<ST, MT, DT>::Compute(const int64_t& len)
+__aicore__ inline void CastTwo<ST, MT, DT>::Compute(int64_t len)
 {
     auto xLocal = inQueueX_.template DeQue<ST>();
     LocalTensor<MT> midLocal = midTypeBuf_.Get<MT>();
@@ -677,9 +812,9 @@ __aicore__ inline void CastTwo<ST, MT, DT>::CopyOut(const int64_t& gmOffset)
 template <typename ST, typename MT, typename DT>
 __aicore__ inline void CastTwo<ST, MT, DT>::Process()
 {
-    bool isLastBlockFlag = (blockIdx_ == tilingData_->blockNum - 1);
-    int64_t loopNum = isLastBlockFlag ? tilingData_->ubLoopOfTailBlock : tilingData_->ubLoopOfFormerBlock;
-    int64_t tailNum = isLastBlockFlag ? tilingData_->ubTailOfTailBlock : tilingData_->ubTailOfFormerBlock;
+    bool isLastBlockFlag = (blockIdx_ == derived_.blockNum - 1);
+    int64_t loopNum = isLastBlockFlag ? derived_.ubLoopOfTailBlock : derived_.ubLoopOfFormerBlock;
+    int64_t tailNum = isLastBlockFlag ? derived_.ubTailOfTailBlock : derived_.ubTailOfFormerBlock;
 
     int64_t gmOffset = 0;
     dataCopyInParams_.blockLen = tilingData_->ubFormer * sizeof(ST);
@@ -710,18 +845,19 @@ __aicore__ inline void CastTwo<ST, MT, DT>::Process()
 // CAST_TEMPLATE_MIRCRO_CAST_INTER_CAST_CAST
 // CAST_TEMPLATE_MIRCRO_DEINTER_SHIFT
 template <int id, typename ST, typename DT, typename MST, typename MMT, typename MDT, LoadDist ldDist, StoreDist stDist,
-          RoundMode castMode1, RoundMode castMode2>
+          RoundMode castMode1, RoundMode castMode2, int32_t RegCopyInStep, int32_t RegCopyOutStep,
+          int64_t OneLoopCopyInBitSize, int64_t InputTypeBitSize>
 class CastMicro {
 public:
     __aicore__ inline CastMicro(){};
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const CastTilingData* tilingData, TPipe* pipePtr);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, __tiling_data_ptr__ CastTilingData* tilingData, TPipe* pipePtr);
     __aicore__ inline void Process();
 
     constexpr static int32_t bufferNum_ = 2;
 
 protected:
     __aicore__ inline void CopyIn(const int64_t& gmOffset);
-    __aicore__ inline void Compute(const int64_t& len, uint16_t regLoop);
+    __aicore__ inline void Compute(int64_t len, uint16_t regLoop);
     __aicore__ inline void CopyOut(const int64_t& gmOffset);
 
 private:
@@ -738,7 +874,7 @@ private:
     __aicore__ inline void ComputeDeinterShift(const int64_t& len, uint16_t regLoop);
 
 protected:
-    const CastTilingData* tilingData_{nullptr};
+    __tiling_data_ptr__ CastTilingData* tilingData_{nullptr};
     TPipe* pipe_{nullptr};
     TQue<QuePosition::VECIN, 1> inQueueX_;
     TQue<QuePosition::VECOUT, 1> outQueue_;
@@ -748,30 +884,59 @@ protected:
     DataCopyPadExtParams<ST> padParams_;
     DataCopyExtParams dataCopyOutParams_;
     int64_t blockIdx_{0};
+    CastDerivedTiling derived_{};
+    int64_t ubFormerRegLoop_{0};
+    int64_t ubTailOfFormerRegLoop_{0};
+    int64_t ubTailOfTailRegLoop_{0};
 };
 
 template <int id, typename ST, typename DT, typename MST, typename MMT, typename MDT, LoadDist ldDist, StoreDist stDist,
-          RoundMode castMode1, RoundMode castMode2>
-__aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::Init(
-    GM_ADDR x, GM_ADDR y, const CastTilingData* tilingData, TPipe* pipePtr)
+          RoundMode castMode1, RoundMode castMode2, int32_t RegCopyInStep, int32_t RegCopyOutStep,
+          int64_t OneLoopCopyInBitSize, int64_t InputTypeBitSize>
+__aicore__ inline void
+CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCopyInStep, RegCopyOutStep,
+          OneLoopCopyInBitSize, InputTypeBitSize>::Init(GM_ADDR x, GM_ADDR y,
+                                                        __tiling_data_ptr__ CastTilingData* tilingData, TPipe* pipePtr)
 {
     tilingData_ = tilingData;
     pipe_ = pipePtr;
     blockIdx_ = GetBlockIdx();
 
+    derived_ = ComputeCastDerivedTiling(tilingData_->shapeSize, tilingData_->coreNum, tilingData_->ubFormer);
+
+    if constexpr (OneLoopCopyInBitSize != 0) {
+        if constexpr (id == CAST_TEMPLATE_MIRCRO_CAST_DEINTER || id == CAST_TEMPLATE_MIRCRO_CAST_DEINTER_CAST ||
+                      id == CAST_TEMPLATE_MIRCRO_CAST_CAST_DEINTER_CAST || id == CAST_TEMPLATE_MIRCRO_DEINTER_SHIFT) {
+            constexpr int64_t doubleCopyInBitSize = OneLoopCopyInBitSize * 2;
+            ubFormerRegLoop_ = (tilingData_->ubFormer * InputTypeBitSize + doubleCopyInBitSize - 1) /
+                               doubleCopyInBitSize;
+            ubTailOfFormerRegLoop_ = (derived_.ubTailOfFormerBlock * InputTypeBitSize + doubleCopyInBitSize - 1) /
+                                     doubleCopyInBitSize;
+            ubTailOfTailRegLoop_ = (derived_.ubTailOfTailBlock * InputTypeBitSize + doubleCopyInBitSize - 1) /
+                                   doubleCopyInBitSize;
+        } else {
+            ubFormerRegLoop_ = (tilingData_->ubFormer * InputTypeBitSize + OneLoopCopyInBitSize - 1) /
+                               OneLoopCopyInBitSize;
+            ubTailOfFormerRegLoop_ = (derived_.ubTailOfFormerBlock * InputTypeBitSize + OneLoopCopyInBitSize - 1) /
+                                     OneLoopCopyInBitSize;
+            ubTailOfTailRegLoop_ = (derived_.ubTailOfTailBlock * InputTypeBitSize + OneLoopCopyInBitSize - 1) /
+                                   OneLoopCopyInBitSize;
+        }
+    }
+
 #if ORIG_DTYPE_X == DT_FLOAT4_E2M1 || ORIG_DTYPE_X == DT_FLOAT4_E1M2
-    xGm_.SetGlobalBuffer((__gm__ ST*)x + blockIdx_ * tilingData_->blockFormer / B2_BITS);
+    xGm_.SetGlobalBuffer((__gm__ ST*)x + blockIdx_ * derived_.blockFormer / B2_BITS);
     pipe_->InitBuffer(inQueueX_, bufferNum_, tilingData_->ubFormer * sizeof(ST) / B2_BITS);
 #else
-    xGm_.SetGlobalBuffer((__gm__ ST*)x + blockIdx_ * tilingData_->blockFormer);
+    xGm_.SetGlobalBuffer((__gm__ ST*)x + blockIdx_ * derived_.blockFormer);
     pipe_->InitBuffer(inQueueX_, bufferNum_, tilingData_->ubFormer * sizeof(ST));
 #endif
 
 #if ORIG_DTYPE_Y == DT_FLOAT4_E2M1 || ORIG_DTYPE_Y == DT_FLOAT4_E1M2 || ORIG_DTYPE_Y == DT_INT4
-    yGm_.SetGlobalBuffer((__gm__ DT*)y + blockIdx_ * tilingData_->blockFormer / B2_BITS);
+    yGm_.SetGlobalBuffer((__gm__ DT*)y + blockIdx_ * derived_.blockFormer / B2_BITS);
     pipe_->InitBuffer(outQueue_, bufferNum_, tilingData_->ubFormer * sizeof(DT) / B2_BITS);
 #else
-    yGm_.SetGlobalBuffer((__gm__ DT*)y + blockIdx_ * tilingData_->blockFormer);
+    yGm_.SetGlobalBuffer((__gm__ DT*)y + blockIdx_ * derived_.blockFormer);
     pipe_->InitBuffer(outQueue_, bufferNum_, tilingData_->ubFormer * sizeof(DT));
 #endif
 
@@ -791,9 +956,11 @@ __aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, cast
 }
 
 template <int id, typename ST, typename DT, typename MST, typename MMT, typename MDT, LoadDist ldDist, StoreDist stDist,
-          RoundMode castMode1, RoundMode castMode2>
-__aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::CopyIn(
-    const int64_t& gmOffset)
+          RoundMode castMode1, RoundMode castMode2, int32_t RegCopyInStep, int32_t RegCopyOutStep,
+          int64_t OneLoopCopyInBitSize, int64_t InputTypeBitSize>
+__aicore__ inline void
+CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCopyInStep, RegCopyOutStep,
+          OneLoopCopyInBitSize, InputTypeBitSize>::CopyIn(const int64_t& gmOffset)
 {
     auto xLocalIn = inQueueX_.template AllocTensor<ST>();
     DataCopyPad(xLocalIn, xGm_[gmOffset], dataCopyInParams_, padParams_);
@@ -801,9 +968,11 @@ __aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, cast
 }
 
 template <int id, typename ST, typename DT, typename MST, typename MMT, typename MDT, LoadDist ldDist, StoreDist stDist,
-          RoundMode castMode1, RoundMode castMode2>
-__aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::Compute(
-    const int64_t& len, uint16_t regLoop)
+          RoundMode castMode1, RoundMode castMode2, int32_t RegCopyInStep, int32_t RegCopyOutStep,
+          int64_t OneLoopCopyInBitSize, int64_t InputTypeBitSize>
+__aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCopyInStep,
+                                 RegCopyOutStep, OneLoopCopyInBitSize, InputTypeBitSize>::Compute(int64_t len,
+                                                                                                  uint16_t regLoop)
 {
     if constexpr (id == CAST_TEMPLATE_MIRCRO_INOUT) {
         ComputeInOut(len, regLoop);
@@ -831,16 +1000,18 @@ __aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, cast
 }
 
 template <int id, typename ST, typename DT, typename MST, typename MMT, typename MDT, LoadDist ldDist, StoreDist stDist,
-          RoundMode castMode1, RoundMode castMode2>
-__aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::ComputeInOut(
-    const int64_t& len, uint16_t regLoop)
+          RoundMode castMode1, RoundMode castMode2, int32_t RegCopyInStep, int32_t RegCopyOutStep,
+          int64_t OneLoopCopyInBitSize, int64_t InputTypeBitSize>
+__aicore__ inline void
+CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCopyInStep, RegCopyOutStep,
+          OneLoopCopyInBitSize, InputTypeBitSize>::ComputeInOut(const int64_t& len, uint16_t regLoop)
 {
     auto xLocal = inQueueX_.template DeQue<ST>();
     auto yLocal = outQueue_.template AllocTensor<DT>();
     __ubuf__ MST* srcAddr = (__ubuf__ MST*)xLocal.GetPhyAddr();
     __ubuf__ MDT* dstAddr = (__ubuf__ MDT*)yLocal.GetPhyAddr();
-    int32_t regCopyInStep = static_cast<int32_t>(tilingData_->regCopyInStep);
-    int32_t regCopyOutStep = static_cast<int32_t>(tilingData_->regCopyOutStep);
+    int32_t regCopyInStep = RegCopyInStep;
+    int32_t regCopyOutStep = RegCopyOutStep;
     uint32_t count = static_cast<uint32_t>(len);
 
     __VEC_SCOPE__
@@ -861,16 +1032,18 @@ __aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, cast
 }
 
 template <int id, typename ST, typename DT, typename MST, typename MMT, typename MDT, LoadDist ldDist, StoreDist stDist,
-          RoundMode castMode1, RoundMode castMode2>
-__aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::ComputeCast(
-    const int64_t& len, uint16_t regLoop)
+          RoundMode castMode1, RoundMode castMode2, int32_t RegCopyInStep, int32_t RegCopyOutStep,
+          int64_t OneLoopCopyInBitSize, int64_t InputTypeBitSize>
+__aicore__ inline void
+CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCopyInStep, RegCopyOutStep,
+          OneLoopCopyInBitSize, InputTypeBitSize>::ComputeCast(const int64_t& len, uint16_t regLoop)
 {
     auto xLocal = inQueueX_.template DeQue<ST>();
     auto yLocal = outQueue_.template AllocTensor<DT>();
     __ubuf__ MST* srcAddr = (__ubuf__ MST*)xLocal.GetPhyAddr();
     __ubuf__ MDT* dstAddr = (__ubuf__ MDT*)yLocal.GetPhyAddr();
-    int32_t regCopyInStep = static_cast<int32_t>(tilingData_->regCopyInStep);
-    int32_t regCopyOutStep = static_cast<int32_t>(tilingData_->regCopyOutStep);
+    int32_t regCopyInStep = RegCopyInStep;
+    int32_t regCopyOutStep = RegCopyOutStep;
     uint32_t count = static_cast<uint32_t>(len);
 
     if constexpr (std::is_same<MST, uint32_t>::value && std::is_same<MDT, float>::value) {
@@ -923,16 +1096,18 @@ __aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, cast
 }
 
 template <int id, typename ST, typename DT, typename MST, typename MMT, typename MDT, LoadDist ldDist, StoreDist stDist,
-          RoundMode castMode1, RoundMode castMode2>
-__aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::ComputeCastInter(
-    const int64_t& len, uint16_t regLoop)
+          RoundMode castMode1, RoundMode castMode2, int32_t RegCopyInStep, int32_t RegCopyOutStep,
+          int64_t OneLoopCopyInBitSize, int64_t InputTypeBitSize>
+__aicore__ inline void
+CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCopyInStep, RegCopyOutStep,
+          OneLoopCopyInBitSize, InputTypeBitSize>::ComputeCastInter(const int64_t& len, uint16_t regLoop)
 {
     auto xLocal = inQueueX_.template DeQue<ST>();
     auto yLocal = outQueue_.template AllocTensor<DT>();
     __ubuf__ MST* srcAddr = (__ubuf__ MST*)xLocal.GetPhyAddr();
     __ubuf__ MDT* dstAddr = (__ubuf__ MDT*)yLocal.GetPhyAddr();
-    int32_t regCopyInStep = static_cast<int32_t>(tilingData_->regCopyInStep);
-    int32_t regCopyOutStep = static_cast<int32_t>(tilingData_->regCopyOutStep);
+    int32_t regCopyInStep = RegCopyInStep;
+    int32_t regCopyOutStep = RegCopyOutStep;
     // bf16 to float
     static constexpr Reg::CastTrait trait = {RegLayout::ZERO, SatMode::UNKNOWN, MaskMergeMode::ZEROING, castMode1};
     MMT zeroValue = 0;
@@ -969,16 +1144,18 @@ __aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, cast
 }
 
 template <int id, typename ST, typename DT, typename MST, typename MMT, typename MDT, LoadDist ldDist, StoreDist stDist,
-          RoundMode castMode1, RoundMode castMode2>
-__aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::ComputeCastDeinter(
-    const int64_t& len, uint16_t regLoop)
+          RoundMode castMode1, RoundMode castMode2, int32_t RegCopyInStep, int32_t RegCopyOutStep,
+          int64_t OneLoopCopyInBitSize, int64_t InputTypeBitSize>
+__aicore__ inline void
+CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCopyInStep, RegCopyOutStep,
+          OneLoopCopyInBitSize, InputTypeBitSize>::ComputeCastDeinter(const int64_t& len, uint16_t regLoop)
 {
     auto xLocal = inQueueX_.template DeQue<ST>();
     auto yLocal = outQueue_.template AllocTensor<DT>();
     __ubuf__ MST* srcAddr = (__ubuf__ MST*)xLocal.GetPhyAddr();
     __ubuf__ MDT* dstAddr = (__ubuf__ MDT*)yLocal.GetPhyAddr();
-    int32_t regCopyInStep = static_cast<int32_t>(tilingData_->regCopyInStep);
-    int32_t regCopyOutStep = static_cast<int32_t>(tilingData_->regCopyOutStep);
+    int32_t regCopyInStep = RegCopyInStep;
+    int32_t regCopyOutStep = RegCopyOutStep;
     uint32_t count = static_cast<uint32_t>(len);
 
     static constexpr Reg::CastTrait trait = []() {
@@ -1020,17 +1197,18 @@ __aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, cast
 }
 
 template <int id, typename ST, typename DT, typename MST, typename MMT, typename MDT, LoadDist ldDist, StoreDist stDist,
-          RoundMode castMode1, RoundMode castMode2>
+          RoundMode castMode1, RoundMode castMode2, int32_t RegCopyInStep, int32_t RegCopyOutStep,
+          int64_t OneLoopCopyInBitSize, int64_t InputTypeBitSize>
 __aicore__ inline void
-CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::ComputeCastCastDeinter(const int64_t& len,
-                                                                                                   uint16_t regLoop)
+CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCopyInStep, RegCopyOutStep,
+          OneLoopCopyInBitSize, InputTypeBitSize>::ComputeCastCastDeinter(const int64_t& len, uint16_t regLoop)
 {
     auto xLocal = inQueueX_.template DeQue<ST>();
     auto yLocal = outQueue_.template AllocTensor<DT>();
     __ubuf__ MST* srcAddr = (__ubuf__ MST*)xLocal.GetPhyAddr();
     __ubuf__ MDT* dstAddr = (__ubuf__ MDT*)yLocal.GetPhyAddr();
-    int32_t regCopyInStep = static_cast<int32_t>(tilingData_->regCopyInStep);
-    int32_t regCopyOutStep = static_cast<int32_t>(tilingData_->regCopyOutStep);
+    int32_t regCopyInStep = RegCopyInStep;
+    int32_t regCopyOutStep = RegCopyOutStep;
     uint32_t count = static_cast<uint32_t>(len);
     MMT zeroValue = 0;
 
@@ -1076,16 +1254,18 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::Comp
 }
 
 template <int id, typename ST, typename DT, typename MST, typename MMT, typename MDT, LoadDist ldDist, StoreDist stDist,
-          RoundMode castMode1, RoundMode castMode2>
-__aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::ComputeCastCast(
-    const int64_t& len, uint16_t regLoop)
+          RoundMode castMode1, RoundMode castMode2, int32_t RegCopyInStep, int32_t RegCopyOutStep,
+          int64_t OneLoopCopyInBitSize, int64_t InputTypeBitSize>
+__aicore__ inline void
+CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCopyInStep, RegCopyOutStep,
+          OneLoopCopyInBitSize, InputTypeBitSize>::ComputeCastCast(const int64_t& len, uint16_t regLoop)
 {
     auto xLocal = inQueueX_.template DeQue<ST>();
     auto yLocal = outQueue_.template AllocTensor<DT>();
     __ubuf__ MST* srcAddr = (__ubuf__ MST*)xLocal.GetPhyAddr();
     __ubuf__ MDT* dstAddr = (__ubuf__ MDT*)yLocal.GetPhyAddr();
-    int32_t regCopyInStep = static_cast<int32_t>(tilingData_->regCopyInStep);
-    int32_t regCopyOutStep = static_cast<int32_t>(tilingData_->regCopyOutStep);
+    int32_t regCopyInStep = RegCopyInStep;
+    int32_t regCopyOutStep = RegCopyOutStep;
     uint32_t count = static_cast<uint32_t>(len);
 
     if constexpr (std::is_same<MST, uint16_t>::value && std::is_same<MDT, bfloat16_t>::value) {
@@ -1157,16 +1337,18 @@ __aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, cast
 }
 
 template <int id, typename ST, typename DT, typename MST, typename MMT, typename MDT, LoadDist ldDist, StoreDist stDist,
-          RoundMode castMode1, RoundMode castMode2>
-__aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::ComputeCastInterCast(
-    const int64_t& len, uint16_t regLoop)
+          RoundMode castMode1, RoundMode castMode2, int32_t RegCopyInStep, int32_t RegCopyOutStep,
+          int64_t OneLoopCopyInBitSize, int64_t InputTypeBitSize>
+__aicore__ inline void
+CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCopyInStep, RegCopyOutStep,
+          OneLoopCopyInBitSize, InputTypeBitSize>::ComputeCastInterCast(const int64_t& len, uint16_t regLoop)
 {
     auto xLocal = inQueueX_.template DeQue<ST>();
     auto yLocal = outQueue_.template AllocTensor<DT>();
     __ubuf__ MST* srcAddr = (__ubuf__ MST*)xLocal.GetPhyAddr();
     __ubuf__ MDT* dstAddr = (__ubuf__ MDT*)yLocal.GetPhyAddr();
-    int32_t regCopyInStep = static_cast<int32_t>(tilingData_->regCopyInStep);
-    int32_t regCopyOutStep = static_cast<int32_t>(tilingData_->regCopyOutStep);
+    int32_t regCopyInStep = RegCopyInStep;
+    int32_t regCopyOutStep = RegCopyOutStep;
     uint32_t count = static_cast<uint32_t>(len);
     MMT zeroValue = 0;
 
@@ -1221,17 +1403,18 @@ __aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, cast
 }
 
 template <int id, typename ST, typename DT, typename MST, typename MMT, typename MDT, LoadDist ldDist, StoreDist stDist,
-          RoundMode castMode1, RoundMode castMode2>
+          RoundMode castMode1, RoundMode castMode2, int32_t RegCopyInStep, int32_t RegCopyOutStep,
+          int64_t OneLoopCopyInBitSize, int64_t InputTypeBitSize>
 __aicore__ inline void
-CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::ComputeCastDeinterCast(const int64_t& len,
-                                                                                                   uint16_t regLoop)
+CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCopyInStep, RegCopyOutStep,
+          OneLoopCopyInBitSize, InputTypeBitSize>::ComputeCastDeinterCast(const int64_t& len, uint16_t regLoop)
 {
     auto xLocal = inQueueX_.template DeQue<ST>();
     auto yLocal = outQueue_.template AllocTensor<DT>();
     __ubuf__ MST* srcAddr = (__ubuf__ MST*)xLocal.GetPhyAddr();
     __ubuf__ MDT* dstAddr = (__ubuf__ MDT*)yLocal.GetPhyAddr();
-    int32_t regCopyInStep = static_cast<int32_t>(tilingData_->regCopyInStep);
-    int32_t regCopyOutStep = static_cast<int32_t>(tilingData_->regCopyOutStep);
+    int32_t regCopyInStep = RegCopyInStep;
+    int32_t regCopyOutStep = RegCopyOutStep;
     uint32_t count = static_cast<uint32_t>(len);
 
     if constexpr ((std::is_same<MST, uint32_t>::value && std::is_same<MDT, half>::value) ||
@@ -1300,16 +1483,18 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::Comp
 }
 
 template <int id, typename ST, typename DT, typename MST, typename MMT, typename MDT, LoadDist ldDist, StoreDist stDist,
-          RoundMode castMode1, RoundMode castMode2>
-__aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1,
-                                 castMode2>::ComputeCastCastDeinterCast(const int64_t& len, uint16_t regLoop)
+          RoundMode castMode1, RoundMode castMode2, int32_t RegCopyInStep, int32_t RegCopyOutStep,
+          int64_t OneLoopCopyInBitSize, int64_t InputTypeBitSize>
+__aicore__ inline void
+CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCopyInStep, RegCopyOutStep,
+          OneLoopCopyInBitSize, InputTypeBitSize>::ComputeCastCastDeinterCast(const int64_t& len, uint16_t regLoop)
 {
     auto xLocal = inQueueX_.template DeQue<ST>();
     auto yLocal = outQueue_.template AllocTensor<DT>();
     __ubuf__ MST* srcAddr = (__ubuf__ MST*)xLocal.GetPhyAddr();
     __ubuf__ MDT* dstAddr = (__ubuf__ MDT*)yLocal.GetPhyAddr();
-    int32_t regCopyInStep = static_cast<int32_t>(tilingData_->regCopyInStep);
-    int32_t regCopyOutStep = static_cast<int32_t>(tilingData_->regCopyOutStep);
+    int32_t regCopyInStep = RegCopyInStep;
+    int32_t regCopyOutStep = RegCopyOutStep;
     uint32_t count = static_cast<uint32_t>(len);
 
     // fp8 to fp32
@@ -1361,17 +1546,18 @@ __aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, cast
 }
 
 template <int id, typename ST, typename DT, typename MST, typename MMT, typename MDT, LoadDist ldDist, StoreDist stDist,
-          RoundMode castMode1, RoundMode castMode2>
+          RoundMode castMode1, RoundMode castMode2, int32_t RegCopyInStep, int32_t RegCopyOutStep,
+          int64_t OneLoopCopyInBitSize, int64_t InputTypeBitSize>
 __aicore__ inline void
-CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::ComputeCastInterCastCast(const int64_t& len,
-                                                                                                     uint16_t regLoop)
+CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCopyInStep, RegCopyOutStep,
+          OneLoopCopyInBitSize, InputTypeBitSize>::ComputeCastInterCastCast(const int64_t& len, uint16_t regLoop)
 {
     auto xLocal = inQueueX_.template DeQue<ST>();
     auto yLocal = outQueue_.template AllocTensor<DT>();
     __ubuf__ MST* srcAddr = (__ubuf__ MST*)xLocal.GetPhyAddr();
     __ubuf__ MDT* dstAddr = (__ubuf__ MDT*)yLocal.GetPhyAddr();
-    int32_t regCopyInStep = static_cast<int32_t>(tilingData_->regCopyInStep);
-    int32_t regCopyOutStep = static_cast<int32_t>(tilingData_->regCopyOutStep);
+    int32_t regCopyInStep = RegCopyInStep;
+    int32_t regCopyOutStep = RegCopyOutStep;
     uint32_t count = static_cast<uint32_t>(len);
     bfloat16_t zeroValue = 0;
 
@@ -1438,16 +1624,18 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::Comp
 }
 
 template <int id, typename ST, typename DT, typename MST, typename MMT, typename MDT, LoadDist ldDist, StoreDist stDist,
-          RoundMode castMode1, RoundMode castMode2>
-__aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::ComputeDeinterShift(
-    const int64_t& len, uint16_t regLoop)
+          RoundMode castMode1, RoundMode castMode2, int32_t RegCopyInStep, int32_t RegCopyOutStep,
+          int64_t OneLoopCopyInBitSize, int64_t InputTypeBitSize>
+__aicore__ inline void
+CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCopyInStep, RegCopyOutStep,
+          OneLoopCopyInBitSize, InputTypeBitSize>::ComputeDeinterShift(const int64_t& len, uint16_t regLoop)
 {
     auto xLocal = inQueueX_.template DeQue<ST>();
     auto yLocal = outQueue_.template AllocTensor<DT>();
     __ubuf__ MST* srcAddr = (__ubuf__ MST*)xLocal.GetPhyAddr();
     __ubuf__ MDT* dstAddr = (__ubuf__ MDT*)yLocal.GetPhyAddr();
-    int32_t regCopyInStep = static_cast<int32_t>(tilingData_->regCopyInStep);
-    int32_t regCopyOutStep = static_cast<int32_t>(tilingData_->regCopyOutStep);
+    int32_t regCopyInStep = RegCopyInStep;
+    int32_t regCopyOutStep = RegCopyOutStep;
     uint32_t count = static_cast<uint32_t>(len);
 
     __VEC_SCOPE__
@@ -1483,9 +1671,11 @@ __aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, cast
 }
 
 template <int id, typename ST, typename DT, typename MST, typename MMT, typename MDT, LoadDist ldDist, StoreDist stDist,
-          RoundMode castMode1, RoundMode castMode2>
-__aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::CopyOut(
-    const int64_t& gmOffset)
+          RoundMode castMode1, RoundMode castMode2, int32_t RegCopyInStep, int32_t RegCopyOutStep,
+          int64_t OneLoopCopyInBitSize, int64_t InputTypeBitSize>
+__aicore__ inline void
+CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCopyInStep, RegCopyOutStep,
+          OneLoopCopyInBitSize, InputTypeBitSize>::CopyOut(const int64_t& gmOffset)
 {
     auto yLocalOut = outQueue_.template DeQue<DT>();
     DataCopyPad(yGm_[gmOffset], yLocalOut, dataCopyOutParams_);
@@ -1493,13 +1683,15 @@ __aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, cast
 }
 
 template <int id, typename ST, typename DT, typename MST, typename MMT, typename MDT, LoadDist ldDist, StoreDist stDist,
-          RoundMode castMode1, RoundMode castMode2>
-__aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2>::Process()
+          RoundMode castMode1, RoundMode castMode2, int32_t RegCopyInStep, int32_t RegCopyOutStep,
+          int64_t OneLoopCopyInBitSize, int64_t InputTypeBitSize>
+__aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCopyInStep,
+                                 RegCopyOutStep, OneLoopCopyInBitSize, InputTypeBitSize>::Process()
 {
-    bool isLastBlockFlag = (blockIdx_ == tilingData_->blockNum - 1);
-    int64_t loopNum = isLastBlockFlag ? tilingData_->ubLoopOfTailBlock : tilingData_->ubLoopOfFormerBlock;
-    int64_t tailNum = isLastBlockFlag ? tilingData_->ubTailOfTailBlock : tilingData_->ubTailOfFormerBlock;
-    int64_t tailRegLoop = isLastBlockFlag ? tilingData_->ubTailOfTailRegLoop : tilingData_->ubTailOfFormerRegLoop;
+    bool isLastBlockFlag = (blockIdx_ == derived_.blockNum - 1);
+    int64_t loopNum = isLastBlockFlag ? derived_.ubLoopOfTailBlock : derived_.ubLoopOfFormerBlock;
+    int64_t tailNum = isLastBlockFlag ? derived_.ubTailOfTailBlock : derived_.ubTailOfFormerBlock;
+    int64_t tailRegLoop = isLastBlockFlag ? ubTailOfTailRegLoop_ : ubTailOfFormerRegLoop_;
 
 #if ORIG_DTYPE_X == DT_FLOAT4_E2M1 || ORIG_DTYPE_X == DT_FLOAT4_E1M2
     int64_t xRealFormer = tilingData_->ubFormer / B2_BITS;
@@ -1519,7 +1711,7 @@ __aicore__ inline void CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, cast
     int64_t yGmOffset = 0;
     for (int64_t i = 0; i < loopNum - 1; ++i) {
         CopyIn(xGmOffset);
-        Compute(tilingData_->ubFormer, static_cast<uint16_t>(tilingData_->ubFormerRegLoop));
+        Compute(tilingData_->ubFormer, static_cast<uint16_t>(ubFormerRegLoop_));
         CopyOut(yGmOffset);
         xGmOffset += xRealFormer;
         yGmOffset += yRealFormer;

@@ -14,6 +14,7 @@
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
 #include "arch35/cast_struct.h"
+#include "arch35/cast_tiling_data.h"
 #include "arch35/cast_impl.h"
 
 namespace AscendcCast {
@@ -85,7 +86,8 @@ __aicore__ constexpr inline AscendC::RoundMode ToRoundMode()
 template <int id>
 __global__ __aicore__ void cast(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
-    GET_TILING_DATA(tilingData, tiling);
+    REGISTER_TILING_DEFAULT(CastTilingData);
+    GET_TILING_DATA_PTR_WITH_STRUCT(CastTilingData, tilingData, tiling);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     AscendC::TPipe pipe;
     if constexpr (!(GetCastPolicy<ORIG_DTYPE_X, ORIG_DTYPE_Y>::isValid_)) {
@@ -108,27 +110,27 @@ __global__ __aicore__ void cast(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR
     if constexpr (templateId == CAST_TEMPLATE_DIRECT_CAST) {
         AscendcCast::CastDirect<mapInType, mapOutType> op;
         constexpr AscendC::RoundMode rMode1 = AscendcCast::ToRoundMode<castMode1>();
-        op.Init(x, y, rMode1, &tilingData, &pipe);
+        op.Init(x, y, rMode1, tilingData, &pipe);
         op.Process();
     } else if constexpr (templateId == CAST_TEMPLATE_DST_BOOL) {
 #if ORIG_DTYPE_Y == DT_BOOL
         AscendcCast::CastDstBool<dTypeX> op;
-        op.Init(x, y, &tilingData, &pipe);
+        op.Init(x, y, tilingData, &pipe);
         op.Process();
 #endif
     } else if constexpr (templateId == CAST_TEMPLATE_THROUGH) {
         AscendcCast::CastThrough<dTypeY> op;
-        op.Init(x, y, &tilingData, &pipe);
+        op.Init(x, y, tilingData, &pipe);
         op.Process();
     } else if constexpr (templateId == CAST_TEMPLATE_SRC_UINT1) {
         AscendcCast::CastUint1<dTypeY> op;
-        op.Init(x, y, &tilingData, &pipe);
+        op.Init(x, y, tilingData, &pipe);
         op.Process();
     } else if constexpr (templateId == CAST_TEMPLATE_TWO_CAST) {
         AscendcCast::CastTwo<mapInType, mapMidType, mapOutType> op;
         constexpr AscendC::RoundMode rMode1 = AscendcCast::ToRoundMode<castMode1>();
         constexpr AscendC::RoundMode rMode2 = AscendcCast::ToRoundMode<castMode2>();
-        op.Init(x, y, rMode1, rMode2, &tilingData, &pipe);
+        op.Init(x, y, rMode1, rMode2, tilingData, &pipe);
         op.Process();
     } else if constexpr (templateId == CAST_TEMPLATE_MIRCRO_INOUT || templateId == CAST_TEMPLATE_MIRCRO_CAST ||
                          templateId == CAST_TEMPLATE_MIRCRO_CAST_INTER ||
@@ -144,10 +146,16 @@ __global__ __aicore__ void cast(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR
         constexpr AscendC::Reg::StoreDist stDist = AscendcCast::ToStoreDist<regCopyOutMode>();
         constexpr AscendC::RoundMode rMode1 = AscendcCast::ToRoundMode<castMode1>();
         constexpr AscendC::RoundMode rMode2 = AscendcCast::ToRoundMode<castMode2>();
+        constexpr auto copyInResult = AscendcCast::GetUbCopyInStep(regCopyInMode, mapDtypeX);
+        constexpr int32_t regCopyInStep = static_cast<int32_t>(copyInResult.step);
+        constexpr int64_t oneLoopCopyInBitSize = copyInResult.oneLoopCopyInBitSize;
+        constexpr int32_t regCopyOutStep = static_cast<int32_t>(
+            AscendcCast::GetUbCopyOutStep(regCopyOutMode, mapDtypeY));
+        constexpr int64_t inputTypeBitSize = AscendcCast::GetGeBitSize(ORIG_DTYPE_X);
         AscendcCast::CastMicro<templateId, dTypeX, dTypeY, mapInType, mapMidType, mapOutType, ldDist, stDist, rMode1,
-                               rMode2>
+                               rMode2, regCopyInStep, regCopyOutStep, oneLoopCopyInBitSize, inputTypeBitSize>
             op;
-        op.Init(x, y, &tilingData, &pipe);
+        op.Init(x, y, tilingData, &pipe);
         op.Process();
     }
     return;
