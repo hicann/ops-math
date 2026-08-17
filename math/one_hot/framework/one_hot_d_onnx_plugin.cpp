@@ -84,10 +84,12 @@ static Status ParseOpToGraphOneHot(const ge::Operator& op, ge::Graph& graph)
     auto const_on_value = ge::op::Const((ori_name + "data_on_value").c_str()).set_attr_value(on_value);
     auto const_off_value = ge::op::Const((ori_name + "data_off_value").c_str()).set_attr_value(off_value);
 
-    auto cast_data0 =
-        ge::op::Cast((ori_name + "_Cast_data0").c_str()).set_input_x(data0).set_attr_dst_type(ge::DT_INT32);
-    auto cast_on_value =
-        ge::op::Cast((ori_name + "_Cast_on_value").c_str()).set_input_x(const_on_value).set_attr_dst_type(ge::DT_FLOAT);
+    auto cast_data0 = ge::op::Cast((ori_name + "_Cast_data0").c_str())
+                          .set_input_x(data0)
+                          .set_attr_dst_type(ge::DT_INT32);
+    auto cast_on_value = ge::op::Cast((ori_name + "_Cast_on_value").c_str())
+                             .set_input_x(const_on_value)
+                             .set_attr_dst_type(ge::DT_FLOAT);
     auto cast_off_value = ge::op::Cast((ori_name + "_Cast_off_value").c_str())
                               .set_input_x(const_off_value)
                               .set_attr_dst_type(ge::DT_FLOAT);
@@ -107,12 +109,11 @@ static Status ParseOpToGraphOneHot(const ge::Operator& op, ge::Graph& graph)
 
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType(
-        {ge::AscendString("ai.onnx::11::NPUOneHot"), ge::AscendString("ai.onnx::12::NPUOneHot"),
-         ge::AscendString("ai.onnx::13::NPUOneHot"), ge::AscendString("ai.onnx::14::NPUOneHot"),
-         ge::AscendString("ai.onnx::15::NPUOneHot"), ge::AscendString("ai.onnx::16::NPUOneHot"),
-         ge::AscendString("ai.onnx::17::NPUOneHot"), ge::AscendString("ai.onnx::18::NPUOneHot"),
-         ge::AscendString("npu::1::NPUOneHot")})
+    .OriginOpType({ge::AscendString("ai.onnx::11::NPUOneHot"), ge::AscendString("ai.onnx::12::NPUOneHot"),
+                   ge::AscendString("ai.onnx::13::NPUOneHot"), ge::AscendString("ai.onnx::14::NPUOneHot"),
+                   ge::AscendString("ai.onnx::15::NPUOneHot"), ge::AscendString("ai.onnx::16::NPUOneHot"),
+                   ge::AscendString("ai.onnx::17::NPUOneHot"), ge::AscendString("ai.onnx::18::NPUOneHot"),
+                   ge::AscendString("npu::1::NPUOneHot")})
     .ParseParamsFn(ParseParamsNpuOneHot)
     .ParseOpToGraphFn(ParseOpToGraphOneHot)
     .ImplyType(ImplyType::TVM);

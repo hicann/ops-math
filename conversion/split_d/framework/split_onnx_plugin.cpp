@@ -137,9 +137,8 @@ Status SingleSizeParse(const ge::Operator& op, const SplitNewProp& prop, ge::Ope
             int64_t split_size = dim_size / prop.num_split;
             std::vector<int64_t> size_splits_num(prop.num_split, split_size);
             if (dim_size % prop.num_split != 0) {
-                OP_LOGE(
-                    GetOpName(op).c_str(), "dim_size[%ld] can not be evenly divided by split_size[%ld].", dim_size,
-                    split_size);
+                OP_LOGE(GetOpName(op).c_str(), "dim_size[%ld] can not be evenly divided by split_size[%ld].", dim_size,
+                        split_size);
                 return FAILED;
             }
             std::vector<int64_t> dims = {(int64_t)size_splits_num.size()};
@@ -207,13 +206,12 @@ static Status ParseOpToGraphSplitNew(const ge::Operator& op, Graph& graph)
 
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType(
-        {ge::AscendString("ai.onnx::8::Split"), ge::AscendString("ai.onnx::9::Split"),
-         ge::AscendString("ai.onnx::10::Split"), ge::AscendString("ai.onnx::11::Split"),
-         ge::AscendString("ai.onnx::12::Split"), ge::AscendString("ai.onnx::13::Split"),
-         ge::AscendString("ai.onnx::14::Split"), ge::AscendString("ai.onnx::15::Split"),
-         ge::AscendString("ai.onnx::16::Split"), ge::AscendString("ai.onnx::17::Split"),
-         ge::AscendString("ai.onnx::18::Split")})
+    .OriginOpType({ge::AscendString("ai.onnx::8::Split"), ge::AscendString("ai.onnx::9::Split"),
+                   ge::AscendString("ai.onnx::10::Split"), ge::AscendString("ai.onnx::11::Split"),
+                   ge::AscendString("ai.onnx::12::Split"), ge::AscendString("ai.onnx::13::Split"),
+                   ge::AscendString("ai.onnx::14::Split"), ge::AscendString("ai.onnx::15::Split"),
+                   ge::AscendString("ai.onnx::16::Split"), ge::AscendString("ai.onnx::17::Split"),
+                   ge::AscendString("ai.onnx::18::Split")})
     .ParseParamsFn(ParseParamsSplitNew)
     .ParseOpToGraphFn(ParseOpToGraphSplitNew)
     .ImplyType(ImplyType::TVM);
