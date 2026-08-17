@@ -32,19 +32,13 @@ using namespace std;
 
 namespace {
 struct InvCompileInfoStub {};
-}  // namespace
+} // namespace
 
 class InvTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "InvTilingTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "InvTilingTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "InvTilingTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "InvTilingTest TearDown" << std::endl; }
 };
 
 // Tiling_001: FP32 基础 shape，单核刚好对齐
@@ -52,15 +46,14 @@ protected:
 TEST_F(InvTilingTest, test_tiling_fp32_basic_001)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{32}, {32}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{32}, {32}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{32}, {32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{32}, {32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "32 8 13104 ";
     std::vector<size_t> expectWorkspaces = {0};
@@ -72,15 +65,14 @@ TEST_F(InvTilingTest, test_tiling_fp32_basic_001)
 TEST_F(InvTilingTest, test_tiling_fp32_multi_core_002)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{8192}, {8192}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{8192}, {8192}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{8192}, {8192}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8192}, {8192}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "8192 128 13104 ";
     std::vector<size_t> expectWorkspaces = {0};
@@ -93,16 +85,15 @@ TEST_F(InvTilingTest, test_tiling_fp32_multi_core_002)
 TEST_F(InvTilingTest, test_tiling_fp16_003)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{64}, {64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{64}, {64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 1;
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{64}, {64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{64}, {64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "64 16 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -114,16 +105,15 @@ TEST_F(InvTilingTest, test_tiling_fp16_003)
 TEST_F(InvTilingTest, test_tiling_bf16_004)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{128}, {128}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{128}, {128}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 27;  // C_DT_BF16 enum-encoded key, 与 approximate_equal 同模式
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{128}, {128}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{128}, {128}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "128 16 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -134,15 +124,14 @@ TEST_F(InvTilingTest, test_tiling_bf16_004)
 TEST_F(InvTilingTest, test_tiling_empty_tensor_005)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
@@ -154,15 +143,14 @@ TEST_F(InvTilingTest, test_tiling_empty_tensor_005)
 TEST_F(InvTilingTest, test_tiling_scalar_006)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "1 8 13104 ";
     std::vector<size_t> expectWorkspaces = {0};
@@ -175,15 +163,14 @@ TEST_F(InvTilingTest, test_tiling_scalar_006)
 TEST_F(InvTilingTest, test_tiling_failed_unsupported_dtype_007)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT8, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT8, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT8, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT8, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, 0, "", {0});
 }
 
@@ -191,17 +178,16 @@ TEST_F(InvTilingTest, test_tiling_failed_unsupported_dtype_007)
 TEST_F(InvTilingTest, test_tiling_failed_zero_core_num_008)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{32}, {32}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{32}, {32}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo,
-        /* coreNum = */ 0,
-        /* ubSize  = */ 262144);
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{32}, {32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{32}, {32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo,
+                                              /* coreNum = */ 0,
+                                              /* ubSize  = */ 262144);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, 0, "", {0});
 }
 
@@ -209,17 +195,16 @@ TEST_F(InvTilingTest, test_tiling_failed_zero_core_num_008)
 TEST_F(InvTilingTest, test_tiling_failed_zero_ub_size_009)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{32}, {32}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{32}, {32}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo,
-        /* coreNum = */ 64,
-        /* ubSize  = */ 0);
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{32}, {32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{32}, {32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo,
+                                              /* coreNum = */ 64,
+                                              /* ubSize  = */ 0);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, 0, "", {0});
 }
 
@@ -228,15 +213,14 @@ TEST_F(InvTilingTest, test_tiling_failed_zero_ub_size_009)
 TEST_F(InvTilingTest, test_tiling_fp32_multi_dim_010)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{2, 4, 8}, {2, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{2, 4, 8}, {2, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{2, 4, 8}, {2, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{2, 4, 8}, {2, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "64 8 13104 ";
     std::vector<size_t> expectWorkspaces = {0};
@@ -256,16 +240,15 @@ TEST_F(InvTilingTest, test_tiling_fp32_multi_dim_010)
 TEST_F(InvTilingTest, test_tiling_int32_basic_011)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{32}, {32}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{32}, {32}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 3;  // C_DT_INT32 -> key3（与 FP32=0/FP16=1/BF16=27 同由 ASCENDC_TPL_SEL 生成，实测=3）
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{32}, {32}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{32}, {32}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "32 8 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -277,16 +260,15 @@ TEST_F(InvTilingTest, test_tiling_int32_basic_011)
 TEST_F(InvTilingTest, test_tiling_int32_multi_core_012)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{8192}, {8192}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{8192}, {8192}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 3;
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{8192}, {8192}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8192}, {8192}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "8192 128 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -297,16 +279,15 @@ TEST_F(InvTilingTest, test_tiling_int32_multi_core_012)
 TEST_F(InvTilingTest, test_tiling_int32_multi_dim_013)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{2, 4, 8}, {2, 4, 8}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{2, 4, 8}, {2, 4, 8}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 3;
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{2, 4, 8}, {2, 4, 8}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{2, 4, 8}, {2, 4, 8}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "64 8 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -317,16 +298,15 @@ TEST_F(InvTilingTest, test_tiling_int32_multi_dim_013)
 TEST_F(InvTilingTest, test_tiling_int32_empty_014)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{0}, {0}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{0}, {0}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 3;
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{0}, {0}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0}, {0}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -350,16 +330,15 @@ TEST_F(InvTilingTest, test_tiling_int32_empty_014)
 TEST_F(InvTilingTest, test_tiling_int32_2d_015)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{3, 5}, {3, 5}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{3, 5}, {3, 5}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 3;
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{3, 5}, {3, 5}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{3, 5}, {3, 5}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "15 8 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -370,16 +349,15 @@ TEST_F(InvTilingTest, test_tiling_int32_2d_015)
 TEST_F(InvTilingTest, test_tiling_int32_4d_016)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 3;
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "8192 128 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -390,16 +368,15 @@ TEST_F(InvTilingTest, test_tiling_int32_4d_016)
 TEST_F(InvTilingTest, test_tiling_int32_5d_017)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{2, 2, 2, 2, 2}, {2, 2, 2, 2, 2}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{2, 2, 2, 2, 2}, {2, 2, 2, 2, 2}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 3;
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{2, 2, 2, 2, 2}, {2, 2, 2, 2, 2}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{2, 2, 2, 2, 2}, {2, 2, 2, 2, 2}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "32 8 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -419,7 +396,7 @@ TEST_F(InvTilingTest, test_tiling_int32_6d_018)
             {{{2, 2, 2, 2, 2, 2}, {2, 2, 2, 2, 2, 2}}, ge::DT_INT32, ge::FORMAT_ND},
         },
         &compileInfo);
-    uint64_t expectTilingKey = 3;
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "64 8 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -439,7 +416,7 @@ TEST_F(InvTilingTest, test_tiling_int32_7d_019)
             {{{2, 2, 2, 2, 2, 2, 2}, {2, 2, 2, 2, 2, 2, 2}}, ge::DT_INT32, ge::FORMAT_ND},
         },
         &compileInfo);
-    uint64_t expectTilingKey = 3;
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "128 8 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -459,7 +436,7 @@ TEST_F(InvTilingTest, test_tiling_int32_8d_020)
             {{{2, 2, 2, 2, 2, 2, 2, 2}, {2, 2, 2, 2, 2, 2, 2, 2}}, ge::DT_INT32, ge::FORMAT_ND},
         },
         &compileInfo);
-    uint64_t expectTilingKey = 3;
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "256 8 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -479,7 +456,7 @@ TEST_F(InvTilingTest, test_tiling_int32_8d_large_021)
             {{{4, 4, 4, 4, 4, 4, 4, 4}, {4, 4, 4, 4, 4, 4, 4, 4}}, ge::DT_INT32, ge::FORMAT_ND},
         },
         &compileInfo);
-    uint64_t expectTilingKey = 3;
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "65536 1024 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -495,16 +472,15 @@ TEST_F(InvTilingTest, test_tiling_int32_8d_large_021)
 TEST_F(InvTilingTest, test_tiling_int32_nonalign_7_022)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{7}, {7}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{7}, {7}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 3;
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{7}, {7}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{7}, {7}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "7 8 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -516,16 +492,15 @@ TEST_F(InvTilingTest, test_tiling_int32_nonalign_7_022)
 TEST_F(InvTilingTest, test_tiling_int32_nonalign_65_023)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{65}, {65}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{65}, {65}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 3;
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{65}, {65}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{65}, {65}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "65 8 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -538,16 +513,15 @@ TEST_F(InvTilingTest, test_tiling_int32_nonalign_65_023)
 TEST_F(InvTilingTest, test_tiling_int32_value_irrelevant_024)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{16}, {16}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{16}, {16}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 3;  // 值无关：INT_MIN/INT_MAX/0 等均走同一 key3 分支
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{16}, {16}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16}, {16}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "16 8 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -575,16 +549,15 @@ TEST_F(InvTilingTest, test_tiling_int32_value_irrelevant_024)
 TEST_F(InvTilingTest, test_tiling_int32_scalar_025)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 3;
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "1 8 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -595,16 +568,15 @@ TEST_F(InvTilingTest, test_tiling_int32_scalar_025)
 TEST_F(InvTilingTest, test_tiling_fp16_scalar_026)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 1;
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "1 16 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -615,16 +587,15 @@ TEST_F(InvTilingTest, test_tiling_fp16_scalar_026)
 TEST_F(InvTilingTest, test_tiling_bf16_scalar_027)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{}, {}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 27;  // 与 test_tiling_bf16_004 同（C_DT_BF16 枚举编码，实测=27）
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{}, {}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{}, {}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "1 16 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -684,7 +655,7 @@ TEST_F(InvTilingTest, test_tiling_fp16_8d_030)
             {{{2, 2, 2, 2, 2, 2, 2, 2}, {2, 2, 2, 2, 2, 2, 2, 2}}, ge::DT_FLOAT16, ge::FORMAT_ND},
         },
         &compileInfo);
-    uint64_t expectTilingKey = 1;
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "256 16 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -704,7 +675,7 @@ TEST_F(InvTilingTest, test_tiling_bf16_6d_031)
             {{{2, 2, 2, 2, 2, 2}, {2, 2, 2, 2, 2, 2}}, ge::DT_BF16, ge::FORMAT_ND},
         },
         &compileInfo);
-    uint64_t expectTilingKey = 27;
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "64 16 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -716,15 +687,14 @@ TEST_F(InvTilingTest, test_tiling_bf16_6d_031)
 TEST_F(InvTilingTest, test_tiling_fp32_nonalign_7_032)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{7}, {7}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{7}, {7}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{7}, {7}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{7}, {7}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "7 8 13104 ";
     std::vector<size_t> expectWorkspaces = {0};
@@ -737,16 +707,15 @@ TEST_F(InvTilingTest, test_tiling_fp32_nonalign_7_032)
 TEST_F(InvTilingTest, test_tiling_fp16_nonalign_17_033)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{17}, {17}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{17}, {17}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 1;
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{17}, {17}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{17}, {17}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "17 16 16384 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -757,16 +726,15 @@ TEST_F(InvTilingTest, test_tiling_fp16_nonalign_17_033)
 TEST_F(InvTilingTest, test_tiling_bf16_empty_034)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{0}, {0}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{0}, {0}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 27;
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{0}, {0}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0}, {0}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -776,16 +744,15 @@ TEST_F(InvTilingTest, test_tiling_bf16_empty_034)
 TEST_F(InvTilingTest, test_tiling_fp16_empty_035)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{0}, {0}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{0}, {0}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 1;
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -796,14 +763,13 @@ TEST_F(InvTilingTest, test_tiling_fp16_empty_035)
 TEST_F(InvTilingTest, test_tiling_failed_unsupported_int64_036)
 {
     InvCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Inv",
-        {
-            {{{32}, {32}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {{{32}, {32}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Inv",
+                                              {
+                                                  {{{32}, {32}}, ge::DT_INT64, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{32}, {32}}, ge::DT_INT64, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, 0, "", {0});
 }

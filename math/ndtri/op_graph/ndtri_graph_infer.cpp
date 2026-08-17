@@ -8,21 +8,29 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-/**
- * \file inv.cpp
- * \brief Inv kernel entry point (arch35 / Ascend950)
- *
- * dtype 由 def 驱动：DTYPE_SELF=self dtype（T），在入口处实例化 op 类的 T 模板实参。
+/*!
+ * \file ndtri_graph_infer.cpp
+ * \brief Ndtri operator graph infer resource
  */
+#include "register/op_impl_registry.h"
+#include "log/log.h"
 
-#include "inv.h"
+namespace ops {
+using namespace ge;
 
-template <int MODE>
-__global__ __aicore__ void inv(GM_ADDR self, GM_ADDR out, GM_ADDR workspace, GM_ADDR tiling)
+static constexpr int64_t IDX_0 = 0;
+
+static ge::graphStatus InferDataTypeNdtri(gert::InferDataTypeContext* context)
 {
-    REGISTER_TILING_DEFAULT(InvTilingData);
-    GET_TILING_DATA_WITH_STRUCT(InvTilingData, tilingData, tiling);
-    NsInv::Inv<DTYPE_SELF> op;
-    op.Init(self, out, &tilingData);
-    op.Process();
+    OP_LOGD(context->GetNodeName(), "Begin to do InferDataTypeNdtri");
+
+    ge::DataType inputDtype = context->GetInputDataType(IDX_0);
+    context->SetOutputDataType(IDX_0, inputDtype);
+
+    OP_LOGD(context->GetNodeName(), "End to do InferDataTypeNdtri");
+    return GRAPH_SUCCESS;
 }
+
+IMPL_OP(Ndtri).InferDataType(InferDataTypeNdtri);
+
+}; // namespace ops

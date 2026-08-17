@@ -96,28 +96,24 @@ static ge::graphStatus InvTilingFunc(gert::TilingContext* context)
     // 1. Get platform info
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     // 2. Get shape info
     int64_t totalElements = 0;
     ge::DataType dataType = ge::DT_FLOAT;
-    OP_CHECK_IF(
-        GetShapeInfo(context, totalElements, dataType) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetShapeInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetShapeInfo(context, totalElements, dataType) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetShapeInfo error"), return ge::GRAPH_FAILED);
 
     // 3. Get workspace size
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     // 4. Compute tiling parameters
     InvTilingData* tiling = context->GetTilingData<InvTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(InvTilingData), 0, sizeof(InvTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(InvTilingData), 0, sizeof(InvTilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     // Determine typeSize based on dtype
     int64_t typeSize = 4; // default: sizeof(float)
@@ -144,8 +140,8 @@ static ge::graphStatus InvTilingFunc(gert::TilingContext* context)
         tiling->blockFactor = 0;
         tiling->ubFactor = 0;
         context->SetBlockDim(1);
-        uint32_t dTypeSelf = static_cast<uint32_t>(dataType);
-        ASCENDC_TPL_SEL_PARAM(context, dTypeSelf);
+        uint32_t mode = 0;
+        ASCENDC_TPL_SEL_PARAM(context, mode);
         return ge::GRAPH_SUCCESS;
     }
 
@@ -159,8 +155,8 @@ static ge::graphStatus InvTilingFunc(gert::TilingContext* context)
     // ubDivisor = bytesPerElem / typeSize = (2*typeSize + 2*4) / typeSize
     int64_t bytesPerElem = 2 * typeSize + 2 * static_cast<int64_t>(sizeof(float));
     int64_t ubFactor = FloorAlign(static_cast<int64_t>(ubSize) / bytesPerElem, ubBlockSize);
-    OP_CHECK_IF(
-        ubFactor <= 0, OP_LOGE(context, "Inv: ubFactor is %ld, UB too small", ubFactor), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ubFactor <= 0, OP_LOGE(context, "Inv: ubFactor is %ld, UB too small", ubFactor),
+                return ge::GRAPH_FAILED);
 
     tiling->totalElements = totalElements;
     tiling->blockFactor = blockFactor;
@@ -168,9 +164,8 @@ static ge::graphStatus InvTilingFunc(gert::TilingContext* context)
 
     context->SetBlockDim(usedCoreNum);
 
-    // 5. Set TilingKey using ASCENDC_TPL_SEL_PARAM
-    uint32_t dTypeSelf = static_cast<uint32_t>(dataType);
-    ASCENDC_TPL_SEL_PARAM(context, dTypeSelf);
+    uint32_t mode = 0;
+    ASCENDC_TPL_SEL_PARAM(context, mode);
 
     return ge::GRAPH_SUCCESS;
 }

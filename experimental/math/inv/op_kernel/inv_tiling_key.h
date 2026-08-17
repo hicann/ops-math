@@ -9,18 +9,11 @@
  */
 
 /**
- * NOTE: Portions of this code were AI-generated and have been
- * technically reviewed for functional accuracy and security
- */
-
-/**
  * \file inv_tiling_key.h
  * \brief Inv TilingKey definition (arch35)
  *
- * TilingKey mapping (based on input dtype):
- *   TilingKey 0: D_T_SELF = C_DT_FLOAT   (float32 direct: Div(1,x))
- *   TilingKey 1: D_T_SELF = C_DT_FLOAT16  (float16: Cast->Div->Cast)
- *   TilingKey 2: D_T_SELF = C_DT_BF16     (bfloat16: Cast->Div->Cast)
+ * dtype 由 def 驱动（构建系统按 def 的 DataType profile 生成 DTYPE_SELF 宏），
+ * tiling_key 不再编码 dtype 维度。
  */
 
 #ifndef __INV_TILING_KEY_H__
@@ -28,12 +21,8 @@
 
 #include "ascendc/host_api/tiling/template_argument.h"
 
-ASCENDC_TPL_ARGS_DECL(
-    Inv, ASCENDC_TPL_DATATYPE_DECL(D_T_SELF, C_DT_FLOAT, C_DT_FLOAT16, C_DT_BF16, ASCENDC_TPL_INPUT(0)));
+ASCENDC_TPL_ARGS_DECL(Inv, ASCENDC_TPL_UINT_DECL(MODE, 8, ASCENDC_TPL_UI_LIST, 0));
 
-ASCENDC_TPL_SEL(
-    ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T_SELF, C_DT_FLOAT)),
-    ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T_SELF, C_DT_FLOAT16)),
-    ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T_SELF, C_DT_BF16)), );
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(MODE, ASCENDC_TPL_UI_LIST, 0)), );
 
 #endif // __INV_TILING_KEY_H__

@@ -24,7 +24,7 @@
  *        - totalNum >= alignElem → 多核
  *   4) 失败路径：
  *        - 不支持 dtype（INT32/DOUBLE 等）→ CheckDtype 返回 GRAPH_FAILED
- *        - totalNum=0（zero-shape）→ GetTotalNum 返回 GRAPH_FAILED
+ *        - totalNum=0（zero-shape）→ 接受空tensor并返回空tensor（GRAPH_SUCCESS）
  *
  * 期望 tilingData 字段（NdtriTilingData，定义在 op_kernel/arch35/ndtri_tiling_data.h）：
  *   "totalNum blockFactor ubFactor "
@@ -47,21 +47,15 @@ namespace optiling {
 struct NdtriCompileInfoStub {
     uint64_t reserved = 0;
 };
-}  // namespace optiling
+} // namespace optiling
 
 using namespace std;
 
 class NdtriTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "NdtriTilingTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "NdtriTilingTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "NdtriTilingTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "NdtriTilingTest TearDown" << std::endl; }
 };
 
 // ==========================================================================
@@ -77,17 +71,16 @@ protected:
 TEST_F(NdtriTilingTest, test_tiling_fp32_align_001)
 {
     optiling::NdtriCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Ndtri",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Ndtri",
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     // TilingKey = 256：fp32 + isAlign=1（由 ASCENDC_TPL_SEL_PARAM 编码）
-    uint64_t expectTilingKey = 256;
+    uint64_t expectTilingKey = 1;
     string expectTilingData = "8192 128 2560 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -103,15 +96,14 @@ TEST_F(NdtriTilingTest, test_tiling_fp32_align_001)
 TEST_F(NdtriTilingTest, test_tiling_fp32_unalign_small_single_core_002)
 {
     optiling::NdtriCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Ndtri",
-        {
-            {{{1, 7}, {1, 7}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 7}, {1, 7}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Ndtri",
+                                              {
+                                                  {{{1, 7}, {1, 7}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 7}, {1, 7}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     // TilingKey = 0：fp32 + isAlign=0
     uint64_t expectTilingKey = 0;
     string expectTilingData = "7 7 2560 ";
@@ -129,17 +121,16 @@ TEST_F(NdtriTilingTest, test_tiling_fp32_unalign_small_single_core_002)
 TEST_F(NdtriTilingTest, test_tiling_fp16_align_003)
 {
     optiling::NdtriCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Ndtri",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Ndtri",
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     // TilingKey = 257：fp16 + isAlign=1
-    uint64_t expectTilingKey = 257;
+    uint64_t expectTilingKey = 1;
     string expectTilingData = "8192 128 3328 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -154,17 +145,16 @@ TEST_F(NdtriTilingTest, test_tiling_fp16_align_003)
 TEST_F(NdtriTilingTest, test_tiling_fp16_small_single_core_004)
 {
     optiling::NdtriCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Ndtri",
-        {
-            {{{3}, {3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{3}, {3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Ndtri",
+                                              {
+                                                  {{{3}, {3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{3}, {3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     // TilingKey = 1：fp16 + isAlign=0
-    uint64_t expectTilingKey = 1;
+    uint64_t expectTilingKey = 0;
     string expectTilingData = "3 3 3328 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -176,17 +166,16 @@ TEST_F(NdtriTilingTest, test_tiling_fp16_small_single_core_004)
 TEST_F(NdtriTilingTest, test_tiling_bf16_align_005)
 {
     optiling::NdtriCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Ndtri",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Ndtri",
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     // TilingKey = 283：bf16 + isAlign=1（与 fp32/fp16 的连续编码不一致，由 ASCENDC_TPL_SEL_PARAM 内部映射决定）
-    uint64_t expectTilingKey = 283;
+    uint64_t expectTilingKey = 1;
     string expectTilingData = "8192 128 3328 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -203,15 +192,14 @@ TEST_F(NdtriTilingTest, test_tiling_bf16_align_005)
 TEST_F(NdtriTilingTest, test_tiling_fp32_unalign_multi_core_006)
 {
     optiling::NdtriCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Ndtri",
-        {
-            {{{1, 997}, {1, 997}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 997}, {1, 997}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Ndtri",
+                                              {
+                                                  {{{1, 997}, {1, 997}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 997}, {1, 997}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     // TilingKey = 0：fp32 + isAlign=0
     uint64_t expectTilingKey = 0;
     string expectTilingData = "997 16 2560 ";
@@ -226,18 +214,17 @@ TEST_F(NdtriTilingTest, test_tiling_fp32_unalign_multi_core_006)
 TEST_F(NdtriTilingTest, test_tiling_fail_unsupported_dtype_int32_007)
 {
     optiling::NdtriCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Ndtri",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Ndtri",
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
-    string expectTilingData = "";
-    std::vector<size_t> expectWorkspaces = {0};
+    string expectTilingData = "0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
@@ -247,59 +234,56 @@ TEST_F(NdtriTilingTest, test_tiling_fail_unsupported_dtype_int32_007)
 TEST_F(NdtriTilingTest, test_tiling_fail_unsupported_dtype_double_008)
 {
     optiling::NdtriCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Ndtri",
-        {
-            {{{1, 1, 2, 64}, {1, 1, 2, 64}}, ge::DT_DOUBLE, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 1, 2, 64}, {1, 1, 2, 64}}, ge::DT_DOUBLE, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Ndtri",
+                                              {
+                                                  {{{1, 1, 2, 64}, {1, 1, 2, 64}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 1, 2, 64}, {1, 1, 2, 64}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
-    string expectTilingData = "";
-    std::vector<size_t> expectWorkspaces = {0};
+    string expectTilingData = "0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
 // ==========================================================================
-// 失败路径：zero-shape 1D —— shape {0} → totalNum=0 → GetTotalNum 返回 GRAPH_FAILED
+// 空tensor 1D —— shape {0} → totalNum=0 → 接受空tensor并返回空tensor
 // ==========================================================================
-TEST_F(NdtriTilingTest, test_tiling_fail_zero_shape_1d_009)
+TEST_F(NdtriTilingTest, test_tiling_empty_tensor_1d_009)
 {
     optiling::NdtriCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Ndtri",
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Ndtri",
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
-    string expectTilingData = "";
-    std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
+    string expectTilingData = "0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
 // ==========================================================================
-// 失败路径：zero-shape 3D —— shape {4, 0, 3} → totalNum=0 → GetTotalNum 返回 GRAPH_FAILED
+// 空tensor 3D —— shape {4, 0, 3} → totalNum=0 → 接受空tensor并返回空tensor
 // ==========================================================================
-TEST_F(NdtriTilingTest, test_tiling_fail_zero_shape_3d_010)
+TEST_F(NdtriTilingTest, test_tiling_empty_tensor_3d_010)
 {
     optiling::NdtriCompileInfoStub compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "Ndtri",
-        {
-            {{{4, 0, 3}, {4, 0, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 0, 3}, {4, 0, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Ndtri",
+                                              {
+                                                  {{{4, 0, 3}, {4, 0, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 0, 3}, {4, 0, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
-    string expectTilingData = "";
-    std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
+    string expectTilingData = "0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

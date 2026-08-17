@@ -45,8 +45,8 @@ static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape)
 }
 
 // 平台信息
-static ge::graphStatus GetPlatformInfo(
-    gert::TilingContext* context, uint64_t& ubSize, int64_t& coreNum, uint32_t& sysWorkspaceSize)
+static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& ubSize, int64_t& coreNum,
+                                       uint32_t& sysWorkspaceSize)
 {
     fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);
@@ -67,9 +67,8 @@ static ge::graphStatus CheckDtype(gert::TilingContext* context, ge::DataType& dt
     OP_CHECK_NULL_WITH_CONTEXT(context, selfDesc);
     dtype = selfDesc->GetDataType();
     const std::set<ge::DataType> supported = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
-    OP_CHECK_IF(
-        supported.count(dtype) == 0, OP_LOGE(context, "Ndtri: unsupported dtype %d", static_cast<int>(dtype)),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(supported.count(dtype) == 0, OP_LOGE(context, "Ndtri: unsupported dtype %d", static_cast<int>(dtype)),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -80,15 +79,14 @@ static ge::graphStatus GetTotalNum(gert::TilingContext* context, int64_t& totalN
     OP_CHECK_NULL_WITH_CONTEXT(context, selfShapePtr);
     auto selfShape = EnsureNotScalar(selfShapePtr->GetStorageShape());
     totalNum = selfShape.GetShapeSize();
-    OP_CHECK_IF(
-        totalNum <= 0, OP_LOGE(context, "Ndtri: totalNum must > 0, got %ld", totalNum), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(totalNum <= 0, OP_LOGE(context, "Ndtri: totalNum must > 0, got %ld", totalNum),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 // 多核 + UB 切分
-static ge::graphStatus DoTiling(
-    gert::TilingContext* context, ge::DataType dtype, int64_t totalNum, uint64_t ubSize, int64_t coreNum,
-    NdtriTilingData* tiling, int64_t& usedCoreNum, int64_t& alignElem)
+static ge::graphStatus DoTiling(gert::TilingContext* context, ge::DataType dtype, int64_t totalNum, uint64_t ubSize,
+                                int64_t coreNum, NdtriTilingData* tiling, int64_t& usedCoreNum, int64_t& alignElem)
 {
     int64_t ubBlockSize = Ops::Base::GetUbBlockSize(context);
     int64_t typeSize = (dtype == ge::DT_FLOAT) ? TYPE_SIZE_FP32 : TYPE_SIZE_FP16_BF16;
@@ -118,20 +116,11 @@ static ge::graphStatus DoTiling(
 }
 
 // TilingKey 派发
-static void DispatchTilingKey(gert::TilingContext* context, ge::DataType dtype, int64_t totalNum, int64_t alignElem)
+static void DispatchTilingKey(gert::TilingContext* context, [[maybe_unused]] ge::DataType dtype, int64_t totalNum,
+                              int64_t alignElem)
 {
-    uint32_t dtypeKey;
-    if (dtype == ge::DT_FLOAT) {
-        dtypeKey = static_cast<uint32_t>(C_DT_FLOAT);
-    } else if (dtype == ge::DT_FLOAT16) {
-        dtypeKey = static_cast<uint32_t>(C_DT_FLOAT16);
-    } else {
-        dtypeKey = static_cast<uint32_t>(C_DT_BF16);
-    }
-    // 防御性兜底：alignElem 由 DoTiling 通过 ubBlockSize/typeSize 计算，
-    // typeSize 为常量 2 或 4 不会为 0；此处显式检查避免静态分析误报除零。
     uint32_t isAlign = (alignElem > 0 && totalNum % alignElem == 0) ? 1U : 0U;
-    ASCENDC_TPL_SEL_PARAM(context, dtypeKey, isAlign);
+    ASCENDC_TPL_SEL_PARAM(context, isAlign);
 }
 
 // Tiling 入口
@@ -140,18 +129,16 @@ static ge::graphStatus NdtriTilingFunc(gert::TilingContext* context)
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
     uint32_t sysWorkspaceSize = 0;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum, sysWorkspaceSize) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum, sysWorkspaceSize) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     ge::DataType dtype;
-    OP_CHECK_IF(
-        CheckDtype(context, dtype) != ge::GRAPH_SUCCESS, OP_LOGE(context, "CheckDtype error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckDtype(context, dtype) != ge::GRAPH_SUCCESS, OP_LOGE(context, "CheckDtype error"),
+                return ge::GRAPH_FAILED);
 
     int64_t totalNum = 0;
-    OP_CHECK_IF(
-        GetTotalNum(context, totalNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetTotalNum error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetTotalNum(context, totalNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetTotalNum error"),
+                return ge::GRAPH_FAILED);
 
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
@@ -159,9 +146,8 @@ static ge::graphStatus NdtriTilingFunc(gert::TilingContext* context)
 
     NdtriTilingData* tiling = context->GetTilingData<NdtriTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(NdtriTilingData), 0, sizeof(NdtriTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(NdtriTilingData), 0, sizeof(NdtriTilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
     tiling->totalNum = totalNum;
 
     int64_t usedCoreNum = 0;

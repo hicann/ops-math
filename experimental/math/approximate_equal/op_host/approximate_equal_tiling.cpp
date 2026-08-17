@@ -63,8 +63,8 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus GetShapeAttrsInfo(
-    gert::TilingContext* context, int64_t& totalNum, ge::DataType& dataType, float& tolerance)
+static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& totalNum, ge::DataType& dataType,
+                                         float& tolerance)
 {
     auto inputX1 = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX1);
@@ -78,12 +78,10 @@ static ge::graphStatus GetShapeAttrsInfo(
     OP_CHECK_NULL_WITH_CONTEXT(context, outY);
     auto shapeY = EnsureNotScalar(outY->GetStorageShape());
 
-    OP_CHECK_IF(
-        shapeX1.GetShapeSize() != shapeX2.GetShapeSize() || shapeX1.GetShapeSize() != shapeY.GetShapeSize(),
-        OP_LOGE(
-            context, "ApproximateEqual: shape mismatch: x1=%ld, x2=%ld, y=%ld", shapeX1.GetShapeSize(),
-            shapeX2.GetShapeSize(), shapeY.GetShapeSize()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(shapeX1.GetShapeSize() != shapeX2.GetShapeSize() || shapeX1.GetShapeSize() != shapeY.GetShapeSize(),
+                OP_LOGE(context, "ApproximateEqual: shape mismatch: x1=%ld, x2=%ld, y=%ld", shapeX1.GetShapeSize(),
+                        shapeX2.GetShapeSize(), shapeY.GetShapeSize()),
+                return ge::GRAPH_FAILED);
 
     totalNum = shapeX1.GetShapeSize();
 
@@ -92,18 +90,16 @@ static ge::graphStatus GetShapeAttrsInfo(
     dataType = inputDesc->GetDataType();
     const std::set<ge::DataType> supported = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
     if (supported.count(dataType) == 0) {
-        OP_LOGE(
-            context, "ApproximateEqual: unsupported dtype=%d (allowed: FLOAT/FLOAT16/BF16)",
-            static_cast<int>(dataType));
+        OP_LOGE(context, "ApproximateEqual: unsupported dtype=%d (allowed: FLOAT/FLOAT16/BF16)",
+                static_cast<int>(dataType));
         return ge::GRAPH_FAILED;
     }
 
     auto inputDesc2 = context->GetInputDesc(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc2);
     if (inputDesc2->GetDataType() != dataType) {
-        OP_LOGE(
-            context, "ApproximateEqual: x1 dtype(%d) != x2 dtype(%d)", static_cast<int>(dataType),
-            static_cast<int>(inputDesc2->GetDataType()));
+        OP_LOGE(context, "ApproximateEqual: x1 dtype(%d) != x2 dtype(%d)", static_cast<int>(dataType),
+                static_cast<int>(inputDesc2->GetDataType()));
         return ge::GRAPH_FAILED;
     }
 
@@ -140,22 +136,20 @@ static void PickDtypeParams(ge::DataType dataType, int64_t& inputTypeSize, int64
     }
 }
 
-static ge::graphStatus InitTilingData(
-    gert::TilingContext* context, int64_t totalNum, float tolerance, ApproximateEqualTilingData*& tiling)
+static ge::graphStatus InitTilingData(gert::TilingContext* context, int64_t totalNum, float tolerance,
+                                      ApproximateEqualTilingData*& tiling)
 {
     tiling = context->GetTilingData<ApproximateEqualTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(ApproximateEqualTilingData), 0, sizeof(ApproximateEqualTilingData)) != EOK,
-        OP_LOGE(context, "memset tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(ApproximateEqualTilingData), 0, sizeof(ApproximateEqualTilingData)) != EOK,
+                OP_LOGE(context, "memset tiling data error"), return ge::GRAPH_FAILED);
     tiling->totalNum = totalNum;
     tiling->tolerance = tolerance;
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus ComputeSplit(
-    gert::TilingContext* context, ApproximateEqualTilingData* tiling, uint64_t ubSize, int64_t coreNum,
-    ge::DataType dataType)
+static ge::graphStatus ComputeSplit(gert::TilingContext* context, ApproximateEqualTilingData* tiling, uint64_t ubSize,
+                                    int64_t coreNum, ge::DataType dataType)
 {
     int64_t inputTypeSize = 0;
     int64_t ubBytesPerElem = 0;
@@ -171,9 +165,8 @@ static ge::graphStatus ComputeSplit(
 
     const int64_t usableUb = static_cast<int64_t>(ubSize) - UB_RESERVED_BYTES;
     int64_t ubFactor = FloorAlign(FloorDiv(usableUb, ubBytesPerElem), alignElems);
-    OP_CHECK_IF(
-        ubFactor <= 0, OP_LOGE(context, "ApproximateEqual: computed ubFactor<=0 (ubSize=%lu)", ubSize),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ubFactor <= 0, OP_LOGE(context, "ApproximateEqual: computed ubFactor<=0 (ubSize=%lu)", ubSize),
+                return ge::GRAPH_FAILED);
     tiling->ubFactor = (ubFactor > tiling->blockFactor) ? tiling->blockFactor : ubFactor;
 
     context->SetBlockDim(usedCoreNum);
@@ -184,34 +177,30 @@ static ge::graphStatus ApproximateEqualTilingFunc(gert::TilingContext* context)
 {
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     int64_t totalNum = 0;
     ge::DataType dataType = ge::DT_UNDEFINED;
     float tolerance = 1e-5f;
-    OP_CHECK_IF(
-        GetShapeAttrsInfo(context, totalNum, dataType, tolerance) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetShapeAttrsInfo(context, totalNum, dataType, tolerance) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     ApproximateEqualTilingData* tiling = nullptr;
-    OP_CHECK_IF(
-        InitTilingData(context, totalNum, tolerance, tiling) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "InitTilingData error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(InitTilingData(context, totalNum, tolerance, tiling) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "InitTilingData error"), return ge::GRAPH_FAILED);
 
     if (totalNum == 0) {
         context->SetBlockDim(1);
     } else {
-        OP_CHECK_IF(
-            ComputeSplit(context, tiling, ubSize, coreNum, dataType) != ge::GRAPH_SUCCESS,
-            OP_LOGE(context, "ComputeSplit error"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(ComputeSplit(context, tiling, ubSize, coreNum, dataType) != ge::GRAPH_SUCCESS,
+                    OP_LOGE(context, "ComputeSplit error"), return ge::GRAPH_FAILED);
     }
 
-    ASCENDC_TPL_SEL_PARAM(context, static_cast<uint32_t>(dataType));
+    uint32_t mode = 0;
+    ASCENDC_TPL_SEL_PARAM(context, mode);
     return ge::GRAPH_SUCCESS;
 }
 

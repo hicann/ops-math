@@ -23,16 +23,12 @@
 
 #include "arch35/ndtri_kernel.h"
 
-template <typename D_T, int K_ALIGN>
-__global__ __aicore__ void ndtri(
-    GM_ADDR self,
-    GM_ADDR out,
-    GM_ADDR workspace,
-    GM_ADDR tiling)
+template <int K_ALIGN>
+__global__ __aicore__ void ndtri(GM_ADDR self, GM_ADDR out, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(NdtriTilingData);
     GET_TILING_DATA_WITH_STRUCT(NdtriTilingData, tilingData, tiling);
-    NsNdtri::Ndtri<D_T, K_ALIGN> op;
+    NsNdtri::Ndtri<DTYPE_X, K_ALIGN> op;
     op.Init(self, out, &tilingData);
     op.Process();
 }

@@ -12,22 +12,21 @@
 
 #include "arch35/approximate_equal.h"
 
-template <typename D_T_X>
-__global__ __aicore__ void approximate_equal(GM_ADDR x1, GM_ADDR x2, GM_ADDR y,
-                                             GM_ADDR workspace, GM_ADDR tiling)
+template <int MODE>
+__global__ __aicore__ void approximate_equal(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(ApproximateEqualTilingData);
     GET_TILING_DATA_WITH_STRUCT(ApproximateEqualTilingData, tilingData, tiling);
 
-    if constexpr (std::is_same_v<D_T_X, float>) {
+    if constexpr (std::is_same_v<DTYPE_X1, float>) {
         NsApproximateEqual::KernelApproximateEqual<float, 0u> op;
         op.Init(x1, x2, y, &tilingData);
         op.Process();
-    } else if constexpr (std::is_same_v<D_T_X, half>) {
+    } else if constexpr (std::is_same_v<DTYPE_X1, half>) {
         NsApproximateEqual::KernelApproximateEqual<half, 1u> op;
         op.Init(x1, x2, y, &tilingData);
         op.Process();
-    } else if constexpr (std::is_same_v<D_T_X, bfloat16_t>) {
+    } else if constexpr (std::is_same_v<DTYPE_X1, bfloat16_t>) {
         NsApproximateEqual::KernelApproximateEqual<bfloat16_t, 2u> op;
         op.Init(x1, x2, y, &tilingData);
         op.Process();

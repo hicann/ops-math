@@ -8,20 +8,12 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-/**
- * NOTE: Portions of this code were AI-generated and have been
- * technically reviewed for functional accuracy and security
- */
 /*!
  * \file ndtri_tiling_key.h
  * \brief Ndtri Tiling 模板参数定义
  *
- * 模板参数维度：
- *   - D_T: 输入/输出 Tensor 的数据类型（C_DT_FLOAT / C_DT_FLOAT16 / C_DT_BF16）
- *   - K_ALIGN: 32B 对齐标记（1=对齐, 0=非对齐）
- *
- * 6 个 TilingKey：{fp32, fp16, bf16} × {对齐, 非对齐}
- * 全部通过 Cast(fp16↔fp32) / Cast(bf16↔fp32) 链路实现；fp32 走 Adds(*, 0.0f) 等价 Copy。
+ * dtype 由 def 驱动（构建系统按 def 的 DataType profile 生成 DTYPE_SELF 宏），
+ * tiling_key 不再编码 dtype 维度，只保留 K_ALIGN。
  */
 
 #ifndef NDTRI_TILING_KEY_H_
@@ -29,28 +21,8 @@
 
 #include "ascendc/host_api/tiling/template_argument.h"
 
-ASCENDC_TPL_ARGS_DECL(Ndtri,
-    ASCENDC_TPL_DATATYPE_DECL(D_T,
-        C_DT_FLOAT, C_DT_FLOAT16, C_DT_BF16,
-        ASCENDC_TPL_INPUT(0)),
-    ASCENDC_TPL_UINT_DECL(K_ALIGN, 8, ASCENDC_TPL_UI_LIST, 0, 1)
-);
+ASCENDC_TPL_ARGS_DECL(Ndtri, ASCENDC_TPL_UINT_DECL(K_ALIGN, 8, ASCENDC_TPL_UI_LIST, 0, 1));
 
-// 6 个 TilingKey：{fp32, fp16, bf16} × {对齐, 非对齐}
-// 全部通过 Cast(fp16↔fp32) / Cast(bf16↔fp32) 链路实现；fp32 走 Adds(*, 0.0f) 等价 Copy。
-ASCENDC_TPL_SEL(
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_FLOAT),
-        ASCENDC_TPL_UINT_SEL(K_ALIGN, ASCENDC_TPL_UI_LIST, 0, 1)
-    ),
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_FLOAT16),
-        ASCENDC_TPL_UINT_SEL(K_ALIGN, ASCENDC_TPL_UI_LIST, 0, 1)
-    ),
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_BF16),
-        ASCENDC_TPL_UINT_SEL(K_ALIGN, ASCENDC_TPL_UI_LIST, 0, 1)
-    ),
-);
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(K_ALIGN, ASCENDC_TPL_UI_LIST, 0, 1)), );
 
-#endif  // NDTRI_TILING_KEY_H_
+#endif // NDTRI_TILING_KEY_H_
