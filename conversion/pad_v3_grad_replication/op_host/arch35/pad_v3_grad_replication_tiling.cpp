@@ -290,8 +290,8 @@ bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailabl
     }
     // 阶梯式从 ubAvailable 减 fixedBytes / alignSlack，避免任何中间值 uint64 翻转
     if (fixedBytes >= ubAvailable) {
-        OP_LOGI(context_->GetNodeName(), "axis=%u failed: fixedBytes=%lu >= ubAvailable=%lu (两端 pad 区已超 UB)", axis,
-                fixedBytes, ubAvailable);
+        OP_LOGI(context_->GetNodeName(), "axis=%u failed: fixedBytes=%lu >= ubAvailable=%lu (both pads exceed UB)",
+                axis, fixedBytes, ubAvailable);
         return false;
     }
     uint64_t budget = ubAvailable - fixedBytes;

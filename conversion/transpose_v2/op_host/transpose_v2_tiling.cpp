@@ -65,7 +65,7 @@ static ge::graphStatus Tiling4TransposeV2(gert::TilingContext* context)
     } else if (perm == std::vector<int64_t>{1, 0, 2} || perm == std::vector<int64_t>{0, 2, 1, 3}) {
         ret = DoOpTiling<Transpose102Tiling>(context);
     } else {
-        OP_LOGE(context->GetNodeName(), "Unsupport perm.");
+        OP_LOGE(context->GetNodeName(), "Unsupported perm.");
         return ge::GRAPH_FAILED;
     }
     return ret;

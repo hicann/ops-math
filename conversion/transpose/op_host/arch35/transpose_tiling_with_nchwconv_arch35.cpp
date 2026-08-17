@@ -142,7 +142,7 @@ ge::graphStatus TransposeVCONVTiling::SetTilingKeyAndCore()
     tilingKey_ = static_cast<uint64_t>(SplitMode::VCONV_TRANSPOSE);
     context_->SetTilingKey(tilingKey_);
     OP_CHECK_IF(context_->SetBlockDim(basicInfo_.UsedCoreNum) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context_->GetNodeName(), "Set used core num is failed!"), return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "Set used core num failed!"), return ge::GRAPH_FAILED);
 
     size_t* workspaces = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, workspaces);

@@ -107,7 +107,7 @@ aclnnStatus aclnnReplicationPad2dGetWorkspaceSize(const aclTensor* self, const a
         // 3 is dim num
         if (self->GetViewShape().GetDimNum() == 3) {
             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                    "Expected 3D or 4D tensor with possibly 0 batch size and other non-zero dimentions for input.");
+                    "Expected 3D or 4D tensor with possibly 0 batch size and other non-zero dimensions for input.");
             return ACLNN_ERR_PARAM_INVALID;
         }
         // 4 is dim num
@@ -117,7 +117,7 @@ aclnnStatus aclnnReplicationPad2dGetWorkspaceSize(const aclTensor* self, const a
                 // 3 is index
                 self->GetViewShape().GetDim(3) == 0) {
                 OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                        "Expected 3D or 4D tensor with possibly 0 batch size and other non-zero dimentions for input.");
+                        "Expected 3D or 4D tensor with possibly 0 batch size and other non-zero dimensions for input.");
                 return ACLNN_ERR_PARAM_INVALID;
             }
         }

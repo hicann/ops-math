@@ -1125,15 +1125,15 @@ ge::graphStatus PadACTiling::Init()
     OP_CHECK_NULL_WITH_CONTEXT(context_, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     coreNum_ = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(coreNum_ == 0U, OP_LOGE(context_, "Failed to core num."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(coreNum_ == 0U, OP_LOGE(context_, "Failed to get core num."), return ge::GRAPH_FAILED);
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize_);
-    OP_CHECK_IF(ubSize_ == 0U, OP_LOGE(context_, "Failed to ub size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ubSize_ == 0U, OP_LOGE(context_, "Failed to get ub size."), return ge::GRAPH_FAILED);
     blockSize_ = static_cast<uint64_t>(Ops::Base::GetUbBlockSize(context_));
-    OP_CHECK_IF(blockSize_ == 0U, OP_LOGE(context_, "Failed to ub block size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(blockSize_ == 0U, OP_LOGE(context_, "Failed to get ub block size."), return ge::GRAPH_FAILED);
     vectorSize_ = static_cast<uint64_t>(Ops::Base::GetVRegSize(context_));
-    OP_CHECK_IF(vectorSize_ == 0U, OP_LOGE(context_, "Failed to vector size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(vectorSize_ == 0U, OP_LOGE(context_, "Failed to get vector size."), return ge::GRAPH_FAILED);
     cacheLineSize_ = Ops::Base::GetCacheLineSize(context_);
-    OP_CHECK_IF(cacheLineSize_ == 0U, OP_LOGE(context_, "Failed to cache line size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(cacheLineSize_ == 0U, OP_LOGE(context_, "Failed to get cache line size."), return ge::GRAPH_FAILED);
     OP_LOGD(context_,
             "platform info is coreNum_ = %u, ubSize_ = %lu, blockSize_ = %lu, vectorSize_ = %lu, cacheLineSize_ = %u",
             coreNum_, ubSize_, blockSize_, vectorSize_, cacheLineSize_);
@@ -1387,7 +1387,8 @@ ge::graphStatus TilingPreparePadv3ForAscendC(gert::TilingParseContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     ci->core_num = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF((ci->core_num <= 0), OP_LOGE(context->GetNodeName(), "Failed to core num."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((ci->core_num <= 0), OP_LOGE(context->GetNodeName(), "Failed to get core num."),
+                return ge::GRAPH_FAILED);
     uint64_t ubSize;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     ci->ub_size = static_cast<int64_t>(ubSize);

@@ -99,7 +99,7 @@ static bool CheckShapeValid(const aclTensor* self, const aclIntArray* dims, cons
     auto dimOut = out->GetViewShape().GetDimNum();
     // 输入输出维度数不同
     if (dimSelf != dimOut) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Permute not support self shape: %s, output shape: %s",
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Permute does not support self shape: %s, output shape: %s",
                 op::ToString(self->GetViewShape()).GetString(), op::ToString(out->GetViewShape()).GetString());
         return false;
     }

@@ -84,7 +84,7 @@ static bool CheckPaddingValue(const aclIntArray* padding, [[maybe_unused]] const
 {
     // padding的每一维度的数值要大于等于0
     if ((*padding)[0] < 0 || (*padding)[1] < 0 || (*padding)[INPUT_NUM_2] < 0 || (*padding)[INPUT_NUM_3] < 0) {
-        OP_LOGW("on aicore situation, padding values should be greater than 0 or equal 0.");
+        OP_LOGW("in AICore situation, padding values should be greater than or equal to 0.");
         return false;
     }
     if ((*padding)[INPUT_NUM_2] == 0 && (*padding)[INPUT_NUM_3] == 0) {
@@ -94,7 +94,7 @@ static bool CheckPaddingValue(const aclIntArray* padding, [[maybe_unused]] const
     if ((*padding)[0] > REFLECT_MODE_MAX_PADDING_VALUE || (*padding)[1] > REFLECT_MODE_MAX_PADDING_VALUE ||
         (*padding)[INPUT_NUM_2] > REFLECT_MODE_MAX_PADDING_VALUE ||
         (*padding)[INPUT_NUM_3] > REFLECT_MODE_MAX_PADDING_VALUE) {
-        OP_LOGW("on aicore situation, padding values should be less than 7 or equal 7.");
+        OP_LOGW("in AICore situation, padding values should be less than or equal to 7.");
         return false;
     }
     return true;
@@ -128,7 +128,7 @@ static bool CheckShape(const aclTensor* gradOutput, const aclTensor* self, const
                      (*padding)[1] < self->GetViewShape().GetDim(selfDimnum - 1) &&
                      (*padding)[2] < self->GetViewShape().GetDim(selfDimnum - 2) &&
                      (*padding)[3] < self->GetViewShape().GetDim(selfDimnum - 2),
-                 OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding size should be less than the corresponding self dimention."),
+                 OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding size should be less than the corresponding self dimension."),
                  return false);
     }
 

@@ -500,9 +500,9 @@ ge::graphStatus TransposeGatherTiling::CalcBlockSplitInfo()
 ge::graphStatus TransposeGatherTiling::SetTilingKeyAndCore()
 {
     OP_CHECK_IF(context_->SetTilingKey(tilingKey_) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context_->GetNodeName(), "Set tiling key is failed!"), return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "Set tiling key failed!"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(context_->SetBlockDim(blkSplitInfo_.usedCoreCnt) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context_->GetNodeName(), "Set used core size is failed!"), return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "Set used core size failed!"), return ge::GRAPH_FAILED);
 
     size_t* workspaces = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, workspaces);
