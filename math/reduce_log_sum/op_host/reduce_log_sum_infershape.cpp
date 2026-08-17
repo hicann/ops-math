@@ -38,8 +38,8 @@ static ge::graphStatus InferShape4ReduceCommon(gert::InferShapeContext* context)
 
     auto axes_size = static_cast<int32_t>(axes_tensor->GetShapeSize());
 
-    OP_CHECK_IF(
-        axes_size < 0, OP_LOGE(context->GetNodeName(), "axes num cannot be less than 0!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(axes_size < 0, OP_LOGE(context->GetNodeName(), "axes num cannot be less than 0!"),
+                return ge::GRAPH_FAILED);
 
     if (axes_size == 0) {
         *out_shape = *in_shape;
@@ -48,15 +48,26 @@ static ge::graphStatus InferShape4ReduceCommon(gert::InferShapeContext* context)
     }
 
     auto dtype = axes_tensor->GetDataType();
-    OP_CHECK_IF(
-        dtype != ge::DT_INT32 && dtype != ge::DT_INT64,
-        OP_LOGE(context->GetNodeName(), "axes datatype %s must in (int32, int64)", ToString(dtype).c_str()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(dtype != ge::DT_INT32 && dtype != ge::DT_INT64,
+                OP_LOGE(context->GetNodeName(), "axes datatype %s must in (int32, int64)", ToString(dtype).c_str()),
+                return ge::GRAPH_FAILED);
     if (dtype == ge::DT_INT32) {
         return ReduceDims<int32_t>(in_shape, axes_tensor, axes_size, *keep_dims, out_shape);
     }
     return ReduceDims<int64_t>(in_shape, axes_tensor, axes_size, *keep_dims, out_shape);
 }
 
-IMPL_OP_INFERSHAPE(ReduceLogSum).InferShape(InferShape4ReduceCommon).InputsDataDependency({1});
+static ge::graphStatus InferDataType4ReduceLogSum(gert::InferDataTypeContext* context)
+{
+    OP_LOGD(context->GetNodeName(), "Begin to do InferDataType4ReduceLogSum");
+    // y.dtype -> x.dtype
+    context->SetOutputDataType(0, context->GetInputDataType(0));
+    OP_LOGD(context->GetNodeName(), "End to do InferDataType4ReduceLogSum");
+    return ge::GRAPH_SUCCESS;
+}
+
+IMPL_OP_INFERSHAPE(ReduceLogSum)
+    .InferShape(InferShape4ReduceCommon)
+    .InferDataType(InferDataType4ReduceLogSum)
+    .InputsDataDependency({1});
 } // namespace ops
