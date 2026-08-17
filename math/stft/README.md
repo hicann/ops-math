@@ -4,7 +4,7 @@
 
 |产品             |  是否支持  |
 |:-------------------------|:----------:|
-|  <term>Ascend 950PR/Ascend 950DT</term>   |     ×    |
+|  <term>Ascend 950PR/Ascend 950DT</term>   |     √    |
 |  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     √    |
 |  <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |     √    |
 |  <term>Atlas 200I/500 A2 推理产品</term>    |     ×    |
@@ -23,13 +23,13 @@
     $$
 
   - 当normalized=true时：
-  
+
     $$
     X[w,m]=\frac{1}{\sqrt{nFft}}(\sum_{k=0}^{winLength-1}window[k]*self[m*hopLength+k]*exp(-j*\frac{2{\pi}wk}{nFft}))
     $$
 
   其中：
-  
+
   - $w$为FFT的频点。
   - $m$为滑动窗口的index。
   - $self$为1维或2维Tensor，当$self$是1维时，其为一个时序采样序列，当$self$是2维时，其为多个时序采样序列。
