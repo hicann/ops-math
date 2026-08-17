@@ -16,8 +16,8 @@ echo "smoke_run_file_url=${smoke_run_file_url}"
 echo "obs_smoke_path=${obs_smoke_path}"
 
 shopt -s extglob
-WORKSPACE=/home/taskspace
-cd /home/taskspace
+
+cd ${WORKSPACE}
 
 log() {
   local dt
