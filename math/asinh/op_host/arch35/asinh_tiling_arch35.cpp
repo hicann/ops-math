@@ -27,7 +27,7 @@
  *     * 公式：ubFactor = FloorAlign((ubSize - logTmpReserve) / 37, 64)
  *   - Log 隐式 tmpBuffer 预留：通过 GetLogMaxMinTmpSize 在 ubSize 中扣除
  *   - 空 Tensor 早返回 + 32B 对齐尾块（DataCopyPad 自动处理）
- *   - TilingKey 编码：ASCENDC_TPL_SEL_PARAM(context, dtype)，dtype 维度即 D_T_X
+ *   - dtype 由 def 驱动，Asinh 无额外算法模板维度
  *
  * 迭代一范围（FP32 单 dtype 走通）：
  *   - dtype 校验：3 dtype 均放行（FP16/BF16 在 Kernel 端已有 Cast 路径骨架，
@@ -35,6 +35,7 @@
  */
 
 #include <algorithm>
+#include <set>
 #include <vector>
 #include "register/op_def_registry.h"
 #include "log/log.h"
@@ -43,12 +44,11 @@
 #include "tiling/platform/platform_ascendc.h"
 #include "tiling/math/log_tiling.h"
 #include "../../op_kernel/arch35/asinh_tiling_data.h"
-#include "../../op_kernel/arch35/asinh_tiling_key.h"
 
 namespace optiling {
 
-using Ops::Base::CeilDiv;
 using Ops::Base::CeilAlign;
+using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
 using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
@@ -73,6 +73,13 @@ constexpr int64_t COMPARE_ALIGN_ELEMS = 64;
 //   - 实际单 tile 元素数 ubFactor ≈ 6720（FP32 视角，248KB / 37 字节/元素，再 64 对齐）
 //   - 取 8192（>6720 略大）作为 typicalShape 上界，避免 GetLogMaxMinTmpSize 输入过大溢出
 constexpr int64_t LOG_TMP_TYPICAL_SHAPE_MAX = 8192;
+constexpr size_t MAX_DIM_NUM = 8;
+
+static bool IsPrivateFormat(ge::Format format)
+{
+    return format == ge::FORMAT_NC1HWC0 || format == ge::FORMAT_FRACTAL_Z || format == ge::FORMAT_NDC1HWC0 ||
+           format == ge::FORMAT_FRACTAL_Z_3D || format == ge::FORMAT_FRACTAL_NZ || format == ge::FORMAT_NC1HWC0_C04;
+}
 
 // 获取平台信息：UB 容量与 AI Core 数（动态获取，禁止硬编码）
 static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t* ubSize, int64_t* coreNum)
@@ -87,24 +94,54 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t* u
     return ge::GRAPH_SUCCESS;
 }
 
-// 校验 shape 与 dtype，输出 totalNum / dtype。
+// 校验 format、shape 与 dtype，输出 totalNum / dtype。
 // MED-1：Tiling 作为算子端最后一道校验，对负 shape 显式拒绝。
 static ge::graphStatus ValidateInput(gert::TilingContext* context, int64_t* totalNum, ge::DataType* dtype)
 {
-    auto inputShape = context->GetInputShape(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, inputShape);
-    *totalNum = inputShape->GetStorageShape().GetShapeSize();
-    OP_CHECK_IF(*totalNum < 0,
-        OP_LOGE(context, "Asinh: invalid totalNum=%ld (negative shape size)", *totalNum),
-        return ge::GRAPH_FAILED);
-
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
+    auto outputDesc = context->GetOutputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, outputDesc);
+    const ge::Format inputOriginFormat = inputDesc->GetOriginFormat();
+    const ge::Format inputStorageFormat = inputDesc->GetStorageFormat();
+    const ge::Format outputOriginFormat = outputDesc->GetOriginFormat();
+    const ge::Format outputStorageFormat = outputDesc->GetStorageFormat();
+    OP_CHECK_IF(IsPrivateFormat(inputOriginFormat) || IsPrivateFormat(inputStorageFormat),
+                OP_LOGE(context, "Asinh: unsupported private input format, origin=%d, storage=%d",
+                        static_cast<int>(inputOriginFormat), static_cast<int>(inputStorageFormat)),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(IsPrivateFormat(outputOriginFormat) || IsPrivateFormat(outputStorageFormat),
+                OP_LOGE(context, "Asinh: unsupported private output format, origin=%d, storage=%d",
+                        static_cast<int>(outputOriginFormat), static_cast<int>(outputStorageFormat)),
+                return ge::GRAPH_FAILED);
+
+    auto inputShape = context->GetInputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputShape);
+    const gert::Shape& inputStorageShape = inputShape->GetStorageShape();
+    const size_t inputRank = inputStorageShape.GetDimNum();
+    OP_CHECK_IF(inputRank > MAX_DIM_NUM, OP_LOGE(context, "Asinh: input rank must be <= 8, but got %zu", inputRank),
+                return ge::GRAPH_FAILED);
+
+    auto outputShape = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, outputShape);
+    const gert::Shape& outputStorageShape = outputShape->GetStorageShape();
+    OP_CHECK_IF(outputStorageShape.GetDimNum() > MAX_DIM_NUM,
+                OP_LOGE(context, "Asinh: output rank must be <= 8, but got %zu", outputStorageShape.GetDimNum()),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputStorageShape != outputStorageShape,
+                OP_LOGE(context, "Asinh: input and output storage shapes must be the same"), return ge::GRAPH_FAILED);
+    *totalNum = inputStorageShape.GetShapeSize();
+    OP_CHECK_IF(*totalNum < 0, OP_LOGE(context, "Asinh: invalid totalNum=%ld (negative shape size)", *totalNum),
+                return ge::GRAPH_FAILED);
+
     *dtype = inputDesc->GetDataType();
     const std::set<ge::DataType> supported = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
-    OP_CHECK_IF(supported.count(*dtype) == 0,
-        OP_LOGE(context, "Asinh: unsupported dtype %d", static_cast<int>(*dtype)),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(supported.count(*dtype) == 0, OP_LOGE(context, "Asinh: unsupported dtype %d", static_cast<int>(*dtype)),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(outputDesc->GetDataType() != *dtype,
+                OP_LOGE(context, "Asinh: output dtype must match input dtype: input=%d, output=%d",
+                        static_cast<int>(*dtype), static_cast<int>(outputDesc->GetDataType())),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -122,14 +159,14 @@ static ge::graphStatus CalcUbFactor(gert::TilingContext* context, uint64_t ubSiz
 
     int64_t ubAvail = static_cast<int64_t>(ubSize) - *logTmpReserveBytes;
     OP_CHECK_IF(ubAvail <= 0,
-        OP_LOGE(context, "Asinh: ubAvail <= 0 after Log tmp reserve, ubSize=%lu logTmpReserve=%ld",
-                static_cast<unsigned long>(ubSize), *logTmpReserveBytes),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context, "Asinh: ubAvail <= 0 after Log tmp reserve, ubSize=%lu logTmpReserve=%ld",
+                        static_cast<unsigned long>(ubSize), *logTmpReserveBytes),
+                return ge::GRAPH_FAILED);
 
     *ubFactor = FloorAlign(FloorDiv(ubAvail, BYTES_PER_ELEM_TOTAL), COMPARE_ALIGN_ELEMS);
-    OP_CHECK_IF(*ubFactor <= 0,
-        OP_LOGE(context, "Asinh: ubFactor too small (< 64 elems after Log tmp reserve), ubFactor=%ld",
-                *ubFactor),
+    OP_CHECK_IF(
+        *ubFactor <= 0,
+        OP_LOGE(context, "Asinh: ubFactor too small (< 64 elems after Log tmp reserve), ubFactor=%ld", *ubFactor),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -141,12 +178,12 @@ static ge::graphStatus AsinhTilingFunc(gert::TilingContext* context)
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
     OP_CHECK_IF(GetPlatformInfo(context, &ubSize, &coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "Asinh: GetPlatformInfo error"), return ge::GRAPH_FAILED);
+                OP_LOGE(context, "Asinh: GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     int64_t totalNum = 0;
     ge::DataType dtype = ge::DT_FLOAT;
     OP_CHECK_IF(ValidateInput(context, &totalNum, &dtype) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "Asinh: ValidateInput error"), return ge::GRAPH_FAILED);
+                OP_LOGE(context, "Asinh: ValidateInput error"), return ge::GRAPH_FAILED);
 
     // 2. workspace
     size_t* ws = context->GetWorkspaceSizes(WORKSPACE_NUM);
@@ -157,12 +194,11 @@ static ge::graphStatus AsinhTilingFunc(gert::TilingContext* context)
     AsinhTilingData* tiling = context->GetTilingData<AsinhTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
     OP_CHECK_IF(memset_s(tiling, sizeof(AsinhTilingData), 0, sizeof(AsinhTilingData)) != EOK,
-        OP_LOGE(context, "Asinh: memset tiling failed"), return ge::GRAPH_FAILED);
+                OP_LOGE(context, "Asinh: memset tiling failed"), return ge::GRAPH_FAILED);
 
     // 4. 空 Tensor 早返回：Tiling 层 SetBlockDim(1)，Kernel 内 Process() 早返回
     if (totalNum == 0) {
         context->SetBlockDim(1);
-        ASCENDC_TPL_SEL_PARAM(context, static_cast<uint32_t>(dtype));
         return ge::GRAPH_SUCCESS;
     }
 
@@ -174,19 +210,18 @@ static ge::graphStatus AsinhTilingFunc(gert::TilingContext* context)
 
     // 6. UB 切分
     int64_t logTmpReserveBytes = 0;
-    OP_CHECK_IF(CalcUbFactor(context, ubSize, tiling->blockFactor, &tiling->ubFactor, &logTmpReserveBytes)
-                != ge::GRAPH_SUCCESS,
+    OP_CHECK_IF(
+        CalcUbFactor(context, ubSize, tiling->blockFactor, &tiling->ubFactor, &logTmpReserveBytes) != ge::GRAPH_SUCCESS,
         OP_LOGE(context, "Asinh: CalcUbFactor error"), return ge::GRAPH_FAILED);
 
-    // 7. BlockDim & TilingKey
+    // 7. BlockDim
     context->SetBlockDim(usedCoreNum);
-    ASCENDC_TPL_SEL_PARAM(context, static_cast<uint32_t>(dtype));
 
     OP_LOGI(context,
             "Asinh: totalNum=%ld, blockFactor=%ld, ubFactor=%ld, usedCoreNum=%ld, dtype=%d, "
             "ubSize=%lu, logTmpReserve=%ld",
-            tiling->totalNum, tiling->blockFactor, tiling->ubFactor, usedCoreNum,
-            static_cast<int>(dtype), static_cast<unsigned long>(ubSize), logTmpReserveBytes);
+            tiling->totalNum, tiling->blockFactor, tiling->ubFactor, usedCoreNum, static_cast<int>(dtype),
+            static_cast<unsigned long>(ubSize), logTmpReserveBytes);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -195,7 +230,7 @@ static ge::graphStatus TilingParseForAsinh([[maybe_unused]] gert::TilingParseCon
     return ge::GRAPH_SUCCESS;
 }
 
-struct AsinhCompileInfo {};  // 占位，入图场景依赖
+struct AsinhCompileInfo {}; // 占位，入图场景依赖
 
 IMPL_OP_OPTILING(Asinh).Tiling(AsinhTilingFunc).TilingParse<AsinhCompileInfo>(TilingParseForAsinh);
 

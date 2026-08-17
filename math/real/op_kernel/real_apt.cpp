@@ -13,19 +13,20 @@
  * \file real_apt.cpp
  * \brief Real operator kernel entry (ascend950 / arch35)
  *
- * Template parameters (matching real_tiling_key.h ASCENDC_TPL_ARGS_DECL):
- *   - D_T: Output data type, from ASCENDC_TPL_DATATYPE_DECL
- *   - IS_COMPLEX: 0=real passthrough, 1=complex extract real, from ASCENDC_TPL_UINT_DECL
+ * Input and output dtypes come from the op def profile. The original input dtype
+ * selects the complex extraction path without duplicating dtype in TilingKey.
  */
 
 #include "arch35/real.h"
-
-template <typename D_T, int IS_COMPLEX>
 __global__ __aicore__ void real(GM_ADDR self, GM_ADDR out, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(RealTilingData);
     GET_TILING_DATA_WITH_STRUCT(RealTilingData, tilingData, tiling);
-    NsReal::RealOp<D_T, IS_COMPLEX> op;
+#if ORIG_DTYPE_INPUT == DT_COMPLEX32 || ORIG_DTYPE_INPUT == DT_COMPLEX64
+    NsReal::RealOp<DTYPE_OUTPUT, 1> op;
+#else
+    NsReal::RealOp<DTYPE_OUTPUT, 0> op;
+#endif
     op.Init(self, out, workspace, &tilingData);
     op.Process();
 }

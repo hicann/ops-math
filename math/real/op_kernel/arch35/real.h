@@ -28,7 +28,6 @@
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
 #include "real_tiling_data.h"
-#include "real_tiling_key.h"
 
 namespace NsReal {
 
@@ -39,7 +38,7 @@ class RealOp {
     static constexpr int32_t BUFFER_NUM = 1;
 
 public:
-    __aicore__ inline RealOp() {};
+    __aicore__ inline RealOp(){};
 
     __aicore__ inline void Init(GM_ADDR self, GM_ADDR out, GM_ADDR workspace, const RealTilingData* tilingData);
     __aicore__ inline void Process();
@@ -54,7 +53,7 @@ private:
     TPipe pipe;
     TQue<QuePosition::VECIN, BUFFER_NUM> inputQueue;
     TQue<QuePosition::VECOUT, BUFFER_NUM> outputQueue;
-    TBuf<QuePosition::VECCALC> passBuf;   // Used for passthrough direct copy
+    TBuf<QuePosition::VECCALC> passBuf; // Used for passthrough direct copy
     TBuf<QuePosition::VECCALC> offsetBuf;
 
     GlobalTensor<T> inputGM;
@@ -81,8 +80,8 @@ __aicore__ inline void RealOp<T, IS_COMPLEX>::BuildOffsetVector()
 }
 
 template <typename T, int IS_COMPLEX>
-__aicore__ inline void RealOp<T, IS_COMPLEX>::Init(
-    GM_ADDR self, GM_ADDR out, GM_ADDR workspace, const RealTilingData* tilingData)
+__aicore__ inline void RealOp<T, IS_COMPLEX>::Init(GM_ADDR self, GM_ADDR out, GM_ADDR workspace,
+                                                   const RealTilingData* tilingData)
 {
     // TOPK-8 hygiene: GM offsets computed via int64 intermediates with first-operand explicit cast,
     // to make multi-dimensional offset computations robust to operand-type drift.
@@ -162,8 +161,7 @@ __aicore__ inline void RealOp<T, IS_COMPLEX>::Compute(int64_t currentNum)
 
         // offsetBuf contains byte offsets: [0, 2*sizeof(T), 4*sizeof(T), ...]
         AscendC::LocalTensor<uint32_t> offsetLocal = offsetBuf.Get<uint32_t>();
-        AscendC::Gather(outLocal, inLocal, offsetLocal, (uint32_t)0,
-                        static_cast<uint32_t>(currentNum));
+        AscendC::Gather(outLocal, inLocal, offsetLocal, (uint32_t)0, static_cast<uint32_t>(currentNum));
 
         outputQueue.template EnQue<T>(outLocal);
         inputQueue.FreeTensor(inLocal);

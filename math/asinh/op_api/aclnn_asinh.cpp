@@ -52,6 +52,12 @@ static const std::initializer_list<DataType> NEED_CAST_DTYPE_LIST_ASIN = {DataTy
 static const std::initializer_list<DataType> ASCEND910_DTYPE_SELFREF_LIST_ASIN = {
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_COMPLEX64, DataType::DT_COMPLEX128};
 
+static bool IsPrivateFormat(ge::Format format)
+{
+    return format == ge::FORMAT_NC1HWC0 || format == ge::FORMAT_FRACTAL_Z || format == ge::FORMAT_NDC1HWC0 ||
+           format == ge::FORMAT_FRACTAL_Z_3D || format == ge::FORMAT_FRACTAL_NZ || format == ge::FORMAT_NC1HWC0_C04;
+}
+
 static bool CheckInplaceDtypeValid(aclTensor* selfRef)
 {
     auto inplaceSupportList = GetDtypeSupportListV2(OUTPUT_DTYPE_SUPPORT_LIST_ASIN, ASCEND910_DTYPE_SELFREF_LIST_ASIN);
@@ -63,11 +69,22 @@ static bool CheckInplaceDtypeValid(aclTensor* selfRef)
 static aclnnStatus CheckParamsAsinh(const aclTensor* input, const aclTensor* out)
 {
     // 检查输入和输出的数据类型是否满足约束，需要根据api定义校验
-    auto supportList =
-        GetDtypeSupportListV2(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST_ASIN, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST_ASIN);
+    auto supportList = GetDtypeSupportListV2(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST_ASIN,
+                                             ASCEND910_DTYPE_DTYPE_SUPPORT_LIST_ASIN);
     CHECK_RET(CheckDtypeValid1In1Out(input, out, supportList, OUTPUT_DTYPE_SUPPORT_LIST_ASIN), ACLNN_ERR_PARAM_INVALID);
     // 检查输入和输出的shape是否满足约束
     CHECK_RET(CheckSameShape1In1Out(input, out), ACLNN_ERR_PARAM_INVALID);
+
+    const auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+
+    if (IsRegBase(curArch)) {
+        OP_CHECK(!::IsPrivateFormat(input->GetStorageFormat()),
+                 OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Asinh does not support private input format on RegBase."),
+                 return ACLNN_ERR_PARAM_INVALID);
+        OP_CHECK(!::IsPrivateFormat(out->GetStorageFormat()),
+                 OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Asinh does not support private output format on RegBase."),
+                 return ACLNN_ERR_PARAM_INVALID);
+    }
 
     if (input->GetStorageFormat() != Format::FORMAT_ND) {
         OP_LOGW("Only support ND format for asinh/inplaceAsinh operator.");
@@ -84,8 +101,8 @@ static aclnnStatus CheckInplaceParamsAsinh(aclTensor* selfRef)
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ExecAsinhGetWorkspaceSize(
-    const aclTensor* input, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus ExecAsinhGetWorkspaceSize(const aclTensor* input, aclTensor* out, uint64_t* workspaceSize,
+                                             aclOpExecutor** executor)
 {
     CHECK_NOT_NULL(input, out);
     // 创建OpExecutor
@@ -133,8 +150,8 @@ static aclnnStatus ExecAsinhGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnAsinhGetWorkspaceSize(
-    const aclTensor* input, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnAsinhGetWorkspaceSize(const aclTensor* input, aclTensor* out, uint64_t* workspaceSize,
+                                       aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAsinh, DFX_IN(input), DFX_OUT(out));
     return ExecAsinhGetWorkspaceSize(input, out, workspaceSize, executor);

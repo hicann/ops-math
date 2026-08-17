@@ -33,7 +33,6 @@
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
 #include "asinh_tiling_data.h"
-#include "asinh_tiling_key.h"
 
 namespace NsAsinh {
 using namespace AscendC;
@@ -41,16 +40,16 @@ using namespace AscendC;
 // ============================================================
 // 19 步流程的 FP32 常量（REQUIREMENTS §8.1 强约束 FP32 字面量精度）
 // ============================================================
-constexpr float CONST_ONE              =  1.0f;
-constexpr float CONST_NEG_ONE          = -1.0f;
-constexpr float CONST_ZERO             =  0.0f;
-constexpr float CONST_S_MIN            =  1.0e-45f;        // clip 下界（REQUIREMENTS §8.1）
-constexpr float CONST_S_MAX            =  3.4028235e34f;   // clip 上界（REQUIREMENTS §8.1）
+constexpr float CONST_ONE = 1.0f;
+constexpr float CONST_NEG_ONE = -1.0f;
+constexpr float CONST_ZERO = 0.0f;
+constexpr float CONST_S_MIN = 1.0e-45f;      // clip 下界（REQUIREMENTS §8.1）
+constexpr float CONST_S_MAX = 3.4028235e34f; // clip 上界（REQUIREMENTS §8.1）
 // ln(2) FP32 近似（避免 acosh 笔误）。
 // 字面量截断到 FP32 实际可表示精度（mantissa 24 bit，约 7 位有效数字）。
 // 完整精度参考: ln(2) ≈ 0.69314718055994530941723212145818...，编译期 round 到最近 FP32。
-constexpr float CONST_LN2              =  0.6931472f;
-constexpr float CONST_BRANCH_THRESHOLD =  0.00024414063f;  // 2^-12，小参数分支阈值
+constexpr float CONST_LN2 = 0.6931472f;
+constexpr float CONST_BRANCH_THRESHOLD = 0.00024414063f; // 2^-12，小参数分支阈值
 
 // Double Buffer 固定为 2（19 步含 Log/Sqrt/Div/Compare 计算密集，双缓冲收益显著）
 static constexpr int32_t BUFFER_NUM = 2;
@@ -72,30 +71,28 @@ private:
     __aicore__ inline void CopyOut(int64_t progress, int64_t currentNum);
 
     // 19 步 FP32 计算（保留 xOrigFp32 全程，最终结果写入 yFp32）
-    __aicore__ inline void ComputeFp32Pipeline(LocalTensor<float>& xOrigFp32,
-                                                LocalTensor<float>& yFp32,
-                                                int64_t count);
+    __aicore__ inline void ComputeFp32Pipeline(LocalTensor<float>& xOrigFp32, LocalTensor<float>& yFp32, int64_t count);
 
 private:
     TPipe pipe;
-    TQue<QuePosition::VECIN,  BUFFER_NUM> inputQue;     // GM → UB 输入队列（dtype = T）
-    TQue<QuePosition::VECOUT, BUFFER_NUM> outputQue;    // UB → GM 输出队列（dtype = T）
+    TQue<QuePosition::VECIN, BUFFER_NUM> inputQue;   // GM → UB 输入队列（dtype = T）
+    TQue<QuePosition::VECOUT, BUFFER_NUM> outputQue; // UB → GM 输出队列（dtype = T）
 
     // FP32 工作 Buffer（所有 dtype 路径都使用）
-    TBuf<QuePosition::VECCALC> xOrigBuf;    // 原始 x FP32 备份（保留符号位，step 19 符号恢复用）
-    TBuf<QuePosition::VECCALC> absXBuf;     // |x| (data_a)；FP16/BF16 路径下也作 fp32 输出区
-    TBuf<QuePosition::VECCALC> bBuf;        // 1/|x| (data_b)；后续 step 复用为 u-1 / clipped s / 1/x²
-    TBuf<QuePosition::VECCALC> rBuf;        // 通用 R Buffer
-    TBuf<QuePosition::VECCALC> sBuf;        // 通用 S Buffer（u / log(u) / res / result_2 / output）
-    TBuf<QuePosition::VECCALC> selMaskBuf;  // Compare 输出 mask (uint8_t)
+    TBuf<QuePosition::VECCALC> xOrigBuf;   // 原始 x FP32 备份（保留符号位，step 19 符号恢复用）
+    TBuf<QuePosition::VECCALC> absXBuf;    // |x| (data_a)；FP16/BF16 路径下也作 fp32 输出区
+    TBuf<QuePosition::VECCALC> bBuf;       // 1/|x| (data_b)；后续 step 复用为 u-1 / clipped s / 1/x²
+    TBuf<QuePosition::VECCALC> rBuf;       // 通用 R Buffer
+    TBuf<QuePosition::VECCALC> sBuf;       // 通用 S Buffer（u / log(u) / res / result_2 / output）
+    TBuf<QuePosition::VECCALC> selMaskBuf; // Compare 输出 mask (uint8_t)
     // Log 隐式 tmpBuffer 由框架从未 InitBuffer 的剩余 UB 自动申请，
     // Host Tiling 已通过 GetLogMaxMinTmpSize 在 ubFactor 计算中扣除字节
 
     GlobalTensor<T> inputGM;
     GlobalTensor<T> outputGM;
 
-    int64_t blockLength_ = 0;   // 本核要处理的元素总数（可能 < blockFactor，例如尾核）
-    int64_t ubFactor_    = 0;   // 单次 UB 循环处理元素数（已经 64 元素对齐）
+    int64_t blockLength_ = 0; // 本核要处理的元素总数（可能 < blockFactor，例如尾核）
+    int64_t ubFactor_ = 0;    // 单次 UB 循环处理元素数（已经 64 元素对齐）
 };
 
 // ============================================================
@@ -109,22 +106,23 @@ __aicore__ inline void Asinh<T>::Init(GM_ADDR input, GM_ADDR out, const AsinhTil
 {
     int64_t blockIdx = AscendC::GetBlockIdx();
     // MED-2 防御性强转：tilingData->blockFactor 为 int64_t、blockIdx 为 int64_t，
-    // 显式 static_cast<int64_t> 提示并保证乘积在 int64_t 域内运算（实际 blockFactor*blockIdx ≤ totalNum + blockFactor 不会溢出）。
+    // 显式 static_cast<int64_t> 提示并保证乘积在 int64_t 域内运算（实际 blockFactor*blockIdx ≤ totalNum + blockFactor
+    // 不会溢出）。
     int64_t blockOffset = static_cast<int64_t>(tilingData->blockFactor) * blockIdx;
     int64_t remainder = tilingData->totalNum - blockOffset;
     blockLength_ = (remainder > tilingData->blockFactor) ? tilingData->blockFactor : remainder;
-    ubFactor_    = tilingData->ubFactor;
+    ubFactor_ = tilingData->ubFactor;
 
     inputGM.SetGlobalBuffer((__gm__ T*)input + blockOffset, blockLength_);
-    outputGM.SetGlobalBuffer((__gm__ T*)out   + blockOffset, blockLength_);
+    outputGM.SetGlobalBuffer((__gm__ T*)out + blockOffset, blockLength_);
 
-    pipe.InitBuffer(inputQue,   BUFFER_NUM, ubFactor_ * sizeof(T));
-    pipe.InitBuffer(outputQue,  BUFFER_NUM, ubFactor_ * sizeof(T));
-    pipe.InitBuffer(xOrigBuf,   ubFactor_ * sizeof(float));  // 原始 x（保留符号位）
-    pipe.InitBuffer(absXBuf,    ubFactor_ * sizeof(float));  // |x|（FP16/BF16 路径也作 fp32Out）
-    pipe.InitBuffer(bBuf,       ubFactor_ * sizeof(float));  // 通用 b Buffer
-    pipe.InitBuffer(rBuf,       ubFactor_ * sizeof(float));  // 通用 R Buffer
-    pipe.InitBuffer(sBuf,       ubFactor_ * sizeof(float));  // 通用 S Buffer
+    pipe.InitBuffer(inputQue, BUFFER_NUM, ubFactor_ * sizeof(T));
+    pipe.InitBuffer(outputQue, BUFFER_NUM, ubFactor_ * sizeof(T));
+    pipe.InitBuffer(xOrigBuf, ubFactor_ * sizeof(float)); // 原始 x（保留符号位）
+    pipe.InitBuffer(absXBuf, ubFactor_ * sizeof(float));  // |x|（FP16/BF16 路径也作 fp32Out）
+    pipe.InitBuffer(bBuf, ubFactor_ * sizeof(float));     // 通用 b Buffer
+    pipe.InitBuffer(rBuf, ubFactor_ * sizeof(float));     // 通用 R Buffer
+    pipe.InitBuffer(sBuf, ubFactor_ * sizeof(float));     // 通用 S Buffer
     // selMask：1 字节/元素，按 256B 对齐保守分配 (ubFactor 字节本身就 64 元素对齐 → 64 字节，不足 256B
     // 保险起见再 round up 到 256B)
     pipe.InitBuffer(selMaskBuf, ((ubFactor_ + 255) / 256 * 256) * sizeof(uint8_t));
@@ -137,7 +135,7 @@ template <typename T>
 __aicore__ inline void Asinh<T>::Process()
 {
     if (blockLength_ <= 0) {
-        return;   // 尾核可能没有数据
+        return; // 尾核可能没有数据
     }
     int64_t loopCount = (blockLength_ + ubFactor_ - 1) / ubFactor_;
     for (int64_t i = 0; i < loopCount; i++) {
@@ -157,9 +155,9 @@ __aicore__ inline void Asinh<T>::CopyIn(int64_t progress, int64_t currentNum)
     LocalTensor<T> xLocal = inputQue.template AllocTensor<T>();
     AscendC::DataCopyExtParams copyParams;
     copyParams.blockCount = 1;
-    copyParams.blockLen   = static_cast<uint32_t>(currentNum * sizeof(T));
-    copyParams.srcStride  = 0;
-    copyParams.dstStride  = 0;
+    copyParams.blockLen = static_cast<uint32_t>(currentNum * sizeof(T));
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
     AscendC::DataCopyPad(xLocal, inputGM[progress * ubFactor_], copyParams, {false, 0, 0, 0});
     inputQue.EnQue(xLocal);
 }
@@ -175,9 +173,9 @@ __aicore__ inline void Asinh<T>::CopyOut(int64_t progress, int64_t currentNum)
     LocalTensor<T> yLocal = outputQue.template DeQue<T>();
     AscendC::DataCopyExtParams copyParams;
     copyParams.blockCount = 1;
-    copyParams.blockLen   = static_cast<uint32_t>(currentNum * sizeof(T));
-    copyParams.srcStride  = 0;
-    copyParams.dstStride  = 0;
+    copyParams.blockLen = static_cast<uint32_t>(currentNum * sizeof(T));
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
     AscendC::DataCopyPad(outputGM[progress * ubFactor_], yLocal, copyParams);
     outputQue.FreeTensor(yLocal);
 }
@@ -255,10 +253,8 @@ __aicore__ inline void Asinh<T>::Compute(int64_t currentNum)
 // 作为 count，满足 Compare.md line 114/125 的 256B 对齐强约束。
 // ============================================================
 template <typename T>
-__aicore__ inline void Asinh<T>::ComputeFp32Pipeline(
-    LocalTensor<float>& xOrigFp32,
-    LocalTensor<float>& yFp32,
-    int64_t count)
+__aicore__ inline void Asinh<T>::ComputeFp32Pipeline(LocalTensor<float>& xOrigFp32, LocalTensor<float>& yFp32,
+                                                     int64_t count)
 {
     uint32_t n = static_cast<uint32_t>(count);
     // **v1.1 关键**：Compare/Select 必须 256B 对齐 → FP32 视角 64 元素
@@ -267,10 +263,10 @@ __aicore__ inline void Asinh<T>::ComputeFp32Pipeline(
     //   超出 currentNum 的对齐区间内 yFp32 为脏值，但 CopyOut DataCopyPad 按字节 blockLen 截断写回
     uint32_t nAligned = (n + COMPARE_ALIGN_ELEMS_KERNEL - 1) & ~(COMPARE_ALIGN_ELEMS_KERNEL - 1);
 
-    LocalTensor<float>   absX    = absXBuf.Get<float>();
-    LocalTensor<float>   b       = bBuf.Get<float>();
-    LocalTensor<float>   r       = rBuf.Get<float>();
-    LocalTensor<float>   s       = sBuf.Get<float>();
+    LocalTensor<float> absX = absXBuf.Get<float>();
+    LocalTensor<float> b = bBuf.Get<float>();
+    LocalTensor<float> r = rBuf.Get<float>();
+    LocalTensor<float> s = sBuf.Get<float>();
     LocalTensor<uint8_t> selMask = selMaskBuf.Get<uint8_t>();
 
     // ===== Step 1: absX = |xOrigFp32| =====
@@ -295,7 +291,7 @@ __aicore__ inline void Asinh<T>::ComputeFp32Pipeline(
     AscendC::Sqrt(r, r, n);
 
     // ===== Step 8: r = sqrt(1/|x|² + 1) + 1/|x| =====
-    AscendC::Add(r, r, b, n);   // bBuf 之后释放可复用
+    AscendC::Add(r, r, b, n); // bBuf 之后释放可复用
 
     // ===== Step 9: r = |x| / (sqrt + 1/|x|) =====
     AscendC::Div(r, absX, r, n);
@@ -318,8 +314,8 @@ __aicore__ inline void Asinh<T>::ComputeFp32Pipeline(
     AscendC::Log(s, s, n);
 
     // ===== Step 15: s = log(u) * r / clipped_s → 主路径 res =====
-    AscendC::Mul(s, s, r, n);   // s = log(u) * r
-    AscendC::Div(s, s, b, n);   // s = log(u) * r / clipped_s
+    AscendC::Mul(s, s, r, n); // s = log(u) * r
+    AscendC::Div(s, s, b, n); // s = log(u) * r / clipped_s
     // bBuf 此后再次释放
 
     // ===== Step 16: 大参数修正 result_2 = min(res, log(|x|) + ln(2) + 1/|x|²) =====
@@ -335,8 +331,8 @@ __aicore__ inline void Asinh<T>::ComputeFp32Pipeline(
     // 的预算（参考 DESIGN §3.8.1），不在本次防御性修复范围。
     AscendC::Duplicate(b, CONST_ONE, n);
     AscendC::Div(b, b, absX, n);
-    AscendC::Mul(b, b, b, n);                 // b = 1/|x|²
-    AscendC::Add(r, r, b, n);                 // r = log(|x|) + ln(2) + 1/|x|²
+    AscendC::Mul(b, b, b, n); // b = 1/|x|²
+    AscendC::Add(r, r, b, n); // r = log(|x|) + ln(2) + 1/|x|²
     // 16d: s = min(s, r) → result_2
     AscendC::Min(s, s, r, n);
 

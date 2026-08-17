@@ -11,7 +11,7 @@
 
 /*!
  * \file real_graph_infer.cpp
- * \brief Real operator graph infer resource (shape + dtype)
+ * \brief Real operator data type inference
  */
 
 #include "register/op_impl_registry.h"
@@ -21,20 +21,6 @@ using namespace ge;
 namespace ops {
 static constexpr int64_t INPUT_IDX = 0;
 static constexpr int64_t OUTPUT_IDX = 0;
-
-static ge::graphStatus RealInferShapeFunc(gert::InferShapeContext* context)
-{
-    const gert::Shape* inShape = context->GetInputShape(INPUT_IDX);
-    if (inShape == nullptr) {
-        return GRAPH_FAILED;
-    }
-    gert::Shape* outShape = context->GetOutputShape(OUTPUT_IDX);
-    if (outShape == nullptr) {
-        return GRAPH_FAILED;
-    }
-    *outShape = *inShape;
-    return GRAPH_SUCCESS;
-}
 
 static ge::graphStatus RealInferDataTypeFunc(gert::InferDataTypeContext* context)
 {
@@ -67,5 +53,5 @@ static ge::graphStatus RealInferDataTypeFunc(gert::InferDataTypeContext* context
     return GRAPH_SUCCESS;
 }
 
-IMPL_OP(Real).InferShape(RealInferShapeFunc).InferDataType(RealInferDataTypeFunc);
+IMPL_OP(Real).InferDataType(RealInferDataTypeFunc);
 } // namespace ops

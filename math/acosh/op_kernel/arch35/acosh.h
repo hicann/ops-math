@@ -30,7 +30,6 @@
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
 #include "acosh_tiling_data.h"
-#include "acosh_tiling_key.h"
 
 namespace NsAcosh {
 using namespace AscendC;
@@ -38,12 +37,12 @@ using namespace AscendC;
 // ============================================================
 // 13 步流程的 FP32 常量（requirement §8.1 强约束 FP32 字面量精度）
 // ============================================================
-constexpr float CONST_NEG_ONE     = -1.0f;
-constexpr float CONST_ONE         =  1.0f;
-constexpr float CONST_S_MIN       =  1.0e-45f;       // clip 下界（requirement §8.1）
-constexpr float CONST_S_MAX       =  3.4028235e34f;  // clip 上界（requirement §8.1）
+constexpr float CONST_NEG_ONE = -1.0f;
+constexpr float CONST_ONE = 1.0f;
+constexpr float CONST_S_MIN = 1.0e-45f;      // clip 下界（requirement §8.1）
+constexpr float CONST_S_MAX = 3.4028235e34f; // clip 上界（requirement §8.1）
 // ln(2) FP32 近似 ≈ 0.6931（requirement v1.2 §8.1 + DESIGN v2.1 §3.5.1 / §5.1 R5 已修正）
-constexpr float CONST_LN2_ADD     =  0.693147180559945286227f;
+constexpr float CONST_LN2_ADD = 0.693147180559945286227f;
 
 // Double Buffer 固定为 2（13 步含 Log/Sqrt/Div 计算密集，双缓冲收益显著）
 static constexpr int32_t BUFFER_NUM = 2;
@@ -62,14 +61,12 @@ private:
     __aicore__ inline void CopyOut(int64_t progress, int64_t currentNum);
 
     // 13 步 FP32 计算（支持 xFp32 == yFp32 别名调用，FP16/BF16 路径下二者同为 fp32WorkBuf）
-    __aicore__ inline void ComputeFp32Pipeline(LocalTensor<float>& xFp32,
-                                                LocalTensor<float>& yFp32,
-                                                int64_t count);
+    __aicore__ inline void ComputeFp32Pipeline(LocalTensor<float>& xFp32, LocalTensor<float>& yFp32, int64_t count);
 
 private:
     TPipe pipe;
-    TQue<QuePosition::VECIN,  BUFFER_NUM> inputQue;     // GM → UB 输入队列（dtype = T）
-    TQue<QuePosition::VECOUT, BUFFER_NUM> outputQue;    // UB → GM 输出队列（dtype = T）
+    TQue<QuePosition::VECIN, BUFFER_NUM> inputQue;   // GM → UB 输入队列（dtype = T）
+    TQue<QuePosition::VECOUT, BUFFER_NUM> outputQue; // UB → GM 输出队列（dtype = T）
     // FP32 工作 Buffer：FP16/BF16 路径承担 xFp32==yFp32==fp32Work 三重角色；FP32 路径下未必用到
     TBuf<QuePosition::VECCALC> fp32WorkBuf;
     // 13 步 Buffer 复用
@@ -85,8 +82,8 @@ private:
     GlobalTensor<T> inputGM;
     GlobalTensor<T> outputGM;
 
-    int64_t blockLength_ = 0;   // 本核要处理的元素总数（可能 < blockFactor，例如尾核）
-    int64_t ubFactor_    = 0;   // 单次 UB 循环处理元素数
+    int64_t blockLength_ = 0; // 本核要处理的元素总数（可能 < blockFactor，例如尾核）
+    int64_t ubFactor_ = 0;    // 单次 UB 循环处理元素数
 };
 
 // ============================================================
@@ -100,13 +97,13 @@ __aicore__ inline void Acosh<T>::Init(GM_ADDR self, GM_ADDR out, const AcoshTili
     // blockIdx ≤ usedCoreNum-1，乘积 ≤ totalNum ≤ INT64_MAX，无溢出风险。
     int64_t remainder = tilingData->totalNum - tilingData->blockFactor * blockIdx;
     blockLength_ = (remainder > tilingData->blockFactor) ? tilingData->blockFactor : remainder;
-    ubFactor_    = tilingData->ubFactor;
+    ubFactor_ = tilingData->ubFactor;
 
     inputGM.SetGlobalBuffer((__gm__ T*)self + tilingData->blockFactor * blockIdx, blockLength_);
-    outputGM.SetGlobalBuffer((__gm__ T*)out  + tilingData->blockFactor * blockIdx, blockLength_);
+    outputGM.SetGlobalBuffer((__gm__ T*)out + tilingData->blockFactor * blockIdx, blockLength_);
 
-    pipe.InitBuffer(inputQue,    BUFFER_NUM, ubFactor_ * sizeof(T));
-    pipe.InitBuffer(outputQue,   BUFFER_NUM, ubFactor_ * sizeof(T));
+    pipe.InitBuffer(inputQue, BUFFER_NUM, ubFactor_ * sizeof(T));
+    pipe.InitBuffer(outputQue, BUFFER_NUM, ubFactor_ * sizeof(T));
     // FP32 工作区：仅 FP16/BF16 路径用于承担 xFp32==yFp32==fp32Work 三重角色
     // FP32 路径下 Compute() 直接对 xLocal/yLocal 执行 13 步流水，fp32WorkBuf 不参与计算 → 跳过 InitBuffer
     // 注：BufferCount FP32 路径 8 → 7（节省 ubFactor*4B），FP16/BF16 路径保持 8
@@ -114,10 +111,10 @@ __aicore__ inline void Acosh<T>::Init(GM_ADDR self, GM_ADDR out, const AcoshTili
         pipe.InitBuffer(fp32WorkBuf, ubFactor_ * sizeof(float));
     }
     // 13 步 Buffer 复用：data_t / data_r
-    pipe.InitBuffer(dataTBuf,    ubFactor_ * sizeof(float));
-    pipe.InitBuffer(dataRBuf,    ubFactor_ * sizeof(float));
+    pipe.InitBuffer(dataTBuf, ubFactor_ * sizeof(float));
+    pipe.InitBuffer(dataRBuf, ubFactor_ * sizeof(float));
     // step 13b 的 log(x)+ln(2) 暂存（非 Log 隐式 tmpBuffer 用途；后者由框架在剩余 UB 自动申请）
-    pipe.InitBuffer(logTmpBuf,   ubFactor_ * sizeof(float));
+    pipe.InitBuffer(logTmpBuf, ubFactor_ * sizeof(float));
 }
 
 // ============================================================
@@ -127,7 +124,7 @@ template <typename T>
 __aicore__ inline void Acosh<T>::Process()
 {
     if (blockLength_ <= 0) {
-        return;   // 尾核可能没有数据
+        return; // 尾核可能没有数据
     }
     int64_t loopCount = (blockLength_ + ubFactor_ - 1) / ubFactor_;
     for (int64_t i = 0; i < loopCount; i++) {
@@ -147,9 +144,9 @@ __aicore__ inline void Acosh<T>::CopyIn(int64_t progress, int64_t currentNum)
     LocalTensor<T> xLocal = inputQue.template AllocTensor<T>();
     AscendC::DataCopyExtParams copyParams;
     copyParams.blockCount = 1;
-    copyParams.blockLen   = static_cast<uint32_t>(currentNum * sizeof(T));
-    copyParams.srcStride  = 0;
-    copyParams.dstStride  = 0;
+    copyParams.blockLen = static_cast<uint32_t>(currentNum * sizeof(T));
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
     AscendC::DataCopyPad(xLocal, inputGM[progress * ubFactor_], copyParams, {false, 0, 0, 0});
     inputQue.EnQue(xLocal);
 }
@@ -163,9 +160,9 @@ __aicore__ inline void Acosh<T>::CopyOut(int64_t progress, int64_t currentNum)
     LocalTensor<T> yLocal = outputQue.template DeQue<T>();
     AscendC::DataCopyExtParams copyParams;
     copyParams.blockCount = 1;
-    copyParams.blockLen   = static_cast<uint32_t>(currentNum * sizeof(T));
-    copyParams.srcStride  = 0;
-    copyParams.dstStride  = 0;
+    copyParams.blockLen = static_cast<uint32_t>(currentNum * sizeof(T));
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
     AscendC::DataCopyPad(outputGM[progress * ubFactor_], yLocal, copyParams);
     outputQue.FreeTensor(yLocal);
 }
@@ -190,7 +187,7 @@ __aicore__ inline void Acosh<T>::Compute(int64_t currentNum)
         //                  float → half/bfloat16_t 支持 CAST_RINT（不支持 CAST_NONE）
         LocalTensor<float> fp32Work = fp32WorkBuf.Get<float>();
         AscendC::Cast(fp32Work, xLocal, AscendC::RoundMode::CAST_NONE, currentNum);
-        ComputeFp32Pipeline(fp32Work, fp32Work, currentNum);   // xFp32 == yFp32 别名调用
+        ComputeFp32Pipeline(fp32Work, fp32Work, currentNum); // xFp32 == yFp32 别名调用
         AscendC::Cast(yLocal, fp32Work, AscendC::RoundMode::CAST_RINT, currentNum);
     }
 
@@ -209,21 +206,19 @@ __aicore__ inline void Acosh<T>::Compute(int64_t currentNum)
 //   logTmp: step 13a/b 写 → step 13c 读
 // ============================================================
 template <typename T>
-__aicore__ inline void Acosh<T>::ComputeFp32Pipeline(
-    LocalTensor<float>& xFp32,
-    LocalTensor<float>& yFp32,
-    int64_t count)
+__aicore__ inline void Acosh<T>::ComputeFp32Pipeline(LocalTensor<float>& xFp32, LocalTensor<float>& yFp32,
+                                                     int64_t count)
 {
-    LocalTensor<float> dataT  = dataTBuf.Get<float>();   // data_t 备份
-    LocalTensor<float> dataR  = dataRBuf.Get<float>();   // data_r 备份
-    LocalTensor<float> logTmp = logTmpBuf.Get<float>();  // log(x)+ln(2) 暂存
+    LocalTensor<float> dataT = dataTBuf.Get<float>();   // data_t 备份
+    LocalTensor<float> dataR = dataRBuf.Get<float>();   // data_r 备份
+    LocalTensor<float> logTmp = logTmpBuf.Get<float>(); // log(x)+ln(2) 暂存
     uint32_t n = static_cast<uint32_t>(count);
 
     // -------- Step 13a/13b 提前算：data_s1 = log(x) + ln(2)，存到 logTmp --------
     // 提前算的目的：xFp32 在 step 1 后会被复用（FP32 路径不会，FP16/BF16 别名路径会）
     //               step 13a/13b 不修改 xFp32，安全
-    AscendC::Log(logTmp, xFp32, n);                       // logTmp = ln(x)
-    AscendC::Adds(logTmp, logTmp, CONST_LN2_ADD, n);      // logTmp = ln(x) + ln(2)
+    AscendC::Log(logTmp, xFp32, n);                  // logTmp = ln(x)
+    AscendC::Adds(logTmp, logTmp, CONST_LN2_ADD, n); // logTmp = ln(x) + ln(2)
 
     // -------- Step 1: data_t = x - 1 --------
     AscendC::Adds(dataT, xFp32, CONST_NEG_ONE, n);

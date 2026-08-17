@@ -25,17 +25,17 @@
 #include "op_common/op_host/util/math_util.h"
 #include "op_common/op_host/util/platform_util.h"
 #include "../../op_kernel/arch35/real_tiling_data.h"
-#include "../../op_kernel/arch35/real_tiling_key.h"
 
 namespace optiling {
 
-using Ops::Base::CeilDiv;
 using Ops::Base::CeilAlign;
-using Ops::Base::FloorDiv;
+using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
+constexpr size_t MAX_DIM_NUM = 8;
 
 static const gert::Shape g_vec_1_shape = {1};
 
@@ -107,14 +107,20 @@ static int64_t ComputeUbFactor(uint64_t isComplex, int64_t typeSize, int64_t ubS
     int64_t usableUbSize = (ubSize > UB_RESERVED_BYTES) ? (ubSize - UB_RESERVED_BYTES) : 0;
 
     if (isComplex == 0) {
-        if (typeSize == 0) { return 0; }  // Re-check to satisfy static analyzer (G.EXP.22-CPP).
+        if (typeSize == 0) {
+            return 0;
+        } // Re-check to satisfy static analyzer (G.EXP.22-CPP).
         return FloorAlign(usableUbSize / typeSize, ubBlockSize);
     }
     int64_t bytesPerElement = 3 * typeSize + 4;
-    if (bytesPerElement == 0) { return 0; }  // Re-check to satisfy static analyzer.
+    if (bytesPerElement == 0) {
+        return 0;
+    } // Re-check to satisfy static analyzer.
     int64_t ubCapacity = FloorAlign(usableUbSize / bytesPerElement, ubBlockSize);
     int64_t twoTypeSize = 2 * typeSize;
-    if (twoTypeSize == 0) { return 0; }  // Re-check to satisfy static analyzer.
+    if (twoTypeSize == 0) {
+        return 0;
+    } // Re-check to satisfy static analyzer.
     int64_t maxByBlockLen = FloorAlign(MAX_COPY_BYTES / twoTypeSize, ubBlockSize);
     return std::min(ubCapacity, maxByBlockLen);
 }
@@ -125,65 +131,81 @@ static ge::graphStatus RealTilingFunc(gert::TilingContext* context)
     // 1. Get platform info
     uint64_t ubSize;
     int64_t coreNum;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     // 2. Get input shape and dtype
     auto inputShapePtr = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputShapePtr);
-    auto inputShape = EnsureNotScalar(inputShapePtr->GetStorageShape());
+    const auto& inputStorageShape = inputShapePtr->GetStorageShape();
+    OP_CHECK_IF(inputStorageShape.GetDimNum() > MAX_DIM_NUM,
+                OP_LOGE(context, "Real: input rank must be <= 8, got %zu", inputStorageShape.GetDimNum()),
+                return ge::GRAPH_FAILED);
+
+    auto inputShape = EnsureNotScalar(inputStorageShape);
 
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
 
     DtypeInfo dtypeInfo;
-    OP_CHECK_IF(
-        GetDtypeInfo(context, inputDesc->GetDataType(), dtypeInfo) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetDtypeInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetDtypeInfo(context, inputDesc->GetDataType(), dtypeInfo) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetDtypeInfo error"), return ge::GRAPH_FAILED);
+
+    auto outputShapePtr = context->GetOutputShape(0);
+    auto outputDesc = context->GetOutputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, outputShapePtr);
+    OP_CHECK_NULL_WITH_CONTEXT(context, outputDesc);
+    const auto& outputStorageShape = outputShapePtr->GetStorageShape();
+    OP_CHECK_IF(outputStorageShape.GetDimNum() > MAX_DIM_NUM,
+                OP_LOGE(context, "Real: output rank must be <= 8, got %zu", outputStorageShape.GetDimNum()),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputStorageShape != outputStorageShape,
+                OP_LOGE(context, "Real: input and output shapes must be identical"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(outputDesc->GetDataType() != dtypeInfo.outputDtype,
+                OP_LOGE(context, "Real: output dtype %d does not match input dtype %d",
+                        static_cast<int>(outputDesc->GetDataType()), static_cast<int>(inputDesc->GetDataType())),
+                return ge::GRAPH_FAILED);
+
+    const auto* attrs = context->GetAttrs();
+    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
+    const int64_t* tout = attrs->GetAttrPointer<int64_t>(0);
+    if (tout != nullptr) {
+        OP_CHECK_IF(*tout != static_cast<int64_t>(ge::DT_FLOAT16) && *tout != static_cast<int64_t>(ge::DT_FLOAT),
+                    OP_LOGE(context, "Real: unsupported Tout value %ld", *tout), return ge::GRAPH_FAILED);
+    }
 
     // 3. Get workspace size
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     // 4. Compute tiling parameters
     RealTilingData* tiling = context->GetTilingData<RealTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(RealTilingData), 0, sizeof(RealTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(RealTilingData), 0, sizeof(RealTilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     int64_t ubBlockSize = Ops::Base::GetUbBlockSize(context);
     int64_t totalOutputNum = inputShape.GetShapeSize();
+    OP_CHECK_IF(totalOutputNum < 0, OP_LOGE(context, "Real: invalid negative shape size %ld", totalOutputNum),
+                return ge::GRAPH_FAILED);
 
     // Empty tensor: use BlockDim(1) with totalOutputNum=0 so kernel falls through with
     // loopCount = (blockLength_ + ubLength_ - 1) / ubLength_ = 0 and exits cleanly.
     // ubFactor must remain positive to avoid div-by-zero in the kernel loopCount expression.
-    if (totalOutputNum <= 0) {
+    if (totalOutputNum == 0) {
         tiling->totalOutputNum = 0;
         tiling->blockFactor = 0;
         tiling->ubFactor = 1;
         context->SetBlockDim(1);
-        uint32_t dType = static_cast<uint32_t>(dtypeInfo.outputDtype);
-        ASCENDC_TPL_SEL_PARAM(context, dType, dtypeInfo.isComplex);
         return ge::GRAPH_SUCCESS;
     }
 
     tiling->totalOutputNum = totalOutputNum;
     tiling->blockFactor = CeilAlign(CeilDiv(totalOutputNum, coreNum), ubBlockSize);
-    tiling->ubFactor = ComputeUbFactor(dtypeInfo.isComplex, dtypeInfo.typeSize,
-                                       static_cast<int64_t>(ubSize), ubBlockSize);
+    tiling->ubFactor = ComputeUbFactor(dtypeInfo.isComplex, dtypeInfo.typeSize, static_cast<int64_t>(ubSize),
+                                       ubBlockSize);
 
     context->SetBlockDim(CeilDiv(totalOutputNum, tiling->blockFactor));
-
-    // 5. Set TilingKey
-    uint32_t dType = static_cast<uint32_t>(dtypeInfo.outputDtype);
-    ASCENDC_TPL_SEL_PARAM(context, dType, dtypeInfo.isComplex);
 
     return ge::GRAPH_SUCCESS;
 }

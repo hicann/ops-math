@@ -63,6 +63,7 @@ constexpr int64_t FP32_TYPE_SIZE = 4;
 //   匹配 fp32 64 元素 / fp16/bf16 128 元素的向量单元处理粒度。
 constexpr int64_t VEC_ALIGN_BYTES = 256;
 constexpr int64_t VEC_ALIGN_FP32_ELEMS = VEC_ALIGN_BYTES / FP32_TYPE_SIZE; // = 64 元素
+constexpr size_t MAX_DIM_NUM = 8;
 
 static inline const gert::Shape EnsureNotScalar(const gert::Shape& inShape)
 {
@@ -92,7 +93,11 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* 
 {
     auto inputX = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
-    auto inputShapeX = EnsureNotScalar(inputX->GetStorageShape());
+    const auto& inputStorageShape = inputX->GetStorageShape();
+    OP_CHECK_IF(inputStorageShape.GetDimNum() > MAX_DIM_NUM,
+                OP_LOGE(context, "Cosh: input rank must be <= 8, got %zu", inputStorageShape.GetDimNum()),
+                return ge::GRAPH_FAILED);
+    auto inputShapeX = EnsureNotScalar(inputStorageShape);
     *totalNum = inputShapeX.GetShapeSize();
     // 外部输入 shape 合法性：元素总数不得为负（畸形 shape 防护，避免负值进入后续切分链）
     OP_CHECK_IF(*totalNum < 0, OP_LOGE(context, "Cosh: invalid negative shape size %ld", static_cast<long>(*totalNum)),
@@ -105,6 +110,21 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* 
     *dataType = inputDesc->GetDataType();
     OP_CHECK_IF(supportedDtype.count(*dataType) == 0,
                 OP_LOGE(context, "Cosh: invalid dtype %d", static_cast<int>(*dataType)), return ge::GRAPH_FAILED);
+
+    auto output = context->GetOutputShape(0);
+    auto outputDesc = context->GetOutputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, output);
+    OP_CHECK_NULL_WITH_CONTEXT(context, outputDesc);
+    const auto& outputStorageShape = output->GetStorageShape();
+    OP_CHECK_IF(outputStorageShape.GetDimNum() > MAX_DIM_NUM,
+                OP_LOGE(context, "Cosh: output rank must be <= 8, got %zu", outputStorageShape.GetDimNum()),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputStorageShape != outputStorageShape,
+                OP_LOGE(context, "Cosh: input and output shapes must be identical"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(outputDesc->GetDataType() != *dataType,
+                OP_LOGE(context, "Cosh: output dtype must match input dtype: input=%d, output=%d",
+                        static_cast<int>(*dataType), static_cast<int>(outputDesc->GetDataType())),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
