@@ -73,16 +73,16 @@ struct NanToNumCustom : public Vec::ElemwiseQuaternaryOP<T, T, float, float, flo
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                     mask = Reg::UpdateMask<float, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                    Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
                     Reg::Compare<T, CMPMODE::NE>(cmpMaskNan, vregInput, vregInput, mask);
-                    Reg::CompareScalar<T, CMPMODE::EQ>(cmpMaskPosinf, vregInput, maxValue, mask);
-                    Reg::CompareScalar<T, CMPMODE::EQ>(cmpMaskNeginf, vregInput, minValue, mask);
+                    Reg::Compares<T, CMPMODE::EQ>(cmpMaskPosinf, vregInput, maxValue, mask);
+                    Reg::Compares<T, CMPMODE::EQ>(cmpMaskNeginf, vregInput, minValue, mask);
                     Reg::Select<T>(vregOutput, nanTensor, vregInput, cmpMaskNan);
                     Reg::Select<T>(vregOutput, posinfTensor, vregOutput, cmpMaskPosinf);
                     Reg::Select<T>(vregOutput, neginfTensor, vregOutput, cmpMaskNeginf);
                     // OpCopyOut
-                    Reg::DataCopy<T, Reg::StoreDist::DIST_NORM_B32>((__ubuf__ T*)(dstAddr + loopIdx * vlSize),
-                                                                    vregOutput, mask);
+                    Reg::StoreAlign<T, Reg::StoreDist::DIST_NORM_B32>((__ubuf__ T*)(dstAddr + loopIdx * vlSize),
+                                                                      vregOutput, mask);
                 }
             }
         } else {
@@ -95,19 +95,19 @@ struct NanToNumCustom : public Vec::ElemwiseQuaternaryOP<T, T, float, float, flo
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                     mask = Reg::UpdateMask<float, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    Reg::DataCopy<T, Reg::LoadDist::DIST_UNPACK_B16>(vregInput16,
-                                                                     (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                    Reg::LoadAlign<T, Reg::LoadDist::DIST_UNPACK_B16>(vregInput16,
+                                                                      (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
                     Reg::Cast<float, T, castTrait0>(vregInput, vregInput16, mask);
                     Reg::Compare<float, CMPMODE::NE>(cmpMaskNan, vregInput, vregInput, mask);
-                    Reg::CompareScalar<float, CMPMODE::EQ>(cmpMaskPosinf, vregInput, maxValue, mask);
-                    Reg::CompareScalar<float, CMPMODE::EQ>(cmpMaskNeginf, vregInput, minValue, mask);
+                    Reg::Compares<float, CMPMODE::EQ>(cmpMaskPosinf, vregInput, maxValue, mask);
+                    Reg::Compares<float, CMPMODE::EQ>(cmpMaskNeginf, vregInput, minValue, mask);
                     Reg::Select<float>(vregOutput, nanTensor, vregInput, cmpMaskNan);
                     Reg::Select<float>(vregOutput, posinfTensor, vregOutput, cmpMaskPosinf);
                     Reg::Select<float>(vregOutput, neginfTensor, vregOutput, cmpMaskNeginf);
                     Reg::Cast<T, float, castTrait1>(vregOutput16, vregOutput, mask);
                     // OpCopyOut
-                    Reg::DataCopy<T, Reg::StoreDist::DIST_PACK_B32>((__ubuf__ T*)(dstAddr + loopIdx * vlSize),
-                                                                    vregOutput16, mask);
+                    Reg::StoreAlign<T, Reg::StoreDist::DIST_PACK_B32>((__ubuf__ T*)(dstAddr + loopIdx * vlSize),
+                                                                      vregOutput16, mask);
                 }
             }
         }

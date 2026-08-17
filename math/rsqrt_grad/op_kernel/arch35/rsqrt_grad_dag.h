@@ -85,11 +85,11 @@ struct DivsCustom : public Vec::ElemwiseBinaryOP<T, T, T> {
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                 mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                 // OpCopyIn
-                Reg::DataCopy(vregInput1, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                Reg::LoadAlign(vregInput1, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
                 // OpCompute
                 Reg::Div(vregOutput, vregInput1, vregInput2, mask);
                 // OpCopyOut
-                Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
+                Reg::StoreAlign((__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
             }
         }
 #endif
@@ -125,13 +125,13 @@ struct RsqrtGradB8 : public Vec::ElemwiseBinaryOP<T, T, T> {
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                 mask = Reg::UpdateMask<float>(count);
                 // OpCopyIn
-                Reg::DataCopy<T, Reg::LoadDist::DIST_UNPACK4_B8>(vregInput1,
-                                                                 (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
+                Reg::LoadAlign<T, Reg::LoadDist::DIST_UNPACK4_B8>(vregInput1,
+                                                                  (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
                 Reg::Cast<half, T, castTraitB82B16>(regTensor5, vregInput1, mask);
                 Reg::Cast<float, half, cutsomCastTrait0>(regTensor3, regTensor5, mask);
 
-                Reg::DataCopy<T, Reg::LoadDist::DIST_UNPACK4_B8>(vregInput2,
-                                                                 (__ubuf__ T*)(src2Addr + loopIdx * vlSize));
+                Reg::LoadAlign<T, Reg::LoadDist::DIST_UNPACK4_B8>(vregInput2,
+                                                                  (__ubuf__ T*)(src2Addr + loopIdx * vlSize));
                 Reg::Cast<half, T, castTraitB82B16>(regTensor6, vregInput2, mask);
                 Reg::Cast<float, half, cutsomCastTrait0>(regTensor4, regTensor6, mask);
 
@@ -156,8 +156,8 @@ struct RsqrtGradB8 : public Vec::ElemwiseBinaryOP<T, T, T> {
                 Reg::Cast<half, float, castTraitB322B16>(regTensor5, regTensor3, mask);
                 Reg::Cast<T, half, castTraitB162B8>(vregOutput, regTensor5, mask);
                 // OpCopyOut
-                Reg::DataCopy<T, Reg::StoreDist::DIST_PACK4_B32>((__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput,
-                                                                 mask);
+                Reg::StoreAlign<T, Reg::StoreDist::DIST_PACK4_B32>((__ubuf__ T*)(dstAddr + loopIdx * vlSize),
+                                                                   vregOutput, mask);
             }
         }
 #endif

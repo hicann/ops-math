@@ -81,20 +81,20 @@ struct TanhCustom : public Vec::ElemwiseUnaryOP<T, T> {
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                 mask = Reg::UpdateMask<float, Reg::RegTraitNumOne>(count);
                 if constexpr (std::is_same_v<T, float>) {
-                    Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vl));
+                    Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vl));
                 } else {
-                    Reg::DataCopy<T, Reg::LoadDist::DIST_UNPACK_B16>(vregInput16,
-                                                                     (__ubuf__ T*)(srcAddr + loopIdx * vl));
+                    Reg::LoadAlign<T, Reg::LoadDist::DIST_UNPACK_B16>(vregInput16,
+                                                                      (__ubuf__ T*)(srcAddr + loopIdx * vl));
                     Reg::Cast<float, T, castTrait0>(vregInput, vregInput16, mask);
                 }
                 TanhCoreCompute(constRegs, vregInput, vregOutput, mask);
                 if constexpr (std::is_same_v<T, float>) {
-                    Reg::DataCopy<T, Reg::StoreDist::DIST_NORM_B32>((__ubuf__ T*)(dstAddr + loopIdx * vl), vregOutput,
-                                                                    mask);
+                    Reg::StoreAlign<T, Reg::StoreDist::DIST_NORM_B32>((__ubuf__ T*)(dstAddr + loopIdx * vl), vregOutput,
+                                                                      mask);
                 } else {
                     Reg::Cast<T, float, castTrait1>(vregOutput16, vregOutput, mask);
-                    Reg::DataCopy<T, Reg::StoreDist::DIST_PACK_B32>((__ubuf__ T*)(dstAddr + loopIdx * vl), vregOutput16,
-                                                                    mask);
+                    Reg::StoreAlign<T, Reg::StoreDist::DIST_PACK_B32>((__ubuf__ T*)(dstAddr + loopIdx * vl),
+                                                                      vregOutput16, mask);
                 }
             }
         }
@@ -115,10 +115,10 @@ private:
         Reg::Mul(vregInputSqr, vregInput, vregInput, mask);
         Reg::Muls(vregOutput, vregInputSqr, FP32_ZERO_015, mask);
         Reg::Adds(vregOutput, vregOutput, FP32_ZERO_NEG_052, mask);
-        Reg::FusedMulDstAdd(vregOutput, vregInputSqr, constRegs.vregValue1, mask);
-        Reg::FusedMulDstAdd(vregOutput, vregInputSqr, constRegs.vregValue2, mask);
+        Reg::MulDstAdd(vregOutput, vregInputSqr, constRegs.vregValue1, mask);
+        Reg::MulDstAdd(vregOutput, vregInputSqr, constRegs.vregValue2, mask);
         Reg::Mul(vregOutput, vregOutput, vregInputSqr, mask);
-        Reg::FusedMulDstAdd(vregOutput, vregInput, vregInput, mask);
+        Reg::MulDstAdd(vregOutput, vregInput, vregInput, mask);
         Reg::Abs(vregInputAbs, vregInput, mask);
         Reg::Muls(vregInputMid, vregInputAbs, FP32_TWO, mask);
         Reg::Exp(vregInputMid, vregInputMid, mask);
@@ -126,12 +126,12 @@ private:
         Reg::Div(vregInputMid, constRegs.vregOne, vregInputMid, mask);
         Reg::Muls(vregInputMid, vregInputMid, FP32_ZERO_NEG_TWO, mask);
         Reg::Adds(vregInputMid, vregInputMid, FP32_ONE, mask);
-        Reg::CompareScalar<float, CMPMODE::GE>(satMaskReg, vregInputAbs, FP32_SAT_BOUND, mask);
+        Reg::Compares<float, CMPMODE::GE>(satMaskReg, vregInputAbs, FP32_SAT_BOUND, mask);
         Reg::Select(vregInputMid, constRegs.vregOne, vregInputMid, satMaskReg);
         Reg::And(vregSign, constRegs.vregSignMask, (Reg::RegTensor<uint32_t, Reg::RegTraitNumOne>&)vregInput, mask);
         Reg::Or((Reg::RegTensor<uint32_t, Reg::RegTraitNumOne>&)vregInputMid,
                 (Reg::RegTensor<uint32_t, Reg::RegTraitNumOne>&)vregInputMid, vregSign, mask);
-        Reg::CompareScalar<float, CMPMODE::GE>(cmpMaskReg, vregInputAbs, FP32_ZERO_6, mask);
+        Reg::Compares<float, CMPMODE::GE>(cmpMaskReg, vregInputAbs, FP32_ZERO_6, mask);
         Reg::Select(vregOutput, vregInputMid, vregOutput, cmpMaskReg);
     }
 #endif // __CCE_AICORE__

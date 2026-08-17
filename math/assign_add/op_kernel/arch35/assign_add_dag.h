@@ -44,12 +44,12 @@ struct AddCustom : public Vec::ElemwiseBinaryOP<T, T, T> {
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                 mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                 // OpCopyIn
-                Reg::DataCopy(vregInput1, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
-                Reg::DataCopy(vregInput2, (__ubuf__ T*)(src2Addr + loopIdx * vlSize));
+                Reg::LoadAlign(vregInput1, (__ubuf__ T*)(src1Addr + loopIdx * vlSize));
+                Reg::LoadAlign(vregInput2, (__ubuf__ T*)(src2Addr + loopIdx * vlSize));
 
                 Reg::Add(vregOutput, vregInput1, vregInput2, mask);
                 // OpCopyOut
-                Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
+                Reg::StoreAlign((__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
             }
         }
 #endif

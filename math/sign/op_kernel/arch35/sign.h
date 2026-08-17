@@ -54,13 +54,13 @@ struct SignCustom : public Vec::ElemwiseUnaryOP<T, T> {
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                 mask = AscendC::Reg::UpdateMask<T, AscendC::Reg::RegTraitNumOne>(count);
                 // OpCopyIn0
-                AscendC::Reg::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                AscendC::Reg::LoadAlign(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
                 // compute sign
-                AscendC::Reg::CompareScalar<T, AscendC::CMPMODE::GT,
-                                            AscendC::Reg::RegTensor<T, AscendC::Reg::RegTraitNumOne>, T>(
+                AscendC::Reg::Compares<T, AscendC::CMPMODE::GT,
+                                       AscendC::Reg::RegTensor<T, AscendC::Reg::RegTraitNumOne>, T>(
                     vregLeftMask, vregInput, (T)0.0, mask);
-                AscendC::Reg::CompareScalar<T, AscendC::CMPMODE::LT,
-                                            AscendC::Reg::RegTensor<T, AscendC::Reg::RegTraitNumOne>, T>(
+                AscendC::Reg::Compares<T, AscendC::CMPMODE::LT,
+                                       AscendC::Reg::RegTensor<T, AscendC::Reg::RegTraitNumOne>, T>(
                     vregRightMask, vregInput, (T)0.0, mask);
 
                 AscendC::Reg::Duplicate(vregOnes, (T)1.0, mask);
@@ -70,7 +70,7 @@ struct SignCustom : public Vec::ElemwiseUnaryOP<T, T> {
 
                 AscendC::Reg::Sub(vregOutput, vregLeft, vregRight, mask);
                 // OpCopyOut
-                AscendC::Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
+                AscendC::Reg::StoreAlign((__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
             }
         }
 #endif
@@ -105,13 +105,13 @@ struct SignCustomInt64 : public Vec::ElemwiseUnaryOP<T, T> {
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                 mask = AscendC::Reg::UpdateMask<T, AscendC::Reg::RegTraitNumTwo>(count);
                 // OpCopyIn0
-                AscendC::Reg::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                AscendC::Reg::LoadAlign(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
                 // compute sign
-                AscendC::Reg::CompareScalar<T, AscendC::CMPMODE::GT,
-                                            AscendC::Reg::RegTensor<T, AscendC::Reg::RegTraitNumTwo>, T>(
+                AscendC::Reg::Compares<T, AscendC::CMPMODE::GT,
+                                       AscendC::Reg::RegTensor<T, AscendC::Reg::RegTraitNumTwo>, T>(
                     vregLeftMask, vregInput, (T)0.0, mask);
-                AscendC::Reg::CompareScalar<T, AscendC::CMPMODE::LT,
-                                            AscendC::Reg::RegTensor<T, AscendC::Reg::RegTraitNumTwo>, T>(
+                AscendC::Reg::Compares<T, AscendC::CMPMODE::LT,
+                                       AscendC::Reg::RegTensor<T, AscendC::Reg::RegTraitNumTwo>, T>(
                     vregRightMask, vregInput, (T)0.0, mask);
 
                 AscendC::Reg::Duplicate(vregOnes, (T)1.0, mask);
@@ -121,8 +121,8 @@ struct SignCustomInt64 : public Vec::ElemwiseUnaryOP<T, T> {
 
                 AscendC::Reg::Sub(vregOutput, vregLeft, vregRight, mask);
                 // OpCopyOut
-                AscendC::Reg::DataCopy<T, AscendC::Reg::StoreDist::DIST_NORM>((__ubuf__ T*)(dstAddr + loopIdx * vlSize),
-                                                                              vregOutput, mask);
+                AscendC::Reg::StoreAlign<T, AscendC::Reg::StoreDist::DIST_NORM>(
+                    (__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
             }
         }
 #endif

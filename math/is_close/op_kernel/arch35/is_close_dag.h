@@ -81,8 +81,8 @@ struct NanEqualCompare : public Vec::ElemwiseQuaternaryOP<uint8_t, float, float,
                     mask = Reg::UpdateMask<float, Reg::RegTraitNumOne>(count);
                     Reg::Duplicate(regTensorOne, (uint8_t)1.0, mask);
                     Reg::Duplicate(regTensorZero, (uint8_t)0.0, mask);
-                    Reg::DataCopy(x1Reg, (__ubuf__ float*)(src1Addr + loopIdx * vlSize));
-                    Reg::DataCopy(x2Reg, (__ubuf__ float*)(src2Addr + loopIdx * vlSize));
+                    Reg::LoadAlign(x1Reg, (__ubuf__ float*)(src1Addr + loopIdx * vlSize));
+                    Reg::LoadAlign(x2Reg, (__ubuf__ float*)(src2Addr + loopIdx * vlSize));
 
                     // 计算结果1——equalCmpMask
                     Reg::Compare<float, CMPMODE::EQ>(equalCmpMask, x1Reg, x2Reg, mask);
@@ -91,12 +91,12 @@ struct NanEqualCompare : public Vec::ElemwiseQuaternaryOP<uint8_t, float, float,
                     Reg::Compare<float, CMPMODE::NE>(tmpMask1, x1Reg, x1Reg, mask);
                     Reg::Compare<float, CMPMODE::NE>(tmpMask2, x2Reg, x2Reg, mask);
                     // MaskAnd取x1x2都是Nan的位置---------------
-                    Reg::MaskAnd(bothNanMask, tmpMask1, tmpMask2, mask);
+                    Reg::And(bothNanMask, tmpMask1, tmpMask2, mask);
                     // MaskOr取计算结果1、4都为True的位置，结果存储到tmpMask2
-                    Reg::MaskOr(tmpMask2, bothNanMask, equalCmpMask, mask);
+                    Reg::Or(tmpMask2, bothNanMask, equalCmpMask, mask);
 
                     // 计算结果3
-                    Reg::FusedAbsSub(absSubReg, x1Reg, x2Reg, mask); // 中间结果
+                    Reg::AbsSub(absSubReg, x1Reg, x2Reg, mask); // 中间结果
                     Reg::Abs(x2AbsReg, x2Reg, mask);
                     Reg::Muls(rtolTmpReg, x2AbsReg, rtol, mask);
                     Reg::Adds(rtolReg, rtolTmpReg, atol, mask);
@@ -108,18 +108,18 @@ struct NanEqualCompare : public Vec::ElemwiseQuaternaryOP<uint8_t, float, float,
 
                     // 其他处理
                     // 符合公式且有限
-                    Reg::MaskAnd(tmpMask1, funcCmpMask, finiteMask, mask);
+                    Reg::And(tmpMask1, funcCmpMask, finiteMask, mask);
                     // 符合上一条或者完全一致
-                    Reg::MaskOr(resultMask, tmpMask2, tmpMask1, mask);
+                    Reg::Or(resultMask, tmpMask2, tmpMask1, mask);
 
                     Reg::Select(resultReg, regTensorOne, regTensorZero, resultMask);
                     Reg::Pack(reguint16, (AscendC::Reg::RegTensor<uint32_t>&)resultReg);
                     Reg::Pack(reguint8, reguint16);
 
-                    AscendC::Reg::MaskPack<AscendC::Reg::HighLowPart::LOWEST>(tmpMask1, mask);
-                    AscendC::Reg::MaskPack<AscendC::Reg::HighLowPart::LOWEST>(mask, tmpMask1);
+                    AscendC::Reg::Pack<AscendC::Reg::HighLowPart::LOWEST>(tmpMask1, mask);
+                    AscendC::Reg::Pack<AscendC::Reg::HighLowPart::LOWEST>(mask, tmpMask1);
                     // OpCopyOut
-                    Reg::DataCopy((__ubuf__ uint8_t*)(dstAddr + loopIdx * vlSize), reguint8, mask);
+                    Reg::StoreAlign((__ubuf__ uint8_t*)(dstAddr + loopIdx * vlSize), reguint8, mask);
                 }
             }
         } else {
@@ -129,13 +129,13 @@ struct NanEqualCompare : public Vec::ElemwiseQuaternaryOP<uint8_t, float, float,
                     mask = Reg::UpdateMask<float, Reg::RegTraitNumOne>(count);
                     Reg::Duplicate(regTensorOne, (uint8_t)1.0f, mask);
                     Reg::Duplicate(regTensorZero, (uint8_t)0.0f, mask);
-                    Reg::DataCopy(x1Reg, (__ubuf__ float*)(src1Addr + loopIdx * vlSize));
-                    Reg::DataCopy(x2Reg, (__ubuf__ float*)(src2Addr + loopIdx * vlSize));
+                    Reg::LoadAlign(x1Reg, (__ubuf__ float*)(src1Addr + loopIdx * vlSize));
+                    Reg::LoadAlign(x2Reg, (__ubuf__ float*)(src2Addr + loopIdx * vlSize));
                     // 计算结果1——equalCmpMask
                     Reg::Compare<float, CMPMODE::EQ>(equalCmpMask, x1Reg, x2Reg, mask);
 
                     // 计算结果3
-                    Reg::FusedAbsSub(absSubReg, x1Reg, x2Reg, mask); // 中间结果
+                    Reg::AbsSub(absSubReg, x1Reg, x2Reg, mask); // 中间结果
                     Reg::Abs(x2AbsReg, x2Reg, mask);
                     Reg::Muls(rtolTmpReg, x2AbsReg, rtol, mask);
                     Reg::Adds(rtolReg, rtolTmpReg, atol, mask);
@@ -147,18 +147,18 @@ struct NanEqualCompare : public Vec::ElemwiseQuaternaryOP<uint8_t, float, float,
 
                     // 其他处理
                     // 符合公式且有限
-                    Reg::MaskAnd(tmpMask1, funcCmpMask, finiteMask, mask);
+                    Reg::And(tmpMask1, funcCmpMask, finiteMask, mask);
                     // 符合上一条或者完全一致
-                    Reg::MaskOr(resultMask, equalCmpMask, tmpMask1, mask);
+                    Reg::Or(resultMask, equalCmpMask, tmpMask1, mask);
 
                     Reg::Select(resultReg, regTensorOne, regTensorZero, resultMask);
                     Reg::Pack(reguint16, (AscendC::Reg::RegTensor<uint32_t>&)resultReg);
                     Reg::Pack(reguint8, reguint16);
-                    AscendC::Reg::MaskPack<AscendC::Reg::HighLowPart::LOWEST>(tmpMask1, mask);
-                    AscendC::Reg::MaskPack<AscendC::Reg::HighLowPart::LOWEST>(mask, tmpMask1);
+                    AscendC::Reg::Pack<AscendC::Reg::HighLowPart::LOWEST>(tmpMask1, mask);
+                    AscendC::Reg::Pack<AscendC::Reg::HighLowPart::LOWEST>(mask, tmpMask1);
 
                     // OpCopyOut
-                    Reg::DataCopy((__ubuf__ uint8_t*)(dstAddr + loopIdx * vlSize), reguint8, mask);
+                    Reg::StoreAlign((__ubuf__ uint8_t*)(dstAddr + loopIdx * vlSize), reguint8, mask);
                 }
             }
         }

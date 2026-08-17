@@ -58,22 +58,22 @@ struct Log1pCustom : public Vec::ElemwiseUnaryOP<T, T> {
                 for (uint16_t loopIdx = 0; loopIdx < static_cast<uint16_t>(loopNum); loopIdx++) {
                     mask = Reg::UpdateMask<float, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                    Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
 
                     Reg::Adds(vregInputAddOne, vregInput, FP32_ONE, mask);
                     Reg::Adds(vregInputMid, vregInputAddOne, FP32_NEG_ONE, mask);
                     Reg::Div(vregInputMid, vregInput, vregInputMid, mask);
                     Reg::Log(vregOutput, vregInputAddOne, mask);
                     Reg::Mul(vregOutput, vregOutput, vregInputMid, mask);
-                    Reg::CompareScalar<float, CMPMODE::NE>(cmpMaskReg, vregInputAddOne, FP32_ONE, mask);
+                    Reg::Compares<float, CMPMODE::NE>(cmpMaskReg, vregInputAddOne, FP32_ONE, mask);
                     Reg::Select(vregOutput, vregOutput, vregInput, cmpMaskReg);
-                    Reg::CompareScalar<float, CMPMODE::NE>(cmpMaskReg, vregInputAddOne, FP32_INF, mask);
+                    Reg::Compares<float, CMPMODE::NE>(cmpMaskReg, vregInputAddOne, FP32_INF, mask);
                     Reg::Duplicate(vregInputMid, FP32_INF, mask);
                     Reg::Select(vregOutput, vregOutput, vregInputMid, cmpMaskReg);
 
                     // OpCopyOut
-                    Reg::DataCopy<T, Reg::StoreDist::DIST_NORM_B32>((__ubuf__ T*)(dstAddr + loopIdx * vlSize),
-                                                                    vregOutput, mask);
+                    Reg::StoreAlign<T, Reg::StoreDist::DIST_NORM_B32>((__ubuf__ T*)(dstAddr + loopIdx * vlSize),
+                                                                      vregOutput, mask);
                 }
             }
         } else {
@@ -84,8 +84,8 @@ struct Log1pCustom : public Vec::ElemwiseUnaryOP<T, T> {
                 for (uint16_t loopIdx = 0; loopIdx < static_cast<uint16_t>(loopNum); loopIdx++) {
                     mask = Reg::UpdateMask<float, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    Reg::DataCopy<T, Reg::LoadDist::DIST_UNPACK_B16>(vregInput16,
-                                                                     (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                    Reg::LoadAlign<T, Reg::LoadDist::DIST_UNPACK_B16>(vregInput16,
+                                                                      (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
                     Reg::Cast<float, T, castTrait0>(vregInput, vregInput16, mask);
 
                     Reg::Adds(vregInputAddOne, vregInput, FP32_ONE, mask);
@@ -93,16 +93,16 @@ struct Log1pCustom : public Vec::ElemwiseUnaryOP<T, T> {
                     Reg::Div(vregInputMid, vregInput, vregInputMid, mask);
                     Reg::Log(vregOutput, vregInputAddOne, mask);
                     Reg::Mul(vregOutput, vregOutput, vregInputMid, mask);
-                    Reg::CompareScalar<float, CMPMODE::NE>(cmpMaskReg, vregInputAddOne, FP32_ONE, mask);
+                    Reg::Compares<float, CMPMODE::NE>(cmpMaskReg, vregInputAddOne, FP32_ONE, mask);
                     Reg::Select(vregOutput, vregOutput, vregInput, cmpMaskReg);
-                    Reg::CompareScalar<float, CMPMODE::NE>(cmpMaskReg, vregInputAddOne, FP32_INF, mask);
+                    Reg::Compares<float, CMPMODE::NE>(cmpMaskReg, vregInputAddOne, FP32_INF, mask);
                     Reg::Duplicate(vregInputMid, FP32_INF, mask);
                     Reg::Select(vregOutput, vregOutput, vregInputMid, cmpMaskReg);
 
                     Reg::Cast<T, float, castTrait1>(vregOutput16, vregOutput, mask);
                     // OpCopyOut
-                    Reg::DataCopy<T, Reg::StoreDist::DIST_PACK_B32>((__ubuf__ T*)(dstAddr + loopIdx * vlSize),
-                                                                    vregOutput16, mask);
+                    Reg::StoreAlign<T, Reg::StoreDist::DIST_PACK_B32>((__ubuf__ T*)(dstAddr + loopIdx * vlSize),
+                                                                      vregOutput16, mask);
                 }
             }
         }

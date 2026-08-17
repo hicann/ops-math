@@ -436,7 +436,7 @@ __aicore__ inline void CastDstBool<ST>::Compute(int64_t len)
 {
     auto xLocal = inQueueX_.template DeQue<ST>();
     auto maskTensor = maskBuf_.Get<uint8_t>();
-    CompareScalar(maskTensor, xLocal, inZero_, CMPMODE::EQ, len);
+    Compares(maskTensor, xLocal, inZero_, CMPMODE::EQ, len);
     inQueueX_.FreeTensor(xLocal);
     int8_t trueValue = 1;
     auto yLocal = outQueue_.template AllocTensor<int8_t>();
@@ -1021,9 +1021,9 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
 
         for (uint16_t loopIdx = 0; loopIdx < regLoop; loopIdx++) {
             mask = Reg::UpdateMask<MDT>(count);
-            Reg::DataCopy<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregTemp, srcAddr, regCopyInStep);
-            Reg::DataCopy<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, (Reg::RegTensor<MDT>&)vregTemp,
-                                                                           regCopyOutStep, mask);
+            Reg::LoadAlign<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregTemp, srcAddr, regCopyInStep);
+            Reg::StoreAlign<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, (Reg::RegTensor<MDT>&)vregTemp,
+                                                                             regCopyOutStep, mask);
         }
     }
 
@@ -1076,7 +1076,7 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
             mask = Reg::UpdateMask<MDT>(count);
 #endif
 
-            Reg::DataCopy<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn, srcAddr, regCopyInStep);
+            Reg::LoadAlign<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn, srcAddr, regCopyInStep);
 #if ORIG_DTYPE_X == DT_FLOAT4_E2M1
             Reg::Cast<MMT, fp4x2_e2m1_t, trait>(vregOut, (Reg::RegTensor<fp4x2_e2m1_t>&)vregIn, maskAll);
 #elif ORIG_DTYPE_X == DT_FLOAT4_E1M2
@@ -1086,8 +1086,8 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
 #else
             Reg::Cast<MMT, MST, trait>(vregOut, vregIn, maskAll);
 #endif
-            Reg::DataCopy<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, (Reg::RegTensor<MDT>&)vregOut,
-                                                                           regCopyOutStep, mask);
+            Reg::StoreAlign<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, (Reg::RegTensor<MDT>&)vregOut,
+                                                                             regCopyOutStep, mask);
         }
     }
 
@@ -1124,18 +1124,18 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
         Reg::MaskReg maskAll = Reg::CreateMask<MST>();
         Reg::Duplicate(vregZero, zeroValue);
         for (uint16_t loopIdx = 0; loopIdx < regLoop; loopIdx++) {
-            Reg::DataCopy<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn, srcAddr, regCopyInStep);
+            Reg::LoadAlign<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn, srcAddr, regCopyInStep);
             Reg::Cast<MMT, MST, trait>(vregCast, vregIn, maskAll);
 
             Reg::Interleave<MMT>(vregOut1, vregOut2, vregCast, vregZero);
 
             mask = Reg::UpdateMask<MDT>(count);
-            Reg::DataCopy<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, (Reg::RegTensor<MDT>&)vregOut1,
-                                                                           regCopyOutStep, mask);
+            Reg::StoreAlign<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, (Reg::RegTensor<MDT>&)vregOut1,
+                                                                             regCopyOutStep, mask);
 
             mask = Reg::UpdateMask<MDT>(count);
-            Reg::DataCopy<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, (Reg::RegTensor<MDT>&)vregOut2,
-                                                                           regCopyOutStep, mask);
+            Reg::StoreAlign<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, (Reg::RegTensor<MDT>&)vregOut2,
+                                                                             regCopyOutStep, mask);
         }
     }
 
@@ -1179,16 +1179,16 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
         Reg::MaskReg mask;
         Reg::MaskReg maskAll = Reg::CreateMask<MST>();
         for (uint16_t loopIdx = 0; loopIdx < regLoop; loopIdx++) {
-            Reg::DataCopy<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn1, srcAddr, regCopyInStep);
-            Reg::DataCopy<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn2, srcAddr, regCopyInStep);
+            Reg::LoadAlign<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn1, srcAddr, regCopyInStep);
+            Reg::LoadAlign<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn2, srcAddr, regCopyInStep);
             Reg::Cast<MMT, MST, trait>(vregCast1, vregIn1, maskAll);
             Reg::Cast<MMT, MST, trait>(vregCast2, vregIn2, maskAll);
             Reg::DeInterleave<int32_t>(vregOut, vregOutNoUse, (Reg::RegTensor<int32_t>&)vregCast1,
                                        (Reg::RegTensor<int32_t>&)vregCast2);
 
             mask = Reg::UpdateMask<MDT>(count);
-            Reg::DataCopy<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, (Reg::RegTensor<MDT>&)vregOut,
-                                                                           regCopyOutStep, mask);
+            Reg::StoreAlign<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, (Reg::RegTensor<MDT>&)vregOut,
+                                                                             regCopyOutStep, mask);
         }
     }
 
@@ -1236,7 +1236,7 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
         Reg::MaskReg mask;
         Reg::MaskReg maskAll = Reg::CreateMask<int8_t>();
         for (uint16_t loopIdx = 0; loopIdx < regLoop; loopIdx++) {
-            Reg::DataCopy<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn, srcAddr, regCopyInStep);
+            Reg::LoadAlign<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn, srcAddr, regCopyInStep);
             Reg::Cast<MMT, MST, trait1>(vregCast, vregIn, maskAll);
             Reg::Interleave<MMT>(vregInter1, vregInter2, vregCast, vregZero);
             Reg::Cast<int64_t, MMT, trait2>(vregCast1, vregInter1, maskAll);
@@ -1244,8 +1244,8 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
             Reg::DeInterleave<int32_t>(vregOut, vregOutNoUse, (Reg::RegTensor<int32_t>&)vregCast1,
                                        (Reg::RegTensor<int32_t>&)vregCast2);
             mask = Reg::UpdateMask<MDT>(count);
-            Reg::DataCopy<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, (Reg::RegTensor<MDT>&)vregOut,
-                                                                           regCopyOutStep, mask);
+            Reg::StoreAlign<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, (Reg::RegTensor<MDT>&)vregOut,
+                                                                             regCopyOutStep, mask);
         }
     }
 
@@ -1309,7 +1309,7 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
             mask = Reg::UpdateMask<MDT>(count);
 #endif
 
-            Reg::DataCopy<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn, srcAddr, regCopyInStep);
+            Reg::LoadAlign<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn, srcAddr, regCopyInStep);
 #if ORIG_DTYPE_X == DT_FLOAT4_E2M1
             Reg::Cast<MMT, fp4x2_e2m1_t, trait1>(vregMid, (Reg::RegTensor<fp4x2_e2m1_t>&)vregIn, maskAll);
 #elif ORIG_DTYPE_X == DT_FLOAT4_E1M2
@@ -1328,7 +1328,7 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
             Reg::Cast<MDT, MMT, trait2>(vregOut, vregMid, maskAll);
 #endif
 
-            Reg::DataCopy<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, vregOut, regCopyOutStep, mask);
+            Reg::StoreAlign<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, vregOut, regCopyOutStep, mask);
         }
     }
 
@@ -1379,7 +1379,7 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
         Reg::RegTensor<MMT> vregInter2;
 
         for (uint16_t loopIdx = 0; loopIdx < regLoop; loopIdx++) {
-            Reg::DataCopy<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn, srcAddr, regCopyInStep);
+            Reg::LoadAlign<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn, srcAddr, regCopyInStep);
 #if ORIG_DTYPE_X == DT_FLOAT4_E2M1
             Reg::Cast<MMT, fp4x2_e2m1_t, trait1>(vregMid, (Reg::RegTensor<fp4x2_e2m1_t>&)vregIn, maskAll);
 #elif ORIG_DTYPE_X == DT_FLOAT4_E1M2
@@ -1392,9 +1392,9 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
             Reg::Cast<MDT, MMT, trait2>(vregOut2, vregInter2, maskAll);
 
             mask = Reg::UpdateMask<MDT>(count);
-            Reg::DataCopy<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, vregOut1, regCopyOutStep, mask);
+            Reg::StoreAlign<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, vregOut1, regCopyOutStep, mask);
             mask = Reg::UpdateMask<MDT>(count);
-            Reg::DataCopy<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, vregOut2, regCopyOutStep, mask);
+            Reg::StoreAlign<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, vregOut2, regCopyOutStep, mask);
         }
     }
 
@@ -1454,8 +1454,8 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
         Reg::MaskReg maskAll = Reg::CreateMask<uint8_t>();
 
         for (uint16_t loopIdx = 0; loopIdx < regLoop; loopIdx++) {
-            Reg::DataCopy<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn1, srcAddr, regCopyInStep);
-            Reg::DataCopy<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn2, srcAddr, regCopyInStep);
+            Reg::LoadAlign<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn1, srcAddr, regCopyInStep);
+            Reg::LoadAlign<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn2, srcAddr, regCopyInStep);
 #if ORIG_DTYPE_X == DT_UINT32
             mask = Reg::UpdateMask<MMT>(count);
             Reg::Cast<MMT, int64_t, trait1>(vregMid1, (Reg::RegTensor<int64_t>&)vregIn1, maskAll);
@@ -1474,7 +1474,7 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
 #else
             Reg::Cast<MDT, MMT, trait2>(vregOut, vregDeinter, maskAll);
 #endif
-            Reg::DataCopy<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, vregOut, regCopyOutStep, mask);
+            Reg::StoreAlign<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, vregOut, regCopyOutStep, mask);
         }
     }
 
@@ -1521,8 +1521,8 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
         Reg::MaskReg maskAll = Reg::CreateMask<uint8_t>();
 
         for (uint16_t loopIdx = 0; loopIdx < regLoop; loopIdx++) {
-            Reg::DataCopy<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn1, srcAddr, regCopyInStep);
-            Reg::DataCopy<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn2, srcAddr, regCopyInStep);
+            Reg::LoadAlign<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn1, srcAddr, regCopyInStep);
+            Reg::LoadAlign<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn2, srcAddr, regCopyInStep);
             Reg::Cast<MMT, MST, trait1>(vregMid1, vregIn1, maskAll);
             Reg::Cast<MMT, MST, trait1>(vregMid2, vregIn2, maskAll);
             Reg::Cast<bfloat16_t, MMT, trait2>(vregMidBf1, vregMid1, maskAll);
@@ -1537,7 +1537,7 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
 #endif
             // 输入fp8，ub former按照VL/sizeof(input)算的对齐，输出的ub buffer按照former分配内存，足够大，
             // 而且拷出使用的是4字节转1字节转出，实际每次VF循环数据量是VL/4 *2，所以拷出ub可以直接用maskAll
-            Reg::DataCopy<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, vregOut, regCopyOutStep, maskAll);
+            Reg::StoreAlign<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, vregOut, regCopyOutStep, maskAll);
         }
     }
 
@@ -1591,7 +1591,7 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
         Reg::RegTensor<bfloat16_t> vregInter2;
 
         for (uint16_t loopIdx = 0; loopIdx < regLoop; loopIdx++) {
-            Reg::DataCopy<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn, srcAddr, regCopyInStep);
+            Reg::LoadAlign<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn, srcAddr, regCopyInStep);
 #if ORIG_DTYPE_X == DT_FLOAT4_E2M1
             Reg::Cast<bfloat16_t, fp4x2_e2m1_t, trait1>(vregMidBf, (Reg::RegTensor<fp4x2_e2m1_t>&)vregIn, maskAll);
 #elif ORIG_DTYPE_X == DT_FLOAT4_E1M2
@@ -1614,8 +1614,10 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
 #endif
             // 输入fp4，ub former按照VL/sizeof(input)算的对齐，输出的ub buffer按照former分配内存，足够大，
             // 而且拷出使用的是4字节转1字节转出，实际每次VF循环数据量是VL/4 *2，所以拷出ub可以直接用maskAll
-            Reg::DataCopy<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, vregOut1, regCopyOutStep, maskAll);
-            Reg::DataCopy<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, vregOut2, regCopyOutStep, maskAll);
+            Reg::StoreAlign<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, vregOut1, regCopyOutStep,
+                                                                             maskAll);
+            Reg::StoreAlign<MDT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, vregOut2, regCopyOutStep,
+                                                                             maskAll);
         }
     }
 
@@ -1653,8 +1655,8 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
         Reg::Duplicate(vreg4Bit, B4_MASK);
 
         for (uint16_t loopIdx = 0; loopIdx < regLoop; loopIdx++) {
-            Reg::DataCopy<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn1, srcAddr, regCopyInStep);
-            Reg::DataCopy<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn2, srcAddr, regCopyInStep);
+            Reg::LoadAlign<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn1, srcAddr, regCopyInStep);
+            Reg::LoadAlign<MST, Reg::PostLiteral::POST_MODE_UPDATE, ldDist>(vregIn2, srcAddr, regCopyInStep);
 
             Reg::DeInterleave<MMT>(vregDeinter1, vregDeinter2, vregIn1, vregIn2);
             Reg::And<MMT, Reg::MaskMergeMode::ZEROING>(vregMid1, vregDeinter1, vreg4Bit, maskAll);
@@ -1662,7 +1664,7 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
             Reg::Or<MMT, Reg::MaskMergeMode::ZEROING>(vregOut, vregMid1, vregMid2, maskAll);
 
             mask = Reg::UpdateMask<MMT>(count);
-            Reg::DataCopy<MMT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, vregOut, regCopyOutStep, mask);
+            Reg::StoreAlign<MMT, Reg::PostLiteral::POST_MODE_UPDATE, stDist>(dstAddr, vregOut, regCopyOutStep, mask);
         }
     }
 

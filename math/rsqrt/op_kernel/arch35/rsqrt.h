@@ -49,14 +49,14 @@ struct RsqrtCustom : public Vec::ElemwiseUnaryOP<T, T> {
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                 mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                 // OpCopyIn0
-                Reg::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                Reg::LoadAlign(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
                 // compute rsqrt
                 Reg::Duplicate(ones, (T)1.0, mask);
                 Reg::Sqrt(vregSqrt, vregInput, mask);
                 // high precision mode div
                 Reg::Div<T, &mode>(vregOutput, ones, vregSqrt, mask);
                 // OpCopyOut
-                Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
+                Reg::StoreAlign((__ubuf__ T*)(dstAddr + loopIdx * vlSize), vregOutput, mask);
             }
         }
 #endif

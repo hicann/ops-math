@@ -143,8 +143,8 @@ __aicore__ inline void AddNRegbaseFullLoad<T>::CopyOut()
 template <typename T>
 __aicore__ inline void AddNRegbaseFullLoad<T>::AddVF(LocalTensor<T> x1Local, LocalTensor<T> x2Local)
 {
-    __local_mem__ T* x1Addr = (__local_mem__ T*)x1Local.GetPhyAddr();
-    __local_mem__ T* x2Addr = (__local_mem__ T*)x2Local.GetPhyAddr();
+    __ubuf__ T* x1Addr = (__ubuf__ T*)x1Local.GetPhyAddr();
+    __ubuf__ T* x2Addr = (__ubuf__ T*)x2Local.GetPhyAddr();
     uint32_t dtypeSize = sizeof(T);
     uint16_t VL = AscendC::VECTOR_REG_WIDTH / dtypeSize;
     uint16_t vfLoop = (dim0Aline + VL - 1) / VL;
@@ -157,10 +157,10 @@ __aicore__ inline void AddNRegbaseFullLoad<T>::AddVF(LocalTensor<T> x1Local, Loc
         AscendC::Reg::MaskReg mask;
         for (uint16_t i = 0; i < vfLoop; i++) {
             mask = AscendC::Reg::UpdateMask<T>(sreg);
-            AscendC::Reg::DataCopy<T, AscendC::Reg::LoadDist::DIST_NORM>(vreg1, x1Addr + i * VL);
-            AscendC::Reg::DataCopy<T, AscendC::Reg::LoadDist::DIST_NORM>(vreg2, x2Addr + i * VL);
+            AscendC::Reg::LoadAlign<T, AscendC::Reg::LoadDist::DIST_NORM>(vreg1, x1Addr + i * VL);
+            AscendC::Reg::LoadAlign<T, AscendC::Reg::LoadDist::DIST_NORM>(vreg2, x2Addr + i * VL);
             AscendC::Reg::Add(vreg3, vreg1, vreg2, mask);
-            AscendC::Reg::DataCopy<T, AscendC::Reg::StoreDist::DIST_NORM>(x1Addr + i * VL, vreg3, mask);
+            AscendC::Reg::StoreAlign<T, AscendC::Reg::StoreDist::DIST_NORM>(x1Addr + i * VL, vreg3, mask);
         }
     }
 }

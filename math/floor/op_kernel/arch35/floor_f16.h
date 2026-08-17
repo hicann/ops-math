@@ -87,11 +87,11 @@ private:
             uint32_t size = i0Extent;
             uint16_t vfLoopNum = (i0Extent + (AscendC::VECTOR_REG_WIDTH / sizeof(half)) - 1) /
                                  (AscendC::VECTOR_REG_WIDTH / sizeof(half));
-            __local_mem__ half* bufferIn0Addr = (__local_mem__ half*)bufferIn0_.GetPhyAddr();
-            __local_mem__ half* bufferOut0Addr = (__local_mem__ half*)bufferOut0_.GetPhyAddr();
+            __ubuf__ half* bufferIn0Addr = (__ubuf__ half*)bufferIn0_.GetPhyAddr();
+            __ubuf__ half* bufferOut0Addr = (__ubuf__ half*)bufferOut0_.GetPhyAddr();
             for (uint16_t i = 0; i < vfLoopNum; i++) {
                 preg0 = AscendC::Reg::UpdateMask<half>(size);
-                AscendC::Reg::DataCopy<half, AscendC::Reg::LoadDist::DIST_NORM>(
+                AscendC::Reg::LoadAlign<half, AscendC::Reg::LoadDist::DIST_NORM>(
                     vreg0, bufferIn0Addr + i * (AscendC::VECTOR_REG_WIDTH / sizeof(half)));
                 AscendC::Reg::Truncate<half, AscendC::RoundMode::CAST_FLOOR, AscendC::Reg::MaskMergeMode::ZEROING>(
                     vreg1, vreg0, preg0);
@@ -100,7 +100,7 @@ private:
                 AscendC::Reg::And(vreg2, vreg2, (RegTensor<uint16_t>&)vreg0, preg0);
                 AscendC::Reg::And(vreg3, vreg3, (RegTensor<uint16_t>&)vreg1, preg0);
                 AscendC::Reg::Or(vreg3, vreg2, vreg3, preg0);
-                AscendC::Reg::DataCopy<half, AscendC::Reg::StoreDist::DIST_NORM_B16>(
+                AscendC::Reg::StoreAlign<half, AscendC::Reg::StoreDist::DIST_NORM_B16>(
                     bufferOut0Addr + i * (AscendC::VECTOR_REG_WIDTH / sizeof(half)), (RegTensor<half>&)vreg3, preg0);
             }
         }

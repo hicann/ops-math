@@ -70,8 +70,8 @@ struct RoundIntCustom : public Vec::ElemwiseTernaryOP<T, T, T, T> {
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                     mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    Reg::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vl));
-                    Reg::DataCopy(vregReUse, (__ubuf__ T*)(absAddr + loopIdx * vl));
+                    Reg::LoadAlign(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vl));
+                    Reg::LoadAlign(vregReUse, (__ubuf__ T*)(absAddr + loopIdx * vl));
 
                     Reg::Div(vregDiv, vregReUse, vregPow, mask);
                     Reg::Mul(vregMul, vregDiv, vregPow, mask);
@@ -79,23 +79,23 @@ struct RoundIntCustom : public Vec::ElemwiseTernaryOP<T, T, T, T> {
                     Reg::Muls(vregMul, vregReUse, ConstTwo, mask);
 
                     // + 1
-                    Reg::CompareScalar<T, CMPMODE::EQ>(cmpMaskReg0, vregMul, power, mask);
+                    Reg::Compares<T, CMPMODE::EQ>(cmpMaskReg0, vregMul, power, mask);
                     Reg::And(vregReUse, vregDiv, vregDupOne, mask);
-                    Reg::CompareScalar<T, CMPMODE::EQ>(cmpMaskReg1, vregReUse, ConstOne, mask);
-                    Reg::MaskAnd(cmpMaskReg0, cmpMaskReg0, cmpMaskReg1, mask);
-                    Reg::CompareScalar<T, CMPMODE::GT>(cmpMaskReg1, vregMul, power, mask);
-                    Reg::MaskOr(cmpMaskReg0, cmpMaskReg0, cmpMaskReg1, mask);
+                    Reg::Compares<T, CMPMODE::EQ>(cmpMaskReg1, vregReUse, ConstOne, mask);
+                    Reg::And(cmpMaskReg0, cmpMaskReg0, cmpMaskReg1, mask);
+                    Reg::Compares<T, CMPMODE::GT>(cmpMaskReg1, vregMul, power, mask);
+                    Reg::Or(cmpMaskReg0, cmpMaskReg0, cmpMaskReg1, mask);
                     Reg::Select(vregMul, vregDupOne, vregDupZero, cmpMaskReg0);
                     Reg::Add(vregMul, vregDiv, vregMul, mask);
 
-                    Reg::CompareScalar<T, CMPMODE::LT>(cmpMaskReg0, vregInput, ConstZero, mask);
+                    Reg::Compares<T, CMPMODE::LT>(cmpMaskReg0, vregInput, ConstZero, mask);
                     Reg::Neg(vregReUse, vregDupOne, mask);
                     Reg::Select(vregDiv, vregReUse, vregDupOne, cmpMaskReg0);
                     Reg::Mul(vregMul, vregMul, vregDiv, mask);
                     Reg::Mul(vregReUse, vregMul, vregPow, mask);
 
                     // OpCopyOut
-                    Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vl), (Reg::RegTensor<T>&)vregReUse, mask);
+                    Reg::StoreAlign((__ubuf__ T*)(dstAddr + loopIdx * vl), (Reg::RegTensor<T>&)vregReUse, mask);
                 }
             }
         }
@@ -123,7 +123,7 @@ struct RoundCustom : public Vec::ElemwiseUnaryOP<T, T> {
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                     mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    Reg::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vl));
+                    Reg::LoadAlign(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vl));
 
                     Reg::Truncate<T, RoundMode::CAST_RINT, Reg::MaskMergeMode::ZEROING>(vregOutput, vregInput, mask);
                     Reg::Duplicate(vregOutInt, UINT32_SIGN, mask);
@@ -131,7 +131,7 @@ struct RoundCustom : public Vec::ElemwiseUnaryOP<T, T> {
                     Reg::Or(vregOutInt, vregOutInt, (Reg::RegTensor<uint32_t>&)vregOutput, mask);
 
                     // OpCopyOut
-                    Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vl), (Reg::RegTensor<T>&)vregOutInt, mask);
+                    Reg::StoreAlign((__ubuf__ T*)(dstAddr + loopIdx * vl), (Reg::RegTensor<T>&)vregOutInt, mask);
                 }
             }
         } else {
@@ -141,7 +141,7 @@ struct RoundCustom : public Vec::ElemwiseUnaryOP<T, T> {
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                     mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    Reg::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vl));
+                    Reg::LoadAlign(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vl));
 
                     Reg::Truncate<T, RoundMode::CAST_RINT, Reg::MaskMergeMode::ZEROING>(vregOutput, vregInput, mask);
                     Reg::Duplicate(vregOutInt, UINT16_SIGN, mask);
@@ -149,7 +149,7 @@ struct RoundCustom : public Vec::ElemwiseUnaryOP<T, T> {
                     Reg::Or(vregOutInt, vregOutInt, (Reg::RegTensor<uint16_t>&)vregOutput, mask);
 
                     // OpCopyOut
-                    Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vl), (Reg::RegTensor<T>&)vregOutInt, mask);
+                    Reg::StoreAlign((__ubuf__ T*)(dstAddr + loopIdx * vl), (Reg::RegTensor<T>&)vregOutInt, mask);
                 }
             }
         }
