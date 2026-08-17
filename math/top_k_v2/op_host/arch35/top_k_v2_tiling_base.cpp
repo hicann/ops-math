@@ -114,14 +114,14 @@ uint32_t GetTopkPreferredInnerChunk(ge::DataType dataType, uint32_t index)
     static constexpr uint32_t CHUNK_VALID_COUNT[] = {3, 4, 5, 6};
     uint32_t group = 0;
     if (dataType == ge::DT_INT64 || dataType == ge::DT_UINT64) {
-        group = 0;
+        group = topkV2DataInfo::INNER_CHUNK_GROUP_8BYTE;
     } else if (dataType == ge::DT_FLOAT || dataType == ge::DT_INT32 || dataType == ge::DT_UINT32) {
-        group = 1;
+        group = topkV2DataInfo::INNER_CHUNK_GROUP_4BYTE;
     } else if (dataType == ge::DT_FLOAT16 || dataType == ge::DT_BF16 || dataType == ge::DT_INT16 ||
                dataType == ge::DT_UINT16) {
-        group = 2;
+        group = topkV2DataInfo::INNER_CHUNK_GROUP_2BYTE;
     } else if (dataType == ge::DT_INT8 || dataType == ge::DT_UINT8) {
-        group = 3;
+        group = topkV2DataInfo::INNER_CHUNK_GROUP_1BYTE;
     } else {
         return 0;
     }

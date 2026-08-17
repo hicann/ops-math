@@ -71,7 +71,13 @@ const uint32_t MERGE_MORE_CORE_ONE_CORE_DATA_SIZE = 2048;
 const uint32_t MERGE_MORE_CORE_LIST_MAX_NUM = 4;
 const uint32_t MERGE_INTRA_CORE_SORT_ALIGN = 32;
 const uint32_t MERGE_INTRA_CORE_MAX_BLOCKS = 256;
+const uint32_t FP32_MERGE_INTRA_CORE_MIN_CORE_NUM_DIVISOR = 2; // IntraCore模式要求unsortedDimNum >= maxCoreNum / 该值
 const uint32_t MAX_INNER_CHUNK_CANDIDATES = 6;
+// 按数据类型字节大小分组的索引，用于GetTopkPreferredInnerChunk选择chunk候选集
+const uint32_t INNER_CHUNK_GROUP_8BYTE = 0; // INT64/UINT64
+const uint32_t INNER_CHUNK_GROUP_4BYTE = 1; // FLOAT/INT32/UINT32
+const uint32_t INNER_CHUNK_GROUP_2BYTE = 2; // FLOAT16/BF16/INT16/UINT16
+const uint32_t INNER_CHUNK_GROUP_1BYTE = 3; // INT8/UINT8
 const float LAST_LOOP_CORE_UTILIZATION = 0.7;
 const uint32_t SMALL_LOOP_UPPER_NUM = 4;
 const uint32_t SMALL_LOOP_LOWER_NUM = 2;

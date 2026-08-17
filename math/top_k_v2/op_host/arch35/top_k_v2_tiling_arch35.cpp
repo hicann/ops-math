@@ -1223,7 +1223,9 @@ bool IsTopkMergeSortMoreCoreFp32Mode(topkV2DataInfo::TopkComputeNowTileSizeInfo&
  */
 bool IsTopkMergeSortIntraCoreFp32Mode(topkV2DataInfo::TopkComputeNowTileSizeInfo& computTileInfo)
 {
-    if (computTileInfo.dataType != ge::DT_FLOAT || computTileInfo.unsortedDimNum < computTileInfo.maxCoreNum / 2) {
+    if (computTileInfo.dataType != ge::DT_FLOAT ||
+        computTileInfo.unsortedDimNum <
+            computTileInfo.maxCoreNum / topkV2DataInfo::FP32_MERGE_INTRA_CORE_MIN_CORE_NUM_DIVISOR) {
         return false;
     }
     if (computTileInfo.kValue <= 0) {
