@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -33,9 +33,9 @@ extern "C" {
  * @return aclnnStatus: 返回状态码。
  */
 
-ACLNN_API aclnnStatus aclnnPrecisionCompareGetWorkspaceSize(const aclTensor *golden, const aclTensor *realdata,
-                                                            aclTensor *out, uint64_t *workspaceSize,
-                                                            aclOpExecutor **executor);
+ACLNN_API aclnnStatus aclnnPrecisionCompareGetWorkspaceSize(const aclTensor* golden, const aclTensor* realdata,
+                                                            aclTensor* out, uint64_t* workspaceSize,
+                                                            aclOpExecutor** executor);
 /**
  * @brief aclnnPrecisionCompare的第二段接口，用于执行计算。
  * @param [in] workspace: 在npu device侧申请的workspace内存起址。
@@ -45,9 +45,9 @@ ACLNN_API aclnnStatus aclnnPrecisionCompareGetWorkspaceSize(const aclTensor *gol
  * @return aclnnStatus: 返回状态码。
  */
 
-ACLNN_API aclnnStatus aclnnPrecisionCompare(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor,
+ACLNN_API aclnnStatus aclnnPrecisionCompare(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
                                             aclrtStream stream);
 #ifdef __cplusplus
 }
 #endif
-#endif  // OP_API_INC_PRECISION_COMPARE_H_
+#endif // OP_API_INC_PRECISION_COMPARE_H_

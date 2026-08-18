@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -7,21 +7,14 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef OP_API_SRC_LEVEL2_PRECISION_COMPARE_UTIL_H_
-#define OP_API_SRC_LEVEL2_PRECISION_COMPARE_UTIL_H_
+#ifndef PTA_NPU_OP_API_INC_LEVEL0_PRECISION_COMPARE_OP_MATH_H_
+#define PTA_NPU_OP_API_INC_LEVEL0_PRECISION_COMPARE_OP_MATH_H_
 
-#include "aclnn/aclnn_base.h"
-#include "opdev/common_types.h"
-#include "opdev/platform.h"
+#include "opdev/op_executor.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-aclnnStatus PrecisionCompareCheckParams(const aclTensor *golden, const aclTensor *realdata, const aclTensor *out);
-
-#ifdef __cplusplus
+namespace l0op {
+const aclTensor* PrecisionCompare(const aclTensor* benchMark, const aclTensor* realData, aclTensor* out,
+                                  const uint32_t detect_type, aclOpExecutor* executor);
 }
-#endif
 
-#endif  // OP_API_SRC_LEVEL2_PRECISION_COMPARE_UTIL_H_
+#endif // PTA_NPU_OP_API_INC_LEVEL0_PRECISION_COMPARE_OP_MATH_H_
