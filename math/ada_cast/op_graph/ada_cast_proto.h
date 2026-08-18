@@ -36,6 +36,8 @@ namespace ge {
  *@par Attributes:
  * @li pixel: Int, default 65535. White level normalization base (positive integer).
  */
+#ifndef OPS_PROTO_DEF_ADACAST
+#define OPS_PROTO_DEF_ADACAST
 REG_OP(AdaCast)
     .INPUT(x, "T1")
     .OUTPUT(y, "T2")
@@ -43,6 +45,7 @@ REG_OP(AdaCast)
     .DATATYPE(T1, TensorType({DT_UINT16}))
     .DATATYPE(T2, TensorType({DT_FLOAT16}))
     .OP_END_FACTORY_REG(AdaCast)
+#endif // OPS_PROTO_DEF_ADACAST
 
 } // namespace ge
 
