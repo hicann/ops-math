@@ -88,7 +88,7 @@ private:
     void ShowNoCutTailTilingData();
     void ShowTilingData();
 
-    void FillsTilingData(MatrixSetDiagV2TilingData& baseTilingData);
+    void FillsTilingData(MatrixSetDiagV2TilingData& tilingData);
     void FillsTilingDataV1(MatrixSetDiagTilingData& tilingData);
 };
 } // namespace optiling

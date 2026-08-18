@@ -33,14 +33,14 @@ static constexpr std::array VALUE_DATA_TYPE_ALL{
 class MatrixSetDiagV2Tiling {
 private:
     // tiling context
-    gert::TilingContext* context_;
+    gert::TilingContext* context_ = nullptr;
 
     /* data */
     uint32_t dimNum_{1};
     uint32_t diagDimNum_{1};
     gert::Shape inputShapeVal_;
     gert::Shape diagShapeVal_;
-    ge::DataType inputDataType_;
+    ge::DataType inputDataType_ = ge::DT_UNDEFINED;
 
     // 输入参数
     MatrixSetDiagInputInfo inputInfo_;
@@ -142,6 +142,11 @@ ge::graphStatus MatrixSetDiagV2Tiling::CheckDiag()
                         std::to_string(i) + "th axis of diagonal must be equal to same axis of input"),
                     return ge::GRAPH_FAILED);
     }
+    OP_CHECK_IF(
+        diagDimNum_ < 1,
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "diagonal", std::to_string(diagDimNum_),
+                                                 "The shape dim of diagonal must be at least 1"),
+        return ge::GRAPH_FAILED);
     inputInfo_.maxDiagLen = diagShapeVal_.GetDim(diagDimNum_ - 1);
     return ge::GRAPH_SUCCESS;
 }
@@ -191,6 +196,12 @@ ge::graphStatus MatrixSetDiagV2Tiling::CheckK()
                                                               Ops::Math::Join(dimNum_, diagDimNum_),
                                                               "The shape dims of input and diagonal must be the same"),
                     return ge::GRAPH_FAILED);
+
+        OP_CHECK_IF(
+            diagDimNum_ < 2,
+            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "diagonal", std::to_string(diagDimNum_),
+                                                     "The shape dim of diagonal must be at least 2"),
+            return ge::GRAPH_FAILED);
 
         uint64_t numDiags = diagShapeVal_.GetDim(diagDimNum_ - 2);
         OP_CHECK_IF(inputInfo_.diagNum != numDiags,

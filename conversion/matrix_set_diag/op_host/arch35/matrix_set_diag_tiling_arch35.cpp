@@ -112,7 +112,7 @@ ge::graphStatus MatrixSetDiagTiling::ParamCheck()
 
     inputInfo_.xColNum = inputShapeVal.GetDim(dimNum_ - COL_DIM_OFFSET);
     inputInfo_.xRowNum = inputShapeVal.GetDim(dimNum_ - ROW_DIM_OFFSET);
-    uint64_t maxDiagLen = diagShapeVal.GetDim(diagDimNum_ - 1);
+    uint64_t maxDiagLen = static_cast<uint64_t>(diagShapeVal.GetDim(diagDimNum_ - 1));
     inputInfo_.maxDiagLen = static_cast<uint32_t>(maxDiagLen);
     OP_CHECK_IF((inputInfo_.maxDiagLen != std::min(inputInfo_.xColNum, inputInfo_.xRowNum)) ||
                     (inputInfo_.maxDiagLen != maxDiagLen),

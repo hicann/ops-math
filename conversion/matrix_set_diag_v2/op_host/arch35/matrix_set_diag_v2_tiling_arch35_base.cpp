@@ -220,7 +220,7 @@ ge::graphStatus MatrixSetDiagTilingBase::Tiling4NoCutTail()
 
 uint64_t MatrixSetDiagTilingBase::DetermineWayAndGetAdditionTileSize()
 {
-    double ratio = (double)(diagDataSize_) / (double)(tailAxisDataSize_);
+    double ratio = static_cast<double>(diagDataSize_) / static_cast<double>(tailAxisDataSize_);
     uint64_t additionTileSize = 0;
 
     if (ratio >= SCATTER_RATIO) {
@@ -260,6 +260,10 @@ void MatrixSetDiagTilingBase::CalculateUbFactorAndCheck(uint64_t validBufSize)
 {
     uint64_t totalTailSize = (tailAxisDataSize_ + diagDataSize_) * inputInfo_.dSize;
     OP_LOGI(context_, "\ttotalTailSize %lu, validBufSize %lu", totalTailSize, validBufSize);
+    if (totalTailSize == 0) {
+        ubFactor_ = 1;
+        return;
+    }
 
     uint64_t ubComputeBufSize = validBufSize >= totalTailSize * inputInfo_.mergeDimSize ?
                                     totalTailSize * inputInfo_.mergeDimSize :

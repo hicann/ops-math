@@ -29,7 +29,8 @@ class MatrixSetDiagCutTailScatter {
 private:
     constexpr static uint32_t ALIGN_NUM = Ops::Base::GetUbBlockSize() / sizeof(T);
     constexpr static int32_t BUF_NUM = 2; // double buffer
-    constexpr static uint32_t NUM_2 = 2;
+    // 特殊数据类型（int8/int64）处理时元素数量翻倍的系数
+    constexpr static uint32_t ELEMENT_EXPAND_TIMES = 2;
     constexpr static uint32_t BUFIDX_BIT0 = 1; // 区分奇偶性，用于double buffer同步
 
 private:
@@ -176,12 +177,12 @@ private:
         }
         uint16_t vlLen = vlLen_;
         if constexpr (sizeof(T) == sizeof(int8_t)) {
-            vlLen = vlLen / NUM_2;
+            vlLen = vlLen / ELEMENT_EXPAND_TIMES;
         }
         uint16_t loopNum = static_cast<uint16_t>(Ops::Base::CeilDiv(diagNum, static_cast<uint32_t>(vlLen)));
 
         if constexpr (sizeof(T) == sizeof(int8_t) || sizeof(T) == sizeof(int64_t)) {
-            diagNum = diagNum * NUM_2;
+            diagNum = diagNum * ELEMENT_EXPAND_TIMES;
         }
 
         auto* diagPtr = (__local_mem__ T*)diag.GetPhyAddr();

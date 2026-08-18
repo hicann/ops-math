@@ -30,7 +30,8 @@ class MatrixSetDiagNoCutWV2 {
 private:
     constexpr static int32_t BUF_NUM = 2; // double buffer
     constexpr static uint32_t ALIGN_NUM = 32 / sizeof(T);
-    constexpr static uint16_t NUM_2 = 2;
+    // 特殊数据类型（int8/int64/uint64）处理时元素数量翻倍的系数
+    constexpr static uint16_t ELEMENT_EXPAND_TIMES = 2;
 
 private:
     using RangeType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>;
@@ -182,7 +183,7 @@ public:
         uint16_t vlPerTile = Ops::Base::CeilDiv(static_cast<uint16_t>(processSize), static_cast<uint16_t>(vlLen));
         uint16_t tilePerVl = static_cast<uint16_t>(vlLen) / processSize - 1; // processSize必大于0
         if constexpr (sizeof(T) == sizeof(uint64_t)) {
-            processSize *= 2;
+            processSize *= ELEMENT_EXPAND_TIMES;
         }
         uint16_t diagNum = diagNum_;
         RangeType_ oneDiagLen = maxDiagLen_;
@@ -284,7 +285,7 @@ public:
         uint16_t vlPerTile = Ops::Base::CeilDiv(static_cast<uint16_t>(processSize), static_cast<uint16_t>(vlLen));
         uint16_t tilePerVl = static_cast<uint16_t>(vlLen) / processSize - 1; // processSize必大于0
         if constexpr (sizeof(T) == sizeof(uint64_t)) {
-            processSize *= 2;
+            processSize *= ELEMENT_EXPAND_TIMES;
         }
         RangeType_ oneDiagLen = -1 * maxDiagLen_;
         RangeType_ oneRowLen = xColNum_;
@@ -418,9 +419,9 @@ public:
         }
         uint32_t diagStride = oneProcessSize;
         if constexpr (sizeof(T) == sizeof(int8_t) || sizeof(T) == sizeof(int64_t)) {
-            oneProcessSize = oneProcessSize * NUM_2;
+            oneProcessSize = oneProcessSize * ELEMENT_EXPAND_TIMES;
             if constexpr (VL_MODE == 1) {
-                tailSize = tailSize * 2;
+                tailSize = tailSize * ELEMENT_EXPAND_TIMES;
             }
         }
         uint32_t dataTypeFactor = sizeof(T) > 4 ? 2 : 1;
@@ -529,8 +530,8 @@ public:
         }
         uint32_t diagStride = oneProcessSize;
         if constexpr (sizeof(T) == sizeof(int8_t) || sizeof(T) == sizeof(int64_t)) {
-            oneProcessSize = oneProcessSize * NUM_2;
-            tailSize = tailSize * NUM_2;
+            oneProcessSize = oneProcessSize * ELEMENT_EXPAND_TIMES;
+            tailSize = tailSize * ELEMENT_EXPAND_TIMES;
         }
         uint32_t dataTypeFactor = sizeof(T) > 4 ? 2 : 1;
         auto* xLocalPtr = (__local_mem__ T*)inLocal.GetPhyAddr();
