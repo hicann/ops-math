@@ -16,11 +16,11 @@
 ## 功能说明
 
 - 算子功能：根据输入的二维张量，提取由diagonal指定的对角线元素。
-  
+
   如果diagonal = 0，选择主对角线；
-  
+
   如果diagonal > 0，选择主对角线上方的第diagonal条对角线；
-  
+
   如果diagonal < 0，选择主对角线下方的第-diagonal条对角线。
 
 ## 参数说明
@@ -76,4 +76,5 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
+| aclnn调用 | [test_aclnn_diag](./examples/test_aclnn_diag.cpp) | 通过[aclnnDiag](./docs/aclnnDiag.md)接口方式调用DiagV2算子。 |
 | 图模式调用 | [test_geir_diag_v2](./examples/test_geir_diag_v2.cpp)   | 通过[算子IR](./op_graph/diag_v2_proto.h)构图方式调用DiagV2算子。 |

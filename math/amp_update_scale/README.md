@@ -123,3 +123,9 @@
 ## 约束说明
 
 无
+
+## 调用说明
+
+| 调用方式 | 调用样例 | 说明 |
+|---------|---------|------|
+| aclnn调用 | [test_aclnn_amp_update_scale](./examples/test_aclnn_amp_update_scale.cpp) | 通过[aclnnAmpUpdateScale](./docs/aclnnAmpUpdateScale.md)接口方式调用AmpUpdateScale算子。 |

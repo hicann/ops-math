@@ -67,4 +67,5 @@ $$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
+| aclnn调用 | [test_aclnn_angle_v2](./examples/test_aclnn_angle_v2.cpp) | 通过[aclnnAngleV2](./docs/aclnnAngleV2.md)接口方式调用AngleV2算子。 |
 | 图模式调用 | [test_geir_angle_v2](./examples/test_geir_angle_v2.cpp)   | 通过[算子IR](./op_graph/angle_v2_proto.h)构图方式调用AngleV2算子。 |

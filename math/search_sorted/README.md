@@ -92,4 +92,6 @@
 
 | 调用方式 | 调用样例                                                              | 说明                                                                     |
 |--------|-------------------------------------------------------------------|------------------------------------------------------------------------|
+| aclnn调用 | [test_aclnn_search_sorted](./examples/test_aclnn_search_sorted.cpp) | 通过[aclnnSearchSorted](./docs/aclnnSearchSorted.md)接口方式调用SearchSorted算子。 |
+| aclnn调用 | [test_aclnn_search_sorteds](./examples/test_aclnn_search_sorteds.cpp) | 通过[aclnnSearchSorteds](./docs/aclnnSearchSorteds.md)接口方式调用SearchSorted算子。 |
 | 图模式调用 | [test_geir_search_sorted](./examples/test_geir_search_sorted.cpp)   | 通过[算子IR](./op_graph/search_sorted_proto.h)构图方式调用SearchSorted算子。 |
