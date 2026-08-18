@@ -24,39 +24,27 @@ class CdistGrad : public OpDef {
 public:
     explicit CdistGrad(const char* name) : OpDef(name)
     {
-        this->Input("grad")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .Format(format)
-            .UnknownShapeFormat(format);
-        this->Input("x1")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .Format(format)
-            .UnknownShapeFormat(format);
-        this->Input("x2")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .Format(format)
-            .UnknownShapeFormat(format);
-        this->Input("cdist")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .Format(format)
-            .UnknownShapeFormat(format);
-        this->Output("y")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .Format(format)
-            .UnknownShapeFormat(format);
+        this->Input("grad").ParamType(REQUIRED).DataType(dataType).Format(format).UnknownShapeFormat(format);
+        this->Input("x1").ParamType(REQUIRED).DataType(dataType).Format(format).UnknownShapeFormat(format);
+        this->Input("x2").ParamType(REQUIRED).DataType(dataType).Format(format).UnknownShapeFormat(format);
+        this->Input("cdist").ParamType(REQUIRED).DataType(dataType).Format(format).UnknownShapeFormat(format);
+        this->Output("y").ParamType(REQUIRED).DataType(dataType).Format(format).UnknownShapeFormat(format);
         this->Attr("p").AttrType(OPTIONAL).Float(DEFAULT_P_NORM);
 
         OpAICoreConfig aicoreConfig;
         aicoreConfig.DynamicCompileStaticFlag(true)
-                    .DynamicRankSupportFlag(true)
-                    .DynamicShapeSupportFlag(true)
-                    .ExtendCfgInfo("opFile.value", "cdist_grad_apt");
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .ExtendCfgInfo("opFile.value", "cdist_grad_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+
+        OpAICoreConfig aicore910bConfig;
+        aicore910bConfig.DynamicCompileStaticFlag(true)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .ExtendCfgInfo("opFile.value", "cdist_grad");
+        this->AICore().AddConfig("ascend910b", aicore910bConfig);
+        this->AICore().AddConfig("ascend910_93", aicore910bConfig);
     }
 };
 OP_ADD(CdistGrad);
