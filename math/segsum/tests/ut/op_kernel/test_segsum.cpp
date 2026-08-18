@@ -20,21 +20,14 @@
 #include <cstdint>
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
-#include "../../../op_host/segsum_tiling.h"
+#include "../../../op_host/arch22/segsum_tiling.h"
 
 extern "C" __global__ __aicore__ void segsum(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
 
-class segsum_test : public testing::Test
-{
+class segsum_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "segsum_test SetUp\n" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "segsum_test TearDown\n" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "segsum_test SetUp\n" << std::endl; }
+    static void TearDownTestCase() { std::cout << "segsum_test TearDown\n" << std::endl; }
 };
 
 TEST_F(segsum_test, test_case_float_0)

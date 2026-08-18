@@ -10,3 +10,11 @@
 # ----------------------------------------------------------------------------
 
 add_modules_sources(OPTYPE segsum ACLNNTYPE aclnn_exclude)
+
+add_tiling_modules()
+if("${ASCEND_COMPUTE_UNIT}" STREQUAL "ascend950")
+    set(SEGSUM_TILING_SRC ${CMAKE_CURRENT_SOURCE_DIR}/arch35/segsum_tiling_arch35.cpp)
+else()
+    set(SEGSUM_TILING_SRC ${CMAKE_CURRENT_SOURCE_DIR}/arch22/segsum_tiling.cpp)
+endif()
+target_sources(${OPHOST_NAME}_tiling_obj PRIVATE ${SEGSUM_TILING_SRC})
