@@ -28,6 +28,7 @@
 #include "op_common/op_host/util/platform_util.h"
 #include "../../op_kernel/arch35/ada_cast_tiling_data.h"
 #include "../../op_kernel/arch35/ada_cast_tiling_key.h"
+#include <set>
 
 namespace optiling {
 
@@ -45,6 +46,8 @@ constexpr int64_t ALIGN_256 = 256;         // UB 对齐字节数
 constexpr int64_t MIN_DTYPE_BITS = 16;     // uint16 输入位宽
 constexpr int64_t ELEM_BYTES = 2;          // uint16 单元素字节数
 constexpr int64_t BUFFER_DIVISOR = 12;     // 保守上界：uint16(2)+int32(4)+float32(4)+half(2) B/elem
+constexpr size_t MAX_DIM_NUM = 8;
+constexpr size_t MAX_PROTO_RANK = 4;
 
 static const gert::Shape g_vec_1_shape = {1};
 
@@ -77,6 +80,22 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* 
     auto inputShapeX = EnsureNotScalar(inputX->GetStorageShape());
     *dim0 = inputShapeX.GetShapeSize();
     OP_CHECK_IF(*dim0 < 0, OP_LOGE(context, "dim0 < 0, invalid shape"), return ge::GRAPH_FAILED);
+
+    OP_CHECK_IF(inputShapeX.GetDimNum() > MAX_PROTO_RANK,
+                OP_LOGE(context, "AdaCast: x rank must be 1~4, got %zu", inputShapeX.GetDimNum()),
+                return ge::GRAPH_FAILED);
+
+    OP_CHECK_IF(inputShapeX.GetDimNum() > MAX_DIM_NUM,
+                OP_LOGE(context, "AdaCast: x dim num must be <= 8, got %zu", inputShapeX.GetDimNum()),
+                return ge::GRAPH_FAILED);
+
+    auto inputDesc = context->GetInputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
+    ge::DataType dataType = inputDesc->GetDataType();
+    const std::set<ge::DataType> supportedDtypes = {ge::DT_UINT16};
+    OP_CHECK_IF(supportedDtypes.count(dataType) == 0,
+                OP_LOGE(context, "AdaCast: x only support DT_UINT16, got %d", static_cast<int32_t>(dataType)),
+                return ge::GRAPH_FAILED);
 
     // 读取属性 pixel（int64，index 0；OPTIONAL Attr，为空时使用 op_def 声明的默认值 65535）
     auto attrs = context->GetAttrs();
