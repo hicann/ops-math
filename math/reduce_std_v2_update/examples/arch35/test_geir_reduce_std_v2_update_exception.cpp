@@ -66,8 +66,21 @@ struct CaseConfig {
     int64_t correction = 0;
     bool castX = false;
     bool expectAccept = false;
-    std::string expectedError;
+    std::vector<std::string> expectedErrors;
+    std::vector<std::string> allowedFailureStages = {"tiling"};
 };
+
+bool Contains(const std::vector<std::string>& values, const std::string& target)
+{
+    return std::find(values.begin(), values.end(), target) != values.end();
+}
+
+bool MatchesAnyError(const std::vector<std::string>& signatures, const std::string& error)
+{
+    return std::any_of(signatures.begin(), signatures.end(), [&error](const std::string& signature) {
+        return !signature.empty() && error.find(signature) != std::string::npos;
+    });
+}
 
 int64_t Count(const std::vector<int64_t>& shape)
 {
@@ -188,11 +201,12 @@ bool RunCase(const CaseConfig& config)
         }
         const std::string actualError = CurrentError();
         const std::string failureStage = FailureStage(actualError);
-        const bool errorMatched = !config.expectedError.empty() &&
-                                  actualError.find(config.expectedError) != std::string::npos;
-        if (failureStage != "tiling" || !errorMatched) {
+        const bool stageMatched = Contains(config.allowedFailureStages, failureStage);
+        const bool errorMatched = MatchesAnyError(config.expectedErrors, actualError);
+        if (!stageMatched || !errorMatched) {
             std::cout << "EXCEPTION_CASE " << config.id << " FAIL category=" << config.category
                       << " expected=reject actual=reject failure_stage=" << failureStage
+                      << " failure_stage_matched=" << (stageMatched ? "true" : "false")
                       << " kernel_launched=false error_signature_matched=" << (errorMatched ? "true" : "false")
                       << " actual_error=" << actualError << std::endl;
             return false;
@@ -230,6 +244,8 @@ int main(int argc, char* argv[])
     if (ge::GEInitialize(options) != ge::SUCCESS) {
         return -1;
     }
+    // GE can reject invalid dtypes or ranks before custom tiling, while format inference can propagate an invalid
+    // output format to an input descriptor. Keep every accepted stage and error signature specific to its case.
     const std::vector<CaseConfig> cases = {
         {"dtype_x_int8",
          "dtype_unsupported",
@@ -245,7 +261,8 @@ int main(int argc, char* argv[])
          0,
          false,
          false,
-         "unsupported x dtype"},
+         {"unsupported x dtype", "Verifying dtype_x_int8_op failed"},
+         {"tiling", "graph_compile"}},
         {"dtype_mean_int8",
          "dtype_unsupported",
          ge::DT_FLOAT,
@@ -260,7 +277,8 @@ int main(int argc, char* argv[])
          0,
          false,
          false,
-         "unsupported mean dtype"},
+         {"unsupported mean dtype", "Verifying dtype_mean_int8_op failed"},
+         {"tiling", "graph_compile"}},
         {"dtype_mean_mismatch",
          "dtype_combination_mismatch",
          ge::DT_FLOAT,
@@ -275,7 +293,8 @@ int main(int argc, char* argv[])
          0,
          false,
          false,
-         "mean dtype 1 != x dtype 0"},
+         {"mean dtype 1 != x dtype 0", "Verifying dtype_mean_mismatch_op failed"},
+         {"tiling", "graph_compile"}},
         {"cast_x_int32_to_float32",
          "dtype_geir_cast",
          ge::DT_FLOAT,
@@ -290,7 +309,8 @@ int main(int argc, char* argv[])
          0,
          true,
          true,
-         ""},
+         {},
+         {}},
         {"format_x_nchw",
          "format_unsupported",
          ge::DT_FLOAT,
@@ -305,7 +325,7 @@ int main(int argc, char* argv[])
          0,
          false,
          false,
-         "x format 0 is unsupported; only ND is supported"},
+         {"x format 0 is unsupported; only ND is supported"}},
         {"format_mean_nchw",
          "format_unsupported",
          ge::DT_FLOAT,
@@ -320,7 +340,7 @@ int main(int argc, char* argv[])
          0,
          false,
          false,
-         "mean format 0 is unsupported; only ND is supported"},
+         {"mean format 0 is unsupported; only ND is supported"}},
         {"format_output_nchw",
          "format_unsupported",
          ge::DT_FLOAT,
@@ -335,7 +355,8 @@ int main(int argc, char* argv[])
          0,
          false,
          false,
-         "output_var format 0 is unsupported; only ND is supported"},
+         {"output_var format 0 is unsupported; only ND is supported",
+          "x format 0 is unsupported; only ND is supported"}},
         {"rank9_x",
          "rank_9_tensor",
          ge::DT_FLOAT,
@@ -350,7 +371,9 @@ int main(int argc, char* argv[])
          0,
          false,
          false,
-         "x rank=9 exceeds supported range [0, 8]"},
+         {"x rank=9 exceeds supported range [0, 8]",
+          "num of dimensions of input/output[x_in__] should be in the range of [0, 8]"},
+         {"tiling", "parameter_check"}},
         {"correction_two",
          "attribute_out_of_range",
          ge::DT_FLOAT,
@@ -365,7 +388,7 @@ int main(int argc, char* argv[])
          2,
          false,
          false,
-         "correction=2, only 0 or 1 supported"},
+         {"correction=2, only 0 or 1 supported"}},
         {"dim_out_of_range",
          "attribute_out_of_range",
          ge::DT_FLOAT,
@@ -380,7 +403,7 @@ int main(int argc, char* argv[])
          0,
          false,
          false,
-         "dim[0]=1 out of range [-1, 1)"},
+         {"dim[0]=1 out of range [-1, 1)"}},
         {"shape_mean_mismatch",
          "shape_dimension_violation",
          ge::DT_FLOAT,
@@ -395,7 +418,7 @@ int main(int argc, char* argv[])
          0,
          false,
          false,
-         "mean rank=2 != x rank=1"},
+         {"mean rank=2 != x rank=1"}},
     };
     bool passed = true;
     bool matched = false;
