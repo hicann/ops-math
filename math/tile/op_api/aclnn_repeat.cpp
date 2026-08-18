@@ -89,9 +89,8 @@ static inline bool CheckTensorDimSize(const aclTensor* self, const aclIntArray* 
     int64_t repeatsSize = repeats->Size();
     OP_CHECK_MAX_DIM(self, MAX_SUPPORT_DIMS_NUMS, return false);
     if (repeatsSize > static_cast<int64_t>(MAX_SUPPORT_DIMS_NUMS)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "repeats size should not be larger than 8. self %ld, repeats %ld", tensorDimSize,
-            repeatsSize);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "repeats size should not be larger than 8. self %ld, repeats %ld",
+                tensorDimSize, repeatsSize);
         return false;
     }
     return true;
@@ -115,7 +114,7 @@ static inline aclnnStatus CheckRepeatsValue(const aclIntArray* repeats)
 {
     for (size_t i = 0; i < repeats->Size(); ++i) {
         if ((*repeats)[i] < 0) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "repeats expected %luth value > 0, but get %ld", i + 1, (*repeats)[i]);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "repeats expected %luth value > 0, but got %ld", i + 1, (*repeats)[i]);
             return false;
         }
     }
@@ -189,9 +188,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* repeats
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnRepeatGetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* repeats, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnRepeatGetWorkspaceSize(const aclTensor* self, const aclIntArray* repeats, aclTensor* out,
+                                        uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnRepeat, DFX_IN(self, repeats), DFX_OUT(out));
 

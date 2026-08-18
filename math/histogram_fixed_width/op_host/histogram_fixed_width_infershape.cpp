@@ -65,7 +65,7 @@ static ge::graphStatus InferShapeForHistogramFixedWidth(gert::InferShapeContext*
                 return ge::GRAPH_FAILED);
     outputShape->SetDimNum(1);
     outputShape->SetDim(OUTPUT_IDX, nbins);
-    OP_LOGD(context->GetNodeName(), "Output_shape = %s", Ops::Base::ToString(*outputShape).c_str());
+    OP_LOGD(context->GetNodeName(), "Output shape = %s", Ops::Base::ToString(*outputShape).c_str());
 
     return ge::GRAPH_SUCCESS;
 }

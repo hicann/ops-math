@@ -288,13 +288,13 @@ ge::graphStatus TruncateDivTiling::GetPlatformInfo()
         auto compileInfoPtr = context_->GetCompileInfo<BroadcastCompileInfo>();
         OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfoPtr);
         ubSize_ = compileInfoPtr->ubSize;
-        OP_LOGD(context_->GetNodeName(), "Get ubSize form compileInfo is: %ld", ubSize_);
+        OP_LOGD(context_->GetNodeName(), "Get ubSize from compileInfo is: %ld B", ubSize_);
     } else {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
         uint64_t ubSizePlatform;
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatform);
         ubSize_ = static_cast<int64_t>(ubSizePlatform);
-        OP_LOGD(context_->GetNodeName(), "Get ubSize form ascendcPlatform is: %ld", ubSize_);
+        OP_LOGD(context_->GetNodeName(), "Get ubSize from ascendcPlatform is: %ld B", ubSize_);
     }
     return ge::GRAPH_SUCCESS;
 }

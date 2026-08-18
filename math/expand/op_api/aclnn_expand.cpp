@@ -84,10 +84,9 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* size, const acl
     auto sizeDimNum = sizeShape.GetDimNum();
     auto selfDimNum = selfShape.GetDimNum();
     if (sizeDimNum < selfDimNum) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "the number of size %zu must be greater or equal to the number of dimensions in the self %zu.",
-            sizeDimNum, selfDimNum);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "the number of size %zu must be greater than or equal to the number of dimensions in the self %zu.",
+                sizeDimNum, selfDimNum);
         return false;
     }
     auto offset = sizeDimNum - selfDimNum;
@@ -98,9 +97,8 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* size, const acl
             expectShape.SetDim(offset + i, selfShape.GetDim(i));
         }
         if ((selfShape.GetDim(i) != sizeShape.GetDim(offset + i)) && (selfShape.GetDim(i) != 1)) {
-            OP_LOGE(
-                ACL_ERROR_INVALID_PARAM, "the self shape [%s] is not match size [%s].",
-                op::ToString(selfShape).GetString(), op::ToString(sizeShape).GetString());
+            OP_LOGE(ACL_ERROR_INVALID_PARAM, "the self shape [%s] does not match size [%s].",
+                    op::ToString(selfShape).GetString(), op::ToString(sizeShape).GetString());
             return false;
         }
         expectShape.SetDim(offset + i, sizeShape.GetDim(offset + i));
@@ -109,10 +107,9 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* size, const acl
         expectShape.SetDim(i, sizeShape.GetDim(i));
     }
     if (outShape != expectShape) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "expect out shape to be same as expectShape, but got out shape [%s], expect shape [%s]",
-            op::ToString(outShape).GetString(), op::ToString(expectShape).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "expect out shape to be same as expectShape, but got out shape [%s], expect shape [%s]",
+                op::ToString(outShape).GetString(), op::ToString(expectShape).GetString());
         return false;
     }
     return true;
@@ -130,7 +127,7 @@ static void CheckFormat(const aclTensor* self)
     // 检查format，若是NZ格式，则添加警告
     if (self->GetStorageFormat() == Format::FORMAT_FRACTAL_NZ) {
         OP_LOGW("Format of self gets [%s], this format may lead to precision failure.",
-        op::ToString(self->GetStorageFormat()).GetString());
+                op::ToString(self->GetStorageFormat()).GetString());
     }
 }
 
@@ -154,8 +151,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* size, c
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnExpandGetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* size, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnExpandGetWorkspaceSize(const aclTensor* self, const aclIntArray* size, aclTensor* out,
+                                        uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
     L2_DFX_PHASE_1(aclnnExpand, DFX_IN(self, size), DFX_OUT(out));
