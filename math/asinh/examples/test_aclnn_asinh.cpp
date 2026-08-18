@@ -35,7 +35,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include "acl/acl.h"
-#include "aclnn_asinh.h" // 来自 vendor 包 opp/vendors/asinh_custom/op_api/include/
+#include "aclnnop/aclnn_asinh.h" // 来自 vendor 包 opp/vendors/asinh_custom/op_api/include/
 
 // ---- 简易宏 ----
 #define CHECK_RET(cond, return_expr) \

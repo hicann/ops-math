@@ -27,21 +27,21 @@
 #include <vector>
 
 #include "acl/acl.h"
-#include "aclnn_acosh.h"
+#include "aclnnop/aclnn_acosh.h"
 
-#define CHECK_RET(cond, return_expr)            \
-    do {                                        \
-        if (!(cond)) {                          \
-            return_expr;                        \
-        }                                       \
+#define CHECK_RET(cond, return_expr) \
+    do {                             \
+        if (!(cond)) {               \
+            return_expr;             \
+        }                            \
     } while (0)
 
-#define LOG_PRINT(message, ...)                 \
-    do {                                        \
-        printf(message, ##__VA_ARGS__);         \
+#define LOG_PRINT(message, ...)         \
+    do {                                \
+        printf(message, ##__VA_ARGS__); \
     } while (0)
 
-static int64_t GetShapeSize(const std::vector<int64_t> &shape)
+static int64_t GetShapeSize(const std::vector<int64_t>& shape)
 {
     int64_t size = 1;
     for (auto d : shape) {
@@ -50,7 +50,7 @@ static int64_t GetShapeSize(const std::vector<int64_t> &shape)
     return size;
 }
 
-static int Init(int32_t deviceId, aclrtStream *stream)
+static int Init(int32_t deviceId, aclrtStream* stream)
 {
     auto ret = aclInit(nullptr);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclInit failed. ERROR: %d\n", ret); return ret);
@@ -62,11 +62,8 @@ static int Init(int32_t deviceId, aclrtStream *stream)
 }
 
 template <typename T>
-static int CreateAclTensor(const std::vector<T> &hostData,
-                           const std::vector<int64_t> &shape,
-                           void **deviceAddr,
-                           aclDataType dataType,
-                           aclTensor **tensor)
+static int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr,
+                           aclDataType dataType, aclTensor** tensor)
 {
     auto bytes = GetShapeSize(shape) * sizeof(T);
     auto ret = aclrtMalloc(deviceAddr, bytes, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -79,8 +76,7 @@ static int CreateAclTensor(const std::vector<T> &hostData,
         strides[i] = shape[i + 1] * strides[i + 1];
     }
 
-    *tensor = aclCreateTensor(shape.data(), shape.size(), dataType,
-                              strides.data(), 0, aclFormat::ACL_FORMAT_ND,
+    *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND,
                               shape.data(), shape.size(), *deviceAddr);
     return 0;
 }
@@ -95,61 +91,53 @@ int main()
 
     // 2. 构造 selfRef：shape=[2,4]，同时作为输入与输出
     std::vector<int64_t> selfShape = {2, 4};
-    std::vector<float>   selfHost = {1.0f, 2.0f, 3.0f, 5.0f,
-                                     10.0f, 1.5f, 2.5f, 4.0f};
+    std::vector<float> selfHost = {1.0f, 2.0f, 3.0f, 5.0f, 10.0f, 1.5f, 2.5f, 4.0f};
     // 保留原始值用于后续 std::acosh 粗对照
     const std::vector<float> origSelf = selfHost;
 
-    aclTensor *selfRef = nullptr;
-    void      *selfDevice = nullptr;
-    ret = CreateAclTensor(selfHost, selfShape, &selfDevice,
-                          aclDataType::ACL_FLOAT, &selfRef);
+    aclTensor* selfRef = nullptr;
+    void* selfDevice = nullptr;
+    ret = CreateAclTensor(selfHost, selfShape, &selfDevice, aclDataType::ACL_FLOAT, &selfRef);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     // 3. 第一段接口
-    uint64_t       workspaceSize = 0;
-    aclOpExecutor *executor      = nullptr;
+    uint64_t workspaceSize = 0;
+    aclOpExecutor* executor = nullptr;
     ret = aclnnInplaceAcoshGetWorkspaceSize(selfRef, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("aclnnInplaceAcoshGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceAcoshGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 4. 申请 workspace
-    void *workspaceAddr = nullptr;
+    void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
         ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-        CHECK_RET(ret == ACL_SUCCESS,
-                  LOG_PRINT("workspace aclrtMalloc failed. ERROR: %d\n", ret); return ret);
+        CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("workspace aclrtMalloc failed. ERROR: %d\n", ret); return ret);
     }
 
     // 5. 第二段接口：原地执行
     ret = aclnnInplaceAcosh(workspaceAddr, workspaceSize, executor, stream);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("aclnnInplaceAcosh failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceAcosh failed. ERROR: %d\n", ret); return ret);
 
     // 6. 同步等待
     ret = aclrtSynchronizeStream(stream);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
     // 7. 拷回（注意：selfRef 内存即输出）
     auto bytes = GetShapeSize(selfShape) * sizeof(float);
     std::vector<float> npuResult(static_cast<size_t>(GetShapeSize(selfShape)), 0.0f);
-    ret = aclrtMemcpy(npuResult.data(), bytes, selfDevice, bytes,
-                      ACL_MEMCPY_DEVICE_TO_HOST);
-    CHECK_RET(ret == ACL_SUCCESS,
-              LOG_PRINT("aclrtMemcpy D2H failed. ERROR: %d\n", ret); return ret);
+    ret = aclrtMemcpy(npuResult.data(), bytes, selfDevice, bytes, ACL_MEMCPY_DEVICE_TO_HOST);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy D2H failed. ERROR: %d\n", ret); return ret);
 
     LOG_PRINT("\n=== aclnnInplaceAcosh result (shape=[2,4], dtype=FLOAT) ===\n");
     int allClose = 1;
     for (size_t i = 0; i < npuResult.size(); ++i) {
         float expected = std::acosh(origSelf[i]);
-        float diff     = std::fabs(npuResult[i] - expected);
-        const char *flag = (diff < 1e-4f) ? "OK" : "DIFF";
+        float diff = std::fabs(npuResult[i] - expected);
+        const char* flag = (diff < 1e-4f) ? "OK" : "DIFF";
         if (diff >= 1e-4f) {
             allClose = 0;
         }
-        LOG_PRINT("  selfRef[%zu] in=%-9.4f  out(原地)=%-12.7f  std::acosh=%-12.7f  diff=%-10.3e  [%s]\n",
-                  i, origSelf[i], npuResult[i], expected, diff, flag);
+        LOG_PRINT("  selfRef[%zu] in=%-9.4f  out(原地)=%-12.7f  std::acosh=%-12.7f  diff=%-10.3e  [%s]\n", i,
+                  origSelf[i], npuResult[i], expected, diff, flag);
     }
     LOG_PRINT("=== aclnnInplaceAcosh %s ===\n", allClose ? "PASS (粗对照)" : "DIFF (粗对照)");
 
