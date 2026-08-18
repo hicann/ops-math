@@ -16,16 +16,17 @@
  *
  * 命名与 op_def / proto.h 一致：y, dy, z
  *
+ * dtype 驱动方式：def 文件声明 DataType 列表，构建系统注入 DTYPE_Y 宏，
+ * Kernel 直接使用 DTYPE_Y 获取输入 y 的实际 C++ 类型，无需 TilingKey 编码 dtype。
+ *
  * 模板参数（与 atan_grad_tiling_key.h 中 ASCENDC_TPL_ARGS_DECL 对应）：
- *   - D_T_X:       数据类型（half / float / bfloat16_t）
  *   - BUFFER_MODE: 缓冲策略（0=单缓冲, 1=双缓冲）
  */
 
 #include "arch35/atan_grad.h"
 
 #ifdef __CCE_KT_TEST__
-extern "C" __global__ __aicore__ void atan_grad(
-    GM_ADDR y, GM_ADDR dy, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void atan_grad(GM_ADDR y, GM_ADDR dy, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
 {
     GET_TILING_DATA_WITH_STRUCT(AtanGradTilingData, tilingData, tiling);
     NsAtanGrad::AtanGrad<DTYPE_Y, 0> op;
@@ -33,13 +34,12 @@ extern "C" __global__ __aicore__ void atan_grad(
     op.Process();
 }
 #else
-template <typename D_T_X, int BUFFER_MODE>
-__global__ __aicore__ void atan_grad(
-    GM_ADDR y, GM_ADDR dy, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
+template <int BUFFER_MODE>
+__global__ __aicore__ void atan_grad(GM_ADDR y, GM_ADDR dy, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(AtanGradTilingData);
     GET_TILING_DATA_WITH_STRUCT(AtanGradTilingData, tilingData, tiling);
-    NsAtanGrad::AtanGrad<D_T_X, BUFFER_MODE> op;
+    NsAtanGrad::AtanGrad<DTYPE_Y, BUFFER_MODE> op;
     op.Init(y, dy, z, &tilingData);
     op.Process();
 }

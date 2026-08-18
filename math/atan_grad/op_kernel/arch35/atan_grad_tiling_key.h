@@ -14,12 +14,13 @@
  * \file atan_grad_tiling_key.h
  * \brief AtanGrad Tiling 模板参数定义
  *
+ * dtype 由 def 文件（DataType 列表）驱动，构建系统注入 DTYPE_Y 宏，
+ * Kernel 直接使用 DTYPE_Y 获取类型，TilingKey 无需编码 dtype。
+ *
  * 模板维度：
- *   - D_T_X:       数据类型（C_DT_FLOAT16 / C_DT_FLOAT / C_DT_BF16）
  *   - BUFFER_MODE: 缓冲策略（0=单缓冲, 1=双缓冲）
  *
- * 共 6 个模板组合：
- *   fp16×SB, fp16×DB, fp32×SB, fp32×DB, bf16×SB, bf16×DB
+ * 共 2 个模板组合：SB, DB（每种 dtype 各 2 份，由 def 驱动展开）
  */
 
 #ifndef __ATAN_GRAD_TILING_KEY_H__
@@ -28,25 +29,9 @@
 #ifndef __CCE_KT_TEST__
 #include "ascendc/host_api/tiling/template_argument.h"
 
-ASCENDC_TPL_ARGS_DECL(AtanGrad,
-    ASCENDC_TPL_DATATYPE_DECL(D_T_X, C_DT_FLOAT16, C_DT_FLOAT, C_DT_BF16, ASCENDC_TPL_INPUT(0)),
-    ASCENDC_TPL_UINT_DECL(BUFFER_MODE, 8, ASCENDC_TPL_UI_LIST, 0, 1)
-);
+ASCENDC_TPL_ARGS_DECL(AtanGrad, ASCENDC_TPL_UINT_DECL(BUFFER_MODE, 8, ASCENDC_TPL_UI_LIST, 0, 1));
 
-ASCENDC_TPL_SEL(
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT16),
-        ASCENDC_TPL_UINT_SEL(BUFFER_MODE, ASCENDC_TPL_UI_LIST, 0, 1)
-    ),
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT),
-        ASCENDC_TPL_UINT_SEL(BUFFER_MODE, ASCENDC_TPL_UI_LIST, 0, 1)
-    ),
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_BF16),
-        ASCENDC_TPL_UINT_SEL(BUFFER_MODE, ASCENDC_TPL_UI_LIST, 0, 1)
-    ),
-);
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(BUFFER_MODE, ASCENDC_TPL_UI_LIST, 0, 1)), );
 #endif
 
 #endif // __ATAN_GRAD_TILING_KEY_H__

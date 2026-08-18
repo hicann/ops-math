@@ -33,10 +33,10 @@
 
 namespace optiling {
 
-using Ops::Base::CeilDiv;
 using Ops::Base::CeilAlign;
-using Ops::Base::FloorDiv;
+using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 // 双缓冲触发阈值：元素数量超过此值时启用双缓冲
@@ -55,8 +55,7 @@ static ge::graphStatus QueryPlatform(gert::TilingContext* context, uint64_t& ubS
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus GetShapeAttrsInfo(
-    gert::TilingContext* context, int64_t& totalNum, ge::DataType& dataType)
+static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& totalNum, ge::DataType& dataType)
 {
     // 输入索引与 op_def / proto.h 一致：0=y (forward input), 1=dy (gradient)
     auto inputY = context->GetInputShape(0);
@@ -80,7 +79,7 @@ static ge::graphStatus SetWorkspace(gert::TilingContext* context)
 {
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
-    currentWorkspace[0] = 0;  // 逐元素算子无需额外 workspace
+    currentWorkspace[0] = 0; // 逐元素算子无需额外 workspace
     return ge::GRAPH_SUCCESS;
 }
 
@@ -88,38 +87,34 @@ static ge::graphStatus AtanGradTilingFunc(gert::TilingContext* context)
 {
     // 1. 获取平台信息
     uint64_t ubSize;
-    int64_t  coreNum;
-    OP_CHECK_IF(
-        QueryPlatform(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "QueryPlatform error"), return ge::GRAPH_FAILED);
+    int64_t coreNum;
+    OP_CHECK_IF(QueryPlatform(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "QueryPlatform error"),
+                return ge::GRAPH_FAILED);
 
     // 2. 获取 shape / dtype
-    int64_t     totalNum;
+    int64_t totalNum;
     ge::DataType dataType = ge::DT_FLOAT;
-    OP_CHECK_IF(
-        GetShapeAttrsInfo(context, totalNum, dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetShapeAttrsInfo(context, totalNum, dataType) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     if (totalNum == 0) {
         context->SetBlockDim(0);
         return ge::GRAPH_FAILED;
     }
     // 3. 设置 workspace
-    OP_CHECK_IF(
-        SetWorkspace(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "SetWorkspace error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(SetWorkspace(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "SetWorkspace error"),
+                return ge::GRAPH_FAILED);
 
     // 4. 填写 TilingData
     AtanGradTilingData* tiling = context->GetTilingData<AtanGradTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(AtanGradTilingData), 0, sizeof(AtanGradTilingData)) != EOK,
-        OP_LOGE(context, "memset tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(AtanGradTilingData), 0, sizeof(AtanGradTilingData)) != EOK,
+                OP_LOGE(context, "memset tiling data error"), return ge::GRAPH_FAILED);
 
     // DMA 最小对齐粒度（32B / sizeof(T)）
     int64_t ubBlockSize = Ops::Base::GetUbBlockSize(context);
 
-    tiling->totalNum    = totalNum;
+    tiling->totalNum = totalNum;
     tiling->blockFactor = CeilAlign(CeilDiv(totalNum, coreNum), ubBlockSize);
     int64_t usedCoreNum = CeilDiv(totalNum, tiling->blockFactor);
 
@@ -137,9 +132,7 @@ static ge::graphStatus AtanGradTilingFunc(gert::TilingContext* context)
         bufferNum = useDoubleBuffer ? 10 : 7;
     }
 
-    tiling->ubFactor = FloorAlign(
-        FloorDiv(static_cast<int64_t>(ubSize) / typeSize, bufferNum),
-        ubBlockSize);
+    tiling->ubFactor = FloorAlign(FloorDiv(static_cast<int64_t>(ubSize) / typeSize, bufferNum), ubBlockSize);
 
     // ubFactor 最小为 ubBlockSize（否则无法正常 CopyIn）
     if (tiling->ubFactor < ubBlockSize) {
@@ -148,9 +141,8 @@ static ge::graphStatus AtanGradTilingFunc(gert::TilingContext* context)
 
     context->SetBlockDim(usedCoreNum);
 
-    // 7. 选择模板（dtype × BUFFER_MODE）
-    uint32_t dTypeX = static_cast<uint32_t>(dataType);
-    ASCENDC_TPL_SEL_PARAM(context, dTypeX, useDoubleBuffer);
+    // 7. 选择模板（BUFFER_MODE only; dtype is driven by def file）
+    ASCENDC_TPL_SEL_PARAM(context, useDoubleBuffer);
 
     return ge::GRAPH_SUCCESS;
 }
