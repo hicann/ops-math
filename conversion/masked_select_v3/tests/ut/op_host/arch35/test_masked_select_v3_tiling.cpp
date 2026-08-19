@@ -22,108 +22,14 @@ using namespace ge;
 using namespace gert;
 using namespace optiling;
 
-class l2_masked_select_test : public testing::Test {
+class l2_masked_select_regbase_test : public testing::Test {
 protected:
     static void SetUpTestCase() { std::cout << "masked_select_test Tiling SetUp" << std::endl; }
 
     static void TearDownTestCase() { std::cout << "masked_select_test Tiling TearDown" << std::endl; }
 };
 
-TEST_F(l2_masked_select_test, aclnnMaskedSelect_base_case_1)
-{
-    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, false};
-
-    gert::TilingContextPara tilingContextPara("MaskedSelectV3",
-                                              {{{{
-                                                     8,
-                                                 },
-                                                 {
-                                                     8,
-                                                 }},
-                                                ge::DT_FLOAT,
-                                                ge::FORMAT_ND},
-                                               {{{
-                                                     8,
-                                                 },
-                                                 {
-                                                     8,
-                                                 }},
-                                                ge::DT_BOOL,
-                                                ge::FORMAT_ND}},
-                                              {
-                                                  {{{
-                                                        8,
-                                                    },
-                                                    {
-                                                        8,
-                                                    }},
-                                                   ge::DT_FLOAT,
-                                                   ge::FORMAT_ND},
-                                              },
-                                              &compileInfo);
-    uint64_t expectTilingKey = 4;
-    string expectTilingData = "1 8 1 8448 8 0 0 0 0 0 ";
-    std::vector<size_t> expectWorkspaces = {16777536};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
-}
-
-TEST_F(l2_masked_select_test, aclnnMaskedSelect_8_int32_nd_and_8_bool_nd_simple_random_case_1)
-{
-    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, false};
-
-    gert::TilingContextPara tilingContextPara("MaskedSelectV3",
-                                              {{{{
-                                                     8,
-                                                 },
-                                                 {
-                                                     8,
-                                                 }},
-                                                ge::DT_INT32,
-                                                ge::FORMAT_ND},
-                                               {{{
-                                                     8,
-                                                 },
-                                                 {
-                                                     8,
-                                                 }},
-                                                ge::DT_BOOL,
-                                                ge::FORMAT_ND}},
-                                              {
-                                                  {{{
-                                                        8,
-                                                    },
-                                                    {
-                                                        8,
-                                                    }},
-                                                   ge::DT_INT32,
-                                                   ge::FORMAT_ND},
-                                              },
-                                              &compileInfo);
-    uint64_t expectTilingKey = 4;
-    string expectTilingData = "1 8 1 8448 8 0 0 0 0 0 ";
-    std::vector<size_t> expectWorkspaces = {16777536};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
-}
-
-TEST_F(l2_masked_select_test, aclnnMaskedSelect_2_4_6_8_10_12_14_16_int64_nd_and_2_4_6_8_10_12_14_16_bool_nd)
-{
-    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, false};
-
-    gert::TilingContextPara tilingContextPara(
-        "MaskedSelectV3",
-        {{{{2, 4, 6, 8, 10, 12, 14, 16}, {2, 4, 6, 8, 10, 12, 14, 16}}, ge::DT_INT64, ge::FORMAT_ND},
-         {{{2, 4, 6, 8, 10, 12, 14, 16}, {2, 4, 6, 8, 10, 12, 14, 16}}, ge::DT_BOOL, ge::FORMAT_ND}},
-        {
-            {{{2, 4, 6, 8, 10, 12, 14, 16}, {2, 4, 6, 8, 10, 12, 14, 16}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 8;
-    string expectTilingData = "48 215040 50 4352 1792 0 0 0 0 0 ";
-    std::vector<size_t> expectWorkspaces = {99355648};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
-}
-
-TEST_F(l2_masked_select_test, regbase_fp16_scalar_input)
+TEST_F(l2_masked_select_regbase_test, regbase_fp16_scalar_input)
 {
     optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, true};
 
@@ -135,7 +41,7 @@ TEST_F(l2_masked_select_test, regbase_fp16_scalar_input)
     EXPECT_TRUE(ok);
 }
 
-TEST_F(l2_masked_select_test, regbase_fp32_1d)
+TEST_F(l2_masked_select_regbase_test, regbase_fp32_1d)
 {
     optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, true};
 
@@ -147,7 +53,7 @@ TEST_F(l2_masked_select_test, regbase_fp32_1d)
     EXPECT_TRUE(ok);
 }
 
-TEST_F(l2_masked_select_test, regbase_int32_large)
+TEST_F(l2_masked_select_regbase_test, regbase_int32_large)
 {
     optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, true};
 
@@ -161,7 +67,7 @@ TEST_F(l2_masked_select_test, regbase_int32_large)
     EXPECT_TRUE(ok);
 }
 
-TEST_F(l2_masked_select_test, regbase_int64_large)
+TEST_F(l2_masked_select_regbase_test, regbase_int64_large)
 {
     optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, true};
 
@@ -174,7 +80,7 @@ TEST_F(l2_masked_select_test, regbase_int64_large)
     EXPECT_TRUE(ok);
 }
 
-TEST_F(l2_masked_select_test, regbase_float16_3d)
+TEST_F(l2_masked_select_regbase_test, regbase_float16_3d)
 {
     optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, true};
 
@@ -188,7 +94,7 @@ TEST_F(l2_masked_select_test, regbase_float16_3d)
     EXPECT_TRUE(ok);
 }
 
-TEST_F(l2_masked_select_test, regbase_bf16_1d)
+TEST_F(l2_masked_select_regbase_test, regbase_bf16_1d)
 {
     optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, true};
 
@@ -200,7 +106,7 @@ TEST_F(l2_masked_select_test, regbase_bf16_1d)
     EXPECT_TRUE(ok);
 }
 
-TEST_F(l2_masked_select_test, regbase_int8_1d)
+TEST_F(l2_masked_select_regbase_test, regbase_int8_1d)
 {
     optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, true};
 
@@ -212,7 +118,7 @@ TEST_F(l2_masked_select_test, regbase_int8_1d)
     EXPECT_TRUE(ok);
 }
 
-TEST_F(l2_masked_select_test, regbase_uint16_2d)
+TEST_F(l2_masked_select_regbase_test, regbase_uint16_2d)
 {
     optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, true};
 
@@ -225,7 +131,7 @@ TEST_F(l2_masked_select_test, regbase_uint16_2d)
     EXPECT_TRUE(ok);
 }
 
-TEST_F(l2_masked_select_test, regbase_shape_mismatch_failed)
+TEST_F(l2_masked_select_regbase_test, regbase_shape_mismatch_failed)
 {
     optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, true};
 
@@ -237,73 +143,21 @@ TEST_F(l2_masked_select_test, regbase_shape_mismatch_failed)
     EXPECT_FALSE(ok);
 }
 
-TEST_F(l2_masked_select_test, non_regbase_float16_1d)
+TEST_F(l2_masked_select_regbase_test, regbase_zero_shape_failed)
 {
-    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, false};
+    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, true};
 
     gert::TilingContextPara tilingContextPara(
-        "MaskedSelectV3",
-        {{{{256}, {256}}, ge::DT_FLOAT16, ge::FORMAT_ND}, {{{256}, {256}}, ge::DT_BOOL, ge::FORMAT_ND}},
-        {{{{256}, {256}}, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
+        "MaskedSelectV3", {{{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND}, {{{0}, {0}}, ge::DT_BOOL, ge::FORMAT_ND}},
+        {{{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND}}, &compileInfo);
     TilingInfo tilingInfo;
     bool ok = ExecuteTiling(tilingContextPara, tilingInfo);
-    EXPECT_TRUE(ok);
+    EXPECT_FALSE(ok);
 }
 
-TEST_F(l2_masked_select_test, non_regbase_bf16_2d)
+TEST_F(l2_masked_select_regbase_test, regbase_uint32_1d)
 {
-    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, false};
-
-    gert::TilingContextPara tilingContextPara(
-        "MaskedSelectV3",
-        {{{{64, 128}, {64, 128}}, ge::DT_BF16, ge::FORMAT_ND}, {{{64, 128}, {64, 128}}, ge::DT_BOOL, ge::FORMAT_ND}},
-        {{{{64, 128}, {64, 128}}, ge::DT_BF16, ge::FORMAT_ND}}, &compileInfo);
-    TilingInfo tilingInfo;
-    bool ok = ExecuteTiling(tilingContextPara, tilingInfo);
-    EXPECT_TRUE(ok);
-}
-
-TEST_F(l2_masked_select_test, non_regbase_int8_1d)
-{
-    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, false};
-
-    gert::TilingContextPara tilingContextPara(
-        "MaskedSelectV3", {{{{512}, {512}}, ge::DT_INT8, ge::FORMAT_ND}, {{{512}, {512}}, ge::DT_BOOL, ge::FORMAT_ND}},
-        {{{{512}, {512}}, ge::DT_INT8, ge::FORMAT_ND}}, &compileInfo);
-    TilingInfo tilingInfo;
-    bool ok = ExecuteTiling(tilingContextPara, tilingInfo);
-    EXPECT_TRUE(ok);
-}
-
-TEST_F(l2_masked_select_test, non_regbase_double_1d)
-{
-    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, false};
-
-    gert::TilingContextPara tilingContextPara(
-        "MaskedSelectV3",
-        {{{{128}, {128}}, ge::DT_DOUBLE, ge::FORMAT_ND}, {{{128}, {128}}, ge::DT_BOOL, ge::FORMAT_ND}},
-        {{{{128}, {128}}, ge::DT_DOUBLE, ge::FORMAT_ND}}, &compileInfo);
-    TilingInfo tilingInfo;
-    bool ok = ExecuteTiling(tilingContextPara, tilingInfo);
-    EXPECT_TRUE(ok);
-}
-
-TEST_F(l2_masked_select_test, non_regbase_uint16_2d)
-{
-    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, false};
-
-    gert::TilingContextPara tilingContextPara(
-        "MaskedSelectV3",
-        {{{{32, 64}, {32, 64}}, ge::DT_UINT16, ge::FORMAT_ND}, {{{32, 64}, {32, 64}}, ge::DT_BOOL, ge::FORMAT_ND}},
-        {{{{32, 64}, {32, 64}}, ge::DT_UINT16, ge::FORMAT_ND}}, &compileInfo);
-    TilingInfo tilingInfo;
-    bool ok = ExecuteTiling(tilingContextPara, tilingInfo);
-    EXPECT_TRUE(ok);
-}
-
-TEST_F(l2_masked_select_test, non_regbase_uint32_1d)
-{
-    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, false};
+    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, true};
 
     gert::TilingContextPara tilingContextPara(
         "MaskedSelectV3",
@@ -314,22 +168,22 @@ TEST_F(l2_masked_select_test, non_regbase_uint32_1d)
     EXPECT_TRUE(ok);
 }
 
-TEST_F(l2_masked_select_test, non_regbase_uint64_1d)
+TEST_F(l2_masked_select_regbase_test, regbase_double_1d)
 {
-    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, false};
+    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, true};
 
     gert::TilingContextPara tilingContextPara(
         "MaskedSelectV3",
-        {{{{128}, {128}}, ge::DT_UINT64, ge::FORMAT_ND}, {{{128}, {128}}, ge::DT_BOOL, ge::FORMAT_ND}},
-        {{{{128}, {128}}, ge::DT_UINT64, ge::FORMAT_ND}}, &compileInfo);
+        {{{{128}, {128}}, ge::DT_DOUBLE, ge::FORMAT_ND}, {{{128}, {128}}, ge::DT_BOOL, ge::FORMAT_ND}},
+        {{{{128}, {128}}, ge::DT_DOUBLE, ge::FORMAT_ND}}, &compileInfo);
     TilingInfo tilingInfo;
     bool ok = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_TRUE(ok);
 }
 
-TEST_F(l2_masked_select_test, non_regbase_bool_1d)
+TEST_F(l2_masked_select_regbase_test, regbase_bool_1d)
 {
-    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, false};
+    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, true};
 
     gert::TilingContextPara tilingContextPara(
         "MaskedSelectV3", {{{{512}, {512}}, ge::DT_BOOL, ge::FORMAT_ND}, {{{512}, {512}}, ge::DT_BOOL, ge::FORMAT_ND}},
@@ -339,14 +193,38 @@ TEST_F(l2_masked_select_test, non_regbase_bool_1d)
     EXPECT_TRUE(ok);
 }
 
-TEST_F(l2_masked_select_test, non_regbase_fp32_tail_num)
+TEST_F(l2_masked_select_regbase_test, regbase_int16_1d)
 {
-    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, false};
+    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, true};
+
+    gert::TilingContextPara tilingContextPara(
+        "MaskedSelectV3", {{{{256}, {256}}, ge::DT_INT16, ge::FORMAT_ND}, {{{256}, {256}}, ge::DT_BOOL, ge::FORMAT_ND}},
+        {{{{256}, {256}}, ge::DT_INT16, ge::FORMAT_ND}}, &compileInfo);
+    TilingInfo tilingInfo;
+    bool ok = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(ok);
+}
+
+TEST_F(l2_masked_select_regbase_test, regbase_uint8_1d)
+{
+    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, true};
+
+    gert::TilingContextPara tilingContextPara(
+        "MaskedSelectV3", {{{{512}, {512}}, ge::DT_UINT8, ge::FORMAT_ND}, {{{512}, {512}}, ge::DT_BOOL, ge::FORMAT_ND}},
+        {{{{512}, {512}}, ge::DT_UINT8, ge::FORMAT_ND}}, &compileInfo);
+    TilingInfo tilingInfo;
+    bool ok = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(ok);
+}
+
+TEST_F(l2_masked_select_regbase_test, regbase_uint64_1d)
+{
+    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, true};
 
     gert::TilingContextPara tilingContextPara(
         "MaskedSelectV3",
-        {{{{1000}, {1000}}, ge::DT_FLOAT, ge::FORMAT_ND}, {{{1000}, {1000}}, ge::DT_BOOL, ge::FORMAT_ND}},
-        {{{{1000}, {1000}}, ge::DT_FLOAT, ge::FORMAT_ND}}, &compileInfo);
+        {{{{128}, {128}}, ge::DT_UINT64, ge::FORMAT_ND}, {{{128}, {128}}, ge::DT_BOOL, ge::FORMAT_ND}},
+        {{{{128}, {128}}, ge::DT_UINT64, ge::FORMAT_ND}}, &compileInfo);
     TilingInfo tilingInfo;
     bool ok = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_TRUE(ok);
