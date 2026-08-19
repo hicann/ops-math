@@ -23,15 +23,9 @@ using namespace std;
 
 class StridedSliceInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "StridedSlice SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "StridedSlice SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "StridedSlice TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "StridedSlice TearDown" << std::endl; }
 };
 
 TEST_F(StridedSliceInfershape, strided_slice_infershape_test1)
@@ -409,5 +403,140 @@ TEST_F(StridedSliceInfershape, strided_slice_infershape_5d)
             {"shrink_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
         });
     std::vector<std::vector<int64_t>> expectOutputShape = {{2, 3, 4, 10, 12}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(StridedSliceInfershape, strided_slice_infershape_multiple_ellipsis)
+{
+    vector<int64_t> beginValue = {0, 0};
+    vector<int64_t> endValue = {5, 5};
+    vector<int64_t> stridesValue = {1, 1};
+    gert::InfershapeContextPara infershapeContextPara(
+        "StridedSlice",
+        {
+            {{{5, 5}, {5, 5}}, ge::DT_INT64, ge::FORMAT_ND},
+            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, beginValue.data()},
+            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, endValue.data()},
+            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, stridesValue.data()},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {"begin_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"end_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"ellipsis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+            {"new_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"shrink_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
+}
+
+TEST_F(StridedSliceInfershape, strided_slice_infershape_param_exceed_dim)
+{
+    vector<int64_t> beginValue = {0, 0, 0};
+    vector<int64_t> endValue = {5, 5, 5};
+    vector<int64_t> stridesValue = {1, 1, 1};
+    gert::InfershapeContextPara infershapeContextPara(
+        "StridedSlice",
+        {
+            {{{5}, {5}}, ge::DT_INT64, ge::FORMAT_ND},
+            {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, beginValue.data()},
+            {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, endValue.data()},
+            {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, stridesValue.data()},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {"begin_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"end_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"ellipsis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"new_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"shrink_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
+}
+
+TEST_F(StridedSliceInfershape, strided_slice_infershape_shrink_negative_stride)
+{
+    vector<int64_t> beginValue = {4};
+    vector<int64_t> endValue = {0};
+    vector<int64_t> stridesValue = {-1};
+    gert::InfershapeContextPara infershapeContextPara(
+        "StridedSlice",
+        {
+            {{{5}, {5}}, ge::DT_INT64, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, beginValue.data()},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, endValue.data()},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, stridesValue.data()},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {"begin_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"end_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"ellipsis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"new_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"shrink_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
+}
+
+TEST_F(StridedSliceInfershape, strided_slice_infershape_shrink_out_of_bound)
+{
+    vector<int64_t> beginValue = {10};
+    vector<int64_t> endValue = {0};
+    vector<int64_t> stridesValue = {1};
+    gert::InfershapeContextPara infershapeContextPara(
+        "StridedSlice",
+        {
+            {{{5}, {5}}, ge::DT_INT64, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, beginValue.data()},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, endValue.data()},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, stridesValue.data()},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {"begin_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"end_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"ellipsis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"new_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"shrink_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
+}
+
+TEST_F(StridedSliceInfershape, strided_slice_infershape_stride_remainder_nonzero)
+{
+    vector<int64_t> beginValue = {0};
+    vector<int64_t> endValue = {5};
+    vector<int64_t> stridesValue = {2};
+    gert::InfershapeContextPara infershapeContextPara(
+        "StridedSlice",
+        {
+            {{{10}, {10}}, ge::DT_INT64, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, beginValue.data()},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, endValue.data()},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, stridesValue.data()},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {"begin_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"end_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"ellipsis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"new_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+            {"shrink_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{3}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
