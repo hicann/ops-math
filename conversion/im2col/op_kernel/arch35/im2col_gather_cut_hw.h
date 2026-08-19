@@ -344,7 +344,7 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::CalcOneUBIdxAndGat
             AscendC::Reg::RegTensor<U> dstReg;
             AscendC::Reg::RegTensor<U> movReg;
             AscendC::Reg::RegTensor<T> dstRegT;
-            AscendC::Reg::UnalignReg uDst;
+            AscendC::Reg::UnalignRegForLoad uDst;
             AscendC::Reg::MaskReg mask;
             AscendC::Reg::MaskReg maskOut;
             AscendC::Reg::MaskReg maskTail;
@@ -375,11 +375,11 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::CalcOneUBIdxAndGat
                     if constexpr (sizeof(T) == sizeof(int8_t)) {
                         // Convert B16 to B8
                         AscendC::Reg::Pack(dstRegT, dstReg);
-                        AscendC::Reg::DataCopyUnAlign(dstPtrT, dstRegT, uDst, factor);
-                        AscendC::Reg::DataCopyUnAlignPost(dstPtrT, uDst, 0);
+                        AscendC::Reg::StoreUnAlign(dstPtrT, dstRegT, uDst, factor);
+                        AscendC::Reg::StoreUnAlignPost(dstPtrT, uDst, 0);
                     } else {
-                        AscendC::Reg::DataCopyUnAlign(dstPtrU, dstReg, uDst, factor);
-                        AscendC::Reg::DataCopyUnAlignPost(dstPtrU, uDst, 0);
+                        AscendC::Reg::StoreUnAlign(dstPtrU, dstReg, uDst, factor);
+                        AscendC::Reg::StoreUnAlignPost(dstPtrU, uDst, 0);
                     }
                     AscendC::Reg::Adds(addReg1, addReg1, (U)stride, mask);
                 }
@@ -387,11 +387,11 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::CalcOneUBIdxAndGat
                 if constexpr (sizeof(T) == sizeof(int8_t)) {
                     // Convert B16 to B8
                     AscendC::Reg::Pack(dstRegT, dstReg);
-                    AscendC::Reg::DataCopyUnAlign(dstPtrT, dstRegT, uDst, tail);
-                    AscendC::Reg::DataCopyUnAlignPost(dstPtrT, uDst, 0);
+                    AscendC::Reg::StoreUnAlign(dstPtrT, dstRegT, uDst, tail);
+                    AscendC::Reg::StoreUnAlignPost(dstPtrT, uDst, 0);
                 } else {
-                    AscendC::Reg::DataCopyUnAlign(dstPtrU, dstReg, uDst, tail);
-                    AscendC::Reg::DataCopyUnAlignPost(dstPtrU, uDst, 0);
+                    AscendC::Reg::StoreUnAlign(dstPtrU, dstReg, uDst, tail);
+                    AscendC::Reg::StoreUnAlignPost(dstPtrU, uDst, 0);
                 }
                 AscendC::Reg::Adds(movReg, movReg, (U)strideH, mask);
                 AscendC::Reg::Move(addReg1, movReg);
@@ -433,7 +433,7 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::CalcOneUBIdxAndGat
             AscendC::Reg::RegTensor<U> mulsReg6;
             AscendC::Reg::RegTensor<U> dstReg;
             AscendC::Reg::RegTensor<T> dstRegT;
-            AscendC::Reg::UnalignReg uDst;
+            AscendC::Reg::UnalignRegForLoad uDst;
             AscendC::Reg::MaskReg mask;
             AscendC::Reg::MaskReg maskOutTail;
 
@@ -467,11 +467,11 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::CalcOneUBIdxAndGat
                 if constexpr (sizeof(T) == sizeof(int8_t)) {
                     // Convert B16 to B8
                     AscendC::Reg::Pack(dstRegT, dstReg);
-                    AscendC::Reg::DataCopyUnAlign(dstPtrT, dstRegT, uDst, factor);
-                    AscendC::Reg::DataCopyUnAlignPost(dstPtrT, uDst, 0);
+                    AscendC::Reg::StoreUnAlign(dstPtrT, dstRegT, uDst, factor);
+                    AscendC::Reg::StoreUnAlignPost(dstPtrT, uDst, 0);
                 } else {
-                    AscendC::Reg::DataCopyUnAlign(dstPtrU, dstReg, uDst, factor);
-                    AscendC::Reg::DataCopyUnAlignPost(dstPtrU, uDst, 0);
+                    AscendC::Reg::StoreUnAlign(dstPtrU, dstReg, uDst, factor);
+                    AscendC::Reg::StoreUnAlignPost(dstPtrU, uDst, 0);
                 }
                 AscendC::Reg::Adds(addReg2, addReg2, (U)stride, mask);
             }
@@ -479,11 +479,11 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::CalcOneUBIdxAndGat
             if constexpr (sizeof(T) == sizeof(int8_t)) {
                 // Convert B16 to B8
                 AscendC::Reg::Pack(dstRegT, dstReg);
-                AscendC::Reg::DataCopyUnAlign(dstPtrT, dstRegT, uDst, tailFactor);
-                AscendC::Reg::DataCopyUnAlignPost(dstPtrT, uDst, 0);
+                AscendC::Reg::StoreUnAlign(dstPtrT, dstRegT, uDst, tailFactor);
+                AscendC::Reg::StoreUnAlignPost(dstPtrT, uDst, 0);
             } else {
-                AscendC::Reg::DataCopyUnAlign(dstPtrU, dstReg, uDst, tailFactor);
-                AscendC::Reg::DataCopyUnAlignPost(dstPtrU, uDst, 0);
+                AscendC::Reg::StoreUnAlign(dstPtrU, dstReg, uDst, tailFactor);
+                AscendC::Reg::StoreUnAlignPost(dstPtrU, uDst, 0);
             }
         }
     }
@@ -527,7 +527,7 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::CalcIdxAndGather(i
         AscendC::Reg::RegTensor<U> mulsReg3;
         AscendC::Reg::RegTensor<U> dstReg;
         AscendC::Reg::RegTensor<T> dstRegT;
-        AscendC::Reg::UnalignReg uDst;
+        AscendC::Reg::UnalignRegForLoad uDst;
         AscendC::Reg::MaskReg mask;
         AscendC::Reg::MaskReg maskOut;
         AscendC::Reg::MaskReg maskT;

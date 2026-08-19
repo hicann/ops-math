@@ -233,8 +233,8 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyDataIn(int64_t offset
         {
             uint32_t inputOffsetReg = inputOffset;
 
-            __local_mem__ PromoteDataT* dst = (__local_mem__ PromoteDataT*)xTensor_.GetPhyAddr();
-            __local_mem__ T* src = (__local_mem__ T*)inputLocal.GetPhyAddr() + inputOffsetReg;
+            __ubuf__ PromoteDataT* dst = (__ubuf__ PromoteDataT*)xTensor_.GetPhyAddr();
+            __ubuf__ T* src = (__ubuf__ T*)inputLocal.GetPhyAddr() + inputOffsetReg;
 
             uint32_t sreg = static_cast<uint32_t>(count);
 
@@ -244,10 +244,10 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::CopyDataIn(int64_t offset
 
             for (uint16_t i = 0; i < loops; i++) {
                 mask = AscendC::Reg::UpdateMask<PromoteDataT>(sreg);
-                AscendC::Reg::DataCopy<T, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(
-                    aReg, (__local_mem__ T*)src + i * loopsStride);
+                AscendC::Reg::LoadAlign<T, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(aReg,
+                                                                                    (__ubuf__ T*)src + i * loopsStride);
                 AscendC::Reg::Cast<PromoteDataT, T, castTrait0>(bReg, aReg, mask);
-                AscendC::Reg::DataCopy(dst + i * loopsStride, bReg, mask);
+                AscendC::Reg::StoreAlign(dst + i * loopsStride, bReg, mask);
             }
         }
         xQue_.EnQue<PromoteDataT>(xTensor_);
@@ -560,9 +560,9 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::UpdateCacheAux(const int6
 
     __VEC_SCOPE__
     {
-        __local_mem__ PromoteDataT* dst = (__local_mem__ PromoteDataT*)dstTensor.GetPhyAddr();
-        __local_mem__ PromoteDataT* cah = (__local_mem__ PromoteDataT*)dstTensor.GetPhyAddr() + cacheID * stride;
-        __local_mem__ PromoteDataT* src = (__local_mem__ PromoteDataT*)srcTensor.GetPhyAddr();
+        __ubuf__ PromoteDataT* dst = (__ubuf__ PromoteDataT*)dstTensor.GetPhyAddr();
+        __ubuf__ PromoteDataT* cah = (__ubuf__ PromoteDataT*)dstTensor.GetPhyAddr() + cacheID * stride;
+        __ubuf__ PromoteDataT* src = (__ubuf__ PromoteDataT*)srcTensor.GetPhyAddr();
 
         uint32_t sreg = static_cast<uint32_t>(count);
 
@@ -571,12 +571,12 @@ __aicore__ inline void GroupedBiasAddGradSplitH<T, U>::UpdateCacheAux(const int6
 
         for (uint16_t i = 0; i < outerLoopTimes; ++i) { // outerLoopTimes is dimH size
             pMask = AscendC::Reg::UpdateMask<PromoteDataT>(sreg);
-            DataCopy(aReg, (__local_mem__ PromoteDataT*)src + i * outerLoopStride);
+            MicroAPI::LoadAlign(aReg, (__ubuf__ PromoteDataT*)src + i * outerLoopStride);
             for (uint16_t j = 0; j < innerLoopTimes; ++j) {
-                DataCopy(bReg, (__local_mem__ PromoteDataT*)dst + i * outerLoopStride + j * innerLoopStride);
+                MicroAPI::LoadAlign(bReg, (__ubuf__ PromoteDataT*)dst + i * outerLoopStride + j * innerLoopStride);
                 Add<PromoteDataT, AscendC::Reg::MaskMergeMode::ZEROING>(aReg, aReg, bReg, pMask);
             }
-            DataCopy((__local_mem__ PromoteDataT*)cah + i * outerLoopStride, aReg, pMask);
+            MicroAPI::StoreAlign((__ubuf__ PromoteDataT*)cah + i * outerLoopStride, aReg, pMask);
         }
     }
 }

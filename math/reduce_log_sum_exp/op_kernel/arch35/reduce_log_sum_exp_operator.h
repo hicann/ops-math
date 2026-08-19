@@ -88,9 +88,9 @@ private:
                 for (uint16_t i = 0; i < dimR - 1; ++i) {
                     uint32_t scalar = dimA;
                     for (uint16_t j = 0; j < loopA; ++j) {
-                        AscendC::Reg::DataCopy(vreg, dstAddr + i * dimA + j * VL_LEN / sizeof(T));
+                        AscendC::Reg::LoadAlign(vreg, dstAddr + i * dimA + j * VL_LEN / sizeof(T));
                         auto mask = AscendC::Reg::UpdateMask<T, AscendC::Reg::RegTraitNumOne>(scalar);
-                        AscendC::Reg::DataCopy(dstAddr + (i + 1) * dimA + j * VL_LEN / sizeof(T), vreg, mask);
+                        AscendC::Reg::StoreAlign(dstAddr + (i + 1) * dimA + j * VL_LEN / sizeof(T), vreg, mask);
                     }
                 }
             }
@@ -101,12 +101,12 @@ private:
                 AscendC::Reg::MaskReg maskFull = Reg::CreateMask<T, Reg::MaskPattern::ALL>();
                 AscendC::Reg::MaskReg mask;
                 for (uint16_t i = 0; i < dimA; ++i) {
-                    AscendC::Reg::DataCopy(vregSrc, dstAddr + i * dimR);
+                    AscendC::Reg::LoadAlign(vregSrc, dstAddr + i * dimR);
                     uint32_t scalar = dimR;
                     for (uint16_t j = 0; j < loopR; ++j) {
                         AscendC::Reg::Duplicate(vregDst, vregSrc, maskFull);
                         auto mask = AscendC::Reg::UpdateMask<T, AscendC::Reg::RegTraitNumOne>(scalar);
-                        AscendC::Reg::DataCopy(dstAddr + i * dimR + j * VL_LEN / sizeof(T), vregDst, mask);
+                        AscendC::Reg::StoreAlign(dstAddr + i * dimR + j * VL_LEN / sizeof(T), vregDst, mask);
                     }
                 }
             }

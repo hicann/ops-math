@@ -157,18 +157,18 @@ __aicore__ inline void MatrixDiagSliceBatch<T, U>::MatrixDiagB8Scatter(__ubuf__ 
         Reg::RegTensor<T> xReg;
         Reg::RegTensor<T> xReg0;
         Reg::RegTensor<T> xReg1;
-        Reg::UnalignReg ureg;
+        Reg::UnalignRegForLoad ureg;
         Reg::AddrReg aReg0;
-        Reg::DataCopy(indexReg, indexAddr);
-        Reg::DataCopyUnAlignPre(ureg, xUbAddr);
+        Reg::LoadAlign(indexReg, indexAddr);
+        Reg::LoadUnAlignPre(ureg, xUbAddr);
         for (uint16_t idx_batchUbFactor = 0; idx_batchUbFactor < batchUbFactorLocal; ++idx_batchUbFactor) {
             aReg0 = Reg::CreateAddrReg<T>(idx_batchUbFactor, nSize_);
-            Reg::DataCopyUnAlignPre(ureg, xUbAddr, aReg0);
-            Reg::DataCopyUnAlign(xReg, ureg, xUbAddr, aReg0, 0);
+            Reg::LoadUnAlignPre(ureg, xUbAddr, aReg0);
+            Reg::LoadUnAlign(xReg, ureg, xUbAddr, aReg0, 0);
             Reg::Interleave(xReg0, xReg1, xReg, xReg);
-            Reg::DataCopyScatter(yUbAddr, xReg0, indexReg, p0);
+            Reg::Scatter(yUbAddr, xReg0, indexReg, p0);
             Reg::Adds(vd0, indexReg, mStride, p0);
-            Reg::DataCopyScatter(yUbAddr, xReg1, vd0, p1);
+            Reg::Scatter(yUbAddr, xReg1, vd0, p1);
             Reg::Adds(indexReg, indexReg, indexStride, p0);
         }
     }
@@ -197,14 +197,14 @@ __aicore__ inline void MatrixDiagSliceBatch<T, U>::MatrixDiagScatter()
             Reg::RegTensor<U> vd0;
             Reg::RegTensor<U> indexReg;
             Reg::RegTensor<T> xReg;
-            Reg::UnalignReg ureg;
+            Reg::UnalignRegForLoad ureg;
             Reg::AddrReg aReg0;
-            Reg::DataCopy(indexReg, indexAddr);
+            Reg::LoadAlign(indexReg, indexAddr);
             for (uint16_t idx_batchUbFactor = 0; idx_batchUbFactor < batchUbFactorLocal; ++idx_batchUbFactor) {
                 aReg0 = Reg::CreateAddrReg<T>(idx_batchUbFactor, nSize_);
-                Reg::DataCopyUnAlignPre(ureg, xUbAddr, aReg0);
-                Reg::DataCopyUnAlign(xReg, ureg, xUbAddr, aReg0, 0);
-                Reg::DataCopyScatter(yUbAddr, xReg, indexReg, p0);
+                Reg::LoadUnAlignPre(ureg, xUbAddr, aReg0);
+                Reg::LoadUnAlign(xReg, ureg, xUbAddr, aReg0, 0);
+                Reg::Scatter(yUbAddr, xReg, indexReg, p0);
                 Reg::Adds(indexReg, indexReg, indexStride, p0);
             }
         }
@@ -267,7 +267,7 @@ __aicore__ inline void MatrixDiagSliceBatch<T, U>::GenScatterIndex()
         Reg::Sub(vd4, indexReg, vd3, p0);
         Reg::Muls(vd5, vd4, nSize_ + 1, p0);
         Reg::Add(vd6, vd2, vd5, p0);
-        Reg::DataCopy(dstAddr, vd6, p0);
+        Reg::StoreAlign(dstAddr, vd6, p0);
     }
 }
 } // namespace MatrixDiagAsc

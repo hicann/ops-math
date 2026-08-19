@@ -29,14 +29,13 @@ public:
     __aicore__ inline void Process();
 
 private:
-    __aicore__ inline void SetLoopInfo(MultiCopyLoopInfo<NDDMA_MAX_DIMS>& loopInfo,
-                                       MultiCopyLoopInfo<NDDMA_MAX_DIMS>& loopInfoTail);
-    __aicore__ inline void SetCopyOutParams(DataCopyExtParams &copyOutParamsMain,
-                                            DataCopyExtParams &copyOutParamsTail);
+    __aicore__ inline void SetLoopInfo(NdDmaLoopInfo<NDDMA_MAX_DIMS>& loopInfo,
+                                       NdDmaLoopInfo<NDDMA_MAX_DIMS>& loopInfoTail);
+    __aicore__ inline void SetCopyOutParams(DataCopyExtParams& copyOutParamsMain, DataCopyExtParams& copyOutParamsTail);
     __aicore__ inline void ProcessPerBlock();
 
 private:
-    TPipe *pipe_;
+    TPipe* pipe_;
     TQueBind<TPosition::VECIN, TPosition::VECOUT, 1> vecQue_;
 
     GlobalTensor<T> inputGM_;
@@ -44,18 +43,17 @@ private:
 
     int64_t blockIdx_ = 0;
 
-    static constexpr MultiCopyConfig nddmaConfig_ = {false, 0, 0, false};
+    static constexpr NdDmaConfig nddmaConfig_ = {false, 0, 0, false};
 
     // 计算中间变量
-    int64_t ubSplitLoopsNum_ = 0; // ub切分轴上的循环次数
-    int64_t curCoreLoopsNum_ = 0; // ub切分轴之外的循环次数
+    int64_t ubSplitLoopsNum_ = 0;   // ub切分轴上的循环次数
+    int64_t curCoreLoopsNum_ = 0;   // ub切分轴之外的循环次数
     int64_t curCoreRowsOffset_ = 0; // 当前核处理的output shape中的起始行数
 };
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceNDDMA<T, U>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
-                                                      GM_ADDR y, const StridedSliceNDDMATilingData* tilingData,
-                                                      TPipe* pipeIn)
+__aicore__ inline void StridedSliceNDDMA<T, U>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y,
+                                                     const StridedSliceNDDMATilingData* tilingData, TPipe* pipeIn)
 {
     blockIdx_ = GetBlockIdx();
     pipe_ = pipeIn;
@@ -81,8 +79,8 @@ __aicore__ inline void StridedSliceNDDMA<T, U>::Process()
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceNDDMA<T, U>::SetLoopInfo(MultiCopyLoopInfo<NDDMA_MAX_DIMS>& loopInfo,
-                                                         MultiCopyLoopInfo<NDDMA_MAX_DIMS>& loopInfoTail)
+__aicore__ inline void StridedSliceNDDMA<T, U>::SetLoopInfo(NdDmaLoopInfo<NDDMA_MAX_DIMS>& loopInfo,
+                                                            NdDmaLoopInfo<NDDMA_MAX_DIMS>& loopInfoTail)
 {
     int64_t inUbDims = this->inputDims_ - this->ubIndex_;
     for (int64_t i = 0; i < inUbDims; i++) {
@@ -120,8 +118,8 @@ __aicore__ inline void StridedSliceNDDMA<T, U>::SetLoopInfo(MultiCopyLoopInfo<ND
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceNDDMA<T, U>::SetCopyOutParams(DataCopyExtParams &copyOutParamsMain,
-                                                              DataCopyExtParams &copyOutParamsTail)
+__aicore__ inline void StridedSliceNDDMA<T, U>::SetCopyOutParams(DataCopyExtParams& copyOutParamsMain,
+                                                                 DataCopyExtParams& copyOutParamsTail)
 {
     copyOutParamsMain.blockCount = 1;
     copyOutParamsMain.blockLen = this->nddmaTotalNum_ * sizeof(T);
@@ -143,8 +141,8 @@ __aicore__ inline void StridedSliceNDDMA<T, U>::ProcessPerBlock()
     int64_t outputGmAddr = 0;
     int64_t handleRowsNum = 0;
 
-    MultiCopyParams<T, NDDMA_MAX_DIMS> paramsMain;
-    MultiCopyParams<T, NDDMA_MAX_DIMS> paramsTail;
+    NdDmaParams<T, NDDMA_MAX_DIMS> paramsMain;
+    NdDmaParams<T, NDDMA_MAX_DIMS> paramsTail;
     paramsMain.constantValue = 0;
     paramsTail.constantValue = 0;
     SetLoopInfo(paramsMain.loopInfo, paramsTail.loopInfo);
@@ -159,8 +157,7 @@ __aicore__ inline void StridedSliceNDDMA<T, U>::ProcessPerBlock()
 
         for (int64_t loops = 0; loops < ubSplitLoopsNum_; loops++) {
             LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();
-            DataCopy<T, NDDMA_MAX_DIMS, nddmaConfig_>(inputLocal,
-                                                      inputGM_[inputGmAddr + loops * this->ubInLoopSteps_],
+            DataCopy<T, NDDMA_MAX_DIMS, nddmaConfig_>(inputLocal, inputGM_[inputGmAddr + loops * this->ubInLoopSteps_],
                                                       paramsMain);
             vecQue_.EnQue(inputLocal);
             inputLocal = vecQue_.DeQue<T>();
@@ -169,12 +166,12 @@ __aicore__ inline void StridedSliceNDDMA<T, U>::ProcessPerBlock()
         }
         if (this->ubTailFactor_ > 0) {
             LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();
-            DataCopy<T, NDDMA_MAX_DIMS, nddmaConfig_>(inputLocal,
-                inputGM_[inputGmAddr + ubSplitLoopsNum_ * this->ubInLoopSteps_], paramsTail);
+            DataCopy<T, NDDMA_MAX_DIMS, nddmaConfig_>(
+                inputLocal, inputGM_[inputGmAddr + ubSplitLoopsNum_ * this->ubInLoopSteps_], paramsTail);
             vecQue_.EnQue(inputLocal);
             inputLocal = vecQue_.DeQue<T>();
-            DataCopyPad(outputGM_[outputGmAddr + ubSplitLoopsNum_ * this->ubOutLoopSteps_],
-                        inputLocal, copyOutParamsTail);
+            DataCopyPad(outputGM_[outputGmAddr + ubSplitLoopsNum_ * this->ubOutLoopSteps_], inputLocal,
+                        copyOutParamsTail);
             vecQue_.FreeTensor(inputLocal);
         }
     }

@@ -275,25 +275,21 @@ __aicore__ inline void ArgMaxWithValueAraGather<T1, T2, T3, withValue, isMin>::C
         LocalTensor<float> xUb32 = xBuf32.Get<float>();
         LocalTensor<float> outUb32 = outBuf32.Get<float>();
         Cast(xUb32, srcUb, RoundMode::CAST_NONE, ubFactorAlignCutNextA_ * rSize_);
-        this->template ArgMaxRa<float, uint32_t>((__local_mem__ float*)outUb32[copyOutNum_].GetPhyAddr(),
-                                                 (__local_mem__ T2*)indiceUb[copyOutNum_].GetPhyAddr(),
-                                                 (__local_mem__ float*)xUb32.GetPhyAddr(), aNum, ubFactorAlignCutNextA_,
-                                                 rSize_);
+        this->template ArgMaxRa<float, uint32_t>(
+            (__ubuf__ float*)outUb32[copyOutNum_].GetPhyAddr(), (__ubuf__ T2*)indiceUb[copyOutNum_].GetPhyAddr(),
+            (__ubuf__ float*)xUb32.GetPhyAddr(), aNum, ubFactorAlignCutNextA_, rSize_);
     } else if constexpr (IsSameType<T1, half>::value) {
-        this->template ArgMaxRa<half, uint16_t>((__local_mem__ T1*)valuesUb[copyOutNum_].GetPhyAddr(),
-                                                (__local_mem__ T2*)indiceUb[copyOutNum_].GetPhyAddr(),
-                                                (__local_mem__ T1*)srcUb.GetPhyAddr(), aNum, ubFactorAlignCutNextA_,
-                                                rSize_);
+        this->template ArgMaxRa<half, uint16_t>((__ubuf__ T1*)valuesUb[copyOutNum_].GetPhyAddr(),
+                                                (__ubuf__ T2*)indiceUb[copyOutNum_].GetPhyAddr(),
+                                                (__ubuf__ T1*)srcUb.GetPhyAddr(), aNum, ubFactorAlignCutNextA_, rSize_);
     } else if constexpr (IsSameType<T1, float>::value || IsSameType<T1, int32_t>::value) {
-        this->template ArgMaxRa<T1, uint32_t>((__local_mem__ T1*)valuesUb[copyOutNum_].GetPhyAddr(),
-                                              (__local_mem__ T2*)indiceUb[copyOutNum_].GetPhyAddr(),
-                                              (__local_mem__ T1*)srcUb.GetPhyAddr(), aNum, ubFactorAlignCutNextA_,
-                                              rSize_);
+        this->template ArgMaxRa<T1, uint32_t>((__ubuf__ T1*)valuesUb[copyOutNum_].GetPhyAddr(),
+                                              (__ubuf__ T2*)indiceUb[copyOutNum_].GetPhyAddr(),
+                                              (__ubuf__ T1*)srcUb.GetPhyAddr(), aNum, ubFactorAlignCutNextA_, rSize_);
     } else if constexpr (IsSameType<T1, int64_t>::value) {
-        this->template ArgMaxAraUnAlignInt64<int64_t, uint64_t>((__local_mem__ T1*)valuesUb[copyOutNum_].GetPhyAddr(),
-                                                                (__local_mem__ T2*)indiceUb[copyOutNum_].GetPhyAddr(),
-                                                                (__local_mem__ T1*)srcUb.GetPhyAddr(), 1, rSize_, aNum,
-                                                                ubFactorAlignCutNextA_, ubFactorAlignCutNextA_, 0);
+        this->template ArgMaxAraUnAlignInt64<int64_t, uint64_t>(
+            (__ubuf__ T1*)valuesUb[copyOutNum_].GetPhyAddr(), (__ubuf__ T2*)indiceUb[copyOutNum_].GetPhyAddr(),
+            (__ubuf__ T1*)srcUb.GetPhyAddr(), 1, rSize_, aNum, ubFactorAlignCutNextA_, ubFactorAlignCutNextA_, 0);
     }
     inQueueX_.FreeTensor(srcUb);
 }
@@ -308,21 +304,20 @@ __aicore__ inline void ArgMaxWithValueAraGather<T1, T2, T3, withValue, isMin>::C
         LocalTensor<float> outUb32 = outBuf32.Get<float>();
         Cast(xUb32, srcUb, RoundMode::CAST_NONE, ubFactorAlignCutNextA_ * rSize_);
         this->template ArgMaxRa<float, uint32_t>(
-            (__local_mem__ float*)outUb32.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-            (__local_mem__ float*)xUb32.GetPhyAddr(), cutNextASize_, ubFactorAlignCutNextA_, rSize_);
+            (__ubuf__ float*)outUb32.GetPhyAddr(), (__ubuf__ T2*)indiceUb.GetPhyAddr(),
+            (__ubuf__ float*)xUb32.GetPhyAddr(), cutNextASize_, ubFactorAlignCutNextA_, rSize_);
     } else if constexpr (IsSameType<T1, half>::value) {
-        this->template ArgMaxRa<half, uint16_t>(
-            (__local_mem__ T1*)valuesUb.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), cutNextASize_, ubFactorAlignCutNextA_, rSize_);
+        this->template ArgMaxRa<half, uint16_t>((__ubuf__ T1*)valuesUb.GetPhyAddr(),
+                                                (__ubuf__ T2*)indiceUb.GetPhyAddr(), (__ubuf__ T1*)srcUb.GetPhyAddr(),
+                                                cutNextASize_, ubFactorAlignCutNextA_, rSize_);
     } else if constexpr (IsSameType<T1, float>::value || IsSameType<T1, int32_t>::value) {
-        this->template ArgMaxRa<T1, uint32_t>(
-            (__local_mem__ T1*)valuesUb.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), cutNextASize_, ubFactorAlignCutNextA_, rSize_);
+        this->template ArgMaxRa<T1, uint32_t>((__ubuf__ T1*)valuesUb.GetPhyAddr(), (__ubuf__ T2*)indiceUb.GetPhyAddr(),
+                                              (__ubuf__ T1*)srcUb.GetPhyAddr(), cutNextASize_, ubFactorAlignCutNextA_,
+                                              rSize_);
     } else if constexpr (IsSameType<T1, int64_t>::value) {
         this->template ArgMaxAraUnAlignInt64<int64_t, uint64_t>(
-            (__local_mem__ T1*)valuesUb.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), 1, rSize_, cutNextASize_, ubFactorAlignCutNextA_,
-            ubFactorAlignCutNextA_, 0);
+            (__ubuf__ T1*)valuesUb.GetPhyAddr(), (__ubuf__ T2*)indiceUb.GetPhyAddr(), (__ubuf__ T1*)srcUb.GetPhyAddr(),
+            1, rSize_, cutNextASize_, ubFactorAlignCutNextA_, ubFactorAlignCutNextA_, 0);
     }
     inQueueX_.FreeTensor(srcUb);
 }
@@ -333,7 +328,7 @@ __aicore__ inline void ArgMaxWithValueAraGather<T1, T2, T3, withValue, isMin>::C
     LocalTensor<T1> xUb = inQueueX_.AllocTensor<T1>();
 
     // NDDMA loopInfo init: cutA R nextA ==> R cutA nextA
-    MultiCopyLoopInfo<NDDMA_DIM_NUM> loopInfo;
+    NdDmaLoopInfo<NDDMA_DIM_NUM> loopInfo;
     for (int64_t i = 0; i < NDDMA_DIM_NUM; i++) {
         loopInfo.loopLpSize[i] = 0;
         loopInfo.loopRpSize[i] = 0;
@@ -352,8 +347,8 @@ __aicore__ inline void ArgMaxWithValueAraGather<T1, T2, T3, withValue, isMin>::C
     loopInfo.loopDstStride[2] = nextASize_;
 
     T1 constValue = 0;
-    static constexpr MultiCopyConfig config = {false, 0, 0, false};
-    MultiCopyParams<T1, NDDMA_DIM_NUM> paramsMain = {loopInfo, constValue};
+    static constexpr NdDmaConfig config = {false, 0, 0, false};
+    NdDmaParams<T1, NDDMA_DIM_NUM> paramsMain = {loopInfo, constValue};
     DataCopy<T1, NDDMA_DIM_NUM, config>(xUb, xGm_[(blockOffset_ + loopOffset_) * rSize_], paramsMain);
 
     inQueueX_.EnQue(xUb);
@@ -400,20 +395,19 @@ __aicore__ inline void ArgMaxWithValueAraGather<T1, T2, T3, withValue, isMin>::C
         LocalTensor<float> outUb32 = outBuf32.Get<float>();
         Cast(xBuf32.Get<float>(), srcUb, RoundMode::CAST_NONE, ubFactorAlignCutA_ * rSize_);
         this->template ArgMaxRa<float, uint32_t>(
-            (__local_mem__ float*)outUb32.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-            (__local_mem__ float*)xUb32.GetPhyAddr(), processNum, ubFactorAlignCutA_, rSize_);
+            (__ubuf__ float*)outUb32.GetPhyAddr(), (__ubuf__ T2*)indiceUb.GetPhyAddr(),
+            (__ubuf__ float*)xUb32.GetPhyAddr(), processNum, ubFactorAlignCutA_, rSize_);
     } else if constexpr (IsSameType<T1, half>::value) {
-        this->template ArgMaxRa<half, uint16_t>(
-            (__local_mem__ T1*)valuesUb.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), processNum, ubFactorAlignCutA_, rSize_);
+        this->template ArgMaxRa<half, uint16_t>((__ubuf__ T1*)valuesUb.GetPhyAddr(),
+                                                (__ubuf__ T2*)indiceUb.GetPhyAddr(), (__ubuf__ T1*)srcUb.GetPhyAddr(),
+                                                processNum, ubFactorAlignCutA_, rSize_);
     } else if constexpr (IsSameType<T1, int64_t>::value) {
         this->template ArgMaxAraUnAlignInt64<int64_t, uint64_t>(
-            (__local_mem__ T1*)valuesUb.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), 1, rSize_, processNum, ubFactorAlignCutA_, ubFactorAlignCutA_, 0);
+            (__ubuf__ T1*)valuesUb.GetPhyAddr(), (__ubuf__ T2*)indiceUb.GetPhyAddr(), (__ubuf__ T1*)srcUb.GetPhyAddr(),
+            1, rSize_, processNum, ubFactorAlignCutA_, ubFactorAlignCutA_, 0);
     } else {
-        this->template ArgMaxRa<T1, uint32_t>(
-            (__local_mem__ T1*)valuesUb.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), processNum, ubFactorAlignCutA_, rSize_);
+        this->template ArgMaxRa<T1, uint32_t>((__ubuf__ T1*)valuesUb.GetPhyAddr(), (__ubuf__ T2*)indiceUb.GetPhyAddr(),
+                                              (__ubuf__ T1*)srcUb.GetPhyAddr(), processNum, ubFactorAlignCutA_, rSize_);
     }
 }
 

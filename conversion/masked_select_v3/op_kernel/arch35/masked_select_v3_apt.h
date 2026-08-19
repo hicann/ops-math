@@ -254,8 +254,8 @@ private:
     __aicore__ inline uint16_t GetVLSize() { return Ops::Base::GetVRegSize() / sizeof(T); };
 
     template <typename T1>
-    __aicore__ inline void DoMaskedSelectV3VF(__local_mem__ void* dstLocal, __local_mem__ void* srcLocal,
-                                              __local_mem__ void* mask, const uint32_t& processLength, uint64_t& count)
+    __aicore__ inline void DoMaskedSelectV3VF(__ubuf__ void* dstLocal, __ubuf__ void* srcLocal, __ubuf__ void* mask,
+                                              const uint32_t& processLength, uint64_t& count)
     {
         uint16_t vregLength = GetVLSize();
         uint16_t copyInInputVregLength = vregLength;
@@ -270,41 +270,41 @@ private:
         {
             AscendC::Reg::ClearSpr<AscendC::SpecialPurposeReg::AR>();
             AscendC::Reg::RegTensor<T1> inputVreg, resultVreg;
-            AscendC::Reg::UnalignReg ureg0;
+            AscendC::Reg::UnalignRegForLoad ureg0;
             AscendC::Reg::RegTensor<uint8_t> maskVreg;
             AscendC::Reg::MaskReg cmpMaskReg, cmpHelpMaskReg, processLengthMaskReg, compareMaskReg, cmpHelpHighMaskReg;
             compareMaskReg = AscendC::Reg::UpdateMask<uint8_t>(maskProcessLength);
             for (uint16_t i = 0; i < mainLoopCount; i++) {
                 // copy mask -> maskVreg, vregLength
-                AscendC::Reg::DataCopy(maskVreg, (__local_mem__ uint8_t*&)mask + i * vregLength);
+                AscendC::Reg::LoadAlign(maskVreg, (__ubuf__ uint8_t*&)mask + i * vregLength);
                 // compare scalar
-                AscendC::Reg::CompareScalar(cmpHelpMaskReg, maskVreg, compareScalarValue, compareMaskReg);
+                AscendC::Reg::Compares(cmpHelpMaskReg, maskVreg, compareScalarValue, compareMaskReg);
 
                 if constexpr (IS_8_BYTES_TYPE) {
-                    AscendC::Reg::MaskUnPack(cmpMaskReg, cmpHelpMaskReg);
-                    AscendC::Reg::MaskMov(cmpHelpMaskReg, cmpMaskReg);
-                    AscendC::Reg::MaskUnPack(cmpMaskReg, cmpHelpMaskReg);
-                    AscendC::Reg::MaskMov(cmpHelpMaskReg, cmpMaskReg);
+                    AscendC::Reg::UnPack(cmpMaskReg, cmpHelpMaskReg);
+                    AscendC::Reg::Move(cmpHelpMaskReg, cmpMaskReg);
+                    AscendC::Reg::UnPack(cmpMaskReg, cmpHelpMaskReg);
+                    AscendC::Reg::Move(cmpHelpMaskReg, cmpMaskReg);
                     AscendC::Reg::MaskInterleave<T1>(cmpMaskReg, cmpHelpHighMaskReg, cmpHelpMaskReg, cmpHelpMaskReg);
                 } else {
                     if constexpr (IS_1_BYTES_TYPE) {
-                        AscendC::Reg::MaskMov(cmpMaskReg, cmpHelpMaskReg);
+                        AscendC::Reg::Move(cmpMaskReg, cmpHelpMaskReg);
                     }
                     if constexpr (IS_2_BYTES_TYPE) {
-                        AscendC::Reg::MaskUnPack(cmpMaskReg, cmpHelpMaskReg);
+                        AscendC::Reg::UnPack(cmpMaskReg, cmpHelpMaskReg);
                     }
                     if constexpr (IS_4_BYTES_TYPE) {
-                        AscendC::Reg::MaskUnPack(cmpMaskReg, cmpHelpMaskReg);
-                        AscendC::Reg::MaskMov(cmpHelpMaskReg, cmpMaskReg);
-                        AscendC::Reg::MaskUnPack(cmpMaskReg, cmpHelpMaskReg);
+                        AscendC::Reg::UnPack(cmpMaskReg, cmpHelpMaskReg);
+                        AscendC::Reg::Move(cmpHelpMaskReg, cmpMaskReg);
+                        AscendC::Reg::UnPack(cmpMaskReg, cmpHelpMaskReg);
                     }
                 }
-                AscendC::Reg::DataCopy(inputVreg, (__local_mem__ T1*&)srcLocal + i * copyInInputVregLength);
-                AscendC::Reg::GatherMask<T1, Reg::GatherMaskMode::STORE_REG>(resultVreg, inputVreg, cmpMaskReg);
-                AscendC::Reg::DataCopyUnAlign<T1, Reg::PostLiteral::POST_MODE_UPDATE>((__local_mem__ T1*&)dstLocal,
-                                                                                      resultVreg, ureg0);
+                AscendC::Reg::LoadAlign(inputVreg, (__ubuf__ T1*&)srcLocal + i * copyInInputVregLength);
+                AscendC::Reg::Squeeze<T1, Reg::GatherMaskMode::STORE_REG>(resultVreg, inputVreg, cmpMaskReg);
+                AscendC::Reg::StoreUnAlign<T1, Reg::PostLiteral::POST_MODE_UPDATE>((__ubuf__ T1*&)dstLocal, resultVreg,
+                                                                                   ureg0);
             }
-            AscendC::Reg::DataCopyUnAlignPost((__local_mem__ T1*&)dstLocal, ureg0);
+            AscendC::Reg::StoreUnAlignPost((__ubuf__ T1*&)dstLocal, ureg0);
         }
         count = (AscendC::Reg::GetSpr<AscendC::SpecialPurposeReg::AR>()) / sizeof(T);
     }
@@ -323,12 +323,12 @@ private:
         }
 
         if constexpr (IS_8_BYTES_TYPE) {
-            DoMaskedSelectV3VF<uint32_t>((__local_mem__ uint32_t*)yLocal.GetPhyAddr(),
-                                         (__local_mem__ uint32_t*)xLocal.GetPhyAddr(),
-                                         (__local_mem__ uint8_t*)maskLocal.GetPhyAddr(), length, rsvdCntTemp);
+            DoMaskedSelectV3VF<uint32_t>((__ubuf__ uint32_t*)yLocal.GetPhyAddr(),
+                                         (__ubuf__ uint32_t*)xLocal.GetPhyAddr(),
+                                         (__ubuf__ uint8_t*)maskLocal.GetPhyAddr(), length, rsvdCntTemp);
         } else {
-            DoMaskedSelectV3VF<T>((__local_mem__ T*)yLocal.GetPhyAddr(), (__local_mem__ T*)xLocal.GetPhyAddr(),
-                                  (__local_mem__ uint8_t*)maskLocal.GetPhyAddr(), length, rsvdCntTemp);
+            DoMaskedSelectV3VF<T>((__ubuf__ T*)yLocal.GetPhyAddr(), (__ubuf__ T*)xLocal.GetPhyAddr(),
+                                  (__ubuf__ uint8_t*)maskLocal.GetPhyAddr(), length, rsvdCntTemp);
         }
         outQueueYTemp.EnQue<T>(yLocal);
         inQueueXTemp.FreeTensor(xLocal);

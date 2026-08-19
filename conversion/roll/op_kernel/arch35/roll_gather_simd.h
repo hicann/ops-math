@@ -258,7 +258,7 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullCHWIndex(__ubuf
         AscendC::Reg::RegTensor<IndexType> indexVReg;
         AscendC::Reg::RegTensor<IntType> calculateVReg, helpCmpVReg, helpAddVReg, helpDivVReg;
         AscendC::Reg::MaskReg cmpResultMaskReg, helpAddCHWMaskReg, fullMaskReg;
-        AscendC::Reg::UnalignReg u0;
+        AscendC::Reg::UnalignRegForLoad u0;
 
         fullMaskReg = AscendC::Reg::CreateMask<IndexType, AscendC::Reg::MaskPattern::ALL>();
         helpAddCHWMaskReg = AscendC::Reg::UpdateMask<IndexType>(shiftCHWSizeScalar);
@@ -284,13 +284,13 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullCHWIndex(__ubuf
         AscendC::Reg::Adds(calculateVReg, calculateVReg, negShiftCHWScalar, fullMaskReg);
         AscendC::Reg::Duplicate(helpAddVReg, shapesLen, helpAddCHWMaskReg);
         AscendC::Reg::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
-        AscendC::Reg::Copy(indexVReg, (Reg::RegTensor<IndexType>&)calculateVReg);
-        AscendC::Reg::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
+        AscendC::Reg::Move(indexVReg, (Reg::RegTensor<IndexType>&)calculateVReg);
+        AscendC::Reg::StoreUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
         for (uint16_t i = 1; i < loopSize; i++) {
             AscendC::Reg::Adds(indexVReg, indexVReg, copyLenth, fullMaskReg);
-            AscendC::Reg::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
+            AscendC::Reg::StoreUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
         }
-        AscendC::Reg::DataCopyUnAlignPost(indexLocalAddr, u0, 0);
+        AscendC::Reg::StoreUnAlignPost(indexLocalAddr, u0, 0);
     }
 }
 
@@ -321,7 +321,7 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullHWIndex(__ubuf_
         AscendC::Reg::RegTensor<IndexType> indexVReg;
         AscendC::Reg::RegTensor<IntType> calculateVReg, helpCmpVReg, helpAddVReg, helpDivVReg;
         AscendC::Reg::MaskReg cmpResultMaskReg, helpAddHWMaskReg, fullMaskReg;
-        AscendC::Reg::UnalignReg u0;
+        AscendC::Reg::UnalignRegForLoad u0;
 
         fullMaskReg = AscendC::Reg::CreateMask<IndexType, AscendC::Reg::MaskPattern::ALL>();
         helpAddHWMaskReg = AscendC::Reg::UpdateMask<IndexType>(shifthWSizeScalar);
@@ -338,13 +338,13 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullHWIndex(__ubuf_
         AscendC::Reg::Adds(calculateVReg, calculateVReg, negShiftHWScalar, fullMaskReg);
         AscendC::Reg::Duplicate(helpAddVReg, hwLen, helpAddHWMaskReg);
         AscendC::Reg::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
-        AscendC::Reg::Copy(indexVReg, (Reg::RegTensor<IndexType>&)calculateVReg);
-        AscendC::Reg::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
+        AscendC::Reg::Move(indexVReg, (Reg::RegTensor<IndexType>&)calculateVReg);
+        AscendC::Reg::StoreUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
         for (uint16_t i = 1; i < loopSize; i++) {
             AscendC::Reg::Adds(indexVReg, indexVReg, copyLenth, fullMaskReg);
-            AscendC::Reg::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
+            AscendC::Reg::StoreUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
         }
-        AscendC::Reg::DataCopyUnAlignPost(indexLocalAddr, u0, 0);
+        AscendC::Reg::StoreUnAlignPost(indexLocalAddr, u0, 0);
     }
 }
 template <typename T, bool isShiftW>
@@ -371,7 +371,7 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullWIndex(__ubuf__
         AscendC::Reg::RegTensor<IndexType> indexVReg;
         AscendC::Reg::RegTensor<IntType> calculateVReg, helpAddVReg;
         AscendC::Reg::MaskReg helpAddHWMaskReg, fullMaskReg;
-        AscendC::Reg::UnalignReg u0;
+        AscendC::Reg::UnalignRegForLoad u0;
 
         fullMaskReg = AscendC::Reg::CreateMask<IndexType, AscendC::Reg::MaskPattern::ALL>();
         helpAddHWMaskReg = AscendC::Reg::UpdateMask<IndexType>(shiftwSizeScalar);
@@ -382,17 +382,17 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullWIndex(__ubuf__
             AscendC::Reg::Duplicate(helpAddVReg, wScalar, helpAddHWMaskReg);
             AscendC::Reg::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
         }
-        AscendC::Reg::Copy(indexVReg, (Reg::RegTensor<IndexType>&)calculateVReg);
+        AscendC::Reg::Move(indexVReg, (Reg::RegTensor<IndexType>&)calculateVReg);
         if constexpr (isShiftW) {
-            AscendC::Reg::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
+            AscendC::Reg::StoreUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
             for (uint16_t i = 1; i < loopSize; i++) {
                 AscendC::Reg::Adds(indexVReg, indexVReg, copyLenth, fullMaskReg);
-                AscendC::Reg::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
+                AscendC::Reg::StoreUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
             }
         } else {
-            AscendC::Reg::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth * loopSize);
+            AscendC::Reg::StoreUnAlign(indexLocalAddr, indexVReg, u0, copyLenth * loopSize);
         }
-        AscendC::Reg::DataCopyUnAlignPost(indexLocalAddr, u0, 0);
+        AscendC::Reg::StoreUnAlignPost(indexLocalAddr, u0, 0);
     }
 }
 template <typename T, bool isShiftW>
@@ -451,24 +451,24 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::Gather(LocalTensor<T>& xTens
         Reg::RegTensor<T> dstReg0;
         Reg::RegTensor<T> dstReg1;
         Reg::MaskReg maskReg;
-        Reg::UnalignReg u0;
+        Reg::UnalignRegForLoad u0;
         if constexpr (sizeof(T) == 1) {
             maskReg = Reg::UpdateMask<uint16_t>(tmpMaskNum);
         } else {
             maskReg = Reg::UpdateMask<T>(tmpMaskNum);
         }
-        Reg::DataCopy(indexReg, indexPtr);
+        Reg::LoadAlign(indexReg, indexPtr);
         for (uint16_t i = 0; i < loopSize; i++) {
             if constexpr (sizeof(T) == 1) {
-                Reg::DataCopyGather((Reg::RegTensor<uint16_t>&)dstReg0, srcPtr + i * tmplSize, indexReg, maskReg);
+                Reg::Gather((Reg::RegTensor<uint16_t>&)dstReg0, srcPtr + i * tmplSize, indexReg, maskReg);
                 Reg::Pack<uint8_t, uint16_t, Reg::HighLowPart::LOWEST>((Reg::RegTensor<uint8_t>&)dstReg1,
                                                                        (Reg::RegTensor<uint16_t>&)dstReg0);
             } else {
-                Reg::DataCopyGather(dstReg1, srcPtr + i * tmplSize, indexReg, maskReg);
+                Reg::Gather(dstReg1, srcPtr + i * tmplSize, indexReg, maskReg);
             }
-            Reg::DataCopyUnAlign(dstPtr, (Reg::RegTensor<T>&)dstReg1, u0, tmplSize);
+            Reg::StoreUnAlign(dstPtr, (Reg::RegTensor<T>&)dstReg1, u0, tmplSize);
         }
-        AscendC::Reg::DataCopyUnAlignPost(dstPtr, u0, 0);
+        AscendC::Reg::StoreUnAlignPost(dstPtr, u0, 0);
     }
     AlienBuf.EnQue<T>(AlienTensor);
 }

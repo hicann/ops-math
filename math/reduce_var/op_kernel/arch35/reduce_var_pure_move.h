@@ -31,7 +31,7 @@ public:
 
 private:
     __aicore__ inline void ProcessPerCore();
-    __aicore__ inline void VFPureMove(__local_mem__ T* meanLocalAddr, __local_mem__ T* varLocalAddr, uint32_t calCount,
+    __aicore__ inline void VFPureMove(__ubuf__ T* meanLocalAddr, __ubuf__ T* varLocalAddr, uint32_t calCount,
                                       float varScale);
 
 private:
@@ -85,7 +85,7 @@ __aicore__ inline void ReduceVarPureMove<T>::Process()
 }
 
 template <typename T>
-__aicore__ inline void ReduceVarPureMove<T>::VFPureMove(__local_mem__ T* meanLocalAddr, __local_mem__ T* varLocalAddr,
+__aicore__ inline void ReduceVarPureMove<T>::VFPureMove(__ubuf__ T* meanLocalAddr, __ubuf__ T* varLocalAddr,
                                                         uint32_t calCount, float varScale)
 {
     uint16_t loopCount = Ops::Base::CeilDiv(calCount, ReduceOpTmpl::VL_FP32);
@@ -125,8 +125,8 @@ __aicore__ inline void ReduceVarPureMove<T>::ProcessPerCore()
 
         LocalTensor<T> meanLocalIn = meanBuf_.Get<T>();
         LocalTensor<T> varLocalIn = varBuf_.Get<T>();
-        __local_mem__ T* meanLocalAddr = (__local_mem__ T*)meanLocalIn.GetPhyAddr();
-        __local_mem__ T* varLocalAddr = (__local_mem__ T*)varLocalIn.GetPhyAddr();
+        __ubuf__ T* meanLocalAddr = (__ubuf__ T*)meanLocalIn.GetPhyAddr();
+        __ubuf__ T* varLocalAddr = (__ubuf__ T*)varLocalIn.GetPhyAddr();
 
         int32_t calCount = static_cast<int32_t>(copyElementNum);
         float varScale = static_cast<float>(tiling_->varFactor);

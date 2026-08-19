@@ -22,9 +22,9 @@ namespace ReduceOpTmpl {
 using namespace AscendC;
 
 template <typename T, bool isStd = false>
-__aicore__ inline void VFMeanVarTwoPassARLessVL(__local_mem__ T* xInUb, __local_mem__ float* dichotomyAddLocal,
-                                                __local_mem__ T* outMeanLocal, __local_mem__ T* outVarLocal,
-                                                uint32_t ANum, uint32_t RStride, uint32_t RNum, float varScale)
+__aicore__ inline void VFMeanVarTwoPassARLessVL(__ubuf__ T* xInUb, __ubuf__ float* dichotomyAddLocal,
+                                                __ubuf__ T* outMeanLocal, __ubuf__ T* outVarLocal, uint32_t ANum,
+                                                uint32_t RStride, uint32_t RNum, float varScale)
 {
     uint32_t nextR = FindNextPower2(RNum);
     float meanScale = float(1.0) / float(nextR);
@@ -50,7 +50,7 @@ __aicore__ inline void VFMeanVarTwoPassARLessVL(__local_mem__ T* xInUb, __local_
         for (uint16_t k = 0; k < aLoopNum; k++) {
             LoadOneTensorForDtypeT(xInUb, x, pregLoop, (k * RStride));
             Muls(meanSum, x, meanScale, pregLoop);
-            ReduceSum(mean, meanSum, pregLoop);
+            MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(mean, meanSum, pregLoop);
             Muls(mean, mean, meanCorrection, pregMerge);
 
             // mean out
@@ -61,7 +61,7 @@ __aicore__ inline void VFMeanVarTwoPassARLessVL(__local_mem__ T* xInUb, __local_
             // 先乘以系数，防止平方溢出
             Muls(y1Scale, y1, varScale, pregLoop);
             Mul(y1Pow, y1Scale, y1, pregLoop);
-            ReduceSum(var, y1Pow, pregLoop);
+            MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(var, y1Pow, pregLoop);
             // var out
             if constexpr (isStd == true) {
                 Sqrt(var, var, pregMerge);
@@ -74,8 +74,8 @@ __aicore__ inline void VFMeanVarTwoPassARLessVL(__local_mem__ T* xInUb, __local_
 }
 
 template <typename T, bool isStd = false>
-__aicore__ inline void VFMeanVarTwoPassAR(__local_mem__ T* xInUb, __local_mem__ float* dichotomyAddLocal,
-                                          __local_mem__ T* outMeanLocal, __local_mem__ T* outVarLocal, uint32_t ANum,
+__aicore__ inline void VFMeanVarTwoPassAR(__ubuf__ T* xInUb, __ubuf__ float* dichotomyAddLocal,
+                                          __ubuf__ T* outMeanLocal, __ubuf__ T* outVarLocal, uint32_t ANum,
                                           uint32_t RStride, uint32_t RNum, float varScale)
 {
     if (RNum <= VL_FP32) {
@@ -148,17 +148,17 @@ __aicore__ inline void VFMeanVarTwoPassAR(__local_mem__ T* xInUb, __local_mem__ 
                 Muls(binaryAddQ, binaryAddQ, meanScale, pregMain);
                 Muls(binaryAddR, binaryAddR, meanScale, pregLoop);
                 Add(binaryAddQ, binaryAddQ, binaryAddR, pregMain);
-                ReduceSum(vlMean, binaryAddQ, pregMain);
-                DataCopy<float, StoreDist::DIST_FIRST_ELEMENT_B32>(((__local_mem__ float*)dichotomyAddLocal + i),
-                                                                   vlMean, pregMerge);
+                MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(vlMean, binaryAddQ, pregMain);
+                MicroAPI::StoreAlign<float, StoreDist::DIST_FIRST_ELEMENT_B32>(((__ubuf__ float*)dichotomyAddLocal + i),
+                                                                               vlMean, pregMerge);
             }
             for (uint16_t i = 0; i < dichtomyPowerReminder; i++) {
                 LoadOneTensorForDtypeT(xInUb, x, pregMain,
                                        ((i + dichotomyAddReminderLoopCount) * VL_FP32 + k * RStride));
                 Muls(x, x, meanScale, pregMain);
-                ReduceSum(vlMean, x, pregMain);
-                DataCopy<float, StoreDist::DIST_FIRST_ELEMENT_B32>(
-                    ((__local_mem__ float*)dichotomyAddLocal + dichotomyAddReminderLoopCount + i), vlMean, pregMerge);
+                MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(vlMean, x, pregMain);
+                MicroAPI::StoreAlign<float, StoreDist::DIST_FIRST_ELEMENT_B32>(
+                    ((__ubuf__ float*)dichotomyAddLocal + dichotomyAddReminderLoopCount + i), vlMean, pregMerge);
             }
 
             DichotomyAdd(mean, dichotomyAddLocal, outerLoop, innerLoopCountOrigin, dichotomyAddLastNum);
@@ -183,9 +183,9 @@ __aicore__ inline void VFMeanVarTwoPassAR(__local_mem__ T* xInUb, __local_mem__ 
                 Mul(binaryAddQPow, binaryAddQScale, binaryAddQ, pregMain);
                 Mul(binaryAddRPow, binaryAddRScale, binaryAddR, pregLoop);
                 Add(binaryAddQPow, binaryAddQPow, binaryAddRPow, pregMain);
-                ReduceSum(vlVar, binaryAddQPow, pregMain);
-                DataCopy<float, StoreDist::DIST_FIRST_ELEMENT_B32>(((__local_mem__ float*)dichotomyAddLocal + i), vlVar,
-                                                                   pregMerge);
+                MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(vlVar, binaryAddQPow, pregMain);
+                MicroAPI::StoreAlign<float, StoreDist::DIST_FIRST_ELEMENT_B32>(((__ubuf__ float*)dichotomyAddLocal + i),
+                                                                               vlVar, pregMerge);
             }
             for (uint16_t i = 0; i < dichtomyPowerReminder; i++) {
                 LoadOneTensorForDtypeT(xInUb, x1, pregMain,
@@ -193,9 +193,9 @@ __aicore__ inline void VFMeanVarTwoPassAR(__local_mem__ T* xInUb, __local_mem__ 
                 Sub(y1, x1, mean, pregMain);
                 Muls(y1Scale, y1, varScale, pregMain);
                 Mul(y1Pow, y1Scale, y1, pregMain);
-                ReduceSum(vlVar, y1Pow, pregMain);
-                DataCopy<float, StoreDist::DIST_FIRST_ELEMENT_B32>(
-                    ((__local_mem__ float*)dichotomyAddLocal + dichotomyAddReminderLoopCount + i), vlVar, pregMerge);
+                MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(vlVar, y1Pow, pregMain);
+                MicroAPI::StoreAlign<float, StoreDist::DIST_FIRST_ELEMENT_B32>(
+                    ((__ubuf__ float*)dichotomyAddLocal + dichotomyAddReminderLoopCount + i), vlVar, pregMerge);
             }
 
             DichotomyAdd(var, dichotomyAddLocal, outerLoop, innerLoopCountOrigin, dichotomyAddLastNum);
@@ -212,9 +212,9 @@ __aicore__ inline void VFMeanVarTwoPassAR(__local_mem__ T* xInUb, __local_mem__ 
 }
 
 template <typename T, bool isStd = false>
-__aicore__ inline void VFMeanVarTwoPassARPadLessVL(__local_mem__ T* xInUb, __local_mem__ float* dichotomyAddLocal,
-                                                   __local_mem__ T* outMeanLocal, __local_mem__ T* outVarLocal,
-                                                   uint16_t ANum, uint16_t RStride, uint32_t RealRNum, float varScale,
+__aicore__ inline void VFMeanVarTwoPassARPadLessVL(__ubuf__ T* xInUb, __ubuf__ float* dichotomyAddLocal,
+                                                   __ubuf__ T* outMeanLocal, __ubuf__ T* outVarLocal, uint16_t ANum,
+                                                   uint16_t RStride, uint32_t RealRNum, float varScale,
                                                    uint32_t lastRAxisLen, uint32_t lastRAxisLenAlign,
                                                    uint16_t loopLastRNum)
 {
@@ -245,7 +245,7 @@ __aicore__ inline void VFMeanVarTwoPassARPadLessVL(__local_mem__ T* xInUb, __loc
             pregLoop = UpdateMask<float>(sreg0);
             LoadOneTensorForDtypeT(xInUb, tmpMeanReg, pregLoop, j * RStride);
             Muls(deltaMean, tmpMeanReg, meanScale, pregLoop);
-            ReduceSum(mean, deltaMean, pregLoop);
+            MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(mean, deltaMean, pregLoop);
             Muls(mean, mean, meanCorrection, pregMerge);
             // mean out
             StoreOneElementForDtypeT<T>(outMeanLocal, mean, pregMerge, j);
@@ -263,15 +263,15 @@ __aicore__ inline void VFMeanVarTwoPassARPadLessVL(__local_mem__ T* xInUb, __loc
                 Sub(delta, tmpMeanReg, mean, pregLoop2);
                 Muls(deltaScale, delta, varScale, pregLoop2);
                 Mul(deltaPow, deltaScale, delta, pregLoop2);
-                DataCopy(((__local_mem__ float*)dichotomyAddLocal + j * RStride + ro * lastRAxisLenAlign), deltaPow,
-                         pregLoop1);
+                MicroAPI::StoreAlign(((__ubuf__ float*)dichotomyAddLocal + j * RStride + ro * lastRAxisLenAlign),
+                                     deltaPow, pregLoop1);
             }
 
             LocalMemBar<MemType::VEC_STORE, MemType::VEC_LOAD>();
 
-            DataCopy(tmpVarReg, dichotomyAddLocal + j * RStride);
+            MicroAPI::LoadAlign(tmpVarReg, dichotomyAddLocal + j * RStride);
             Muls(tmpVarReg, tmpVarReg, float(1.0), pregLoop);
-            ReduceSum(var, tmpVarReg, pregLoop);
+            MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(var, tmpVarReg, pregLoop);
 
             if constexpr (isStd == true) {
                 Sqrt(var, var, pregMerge);
@@ -284,8 +284,8 @@ __aicore__ inline void VFMeanVarTwoPassARPadLessVL(__local_mem__ T* xInUb, __loc
 }
 
 template <typename T, bool isStd = false>
-__aicore__ inline void VFMeanVarTwoPassARPad(__local_mem__ T* xInUb, __local_mem__ float* dichotomyAddLocal,
-                                             __local_mem__ T* outMeanLocal, __local_mem__ T* outVarLocal, uint16_t ANum,
+__aicore__ inline void VFMeanVarTwoPassARPad(__ubuf__ T* xInUb, __ubuf__ float* dichotomyAddLocal,
+                                             __ubuf__ T* outMeanLocal, __ubuf__ T* outVarLocal, uint16_t ANum,
                                              uint16_t RStride, uint32_t RealRNum, float varScale, uint32_t lastRAxisLen,
                                              uint32_t lastRAxisLenAlign, uint16_t loopLastRNum)
 {
@@ -359,8 +359,8 @@ __aicore__ inline void VFMeanVarTwoPassARPad(__local_mem__ T* xInUb, __local_mem
                 Muls(dichotomyAddMeanL, dichotomyAddMeanL, meanScale, pregMain);
                 Muls(dichotomyAddMeanR, dichotomyAddMeanR, meanScale, pregLoop);
                 Add(sumMean, dichotomyAddMeanL, dichotomyAddMeanR, pregMain);
-                ReduceSum(mean, sumMean, pregMain);
-                DataCopy<float, StoreDist::DIST_FIRST_ELEMENT_B32>(dichotomyAddLocal + i, mean, pregMerge);
+                MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(mean, sumMean, pregMain);
+                MicroAPI::StoreAlign<float, StoreDist::DIST_FIRST_ELEMENT_B32>(dichotomyAddLocal + i, mean, pregMerge);
             }
 
             // PART2: 整块剩余部分vcadd回刷UB
@@ -368,8 +368,8 @@ __aicore__ inline void VFMeanVarTwoPassARPad(__local_mem__ T* xInUb, __local_mem
                 LoadOneTensorForDtypeT(xInUb, dichotomyAddMeanL, pregMain,
                                        j * RStride + (i + dichotomyAddReminderLoopCount) * VL_FP32);
                 Muls(dichotomyAddMeanL, dichotomyAddMeanL, meanScale, pregMain);
-                ReduceSum(mean, dichotomyAddMeanL, pregMain);
-                DataCopy<float, StoreDist::DIST_FIRST_ELEMENT_B32>(
+                MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(mean, dichotomyAddMeanL, pregMain);
+                MicroAPI::StoreAlign<float, StoreDist::DIST_FIRST_ELEMENT_B32>(
                     dichotomyAddLocal + dichotomyAddReminderLoopCount + i, mean, pregMerge);
             }
 
@@ -394,8 +394,8 @@ __aicore__ inline void VFMeanVarTwoPassARPad(__local_mem__ T* xInUb, __local_mem
                     // 先乘以系数，防止平方溢出
                     Muls(x1Scale, x1, varScale, pregLoop);
                     Mul(x1Pow, x1Scale, x1, pregLoop);
-                    DataCopy(
-                        ((__local_mem__ float*)dichotomyAddLocal + j * RStride + ro * lastRAxisLenAlign + ri * VL_FP32),
+                    MicroAPI::StoreAlign(
+                        ((__ubuf__ float*)dichotomyAddLocal + j * RStride + ro * lastRAxisLenAlign + ri * VL_FP32),
                         x1Pow, pregLoop);
                 }
                 {
@@ -405,9 +405,9 @@ __aicore__ inline void VFMeanVarTwoPassARPad(__local_mem__ T* xInUb, __local_mem
                     Sub(x1, x1, mean, pregLoop);
                     Muls(x1Scale, x1, varScale, pregLoop);
                     Mul(x1Pow, x1Scale, x1, pregLoop);
-                    DataCopy(((__local_mem__ float*)dichotomyAddLocal + j * RStride + ro * lastRAxisLenAlign +
-                              lastRAxisLoopNumT * VL_FP32),
-                             x1Pow, pregLoop1);
+                    MicroAPI::StoreAlign(((__ubuf__ float*)dichotomyAddLocal + j * RStride + ro * lastRAxisLenAlign +
+                                          lastRAxisLoopNumT * VL_FP32),
+                                         x1Pow, pregLoop1);
                 }
             }
 
@@ -418,21 +418,22 @@ __aicore__ inline void VFMeanVarTwoPassARPad(__local_mem__ T* xInUb, __local_mem
             // PART1: 整尾块合并
             for (uint16_t i = 0; i < dichotomyAddReminderLoopCount; i++) {
                 pregLoop = UpdateMask<float>(sreg0);
-                DataCopy(dichotomyAddVarL, dichotomyAddLocal + j * RStride + i * VL_FP32);
-                DataCopy(dichotomyAddVarR, dichotomyAddLocal + j * RStride + i * VL_FP32 + dichotomyAddPower);
+                MicroAPI::LoadAlign(dichotomyAddVarL, dichotomyAddLocal + j * RStride + i * VL_FP32);
+                MicroAPI::LoadAlign(dichotomyAddVarR,
+                                    dichotomyAddLocal + j * RStride + i * VL_FP32 + dichotomyAddPower);
                 // dichotomyAddVarR 可能非VL对齐，有脏数据
                 Muls(deltaR, dichotomyAddVarR, float(1.0), pregLoop);
                 Add(sumVar, dichotomyAddVarL, deltaR, pregMain);
-                ReduceSum(var, sumVar, pregMain);
-                DataCopy<float, StoreDist::DIST_FIRST_ELEMENT_B32>(dichotomyAddLocal + i, var, pregMerge);
+                MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(var, sumVar, pregMain);
+                MicroAPI::StoreAlign<float, StoreDist::DIST_FIRST_ELEMENT_B32>(dichotomyAddLocal + i, var, pregMerge);
             }
 
             // PART2: 整块剩余部分vcadd回刷UB
             for (uint16_t i = 0; i < dichtomyPowerReminder; i++) {
-                DataCopy(dichotomyAddVarL,
-                         dichotomyAddLocal + j * RStride + (i + dichotomyAddReminderLoopCount) * VL_FP32);
-                ReduceSum(var, dichotomyAddVarL, pregMain);
-                DataCopy<float, StoreDist::DIST_FIRST_ELEMENT_B32>(
+                MicroAPI::LoadAlign(dichotomyAddVarL,
+                                    dichotomyAddLocal + j * RStride + (i + dichotomyAddReminderLoopCount) * VL_FP32);
+                MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(var, dichotomyAddVarL, pregMain);
+                MicroAPI::StoreAlign<float, StoreDist::DIST_FIRST_ELEMENT_B32>(
                     dichotomyAddLocal + dichotomyAddReminderLoopCount + i, var, pregMerge);
             }
             DichotomyAdd(var, dichotomyAddLocal, outerLoop, innerLoopCountOrigin, dichotomyAddLastNum);
@@ -450,7 +451,7 @@ __aicore__ inline void VFMeanVarTwoPassARPad(__local_mem__ T* xInUb, __local_mem
 }
 
 template <typename T, bool isStd = false>
-__aicore__ inline void VFMeanVarTwoPassRAFp32(__local_mem__ T* xInUb, LocalTensor<float>& dichotomyAddLocal,
+__aicore__ inline void VFMeanVarTwoPassRAFp32(__ubuf__ T* xInUb, LocalTensor<float>& dichotomyAddLocal,
                                               LocalTensor<float>& tmpMeanTensor, LocalTensor<float>& tmpVarTensor,
                                               LocalTensor<T>& outMeanTensor, LocalTensor<T>& outVarTensor,
                                               uint32_t ANum, uint32_t RNum, float varScale)
@@ -465,8 +466,8 @@ __aicore__ inline void VFMeanVarTwoPassRAFp32(__local_mem__ T* xInUb, LocalTenso
 
     uint32_t srcShape[DICHOTOMY_ADD_COEFF] = {RNum, ANum};
 
-    __local_mem__ float* tmpMeanAddr = (__local_mem__ float*)tmpMeanTensor.GetPhyAddr();
-    __local_mem__ float* tmpVarAddr = (__local_mem__ float*)tmpVarTensor.GetPhyAddr();
+    __ubuf__ float* tmpMeanAddr = (__ubuf__ float*)tmpMeanTensor.GetPhyAddr();
+    __ubuf__ float* tmpVarAddr = (__ubuf__ float*)tmpVarTensor.GetPhyAddr();
 
     __VEC_SCOPE__
     {
@@ -478,14 +479,14 @@ __aicore__ inline void VFMeanVarTwoPassRAFp32(__local_mem__ T* xInUb, LocalTenso
             for (uint16_t rIndx = 0; rIndx < rLoopCount; rIndx++) {
                 LoadOneTensorForDtypeT(xInUb, x1, pregLoop, aIndex * VL_FP32 + rIndx * ANum);
                 Muls(x1, x1, meanScale, pregLoop);
-                DataCopy(tmpMeanAddr + aIndex * VL_FP32 + rIndx * ANum, x1, pregLoop);
+                MicroAPI::StoreAlign(tmpMeanAddr + aIndex * VL_FP32 + rIndx * ANum, x1, pregLoop);
             }
         }
     }
 
     AscendC::ReduceSum<float, AscendC::Pattern::Reduce::RA, true>(outMeanTensor, tmpMeanTensor, srcShape, false);
 
-    __local_mem__ T* outMeanAddr = (__local_mem__ T*)outMeanTensor.GetPhyAddr();
+    __ubuf__ T* outMeanAddr = (__ubuf__ T*)outMeanTensor.GetPhyAddr();
 
     __VEC_SCOPE__
     {
@@ -502,16 +503,16 @@ __aicore__ inline void VFMeanVarTwoPassRAFp32(__local_mem__ T* xInUb, LocalTenso
         uint32_t sreg0 = ANum;
         for (uint16_t aIndex = 0; aIndex < aLoopCount; aIndex++) {
             pregLoop = UpdateMask<float>(sreg0);
-            DataCopy(mean, outMeanAddr + aIndex * VL_FP32);
+            MicroAPI::LoadAlign(mean, outMeanAddr + aIndex * VL_FP32);
             Muls(mean, mean, meanCorrection, pregLoop);
-            DataCopy(outMeanAddr + aIndex * VL_FP32, mean, pregLoop);
+            MicroAPI::StoreAlign(outMeanAddr + aIndex * VL_FP32, mean, pregLoop);
             for (uint16_t rIndx = 0; rIndx < rLoopCount; rIndx++) {
                 LoadOneTensorForDtypeT(xInUb, x1, pregLoop, aIndex * VL_FP32 + rIndx * ANum);
 
                 Sub(delta, x1, mean, pregLoop);
                 Muls(deltaScale, delta, varScale, pregLoop);
                 Mul(deltaPow, deltaScale, delta, pregLoop);
-                DataCopy(tmpVarAddr + aIndex * VL_FP32 + rIndx * ANum, deltaPow, pregLoop);
+                MicroAPI::StoreAlign(tmpVarAddr + aIndex * VL_FP32 + rIndx * ANum, deltaPow, pregLoop);
             }
         }
     }
@@ -522,7 +523,7 @@ __aicore__ inline void VFMeanVarTwoPassRAFp32(__local_mem__ T* xInUb, LocalTenso
 }
 
 template <typename T, bool isStd = false>
-__aicore__ inline void VFMeanVarTwoPassRAB16(__local_mem__ T* xInUb, LocalTensor<float>& dichotomyAddLocal,
+__aicore__ inline void VFMeanVarTwoPassRAB16(__ubuf__ T* xInUb, LocalTensor<float>& dichotomyAddLocal,
                                              LocalTensor<float>& tmpMeanTensor, LocalTensor<float>& tmpVarTensor,
                                              LocalTensor<T>& outMeanTensor, LocalTensor<T>& outVarTensor, uint32_t ANum,
                                              uint32_t RNum, float varScale)
@@ -537,9 +538,9 @@ __aicore__ inline void VFMeanVarTwoPassRAB16(__local_mem__ T* xInUb, LocalTensor
 
     uint32_t srcShape[DICHOTOMY_ADD_COEFF] = {RNum, ANum};
 
-    __local_mem__ float* dichotomyAddAddr = (__local_mem__ float*)dichotomyAddLocal.GetPhyAddr();
-    __local_mem__ float* tmpMeanAddr = (__local_mem__ float*)tmpMeanTensor.GetPhyAddr();
-    __local_mem__ float* tmpVarAddr = (__local_mem__ float*)tmpVarTensor.GetPhyAddr();
+    __ubuf__ float* dichotomyAddAddr = (__ubuf__ float*)dichotomyAddLocal.GetPhyAddr();
+    __ubuf__ float* tmpMeanAddr = (__ubuf__ float*)tmpMeanTensor.GetPhyAddr();
+    __ubuf__ float* tmpVarAddr = (__ubuf__ float*)tmpVarTensor.GetPhyAddr();
 
     __VEC_SCOPE__
     {
@@ -553,7 +554,7 @@ __aicore__ inline void VFMeanVarTwoPassRAB16(__local_mem__ T* xInUb, LocalTensor
             for (uint16_t rIndx = 0; rIndx < rLoopCount; rIndx++) {
                 LoadOneTensorForDtypeT(xInUb, x1, pregLoop, aIndex * VL_FP32 + rIndx * ANum);
                 Muls(x1, x1, meanScale, pregLoop);
-                DataCopy(dichotomyAddAddr + aIndex * VL_FP32 + rIndx * ANum, x1, pregLoop);
+                MicroAPI::StoreAlign(dichotomyAddAddr + aIndex * VL_FP32 + rIndx * ANum, x1, pregLoop);
             }
         }
     }
@@ -575,16 +576,16 @@ __aicore__ inline void VFMeanVarTwoPassRAB16(__local_mem__ T* xInUb, LocalTensor
         uint32_t sreg0 = ANum;
         for (uint16_t aIndex = 0; aIndex < aLoopCount; aIndex++) {
             pregLoop = UpdateMask<float>(sreg0);
-            DataCopy(mean, tmpMeanAddr + aIndex * VL_FP32);
+            MicroAPI::LoadAlign(mean, tmpMeanAddr + aIndex * VL_FP32);
             Muls(mean, mean, meanCorrection, pregLoop);
-            DataCopy(tmpMeanAddr + aIndex * VL_FP32, mean, pregLoop);
+            MicroAPI::StoreAlign(tmpMeanAddr + aIndex * VL_FP32, mean, pregLoop);
             for (uint16_t rIndx = 0; rIndx < rLoopCount; rIndx++) {
                 LoadOneTensorForDtypeT(xInUb, x1, pregLoop, aIndex * VL_FP32 + rIndx * ANum);
 
                 Sub(delta, x1, mean, pregLoop);
                 Muls(deltaScale, delta, varScale, pregLoop);
                 Mul(deltaPow, deltaScale, delta, pregLoop);
-                DataCopy(dichotomyAddAddr + aIndex * VL_FP32 + rIndx * ANum, deltaPow, pregLoop);
+                MicroAPI::StoreAlign(dichotomyAddAddr + aIndex * VL_FP32 + rIndx * ANum, deltaPow, pregLoop);
             }
         }
     }
@@ -599,7 +600,7 @@ __aicore__ inline void VFMeanVarTwoPassRAB16(__local_mem__ T* xInUb, LocalTensor
 }
 
 template <typename T, bool isStd = false>
-__aicore__ inline void VFMeanVarTwoPassRA(__local_mem__ T* xInUb, LocalTensor<float>& dichotomyAddLocal,
+__aicore__ inline void VFMeanVarTwoPassRA(__ubuf__ T* xInUb, LocalTensor<float>& dichotomyAddLocal,
                                           LocalTensor<float>& tmpMeanTensor, LocalTensor<float>& tmpVarTensor,
                                           LocalTensor<T>& outMeanTensor, LocalTensor<T>& outVarTensor, uint32_t ANum,
                                           uint32_t RNum, float varScale)

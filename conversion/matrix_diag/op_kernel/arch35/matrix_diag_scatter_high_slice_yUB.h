@@ -201,12 +201,12 @@ __aicore__ inline void MatrixDiagSliceYUb<T, U>::MatrixDiagScatter(uint32_t UbUn
             Reg::RegTensor<T> xReg;
             Reg::RegTensor<T> xReg0;
             Reg::RegTensor<T> xReg1;
-            Reg::DataCopy(indexReg, indexAddr);
-            Reg::DataCopy(xReg, xUbAddr);
+            Reg::LoadAlign(indexReg, indexAddr);
+            Reg::LoadAlign(xReg, xUbAddr);
             Reg::Interleave(xReg0, xReg1, xReg, xReg);
-            Reg::DataCopyScatter(yUbAddr, xReg0, indexReg, p0);
+            Reg::Scatter(yUbAddr, xReg0, indexReg, p0);
             Reg::Adds(vd1, indexReg, mStride, p1);
-            Reg::DataCopyScatter(yUbAddr, xReg1, vd1, p1);
+            Reg::Scatter(yUbAddr, xReg1, vd1, p1);
         }
     } else {
         __VEC_SCOPE__
@@ -214,9 +214,9 @@ __aicore__ inline void MatrixDiagSliceYUb<T, U>::MatrixDiagScatter(uint32_t UbUn
             Reg::MaskReg p0 = AscendC::Reg::UpdateMask<U>(UbUnitElementLocal);
             Reg::RegTensor<U> indexReg;
             Reg::RegTensor<T> xReg;
-            Reg::DataCopy(indexReg, indexAddr);
-            Reg::DataCopy(xReg, xUbAddr);
-            Reg::DataCopyScatter(yUbAddr, xReg, indexReg, p0);
+            Reg::LoadAlign(indexReg, indexAddr);
+            Reg::LoadAlign(xReg, xUbAddr);
+            Reg::Scatter(yUbAddr, xReg, indexReg, p0);
         }
     }
     outQue_.EnQue<T>(yUbFactorLocal);
@@ -299,7 +299,7 @@ __aicore__ inline void MatrixDiagSliceYUb<T, U>::GenScatterIndex(uint32_t UbUnit
         Reg::Sub(subReg, index, mulReg, maskP);
         Reg::Muls(muls2Reg, subReg, UbUnitElementLocal + 1, maskP);
         Reg::Add(addReg, mulsReg, muls2Reg, maskP);
-        Reg::DataCopy(indexAddr, addReg, maskP);
+        Reg::StoreAlign(indexAddr, addReg, maskP);
     }
 }
 } // namespace MatrixDiagAsc

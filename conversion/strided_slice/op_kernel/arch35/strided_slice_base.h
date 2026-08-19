@@ -94,9 +94,9 @@ public:
     __aicore__ inline void CalcReorderAxisInfoDimsThree(uint32_t axis1, uint32_t axis2, uint32_t axis3BA);
     __aicore__ inline void CalcReorderAxisInfoDimsFour(uint32_t axis0, uint32_t axis1, uint32_t axis2,
                                                        uint32_t axis3BA);
-    __aicore__ inline void Reorder4Output(__local_mem__ T* outAddr);
-    __aicore__ inline void Reorder4OutputPhase1(__local_mem__ RT* reOutAddr, uint32_t rVLCnt);
-    __aicore__ inline void Reorder4OutputPhase2(__local_mem__ RT* reOutAddr, uint32_t rVLCnt);
+    __aicore__ inline void Reorder4Output(__ubuf__ T* outAddr);
+    __aicore__ inline void Reorder4OutputPhase1(__ubuf__ RT* reOutAddr, uint32_t rVLCnt);
+    __aicore__ inline void Reorder4OutputPhase2(__ubuf__ RT* reOutAddr, uint32_t rVLCnt);
 
 protected:
     template <typename T1>
@@ -503,7 +503,7 @@ __aicore__ inline void StridedSliceBase<T, U>::CalcReorderAxisInfo(uint32_t axis
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceBase<T, U>::Reorder4OutputPhase1(__local_mem__ RT* reOutAddr, uint32_t rVLCnt)
+__aicore__ inline void StridedSliceBase<T, U>::Reorder4OutputPhase1(__ubuf__ RT* reOutAddr, uint32_t rVLCnt)
 {
     if (uAxis2_ <= 1) {
         return;
@@ -536,13 +536,13 @@ __aicore__ inline void StridedSliceBase<T, U>::Reorder4OutputPhase1(__local_mem_
                 for (uint16_t axis1Idx = 0; axis1Idx < uAxis1; axis1Idx++) {
                     auto areg = Reg::CreateAddrReg<RT>(axis3LpIdx, rVLCnt, axis2Idx, axis2Offset, axis1Idx,
                                                        axis1Offset);
-                    Reg::DataCopy(regData0, reOutAddr, areg);
-                    Reg::DataCopy(regData1, reOutAddr1, areg);
-                    Reg::Copy(regTmp, regData0);
-                    Reg::Copy(regData0, regData1);
-                    Reg::Copy(regData1, regTmp);
-                    Reg::DataCopy(reOutAddr, regData0, areg, mask);
-                    Reg::DataCopy(reOutAddr1, regData1, areg, mask);
+                    Reg::LoadAlign(regData0, reOutAddr, areg);
+                    Reg::LoadAlign(regData1, reOutAddr1, areg);
+                    Reg::Move(regTmp, regData0);
+                    Reg::Move(regData0, regData1);
+                    Reg::Move(regData1, regTmp);
+                    Reg::StoreAlign(reOutAddr, regData0, areg, mask);
+                    Reg::StoreAlign(reOutAddr1, regData1, areg, mask);
                 }
                 reOutAddr1 -= axis2RBOffset;
             }
@@ -551,7 +551,7 @@ __aicore__ inline void StridedSliceBase<T, U>::Reorder4OutputPhase1(__local_mem_
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceBase<T, U>::Reorder4OutputPhase2(__local_mem__ RT* reOutAddr, uint32_t rVLCnt)
+__aicore__ inline void StridedSliceBase<T, U>::Reorder4OutputPhase2(__ubuf__ RT* reOutAddr, uint32_t rVLCnt)
 {
     if (uAxis0_ <= 1) {
         return;
@@ -579,13 +579,13 @@ __aicore__ inline void StridedSliceBase<T, U>::Reorder4OutputPhase2(__local_mem_
             for (uint16_t axis1LpIdx = 0; axis1LpIdx < axis1LpCnt; axis1LpIdx++) {
                 mask = Reg::UpdateMask<RT>(maskValue);
                 auto areg = Reg::CreateAddrReg<RT>(axis0Idx, axis0Offset, axis1LpIdx, rVLCnt);
-                Reg::DataCopy(regData0, reOutAddr, areg);
-                Reg::DataCopy(regData1, reOutAddr1, areg);
-                Reg::Copy(regTmp, regData0);
-                Reg::Copy(regData0, regData1);
-                Reg::Copy(regData1, regTmp);
-                Reg::DataCopy(reOutAddr, regData0, areg, mask);
-                Reg::DataCopy(reOutAddr1, regData1, areg, mask);
+                Reg::LoadAlign(regData0, reOutAddr, areg);
+                Reg::LoadAlign(regData1, reOutAddr1, areg);
+                Reg::Move(regTmp, regData0);
+                Reg::Move(regData0, regData1);
+                Reg::Move(regData1, regTmp);
+                Reg::StoreAlign(reOutAddr, regData0, areg, mask);
+                Reg::StoreAlign(reOutAddr1, regData1, areg, mask);
             }
             reOutAddr1 -= axis0RBOffset;
         }
@@ -593,14 +593,14 @@ __aicore__ inline void StridedSliceBase<T, U>::Reorder4OutputPhase2(__local_mem_
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceBase<T, U>::Reorder4Output(__local_mem__ T* outAddr)
+__aicore__ inline void StridedSliceBase<T, U>::Reorder4Output(__ubuf__ T* outAddr)
 {
     if (uAxis0_ * uAxis1_ * uAxis2_ == 1U) {
         return;
     }
 
     uint32_t rVLCnt = (sizeof(T) != sizeof(RT)) ? NUM_TWO * vlCnt_ : vlCnt_;
-    auto reOutAddr = reinterpret_cast<__local_mem__ RT*>(outAddr);
+    auto reOutAddr = reinterpret_cast<__ubuf__ RT*>(outAddr);
     Reorder4OutputPhase1(reOutAddr, rVLCnt);
     Reorder4OutputPhase2(reOutAddr, rVLCnt);
 }

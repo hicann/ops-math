@@ -332,13 +332,13 @@ public:
         CopyInX(0, view, shape, calcShape);
 
         LocalTensor<DataType> inputUb = inputQueue_.DeQue<DataType>();
-        __local_mem__ DataType* xLocal = (__local_mem__ DataType*)inputUb.GetPhyAddr();
-        __local_mem__ float* dichotomyAddAddr = (__local_mem__ float*)tDichAddTensor_.GetPhyAddr();
+        __ubuf__ DataType* xLocal = (__ubuf__ DataType*)inputUb.GetPhyAddr();
+        __ubuf__ float* dichotomyAddAddr = (__ubuf__ float*)tDichAddTensor_.GetPhyAddr();
 
         LocalTensor<DataType> outMeanTensor = outQueue_.AllocTensor<DataType>();
         LocalTensor<DataType> outVarTensor = outMeanTensor[tiling_->resultBlock / sizeof(DataType)];
-        __local_mem__ DataType* outMeanAddr = (__local_mem__ DataType*)outMeanTensor.GetPhyAddr();
-        __local_mem__ DataType* outVarAddr = (__local_mem__ DataType*)outVarTensor.GetPhyAddr();
+        __ubuf__ DataType* outMeanAddr = (__ubuf__ DataType*)outMeanTensor.GetPhyAddr();
+        __ubuf__ DataType* outVarAddr = (__ubuf__ DataType*)outVarTensor.GetPhyAddr();
 
         float varScale = tiling_->correctionInvalid == 1 ? (*((float*)&FLOAT32_INF)) : tiling_->varFactor;
         float meanScale = tiling_->meanFactor;
@@ -412,8 +412,8 @@ public:
                                          int64_t& count, int64_t& tailsNum)
     {
         Ops::Base::ReduceOpTmpl::SliceView<Ops::Base::ReduceOpTmpl::MAX_DIM> view;
-        __local_mem__ float* meanBufAddr = (__local_mem__ float*)tMeanTensor.GetPhyAddr();
-        __local_mem__ float* varBufAddr = (__local_mem__ float*)tVarTensor.GetPhyAddr();
+        __ubuf__ float* meanBufAddr = (__ubuf__ float*)tMeanTensor.GetPhyAddr();
+        __ubuf__ float* varBufAddr = (__ubuf__ float*)tVarTensor.GetPhyAddr();
 
         float scale = 1.0f;
         uint32_t processNum = 0;
@@ -428,7 +428,7 @@ public:
             CopyInX(i, view, shape, calcShape);
 
             LocalTensor<DataType> inputUb = inputQueue_.DeQue<DataType>();
-            __local_mem__ DataType* xLocal = (__local_mem__ DataType*)inputUb.GetPhyAddr();
+            __ubuf__ DataType* xLocal = (__ubuf__ DataType*)inputUb.GetPhyAddr();
 
             count = count + 1;
             scale = static_cast<float>(1.0) / static_cast<float>(count);
@@ -450,7 +450,7 @@ public:
                 }
                 CopyInX(i, view, shape, calcShape);
                 LocalTensor<DataType> inputUb = inputQueue_.DeQue<DataType>();
-                __local_mem__ DataType* xLocal = (__local_mem__ DataType*)inputUb.GetPhyAddr();
+                __ubuf__ DataType* xLocal = (__ubuf__ DataType*)inputUb.GetPhyAddr();
                 count = count + 1;
                 tailsNum = tailsNum + 1;
                 scale = static_cast<float>(1.0) / static_cast<float>(count);
@@ -517,8 +517,8 @@ public:
         LocalTensor<float>& tMeanTensor, LocalTensor<float>& tVarTensor, int64_t& count, uint32_t& updateCycleCnt,
         bool& hasTail)
     {
-        __local_mem__ float* meanBufAddr = (__local_mem__ float*)tMeanTensor.GetPhyAddr();
-        __local_mem__ float* varBufAddr = (__local_mem__ float*)tVarTensor.GetPhyAddr();
+        __ubuf__ float* meanBufAddr = (__ubuf__ float*)tMeanTensor.GetPhyAddr();
+        __ubuf__ float* varBufAddr = (__ubuf__ float*)tVarTensor.GetPhyAddr();
 
         uint32_t processNum = 0;
         // 可能存在多个尾块的场景，如整块、尾块、整块、尾块..., 可以先做整块的update，再做尾块的update
@@ -530,7 +530,7 @@ public:
             CopyInX(i, view, shape, calcShape);
 
             LocalTensor<DataType> inputUb = inputQueue_.DeQue<DataType>();
-            __local_mem__ DataType* xLocal = (__local_mem__ DataType*)inputUb.GetPhyAddr();
+            __ubuf__ DataType* xLocal = (__ubuf__ DataType*)inputUb.GetPhyAddr();
 
             count = count + 1;
             updateCycleCnt = updateCycleCnt + 1;
@@ -560,8 +560,8 @@ public:
         LocalTensor<float>& tMeanTensor, LocalTensor<float>& tVarTensor, int64_t& count, int64_t& tailsNum,
         uint32_t& updateCycleCnt)
     {
-        __local_mem__ float* meanBufAddr = (__local_mem__ float*)tMeanTensor.GetPhyAddr();
-        __local_mem__ float* varBufAddr = (__local_mem__ float*)tVarTensor.GetPhyAddr();
+        __ubuf__ float* meanBufAddr = (__ubuf__ float*)tMeanTensor.GetPhyAddr();
+        __ubuf__ float* varBufAddr = (__ubuf__ float*)tVarTensor.GetPhyAddr();
 
         uint32_t processNum = 0;
         for (int64_t i = 0; i < rCount_; i++) {
@@ -570,7 +570,7 @@ public:
             }
             CopyInX(i, view, shape, calcShape);
             LocalTensor<DataType> inputUb = inputQueue_.DeQue<DataType>();
-            __local_mem__ DataType* xLocal = (__local_mem__ DataType*)inputUb.GetPhyAddr();
+            __ubuf__ DataType* xLocal = (__ubuf__ DataType*)inputUb.GetPhyAddr();
 
             count = count + 1;
             updateCycleCnt = updateCycleCnt + 1;
@@ -625,16 +625,16 @@ public:
                                                            LocalTensor<float>& groupMeanTensor,
                                                            LocalTensor<float>& groupVarTensor, uint32_t updateCycleCnt)
     {
-        __local_mem__ float* meanBufAddr = (__local_mem__ float*)tMeanTensor.GetPhyAddr();
-        __local_mem__ float* varBufAddr = (__local_mem__ float*)tVarTensor.GetPhyAddr();
+        __ubuf__ float* meanBufAddr = (__ubuf__ float*)tMeanTensor.GetPhyAddr();
+        __ubuf__ float* varBufAddr = (__ubuf__ float*)tVarTensor.GetPhyAddr();
 
         int32_t entryGroupIdx = rCntGroupIdx_;
-        __local_mem__ float* groupMeanBufAddr = (__local_mem__ float*)groupMeanTensor.GetPhyAddr() +
-                                                entryGroupIdx * MAX_INNER_A_NUM;
-        __local_mem__ float* groupVarBufAddr = (__local_mem__ float*)groupVarTensor.GetPhyAddr() +
-                                               entryGroupIdx * MAX_INNER_A_NUM;
+        __ubuf__ float* groupMeanBufAddr = (__ubuf__ float*)groupMeanTensor.GetPhyAddr() +
+                                           entryGroupIdx * MAX_INNER_A_NUM;
+        __ubuf__ float* groupVarBufAddr = (__ubuf__ float*)groupVarTensor.GetPhyAddr() +
+                                          entryGroupIdx * MAX_INNER_A_NUM;
 
-        __local_mem__ float* dichotomyAddLocal = (__local_mem__ float*)tDichAddTensor_.GetPhyAddr();
+        __ubuf__ float* dichotomyAddLocal = (__ubuf__ float*)tDichAddTensor_.GetPhyAddr();
 
         if constexpr (!InnerPattern::TailA) {
             FinalizeGroupsNonTailA(shape, isTail, updateCycleCnt, entryGroupIdx, meanBufAddr, varBufAddr,
@@ -649,12 +649,13 @@ public:
     }
 
     // !TailA 分支：AR pattern，按 isLastAlign / isInvert 决定 finalize 调用与 rCntGroupWelford_ 记账
-    __aicore__ inline void FinalizeGroupsNonTailA(
-        Ops::Base::ReduceOpTmpl::Shape<InnerPattern::Dim>& shape, bool isTail, uint32_t updateCycleCnt,
-        int32_t entryGroupIdx, __local_mem__ float* meanBufAddr, __local_mem__ float* varBufAddr,
-        __local_mem__ float* groupMeanBufAddr, __local_mem__ float* groupVarBufAddr,
-        __local_mem__ float* dichotomyAddLocal, LocalTensor<float>& tMeanTensor, LocalTensor<float>& tVarTensor,
-        LocalTensor<float>& groupMeanTensor, LocalTensor<float>& groupVarTensor)
+    __aicore__ inline void FinalizeGroupsNonTailA(Ops::Base::ReduceOpTmpl::Shape<InnerPattern::Dim>& shape, bool isTail,
+                                                  uint32_t updateCycleCnt, int32_t entryGroupIdx,
+                                                  __ubuf__ float* meanBufAddr, __ubuf__ float* varBufAddr,
+                                                  __ubuf__ float* groupMeanBufAddr, __ubuf__ float* groupVarBufAddr,
+                                                  __ubuf__ float* dichotomyAddLocal, LocalTensor<float>& tMeanTensor,
+                                                  LocalTensor<float>& tVarTensor, LocalTensor<float>& groupMeanTensor,
+                                                  LocalTensor<float>& groupVarTensor)
     {
         uint32_t aNum = static_cast<uint32_t>(shape.value[0]);
         uint32_t rNum = static_cast<uint32_t>(shape.value[1]);
@@ -681,7 +682,7 @@ public:
             float meanScale = (rNum == 0) ? 1.0f : (1.0f * updateCycleCnt) / static_cast<float>(rNum * updateCycleCnt);
 
             if (tiling_->isInvert == 1) {
-                __local_mem__ float* tmpCountLocal = (__local_mem__ float*)tCountTensor_.GetPhyAddr();
+                __ubuf__ float* tmpCountLocal = (__ubuf__ float*)tCountTensor_.GetPhyAddr();
                 uint32_t RNumRA = rNum;
                 uint32_t ANumRA = rStride;
                 int64_t tailRNumRA = 0;
@@ -723,8 +724,8 @@ public:
 
     // TailA 分支：RA pattern，按 isInvert 选择对齐 finalize 或 RA finalize
     __aicore__ inline void FinalizeGroupsTailA(Ops::Base::ReduceOpTmpl::Shape<InnerPattern::Dim>& shape, bool isTail,
-                                               uint32_t updateCycleCnt, __local_mem__ float* meanBufAddr,
-                                               __local_mem__ float* varBufAddr, __local_mem__ float* dichotomyAddLocal,
+                                               uint32_t updateCycleCnt, __ubuf__ float* meanBufAddr,
+                                               __ubuf__ float* varBufAddr, __ubuf__ float* dichotomyAddLocal,
                                                LocalTensor<float>& tMeanTensor, LocalTensor<float>& tVarTensor,
                                                LocalTensor<float>& groupMeanTensor, LocalTensor<float>& groupVarTensor)
     {
@@ -734,8 +735,8 @@ public:
             uint32_t rStride = static_cast<uint32_t>(shape.value[1]);
             LocalTensor<float> dstGroupMeanInv = groupMeanTensor[rCntGroupIdx_ * MAX_INNER_A_NUM];
             LocalTensor<float> dstGroupVarInv = groupVarTensor[rCntGroupIdx_ * MAX_INNER_A_NUM];
-            __local_mem__ float* dstGroupMeanAddrInv = (__local_mem__ float*)dstGroupMeanInv.GetPhyAddr();
-            __local_mem__ float* dstGroupVarAddrInv = (__local_mem__ float*)dstGroupVarInv.GetPhyAddr();
+            __ubuf__ float* dstGroupMeanAddrInv = (__ubuf__ float*)dstGroupMeanInv.GetPhyAddr();
+            __ubuf__ float* dstGroupVarAddrInv = (__ubuf__ float*)dstGroupVarInv.GetPhyAddr();
 
             rCntGroupWelford_[rCntGroupIdx_] = rNum * updateCycleCnt;
             rCntGroupIdx_ = isInvert_ ? (rCntGroupIdx_ - 1) : (rCntGroupIdx_ + 1);
@@ -747,7 +748,7 @@ public:
                                                                  rStride, 1.0f, meanScale, updateCycleCnt);
         } else {
             // dichotomyAddLocal RA场景下空间分配
-            __local_mem__ float* tmpCountLocal = (__local_mem__ float*)tCountTensor_.GetPhyAddr();
+            __ubuf__ float* tmpCountLocal = (__ubuf__ float*)tCountTensor_.GetPhyAddr();
             uint32_t RNum = isTail ? lastReduceTailR_ : shape.value[0];
             uint32_t ANum = shape.value[1];
 
@@ -768,14 +769,14 @@ public:
     }
 
     // 组归约收尾：group buffer 写满后，将 WELFORD_GROUP_NUM 个组再次 finalize 成单组并翻转 isInvert_
-    __aicore__ inline void FinalizeGroupsConsolidate(__local_mem__ float* dichotomyAddLocal,
+    __aicore__ inline void FinalizeGroupsConsolidate(__ubuf__ float* dichotomyAddLocal,
                                                      LocalTensor<float>& groupMeanTensor,
                                                      LocalTensor<float>& groupVarTensor)
     {
         if ((isInvert_ && rCntGroupIdx_ <= 0) || (!isInvert_ && rCntGroupIdx_ >= WELFORD_GROUP_NUM)) {
             // RA finalize
             int64_t totalCnt = 0;
-            __local_mem__ float* tmpCountLocal = (__local_mem__ float*)tCountTensor_.GetPhyAddr();
+            __ubuf__ float* tmpCountLocal = (__ubuf__ float*)tCountTensor_.GetPhyAddr();
             int32_t startIdx = isInvert_ ? 1 : 0;
             int32_t endIdx = isInvert_ ? (WELFORD_GROUP_NUM + 1) : WELFORD_GROUP_NUM;
 
@@ -814,10 +815,10 @@ public:
     {
         LocalTensor<T> outMeanTensor = outQueue_.AllocTensor<T>();
         LocalTensor<T> outVarTensor = outMeanTensor[tiling_->resultBlock / sizeof(T)];
-        __local_mem__ T* outMeanAddr = (__local_mem__ T*)outMeanTensor.GetPhyAddr();
-        __local_mem__ T* outVarAddr = (__local_mem__ T*)outVarTensor.GetPhyAddr();
+        __ubuf__ T* outMeanAddr = (__ubuf__ T*)outMeanTensor.GetPhyAddr();
+        __ubuf__ T* outVarAddr = (__ubuf__ T*)outVarTensor.GetPhyAddr();
 
-        __local_mem__ float* dichotomyAddLocal = (__local_mem__ float*)tDichAddTensor_.GetPhyAddr();
+        __ubuf__ float* dichotomyAddLocal = (__ubuf__ float*)tDichAddTensor_.GetPhyAddr();
 
         float varScale = tiling_->varFactor;
         if (tiling_->correctionInvalid == 1) {
@@ -831,7 +832,7 @@ public:
 
         // RA finalize
         int64_t totalRCnt = 0;
-        __local_mem__ float* tmpCountLocal = (__local_mem__ float*)tCountTensor_.GetPhyAddr();
+        __ubuf__ float* tmpCountLocal = (__ubuf__ float*)tCountTensor_.GetPhyAddr();
         int32_t startIdx = isInvert_ ? (rCntGroupIdx_ + 1) : 0;
         int32_t endIdx = isInvert_ ? (WELFORD_GROUP_NUM + 1) : rCntGroupIdx_;
         uint32_t RNum = endIdx - startIdx;
@@ -890,14 +891,14 @@ public:
                                                    LocalTensor<float>& tVarTensor, LocalTensor<T>& outMeanTensor,
                                                    LocalTensor<T>& outVarTensor, float varScale)
     {
-        __local_mem__ float* dichotomyAddLocal = (__local_mem__ float*)tDichAddTensor_.GetPhyAddr();
-        __local_mem__ float* meanBufAddr = (__local_mem__ float*)tMeanTensor.GetPhyAddr();
-        __local_mem__ float* varBufAddr = (__local_mem__ float*)tVarTensor.GetPhyAddr();
-        __local_mem__ T* outMeanAddr = (__local_mem__ T*)outMeanTensor.GetPhyAddr();
-        __local_mem__ T* outVarAddr = (__local_mem__ T*)outVarTensor.GetPhyAddr();
+        __ubuf__ float* dichotomyAddLocal = (__ubuf__ float*)tDichAddTensor_.GetPhyAddr();
+        __ubuf__ float* meanBufAddr = (__ubuf__ float*)tMeanTensor.GetPhyAddr();
+        __ubuf__ float* varBufAddr = (__ubuf__ float*)tVarTensor.GetPhyAddr();
+        __ubuf__ T* outMeanAddr = (__ubuf__ T*)outMeanTensor.GetPhyAddr();
+        __ubuf__ T* outVarAddr = (__ubuf__ T*)outVarTensor.GetPhyAddr();
 
         if (tiling_->isInvert == 1) {
-            __local_mem__ float* tmpCountLocal = (__local_mem__ float*)tCountTensor_.GetPhyAddr();
+            __ubuf__ float* tmpCountLocal = (__ubuf__ float*)tCountTensor_.GetPhyAddr();
             uint32_t RNum = static_cast<uint32_t>(shape.value[0]); // R 行数（主块几何）
             uint32_t ANum = static_cast<uint32_t>(shape.value[1]); // 行 stride（A 对齐长度）
             if (count == tailsNum) {
@@ -986,11 +987,11 @@ public:
                                                 LocalTensor<float>& tVarTensor, LocalTensor<T>& outMeanTensor,
                                                 LocalTensor<T>& outVarTensor, float varScale)
     {
-        __local_mem__ float* dichotomyAddLocal = (__local_mem__ float*)tDichAddTensor_.GetPhyAddr();
-        __local_mem__ float* meanBufAddr = (__local_mem__ float*)tMeanTensor.GetPhyAddr();
-        __local_mem__ float* varBufAddr = (__local_mem__ float*)tVarTensor.GetPhyAddr();
-        __local_mem__ T* outMeanAddr = (__local_mem__ T*)outMeanTensor.GetPhyAddr();
-        __local_mem__ T* outVarAddr = (__local_mem__ T*)outVarTensor.GetPhyAddr();
+        __ubuf__ float* dichotomyAddLocal = (__ubuf__ float*)tDichAddTensor_.GetPhyAddr();
+        __ubuf__ float* meanBufAddr = (__ubuf__ float*)tMeanTensor.GetPhyAddr();
+        __ubuf__ float* varBufAddr = (__ubuf__ float*)tVarTensor.GetPhyAddr();
+        __ubuf__ T* outMeanAddr = (__ubuf__ T*)outMeanTensor.GetPhyAddr();
+        __ubuf__ T* outVarAddr = (__ubuf__ T*)outVarTensor.GetPhyAddr();
 
         if (tiling_->isInvert == 1) {
             uint32_t aNum = static_cast<uint32_t>(shape.value[0]);
@@ -1025,7 +1026,7 @@ public:
             return true;
         }
         // dichotomyAddLocal RA场景下空间分配
-        __local_mem__ float* tmpCountLocal = (__local_mem__ float*)tCountTensor_.GetPhyAddr();
+        __ubuf__ float* tmpCountLocal = (__ubuf__ float*)tCountTensor_.GetPhyAddr();
         uint32_t RNum = shape.value[0];
         uint32_t ANum = shape.value[1];
 
@@ -1083,7 +1084,7 @@ public:
             realAnum = ubFactorA_;
         }
 
-        __local_mem__ float* dichotomyAddAddr = (__local_mem__ float*)tDichAddTensor_.GetPhyAddr();
+        __ubuf__ float* dichotomyAddAddr = (__ubuf__ float*)tDichAddTensor_.GetPhyAddr();
         LocalTensor<DataType> outMeanTensor = outQueue_.AllocTensor<DataType>();
         LocalTensor<DataType> outVarTensor = outMeanTensor[tiling_->resultBlock / sizeof(DataType)];
 
@@ -1092,7 +1093,7 @@ public:
         float varScale = (tiling_->correctionInvalid == 1) ? (*((float*)&FLOAT32_INF)) : tiling_->varFactor;
 
         Ops::Base::ReduceOpTmpl::SetEvent<HardEvent::V_S>(HardEvent::V_S);
-        __local_mem__ float* groupCountBufAddr = (__local_mem__ float*)tCountTensor_.GetPhyAddr();
+        __ubuf__ float* groupCountBufAddr = (__ubuf__ float*)tCountTensor_.GetPhyAddr();
         for (int i = 0; i < tiling_->groupR; i++) {
             float reduceCnt = static_cast<float>(tiling_->reduceCntEachGroupR[i]);
             tCountTensor_.SetValue(i, reduceCnt);
@@ -1426,11 +1427,11 @@ public:
         }
 
         // Step 3: Multi-dimensional NDDMA dispatch based on Dim
-        static constexpr MultiCopyConfig config = {false, 0, 0, false};
+        static constexpr NdDmaConfig config = {false, 0, 0, false};
 
         if constexpr (Dim <= 4) {
             if constexpr (Dim == 3) {
-                MultiCopyLoopInfo<NDDMA_LOOP_DIM3> loopInfo = {
+                NdDmaLoopInfo<NDDMA_LOOP_DIM3> loopInfo = {
                     .loopSrcStride = {1, view.axis[1].srcStride, view.axis[2].srcStride},
                     .loopDstStride = {1, static_cast<uint32_t>(view.axis[1].dstStride),
                                       static_cast<uint32_t>(view.axis[2].dstStride)},
@@ -1438,11 +1439,11 @@ public:
                                  static_cast<uint32_t>(view.axis[2].repeat)},
                     .loopLpSize = {0, 0, 0},
                     .loopRpSize = {0, 0, 0}};
-                MultiCopyParams<DataType, NDDMA_LOOP_DIM3> params = {loopInfo, 0};
+                NdDmaParams<DataType, NDDMA_LOOP_DIM3> params = {loopInfo, 0};
                 DataCopy<DataType, NDDMA_LOOP_DIM3, config>(ubTensor, inputGM_[view.addr], params);
             } else {
                 // Dim == 4 (Dim == 1 or 2 already handled by outer == 1)
-                MultiCopyLoopInfo<NDDMA_LOOP_DIM4> loopInfo = {
+                NdDmaLoopInfo<NDDMA_LOOP_DIM4> loopInfo = {
                     .loopSrcStride = {1, view.axis[1].srcStride, view.axis[2].srcStride, view.axis[3].srcStride},
                     .loopDstStride = {1, static_cast<uint32_t>(view.axis[1].dstStride),
                                       static_cast<uint32_t>(view.axis[2].dstStride),
@@ -1452,12 +1453,12 @@ public:
                                  static_cast<uint32_t>(view.axis[3].repeat)},
                     .loopLpSize = {0, 0, 0, 0},
                     .loopRpSize = {0, 0, 0, 0}};
-                MultiCopyParams<DataType, NDDMA_LOOP_DIM4> params = {loopInfo, 0};
+                NdDmaParams<DataType, NDDMA_LOOP_DIM4> params = {loopInfo, 0};
                 DataCopy<DataType, NDDMA_LOOP_DIM4, config>(ubTensor, inputGM_[view.addr], params);
             }
         } else {
             // Dim >= 5: inner 5 dims via NDDMA, outer dims via for loops
-            MultiCopyLoopInfo<NDDMA_LOOP_DIM5> loopInfo = {
+            NdDmaLoopInfo<NDDMA_LOOP_DIM5> loopInfo = {
                 .loopSrcStride = {1, view.axis[1].srcStride, view.axis[2].srcStride, view.axis[3].srcStride,
                                   view.axis[4].srcStride},
                 .loopDstStride = {1, static_cast<uint32_t>(view.axis[1].dstStride),
@@ -1469,7 +1470,7 @@ public:
                              static_cast<uint32_t>(view.axis[4].repeat)},
                 .loopLpSize = {0, 0, 0, 0, 0},
                 .loopRpSize = {0, 0, 0, 0, 0}};
-            MultiCopyParams<DataType, NDDMA_LOOP_DIM5> params = {loopInfo, 0};
+            NdDmaParams<DataType, NDDMA_LOOP_DIM5> params = {loopInfo, 0};
             for (int32_t i = 0; i < view.axis[5].repeat; i++) {
                 for (int32_t j = 0; j < view.axis[6].repeat; j++) {
                     for (int32_t k = 0; k < view.axis[7].repeat; k++) {
@@ -1489,7 +1490,7 @@ public:
         const Ops::Base::ReduceOpTmpl::SliceView<Ops::Base::ReduceOpTmpl::MAX_DIM>& view,
         LocalTensor<DataType>& ubTensor)
     {
-        static constexpr MultiCopyConfig config = {false, 0, 0, false};
+        static constexpr NdDmaConfig config = {false, 0, 0, false};
 
         // Step 1: bundle 所有 R / A 轴 repeat, 重算每根 axis 的 dstStride
         uint32_t tailBundle = 1;  // 所有 R 轴 repeat 乘积
@@ -1554,12 +1555,12 @@ public:
                 ubRealABundle_ = otherBundle; // axis[1] = A
                 ubRealRBundle_ = tailBundle;  // axis[0] = R
             }
-            MultiCopyLoopInfo<NDDMA_LOOP_DIM3> loopInfo = {.loopSrcStride = {1, srcStrideL1, 1},
-                                                           .loopDstStride = {1, 1, otherAlign},
-                                                           .loopSize = {1, otherBundle, tailBundle},
-                                                           .loopLpSize = {0, 0, 0},
-                                                           .loopRpSize = {0, 0, 0}};
-            MultiCopyParams<DataType, NDDMA_LOOP_DIM3> params = {loopInfo, 0};
+            NdDmaLoopInfo<NDDMA_LOOP_DIM3> loopInfo = {.loopSrcStride = {1, srcStrideL1, 1},
+                                                       .loopDstStride = {1, 1, otherAlign},
+                                                       .loopSize = {1, otherBundle, tailBundle},
+                                                       .loopLpSize = {0, 0, 0},
+                                                       .loopRpSize = {0, 0, 0}};
+            NdDmaParams<DataType, NDDMA_LOOP_DIM3> params = {loopInfo, 0};
             DataCopy<DataType, NDDMA_LOOP_DIM3, config>(ubTensor, inputGM_[view.addr], params);
             return;
         }
@@ -1591,14 +1592,14 @@ public:
                 constexpr int32_t peelIdx = Pattern::FirstA ? 2 : 1; // 第 2 根 A 轴在 view 中的下标
                 if (view.axis[peelIdx].isAxisA) {
                     constexpr int32_t rIdx = (peelIdx == 2) ? 1 : 2; // R 轴在 view 中的下标
-                    MultiCopyLoopInfo<NDDMA_LOOP_DIM3> loopInfo = {
+                    NdDmaLoopInfo<NDDMA_LOOP_DIM3> loopInfo = {
                         .loopSrcStride = {1, static_cast<uint32_t>(view.axis[rIdx].srcStride), 1},
                         .loopDstStride = {1, 1, otherAlign},
                         .loopSize = {1, static_cast<uint32_t>(view.axis[rIdx].repeat),
                                      static_cast<uint32_t>(view.axis[0].repeat)},
                         .loopLpSize = {0, 0, 0},
                         .loopRpSize = {0, 0, 0}};
-                    MultiCopyParams<DataType, NDDMA_LOOP_DIM3> params = {loopInfo, 0};
+                    NdDmaParams<DataType, NDDMA_LOOP_DIM3> params = {loopInfo, 0};
                     for (uint32_t k = 0; k < static_cast<uint32_t>(view.axis[peelIdx].repeat); k++) {
                         DataCopy<DataType, NDDMA_LOOP_DIM3, config>(
                             ubTensor[k * invDstStride[peelIdx]], inputGM_[view.addr + k * view.axis[peelIdx].srcStride],
@@ -1606,33 +1607,33 @@ public:
                     }
                 } else {
                     // [R,R,A]：仅 1 根 A 散射层，维持 4 层单拷贝
-                    MultiCopyLoopInfo<NDDMA_LOOP_DIM4> loopInfo = {
+                    NdDmaLoopInfo<NDDMA_LOOP_DIM4> loopInfo = {
                         .loopSrcStride = {lvlSrc[0], lvlSrc[1], lvlSrc[2], lvlSrc[3]},
                         .loopDstStride = {lvlDst[0], lvlDst[1], lvlDst[2], lvlDst[3]},
                         .loopSize = {lvlSize[0], lvlSize[1], lvlSize[2], lvlSize[3]},
                         .loopLpSize = {0, 0, 0, 0},
                         .loopRpSize = {0, 0, 0, 0}};
-                    MultiCopyParams<DataType, NDDMA_LOOP_DIM4> params = {loopInfo, 0};
+                    NdDmaParams<DataType, NDDMA_LOOP_DIM4> params = {loopInfo, 0};
                     DataCopy<DataType, NDDMA_LOOP_DIM4, config>(ubTensor, inputGM_[view.addr], params);
                 }
             } else if constexpr (Dim == 4) {
-                MultiCopyLoopInfo<NDDMA_LOOP_DIM5> loopInfo = {
+                NdDmaLoopInfo<NDDMA_LOOP_DIM5> loopInfo = {
                     .loopSrcStride = {lvlSrc[0], lvlSrc[1], lvlSrc[2], lvlSrc[3], lvlSrc[4]},
                     .loopDstStride = {lvlDst[0], lvlDst[1], lvlDst[2], lvlDst[3], lvlDst[4]},
                     .loopSize = {lvlSize[0], lvlSize[1], lvlSize[2], lvlSize[3], lvlSize[4]},
                     .loopLpSize = {0, 0, 0, 0, 0},
                     .loopRpSize = {0, 0, 0, 0, 0}};
-                MultiCopyParams<DataType, NDDMA_LOOP_DIM5> params = {loopInfo, 0};
+                NdDmaParams<DataType, NDDMA_LOOP_DIM5> params = {loopInfo, 0};
                 DataCopy<DataType, NDDMA_LOOP_DIM5, config>(ubTensor, inputGM_[view.addr], params);
             } else {
                 // Dim >= 5: 内 5 层 NDDMA（退化 L0 + axis[0..3]），剩余 axis[4..7] 外层 for 循环
-                MultiCopyLoopInfo<NDDMA_LOOP_DIM5> loopInfo = {
+                NdDmaLoopInfo<NDDMA_LOOP_DIM5> loopInfo = {
                     .loopSrcStride = {lvlSrc[0], lvlSrc[1], lvlSrc[2], lvlSrc[3], lvlSrc[4]},
                     .loopDstStride = {lvlDst[0], lvlDst[1], lvlDst[2], lvlDst[3], lvlDst[4]},
                     .loopSize = {lvlSize[0], lvlSize[1], lvlSize[2], lvlSize[3], lvlSize[4]},
                     .loopLpSize = {0, 0, 0, 0, 0},
                     .loopRpSize = {0, 0, 0, 0, 0}};
-                MultiCopyParams<DataType, NDDMA_LOOP_DIM5> params = {loopInfo, 0};
+                NdDmaParams<DataType, NDDMA_LOOP_DIM5> params = {loopInfo, 0};
                 for (int32_t i = 0; i < view.axis[4].repeat; i++) {
                     for (int32_t j = 0; j < view.axis[5].repeat; j++) {
                         for (int32_t k = 0; k < view.axis[6].repeat; k++) {
@@ -1653,17 +1654,17 @@ public:
 
         // !TailA (AR→RA): 与历史实现逐位一致 —— axis[0](R) 落 L0 按 otherAlign 散射、axis[1](A) 连续
         if constexpr (Dim == 3) {
-            MultiCopyLoopInfo<NDDMA_LOOP_DIM3> loopInfo = {
+            NdDmaLoopInfo<NDDMA_LOOP_DIM3> loopInfo = {
                 .loopSrcStride = {1, srcStrideL1, static_cast<uint32_t>(view.axis[2].srcStride)},
                 .loopDstStride = {invDstStride[0], invDstStride[1], invDstStride[2]},
                 .loopSize = {static_cast<uint32_t>(view.axis[0].repeat), static_cast<uint32_t>(view.axis[1].repeat),
                              static_cast<uint32_t>(view.axis[2].repeat)},
                 .loopLpSize = {0, 0, 0},
                 .loopRpSize = {0, 0, 0}};
-            MultiCopyParams<DataType, NDDMA_LOOP_DIM3> params = {loopInfo, 0};
+            NdDmaParams<DataType, NDDMA_LOOP_DIM3> params = {loopInfo, 0};
             DataCopy<DataType, NDDMA_LOOP_DIM3, config>(ubTensor, inputGM_[view.addr], params);
         } else if constexpr (Dim == 4) {
-            MultiCopyLoopInfo<NDDMA_LOOP_DIM4> loopInfo = {
+            NdDmaLoopInfo<NDDMA_LOOP_DIM4> loopInfo = {
                 .loopSrcStride = {1, srcStrideL1, static_cast<uint32_t>(view.axis[2].srcStride),
                                   static_cast<uint32_t>(view.axis[3].srcStride)},
                 .loopDstStride = {invDstStride[0], invDstStride[1], invDstStride[2], invDstStride[3]},
@@ -1671,11 +1672,11 @@ public:
                              static_cast<uint32_t>(view.axis[2].repeat), static_cast<uint32_t>(view.axis[3].repeat)},
                 .loopLpSize = {0, 0, 0, 0},
                 .loopRpSize = {0, 0, 0, 0}};
-            MultiCopyParams<DataType, NDDMA_LOOP_DIM4> params = {loopInfo, 0};
+            NdDmaParams<DataType, NDDMA_LOOP_DIM4> params = {loopInfo, 0};
             DataCopy<DataType, NDDMA_LOOP_DIM4, config>(ubTensor, inputGM_[view.addr], params);
         } else {
             // Dim >= 5: 内 5 层 NDDMA (axis[0..4]) + 外层 axis[5..7] for 循环
-            MultiCopyLoopInfo<NDDMA_LOOP_DIM5> loopInfo = {
+            NdDmaLoopInfo<NDDMA_LOOP_DIM5> loopInfo = {
                 .loopSrcStride = {1, srcStrideL1, static_cast<uint32_t>(view.axis[2].srcStride),
                                   static_cast<uint32_t>(view.axis[3].srcStride),
                                   static_cast<uint32_t>(view.axis[4].srcStride)},
@@ -1685,7 +1686,7 @@ public:
                              static_cast<uint32_t>(view.axis[4].repeat)},
                 .loopLpSize = {0, 0, 0, 0, 0},
                 .loopRpSize = {0, 0, 0, 0, 0}};
-            MultiCopyParams<DataType, NDDMA_LOOP_DIM5> params = {loopInfo, 0};
+            NdDmaParams<DataType, NDDMA_LOOP_DIM5> params = {loopInfo, 0};
             for (int32_t i = 0; i < view.axis[5].repeat; i++) {
                 for (int32_t j = 0; j < view.axis[6].repeat; j++) {
                     for (int32_t k = 0; k < view.axis[7].repeat; k++) {

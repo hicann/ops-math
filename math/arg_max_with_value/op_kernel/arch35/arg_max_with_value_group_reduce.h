@@ -207,15 +207,14 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
             ComputeRa(tiling_->cutRSize, indiceUb, valuesUb, nextAAlign_, a);
             if constexpr (IsSameType<T1, bfloat16_t>::value) {
                 LocalTensor<float> outUb32 = outBuf32.Get<float>();
-                this->template UpdateResult<float>((__local_mem__ T2*)indiceUb[nextAAlign_].GetPhyAddr(),
-                                                   (__local_mem__ float*)outUb32[nextAAlign_].GetPhyAddr(),
-                                                   (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-                                                   (__local_mem__ float*)outUb32.GetPhyAddr(), tiling_->nextASize);
+                this->template UpdateResult<float>((__ubuf__ T2*)indiceUb[nextAAlign_].GetPhyAddr(),
+                                                   (__ubuf__ float*)outUb32[nextAAlign_].GetPhyAddr(),
+                                                   (__ubuf__ T2*)indiceUb.GetPhyAddr(),
+                                                   (__ubuf__ float*)outUb32.GetPhyAddr(), tiling_->nextASize);
             } else {
-                this->template UpdateResult<T1>((__local_mem__ T2*)indiceUb[nextAAlign_].GetPhyAddr(),
-                                                (__local_mem__ T1*)valuesUb[nextAAlign_].GetPhyAddr(),
-                                                (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-                                                (__local_mem__ T1*)valuesUb.GetPhyAddr(), tiling_->nextASize);
+                this->template UpdateResult<T1>(
+                    (__ubuf__ T2*)indiceUb[nextAAlign_].GetPhyAddr(), (__ubuf__ T1*)valuesUb[nextAAlign_].GetPhyAddr(),
+                    (__ubuf__ T2*)indiceUb.GetPhyAddr(), (__ubuf__ T1*)valuesUb.GetPhyAddr(), tiling_->nextASize);
             }
         }
         // tail r loop
@@ -225,16 +224,16 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
             if (loopR_ > 0) {
                 ComputeRa(tailR_, indiceUb, valuesUb, nextAAlign_, a);
                 if constexpr (!IsSameType<T1, bfloat16_t>::value) {
-                    this->template UpdateResult<T1>((__local_mem__ T2*)indiceUb[nextAAlign_].GetPhyAddr(),
-                                                    (__local_mem__ T1*)valuesUb[nextAAlign_].GetPhyAddr(),
-                                                    (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-                                                    (__local_mem__ T1*)valuesUb.GetPhyAddr(), tiling_->nextASize);
+                    this->template UpdateResult<T1>((__ubuf__ T2*)indiceUb[nextAAlign_].GetPhyAddr(),
+                                                    (__ubuf__ T1*)valuesUb[nextAAlign_].GetPhyAddr(),
+                                                    (__ubuf__ T2*)indiceUb.GetPhyAddr(),
+                                                    (__ubuf__ T1*)valuesUb.GetPhyAddr(), tiling_->nextASize);
                 } else {
                     LocalTensor<float> outUb32 = outBuf32.Get<float>();
-                    this->template UpdateResult<float>((__local_mem__ T2*)indiceUb[nextAAlign_].GetPhyAddr(),
-                                                       (__local_mem__ float*)outUb32[nextAAlign_].GetPhyAddr(),
-                                                       (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-                                                       (__local_mem__ float*)outUb32.GetPhyAddr(), tiling_->nextASize);
+                    this->template UpdateResult<float>((__ubuf__ T2*)indiceUb[nextAAlign_].GetPhyAddr(),
+                                                       (__ubuf__ float*)outUb32[nextAAlign_].GetPhyAddr(),
+                                                       (__ubuf__ T2*)indiceUb.GetPhyAddr(),
+                                                       (__ubuf__ float*)outUb32.GetPhyAddr(), tiling_->nextASize);
                 }
             } else {
                 ComputeRa(tailR_, indiceUb, valuesUb, 0, a);
@@ -304,15 +303,13 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
         Compute<isAra>(tiling_->cutRSize, indiceUb, valuesUb, outAAlign_);
         if constexpr (IsSameType<T1, bfloat16_t>::value) {
             LocalTensor<float> outUb32 = outBuf32.Get<float>();
-            this->template UpdateResult<float>((__local_mem__ T2*)indiceUb[outAAlign_].GetPhyAddr(),
-                                               (__local_mem__ float*)outUb32[outAAlign_].GetPhyAddr(),
-                                               (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-                                               (__local_mem__ float*)outUb32.GetPhyAddr(), outASize_);
+            this->template UpdateResult<float>(
+                (__ubuf__ T2*)indiceUb[outAAlign_].GetPhyAddr(), (__ubuf__ float*)outUb32[outAAlign_].GetPhyAddr(),
+                (__ubuf__ T2*)indiceUb.GetPhyAddr(), (__ubuf__ float*)outUb32.GetPhyAddr(), outASize_);
         } else {
-            this->template UpdateResult<T1>((__local_mem__ T2*)indiceUb[outAAlign_].GetPhyAddr(),
-                                            (__local_mem__ T1*)valuesUb[outAAlign_].GetPhyAddr(),
-                                            (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-                                            (__local_mem__ T1*)valuesUb.GetPhyAddr(), outASize_);
+            this->template UpdateResult<T1>(
+                (__ubuf__ T2*)indiceUb[outAAlign_].GetPhyAddr(), (__ubuf__ T1*)valuesUb[outAAlign_].GetPhyAddr(),
+                (__ubuf__ T2*)indiceUb.GetPhyAddr(), (__ubuf__ T1*)valuesUb.GetPhyAddr(), outASize_);
         }
     }
 }
@@ -328,16 +325,14 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
         if (loopR_ > 0) {
             Compute<isAra>(tailR_, indiceUb, valuesUb, outAAlign_);
             if constexpr (!IsSameType<T1, bfloat16_t>::value) {
-                this->template UpdateResult<T1>((__local_mem__ T2*)indiceUb[outAAlign_].GetPhyAddr(),
-                                                (__local_mem__ T1*)valuesUb[outAAlign_].GetPhyAddr(),
-                                                (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-                                                (__local_mem__ T1*)valuesUb.GetPhyAddr(), outASize_);
+                this->template UpdateResult<T1>(
+                    (__ubuf__ T2*)indiceUb[outAAlign_].GetPhyAddr(), (__ubuf__ T1*)valuesUb[outAAlign_].GetPhyAddr(),
+                    (__ubuf__ T2*)indiceUb.GetPhyAddr(), (__ubuf__ T1*)valuesUb.GetPhyAddr(), outASize_);
             } else {
                 LocalTensor<float> outUb32 = outBuf32.Get<float>();
-                this->template UpdateResult<float>((__local_mem__ T2*)indiceUb[outAAlign_].GetPhyAddr(),
-                                                   (__local_mem__ float*)outUb32[outAAlign_].GetPhyAddr(),
-                                                   (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-                                                   (__local_mem__ float*)outUb32.GetPhyAddr(), outASize_);
+                this->template UpdateResult<float>(
+                    (__ubuf__ T2*)indiceUb[outAAlign_].GetPhyAddr(), (__ubuf__ float*)outUb32[outAAlign_].GetPhyAddr(),
+                    (__ubuf__ T2*)indiceUb.GetPhyAddr(), (__ubuf__ float*)outUb32.GetPhyAddr(), outASize_);
             }
         } else {
             Compute<isAra>(tailR_, indiceUb, valuesUb, 0);
@@ -414,24 +409,22 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
         uint64_t alignAR = CeilDivision(dimR * tiling_->nextASize, ELEMENT_PER_BLOCK) * ELEMENT_PER_BLOCK;
         Cast(xUb32, srcUb, RoundMode::CAST_NONE, alignAR);
         inQueueX_.FreeTensor(srcUb);
-        this->template ArgMaxRa<float, uint32_t>((__local_mem__ float*)outUb32[offset].GetPhyAddr(),
-                                                 (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
-                                                 (__local_mem__ float*)xUb32.GetPhyAddr(), tiling_->nextASize,
+        this->template ArgMaxRa<float, uint32_t>((__ubuf__ float*)outUb32[offset].GetPhyAddr(),
+                                                 (__ubuf__ T2*)indiceUb[offset].GetPhyAddr(),
+                                                 (__ubuf__ float*)xUb32.GetPhyAddr(), tiling_->nextASize,
                                                  tiling_->nextASize, dimR, blockOffset_ + loopOffset_);
     } else if constexpr (IsSameType<T1, half>::value) {
-        this->template ArgMaxRa<T1, uint16_t>((__local_mem__ T1*)valuesUb[offset].GetPhyAddr(),
-                                              (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
-                                              (__local_mem__ T1*)srcUb.GetPhyAddr(), tiling_->nextASize,
-                                              tiling_->nextASize, dimR, blockOffset_ + loopOffset_);
+        this->template ArgMaxRa<T1, uint16_t>(
+            (__ubuf__ T1*)valuesUb[offset].GetPhyAddr(), (__ubuf__ T2*)indiceUb[offset].GetPhyAddr(),
+            (__ubuf__ T1*)srcUb.GetPhyAddr(), tiling_->nextASize, tiling_->nextASize, dimR, blockOffset_ + loopOffset_);
     } else if constexpr (!IsSameType<T1, int64_t>::value) {
-        this->template ArgMaxRa<T1, uint32_t>((__local_mem__ T1*)valuesUb[offset].GetPhyAddr(),
-                                              (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
-                                              (__local_mem__ T1*)srcUb.GetPhyAddr(), tiling_->nextASize,
-                                              tiling_->nextASize, dimR, blockOffset_ + loopOffset_);
+        this->template ArgMaxRa<T1, uint32_t>(
+            (__ubuf__ T1*)valuesUb[offset].GetPhyAddr(), (__ubuf__ T2*)indiceUb[offset].GetPhyAddr(),
+            (__ubuf__ T1*)srcUb.GetPhyAddr(), tiling_->nextASize, tiling_->nextASize, dimR, blockOffset_ + loopOffset_);
     } else if constexpr (IsSameType<T1, int64_t>::value) {
         this->template ArgMaxAraUnAlignInt64<int64_t, uint64_t>(
-            (__local_mem__ T1*)valuesUb[offset].GetPhyAddr(), (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), 1, dimR, tiling_->nextASize, tiling_->nextASize, tiling_->nextASize,
+            (__ubuf__ T1*)valuesUb[offset].GetPhyAddr(), (__ubuf__ T2*)indiceUb[offset].GetPhyAddr(),
+            (__ubuf__ T1*)srcUb.GetPhyAddr(), 1, dimR, tiling_->nextASize, tiling_->nextASize, tiling_->nextASize,
             blockOffset_ + loopOffset_);
     }
     if constexpr (!IsSameType<T1, bfloat16_t>::value) {
@@ -454,24 +447,21 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
             uint64_t alignR = CeilDivision(dimR * tiling_->nextASize, ELEMENT_PER_BLOCK) * ELEMENT_PER_BLOCK;
             Cast(xUb32, srcUb, RoundMode::CAST_NONE, tiling_->aSize * alignR);
             this->template ArgMaxGatherV1<float, uint32_t, int32_t, true>(
-                (__local_mem__ float*)outUb32[offset].GetPhyAddr(), (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
-                (__local_mem__ float*)xUb32.GetPhyAddr(), tiling_->aSize, dimR, tiling_->nextASize,
+                (__ubuf__ float*)outUb32[offset].GetPhyAddr(), (__ubuf__ T2*)indiceUb[offset].GetPhyAddr(),
+                (__ubuf__ float*)xUb32.GetPhyAddr(), tiling_->aSize, dimR, tiling_->nextASize,
                 blockOffset_ + loopOffset_);
         } else if constexpr (IsSameType<T1, half>::value) {
             this->template ArgMaxGatherV1<T1, uint16_t, int16_t, true>(
-                (__local_mem__ T1*)valuesUb[offset].GetPhyAddr(), (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
-                (__local_mem__ T1*)srcUb.GetPhyAddr(), tiling_->aSize, dimR, tiling_->nextASize,
-                blockOffset_ + loopOffset_);
+                (__ubuf__ T1*)valuesUb[offset].GetPhyAddr(), (__ubuf__ T2*)indiceUb[offset].GetPhyAddr(),
+                (__ubuf__ T1*)srcUb.GetPhyAddr(), tiling_->aSize, dimR, tiling_->nextASize, blockOffset_ + loopOffset_);
         } else if constexpr (!IsSameType<T1, int64_t>::value) {
             this->template ArgMaxGatherV1<T1, uint32_t, int32_t, true>(
-                (__local_mem__ T1*)valuesUb[offset].GetPhyAddr(), (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
-                (__local_mem__ T1*)srcUb.GetPhyAddr(), tiling_->aSize, dimR, tiling_->nextASize,
-                blockOffset_ + loopOffset_);
+                (__ubuf__ T1*)valuesUb[offset].GetPhyAddr(), (__ubuf__ T2*)indiceUb[offset].GetPhyAddr(),
+                (__ubuf__ T1*)srcUb.GetPhyAddr(), tiling_->aSize, dimR, tiling_->nextASize, blockOffset_ + loopOffset_);
         } else if constexpr (IsSameType<T1, int64_t>::value) {
             this->template ArgMaxGatherV1Int64<T1, uint64_t, int64_t, true>(
-                (__local_mem__ T1*)valuesUb[offset].GetPhyAddr(), (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
-                (__local_mem__ T1*)srcUb.GetPhyAddr(), tiling_->aSize, dimR, tiling_->nextASize,
-                blockOffset_ + loopOffset_);
+                (__ubuf__ T1*)valuesUb[offset].GetPhyAddr(), (__ubuf__ T2*)indiceUb[offset].GetPhyAddr(),
+                (__ubuf__ T1*)srcUb.GetPhyAddr(), tiling_->aSize, dimR, tiling_->nextASize, blockOffset_ + loopOffset_);
         }
     } else {
         if constexpr (IsSameType<T1, bfloat16_t>::value) {
@@ -480,20 +470,20 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
             uint64_t alignR = CeilDivision(dimR, ELEMENT_PER_BLOCK) * ELEMENT_PER_BLOCK;
             Cast(xUb32, srcUb, RoundMode::CAST_NONE, tiling_->aSize * alignR);
             this->template ArgMaxV1<float, uint32_t, true>(
-                (__local_mem__ float*)outUb32[offset].GetPhyAddr(), (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
-                (__local_mem__ float*)xUb32.GetPhyAddr(), outASize_, dimR, blockOffset_ + loopOffset_);
+                (__ubuf__ float*)outUb32[offset].GetPhyAddr(), (__ubuf__ T2*)indiceUb[offset].GetPhyAddr(),
+                (__ubuf__ float*)xUb32.GetPhyAddr(), outASize_, dimR, blockOffset_ + loopOffset_);
         } else if constexpr (IsSameType<T1, half>::value) {
             this->template ArgMaxV1<T1, uint16_t, true>(
-                (__local_mem__ T1*)valuesUb[offset].GetPhyAddr(), (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
-                (__local_mem__ T1*)srcUb.GetPhyAddr(), outASize_, dimR, blockOffset_ + loopOffset_);
+                (__ubuf__ T1*)valuesUb[offset].GetPhyAddr(), (__ubuf__ T2*)indiceUb[offset].GetPhyAddr(),
+                (__ubuf__ T1*)srcUb.GetPhyAddr(), outASize_, dimR, blockOffset_ + loopOffset_);
         } else if constexpr (!IsSameType<T1, int64_t>::value) {
             this->template ArgMaxV1<T1, uint32_t, true>(
-                (__local_mem__ T1*)valuesUb[offset].GetPhyAddr(), (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
-                (__local_mem__ T1*)srcUb.GetPhyAddr(), outASize_, dimR, blockOffset_ + loopOffset_);
+                (__ubuf__ T1*)valuesUb[offset].GetPhyAddr(), (__ubuf__ T2*)indiceUb[offset].GetPhyAddr(),
+                (__ubuf__ T1*)srcUb.GetPhyAddr(), outASize_, dimR, blockOffset_ + loopOffset_);
         } else if constexpr (IsSameType<T1, int64_t>::value) {
             this->template ArgMaxV1Int64<true>(
-                (__local_mem__ T1*)valuesUb[offset].GetPhyAddr(), (__local_mem__ T2*)indiceUb[offset].GetPhyAddr(),
-                (__local_mem__ T1*)srcUb.GetPhyAddr(), outASize_, dimR, blockOffset_ + loopOffset_);
+                (__ubuf__ T1*)valuesUb[offset].GetPhyAddr(), (__ubuf__ T2*)indiceUb[offset].GetPhyAddr(),
+                (__ubuf__ T1*)srcUb.GetPhyAddr(), outASize_, dimR, blockOffset_ + loopOffset_);
         }
     }
 
@@ -513,10 +503,10 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
     LocalTensor<T2> indiceUb = outQueueIndice_.AllocTensor<T2>();
     LocalTensor<T4> valuesUb = outQueueValues_.AllocTensor<T4>();
 
-    auto srcIndicePtr = (__local_mem__ T2*)srcIndiceUb.GetPhyAddr();
-    auto srcValuePtr = (__local_mem__ T4*)srcValueUb.GetPhyAddr();
-    auto dstIndicePtr = (__local_mem__ T2*)indiceUb.GetPhyAddr();
-    auto dstValuePtr = (__local_mem__ T4*)valuesUb.GetPhyAddr();
+    auto srcIndicePtr = (__ubuf__ T2*)srcIndiceUb.GetPhyAddr();
+    auto srcValuePtr = (__ubuf__ T4*)srcValueUb.GetPhyAddr();
+    auto dstIndicePtr = (__ubuf__ T2*)indiceUb.GetPhyAddr();
+    auto dstValuePtr = (__ubuf__ T4*)valuesUb.GetPhyAddr();
 
     uint16_t vl = this->GetVLSize();
     uint16_t loopA = CeilDivision(outASize_, vl);
@@ -539,44 +529,44 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
             auto tmpIndicePtr = srcIndicePtr + dimA;
             mask = AscendC::Reg::UpdateMask<T4>(processA);
             AscendC::Reg::AddrReg valueOffset = AscendC::Reg::CreateAddrReg<T4>(i, vl);
-            DataCopy(vregValue0, srcValuePtr, valueOffset);
+            MicroAPI::LoadAlign(vregValue0, srcValuePtr, valueOffset);
             AscendC::Reg::AddrReg indicesOffset = AscendC::Reg::CreateAddrReg<uint32_t>(i, vl);
-            DataCopy(vregIndices0, srcIndicePtr, indicesOffset);
+            MicroAPI::LoadAlign(vregIndices0, srcIndicePtr, indicesOffset);
             if constexpr (IsSameType<T1, half>::value) {
                 maskLower = AscendC::Reg::UpdateMask<T2>(sregMask);
                 maskHigher = AscendC::Reg::UpdateMask<T2>(sregMask);
-                DataCopy(indicesHigher0, srcIndicePtr + repeatElmB32, indicesOffset);
+                MicroAPI::LoadAlign(indicesHigher0, srcIndicePtr + repeatElmB32, indicesOffset);
             }
             for (uint16_t j = 0; j < loopR; j++) {
                 AscendC::Reg::AddrReg valueAreg = AscendC::Reg::CreateAddrReg<T4>(i, vl, j, dimA);
                 AscendC::Reg::AddrReg indicesAreg = AscendC::Reg::CreateAddrReg<uint32_t>(i, vl, j, dimA);
-                DataCopy(vregValue1, tmpValuePtr, valueAreg);
+                MicroAPI::LoadAlign(vregValue1, tmpValuePtr, valueAreg);
                 if constexpr (isMin) {
                     Compare<T4, CMPMODE::LE>(cmpMask, vregValue0, vregValue1, mask);
                 } else {
                     Compare<T4, CMPMODE::GE>(cmpMask, vregValue0, vregValue1, mask);
                 }
                 Compare<T4, CMPMODE::NE>(nanMask, vregValue0, vregValue0, mask);
-                AscendC::Reg::MaskOr(cmpMask, cmpMask, nanMask, mask);
+                AscendC::Reg::Or(cmpMask, cmpMask, nanMask, mask);
                 Select(vregValue0, vregValue0, vregValue1, cmpMask);
                 if constexpr (IsSameType<T1, half>::value) {
-                    AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::LOWEST>(pregLower, cmpMask);
-                    AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::HIGHEST>(pregHigher, cmpMask);
-                    DataCopy(vregIndices1, tmpIndicePtr, indicesAreg);
-                    DataCopy(indicesHigher1, tmpIndicePtr + repeatElmB32, indicesAreg);
+                    AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::LOWEST>(pregLower, cmpMask);
+                    AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::HIGHEST>(pregHigher, cmpMask);
+                    MicroAPI::LoadAlign(vregIndices1, tmpIndicePtr, indicesAreg);
+                    MicroAPI::LoadAlign(indicesHigher1, tmpIndicePtr + repeatElmB32, indicesAreg);
                     Select(vregIndices0, vregIndices0, vregIndices1, pregLower);
                     Select(indicesHigher0, indicesHigher0, indicesHigher1, pregHigher);
                 } else {
-                    DataCopy(vregIndices1, tmpIndicePtr, indicesAreg);
+                    MicroAPI::LoadAlign(vregIndices1, tmpIndicePtr, indicesAreg);
                     Select(vregIndices0, vregIndices0, vregIndices1, cmpMask);
                 }
             }
-            DataCopy(dstValuePtr, vregValue0, valueOffset, mask);
+            MicroAPI::StoreAlign(dstValuePtr, vregValue0, valueOffset, mask);
             if constexpr (IsSameType<T1, half>::value) {
-                DataCopy(dstIndicePtr, vregIndices0, indicesOffset, maskLower);
-                DataCopy(dstIndicePtr + repeatElmB32, indicesHigher0, indicesOffset, maskHigher);
+                MicroAPI::StoreAlign(dstIndicePtr, vregIndices0, indicesOffset, maskLower);
+                MicroAPI::StoreAlign(dstIndicePtr + repeatElmB32, indicesHigher0, indicesOffset, maskHigher);
             } else {
-                DataCopy(dstIndicePtr, vregIndices0, indicesOffset, mask);
+                MicroAPI::StoreAlign(dstIndicePtr, vregIndices0, indicesOffset, mask);
             }
         }
     }
@@ -596,10 +586,10 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
     LocalTensor<T2> indiceUb = outQueueIndice_.AllocTensor<T2>();
     LocalTensor<T4> valuesUb = outQueueValues_.AllocTensor<T4>();
 
-    auto srcIndicePtr = (__local_mem__ T2*)srcIndiceUb.GetPhyAddr();
-    auto srcValuePtr = (__local_mem__ T4*)srcValueUb.GetPhyAddr();
-    auto dstIndicePtr = (__local_mem__ T2*)indiceUb.GetPhyAddr();
-    auto dstValuePtr = (__local_mem__ T4*)valuesUb.GetPhyAddr();
+    auto srcIndicePtr = (__ubuf__ T2*)srcIndiceUb.GetPhyAddr();
+    auto srcValuePtr = (__ubuf__ T4*)srcValueUb.GetPhyAddr();
+    auto dstIndicePtr = (__ubuf__ T2*)indiceUb.GetPhyAddr();
+    auto dstValuePtr = (__ubuf__ T4*)valuesUb.GetPhyAddr();
 
     uint16_t vl = this->GetVLSize();
     uint16_t loopA = CeilDivision(outASize_, vl);
@@ -618,21 +608,21 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
             auto tmpValuePtr = srcValuePtr + dimA;
             auto tmpIndicePtr = srcIndicePtr + dimA;
             mask = AscendC::Reg::UpdateMask<uint32_t>(processA);
-            DataCopy(vregValue0, (__local_mem__ T4*)srcValuePtr + i * vl);
-            DataCopy(vregIndices0, (__local_mem__ T2*)srcIndicePtr + i * vl);
+            MicroAPI::LoadAlign(vregValue0, (__ubuf__ T4*)srcValuePtr + i * vl);
+            MicroAPI::LoadAlign(vregIndices0, (__ubuf__ T2*)srcIndicePtr + i * vl);
             for (uint16_t j = 0; j < loopR; j++) {
-                DataCopy(vregValue1, (__local_mem__ T4*)tmpValuePtr + i * vl + j * dimA);
+                MicroAPI::LoadAlign(vregValue1, (__ubuf__ T4*)tmpValuePtr + i * vl + j * dimA);
                 if constexpr (isMin) {
                     Compare<T4, CMPMODE::LE>(cmpMask, vregValue0, vregValue1, mask);
                 } else {
                     Compare<T4, CMPMODE::GE>(cmpMask, vregValue0, vregValue1, mask);
                 }
                 Select(vregValue0, vregValue0, vregValue1, cmpMask);
-                DataCopy(vregIndices1, (__local_mem__ T2*)tmpIndicePtr + i * vl + j * dimA);
+                MicroAPI::LoadAlign(vregIndices1, (__ubuf__ T2*)tmpIndicePtr + i * vl + j * dimA);
                 Select(vregIndices0, vregIndices0, vregIndices1, cmpMask);
             }
-            DataCopy((__local_mem__ T4*)dstValuePtr + i * vl, vregValue0, mask);
-            DataCopy((__local_mem__ T2*)dstIndicePtr + i * vl, vregIndices0, mask);
+            MicroAPI::StoreAlign((__ubuf__ T4*)dstValuePtr + i * vl, vregValue0, mask);
+            MicroAPI::StoreAlign((__ubuf__ T2*)dstIndicePtr + i * vl, vregIndices0, mask);
         }
     }
     outQueueIndice_.EnQue(indiceUb);
@@ -657,10 +647,10 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
     LocalTensor<T2> indiceUb = outQueueIndice_.AllocTensor<T2>();
     LocalTensor<T4> valuesUb = outQueueValues_.AllocTensor<T4>();
 
-    auto srcIndicePtr = (__local_mem__ T2*)srcIndiceUb.GetPhyAddr();
-    auto srcValuePtr = (__local_mem__ T4*)srcValueUb.GetPhyAddr();
-    auto dstIndicePtr = (__local_mem__ T2*)indiceUb.GetPhyAddr();
-    auto dstValuePtr = (__local_mem__ T4*)valuesUb.GetPhyAddr();
+    auto srcIndicePtr = (__ubuf__ T2*)srcIndiceUb.GetPhyAddr();
+    auto srcValuePtr = (__ubuf__ T4*)srcValueUb.GetPhyAddr();
+    auto dstIndicePtr = (__ubuf__ T2*)indiceUb.GetPhyAddr();
+    auto dstValuePtr = (__ubuf__ T4*)valuesUb.GetPhyAddr();
 
     uint16_t vl = this->GetVLSize();
     uint16_t loopA = CeilDivision(actualNextA, vl);
@@ -680,21 +670,21 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
             auto tmpValuePtr = srcValuePtr + dimA;
             auto tmpIndicePtr = srcIndicePtr + dimIndicates;
             mask = AscendC::Reg::UpdateMask<uint32_t>(processA);
-            DataCopy(vregValue0, (__local_mem__ T4*)srcValuePtr + i * vl);
-            DataCopy(vregIndices0, (__local_mem__ T2*)srcIndicePtr + i * vl);
+            MicroAPI::LoadAlign(vregValue0, (__ubuf__ T4*)srcValuePtr + i * vl);
+            MicroAPI::LoadAlign(vregIndices0, (__ubuf__ T2*)srcIndicePtr + i * vl);
             for (uint16_t j = 0; j < loopR; j++) {
-                DataCopy(vregValue1, (__local_mem__ T4*)tmpValuePtr + i * vl + j * dimA);
+                MicroAPI::LoadAlign(vregValue1, (__ubuf__ T4*)tmpValuePtr + i * vl + j * dimA);
                 if constexpr (isMin) {
                     Compare<T4, CMPMODE::LE>(cmpMask, vregValue0, vregValue1, mask);
                 } else {
                     Compare<T4, CMPMODE::GE>(cmpMask, vregValue0, vregValue1, mask);
                 }
                 Select(vregValue0, vregValue0, vregValue1, cmpMask);
-                DataCopy(vregIndices1, (__local_mem__ T2*)tmpIndicePtr + i * vl + j * dimIndicates);
+                MicroAPI::LoadAlign(vregIndices1, (__ubuf__ T2*)tmpIndicePtr + i * vl + j * dimIndicates);
                 Select(vregIndices0, vregIndices0, vregIndices1, cmpMask);
             }
-            DataCopy((__local_mem__ T4*)dstValuePtr + i * vl, vregValue0, mask);
-            DataCopy((__local_mem__ T2*)dstIndicePtr + i * vl, vregIndices0, mask);
+            MicroAPI::StoreAlign((__ubuf__ T4*)dstValuePtr + i * vl, vregValue0, mask);
+            MicroAPI::StoreAlign((__ubuf__ T2*)dstIndicePtr + i * vl, vregIndices0, mask);
         }
     }
     outQueueIndice_.EnQue(indiceUb);
@@ -721,10 +711,10 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
     LocalTensor<T2> indiceUb = outQueueIndice_.AllocTensor<T2>();
     LocalTensor<T4> valuesUb = outQueueValues_.AllocTensor<T4>();
 
-    auto srcIndicePtr = (__local_mem__ T2*)srcIndiceUb.GetPhyAddr();
-    auto srcValuePtr = (__local_mem__ T4*)srcValueUb.GetPhyAddr();
-    auto dstIndicePtr = (__local_mem__ T2*)indiceUb.GetPhyAddr();
-    auto dstValuePtr = (__local_mem__ T4*)valuesUb.GetPhyAddr();
+    auto srcIndicePtr = (__ubuf__ T2*)srcIndiceUb.GetPhyAddr();
+    auto srcValuePtr = (__ubuf__ T4*)srcValueUb.GetPhyAddr();
+    auto dstIndicePtr = (__ubuf__ T2*)indiceUb.GetPhyAddr();
+    auto dstValuePtr = (__ubuf__ T4*)valuesUb.GetPhyAddr();
 
     uint16_t vl = this->GetVLSize();
     uint16_t loopA = CeilDivision(actualNextA, vl);
@@ -749,44 +739,44 @@ __aicore__ inline void ArgMaxWithValueGroupReduce<T1, T2, T3, withValue, isMin>:
             auto tmpIndicePtr = srcIndicePtr + dimIndicates;
             mask = AscendC::Reg::UpdateMask<T4>(processA);
             AscendC::Reg::AddrReg valueOffset = AscendC::Reg::CreateAddrReg<T4>(i, vl);
-            DataCopy(vregValue0, srcValuePtr, valueOffset);
+            MicroAPI::LoadAlign(vregValue0, srcValuePtr, valueOffset);
             AscendC::Reg::AddrReg indicesOffset = AscendC::Reg::CreateAddrReg<uint32_t>(i, vl);
-            DataCopy(vregIndices0, srcIndicePtr, indicesOffset);
+            MicroAPI::LoadAlign(vregIndices0, srcIndicePtr, indicesOffset);
             if constexpr (IsSameType<T1, half>::value) {
                 maskLower = AscendC::Reg::UpdateMask<T2>(sregMask);
                 maskHigher = AscendC::Reg::UpdateMask<T2>(sregMask);
-                DataCopy(indicesHigher0, srcIndicePtr + repeatElmB32, indicesOffset);
+                MicroAPI::LoadAlign(indicesHigher0, srcIndicePtr + repeatElmB32, indicesOffset);
             }
             for (uint16_t j = 0; j < loopR; j++) {
                 AscendC::Reg::AddrReg valueAreg = AscendC::Reg::CreateAddrReg<T4>(i, vl, j, dimA);
                 AscendC::Reg::AddrReg indicesAreg = AscendC::Reg::CreateAddrReg<uint32_t>(i, vl, j, dimIndicates);
-                DataCopy(vregValue1, tmpValuePtr, valueAreg);
+                MicroAPI::LoadAlign(vregValue1, tmpValuePtr, valueAreg);
                 if constexpr (isMin) {
                     Compare<T4, CMPMODE::LE>(cmpMask, vregValue0, vregValue1, mask);
                 } else {
                     Compare<T4, CMPMODE::GE>(cmpMask, vregValue0, vregValue1, mask);
                 }
                 Compare<T4, CMPMODE::NE>(nanMask, vregValue0, vregValue0, mask);
-                AscendC::Reg::MaskOr(cmpMask, cmpMask, nanMask, mask);
+                AscendC::Reg::Or(cmpMask, cmpMask, nanMask, mask);
                 Select(vregValue0, vregValue0, vregValue1, cmpMask);
                 if constexpr (IsSameType<T1, half>::value) {
-                    AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::LOWEST>(pregLower, cmpMask);
-                    AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::HIGHEST>(pregHigher, cmpMask);
-                    DataCopy(vregIndices1, tmpIndicePtr, indicesAreg);
-                    DataCopy(indicesHigher1, tmpIndicePtr + repeatElmB32, indicesAreg);
+                    AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::LOWEST>(pregLower, cmpMask);
+                    AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::HIGHEST>(pregHigher, cmpMask);
+                    MicroAPI::LoadAlign(vregIndices1, tmpIndicePtr, indicesAreg);
+                    MicroAPI::LoadAlign(indicesHigher1, tmpIndicePtr + repeatElmB32, indicesAreg);
                     Select(vregIndices0, vregIndices0, vregIndices1, pregLower);
                     Select(indicesHigher0, indicesHigher0, indicesHigher1, pregHigher);
                 } else {
-                    DataCopy(vregIndices1, tmpIndicePtr, indicesAreg);
+                    MicroAPI::LoadAlign(vregIndices1, tmpIndicePtr, indicesAreg);
                     Select(vregIndices0, vregIndices0, vregIndices1, cmpMask);
                 }
             }
-            DataCopy(dstValuePtr, vregValue0, valueOffset, mask);
+            MicroAPI::StoreAlign(dstValuePtr, vregValue0, valueOffset, mask);
             if constexpr (IsSameType<T1, half>::value) {
-                DataCopy(dstIndicePtr, vregIndices0, indicesOffset, maskLower);
-                DataCopy(dstIndicePtr + repeatElmB32, indicesHigher0, indicesOffset, maskHigher);
+                MicroAPI::StoreAlign(dstIndicePtr, vregIndices0, indicesOffset, maskLower);
+                MicroAPI::StoreAlign(dstIndicePtr + repeatElmB32, indicesHigher0, indicesOffset, maskHigher);
             } else {
-                DataCopy(dstIndicePtr, vregIndices0, indicesOffset, mask);
+                MicroAPI::StoreAlign(dstIndicePtr, vregIndices0, indicesOffset, mask);
             }
         }
     }

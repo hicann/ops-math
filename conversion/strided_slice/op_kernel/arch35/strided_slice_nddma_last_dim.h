@@ -31,11 +31,11 @@ public:
 private:
     __aicore__ inline void ProcessPerBlockInLastDim();
     __aicore__ inline void ProcessPerBlock();
-    __aicore__ inline void SetLoopInfo(MultiCopyLoopInfo<NDDMA_LAST_DIMS>& loopInfo,
-                                       MultiCopyLoopInfo<NDDMA_LAST_DIMS>& loopInfoTail);
+    __aicore__ inline void SetLoopInfo(NdDmaLoopInfo<NDDMA_LAST_DIMS>& loopInfo,
+                                       NdDmaLoopInfo<NDDMA_LAST_DIMS>& loopInfoTail);
 
 private:
-    TPipe *pipe_;
+    TPipe* pipe_;
     TQueBind<TPosition::VECIN, TPosition::VECOUT, 1> vecQue_;
 
     GlobalTensor<T> inputGM_;
@@ -43,16 +43,16 @@ private:
 
     int64_t blockIdx_ = 0;
 
-    static constexpr MultiCopyConfig nddmaConfig_ = {false, 0, 0, false};
+    static constexpr NdDmaConfig nddmaConfig_ = {false, 0, 0, false};
 
-    DataCopyExtParams copyOutParamsMain_ {1, 0, 0, 0, 0};
-    DataCopyExtParams copyOutParamsTail_ {1, 0, 0, 0, 0};
+    DataCopyExtParams copyOutParamsMain_{1, 0, 0, 0, 0};
+    DataCopyExtParams copyOutParamsTail_{1, 0, 0, 0, 0};
 };
 
 template <typename T, typename U>
 __aicore__ inline void StridedSliceNDDMALastDim<T, U>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
-                                                      GM_ADDR y, const StridedSliceNDDMATilingData* tilingData,
-                                                      TPipe* pipeIn)
+                                                            GM_ADDR y, const StridedSliceNDDMATilingData* tilingData,
+                                                            TPipe* pipeIn)
 {
     blockIdx_ = GetBlockIdx();
     pipe_ = pipeIn;
@@ -101,8 +101,8 @@ __aicore__ inline void StridedSliceNDDMALastDim<T, U>::ProcessPerBlockInLastDim(
     int64_t loopCnt = 0;
     this->GetLastDimSplitLoopCnt(loopCnt, blockIdx_);
 
-    MultiCopyParams<T, NDDMA_LAST_DIMS> paramsMain;
-    MultiCopyParams<T, NDDMA_LAST_DIMS> paramsTail;
+    NdDmaParams<T, NDDMA_LAST_DIMS> paramsMain;
+    NdDmaParams<T, NDDMA_LAST_DIMS> paramsTail;
     paramsMain.constantValue = 0;
     paramsTail.constantValue = 0;
     SetLoopInfo(paramsMain.loopInfo, paramsTail.loopInfo);
@@ -110,8 +110,7 @@ __aicore__ inline void StridedSliceNDDMALastDim<T, U>::ProcessPerBlockInLastDim(
     copyOutParamsMain_.blockLen = this->ubFactor_ * sizeof(T);
     for (int64_t loops = 0; loops < loopCnt; loops++) {
         LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();
-        DataCopy<T, NDDMA_LAST_DIMS, nddmaConfig_>(inputLocal,
-                                                   inputGM_[inputGmAddr + loops * this->ubInLoopSteps_],
+        DataCopy<T, NDDMA_LAST_DIMS, nddmaConfig_>(inputLocal, inputGM_[inputGmAddr + loops * this->ubInLoopSteps_],
                                                    paramsMain);
         vecQue_.EnQue(inputLocal);
         inputLocal = vecQue_.DeQue<T>();
@@ -122,8 +121,7 @@ __aicore__ inline void StridedSliceNDDMALastDim<T, U>::ProcessPerBlockInLastDim(
     if (this->ubTailFactor_ > 0) {
         LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();
         copyOutParamsTail_.blockLen = this->ubTailFactor_ * sizeof(T);
-        DataCopy<T, NDDMA_LAST_DIMS, nddmaConfig_>(inputLocal,
-                                                   inputGM_[inputGmAddr + loopCnt * this->ubInLoopSteps_],
+        DataCopy<T, NDDMA_LAST_DIMS, nddmaConfig_>(inputLocal, inputGM_[inputGmAddr + loopCnt * this->ubInLoopSteps_],
                                                    paramsTail);
         vecQue_.EnQue(inputLocal);
         inputLocal = vecQue_.DeQue<T>();
@@ -147,8 +145,8 @@ __aicore__ inline void StridedSliceNDDMALastDim<T, U>::ProcessPerBlock()
 
     int64_t inputGmAddr = 0;
     int64_t outputGmAddr = 0;
-    MultiCopyParams<T, NDDMA_LAST_DIMS> paramsMain;
-    MultiCopyParams<T, NDDMA_LAST_DIMS> paramsTail;
+    NdDmaParams<T, NDDMA_LAST_DIMS> paramsMain;
+    NdDmaParams<T, NDDMA_LAST_DIMS> paramsTail;
     paramsMain.constantValue = 0;
     paramsTail.constantValue = 0;
     SetLoopInfo(paramsMain.loopInfo, paramsTail.loopInfo);
@@ -169,21 +167,19 @@ __aicore__ inline void StridedSliceNDDMALastDim<T, U>::ProcessPerBlock()
 
         if (this->ubTailFactor_ > 0) {
             LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();
-            DataCopy<T, NDDMA_LAST_DIMS, nddmaConfig_>(inputLocal,
-                                                       inputGM_[inputGmAddr + ubSplitOutNum * outLoopSteps],
+            DataCopy<T, NDDMA_LAST_DIMS, nddmaConfig_>(inputLocal, inputGM_[inputGmAddr + ubSplitOutNum * outLoopSteps],
                                                        paramsTail);
             vecQue_.EnQue(inputLocal);
             inputLocal = vecQue_.DeQue<T>();
-            DataCopyPad(outputGM_[outputGmAddr + ubSplitOutNum * this->ubFactor_], inputLocal,
-                        copyOutParamsTail_);
+            DataCopyPad(outputGM_[outputGmAddr + ubSplitOutNum * this->ubFactor_], inputLocal, copyOutParamsTail_);
             vecQue_.FreeTensor(inputLocal);
         }
     }
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceNDDMALastDim<T, U>::SetLoopInfo(MultiCopyLoopInfo<NDDMA_LAST_DIMS>& loopInfo,
-                                                                MultiCopyLoopInfo<NDDMA_LAST_DIMS>& loopInfoTail)
+__aicore__ inline void StridedSliceNDDMALastDim<T, U>::SetLoopInfo(NdDmaLoopInfo<NDDMA_LAST_DIMS>& loopInfo,
+                                                                   NdDmaLoopInfo<NDDMA_LAST_DIMS>& loopInfoTail)
 {
     // ub main
     loopInfo.loopSize[0] = this->ubFactor_;

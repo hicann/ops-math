@@ -178,20 +178,20 @@ __aicore__ inline void ArgMaxWithValueArGather<T1, T2, T3, withValue, isMin>::Co
         LocalTensor<float> outUb32 = outBuf32.Get<float>();
         Cast(xUb32, srcUb, RoundMode::CAST_NONE, processNum * rSize_);
         this->template ArgMaxGatherRa<float, uint32_t, int32_t>(
-            (__local_mem__ float*)outUb32.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-            (__local_mem__ float*)xUb32.GetPhyAddr(), processNum, rSize_);
+            (__ubuf__ float*)outUb32.GetPhyAddr(), (__ubuf__ T2*)indiceUb.GetPhyAddr(),
+            (__ubuf__ float*)xUb32.GetPhyAddr(), processNum, rSize_);
     } else if constexpr (IsSameType<T1, half>::value) {
-        this->template ArgMaxGatherRa<half, uint16_t, int16_t>(
-            (__local_mem__ T1*)valuesUb.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), processNum, rSize_);
+        this->template ArgMaxGatherRa<half, uint16_t, int16_t>((__ubuf__ T1*)valuesUb.GetPhyAddr(),
+                                                               (__ubuf__ T2*)indiceUb.GetPhyAddr(),
+                                                               (__ubuf__ T1*)srcUb.GetPhyAddr(), processNum, rSize_);
     } else if constexpr (IsSameType<T1, float>::value || IsSameType<T1, int32_t>::value) {
-        this->template ArgMaxGatherRa<T1, uint32_t, int32_t>((__local_mem__ T1*)valuesUb.GetPhyAddr(),
-                                                             (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-                                                             (__local_mem__ T1*)srcUb.GetPhyAddr(), processNum, rSize_);
+        this->template ArgMaxGatherRa<T1, uint32_t, int32_t>((__ubuf__ T1*)valuesUb.GetPhyAddr(),
+                                                             (__ubuf__ T2*)indiceUb.GetPhyAddr(),
+                                                             (__ubuf__ T1*)srcUb.GetPhyAddr(), processNum, rSize_);
     } else if constexpr (IsSameType<T1, int64_t>::value) {
-        this->template ArgMaxGatherRaInt64<T1, uint64_t, int64_t>(
-            (__local_mem__ T1*)valuesUb.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), processNum, rSize_);
+        this->template ArgMaxGatherRaInt64<T1, uint64_t, int64_t>((__ubuf__ T1*)valuesUb.GetPhyAddr(),
+                                                                  (__ubuf__ T2*)indiceUb.GetPhyAddr(),
+                                                                  (__ubuf__ T1*)srcUb.GetPhyAddr(), processNum, rSize_);
     }
     inQueueX_.FreeTensor(srcUb);
 }

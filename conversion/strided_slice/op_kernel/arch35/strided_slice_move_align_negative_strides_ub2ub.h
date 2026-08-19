@@ -20,37 +20,35 @@
 
 #include "strided_slice_base.h"
 
-namespace StridedSlice
-{
+namespace StridedSlice {
 using namespace AscendC;
 
 template <typename T, typename U>
-class StridedSliceMoveAlignUb2Ub : public StridedSliceBase<T, U>
-{
+class StridedSliceMoveAlignUb2Ub : public StridedSliceBase<T, U> {
 public:
     __aicore__ inline StridedSliceMoveAlignUb2Ub(){};
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y,
-        const StridedSliceMAUB2UBTilingData *tdPtr, TPipe *pipe);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y, const StridedSliceMAUB2UBTilingData* tdPtr,
+                                TPipe* pipe);
     __aicore__ inline void Process();
 
 private:
-    __aicore__ inline void ProcessPerBlock(const DataCopyExtParams &copyOutParamsMain,
-                                           const DataCopyExtParams &copyOutParamsTail);
+    __aicore__ inline void ProcessPerBlock(const DataCopyExtParams& copyOutParamsMain,
+                                           const DataCopyExtParams& copyOutParamsTail);
     __aicore__ inline void ParseCopyInTilingData();
-    __aicore__ inline void ParseLoopModeAndMoveAlignParams(LoopModeParams &loopMode, DataCopyExtParams &extParams);
-    __aicore__ inline void SetCopyOutAlignParams(DataCopyExtParams &copyOutParams, const DataCopyExtParams &copyInParam,
-                                                 const LoopModeParams &loopMode);
+    __aicore__ inline void ParseLoopModeAndMoveAlignParams(LoopModeParams& loopMode, DataCopyExtParams& extParams);
+    __aicore__ inline void SetCopyOutAlignParams(DataCopyExtParams& copyOutParams, const DataCopyExtParams& copyInParam,
+                                                 const LoopModeParams& loopMode);
     __aicore__ inline void ProcessWithDataCopyGather(int64_t inGmAddr, int64_t outGmAddr,
-                                                     const LoopModeParams &loopMode,
-                                                     const DataCopyExtParams &copyInParam,
-                                                     const DataCopyExtParams &copyOutParam);
-    __aicore__ inline void ReorderSlice(const LoopModeParams &loopMode, const DataCopyExtParams &copyInParam,
-                                        __local_mem__ T *outAddr);
-    __aicore__ inline int64_t CalcRollbackOffset(const LoopModeParams &loopMode, const DataCopyExtParams &copyInParam);
+                                                     const LoopModeParams& loopMode,
+                                                     const DataCopyExtParams& copyInParam,
+                                                     const DataCopyExtParams& copyOutParam);
+    __aicore__ inline void ReorderSlice(const LoopModeParams& loopMode, const DataCopyExtParams& copyInParam,
+                                        __ubuf__ T* outAddr);
+    __aicore__ inline int64_t CalcRollbackOffset(const LoopModeParams& loopMode, const DataCopyExtParams& copyInParam);
 
 private:
-    TPipe *pipe_ = nullptr;
-    const StridedSliceMAUB2UBTilingData *tdPtr_ = nullptr;
+    TPipe* pipe_ = nullptr;
+    const StridedSliceMAUB2UBTilingData* tdPtr_ = nullptr;
     TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> inOutQue_;
     GlobalTensor<T> inputGM_;
     GlobalTensor<T> outputGM_;
@@ -69,12 +67,12 @@ private:
 
 template <typename T, typename U>
 __aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y,
-    const StridedSliceMAUB2UBTilingData *tdPtr, TPipe *pipe)
+                                                              const StridedSliceMAUB2UBTilingData* tdPtr, TPipe* pipe)
 {
     blockIdx_ = GetBlockIdx();
 
-    inputGM_.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(x));
-    outputGM_.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(y));
+    inputGM_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
+    outputGM_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(y));
 
     tdPtr_ = tdPtr;
     this->ParseBaseTilingDataV2(begin, &(tdPtr_->stridedSliceBaseTilingData), blockIdx_);
@@ -108,8 +106,8 @@ __aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::Process()
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::ParseLoopModeAndMoveAlignParams(LoopModeParams &loopMode,
-                                                                                       DataCopyExtParams &extParams)
+__aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::ParseLoopModeAndMoveAlignParams(LoopModeParams& loopMode,
+                                                                                         DataCopyExtParams& extParams)
 {
     loopMode.loop1Size = tdPtr_->moveAlignParams.loop1Size;
     loopMode.loop2Size = tdPtr_->moveAlignParams.loop2Size;
@@ -120,9 +118,9 @@ __aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::ParseLoopModeAndMoveAli
 
     extParams.blockCount = tdPtr_->moveAlignParams.blockCount;
     extParams.blockLen = tdPtr_->moveAlignParams.blockLen;
-    extParams.srcStride = (tdPtr_->moveAlignParams.srcStride > extParams.blockLen)
-                              ? tdPtr_->moveAlignParams.srcStride - extParams.blockLen
-                              : 0;
+    extParams.srcStride = (tdPtr_->moveAlignParams.srcStride > extParams.blockLen) ?
+                              tdPtr_->moveAlignParams.srcStride - extParams.blockLen :
+                              0;
     extParams.dstStride = 0;
 }
 
@@ -148,12 +146,13 @@ __aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::ParseCopyInTilingData()
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::SetCopyOutAlignParams(DataCopyExtParams &copyOutParams,
-                                                                             const DataCopyExtParams &copyInParam,
-                                                                             const LoopModeParams &loopMode)
+__aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::SetCopyOutAlignParams(DataCopyExtParams& copyOutParams,
+                                                                               const DataCopyExtParams& copyInParam,
+                                                                               const LoopModeParams& loopMode)
 {
-    uint32_t blockLen =
-        Ops::Base::CeilDiv(uint32_t(copyInParam.blockLen / sizeof(T)), uint32_t(std::abs(lastDimStride_))) * sizeof(T);
+    uint32_t blockLen = Ops::Base::CeilDiv(uint32_t(copyInParam.blockLen / sizeof(T)),
+                                           uint32_t(std::abs(lastDimStride_))) *
+                        sizeof(T);
     if (blockLen % BLOCK_SIZE_BYTE != 0) {
         copyOutParams.blockCount = loopMode.loop2Size * loopMode.loop1Size * copyInParam.blockCount;
         copyOutParams.blockLen = blockLen;
@@ -168,9 +167,9 @@ __aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::SetCopyOutAlignParams(D
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::ReorderSlice(const LoopModeParams &loopMode,
-                                                                   const DataCopyExtParams &copyInParam,
-                                                                   __local_mem__ T *outAddr)
+__aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::ReorderSlice(const LoopModeParams& loopMode,
+                                                                      const DataCopyExtParams& copyInParam,
+                                                                      __ubuf__ T* outAddr)
 {
     uint32_t axis0 = loopMode.loop2Size;
     uint32_t axis1 = loopMode.loop1Size;
@@ -184,8 +183,8 @@ __aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::ReorderSlice(const Loop
 
 template <typename T, typename U>
 __aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::ProcessWithDataCopyGather(
-    int64_t inGmAddr, int64_t outGmAddr, const LoopModeParams &loopMode, const DataCopyExtParams &copyInParam,
-    const DataCopyExtParams &copyOutParam)
+    int64_t inGmAddr, int64_t outGmAddr, const LoopModeParams& loopMode, const DataCopyExtParams& copyInParam,
+    const DataCopyExtParams& copyOutParam)
 {
     DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
 
@@ -200,7 +199,7 @@ __aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::ProcessWithDataCopyGath
     SetFlag<HardEvent::MTE2_V>(eventID0);
     WaitFlag<HardEvent::MTE2_V>(eventID0);
 
-    ReorderSlice(loopMode, copyInParam, (__local_mem__ T *)inTensor.GetPhyAddr());
+    ReorderSlice(loopMode, copyInParam, (__ubuf__ T*)inTensor.GetPhyAddr());
 
     event_t eventID1 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
     SetFlag<HardEvent::V_MTE3>(eventID1);
@@ -211,8 +210,8 @@ __aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::ProcessWithDataCopyGath
 }
 
 template <typename T, typename U>
-__aicore__ inline int64_t StridedSliceMoveAlignUb2Ub<T, U>::CalcRollbackOffset(const LoopModeParams &loopMode,
-                                                                             const DataCopyExtParams &copyInParam)
+__aicore__ inline int64_t StridedSliceMoveAlignUb2Ub<T, U>::CalcRollbackOffset(const LoopModeParams& loopMode,
+                                                                               const DataCopyExtParams& copyInParam)
 {
     int64_t backOffset = 0;
 
@@ -233,8 +232,8 @@ __aicore__ inline int64_t StridedSliceMoveAlignUb2Ub<T, U>::CalcRollbackOffset(c
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::ProcessPerBlock(const DataCopyExtParams &copyOutParamsMain,
-                                                                       const DataCopyExtParams &copyOutParamsTail)
+__aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::ProcessPerBlock(const DataCopyExtParams& copyOutParamsMain,
+                                                                         const DataCopyExtParams& copyOutParamsTail)
 {
     int64_t inputGmAddr = 0;
     int64_t outputGmAddr = 0;

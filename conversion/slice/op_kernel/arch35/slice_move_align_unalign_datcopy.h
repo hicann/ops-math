@@ -168,9 +168,9 @@ template <typename T, typename U, typename V>
 __aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U, V>::DataCopyUnalignGather(uint32_t blockCount)
 {
     auto inTensor = inQue_.DeQue<T>();
-    __local_mem__ T* srcPtr = (__local_mem__ T*)inTensor.GetPhyAddr();
+    __ubuf__ T* srcPtr = (__ubuf__ T*)inTensor.GetPhyAddr();
     auto outTensor = outQue_.AllocTensor<T>();
-    __local_mem__ T* dstPtr = (__local_mem__ T*)outTensor.GetPhyAddr();
+    __ubuf__ T* dstPtr = (__ubuf__ T*)outTensor.GetPhyAddr();
     uint32_t lastOneDimBegin = this->begin_[this->inputDims_ - 1];
     uint32_t lastOneInputDim = tdPtr_->lastOneInputDim;
     uint32_t lastOneOutputDim = this->outputShape_[this->inputDims_ - 1];
@@ -182,20 +182,20 @@ __aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U, V>::DataCopyUnalignGa
     __VEC_SCOPE__
     {
         Reg::RegTensor<T> vd0;
-        Reg::UnalignReg u0;
-        Reg::UnalignReg u1;
+        Reg::UnalignRegForLoad u0;
+        Reg::UnalignRegForLoad u1;
 
         for (uint16_t i = 0; i < (uint16_t)blockCount; i++) {
             uint32_t blockCountInputOffest = i * perLoopInputPadElem + lastOneDimBegin;
             uint32_t blockCountOutputOffest = i * perLoopOutputPadElem;
-            __local_mem__ T* srcPtr1 = srcPtr + blockCountInputOffest;
-            __local_mem__ T* dstPtr1 = dstPtr + blockCountOutputOffest;
-            Reg::DataCopyUnAlignPre(u0, srcPtr1);
+            __ubuf__ T* srcPtr1 = srcPtr + blockCountInputOffest;
+            __ubuf__ T* dstPtr1 = dstPtr + blockCountOutputOffest;
+            Reg::LoadUnAlignPre(u0, srcPtr1);
             for (uint16_t j = 0; j < (uint16_t)repeatTimes; j++) {
-                Reg::DataCopyUnAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(vd0, u0, srcPtr1, lastOneInputDim);
-                Reg::DataCopyUnAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(dstPtr1, vd0, u1, lastOneOutputDim);
+                Reg::LoadUnAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(vd0, u0, srcPtr1, lastOneInputDim);
+                Reg::StoreUnAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(dstPtr1, vd0, u1, lastOneOutputDim);
             }
-            Reg::DataCopyUnAlignPost<T, Reg::PostLiteral::POST_MODE_UPDATE>(dstPtr1, u1, 0);
+            Reg::StoreUnAlignPost<T, Reg::PostLiteral::POST_MODE_UPDATE>(dstPtr1, u1, 0);
         }
     }
     inQue_.FreeTensor(inTensor);

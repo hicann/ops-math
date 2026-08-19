@@ -48,23 +48,18 @@ private:
     __aicore__ inline void ProcessNoSplitM(uint32_t bOffset, uint32_t pOffset, uint32_t rOffsetBlock,
                                            uint32_t blockFactorR);
     __aicore__ inline void CalSplitMResult(int32_t processNum);
-    __aicore__ inline void ComputeOneSize(__local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
-                                          __local_mem__ float* dstPtr);
+    __aicore__ inline void ComputeOneSize(__ubuf__ float* srcPtrX1, __ubuf__ float* srcPtrX2, __ubuf__ float* dstPtr);
     __aicore__ inline void ComputePNorm2(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-                                         __local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
-                                         __local_mem__ float* dstPtr);
+                                         __ubuf__ float* srcPtrX1, __ubuf__ float* srcPtrX2, __ubuf__ float* dstPtr);
     __aicore__ inline void ComputePNorm1(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-                                         __local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
-                                         __local_mem__ float* dstPtr);
+                                         __ubuf__ float* srcPtrX1, __ubuf__ float* srcPtrX2, __ubuf__ float* dstPtr);
     __aicore__ inline void ComputePNorm0(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-                                         __local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
-                                         __local_mem__ float* dstPtr);
+                                         __ubuf__ float* srcPtrX1, __ubuf__ float* srcPtrX2, __ubuf__ float* dstPtr);
     __aicore__ inline void ComputePNormInf(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-                                           __local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
-                                           __local_mem__ float* dstPtr);
+                                           __ubuf__ float* srcPtrX1, __ubuf__ float* srcPtrX2, __ubuf__ float* dstPtr);
     __aicore__ inline void ComputePNormOther(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-                                             __local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
-                                             __local_mem__ float* dstPtr);
+                                             __ubuf__ float* srcPtrX1, __ubuf__ float* srcPtrX2,
+                                             __ubuf__ float* dstPtr);
 
 private:
     constexpr static int32_t BUFFER_NUM = 2;
@@ -324,9 +319,9 @@ __aicore__ inline void Cdist<T>::Compute()
         x2Local = x2Queue_.DeQue<T>();
         yFp32_ = yQueue_.DeQue<float>();
     }
-    auto* srcPtrX1 = (__local_mem__ float*)x1Local.GetPhyAddr();
-    auto* srcPtrX2 = (__local_mem__ float*)x2Local.GetPhyAddr();
-    auto* dstPtr = (__local_mem__ float*)yFp32_.GetPhyAddr();
+    auto* srcPtrX1 = (__ubuf__ float*)x1Local.GetPhyAddr();
+    auto* srcPtrX2 = (__ubuf__ float*)x2Local.GetPhyAddr();
+    auto* dstPtr = (__ubuf__ float*)yFp32_.GetPhyAddr();
     ComputeOneSize(srcPtrX1, srcPtrX2, dstPtr);
     if constexpr (sizeof(T) != sizeof(float)) {
         yCastQueue_.EnQue(yFp32_);
@@ -355,9 +350,9 @@ __aicore__ inline void Cdist<T>::ComputeSplitM()
         yFp32_ = yQueue_.DeQue<float>();
     }
     tmpLocal_ = tmpQueue_.DeQue<float>();
-    auto* dstPtr = (__local_mem__ float*)tmpLocal_.GetPhyAddr();
-    auto* srcPtrX1 = (__local_mem__ float*)x1LocalSplitM.GetPhyAddr();
-    auto* srcPtrX2 = (__local_mem__ float*)x2LocalSplitM.GetPhyAddr();
+    auto* dstPtr = (__ubuf__ float*)tmpLocal_.GetPhyAddr();
+    auto* srcPtrX1 = (__ubuf__ float*)x1LocalSplitM.GetPhyAddr();
+    auto* srcPtrX2 = (__ubuf__ float*)x2LocalSplitM.GetPhyAddr();
     ComputeOneSize(srcPtrX1, srcPtrX2, dstPtr);
     if (p_ == static_cast<float>(INFINITY)) {
         Max(yFp32_, tmpLocal_, yFp32_, processNum);
@@ -377,8 +372,8 @@ __aicore__ inline void Cdist<T>::ComputeSplitM()
 }
 
 template <typename T>
-__aicore__ inline void Cdist<T>::ComputeOneSize(__local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
-                                                __local_mem__ float* dstPtr)
+__aicore__ inline void Cdist<T>::ComputeOneSize(__ubuf__ float* srcPtrX1, __ubuf__ float* srcPtrX2,
+                                                __ubuf__ float* dstPtr)
 {
     uint16_t M = (ubLoopNumM_ == 1) ? M_ : mSize_;
     uint16_t loopNumM = M / vlLen_;
@@ -404,12 +399,12 @@ __aicore__ inline void Cdist<T>::ComputeOneSize(__local_mem__ float* srcPtrX1, _
 
 template <typename T>
 __aicore__ inline void Cdist<T>::ComputePNorm2(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-                                               __local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
-                                               __local_mem__ float* dstPtr)
+                                               __ubuf__ float* srcPtrX1, __ubuf__ float* srcPtrX2,
+                                               __ubuf__ float* dstPtr)
 {
     uint32_t maksTailNumNorm2 = tailNumM;
     uint32_t maskOneNumNorm2 = BASE_ONE;
-    __local_mem__ float* yOffsetNorm2 = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
+    __ubuf__ float* yOffsetNorm2 = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
     __VEC_SCOPE__
     {
         Reg::RegTensor<float> x1RegNorm2;
@@ -429,22 +424,22 @@ __aicore__ inline void Cdist<T>::ComputePNorm2(uint32_t b, uint32_t p, uint32_t 
                                                            SqrtAlgo::PRECISION_0ULP_FTZ_FALSE};
         Reg::Duplicate(dstRegNorm2, (float)0);
         for (uint16_t m = 0; m < loopNumM; m++) {
-            __local_mem__ float* x1OffsetNorm2 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
-            __local_mem__ float* x2OffsetNorm2 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
+            __ubuf__ float* x1OffsetNorm2 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
+            __ubuf__ float* x2OffsetNorm2 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
             Reg::LoadAlign(x1RegNorm2, x1OffsetNorm2);
             Reg::LoadAlign(x2RegNorm2, x2OffsetNorm2);
             Reg::Sub(subRegNorm2, x1RegNorm2, x2RegNorm2, maskAllNorm2);
             Reg::Mul(mulRegNorm2, subRegNorm2, subRegNorm2, maskAllNorm2);
-            Reg::ReduceSum(sumRegNorm2, mulRegNorm2, maskAllNorm2);
+            Reg::Reduce<Reg::ReduceType::SUM>(sumRegNorm2, mulRegNorm2, maskAllNorm2);
             Reg::Add(dstRegNorm2, dstRegNorm2, sumRegNorm2, maskOneNorm2);
         }
-        __local_mem__ float* x1OffsetNorm2 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
-        __local_mem__ float* x2OffsetNorm2 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
+        __ubuf__ float* x1OffsetNorm2 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
+        __ubuf__ float* x2OffsetNorm2 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
         Reg::LoadAlign(x1RegNorm2, x1OffsetNorm2);
         Reg::LoadAlign(x2RegNorm2, x2OffsetNorm2);
         Reg::Sub(subRegNorm2, x1RegNorm2, x2RegNorm2, maskTailNorm2);
         Reg::Mul(mulRegNorm2, subRegNorm2, subRegNorm2, maskTailNorm2);
-        Reg::ReduceSum(sumRegNorm2, mulRegNorm2, maskTailNorm2);
+        Reg::Reduce<Reg::ReduceType::SUM>(sumRegNorm2, mulRegNorm2, maskTailNorm2);
         Reg::Add(dstRegNorm2, dstRegNorm2, sumRegNorm2, maskOneNorm2);
         if (ubLoopNumM_ == 1) {
             Reg::Sqrt<float, &modesqrt>(resultRegNorm2, dstRegNorm2, maskOneNorm2);
@@ -458,12 +453,12 @@ __aicore__ inline void Cdist<T>::ComputePNorm2(uint32_t b, uint32_t p, uint32_t 
 
 template <typename T>
 __aicore__ inline void Cdist<T>::ComputePNorm1(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-                                               __local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
-                                               __local_mem__ float* dstPtr)
+                                               __ubuf__ float* srcPtrX1, __ubuf__ float* srcPtrX2,
+                                               __ubuf__ float* dstPtr)
 {
     uint32_t maksTailNumNorm1 = tailNumM;
     uint32_t maskOneNumNorm1 = BASE_ONE;
-    __local_mem__ float* yOffsetNorm1 = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
+    __ubuf__ float* yOffsetNorm1 = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
     __VEC_SCOPE__
     {
         Reg::RegTensor<float> x1RegNorm1;
@@ -480,22 +475,22 @@ __aicore__ inline void Cdist<T>::ComputePNorm1(uint32_t b, uint32_t p, uint32_t 
         maskOneNorm1 = Reg::UpdateMask<float>(maskOneNumNorm1);
         Reg::Duplicate(dstRegNorm1, (float)0);
         for (uint16_t m = 0; m < loopNumM; m++) {
-            __local_mem__ float* x1OffsetNorm1 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
-            __local_mem__ float* x2OffsetNorm1 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
+            __ubuf__ float* x1OffsetNorm1 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
+            __ubuf__ float* x2OffsetNorm1 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
             Reg::LoadAlign(x1RegNorm1, x1OffsetNorm1);
             Reg::LoadAlign(x2RegNorm1, x2OffsetNorm1);
             Reg::Sub(subRegNorm1, x1RegNorm1, x2RegNorm1, maskAllNorm1);
             Reg::Abs(absRegNorm1, subRegNorm1, maskAllNorm1);
-            Reg::ReduceSum(sumRegNorm1, absRegNorm1, maskAllNorm1);
+            Reg::Reduce<Reg::ReduceType::SUM>(sumRegNorm1, absRegNorm1, maskAllNorm1);
             Reg::Add(dstRegNorm1, dstRegNorm1, sumRegNorm1, maskOneNorm1);
         }
-        __local_mem__ float* x1OffsetNorm1 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
-        __local_mem__ float* x2OffsetNorm1 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
+        __ubuf__ float* x1OffsetNorm1 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
+        __ubuf__ float* x2OffsetNorm1 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
         Reg::LoadAlign(x1RegNorm1, x1OffsetNorm1);
         Reg::LoadAlign(x2RegNorm1, x2OffsetNorm1);
         Reg::Sub(subRegNorm1, x1RegNorm1, x2RegNorm1, maskTailNorm1);
         Reg::Abs(absRegNorm1, subRegNorm1, maskTailNorm1);
-        Reg::ReduceSum(sumRegNorm1, absRegNorm1, maskTailNorm1);
+        Reg::Reduce<Reg::ReduceType::SUM>(sumRegNorm1, absRegNorm1, maskTailNorm1);
         Reg::Add(dstRegNorm1, dstRegNorm1, sumRegNorm1, maskOneNorm1);
         Reg::StoreUnAlign(yOffsetNorm1, dstRegNorm1, uRegNorm1, BASE_ONE);
         Reg::StoreUnAlignPost(yOffsetNorm1, uRegNorm1, 0);
@@ -504,12 +499,12 @@ __aicore__ inline void Cdist<T>::ComputePNorm1(uint32_t b, uint32_t p, uint32_t 
 
 template <typename T>
 __aicore__ inline void Cdist<T>::ComputePNorm0(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM, uint32_t tailNumM,
-                                               __local_mem__ float* srcPtrX1, __local_mem__ float* srcPtrX2,
-                                               __local_mem__ float* dstPtr)
+                                               __ubuf__ float* srcPtrX1, __ubuf__ float* srcPtrX2,
+                                               __ubuf__ float* dstPtr)
 {
     uint32_t maksTailNumNorm0 = tailNumM;
     uint32_t maskOneNumNorm0 = BASE_ONE;
-    __local_mem__ float* yOffsetNorm0 = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
+    __ubuf__ float* yOffsetNorm0 = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
     __VEC_SCOPE__
     {
         Reg::RegTensor<float> x1RegNorm0;
@@ -528,8 +523,8 @@ __aicore__ inline void Cdist<T>::ComputePNorm0(uint32_t b, uint32_t p, uint32_t 
         maskOneNorm0 = Reg::UpdateMask<float>(maskOneNumNorm0);
         Reg::Duplicate(dstRegNorm0, (float)0);
         for (uint16_t m = 0; m < loopNumM; m++) {
-            __local_mem__ float* x1OffsetNorm0 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
-            __local_mem__ float* x2OffsetNorm0 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
+            __ubuf__ float* x1OffsetNorm0 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
+            __ubuf__ float* x2OffsetNorm0 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
             Reg::LoadAlign(x1RegNorm0, x1OffsetNorm0);
             Reg::LoadAlign(x2RegNorm0, x2OffsetNorm0);
             Reg::Sub(subRegNorm0, x1RegNorm0, x2RegNorm0, maskAllNorm0);
@@ -537,11 +532,11 @@ __aicore__ inline void Cdist<T>::ComputePNorm0(uint32_t b, uint32_t p, uint32_t 
             Reg::Truncate<float, RoundMode::CAST_CEIL, Reg::MaskMergeMode::ZEROING>(castRegNorm0, absRegNorm0,
                                                                                     maskAllNorm0);
             Reg::Mins(minRegNorm0, castRegNorm0, (float)1, maskAllNorm0);
-            Reg::ReduceSum(sumRegNorm0, minRegNorm0, maskAllNorm0);
+            Reg::Reduce<Reg::ReduceType::SUM>(sumRegNorm0, minRegNorm0, maskAllNorm0);
             Reg::Add(dstRegNorm0, dstRegNorm0, sumRegNorm0, maskOneNorm0);
         }
-        __local_mem__ float* x1OffsetNorm0 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
-        __local_mem__ float* x2OffsetNorm0 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
+        __ubuf__ float* x1OffsetNorm0 = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
+        __ubuf__ float* x2OffsetNorm0 = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
         Reg::LoadAlign(x1RegNorm0, x1OffsetNorm0);
         Reg::LoadAlign(x2RegNorm0, x2OffsetNorm0);
         Reg::Sub(subRegNorm0, x1RegNorm0, x2RegNorm0, maskTailNorm0);
@@ -549,7 +544,7 @@ __aicore__ inline void Cdist<T>::ComputePNorm0(uint32_t b, uint32_t p, uint32_t 
         Reg::Truncate<float, RoundMode::CAST_CEIL, Reg::MaskMergeMode::ZEROING>(castRegNorm0, absRegNorm0,
                                                                                 maskTailNorm0);
         Reg::Mins(minRegNorm0, castRegNorm0, (float)1, maskTailNorm0);
-        Reg::ReduceSum(sumRegNorm0, minRegNorm0, maskTailNorm0);
+        Reg::Reduce<Reg::ReduceType::SUM>(sumRegNorm0, minRegNorm0, maskTailNorm0);
         Reg::Add(dstRegNorm0, dstRegNorm0, sumRegNorm0, maskOneNorm0);
         Reg::StoreUnAlign(yOffsetNorm0, dstRegNorm0, uRegNorm0, BASE_ONE);
         Reg::StoreUnAlignPost(yOffsetNorm0, uRegNorm0, 0);
@@ -558,12 +553,12 @@ __aicore__ inline void Cdist<T>::ComputePNorm0(uint32_t b, uint32_t p, uint32_t 
 
 template <typename T>
 __aicore__ inline void Cdist<T>::ComputePNormInf(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM,
-                                                 uint32_t tailNumM, __local_mem__ float* srcPtrX1,
-                                                 __local_mem__ float* srcPtrX2, __local_mem__ float* dstPtr)
+                                                 uint32_t tailNumM, __ubuf__ float* srcPtrX1, __ubuf__ float* srcPtrX2,
+                                                 __ubuf__ float* dstPtr)
 {
     uint32_t maksTailNumNormInf = tailNumM;
     uint32_t maskOneNumNormInf = BASE_ONE;
-    __local_mem__ float* yOffsetNormInf = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
+    __ubuf__ float* yOffsetNormInf = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
     __VEC_SCOPE__
     {
         Reg::RegTensor<float> x1RegNormInf;
@@ -580,22 +575,22 @@ __aicore__ inline void Cdist<T>::ComputePNormInf(uint32_t b, uint32_t p, uint32_
         maskOneNormInf = Reg::UpdateMask<float>(maskOneNumNormInf);
         Reg::Duplicate(dstRegNormInf, (float)0);
         for (uint16_t m = 0; m < loopNumM; m++) {
-            __local_mem__ float* x1OffsetNormInf = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
-            __local_mem__ float* x2OffsetNormInf = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
+            __ubuf__ float* x1OffsetNormInf = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
+            __ubuf__ float* x2OffsetNormInf = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
             Reg::LoadAlign(x1RegNormInf, x1OffsetNormInf);
             Reg::LoadAlign(x2RegNormInf, x2OffsetNormInf);
             Reg::Sub(subRegNormInf, x1RegNormInf, x2RegNormInf, maskAllNormInf);
             Reg::Abs(absRegNormInf, subRegNormInf, maskAllNormInf);
-            Reg::ReduceMax(maxRegNormInf, absRegNormInf, maskAllNormInf);
+            Reg::Reduce<Reg::ReduceType::MAX>(maxRegNormInf, absRegNormInf, maskAllNormInf);
             Reg::Max(dstRegNormInf, maxRegNormInf, dstRegNormInf, maskOneNormInf);
         }
-        __local_mem__ float* x1OffsetNormInf = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
-        __local_mem__ float* x2OffsetNormInf = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
+        __ubuf__ float* x1OffsetNormInf = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
+        __ubuf__ float* x2OffsetNormInf = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
         Reg::LoadAlign(x1RegNormInf, x1OffsetNormInf);
         Reg::LoadAlign(x2RegNormInf, x2OffsetNormInf);
         Reg::Sub(subRegNormInf, x1RegNormInf, x2RegNormInf, maskTailNormInf);
         Reg::Abs(absRegNormInf, subRegNormInf, maskAllNormInf);
-        Reg::ReduceMax(maxRegNormInf, absRegNormInf, maskAllNormInf);
+        Reg::Reduce<Reg::ReduceType::MAX>(maxRegNormInf, absRegNormInf, maskAllNormInf);
         Reg::Max(dstRegNormInf, maxRegNormInf, dstRegNormInf, maskOneNormInf);
         Reg::StoreUnAlign(yOffsetNormInf, dstRegNormInf, uRegNormInf, BASE_ONE);
         Reg::StoreUnAlignPost(yOffsetNormInf, uRegNormInf, 0);
@@ -604,12 +599,12 @@ __aicore__ inline void Cdist<T>::ComputePNormInf(uint32_t b, uint32_t p, uint32_
 
 template <typename T>
 __aicore__ inline void Cdist<T>::ComputePNormOther(uint32_t b, uint32_t p, uint32_t r, uint16_t loopNumM,
-                                                   uint32_t tailNumM, __local_mem__ float* srcPtrX1,
-                                                   __local_mem__ float* srcPtrX2, __local_mem__ float* dstPtr)
+                                                   uint32_t tailNumM, __ubuf__ float* srcPtrX1,
+                                                   __ubuf__ float* srcPtrX2, __ubuf__ float* dstPtr)
 {
     uint32_t maksTailNum = tailNumM;
     uint32_t maskOneNum = BASE_ONE;
-    __local_mem__ float* yOffset = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
+    __ubuf__ float* yOffset = dstPtr + b * pSize_ * RAlign_ + p * RAlign_ + r;
     __VEC_SCOPE__
     {
         Reg::RegTensor<float> x1Reg;
@@ -634,8 +629,8 @@ __aicore__ inline void Cdist<T>::ComputePNormOther(uint32_t b, uint32_t p, uint3
         static constexpr Reg::LogSpecificMode modelog = {Reg::MaskMergeMode::ZEROING,
                                                          LogAlgo::PRECISION_1ULP_FTZ_FALSE};
         for (uint16_t m = 0; m < loopNumM; m++) {
-            __local_mem__ float* x1Offset = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
-            __local_mem__ float* x2Offset = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
+            __ubuf__ float* x1Offset = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * m;
+            __ubuf__ float* x2Offset = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * m;
             Reg::LoadAlign(x1Reg, x1Offset);
             Reg::LoadAlign(x2Reg, x2Offset);
             Reg::Sub(subReg, x1Reg, x2Reg, maskAll);
@@ -643,11 +638,11 @@ __aicore__ inline void Cdist<T>::ComputePNormOther(uint32_t b, uint32_t p, uint3
             Reg::Log<float, &modelog>(logReg, absReg, maskAll);
             Reg::Muls(mulReg, logReg, (float)p_, maskAll);
             Reg::Exp<float, &modeexp>(expReg, mulReg, maskAll);
-            Reg::ReduceSum(sumReg, expReg, maskAll);
+            Reg::Reduce<Reg::ReduceType::SUM>(sumReg, expReg, maskAll);
             Reg::Add(dstReg, dstReg, sumReg, maskOne);
         }
-        __local_mem__ float* x1Offset = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
-        __local_mem__ float* x2Offset = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
+        __ubuf__ float* x1Offset = srcPtrX1 + b * pSize_ * MAlign_ + p * MAlign_ + vlLen_ * loopNumM;
+        __ubuf__ float* x2Offset = srcPtrX2 + b * rSize_ * MAlign_ + r * MAlign_ + vlLen_ * loopNumM;
         Reg::LoadAlign(x1Reg, x1Offset);
         Reg::LoadAlign(x2Reg, x2Offset);
         Reg::Sub(subReg, x1Reg, x2Reg, maskTail);
@@ -655,7 +650,7 @@ __aicore__ inline void Cdist<T>::ComputePNormOther(uint32_t b, uint32_t p, uint3
         Reg::Log<float, &modelog>(logReg, absReg, maskTail);
         Reg::Muls(mulReg, logReg, (float)p_, maskTail);
         Reg::Exp<float, &modeexp>(expReg, mulReg, maskTail);
-        Reg::ReduceSum(sumReg, expReg, maskTail);
+        Reg::Reduce<Reg::ReduceType::SUM>(sumReg, expReg, maskTail);
         Reg::Add(dstReg, dstReg, sumReg, maskOne);
         if (ubLoopNumM_ == 1) {
             Reg::Log<float, &modelog>(logReg, dstReg, maskOne);

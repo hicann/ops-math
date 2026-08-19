@@ -328,8 +328,8 @@ __aicore__ inline void ArgMaxWithValueArACutAAndNextA<T1, T2, T3, withValue, isM
                   rLoopIdx * ubFactorR_);
         inQueueX_.FreeTensor(xLocal);
         this->template UpdateResult<T1, false>(
-            (__local_mem__ T2*)tempIndiceUb.GetPhyAddr(), (__local_mem__ T1*)tempValueUb.GetPhyAddr(),
-            (__local_mem__ T2*)indiceUb.GetPhyAddr(), (__local_mem__ T1*)valuesUb.GetPhyAddr(), aUbLength * nextAAlign);
+            (__ubuf__ T2*)tempIndiceUb.GetPhyAddr(), (__ubuf__ T1*)tempValueUb.GetPhyAddr(),
+            (__ubuf__ T2*)indiceUb.GetPhyAddr(), (__ubuf__ T1*)valuesUb.GetPhyAddr(), aUbLength * nextAAlign);
     }
 }
 
@@ -340,16 +340,16 @@ __aicore__ inline void ArgMaxWithValueArACutAAndNextA<T1, T2, T3, withValue, isM
 {
     if constexpr (IsSameType<T1, int64_t>::value) {
         this->template ArgMaxAraUnAlignInt64<int64_t, uint64_t>(
-            (__local_mem__ T1*)valuesUb.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), aUbLength, rUbLength, nextAUbLength, srcDimA1, dstDimA1, startR);
+            (__ubuf__ T1*)valuesUb.GetPhyAddr(), (__ubuf__ T2*)indiceUb.GetPhyAddr(), (__ubuf__ T1*)srcUb.GetPhyAddr(),
+            aUbLength, rUbLength, nextAUbLength, srcDimA1, dstDimA1, startR);
     } else if constexpr (IsSameType<T1, half>::value || IsSameType<T1, bfloat16_t>::value) {
         this->template ArgMaxAraUnAlign<T1, uint16_t>(
-            (__local_mem__ T1*)valuesUb.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), aUbLength, rUbLength, nextAUbLength, srcDimA1, dstDimA1, startR);
+            (__ubuf__ T1*)valuesUb.GetPhyAddr(), (__ubuf__ T2*)indiceUb.GetPhyAddr(), (__ubuf__ T1*)srcUb.GetPhyAddr(),
+            aUbLength, rUbLength, nextAUbLength, srcDimA1, dstDimA1, startR);
     } else {
         this->template ArgMaxAraUnAlign<T1, uint32_t>(
-            (__local_mem__ T1*)valuesUb.GetPhyAddr(), (__local_mem__ T2*)indiceUb.GetPhyAddr(),
-            (__local_mem__ T1*)srcUb.GetPhyAddr(), aUbLength, rUbLength, nextAUbLength, srcDimA1, dstDimA1, startR);
+            (__ubuf__ T1*)valuesUb.GetPhyAddr(), (__ubuf__ T2*)indiceUb.GetPhyAddr(), (__ubuf__ T1*)srcUb.GetPhyAddr(),
+            aUbLength, rUbLength, nextAUbLength, srcDimA1, dstDimA1, startR);
     }
 }
 

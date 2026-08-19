@@ -138,17 +138,17 @@ __aicore__ inline void RollUnaliegnedSimd<T>::GaTher(int32_t Addr, uint16_t repe
     __VEC_SCOPE__
     {
         Reg::RegTensor<T> dst0;
-        Reg::UnalignReg u0;
-        Reg::UnalignReg u1;
+        Reg::UnalignRegForLoad u0;
+        Reg::UnalignRegForLoad u1;
         auto dstPtr = (__ubuf__ T*)AlienTensor.GetPhyAddr();
         auto srcPtr = (__ubuf__ T*)xTensor.GetPhyAddr();
         for (uint16_t i = 0; i < repeatnum; i++) {
             auto srcUbT = srcPtr + Addr + i * strides;
-            Reg::DataCopyUnAlignPre(u0, srcUbT);
-            Reg::DataCopyUnAlign(dst0, u0, srcUbT);
-            Reg::DataCopyUnAlign(dstPtr, dst0, u1, dstStride);
+            Reg::LoadUnAlignPre(u0, srcUbT);
+            Reg::LoadUnAlign(dst0, u0, srcUbT);
+            Reg::StoreUnAlign(dstPtr, dst0, u1, dstStride);
         }
-        Reg::DataCopyUnAlignPost(dstPtr, u1, 0);
+        Reg::StoreUnAlignPost(dstPtr, u1, 0);
     }
     AlienBuf.EnQue<T>(AlienTensor);
     xInQue_.EnQue<T>(xTensor);

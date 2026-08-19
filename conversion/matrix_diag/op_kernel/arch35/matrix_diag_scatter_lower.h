@@ -37,13 +37,11 @@ private:
     __aicore__ inline void CopyOut(uint64_t i, int64_t totalNum);
     __aicore__ inline void genIndex();
     __aicore__ inline void VFProcess(uint32_t maskNum0, uint32_t processNum, uint32_t totalNum, U addrOffset,
-                                     uint16_t loopNum, __local_mem__ U* idxPtr, __local_mem__ T* srcPtr,
-                                     __local_mem__ T* dstPtr);
+                                     uint16_t loopNum, __ubuf__ U* idxPtr, __ubuf__ T* srcPtr, __ubuf__ T* dstPtr);
     __aicore__ inline void VFProcessInt8(uint32_t maskNumInt8, uint32_t processNum, uint32_t totalNum, U addrOffset,
-                                         uint16_t loopNum, __local_mem__ U* idxPtr, __local_mem__ T* srcPtr,
-                                         __local_mem__ T* dstPtr);
+                                         uint16_t loopNum, __ubuf__ U* idxPtr, __ubuf__ T* srcPtr, __ubuf__ T* dstPtr);
     __aicore__ inline void MainProcess(uint64_t loop, uint32_t maskNum, uint32_t processNum, uint32_t totalNum,
-                                       U addrOffset, uint16_t loopNum, __local_mem__ U* idxPtr);
+                                       U addrOffset, uint16_t loopNum, __ubuf__ U* idxPtr);
 
 private:
     constexpr static int32_t BUFFER_NUM = 2;
@@ -98,7 +96,7 @@ __aicore__ inline void MatrixDiagScatterLower<T, U, Y>::genIndex()
 {
     uint32_t num = vlLen_;
     LocalTensor<Y> indexLocal = indexBuf_.AllocTensor<Y>();
-    __local_mem__ U* dst = (__local_mem__ U*)indexLocal.GetPhyAddr();
+    __ubuf__ U* dst = (__ubuf__ U*)indexLocal.GetPhyAddr();
     __VEC_SCOPE__
     {
         Reg::RegTensor<Y> indexReg;
@@ -120,7 +118,7 @@ __aicore__ inline void MatrixDiagScatterLower<T, U, Y>::genIndex()
         Reg::Add(addReg, tmp1, tmp2, mask);
         Reg::Muls(tmp3, tmp2, U(nSize_), mask);
         Reg::Add(addReg, addReg, tmp3, mask);
-        Reg::DataCopy(dst, addReg, mask);
+        Reg::StoreAlign(dst, addReg, mask);
     }
     indexBuf_.EnQue(indexLocal);
 }
@@ -184,15 +182,14 @@ __aicore__ inline void MatrixDiagScatterLower<T, U, Y>::Process()
 template <typename T, typename U, typename Y>
 __aicore__ inline void MatrixDiagScatterLower<T, U, Y>::MainProcess(uint64_t loop, uint32_t maskNum,
                                                                     uint32_t processNum, uint32_t totalNum,
-                                                                    U addrOffset, uint16_t loopNum,
-                                                                    __local_mem__ U* idxPtr)
+                                                                    U addrOffset, uint16_t loopNum, __ubuf__ U* idxPtr)
 {
     CopyIn(loop, totalNum);
     LocalTensor<T> xLocal = xQueue_.DeQue<T>();
     LocalTensor<T> yLocal = yQueue_.AllocTensor<T>();
     Duplicate<T>(yLocal, (T)0, totalNum * nSize_);
-    auto* srcPtr = (__local_mem__ T*)xLocal.GetPhyAddr();
-    auto* dstPtr = (__local_mem__ T*)yLocal.GetPhyAddr();
+    auto* srcPtr = (__ubuf__ T*)xLocal.GetPhyAddr();
+    auto* dstPtr = (__ubuf__ T*)yLocal.GetPhyAddr();
     if constexpr (sizeof(T) == sizeof(int8_t)) {
         VFProcessInt8(maskNum, processNum, totalNum, addrOffset, loopNum, idxPtr, srcPtr, dstPtr);
     } else {
@@ -211,7 +208,7 @@ __aicore__ inline void MatrixDiagScatterLower<T, U, Y>::ProcessPerCore(uint64_t 
     uint32_t processNum = totalNum <= vlLen_ ? totalNum : batchNum_ * nSize_;
     uint16_t loopNum = totalNum / processNum;
     LocalTensor<Y> indexLocal = indexBuf_.DeQue<Y>();
-    auto* idxPtr = (__local_mem__ U*)indexLocal.GetPhyAddr();
+    auto* idxPtr = (__ubuf__ U*)indexLocal.GetPhyAddr();
     U addrOffset = processNum * nSize_;
     uint32_t maskNum0 = processNum;
     for (uint64_t i = 0; i < ubLoopNum; i++) {
@@ -228,8 +225,8 @@ __aicore__ inline void MatrixDiagScatterLower<T, U, Y>::ProcessPerCore(uint64_t 
 template <typename T, typename U, typename Y>
 __aicore__ inline void MatrixDiagScatterLower<T, U, Y>::VFProcess(uint32_t maskNum0, uint32_t processNum,
                                                                   uint32_t totalNum, U addrOffset, uint16_t loopNum,
-                                                                  __local_mem__ U* idxPtr, __local_mem__ T* srcPtr,
-                                                                  __local_mem__ T* dstPtr)
+                                                                  __ubuf__ U* idxPtr, __ubuf__ T* srcPtr,
+                                                                  __ubuf__ T* dstPtr)
 {
     uint32_t tailNum = totalNum - processNum * loopNum;
     uint32_t maskTailNum = tailNum;
@@ -240,22 +237,22 @@ __aicore__ inline void MatrixDiagScatterLower<T, U, Y>::VFProcess(uint32_t maskN
         Reg::RegTensor<U> indexReg;
         Reg::RegTensor<T> lowerReg;
         Reg::RegTensor<T> higherReg;
-        Reg::UnalignReg u0;
+        Reg::UnalignRegForLoad u0;
         Reg::MaskReg mask0;
         Reg::MaskReg mask1;
         mask0 = Reg::UpdateMask<T>(maskNum0);
         mask1 = Reg::UpdateMask<T>(maskTailNum);
-        Reg::DataCopy(indexReg, idxPtr);
+        Reg::LoadAlign(indexReg, idxPtr);
         for (uint16_t j = 0; j < loopNum; j++) {
-            Reg::DataCopyUnAlignPre(u0, srcPtr);
-            Reg::DataCopyUnAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(srcReg, u0, srcPtr, processNum);
-            Reg::DataCopyScatter(dstPtr, srcReg, indexReg, mask0);
+            Reg::LoadUnAlignPre(u0, srcPtr);
+            Reg::LoadUnAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(srcReg, u0, srcPtr, processNum);
+            Reg::Scatter(dstPtr, srcReg, indexReg, mask0);
             Reg::Adds(indexReg, indexReg, addrOffset, mask0);
         }
         if (tailNum != 0) {
-            Reg::DataCopyUnAlignPre(u0, srcPtr);
-            Reg::DataCopyUnAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(srcReg, u0, srcPtr, processNum);
-            Reg::DataCopyScatter(dstPtr, srcReg, indexReg, mask1);
+            Reg::LoadUnAlignPre(u0, srcPtr);
+            Reg::LoadUnAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(srcReg, u0, srcPtr, processNum);
+            Reg::Scatter(dstPtr, srcReg, indexReg, mask1);
         }
     }
 }
@@ -269,7 +266,7 @@ __aicore__ inline void MatrixDiagScatterLower<T, U, Y>::ProcessPerCoreInt8(uint6
     uint32_t processNum = totalNum <= halfVlLen ? totalNum : batchNum_ * nSize_;
     uint16_t loopNum = totalNum / processNum;
     LocalTensor<Y> indexLocal = indexBuf_.DeQue<Y>();
-    auto* idxPtr = (__local_mem__ U*)indexLocal.GetPhyAddr();
+    auto* idxPtr = (__ubuf__ U*)indexLocal.GetPhyAddr();
     uint32_t maskNumInt8 = processNum * 2;
     U addrOffset = processNum * nSize_;
     uint32_t maskNum0 = processNum;
@@ -287,8 +284,8 @@ __aicore__ inline void MatrixDiagScatterLower<T, U, Y>::ProcessPerCoreInt8(uint6
 template <typename T, typename U, typename Y>
 __aicore__ inline void MatrixDiagScatterLower<T, U, Y>::VFProcessInt8(uint32_t maskNumInt8, uint32_t processNum,
                                                                       uint32_t totalNum, U addrOffset, uint16_t loopNum,
-                                                                      __local_mem__ U* idxPtr, __local_mem__ T* srcPtr,
-                                                                      __local_mem__ T* dstPtr)
+                                                                      __ubuf__ U* idxPtr, __ubuf__ T* srcPtr,
+                                                                      __ubuf__ T* dstPtr)
 {
     uint32_t tailNum = totalNum - processNum * loopNum;
     uint32_t maskTailNum = tailNum * 2;
@@ -299,26 +296,26 @@ __aicore__ inline void MatrixDiagScatterLower<T, U, Y>::VFProcessInt8(uint32_t m
         Reg::RegTensor<U> indexRegInt8;
         Reg::RegTensor<T> lowerRegInt8;
         Reg::RegTensor<T> higherRegInt8;
-        Reg::UnalignReg u0Int8;
+        Reg::UnalignRegForLoad u0Int8;
         Reg::MaskReg mask0Int8;
         Reg::MaskReg mask1Int8;
         mask0Int8 = Reg::UpdateMask<T>(maskNumInt8);
         mask1Int8 = Reg::UpdateMask<T>(maskTailNum);
-        Reg::DataCopy(indexRegInt8, idxPtr);
+        Reg::LoadAlign(indexRegInt8, idxPtr);
         for (uint16_t j = 0; j < loopNum; j++) {
-            Reg::DataCopyUnAlignPre(u0Int8, srcPtr);
-            Reg::DataCopyUnAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(srcRegInt8, u0Int8, srcPtr, processNum);
+            Reg::LoadUnAlignPre(u0Int8, srcPtr);
+            Reg::LoadUnAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(srcRegInt8, u0Int8, srcPtr, processNum);
             Reg::Duplicate(zeroRegInt8, (T)0);
             Reg::Interleave(lowerRegInt8, higherRegInt8, srcRegInt8, zeroRegInt8);
-            Reg::DataCopyScatter(dstPtr, lowerRegInt8, indexRegInt8, mask0Int8);
+            Reg::Scatter(dstPtr, lowerRegInt8, indexRegInt8, mask0Int8);
             Reg::Adds(indexRegInt8, indexRegInt8, addrOffset, mask0Int8);
         }
         if (tailNum != 0) {
-            Reg::DataCopyUnAlignPre(u0Int8, srcPtr);
-            Reg::DataCopyUnAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(srcRegInt8, u0Int8, srcPtr, processNum);
+            Reg::LoadUnAlignPre(u0Int8, srcPtr);
+            Reg::LoadUnAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(srcRegInt8, u0Int8, srcPtr, processNum);
             Reg::Duplicate(zeroRegInt8, (U)0);
             Reg::Interleave(lowerRegInt8, higherRegInt8, srcRegInt8, zeroRegInt8);
-            Reg::DataCopyScatter(dstPtr, lowerRegInt8, indexRegInt8, mask1Int8);
+            Reg::Scatter(dstPtr, lowerRegInt8, indexRegInt8, mask1Int8);
         }
     }
 }

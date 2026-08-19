@@ -38,23 +38,22 @@ private:
                                         std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
 
 private:
-    __aicore__ inline void SetLoopInfo(MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo,
-                                       MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfoTail);
+    __aicore__ inline void SetLoopInfo(NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo,
+                                       NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfoTail);
     __aicore__ inline void SetCopyOutParams(DataCopyExtParams& copyOutParams,
-                                            const MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo);
+                                            const NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo);
     __aicore__ inline void ProcessPerBlock();
     __aicore__ inline void ProcessWithDataCopyGather(int64_t inGmAddr, int64_t outGmAddr,
-                                                     const MultiCopyParams<T, NDDMA_MAX_DIMS_NEG>& nddmaParams,
+                                                     const NdDmaParams<T, NDDMA_MAX_DIMS_NEG>& nddmaParams,
                                                      const DataCopyExtParams& copyOutParam,
                                                      const LocalTensor<RangeType>& idxTensor, RangeType idxBaseOffset);
-    __aicore__ inline void GatherSlice(const MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo,
+    __aicore__ inline void GatherSlice(const NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo,
                                        const LocalTensor<RangeType>& idxTensor, RangeType idxBaseOffset);
     __aicore__ inline void GenGatherIndex(LocalTensor<RangeType>& idxTensor);
-    __aicore__ inline void GatherInOrder(__local_mem__ RangeType* idxAddr, __local_mem__ T* inAddr,
-                                         __local_mem__ T* outAddr, uint32_t outerAxis, uint32_t axis3,
-                                         const MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo,
-                                         RangeType idxBaseOffset);
-    __aicore__ inline int64_t CalcRollbackOffset(const MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo);
+    __aicore__ inline void GatherInOrder(__ubuf__ RangeType* idxAddr, __ubuf__ T* inAddr, __ubuf__ T* outAddr,
+                                         uint32_t outerAxis, uint32_t axis3,
+                                         const NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo, RangeType idxBaseOffset);
+    __aicore__ inline int64_t CalcRollbackOffset(const NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo);
 
 private:
     TPipe* pipe_ = nullptr;
@@ -65,7 +64,7 @@ private:
     GlobalTensor<T> inputGM_;
     GlobalTensor<T> outputGM_;
 
-    static constexpr MultiCopyConfig nddmaConfig_ = {false, 0, 0, false};
+    static constexpr NdDmaConfig nddmaConfig_ = {false, 0, 0, false};
 
     int64_t blockIdx_ = 0;
     uint8_t bufferCnt_ = 2; // enable db
@@ -107,9 +106,11 @@ __aicore__ inline void StridedSliceNDDMAGather<T, U>::Process()
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceNDDMAGather<T, U>::GatherInOrder(
-    __local_mem__ RangeType* idxAddr, __local_mem__ T* inAddr, __local_mem__ T* outAddr, uint32_t outerAxis,
-    uint32_t axis3, const MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo, RangeType idxBaseOffset)
+__aicore__ inline void StridedSliceNDDMAGather<T, U>::GatherInOrder(__ubuf__ RangeType* idxAddr, __ubuf__ T* inAddr,
+                                                                    __ubuf__ T* outAddr, uint32_t outerAxis,
+                                                                    uint32_t axis3,
+                                                                    const NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo,
+                                                                    RangeType idxBaseOffset)
 {
     uint32_t axis3BA = Ops::Base::CeilAlign(axis3, elemPerBlock_);
     uint32_t maskBeg = axis3;
@@ -132,33 +133,32 @@ __aicore__ inline void StridedSliceNDDMAGather<T, U>::GatherInOrder(
         Reg::MaskReg maskIdx = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
         Reg::MaskReg maskData;
 
-        Reg::DataCopy(regIdx, idxAddr);
+        Reg::LoadAlign(regIdx, idxAddr);
         Reg::Adds(regIdx, regIdx, idxBaseOffset, maskIdx);
 
         for (uint16_t axis3LpIdx = 0; axis3LpIdx < axis3LpCnt; axis3LpIdx++) {
             maskData = Reg::UpdateMask<T>(maskValue);
-            Reg::Copy(regIdxBK, regIdx);
+            Reg::Move(regIdxBK, regIdx);
             for (uint16_t oIdx = 0; oIdx < oAxis; oIdx++) {
-                Reg::DataCopyGather((Reg::RegTensor<CastType>&)regData, inAddr, (Reg::RegTensor<IdxType>&)regIdx,
-                                    maskData);
+                Reg::Gather((Reg::RegTensor<CastType>&)regData, inAddr, (Reg::RegTensor<IdxType>&)regIdx, maskData);
                 if constexpr (sizeof(T) != 1) {
-                    Reg::DataCopy(outAddr + oIdx * axis3BA + axis3LpIdx * rVLCnt, regData, maskData);
+                    Reg::StoreAlign(outAddr + oIdx * axis3BA + axis3LpIdx * rVLCnt, regData, maskData);
                 } else {
-                    __local_mem__ CastType* outAddrB16 = reinterpret_cast<__local_mem__ CastType*>(
-                        outAddr + oIdx * axis3BA + axis3LpIdx * rVLCnt);
-                    Reg::DataCopy<CastType, Reg::StoreDist::DIST_PACK_B16>(
+                    __ubuf__ CastType* outAddrB16 = reinterpret_cast<__ubuf__ CastType*>(outAddr + oIdx * axis3BA +
+                                                                                         axis3LpIdx * rVLCnt);
+                    Reg::StoreAlign<CastType, Reg::StoreDist::DIST_PACK_B16>(
                         outAddrB16, (Reg::RegTensor<CastType>&)regData, maskData);
                 }
                 Reg::Adds(regIdx, regIdx, axis3BAIn, maskIdx);
             }
-            Reg::Copy(regIdx, regIdxBK);
+            Reg::Move(regIdx, regIdxBK);
             Reg::Adds(regIdx, regIdx, axis3Offset, maskIdx);
         }
     }
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceNDDMAGather<T, U>::GatherSlice(const MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo,
+__aicore__ inline void StridedSliceNDDMAGather<T, U>::GatherSlice(const NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo,
                                                                   const LocalTensor<RangeType>& idxTensor,
                                                                   RangeType idxBaseOffset)
 {
@@ -172,9 +172,9 @@ __aicore__ inline void StridedSliceNDDMAGather<T, U>::GatherSlice(const MultiCop
     auto outTensor = outQue_.AllocTensor<T>();
     auto inTensor = inQue_.DeQue<T>();
 
-    __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
-    __local_mem__ T* inAddr = (__local_mem__ T*)inTensor.GetPhyAddr();
-    __local_mem__ T* outAddr = (__local_mem__ T*)outTensor.GetPhyAddr();
+    __ubuf__ RangeType* idxAddr = (__ubuf__ RangeType*)idxTensor.GetPhyAddr();
+    __ubuf__ T* inAddr = (__ubuf__ T*)inTensor.GetPhyAddr();
+    __ubuf__ T* outAddr = (__ubuf__ T*)outTensor.GetPhyAddr();
     GatherInOrder(idxAddr, inAddr, outAddr, axis0 * axis1 * axis2, axis3, loopInfo, idxBaseOffset);
     inQue_.FreeTensor(inTensor);
 
@@ -185,7 +185,7 @@ __aicore__ inline void StridedSliceNDDMAGather<T, U>::GatherSlice(const MultiCop
 
 template <typename T, typename U>
 __aicore__ inline void StridedSliceNDDMAGather<T, U>::ProcessWithDataCopyGather(
-    int64_t inGmAddr, int64_t outGmAddr, const MultiCopyParams<T, NDDMA_MAX_DIMS_NEG>& nddmaParams,
+    int64_t inGmAddr, int64_t outGmAddr, const NdDmaParams<T, NDDMA_MAX_DIMS_NEG>& nddmaParams,
     const DataCopyExtParams& copyOutParam, const LocalTensor<RangeType>& idxTensor, RangeType idxBaseOffset)
 {
     auto inTensor = inQue_.AllocTensor<T>();
@@ -202,7 +202,7 @@ __aicore__ inline void StridedSliceNDDMAGather<T, U>::ProcessWithDataCopyGather(
 template <typename T, typename U>
 __aicore__ inline void StridedSliceNDDMAGather<T, U>::GenGatherIndex(LocalTensor<RangeType>& idxTensor)
 {
-    __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
+    __ubuf__ RangeType* idxAddr = (__ubuf__ RangeType*)idxTensor.GetPhyAddr();
     int32_t begIndex = this->nddmaLoopSize_[NDDMA_MAX_DIMS_NEG - 1] - 1; // last axis num in ub
     // last axis stride is -1 in ub
     __VEC_SCOPE__
@@ -213,13 +213,13 @@ __aicore__ inline void StridedSliceNDDMAGather<T, U>::GenGatherIndex(LocalTensor
         Reg::Arange<RangeType, Reg::IndexOrder::INCREASE_ORDER>(indexReg, 0);
         Reg::Duplicate(tmpReg, begIndex);
         Reg::Sub(indexReg, tmpReg, indexReg, mask);
-        Reg::DataCopy(idxAddr, indexReg, mask);
+        Reg::StoreAlign(idxAddr, indexReg, mask);
     }
 }
 
 template <typename T, typename U>
 __aicore__ inline int64_t StridedSliceNDDMAGather<T, U>::CalcRollbackOffset(
-    const MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo)
+    const NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo)
 {
     int64_t backOffset = 0;
 
@@ -240,8 +240,8 @@ __aicore__ inline int64_t StridedSliceNDDMAGather<T, U>::CalcRollbackOffset(
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceNDDMAGather<T, U>::SetLoopInfo(MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo,
-                                                                  MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfoTail)
+__aicore__ inline void StridedSliceNDDMAGather<T, U>::SetLoopInfo(NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo,
+                                                                  NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfoTail)
 {
     for (int64_t i = 0; i < inUbDims_; i++) {
         // ub main
@@ -279,7 +279,7 @@ __aicore__ inline void StridedSliceNDDMAGather<T, U>::SetLoopInfo(MultiCopyLoopI
 
 template <typename T, typename U>
 __aicore__ inline void StridedSliceNDDMAGather<T, U>::SetCopyOutParams(
-    DataCopyExtParams& copyOutParams, const MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo)
+    DataCopyExtParams& copyOutParams, const NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo)
 {
     if (loopInfo.loopSize[0] % elemPerBlock_ == 0) {
         copyOutParams.blockCount = 1;
@@ -301,8 +301,8 @@ __aicore__ inline void StridedSliceNDDMAGather<T, U>::ProcessPerBlock()
     int64_t inputGmAddr = 0;
     int64_t outputGmAddr = 0;
 
-    MultiCopyParams<T, NDDMA_MAX_DIMS_NEG> paramsMain;
-    MultiCopyParams<T, NDDMA_MAX_DIMS_NEG> paramsTail;
+    NdDmaParams<T, NDDMA_MAX_DIMS_NEG> paramsMain;
+    NdDmaParams<T, NDDMA_MAX_DIMS_NEG> paramsTail;
     paramsMain.constantValue = 0;
     paramsTail.constantValue = 0;
     SetLoopInfo(paramsMain.loopInfo, paramsTail.loopInfo);

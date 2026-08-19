@@ -193,7 +193,7 @@ public:
         RangeType_ xColOffset = -1 * xColNum_;
         RangeType_ kNegOffset = -1 * oneDiagLen;
         RangeType_ kPosOffset = oneDiagLen + 1;
-        auto* idxPtr = (__local_mem__ RangeType_*)idxLocal.GetPhyAddr();
+        auto* idxPtr = (__ubuf__ RangeType_*)idxLocal.GetPhyAddr();
         RangeType_ dataTypeFactor = sizeof(T) > 4 ? 2 : 1;
         RangeType_ tailAxisDataSize = tailAxisDataSize_;
 
@@ -209,7 +209,7 @@ public:
             Reg::MaskReg mask;
             Reg::MaskReg kMask;
             Reg::MaskReg tMask;
-            Reg::UnalignReg uReg;
+            Reg::UnalignRegForLoad uReg;
 
             Reg::Duplicate(outIdxReg, -1);
             if constexpr (VL_MODE == 0) {
@@ -292,7 +292,7 @@ public:
         RangeType_ xRowNum = xRowNum_;
         RangeType_ xColOffset = -1 * xColNum_ - 1;
         RangeType_ firstKOffset = -1 * firstK_;
-        auto* idxPtr = (__local_mem__ RangeType_*)idxLocal.GetPhyAddr();
+        auto* idxPtr = (__ubuf__ RangeType_*)idxLocal.GetPhyAddr();
         RangeType_ dataTypeFactor = sizeof(T) > 4 ? 2 : 1;
         RangeType_ tailAxisDataSize = tailDiagSize_;
 
@@ -308,7 +308,7 @@ public:
             Reg::MaskReg mask;
             Reg::MaskReg kMask;
             Reg::MaskReg tMask;
-            Reg::UnalignReg uReg;
+            Reg::UnalignRegForLoad uReg;
 
             Reg::Duplicate(outIdxReg, -1);
 
@@ -426,9 +426,9 @@ public:
         }
         uint32_t dataTypeFactor = sizeof(T) > 4 ? 2 : 1;
 
-        auto* xLocalPtr = (__local_mem__ T*)inLocal.GetPhyAddr();
-        auto* diagPtr = (__local_mem__ T*)diagLocal.GetPhyAddr();
-        auto* idxPtr = (__local_mem__ RangeType_*)idxLocal.GetPhyAddr();
+        auto* xLocalPtr = (__ubuf__ T*)inLocal.GetPhyAddr();
+        auto* diagPtr = (__ubuf__ T*)diagLocal.GetPhyAddr();
+        auto* idxPtr = (__ubuf__ RangeType_*)idxLocal.GetPhyAddr();
 
         __VEC_SCOPE__
         {
@@ -438,7 +438,7 @@ public:
             Reg::MaskReg mask;
             Reg::MaskReg tMask;
             Reg::MaskReg kMask;
-            Reg::UnalignReg uReg;
+            Reg::UnalignRegForLoad uReg;
 
             if constexpr (VL_MODE == 0) {
                 for (uint16_t i = 0; i < loop1Num; i++) {
@@ -534,9 +534,9 @@ public:
             tailSize = tailSize * ELEMENT_EXPAND_TIMES;
         }
         uint32_t dataTypeFactor = sizeof(T) > 4 ? 2 : 1;
-        auto* xLocalPtr = (__local_mem__ T*)inLocal.GetPhyAddr();
-        auto* diagPtr = (__local_mem__ T*)diagLocal.GetPhyAddr();
-        auto* idxPtr = (__local_mem__ RangeType_*)idxLocal.GetPhyAddr();
+        auto* xLocalPtr = (__ubuf__ T*)inLocal.GetPhyAddr();
+        auto* diagPtr = (__ubuf__ T*)diagLocal.GetPhyAddr();
+        auto* idxPtr = (__ubuf__ RangeType_*)idxLocal.GetPhyAddr();
 
         __VEC_SCOPE__
         {
@@ -547,7 +547,7 @@ public:
             Reg::MaskReg mask;
             Reg::MaskReg tMask;
             Reg::MaskReg kMask;
-            Reg::UnalignReg uReg;
+            Reg::UnalignRegForLoad uReg;
 
             if constexpr (VL_MODE == 0) {
                 for (uint16_t i = 0; i < loop1Num; i++) {

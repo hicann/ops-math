@@ -36,8 +36,8 @@ struct CastB32Any : public Vec::ElemwiseUnaryOP<T, R> {
 #ifdef __CCE_AICORE__
         constexpr uint32_t VECTOR_LENGTH = GetVRegSize();
         constexpr uint32_t VL_B32 = VECTOR_LENGTH / sizeof(T);
-        __local_mem__ R* srcAddr = (__local_mem__ R*)src.GetPhyAddr();
-        __local_mem__ T* dstAddr = (__local_mem__ T*)dst.GetPhyAddr();
+        __ubuf__ R* srcAddr = (__ubuf__ R*)src.GetPhyAddr();
+        __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
         uint16_t loopTimes = CeilDiv(count, VL_B32);
         uint32_t InSize = count;
         uint32_t OutSize = count;
@@ -51,11 +51,11 @@ struct CastB32Any : public Vec::ElemwiseUnaryOP<T, R> {
             for (uint16_t j = 0; j < loopTimes; j++) {
                 InMask = Reg::UpdateMask<R>(InSize);
                 OutMask = Reg::UpdateMask<T>(OutSize);
-                Reg::DataCopy<R, Reg::PostLiteral::POST_MODE_UPDATE>(srcReg, srcAddr, VL_B32);
+                Reg::LoadAlign<R, Reg::PostLiteral::POST_MODE_UPDATE>(srcReg, srcAddr, VL_B32);
                 Reg::Compares<R, CMPMODE::NE>(cmpMask, srcReg, 0.0f, InMask);
                 Reg::Duplicate(dstReg, 0);
                 Reg::Duplicate(dstReg, 1, cmpMask);
-                Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(dstAddr, dstReg, VL_B32, OutMask);
+                Reg::StoreAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(dstAddr, dstReg, VL_B32, OutMask);
             }
         }
 #endif

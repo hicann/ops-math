@@ -255,7 +255,7 @@ __aicore__ inline void Im2ColGatherCutNc<T, isPadding>::GatherWithPaddingVFCross
         Reg::RegTensor<CastType_> zeroReg;
         Reg::RegTensor<T> dstReg;
         Reg::RegTensor<T> dstRegT;
-        Reg::UnalignReg uReg;
+        Reg::UnalignRegForLoad uReg;
         Reg::MaskReg mask = Reg::UpdateMask<IdxType_>(maskSize);
         Reg::MaskReg gatherMask = Reg::UpdateMask<CastType_>(gatherMaskSize);
         Reg::MaskReg tailGatherMask = Reg::UpdateMask<CastType_>(tailGatherMaskSize);
@@ -327,7 +327,7 @@ __aicore__ inline void Im2ColGatherCutNc<T, isPadding>::GatherWithPaddingVFCross
         Reg::Muls(coeffReg, coeffReg, IdxType_(inputHW), mask1);
         Reg::Add(idxReg, idxReg, coeffReg, mask1);
         if constexpr (sizeof(T) == 8) {
-            Reg::MaskUnPack(mask1, mask1);
+            Reg::UnPack(mask1, mask1);
         }
 
         for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
@@ -415,7 +415,7 @@ __aicore__ inline void Im2ColGatherCutNc<T, isPadding>::GatherWithPaddingVFWithi
         Reg::RegTensor<IdxType_> mulReg1;
         Reg::RegTensor<T> dstReg;
         Reg::RegTensor<T> dstRegT;
-        Reg::UnalignReg uReg;
+        Reg::UnalignRegForLoad uReg;
         Reg::MaskReg mask = Reg::CreateMask<IdxType_, Reg::MaskPattern::ALL>();
         Reg::MaskReg tailMask = Reg::UpdateMask<IdxType_>(tailMaskSize);
         Reg::MaskReg selMask;
@@ -625,7 +625,7 @@ __aicore__ inline void Im2ColGatherCutNc<T, isPadding>::GatherNoPaddingVFCrossNc
         Reg::RegTensor<IdxType_> coeffReg;
         Reg::RegTensor<T> dstReg;
         Reg::RegTensor<T> dstRegT;
-        Reg::UnalignReg uReg;
+        Reg::UnalignRegForLoad uReg;
         Reg::MaskReg mask = Reg::UpdateMask<IdxType_>(maskSize);
         Reg::MaskReg gatherMask = Reg::UpdateMask<CastType_>(gatherMaskSize);
         Reg::MaskReg tailGatherMask = Reg::UpdateMask<CastType_>(tailGatherMaskSize);
@@ -755,7 +755,7 @@ __aicore__ inline void Im2ColGatherCutNc<T, isPadding>::GatherNoPaddingVFWithinN
         Reg::RegTensor<IdxType_> mulReg1;
         Reg::RegTensor<T> dstReg;
         Reg::RegTensor<T> dstRegT;
-        Reg::UnalignReg uReg;
+        Reg::UnalignRegForLoad uReg;
         Reg::MaskReg mask = Reg::CreateMask<IdxType_, Reg::MaskPattern::ALL>();
         Reg::MaskReg tailMask = Reg::UpdateMask<IdxType_>(tailMaskSize);
         Reg::MaskReg tailGatherMask = Reg::UpdateMask<CastType_>(tailGatherMaskSize);

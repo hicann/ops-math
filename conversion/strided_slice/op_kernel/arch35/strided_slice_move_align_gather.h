@@ -52,9 +52,8 @@ private:
     __aicore__ inline void GatherSlice(const LoopModeParams& loopMode, const DataCopyExtParams& copyInParam,
                                        const LocalTensor<RangeType>& idxTensor);
     __aicore__ inline void GenGatherIndex(LocalTensor<RangeType>& idxTensor);
-    __aicore__ inline void GatherInOrder(__local_mem__ RangeType* idxAddr, __local_mem__ T* inAddr,
-                                         __local_mem__ T* outAddr, uint32_t outerAxis, uint32_t axis3,
-                                         const DataCopyExtParams& copyInParam);
+    __aicore__ inline void GatherInOrder(__ubuf__ RangeType* idxAddr, __ubuf__ T* inAddr, __ubuf__ T* outAddr,
+                                         uint32_t outerAxis, uint32_t axis3, const DataCopyExtParams& copyInParam);
     __aicore__ inline int64_t CalcRollbackOffset(const LoopModeParams& loopMode, const DataCopyExtParams& copyInParam);
 
 private:
@@ -182,9 +181,8 @@ __aicore__ inline void StridedSliceMoveAlignGather<T, U>::SetCopyOutAlignParams(
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceMoveAlignGather<T, U>::GatherInOrder(__local_mem__ RangeType* idxAddr,
-                                                                        __local_mem__ T* inAddr,
-                                                                        __local_mem__ T* outAddr, uint32_t outerAxis,
+__aicore__ inline void StridedSliceMoveAlignGather<T, U>::GatherInOrder(__ubuf__ RangeType* idxAddr, __ubuf__ T* inAddr,
+                                                                        __ubuf__ T* outAddr, uint32_t outerAxis,
                                                                         uint32_t axis3,
                                                                         const DataCopyExtParams& copyInParam)
 {
@@ -212,26 +210,25 @@ __aicore__ inline void StridedSliceMoveAlignGather<T, U>::GatherInOrder(__local_
         Reg::MaskReg maskIdx = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
         Reg::MaskReg maskData;
 
-        Reg::DataCopy(regIdx, idxAddr);
+        Reg::LoadAlign(regIdx, idxAddr);
         Reg::Adds(regIdx, regIdx, idxBaseOffset, maskIdx);
 
         for (uint16_t axis3LpIdx = 0; axis3LpIdx < axis3LpCnt; axis3LpIdx++) {
             maskData = Reg::UpdateMask<T>(maskValue);
-            Reg::Copy(regIdxBK, regIdx);
+            Reg::Move(regIdxBK, regIdx);
             for (uint16_t oIdx = 0; oIdx < oAxis; oIdx++) {
-                Reg::DataCopyGather((Reg::RegTensor<CastType>&)regData, inAddr, (Reg::RegTensor<IdxType>&)regIdx,
-                                    maskData);
+                Reg::Gather((Reg::RegTensor<CastType>&)regData, inAddr, (Reg::RegTensor<IdxType>&)regIdx, maskData);
                 if constexpr (sizeof(T) != 1) {
-                    Reg::DataCopy(outAddr + oIdx * axis3BA + axis3LpIdx * rVLCnt, regData, maskData);
+                    Reg::StoreAlign(outAddr + oIdx * axis3BA + axis3LpIdx * rVLCnt, regData, maskData);
                 } else {
-                    __local_mem__ CastType* outAddrB16 = reinterpret_cast<__local_mem__ CastType*>(
-                        outAddr + oIdx * axis3BA + axis3LpIdx * rVLCnt);
-                    Reg::DataCopy<CastType, Reg::StoreDist::DIST_PACK_B16>(
+                    __ubuf__ CastType* outAddrB16 = reinterpret_cast<__ubuf__ CastType*>(outAddr + oIdx * axis3BA +
+                                                                                         axis3LpIdx * rVLCnt);
+                    Reg::StoreAlign<CastType, Reg::StoreDist::DIST_PACK_B16>(
                         outAddrB16, (Reg::RegTensor<CastType>&)regData, maskData);
                 }
                 Reg::Adds(regIdx, regIdx, axis3BAIn, maskIdx);
             }
-            Reg::Copy(regIdx, regIdxBK);
+            Reg::Move(regIdx, regIdxBK);
             Reg::Adds(regIdx, regIdx, axis3Offset, maskIdx);
         }
     }
@@ -250,9 +247,9 @@ __aicore__ inline void StridedSliceMoveAlignGather<T, U>::GatherSlice(const Loop
 
     auto outTensor = outQue_.AllocTensor<T>();
     auto inTensor = inQue_.DeQue<T>();
-    __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
-    __local_mem__ T* inAddr = (__local_mem__ T*)inTensor.GetPhyAddr();
-    __local_mem__ T* outAddr = (__local_mem__ T*)outTensor.GetPhyAddr();
+    __ubuf__ RangeType* idxAddr = (__ubuf__ RangeType*)idxTensor.GetPhyAddr();
+    __ubuf__ T* inAddr = (__ubuf__ T*)inTensor.GetPhyAddr();
+    __ubuf__ T* outAddr = (__ubuf__ T*)outTensor.GetPhyAddr();
     GatherInOrder(idxAddr, inAddr, outAddr, axis0 * axis1 * axis2, axis3, copyInParam);
     inQue_.FreeTensor(inTensor);
     this->CalcReorderAxisInfo(axis0, axis1, axis2, axis3BA);
@@ -285,7 +282,7 @@ __aicore__ inline void StridedSliceMoveAlignGather<T, U>::GenGatherIndex(LocalTe
 {
     int32_t r1DimSize = Ops::Base::CeilDiv(int64_t(tdPtr_->moveAlignParams.blockLen / sizeof(T)),
                                            std::abs(lastDimStride_));
-    __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
+    __ubuf__ RangeType* idxAddr = (__ubuf__ RangeType*)idxTensor.GetPhyAddr();
     if (lastDimStride_ > 0) {
         __VEC_SCOPE__
         {
@@ -293,7 +290,7 @@ __aicore__ inline void StridedSliceMoveAlignGather<T, U>::GenGatherIndex(LocalTe
             Reg::RegTensor<RangeType> indexReg;
             Reg::Arange(indexReg, 0);
             Reg::Muls(indexReg, indexReg, RangeType(lastDimStride_), mask);
-            Reg::DataCopy(idxAddr, indexReg, mask);
+            Reg::StoreAlign(idxAddr, indexReg, mask);
         }
     } else {
         int32_t begIndex = r1DimSize - 1;
@@ -307,7 +304,7 @@ __aicore__ inline void StridedSliceMoveAlignGather<T, U>::GenGatherIndex(LocalTe
             Reg::Duplicate(tmpReg, begIndex);
             Reg::Sub(indexReg, tmpReg, indexReg, mask);
             Reg::Muls(indexReg, indexReg, stride, mask);
-            Reg::DataCopy(idxAddr, indexReg, mask);
+            Reg::StoreAlign(idxAddr, indexReg, mask);
         }
     }
 }

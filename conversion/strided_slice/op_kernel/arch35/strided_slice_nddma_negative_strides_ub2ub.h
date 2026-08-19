@@ -20,38 +20,37 @@
 
 #include "strided_slice_base.h"
 
-namespace StridedSlice
-{
+namespace StridedSlice {
 using namespace AscendC;
 
 template <typename T, typename U>
-class StridedSliceNDDMAUb2Ub : public StridedSliceBase<T, U>
-{
+class StridedSliceNDDMAUb2Ub : public StridedSliceBase<T, U> {
 public:
     __aicore__ inline StridedSliceNDDMAUb2Ub(){};
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y,
-        const StridedSliceNDDMATilingData *tdPtr, TPipe *pipe);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y, const StridedSliceNDDMATilingData* tdPtr,
+                                TPipe* pipe);
     __aicore__ inline void Process();
 
 private:
-    __aicore__ inline void SetLoopInfo(MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo,
-                                       MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfoTail);
-    __aicore__ inline void SetCopyOutParams(DataCopyExtParams &copyOutParams,
-                                            const MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG> &loopInfo);
+    __aicore__ inline void SetLoopInfo(NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo,
+                                       NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfoTail);
+    __aicore__ inline void SetCopyOutParams(DataCopyExtParams& copyOutParams,
+                                            const NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo);
     __aicore__ inline void ProcessPerBlock();
     __aicore__ inline void ProcessWithDataCopyGather(int64_t inGmAddr, int64_t outGmAddr,
-        const MultiCopyParams<T, NDDMA_MAX_DIMS_NEG> &nddmaParams, const DataCopyExtParams &copyOutParam);
-    __aicore__ inline void ReorderSlice(const MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG> &loopInfo, __local_mem__ T *outAddr);
-    __aicore__ inline int64_t CalcRollbackOffset(const MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG> &loopInfo);
+                                                     const NdDmaParams<T, NDDMA_MAX_DIMS_NEG>& nddmaParams,
+                                                     const DataCopyExtParams& copyOutParam);
+    __aicore__ inline void ReorderSlice(const NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo, __ubuf__ T* outAddr);
+    __aicore__ inline int64_t CalcRollbackOffset(const NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo);
 
 private:
-    TPipe *pipe_ = nullptr;
-    const StridedSliceNDDMATilingData *tdPtr_ = nullptr;
+    TPipe* pipe_ = nullptr;
+    const StridedSliceNDDMATilingData* tdPtr_ = nullptr;
     TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> inOutQue_;
     GlobalTensor<T> inputGM_;
     GlobalTensor<T> outputGM_;
 
-    static constexpr MultiCopyConfig nddmaConfig_ = {false, 0, 0, false};
+    static constexpr NdDmaConfig nddmaConfig_ = {false, 0, 0, false};
 
     int64_t blockIdx_ = 0;
     uint8_t bufferCnt_ = 2; // enable db
@@ -62,12 +61,12 @@ private:
 
 template <typename T, typename U>
 __aicore__ inline void StridedSliceNDDMAUb2Ub<T, U>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y,
-    const StridedSliceNDDMATilingData *tdPtr, TPipe *pipe)
+                                                          const StridedSliceNDDMATilingData* tdPtr, TPipe* pipe)
 {
     blockIdx_ = GetBlockIdx();
 
-    inputGM_.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(x));
-    outputGM_.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(y));
+    inputGM_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
+    outputGM_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(y));
 
     tdPtr_ = tdPtr;
     this->ParseNDDMATilingData(begin, tdPtr_, blockIdx_);
@@ -91,8 +90,8 @@ __aicore__ inline void StridedSliceNDDMAUb2Ub<T, U>::Process()
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceNDDMAUb2Ub<T, U>::ReorderSlice(const MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG> &loopInfo,
-                                                               __local_mem__ T *outAddr)
+__aicore__ inline void StridedSliceNDDMAUb2Ub<T, U>::ReorderSlice(const NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo,
+                                                                  __ubuf__ T* outAddr)
 {
     // (axis0, axis1, axis2, axis3BA)
     uint32_t axis0 = loopInfo.loopSize[DIMS_3];
@@ -107,8 +106,8 @@ __aicore__ inline void StridedSliceNDDMAUb2Ub<T, U>::ReorderSlice(const MultiCop
 
 template <typename T, typename U>
 __aicore__ inline void StridedSliceNDDMAUb2Ub<T, U>::ProcessWithDataCopyGather(
-    int64_t inGmAddr, int64_t outGmAddr, const MultiCopyParams<T, NDDMA_MAX_DIMS_NEG> &nddmaParams,
-    const DataCopyExtParams &copyOutParam)
+    int64_t inGmAddr, int64_t outGmAddr, const NdDmaParams<T, NDDMA_MAX_DIMS_NEG>& nddmaParams,
+    const DataCopyExtParams& copyOutParam)
 {
     auto inTensor = inOutQue_.AllocTensor<T>();
     DataCopy<T, NDDMA_MAX_DIMS_NEG, nddmaConfig_>(inTensor, inputGM_[inGmAddr], nddmaParams);
@@ -119,7 +118,7 @@ __aicore__ inline void StridedSliceNDDMAUb2Ub<T, U>::ProcessWithDataCopyGather(
     SetFlag<HardEvent::MTE2_V>(eventID0);
     WaitFlag<HardEvent::MTE2_V>(eventID0);
 
-    ReorderSlice(nddmaParams.loopInfo, (__local_mem__ T *)inTensor.GetPhyAddr());
+    ReorderSlice(nddmaParams.loopInfo, (__ubuf__ T*)inTensor.GetPhyAddr());
 
     event_t eventID1 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
     SetFlag<HardEvent::V_MTE3>(eventID1);
@@ -131,7 +130,8 @@ __aicore__ inline void StridedSliceNDDMAUb2Ub<T, U>::ProcessWithDataCopyGather(
 }
 
 template <typename T, typename U>
-__aicore__ inline int64_t StridedSliceNDDMAUb2Ub<T, U>::CalcRollbackOffset(const MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG> &loopInfo)
+__aicore__ inline int64_t StridedSliceNDDMAUb2Ub<T, U>::CalcRollbackOffset(
+    const NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo)
 {
     int64_t backOffset = 0;
 
@@ -152,8 +152,8 @@ __aicore__ inline int64_t StridedSliceNDDMAUb2Ub<T, U>::CalcRollbackOffset(const
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceNDDMAUb2Ub<T, U>::SetLoopInfo(MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG> &loopInfo,
-                                                         MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG> &loopInfoTail)
+__aicore__ inline void StridedSliceNDDMAUb2Ub<T, U>::SetLoopInfo(NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo,
+                                                                 NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfoTail)
 {
     for (int64_t i = 0; i < inUbDims_; i++) {
         // ub main
@@ -190,13 +190,13 @@ __aicore__ inline void StridedSliceNDDMAUb2Ub<T, U>::SetLoopInfo(MultiCopyLoopIn
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceNDDMAUb2Ub<T, U>::SetCopyOutParams(DataCopyExtParams &copyOutParams,
-                                                              const MultiCopyLoopInfo<NDDMA_MAX_DIMS_NEG> &loopInfo)
+__aicore__ inline void StridedSliceNDDMAUb2Ub<T, U>::SetCopyOutParams(DataCopyExtParams& copyOutParams,
+                                                                      const NdDmaLoopInfo<NDDMA_MAX_DIMS_NEG>& loopInfo)
 {
     if (loopInfo.loopSize[0] % elemPerBlock_ == 0) {
         copyOutParams.blockCount = 1;
         copyOutParams.blockLen = loopInfo.loopSize[0] * loopInfo.loopSize[1] * loopInfo.loopSize[2] *
-                                     loopInfo.loopSize[3] * sizeof(T);
+                                 loopInfo.loopSize[3] * sizeof(T);
         copyOutParams.dstStride = 0;
         copyOutParams.srcStride = 0;
     } else {
@@ -213,8 +213,8 @@ __aicore__ inline void StridedSliceNDDMAUb2Ub<T, U>::ProcessPerBlock()
     int64_t inputGmAddr = 0;
     int64_t outputGmAddr = 0;
 
-    MultiCopyParams<T, NDDMA_MAX_DIMS_NEG> paramsMain;
-    MultiCopyParams<T, NDDMA_MAX_DIMS_NEG> paramsTail;
+    NdDmaParams<T, NDDMA_MAX_DIMS_NEG> paramsMain;
+    NdDmaParams<T, NDDMA_MAX_DIMS_NEG> paramsTail;
     paramsMain.constantValue = 0;
     paramsTail.constantValue = 0;
     SetLoopInfo(paramsMain.loopInfo, paramsTail.loopInfo);
@@ -225,8 +225,8 @@ __aicore__ inline void StridedSliceNDDMAUb2Ub<T, U>::ProcessPerBlock()
     SetCopyOutParams(copyOutParamsTail, paramsTail.loopInfo);
 
     // 计算中间变量
-    int64_t ubSplitLoopsNum = 0; // ub切分轴上的循环次数
-    int64_t ubOuterLoopsNum = 0; // ub切分轴之外的循环次数
+    int64_t ubSplitLoopsNum = 0;  // ub切分轴上的循环次数
+    int64_t ubOuterLoopsNum = 0;  // ub切分轴之外的循环次数
     int64_t rowsOffsetOutput = 0; // 当前核处理的output shape中的起始行数
     this->CalcProcessLoopsNum(ubOuterLoopsNum, ubSplitLoopsNum, blockIdx_);
     this->GetProcessRowsOffsetAll(rowsOffsetOutput, blockIdx_);
@@ -239,8 +239,7 @@ __aicore__ inline void StridedSliceNDDMAUb2Ub<T, U>::ProcessPerBlock()
         outputGmAddr = this->GetOutputGmAddrAll(rowsOffsetOutput + idx * this->rowsOffsetSteps_[this->ubIndex_]);
         for (int64_t loops = 0; loops < ubSplitLoopsNum; loops++) {
             ProcessWithDataCopyGather(inputGmAddr + loops * this->ubInLoopSteps_ - negativeStrideOffset,
-                                      outputGmAddr + loops * this->ubOutLoopSteps_, paramsMain,
-                                      copyOutParamsMain);
+                                      outputGmAddr + loops * this->ubOutLoopSteps_, paramsMain, copyOutParamsMain);
         }
         if (this->ubTailFactor_ > 0) {
             ProcessWithDataCopyGather(inputGmAddr + ubSplitLoopsNum * this->ubInLoopSteps_ - negativeStrideOffsetT,

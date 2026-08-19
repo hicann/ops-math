@@ -36,8 +36,8 @@ struct CastInt : public Vec::ElemwiseUnaryOP<R, T> {
 #ifdef __CCE_AICORE__
         constexpr uint32_t VECTOR_LENGTH = GetVRegSize();
         constexpr uint32_t VL_B16 = VECTOR_LENGTH / sizeof(int16_t);
-        __local_mem__ T* srcAddr = (__local_mem__ T*)src.GetPhyAddr();
-        __local_mem__ R* dstAddr = (__local_mem__ R*)dst.GetPhyAddr();
+        __ubuf__ T* srcAddr = (__ubuf__ T*)src.GetPhyAddr();
+        __ubuf__ R* dstAddr = (__ubuf__ R*)dst.GetPhyAddr();
         uint16_t loopTimes = CeilDiv(count, VL_B16);
 
         __VEC_SCOPE__
@@ -47,9 +47,9 @@ struct CastInt : public Vec::ElemwiseUnaryOP<R, T> {
             uint32_t sregMask = count;
             for (uint16_t j = 0; j < loopTimes; j++) {
                 preg = Reg::UpdateMask<uint16_t>(sregMask);
-                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(srcValue, srcAddr + VL_B16 * j);
-                Reg::DataCopy<R, Reg::StoreDist::DIST_PACK_B16>(dstAddr + VL_B16 * j, (Reg::RegTensor<R>&)srcValue,
-                                                                preg);
+                Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(srcValue, srcAddr + VL_B16 * j);
+                Reg::StoreAlign<R, Reg::StoreDist::DIST_PACK_B16>(dstAddr + VL_B16 * j, (Reg::RegTensor<R>&)srcValue,
+                                                                  preg);
             }
         }
 #endif

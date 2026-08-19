@@ -128,8 +128,8 @@ __aicore__ inline void SliceMoveAlignGather<T, U, V>::InitLoopIndex()
     // 根据输出拆解range(0, len_per_loop) -> dstLastOne, dsrLastTwo
     loopLastOneDimInitTensor_ = idxInitBuf_.GetWithOffset<RangeType>(vlCnt_, 0);
     loopLastTwoDimInitTensor_ = idxInitBuf_.GetWithOffset<RangeType>(vlCnt_, VL_SIZE_BYTE);
-    __local_mem__ RangeType* loopLastOneDimInitAddr = (__local_mem__ RangeType*)loopLastOneDimInitTensor_.GetPhyAddr();
-    __local_mem__ RangeType* loopLastTwoDimInitAddr = (__local_mem__ RangeType*)loopLastTwoDimInitTensor_.GetPhyAddr();
+    __ubuf__ RangeType* loopLastOneDimInitAddr = (__ubuf__ RangeType*)loopLastOneDimInitTensor_.GetPhyAddr();
+    __ubuf__ RangeType* loopLastTwoDimInitAddr = (__ubuf__ RangeType*)loopLastTwoDimInitTensor_.GetPhyAddr();
     auto lastOneOutputDim = RangeType(lastOneDimOutputDim_);
 
     __VEC_SCOPE__
@@ -144,8 +144,8 @@ __aicore__ inline void SliceMoveAlignGather<T, U, V>::InitLoopIndex()
         Reg::Div(loopLastTwoDimInitReg, indexReg, lastOneOutputDimReg, mask);
         Reg::Muls(loopLastOneDimInitReg, loopLastTwoDimInitReg, lastOneOutputDim, mask);
         Reg::Sub(loopLastOneDimInitReg, indexReg, loopLastOneDimInitReg, mask);
-        Reg::DataCopy(loopLastTwoDimInitAddr, loopLastTwoDimInitReg, mask);
-        Reg::DataCopy(loopLastOneDimInitAddr, loopLastOneDimInitReg, mask);
+        Reg::StoreAlign(loopLastTwoDimInitAddr, loopLastTwoDimInitReg, mask);
+        Reg::StoreAlign(loopLastOneDimInitAddr, loopLastOneDimInitReg, mask);
     }
 }
 
@@ -221,12 +221,12 @@ __aicore__ inline void SliceMoveAlignGather<T, U, V>::SetCopyOutAlignParams(Data
 template <typename T, typename U, typename V>
 __aicore__ inline void SliceMoveAlignGather<T, U, V>::GatherWithIndex(uint32_t blockCount)
 {
-    __local_mem__ RangeType* loopLastOneDimInitAddr = (__local_mem__ RangeType*)loopLastOneDimInitTensor_.GetPhyAddr();
-    __local_mem__ RangeType* loopLastTwoDimInitAddr = (__local_mem__ RangeType*)loopLastTwoDimInitTensor_.GetPhyAddr();
+    __ubuf__ RangeType* loopLastOneDimInitAddr = (__ubuf__ RangeType*)loopLastOneDimInitTensor_.GetPhyAddr();
+    __ubuf__ RangeType* loopLastTwoDimInitAddr = (__ubuf__ RangeType*)loopLastTwoDimInitTensor_.GetPhyAddr();
     auto inTensor = inQue_.DeQue<T>();
-    __local_mem__ T* inAddr = (__local_mem__ T*)inTensor.GetPhyAddr();
+    __ubuf__ T* inAddr = (__ubuf__ T*)inTensor.GetPhyAddr();
     auto outTensor = outQue_.AllocTensor<T>();
-    __local_mem__ T* outAddr = (__local_mem__ T*)outTensor.GetPhyAddr();
+    __ubuf__ T* outAddr = (__ubuf__ T*)outTensor.GetPhyAddr();
     uint32_t lastOneDimBegin = this->begin_[this->inputDims_ - 1];
     uint32_t lastOneInputDim = tdPtr_->lastOneInputDim;
     auto lastOneOutputDim = RangeType(lastOneDimOutputDim_);
@@ -259,8 +259,8 @@ __aicore__ inline void SliceMoveAlignGather<T, U, V>::GatherWithIndex(uint32_t b
         Reg::Duplicate(regAllOne, 1);
         Reg::Duplicate(regAllZero, 0);
 
-        Reg::DataCopy(regLastOneDimIdx, loopLastOneDimInitAddr);
-        Reg::DataCopy(regLastTwoDimIdx, loopLastTwoDimInitAddr);
+        Reg::LoadAlign(regLastOneDimIdx, loopLastOneDimInitAddr);
+        Reg::LoadAlign(regLastTwoDimIdx, loopLastTwoDimInitAddr);
         uint32_t perLoopCount = perOutBlkLenElem;
         for (uint16_t j = 0; j < times; j++) {
             maskData = Reg::UpdateMask<T>(perLoopCount);
@@ -273,22 +273,22 @@ __aicore__ inline void SliceMoveAlignGather<T, U, V>::GatherWithIndex(uint32_t b
                 uint32_t blockCountInputOffest = i * perLoopInputPadElem;
                 uint32_t blockCountOutputOffest = i * perLoopOutputPadElem;
 
-                Reg::DataCopyGather((Reg::RegTensor<CastType>&)regData, inAddr + blockCountInputOffest,
-                                    (Reg::RegTensor<IdxType>&)regIdx, maskData);
+                Reg::Gather((Reg::RegTensor<CastType>&)regData, inAddr + blockCountInputOffest,
+                            (Reg::RegTensor<IdxType>&)regIdx, maskData);
                 if constexpr (sizeof(T) != 1) {
-                    Reg::DataCopy(outAddr + blockCountOutputOffest + j * rVLCnt, regData,
-                                  maskData); // 下次搬出的起始位置也是block对齐的，不需要考虑最后一次的尾块
+                    Reg::StoreAlign(outAddr + blockCountOutputOffest + j * rVLCnt, regData,
+                                    maskData); // 下次搬出的起始位置也是block对齐的，不需要考虑最后一次的尾块
                 } else {
-                    __local_mem__ CastType* outAddrB16 = reinterpret_cast<__local_mem__ CastType*>(
+                    __ubuf__ CastType* outAddrB16 = reinterpret_cast<__ubuf__ CastType*>(
                         outAddr + blockCountOutputOffest + j * rVLCnt);
-                    Reg::DataCopy<CastType, Reg::StoreDist::DIST_PACK_B16>(
+                    Reg::StoreAlign<CastType, Reg::StoreDist::DIST_PACK_B16>(
                         outAddrB16, (Reg::RegTensor<CastType>&)regData, maskData);
                 }
             }
             // update index
             Reg::Adds(regLastOneDimIdx, regLastOneDimIdx, RangeType(loopLastOneDimInc), maskData);
             Reg::Adds(regLastTwoDimIdx, regLastTwoDimIdx, RangeType(loopLastTwoDimInc), maskData);
-            Reg::CompareScalar<RangeType, CMPMODE::GE>(cmpMaskReg, regLastOneDimIdx, lastOneOutputDim, maskData);
+            Reg::Compares<RangeType, CMPMODE::GE>(cmpMaskReg, regLastOneDimIdx, lastOneOutputDim, maskData);
             Reg::Select(regCarry, regAllOne, regAllZero, cmpMaskReg);
             Reg::Add(regLastTwoDimIdx, regLastTwoDimIdx, regCarry, maskData);
             Reg::Muls(regCarry, regCarry, lastOneOutputDim, maskData);

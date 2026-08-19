@@ -137,8 +137,8 @@ public:
     }
 
 private:
-    __aicore__ inline void VFProcess(__local_mem__ T* diagPtr, __ubuf__ T* xLocalPtr, uint32_t diagNum,
-                                     uint16_t loopNum, uint16_t processNum, IdxType_ indexStart)
+    __aicore__ inline void VFProcess(__ubuf__ T* diagPtr, __ubuf__ T* xLocalPtr, uint32_t diagNum, uint16_t loopNum,
+                                     uint16_t processNum, IdxType_ indexStart)
     {
         __VEC_SCOPE__
         {
@@ -185,8 +185,8 @@ private:
             diagNum = diagNum * ELEMENT_EXPAND_TIMES;
         }
 
-        auto* diagPtr = (__local_mem__ T*)diag.GetPhyAddr();
-        auto* xLocalPtr = (__local_mem__ T*)x.GetPhyAddr();
+        auto* diagPtr = (__ubuf__ T*)diag.GetPhyAddr();
+        auto* xLocalPtr = (__ubuf__ T*)x.GetPhyAddr();
         VFProcess(diagPtr, xLocalPtr, diagNum, loopNum, vlLen, static_cast<IdxType_>(indexStart - offsetInTail));
 
         SetWaitEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3, bufIdx);
