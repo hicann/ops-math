@@ -24,21 +24,15 @@ using namespace std;
 
 class l2_roll_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "roll_test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "roll_test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "roll_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "roll_test TearDown" << std::endl; }
 };
 
 TEST_F(l2_roll_test, test_dtype_float)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -51,8 +45,8 @@ TEST_F(l2_roll_test, test_dtype_float)
 
 TEST_F(l2_roll_test, test_dtype_float16)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT16, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT16, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -65,8 +59,8 @@ TEST_F(l2_roll_test, test_dtype_float16)
 
 TEST_F(l2_roll_test, test_dtype_int32)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_INT32, ACL_FORMAT_ND).Value(vector<int32_t>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_INT32, ACL_FORMAT_ND)
+                     .Value(vector<int32_t>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_INT32, ACL_FORMAT_ND);
@@ -79,8 +73,8 @@ TEST_F(l2_roll_test, test_dtype_int32)
 
 TEST_F(l2_roll_test, test_dtype_int64)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_INT64, ACL_FORMAT_ND).Value(vector<int64_t>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_INT64, ACL_FORMAT_ND)
+                     .Value(vector<int64_t>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_INT64, ACL_FORMAT_ND);
@@ -93,8 +87,8 @@ TEST_F(l2_roll_test, test_dtype_int64)
 
 TEST_F(l2_roll_test, test_dtype_int8)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_INT8, ACL_FORMAT_ND).Value(vector<int8_t>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_INT8, ACL_FORMAT_ND)
+                     .Value(vector<int8_t>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_INT8, ACL_FORMAT_ND);
@@ -107,8 +101,8 @@ TEST_F(l2_roll_test, test_dtype_int8)
 
 TEST_F(l2_roll_test, test_dtype_uint8)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_UINT8, ACL_FORMAT_ND).Value(vector<uint8_t>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_UINT8, ACL_FORMAT_ND)
+                     .Value(vector<uint8_t>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_UINT8, ACL_FORMAT_ND);
@@ -121,8 +115,8 @@ TEST_F(l2_roll_test, test_dtype_uint8)
 
 TEST_F(l2_roll_test, test_dtype_uint32)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_UINT32, ACL_FORMAT_ND).Value(vector<uint32_t>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_UINT32, ACL_FORMAT_ND)
+                     .Value(vector<uint32_t>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_UINT32, ACL_FORMAT_ND);
@@ -148,8 +142,8 @@ TEST_F(l2_roll_test, test_dtype_bool)
 
 TEST_F(l2_roll_test, test_format_nd)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -188,8 +182,8 @@ TEST_F(l2_roll_test, test_format_nhwc)
 
 TEST_F(l2_roll_test, test_shift_dim_0)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -202,8 +196,8 @@ TEST_F(l2_roll_test, test_shift_dim_0)
 
 TEST_F(l2_roll_test, test_shift_dim_1)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto dims = IntArrayDesc(vector<int64_t>{1});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -217,8 +211,8 @@ TEST_F(l2_roll_test, test_shift_dim_1)
 
 TEST_F(l2_roll_test, test_shift_negative_dim)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{-1});
     auto dims = IntArrayDesc(vector<int64_t>{-1});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -246,8 +240,8 @@ TEST_F(l2_roll_test, test_multiple_shifts_dims)
 
 TEST_F(l2_roll_test, test_shift_larger_than_dim)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{5});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -260,8 +254,8 @@ TEST_F(l2_roll_test, test_shift_larger_than_dim)
 
 TEST_F(l2_roll_test, test_empty_dims_single_shift)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{2});
     auto dims = IntArrayDesc(vector<int64_t>{});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -380,8 +374,8 @@ TEST_F(l2_roll_test, test_single_element_tensor)
 
 TEST_F(l2_roll_test, test_shift_zero)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{0});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -433,8 +427,8 @@ TEST_F(l2_roll_test, test_non_contiguous)
 
 TEST_F(l2_roll_test, test_invalid_dims_size_not_match_shifts)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1, 2});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -447,8 +441,8 @@ TEST_F(l2_roll_test, test_invalid_dims_size_not_match_shifts)
 
 TEST_F(l2_roll_test, test_invalid_dims_out_of_range)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto dims = IntArrayDesc(vector<int64_t>{5});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -461,8 +455,8 @@ TEST_F(l2_roll_test, test_invalid_dims_out_of_range)
 
 TEST_F(l2_roll_test, test_invalid_dims_out_of_range_negative)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto dims = IntArrayDesc(vector<int64_t>{-5});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -475,8 +469,8 @@ TEST_F(l2_roll_test, test_invalid_dims_out_of_range_negative)
 
 TEST_F(l2_roll_test, test_invalid_dims_size_not_zero_with_empty_shifts)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -489,8 +483,8 @@ TEST_F(l2_roll_test, test_invalid_dims_size_not_zero_with_empty_shifts)
 
 TEST_F(l2_roll_test, test_invalid_dims_size_not_1_with_empty_shifts)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1, 2});
     auto dims = IntArrayDesc(vector<int64_t>{});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -503,8 +497,8 @@ TEST_F(l2_roll_test, test_invalid_dims_size_not_1_with_empty_shifts)
 
 TEST_F(l2_roll_test, test_invalid_shape_mismatch)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({3, 4}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -517,8 +511,8 @@ TEST_F(l2_roll_test, test_invalid_shape_mismatch)
 
 TEST_F(l2_roll_test, test_invalid_dtype_mismatch)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_INT32, ACL_FORMAT_ND);
@@ -556,8 +550,8 @@ TEST_F(l2_roll_test, test_nullptr_x)
 
 TEST_F(l2_roll_test, test_nullptr_shifts)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
 
@@ -569,8 +563,8 @@ TEST_F(l2_roll_test, test_nullptr_shifts)
 
 TEST_F(l2_roll_test, test_nullptr_dims)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
 
@@ -582,8 +576,8 @@ TEST_F(l2_roll_test, test_nullptr_dims)
 
 TEST_F(l2_roll_test, test_nullptr_out)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto dims = IntArrayDesc(vector<int64_t>{0});
 
@@ -647,8 +641,8 @@ TEST_F(l2_roll_test, test_large_tensor)
 
 TEST_F(l2_roll_test, test_dim_1_wrap)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{3});
     auto dims = IntArrayDesc(vector<int64_t>{1});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -662,8 +656,8 @@ TEST_F(l2_roll_test, test_dim_1_wrap)
 
 TEST_F(l2_roll_test, test_wrap_dim_1)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto dims = IntArrayDesc(vector<int64_t>{1});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -690,8 +684,8 @@ TEST_F(l2_roll_test, test_2d_squeeze_case)
 
 TEST_F(l2_roll_test, test_axis_0_direct_roll)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{2});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -717,8 +711,8 @@ TEST_F(l2_roll_test, test_2d_1x1_tensor)
 
 TEST_F(l2_roll_test, test_negative_shift_large)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{-5});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -731,8 +725,8 @@ TEST_F(l2_roll_test, test_negative_shift_large)
 
 TEST_F(l2_roll_test, test_wrapdim_negative_dim)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{1});
     auto dims = IntArrayDesc(vector<int64_t>{-2});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -855,8 +849,8 @@ TEST_F(l2_roll_test, test_contiguous_false)
 
 TEST_F(l2_roll_test, test_shift_equal_to_dim)
 {
-    auto input =
-        TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto shifts = IntArrayDesc(vector<int64_t>{4});
     auto dims = IntArrayDesc(vector<int64_t>{0});
     auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -877,4 +871,89 @@ TEST_F(l2_roll_test, test_invalid_format_mismatch)
     uint64_t workspaceSize = 0;
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, 0);
+}
+
+TEST_F(l2_roll_test, test_dtype_bf16)
+{
+    auto input = TensorDesc({4, 3}, ACL_BF16, ACL_FORMAT_ND).ValueRange(-10, 10);
+    auto shifts = IntArrayDesc(vector<int64_t>{1});
+    auto dims = IntArrayDesc(vector<int64_t>{0});
+    auto output = TensorDesc({4, 3}, ACL_BF16, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
+}
+
+TEST_F(l2_roll_test, test_dtype_int16)
+{
+    auto input = TensorDesc({4, 3}, ACL_INT16, ACL_FORMAT_ND).ValueRange(-10, 10);
+    auto shifts = IntArrayDesc(vector<int64_t>{1});
+    auto dims = IntArrayDesc(vector<int64_t>{0});
+    auto output = TensorDesc({4, 3}, ACL_INT16, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
+}
+
+TEST_F(l2_roll_test, test_invalid_x_dtype_not_support)
+{
+    auto input = TensorDesc({4, 3}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-10, 10);
+    auto shifts = IntArrayDesc(vector<int64_t>{1});
+    auto dims = IntArrayDesc(vector<int64_t>{0});
+    auto output = TensorDesc({4, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_PARAM_INVALID);
+}
+
+TEST_F(l2_roll_test, test_invalid_out_dtype_not_support)
+{
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10);
+    auto shifts = IntArrayDesc(vector<int64_t>{1});
+    auto dims = IntArrayDesc(vector<int64_t>{0});
+    auto output = TensorDesc({4, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_PARAM_INVALID);
+}
+
+TEST_F(l2_roll_test, test_workspace_nullptr)
+{
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10);
+    auto shifts = IntArrayDesc(vector<int64_t>{1});
+    auto dims = IntArrayDesc(vector<int64_t>{0});
+    auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
+    uint64_t* workspaceSize = nullptr;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_PARAM_NULLPTR);
+}
+
+TEST_F(l2_roll_test, test_bool_1xN_dim1_squeeze_combine)
+{
+    auto input = TensorDesc({1, 4}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<int8_t>{1, 0, 1, 0});
+    auto shifts = IntArrayDesc(vector<int64_t>{1});
+    auto dims = IntArrayDesc(vector<int64_t>{1});
+    auto output = TensorDesc({1, 4}, ACL_BOOL, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
+}
+
+TEST_F(l2_roll_test, test_duplicate_dims)
+{
+    auto input = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                     .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto shifts = IntArrayDesc(vector<int64_t>{1, 2});
+    auto dims = IntArrayDesc(vector<int64_t>{0, 0});
+    auto output = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
 }
