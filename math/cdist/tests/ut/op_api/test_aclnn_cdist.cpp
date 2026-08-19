@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <array>
+#include <limits>
 #include "gtest/gtest.h"
 
 #include "opdev/platform.h"
@@ -23,15 +24,9 @@ using namespace std;
 
 class l2_cdist_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_cdist_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "l2_cdist_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "l2_cdist_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "l2_cdist_test TearDown" << endl; }
 };
 
 TEST_F(l2_cdist_test, case_01_float)
@@ -524,4 +519,100 @@ TEST_F(l2_cdist_test, case_31_workspace_null)
     uint64_t* workspace_size = nullptr;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
+}
+
+// 正常场景：p为正无穷大，覆盖CheckParamsLogic中isinf(p)特殊处理分支
+TEST_F(l2_cdist_test, case_32_p_inf)
+{
+    auto x1Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto x2Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    float p = std::numeric_limits<float>::infinity();
+    int64_t compute_mode = 2;
+
+    auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+}
+
+// 正常场景：非ND格式输入，覆盖CheckFormat中非ND format警告分支
+TEST_F(l2_cdist_test, case_33_non_nd_format)
+{
+    auto x1Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_NCHW);
+    auto x2Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_NCHW);
+    auto outDesc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_NCHW);
+    float p = 2.0;
+    int64_t compute_mode = 2;
+
+    auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+}
+
+// 正常场景：compute_mode=1，覆盖非0/2的合法compute_mode值
+TEST_F(l2_cdist_test, case_34_compute_mode_1)
+{
+    auto x1Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto x2Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    float p = 1.0;
+    int64_t compute_mode = 1;
+
+    auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+}
+
+// 正常场景：3维tensor正常计算路径
+TEST_F(l2_cdist_test, case_35_3d_success)
+{
+    auto x1Desc = TensorDesc({2, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto x2Desc = TensorDesc({2, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({2, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    float p = 2.0;
+    int64_t compute_mode = 2;
+
+    auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+}
+
+// 正常场景：p为较大值，覆盖非常规p值路径
+TEST_F(l2_cdist_test, case_36_p_large_value)
+{
+    auto x1Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto x2Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    float p = 100.0;
+    int64_t compute_mode = 2;
+
+    auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+}
+
+// 正常场景：p为负无穷大，覆盖p<0分支（负无穷）
+TEST_F(l2_cdist_test, case_37_p_neg_inf)
+{
+    auto x1Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto x2Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    float p = -std::numeric_limits<float>::infinity();
+    int64_t compute_mode = 2;
+
+    auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
