@@ -49,7 +49,9 @@ constexpr float CONST_S_MAX = 3.4028235e34f; // clip 上界（REQUIREMENTS §8.1
 // 字面量截断到 FP32 实际可表示精度（mantissa 24 bit，约 7 位有效数字）。
 // 完整精度参考: ln(2) ≈ 0.69314718055994530941723212145818...，编译期 round 到最近 FP32。
 constexpr float CONST_LN2 = 0.6931472f;
-constexpr float CONST_BRANCH_THRESHOLD = 0.00024414063f; // 2^-12，小参数分支阈值
+constexpr float CONST_BRANCH_THRESHOLD = 0.00024414063f;   // 2^-12，小参数分支阈值
+constexpr float CONST_DIRECT_LOG_THRESHOLD = 10.0f;        // 中大参数直接使用 log(u)
+constexpr float CONST_ASYMPTOTIC_THRESHOLD = 268435456.0f; // 2^28，以上使用 log(|x|) + ln(2)
 
 // Double Buffer 固定为 2（19 步含 Log/Sqrt/Div/Compare 计算密集，双缓冲收益显著）
 static constexpr int32_t BUFFER_NUM = 2;
@@ -313,9 +315,14 @@ __aicore__ inline void Asinh<T>::ComputeFp32Pipeline(LocalTensor<float>& xOrigFp
     // Log natural 三参数版本，框架从未 InitBuffer 的剩余 UB 自动申请 tmpBuffer
     AscendC::Log(s, s, n);
 
-    // ===== Step 15: s = log(u) * r / clipped_s → 主路径 res =====
-    AscendC::Mul(s, s, r, n); // s = log(u) * r
-    AscendC::Div(s, s, b, n); // s = log(u) * r / clipped_s
+    // ===== Step 15: 小参数保留 log1p 补偿，中大参数直接使用 log(u) =====
+    // 对 |x| < 10，r/(u-1) 可补偿 u=1+r 在 FP32 下的舍入；对更大输入，
+    // 该乘除会引入额外 1~2 ULP，因此将分子、分母同时置 1，保留 step 14 的 log(u)。
+    AscendC::CompareScalar(selMask, absX, CONST_DIRECT_LOG_THRESHOLD, AscendC::CMPMODE::LT, nAligned);
+    AscendC::Select(r, selMask, r, CONST_ONE, AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE, nAligned);
+    AscendC::Select(b, selMask, b, CONST_ONE, AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE, nAligned);
+    AscendC::Mul(s, s, r, n); // 小参数: log(u) * r；中大参数: log(u) * 1
+    AscendC::Div(s, s, b, n); // 小参数: / (u-1)；中大参数: / 1
     // bBuf 此后再次释放
 
     // ===== Step 16: 大参数修正 result_2 = min(res, log(|x|) + ln(2) + 1/|x|²) =====
@@ -333,7 +340,20 @@ __aicore__ inline void Asinh<T>::ComputeFp32Pipeline(LocalTensor<float>& xOrigFp
     AscendC::Div(b, b, absX, n);
     AscendC::Mul(b, b, b, n); // b = 1/|x|²
     AscendC::Add(r, r, b, n); // r = log(|x|) + ln(2) + 1/|x|²
-    // 16d: s = min(s, r) → result_2
+
+    // 16d: 分段选择 correction。
+    //   |x| < 10: 保持原有 min(res, correction)；
+    //   10 <= |x| < 2^28: 屏蔽 correction，直接保留 log(u)；
+    //   |x| >= 2^28: 恢复渐近式，避免 u≈2|x| 溢出。
+    // bBuf 已结束 1/|x|² 的生命周期，借其保存 correction，供极大值和 NaN 路径恢复。
+    AscendC::Adds(b, r, CONST_ZERO, n);
+    AscendC::CompareScalar(selMask, absX, CONST_DIRECT_LOG_THRESHOLD, AscendC::CMPMODE::LT, nAligned);
+    AscendC::Select(r, selMask, r, CONST_S_MAX, AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE, nAligned);
+    AscendC::CompareScalar(selMask, absX, CONST_ASYMPTOTIC_THRESHOLD, AscendC::CMPMODE::GE, nAligned);
+    AscendC::Select(r, selMask, b, r, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, nAligned);
+    // NaN 与自身比较为 false：恢复 NaN correction，保持原有 NaN 传播语义。
+    AscendC::Compare(selMask, absX, absX, AscendC::CMPMODE::EQ, nAligned);
+    AscendC::Select(r, selMask, r, b, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, nAligned);
     AscendC::Min(s, s, r, n);
 
     // ===== Step 17: output = select(|x| < 2^-12, |x|, result_2) =====
