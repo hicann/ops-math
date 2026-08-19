@@ -38,6 +38,8 @@ namespace ge {
  *Compatible with the TensorFlow operator AddV2.
  *
  */
+#ifndef OPS_PROTO_DEF_ADDV2
+#define OPS_PROTO_DEF_ADDV2
 REG_OP(AddV2)
     .INPUT(x1, TensorType({DT_FLOAT, DT_INT32, DT_INT64, DT_FLOAT16, DT_INT16, DT_INT8, DT_UINT8, DT_DOUBLE,
                            DT_COMPLEX64, DT_BF16, DT_COMPLEX128}))
@@ -46,6 +48,7 @@ REG_OP(AddV2)
     .OUTPUT(y, TensorType({DT_FLOAT, DT_INT32, DT_INT64, DT_FLOAT16, DT_INT16, DT_INT8, DT_UINT8, DT_DOUBLE,
                            DT_COMPLEX64, DT_BF16, DT_COMPLEX128}))
     .OP_END_FACTORY_REG(AddV2)
+#endif
 
 } // namespace ge
 
