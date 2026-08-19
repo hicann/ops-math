@@ -215,17 +215,18 @@ protected:
                 AscendC::Reg::Adds(idxReg, baseIdxReg, ToRangeScalar(axisBase * this->inputRowElems_), idxMask);
                 for (uint16_t inner = 0; inner < curInnerChunk; ++inner) {
                     // Gather: read data from inputAddr using transpose indices in idxReg
-                    AscendC::Reg::DataCopyGather(dataReg, inputAddr + inner, (AscendC::Reg::RegTensor<IdxType>&)idxReg,
-                                                 dataMask);
+                    AscendC::Reg::Gather(dataReg, inputAddr + inner, (AscendC::Reg::RegTensor<IdxType>&)idxReg,
+                                         dataMask);
                     if constexpr (sizeof(T) != 1) {
                         // Non-int8: write directly to UB output address
-                        AscendC::Reg::DataCopy(outputAddr + inner * outputValueAxisElems + axisBase, dataReg, dataMask);
+                        AscendC::Reg::StoreAlign(outputAddr + inner * outputValueAxisElems + axisBase, dataReg,
+                                                 dataMask);
                     } else {
                         // int8: pack into b16 for compact UB write
-                        __local_mem__ CastType* outputAddrB16 = reinterpret_cast<__local_mem__ CastType*>(
+                        __ubuf__ CastType* outputAddrB16 = reinterpret_cast<__ubuf__ CastType*>(
                             outputAddr + inner * outputValueAxisElems + axisBase);
-                        AscendC::Reg::DataCopy<CastType, AscendC::Reg::StoreDist::DIST_PACK_B16>(outputAddrB16, dataReg,
-                                                                                                 dataMask);
+                        AscendC::Reg::StoreAlign<CastType, AscendC::Reg::StoreDist::DIST_PACK_B16>(outputAddrB16,
+                                                                                                   dataReg, dataMask);
                     }
                 }
             }

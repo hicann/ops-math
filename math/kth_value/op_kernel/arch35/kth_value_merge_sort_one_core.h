@@ -127,7 +127,7 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
 template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis>
 __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis>::InitIndexLocal()
 {
-    __local_mem__ int32_t* indexValuePtr = reinterpret_cast<__ubuf__ int32_t*>(indexLocal_.GetPhyAddr());
+    __ubuf__ int32_t* indexValuePtr = reinterpret_cast<__ubuf__ int32_t*>(indexLocal_.GetPhyAddr());
     uint32_t vfLenB32 = Ops::Base::GetVRegSize() / sizeof(int32_t);
     uint16_t repeatTime = Ops::Base::CeilDiv(alignSize_, vfLenB32);
     uint32_t alignSizeCopy = alignSize_;
@@ -139,7 +139,7 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
         for (uint16_t i = 0; i < repeatTime; ++i) {
             Reg::MaskReg mask = Reg::UpdateMask<uint32_t>(alignSizeCopy);
             Reg::Adds(indexTensor, vciTensor, i * vfLenB32, mask);
-            Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(indexValuePtr, indexTensor, vfLenB32, mask);
+            Reg::StoreAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(indexValuePtr, indexTensor, vfLenB32, mask);
         }
     }
 }

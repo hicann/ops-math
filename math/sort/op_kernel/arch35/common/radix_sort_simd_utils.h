@@ -32,7 +32,7 @@ using AscendC::Reg::UpdateMask;
 
 template <typename UT, uint64_t isDescend>
 __aicore__ inline void Twiddle(uint16_t repeatTime, uint32_t vfLen, uint32_t inputNum, RegTensor<UT>& xorReg,
-                               __local_mem__ UT* xValuePtr, __local_mem__ UT* uXValuePtr)
+                               __ubuf__ UT* xValuePtr, __ubuf__ UT* uXValuePtr)
 {
     Reg::MaskReg xorMask;
     Reg::RegTensor<UT> inputReg;
@@ -40,13 +40,13 @@ __aicore__ inline void Twiddle(uint16_t repeatTime, uint32_t vfLen, uint32_t inp
     Reg::RegTensor<UT> xorResult;
     for (uint16_t i = 0; i < repeatTime; i++) {
         xorMask = Reg::UpdateMask<UT>(inputNum);
-        Reg::DataCopy<UT, Reg::PostLiteral::POST_MODE_UPDATE>(inputReg, xValuePtr, vfLen);
+        Reg::LoadAlign<UT, Reg::PostLiteral::POST_MODE_UPDATE>(inputReg, xValuePtr, vfLen);
         Reg::Xor(xorResult, inputReg, xorReg, xorMask);
         if constexpr (isDescend == 0) {
-            Reg::DataCopy<UT, Reg::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, xorResult, vfLen, xorMask);
+            Reg::StoreAlign<UT, Reg::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, xorResult, vfLen, xorMask);
         } else {
             Reg::Not(vnotReg, xorResult, xorMask);
-            Reg::DataCopy<UT, Reg::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, vnotReg, vfLen, xorMask);
+            Reg::StoreAlign<UT, Reg::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, vnotReg, vfLen, xorMask);
         }
     }
 }
@@ -54,8 +54,8 @@ __aicore__ inline void Twiddle(uint16_t repeatTime, uint32_t vfLen, uint32_t inp
 template <typename T1, typename UT, uint64_t isDescend>
 __aicore__ inline void TwiddleInB32(LocalTensor<T1> inputX, LocalTensor<UT> uInputX, uint32_t numTileData)
 {
-    __local_mem__ UT* xValuePtr = (__ubuf__ UT*)inputX.GetPhyAddr();
-    __local_mem__ UT* uXValuePtr = (__ubuf__ UT*)uInputX.GetPhyAddr();
+    __ubuf__ UT* xValuePtr = (__ubuf__ UT*)inputX.GetPhyAddr();
+    __ubuf__ UT* uXValuePtr = (__ubuf__ UT*)uInputX.GetPhyAddr();
     uint16_t repeatTime = CeilDivision(numTileData, VF_LEN_B32);
     uint32_t inputNum = numTileData;
     __VEC_SCOPE__
@@ -71,8 +71,8 @@ __aicore__ inline void TwiddleInB32(LocalTensor<T1> inputX, LocalTensor<UT> uInp
 template <typename T1, typename UT, uint64_t isDescend>
 __aicore__ inline void TwiddleInB16(LocalTensor<T1> inputX, LocalTensor<UT> uintInputX, uint32_t numTileData)
 {
-    __local_mem__ UT* xValuePtr = (__ubuf__ UT*)inputX.GetPhyAddr();
-    __local_mem__ UT* uXValuePtr = (__ubuf__ UT*)uintInputX.GetPhyAddr();
+    __ubuf__ UT* xValuePtr = (__ubuf__ UT*)inputX.GetPhyAddr();
+    __ubuf__ UT* uXValuePtr = (__ubuf__ UT*)uintInputX.GetPhyAddr();
     uint16_t repeatTime = CeilDivision(numTileData, VF_LEN_B16);
     uint32_t inputNum = numTileData;
     __VEC_SCOPE__
@@ -87,8 +87,8 @@ __aicore__ inline void TwiddleInB16(LocalTensor<T1> inputX, LocalTensor<UT> uint
 template <typename T1, typename UT, uint64_t isDescend>
 __aicore__ inline void TwiddleInB8(LocalTensor<T1> inputX, LocalTensor<UT> uintInputX, uint32_t numTileData)
 {
-    __local_mem__ UT* xValuePtr = (__ubuf__ UT*)inputX.GetPhyAddr();
-    __local_mem__ UT* uXValuePtr = (__ubuf__ UT*)uintInputX.GetPhyAddr();
+    __ubuf__ UT* xValuePtr = (__ubuf__ UT*)inputX.GetPhyAddr();
+    __ubuf__ UT* uXValuePtr = (__ubuf__ UT*)uintInputX.GetPhyAddr();
     uint16_t repeatTime = CeilDivision(numTileData, VF_LEN_B8);
     uint32_t inputNum = numTileData;
     __VEC_SCOPE__
@@ -103,8 +103,8 @@ __aicore__ inline void TwiddleInB8(LocalTensor<T1> inputX, LocalTensor<UT> uintI
 template <typename T1, typename UT, uint64_t isDescend>
 __aicore__ inline void TwiddleInB64(LocalTensor<T1> inputX, LocalTensor<UT> uintInputX, uint32_t numTileData)
 {
-    __local_mem__ UT* xValuePtr = (__ubuf__ UT*)inputX.GetPhyAddr();
-    __local_mem__ UT* uXValuePtr = (__ubuf__ UT*)uintInputX.GetPhyAddr();
+    __ubuf__ UT* xValuePtr = (__ubuf__ UT*)inputX.GetPhyAddr();
+    __ubuf__ UT* uXValuePtr = (__ubuf__ UT*)uintInputX.GetPhyAddr();
     uint16_t repeatTime = CeilDivision(numTileData, VF_LEN_B64);
     uint32_t inputNum = numTileData;
     __VEC_SCOPE__
@@ -119,8 +119,8 @@ __aicore__ inline void TwiddleInB64(LocalTensor<T1> inputX, LocalTensor<UT> uint
 template <typename T1, typename UT, uint64_t isDescend>
 __aicore__ inline void TwiddleInFp16(LocalTensor<T1> inputX, LocalTensor<UT> uintInputX, uint32_t numTileData)
 {
-    __local_mem__ uint16_t* xValuePtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr();
-    __local_mem__ uint16_t* uXValuePtr = (__ubuf__ uint16_t*)uintInputX.GetPhyAddr();
+    __ubuf__ uint16_t* xValuePtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr();
+    __ubuf__ uint16_t* uXValuePtr = (__ubuf__ uint16_t*)uintInputX.GetPhyAddr();
     uint16_t repeatTime = CeilDivision(numTileData, VF_LEN_B16);
     uint32_t inputNum = numTileData;
     __VEC_SCOPE__
@@ -137,13 +137,13 @@ __aicore__ inline void TwiddleInFp16(LocalTensor<T1> inputX, LocalTensor<UT> uin
         for (uint16_t i = 0; i < repeatTime; i++) {
             xorMask = Reg::UpdateMask<uint16_t>(inputNum);
             // load input
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputReg, xValuePtr, VF_LEN_B16);
+            Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputReg, xValuePtr, VF_LEN_B16);
             // vand
             Reg::RegTensor<uint16_t> andValueOne;
             Reg::And(andValueOne, inputReg, vandMask, maskB16);
             // not equal
             Reg::MaskReg cmpValueOne;
-            Reg::CompareScalar<uint16_t, CMPMODE::NE>(cmpValueOne, andValueOne, ZERO_VALUE_FLAG_B16, maskB16);
+            Reg::Compares<uint16_t, CMPMODE::NE>(cmpValueOne, andValueOne, ZERO_VALUE_FLAG_B16, maskB16);
             // vsel
             Reg::RegTensor<uint16_t> finalMaskOne;
             Reg::Select(finalMaskOne, xorMaskReg, vandMask, cmpValueOne);
@@ -155,17 +155,17 @@ __aicore__ inline void TwiddleInFp16(LocalTensor<T1> inputX, LocalTensor<UT> uin
             // 如果后期需要改为单次twiddleIn，则需要在提取位数时将负0转换为正0
             // get -0.0 mask
             Reg::MaskReg minusZeroMask;
-            Reg::CompareScalar<uint16_t, CMPMODE::EQ>(minusZeroMask, xorVectorOne, TWIDDLED_MINUS_ZERO_BITS_FP16,
-                                                      maskB16);
+            Reg::Compares<uint16_t, CMPMODE::EQ>(minusZeroMask, xorVectorOne, TWIDDLED_MINUS_ZERO_BITS_FP16, maskB16);
             // change -0.0 to +0.0
             Reg::RegTensor<uint16_t> resultReg;
             Reg::Select(resultReg, twiddledZeroReg, xorVectorOne, minusZeroMask);
 
             if constexpr (isDescend == 0) {
-                Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, resultReg, VF_LEN_B16, xorMask);
+                Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, resultReg, VF_LEN_B16,
+                                                                              xorMask);
             } else {
                 Reg::Not(vnotReg, resultReg, xorMask);
-                Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, vnotReg, VF_LEN_B16, xorMask);
+                Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, vnotReg, VF_LEN_B16, xorMask);
             }
         }
     }
@@ -174,8 +174,8 @@ __aicore__ inline void TwiddleInFp16(LocalTensor<T1> inputX, LocalTensor<UT> uin
 template <typename T1, typename UT, uint64_t isDescend>
 __aicore__ inline void TwiddleInFp32(LocalTensor<T1> inputX, LocalTensor<UT> uintInputX, uint32_t numTileData)
 {
-    __local_mem__ uint32_t* xValuePtr = (__ubuf__ uint32_t*)inputX.GetPhyAddr();
-    __local_mem__ uint32_t* uXValuePtr = (__ubuf__ uint32_t*)uintInputX.GetPhyAddr();
+    __ubuf__ uint32_t* xValuePtr = (__ubuf__ uint32_t*)inputX.GetPhyAddr();
+    __ubuf__ uint32_t* uXValuePtr = (__ubuf__ uint32_t*)uintInputX.GetPhyAddr();
     uint16_t repeatTime = CeilDivision(numTileData, VF_LEN_B32);
     uint32_t inputNum = numTileData;
     __VEC_SCOPE__
@@ -191,13 +191,13 @@ __aicore__ inline void TwiddleInFp32(LocalTensor<T1> inputX, LocalTensor<UT> uin
         for (uint16_t i = 0; i < repeatTime; i++) {
             xorMask = Reg::UpdateMask<uint32_t>(inputNum);
             // load input
-            Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputReg, xValuePtr, VF_LEN_B32);
+            Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputReg, xValuePtr, VF_LEN_B32);
             // vand
             Reg::RegTensor<uint32_t> andValueOne;
             Reg::And(andValueOne, inputReg, vandMask, maskB32);
             // not equal
             Reg::MaskReg cmpValueOne;
-            Reg::CompareScalar<uint32_t, CMPMODE::NE>(cmpValueOne, andValueOne, ZERO_VALUE_FLAG_B32, xorMask);
+            Reg::Compares<uint32_t, CMPMODE::NE>(cmpValueOne, andValueOne, ZERO_VALUE_FLAG_B32, xorMask);
             // vsel
             Reg::RegTensor<uint32_t> finalMaskOne;
             Reg::Select(finalMaskOne, xorMaskReg, vandMask, cmpValueOne);
@@ -209,17 +209,17 @@ __aicore__ inline void TwiddleInFp32(LocalTensor<T1> inputX, LocalTensor<UT> uin
             // 如果后期需要改为单次twiddleIn，则需要在提取位数时将负0转换为正0
             // get -0.0 mask
             Reg::MaskReg minusZeroMask;
-            Reg::CompareScalar<uint32_t, CMPMODE::EQ>(minusZeroMask, xorVectorZero, TWIDDLED_MINUS_ZERO_BITS_FP32,
-                                                      maskB32);
+            Reg::Compares<uint32_t, CMPMODE::EQ>(minusZeroMask, xorVectorZero, TWIDDLED_MINUS_ZERO_BITS_FP32, maskB32);
             // change -0.0 to +0.0
             Reg::RegTensor<uint32_t> resultReg;
             Reg::Select(resultReg, twiddledZeroReg, xorVectorZero, minusZeroMask);
 
             if constexpr (isDescend == 0) {
-                Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, resultReg, VF_LEN_B32, xorMask);
+                Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, resultReg, VF_LEN_B32,
+                                                                              xorMask);
             } else {
                 Reg::Not(vnotReg, resultReg, maskB32);
-                Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, vnotReg, VF_LEN_B32, xorMask);
+                Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, vnotReg, VF_LEN_B32, xorMask);
             }
         }
     }
@@ -228,8 +228,8 @@ __aicore__ inline void TwiddleInFp32(LocalTensor<T1> inputX, LocalTensor<UT> uin
 template <typename T1, typename UT>
 __aicore__ inline void ReverseInputData(LocalTensor<T1> inputX, LocalTensor<UT> uintInputX, uint32_t numTileData)
 {
-    __local_mem__ UT* inputXValuePtr = (__ubuf__ UT*)inputX.GetPhyAddr();
-    __local_mem__ UT* reverseInputXPtr = (__ubuf__ UT*)uintInputX.GetPhyAddr();
+    __ubuf__ UT* inputXValuePtr = (__ubuf__ UT*)inputX.GetPhyAddr();
+    __ubuf__ UT* reverseInputXPtr = (__ubuf__ UT*)uintInputX.GetPhyAddr();
     uint32_t vfLen = Ops::Base::GetVRegSize() / sizeof(UT);
     uint16_t repeatTime = CeilDivision(numTileData, vfLen);
     uint32_t inputElementNum = numTileData;
@@ -240,9 +240,9 @@ __aicore__ inline void ReverseInputData(LocalTensor<T1> inputX, LocalTensor<UT> 
         Reg::MaskReg predicateDefaultB8 = Reg::CreateMask<UT>();
         for (uint16_t i = 0; i < repeatTime; i++) {
             Reg::MaskReg vnotMask = Reg::UpdateMask<UT>(inputElementNum);
-            Reg::DataCopy<UT, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtr, vfLen);
+            Reg::LoadAlign<UT, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtr, vfLen);
             Reg::Not(vnotVectorZero, inputVectorOne, predicateDefaultB8);
-            Reg::DataCopy<UT, Reg::PostLiteral::POST_MODE_UPDATE>(reverseInputXPtr, vnotVectorZero, vfLen, vnotMask);
+            Reg::StoreAlign<UT, Reg::PostLiteral::POST_MODE_UPDATE>(reverseInputXPtr, vnotVectorZero, vfLen, vnotMask);
         }
     }
 }

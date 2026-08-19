@@ -113,7 +113,7 @@ __aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallA
     pipe_->InitBuffer(sortedValueLocalCastTbuf_, alignSize_ * sizeof(CONVERT_TYPE) * oneCoreRowNum_);
     indexLocal_ = indeXLocalTbuf_.AllocTensor<uint32_t>();
     // init indexLocal value
-    __local_mem__ int32_t* indexValuePtr = (__ubuf__ int32_t*)indexLocal_.GetPhyAddr();
+    __ubuf__ int32_t* indexValuePtr = (__ubuf__ int32_t*)indexLocal_.GetPhyAddr();
     uint32_t vfLenB32 = Ops::Base::GetVRegSize() / sizeof(int32_t);
     uint16_t repeatTime = CeilDivision(alignSize_, vfLenB32);
     uint32_t aglinTileSizeCopy = alignSize_;
@@ -125,7 +125,7 @@ __aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallA
         for (uint16_t i = 0; i < repeatTime; i++) {
             Reg::MaskReg vciMask = Reg::UpdateMask<uint32_t>(aglinTileSizeCopy);
             Reg::Adds(indexTensor, vciTensor, i * vfLenB32, vciMask);
-            Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(indexValuePtr, indexTensor, vfLenB32, vciMask);
+            Reg::StoreAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(indexValuePtr, indexTensor, vfLenB32, vciMask);
         }
     }
 }

@@ -225,15 +225,15 @@ __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>
         AscendC::Reg::Arange(valueIdxReg, 0);
         AscendC::Reg::Muls(valueIdxReg, valueIdxReg, static_cast<RangeType_>(this->valueAxisElems_), valueIdxMask);
         for (uint16_t axis = 0; axis < this->axisLen_; ++axis) {
-            AscendC::Reg::DataCopyGather(valueReg, sortedValueAddr + axis,
-                                         (AscendC::Reg::RegTensor<IdxType_>&)valueIdxReg, valueMask);
+            AscendC::Reg::Gather(valueReg, sortedValueAddr + axis, (AscendC::Reg::RegTensor<IdxType_>&)valueIdxReg,
+                                 valueMask);
             if constexpr (sizeof(T) != 1) {
-                AscendC::Reg::DataCopy(outputValueAddr + axis * this->inputRowElems_, valueReg, valueMask);
+                AscendC::Reg::StoreAlign(outputValueAddr + axis * this->inputRowElems_, valueReg, valueMask);
             } else {
-                __local_mem__ CastType_* outputValueAddrB16 = reinterpret_cast<__local_mem__ CastType_*>(
+                __ubuf__ CastType_* outputValueAddrB16 = reinterpret_cast<__ubuf__ CastType_*>(
                     outputValueAddr + axis * this->inputRowElems_);
-                AscendC::Reg::DataCopy<CastType_, AscendC::Reg::StoreDist::DIST_PACK_B16>(outputValueAddrB16, valueReg,
-                                                                                          valueMask);
+                AscendC::Reg::StoreAlign<CastType_, AscendC::Reg::StoreDist::DIST_PACK_B16>(outputValueAddrB16,
+                                                                                            valueReg, valueMask);
             }
         }
     }

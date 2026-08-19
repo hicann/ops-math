@@ -64,7 +64,7 @@ __aicore__ inline void MergeSortKernel<T, CONVERT_TYPE, IS_DESCEND>::InitMergeSo
     pipePtr_->InitBuffer(sortedValCastBuf_, ROUND_UP_AGLIN(alignTileSize * sizeof(CONVERT_TYPE)) * coreRowNum);
     idxLocal_ = idxLocalBuf_.AllocTensor<uint32_t>();
     // init idxLocal_ value
-    __local_mem__ int32_t* idxValPtr = (__ubuf__ int32_t*)idxLocal_.GetPhyAddr();
+    __ubuf__ int32_t* idxValPtr = (__ubuf__ int32_t*)idxLocal_.GetPhyAddr();
     uint16_t repeatCnt = (alignTileSize + ONE_TIMES_B32_NUM - 1) / ONE_TIMES_B32_NUM;
     uint32_t alignTileSizeCp = alignTileSize;
     __VEC_SCOPE__
@@ -75,7 +75,7 @@ __aicore__ inline void MergeSortKernel<T, CONVERT_TYPE, IS_DESCEND>::InitMergeSo
         for (uint16_t i = 0; i < repeatCnt; i++) {
             Reg::MaskReg vciMsk = Reg::UpdateMask<uint32_t>(alignTileSizeCp);
             Reg::Adds(idxReg, vciReg, i * ONE_TIMES_B32_NUM, vciMsk);
-            Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(idxValPtr, idxReg, ONE_TIMES_B32_NUM, vciMsk);
+            Reg::StoreAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(idxValPtr, idxReg, ONE_TIMES_B32_NUM, vciMsk);
         }
     }
 }

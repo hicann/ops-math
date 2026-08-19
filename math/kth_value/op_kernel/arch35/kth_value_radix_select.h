@@ -61,11 +61,11 @@ __simt_callee__ __aicore__ inline int64_t LocatePrefixTarget(__ubuf__ UT* keys, 
     return -1;
 }
 
-__aicore__ inline void StoreRadixByteHistogram(__local_mem__ uint16_t* histogramPtr, Reg::RegTensor<uint16_t>& hist0,
+__aicore__ inline void StoreRadixByteHistogram(__ubuf__ uint16_t* histogramPtr, Reg::RegTensor<uint16_t>& hist0,
                                                Reg::RegTensor<uint16_t>& hist1, Reg::MaskReg maskB16)
 {
-    Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramPtr, hist0, VF_LEN_B16, maskB16);
-    Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramPtr, hist1, VF_LEN_B16, maskB16);
+    Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramPtr, hist0, VF_LEN_B16, maskB16);
+    Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramPtr, hist1, VF_LEN_B16, maskB16);
 }
 
 __aicore__ inline void AddSelectedByteHistogram(Reg::RegTensor<uint16_t>& hist0, Reg::RegTensor<uint16_t>& hist1,
@@ -73,7 +73,7 @@ __aicore__ inline void AddSelectedByteHistogram(Reg::RegTensor<uint16_t>& hist0,
                                                 Reg::MaskReg histMask)
 {
     Reg::MaskReg selectedMask;
-    Reg::CompareScalar<uint8_t, CMPMODE::EQ>(selectedMask, flagBytes, 1, histMask);
+    Reg::Compares<uint8_t, CMPMODE::EQ>(selectedMask, flagBytes, 1, histMask);
     Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::FREQUENCY>(hist0, bytes,
                                                                                                      selectedMask);
     Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN1, Reg::HistogramsType::FREQUENCY>(hist1, bytes,
@@ -87,7 +87,7 @@ __aicore__ inline void SelectPrefixFlag(Reg::RegTensor<VT>& flag, Reg::RegTensor
 {
     Reg::MaskReg selected;
     Reg::And(masked, input, prefixMaskReg, mask);
-    Reg::CompareScalar<VT, CMPMODE::EQ>(selected, masked, prefixKey, mask);
+    Reg::Compares<VT, CMPMODE::EQ>(selected, masked, prefixKey, mask);
     Reg::Select(flag, one, zero, selected);
 }
 
@@ -427,8 +427,8 @@ __aicore__ inline void KthValueRadixSelect<T, UT>::BuildTileHistogramB8(LocalTen
                                                                         UT prefixMask, UT prefixKey,
                                                                         LocalTensor<uint16_t>& tileHistogram)
 {
-    __local_mem__ UT* keyPtr = (__ubuf__ UT*)keys.GetPhyAddr();
-    __local_mem__ uint16_t* histogramPtr = (__ubuf__ uint16_t*)tileHistogram.GetPhyAddr();
+    __ubuf__ UT* keyPtr = (__ubuf__ UT*)keys.GetPhyAddr();
+    __ubuf__ uint16_t* histogramPtr = (__ubuf__ uint16_t*)tileHistogram.GetPhyAddr();
     uint32_t remain = count;
     uint16_t repeats = CeilDivision(count, VF_LEN_B8);
     __VEC_SCOPE__
@@ -442,10 +442,10 @@ __aicore__ inline void KthValueRadixSelect<T, UT>::BuildTileHistogramB8(LocalTen
         Reg::Duplicate(prefixMaskReg, prefixMask, maskB8);
         for (uint16_t i = 0; i < repeats; ++i) {
             Reg::MaskReg validMask = Reg::UpdateMask<uint8_t>(remain);
-            Reg::DataCopy<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(input, keyPtr, VF_LEN_B8);
+            Reg::LoadAlign<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(input, keyPtr, VF_LEN_B8);
             Reg::And(masked, input, prefixMaskReg, validMask);
             Reg::MaskReg selectedMask;
-            Reg::CompareScalar<uint8_t, CMPMODE::EQ>(selectedMask, masked, prefixKey, validMask);
+            Reg::Compares<uint8_t, CMPMODE::EQ>(selectedMask, masked, prefixKey, validMask);
             Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::FREQUENCY>(
                 hist0, input, selectedMask);
             Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN1, Reg::HistogramsType::FREQUENCY>(
@@ -460,8 +460,8 @@ __aicore__ inline void KthValueRadixSelect<T, UT>::BuildTileHistogramB16(LocalTe
                                                                          uint32_t shift, UT prefixMask, UT prefixKey,
                                                                          LocalTensor<uint16_t>& tileHistogram)
 {
-    __local_mem__ UT* keyPtr = (__ubuf__ UT*)keys.GetPhyAddr();
-    __local_mem__ uint16_t* histogramPtr = (__ubuf__ uint16_t*)tileHistogram.GetPhyAddr();
+    __ubuf__ UT* keyPtr = (__ubuf__ UT*)keys.GetPhyAddr();
+    __ubuf__ uint16_t* histogramPtr = (__ubuf__ uint16_t*)tileHistogram.GetPhyAddr();
     uint32_t remain = count;
     uint16_t repeats = CeilDivision(count, VF_LEN_B8);
     __VEC_SCOPE__
@@ -476,13 +476,13 @@ __aicore__ inline void KthValueRadixSelect<T, UT>::BuildTileHistogramB16(LocalTe
         Reg::Duplicate(zero, 0, maskB16);
         for (uint16_t i = 0; i < repeats; ++i) {
             Reg::MaskReg histMask = Reg::UpdateMask<uint8_t>(remain);
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(input0, keyPtr, VF_LEN_B16);
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(input1, keyPtr, VF_LEN_B16);
+            Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(input0, keyPtr, VF_LEN_B16);
+            Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(input1, keyPtr, VF_LEN_B16);
             Reg::And(masked0, input0, prefixMaskReg, maskB16);
             Reg::And(masked1, input1, prefixMaskReg, maskB16);
             Reg::MaskReg selected0, selected1;
-            Reg::CompareScalar<uint16_t, CMPMODE::EQ>(selected0, masked0, prefixKey, maskB16);
-            Reg::CompareScalar<uint16_t, CMPMODE::EQ>(selected1, masked1, prefixKey, maskB16);
+            Reg::Compares<uint16_t, CMPMODE::EQ>(selected0, masked0, prefixKey, maskB16);
+            Reg::Compares<uint16_t, CMPMODE::EQ>(selected1, masked1, prefixKey, maskB16);
             Reg::Select(flag0, one, zero, selected0);
             Reg::Select(flag1, one, zero, selected1);
             Reg::ShiftRights<uint16_t, int16_t>(shifted0, input0, shift, maskB16);
@@ -501,8 +501,8 @@ __aicore__ inline void KthValueRadixSelect<T, UT>::BuildTileHistogramB32(LocalTe
                                                                          uint32_t shift, UT prefixMask, UT prefixKey,
                                                                          LocalTensor<uint16_t>& tileHistogram)
 {
-    __local_mem__ UT* keyPtr = (__ubuf__ UT*)keys.GetPhyAddr();
-    __local_mem__ uint16_t* histogramPtr = (__ubuf__ uint16_t*)tileHistogram.GetPhyAddr();
+    __ubuf__ UT* keyPtr = (__ubuf__ UT*)keys.GetPhyAddr();
+    __ubuf__ uint16_t* histogramPtr = (__ubuf__ uint16_t*)tileHistogram.GetPhyAddr();
     uint32_t remain = count;
     uint16_t repeats = CeilDivision(count, VF_LEN_B8);
     __VEC_SCOPE__
@@ -519,10 +519,10 @@ __aicore__ inline void KthValueRadixSelect<T, UT>::BuildTileHistogramB32(LocalTe
         Reg::Duplicate(zero, 0, maskB32);
         for (uint16_t i = 0; i < repeats; ++i) {
             Reg::MaskReg histMask = Reg::UpdateMask<uint8_t>(remain);
-            Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(input0, keyPtr, VF_LEN_B32);
-            Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(input1, keyPtr, VF_LEN_B32);
-            Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(input2, keyPtr, VF_LEN_B32);
-            Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(input3, keyPtr, VF_LEN_B32);
+            Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(input0, keyPtr, VF_LEN_B32);
+            Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(input1, keyPtr, VF_LEN_B32);
+            Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(input2, keyPtr, VF_LEN_B32);
+            Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(input3, keyPtr, VF_LEN_B32);
             SelectPrefixFlag(flag0, input0, masked, prefixMaskReg, prefixKey, one, zero, maskB32);
             SelectPrefixFlag(flag1, input1, masked, prefixMaskReg, prefixKey, one, zero, maskB32);
             SelectPrefixFlag(flag2, input2, masked, prefixMaskReg, prefixKey, one, zero, maskB32);
@@ -546,10 +546,10 @@ __aicore__ inline void KthValueRadixSelect<T, UT>::BuildTileHistogramB64(LocalTe
                                                                          uint32_t shift, UT prefixMask, UT prefixKey,
                                                                          LocalTensor<uint16_t>& tileHistogram)
 {
-    __local_mem__ UT* keyPtr = (__ubuf__ UT*)keys.GetPhyAddr();
+    __ubuf__ UT* keyPtr = (__ubuf__ UT*)keys.GetPhyAddr();
     uint16_t repeats = CeilDivision(count, VF_LEN_B8);
     uint32_t remain = count;
-    __local_mem__ uint16_t* histogramPtr = (__ubuf__ uint16_t*)tileHistogram.GetPhyAddr();
+    __ubuf__ uint16_t* histogramPtr = (__ubuf__ uint16_t*)tileHistogram.GetPhyAddr();
     __VEC_SCOPE__
     {
         Reg::RegTensor<uint16_t> hist0, hist1;
@@ -566,14 +566,14 @@ __aicore__ inline void KthValueRadixSelect<T, UT>::BuildTileHistogramB64(LocalTe
         Reg::Duplicate(zero, 0, maskB64);
         for (uint16_t i = 0; i < repeats; ++i) {
             Reg::MaskReg histMask = Reg::UpdateMask<uint8_t>(remain);
-            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(input0, keyPtr, VF_LEN_B64);
-            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(input1, keyPtr, VF_LEN_B64);
-            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(input2, keyPtr, VF_LEN_B64);
-            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(input3, keyPtr, VF_LEN_B64);
-            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(input4, keyPtr, VF_LEN_B64);
-            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(input5, keyPtr, VF_LEN_B64);
-            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(input6, keyPtr, VF_LEN_B64);
-            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(input7, keyPtr, VF_LEN_B64);
+            Reg::LoadAlign<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(input0, keyPtr, VF_LEN_B64);
+            Reg::LoadAlign<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(input1, keyPtr, VF_LEN_B64);
+            Reg::LoadAlign<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(input2, keyPtr, VF_LEN_B64);
+            Reg::LoadAlign<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(input3, keyPtr, VF_LEN_B64);
+            Reg::LoadAlign<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(input4, keyPtr, VF_LEN_B64);
+            Reg::LoadAlign<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(input5, keyPtr, VF_LEN_B64);
+            Reg::LoadAlign<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(input6, keyPtr, VF_LEN_B64);
+            Reg::LoadAlign<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(input7, keyPtr, VF_LEN_B64);
             SelectPrefixFlag(flag0, input0, masked, prefixMaskReg, prefixKey, one, zero, maskB64);
             SelectPrefixFlag(flag1, input1, masked, prefixMaskReg, prefixKey, one, zero, maskB64);
             SelectPrefixFlag(flag2, input2, masked, prefixMaskReg, prefixKey, one, zero, maskB64);
@@ -604,14 +604,14 @@ __aicore__ inline void KthValueRadixSelect<T, UT>::BuildTileHistogramB64(LocalTe
 template <typename T, typename UT>
 __aicore__ inline void KthValueRadixSelect<T, UT>::ClearHistogram(LocalTensor<uint64_t>& histogram)
 {
-    __local_mem__ int64_t* histogramPtr = (__ubuf__ int64_t*)histogram.GetPhyAddr();
+    __ubuf__ int64_t* histogramPtr = (__ubuf__ int64_t*)histogram.GetPhyAddr();
     __VEC_SCOPE__
     {
         Reg::MaskReg maskB64 = Reg::CreateMask<int64_t>();
         Reg::RegTensor<int64_t> zero;
         Reg::Duplicate(zero, 0, maskB64);
         for (uint16_t i = 0; i < RADIX / VF_LEN_B64; ++i) {
-            Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramPtr, zero, VF_LEN_B64, maskB64);
+            Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramPtr, zero, VF_LEN_B64, maskB64);
         }
     }
 }
@@ -620,18 +620,19 @@ template <typename T, typename UT>
 __aicore__ inline void KthValueRadixSelect<T, UT>::AccumulateHistogram(LocalTensor<uint64_t>& histogram,
                                                                        LocalTensor<uint64_t>& src)
 {
-    __local_mem__ int64_t* histogramReadPtr = (__ubuf__ int64_t*)histogram.GetPhyAddr();
-    __local_mem__ int64_t* histogramWritePtr = histogramReadPtr;
-    __local_mem__ int64_t* srcPtr = (__ubuf__ int64_t*)src.GetPhyAddr();
+    __ubuf__ int64_t* histogramReadPtr = (__ubuf__ int64_t*)histogram.GetPhyAddr();
+    __ubuf__ int64_t* histogramWritePtr = histogramReadPtr;
+    __ubuf__ int64_t* srcPtr = (__ubuf__ int64_t*)src.GetPhyAddr();
     __VEC_SCOPE__
     {
         Reg::MaskReg maskB64 = Reg::CreateMask<int64_t>();
         Reg::RegTensor<int64_t> dstReg, srcReg;
         for (uint16_t i = 0; i < RADIX / VF_LEN_B64; ++i) {
-            Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(dstReg, histogramReadPtr, VF_LEN_B64);
-            Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(srcReg, srcPtr, VF_LEN_B64);
+            Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(dstReg, histogramReadPtr, VF_LEN_B64);
+            Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(srcReg, srcPtr, VF_LEN_B64);
             Reg::Add(dstReg, dstReg, srcReg, maskB64);
-            Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, dstReg, VF_LEN_B64, maskB64);
+            Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, dstReg, VF_LEN_B64,
+                                                                         maskB64);
         }
     }
 }
@@ -640,16 +641,16 @@ template <typename T, typename UT>
 __aicore__ inline void KthValueRadixSelect<T, UT>::AccumulateTileHistogram(LocalTensor<uint64_t>& histogram,
                                                                            LocalTensor<uint16_t>& tileHistogram)
 {
-    __local_mem__ uint16_t* tilePtr = (__ubuf__ uint16_t*)tileHistogram.GetPhyAddr();
-    __local_mem__ int64_t* histogramReadPtr = (__ubuf__ int64_t*)histogram.GetPhyAddr();
-    __local_mem__ int64_t* histogramWritePtr = histogramReadPtr;
+    __ubuf__ uint16_t* tilePtr = (__ubuf__ uint16_t*)tileHistogram.GetPhyAddr();
+    __ubuf__ int64_t* histogramReadPtr = (__ubuf__ int64_t*)histogram.GetPhyAddr();
+    __ubuf__ int64_t* histogramWritePtr = histogramReadPtr;
     __VEC_SCOPE__
     {
         Reg::MaskReg maskB16 = Reg::CreateMask<uint16_t>();
         Reg::MaskReg maskB64 = Reg::CreateMask<int64_t>();
         Reg::RegTensor<uint16_t> hist0, hist1, zero16;
-        Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(hist0, tilePtr, VF_LEN_B16);
-        Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(hist1, tilePtr, VF_LEN_B16);
+        Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(hist0, tilePtr, VF_LEN_B16);
+        Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(hist1, tilePtr, VF_LEN_B16);
         Reg::Duplicate(zero16, 0, maskB16);
 
         Reg::RegTensor<uint32_t> hist32_0, hist32_1, hist32_2, hist32_3;
@@ -668,14 +669,14 @@ __aicore__ inline void KthValueRadixSelect<T, UT>::AccumulateTileHistogram(Local
                         (Reg::RegTensor<uint32_t>&)zero16);
 
         Reg::RegTensor<int64_t> old0, old1, old2, old3, old4, old5, old6, old7;
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(old0, histogramReadPtr, VF_LEN_B64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(old1, histogramReadPtr, VF_LEN_B64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(old2, histogramReadPtr, VF_LEN_B64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(old3, histogramReadPtr, VF_LEN_B64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(old4, histogramReadPtr, VF_LEN_B64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(old5, histogramReadPtr, VF_LEN_B64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(old6, histogramReadPtr, VF_LEN_B64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(old7, histogramReadPtr, VF_LEN_B64);
+        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(old0, histogramReadPtr, VF_LEN_B64);
+        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(old1, histogramReadPtr, VF_LEN_B64);
+        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(old2, histogramReadPtr, VF_LEN_B64);
+        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(old3, histogramReadPtr, VF_LEN_B64);
+        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(old4, histogramReadPtr, VF_LEN_B64);
+        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(old5, histogramReadPtr, VF_LEN_B64);
+        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(old6, histogramReadPtr, VF_LEN_B64);
+        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(old7, histogramReadPtr, VF_LEN_B64);
         Reg::Add(old0, old0, hist64_0, maskB64);
         Reg::Add(old1, old1, hist64_1, maskB64);
         Reg::Add(old2, old2, hist64_2, maskB64);
@@ -684,14 +685,14 @@ __aicore__ inline void KthValueRadixSelect<T, UT>::AccumulateTileHistogram(Local
         Reg::Add(old5, old5, hist64_5, maskB64);
         Reg::Add(old6, old6, hist64_6, maskB64);
         Reg::Add(old7, old7, hist64_7, maskB64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, old0, VF_LEN_B64, maskB64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, old1, VF_LEN_B64, maskB64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, old2, VF_LEN_B64, maskB64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, old3, VF_LEN_B64, maskB64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, old4, VF_LEN_B64, maskB64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, old5, VF_LEN_B64, maskB64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, old6, VF_LEN_B64, maskB64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, old7, VF_LEN_B64, maskB64);
+        Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, old0, VF_LEN_B64, maskB64);
+        Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, old1, VF_LEN_B64, maskB64);
+        Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, old2, VF_LEN_B64, maskB64);
+        Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, old3, VF_LEN_B64, maskB64);
+        Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, old4, VF_LEN_B64, maskB64);
+        Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, old5, VF_LEN_B64, maskB64);
+        Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, old6, VF_LEN_B64, maskB64);
+        Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histogramWritePtr, old7, VF_LEN_B64, maskB64);
     }
 }
 

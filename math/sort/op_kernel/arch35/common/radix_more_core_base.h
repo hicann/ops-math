@@ -52,9 +52,9 @@ __aicore__ inline void CopyDataIn(GlobalTensor<T1> inputX, LocalTensor<T1> xLoca
 template <typename T3>
 __aicore__ inline void ComputeSumChist(RegTensor<uint16_t>& chist0, RegTensor<uint16_t>& chist1,
                                        RegTensor<uint16_t>& hist0, RegTensor<uint16_t>& hist1, MaskReg& maskB16,
-                                       MaskReg& maskB32, __local_mem__ T3* blockExcusiveUbRPtr,
-                                       __local_mem__ T3* blockExcusiveUbWPtr, __local_mem__ uint16_t* histUbPtr,
-                                       __local_mem__ uint16_t* histCumsumUbPtr)
+                                       MaskReg& maskB32, __ubuf__ T3* blockExcusiveUbRPtr,
+                                       __ubuf__ T3* blockExcusiveUbWPtr, __ubuf__ uint16_t* histUbPtr,
+                                       __ubuf__ uint16_t* histCumsumUbPtr)
 {
     // chist is inclusive per-tile cumulative histogram. Subtract the current bin count to get the per-bin exclusive
     // offset used by the later scatter phase.
@@ -64,10 +64,11 @@ __aicore__ inline void ComputeSumChist(RegTensor<uint16_t>& chist0, RegTensor<ui
 
     // Persist each tile's histogram and exclusive cumsum. ComputeOnePass reloads these after global bin offsets have
     // been accumulated across tiles/cores.
-    Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(histUbPtr, hist0, VF_LEN_B16, maskB16);
-    Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(histUbPtr, hist1, VF_LEN_B16, maskB16);
-    Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(histCumsumUbPtr, excusiveSumZero, VF_LEN_B16, maskB16);
-    Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(histCumsumUbPtr, excusiveSumOne, VF_LEN_B16, maskB16);
+    Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(histUbPtr, hist0, VF_LEN_B16, maskB16);
+    Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(histUbPtr, hist1, VF_LEN_B16, maskB16);
+    Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(histCumsumUbPtr, excusiveSumZero, VF_LEN_B16,
+                                                                  maskB16);
+    Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(histCumsumUbPtr, excusiveSumOne, VF_LEN_B16, maskB16);
 
     Reg::Duplicate(zeroReg, 0, maskB16);
     Reg::RegTensor<uint32_t> sum0, sum1, sum2, sum3;
@@ -75,19 +76,19 @@ __aicore__ inline void ComputeSumChist(RegTensor<uint16_t>& chist0, RegTensor<ui
     Reg::Interleave((Reg::RegTensor<uint16_t>&)sum2, (Reg::RegTensor<uint16_t>&)sum3, excusiveSumOne, zeroReg);
     if constexpr (sizeof(T3) == sizeof(uint32_t)) {
         Reg::RegTensor<uint32_t> sumIn0, sumIn1, sumIn2, sumIn3;
-        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(sumIn0, blockExcusiveUbRPtr, VF_LEN_B32);
-        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(sumIn1, blockExcusiveUbRPtr, VF_LEN_B32);
-        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(sumIn2, blockExcusiveUbRPtr, VF_LEN_B32);
-        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(sumIn3, blockExcusiveUbRPtr, VF_LEN_B32);
+        Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(sumIn0, blockExcusiveUbRPtr, VF_LEN_B32);
+        Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(sumIn1, blockExcusiveUbRPtr, VF_LEN_B32);
+        Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(sumIn2, blockExcusiveUbRPtr, VF_LEN_B32);
+        Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(sumIn3, blockExcusiveUbRPtr, VF_LEN_B32);
         // Accumulate the current tile's exclusive cumsum into this core's block-level bin totals.
         Reg::Add(sumIn0, sumIn0, sum0, maskB32);
         Reg::Add(sumIn1, sumIn1, sum1, maskB32);
         Reg::Add(sumIn2, sumIn2, sum2, maskB32);
         Reg::Add(sumIn3, sumIn3, sum3, maskB32);
-        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, sumIn0, VF_LEN_B32, maskB32);
-        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, sumIn1, VF_LEN_B32, maskB32);
-        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, sumIn2, VF_LEN_B32, maskB32);
-        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, sumIn3, VF_LEN_B32, maskB32);
+        Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, sumIn0, VF_LEN_B32, maskB32);
+        Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, sumIn1, VF_LEN_B32, maskB32);
+        Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, sumIn2, VF_LEN_B32, maskB32);
+        Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, sumIn3, VF_LEN_B32, maskB32);
     } else {
         Reg::MaskReg maskB64 = Reg::CreateMask<int64_t>();
         Reg::RegTensor<int64_t> sum0Int64, sum1Int64, sum2Int64, sum3Int64;
@@ -102,14 +103,14 @@ __aicore__ inline void ComputeSumChist(RegTensor<uint16_t>& chist0, RegTensor<ui
                         (Reg::RegTensor<uint32_t>&)zeroReg);
         Reg::RegTensor<int64_t> int64In0, int64In1, int64In2, int64In3;
         Reg::RegTensor<int64_t> int64In4, int64In5, int64In6, int64In7;
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In0, blockExcusiveUbRPtr, VF_LEN_B64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In1, blockExcusiveUbRPtr, VF_LEN_B64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In2, blockExcusiveUbRPtr, VF_LEN_B64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In3, blockExcusiveUbRPtr, VF_LEN_B64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In4, blockExcusiveUbRPtr, VF_LEN_B64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In5, blockExcusiveUbRPtr, VF_LEN_B64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In6, blockExcusiveUbRPtr, VF_LEN_B64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In7, blockExcusiveUbRPtr, VF_LEN_B64);
+        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In0, blockExcusiveUbRPtr, VF_LEN_B64);
+        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In1, blockExcusiveUbRPtr, VF_LEN_B64);
+        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In2, blockExcusiveUbRPtr, VF_LEN_B64);
+        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In3, blockExcusiveUbRPtr, VF_LEN_B64);
+        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In4, blockExcusiveUbRPtr, VF_LEN_B64);
+        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In5, blockExcusiveUbRPtr, VF_LEN_B64);
+        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In6, blockExcusiveUbRPtr, VF_LEN_B64);
+        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(int64In7, blockExcusiveUbRPtr, VF_LEN_B64);
         // Accumulate the current tile's exclusive cumsum into this core's block-level bin totals.
         Reg::Add(int64In0, int64In0, sum0Int64, maskB64);
         Reg::Add(int64In1, int64In1, sum1Int64, maskB64);
@@ -119,14 +120,22 @@ __aicore__ inline void ComputeSumChist(RegTensor<uint16_t>& chist0, RegTensor<ui
         Reg::Add(int64In5, int64In5, sum5Int64, maskB64);
         Reg::Add(int64In6, int64In6, sum6Int64, maskB64);
         Reg::Add(int64In7, int64In7, sum7Int64, maskB64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In0, VF_LEN_B64, maskB64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In1, VF_LEN_B64, maskB64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In2, VF_LEN_B64, maskB64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In3, VF_LEN_B64, maskB64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In4, VF_LEN_B64, maskB64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In5, VF_LEN_B64, maskB64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In6, VF_LEN_B64, maskB64);
-        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In7, VF_LEN_B64, maskB64);
+        Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In0, VF_LEN_B64,
+                                                                     maskB64);
+        Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In1, VF_LEN_B64,
+                                                                     maskB64);
+        Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In2, VF_LEN_B64,
+                                                                     maskB64);
+        Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In3, VF_LEN_B64,
+                                                                     maskB64);
+        Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In4, VF_LEN_B64,
+                                                                     maskB64);
+        Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In5, VF_LEN_B64,
+                                                                     maskB64);
+        Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In6, VF_LEN_B64,
+                                                                     maskB64);
+        Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveUbWPtr, int64In7, VF_LEN_B64,
+                                                                     maskB64);
     }
 }
 
@@ -137,12 +146,12 @@ __aicore__ inline void GetGlobalExcusiveSumB32(LocalTensor<UT>& inputX, LocalTen
 {
     uint32_t bitOffset = round * SHIFT_BIT_NUM;
     uint16_t repeatTime = CeilDivision(currTileSize, VF_LEN_B8);
-    __local_mem__ uint32_t* inXPtr = (__ubuf__ uint32_t*)inputX.GetPhyAddr();
-    __local_mem__ T3* blockExcusiveUbWPtr = (__ubuf__ T3*)blockExcusiveUb.GetPhyAddr();
-    __local_mem__ T3* blockExcusiveUbRPtr = blockExcusiveUbWPtr;
-    __local_mem__ uint16_t* histUbPtr = (__ubuf__ uint16_t*)histUb.GetPhyAddr();
-    __local_mem__ uint16_t* histCumsumUbPtr = (__ubuf__ uint16_t*)histCumsumUb.GetPhyAddr();
-    __local_mem__ uint8_t* inputB8UbPtr = (__ubuf__ uint8_t*)inputB8Ub.GetPhyAddr();
+    __ubuf__ uint32_t* inXPtr = (__ubuf__ uint32_t*)inputX.GetPhyAddr();
+    __ubuf__ T3* blockExcusiveUbWPtr = (__ubuf__ T3*)blockExcusiveUb.GetPhyAddr();
+    __ubuf__ T3* blockExcusiveUbRPtr = blockExcusiveUbWPtr;
+    __ubuf__ uint16_t* histUbPtr = (__ubuf__ uint16_t*)histUb.GetPhyAddr();
+    __ubuf__ uint16_t* histCumsumUbPtr = (__ubuf__ uint16_t*)histCumsumUb.GetPhyAddr();
+    __ubuf__ uint8_t* inputB8UbPtr = (__ubuf__ uint8_t*)inputB8Ub.GetPhyAddr();
     uint32_t inputElementNum = currTileSize;
     __VEC_SCOPE__
     {
@@ -158,10 +167,10 @@ __aicore__ inline void GetGlobalExcusiveSumB32(LocalTensor<UT>& inputX, LocalTen
         for (uint16_t i = 0; i < repeatTime; i++) {
             histMask = Reg::UpdateMask<uint8_t>(inputElementNum);
             // Load four B32 vectors, shift out the current radix byte, then compact it to B8 for histogram/scatter.
-            Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(in0, inXPtr, VF_LEN_B32);
-            Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(in1, inXPtr, VF_LEN_B32);
-            Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(in2, inXPtr, VF_LEN_B32);
-            Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(in3, inXPtr, VF_LEN_B32);
+            Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(in0, inXPtr, VF_LEN_B32);
+            Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(in1, inXPtr, VF_LEN_B32);
+            Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(in2, inXPtr, VF_LEN_B32);
+            Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(in3, inXPtr, VF_LEN_B32);
             Reg::RegTensor<uint32_t> shift0, shift1, shift2, shift3;
             Reg::ShiftRights<uint32_t, int16_t>(shift0, in0, bitOffset, maskB32);
             Reg::ShiftRights<uint32_t, int16_t>(shift1, in1, bitOffset, maskB32);
@@ -174,7 +183,7 @@ __aicore__ inline void GetGlobalExcusiveSumB32(LocalTensor<UT>& inputX, LocalTen
             Reg::RegTensor<uint8_t> deInter0B8, deInter1B8;
             Reg::DeInterleave(deInter0B8, deInter1B8, (Reg::RegTensor<uint8_t>&)deInter0,
                               (Reg::RegTensor<uint8_t>&)deInter2);
-            Reg::DataCopy<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputB8UbPtr, deInter0B8, VF_LEN_B8, histMask);
+            Reg::StoreAlign<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputB8UbPtr, deInter0B8, VF_LEN_B8, histMask);
             // Build both the frequency histogram and the inclusive cumulative histogram for this tile.
             Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::FREQUENCY>(
                 hist0, deInter0B8, histMask);
@@ -197,12 +206,12 @@ __aicore__ inline void GetGlobalExcusiveSumB64(LocalTensor<UT>& inputX, LocalTen
 {
     uint32_t bitOffset = round * SHIFT_BIT_NUM;
     uint16_t repeatTime = CeilDivision(currTileSize, VF_LEN_B8);
-    __local_mem__ uint64_t* inXPtr = (__ubuf__ uint64_t*)inputX.GetPhyAddr();
-    __local_mem__ T3* blockExcusiveUbWPtr = (__ubuf__ T3*)blockExcusiveUb.GetPhyAddr();
-    __local_mem__ T3* blockExcusiveUbRPtr = blockExcusiveUbWPtr;
-    __local_mem__ uint16_t* histUbPtr = (__ubuf__ uint16_t*)histUb.GetPhyAddr();
-    __local_mem__ uint8_t* inputB8UbPtr = (__ubuf__ uint8_t*)inputB8Ub.GetPhyAddr();
-    __local_mem__ uint16_t* histCumsumUbPtr = (__ubuf__ uint16_t*)histCumsumUb.GetPhyAddr();
+    __ubuf__ uint64_t* inXPtr = (__ubuf__ uint64_t*)inputX.GetPhyAddr();
+    __ubuf__ T3* blockExcusiveUbWPtr = (__ubuf__ T3*)blockExcusiveUb.GetPhyAddr();
+    __ubuf__ T3* blockExcusiveUbRPtr = blockExcusiveUbWPtr;
+    __ubuf__ uint16_t* histUbPtr = (__ubuf__ uint16_t*)histUb.GetPhyAddr();
+    __ubuf__ uint8_t* inputB8UbPtr = (__ubuf__ uint8_t*)inputB8Ub.GetPhyAddr();
+    __ubuf__ uint16_t* histCumsumUbPtr = (__ubuf__ uint16_t*)histCumsumUb.GetPhyAddr();
     uint32_t inputElementNum = currTileSize;
     __VEC_SCOPE__
     {
@@ -219,14 +228,14 @@ __aicore__ inline void GetGlobalExcusiveSumB64(LocalTensor<UT>& inputX, LocalTen
         for (uint16_t i = 0; i < repeatTime; i++) {
             histMask = Reg::UpdateMask<uint8_t>(inputElementNum);
             // Load eight B64 vectors, shift out the current radix byte, then compact it to B8 for histogram/scatter.
-            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in0, inXPtr, VF_LEN_B64);
-            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in1, inXPtr, VF_LEN_B64);
-            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in2, inXPtr, VF_LEN_B64);
-            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in3, inXPtr, VF_LEN_B64);
-            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in4, inXPtr, VF_LEN_B64);
-            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in5, inXPtr, VF_LEN_B64);
-            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in6, inXPtr, VF_LEN_B64);
-            Reg::DataCopy<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in7, inXPtr, VF_LEN_B64);
+            Reg::LoadAlign<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in0, inXPtr, VF_LEN_B64);
+            Reg::LoadAlign<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in1, inXPtr, VF_LEN_B64);
+            Reg::LoadAlign<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in2, inXPtr, VF_LEN_B64);
+            Reg::LoadAlign<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in3, inXPtr, VF_LEN_B64);
+            Reg::LoadAlign<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in4, inXPtr, VF_LEN_B64);
+            Reg::LoadAlign<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in5, inXPtr, VF_LEN_B64);
+            Reg::LoadAlign<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in6, inXPtr, VF_LEN_B64);
+            Reg::LoadAlign<uint64_t, Reg::PostLiteral::POST_MODE_UPDATE>(in7, inXPtr, VF_LEN_B64);
             Reg::RegTensor<uint64_t> shift0, shift1, shift2, shift3, shift4, shift5, shift6, shift7;
             Reg::ShiftRights<uint64_t, int16_t>(shift0, in0, bitOffset, maskB64);
             Reg::ShiftRights<uint64_t, int16_t>(shift1, in1, bitOffset, maskB64);
@@ -249,7 +258,7 @@ __aicore__ inline void GetGlobalExcusiveSumB64(LocalTensor<UT>& inputX, LocalTen
             Reg::RegTensor<uint8_t> deInter0B8, deInter1B8;
             Reg::DeInterleave(deInter0B8, deInter1B8, (Reg::RegTensor<uint8_t>&)deInter0B16,
                               (Reg::RegTensor<uint8_t>&)deInter2B16);
-            Reg::DataCopy<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputB8UbPtr, deInter0B8, VF_LEN_B8, histMask);
+            Reg::StoreAlign<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputB8UbPtr, deInter0B8, VF_LEN_B8, histMask);
             // Build both the frequency histogram and the inclusive cumulative histogram for this tile.
             Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::FREQUENCY>(
                 hist0, deInter0B8, histMask);
@@ -272,12 +281,12 @@ __aicore__ inline void GetGlobalExcusiveSumB16(LocalTensor<UT>& inputX, LocalTen
 {
     uint32_t bitOffset = round * SHIFT_BIT_NUM;
     uint16_t repeatTime = CeilDivision(currTileSize, VF_LEN_B8);
-    __local_mem__ uint16_t* inputXValuePtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr();
-    __local_mem__ T3* blockExcusiveUbWPtr = (__ubuf__ T3*)blockExcusiveUb.GetPhyAddr();
-    __local_mem__ T3* blockExcusiveUbRPtr = blockExcusiveUbWPtr;
-    __local_mem__ uint16_t* histUbPtr = (__ubuf__ uint16_t*)histUb.GetPhyAddr();
-    __local_mem__ uint16_t* histCumsumUbPtr = (__ubuf__ uint16_t*)histCumsumUb.GetPhyAddr();
-    __local_mem__ uint8_t* inputB8UbPtr = (__ubuf__ uint8_t*)inputB8Ub.GetPhyAddr();
+    __ubuf__ uint16_t* inputXValuePtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr();
+    __ubuf__ T3* blockExcusiveUbWPtr = (__ubuf__ T3*)blockExcusiveUb.GetPhyAddr();
+    __ubuf__ T3* blockExcusiveUbRPtr = blockExcusiveUbWPtr;
+    __ubuf__ uint16_t* histUbPtr = (__ubuf__ uint16_t*)histUb.GetPhyAddr();
+    __ubuf__ uint16_t* histCumsumUbPtr = (__ubuf__ uint16_t*)histCumsumUb.GetPhyAddr();
+    __ubuf__ uint8_t* inputB8UbPtr = (__ubuf__ uint8_t*)inputB8Ub.GetPhyAddr();
     uint32_t inputElementNum = currTileSize;
     __VEC_SCOPE__
     {
@@ -294,14 +303,14 @@ __aicore__ inline void GetGlobalExcusiveSumB16(LocalTensor<UT>& inputX, LocalTen
         for (uint16_t i = 0; i < repeatTime; i++) {
             histMask = Reg::UpdateMask<uint8_t>(inputElementNum);
             // Load two B16 vectors, shift out the current radix byte, then compact it to B8 for histogram/scatter.
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(in0, inputXValuePtr, VF_LEN_B16);
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(in1, inputXValuePtr, VF_LEN_B16);
+            Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(in0, inputXValuePtr, VF_LEN_B16);
+            Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(in1, inputXValuePtr, VF_LEN_B16);
             Reg::ShiftRights<uint16_t, int16_t>(shift0, in0, bitOffset, maskB16);
             Reg::ShiftRights<uint16_t, int16_t>(shift1, in1, bitOffset, maskB16);
             Reg::RegTensor<uint8_t> deInter0B8, deInter1B8;
             Reg::DeInterleave(deInter0B8, deInter1B8, (Reg::RegTensor<uint8_t>&)shift0,
                               (Reg::RegTensor<uint8_t>&)shift1);
-            Reg::DataCopy<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputB8UbPtr, deInter0B8, VF_LEN_B8, histMask);
+            Reg::StoreAlign<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputB8UbPtr, deInter0B8, VF_LEN_B8, histMask);
             // Build both the frequency histogram and the inclusive cumulative histogram for this tile.
             Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::FREQUENCY>(
                 hist0, deInter0B8, histMask);
@@ -324,12 +333,12 @@ __aicore__ inline void GetGlobalExcusiveSumB8(LocalTensor<UT>& inputX, LocalTens
 {
     uint32_t bitOffset = round * SHIFT_BIT_NUM;
     uint16_t repeatTime = CeilDivision(currTileSize, VF_LEN_B8);
-    __local_mem__ uint8_t* inXPtr = (__ubuf__ uint8_t*)inputX.GetPhyAddr();
-    __local_mem__ T3* blockExcusiveUbWPtr = (__ubuf__ T3*)blockExcusiveUb.GetPhyAddr();
-    __local_mem__ T3* blockExcusiveUbRPtr = blockExcusiveUbWPtr;
-    __local_mem__ uint16_t* histUbPtr = (__ubuf__ uint16_t*)histUb.GetPhyAddr();
-    __local_mem__ uint16_t* histCumsumUbPtr = (__ubuf__ uint16_t*)histCumsumUb.GetPhyAddr();
-    __local_mem__ uint8_t* inputB8UbPtr = (__ubuf__ uint8_t*)inputB8Ub.GetPhyAddr();
+    __ubuf__ uint8_t* inXPtr = (__ubuf__ uint8_t*)inputX.GetPhyAddr();
+    __ubuf__ T3* blockExcusiveUbWPtr = (__ubuf__ T3*)blockExcusiveUb.GetPhyAddr();
+    __ubuf__ T3* blockExcusiveUbRPtr = blockExcusiveUbWPtr;
+    __ubuf__ uint16_t* histUbPtr = (__ubuf__ uint16_t*)histUb.GetPhyAddr();
+    __ubuf__ uint16_t* histCumsumUbPtr = (__ubuf__ uint16_t*)histCumsumUb.GetPhyAddr();
+    __ubuf__ uint8_t* inputB8UbPtr = (__ubuf__ uint8_t*)inputB8Ub.GetPhyAddr();
     uint32_t inputElementNum = currTileSize;
     __VEC_SCOPE__
     {
@@ -346,8 +355,8 @@ __aicore__ inline void GetGlobalExcusiveSumB8(LocalTensor<UT>& inputX, LocalTens
         for (uint16_t i = 0; i < repeatTime; i++) {
             histMask = Reg::UpdateMask<uint8_t>(inputElementNum);
             // B8 input already is the radix byte for this round; save it and build histogram/cumsum directly.
-            Reg::DataCopy<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(in0, inXPtr, VF_LEN_B8);
-            Reg::DataCopy<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputB8UbPtr, in0, VF_LEN_B8, histMask);
+            Reg::LoadAlign<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(in0, inXPtr, VF_LEN_B8);
+            Reg::StoreAlign<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputB8UbPtr, in0, VF_LEN_B8, histMask);
             Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::FREQUENCY>(hist0, in0,
                                                                                                              histMask);
             Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN1, Reg::HistogramsType::FREQUENCY>(hist1, in0,
@@ -694,8 +703,8 @@ public:
         uint32_t unSortId = this->blockIdx_ / this->lastDimRealCore_;
         int64_t unSortIdOffset = static_cast<int64_t>(unSortId) * this->lastDimTileNum_ * RADIX_SORT_NUM * sizeof(T1) +
                                  static_cast<int64_t>(round) * RADIX_SORT_NUM * this->lastDimTileNum_;
-        __local_mem__ uint16_t* blockHistPtr = (__ubuf__ uint16_t*)blockHist.GetPhyAddr();
-        __local_mem__ T3* blockHistWithFlagPtr = (__ubuf__ T3*)blockHistWithFlag.GetPhyAddr();
+        __ubuf__ uint16_t* blockHistPtr = (__ubuf__ uint16_t*)blockHist.GetPhyAddr();
+        __ubuf__ T3* blockHistWithFlagPtr = (__ubuf__ T3*)blockHistWithFlag.GetPhyAddr();
         // Soft synchronization state is packed in the highest two bits of each bin value:
         //   0: not initialized, retry
         //   1: aggregate ready, this tile's local histogram can be accumulated
@@ -708,8 +717,8 @@ public:
             Reg::RegTensor<uint16_t> lookaheadOutZero, lookaheadOutOne, lookaheadOutTwo, lookaheadOutThree;
             Reg::RegTensor<uint16_t> zeroVector;
             Reg::Duplicate(zeroVector, 0, predicateDefaultB16);
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistZero, blockHistPtr, VF_LEN_B16);
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistOne, blockHistPtr, VF_LEN_B16);
+            Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistZero, blockHistPtr, VF_LEN_B16);
+            Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistOne, blockHistPtr, VF_LEN_B16);
             // Widen the uint16 histogram to T3 and set the aggregate-ready state bit before publishing to GM.
             Reg::Interleave(lookaheadOutZero, lookaheadOutOne, blockHistZero, zeroVector);
             Reg::Interleave(lookaheadOutTwo, lookaheadOutThree, blockHistOne, zeroVector);
@@ -727,14 +736,14 @@ public:
                         predicateDefault);
                 Reg::Or(lookaheadOutThreeMask, (Reg::RegTensor<uint32_t>&)lookaheadOutThree, aggregateReadyMask,
                         predicateDefault);
-                Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistWithFlagPtr, lookaheadOutZeroMask,
-                                                                            VF_LEN_B32, predicateDefault);
-                Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistWithFlagPtr, lookaheadOutOneMask,
-                                                                            VF_LEN_B32, predicateDefault);
-                Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistWithFlagPtr, lookaheadOutTwoMask,
-                                                                            VF_LEN_B32, predicateDefault);
-                Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistWithFlagPtr, lookaheadOutThreeMask,
-                                                                            VF_LEN_B32, predicateDefault);
+                Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                    blockHistWithFlagPtr, lookaheadOutZeroMask, VF_LEN_B32, predicateDefault);
+                Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistWithFlagPtr, lookaheadOutOneMask,
+                                                                              VF_LEN_B32, predicateDefault);
+                Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistWithFlagPtr, lookaheadOutTwoMask,
+                                                                              VF_LEN_B32, predicateDefault);
+                Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                    blockHistWithFlagPtr, lookaheadOutThreeMask, VF_LEN_B32, predicateDefault);
             } else {
                 Reg::RegTensor<int64_t> aggregateReadyMask;
                 Reg::MaskReg predicateDefault = Reg::CreateMask<int64_t>();
@@ -767,21 +776,21 @@ public:
                         predicateDefault);
                 Reg::Or(lookaheadOutThreeMaskB64B, (Reg::RegTensor<int64_t>&)lookaheadOutThreeB64B, aggregateReadyMask,
                         predicateDefault);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockHistWithFlagPtr, lookaheadOutZeroMaskB64A, VF_LEN_B64, predicateDefault);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockHistWithFlagPtr, lookaheadOutZeroMaskB64B, VF_LEN_B64, predicateDefault);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockHistWithFlagPtr, lookaheadOutOneMaskB64A, VF_LEN_B64, predicateDefault);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockHistWithFlagPtr, lookaheadOutOneMaskB64B, VF_LEN_B64, predicateDefault);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockHistWithFlagPtr, lookaheadOutTwoMaskB64A, VF_LEN_B64, predicateDefault);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockHistWithFlagPtr, lookaheadOutTwoMaskB64B, VF_LEN_B64, predicateDefault);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockHistWithFlagPtr, lookaheadOutThreeMaskB64A, VF_LEN_B64, predicateDefault);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockHistWithFlagPtr, lookaheadOutThreeMaskB64B, VF_LEN_B64, predicateDefault);
             }
         }
@@ -805,7 +814,7 @@ public:
         uint32_t unSortId = this->blockIdx_ / this->lastDimRealCore_;
         int64_t unSortIdOffset = static_cast<int64_t>(unSortId) * this->lastDimTileNum_ * RADIX_SORT_NUM * sizeof(T1) +
                                  static_cast<int64_t>(round) * RADIX_SORT_NUM * this->lastDimTileNum_;
-        __local_mem__ T3* nowTileHistBufferPtr = (__ubuf__ T3*)nowTileHistBuffer.GetPhyAddr();
+        __ubuf__ T3* nowTileHistBufferPtr = (__ubuf__ T3*)nowTileHistBuffer.GetPhyAddr();
 
         uint16_t repeatTime;
         if constexpr (IsSameType<T3, uint32_t>::value) {
@@ -819,15 +828,15 @@ public:
         for (int i = tileId - 1; i >= 0; --i) {
             int mode = -1;
             uint32_t histTileOffset = RADIX_SORT_NUM * i;
-            __local_mem__ uint32_t* ubFlagTensorPtr = (__ubuf__ uint32_t*)ubFlagTensor.GetPhyAddr();
-            __local_mem__ T3* tilePrevHistValuePtrCopy = nullptr;
+            __ubuf__ uint32_t* ubFlagTensorPtr = (__ubuf__ uint32_t*)ubFlagTensor.GetPhyAddr();
+            __ubuf__ T3* tilePrevHistValuePtrCopy = nullptr;
             while (true) {
                 // Poll until the previous tile publishes a full 256-bin aggregate-ready or prefix-ready state.
                 LocalTensor<T3> xLocal = this->inQueueGlobalHist_.template AllocTensor<T3>();
                 CopyGlobalDataIn<T3>(allTileHistBuffer[unSortIdOffset], xLocal, histTileOffset, RADIX_SORT_NUM);
                 this->inQueueGlobalHist_.EnQue(xLocal);
                 LocalTensor<T3> tilePrevHistValue = this->inQueueGlobalHist_.template DeQue<T3>();
-                __local_mem__ T3* tilePrevHistValuePtr = (__ubuf__ T3*)tilePrevHistValue.GetPhyAddr();
+                __ubuf__ T3* tilePrevHistValuePtr = (__ubuf__ T3*)tilePrevHistValue.GetPhyAddr();
                 tilePrevHistValuePtrCopy = tilePrevHistValuePtr;
                 __VEC_SCOPE__
                 {
@@ -844,14 +853,14 @@ public:
                         Reg::RegTensor<T3> prevTileHistValue;
                         Reg::RegTensor<uint32_t> stateBitValue;
                         if constexpr (IsSameType<T3, uint32_t>::value) {
-                            Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                            Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                                 prevTileHistValue, tilePrevHistValuePtr, VF_LEN_B32);
                             // The highest two bits carry the soft-sync state, the remaining bits carry the bin count.
                             Reg::ShiftRights<uint32_t, int16_t>(stateBitValue, prevTileHistValue, STATE_BIT_SHF_VALUE,
                                                                 maskB32);
                             pRegSelect = maskB32;
                         } else {
-                            Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                            Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                                 prevTileHistValue, tilePrevHistValuePtr, VF_LEN_B64);
                             Reg::MaskReg maskB64 = Reg::CreateMask<int64_t>();
                             Reg::RegTensor<uint64_t> stateTmp;
@@ -863,32 +872,33 @@ public:
                         }
                         Reg::MaskReg maskNotInit;
                         Reg::RegTensor<uint32_t> maskNotInitCount;
-                        Reg::CompareScalar<uint32_t, CMPMODE::EQ>(maskNotInit, stateBitValue, NOT_INIT_MODE,
-                                                                  pRegSelect);
+                        Reg::Compares<uint32_t, CMPMODE::EQ>(maskNotInit, stateBitValue, NOT_INIT_MODE, pRegSelect);
                         Reg::Select(maskNotInitCount, onesVector, zerosVector, maskNotInit);
                         Reg::Add(notInitCount, notInitCount, maskNotInitCount, maskNotInit);
                         Reg::MaskReg maskAggReady;
                         Reg::RegTensor<uint32_t> maskAggReadyCount;
-                        Reg::CompareScalar<uint32_t, CMPMODE::EQ>(maskAggReady, stateBitValue, AGG_READY_MODE,
-                                                                  pRegSelect);
+                        Reg::Compares<uint32_t, CMPMODE::EQ>(maskAggReady, stateBitValue, AGG_READY_MODE, pRegSelect);
                         Reg::Select(maskAggReadyCount, onesVector, zerosVector, maskAggReady);
                         Reg::Add(aggReadyCount, aggReadyCount, maskAggReadyCount, maskAggReady);
                         Reg::MaskReg maskPrefixReady;
                         Reg::RegTensor<uint32_t> maskPrefixReadyCount;
-                        Reg::CompareScalar<uint32_t, CMPMODE::EQ>(maskPrefixReady, stateBitValue, PREFIX_READY_MODE,
-                                                                  pRegSelect);
+                        Reg::Compares<uint32_t, CMPMODE::EQ>(maskPrefixReady, stateBitValue, PREFIX_READY_MODE,
+                                                             pRegSelect);
                         Reg::Select(maskPrefixReadyCount, onesVector, zerosVector, maskPrefixReady);
                         Reg::Add(prefixReadyCount, prefixReadyCount, maskPrefixReadyCount, maskPrefixReady);
                     }
-                    Reg::ReduceSum(notInitCount, notInitCount, maskB32);
-                    Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE, Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(
-                        ubFlagTensorPtr, notInitCount, HIST_MASK_OUT_LEN, maskB32);
-                    Reg::ReduceSum(aggReadyCount, aggReadyCount, maskB32);
-                    Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE, Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(
-                        ubFlagTensorPtr, aggReadyCount, HIST_MASK_OUT_LEN, maskB32);
-                    Reg::ReduceSum(prefixReadyCount, prefixReadyCount, maskB32);
-                    Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE, Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(
-                        ubFlagTensorPtr, prefixReadyCount, HIST_MASK_OUT_LEN, maskB32);
+                    Reg::Reduce<ReduceType::SUM>(notInitCount, notInitCount, maskB32);
+                    Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE,
+                                    Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(ubFlagTensorPtr, notInitCount,
+                                                                            HIST_MASK_OUT_LEN, maskB32);
+                    Reg::Reduce<ReduceType::SUM>(aggReadyCount, aggReadyCount, maskB32);
+                    Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE,
+                                    Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(ubFlagTensorPtr, aggReadyCount,
+                                                                            HIST_MASK_OUT_LEN, maskB32);
+                    Reg::Reduce<ReduceType::SUM>(prefixReadyCount, prefixReadyCount, maskB32);
+                    Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE,
+                                    Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(ubFlagTensorPtr, prefixReadyCount,
+                                                                            HIST_MASK_OUT_LEN, maskB32);
                 }
                 event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
                 SetFlag<HardEvent::V_S>(eventId);
@@ -908,7 +918,7 @@ public:
                 }
                 this->inQueueGlobalHist_.FreeTensor(tilePrevHistValue);
             }
-            __local_mem__ T3* nowTileHistBufferPtrCopy = nowTileHistBufferPtr;
+            __ubuf__ T3* nowTileHistBufferPtrCopy = nowTileHistBufferPtr;
             event_t eventIdWaitV = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::S_V));
             SetFlag<HardEvent::S_V>(eventIdWaitV);
             WaitFlag<HardEvent::S_V>(eventIdWaitV);
@@ -920,30 +930,30 @@ public:
                     Reg::Duplicate(histMask, VALUE_MASK, predicateDefault);
                     for (uint16_t i = 0; i < repeatTime; i++) {
                         Reg::RegTensor<uint32_t> nowTileHistVal, prevTileHistVal;
-                        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(nowTileHistVal,
-                                                                                    nowTileHistBufferPtr, VF_LEN_B32);
-                        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                        Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(nowTileHistVal,
+                                                                                     nowTileHistBufferPtr, VF_LEN_B32);
+                        Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                             prevTileHistVal, tilePrevHistValuePtrCopy, VF_LEN_B32);
                         // Strip the state bits before adding the previous tile's histogram value.
                         Reg::And(nowTileHistVal, nowTileHistVal, histMask, predicateDefault);
                         Reg::And(prevTileHistVal, prevTileHistVal, histMask, predicateDefault);
                         Reg::Add(nowTileHistVal, nowTileHistVal, prevTileHistVal, predicateDefault);
-                        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                        Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                             nowTileHistBufferPtrCopy, nowTileHistVal, VF_LEN_B32, predicateDefault);
                     }
                 } else {
                     Reg::Duplicate(histMask, VALUE_MASK_B64, predicateDefault);
                     for (uint16_t i = 0; i < repeatTime; i++) {
                         Reg::RegTensor<int64_t> nowTileHistVal, prevTileHistVal;
-                        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(nowTileHistVal, nowTileHistBufferPtr,
-                                                                                   VF_LEN_B64);
-                        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(nowTileHistVal,
+                                                                                    nowTileHistBufferPtr, VF_LEN_B64);
+                        Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                             prevTileHistVal, tilePrevHistValuePtrCopy, VF_LEN_B64);
                         // Strip the state bits before adding the previous tile's histogram value.
                         Reg::And(nowTileHistVal, nowTileHistVal, histMask, predicateDefault);
                         Reg::And(prevTileHistVal, prevTileHistVal, histMask, predicateDefault);
                         Reg::Add(nowTileHistVal, nowTileHistVal, prevTileHistVal, predicateDefault);
-                        Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                        Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                             nowTileHistBufferPtrCopy, nowTileHistVal, VF_LEN_B64, predicateDefault);
                     }
                 }
@@ -963,8 +973,8 @@ public:
         uint32_t unSortId = this->blockIdx_ / this->lastDimRealCore_;
         int64_t unSortIdOffset = static_cast<int64_t>(unSortId) * this->lastDimTileNum_ * RADIX_SORT_NUM * sizeof(T1) +
                                  static_cast<int64_t>(round) * RADIX_SORT_NUM * this->lastDimTileNum_;
-        __local_mem__ T3* histCumsumPtr = (__ubuf__ T3*)blockHistWithFlag.GetPhyAddr();
-        __local_mem__ T3* histCumsumPtrCopy = histCumsumPtr;
+        __ubuf__ T3* histCumsumPtr = (__ubuf__ T3*)blockHistWithFlag.GetPhyAddr();
+        __ubuf__ T3* histCumsumPtrCopy = histCumsumPtr;
 
         uint16_t repeatTime;
         if constexpr (IsSameType<T3, uint32_t>::value) {
@@ -981,26 +991,26 @@ public:
                 Reg::Duplicate(prefixRemainMask, VALUE_MASK, predicateDefault);
                 for (uint16_t repate = 0; repate < repeatTime; repate++) {
                     Reg::RegTensor<uint32_t> keyCumsumValue;
-                    Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(keyCumsumValue, histCumsumPtr,
-                                                                                VF_LEN_B32);
+                    Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(keyCumsumValue, histCumsumPtr,
+                                                                                 VF_LEN_B32);
                     // Preserve the accumulated histogram value and publish the prefix-ready state bit.
                     Reg::And(keyCumsumValue, keyCumsumValue, prefixRemainMask, predicateDefault);
                     Reg::Or(keyCumsumValue, keyCumsumValue, prefixReadyMask, predicateDefault);
-                    Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(histCumsumPtrCopy, keyCumsumValue,
-                                                                                VF_LEN_B32, predicateDefault);
+                    Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(histCumsumPtrCopy, keyCumsumValue,
+                                                                                  VF_LEN_B32, predicateDefault);
                 }
             } else {
                 Reg::Duplicate(prefixReadyMask, PREFIX_READY_MASK_B64, predicateDefault);
                 Reg::Duplicate(prefixRemainMask, VALUE_MASK_B64, predicateDefault);
                 for (uint16_t repate = 0; repate < repeatTime; repate++) {
                     Reg::RegTensor<int64_t> keyCumsumValue;
-                    Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(keyCumsumValue, histCumsumPtr,
-                                                                               VF_LEN_B64);
+                    Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(keyCumsumValue, histCumsumPtr,
+                                                                                VF_LEN_B64);
                     // Preserve the accumulated histogram value and publish the prefix-ready state bit.
                     Reg::And(keyCumsumValue, keyCumsumValue, prefixRemainMask, predicateDefault);
                     Reg::Or(keyCumsumValue, keyCumsumValue, prefixReadyMask, predicateDefault);
-                    Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histCumsumPtrCopy, keyCumsumValue,
-                                                                               VF_LEN_B64, predicateDefault);
+                    Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(histCumsumPtrCopy, keyCumsumValue,
+                                                                                 VF_LEN_B64, predicateDefault);
                 }
             }
         }
