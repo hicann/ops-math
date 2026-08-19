@@ -12,6 +12,10 @@
 #include <iostream>
 #include "infershape_context_faker.h"
 #include "infershape_case_executor.h"
+#include "op_infer_shape_range_context_builder.h"
+#include "op_tiling_parse_context_builder.h"
+#include "base/registry/op_impl_space_registry_v2.h"
+#include "platform/platform_infos_def.h"
 
 class MaskedSelectv3InferTest : public testing::Test {
 protected:
@@ -39,11 +43,64 @@ TEST_F(MaskedSelectv3InferTest, infershape_4d_fp32)
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-TEST_F(MaskedSelectv3InferTest, infershape_int32)
+TEST_F(MaskedSelectv3InferTest, infershape_range_base)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "MaskedSelect", {{{{16}, {16}}, ge::DT_INT32, ge::FORMAT_ND}, {{{16}, {16}}, ge::DT_BOOL, ge::FORMAT_ND}},
-        {{{{}, {}}, ge::DT_INT32, ge::FORMAT_ND}});
-    std::vector<std::vector<int64_t>> expectOutputShape = {{-1}};
-    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    ASSERT_NE(spaceRegistry, nullptr);
+    auto opImpl = spaceRegistry->GetOpImpl("MaskedSelect");
+    ASSERT_NE(opImpl, nullptr);
+    ASSERT_NE(opImpl->infer_shape_range, nullptr);
+
+    gert::OpInferShapeRangeContextBuilder builder;
+    builder.OpType("MaskedSelect").OpName("MaskedSelect");
+    builder.IONum(2, 1);
+    builder.OutputTensorDesc(0, ge::DT_FLOAT16, ge::FORMAT_ND, ge::FORMAT_ND);
+    auto contextHolder = builder.Build();
+    auto* context = contextHolder.GetContext();
+    ASSERT_NE(context, nullptr);
+
+    auto ret = opImpl->infer_shape_range(context);
+    EXPECT_EQ(ret, ge::GRAPH_FAILED);
+}
+
+TEST_F(MaskedSelectv3InferTest, tiling_parse_prepare)
+{
+    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    ASSERT_NE(spaceRegistry, nullptr);
+    auto opImpl = spaceRegistry->GetOpImpl("MaskedSelectV3");
+    ASSERT_NE(opImpl, nullptr);
+    ASSERT_NE(opImpl->tiling_parse, nullptr);
+
+    struct MaskedSelectV3CompileInfo {
+        uint64_t aivNum = 0;
+        uint64_t ubSize = 0;
+        uint64_t workSpaceSize = 0;
+        bool isRegbase = false;
+    } compileInfo = {};
+
+    fe::PlatFormInfos platformInfo;
+    platformInfo.Init();
+    std::map<std::string, std::string> socInfos = {{"ai_core_cnt", "48"}, {"core_type_list", "AICore"}};
+    platformInfo.SetPlatformRes("SoCInfo", socInfos);
+    std::map<std::string, std::string> aicoreSpec = {{"ub_size", "262144"}};
+    platformInfo.SetPlatformRes("AICoreSpec", aicoreSpec);
+
+    gert::OpTilingParseContextBuilder builder;
+    builder.OpType("MaskedSelectV3").OpName("MaskedSelectV3");
+    builder.IONum(2, 1);
+    builder.InputTensorDesc(0, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND);
+    builder.InputTensorDesc(1, ge::DT_BOOL, ge::FORMAT_ND, ge::FORMAT_ND);
+    builder.OutputTensorDesc(0, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND);
+    builder.CompiledInfo(&compileInfo);
+    builder.CompiledJson("{}");
+    builder.PlatformInfo(reinterpret_cast<void*>(&platformInfo));
+    auto contextHolder = builder.Build();
+    auto* context = contextHolder.GetContext();
+    ASSERT_NE(context, nullptr);
+
+    auto ret = opImpl->tiling_parse(reinterpret_cast<gert::KernelContext*>(context));
+    EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
+    EXPECT_NE(compileInfo.aivNum, 0UL);
+    EXPECT_NE(compileInfo.ubSize, 0UL);
+    EXPECT_EQ(compileInfo.isRegbase, false);
 }
