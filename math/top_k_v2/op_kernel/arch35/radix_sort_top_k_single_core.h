@@ -207,8 +207,8 @@ RadixSortTopKSingleCore<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_SORT, T_INDEX
     }
     if (needSortWithIndex_) {
         this->tPipe_->Reset();
-        sortwithindexForTopK<T_INDEX_TO>(topkValuesGmAddr_, topkIndicesGmAddr_, valueAddr_, indicesAddr_,
-                                         sortWithIndexWorkspace_, tilingDataPtr_, this->tPipe_);
+        sortwithindexForTopK<T, T_INDEX_TO>(topkValuesGmAddr_, topkIndicesGmAddr_, valueAddr_, indicesAddr_,
+                                            sortWithIndexWorkspace_, tilingDataPtr_, this->tPipe_);
     }
 }
 

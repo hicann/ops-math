@@ -266,8 +266,8 @@ RadixSortTopK<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_
     }
     if (needSortWithIndex_) {
         pipe.Reset();
-        sortwithindexForTopK<T_INDEX_TO>(topkValuesGmAddr_, topkIndicesGmAddr_, valueAddr_, indicesAddr_,
-                                         sortWithIndexWorkspace_, tilingDataPtr_, &pipe);
+        sortwithindexForTopK<T, T_INDEX_TO>(topkValuesGmAddr_, topkIndicesGmAddr_, valueAddr_, indicesAddr_,
+                                            sortWithIndexWorkspace_, tilingDataPtr_, &pipe);
     }
 }
 
