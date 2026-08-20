@@ -129,7 +129,7 @@ ge::Operator AddData(const std::string& name, uint32_t index, const std::vector<
 }
 
 void BuildGraph(const CaseConfig& config, ge::Graph& graph, std::vector<ge::Tensor>& tensors,
-                std::vector<ge::Operator>& inputs, std::vector<ge::Operator>& outputs)
+                std::vector<ge::Operator>& inputs, std::vector<ge::Operator>& outputs, bool setDim = true)
 {
     const auto sourceDtype = config.castX ? ge::DT_INT32 : config.xDtype;
     auto xData = AddData(config.id + "_x", 0, config.shape, sourceDtype, config.xFormat, 2.0F, graph, tensors, inputs);
@@ -152,7 +152,9 @@ void BuildGraph(const CaseConfig& config, ge::Graph& graph, std::vector<ge::Tens
     op.set_input_mean(mean);
     op.update_input_desc_x(xDesc);
     op.update_input_desc_mean(meanDesc);
-    op.set_attr_dim(config.dim);
+    if (setDim) {
+        op.set_attr_dim(config.dim);
+    }
     op.set_attr_if_std(false);
     op.set_attr_unbiased(false);
     op.set_attr_keepdim(true);
@@ -179,13 +181,13 @@ bool VerifyOutput(const std::vector<ge::Tensor>& result, const CaseConfig& confi
     return value != nullptr && std::abs(value[0]) <= 1.0e-6F;
 }
 
-bool RunCase(const CaseConfig& config)
+bool RunCase(const CaseConfig& config, bool setDim = true)
 {
     ge::Graph graph(("reduce_std_v2_update_exception_" + config.id).c_str());
     std::vector<ge::Tensor> tensors;
     std::vector<ge::Operator> inputs;
     std::vector<ge::Operator> outputs;
-    BuildGraph(config, graph, tensors, inputs, outputs);
+    BuildGraph(config, graph, tensors, inputs, outputs, setDim);
     graph.SetInputs(inputs).SetOutputs(outputs);
     const std::map<ge::AscendString, ge::AscendString> options;
     ge::Session session(options);
@@ -428,6 +430,17 @@ int main(int argc, char* argv[])
         }
         matched = true;
         passed = RunCase(item) && passed;
+    }
+    const std::string missingDimId = "missing_required_dim";
+    if (argc <= 1 || missingDimId == argv[1]) {
+        CaseConfig missingDim;
+        missingDim.id = missingDimId;
+        missingDim.category = "required_attribute_missing";
+        missingDim.expectedErrors = {
+            "Call InferShapeAndType for node:missing_required_dim_op(ReduceStdV2Update) failed"};
+        missingDim.allowedFailureStages = {"graph_compile"};
+        matched = true;
+        passed = RunCase(missingDim, false) && passed;
     }
     if (!matched) {
         std::cout << "EXCEPTION_SUITE ReduceStdV2Update FAIL unknown_case=" << argv[1] << std::endl;

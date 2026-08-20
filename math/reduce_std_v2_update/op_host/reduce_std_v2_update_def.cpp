@@ -50,13 +50,12 @@ public:
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
 
-        // dim 为 REQUIRED_ATTR（值依赖，tiling 阶段读取做合轴决策）
-        // 无参数 ListInt() 表示 REQUIRED_ATTR（与 REG_OP REQUIRED_ATTR(dim, ListInt) 等价）
-        this->Attr("dim").ListInt();
-        this->Attr("if_std").Bool(false);
-        this->Attr("unbiased").Bool(true);
-        this->Attr("keepdim").Bool(false);
-        this->Attr("correction").Int(1);
+        // 属性必选/可选语义与 REG_OP 原型保持一致。
+        this->Attr("dim").AttrType(REQUIRED).ListInt();
+        this->Attr("if_std").AttrType(OPTIONAL).Bool(false);
+        this->Attr("unbiased").AttrType(OPTIONAL).Bool(true);
+        this->Attr("keepdim").AttrType(OPTIONAL).Bool(false);
+        this->Attr("correction").AttrType(OPTIONAL).Int(1);
 
         OpAICoreConfig aiCoreConfig;
         aiCoreConfig.DynamicCompileStaticFlag(true)

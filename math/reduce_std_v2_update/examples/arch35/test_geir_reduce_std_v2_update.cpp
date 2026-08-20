@@ -29,6 +29,7 @@
  * 覆盖：
  *   Test 1 - FP32, if_std=false（方差）, unbiased=true, dim=[1], keepdim=false
  *   Test 2 - FP32, if_std=true（标准差）, correction=1, dim=[1], keepdim=true
+ *   Test 3 - FP32, 仅设置必选 dim，验证四个可选属性使用默认值
  *   输入共 128 个元素，覆盖 Arch35 寄存器 API 多轮 mask 计算路径。
  *
  * 编译：参见 CMakeLists.txt   运行：参见 run.sh
@@ -153,7 +154,7 @@ static void ComputeGolden(const float* x, const float* mean, float* output, int6
 }
 
 // 构建 ReduceStdV2Update 计算图
-int CreateGraph(DataType inDtype, bool if_std, bool unbiased, bool keepdim, int64_t correction,
+int CreateGraph(DataType inDtype, bool if_std, bool unbiased, bool keepdim, int64_t correction, bool setOptionalAttrs,
                 const std::vector<int64_t>& dimArr, const std::vector<int64_t>& tensorShape,
                 const std::vector<int64_t>& outShape, std::vector<ge::Tensor>& input, std::vector<Operator>& inputs,
                 std::vector<Operator>& outputs, Graph& graph)
@@ -204,10 +205,12 @@ int CreateGraph(DataType inDtype, bool if_std, bool unbiased, bool keepdim, int6
     reduceOp.update_input_desc_mean(meanDesc);
 
     reduceOp.set_attr_dim(dimArr);
-    reduceOp.set_attr_if_std(if_std);
-    reduceOp.set_attr_unbiased(unbiased);
-    reduceOp.set_attr_keepdim(keepdim);
-    reduceOp.set_attr_correction(correction);
+    if (setOptionalAttrs) {
+        reduceOp.set_attr_if_std(if_std);
+        reduceOp.set_attr_unbiased(unbiased);
+        reduceOp.set_attr_keepdim(keepdim);
+        reduceOp.set_attr_correction(correction);
+    }
 
     TensorDesc yDesc(ge::Shape(outShape), FORMAT_ND, inDtype);
     yDesc.SetFormat(FORMAT_ND);
@@ -221,7 +224,7 @@ int CreateGraph(DataType inDtype, bool if_std, bool unbiased, bool keepdim, int6
 
 // 单个测试用例
 int RunTestCase(const char* testName, bool if_std, bool unbiased, bool keepdim, int64_t correction,
-                const std::vector<int64_t>& dimArr, const std::vector<int64_t>& tensorShape,
+                bool setOptionalAttrs, const std::vector<int64_t>& dimArr, const std::vector<int64_t>& tensorShape,
                 const std::vector<int64_t>& outShape, int64_t outNum, uint32_t graph_id)
 {
     if (dimArr.empty()) {
@@ -235,8 +238,8 @@ int RunTestCase(const char* testName, bool if_std, bool unbiased, bool keepdim, 
     std::vector<Operator> outputs{};
 
     DataType inDtype = DT_FLOAT;
-    int ret = CreateGraph(inDtype, if_std, unbiased, keepdim, correction, dimArr, tensorShape, outShape, input, inputs,
-                          outputs, graph);
+    int ret = CreateGraph(inDtype, if_std, unbiased, keepdim, correction, setOptionalAttrs, dimArr, tensorShape,
+                          outShape, input, inputs, outputs, graph);
     if (ret != SUCCESS) {
         printf("%s - ERROR - Create graph failed\n", GetTime().c_str());
         return FAILED;
@@ -370,13 +373,18 @@ int main(int argc, char* argv[])
     // Test 1: if_std=false（方差）, unbiased=true (correction=1), keepdim=false, dim=[1]
     //   output shape = [8]
     std::vector<int64_t> outShape1 = {M};
-    int r1 = RunTestCase("GEIR_Test1_var", false, true, false, 1, dimArr, tensorShape, outShape1, M, 0);
+    int r1 = RunTestCase("GEIR_Test1_var", false, true, false, 1, true, dimArr, tensorShape, outShape1, M, 0);
 
     // Test 2: if_std=true（标准差）, unbiased=true (correction=1), keepdim=true, dim=[1]
     //   output shape = [8,1]
     //   注：tiling 中 unbiased=false 会强制 correction=0，故 unbiased=true 与 correction=1 配合使用
     std::vector<int64_t> outShape2 = {M, 1};
-    int r2 = RunTestCase("GEIR_Test2_std", true, true, true, 1, dimArr, tensorShape, outShape2, M, 1);
+    int r2 = RunTestCase("GEIR_Test2_std", true, true, true, 1, true, dimArr, tensorShape, outShape2, M, 1);
+
+    // Test 3: 仅设置必选 dim；其余属性应采用原型默认值 false/true/false/1。
+    std::vector<int64_t> outShape3 = {M};
+    int r3 = RunTestCase("GEIR_Test3_optional_attr_defaults", false, true, false, 1, false, dimArr, tensorShape,
+                         outShape3, M, 2);
 
     printf("%s - INFO - Finalize ge\n", GetTime().c_str());
     ret = ge::GEFinalize();
@@ -386,7 +394,7 @@ int main(int argc, char* argv[])
     }
     printf("%s - INFO - Finalize ge success\n", GetTime().c_str());
 
-    const bool allPassed = (r1 == SUCCESS && r2 == SUCCESS);
+    const bool allPassed = (r1 == SUCCESS && r2 == SUCCESS && r3 == SUCCESS);
     std::cout << (allPassed ? "[PASS] All GE IR tests passed." : "[FAIL] Some GE IR tests failed.") << std::endl;
     if (allPassed) {
         std::cout << "ReduceStdV2Update static GEIR verification PASSED" << std::endl;
