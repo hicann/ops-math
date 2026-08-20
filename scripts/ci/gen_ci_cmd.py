@@ -45,6 +45,7 @@ CI用法
     bash build.sh -f pr_filelist.txt --run_example
 
 """
+
 import argparse
 import os
 import re
@@ -54,21 +55,21 @@ import sys
 # ============================================================
 # 配置常量
 # ============================================================
-DEFAULT_SOC = 'ascend910b'
-DEFAULT_EXP_OP = 'acos'
-DEFAULT_NORMAL_OP = 'is_finite'
-DEFAULT_UTS = {'ophost', 'opapi', 'opkernel', 'opgraph'}
+DEFAULT_SOC = "ascend910b"
+DEFAULT_EXP_OP = "acos"
+DEFAULT_NORMAL_OP = "is_finite"
+DEFAULT_UTS = {"ophost", "opapi", "opkernel", "opgraph"}
 
 # 规则定义：pattern 匹配路径，提取对应信息
 RULES = [
     # experimental 算子
-    {'pattern': r'experimental/(?:math|conversion|random)/([^/]+)', 'type': 'exp_ops'},
+    {"pattern": r"experimental/(?:math|conversion|random)/([^/]+)", "type": "exp_ops"},
     # 普通算子
-    {'pattern': r'^(?:math|conversion|random)/([^/]+)', 'type': 'ops'},
+    {"pattern": r"^(?:math|conversion|random)/([^/]+)", "type": "ops"},
 ]
 
 # 默认SOC（用于pkg和run_example命令的SOC过滤）
-DEFAULT_FILTER_SOC = 'ascend910b'
+DEFAULT_FILTER_SOC = "ascend910b"
 
 
 def check_op_supports_soc(op_name, soc, is_experimental=False):
@@ -85,24 +86,28 @@ def check_op_supports_soc(op_name, soc, is_experimental=False):
     Returns:
         bool: 是否支持该SOC
     """
-    prefixes = ['math/', 'conversion/', 'random/']
+    prefixes = ["math/", "conversion/", "random/"]
     if is_experimental:
-        prefixes = ['experimental/math/', 'experimental/conversion/', 'experimental/random/']
+        prefixes = [
+            "experimental/math/",
+            "experimental/conversion/",
+            "experimental/random/",
+        ]
 
     for prefix in prefixes:
-        op_host_dir = os.path.join(prefix, op_name, 'op_host')
+        op_host_dir = os.path.join(prefix, op_name, "op_host")
         if not os.path.isdir(op_host_dir):
             continue
 
         for filename in os.listdir(op_host_dir):
-            if filename.endswith('_def.cpp'):
+            if filename.endswith("_def.cpp"):
                 def_file = os.path.join(op_host_dir, filename)
                 try:
-                    with open(def_file, 'r', encoding='utf-8') as f:
+                    with open(def_file, "r", encoding="utf-8") as f:
                         content = f.read()
                         if f'AddConfig("{soc}"' in content:
                             return True
-                except (IOError, OSError) as e:
+                except (IOError, OSError):
                     # 文件读取失败，继续检查下一个文件
                     continue
 
@@ -127,6 +132,47 @@ def filter_ops_by_soc_support(ops, soc, is_experimental=False):
     return supported_ops
 
 
+def check_op_has_op_kernel(op_name, is_experimental=False):
+    """检查算子是否存在 op_kernel 目录
+
+    出包模式需要生成 kernel 二进制，没有 op_kernel 目录的算子无法出包。
+
+    Args:
+        op_name: 算子名称
+        is_experimental: 是否为 experimental 算子
+
+    Returns:
+        bool: 是否存在 op_kernel 目录
+    """
+    prefixes = ["math/", "conversion/", "random/"]
+    if is_experimental:
+        prefixes = [
+            "experimental/math/",
+            "experimental/conversion/",
+            "experimental/random/",
+        ]
+
+    for prefix in prefixes:
+        op_kernel_dir = os.path.join(prefix, op_name, "op_kernel")
+        if os.path.isdir(op_kernel_dir):
+            return True
+
+    return False
+
+
+def filter_ops_by_op_kernel(ops, is_experimental=False):
+    """过滤出存在 op_kernel 目录的算子
+
+    Args:
+        ops: 算子集合
+        is_experimental: 是否为 experimental 算子
+
+    Returns:
+        set: 存在 op_kernel 目录的算子集合
+    """
+    return {op for op in ops if check_op_has_op_kernel(op, is_experimental)}
+
+
 def read_file_lines(filepath):
     """读取文件并返回非空、非注释行列表
 
@@ -137,8 +183,12 @@ def read_file_lines(filepath):
         list: 行列表，文件不存在返回空列表
     """
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            return [line.strip() for line in f if line.strip() and not line.strip().startswith('#')]
+        with open(filepath, "r", encoding="utf-8") as f:
+            return [
+                line.strip()
+                for line in f
+                if line.strip() and not line.strip().startswith("#")
+            ]
     except (FileNotFoundError, PermissionError, UnicodeDecodeError):
         return []
 
@@ -154,23 +204,23 @@ def parse_changed_files(filepath):
     files = read_file_lines(filepath)
 
     for file_path in files:
-        if file_path.endswith('.md'):
+        if file_path.endswith(".md"):
             continue
         if not os.path.exists(file_path):
             continue
 
         for rule in RULES:
-            m = re.search(rule['pattern'], file_path)
+            m = re.search(rule["pattern"], file_path)
             if not m:
                 continue
 
-            rule_type = rule['type']
-            if rule_type == 'exp_ops':
+            rule_type = rule["type"]
+            if rule_type == "exp_ops":
                 exp_ops.add(m.group(1))
-            elif rule_type == 'ops':
+            elif rule_type == "ops":
                 normal_ops.add(m.group(1))
 
-    return {'exp_ops': exp_ops, 'normal_ops': normal_ops}
+    return {"exp_ops": exp_ops, "normal_ops": normal_ops}
 
 
 def get_op_ut_types(op_name, files, is_experimental):
@@ -185,42 +235,46 @@ def get_op_ut_types(op_name, files, is_experimental):
     socs = set()
 
     # 算子可能的路径前缀
-    prefixes = ['math/', 'conversion/', 'random/']
+    prefixes = ["math/", "conversion/", "random/"]
     if is_experimental:
-        prefixes = ['experimental/math/', 'experimental/conversion/', 'experimental/random/']
+        prefixes = [
+            "experimental/math/",
+            "experimental/conversion/",
+            "experimental/random/",
+        ]
 
     for f in files:
         # 检查文件是否属于该算子
         matched = False
         for prefix in prefixes:
-            if f.startswith(f'{prefix}{op_name}/'):
+            if f.startswith(f"{prefix}{op_name}/"):
                 matched = True
                 break
 
         if matched:
             # 检测 UT 类型
-            if '/op_host/' in f or '/tests/ut/op_host/' in f:
-                uts.add('ophost')
-            if '/op_api/' in f or '/tests/ut/op_api/' in f:
-                uts.add('opapi')
-            if '/op_kernel/' in f or '/tests/ut/op_kernel/' in f:
-                uts.add('opkernel')
-            if '/op_graph/' in f or '/tests/ut/op_graph/' in f:
-                uts.add('opgraph')
+            if "/op_host/" in f or "/tests/ut/op_host/" in f:
+                uts.add("ophost")
+            if "/op_api/" in f or "/tests/ut/op_api/" in f:
+                uts.add("opapi")
+            if "/op_kernel/" in f or "/tests/ut/op_kernel/" in f:
+                uts.add("opkernel")
+            if "/op_graph/" in f or "/tests/ut/op_graph/" in f:
+                uts.add("opgraph")
 
             # 检测该算子的 SOC（通过 arch35 目录）
-            if '/arch35/' in f:
-                socs.add('ascend950')
+            if "/arch35/" in f:
+                socs.add("ascend950")
 
     return uts, socs
 
 
 def make_command(op, uts, soc, cann_3rd_lib_path=None, is_experimental=False):
     """生成单个算子的构建命令"""
-    cmd_parts = ['bash', 'build.sh', '-u', '-j16']
+    cmd_parts = ["bash", "build.sh", "-u", "-j16"]
 
     if is_experimental:
-        cmd_parts.append('--experimental')
+        cmd_parts.append("--experimental")
 
     cmd_parts.append(f"--ops={op}")
 
@@ -236,7 +290,9 @@ def make_command(op, uts, soc, cann_3rd_lib_path=None, is_experimental=False):
     return cmd_parts
 
 
-def make_merged_command(merged_ops, ut_type, soc, cann_3rd_lib_path=None, is_experimental=False):
+def make_merged_command(
+    merged_ops, ut_type, soc, cann_3rd_lib_path=None, is_experimental=False
+):
     """生成合并后的构建命令（多个算子合并到一条命令）
     合并策略：按 (SOC, UT类型) 分组合并算子，减少命令数量
 
@@ -244,10 +300,10 @@ def make_merged_command(merged_ops, ut_type, soc, cann_3rd_lib_path=None, is_exp
     - opapi/opgraph: 只跑默认 SOC (ascend910b)，所有算子合并为一条命令
     - ophost/opkernel: 按 SOC 分组（有 arch35 变更时跑多个 SOC），同一 SOC 的算子合并
     """
-    cmd_parts = ['bash', 'build.sh', '-u', '-j16']
+    cmd_parts = ["bash", "build.sh", "-u", "-j16"]
 
     if is_experimental:
-        cmd_parts.append('--experimental')
+        cmd_parts.append("--experimental")
 
     cmd_parts.append(f"--ops={merged_ops}")
     cmd_parts.append(f"--{ut_type}")
@@ -271,13 +327,17 @@ def make_run_example_command(op_name, mode, is_experimental=False):
     """
     if is_experimental:
         cmd_parts = [
-            'bash', 'build.sh', '--experimental', '--run_example',
-            op_name, mode, 'cust', '--vendor_name=experimental'
+            "bash",
+            "build.sh",
+            "--experimental",
+            "--run_example",
+            op_name,
+            mode,
+            "cust",
+            "--vendor_name=experimental",
         ]
     else:
-        cmd_parts = [
-            'bash', 'build.sh', '--run_example', op_name, mode, 'cust'
-        ]
+        cmd_parts = ["bash", "build.sh", "--run_example", op_name, mode, "cust"]
     return cmd_parts
 
 
@@ -294,8 +354,8 @@ def build_ut_commands(filepath, experimental=False, cann_3rd_lib_path=None):
     parsed = parse_changed_files(filepath)
     files = read_file_lines(filepath)
 
-    exp_ops = parsed['exp_ops']
-    normal_ops = parsed['normal_ops']
+    exp_ops = parsed["exp_ops"]
+    normal_ops = parsed["normal_ops"]
 
     # 根据参数确定跑哪类算子
     ops = exp_ops if experimental else normal_ops
@@ -303,7 +363,11 @@ def build_ut_commands(filepath, experimental=False, cann_3rd_lib_path=None):
 
     # 无变更，用默认命令
     if not ops:
-        return [make_command(default_op, DEFAULT_UTS, DEFAULT_SOC, cann_3rd_lib_path, experimental)]
+        return [
+            make_command(
+                default_op, DEFAULT_UTS, DEFAULT_SOC, cann_3rd_lib_path, experimental
+            )
+        ]
 
     # 以下为 UT 命令生成逻辑
     # 分组收集：{(soc, ut_type): set(op_names)}
@@ -318,15 +382,15 @@ def build_ut_commands(filepath, experimental=False, cann_3rd_lib_path=None):
         op_socs_to_run = {DEFAULT_SOC} | op_socs
 
         # opapi/opgraph 不区分 SOC，只跑默认 SOC，合并所有算子
-        if 'opapi' in uts:
-            key = (DEFAULT_SOC, 'opapi')
+        if "opapi" in uts:
+            key = (DEFAULT_SOC, "opapi")
             groups.setdefault(key, set()).add(op)
-        if 'opgraph' in uts:
-            key = (DEFAULT_SOC, 'opgraph')
+        if "opgraph" in uts:
+            key = (DEFAULT_SOC, "opgraph")
             groups.setdefault(key, set()).add(op)
 
         # ophost/opkernel 按该算子检测到的 SOC 分组
-        host_kernel_uts = uts - {'opapi', 'opgraph'}
+        host_kernel_uts = uts - {"opapi", "opgraph"}
         for ut in host_kernel_uts:
             for soc in op_socs_to_run:
                 key = (soc, ut)
@@ -336,8 +400,10 @@ def build_ut_commands(filepath, experimental=False, cann_3rd_lib_path=None):
     commands = []
     for (soc, ut_type), op_names in sorted(groups.items()):
         # 将算子列表合并为逗号分隔的字符串
-        merged_ops = ','.join(sorted(op_names))
-        cmd = make_merged_command(merged_ops, ut_type, soc, cann_3rd_lib_path, experimental)
+        merged_ops = ",".join(sorted(op_names))
+        cmd = make_merged_command(
+            merged_ops, ut_type, soc, cann_3rd_lib_path, experimental
+        )
         commands.append(cmd)
 
     # 去重保序（基于 tuple 去重，保留 list 类型）
@@ -362,24 +428,28 @@ def check_op_examples(op_name, is_experimental):
         dict: {'has_eager': bool, 'has_graph': bool}
     """
     # 算子可能的路径前缀
-    prefixes = ['math/', 'conversion/', 'random/']
+    prefixes = ["math/", "conversion/", "random/"]
     if is_experimental:
-        prefixes = ['experimental/math/', 'experimental/conversion/', 'experimental/random/']
+        prefixes = [
+            "experimental/math/",
+            "experimental/conversion/",
+            "experimental/random/",
+        ]
 
-    result = {'has_eager': False, 'has_graph': False}
+    result = {"has_eager": False, "has_graph": False}
 
     for prefix in prefixes:
-        examples_dir = os.path.join(prefix, op_name, 'examples')
+        examples_dir = os.path.join(prefix, op_name, "examples")
         if not os.path.isdir(examples_dir):
             continue
 
         # 检查目录下的文件
         try:
             for filename in os.listdir(examples_dir):
-                if filename.startswith('test_aclnn') and filename.endswith('.cpp'):
-                    result['has_eager'] = True
-                if filename.startswith('test_geir') and filename.endswith('.cpp'):
-                    result['has_graph'] = True
+                if filename.startswith("test_aclnn") and filename.endswith(".cpp"):
+                    result["has_eager"] = True
+                if filename.startswith("test_geir") and filename.endswith(".cpp"):
+                    result["has_graph"] = True
         except OSError:
             continue
 
@@ -403,8 +473,8 @@ def build_example_commands(filepath, experimental=False):
     """
     parsed = parse_changed_files(filepath)
 
-    exp_ops = parsed['exp_ops']
-    normal_ops = parsed['normal_ops']
+    exp_ops = parsed["exp_ops"]
+    normal_ops = parsed["normal_ops"]
 
     # 根据参数确定跑哪类算子
     ops = exp_ops if experimental else normal_ops
@@ -424,8 +494,8 @@ def build_example_commands(filepath, experimental=False):
         example_check = check_op_examples(op, experimental)
 
         # 根据存在的测试文件类型生成对应命令
-        if example_check['has_eager']:
-            commands.append(make_run_example_command(op, 'eager', experimental))
+        if example_check["has_eager"]:
+            commands.append(make_run_example_command(op, "eager", experimental))
 
     return commands
 
@@ -444,13 +514,13 @@ def make_package_command(merged_ops, cann_3rd_lib_path=None, is_experimental=Fal
         cann_3rd_lib_path: 可选的第三方库路径
         is_experimental: 是否为 experimental 算子
     """
-    cmd_parts = ['bash', 'build.sh', '--pkg', '-j16']
+    cmd_parts = ["bash", "build.sh", "--pkg", "-j16"]
 
     if is_experimental:
-        cmd_parts.append('--experimental')
-        cmd_parts.append('--vendor_name=experimental')
+        cmd_parts.append("--experimental")
+        cmd_parts.append("--vendor_name=experimental")
     else:
-        cmd_parts.append('--vendor_name=custom')
+        cmd_parts.append("--vendor_name=custom")
 
     cmd_parts.append(f"--ops={merged_ops}")
 
@@ -466,6 +536,7 @@ def build_package_commands(filepath, experimental=False, cann_3rd_lib_path=None)
     出包模式特点：
     - 不区分 UT 类型 和 SOC
     - 所有算子合并到一条命令
+    - 仅保留支持默认SOC且存在 op_kernel 目录的算子（出包需要 kernel 二进制）
 
     Args:
         filepath: 变更文件路径
@@ -477,8 +548,8 @@ def build_package_commands(filepath, experimental=False, cann_3rd_lib_path=None)
     """
     parsed = parse_changed_files(filepath)
 
-    exp_ops = parsed['exp_ops']
-    normal_ops = parsed['normal_ops']
+    exp_ops = parsed["exp_ops"]
+    normal_ops = parsed["normal_ops"]
 
     # 根据参数确定跑哪类算子
     ops = exp_ops if experimental else normal_ops
@@ -487,12 +558,22 @@ def build_package_commands(filepath, experimental=False, cann_3rd_lib_path=None)
     # 过滤不支持 DEFAULT_FILTER_SOC 的算子
     ops = filter_ops_by_soc_support(ops, DEFAULT_FILTER_SOC, experimental)
 
+    # 过滤没有 op_kernel 目录的算子（出包需要 kernel 二进制）
+    ops_with_kernel = filter_ops_by_op_kernel(ops, experimental)
+    dropped_no_kernel = ops - ops_with_kernel
+    if dropped_no_kernel:
+        print(
+            f"警告: 以下算子无 op_kernel 目录，出包命令中丢弃: {','.join(sorted(dropped_no_kernel))}",
+            flush=True,
+        )
+    ops = ops_with_kernel
+
     # 无变更或过滤后为空，用默认命令
     if not ops:
         return [make_package_command(default_op, cann_3rd_lib_path, experimental)]
 
     # 所有算子合并到一条命令
-    merged_ops = ','.join(sorted(ops))
+    merged_ops = ",".join(sorted(ops))
     cmd = make_package_command(merged_ops, cann_3rd_lib_path, experimental)
 
     return [cmd]
@@ -506,7 +587,7 @@ def print_commands(commands):
     print(flush=True)
 
 
-def execute_commands(commands, mode='ut'):
+def execute_commands(commands, mode="ut"):
     """执行命令列表并根据模式打印结果
 
     Args:
@@ -520,46 +601,72 @@ def execute_commands(commands, mode='ut'):
         print(f"执行: {' '.join(cmd)}", flush=True)
         result = subprocess.run(cmd)
         if result.returncode != 0:
-            print(f"run {mode} fail: {' '.join(cmd)} (返回码: {result.returncode})", flush=True)
+            print(
+                f"run {mode} fail: {' '.join(cmd)} (返回码: {result.returncode})",
+                flush=True,
+            )
             return 1
         print(f"命令成功: {' '.join(cmd)}", flush=True)
     return 0
 
 
 def main():
-    parser = argparse.ArgumentParser(description='根据 CI 变更文件生成构建命令')
-    parser.add_argument('-f', '--file', required=True, help='变更文件列表 必选参数')
-    parser.add_argument('--exec', action='store_true', help='直接执行生成的命令 可选参数')
-    parser.add_argument('--experimental', choices=['TRUE', 'FALSE'], default='FALSE',
-                        help='可选参数 默认FALSE TRUE表示跑experimental目录下的用例 检测不到算子跑默认experimental目录下的acos算子 '
-                             'FALSE表示跑基本算子的用例 检查不到算子跑math目录下的is_finite 是否指定 experimental 算子构建 (TRUE/FALSE)')
-    parser.add_argument('--pkg', choices=['TRUE', 'FALSE'], default='FALSE',
-                        help='是否生成出包命令 (TRUE/FALSE) 可选参数 默认是FALSE TRUE表示对涉及变更的算子打自定义算子包 '
-                             'FALSE 不打包 只跑UT')
-    parser.add_argument('--run_example', choices=['TRUE', 'FALSE'], default='FALSE',
-                        help='是否生成 run_example 命令 (TRUE/FALSE) 可选参数 默认FALSE TRUE表示每个算子运行示例')
-    parser.add_argument('--cann_3rd_lib_path', help='可选参数 CANN third party lib path')
-    parser.add_argument('--list_ops', action='store_true',
-                        help='仅输出变更涉及的算子名列表(逗号分隔)，不生成命令')
+    parser = argparse.ArgumentParser(description="根据 CI 变更文件生成构建命令")
+    parser.add_argument("-f", "--file", required=True, help="变更文件列表 必选参数")
+    parser.add_argument(
+        "--exec", action="store_true", help="直接执行生成的命令 可选参数"
+    )
+    parser.add_argument(
+        "--experimental",
+        choices=["TRUE", "FALSE"],
+        default="FALSE",
+        help="可选参数 默认FALSE TRUE表示跑experimental目录下的用例 检测不到算子跑默认experimental目录下的acos算子 "
+        "FALSE表示跑基本算子的用例 检查不到算子跑math目录下的is_finite 是否指定 experimental 算子构建 (TRUE/FALSE)",
+    )
+    parser.add_argument(
+        "--pkg",
+        choices=["TRUE", "FALSE"],
+        default="FALSE",
+        help="是否生成出包命令 (TRUE/FALSE) 可选参数 默认是FALSE TRUE表示对涉及变更的算子打自定义算子包 "
+        "FALSE 不打包 只跑UT",
+    )
+    parser.add_argument(
+        "--run_example",
+        choices=["TRUE", "FALSE"],
+        default="FALSE",
+        help="是否生成 run_example 命令 (TRUE/FALSE) 可选参数 默认FALSE TRUE表示每个算子运行示例",
+    )
+    parser.add_argument(
+        "--cann_3rd_lib_path", help="可选参数 CANN third party lib path"
+    )
+    parser.add_argument(
+        "--list_ops",
+        action="store_true",
+        help="仅输出变更涉及的算子名列表(逗号分隔)，不生成命令",
+    )
     args = parser.parse_args()
 
     if args.list_ops:
         parsed = parse_changed_files(args.file)
-        ops = parsed['exp_ops'] if args.experimental == 'TRUE' else parsed['normal_ops']
+        ops = parsed["exp_ops"] if args.experimental == "TRUE" else parsed["normal_ops"]
         if ops:
-            print(','.join(sorted(ops)))
+            print(",".join(sorted(ops)))
         return
 
     # 根据模式选择不同的命令生成函数
-    if args.run_example == 'TRUE':
-        commands = build_example_commands(args.file, args.experimental == 'TRUE')
-        mode = 'example'
-    elif args.pkg == 'TRUE':
-        commands = build_package_commands(args.file, args.experimental == 'TRUE', args.cann_3rd_lib_path)
-        mode = 'pkg'
+    if args.run_example == "TRUE":
+        commands = build_example_commands(args.file, args.experimental == "TRUE")
+        mode = "example"
+    elif args.pkg == "TRUE":
+        commands = build_package_commands(
+            args.file, args.experimental == "TRUE", args.cann_3rd_lib_path
+        )
+        mode = "pkg"
     else:
-        commands = build_ut_commands(args.file, args.experimental == 'TRUE', args.cann_3rd_lib_path)
-        mode = 'ut'
+        commands = build_ut_commands(
+            args.file, args.experimental == "TRUE", args.cann_3rd_lib_path
+        )
+        mode = "ut"
 
     # 打印生成的命令
     print_commands(commands)
@@ -569,5 +676,5 @@ def main():
         sys.exit(execute_commands(commands, mode))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
