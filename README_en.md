@@ -1,8 +1,10 @@
 # ops-math
 
+English | [简体中文](./README.md)
+
 ## 🔥Latest News
 
-- [2026/01] Added [QuickStart](docs/QUICKSTART_en.md) to guide beginners with zero foundation to get started with operator project deployment (supporting Docker environments), operator development, and contribution processes.
+- [2026/01] Added [QuickStart](./QUICKSTART_en.md) to guide beginners with zero foundation to get started with operator project deployment (supporting Docker environments), operator development, and contribution processes.
 - [2025/12] Open source operators support Ascend 950PR/Ascend 950DT, which can be developed and debugged through the CANN Simulator simulation tool; added a <<<>>> kernel heterogeneous call example in the add operator for user-defined usage; added support for operators [concat](conversion/concat/), [lerp](math/lerp/), [drop_out_v3](random/drop_out_v3/), and others in multiple categories.
 - [2025/11] Improved multiple operator README descriptions and enhanced operator development example documentation and examples.
 - [2025/10] Added the experimental directory and improved the [Contribution Guide](CONTRIBUTING_en.md) to support developers in debugging and contributing custom operators.
@@ -10,7 +12,7 @@
 
 ## 🚀Overview
 
-ops-math is a basic operator library that provides numerical computation in the [CANN](https://hiascend.com/software/cann) (Compute Architecture for Neural Networks) operator library, including conversion, math, and random categories, covering tensor shape transformation, basic mathematical operations, random number generation, and other scenarios. 
+ops-math is a basic operator library that provides numerical computation in the [CANN](https://hiascend.com/software/cann) (Compute Architecture for Neural Networks) operator library, including conversion, math, and random categories, covering tensor shape transformation, basic mathematical operations, random number generation, and other scenarios.
 <!--
 The position of the sub-library in the architecture diagram is as follows.
 

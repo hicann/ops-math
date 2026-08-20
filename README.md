@@ -1,5 +1,7 @@
 # ops-math
 
+English | [简体中文](./README.md)
+
 ## 🔥Latest News
 
 - [2026/01] 新增[QuickStart](QUICKSTART.md)，指导新手零基础入门算子项目部署（支持Docker环境）、算子开发和贡献流程。
