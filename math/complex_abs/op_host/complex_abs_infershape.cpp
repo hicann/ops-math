@@ -28,6 +28,8 @@ static graphStatus InferDataType4ComplexAbs(gert::InferDataTypeContext* context)
         output_dtype = DT_FLOAT;
     } else if (input_x_dtype == DT_COMPLEX32) {
         output_dtype = DT_FLOAT16;
+    } else if (input_x_dtype == DT_COMPLEX128) {
+        output_dtype = DT_DOUBLE;
     }
     context->SetOutputDataType(0, output_dtype);
     OP_LOGD(context->GetNodeName(), "InferDataType4ComplexAbs end");
