@@ -21,6 +21,16 @@
 #include "reduce_var_twopass.h"
 
 namespace ReduceOpTmpl {
+// view.axis[] / invDstStride[] 中的维度下标（第 5~8 维），避免魔数
+constexpr int32_t AXIS_DIM4 = 4;
+constexpr int32_t AXIS_DIM5 = 5;
+constexpr int32_t AXIS_DIM6 = 6;
+constexpr int32_t AXIS_DIM7 = 7;
+// 张量维数（Dim 比较分支），避免魔数
+constexpr int32_t DIM3 = 3;
+constexpr int32_t DIM4 = 4;
+constexpr int32_t DIM5 = 5;
+
 template <typename DataType, typename PromoteDataType, bool batchInvariant, uint32_t PatternID, uint32_t LoopARCount,
           uint32_t LoopInnerARCount, bool isStd = false>
 class ReduceVarSch {
@@ -1429,8 +1439,8 @@ public:
         // Step 3: Multi-dimensional NDDMA dispatch based on Dim
         static constexpr NdDmaConfig config = {false, 0, 0, false};
 
-        if constexpr (Dim <= 4) {
-            if constexpr (Dim == 3) {
+        if constexpr (Dim <= DIM4) {
+            if constexpr (Dim == DIM3) {
                 NdDmaLoopInfo<NDDMA_LOOP_DIM3> loopInfo = {
                     .loopSrcStride = {1, view.axis[1].srcStride, view.axis[2].srcStride},
                     .loopDstStride = {1, static_cast<uint32_t>(view.axis[1].dstStride),
@@ -1460,24 +1470,24 @@ public:
             // Dim >= 5: inner 5 dims via NDDMA, outer dims via for loops
             NdDmaLoopInfo<NDDMA_LOOP_DIM5> loopInfo = {
                 .loopSrcStride = {1, view.axis[1].srcStride, view.axis[2].srcStride, view.axis[3].srcStride,
-                                  view.axis[4].srcStride},
+                                  view.axis[AXIS_DIM4].srcStride},
                 .loopDstStride = {1, static_cast<uint32_t>(view.axis[1].dstStride),
                                   static_cast<uint32_t>(view.axis[2].dstStride),
                                   static_cast<uint32_t>(view.axis[3].dstStride),
-                                  static_cast<uint32_t>(view.axis[4].dstStride)},
+                                  static_cast<uint32_t>(view.axis[AXIS_DIM4].dstStride)},
                 .loopSize = {static_cast<uint32_t>(view.axis[0].repeat), static_cast<uint32_t>(view.axis[1].repeat),
                              static_cast<uint32_t>(view.axis[2].repeat), static_cast<uint32_t>(view.axis[3].repeat),
-                             static_cast<uint32_t>(view.axis[4].repeat)},
+                             static_cast<uint32_t>(view.axis[AXIS_DIM4].repeat)},
                 .loopLpSize = {0, 0, 0, 0, 0},
                 .loopRpSize = {0, 0, 0, 0, 0}};
             NdDmaParams<DataType, NDDMA_LOOP_DIM5> params = {loopInfo, 0};
-            for (int32_t i = 0; i < view.axis[5].repeat; i++) {
-                for (int32_t j = 0; j < view.axis[6].repeat; j++) {
-                    for (int32_t k = 0; k < view.axis[7].repeat; k++) {
-                        int64_t dstStride = i * view.axis[5].dstStride + j * view.axis[6].dstStride +
-                                            k * view.axis[7].dstStride;
-                        int64_t srcStride = i * view.axis[5].srcStride + j * view.axis[6].srcStride +
-                                            k * view.axis[7].srcStride;
+            for (int32_t i = 0; i < view.axis[AXIS_DIM5].repeat; i++) {
+                for (int32_t j = 0; j < view.axis[AXIS_DIM6].repeat; j++) {
+                    for (int32_t k = 0; k < view.axis[AXIS_DIM7].repeat; k++) {
+                        int64_t dstStride = i * view.axis[AXIS_DIM5].dstStride + j * view.axis[AXIS_DIM6].dstStride +
+                                            k * view.axis[AXIS_DIM7].dstStride;
+                        int64_t srcStride = i * view.axis[AXIS_DIM5].srcStride + j * view.axis[AXIS_DIM6].srcStride +
+                                            k * view.axis[AXIS_DIM7].srcStride;
                         DataCopy<DataType, NDDMA_LOOP_DIM5, config>(ubTensor[dstStride],
                                                                     inputGM_[view.addr + srcStride], params);
                     }
@@ -1567,7 +1577,7 @@ public:
 
         // Step 3: 多维分发
         if constexpr (InnerPattern::TailA) {
-            constexpr int32_t innerAxes = (Dim >= 5) ? 4 : Dim; // NDDMA 内层轴数（+1 退化层后 <=5 层）
+            constexpr int32_t innerAxes = (Dim >= DIM5) ? DIM4 : Dim; // NDDMA 内层轴数（+1 退化层后 <=5 层）
             uint32_t lvlSize[5] = {1, 1, 1, 1, 1};
             uint32_t lvlSrc[5] = {1, 1, 1, 1, 1};
             uint32_t lvlDst[5] = {1, 1, 1, 1, 1};
@@ -1588,7 +1598,7 @@ public:
                     lvl++;
                 }
             }
-            if constexpr (Dim == 3) {
+            if constexpr (Dim == DIM3) {
                 constexpr int32_t peelIdx = Pattern::FirstA ? 2 : 1; // 第 2 根 A 轴在 view 中的下标
                 if (view.axis[peelIdx].isAxisA) {
                     constexpr int32_t rIdx = (peelIdx == 2) ? 1 : 2; // R 轴在 view 中的下标
@@ -1616,7 +1626,7 @@ public:
                     NdDmaParams<DataType, NDDMA_LOOP_DIM4> params = {loopInfo, 0};
                     DataCopy<DataType, NDDMA_LOOP_DIM4, config>(ubTensor, inputGM_[view.addr], params);
                 }
-            } else if constexpr (Dim == 4) {
+            } else if constexpr (Dim == DIM4) {
                 NdDmaLoopInfo<NDDMA_LOOP_DIM5> loopInfo = {
                     .loopSrcStride = {lvlSrc[0], lvlSrc[1], lvlSrc[2], lvlSrc[3], lvlSrc[4]},
                     .loopDstStride = {lvlDst[0], lvlDst[1], lvlDst[2], lvlDst[3], lvlDst[4]},
@@ -1634,14 +1644,16 @@ public:
                     .loopLpSize = {0, 0, 0, 0, 0},
                     .loopRpSize = {0, 0, 0, 0, 0}};
                 NdDmaParams<DataType, NDDMA_LOOP_DIM5> params = {loopInfo, 0};
-                for (int32_t i = 0; i < view.axis[4].repeat; i++) {
-                    for (int32_t j = 0; j < view.axis[5].repeat; j++) {
-                        for (int32_t k = 0; k < view.axis[6].repeat; k++) {
-                            for (int32_t m = 0; m < view.axis[7].repeat; m++) {
-                                int64_t srcOff = i * view.axis[4].srcStride + j * view.axis[5].srcStride +
-                                                 k * view.axis[6].srcStride + m * view.axis[7].srcStride;
-                                int64_t dstOff = i * invDstStride[4] + j * invDstStride[5] + k * invDstStride[6] +
-                                                 m * invDstStride[7];
+                for (int32_t i = 0; i < view.axis[AXIS_DIM4].repeat; i++) {
+                    for (int32_t j = 0; j < view.axis[AXIS_DIM5].repeat; j++) {
+                        for (int32_t k = 0; k < view.axis[AXIS_DIM6].repeat; k++) {
+                            for (int32_t m = 0; m < view.axis[AXIS_DIM7].repeat; m++) {
+                                int64_t srcOff = i * view.axis[AXIS_DIM4].srcStride +
+                                                 j * view.axis[AXIS_DIM5].srcStride +
+                                                 k * view.axis[AXIS_DIM6].srcStride +
+                                                 m * view.axis[AXIS_DIM7].srcStride;
+                                int64_t dstOff = i * invDstStride[AXIS_DIM4] + j * invDstStride[AXIS_DIM5] +
+                                                 k * invDstStride[AXIS_DIM6] + m * invDstStride[AXIS_DIM7];
                                 DataCopy<DataType, NDDMA_LOOP_DIM5, config>(ubTensor[dstOff],
                                                                             inputGM_[view.addr + srcOff], params);
                             }
@@ -1653,7 +1665,7 @@ public:
         }
 
         // !TailA (AR→RA): 与历史实现逐位一致 —— axis[0](R) 落 L0 按 otherAlign 散射、axis[1](A) 连续
-        if constexpr (Dim == 3) {
+        if constexpr (Dim == DIM3) {
             NdDmaLoopInfo<NDDMA_LOOP_DIM3> loopInfo = {
                 .loopSrcStride = {1, srcStrideL1, static_cast<uint32_t>(view.axis[2].srcStride)},
                 .loopDstStride = {invDstStride[0], invDstStride[1], invDstStride[2]},
@@ -1663,7 +1675,7 @@ public:
                 .loopRpSize = {0, 0, 0}};
             NdDmaParams<DataType, NDDMA_LOOP_DIM3> params = {loopInfo, 0};
             DataCopy<DataType, NDDMA_LOOP_DIM3, config>(ubTensor, inputGM_[view.addr], params);
-        } else if constexpr (Dim == 4) {
+        } else if constexpr (Dim == DIM4) {
             NdDmaLoopInfo<NDDMA_LOOP_DIM4> loopInfo = {
                 .loopSrcStride = {1, srcStrideL1, static_cast<uint32_t>(view.axis[2].srcStride),
                                   static_cast<uint32_t>(view.axis[3].srcStride)},
@@ -1679,20 +1691,22 @@ public:
             NdDmaLoopInfo<NDDMA_LOOP_DIM5> loopInfo = {
                 .loopSrcStride = {1, srcStrideL1, static_cast<uint32_t>(view.axis[2].srcStride),
                                   static_cast<uint32_t>(view.axis[3].srcStride),
-                                  static_cast<uint32_t>(view.axis[4].srcStride)},
-                .loopDstStride = {invDstStride[0], invDstStride[1], invDstStride[2], invDstStride[3], invDstStride[4]},
+                                  static_cast<uint32_t>(view.axis[AXIS_DIM4].srcStride)},
+                .loopDstStride = {invDstStride[0], invDstStride[1], invDstStride[2], invDstStride[3],
+                                  invDstStride[AXIS_DIM4]},
                 .loopSize = {static_cast<uint32_t>(view.axis[0].repeat), static_cast<uint32_t>(view.axis[1].repeat),
                              static_cast<uint32_t>(view.axis[2].repeat), static_cast<uint32_t>(view.axis[3].repeat),
-                             static_cast<uint32_t>(view.axis[4].repeat)},
+                             static_cast<uint32_t>(view.axis[AXIS_DIM4].repeat)},
                 .loopLpSize = {0, 0, 0, 0, 0},
                 .loopRpSize = {0, 0, 0, 0, 0}};
             NdDmaParams<DataType, NDDMA_LOOP_DIM5> params = {loopInfo, 0};
-            for (int32_t i = 0; i < view.axis[5].repeat; i++) {
-                for (int32_t j = 0; j < view.axis[6].repeat; j++) {
-                    for (int32_t k = 0; k < view.axis[7].repeat; k++) {
-                        int64_t srcOff = i * view.axis[5].srcStride + j * view.axis[6].srcStride +
-                                         k * view.axis[7].srcStride;
-                        int64_t dstOff = i * invDstStride[5] + j * invDstStride[6] + k * invDstStride[7];
+            for (int32_t i = 0; i < view.axis[AXIS_DIM5].repeat; i++) {
+                for (int32_t j = 0; j < view.axis[AXIS_DIM6].repeat; j++) {
+                    for (int32_t k = 0; k < view.axis[AXIS_DIM7].repeat; k++) {
+                        int64_t srcOff = i * view.axis[AXIS_DIM5].srcStride + j * view.axis[AXIS_DIM6].srcStride +
+                                         k * view.axis[AXIS_DIM7].srcStride;
+                        int64_t dstOff = i * invDstStride[AXIS_DIM5] + j * invDstStride[AXIS_DIM6] +
+                                         k * invDstStride[AXIS_DIM7];
                         DataCopy<DataType, NDDMA_LOOP_DIM5, config>(ubTensor[dstOff], inputGM_[view.addr + srcOff],
                                                                     params);
                     }
