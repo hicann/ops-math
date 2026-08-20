@@ -94,7 +94,7 @@ ge::graphStatus MatrixSetDiagV2Tiling::CheckX()
                                                          "The shape dim of input must be within the range [2, 8]"),
                 return ge::GRAPH_FAILED);
 
-    int32_t lastIdx = dimNum_ - 1;
+    int32_t lastIdx = static_cast<int32_t>(dimNum_) - 1;
     inputInfo_.xColNum = inputShapeVal_.GetDim(lastIdx);
     inputInfo_.xRowNum = inputShapeVal_.GetDim(lastIdx - 1);
     // 非尾轴合轴
@@ -128,12 +128,12 @@ ge::graphStatus MatrixSetDiagV2Tiling::CheckDiag()
                                                           Ops::Math::Join(dimNum_, diagDimNum_),
                                                           "The shape dim of diagonal must be <= that of input"),
                 return ge::GRAPH_FAILED);
-    OP_CHECK_IF(diagDimNum_ < dimNum_ - 1,
+    OP_CHECK_IF(static_cast<int64_t>(diagDimNum_) < static_cast<int64_t>(dimNum_) - 1,
                 OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(context_->GetNodeName(), "input and diagonal",
                                                           Ops::Math::Join(dimNum_, diagDimNum_),
                                                           "The shape dim of diagonal must be >= that of input - 1"),
                 return ge::GRAPH_FAILED);
-    int32_t lastIdx = dimNum_ - 1;
+    int32_t lastIdx = static_cast<int32_t>(dimNum_) - 1;
     for (int32_t i = 0; i < lastIdx - 1; ++i) {
         OP_CHECK_IF(diagShapeVal_.GetDim(i) != inputShapeVal_.GetDim(i),
                     OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
@@ -147,7 +147,7 @@ ge::graphStatus MatrixSetDiagV2Tiling::CheckDiag()
         OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "diagonal", std::to_string(diagDimNum_),
                                                  "The shape dim of diagonal must be at least 1"),
         return ge::GRAPH_FAILED);
-    inputInfo_.maxDiagLen = diagShapeVal_.GetDim(diagDimNum_ - 1);
+    inputInfo_.maxDiagLen = static_cast<uint32_t>(diagShapeVal_.GetDim(static_cast<size_t>(diagDimNum_) - 1));
     return ge::GRAPH_SUCCESS;
 }
 
@@ -203,7 +203,7 @@ ge::graphStatus MatrixSetDiagV2Tiling::CheckK()
                                                      "The shape dim of diagonal must be at least 2"),
             return ge::GRAPH_FAILED);
 
-        uint64_t numDiags = diagShapeVal_.GetDim(diagDimNum_ - 2);
+        uint64_t numDiags = static_cast<uint64_t>(diagShapeVal_.GetDim(static_cast<size_t>(diagDimNum_) - 2));
         OP_CHECK_IF(inputInfo_.diagNum != numDiags,
                     OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "diagonal", std::to_string(numDiags),
                                                           "-2th axis of diagonal must be " +
