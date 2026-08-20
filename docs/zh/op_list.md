@@ -201,7 +201,7 @@
     <td><a href="../../math/angle_v2/README.md">angle_v2</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
+    <td>√</td>
     <td>√</td>
     <td>AI Core</td>
     <td>为输入张量的每一个元素取角度（单位：弧度）。</td>
@@ -471,7 +471,7 @@
     <td><a href="../../math/cdist/README.md">cdist</a></td>
     <td> </td>
     <td> </td>
-    <td> </td>
+    <td>√</td>
     <td> </td>
     <td> </td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
@@ -1021,7 +1021,7 @@
     <td><a href="../../math/histogram_v2/README.md">histogram_v2</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
+    <td>√</td>
     <td>√</td>
     <td>AI Core</td>
     <td>计算张量直方图。</td>
@@ -1651,7 +1651,7 @@
     <td><a href="../../math/reduce_nansum/README.md">reduce_nansum</a></td>
     <td>×</td>
     <td>×</td>
-    <td>×</td>
+    <td>√</td>
     <td>×</td>
     <td>AI Core</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
@@ -1691,7 +1691,7 @@
     <td><a href="../../math/reduce_std_with_mean/README.md">reduce_std_with_mean</a></td>
     <td>×</td>
     <td>×</td>
-    <td>×</td>
+    <td>√</td>
     <td>×</td>
     <td>AI Core</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
@@ -1891,7 +1891,7 @@
     <td><a href="../../math/silent_check/README.md">silent_check</a></td>
     <td>×</td>
     <td>×</td>
-    <td>×</td>
+    <td>√</td>
     <td>×</td>
     <td>AI Core</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
@@ -1901,7 +1901,7 @@
     <td><a href="../../math/silent_check_v2/README.md">silent_check_v2</a></td>
     <td> </td>
     <td> </td>
-    <td> </td>
+    <td>√</td>
     <td> </td>
     <td> </td>
     <td> </td>
@@ -2401,7 +2401,7 @@
     <td><a href="../../conversion/diag_v2/README.md">diag_v2</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
+    <td>√</td>
     <td>√</td>
     <td>AI Core</td>
     <td>根据输入的二维张量，提取由diagonal指定的对角线元素。</td>
