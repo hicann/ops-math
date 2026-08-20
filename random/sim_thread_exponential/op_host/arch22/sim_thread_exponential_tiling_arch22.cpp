@@ -9,11 +9,11 @@
  */
 
 /*!
- * \file sim_thread_exponential_tiling_arch32.cpp
+ * \file sim_thread_exponential_tiling_arch22.cpp
  * \brief
  */
 
-#include "sim_thread_exponential_tiling_arch32.h"
+#include "sim_thread_exponential_tiling_arch22.h"
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 #include "util/math_util.h"

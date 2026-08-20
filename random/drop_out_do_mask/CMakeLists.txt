@@ -11,7 +11,7 @@
 # 设置算子定义时支持的芯片类型
 set(SUPPORT_COMPUTE_UNIT "ascend310p" "ascend910_93" "ascend910b" "ascend950")
 # 设置每种芯片类型对应的 tiling 文件目录 (op_host 下的子目录名)
-set(SUPPORT_TILING_DIR "arch32" "arch32" "arch32" "arch35")
+set(SUPPORT_TILING_DIR "arch22" "arch22" "arch22" "arch35")
 # 编译配置
 add_all_modules_sources(OPTYPE drop_out_do_mask ACLNNTYPE aclnn_exclude
     COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT}

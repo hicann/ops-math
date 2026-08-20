@@ -12,7 +12,7 @@
 #include <fstream>
 #include <vector>
 #include <gtest/gtest.h>
-#include "../../../../../diag_v2/op_host/arch32/diag_v2_tiling.h"
+#include "../../../../../diag_v2/op_host/arch22/diag_v2_tiling.h"
 
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
@@ -23,13 +23,9 @@ using namespace optiling;
 
 class diagFlatTiling : public testing::Test {
 protected:
-    static void SetUpTestCase() {
-        std::cout << "diagFlat Tiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "diagFlat Tiling SetUp" << std::endl; }
 
-    static void TearDownTestCase() {
-        std::cout << "diagFlat Tiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "diagFlat Tiling TearDown" << std::endl; }
 };
 
 struct DiagFlatCompileInfo {
@@ -38,15 +34,32 @@ struct DiagFlatCompileInfo {
     bool isAscend310P = false;
 };
 
-TEST_F(diagFlatTiling, test_diag_flat_tiling_fp16_fp16) {
+TEST_F(diagFlatTiling, test_diag_flat_tiling_fp16_fp16)
+{
     DiagFlatCompileInfo compileInfo = {48, 196608, false};
-    
-    gert::TilingContextPara tilingContextPara("DiagFlat",
-                                              {{{{8,}, {8,}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-                                              {{{8,}, {8,}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
-                                              {{{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},},
-                                              {gert::TilingContextPara::OpAttr("diagonal", Ops::Math::AnyValue::CreateFrom<int64_t>(0))},
-                                              &compileInfo);
+
+    gert::TilingContextPara tilingContextPara(
+        "DiagFlat",
+        {{{{
+               8,
+           },
+           {
+               8,
+           }},
+          ge::DT_FLOAT16,
+          ge::FORMAT_ND},
+         {{{
+               8,
+           },
+           {
+               8,
+           }},
+          ge::DT_FLOAT16,
+          ge::FORMAT_ND}},
+        {
+            {{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        {gert::TilingContextPara::OpAttr("diagonal", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo);
     uint64_t expectTilingKey = 101;
     string expectTilingData = "0 0 0 0 0 0 0 101 0 8 48 1 8 0 163840 16384 0 16778752 ";
     std::vector<size_t> expectWorkspaces = {16778752};

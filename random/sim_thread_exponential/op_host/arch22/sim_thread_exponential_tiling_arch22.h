@@ -9,12 +9,12 @@
  */
 
 /*!
- * \file sim_thread_exponential_tiling_arch32.h
+ * \file sim_thread_exponential_tiling_arch22.h
  * \brief
  */
 
-#ifndef OPS_BUILD_IN_OP_TILING_RUNTIME_SIM_THREAD_EXPONENTIAL_ARCH32_H_
-#define OPS_BUILD_IN_OP_TILING_RUNTIME_SIM_THREAD_EXPONENTIAL_ARCH32_H_
+#ifndef OPS_BUILD_IN_OP_TILING_RUNTIME_SIM_THREAD_EXPONENTIAL_ARCH22_H_
+#define OPS_BUILD_IN_OP_TILING_RUNTIME_SIM_THREAD_EXPONENTIAL_ARCH22_H_
 
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
@@ -113,4 +113,4 @@ private:
 };
 } // namespace optiling
 
-#endif // OPS_BUILD_IN_OP_TILING_RUNTIME_SIM_THREAD_EXPONENTIAL_ARCH32_H_
+#endif // OPS_BUILD_IN_OP_TILING_RUNTIME_SIM_THREAD_EXPONENTIAL_ARCH22_H_

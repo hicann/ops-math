@@ -28,16 +28,15 @@ static uint32_t GetDataLength32BAligned(uint32_t dataLength, uint32_t dtypeByteS
 template <typename T>
 class PadV3GradReplicationTilingHandler {
 public:
-    explicit PadV3GradReplicationTilingHandler(
-        gert::TilingContext* tilingContext, const PadV3GradReplicationCompileInfo* tilingCompileInfo)
+    explicit PadV3GradReplicationTilingHandler(gert::TilingContext* tilingContext,
+                                               const PadV3GradReplicationCompileInfo* tilingCompileInfo)
         : context(tilingContext), compileInfo(tilingCompileInfo) {};
     ge::graphStatus HandleKernelTiling();
     ge::graphStatus Init();
     void Run();
     void CalculateValues();
-    void FillStruct(
-        uint64_t layerCount, uint32_t eleCount, uint32_t tileEleNum, EdgeTiling& edgeTiling,
-        uint16_t edgeCountLimit = MAX_UINT16);
+    void FillStruct(uint64_t layerCount, uint32_t eleCount, uint32_t tileEleNum, EdgeTiling& edgeTiling,
+                    uint16_t edgeCountLimit = MAX_UINT16);
     void FillStructs();
     void FillValues();
     void SetPreferences();
@@ -152,9 +151,9 @@ void PadV3GradReplicationTilingHandler<T>::CalculateValues()
     }
     virtualInputShape[DIM_0] = (inputDim == DIM_4D) ? inputShape[DIM_0] : (inputShape[DIM_0] * inputShape[DIM_1]);
     inputSize = context->GetInputTensor(X_INPUT_INDEX)->GetShapeSize();
-    cubeInputSize =
-        virtualInputShape[DIM_1] * virtualInputShape[DIM_2] * virtualInputShape[DIM_3]; // 计算输入的后三维体积
-    layerInputSize = virtualInputShape[DIM_2] * virtualInputShape[DIM_3];               // 计算输入的后两维体积;
+    cubeInputSize = virtualInputShape[DIM_1] * virtualInputShape[DIM_2] *
+                    virtualInputShape[DIM_3];                             // 计算输入的后三维体积
+    layerInputSize = virtualInputShape[DIM_2] * virtualInputShape[DIM_3]; // 计算输入的后两维体积;
     cubeNumEachCore = (virtualInputShape[DIM_0] - 1) / compileInfo->vectorCoreNum + 1;
     realUsedCoreNum = (virtualInputShape[DIM_0] - 1) / cubeNumEachCore + 1;
     cubeNumLastCore = virtualInputShape[DIM_0] % cubeNumEachCore;
@@ -169,9 +168,9 @@ void PadV3GradReplicationTilingHandler<T>::CalculateValues()
     for (uint32_t i = 0; i < outputShape.GetDimNum(); i++) {
         outputSize *= outputShape.GetDim(i);
     }
-    cubeOutputSize =
-        virtualOutputShape[DIM_1] * virtualOutputShape[DIM_2] * virtualOutputShape[DIM_3]; // 计算输出的后三维体积
-    layerOutputSize = virtualOutputShape[DIM_2] * virtualOutputShape[DIM_3];               // 计算输出的后两维体积;
+    cubeOutputSize = virtualOutputShape[DIM_1] * virtualOutputShape[DIM_2] *
+                     virtualOutputShape[DIM_3];                              // 计算输出的后三维体积
+    layerOutputSize = virtualOutputShape[DIM_2] * virtualOutputShape[DIM_3]; // 计算输出的后两维体积;
     for (uint32_t i = 0; i < PADDING_PAIR_NUM; i++) {
         paddings[i * PAIR] = paddingValue[PADDING_API_LENGTH - i * PAIR - PAIR];
         paddings[i * PAIR + 1] = paddingValue[PADDING_API_LENGTH - i * PAIR - 1];
@@ -200,9 +199,9 @@ void PadV3GradReplicationTilingHandler<T>::CalculateValues()
                      (paddings[DIM_1] ? (paddings[DIM_1] + 1) : 0); // 如果小等于0，则没有中间部分需要搬运
     if (innerRowLength < 0)
         innerRowLength = 0;
-    topToBottomSize = (virtualInputShape[DIM_2] - paddings[DIM_3] - 1) * topSize;    // 底边相对顶边在输入上的偏移量
-    topResultSize = virtualInputShape[DIM_0] * virtualInputShape[DIM_1] * topSize;   // 底边相对顶边在临时输出上的偏移量
-    leftToRightSize = virtualInputShape[DIM_3] - paddings[DIM_1] - 1;                // 右边相对左边在输入上的偏移量
+    topToBottomSize = (virtualInputShape[DIM_2] - paddings[DIM_3] - 1) * topSize; // 底边相对顶边在输入上的偏移量
+    topResultSize = virtualInputShape[DIM_0] * virtualInputShape[DIM_1] * topSize; // 底边相对顶边在临时输出上的偏移量
+    leftToRightSize = virtualInputShape[DIM_3] - paddings[DIM_1] - 1; // 右边相对左边在输入上的偏移量
     leftResultSize = virtualInputShape[DIM_0] * virtualInputShape[DIM_1] * leftSize; // 右边相对左边在临时输出上的偏移量
     workspaceSize = (topResultSize + leftResultSize) * PAIR +
                     layerOutputSize * PAIR * virtualInputShape[DIM_0]; // 用户workspace大小
@@ -215,8 +214,8 @@ void PadV3GradReplicationTilingHandler<T>::CalculateValues()
    tileEleNum: 每轮能处理的元素数
 */
 template <typename T>
-void PadV3GradReplicationTilingHandler<T>::FillStruct(
-    uint64_t layerCount, uint32_t eleCount, uint32_t tileEleNum, EdgeTiling& edgeTiling, uint16_t edgeCountLimit)
+void PadV3GradReplicationTilingHandler<T>::FillStruct(uint64_t layerCount, uint32_t eleCount, uint32_t tileEleNum,
+                                                      EdgeTiling& edgeTiling, uint16_t edgeCountLimit)
 {
     uint16_t edgeCount;
     uint64_t tileCount;
@@ -428,8 +427,8 @@ void PadV3GradReplicationTilingHandler<T>::SetPreferences()
 
 static ge::graphStatus PadV3GradReplicationTiling(gert::TilingContext* context)
 {
-    const PadV3GradReplicationCompileInfo* compileInfo =
-        reinterpret_cast<const PadV3GradReplicationCompileInfo*>(context->GetCompileInfo());
+    const PadV3GradReplicationCompileInfo* compileInfo = reinterpret_cast<const PadV3GradReplicationCompileInfo*>(
+        context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     OP_LOGI(context->GetNodeName(), "Calculating tiling for PadV3GradReplication.");
     const gert::Tensor* paddings_tensor = context->GetInputTensor(PADDING_INPUT_INDEX);
@@ -456,15 +455,13 @@ static ge::graphStatus PadV3GradReplicationTilingParse(gert::TilingParseContext*
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->vectorCoreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->vectorCoreNum <= 0),
-        OP_LOGE(context->GetNodeName(), "No vector core available."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->vectorCoreNum <= 0), OP_LOGE(context->GetNodeName(), "No vector core available."),
+                return ge::GRAPH_FAILED);
     uint64_t ubByteSize;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubByteSize);
     compileInfo->ubByteSize = ubByteSize;
-    OP_CHECK_IF(
-        (compileInfo->ubByteSize <= 0),
-        OP_LOGE(context->GetNodeName(), "Failed to get ub size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->ubByteSize <= 0), OP_LOGE(context->GetNodeName(), "Failed to get ub size."),
+                return ge::GRAPH_FAILED);
     compileInfo->sysWorkspaceByteSize = ascendcPlatform.GetLibApiWorkSpaceSize();
     return ge::GRAPH_SUCCESS;
 }

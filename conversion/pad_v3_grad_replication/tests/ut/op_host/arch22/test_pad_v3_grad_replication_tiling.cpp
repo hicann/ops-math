@@ -15,34 +15,27 @@
 
 #include <iostream>
 #include <gtest/gtest.h>
-#include "conversion/pad_v3_grad_replication/op_host/arch32/pad_v3_grad_replication_tiling.h"
+#include "conversion/pad_v3_grad_replication/op_host/arch22/pad_v3_grad_replication_tiling.h"
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
 
 class PadV3GradReplicationTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "PadV3GradReplicationTiling  SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "PadV3GradReplicationTiling  TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "PadV3GradReplicationTiling  SetUp" << std::endl; }
+    static void TearDownTestCase() { std::cout << "PadV3GradReplicationTiling  TearDown" << std::endl; }
 };
 
 TEST_F(PadV3GradReplicationTiling, pad_v3_grad_replication_tiling_test_success)
 {
     optiling::PadV3GradReplicationCompileInfo compileInfo = {64, 262144, 16777216};
     std::vector<int64_t> constValue = {0, 0, 0, 0, 0, 1, 1, 1, 1, 1};
-    gert::TilingContextPara tilingContextPara(
-        "PadV3GradReplication",
-        {{{{1, 1, 30, 30}, {1, 1, 30, 30}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-         {{{10}, {10}}, ge::DT_INT64, ge::FORMAT_ND, true, constValue.data()}},
-        {
-            {{{1, 1, 28, 28}, {1, 1, 28, 28}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("PadV3GradReplication",
+                                              {{{{1, 1, 30, 30}, {1, 1, 30, 30}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {{{10}, {10}}, ge::DT_INT64, ge::FORMAT_ND, true, constValue.data()}},
+                                              {
+                                                  {{{1, 1, 28, 28}, {1, 1, 28, 28}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 2;
     std::string expectTilingData =
         "24019106386761045 1125899908240720 18014398526259200 4294967297 128849018910 900 900 4294968196 4294967297 "
@@ -56,13 +49,12 @@ TEST_F(PadV3GradReplicationTiling, pad_v3_grad_replication_tiling_test_failed)
 {
     optiling::PadV3GradReplicationCompileInfo compileInfo = {64, 262144, 16777216};
     std::vector<int64_t> constValue = {0, 0, 0, 0, 0, 1, 1, 1, 1, 1};
-    gert::TilingContextPara tilingContextPara(
-        "PadV3GradReplication",
-        {{{{1, 1, 30, 30}, {1, 1, 30, 30}}, ge::DT_INT32, ge::FORMAT_ND},
-         {{{10}, {10}}, ge::DT_INT64, ge::FORMAT_ND, true, constValue.data()}},
-        {
-            {{{1, 1, 28, 28}, {1, 1, 28, 28}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("PadV3GradReplication",
+                                              {{{{1, 1, 30, 30}, {1, 1, 30, 30}}, ge::DT_INT32, ge::FORMAT_ND},
+                                               {{{10}, {10}}, ge::DT_INT64, ge::FORMAT_ND, true, constValue.data()}},
+                                              {
+                                                  {{{1, 1, 28, 28}, {1, 1, 28, 28}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }

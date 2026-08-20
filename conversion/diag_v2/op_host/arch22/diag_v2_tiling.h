@@ -29,8 +29,7 @@ constexpr int64_t SCALAR_MAX_WIDTH = 1024L;
 constexpr int64_t LEAST_NUM_PER_CORE = 64L;
 constexpr int64_t BLOCK_SIZE = 32L;
 
-enum class DiagV2TilingKey : int64_t
-{
+enum class DiagV2TilingKey : int64_t {
     ASSIST_SIZE_1 = 2101,
     ASSIST_SIZE_2 = 2102,
     ASSIST_SIZE_4 = 2103,

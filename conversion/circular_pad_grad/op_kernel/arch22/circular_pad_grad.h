@@ -195,9 +195,8 @@ public:
             }
             if (bottom_ > 0) {
                 params.paramsOut.blockCount = static_cast<uint16_t>(bottom_);
-                DataCopyPad(
-                    workspaceGM_[i * workspaceLen_ + Align_], inLocal[(inputH_ - bottom_) * inputWAlign_],
-                    params.paramsOut);
+                DataCopyPad(workspaceGM_[i * workspaceLen_ + Align_], inLocal[(inputH_ - bottom_) * inputWAlign_],
+                            params.paramsOut);
             }
             SetAtomicNone();
             queBindT2_.FreeTensor(inLocal);
@@ -231,9 +230,8 @@ public:
             }
             if (bottom_ > 0) {
                 params.paramsOut.blockCount = static_cast<uint16_t>(bottom_);
-                DataCopyPad(
-                    workspaceGM_[i * workspaceLen_ + Align_], inLocalT2[(inputH_ - bottom_) * inputWAlign_],
-                    params.paramsOut);
+                DataCopyPad(workspaceGM_[i * workspaceLen_ + Align_], inLocalT2[(inputH_ - bottom_) * inputWAlign_],
+                            params.paramsOut);
             }
             SetAtomicNone();
             queBindT1_.FreeTensor(inLocal);
@@ -242,8 +240,8 @@ public:
         }
     }
 
-    __aicore__ inline void CopyGMToGMOnceNoCast(
-        GlobalTensor<T1> srcGM, GlobalTensor<T1> dstGM, CopyParams& inCopyParams, CopyParams& outCopyParams)
+    __aicore__ inline void CopyGMToGMOnceNoCast(GlobalTensor<T1> srcGM, GlobalTensor<T1> dstGM,
+                                                CopyParams& inCopyParams, CopyParams& outCopyParams)
     {
         auto inLocal = queBindT2_.AllocTensor<T1>();
         DataCopyPad(inLocal, srcGM[inCopyParams.offset], inCopyParams.dcParams, padParmsT1);
@@ -254,8 +252,8 @@ public:
         queBindT2_.FreeTensor(inLocal);
     }
 
-    __aicore__ inline void CopyGMToGMOnceCastToFP32(
-        GlobalTensor<T1> srcGM, GlobalTensor<T2> dstGM, CopyParams& inCopyParams, CopyParams& outCopyParams)
+    __aicore__ inline void CopyGMToGMOnceCastToFP32(GlobalTensor<T1> srcGM, GlobalTensor<T2> dstGM,
+                                                    CopyParams& inCopyParams, CopyParams& outCopyParams)
     {
         auto inLocal = queBindT1_.AllocTensor<T1>();
         DataCopyPad(inLocal, srcGM[inCopyParams.offset], inCopyParams.dcParams, padParmsT1);
@@ -273,8 +271,8 @@ public:
         queBindT2_.FreeTensor(inLocalT2);
     }
 
-    __aicore__ inline void CopyGMToGMOnceCastFromFP32(
-        GlobalTensor<T2> srcGM, GlobalTensor<T1> dstGM, CopyParams& inCopyParams, CopyParams& outCopyParams)
+    __aicore__ inline void CopyGMToGMOnceCastFromFP32(GlobalTensor<T2> srcGM, GlobalTensor<T1> dstGM,
+                                                      CopyParams& inCopyParams, CopyParams& outCopyParams)
     {
         auto inLocalT2 = queBindT2_.AllocTensor<T2>();
         DataCopyPad(inLocalT2, srcGM[inCopyParams.offset], inCopyParams.dcParams, padParmsT2);
@@ -282,10 +280,9 @@ public:
 
         inLocalT2 = queBindT2_.DeQue<QuePosition::GM, QuePosition::VECIN, T2>();
         auto inLocal = queBindT1_.AllocTensor<T1>();
-        Cast(
-            inLocal, inLocalT2, RoundMode::CAST_ROUND,
-            inCopyParams.dcParams.blockCount * (GetAlign((inCopyParams.dcParams.blockLen) / T2Size_, T2Size_) +
-                                                inCopyParams.dcParams.dstStride * Align_));
+        Cast(inLocal, inLocalT2, RoundMode::CAST_ROUND,
+             inCopyParams.dcParams.blockCount * (GetAlign((inCopyParams.dcParams.blockLen) / T2Size_, T2Size_) +
+                                                 inCopyParams.dcParams.dstStride * Align_));
         queBindT1_.EnQue<QuePosition::VECOUT, QuePosition::GM, T1>(inLocal);
 
         inLocal = queBindT1_.DeQue<QuePosition::VECOUT, QuePosition::GM, T1>();
@@ -320,8 +317,8 @@ public:
         paramsRight.paramsOut = {inOutputHU16, rightAlignSizeU32, 0, wRightStridU32, 0};
     }
 
-    __aicore__ inline void CopyGMToGMLines(
-        int64_t lines, int64_t lineW, CopyParams& inCopyParams, CopyParams& outCopyParams)
+    __aicore__ inline void CopyGMToGMLines(int64_t lines, int64_t lineW, CopyParams& inCopyParams,
+                                           CopyParams& outCopyParams)
     {
         if (lineW == 0 || T1Size_ == 0) {
             return;
@@ -355,8 +352,8 @@ public:
         }
     }
 
-    __aicore__ inline void CopyGMToGMLinesOnce(
-        int64_t lines, int64_t lineW, CopyParams& inCopyParams, CopyParams& outCopyParams)
+    __aicore__ inline void CopyGMToGMLinesOnce(int64_t lines, int64_t lineW, CopyParams& inCopyParams,
+                                               CopyParams& outCopyParams)
     {
         if (lineW == 0 || T1Size_ == 0) {
             return;
@@ -386,26 +383,24 @@ public:
         }
     }
 
-    __aicore__ inline void AddLeftAndRightOnce(
-        CopyParams& inCopyParamsl, CopyParams& outCopyParamsl, CopyParams& inCopyParamsr, CopyParams& outCopyParamsr)
+    __aicore__ inline void AddLeftAndRightOnce(CopyParams& inCopyParamsl, CopyParams& outCopyParamsl,
+                                               CopyParams& inCopyParamsr, CopyParams& outCopyParamsr)
     {
         auto wLRLocal = queBindT2_.AllocTensor<T2>();
         if (right_ > 0) {
             DataCopyPad(wLRLocal, workspaceGM_[inCopyParamsr.offset], inCopyParamsr.dcParams, padParmsT2);
         }
         if (left_ > 0) {
-            DataCopyPad(
-                wLRLocal[inCopyParamsr.dcParams.blockCount * rightAlign_], workspaceGM_[inCopyParamsl.offset],
-                inCopyParamsl.dcParams, padParmsT2);
+            DataCopyPad(wLRLocal[inCopyParamsr.dcParams.blockCount * rightAlign_], workspaceGM_[inCopyParamsl.offset],
+                        inCopyParamsl.dcParams, padParmsT2);
         }
         queBindT2_.EnQue(wLRLocal);
         wLRLocal = queBindT2_.DeQue<T2>();
 
         SetAtomicAdd<T2>();
         if (left_ > 0) {
-            DataCopyPad(
-                workspaceGM_[outCopyParamsl.offset], wLRLocal[inCopyParamsr.dcParams.blockCount * rightAlign_],
-                outCopyParamsl.dcParams);
+            DataCopyPad(workspaceGM_[outCopyParamsl.offset], wLRLocal[inCopyParamsr.dcParams.blockCount * rightAlign_],
+                        outCopyParamsl.dcParams);
             PipeBarrier<PIPE_MTE3>();
         }
         if (right_ > 0) {
@@ -415,8 +410,8 @@ public:
         queBindT2_.FreeTensor(wLRLocal);
     }
 
-    __aicore__ inline void AddLeftAndRightLines(
-        int64_t lines, sDataCopyExtParams& paramsLeft, sDataCopyExtParams& paramsRight)
+    __aicore__ inline void AddLeftAndRightLines(int64_t lines, sDataCopyExtParams& paramsLeft,
+                                                sDataCopyExtParams& paramsRight)
     {
         int64_t lInOffset = Align_;
         int64_t lOutOffset = Align_ + inOutputW_;
@@ -456,8 +451,8 @@ public:
         }
     }
 
-    __aicore__ inline void CopyGmToGm(
-        int64_t pages, int64_t taskNum, int64_t offsetIn, int64_t offsetOut, int64_t stride)
+    __aicore__ inline void CopyGmToGm(int64_t pages, int64_t taskNum, int64_t offsetIn, int64_t offsetOut,
+                                      int64_t stride)
     {
         int64_t loop = (workspaceLen_ * pages * T2Size_) / T2UBSize_;
         uint32_t tail = (workspaceLen_ * pages * T2Size_) % T2UBSize_;

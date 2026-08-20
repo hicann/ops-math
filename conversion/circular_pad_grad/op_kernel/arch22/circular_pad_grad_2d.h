@@ -22,8 +22,8 @@ class CircularPadGrad2D : public CircularPadGrad<T1, T2, ISCAST> {
 public:
     __aicore__ inline CircularPadGrad2D(TPipe* pipe) : CircularPadGrad<T1, T2, ISCAST>(pipe){};
 
-    __aicore__ inline void Init2D(
-        GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR workspace, const CircularPadCommonTilingData& tiling_data)
+    __aicore__ inline void Init2D(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR workspace,
+                                  const CircularPadCommonTilingData& tiling_data)
     {
         this->Init(tiling_data);
 
@@ -37,10 +37,10 @@ public:
         }
 
         this->xGM_.SetGlobalBuffer((__gm__ T1*)x + this->inputLen_ * startIdx, this->inputLen_ * this->perCoreTaskNum_);
-        this->yGM_.SetGlobalBuffer(
-            (__gm__ T1*)y + this->outputLen_ * startIdx, this->outputLen_ * this->perCoreTaskNum_);
-        this->workspaceGM_.SetGlobalBuffer(
-            (__gm__ T2*)workspace + this->workspaceLen_ * startIdx, this->workspaceLen_ * this->perCoreTaskNum_);
+        this->yGM_.SetGlobalBuffer((__gm__ T1*)y + this->outputLen_ * startIdx,
+                                   this->outputLen_ * this->perCoreTaskNum_);
+        this->workspaceGM_.SetGlobalBuffer((__gm__ T2*)workspace + this->workspaceLen_ * startIdx,
+                                           this->workspaceLen_ * this->perCoreTaskNum_);
         if (this->left_ < 0 || this->right_ < 0 || this->top_ < 0 || this->bottom_ < 0) {
             this->SetGMtoZero(this->outputLen_ * this->perCoreTaskNum_);
         }

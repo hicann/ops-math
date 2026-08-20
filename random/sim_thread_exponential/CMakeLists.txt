@@ -11,8 +11,8 @@
 # 设置算子定义时支持的芯片类型
 set(SUPPORT_COMPUTE_UNIT "ascend910b" "ascend910_93" "ascend950")
 # 设置每种芯片类型对应的tiling文件目录，即采用op_host目录下哪个文件夹下的tiling文件编译
-# 910b/910_93使用arch32目录(SIMD)，950使用arch35目录(SIMT)
-set(SUPPORT_TILING_DIR "arch32" "arch32" "arch35")
+# 910b/910_93使用arch22目录(SIMD)，950使用arch35目录(SIMT)
+set(SUPPORT_TILING_DIR "arch22" "arch22" "arch35")
 add_all_modules_sources(OPTYPE sim_thread_exponential
                         ACLNNTYPE aclnn
                         COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT}
