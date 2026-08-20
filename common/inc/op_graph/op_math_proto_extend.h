@@ -905,25 +905,6 @@ REG_OP(ExpandDims)
     .OP_END_FACTORY_REG(ReduceStdWithMean)
 
     /**
-     * @brief SignBitsPack.
-
-     * @par Inputs:
-     * one input, including:
-     * x: A 1D Tensor of float32 or float16.
-     *
-     * @par Attributes:
-     * size: first dim value of output tensor. Must be uint8 type.
-     *
-     * @par Outputs:
-     * y: A 2D Tensor of type uint8 with shape (size, N)
-     */
-    REG_OP(SignBitsPack)
-    .INPUT(x, TensorType({DT_FLOAT, DT_FLOAT16}))
-    .OUTPUT(y, TensorType({DT_UINT8}))
-    .REQUIRED_ATTR(size, Int)
-    .OP_END_FACTORY_REG(SignBitsPack)
-
-    /**
     * @brief Assigns "value" to the sliced l-value reference of "var".
     * The values of "value" are assigned to the positions in the variable. "var"
     * that are selected by the slice parameters. The slice parameters "begin, "end",

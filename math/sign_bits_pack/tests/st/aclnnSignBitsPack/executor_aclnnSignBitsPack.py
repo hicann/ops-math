@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
-# Copyright (c) 2025 Huawe                                                                                                                                                                                                                     i Technologies Co., Ltd.
-# This program is free software, you can redistribute it and/or modify it under the terms and conditions of                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        aa
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
@@ -17,9 +17,9 @@ from atk.configs.dataset_config import InputDataset
 from atk.tasks.api_execute import register
 from atk.tasks.api_execute.base_api import BaseApi
 
+
 @register("ascend_aclnn_signbitspack")
 class AclnnSigbBitsPack(BaseApi):
-
     def __call__(self, input_data: InputDataset, with_output: bool = False):
         selfTensor = input_data.kwargs["self"]
         size = input_data.kwargs["size"]
@@ -31,7 +31,7 @@ class AclnnSigbBitsPack(BaseApi):
         one_bit_adam = np.where(sign_bits >= 0, 1, 0)
         num_elements = len(one_bit_adam)
         remainder = num_elements % 8
-        if remainder!= 0:
+        if remainder != 0:
             # 需要填充的元素个数
             padding_size = 8 - remainder
             # 创建填充的1位Adam值，这里对于 -1按照之前假设为1
@@ -54,5 +54,7 @@ class AclnnSigbBitsPack(BaseApi):
         num_packed = len(packed_uint8_array)
         reshaped_size = num_packed // size
         # 将打包后的uint8数组转化为二维Tensor
-        tensor_result = torch.from_numpy(packed_uint8_array).reshape(size, reshaped_size)
+        tensor_result = torch.from_numpy(packed_uint8_array).reshape(
+            size, reshaped_size
+        )
         return tensor_result

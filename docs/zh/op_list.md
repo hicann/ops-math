@@ -1859,12 +1859,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/sign_bits_pack/README.md">sign_bits_pack</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>将浮点数（float16/float32）的符号位提取并打包为uint8字节，每8个符号位打包为1个字节。</td>
   </tr>
   <tr>
     <td>math</td>

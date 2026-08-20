@@ -50,7 +50,8 @@ static inline bool CheckSocVersionIsSupport(void)
 {
     return GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
            GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND310P ||
-           GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93;
+           GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
+           GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950;
 }
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
@@ -114,6 +115,11 @@ static bool CheckShape(const aclTensor* self, const aclTensor* out)
 
 static bool CheckValue(const aclTensor* self, int64_t size, const aclTensor* out)
 {
+    if (size <= 0) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "size value must bigger than zero.");
+        return false;
+    }
+
     for (size_t i = 0; i < out->GetViewShape().GetDimNum(); i++) {
         if (out->GetViewShape().GetDim(i) < 0) {
             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim value of out is negative.");
@@ -121,15 +127,22 @@ static bool CheckValue(const aclTensor* self, int64_t size, const aclTensor* out
         }
     }
 
-    size_t selfdim = self->GetViewShape().GetDim(0);
-    auto ysize = (selfdim + 7) / 8;
-    if (size <= 0) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "size value must bigger zero.");
+    int64_t selfDim = self->GetViewShape().GetDim(0);
+    if (selfDim < 0) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim value of self is negative.");
         return false;
     }
 
-    if (size != 0 && ysize % size != 0) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "all must need be divisible by size");
+    int64_t ysize = (selfDim + 7) / 8;
+    if (ysize % size != 0) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The number of packed bytes %ld cannot be divided by size %ld.", ysize, size);
+        return false;
+    }
+
+    int64_t outDimOneNum = out->GetViewShape().GetDim(0);
+    if (size != outDimOneNum) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "The value of the first dimension of 'out' is incorrect and should be equal to size.");
         return false;
     }
     return true;
