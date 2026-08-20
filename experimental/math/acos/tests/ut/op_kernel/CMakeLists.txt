@@ -9,19 +9,69 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-if (UT_TEST_ALL OR OP_KERNEL_UT)
-    # 需要将Tiling依赖的文件添加到CMakeLists.txt中
-    # set(elewise_common_tiling_files
-    #         ${CANN_ROOT}/ops/built-in/op_tiling/runtime/elewise_tiling.cc
-    #         )
-    # 算子自己的tiling文件路径
-    set(acos_tiling_files
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/acos_tiling.cpp
-        )
-    # 使用AddOpTestCase
-    # param1：算子名称，以kernel方式命名
-    # param2：soc版本，多个以分号分隔，例如："ascend910_95;ascend910b"
-    # param3：自定义编译选项，一般填写测试的一种典型数据类型组合，不需要则传入空字符串，例如："-DDTYPE_X=float"，多个使用空格分隔，例如："-DDTYPE_X=float -DDTYPE_Y=float"
-    # param4：该算子依赖的所有tiling源码文件
-    AddOpTestCase(acos "ascend910b" "" "${acos_tiling_files}")
+function(add_acos_kernel_ut_case)
+    if(NOT ASCEND_COMPUTE_UNIT STREQUAL "ascend910b")
+        return()
+    endif()
+
+    list(FIND ASCEND_OP_NAME acos acos_index)
+    if(NOT "${ASCEND_OP_NAME}" STREQUAL "" AND acos_index EQUAL -1)
+        return()
+    endif()
+
+    set(soc_version Ascend910B1)
+    set(case_target acos_${soc_version}_cases_obj)
+    set(module_target ${OP_KERNEL_MODULE_NAME}_${soc_version}_cases_obj)
+
+    add_library(${case_target} OBJECT ${CMAKE_CURRENT_SOURCE_DIR}/test_acos.cpp)
+    target_compile_options(
+        ${case_target}
+        PRIVATE
+            -g
+            -include "${CMAKE_CURRENT_SOURCE_DIR}/acos_tiling.h"
+            -DUT_SOC_VERSION="${soc_version}"
+    )
+    target_include_directories(
+        ${case_target}
+        PRIVATE
+            ${GTEST_INCLUDE}
+            ${ASCEND_DIR}/include/base/context_builder
+            ${PROJECT_SOURCE_DIR}/tests/ut/op_kernel
+            ${PROJECT_SOURCE_DIR}/tests/ut/common
+            ${OP_TILING_INCLUDE}
+            ${dlog_MATH_INCLUDE_DIR}
+            ${ASCEND_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/asc/
+            ${ASCEND_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            ${ASCEND_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/asc/include/
+            ${ASCEND_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/asc/include/basic_api/
+    )
+    target_link_libraries(
+        ${case_target}
+        PRIVATE
+            $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
+            tikicpulib::${soc_version}
+            GTest::gtest
+    )
+
+    if(NOT TARGET ${module_target})
+        add_library(${module_target} OBJECT $<TARGET_OBJECTS:${case_target}>)
+    else()
+        target_sources(${module_target} PRIVATE $<TARGET_OBJECTS:${case_target}>)
+    endif()
+    target_link_libraries(
+        ${module_target}
+        PRIVATE
+            $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
+            $<TARGET_OBJECTS:${case_target}>
+    )
+
+    list(FIND fastOpTestSocVersions "${soc_version}" soc_index)
+    if(soc_index EQUAL -1)
+        set(fastOpTestSocVersions ${fastOpTestSocVersions} ${soc_version}
+            CACHE STRING "fastOp Test SocVersions" FORCE)
+    endif()
+endfunction()
+
+if(UT_TEST_ALL OR OP_KERNEL_UT)
+    add_acos_kernel_ut_case()
 endif()
