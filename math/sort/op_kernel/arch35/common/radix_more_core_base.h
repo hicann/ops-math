@@ -887,15 +887,15 @@ public:
                         Reg::Select(maskPrefixReadyCount, onesVector, zerosVector, maskPrefixReady);
                         Reg::Add(prefixReadyCount, prefixReadyCount, maskPrefixReadyCount, maskPrefixReady);
                     }
-                    Reg::Reduce<ReduceType::SUM>(notInitCount, notInitCount, maskB32);
+                    Reg::Reduce<Reg::ReduceType::SUM>(notInitCount, notInitCount, maskB32);
                     Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE,
                                     Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(ubFlagTensorPtr, notInitCount,
                                                                             HIST_MASK_OUT_LEN, maskB32);
-                    Reg::Reduce<ReduceType::SUM>(aggReadyCount, aggReadyCount, maskB32);
+                    Reg::Reduce<Reg::ReduceType::SUM>(aggReadyCount, aggReadyCount, maskB32);
                     Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE,
                                     Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(ubFlagTensorPtr, aggReadyCount,
                                                                             HIST_MASK_OUT_LEN, maskB32);
-                    Reg::Reduce<ReduceType::SUM>(prefixReadyCount, prefixReadyCount, maskB32);
+                    Reg::Reduce<Reg::ReduceType::SUM>(prefixReadyCount, prefixReadyCount, maskB32);
                     Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE,
                                     Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(ubFlagTensorPtr, prefixReadyCount,
                                                                             HIST_MASK_OUT_LEN, maskB32);
