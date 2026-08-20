@@ -44,10 +44,10 @@ template <typename T, typename UNSINGED_TYPE, int32_t NUM_PASS, bool IS_DESCEND,
 __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESCEND, T_INDEX>::GetGlobalExcusiveSum(
     LocalTensor<uint16_t> inputX, LocalTensor<T_INDEX> blockExcusive, uint32_t numTileData)
 {
-    __local_mem__ uint16_t* inputXValuePtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr();
-    __local_mem__ T_INDEX* blockExcusivePtr = (__ubuf__ T_INDEX*)blockExcusive.GetPhyAddr();
-    __local_mem__ T_INDEX* blockExcusivePtrRead = blockExcusivePtr;
-    __local_mem__ T_INDEX* blockExcusivePtrWrite = blockExcusivePtr;
+    __ubuf__ uint16_t* inputXValuePtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr();
+    __ubuf__ T_INDEX* blockExcusivePtr = (__ubuf__ T_INDEX*)blockExcusive.GetPhyAddr();
+    __ubuf__ T_INDEX* blockExcusivePtrRead = blockExcusivePtr;
+    __ubuf__ T_INDEX* blockExcusivePtrWrite = blockExcusivePtr;
     uint16_t loopTime = NUM_PASS;
     uint16_t repateTime = (numTileData + ONE_TIMES_B16_NUM - 1) / ONE_TIMES_B16_NUM;
     __VEC_SCOPE__
@@ -66,13 +66,13 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
             Reg::Duplicate(chistVectorOne, 0, predicateDefaultB16);
             uint32_t inputElementNum = numTileData;
             int16_t bitOffset = round * SHIFT_BIT_NUM;
-            __local_mem__ uint16_t* inputXValuePtrCopy = inputXValuePtr;
+            __ubuf__ uint16_t* inputXValuePtrCopy = inputXValuePtr;
             // calc hist/excusive
             for (uint16_t i = 0; i < repateTime; i++) {
                 Reg::MaskReg histMask = Reg::UpdateMask<uint16_t>(inputElementNum);
                 // load input
-                Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtrCopy,
-                                                                            ONE_TIMES_B16_NUM);
+                Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtrCopy,
+                                                                             ONE_TIMES_B16_NUM);
                 // vshr
                 Reg::RegTensor<uint16_t> shiftVecOne;
                 Reg::ShiftRights<uint16_t, int16_t>(shiftVecOne, inputVectorOne, bitOffset, predicateDefaultB16);
@@ -83,7 +83,7 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
                                   (Reg::RegTensor<uint8_t>&)zeroVector);
                 // copy u16 mask
                 Reg::MaskReg maskU8;
-                Reg::MaskPack(maskU8, histMask);
+                Reg::Pack(maskU8, histMask);
                 // get hist
                 Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::FREQUENCY>(
                     histVectorZero, shiftVecU8LowBit, maskU8);
@@ -109,27 +109,27 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
                 // load global excusive
                 Reg::RegTensor<int32_t> excusiveSumGlobalZero, excusiveSumGlobalOne, excusiveSumGlobalTwo,
                     excusiveSumGlobalThree;
-                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalZero, blockExcusivePtrRead,
-                                                                           ONE_TIMES_B32_NUM);
-                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalOne, blockExcusivePtrRead,
-                                                                           ONE_TIMES_B32_NUM);
-                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalTwo, blockExcusivePtrRead,
-                                                                           ONE_TIMES_B32_NUM);
-                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalThree, blockExcusivePtrRead,
-                                                                           ONE_TIMES_B32_NUM);
+                Reg::LoadAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalZero, blockExcusivePtrRead,
+                                                                            ONE_TIMES_B32_NUM);
+                Reg::LoadAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalOne, blockExcusivePtrRead,
+                                                                            ONE_TIMES_B32_NUM);
+                Reg::LoadAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalTwo, blockExcusivePtrRead,
+                                                                            ONE_TIMES_B32_NUM);
+                Reg::LoadAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalThree,
+                                                                            blockExcusivePtrRead, ONE_TIMES_B32_NUM);
                 // add block ans to global excusive
                 Reg::Add(excusiveSumGlobalZero, excusiveSumGlobalZero, excusiveSumZeroB32, predicateDefault);
                 Reg::Add(excusiveSumGlobalOne, excusiveSumGlobalOne, excusiveSumOneB32, predicateDefault);
                 Reg::Add(excusiveSumGlobalTwo, excusiveSumGlobalTwo, excusiveSumTwoB32, predicateDefault);
                 Reg::Add(excusiveSumGlobalThree, excusiveSumGlobalThree, excusiveSumThreeB32, predicateDefault);
                 // vsts to global
-                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusivePtrWrite, excusiveSumGlobalZero,
-                                                                           ONE_TIMES_B32_NUM, predicateDefault);
-                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusivePtrWrite, excusiveSumGlobalOne,
-                                                                           ONE_TIMES_B32_NUM, predicateDefault);
-                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusivePtrWrite, excusiveSumGlobalTwo,
-                                                                           ONE_TIMES_B32_NUM, predicateDefault);
-                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                Reg::StoreAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                    blockExcusivePtrWrite, excusiveSumGlobalZero, ONE_TIMES_B32_NUM, predicateDefault);
+                Reg::StoreAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                    blockExcusivePtrWrite, excusiveSumGlobalOne, ONE_TIMES_B32_NUM, predicateDefault);
+                Reg::StoreAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                    blockExcusivePtrWrite, excusiveSumGlobalTwo, ONE_TIMES_B32_NUM, predicateDefault);
+                Reg::StoreAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockExcusivePtrWrite, excusiveSumGlobalThree, ONE_TIMES_B32_NUM, predicateDefault);
             } else {
                 // cast B32 to B64
@@ -154,22 +154,22 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
                     excusiveSumGlobalOneB;
                 Reg::RegTensor<int64_t> excusiveSumGlobalTwoA, excusiveSumGlobalTwoB, excusiveSumGlobalThreeA,
                     excusiveSumGlobalThreeB;
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalZeroA, blockExcusivePtrRead,
-                                                                           ONE_TIMES_B64_NUM);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalZeroB, blockExcusivePtrRead,
-                                                                           ONE_TIMES_B64_NUM);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalOneA, blockExcusivePtrRead,
-                                                                           ONE_TIMES_B64_NUM);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalOneB, blockExcusivePtrRead,
-                                                                           ONE_TIMES_B64_NUM);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalTwoA, blockExcusivePtrRead,
-                                                                           ONE_TIMES_B64_NUM);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalTwoB, blockExcusivePtrRead,
-                                                                           ONE_TIMES_B64_NUM);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalThreeA,
-                                                                           blockExcusivePtrRead, ONE_TIMES_B64_NUM);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalThreeB,
-                                                                           blockExcusivePtrRead, ONE_TIMES_B64_NUM);
+                Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalZeroA,
+                                                                            blockExcusivePtrRead, ONE_TIMES_B64_NUM);
+                Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalZeroB,
+                                                                            blockExcusivePtrRead, ONE_TIMES_B64_NUM);
+                Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalOneA, blockExcusivePtrRead,
+                                                                            ONE_TIMES_B64_NUM);
+                Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalOneB, blockExcusivePtrRead,
+                                                                            ONE_TIMES_B64_NUM);
+                Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalTwoA, blockExcusivePtrRead,
+                                                                            ONE_TIMES_B64_NUM);
+                Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalTwoB, blockExcusivePtrRead,
+                                                                            ONE_TIMES_B64_NUM);
+                Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalThreeA,
+                                                                            blockExcusivePtrRead, ONE_TIMES_B64_NUM);
+                Reg::LoadAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(excusiveSumGlobalThreeB,
+                                                                            blockExcusivePtrRead, ONE_TIMES_B64_NUM);
                 // add block ans to global excusive
                 Reg::Add(excusiveSumGlobalZeroA, excusiveSumGlobalZeroA, excusiveSumZeroB64A, predicateDefault);
                 Reg::Add(excusiveSumGlobalZeroB, excusiveSumGlobalZeroB, excusiveSumZeroB64B, predicateDefault);
@@ -180,21 +180,21 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
                 Reg::Add(excusiveSumGlobalThreeA, excusiveSumGlobalThreeA, excusiveSumThreeB64A, predicateDefault);
                 Reg::Add(excusiveSumGlobalThreeB, excusiveSumGlobalThreeB, excusiveSumThreeB64B, predicateDefault);
                 // vsts to global
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockExcusivePtrWrite, excusiveSumGlobalZeroA, ONE_TIMES_B64_NUM, predicateDefault);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockExcusivePtrWrite, excusiveSumGlobalZeroB, ONE_TIMES_B64_NUM, predicateDefault);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusivePtrWrite, excusiveSumGlobalOneA,
-                                                                           ONE_TIMES_B64_NUM, predicateDefault);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusivePtrWrite, excusiveSumGlobalOneB,
-                                                                           ONE_TIMES_B64_NUM, predicateDefault);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusivePtrWrite, excusiveSumGlobalTwoA,
-                                                                           ONE_TIMES_B64_NUM, predicateDefault);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusivePtrWrite, excusiveSumGlobalTwoB,
-                                                                           ONE_TIMES_B64_NUM, predicateDefault);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                    blockExcusivePtrWrite, excusiveSumGlobalOneA, ONE_TIMES_B64_NUM, predicateDefault);
+                Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                    blockExcusivePtrWrite, excusiveSumGlobalOneB, ONE_TIMES_B64_NUM, predicateDefault);
+                Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                    blockExcusivePtrWrite, excusiveSumGlobalTwoA, ONE_TIMES_B64_NUM, predicateDefault);
+                Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                    blockExcusivePtrWrite, excusiveSumGlobalTwoB, ONE_TIMES_B64_NUM, predicateDefault);
+                Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockExcusivePtrWrite, excusiveSumGlobalThreeA, ONE_TIMES_B64_NUM, predicateDefault);
-                Reg::DataCopy<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+                Reg::StoreAlign<int64_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                     blockExcusivePtrWrite, excusiveSumGlobalThreeB, ONE_TIMES_B64_NUM, predicateDefault);
             }
         }
@@ -208,11 +208,11 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
 {
     int16_t bitOffset = round * SHIFT_BIT_NUM;
     uint16_t repateTime = (numTileData + ONE_TIMES_B16_NUM - 1) / ONE_TIMES_B16_NUM;
-    __local_mem__ uint16_t* inputXValuePtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr();
-    __local_mem__ uint8_t* inputX8BitValuePtr = (__ubuf__ uint8_t*)inputXBitValue.GetPhyAddr();
-    __local_mem__ uint8_t* inputX8BitValueCopyPtr = (__ubuf__ uint8_t*)inputXBitValueCopy.GetPhyAddr();
-    __local_mem__ uint16_t* blockExcusiveLocalPtr = (__ubuf__ uint16_t*)blockExcusive.GetPhyAddr();
-    __local_mem__ uint16_t* blockHistPtr = (__ubuf__ uint16_t*)blockHist.GetPhyAddr();
+    __ubuf__ uint16_t* inputXValuePtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr();
+    __ubuf__ uint8_t* inputX8BitValuePtr = (__ubuf__ uint8_t*)inputXBitValue.GetPhyAddr();
+    __ubuf__ uint8_t* inputX8BitValueCopyPtr = (__ubuf__ uint8_t*)inputXBitValueCopy.GetPhyAddr();
+    __ubuf__ uint16_t* blockExcusiveLocalPtr = (__ubuf__ uint16_t*)blockExcusive.GetPhyAddr();
+    __ubuf__ uint16_t* blockHistPtr = (__ubuf__ uint16_t*)blockHist.GetPhyAddr();
     __VEC_SCOPE__
     {
         Reg::RegTensor<uint16_t> inputVectorOne;
@@ -230,8 +230,8 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
         for (uint16_t i = 0; i < repateTime; i++) {
             Reg::MaskReg histMask = Reg::UpdateMask<uint16_t>(inputElementNum);
             // load input
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtr,
-                                                                        ONE_TIMES_B16_NUM);
+            Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtr,
+                                                                         ONE_TIMES_B16_NUM);
             // vshr
             Reg::RegTensor<uint16_t> shiftVecOne;
             Reg::ShiftRights<uint16_t, int16_t>(shiftVecOne, inputVectorOne, bitOffset, predicateDefaultB16);
@@ -242,11 +242,11 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
                               (Reg::RegTensor<uint8_t>&)zeroVector);
             // copy u16 mask
             Reg::MaskReg maskU8;
-            Reg::MaskPack(maskU8, histMask);
-            Reg::DataCopy<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputX8BitValuePtr, shiftVecU8LowBit,
-                                                                       ONE_TIMES_B16_NUM, maskU8);
-            Reg::DataCopy<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputX8BitValueCopyPtr, shiftVecU8LowBit,
-                                                                       ONE_TIMES_B16_NUM, maskU8);
+            Reg::Pack(maskU8, histMask);
+            Reg::StoreAlign<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputX8BitValuePtr, shiftVecU8LowBit,
+                                                                         ONE_TIMES_B16_NUM, maskU8);
+            Reg::StoreAlign<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputX8BitValueCopyPtr, shiftVecU8LowBit,
+                                                                         ONE_TIMES_B16_NUM, maskU8);
             // get hist
             Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::FREQUENCY>(
                 histVectorZero, shiftVecU8LowBit, maskU8);
@@ -263,15 +263,15 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
         Reg::Sub(excusiveSumZero, chistVectorZero, histVectorZero, predicateDefaultB16);
         Reg::Sub(excusiveSumOne, chistVectorOne, histVectorOne, predicateDefaultB16);
         // store escusive sum to ub
-        Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveLocalPtr, excusiveSumZero,
-                                                                    ONE_TIMES_B16_NUM, predicateDefaultB16);
-        Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveLocalPtr, excusiveSumOne,
-                                                                    ONE_TIMES_B16_NUM, predicateDefaultB16);
+        Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveLocalPtr, excusiveSumZero,
+                                                                      ONE_TIMES_B16_NUM, predicateDefaultB16);
+        Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockExcusiveLocalPtr, excusiveSumOne,
+                                                                      ONE_TIMES_B16_NUM, predicateDefaultB16);
         // store hist to ub
-        Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistPtr, histVectorZero, ONE_TIMES_B16_NUM,
-                                                                    predicateDefaultB16);
-        Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistPtr, histVectorOne, ONE_TIMES_B16_NUM,
-                                                                    predicateDefaultB16);
+        Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistPtr, histVectorZero, ONE_TIMES_B16_NUM,
+                                                                      predicateDefaultB16);
+        Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockHistPtr, histVectorOne, ONE_TIMES_B16_NUM,
+                                                                      predicateDefaultB16);
     }
 }
 
@@ -279,8 +279,8 @@ template <typename T, typename UNSINGED_TYPE, int32_t NUM_PASS, bool IS_DESCEND,
 __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESCEND, T_INDEX>::TwiddleInB16(
     LocalTensor<T> inputX, LocalTensor<UNSINGED_TYPE> uintInputX, uint32_t numTileData)
 {
-    __local_mem__ uint16_t* inputXValuePtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr();
-    __local_mem__ uint16_t* uintInputXValuePtr = (__ubuf__ uint16_t*)uintInputX.GetPhyAddr();
+    __ubuf__ uint16_t* inputXValuePtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr();
+    __ubuf__ uint16_t* uintInputXValuePtr = (__ubuf__ uint16_t*)uintInputX.GetPhyAddr();
     uint16_t repateTime = (numTileData + ONE_TIMES_B16_NUM - 1) / ONE_TIMES_B16_NUM;
     __VEC_SCOPE__
     {
@@ -292,14 +292,14 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
         for (uint16_t i = 0; i < repateTime; i++) {
             Reg::MaskReg xorMask = Reg::UpdateMask<uint16_t>(inputElementNum);
             // load input
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtr,
-                                                                        ONE_TIMES_B16_NUM);
+            Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtr,
+                                                                         ONE_TIMES_B16_NUM);
             // vxor
             Reg::RegTensor<uint16_t> xorVectorZero;
             Reg::Xor(xorVectorZero, inputVectorOne, xorValueVector, xorMask);
             // sts
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(uintInputXValuePtr, xorVectorZero,
-                                                                        ONE_TIMES_B16_NUM, xorMask);
+            Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(uintInputXValuePtr, xorVectorZero,
+                                                                          ONE_TIMES_B16_NUM, xorMask);
         }
     }
     if (IS_DESCEND) {
@@ -311,8 +311,8 @@ template <typename T, typename UNSINGED_TYPE, int32_t NUM_PASS, bool IS_DESCEND,
 __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESCEND, T_INDEX>::TwiddleOutB16(
     LocalTensor<UNSINGED_TYPE> uintInputX, LocalTensor<T> inputX, uint32_t numTileData)
 {
-    __local_mem__ uint16_t* uinputXValuePtr = (__ubuf__ uint16_t*)uintInputX.GetPhyAddr();
-    __local_mem__ int16_t* inputXValuePtr = (__ubuf__ int16_t*)inputX.GetPhyAddr();
+    __ubuf__ uint16_t* uinputXValuePtr = (__ubuf__ uint16_t*)uintInputX.GetPhyAddr();
+    __ubuf__ int16_t* inputXValuePtr = (__ubuf__ int16_t*)inputX.GetPhyAddr();
     uint16_t repateTime = (numTileData + ONE_TIMES_B16_NUM - 1) / ONE_TIMES_B16_NUM;
     if (IS_DESCEND) {
         ReverseInputData(uintInputX, uintInputX, numTileData);
@@ -327,13 +327,13 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
         for (uint16_t i = 0; i < repateTime; i++) {
             Reg::MaskReg xorMask = Reg::UpdateMask<uint16_t>(inputElementNum);
             // load input
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, uinputXValuePtr,
-                                                                        ONE_TIMES_B16_NUM);
+            Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, uinputXValuePtr,
+                                                                         ONE_TIMES_B16_NUM);
             // vxor
             Reg::RegTensor<uint16_t> xorVectorZero;
             Reg::Xor(xorVectorZero, inputVectorOne, xorValueVector, xorMask);
             // sts
-            Reg::DataCopy<int16_t, Reg::PostLiteral::POST_MODE_UPDATE>(
+            Reg::StoreAlign<int16_t, Reg::PostLiteral::POST_MODE_UPDATE>(
                 inputXValuePtr, (Reg::RegTensor<int16_t>&)xorVectorZero, ONE_TIMES_B16_NUM, xorMask);
         }
     }
@@ -343,8 +343,8 @@ template <typename T, typename UNSINGED_TYPE, int32_t NUM_PASS, bool IS_DESCEND,
 __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESCEND, T_INDEX>::TwiddleInFp16(
     LocalTensor<T> inputX, LocalTensor<UNSINGED_TYPE> uintInputX, uint32_t numTileData)
 {
-    __local_mem__ uint16_t* inputXValuePtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr();
-    __local_mem__ uint16_t* uinputXValuePtr = (__ubuf__ uint16_t*)uintInputX.GetPhyAddr();
+    __ubuf__ uint16_t* inputXValuePtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr();
+    __ubuf__ uint16_t* uinputXValuePtr = (__ubuf__ uint16_t*)uintInputX.GetPhyAddr();
     uint16_t repateTime = (numTileData + ONE_TIMES_B16_NUM - 1) / ONE_TIMES_B16_NUM;
     __VEC_SCOPE__
     {
@@ -357,15 +357,14 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
         for (uint16_t i = 0; i < repateTime; i++) {
             Reg::MaskReg xorMask = Reg::UpdateMask<uint16_t>(inputElementNum);
             // load input
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtr,
-                                                                        ONE_TIMES_B16_NUM);
+            Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtr,
+                                                                         ONE_TIMES_B16_NUM);
             // vxor
             Reg::RegTensor<uint16_t> andValueOne;
             Reg::And(andValueOne, inputVectorOne, vandMask, predicateDefaultB16);
             // not equal
             Reg::MaskReg cmpValueOne;
-            Reg::CompareScalar<uint16_t, CMPMODE::NE>(cmpValueOne, andValueOne, ZERO_VALUE_FLAG_B16,
-                                                      predicateDefaultB16);
+            Reg::Compares<uint16_t, CMPMODE::NE>(cmpValueOne, andValueOne, ZERO_VALUE_FLAG_B16, predicateDefaultB16);
             // vsel
             Reg::RegTensor<uint16_t> finalMaskOne;
             Reg::Select(finalMaskOne, xorMaskVector, vandMask, cmpValueOne);
@@ -373,8 +372,8 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
             Reg::RegTensor<uint16_t> xorVectorOne;
             Reg::Xor(xorVectorOne, inputVectorOne, finalMaskOne, predicateDefaultB16);
             // sts
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(uinputXValuePtr, xorVectorOne,
-                                                                        ONE_TIMES_B16_NUM, xorMask);
+            Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(uinputXValuePtr, xorVectorOne,
+                                                                          ONE_TIMES_B16_NUM, xorMask);
         }
     }
     if (IS_DESCEND) {
@@ -386,8 +385,8 @@ template <typename T, typename UNSINGED_TYPE, int32_t NUM_PASS, bool IS_DESCEND,
 __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESCEND, T_INDEX>::TwiddleOutFp16(
     LocalTensor<UNSINGED_TYPE> uintInputX, LocalTensor<T> inputX, uint32_t numTileData)
 {
-    __local_mem__ uint16_t* inputXValuePtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr();
-    __local_mem__ uint16_t* uinputXValuePtr = (__ubuf__ uint16_t*)uintInputX.GetPhyAddr();
+    __ubuf__ uint16_t* inputXValuePtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr();
+    __ubuf__ uint16_t* uinputXValuePtr = (__ubuf__ uint16_t*)uintInputX.GetPhyAddr();
     uint16_t repateTime = (numTileData + ONE_TIMES_B16_NUM - 1) / ONE_TIMES_B16_NUM;
     if (IS_DESCEND) {
         ReverseInputData(uintInputX, uintInputX, numTileData);
@@ -403,15 +402,14 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
         for (uint16_t i = 0; i < repateTime; i++) {
             Reg::MaskReg xorMask = Reg::UpdateMask<uint16_t>(inputElementNum);
             // load input
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, uinputXValuePtr,
-                                                                        ONE_TIMES_B16_NUM);
+            Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, uinputXValuePtr,
+                                                                         ONE_TIMES_B16_NUM);
             // and
             Reg::RegTensor<uint16_t> andValueZero;
             Reg::And(andValueZero, inputVectorOne, vandMask, xorMask);
             // not equal
             Reg::MaskReg cmpValueZero;
-            Reg::CompareScalar<uint16_t, CMPMODE::NE>(cmpValueZero, andValueZero, ZERO_VALUE_FLAG_B16,
-                                                      predicateDefaultB16);
+            Reg::Compares<uint16_t, CMPMODE::NE>(cmpValueZero, andValueZero, ZERO_VALUE_FLAG_B16, predicateDefaultB16);
             // vsel
             Reg::RegTensor<uint16_t> finalMaskOne;
             Reg::Select(finalMaskOne, xorMaskVector, vandMask, cmpValueZero);
@@ -419,8 +417,8 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
             Reg::RegTensor<uint16_t> xorVectorZero;
             Reg::Xor(xorVectorZero, inputVectorOne, xorMaskVector, predicateDefaultB16);
             // sts
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputXValuePtr, xorVectorZero,
-                                                                        ONE_TIMES_B16_NUM, xorMask);
+            Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputXValuePtr, xorVectorZero,
+                                                                          ONE_TIMES_B16_NUM, xorMask);
         }
     }
 }
@@ -429,9 +427,9 @@ template <typename T, typename UNSINGED_TYPE, int32_t NUM_PASS, bool IS_DESCEND,
 __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESCEND, T_INDEX>::ReverseInputData(
     LocalTensor<UNSINGED_TYPE> inputX, LocalTensor<UNSINGED_TYPE> reverseInputX, uint32_t numTileData)
 {
-    __local_mem__ uint16_t* inputXValuePtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr();
-    __local_mem__ uint16_t* inputXValuePtrCopy = inputXValuePtr;
-    __local_mem__ uint16_t* reverseInputXPtr = (__ubuf__ uint16_t*)reverseInputX.GetPhyAddr();
+    __ubuf__ uint16_t* inputXValuePtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr();
+    __ubuf__ uint16_t* inputXValuePtrCopy = inputXValuePtr;
+    __ubuf__ uint16_t* reverseInputXPtr = (__ubuf__ uint16_t*)reverseInputX.GetPhyAddr();
     uint16_t repateTime = (numTileData + ONE_TIMES_B16_NUM - 1) / ONE_TIMES_B16_NUM;
     __VEC_SCOPE__
     {
@@ -442,13 +440,13 @@ __aicore__ inline void RadixBlockSortSimdB16<T, UNSINGED_TYPE, NUM_PASS, IS_DESC
         for (uint16_t i = 0; i < repateTime; i++) {
             Reg::MaskReg vnotMask = Reg::UpdateMask<uint16_t>(inputElementNum);
             // load input
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtrCopy,
-                                                                        ONE_TIMES_B16_NUM);
+            Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtrCopy,
+                                                                         ONE_TIMES_B16_NUM);
             // reverse op
             Reg::Not(vnotVectorZero, inputVectorOne, vnotMask);
             // sts
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(reverseInputXPtr, vnotVectorZero,
-                                                                        ONE_TIMES_B16_NUM, vnotMask);
+            Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(reverseInputXPtr, vnotVectorZero,
+                                                                          ONE_TIMES_B16_NUM, vnotMask);
         }
     }
 }

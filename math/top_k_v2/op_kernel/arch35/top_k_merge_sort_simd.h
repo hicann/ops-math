@@ -61,7 +61,7 @@ __aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND>::MergeSor
     Ppipe->InitBuffer(sortedValueLocalCastTbuf_, ROUND_UP_AGLIN(aglinTileSize * sizeof(CONVERT_TYPE)) * oneCoreRowNum);
     indexLocal_ = indeXLocalTbuf_.AllocTensor<uint32_t>();
     // init indexLocal value
-    __local_mem__ int32_t* indexValuePtr = (__ubuf__ int32_t*)indexLocal_.GetPhyAddr();
+    __ubuf__ int32_t* indexValuePtr = (__ubuf__ int32_t*)indexLocal_.GetPhyAddr();
     uint16_t repateTime = (aglinTileSize + ONE_TIMES_B32_NUM - 1) / ONE_TIMES_B32_NUM;
     uint32_t aglinTileSizeCopy = aglinTileSize;
     __VEC_SCOPE__
@@ -72,8 +72,8 @@ __aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND>::MergeSor
         for (uint16_t i = 0; i < repateTime; i++) {
             Reg::MaskReg vciMask = Reg::UpdateMask<uint32_t>(aglinTileSizeCopy);
             Reg::Adds(indexTensor, vciTensor, i * ONE_TIMES_B32_NUM, vciMask);
-            Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(indexValuePtr, indexTensor, ONE_TIMES_B32_NUM,
-                                                                       vciMask);
+            Reg::StoreAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(indexValuePtr, indexTensor, ONE_TIMES_B32_NUM,
+                                                                         vciMask);
         }
     }
 }

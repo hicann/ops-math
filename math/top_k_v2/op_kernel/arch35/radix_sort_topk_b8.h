@@ -26,7 +26,7 @@ struct RadixSortTopKB8 {
 };
 
 template <typename T, typename U>
-__aicore__ inline void StoreCumsumToUB(__local_mem__ T* blockCumSumPtr, Reg::RegTensor<U>& chistVectorZero,
+__aicore__ inline void StoreCumsumToUB(__ubuf__ T* blockCumSumPtr, Reg::RegTensor<U>& chistVectorZero,
                                        Reg::RegTensor<U>& chistVectorOne, Reg::RegTensor<U>& zeroVector)
 {
     __VEC_SCOPE__
@@ -38,14 +38,14 @@ __aicore__ inline void StoreCumsumToUB(__local_mem__ T* blockCumSumPtr, Reg::Reg
         Reg::RegTensor<int32_t> cumSumTwoB32, cumSumThreeB32;
         Reg::Interleave((Reg::RegTensor<uint16_t>&)cumSumTwoB32, (Reg::RegTensor<uint16_t>&)cumSumThreeB32,
                         chistVectorOne, zeroVector);
-        Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockCumSumPtr, cumSumZeroB32, ONE_TIMES_B32_NUM,
-                                                                   predicateDefaultB32);
-        Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockCumSumPtr, cumSumOneB32, ONE_TIMES_B32_NUM,
-                                                                   predicateDefaultB32);
-        Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockCumSumPtr, cumSumTwoB32, ONE_TIMES_B32_NUM,
-                                                                   predicateDefaultB32);
-        Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockCumSumPtr, cumSumThreeB32, ONE_TIMES_B32_NUM,
-                                                                   predicateDefaultB32);
+        Reg::StoreAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockCumSumPtr, cumSumZeroB32, ONE_TIMES_B32_NUM,
+                                                                     predicateDefaultB32);
+        Reg::StoreAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockCumSumPtr, cumSumOneB32, ONE_TIMES_B32_NUM,
+                                                                     predicateDefaultB32);
+        Reg::StoreAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockCumSumPtr, cumSumTwoB32, ONE_TIMES_B32_NUM,
+                                                                     predicateDefaultB32);
+        Reg::StoreAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(blockCumSumPtr, cumSumThreeB32, ONE_TIMES_B32_NUM,
+                                                                     predicateDefaultB32);
     }
 }
 
@@ -54,8 +54,8 @@ __aicore__ inline void RadixSortTopKB8<T, UNSIGNED_TYPE, NUM_PASS, IS_DESCEND, T
     LocalTensor<UNSIGNED_TYPE> inputX, LocalTensor<int32_t> blockCumSum, UNSIGNED_TYPE andDataMask,
     UNSIGNED_TYPE involvedDataMask, int32_t round, uint32_t numTileData)
 {
-    __local_mem__ UNSIGNED_TYPE* inputXValuePtr = (__ubuf__ UNSIGNED_TYPE*)inputX.GetPhyAddr();
-    __local_mem__ int32_t* blockCumSumPtr = (__ubuf__ int32_t*)blockCumSum.GetPhyAddr();
+    __ubuf__ UNSIGNED_TYPE* inputXValuePtr = (__ubuf__ UNSIGNED_TYPE*)inputX.GetPhyAddr();
+    __ubuf__ int32_t* blockCumSumPtr = (__ubuf__ int32_t*)blockCumSum.GetPhyAddr();
     int16_t bitOffset = round * SHIFT_BIT_NUM;
     uint16_t repateTime = (numTileData + ONE_TIMES_B8_NUM - 1) / ONE_TIMES_B8_NUM;
     __VEC_SCOPE__
@@ -72,8 +72,8 @@ __aicore__ inline void RadixSortTopKB8<T, UNSIGNED_TYPE, NUM_PASS, IS_DESCEND, T
         for (uint16_t i = 0; i < repateTime; i++) {
             Reg::MaskReg histMask = Reg::UpdateMask<uint8_t>(inputElementNum);
             // load input
-            Reg::DataCopy<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtr,
-                                                                       ONE_TIMES_B8_NUM);
+            Reg::LoadAlign<uint8_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtr,
+                                                                        ONE_TIMES_B8_NUM);
             // get hist
             Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::ACCUMULATE>(
                 chistVectorZero, inputVectorOne, histMask);

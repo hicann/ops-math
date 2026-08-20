@@ -30,8 +30,8 @@ __aicore__ inline void RadixSortTopKB16<T, UNSIGNED_TYPE, NUM_PASS, IS_DESCEND, 
     LocalTensor<UNSIGNED_TYPE> inputX, LocalTensor<int32_t> blockCumSum, UNSIGNED_TYPE andDataMask,
     UNSIGNED_TYPE involvedDataMask, uint16_t round, uint32_t numTileData)
 {
-    __local_mem__ UNSIGNED_TYPE* inputXValuePtr = (__ubuf__ UNSIGNED_TYPE*)inputX.GetPhyAddr();
-    __local_mem__ int32_t* blockCumSumPtr = (__ubuf__ int32_t*)blockCumSum.GetPhyAddr();
+    __ubuf__ UNSIGNED_TYPE* inputXValuePtr = (__ubuf__ UNSIGNED_TYPE*)inputX.GetPhyAddr();
+    __ubuf__ int32_t* blockCumSumPtr = (__ubuf__ int32_t*)blockCumSum.GetPhyAddr();
     int16_t bitOffset = round * SHIFT_BIT_NUM;
     uint16_t repateTime = (numTileData + ONE_TIMES_B16_NUM - 1) / ONE_TIMES_B16_NUM;
     uint16_t roundValue = NUM_PASS - 1;
@@ -53,22 +53,22 @@ __aicore__ inline void RadixSortTopKB16<T, UNSIGNED_TYPE, NUM_PASS, IS_DESCEND, 
         for (uint16_t i = 0; i < repateTime; i++) {
             Reg::MaskReg histMask = Reg::UpdateMask<uint16_t>(inputElementNum);
             // load input
-            Reg::DataCopy<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtr,
-                                                                        ONE_TIMES_B16_NUM);
+            Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, inputXValuePtr,
+                                                                         ONE_TIMES_B16_NUM);
             // get high bit value
             Reg::RegTensor<uint16_t> andValueZero;
             Reg::And(andValueZero, inputVectorOne, andMaskVector, histMask);
             // get same value
             Reg::MaskReg cmpValueMask;
-            Reg::CompareScalar<uint16_t, CMPMODE::EQ>(cmpValueMask, andValueZero, involvedDataMask, histMask);
+            Reg::Compares<uint16_t, CMPMODE::EQ>(cmpValueMask, andValueZero, involvedDataMask, histMask);
             // update mask for next step calc
             Reg::MaskReg newHistMask;
-            Reg::MaskAnd(newHistMask, cmpValueMask, histMask, predicateDefaultB16);
+            Reg::And(newHistMask, cmpValueMask, histMask, predicateDefaultB16);
             // is first round
             Reg::MaskReg finalMask, firstRoundMask;
-            Reg::CompareScalar<uint16_t, CMPMODE::EQ>(firstRoundMask, firstRoundVector, round, histMask);
+            Reg::Compares<uint16_t, CMPMODE::EQ>(firstRoundMask, firstRoundVector, round, histMask);
             // mask sel
-            Reg::MaskSel(finalMask, histMask, newHistMask, firstRoundMask);
+            Reg::Select(finalMask, histMask, newHistMask, firstRoundMask);
             // vshr
             Reg::RegTensor<uint16_t> shiftVecOne;
             Reg::ShiftRights<uint16_t, int16_t>(shiftVecOne, inputVectorOne, bitOffset, finalMask);
@@ -78,7 +78,7 @@ __aicore__ inline void RadixSortTopKB16<T, UNSIGNED_TYPE, NUM_PASS, IS_DESCEND, 
                               (Reg::RegTensor<uint8_t>&)zeroVector);
             // copy u16 mask
             Reg::MaskReg maskU8;
-            Reg::MaskPack(maskU8, finalMask);
+            Reg::Pack(maskU8, finalMask);
             // get hist
             Reg::Histograms<uint8_t, uint16_t, Reg::HistogramsBinType::BIN0, Reg::HistogramsType::ACCUMULATE>(
                 chistVectorZero, shiftVecU8LowBit, maskU8);

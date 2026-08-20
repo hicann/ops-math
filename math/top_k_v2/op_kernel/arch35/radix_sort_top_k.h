@@ -300,8 +300,8 @@ __aicore__ inline T_INDEX RadixSortTopK<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, 
     // reduce sum
     uint32_t inputElementNum = (tileId + 1);
     uint16_t repateTime = (inputElementNum + topkV2::ONE_TIMES_B32_NUM - 1) / topkV2::ONE_TIMES_B32_NUM;
-    __local_mem__ uint32_t* lastDimTileTopKPtr = (__ubuf__ uint32_t*)lastDimTileTopKInfo.GetPhyAddr();
-    __local_mem__ uint32_t* lastDimTileTopKCopyPtr = lastDimTileTopKPtr;
+    __ubuf__ uint32_t* lastDimTileTopKPtr = (__ubuf__ uint32_t*)lastDimTileTopKInfo.GetPhyAddr();
+    __ubuf__ uint32_t* lastDimTileTopKCopyPtr = lastDimTileTopKPtr;
     __VEC_SCOPE__
     {
         Reg::RegTensor<uint32_t> addTensor;
@@ -312,15 +312,15 @@ __aicore__ inline T_INDEX RadixSortTopK<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, 
             // mask value
             Reg::MaskReg dataMask = Reg::UpdateMask<uint32_t>(inputElementNum);
             // load input
-            Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, lastDimTileTopKPtr,
-                                                                        topkV2::ONE_TIMES_B32_NUM);
+            Reg::LoadAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputVectorOne, lastDimTileTopKPtr,
+                                                                         topkV2::ONE_TIMES_B32_NUM);
             // reduce sum
             Reg::RegTensor<uint32_t> reduceSumTensor;
-            Reg::ReduceSum(reduceSumTensor, inputVectorOne, dataMask);
+            Reg::Reduce<Reg::ReduceType::SUM>(reduceSumTensor, inputVectorOne, dataMask);
             // vadd
             Reg::Add(addTensor, addTensor, reduceSumTensor, dataMask);
         }
-        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE, Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(
+        Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE, Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(
             lastDimTileTopKCopyPtr, addTensor, REDUCE_CUMSUM_OUT_LEN, predicateDefault);
     }
     event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
@@ -1066,15 +1066,15 @@ template <typename T, typename UNSIGNED_TYPE, int32_t NUM_PASS, bool IS_LARGEST,
 __aicore__ inline void RadixSortTopK<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO>::CopyUb2Ub(
     LocalTensor<uint32_t> outputUb, LocalTensor<uint32_t> inputUb, T_INDEX offset)
 {
-    __local_mem__ uint32_t* inputUbPtr = (__ubuf__ uint32_t*)inputUb.GetPhyAddr();
-    __local_mem__ uint32_t* outputUbPtr = (__ubuf__ uint32_t*)outputUb.GetPhyAddr();
+    __ubuf__ uint32_t* inputUbPtr = (__ubuf__ uint32_t*)inputUb.GetPhyAddr();
+    __ubuf__ uint32_t* outputUbPtr = (__ubuf__ uint32_t*)outputUb.GetPhyAddr();
     __VEC_SCOPE__
     {
         Reg::RegTensor<uint32_t> inputVectorOne;
         Reg::MaskReg predicateDefaultB32 = Reg::CreateMask<uint32_t, Reg::MaskPattern::VL8>();
-        Reg::DataCopy<uint32_t, Reg::LoadDist::DIST_BRC_B32>(inputVectorOne, inputUbPtr + offset);
-        Reg::DataCopy<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(outputUbPtr, inputVectorOne,
-                                                                    topkV2::ONE_TIMES_B32_NUM, predicateDefaultB32);
+        Reg::LoadAlign<uint32_t, Reg::LoadDist::DIST_BRC_B32>(inputVectorOne, inputUbPtr + offset);
+        Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(outputUbPtr, inputVectorOne,
+                                                                      topkV2::ONE_TIMES_B32_NUM, predicateDefaultB32);
     }
 }
 
