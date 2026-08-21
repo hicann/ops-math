@@ -11,7 +11,7 @@
 // arch35 (RegBase / ascend950) tiling UT. Each case fakes a RegBase SoC ("ascend950") via the
 // histogram_v2_ut::RunTilingWithSoc helper, so IsRegbaseSocVersion() is true and the
 // HistogramV2SimtTiling template is selected regardless of the build SoC. This is compiled
-// unconditionally alongside the arch32 (MemBase) UT, so a single build (any SoC) covers both
+// unconditionally alongside the arch22 (MemBase) UT, so a single build (any SoC) covers both
 // the SIMT and MemBase tiling templates without needing --soc=ascend950.
 
 #include <iostream>

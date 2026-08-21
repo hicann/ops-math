@@ -9,12 +9,12 @@
  */
 
 /*!
- * \file is_finite_tiling_arch32.h
+ * \file is_finite_tiling_arch22.h
  * \brief
  */
 
-#ifndef IS_FINITE_TILING_ARCH32_H
-#define IS_FINITE_TILING_ARCH32_H
+#ifndef IS_FINITE_TILING_ARCH22_H
+#define IS_FINITE_TILING_ARCH22_H
 
 #include "../../op_kernel/is_finite_struct.h"
 #include "torch_extension/tiling_utils_math.h"
@@ -66,10 +66,10 @@ public:
 } // namespace IsFiniteNs
 
 namespace optiling {
-struct IsFiniteCompileInfoArch32 {
+struct IsFiniteCompileInfoArch22 {
     int32_t totalCoreNum = 0;
     int64_t ubSize = 0;
     bool isRegbase = false;
 };
 } // namespace optiling
-#endif // IS_FINITE_TILING_ARCH32_H
+#endif // IS_FINITE_TILING_ARCH22_H

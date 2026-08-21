@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-// arch32 (non-RegBase: ascend310p / ascend910_93 / ascend910b) tiling UT. Each case fakes a
+// arch22 (non-RegBase: ascend310p / ascend910_93 / ascend910b) tiling UT. Each case fakes a
 // non-RegBase SoC ("ascend910b") via the histogram_v2_ut::RunTilingWithSoc helper, so
 // IsRegbaseSocVersion() is false and the HistogramV2MembaseTiling template is selected regardless
 // of the build SoC. This is compiled unconditionally alongside the arch35 (SIMT) UT, so a single
@@ -33,10 +33,10 @@ using TD = gert::TilingContextPara::TensorDescription;
 
 class HistogramV2MembaseTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase() { std::cout << "HistogramV2MembaseTilingTest (arch32/MemBase) SetUp" << std::endl; }
+    static void SetUpTestCase() { std::cout << "HistogramV2MembaseTilingTest (arch22/MemBase) SetUp" << std::endl; }
     static void TearDownTestCase()
     {
-        std::cout << "HistogramV2MembaseTilingTest (arch32/MemBase) TearDown" << std::endl;
+        std::cout << "HistogramV2MembaseTilingTest (arch22/MemBase) TearDown" << std::endl;
     }
 };
 

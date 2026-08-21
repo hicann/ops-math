@@ -21,8 +21,7 @@
 namespace optiling {
 using namespace Ops::Base;
 
-class IsFiniteRegbaseTiling
-{
+class IsFiniteRegbaseTiling {
 public:
     explicit IsFiniteRegbaseTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();

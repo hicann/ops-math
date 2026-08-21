@@ -15,7 +15,7 @@ if (UT_TEST_ALL OR OP_KERNEL_UT)
     #         )
     # 算子自己的tiling文件路径
     set(is_finite_tiling_files
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/arch32/is_finite_tiling_arch32.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/arch22/is_finite_tiling_arch22.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/arch35/is_finite_tiling_arch35.cpp
         )
     # list(APPEND is_finite_tiling_files ${elewise_common_tiling_files})

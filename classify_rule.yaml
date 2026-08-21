@@ -71,7 +71,7 @@ math@ops-math:
         - ops/ops-math/math/atanh/op_api/
         - ops/ops-math/math/axpy/op_api/
         - ops/ops-math/math/axpy_v2/op_api/
-        - ops/ops-math/math/bessel_i1e/op_host/arch32/
+        - ops/ops-math/math/bessel_i1e/op_host/arch22/
         - ops/ops-math/math/bias_add_grad/op_kernel/
         - ops/ops-math/math/bincount/op_api/
         - ops/ops-math/math/bitwise_and/op_api/
@@ -125,7 +125,7 @@ math@ops-math:
         - ops/ops-math/math/invert/op_api/
         - ops/ops-math/math/is_close/op_api/
         - ops/ops-math/math/is_finite/op_api/
-        - ops/ops-math/math/is_finite/op_host/arch32/
+        - ops/ops-math/math/is_finite/op_host/arch22/
         - ops/ops-math/math/is_finite/op_kernel/
         - ops/ops-math/math/is_inf/op_host/
         - ops/ops-math/math/is_inf/op_kernel/

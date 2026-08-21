@@ -30,9 +30,8 @@ ge::graphStatus IsFiniteRegbaseTiling::CalcInputDtype()
     this->inputDtype = inputDesc->GetDataType();
     OP_CHECK_IF(
         this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_FLOAT,
-        OP_LOGE(
-            tilingContext, "Input x dtype not supported, only support [DT_FLOAT, DT_FLOAT16, DT_BF16], got %s",
-            ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str()),
+        OP_LOGE(tilingContext, "Input x dtype not supported, only support [DT_FLOAT, DT_FLOAT16, DT_BF16], got %s",
+                ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str()),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -42,12 +41,10 @@ ge::graphStatus IsFiniteRegbaseTiling::CalcOutputDtype()
     auto outputDesc = tilingContext->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
-    OP_CHECK_IF(
-        this->outputDtype != ge::DT_BOOL,
-        OP_LOGE(
-            tilingContext, "Output y dtype not supported, only support [DT_BOOL], got %s",
-            ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(this->outputDtype != ge::DT_BOOL,
+                OP_LOGE(tilingContext, "Output y dtype not supported, only support [DT_BOOL], got %s",
+                        ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -61,9 +58,8 @@ ge::graphStatus IsFiniteRegbaseTiling::CheckShape()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
     const gert::Shape& outputYShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
-    OP_CHECK_IF(
-        inputXShape != outputYShape, OP_LOGE(tilingContext, "Input x and output y shape not the same"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputXShape != outputYShape, OP_LOGE(tilingContext, "Input x and output y shape not the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -85,19 +81,16 @@ ge::graphStatus IsFiniteRegbaseTiling::SetTilingData()
 ge::graphStatus IsFiniteRegbaseTiling::RunTiling()
 {
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-    OP_CHECK_IF(
-        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "Get input dtype failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "Get output dtype failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "Check shape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "Get input dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "Get output dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "Check shape failed"),
+                return ge::GRAPH_FAILED);
 
     tiling_ = tilingContext->GetTilingData<EleBaseTilingDataV2>();
-    OP_CHECK_IF(
-        (tiling_ == nullptr), OP_LOGE(tilingContext, "Get EleBaseTilingDataV2 from context failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((tiling_ == nullptr), OP_LOGE(tilingContext, "Get EleBaseTilingDataV2 from context failed"),
+                return ge::GRAPH_FAILED);
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     if (this->inputDtype == ge::DT_FLOAT16) {
@@ -110,14 +103,12 @@ ge::graphStatus IsFiniteRegbaseTiling::RunTiling()
         dType = TPL_FP32;
         baseTilingResult = elewiseBaseTiling.DoTiling<IsFiniteDag<float>::OpDag>(*tiling_, ASCEND_API_BUFFER);
     } else {
-        OP_LOGE(
-            tilingContext, "Input x dtype not supported, only support [DT_FLOAT, DT_FLOAT16, DT_BF16], got %s",
-            ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str());
+        OP_LOGE(tilingContext, "Input x dtype not supported, only support [DT_FLOAT, DT_FLOAT16, DT_BF16], got %s",
+                ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str());
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(
-        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "ElewiseBaseTiling failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "ElewiseBaseTiling failed"),
+                return ge::GRAPH_FAILED);
 
     return SetTilingData();
 }

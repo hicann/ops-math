@@ -15,7 +15,7 @@
 // The shared tiling_case_executor bakes the SoC from the compile-time BUILD_SOC_VERSION, so it can
 // only exercise one template per build. This helper builds the tiling context the same way but sets
 // the platform SoC from a per-case argument, so a single build (any BUILD_SOC_VERSION) can cover
-// both the SIMT (arch35) and MemBase (arch32) tiling sources. It is a local copy of the shared
+// both the SIMT (arch35) and MemBase (arch22) tiling sources. It is a local copy of the shared
 // DO_TILING flow — kept entirely inside histogram_v2 so no common test file is modified.
 
 #ifndef HISTOGRAM_V2_TESTS_UT_OP_HOST_HISTOGRAM_V2_TILING_UT_UTIL_H
