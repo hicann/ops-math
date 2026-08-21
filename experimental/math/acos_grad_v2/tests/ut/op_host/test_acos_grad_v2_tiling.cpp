@@ -10,7 +10,7 @@
 
 #include <gtest/gtest.h>
 #include "tiling_case_executor.h"
-#include "../../../op_kernel/arch32/acos_grad_v2_tiling_data.h"
+#include "../../../op_kernel/arch22/acos_grad_v2_tiling_data.h"
 
 namespace optiling {
 struct AcosGradV2CompileInfo {

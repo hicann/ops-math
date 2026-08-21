@@ -12,7 +12,7 @@
 
 /*!
  * \file add_mat_mat_elements_plus_tiling_data.h
- * \brief AddMatMatElementsPlus TilingData 结构体定义（arch32，Ascend910B / Ascend910_93）
+ * \brief AddMatMatElementsPlus TilingData 结构体定义（arch22，Ascend910B / Ascend910_93）
  *
  * 使用标准 C++ struct，禁止使用废弃宏 BEGIN_TILING_DATA_DEF
  *

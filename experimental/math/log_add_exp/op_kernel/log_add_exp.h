@@ -15,7 +15,7 @@
 
 /**
  * \file log_add_exp.h
- * \brief LogAddExp kernel class definition (arch32)
+ * \brief LogAddExp kernel class definition (arch22)
  *
  * Computes logaddexp(x, y) = max(x, y) + ln(1 + e^(-|x - y|))
  *
@@ -42,8 +42,8 @@ class LogAddExp {
 public:
     __aicore__ inline LogAddExp(){};
 
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR y, GM_ADDR out, GM_ADDR workspace, const LogAddExpTilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR out, GM_ADDR workspace,
+                                const LogAddExpTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -79,8 +79,8 @@ private:
 };
 
 template <typename T_IN, typename T_COMPUTE>
-__aicore__ inline void LogAddExp<T_IN, T_COMPUTE>::Init(
-    GM_ADDR x, GM_ADDR y, GM_ADDR out, GM_ADDR workspace, const LogAddExpTilingData* tilingData)
+__aicore__ inline void LogAddExp<T_IN, T_COMPUTE>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR out, GM_ADDR workspace,
+                                                        const LogAddExpTilingData* tilingData)
 {
     tilingData_ = tilingData;
     int64_t remainderLength = tilingData->totalLength - tilingData->blockFactor * AscendC::GetBlockIdx();
@@ -146,8 +146,8 @@ __aicore__ inline void LogAddExp<T_IN, T_COMPUTE>::ExpandBroadcast()
 }
 
 template <typename T_IN, typename T_COMPUTE>
-__aicore__ inline int64_t LogAddExp<T_IN, T_COMPUTE>::ComputeOffset(
-    int64_t linearIdx, const int64_t* strides, int64_t dimNum)
+__aicore__ inline int64_t LogAddExp<T_IN, T_COMPUTE>::ComputeOffset(int64_t linearIdx, const int64_t* strides,
+                                                                    int64_t dimNum)
 {
     int64_t offset = 0;
     int64_t remaining = linearIdx;

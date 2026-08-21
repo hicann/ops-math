@@ -16,7 +16,7 @@
 
 /**
  * \file sinh_v2.h
- * \brief SinhV2 kernel class definition (arch32 - Ascend910B)
+ * \brief SinhV2 kernel class definition (arch22 - Ascend910B)
  *
  * Computes sinh(x) = (exp(x) - exp(-x)) / 2 for each element.
  * - float32 path: direct computation

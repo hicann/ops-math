@@ -65,7 +65,7 @@ namespace SlogdetUT {
 
 static const std::string OP_NAME = "Slogdet";
 
-// FULL 路径下 16MB 系统 workspace（与 op_host/arch32/slogdet_tiling.cpp WS_SYS_SIZE 一致）
+// FULL 路径下 16MB 系统 workspace（与 op_host/arch22/slogdet_tiling.cpp WS_SYS_SIZE 一致）
 constexpr size_t WS_SYS_SIZE = 16U * 1024U * 1024U;
 
 // FULL 路径（fp32 + MEM_STRATEGY=0）在本 UT 框架下观测到的稳定 TilingKey。
@@ -76,7 +76,7 @@ constexpr int64_t SLOGDET_FULL_TILING_KEY = 0;
 constexpr int64_t SLOGDET_BLOCKED_TILING_KEY = 256;
 
 // epsSingular 锁定值（迭代三据全量 ST 对照 torch fp32 最终锁定为小绝对阈值 1e-30，与 n 无关）：
-// 见 op_host/arch32/slogdet_tiling.cpp ComputeEps（穿刺 slogdet_illcond_precision 实证 1e-12/相对阈值过激）。
+// 见 op_host/arch22/slogdet_tiling.cpp ComputeEps（穿刺 slogdet_illcond_precision 实证 1e-12/相对阈值过激）。
 constexpr float SLOGDET_EPS_SINGULAR = 1e-30f;
 
 // 默认 UB（262144=256KB）下 ResolveResidentMax 推导的 N_RESIDENT_MAX（实测：248）。
@@ -87,15 +87,9 @@ struct SlogdetCompileInfo {};
 
 class SlogdetTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "SlogdetTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "SlogdetTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "SlogdetTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "SlogdetTiling TearDown" << std::endl; }
 };
 
 // 从 vector<int64_t> 构造 StorageShape（origin == storage），规避只接受 initializer_list 的构造限制。
@@ -111,17 +105,14 @@ static gert::StorageShape MakeStorageShape(const std::vector<int64_t>& dims)
 
 // 构造单输入(self) + 双输出(signOut/logOut) 的 TilingContextPara。
 // self.shape = batchShape + [n, n]；输出 shape = batchShape。
-static gert::TilingContextPara MakePara(SlogdetCompileInfo* compileInfo,
-                                        const std::vector<int64_t>& selfShape,
-                                        const std::vector<int64_t>& outShape,
-                                        uint64_t coreNum = 64,
+static gert::TilingContextPara MakePara(SlogdetCompileInfo* compileInfo, const std::vector<int64_t>& selfShape,
+                                        const std::vector<int64_t>& outShape, uint64_t coreNum = 64,
                                         uint64_t ubSize = 262144)
 {
     gert::StorageShape self = MakeStorageShape(selfShape);
     gert::StorageShape sign = MakeStorageShape(outShape);
     gert::StorageShape log = MakeStorageShape(outShape);
-    std::vector<gert::TilingContextPara::TensorDescription> inputs(
-        {{self, ge::DT_FLOAT, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> inputs({{self, ge::DT_FLOAT, ge::FORMAT_ND}});
     std::vector<gert::TilingContextPara::TensorDescription> outputs(
         {{sign, ge::DT_FLOAT, ge::FORMAT_ND}, {log, ge::DT_FLOAT, ge::FORMAT_ND}});
     std::vector<gert::TilingContextPara::OpAttr> attrs;
@@ -141,8 +132,8 @@ TEST_F(SlogdetTiling, slogdet_tiling_full_single_matrix)
     const auto* td = reinterpret_cast<const SlogdetTilingData*>(info.tilingData.get());
     EXPECT_EQ(td->matSizeN, 6U);
     EXPECT_EQ(td->matrixNumCount, 1UL);
-    EXPECT_EQ(td->blockSize, 6U);   // FULL: blockSize = n
-    EXPECT_EQ(td->blockNum, 1U);    // FULL: blockNum = 1
+    EXPECT_EQ(td->blockSize, 6U); // FULL: blockSize = n
+    EXPECT_EQ(td->blockNum, 1U);  // FULL: blockNum = 1
     EXPECT_GT(td->epsSingular, 0.0f);
     // 迭代三：epsSingular 最终锁定为小绝对阈值 1e-30（host ComputeEps 返回常量，kernel 直接 |piv|<=eps 判奇异）
     EXPECT_FLOAT_EQ(td->epsSingular, SLOGDET_EPS_SINGULAR);
@@ -203,7 +194,7 @@ TEST_F(SlogdetTiling, slogdet_tiling_multi_dim_batch)
 
     const auto* td = reinterpret_cast<const SlogdetTilingData*>(info.tilingData.get());
     EXPECT_EQ(td->matSizeN, 5U);
-    EXPECT_EQ(td->matrixNumCount, 6UL);  // 2 * 3
+    EXPECT_EQ(td->matrixNumCount, 6UL); // 2 * 3
     EXPECT_EQ(td->blockSize, 5U);
     EXPECT_EQ(td->blockNum, 1U);
     EXPECT_EQ(info.blockNum, 6U);
@@ -249,8 +240,7 @@ TEST_F(SlogdetTiling, slogdet_tiling_large_n_blocked)
     EXPECT_EQ(info.tilingKey, SLOGDET_BLOCKED_TILING_KEY);
     // BLOCKED workspace = needCoreNum * n*n fp32（≥ 64*64*4 = 16384B；本例 needCore=1）
     ASSERT_EQ(info.workspaceSizes.size(), 1U);
-    EXPECT_GE(static_cast<size_t>(info.workspaceSizes[0]),
-              static_cast<size_t>(1U) * 64U * 64U * sizeof(float));
+    EXPECT_GE(static_cast<size_t>(info.workspaceSizes[0]), static_cast<size_t>(1U) * 64U * 64U * sizeof(float));
 }
 
 // TilingKey 选择：FULL 路径（fp32 + MEM_STRATEGY=0）应生成一个稳定的 TilingKey。
@@ -288,7 +278,7 @@ TEST_F(SlogdetTiling, slogdet_tiling_n_over_upper_bound_rejected)
 {
     SlogdetCompileInfo compileInfo;
     auto para = MakePara(&compileInfo, {4096, 4096}, {});
-    ExecuteTestCase(para, ge::GRAPH_FAILED);  // n=4096 > 4095 → 拒绝（正确返回错误而非崩溃）
+    ExecuteTestCase(para, ge::GRAPH_FAILED); // n=4096 > 4095 → 拒绝（正确返回错误而非崩溃）
 }
 
 // MED-1 边界（in）：n=4095（恰为安全上界）⇒ tiling 接受（GRAPH_SUCCESS），matSizeN 正确写入。
@@ -326,11 +316,11 @@ TEST_P(SlogdetTilingMidN, full_mid_n_scales)
     ASSERT_LE(n, RESIDENT_MAX_DEFAULT_UB);
     EXPECT_EQ(td->matSizeN, n);
     EXPECT_EQ(td->matrixNumCount, 1UL);
-    EXPECT_EQ(td->blockSize, n);   // FULL: blockSize = n
-    EXPECT_EQ(td->blockNum, 1U);   // FULL: blockNum = 1
+    EXPECT_EQ(td->blockSize, n); // FULL: blockSize = n
+    EXPECT_EQ(td->blockNum, 1U); // FULL: blockNum = 1
     EXPECT_FLOAT_EQ(td->epsSingular, SLOGDET_EPS_SINGULAR);
-    EXPECT_EQ(info.blockNum, 1U);  // 单矩阵 → needCore=1
-    EXPECT_EQ(info.tilingKey, SLOGDET_FULL_TILING_KEY);  // MEM_STRATEGY=0
+    EXPECT_EQ(info.blockNum, 1U);                       // 单矩阵 → needCore=1
+    EXPECT_EQ(info.tilingKey, SLOGDET_FULL_TILING_KEY); // MEM_STRATEGY=0
     ASSERT_EQ(info.workspaceSizes.size(), 1U);
     EXPECT_EQ(static_cast<size_t>(info.workspaceSizes[0]), WS_SYS_SIZE);
 }
@@ -404,7 +394,7 @@ TEST_F(SlogdetTiling, slogdet_tiling_three_dim_batch)
 
     const auto* td = reinterpret_cast<const SlogdetTilingData*>(info.tilingData.get());
     EXPECT_EQ(td->matSizeN, 3U);
-    EXPECT_EQ(td->matrixNumCount, 8UL);  // 2*2*2
+    EXPECT_EQ(td->matrixNumCount, 8UL); // 2*2*2
     EXPECT_EQ(td->blockSize, 3U);
     EXPECT_EQ(td->blockNum, 1U);
     EXPECT_EQ(info.blockNum, 8U);
@@ -482,7 +472,7 @@ TEST_F(SlogdetTiling, slogdet_tiling_blocked_blocksize_is_col_block)
     EXPECT_EQ(td->blockSize, 64U);
     EXPECT_EQ(td->blockNum, 1U);
     EXPECT_EQ(info.tilingKey, SLOGDET_BLOCKED_TILING_KEY);
-    EXPECT_FLOAT_EQ(td->epsSingular, SLOGDET_EPS_SINGULAR);  // eps 锁定不随路径变化
+    EXPECT_FLOAT_EQ(td->epsSingular, SLOGDET_EPS_SINGULAR); // eps 锁定不随路径变化
 }
 
 // BLOCKED workspace = 16MB 系统预留主导分支（needCore*n*n*4 <= 16MB）：
@@ -515,13 +505,13 @@ TEST_F(SlogdetTiling, slogdet_tiling_blocked_workspace_slot_dominant)
     const auto* td = reinterpret_cast<const SlogdetTilingData*>(info.tilingData.get());
     EXPECT_EQ(td->matSizeN, 512U);
     EXPECT_EQ(td->matrixNumCount, 17UL);
-    EXPECT_EQ(td->blockSize, 64U);   // COL_BLOCK
+    EXPECT_EQ(td->blockSize, 64U); // COL_BLOCK
     EXPECT_EQ(info.tilingKey, SLOGDET_BLOCKED_TILING_KEY);
     // needCore = min(64, 17) = 17
     EXPECT_EQ(info.blockNum, 17U);
     // workspace = needCore * n*n*4 = 17 * 512*512*4 = 17825792 > 16MB
     const size_t expectWs = static_cast<size_t>(17U) * 512U * 512U * sizeof(float);
-    ASSERT_GT(expectWs, WS_SYS_SIZE);  // 自检：确为 slot 主导分支
+    ASSERT_GT(expectWs, WS_SYS_SIZE); // 自检：确为 slot 主导分支
     ASSERT_EQ(info.workspaceSizes.size(), 1U);
     EXPECT_EQ(static_cast<size_t>(info.workspaceSizes[0]), expectWs);
 }
@@ -539,7 +529,7 @@ TEST_F(SlogdetTiling, slogdet_tiling_blocked_batch_core_split)
     const auto* td = reinterpret_cast<const SlogdetTilingData*>(info.tilingData.get());
     EXPECT_EQ(td->matSizeN, 100U);
     EXPECT_EQ(td->matrixNumCount, 8UL);
-    EXPECT_EQ(td->blockSize, 64U);   // BLOCKED COL_BLOCK
+    EXPECT_EQ(td->blockSize, 64U); // BLOCKED COL_BLOCK
     EXPECT_EQ(info.tilingKey, SLOGDET_BLOCKED_TILING_KEY);
     // needCore = min(coreNum=4, batch=8) = 4
     EXPECT_EQ(info.blockNum, 4U);
@@ -577,8 +567,7 @@ TEST_P(SlogdetMemStrategy, n128_strategy_by_ub)
 
 INSTANTIATE_TEST_SUITE_P(
     Strategy, SlogdetMemStrategy,
-    testing::Values(
-        MemStrategyCase{262144U, SLOGDET_FULL_TILING_KEY, 128U},     // FULL（n<=residentMax 248）
-        MemStrategyCase{16384U, SLOGDET_BLOCKED_TILING_KEY, 64U}));  // BLOCKED（n>residentMax 40）
+    testing::Values(MemStrategyCase{262144U, SLOGDET_FULL_TILING_KEY, 128U},    // FULL（n<=residentMax 248）
+                    MemStrategyCase{16384U, SLOGDET_BLOCKED_TILING_KEY, 64U})); // BLOCKED（n>residentMax 40）
 
-}  // namespace SlogdetUT
+} // namespace SlogdetUT

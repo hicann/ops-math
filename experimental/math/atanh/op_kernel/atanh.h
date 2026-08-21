@@ -15,7 +15,7 @@
 
 /*!
  * \file atanh.h
- * \brief Atanh 算子 kernel 类定义（arch32 架构）
+ * \brief Atanh 算子 kernel 类定义（arch22 架构）
  *
  * 公式：atanh(x) = 0.5 * ln((1 + x) / (1 - x))
  *

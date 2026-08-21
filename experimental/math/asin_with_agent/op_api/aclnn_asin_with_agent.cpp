@@ -26,7 +26,7 @@
  *   - FLOAT/FLOAT16/DOUBLE -> 与输入相同
  *   - INT8/INT16/INT32/INT64/UINT8/BOOL -> FLOAT32
  *
- * DOUBLE 路径特殊处理（穿刺验证结论：arch32 AICore 禁止 fp64 算术）：
+ * DOUBLE 路径特殊处理（穿刺验证结论：arch22 AICore 禁止 fp64 算术）：
  *   1. 调用 aclCastToFloat32（aclnn 框架提供）将 fp64 输入 tensor 在 Host/NPU 侧转为 fp32
  *   2. 调用 l0op::AsinWithAgent 对 fp32 tensor 执行 Asin
  *   3. 调用 aclCastFromFloat32 将 fp32 结果转回 fp64，写入输出 tensor
@@ -100,9 +100,8 @@ static bool CheckDtypeValid(const aclTensor* x, const aclTensor* y)
     }
     op::DataType expectedOutDtype = GetExpectedOutputDtype(x->GetDataType());
     if (y->GetDataType() != expectedOutDtype) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Output dtype mismatch: expected=%d, actual=%d",
-            static_cast<int>(expectedOutDtype), static_cast<int>(y->GetDataType()));
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Output dtype mismatch: expected=%d, actual=%d",
+                static_cast<int>(expectedOutDtype), static_cast<int>(y->GetDataType()));
         return false;
     }
     return true;
@@ -113,9 +112,8 @@ static bool CheckFormat(const aclTensor* x, const aclTensor* y)
     auto formatX = x->GetStorageFormat();
     auto formatY = y->GetStorageFormat();
     if (IsPrivateFormat(formatX) || IsPrivateFormat(formatY)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Private format not supported: x=%d, y=%d", static_cast<int>(formatX),
-            static_cast<int>(formatY));
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Private format not supported: x=%d, y=%d", static_cast<int>(formatX),
+                static_cast<int>(formatY));
         return false;
     }
     return true;
@@ -166,8 +164,8 @@ static aclnnStatus CheckParams(const aclTensor* x, const aclTensor* y)
  * 8. ViewCopy()         - 输出非连续处理
  * 9. GetWorkspaceSize() - 获取 workspace 大小
  */
-extern "C" aclnnStatus aclnnAsinWithAgentGetWorkspaceSize(
-    const aclTensor* x, aclTensor* y, uint64_t* workspaceSize, aclOpExecutor** executor)
+extern "C" aclnnStatus aclnnAsinWithAgentGetWorkspaceSize(const aclTensor* x, aclTensor* y, uint64_t* workspaceSize,
+                                                          aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAsinWithAgent, DFX_IN(x), DFX_OUT(y));
 
@@ -192,7 +190,7 @@ extern "C" aclnnStatus aclnnAsinWithAgentGetWorkspaceSize(
 
     if (x->GetDataType() == DataType::DT_DOUBLE) {
         // DOUBLE 路径：Host 端 fp64->fp32 转换
-        // 穿刺验证结论：arch32 AICore 禁止 fp64 算术，必须在 Host 端（通过 NPU Cast 算子）转换
+        // 穿刺验证结论：arch22 AICore 禁止 fp64 算术，必须在 Host 端（通过 NPU Cast 算子）转换
         // 通过 l0op::Cast 将 fp64 tensor 转为 fp32
         auto xFp32 = l0op::Cast(xContiguous, DataType::DT_FLOAT, uniqueExecutor.get());
         CHECK_RET(xFp32 != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -222,8 +220,8 @@ extern "C" aclnnStatus aclnnAsinWithAgentGetWorkspaceSize(
 /**
  * @brief 第二段接口：执行计算
  */
-extern "C" aclnnStatus aclnnAsinWithAgent(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+extern "C" aclnnStatus aclnnAsinWithAgent(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                          aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnAsinWithAgent);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

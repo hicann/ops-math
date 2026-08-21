@@ -17,7 +17,7 @@
 
 /*!
  * \file cdist_grad_tiling.cpp
- * \brief CdistGrad Tiling implementation (arch32)
+ * \brief CdistGrad Tiling implementation (arch22)
  *
  * Supports all 4 p-value branches (p=1, p=2, p=inf, general p),
  * fp32, 2D/3D input, FullM mode.
@@ -72,14 +72,12 @@ static ge::graphStatus CdistGradTilingFunc(gert::TilingContext* context)
 {
     uint64_t ubSizeU64;
     int64_t coreNum;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSizeU64, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, ubSizeU64, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
     int64_t ubSize = static_cast<int64_t>(ubSizeU64);
 
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     // Get p attribute (index=0, the only attr)
     const auto* attrs = context->GetAttrs();
@@ -186,11 +184,10 @@ static ge::graphStatus CdistGradTilingFunc(gert::TilingContext* context)
     // Check if M is too large for UB: even with rTile=1, total buffer must fit in UB
     int64_t minRequiredBytes = fixedBytes + perRowBytes; // minimum: fixed buffers + 1 R-tile row
     if (minRequiredBytes > ubSize) {
-        OP_LOGW(
-            context,
-            "CdistGrad: M=%ld (mAligned=%ld) exceeds UB capacity. "
-            "Required %ld bytes > UB %ld bytes. Results may be incorrect.",
-            M, mAligned, minRequiredBytes, ubSize);
+        OP_LOGW(context,
+                "CdistGrad: M=%ld (mAligned=%ld) exceeds UB capacity. "
+                "Required %ld bytes > UB %ld bytes. Results may be incorrect.",
+                M, mAligned, minRequiredBytes, ubSize);
     }
 
     // Align rTile for 32-byte alignment (fp32 elements)
@@ -208,16 +205,14 @@ static ge::graphStatus CdistGradTilingFunc(gert::TilingContext* context)
     int64_t usedCoreNum = CeilDiv(totalTasks, tasksPerCore);
     int64_t tailCoreTasks = totalTasks - (usedCoreNum - 1) * tasksPerCore;
 
-    OP_LOGI(
-        context, "CdistGrad: mAligned=%ld rTile=%ld rTileAligned=%ld numRChunks=%ld usedCoreNum=%ld", mAligned, rTile,
-        rTileAligned, numRChunks, usedCoreNum);
+    OP_LOGI(context, "CdistGrad: mAligned=%ld rTile=%ld rTileAligned=%ld numRChunks=%ld usedCoreNum=%ld", mAligned,
+            rTile, rTileAligned, numRChunks, usedCoreNum);
 
     // Fill TilingData
     CdistGradTilingData* tiling = context->GetTilingData<CdistGradTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(CdistGradTilingData), 0, sizeof(CdistGradTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(CdistGradTilingData), 0, sizeof(CdistGradTilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     tiling->batchSize = B;
     tiling->pSize = P;

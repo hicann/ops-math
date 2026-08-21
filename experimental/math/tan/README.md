@@ -31,7 +31,7 @@ tan(x) = sin(x) / cos(x)
 
 ### 目标芯片
 
-- Ascend 910B3（arch32 架构）
+- Ascend 910B3（arch22 架构）
 
 ## 使用方法
 

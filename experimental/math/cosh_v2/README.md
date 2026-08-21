@@ -20,7 +20,7 @@ cosh(x) = exp(|x| - ln2) + exp(-|x|) / 2
 
 | 项目 | 说明 |
 |------|------|
-| 目标芯片 | Ascend 910B3 (arch32, DAV_2201) |
+| 目标芯片 | Ascend 910B3 (arch22, DAV_2201) |
 | CANN 版本 | 9.0.0 |
 | 数据类型 | float16, float32, bfloat16 |
 | 调用方式 | ACLNN 两段式接口 |
@@ -72,12 +72,12 @@ cosh/
 │   ├── cosh_v2_def.cpp            # 算子原型注册
 │   ├── cosh_v2_infershape.cpp     # Shape 推导
 │   ├── CMakeLists.txt
-│   └── arch32/
+│   └── arch22/
 │       └── cosh_v2_tiling.cpp     # Tiling 实现 (Ascend910B)
 ├── op_kernel/                  # Kernel 侧实现
-│   ├── cosh_v2_arch32.cpp         # Kernel 入口
+│   ├── cosh_v2_arch22.cpp         # Kernel 入口
 │   ├── CMakeLists.txt
-│   └── arch32/
+│   └── arch22/
 │       ├── cosh.h              # Kernel 类定义与计算逻辑
 │       ├── cosh_v2_tiling_data.h  # TilingData 结构体
 │       └── cosh_v2_tiling_key.h   # TilingKey 模板参数定义

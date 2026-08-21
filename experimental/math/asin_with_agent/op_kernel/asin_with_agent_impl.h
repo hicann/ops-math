@@ -16,14 +16,14 @@
 
 /*!
  * \file asin_with_agent_impl.h
- * \brief AsinWithAgent Kernel 实现（arch32: Ascend910B）
+ * \brief AsinWithAgent Kernel 实现（arch22: Ascend910B）
  *
  * 性能优化版本：
  *   - Group A (TilingKey 0/1)：float/half，手动泰勒展开（分段法）
  *     不使用 AscendC::Asin 高阶 API，消除内部 PipeBarrier 停顿
  *     tmpBuffer = 5 * tileLength * sizeof(float)（5 个 float 工作 buffer）
- *     使用 Mul+Adds 代替 Fma（arch32 不支持 adv_api Fma 标量版本）
- *     使用 CompareScalar+Select 代替 Cmps（arch32 不直接支持 Cmps）
+ *     使用 Mul+Adds 代替 Fma（arch22 不支持 adv_api Fma 标量版本）
+ *     使用 CompareScalar+Select 代替 Cmps（arch22 不直接支持 Cmps）
  *   - Group B (TilingKey 2)：DOUBLE 在 op_api 层已转为 fp32；走 Group A fp32 路径
  *   - Group C (TilingKey 3-8)：整数/BOOL，Cast→fp32→Asin<float>（保留高阶 API）
  *
@@ -58,9 +58,9 @@ using namespace AscendC;
 // 手动泰勒展开，5 个 float 工作 buffer
 // ============================================================================
 template <typename T>
-__aicore__ inline void ComputeGroupA(
-    LocalTensor<T>& dst, LocalTensor<T>& src, LocalTensor<float>& f1, LocalTensor<float>& f2, LocalTensor<float>& f3,
-    LocalTensor<float>& f4, LocalTensor<float>& f5, uint32_t count)
+__aicore__ inline void ComputeGroupA(LocalTensor<T>& dst, LocalTensor<T>& src, LocalTensor<float>& f1,
+                                     LocalTensor<float>& f2, LocalTensor<float>& f3, LocalTensor<float>& f4,
+                                     LocalTensor<float>& f5, uint32_t count)
 {
     constexpr float THRESHOLD = 0.7071067811865476f;
     constexpr float PI_OVER_2 = 1.5707963267948966f;
@@ -185,9 +185,9 @@ __aicore__ inline void ComputeGroupA(
 // ============================================================================
 // Group B（TilingKey=2）：DOUBLE 路径 → 与 Group A fp32 相同
 // ============================================================================
-__aicore__ inline void ComputeGroupB(
-    LocalTensor<float>& dst, LocalTensor<float>& src, LocalTensor<float>& f1, LocalTensor<float>& f2,
-    LocalTensor<float>& f3, LocalTensor<float>& f4, LocalTensor<float>& f5, uint32_t count)
+__aicore__ inline void ComputeGroupB(LocalTensor<float>& dst, LocalTensor<float>& src, LocalTensor<float>& f1,
+                                     LocalTensor<float>& f2, LocalTensor<float>& f3, LocalTensor<float>& f4,
+                                     LocalTensor<float>& f5, uint32_t count)
 {
     ComputeGroupA<float>(dst, src, f1, f2, f3, f4, f5, count);
 }
@@ -196,9 +196,9 @@ __aicore__ inline void ComputeGroupB(
 // Group C 计算函数（TilingKey 3-8，整数/BOOL）
 // ============================================================================
 
-__aicore__ inline void ComputeGroupC_Int8(
-    LocalTensor<float>& dst, LocalTensor<int8_t>& src, LocalTensor<half>& halfBuf, LocalTensor<float>& floatCastBuf,
-    LocalTensor<uint8_t>& tmpBuf, uint32_t count)
+__aicore__ inline void ComputeGroupC_Int8(LocalTensor<float>& dst, LocalTensor<int8_t>& src, LocalTensor<half>& halfBuf,
+                                          LocalTensor<float>& floatCastBuf, LocalTensor<uint8_t>& tmpBuf,
+                                          uint32_t count)
 {
     AscendC::Cast(halfBuf, src, RoundMode::CAST_NONE, count);
     PipeBarrier<PIPE_V>();
@@ -207,27 +207,25 @@ __aicore__ inline void ComputeGroupC_Int8(
     AscendC::Asin(dst, floatCastBuf, tmpBuf, count);
 }
 
-__aicore__ inline void ComputeGroupC_Int16(
-    LocalTensor<float>& dst, LocalTensor<int16_t>& src, LocalTensor<float>& castBuf, LocalTensor<uint8_t>& tmpBuf,
-    uint32_t count)
+__aicore__ inline void ComputeGroupC_Int16(LocalTensor<float>& dst, LocalTensor<int16_t>& src,
+                                           LocalTensor<float>& castBuf, LocalTensor<uint8_t>& tmpBuf, uint32_t count)
 {
     AscendC::Cast(castBuf, src, RoundMode::CAST_NONE, count);
     PipeBarrier<PIPE_V>();
     AscendC::Asin(dst, castBuf, tmpBuf, count);
 }
 
-__aicore__ inline void ComputeGroupC_Int32(
-    LocalTensor<float>& dst, LocalTensor<int32_t>& src, LocalTensor<float>& castBuf, LocalTensor<uint8_t>& tmpBuf,
-    uint32_t count)
+__aicore__ inline void ComputeGroupC_Int32(LocalTensor<float>& dst, LocalTensor<int32_t>& src,
+                                           LocalTensor<float>& castBuf, LocalTensor<uint8_t>& tmpBuf, uint32_t count)
 {
     AscendC::Cast(castBuf, src, RoundMode::CAST_NONE, count);
     PipeBarrier<PIPE_V>();
     AscendC::Asin(dst, castBuf, tmpBuf, count);
 }
 
-__aicore__ inline void ComputeGroupC_Int64(
-    LocalTensor<float>& dst, LocalTensor<int64_t>& src, LocalTensor<int32_t>& i32Buf, LocalTensor<float>& floatCastBuf,
-    LocalTensor<uint8_t>& tmpBuf, uint32_t count)
+__aicore__ inline void ComputeGroupC_Int64(LocalTensor<float>& dst, LocalTensor<int64_t>& src,
+                                           LocalTensor<int32_t>& i32Buf, LocalTensor<float>& floatCastBuf,
+                                           LocalTensor<uint8_t>& tmpBuf, uint32_t count)
 {
     AscendC::Cast(i32Buf, src, RoundMode::CAST_NONE, count);
     PipeBarrier<PIPE_V>();
@@ -236,9 +234,9 @@ __aicore__ inline void ComputeGroupC_Int64(
     AscendC::Asin(dst, floatCastBuf, tmpBuf, count);
 }
 
-__aicore__ inline void ComputeGroupC_Uint8(
-    LocalTensor<float>& dst, LocalTensor<uint8_t>& src, LocalTensor<half>& halfBuf, LocalTensor<float>& floatCastBuf,
-    LocalTensor<uint8_t>& tmpBuf, uint32_t count)
+__aicore__ inline void ComputeGroupC_Uint8(LocalTensor<float>& dst, LocalTensor<uint8_t>& src,
+                                           LocalTensor<half>& halfBuf, LocalTensor<float>& floatCastBuf,
+                                           LocalTensor<uint8_t>& tmpBuf, uint32_t count)
 {
     AscendC::Cast(halfBuf, src, RoundMode::CAST_NONE, count);
     PipeBarrier<PIPE_V>();
@@ -247,9 +245,9 @@ __aicore__ inline void ComputeGroupC_Uint8(
     AscendC::Asin(dst, floatCastBuf, tmpBuf, count);
 }
 
-__aicore__ inline void ComputeGroupC_Bool(
-    LocalTensor<float>& dst, LocalTensor<bool>& src, LocalTensor<half>& halfBuf, LocalTensor<float>& floatCastBuf,
-    LocalTensor<uint8_t>& tmpBuf, uint32_t count)
+__aicore__ inline void ComputeGroupC_Bool(LocalTensor<float>& dst, LocalTensor<bool>& src, LocalTensor<half>& halfBuf,
+                                          LocalTensor<float>& floatCastBuf, LocalTensor<uint8_t>& tmpBuf,
+                                          uint32_t count)
 {
     LocalTensor<uint8_t> srcU8 = src.template ReinterpretCast<uint8_t>();
     AscendC::Cast(halfBuf, srcU8, RoundMode::CAST_NONE, count);
@@ -292,7 +290,7 @@ struct OutputTypeOf<bool> {
 };
 
 // ============================================================================
-// AsinWithAgent Kernel 主类（arch32）
+// AsinWithAgent Kernel 主类（arch22）
 //
 // tmpBuf 布局（Group A/B，TK0/1/2）：
 //   tmpBufferSize = 5 * tileLength * sizeof(float)
@@ -349,8 +347,8 @@ private:
 };
 
 template <typename D_T>
-__aicore__ inline void AsinWithAgent<D_T>::Init(
-    GM_ADDR x, GM_ADDR y, GM_ADDR workspace, const AsinWithAgentTilingData* tilingData)
+__aicore__ inline void AsinWithAgent<D_T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR workspace,
+                                                const AsinWithAgentTilingData* tilingData)
 {
     uint32_t totalLength = tilingData->totalLength;
     uint32_t usedCoreNum = tilingData->usedCoreNum;
@@ -437,9 +435,11 @@ __aicore__ inline void AsinWithAgent<D_T>::ComputeImpl(LocalTensor<O_T>& dst, Lo
 
         if constexpr (std::is_same<T, int8_t>::value) {
             LocalTensor<half> halfBuf = ping ? midBufPing.Get<half>() : midBufPong.Get<half>();
-            LocalTensor<float> floatCastBuf =
-                ping ? midBufPing.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U] :
-                       midBufPong.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U];
+            LocalTensor<float>
+                floatCastBuf = ping ? midBufPing.Get<half>()
+                                          .ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U] :
+                                      midBufPong.Get<half>()
+                                          .ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U];
             ComputeGroupC_Int8(dst, src, halfBuf, floatCastBuf, tmpBuf, count);
         } else if constexpr (std::is_same<T, int16_t>::value) {
             LocalTensor<float> castBuf = ping ? midBufPing.Get<float>() : midBufPong.Get<float>();
@@ -453,15 +453,19 @@ __aicore__ inline void AsinWithAgent<D_T>::ComputeImpl(LocalTensor<O_T>& dst, Lo
             ComputeGroupC_Int64(dst, src, i32Buf, floatCastBuf, tmpBuf, count);
         } else if constexpr (std::is_same<T, uint8_t>::value) {
             LocalTensor<half> halfBuf = ping ? midBufPing.Get<half>() : midBufPong.Get<half>();
-            LocalTensor<float> floatCastBuf =
-                ping ? midBufPing.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U] :
-                       midBufPong.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U];
+            LocalTensor<float>
+                floatCastBuf = ping ? midBufPing.Get<half>()
+                                          .ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U] :
+                                      midBufPong.Get<half>()
+                                          .ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U];
             ComputeGroupC_Uint8(dst, src, halfBuf, floatCastBuf, tmpBuf, count);
         } else if constexpr (std::is_same<T, bool>::value) {
             LocalTensor<half> halfBuf = ping ? midBufPing.Get<half>() : midBufPong.Get<half>();
-            LocalTensor<float> floatCastBuf =
-                ping ? midBufPing.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U] :
-                       midBufPong.Get<half>().ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U];
+            LocalTensor<float>
+                floatCastBuf = ping ? midBufPing.Get<half>()
+                                          .ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U] :
+                                      midBufPong.Get<half>()
+                                          .ReinterpretCast<float>()[static_cast<uint32_t>(tileLength_) / 2U];
             ComputeGroupC_Bool(dst, src, halfBuf, floatCastBuf, tmpBuf, count);
         }
     }

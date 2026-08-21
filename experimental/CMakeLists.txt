@@ -23,6 +23,7 @@ set(COMMON_L0_SRCS
   ${CMAKE_SOURCE_DIR}/conversion/transpose/op_api/transpose.cpp
   ${CMAKE_SOURCE_DIR}/conversion/pad/op_api/pad.cpp
   ${CMAKE_SOURCE_DIR}/conversion/fill/op_api/fill.cpp
+  ${CMAKE_SOURCE_DIR}/conversion/unsqueeze/op_host/op_api/unsqueeze.cpp
   )
 
 add_opapi_modules()

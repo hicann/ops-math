@@ -16,7 +16,7 @@
 
 /*!
  * \file asinh_with_agent.h
- * \brief AsinhWithAgent 算子 Kernel 类定义（arch32 架构）
+ * \brief AsinhWithAgent 算子 Kernel 类定义（arch22 架构）
  *
  * 模板参数说明：
  *   - T: 数据类型（half=float16, float=float32）
@@ -32,8 +32,8 @@
  *   tmpQueue    : 1 × tmpBufSize  (Asinh sharedTmpBuffer)
  */
 
-#ifndef ASINH_WITH_AGENT_ARCH32_H
-#define ASINH_WITH_AGENT_ARCH32_H
+#ifndef ASINH_WITH_AGENT_ARCH22_H
+#define ASINH_WITH_AGENT_ARCH22_H
 
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
@@ -138,4 +138,4 @@ __aicore__ inline void AsinhWithAgent<T, BUFFER_MODE>::Process()
 
 } // namespace NsAsinhWithAgent
 
-#endif // ASINH_WITH_AGENT_ARCH32_H
+#endif // ASINH_WITH_AGENT_ARCH22_H

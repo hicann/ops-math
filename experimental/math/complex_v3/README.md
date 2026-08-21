@@ -9,7 +9,7 @@
 | 输入数据类型 | float32, float16 |
 | 输出数据类型 | complex64（对应 float32）, complex32（对应 float16） |
 | 支持芯片 | Ascend910B（910B3） |
-| 架构 | arch32 |
+| 架构 | arch22 |
 | 广播 | 支持 NumPy 广播语义（单维、双向、维度补齐、标量广播，最高 8D） |
 | ACLNN 接口 | `aclnnComplexV3(real, imag, out)` 两段式接口 |
 
@@ -24,12 +24,12 @@ ops/complex_v3/
 │   ├── CMakeLists.txt
 │   ├── complex_v3_def.cpp             # 算子定义与注册
 │   ├── complex_v3_infershape.cpp      # Shape 推导（NumPy 广播）
-│   └── arch32/
+│   └── arch22/
 │       └── complex_v3_tiling.cpp      # Tiling 策略（多核切分 + UB 切分）
 ├── op_kernel/
 │   ├── CMakeLists.txt
-│   ├── complex_v3_arch32.cpp          # Kernel 入口
-│   └── arch32/
+│   ├── complex_v3_arch22.cpp          # Kernel 入口
+│   └── arch22/
 │       ├── complex.h               # Kernel 实现（无广播 + 广播路径）
 │       ├── complex_v3_tiling_data.h   # TilingData 结构体
 │       └── complex_v3_tiling_key.h    # TilingKey 定义
@@ -114,7 +114,7 @@ bash run.sh --mode=real
 
 测试环境：Ascend910B (910B3)，ACL Event Timing，10 次 warmup + 50 次重复取中位数。
 
-广播路径采用 DataCopyPad 预加载输入到 UB + LocalTensor 逐元素索引方案（arch32 不支持 Scatter/Gather 向量指令），性能受架构限制。无广播路径通过宽类型打包写入 + 4x 循环展开优化，相比初始版本提升 4.1x。
+广播路径采用 DataCopyPad 预加载输入到 UB + LocalTensor 逐元素索引方案（arch22 不支持 Scatter/Gather 向量指令），性能受架构限制。无广播路径通过宽类型打包写入 + 4x 循环展开优化，相比初始版本提升 4.1x。
 
 ## 设计要点
 

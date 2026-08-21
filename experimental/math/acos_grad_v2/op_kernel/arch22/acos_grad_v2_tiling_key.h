@@ -10,7 +10,7 @@
 
 /*!
  * \file acos_grad_v2_tiling_key.h
- * \brief AcosGradV2 TilingKey 定义（arch32 / Ascend910B）
+ * \brief AcosGradV2 TilingKey 定义（arch22 / Ascend910B）
  *
  * 模板参数 D_T 由输入 0 (y) 的 dtype 决定：FP32 / FP16 / BF16。
  */

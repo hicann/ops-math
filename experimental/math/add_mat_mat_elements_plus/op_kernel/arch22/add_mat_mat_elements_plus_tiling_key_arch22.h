@@ -12,7 +12,7 @@
 
 /*!
  * \file add_mat_mat_elements_plus_tiling_key.h
- * \brief AddMatMatElementsPlus TilingKey 模板参数定义（arch32，Ascend910B / Ascend910_93）
+ * \brief AddMatMatElementsPlus TilingKey 模板参数定义（arch22，Ascend910B / Ascend910_93）
  *
  * 模板参数 D_T：数据类型（C_DT_FLOAT16 / C_DT_FLOAT / C_DT_BF16）
  *   - TilingKey_0: D_T = C_DT_FLOAT16 (fp16 Cast 绕行路径)

@@ -112,7 +112,7 @@ public:
             })
             .AutoContiguous();
 
-        // Ascend910B 配置（arch32）
+        // Ascend910B 配置（arch22）
         OpAICoreConfig aicoreConfig910B;
         aicoreConfig910B.DynamicCompileStaticFlag(true)
             .DynamicFormatFlag(false)

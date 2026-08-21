@@ -15,7 +15,7 @@
 
 /**
  * \file tan.h
- * \brief Tan kernel class definition (arch32 - Ascend910B)
+ * \brief Tan kernel class definition (arch22 - Ascend910B)
  *
  * Computes tan(x) = sin(x) / cos(x) for each element.
  * - float32 path: direct computation using Sin, Cos, Div

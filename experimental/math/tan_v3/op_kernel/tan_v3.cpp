@@ -15,8 +15,8 @@
  */
 
 /**
- * \file tan_v3_arch32.cpp
- * \brief TanV3 kernel entry point (arch32 architecture - Ascend910B)
+ * \file tan_v3_arch22.cpp
+ * \brief TanV3 kernel entry point (arch22 architecture - Ascend910B)
  */
 
 #include "tan_v3.h"

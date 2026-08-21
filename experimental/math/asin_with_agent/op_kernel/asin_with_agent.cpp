@@ -15,8 +15,8 @@
  */
 
 /*!
- * \file asin_with_agent_arch32.cpp
- * \brief AsinWithAgent Kernel 入口（arch32: Ascend910B）
+ * \file asin_with_agent_arch22.cpp
+ * \brief AsinWithAgent Kernel 入口（arch22: Ascend910B）
  *
  * 模板参数 D_T 由 TilingKey 决定（通过 ASCENDC_TPL_SEL_PARAM 设置）：
  *   D_T=float   -> TilingKey=0（Group A fp32）

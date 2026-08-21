@@ -16,7 +16,7 @@
 
 /*!
  * \file asinh_with_agent_tiling_data.h
- * \brief AsinhWithAgent TilingData 结构体定义（arch32）
+ * \brief AsinhWithAgent TilingData 结构体定义（arch22）
  */
 
 #ifndef ASINH_WITH_AGENT_TILING_DATA_H

@@ -15,7 +15,7 @@
 
 /**
  * \file log_add_exp_tiling.cpp
- * \brief LogAddExp tiling implementation for arch32 (Ascend910B)
+ * \brief LogAddExp tiling implementation for arch22 (Ascend910B)
  *
  * Iteration 1: fp32 + non-broadcast path only.
  * Pre-embedded: fp16/bf16 TilingKey selection and broadcast TilingData fields.
@@ -64,8 +64,8 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus GetWorkspaceSize(
-    gert::TilingContext* context, bool useBinaryDoubling, int64_t expandRows, int64_t innerSize, ge::DataType dataType)
+static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context, bool useBinaryDoubling, int64_t expandRows,
+                                        int64_t innerSize, ge::DataType dataType)
 {
     (void)expandRows;
     (void)innerSize;
@@ -86,9 +86,8 @@ static ge::graphStatus LogAddExpTilingFunc(gert::TilingContext* context)
     // 1. Get platform info
     uint64_t ubSize;
     int64_t coreNum;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     // 2. Get input/output shapes and dtype
     auto inputX = context->GetInputShape(0);
@@ -154,9 +153,8 @@ static ge::graphStatus LogAddExpTilingFunc(gert::TilingContext* context)
     // 6. Fill TilingData
     LogAddExpTilingData* tiling = context->GetTilingData<LogAddExpTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(LogAddExpTilingData), 0, sizeof(LogAddExpTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(LogAddExpTilingData), 0, sizeof(LogAddExpTilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     // UB tiling
     // For FP16/BF16: 2 input queues(x2 double buf) * 2B + 1 output queue(x2 double buf) * 2B + 3 tmp * 4B = 24B/elem
@@ -210,9 +208,8 @@ static ge::graphStatus LogAddExpTilingFunc(gert::TilingContext* context)
     }
 
     // 5. Get workspace + multi-core blockFactor
-    OP_CHECK_IF(
-        GetWorkspaceSize(context, useBinaryDoubling, expandRows, innerSize, dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context, useBinaryDoubling, expandRows, innerSize, dataType) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
 
     // Multi-core tiling
     tiling->totalLength = totalLength;

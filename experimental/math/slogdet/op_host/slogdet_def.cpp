@@ -57,7 +57,7 @@ public:
             .PrecisionReduceFlag(true)
             .ExtendCfgInfo("opFile.value", "slogdet");
         // 910C/A3 在构建参数中对应 "ascend910_93"；本算子只使用通用 AscendC Vector/MTE/Scalar
-        // 同步与搬运接口，arch32 tiling 与 910B 复用，因此与 910B 一并声明支持。
+        // 同步与搬运接口，arch22 tiling 与 910B 复用，因此与 910B 一并声明支持。
         this->AICore().AddConfig("ascend910b", aicoreConfig);
         this->AICore().AddConfig("ascend910_93", aicoreConfig);
     }

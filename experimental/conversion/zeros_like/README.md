@@ -8,7 +8,7 @@
 | :------------------------------------------------------------------------------ | :------: |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
-- 本 experimental 实现仅在 `op_host/zeros_like_def.cpp` 中 `AddConfig("ascend910b", ...)`，目标芯片为 Ascend910B（SocVersion `ASCEND910B`，NpuArch `DAV_2201`，即 arch32）。
+- 本 experimental 实现仅在 `op_host/zeros_like_def.cpp` 中 `AddConfig("ascend910b", ...)`，目标芯片为 Ascend910B（SocVersion `ASCEND910B`，NpuArch `DAV_2201`，即 arch22）。
 - 950（DAV_3510 / arch35）由内建 `conversion/zeros_like` 覆盖，不在本目录范围内（差异见下文「与内建 ascend950 版差异」）。
 
 ## 功能说明
@@ -110,11 +110,11 @@ bash build_out/cann-ops-math-custom_linux-<arch>.run --quiet --install-path=<ins
 
 本 experimental 实现与内建 `conversion/zeros_like`（950 版）共享同一 aclnn 接口语义（`aclnnInplaceZero`）与同一 L2 dtype 校验超集（来自 `math/zero_op`）；差异仅在目标芯片、kernel 形态、AI Core 实际编译的 dtype 集合。
 
-| 维度 | 内建 `conversion/zeros_like`（950 / DAV_3510 / arch35） | 本 experimental（910b / DAV_2201 / arch32） |
+| 维度 | 内建 `conversion/zeros_like`（950 / DAV_3510 / arch35） | 本 experimental（910b / DAV_2201 / arch22） |
 |------|----------------------------------------------------------|---------------------------------------------|
 | 目标芯片 | Ascend950DT/PR | Ascend910B（A2） |
 | OpDef AddConfig | `AddConfig("ascend950", ...)` | `AddConfig("ascend910b", config910b)` |
-| kernel 形态 | arch35 **DAG kernel**（`op_kernel/arch35/zeros_like_dag.h`，入口 `zeros_like_apt.cpp`，`opFile.value="zeros_like_apt"`） | arch32 **原生 AscendC kernel**（`op_kernel/zeros_like.cpp`，显式 `opFile.value="zeros_like"`） |
+| kernel 形态 | arch35 **DAG kernel**（`op_kernel/arch35/zeros_like_dag.h`，入口 `zeros_like_apt.cpp`，`opFile.value="zeros_like_apt"`） | arch22 **原生 AscendC kernel**（`op_kernel/zeros_like.cpp`，显式 `opFile.value="zeros_like"`） |
 | OpDef dtype | 13 种（含 fp8_e5m2/fp8_e4m3fn/hifloat8/fp4_e1m2/fp4_e2m1 窄浮点） | **8 种**（不扩窄浮点；窄浮点不在 910b AI Core 范围） |
 | 写 0 实现 | DAG 框架 | 单块零缓冲 `Duplicate(0)` 复用 + DataCopy/DataCopyPad |
 | 目录布局 | 跨目录（kernel 在 conversion，L0 aclnn 在 `math/zero_op`） | experimental 自包含单目录 |
@@ -128,7 +128,7 @@ experimental/conversion/zeros_like/
 │   ├── zeros_like_def.cpp           # OpDef: 8 dtype, AddConfig("ascend910b")
 │   ├── zeros_like_infershape.cpp    # InferShape / InferDataType（直传）
 │   ├── zeros_like_tiling.{cpp,h}    # 顶层 tiling（字节宽度桶切分）
-├── op_kernel/                     # 设备侧 AscendC AI Core kernel（arch32 原生）
+├── op_kernel/                     # 设备侧 AscendC AI Core kernel（arch22 原生）
 │   ├── zeros_like.cpp               # kernel 入口（opFile.value="zeros_like"）
 │   ├── zeros_like_tiling_data.h
 │   └── zeros_like_tiling_key.h      # 字节宽度 4 桶 ASCENDC_TPL_UINT_DECL

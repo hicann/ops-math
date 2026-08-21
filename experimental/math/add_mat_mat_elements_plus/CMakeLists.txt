@@ -13,10 +13,10 @@
 # 设置算子定义时支持的芯片类型
 set(SUPPORT_COMPUTE_UNIT "ascend910b" "ascend910_93" "ascend950")
 # 设置每种芯片类型对应的tiling文件目录，即采用op_host目录下哪个文件夹下的tiling文件编译
-set(SUPPORT_TILING_DIR "arch32" "arch32" "arch35")
+set(SUPPORT_TILING_DIR "arch22" "arch22" "arch35")
 add_all_modules_sources(OPTYPE add_mat_mat_elements_plus ACLNNTYPE aclnn_exclude COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT} TILING_DIR ${SUPPORT_TILING_DIR} DISABLE_IN_OPP TRUE)
 
 # 设置每种芯片类型对应的 kernel 入口文件
-# A2/A3（ascend910b / ascend910_93）使用 arch32 独立 kernel 实现
-add_kernel_sources(KERNEL_SRC add_mat_mat_elements_plus_arch32.cpp COMPUTE_UNITS ascend910b ascend910_93)
+# A2/A3（ascend910b / ascend910_93）使用 arch22 独立 kernel 实现
+add_kernel_sources(KERNEL_SRC add_mat_mat_elements_plus_arch22.cpp COMPUTE_UNITS ascend910b ascend910_93)
 # A5（ascend950）使用默认 kernel 入口 add_mat_mat_elements_plus.cpp（include arch35/）

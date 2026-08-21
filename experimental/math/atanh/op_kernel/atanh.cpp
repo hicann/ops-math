@@ -15,7 +15,7 @@
 
 /*!
  * \file atanh.cpp
- * \brief Atanh 算子 kernel 入口（arch32 架构）
+ * \brief Atanh 算子 kernel 入口（arch22 架构）
  */
 
 #include "atanh.h"

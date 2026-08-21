@@ -17,7 +17,7 @@ y = atanh(x) = 0.5 * ln((1 + x) / (1 - x))
 
 | 芯片 | 架构 | 数据类型 |
 |------|------|---------|
-| Ascend910B | arch32 (DAV_2201) | float32, float16 |
+| Ascend910B | arch22 (DAV_2201) | float32, float16 |
 
 ### 精度标准
 
@@ -39,12 +39,12 @@ atanh/
 │   ├── CMakeLists.txt
 │   ├── atanh_def.cpp                       # 算子定义（dtype/format 注册）
 │   ├── atanh_infershape.cpp                # Shape 推导（output_shape = input_shape）
-│   └── arch32/
+│   └── arch22/
 │       └── atanh_tiling.cpp                # Tiling 参数计算与 TilingKey 选择
 ├── op_kernel/                              # Kernel 侧实现
 │   ├── CMakeLists.txt
-│   ├── atanh_arch32.cpp                    # Kernel 入口（模板实例化）
-│   └── arch32/
+│   ├── atanh_arch22.cpp                    # Kernel 入口（模板实例化）
+│   └── arch22/
 │       ├── atanh.h                         # Kernel 类（Init/Process/CopyIn/Compute/CopyOut）
 │       ├── atanh_tiling_data.h             # TilingData 结构体
 │       └── atanh_tiling_key.h              # TilingKey 模板参数声明

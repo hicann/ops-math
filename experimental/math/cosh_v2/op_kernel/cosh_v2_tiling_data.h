@@ -15,7 +15,7 @@
 
 /**
  * \file cosh_v2_tiling_data.h
- * \brief TilingData structure for CoshV2 operator (arch32)
+ * \brief TilingData structure for CoshV2 operator (arch22)
  */
 
 #ifndef _COSH_V2_TILING_DATA_H_

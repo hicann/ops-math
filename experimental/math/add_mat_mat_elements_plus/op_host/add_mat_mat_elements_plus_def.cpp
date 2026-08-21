@@ -88,7 +88,7 @@ public:
             .ExtendCfgInfo("opFile.value", "add_mat_mat_elements_plus");
 
         // 多架构配置：ascend910b(A2) / ascend910_93(A3) / ascend950(A5)
-        // arch32 tiling 复用 arch35 实现（简单 elementwise 算子，tiling 参数对两种架构通用）
+        // arch22 tiling 复用 arch35 实现（简单 elementwise 算子，tiling 参数对两种架构通用）
         this->AICore().AddConfig("ascend910b", aicoreConfig);
         this->AICore().AddConfig("ascend910_93", aicoreConfig);
         this->AICore().AddConfig("ascend950", aicoreConfig);

@@ -12,8 +12,8 @@
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
  */
-#ifndef ACOS_ARCH32_H
-#define ACOS_ARCH32_H
+#ifndef ACOS_ARCH22_H
+#define ACOS_ARCH22_H
 
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
@@ -55,8 +55,8 @@ private:
 };
 
 template <typename T, uint32_t CALC_MODE>
-__aicore__ inline void AcosV2Kernel<T, CALC_MODE>::Init(
-    GM_ADDR selfGm, GM_ADDR outGm, const AcosV2TilingData* tilingData)
+__aicore__ inline void AcosV2Kernel<T, CALC_MODE>::Init(GM_ADDR selfGm, GM_ADDR outGm,
+                                                        const AcosV2TilingData* tilingData)
 {
     uint32_t coreIdx = AscendC::GetBlockIdx();
     int64_t totalLength = static_cast<int64_t>(tilingData->totalLength);
@@ -154,4 +154,4 @@ __aicore__ inline void AcosV2Kernel<T, CALC_MODE>::CopyOut(int64_t loopIdx, int6
 
 } // namespace NsAcos
 
-#endif // ACOS_ARCH32_H
+#endif // ACOS_ARCH22_H

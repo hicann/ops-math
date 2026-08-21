@@ -16,7 +16,7 @@
 
 /*!
  * \file asinh_v2_tiling_data.h
- * \brief AsinhV2 TilingData 结构体定义（arch32）
+ * \brief AsinhV2 TilingData 结构体定义（arch22）
  */
 
 #ifndef ASINH_V2_TILING_DATA_H

@@ -16,7 +16,7 @@
 
 /*!
  * \file asin_with_agent_tiling_data.h
- * \brief AsinWithAgent TilingData 结构体定义（arch32）
+ * \brief AsinWithAgent TilingData 结构体定义（arch22）
  *
  * 使用标准 C++ struct（禁止 BEGIN_TILING_DATA_DEF 宏）
  *

@@ -88,7 +88,7 @@ cmake -B build_ut -DTEST_TYPE=UT && cmake --build build_ut
 ./build_ut/ut_asin_with_agent
 ```
 
-最终版本 UT 通过情况：**28/28 通过**（含 arch32 + arch35，覆盖 9 种 dtype 的 InferShape/Tiling 分支）。
+最终版本 UT 通过情况：**28/28 通过**（含 arch22 + arch35，覆盖 9 种 dtype 的 InferShape/Tiling 分支）。
 
 ### ST（系统测试，需真实 NPU）
 
@@ -125,7 +125,7 @@ cmake -B build_st -DTEST_TYPE=ST -DRUN_MODE=NPU && cmake --build build_st
 
 ### 2. Host 端 DOUBLE 转换（Group B：fp64）
 
-arch32（Ascend 910B）不支持 fp64 向量指令，无法在 Kernel 侧直接处理 DOUBLE 类型。
+arch22（Ascend 910B）不支持 fp64 向量指令，无法在 Kernel 侧直接处理 DOUBLE 类型。
 
 实现方案：在 op_api 层 Host 端完成 fp64↔fp32 转换：
 
@@ -151,7 +151,7 @@ DOUBLE 输出精度受限于 fp32 中间结果（满足 atol=1e-4、rtol=1e-4 �
 ### 4. 多核 + UB 切分策略
 
 - 多核切分：按元素均分，尾余量由最后一个 core 处理
-- UB 切分：按 UB 容量（arch32 约 192KB）和 dtype 字节数计算 tileLength，双缓冲流水
+- UB 切分：按 UB 容量（arch22 约 192KB）和 dtype 字节数计算 tileLength，双缓冲流水
 - 非对齐处理：tail 元素通过 `DataCopyPad` 对齐到 32 字节边界
 
 ---
@@ -163,7 +163,7 @@ DOUBLE 输出精度受限于 fp32 中间结果（满足 atol=1e-4、rtol=1e-4 �
 | INT64 值超 2^31 时精度丢失 | INT64 路径内部先 Cast 到 int32，超出 `[-2^31, 2^31-1]` 范围时截断。对于 arcsin 计算，超出 [-1, 1] 的整数输出均为 NaN，此截断无实际影响 |
 | DOUBLE 精度限于 fp32 | DOUBLE 路径经 fp32 中间计算，精度约 7 位有效十进制数（满足 1e-4 精度要求） |
 | 总元素数上限 | totalLength 在 Tiling 侧转为 uint32_t，超过 2^32-1（约 42 亿）元素的 Tensor 会静默截断（实际 NPU 内存限制远低于此阈值） |
-| Ascend950 手动泰勒展开 | arch35（Ascend950）不支持 AscendC::Asin 高阶 API，已同步采用手动泰勒展开实现，行为与 arch32 一致 |
+| Ascend950 手动泰勒展开 | arch35（Ascend950）不支持 AscendC::Asin 高阶 API，已同步采用手动泰勒展开实现，行为与 arch22 一致 |
 
 ---
 
@@ -174,12 +174,12 @@ asin_with_agent/
 ├── build.sh                    # 一键编译安装脚本
 ├── CMakeLists.txt
 ├── op_kernel/
-│   ├── arch32/                 # Ascend910B Kernel 实现
+│   ├── arch22/                 # Ascend910B Kernel 实现
 │   │   └── asin_with_agent_impl.h
 │   └── arch35/                 # Ascend950 Kernel 实现
 │       └── asin_with_agent_impl.h
 ├── op_host/
-│   ├── arch32/                 # Ascend910B Tiling 实现
+│   ├── arch22/                 # Ascend910B Tiling 实现
 │   │   └── asin_with_agent_tiling.cpp
 │   ├── arch35/                 # Ascend950 Tiling 实现
 │   │   └── asin_with_agent_tiling.cpp

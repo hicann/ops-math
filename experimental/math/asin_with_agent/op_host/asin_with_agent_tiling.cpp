@@ -16,7 +16,7 @@
 
 /*!
  * \file asin_with_agent_tiling.cpp
- * \brief AsinWithAgent Host Tiling 实现（arch32: Ascend910B）
+ * \brief AsinWithAgent Host Tiling 实现（arch22: Ascend910B）
  *
  * 迭代二：实现全部 TilingKey（0-8）的 tileLength 和 tmpBufferSize 计算
  * 性能优化：Group A (TK0/1/2) 改用手动泰勒展开，tmpBuffer 从 Asin API 大小改为 4 个 float 工作区
@@ -133,8 +133,8 @@ static uint32_t ComputeTileLength(uint64_t ubSize, uint32_t perElemBytes, uint32
     }
 
     uint64_t rawTileLen = (availUB - tmpTotalUB) / perElemBytes;
-    uint32_t tileLen =
-        static_cast<uint32_t>(FloorAlign(static_cast<int64_t>(rawTileLen), static_cast<int64_t>(alignElem)));
+    uint32_t tileLen = static_cast<uint32_t>(
+        FloorAlign(static_cast<int64_t>(rawTileLen), static_cast<int64_t>(alignElem)));
     if (tileLen == 0) {
         tileLen = alignElem;
     }
@@ -155,9 +155,8 @@ static ge::graphStatus AsinWithAgentTilingFunc(gert::TilingContext* context)
     // 1. 获取平台信息
     uint64_t ubSize;
     int64_t coreNum;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     // 2. 获取输入形状和 dtype
     auto inputShape = context->GetInputShape(0);
@@ -170,21 +169,18 @@ static ge::graphStatus AsinWithAgentTilingFunc(gert::TilingContext* context)
     ge::DataType dataType = inputDesc->GetDataType();
 
     uint32_t tilingKey = ComputeTilingKey(dataType);
-    OP_CHECK_IF(
-        tilingKey == UINT32_MAX, OP_LOGE(context, "Unsupported dtype: %d", static_cast<int>(dataType)),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(tilingKey == UINT32_MAX, OP_LOGE(context, "Unsupported dtype: %d", static_cast<int>(dataType)),
+                return ge::GRAPH_FAILED);
 
     // 3. 设置 workspace
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     // 4. 获取 TilingData 指针
     AsinWithAgentTilingData* tiling = context->GetTilingData<AsinWithAgentTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(AsinWithAgentTilingData), 0, sizeof(AsinWithAgentTilingData)) != EOK,
-        OP_LOGE(context, "memset tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(AsinWithAgentTilingData), 0, sizeof(AsinWithAgentTilingData)) != EOK,
+                OP_LOGE(context, "memset tiling data error"), return ge::GRAPH_FAILED);
 
     // 上限校验：totalLength 超过 UINT32_MAX 时截断，拒绝处理
     if (totalLength > static_cast<int64_t>(UINT32_MAX)) {

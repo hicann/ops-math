@@ -63,8 +63,8 @@ shape = [1024, 1024]，10 轮平均）。
 ## A2 适配要点
 
 - 算子定义 `op_host/acos_grad_v2_def.cpp` 仅注册 `ascend910b`（AICore 配置）。
-- `CMakeLists.txt` 中 `COMPUTE_UNIT=ascend910b`、`TILING_DIR=arch32`，并通过
-  `add_kernel_sources` 显式注册 `arch32/acos_grad_v2.cpp` 入口。
+- `CMakeLists.txt` 中 `COMPUTE_UNIT=ascend910b`、`TILING_DIR=arch22`，并通过
+  `add_kernel_sources` 显式注册 `arch22/acos_grad_v2.cpp` 入口。
 - Kernel 使用标准 Ascend C 高阶向量 API（Cast/Mul/Muls/Adds/Sqrt/Div 等），
   FP16/BF16 先 Cast 到 FP32 计算再 Cast 回原类型，FP32 直接计算；这些 API 在 A2 上原生支持。
 

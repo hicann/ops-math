@@ -10,7 +10,7 @@
 
 /*!
  * \file acos_grad_v2_tiling_data.h
- * \brief AcosGradV2 Tiling Data 结构（arch32 / Ascend910B）
+ * \brief AcosGradV2 Tiling Data 结构（arch22 / Ascend910B）
  */
 
 #ifndef ACOS_GRAD_V2_TILING_DATA_H

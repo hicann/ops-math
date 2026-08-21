@@ -16,7 +16,7 @@
 
 /**
  * \file sinh_v2_tiling.cpp
- * \brief SinhV2 Tiling implementation (arch32 - Ascend910B)
+ * \brief SinhV2 Tiling implementation (arch22 - Ascend910B)
  *
  * Computes tiling parameters for SinhV2 operator:
  * - Multi-core splitting: totalNum divided evenly across AI Cores
@@ -81,9 +81,8 @@ static ge::graphStatus SinhV2TilingFunc(gert::TilingContext* context)
     // 1. Get platform info
     uint64_t ubSize;
     int64_t coreNum;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     // 2. Get input shape and dtype
     auto inputShape = context->GetInputShape(0);
@@ -96,16 +95,14 @@ static ge::graphStatus SinhV2TilingFunc(gert::TilingContext* context)
     ge::DataType dtype = inputDesc->GetDataType();
 
     // 3. Get workspace size
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     // 4. Set TilingData
     SinhV2TilingData* tiling = context->GetTilingData<SinhV2TilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(SinhV2TilingData), 0, sizeof(SinhV2TilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(SinhV2TilingData), 0, sizeof(SinhV2TilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     // Handle empty tensor
     if (totalNum == 0) {

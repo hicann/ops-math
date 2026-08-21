@@ -15,7 +15,7 @@
 
 /*!
  * \file complex.h
- * \brief ComplexV3 operator kernel class definition (arch32)
+ * \brief ComplexV3 operator kernel class definition (arch22)
  *
  * Template parameters:
  *   - T: Data type (float / half)
@@ -92,8 +92,8 @@ private:
 // Init
 // =============================================================================
 template <typename T, int BROADCAST_MODE>
-__aicore__ inline void ComplexV3<T, BROADCAST_MODE>::Init(
-    GM_ADDR real, GM_ADDR imag, GM_ADDR out, const ComplexV3TilingData* tilingData)
+__aicore__ inline void ComplexV3<T, BROADCAST_MODE>::Init(GM_ADDR real, GM_ADDR imag, GM_ADDR out,
+                                                          const ComplexV3TilingData* tilingData)
 {
     tilingData_ = tilingData;
     int64_t offset = tilingData->blockFactor * AscendC::GetBlockIdx();

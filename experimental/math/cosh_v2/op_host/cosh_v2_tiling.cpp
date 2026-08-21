@@ -15,7 +15,7 @@
 
 /**
  * \file cosh_v2_tiling.cpp
- * \brief CoshV2 operator tiling implementation (arch32 / Ascend910B)
+ * \brief CoshV2 operator tiling implementation (arch22 / Ascend910B)
  *
  * Tiling strategy:
  *   - Multi-core: totalNum / coreNum elements per core
@@ -87,9 +87,8 @@ static ge::graphStatus CoshV2TilingFunc(gert::TilingContext* context)
     // 4. TilingData
     CoshV2TilingData* tiling = context->GetTilingData<CoshV2TilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(CoshV2TilingData), 0, sizeof(CoshV2TilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(CoshV2TilingData), 0, sizeof(CoshV2TilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     tiling->totalNum = totalNum;
     tiling->blockFactor = CeilDiv(totalNum, coreNum);

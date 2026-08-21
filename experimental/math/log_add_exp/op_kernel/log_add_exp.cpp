@@ -14,8 +14,8 @@
  */
 
 /**
- * \file log_add_exp_arch32.cpp
- * \brief LogAddExp kernel entry (arch32)
+ * \file log_add_exp_arch22.cpp
+ * \brief LogAddExp kernel entry (arch22)
  */
 
 #include "log_add_exp.h"

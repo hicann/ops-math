@@ -13,7 +13,7 @@
  * \brief experimental 自包含 ascend910b (DAV_2201) 标准 AscendC tiling：IMPL_OP_OPTILING(ZerosLike)。
  *        退化 Elementwise（仅写 0）：按总字节数以 32B 对齐块多核均衡切分，
  *        单块零缓冲 UB 切分，按字节宽度（1/2/4/8）选 TilingKey；0 元素保护；workspace=0。
- *        标准顶层 tiling（非 arch32 子目录）：experimental zeros_like 仅 ascend910b，
+ *        标准顶层 tiling（非 arch22 子目录）：experimental zeros_like 仅 ascend910b，
  *        无 950 arch35 入口，故不存在重复注册 IMPL_OP_OPTILING(ZerosLike) 风险。
  */
 #include <map>
@@ -40,15 +40,12 @@ static const std::map<ge::DataType, uint32_t> g_zlByteWidth = {
     {ge::DT_BF16, 2}, {ge::DT_FLOAT, 4}, {ge::DT_INT32, 4}, {ge::DT_INT64, 8},
 };
 
-static uint64_t CeilDiv(uint64_t a, uint64_t b)
-{
-    return (b == 0) ? 0 : ((a + b - 1) / b);
-}
+static uint64_t CeilDiv(uint64_t a, uint64_t b) { return (b == 0) ? 0 : ((a + b - 1) / b); }
 
 // 解析输出 dtype（归一字节宽度）并做 dtype/shape 一致性校验，
 // 输出 bytesPerElem 与元素总数 outElem。
-static ge::graphStatus ParseZerosLikeOutput(
-    gert::TilingContext* tilingContext, uint32_t& bytesPerElem, uint64_t& outElem)
+static ge::graphStatus ParseZerosLikeOutput(gert::TilingContext* tilingContext, uint32_t& bytesPerElem,
+                                            uint64_t& outElem)
 {
     auto inputDesc = tilingContext->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
@@ -56,16 +53,14 @@ static ge::graphStatus ParseZerosLikeOutput(
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     ge::DataType inputDtype = inputDesc->GetDataType();
     ge::DataType outputDtype = outputDesc->GetDataType();
-    OP_CHECK_IF(
-        outputDtype != inputDtype, OP_LOGE(tilingContext, "ZerosLike output y dtype not same as input x"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(outputDtype != inputDtype, OP_LOGE(tilingContext, "ZerosLike output y dtype not same as input x"),
+                return ge::GRAPH_FAILED);
 
     // dtype -> 字节宽度桶
     auto itByte = g_zlByteWidth.find(outputDtype);
-    OP_CHECK_IF(
-        itByte == g_zlByteWidth.end(),
-        OP_LOGE(tilingContext, "ZerosLike unsupported output dtype %d", static_cast<int32_t>(outputDtype)),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(itByte == g_zlByteWidth.end(),
+                OP_LOGE(tilingContext, "ZerosLike unsupported output dtype %d", static_cast<int32_t>(outputDtype)),
+                return ge::GRAPH_FAILED);
     bytesPerElem = itByte->second;
 
     // shape 一致性校验 + 元素总数
@@ -75,9 +70,8 @@ static ge::graphStatus ParseZerosLikeOutput(
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputShape);
     uint64_t inElem = inputShape->GetStorageShape().GetShapeSize();
     outElem = outputShape->GetStorageShape().GetShapeSize();
-    OP_CHECK_IF(
-        inElem != outElem, OP_LOGE(tilingContext, "ZerosLike input/output shape size mismatch"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inElem != outElem, OP_LOGE(tilingContext, "ZerosLike input/output shape size mismatch"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -96,9 +90,8 @@ static uint64_t ComputeZerosLikeTileBytes(const ZerosLikeCompileInfo* compileInf
 }
 
 // 按总字节数在核间以 32B 对齐块均衡切分，填充 TilingData 各字段并设置 BlockDim。
-static void ComputeZerosLikeSplit(
-    gert::TilingContext* tilingContext, const ZerosLikeCompileInfo* compileInfo, ZerosLikeTilingData* tilingData,
-    uint32_t bytesPerElem, uint64_t totalBytes)
+static void ComputeZerosLikeSplit(gert::TilingContext* tilingContext, const ZerosLikeCompileInfo* compileInfo,
+                                  ZerosLikeTilingData* tilingData, uint32_t bytesPerElem, uint64_t totalBytes)
 {
     uint64_t tileBytes = ComputeZerosLikeTileBytes(compileInfo);
 
@@ -147,12 +140,10 @@ static ge::graphStatus TilingPrepare4ZerosLike(gert::TilingParseContext* context
     uint64_t ubSizePlatForm = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSize = static_cast<int64_t>(ubSizePlatForm);
-    OP_CHECK_IF(
-        (compileInfo->totalCoreNum <= 0 || compileInfo->ubSize <= 0),
-        OP_LOGE(
-            context, "ZerosLike get hardware info failed, coreNum:%d, ubSize:%ld.", compileInfo->totalCoreNum,
-            compileInfo->ubSize),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->totalCoreNum <= 0 || compileInfo->ubSize <= 0),
+                OP_LOGE(context, "ZerosLike get hardware info failed, coreNum:%d, ubSize:%ld.",
+                        compileInfo->totalCoreNum, compileInfo->ubSize),
+                return ge::GRAPH_FAILED);
     OP_LOGD(context, "ZerosLike prepare: totalCoreNum=%d, ubSize=%ld", compileInfo->totalCoreNum, compileInfo->ubSize);
     return ge::GRAPH_SUCCESS;
 }
@@ -187,13 +178,12 @@ static ge::graphStatus Tiling4ZerosLike(gert::TilingContext* tilingContext)
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, workspaces);
     workspaces[0] = ZL_WORKSPACE;
 
-    OP_LOGD(
-        tilingContext,
-        "ZerosLike tiling: totalBytes=%lu, usedCore=%u, perCoreBytes=%lu, tailCoreNum=%lu, "
-        "tileBytes=%lu, bytesPerElem=%u",
-        static_cast<unsigned long>(tilingData->totalBytes), tilingData->usedCoreNum,
-        static_cast<unsigned long>(tilingData->perCoreBytes), static_cast<unsigned long>(tilingData->tailCoreNum),
-        static_cast<unsigned long>(tilingData->tileBytes), tilingData->bytesPerElem);
+    OP_LOGD(tilingContext,
+            "ZerosLike tiling: totalBytes=%lu, usedCore=%u, perCoreBytes=%lu, tailCoreNum=%lu, "
+            "tileBytes=%lu, bytesPerElem=%u",
+            static_cast<unsigned long>(tilingData->totalBytes), tilingData->usedCoreNum,
+            static_cast<unsigned long>(tilingData->perCoreBytes), static_cast<unsigned long>(tilingData->tailCoreNum),
+            static_cast<unsigned long>(tilingData->tileBytes), tilingData->bytesPerElem);
     return ge::GRAPH_SUCCESS;
 }
 

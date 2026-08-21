@@ -14,8 +14,8 @@
  */
 
 /**
- * \file cosh_v2_arch32.cpp
- * \brief CoshV2 operator kernel entry (arch32 / Ascend910B)
+ * \file cosh_v2_arch22.cpp
+ * \brief CoshV2 operator kernel entry (arch22 / Ascend910B)
  *
  * Template parameters (matching ASCENDC_TPL_ARGS_DECL in cosh_v2_tiling_key.h):
  *   - D_T: Data type (half / float / bfloat16_t)

@@ -15,8 +15,8 @@
  */
 
 /**
- * \file sinh_v2_arch32.cpp
- * \brief SinhV2 kernel entry point (arch32 architecture - Ascend910B)
+ * \file sinh_v2_arch22.cpp
+ * \brief SinhV2 kernel entry point (arch22 architecture - Ascend910B)
  */
 
 #include "sinh_v2.h"

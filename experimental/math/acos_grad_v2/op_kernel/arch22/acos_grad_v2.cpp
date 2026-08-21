@@ -10,7 +10,7 @@
 
 /*!
  * \file acos_grad_v2.cpp
- * \brief AcosGradV2 算子 Kernel 入口（arch32 / Ascend910B）
+ * \brief AcosGradV2 算子 Kernel 入口（arch22 / Ascend910B）
  *
  * Inputs (对齐 def.cpp / README):
  *   y  : 前向 Acos 的输入张量

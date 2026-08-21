@@ -16,7 +16,7 @@
 
 /*!
  * \file asinh_v2.h
- * \brief AsinhV2 算子 Kernel 类定义（arch32 架构）
+ * \brief AsinhV2 算子 Kernel 类定义（arch22 架构）
  *
  * 模板参数说明：
  *   - T: 数据类型（half=float16, float=float32）
@@ -32,8 +32,8 @@
  *   tmpQueue    : 1 × tmpBufSize  (Asinh sharedTmpBuffer)
  */
 
-#ifndef ASINH_V2_ARCH32_H
-#define ASINH_V2_ARCH32_H
+#ifndef ASINH_V2_ARCH22_H
+#define ASINH_V2_ARCH22_H
 
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
@@ -138,4 +138,4 @@ __aicore__ inline void AsinhV2<T, BUFFER_MODE>::Process()
 
 } // namespace NsAsinhV2
 
-#endif // ASINH_V2_ARCH32_H
+#endif // ASINH_V2_ARCH22_H

@@ -15,7 +15,7 @@
 
 /*!
  * \file complex_v3_tiling.cpp
- * \brief ComplexV3 operator tiling implementation (arch32)
+ * \brief ComplexV3 operator tiling implementation (arch22)
  *
  * Computes tiling parameters for the ComplexV3 operator:
  * - Multi-core split: totalLength / coreNum
@@ -92,14 +92,12 @@ static ge::graphStatus ComplexV3TilingFunc(gert::TilingContext* context)
     // 1. Get platform info
     uint64_t ubSize;
     int64_t coreNum;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     // 2. Get workspace info
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     // 3. Get input shapes
     auto inputReal = context->GetInputShape(0);
@@ -123,9 +121,8 @@ static ge::graphStatus ComplexV3TilingFunc(gert::TilingContext* context)
     // 6. Initialize tiling data
     ComplexV3TilingData* tiling = context->GetTilingData<ComplexV3TilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(ComplexV3TilingData), 0, sizeof(ComplexV3TilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(ComplexV3TilingData), 0, sizeof(ComplexV3TilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     tiling->broadcastMode = broadcastMode;
 
@@ -136,8 +133,8 @@ static ge::graphStatus ComplexV3TilingFunc(gert::TilingContext* context)
         totalLength = realShape.GetShapeSize();
     } else {
         // Broadcast: compute broadcast shape using NumPy rules
-        uint32_t maxDim =
-            std::max(static_cast<uint32_t>(realShape.GetDimNum()), static_cast<uint32_t>(imagShape.GetDimNum()));
+        uint32_t maxDim = std::max(static_cast<uint32_t>(realShape.GetDimNum()),
+                                   static_cast<uint32_t>(imagShape.GetDimNum()));
         tiling->dimNum = maxDim;
 
         totalLength = 1;
@@ -225,8 +222,8 @@ static ge::graphStatus ComplexV3TilingFunc(gert::TilingContext* context)
             // Total = ubFactor * (4 + 1 + 1) = ubFactor * 6
             tiling->preloadMode = 0;
             int64_t onDemandCoeff = outBufCoeff + 2; // +2 for realTmp + imagTmp (each ubFactor elems)
-            tiling->ubFactor =
-                FloorAlign(FloorDiv(static_cast<int64_t>(ubSize) / typeSize, onDemandCoeff), ubBlockSize);
+            tiling->ubFactor = FloorAlign(FloorDiv(static_cast<int64_t>(ubSize) / typeSize, onDemandCoeff),
+                                          ubBlockSize);
         }
     }
 

@@ -10,7 +10,7 @@
 
 /*!
  * \file acos_grad_v2.h
- * \brief KernelAcosGradV2 类实现（arch32 / Ascend910B）
+ * \brief KernelAcosGradV2 类实现（arch22 / Ascend910B）
  *
  * 对齐 math/acos_grad README:
  *   y  : 前向 Acos 的输入张量

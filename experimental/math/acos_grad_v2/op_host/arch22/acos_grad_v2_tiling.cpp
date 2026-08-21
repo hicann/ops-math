@@ -10,7 +10,7 @@
 
 /*!
  * \file acos_grad_v2_tiling.cpp
- * \brief AcosGradV2 Tiling — 多核 + UB 两级切分（arch32 / Ascend910B）
+ * \brief AcosGradV2 Tiling — 多核 + UB 两级切分（arch22 / Ascend910B）
  *
  * 切分策略：
  *   1) 多核（blockDim）：按 ELEM_ALIGN(512) 对齐切 totalLength → blockFormer × blockNum
@@ -22,8 +22,8 @@
 #include "log/log.h"
 #include "util/math_util.h"
 #include "util/platform_util.h"
-#include "../../op_kernel/arch32/acos_grad_v2_tiling_data.h"
-#include "../../op_kernel/arch32/acos_grad_v2_tiling_key.h"
+#include "../../op_kernel/arch22/acos_grad_v2_tiling_data.h"
+#include "../../op_kernel/arch22/acos_grad_v2_tiling_key.h"
 
 namespace optiling {
 

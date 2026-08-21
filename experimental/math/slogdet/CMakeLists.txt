@@ -11,11 +11,11 @@
 # NOTE: Portions of this code were AI-generated and have been
 # technically reviewed for functional accuracy and security
 
-# 设置算子定义时支持的芯片类型（Ascend 910B + 910C/A3，均复用 arch32 tiling）
+# 设置算子定义时支持的芯片类型（Ascend 910B + 910C/A3，均复用 arch22 tiling）
 set(SUPPORT_COMPUTE_UNIT "ascend910b" "ascend910_93")
-# 设置每种芯片类型对应的 tiling 文件目录（op_host/arch32）。
-# arch32 为实验树对 DAV_2201/910B/910C(A3) 家族沿用的目录标签（与 CLAUDE.md 中 arch22 同指 DAV_2201）。
-set(SUPPORT_TILING_DIR "arch32" "arch32")
+# 设置每种芯片类型对应的 tiling 文件目录（op_host/arch22）。
+# arch22 为实验树对 DAV_2201/910B/910C(A3) 家族沿用的目录标签（与 CLAUDE.md 中 arch22 同指 DAV_2201）。
+set(SUPPORT_TILING_DIR "arch22" "arch22")
 # ACLNNTYPE aclnn_exclude + DISABLE_IN_OPP TRUE：
 #   - 不进 OPP 包（实验树构建隔离，避免与 math/slogdet 同时进同一包）
 #   - aclnnSlogdet 符号仅在 experimental 构建时编译（与 math/slogdet 不同时构建）

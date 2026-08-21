@@ -15,7 +15,7 @@
 
 /*!
  * \file atanh_tiling.cpp
- * \brief Atanh 算子 Tiling 实现（arch32）
+ * \brief Atanh 算子 Tiling 实现（arch22）
  */
 
 #include "register/op_def_registry.h"
@@ -67,12 +67,10 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
     OP_CHECK_NULL_WITH_CONTEXT(context, outY);
     auto outShapeY = EnsureNotScalar(outY->GetStorageShape());
 
-    OP_CHECK_IF(
-        inputShapeX.GetShapeSize() != outShapeY.GetShapeSize(),
-        OP_LOGE(
-            context, "Atanh: input and output shape size mismatch: x=%ld, y=%ld", inputShapeX.GetShapeSize(),
-            outShapeY.GetShapeSize()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputShapeX.GetShapeSize() != outShapeY.GetShapeSize(),
+                OP_LOGE(context, "Atanh: input and output shape size mismatch: x=%ld, y=%ld",
+                        inputShapeX.GetShapeSize(), outShapeY.GetShapeSize()),
+                return ge::GRAPH_FAILED);
 
     totalIdx = inputShapeX.GetShapeSize();
 
@@ -100,28 +98,24 @@ static ge::graphStatus AtanhTilingFunc(gert::TilingContext* context)
     // 1. 获取平台信息
     uint64_t ubSize;
     int64_t coreNum;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     // 2. 获取shape、属性信息
     int64_t totalIdx;
     ge::DataType dataType;
-    OP_CHECK_IF(
-        GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     // 3. 获取Workspace
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     // 4. 设置tiling信息
     AtanhTilingData* tiling = context->GetTilingData<AtanhTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(AtanhTilingData), 0, sizeof(AtanhTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(AtanhTilingData), 0, sizeof(AtanhTilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     // 类型大小
     int64_t typeSize = (dataType == ge::DT_FLOAT) ? 4 : 2;

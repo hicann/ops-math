@@ -14,8 +14,8 @@
  */
 
 /**
- * \file tan_arch32.cpp
- * \brief Tan kernel entry point (arch32 architecture - Ascend910B)
+ * \file tan_arch22.cpp
+ * \brief Tan kernel entry point (arch22 architecture - Ascend910B)
  */
 
 #include "tan.h"

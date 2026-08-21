@@ -12,7 +12,7 @@
 
 /*!
  * \file add_mat_mat_elements_plus.h
- * \brief AddMatMatElementsPlus Kernel 实现类（arch32 架构，Ascend910B / Ascend910_93）
+ * \brief AddMatMatElementsPlus Kernel 实现类（arch22 架构，Ascend910B / Ascend910_93）
  *
  * 计算公式：c_out = c × beta + alpha × a × b
  *
@@ -28,15 +28,15 @@
  *   alpha/beta 为标量 tensor（1-element），Init 时从 GM 单点读取。
  */
 
-#ifndef ADD_MAT_MAT_ELEMENTS_PLUS_ARCH32_H_
-#define ADD_MAT_MAT_ELEMENTS_PLUS_ARCH32_H_
+#ifndef ADD_MAT_MAT_ELEMENTS_PLUS_ARCH22_H_
+#define ADD_MAT_MAT_ELEMENTS_PLUS_ARCH22_H_
 
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
-#include "add_mat_mat_elements_plus_tiling_data_arch32.h"
-#include "add_mat_mat_elements_plus_tiling_key_arch32.h"
+#include "add_mat_mat_elements_plus_tiling_data_arch22.h"
+#include "add_mat_mat_elements_plus_tiling_key_arch22.h"
 
-namespace NsAddMatMatElementsPlusArch32 {
+namespace NsAddMatMatElementsPlusArch22 {
 
 using namespace AscendC;
 
@@ -84,7 +84,7 @@ private:
     float betaVal_;        // beta 标量（float 存储，Init 时从 GM 读出）
 
     // bf16 路径额外中间 buffer
-    // arch32 优化：tileLength 可达 4096，UB 使用量 = 4×4096×2 + 4×4096×4 = 96KB / 192KB
+    // arch22 优化：tileLength 可达 4096，UB 使用量 = 4×4096×2 + 4×4096×4 = 96KB / 192KB
     TBuf<QuePosition::VECCALC> floatBufA;
     TBuf<QuePosition::VECCALC> floatBufB;
     TBuf<QuePosition::VECCALC> floatBufC;
@@ -157,7 +157,7 @@ __aicore__ inline void KernelAddMatMatElementsPlus<T>::CopyIn(uint32_t progress,
 
     DataCopyParams copyParams;
     copyParams.blockCount = 1;
-    // arch32 优化：tileLength 可达 4096（fp16: 4096*2=8192, fp32: 4096*4=16384）
+    // arch22 优化：tileLength 可达 4096（fp16: 4096*2=8192, fp32: 4096*4=16384）
     static_assert(sizeof(T) <= 4U, "element size must be <= 4 bytes");
     copyParams.blockLen = static_cast<uint16_t>(currentLen * sizeof(T));
     copyParams.srcStride = 0;
@@ -278,6 +278,6 @@ __aicore__ inline void KernelAddMatMatElementsPlus<T>::Process()
     }
 }
 
-} // namespace NsAddMatMatElementsPlusArch32
+} // namespace NsAddMatMatElementsPlusArch22
 
-#endif // ADD_MAT_MAT_ELEMENTS_PLUS_ARCH32_H_
+#endif // ADD_MAT_MAT_ELEMENTS_PLUS_ARCH22_H_

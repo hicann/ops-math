@@ -23,7 +23,7 @@
  *        Multi-tile/tail invariants are checked self-consistently (no hardcoded platform-reserved UB).
  *
  *        Experimental flat layout: TilingData/CompileInfo are defined in op_kernel/fused_mul_add_n_tiling_data.h
- *        and the host tiling lives in op_host/fused_mul_add_n_tiling.cpp (no arch32/arch35 subdirs).
+ *        and the host tiling lives in op_host/fused_mul_add_n_tiling.cpp (no arch22/arch35 subdirs).
  *
  *        Platform values come from the faker (default coreNum=64, ubSize=262144=256KB), which the
  *        tiling reads via context->GetPlatformInfo(). The actually-usable UB returned by
@@ -112,65 +112,59 @@ int64_t Field(const TilingInfo& info, size_t idx)
 // faker 的 BuildTilingContext 要求 compileInfo 非空（否则 context 创建失败 -> 空指针 segfault）。
 // tiling 实际平台值取自 GetPlatformInfo()（faker 由 coreNum_/ubSize_ 注入），
 // 此 compileInfo 仅用于满足 faker 建上下文要求，保持与平台一致。
-static optiling::FusedMulAddNCompileInfo g_compileInfo = {
-    static_cast<int64_t>(UT_CORE_NUM), static_cast<int64_t>(UT_UB_SIZE)};
+static optiling::FusedMulAddNCompileInfo g_compileInfo = {static_cast<int64_t>(UT_CORE_NUM),
+                                                          static_cast<int64_t>(UT_UB_SIZE)};
 
 // 构造同 dtype（5 元一致）的 FusedMulAddN tiling 用例（x1==x2 shape，x3 单元素 scalar）
 gert::TilingContextPara MakePara(ge::DataType dtype, const gert::StorageShape& shape)
 {
-    return gert::TilingContextPara(
-        "FusedMulAddN",
-        {
-            {shape, dtype, ge::FORMAT_ND},
-            {shape, dtype, ge::FORMAT_ND},
-            {{{1}, {1}}, dtype, ge::FORMAT_ND},
-        },
-        {
-            {shape, dtype, ge::FORMAT_ND},
-        },
-        &g_compileInfo, UT_CORE_NUM, UT_UB_SIZE);
+    return gert::TilingContextPara("FusedMulAddN",
+                                   {
+                                       {shape, dtype, ge::FORMAT_ND},
+                                       {shape, dtype, ge::FORMAT_ND},
+                                       {{{1}, {1}}, dtype, ge::FORMAT_ND},
+                                   },
+                                   {
+                                       {shape, dtype, ge::FORMAT_ND},
+                                   },
+                                   &g_compileInfo, UT_CORE_NUM, UT_UB_SIZE);
 }
 
 // 构造 fp32 同 dtype 的 FusedMulAddN tiling 用例（x1==x2 shape，x3 单元素 scalar）
-gert::TilingContextPara MakeFp32Para(const gert::StorageShape& shape)
-{
-    return MakePara(ge::DT_FLOAT, shape);
-}
+gert::TilingContextPara MakeFp32Para(const gert::StorageShape& shape) { return MakePara(ge::DT_FLOAT, shape); }
 
 // 构造可指定核数的同 dtype 用例（x3 单元素 scalar）。
 // 注：tiling 通过 context->GetPlatformInfo() 读取核数/UB，faker 由 coreNum_/ubSize_ 注入，
 // 故此处自定义 coreNum 可确定性触发「单核 / 元素数 < 核数（部分核空闲）」等多核切分边界分支。
 gert::TilingContextPara MakeParaWithCore(ge::DataType dtype, const gert::StorageShape& shape, uint64_t coreNum)
 {
-    return gert::TilingContextPara(
-        "FusedMulAddN",
-        {
-            {shape, dtype, ge::FORMAT_ND},
-            {shape, dtype, ge::FORMAT_ND},
-            {{{1}, {1}}, dtype, ge::FORMAT_ND},
-        },
-        {
-            {shape, dtype, ge::FORMAT_ND},
-        },
-        &g_compileInfo, coreNum, UT_UB_SIZE);
+    return gert::TilingContextPara("FusedMulAddN",
+                                   {
+                                       {shape, dtype, ge::FORMAT_ND},
+                                       {shape, dtype, ge::FORMAT_ND},
+                                       {{{1}, {1}}, dtype, ge::FORMAT_ND},
+                                   },
+                                   {
+                                       {shape, dtype, ge::FORMAT_ND},
+                                   },
+                                   &g_compileInfo, coreNum, UT_UB_SIZE);
 }
 
 // 构造 x3 形态可自定义的同 dtype 用例（用于校验 x3 = [1] 与 [1,1] 的 ShapeSize=1 等价路径，
 // 以及 x3 ShapeSize≠1 的校验失败路径）。x1==x2 = shape。
-gert::TilingContextPara MakeParaWithX3(
-    ge::DataType dtype, const gert::StorageShape& shape, const gert::StorageShape& x3Shape)
+gert::TilingContextPara MakeParaWithX3(ge::DataType dtype, const gert::StorageShape& shape,
+                                       const gert::StorageShape& x3Shape)
 {
-    return gert::TilingContextPara(
-        "FusedMulAddN",
-        {
-            {shape, dtype, ge::FORMAT_ND},
-            {shape, dtype, ge::FORMAT_ND},
-            {x3Shape, dtype, ge::FORMAT_ND},
-        },
-        {
-            {shape, dtype, ge::FORMAT_ND},
-        },
-        &g_compileInfo, UT_CORE_NUM, UT_UB_SIZE);
+    return gert::TilingContextPara("FusedMulAddN",
+                                   {
+                                       {shape, dtype, ge::FORMAT_ND},
+                                       {shape, dtype, ge::FORMAT_ND},
+                                       {x3Shape, dtype, ge::FORMAT_ND},
+                                   },
+                                   {
+                                       {shape, dtype, ge::FORMAT_ND},
+                                   },
+                                   &g_compileInfo, UT_CORE_NUM, UT_UB_SIZE);
 }
 
 // dtype 对应的 32B 对齐粒度（元素数）
@@ -219,15 +213,9 @@ void ExpectMultiTileInvariants(const TilingInfo& info, int64_t align)
 
 class FusedMulAddNTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "FusedMulAddNTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "FusedMulAddNTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "FusedMulAddNTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "FusedMulAddNTiling TearDown" << std::endl; }
 };
 
 // ---- 用例 1：fp32 单 tile 小 shape（256 元素）+ 核数 cap ----
@@ -301,9 +289,8 @@ TEST_F(FusedMulAddNTiling, fp32_small_shape_capped_single_core)
     EXPECT_EQ(Field(info, IDX_UB_TAIL_FORMER), 1000);
     EXPECT_EQ(Field(info, IDX_UB_TAIL_TAIL), 1000);
     // 一致性：blockFormer*(blockNum-1) + blockTail == totalNum
-    EXPECT_EQ(
-        Field(info, IDX_BLOCK_FORMER) * (Field(info, IDX_BLOCK_NUM) - 1) + Field(info, IDX_BLOCK_TAIL),
-        Field(info, IDX_TOTAL_NUM));
+    EXPECT_EQ(Field(info, IDX_BLOCK_FORMER) * (Field(info, IDX_BLOCK_NUM) - 1) + Field(info, IDX_BLOCK_TAIL),
+              Field(info, IDX_TOTAL_NUM));
 }
 
 // ---- 用例 4：fp32 大 shape，触发单核多 tile 循环（ubFormer < blockFormer）----
@@ -365,17 +352,16 @@ TEST_F(FusedMulAddNTiling, fp32_empty_tensor)
 // ---- 用例 6：dtype 不一致 -> 校验失败路径（tiling 返回 GRAPH_FAILED）----
 TEST_F(FusedMulAddNTiling, dtype_mismatch_failed)
 {
-    gert::TilingContextPara para(
-        "FusedMulAddN",
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND}, // x3 dtype 与 x1 不一致
-        },
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &g_compileInfo, UT_CORE_NUM, UT_UB_SIZE);
+    gert::TilingContextPara para("FusedMulAddN",
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND}, // x3 dtype 与 x1 不一致
+                                 },
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 &g_compileInfo, UT_CORE_NUM, UT_UB_SIZE);
     ExecuteTestCase(para, ge::GRAPH_FAILED);
 }
 
@@ -491,9 +477,8 @@ TEST_F(FusedMulAddNTiling, dtype_to_tiling_key_mapping)
         const int64_t align = AlignOf(c.dtype);
         EXPECT_EQ(Field(info, IDX_TOTAL_NUM), 4096) << "dtype=" << c.name;
         EXPECT_EQ(Field(info, IDX_BLOCK_FORMER) % align, 0) << "dtype=" << c.name;
-        EXPECT_EQ(
-            Field(info, IDX_BLOCK_FORMER) * (Field(info, IDX_BLOCK_NUM) - 1) + Field(info, IDX_BLOCK_TAIL),
-            Field(info, IDX_TOTAL_NUM))
+        EXPECT_EQ(Field(info, IDX_BLOCK_FORMER) * (Field(info, IDX_BLOCK_NUM) - 1) + Field(info, IDX_BLOCK_TAIL),
+                  Field(info, IDX_TOTAL_NUM))
             << "dtype=" << c.name;
     }
 }
@@ -586,9 +571,8 @@ TEST_F(FusedMulAddNTiling, fp16_small_shape_capped_single_core)
     EXPECT_EQ(Field(info, IDX_UB_TAIL_FORMER), 1008);
     EXPECT_EQ(Field(info, IDX_UB_TAIL_TAIL), 1000);
     // 一致性：blockFormer*(blockNum-1) + blockTail == totalNum（单核：0 + 1000 == 1000）
-    EXPECT_EQ(
-        Field(info, IDX_BLOCK_FORMER) * (Field(info, IDX_BLOCK_NUM) - 1) + Field(info, IDX_BLOCK_TAIL),
-        Field(info, IDX_TOTAL_NUM));
+    EXPECT_EQ(Field(info, IDX_BLOCK_FORMER) * (Field(info, IDX_BLOCK_NUM) - 1) + Field(info, IDX_BLOCK_TAIL),
+              Field(info, IDX_TOTAL_NUM));
 }
 
 // ---- 用例 12：各 dtype 空 tensor（0 元素）-> 单核 0 循环，仅 TilingKey 不同 ----
@@ -638,17 +622,16 @@ TEST_F(FusedMulAddNTiling, unsupported_dtype_failed)
 // ---- 用例 14：x1/x2 shape 不一致 -> 校验失败路径（shapeX1 != shapeX2 -> GRAPH_FAILED）----
 TEST_F(FusedMulAddNTiling, x1_x2_shape_mismatch_failed)
 {
-    gert::TilingContextPara para(
-        "FusedMulAddN",
-        {
-            {{{8, 32}, {8, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},   // x1: 256 元素
-            {{{16, 32}, {16, 32}}, ge::DT_FLOAT, ge::FORMAT_ND}, // x2: 512 元素，与 x1 不一致
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{8, 32}, {8, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &g_compileInfo, UT_CORE_NUM, UT_UB_SIZE);
+    gert::TilingContextPara para("FusedMulAddN",
+                                 {
+                                     {{{8, 32}, {8, 32}}, ge::DT_FLOAT, ge::FORMAT_ND}, // x1: 256 元素
+                                     {{{16, 32}, {16, 32}}, ge::DT_FLOAT, ge::FORMAT_ND}, // x2: 512 元素，与 x1 不一致
+                                     {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{8, 32}, {8, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 &g_compileInfo, UT_CORE_NUM, UT_UB_SIZE);
     ExecuteTestCase(para, ge::GRAPH_FAILED);
 }
 
@@ -656,34 +639,32 @@ TEST_F(FusedMulAddNTiling, x1_x2_shape_mismatch_failed)
 // 用例 6 已覆盖 x3 dtype 不一致；此处覆盖 dtype 校验的 x1!=x2 这一条腿。
 TEST_F(FusedMulAddNTiling, x1_x2_dtype_mismatch_failed)
 {
-    gert::TilingContextPara para(
-        "FusedMulAddN",
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND}, // x2 dtype 与 x1 不一致
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &g_compileInfo, UT_CORE_NUM, UT_UB_SIZE);
+    gert::TilingContextPara para("FusedMulAddN",
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND}, // x2 dtype 与 x1 不一致
+                                     {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 &g_compileInfo, UT_CORE_NUM, UT_UB_SIZE);
     ExecuteTestCase(para, ge::GRAPH_FAILED);
 }
 
 // ---- 用例 16：y 与 x1 dtype 不一致 -> 校验失败路径（dtypeX1 != dtypeY -> GRAPH_FAILED）----
 TEST_F(FusedMulAddNTiling, y_dtype_mismatch_failed)
 {
-    gert::TilingContextPara para(
-        "FusedMulAddN",
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND}, // y dtype 与 x1 不一致
-        },
-        &g_compileInfo, UT_CORE_NUM, UT_UB_SIZE);
+    gert::TilingContextPara para("FusedMulAddN",
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                     {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                 },
+                                 {
+                                     {{{16, 16}, {16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND}, // y dtype 与 x1 不一致
+                                 },
+                                 &g_compileInfo, UT_CORE_NUM, UT_UB_SIZE);
     ExecuteTestCase(para, ge::GRAPH_FAILED);
 }
 
@@ -747,9 +728,8 @@ TEST_F(FusedMulAddNTiling, fp32_total_exact_multiple_of_core)
     EXPECT_EQ(Field(info, IDX_UB_TAIL_FORMER), 512);
     EXPECT_EQ(Field(info, IDX_UB_TAIL_TAIL), 512);
     // 切分自洽
-    EXPECT_EQ(
-        Field(info, IDX_BLOCK_FORMER) * (Field(info, IDX_BLOCK_NUM) - 1) + Field(info, IDX_BLOCK_TAIL),
-        Field(info, IDX_TOTAL_NUM));
+    EXPECT_EQ(Field(info, IDX_BLOCK_FORMER) * (Field(info, IDX_BLOCK_NUM) - 1) + Field(info, IDX_BLOCK_TAIL),
+              Field(info, IDX_TOTAL_NUM));
     ASSERT_EQ(info.workspaceSizes.size(), 1u);
     EXPECT_EQ(info.workspaceSizes[0], static_cast<int64_t>(UT_WORKSPACE));
 }
@@ -776,9 +756,8 @@ TEST_F(FusedMulAddNTiling, fp32_elems_less_than_core_partial_idle)
     EXPECT_EQ(Field(info, IDX_UB_FORMER), 64);
     EXPECT_EQ(Field(info, IDX_UB_LOOP_FORMER), 1);
     EXPECT_EQ(Field(info, IDX_UB_LOOP_TAIL), 1);
-    EXPECT_EQ(
-        Field(info, IDX_BLOCK_FORMER) * (Field(info, IDX_BLOCK_NUM) - 1) + Field(info, IDX_BLOCK_TAIL),
-        Field(info, IDX_TOTAL_NUM));
+    EXPECT_EQ(Field(info, IDX_BLOCK_FORMER) * (Field(info, IDX_BLOCK_NUM) - 1) + Field(info, IDX_BLOCK_TAIL),
+              Field(info, IDX_TOTAL_NUM));
 }
 
 // ---- 用例 22：单核（fp32 8 元素，64 核）-> blockNum=1 ----
@@ -823,9 +802,8 @@ TEST_F(FusedMulAddNTiling, fp32_forced_single_core)
     EXPECT_EQ(Field(info, IDX_UB_FORMER), 256);
     EXPECT_EQ(Field(info, IDX_UB_LOOP_FORMER), 1);
     EXPECT_EQ(Field(info, IDX_UB_LOOP_TAIL), 1);
-    EXPECT_EQ(
-        Field(info, IDX_BLOCK_FORMER) * (Field(info, IDX_BLOCK_NUM) - 1) + Field(info, IDX_BLOCK_TAIL),
-        Field(info, IDX_TOTAL_NUM));
+    EXPECT_EQ(Field(info, IDX_BLOCK_FORMER) * (Field(info, IDX_BLOCK_NUM) - 1) + Field(info, IDX_BLOCK_TAIL),
+              Field(info, IDX_TOTAL_NUM));
 }
 
 // ---- 用例 24：极小非对齐 shape（fp32 9 元素，64 核）+ 核数 cap → 单核，blockFormer 对齐到 16 ----
@@ -851,9 +829,8 @@ TEST_F(FusedMulAddNTiling, fp32_tail_tile_one_element)
     EXPECT_EQ(Field(info, IDX_UB_LOOP_TAIL), 1);
     EXPECT_EQ(Field(info, IDX_UB_TAIL_TAIL), 9);
     // 切分自洽（单核：0 + 9 == 9）
-    EXPECT_EQ(
-        Field(info, IDX_BLOCK_FORMER) * (Field(info, IDX_BLOCK_NUM) - 1) + Field(info, IDX_BLOCK_TAIL),
-        Field(info, IDX_TOTAL_NUM));
+    EXPECT_EQ(Field(info, IDX_BLOCK_FORMER) * (Field(info, IDX_BLOCK_NUM) - 1) + Field(info, IDX_BLOCK_TAIL),
+              Field(info, IDX_TOTAL_NUM));
 }
 
 // ---- 用例 25：workspace 恒为 WORKSPACE_SIZE(32)，与 dtype/shape 无关（逐元素无需大 workspace）----
@@ -964,10 +941,8 @@ TEST_F(FusedMulAddNTiling, core_cap_core_count_256x256)
         const char* name;
     };
     const Case cases[] = {
-        {ge::DT_FLOAT, TILING_KEY_FP32, 4, 16, "fp32"},
-        {ge::DT_FLOAT16, TILING_KEY_FP16, 2, 8, "fp16"},
-        {ge::DT_BF16, TILING_KEY_BF16, 2, 8, "bf16"},
-        {ge::DT_INT32, TILING_KEY_INT32, 4, 16, "int32"},
+        {ge::DT_FLOAT, TILING_KEY_FP32, 4, 16, "fp32"},  {ge::DT_FLOAT16, TILING_KEY_FP16, 2, 8, "fp16"},
+        {ge::DT_BF16, TILING_KEY_BF16, 2, 8, "bf16"},    {ge::DT_INT32, TILING_KEY_INT32, 4, 16, "int32"},
         {ge::DT_INT16, TILING_KEY_INT16, 2, 8, "int16"},
     };
     for (const auto& c : cases) {
@@ -1003,10 +978,8 @@ TEST_F(FusedMulAddNTiling, core_cap_large_shape_full_40core_4096x1024)
         const char* name;
     };
     const Case cases[] = {
-        {ge::DT_FLOAT, TILING_KEY_FP32, "fp32"},
-        {ge::DT_FLOAT16, TILING_KEY_FP16, "fp16"},
-        {ge::DT_BF16, TILING_KEY_BF16, "bf16"},
-        {ge::DT_INT32, TILING_KEY_INT32, "int32"},
+        {ge::DT_FLOAT, TILING_KEY_FP32, "fp32"},   {ge::DT_FLOAT16, TILING_KEY_FP16, "fp16"},
+        {ge::DT_BF16, TILING_KEY_BF16, "bf16"},    {ge::DT_INT32, TILING_KEY_INT32, "int32"},
         {ge::DT_INT16, TILING_KEY_INT16, "int16"},
     };
     for (const auto& c : cases) {

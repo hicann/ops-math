@@ -32,7 +32,7 @@ public:
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
 
-        // Ascend910B (arch32) configuration
+        // Ascend910B (arch22) configuration
         OpAICoreConfig aicoreConfig910B;
         aicoreConfig910B.DynamicCompileStaticFlag(true)
             .DynamicFormatFlag(false)

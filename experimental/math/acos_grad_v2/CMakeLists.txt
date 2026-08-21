@@ -13,13 +13,13 @@
 
 # 设置算子定义时支持的芯片类型：A2 训练/推理系列产品 (ascend910b)
 set(SUPPORT_COMPUTE_UNIT "ascend910b")
-# 设置每种芯片类型对应的 tiling 文件目录：A2 -> arch32
-set(SUPPORT_TILING_DIR "arch32")
+# 设置每种芯片类型对应的 tiling 文件目录：A2 -> arch22
+set(SUPPORT_TILING_DIR "arch22")
 add_all_modules_sources(OPTYPE acos_grad_v2 ACLNNTYPE aclnn_exclude
     COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT} TILING_DIR ${SUPPORT_TILING_DIR} DISABLE_IN_OPP TRUE)
 
-# 显式注册 kernel 入口（arch32 / Ascend910B）
+# 显式注册 kernel 入口（arch22 / Ascend910B）
 add_kernel_sources(
-    KERNEL_SRC arch32/acos_grad_v2.cpp
+    KERNEL_SRC arch22/acos_grad_v2.cpp
     COMPUTE_UNITS ascend910b
 )

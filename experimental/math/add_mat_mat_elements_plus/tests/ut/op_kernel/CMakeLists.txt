@@ -22,20 +22,20 @@ if (UT_TEST_ALL OR OP_KERNEL_UT)
             PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_kernel/add_mat_mat_elements_plus.cpp)
     endif()
 
-    # A2（ascend910b）使用 arch32 kernel + arch32 tiling
-    set(add_mat_mat_elements_plus_tiling_files_arch32
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/arch32/add_mat_mat_elements_plus_tiling_arch32.cpp
+    # A2（ascend910b）使用 arch22 kernel + arch22 tiling
+    set(add_mat_mat_elements_plus_tiling_files_arch22
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/arch22/add_mat_mat_elements_plus_tiling_arch22.cpp
         )
-    AddOpTestCase(add_mat_mat_elements_plus "ascend910b" "-DDTYPE_C=float" "${add_mat_mat_elements_plus_tiling_files_arch32}")
+    AddOpTestCase(add_mat_mat_elements_plus "ascend910b" "-DDTYPE_C=float" "${add_mat_mat_elements_plus_tiling_files_arch22}")
     if (TARGET add_mat_mat_elements_plus_Ascend910B1_cases_obj)
         target_sources(add_mat_mat_elements_plus_Ascend910B1_cases_obj
-            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_kernel/add_mat_mat_elements_plus_arch32.cpp)
+            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_kernel/add_mat_mat_elements_plus_arch22.cpp)
     endif()
 
-    # A3（ascend910_93）使用 arch32 kernel + arch32 tiling
-    AddOpTestCase(add_mat_mat_elements_plus "ascend910_93" "-DDTYPE_C=float" "${add_mat_mat_elements_plus_tiling_files_arch32}")
+    # A3（ascend910_93）使用 arch22 kernel + arch22 tiling
+    AddOpTestCase(add_mat_mat_elements_plus "ascend910_93" "-DDTYPE_C=float" "${add_mat_mat_elements_plus_tiling_files_arch22}")
     if (TARGET add_mat_mat_elements_plus_Ascend910_9391_cases_obj)
         target_sources(add_mat_mat_elements_plus_Ascend910_9391_cases_obj
-            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_kernel/add_mat_mat_elements_plus_arch32.cpp)
+            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_kernel/add_mat_mat_elements_plus_arch22.cpp)
     endif()
 endif()

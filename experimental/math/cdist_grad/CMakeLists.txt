@@ -9,12 +9,12 @@
 # ----------------------------------------------------------------------------
 
 # 我们正常的版权申明，下面是我们的备注
-# 
+#
 # NOTE: Portions of this code were AI-generated and have been
 # technically reviewed for functional accuracy and security
 
 # 设置算子定义时支持的芯片类型
 set(SUPPORT_COMPUTE_UNIT "ascend910_93" "ascend910b")
 # 设置每种芯片类型对应的tiling文件目录，即采用op_host目录下哪个文件夹下的tiling文件编译
-set(SUPPORT_TILING_DIR "arch32" "arch32")
+set(SUPPORT_TILING_DIR "arch22" "arch22")
 add_all_modules_sources(OPTYPE cdist_grad ACLNNTYPE aclnn_exclude COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT} TILING_DIR ${SUPPORT_TILING_DIR} DISABLE_IN_OPP TRUE)

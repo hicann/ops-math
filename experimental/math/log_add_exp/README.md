@@ -43,7 +43,7 @@ logaddexp(x, y) = max(x, y) + ln(1 + e^(-|x - y|))
 
 ### 目标芯片
 
-- Ascend 910B3（arch32 架构）
+- Ascend 910B3（arch22 架构）
 
 ## 使用方法
 
@@ -175,10 +175,10 @@ ops/log_add_exp/
 ├── op_host/                           # Host 侧实现
 │   ├── log_add_exp_def.cpp            # 算子定义（aclnn API 注册）
 │   ├── log_add_exp_infershape.cpp     # InferShape（广播规则实现）
-│   └── arch32/
+│   └── arch22/
 │       └── log_add_exp_tiling.cpp    # Tiling 实现（含广播分析）
 ├── op_kernel/                         # Device 侧实现
-│   └── arch32/
+│   └── arch22/
 │       └── log_add_exp.h             # Kernel 实现（核心计算逻辑）
 ├── tests/
 │   ├── st/                            # 系统测试

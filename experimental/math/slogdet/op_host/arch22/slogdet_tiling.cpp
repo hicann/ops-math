@@ -35,13 +35,13 @@
 
 namespace optiling {
 
-constexpr uint32_t BLOCK_SIZE = 32U;            // DataBlock 字节数（32B 对齐基本单位）
-constexpr uint64_t WS_SYS_SIZE = 16ULL * 1024U * 1024U;  // 16MB 系统 workspace（沿用 cholesky 线代算子约定）
-constexpr uint32_t UB_RESERVE = 8U * 1024U;     // UB 系统保留（约 8KB）
-constexpr uint32_t MEM_STRATEGY_FULL = 0U;      // 全驻留
-constexpr uint32_t MEM_STRATEGY_BLOCKED = 1U;   // 核内分块（large-n，U 常驻 GM workspace）
-constexpr uint32_t FULL_RESIDENT_FALLBACK = 256U;  // ResolveResidentMax 兜底上界（UB 信息异常时）
-constexpr uint32_t COL_BLOCK = 64U;             // BLOCKED 列块宽度（写入 tiling blockSize 占位字段，kernel 未消费）
+constexpr uint32_t BLOCK_SIZE = 32U;                    // DataBlock 字节数（32B 对齐基本单位）
+constexpr uint64_t WS_SYS_SIZE = 16ULL * 1024U * 1024U; // 16MB 系统 workspace（沿用 cholesky 线代算子约定）
+constexpr uint32_t UB_RESERVE = 8U * 1024U;             // UB 系统保留（约 8KB）
+constexpr uint32_t MEM_STRATEGY_FULL = 0U;              // 全驻留
+constexpr uint32_t MEM_STRATEGY_BLOCKED = 1U;           // 核内分块（large-n，U 常驻 GM workspace）
+constexpr uint32_t FULL_RESIDENT_FALLBACK = 256U;       // ResolveResidentMax 兜底上界（UB 信息异常时）
+constexpr uint32_t COL_BLOCK = 64U; // BLOCKED 列块宽度（写入 tiling blockSize 占位字段，kernel 未消费）
 // BLOCKED 列 gather 的 DataCopyPad blockCount = 子列长度 m=n-k（最大 ≈ n），uint16 取值范围 [1,4095]
 //   （asc-devkit DataCopyPad(ISASI).md 实测约束）。故 BLOCKED 路径安全 n 上界 = 4095。
 //   超出则 blockCount 静默越界（读错列长度）→ 必须 host 拒绝（MED-1）。文档 N 上界同步收窄至此值。
@@ -51,10 +51,7 @@ constexpr uint32_t SLOGDET_MAX_N = 4095U;
 constexpr double UB_MARGIN_RATIO = 0.95;
 
 // 32B 对齐后的字节数
-static inline uint64_t Align32(uint64_t bytes)
-{
-    return ((bytes + BLOCK_SIZE - 1U) / BLOCK_SIZE) * BLOCK_SIZE;
-}
+static inline uint64_t Align32(uint64_t bytes) { return ((bytes + BLOCK_SIZE - 1U) / BLOCK_SIZE) * BLOCK_SIZE; }
 
 // 由运行时 UB 容量推导单矩阵全驻留可行的最大 n（解 n*align(n*4,32) + 常量 buffer ≤ 可用 UB * 裕量系数）。
 // FULL 路径 buffer 估算（fp32）：uWork[n*align(n*4,32)] + col + absCol + diag(≈align(n*4,32) 三块)
@@ -65,16 +62,15 @@ static uint32_t ResolveResidentMax(uint64_t ubSize)
         return FULL_RESIDENT_FALLBACK;
     }
     // 预留裕量（LOW-3）：实际可用按 (ubSize-UB_RESERVE)*0.95 计，避免边界 n 处 UB 余量过薄。
-    const uint64_t avail = static_cast<uint64_t>(
-        static_cast<double>(ubSize - UB_RESERVE) * UB_MARGIN_RATIO);
+    const uint64_t avail = static_cast<uint64_t>(static_cast<double>(ubSize - UB_RESERVE) * UB_MARGIN_RATIO);
     // 线性扫描求满足容量约束的最大 n（n 通常 <= 数百，开销可忽略）
     uint32_t best = 1U;
     for (uint32_t n = 1U; n <= 4096U; ++n) {
         const uint64_t rowBytes = Align32(static_cast<uint64_t>(n) * sizeof(float));
-        const uint64_t total = static_cast<uint64_t>(n) * rowBytes  // uWork
-                               + 4U * rowBytes                       // col / absCol / diag / 备用
-                               + BLOCK_SIZE                          // sharedTmp
-                               + 2U * BLOCK_SIZE;                    // 结果标量 buffer
+        const uint64_t total = static_cast<uint64_t>(n) * rowBytes // uWork
+                               + 4U * rowBytes                     // col / absCol / diag / 备用
+                               + BLOCK_SIZE                        // sharedTmp
+                               + 2U * BLOCK_SIZE;                  // 结果标量 buffer
         if (total <= avail) {
             best = n;
         } else {
@@ -93,7 +89,7 @@ static uint32_t ResolveResidentMax(uint64_t ubSize)
 //   epsFloor：取极小绝对值（1e-30）作下限，仅在 maxPiv 极小时兜底，相对项为主驱动。
 static float ComputeEps([[maybe_unused]] uint32_t matSizeN)
 {
-    constexpr float SLOGDET_EPS_FLOOR = 1e-30f;  // 绝对下限 floor；相对阈值 n·FLT_EPS·maxPiv 由 kernel 主导
+    constexpr float SLOGDET_EPS_FLOOR = 1e-30f; // 绝对下限 floor；相对阈值 n·FLT_EPS·maxPiv 由 kernel 主导
     return SLOGDET_EPS_FLOOR;
 }
 
@@ -138,7 +134,8 @@ static ge::graphStatus GetSlogdetShapeInfo(gert::TilingContext* context, Slogdet
     info.matSizeN = static_cast<uint32_t>(shape.GetDim(rank - 1));
     OP_CHECK_IF(info.matSizeN == 0U, OP_LOGE(context, "matSizeN is 0"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(info.matSizeN > SLOGDET_MAX_N,
-                OP_LOGE(context, "matSizeN=%u exceeds supported upper bound %u (BLOCKED DataCopyPad "
+                OP_LOGE(context,
+                        "matSizeN=%u exceeds supported upper bound %u (BLOCKED DataCopyPad "
                         "blockCount uint16 limit); split or upgrade gather to support larger n.",
                         info.matSizeN, SLOGDET_MAX_N),
                 return ge::GRAPH_FAILED);
@@ -159,12 +156,12 @@ static SlogdetStrategyInfo ResolveSlogdetStrategy(const SlogdetPlatformInfo& pla
     if (shape.matSizeN > residentMax) {
         info.memStrategy = MEM_STRATEGY_BLOCKED;
         info.blockSize = COL_BLOCK;
-        OP_LOGI(context, "Slogdet: n=%u > residentMax=%u → BLOCKED (U-resident GM workspace).",
-                shape.matSizeN, residentMax);
+        OP_LOGI(context, "Slogdet: n=%u > residentMax=%u → BLOCKED (U-resident GM workspace).", shape.matSizeN,
+                residentMax);
     }
-    info.needCoreNum = (static_cast<uint64_t>(platform.coreNum) < shape.matrixNumCount)
-                           ? static_cast<uint32_t>(platform.coreNum)
-                           : static_cast<uint32_t>(shape.matrixNumCount);
+    info.needCoreNum = (static_cast<uint64_t>(platform.coreNum) < shape.matrixNumCount) ?
+                           static_cast<uint32_t>(platform.coreNum) :
+                           static_cast<uint32_t>(shape.matrixNumCount);
     return info;
 }
 
@@ -250,8 +247,6 @@ static ge::graphStatus TilingParseForSlogdet([[maybe_unused]] gert::TilingParseC
 
 struct SlogdetCompileInfo {};
 
-IMPL_OP_OPTILING(Slogdet)
-    .Tiling(SlogdetTilingFunc)
-    .TilingParse<SlogdetCompileInfo>(TilingParseForSlogdet);
+IMPL_OP_OPTILING(Slogdet).Tiling(SlogdetTilingFunc).TilingParse<SlogdetCompileInfo>(TilingParseForSlogdet);
 
 } // namespace optiling

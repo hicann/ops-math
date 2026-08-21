@@ -13,8 +13,8 @@
  * technically reviewed for functional accuracy and security
  */
 /*!
- * \file complex_v3_arch32.cpp
- * \brief ComplexV3 operator kernel entry (arch32)
+ * \file complex_v3_arch22.cpp
+ * \brief ComplexV3 operator kernel entry (arch22)
  *
  * Template parameters (matching complex_v3_tiling_key.h ASCENDC_TPL_ARGS_DECL):
  *   - D_T: Data type, mapped from ASCENDC_TPL_DATATYPE_DECL

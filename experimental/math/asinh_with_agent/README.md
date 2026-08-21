@@ -20,7 +20,7 @@ y = asinh(x) = ln(x + sqrt(x^2 + 1))
 - **高效实现**：使用 Ascend C 高阶 API，性能优化充分
 - **完整覆盖**：4 路 TilingKey，支持单/双缓冲策略，覆盖小/大数据量场景
 - **精度达标**：float16 atol/rtol=0.001，float32 atol/rtol=0.0001，与 PyTorch torch.asinh 对齐
-- **多架构支持**：Ascend910B（arch32）、Ascend950DT/PR（arch35）
+- **多架构支持**：Ascend910B（arch22）、Ascend950DT/PR（arch35）
 
 ---
 
@@ -46,7 +46,7 @@ cd ops/asinh_with_agent
 #### 第二步：执行编译
 
 ```bash
-# 编译 arch32（Ascend910B）
+# 编译 arch22（Ascend910B）
 bash build.sh --soc=ascend910b
 
 # 编译 arch35（Ascend950，可选）
@@ -184,7 +184,7 @@ int main() {
 | 项目 | 内容 |
 |------|------|
 | 芯片型号 | Ascend910B3 |
-| 编译目标 | arch32 (DAV_2201) |
+| 编译目标 | arch22 (DAV_2201) |
 | 测试框架 | Native C/C++ ACLNN |
 | 测试数据 | 随机 float32 数据 |
 
@@ -278,7 +278,7 @@ Tiling 阶段自动根据输入形状和数据类型选择合适的 TK。
 
 ### Q4: 算子是否支持 Ascend950?
 
-**A**：代码已支持（arch35/DAV_3510），但目前仅在 Ascend910B 上完成 NPU 验证。Ascend950 的 NPU 验证待 950 设备可用后进行。编译和功能逻辑与 arch32 一致。
+**A**：代码已支持（arch35/DAV_3510），但目前仅在 Ascend910B 上完成 NPU 验证。Ascend950 的 NPU 验证待 950 设备可用后进行。编译和功能逻辑与 arch22 一致。
 
 ### Q5: 如何查看算子运行的 kernel 日志？
 
@@ -346,7 +346,7 @@ export ASCEND_SLOG_PRINT_TO_STDOUT=1
 | **算子版本** | v1.0 |
 | **发布日期** | 2026-03-28 |
 | **开发工具** | Ascend C SDK (cann-9.0.0+) |
-| **支持芯片** | Ascend910B (arch32), Ascend950DT/PR (arch35) |
+| **支持芯片** | Ascend910B (arch22), Ascend950DT/PR (arch35) |
 | **状态** | ✅ 生产就绪 |
 
 ---

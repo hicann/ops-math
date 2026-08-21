@@ -15,8 +15,8 @@
  */
 
 /*!
- * \file asinh_v2_tiling_arch32.cpp
- * \brief AsinhV2 Tiling 实现（arch32 架构）
+ * \file asinh_v2_tiling_arch22.cpp
+ * \brief AsinhV2 Tiling 实现（arch22 架构）
  *
  * Tiling 策略：
  * 1. 多核切分：将总元素按 AI Core 数量均分（CeilDiv）
@@ -80,9 +80,8 @@ static ge::graphStatus AsinhV2TilingFunc(gert::TilingContext* context)
     // 1. 获取平台信息
     uint64_t ubSize;
     int64_t coreNum;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     // 2. 获取输入 Shape 和 dtype
     auto inputShape = context->GetInputShape(0);
@@ -95,14 +94,12 @@ static ge::graphStatus AsinhV2TilingFunc(gert::TilingContext* context)
     ge::DataType dataType = inputDesc->GetDataType();
 
     // 只接受 float16 / float32（其他类型由 op_api 层转换后传入）
-    OP_CHECK_IF(
-        dataType != ge::DT_FLOAT16 && dataType != ge::DT_FLOAT,
-        OP_LOGE(context, "AsinhV2: unsupported dtype %d", static_cast<int>(dataType)), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(dataType != ge::DT_FLOAT16 && dataType != ge::DT_FLOAT,
+                OP_LOGE(context, "AsinhV2: unsupported dtype %d", static_cast<int>(dataType)), return ge::GRAPH_FAILED);
 
     // 3. 获取 Workspace 大小
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     // 4. 计算 tmpBufSize（Asinh sharedTmpBuffer）
     // 不依赖 GetAsinhMaxMinTmpSize（adv_api/math/asinh_tiling.h 在本工程 include 路径中不可用）。
@@ -110,8 +107,8 @@ static ge::graphStatus AsinhV2TilingFunc(gert::TilingContext* context)
     // 这里保守取 ubSize / 4（≈48KB，192KB UB 下），满足任意 tile 尺寸的需求。
     uint32_t typeSize = (dataType == ge::DT_FLOAT16) ? 2U : 4U;
     int64_t tmpBufSize = static_cast<int64_t>(ubSize / 4);
-    OP_CHECK_IF(
-        tmpBufSize <= 0, OP_LOGE(context, "AsinhV2: tmpBufSize is invalid: %ld", tmpBufSize), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(tmpBufSize <= 0, OP_LOGE(context, "AsinhV2: tmpBufSize is invalid: %ld", tmpBufSize),
+                return ge::GRAPH_FAILED);
 
     // 5. 计算 ubFactor
     // UB 布局：input(BUFFER_NUM份) + output(BUFFER_NUM份) + tmpBuf(1份)
@@ -137,9 +134,8 @@ static ge::graphStatus AsinhV2TilingFunc(gert::TilingContext* context)
     // 7. 写入 TilingData
     auto* tiling = context->GetTilingData<AsinhV2TilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(AsinhV2TilingData), 0, sizeof(AsinhV2TilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(AsinhV2TilingData), 0, sizeof(AsinhV2TilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     tiling->totalNum = totalNum;
     tiling->blockFactor = blockFactor;

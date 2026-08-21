@@ -9,8 +9,8 @@
  */
 
 /*!
- * \file test_add_mat_mat_elements_plus_apt_arch32.cpp
- * \brief AddMatMatElementsPlus Kernel APT 测试（arch32，Ascend910B / Ascend910_93）
+ * \file test_add_mat_mat_elements_plus_apt_arch22.cpp
+ * \brief AddMatMatElementsPlus Kernel APT 测试（arch22，Ascend910B / Ascend910_93）
  */
 
 #include <cstdint>
@@ -21,7 +21,7 @@
 #include "tikicpulib.h"
 #endif
 
-#include "../../../op_kernel/arch32/add_mat_mat_elements_plus_tiling_data_arch32.h"
+#include "../../../op_kernel/arch22/add_mat_mat_elements_plus_tiling_data_arch22.h"
 
 using namespace std;
 
@@ -29,13 +29,13 @@ extern "C" __global__ __aicore__ void add_mat_mat_elements_plus(GM_ADDR c, GM_AD
                                                                 GM_ADDR alpha, GM_ADDR cOut, GM_ADDR workspace,
                                                                 GM_ADDR tiling);
 
-class AddMatMatElementsPlusArch32KernelTest : public testing::Test {
+class AddMatMatElementsPlusArch22KernelTest : public testing::Test {
 protected:
-    static void SetUpTestCase() { cout << "AddMatMatElementsPlusArch32KernelTest SetUp" << endl; }
-    static void TearDownTestCase() { cout << "AddMatMatElementsPlusArch32KernelTest TearDown" << endl; }
+    static void SetUpTestCase() { cout << "AddMatMatElementsPlusArch22KernelTest SetUp" << endl; }
+    static void TearDownTestCase() { cout << "AddMatMatElementsPlusArch22KernelTest TearDown" << endl; }
 };
 
-TEST_F(AddMatMatElementsPlusArch32KernelTest, test_fp32_basic)
+TEST_F(AddMatMatElementsPlusArch22KernelTest, test_fp32_basic)
 {
     constexpr size_t numElements = 1024;
     size_t dataSize = numElements * sizeof(float);
@@ -72,7 +72,7 @@ TEST_F(AddMatMatElementsPlusArch32KernelTest, test_fp32_basic)
     AscendC::GmFree(tiling);
 }
 
-TEST_F(AddMatMatElementsPlusArch32KernelTest, test_fp32_large)
+TEST_F(AddMatMatElementsPlusArch22KernelTest, test_fp32_large)
 {
     constexpr size_t numElements = 8192;
     size_t dataSize = numElements * sizeof(float);

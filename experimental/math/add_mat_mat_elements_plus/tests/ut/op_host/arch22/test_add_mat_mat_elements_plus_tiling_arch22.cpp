@@ -9,15 +9,15 @@
  */
 
 /*!
- * \file test_add_mat_mat_elements_plus_tiling_arch32.cpp
- * \brief AddMatMatElementsPlus Tiling 单元测试（arch32，Ascend910B / Ascend910_93）
+ * \file test_add_mat_mat_elements_plus_tiling_arch22.cpp
+ * \brief AddMatMatElementsPlus Tiling 单元测试（arch22，Ascend910B / Ascend910_93）
  */
 
 #include <iostream>
 #include <gtest/gtest.h>
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
-#include "../../../../op_host/arch32/add_mat_mat_elements_plus_tiling_arch32.h"
+#include "../../../../op_host/arch22/add_mat_mat_elements_plus_tiling_arch22.h"
 
 using namespace std;
 using namespace ge;
@@ -29,14 +29,14 @@ struct AddMatMatElementsPlusCompileInfo {};
 
 // 输入顺序与 op_def / proto.h 一致：c, a, b, beta, alpha
 // beta/alpha 为 1-element 标量 tensor
-class AddMatMatElementsPlusArch32TilingTest : public testing::Test {
+class AddMatMatElementsPlusArch22TilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase() { std::cout << "AddMatMatElementsPlusArch32TilingTest SetUp" << std::endl; }
+    static void SetUpTestCase() { std::cout << "AddMatMatElementsPlusArch22TilingTest SetUp" << std::endl; }
 
-    static void TearDownTestCase() { std::cout << "AddMatMatElementsPlusArch32TilingTest TearDown" << std::endl; }
+    static void TearDownTestCase() { std::cout << "AddMatMatElementsPlusArch22TilingTest TearDown" << std::endl; }
 };
 
-TEST_F(AddMatMatElementsPlusArch32TilingTest, add_mat_mat_elements_plus_tiling_fp32_basic)
+TEST_F(AddMatMatElementsPlusArch22TilingTest, add_mat_mat_elements_plus_tiling_fp32_basic)
 {
     gert::StorageShape shape = {{32, 32}, {32, 32}};
     gert::StorageShape scalarShape = {{1}, {1}};
@@ -55,7 +55,7 @@ TEST_F(AddMatMatElementsPlusArch32TilingTest, add_mat_mat_elements_plus_tiling_f
     EXPECT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
 }
 
-TEST_F(AddMatMatElementsPlusArch32TilingTest, add_mat_mat_elements_plus_tiling_fp16_basic)
+TEST_F(AddMatMatElementsPlusArch22TilingTest, add_mat_mat_elements_plus_tiling_fp16_basic)
 {
     gert::StorageShape shape = {{16, 64}, {16, 64}};
     gert::StorageShape scalarShape = {{1}, {1}};
@@ -74,7 +74,7 @@ TEST_F(AddMatMatElementsPlusArch32TilingTest, add_mat_mat_elements_plus_tiling_f
     EXPECT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
 }
 
-TEST_F(AddMatMatElementsPlusArch32TilingTest, add_mat_mat_elements_plus_tiling_bf16_basic)
+TEST_F(AddMatMatElementsPlusArch22TilingTest, add_mat_mat_elements_plus_tiling_bf16_basic)
 {
     gert::StorageShape shape = {{8, 128}, {8, 128}};
     gert::StorageShape scalarShape = {{1}, {1}};
@@ -93,7 +93,7 @@ TEST_F(AddMatMatElementsPlusArch32TilingTest, add_mat_mat_elements_plus_tiling_b
     EXPECT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
 }
 
-TEST_F(AddMatMatElementsPlusArch32TilingTest, add_mat_mat_elements_plus_tiling_fp32_large)
+TEST_F(AddMatMatElementsPlusArch22TilingTest, add_mat_mat_elements_plus_tiling_fp32_large)
 {
     gert::StorageShape shape = {{1024, 1024}, {1024, 1024}};
     gert::StorageShape scalarShape = {{1}, {1}};
@@ -112,9 +112,9 @@ TEST_F(AddMatMatElementsPlusArch32TilingTest, add_mat_mat_elements_plus_tiling_f
     EXPECT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
 }
 
-TEST_F(AddMatMatElementsPlusArch32TilingTest, add_mat_mat_elements_plus_tiling_fp16_large)
+TEST_F(AddMatMatElementsPlusArch22TilingTest, add_mat_mat_elements_plus_tiling_fp16_large)
 {
-    // arch32 优化：tileLength=4096 验证大 tile 场景
+    // arch22 优化：tileLength=4096 验证大 tile 场景
     gert::StorageShape shape = {{2048, 2048}, {2048, 2048}};
     gert::StorageShape scalarShape = {{1}, {1}};
 

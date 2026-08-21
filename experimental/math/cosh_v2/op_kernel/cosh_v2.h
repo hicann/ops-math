@@ -15,7 +15,7 @@
 
 /**
  * \file cosh_v2.h
- * \brief CoshV2 operator kernel class definition (arch32 / Ascend910B)
+ * \brief CoshV2 operator kernel class definition (arch22 / Ascend910B)
  *
  * Computes: cosh(x) = exp(|x| - ln2) + exp(-|x|) / 2
  *
