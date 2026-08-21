@@ -23,6 +23,8 @@ function(gen_opbuild_target)
   target_link_libraries(gen_op_host_${OPBUILD_PREFIX} PRIVATE $<BUILD_INTERFACE:intf_pub_cxx17> exe_graph register
           c_sec)
   target_compile_options(gen_op_host_${OPBUILD_PREFIX} PRIVATE -fno-common)
+  # op def 源文件可能需要引用仓库内公共头文件（如 common/inc/op_host/*.h）
+  target_include_directories(gen_op_host_${OPBUILD_PREFIX} PRIVATE ${OPS_MATH_DIR} ${OPS_MATH_COMMON_INC})
   string(REPLACE ";" "\;" OPS_PRODUCT_NAME "${ASCEND_COMPUTE_UNIT}")
 
 
