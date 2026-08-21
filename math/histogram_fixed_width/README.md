@@ -24,6 +24,7 @@
 | range　| 输入　　　　　 | 形状为[2]的张量，包含[min,max]。 | FLOAT、FLOAT16、INT32、INT64 | ND　　　 |
 | nbins　| 输入　　　　　 | 标量张量，直方图区间数量。　　　　　 | INT32　　　　　　　　　　　　| ND　　　 |
 | y　　　| 输出　　　　　 | 直方图结果，形状为[nbins]。　　　　 | INT32　　　　　　　　　　　　| ND　　　 |
+|dtype   | 属性           |预留属性，默认值为3                 | INT64                         |-|
 
 ## 约束说明
 
