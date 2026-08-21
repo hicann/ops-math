@@ -48,7 +48,7 @@ private:
     __aicore__ inline void ScatterKeysGlobal(LocalTensor<XType> xInputValueLocal,
                                              LocalTensor<uint32_t> sortedIndexLocal,
                                              LocalTensor<IndexType> xInputIndexLocal,
-                                             LocalTensor<uint8_t> inputX8BitValue,
+                                             LocalTensor<uint8_t> sortedValueLocal,
                                              LocalTensor<uint16_t> blockExcusiveSum,
                                              LocalTensor<XRangeType> blockDataInGlobalPos,
                                              LocalTensor<uint32_t> blockHistFlag, LocalTensor<uint16_t> blockHist,
@@ -265,8 +265,9 @@ __aicore__ inline void RadixSortWithIndexMultiBlock<XType, UnsignedType, IsDesce
             AscendC::LocalTensor<uint8_t> sortedValueLocal = this->outValueQueue_.template AllocTensor<uint8_t>();
             AscendC::Sort<uint8_t, false, sortConfigMuti>(sortedValueLocal, sortedValueIndexLocal, inputX8Ub,
                                                           shareTmpBuffer, static_cast<uint32_t>(currTileSize));
-            this->outValueQueue_.template FreeTensor(sortedValueLocal);
+            this->outValueQueue_.template EnQue<uint8_t>(sortedValueLocal);
             this->outIdxQueue_.template EnQue<uint32_t>(sortedValueIndexLocal);
+            this->inputB8Que_.template FreeTensor(inputX8Ub);
             AscendC::LocalTensor<uint32_t> ubFlagTensor = this->blockUbFlagQue_.template AllocTensor<uint32_t>();
             // not first tile
             LocalTensor<XRangeType> blockHistFlagUb1 = this->blockHistFlagUbQue_.template AllocTensor<XRangeType>();
@@ -283,17 +284,18 @@ __aicore__ inline void RadixSortWithIndexMultiBlock<XType, UnsignedType, IsDesce
             }
             this->blockHistFlagUbQue_.template FreeTensor(blockHistFlagUb1);
             sortedValueIndexLocal = this->outIdxQueue_.template DeQue<uint32_t>();
+            sortedValueLocal = this->outValueQueue_.template DeQue<uint8_t>();
             AscendC::LocalTensor<XRangeType> blockDataInGlobalPos = this->blockUbFlagQue_
                                                                         .template AllocTensor<XRangeType>();
             blockExcusiveUb = this->blockExcusiveInQue_.template DeQue<uint16_t>();
             LocalTensor<uint32_t> blockHistFlagUb2 = this->blockHistFlagUbQue_.template AllocTensor<uint32_t>();
-            ScatterKeysGlobal(xLocal, sortedValueIndexLocal, xIndexLocal, inputX8Ub, blockExcusiveUb,
+            ScatterKeysGlobal(xLocal, sortedValueIndexLocal, xIndexLocal, sortedValueLocal, blockExcusiveUb,
                               blockDataInGlobalPos, blockHistFlagUb2, blockHistUb, sortRound, tileDataStart,
                               currTileSize);
             inQueueIndex_.template FreeTensor(xIndexLocal);
             this->blockHistFlagUbQue_.template FreeTensor(blockHistFlagUb2);
             this->inQueueX_.template FreeTensor(xLocal);
-            this->inputB8Que_.template FreeTensor(inputX8Ub);
+            this->outValueQueue_.template FreeTensor(sortedValueLocal);
             this->blockHistInQue_.template FreeTensor(blockHistUb);
             this->blockUbFlagQue_.template FreeTensor(blockDataInGlobalPos);
             this->blockExcusiveInQue_.template FreeTensor(blockExcusiveUb);
@@ -313,7 +315,7 @@ __simt_vf__ LAUNCH_BOUND(THREAD_DIM_NUM) __aicore__
                             __ubuf__ XRangeType* blockDataInGlobalPosAddr,  // 位置信息
                             __ubuf__ uint32_t* sortedIndexLocalAddr,        // 8bit排序后的idx
                             __ubuf__ IndexType* xInputIndexLocalAddr,       // 8bit在workspace的idx
-                            __ubuf__ uint8_t* inputX8BitValueAddr,          // 8bit在workspace的value
+                            __ubuf__ uint8_t* sortedValueLocalAddr,         // 8bit排序后的value
                             __ubuf__ XType* xInputValueLocalAddr,           // tile块的X值
                             __ubuf__ XRangeType* blockHistFlagAddr,         // blockHistFlag_(适配int64_t)
                             __ubuf__ uint16_t* blockHistAddr,               // blockHist_, 当前tile块直方图统计
@@ -349,7 +351,7 @@ __simt_vf__ LAUNCH_BOUND(THREAD_DIM_NUM) __aicore__
         XRangeType localDataIndex = static_cast<XRangeType>(sortedIndexLocalAddr[i]);
         // blockDataInGlobalPos stand for one data in globa pos
         // i stand for data in now block pos
-        XRangeType dataFinalGlobalPos = blockDataInGlobalPosAddr[inputX8BitValueAddr[localDataIndex]] + i;
+        XRangeType dataFinalGlobalPos = blockDataInGlobalPosAddr[sortedValueLocalAddr[i]] + i;
         // store to gm
         inputXDoubleBufferAddr[dataFinalGlobalPos + outputXUnsortedAxisOffset] = xInputValueLocalAddr[localDataIndex];
         indexDoubleBufferGmAddr[dataFinalGlobalPos + outputXUnsortedAxisOffset] = xInputIndexLocalAddr[localDataIndex];
@@ -360,7 +362,7 @@ template <typename XType, typename UnsignedType, bool IsDescend, typename XRange
 __aicore__ inline void
 RadixSortWithIndexMultiBlock<XType, UnsignedType, IsDescend, XRangeType, IndexType>::ScatterKeysGlobal(
     LocalTensor<XType> xInputValueLocal, LocalTensor<uint32_t> sortedIndexLocal,
-    LocalTensor<IndexType> xInputIndexLocal, LocalTensor<uint8_t> inputX8BitValue,
+    LocalTensor<IndexType> xInputIndexLocal, LocalTensor<uint8_t> sortedValueLocal,
     LocalTensor<uint16_t> blockExcusiveSum, LocalTensor<XRangeType> blockDataInGlobalPos,
     LocalTensor<uint32_t> blockHistFlag, LocalTensor<uint16_t> blockHist, uint32_t sortRound, XRangeType tileDataStart,
     uint32_t cureTileSize)
@@ -374,7 +376,7 @@ RadixSortWithIndexMultiBlock<XType, UnsignedType, IsDescend, XRangeType, IndexTy
         dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize, outputXUnsortedAxisOffset, unSortIdOffset,
         (__ubuf__ uint16_t*)(blockExcusiveSum.GetPhyAddr()), (__gm__ XRangeType*)(this->excusiveBinsGmWk_.GetPhyAddr()),
         (__ubuf__ XRangeType*)(blockDataInGlobalPos.GetPhyAddr()), (__ubuf__ uint32_t*)(sortedIndexLocal.GetPhyAddr()),
-        (__ubuf__ IndexType*)(xInputIndexLocal.GetPhyAddr()), (__ubuf__ uint8_t*)(inputX8BitValue.GetPhyAddr()),
+        (__ubuf__ IndexType*)(xInputIndexLocal.GetPhyAddr()), (__ubuf__ uint8_t*)(sortedValueLocal.GetPhyAddr()),
         (__ubuf__ XType*)(xInputValueLocal.GetPhyAddr()), (__ubuf__ XRangeType*)(blockHistFlag.GetPhyAddr()),
         (__ubuf__ uint16_t*)(blockHist.GetPhyAddr()), (__gm__ IndexType*)(outIdxT2.GetPhyAddr()),
         (__gm__ XType*)(this->inputXDbGm_.Alternate().GetPhyAddr()));

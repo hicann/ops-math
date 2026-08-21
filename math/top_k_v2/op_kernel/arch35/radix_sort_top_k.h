@@ -497,6 +497,8 @@ __aicore__ inline void RadixSortTopK<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_
                         CopyDataIn(inputX[inputXUnsortedAxisOffset], tileOffset, currTileNum);
                     } else {
                         // reuse buffer
+                        inQueueX_.FreeTensor(xLocal);
+                        xLocal = inQueueX_.AllocTensor<T>();
                         CopyDataInWithReuseBuffer(inputX[inputXUnsortedAxisOffset], xLocal, tileOffset, currTileNum);
                     }
                     xLocal = inQueueX_.DeQue<T>();
@@ -701,6 +703,10 @@ __aicore__ inline void RadixSortTopK<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_
             }
             int32_t currTileNum = TopkGetMin<int32_t>(remainTileDataNum, static_cast<int32_t>(numTileData_));
             // copy gm to ub
+            if (tileId != startTileId) {
+                inQueueX_.FreeTensor(xLocal);
+                xLocal = inQueueX_.AllocTensor<T>();
+            }
             CopyDataInWithReuseBuffer(inputX[inputXUnsortedAxisOffset], xLocal, tileOffset, currTileNum);
             xLocal = inQueueX_.DeQue<T>();
             StoreFinalAnswer2Gm(xLocal, tileId, tileCount, oneRowTopKValueOffset);
