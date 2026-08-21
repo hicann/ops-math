@@ -37,7 +37,7 @@ namespace ge {
 
 * @attention Constraints:
 * @li "axis" must be within the rank of the input tensor.
-* @li "tiles" must be greater than 1.
+* @li "tiles" must be greater than 0.
 * @par Third-party framework compatibility
 * Compatible with the Caffe operator Tile.
 */
