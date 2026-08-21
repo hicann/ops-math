@@ -9,105 +9,132 @@
  */
 
 #include <iostream>
+#include <memory>
+#include <type_traits>
 #include <vector>
 #include "acl/acl.h"
 #include "aclnnop/aclnn_sinh.h"
 
 #define CHECK_RET(cond, return_expr) \
-  do {                               \
-    if (!(cond)) {                   \
-      return_expr;                   \
-    }                                \
-  } while (0)
+    do {                             \
+        if (!(cond)) {               \
+            return_expr;             \
+        }                            \
+    } while (0)
 
-#define LOG_PRINT(message, ...)     \
-  do {                              \
-    printf(message, ##__VA_ARGS__); \
-  } while (0)
+#define LOG_PRINT(message, ...)         \
+    do {                                \
+        printf(message, ##__VA_ARGS__); \
+    } while (0)
 
-int64_t GetShapeSize(const std::vector<int64_t>& shape) {
-  int64_t shapeSize = 1;
-  for (auto i : shape) {
-    shapeSize *= i;
-  }
-  return shapeSize;
+int64_t GetShapeSize(const std::vector<int64_t>& shape)
+{
+    int64_t shapeSize = 1;
+    for (auto i : shape) {
+        shapeSize *= i;
+    }
+    return shapeSize;
 }
 
-int Init(int32_t deviceId, aclrtStream* stream) {
-  // 固定写法，资源初始化
-  auto ret = aclInit(nullptr);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclInit failed. ERROR: %d\n", ret); return ret);
-  ret = aclrtSetDevice(deviceId);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSetDevice failed. ERROR: %d\n", ret); return ret);
-  ret = aclrtCreateStream(stream);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtCreateStream failed. ERROR: %d\n", ret); return ret);
-  return 0;
+using StreamPtr = std::unique_ptr<std::remove_pointer<aclrtStream>::type, decltype(&aclrtDestroyStream)>;
+using DeviceMemPtr = std::unique_ptr<void, decltype(&aclrtFree)>;
+using TensorPtr = std::unique_ptr<aclTensor, decltype(&aclDestroyTensor)>;
+
+int Init(int32_t deviceId, StreamPtr& stream, bool& initialized, bool& deviceSet)
+{
+    // 固定写法，资源初始化
+    auto ret = aclInit(nullptr);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclInit failed. ERROR: %d\n", ret); return ret);
+    initialized = true;
+    ret = aclrtSetDevice(deviceId);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSetDevice failed. ERROR: %d\n", ret); return ret);
+    deviceSet = true;
+    aclrtStream rawStream = nullptr;
+    ret = aclrtCreateStream(&rawStream);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtCreateStream failed. ERROR: %d\n", ret); return ret);
+    stream.reset(rawStream);
+    return 0;
 }
 
 template <typename T>
-int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr,
-                    aclDataType dataType, aclTensor** tensor) {
-  auto size = GetShapeSize(shape) * sizeof(T);
-  // 调用aclrtMalloc申请device侧内存
-  auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMalloc failed. ERROR: %d\n", ret); return ret);
-  // 调用aclrtMemcpy将host侧数据拷贝到device侧内存上
-  ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
+int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape, aclDataType dataType,
+                    DeviceMemPtr& deviceAddr, TensorPtr& tensor)
+{
+    auto size = GetShapeSize(shape) * sizeof(T);
+    // 调用aclrtMalloc申请device侧内存
+    void* rawDeviceAddr = nullptr;
+    auto ret = aclrtMalloc(&rawDeviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMalloc failed. ERROR: %d\n", ret); return ret);
+    deviceAddr.reset(rawDeviceAddr);
+    // 调用aclrtMemcpy将host侧数据拷贝到device侧内存上
+    ret = aclrtMemcpy(deviceAddr.get(), size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
 
-  // 计算连续tensor的strides
-  std::vector<int64_t> strides(shape.size(), 1);
-  for (int64_t i = shape.size() - 2; i >= 0; i--) {
-    strides[i] = shape[i + 1] * strides[i + 1];
-  }
+    // 计算连续tensor的strides
+    std::vector<int64_t> strides(shape.size(), 1);
+    for (int64_t i = shape.size() - 2; i >= 0; i--) {
+        strides[i] = shape[i + 1] * strides[i + 1];
+    }
 
-  // 调用aclCreateTensor接口创建aclTensor
-  *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND,
-                            shape.data(), shape.size(), *deviceAddr);
-  return 0;
+    // 调用aclCreateTensor接口创建aclTensor
+    aclTensor* rawTensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0,
+                                           aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), deviceAddr.get());
+    CHECK_RET(rawTensor != nullptr, LOG_PRINT("aclCreateTensor failed.\n"); return ACL_ERROR_FAILURE);
+    tensor.reset(rawTensor);
+    return 0;
 }
 
-int ExecuteSinh(aclTensor* self, aclTensor* out, aclrtStream stream) {
+int ExecuteSinh(aclTensor* self, aclTensor* out, aclrtStream stream)
+{
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
     int ret = aclnnSinhGetWorkspaceSize(self, out, &workspaceSize, &executor);
-    if (ret != ACL_SUCCESS) return ret;
+    if (ret != ACL_SUCCESS)
+        return ret;
 
-    void* workspaceAddr = nullptr;
-    if (workspaceSize > 0) {
-        ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-        if (ret != ACL_SUCCESS) return ret;
+    DeviceMemPtr workspaceAddr(nullptr, &aclrtFree);
+    if (workspaceSize > static_cast<uint64_t>(0)) {
+        void* rawWorkspaceAddr = nullptr;
+        ret = aclrtMalloc(&rawWorkspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
+        if (ret != ACL_SUCCESS)
+            return ret;
+        workspaceAddr.reset(rawWorkspaceAddr);
     }
 
-    ret = aclnnSinh(workspaceAddr, workspaceSize, executor, stream);
-    if (workspaceSize > 0) aclrtFree(workspaceAddr);
+    ret = aclnnSinh(workspaceAddr.get(), workspaceSize, executor, stream);
     return ret;
 }
 
-int ExecuteInplaceSinh(aclTensor* self, aclrtStream stream) {
+int ExecuteInplaceSinh(aclTensor* self, aclrtStream stream)
+{
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
     int ret = aclnnInplaceSinhGetWorkspaceSize(self, &workspaceSize, &executor);
-    if (ret != ACL_SUCCESS) return ret;
+    if (ret != ACL_SUCCESS)
+        return ret;
 
-    void* workspaceAddr = nullptr;
-    if (workspaceSize > 0) {
-        ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-        if (ret != ACL_SUCCESS) return ret;
+    DeviceMemPtr workspaceAddr(nullptr, &aclrtFree);
+    if (workspaceSize > static_cast<uint64_t>(0)) {
+        void* rawWorkspaceAddr = nullptr;
+        ret = aclrtMalloc(&rawWorkspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
+        if (ret != ACL_SUCCESS)
+            return ret;
+        workspaceAddr.reset(rawWorkspaceAddr);
     }
 
-    ret = aclnnInplaceSinh(workspaceAddr, workspaceSize, executor, stream);
-    if (workspaceSize > 0) aclrtFree(workspaceAddr);
+    ret = aclnnInplaceSinh(workspaceAddr.get(), workspaceSize, executor, stream);
     return ret;
 }
 
-int PrintResults(void* outDeviceAddr, std::vector<int64_t>& outShape,
-                    void* selfDeviceAddr, std::vector<int64_t>& selfShape) {
+int PrintResults(void* outDeviceAddr, std::vector<int64_t>& outShape, void* selfDeviceAddr,
+                 std::vector<int64_t>& selfShape)
+{
     auto size = GetShapeSize(outShape);
     std::vector<float> resultData(size, 0);
     int ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr,
                           size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
-    if (ret != ACL_SUCCESS) return ret;
+    if (ret != ACL_SUCCESS)
+        return ret;
 
     for (int64_t i = 0; i < size; i++) {
         LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
@@ -115,9 +142,10 @@ int PrintResults(void* outDeviceAddr, std::vector<int64_t>& outShape,
 
     auto inplaceSize = GetShapeSize(selfShape);
     std::vector<float> inplaceResultData(inplaceSize, 0);
-    ret = aclrtMemcpy(inplaceResultData.data(), inplaceResultData.size() * sizeof(inplaceResultData[0]),
-                      selfDeviceAddr, inplaceSize * sizeof(float), ACL_MEMCPY_DEVICE_TO_HOST);
-    if (ret != ACL_SUCCESS) return ret;
+    ret = aclrtMemcpy(inplaceResultData.data(), inplaceResultData.size() * sizeof(inplaceResultData[0]), selfDeviceAddr,
+                      inplaceSize * sizeof(float), ACL_MEMCPY_DEVICE_TO_HOST);
+    if (ret != ACL_SUCCESS)
+        return ret;
 
     for (int64_t i = 0; i < inplaceSize; i++) {
         LOG_PRINT("inplaceResult[%ld] is: %f\n", i, inplaceResultData[i]);
@@ -126,78 +154,66 @@ int PrintResults(void* outDeviceAddr, std::vector<int64_t>& outShape,
     return ACL_SUCCESS;
 }
 
-int CreateInputOutputTensors(aclTensor** self, aclTensor** out,
-                             void** selfDeviceAddr, void** outDeviceAddr) {
+int CreateInputOutputTensors(TensorPtr& self, TensorPtr& out, DeviceMemPtr& selfDeviceAddr, DeviceMemPtr& outDeviceAddr)
+{
     std::vector<int64_t> selfShape = {4, 2};
     std::vector<int64_t> outShape = {4, 2};
     std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
     std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
 
     // 创建self aclTensor
-    int ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_FLOAT, self);
+    int ret = CreateAclTensor(selfHostData, selfShape, aclDataType::ACL_FLOAT, selfDeviceAddr, self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建out aclTensor
-    ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_FLOAT, out);
+    ret = CreateAclTensor(outHostData, outShape, aclDataType::ACL_FLOAT, outDeviceAddr, out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     return ACL_SUCCESS;
 }
 
-void CleanupResources(aclTensor* self, aclTensor* out,
-                      void* selfDeviceAddr, void* outDeviceAddr,
-                      aclrtStream stream, int32_t deviceId) {
-    // 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
-    aclDestroyTensor(self);
-    aclDestroyTensor(out);
-
-    // 释放device资源，需要根据具体API的接口定义修改
-    aclrtFree(selfDeviceAddr);
-    aclrtFree(outDeviceAddr);
-    aclrtDestroyStream(stream);
-    aclrtResetDevice(deviceId);
-    aclFinalize();
-}
-
-int main() {
+int main()
+{
     // 1. Device/stream initialization
     int32_t deviceId = 0;
-    aclrtStream stream;
-    auto ret = Init(deviceId, &stream);
+    bool initialized = false;
+    bool deviceSet = false;
+    std::shared_ptr<void> aclGuard(nullptr, [&](void*) {
+        if (deviceSet) {
+            aclrtResetDevice(deviceId);
+        }
+        if (initialized) {
+            aclFinalize();
+        }
+    });
+    StreamPtr stream(nullptr, &aclrtDestroyStream);
+    auto ret = Init(deviceId, stream, initialized, deviceSet);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
     // 2. Construct input and output tensors
-    void* selfDeviceAddr = nullptr;
-    void* outDeviceAddr = nullptr;
-    aclTensor* self = nullptr;
-    aclTensor* out = nullptr;
+    DeviceMemPtr selfDeviceAddr(nullptr, &aclrtFree);
+    DeviceMemPtr outDeviceAddr(nullptr, &aclrtFree);
+    TensorPtr self(nullptr, &aclDestroyTensor);
+    TensorPtr out(nullptr, &aclDestroyTensor);
 
-    ret = CreateInputOutputTensors(&self, &out, &selfDeviceAddr, &outDeviceAddr);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Create tensors failed. ERROR: %d\n", ret);
-              CleanupResources(self, out, selfDeviceAddr, outDeviceAddr, stream, deviceId); return ret);
+    ret = CreateInputOutputTensors(self, out, selfDeviceAddr, outDeviceAddr);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Create tensors failed. ERROR: %d\n", ret); return ret);
 
     // 3. Execute sinh operations
-    ret = ExecuteSinh(self, out, stream);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteSinh failed. ERROR: %d\n", ret);
-              CleanupResources(self, out, selfDeviceAddr, outDeviceAddr, stream, deviceId); return ret);
+    ret = ExecuteSinh(self.get(), out.get(), stream.get());
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteSinh failed. ERROR: %d\n", ret); return ret);
 
-    ret = ExecuteInplaceSinh(self, stream);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteInplaceSinh failed. ERROR: %d\n", ret);
-              CleanupResources(self, out, selfDeviceAddr, outDeviceAddr, stream, deviceId); return ret);
+    ret = ExecuteInplaceSinh(self.get(), stream.get());
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteInplaceSinh failed. ERROR: %d\n", ret); return ret);
 
     // 4. Synchronize stream
-    ret = aclrtSynchronizeStream(stream);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret);
-              CleanupResources(self, out, selfDeviceAddr, outDeviceAddr, stream, deviceId); return ret);
+    ret = aclrtSynchronizeStream(stream.get());
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
     // 5. Print results
     std::vector<int64_t> selfShape = {4, 2};
     std::vector<int64_t> outShape = {4, 2};
-    ret = PrintResults(outDeviceAddr, outShape, selfDeviceAddr, selfShape);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("PrintResults failed. ERROR: %d\n", ret);
-              CleanupResources(self, out, selfDeviceAddr, outDeviceAddr, stream, deviceId); return ret);
-
-    // 6. Cleanup resources
-    CleanupResources(self, out, selfDeviceAddr, outDeviceAddr, stream, deviceId);
+    ret = PrintResults(outDeviceAddr.get(), outShape, selfDeviceAddr.get(), selfShape);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("PrintResults failed. ERROR: %d\n", ret); return ret);
 
     return 0;
 }
