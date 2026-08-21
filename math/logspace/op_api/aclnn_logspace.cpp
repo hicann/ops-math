@@ -137,7 +137,7 @@ aclnnStatus aclnnLogSpaceGetWorkspaceSize(const aclScalar* start, const aclScala
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnLogSpace(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+aclnnStatus aclnnLogSpace(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnLogSpace);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

@@ -50,18 +50,14 @@ ge::graphStatus LogAddExpTiling::GetShapeAttrsInfo()
     }
     // base must be -1 (natural log) or strictly positive
     if (base_ != DEFAULT_BASE && base_ <= 0.0f) {
-        OP_LOGE(context_->GetNodeName(),
-                "base must be -1 (natural log) or > 0, got %f", base_);
+        OP_LOGE(context_->GetNodeName(), "base must be -1 (natural log) or > 0, got %f", base_);
         return ge::GRAPH_FAILED;
     }
     useFullFormula_ = !(base_ == DEFAULT_BASE && scale_ == DEFAULT_SCALE && shift_ == DEFAULT_SHIFT);
     return ge::GRAPH_SUCCESS;
 }
 
-bool LogAddExpTiling::IsCapable()
-{
-    return true;
-}
+bool LogAddExpTiling::IsCapable() { return true; }
 
 ge::graphStatus LogAddExpTiling::CheckDtype(ge::DataType& input0Dtype)
 {
@@ -75,14 +71,12 @@ ge::graphStatus LogAddExpTiling::CheckDtype(ge::DataType& input0Dtype)
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
     ge::DataType outputDtype = outputDesc->GetDataType();
     if (input0Dtype != input1Dtype || input0Dtype != outputDtype) {
-        std::string reasonMsg = "The dtypes of x1(" +
-                                ge::TypeUtils::DataTypeToSerialString(input0Dtype) + "), x2(" +
+        std::string reasonMsg = "The dtypes of x1(" + ge::TypeUtils::DataTypeToSerialString(input0Dtype) + "), x2(" +
                                 ge::TypeUtils::DataTypeToSerialString(input1Dtype) + ") and y(" +
-                                ge::TypeUtils::DataTypeToSerialString(outputDtype) +
-                                ") must be the same";
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
-            reasonMsg.c_str());
+                                ge::TypeUtils::DataTypeToSerialString(outputDtype) + ") must be the same";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x1",
+                                              ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
+                                              reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -127,9 +121,8 @@ ge::graphStatus LogAddExpTiling::DoFullFormulaTiling(ge::DataType input0Dtype)
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), FORMULA_TYPE_FULL);
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(
-            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
-            "fp16, bf16, fp32");
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1",
+                                  ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(), "fp16, bf16, fp32");
         return ge::GRAPH_FAILED;
     }
     return ret;
@@ -139,8 +132,7 @@ ge::graphStatus LogAddExpTiling::DoSimplifiedTiling(ge::DataType input0Dtype)
 {
     ge::graphStatus ret = ge::GRAPH_SUCCESS;
     if (input0Dtype == ge::DT_BF16) {
-        BroadcastBaseTiling<LogAddExpOp::LogAddExpSimplifiedWithCastCompute<bfloat16_t>::OpDag> brcBaseTiling(
-            context_);
+        BroadcastBaseTiling<LogAddExpOp::LogAddExpSimplifiedWithCastCompute<bfloat16_t>::OpDag> brcBaseTiling(context_);
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), FORMULA_TYPE_SIMPLIFIED);
     } else if (input0Dtype == ge::DT_FLOAT16) {
@@ -152,9 +144,8 @@ ge::graphStatus LogAddExpTiling::DoSimplifiedTiling(ge::DataType input0Dtype)
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), FORMULA_TYPE_SIMPLIFIED);
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(
-            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
-            "fp16, bf16, fp32");
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1",
+                                  ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(), "fp16, bf16, fp32");
         return ge::GRAPH_FAILED;
     }
     return ret;
@@ -172,30 +163,15 @@ ge::graphStatus LogAddExpTiling::DoOpTiling()
     return DoSimplifiedTiling(input0Dtype);
 }
 
-ge::graphStatus LogAddExpTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus LogAddExpTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t LogAddExpTiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t LogAddExpTiling::GetTilingKey() const { return tilingKey; }
 
-ge::graphStatus LogAddExpTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus LogAddExpTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus LogAddExpTiling::PostTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus LogAddExpTiling::PostTiling() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus LogAddExpTiling::GetPlatformInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus LogAddExpTiling::GetPlatformInfo() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus TilingForLogAddExp(gert::TilingContext* context)
 {
@@ -205,7 +181,7 @@ ge::graphStatus TilingForLogAddExp(gert::TilingContext* context)
         return ge::GRAPH_FAILED;
     }
 
-    auto compileInfo = reinterpret_cast<const LogAddExpCompileInfo*>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<LogAddExpCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     OP_LOGD(context, "Enter ascendc LogAddExpTiling");

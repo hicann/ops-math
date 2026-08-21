@@ -20,13 +20,13 @@ using namespace op;
 
 namespace l0op {
 OP_TYPE_REGISTER(Pdist);
-const aclTensor* Pdist(const aclTensor* self, float p, aclOpExecutor* executor)
+const aclTensor* Pdist(const aclTensor* input, float p, aclOpExecutor* executor)
 {
-    L0_DFX(Pdist, self, p);
-    auto pdistOut = executor->AllocTensor(self->GetDataType(), op::Format::FORMAT_ND, op::Format::FORMAT_ND);
+    L0_DFX(Pdist, input, p);
+    auto pdistOut = executor->AllocTensor(input->GetDataType(), op::Format::FORMAT_ND, op::Format::FORMAT_ND);
     CHECK_RET(pdistOut != nullptr, nullptr);
-    INFER_SHAPE(Pdist, OP_INPUT(self), OP_OUTPUT(pdistOut), OP_ATTR(p));
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Pdist, OP_INPUT(self), OP_ATTR(p), OP_OUTPUT(pdistOut));
+    INFER_SHAPE(Pdist, OP_INPUT(input), OP_OUTPUT(pdistOut), OP_ATTR(p));
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Pdist, OP_INPUT(input), OP_ATTR(p), OP_OUTPUT(pdistOut));
     OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "PdistAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
              return nullptr);
     return pdistOut;

@@ -34,26 +34,18 @@ namespace optiling {
 
 constexpr static uint64_t ATAN2_COMMON_TILING_PRIORITY = 0;
 
-ge::graphStatus Atan2Tiling::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus Atan2Tiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
-bool Atan2Tiling::IsCapable()
-{
-    return true;
-}
+bool Atan2Tiling::IsCapable() { return true; }
 
-
-bool Atan2Tiling::CheckDtype(
-    const ge::DataType& input0Dtype, const ge::DataType& input1Dtype, const ge::DataType& outputDtype) const
+bool Atan2Tiling::CheckDtype(const ge::DataType& input0Dtype, const ge::DataType& input1Dtype,
+                             const ge::DataType& outputDtype) const
 {
     if (input0Dtype != input1Dtype || input0Dtype != outputDtype) {
-        OP_LOGE(
-            context_->GetNodeName(), "Dtype of input0[%s] should be equal to dtype of input1[%s] and output[%s].",
-            ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(input1Dtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str());
+        OP_LOGE(context_->GetNodeName(), "Dtype of input0[%s] should be equal to dtype of input1[%s] and output[%s].",
+                ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
+                ge::TypeUtils::DataTypeToSerialString(input1Dtype).c_str(),
+                ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str());
         return false;
     }
     return true;
@@ -88,37 +80,22 @@ ge::graphStatus Atan2Tiling::DoOpTiling()
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
         OP_LOGE(context_->GetNodeName(), "Input dtype is only support fp16, bf16, fp32, while got %s!",
-            ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str());
+                ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str());
         return ge::GRAPH_FAILED;
     }
 
     return ret;
 }
 
-ge::graphStatus Atan2Tiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus Atan2Tiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t Atan2Tiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t Atan2Tiling::GetTilingKey() const { return tilingKey; }
 
-ge::graphStatus Atan2Tiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus Atan2Tiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus Atan2Tiling::PostTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus Atan2Tiling::PostTiling() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus Atan2Tiling::GetPlatformInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus Atan2Tiling::GetPlatformInfo() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus TilingForAtan2(gert::TilingContext* context)
 {
@@ -128,16 +105,14 @@ ge::graphStatus TilingForAtan2(gert::TilingContext* context)
         return ge::GRAPH_FAILED;
     }
 
-    auto compileInfo = reinterpret_cast<const BroadcastCompileInfo*>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<BroadcastCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     OP_LOGD(context, "Enter ascendc Atan2Tiling");
     return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
-ge::graphStatus TilingPrepareForAtan2([[maybe_unused]] gert::TilingParseContext* context){
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus TilingPrepareForAtan2([[maybe_unused]] gert::TilingParseContext* context) { return ge::GRAPH_SUCCESS; }
 
 IMPL_OP_OPTILING(Atan2).Tiling(TilingForAtan2).TilingParse<BroadcastCompileInfo>(TilingPrepareForAtan2);
 

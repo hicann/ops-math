@@ -74,7 +74,7 @@ ge::graphStatus TilingForComplex(gert::TilingContext* context)
         return ge::GRAPH_FAILED;
     }
 
-    auto compileInfo = reinterpret_cast<const ComplexCompileInfo*>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<ComplexCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     OP_LOGD(context, "Enter ascendc ComplexTiling");

@@ -38,10 +38,9 @@ struct CdistGradCompileInfo {
 static constexpr int32_t SIZE4 = 4;
 static constexpr int32_t SIZE2 = 2;
 
-static ge::graphStatus DoTilingAscendC(
-    gert::TilingContext* context, const CdistGradCompileInfo* compileInfo,
-    ReduceOpInputParam& opInput, ReduceTilingKey& key,
-    ReduceOpTilingData* reduceTiling, int32_t normMode)
+static ge::graphStatus DoTilingAscendC(gert::TilingContext* context, const CdistGradCompileInfo* compileInfo,
+                                       ReduceOpInputParam& opInput, ReduceTilingKey& key,
+                                       ReduceOpTilingData* reduceTiling, int32_t normMode)
 {
     ge::graphStatus status = ge::GRAPH_FAILED;
 
@@ -63,8 +62,8 @@ static ge::graphStatus DoTilingAscendC(
             status = Tiling4ReduceOp<CdistGrad::CdistGradP2Dag<float, float>::OpDag>(
                 context, opInput, key, &compileInfo->opInfo, reduceTiling);
         } else {
-            status = Tiling4ReduceOp<CdistGrad::CdistGradDag<float, float>::OpDag>(
-                context, opInput, key, &compileInfo->opInfo, reduceTiling);
+            status = Tiling4ReduceOp<CdistGrad::CdistGradDag<float, float>::OpDag>(context, opInput, key,
+                                                                                   &compileInfo->opInfo, reduceTiling);
         }
     } else if (ge::GetSizeByDataType(opInput.inputDtype) == SIZE2) {
         // float16 / bfloat16 — both use half for tiling calc, DTYPE_GRAD handles actual type
@@ -75,25 +74,23 @@ static ge::graphStatus DoTilingAscendC(
             status = Tiling4ReduceOp<CdistGrad::CdistGradLargePDag<half, float>::OpDag>(
                 context, opInput, key, &compileInfo->opInfo, reduceTiling);
         } else if (normMode == CdistGrad::NORM_MODE_P0) {
-            status = Tiling4ReduceOp<CdistGrad::CdistGradP0Dag<half, float>::OpDag>(
-                context, opInput, key, &compileInfo->opInfo, reduceTiling);
+            status = Tiling4ReduceOp<CdistGrad::CdistGradP0Dag<half, float>::OpDag>(context, opInput, key,
+                                                                                    &compileInfo->opInfo, reduceTiling);
         } else if (normMode == CdistGrad::NORM_MODE_P1) {
-            status = Tiling4ReduceOp<CdistGrad::CdistGradP1Dag<half, float>::OpDag>(
-                context, opInput, key, &compileInfo->opInfo, reduceTiling);
+            status = Tiling4ReduceOp<CdistGrad::CdistGradP1Dag<half, float>::OpDag>(context, opInput, key,
+                                                                                    &compileInfo->opInfo, reduceTiling);
         } else if (normMode == CdistGrad::NORM_MODE_P2) {
-            status = Tiling4ReduceOp<CdistGrad::CdistGradP2Dag<half, float>::OpDag>(
-                context, opInput, key, &compileInfo->opInfo, reduceTiling);
+            status = Tiling4ReduceOp<CdistGrad::CdistGradP2Dag<half, float>::OpDag>(context, opInput, key,
+                                                                                    &compileInfo->opInfo, reduceTiling);
         } else {
-            status = Tiling4ReduceOp<CdistGrad::CdistGradDag<half, float>::OpDag>(
-                context, opInput, key, &compileInfo->opInfo, reduceTiling);
+            status = Tiling4ReduceOp<CdistGrad::CdistGradDag<half, float>::OpDag>(context, opInput, key,
+                                                                                  &compileInfo->opInfo, reduceTiling);
         }
     }
 
-    OP_CHECK_IF(
-        (status == ge::GRAPH_FAILED),
-        OP_LOGE(context->GetNodeName(),
-                "ReduceOp Tiling failed, dtype should be in (float16/bfloat16/float)"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((status == ge::GRAPH_FAILED),
+                OP_LOGE(context->GetNodeName(), "ReduceOp Tiling failed, dtype should be in (float16/bfloat16/float)"),
+                return ge::GRAPH_FAILED);
     return status;
 }
 
@@ -116,19 +113,16 @@ static int32_t ComputeNormMode(float p)
 
 static ge::graphStatus Tiling4CdistGrad(gert::TilingContext* context)
 {
-    auto compileInfo = reinterpret_cast<const CdistGradCompileInfo*>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<CdistGradCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     ReduceOpInputParam opInput;
-    OP_CHECK_IF(
-        (ReduceOpTmpl::GetInputParam(context, opInput, 0) == ge::GRAPH_FAILED),
-        OP_LOGE(context->GetNodeName(), "ReduceOp get grad input param failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((ReduceOpTmpl::GetInputParam(context, opInput, 0) == ge::GRAPH_FAILED),
+                OP_LOGE(context->GetNodeName(), "ReduceOp get grad input param failed"), return ge::GRAPH_FAILED);
 
     int64_t dimNum = static_cast<int64_t>(opInput.shape.size());
-    OP_CHECK_IF(
-        dimNum < 2,
-        OP_LOGE(context->GetNodeName(), "CdistGrad requires at least 2D input, got: %ld", dimNum),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(dimNum < 2, OP_LOGE(context->GetNodeName(), "CdistGrad requires at least 2D input, got: %ld", dimNum),
+                return ge::GRAPH_FAILED);
     opInput.axes = {dimNum - 2};
 
     // Get attr p
@@ -152,18 +146,14 @@ static ge::graphStatus Tiling4CdistGrad(gert::TilingContext* context)
     OP_LOGI(context->GetNodeName(), "CdistGrad attr p = %f, normMode = %d", p, normMode);
 
     ReduceTilingKey key;
-    OP_CHECK_IF(
-        (DoTilingAscendC(context, compileInfo, opInput, key,
-                         &(tilingData->reduceTiling), normMode) == ge::GRAPH_FAILED),
-        OP_LOGE(context->GetNodeName(), "DoTiling Failed for CdistGrad"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((DoTilingAscendC(context, compileInfo, opInput, key, &(tilingData->reduceTiling), normMode) ==
+                 ge::GRAPH_FAILED),
+                OP_LOGE(context->GetNodeName(), "DoTiling Failed for CdistGrad"), return ge::GRAPH_FAILED);
 
     uint64_t tilingKey;
     GEN_REDUCE_TILING_KEY(tilingKey, key, static_cast<uint32_t>(normMode));
-    OP_LOGI(
-        context->GetNodeName(),
-        "patternID:%u, loopARCount:%u, loopInnerARCount:%u, normMode:%d, Tiling Key is:%lu",
-        key.patternID, key.loopARCount, key.loopInnerARCount, normMode, tilingKey);
+    OP_LOGI(context->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u, normMode:%d, Tiling Key is:%lu",
+            key.patternID, key.loopARCount, key.loopInnerARCount, normMode, tilingKey);
     context->SetTilingKey(tilingKey);
     return ge::GRAPH_SUCCESS;
 }
@@ -176,33 +166,29 @@ static ge::graphStatus TilingPrepare4ReduceOp(ContextT* context, ReduceOpCompile
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->vectorCoreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->vectorCoreNum == 0UL),
-        OP_LOGE(context->GetNodeName(), "ReduceOp GetHardwareInfo Failed, vectorCoreNum:%lu",
-                compileInfo->vectorCoreNum),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->vectorCoreNum == 0UL),
+                OP_LOGE(context->GetNodeName(), "ReduceOp GetHardwareInfo Failed, vectorCoreNum:%lu",
+                        compileInfo->vectorCoreNum),
+                return ge::GRAPH_FAILED);
 
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
-    OP_CHECK_IF(
-        ubSize <= CACHE_BUF_SIZE,
-        OP_LOGE(context->GetNodeName(), "ReduceOp GetHardwareInfo Failed, ubSize:%lu, at least:%lu.",
-                ubSize, CACHE_BUF_SIZE),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ubSize <= CACHE_BUF_SIZE,
+                OP_LOGE(context->GetNodeName(), "ReduceOp GetHardwareInfo Failed, ubSize:%lu, at least:%lu.", ubSize,
+                        CACHE_BUF_SIZE),
+                return ge::GRAPH_FAILED);
     compileInfo->ubSize = ubSize;
 
     compileInfo->cacheLineSize = GetCacheLineSize(context);
-    OP_CHECK_IF(
-        compileInfo->cacheLineSize == 0UL,
-        OP_LOGE(context->GetNodeName(), "ReduceOp GetHardwareInfo Failed, cacheLineSize:%lu.",
-                compileInfo->cacheLineSize),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(compileInfo->cacheLineSize == 0UL,
+                OP_LOGE(context->GetNodeName(), "ReduceOp GetHardwareInfo Failed, cacheLineSize:%lu.",
+                        compileInfo->cacheLineSize),
+                return ge::GRAPH_FAILED);
 
     compileInfo->ubBlockSize = GetUbBlockSize(context);
     OP_CHECK_IF(
         compileInfo->ubBlockSize == 0UL,
-        OP_LOGE(context->GetNodeName(), "ReduceOp GetHardwareInfo Failed, ubBlockSize:%lu.",
-                compileInfo->ubBlockSize),
+        OP_LOGE(context->GetNodeName(), "ReduceOp GetHardwareInfo Failed, ubBlockSize:%lu.", compileInfo->ubBlockSize),
         return ge::GRAPH_FAILED);
 
     compileInfo->vRegSize = GetVRegSize(context);
@@ -227,8 +213,6 @@ static ge::graphStatus TilingParse4CdistGrad(gert::TilingParseContext* context)
     return TilingPrepare4ReduceOp(context, &compileInfo->opInfo);
 }
 
-IMPL_OP_OPTILING(CdistGrad)
-    .Tiling(Tiling4CdistGrad)
-    .TilingParse<CdistGradCompileInfo>(TilingParse4CdistGrad);
+IMPL_OP_OPTILING(CdistGrad).Tiling(Tiling4CdistGrad).TilingParse<CdistGradCompileInfo>(TilingParse4CdistGrad);
 
-}  // namespace optiling
+} // namespace optiling

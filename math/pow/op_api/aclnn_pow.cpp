@@ -378,9 +378,11 @@ static aclnnStatus CheckPowScalarTensorParams(const aclScalar* self, const aclTe
 
 static bool CheckSupportPows(const aclTensor* selfCast, const aclScalar* exponent)
 {
-    if (exponent->ToFloat() != SQRT_EXP && exponent->ToFloat() != SQUARE_EXP && exponent->ToFloat() != CUBE_EXP &&
-        exponent->ToFloat() != NEGTIVE_SQRT_EXP && exponent->ToFloat() != NEGTIVE_ONE_EXP &&
-        exponent->ToFloat() != NEGTIVE_SQUARE_EXP) {
+    if (static_cast<float>(exponent->ToFloat()) != SQRT_EXP && static_cast<float>(exponent->ToFloat()) != SQUARE_EXP &&
+        static_cast<float>(exponent->ToFloat()) != CUBE_EXP &&
+        static_cast<float>(exponent->ToFloat()) != NEGTIVE_SQRT_EXP &&
+        static_cast<float>(exponent->ToFloat()) != NEGTIVE_ONE_EXP &&
+        static_cast<float>(exponent->ToFloat()) != NEGTIVE_SQUARE_EXP) {
         return false;
     }
 
@@ -441,7 +443,7 @@ aclnnStatus aclnnPowTensorScalarGetWorkspaceSize(const aclTensor* self, const ac
     auto selfCast = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
     CHECK_RET(selfCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    aclTensor* powOut = nullptr;
+    const aclTensor* powOut = nullptr;
     bool canUseSquare = static_cast<float>(exponent->ToFloat()) == SQUARE_EXP &&
                         (!IsRegBase() || (IsRegBase() && (selfCast->GetDataType() == op::DataType::DT_FLOAT ||
                                                           selfCast->GetDataType() == op::DataType::DT_BF16 ||
@@ -454,7 +456,7 @@ aclnnStatus aclnnPowTensorScalarGetWorkspaceSize(const aclTensor* self, const ac
         auto expTensor = uniqueExecutor.get()->ConvertToTensor(exponent, promoteType);
         CHECK_RET(expTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
         // 调用pows进行计算
-        powOut = const_cast<aclTensor*>(l0op::Pows(selfCast, expTensor, uniqueExecutor.get()));
+        powOut = l0op::Pows(selfCast, expTensor, uniqueExecutor.get());
     } else if (canUseSquare) {
         const aclTensor* squareInput = selfCast;
         if (CheckType(selfCast->GetDataType(), SQUARE_NEED_CAST_DTYPE_LIST)) {
@@ -462,15 +464,15 @@ aclnnStatus aclnnPowTensorScalarGetWorkspaceSize(const aclTensor* self, const ac
             CHECK_RET(squareInput != nullptr, ACLNN_ERR_INNER_NULLPTR);
         }
         // 当exponent为2.0时，使用square算子计算
-        powOut = const_cast<aclTensor*>(l0op::Square(squareInput, uniqueExecutor.get()));
+        powOut = l0op::Square(squareInput, uniqueExecutor.get());
     } else if (canNoUseOp) {
-        powOut = const_cast<aclTensor*>(selfCast);
+        powOut = selfCast;
     } else {
         auto expTensor = uniqueExecutor.get()->ConvertToTensor(exponent, promoteType);
         CHECK_RET(expTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
         // 调用pow进行计算
-        powOut = const_cast<aclTensor*>(l0op::Pow(selfCast, expTensor, uniqueExecutor.get()));
+        powOut = l0op::Pow(selfCast, expTensor, uniqueExecutor.get());
     }
     CHECK_RET(powOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
@@ -590,7 +592,7 @@ aclnnStatus aclnnPowScalarTensorGetWorkspaceSize(const aclScalar* self, const ac
     }
 
     // fill(1) 分支
-    if (IsRegBase() && static_cast<float>(self->ToFloat()) == 1.0 && !IsComplexType(exponent->GetDataType()) &&
+    if (IsRegBase() && static_cast<float>(self->ToFloat()) == 1.0f && !IsComplexType(exponent->GetDataType()) &&
         !IsComplexType(out->GetDataType())) {
         CHECK_RET(BuildPowScalarTensorFillOne(out, uniqueExecutor.get()) == ACLNN_SUCCESS, ACLNN_ERR_INNER);
         *workspaceSize = uniqueExecutor->GetWorkspaceSize();
