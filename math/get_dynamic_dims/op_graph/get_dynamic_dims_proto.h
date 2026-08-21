@@ -30,7 +30,7 @@ namespace ge {
 *@li N: A int that indicates the inputs number. \n
 
 *@par Outputs:
-*dims: GE unknown dims, a vector of int64. \n
+*dims: GE unknown dims, a vector of int32 or int64. \n
 */
 REG_OP(GetDynamicDims)
     .DYNAMIC_INPUT(input, TensorType({DT_INT32, DT_INT64}))
