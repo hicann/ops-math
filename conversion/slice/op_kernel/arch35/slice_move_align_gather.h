@@ -15,7 +15,6 @@
 #ifndef SLICE_MOVE_ALIGN_GATHER_H
 #define SLICE_MOVE_ALIGN_GATHER_H
 
-#include <cstdlib>
 #include <type_traits>
 
 #include "slice_base.h"
