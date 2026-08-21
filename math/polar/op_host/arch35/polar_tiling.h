@@ -47,7 +47,7 @@ protected:
     ge::graphStatus CalcStride();
 
 private:
-    const PolarCompileInfo* compileInfo_;
+    const PolarCompileInfo* compileInfo_ = nullptr;
     PolarTilingData tilingData_{};
     uint32_t blockDim_{1};
     int64_t totalElements_ = 0;

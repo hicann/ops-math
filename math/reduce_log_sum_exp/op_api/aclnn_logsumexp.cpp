@@ -68,7 +68,7 @@ static const std::initializer_list<op::DataType> OUTPUT_DTYPE_SUPPORT_LIST = {op
 static const std::initializer_list<op::DataType> OUTPUT_DTYPE_SUPPORT_LIST_910B = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
-static bool CheckDtypeValid(const aclTensor* self, aclTensor* out)
+static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     // 检查self的数据类型是否支持
     if (op::GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND910B ||
@@ -82,7 +82,7 @@ static bool CheckDtypeValid(const aclTensor* self, aclTensor* out)
     return true;
 }
 
-static bool CheckPromoteType(const aclTensor* self, aclTensor* out)
+static bool CheckPromoteType(const aclTensor* self, const aclTensor* out)
 {
     // 检查self能否转换为out的dtype
     OP_CHECK_RESULT_DTYPE_CAST_FAILED(self->GetDataType(), out->GetDataType(), return false);
@@ -149,7 +149,7 @@ static void ExpectShapeInferWithDimMask(const op::Shape& selfShape, const aclInt
     }
 }
 
-static bool CheckShape(const aclTensor* self, aclTensor* out, const aclIntArray* dim, bool keepDim)
+static bool CheckShape(const aclTensor* self, const aclTensor* out, const aclIntArray* dim, bool keepDim)
 {
     // 是否小于8维
     OP_CHECK_MAX_DIM(self, MAX_DIM_LEN, return false);

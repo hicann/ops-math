@@ -31,8 +31,7 @@ struct CrossCompileInfo {
 
 class CrossTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit CrossTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit CrossTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override { return true; }
@@ -48,7 +47,7 @@ protected:
     ge::graphStatus CalcStrideAndVectors();
 
 private:
-    const CrossCompileInfo* compileInfo_;
+    const CrossCompileInfo* compileInfo_ = nullptr;
     CrossRegbaseTilingData tilingData_{};
     uint32_t blockDim_{1};
     int64_t totalVectors_{0};

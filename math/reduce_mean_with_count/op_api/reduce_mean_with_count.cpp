@@ -56,7 +56,7 @@ static op::Shape ComputeReduceOutputShape(const aclTensor* x, const aclIntArray*
 
     // Build output shape
     for (int64_t d = 0; d < dimNum; d++) {
-        if (axisSet.count(d)) {
+        if (axisSet.count(d) > 0) {
             if (keepDims) {
                 yShape.AppendDim(1);
             }

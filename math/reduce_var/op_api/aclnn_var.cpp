@@ -46,7 +46,7 @@ static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
-static bool CheckDtypeValid(const aclTensor* self, aclTensor* out)
+static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     auto DTYPE_SUPPORT_LIST = GetDtypeSupportListV2(ASCEND910B_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_SUPPORT_LIST);
 
@@ -95,7 +95,7 @@ static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim)
     return true;
 }
 
-static bool CheckShape(const aclTensor* self, const aclIntArray* dim, bool keepdim, aclTensor* out)
+static bool CheckShape(const aclTensor* self, const aclIntArray* dim, bool keepdim, const aclTensor* out)
 {
     OP_CHECK_MAX_DIM(self, MAX_SUPPORT_DIMS_NUMS, return false);
 

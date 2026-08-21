@@ -117,7 +117,7 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* vec1, const acl
 }
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* vec1, const aclTensor* vec2, const aclScalar* beta,
-                            const aclScalar* alpha, aclTensor* out)
+                            const aclScalar* alpha, const aclTensor* out)
 {
     const auto& supportList = GetDtypeSupportList();
     // 检查self的数据类型是否在支持列表内

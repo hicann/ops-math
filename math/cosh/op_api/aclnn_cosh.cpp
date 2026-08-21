@@ -59,7 +59,7 @@ static bool IsPrivateFormat(ge::Format format)
            format == ge::FORMAT_FRACTAL_Z_3D || format == ge::FORMAT_FRACTAL_NZ || format == ge::FORMAT_NC1HWC0_C04;
 }
 
-static bool CheckInplaceDtypeValid(aclTensor* selfRef)
+static bool CheckInplaceDtypeValid(const aclTensor* selfRef)
 {
     auto inplaceSupportList = GetDtypeSupportListV2(DTYPE_OUT_LIST, ASCEND910_DTYPE_SELFREF_LIST);
     // 检查selfRef的数据类型是否在inplace cosh算子的支持列表内

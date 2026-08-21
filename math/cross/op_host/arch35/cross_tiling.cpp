@@ -22,6 +22,7 @@ static constexpr uint64_t INPUT_X1 = 0;
 static constexpr uint64_t INPUT_X2 = 1;
 static constexpr uint64_t DIM = 0;
 static constexpr int64_t INT_MAX = 2147483647;
+static constexpr int64_t CROSS_DIM_SIZE = 3;
 
 ge::graphStatus CrossTiling::GetPlatformInfo()
 {
@@ -32,7 +33,8 @@ ge::graphStatus CrossTiling::GetPlatformInfo()
 }
 
 // 1. 基础参数校验（输入形状、维度合法性、尺寸检查）
-ge::graphStatus CrossTiling::CheckBaseShapeAndAttrs() {
+ge::graphStatus CrossTiling::CheckBaseShapeAndAttrs()
+{
     OP_LOGD(context_, "CrossTiling CheckBaseShapeAndAttrs.");
     const gert::StorageShape* shape1 = context_->GetInputShape(INPUT_X1);
     const gert::StorageShape* shape2 = context_->GetInputShape(INPUT_X2);
@@ -56,11 +58,11 @@ ge::graphStatus CrossTiling::CheckBaseShapeAndAttrs() {
     }
 
     OP_CHECK_IF((dim < -dimNum1_ || dim >= dimNum1_),
-        OP_LOGE(context_, "dim must be in [%ld, %ld], dim: [%ld].", -dimNum1_, dimNum1_ - 1, dim),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context_, "dim must be in [%ld, %ld], dim: [%ld].", -dimNum1_, dimNum1_ - 1, dim),
+                return ge::GRAPH_FAILED);
     OP_CHECK_IF((dimNum1_ != dimNum2_),
-        OP_LOGE(context_, "x1 and x2 dim count mismatch: %ld vs %ld.", dimNum1_, dimNum2_),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context_, "x1 and x2 dim count mismatch: %ld vs %ld.", dimNum1_, dimNum2_),
+                return ge::GRAPH_FAILED);
 
     // 标准化维度
     int64_t tempDimNum = dimNum1_ == 0 ? 1 : dimNum1_;
@@ -69,22 +71,26 @@ ge::graphStatus CrossTiling::CheckBaseShapeAndAttrs() {
     // 校验指定维度必须为3
     int64_t dimSize1 = x1Dims_[normalizedDim_];
     int64_t dimSize2 = x2Dims_[normalizedDim_];
-    OP_CHECK_IF((dimSize1 != 3), OP_LOGE(context_, "x1 dim[%ld] must be 3, got %ld.", normalizedDim_, dimSize1), return ge::GRAPH_FAILED);
-    OP_CHECK_IF((dimSize2 != 3), OP_LOGE(context_, "x2 dim[%ld] must be 3, got %ld.", normalizedDim_, dimSize2), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((dimSize1 != 3), OP_LOGE(context_, "x1 dim[%ld] must be 3, got %ld.", normalizedDim_, dimSize1),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF((dimSize2 != 3), OP_LOGE(context_, "x2 dim[%ld] must be 3, got %ld.", normalizedDim_, dimSize2),
+                return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }
 
 // 2. 广播兼容性校验 + 计算合并形状
-ge::graphStatus CrossTiling::CheckBroadcastAndMergeShape() {
+ge::graphStatus CrossTiling::CheckBroadcastAndMergeShape()
+{
     OP_LOGD(context_, "CrossTiling CheckBroadcastAndMergeShape.");
     for (int64_t i = 0; i < dimNum1_; i++) {
-        if (i == normalizedDim_) continue;
+        if (i == normalizedDim_)
+            continue;
         int64_t size1 = x1Dims_[i];
         int64_t size2 = x2Dims_[i];
         OP_CHECK_IF((size1 != size2 && size1 != 1 && size2 != 1),
-            OP_LOGE(context_, "Shapes not broadcastable at dim %ld: %ld vs %ld.", i, size1, size2),
-            return ge::GRAPH_FAILED);
+                    OP_LOGE(context_, "Shapes not broadcastable at dim %ld: %ld vs %ld.", i, size1, size2),
+                    return ge::GRAPH_FAILED);
     }
 
     // 计算合并形状 & 输出总大小
@@ -105,7 +111,8 @@ ge::graphStatus CrossTiling::CheckBroadcastAndMergeShape() {
 }
 
 // 3. 计算步长stride + 最终向量参数
-ge::graphStatus CrossTiling::CalcStrideAndVectors() {
+ge::graphStatus CrossTiling::CalcStrideAndVectors()
+{
     OP_LOGD(context_, "CrossTiling CalcStrideAndVectors.");
     int64_t stride[4] = {1, 1, 1, 1};
     for (int64_t i = dimNum1_ - 1; i >= 0; i--) {
@@ -117,7 +124,7 @@ ge::graphStatus CrossTiling::CalcStrideAndVectors() {
         stride[0] *= x1Dims_[i];
         stride[1] *= x2Dims_[i];
         stride[2] *= mergedShape_[i];
-        stride[3] *= (i == dim_ ? 3 : mergedShape_[i]);
+        stride[3] *= (i == dim_ ? CROSS_DIM_SIZE : mergedShape_[i]);
     }
 
     // 计算维度步长
@@ -129,24 +136,28 @@ ge::graphStatus CrossTiling::CalcStrideAndVectors() {
     // 计算总向量数
     totalVectors_ = 1;
     for (int64_t i = 0; i < dimNum1_; i++) {
-        if (i != normalizedDim_) totalVectors_ *= mergedShape_[i];
+        if (i != normalizedDim_)
+            totalVectors_ *= mergedShape_[i];
     }
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus CrossTiling::GetShapeAttrsInfo() {
-    if (CheckBaseShapeAndAttrs() != ge::GRAPH_SUCCESS) return ge::GRAPH_FAILED;
-    if (CheckBroadcastAndMergeShape() != ge::GRAPH_SUCCESS) return ge::GRAPH_FAILED;
-    if (CalcStrideAndVectors() != ge::GRAPH_SUCCESS) return ge::GRAPH_FAILED;
+ge::graphStatus CrossTiling::GetShapeAttrsInfo()
+{
+    if (CheckBaseShapeAndAttrs() != ge::GRAPH_SUCCESS)
+        return ge::GRAPH_FAILED;
+    if (CheckBroadcastAndMergeShape() != ge::GRAPH_SUCCESS)
+        return ge::GRAPH_FAILED;
+    if (CalcStrideAndVectors() != ge::GRAPH_SUCCESS)
+        return ge::GRAPH_FAILED;
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus CrossTiling::DoOpTiling()
 {
     OP_LOGD(context_, "CrossTiling DoOpTiling.");
-    
+
     int64_t coreNum = compileInfo_->coreNum;
-    // coreNum = 1;
     int64_t vectorsPerCore = totalVectors_ / coreNum;
     int64_t formerCore = totalVectors_ % coreNum;
 
@@ -157,7 +168,7 @@ ge::graphStatus CrossTiling::DoOpTiling()
     tilingData_.dimNum = dimNum_;
     tilingData_.dimStride = dimStride_;
     tilingData_.formerCore = formerCore;
-    
+
     for (int64_t i = 0; i < MAX_DIM; i++) {
         if (i < dimNum_) {
             tilingData_.mergedStride[i] = mergedStride_[i];
@@ -188,9 +199,8 @@ ge::graphStatus CrossTiling::PostTiling()
     auto res = context_->SetBlockDim(static_cast<uint32_t>(blockDim_));
     OP_CHECK_IF((res != ge::GRAPH_SUCCESS), OP_LOGE(context_, "SetBlockDim failed."), return ge::GRAPH_FAILED);
 
-    errno_t ret = memcpy_s(
-        context_->GetRawTilingData()->GetData(), context_->GetRawTilingData()->GetCapacity(), &tilingData_,
-        sizeof(CrossRegbaseTilingData));
+    errno_t ret = memcpy_s(context_->GetRawTilingData()->GetData(), context_->GetRawTilingData()->GetCapacity(),
+                           &tilingData_, sizeof(CrossRegbaseTilingData));
     if (ret != EOK) {
         OP_LOGE(context_->GetNodeName(), "memcpy_s failed, ret=%d", ret);
         return ge::GRAPH_FAILED;
@@ -223,8 +233,8 @@ static ge::graphStatus TilingPrepare4CrossAscendc(gert::TilingParseContext* cont
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
 
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->coreNum <= 0), OP_LOGE(context->GetNodeName(), "core num is negative."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->coreNum <= 0), OP_LOGE(context->GetNodeName(), "core num is negative."),
+                return ge::GRAPH_FAILED);
 
     OP_LOGD(context->GetNodeName(), "Exit TilingPrepare4CrossAscendc.");
     return ge::GRAPH_SUCCESS;

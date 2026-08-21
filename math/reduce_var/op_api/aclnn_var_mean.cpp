@@ -54,7 +54,7 @@ static const std::initializer_list<DataType>& GetDtypeSupportList()
     }
 }
 
-static bool CheckDtypeValid(const aclTensor* self, aclTensor* meanOut, aclTensor* varOut)
+static bool CheckDtypeValid(const aclTensor* self, const aclTensor* meanOut, const aclTensor* varOut)
 {
     auto dtypeSupportList = GetDtypeSupportList();
     OP_CHECK_DTYPE_NOT_SUPPORT(self, dtypeSupportList, return false);
@@ -98,8 +98,8 @@ static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim)
     return true;
 }
 
-static bool CheckShape(const aclTensor* self, const aclIntArray* dim, bool keepdim, aclTensor* meanOut,
-                       aclTensor* varOut)
+static bool CheckShape(const aclTensor* self, const aclIntArray* dim, bool keepdim, const aclTensor* meanOut,
+                       const aclTensor* varOut)
 {
     OP_CHECK_MAX_DIM(self, MAX_SUPPORT_DIMS_NUMS, return false);
 

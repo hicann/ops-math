@@ -76,7 +76,6 @@ static aclnnStatus CheckParamsAsinh(const aclTensor* input, const aclTensor* out
     CHECK_RET(CheckSameShape1In1Out(input, out), ACLNN_ERR_PARAM_INVALID);
 
     const auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
-
     if (IsRegBase(curArch)) {
         OP_CHECK(!::IsPrivateFormat(input->GetStorageFormat()),
                  OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Asinh does not support private input format on RegBase."),
