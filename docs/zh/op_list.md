@@ -1528,6 +1528,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/ragged_bin_count/README.md">ragged_bin_count</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>按splits划分的ragged row，统计每个bin的出现次数或权重和。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/range/README.md">range</a></td>
     <td>√</td>
     <td>√</td>
