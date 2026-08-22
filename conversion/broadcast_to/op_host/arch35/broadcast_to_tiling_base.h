@@ -87,6 +87,7 @@ ge::graphStatus GetABFlag(const gert::TilingContext* context, const gert::Shape&
 void AdjustShapesToSameDimNum(gert::Shape& inShape, size_t outDimNum);
 ge::graphStatus MergeAxis(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape);
 ge::graphStatus DeleteOneSizeAxis(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape);
+bool IsSingleAxisBrcAfterMerge(const gert::Shape& outShape);
 
 class BroadcastToTilingAscendC {
 public:

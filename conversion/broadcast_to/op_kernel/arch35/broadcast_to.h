@@ -18,6 +18,7 @@
 
 #include <type_traits>
 
+#include "broadcast_to_with_single_axis.h"
 #include "broadcast_to_with_copypad.h"
 #include "broadcast_to_with_dma.h"
 #include "broadcast_to_with_tailAxis.h"
@@ -32,6 +33,8 @@ using namespace BrcTo;
 #define TILING_MODE_LAST_DIM_LARGE_B 11003
 #define TILING_MODE_FULL_NDDMA 11004
 #define TILING_MODE_LAST_DIM_SMALL_A 11005
+#define TILING_MODE_SINGLE_AXIS 11006
+#define TILING_MODE_SINGLE_AXIS_BRC 11007
 
 // for other operator(ex: tile) to use
 __aicore__ void inline broadcast_to_impl(GM_ADDR x, GM_ADDR shape, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
@@ -52,11 +55,25 @@ __aicore__ void inline broadcast_to_impl(GM_ADDR x, GM_ADDR shape, GM_ADDR y, GM
             tSize == b8, uint8_t,
             std::conditional_t<tSize == b16, uint16_t, std::conditional_t<tSize == b64, uint64_t, DTYPE_X>>>,
         DTYPE_X>;
-    TPipe pipe;
 
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-    GET_TILING_DATA(tilingData, tiling);
 
+    if (TILING_KEY_IS(TILING_MODE_SINGLE_AXIS) || TILING_KEY_IS(TILING_MODE_SINGLE_AXIS_BRC)) {
+        GET_TILING_DATA_PTR_WITH_STRUCT(BrcSA::SingleAxisBrcTilingData, saTilingData, tiling);
+        if (TILING_KEY_IS(TILING_MODE_SINGLE_AXIS)) {
+            BrcSA::BroadcastSingleAxis<DTYPE_X_, false> op;
+            op.Init(x, y, saTilingData);
+            op.Process();
+        } else {
+            BrcSA::BroadcastSingleAxis<DTYPE_X_, true> op;
+            op.Init(x, y, saTilingData);
+            op.Process();
+        }
+        return;
+    }
+
+    TPipe pipe;
+    GET_TILING_DATA(tilingData, tiling);
     if (TILING_KEY_IS(TILING_MODE_NDDMA)) {
         BrcToWithNDDMA<DTYPE_X_, BroadcastToTilingData> op;
         op.Init(x, y, &tilingData, &pipe);

@@ -140,6 +140,8 @@ void AdjustShapesToSameDimNum(gert::Shape& inShape, size_t outDimNum)
     inShape = newShape;
 }
 
+bool IsSingleAxisBrcAfterMerge(const gert::Shape& outShape) { return outShape.GetDimNum() == 1; }
+
 static ge::graphStatus CheckBroadcastRule(const gert::TilingContext* context, const gert::Shape& inShape,
                                           const gert::Shape& outShape)
 {
