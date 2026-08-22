@@ -562,6 +562,13 @@ function(gen_ops_info_and_python)
       foreach(OP_DIR ${COMPILED_OP_DIRS})
         get_filename_component(op_name ${OP_DIR} NAME)
 
+        # 仅定义了信息库、没有 kernel 实现的算子(如 bitcast),无需也无法编译 kernel 二进制,
+        # 直接跳过 kernel 编译链路,与 get_op_type_and_validate 中 op_kernel 目录判断保持一致。
+        if(NOT EXISTS "${OP_DIR}/op_kernel")
+          message(STATUS "[INFO] On [${compute_unit}], [${op_name}] has no op_kernel directory, skip kernel binary compile.")
+          continue()
+        endif()
+
         set(op_type)
         get_op_type_from_op_name("${op_name}" op_type)
         if(NOT op_type)

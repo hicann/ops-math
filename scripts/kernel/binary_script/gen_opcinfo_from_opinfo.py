@@ -13,6 +13,7 @@
 """
 gen_opcinfo_from_opinfo.py
 """
+
 import sys
 import os
 import json
@@ -74,6 +75,15 @@ def get_res_from_file(json_file):
             op_file = convert_to_snake(op_type)
         else:
             op_file = op_file.get("value")
+            # opFile.value=Null 表示算子只有信息库定义、没有 kernel 实现(如 bitcast),
+            # 无需进入 kernel 二进制编译清单,否则会生成 dynamic/Null.py 导致编译失败。
+            if op_file is None or str(op_file).strip().lower() in ("null", "none"):
+                print(
+                    "[INFO] op {} has no kernel implementation (opFile={}), skip kernel compile.".format(
+                        op_type, op_file
+                    )
+                )
+                continue
         if op_interface is None:
             op_interface = convert_to_snake(op_type)
         else:
@@ -84,7 +94,7 @@ def get_res_from_file(json_file):
     return output_res
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = sys.argv
 
     in_file_path_list = list()
@@ -97,7 +107,7 @@ if __name__ == '__main__':
             out_csv_file = arg
 
     res = dict()
-    wr_header = ['op_type', 'file_name', 'file_func']
+    wr_header = ["op_type", "file_name", "file_func"]
     wr_data = list()
     for ops_json_file in in_file_path_list:
         _res = get_res_from_file(ops_json_file)
@@ -106,7 +116,13 @@ if __name__ == '__main__':
                 res[_op_type] = _op_value
                 file_name = _op_value[0]
                 func_name = _op_value[1]
-                wr_data.append({wr_header[0]: _op_type, wr_header[1]: file_name, wr_header[2]: func_name})
+                wr_data.append(
+                    {
+                        wr_header[0]: _op_type,
+                        wr_header[1]: file_name,
+                        wr_header[2]: func_name,
+                    }
+                )
                 continue
             global_op_value = res.get(_op_type)
             if global_op_value != _op_value:
