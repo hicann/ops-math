@@ -2028,6 +2028,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/square_sum_all/README.md">square_sum_all</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>分别计算两个同Shape输入Tensor的全元素平方和，输出两个独立标量。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/square_sum_v1/README.md">square_sum_v1</a></td>
     <td>√</td>
     <td>√</td>
