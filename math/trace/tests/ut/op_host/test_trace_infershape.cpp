@@ -15,33 +15,25 @@
 #include "infershape_context_faker.h"
 #include "infershape_case_executor.h"
 
-class TraceInfershape : public testing::Test
-{
+class TraceInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "TraceInfershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "TraceInfershape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "TraceInfershape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "TraceInfershape TearDown" << std::endl; }
 };
 
 TEST_F(TraceInfershape, trace_infershape_test1)
 {
     // 4x4 float32 matrix -> scalar output
-    gert::InfershapeContextPara infershapeContextPara(
-        "Trace",
-        {
-            {{{4, 4}, {4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Trace",
+                                                      {
+                                                          {{{4, 4}, {4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
-        {},  // scalar output (0-dim)
+        {}, // scalar output (0-dim)
     };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -49,16 +41,15 @@ TEST_F(TraceInfershape, trace_infershape_test1)
 TEST_F(TraceInfershape, trace_infershape_test2)
 {
     // 3x5 int32 non-square matrix -> scalar output
-    gert::InfershapeContextPara infershapeContextPara(
-        "Trace",
-        {
-            {{{3, 5}, {3, 5}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Trace",
+                                                      {
+                                                          {{{3, 5}, {3, 5}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
-        {},  // scalar output (0-dim)
+        {}, // scalar output (0-dim)
     };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -66,16 +57,63 @@ TEST_F(TraceInfershape, trace_infershape_test2)
 TEST_F(TraceInfershape, trace_infershape_test3)
 {
     // 128x128 float16 matrix -> scalar output
-    gert::InfershapeContextPara infershapeContextPara(
-        "Trace",
-        {
-            {{{128, 128}, {128, 128}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Trace",
+                                                      {
+                                                          {{{128, 128}, {128, 128}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
-        {},  // scalar output (0-dim)
+        {}, // scalar output (0-dim)
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(TraceInfershape, trace_infershape_unknown_shape)
+{
+    // Unknown shape (-1): {-1, -1} 2D matrix -> scalar output
+    gert::InfershapeContextPara infershapeContextPara("Trace",
+                                                      {
+                                                          {{{-1, -1}, {-1, -1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {}, // scalar output (0-dim)
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(TraceInfershape, trace_infershape_unknown_shape_mixed)
+{
+    // Mixed unknown dim (-1) with known dims: {-1, 4} 2D matrix -> scalar output
+    gert::InfershapeContextPara infershapeContextPara("Trace",
+                                                      {
+                                                          {{{-1, 4}, {-1, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {}, // scalar output (0-dim)
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(TraceInfershape, trace_infershape_unknown_rank)
+{
+    // Unknown rank (-2): {-2} -> scalar output
+    gert::InfershapeContextPara infershapeContextPara("Trace",
+                                                      {
+                                                          {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {}, // scalar output (0-dim)
     };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }

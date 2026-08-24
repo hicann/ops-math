@@ -18,6 +18,7 @@
  */
 #include "register/op_impl_registry.h"
 #include "log/log.h"
+#include "util/shape_util.h"
 
 using namespace ge;
 
@@ -31,12 +32,10 @@ static ge::graphStatus InferShapeTrace(gert::InferShapeContext* context)
     const gert::Shape* xShape = context->GetInputShape(IDX_0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
 
-    // Dimension check: must be 2D
-    if (xShape->GetDimNum() != 2) {
+    // Dimension check: must be 2D (unknown rank(-2) 时跳过维度数校验，输出仍为标量)
+    if (!Ops::Base::IsUnknownRank(*xShape) && xShape->GetDimNum() != 2) {
         OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-            context->GetNodeName(), "x",
-            std::to_string(xShape->GetDimNum()).c_str(),
-            "trace expects a 2D matrix");
+            context->GetNodeName(), "x", std::to_string(xShape->GetDimNum()).c_str(), "trace expects a 2D matrix");
         return GRAPH_FAILED;
     }
 
@@ -50,4 +49,4 @@ static ge::graphStatus InferShapeTrace(gert::InferShapeContext* context)
 }
 
 IMPL_OP_INFERSHAPE(Trace).InferShape(InferShapeTrace);
-}  // namespace ops
+} // namespace ops
