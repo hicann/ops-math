@@ -17,6 +17,3 @@ add_all_modules_sources(
     TILING_DIR ${SUPPORT_TILING_DIR}
     DEPENDENCIES stateless_bernoulli
     DISABLE_IN_OPP FALSE)
-
-target_sources(${OPHOST_NAME}_opapi_obj PRIVATE
-    ${PROJECT_SOURCE_DIR}/random/dsa_gen_bit_mask/op_host/op_api/dsa_gen_bit_mask.cpp)

@@ -24,6 +24,7 @@ set(COMMON_L0_SRCS
   ${CMAKE_SOURCE_DIR}/conversion/pad/op_api/pad.cpp
   ${CMAKE_SOURCE_DIR}/conversion/fill/op_api/fill.cpp
   ${CMAKE_SOURCE_DIR}/conversion/unsqueeze/op_host/op_api/unsqueeze.cpp
+  ${CMAKE_SOURCE_DIR}/random/dsa_gen_bit_mask/op_host/op_api/dsa_gen_bit_mask.cpp
   )
 
 add_opapi_modules()
