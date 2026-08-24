@@ -330,6 +330,10 @@ static const aclTensor* InitializeTensor(const aclTensor* x, op::DataType dtype,
         int64_t tensorShape[1] = {};
         tensorShape[0] = 1;
         auto baseShape = executor->AllocIntArray(tensorShape, 1);
+        if (baseShape == nullptr) {
+            OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "Alloc baseShape should not be null.");
+            return nullptr;
+        }
         xContiguous = l0op::BroadcastTo(xContiguous, baseShape, executor);
         if (xContiguous == nullptr) {
             OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "After broadcast, tensor xContiguous should not be null.");
@@ -373,19 +377,22 @@ static const aclTensor* BroadcastTensor(const aclTensor* x, const aclTensor* out
     // 涉及3维->4维，4维->5维，因此都reformat成ND
     x = l0op::ReFormat(x, op::Format::FORMAT_ND);
     if (x == nullptr) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Before broadcast, Reformat result is nullptr.");
+        OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "Before broadcast, Reformat result is nullptr.");
+        return nullptr;
     }
     if (x->GetViewShape() != out->GetViewShape()) {
         x = l0op::BroadcastTo(x, broadcastShape, executor);
         if (x == nullptr) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast result is nullptr.");
+            OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "Broadcast result is nullptr.");
+            return nullptr;
         }
     }
 
     // 涉及3维->4维，4维->5维，因此都reformat成ND
     x = l0op::ReFormat(x, op::Format::FORMAT_ND);
     if (x == nullptr) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Reformat result is nullptr.");
+        OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "Reformat result is nullptr.");
+        return nullptr;
     }
 
     return x;
@@ -542,6 +549,7 @@ aclnnStatus ExecRemainderTensorTensorGetWorkspaceSize(const aclTensor* self, con
 
         // 需要做broadcast
         auto broadcastShape = GetTensorShape(out, uniqueExecutor.get());
+        CHECK_RET(broadcastShape != nullptr, ACLNN_ERR_INNER_NULLPTR);
         selfContiguous = BroadcastTensor(selfContiguous, out, broadcastShape, uniqueExecutor.get());
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
         otherContiguous = BroadcastTensor(otherContiguous, out, broadcastShape, uniqueExecutor.get());
@@ -580,8 +588,9 @@ aclnnStatus ExecRemainderTensorScalarGetWorkspaceSize(const aclTensor* self, con
         auto selfCasted = l0op::Cast(selfContiguous, castDtype, uniqueExecutor.get());
         CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-        auto floorModOpOut = l0op::FloorMod(selfCasted, uniqueExecutor.get()->ConvertToTensor(other, castDtype),
-                                            uniqueExecutor.get());
+        auto otherTensor = uniqueExecutor.get()->ConvertToTensor(other, castDtype);
+        CHECK_RET(otherTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto floorModOpOut = l0op::FloorMod(selfCasted, otherTensor, uniqueExecutor.get());
         CHECK_RET(floorModOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
         auto castOut = l0op::Cast(floorModOpOut, out->GetDataType(), uniqueExecutor.get());
@@ -592,6 +601,7 @@ aclnnStatus ExecRemainderTensorScalarGetWorkspaceSize(const aclTensor* self, con
         auto selfContiguous = InitializeTensor(self, castDtype, uniqueExecutor.get());
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto otherContiguous = uniqueExecutor.get()->ConvertToTensor(other, castDtype);
+        CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto selfShape = GetTensorShape(selfContiguous, uniqueExecutor.get());
         CHECK_RET(selfShape != nullptr, ACLNN_ERR_INNER_NULLPTR);
         otherContiguous = l0op::BroadcastTo(otherContiguous, selfShape, uniqueExecutor.get());
@@ -653,8 +663,9 @@ aclnnStatus aclnnRemainderScalarTensorGetWorkspaceSize(const aclScalar* self, co
         auto otherCasted = l0op::Cast(otherContiguous, castDtype, uniqueExecutor.get());
         CHECK_RET(otherCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-        auto floorModOpOut = l0op::FloorMod(uniqueExecutor.get()->ConvertToTensor(self, castDtype), otherCasted,
-                                            uniqueExecutor.get());
+        auto selfTensor = uniqueExecutor.get()->ConvertToTensor(self, castDtype);
+        CHECK_RET(selfTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto floorModOpOut = l0op::FloorMod(selfTensor, otherCasted, uniqueExecutor.get());
         CHECK_RET(floorModOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
         auto castOut = l0op::Cast(floorModOpOut, out->GetDataType(), uniqueExecutor.get());
@@ -663,6 +674,7 @@ aclnnStatus aclnnRemainderScalarTensorGetWorkspaceSize(const aclScalar* self, co
         CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
     } else {
         auto selfContiguous = uniqueExecutor.get()->ConvertToTensor(self, out->GetDataType());
+        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto otherShape = GetTensorShape(other, uniqueExecutor.get());
         CHECK_RET(otherShape != nullptr, ACLNN_ERR_INNER_NULLPTR);
         selfContiguous = l0op::BroadcastTo(selfContiguous, otherShape, uniqueExecutor.get());
