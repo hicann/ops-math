@@ -43,15 +43,14 @@ ge::graphStatus StatelessRandomNormalV2Tiling::GetPlatformInfo()
     } else {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
         auto aivNum = ascendcPlatform.GetCoreNumAiv();
-        OP_CHECK_IF(
-            (aivNum <= 0), OP_LOGE(opName, "StatelessRandomNormalV2Tiling fail to get coreNum."),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((aivNum <= 0), OP_LOGE(opName, "StatelessRandomNormalV2Tiling fail to get coreNum."),
+                    return ge::GRAPH_FAILED);
         coreNum_ = aivNum;
         uint64_t ubSizePlatForm;
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
-        OP_CHECK_IF(
-            (ubSizePlatForm <= REGBASE_CCEC_CACHE_SIZE),
-            OP_LOGE(opName, "ub size less than REGBASE_CCEC_CACHE_SIZE Size. please check"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF((ubSizePlatForm <= REGBASE_CCEC_CACHE_SIZE),
+                    OP_LOGE(opName, "ub size less than REGBASE_CCEC_CACHE_SIZE Size. please check"),
+                    return ge::GRAPH_FAILED);
         ubSize_ = ubSizePlatForm - REGBASE_CCEC_CACHE_SIZE;
     }
     return ge::GRAPH_SUCCESS;
@@ -97,8 +96,7 @@ ge::graphStatus StatelessRandomNormalV2Tiling::GetInputInfo()
     if (alg_ != Algorithm::RNG_ALG_PHILOX) {
         std::string valueStr = std::to_string(static_cast<int32_t>(alg_));
         std::string reasonMsg = "alg only support RNG_ALG_PHILOX";
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            opName, "input alg", valueStr.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName, "input alg", valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -141,11 +139,10 @@ void StatelessRandomNormalV2Tiling::BlockTiling()
     blockTilingSize_ = std::max(static_cast<uint32_t>(blockAlignFactor), minTilingSize);
     blockNum_ = CeilDiv(outputSize_, blockTilingSize_);
     tailBlockTilingSize_ = outputSize_ - blockTilingSize_ * (blockNum_ - 1);
-    OP_LOGD(
-        opName,
-        "outputSize = %lld, blockFactor = %lld, blockAlignFactor = %lld,"
-        "blockTilingSize = %d, tailBlockTilingSize = %d",
-        outputSize_, blockFactor, blockAlignFactor, blockTilingSize_, tailBlockTilingSize_);
+    OP_LOGD(opName,
+            "outputSize = %lld, blockFactor = %lld, blockAlignFactor = %lld,"
+            "blockTilingSize = %d, tailBlockTilingSize = %d",
+            outputSize_, blockFactor, blockAlignFactor, blockTilingSize_, tailBlockTilingSize_);
     return;
 }
 
@@ -170,10 +167,7 @@ ge::graphStatus StatelessRandomNormalV2Tiling::DoOpTiling()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus StatelessRandomNormalV2Tiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus StatelessRandomNormalV2Tiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
 uint64_t StatelessRandomNormalV2Tiling::GetTilingKey() const
 {
@@ -192,11 +186,14 @@ ge::graphStatus StatelessRandomNormalV2Tiling::GetWorkspaceSize()
 ge::graphStatus StatelessRandomNormalV2Tiling::PostTiling()
 {
     auto workspaces = context_->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, workspaces);
     workspaces[0] = workspaceSize_;
     context_->SetTilingKey(GetTilingKey());
     context_->SetBlockDim(blockNum_);
-    tilingData.SaveToBuffer(context_->GetRawTilingData()->GetData(), context_->GetRawTilingData()->GetCapacity());
-    context_->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
+    auto rawTilingData = context_->GetRawTilingData();
+    OP_CHECK_NULL_WITH_CONTEXT(context_, rawTilingData);
+    tilingData.SaveToBuffer(rawTilingData->GetData(), rawTilingData->GetCapacity());
+    rawTilingData->SetDataSize(tilingData.GetDataSize());
     return ge::GRAPH_SUCCESS;
 }
 
@@ -224,7 +221,7 @@ static ge::graphStatus TilingPrepare4StatelessRandomNormalV2(gert::TilingParseCo
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);
 
     auto compileInfoPtr = context->GetCompiledInfo<StatelessRandomNormalV2CompileInfo>();
-    OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);
+    OP_CHECK_NULL_WITH_CONTEXT(context, compileInfoPtr);
 
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
     compileInfoPtr->aivNum = ascendcPlatform.GetCoreNumAiv();
