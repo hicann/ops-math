@@ -49,6 +49,7 @@ static ge::graphStatus InferShape4TileWithAxis(gert::InferShapeContext* context)
     // unknown rank 处理: input rank 未知时 output 也设未知
     if (Ops::Base::IsUnknownRank(*input_shape)) {
         Ops::Base::SetUnknownRank(*output_shape);
+        OP_LOGI(context->GetNodeName(), "TileWithAxis output shape: %s.", Ops::Base::ToString(*output_shape).c_str());
         return ge::GRAPH_SUCCESS;
     }
 
@@ -57,6 +58,7 @@ static ge::graphStatus InferShape4TileWithAxis(gert::InferShapeContext* context)
         // 标量输入: 输出 shape = [tiles]
         output_shape->SetDimNum(1);
         output_shape->SetDim(0, tiles);
+        OP_LOGI(context->GetNodeName(), "TileWithAxis output shape: %s.", Ops::Base::ToString(*output_shape).c_str());
         return ge::GRAPH_SUCCESS;
     }
 
@@ -75,9 +77,16 @@ static ge::graphStatus InferShape4TileWithAxis(gert::InferShapeContext* context)
         }
     }
 
+    OP_LOGI(context->GetNodeName(), "TileWithAxis output shape: %s.", Ops::Base::ToString(*output_shape).c_str());
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_INFERSHAPE(TileWithAxis).InferShape(InferShape4TileWithAxis);
+static ge::graphStatus InferDataType4TileWithAxis(gert::InferDataTypeContext* context)
+{
+    context->SetOutputDataType(0, context->GetInputDataType(0));
+    return ge::GRAPH_SUCCESS;
+}
+
+IMPL_OP_INFERSHAPE(TileWithAxis).InferShape(InferShape4TileWithAxis).InferDataType(InferDataType4TileWithAxis);
 
 } // namespace ops

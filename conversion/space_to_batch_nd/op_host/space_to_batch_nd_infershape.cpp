@@ -111,10 +111,12 @@ ge::graphStatus SpaceToBatchNDInferShapeHelper::Inference()
 
     if (Ops::Base::IsUnknownRank(*xShape_)) {
         Ops::Base::SetUnknownRank(*yShape_);
+        OP_LOGI(context_->GetNodeName(), "SpaceToBatchND output shape: %s.", Ops::Base::ToString(*yShape_).c_str());
         return ge::GRAPH_SUCCESS;
     }
 
     OP_CHECK_IF(CheckAndInfer() != ge::GRAPH_SUCCESS, OP_LOGE(context_, "infer failed"), return ge::GRAPH_FAILED);
+    OP_LOGI(context_->GetNodeName(), "SpaceToBatchND output shape: %s.", Ops::Base::ToString(*yShape_).c_str());
     return ge::GRAPH_SUCCESS;
 }
 
@@ -124,7 +126,14 @@ static ge::graphStatus Infershape4SpaceToBatchND(gert::InferShapeContext* contex
     return helper.Inference();
 }
 
+static ge::graphStatus InferDataType4SpaceToBatchND(gert::InferDataTypeContext* context)
+{
+    context->SetOutputDataType(OUTPUT_IDX_Y, context->GetInputDataType(INPUT_IDX_X));
+    return ge::GRAPH_SUCCESS;
+}
+
 IMPL_OP_INFERSHAPE(SpaceToBatchND)
     .InferShape(Infershape4SpaceToBatchND)
+    .InferDataType(InferDataType4SpaceToBatchND)
     .InputsDataDependency({INPUT_IDX_BS, INPUT_IDX_PADS});
 } // namespace ops

@@ -89,11 +89,18 @@ static ge::graphStatus Infershape4DiagV2(gert::InferShapeContext* context)
     }
 
     OP_LOGD(context, "output_y_shape = %s.", Ops::Base::ToString(*output_y_shape).c_str());
+    OP_LOGI(context, "DiagV2 output shape: %s.", Ops::Base::ToString(*output_y_shape).c_str());
     OP_LOGD(context, "End to do DiagV2Infershape.");
 
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_INFERSHAPE(DiagV2).InferShape(Infershape4DiagV2);
+static ge::graphStatus InferDataType4DiagV2(gert::InferDataTypeContext* context)
+{
+    context->SetOutputDataType(DiagV2_OUT_Y_IDX, context->GetInputDataType(DiagV2_IN_X_IDX));
+    return ge::GRAPH_SUCCESS;
+}
+
+IMPL_OP_INFERSHAPE(DiagV2).InferShape(Infershape4DiagV2).InferDataType(InferDataType4DiagV2);
 // -------------------DiagV2 Ops END---------------------
 } // namespace ops

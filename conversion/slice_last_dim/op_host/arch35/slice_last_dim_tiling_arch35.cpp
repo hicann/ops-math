@@ -25,8 +25,7 @@ static constexpr double MIN_CORE_UTIL_RATIO = 0.8;
 
 class SliceLastDimTiling {
 public:
-    explicit SliceLastDimTiling(gert::TilingContext* context) : context_(context)
-    {}
+    explicit SliceLastDimTiling(gert::TilingContext* context) : context_(context) {}
     ge::graphStatus DoTiling();
 
 private:
@@ -35,10 +34,10 @@ private:
     ge::graphStatus ComputeAndSetTiling();
 
     void InitElementSizes();
-    void DoCacheLineTiling(
-        int64_t alignedLast, int32_t& startAxis, int64_t& clInnerProduct, int64_t& minUbFactor, int64_t& outerProduct);
-    void DoTilingSearch(
-        int64_t alignedLast, int32_t startAxis, int64_t minUbFactor, int64_t clInnerProduct, int64_t outerProduct);
+    void DoCacheLineTiling(int64_t alignedLast, int32_t& startAxis, int64_t& clInnerProduct, int64_t& minUbFactor,
+                           int64_t& outerProduct);
+    void DoTilingSearch(int64_t alignedLast, int32_t startAxis, int64_t minUbFactor, int64_t clInnerProduct,
+                        int64_t outerProduct);
     ge::graphStatus SetTilingData();
 
     gert::TilingContext* context_;
@@ -78,32 +77,28 @@ ge::graphStatus SliceLastDimTiling::GetSocInfo()
     coreNum_ = ascendcPlatform.GetCoreNumAiv();
     OP_CHECK_IF(
         (coreNum_ == 0U),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "coreNum", std::to_string(coreNum_).c_str(), "The core num must be positive."),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "coreNum", std::to_string(coreNum_).c_str(),
+                                              "The core num must be positive."),
         return ge::GRAPH_FAILED);
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
-    OP_CHECK_IF(
-        (ubSize == 0U),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "ubSize", std::to_string(ubSize).c_str(),
-            "Failed to get ub size, ub size must be positive."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((ubSize == 0U),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize", std::to_string(ubSize).c_str(),
+                                                      "Failed to get ub size, ub size must be positive."),
+                return ge::GRAPH_FAILED);
     ubSize_ = static_cast<uint32_t>(ubSize);
     cacheLineSize_ = Ops::Base::GetCacheLineSize(context_);
-    OP_CHECK_IF(
-        (cacheLineSize_ == 0U),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "cacheLineSize", std::to_string(cacheLineSize_).c_str(),
-            "Failed to get cache line size, cache line size must be positive."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((cacheLineSize_ == 0U),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                    context_->GetNodeName(), "cacheLineSize", std::to_string(cacheLineSize_).c_str(),
+                    "Failed to get cache line size, cache line size must be positive."),
+                return ge::GRAPH_FAILED);
     ubBlockSize_ = Ops::Base::GetUbBlockSize(context_);
-    OP_CHECK_IF(
-        (ubBlockSize_ == 0U),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "ubBlockSize", std::to_string(ubBlockSize_).c_str(),
-            "Failed to get block size, block size must be positive."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((ubBlockSize_ == 0U),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubBlockSize",
+                                                      std::to_string(ubBlockSize_).c_str(),
+                                                      "Failed to get block size, block size must be positive."),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -113,21 +108,19 @@ ge::graphStatus SliceLastDimTiling::GetParams()
     OP_CHECK_NULL_WITH_CONTEXT(context_, inputValueDesc);
     auto inputDataType = inputValueDesc->GetDataType();
     dSize_ = ge::GetSizeByDataType(inputDataType);
-    OP_CHECK_IF(
-        dSize_ <= 0,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "dSize", std::to_string(dSize_).c_str(), "The data type size must be positive."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(dSize_ <= 0,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "dSize", std::to_string(dSize_).c_str(),
+                                                      "The data type size must be positive."),
+                return ge::GRAPH_FAILED);
 
     auto xInputShape = context_->GetInputShape(INPUT_IDX_X);
     OP_CHECK_NULL_WITH_CONTEXT(context_, xInputShape);
     auto xShape = xInputShape->GetStorageShape();
     rank_ = static_cast<int64_t>(xShape.GetDimNum());
-    OP_CHECK_IF(
-        rank_ < 1 || rank_ > static_cast<int64_t>(MAX_RANK),
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-            context_->GetNodeName(), "x", std::to_string(rank_).c_str(), "The shape dim of x must be in [1, 8]."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(rank_ < 1 || rank_ > static_cast<int64_t>(MAX_RANK),
+                OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "x", std::to_string(rank_).c_str(),
+                                                         "The shape dim of x must be in [1, 8]."),
+                return ge::GRAPH_FAILED);
     for (int64_t i = 0; i < rank_; ++i) {
         inShape_[i] = xShape.GetDim(i);
     }
@@ -151,8 +144,8 @@ ge::graphStatus SliceLastDimTiling::GetParams()
     }
     OP_CHECK_IF(
         stride_ < 1,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "stride", std::to_string(stride_).c_str(), "The value of stride must be >= 1."),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "stride", std::to_string(stride_).c_str(),
+                                              "The value of stride must be >= 1."),
         return ge::GRAPH_FAILED);
 
     lastDimIn_ = inShape_[rank_ - 1];
@@ -192,8 +185,8 @@ void SliceLastDimTiling::InitElementSizes()
     cacheLineElements_ = cacheLineSize_ / static_cast<uint32_t>(dSize_);
 }
 
-void SliceLastDimTiling::DoCacheLineTiling(
-    int64_t alignedLast, int32_t& startAxis, int64_t& clInnerProduct, int64_t& minUbFactor, int64_t& outerProduct)
+void SliceLastDimTiling::DoCacheLineTiling(int64_t alignedLast, int32_t& startAxis, int64_t& clInnerProduct,
+                                           int64_t& minUbFactor, int64_t& outerProduct)
 {
     int64_t outShape[2];
     outShape[0] = outerSize_;
@@ -220,8 +213,8 @@ void SliceLastDimTiling::DoCacheLineTiling(
     }
 }
 
-void SliceLastDimTiling::DoTilingSearch(
-    int64_t alignedLast, int32_t startAxis, int64_t minUbFactor, int64_t clInnerProduct, int64_t outerProduct)
+void SliceLastDimTiling::DoTilingSearch(int64_t alignedLast, int32_t startAxis, int64_t minUbFactor,
+                                        int64_t clInnerProduct, int64_t outerProduct)
 {
     int64_t outShape[2];
     outShape[0] = outerSize_;
@@ -273,10 +266,9 @@ ge::graphStatus SliceLastDimTiling::SetTilingData()
     perCoreCount_ = Ops::Base::CeilDiv(totalCount_, static_cast<uint64_t>(coreNum_));
     uint64_t realCoreNum = Ops::Base::CeilDiv(totalCount_, perCoreCount_);
 
-    OP_LOGI(
-        context_,
-        "SliceLastDim tiling: copyMode=%u ubAxis=%u ubFactor=%u totalCount=%lu perCoreCount=%lu realCoreNum=%lu",
-        copyMode_, ubAxis_, ubFactor_, totalCount_, perCoreCount_, realCoreNum);
+    OP_LOGI(context_,
+            "SliceLastDim tiling: copyMode=%u ubAxis=%u ubFactor=%u totalCount=%lu perCoreCount=%lu realCoreNum=%lu",
+            copyMode_, ubAxis_, ubFactor_, totalCount_, perCoreCount_, realCoreNum);
 
     auto tilingData = context_->GetTilingData<SliceLastDimTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context_, tilingData);
@@ -293,12 +285,11 @@ ge::graphStatus SliceLastDimTiling::SetTilingData()
     context_->SetTilingKey(GET_TPL_TILING_KEY(copyMode_, ubAxis_));
     context_->SetBlockDim(realCoreNum);
 
-    OP_LOGI(
-        context_,
-        "SliceLastDim tilingData: outerSize=%ld lastDimIn=%ld lastDimOut=%ld start=%ld stride=%ld "
-        "totalCount=%lu perCoreCount=%lu ubFactor=%u bufferSize=%u",
-        tilingData->outerSize, tilingData->lastDimIn, tilingData->lastDimOut, tilingData->start, tilingData->stride,
-        tilingData->totalCount, tilingData->perCoreCount, tilingData->ubFactor, tilingData->bufferSize);
+    OP_LOGI(context_,
+            "SliceLastDim tilingData: outerSize=%ld lastDimIn=%ld lastDimOut=%ld start=%ld stride=%ld "
+            "totalCount=%lu perCoreCount=%lu ubFactor=%u bufferSize=%u",
+            tilingData->outerSize, tilingData->lastDimIn, tilingData->lastDimOut, tilingData->start, tilingData->stride,
+            tilingData->totalCount, tilingData->perCoreCount, tilingData->ubFactor, tilingData->bufferSize);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -319,18 +310,15 @@ ge::graphStatus SliceLastDimTiling::ComputeAndSetTiling()
 ge::graphStatus SliceLastDimTiling::DoTiling()
 {
     auto ret = GetSocInfo();
-    OP_CHECK_IF(
-        ret != ge::GRAPH_SUCCESS,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "GetSocInfo", "failed", ""), return ret);
+    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "GetSocInfo", "failed", ""), return ret);
     ret = GetParams();
-    OP_CHECK_IF(
-        ret != ge::GRAPH_SUCCESS,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "GetParams", "failed", ""), return ret);
+    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "GetParams", "failed", ""), return ret);
     ret = ComputeAndSetTiling();
-    OP_CHECK_IF(
-        ret != ge::GRAPH_SUCCESS,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ComputeAndSetTiling", "failed", ""),
-        return ret);
+    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ComputeAndSetTiling", "failed", ""),
+                return ret);
 
     size_t* workSpaceSize = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, workSpaceSize);
@@ -340,6 +328,7 @@ ge::graphStatus SliceLastDimTiling::DoTiling()
 
 static ge::graphStatus SliceLastDimTilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     SliceLastDimTiling tiling(context);
     return tiling.DoTiling();
 }

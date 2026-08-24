@@ -66,7 +66,13 @@ static ge::graphStatus InfershapeForDiagFlat(gert::InferShapeContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_INFERSHAPE(DiagFlat).InferShape(InfershapeForDiagFlat);
+static ge::graphStatus InferDataTypeForDiagFlat(gert::InferDataTypeContext* context)
+{
+    context->SetOutputDataType(DIAGFLAT_OUT_Y_IDX, context->GetInputDataType(DIAGFLAT_IN_X_IDX));
+    return ge::GRAPH_SUCCESS;
+}
+
+IMPL_OP_INFERSHAPE(DiagFlat).InferShape(InfershapeForDiagFlat).InferDataType(InferDataTypeForDiagFlat);
 // -------------------DiagFlat Ops END---------------------
 
 } // namespace ops

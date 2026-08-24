@@ -282,6 +282,24 @@ ge::graphStatus SpaceToBatchNDTiling::SetTilingData()
         tilingData->padBottom[i] = padBottom_[i];
     }
 
+    OP_LOGI(context_,
+            "SpaceToBatchND TilingData: rank=%ld inShape=[%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld] "
+            "outShape=[%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld] totalCount=%ld perCoreCount=%ld ubAxis=%ld "
+            "ubFactor=%ld bufferSize=%ld numSpatialDims=%ld blockShape=[%ld,%ld,%ld,%ld,%ld,%ld,%ld] "
+            "padTop=[%ld,%ld,%ld,%ld,%ld,%ld,%ld] padBottom=[%ld,%ld,%ld,%ld,%ld,%ld,%ld]",
+            tilingData->rank, tilingData->inShape[0], tilingData->inShape[1], tilingData->inShape[2],
+            tilingData->inShape[3], tilingData->inShape[4], tilingData->inShape[5], tilingData->inShape[6],
+            tilingData->inShape[7], tilingData->inShape[8], tilingData->outShape[0], tilingData->outShape[1],
+            tilingData->outShape[2], tilingData->outShape[3], tilingData->outShape[4], tilingData->outShape[5],
+            tilingData->outShape[6], tilingData->outShape[7], tilingData->outShape[8], tilingData->totalCount,
+            tilingData->perCoreCount, tilingData->ubAxis, tilingData->ubFactor, tilingData->bufferSize,
+            tilingData->numSpatialDims, tilingData->blockShape[0], tilingData->blockShape[1], tilingData->blockShape[2],
+            tilingData->blockShape[3], tilingData->blockShape[4], tilingData->blockShape[5], tilingData->blockShape[6],
+            tilingData->padTop[0], tilingData->padTop[1], tilingData->padTop[2], tilingData->padTop[3],
+            tilingData->padTop[4], tilingData->padTop[5], tilingData->padTop[6], tilingData->padBottom[0],
+            tilingData->padBottom[1], tilingData->padBottom[2], tilingData->padBottom[3], tilingData->padBottom[4],
+            tilingData->padBottom[5], tilingData->padBottom[6]);
+
     uint64_t tilingKey = GET_TPL_TILING_KEY(static_cast<uint64_t>(rank_) - static_cast<uint64_t>(ubAxis_));
 
     OP_LOGI(context_, "tilingKey is %lu, ubAxis %u", tilingKey, ubAxis_);
@@ -323,6 +341,7 @@ ge::graphStatus SpaceToBatchNDTiling::DoTiling()
 
 static ge::graphStatus SpaceToBatchNDTilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     SpaceToBatchNDTiling tiling(context);
     return tiling.DoTiling();
 }

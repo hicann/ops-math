@@ -21,6 +21,7 @@ struct CircularPadGradCompileInfo {};
 
 static ge::graphStatus CircularPadGradTiling(gert::TilingContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     OP_LOGD(context->GetNodeName(), "CircularPadGradTiling running begin");
     PadV3GradACTiling tilingObject(context);
     tilingObject.isCircularPadGrad_ = true;

@@ -72,16 +72,28 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 // ============================================================================
 // Helper: Handle scalar (rank=0) input
 // ============================================================================
-static ge::graphStatus HandleScalarInput(gert::TilingContext* context, int64_t tiles,
-                                         uint64_t ubSize)
+static void LogTilingData(gert::TilingContext* context, const TileWithAxisTilingData* tiling)
+{
+    OP_LOGI(context->GetNodeName(),
+            "TileWithAxis TilingData: inShape=[%ld,%ld,%ld] outShape=[%ld,%ld,%ld] totalCount=%lu "
+            "perCoreCount=%lu ubAxis=%u ubFactor=%u bufferSize=%u tiles=%ld rowLength=%ld",
+            tiling->inShape[0], tiling->inShape[1], tiling->inShape[2], tiling->outShape[0], tiling->outShape[1],
+            tiling->outShape[2], tiling->totalCount, tiling->perCoreCount, tiling->ubAxis, tiling->ubFactor,
+            tiling->bufferSize, tiling->tiles, tiling->rowLength);
+}
+
+static ge::graphStatus HandleScalarInput(gert::TilingContext* context, int64_t tiles, uint64_t ubSize)
 {
     TileWithAxisTilingData* tiling = context->GetTilingData<TileWithAxisTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(TileWithAxisTilingData), 0, sizeof(TileWithAxisTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
-    tiling->inShape[0] = 1; tiling->inShape[1] = 1; tiling->inShape[2] = 1;
-    tiling->outShape[0] = 1; tiling->outShape[1] = tiles; tiling->outShape[2] = 1;
+    OP_CHECK_IF(memset_s(tiling, sizeof(TileWithAxisTilingData), 0, sizeof(TileWithAxisTilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    tiling->inShape[0] = 1;
+    tiling->inShape[1] = 1;
+    tiling->inShape[2] = 1;
+    tiling->outShape[0] = 1;
+    tiling->outShape[1] = tiles;
+    tiling->outShape[2] = 1;
     tiling->totalCount = 1;
     tiling->perCoreCount = 1;
     tiling->ubAxis = 0;
@@ -89,10 +101,11 @@ static ge::graphStatus HandleScalarInput(gert::TilingContext* context, int64_t t
     tiling->bufferSize = ubSize / 2;
     tiling->tiles = tiles;
     tiling->rowLength = 1;
+    LogTilingData(context, tiling);
     context->SetBlockDim(1);
     ASCENDC_TPL_SEL_PARAM(context, static_cast<uint32_t>(0));
-    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -116,16 +129,17 @@ static ge::graphStatus NormalizeAxis(gert::TilingContext* context, int64_t& axis
 // ============================================================================
 static int64_t MaxBlocksOnAxis(uint8_t ax, int64_t outerDim, int64_t tiles, int64_t rowLength)
 {
-    if (ax == 0) return outerDim;
-    if (ax == 1) return outerDim * tiles;
+    if (ax == 0)
+        return outerDim;
+    if (ax == 1)
+        return outerDim * tiles;
     return outerDim * tiles * rowLength;
 }
 
 // ============================================================================
 // Helper: Compute ubFactor from axis + target block count
 // ============================================================================
-static uint32_t ComputeUbFactor(uint8_t ax, int64_t target,
-                                int64_t outerDim, int64_t tiles, int64_t rowLength)
+static uint32_t ComputeUbFactor(uint8_t ax, int64_t target, int64_t outerDim, int64_t tiles, int64_t rowLength)
 {
     if (ax == 0) {
         return static_cast<uint32_t>(std::max(static_cast<int64_t>(1), CeilDiv(outerDim, target)));
@@ -141,20 +155,21 @@ static uint32_t ComputeUbFactor(uint8_t ax, int64_t target,
 // ============================================================================
 // Helper: Compute totalCount from axis + ubFactor
 // ============================================================================
-static uint64_t ComputeTotalCount(uint8_t ax, int64_t uf,
-                                  int64_t outerDim, int64_t tiles, int64_t rowLength)
+static uint64_t ComputeTotalCount(uint8_t ax, int64_t uf, int64_t outerDim, int64_t tiles, int64_t rowLength)
 {
-    if (ax == 0) return static_cast<uint64_t>(CeilDiv(outerDim, uf));
-    if (ax == 1) return static_cast<uint64_t>(outerDim * CeilDiv(tiles, uf));
+    if (ax == 0)
+        return static_cast<uint64_t>(CeilDiv(outerDim, uf));
+    if (ax == 1)
+        return static_cast<uint64_t>(outerDim * CeilDiv(tiles, uf));
     return static_cast<uint64_t>(outerDim * tiles * CeilDiv(rowLength, uf));
 }
 
 // ============================================================================
 // Step 2: Select initial UB axis by priority (0 > 1 > 2)
 // ============================================================================
-static void SelectInitialUbAxis(int64_t ubFactor0, int64_t ubFactor1, int64_t ubFactor2,
-                                int64_t outerDim, int64_t tiles, int64_t rowLength,
-                                uint8_t& ubAxis, uint32_t& ubFactor, uint64_t& totalCount)
+static void SelectInitialUbAxis(int64_t ubFactor0, int64_t ubFactor1, int64_t ubFactor2, int64_t outerDim,
+                                int64_t tiles, int64_t rowLength, uint8_t& ubAxis, uint32_t& ubFactor,
+                                uint64_t& totalCount)
 {
     if (ubFactor0 >= 1) {
         ubAxis = 0;
@@ -174,10 +189,9 @@ static void SelectInitialUbAxis(int64_t ubFactor0, int64_t ubFactor1, int64_t ub
 // ============================================================================
 // Step 2.5: Core-aware ubFactor adjustment + cross-axis fallback
 // ============================================================================
-static void AdjustForCoreUtilization(uint8_t& ubAxis, uint32_t& ubFactor, uint64_t& totalCount,
-                                     int64_t ubFactor0, int64_t ubFactor1, int64_t ubFactor2,
-                                     int64_t outerDim, int64_t tiles, int64_t rowLength,
-                                     int64_t coreNum)
+static void AdjustForCoreUtilization(uint8_t& ubAxis, uint32_t& ubFactor, uint64_t& totalCount, int64_t ubFactor0,
+                                     int64_t ubFactor1, int64_t ubFactor2, int64_t outerDim, int64_t tiles,
+                                     int64_t rowLength, int64_t coreNum)
 {
     int64_t totalOutElements = outerDim * tiles * rowLength;
     int64_t thresholdBlocks = static_cast<int64_t>(static_cast<double>(coreNum) * TARGET_CORE_RATIO);
@@ -202,31 +216,33 @@ static void AdjustForCoreUtilization(uint8_t& ubAxis, uint32_t& ubFactor, uint64
         return;
     }
 
-    uint8_t  bestAxis  = ubAxis;
+    uint8_t bestAxis = ubAxis;
     uint64_t bestCount = totalCount;
-    uint32_t bestUf    = ubFactor;
+    uint32_t bestUf = ubFactor;
 
     const int64_t origUbFactors[] = {ubFactor0, ubFactor1, ubFactor2};
     for (uint8_t cand = 0; cand < 3; cand++) {
-        if (cand == ubAxis || origUbFactors[cand] < 1) continue;
+        if (cand == ubAxis || origUbFactors[cand] < 1)
+            continue;
 
         int64_t maxOnCand = MaxBlocksOnAxis(cand, outerDim, tiles, rowLength);
         int64_t candTarget = std::min({thresholdBlocks, maxBlocksByData, maxOnCand, coreNum});
-        uint32_t candUf    = ComputeUbFactor(cand, candTarget, outerDim, tiles, rowLength);
+        uint32_t candUf = ComputeUbFactor(cand, candTarget, outerDim, tiles, rowLength);
         uint64_t candCount = ComputeTotalCount(cand, static_cast<int64_t>(candUf), outerDim, tiles, rowLength);
 
-        if (candCount > static_cast<uint64_t>(coreNum)) continue;
+        if (candCount > static_cast<uint64_t>(coreNum))
+            continue;
 
         if (candCount > bestCount) {
-            bestAxis  = cand;
+            bestAxis = cand;
             bestCount = candCount;
-            bestUf    = candUf;
+            bestUf = candUf;
         }
     }
 
     if (bestAxis != ubAxis) {
-        ubAxis    = bestAxis;
-        ubFactor  = bestUf;
+        ubAxis = bestAxis;
+        ubFactor = bestUf;
         totalCount = bestCount;
     }
 }
@@ -236,13 +252,12 @@ static void AdjustForCoreUtilization(uint8_t& ubAxis, uint32_t& ubFactor, uint64
 // ============================================================================
 static ge::graphStatus TileWithAxisTilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     // 1. 获取平台运行信息
     uint64_t ubSize;
     int64_t coreNum;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, &ubSize, &coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, &ubSize, &coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     // 2. 获取输入信息
     auto inputX = context->GetInputShape(0);
@@ -272,8 +287,8 @@ static ge::graphStatus TileWithAxisTilingFunc(gert::TilingContext* context)
     }
 
     // 4. 校验并归一化 axis
-    OP_CHECK_IF(NormalizeAxis(context, axis, rank) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "NormalizeAxis failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(NormalizeAxis(context, axis, rank) != ge::GRAPH_SUCCESS, OP_LOGE(context, "NormalizeAxis failed"),
+                return ge::GRAPH_FAILED);
 
     // 5. 计算展平参数 (v1.6 折叠 axisDim 进 rowLength)
     int64_t outerDim = 1;
@@ -290,13 +305,13 @@ static ge::graphStatus TileWithAxisTilingFunc(gert::TilingContext* context)
     // 6. TilingData 空间分配
     TileWithAxisTilingData* tiling = context->GetTilingData<TileWithAxisTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(TileWithAxisTilingData), 0, sizeof(TileWithAxisTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(TileWithAxisTilingData), 0, sizeof(TileWithAxisTilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     // 7. UB 切分
     int64_t dtypeSize = static_cast<int64_t>(ge::GetSizeByDataType(dataType));
-    OP_CHECK_IF(dtypeSize <= 0, OP_LOGE(context, "unsupported dtype, GetSizeByDataType returned %ld", dtypeSize), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(dtypeSize <= 0, OP_LOGE(context, "unsupported dtype, GetSizeByDataType returned %ld", dtypeSize),
+                return ge::GRAPH_FAILED);
     int64_t bufferSizeElements = (static_cast<int64_t>(ubSize) / 2) / dtypeSize;
     int64_t rowOutElements = tiles * rowLength;
 
@@ -304,16 +319,14 @@ static ge::graphStatus TileWithAxisTilingFunc(gert::TilingContext* context)
     int64_t ubFactor1 = (rowLength > 0) ? std::min(tiles, bufferSizeElements / rowLength) : 0;
     int64_t ubFactor2 = std::min(rowLength, bufferSizeElements);
 
-    uint8_t  ubAxis = 0;
+    uint8_t ubAxis = 0;
     uint32_t ubFactor = 1;
     uint64_t totalCount = 0;
 
-    SelectInitialUbAxis(ubFactor0, ubFactor1, ubFactor2, outerDim, tiles, rowLength,
-                        ubAxis, ubFactor, totalCount);
+    SelectInitialUbAxis(ubFactor0, ubFactor1, ubFactor2, outerDim, tiles, rowLength, ubAxis, ubFactor, totalCount);
 
-    AdjustForCoreUtilization(ubAxis, ubFactor, totalCount,
-                             ubFactor0, ubFactor1, ubFactor2,
-                             outerDim, tiles, rowLength, coreNum);
+    AdjustForCoreUtilization(ubAxis, ubFactor, totalCount, ubFactor0, ubFactor1, ubFactor2, outerDim, tiles, rowLength,
+                             coreNum);
 
     // 8. 多核切分
     uint64_t perCoreCount = static_cast<uint64_t>(CeilDiv(static_cast<int64_t>(totalCount), coreNum));
@@ -333,14 +346,13 @@ static ge::graphStatus TileWithAxisTilingFunc(gert::TilingContext* context)
     tiling->bufferSize = static_cast<uint32_t>(ubSize) / 2;
     tiling->tiles = tiles;
     tiling->rowLength = rowLength;
+    LogTilingData(context, tiling);
 
     // 10. 设置 BlockDim + workspace + TilingKey
     context->SetBlockDim(realCoreNum);
 
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     ASCENDC_TPL_SEL_PARAM(context, static_cast<uint32_t>(ubAxis));
 
@@ -360,6 +372,8 @@ struct TileWithAxisCompileInfo {};
 // ============================================================================
 // Tiling 注册入口
 // ============================================================================
-IMPL_OP_OPTILING(TileWithAxis).Tiling(TileWithAxisTilingFunc).TilingParse<TileWithAxisCompileInfo>(TilingParseForTileWithAxis);
+IMPL_OP_OPTILING(TileWithAxis)
+    .Tiling(TileWithAxisTilingFunc)
+    .TilingParse<TileWithAxisCompileInfo>(TilingParseForTileWithAxis);
 
 } // namespace optiling

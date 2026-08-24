@@ -30,7 +30,7 @@ static constexpr uint32_t MAX_BUFFER_SIZE = 64 * 1024U;
 
 class SpaceToBatchTiling {
 public:
-    explicit SpaceToBatchTiling(gert::TilingContext* context) : context_(context){};
+    explicit SpaceToBatchTiling(gert::TilingContext* context) : context_(context) {};
     ~SpaceToBatchTiling() = default;
 
     ge::graphStatus DoTiling();
@@ -299,6 +299,12 @@ ge::graphStatus SpaceToBatchTiling::DoTiling()
     OP_LOGI(context_, "inShape=%s, outShape=%s, blockSize=%ld, paddings=[%ld,%ld,%ld,%ld]",
             ArrToStr(inShape_, STB_AXIS_COUNT).c_str(), ArrToStr(outShape_, STB_AXIS_COUNT).c_str(), blockSize_,
             paddings_[0][0], paddings_[0][1], paddings_[1][0], paddings_[1][1]);
+    OP_LOGI(context_->GetNodeName(),
+            "SpaceToBatch TilingData: inShape=%s outShape=%s blockSize=%ld paddings=[%ld,%ld,%ld,%ld] "
+            "totalCount=%lu perCoreCount=%lu ubAxis=%u ubFactor=%u bufferSize=%u",
+            ArrToStr(inShape_, STB_AXIS_COUNT).c_str(), ArrToStr(outShape_, STB_AXIS_COUNT).c_str(), blockSize_,
+            paddings_[0][0], paddings_[0][1], paddings_[1][0], paddings_[1][1], tilingData->totalCount,
+            tilingData->perCoreCount, tilingData->ubAxis, tilingData->ubFactor, tilingData->bufferSize);
 
     context_->SetTilingKey(tilingKey);
     context_->SetBlockDim(realCoreNum_);
@@ -312,6 +318,7 @@ ge::graphStatus SpaceToBatchTiling::DoTiling()
 
 static ge::graphStatus Tiling4SpaceToBatch(gert::TilingContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     SpaceToBatchTiling tiling{context};
     return tiling.DoTiling();
 }

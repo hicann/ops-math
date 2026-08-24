@@ -17,6 +17,7 @@
  */
 #include "register/op_impl_registry.h"
 #include "op_common/log/log.h"
+#include "util/shape_util.h"
 
 using namespace ge;
 
@@ -45,29 +46,25 @@ static ge::graphStatus InferShape4DataCompare(gert::InferShapeContext* context)
     const int64_t x2Rank = static_cast<int64_t>(x2Shape->GetDimNum());
 
     // rank 校验 ≤ 8
-    OP_CHECK_IF(
-        x1Rank > static_cast<int64_t>(kMaxRank),
-        OP_LOGE(context->GetNodeName(), "x1 rank %ld exceeds max %zu", x1Rank, kMaxRank), return GRAPH_FAILED);
-    OP_CHECK_IF(
-        x2Rank > static_cast<int64_t>(kMaxRank),
-        OP_LOGE(context->GetNodeName(), "x2 rank %ld exceeds max %zu", x2Rank, kMaxRank), return GRAPH_FAILED);
+    OP_CHECK_IF(x1Rank > static_cast<int64_t>(kMaxRank),
+                OP_LOGE(context->GetNodeName(), "x1 rank %ld exceeds max %zu", x1Rank, kMaxRank), return GRAPH_FAILED);
+    OP_CHECK_IF(x2Rank > static_cast<int64_t>(kMaxRank),
+                OP_LOGE(context->GetNodeName(), "x2 rank %ld exceeds max %zu", x2Rank, kMaxRank), return GRAPH_FAILED);
 
     // shape 一致性校验
-    OP_CHECK_IF(
-        x1Rank != x2Rank, OP_LOGE(context->GetNodeName(), "x1 rank %ld != x2 rank %ld", x1Rank, x2Rank),
-        return GRAPH_FAILED);
+    OP_CHECK_IF(x1Rank != x2Rank, OP_LOGE(context->GetNodeName(), "x1 rank %ld != x2 rank %ld", x1Rank, x2Rank),
+                return GRAPH_FAILED);
     for (int64_t i = 0; i < x1Rank; ++i) {
-        OP_CHECK_IF(
-            x1Shape->GetDim(static_cast<size_t>(i)) != x2Shape->GetDim(static_cast<size_t>(i)),
-            OP_LOGE(
-                context->GetNodeName(), "x1 dim[%ld]=%ld != x2 dim[%ld]=%ld", i,
-                x1Shape->GetDim(static_cast<size_t>(i)), i, x2Shape->GetDim(static_cast<size_t>(i))),
-            return GRAPH_FAILED);
+        OP_CHECK_IF(x1Shape->GetDim(static_cast<size_t>(i)) != x2Shape->GetDim(static_cast<size_t>(i)),
+                    OP_LOGE(context->GetNodeName(), "x1 dim[%ld]=%ld != x2 dim[%ld]=%ld", i,
+                            x1Shape->GetDim(static_cast<size_t>(i)), i, x2Shape->GetDim(static_cast<size_t>(i))),
+                    return GRAPH_FAILED);
     }
 
     // 输出固定为标量（0 维）
     *numShape = gert::Shape();
 
+    OP_LOGI(context->GetNodeName(), "DataCompare output shape: %s.", Ops::Base::ToString(*numShape).c_str());
     OP_LOGD(context->GetNodeName(), "End InferShape: x1Rank=%ld, output=scalar", x1Rank);
     return GRAPH_SUCCESS;
 }

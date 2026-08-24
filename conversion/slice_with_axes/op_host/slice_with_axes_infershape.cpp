@@ -10,6 +10,7 @@
 
 #include "register/op_impl_registry.h"
 #include "log/log.h"
+#include "util/shape_util.h"
 
 using namespace ge;
 namespace ops {
@@ -78,10 +79,18 @@ static ge::graphStatus Infershape4SliceWithAxes(gert::InferShapeContext* context
         yShape->SetDim(axis, sliceSize);
     }
 
+    OP_LOGI(context->GetNodeName(), "SliceWithAxes output shape: %s.", Ops::Base::ToString(*yShape).c_str());
+    return ge::GRAPH_SUCCESS;
+}
+
+static ge::graphStatus InferDataType4SliceWithAxes(gert::InferDataTypeContext* context)
+{
+    context->SetOutputDataType(OUTPUT_IDX_Y, context->GetInputDataType(INPUT_IDX_X));
     return ge::GRAPH_SUCCESS;
 }
 
 IMPL_OP_INFERSHAPE(SliceWithAxes)
     .InferShape(Infershape4SliceWithAxes)
+    .InferDataType(InferDataType4SliceWithAxes)
     .InputsDataDependency({INPUT_IDX_OFFSETS, INPUT_IDX_SIZE});
 } // namespace ops

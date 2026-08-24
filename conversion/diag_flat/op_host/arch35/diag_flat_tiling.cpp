@@ -40,18 +40,15 @@ constexpr int64_t SIMT_DCACHE_SIZE = 64 * 1024;
 // ============================================================================
 // Helper: Get platform info (ubSize, coreNum)
 // ============================================================================
-static ge::graphStatus GetPlatformInfo(gert::TilingContext* context,
-                                        uint64_t* ubSize, int64_t* coreNum)
+static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t* ubSize, int64_t* coreNum)
 {
     fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
     *coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(*coreNum == 0, OP_LOGE(context, "coreNum is 0"),
-                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(*coreNum == 0, OP_LOGE(context, "coreNum is 0"), return ge::GRAPH_FAILED);
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, *ubSize);
-    OP_CHECK_IF(*ubSize == 0, OP_LOGE(context, "ubSize is 0"),
-                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(*ubSize == 0, OP_LOGE(context, "ubSize is 0"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -61,15 +58,22 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context,
 static int64_t GetDtypeSize(ge::DataType dataType)
 {
     switch (dataType) {
-        case ge::DT_FLOAT16: case ge::DT_BF16:
-        case ge::DT_INT16: case ge::DT_UINT16:
+        case ge::DT_FLOAT16:
+        case ge::DT_BF16:
+        case ge::DT_INT16:
+        case ge::DT_UINT16:
             return 2;
-        case ge::DT_FLOAT: case ge::DT_INT32: case ge::DT_UINT32:
+        case ge::DT_FLOAT:
+        case ge::DT_INT32:
+        case ge::DT_UINT32:
             return 4;
-        case ge::DT_DOUBLE: case ge::DT_INT64: case ge::DT_UINT64:
+        case ge::DT_DOUBLE:
+        case ge::DT_INT64:
+        case ge::DT_UINT64:
         case ge::DT_COMPLEX64:
             return 8;
-        case ge::DT_INT8: case ge::DT_UINT8:
+        case ge::DT_INT8:
+        case ge::DT_UINT8:
             return 1;
         default:
             return 4;
@@ -84,10 +88,8 @@ ge::graphStatus TilingDiagFlatArch35(gert::TilingContext* context, DiagFlatTilin
     // 1. Get platform info
     uint64_t ubSize;
     int64_t hwCoreNum;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, &ubSize, &hwCoreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, &ubSize, &hwCoreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     // 2. Get input shape and numInput
     auto inputX = context->GetInputShape(0);
@@ -112,8 +114,7 @@ ge::graphStatus TilingDiagFlatArch35(gert::TilingContext* context, DiagFlatTilin
     int64_t outTotal = outWidth * outWidth;
 
     // 6. Multi-core split
-    int64_t realCoreNum = std::min(hwCoreNum,
-        std::max<int64_t>(1, (numInput + outTotal) / MIN_WORK_PER_CORE / 2));
+    int64_t realCoreNum = std::min(hwCoreNum, std::max<int64_t>(1, (numInput + outTotal) / MIN_WORK_PER_CORE / 2));
 
     // 7. outPerCore
     int64_t outPerCore = 0;
@@ -122,25 +123,23 @@ ge::graphStatus TilingDiagFlatArch35(gert::TilingContext* context, DiagFlatTilin
     }
 
     // 8. tileLength
-    OP_CHECK_IF(dtypeSize <= 0, OP_LOGE(context, "invalid dtypeSize %ld", dtypeSize),
-                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(dtypeSize <= 0, OP_LOGE(context, "invalid dtypeSize %ld", dtypeSize), return ge::GRAPH_FAILED);
     int64_t ubPerBuf = (ubSize - SIMT_DCACHE_SIZE) / DIAG_FLAT_BUFFER_NUM;
     int64_t tileLength = std::min<int64_t>({ubPerBuf / dtypeSize, outPerCore});
 
     // 9. Fill output struct
-    out->numInput    = numInput;
-    out->diagonal    = diagonal;
-    out->outWidth    = outWidth;
-    out->outTotal    = outTotal;
-    out->outPerCore  = outPerCore;
-    out->tileLength  = tileLength;
+    out->numInput = numInput;
+    out->diagonal = diagonal;
+    out->outWidth = outWidth;
+    out->outTotal = outTotal;
+    out->outPerCore = outPerCore;
+    out->tileLength = tileLength;
     out->realCoreNum = realCoreNum;
     out->localMemSize = static_cast<uint32_t>(ubSize - SIMT_DCACHE_SIZE);
 
     // 10. Set context-level params (common to both callers)
     auto ret = context->SetLocalMemorySize(out->localMemSize);
-    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "set local memory size failed."), return ret);
+    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "set local memory size failed."), return ret);
 
     context->SetBlockDim(realCoreNum);
 
@@ -156,27 +155,30 @@ ge::graphStatus TilingDiagFlatArch35(gert::TilingContext* context, DiagFlatTilin
 // ============================================================================
 static ge::graphStatus DiagFlatTilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     DiagFlatTilingOutput out;
-    OP_CHECK_IF(
-        TilingDiagFlatArch35(context, &out) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "TilingDiagFlatArch35 error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(TilingDiagFlatArch35(context, &out) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "TilingDiagFlatArch35 error"), return ge::GRAPH_FAILED);
 
     // Fill DiagFlat's own TilingData
     DiagFlatArch35TilingData* tiling = context->GetTilingData<DiagFlatArch35TilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(DiagFlatArch35TilingData), 0, sizeof(DiagFlatArch35TilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(DiagFlatArch35TilingData), 0, sizeof(DiagFlatArch35TilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
-    tiling->numInput    = out.numInput;
-    tiling->diagonal    = out.diagonal;
-    tiling->outWidth    = out.outWidth;
-    tiling->outTotal    = out.outTotal;
-    tiling->outPerCore  = out.outPerCore;
-    tiling->tileLength  = out.tileLength;
+    tiling->numInput = out.numInput;
+    tiling->diagonal = out.diagonal;
+    tiling->outWidth = out.outWidth;
+    tiling->outTotal = out.outTotal;
+    tiling->outPerCore = out.outPerCore;
+    tiling->tileLength = out.tileLength;
     tiling->realCoreNum = out.realCoreNum;
+
+    OP_LOGI(context->GetNodeName(),
+            "DiagFlat TilingData: numInput=%ld diagonal=%ld outWidth=%ld outTotal=%ld outPerCore=%ld "
+            "tileLength=%ld realCoreNum=%ld",
+            tiling->numInput, tiling->diagonal, tiling->outWidth, tiling->outTotal, tiling->outPerCore,
+            tiling->tileLength, tiling->realCoreNum);
 
     // DiagFlat's own TilingKey
     ASCENDC_TPL_SEL_PARAM(context, static_cast<uint32_t>(3501));
@@ -197,8 +199,6 @@ struct DiagFlatCompileInfo {};
 // ============================================================================
 // Tiling registration
 // ============================================================================
-IMPL_OP_OPTILING(DiagFlat)
-    .Tiling(DiagFlatTilingFunc)
-    .TilingParse<DiagFlatCompileInfo>(TilingParseForDiagFlat);
+IMPL_OP_OPTILING(DiagFlat).Tiling(DiagFlatTilingFunc).TilingParse<DiagFlatCompileInfo>(TilingParseForDiagFlat);
 
 } // namespace optiling

@@ -247,6 +247,16 @@ ge::graphStatus BatchToSpaceTiling::SetTilingData()
     tilingData->cropLeft = crops_[2];
     tilingData->cropRight = crops_[3];
 
+    OP_LOGI(context_,
+            "TilingData: inShape=[%ld,%ld,%ld,%ld] outShape=[%ld,%ld,%ld,%ld] totalCount=%lu "
+            "perCoreCount=%lu ubFactor=%u bufferSize=%u blockSize=%ld cropTop=%ld cropBottom=%ld "
+            "cropLeft=%ld cropRight=%ld",
+            tilingData->inShape[0], tilingData->inShape[1], tilingData->inShape[2], tilingData->inShape[3],
+            tilingData->outShape[0], tilingData->outShape[1], tilingData->outShape[2], tilingData->outShape[3],
+            tilingData->totalCount, tilingData->perCoreCount, tilingData->ubFactor, tilingData->bufferSize,
+            tilingData->blockSize, tilingData->cropTop, tilingData->cropBottom, tilingData->cropLeft,
+            tilingData->cropRight);
+
     const uint64_t tilingKey = GET_TPL_TILING_KEY(ubAxis_);
     OP_LOGI(context_, "tilingKey is %lu, ubAxis %u", tilingKey, ubAxis_);
     context_->SetTilingKey(tilingKey);
@@ -285,6 +295,7 @@ ge::graphStatus BatchToSpaceTiling::DoTiling()
 
 static ge::graphStatus BatchToSpaceTilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     BatchToSpaceTiling tiling(context);
     return tiling.DoTiling();
 }

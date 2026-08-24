@@ -119,8 +119,24 @@ ge::graphStatus BatchToSpaceInferShapeHelper::Inference()
 static ge::graphStatus Infershape4BatchToSpace(gert::InferShapeContext* context)
 {
     BatchToSpaceInferShapeHelper helper(context);
-    return helper.Inference();
+    const ge::graphStatus ret = helper.Inference();
+    if (ret != ge::GRAPH_SUCCESS) {
+        return ret;
+    }
+    const gert::Shape* yShape = context->GetOutputShape(OUTPUT_IDX_Y);
+    OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
+    OP_LOGI(context->GetNodeName(), "BatchToSpace output shape: %s.", Ops::Base::ToString(*yShape).c_str());
+    return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_INFERSHAPE(BatchToSpace).InferShape(Infershape4BatchToSpace).InputsDataDependency({INPUT_IDX_CROPS});
+static ge::graphStatus InferDataType4BatchToSpace(gert::InferDataTypeContext* context)
+{
+    context->SetOutputDataType(OUTPUT_IDX_Y, context->GetInputDataType(INPUT_IDX_X));
+    return ge::GRAPH_SUCCESS;
+}
+
+IMPL_OP_INFERSHAPE(BatchToSpace)
+    .InferShape(Infershape4BatchToSpace)
+    .InferDataType(InferDataType4BatchToSpace)
+    .InputsDataDependency({INPUT_IDX_CROPS});
 } // namespace ops

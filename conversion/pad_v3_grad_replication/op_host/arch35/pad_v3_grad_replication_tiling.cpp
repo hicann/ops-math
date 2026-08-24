@@ -489,6 +489,13 @@ void PadV3GradReplicationTiling::FillTilingData(PadV3GradReplicationTilingData* 
         tilingData->rightPad[i] = rightPad_[i];
     }
 
+    OP_LOGI(context_->GetNodeName(),
+            "PadV3GradReplication TilingData: dimNum=%u splitAxis=%u splitCount=%u splitSize=%u "
+            "usedCoreNum=%u tilesPerCore=%u inputShape=%s outputShape=%s strideAligned=%s leftPad=%s rightPad=%s",
+            tilingData->dimNum, tilingData->splitAxis, tilingData->splitCount, tilingData->splitSize,
+            tilingData->usedCoreNum, tilingData->tilesPerCore, ToString(inputShape_, dimNum_).c_str(),
+            ToString(outputShape_, dimNum_).c_str(), ToString(strideAligned_, dimNum_).c_str(),
+            ToString(leftPad_, dimNum_).c_str(), ToString(rightPad_, dimNum_).c_str());
     OP_LOGI(context_->GetNodeName(), "FillTilingData done.");
 }
 
@@ -567,6 +574,7 @@ static ge::graphStatus TilingPrepare4PadV3GradReplication(gert::TilingParseConte
 
 IMPL_OP_OPTILING(PadV3GradReplication)
     .Tiling([](gert::TilingContext* context) -> ge::graphStatus {
+        OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
         PadV3GradReplicationTiling tiling(context);
         return tiling.DoTiling();
     })

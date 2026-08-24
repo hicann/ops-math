@@ -10,6 +10,7 @@
 
 #include "register/op_impl_registry.h"
 #include "log/log.h"
+#include "util/shape_util.h"
 
 using namespace ge;
 namespace ops {
@@ -66,8 +67,15 @@ static ge::graphStatus Infershape4SliceLastDim(gert::InferShapeContext* context)
         yShape->AppendDim(length);
     }
 
+    OP_LOGI(context->GetNodeName(), "SliceLastDim output shape: %s.", Ops::Base::ToString(*yShape).c_str());
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_INFERSHAPE(SliceLastDim).InferShape(Infershape4SliceLastDim);
+static ge::graphStatus InferDataType4SliceLastDim(gert::InferDataTypeContext* context)
+{
+    context->SetOutputDataType(OUTPUT_IDX_Y, context->GetInputDataType(INPUT_IDX_X));
+    return ge::GRAPH_SUCCESS;
+}
+
+IMPL_OP_INFERSHAPE(SliceLastDim).InferShape(Infershape4SliceLastDim).InferDataType(InferDataType4SliceLastDim);
 } // namespace ops

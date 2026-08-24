@@ -80,6 +80,7 @@ ge::graphStatus SpaceToBatchInferShapeHelper::Inference()
 
     if (Ops::Base::IsUnknownRank(*xShape_)) {
         Ops::Base::SetUnknownRank(*yShape_);
+        OP_LOGI(context_->GetNodeName(), "SpaceToBatch output shape: %s.", Ops::Base::ToString(*yShape_).c_str());
         return ge::GRAPH_SUCCESS;
     }
 
@@ -119,6 +120,7 @@ ge::graphStatus SpaceToBatchInferShapeHelper::Inference()
 
     yShape_->AppendDim(xShape_->GetDim(3));
 
+    OP_LOGI(context_->GetNodeName(), "SpaceToBatch output shape: %s.", Ops::Base::ToString(*yShape_).c_str());
     return ge::GRAPH_SUCCESS;
 }
 
@@ -128,5 +130,14 @@ static ge::graphStatus Infershape4SpaceToBatch(gert::InferShapeContext* context)
     return helper.Inference();
 }
 
-IMPL_OP_INFERSHAPE(SpaceToBatch).InferShape(Infershape4SpaceToBatch).InputsDataDependency({INPUT_IDX_PADDINGS});
+static ge::graphStatus InferDataType4SpaceToBatch(gert::InferDataTypeContext* context)
+{
+    context->SetOutputDataType(OUTPUT_IDX_Y, context->GetInputDataType(INPUT_IDX_X));
+    return ge::GRAPH_SUCCESS;
+}
+
+IMPL_OP_INFERSHAPE(SpaceToBatch)
+    .InferShape(Infershape4SpaceToBatch)
+    .InferDataType(InferDataType4SpaceToBatch)
+    .InputsDataDependency({INPUT_IDX_PADDINGS});
 } // namespace ops

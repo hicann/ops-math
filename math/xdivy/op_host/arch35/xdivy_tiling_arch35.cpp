@@ -30,20 +30,18 @@ using namespace ge;
 namespace xdivy {
 
 // === 算子特定常量 — 新算子必须修改 ===
-constexpr int64_t kPhysNodesFp32 = 3;  // 物理存活节点 P (FP32 路径, 无 Cast)
-constexpr int64_t kPhysNodesFp16 = 4;  // 物理存活节点 P (FP16/BF16 路径, 有 Cast)
-constexpr int64_t kBufDtypeSize  = 4;  // per_buf_elems 永远除 sizeof(float32) (cast.md §Tile)
+constexpr int64_t kPhysNodesFp32 = 3; // 物理存活节点 P (FP32 路径, 无 Cast)
+constexpr int64_t kPhysNodesFp16 = 4; // 物理存活节点 P (FP16/BF16 路径, 有 Cast)
+constexpr int64_t kBufDtypeSize = 4;  // per_buf_elems 永远除 sizeof(float32) (cast.md §Tile)
 
 // 5.1 PadAndSqueeze
 
-bool PadAndSqueeze(
-    const std::vector<std::vector<int64_t>>& input_shapes,
-    const std::vector<std::vector<int64_t>>& output_shapes,
-    std::vector<int64_t>&                    maximum_bro_shape,
-    std::vector<std::vector<int64_t>>&       normal_input_shapes,
-    std::vector<std::vector<int64_t>>&       normal_output_shapes)
+bool PadAndSqueeze(const std::vector<std::vector<int64_t>>& input_shapes,
+                   const std::vector<std::vector<int64_t>>& output_shapes, std::vector<int64_t>& maximum_bro_shape,
+                   std::vector<std::vector<int64_t>>& normal_input_shapes,
+                   std::vector<std::vector<int64_t>>& normal_output_shapes)
 {
-    int64_t num_inputs  = (int64_t)input_shapes.size();
+    int64_t num_inputs = (int64_t)input_shapes.size();
     int64_t num_outputs = (int64_t)output_shapes.size();
     int64_t max_rank = 0;
     for (auto& s : input_shapes)
@@ -57,8 +55,10 @@ bool PadAndSqueeze(
         return p;
     };
     std::vector<std::vector<int64_t>> padded_in(num_inputs), padded_out(num_outputs);
-    for (int64_t i = 0; i < num_inputs;  i++) padded_in[i]  = pad(input_shapes[i]);
-    for (int64_t i = 0; i < num_outputs; i++) padded_out[i] = pad(output_shapes[i]);
+    for (int64_t i = 0; i < num_inputs; i++)
+        padded_in[i] = pad(input_shapes[i]);
+    for (int64_t i = 0; i < num_outputs; i++)
+        padded_out[i] = pad(output_shapes[i]);
     maximum_bro_shape.clear();
     normal_input_shapes.assign(num_inputs, std::vector<int64_t>());
     normal_output_shapes.assign(num_outputs, std::vector<int64_t>());
@@ -66,31 +66,37 @@ bool PadAndSqueeze(
         bool all_one = true;
         int64_t max_dim = 0;
         for (int64_t i = 0; i < num_inputs; i++) {
-            if (padded_in[i][d] != 1) all_one = false;
+            if (padded_in[i][d] != 1)
+                all_one = false;
             max_dim = std::max(max_dim, padded_in[i][d]);
         }
         for (int64_t i = 0; i < num_outputs; i++) {
-            if (padded_out[i][d] != 1) all_one = false;
+            if (padded_out[i][d] != 1)
+                all_one = false;
             max_dim = std::max(max_dim, padded_out[i][d]);
         }
         if (!all_one) {
             maximum_bro_shape.push_back(max_dim);
-            for (int64_t i = 0; i < num_inputs;  i++) normal_input_shapes[i].push_back(padded_in[i][d]);
-            for (int64_t i = 0; i < num_outputs; i++) normal_output_shapes[i].push_back(padded_out[i][d]);
+            for (int64_t i = 0; i < num_inputs; i++)
+                normal_input_shapes[i].push_back(padded_in[i][d]);
+            for (int64_t i = 0; i < num_outputs; i++)
+                normal_output_shapes[i].push_back(padded_out[i][d]);
         }
     }
     if (maximum_bro_shape.empty()) {
         maximum_bro_shape.push_back(1);
-        for (int64_t i = 0; i < num_inputs;  i++) normal_input_shapes[i].push_back(1);
-        for (int64_t i = 0; i < num_outputs; i++) normal_output_shapes[i].push_back(1);
+        for (int64_t i = 0; i < num_inputs; i++)
+            normal_input_shapes[i].push_back(1);
+        for (int64_t i = 0; i < num_outputs; i++)
+            normal_output_shapes[i].push_back(1);
     }
     return true;
 }
 
 // 5.2 FindSplitAxis — 从最内轴向外扫描，d_k × inner > per_buf_elems 时切分
 
-bool FindSplitAxis(const std::vector<int64_t>& max_bro_shape,
-    int64_t dtype_size, int64_t ub_per_core, int64_t phys_nodes, SplitResult& out)
+bool FindSplitAxis(const std::vector<int64_t>& max_bro_shape, int64_t dtype_size, int64_t ub_per_core,
+                   int64_t phys_nodes, SplitResult& out)
 {
     int64_t per_buf_bytes = (ub_per_core / phys_nodes) & ~31LL;
     int64_t per_buf_elems = per_buf_bytes / dtype_size;
@@ -119,39 +125,50 @@ bool FindSplitAxis(const std::vector<int64_t>& max_bro_shape,
 
 // 5.3 MultiCoreSplit
 
-bool MultiCoreSplit(const std::vector<int64_t>& max_bro_shape,
-    const SplitResult& ub_split, int64_t max_cores, MultiCoreResult& out)
+bool MultiCoreSplit(const std::vector<int64_t>& max_bro_shape, const SplitResult& ub_split, int64_t max_cores,
+                    MultiCoreResult& out)
 {
     int64_t k = ub_split.axis, outer_prod = 1;
-    for (int64_t j = 0; j < k; j++) outer_prod *= max_bro_shape[j];
+    for (int64_t j = 0; j < k; j++)
+        outer_prod *= max_bro_shape[j];
     out.total_tiles = outer_prod * ub_split.a_o;
-    out.num_cores   = (out.total_tiles < max_cores) ? out.total_tiles : max_cores;
-    out.tiles_main  = out.total_tiles / out.num_cores;
-    out.cores_tail  = out.total_tiles % out.num_cores;
+    out.num_cores = (out.total_tiles < max_cores) ? out.total_tiles : max_cores;
+    out.tiles_main = out.total_tiles / out.num_cores;
+    out.cores_tail = out.total_tiles % out.num_cores;
     return true;
 }
 
 // 5.5 地址偏移
 
-bool PrecomputeInputStrides(const std::vector<int64_t>& s, std::vector<int64_t>& strides) {
+bool PrecomputeInputStrides(const std::vector<int64_t>& s, std::vector<int64_t>& strides)
+{
     int64_t rank = (int64_t)s.size();
     strides.assign(rank, 0);
     for (int64_t d = rank - 1; d >= 0; d--) {
-        if (s[d] == 1) { strides[d] = 0; continue; }
+        if (s[d] == 1) {
+            strides[d] = 0;
+            continue;
+        }
         int64_t prod = 1;
-        for (int64_t j = d + 1; j < rank; j++) prod *= s[j];
+        for (int64_t j = d + 1; j < rank; j++)
+            prod *= s[j];
         strides[d] = prod;
     }
     return true;
 }
 
-bool PrecomputeOutputStrides(const std::vector<int64_t>& s, std::vector<int64_t>& strides) {
+bool PrecomputeOutputStrides(const std::vector<int64_t>& s, std::vector<int64_t>& strides)
+{
     int64_t rank = (int64_t)s.size();
     strides.assign(rank, 0);
     for (int64_t d = rank - 1; d >= 0; d--) {
-        if (s[d] == 1) { strides[d] = 0; continue; }
+        if (s[d] == 1) {
+            strides[d] = 0;
+            continue;
+        }
         int64_t prod = 1;
-        for (int64_t j = d + 1; j < rank; j++) prod *= s[j];
+        for (int64_t j = d + 1; j < rank; j++)
+            prod *= s[j];
         strides[d] = prod;
     }
     return true;
@@ -172,7 +189,8 @@ static std::string Arr2String(const int64_t* arr, int64_t n)
     std::ostringstream oss;
     oss << "[";
     if (n > 0) {
-        for (int64_t i = 0; i < n - 1; ++i) oss << arr[i] << ",";
+        for (int64_t i = 0; i < n - 1; ++i)
+            oss << arr[i] << ",";
         oss << arr[n - 1];
     }
     oss << "]";
@@ -188,23 +206,28 @@ ge::graphStatus XdivyTiling::GetShapeInfo()
 
     // 读输入 shape
     for (size_t i = 0; i < ctx_->GetComputeNodeInfo()->GetInputsNum(); ++i) {
-        auto shape = ctx_->GetInputShape(i); OP_CHECK_NULL_WITH_CONTEXT(ctx_, shape);
+        auto shape = ctx_->GetInputShape(i);
+        OP_CHECK_NULL_WITH_CONTEXT(ctx_, shape);
         std::vector<int64_t> dims;
         gert::Shape s = shape->GetStorageShape();
-        for (size_t d = 0; d < s.GetDimNum(); ++d) dims.push_back(s.GetDim(d));
+        for (size_t d = 0; d < s.GetDimNum(); ++d)
+            dims.push_back(s.GetDim(d));
         raw_input_shapes_.push_back(dims);
     }
 
     // 读输出 shape
     for (size_t i = 0; i < ctx_->GetComputeNodeInfo()->GetOutputsNum(); ++i) {
-        auto shape = ctx_->GetOutputShape(i); OP_CHECK_NULL_WITH_CONTEXT(ctx_, shape);
+        auto shape = ctx_->GetOutputShape(i);
+        OP_CHECK_NULL_WITH_CONTEXT(ctx_, shape);
         std::vector<int64_t> dims;
         gert::Shape s = shape->GetStorageShape();
-        for (size_t d = 0; d < s.GetDimNum(); ++d) dims.push_back(s.GetDim(d));
+        for (size_t d = 0; d < s.GetDimNum(); ++d)
+            dims.push_back(s.GetDim(d));
         raw_output_shapes_.push_back(dims);
     }
 
-    auto inputDesc = ctx_->GetInputDesc(0); OP_CHECK_NULL_WITH_CONTEXT(ctx_, inputDesc);
+    auto inputDesc = ctx_->GetInputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(ctx_, inputDesc);
     ge::DataType dtype = inputDesc->GetDataType();
     if (dtype == ge::DT_FLOAT) {
         dtype_size_ = 4;
@@ -217,17 +240,16 @@ ge::graphStatus XdivyTiling::GetShapeInfo()
         return GRAPH_FAILED;
     }
 
-    PadAndSqueeze(raw_input_shapes_, raw_output_shapes_,
-                  max_bro_shape_, normal_input_shapes_, normal_output_shapes_);
+    PadAndSqueeze(raw_input_shapes_, raw_output_shapes_, max_bro_shape_, normal_input_shapes_, normal_output_shapes_);
     rank_ = (int64_t)max_bro_shape_.size();
 
-    OP_LOGI(ctx_->GetNodeName(), "Xdivy GetShapeInfo done rank %ld phys_nodes %ld ub %lu core %lu",
-        rank_, phys_nodes_, compileInfo->ubSize, compileInfo->coreNum);
+    OP_LOGI(ctx_->GetNodeName(), "Xdivy GetShapeInfo done rank %ld phys_nodes %ld ub %lu core %lu", rank_, phys_nodes_,
+            compileInfo->ubSize, compileInfo->coreNum);
 
     return GRAPH_SUCCESS;
 }
 
-template<int64_t R>
+template <int64_t R>
 ge::graphStatus XdivyTiling::DoTilingAndSet()
 {
     auto* tiling = ctx_->GetTilingData<XdivyTilingData<R>>();
@@ -243,81 +265,81 @@ ge::graphStatus XdivyTiling::DoTilingAndSet()
     FindSplitAxis(max_bro_shape_, kBufDtypeSize, ub_per_core, phys_nodes_, tiling->split);
     MultiCoreSplit(max_bro_shape_, tiling->split, (int64_t)compileInfo->coreNum, tiling->multicore);
 
-    int64_t num_in  = (int64_t)normal_input_shapes_.size();
+    int64_t num_in = (int64_t)normal_input_shapes_.size();
     int64_t num_out = (int64_t)normal_output_shapes_.size();
     std::vector<std::vector<int64_t>> in_strides(num_in), out_strides(num_out);
-    for (int64_t i = 0; i < num_in;  i++) PrecomputeInputStrides(normal_input_shapes_[i], in_strides[i]);
-    for (int64_t i = 0; i < num_out; i++) PrecomputeOutputStrides(normal_output_shapes_[i], out_strides[i]);
+    for (int64_t i = 0; i < num_in; i++)
+        PrecomputeInputStrides(normal_input_shapes_[i], in_strides[i]);
+    for (int64_t i = 0; i < num_out; i++)
+        PrecomputeOutputStrides(normal_output_shapes_[i], out_strides[i]);
 
     tiling->rank = rank_;
     int64_t delta = R - rank_;
 
     // max_bro_shape: 前补 1
-    for (int64_t d = 0; d < delta; d++) tiling->max_bro_shape[d] = 1;
-    for (int64_t d = 0; d < rank_; d++) tiling->max_bro_shape[d + delta] = max_bro_shape_[d];
+    for (int64_t d = 0; d < delta; d++)
+        tiling->max_bro_shape[d] = 1;
+    for (int64_t d = 0; d < rank_; d++)
+        tiling->max_bro_shape[d + delta] = max_bro_shape_[d];
 
     tiling->split.axis += delta;
 
-    tiling->num_inputs  = num_in;
+    tiling->num_inputs = num_in;
     tiling->num_outputs = num_out;
 
     // input: 前补 shape=1 stride=0
     for (int64_t i = 0; i < num_in; i++) {
         for (int64_t d = 0; d < delta; d++) {
-            tiling->input_shapes[i][d]  = 1;
+            tiling->input_shapes[i][d] = 1;
             tiling->input_strides[i][d] = 0;
         }
         for (int64_t d = 0; d < rank_; d++) {
-            tiling->input_shapes[i][d + delta]  = normal_input_shapes_[i][d];
+            tiling->input_shapes[i][d + delta] = normal_input_shapes_[i][d];
             tiling->input_strides[i][d + delta] = in_strides[i][d];
         }
     }
     // 未使用 input slot: 全填 1/0
     for (int64_t i = num_in; i < kMaxInputSlots; i++)
         for (int64_t d = 0; d < R; d++) {
-            tiling->input_shapes[i][d]  = 1;
+            tiling->input_shapes[i][d] = 1;
             tiling->input_strides[i][d] = 0;
         }
 
     // output: 前补 shape=1 stride=0
     for (int64_t i = 0; i < num_out; i++) {
         for (int64_t d = 0; d < delta; d++) {
-            tiling->output_shapes[i][d]  = 1;
+            tiling->output_shapes[i][d] = 1;
             tiling->output_strides[i][d] = 0;
         }
         for (int64_t d = 0; d < rank_; d++) {
-            tiling->output_shapes[i][d + delta]  = normal_output_shapes_[i][d];
+            tiling->output_shapes[i][d + delta] = normal_output_shapes_[i][d];
             tiling->output_strides[i][d + delta] = out_strides[i][d];
         }
     }
     for (int64_t i = num_out; i < kMaxOutputSlots; i++)
         for (int64_t d = 0; d < R; d++) {
-            tiling->output_shapes[i][d]  = 1;
+            tiling->output_shapes[i][d] = 1;
             tiling->output_strides[i][d] = 0;
         }
 
     ctx_->SetBlockDim(tiling->multicore.num_cores);
 
     // 维测: TilingData 全部字段
-    OP_LOGI(ctx_->GetNodeName(), "Xdivy TilingData: per_buf_bytes=%ld rank=%ld->R=%d "
+    OP_LOGI(ctx_->GetNodeName(),
+            "Xdivy TilingData: per_buf_bytes=%ld rank=%ld->R=%d "
             "max_bro_shape=%s "
             "split(axis=%ld a_i=%ld a_o=%ld a_i_tail=%ld) "
             "multi(cores=%ld tiles=%ld main=%ld core_tail=%ld) num_in=%ld num_out=%ld",
-            tiling->per_buf_bytes, rank_, (int)R,
-            Arr2String(tiling->max_bro_shape, R).c_str(),
-            tiling->split.axis, tiling->split.a_i, tiling->split.a_o, tiling->split.a_i_tail,
-            tiling->multicore.num_cores, tiling->multicore.total_tiles,
-            tiling->multicore.tiles_main, tiling->multicore.cores_tail,
-            num_in, num_out);
+            tiling->per_buf_bytes, rank_, (int)R, Arr2String(tiling->max_bro_shape, R).c_str(), tiling->split.axis,
+            tiling->split.a_i, tiling->split.a_o, tiling->split.a_i_tail, tiling->multicore.num_cores,
+            tiling->multicore.total_tiles, tiling->multicore.tiles_main, tiling->multicore.cores_tail, num_in, num_out);
 
     for (int64_t i = 0; i < num_in; i++)
-        OP_LOGI(ctx_->GetNodeName(), "Xdivy TilingData input[%ld]: shape=%s stride=%s",
-                i, Arr2String(tiling->input_shapes[i], R).c_str(),
-                   Arr2String(tiling->input_strides[i], R).c_str());
+        OP_LOGI(ctx_->GetNodeName(), "Xdivy TilingData input[%ld]: shape=%s stride=%s", i,
+                Arr2String(tiling->input_shapes[i], R).c_str(), Arr2String(tiling->input_strides[i], R).c_str());
     for (int64_t i = 0; i < num_out; i++)
-        OP_LOGI(ctx_->GetNodeName(), "Xdivy TilingData output[%ld]: shape=%s stride=%s",
-                i, Arr2String(tiling->output_shapes[i], R).c_str(),
-                   Arr2String(tiling->output_strides[i], R).c_str());
+        OP_LOGI(ctx_->GetNodeName(), "Xdivy TilingData output[%ld]: shape=%s stride=%s", i,
+                Arr2String(tiling->output_shapes[i], R).c_str(), Arr2String(tiling->output_strides[i], R).c_str());
 
     return GRAPH_SUCCESS;
 }
@@ -325,7 +347,8 @@ ge::graphStatus XdivyTiling::DoTilingAndSet()
 ge::graphStatus XdivyTiling::RunTiling()
 {
     ge::graphStatus ret = GetShapeInfo();
-    if (ret != GRAPH_SUCCESS) return ret;
+    if (ret != GRAPH_SUCCESS)
+        return ret;
 
     int64_t mapped = (rank_ <= 4) ? 4 : 8;
     if (mapped == 4) {
@@ -340,11 +363,13 @@ ge::graphStatus XdivyTiling::RunTiling()
 
 static ge::graphStatus TilingFuncXdivy(gert::TilingContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     XdivyTiling xdivyTiling(context);
     auto ret = xdivyTiling.RunTiling();
-    if (ret != GRAPH_SUCCESS) return ret;
+    if (ret != GRAPH_SUCCESS)
+        return ret;
     size_t* workspaces = context->GetWorkspaceSizes(1);
-    workspaces[0] = 16 * 1024 * 1024;  // 16MB
+    workspaces[0] = 16 * 1024 * 1024; // 16MB
     return GRAPH_SUCCESS;
 }
 
