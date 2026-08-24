@@ -82,7 +82,7 @@ aclnnStatus aclnnStack(
       <td>-</td>
       <td>FLOAT16、FLOAT、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。</td>
       <td>ND</td>
-      <td>1-7</td>
+      <td>0-7</td>
       <td>√</td>
     </tr>
     <tr>
