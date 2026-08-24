@@ -164,11 +164,13 @@ static ge::graphStatus HandleEmptyTensor(gert::TilingContext* context, DataCompa
     tiling->rtol = info->rtol;
     tiling->cacheBufUbSize = CACHE_BUF_SIZE;
 
-    context->SetBlockDim(1);
+    OP_CHECK_IF(context->SetBlockDim(1) != ge::GRAPH_SUCCESS, OP_LOGE(context, "Failed to set BlockDim"),
+                return ge::GRAPH_FAILED);
     ASCENDC_TPL_SEL_PARAM(context, static_cast<uint32_t>(0), static_cast<uint32_t>(1));
 
     size_t sysWsSize = platform_ascendc::PlatformAscendC(context->GetPlatformInfo()).GetLibApiWorkSpaceSize();
     size_t* wsSizes = context->GetWorkspaceSizes(WORKSPACE_NUM);
+    OP_CHECK_NULL_WITH_CONTEXT(context, wsSizes);
     wsSizes[0] = sysWsSize;
 
     OP_LOGI(context->GetNodeName(), "EMPTY tensor path, totalElements=0");
@@ -299,7 +301,7 @@ static ge::graphStatus ComputeGroupSplit(gert::TilingContext* context, DataCompa
     return ge::GRAPH_SUCCESS;
 }
 
-static void SetWorkspaceSize(gert::TilingContext* context, const DataCompareTilingData* tiling, bool isGroup)
+static ge::graphStatus SetWorkspaceSize(gert::TilingContext* context, const DataCompareTilingData* tiling, bool isGroup)
 {
     size_t sysWsSize = platform_ascendc::PlatformAscendC(context->GetPlatformInfo()).GetLibApiWorkSpaceSize();
     size_t usrWsSize = 0;
@@ -312,7 +314,10 @@ static void SetWorkspaceSize(gert::TilingContext* context, const DataCompareTili
         usrWsSize = ((usrWsSize + 31) / 32) * 32;
     }
     size_t* wsSizes = context->GetWorkspaceSizes(WORKSPACE_NUM);
+    OP_CHECK_NULL_WITH_CONTEXT(context, wsSizes);
     wsSizes[0] = usrWsSize + sysWsSize;
+
+    return ge::GRAPH_SUCCESS;
 }
 
 static ge::graphStatus DataCompareTilingFunc(gert::TilingContext* context)
@@ -334,7 +339,7 @@ static ge::graphStatus DataCompareTilingFunc(gert::TilingContext* context)
     DataCompareTilingData* tiling = context->GetTilingData<DataCompareTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
     OP_CHECK_IF(memset_s(tiling, sizeof(DataCompareTilingData), 0, sizeof(DataCompareTilingData)) != EOK,
-                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+                OP_LOGE(context, "Set tiling data error"), return ge::GRAPH_FAILED);
 
     if (info.isEmptyTensor) {
         return HandleEmptyTensor(context, tiling, &info);
@@ -370,10 +375,12 @@ static ge::graphStatus DataCompareTilingFunc(gert::TilingContext* context)
     tiling->rtol = info.rtol;
 
     ASCENDC_TPL_SEL_PARAM(context, static_cast<uint32_t>(templateType), static_cast<uint32_t>(0));
-    context->SetBlockDim(static_cast<uint32_t>(usedCoreNum));
+    OP_CHECK_IF(context->SetBlockDim(static_cast<uint32_t>(usedCoreNum)) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "Failed to set BlockDim"), return ge::GRAPH_FAILED);
 
     bool isGroup = (templateType == 1);
-    SetWorkspaceSize(context, tiling, isGroup);
+    OP_CHECK_IF(SetWorkspaceSize(context, tiling, isGroup) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "SetWorkspaceSize failed"), return ge::GRAPH_FAILED);
     LogTilingData(context, tiling);
 
     OP_LOGI(context->GetNodeName(),
