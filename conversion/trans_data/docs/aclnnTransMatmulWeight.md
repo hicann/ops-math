@@ -107,6 +107,10 @@ aclnnStatus aclnnTransMatmulWeight(
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：mmWeightRef数据类型不支持BFLOAT16。
   <!-- end id7 -->
 
+  <!-- npu="910b,A3" id8 -->
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：mmWeightRef数据类型支持FLOAT16、INT8、BFLOAT16。shape支持2~6维。
+  <!-- end id8 -->
+
 - **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)
