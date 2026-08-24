@@ -38,13 +38,15 @@ private:
     GlobalTensor<T> input_;
     GlobalTensor<T> output_;
     GlobalTensor<T> constPad_;
-    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, BUFFER_NUM> inQueue_;
+    TBuf<TPosition::VECCALC> inQueue_;
 
     TPipe* pipe_ = nullptr;
     int64_t blockIdx_;
     uint32_t additionOffset_{0};
     T constValue_{0};
     const PadACTilingData* tilingData_ = nullptr;
+    bool firstOut_{true};
+    bool lastOut_{true};
     uint64_t inIndex_[PAD_MAX_DIMS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
     uint32_t inCopyLen_[PAD_MAX_DIMS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
     uint64_t outIndex_[PAD_MAX_DIMS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -72,7 +74,7 @@ public:
             }
         }
 
-        pipe_->InitBuffer(inQueue_, BUFFER_NUM, tilingData_->outTileSize + tilingData_->additionTileSize);
+        pipe_->InitBuffer(inQueue_, BUFFER_NUM * (tilingData_->outTileSize + tilingData_->additionTileSize));
         for (uint32_t i = tilingData_->ubAxis + 1U; i < tilingData_->dimNum; i++) {
             inCopyLen_[i] = tilingData_->inShape[i];
         }
@@ -84,6 +86,10 @@ public:
         if (startIdxHuge >= tilingData_->ubTotalCount) {
             return;
         }
+        LocalTensor<T> in = inQueue_.Get<T>();
+        Duplicate(in, constValue_, BUFFER_NUM * (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T));
+        SetFlag<HardEvent::V_MTE2>(EVENT_ID0);
+        SetFlag<HardEvent::V_MTE2>(EVENT_ID1);
         uint32_t endIdxHuge = (blockIdx_ + 1L) * tilingData_->ubPerCount;
         endIdxHuge = (endIdxHuge < tilingData_->ubTotalCount ? endIdxHuge : tilingData_->ubTotalCount);
 
@@ -92,6 +98,8 @@ public:
         for (uint32_t idx = startIdxHuge; idx < endIdxHuge; idx++) {
             bool isAllPadding = false;
             uint32_t curIdxHuge = idx;
+            firstOut_ = (idx == startIdxHuge);
+            lastOut_ = (idx == endIdxHuge - 1);
             for (int32_t i = ubAxis; i >= 0; i--) {
                 uint64_t factorHuge = tilingData_->outShape[i];
                 if (i == ubAxis) {
@@ -131,32 +139,58 @@ public:
                     inCopyLen_[ubAxis] = 0;
                 }
             }
-            ProcessOneStep();
+            ProcessOneStep(idx - startIdxHuge);
         }
     }
 
 private:
-    __aicore__ inline void ProcessOneStep()
+    __aicore__ inline void ProcessOneStep(int32_t idx)
     {
-        // Copy IN
-        LocalTensor<T> srcLocal = inQueue_.AllocTensor<T>();
+        LocalTensor<T> input = inQueue_.Get<T>();
+        LocalTensor<T>
+            srcLocal = input[(idx & 1) * (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T)];
         PadHugeParam padParam;
         padParam.padH = 1;
         padParam.padW = CeilAlign(tilingData_->ubFactor, BLK_ELEMS);
         padParam.padHLOffset = 0;
         padParam.padHROffset = 1;
 
-        CopyIn(srcLocal, padParam);
+        bool hasMTE2 = false;
+        bool hasPadding = false;
+        CopyIn(srcLocal, padParam, hasMTE2, idx);
 
-        PadOneLine(srcLocal[additionOffset_], padParam, srcLocal, VL_SIZE / sizeof(T));
+        PadOneLine(srcLocal[additionOffset_], padParam, srcLocal, VL_SIZE / sizeof(T), hasMTE2, hasPadding);
 
-        CopyOut(srcLocal, padParam);
-
-        inQueue_.FreeTensor(srcLocal);
+        CopyOut(srcLocal, padParam, hasMTE2, hasPadding, idx);
     }
 
-    __aicore__ inline void CopyIn(const LocalTensor<T>& src, PadHugeParam& padParam)
+    __aicore__ inline void CopyIn(const LocalTensor<T>& src, PadHugeParam& padParam, bool& hasMTE2, int32_t idx)
     {
+        if (idx >= 1) {
+            int32_t nextIdx = idx + 1;
+            if ((nextIdx & 1) == 0) {
+                WaitFlag<HardEvent::MTE3_V>(EVENT_ID0);
+            } else {
+                WaitFlag<HardEvent::MTE3_V>(EVENT_ID1);
+            }
+            LocalTensor<T> input = inQueue_.Get<T>();
+            LocalTensor<T> nextLocal = input[(nextIdx & 1) *
+                                             (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T)];
+            Duplicate(nextLocal, constValue_, (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T));
+            if (!lastOut_) {
+                if ((nextIdx & 1) == 0) {
+                    SetFlag<HardEvent::V_MTE2>(EVENT_ID0);
+                } else {
+                    SetFlag<HardEvent::V_MTE2>(EVENT_ID1);
+                }
+            }
+        }
+
+        if ((idx & 1) == 0) {
+            WaitFlag<HardEvent::V_MTE2>(EVENT_ID0);
+        } else {
+            WaitFlag<HardEvent::V_MTE2>(EVENT_ID1);
+        }
         const int8_t ubAxis = tilingData_->ubAxis;
         const uint32_t ubFactor = tilingData_->ubFactor;
         uint64_t inAddr = 0;
@@ -173,14 +207,11 @@ private:
             padParam.padWROffset = ubFactor;
             copyInParams.blockLen = ubFactor * sizeof(T);
             DataCopyPad(src[additionOffset_], input_[inAddr], copyInParams, padParams);
-            SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
+            hasMTE2 = true;
         } else if (inCopyLen_[ubAxis] == 0) {
-            SetEvent<HardEvent::MTE3_V>(HardEvent::MTE3_V);
             padParam.padWLOffset = 0;
             padParam.padWROffset = 0;
-            Duplicate(src[additionOffset_], constValue_, tilingData_->outTileSize / sizeof(T));
         } else {
-            SetEvent<HardEvent::MTE3_V>(HardEvent::MTE3_V);
             padParam.padWLOffset = (outIndex_[ubAxis] < tilingData_->leftPad[ubAxis]) ?
                                        tilingData_->leftPad[ubAxis] % ubFactor :
                                        0;
@@ -191,8 +222,6 @@ private:
                                         tilingData_->inShape[tilingData_->ubAxis]) %
                                            ubFactor;
             uint32_t ubOffset = CeilAlign(padParam.padWLOffset, BLK_ELEMS);
-            Duplicate(src, constValue_, additionOffset_ + tilingData_->outTileSize / sizeof(T));
-            SetEvent<HardEvent::V_MTE2>(HardEvent::V_MTE2);
             uint32_t copyLen = inCopyLen_[ubAxis];
             uint32_t remainderLen = 0;
             if (ubOffset != padParam.padWLOffset) {
@@ -210,12 +239,12 @@ private:
                 copyInParams.blockLen = copyLen * sizeof(T);
                 DataCopyPad(src[additionOffset_ + ubOffset], input_[inAddr + remainderLen], copyInParams, padParams);
             }
-
-            SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
+            hasMTE2 = true;
         }
     }
 
-    __aicore__ inline void CopyOut(const LocalTensor<T>& src, PadHugeParam& padParam)
+    __aicore__ inline void CopyOut(const LocalTensor<T>& src, PadHugeParam& padParam, bool hasMTE2, bool hasPadding,
+                                   int32_t idx)
     {
         const int8_t ubAxis = tilingData_->ubAxis;
         const uint32_t ubFactor = tilingData_->ubFactor;
@@ -232,24 +261,37 @@ private:
         copyOutParams.srcStride = 0;
         copyOutParams.dstStride = 0;
 
-        SetEvent<HardEvent::MTE2_MTE3>(HardEvent::MTE2_MTE3);
+        if (hasMTE2 && !hasPadding) {
+            SetEvent<HardEvent::MTE2_MTE3>(HardEvent::MTE2_MTE3);
+        } else {
+            SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
+        }
         DataCopyPad(output_[outAddr], src[additionOffset_], copyOutParams);
+        if (!lastOut_) {
+            if ((idx & 1) == 0) {
+                SetFlag<HardEvent::MTE3_V>(EVENT_ID0);
+            } else {
+                SetFlag<HardEvent::MTE3_V>(EVENT_ID1);
+            }
+        }
     }
 
     __aicore__ inline void PadOneLine(LocalTensor<T> src, PadHugeParam& padParam, LocalTensor<T> addition,
-                                      uint32_t additionLen)
+                                      uint32_t additionLen, bool hasMTE2, bool& hasPadding)
     {
         if (padParam.padW % BLK_ELEMS == 0 && padParam.padWLOffset % BLK_ELEMS == 0 &&
             padParam.padWROffset % BLK_ELEMS == 0) {
-            SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
             return;
+        }
+        if (hasMTE2) {
+            SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
         }
         if constexpr (sizeof(T) == B64_BYTES) {
             PadBothSide<AscendC::Reg::RegTraitNumTwo>(src, padParam, addition, additionLen);
         } else {
             PadBothSide<AscendC::Reg::RegTraitNumOne>(src, padParam, addition, additionLen);
         }
-        SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
+        hasPadding = true;
     }
 
     template <const AscendC::Reg::RegTrait& Trait>

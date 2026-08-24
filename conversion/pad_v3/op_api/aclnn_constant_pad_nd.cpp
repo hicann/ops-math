@@ -247,7 +247,7 @@ static aclnnStatus HandleSelfEmpty(const aclScalar* value, aclTensor* out, aclOp
 
     // 将value转换为tensor，并且数据类型转换为self的数据类型
     const aclTensor* valueTensor = nullptr;
-    if (out->GetDataType() == DataType::DT_BOOL) {
+    if (out->GetDataType() == DataType::DT_BOOL && !IsRegBase()) {
         auto valueTensorBool = executor->ConvertToTensor(value, DataType::DT_BOOL);
         CHECK_RET(valueTensorBool != nullptr, ACLNN_ERR_INNER_NULLPTR);
         valueTensor = l0op::Cast(valueTensorBool, DataType::DT_INT8, executor);
@@ -264,7 +264,7 @@ static aclnnStatus HandleSelfEmpty(const aclScalar* value, aclTensor* out, aclOp
     CHECK_RET(fillOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     const aclTensor* fillOutCasted = fillOut;
-    if (out->GetDataType() == DataType::DT_BOOL) {
+    if (out->GetDataType() == DataType::DT_BOOL && !IsRegBase()) {
         fillOutCasted = l0op::Cast(fillOut, DataType::DT_BOOL, executor);
         CHECK_RET(fillOutCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
     }
@@ -282,7 +282,7 @@ static aclnnStatus DoPadV3(const aclTensor* self, const aclIntArray* noneNegPad,
     auto padTensor = executor->ConvertToTensor(noneNegPad, DataType::DT_INT32);
     CHECK_RET(padTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
     DataType dataType = self->GetDataType();
-    if (dataType == DataType::DT_BOOL) {
+    if (dataType == DataType::DT_BOOL && !IsRegBase()) {
         dataType = DataType::DT_INT8;
     }
 
@@ -291,7 +291,7 @@ static aclnnStatus DoPadV3(const aclTensor* self, const aclIntArray* noneNegPad,
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     auto selfCasted = selfContiguous;
-    if (self->GetDataType() == DataType::DT_BOOL) {
+    if (self->GetDataType() == DataType::DT_BOOL && !IsRegBase()) {
         // 将bool类型承输入self的转换成int8的数据类型
         selfCasted = l0op::Cast(selfContiguous, dataType, executor);
         CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -317,7 +317,7 @@ static aclnnStatus DoPadV3(const aclTensor* self, const aclIntArray* noneNegPad,
     CHECK_RET(valueTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     auto valueCasted = valueTensor;
-    if (self->GetDataType() == DataType::DT_BOOL) {
+    if (self->GetDataType() == DataType::DT_BOOL && !IsRegBase()) {
         // 将bool类型的value转换成int8的数据类型
         valueCasted = l0op::Cast(valueTensor, dataType, executor);
         CHECK_RET(valueCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -337,7 +337,7 @@ static aclnnStatus DoStridedSlice(const aclTensor* padV3Result, const aclIntArra
     op::Shape curShape = padV3Result->GetViewShape();
     size_t outDim = out->GetViewShape().GetDimNum();
     DataType dataType = out->GetDataType();
-    if (dataType == DataType::DT_BOOL) {
+    if (dataType == DataType::DT_BOOL && !IsRegBase()) {
         dataType = DataType::DT_INT8;
     }
     FVector<int64_t> beginFV;
@@ -373,7 +373,7 @@ static aclnnStatus DoStridedSlice(const aclTensor* padV3Result, const aclIntArra
         (*end)[i] = stridedResult->GetViewShape().GetDim(i);
     }
     auto stridedResultCasted = stridedResult;
-    if (out->GetDataType() == DataType::DT_BOOL) {
+    if (out->GetDataType() == DataType::DT_BOOL && !IsRegBase()) {
         stridedResultCasted = l0op::Cast(stridedResult, DataType::DT_BOOL, executor);
         CHECK_RET(stridedResultCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
     }
@@ -447,7 +447,7 @@ aclnnStatus aclnnConstantPadNdGetWorkspaceSize(const aclTensor* self, const aclI
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
         padV3Result = selfContiguous;
-        if (self->GetDataType() == DataType::DT_BOOL) {
+        if (self->GetDataType() == DataType::DT_BOOL && !IsRegBase()) {
             // 将bool类型承输入self的转换成int8的数据类型
             padV3Result = l0op::Cast(selfContiguous, DataType::DT_INT8, uniqueExecutor.get());
             CHECK_RET(padV3Result != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -456,7 +456,7 @@ aclnnStatus aclnnConstantPadNdGetWorkspaceSize(const aclTensor* self, const aclI
 
     if ((signSymbol & NEGETIVE) == 0) {
         auto padV3ResultCasted = padV3Result;
-        if (out->GetDataType() == DataType::DT_BOOL) {
+        if (out->GetDataType() == DataType::DT_BOOL && !IsRegBase()) {
             padV3ResultCasted = l0op::Cast(padV3Result, DataType::DT_BOOL, uniqueExecutor.get());
             CHECK_RET(padV3ResultCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
         }

@@ -388,12 +388,26 @@ private:
             AscendC::Reg::MaskNot(pMask, pMask, maskAll);
             outMask = AscendC::Reg::UpdateMask<T, Trait>(outLen);
             if constexpr (UB_AXES == 2) {
-                for (uint16_t n = 0; n < dimNNum; n++) {
-                    AscendC::Reg::DataCopy(vReg, dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW);
+                for (uint16_t n = 0; n < dimNNum / 2; n++) {
+                    AscendC::Reg::DataCopy(vReg, dstAddr + ubInOffset + padRigthFloorAlign + 2 * n * padCHW);
                     vRegTmp = vReg;
                     Duplicate<T, AscendC::Reg::MaskMergeMode::ZEROING, T>(vRegTmp, value, pMask);
                     Copy(vReg, vRegTmp, pMask);
-                    AscendC::Reg::DataCopy(dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW, vReg, outMask);
+                    AscendC::Reg::DataCopy(dstAddr + ubInOffset + padRigthFloorAlign + 2 * n * padCHW, vReg, outMask);
+                    AscendC::Reg::DataCopy(vReg, dstAddr + ubInOffset + padRigthFloorAlign + (2 * n + 1) * padCHW);
+                    vRegTmp = vReg;
+                    Duplicate<T, AscendC::Reg::MaskMergeMode::ZEROING, T>(vRegTmp, value, pMask);
+                    Copy(vReg, vRegTmp, pMask);
+                    AscendC::Reg::DataCopy(dstAddr + ubInOffset + padRigthFloorAlign + (2 * n + 1) * padCHW, vReg,
+                                           outMask);
+                }
+                for (uint16_t i = 0; i < dimNNum % 2; i++) {
+                    AscendC::Reg::DataCopy(vReg, dstAddr + ubInOffset + padRigthFloorAlign + (dimNNum - 1) * padCHW);
+                    vRegTmp = vReg;
+                    Duplicate<T, AscendC::Reg::MaskMergeMode::ZEROING, T>(vRegTmp, value, pMask);
+                    Copy(vReg, vRegTmp, pMask);
+                    AscendC::Reg::DataCopy(dstAddr + ubInOffset + padRigthFloorAlign + (dimNNum - 1) * padCHW, vReg,
+                                           outMask);
                 }
             } else if constexpr (UB_AXES == 3) {
                 for (uint16_t n = 0; n < dimNNum; n++) {
