@@ -10,6 +10,7 @@
 
 #include <gtest/gtest.h>
 #include <iostream>
+#include <optional>
 #include "infershape_context_faker.h"
 #include "base/registry/op_impl_space_registry_v2.h"
 
@@ -93,8 +94,9 @@ TEST_F(HistogramV2Test, HistogramV2_infershape_case_0)
     ExeTestCase({expectResult}, inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS);
 }
 
-// bins <= 0 should make InferShape fail (covers the OP_CHECK_IF error branch).
-static void RunInferShapeWithBins(int64_t bins, ge::graphStatus expect)
+// bins 未设置时表示缺失，回落默认值；bins <= 0 时 InferShape 失败（覆盖 OP_CHECK_IF 错误分支）。
+static void RunInferShapeWithBins(const std::optional<int64_t>& bins, ge::graphStatus expect,
+                                  const std::vector<int64_t>& expectShape = {})
 {
     gert::StorageShape x0 = {{16, 16}, {16, 16}};
     gert::StorageShape x1 = {{16, 16}, {16, 16}};
@@ -102,21 +104,26 @@ static void RunInferShapeWithBins(int64_t bins, ge::graphStatus expect)
     gert::StorageShape outStorageShape = {};
     std::vector<gert::Tensor*> inputTensors = {(gert::Tensor*)&x0, (gert::Tensor*)&x1, (gert::Tensor*)&x2};
     std::vector<gert::StorageShape*> outputShapes = {&outStorageShape};
-    auto contextHolder = gert::InferShapeContextFaker()
-                             .SetOpType("HistogramV2")
-                             .NodeIoNum(3, 1)
-                             .NodeInputTd(0, ge::DT_FLOAT16, ge::FORMAT_ND, ge::FORMAT_ND)
-                             .NodeInputTd(1, ge::DT_FLOAT16, ge::FORMAT_ND, ge::FORMAT_ND)
-                             .NodeInputTd(2, ge::DT_FLOAT16, ge::FORMAT_ND, ge::FORMAT_ND)
-                             .NodeOutputTd(0, ge::DT_INT32, ge::FORMAT_ND, ge::FORMAT_ND)
-                             .InputTensors(inputTensors)
-                             .OutputShapes(outputShapes)
-                             .Attr("bins", bins)
-                             .Build();
+    gert::InferShapeContextFaker faker;
+    faker.SetOpType("HistogramV2")
+        .NodeIoNum(3, 1)
+        .NodeInputTd(0, ge::DT_FLOAT16, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(1, ge::DT_FLOAT16, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(2, ge::DT_FLOAT16, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeOutputTd(0, ge::DT_INT32, ge::FORMAT_ND, ge::FORMAT_ND)
+        .InputTensors(inputTensors)
+        .OutputShapes(outputShapes);
+    if (bins.has_value()) {
+        faker.Attr("bins", *bins);
+    }
+    auto contextHolder = faker.Build();
     auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
     auto inferShapeFunc = spaceRegistry->GetOpImpl("HistogramV2")->infer_shape;
     ASSERT_NE(inferShapeFunc, nullptr);
     EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), expect);
+    if (!expectShape.empty()) {
+        EXPECT_EQ(ToVector(*contextHolder.GetContext()->GetOutputShape(0)), expectShape);
+    }
 }
 
 TEST_F(HistogramV2Test, HistogramV2_infershape_bins_negative) { RunInferShapeWithBins(-1, ge::GRAPH_FAILED); }
@@ -124,3 +131,9 @@ TEST_F(HistogramV2Test, HistogramV2_infershape_bins_negative) { RunInferShapeWit
 TEST_F(HistogramV2Test, HistogramV2_infershape_bins_zero) { RunInferShapeWithBins(0, ge::GRAPH_FAILED); }
 
 TEST_F(HistogramV2Test, HistogramV2_infershape_bins_custom) { RunInferShapeWithBins(64, ge::GRAPH_SUCCESS); }
+
+// bins 属性缺失（GetAttrPointer 返回 nullptr）时回落默认值 100，与 tiling 侧行为保持一致。
+TEST_F(HistogramV2Test, HistogramV2_infershape_bins_missing)
+{
+    RunInferShapeWithBins(std::nullopt, ge::GRAPH_SUCCESS, {100});
+}

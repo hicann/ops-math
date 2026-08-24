@@ -35,9 +35,9 @@ constexpr int64_t UB_SELF_LENGTH = 16320L; // 64 * 255
 constexpr int64_t UB_BINS_LENGTH = 16320L; // 16320 * 4 = 65280 < 65535，结果可一次性搬出
 constexpr int64_t UB_SELF_LENGTH_310P = 16000L;
 constexpr int64_t UB_BINS_LENGTH_310P = 16320L;
+constexpr int64_t DEFAULT_BINS = 100L;
 
-class HistogramV2Tiling
-{
+class HistogramV2Tiling {
 public:
     explicit HistogramV2Tiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus Init();
@@ -156,20 +156,29 @@ ge::graphStatus HistogramV2Tiling::Init()
 {
     OP_LOGD(tilingContext, "Tiling initing.");
 
-    auto selfShape = tilingContext->GetInputShape(0)->GetStorageShape();
+    auto inputShape = tilingContext->GetInputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputShape);
+    auto selfShape = inputShape->GetStorageShape();
     totalLength = selfShape.GetShapeSize();
 
     auto compileInfo = reinterpret_cast<const HistogramV2CompileInfo*>(tilingContext->GetCompileInfo());
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, compileInfo);
     coreNum = compileInfo->totalCoreNum;
     OP_LOGD(tilingContext, "coreNum %ld.", coreNum);
     if (coreNum == 0) {
         return ge::GRAPH_FAILED;
     }
-    auto dType = tilingContext->GetInputDesc(0)->GetDataType();
+    auto inputDesc = tilingContext->GetInputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
+    auto dType = inputDesc->GetDataType();
 
     auto attrs = tilingContext->GetAttrs();
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, attrs);
     int32_t binsIndex = 0;
-    bins = *(attrs->GetAttrPointer<int64_t>(binsIndex));
+    const int64_t* binsPtr = attrs->GetAttrPointer<int64_t>(binsIndex);
+    bins = (binsPtr == nullptr) ? DEFAULT_BINS : *binsPtr;
+    OP_CHECK_IF(bins <= 0, OP_LOGE(tilingContext, "bins has to be positive, but got %ld.", bins),
+                return ge::GRAPH_FAILED);
     SetTilingKeyMode(dType);
     tilingContext->SetNeedAtomic(true);
     TilingDataForCore();
@@ -215,8 +224,8 @@ ge::graphStatus HistogramV2Tiling::SetKernelTiling()
     tilingData.set_tailTileLeftDataLength(tailTileLeftDataLength);
     tilingData.set_tailTileLeftDataLengthAligned(tailTileLeftDataLengthAligned);
 
-    tilingData.SaveToBuffer(
-        tilingContext->GetRawTilingData()->GetData(), tilingContext->GetRawTilingData()->GetCapacity());
+    tilingData.SaveToBuffer(tilingContext->GetRawTilingData()->GetData(),
+                            tilingContext->GetRawTilingData()->GetCapacity());
     tilingContext->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
     TilingDataPrint();
     return ge::GRAPH_SUCCESS;
@@ -243,15 +252,11 @@ void HistogramV2Tiling::TilingDataPrint() const
     OP_LOGD(tilingContext, "tailTileLeftDataLengthAligned: %ld.", tailTileLeftDataLengthAligned);
 }
 
-class HistogramV2MembaseTiling : public HistogramV2BaseClass
-{
+class HistogramV2MembaseTiling : public HistogramV2BaseClass {
 public:
     explicit HistogramV2MembaseTiling(gert::TilingContext* context) : HistogramV2BaseClass(context) {};
     ~HistogramV2MembaseTiling() override = default;
-    void Reset(gert::TilingContext* context) override
-    {
-        HistogramV2BaseClass::Reset(context);
-    }
+    void Reset(gert::TilingContext* context) override { HistogramV2BaseClass::Reset(context); }
 
 protected:
     bool IsCapable() override
@@ -265,24 +270,17 @@ protected:
     ge::graphStatus DoOpTiling() override
     {
         HistogramV2Tiling tilingObject(context_);
-        tilingObject.Init();
+        if (tilingObject.Init() != ge::GRAPH_SUCCESS) {
+            return ge::GRAPH_FAILED;
+        }
         return tilingObject.SetKernelTiling();
     }
 
-    ge::graphStatus PostTiling() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus PostTiling() override { return ge::GRAPH_SUCCESS; }
 
-    ge::graphStatus GetShapeAttrsInfo() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus GetShapeAttrsInfo() override { return ge::GRAPH_SUCCESS; }
 
-    uint64_t GetTilingKey() const override
-    {
-        return context_->GetTilingKey();
-    }
+    uint64_t GetTilingKey() const override { return context_->GetTilingKey(); }
 };
 
 REGISTER_OPS_TILING_TEMPLATE(HistogramV2, HistogramV2MembaseTiling, 10000);
