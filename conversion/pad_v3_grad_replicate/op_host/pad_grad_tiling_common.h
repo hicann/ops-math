@@ -127,17 +127,19 @@ template <typename T>
 static ge::graphStatus GetInputInfo(gert::TilingContext* tilingContext, InputParamsInfo& params,
                                     bool allowConstantMode = true)
 {
-    OP_LOGI(tilingContext->GetNodeName(), "strat to get input dims");
+    OP_LOGI(tilingContext->GetNodeName(), "start to get input dims");
     const gert::StorageShape* xShape = tilingContext->GetInputShape(X_INPUT_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, xShape);
     OP_CHECK_IF(xShape->GetStorageShape().GetDimNum() != CHECK_DIM_NUM,
-                OP_LOGE(tilingContext->GetNodeName(), "input dim is not 4, please check input."),
+                OP_LOGE(tilingContext->GetNodeName(), "input dim is not 4, please check input shape dimension."),
                 return ge::GRAPH_FAILED);
     const gert::StorageShape* paddingShape = tilingContext->GetInputShape(PAD_INPUT_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, paddingShape);
     OP_CHECK_IF(static_cast<int32_t>(xShape->GetStorageShape().GetDimNum() * 2) !=
                     static_cast<int32_t>(paddingShape->GetStorageShape().GetDim(0)),
-                OP_LOGE(tilingContext->GetNodeName(), "Please check input or padding shape"), return ge::GRAPH_FAILED);
+                OP_LOGE(tilingContext->GetNodeName(),
+                        "input dim num does not match padding shape size, expected padding size = input dim num * 2."),
+                return ge::GRAPH_FAILED);
     const gert::Tensor* paddingsTensor = tilingContext->GetInputTensor(PAD_INPUT_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, paddingsTensor);
 
@@ -168,7 +170,8 @@ static ge::graphStatus GetInputInfo(gert::TilingContext* tilingContext, InputPar
     params.alignOutWidth = CeilAlignStatus(params.outWidth, ALIGN_16);
 
     const gert::RuntimeAttrs* attrs = tilingContext->GetAttrs();
-    OP_CHECK_IF(attrs == nullptr, OP_LOGE(tilingContext->GetNodeName(), "Get attrs Failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(attrs == nullptr, OP_LOGE(tilingContext->GetNodeName(), "Failed to get runtime attrs."),
+                return ge::GRAPH_FAILED);
     const std::string mode = std::string(attrs->GetAttrPointer<char>(MODE_INDEX));
     if (allowConstantMode) {
         OP_CHECK_IF(mode != "reflect" && mode != "edge" && mode != "constant",

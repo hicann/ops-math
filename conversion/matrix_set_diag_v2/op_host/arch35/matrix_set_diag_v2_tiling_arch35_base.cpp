@@ -327,7 +327,7 @@ ge::graphStatus MatrixSetDiagTilingBase::GetSocInfo()
     OP_CHECK_IF((ubBlockSize_ == 0U), OP_LOGE(context_, "Failed to get ub block size."), return ge::GRAPH_FAILED);
     ubBlockElements_ = ubBlockSize_ / inputInfo_.dSize;
     vectorSize_ = static_cast<uint64_t>(Ops::Base::GetVRegSize(context_));
-    OP_CHECK_IF(vectorSize_ == 0U, OP_LOGE(context_, "Failed to vector size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(vectorSize_ == 0U, OP_LOGE(context_, "Failed to get vector size."), return ge::GRAPH_FAILED);
     OP_LOGI(context_, "soc info: ubSize %lu, coreNum %u, ubBlockSize %lu ", ubSize_, coreNum_, ubBlockSize_);
     return ge::GRAPH_SUCCESS;
 }

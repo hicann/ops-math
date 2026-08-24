@@ -58,7 +58,7 @@ static Status ParseOpToGraphTranspose(const ge::Operator& op, Graph& graph)
     }
     // there is default action in onnx
     if (perm.empty()) {
-        OP_LOGE(GetOpName(op).c_str(), "must input the attr of perm");
+        OP_LOGE(GetOpName(op).c_str(), "The perm attribute must be provided.");
         return FAILED;
     }
 
@@ -77,19 +77,14 @@ static Status ParseOpToGraphTranspose(const ge::Operator& op, Graph& graph)
 }
 // register Transpose op info to GE
 REGISTER_CUSTOM_OP("PartitionedCall")
-  .FrameworkType(ONNX)
-  .OriginOpType({ge::AscendString("ai.onnx::8::Transpose"),
-                 ge::AscendString("ai.onnx::9::Transpose"),
-                 ge::AscendString("ai.onnx::10::Transpose"),
-                 ge::AscendString("ai.onnx::11::Transpose"),
-                 ge::AscendString("ai.onnx::12::Transpose"),
-                 ge::AscendString("ai.onnx::13::Transpose"),
-                 ge::AscendString("ai.onnx::14::Transpose"),
-                 ge::AscendString("ai.onnx::15::Transpose"),
-                 ge::AscendString("ai.onnx::16::Transpose"),
-                 ge::AscendString("ai.onnx::17::Transpose"),
-                 ge::AscendString("ai.onnx::18::Transpose")})
-  .ParseParamsFn(ParseParamsTranspose)
-  .ParseOpToGraphFn(ParseOpToGraphTranspose)
-  .ImplyType(ImplyType::TVM);
-}  // namespace domi
+    .FrameworkType(ONNX)
+    .OriginOpType({ge::AscendString("ai.onnx::8::Transpose"), ge::AscendString("ai.onnx::9::Transpose"),
+                   ge::AscendString("ai.onnx::10::Transpose"), ge::AscendString("ai.onnx::11::Transpose"),
+                   ge::AscendString("ai.onnx::12::Transpose"), ge::AscendString("ai.onnx::13::Transpose"),
+                   ge::AscendString("ai.onnx::14::Transpose"), ge::AscendString("ai.onnx::15::Transpose"),
+                   ge::AscendString("ai.onnx::16::Transpose"), ge::AscendString("ai.onnx::17::Transpose"),
+                   ge::AscendString("ai.onnx::18::Transpose")})
+    .ParseParamsFn(ParseParamsTranspose)
+    .ParseOpToGraphFn(ParseOpToGraphTranspose)
+    .ImplyType(ImplyType::TVM);
+} // namespace domi

@@ -93,7 +93,7 @@ ge::graphStatus MatrixSetDiagV2InferShapeHelper::CheckK()
         lower_ = kVec_.GetDim(0);
         OP_CHECK_IF(upper_ < lower_,
                     OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "k", Ops::Base::ToString(kVec_),
-                                                          "The value of k[1] must greater than k[0]"),
+                                                          "The value of k[1] must be greater than k[0]"),
                     return ge::GRAPH_FAILED);
     } else {
         lower_ = kVec_.GetDim(0);
@@ -104,11 +104,11 @@ ge::graphStatus MatrixSetDiagV2InferShapeHelper::CheckK()
     col_ = xShape_->GetDim(xDimNum_ - 1);
     OP_CHECK_IF(row_ != ge::UNKNOWN_DIM && lower_ <= -row_,
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "k", Ops::Base::ToString(kVec_),
-                                                      "The value of k[1] must less than last axis of input"),
+                                                      "The value of k[1] must be less than last axis of input"),
                 return ge::GRAPH_FAILED);
     OP_CHECK_IF(col_ != ge::UNKNOWN_DIM && upper_ >= col_,
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "k", Ops::Base::ToString(kVec_),
-                                                      "The value of -k[0] must less than -2th axis of input"),
+                                                      "The value of -k[0] must be less than -2nd axis of input"),
                 return ge::GRAPH_FAILED);
 
     if (lower_ == upper_) {
@@ -127,7 +127,7 @@ ge::graphStatus MatrixSetDiagV2InferShapeHelper::CheckK()
         int64_t kNum = upper_ - lower_ + 1;
         OP_CHECK_IF(numDiags != kNum,
                     OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "diagonal", std::to_string(numDiags),
-                                                          "-2th axis of diagonal must be " + std::to_string(kNum) +
+                                                          "-2nd axis of diagonal must be " + std::to_string(kNum) +
                                                               ", when the value of k is " + Ops::Base::ToString(kVec_)),
                     return ge::GRAPH_FAILED);
     }
@@ -139,7 +139,7 @@ ge::graphStatus MatrixSetDiagV2InferShapeHelper::CheckK()
     OP_CHECK_IF(
         maxDiagLen != diagLenComputed,
         OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "diagonal", std::to_string(maxDiagLen),
-                                              "-1th axis of diagonal must be " + std::to_string(diagLenComputed) +
+                                              "-1st axis of diagonal must be " + std::to_string(diagLenComputed) +
                                                   ", when the value of k is " + Ops::Base::ToString(kVec_)),
         return ge::GRAPH_FAILED);
 

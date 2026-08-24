@@ -30,7 +30,7 @@ static Status ParseParamsDepthToSpace(const Message* op_src, ge::Operator& op_de
     }
     const int support_block_size = 2;
     if (block_size < support_block_size) {
-        OP_LOGE(GetOpName(op_dest).c_str(), "blocksize, specifying the size of the spatial block, should be >=2, ");
+        OP_LOGE(GetOpName(op_dest).c_str(), "blocksize, specifying the size of the spatial block, should be >= 2.");
         return FAILED;
     }
 

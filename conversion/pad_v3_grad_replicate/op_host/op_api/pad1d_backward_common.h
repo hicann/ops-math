@@ -107,7 +107,9 @@ static bool Pad1dBwdCheckShapeCommon(const aclTensor* gradOutput, const aclTenso
     // check the last dim value of gradOutput. 0, 1 are indexes
     OP_CHECK(gradOutput->GetViewShape().GetDim(selfDimnum - 1) ==
                  self->GetViewShape().GetDim(selfDimnum - 1) + (*padding)[0] + (*padding)[1],
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "wrong gradOutput shape."), return false);
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                     "gradOutput shape does not match the expected shape derived from input and padding."),
+             return false);
     return true;
 }
 
@@ -123,7 +125,7 @@ static bool Pad1dBwdCheckShape(const aclTensor* gradOutput, const aclTensor* sel
         auto selfDimnum = self->GetViewShape().GetDimNum();
         OP_CHECK((*padding)[0] < self->GetViewShape().GetDim(selfDimnum - 1) &&
                      (*padding)[1] < self->GetViewShape().GetDim(selfDimnum - 1),
-                 OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding size should be less than the corresponding self dimention."),
+                 OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding size should be less than the corresponding self dimension."),
                  return false);
     }
     return true;
@@ -175,22 +177,23 @@ static bool Pad1dBwdCheckPaddingValue(const aclIntArray* padding, const aclTenso
 {
     // padding的每一维度的数值要大于等于0
     if ((*padding)[0] < 0 || (*padding)[1] < 0) {
-        OP_LOGW("on aicore situation, padding values should be greater than 0 or equal 0.");
+        OP_LOGW("in AICore situation, padding values should be greater than or equal to 0.");
         return false;
     }
 
     if (mode == Pad1dBackwardMode::REFLECT) {
         if ((*padding)[0] > kPad1dReflectAicpuShape || (*padding)[1] > kPad1dReflectAicpuShape) {
-            OP_LOGW("on aicore situation, padding values should be greater than 0 or equal 0 and less than or equal to "
-                    "the shape limit value %ld.",
-                    kPad1dReflectAicpuShape);
+            OP_LOGW(
+                "in AICore situation, padding values should be greater than or equal to 0 and less than or equal to "
+                "the shape limit value %ld.",
+                kPad1dReflectAicpuShape);
             return false;
         }
     } else {
         // fp32类型下，AtlasA2 padding最多不超过7200
         if (!IsRegBase() && gradOutput->GetDataType() == op::DataType::DT_FLOAT &&
             ((*padding)[0] >= kPad1dReplicatePaddingFp32Max || (*padding)[1] >= kPad1dReplicatePaddingFp32Max)) {
-            OP_LOGW("on aicore situation, padding values should be less than %ld.", kPad1dReplicatePaddingFp32Max);
+            OP_LOGW("in AICore situation, padding values should be less than %ld.", kPad1dReplicatePaddingFp32Max);
             return false;
         }
     }

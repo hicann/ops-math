@@ -129,7 +129,9 @@ inline static bool CheckShape(const aclTensor* gradOutput, const aclTensor* self
                      self->GetViewShape().GetDim(selfDimnum - 1) + (*padding)[0] + (*padding)[1] &&
                  gradOutput->GetViewShape().GetDim(selfDimnum - 3) ==
                      self->GetViewShape().GetDim(selfDimnum - 3) + (*padding)[4] + (*padding)[5],
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "wrong gradOutput shape."), return false);
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                     "gradOutput shape does not match the expected shape derived from input and padding."),
+             return false);
     return true;
 }
 

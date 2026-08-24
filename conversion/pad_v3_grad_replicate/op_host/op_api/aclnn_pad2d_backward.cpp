@@ -137,7 +137,7 @@ static bool CheckShape(const aclTensor* gradOutput, const aclTensor* self, const
         auto isBF16Support = CheckPaddingValue(padding, mode);
         OP_CHECK(isBF16Support,
                  OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                         "bf16 only supports h dim no pad or padding values less than 7 or equal 7."),
+                         "bf16 only supports h dim no pad or padding values less than or equal to 7."),
                  return false);
     }
 
@@ -146,7 +146,9 @@ static bool CheckShape(const aclTensor* gradOutput, const aclTensor* self, const
                      self->GetViewShape().GetDim(selfDimnum - 2) + (*padding)[2] + (*padding)[3] &&
                  gradOutput->GetViewShape().GetDim(selfDimnum - 1) ==
                      self->GetViewShape().GetDim(selfDimnum - 1) + (*padding)[0] + (*padding)[1],
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "wrong gradOutput shape."), return false);
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                     "gradOutput shape does not match the expected shape derived from input and padding."),
+             return false);
     return true;
 }
 

@@ -171,16 +171,16 @@ ge::graphStatus MatrixSetDiagV2Tiling::CheckK()
     inputInfo_.k1 = k.GetDimNum() > 1 ? k[1] : k[0];
     OP_CHECK_IF(inputInfo_.k1 < inputInfo_.k0,
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "k", Ops::Base::ToString(k),
-                                                      "The value of k[1] must greater than k[0]"),
+                                                      "The value of k[1] must be greater than k[0]"),
                 return ge::GRAPH_FAILED);
 
     OP_CHECK_IF(static_cast<int64_t>(inputInfo_.k1) >= static_cast<int64_t>(inputInfo_.xColNum),
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "k", Ops::Base::ToString(k),
-                                                      "The value of k[1] must less than last axis of input"),
+                                                      "The value of k[1] must be less than last axis of input"),
                 return ge::GRAPH_FAILED);
     OP_CHECK_IF(static_cast<int64_t>(inputInfo_.k0) <= -static_cast<int64_t>(inputInfo_.xRowNum),
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "k", Ops::Base::ToString(k),
-                                                      "The value of -k[0] must less than -2th axis of input"),
+                                                      "The value of -k[0] must be less than -2nd axis of input"),
                 return ge::GRAPH_FAILED);
     inputInfo_.diagNum = inputInfo_.k1 - inputInfo_.k0 + 1;
 
@@ -206,7 +206,7 @@ ge::graphStatus MatrixSetDiagV2Tiling::CheckK()
         uint64_t numDiags = static_cast<uint64_t>(diagShapeVal_.GetDim(static_cast<size_t>(diagDimNum_) - 2));
         OP_CHECK_IF(inputInfo_.diagNum != numDiags,
                     OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "diagonal", std::to_string(numDiags),
-                                                          "-2th axis of diagonal must be " +
+                                                          "-2nd axis of diagonal must be " +
                                                               std::to_string(inputInfo_.diagNum) +
                                                               ", when the value of k is " + Ops::Base::ToString(k)),
                     return ge::GRAPH_FAILED);
@@ -218,7 +218,7 @@ ge::graphStatus MatrixSetDiagV2Tiling::CheckK()
     OP_CHECK_IF(inputInfo_.maxDiagLen != diagLenComputed,
                 OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
                     context_->GetNodeName(), "diagonal", std::to_string(inputInfo_.maxDiagLen),
-                    "-1th axis of diagonal must be " + std::to_string(diagLenComputed) + ", when the value of k is " +
+                    "-1st axis of diagonal must be " + std::to_string(diagLenComputed) + ", when the value of k is " +
                         Ops::Base::ToString(k)),
                 return ge::GRAPH_FAILED);
 

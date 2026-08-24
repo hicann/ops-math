@@ -1079,8 +1079,7 @@ ge::graphStatus PadACTiling::GetShapeAttrsInfo()
         } else {
             if (isMirrorPad_) {
                 std::string reasonMsg = "The value of mode cannot be empty.";
-                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "mode", std::string(mode).c_str(),
-                                                      reasonMsg.c_str());
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "mode", "nullptr", reasonMsg.c_str());
                 return ge::GRAPH_FAILED;
             }
         }
