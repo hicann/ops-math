@@ -292,6 +292,9 @@ __aicore__ inline void RadixSortWithIndexMultiBlock<XType, UnsignedType, IsDesce
             ScatterKeysGlobal(xLocal, sortedValueIndexLocal, xIndexLocal, sortedValueLocal, blockExcusiveUb,
                               blockDataInGlobalPos, blockHistFlagUb2, blockHistUb, sortRound, tileDataStart,
                               currTileSize);
+            event_t evtVS = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
+            SetFlag<HardEvent::V_S>(evtVS);
+            WaitFlag<HardEvent::V_S>(evtVS);
             inQueueIndex_.template FreeTensor(xIndexLocal);
             this->blockHistFlagUbQue_.template FreeTensor(blockHistFlagUb2);
             this->inQueueX_.template FreeTensor(xLocal);

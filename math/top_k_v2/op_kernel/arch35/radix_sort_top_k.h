@@ -739,6 +739,9 @@ __aicore__ inline void RadixSortTopK<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_
                 WaitFlag<HardEvent::MTE3_V>(eventMet3VecId);
                 remainTileTopkValue_(tileTopkValueIndex) = tileCusumBuffer[tileTopkOffsetInUb](boundaryBin) -
                                                            tilePrevCusumValue;
+                event_t eventIdScalar = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::S_V));
+                SetFlag<HardEvent::S_V>(eventIdScalar);
+                WaitFlag<HardEvent::S_V>(eventIdScalar);
                 CopyUb2Ub(reuseBuffer2Copy, remainTileTopkValue_, tileTopkValueIndex);
                 event_t eventIdWaitV = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
                 SetFlag<HardEvent::V_MTE3>(eventIdWaitV);
