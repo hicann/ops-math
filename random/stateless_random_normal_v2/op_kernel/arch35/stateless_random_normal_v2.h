@@ -217,14 +217,14 @@ __aicore__ inline void StatelessRandomNormalV2<T>::Uint32ToFloat(LocalTensor<flo
 
         for (uint16_t i = 0; i < static_cast<uint16_t>(repeatTimes); ++i) {
             mask = Reg::UpdateMask<float>(sReg1);
-            Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE, Reg::LoadDist::DIST_NORM>(vReg0, ubPhilox,
-                                                                                                 offset);
+            Reg::LoadAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE, Reg::LoadDist::DIST_NORM>(vReg0, ubPhilox,
+                                                                                                  offset);
             Reg::And<int32_t, Reg::MaskMergeMode::ZEROING>(vReg2, vReg0, vReg1, mask);
             Reg::Or<int32_t, Reg::MaskMergeMode::ZEROING>(vReg4, vReg2, vReg3, mask);
             vReg5 = (Reg::RegTensor<float>&)vReg4;
             Reg::Adds<float, float, Reg::MaskMergeMode::ZEROING>(vReg6, vReg5, sReg4, mask);
-            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE, Reg::StoreDist::DIST_NORM_B32>(ubOut, vReg6,
-                                                                                                    offset, mask);
+            Reg::StoreAlign<float, Reg::PostLiteral::POST_MODE_UPDATE, Reg::StoreDist::DIST_NORM_B32>(ubOut, vReg6,
+                                                                                                      offset, mask);
         }
     }
 }
@@ -262,15 +262,15 @@ __aicore__ inline void StatelessRandomNormalV2<T>::BoxMullerFloat(LocalTensor<fl
         int32_t offset = static_cast<int32_t>(INT32_FLOAT32_ONE_REPEAT);
         for (uint16_t i = 0; i < static_cast<uint16_t>(repeatTimes); ++i) {
             mask = Reg::UpdateMask<float>(sreg1);
-            Reg::DataCopy<float, Reg::LoadDist::DIST_DINTLV_B32>(vreg0, vreg1,
-                                                                 uniformRes + i * offset * DOUBLE_UNIFORM_RESULT);
+            Reg::LoadAlign<float, Reg::LoadDist::DIST_DINTLV_B32>(vreg0, vreg1,
+                                                                  uniformRes + i * offset * DOUBLE_UNIFORM_RESULT);
             Reg::Maxs(vreg2, vreg0, epsScalar, mask);
             Reg::Ln(vreg3, vreg2, mask);
             Reg::Muls(vreg4, vreg1, doublePiScalar, mask);
             Reg::Muls(vreg5, vreg3, -DOUBLE_MULTIPLE, mask);
             Reg::Sqrt(vreg6, vreg5, mask);
-            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(ubV1Out, vreg4, offset, mask);
-            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(ubU2Out, vreg6, offset, mask);
+            Reg::StoreAlign<float, Reg::PostLiteral::POST_MODE_UPDATE>(ubV1Out, vreg4, offset, mask);
+            Reg::StoreAlign<float, Reg::PostLiteral::POST_MODE_UPDATE>(ubU2Out, vreg6, offset, mask);
         }
     }
 }
@@ -305,14 +305,14 @@ __aicore__ inline void StatelessRandomNormalV2<T>::BoxMullerMul(LocalTensor<floa
         int32_t offset = static_cast<int32_t>(INT32_FLOAT32_ONE_REPEAT);
         for (uint16_t i = 0; i < static_cast<uint16_t>(repeatTimes); ++i) {
             mask = Reg::UpdateMask<float>(sreg1);
-            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(vreg0, ubSinResult, offset);
-            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(vreg1, ubCosResult, offset);
-            Reg::DataCopy<float, Reg::PostLiteral::POST_MODE_UPDATE>(vreg2, ubU2Result, offset);
+            Reg::LoadAlign<float, Reg::PostLiteral::POST_MODE_UPDATE>(vreg0, ubSinResult, offset);
+            Reg::LoadAlign<float, Reg::PostLiteral::POST_MODE_UPDATE>(vreg1, ubCosResult, offset);
+            Reg::LoadAlign<float, Reg::PostLiteral::POST_MODE_UPDATE>(vreg2, ubU2Result, offset);
 
             Reg::Mul(vreg3, vreg0, vreg2, mask);
             Reg::Mul(vreg4, vreg1, vreg2, mask);
 
-            Reg::DataCopy<int32_t, Reg::StoreDist::DIST_INTLV_B32>(
+            Reg::StoreAlign<int32_t, Reg::StoreDist::DIST_INTLV_B32>(
                 reinterpret_cast<__ubuf__ int32_t*>(ubOut + i * offset * DOUBLE_UNIFORM_RESULT),
                 (Reg::RegTensor<int32_t>&)(vreg3), (Reg::RegTensor<int32_t>&)(vreg4), mask);
         }

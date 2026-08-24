@@ -136,30 +136,30 @@ __aicore__ inline void TensorEqualKernel<T>::Compute(int64_t dataLen)
         AscendC::Reg::MaskReg bakMaskReg = AscendC::Reg::CreateMask<uint8_t, AscendC::Reg::MaskPattern::ALLF>();
         for (uint16_t i = 0; i < repeatTimes; i++) {
             offSetReg = AscendC::Reg::CreateAddrReg<uint8_t>(i, strideVReg);
-            AscendC::Reg::DataCopy(xReg, inputXAddr, offSetReg);
-            AscendC::Reg::DataCopy(yReg, inputYAddr, offSetReg);
+            AscendC::Reg::LoadAlign(xReg, inputXAddr, offSetReg);
+            AscendC::Reg::LoadAlign(yReg, inputYAddr, offSetReg);
             maskReg = AscendC::Reg::UpdateMask<uint8_t>(dataLenVf);
             AscendC::Reg::Compare<InputType, CMPMODE::NE>(cmpMaskReg, xReg, yReg, maskReg);
-            AscendC::Reg::MaskOr(bakMaskReg, bakMaskReg, cmpMaskReg, allMaskReg);
+            AscendC::Reg::Or(bakMaskReg, bakMaskReg, cmpMaskReg, allMaskReg);
         }
         if constexpr (std::is_same<InputType, uint8_t>::value) {
             AscendC::Reg::Duplicate(tmpU16Reg, 1);
-            AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::HIGHEST>(bakMaskRegHigh, bakMaskReg);
-            AscendC::Reg::MaskUnPack<AscendC::Reg::HighLowPart::LOWEST>(bakMaskRegLow, bakMaskReg);
-            AscendC::Reg::ReduceMax(tmpU16RegAdd, tmpU16Reg, bakMaskRegHigh);
-            AscendC::Reg::ReduceMax(tmpU16Reg, tmpU16Reg, bakMaskRegLow);
+            AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::HIGHEST>(bakMaskRegHigh, bakMaskReg);
+            AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::LOWEST>(bakMaskRegLow, bakMaskReg);
+            AscendC::Reg::Reduce<MicroAPI::ReduceType::MAX>(tmpU16RegAdd, tmpU16Reg, bakMaskRegHigh);
+            AscendC::Reg::Reduce<MicroAPI::ReduceType::MAX>(tmpU16Reg, tmpU16Reg, bakMaskRegLow);
             AscendC::Reg::Add(tmpU16Reg, tmpU16Reg, tmpU16RegAdd, allMaskReg);
             AscendC::Reg::UnPack<uint32_t, uint16_t, AscendC::Reg::HighLowPart::LOWEST>(tmpU32Reg, tmpU16Reg);
-            AscendC::Reg::DataCopy(resultAddr, tmpU32Reg, allMaskReg);
+            AscendC::Reg::StoreAlign(resultAddr, tmpU32Reg, allMaskReg);
         } else if constexpr (std::is_same<InputType, half>::value) {
             AscendC::Reg::Duplicate(tmpU16Reg, 1);
-            AscendC::Reg::ReduceMax(tmpU16Reg, tmpU16Reg, bakMaskReg);
+            AscendC::Reg::Reduce<MicroAPI::ReduceType::MAX>(tmpU16Reg, tmpU16Reg, bakMaskReg);
             AscendC::Reg::UnPack<uint32_t, uint16_t, AscendC::Reg::HighLowPart::LOWEST>(tmpU32Reg, tmpU16Reg);
-            AscendC::Reg::DataCopy(resultAddr, tmpU32Reg, allMaskReg);
+            AscendC::Reg::StoreAlign(resultAddr, tmpU32Reg, allMaskReg);
         } else {
             AscendC::Reg::Duplicate(tmpU32Reg, 1);
-            AscendC::Reg::ReduceMax(tmpU32Reg, tmpU32Reg, bakMaskReg);
-            AscendC::Reg::DataCopy(resultAddr, tmpU32Reg, allMaskReg);
+            AscendC::Reg::Reduce<MicroAPI::ReduceType::MAX>(tmpU32Reg, tmpU32Reg, bakMaskReg);
+            AscendC::Reg::StoreAlign(resultAddr, tmpU32Reg, allMaskReg);
         }
     }
     inputXQueue_.FreeTensor(xLocal);
