@@ -19,8 +19,8 @@
 using namespace ge;
 namespace ops {
 
-ge::graphStatus ConcatInferShapeCommon(
-    gert::InferShapeContext* context, const int64_t dynamic_input_idx, int64_t num_concat, int64_t axis)
+ge::graphStatus ConcatInferShapeCommon(gert::InferShapeContext* context, const int64_t dynamic_input_idx,
+                                       int64_t num_concat, int64_t axis)
 {
     auto in_shape = context->GetDynamicInputShape(dynamic_input_idx, 0);
     OP_CHECK_NULL_WITH_CONTEXT(context, in_shape);
@@ -40,10 +40,9 @@ ge::graphStatus ConcatInferShapeCommon(
     }
 
     size_t output_dim = out_shape->GetDimNum();
-    OP_CHECK_IF(
-        !IsDimValid(output_dim, axis),
-        OP_LOGE(context->GetNodeName(), "%s", GenInvalidDimMsg("concat_dim", output_dim, axis).c_str()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(!IsDimValid(output_dim, axis),
+                OP_LOGE(context->GetNodeName(), "%s", GenInvalidDimMsg("concat_dim", output_dim, axis).c_str()),
+                return ge::GRAPH_FAILED);
     if (axis < 0) {
         axis += output_dim;
     }
@@ -51,26 +50,25 @@ ge::graphStatus ConcatInferShapeCommon(
     int64_t concat_dim_size = out_shape->GetDim(axis);
     for (int64_t relative_index = 1; relative_index < num_concat; relative_index++) {
         const gert::Shape* input_i_shape = context->GetDynamicInputShape(dynamic_input_idx, relative_index);
-        OP_LOGD(
-            context->GetNodeName(), "input_shape %ld:%s", relative_index, Ops::Base::ToString(*input_i_shape).c_str());
+        OP_CHECK_NULL_WITH_CONTEXT(context, input_i_shape);
+        OP_LOGD(context->GetNodeName(), "input_shape %ld:%s", relative_index,
+                Ops::Base::ToString(*input_i_shape).c_str());
         if (input_i_shape->IsScalar() && output_dim == 1) {
             concat_dim_size += 1;
             continue;
         }
         if (input_i_shape->GetDimNum() != output_dim) {
             // input shape size is not equal output
-            OP_LOGE(
-                context->GetNodeName(), "shape[%" PRId64 "].GetDimNum %zu, must be equal to %zu!", relative_index,
-                input_i_shape->GetDimNum(), output_dim);
+            OP_LOGE(context->GetNodeName(), "shape[%" PRId64 "].GetDimNum %zu, must be equal to %zu!", relative_index,
+                    input_i_shape->GetDimNum(), output_dim);
             return ge::GRAPH_FAILED;
         }
         // check whether the non concat dim is equal
         for (int64_t check_dim = 0; check_dim < static_cast<int64_t>(output_dim); check_dim++) {
             if (check_dim != axis && input_i_shape->GetDim(check_dim) != out_shape->GetDim(check_dim)) {
-                OP_LOGE(
-                    context->GetNodeName(),
-                    "shape[%" PRId64 "][%" PRId64 "] is %" PRId64 ", must be equal to %" PRId64 "!", relative_index,
-                    check_dim, input_i_shape->GetDim(check_dim), out_shape->GetDim(check_dim));
+                OP_LOGE(context->GetNodeName(),
+                        "shape[%" PRId64 "][%" PRId64 "] is %" PRId64 ", must be equal to %" PRId64 "!", relative_index,
+                        check_dim, input_i_shape->GetDim(check_dim), out_shape->GetDim(check_dim));
                 return ge::GRAPH_FAILED;
             }
         }
