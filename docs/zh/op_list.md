@@ -388,6 +388,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/bias/README.md">bias</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>按照axis、num_axes和bias_from_blob推导bias的广播形状，计算y = x + broadcast(bias)。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/bias_add/README.md">bias_add</a></td>
     <td>√</td>
     <td>√</td>
