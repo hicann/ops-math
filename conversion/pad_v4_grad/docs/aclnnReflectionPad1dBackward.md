@@ -25,7 +25,7 @@
 
 ## 功能说明
 
-- 接口功能：reflection_pad1d的反向传播，前向计算参考[[aclnnReflectionPad1d](../../mirror_pad/docs/aclnnReflectionPad1d.md)]。
+- 接口功能：reflection_pad1d的反向传播，前向计算参考[aclnnReflectionPad1d](../../mirror_pad/docs/aclnnReflectionPad1d.md)。
 - 示例：
 
   ```text

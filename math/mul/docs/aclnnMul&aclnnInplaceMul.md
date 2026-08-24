@@ -280,7 +280,7 @@ aclnnStatus aclnnInplaceMul(
       <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入`other`。</td>
-      <td>数据类型需要与selfRef的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>.md)），shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
+      <td>数据类型需要与selfRef的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>，shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>

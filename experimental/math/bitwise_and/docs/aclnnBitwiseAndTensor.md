@@ -1,6 +1,6 @@
 # aclnnBitwiseAndTensor
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/bitwise_and)
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/experimental/math/bitwise_and)
 
 ## 产品支持情况
 

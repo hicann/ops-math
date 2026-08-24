@@ -47,7 +47,7 @@ $$
     * <term>昇腾910_95 AI处理器</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64。
     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
     * <term>Atlas 训练系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
-  - out(aclTensor \*, 计算输出)：公式中的`out`，Device侧的aclTensor，数据类型需要是BOOL可转换的数据类型[互转换关系](../../../../docs/zh/context/conversion_relationship.md), shape与self、other广播之后的shape（参见[broadcast关系](../../../../docs/zh/context/broadcast_relationship.md)）一致，shape维度不高于8维，支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND。
+  - out(aclTensor \*, 计算输出)：公式中的`out`，Device侧的aclTensor，数据类型需要是BOOL可转换的数据类型（参见[互转换关系](../../../../docs/zh/context/conversion_relationship.md)），shape与self、other广播之后的shape（参见[broadcast关系](../../../../docs/zh/context/broadcast_relationship.md)）一致，shape维度不高于8维，支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND。
     * <term>昇腾910_95 AI处理器</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64、UINT32、UINT16。
     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
     * <term>Atlas 训练系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
