@@ -9,13 +9,12 @@
  * - Pei Haobo<@xiaopei-1>
  * - Su Tonghua <@sutonghua>
  *
- * This program is free software: you can redistribute it and/or modify it.
- * Licensed under the CANN Open Software License Agreement Version 2.0 (the "License").
- * You may not use this file except in compliance with the License.
- * See the LICENSE file at the root of the repository for the full text of the License.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED,
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 /*!
@@ -46,7 +45,7 @@ public:
     __aicore__ inline void Process();
 
 private:
-    __aicore__ inline void CopyIn(int32_t progress);
+    __aicore__ inline void CopyIn(int32_t progress, uint32_t curTileLen);
     __aicore__ inline void ReduceMeanV2Axes0();
     __aicore__ inline void ReduceMeanV2Axes1();
     __aicore__ inline void ReduceMeanV2AxesAll();
@@ -82,8 +81,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void ReduceMeanV2<T>::Init(
-    GM_ADDR x, GM_ADDR z, GM_ADDR workspace, const ReduceMeanV2TilingData* tilingData)
+__aicore__ inline void ReduceMeanV2<T>::Init(GM_ADDR x, GM_ADDR z, GM_ADDR workspace,
+                                             const ReduceMeanV2TilingData* tilingData)
 {
     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
     this->blockIdx = AscendC::GetBlockIdx();
@@ -103,8 +102,8 @@ __aicore__ inline void ReduceMeanV2<T>::Init(
         this->coreDataNum = tilingData->smallCoreDataNum;
         this->tileNum = tilingData->finalSmallTileNum;
         this->tailDataNum = tilingData->smallTailDataNum;
-        globalBufferIndex -=
-            (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (this->blockIdx - tilingData->tailBlockNum);
+        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) *
+                             (this->blockIdx - tilingData->tailBlockNum);
     }
 
     uint32_t totalElements = this->rows * this->cols;
@@ -159,9 +158,8 @@ __aicore__ inline void ReduceMeanV2<T>::Init(
 }
 
 template <typename T>
-__aicore__ inline void ReduceMeanV2<T>::CopyIn(int32_t progress)
+__aicore__ inline void ReduceMeanV2<T>::CopyIn(int32_t progress, uint32_t curTileLen)
 {
-    uint32_t curTileLen = (progress == tileNum - 1) ? tailDataNum : tileDataNum;
     AscendC::LocalTensor<T> xLocal = inQueueInput.AllocTensor<T>();
     AscendC::DataCopy(xLocal, xGm[progress * this->tileDataNum], curTileLen);
     inQueueInput.EnQue(xLocal);
@@ -198,7 +196,7 @@ __aicore__ inline void ReduceMeanV2<T>::ReduceMeanV2Axes0()
     for (uint32_t t = 0; t < tileNum; ++t) {
         uint32_t curTileLen = (t == tileNum - 1) ? lastTileLen : tileLen;
 
-        CopyIn(t);
+        CopyIn(t, curTileLen);
         AscendC::LocalTensor<T> tileLocal = inQueueInput.DeQue<T>();
         AscendC::LocalTensor<float> tileFloat = tmpFloat.Get<float>();
 
@@ -255,17 +253,16 @@ __aicore__ inline void ReduceMeanV2<T>::ReduceMeanV2Axes0()
             int32_t eventIDSToMTE3 = static_cast<int32_t>(GetTPipePtr()->FetchEventID(AscendC::HardEvent::V_MTE3));
             AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(eventIDSToMTE3);
             AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(eventIDSToMTE3);
-            AscendC::DataCopyExtParams copyParams{
-                static_cast<uint16_t>(colNum), sizeof(T), static_cast<uint32_t>(1), 0,
-                0}; // 结构体DataCopyExtParams最后一个参数是rsv保留位
+            AscendC::DataCopyExtParams copyParams{static_cast<uint16_t>(colNum), sizeof(T), static_cast<uint32_t>(1), 0,
+                                                  0}; // 结构体DataCopyExtParams最后一个参数是rsv保留位
             AscendC::DataCopyPad(zGm, tmpBase0, copyParams);
         } else {
             int32_t eventIDSToMTE3 = static_cast<int32_t>(GetTPipePtr()->FetchEventID(AscendC::HardEvent::V_MTE3));
             AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(eventIDSToMTE3);
             AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(eventIDSToMTE3);
-            AscendC::DataCopyExtParams copyParams{
-                static_cast<uint16_t>(colNum), sizeof(float), static_cast<uint32_t>(1), 0,
-                0}; // 结构体DataCopyExtParams最后一个参数是rsv保留位
+            AscendC::DataCopyExtParams copyParams{static_cast<uint16_t>(colNum), sizeof(float),
+                                                  static_cast<uint32_t>(1), 0,
+                                                  0}; // 结构体DataCopyExtParams最后一个参数是rsv保留位
             AscendC::DataCopyPad(zGm, tmpBuf, copyParams);
         }
     }
@@ -291,7 +288,7 @@ __aicore__ inline void ReduceMeanV2<T>::ReduceMeanV2Axes1()
     for (uint32_t t = 0; t < tileNum; ++t) {
         uint32_t curTileLen = (t == tileNum - 1) ? lastTileLen : tileLen;
 
-        CopyIn(t);
+        CopyIn(t, curTileLen);
         AscendC::LocalTensor<T> tileLocal = inQueueInput.DeQue<T>();
         AscendC::LocalTensor<float> tileFloat = tmpFloat.Get<float>();
         if constexpr (AscendC::Std::is_same<T, float16_t>::value) {
@@ -346,17 +343,16 @@ __aicore__ inline void ReduceMeanV2<T>::ReduceMeanV2Axes1()
             int32_t eventIDSToMTE3 = static_cast<int32_t>(GetTPipePtr()->FetchEventID(AscendC::HardEvent::V_MTE3));
             AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(eventIDSToMTE3);
             AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(eventIDSToMTE3);
-            AscendC::DataCopyExtParams copyParams{
-                static_cast<uint16_t>(colNum), sizeof(T), static_cast<uint32_t>(1), 0,
-                0}; // 结构体DataCopyExtParams最后一个参数是rsv保留位
+            AscendC::DataCopyExtParams copyParams{static_cast<uint16_t>(colNum), sizeof(T), static_cast<uint32_t>(1), 0,
+                                                  0}; // 结构体DataCopyExtParams最后一个参数是rsv保留位
             AscendC::DataCopyPad(zGm, tmpBase0, copyParams);
         } else {
             int32_t eventIDSToMTE3 = static_cast<int32_t>(GetTPipePtr()->FetchEventID(AscendC::HardEvent::V_MTE3));
             AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(eventIDSToMTE3);
             AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(eventIDSToMTE3);
-            AscendC::DataCopyExtParams copyParams{
-                static_cast<uint16_t>(rowNum), sizeof(float), static_cast<uint32_t>(1), 0,
-                0}; // 结构体DataCopyExtParams最后一个参数是rsv保留位
+            AscendC::DataCopyExtParams copyParams{static_cast<uint16_t>(rowNum), sizeof(float),
+                                                  static_cast<uint32_t>(1), 0,
+                                                  0}; // 结构体DataCopyExtParams最后一个参数是rsv保留位
             AscendC::DataCopyPad(zGm, tmpBuf, copyParams);
         }
     }
@@ -368,9 +364,11 @@ __aicore__ inline void ReduceMeanV2<T>::ReduceMeanV2AxesAll()
     const uint32_t loopCount = this->tileNum;
     const uint32_t tileLen = this->tileDataNum;
     const uint32_t blockLen = this->coreDataNum;
-    const uint32_t lastTileLen = this->tailDataNum;
     const uint32_t globalOffset = this->globalOffset;
     const uint32_t totalElements = this->rows * this->cols;
+    // Init 已按 totalElements 裁剪 coreDataNum, 末 tile 实际长度须以裁剪后的本核数据量为准,
+    // 否则非 32B 对齐输入会把 GM pad 读入均值 (blockLen >= (loopCount-1)*tileLen 恒成立, 此处兜底防下溢)
+    const uint32_t lastTileLen = (blockLen >= (loopCount - 1) * tileLen) ? (blockLen - (loopCount - 1) * tileLen) : 0;
 
     AscendC::LocalTensor<float> localSum = tmpBase.Get<float>();
     float initVal = 0.0f;
@@ -378,7 +376,7 @@ __aicore__ inline void ReduceMeanV2<T>::ReduceMeanV2AxesAll()
     for (uint32_t t = 0; t < loopCount; ++t) {
         uint32_t curTileLen = (t == loopCount - 1) ? lastTileLen : tileLen;
 
-        CopyIn(t);
+        CopyIn(t, curTileLen);
         AscendC::LocalTensor<T> tileLocal = inQueueInput.DeQue<T>();
 
         AscendC::LocalTensor<float> tileFloat = tmpFloat.Get<float>();

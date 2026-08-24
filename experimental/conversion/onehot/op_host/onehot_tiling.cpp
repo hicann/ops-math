@@ -9,13 +9,12 @@
  * - Liu Jun <@kbryantttt>
  * - Su Tonghua <@sutonghua>
  *
- * This program is free software: you can redistribute it and/or modify it.
- * Licensed under the CANN Open Software License Agreement Version 2.0 (the "License").
- * You may not use this file except in compliance with the License.
- * See the LICENSE file at the root of the repository for the full text of the License.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED,
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 /*!
@@ -85,15 +84,13 @@ static ge::graphStatus OnehotTilingFunc(gert::TilingContext* context)
     // 1、获取平台运行信息
     uint64_t ubSize;
     int64_t coreNum;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
     // 2、获取shape、属性信息
     int64_t totalIdx = 0;
     ge::DataType dataType;
-    OP_CHECK_IF(
-        GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
     // handle empty input
     if (totalIdx <= 0) {
         OnehotTilingData* tiling = context->GetTilingData<OnehotTilingData>();
@@ -104,16 +101,14 @@ static ge::graphStatus OnehotTilingFunc(gert::TilingContext* context)
         return ge::GRAPH_SUCCESS;
     }
     // 3、获取WorkspaceSize信息
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     // 4、设置tiling信息
     OnehotTilingData* tiling = context->GetTilingData<OnehotTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(OnehotTilingData), 0, sizeof(OnehotTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(OnehotTilingData), 0, sizeof(OnehotTilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
     uint32_t typeLength = 0;
     ge::TypeUtils::GetDataTypeLength(context->GetInputDesc(0)->GetDataType(), typeLength);
     if (typeLength == 0) {
@@ -149,8 +144,8 @@ static ge::graphStatus OnehotTilingFunc(gert::TilingContext* context)
     uint32_t smallCoreDataNum = static_cast<uint32_t>(smallCoreDataNum_u);
     uint32_t smallTileNum = static_cast<uint32_t>(everyCoreInputBlockNum / static_cast<uint64_t>(tileBlockNum));
     uint32_t finalSmallTileNum = ((everyCoreInputBlockNum % tileBlockNum) == 0) ? smallTileNum : (smallTileNum + 1);
-    int64_t smallTailDataNum_i =
-        static_cast<int64_t>(smallCoreDataNum) - static_cast<int64_t>(tileDataNum) * static_cast<int64_t>(smallTileNum);
+    int64_t smallTailDataNum_i = static_cast<int64_t>(smallCoreDataNum) -
+                                 static_cast<int64_t>(tileDataNum) * static_cast<int64_t>(smallTileNum);
     uint32_t smallTailDataNum = (smallTailDataNum_i <= 0) ? tileDataNum : static_cast<uint32_t>(smallTailDataNum_i);
     // big-core（每个多一个 block）
     uint64_t bigEveryCoreBlockNum = everyCoreInputBlockNum + 1ULL;
@@ -158,8 +153,8 @@ static ge::graphStatus OnehotTilingFunc(gert::TilingContext* context)
     uint32_t bigCoreDataNum = static_cast<uint32_t>(bigCoreDataNum_u);
     uint32_t bigTileNum = static_cast<uint32_t>(bigEveryCoreBlockNum / static_cast<uint64_t>(tileBlockNum));
     uint32_t finalBigTileNum = ((bigEveryCoreBlockNum % tileBlockNum) == 0) ? bigTileNum : (bigTileNum + 1);
-    int64_t bigTailDataNum_i =
-        static_cast<int64_t>(bigCoreDataNum) - static_cast<int64_t>(tileDataNum) * static_cast<int64_t>(bigTileNum);
+    int64_t bigTailDataNum_i = static_cast<int64_t>(bigCoreDataNum) -
+                               static_cast<int64_t>(tileDataNum) * static_cast<int64_t>(bigTileNum);
     uint32_t bigTailDataNum = (bigTailDataNum_i <= 0) ? tileDataNum : static_cast<uint32_t>(bigTailDataNum_i);
     // write back
     tiling->smallCoreDataNum = static_cast<int64_t>(smallCoreDataNum);
@@ -175,8 +170,18 @@ static ge::graphStatus OnehotTilingFunc(gert::TilingContext* context)
     if (attrs) {
         const int64_t* depthAttr = attrs->GetInt(0);
         if (depthAttr) {
+            // 校验 depth: 拒绝 <=0 或超出 int32 可表示范围的值, 避免非法 depth 到达 kernel
+            if (*depthAttr <= 0 || *depthAttr > 0x7FFFFFFFLL) {
+                OP_LOGE(context, "invalid depth=%ld, require 0 < depth <= INT32_MAX", *depthAttr);
+                return ge::GRAPH_FAILED;
+            }
             depth = static_cast<int32_t>(*depthAttr);
         }
+    }
+    // depth 属性缺失时保持 0, 同样非法
+    if (depth <= 0) {
+        OP_LOGE(context, "invalid depth=%d, require 0 < depth <= INT32_MAX", depth);
+        return ge::GRAPH_FAILED;
     }
     tiling->depth = depth;
     context->SetBlockDim(finalCoreNum);

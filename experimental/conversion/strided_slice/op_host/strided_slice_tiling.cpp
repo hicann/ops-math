@@ -9,13 +9,12 @@
  * - Liu Jun <@kbryantttt>
  * - Su Tonghua <@sutonghua>
  *
- * This program is free software: you can redistribute it and/or modify it.
- * Licensed under the CANN Open Software License Agreement Version 2.0 (the "License").
- * You may not use this file except in compliance with the License.
- * See the LICENSE file at the root of the repository for the full text of the License.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED,
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 /*!
  * \file strided_slice_tiling.cpp
@@ -85,15 +84,13 @@ static ge::graphStatus StridedSliceTilingFunc(gert::TilingContext* context)
     // 1、获取平台运行信息
     uint64_t ubSize;
     int64_t coreNum;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
     // 2、获取shape、属性信息
     int64_t totalIdx = 0;
     ge::DataType dataType;
-    OP_CHECK_IF(
-        GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
     // handle empty input
     if (totalIdx <= 0) {
         StridedSliceTilingData* tiling = context->GetTilingData<StridedSliceTilingData>();
@@ -104,63 +101,57 @@ static ge::graphStatus StridedSliceTilingFunc(gert::TilingContext* context)
         return ge::GRAPH_SUCCESS;
     }
     // 3、获取WorkspaceSize信息
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
     // 4、设置tiling信息
     StridedSliceTilingData* tiling = context->GetTilingData<StridedSliceTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(StridedSliceTilingData), 0, sizeof(StridedSliceTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(StridedSliceTilingData), 0, sizeof(StridedSliceTilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
     ge::TypeUtils::GetDataTypeLength(context->GetInputDesc(0)->GetDataType(), type_Size);
     if (type_Size == 0) {
         OP_LOGE(context, "type_Size is 0");
         return ge::GRAPH_FAILED;
     }
-    uint32_t start1 = 0;
-    uint32_t start2 = 0;
-    uint32_t end1 = 0;
-    uint32_t end2 = 0;
-    uint32_t stride1 = 0;
-    uint32_t stride2 = 0;
+    int64_t start1 = 0;
+    int64_t start2 = 0;
+    int64_t end1 = 0;
+    int64_t end2 = 0;
+    int64_t stride1 = 0;
+    int64_t stride2 = 0;
     const auto xShape = context->GetInputTensor(0)->GetOriginShape();
     int64_t dim = static_cast<int64_t>(xShape.GetDimNum());
     auto attrs = context->GetAttrs();
     if (attrs) {
         const int64_t* start1Ptr = attrs->GetInt(0);
         if (start1Ptr) {
-            start1 = static_cast<uint32_t>(*start1Ptr);
-        }
-        if (dim == 1) {
-            start1 = static_cast<uint32_t>(0);
+            start1 = *start1Ptr;
         }
         const int64_t* start2Ptr = attrs->GetInt(1);
         if (start2Ptr) {
-            start2 = static_cast<uint32_t>(*start2Ptr);
+            start2 = *start2Ptr;
         }
         const int64_t* end1Ptr = attrs->GetInt(2);
         if (end1Ptr) {
-            end1 = static_cast<uint32_t>(*end1Ptr);
-        }
-        if (dim == 1) {
-            end1 = static_cast<uint32_t>(1);
+            end1 = *end1Ptr;
         }
         const int64_t* end2Ptr = attrs->GetInt(3);
         if (end2Ptr) {
-            end2 = static_cast<uint32_t>(*end2Ptr);
+            end2 = *end2Ptr;
         }
         const int64_t* stride1Ptr = attrs->GetInt(4);
         if (stride1Ptr) {
-            stride1 = static_cast<uint32_t>(*stride1Ptr);
-        }
-        if (dim == 1) {
-            stride1 = static_cast<uint32_t>(1);
+            stride1 = *stride1Ptr;
         }
         const int64_t* stride2Ptr = attrs->GetInt(5);
         if (stride2Ptr) {
-            stride2 = static_cast<uint32_t>(*stride2Ptr);
+            stride2 = *stride2Ptr;
         }
+    }
+    if (dim == 1) {
+        start1 = 0;
+        end1 = 1;
+        stride1 = 1;
     }
     uint32_t ubDataNumber = 9;
     auto inputx = context->GetInputShape(0);
@@ -172,6 +163,33 @@ static ge::graphStatus StridedSliceTilingFunc(gert::TilingContext* context)
         rows = static_cast<uint32_t>(inputShapeX.GetDim(0));
     }
     uint32_t cols = static_cast<uint32_t>(inputShapeX.GetDim(1));
+    // 校验切片控制量: 拒绝负值/零步长/空切片/越界, 避免 int64->uint32 强转回绕导致的越界读写
+    auto CheckSlice = [&](int64_t axisSize, int64_t start, int64_t end, int64_t stride, const char* axisName) -> bool {
+        if (start < 0 || end < 0 || stride <= 0) {
+            OP_LOGE(context,
+                    "invalid %s slice param: start=%ld end=%ld stride=%ld, "
+                    "require start/end >= 0 and stride > 0",
+                    axisName, start, end, stride);
+            return false;
+        }
+        if (start >= end || end > axisSize) {
+            OP_LOGE(context,
+                    "invalid %s slice range: start=%ld end=%ld axisSize=%ld, "
+                    "require 0 <= start < end <= axisSize",
+                    axisName, start, end, axisSize);
+            return false;
+        }
+        return true;
+    };
+    int64_t axis0Size = inputShapeX.GetDim(0);
+    int64_t axis1Size = (dim >= 2) ? inputShapeX.GetDim(1) : axis0Size;
+    if ((dim >= 2) && (!CheckSlice(axis0Size, start1, end1, stride1, "axis0") ||
+                       !CheckSlice(axis1Size, start2, end2, stride2, "axis1"))) {
+        return ge::GRAPH_FAILED;
+    }
+    if ((dim == 1) && !CheckSlice(axis0Size, start2, end2, stride2, "axis0")) {
+        return ge::GRAPH_FAILED;
+    }
     uint32_t rowBytes = cols * type_Size;
     uint32_t rowBytesAligned = ((rowBytes + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE;
     uint32_t blocksPerRow = rowBytesAligned / BLOCK_SIZE;
@@ -192,12 +210,12 @@ static ge::graphStatus StridedSliceTilingFunc(gert::TilingContext* context)
     uint32_t bigTailRows = (bigTotalRows % tileRows == 0) ? tileRows : (bigTotalRows % tileRows);
     tiling->cols = cols;
     tiling->rows = rows;
-    tiling->start1 = start1;
-    tiling->start2 = start2;
-    tiling->end1 = end1;
-    tiling->end2 = end2;
-    tiling->stride1 = stride1;
-    tiling->stride2 = stride2;
+    tiling->start1 = static_cast<uint32_t>(start1);
+    tiling->start2 = static_cast<uint32_t>(start2);
+    tiling->end1 = static_cast<uint32_t>(end1);
+    tiling->end2 = static_cast<uint32_t>(end2);
+    tiling->stride1 = static_cast<uint32_t>(stride1);
+    tiling->stride2 = static_cast<uint32_t>(stride2);
     tiling->tileRows = tileRows;
     tiling->smallTailRows = smallTailRows;
     tiling->bigTailRows = bigTailRows;

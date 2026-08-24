@@ -9,13 +9,12 @@
  * - Li Zhi<@hitLeechi>
  * - Su Tonghua <@sutonghua>
  *
- * This program is free software: you can redistribute it and/or modify it.
- * Licensed under the CANN Open Software License Agreement Version 2.0 (the "License").
- * You may not use this file except in compliance with the License.
- * See the LICENSE file at the root of the repository for the full text of the License.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED,
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 /*!
@@ -72,11 +71,14 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
 static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context, ReduceProdV2ShapeInfo& info)
 {
     OP_CHECK_IF(context == nullptr, OP_LOGE(context, "context is nullptr"), return ge::GRAPH_FAILED);
+    // kernel 按每输出 64B 槽(SLOT_STRIDE 个 float)访问 workspace, 这里按字节数申请
     size_t userSize = 0;
     if (info.axes == 0) {
-        userSize = static_cast<size_t>(SLOT * info.cols);
+        userSize = static_cast<size_t>(SLOT) * info.cols * sizeof(float);
+    } else if (info.axes == 1) {
+        userSize = static_cast<size_t>(SLOT) * info.rows * sizeof(float);
     } else {
-        userSize = static_cast<size_t>(SLOT * info.rows);
+        userSize = static_cast<size_t>(SLOT) * 1 * sizeof(float);
     }
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
     uint32_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
@@ -152,9 +154,8 @@ static ge::graphStatus ReduceProdV2TilingFunc(gert::TilingContext* context)
     // ReduceProdV2TilingData tiling;
     ReduceProdV2TilingData* tiling = context->GetTilingData<ReduceProdV2TilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(ReduceProdV2TilingData), 0, sizeof(ReduceProdV2TilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(ReduceProdV2TilingData), 0, sizeof(ReduceProdV2TilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
     // 获取平台运行信息
     uint64_t ubSize;
     int64_t coreNum;
@@ -194,9 +195,8 @@ static ge::graphStatus ReduceProdV2TilingFunc(gert::TilingContext* context)
     tiling->axes = (uint32_t)shapeInfo.axes;
     tiling->keepdims = (uint32_t)shapeInfo.keepdims;
     // 计算workspace大小
-    OP_CHECK_IF(
-        GetWorkspaceSize(context, shapeInfo) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context, shapeInfo) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
     context->SetBlockDim(coreNum);
     return ge::GRAPH_SUCCESS;
 }

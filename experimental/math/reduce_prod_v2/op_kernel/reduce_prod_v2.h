@@ -9,13 +9,12 @@
  * - Li Zhi<@hitLeechi>
  * - Su Tonghua <@sutonghua>
  *
- * This program is free software: you can redistribute it and/or modify it.
- * Licensed under the CANN Open Software License Agreement Version 2.0 (the "License").
- * You may not use this file except in compliance with the License.
- * See the LICENSE file at the root of the repository for the full text of the License.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED,
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 /*!
@@ -45,7 +44,7 @@ public:
     __aicore__ inline void Process();
 
 private:
-    __aicore__ inline void CopyIn(int32_t progress);
+    __aicore__ inline void CopyIn(int32_t progress, uint32_t curTileLen);
     __aicore__ inline void ReduceProdV2Axes0();
     __aicore__ inline void ReduceProdV2Axes1();
     __aicore__ inline void ReduceProdV2Axes2();
@@ -64,6 +63,7 @@ private:
     AscendC::TBuf<AscendC::TPosition::VECCALC> rowSum;
     AscendC::TBuf<AscendC::TPosition::VECCALC> colSum;
     AscendC::TBuf<AscendC::TPosition::VECCALC> tmpBuffer;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> signCount;
 
     uint32_t blockIdx;
     uint32_t blockNum;
@@ -82,8 +82,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void ReduceProdV2<T>::Init(
-    GM_ADDR x, GM_ADDR z, GM_ADDR workspace, const ReduceProdV2TilingData* tilingData)
+__aicore__ inline void ReduceProdV2<T>::Init(GM_ADDR x, GM_ADDR z, GM_ADDR workspace,
+                                             const ReduceProdV2TilingData* tilingData)
 {
     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
     uint32_t coreIdx = AscendC::GetBlockIdx();
@@ -104,8 +104,8 @@ __aicore__ inline void ReduceProdV2<T>::Init(
         this->coreDataNum = tilingData->smallCoreDataNum;
         this->tileNum = tilingData->finalSmallTileNum;
         this->tailDataNum = tilingData->smallTailDataNum;
-        globalBufferIndex -=
-            (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (coreIdx - tilingData->tailBlockNum);
+        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) *
+                             (coreIdx - tilingData->tailBlockNum);
     }
 
     uint32_t totalElements = this->rows * this->cols;
@@ -146,16 +146,17 @@ __aicore__ inline void ReduceProdV2<T>::Init(
     pipe.InitBuffer(tmpBuffer, workGmSize * sizeof(float));
     if (axes == 0) {
         pipe.InitBuffer(colSum, this->cols * sizeof(float));
+        pipe.InitBuffer(signCount, this->cols * sizeof(float));
     } else if (axes == 1) {
         pipe.InitBuffer(rowSum, this->rows * sizeof(float));
+        pipe.InitBuffer(signCount, this->rows * sizeof(float));
     }
     this->GlobalOffset = globalBufferIndex;
 }
 
 template <typename T>
-__aicore__ inline void ReduceProdV2<T>::CopyIn(int32_t progress)
+__aicore__ inline void ReduceProdV2<T>::CopyIn(int32_t progress, uint32_t curTileLen)
 {
-    uint32_t curTileLen = (progress == tileNum - 1) ? tailDataNum : tileDataNum;
     AscendC::LocalTensor<T> xLocal = inQueueInput.AllocTensor<T>();
     AscendC::DataCopy(xLocal, xGm[progress * this->tileDataNum], curTileLen);
     inQueueInput.EnQue(xLocal);
@@ -184,14 +185,16 @@ __aicore__ inline void ReduceProdV2<T>::ReduceProdV2Axes0()
     const uint32_t globalOffset = this->GlobalOffset;
 
     AscendC::LocalTensor<float> localSum = colSum.Get<float>();
+    AscendC::LocalTensor<float> signLocal = signCount.Get<float>();
     for (uint32_t c = 0; c < colNum; ++c) {
         localSum.SetValue(c, 0.0f);
+        signLocal.SetValue(c, 0.0f);
     }
 
     for (uint32_t t = 0; t < tileNum; ++t) {
         uint32_t curTileLen = (t == tileNum - 1) ? lastTileLen : tileLen;
 
-        CopyIn(t);
+        CopyIn(t, curTileLen);
         AscendC::LocalTensor<T> tileLocal = inQueueInput.DeQue<T>();
         AscendC::LocalTensor<float> tileFloat = tmpFloat.Get<float>();
 
@@ -202,6 +205,19 @@ __aicore__ inline void ReduceProdV2<T>::ReduceProdV2Axes0()
                 tileFloat.SetValue(i, tileLocal.GetValue(i));
             }
         }
+        // 统计负值个数(在 Abs 前提取符号), 带边界守卫跳过对齐 pad
+        for (uint32_t i = 0; i < curTileLen; ++i) {
+            uint32_t globalIdx = globalOffset + t * tileLen + i;
+            if (globalIdx >= totalElements) {
+                continue;
+            }
+            if (tileFloat.GetValue(i) < 0.0f) {
+                uint32_t colIdx = globalIdx % colNum;
+                signLocal.SetValue(colIdx, signLocal.GetValue(colIdx) + 1.0f);
+            }
+        }
+        // 对绝对值做对数累加, 避免负值进入 Ln 产生 NaN
+        AscendC::Abs(tileFloat, tileFloat, curTileLen);
         AscendC::Ln(tileFloat, tileFloat, curTileLen);
         for (uint32_t i = 0; i < curTileLen; ++i) {
             uint32_t globalIdx = globalOffset + t * tileLen + i;
@@ -226,6 +242,8 @@ __aicore__ inline void ReduceProdV2<T>::ReduceProdV2Axes0()
     AscendC::Duplicate(tmpBuf, 0.0f, totalWorkSize);
     for (uint32_t c = 0; c < colNum; ++c) {
         tmpBuf.SetValue(c * SLOT_STRIDE, localSum.GetValue(c));
+        // 槽内第二个元素存放负值个数, 随和一起原子累加, 不额外占用 workspace
+        tmpBuf.SetValue(c * SLOT_STRIDE + 1, signLocal.GetValue(c));
     }
     AscendC::SetAtomicAdd<float>();
     AscendC::DataCopy(workGm, tmpBuf, totalWorkSize);
@@ -238,9 +256,16 @@ __aicore__ inline void ReduceProdV2<T>::ReduceProdV2Axes0()
         int32_t eventIDMTE2ToV = static_cast<int32_t>(GetTPipePtr()->FetchEventID(AscendC::HardEvent::MTE2_V));
         AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(eventIDMTE2ToV);
         AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(eventIDMTE2ToV);
+        // 先取出负值个数(Exp 会破坏计数槽), 再按奇偶恢复符号
+        for (uint32_t c = 0; c < colNum; ++c) {
+            signLocal.SetValue(c, tmpBuf.GetValue(c * SLOT_STRIDE + 1));
+        }
         AscendC::Exp(tmpBuf, tmpBuf, totalWorkSize);
         for (uint32_t c = 0; c < colNum; ++c) {
             float val = tmpBuf.GetValue(c * SLOT_STRIDE);
+            if ((static_cast<int32_t>(signLocal.GetValue(c)) & 1) != 0) {
+                val = -val;
+            }
             zGm.SetValue(c, static_cast<T>(val));
         }
     }
@@ -258,13 +283,15 @@ __aicore__ inline void ReduceProdV2<T>::ReduceProdV2Axes1()
     const uint32_t globalOffset = this->GlobalOffset;
 
     AscendC::LocalTensor<float> localRowSum = rowSum.Get<float>();
+    AscendC::LocalTensor<float> signLocal = signCount.Get<float>();
     for (uint32_t r = 0; r < rowNum; ++r) {
         localRowSum.SetValue(r, 0.0f);
+        signLocal.SetValue(r, 0.0f);
     }
     for (uint32_t t = 0; t < tileNum; ++t) {
         uint32_t curTileLen = (t == tileNum - 1) ? lastTileLen : tileLen;
 
-        CopyIn(t);
+        CopyIn(t, curTileLen);
         AscendC::LocalTensor<T> tileLocal = inQueueInput.DeQue<T>();
         AscendC::LocalTensor<float> tileFloat = tmpFloat.Get<float>();
         if (keyType == 1) {
@@ -274,6 +301,19 @@ __aicore__ inline void ReduceProdV2<T>::ReduceProdV2Axes1()
                 tileFloat.SetValue(i, tileLocal.GetValue(i));
             }
         }
+        // 统计负值个数(在 Abs 前提取符号), 带边界守卫跳过对齐 pad
+        for (uint32_t i = 0; i < curTileLen; ++i) {
+            uint32_t globalIdx = globalOffset + t * tileLen + i;
+            if (globalIdx >= totalElements) {
+                continue;
+            }
+            if (tileFloat.GetValue(i) < 0.0f) {
+                uint32_t rowIdx = globalIdx / colNum;
+                signLocal.SetValue(rowIdx, signLocal.GetValue(rowIdx) + 1.0f);
+            }
+        }
+        // 对绝对值做对数累加, 避免负值进入 Ln 产生 NaN
+        AscendC::Abs(tileFloat, tileFloat, curTileLen);
         AscendC::Ln(tileFloat, tileFloat, curTileLen);
         for (uint32_t i = 0; i < curTileLen; ++i) {
             uint32_t globalIdx = globalOffset + t * tileLen + i;
@@ -298,6 +338,8 @@ __aicore__ inline void ReduceProdV2<T>::ReduceProdV2Axes1()
     AscendC::Duplicate(tmpBuf, 0.0f, totalWorkSize);
     for (uint32_t r = 0; r < rowNum; ++r) {
         tmpBuf.SetValue(r * SLOT_STRIDE, localRowSum.GetValue(r));
+        // 槽内第二个元素存放负值个数, 随和一起原子累加, 不额外占用 workspace
+        tmpBuf.SetValue(r * SLOT_STRIDE + 1, signLocal.GetValue(r));
     }
     AscendC::SetAtomicAdd<float>();
     AscendC::DataCopy(workGm, tmpBuf, totalWorkSize);
@@ -310,9 +352,16 @@ __aicore__ inline void ReduceProdV2<T>::ReduceProdV2Axes1()
         int32_t eventIDMTE2ToV = static_cast<int32_t>(GetTPipePtr()->FetchEventID(AscendC::HardEvent::MTE2_V));
         AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(eventIDMTE2ToV);
         AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(eventIDMTE2ToV);
+        // 先取出负值个数(Exp 会破坏计数槽), 再按奇偶恢复符号
+        for (uint32_t r = 0; r < rowNum; ++r) {
+            signLocal.SetValue(r, tmpBuf.GetValue(r * SLOT_STRIDE + 1));
+        }
         AscendC::Exp(tmpBuf, tmpBuf, totalWorkSize);
         for (uint32_t r = 0; r < rowNum; ++r) {
             float val = tmpBuf.GetValue(r * SLOT_STRIDE);
+            if ((static_cast<int32_t>(signLocal.GetValue(r)) & 1) != 0) {
+                val = -val;
+            }
             zGm.SetValue(r, static_cast<T>(val));
         }
     }
@@ -323,16 +372,18 @@ __aicore__ inline void ReduceProdV2<T>::ReduceProdV2Axes2()
     const uint32_t loopCount = this->tileNum;
     const uint32_t tileLen = this->tileDataNum;
     const uint32_t blockLen = this->coreDataNum;
-    const uint32_t lastTileLen = this->tailDataNum;
     const uint32_t globalOffset = this->GlobalOffset;
+    // Init 已按 totalElements 裁剪 coreDataNum, 末 tile 实际长度须以裁剪后的本核数据量为准,
+    // 否则非 32B 对齐输入会把 GM pad/OOB 读入 Ln 导致乘积错误
+    const uint32_t lastTileLen = (blockLen >= (loopCount - 1) * tileLen) ? (blockLen - (loopCount - 1) * tileLen) : 0;
 
     AscendC::LocalTensor<float> localSum = tmpBase.Get<float>();
-    float initVal = 0.0f;
-    localSum.SetValue(0, initVal);
+    localSum.SetValue(0, 0.0f); // Ln|sum
+    localSum.SetValue(1, 0.0f); // 负值个数
     for (uint32_t t = 0; t < loopCount; ++t) {
         uint32_t curTileLen = (t == loopCount - 1) ? lastTileLen : tileLen;
 
-        CopyIn(t);
+        CopyIn(t, curTileLen);
         AscendC::LocalTensor<T> tileLocal = inQueueInput.DeQue<T>();
 
         AscendC::LocalTensor<float> tileFloat = tmpFloat.Get<float>();
@@ -343,6 +394,14 @@ __aicore__ inline void ReduceProdV2<T>::ReduceProdV2Axes2()
                 tileFloat.SetValue(i, tileLocal.GetValue(i));
             }
         }
+        // 统计负值个数(在 Abs 前提取符号); 末 tile 已裁剪, 无 pad 进入
+        for (uint32_t i = 0; i < curTileLen; ++i) {
+            if (tileFloat.GetValue(i) < 0.0f) {
+                localSum.SetValue(1, localSum.GetValue(1) + 1.0f);
+            }
+        }
+        // 对绝对值做对数累加, 避免负值进入 Ln 产生 NaN
+        AscendC::Abs(tileFloat, tileFloat, curTileLen);
         AscendC::Ln(tileFloat, tileFloat, curTileLen);
         float tileSum = 0.0f;
         for (uint32_t i = 0; i < curTileLen; ++i) {
@@ -356,6 +415,8 @@ __aicore__ inline void ReduceProdV2<T>::ReduceProdV2Axes2()
     uint32_t totalWorkSize = SLOT_STRIDE;
     AscendC::Duplicate(tmpBuf, 0.0f, totalWorkSize);
     tmpBuf.SetValue(0, localSum.GetValue(0));
+    // 槽内第二个元素存放负值个数, 随和一起原子累加, 不额外占用 workspace
+    tmpBuf.SetValue(1, localSum.GetValue(1));
     AscendC::SetAtomicAdd<float>();
     AscendC::DataCopy(workGm, tmpBuf, totalWorkSize);
     AscendC::SetAtomicNone();
@@ -370,6 +431,8 @@ __aicore__ inline void ReduceProdV2<T>::ReduceProdV2Axes2()
         int32_t eventIDMTE2ToV = static_cast<int32_t>(GetTPipePtr()->FetchEventID(AscendC::HardEvent::MTE2_V));
         AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(eventIDMTE2ToV);
         AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(eventIDMTE2ToV);
+        // 先取出负值个数(Exp 会破坏计数槽), 再按奇偶恢复符号
+        float negCount = tmpBuf.GetValue(1);
         AscendC::Exp(tmpBuf, tmpBuf, totalWorkSize);
         // V_MTE3 vector --UB->GM
         int32_t eventIDVToMTE3 = static_cast<int32_t>(GetTPipePtr()->FetchEventID(AscendC::HardEvent::V_MTE3));
@@ -377,6 +440,9 @@ __aicore__ inline void ReduceProdV2<T>::ReduceProdV2Axes2()
         AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(eventIDVToMTE3);
         AscendC::DataCopy(workGm, tmpBuf, totalWorkSize);
         float globalSum = workGm.GetValue(0);
+        if ((static_cast<int32_t>(negCount) & 1) != 0) {
+            globalSum = -globalSum;
+        }
         zGm.SetValue(0, static_cast<T>(globalSum));
     }
 }
