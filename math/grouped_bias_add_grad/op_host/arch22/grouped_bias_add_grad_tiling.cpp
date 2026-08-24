@@ -33,16 +33,14 @@ ge::graphStatus GroupedBiasAddGradTiling::GetPlatformInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfo);
 
     baseInfoOp_.vectorCoreNum = compileInfo->coreNum;
-    OP_CHECK_IF(
-        (baseInfoOp_.vectorCoreNum <= 0),
-        OP_LOGE(nodeName_, "GroupedBiasAddGradTiling get num of vector core is less than or equal to 0."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((baseInfoOp_.vectorCoreNum <= 0),
+                OP_LOGE(nodeName_, "GroupedBiasAddGradTiling get num of vector core is less than or equal to 0."),
+                return ge::GRAPH_FAILED);
 
     baseInfoOp_.ubSize = compileInfo->ubSize;
-    OP_CHECK_IF(
-        (baseInfoOp_.ubSize <= 0),
-        OP_LOGE(nodeName_, "GroupedBiasAddGradTiling get ub size is less than or equal to 0."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((baseInfoOp_.ubSize <= 0),
+                OP_LOGE(nodeName_, "GroupedBiasAddGradTiling get ub size is less than or equal to 0."),
+                return ge::GRAPH_FAILED);
 
     baseInfoOp_.ubSize -= RESERVED_UB_SIZE;
 
@@ -58,10 +56,10 @@ ge::graphStatus GroupedBiasAddGradTiling::GetInputInfo()
     auto gradYInputDesc = context_->GetInputDesc(GRAD_Y_INPUT_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, gradYInputDesc);
     baseInfoOp_.gradYInputDtype = gradYInputDesc->GetDataType();
-    OP_CHECK_IF(
-        (baseInfoOp_.gradYInputDtype != ge::DT_FLOAT && baseInfoOp_.gradYInputDtype != ge::DT_FLOAT16 &&
-         baseInfoOp_.gradYInputDtype != ge::DT_BF16),
-        OP_LOGE(nodeName_, "the dtype of input grad_y should be one of FP32/FP16/BF16."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((baseInfoOp_.gradYInputDtype != ge::DT_FLOAT && baseInfoOp_.gradYInputDtype != ge::DT_FLOAT16 &&
+                 baseInfoOp_.gradYInputDtype != ge::DT_BF16),
+                OP_LOGE(nodeName_, "the dtype of input grad_y should be one of FP32/FP16/BF16."),
+                return ge::GRAPH_FAILED);
 
     auto gradYInputShapePtr = context_->GetInputShape(GRAD_Y_INPUT_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, gradYInputShapePtr);
@@ -71,10 +69,9 @@ ge::graphStatus GroupedBiasAddGradTiling::GetInputInfo()
     // group_idx
     auto groupIdxInputShapePtr = context_->GetOptionalInputShape(GROUP_IDX_INPUT_INDEX);
     if (groupIdxInputShapePtr == nullptr) {
-        OP_CHECK_IF(
-            (baseInfoOp_.gradYDimNum != THREE_NUM),
-            OP_LOGE(nodeName_, "the input grad_y should be 3D tensor when group_idx is null."),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((baseInfoOp_.gradYDimNum != THREE_NUM),
+                    OP_LOGE(nodeName_, "the input grad_y should be 3D tensor when group_idx is null."),
+                    return ge::GRAPH_FAILED);
         baseInfoOp_.dimG = gradYInputShape.GetDim(0);
         baseInfoOp_.dimC = gradYInputShape.GetDim(1);
         baseInfoOp_.dimH = gradYInputShape.GetDim(TWO_NUM);
@@ -92,15 +89,14 @@ ge::graphStatus GroupedBiasAddGradTiling::GetInputInfo()
         auto groupIdxInputDesc = context_->GetInputDesc(GROUP_IDX_INPUT_INDEX);
         OP_CHECK_NULL_WITH_CONTEXT(context_, groupIdxInputDesc);
         baseInfoOp_.groupIdxInputDtype = groupIdxInputDesc->GetDataType();
-        OP_CHECK_IF(
-            (baseInfoOp_.groupIdxInputDtype != ge::DT_INT32 && baseInfoOp_.groupIdxInputDtype != ge::DT_INT64),
-            OP_LOGE(nodeName_, "the dtype of input group_idx should be INT32 or INT64."), return ge::GRAPH_FAILED);
+        OP_CHECK_IF((baseInfoOp_.groupIdxInputDtype != ge::DT_INT32 && baseInfoOp_.groupIdxInputDtype != ge::DT_INT64),
+                    OP_LOGE(nodeName_, "the dtype of input group_idx should be INT32 or INT64."),
+                    return ge::GRAPH_FAILED);
     }
 
     if (baseInfoOp_.existGroupIdx == 1 && baseInfoOp_.dimG > INPUT_MAX_GROUP) {
-        OP_LOGE(
-            nodeName_, "input group_idx shape not support more than %ld, but got %ld.", INPUT_MAX_GROUP,
-            baseInfoOp_.dimG);
+        OP_LOGE(nodeName_, "input group_idx shape not support more than %ld, but got %ld.", INPUT_MAX_GROUP,
+                baseInfoOp_.dimG);
         return ge::GRAPH_FAILED;
     }
 
@@ -131,18 +127,15 @@ ge::graphStatus GroupedBiasAddGradTiling::CheckOutput()
     auto gradBiasOutputShapePtr = context_->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, gradBiasOutputShapePtr);
     auto gradBiasOutputShape = gradBiasOutputShapePtr->GetStorageShape();
-    OP_CHECK_IF(
-        (gradBiasOutputShape.GetDimNum() != TWO_NUM),
-        OP_LOGE(nodeName_, "the dim of grad_bias should be 2, but got %zu.", gradBiasOutputShape.GetDimNum()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((gradBiasOutputShape.GetDimNum() != TWO_NUM),
+                OP_LOGE(nodeName_, "the dim of grad_bias should be 2, but got %zu.", gradBiasOutputShape.GetDimNum()),
+                return ge::GRAPH_FAILED);
     auto gradBiasdim0 = gradBiasOutputShape.GetDim(0);
     auto gradBiasdim1 = gradBiasOutputShape.GetDim(1);
-    OP_CHECK_IF(
-        ((gradBiasdim0 != baseInfoOp_.dimG) || (gradBiasdim1 != baseInfoOp_.dimH)),
-        OP_LOGE(
-            nodeName_, "the shape of grad_bias should be [%ld, %ld], bug got [%ld, %ld].", baseInfoOp_.dimG,
-            baseInfoOp_.dimH, gradBiasdim0, gradBiasdim1),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(((gradBiasdim0 != baseInfoOp_.dimG) || (gradBiasdim1 != baseInfoOp_.dimH)),
+                OP_LOGE(nodeName_, "the shape of grad_bias should be [%ld, %ld], bug got [%ld, %ld].", baseInfoOp_.dimG,
+                        baseInfoOp_.dimH, gradBiasdim0, gradBiasdim1),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -182,8 +175,8 @@ ge::graphStatus GroupedBiasAddGradTiling::DoTiling()
     } else if (perfTemp && baseInfoOp_.dimGB < INT32_MAX) {
         baseInfoOp_.performance = 1;
         int64_t groupIdxAlign = Ops::Base::CeilDiv(baseInfoOp_.dimG, BLOCK_SIZE / unitLength) * BLOCK_SIZE / unitLength;
-        int64_t sortBuffer =
-            Ops::Base::CeilDiv(baseInfoOp_.dimG, BLOCK_SIZE) * BLOCK_SIZE * sizeof(int32_t) * TWO_NUM * TWO_NUM;
+        int64_t sortBuffer = Ops::Base::CeilDiv(baseInfoOp_.dimG, BLOCK_SIZE) * BLOCK_SIZE * sizeof(int32_t) * TWO_NUM *
+                             TWO_NUM;
         int64_t groupIdxExtraBuffer = groupIdxAlign * unitLength * TWO_NUM + sortBuffer;
         avilableUbsize = avilableUbsize - groupIdxExtraBuffer;
         splitCoreOp_.baseC = avilableUbsize / ACTIVE_NODES_NUM / sizeof(float) / splitCoreOp_.baseH;
@@ -266,9 +259,8 @@ uint64_t GroupedBiasAddGradTiling::GetTilingKey() const
     }
 
     uint32_t groupIdxDtype = baseInfoOp_.groupIdxInputDtype == ge::DT_INT32 ? 0 : 1;
-    auto tilingKey = ComputeTiling(
-        {static_cast<uint32_t>(groupIdxDtype), baseInfoOp_.performance, useUBSum, baseInfoOp_.existGroupIdx,
-         static_cast<uint32_t>(inDtype)});
+    auto tilingKey = ComputeTiling({static_cast<uint32_t>(groupIdxDtype), baseInfoOp_.performance, useUBSum,
+                                    baseInfoOp_.existGroupIdx, static_cast<uint32_t>(inDtype)});
     OP_LOGI(nodeName_, "[GroupedBiasAddGrad] GetTilingKey [%lu].", tilingKey);
     return tilingKey;
 }
@@ -338,8 +330,8 @@ ge::graphStatus GroupedBiasAddGradTiling::RunGroupedBiasAddGradTiling()
 
 ge::graphStatus TilingForGroupedBiasAddGrad(gert::TilingContext* context)
 {
-    OP_CHECK_IF(
-        context == nullptr, OP_LOGE("GroupedBiasAddGrad", "context should not be nullptr."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(context == nullptr, OP_LOGE("GroupedBiasAddGrad", "context should not be nullptr."),
+                return ge::GRAPH_FAILED);
 
     GroupedBiasAddGradTiling tiling(context);
     return tiling.RunGroupedBiasAddGradTiling();
@@ -347,8 +339,8 @@ ge::graphStatus TilingForGroupedBiasAddGrad(gert::TilingContext* context)
 
 ge::graphStatus TilingPrepareForGroupedBiasAddGrad(gert::TilingParseContext* context)
 {
-    OP_CHECK_IF(
-        context == nullptr, OP_LOGE("GroupedBiasAddGrad", "context should not be nullptr."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(context == nullptr, OP_LOGE("GroupedBiasAddGrad", "context should not be nullptr."),
+                return ge::GRAPH_FAILED);
     auto nodeName = context->GetNodeName();
     OP_LOGD(nodeName, "TilingPrepareForGroupedBiasAddGrad start.");
 

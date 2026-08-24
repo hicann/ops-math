@@ -38,8 +38,7 @@ constexpr int64_t PERF_G_NUM = 200;
 constexpr int64_t TWO_NUM = 2;
 constexpr int64_t THREE_NUM = 3;
 
-enum class DtypeEnum : uint32_t
-{
+enum class DtypeEnum : uint32_t {
     FLOAT16 = 0,
     FLOAT32 = 1,
     BFLOAT16 = 2,

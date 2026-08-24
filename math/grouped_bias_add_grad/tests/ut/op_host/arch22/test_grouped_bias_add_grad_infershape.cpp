@@ -14,14 +14,10 @@
 #include "base/registry/op_impl_space_registry_v2.h"
 
 class GroupedBiasAddGrad : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "GroupedBiasAddGrad SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() { std::cout << "GroupedBiasAddGrad SetUp" << std::endl; }
 
-  static void TearDownTestCase() {
-    std::cout << "GroupedBiasAddGrad TearDown" << std::endl;
-  }
+    static void TearDownTestCase() { std::cout << "GroupedBiasAddGrad TearDown" << std::endl; }
 };
 
 static std::vector<int64_t> ToVector(const gert::Shape& shape)
@@ -34,12 +30,10 @@ static std::vector<int64_t> ToVector(const gert::Shape& shape)
     return shapeVec;
 }
 
-static void ExeTestCase(
-    std::vector<std::vector<int64_t> > expectResults,
-    const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
-    const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
-    gert::StorageShape& outStorageShape,
-    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
+static void ExeTestCase(std::vector<std::vector<int64_t> > expectResults,
+                        const std::vector<gert::StorageShape>& inputShapes, // 存储所有输入StorageShape参数
+                        const std::vector<ge::DataType>& dtypes,            // 存储所有DataType参数
+                        gert::StorageShape& outStorageShape, ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
 {
     // 从vector中取出对应参数（保持原顺序）
     const auto& x1StorageShape = inputShapes[0];
@@ -50,20 +44,17 @@ static void ExeTestCase(
     ge::DataType outputDtype = dtypes[2];
 
     /* make infershape context */
-    std::vector<gert::Tensor *> inputTensors = {
-        (gert::Tensor *)&x1StorageShape,
-        (gert::Tensor *)&x2StorageShape
-    };
-    std::vector<gert::StorageShape *> outputShapes = {&outStorageShape};
+    std::vector<gert::Tensor*> inputTensors = {(gert::Tensor*)&x1StorageShape, (gert::Tensor*)&x2StorageShape};
+    std::vector<gert::StorageShape*> outputShapes = {&outStorageShape};
     auto contextHolder = gert::InferShapeContextFaker()
-        .SetOpType("GroupedBiasAddGrad")
-        .NodeIoNum(2, 1)
-        .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(1, input2Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .InputTensors(inputTensors)
-        .OutputShapes(outputShapes)
-        .Build();
+                             .SetOpType("GroupedBiasAddGrad")
+                             .NodeIoNum(2, 1)
+                             .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeInputTd(1, input2Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .InputTensors(inputTensors)
+                             .OutputShapes(outputShapes)
+                             .Build();
 
     /* get infershape func */
     auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
@@ -80,14 +71,11 @@ static void ExeTestCase(
 TEST_F(GroupedBiasAddGrad, GroupedBiasAddGrad_infershape_case_0)
 {
     // 用vector存储同类型参数（顺序与原参数列表一致）
-    std::vector<gert::StorageShape> inputShapes = {
-        {{40, 6912}, {40, 6912}},                 
-        {{10}, {10}}                           
-    };
+    std::vector<gert::StorageShape> inputShapes = {{{40, 6912}, {40, 6912}}, {{10}, {10}}};
     std::vector<ge::DataType> dtypes = {
-        ge::DT_FLOAT,  // input1Dtype
-        ge::DT_INT32,    // input2Dtype
-        ge::DT_FLOAT   // outputDtype
+        ge::DT_FLOAT, // input1Dtype
+        ge::DT_INT32, // input2Dtype
+        ge::DT_FLOAT  // outputDtype
     };
 
     std::vector<int64_t> expectResult = {10, 6912};
@@ -96,4 +84,3 @@ TEST_F(GroupedBiasAddGrad, GroupedBiasAddGrad_infershape_case_0)
     // 简化后的函数调用
     ExeTestCase({expectResult}, inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS);
 }
-

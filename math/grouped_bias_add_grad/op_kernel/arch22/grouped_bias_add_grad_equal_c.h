@@ -24,12 +24,11 @@ namespace GroupedBiasAddGradAll {
 using namespace AscendC;
 
 template <typename T, const uint32_t USE_TYPE>
-class GroupedBiasAddGradEqualC : public GroupedBiasAddGradBase<T>
-{
+class GroupedBiasAddGradEqualC : public GroupedBiasAddGradBase<T> {
 public:
     __aicore__ inline GroupedBiasAddGradEqualC(){};
-    __aicore__ inline void Init(
-        GM_ADDR grad_y, GM_ADDR grad_bias, GM_ADDR workspace, const GroupedBiasAddGradTilingData& tilingData);
+    __aicore__ inline void Init(GM_ADDR grad_y, GM_ADDR grad_bias, GM_ADDR workspace,
+                                const GroupedBiasAddGradTilingData& tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -37,8 +36,8 @@ private:
 };
 
 template <typename T, const uint32_t USE_TYPE>
-__aicore__ inline void GroupedBiasAddGradEqualC<T, USE_TYPE>::Init(
-    GM_ADDR grad_y, GM_ADDR grad_bias, GM_ADDR workspace, const GroupedBiasAddGradTilingData& tilingData)
+__aicore__ inline void GroupedBiasAddGradEqualC<T, USE_TYPE>::Init(GM_ADDR grad_y, GM_ADDR grad_bias, GM_ADDR workspace,
+                                                                   const GroupedBiasAddGradTilingData& tilingData)
 {
     // Init tiling data
     this->InitBaseParams(grad_y, grad_bias, workspace, tilingData);
@@ -64,8 +63,8 @@ __aicore__ inline void GroupedBiasAddGradEqualC<T, USE_TYPE>::Process()
             if (unlikely(isLastH)) {
                 this->processH_ = tailH;
             }
-            InitOutput<T>(
-                this->gradBiasGm_[this->gIdx_ * this->dimH_ + this->hIdx_ * this->baseH_], this->processH_, 0);
+            InitOutput<T>(this->gradBiasGm_[this->gIdx_ * this->dimH_ + this->hIdx_ * this->baseH_], this->processH_,
+                          0);
         } else if constexpr (USE_TYPE == USE_UB) {
             this->ComputePerGUb(cPreValue, tailC);
         } else if constexpr (USE_TYPE == USE_WS) {

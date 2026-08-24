@@ -59,14 +59,12 @@ struct SplitCoreParams {
     int64_t wsUnitNum{0};
 };
 
-class GroupedBiasAddGradTiling
-{
+class GroupedBiasAddGradTiling {
 public:
     explicit GroupedBiasAddGradTiling(gert::TilingContext* context)
         : context_(context), nodeName_(context->GetNodeName())
     {}
-    ~GroupedBiasAddGradTiling()
-    {}
+    ~GroupedBiasAddGradTiling() {}
     GroupedBiasAddGradTilingData tilingData_;
     ge::graphStatus RunGroupedBiasAddGradTiling();
     ge::graphStatus GetInputInfo();

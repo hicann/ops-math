@@ -24,13 +24,11 @@ namespace GroupedBiasAddGradAll {
 using namespace AscendC;
 
 template <typename T, typename G, const uint32_t USE_TYPE>
-class GroupedBiasAddGradUnequalC : public GroupedBiasAddGradBase<T>
-{
+class GroupedBiasAddGradUnequalC : public GroupedBiasAddGradBase<T> {
 public:
     __aicore__ inline GroupedBiasAddGradUnequalC(){};
-    __aicore__ inline void Init(
-        GM_ADDR grad_y, GM_ADDR group_idx, GM_ADDR grad_bias, GM_ADDR workspace,
-        const GroupedBiasAddGradTilingData& tilingData);
+    __aicore__ inline void Init(GM_ADDR grad_y, GM_ADDR group_idx, GM_ADDR grad_bias, GM_ADDR workspace,
+                                const GroupedBiasAddGradTilingData& tilingData);
     __aicore__ inline void CopyInGroupIdAndCalcInterval(LocalTensor<int32_t>& interval, LocalTensor<int32_t>& groupIdx);
     __aicore__ inline void CopyInGroupIdAndCalcInterval(LocalTensor<int64_t>& interval, LocalTensor<int64_t>& groupIdx);
     __aicore__ inline void Process();
@@ -43,9 +41,9 @@ private:
 };
 
 template <typename T, typename G, const uint32_t USE_TYPE>
-__aicore__ inline void GroupedBiasAddGradUnequalC<T, G, USE_TYPE>::Init(
-    GM_ADDR grad_y, GM_ADDR group_idx, GM_ADDR grad_bias, GM_ADDR workspace,
-    const GroupedBiasAddGradTilingData& tilingData)
+__aicore__ inline void GroupedBiasAddGradUnequalC<T, G, USE_TYPE>::Init(GM_ADDR grad_y, GM_ADDR group_idx,
+                                                                        GM_ADDR grad_bias, GM_ADDR workspace,
+                                                                        const GroupedBiasAddGradTilingData& tilingData)
 {
     // Init tiling data
     this->InitBaseParams(grad_y, grad_bias, workspace, tilingData);
@@ -66,14 +64,13 @@ template <typename T, typename G, const uint32_t USE_TYPE>
 __aicore__ inline void GroupedBiasAddGradUnequalC<T, G, USE_TYPE>::CopyInGroupIdAndCalcInterval(
     LocalTensor<int32_t>& interval, LocalTensor<int32_t>& groupIdx)
 {
-    DataCopyExtParams copyParams{
-        static_cast<uint16_t>(1), static_cast<uint32_t>(this->dimG_ * sizeof(int32_t)), static_cast<uint32_t>(0),
-        static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
+    DataCopyExtParams copyParams{static_cast<uint16_t>(1), static_cast<uint32_t>(this->dimG_ * sizeof(int32_t)),
+                                 static_cast<uint32_t>(0), static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
     int32_t dimGMod = this->dimG_ % B32_BLOCK_NUM;
     int32_t processRightPad = dimGMod ? (B32_BLOCK_NUM - dimGMod) : 0;
 
-    DataCopyPadExtParams<int32_t> padParams{
-        true, static_cast<uint8_t>(0), static_cast<uint8_t>(processRightPad), static_cast<int32_t>(0)};
+    DataCopyPadExtParams<int32_t> padParams{true, static_cast<uint8_t>(0), static_cast<uint8_t>(processRightPad),
+                                            static_cast<int32_t>(0)};
     DataCopyPad(interval, groupIdxGm_[0], copyParams, padParams);
 
     if (unlikely(this->dimG_ == 1)) {
@@ -89,14 +86,13 @@ template <typename T, typename G, const uint32_t USE_TYPE>
 __aicore__ inline void GroupedBiasAddGradUnequalC<T, G, USE_TYPE>::CopyInGroupIdAndCalcInterval(
     LocalTensor<int64_t>& interval, LocalTensor<int64_t>& groupIdx)
 {
-    DataCopyExtParams copyParams{
-        static_cast<uint16_t>(1), static_cast<uint32_t>(this->dimG_ * sizeof(int64_t)), static_cast<uint32_t>(0),
-        static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
+    DataCopyExtParams copyParams{static_cast<uint16_t>(1), static_cast<uint32_t>(this->dimG_ * sizeof(int64_t)),
+                                 static_cast<uint32_t>(0), static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
     int32_t dimGMod = this->dimG_ % B64_BLOCK_NUM;
     int32_t processRightPad = dimGMod ? (B64_BLOCK_NUM - dimGMod) : 0;
 
-    DataCopyPadExtParams<int32_t> padParams{
-        true, static_cast<uint8_t>(0), static_cast<uint8_t>(processRightPad * 2), static_cast<int32_t>(0)};
+    DataCopyPadExtParams<int32_t> padParams{true, static_cast<uint8_t>(0), static_cast<uint8_t>(processRightPad * 2),
+                                            static_cast<int32_t>(0)};
 
     LocalTensor<int32_t> intervalInt32 = interval.template ReinterpretCast<int32_t>();
     LocalTensor<int32_t> groupIdxInt32 = groupIdx.template ReinterpretCast<int32_t>();
@@ -144,8 +140,8 @@ __aicore__ inline void GroupedBiasAddGradUnequalC<T, G, USE_TYPE>::Process()
             if (unlikely(isLastH)) {
                 this->processH_ = tailH;
             }
-            InitOutput<T>(
-                this->gradBiasGm_[this->gIdx_ * this->dimH_ + this->hIdx_ * this->baseH_], this->processH_, 0);
+            InitOutput<T>(this->gradBiasGm_[this->gIdx_ * this->dimH_ + this->hIdx_ * this->baseH_], this->processH_,
+                          0);
         } else if constexpr (USE_TYPE == USE_UB) {
             this->ComputePerGUb(cPreValue, tailC);
         } else if (this->loopCNum_ <= UB_GROUP_SUM_NUM) {

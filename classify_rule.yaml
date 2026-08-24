@@ -118,8 +118,8 @@ math@ops-math:
         - ops/ops-math/math/greater/op_api/
         - ops/ops-math/math/greater_equal/op_api/
         - ops/ops-math/math/grouped_bias_add_grad/op_api/
-        - ops/ops-math/math/grouped_bias_add_grad/op_host/arch32/
-        - ops/ops-math/math/grouped_bias_add_grad/op_kernel/arch32/
+        - ops/ops-math/math/grouped_bias_add_grad/op_host/arch22/
+        - ops/ops-math/math/grouped_bias_add_grad/op_kernel/arch22/
         - ops/ops-math/math/histogram_v2/op_api/
         - ops/ops-math/math/histogram_v2/op_kernel/
         - ops/ops-math/math/invert/op_api/

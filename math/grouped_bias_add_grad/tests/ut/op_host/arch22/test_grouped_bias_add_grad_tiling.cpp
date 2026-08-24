@@ -13,21 +13,15 @@
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
 
-#include "../../../../op_host/arch32/grouped_bias_add_grad_tiling.h"
+#include "../../../../op_host/arch22/grouped_bias_add_grad_tiling.h"
 
 using namespace std;
 
 class TilingGroupedBiasAddGrad : public ::testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "TilingGroupedBiasAddGrad SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "TilingGroupedBiasAddGrad SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "TilingGroupedBiasAddGrad TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "TilingGroupedBiasAddGrad TearDown" << std::endl; }
 };
 
 struct GroupedBiasAddGradCompileInfo {
