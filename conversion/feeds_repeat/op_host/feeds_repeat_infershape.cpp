@@ -17,7 +17,6 @@
 
 using namespace ge;
 
-
 namespace ops {
 static constexpr size_t IDX_0 = 0;
 static constexpr size_t IDX_1 = 1;
@@ -39,23 +38,20 @@ static ge::graphStatus InferShape4FeedsRepeat(gert::InferShapeContext* context)
 {
     OP_LOGD(context, "Begin to do InferShape4FeedsRepeat");
     const gert::Shape* feeds_shape = context->GetInputShape(IDX_0);
-    OP_CHECK_IF(
-        feeds_shape == nullptr, OP_LOGE(context->GetNodeName(), "get feedsrepeat feeds_shape failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(feeds_shape == nullptr, OP_LOGE(context->GetNodeName(), "get feedsrepeat feeds_shape failed"),
+                return ge::GRAPH_FAILED);
     OP_CHECK_NULL_WITH_CONTEXT(context, feeds_shape);
     const gert::Shape* repeat_times_shape = context->GetInputShape(IDX_1);
-    OP_CHECK_IF(
-        repeat_times_shape == nullptr, OP_LOGE(context->GetNodeName(), "get feedsrepeat repeat_times_shape failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(repeat_times_shape == nullptr,
+                OP_LOGE(context->GetNodeName(), "get feedsrepeat repeat_times_shape failed"), return ge::GRAPH_FAILED);
     OP_CHECK_NULL_WITH_CONTEXT(context, repeat_times_shape);
     gert::Shape* y_shape = context->GetOutputShape(IDX_0);
-    OP_CHECK_IF(
-        y_shape == nullptr, OP_LOGE(context->GetNodeName(), "get feedsrepeat y_shape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(y_shape == nullptr, OP_LOGE(context->GetNodeName(), "get feedsrepeat y_shape failed"),
+                return ge::GRAPH_FAILED);
     OP_CHECK_NULL_WITH_CONTEXT(context, y_shape);
     const gert::RuntimeAttrs* attrs = context->GetAttrs();
-    OP_CHECK_IF(
-        attrs == nullptr, OP_LOGE(context->GetNodeName(), "get feedsrepeat runtime attrs failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(attrs == nullptr, OP_LOGE(context->GetNodeName(), "get feedsrepeat runtime attrs failed"),
+                return ge::GRAPH_FAILED);
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
 
     if (IsUnknownRankForFeeds(y_shape)) { // [-2]输入
@@ -64,6 +60,7 @@ static ge::graphStatus InferShape4FeedsRepeat(gert::InferShapeContext* context)
     } else {
         *y_shape = *feeds_shape;
         const int64_t* output_feeds_size = attrs->GetAttrPointer<int64_t>(0);
+        OP_CHECK_NULL_WITH_CONTEXT(context, output_feeds_size);
         y_shape->SetDim(0, *output_feeds_size);
     }
     OP_LOGD(context, "End to do InferShape4FeedsRepeat");
@@ -74,8 +71,8 @@ static ge::graphStatus InferDataType4FeedsRepeat(gert::InferDataTypeContext* con
 {
     OP_LOGD(context, "Begin to do InferDataType4FeedsRepeat");
     OP_LOGD(context, "input feeds dtype: %s", Ops::Base::ToString(context->GetInputDataType(IDX_0)).c_str());
-    OP_LOGD(
-        context, "input feeds_repeat_times dtype: %s", Ops::Base::ToString(context->GetInputDataType(IDX_1)).c_str());
+    OP_LOGD(context, "input feeds_repeat_times dtype: %s",
+            Ops::Base::ToString(context->GetInputDataType(IDX_1)).c_str());
     context->SetOutputDataType(IDX_0, context->GetInputDataType(IDX_0));
     OP_LOGD(context, "End to do InferDataType4FeedsRepeat");
     return GRAPH_SUCCESS;
