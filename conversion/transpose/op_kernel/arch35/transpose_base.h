@@ -38,7 +38,7 @@ constexpr int64_t DIM_FIVE = 5;               // 维度常量：5维
 constexpr int64_t DIM_SIX = 6;                // 维度常量：6维
 constexpr int64_t DIM_SEVEN = 7;              // 维度常量：7维
 constexpr int64_t DIM_EIGHT = 8;              // 维度常量：8维
-constexpr MultiCopyConfig config = {false, 0, 0, false}; // NDDMA DataCopy 默认配置（非重复模式）
+constexpr NdDmaConfig config = {false, 0, 0, false}; // NDDMA DataCopy 默认配置（非重复模式）
 constexpr int64_t TWO = 2;
 constexpr int64_t BUFFER_NUM = 2; // 双缓冲数量，用于 TENSOR_MOVE 和 N_LAST 策略
 

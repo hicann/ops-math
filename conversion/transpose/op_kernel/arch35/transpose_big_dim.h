@@ -48,11 +48,11 @@ public:
 
 private:
     __aicore__ inline void DecimalToMixed(int64_t num, int64_t bases[], int64_t mixedBase[]);
-    __aicore__ inline void SetLoopInfo(MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM>& loopInfo);
-    __aicore__ inline void CopyIn(int64_t loopIdx, MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& params);
+    __aicore__ inline void SetLoopInfo(NdDmaLoopInfo<NDDMA_MAX_DIM_NUM>& loopInfo);
+    __aicore__ inline void CopyIn(int64_t loopIdx, NdDmaParams<T, NDDMA_MAX_DIM_NUM>& params);
     __aicore__ inline void CopyOut(int64_t loopIdx, DataCopyExtParams& copyOutParams);
-    __aicore__ inline void ProcessPerCore(MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& paramsMain,
-                                          MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& paramsTail,
+    __aicore__ inline void ProcessPerCore(NdDmaParams<T, NDDMA_MAX_DIM_NUM>& paramsMain,
+                                          NdDmaParams<T, NDDMA_MAX_DIM_NUM>& paramsTail,
                                           DataCopyExtParams& copyOutParamsMain, DataCopyExtParams& copyOutParamsTail);
 
 private:
@@ -116,7 +116,7 @@ __aicore__ inline void TransposeBigDim<T>::DecimalToMixed(int64_t num, int64_t b
  *   - nddmaFlag[i] == 0：该维在输出切分轴之前，大小为1（不参与循环）
  */
 template <typename T>
-__aicore__ inline void TransposeBigDim<T>::SetLoopInfo(MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM>& loopInfo)
+__aicore__ inline void TransposeBigDim<T>::SetLoopInfo(NdDmaLoopInfo<NDDMA_MAX_DIM_NUM>& loopInfo)
 {
     int64_t nddmaFlag[NDDMA_MAX_DIM_NUM] = {0};
     for (int64_t i = 0; i < NDDMA_MAX_DIM_NUM; i++) {
@@ -159,7 +159,7 @@ __aicore__ inline void TransposeBigDim<T>::Process()
         return;
     }
 
-    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfo;
+    NdDmaLoopInfo<NDDMA_MAX_DIM_NUM> loopInfo;
     SetLoopInfo(loopInfo);
 
     // calculate blockCount
@@ -170,17 +170,17 @@ __aicore__ inline void TransposeBigDim<T>::Process()
     copyOutParamsTail.blockLen = tiling_->totalNddmaNum / tiling_->outUbFactor * tiling_->outTailFactor * sizeof(T);
 
     T constValue = 0;
-    MultiCopyParams<T, NDDMA_MAX_DIM_NUM> paramsMain = {loopInfo, constValue};
+    NdDmaParams<T, NDDMA_MAX_DIM_NUM> paramsMain = {loopInfo, constValue};
     if (tiling_->outTailFactor != 0) {
         loopInfo.loopSize[cutIdx_] = tiling_->outTailFactor;
         loopInfo.loopDstStride[cutIdx_] = tiling_->baseNddmaShape[NDDMA_MAX_DIM_NUM - 1 - cutIdx_];
     }
-    MultiCopyParams<T, NDDMA_MAX_DIM_NUM> paramsTail = {loopInfo, constValue};
+    NdDmaParams<T, NDDMA_MAX_DIM_NUM> paramsTail = {loopInfo, constValue};
     ProcessPerCore(paramsMain, paramsTail, copyOutParamsMain, copyOutParamsTail);
 }
 
 template <typename T>
-__aicore__ inline void TransposeBigDim<T>::CopyIn(int64_t loopIdx, MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& params)
+__aicore__ inline void TransposeBigDim<T>::CopyIn(int64_t loopIdx, NdDmaParams<T, NDDMA_MAX_DIM_NUM>& params)
 {
     int64_t srcAddressOffset = 0;
     DecimalToMixed(loopIdx, dstAddressOffsetMixedBase_, dstAddressOffsetMixedBaseRes_);
@@ -206,8 +206,8 @@ __aicore__ inline void TransposeBigDim<T>::CopyOut(int64_t loopIdx, DataCopyExtP
 }
 
 template <typename T>
-__aicore__ inline void TransposeBigDim<T>::ProcessPerCore(MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& paramsMain,
-                                                          MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& paramsTail,
+__aicore__ inline void TransposeBigDim<T>::ProcessPerCore(NdDmaParams<T, NDDMA_MAX_DIM_NUM>& paramsMain,
+                                                          NdDmaParams<T, NDDMA_MAX_DIM_NUM>& paramsTail,
                                                           DataCopyExtParams& copyOutParamsMain,
                                                           DataCopyExtParams& copyOutParamsTail)
 {

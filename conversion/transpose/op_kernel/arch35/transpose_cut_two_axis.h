@@ -113,8 +113,8 @@ private:
                                                         int64_t loopShapeSizeArray[], int64_t inputCutIndex,
                                                         int64_t outputCutIndex, const int64_t expandedShape[],
                                                         const int64_t inUbShape[]);
-    __aicore__ inline MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> SetupLoopInfo(const int64_t inUbSrcShape[],
-                                                                         const int64_t inUbDstShape[]);
+    __aicore__ inline NdDmaLoopInfo<NDDMA_MAX_DIM_NUM> SetupLoopInfo(const int64_t inUbSrcShape[],
+                                                                     const int64_t inUbDstShape[]);
     __aicore__ inline void ProcessMain(int64_t loopidxStart, int64_t loopidxEnd);
     __aicore__ inline void ProcessOutputTail(int64_t loopidxStart, int64_t loopidxEnd);
     __aicore__ inline void ProcessInputTail(int64_t loopidxStart, int64_t loopidxEnd);
@@ -299,10 +299,10 @@ __aicore__ inline void TransposeCutTwoAxis<T>::GetTailTailLoopAddressOffset(
 }
 
 template <typename T>
-__aicore__ inline MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> TransposeCutTwoAxis<T>::SetupLoopInfo(
-    const int64_t inUbSrcShape[], const int64_t inUbDstShape[])
+__aicore__ inline NdDmaLoopInfo<NDDMA_MAX_DIM_NUM> TransposeCutTwoAxis<T>::SetupLoopInfo(const int64_t inUbSrcShape[],
+                                                                                         const int64_t inUbDstShape[])
 {
-    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfo;
+    NdDmaLoopInfo<NDDMA_MAX_DIM_NUM> loopInfo;
 
     int64_t loopDstStrideTmp[NDDMA_MAX_DIM_NUM] = {0};
     for (int64_t i = 0; i < NDDMA_MAX_DIM_NUM; i++) {
@@ -352,9 +352,8 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessMain(int64_t loopidxStart,
 {
     // main
     T constValue = 0;
-    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoMain = SetupLoopInfo(tiling_->inUbMainSrcShape,
-                                                                      tiling_->inUbMainDstShape);
-    MultiCopyParams<T, NDDMA_MAX_DIM_NUM> paramsMain = {loopInfoMain, constValue};
+    NdDmaLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoMain = SetupLoopInfo(tiling_->inUbMainSrcShape, tiling_->inUbMainDstShape);
+    NdDmaParams<T, NDDMA_MAX_DIM_NUM> paramsMain = {loopInfoMain, constValue};
 
     DataCopyExtParams copyOutParamsMain;
     copyOutParamsMain.blockLen = mainLoopSize_[0] * sizeof(T);
@@ -417,9 +416,9 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessInputTail(int64_t loopidxS
 {
     // NDDMA loopInfo init
     T constValue = 0;
-    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoInputTail = SetupLoopInfo(tiling_->inUbInputTailSrcShape,
-                                                                           tiling_->inUbInputTailDstShape);
-    MultiCopyParams<T, NDDMA_MAX_DIM_NUM> paramsInputTail = {loopInfoInputTail, constValue};
+    NdDmaLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoInputTail = SetupLoopInfo(tiling_->inUbInputTailSrcShape,
+                                                                       tiling_->inUbInputTailDstShape);
+    NdDmaParams<T, NDDMA_MAX_DIM_NUM> paramsInputTail = {loopInfoInputTail, constValue};
 
     DataCopyExtParams copyOutParamsInputTail;
     copyOutParamsInputTail.blockLen = inputTailLoopSize_[0] * sizeof(T);
@@ -492,9 +491,9 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessOutputTail(int64_t loopidx
 {
     // NDDMA loopInfo init
     T constValue = 0;
-    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoOutputTail = SetupLoopInfo(tiling_->inUbOutputTailSrcShape,
-                                                                            tiling_->inUbOutputTailDstShape);
-    MultiCopyParams<T, NDDMA_MAX_DIM_NUM> paramsOutputTail = {loopInfoOutputTail, constValue};
+    NdDmaLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoOutputTail = SetupLoopInfo(tiling_->inUbOutputTailSrcShape,
+                                                                        tiling_->inUbOutputTailDstShape);
+    NdDmaParams<T, NDDMA_MAX_DIM_NUM> paramsOutputTail = {loopInfoOutputTail, constValue};
 
     DataCopyExtParams copyOutParamsOutputTail;
     copyOutParamsOutputTail.blockLen = outputTailLoopSize_[0] * sizeof(T);
@@ -575,9 +574,8 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessTail(int64_t loopidxStart,
 {
     // NDDMA loopInfo init
     T constValue = 0;
-    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoTail = SetupLoopInfo(tiling_->inUbTailSrcShape,
-                                                                      tiling_->inUbTailDstShape);
-    MultiCopyParams<T, NDDMA_MAX_DIM_NUM> paramsTail = {loopInfoTail, constValue};
+    NdDmaLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoTail = SetupLoopInfo(tiling_->inUbTailSrcShape, tiling_->inUbTailDstShape);
+    NdDmaParams<T, NDDMA_MAX_DIM_NUM> paramsTail = {loopInfoTail, constValue};
 
     DataCopyExtParams copyOutParamsTail;
     copyOutParamsTail.blockLen = tailLoopSize_[0] * sizeof(T);

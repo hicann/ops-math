@@ -63,15 +63,15 @@ public:
 
 private:
     __aicore__ inline void ParseTilingData();
-    __aicore__ inline MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> SetupLoopInfo(const int64_t inUbSrcShape[],
-                                                                         const int64_t inUbDstShape[]);
+    __aicore__ inline NdDmaLoopInfo<NDDMA_MAX_DIM_NUM> SetupLoopInfo(const int64_t inUbSrcShape[],
+                                                                     const int64_t inUbDstShape[]);
     __aicore__ inline void ProcessMain(int64_t loopidxEnd);
     __aicore__ inline void ProcessTail();
     __aicore__ inline void GetLoopParams(int64_t n);
     __aicore__ inline void DecimalToMixed(int64_t num, int64_t bases[],
                                           int64_t mixedBase[]); ///< 十进制转混合基（地址计算核心）
     __aicore__ inline void GetLoopAndStride();                  ///< 计算源/目标循环步长
-    __aicore__ inline void CopyIn(int64_t loopIdx, MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& params);
+    __aicore__ inline void CopyIn(int64_t loopIdx, NdDmaParams<T, NDDMA_MAX_DIM_NUM>& params);
     __aicore__ inline void CopyOut(int64_t loopIdx, int64_t loopSize[], int64_t loopSrcStride[],
                                    int64_t loopDstStride[]);
     __aicore__ inline void ProcessPerCore();
@@ -169,10 +169,10 @@ __aicore__ inline void TransposeCutOneAxis<T>::ParseTilingData()
  * @return NDDMA 搬运参数
  */
 template <typename T>
-__aicore__ inline MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> TransposeCutOneAxis<T>::SetupLoopInfo(
-    const int64_t inUbSrcShape[], const int64_t inUbDstShape[])
+__aicore__ inline NdDmaLoopInfo<NDDMA_MAX_DIM_NUM> TransposeCutOneAxis<T>::SetupLoopInfo(const int64_t inUbSrcShape[],
+                                                                                         const int64_t inUbDstShape[])
 {
-    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfo;
+    NdDmaLoopInfo<NDDMA_MAX_DIM_NUM> loopInfo;
     int64_t loopDstStrideTmp[NDDMA_MAX_DIM_NUM] = {0};
     for (int64_t i = 0; i < NDDMA_MAX_DIM_NUM; i++) {
         int64_t recumMultiSrc = 1;
@@ -308,7 +308,7 @@ __aicore__ inline void TransposeCutOneAxis<T>::GetLoopAndStride()
 }
 
 template <typename T>
-__aicore__ inline void TransposeCutOneAxis<T>::CopyIn(int64_t loopIdx, MultiCopyParams<T, NDDMA_MAX_DIM_NUM>& params)
+__aicore__ inline void TransposeCutOneAxis<T>::CopyIn(int64_t loopIdx, NdDmaParams<T, NDDMA_MAX_DIM_NUM>& params)
 {
     int64_t srcAddressOffset = 0;
     DecimalToMixed(loopIdx, dstLoopSize_, dstAddressOffsetMixedBase_);
@@ -388,18 +388,17 @@ __aicore__ inline void TransposeCutOneAxis<T>::ProcessPerCore()
 
     // MTE2 params main
     T constValue = 0;
-    MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoMain = SetupLoopInfo(tiling_->inUbMainSrcShape,
-                                                                      tiling_->inUbMainDstShape);
-    MultiCopyParams<T, NDDMA_MAX_DIM_NUM> paramsMain = {loopInfoMain, constValue};
+    NdDmaLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoMain = SetupLoopInfo(tiling_->inUbMainSrcShape, tiling_->inUbMainDstShape);
+    NdDmaParams<T, NDDMA_MAX_DIM_NUM> paramsMain = {loopInfoMain, constValue};
 
     int64_t outCutLoopSize = Ops::Base::CeilDiv(tiling_->expandedOutputShape[expandedOutputCutIndex_],
                                                 tiling_->outUbFactor);
     for (int64_t loopIdx = blkProcessIdxStart_; loopIdx < blkProcessIdxEnd_; loopIdx++) {
         if (tiling_->outTailFactor != 0 && (loopIdx + 1) % outCutLoopSize == 0) { // tail
             // MTE2 params tail
-            MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoTail = SetupLoopInfo(tiling_->inUbTailSrcShape,
-                                                                              tiling_->inUbTailDstShape);
-            MultiCopyParams<T, NDDMA_MAX_DIM_NUM> paramsTail = {loopInfoTail, constValue};
+            NdDmaLoopInfo<NDDMA_MAX_DIM_NUM> loopInfoTail = SetupLoopInfo(tiling_->inUbTailSrcShape,
+                                                                          tiling_->inUbTailDstShape);
+            NdDmaParams<T, NDDMA_MAX_DIM_NUM> paramsTail = {loopInfoTail, constValue};
             CopyIn(loopIdx, paramsTail);
             CopyOut(loopIdx, loopSizeTail_, loopSrcStrideTail_, loopDstStrideTail_);
         } else {

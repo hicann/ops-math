@@ -50,7 +50,7 @@
 namespace Transpose {
 using namespace AscendC;
 using AscendC::Reg::CreateMask;
-using AscendC::Reg::DataCopyGather;
+using AscendC::Reg::Gather;
 using AscendC::Reg::MaskReg;
 using AscendC::Reg::RegTensor;
 using AscendC::Reg::UpdateMask;
@@ -336,9 +336,9 @@ __aicore__ inline void TransposeWithGather<T>::GatherData()
 
     auto xInLocal = xInQue_.DeQue<T>();
     auto xOutLocal = xOutQue_.AllocTensor<T>();
-    __local_mem__ T* xInAddr = (__local_mem__ T*)xInLocal.GetPhyAddr();
-    __local_mem__ T* xOutAddr = (__local_mem__ T*)xOutLocal.GetPhyAddr();
-    __local_mem__ RangeType_* idxAddr = (__local_mem__ RangeType_*)idxLocal_.GetPhyAddr();
+    __ubuf__ T* xInAddr = (__ubuf__ T*)xInLocal.GetPhyAddr();
+    __ubuf__ T* xOutAddr = (__ubuf__ T*)xOutLocal.GetPhyAddr();
+    __ubuf__ RangeType_* idxAddr = (__ubuf__ RangeType_*)idxLocal_.GetPhyAddr();
     idxAddr += static_cast<uint32_t>(gIndexId_ * gIdxOffset_);
 
     __VEC_SCOPE__
@@ -351,7 +351,7 @@ __aicore__ inline void TransposeWithGather<T>::GatherData()
 
         for (uint16_t lpIdx = 0; lpIdx < burstLpCnt; ++lpIdx) {
             mask = UpdateMask<T>(maskValue);
-            Reg::DataCopy(idxOriReg, idxAddr + lpIdx * vlSize_);
+            Reg::LoadAlign(idxOriReg, idxAddr + lpIdx * vlSize_);
             uint32_t outIdx = 0;
             for (uint16_t axis2Idx = 0; axis2Idx < static_cast<uint16_t>(outUbAxis2_); ++axis2Idx) {
                 RangeType_ axis2Update = static_cast<RangeType_>(axis2Idx * outUbAxis2InROffset_);
@@ -361,14 +361,13 @@ __aicore__ inline void TransposeWithGather<T>::GatherData()
                         RangeType_ axis0Update = static_cast<RangeType_>(axis0Idx * outUbAxis0InROffset_);
                         RangeType_ idxUpdate = axis2Update + axis1Update + axis0Update;
                         Reg::Adds(idxReg, idxOriReg, idxUpdate, maskIdx);
-                        DataCopyGather((Reg::RegTensor<CastType_>&)xReg, xInAddr, (Reg::RegTensor<IdxType_>&)idxReg,
-                                       mask);
+                        Reg::Gather((Reg::RegTensor<CastType_>&)xReg, xInAddr, (Reg::RegTensor<IdxType_>&)idxReg, mask);
                         if constexpr (sizeof(T) != sizeof(int8_t)) {
-                            Reg::DataCopy(xOutAddr + outIdx * outLenAlign + lpIdx * vlSize_, xReg, mask);
+                            Reg::StoreAlign(xOutAddr + outIdx * outLenAlign + lpIdx * vlSize_, xReg, mask);
                         } else {
-                            __local_mem__ CastType_* xOutAddrB16 = reinterpret_cast<__local_mem__ CastType_*>(
+                            __ubuf__ CastType_* xOutAddrB16 = reinterpret_cast<__ubuf__ CastType_*>(
                                 xOutAddr + outIdx * outLenAlign + lpIdx * vlSize_);
-                            Reg::DataCopy<CastType_, Reg::StoreDist::DIST_PACK_B16>(
+                            Reg::StoreAlign<CastType_, Reg::StoreDist::DIST_PACK_B16>(
                                 xOutAddrB16, (Reg::RegTensor<CastType_>&)xReg, mask);
                         }
                         ++outIdx;
@@ -388,7 +387,7 @@ __aicore__ inline void TransposeWithGather<T>::GenIndex4OneDim(int32_t goffset)
     uint32_t lastDimSize = static_cast<uint32_t>(outUbAxes_[td_->ubAxesCnt - 1]);
     RangeType_ lastDimInOffset = static_cast<RangeType_>(CalcUbAxesInOffset(lastPerm));
 
-    __local_mem__ RangeType_* idxAddr = (__local_mem__ RangeType_*)idxLocal_.GetPhyAddr();
+    __ubuf__ RangeType_* idxAddr = (__ubuf__ RangeType_*)idxLocal_.GetPhyAddr();
     idxAddr += goffset;
     uint16_t loopCnt = static_cast<uint16_t>(Ops::Base::CeilDiv(lastDimSize, idxVLSize_));
 
@@ -401,7 +400,7 @@ __aicore__ inline void TransposeWithGather<T>::GenIndex4OneDim(int32_t goffset)
         for (uint16_t lpIdx = 0; lpIdx < loopCnt; ++lpIdx) {
             mask = UpdateMask<RangeType_>(lastDimSize);
             Reg::Muls(dstReg, srcReg, lastDimInOffset, mask);
-            Reg::DataCopy(idxAddr + lpIdx * idxVLSize_, dstReg, mask);
+            Reg::StoreAlign(idxAddr + lpIdx * idxVLSize_, dstReg, mask);
             Reg::Adds(srcReg, srcReg, idxVLSize_, mask);
         }
     }
@@ -420,7 +419,7 @@ __aicore__ inline void TransposeWithGather<T>::GenIndex4TwoDim(int32_t goffset)
     RangeType_ lastDimInc = static_cast<RangeType_>(idxVLSize_ % lastDimSize);
     RangeType_ last2ndDimInc = static_cast<RangeType_>(idxVLSize_ / lastDimSize);
 
-    __local_mem__ RangeType_* idxAddr = (__local_mem__ RangeType_*)idxLocal_.GetPhyAddr();
+    __ubuf__ RangeType_* idxAddr = (__ubuf__ RangeType_*)idxLocal_.GetPhyAddr();
     idxAddr += goffset;
     uint16_t loopCnt = 0;
     uint32_t leftDimSize = 0;
@@ -445,14 +444,14 @@ __aicore__ inline void TransposeWithGather<T>::GenIndex4TwoDim(int32_t goffset)
         Reg::Arange(idxReg, 0);
         Reg::Duplicate(dim0Reg, lastDimSize);
         Reg::Div(tmpReg, idxReg, dim0Reg, mask);
-        Reg::Copy(dim1Reg, tmpReg); // vec_b: VL / a
+        Reg::Move(dim1Reg, tmpReg); // vec_b: VL / a
         Reg::Mul(tmpReg, tmpReg, dim0Reg, mask);
         Reg::Sub(dim0Reg, idxReg, tmpReg, mask);
         // index: vec_a * a_in_offset + vec_b * b_in_offset
         Reg::Muls(tmpReg, dim0Reg, lastDimInOffset, mask);
         Reg::Muls(dstReg, dim1Reg, last2ndDimInOffset, mask);
         Reg::Add(dstReg, dstReg, tmpReg, mask);
-        Reg::DataCopy(idxAddr, dstReg, mask);
+        Reg::StoreAlign(idxAddr, dstReg, mask);
 
         MaskReg lpMask;
         MaskReg selMask;
@@ -468,7 +467,7 @@ __aicore__ inline void TransposeWithGather<T>::GenIndex4TwoDim(int32_t goffset)
              *   vec_a = vec_a - cmp_a * a
              */
             Reg::Adds(dim0Reg, dim0Reg, lastDimInc, lpMask);
-            Reg::CompareScalar<RangeType_, CMPMODE::GE>(selMask, dim0Reg, lastDimSize, lpMask);
+            Reg::Compares<RangeType_, CMPMODE::GE>(selMask, dim0Reg, lastDimSize, lpMask);
             Reg::Select(cmpReg, oneReg, zeroReg, selMask);
             Reg::Muls(tmpReg, cmpReg, lastDimSize, lpMask);
             Reg::Sub(dim0Reg, dim0Reg, tmpReg, lpMask);
@@ -479,7 +478,7 @@ __aicore__ inline void TransposeWithGather<T>::GenIndex4TwoDim(int32_t goffset)
             Reg::Muls(tmpReg, dim0Reg, lastDimInOffset, lpMask);
             Reg::Muls(dstReg, dim1Reg, last2ndDimInOffset, lpMask);
             Reg::Add(dstReg, dstReg, tmpReg, lpMask);
-            Reg::DataCopy(idxAddr + (lpIdx + 1) * idxVLSize_, dstReg, lpMask);
+            Reg::StoreAlign(idxAddr + (lpIdx + 1) * idxVLSize_, dstReg, lpMask);
         }
     }
 }
@@ -501,7 +500,7 @@ __aicore__ inline void TransposeWithGather<T>::GenIndex4ThreeDim(int32_t goffset
     RangeType_ last2ndDimInc = static_cast<RangeType_>(idxVLSize_ / lastDimSize % last2ndDimSize);
     RangeType_ last3rdDimInc = static_cast<RangeType_>(idxVLSize_ / (lastDimSize * last2ndDimSize));
 
-    __local_mem__ RangeType_* idxAddr = (__local_mem__ RangeType_*)idxLocal_.GetPhyAddr();
+    __ubuf__ RangeType_* idxAddr = (__ubuf__ RangeType_*)idxLocal_.GetPhyAddr();
     idxAddr += goffset;
     uint16_t loopCnt = 0;
     uint32_t leftDimSize = 0;
@@ -527,9 +526,9 @@ __aicore__ inline void TransposeWithGather<T>::GenIndex4ThreeDim(int32_t goffset
         // vec_a: VL % a
         Reg::Arange(idxReg, 0);
         Reg::Duplicate(dim0Reg, lastDimSize);
-        Reg::Copy(dim2Reg, dim0Reg); // backup a
+        Reg::Move(dim2Reg, dim0Reg); // backup a
         Reg::Div(tmpReg, idxReg, dim0Reg, mask);
-        Reg::Copy(dim1Reg, tmpReg); // backup VL / a
+        Reg::Move(dim1Reg, tmpReg); // backup VL / a
         Reg::Mul(tmpReg, tmpReg, dim0Reg, mask);
         Reg::Sub(dim0Reg, idxReg, tmpReg, mask);
         // vec_b: VL / a % b
@@ -546,7 +545,7 @@ __aicore__ inline void TransposeWithGather<T>::GenIndex4ThreeDim(int32_t goffset
         Reg::Muls(dstReg, dim2Reg, last3rdDimInOffset, mask);
         Reg::Add(dstReg, dstReg, tmpReg, mask);
         Reg::Add(dstReg, dstReg, tmp1Reg, mask);
-        Reg::DataCopy(idxAddr, dstReg, mask);
+        Reg::StoreAlign(idxAddr, dstReg, mask);
 
         MaskReg lpMask;
         MaskReg selMask;
@@ -562,7 +561,7 @@ __aicore__ inline void TransposeWithGather<T>::GenIndex4ThreeDim(int32_t goffset
              *   vec_a = vec_a - cmp_a * a
              */
             Reg::Adds(dim0Reg, dim0Reg, lastDimInc, lpMask);
-            Reg::CompareScalar<RangeType_, CMPMODE::GE>(selMask, dim0Reg, lastDimSize, lpMask);
+            Reg::Compares<RangeType_, CMPMODE::GE>(selMask, dim0Reg, lastDimSize, lpMask);
             Reg::Select(cmpReg, oneReg, zeroReg, selMask);
             Reg::Muls(tmpReg, cmpReg, lastDimSize, lpMask);
             Reg::Sub(dim0Reg, dim0Reg, tmpReg, lpMask);
@@ -572,7 +571,7 @@ __aicore__ inline void TransposeWithGather<T>::GenIndex4ThreeDim(int32_t goffset
              */
             Reg::Adds(cmpReg, cmpReg, last2ndDimInc, lpMask);
             Reg::Add(dim1Reg, dim1Reg, cmpReg, lpMask);
-            Reg::CompareScalar<RangeType_, CMPMODE::GE>(selMask, dim1Reg, last2ndDimSize, lpMask);
+            Reg::Compares<RangeType_, CMPMODE::GE>(selMask, dim1Reg, last2ndDimSize, lpMask);
             Reg::Select(cmpReg, oneReg, zeroReg, selMask);
             Reg::Muls(tmpReg, cmpReg, last2ndDimSize, lpMask);
             Reg::Sub(dim1Reg, dim1Reg, tmpReg, lpMask);
@@ -585,7 +584,7 @@ __aicore__ inline void TransposeWithGather<T>::GenIndex4ThreeDim(int32_t goffset
             Reg::Muls(dstReg, dim2Reg, last3rdDimInOffset, lpMask);
             Reg::Add(dstReg, dstReg, tmpReg, lpMask);
             Reg::Add(dstReg, dstReg, tmp1Reg, lpMask);
-            Reg::DataCopy(idxAddr + (lpIdx + 1) * idxVLSize_, dstReg, lpMask);
+            Reg::StoreAlign(idxAddr + (lpIdx + 1) * idxVLSize_, dstReg, lpMask);
         }
     }
 }
