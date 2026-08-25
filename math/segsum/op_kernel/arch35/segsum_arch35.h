@@ -9,7 +9,7 @@
  */
 
 /*!
- * \file segsum.h (arch35 / Ascend950)
+ * \file segsum_arch35.h (arch35 / Ascend950)
  * \brief arch35 implementation of Segsum.
  *
  * y[i][j] = exp(sum_{p = j + 1}^{i} x_p) for j <= i, y[i][j] = 0 for j > i.

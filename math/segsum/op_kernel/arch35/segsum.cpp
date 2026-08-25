@@ -13,7 +13,7 @@
  * \brief Segsum kernel entry for arch35 / Ascend950.
  */
 
-#include "segsum.h"
+#include "segsum_arch35.h"
 
 using namespace SegsumArch35;
 
