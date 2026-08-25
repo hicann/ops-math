@@ -37,8 +37,8 @@
 namespace optiling {
 
 using Ops::Base::CeilDiv;
-using Ops::Base::FloorDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
 constexpr uint32_t MAX_INPUT_NUM = 32;
@@ -76,7 +76,7 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
     }
     // Ascend950 fallback values
     constexpr int64_t FALLBACK_CORE_NUM = 40;
-    constexpr uint64_t FALLBACK_UB_SIZE = 253952;  // 248 KB
+    constexpr uint64_t FALLBACK_UB_SIZE = 253952; // 248 KB
     if (coreNum == 0) {
         OP_LOGW(context, "Eltwise: failed to get core num, using fallback %ld", FALLBACK_CORE_NUM);
         coreNum = FALLBACK_CORE_NUM;
@@ -96,15 +96,14 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus GetInputInfo(gert::TilingContext* context, uint32_t& inputNum,
-                                    ge::DataType& dtype, int64_t& totalNum)
+static ge::graphStatus GetInputInfo(gert::TilingContext* context, uint32_t& inputNum, ge::DataType& dtype,
+                                    int64_t& totalNum)
 {
     auto computeNodeInfo = context->GetComputeNodeInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, computeNodeInfo);
     inputNum = static_cast<uint32_t>(computeNodeInfo->GetInputsNum());
-    OP_CHECK_IF(inputNum == 0 || inputNum > MAX_INPUT_NUM,
-        OP_LOGE(context, "Eltwise: invalid inputNum %u", inputNum),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputNum == 0 || inputNum > MAX_INPUT_NUM, OP_LOGE(context, "Eltwise: invalid inputNum %u", inputNum),
+                return ge::GRAPH_FAILED);
 
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
@@ -114,25 +113,43 @@ static ge::graphStatus GetInputInfo(gert::TilingContext* context, uint32_t& inpu
     OP_CHECK_NULL_WITH_CONTEXT(context, inputShape0);
     auto shape = EnsureNotScalar(inputShape0->GetStorageShape());
     totalNum = shape.GetShapeSize();
-    OP_CHECK_IF(totalNum < 0,
-        OP_LOGE(context, "Eltwise: invalid totalNum %ld (negative shape)", totalNum),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(totalNum < 0, OP_LOGE(context, "Eltwise: invalid totalNum %ld (negative shape)", totalNum),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
+}
+
+static size_t GetModeIndex(const gert::RuntimeAttrs* attrs)
+{
+    // def.cpp declares attrs in order: N, mode, coeff
+    // But older ops-info JSON may only have: mode, coeff (no N)
+    // Use GetAttrNum() to determine which layout:
+    //   3 attrs → [N, mode, coeff] → mode at index 1
+    //   2 attrs → [mode, coeff]    → mode at index 0
+    size_t attrNum = attrs->GetAttrNum();
+    return (attrNum >= 3) ? 1 : 0;
+}
+
+static size_t GetCoeffIndex(const gert::RuntimeAttrs* attrs)
+{
+    // Same logic as GetModeIndex: coeff follows mode
+    //   3 attrs → [N, mode, coeff] → coeff at index 2
+    //   2 attrs → [mode, coeff]    → coeff at index 1
+    size_t attrNum = attrs->GetAttrNum();
+    return (attrNum >= 3) ? 2 : 1;
 }
 
 static ge::graphStatus GetModeAttr(gert::TilingContext* context, int64_t& mode)
 {
-    // Attr order in op_def: 0=mode (OPTIONAL), 1=coeff (OPTIONAL)
     const auto* attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
-    mode = 1;  // default SUM
-    const int64_t* modePtr = attrs->GetAttrPointer<int64_t>(0);
+    mode = 1; // default SUM
+
+    size_t modeIdx = GetModeIndex(attrs);
+    const int64_t* modePtr = attrs->GetInt(modeIdx);
     if (modePtr != nullptr) {
         mode = *modePtr;
     }
-    OP_CHECK_IF(mode < 0 || mode > 2,
-        OP_LOGE(context, "Eltwise: invalid mode %ld", mode),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(mode < 0 || mode > 2, OP_LOGE(context, "Eltwise: invalid mode %ld", mode), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -152,38 +169,31 @@ static ge::graphStatus GetTypeSize(gert::TilingContext* context, ge::DataType dt
     }
 }
 
-static void SetEmptyTilingAndKey(gert::TilingContext* context, EltwiseTilingData* tiling,
-                                 uint32_t inputNum, ge::DataType dtype, int64_t mode)
+static void SetEmptyTilingAndKey(gert::TilingContext* context, EltwiseTilingData* tiling, uint32_t inputNum,
+                                 [[maybe_unused]] ge::DataType dtype, int64_t mode)
 {
     tiling->totalNum = 0;
     tiling->blockFactor = 0;
     tiling->ubFactor = 0;
     tiling->inputNum = inputNum;
     context->SetBlockDim(1);
-    uint32_t dType = static_cast<uint32_t>(dtype);
+    // def 驱动 dtype：tiling_key 只编码 MODE，dtype 由 DTYPE_X 宏驱动
     uint32_t modeVal = static_cast<uint32_t>(mode);
-    ASCENDC_TPL_SEL_PARAM(context, dType, modeVal);
+    ASCENDC_TPL_SEL_PARAM(context, modeVal);
 }
 
-static ge::graphStatus ComputeUbFactor(gert::TilingContext* context, uint64_t ubSize,
-                                       ge::DataType dtype, int64_t typeSize,
+static ge::graphStatus ComputeUbFactor(gert::TilingContext* context, uint64_t ubSize, int64_t typeSize,
                                        int64_t ubBlockSize, int64_t& ubFactor)
 {
     // Reserve system overhead for TPipe internal management (queues, barriers, etc.)
-    constexpr int64_t UB_SYS_OVERHEAD = 2048;  // 2 KB
+    constexpr int64_t UB_SYS_OVERHEAD = 2048; // 2 KB
     int64_t availUbSize = static_cast<int64_t>(ubSize) - UB_SYS_OVERHEAD;
     if (availUbSize < 0) {
         availUbSize = static_cast<int64_t>(ubSize);
     }
 
-    int64_t bytesPerElem;
-    if (dtype == ge::DT_FLOAT) {
-        // FP32: inputBuf + accBuf + outputBuf = 3 * sizeof(float)
-        bytesPerElem = 3 * static_cast<int64_t>(sizeof(float));  // 12
-    } else {
-        // FP16/BF16: inputBuf(T) + castBuf(fp32) + accBuf(fp32) + outputBuf(T)
-        bytesPerElem = 2 * typeSize + 2 * static_cast<int64_t>(sizeof(float));  // 12
-    }
+    // No upcast: inputBuf(T) + accBuf(T) + coeffBuf(T) + outputBuf(T) = 4 * typeSize
+    int64_t bytesPerElem = 4 * typeSize;
 
     ubFactor = FloorAlign(availUbSize / bytesPerElem, ubBlockSize);
 
@@ -198,17 +208,16 @@ static ge::graphStatus ComputeUbFactor(gert::TilingContext* context, uint64_t ub
         ubFactor = maxUbFactor;
     }
 
-    OP_CHECK_IF(ubFactor <= 0,
-        OP_LOGE(context, "Eltwise: ubFactor=%ld, UB too small", ubFactor),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ubFactor <= 0, OP_LOGE(context, "Eltwise: ubFactor=%ld, UB too small", ubFactor),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 static void FillCoeff(gert::TilingContext* context, EltwiseTilingData* tiling, uint32_t inputNum)
 {
     const auto* attrs = context->GetAttrs();
-    // coeff is at attr index 1 (after mode), it's a listFloat
-    const auto* coeffList = attrs->GetListFloat(1);
+    size_t coeffIdx = GetCoeffIndex(attrs);
+    const gert::TypedContinuousVector<float>* coeffList = attrs->GetListFloat(coeffIdx);
     if (coeffList != nullptr && coeffList->GetSize() > 0) {
         size_t coeffSize = coeffList->GetSize();
         const float* coeffData = coeffList->GetData();
@@ -229,26 +238,23 @@ static ge::graphStatus InitTilingData(gert::TilingContext* context, EltwiseTilin
 {
     tiling = context->GetTilingData<EltwiseTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(EltwiseTilingData), 0, sizeof(EltwiseTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(EltwiseTilingData), 0, sizeof(EltwiseTilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 static ge::graphStatus FillTilingAndKey(gert::TilingContext* context, EltwiseTilingData* tiling,
                                         const TilingParams& params)
 {
-    int64_t ubBlockSize = 32 / params.typeSize;  // 32-byte alignment in elements
+    int64_t ubBlockSize = 32 / params.typeSize; // 32-byte alignment in elements
 
     int64_t blockFactor = CeilDiv(params.totalNum, params.coreNum);
     blockFactor = ((blockFactor + ubBlockSize - 1) / ubBlockSize) * ubBlockSize;
     int64_t usedCoreNum = CeilDiv(params.totalNum, blockFactor);
 
     int64_t ubFactor = 0;
-    OP_CHECK_IF(
-        ComputeUbFactor(context, params.ubSize, params.dtype, params.typeSize,
-                        ubBlockSize, ubFactor) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "ComputeUbFactor error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ComputeUbFactor(context, params.ubSize, params.typeSize, ubBlockSize, ubFactor) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "ComputeUbFactor error"), return ge::GRAPH_FAILED);
 
     tiling->totalNum = params.totalNum;
     tiling->blockFactor = blockFactor;
@@ -260,35 +266,29 @@ static ge::graphStatus FillTilingAndKey(gert::TilingContext* context, EltwiseTil
     }
 
     context->SetBlockDim(usedCoreNum);
-    uint32_t dType = static_cast<uint32_t>(params.dtype);
+    // def 驱动 dtype：tiling_key 只编码 MODE，dtype 由 DTYPE_X 宏驱动
     uint32_t modeVal = static_cast<uint32_t>(params.mode);
-    ASCENDC_TPL_SEL_PARAM(context, dType, modeVal);
+    ASCENDC_TPL_SEL_PARAM(context, modeVal);
     return ge::GRAPH_SUCCESS;
 }
 
 static ge::graphStatus EltwiseTilingFunc(gert::TilingContext* context)
 {
     TilingParams params;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, params.ubSize, params.coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        GetInputInfo(context, params.inputNum, params.dtype, params.totalNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetInputInfo error"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        GetModeAttr(context, params.mode) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetModeAttr error"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, params.ubSize, params.coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetInputInfo(context, params.inputNum, params.dtype, params.totalNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetInputInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetModeAttr(context, params.mode) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetModeAttr error"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     EltwiseTilingData* tiling = nullptr;
-    OP_CHECK_IF(
-        InitTilingData(context, tiling) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "InitTilingData error"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        GetTypeSize(context, params.dtype, params.typeSize) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetTypeSize error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(InitTilingData(context, tiling) != ge::GRAPH_SUCCESS, OP_LOGE(context, "InitTilingData error"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetTypeSize(context, params.dtype, params.typeSize) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetTypeSize error"), return ge::GRAPH_FAILED);
 
     if (params.totalNum == 0) {
         SetEmptyTilingAndKey(context, tiling, params.inputNum, params.dtype, params.mode);

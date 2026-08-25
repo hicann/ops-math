@@ -14,6 +14,8 @@
  * \file eltwise.cpp
  * \brief Eltwise kernel entry point (arch35 / Ascend950)
  *
+ * def 驱动 dtype 模式：dtype 由 DTYPE_X 宏注入，tiling_key 只编码 MODE。
+ *
  * DYNAMIC_INPUT: The framework passes a single GM_ADDR for the "inputs"
  * dynamic input group. This address points to a GM pointer table containing
  * the addresses of each individual input tensor. The actual number of inputs
@@ -23,9 +25,7 @@
 #include "arch35/eltwise.h"
 
 #ifdef __CCE_KT_TEST__
-extern "C" __global__ __aicore__ void eltwise(
-    GM_ADDR inputs, GM_ADDR output,
-    GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void eltwise(GM_ADDR inputs, GM_ADDR output, GM_ADDR workspace, GM_ADDR tiling)
 {
     GET_TILING_DATA_WITH_STRUCT(EltwiseTilingData, tilingData, tiling);
     NsEltwise::Eltwise<DTYPE_X, 1> op;
@@ -33,15 +33,13 @@ extern "C" __global__ __aicore__ void eltwise(
     op.Process();
 }
 #else
-template <typename D_T, int MODE>
-__global__ __aicore__ void eltwise(
-    GM_ADDR inputs, GM_ADDR output,
-    GM_ADDR workspace, GM_ADDR tiling)
+template <int MODE>
+__global__ __aicore__ void eltwise(GM_ADDR inputs, GM_ADDR output, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(EltwiseTilingData);
     GET_TILING_DATA_WITH_STRUCT(EltwiseTilingData, tilingData, tiling);
 
-    NsEltwise::Eltwise<D_T, MODE> op;
+    NsEltwise::Eltwise<DTYPE_X, MODE> op;
     op.Init(inputs, output, &tilingData);
     op.Process();
 }

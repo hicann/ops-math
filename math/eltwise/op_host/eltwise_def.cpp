@@ -21,8 +21,8 @@
  *
  * Input:  inputs (DYNAMIC_INPUT, 1~32 tensors, float16/bfloat16/float32)
  * Output: out (Tensor, same dtype/shape as inputs)
- * Attrs:  mode (int, default=1, OPTIONAL), coeff (listFloat, default={}, OPTIONAL)
- * Target: Ascend950 (arch35) only
+ * Attrs:  N (int, REQUIRED, count of dynamic inputs), mode (int, default=1, OPTIONAL), coeff (listFloat, default={},
+ * OPTIONAL) Target: Ascend950 (arch35) only
  */
 #include "register/op_def_registry.h"
 
@@ -44,9 +44,12 @@ public:
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
 
-        // Align with proto.h: mode/coeff are OPTIONAL (default SUM with all-1.0 coeffs)
-        // N from proto.h is implicit (== count of dynamic inputs); not needed at op_def
-        // level since the tiling derives it via GetInputsNum().
+        // N: required int attribute = count of dynamic inputs.
+        // Declared here so the autogen proto.h includes REQUIRED_ATTR(N, Int),
+        // matching op_graph/eltwise_proto.h. Without this, the build system
+        // strips N from the installed proto.h, causing set_attr_N() to fail
+        // at link/compile time for any GE graph client.
+        this->Attr("N").AttrType(REQUIRED).Int();
         this->Attr("mode").AttrType(OPTIONAL).Int(1);
         this->Attr("coeff").AttrType(OPTIONAL).ListFloat({});
 

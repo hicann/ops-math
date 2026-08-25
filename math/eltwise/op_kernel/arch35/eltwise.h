@@ -58,31 +58,31 @@ namespace NsEltwise {
 
 constexpr uint32_t MAX_INPUT_NUM = 32;
 
-using AscendC::TPipe;
-using AscendC::TQue;
-using AscendC::TBuf;
-using AscendC::QuePosition;
-using AscendC::GlobalTensor;
-using AscendC::LocalTensor;
-using AscendC::DataCopyParams;
+using AscendC::Add;
+using AscendC::Cast;
+using AscendC::Copy;
 using AscendC::DataCopyPad;
 using AscendC::DataCopyPadParams;
-using AscendC::RoundMode;
+using AscendC::DataCopyParams;
+using AscendC::Duplicate;
 using AscendC::GetBlockIdx;
-using AscendC::Cast;
+using AscendC::GlobalTensor;
+using AscendC::LocalTensor;
+using AscendC::Max;
 using AscendC::Mul;
 using AscendC::Muls;
-using AscendC::Add;
-using AscendC::Max;
-using AscendC::Duplicate;
+using AscendC::QuePosition;
+using AscendC::RoundMode;
+using AscendC::TBuf;
+using AscendC::TPipe;
+using AscendC::TQue;
 
 template <typename T, int MODE>
 class Eltwise {
 public:
     __aicore__ inline Eltwise() {}
 
-    __aicore__ inline void Init(GM_ADDR inputs, GM_ADDR output,
-                                const EltwiseTilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR inputs, GM_ADDR output, const EltwiseTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -92,32 +92,21 @@ private:
     // Compute a single tile: iterate over all inputs, accumulate result
     __aicore__ inline void ComputeTile(int64_t gmOffset, int64_t currentNum);
 
-    // Mode-specific computation helpers (all operate in fp32)
-    __aicore__ inline void ComputeProductInit(LocalTensor<float>& acc,
-                                              LocalTensor<float>& src,
-                                              int64_t alignedNum);
-    __aicore__ inline void ComputeProductAccum(LocalTensor<float>& acc,
-                                               LocalTensor<float>& src,
-                                               int64_t alignedNum);
-    __aicore__ inline void ComputeSumInit(LocalTensor<float>& acc,
-                                          LocalTensor<float>& src,
-                                          float coeffVal, int64_t alignedNum);
-    __aicore__ inline void ComputeSumAccum(LocalTensor<float>& acc,
-                                           LocalTensor<float>& src,
-                                           float coeffVal, int64_t alignedNum);
-    __aicore__ inline void ComputeMaxInit(LocalTensor<float>& acc,
-                                          LocalTensor<float>& src,
-                                          int64_t alignedNum);
-    __aicore__ inline void ComputeMaxAccum(LocalTensor<float>& acc,
-                                           LocalTensor<float>& src,
+    // Mode-specific computation helpers (operate in original dtype T, no upcast)
+    __aicore__ inline void ComputeProductInit(LocalTensor<T>& acc, LocalTensor<T>& src, int64_t alignedNum);
+    __aicore__ inline void ComputeProductAccum(LocalTensor<T>& acc, LocalTensor<T>& src, int64_t alignedNum);
+    __aicore__ inline void ComputeSumInit(LocalTensor<T>& acc, LocalTensor<T>& src, float coeffVal, int64_t alignedNum);
+    __aicore__ inline void ComputeSumAccum(LocalTensor<T>& acc, LocalTensor<T>& src, float coeffVal,
                                            int64_t alignedNum);
+    __aicore__ inline void ComputeMaxInit(LocalTensor<T>& acc, LocalTensor<T>& src, int64_t alignedNum);
+    __aicore__ inline void ComputeMaxAccum(LocalTensor<T>& acc, LocalTensor<T>& src, int64_t alignedNum);
 
 private:
     TPipe pipe_;
     TQue<QuePosition::VECIN, 1> inputQueue_;
     TQue<QuePosition::VECOUT, 1> outputQueue_;
-    TBuf<QuePosition::VECCALC> castBuf_;    // cast buffer (fp32) for non-fp32 dtypes
-    TBuf<QuePosition::VECCALC> accBuf_;     // accumulator buffer (fp32)
+    TBuf<QuePosition::VECCALC> accBuf_;   // accumulator buffer (same dtype as input)
+    TBuf<QuePosition::VECCALC> coeffBuf_; // coeff scalar buffer (same dtype as input)
 
     GlobalTensor<T> inputGM_[MAX_INPUT_NUM];
     GlobalTensor<T> outputGM_;
@@ -133,8 +122,7 @@ private:
 // Init
 // =============================================================================
 template <typename T, int MODE>
-__aicore__ inline void Eltwise<T, MODE>::Init(GM_ADDR inputs, GM_ADDR output,
-                                               const EltwiseTilingData* tilingData)
+__aicore__ inline void Eltwise<T, MODE>::Init(GM_ADDR inputs, GM_ADDR output, const EltwiseTilingData* tilingData)
 {
     ubFactor_ = tilingData->ubFactor;
     inputNum_ = tilingData->inputNum;
@@ -166,26 +154,18 @@ __aicore__ inline void Eltwise<T, MODE>::Init(GM_ADDR inputs, GM_ADDR output,
     }
     outputGM_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(output) + blockOffset_, blockLen_);
 
-    // Initialize buffers
+    // Initialize buffers — all in original dtype T (no upcast)
     pipe_.InitBuffer(inputQueue_, 1, ubFactor_ * sizeof(T));
     pipe_.InitBuffer(outputQueue_, 1, ubFactor_ * sizeof(T));
-
-    if constexpr (std::is_same_v<T, float>) {
-        // FP32: accBuf only (no cast needed)
-        pipe_.InitBuffer(accBuf_, ubFactor_ * sizeof(float));
-    } else {
-        // FP16/BF16: need castBuf and accBuf (both fp32)
-        pipe_.InitBuffer(castBuf_, ubFactor_ * sizeof(float));
-        pipe_.InitBuffer(accBuf_, ubFactor_ * sizeof(float));
-    }
+    pipe_.InitBuffer(accBuf_, ubFactor_ * sizeof(T));
+    pipe_.InitBuffer(coeffBuf_, ubFactor_ * sizeof(T));
 }
 
 // =============================================================================
 // CopyIn: GM -> UB (inputQueue)
 // =============================================================================
 template <typename T, int MODE>
-__aicore__ inline void Eltwise<T, MODE>::CopyIn(uint32_t inputIdx, int64_t gmOffset,
-                                                 int64_t currentNum)
+__aicore__ inline void Eltwise<T, MODE>::CopyIn(uint32_t inputIdx, int64_t gmOffset, int64_t currentNum)
 {
     LocalTensor<T> xLocal = inputQueue_.template AllocTensor<T>();
     DataCopyParams copyParams;
@@ -214,59 +194,89 @@ __aicore__ inline void Eltwise<T, MODE>::CopyOut(int64_t gmOffset, int64_t curre
 }
 
 // =============================================================================
-// Mode-specific computation helpers (all in fp32 space)
+// Mode-specific computation helpers (operate in original dtype T, no upcast)
+// For BF16: bisheng cannot construct bfloat16_t literals, so use
+//   ReinterpretCast<uint16_t> + Duplicate(uint16_t) for scalar fill.
 // =============================================================================
+
+// Helper: copy src to dst via UB->UB Copy API
+template <typename T>
+__aicore__ inline void CopyTensor(LocalTensor<T>& dst, LocalTensor<T>& src, int64_t count)
+{
+    AscendC::Copy(dst, src, static_cast<uint32_t>(count));
+}
 
 // PRODUCT: Initialize accumulator = src (first input)
 template <typename T, int MODE>
-__aicore__ inline void Eltwise<T, MODE>::ComputeProductInit(
-    LocalTensor<float>& acc, LocalTensor<float>& src, int64_t alignedNum)
+__aicore__ inline void Eltwise<T, MODE>::ComputeProductInit(LocalTensor<T>& acc, LocalTensor<T>& src,
+                                                            int64_t alignedNum)
 {
-// NOTE: Duplicate(0)+Add used as cross-queue tensor copy workaround
-    Duplicate(acc, 0.0f, static_cast<int32_t>(alignedNum));
-    Add(acc, acc, src, static_cast<int32_t>(alignedNum));
+    CopyTensor(acc, src, alignedNum);
 }
 
 // PRODUCT: acc = acc * src
 template <typename T, int MODE>
-__aicore__ inline void Eltwise<T, MODE>::ComputeProductAccum(
-    LocalTensor<float>& acc, LocalTensor<float>& src, int64_t alignedNum)
+__aicore__ inline void Eltwise<T, MODE>::ComputeProductAccum(LocalTensor<T>& acc, LocalTensor<T>& src,
+                                                             int64_t alignedNum)
 {
     Mul(acc, acc, src, static_cast<int32_t>(alignedNum));
 }
 
 // SUM: Initialize accumulator = coeff * src (first input)
 template <typename T, int MODE>
-__aicore__ inline void Eltwise<T, MODE>::ComputeSumInit(
-    LocalTensor<float>& acc, LocalTensor<float>& src, float coeffVal, int64_t alignedNum)
+__aicore__ inline void Eltwise<T, MODE>::ComputeSumInit(LocalTensor<T>& acc, LocalTensor<T>& src, float coeffVal,
+                                                        int64_t alignedNum)
 {
-    Muls(acc, src, coeffVal, static_cast<int32_t>(alignedNum));
+    if constexpr (std::is_same_v<T, float>) {
+        Muls(acc, src, coeffVal, static_cast<int32_t>(alignedNum));
+    } else if constexpr (std::is_same_v<T, half>) {
+        Muls(acc, src, half(coeffVal), static_cast<int32_t>(alignedNum));
+    } else {
+        // BF16: build coeff tensor via ReinterpretCast<uint16_t> + bit pattern
+        uint32_t coeffBits;
+        __builtin_memcpy(&coeffBits, &coeffVal, sizeof(float));
+        uint16_t bf16CoeffBits = static_cast<uint16_t>(coeffBits >> 16);
+        LocalTensor<T> coeffTensor = coeffBuf_.template Get<T>();
+        auto coeffU16 = coeffTensor.template ReinterpretCast<uint16_t>();
+        Duplicate(coeffU16, bf16CoeffBits, static_cast<int32_t>(alignedNum));
+        Mul(acc, src, coeffTensor, static_cast<int32_t>(alignedNum));
+    }
 }
 
 // SUM: acc = acc + coeff * src
 template <typename T, int MODE>
-__aicore__ inline void Eltwise<T, MODE>::ComputeSumAccum(
-    LocalTensor<float>& acc, LocalTensor<float>& src, float coeffVal, int64_t alignedNum)
+__aicore__ inline void Eltwise<T, MODE>::ComputeSumAccum(LocalTensor<T>& acc, LocalTensor<T>& src, float coeffVal,
+                                                         int64_t alignedNum)
 {
-    // Muls into src itself (overwrite ok, we don't need original after this)
-    Muls(src, src, coeffVal, static_cast<int32_t>(alignedNum));
-    Add(acc, acc, src, static_cast<int32_t>(alignedNum));
+    if constexpr (std::is_same_v<T, float>) {
+        Muls(src, src, coeffVal, static_cast<int32_t>(alignedNum));
+        Add(acc, acc, src, static_cast<int32_t>(alignedNum));
+    } else if constexpr (std::is_same_v<T, half>) {
+        Muls(src, src, half(coeffVal), static_cast<int32_t>(alignedNum));
+        Add(acc, acc, src, static_cast<int32_t>(alignedNum));
+    } else {
+        // BF16: multiply src by coeff tensor, then add to acc
+        uint32_t coeffBits;
+        __builtin_memcpy(&coeffBits, &coeffVal, sizeof(float));
+        uint16_t bf16CoeffBits = static_cast<uint16_t>(coeffBits >> 16);
+        LocalTensor<T> coeffTensor = coeffBuf_.template Get<T>();
+        auto coeffU16 = coeffTensor.template ReinterpretCast<uint16_t>();
+        Duplicate(coeffU16, bf16CoeffBits, static_cast<int32_t>(alignedNum));
+        Mul(src, src, coeffTensor, static_cast<int32_t>(alignedNum));
+        Add(acc, acc, src, static_cast<int32_t>(alignedNum));
+    }
 }
 
 // MAX: Initialize accumulator = src (first input)
 template <typename T, int MODE>
-__aicore__ inline void Eltwise<T, MODE>::ComputeMaxInit(
-    LocalTensor<float>& acc, LocalTensor<float>& src, int64_t alignedNum)
+__aicore__ inline void Eltwise<T, MODE>::ComputeMaxInit(LocalTensor<T>& acc, LocalTensor<T>& src, int64_t alignedNum)
 {
-// NOTE: Duplicate(0)+Add used as cross-queue tensor copy workaround
-    Duplicate(acc, 0.0f, static_cast<int32_t>(alignedNum));
-    Add(acc, acc, src, static_cast<int32_t>(alignedNum));
+    CopyTensor(acc, src, alignedNum);
 }
 
 // MAX: acc = max(acc, src)
 template <typename T, int MODE>
-__aicore__ inline void Eltwise<T, MODE>::ComputeMaxAccum(
-    LocalTensor<float>& acc, LocalTensor<float>& src, int64_t alignedNum)
+__aicore__ inline void Eltwise<T, MODE>::ComputeMaxAccum(LocalTensor<T>& acc, LocalTensor<T>& src, int64_t alignedNum)
 {
     Max(acc, acc, src, static_cast<int32_t>(alignedNum));
 }
@@ -278,81 +288,46 @@ template <typename T, int MODE>
 __aicore__ inline void Eltwise<T, MODE>::ComputeTile(int64_t gmOffset, int64_t currentNum)
 {
     // Alignment: max of float32 block and T block (32-byte boundary)
-    constexpr int64_t floatBlock = 32 / sizeof(float);  // 8
+    constexpr int64_t floatBlock = 32 / sizeof(float); // 8
     constexpr int64_t typeBlock = 32 / sizeof(T);
     constexpr int64_t alignBlock = (floatBlock > typeBlock) ? floatBlock : typeBlock;
     int64_t alignedNum = ((currentNum + alignBlock - 1) / alignBlock) * alignBlock;
 
-    LocalTensor<float> acc = accBuf_.template Get<float>();
+    LocalTensor<T> acc = accBuf_.template Get<T>();
 
-    // Process first input: initialize accumulator
+    // Process first input: initialize accumulator (directly in dtype T, no upcast)
     {
         CopyIn(0, gmOffset, currentNum);
         LocalTensor<T> xLocal = inputQueue_.template DeQue<T>();
 
-        if constexpr (std::is_same_v<T, float>) {
-            // FP32: direct computation
-            if constexpr (MODE == 0) {
-                ComputeProductInit(acc, xLocal, alignedNum);
-            } else if constexpr (MODE == 1) {
-                ComputeSumInit(acc, xLocal, coeff_[0], alignedNum);
-            } else {
-                ComputeMaxInit(acc, xLocal, alignedNum);
-            }
+        if constexpr (MODE == 0) {
+            ComputeProductInit(acc, xLocal, alignedNum);
+        } else if constexpr (MODE == 1) {
+            ComputeSumInit(acc, xLocal, coeff_[0], alignedNum);
         } else {
-            // FP16/BF16: cast to fp32 first
-            LocalTensor<float> castLocal = castBuf_.template Get<float>();
-            Cast(castLocal, xLocal, RoundMode::CAST_NONE, static_cast<uint32_t>(alignedNum));
-
-            if constexpr (MODE == 0) {
-                ComputeProductInit(acc, castLocal, alignedNum);
-            } else if constexpr (MODE == 1) {
-                ComputeSumInit(acc, castLocal, coeff_[0], alignedNum);
-            } else {
-                ComputeMaxInit(acc, castLocal, alignedNum);
-            }
+            ComputeMaxInit(acc, xLocal, alignedNum);
         }
         inputQueue_.FreeTensor(xLocal);
     }
 
-    // Process remaining inputs: accumulate
+    // Process remaining inputs: accumulate (directly in dtype T, no upcast)
     for (uint32_t k = 1; k < inputNum_; k++) {
         CopyIn(k, gmOffset, currentNum);
         LocalTensor<T> xLocal = inputQueue_.template DeQue<T>();
 
-        if constexpr (std::is_same_v<T, float>) {
-            if constexpr (MODE == 0) {
-                ComputeProductAccum(acc, xLocal, alignedNum);
-            } else if constexpr (MODE == 1) {
-                ComputeSumAccum(acc, xLocal, coeff_[k], alignedNum);
-            } else {
-                ComputeMaxAccum(acc, xLocal, alignedNum);
-            }
+        if constexpr (MODE == 0) {
+            ComputeProductAccum(acc, xLocal, alignedNum);
+        } else if constexpr (MODE == 1) {
+            ComputeSumAccum(acc, xLocal, coeff_[k], alignedNum);
         } else {
-            LocalTensor<float> castLocal = castBuf_.template Get<float>();
-            Cast(castLocal, xLocal, RoundMode::CAST_NONE, static_cast<uint32_t>(alignedNum));
-
-            if constexpr (MODE == 0) {
-                ComputeProductAccum(acc, castLocal, alignedNum);
-            } else if constexpr (MODE == 1) {
-                ComputeSumAccum(acc, castLocal, coeff_[k], alignedNum);
-            } else {
-                ComputeMaxAccum(acc, castLocal, alignedNum);
-            }
+            ComputeMaxAccum(acc, xLocal, alignedNum);
         }
         inputQueue_.FreeTensor(xLocal);
     }
 
-    // Write result to output
+    // Write result to output (acc is in dtype T, copy via CopyTensor)
     LocalTensor<T> yLocal = outputQueue_.template AllocTensor<T>();
-    if constexpr (std::is_same_v<T, float>) {
-        // FP32: acc is already the result, copy to output
-        Duplicate(yLocal, 0.0f, static_cast<int32_t>(alignedNum));
-        Add(yLocal, yLocal, acc, static_cast<int32_t>(alignedNum));
-    } else {
-        // FP16/BF16: cast back from fp32
-        Cast(yLocal, acc, RoundMode::CAST_ROUND, static_cast<uint32_t>(alignedNum));
-    }
+    CopyTensor(yLocal, acc, alignedNum);
     outputQueue_.template EnQue<T>(yLocal);
 }
 

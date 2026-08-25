@@ -14,11 +14,10 @@
  * \file eltwise_tiling_key.h
  * \brief Eltwise TilingKey definition (arch35)
  *
- * Template parameters:
- *   D_T  - DataType: C_DT_FLOAT16, C_DT_BF16, C_DT_FLOAT
- *   MODE - UINT(8): 0=PRODUCT, 1=SUM, 2=MAX
+ * def 驱动 dtype 模式：dtype 由 def 文件的 DataType 声明 + DTYPE_X 宏驱动，
+ * tiling_key 只编码 MODE 维度（0=PRODUCT, 1=SUM, 2=MAX）。
  *
- * 9 TilingKey combinations: 3 dtype x 3 mode
+ * 编译变体：3 dtype (def 驱动) × 3 mode (tiling_key 驱动) = 9 个 kernel
  */
 
 #ifndef ELTWISE_TILING_KEY_H
@@ -27,28 +26,11 @@
 #ifndef __CCE_KT_TEST__
 #include "ascendc/host_api/tiling/template_argument.h"
 
-ASCENDC_TPL_ARGS_DECL(Eltwise,
-    ASCENDC_TPL_DATATYPE_DECL(D_T, C_DT_FLOAT16, C_DT_BF16, C_DT_FLOAT, ASCENDC_TPL_INPUT(0)),
-    ASCENDC_TPL_UINT_DECL(MODE, 8, ASCENDC_TPL_UI_LIST, 0, 1, 2)
-);
+ASCENDC_TPL_ARGS_DECL(Eltwise, ASCENDC_TPL_UINT_DECL(MODE, 8, ASCENDC_TPL_UI_LIST, 0, 1, 2));
 
 ASCENDC_TPL_SEL(
-    // float16 x 3 modes
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_FLOAT16),
-        ASCENDC_TPL_UINT_SEL(MODE, ASCENDC_TPL_UI_LIST, 0, 1, 2)
-    ),
-    // bfloat16 x 3 modes
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_BF16),
-        ASCENDC_TPL_UINT_SEL(MODE, ASCENDC_TPL_UI_LIST, 0, 1, 2)
-    ),
-    // float32 x 3 modes
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_FLOAT),
-        ASCENDC_TPL_UINT_SEL(MODE, ASCENDC_TPL_UI_LIST, 0, 1, 2)
-    ),
-);
+    // 3 modes (dtype driven by def DTYPE_X macro)
+    ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(MODE, ASCENDC_TPL_UI_LIST, 0, 1, 2)), );
 #endif
 
 #endif // ELTWISE_TILING_KEY_H
