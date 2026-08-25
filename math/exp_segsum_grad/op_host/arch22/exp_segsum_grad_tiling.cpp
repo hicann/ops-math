@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -44,11 +44,10 @@ public:
 
 private:
     ge::graphStatus ParseInputAttrs();
-    void GetWorkSpace(uint32_t needCoreNum);
     void GetNeedCoreNum(uint32_t coreNumPlatform);
     void GetTilingKey(uint64_t ubSizePlatform);
     uint8_t GetDataTypeSize();
-    void FillTilingData();
+    ge::graphStatus FillTilingData();
 
     template <typename T1, typename T2>
     inline auto CeilA2B(T1 a, T2 b) -> T1;
@@ -72,6 +71,7 @@ private:
 ge::graphStatus ExpSegsumGradTiling::ParseInputAttrs()
 {
     auto srcGradOutShape = tilingContext->GetInputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, srcGradOutShape);
     int32_t gradOutDim = srcGradOutShape->GetStorageShape().GetDimNum();
     auto gradOutShape = srcGradOutShape->GetOriginShape();
     for (int8_t i = 0; i < gradOutDim - TAILNUM; i++) {
@@ -79,6 +79,7 @@ ge::graphStatus ExpSegsumGradTiling::ParseInputAttrs()
     }
     tailDimLength = gradOutShape.GetDim(gradOutDim - 1);
     auto temp = tilingContext->GetInputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, temp);
     dataType = temp->GetDataType();
     blockSize = BLOCK / dataTypeSize;
     return ge::GRAPH_SUCCESS;
@@ -86,16 +87,25 @@ ge::graphStatus ExpSegsumGradTiling::ParseInputAttrs()
 
 ge::graphStatus ExpSegsumGradTiling::RunBigKernelTiling()
 {
-    ParseInputAttrs();
+    OP_CHECK_IF(ParseInputAttrs() != ge::GRAPH_SUCCESS,
+                OP_LOGE(tilingContext->GetNodeName(), "ExpSegsumGrad ParseInputAttrs failed"), return ge::GRAPH_FAILED);
     size_t* workspaces = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, workspaces);
     workspaces[0] = WORK_SPACE_SIZE;
     auto compileInfo = reinterpret_cast<const ExpSegsumGradCompileInfo*>(tilingContext->GetCompileInfo());
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, compileInfo);
     uint32_t coreNumPlatform = compileInfo->coreNum;
     uint64_t ubSizePlatform = compileInfo->ubSize;
-    GetNeedCoreNum(coreNumPlatform);
-    GetTilingKey(ubSizePlatform);
-    FillTilingData();
-    return ge::GRAPH_SUCCESS;
+    if (batches == 0 || tailDimLength == 0) {
+        // Runtime requires a non-zero block dimension even when there is no output to compute.
+        needCoreNum = 1;
+        tilingKey = SMALL_SIZE_TILING_KEY;
+        slideSize = 0;
+    } else {
+        GetNeedCoreNum(coreNumPlatform);
+        GetTilingKey(ubSizePlatform);
+    }
+    return FillTilingData();
 }
 
 void ExpSegsumGradTiling::GetTilingKey(uint64_t ubSizePlatform)
@@ -134,6 +144,10 @@ void ExpSegsumGradTiling::GetTilingKey(uint64_t ubSizePlatform)
 
 void ExpSegsumGradTiling::GetNeedCoreNum(uint32_t coreNumPlatform)
 {
+    // batchStart/batchEnd arrays are sized MAX_CORE_CONT; clamp defensively to avoid out-of-bounds writes.
+    if (coreNumPlatform > MAX_CORE_CONT) {
+        coreNumPlatform = MAX_CORE_CONT;
+    }
     int64_t averageBatches = CeilA2B(batches, coreNumPlatform);
     needCoreNum = CeilA2B(batches, averageBatches);
     for (int64_t coreIndex = 0; coreIndex < needCoreNum; coreIndex++) {
@@ -166,7 +180,7 @@ inline auto ExpSegsumGradTiling::CeilA2B(T1 a, T2 b) -> T1
     }
 }
 
-void ExpSegsumGradTiling::FillTilingData()
+ge::graphStatus ExpSegsumGradTiling::FillTilingData()
 {
     tilingData.set_batches(batches);
     tilingData.set_tailDimLength(tailDimLength);
@@ -178,12 +192,15 @@ void ExpSegsumGradTiling::FillTilingData()
     tilingContext->SetBlockDim(needCoreNum);
     tilingContext->SetTilingKey(tilingKey);
     if (tilingKey == COMMON_TILING_KEY) {
-        tilingContext->SetScheduleMode(SCHEDULE_MODE);
+        OP_CHECK_IF(tilingContext->SetScheduleMode(SCHEDULE_MODE) != ge::GRAPH_SUCCESS,
+                    OP_LOGE(tilingContext->GetNodeName(), "ExpSegsumGrad SetScheduleMode failed"),
+                    return ge::GRAPH_FAILED);
     }
 
     tilingData.SaveToBuffer(tilingContext->GetRawTilingData()->GetData(),
                             tilingContext->GetRawTilingData()->GetCapacity());
     tilingContext->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
+    return ge::GRAPH_SUCCESS;
 }
 
 static ge::graphStatus Tiling4ExpSegsumGrad(gert::TilingContext* context)
