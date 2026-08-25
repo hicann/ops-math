@@ -60,12 +60,17 @@ static aclnnStatus updateFrom(int64_t& from, op::DataType dtype)
             return ACLNN_SUCCESS;
     }
     if (fromPlusOne < from) {
-        int64_t from_ = std::abs(from + 1);
+        uint64_t from_ = (from < 0) ? (0ULL - static_cast<uint64_t>(from)) - 1 : static_cast<uint64_t>(from) + 1;
         int32_t n = 0;
         while ((from_ >>= 1) != 0LL) {
             ++n;
         }
-        from = fromPlusOne + (1LL << (n - digits + 1));
+        int32_t shift = n - digits + 1;
+        if (shift >= 0 && shift < 64) {
+            from = fromPlusOne + (1LL << shift);
+        } else {
+            from = fromPlusOne;
+        }
     }
     OP_LOGI("after updateFrom: from %ld, target dtype %d", from, dtype);
     return ACLNN_SUCCESS;
@@ -102,12 +107,17 @@ static aclnnStatus updateTo(int64_t& to, op::DataType dtype)
             return ACLNN_SUCCESS;
     }
     if (toMinusOne >= to) {
-        int64_t to_ = std::abs(to - 1);
+        uint64_t to_ = (to >= 1) ? static_cast<uint64_t>(to) - 1 : 1ULL - static_cast<uint64_t>(to);
         int32_t n = 0;
         while ((to_ >>= 1) != 0LL) {
             ++n;
         }
-        to = toMinusOne - (1LL << (n - digits + 1));
+        int32_t shift = n - digits + 1;
+        if (shift >= 0 && shift < 64) {
+            to = toMinusOne - (1LL << shift);
+        } else {
+            to = toMinusOne;
+        }
     }
     OP_LOGI("after updateTo: to %ld, target dtype %d", to, dtype);
     return ACLNN_SUCCESS;

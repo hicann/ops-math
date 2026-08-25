@@ -20,7 +20,7 @@
 
 namespace op {
 
-static bool IsDoubleEqual(double lhs, double rhs)
+inline bool IsDoubleEqual(double lhs, double rhs)
 {
     return std::abs(lhs - rhs) <= std::numeric_limits<double>::epsilon();
 }
