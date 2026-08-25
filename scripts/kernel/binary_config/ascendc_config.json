@@ -440,7 +440,7 @@
     {"name":"TomeMerge", "compute_units": ["ascend310p", "ascend910b", "ascend910"], "auto_sync" : true},
     {"name":"RopeQuantKvcache", "compute_units": ["ascend910b"], "auto_sync" : false},
     {"name":"RopeWithSinCosCache", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : true},
-    {"name":"SubMulConcat", "compute_units": ["ascend910b"], "auto_sync" : false},
+    {"name":"SubMulConcat", "compute_units": ["ascend910b", "ascend950"], "auto_sync" : false},
     {"name":"DynamicQuantUpdateScatter", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : true},
     {"name":"DynamicQuantUpdateScatterV2", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : true},
     {"name":"DynamicQuant", "compute_units": ["ascend310p", "ascend910b", "ascend910", "ascend910_93", "ascend950"], "auto_sync" : true},

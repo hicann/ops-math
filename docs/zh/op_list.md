@@ -2098,6 +2098,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/sub_mul_concat/README.md">sub_mul_concat</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>内部融合算子，由CANN既有图融合流程将Sub、Mul和Concat/ConcatV2/ConcatV2D原始图转换后生成，不提供公开ACLNN或直接构造接口。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/svd/README.md">svd</a></td>
     <td>×</td>
     <td>×</td>
