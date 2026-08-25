@@ -42,10 +42,10 @@ using std::map;
 using std::string;
 using std::vector;
 
-#define LOG_PRINT(message, ...)     \
-  do {                              \
-    printf(message, ##__VA_ARGS__); \
-  } while (0)
+#define LOG_PRINT(message, ...)         \
+    do {                                \
+        printf(message, ##__VA_ARGS__); \
+    } while (0)
 
 string GetTime()
 {
@@ -97,7 +97,7 @@ uint32_t GetDataTypeSize(DataType dt)
     return dilation;
 }
 
-int32_t GenBoolData(vector<int64_t> shapes, Tensor &input_tensor, TensorDesc &input_tensor_desc, bool value)
+int32_t GenBoolData(vector<int64_t> shapes, Tensor& input_tensor, TensorDesc& input_tensor_desc, bool value)
 {
     input_tensor_desc.SetRealDimCnt(shapes.size());
     size_t size = 1;
@@ -105,19 +105,19 @@ int32_t GenBoolData(vector<int64_t> shapes, Tensor &input_tensor, TensorDesc &in
         size *= shapes[i];
     }
     uint32_t data_len = size * sizeof(bool);
-    bool *pData = new (std::nothrow) bool[size];
+    bool* pData = new (std::nothrow) bool[size];
     if (pData == nullptr) {
         return FAILED;
     }
     for (size_t i = 0; i < size; ++i) {
         pData[i] = value;
     }
-    input_tensor = Tensor(input_tensor_desc, reinterpret_cast<uint8_t *>(pData), data_len);
+    input_tensor = Tensor(input_tensor_desc, reinterpret_cast<uint8_t*>(pData), data_len);
     delete[] pData;
     return SUCCESS;
 }
 
-int32_t GenDoubleData(vector<int64_t> shapes, Tensor &input_tensor, TensorDesc &input_tensor_desc, double value)
+int32_t GenDoubleData(vector<int64_t> shapes, Tensor& input_tensor, TensorDesc& input_tensor_desc, double value)
 {
     input_tensor_desc.SetRealDimCnt(shapes.size());
     size_t size = 1;
@@ -125,21 +125,21 @@ int32_t GenDoubleData(vector<int64_t> shapes, Tensor &input_tensor, TensorDesc &
         size *= shapes[i];
     }
     uint32_t data_len = size * sizeof(double);
-    double *pData = new (std::nothrow) double[size];
+    double* pData = new (std::nothrow) double[size];
     if (pData == nullptr) {
         return FAILED;
     }
     for (size_t i = 0; i < size; ++i) {
         pData[i] = value;
     }
-    input_tensor = Tensor(input_tensor_desc, reinterpret_cast<uint8_t *>(pData), data_len);
+    input_tensor = Tensor(input_tensor_desc, reinterpret_cast<uint8_t*>(pData), data_len);
     delete[] pData;
     return SUCCESS;
 }
 
-int32_t WriteDataToFile(string bin_file, uint64_t data_size, uint8_t *inputData)
+int32_t WriteDataToFile(string bin_file, uint64_t data_size, uint8_t* inputData)
 {
-    FILE *fp = fopen(bin_file.c_str(), "wb");
+    FILE* fp = fopen(bin_file.c_str(), "wb");
     if (fp == nullptr) {
         printf("Failed to open file: %s\n", bin_file.c_str());
         return FAILED;
@@ -149,8 +149,8 @@ int32_t WriteDataToFile(string bin_file, uint64_t data_size, uint8_t *inputData)
     return SUCCESS;
 }
 
-int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor> &input, std::vector<Operator> &inputs,
-    std::vector<Operator> &outputs, Graph &graph)
+int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor>& input, std::vector<Operator>& inputs,
+                     std::vector<Operator>& outputs, Graph& graph)
 {
     Status ret = SUCCESS;
 
@@ -215,37 +215,38 @@ int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor> &input, std::vect
     return SUCCESS;
 }
 
-void SaveInputOutput(std::vector<ge::Tensor> &input, std::vector<ge::Tensor> &output) {
+void SaveInputOutput(std::vector<ge::Tensor>& input, std::vector<ge::Tensor>& output)
+{
     int input_num = input.size();
     for (int i = 0; i < input_num; i++) {
         std::cout << "input " << i << " dtype :  " << input[i].GetTensorDesc().GetDataType() << std::endl;
         string input_file = "./tc_ge_irrun_select_v2_npu_input_" + std::to_string(i) + ".bin";
-        uint8_t *input_data_i = input[i].GetData();
+        uint8_t* input_data_i = input[i].GetData();
         int64_t input_shape = input[i].GetTensorDesc().GetShape().GetShapeSize();
         std::cout << "this is " << i << "th input, input shape size =" << input_shape << std::endl;
         uint32_t data_size = input_shape * GetDataTypeSize(input[i].GetTensorDesc().GetDataType());
-        WriteDataToFile((const char *)input_file.c_str(), data_size, input_data_i);
+        WriteDataToFile((const char*)input_file.c_str(), data_size, input_data_i);
     }
 
     int output_num = output.size();
     for (int i = 0; i < output_num; i++) {
         std::cout << "output " << i << " dtype :  " << output[i].GetTensorDesc().GetDataType() << std::endl;
         string output_file = "./tc_ge_irrun_select_v2_npu_output_" + std::to_string(i) + ".bin";
-        uint8_t *output_data_i = output[i].GetData();
+        uint8_t* output_data_i = output[i].GetData();
         int64_t output_shape = output[i].GetTensorDesc().GetShape().GetShapeSize();
         std::cout << "this is " << i << "th output, output shape size =" << output_shape << std::endl;
         uint32_t data_size = output_shape * GetDataTypeSize(output[i].GetTensorDesc().GetDataType());
-        WriteDataToFile((const char *)output_file.c_str(), data_size, output_data_i);
-        double *resultData = reinterpret_cast<double *>(output_data_i);
+        WriteDataToFile((const char*)output_file.c_str(), data_size, output_data_i);
+        double* resultData = reinterpret_cast<double*>(output_data_i);
         for (int64_t j = 0; j < output_shape; j++) {
             LOG_PRINT("result[%ld] is: %f\n", j, resultData[j]);
         }
     }
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-    const char *graph_name = "tc_ge_irrun_select_v2";
+    const char* graph_name = "tc_ge_irrun_select_v2";
     Graph graph(graph_name);
     std::vector<ge::Tensor> input;
 
@@ -253,7 +254,7 @@ int main(int argc, char *argv[])
     std::map<AscendString, AscendString> global_options = {{"ge.exec.deviceId", "0"}, {"ge.graphRunMode", "1"}};
     Status ret = ge::GEInitialize(global_options);
     if (ret != SUCCESS) {
-        printf("%s - INFO - [XIR]: Initialize ge using ge global options failed\n", GetTime().c_str());
+        printf("%s - ERROR - [XIR]: Initialize ge using ge global options failed\n", GetTime().c_str());
         return FAILED;
     }
     printf("%s - INFO - [XIR]: Initialize ge using ge global options success\n", GetTime().c_str());
@@ -282,7 +283,7 @@ int main(int argc, char *argv[])
 
     std::map<AscendString, AscendString> build_options = {};
     printf("%s - INFO - [XIR]: Start to create ir session using build options\n", GetTime().c_str());
-    ge::Session *session = new (std::nothrow) Session(build_options);
+    ge::Session* session = new (std::nothrow) Session(build_options);
 
     if (session == nullptr) {
         printf("%s - ERROR - [XIR]: Create ir session using build options failed\n", GetTime().c_str());
@@ -291,9 +292,7 @@ int main(int argc, char *argv[])
     printf("%s - INFO - [XIR]: Create ir session using build options success\n", GetTime().c_str());
     printf("%s - INFO - [XIR]: Start to add compute graph to ir session\n", GetTime().c_str());
 
-    std::map<AscendString, AscendString> graph_options = {
-        {"ge.exec.precision_mode", "allow_mix_precision"}
-    };
+    std::map<AscendString, AscendString> graph_options = {{"ge.exec.precision_mode", "allow_mix_precision"}};
 
     ret = session->AddGraph(0, graph, graph_options);
     if (ret != SUCCESS) {
