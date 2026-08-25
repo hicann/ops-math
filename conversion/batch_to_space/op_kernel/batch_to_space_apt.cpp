@@ -14,13 +14,33 @@
 
 using namespace NsBatchToSpace;
 
-// template 版本供 precompile 阶段解析 kernel entry 名称
+template <uint8_t UbAxis>
+__aicore__ inline void BatchToSpaceDispatch(GM_ADDR x, GM_ADDR y, GM_ADDR tiling)
+{
+    GET_TILING_DATA_WITH_STRUCT(BatchToSpaceTilingData, tilingData, tiling);
+
+    if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
+        BatchToSpace<int8_t, UbAxis> op;
+        op.Init(x, y, &tilingData);
+        op.Process();
+    } else if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
+        BatchToSpace<int16_t, UbAxis> op;
+        op.Init(x, y, &tilingData);
+        op.Process();
+    } else if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
+        BatchToSpace<int32_t, UbAxis> op;
+        op.Init(x, y, &tilingData);
+        op.Process();
+    } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
+        BatchToSpace<int64_t, UbAxis> op;
+        op.Init(x, y, &tilingData);
+        op.Process();
+    }
+}
+
 template <uint8_t UbAxis>
 __global__ __aicore__ void batch_to_space(GM_ADDR x, GM_ADDR crops, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(BatchToSpaceTilingData);
-    GET_TILING_DATA_WITH_STRUCT(BatchToSpaceTilingData, tilingData, tiling);
-    BatchToSpace<DTYPE_X, UbAxis> op;
-    op.Init(x, y, &tilingData);
-    op.Process();
+    BatchToSpaceDispatch<UbAxis>(x, y, tiling);
 }
