@@ -16,7 +16,7 @@
  * Algorithm (PTX dual-branch strategy):
  *   Branch 1 (|x| < 1):  Taylor polynomial  sinh(x) = x + x^3 * P(x^2)
  *   Branch 2 (|x| >= 1): offset-exp         t = exp(|x| - ln2), sinh = t - 0.25/t
- *   Branch 3 (|x| >= 90): overflow guard     return sign(x) * inf
+ *   Branch 3 (|x| >= 89.4159927): overflow guard     return sign(x) * inf
  */
 
 #ifndef SINH_DAG_H
@@ -54,10 +54,12 @@ struct SinhCustomVF : public Vec::ElemwiseUnaryOP<T, T> {
         constexpr T c5 = T(0.0000027557319f); // 0x363D0ADA, 1/362880
 
         constexpr T one_val = T(1.0f);
-        constexpr T ninety_val = T(90.0f);
+        // First FP32 input whose correctly rounded sinh result overflows.
+        constexpr T overflow_val = T(89.4159927368164f);
         constexpr T zero_val = T(0.0f);
         constexpr T quarter_val = T(0.25f);
-        constexpr T neg_ln2 = T(-0.6931471805599453f);
+        constexpr T neg_ln2_hi = T(-0.6931471824645996f);
+        constexpr T ln2_lo = T(1.9046542e-9f);
         const T inf_val = T(__builtin_huge_valf()); // +infinity
 
         uint32_t VL = AscendC::VECTOR_REG_WIDTH / sizeof(T);
@@ -110,11 +112,31 @@ struct SinhCustomVF : public Vec::ElemwiseUnaryOP<T, T> {
                 AscendC::Reg::Add(reg_poly, reg_x, reg_poly, mask);    // x + x3*P(x2)
                 // reg_poly now holds Taylor result
 
-                // === Exp branch: offset-exp to avoid overflow ===
-                // shifted = |x| - ln2
-                AscendC::Reg::Adds(reg_temp, reg_abs, neg_ln2, mask);
+                // === Exp branch: offset-exp with subtraction residual correction ===
+                // shifted = fl(|x| - ln2_hi)
+                AscendC::Reg::Adds(reg_temp, reg_abs, neg_ln2_hi, mask);
+
+                // Recover the low part lost by the FP32 subtraction:
+                // err = (ax - (shifted - z)) + ((-ln2_hi) - z) + ln2_lo,
+                // where z = shifted - ax.
+                AscendC::Reg::Sub(reg_exp, reg_temp, reg_abs, mask);      // z
+                AscendC::Reg::Sub(reg_result, reg_temp, reg_exp, mask);   // shifted - z
+                AscendC::Reg::Sub(reg_result, reg_abs, reg_result, mask); // ax - (shifted - z)
+                AscendC::Reg::Neg(reg_x2, reg_exp, mask);
+                AscendC::Reg::Adds(reg_x2, reg_x2, neg_ln2_hi, mask); // (-ln2_hi) - z
+                AscendC::Reg::Add(reg_result, reg_result, reg_x2, mask);
+                AscendC::Reg::Adds(reg_result, reg_result, ln2_lo, mask); // subtraction residual
+
                 // t = e^(|x| - ln2) = e^|x| / 2
                 AscendC::Reg::Exp(reg_exp, reg_temp, mask);
+
+                // exp(shifted + err) ~= exp(shifted) * (1 + err). Apply only
+                // below the overflow boundary so Inf/NaN lanes are not polluted.
+                AscendC::Reg::CompareScalar<T, CMPMODE::LT>(cmpMask1, reg_abs, overflow_val, mask);
+                AscendC::Reg::Mul(reg_x2, reg_exp, reg_result, cmpMask1);
+                AscendC::Reg::Add(reg_x2, reg_exp, reg_x2, cmpMask1);
+                AscendC::Reg::Select(reg_exp, reg_x2, reg_exp, cmpMask1);
+
                 // inv_t = 0.25 / t = e^(-|x|) / 2
                 AscendC::Reg::Duplicate(reg_temp, quarter_val);
                 AscendC::Reg::Div<T, &divMode>(reg_temp, reg_temp, reg_exp, mask);
@@ -133,13 +155,13 @@ struct SinhCustomVF : public Vec::ElemwiseUnaryOP<T, T> {
                 AscendC::Reg::CompareScalar<T, CMPMODE::LT>(cmpMask1, reg_abs, one_val, mask);
                 AscendC::Reg::Select(reg_result, reg_poly, reg_exp, cmpMask1);
 
-                // === Overflow guard: |x| >= 90 ? sign(x)*inf : result ===
-                AscendC::Reg::CompareScalar<T, CMPMODE::GE>(cmpMask1, reg_abs, ninety_val, mask);
+                // === Overflow guard: |x| >= first overflowing FP32 input ===
+                AscendC::Reg::CompareScalar<T, CMPMODE::GE>(cmpMask1, reg_abs, overflow_val, mask);
                 // Create signed infinity: +inf for x >= 0, -inf for x < 0
                 AscendC::Reg::Duplicate(reg_temp, inf_val);                  // +inf
                 AscendC::Reg::Neg(reg_exp, reg_temp, mask);                  // -inf (reuse reg_exp)
                 AscendC::Reg::Select(reg_temp, reg_exp, reg_temp, cmpMask0); // sign(x)*inf
-                // Apply overflow: |x| >= 90 ? sign(x)*inf : branch_result
+                // Apply overflow: |x| >= overflow_val ? sign(x)*inf : branch_result
                 AscendC::Reg::Select(reg_result, reg_temp, reg_result, cmpMask1);
 
                 // Store output
