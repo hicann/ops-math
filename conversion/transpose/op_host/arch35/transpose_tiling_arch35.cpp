@@ -10,7 +10,32 @@
 
 /*!
  * \file transpose_tiling_arch35.cpp
- * \brief
+ * \brief Transpose Tiling 核心计算实现
+ *
+ * 本文件实现了 TransposeNddmaTiling 类的所有方法，涵盖 Tiling 计算的完整流程：
+ *
+ * 主流程：
+ *   1. 获取输入 shape、perm、dtype 信息
+ *   2. 校验 shape/perm 有效性
+ *   3. 消除 size=1 的轴
+ *   4. 合并 perm 中连续的轴
+ *   5. 校验简化后的 shape
+ *   6. 尝试 VCONV/021 路径（DAV_5102 专用）
+ *   7. 尾轴转置场景：判断尾轴是否参与转置并尝试 Gather 路径
+ *   8. 策略选型（决策树）
+ *   9. UB 切分计算
+ *  10. 多核 Block 切分
+ *  11. 5维扩展
+ *  12. UB 内 shape 计算
+ *  13. CUT_TWICE 区间计算
+ *  14. 填充 TilingData 结构
+ *
+ * 策略选型决策树：
+ *   dim==1 → TENSOR_MOVE
+ *   totalVolume*eleBytes < threshold → SMALL_SHAPE（兜底SIMT）
+ *   !isLastAxisTranspose && lastAxisSize>=32 → N_LAST_TRANSPOSE
+ *   dim<=5 → NDDMA_BASE → 切轴 → CUT_ONCE/CUT_TWICE
+ *   dim>5 → BIG_DIM
  */
 
 #include <sstream>
@@ -46,6 +71,14 @@ ge::graphStatus TransposeNddmaTiling::Init(const int64_t& coreNum, const int64_t
     return ge::GRAPH_SUCCESS;
 }
 
+/**
+ * @brief 主 Tiling 流程
+ *
+ * 执行完整的 Tiling 计算流程，包括 shape 预处理、策略选型、
+ * UB 切分、Block 切分、5维扩展、TilingData 填充。
+ *
+ * @return ge::GRAPH_SUCCESS 成功；ge::GRAPH_FAILED 失败
+ */
 ge::graphStatus TransposeNddmaTiling::RunTranposelTiling()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Start running Tiling4Transpose.");
@@ -56,9 +89,9 @@ ge::graphStatus TransposeNddmaTiling::RunTranposelTiling()
 
     auto ret = CheckShapeInfo();
     CHECK_RET_SUCC(ret);
-    // if axis value is 1, remove it.
+    // 消除 size=1 的轴（减少不必要的维度）
     RemoveAxisV2(shapeInfo_);
-    // reduce axis
+    // 合并 perm 中连续的轴（进一步降低维度数）
     MergeAxisV2(shapeInfo_);
     // check reduced shape
     ret = CheckReducedShapeInfo();
@@ -102,6 +135,16 @@ ge::graphStatus TransposeNddmaTiling::RunTranposelTiling()
     return ge::GRAPH_SUCCESS;
 }
 
+/**
+ * @brief 尝试 VCONV/021 Tiling 路径（仅 DAV_5102）
+ *
+ * DAV_5102(Ascend950) 有专用的 TransDataTo5HD 硬件指令，可实现高效的2D/3D转置。
+ * 两种 VCONV 路径：
+ * 1. VCONV_TRANSPOSE(10007)：2D perm=[1,0] + 16bit + shape[0]>5
+ * 2. VCONV_021_TRANSPOSE(10008)：3D perm=[0,2,1] + 8/16/32bit + H>8,W>8,HW≥448
+ *
+ * @return ge::GRAPH_SUCCESS 命中 VCONV 路径；ge::GRAPH_FAILED 未命中
+ */
 ge::graphStatus TransposeNddmaTiling::TryVCONVTiling()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Start Try VCONVTiling.");
@@ -127,6 +170,20 @@ ge::graphStatus TransposeNddmaTiling::TryVCONVTiling()
     return ge::GRAPH_FAILED;
 }
 
+/**
+ * @brief 判断 021 VCONV 路径是否有效
+ *
+ * 校验条件：
+ * 1. perm = [0, 2, 1]（H↔W转置，N维不变）
+ * 2. dim == 3
+ * 3. dtype 为 8/16/32 bit
+ * 4. H > 8, W > 8
+ * 5. H*W ≥ 448
+ * 6. HW 填充效率 > 50%（避免对齐开销过大）
+ * 7. 总数据量 ≥ 70KB
+ *
+ * @return true 满足 021 VCONV 条件；false 不满足
+ */
 bool TransposeNddmaTiling::Is021VConvValid()
 {
     // check perm: 021 transpose
@@ -327,30 +384,64 @@ ge::graphStatus TransposeNddmaTiling::CheckReducedShapeInfo()
     return ge::GRAPH_SUCCESS;
 }
 
+/**
+ * @brief 输入侧切轴：确定输入切分轴 inCutIndex 和切分因子 inUbFactor
+ *
+ * 切轴逻辑：
+ * 从输入最末轴（连续性最好的轴）向前扫描，优先整体"吞掉"较短的靠后轴；
+ * 遇到第一根 UB 预算放不下的轴时，将其切为主块+尾块，并停止扫描。
+ *
+ * 预算模型：
+ *   - splitInfo_.ubElement  = 期望每次进 UB 的元素总数
+ *   - splitInfo_.inUbElement = 输入侧剩余预算（循环中逐步扣除已被整体吞掉的轴）
+ *   - 吞掉一个轴：inUbElement /= currentShapeDim（一个 block 中该轴全量出现）
+ *   - 切分一个轴：inUbElement 直接作为 inUbFactor（该 block 中只搬这么多）
+ *
+ * 产物（写入 splitInfo_）：
+ *   - inCutIndex   输入切分轴索引
+ *   - inUbFactor   主块切分因子（一次搬入 UB 的元素数）
+ *   - inTailFactor 尾块元素数 = curDim % inUbFactor
+ *   - outUbElement = ubElement / inUbActual（留给输出侧切轴的剩余预算）
+ *
+ * @return 切分后剩余的总 block 基数（帮助上层判断是否需要更多切分/分核）
+ */
 int64_t TransposeNddmaTiling::DoSplitUBInput()
 {
     int64_t remainingTotalElment = shapeInfo_.totalVolumeActual;
     for (int64_t i = 0; i < shapeInfo_.dim; i++) {
         int64_t currentShapeDim = shapeInfo_.reducedInShape[shapeInfo_.dim - 1 - i];
         if (splitInfo_.inUbElement < currentShapeDim) {
+            // 该轴放不下 → 它就是输入切分轴，主块一次搬 inUbElement 个元素
             splitInfo_.inCutIndex = shapeInfo_.dim - 1 - i;
             splitInfo_.inUbFactor = splitInfo_.inUbElement;
             splitInfo_.inTailFactor = currentShapeDim % splitInfo_.inUbFactor;
             splitInfo_.inUbActual *= splitInfo_.inUbElement;
+            // 更新剩余 block 基数：该轴从"整根"变为"分成 CeilDiv 块"后需循环的总份数
             remainingTotalElment = remainingTotalElment / currentShapeDim *
                                    Ops::Base::CeilDiv(currentShapeDim, splitInfo_.inUbElement);
             break;
         } else {
+            // 该轴整体放得下 → 吞掉它：一个 block 中该轴全量出现，预算除以该轴长度
             splitInfo_.inUbElement /= currentShapeDim;
             splitInfo_.inUbActual *= currentShapeDim;
             remainingTotalElment /= currentShapeDim;
             splitInfo_.inUbFactor = currentShapeDim;
         }
     }
+    // 输出侧剩余预算：UB 总量扣除输入侧已占用的部分
     splitInfo_.outUbElement = splitInfo_.ubElement / splitInfo_.inUbActual;
     return remainingTotalElment;
 }
 
+/**
+ * @brief 根据输入轴索引查找其在输出 perm 中的位置
+ *
+ * 输入第 index 轴对应输出 perm 顺序中的哪一根轴（FindOutIndex）。
+ * 用于判断输出切分轴是否比输入切分轴的映射位置"更靠前"（决定 CUT_ONCE/TWICE）。
+ *
+ * @param index 输入轴索引
+ * @return 输出 perm 中的位置索引
+ */
 int64_t TransposeNddmaTiling::FindOutIndex(int64_t index)
 {
     for (int64_t i = 0; i < shapeInfo_.dim; i++) {
@@ -361,6 +452,25 @@ int64_t TransposeNddmaTiling::FindOutIndex(int64_t index)
     return 0;
 }
 
+/**
+ * @brief UB 越界校验（CUT_ONCE/CUT_TWICE 分核因子回溯时使用）
+ *
+ * 校验"当前切的轴 currentSplitIndex 取 currentSplitValue，且最外层轴全量进入
+ * 一个 block 时，进 UB 的元素数是否会超过预算 splitInfo_.ubElement"。
+ *
+ * 计算方式（把 burst 长度按输出维度 Block 对齐后累乘外层尺寸）：
+ *   burstLenBlockAlign = Π outShape[j] (j>currentSplitIndex，即切分轴右侧的连续轴)
+ *                      * currentSplitValue   （切分轴本次取的块长）
+ *      若 calcIn 且该输出轴恰是输入切分轴 → 再乘 inUbFactor（输入切分块在 block 中占的份数）
+ *      然后按 ubBlockSize 字节对齐
+ *   inUbElements = burstLenBlockAlign * Π outShape[j] (j<currentSplitIndex 且 perm[j]>inCutIndex)
+ *                 * inUbFactor（perm[j]==inCutIndex 时）
+ *
+ * @param currentSplitIndex  当前候选切分轴（输出 perm 视角）
+ * @param currentSplitValue  该轴拟使用的块长
+ * @param calcIn             是否把输入切分因子 inUbFactor 计入（切输入侧因子回调时传 true）
+ * @return true 越界（该因子不可用）；false 通过
+ */
 bool TransposeNddmaTiling::UbOutOfBoundCheck(int64_t currentSplitIndex, int64_t currentSplitValue, bool calcIn)
 {
     int64_t burstLenBlockAlign = 1;
@@ -411,6 +521,20 @@ bool TransposeNddmaTiling::UbOutOfBoundCheckNLast(int64_t currentSplitIndex, int
     return false;
 }
 
+/**
+ * @brief N_LAST 场景：按核利用率阈值回溯输入切分因子（Rate 版）
+ *
+ * 当按当前 inUbFactor 计算出的总循环数不足以铺满 coreNum 核时，
+ * 从预算上限 splitInfo_.inUbElement 向下递减 i，寻找满足：
+ *   - 潜在核数 coreNumNew = remainingTotalElment * CeilDiv(curDim, i) 与 coreNum 的
+ *     比值 rate >= VEC_CORE_USED_THRES_HOLD（0.9，即至少用满90%核）
+ *   - 且按该因子切后数据不越界 UB（UbOutOfBoundCheckNLast）
+ * 的最大因子，作为新的 inUbFactor，越小切得越细 → block 越多 → 核用得更满。
+ *
+ * @param currentSplitIndex    当前输入切分轴索引
+ * @param currentInShapeDim    切分轴完整长度
+ * @param remainingTotalElment 切分轴之外其他轴的循环基数
+ */
 void TransposeNddmaTiling::FindSplitFactorByRateNLast(int64_t currentSplitIndex, int64_t currentInShapeDim,
                                                       int64_t remainingTotalElment)
 {
@@ -429,6 +553,25 @@ void TransposeNddmaTiling::FindSplitFactorByRateNLast(int64_t currentSplitIndex,
     }
 }
 
+/**
+ * @brief CUT_ONCE/CUT_TWICE 分核因子回溯（Multiples 版，输出侧因子求值）
+ *
+ * 目标是让块总数等于 coreNum 整数倍的同时尽量用满核：
+ * 从候选因子 i=1 递增，若：
+ *   - 潜在块数 coreNumNew = remainingTotalElment * CeilDiv(curDim, i) 除以 coreNum
+ *     的商仍等于目标倍数 coreNumMultiples（即块数同量级，不跳跃）
+ *   - 且按因子 i 切后不越界 UB（UbOutOfBoundCheck）
+ * 取最小的合法因子（切得最细、块数最多；i 越小 CeilDiv 越大 → 核用得更满）。
+ * 找不到完全等倍数的因子时，退而求其次选不越界的最大因子 bestI。
+ *
+ * 注意：此函数更新的是输出侧切分信息（outCutIndex/outUbFactor/outUbActual），
+ * 因为 CUT_ONCE/TWICE 分核时优先回溯输出切分因子。
+ *
+ * @param currentSplitIndex    候选输出切分轴
+ * @param currentInShapeDim    切分轴完整长度
+ * @param remainingTotalElment 切分轴之外其他轴的循环基数
+ * @param coreNumMultiples     目标块数/coreNum 的整数倍数
+ */
 void TransposeNddmaTiling::FindSplitFactorByMultiplesLast(int64_t currentSplitIndex, int64_t currentInShapeDim,
                                                           int64_t remainingTotalElment, int64_t coreNumMultiples)
 {
@@ -452,6 +595,22 @@ void TransposeNddmaTiling::FindSplitFactorByMultiplesLast(int64_t currentSplitIn
     splitInfo_.outUbActual *= bestI;
 }
 
+/**
+ * @brief N_LAST 场景：分核因子回溯（Multiples 版，输入侧因子求值）
+ *
+ * 与 FindSplitFactorByRateNLast 不同，本函数在先满足"块数 ≥ coreNum"的前提下，
+ * 进一步让块数保持为 coreNum 的整数倍（负载均衡）：
+ *   1. 先取最大的合法因子 inUbFactor（从预算上限递减，不越界 UB 的最大值）；
+ *   2. 计算该因子对应的块数 coreNumTmp 与 coreNum 的整数倍数 coreNumMultiples；
+ *   3. 从 i=1 递增找最小合法因子，使得 CeilDiv(curDim, i) 产生的块数仍落在同一
+ *      整数倍数（coreNumMultiples）内且不越界 → 块数几乎不变但切分更细，
+ *      实际用核率更高。
+ *
+ * @param currentSplitIndex    输入切分轴索引
+ * @param currentInShapeDim    切分轴完整长度
+ * @param remainingTotalElment 切分轴之外其他轴的循环基数
+ * @param coreNumMultiples     目标块数/coreNum 的整数倍数
+ */
 void TransposeNddmaTiling::FindSplitFactorByMultiplesNLast(int64_t currentSplitIndex, int64_t currentInShapeDim,
                                                            int64_t remainingTotalElment, int64_t coreNumMultiples)
 {
@@ -478,6 +637,29 @@ void TransposeNddmaTiling::FindSplitFactorByMultiplesNLast(int64_t currentSplitI
     }
 }
 
+/**
+ * @brief 核心切轴逻辑（DoSplitUB 主流程）
+ *
+ * 完成输入切轴后（DoSplitUBInput），继续在**输出 perm 顺序**上做切轴：
+ * 从输出最末轴向前扫描，在 outUbElement 预算内决定是否切分输出侧，
+ * 最终依据"输出切分轴 vs 输入切分轴映射位置"判定 CUT_ONCE 还是 CUT_TWICE。
+ *
+ * 决策逻辑：
+ *   - 输出轴对应的输入轴在切分轴右侧（perm[i] > inCutIndex）：
+ *     该轴已由输入切分预算覆盖，直接跳过不重复切
+ *   - 输出轴恰是输入切分轴映射（perm[i] == inCutIndex）：
+ *     每个 block 中该轴还剩 CeilDiv(inShape[inCutIndex], inUbFactor) 个"行"
+ *   - 其余输出轴：按完整 outShape 推算
+ *
+ * 循环终止条件（找到 outCutIndex）：
+ *   - outUbElement < currentShapeDim：预算放不下 → 在当前轴切分（outUbFactor 回溯求值）
+ *   - currentShapeDim 全部吞掉则继续向前，同时记录 outCutIndex（退轴至吞不下的轴）
+ *
+ * 最终判定：
+ *   outCutIndex > FindOutIndex(inCutIndex) → CUT_TWICE（输出切分轴比输入映射更靠前，
+ *   需同时在输入/输出两侧切轴，否则最外层输出维度会溢出 UB）
+ *   否则 → CUT_ONCE（输入切分已足够，输出侧由 NDDMA 自动重排）
+ */
 void TransposeNddmaTiling::DoSplitUB()
 {
     int64_t remainingTotalElment = DoSplitUBInput();
@@ -519,6 +701,18 @@ void TransposeNddmaTiling::DoSplitUB()
     }
 }
 
+/**
+ * @brief BIG_DIM（>5维）场景的切轴逻辑
+ *
+ * 超过 5 维时无法直接使用 NDDMA 5 维格式，切轴简化为只切一根输出轴：
+ * 从输出最末轴向前扫描，遇到以下任一条件即确定 outCutIndex：
+ *   1. UB 预算放不下该轴（ubElement < outShape[i]）：直接切分
+ *   2. 吞掉该轴后累计元素数 ≤ coreNum（剩余维度已足够铺满核，无需再切更外层）
+ *   3. 已经吞了 NDDMA_MAX_DIM_NUM-1=4 根轴（只剩最后一根可切的空间）
+ *
+ * 切分轴确定后，后续由 CalcBlockSplitInfoForBigDim 分核、FlushBaseNumForBigDim
+ * 将 >5 维压缩到 5 维 NDDMA 表示。
+ */
 void TransposeNddmaTiling::DoSplitUBBigDim()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering DoSplitUBBigDim.");
@@ -554,6 +748,21 @@ void TransposeNddmaTiling::DoSplitUBBigDim()
     }
 }
 
+/**
+ * @brief BIG_DIM 场景：将 >5 维原始 shape 压缩为 NDDMA 5 维表示
+ *
+ * 生成 kernel 端 NDDMA SetLoopInfo 所需的三个数组：
+ *   - nddmaIdx[i]：5 维压缩索引 i 对应的原始输入轴索引（按输出 perm 顺序从高维往低维排）
+ *   - baseNddmaShape[i]：压缩后第 i 维的循环基数（该轴在 block 循环中的步长）
+ *   - baseInShape_[k]：原始第 k 轴的输入地址基数（右侧轴的乘积）
+ *
+ * 循环基数＝该轴"一个 block 中占的重复份数"：
+ *   - 切分轴右侧的轴：完整 outShape[i]（每 block 在该轴全量循环）
+ *   - 切分轴：outUbFactor（主块因子）
+ * 汇总到 totalNddmaNum_（一个 block 的总元素数，kernel CopyOut 用它设 blockLen）。
+ *
+ * 最后按输出维度顺序 sort 后回填 baseNddmaShape_（kernel 按 nddmaIdx 查找对应基数）。
+ */
 void TransposeNddmaTiling::FlushBaseNumForBigDim()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering FlushBaseNumForBigDim.");
@@ -596,6 +805,16 @@ void TransposeNddmaTiling::FlushBaseNumForBigDim()
     }
 }
 
+/**
+ * @brief 策略选型决策树
+ *
+ * 按以下优先级选择 Tiling 策略：
+ * 1. dim==1 → TENSOR_MOVE（纯搬运）
+ * 2. totalVolume*eleBytes < threshold → SMALL_SHAPE（SIMT兜底）
+ * 3. !isLastAxisTranspose && lastAxisSize>=32 → N_LAST_TRANSPOSE（连续行搬移）
+ * 4. dim<=5 → NDDMA_BASE（后续 DoSplitUB 进一步判定 CUT_ONCE/CUT_TWICE）
+ * 5. dim>5 → BIG_DIM（压缩到5维NDDMA）
+ */
 void TransposeNddmaTiling::EntryTilingTemplate()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering EntryTilingTemplate.");
@@ -635,6 +854,16 @@ void TransposeNddmaTiling::EntryTilingTemplate()
     tilingKey_ = static_cast<int64_t>(SplitMode::SMALL_SHAPE);
 }
 
+/**
+ * @brief UB 切分信息计算入口（按 TilingKey 分派）
+ *
+ * 根据策略选择不同的 UB 预算模型：
+ *   - TENSOR_MOVE / N_LAST_TRANSPOSE：双缓冲，ubElement = ubSize/2/eleBytes
+ *     （一半 UB 用于 CopyIn，另一半用于 CopyOut）
+ *   - NDDMA_BASE（CUT_ONCE/CUT_TWICE）：inUbElement = sqrt(ubElement)，
+ *     近似保证输入+输出两份数据之和不超过 UB；随后 DoSplitUB 完成切轴
+ *   - BIG_DIM：DoSplitUBBigDim 只切输出侧一根轴
+ */
 void TransposeNddmaTiling::CalcUBSplitInfo()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering CalcUBSplitInfo");
@@ -655,6 +884,14 @@ void TransposeNddmaTiling::CalcUBSplitInfo()
     }
 }
 
+/**
+ * @brief TENSOR_MOVE（1维纯搬运）分核逻辑
+ *
+ * 数据线性排布，无需处理转置。按总元素数均分：
+ *   - 总元素 < coreNum：只用 1 个核，一次全部搬完（blkFactor = 总元素）
+ *   - 否则：开满核，blkFactor = 总元素/coreNum，blkTailFactor 兜尾
+ * inUbFactor = ubElement（单个 block 一次可搬运的元素数）。
+ */
 void TransposeNddmaTiling::CalcBlockSplitInfoForTensorMove()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering CalcBlockSplitInfoForTensorMove.");
@@ -671,6 +908,21 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForTensorMove()
     }
 }
 
+/**
+ * @brief SMALL_SHAPE 分核的多核切分辅助（每个候选轴的最小因数切分）
+ *
+ * 遍历形状轴 i，若整根轴搬移的字节超过 cacheLineSize（无法一次搬完），
+ * 就在该轴按最小因数 j 切分 outCutIndex，使块级地址跳到下一条 cache line：
+ *   - j == 轴全长 且是第 0 轴（素数轴且已到最后）：outUbFactor 取 ceil(cacheLine)，
+ *     最终靠其他轴或外层循环开多核
+ *   - j == 轴全长 且非第 0 轴：全切，剩余外层轴继续开多核
+ *   - 其他：按最小因数 j 切分
+ *
+ * @param i            候选轴索引
+ * @param shapeSizeByte 该轴完整尺寸（字节）
+ * @param totalElment   [in,out] 累计 block 基数（切分后按 CeilDiv 更新）
+ * @return 更新后的 totalElment
+ */
 int64_t TransposeNddmaTiling::CalcBlockSplitInfoForNoCutForMultiCore(int64_t i, int64_t shapeSizeByte,
                                                                      int64_t& totalElment)
 {
@@ -704,6 +956,17 @@ int64_t TransposeNddmaTiling::CalcBlockSplitInfoForNoCutForMultiCore(int64_t i, 
     return totalElment;
 }
 
+/**
+ * @brief SMALL_SHAPE（SIMT 直读直写）分核逻辑
+ *
+ * SIMT 模式不经过 UB，每个核直接 GM→GM。分核目标是让每核处理的数据
+ * 量对齐 128 字节（SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE），避免跨核访问
+ * 边界不对齐：
+ *   - 总元素 < coreNum：按元素数开核（每核 1 个元素）
+ *   - 否则：先取 ceil（向上对齐 128B）与 floor（向下对齐 128B）两个候选，
+ *     若 floor×核数仍能容纳全部数据则直接开满核，否则用 ceil 对齐后的核数
+ *     （ceilAlignFactor 比 floor 大 → 实际核数略少但每核数据对齐）
+ */
 void TransposeNddmaTiling::CalcBlockSplitInfoForSmallShape()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering CalcBlockSplitInfoForSmallShape.");
@@ -733,6 +996,19 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForSmallShape()
     }
 }
 
+/**
+ * @brief N_LAST_TRANSPOSE（尾轴不转置）分核逻辑
+ *
+ * 尾轴不转置时最后维在输入/输出中保持连续，可按"连续行搬移"分块。
+ * 从输入最末轴向前做 UB 预算（inUbElement = ubSize/2/eleBytes，双缓冲）：
+ *   - 预算放不下该轴（inUbElement < curDim）：
+ *       · 若切后块数已足够 ≥coreNum → FindSplitFactorByMultiplesNLast（保整数倍负载均衡）
+ *       · 否则 → FindSplitFactorByRateNLast（按 0.9 核利用率阈值回溯因子）
+ *       · 若 inUbFactor 无效（0）→ CheckInUbFactorValid 退轴到上一层
+ *   - 预算放得下：整根吞掉，预算除以该轴长度，记录 solvedTotalElment 便于退轴恢复
+ *
+ * 最终分核参数 = SetRealCoreNumAndBlkFactor(CeilDiv(inCutAxis, inUbFactor) × remaining)
+ */
 void TransposeNddmaTiling::CalcBlockSplitInfoForNLastTranspose()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering CalcBlockSplitInfoForNLastTranspose.");
@@ -775,6 +1051,20 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForNLastTranspose()
     SetRealCoreNumAndBlkFactor(coreNum);
 }
 
+/**
+ * @brief N_LAST 退轴逻辑（inUbFactor 不可用时回退到上一根轴重切）
+ *
+ * 当在某根轴上切出的 inUbFactor==0（预算在该轴耗尽或因子查找失败）且
+ * 尚未切到最末轴时，把切分位置**上移一层**（切更靠末的轴），并恢复该层
+ * 的原始预算（inUbElement = 该轴完整长度、remaining 从 solvedTotalElment 重建），
+ * 重新调用 FindSplitFactorByMultiplesNLast 求因子，直到找到合法 inUbFactor 或穷尽。
+ *
+ * @param currentSplitIndex    [in,out] 输入切分轴索引（会上移）
+ * @param currentInShapeDim    [in,out] 当前轴长度
+ * @param remainingTotalElment [in,out] 剩余循环基数
+ * @param coreNumMultiples     [in,out] 目标块/coreNum 倍数
+ * @param solvedTotalElment    记录已完整吞入的轴的容量（用于恢复）
+ */
 void TransposeNddmaTiling::CheckInUbFactorValid(int64_t& currentSplitIndex, int64_t& currentInShapeDim,
                                                 int64_t& remainingTotalElment, int64_t& coreNumMultiples,
                                                 int64_t* solvedTotalElment)
@@ -795,6 +1085,16 @@ void TransposeNddmaTiling::CheckInUbFactorValid(int64_t& currentSplitIndex, int6
     }
 }
 
+/**
+ * @brief 根据 block 总数设置分核参数（realCoreNum/blkFactor/blkTailFactor）
+ *
+ * 核心规则：
+ *   - block 总数 ≥ coreNum：开满全部核；每核基础 blkFactor 个 block，
+ *     前 blkTailFactor 个核额外多处理 1 个（差额补偿均分）
+ *   - block 总数 < coreNum：只用 blockTotal 个核，每核 1 个 block
+ *
+ * @param coreNum 当前分核路径计算出的 block 总数
+ */
 void TransposeNddmaTiling::SetRealCoreNumAndBlkFactor(int64_t coreNum)
 {
     if (coreNum >= coreNum_) {
@@ -808,6 +1108,25 @@ void TransposeNddmaTiling::SetRealCoreNumAndBlkFactor(int64_t coreNum)
     }
 }
 
+/**
+ * @brief CUT_ONCE 分核逻辑
+ *
+ * 输入切轴（DoSplitUBInput）＋输出切轴（DoSplitUB）完成后，计算把
+ * block 摊到核上的分核参数（realCoreNum/blkFactor/blkTailFactor）。
+ *
+ * 前置修正（把 CUT_ONCE 的"单轴切分"统一到输入轴视角）：
+ *   1. 若输入/输出切的是同一根轴（inCutIndex == perm[outCutIndex]）：
+ *      outUbFactor *= inUbFactor —— 一个 block 同时覆盖输入的切分份数与输出的切分份数
+ *   2. 若输出切分因子整好切满整个输出轴（outUbFactor == outShape[outCutIndex]）：
+ *      实际有效切轴退化为输入轴，outCutIndex 改指 FindOutIndex(inCutIndex)
+ *
+ * block 总数 = CeilDiv(outShape[outCutIndex], outUbFactor)
+ *            × Π outShape[i]（i < outCutIndex 且 perm[i] < inCutIndex 的外层轴）
+ *
+ * 核利用率不足（outUbAxis < coreNum）时，回调输出切分因子：
+ * 从当前因子递减，找"潜在核数占比 ≥ 0.9 且不越界 UB"的最大因子；
+ * 找不到则取 rate 最大的合法因子（bestRate/bestI 记录）。
+ */
 void TransposeNddmaTiling::CalcBlockSplitInfoForCutOnce()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering CalcBlockSplitInfoForCutOnce.");
@@ -860,6 +1179,19 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForCutOnce()
     SetRealCoreNumAndBlkFactor(outUbAxis);
 }
 
+/**
+ * @brief CUT_TWICE 分核逻辑
+ *
+ * 双切场景 block 总数按"输出外层块数 × 输入轴块数"计算：
+ *   outAxiseExceptSplitInAxis = Π outShape[i]（i<outCutIndex 且 perm[i]<inCutIndex）
+ *                             × CeilDiv(outShape[outCutIndex], outUbFactor)
+ *   inUbAxis = CeilDiv(inShape[inCutIndex], inUbFactor)
+ *   blockTotal = outAxiseExceptSplitInAxis × inUbAxis
+ *
+ * 核利用率不足（< coreNum）时回调**输入**切分因子 inUbFactor
+ * （输出切分轴已被外层循环枚举，提高并行度只能让输入侧切得更细），
+ * 选取 rate≥0.9 且不越界 UB 的最大因子，找不到则取 rate 最大者。
+ */
 void TransposeNddmaTiling::CalcBlockSplitInfoForCutTwice()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering CalcBlockSplitInfoForCutTwice.");
@@ -903,6 +1235,18 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForCutTwice()
     SetRealCoreNumAndBlkFactor(inUbAxis);
 }
 
+/**
+ * @brief BIG_DIM（>5维）分核逻辑
+ *
+ * 只回调输出切分因子 outUbFactor 来调节并行度：
+ *   outUbAxisExceptSplitAxis = Π outShape[i]（i < outCutIndex）
+ *   coreNum = CeilDiv(outShape[outCutIndex], outUbFactor) × outUbAxisExceptSplitAxis
+ *
+ * coreNum < coreNum_（块不足）时：
+ *   递减 outUbFactor 找 rate≥0.9 的最大因子（无越界检查，BIG_DIM 无 UB 内切轴）
+ * block 数充足时：找使 FloorDiv(块数,coreNum) 保持相同倍数的更细因子（负载均衡）
+ * 最后 FlushBaseNumForBigDim 生成 5 维压缩映射并 SetRealCoreNumAndBlkFactor。
+ */
 void TransposeNddmaTiling::CalcBlockSplitInfoForBigDim()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering CalcBlockSplitInfoForBigDim.");
@@ -954,6 +1298,16 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForBigDim()
     SetRealCoreNumAndBlkFactor(coreNum);
 }
 
+/**
+ * @brief 分核逻辑入口（按 TilingKey 分派）
+ *
+ * 每种策略用不同方式计算 block 总数并设置 realCoreNum/blkFactor/blkTailFactor：
+ *   - TENSOR_MOVE：按总元素数直接均分
+ *   - SMALL_SHAPE：SIMT 直读直写，按 128B 对齐均分
+ *   - CUT_ONCE / CUT_TWICE：由切分因子推断 block 数，必要时回调因子到 0.9 核利用率
+ *   - N_LAST_TRANSPOSE：按连续行搬移的块数分核（可退轴）
+ *   - BIG_DIM：按压缩后的输出侧块数分核
+ */
 void TransposeNddmaTiling::CalcBlockSplitInfo()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering CalcBlockSplitInfo.");
@@ -981,6 +1335,16 @@ void TransposeNddmaTiling::CalcBlockSplitInfo()
     }
 }
 
+/**
+ * @brief 5 维扩展：把简化后 ≤5 维的 shape/perm 左填充为 NDDMA 5 维
+ *
+ * NDDMA DataCopy<T,5> 固定使用 5 维参数，低维 shape（dim<5）需要在左侧
+ * 补 1 维（offset = 5 - dim），使轴索引与 NDDMA 硬件语义一致，例如：
+ *   reducedShape=[8,64,128] (dim=3) → expanded=[1,1,8,64,128]
+ *   perm 同样 +offset：reducedPerm=[2,0,1] → expandedPerm=[4,2,3]
+ *
+ * kernel 端 NDDMA loopSize/stride 计算统一基于 expanded* 数组。
+ */
 void TransposeNddmaTiling::NDDMADimExpand()
 {
     int64_t offset = (shapeInfo_.dim < NDDMA_MAX_DIM_NUM) ? (NDDMA_MAX_DIM_NUM - shapeInfo_.dim) : 0;
@@ -992,6 +1356,14 @@ void TransposeNddmaTiling::NDDMADimExpand()
     }
 }
 
+/**
+ * @brief UB 内 shape 计算入口（按 TilingKey 分派）
+ *
+ * 生成 kernel 端 NDDMA SetupLoopInfo 所需的 inUb*SrcShape/inUb*DstShape：
+ *   - SMALL_SHAPE：CalcInUbShapeInfoForNoNeedCut（无需 UB 切分的简单情形）
+ *   - CUT_ONCE：单轴切分，Main/Tail 两组 shape
+ *   - CUT_TWICE：双轴切分，Main/InputTail/OutputTail/Tail 四组 shape
+ */
 void TransposeNddmaTiling::GetInUbShapeInfo()
 {
     switch (tilingKey_) {
@@ -1009,6 +1381,12 @@ void TransposeNddmaTiling::GetInUbShapeInfo()
     }
 }
 
+/**
+ * @brief CUT_TWICE 区间信息计算入口（按 TilingKey 分派）
+ *
+ * 仅 CUT_TWICE 需要 4 种数据区间边界：
+ *   Main / InputTail / OutputTail / Tail（定义见 GetIntervalInfoForCutTwice）。
+ */
 void TransposeNddmaTiling::GetIntervalInfo()
 {
     switch (tilingKey_) {
@@ -1020,6 +1398,15 @@ void TransposeNddmaTiling::GetIntervalInfo()
     }
 }
 
+/**
+ * @brief 计算"无需切分"场景的 UB 内 shape（SMALL_SHAPE 等路径）
+ *
+ * 只有一个切分轴（outCutIndex）需要以 outUbFactor/outTailFactor 切分，
+ * 其余进入 block 的轴要么取完整输出 shape、要么置 1（外层循环负责）：
+ *   - i > outCutIndexExpand（切分轴右侧）：完整 expandedOutputShape
+ *   - i == outCutIndexExpand：Main=outUbFactor，Tail=outTailFactor
+ *   - i < outCutIndexExpand：1（不进入单次 block）
+ */
 void TransposeNddmaTiling::CalcInUbShapeInfoForNoNeedCut()
 {
     int64_t outCutIndexExpand = splitInfo_.outCutIndex + NDDMA_MAX_DIM_NUM - shapeInfo_.dim;
@@ -1041,6 +1428,18 @@ void TransposeNddmaTiling::CalcInUbShapeInfoForNoNeedCut()
     }
 }
 
+/**
+ * @brief 计算 CUT_ONCE 的 UB 内源/目标 5 维 shape
+ *
+ * 一个 block 中进 UB 的数据在"源侧"（输入视角）和"目标侧"（输出视角）
+ * 各有一份 5 维描述：
+ *   - 输出切分轴（outCutIndex 展开位）：Main = outUbFactor，Tail = outTailFactor；
+ *   - 输出切分轴右侧的轴：完整 expandedOutputShape（每 block 全量出现）；
+ *   - 输出切分轴左侧、且 perm[i] < inCutIndex 的轴（外部循环轴）：Main/Tail = 1
+ *     （该轴不进入单次 block，由分核外层循环负责）；
+ *   - src 侧通过 expandedPerm 映射（输出第 i 轴 ↔ 输入第 expandedPerm[i] 轴）得到，
+ *     kernel 端 SetupLoopInfo / GetLoopParams 据此构造 NDDMA loopSize / stride。
+ */
 void TransposeNddmaTiling::CalcInUbShapeInfoForCutOnce()
 {
     int64_t outCutIndexExpand = splitInfo_.outCutIndex + NDDMA_MAX_DIM_NUM - shapeInfo_.dim;
@@ -1062,6 +1461,24 @@ void TransposeNddmaTiling::CalcInUbShapeInfoForCutOnce()
     }
 }
 
+/**
+ * @brief 计算 CUT_TWICE 的 4 组 UB 内源/目标 5 维 shape
+ *
+ * CUT_TWICE 需同时切输入与输出轴，一个 block 的 UB 数据根据"输入/输出
+ * 切分轴各自是主块还是尾块"分为 4 种相位，每种相位对应一组 src/dst shape：
+ *
+ *   inUbMain*         ：输入主块 × 输出主块
+ *   inUbInputTail*    ：输入尾块 × 输出主块
+ *   inUbOutputTail*   ：输入主块 × 输出尾块
+ *   inUbTail*         ：输入尾块 × 输出尾块
+ *
+ * 规则（以 src 为例）：
+ *   - 输入切分轴左侧外层轴：Main/InputTail/Tail = 1（外层循环负责）
+ *   - 输入切分轴本身：Main = inUbFactor；InputTail/Tail = inTailFactor
+ *   - 输出切分轴（通过 perm 映射到输入侧）：按 outUbFactor/outTailFactor 覆盖对应组
+ *   - 其余进入 block 的轴保持完整 expandedInputShape
+ * dst 侧 = src 侧按 expandedPerm 重排后得到（NDDMA 搬入后即完成维度重排）。
+ */
 void TransposeNddmaTiling::CalcInUbShapeInfoForCutTwice()
 {
     // 双切分场景下，对于输入，输入切分轴右侧为UB内的轴；对于输出，输出切分轴右侧非由输入确定的UB内的轴也都为UB内的轴
@@ -1109,6 +1526,25 @@ void TransposeNddmaTiling::CalcInUbShapeInfoForCutTwice()
     }
 }
 
+/**
+ * @brief 计算 CUT_TWICE 的 4 种数据区间边界（Main/InputTail/OutputTail/Tail）
+ *
+ * 双切后所有 block 按「输入切分轴 × 输出切分轴」二维排布，可分为 4 个连续区间。
+ * 区间边界以全局 block 索引表示，供 kernel ProcessBlock 与自身核范围求交集。
+ *
+ * 排布顺序（共 inBlocks × outBlocks × outUbLoop 个 block）：
+ *   Main        ：[0,                     inBlocks×outBlocks×outUbLoop-1]
+ *   InputTail   ：Main 之后，长度 = outBlocks×outUbLoop（输入轴为尾、输出逐块）
+ *   OutputTail  ：InputTail 之后，长度 = inBlocks×outUbLoop（输出轴为尾）
+ *   Tail        ：最后 outUbLoop 个（两轴均为尾）
+ *
+ * 其中：
+ *   inBlocks  = expandedInputShape[inCutIdx] / inUbMainSrcShape[inCutIdx]
+ *   outBlocks = expandedInputShape[outCutIdx] / inUbMainSrcShape[outCutIdx]
+ *   outUbLoop = Π (expandedInputShape[i]/inUbMainSrcShape[i])，i 为非切分轴
+ *
+ * 若某侧 tailFactor==0，对应区间长度为 0（start/end 保持 0，kernel 跳过）。
+ */
 void TransposeNddmaTiling::GetIntervalInfoForCutTwice()
 {
     int64_t expandedInputCutIndex = splitInfo_.inCutIndex + NDDMA_MAX_DIM_NUM - shapeInfo_.dim;

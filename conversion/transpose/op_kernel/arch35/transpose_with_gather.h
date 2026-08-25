@@ -10,7 +10,34 @@
 
 /*!
  * \file transpose_with_gather.h
- * \brief transpose_with_gather
+ * \brief TilingKey=10006 GATHER_TRANSPOSE 策略实现
+ *
+ * 适用场景：尾轴转置（isLastAxisTranspose==true）+ 大shape（非小shape场景）。
+ *
+ * 核心机制：使用 DAV_3510 的 Gather 硬件指令（RegBase 路径）
+ *   Gather 根据预计算的索引数组从 UB 中按任意跨步读取数据，
+ *   实现尾轴转置。索引数组在 Init 阶段预生成，最多4组覆盖4种 main/tail 组合。
+ *
+ * Buffer 规划：
+ *   - xInQue_：输入 Queue（双缓冲），存放 CopyIn 的数据
+ *   - xOutQue_：输出 Queue（双缓冲），存放 Gather 后的数据
+ *   - idxBuf_：Gather 索引缓冲，存放预计算的4组索引
+ *
+ * Gather 索引生成算法：
+ *   支持1/2/3维索引（GenIndex4OneDim / GenIndex4TwoDim / GenIndex4ThreeDim）
+ *   使用 Reg::Arange + Reg::Div + Reg::Mul + Reg::Muls 等 RegBase 指令计算索引
+ *   核心思路：将输出线性索引分解到各维度，再按 perm 映射计算输入偏移
+ *
+ * 类型适配：
+ *   - RangeType_：8bit→int16_t，16bit→int16_t，32/64bit→int32_t（索引计算类型）
+ *   - IdxType_：8bit→uint16_t，16bit→uint16_t，32/64bit→uint32_t（Gather 索引类型）
+ *   - CastType_：8bit→uint16_t/int16_t（8bit 需 Cast 到16bit 进行 DataCopyGather）
+ *
+ * 4种 phase 的索引偏移控制（gIndexId_）：
+ *   0: out_cut=false, in_cut=false  （主块）
+ *   1: out_cut=false, in_cut=true   （输入尾块）
+ *   2: out_cut=true,  in_cut=false  （输出尾块）
+ *   3: out_cut=true,  in_cut=true   （双尾块）
  */
 #ifndef KERNEL_TRANSPOSE_WITH_GATHER_H_
 #define KERNEL_TRANSPOSE_WITH_GATHER_H_
@@ -32,6 +59,22 @@ constexpr int8_t UB_MAX_DIM_NUM = 6;
 constexpr int8_t NUM_TWO = 2;
 constexpr int8_t NUM_THREE = 3;
 
+/**
+ * @brief GATHER_TRANSPOSE 策略类，使用 Gather 硬件指令实现尾轴转置
+ *
+ * 执行流程：
+ * 1. InitAxes: 初始化 UB 轴尺寸
+ * 2. GenGatherIndex4AllPhase: 预生成4种 phase 的 Gather 索引
+ * 3. for each block loop:
+ *    a. CalcBlkAddr: 计算当前 block 的 GM 输入/输出地址
+ *    b. UpdateUbAxes: 根据 block 位置更新 UB 轴尺寸（main/tail）
+ *    c. CopyDataIn: DataCopyPad(GM → UB) + LoopMode
+ *    d. GetOutLoopAxes: 获取输出循环轴参数
+ *    e. GatherData: Gather(UB_in → UB_out) 使用 RegBase 硬件
+ *    f. CopyDataOut: DataCopyPad(UB → GM) + LoopMode
+ *
+ * @tparam T 数据元素类型
+ */
 template <typename T>
 class TransposeWithGather {
 public:
@@ -70,31 +113,34 @@ private:
 
     int64_t blkBeg_ = 0;
     int64_t blkEnd_ = 0;
-    int64_t blkInAddr_ = 0;
-    int64_t blkOutAddr_ = 0;
-    int64_t blkInCutROffset_ = 0;
-    int64_t blkOutCutROffset_ = 0;
-    int64_t blkInCutAxisSize_ = 0;
-    int64_t blkOutCutAxisSize_ = 0;
-    int32_t inUbAxes_[UB_MAX_DIM_NUM] = {1, 1, 1, 1, 1, 1};
-    int32_t outUbAxes_[UB_MAX_DIM_NUM] = {1, 1, 1, 1, 1, 1};
-    /*  0: out_cut=false, in_cut=false
-     *  1: out_cut=false, in_cut=true
-     *  2: out_cut=true,  in_cut=false
-     *  3: out_cut=true,  in_cut=true
+    int64_t blkInAddr_ = 0;                                  ///< 当前 block 的 GM 输入起始地址偏移
+    int64_t blkOutAddr_ = 0;                                 ///< 当前 block 的 GM 输出起始地址偏移
+    int64_t blkInCutROffset_ = 0;                            ///< 输入切分轴的块级循环偏移
+    int64_t blkOutCutROffset_ = 0;                           ///< 输出切分轴的块级循环偏移
+    int64_t blkInCutAxisSize_ = 0;                           ///< 输入切分轴的块级尺寸
+    int64_t blkOutCutAxisSize_ = 0;                          ///< 输出切分轴的块级尺寸
+    int32_t inUbAxes_[UB_MAX_DIM_NUM] = {1, 1, 1, 1, 1, 1};  ///< 输入 UB 各轴尺寸（动态更新）
+    int32_t outUbAxes_[UB_MAX_DIM_NUM] = {1, 1, 1, 1, 1, 1}; ///< 输出 UB 各轴尺寸（动态更新）
+    /* 4种 Gather 索引 phase 的控制变量
+     *  0: out_cut=false, in_cut=false  （主块）
+     *  1: out_cut=false, in_cut=true   （输入尾块）
+     *  2: out_cut=true,  in_cut=false  （输出尾块）
+     *  3: out_cut=true,  in_cut=true   （双尾块）
      */
-    int32_t gIndexId_ = 0; // control index offset of gather
+    int32_t gIndexId_ = 0; // 控制 Gather 索引的偏移量
 
-    using RangeType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>;
-    using IdxType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>;
-    using CastType_ = std::conditional_t<sizeof(T) == 1,
+    /* 类型适配：根据元素字节宽度选择合适的索引计算类型和 Gather 索引类型 */
+    using RangeType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>; ///< 索引计算类型
+    using IdxType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>; ///< Gather 索引类型
+    using CastType_ = std::conditional_t<sizeof(T) == 1,                                   ///< 8bit Cast 类型
                                          std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
-    uint32_t vlSize_ = static_cast<uint32_t>(Ops::Base::GetVRegSize() / sizeof(CastType_));
-    uint32_t idxVLSize_ = static_cast<uint32_t>(Ops::Base::GetVRegSize() / sizeof(RangeType_));
-    LocalTensor<RangeType_> idxLocal_;
-    int32_t gElemPerBlock_ = static_cast<int32_t>(BLOCK_SIZE_BYTE / sizeof(RangeType_));
-    int32_t elemPerBlock_ = static_cast<int32_t>(BLOCK_SIZE_BYTE / sizeof(T));
-    int32_t gIdxOffset_ = 0;
+    uint32_t vlSize_ = static_cast<uint32_t>(Ops::Base::GetVRegSize() / sizeof(CastType_)); ///< 向量寄存器元素数
+    uint32_t idxVLSize_ = static_cast<uint32_t>(Ops::Base::GetVRegSize() /
+                                                sizeof(RangeType_)); ///< 索引向量寄存器元素数
+    LocalTensor<RangeType_> idxLocal_;                               ///< Gather 索引的 Local Tensor
+    int32_t gElemPerBlock_ = static_cast<int32_t>(BLOCK_SIZE_BYTE / sizeof(RangeType_)); ///< 索引每 Block 元素数
+    int32_t elemPerBlock_ = static_cast<int32_t>(BLOCK_SIZE_BYTE / sizeof(T));           ///< 数据每 Block 元素数
+    int32_t gIdxOffset_ = 0; ///< 每组 Gather 索引的偏移量（字节数）
 
     LoopModeParams lpModeInParams_ = {1, 1, 0, 0, 0, 0};
     LoopModeParams lpModeOutParams_ = {1, 1, 0, 0, 0, 0};
@@ -260,6 +306,23 @@ __aicore__ inline int64_t TransposeWithGather<T>::CalcBlkAxesOffset(int8_t begId
     return res;
 }
 
+/**
+ * @brief 执行 Gather 硬件转置操作
+ *
+ * 使用 RegBase 路径的 Gather 指令，根据预计算的索引从 UB_in 中
+ * 按任意跨步读取数据写入 UB_out，实现尾轴转置。
+ *
+ * 算法步骤：
+ * 1. 获取输入/输出/索引的 UB 物理地址
+ * 2. 按 gIndexId_ 选择对应的 Gather 索引偏移
+ * 3. 按 burstLpCnt 分批处理（每批 vlSize_ 个元素）
+ * 4. 对每批数据，按 outUbAxis2/1/0 三层循环展开：
+ *    a. 计算当前轴的偏移更新值 idxUpdate
+ *    b. Reg::Adds(idxReg, idxOriReg, idxUpdate) 更新索引
+ *    c. Gather(xReg, xInAddr, idxReg, mask) 按索引读取
+ *    d. Reg::DataCopy 写入输出 UB
+ * 5. 8bit 类型特殊处理：使用 DIST_PACK_B16 存储模式
+ */
 template <typename T>
 __aicore__ inline void TransposeWithGather<T>::GatherData()
 {

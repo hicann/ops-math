@@ -8,6 +8,23 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+/**
+ * @file aclnn_permute.cpp
+ * @brief aclnnPermute 接口实现
+ *
+ * 本文件实现了 aclnnPermute 的 GetWorkspaceSize 和执行接口。
+ *
+ * 处理流程：
+ * 1. CheckParam：空指针 / dtype 支持 / shape 一致 / dims 范围 / dims 不重复
+ * 2. BuildPermuteGraph：
+ *    a. 空 tensor → 直接返回空输出
+ *    b. l0op::Contiguous(self) → 转连续
+ *    c. dims 负值转正
+ *    d. l0op::Transpose(contiguous, perm, executor) → 核心转置
+ * 3. l0op::ViewCopy(permuteOut, out) → 写回非连续输出
+ *
+ * dims 负值处理：dims[i] < 0 时映射为 dims[i] + dimSize
+ */
 #include "aclnn_permute.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/transdata.h"
@@ -180,6 +197,21 @@ static const aclTensor* ProcessEmptyTensor(const aclTensor* self, const aclTenso
     }
 }
 
+/**
+ * @brief 构建 Permute 计算图
+ *
+ * 执行流程：
+ * 1. 空 tensor 处理：直接返回空输出
+ * 2. 转连续：非连续 Tensor 先调用 l0op::Contiguous 转连续
+ * 3. dims 负值转正：perm[i] < 0 → perm[i] + permSize
+ * 4. 调用 l0op::Transpose 完成维度交换
+ *
+ * @param self     输入张量
+ * @param dims     维度排列数组
+ * @param out      输出张量
+ * @param executor 算子执行器
+ * @return 转置结果张量；nullptr 表示失败
+ */
 static const aclTensor* BuildPermuteGraph(const aclTensor* self, const aclIntArray* dims, const aclTensor* out,
                                           aclOpExecutor* executor)
 {

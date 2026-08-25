@@ -10,8 +10,29 @@
 
 /*!
  * \file transpose_transdata_5hd_021.h
- * \brief 3D 021 transpose using TransDataTo5HD: [N, H, W] -> [N, W, H]
- * Supports 8-bit (int8/uint8), 16-bit (half/bfloat16), and 32-bit (float/int32) data types.
+ * \brief TilingKey=10008 VCONV_021_TRANSPOSE 策略实现
+ *
+ * 适用场景：DAV_5102(Ascend950) + 3D perm=[0,2,1]（H↔W转置，N维不变）+ 8/16/32bit + H>8,W>8,HW≥448
+ *
+ * 核心机制：使用 TransDataTo5HD 硬件指令实现3D [N,H,W]→[N,W,H] 转置。
+ * 与 VCONV_TRANSPOSE(10007) 的区别：
+ *   - 支持3种位宽：8bit(int8/uint8) / 16bit(fp16/bf16) / 32bit(fp32/int32)
+ *   - 多了一个 N 维循环（按 batch 处理）
+ *   - 支持 HSplit 模式（按 H 维切分到不同核）
+ *
+ * 切分模式：
+ *   - UseHSplit：按 H 维切分（每个核负责部分H行），适用于 H 较大的场景
+ *   - UseRConv：按行（R=H）方向 UB 切分 → ComputeRConv
+ *   - 否则按列（C=W）方向 UB 切分 → ComputeCConv
+ *
+ * 8bit 特殊处理（Compute8BitCore）：
+ *   - 8bit 数据需要高/低半分别处理（evenParams / oddParams）
+ *   - srcHighHalf 参数交替设置，用于处理8bit数据的16bit对齐
+ *   - 需要 PipeBarrier<PIPE_V>() 同步
+ *
+ * 32bit 特殊处理：
+ *   - dstStrideFactor = 2（32bit 类型 Gather 步长加倍）
+ *   - blockElem = 8（32B / 4B = 8 元素/块）
  */
 
 #ifndef KERNEL_TRANSPOSE_TRANSDATA_5HD_021_H_
@@ -23,13 +44,22 @@
 
 namespace Transpose {
 using namespace AscendC;
-static constexpr int64_t TRANSELEM_021 = 16;
-static constexpr int64_t BLOCKELEM_8BIT = 32;
-static constexpr int64_t BLOCKELEM_16BIT = 16;
-static constexpr int64_t BLOCKELEM_32BIT = 8;
-static constexpr int64_t DST_STRIDE_FACTOR_16BIT = 1;
-static constexpr int64_t DST_STRIDE_FACTOR_32BIT = 2;
+/* 硬件对齐常量：不同位宽对应的每 Block 元素数和 dstStride 因子 */
+static constexpr int64_t TRANSELEM_021 = 16;          ///< TransDataTo5HD 每次处理的元素数
+static constexpr int64_t BLOCKELEM_8BIT = 32;         ///< 8bit: 32B/1B = 32 元素/Block
+static constexpr int64_t BLOCKELEM_16BIT = 16;        ///< 16bit: 32B/2B = 16 元素/Block
+static constexpr int64_t BLOCKELEM_32BIT = 8;         ///< 32bit: 32B/4B = 8 元素/Block
+static constexpr int64_t DST_STRIDE_FACTOR_16BIT = 1; ///< 16bit dstStride 因子（标准步长）
+static constexpr int64_t DST_STRIDE_FACTOR_32BIT = 2; ///< 32bit dstStride 因子（步长需×2）
 
+/**
+ * @brief VCONV_021_TRANSPOSE 策略类，使用 TransDataTo5HD 实现3D [N,H,W]→[N,W,H] 转置
+ *
+ * 支持 8bit/16bit/32bit 三种位宽。8bit 需要高低半分别处理，32bit dstStride 需加倍。
+ * 支持 HSplit 模式（按 H 维切分到不同核）和 NSplit 模式（按 N 维切分）。
+ *
+ * @tparam T 数据元素类型（int8_t/int16_t/int32_t）
+ */
 template <typename T>
 class KernelTransDataTo5HD021 {
 public:
@@ -55,10 +85,13 @@ private:
     __aicore__ inline void CopyOutAligned(uint32_t r, uint32_t c);
     __aicore__ inline void CopyOutUnaligned(uint32_t r, uint32_t c, uint32_t ubLoop);
 
-    static constexpr int64_t blockElem = (sizeof(T) == 1) ? BLOCKELEM_8BIT :
-                                         (sizeof(T) == 4) ? BLOCKELEM_32BIT :
-                                                            BLOCKELEM_16BIT;
-    static constexpr int64_t dstStrideFactor = (sizeof(T) == 4) ? DST_STRIDE_FACTOR_32BIT : DST_STRIDE_FACTOR_16BIT;
+    /* 编译期常量：根据 sizeof(T) 自动选择 blockElem 和 dstStrideFactor */
+    static constexpr int64_t blockElem = (sizeof(T) == 1) ? BLOCKELEM_8BIT :    ///< 8bit: 32元素/Block
+                                         (sizeof(T) == 4) ? BLOCKELEM_32BIT :   ///< 32bit: 8元素/Block
+                                                            BLOCKELEM_16BIT;     ///< 16bit: 16元素/Block
+    static constexpr int64_t dstStrideFactor = (sizeof(T) == 4) ? DST_STRIDE_FACTOR_32BIT ///< 32bit: 步长×2
+                                                                  :
+                                                                  DST_STRIDE_FACTOR_16BIT; ///< 其他: 标准步长
 
     const Transpose021VCONVTilingData* tiling_ = nullptr;
     TQue<TPosition::VECIN, 1> inQueueSrc;
@@ -122,6 +155,22 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::ComputeRConv(uint32_t r, uint
     }
 }
 
+/**
+ * @brief 8bit 数据的 TransDataTo5HD 核心计算
+ *
+ * 8bit 数据需要高低半分别处理（因为硬件以16bit为基本单位操作）：
+ * - evenParams：处理偶数行（srcHighHalf 根据 srcHalfIdx 交替）
+ * - oddParams：处理奇数行
+ * - 需要在 even 和 odd 之间加 PipeBarrier<PIPE_V>() 同步
+ *
+ * 算法：
+ * 1. 按 cAlignBlocks（W方向按 blockElem 分块）遍历
+ * 2. 每块准备16个 srcList（偶数行）和16个 srcListOdd（奇数行）
+ * 3. 按 srcHalfIdx（0和1）交替处理高低半：
+ *    - evenParams/oddParams 的 srcHighHalf 交替设置
+ *    - TransDataTo5HD 按参数执行16×16 转置
+ * 4. 使用 PipeBarrier<PIPE_V>() 确保硬件流水线同步
+ */
 template <typename T>
 __aicore__ inline void KernelTransDataTo5HD021<T>::Compute8BitCore(uint32_t r, uint32_t c, uint32_t rAlign)
 {

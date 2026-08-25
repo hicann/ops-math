@@ -10,7 +10,17 @@
 
 /*!
  * \file transpose_tensor_move.h
- * \brief transpose_tensor_move
+ * \brief TilingKey=10000 TENSOR_MOVE 策略实现
+ *
+ * 适用场景：经过 RemoveAxisV2 + MergeAxisV2 后 reduced dim == 1，即输入融合后仅剩单一维度，
+ * 等价于纯数据搬运，无需任何转置操作。
+ *
+ * 核心设计：
+ *   - 使用 TQueBind<VECIN, VECOUT, 1> 双缓冲队列（BUFFER_NUM=2），UB 分两半交替使用
+ *   - 每次 CopyIn 从 GM 搬运 inUbFactor 个元素到 UB，再 CopyOut 原样写回 GM
+ *   - 双缓冲流水线：CopyIn 和 CopyOut 可重叠执行，提高带宽利用率
+ *
+ * 数据流：GM → DataCopyPad(UB) → DataCopyPad(GM)，纯顺序搬运无转置
  */
 #ifndef TRANSPOSE_TENSOR_MOVE_H
 #define TRANSPOSE_TENSOR_MOVE_H
@@ -20,6 +30,14 @@
 namespace Transpose {
 using namespace AscendC;
 
+/**
+ * @brief TENSOR_MOVE 策略类，实现纯数据搬运
+ *
+ * 当 Transpose 经过轴消除和轴合并后只剩1维时，无需转置，只需将数据从
+ * 输入 GM 搬运到输出 GM。使用双缓冲队列实现搬运流水线。
+ *
+ * @tparam T 数据元素类型（int8_t/int16_t/int32_t/int64_t 或复合类型）
+ */
 template <typename T>
 class TransposeTensorMove : public TransposeBase<T> {
 public:
@@ -34,20 +52,20 @@ private:
     int64_t blockIdx_;
 
     // buffer
-    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> vecQue_;
-    GlobalTensor<T> inputGM_;
-    GlobalTensor<T> outputGM_;
+    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> vecQue_; // 双缓冲绑定队列，VECIN→VECOUT 自动配对
+    GlobalTensor<T> inputGM_;                                     // 输入 GM 张量
+    GlobalTensor<T> outputGM_;                                    // 输出 GM 张量
 
     // tiling params
     const TransposeOpTilingData* tiling_;
-    int64_t inputTailFactor_ = 0;
-    int64_t blockLoopNum_ = 0;
-    int64_t inLoopNum_ = 0;
-    int64_t srcOffset_ = 0;
+    int64_t inputTailFactor_ = 0; // 最后一次 UB 循环的尾块元素数（不满 inUbFactor 时）
+    int64_t blockLoopNum_ = 0;    // 当前核需要执行的 UB 循环总次数
+    int64_t inLoopNum_ = 0;       // UB 循环次数（= CeilDiv(blockLoopNum_, inUbFactor)）
+    int64_t srcOffset_ = 0;       // 当前核在全局数据中的起始偏移（元素数）
 
     // Datacopy params
-    DataCopyPadExtParams<T> padParams_{false, 0, 0, 0};
-    DataCopyExtParams copyOutParamsMain_{1, 0, 0, 0, 0};
+    DataCopyPadExtParams<T> padParams_{false, 0, 0, 0};  // Pad 扩展参数（不使用 Padding）
+    DataCopyExtParams copyOutParamsMain_{1, 0, 0, 0, 0}; // CopyOut 参数：blockCount=1, blockLen 动态设置
 };
 
 template <typename T>

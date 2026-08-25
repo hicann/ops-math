@@ -10,7 +10,25 @@
 
 /*!
  * \file transpose_cut_two_axis.h
- * \brief transpose_cut_two_axis
+ * \brief TilingKey=10003 CUT_TWICE 策略实现
+ *
+ * 适用场景：2-5维 NDDMA 场景，DoSplitUB 后 outCutIndex > FindOutIndex(inCutIndex)，
+ * 即输出切分轴比输入切分轴"更靠前"，需要同时切2个轴。
+ *
+ * 核心特征：4种数据区间
+ *   由于同时切输入轴和输出轴，数据被划分为4种区间：
+ *   | 区间       | 含义                          | 处理函数          |
+ *   |------------|-------------------------------|-------------------|
+ *   | Main       | 输入轴+输出轴均为主块          | ProcessMain()     |
+ *   | InputTail  | 输入轴为尾块，输出轴为主块      | ProcessInputTail()|
+ *   | OutputTail | 输入轴为主块，输出轴为尾块      | ProcessOutputTail()|
+ *   | Tail       | 输入轴+输出轴均为尾块          | ProcessTail()     |
+ *
+ * 区间范围由 TilingData 中的 rangeMainEnd / rangeInputTailStart/End /
+ * rangeOutputTailStart/End / rangeTailStart/End 定义。
+ *
+ * 多核区间计算：ProcessBlock() 中，每个核根据自己的 srcOffset_ 和 blkProcessNum_
+ * 与4种区间求交集（PorcessOffsetRange），只处理自己负责的区间。
  */
 #ifndef TRANSPOSE_CUT_TWO_AXIS_H
 #define TRANSPOSE_CUT_TWO_AXIS_H
@@ -20,6 +38,14 @@
 namespace Transpose {
 using namespace AscendC;
 
+/**
+ * @brief CUT_TWICE 策略类，实现 NDDMA 5维搬运 + 双轴切分转置
+ *
+ * 与 CUT_ONCE 的主要区别：需要同时切输入轴和输出轴，产生4种数据区间。
+ * 每种区间使用不同的 NDDMA 参数和地址偏移基准。
+ *
+ * @tparam T 数据元素类型
+ */
 template <typename T>
 class TransposeCutTwoAxis : public TransposeBase<T> {
 public:
@@ -37,35 +63,37 @@ private:
     const TransposeOpTilingData* tiling_;
 
     // expand input and output init
-    int64_t expandedInputCutIndex_;
-    int64_t expandedOutputCutIndex_;
+    int64_t expandedInputCutIndex_;  ///< 输入切分轴在5维扩展后的索引
+    int64_t expandedOutputCutIndex_; ///< 输出切分轴在5维扩展后的索引
 
     // core params
     int64_t blkProcessNum_ = 0;
     int64_t srcOffset_ = 0;
 
-    // copyOut params
-    int64_t mainLoopSize_[NDDMA_MAX_DIM_NUM] = {1, 1, 1, 1, 1};
-    int64_t mainLoopSrcStride_[NDDMA_MAX_DIM_NUM] = {0, 0, 0, 0, 0};
-    int64_t inputTailLoopSize_[NDDMA_MAX_DIM_NUM] = {1, 1, 1, 1, 1};
-    int64_t inputTailLoopSrcStride_[NDDMA_MAX_DIM_NUM] = {0, 0, 0, 0, 0};
-    int64_t outputTailLoopSize_[NDDMA_MAX_DIM_NUM] = {1, 1, 1, 1, 1};
-    int64_t outputTailLoopSrcStride_[NDDMA_MAX_DIM_NUM] = {0, 0, 0, 0, 0};
-    int64_t tailLoopSize_[NDDMA_MAX_DIM_NUM] = {1, 1, 1, 1, 1};
-    int64_t tailLoopSrcStride_[NDDMA_MAX_DIM_NUM] = {0, 0, 0, 0, 0};
-    int64_t loopDstStride_[NDDMA_MAX_DIM_NUM] = {0, 0, 0, 0, 0};
+    // CopyOut 参数：4种区间各有独立的 loopSize 和 loopSrcStride
+    int64_t mainLoopSize_[NDDMA_MAX_DIM_NUM] = {1, 1, 1, 1, 1};            ///< Main 区间 loopSize
+    int64_t mainLoopSrcStride_[NDDMA_MAX_DIM_NUM] = {0, 0, 0, 0, 0};       ///< Main 区间 loopSrcStride
+    int64_t inputTailLoopSize_[NDDMA_MAX_DIM_NUM] = {1, 1, 1, 1, 1};       ///< InputTail 区间 loopSize
+    int64_t inputTailLoopSrcStride_[NDDMA_MAX_DIM_NUM] = {0, 0, 0, 0, 0};  ///< InputTail 区间 loopSrcStride
+    int64_t outputTailLoopSize_[NDDMA_MAX_DIM_NUM] = {1, 1, 1, 1, 1};      ///< OutputTail 区间 loopSize
+    int64_t outputTailLoopSrcStride_[NDDMA_MAX_DIM_NUM] = {0, 0, 0, 0, 0}; ///< OutputTail 区间 loopSrcStride
+    int64_t tailLoopSize_[NDDMA_MAX_DIM_NUM] = {1, 1, 1, 1, 1};            ///< Tail 区间 loopSize
+    int64_t tailLoopSrcStride_[NDDMA_MAX_DIM_NUM] = {0, 0, 0, 0, 0};       ///< Tail 区间 loopSrcStride
+    int64_t loopDstStride_[NDDMA_MAX_DIM_NUM] = {0, 0, 0, 0, 0};           ///< 共用的 loopDstStride
 
-    int64_t inputTailSrcAddressOffsetBase_ = 1;
-    int64_t inputTailDstAddressOffsetBase_ = 1;
-    int64_t outputTailSrcAddressOffsetBase_ = 1;
-    int64_t outputTailDstAddressOffsetBase_ = 1;
+    // 尾块的基准地址偏移（尾块在输入/输出轴上有固定的偏移起点）
+    int64_t inputTailSrcAddressOffsetBase_ = 1;  ///< InputTail 源地址基准偏移
+    int64_t inputTailDstAddressOffsetBase_ = 1;  ///< InputTail 目标地址基准偏移
+    int64_t outputTailSrcAddressOffsetBase_ = 1; ///< OutputTail 源地址基准偏移
+    int64_t outputTailDstAddressOffsetBase_ = 1; ///< OutputTail 目标地址基准偏移
 
-    int64_t inputOutputCutIndex_;
-    int64_t outputInputCutIndex_;
-    int64_t maxCutIndex_;
-    int64_t minCutIndex_;
-    int64_t outUbLoop_ = 1;
+    int64_t inputOutputCutIndex_; ///< 从输入角度看，输出切分轴对应的输入轴索引
+    int64_t outputInputCutIndex_; ///< 从输出角度看，输入切分轴对应的输出轴索引
+    int64_t maxCutIndex_;         ///< 两个切分轴中较大的索引（用于对齐计算）
+    int64_t minCutIndex_;         ///< 两个切分轴中较小的索引
+    int64_t outUbLoop_ = 1;       ///< 非切分轴的 UB 循环数
 
+    /// 区间结构体，记录某个数据区间的起始和结束索引
     struct Interval_ {
         int64_t start = 0;
         int64_t end = 0;
@@ -129,6 +157,16 @@ __aicore__ inline void TransposeCutTwoAxis<T>::Process()
     ProcessPerCore();
 }
 
+/**
+ * @brief 全局十进制转混合基函数（8维，CUT_TWICE 使用）
+ *
+ * 将线性索引 num 分解到8维混合基，用于计算多维地址偏移。
+ * 与 CUT_ONCE 的 DecimalToMixed 类似，但维度上限为 TRANSPOSE_MAX_AXIS_NUM(8)。
+ *
+ * @param num       待分解的十进制数
+ * @param bases     各维度的基数数组
+ * @param mixedBase [out] 混合基分解结果
+ */
 __aicore__ inline void DecimalToMixedBase(int64_t num, int64_t bases[], int64_t mixedBase[])
 {
     if (num == 0) {
@@ -151,6 +189,17 @@ __aicore__ inline int64_t AlignToMultiple(int64_t a, int64_t b)
     return CeilDivision(a, b) * b;
 }
 
+/**
+ * @brief 计算当前核与指定区间的交集
+ *
+ * CUT_TWICE 的4种区间（Main/InputTail/OutputTail/Tail）是全局定义的，
+ * 每个核只负责其中一部分数据。此函数计算当前核的循环范围 [srcOffset_, srcOffset_+blkProcessNum_-1]
+ * 与指定区间 [start, end] 的交集，结果写入 offsetRangeRes。
+ *
+ * @param start        区间起始索引
+ * @param end          区间结束索引
+ * @param offsetRangeRes [out] 交集结果
+ */
 template <typename T>
 __aicore__ inline void TransposeCutTwoAxis<T>::PorcessOffsetRange(int64_t start, int64_t end, Interval_& offsetRangeRes)
 {

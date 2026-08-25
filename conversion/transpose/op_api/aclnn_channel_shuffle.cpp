@@ -8,6 +8,26 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+/**
+ * @file aclnn_channel_shuffle.cpp
+ * @brief aclnnChannelShuffle 接口实现
+ *
+ * 本文件实现了 aclnnChannelShuffle 的 GetWorkspaceSize 和执行接口。
+ *
+ * Channel Shuffle 的数学公式：
+ *   y = reshape(transpose(reshape(x, [*, g, C/g, H, W]), [0,2,1,3,4]), [*, C, H, W])
+ *
+ * 实现逻辑（reshape→transpose→reshape 组合）：
+ * 1. 将输入从 [*, C, H, W] reshape 成 [*, groups, C/groups, H, W]
+ * 2. 构造 perm = [0, 2, 1, 3, 4, ...]，交换第1维(groups)和第2维(C/groups)
+ * 3. 执行 Transpose 完成维度交换
+ * 4. 将结果 reshape 回 [*, C, H, W]
+ *
+ * 约束条件：
+ * - 输入维度 3-7 维
+ * - groups > 0 且能被 C（第1维）整除
+ * - 输入输出 shape 必须一致
+ */
 #include "aclnn_channel_shuffle.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/transpose.h"
@@ -99,6 +119,23 @@ static aclnnStatus CheckParams(const aclTensor* self, int64_t groups, aclTensor*
     return ACLNN_SUCCESS;
 }
 
+/**
+ * @brief 执行 Channel Shuffle 核心计算
+ *
+ * 实现 reshape→transpose→reshape 组合：
+ * 1. 计算新的 reshape size：[*, groups, channelsPerGroup, H, W, ...]
+ * 2. Contiguous 转连续
+ * 3. Reshape: [*, C, H, W] → [*, groups, C/g, H, W]
+ * 4. Transpose: perm=[0,2,1,3,4,...]，交换 groups 和 C/g 维
+ * 5. Reshape: 转回 [*, C, H, W]
+ * 6. ViewCopy: 写回可能的非连续输出
+ *
+ * @param self     输入张量
+ * @param groups   通道分组数
+ * @param out      输出张量
+ * @param executor 算子执行器
+ * @return ACLNN_SUCCESS 成功；其他错误码失败
+ */
 static aclnnStatus ProcessChannelShuffle(const aclTensor* self, const int64_t groups, aclTensor* out,
                                          aclOpExecutor* executor)
 {

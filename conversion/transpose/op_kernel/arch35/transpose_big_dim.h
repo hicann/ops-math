@@ -10,7 +10,21 @@
 
 /*!
  * \file transpose_big_dim.h
- * \brief transpose_big_dim
+ * \brief TilingKey=10005 BIG_DIM 策略实现
+ *
+ * 适用场景：维度 > 5（超过 NDDMA 5维限制），需要将原始 shape 压缩到5维 NDDMA 格式。
+ *
+ * 核心策略：
+ *   - Host 侧 FlushBaseNumForBigDim() 预计算 nddmaIdx 映射：
+ *     将原始轴索引压缩到5维 NDDMA 格式，nddmaIdx[i] 记录5维中第i维对应的原始轴
+ *   - Kernel 侧 SetLoopInfo() 根据 nddmaIdx 和 perm[outCutIndex] 设置5维 NDDMA 参数
+ *   - nddmaFlag[i] 标记每维的状态：
+ *     = 1  → 该维保持原始大小（位于输出切分轴之后，UB内完整保留）
+ *     = -1 → 该维被切分（即为输出切分轴对应的输入轴）
+ *     = 0  → 该维大小为1（位于输出切分轴之前，已合并到更高级别）
+ *
+ * 数据流：GM → DataCopy<T,5>(UB, NDDMA) → DataCopyPad(GM, 整块写出)
+ * Main/Tail 判断同 CUT_ONCE，按 outCutLoopSize 判断。
  */
 #ifndef TRANSPOSE_BIG_DIM_H
 #define TRANSPOSE_BIG_DIM_H
@@ -20,6 +34,11 @@
 namespace Transpose {
 using namespace AscendC;
 
+/**
+ * @brief BIG_DIM 策略类，实现 >5维压缩到5维 NDDMA 的转置
+ *
+ * @tparam T 数据元素类型
+ */
 template <typename T>
 class TransposeBigDim : public TransposeBase<T> {
 public:
@@ -87,6 +106,15 @@ __aicore__ inline void TransposeBigDim<T>::DecimalToMixed(int64_t num, int64_t b
     }
 }
 
+/**
+ * @brief 设置 NDDMA 5维搬运的 LoopInfo 参数
+ *
+ * 根据 nddmaIdx 映射和 perm[outCutIndex] 设置5维 NDDMA 参数。
+ * nddmaFlag[i] 标记每维的状态：
+ *   - nddmaFlag[i] == 1：该维在输出切分轴之后，保持原始大小
+ *   - nddmaFlag[i] == -1：该维是输出切分轴对应的输入轴，使用 outUbFactor 作为 loopSize
+ *   - nddmaFlag[i] == 0：该维在输出切分轴之前，大小为1（不参与循环）
+ */
 template <typename T>
 __aicore__ inline void TransposeBigDim<T>::SetLoopInfo(MultiCopyLoopInfo<NDDMA_MAX_DIM_NUM>& loopInfo)
 {

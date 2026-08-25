@@ -9,7 +9,23 @@
  */
 /*!
  * \file transpose_tiling_base.cpp
- * \brief transpose
+ * \brief Transpose Tiling 基础轴变换函数实现
+ *
+ * 本文件实现 RemoveAxisV2 和 MergeAxisV2 两个核心轴变换函数，
+ * 它们是 Tiling 策略选择的前置步骤。
+ *
+ * RemoveAxisV2 算法：
+ *   1. 如果所有轴都是1，直接降为1维
+ *   2. 遍历 shape，找出 size=1 的轴索引（delPerm）
+ *   3. 从 perm 中删除这些轴对应的索引
+ *   4. 调整剩余 perm 值（大于被删除轴索引的值减1）
+ *   5. 重新计算 reducedInShape 和 reducedOutShape
+ *
+ * MergeAxisV2 算法：
+ *   1. 按 perm 顺序遍历，检查相邻两个 perm 值是否连续
+ *   2. 连续的轴合并为一个轴（shape 相乘）
+ *   3. 重新排列合并后的 perm 和 shape
+ *   4. 计算新的 reducedInShape 和 reducedOutShape
  */
 #include "transpose_tiling_arch35.h"
 #include "transpose_tiling_base.h"

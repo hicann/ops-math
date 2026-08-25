@@ -22,6 +22,18 @@ static constexpr int64_t NUM_FOUR = 4;
 static constexpr int64_t NUM_EIGHT = 8;
 static constexpr size_t SYS_WORKSPACE_SIZE = static_cast<size_t>(16) * 1024 * 1024;
 
+/**
+ * @brief 计算 Gather 路径 UB 预算（dataTensorSize / indexTensorSize）
+ *
+ * Gather 路径 UB 中同时存在：输入 queue（双缓冲）×2 + 输出 queue（双缓冲）×2
+ * + Gather 索引 buffer。按"输入2份 + 输出2份 + 索引1份"比例切分 UB 预算，
+ * 并对 ubBlockSize 块对齐。
+ *
+ * 分档依据（元素字节数，决定索引占用比例）：
+ *   - 1B（8bit）：data 占 ub/(2*2+2)=ub/6；索引需 16bit → index = data*2
+ *   - 8B（64bit）：data 占 ub/(2*2*8+4)*8；索引 32bit → index = data/2
+ *   - 其他（2/4B）：data 占 ub/(2*2+1)=ub/5；索引同宽 → index = data
+ */
 void TransposeGatherTiling::CalcTensorSize()
 {
     // ping pong, input and output
@@ -40,6 +52,14 @@ void TransposeGatherTiling::CalcTensorSize()
     }
 }
 
+/**
+ * @brief 计算 shape[beg, end) 区间的元素数乘积
+ *
+ * @param shape 输入 shape（此处传 reducedInShape 或 reducedOutShape）
+ * @param beg   起始索引（含）
+ * @param end   结束索引（不含）
+ * @return 区间内各轴长度乘积
+ */
 int64_t TransposeGatherTiling::CalcShapeSize(const std::vector<int64_t>& shape, int64_t beg, int64_t end)
 {
     int64_t res = 1;
@@ -49,6 +69,15 @@ int64_t TransposeGatherTiling::CalcShapeSize(const std::vector<int64_t>& shape, 
     return res;
 }
 
+/**
+ * @brief 选择进入 UB 的输入轴（inUbPerm）
+ *
+ * 从输入最末轴（最连续）向前收集轴索引，最多 UB_MAX_BRW_NUM=3 根，
+ * 直到已收集轴的元素容量乘积超过 sqrtedTensor（正方形 block 边长预算）：
+ *   inUbPerm_[0..cnt-1] = [最末轴, 次末轴, ...]
+ *
+ * @param sqrtedTensor block 边长预算（元素数）
+ */
 void TransposeGatherTiling::CalcInUbPerm(int64_t sqrtedTensor)
 {
     for (int64_t i = shapeInfo_.dim - 1; i >= 0; --i) {
@@ -62,6 +91,15 @@ void TransposeGatherTiling::CalcInUbPerm(int64_t sqrtedTensor)
     }
 }
 
+/**
+ * @brief 选择进入 UB 的输出轴（outUbPerm）
+ *
+ * 从输出最末轴向前收集输出轴对应的输入轴索引（reducedPerm[i]），
+ * 最多 UB_MAX_BRW_NUM=3 根，直到乘积超过 sqrtedTensor。
+ * 与 CalcInUbPerm 的结果合并为 allUbPerm（真正进入 UB 循环的轴集合）。
+ *
+ * @param sqrtedTensor block 边长预算（元素数）
+ */
 void TransposeGatherTiling::CalcOutUbPerm(int64_t sqrtedTensor)
 {
     for (int64_t i = shapeInfo_.dim - 1; i >= 0; --i) {
@@ -74,6 +112,26 @@ void TransposeGatherTiling::CalcOutUbPerm(int64_t sqrtedTensor)
     }
 }
 
+/**
+ * @brief 根据 UB 越界情况回调切分因子（AdjustUbCutAxisFactor）
+ *
+ * 对拟定的 cut factor（axisFactor）做输入/输出两侧的 UB 越界校验：
+ * 若"当前 block 数据量 > elemInTensor"，按 elemInTensor/对侧尺寸/block 回退因子。
+ *
+ * 三种 axisFlag 场景（与 CalcUbAxisCutFactor 调用对应）：
+ *   - 0：in/out 切同一条轴 —— 同时校验 dst（输出 UB）与 src（输入 UB）两侧；
+ *   - 1 / 3：切"输出"轴 —— 校验 dst 溢出（输入侧已计入 inUbCutAxisFactor），
+ *        src 侧累计整块是否超 elemInTensor；
+ *   - 2：切"输入"轴 —— 校验 src 溢出（输出侧已计入 outUbCutAxisFactor）。
+ *
+ * 回退公式（以 axisFlag==0 的 dst 侧为例）：
+ *   dstFactor = elemInTensor / dstInUbAxesSize / elemPerBlock * elemPerBlock / dstOutUbAxesSize
+ *   即用剩余容量除以对侧轴乘积、再向 block 对齐后取整，确保回退后不越界。
+ *
+ * @param axisFactor  [in,out] 待回调的切分因子
+ * @param axisFlag   0=同轴; 1=输出轴; 2=输入轴; 3=输出轴(计入输入因子后)
+ * @param elemInTensor 数据 tensor 的元素容量上限
+ */
 void TransposeGatherTiling::AdjustUbCutAxisFactor(int32_t& axisFactor, int8_t axisFlag, int64_t elemInTensor)
 {
     int64_t srcInUbAxesSize = 1;
@@ -81,21 +139,25 @@ void TransposeGatherTiling::AdjustUbCutAxisFactor(int32_t& axisFactor, int8_t ax
     int64_t dstInUbAxesSize = 1;
     int64_t dstOutUbAxesSize = 1;
 
+    // dst 侧（输出视角）：outUbPerm 前 cnt-1 根轴（非切分轴）的乘积
     std::set<int8_t> viceUbPerm0(allUbPerm_);
     for (int8_t i = 0; i < outUbPerm_.cnt - 1; ++i) {
         dstOutUbAxesSize *= shapeInfo_.reducedInShape[outUbPerm_.perm[i]];
         viceUbPerm0.erase(outUbPerm_.perm[i]);
     }
+    // dst 侧输入贡献：inUbPerm 中还未被 outUbPerm 占用的轴
     for (int8_t i = 0; i < inUbPerm_.cnt - 1; ++i) {
         if (viceUbPerm0.find(inUbPerm_.perm[i]) != viceUbPerm0.end()) {
             dstInUbAxesSize *= shapeInfo_.reducedInShape[inUbPerm_.perm[i]];
         }
     }
+    // src 侧（输入视角）：inUbPerm 前 cnt-1 根非切分轴
     std::set<int8_t> viceUbPerm1(allUbPerm_);
     for (int8_t i = 0; i < inUbPerm_.cnt - 1; ++i) {
         srcInUbAxesSize *= shapeInfo_.reducedInShape[inUbPerm_.perm[i]];
         viceUbPerm1.erase(inUbPerm_.perm[i]);
     }
+    // src 侧输出贡献：outUbPerm 中还未被 inUbPerm 占用的轴
     for (int8_t i = 0; i < outUbPerm_.cnt - 1; ++i) {
         if (viceUbPerm1.find(outUbPerm_.perm[i]) != viceUbPerm1.end()) {
             srcOutUbAxesSize *= shapeInfo_.reducedInShape[outUbPerm_.perm[i]];
@@ -156,6 +218,33 @@ void TransposeGatherTiling::AdjustUbCutAxisFactor(int32_t& axisFactor, int8_t ax
     }
 }
 
+/**
+ * @brief 确定 Gather 的 UB 内切分因子（inUbCutAxisFactor / outUbCutAxisFactor）
+ *
+ * 切分轴 = inUbPerm/outUbPerm 各自最末一根轴（被"切"以适应 UB 容量）。
+ * 根据"输入 last 轴 / 输出 last 轴是否还剩余（isLastInPermLeft / isLastOutPermLeft）"
+ * 分 4 种 case 求因子：
+ *
+ *   1) 两 last 都剩余（∈viceAllUbPerm）：
+ *      a. 两 last 轴不同：
+ *         - 若 in/out 无重叠（cnt 之和 == ubAxesCnt）：两因子各取
+ *           sqrtedTensor / savedElems（正方形近似）
+ *         - 有重叠：先按共用轴计算 newSqrtedTensor 再分别除以非共用轴乘积
+ *      b. 两 last 轴相同：因子取 min(inUbCutAxisSize, maxCutAxisSize, maxOutCutAxisSize)
+ *         并让 outUbCutAxisFactor = inUbCutAxisFactor（同轴同切）
+ *   2) 都不剩余：取完整 cutAxisSize（该轴全量进 UB，无需切）
+ *   3) 只剩输入 last：outCutAxisFactor 取完整，inCutAxisFactor 取
+ *      min(inUbCutAxisSize, maxCutAxisSize) 并回调
+ *   4) 只剩输出 last：对称处理
+ *
+ * maxOutCutAxisSize 额外限制：为 gather 索引预留 1/4 UB（NUM_FOUR 分母）。
+ *
+ * @param elemInTensor    数据 tensor 元素容量上限
+ * @param sqrtedTensor    block 边长预算
+ * @param isLastInPermLeft  输入 last 轴是否∈viceAllUbPerm（剩余未分配）
+ * @param isLastOutPermLeft 输出 last 轴是否∈viceAllUbPerm
+ * @param viceAllUbPerm    已分配轴集合（in/out 非切分轴已从 allUbPerm 移除）
+ */
 void TransposeGatherTiling::CalcUbAxisCutFactor(int64_t elemInTensor, int64_t sqrtedTensor, bool isLastInPermLeft,
                                                 bool isLastOutPermLeft, const std::set<int8_t>& viceAllUbPerm)
 {
@@ -217,6 +306,25 @@ void TransposeGatherTiling::CalcUbAxisCutFactor(int64_t elemInTensor, int64_t sq
     }
 }
 
+/**
+ * @brief 汇总 UB 内轴尺寸（inUbAxes / outUbAxes / ubPerm）并做硬件约束校验
+ *
+ * tmpInAxes/tmpOutAxes/tmpOutPerm 是"十字布局"的中间表示：
+ *   对每个输出位置 j：outAxes[j] 记录该输出轴的尺寸，inAxes[perm[j]] 记录
+ *   对应输入轴尺寸，ubPerm[j] 记录输入轴在 allUbPerm 中的序号。
+ * 本函数把它们压实为 kernel 使用的紧凑数组（去掉 0 项），并计算：
+ *   - totalSizeInUb = eleBytes × Π inUbAxes：UT 单次搬运容量
+ *   - indexStep：gather 索引的步进
+ *
+ * 硬件约束（不满足则返回失败回退 NDDMA）：
+ *   - totalSizeInUb ≥ MTE_GATE(0x8000)：MTE 搬运效率门槛
+ *   - CheckBC(indexStep) 为 false：避免 gather 索引在 UB bank 上的冲突
+ *
+ * 同时把输入侧切分轴位置 inUbInCutPos/inUbOutCutPos 映射到输出侧
+ * （outUbInCutPos / outUbOutCutPos），供 kernel GetOutLoopAxes 使用。
+ *
+ * @return GRAPH_SUCCESS 校验通过；GRAPH_FAILED MTE 效率不足或 bank 冲突
+ */
 ge::graphStatus TransposeGatherTiling::CalcUbAxesInfo(const int64_t (&tmpInAxes)[MAX_TRANS_AXIS_NUM],
                                                       const int64_t (&tmpOutAxes)[MAX_TRANS_AXIS_NUM],
                                                       const int8_t (&tmpOutPerm)[MAX_TRANS_AXIS_NUM])
@@ -260,6 +368,28 @@ ge::graphStatus TransposeGatherTiling::CalcUbAxesInfo(const int64_t (&tmpInAxes)
     return ge::GRAPH_SUCCESS;
 }
 
+/**
+ * @brief 构造 Gather 的 UB 轴信息（CalcUbSplitInfo4Gather）
+ *
+ * 把已选出的 inUbPerm/outUbPerm 轴整理为"十字布局"中间数组 tmpInAxes/
+ * tmpOutAxes/tmpOutPerm，并调用 CalcUbAxisCutFactor 确定切分因子。
+ *
+ * 具体流程：
+ *   1. ubAxesCnt = allUbPerm 大小（UB 内轴总数）
+ *   2. inUbCutAxisSize = inUbPerm 最末轴长度（输入切分轴完整尺寸），
+ *      inUbInCutPos = 该轴在 allUbPerm 中的序号
+ *   3. 输入非切分轴：填入其在输出 perm 位置 idx 的 tmpOutPerm/tmpOutAxes，
+ *      以及 tmpInAxes[perm[i]]（十字布局的第一条边）
+ *   4. 输出非切分轴（且未在输入中出现）：填入对应位置（十字布局第二条边）
+ *   5. 计算 isLastInPermLeft/isLastOutPermLeft（两 last 轴是否仍未分配）
+ *   6. CalcUbAxisCutFactor 确定 inUbCutAxisFactor / outUbCutAxisFactor
+ *   7. 若 last 轴剩余：把切分因子填入 tmpOutAxes[idx]（尺寸 = 因子）
+ *   8. CalcUbAxesInfo 压实 + 硬件校验
+ *
+ * @param elemInTensor 数据 tensor 元素容量上限
+ * @param sqrtedTensor block 边长预算
+ * @return GRAPH_SUCCESS 成功；GRAPH_FAILED 校验失败回退 NDDMA
+ */
 ge::graphStatus TransposeGatherTiling::CalcUbSplitInfo4Gather(int64_t elemInTensor, int64_t sqrtedTensor)
 {
     int8_t tmpOutPerm[MAX_TRANS_AXIS_NUM] = {0xf, 0xf, 0xf, 0xf, 0xf, 0xf, 0xf, 0xf};
@@ -322,6 +452,18 @@ ge::graphStatus TransposeGatherTiling::CalcUbSplitInfo4Gather(int64_t elemInTens
     return CalcUbAxesInfo(tmpInAxes, tmpOutAxes, tmpOutPerm);
 }
 
+/**
+ * @brief 计算 Gather 搬入/搬出（MTE）的各循环轴跨步
+ *
+ * axis0/1/2InSrcStride：从 GM 搬入 UB 时，UB 内各循环轴对应的源跨步
+ *   - 源跨步 = 输入视角下该轴右侧（更高维）所有轴的乘积
+ *   - 优先保证"输出最末维连续搬入"（outUbPerm_[0] 的轴放在 axis0 首循环）
+ * axis0/1/2OutDstStride：从 UB 搬出到 GM 时，各循环轴的目标跨步
+ *   - 目标跨步 = 输出视角下该轴右侧乘积
+ *
+ * kernel 端 SetCopyInParams/SetCopyOutParams 用这些 stride 构建
+ * DataCopyPad 的 blockCount/blockLen/stride 与 LoopMode 参数。
+ */
 void TransposeGatherTiling::CalcUbSplitInfo4MTE()
 {
     auto dim = shapeInfo_.dim;
@@ -363,6 +505,17 @@ void TransposeGatherTiling::CalcUbSplitInfo4MTE()
     }
 }
 
+/**
+ * @brief 借轴调整：让"借入的轴"搬入 UB 时位于 axis0（输出末维连续）
+ *
+ * 当输出末维（outUbPerm 最后一轴的输入序号）在 UB 内的位置不是 axis0，
+ * 且中间有空位（axis0Gap = inUbInCutPos - 1 - outLastDimInPos > 0）时，
+ * 把 inUbAxes 中元素向左移位，把输出末维那根轴搬到 axis0 位置，
+ * 保证搬入 GM→UB 时输出末维连续（搬出时无需跨步）。
+ *
+ * 同时修正 ubPerm 顺序，使 gather 索引生成阶段（GenIndex4OneDim/TwoDim/ThreeDim）
+ * 按新的轴顺序枚举输出维度，并适配 outUbPerm.cnt==2/3 时的轴排列。
+ */
 void TransposeGatherTiling::AdjustInUbAxesPosition()
 {
     int8_t outLastDimInPos = ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - 1];
@@ -411,6 +564,16 @@ void TransposeGatherTiling::AdjustInUbAxesPosition()
     }
 }
 
+/**
+ * @brief 检查 gather 索引的 UB Bank Conflict
+ *
+ * 索引步进（steps，元素数）× eleLenInBytes 得到字节跨步，按 8B 子 bank 对齐后，
+ * 若在 128B bank 内所占的子 bank 序号为偶数（MOD 8 后 /8%2==0），说明 gather
+ * 读取时多个并行访问落在同一子 bank → 硬件冲突，返回 true。
+ *
+ * @param steps 索引步进（元素数）
+ * @return true 存在 bank 冲突（应回退 NDDMA）；false 安全
+ */
 bool TransposeGatherTiling::CheckBC(int32_t steps)
 {
     int32_t bytesPerSubBank = 8;
@@ -420,6 +583,16 @@ bool TransposeGatherTiling::CheckBC(int32_t steps)
     return (stepBytesAlign % bytesPerBank / bytesPerSubBank % NUM_TWO == 0);
 }
 
+/**
+ * @brief 计算 Gather block 的边长预算（sqrt 后按 block/cacheline 对齐）
+ *
+ * sqrtedTensor = sqrt(elemInTensor)，先向 elemPerBlock 向下对齐，
+ * 再限制到 cacheLineSize 以内（除以 cacheLine 后取整）。
+ * 若输入最末轴比预算大且预算会引起 bank 冲突，则再减去 8B 对应元素数。
+ *
+ * @param elemInTensor 数据 tensor 元素容量
+ * @return block 边长预算（元素数）
+ */
 int64_t TransposeGatherTiling::CalcSqrtedTensor(int64_t elemInTensor)
 {
     int64_t elemPerBlock = platInfo_.ubBlockSize / shapeInfo_.eleLenInBytes;
@@ -436,6 +609,22 @@ int64_t TransposeGatherTiling::CalcSqrtedTensor(int64_t elemInTensor)
     return sqrtedTensor;
 }
 
+/**
+ * @brief Gather 切轴逻辑入口（组装 UB 内轴 + 切分因子 + MTE 跨步）
+ *
+ * 整体流程：
+ *   1. elemInTensor = dataTensorSize / eleBytes（UB 数据预算的元素容量）
+ *   2. sqrtedTensor = CalcSqrtedTensor(elemInTensor)（block 边长预算）
+ *   3. CalcInUbPerm/CalcOutUbPerm：选择进入 UB 的输入/输出轴（≤3 根）
+ *   4. CalcUbSplitInfo4Gather：十字布局 + 切分因子 + 硬件校验
+ *   5. CalcUbSplitInfo4MTE：搬入/搬出跨步
+ *   6. AdjustInUbAxesPosition：借轴调整（保证输出末维连续搬入）
+ *
+ * MTE/BC 校验失败（CalcUbSplitInfo4Gather 返回 FAIL）时返回失败，
+ * 上层 DoTiling 会回退 NDDMA 主流程。
+ *
+ * @return GRAPH_SUCCESS 切轴完成；GRAPH_FAILED MTE 效率不足或 bank 冲突
+ */
 ge::graphStatus TransposeGatherTiling::CalcUbSplitInfo()
 {
     int64_t elemInTensor = static_cast<int64_t>(dataTensorSize_ / shapeInfo_.eleLenInBytes);
@@ -450,6 +639,27 @@ ge::graphStatus TransposeGatherTiling::CalcUbSplitInfo()
     return ge::GRAPH_SUCCESS;
 }
 
+/**
+ * @brief Gather 分核逻辑（块级循环轴 + 核数/负载均衡）
+ *
+ * 对 allUbPerm 之外（未进入单次 block）的轴，以及切分后仍剩余循环的轴，
+ * 每个轴生成一个块级循环轴 blkAxes：
+ *   - blkAxes[cnt]   = CeilDiv(shape[i], axisFactor)：该轴需循环的次数
+ *   - blkAxesInAOffset[cnt]  = Π reducedInShape[j] (j>i) × axisFactor：输入地址跨步
+ *   - blkAxesOutAOffset[cnt] = Π reducedOutShape[j] (j>perm逆位置) × axisFactor：输出地址跨步
+ *   - 输入/输出切分轴若有尾块（size % factor != 0），记 blkInUbCutPos / blkOutUbCutPos
+ *     （kernel UpdateUbAxes 据此切换 main/tail）
+ *
+ * 核数：totalElems = Π blkAxes
+ *   usedCoreCnt = CeilDiv(totalElems, CeilDiv(totalElems, coreNum))
+ *   若 usedCoreCnt < coreNum/2 → 块太少不划算，返回失败回退 NDDMA
+ *   blkFactor = CeilDiv(totalElems, usedCoreCnt)
+ *   blkTailFactor = totalElems - (usedCoreCnt-1) × blkFactor（尾核吃尾块）
+ *
+ * kernel GetCoreLoopRange：前 usedCoreCnt-1 个核各 blkFactor 块，最后核吃尾块。
+ *
+ * @return GRAPH_SUCCESS 分核完成；GRAPH_FAILED 块数太少回退 NDDMA
+ */
 ge::graphStatus TransposeGatherTiling::CalcBlockSplitInfo()
 {
     int8_t dim = shapeInfo_.dim;
@@ -603,6 +813,17 @@ std::string TransposeGatherTiling::PrintTilingData()
     return tdStr;
 }
 
+/**
+ * @brief Gather Tiling 主流程入口
+ *
+ * 依次执行：UB 预算 → 切轴（UB 内轴+切分因子）→ 分核 → 写 TilingData →
+ * 设置 tilingKey 与 blockDim。
+ *
+ * 任一步失败（MTE 效率不足 / bank 冲突 / 块数太少）均返回 GRAPH_FAILED，
+ * 上层 RunTranposelTiling 会继续走 NDDMA 决策树（EntryTilingTemplate）兜底。
+ *
+ * @return GRAPH_SUCCESS gather Tiling 完成；GRAPH_FAILED 回退 NDDMA
+ */
 ge::graphStatus TransposeGatherTiling::DoTiling()
 {
     CalcTensorSize();

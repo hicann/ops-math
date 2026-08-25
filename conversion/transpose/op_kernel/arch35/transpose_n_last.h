@@ -10,7 +10,23 @@
 
 /*!
  * \file transpose_n_last.h
- * \brief transpose_n_last
+ * \brief TilingKey=10004 N_LAST_TRANSPOSE 策略实现
+ *
+ * 适用场景：尾轴不转置（reducedPerm[dim-1]==dim-1）且尾轴大小 ≥ 32（MOVEALIGN_LAST_MIN_ELE），
+ * 即输入的最后一维在输出中保持连续，可以按连续行进行搬移。
+ *
+ * 核心优势：
+ *   - 尾轴连续意味着无需 NDDMA 转置，直接按行搬运即可
+ *   - 使用双缓冲流水线（BUFFER_NUM=2），CopyIn 和 CopyOut 可重叠执行
+ *   - 支持8维循环展开（loop4~7），提高 CopyOut 效率
+ *   - 混合基地址计算（GetDstAddressOffset）将线性 loopIdx 分解到各输出维度，
+ *     再按 perm 映射回输入维度计算偏移
+ *
+ * 性能优化标记（已在代码中实现）：
+ *   P2: main/tail 循环分离，消除热路径分支
+ *   P4: 缓存数组成员到局部变量，避免别名导致的重载
+ *   P6: 缓存 tiling 指针字段到局部变量，避免双重 Load
+ *   P9: 融合 DecimalToMixed + 累加，无中间数组，无零初始化开销
  */
 #ifndef TRANSPOSE_N_LAST_H
 #define TRANSPOSE_N_LAST_H
@@ -20,6 +36,14 @@
 namespace Transpose {
 using namespace AscendC;
 
+/**
+ * @brief N_LAST_TRANSPOSE 策略类，实现尾轴不转置的连续行搬移
+ *
+ * 利用尾轴连续的特性，按行搬运数据，双缓冲流水线加速。
+ * 支持8维循环展开，适用于 2-8 维输入。
+ *
+ * @tparam T 数据元素类型
+ */
 template <typename T>
 class TransposeNLast : public TransposeBase<T> {
 public:
@@ -44,37 +68,37 @@ private:
     int64_t blockIdx_;
 
     // buffer
-    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> vecQue_;
-    GlobalTensor<T> inputGM_;
-    GlobalTensor<T> outputGM_;
+    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> vecQue_; // 双缓冲绑定队列（BUFFER_NUM=2）
+    GlobalTensor<T> inputGM_;                                     // 输入 GM 张量
+    GlobalTensor<T> outputGM_;                                    // 输出 GM 张量
 
     // tiling params
     const TransposeOpTilingData* tiling_;
-    int64_t reducedInputShape_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
-    int64_t reducedOutputShape_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
-    int64_t inUbInputShapeMain_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
-    int64_t inUbOutputShapeMain_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
-    int64_t inUbInputShapeTail_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
-    int64_t inUbOutputShapeTail_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
-    int64_t outputBlockLenMain_ = 0;
-    int64_t outputBlockLenTail_ = 0;
+    int64_t reducedInputShape_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};   ///< 简化后的输入 shape
+    int64_t reducedOutputShape_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};  ///< 简化后的输出 shape
+    int64_t inUbInputShapeMain_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};  ///< Main 块输入 UB shape
+    int64_t inUbOutputShapeMain_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0}; ///< Main 块输出 UB shape
+    int64_t inUbInputShapeTail_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};  ///< Tail 块输入 UB shape
+    int64_t inUbOutputShapeTail_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0}; ///< Tail 块输出 UB shape
+    int64_t outputBlockLenMain_ = 0; ///< Main 块输出尾轴长度（连续元素数）
+    int64_t outputBlockLenTail_ = 0; ///< Tail 块输出尾轴长度
 
     // core params
     int64_t blkProcessNum_ = 0;
     int64_t blkProcessIdxStart_ = 0;
     int64_t blkProcessIdxEnd_ = 0;
 
-    // addressOffset params
-    int64_t dstAddressOffsetMixedBase_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
-    int64_t dstLoopNumArray_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
+    // 地址偏移参数（用于 GetDstAddressOffset 的混合基分解）
+    int64_t dstAddressOffsetMixedBase_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0}; ///< 输出地址偏移混合基
+    int64_t dstLoopNumArray_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};           ///< 输出各维度步长
 
-    // dataCopy params
-    int64_t loopSizeMain_[TRANSPOSE_MAX_AXIS_NUM] = {1, 1, 1, 1, 1, 1, 1, 1};
-    int64_t loopSrcStrideMain_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
-    int64_t loopDstStrideMain_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
-    int64_t loopSizeTail_[TRANSPOSE_MAX_AXIS_NUM] = {1, 1, 1, 1, 1, 1, 1, 1};
-    int64_t loopSrcStrideTail_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
-    int64_t loopDstStrideTail_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
+    // DataCopy 参数：Main 和 Tail 各一组
+    int64_t loopSizeMain_[TRANSPOSE_MAX_AXIS_NUM] = {1, 1, 1, 1, 1, 1, 1, 1};      ///< Main 块各维 loopSize
+    int64_t loopSrcStrideMain_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0}; ///< Main 块各维 srcStride
+    int64_t loopDstStrideMain_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0}; ///< Main 块各维 dstStride
+    int64_t loopSizeTail_[TRANSPOSE_MAX_AXIS_NUM] = {1, 1, 1, 1, 1, 1, 1, 1};      ///< Tail 块各维 loopSize
+    int64_t loopSrcStrideTail_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0}; ///< Tail 块各维 srcStride
+    int64_t loopDstStrideTail_[TRANSPOSE_MAX_AXIS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0}; ///< Tail 块各维 dstStride
 };
 
 template <typename T>
@@ -197,11 +221,27 @@ __aicore__ inline void TransposeNLast<T>::GetLoopParams(int64_t n)
     }
 }
 
+/**
+ * @brief 计算目标地址偏移（融合 DecimalToMixed + 累加，P9 优化）
+ *
+ * 将线性 loopIdx 分解到各输出维度，然后累加计算目标地址偏移。
+ * 直接在循环中执行混合基分解和累加，避免创建中间数组和零初始化开销。
+ *
+ * 算法：
+ *   for i = permSize-1 downto 0:
+ *     dstAddressOffset += (num % mixedBase[i]) * loopNum[i]
+ *     num /= mixedBase[i]
+ *
+ * @param loopIdx  当前循环索引
+ * @param permSize 维度数
+ * @param mixedBase 混合基基数数组（各维度的循环次数）
+ * @param loopNum   各维度的地址步长
+ * @return 目标地址偏移（元素数）
+ */
 template <typename T>
 __aicore__ inline int64_t TransposeNLast<T>::GetDstAddressOffset(int64_t loopIdx, int64_t permSize,
                                                                  const int64_t mixedBase[], const int64_t loopNum[])
 {
-    // Fuse DecimalToMixed + accumulation: no intermediate array, no zero-init overhead (P9)
     int64_t dstAddressOffset = 0;
     if (loopIdx != 0) {
         int64_t num = loopIdx;

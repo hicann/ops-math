@@ -10,7 +10,25 @@
 
 /*!
  * \file transpose_small_shape.h
- * \brief transpose_small_shape
+ * \brief TilingKey=10001 SMALL_SHAPE 策略实现
+ *
+ * 适用场景：总数据量（字节）< SMALL_SHAPE_BYTES_THRESHOLD，且非 TENSOR_MOVE/VCONV/GATHER 场景。
+ *
+ * 核心机制：SIMT（Single Instruction Multiple Thread）模式
+ *   - 利用 DAV_3510 的 SIMT 硬件能力，每个线程独立计算输出位置
+ *   - 直接 GM→GM 读写，无需 UB 中转，减少一次数据搬运
+ *   - 使用 asc_vf_call 启动 SIMT 函数，2048线程并行
+ *
+ * 地址计算原理（混合基分解）：
+ *   - 线程按 threadIdx.x 遍历输出元素
+ *   - 使用 Simt::UintDiv 快速除法进行混合基分解：将线性输出索引 yIdx 分解到各维度
+ *   - inputIndex[d] = yIdx 在维度 d 上的余数（即 yIdx % outputShape[d]）
+ *   - xIdx = Σ(inputIndex[d] * dstStride[d])，其中 dstStride[d] 为输入张量在维度 d 上的步长
+ *   - 最终 outputGM[coreOffset + idx] = inputGM[xIdx]
+ *
+ * 快速除法优化：
+ *   - GetUintDivMagicAndShift 预计算魔术数 m[i] 和位移 shift[i]
+ *   - Simt::UintDiv(yIdx, m, shift) 替代昂贵的硬件除法指令
  */
 #ifndef TRANSPOSE_SMALL_SHAPE_H
 #define TRANSPOSE_SMALL_SHAPE_H
@@ -18,21 +36,30 @@
 #include "transpose_base.h"
 #include "simt_api/asc_simt.h"
 
+/* SIMT 线程数配置：FPGA 环境使用较小线程数，实际 NPU 使用 2048 线程 */
 #ifdef __DAV_FPGA__
-constexpr int32_t THREAD_DIM = 512;
+constexpr int32_t THREAD_DIM = 512; // FPGA 环境：512 线程
 constexpr int32_t HALF_THREAD_DIM = 512;
 constexpr int32_t QUARTER_THREAD_DIM = 512;
 constexpr int32_t AN_EIGHTH_THREAD_DIM = 256;
 #else
-constexpr int32_t THREAD_DIM = 2048;
-constexpr int32_t HALF_THREAD_DIM = 1024;
-constexpr int32_t QUARTER_THREAD_DIM = 512;
-constexpr int32_t AN_EIGHTH_THREAD_DIM = 256;
+constexpr int32_t THREAD_DIM = 2048;          // NPU 环境：2048 线程（DAV_3510 SIMT 最大线程数）
+constexpr int32_t HALF_THREAD_DIM = 1024;     // 1024 线程
+constexpr int32_t QUARTER_THREAD_DIM = 512;   // 512 线程
+constexpr int32_t AN_EIGHTH_THREAD_DIM = 256; // 256 线程
 #endif
 
 namespace Transpose {
 using namespace AscendC;
 
+/**
+ * @brief SMALL_SHAPE 策略类，使用 SIMT 模式实现小数据量转置
+ *
+ * 直接 GM→GM 读写，无需 UB 中转。每个线程独立计算输出位置。
+ * 注意：此类不需要 TQueBind 缓冲队列，也不需要 TPipe。
+ *
+ * @tparam T 数据元素类型
+ */
 template <typename T>
 class TransposeSmallShape : public TransposeBase<T> {
 public:
@@ -56,6 +83,28 @@ __aicore__ inline void TransposeSmallShape<T>::Init(GM_ADDR x, GM_ADDR y, const 
     outputGM_.SetGlobalBuffer((__gm__ T*)y);
 }
 
+/**
+ * @brief 2维 SIMT 计算函数
+ *
+ * 对2维转置进行逐元素地址计算。每个线程按 threadIdx.x 遍历输出元素，
+ * 使用 UintDiv 快速除法将线性输出索引分解到2个维度，计算对应的输入地址。
+ *
+ * 混合基分解算法（以2维为例）：
+ *   yIdx = coreOffset + idx  （线性输出索引）
+ *   inputIndex0 = yIdx % outputShape0         （第0维的索引）
+ *   yIdx = yIdx / outputShape0                （商）
+ *   inputIndex1 = yIdx % outputShape1         （第1维的索引）
+ *   xIdx = inputIndex0 * outputShape1 + inputIndex1  （线性输入索引，2维特例）
+ *
+ * @param inputGM       输入 GM 地址
+ * @param outputGM      输出 GM 地址（volatile 修饰避免编译器优化写顺序）
+ * @param coreFactor    当前核需处理的元素数
+ * @param coreOffset    当前核在全局输出中的起始偏移
+ * @param outputShape0  输出 shape[0]（维度0大小）
+ * @param outputShape1  输出 shape[1]（维度1大小）
+ * @param m0, m1        UintDiv 魔术数（用于快速除法）
+ * @param s0, s1        UintDiv 位移数（用于快速除法）
+ */
 template <typename T>
 __simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__
     void SimtComputeDimTwo(__gm__ T* inputGM, __gm__ volatile T* outputGM, uint32_t coreFactor, uint32_t coreOffset,

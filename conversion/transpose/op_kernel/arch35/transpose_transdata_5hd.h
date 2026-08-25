@@ -10,7 +10,32 @@
 
 /*!
  * \file transpose_transdata_5hd.h
- * \brief transpose_transdata_5hd
+ * \brief TilingKey=10007 VCONV_TRANSPOSE 策略实现
+ *
+ * 适用场景：DAV_5102(Ascend950) + 2D perm=[1,0] + 16bit 数据类型(fp16/bf16) + shape[0]>5
+ *
+ * 核心机制：使用 TransDataTo5HD 硬件指令实现2D矩阵转置
+ *   TransDataTo5HD 以16行为单位进行行列互换，每次处理16×16 的数据块。
+ *
+ * R/C 维切分模式：
+ *   - IsRSplit：按行（R维）切分 → 每个核负责部分行
+ *   - IsRCSplit：同时按行列切分 → 每个核负责部分行+部分列
+ *   - 否则：按列（C维）切分 → 每个核负责部分列
+ *
+ * 数据流：
+ *   1. BaseCopyIn: DataCopyPad(GM → UB)
+ *   2. BaseCompute:
+ *      - r >= c → ComputeRConv: 以行为主序遍历列，TransDataTo5HD按16行一组
+ *      - r < c → ComputeCConv: 以列为主序遍历行
+ *   3. BaseCopyOut: DataCopyPad(UB → GM)
+ *
+ * TransDataTo5HD 参数说明：
+ *   - repeatTimes = r/16（或 c/16）：重复次数
+ *   - srcRepStride：源重复步长（每处理完16行后，源地址的偏移）
+ *   - dstRepStride：目标重复步长（每处理完16行后，目标地址的偏移）
+ *   - srcList/dstList：16个 LocalTensor 地址列表，硬件按列表顺序读取/写入
+ *
+ * 仅支持 int16_t 模板参数（对应 fp16/bf16 的 sizeof==2）
  */
 
 #ifndef KERNEL_TRANSPOSE_TRANSDATA_5HD_H_
@@ -22,8 +47,16 @@
 
 namespace Transpose {
 using namespace AscendC;
-static constexpr int64_t TRANSELEM = 16;
+static constexpr int64_t TRANSELEM = 16; ///< TransDataTo5HD 每次处理的元素数（16×16块转置）
 
+/**
+ * @brief VCONV_TRANSPOSE 策略类，使用 TransDataTo5HD 实现2D矩阵转置
+ *
+ * 仅实例化 int16_t 模板（对应 fp16/bf16）。TransDataTo5HD 硬件指令
+ * 以16行为单位进行行列互换，是2D转置的高效硬件加速方案。
+ *
+ * @tparam T 数据元素类型（实际仅使用 int16_t）
+ */
 template <typename T>
 class KernelTransDataTo5HD {
 public:
@@ -82,6 +115,16 @@ __aicore__ inline void KernelTransDataTo5HD<T>::Init(GM_ADDR x, GM_ADDR y, const
     pipe->InitBuffer(outQueueDst, BUFFER_NUM, tiling_->AvailableUbSize);
 }
 
+/**
+ * @brief R维主序计算：以行为主序遍历列，TransDataTo5HD按16行一组转置
+ *
+ * 当 r >= c 时选择此路径。每次 TransDataTo5HD 处理16行×c列的数据，
+ * repeatTimes = r/16 表示共需要重复 r/16 次处理。
+ *
+ * @param r       实际行数（可能不等于 rAlign）
+ * @param c       实际列数
+ * @param cAlign  列数对齐值（用于 srcRepStride 计算）
+ */
 template <typename T>
 __aicore__ inline void KernelTransDataTo5HD<T>::ComputeRConv(int r, int c, int cAlign)
 {
@@ -112,6 +155,16 @@ __aicore__ inline void KernelTransDataTo5HD<T>::ComputeRConv(int r, int c, int c
     inQueueSrc.FreeTensor(srcLocal);
 }
 
+/**
+ * @brief C维主序计算：以列为主序遍历行，TransDataTo5HD按16列一组转置
+ *
+ * 当 r < c 时选择此路径。每次 TransDataTo5HD 处理c列×16行的数据，
+ * repeatTimes = c/16 表示共需要重复 c/16 次处理。
+ *
+ * @param r       实际行数
+ * @param c       实际列数（可能不等于 cAlign）
+ * @param rAlign  行数对齐值（用于 dstRepStride 计算）
+ */
 template <typename T>
 __aicore__ inline void KernelTransDataTo5HD<T>::ComputeCConv(int r, int c, int rAlign)
 {

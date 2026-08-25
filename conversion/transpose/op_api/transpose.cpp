@@ -8,6 +8,26 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+/**
+ * @file transpose.cpp
+ * @brief l0op::Transpose 底层路由实现
+ *
+ * 本文件实现了 l0op::Transpose 函数，负责将 Transpose 请求路由到
+ * 合适的执行后端（TransposeV2AiCore / TransposeAiCore / TransposeAiCpu）。
+ *
+ * 路由逻辑：
+ * 1. 首先检查是否支持 TransposeV2（A2/A3 小 shape 特化路径）
+ *    - 仅 Ascend910B/910_93 支持
+ *    - 支持 3D perm=[0,2,1]/[1,0,2] 和 4D perm=[0,2,1,3]
+ *    - 仅支持 fp16/fp32/bf16
+ * 2. 如果支持 AiCore（dtype 在支持列表内），走 TransposeAiCore
+ * 3. 否则走 TransposeAiCpu（AICPU 路径，支持更广泛的 dtype）
+ *
+ * TransposeV2 支持的具体 shape 约束：
+ * - perm=[0,2,1]：dim1≤128, dim2≤128
+ * - perm=[1,0,2]：根据 dtype 有不同的 limitSize 和额外约束
+ * - perm=[0,2,1,3]：dim3≤64 且按 typeBlock 对齐，dim0 在 1024-2048 范围
+ */
 #include <memory>
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/make_op_executor.h"
@@ -141,6 +161,21 @@ const aclTensor* Transpose(const aclTensor* x, const aclTensor* y, const aclTens
     return TransposeAiCpu(x, y, perm, executor);
 }
 
+/**
+ * @brief l0op::Transpose 高层接口（aclIntArray perm 版本）
+ *
+ * 执行流程：
+ * 1. 检查输入是否连续（非连续返回错误）
+ * 2. 将 aclIntArray 转换为 aclTensor（perm tensor）
+ * 3. 分配输出 tensor，执行 InferShape
+ * 4. 尝试 TransposeV2AiCore 路径（A2/A3 小 shape 特化）
+ * 5. 若不支持 V2，走通用 Transpose 路径（AiCore 或 AiCpu）
+ *
+ * @param x        输入张量（必须连续）
+ * @param perm     维度排列数组（aclIntArray 格式）
+ * @param executor 算子执行器
+ * @return 转置后的输出张量；nullptr 表示失败
+ */
 const aclTensor* Transpose(const aclTensor* x, const aclIntArray* perm, aclOpExecutor* executor)
 {
     if (!op::IsContiguous(x)) {

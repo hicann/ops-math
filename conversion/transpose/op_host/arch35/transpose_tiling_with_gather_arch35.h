@@ -82,6 +82,20 @@ struct PlatInfo {
     int64_t ubBlockSize = 0;
 };
 
+/**
+ * @brief Gather 路径 UB 切分信息结构体
+ *
+ * 记录进入 UB 的轴尺寸、切分轴因子、MTE 搬运跨步等
+ *
+ *   inUbAxes/outUbAxes：UB 内输入/输出各轴尺寸（最多 UB_MAX_DIM_NUM=6 维）
+ *   ubPerm：UB 内轴的排列顺序（索引=allUbPerm 中的序号）
+ *   inUbCutAxisSize/outUbCutAxisSize：输入/输出切分轴完整尺寸
+ *   inUbCutAxisFactor/outUbCutAxisFactor：切分轴主块因子
+ *   inUbInCutPos/outUbInCutPos：输入切分轴在 UB 轴序列中的位置
+ *   inUbOutCutPos/outUbOutCutPos：输出切分轴在 UB 轴序列中的位置
+ *   axis0/1/2InSrcStride：搬入 GM→UB 的循环轴源跨步
+ *   axis0/1/2OutDstStride：搬出 UB→GM 的循环轴目标跨步
+ */
 struct UbSplitInfo {
     int64_t inUbCutAxisSize = 1;
     int64_t outUbCutAxisSize = 1;
@@ -96,7 +110,7 @@ struct UbSplitInfo {
     // for count gather index
     int32_t inUbAxes[UB_MAX_DIM_NUM] = {1, 1, 1, 1, 1, 1}; // maybe changed accorrding to MTE2
     int32_t outUbAxes[UB_MAX_DIM_NUM] = {1, 1, 1, 1, 1, 1};
-    int8_t ubPerm[UB_MAX_DIM_NUM] = {0xf, 0xf, 0xf, 0xf, 0xf, 0xf}; // // maybe changed accorrding to MTE2
+    int8_t ubPerm[UB_MAX_DIM_NUM] = {0xf, 0xf, 0xf, 0xf, 0xf, 0xf}; // maybe changed accorrding to MTE2
     int8_t ubAxesCnt = 0;
     // for update inUbAxes and outUbAxes
     int8_t inUbInCutPos = 0;  // include right offset to be move in burst length
@@ -105,6 +119,18 @@ struct UbSplitInfo {
     int8_t outUbOutCutPos = 0; // include right offset to be move out burst length
 };
 
+/**
+ * @brief Gather 路径分核（块级循环）信息结构体
+ *
+ * 记录进入块级循环（block loop）的轴及地址跨步：
+ *   blkAxes[cnt]：块级各轴循环次数
+ *   blkAxesInAOffset[cnt]：块级输入地址跨步（元素数）
+ *   blkAxesOutAOffset[cnt]：块级输出地址跨步（元素数）
+ *   blkFactor/blkTailFactor：每核块数/尾核块数
+ *   usedCoreCnt：实际使用核数
+ *   blkInUbCutPos/blkOutUbCutPos：块级循环最后一轮时输入/输出切分轴要切尾块
+ *     （kernel UpdateUbAxes 据此切换 main/tail 与 gather 索引 phase）
+ */
 struct BlockSplitInfo {
     int64_t blkAxes[MAX_TRANS_AXIS_NUM] = {1, 1, 1, 1, 1, 1, 1, 1};
     int64_t blkAxesInAOffset[MAX_TRANS_AXIS_NUM] = {1, 1, 1, 1, 1, 1, 1, 1};
