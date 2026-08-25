@@ -52,6 +52,7 @@ public:
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
             .ExtendCfgInfo("opFile.value", "mul_no_nan");
+        this->AICore().AddConfig("ascend910b", aiCoreConfig);
         this->AICore().AddConfig("ascend950", aiCoreConfig);
     }
 };

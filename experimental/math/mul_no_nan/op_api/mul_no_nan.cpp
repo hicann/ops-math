@@ -32,38 +32,34 @@ namespace l0op {
 
 OP_TYPE_REGISTER(MulNoNan);
 
-static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT16, DataType::DT_FLOAT, DataType::DT_BF16};
+static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {DataType::DT_FLOAT16, DataType::DT_FLOAT,
+                                                                              DataType::DT_BF16};
 
 static bool IsAiCoreSupport(const aclTensor* x, const aclTensor* y)
 {
     auto npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
-    OP_CHECK(
-        npuArch == NpuArch::DAV_3510,
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "MulNoNan not supported on this platform: npuArch=%d.", static_cast<int>(npuArch)),
-        return false);
-    OP_CHECK(
-        CheckType(x->GetDataType(), AICORE_DTYPE_SUPPORT_LIST) &&
-            CheckType(y->GetDataType(), AICORE_DTYPE_SUPPORT_LIST),
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "MulNoNan not supported: dtype x=%d, y=%d. Supported dtypes: FLOAT16, FLOAT, BFLOAT16.",
-            static_cast<int>(x->GetDataType()), static_cast<int>(y->GetDataType())),
-        return false);
+    OP_CHECK(npuArch == NpuArch::DAV_3510 || npuArch == NpuArch::DAV_2201,
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "MulNoNan not supported on this platform: npuArch=%d.",
+                     static_cast<int>(npuArch)),
+             return false);
+    OP_CHECK(CheckType(x->GetDataType(), AICORE_DTYPE_SUPPORT_LIST) &&
+                 CheckType(y->GetDataType(), AICORE_DTYPE_SUPPORT_LIST),
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                     "MulNoNan not supported: dtype x=%d, y=%d. Supported dtypes: FLOAT16, FLOAT, BFLOAT16.",
+                     static_cast<int>(x->GetDataType()), static_cast<int>(y->GetDataType())),
+             return false);
     return true;
 }
 
 static bool MulNoNanInferShape(const op::Shape& xShape, const op::Shape& yShape, op::Shape& outShape)
 {
-    OP_CHECK(
-        BroadcastInferShape(xShape, yShape, outShape), OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape broadcast failed."),
-        return false);
+    OP_CHECK(BroadcastInferShape(xShape, yShape, outShape), OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape broadcast failed."),
+             return false);
     return true;
 }
 
-static const aclTensor* MulNoNanAiCore(
-    const aclTensor* x, const aclTensor* y, const aclTensor* out, aclOpExecutor* executor)
+static const aclTensor* MulNoNanAiCore(const aclTensor* x, const aclTensor* y, const aclTensor* out,
+                                       aclOpExecutor* executor)
 {
     L0_DFX(MulNoNanAiCore, x, y, out);
 
@@ -77,9 +73,8 @@ const aclTensor* MulNoNan(const aclTensor* x, const aclTensor* y, aclOpExecutor*
     Shape outShape;
     const aclTensor* out = nullptr;
 
-    OP_CHECK(
-        MulNoNanInferShape(x->GetViewShape(), y->GetViewShape(), outShape),
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Infer shape failed."), return nullptr);
+    OP_CHECK(MulNoNanInferShape(x->GetViewShape(), y->GetViewShape(), outShape),
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Infer shape failed."), return nullptr);
 
     OP_CHECK(IsAiCoreSupport(x, y), OP_LOGE(ACLNN_ERR_PARAM_INVALID, "IsAiCoreSupport check failed."), return nullptr);
 

@@ -22,8 +22,8 @@
 #include "register/op_def_registry.h"
 #include "op_common/log/log.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
-#include "../op_kernel/mul_no_nan_dag.h"
-#include "../op_kernel/mul_no_nan_struct.h"
+#include "../../op_kernel/mul_no_nan_dag.h"
+#include "../../op_kernel/mul_no_nan_struct.h"
 
 namespace optiling {
 

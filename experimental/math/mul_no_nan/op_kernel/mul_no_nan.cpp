@@ -16,13 +16,51 @@
 
 /*!
  * \file mul_no_nan.cpp
- * \brief MulNoNan Kernel entry (atvoss Broadcast mode)
+ * \brief mul_no_nan kernel entry
+ *
+ * 910b (A2/A3, __NPU_ARCH__ == 2201): native AscendC vector kernel (TQue
+ *        double-buffered pipeline: DataCopy -> Compares(NE)+Mul+Select
+ *        VSEL_TENSOR_SCALAR_MODE -> DataCopy), fp16/bf16 promoted to fp32.
+ * A5 (950): atvoss BroadcastSch path (original implementation, untouched).
  */
 
 #include "kernel_operator.h"
+
+#if (defined(__NPU_ARCH__) && (__NPU_ARCH__ == 2201))
+#include "mul_no_nan.h"
+#else
 #include "mul_no_nan_dag.h"
 #include "mul_no_nan_struct.h"
 #include "atvoss/broadcast/broadcast_sch.h"
+#endif
+
+using namespace AscendC;
+
+#if (defined(__NPU_ARCH__) && (__NPU_ARCH__ == 2201))
+
+extern "C" __global__ __aicore__ void mul_no_nan(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+{
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
+
+    (void)workspace;
+    (void)tiling;
+
+    REGISTER_TILING_DEFAULT(MulNoNanTilingData);
+
+    GM_ADDR* paramBase = reinterpret_cast<GM_ADDR*>(get_para_base());
+    constexpr uint32_t X1_PARAM_INDEX = 0;
+    constexpr uint32_t X2_PARAM_INDEX = 1;
+    constexpr uint32_t Y_PARAM_INDEX = 2;
+    constexpr uint32_t INLINE_TILING_PARAM_INDEX = 5;
+    const MulNoNanTilingData* tilingData = reinterpret_cast<const MulNoNanTilingData*>(paramBase +
+                                                                                       INLINE_TILING_PARAM_INDEX);
+
+    MulNoNanKernel<DTYPE_X> op;
+    op.Init(paramBase[X1_PARAM_INDEX], paramBase[X2_PARAM_INDEX], paramBase[Y_PARAM_INDEX], tilingData);
+    op.Process();
+}
+
+#else
 
 using namespace Ops::Base;
 
@@ -36,3 +74,5 @@ __global__ __aicore__ void mul_no_nan(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR w
     BroadcastSch<schMode, OpDag> sch(tiling);
     sch.Process(x, y, z);
 }
+
+#endif
