@@ -78,7 +78,7 @@ aclnnStatus aclnnLogAddExp(
 
 ## 约束说明
 
-- `x` 与 `y` ��为相同数据类型（不支持隐式类型提升）。
+- `x` 与 `y` 须为相同数据类型（不支持隐式类型提升）。
 - `x` 与 `y` 最大支持 8 维。
 - `out` 的 shape 须等于 `broadcast(x.shape, y.shape)`，否则返回 `ACLNN_ERR_PARAM_INVALID`。
 - 支持空 tensor（元素数为 0），此时 workspaceSize 为 0，直接返回成功。
