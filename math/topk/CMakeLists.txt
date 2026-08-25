@@ -8,7 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-add_all_modules_sources(OPTYPE topk ACLNNTYPE aclnn_exclude)
+add_all_modules_sources(OPTYPE topk ACLNNTYPE aclnn_exclude HOSTCPU TRUE)
 
 if(ENABLE_TEST AND (UT_TEST_ALL OR OP_KERNEL_AICPU_UT))
     list(FIND ASCEND_OP_NAME topk TOPK_INDEX)

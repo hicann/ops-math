@@ -9,6 +9,7 @@
  */
 
 #include "coordinates_1d_to_2d_aicpu.h"
+#include "aicpu/math_aicpu_register.h"
 
 #include "cpu_kernel_utils.h"
 #include "cpu_types.h"
@@ -25,8 +26,7 @@ const uint32_t kShapeNum = 4;
 
 namespace aicpu {
 template <typename T>
-uint32_t Coordinates1DTo2DCompute(Tensor* x, Tensor* shape, Tensor* output_row,
-                                 Tensor* output_col, Tensor* output_n)
+uint32_t Coordinates1DTo2DCompute(Tensor* x, Tensor* shape, Tensor* output_row, Tensor* output_col, Tensor* output_n)
 {
     const T* x_data = static_cast<const T*>(x->GetData());
     const T* shape_data = static_cast<const T*>(shape->GetData());
@@ -35,27 +35,23 @@ uint32_t Coordinates1DTo2DCompute(Tensor* x, Tensor* shape, Tensor* output_row,
     T* n_data = static_cast<T*>(output_n->GetData());
 
     KERNEL_CHECK_FALSE((shape_data[3] != 0), KERNEL_STATUS_PARAM_INVALID,
-                       "Input[shape] element[3] must not be zero, but got[%ld].",
-                       static_cast<int64_t>(shape_data[3]));
+                       "Input[shape] element[3] must not be zero, but got[%ld].", static_cast<int64_t>(shape_data[3]));
 
     T val = *x_data;
     T col_num = shape_data[3];
     *row_data = val / col_num;
     *col_data = val % col_num;
     *n_data = col_num;
-    KERNEL_LOG_INFO(
-        "Input x[%ld], shape row[%ld], shape col[%ld], "
-        "output row index[%ld], output col index[%ld], output n[%ld].",
-        static_cast<int64_t>(val), static_cast<int64_t>(shape_data[2]),
-        static_cast<int64_t>(col_num), static_cast<int64_t>(*row_data),
-        static_cast<int64_t>(*col_data), static_cast<int64_t>(*n_data));
+    KERNEL_LOG_INFO("Input x[%ld], shape row[%ld], shape col[%ld], "
+                    "output row index[%ld], output col index[%ld], output n[%ld].",
+                    static_cast<int64_t>(val), static_cast<int64_t>(shape_data[2]), static_cast<int64_t>(col_num),
+                    static_cast<int64_t>(*row_data), static_cast<int64_t>(*col_data), static_cast<int64_t>(*n_data));
     return KERNEL_STATUS_OK;
 }
 
 uint32_t Coordinates1DTo2DCpuKernel::Compute(CpuKernelContext& ctx)
 {
-    KERNEL_HANDLE_ERROR(NormalCheck(ctx, kInputNum, kOutputNum),
-                        "Check Coordinates1DTo2D params failed.");
+    KERNEL_HANDLE_ERROR(NormalCheck(ctx, kInputNum, kOutputNum), "Check Coordinates1DTo2D params failed.");
 
     Tensor* x = ctx.Input(0);
     Tensor* shape = ctx.Input(1);
@@ -65,12 +61,11 @@ uint32_t Coordinates1DTo2DCpuKernel::Compute(CpuKernelContext& ctx)
 
     DataType x_dt = x->GetDataType();
     KERNEL_CHECK_FALSE((x_dt == shape->GetDataType()), KERNEL_STATUS_INNER_ERROR,
-                       "Input[x] data type[%s] and input[shape] data type[%s] must be same.",
-                       DTypeStr(x_dt).c_str(), DTypeStr(shape->GetDataType()).c_str());
+                       "Input[x] data type[%s] and input[shape] data type[%s] must be same.", DTypeStr(x_dt).c_str(),
+                       DTypeStr(shape->GetDataType()).c_str());
 
     KERNEL_CHECK_FALSE((shape->NumElements() == kShapeNum), KERNEL_STATUS_INNER_ERROR,
-                       "Input[shape] element number must be equal to 4, but got[%ld].",
-                       shape->NumElements());
+                       "Input[shape] element number must be equal to 4, but got[%ld].", shape->NumElements());
 
     switch (x_dt) {
         case DT_INT32:
@@ -85,5 +80,5 @@ uint32_t Coordinates1DTo2DCpuKernel::Compute(CpuKernelContext& ctx)
     }
 }
 
-REGISTER_CPU_KERNEL(kCoordinates1DTo2D, Coordinates1DTo2DCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kCoordinates1DTo2D, Coordinates1DTo2DCpuKernel);
 } // namespace aicpu

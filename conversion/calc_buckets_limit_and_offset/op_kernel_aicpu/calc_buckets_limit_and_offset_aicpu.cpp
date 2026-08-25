@@ -9,6 +9,7 @@
  */
 
 #include "calc_buckets_limit_and_offset_aicpu.h"
+#include "aicpu/math_aicpu_register.h"
 
 #include <algorithm>
 #include <vector>
@@ -109,5 +110,5 @@ uint32_t CalcBucketsLimitAndOffsetCpuKernel::Compute(CpuKernelContext& ctx)
     return DoCompute<int64_t>();
 }
 
-REGISTER_CPU_KERNEL(kCalcBucketsLimitAndOffset, CalcBucketsLimitAndOffsetCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kCalcBucketsLimitAndOffset, CalcBucketsLimitAndOffsetCpuKernel);
 } // namespace aicpu

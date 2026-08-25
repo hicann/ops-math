@@ -9,6 +9,7 @@
  */
 
 #include "topk_aicpu.h"
+#include "aicpu/math_aicpu_register.h"
 
 #include <algorithm>
 #include <cmath>
@@ -606,5 +607,5 @@ KernelStatus TopkCpuKernel::GetInputAndCheck(const CpuKernelContext& ctx)
     return KERNEL_STATUS_OK;
 }
 
-REGISTER_CPU_KERNEL(TOPK, TopkCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(TOPK, TopkCpuKernel);
 } // namespace aicpu

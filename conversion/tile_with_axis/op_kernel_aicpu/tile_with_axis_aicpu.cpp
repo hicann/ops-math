@@ -9,6 +9,7 @@
  */
 
 #include "tile_with_axis_aicpu.h"
+#include "aicpu/math_aicpu_register.h"
 
 #include "cpu_kernel_utils.h"
 #include "securec.h"
@@ -192,5 +193,5 @@ uint32_t TileWithAxisCpuKernel::Compute(CpuKernelContext& ctx)
     }
 }
 
-REGISTER_CPU_KERNEL(kTileWithAxis, TileWithAxisCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kTileWithAxis, TileWithAxisCpuKernel);
 } // namespace aicpu

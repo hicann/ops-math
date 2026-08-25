@@ -9,6 +9,7 @@
  */
 
 #include "cumsum_aicpu.h"
+#include "aicpu/math_aicpu_register.h"
 #include <complex>
 #include <vector>
 #include "cpu_kernel_utils.h"
@@ -112,8 +113,8 @@ inline void AccumulateRowInclusive(const T* __restrict__ in, T* __restrict__ out
 // Sequential dependency along depth prevents vectorization, but the contiguous access pattern
 // is optimal for the hardware prefetcher. Parallelize over independent sequences (inner).
 template <typename T>
-uint32_t ComputeCumsumContiguous(
-    const T* __restrict__ input, T* __restrict__ output, const CumsumLayout& layout, Range seqs)
+uint32_t ComputeCumsumContiguous(const T* __restrict__ input, T* __restrict__ output, const CumsumLayout& layout,
+                                 Range seqs)
 {
     for (int64_t seq = seqs.begin; seq < seqs.end; ++seq) {
         const T* __restrict__ in = input + seq * layout.depth;
@@ -139,8 +140,8 @@ uint32_t ComputeCumsumContiguous(
 // enabling GCC to auto-vectorize with NEON instructions on aarch64.
 // Uses __builtin_prefetch to overlap next depth-row fetch with current-row computation.
 template <typename T>
-uint32_t ComputeCumsumBatched(
-    const T* __restrict__ input, T* __restrict__ output, const CumsumLayout& layout, Range inners, Range outers)
+uint32_t ComputeCumsumBatched(const T* __restrict__ input, T* __restrict__ output, const CumsumLayout& layout,
+                              Range inners, Range outers)
 {
     const int64_t outer_span = outers.end - outers.begin;
     std::vector<T> acc(static_cast<size_t>(outer_span), static_cast<T>(0));
@@ -183,8 +184,8 @@ uint32_t CumsumComputeSmall(const T* __restrict__ input, T* __restrict__ output,
 // Path 2 (inner>=cores): parallelize inner, each thread processes full outer range.
 // Path 3 (inner<cores): chunk outer dimension to create enough parallel work units.
 template <typename T>
-uint32_t CumsumComputeParallel(
-    CpuKernelContext& ctx, const T* __restrict__ input, T* __restrict__ output, const CumsumLayout& layout)
+uint32_t CumsumComputeParallel(CpuKernelContext& ctx, const T* __restrict__ input, T* __restrict__ output,
+                               const CumsumLayout& layout)
 {
     const uint32_t cpu_num = aicpu::CpuKernelUtils::GetCPUNum(ctx);
     const int64_t avail_cores = static_cast<int64_t>(std::max(1U, std::max(cpu_num, kReserveCores) - kReserveCores));
@@ -196,27 +197,25 @@ uint32_t CumsumComputeParallel(
         auto shard = [input, output, &layout](int64_t begin, int64_t end) {
             (void)ComputeCumsumContiguous<T>(input, output, layout, {begin, end});
         };
-        KERNEL_HANDLE_ERROR(
-            CpuKernelUtils::ParallelFor(ctx, layout.inner, per_unit_size, shard),
-            "Cumsum ParallelFor failed: inner=%ld, depth=%ld", layout.inner, layout.depth)
+        KERNEL_HANDLE_ERROR(CpuKernelUtils::ParallelFor(ctx, layout.inner, per_unit_size, shard),
+                            "Cumsum ParallelFor failed: inner=%ld, depth=%ld", layout.inner, layout.depth)
     } else if (layout.inner >= avail_cores) {
         const int64_t per_unit_size = layout.inner / avail_cores;
         KERNEL_LOG_INFO("Cumsum parallel: path=batched, cores=%ld, per_unit=%ld", avail_cores, per_unit_size);
         auto shard = [input, output, &layout](int64_t begin, int64_t end) {
             (void)ComputeCumsumBatched<T>(input, output, layout, {begin, end}, {0, layout.outer});
         };
-        KERNEL_HANDLE_ERROR(
-            CpuKernelUtils::ParallelFor(ctx, layout.inner, per_unit_size, shard),
-            "Cumsum ParallelFor failed: inner=%ld, outer=%ld, depth=%ld", layout.inner, layout.outer, layout.depth)
+        KERNEL_HANDLE_ERROR(CpuKernelUtils::ParallelFor(ctx, layout.inner, per_unit_size, shard),
+                            "Cumsum ParallelFor failed: inner=%ld, outer=%ld, depth=%ld", layout.inner, layout.outer,
+                            layout.depth)
     } else {
         const int64_t chunks_per_inner = std::max(1L, (avail_cores + layout.inner - 1) / layout.inner);
         const int64_t chunk_size = std::max(1L, (layout.outer + chunks_per_inner - 1) / chunks_per_inner);
         const int64_t actual_chunks = (layout.outer + chunk_size - 1) / chunk_size;
         const int64_t total_units = layout.inner * actual_chunks;
         const int64_t per_unit_size = std::max(1L, total_units / avail_cores);
-        KERNEL_LOG_INFO(
-            "Cumsum parallel: path=outer_chunking, cores=%ld, chunks=%ld, chunk_size=%ld", avail_cores, actual_chunks,
-            chunk_size);
+        KERNEL_LOG_INFO("Cumsum parallel: path=outer_chunking, cores=%ld, chunks=%ld, chunk_size=%ld", avail_cores,
+                        actual_chunks, chunk_size);
 
         auto shard = [input, output, layout, actual_chunks, chunk_size](int64_t begin, int64_t end) {
             for (int64_t unit = begin; unit < end; ++unit) {
@@ -227,15 +226,15 @@ uint32_t CumsumComputeParallel(
                 (void)ComputeCumsumBatched<T>(input, output, layout, {inner_idx, inner_idx + 1}, {o_begin, o_end});
             }
         };
-        KERNEL_HANDLE_ERROR(
-            CpuKernelUtils::ParallelFor(ctx, total_units, per_unit_size, shard),
-            "Cumsum ParallelFor failed: inner=%ld, outer=%ld, chunks=%ld", layout.inner, layout.outer, actual_chunks)
+        KERNEL_HANDLE_ERROR(CpuKernelUtils::ParallelFor(ctx, total_units, per_unit_size, shard),
+                            "Cumsum ParallelFor failed: inner=%ld, outer=%ld, chunks=%ld", layout.inner, layout.outer,
+                            actual_chunks)
     }
     return KERNEL_STATUS_OK;
 }
 
-void CumsumCpuKernel::AxesCal(
-    const CpuKernelContext& ctx, int64_t& inner, int64_t& outer, int64_t& depth, const int32_t& axis) const
+void CumsumCpuKernel::AxesCal(const CpuKernelContext& ctx, int64_t& inner, int64_t& outer, int64_t& depth,
+                              const int32_t& axis) const
 {
     auto shape = ctx.Input(kFirstInputIndex)->GetTensorShape();
     const int64_t rank = shape->GetDims();
@@ -253,8 +252,8 @@ void CumsumCpuKernel::AxesCal(
 uint32_t CumsumCpuKernel::Compute(CpuKernelContext& ctx)
 {
     // check params
-    KERNEL_HANDLE_ERROR(
-        NormalCheck(ctx, kCumsumInputNum, kCumsumOutputNum), "[%s] check input and output failed.", kCumsum);
+    KERNEL_HANDLE_ERROR(NormalCheck(ctx, kCumsumInputNum, kCumsumOutputNum), "[%s] check input and output failed.",
+                        kCumsum);
     // parse params
     KERNEL_HANDLE_ERROR(CumsumCheck(ctx), "[%s] check params failed.", kCumsum);
     auto input_data_type = ctx.Input(kFirstInputIndex)->GetDataType();
@@ -282,24 +281,21 @@ uint32_t CumsumCpuKernel::Compute(CpuKernelContext& ctx)
 uint32_t CumsumCpuKernel::CumsumCheck(const CpuKernelContext& ctx)
 {
     KERNEL_CHECK_NULLPTR(ctx.Input(kFirstInputIndex)->GetData(), KERNEL_STATUS_PARAM_INVALID, "Get input data failed.");
-    KERNEL_CHECK_NULLPTR(
-        ctx.Output(kFirstInputIndex)->GetData(), KERNEL_STATUS_PARAM_INVALID, "Get output data failed.");
+    KERNEL_CHECK_NULLPTR(ctx.Output(kFirstInputIndex)->GetData(), KERNEL_STATUS_PARAM_INVALID,
+                         "Get output data failed.");
 
     if (ctx.Input(1)->GetData() != nullptr) {
-        KERNEL_CHECK_FALSE(
-            (ctx.Input(1)->GetDataType() == DT_INT32 || ctx.Input(1)->GetDataType() == DT_INT64),
-            KERNEL_STATUS_PARAM_INVALID, "Axis data type [%u] not supported, expect INT32 or INT64.",
-            ctx.Input(1)->GetDataType());
-        KERNEL_CHECK_FALSE(
-            ctx.Input(1)->NumElements() == 1, KERNEL_STATUS_PARAM_INVALID,
-            "Axis tensor must be scalar, got num_elements=%ld.", ctx.Input(1)->NumElements())
+        KERNEL_CHECK_FALSE((ctx.Input(1)->GetDataType() == DT_INT32 || ctx.Input(1)->GetDataType() == DT_INT64),
+                           KERNEL_STATUS_PARAM_INVALID, "Axis data type [%u] not supported, expect INT32 or INT64.",
+                           ctx.Input(1)->GetDataType());
+        KERNEL_CHECK_FALSE(ctx.Input(1)->NumElements() == 1, KERNEL_STATUS_PARAM_INVALID,
+                           "Axis tensor must be scalar, got num_elements=%ld.", ctx.Input(1)->NumElements())
     }
     std::vector<int64_t> shape_input = ctx.Input(0)->GetTensorShape()->GetDimSizes();
     std::vector<int64_t> shape_output = ctx.Output(0)->GetTensorShape()->GetDimSizes();
 
-    KERNEL_CHECK_FALSE(
-        (shape_input.size() == shape_output.size()), KERNEL_STATUS_PARAM_INVALID,
-        "Input rank [%zu] must equal output rank [%zu].", shape_input.size(), shape_output.size())
+    KERNEL_CHECK_FALSE((shape_input.size() == shape_output.size()), KERNEL_STATUS_PARAM_INVALID,
+                       "Input rank [%zu] must equal output rank [%zu].", shape_input.size(), shape_output.size())
     return KERNEL_STATUS_OK;
 }
 
@@ -344,9 +340,8 @@ uint32_t CumsumCpuKernel::CumsumCompute(CpuKernelContext& ctx) const
     const int64_t data_size = data_num * static_cast<int64_t>(sizeof(T));
     CumsumLayout layout = MakeLayout(depth, outer, inner, reverse, exclusive);
 
-    KERNEL_LOG_INFO(
-        "Cumsum: axis=%d, exclusive=%d, reverse=%d, inner=%ld, outer=%ld, depth=%ld, data_size=%ld", axis, exclusive,
-        reverse, inner, outer, depth, data_size);
+    KERNEL_LOG_INFO("Cumsum: axis=%d, exclusive=%d, reverse=%d, inner=%ld, outer=%ld, depth=%ld, data_size=%ld", axis,
+                    exclusive, reverse, inner, outer, depth, data_size);
 
     if (data_size <= kParalledDataSize) {
         return CumsumComputeSmall<T>(input_data, output_data, layout);
@@ -354,5 +349,5 @@ uint32_t CumsumCpuKernel::CumsumCompute(CpuKernelContext& ctx) const
     return CumsumComputeParallel<T>(ctx, input_data, output_data, layout);
 }
 
-REGISTER_CPU_KERNEL(kCumsum, CumsumCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kCumsum, CumsumCpuKernel);
 } // namespace aicpu

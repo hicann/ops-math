@@ -2340,7 +2340,7 @@
     <td>conversion</td>
     <td><a href="../../conversion/calc_buckets_limit_and_offset/README.md">calc_buckets_limit_and_offset</a></td>
     <td>√</td>
-    <td>×</td>
+    <td>√</td>
     <td>×</td>
     <td>√</td>
     <td>AI CPU</td>
@@ -2389,8 +2389,8 @@
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/coordinates_1d_to_2d/README.md">coordinates_1d_to_2d</a></td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
     <td>×</td>
     <td>√</td>
     <td>AI CPU</td>
@@ -2549,8 +2549,8 @@
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/slice_write/README.md">slice_write</a></td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
     <td>×</td>
     <td>√</td>
     <td>AI CPU</td>
@@ -3180,7 +3180,7 @@
     <td>conversion</td>
     <td><a href="../../conversion/split_d/README.md">split_d</a></td>
     <td>√</td>
-    <td>×</td>
+    <td>√</td>
     <td>×</td>
     <td>√</td>
     <td>AI CPU</td>
