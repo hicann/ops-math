@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "Eigen/Dense"
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
 #include "cpu_types.h"
 #include "kernel_util.h"
@@ -124,10 +125,10 @@ bool ComputeBcastDivInfo(const std::vector<int64_t>& x_shape, const std::vector<
     int32_t collapsed = 1;
 
     for (int32_t d = 1; d < ndims; ++d) {
-        bool x_ok =
-            (info.x_strides[collapsed - 1] == tx[d] * to[d]) || (info.x_strides[collapsed - 1] == 0 && tx[d] == 0);
-        bool y_ok =
-            (info.y_strides[collapsed - 1] == ty[d] * to[d]) || (info.y_strides[collapsed - 1] == 0 && ty[d] == 0);
+        bool x_ok = (info.x_strides[collapsed - 1] == tx[d] * to[d]) ||
+                    (info.x_strides[collapsed - 1] == 0 && tx[d] == 0);
+        bool y_ok = (info.y_strides[collapsed - 1] == ty[d] * to[d]) ||
+                    (info.y_strides[collapsed - 1] == 0 && ty[d] == 0);
 
         if (x_ok && y_ok) {
             info.out_shape[collapsed - 1] *= to[d];
@@ -190,7 +191,8 @@ uint32_t NoBcastComputeImpl(const CpuKernelContext& ctx)
 
     if (data_num >= kParallelDataNumSameShape) {
         uint32_t min_core_num = 1U;
-        uint32_t max_core_num = std::max(min_core_num, std::max(CpuKernelUtils::GetCPUNum(ctx), kReserveCpuNum) - kReserveCpuNum);
+        uint32_t max_core_num = std::max(min_core_num,
+                                         std::max(CpuKernelUtils::GetCPUNum(ctx), kReserveCpuNum) - kReserveCpuNum);
         if (data_num <= kParallelDataNumSameShapeMid) {
             max_core_num = std::min(max_core_num, 4U);
         }
@@ -200,8 +202,8 @@ uint32_t NoBcastComputeImpl(const CpuKernelContext& ctx)
         auto sharder = [&type, &in0, &in1, &out](int64_t start, int64_t end) {
             SpecialComputeImpl<T>(type, start, end, in0, in1, out);
         };
-        KERNEL_HANDLE_ERROR(
-            CpuKernelUtils::ParallelFor(ctx, data_num, data_num / max_core_num, sharder), "RealDiv Compute failed.")
+        KERNEL_HANDLE_ERROR(CpuKernelUtils::ParallelFor(ctx, data_num, data_num / max_core_num, sharder),
+                            "RealDiv Compute failed.")
     } else {
         SpecialComputeImpl<T>(type, 0, data_num, in0, in1, out);
     }
@@ -305,7 +307,8 @@ uint32_t BcastComputeImpl(const CpuKernelContext& ctx, const BcastDivInfo& info)
 
     if (data_num >= kParallelDataNum) {
         uint32_t min_core_num = 1U;
-        uint32_t max_core_num = std::max(min_core_num, std::max(CpuKernelUtils::GetCPUNum(ctx), kReserveCpuNum) - kReserveCpuNum);
+        uint32_t max_core_num = std::max(min_core_num,
+                                         std::max(CpuKernelUtils::GetCPUNum(ctx), kReserveCpuNum) - kReserveCpuNum);
         if (data_num <= kParallelDataNumMid) {
             max_core_num = std::min(max_core_num, 4U);
         }
@@ -352,9 +355,8 @@ uint32_t RealDivKernel::RealDivSameTypeCompute(const CpuKernelContext& ctx, Data
         case DT_COMPLEX128:
             return RealDivCompute<std::complex<double>>(ctx, false);
         default:
-            KERNEL_LOG_ERROR(
-                "[%s] Data type of input is not support, input data type is [%s].", ctx.GetOpType().c_str(),
-                DTypeStr(data_type).c_str());
+            KERNEL_LOG_ERROR("[%s] Data type of input is not support, input data type is [%s].",
+                             ctx.GetOpType().c_str(), DTypeStr(data_type).c_str());
             return KERNEL_STATUS_PARAM_INVALID;
     }
 }
@@ -413,12 +415,12 @@ uint32_t RealDivKernel::Compute(CpuKernelContext& ctx)
 
     DataType input0_type = input0->GetDataType();
     DataType input1_type = input1->GetDataType();
-    KERNEL_CHECK_FALSE(
-        (input0_type == input1_type), KERNEL_STATUS_PARAM_INVALID, "input0 type[%s] is not equal to input1 type[%s]",
-        DTypeStr(input0_type).c_str(), DTypeStr(input1_type).c_str());
+    KERNEL_CHECK_FALSE((input0_type == input1_type), KERNEL_STATUS_PARAM_INVALID,
+                       "input0 type[%s] is not equal to input1 type[%s]", DTypeStr(input0_type).c_str(),
+                       DTypeStr(input1_type).c_str());
     return RealDivSameTypeCompute(ctx, input0_type);
 }
 
-REGISTER_CPU_KERNEL(kRealDiv, RealDivKernel);
-REGISTER_CPU_KERNEL(kDIV, RealDivKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kRealDiv, RealDivKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kDIV, RealDivKernel);
 } // namespace aicpu

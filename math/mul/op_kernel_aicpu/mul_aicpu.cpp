@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <functional>
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
 #include "cpu_types.h"
 #include "utils/eigen_tensor.h"
@@ -483,5 +484,5 @@ uint32_t MulCpuKernel::Compute(CpuKernelContext& ctx)
     return KERNEL_STATUS_PARAM_INVALID;
 }
 
-REGISTER_CPU_KERNEL(kMul, MulCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kMul, MulCpuKernel);
 } // namespace aicpu
