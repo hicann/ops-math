@@ -29,6 +29,8 @@ constexpr int64_t UNKNOWN_DIM_VALUE = -1;
 constexpr int64_t MIN_SPLITS_NUM = 2;
 constexpr size_t MIN_VALUES_RANK = 1U;
 constexpr size_t MAX_VALUES_RANK = 2U;
+constexpr size_t MIN_WEIGHTS_RANK = 0U;
+constexpr size_t MAX_WEIGHTS_RANK = 2U;
 
 ge::graphStatus CheckRankInRange(const gert::InferShapeContext* context, const gert::Shape& shape, size_t minRank,
                                  size_t maxRank, const char* inputName)
@@ -45,46 +47,86 @@ ge::graphStatus CheckRankInRange(const gert::InferShapeContext* context, const g
     return ge::GRAPH_SUCCESS;
 }
 
+struct ElementCountInfo {
+    bool known = false;
+    int64_t value = 0;
+};
+
+// InferShape may see an unknown rank or unknown dimensions.  Resolve the element count only when it is
+// mathematically known; a zero dimension still makes the count zero even when another dimension is unknown.
+ge::graphStatus ResolveElementCount(const gert::InferShapeContext* context, const gert::Shape& shape,
+                                    const char* inputName, ElementCountInfo& result)
+{
+    result = {};
+    if (Ops::Base::IsUnknownRank(shape)) {
+        return ge::GRAPH_SUCCESS;
+    }
+
+    bool hasUnknownDim = false;
+    bool hasZeroDim = false;
+    for (size_t dimIndex = 0U; dimIndex < shape.GetDimNum(); ++dimIndex) {
+        const int64_t dim = shape.GetDim(dimIndex);
+        OP_CHECK_IF(dim < UNKNOWN_DIM_VALUE,
+                    OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+                        context->GetNodeName(), inputName, Ops::Base::ToString(shape),
+                        "dimensions must be non-negative or -1, but got " + std::to_string(dim)),
+                    return ge::GRAPH_FAILED);
+        hasUnknownDim = hasUnknownDim || dim == UNKNOWN_DIM_VALUE;
+        hasZeroDim = hasZeroDim || dim == 0;
+    }
+
+    if (hasZeroDim) {
+        result = {true, 0};
+        return ge::GRAPH_SUCCESS;
+    }
+    if (hasUnknownDim) {
+        return ge::GRAPH_SUCCESS;
+    }
+
+    const int64_t elementCount = shape.GetShapeSize();
+    OP_CHECK_IF(elementCount == gert::Shape::kInvalidDimValue,
+                OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context->GetNodeName(), inputName, Ops::Base::ToString(shape),
+                                                      "element count overflows int64"),
+                return ge::GRAPH_FAILED);
+    result = {true, elementCount};
+    return ge::GRAPH_SUCCESS;
+}
+
 ge::graphStatus CheckWeightsShape(const gert::InferShapeContext* context, const gert::Shape& valuesShape,
                                   const gert::Shape& weightsShape)
 {
-    if (Ops::Base::IsUnknownRank(weightsShape)) {
-        return ge::GRAPH_SUCCESS;
-    }
     OP_CHECK_IF(
-        CheckRankInRange(context, weightsShape, MIN_VALUES_RANK, MAX_VALUES_RANK, "weights") != ge::GRAPH_SUCCESS,
+        CheckRankInRange(context, weightsShape, MIN_WEIGHTS_RANK, MAX_WEIGHTS_RANK, "weights") != ge::GRAPH_SUCCESS,
         OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context->GetNodeName(), "weights", Ops::Base::ToString(weightsShape),
-                                              "the rank of weights is invalid"),
+                                              "weights rank must not exceed the GE verifier limit"),
         return ge::GRAPH_FAILED);
 
-    const bool isEmpty = weightsShape.GetDimNum() == 1U && weightsShape.GetDim(0U) == 0;
-    if (isEmpty || Ops::Base::IsUnknownRank(valuesShape)) {
+    ElementCountInfo valuesCount;
+    ElementCountInfo weightsCount;
+    OP_CHECK_IF(
+        ResolveElementCount(context, valuesShape, "values", valuesCount) != ge::GRAPH_SUCCESS,
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context->GetNodeName(), "values", Ops::Base::ToString(valuesShape),
+                                              "values element count validation failed"),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        ResolveElementCount(context, weightsShape, "weights", weightsCount) != ge::GRAPH_SUCCESS,
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context->GetNodeName(), "weights", Ops::Base::ToString(weightsShape),
+                                              "weights element count validation failed"),
+        return ge::GRAPH_FAILED);
+
+    // Any zero-element shape means "no weights".  If either non-empty count is still dynamic, concrete
+    // Tiling performs the same element-count check once all dimensions are materialised.
+    if ((weightsCount.known && weightsCount.value == 0) || !valuesCount.known || !weightsCount.known) {
         return ge::GRAPH_SUCCESS;
     }
 
-    // A dynamic rank-1 weights shape may resolve to the only legal empty representation [0].
-    const bool mayResolveToEmpty = weightsShape.GetDimNum() == 1U && weightsShape.GetDim(0U) == UNKNOWN_DIM_VALUE;
-    OP_CHECK_IF(weightsShape.GetDimNum() != valuesShape.GetDimNum() && !mayResolveToEmpty,
+    OP_CHECK_IF(weightsCount.value != valuesCount.value,
                 OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
                     context->GetNodeName(), "weights, values",
                     Ops::Base::ToString(weightsShape) + ", " + Ops::Base::ToString(valuesShape),
-                    "non-empty weights must have the same rank as values"),
+                    "non-empty weights must have the same element count as values, got " +
+                        std::to_string(weightsCount.value) + " vs " + std::to_string(valuesCount.value)),
                 return ge::GRAPH_FAILED);
-    if (weightsShape.GetDimNum() != valuesShape.GetDimNum()) {
-        return ge::GRAPH_SUCCESS;
-    }
-
-    for (size_t dim = 0U; dim < valuesShape.GetDimNum(); ++dim) {
-        const int64_t valuesDim = valuesShape.GetDim(dim);
-        const int64_t weightsDim = weightsShape.GetDim(dim);
-        OP_CHECK_IF(
-            valuesDim != UNKNOWN_DIM_VALUE && weightsDim != UNKNOWN_DIM_VALUE && valuesDim != weightsDim,
-            OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-                context->GetNodeName(), "weights, values",
-                Ops::Base::ToString(weightsShape) + ", " + Ops::Base::ToString(valuesShape),
-                "non-empty weights must have exactly the same shape as values, mismatch at dim " + std::to_string(dim)),
-            return ge::GRAPH_FAILED);
-    }
     return ge::GRAPH_SUCCESS;
 }
 

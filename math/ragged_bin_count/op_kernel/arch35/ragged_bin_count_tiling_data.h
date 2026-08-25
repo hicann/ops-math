@@ -17,8 +17,7 @@ struct RaggedBinCountTilingData {
     int64_t numValues = 0;
     int64_t numBins = 0;
     int64_t outputElements = 0;
-    // Written by the host tiling for diagnostics and profiling attribution. The SIMT kernel derives its own
-    // core index from GetBlockIdx()/GetBlockNum(), so it deliberately never reads this field back.
+    // Number of scheduled logical cores. The kernel uses it for work partitioning and precise-workspace indexes.
     uint32_t usedCoreNum = 0U;
     // Number of float slots each core privatises in UB before touching global memory; 0 disables the
     // privatised path and the kernel scatters straight to GM as before. When non-zero it always equals

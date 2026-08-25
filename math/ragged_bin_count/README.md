@@ -28,7 +28,7 @@
 
 $$output_{b,m} = \sum_{i=splits_b}^{splits_{b+1}-1} \mathbb{1}[values_i = m] \cdot w_i$$
 
-  其中 $w_i = weights_i$（`weights` 非空）或 $w_i = 1.0$（`weights` 为空tensor `[0]`）。
+  其中 $w_i = weights_{flat}[i]$（`weights` 元素个数非0）或 $w_i = 1.0$（`weights` 元素个数为0）。
 
   二值（`binary_output = true`），忽略 `weights`：
 
@@ -43,13 +43,12 @@ $$output_{b,m} = \mathbb{1}\left[\exists\, i \in [splits_b,\ splits_{b+1}) ,\ va
 | splits | 输入 | 严格1D row-splits tensor，元素数至少为2 | INT64 | ND |
 | values | 输入 | 1D或2D bin index tensor，按连续元素顺序展平 | INT32、INT64 | ND |
 | size | 输入 | 1D且元素个数为1（即shape为`[1]`），`size[0]` 为非负bin数量，dtype与values相同 | INT32、INT64 | ND |
-| weights | 输入 | 权重tensor，必传。元素个数为0（空Tensor）时表示不使用权重，等价于全1；否则元素个数必须与values相同，按values展平后的顺序逐元素对应 | FLOAT（FP32） | ND |
+| weights | 输入 | 0D、1D或2D权重tensor，必传。元素个数为0（空Tensor）时表示不使用权重，等价于全1；否则元素个数必须与values相同，按values展平后的顺序逐元素对应 | FLOAT（FP32） | ND |
 | binary_output | 属性 | 是否输出二值结果，默认false | BOOL | - |
 | output | 输出 | 严格2D，shape为`[numel(splits)-1, size[0]]` | FLOAT（FP32） | ND |
 
 ## 约束说明
 
-- 本目录仅注册 `ascend950`，Kernel位于 `arch35`，不改变A2/A3既有实现。
 - 各输入的数据类型必须整组匹配下表之一，不允许跨行组合（`size` 的dtype必须与 `values` 相同）：
 
 | splits | values | size | weights | output | 数据格式 |
@@ -58,11 +57,12 @@ $$output_{b,m} = \mathbb{1}\left[\exists\, i \in [splits_b,\ splits_{b+1}) ,\ va
 | INT64 | INT64 | INT64 | FLOAT（FP32） | FLOAT（FP32） | ND |
 
 - `splits[0]` 必须为0，`splits` 必须单调不降，`splits[-1]` 必须等于values元素数。
-- `weights` 只按**元素个数**校验，不校验shape与维数：元素个数为0即表示不使用权重，非0时必须与`values`的元素个数相同（维数可以不同，按展平顺序对应）。此规则与canndev一致。
+- 上述 `splits` 数据值约束、`splits` 越界以及 `values` 含负数，属于Kernel运行时非法输入：整块输出保持按位 `+0.0`，且Kernel在读取 `weights` 前返回。rank、shape、dtype、元素数不符合接口约束则由InferShape/Tiling拒绝，两类错误不可混淆。
+- `weights` 自身维数不得超过2；在此范围内只按**元素个数**校验，不要求shape或维数与`values`相同：元素个数为0即表示不使用权重，非0时必须与`values`的元素个数相同（按展平顺序对应）。该维数上限和元素数规则均与canndev一致。
 - 空Tensor支持情况，按轴分别说明：
   - `size[0]` 为0：输出为空Tensor `[numel(splits)-1, 0]`，不下发有效计算，直接返回成功。
   - `values` 元素数为0：此时 `splits` 各元素必须全为0，输出各位置均为 `+0.0`。
-  - `weights` 元素个数为0（如shape为`[0]`、`[0,3]`、`[2,0]`）：表示无权重，等价于全1，均合法。
+  - `weights` 元素个数为0（如shape为`[0]`、`[0,3]`、`[2,0]`、`[0,0]`）：表示无权重，等价于全1，均合法。
   - `splits` **不支持**空Tensor，元素数必须至少为2，否则校验失败返回错误。
 
 ## 调用说明

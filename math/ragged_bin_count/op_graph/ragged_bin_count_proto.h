@@ -27,7 +27,8 @@ namespace ge {
  * @li splits: A 1D int64 tensor. Adjacent entries delimit each ragged row in values.
  * @li values: An int32 or int64 tensor containing bin indices.
  * @li size: A non-negative scalar tensor with the same dtype as values. It specifies the number of bins.
- * @li weights: A tensor with the same number of elements as values, or an empty tensor. Empty weights act as ones.
+ * @li weights: A tensor of rank at most 2, interpreted in flattened ND order. Zero elements mean unit weights;
+ *     otherwise its element count must equal values. Rank and individual dimensions need not match values.
  *
  * @par Attributes:
  * @li binary_output: If true, every bin that occurs at least once is written as one. Defaults to false.

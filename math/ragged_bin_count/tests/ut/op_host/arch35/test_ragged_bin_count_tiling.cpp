@@ -18,21 +18,25 @@
 #include "gtest/gtest.h"
 #include "tiling_case_executor.h"
 #include "tiling_context_faker.h"
+#include "../../../../op_kernel/arch35/ragged_bin_count_precision_policy.h"
+#include "../../../../op_kernel/arch35/ragged_bin_count_tiling_data.h"
 
 namespace {
 constexpr uint64_t DEFAULT_CORE_NUM = 64U;
 constexpr uint64_t DEFAULT_UB_SIZE = 262144U;
 constexpr uint64_t DEFAULT_TILING_DATA_SIZE = 4096U;
 constexpr size_t EXPECTED_SYSTEM_WORKSPACE = 16U * 1024U * 1024U;
-constexpr size_t EXPECTED_USER_WORKSPACE = 32U;
+constexpr size_t EXPECTED_USER_WORKSPACE = NsRaggedBinCount::USER_WORKSPACE_HEADER_BYTES;
 constexpr size_t EXPECTED_TOTAL_WORKSPACE = EXPECTED_SYSTEM_WORKSPACE + EXPECTED_USER_WORKSPACE;
-constexpr uint64_t UINT32_BOUNDARY = static_cast<uint64_t>(std::numeric_limits<uint32_t>::max());
+constexpr uint64_t UINT32_MAX_VALUE = static_cast<uint64_t>(std::numeric_limits<uint32_t>::max());
+constexpr uint64_t THREAD_NUM_U32 = 1024U;
+constexpr uint64_t MAX_SUPPORTED_CORES = 128U;
+constexpr uint64_t UINT32_INDEX_LIMIT = UINT32_MAX_VALUE - THREAD_NUM_U32 * MAX_SUPPORTED_CORES;
 
 bool UseUint32IndexModel(uint64_t numSplits, uint64_t numValues, uint64_t outputElements)
 {
-    return numSplits <= UINT32_BOUNDARY && numValues <= UINT32_BOUNDARY && outputElements <= UINT32_BOUNDARY;
+    return numSplits <= UINT32_INDEX_LIMIT && numValues <= UINT32_INDEX_LIMIT && outputElements <= UINT32_INDEX_LIMIT;
 }
-
 // usedCoreNum and privateHistElems are the two uint32 fields sharing the tiling data's last eight
 // bytes, and the executor prints the raw buffer as int64, so the pair arrives as one packed number.
 // Spelling it out here keeps the expectations readable instead of hard-coding values like 51539607553.
@@ -40,6 +44,14 @@ std::string CoreAndPrivateHistogram(uint32_t usedCoreNum, uint32_t privateHistEl
 {
     const uint64_t packed = static_cast<uint64_t>(usedCoreNum) | (static_cast<uint64_t>(privateHistElems) << 32U);
     return std::to_string(packed) + ' ';
+}
+
+size_t PreciseValueWorkspace(uint32_t usedCoreNum, uint32_t outputElements)
+{
+    return EXPECTED_SYSTEM_WORKSPACE + EXPECTED_USER_WORKSPACE +
+           static_cast<size_t>(usedCoreNum) * outputElements *
+               static_cast<size_t>(NsRaggedBinCount::PRECISE_VALUE_PARTITIONS_PER_CORE) *
+               static_cast<size_t>(NsRaggedBinCount::PRECISE_VALUE_PARTIAL_BYTES);
 }
 
 struct RaggedBinCountCompileInfo {};
@@ -107,6 +119,50 @@ TEST_F(RaggedBinCountTilingTest, test_row_mapping_with_weights)
                                     {}, &compileInfo, DEFAULT_CORE_NUM, DEFAULT_UB_SIZE, DEFAULT_TILING_DATA_SIZE);
     ExecuteTestCase(context, ge::GRAPH_SUCCESS, 1U, "3 4 10 4 12 " + CoreAndPrivateHistogram(1U, 12U),
                     {EXPECTED_TOTAL_WORKSPACE});
+}
+
+TEST_F(RaggedBinCountTilingTest, test_launch_and_precise_workspace_use_scheduled_core_count)
+{
+    RaggedBinCountCompileInfo compileInfo;
+    int32_t sizeData[1] = {4};
+    gert::TilingContextPara context("RaggedBinCount",
+                                    {
+                                        {{{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND},
+                                        {{{10}, {10}}, ge::DT_INT32, ge::FORMAT_ND},
+                                        {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData},
+                                        {{{10}, {10}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                    },
+                                    {
+                                        {{{3, 4}, {3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                    },
+                                    {}, &compileInfo, DEFAULT_CORE_NUM, DEFAULT_UB_SIZE, DEFAULT_TILING_DATA_SIZE);
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(context, tilingInfo));
+    EXPECT_EQ(tilingInfo.blockNum, 1U);
+    ASSERT_GE(tilingInfo.tilingDataSize, sizeof(RaggedBinCountTilingData));
+    const auto* tilingData = reinterpret_cast<const RaggedBinCountTilingData*>(tilingInfo.tilingData.get());
+    EXPECT_EQ(tilingData->usedCoreNum, 1U);
+
+    int64_t valueSizeData[1] = {1};
+    gert::TilingContextPara valueContext("RaggedBinCount",
+                                         {
+                                             {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},
+                                             {{{4096}, {4096}}, ge::DT_INT64, ge::FORMAT_ND},
+                                             {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, valueSizeData},
+                                             {{{4096}, {4096}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                         },
+                                         {
+                                             {{{1, 1}, {1, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                         },
+                                         {}, &compileInfo, DEFAULT_CORE_NUM, DEFAULT_UB_SIZE, DEFAULT_TILING_DATA_SIZE);
+    TilingInfo valueTilingInfo;
+    ASSERT_TRUE(ExecuteTiling(valueContext, valueTilingInfo));
+    EXPECT_EQ(valueTilingInfo.blockNum, 4U);
+    ASSERT_GE(valueTilingInfo.tilingDataSize, sizeof(RaggedBinCountTilingData));
+    const auto* valueTilingData = reinterpret_cast<const RaggedBinCountTilingData*>(valueTilingInfo.tilingData.get());
+    EXPECT_EQ(valueTilingData->usedCoreNum, 4U);
+    ASSERT_EQ(valueTilingInfo.workspaceSizes.size(), 1U);
+    EXPECT_EQ(valueTilingInfo.workspaceSizes[0], PreciseValueWorkspace(4U, 1U));
 }
 
 TEST_F(RaggedBinCountTilingTest, test_binary_output_without_weights)
@@ -299,6 +355,78 @@ TEST_F(RaggedBinCountTilingTest, test_value_mapping_with_weights_selects_key_fiv
                     {EXPECTED_TOTAL_WORKSPACE});
 }
 
+TEST_F(RaggedBinCountTilingTest, test_precise_value_policy_and_workspace_boundaries)
+{
+    EXPECT_TRUE(NsRaggedBinCount::UsePreciseValuePath(262144, 1));
+    EXPECT_FALSE(NsRaggedBinCount::UsePreciseValuePath(262145, 1));
+    EXPECT_TRUE(NsRaggedBinCount::UsePreciseValuePath(131072, 2));
+    EXPECT_FALSE(NsRaggedBinCount::UsePreciseValuePath(131073, 2));
+    EXPECT_FALSE(NsRaggedBinCount::UsePreciseValuePath(4096, 3));
+
+    RaggedBinCountCompileInfo compileInfo;
+    int32_t sizeData[1] = {2};
+    gert::TilingContextPara preciseContext("RaggedBinCount",
+                                           {
+                                               {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},
+                                               {{{131072}, {131072}}, ge::DT_INT32, ge::FORMAT_ND},
+                                               {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData},
+                                               {{{131072}, {131072}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                           },
+                                           {
+                                               {{{1, 2}, {1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                           },
+                                           {}, &compileInfo, DEFAULT_CORE_NUM, DEFAULT_UB_SIZE,
+                                           DEFAULT_TILING_DATA_SIZE);
+    ExecuteTestCase(preciseContext, ge::GRAPH_SUCCESS, 5U, "1 2 131072 2 2 " + CoreAndPrivateHistogram(64U, 0U),
+                    {PreciseValueWorkspace(64U, 2U)});
+
+    int32_t singleBinSizeData[1] = {1};
+    gert::TilingContextPara singleBinPreciseContext(
+        "RaggedBinCount",
+        {
+            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},
+            {{{262144}, {262144}}, ge::DT_INT32, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, singleBinSizeData},
+            {{{262144}, {262144}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 1}, {1, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {}, &compileInfo, DEFAULT_CORE_NUM, DEFAULT_UB_SIZE, DEFAULT_TILING_DATA_SIZE);
+    ExecuteTestCase(singleBinPreciseContext, ge::GRAPH_SUCCESS, 5U,
+                    "1 2 262144 1 1 " + CoreAndPrivateHistogram(64U, 0U), {PreciseValueWorkspace(64U, 1U)});
+
+    gert::TilingContextPara singleBinFallbackContext(
+        "RaggedBinCount",
+        {
+            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},
+            {{{262145}, {262145}}, ge::DT_INT32, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, singleBinSizeData},
+            {{{262145}, {262145}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 1}, {1, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {}, &compileInfo, DEFAULT_CORE_NUM, DEFAULT_UB_SIZE, DEFAULT_TILING_DATA_SIZE);
+    ExecuteTestCase(singleBinFallbackContext, ge::GRAPH_SUCCESS, 5U,
+                    "1 2 262145 1 1 " + CoreAndPrivateHistogram(64U, 1U), {EXPECTED_TOTAL_WORKSPACE});
+
+    gert::TilingContextPara fallbackContext("RaggedBinCount",
+                                            {
+                                                {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                {{{131073}, {131073}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData},
+                                                {{{131073}, {131073}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                            },
+                                            {
+                                                {{{1, 2}, {1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                            },
+                                            {}, &compileInfo, DEFAULT_CORE_NUM, DEFAULT_UB_SIZE,
+                                            DEFAULT_TILING_DATA_SIZE);
+    ExecuteTestCase(fallbackContext, ge::GRAPH_SUCCESS, 5U, "1 2 131073 2 2 " + CoreAndPrivateHistogram(64U, 2U),
+                    {EXPECTED_TOTAL_WORKSPACE});
+}
+
 TEST_F(RaggedBinCountTilingTest, test_value_binary_without_weights_selects_key_six)
 {
     RaggedBinCountCompileInfo compileInfo;
@@ -453,19 +581,18 @@ TEST_F(RaggedBinCountTilingTest, test_size_must_have_exact_shape_one)
     ExecuteTestCase(lengthTwoContext, ge::GRAPH_FAILED);
 }
 
-// weights is validated by element count alone (see CheckWeightsShape): rank never participates,
-// because the kernel walks weights through the flattened values order, and canndev
-// (op_proto/runtime/bincount_ops.cc:104-107) compares GetShapeSize() only.  The three cases below
-// pin that rule from both sides -- same count with a different rank is accepted, zero count in any
-// shape means "no weights", and a genuine count mismatch is still rejected.
-TEST_F(RaggedBinCountTilingTest, test_weights_matching_element_count_accepts_any_rank)
+// The GE verifier admits ranks 0 through 2.  Within that range, weights is validated by element
+// count alone (see CheckWeightsShape): the kernel walks weights through the flattened values order,
+// and canndev's runtime infershape compares GetShapeSize() only.  The cases below pin that rule from
+// both sides -- a different supported rank/dimension layout is accepted, rank 3 is rejected, zero
+// count in any supported shape means "no weights", and a genuine count mismatch is still rejected.
+TEST_F(RaggedBinCountTilingTest, test_weights_matching_element_count_accepts_supported_shape_variants)
 {
     RaggedBinCountCompileInfo compileInfo;
     int32_t sizeData[1] = {4};
-    // values is [2, 3]; a flat [6] and a rank-3 [1, 2, 3] both carry those same six weights, so each
+    // values is [2, 3]; a flat [6] and a permuted [3, 2] both carry those same six weights, so each
     // must reproduce byte-for-byte the key and TilingData that an exactly-shaped [2, 3] weights gives
-    // in test_two_dimensional_values_and_exact_weights_shape_succeeds -- weights rank reaches no
-    // TilingData field, and a difference here would mean it leaked into one.
+    // in test_two_dimensional_values_and_exact_weights_shape_succeeds.
     const std::string expectedTilingData = "2 3 6 4 8 " + CoreAndPrivateHistogram(1U, 8U);
 
     gert::TilingContextPara flatContext("RaggedBinCount",
@@ -481,6 +608,20 @@ TEST_F(RaggedBinCountTilingTest, test_weights_matching_element_count_accepts_any
                                         {}, &compileInfo, DEFAULT_CORE_NUM, DEFAULT_UB_SIZE, DEFAULT_TILING_DATA_SIZE);
     ExecuteTestCase(flatContext, ge::GRAPH_SUCCESS, 1U, expectedTilingData, {EXPECTED_TOTAL_WORKSPACE});
 
+    gert::TilingContextPara permutedContext("RaggedBinCount",
+                                            {
+                                                {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                {{{2, 3}, {2, 3}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData},
+                                                {{{3, 2}, {3, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                            },
+                                            {
+                                                {{{2, 4}, {2, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                            },
+                                            {}, &compileInfo, DEFAULT_CORE_NUM, DEFAULT_UB_SIZE,
+                                            DEFAULT_TILING_DATA_SIZE);
+    ExecuteTestCase(permutedContext, ge::GRAPH_SUCCESS, 1U, expectedTilingData, {EXPECTED_TOTAL_WORKSPACE});
+
     gert::TilingContextPara rankThreeContext("RaggedBinCount",
                                              {
                                                  {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND},
@@ -493,10 +634,10 @@ TEST_F(RaggedBinCountTilingTest, test_weights_matching_element_count_accepts_any
                                              },
                                              {}, &compileInfo, DEFAULT_CORE_NUM, DEFAULT_UB_SIZE,
                                              DEFAULT_TILING_DATA_SIZE);
-    ExecuteTestCase(rankThreeContext, ge::GRAPH_SUCCESS, 1U, expectedTilingData, {EXPECTED_TOTAL_WORKSPACE});
+    ExecuteTestCase(rankThreeContext, ge::GRAPH_FAILED);
 }
 
-TEST_F(RaggedBinCountTilingTest, test_empty_weights_of_any_shape_means_no_weights)
+TEST_F(RaggedBinCountTilingTest, test_empty_weights_of_any_supported_shape_means_no_weights)
 {
     RaggedBinCountCompileInfo compileInfo;
     int32_t sizeData[1] = {4};
@@ -703,10 +844,11 @@ TEST_F(RaggedBinCountTilingTest, test_safe_ceil_div_handles_non_even_workload)
 
 TEST_F(RaggedBinCountTilingTest, test_index_width_boundary_model_checks_all_three_domains)
 {
-    EXPECT_TRUE(UseUint32IndexModel(UINT32_BOUNDARY, UINT32_BOUNDARY, UINT32_BOUNDARY));
-    EXPECT_FALSE(UseUint32IndexModel(UINT32_BOUNDARY + 1U, 1U, 1U));
-    EXPECT_FALSE(UseUint32IndexModel(1U, UINT32_BOUNDARY + 1U, 1U));
-    EXPECT_FALSE(UseUint32IndexModel(1U, 1U, UINT32_BOUNDARY + 1U));
+    EXPECT_EQ(UINT32_INDEX_LIMIT, 4294836223ULL);
+    EXPECT_TRUE(UseUint32IndexModel(UINT32_INDEX_LIMIT, UINT32_INDEX_LIMIT, UINT32_INDEX_LIMIT));
+    EXPECT_FALSE(UseUint32IndexModel(UINT32_INDEX_LIMIT + 1U, 1U, 1U));
+    EXPECT_FALSE(UseUint32IndexModel(1U, UINT32_INDEX_LIMIT + 1U, 1U));
+    EXPECT_FALSE(UseUint32IndexModel(1U, 1U, UINT32_INDEX_LIMIT + 1U));
 }
 
 TEST_F(RaggedBinCountTilingTest, test_all_eight_keys_accept_both_native_dtypes)

@@ -14,38 +14,7 @@
  */
 
 #include "register/op_def_registry.h"
-#include "graph/operator.h"
-
-namespace {
-using namespace ge;
-
-constexpr uint32_t INPUT_SPLITS = 0U;
-constexpr uint32_t INPUT_VALUES = 1U;
-constexpr uint32_t INPUT_SIZE = 2U;
-constexpr uint32_t INPUT_WEIGHTS = 3U;
-constexpr uint32_t OUTPUT_RESULT = 0U;
-
-graphStatus CheckIfAICoreSupported(const Operator& op, AscendString& result)
-{
-    const DataType splitsDtype = op.GetInputDesc(INPUT_SPLITS).GetDataType();
-    const DataType valuesDtype = op.GetInputDesc(INPUT_VALUES).GetDataType();
-    const DataType sizeDtype = op.GetInputDesc(INPUT_SIZE).GetDataType();
-    const DataType weightsDtype = op.GetInputDesc(INPUT_WEIGHTS).GetDataType();
-    const DataType outputDtype = op.GetOutputDesc(OUTPUT_RESULT).GetDataType();
-
-    const bool isNativeCombination = splitsDtype == DT_INT64 && (valuesDtype == DT_INT32 || valuesDtype == DT_INT64) &&
-                                     sizeDtype == valuesDtype && weightsDtype == DT_FLOAT && outputDtype == DT_FLOAT;
-    if (!isNativeCombination) {
-        result = AscendString(
-            R"({"isSupported": "False", "dynamicCompileStatic": "True", "reason": "RaggedBinCount Ascend 950 supports only splits=int64, values/size=int32 or int64 with matching dtype, and weights/output=float32."})");
-        return GRAPH_FAILED;
-    }
-
-    result = AscendString(
-        R"({"isSupported": "True", "dynamicCompileStatic": "True", "reason": "RaggedBinCount native dtype contract passed."})");
-    return GRAPH_SUCCESS;
-}
-} // namespace
+#include "ragged_bin_count_check_support.h"
 
 namespace ops {
 class RaggedBinCount : public OpDef {
@@ -87,7 +56,7 @@ public:
             .AutoContiguous();
         this->Attr("binary_output").AttrType(OPTIONAL).Bool(false);
 
-        this->AICore().SetCheckSupport(CheckIfAICoreSupported);
+        this->AICore().SetCheckSupport(CheckSupport4RaggedBinCount);
 
         OpAICoreConfig aicoreConfig;
         aicoreConfig.DynamicCompileStaticFlag(true)
@@ -107,11 +76,4 @@ public:
 };
 
 OP_ADD(RaggedBinCount);
-// ragged_bin_count_def.cpp is also compiled into the tiling object so that the
-// pre-selection CheckSupport callback is available to FE before compatibility casts.
-static int g_RaggedBinCount_register_check_support = [](const char* name) {
-    RaggedBinCount opDef(name);
-    optiling::OpCheckFuncHelper(FUNC_CHECK_SUPPORTED, name, opDef.AICore().GetCheckSupport());
-    return 0;
-}("RaggedBinCount");
 } // namespace ops

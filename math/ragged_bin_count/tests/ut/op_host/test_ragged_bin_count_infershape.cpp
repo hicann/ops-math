@@ -10,11 +10,13 @@
 
 #include <cstdint>
 #include <iostream>
+#include <limits>
 #include <vector>
 
 #include "gtest/gtest.h"
 #include "infershape_case_executor.h"
 #include "infershape_context_faker.h"
+#include "../../../op_host/ragged_bin_count_check_support.h"
 
 class RaggedBinCountInfershapeTest : public testing::Test {
 protected:
@@ -22,6 +24,30 @@ protected:
 
     static void TearDownTestCase() { std::cout << "RaggedBinCountInfershapeTest TearDown" << std::endl; }
 };
+
+TEST_F(RaggedBinCountInfershapeTest, check_support_accepts_int32_native_combination)
+{
+    EXPECT_TRUE(ops::IsRaggedBinCountNativeDtypeCombination(ge::DT_INT64, ge::DT_INT32, ge::DT_INT32, ge::DT_FLOAT,
+                                                            ge::DT_FLOAT));
+}
+
+TEST_F(RaggedBinCountInfershapeTest, check_support_accepts_int64_native_combination)
+{
+    EXPECT_TRUE(ops::IsRaggedBinCountNativeDtypeCombination(ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_FLOAT,
+                                                            ge::DT_FLOAT));
+}
+
+TEST_F(RaggedBinCountInfershapeTest, check_support_rejects_mismatched_values_and_size)
+{
+    EXPECT_FALSE(ops::IsRaggedBinCountNativeDtypeCombination(ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_FLOAT,
+                                                             ge::DT_FLOAT));
+}
+
+TEST_F(RaggedBinCountInfershapeTest, check_support_rejects_non_fp32_weights)
+{
+    EXPECT_FALSE(ops::IsRaggedBinCountNativeDtypeCombination(ge::DT_INT64, ge::DT_INT32, ge::DT_INT32, ge::DT_FLOAT16,
+                                                             ge::DT_FLOAT));
+}
 
 TEST_F(RaggedBinCountInfershapeTest, test_int32_static_shape)
 {
@@ -118,7 +144,23 @@ TEST_F(RaggedBinCountInfershapeTest, test_splits_too_short)
     ExecuteTestCase(context, ge::GRAPH_FAILED);
 }
 
-TEST_F(RaggedBinCountInfershapeTest, test_weights_length_mismatch)
+TEST_F(RaggedBinCountInfershapeTest, test_empty_splits_is_rejected)
+{
+    int32_t sizeData[1] = {5};
+    gert::InfershapeContextPara context("RaggedBinCount",
+                                        {
+                                            {{{0}, {0}}, ge::DT_INT64, ge::FORMAT_ND},
+                                            {{{0}, {0}}, ge::DT_INT32, ge::FORMAT_ND},
+                                            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData},
+                                            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                        },
+                                        {
+                                            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                        });
+    ExecuteTestCase(context, ge::GRAPH_FAILED);
+}
+
+TEST_F(RaggedBinCountInfershapeTest, test_weights_element_count_mismatch_is_rejected)
 {
     int32_t sizeData[1] = {5};
     gert::InfershapeContextPara context("RaggedBinCount",
@@ -134,7 +176,7 @@ TEST_F(RaggedBinCountInfershapeTest, test_weights_length_mismatch)
     ExecuteTestCase(context, ge::GRAPH_FAILED);
 }
 
-TEST_F(RaggedBinCountInfershapeTest, test_weights_same_numel_but_different_shape_is_rejected)
+TEST_F(RaggedBinCountInfershapeTest, test_weights_same_numel_but_different_shape_is_accepted)
 {
     int32_t sizeData[1] = {5};
     gert::InfershapeContextPara context("RaggedBinCount",
@@ -147,7 +189,7 @@ TEST_F(RaggedBinCountInfershapeTest, test_weights_same_numel_but_different_shape
                                         {
                                             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                         });
-    ExecuteTestCase(context, ge::GRAPH_FAILED);
+    ExecuteTestCase(context, ge::GRAPH_SUCCESS, {{2, 5}});
 }
 
 TEST_F(RaggedBinCountInfershapeTest, test_splits_scalar_is_rejected)
@@ -230,7 +272,22 @@ TEST_F(RaggedBinCountInfershapeTest, test_size_length_two_is_rejected)
     ExecuteTestCase(context, ge::GRAPH_FAILED);
 }
 
-TEST_F(RaggedBinCountInfershapeTest, test_weights_scalar_is_rejected)
+TEST_F(RaggedBinCountInfershapeTest, test_empty_size_is_rejected)
+{
+    gert::InfershapeContextPara context("RaggedBinCount",
+                                        {
+                                            {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND},
+                                            {{{0}, {0}}, ge::DT_INT32, ge::FORMAT_ND},
+                                            {{{0}, {0}}, ge::DT_INT32, ge::FORMAT_ND},
+                                            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                        },
+                                        {
+                                            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                        });
+    ExecuteTestCase(context, ge::GRAPH_FAILED);
+}
+
+TEST_F(RaggedBinCountInfershapeTest, test_weights_scalar_numel_mismatch_is_rejected)
 {
     int32_t sizeData[1] = {5};
     gert::InfershapeContextPara context("RaggedBinCount",
@@ -246,7 +303,7 @@ TEST_F(RaggedBinCountInfershapeTest, test_weights_scalar_is_rejected)
     ExecuteTestCase(context, ge::GRAPH_FAILED);
 }
 
-TEST_F(RaggedBinCountInfershapeTest, test_weights_rank_three_is_rejected)
+TEST_F(RaggedBinCountInfershapeTest, test_weights_rank_three_is_rejected_by_public_contract)
 {
     int32_t sizeData[1] = {5};
     gert::InfershapeContextPara context("RaggedBinCount",
@@ -255,6 +312,151 @@ TEST_F(RaggedBinCountInfershapeTest, test_weights_rank_three_is_rejected)
                                             {{{1, 2}, {1, 2}}, ge::DT_INT32, ge::FORMAT_ND},
                                             {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData},
                                             {{{1, 1, 2}, {1, 1, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                        },
+                                        {
+                                            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                        });
+    ExecuteTestCase(context, ge::GRAPH_FAILED);
+}
+
+TEST_F(RaggedBinCountInfershapeTest, test_weights_zero_numel_of_any_supported_shape_is_accepted)
+{
+    int32_t sizeData[1] = {5};
+    gert::InfershapeContextPara leadingZeroContext("RaggedBinCount",
+                                                   {
+                                                       {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                       {{{2, 3}, {2, 3}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                       {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData},
+                                                       {{{0, 3}, {0, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                   },
+                                                   {
+                                                       {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                   });
+    ExecuteTestCase(leadingZeroContext, ge::GRAPH_SUCCESS, {{2, 5}});
+
+    gert::InfershapeContextPara trailingZeroContext("RaggedBinCount",
+                                                    {
+                                                        {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                        {{{2, 3}, {2, 3}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                        {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData},
+                                                        {{{2, 0}, {2, 0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                    },
+                                                    {
+                                                        {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                    });
+    ExecuteTestCase(trailingZeroContext, ge::GRAPH_SUCCESS, {{2, 5}});
+
+    gert::InfershapeContextPara allZeroContext("RaggedBinCount",
+                                               {
+                                                   {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                   {{{2, 3}, {2, 3}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                   {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData},
+                                                   {{{0, 0}, {0, 0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                               },
+                                               {
+                                                   {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                               });
+    ExecuteTestCase(allZeroContext, ge::GRAPH_SUCCESS, {{2, 5}});
+
+    gert::InfershapeContextPara zeroAndUnknownContext("RaggedBinCount",
+                                                      {
+                                                          {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                          {{{2, 3}, {2, 3}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                          {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData},
+                                                          {{{-1, 0}, {-1, 0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
+    ExecuteTestCase(zeroAndUnknownContext, ge::GRAPH_SUCCESS, {{2, 5}});
+}
+
+TEST_F(RaggedBinCountInfershapeTest, test_weights_scalar_with_matching_numel_is_accepted)
+{
+    int32_t sizeData[1] = {5};
+    gert::InfershapeContextPara context("RaggedBinCount",
+                                        {
+                                            {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND},
+                                            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData},
+                                            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                        },
+                                        {
+                                            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                        });
+    ExecuteTestCase(context, ge::GRAPH_SUCCESS, {{2, 5}});
+}
+
+TEST_F(RaggedBinCountInfershapeTest, test_dynamic_weights_numel_validation_is_deferred_until_tiling)
+{
+    int32_t sizeData[1] = {5};
+    gert::InfershapeContextPara dynamicValuesContext("RaggedBinCount",
+                                                     {
+                                                         {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                         {{{2, -1}, {2, -1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                         {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData},
+                                                         {{{6}, {6}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                     },
+                                                     {
+                                                         {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                     });
+    ExecuteTestCase(dynamicValuesContext, ge::GRAPH_SUCCESS, {{2, 5}});
+
+    gert::InfershapeContextPara dynamicWeightsContext("RaggedBinCount",
+                                                      {
+                                                          {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                          {{{2, 3}, {2, 3}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                          {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData},
+                                                          {{{-1}, {-1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
+    ExecuteTestCase(dynamicWeightsContext, ge::GRAPH_SUCCESS, {{2, 5}});
+}
+
+TEST_F(RaggedBinCountInfershapeTest, test_zero_numel_values_rejects_nonempty_weights)
+{
+    int32_t sizeData[1] = {5};
+    gert::InfershapeContextPara context("RaggedBinCount",
+                                        {
+                                            {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND},
+                                            {{{0, -1}, {0, -1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData},
+                                            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                        },
+                                        {
+                                            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                        });
+    ExecuteTestCase(context, ge::GRAPH_FAILED);
+}
+
+TEST_F(RaggedBinCountInfershapeTest, test_weights_invalid_dimension_is_rejected)
+{
+    int32_t sizeData[1] = {5};
+    gert::InfershapeContextPara context("RaggedBinCount",
+                                        {
+                                            {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND},
+                                            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData},
+                                            {{{1, -2}, {1, -2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                        },
+                                        {
+                                            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                        });
+    ExecuteTestCase(context, ge::GRAPH_FAILED);
+}
+
+TEST_F(RaggedBinCountInfershapeTest, test_weights_element_count_overflow_is_rejected)
+{
+    int32_t sizeData[1] = {5};
+    const int64_t maxDimension = std::numeric_limits<int64_t>::max();
+    gert::InfershapeContextPara context("RaggedBinCount",
+                                        {
+                                            {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND},
+                                            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData},
+                                            {{{maxDimension, 2}, {maxDimension, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                         },
                                         {
                                             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},

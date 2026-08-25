@@ -25,6 +25,7 @@
 #include "register/op_impl_registry.h"
 #include "util/const_util.h"
 #include "util/math_util.h"
+#include "../../op_kernel/arch35/ragged_bin_count_precision_policy.h"
 #include "../../op_kernel/arch35/ragged_bin_count_tiling_data.h"
 #include "../../op_kernel/arch35/ragged_bin_count_tiling_key.h"
 
@@ -42,6 +43,8 @@ constexpr int64_t ATTR_BINARY_OUTPUT = 0;
 constexpr size_t RANK_SPLITS = 1U;
 constexpr size_t MIN_VALUES_RANK = 1U;
 constexpr size_t MAX_VALUES_RANK = 2U;
+constexpr size_t MIN_WEIGHTS_RANK = 0U;
+constexpr size_t MAX_WEIGHTS_RANK = 2U;
 constexpr size_t RANK_SIZE = 1U;
 constexpr size_t RANK_OUTPUT = 2U;
 constexpr int64_t MIN_SPLITS_NUM = 2;
@@ -49,7 +52,6 @@ constexpr int64_t PER_CORE_MIN_ELEMENTS = 1024;
 constexpr int64_t MIN_CORE_NUM = 1;
 constexpr uint32_t DCACHE_SIZE = 128U * 1024U;
 constexpr uint32_t STATIC_UB_ESTIMATE = 0U;
-constexpr size_t USER_WORKSPACE_SIZE = 32U;
 constexpr size_t OUTPUT_ELEMENT_BYTES = sizeof(float);
 constexpr uint32_t SCHEDULE_MODE_SYNC_ALL = 1U;
 
@@ -122,18 +124,21 @@ ge::graphStatus GetSafeElementCount(const gert::TilingContext* context, const ge
     return ge::GRAPH_SUCCESS;
 }
 
-// weights is validated by element count alone, deliberately ignoring rank.  canndev does the same
-// (op_proto/runtime/bincount_ops.cc:104-107 compares GetShapeSize() only), and the kernel addresses
-// weights linearly through the flattened values order, so rank never affects a single load.  A rank
-// or per-dim check here would therefore reject graphs canndev accepts -- an empty weights written as
-// [0, 3] rather than [0], or a [6] weights against a [2, 3] values -- without buying any safety.
-// GetSafeElementCount is used instead of GetShapeSize() because it already rejects negative dims and
+// The built-in GE verifier caps weights at rank 2.  Within that public rank range, canndev validates
+// weights by element count alone (op_proto/runtime/bincount_ops.cc:104-107), and the kernel addresses
+// weights linearly through the flattened values order.  Thus [0, 3] and [2, 0] are both empty, while
+// a flat [6] may pair with [2, 3] values.  GetSafeElementCount also rejects negative dimensions and
 // guards the multiply against int64 overflow.
 ge::graphStatus CheckWeightsShape(const gert::TilingContext* context, const gert::StorageShape* valuesShape,
                                   const gert::StorageShape* weightsShape, bool& hasWeights)
 {
     const gert::Shape& values = valuesShape->GetStorageShape();
     const gert::Shape& weights = weightsShape->GetStorageShape();
+    OP_CHECK_IF(
+        CheckRankInRange(context, weightsShape, MIN_WEIGHTS_RANK, MAX_WEIGHTS_RANK, "weights") != ge::GRAPH_SUCCESS,
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context->GetNodeName(), "weights", Ops::Base::ToString(weights),
+                                              "weights rank must not exceed the GE verifier limit"),
+        return ge::GRAPH_FAILED);
     int64_t valuesCount = 0;
     int64_t weightsCount = 0;
     OP_CHECK_IF(GetSafeElementCount(context, valuesShape, "values", valuesCount) != ge::GRAPH_SUCCESS,
@@ -375,6 +380,37 @@ uint32_t DecidePrivateHistElems(const ProblemSize& problem, const PlatformBudget
     return static_cast<uint32_t>(problem.outputElements);
 }
 
+ge::graphStatus ResolveUserWorkspaceSize(const gert::TilingContext* context, const ProblemSize& problem,
+                                         const ScheduleParams& schedule, uint64_t& userWorkspaceSize)
+{
+    userWorkspaceSize = NsRaggedBinCount::USER_WORKSPACE_HEADER_BYTES;
+    const bool usePreciseValue = schedule.mappingMode == MAPPING_MODE_VALUE && problem.hasWeights &&
+                                 !schedule.binaryOutput &&
+                                 NsRaggedBinCount::UsePreciseValuePath(problem.numValues, problem.numBins);
+    if (!usePreciseValue) {
+        return ge::GRAPH_SUCCESS;
+    }
+
+    const uint64_t coreNum = static_cast<uint64_t>(schedule.coreNum);
+    const uint64_t outputElements = static_cast<uint64_t>(problem.outputElements);
+    constexpr uint64_t partitions = static_cast<uint64_t>(NsRaggedBinCount::PRECISE_VALUE_PARTITIONS_PER_CORE);
+    constexpr uint64_t slotBytes = NsRaggedBinCount::PRECISE_VALUE_PARTIAL_BYTES;
+    constexpr uint64_t maxValue = std::numeric_limits<uint64_t>::max();
+    OP_CHECK_IF(outputElements != 0U && coreNum > maxValue / outputElements,
+                OP_LOGE(context->GetNodeName(), "The precise VALUE workspace entry count overflows uint64."),
+                return ge::GRAPH_FAILED);
+    uint64_t entryCount = coreNum * outputElements;
+    OP_CHECK_IF(entryCount > maxValue / partitions,
+                OP_LOGE(context->GetNodeName(), "The precise VALUE workspace partition count overflows uint64."),
+                return ge::GRAPH_FAILED);
+    entryCount *= partitions;
+    OP_CHECK_IF(entryCount > (maxValue - userWorkspaceSize) / slotBytes,
+                OP_LOGE(context->GetNodeName(), "The precise VALUE workspace byte count overflows uint64."),
+                return ge::GRAPH_FAILED);
+    userWorkspaceSize += entryCount * slotBytes;
+    return ge::GRAPH_SUCCESS;
+}
+
 ge::graphStatus ResolveSchedule(gert::TilingContext* context, const ProblemSize& problem, const PlatformBudget& budget,
                                 ScheduleParams& schedule)
 {
@@ -399,7 +435,10 @@ ge::graphStatus ResolveSchedule(gert::TilingContext* context, const ProblemSize&
         }
     }
 
-    schedule.privateHistElems = DecidePrivateHistElems(problem, budget, schedule.coreNum);
+    const bool usePreciseValue = schedule.mappingMode == MAPPING_MODE_VALUE && problem.hasWeights &&
+                                 !schedule.binaryOutput &&
+                                 NsRaggedBinCount::UsePreciseValuePath(problem.numValues, problem.numBins);
+    schedule.privateHistElems = usePreciseValue ? 0U : DecidePrivateHistElems(problem, budget, schedule.coreNum);
     schedule.schMode = (schedule.mappingMode << RBC_MAPPING_MODE_SHIFT) |
                        (static_cast<uint32_t>(schedule.binaryOutput) << RBC_BINARY_OUTPUT_SHIFT) |
                        static_cast<uint32_t>(problem.hasWeights);
@@ -436,11 +475,15 @@ ge::graphStatus PublishTiling(gert::TilingContext* context, const ProblemSize& p
 
     size_t* workspaceSizes = context->GetWorkspaceSizes(1U);
     OP_CHECK_NULL_WITH_CONTEXT(context, workspaceSizes);
+    uint64_t userWorkspaceSize = 0U;
+    OP_CHECK_IF(ResolveUserWorkspaceSize(context, problem, schedule, userWorkspaceSize) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "Failed to resolve the user workspace size."), return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        budget.systemWorkspaceSize > static_cast<uint64_t>(std::numeric_limits<size_t>::max() - USER_WORKSPACE_SIZE),
+        userWorkspaceSize > static_cast<uint64_t>(std::numeric_limits<size_t>::max()) ||
+            budget.systemWorkspaceSize > static_cast<uint64_t>(std::numeric_limits<size_t>::max()) - userWorkspaceSize,
         OP_LOGE(context->GetNodeName(), "The system and user workspace size addition overflows size_t."),
         return ge::GRAPH_FAILED);
-    workspaceSizes[0] = static_cast<size_t>(budget.systemWorkspaceSize) + USER_WORKSPACE_SIZE;
+    workspaceSizes[0] = static_cast<size_t>(budget.systemWorkspaceSize + userWorkspaceSize);
     return ge::GRAPH_SUCCESS;
 }
 
