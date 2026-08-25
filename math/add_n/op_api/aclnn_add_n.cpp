@@ -94,13 +94,17 @@ static bool CheckShape(const aclTensorList* tensors, const aclTensor* out)
     auto shape = (*tensors)[0]->GetViewShape();
     for (uint64_t i = 1; i < tensors->Size(); i++) {
         if ((*tensors)[i]->GetViewShape() != shape) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input tensors should have same shape.");
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "Input tensors should have same shape. tensor 0 shape: %s, tensor %lu shape: %s.",
+                    op::ToString(shape).GetString(), i, op::ToString((*tensors)[i]->GetViewShape()).GetString());
             return false;
         }
     }
 
     if (shape != out->GetViewShape()) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input tensors should have same shape with output.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "Input tensors should have same shape with output. input shape: %s, output shape: %s.",
+                op::ToString(shape).GetString(), op::ToString(out->GetViewShape()).GetString());
         return false;
     }
 
@@ -129,7 +133,7 @@ static aclnnStatus CheckParams(const aclTensorList* tensors, const aclTensor* ou
 
     // 检查数据格式是否为ND
     if (IsPrivateFormat((*tensors)[0]->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND, NCHW, NHWC, HWCN, NDHWC, NCDHW.");
         return ACLNN_ERR_PARAM_INVALID;
     }
 

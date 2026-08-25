@@ -33,20 +33,19 @@ static const std::initializer_list<DataType> ASCEND910_DTYPE_DTYPE_SUPPORT_LIST 
     DataType::DT_INT16,  DataType::DT_INT8,  DataType::DT_UINT8,   DataType::DT_BOOL};
 
 static const std::initializer_list<DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_DOUBLE, DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_INT64, DataType::DT_INT32,
-    DataType::DT_INT16,  DataType::DT_INT8,  DataType::DT_UINT8,   DataType::DT_BOOL,  DataType::DT_BF16,
-    DataType::DT_COMPLEX64};
+    DataType::DT_DOUBLE, DataType::DT_FLOAT, DataType::DT_FLOAT16,  DataType::DT_INT64,
+    DataType::DT_INT32,  DataType::DT_INT16, DataType::DT_INT8,     DataType::DT_UINT8,
+    DataType::DT_BOOL,   DataType::DT_BF16,  DataType::DT_COMPLEX64};
 
 static const std::initializer_list<DataType> ARCH_REGBASE_DTYPE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_DOUBLE, DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_INT64, DataType::DT_INT32,
-    DataType::DT_INT16,  DataType::DT_INT8,  DataType::DT_UINT8,   DataType::DT_BOOL,  DataType::DT_BF16,
-    DataType::DT_COMPLEX32,  DataType::DT_COMPLEX64};
+    DataType::DT_DOUBLE, DataType::DT_FLOAT, DataType::DT_FLOAT16,   DataType::DT_INT64,
+    DataType::DT_INT32,  DataType::DT_INT16, DataType::DT_INT8,      DataType::DT_UINT8,
+    DataType::DT_BOOL,   DataType::DT_BF16,  DataType::DT_COMPLEX32, DataType::DT_COMPLEX64};
 
 static const std::unordered_map<DataType, DataType> COMPLEX_IN_AND_OUT_DTYPE_MAP = {
-    {DataType::DT_COMPLEX32, DataType::DT_FLOAT16}, 
+    {DataType::DT_COMPLEX32, DataType::DT_FLOAT16},
     {DataType::DT_COMPLEX64, DataType::DT_FLOAT},
-    {DataType::DT_COMPLEX128, DataType::DT_DOUBLE}
-};
+    {DataType::DT_COMPLEX128, DataType::DT_DOUBLE}};
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
@@ -111,15 +110,15 @@ static bool CheckFormat(const aclTensor* self, const aclTensor* out)
 {
     // 输入输出的格式需要一致
     if (self->GetStorageFormat() != out->GetStorageFormat()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Format of input and output should be equal. self [%s], out [%s].",
-            ToString(self->GetStorageShape()).GetString(), ToString(out->GetStorageShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "Format of input and output should be equal. self format [%d], out format [%d].",
+                static_cast<int32_t>(self->GetStorageFormat()), static_cast<int32_t>(out->GetStorageFormat()));
         return false;
     }
 
     // self格式不能是私有格式
     if (IsPrivateFormat(self->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND, NCHW, NHWC, HWCN, NDHWC, NCDHW.");
         return false;
     }
 
@@ -154,7 +153,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
     return ACLNN_SUCCESS;
 }
 
-static bool IsSupportComplexAbs(const op::DataType selfType) {
+static bool IsSupportComplexAbs(const op::DataType selfType)
+{
     if (IsComplexType(selfType)) {
         auto npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
         if (npuArch == NpuArch::DAV_2201) {
@@ -167,8 +167,8 @@ static bool IsSupportComplexAbs(const op::DataType selfType) {
     }
 }
 
-aclnnStatus aclnnAbsGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnAbsGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                     aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAbs, DFX_IN(self), DFX_OUT(out));
 
@@ -203,7 +203,7 @@ aclnnStatus aclnnAbsGetWorkspaceSize(
     const aclTensor* absResult = nullptr;
     if (IsSupportComplexAbs(selfContiguous->GetDataType())) {
         absResult = l0op::ComplexAbs(selfContiguous, uniqueExecutor.get());
-    } else{
+    } else {
         absResult = l0op::Abs(selfContiguous, uniqueExecutor.get());
     }
     CHECK_RET(absResult != nullptr, ACLNN_ERR_INNER_NULLPTR);

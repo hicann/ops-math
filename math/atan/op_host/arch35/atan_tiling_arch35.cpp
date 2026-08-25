@@ -43,8 +43,8 @@ ge::graphStatus AtanTiling::CalcInputDtype()
     OP_CHECK_IF(
         this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT,
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "input",
-                                               ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
-                                               "The dtype of input must be FLOAT16, BF16 or FLOAT"),
+                                              ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
+                                              "The dtype of input must be FLOAT16, BF16 or FLOAT"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -57,16 +57,15 @@ ge::graphStatus AtanTiling::CalcOutputDtype()
     OP_CHECK_IF(
         this->outputDtype != ge::DT_FLOAT16 && this->outputDtype != ge::DT_BF16 && this->outputDtype != ge::DT_FLOAT,
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "output",
-                                               ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
-                                               "The dtype of output must be FLOAT16, BF16 or FLOAT"),
+                                              ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+                                              "The dtype of output must be FLOAT16, BF16 or FLOAT"),
         return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        this->outputDtype != this->inputDtype,
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "input, output",
-                                                ge::TypeUtils::DataTypeToSerialString(this->inputDtype) + ", " +
-                                                ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
-                                                "The dtypes of input and output must be the same"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(this->outputDtype != this->inputDtype,
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "input, output",
+                                                       ge::TypeUtils::DataTypeToSerialString(this->inputDtype) + ", " +
+                                                           ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+                                                       "The dtypes of input and output must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -80,32 +79,28 @@ ge::graphStatus AtanTiling::CheckShape()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
     const gert::Shape& outputYShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
-    OP_CHECK_IF(
-        inputXShape != outputYShape, OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "inputX, outputY",
-                                                                            (Ops::Base::ToString(inputXShape) + ", " +
-                                                                             Ops::Base::ToString(outputYShape)).c_str(),
-                                                                            "The shapes of input and output must be the same"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputXShape != outputYShape,
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "inputX, outputY",
+                    (Ops::Base::ToString(inputXShape) + ", " + Ops::Base::ToString(outputYShape)).c_str(),
+                    "The shapes of input and output must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus AtanTiling::RunTiling()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "Enter TilingForAtan");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-    OP_CHECK_IF(
-        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"),
+                return ge::GRAPH_FAILED);
 
     auto tiling = tilingContext->GetTilingData<EleBaseTilingDataV2>();
-    OP_CHECK_IF(
-        (tiling == nullptr), OP_LOGE(tilingContext->GetNodeName(), "Get AtanTiling from GE context failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((tiling == nullptr), OP_LOGE(tilingContext->GetNodeName(), "Get AtanTiling from GE context failed"),
+                return ge::GRAPH_FAILED);
 
     ge::graphStatus ret = ge::GRAPH_SUCCESS;
 
@@ -120,12 +115,14 @@ ge::graphStatus AtanTiling::RunTiling()
         ret = elewiseBaseTiling.DoTiling<AtanOp::AtanDag<bfloat16_t>::OpDag>(*tiling, ASCEND_API_BUFFER);
     } else {
         OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "inputDtype",
-                                       ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
-                                       "FLOAT16, BF16, FLOAT");
+                                  ge::TypeUtils::DataTypeToSerialString(this->inputDtype), "FLOAT16, BF16, FLOAT");
         return ge::GRAPH_FAILED;
     }
 
-    OP_CHECK_IF(ret == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ret == ge::GRAPH_FAILED,
+                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed, input dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str()),
+                return ge::GRAPH_FAILED);
 
     // set workspace/tilingkey/blockdim
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);

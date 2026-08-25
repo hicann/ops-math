@@ -61,14 +61,13 @@ ge::graphStatus AssignSubTiling::CheckDtype()
     auto varDtype = varDesc->GetDataType();
     auto valueDtype = valueDesc->GetDataType();
     this->outputDtype = outputDesc->GetDataType();
-    OP_CHECK_IF(
-        varDtype != valueDtype || varDtype != this->outputDtype,
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "var, value, output",
-                                                ge::TypeUtils::DataTypeToSerialString(varDtype) + ", " +
-                                                ge::TypeUtils::DataTypeToSerialString(valueDtype) + ", " +
-                                                ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
-                                                "The dtypes of var, value and output must be the same"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(varDtype != valueDtype || varDtype != this->outputDtype,
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "var, value, output",
+                                                       ge::TypeUtils::DataTypeToSerialString(varDtype) + ", " +
+                                                           ge::TypeUtils::DataTypeToSerialString(valueDtype) + ", " +
+                                                           ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+                                                       "The dtypes of var, value and output must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -87,9 +86,10 @@ ge::graphStatus AssignSubTiling::CheckShape() const
     OP_CHECK_IF(
         varShape != valueShape || varShape != outputShape,
         OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "var, value, output",
-                                                (Ops::Base::ToString(varShape) + ", " + Ops::Base::ToString(valueShape) +
-                                                 ", " + Ops::Base::ToString(outputShape)).c_str(),
-                                                "The shapes of var, value and output must be the same"),
+                                               (Ops::Base::ToString(varShape) + ", " + Ops::Base::ToString(valueShape) +
+                                                ", " + Ops::Base::ToString(outputShape))
+                                                   .c_str(),
+                                               "The shapes of var, value and output must be the same"),
         return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
@@ -97,14 +97,13 @@ ge::graphStatus AssignSubTiling::CheckShape() const
 
 ge::graphStatus AssignSubTiling::RunTiling()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "AssignSubTiling RunTiling enter.");
     Ops::Base::ElewiseBaseTiling eleBaseTiling(tilingContext);
 
     tiling = tilingContext->GetTilingData<AssignSubTilingData>();
-    OP_CHECK_IF(
-        CheckDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check dtype failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"),
+                return ge::GRAPH_FAILED);
     ge::graphStatus ret = ge::GRAPH_FAILED;
     if (this->outputDtype == ge::DT_FLOAT16) {
         ret = eleBaseTiling.DoTiling<AssignSubOp<half>::OpDag>(tiling->baseTiling);
@@ -122,11 +121,14 @@ ge::graphStatus AssignSubTiling::RunTiling()
         ret = eleBaseTiling.DoTiling<AssignSubOp<uint8_t>::OpDag>(tiling->baseTiling);
     } else {
         OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "output",
-                                       ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
-                                       "FLOAT16, BF16, FLOAT, INT8, INT32, INT64, UINT8");
+                                  ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+                                  "FLOAT16, BF16, FLOAT, INT8, INT32, INT64, UINT8");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(ret == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "AssignSubTiling failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ret == ge::GRAPH_FAILED,
+                OP_LOGE(tilingContext->GetNodeName(), "AssignSubTiling failed, output dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
+                return ge::GRAPH_FAILED);
     SetTilingData();
     size_t usrWorkspaceSize = 0;
     size_t sysWorkspaceSize = SYS_WORKSPACE_SIZE;

@@ -127,8 +127,6 @@ static ge::graphStatus TilingForAbs(gert::TilingContext* context)
     OP_LOGD("AbsTiling", "Enter TilingForAbs");
     OP_CHECK_IF(context == nullptr, OP_LOGE(context, "Tiling context is null"), return ge::GRAPH_FAILED);
 
-    // 走新的模板tiling
-    OP_LOGD("AbsTiling", "Enter new AbsTiling");
     AbsTiling absTiling(context);
     return absTiling.RunTiling();
 }
