@@ -216,7 +216,7 @@ aclnnStatus aclnnSearchSorted(
       <td>out的shape与self的shape不相同，sorter的shape与sortedSequence的shape不相同。</td>
     </tr>
     <tr>
-      <td>当sortedSequence维度大于一，self除最后一维外，其他维度不与sortedSequence对应维度不相等时。</td>
+      <td>当sortedSequence维度大于一，self除最后一维外，其他维度与sortedSequence对应维度不相等时。</td>
     </tr>
   </tbody></table>
 

@@ -98,7 +98,7 @@ aclnnStatus aclnnClampTensor(
       <td class="tg-0lax">out（aclTensor*）</td>
       <td class="tg-0lax">输出</td>
       <td class="tg-0lax">输出Tensor，即公式中的y<sub>i</sub>。</td>
-      <td class="tg-0lax">shape是self、clipValueMin、clipValueMax进行<a href="../../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>的shape，数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0lax">shape是self、clipValueMin、clipValueMax进行<a href="../../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast</a>后的shape，数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0lax">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0lax">ND</td>
       <td class="tg-0lax">1-8</td>

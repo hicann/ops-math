@@ -139,7 +139,7 @@ aclnnStatus aclnnCalculateMatmulWeightSizeV2(
     <tr>
       <td class="tg-0pky" rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
       <td class="tg-0pky" rowspan="3">161002</td>
-      <td class="tg-0pky">不支持空Tensor的输入空Tensor。</td>
+      <td class="tg-0pky">不支持输入空Tensor。</td>
     </tr>
     <tr>
       <td class="tg-0lax">输入shape的维度不满足要求。</td>

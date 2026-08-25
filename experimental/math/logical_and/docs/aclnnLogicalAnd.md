@@ -145,7 +145,7 @@ aclnnStatus aclnnLogicalAnd(
     <tr>
       <td rowspan="8">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="8">161002</td>
-      <td>condition, self, 和other的数据类型和数据格式不在支持的范围之内。</td>
+      <td>condition, self, 和other的数据类型和数据格式不在支持的范围内。</td>
     </tr>
     <tr>
       <td>condition, self, 和other的数据维度超过了8维。</td>

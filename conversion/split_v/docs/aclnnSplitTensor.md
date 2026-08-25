@@ -88,7 +88,7 @@ aclnnStatus aclnnSplitTensor(
     <tr>
       <td>splitSections（uint64_t）</td>
       <td>输入</td>
-      <td>表示沿dim轴均匀切分后的块大小最后一块可以小于splitSections。</td>
+      <td>表示沿dim轴均匀切分后的块大小，最后一块可以小于splitSections。</td>
       <td>-</td>
       <td>UINT64</td>
       <td>-</td>

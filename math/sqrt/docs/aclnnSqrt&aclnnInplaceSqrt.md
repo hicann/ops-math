@@ -257,8 +257,8 @@ aclnnStatus aclnnInplaceSqrt(
   <tbody>
     <tr>
       <td class="tg-0pky">self（aclTensor*）</td>
-      <td class="tg-0pky">输入|输出</td>
-      <td class="tg-0pky">输入|输出张量，公式中的self/out。</td>
+      <td class="tg-0pky">输入/输出</td>
+      <td class="tg-0pky">输入/输出张量，公式中的self/out。</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td class="tg-0pky">ND</td>

@@ -193,7 +193,7 @@ aclnnStatus aclnnNpuFormatCast(
       <tr>
         <td rowspan="5"> ACLNN_ERR_PARAM_INVALID </td>
         <td rowspan="5"> 161002 </td>
-        <td>srcTensor的数据格式非，数据类型非不在具体范围内。</td>
+        <td>srcTensor的数据格式不在具体范围内。</td>
       </tr>
       <tr>
         <td>dstFormat的数据格式不在具体范围内。</td>

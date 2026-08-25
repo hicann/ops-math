@@ -109,7 +109,7 @@ $$
 
 ## 约束说明
 
-如果输入shape超过1000000可能会导致算子执行超时（aicore error类型报错，errorStr为：timeout or trap error），场景为最后2轴各轴相乘的积小于16，前面的轴各轴相乘的积超大。
+如果输入shape超过1000000可能会导致算子执行超时（aicore error类型报错，errorStr为：timeout or trap error），场景为最后2轴各轴相乘的积小于16，前面的轴各轴相乘的积超过。
 
 ## 调用示例
 
