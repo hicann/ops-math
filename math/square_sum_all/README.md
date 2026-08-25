@@ -7,7 +7,7 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                    |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>   |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                   |    ×     |
+| <term>Atlas 200I/500 A2 推理产品</term>                   |    √     |
 | <term>Atlas 推理系列产品</term>                           |    √     |
 | <term>Atlas 训练系列产品</term>                           |    √     |
 
@@ -76,11 +76,8 @@ $$
 
 - x1与x2的执行期rank及每一维长度必须完全相同，不支持广播。shape`[2,3]`与`[6]`即使元素数相同也不合法。
 - x1与x2必须使用相同格式。ND输入对应ND输出；NCHW、NHWC输入均对应ND标量输出。除此之外的混合格式组合不支持。
-- Ascend 950当前不支持FRACTAL_Z、C1HWNCoC0、NC1HWC0私有格式，Host Tiling会在Kernel执行前拒绝；后续版本可能放开。
 - 本算子不做隐式数据类型转换与输入数据格式转换，四个参数的数据类型和数据格式必须与上述合法组合一致。
-- 平方、核内累加与跨核合并全程使用FLOAT。合法Tiling或分核数变化会改变浮点累加顺序，因此不承诺跨分核配置逐bit一致。
 - NaN、Inf及有限值平方上溢按FLOAT语义自然传播；两路累加器与两个输出互不污染，`x1`中的非有限值不会影响`y2`，反之亦然。
-- 确定性计算：默认确定性实现。跨核合并不使用原子累加，各核分片按`blockIdx`固定顺序汇总，因此同一shape在同一部署二进制上重复执行的结果逐bit一致；跨分核配置的差异见上一条。
 - ND、NCHW、NHWC输入走同一条按元素总数展平的归约路径，Kernel侧无格式分支，因此结果与轴顺序无关。
 - 本算子仅提供GE图模式注册，构建配置为`aclnn_exclude`，不提供aclnn接口。
 

@@ -9,7 +9,7 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
-"""Generate the deterministic 1004-case SquareSumAll TTK kernel suite."""
+"""Generate the deterministic 1026-case SquareSumAll TTK kernel suite."""
 
 import argparse
 import ast
@@ -25,7 +25,37 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 
 BASE_CASE_COUNT = 1000
-TARGETED_CASE_COUNT = 4
+PUBLIC_FORMATS = ("NCHW", "NHWC")
+PUBLIC_FORMAT_CASE_LABELS = (
+    "minimum",
+    "vector_aligned",
+    "vector_tail",
+    "tile_minus_one",
+    "tile_aligned",
+    "tile_plus_one",
+    "core_split_minus_one",
+    "core_split_aligned",
+    "core_split_plus_one",
+    "sixteen_cores_tail",
+    "fifty_six_cores",
+    "three_tile_loops",
+)
+PUBLIC_FORMAT_ELEMENTS = (
+    1,
+    64,
+    65,
+    4095,
+    4096,
+    4097,
+    8191,
+    8192,
+    8193,
+    65537,
+    229376,
+    458753,
+)
+PUBLIC_FORMAT_CASES_PER_FORMAT = len(PUBLIC_FORMAT_ELEMENTS)
+TARGETED_CASE_COUNT = 2 + len(PUBLIC_FORMATS) * PUBLIC_FORMAT_CASES_PER_FORMAT
 CASE_COUNT = BASE_CASE_COUNT + TARGETED_CASE_COUNT
 SEED_COUNT = BASE_CASE_COUNT // 2
 BASE_SEED_COUNT = 250
@@ -37,6 +67,11 @@ MAX_DIMENSION = 1 << 20
 # int64; MAX_ELEMENTS is the largest total this suite drives (56 cores x 4096 x 8 tiles + 1).
 MAX_TILE_LOOPS = 8
 MAX_ELEMENTS = MAX_CORE_COUNT * TILE_ELEMENTS * MAX_TILE_LOOPS + 1
+GPU_ALIGNED_MIN_ELEMENTS = 8192
+# partialCount is capped at 1728 and each partial owns 128 elements per
+# grid-stride chunk.  chunkCount is stored in uint16_t, so key 1 accepts at
+# most 1728 * 128 * 65535 elements; larger legal shapes fall back to key 0.
+GPU_ALIGNED_MAX_ELEMENTS = 14_495_293_440
 FP32_RTOL = 2**-10
 FP32_ATOL = 2**-16
 REQUIRED_MISMATCH_RATIO = 0.01
@@ -120,6 +155,37 @@ NORMAL_PARAMETERS = (
     ((-1.0, 1.0), (1.0, 1.0)),
 )
 
+KERNEL_PUBLIC_FORMAT_SHAPES: Dict[str, Tuple[Tuple[int, ...], ...]] = {
+    "NCHW": (
+        (1, 1, 1, 1),
+        (1, 2, 4, 8),
+        (1, 1, 5, 13),
+        (1, 3, 5, 273),
+        (1, 8, 16, 32),
+        (1, 17, 1, 241),
+        (1, 1, 1, 8191),
+        (1, 8, 32, 32),
+        (1, 3, 1, 2731),
+        (1, 1, 1, 65537),
+        (1, 7, 256, 128),
+        (1, 79, 1, 5807),
+    ),
+    "NHWC": (
+        (1, 1, 1, 1),
+        (1, 4, 8, 2),
+        (1, 5, 13, 1),
+        (1, 5, 273, 3),
+        (1, 16, 32, 8),
+        (1, 1, 241, 17),
+        (1, 1, 8191, 1),
+        (1, 32, 32, 8),
+        (1, 1, 2731, 3),
+        (1, 1, 65537, 1),
+        (1, 256, 128, 7),
+        (1, 1, 5807, 79),
+    ),
+}
+
 
 @dataclass(frozen=True)
 class CaseSeed:
@@ -143,6 +209,11 @@ def _tile_loops(element_count: int) -> int:
     core_count = _used_cores(element_count)
     max_core_elements = (element_count + core_count - 1) // core_count
     return (max_core_elements + TILE_ELEMENTS - 1) // TILE_ELEMENTS
+
+
+def _tiling_key(element_count: int) -> int:
+    """Expected Ascend950 route for the current product tiling policy."""
+    return int(GPU_ALIGNED_MIN_ELEMENTS <= element_count <= GPU_ALIGNED_MAX_ELEMENTS)
 
 
 def _distribute_power_shape(rank: int, exponent: int, phase: int) -> Tuple[int, ...]:
@@ -630,6 +701,7 @@ def _make_targeted_row(
     input_ori_formats: Optional[Tuple[str, str]] = None,
     output_ori_shapes: Optional[Tuple[Tuple[int, ...], Tuple[int, ...]]] = None,
     output_ori_formats: Optional[Tuple[str, str]] = None,
+    input_data_ranges: Optional[str] = None,
 ) -> Dict[str, str]:
     row = {header: "" for header in CSV_HEADERS}
     row.update(
@@ -644,7 +716,8 @@ def _make_targeted_row(
             "output_dtypes": repr(("float32", "float32")),
             "output_formats": repr(output_formats),
             "attributes": "{}",
-            "input_data_ranges": repr(((-4, 4, 0.0), (-4, 4, 0.0))),
+            "input_data_ranges": input_data_ranges
+            or repr(((-4, 4, 0.0), (-4, 4, 0.0))),
             "precision_tolerances": repr(
                 (
                     (FP32_RTOL, REQUIRED_MISMATCH_RATIO),
@@ -673,9 +746,52 @@ def _make_targeted_row(
     return row
 
 
+def _build_public_format_rows(
+    network_name: str,
+    testcase_prefix: str,
+    shapes_by_format: Dict[str, Tuple[Tuple[int, ...], ...]],
+    mode: str,
+    profile_offset: int,
+) -> List[Dict[str, str]]:
+    rows = []
+    for format_index, format_name in enumerate(PUBLIC_FORMATS):
+        shapes = shapes_by_format[format_name]
+        for case_index, (label, shape) in enumerate(
+            zip(PUBLIC_FORMAT_CASE_LABELS, shapes), start=1
+        ):
+            profile_index = (case_index - 1 + format_index * 5 + profile_offset) % len(
+                FINITE_PROFILE_NAMES
+            )
+            distribution = "uniform" if (case_index + profile_offset) % 2 else "normal"
+            seed = CaseSeed("format", shape, profile_index)
+            ranges, _, profile_key = _input_ranges(seed, distribution)
+            element_count = _elements(shape)
+            shape_pair = (shape, shape)
+            rows.append(
+                _make_targeted_row(
+                    f"{testcase_prefix}_{format_name.lower()}_{case_index:02d}_{label}",
+                    network_name,
+                    shape_pair,
+                    (format_name, format_name),
+                    ("ND", "ND"),
+                    f"mode={mode}; category=format; format={format_name}-to-ND; "
+                    f"boundary={label}; profile={profile_key}; rank=4; elements={element_count}; "
+                    f"expected_cores={_used_cores(element_count)}; "
+                    f"max_core_tile_loops={_tile_loops(element_count)}; "
+                    f"tiling_key={_tiling_key(element_count)}",
+                    input_ori_shapes=shape_pair,
+                    input_ori_formats=(format_name, format_name),
+                    output_ori_shapes=((1,), (1,)),
+                    output_ori_formats=("ND", "ND"),
+                    input_data_ranges=ranges,
+                )
+            )
+    return rows
+
+
 def _build_targeted_rows() -> List[Dict[str, str]]:
     network_name = "square_sum_all_regression"
-    return [
+    rows = [
         _make_targeted_row(
             "ssa_x_001_rank0_scalar",
             network_name,
@@ -693,23 +809,17 @@ def _build_targeted_rows() -> List[Dict[str, str]]:
             ("ND", "ND"),
             "category=format; profile=ND-baseline; elements=960; 公有格式路径的ND对照",
         ),
-        _make_targeted_row(
-            "ssa_x_006_fmt_nchw",
-            network_name,
-            ((2, 3, 4, 5), (2, 3, 4, 5)),
-            ("NCHW", "NCHW"),
-            ("ND", "ND"),
-            "category=format; profile=NCHW-to-ND; rank=4; elements=120; 验证公有格式增量路由",
-        ),
-        _make_targeted_row(
-            "ssa_x_007_fmt_nhwc",
-            network_name,
-            ((2, 4, 5, 3), (2, 4, 5, 3)),
-            ("NHWC", "NHWC"),
-            ("ND", "ND"),
-            "category=format; profile=NHWC-to-ND; rank=4; elements=120; 验证公有格式增量路由",
-        ),
     ]
+    rows.extend(
+        _build_public_format_rows(
+            network_name,
+            "ssa_x_fmt",
+            KERNEL_PUBLIC_FORMAT_SHAPES,
+            "kernel",
+            profile_offset=0,
+        )
+    )
+    return rows
 
 
 def _build_rows() -> List[Dict[str, str]]:
@@ -736,8 +846,8 @@ def _build_rows() -> List[Dict[str, str]]:
                     "output_formats": repr(("ND", "ND")),
                     "attributes": "{}",
                     "input_data_ranges": ranges,
-                    # TTK stores each pair as (rtol, permitted mismatch ratio). The custom TestSpec
-                    # additionally enforces atol=2^-16 and max_abs_error<=1e-2 for both scalar outputs.
+                    # close 回归档消费每对 (rtol, permitted mismatch ratio) 与下方 atol；
+                    # 三方档由 TestSpec/CLI 改用 cross_check L1。
                     "precision_tolerances": repr(
                         (
                             (FP32_RTOL, REQUIRED_MISMATCH_RATIO),
@@ -766,6 +876,59 @@ def _build_rows() -> List[Dict[str, str]]:
 
 def _is_power_of_two(value: int) -> bool:
     return value > 0 and value & (value - 1) == 0
+
+
+def _audit_public_format_rows(
+    rows: Sequence[Dict[str, str]],
+    expected_shapes: Dict[str, Tuple[Tuple[int, ...], ...]],
+) -> None:
+    assert len(rows) == len(PUBLIC_FORMATS) * PUBLIC_FORMAT_CASES_PER_FORMAT
+    for format_name in PUBLIC_FORMATS:
+        format_rows = [
+            row
+            for row in rows
+            if ast.literal_eval(row["input_formats"]) == (format_name, format_name)
+        ]
+        assert len(format_rows) == PUBLIC_FORMAT_CASES_PER_FORMAT
+        shapes = [ast.literal_eval(row["input_shapes"])[0] for row in format_rows]
+        assert tuple(shapes) == expected_shapes[format_name]
+        assert tuple(_elements(shape) for shape in shapes) == PUBLIC_FORMAT_ELEMENTS
+        assert all(len(shape) == 4 for shape in shapes)
+        assert all(
+            ast.literal_eval(row["input_shapes"])[0]
+            == ast.literal_eval(row["input_shapes"])[1]
+            for row in format_rows
+        )
+        assert all(
+            ast.literal_eval(row["input_ori_shapes"])
+            == ast.literal_eval(row["input_shapes"])
+            for row in format_rows
+        )
+        assert all(
+            ast.literal_eval(row["input_ori_formats"]) == (format_name, format_name)
+            for row in format_rows
+        )
+        assert all(
+            ast.literal_eval(row["output_formats"]) == ("ND", "ND")
+            and ast.literal_eval(row["output_ori_formats"]) == ("ND", "ND")
+            for row in format_rows
+        )
+        assert len({row["input_data_ranges"] for row in format_rows}) == len(
+            format_rows
+        )
+        assert all(
+            f"tiling_key={_tiling_key(_elements(shape))}" in row["remark"]
+            for row, shape in zip(format_rows, shapes)
+        )
+        assert {_used_cores(count) for count in PUBLIC_FORMAT_ELEMENTS} == {
+            1,
+            2,
+            16,
+            56,
+        }
+        assert {_tile_loops(count) for count in PUBLIC_FORMAT_ELEMENTS} == {1, 2, 3}
+        assert any(count % 64 == 0 for count in PUBLIC_FORMAT_ELEMENTS)
+        assert any(count % 64 != 0 for count in PUBLIC_FORMAT_ELEMENTS)
 
 
 def _audit(rows: Sequence[Dict[str, str]]) -> None:
@@ -858,21 +1021,12 @@ def _audit(rows: Sequence[Dict[str, str]]) -> None:
             == 2 * SPECIAL_SEEDS_PER_PROFILE
         )
 
-    targeted_by_name = {row["testcase_name"]: row for row in targeted_rows}
     private_formats = {"FRACTAL_Z", "C1HWNCoC0", "NC1HWC0"}
     for row in rows:
         formats = set(ast.literal_eval(row["input_formats"]))
         formats.update(ast.literal_eval(row["output_formats"]))
         assert formats.isdisjoint(private_formats)
-    for format_name, case_name in (
-        ("NCHW", "ssa_x_006_fmt_nchw"),
-        ("NHWC", "ssa_x_007_fmt_nhwc"),
-    ):
-        row = targeted_by_name[case_name]
-        input_shapes = ast.literal_eval(row["input_shapes"])
-        assert all(len(shape) == 4 for shape in input_shapes)
-        assert ast.literal_eval(row["input_formats"]) == (format_name, format_name)
-        assert ast.literal_eval(row["output_formats"]) == ("ND", "ND")
+    _audit_public_format_rows(targeted_rows[2:], KERNEL_PUBLIC_FORMAT_SHAPES)
 
 
 def _render(rows: Sequence[Dict[str, str]]) -> str:

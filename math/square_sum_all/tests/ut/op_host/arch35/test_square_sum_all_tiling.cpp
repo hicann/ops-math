@@ -14,6 +14,7 @@
  */
 
 #include <cstdint>
+#include <limits>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -26,8 +27,16 @@ namespace {
 constexpr uint64_t TEST_CORE_NUM = 56;
 constexpr uint64_t TEST_UB_SIZE = 256 * 1024;
 constexpr uint64_t TEST_TILING_CAPACITY = 4096;
+constexpr size_t TEST_SYSTEM_WORKSPACE_BYTES = 16 * 1024 * 1024;
 constexpr int64_t TILE_ELEMENTS = 4096;
 constexpr int64_t WORKSPACE_BYTES_PER_CORE = 64;
+constexpr int64_t GPU_ALIGNED_MIN_ELEMENTS = 8192;
+constexpr int64_t GPU_ALIGNED_MAX_ELEMENTS_FOR_VECTOR_CHUNKS = 14495293440;
+constexpr uint64_t GPU_ALIGNED_MIN_UB_BYTES = 137728;
+constexpr size_t GPU_ALIGNED_MIN_WORKSPACE_BYTES = 4096;
+constexpr size_t GPU_ALIGNED_MAX_WORKSPACE_BYTES = 110592;
+constexpr uint64_t LEGACY_TILING_KEY = 0;
+constexpr uint64_t GPU_ALIGNED_TILING_KEY = 1;
 
 struct SquareSumAllCompileInfo {};
 SquareSumAllCompileInfo g_compileInfo;
@@ -80,9 +89,10 @@ const SquareSumAllTilingData& GetTilingData(const TilingInfo& tilingInfo)
     return *reinterpret_cast<const SquareSumAllTilingData*>(tilingInfo.tilingData.get());
 }
 
-void CheckCommonResult(const TilingInfo& tilingInfo, int64_t expectedCores)
+void CheckCommonResult(const TilingInfo& tilingInfo, int64_t expectedCores,
+                       uint64_t expectedTilingKey = LEGACY_TILING_KEY)
 {
-    EXPECT_EQ(tilingInfo.tilingKey, 0);
+    EXPECT_EQ(tilingInfo.tilingKey, expectedTilingKey);
     EXPECT_EQ(tilingInfo.blockNum, static_cast<size_t>(expectedCores));
     ASSERT_EQ(tilingInfo.workspaceSizes.size(), 1U);
     EXPECT_GE(tilingInfo.workspaceSizes[0], expectedCores * WORKSPACE_BYTES_PER_CORE);
@@ -123,7 +133,7 @@ TEST_F(SquareSumAllTilingTest, MultiTileLengthKeepsBalancedPartition)
 {
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(MakeContext({262147}, {262147}), tilingInfo));
-    CheckCommonResult(tilingInfo, 56);
+    CheckCommonResult(tilingInfo, 56, GPU_ALIGNED_TILING_KEY);
 
     const auto& tilingData = GetTilingData(tilingInfo);
     EXPECT_EQ(tilingData.totalElements, 262147);
@@ -133,15 +143,78 @@ TEST_F(SquareSumAllTilingTest, MultiTileLengthKeepsBalancedPartition)
     EXPECT_EQ(tilingData.tileElements, TILE_ELEMENTS);
 }
 
-TEST_F(SquareSumAllTilingTest, CoreThresholdUsesTwoCores)
+TEST_F(SquareSumAllTilingTest, BelowGpuAlignedThresholdUsesLegacyKernel)
 {
     TilingInfo tilingInfo;
-    ASSERT_TRUE(ExecuteTiling(MakeContext({8192}, {8192}), tilingInfo));
-    CheckCommonResult(tilingInfo, 2);
+    ASSERT_TRUE(ExecuteTiling(MakeContext({GPU_ALIGNED_MIN_ELEMENTS - 1}, {GPU_ALIGNED_MIN_ELEMENTS - 1}), tilingInfo));
+    CheckCommonResult(tilingInfo, 1, LEGACY_TILING_KEY);
+}
+
+TEST_F(SquareSumAllTilingTest, GpuAlignedThresholdUsesTwoCores)
+{
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(MakeContext({GPU_ALIGNED_MIN_ELEMENTS}, {GPU_ALIGNED_MIN_ELEMENTS}), tilingInfo));
+    CheckCommonResult(tilingInfo, 2, GPU_ALIGNED_TILING_KEY);
+    EXPECT_EQ(tilingInfo.workspaceSizes[0], TEST_SYSTEM_WORKSPACE_BYTES + GPU_ALIGNED_MIN_WORKSPACE_BYTES);
 
     const auto& tilingData = GetTilingData(tilingInfo);
     EXPECT_EQ(tilingData.baseCoreElements, 4096);
     EXPECT_EQ(tilingData.extraCoreCount, 0);
+}
+
+TEST_F(SquareSumAllTilingTest, GpuAlignedPseudoBlockCapBoundaryStaysOnKeyOne)
+{
+    for (const int64_t elementCount : {221184, 221185}) {
+        TilingInfo tilingInfo;
+        ASSERT_TRUE(ExecuteTiling(MakeContext({elementCount}, {elementCount}), tilingInfo));
+        CheckCommonResult(tilingInfo, 54, GPU_ALIGNED_TILING_KEY);
+        EXPECT_EQ(tilingInfo.workspaceSizes[0], TEST_SYSTEM_WORKSPACE_BYTES + GPU_ALIGNED_MAX_WORKSPACE_BYTES);
+    }
+}
+
+TEST_F(SquareSumAllTilingTest, GpuAlignedPathFitsExactMinimumUb)
+{
+    ContextOptions options;
+    options.ubSize = GPU_ALIGNED_MIN_UB_BYTES;
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(
+        ExecuteTiling(MakeContext({GPU_ALIGNED_MIN_ELEMENTS}, {GPU_ALIGNED_MIN_ELEMENTS}, options), tilingInfo));
+    CheckCommonResult(tilingInfo, 2, GPU_ALIGNED_TILING_KEY);
+    EXPECT_EQ(tilingInfo.workspaceSizes[0], TEST_SYSTEM_WORKSPACE_BYTES + GPU_ALIGNED_MIN_WORKSPACE_BYTES);
+}
+
+TEST_F(SquareSumAllTilingTest, GpuAlignedVectorChunkBoundaryFallsBackSafely)
+{
+    TilingInfo fitInfo;
+    ASSERT_TRUE(ExecuteTiling(
+        MakeContext({GPU_ALIGNED_MAX_ELEMENTS_FOR_VECTOR_CHUNKS}, {GPU_ALIGNED_MAX_ELEMENTS_FOR_VECTOR_CHUNKS}),
+        fitInfo));
+    CheckCommonResult(fitInfo, 56, GPU_ALIGNED_TILING_KEY);
+
+    TilingInfo fallbackInfo;
+    ASSERT_TRUE(ExecuteTiling(
+        MakeContext({GPU_ALIGNED_MAX_ELEMENTS_FOR_VECTOR_CHUNKS + 1}, {GPU_ALIGNED_MAX_ELEMENTS_FOR_VECTOR_CHUNKS + 1}),
+        fallbackInfo));
+    CheckCommonResult(fallbackInfo, 56, LEGACY_TILING_KEY);
+}
+
+TEST_F(SquareSumAllTilingTest, GpuAlignedPathFallsBackWhenUbIsOneByteShort)
+{
+    ContextOptions options;
+    options.ubSize = GPU_ALIGNED_MIN_UB_BYTES - 1;
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(
+        ExecuteTiling(MakeContext({GPU_ALIGNED_MIN_ELEMENTS}, {GPU_ALIGNED_MIN_ELEMENTS}, options), tilingInfo));
+    CheckCommonResult(tilingInfo, 2, LEGACY_TILING_KEY);
+}
+
+TEST_F(SquareSumAllTilingTest, Int64MaxElementCountFallsBackWithoutOverflow)
+{
+    const int64_t elementCount = std::numeric_limits<int64_t>::max();
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(MakeContext({elementCount}, {elementCount}), tilingInfo));
+    CheckCommonResult(tilingInfo, 56, LEGACY_TILING_KEY);
+    EXPECT_EQ(GetTilingData(tilingInfo).totalElements, elementCount);
 }
 
 TEST_F(SquareSumAllTilingTest, RankEightIsFlattenedToElementCount)

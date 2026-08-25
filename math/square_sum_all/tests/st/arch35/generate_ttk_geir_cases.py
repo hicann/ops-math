@@ -9,7 +9,7 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
-"""Generate the deterministic 152-case SquareSumAll TTK GEIR suite.
+"""Generate the deterministic 174-case SquareSumAll TTK GEIR suite.
 
 GEIR 与 kernel 跑同一份 Device Kernel，但入口链路不同：GEIR 先建 GE 图，依次触发
 InferShape（op_host）、InferDataType（op_graph）、Tiling、binary 选择，再执行并比对。
@@ -19,15 +19,16 @@ InferShape 与 InferDataType 唯一的端到端看护点。
 执行时同时开启静态图与动态图（`ttk geir -d`）：动态图把输入输出 desc 全部置为 -1
 （graph_builder.py 的 is_dynamic 分支），GE 只能依赖算子自身的推导函数。
 
-基础回归预算150条，另加NCHW、NHWC两条格式路由用例。本算子有两个轴是**常量，
-不是可覆盖维度**：
+基础回归预算150条，另加NCHW、NHWC各12条格式分层用例。本算子有一个固定轴和一个
+由规模决定的路由轴：
 
-- **tiling key 恒为 0**：square_sum_all_tiling.cpp 里是无分支的 SetTilingKey(0)，
-  当前支持的ND、NCHW、NHWC格式复用同一套Kernel。不存在多tiling key可覆盖。
+- **tiling key 为 0/1**：小规模走原有 key 0；Ascend950 上 8192 至 14,495,293,440
+  元素走 GPU 对齐的 key 1；更大的合法 shape 因 UB 容量回退 key 0。ND、NCHW、NHWC
+  共用同一套规模路由规则。
 - **类型组合恒为 float32**：op_def四个参数都只声明DT_FLOAT。正向格式覆盖为ND输入到ND输出，
   以及NCHW/NHWC输入到ND输出；私有格式由Host Tiling提前拒绝，不进入GEIR正向用例。
 
-因此基础150条投给真正变化的轴，新增2条专门验证公有格式选路：
+因此基础150条投给真正变化的轴，新增24条专门验证公有格式选路及其边界行为：
 
 | 轴 | 取值来源 | 覆盖 |
 | :-- | :-- | :-- |
@@ -38,6 +39,7 @@ InferShape 与 InferDataType 唯一的端到端看护点。
 | shape 形态 | 因子分解后旋转 | 1 出现在首/中/尾 |
 | 异常值 | 16 个 profile | NaN、±Inf、零、有符号零、次正规、有限值平方上溢、两路隔离 |
 | 分布 | uniform / normal | 各 75 条 |
+| 公有格式 | NCHW / NHWC | 各12条，覆盖64元素向量边界、4096元素tile边界、分核与56核封顶 |
 """
 
 import argparse
@@ -55,28 +57,64 @@ from generate_ttk_cases import (
     FP32_RTOL,
     MAX_CORE_COUNT,
     MAX_DIMENSION,
+    KERNEL_PUBLIC_FORMAT_SHAPES,
+    PUBLIC_FORMAT_CASES_PER_FORMAT,
+    PUBLIC_FORMATS,
     REQUIRED_MISMATCH_RATIO,
     SPECIAL_PROFILE_NAMES,
     TILE_ELEMENTS,
     CaseSeed,
+    _audit_public_format_rows,
+    _build_public_format_rows,
     _elements,
     _input_ranges,
-    _make_targeted_row,
     _render,
     _tile_loops,
+    _tiling_key,
     _used_cores,
     _validated_output_path,
     _write_output,
 )
 
 BASE_CASE_COUNT = 150
-TARGETED_CASE_COUNT = 2
+TARGETED_CASE_COUNT = len(PUBLIC_FORMATS) * PUBLIC_FORMAT_CASES_PER_FORMAT
 CASE_COUNT = BASE_CASE_COUNT + TARGETED_CASE_COUNT
 MAX_RANK = 8
 PROFILE_COUNT = 12
 MAX_TILE_LOOPS = 6
 # 最大规模由"最长核跑满 6 个 tile"决定；两路输入合计约 11MB，实体卡可承受。
 MAX_ELEMENTS = MAX_CORE_COUNT * TILE_ELEMENTS * MAX_TILE_LOOPS + 1
+
+GEIR_PUBLIC_FORMAT_SHAPES: Dict[str, Tuple[Tuple[int, ...], ...]] = {
+    "NCHW": (
+        (1, 1, 1, 1),
+        (2, 1, 8, 4),
+        (1, 5, 13, 1),
+        (3, 5, 7, 39),
+        (2, 4, 8, 64),
+        (17, 1, 241, 1),
+        (1, 8191, 1, 1),
+        (2, 4, 16, 64),
+        (3, 1, 2731, 1),
+        (1, 65537, 1, 1),
+        (2, 14, 64, 128),
+        (79, 1, 5807, 1),
+    ),
+    "NHWC": (
+        (1, 1, 1, 1),
+        (2, 8, 4, 1),
+        (1, 13, 1, 5),
+        (3, 7, 39, 5),
+        (2, 8, 64, 4),
+        (17, 241, 1, 1),
+        (1, 1, 1, 8191),
+        (2, 16, 64, 4),
+        (3, 2731, 1, 1),
+        (1, 1, 1, 65537),
+        (2, 64, 128, 14),
+        (79, 5807, 1, 1),
+    ),
+}
 
 
 def _factor_shape(rank: int, element_count: int, phase: int) -> Tuple[int, ...]:
@@ -311,8 +349,8 @@ def _build_rows() -> List[Dict[str, str]]:
                 "output_formats": repr(("ND", "ND")),
                 "attributes": "{}",
                 "input_data_ranges": ranges,
-                # TTK 每对为 (rtol, 允许失配比例)；TestSpec 另行强制 atol=2^-16
-                # 与 max_abs_error<=1e-2，两路标量输出各判一次。
+                # close 回归档消费每对 (rtol, 允许失配比例) 与下方 atol；
+                # 三方档由 TestSpec/CLI 改用 cross_check L1。
                 "precision_tolerances": repr(
                     (
                         (FP32_RTOL, REQUIRED_MISMATCH_RATIO),
@@ -327,7 +365,8 @@ def _build_rows() -> List[Dict[str, str]]:
                     f"mode=geir; distribution={distribution}; category={seed.category}; "
                     f"profile={profile_key}; rank={len(seed.shape)}; elements={element_count}; "
                     f"expected_cores={_used_cores(element_count)}; "
-                    f"max_core_tile_loops={_tile_loops(element_count)}; tiling_key=0"
+                    f"max_core_tile_loops={_tile_loops(element_count)}; "
+                    f"tiling_key={_tiling_key(element_count)}"
                 ),
                 "priority": priority,
                 "manual_input_binaries": "()",
@@ -336,24 +375,13 @@ def _build_rows() -> List[Dict[str, str]]:
         )
         rows.append(row)
     rows.extend(
-        [
-            _make_targeted_row(
-                "ssag_x_151_fmt_nchw",
-                "square_sum_all_geir_regression",
-                ((2, 3, 4, 5), (2, 3, 4, 5)),
-                ("NCHW", "NCHW"),
-                ("ND", "ND"),
-                "mode=geir; category=format; profile=NCHW-to-ND; rank=4; elements=120; tiling_key=0",
-            ),
-            _make_targeted_row(
-                "ssag_x_152_fmt_nhwc",
-                "square_sum_all_geir_regression",
-                ((2, 4, 5, 3), (2, 4, 5, 3)),
-                ("NHWC", "NHWC"),
-                ("ND", "ND"),
-                "mode=geir; category=format; profile=NHWC-to-ND; rank=4; elements=120; tiling_key=0",
-            ),
-        ]
+        _build_public_format_rows(
+            "square_sum_all_geir_regression",
+            "ssag_x_fmt",
+            GEIR_PUBLIC_FORMAT_SHAPES,
+            "geir",
+            profile_offset=3,
+        )
     )
     _audit(rows)
     return rows
@@ -390,13 +418,14 @@ def _audit(rows: Sequence[Dict[str, str]]) -> None:
     assert min(rank_counts.values()) >= 10, rank_counts
 
     element_counts = [_elements(shape) for shape in shapes]
-    # blockDim 1~56 必须全覆盖——这是本算子唯一的 tiling 形态变化。
+    # blockDim 1~56 与 key 0/1 都必须覆盖。
     assert set(_used_cores(count) for count in element_counts) == set(
         range(1, MAX_CORE_COUNT + 1)
     )
     assert set(range(1, MAX_TILE_LOOPS + 1)).issubset(
         set(_tile_loops(count) for count in element_counts)
     )
+    assert {_tiling_key(count) for count in element_counts} == {0, 1}
     required_boundaries = {
         1,
         63,
@@ -439,11 +468,14 @@ def _audit(rows: Sequence[Dict[str, str]]) -> None:
         formats = set(ast.literal_eval(row["input_formats"]))
         formats.update(ast.literal_eval(row["output_formats"]))
         assert formats.isdisjoint(private_formats)
-    for row, format_name in zip(targeted_rows, ("NCHW", "NHWC")):
-        input_shapes = ast.literal_eval(row["input_shapes"])
-        assert all(len(shape) == 4 for shape in input_shapes)
-        assert ast.literal_eval(row["input_formats"]) == (format_name, format_name)
-        assert ast.literal_eval(row["output_formats"]) == ("ND", "ND")
+    _audit_public_format_rows(targeted_rows, GEIR_PUBLIC_FORMAT_SHAPES)
+    for format_name in PUBLIC_FORMATS:
+        kernel_shapes = KERNEL_PUBLIC_FORMAT_SHAPES[format_name]
+        geir_shapes = GEIR_PUBLIC_FORMAT_SHAPES[format_name]
+        assert kernel_shapes[0] == geir_shapes[0]
+        assert all(
+            kernel != geir for kernel, geir in zip(kernel_shapes[1:], geir_shapes[1:])
+        )
 
 
 def _print_summary(rows: Sequence[Dict[str, str]], output_path: Path) -> None:
@@ -463,7 +495,8 @@ def _print_summary(rows: Sequence[Dict[str, str]], output_path: Path) -> None:
         f"blockdim_covered=1-{MAX_CORE_COUNT} ({len(set(_used_cores(n) for n in element_counts))} values)"
     )
     print(
-        f"tile_loops={sorted(set(_tile_loops(n) for n in element_counts))} tiling_keys=[0]"
+        f"tile_loops={sorted(set(_tile_loops(n) for n in element_counts))} "
+        f"tiling_keys={sorted(set(_tiling_key(n) for n in element_counts))}"
     )
     print(
         f"element_range={min(element_counts)}-{max(element_counts)} special_cases={len(SPECIAL_PROFILE_NAMES)}"

@@ -23,6 +23,7 @@
 #include "platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
 #include "../../op_kernel/arch35/square_sum_all_tiling_data.h"
+#include "../../op_kernel/arch35/square_sum_all_tiling_key.h"
 
 namespace optiling {
 namespace {
@@ -42,10 +43,37 @@ constexpr int64_t UB_RESERVED_BYTES = 8 * 1024;
 constexpr int64_t RESULT_LOCAL_BYTES = 64;
 constexpr int64_t WORKSPACE_SLOT_BYTES = 32;
 constexpr int64_t WORKSPACE_REGIONS = 2;
+constexpr int64_t GPU_ALIGNED_MIN_ELEMENTS = 8192;
+constexpr int64_t GPU_BLOCK_ELEMENTS = 128;
+constexpr int64_t GPU_MAX_PARTIALS = 1728;
+constexpr int64_t GPU_RESULT_LOCAL_BYTES = 2 * VECTOR_BYTES;
+constexpr int64_t GPU_PARTIAL_LOCAL_BYTES_PER_ELEMENT = WORKSPACE_SLOT_BYTES;
+constexpr int64_t GPU_INPUT_QUEUE_DEPTH = 2;
+constexpr int64_t GPU_ACCUMULATOR_REGION_COUNT = 4;
+constexpr int64_t GPU_BATCH_RESULT_BYTES_PER_PARTIAL = WORKSPACE_REGIONS * WORKSPACE_SLOT_BYTES;
+constexpr int64_t GPU_BATCH_LOCAL_BYTES_PER_PARTIAL = INPUT_QUEUE_COUNT * GPU_INPUT_QUEUE_DEPTH * GPU_BLOCK_ELEMENTS *
+                                                          ELEMENT_BYTES +
+                                                      GPU_ACCUMULATOR_REGION_COUNT * VECTOR_ELEMENTS * ELEMENT_BYTES +
+                                                      GPU_BATCH_RESULT_BYTES_PER_PARTIAL;
+constexpr int64_t GPU_UB_RESERVED_BYTES = 32 * 1024;
+constexpr int64_t GPU_TPIPE_BUDGET_BYTES = 224 * 1024;
+constexpr int64_t MAX_VECTOR_CHUNKS = std::numeric_limits<uint16_t>::max();
+constexpr uint64_t LEGACY_TILING_KEY = 0;
+constexpr uint64_t GPU_ALIGNED_TILING_KEY = 1;
 constexpr size_t WORKSPACE_COUNT = 1;
 constexpr bool PRIVATE_FORMATS_ENABLED = false;
 
 struct SquareSumAllCompileInfo {};
+
+struct KernelPlan {
+    int64_t usedCoreNum = 0;
+    int64_t tileElements = 0;
+    int64_t userWorkspaceBytes = 0;
+    int64_t ubRequirementBytes = 0;
+    uint64_t tilingKey = LEGACY_TILING_KEY;
+};
+
+int64_t CeilDivPositive(int64_t value, int64_t divisor) { return value / divisor + (value % divisor != 0); }
 
 // 私有格式的注册、binary 与 Kernel 能力暂时保留，便于后续放开；当前版本在
 // ValidateDtypeAndFormat 中提前拦截，不进入 shape 校验和 Kernel 执行。
@@ -212,13 +240,49 @@ ge::graphStatus GetPlatformInfo(gert::TilingContext* context, int64_t& coreNum, 
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus FillTiling(gert::TilingContext* context, int64_t totalElements, int64_t coreNum, int64_t ubSize,
-                           uint64_t systemWorkspaceSize)
+bool TryBuildGpuAlignedPlan(int64_t totalElements, int64_t coreNum, int64_t ubSize, KernelPlan& plan)
 {
-    int64_t usedCoreNum = std::max<int64_t>(1, totalElements / MAX_TILE_ELEMENTS);
-    usedCoreNum = std::min(usedCoreNum, coreNum);
+    if (totalElements < GPU_ALIGNED_MIN_ELEMENTS) {
+        return false;
+    }
+    const int64_t partialCount = std::min(CeilDivPositive(totalElements, GPU_BLOCK_ELEMENTS), GPU_MAX_PARTIALS);
+    const int64_t gridStride = partialCount * GPU_BLOCK_ELEMENTS;
+    const int64_t chunkCount = CeilDivPositive(totalElements, gridStride);
+    if (chunkCount > MAX_VECTOR_CHUNKS) {
+        return false;
+    }
+    const int64_t requestedCores = std::max<int64_t>(1, totalElements / MAX_TILE_ELEMENTS);
+    const int64_t usedCoreNum = std::min({coreNum, partialCount, requestedCores});
+    const int64_t maxCorePartialCount = CeilDivPositive(partialCount, usedCoreNum);
+    const int64_t packedPartials = CeilDivPositive(partialCount, GPU_BLOCK_ELEMENTS) * GPU_BLOCK_ELEMENTS;
+    const int64_t fixedTpipeBytes = GPU_RESULT_LOCAL_BYTES + packedPartials * GPU_PARTIAL_LOCAL_BYTES_PER_ELEMENT;
+    if (fixedTpipeBytes >= GPU_TPIPE_BUDGET_BYTES) {
+        return false;
+    }
+    const int64_t batchCapacityByTpipe = (GPU_TPIPE_BUDGET_BYTES - fixedTpipeBytes) / GPU_BATCH_LOCAL_BYTES_PER_PARTIAL;
+    if (batchCapacityByTpipe <= 0) {
+        return false;
+    }
+    const int64_t batchPartialCapacity = std::min(batchCapacityByTpipe, maxCorePartialCount);
+    const int64_t ubRequirementBytes = GPU_UB_RESERVED_BYTES + fixedTpipeBytes +
+                                       batchPartialCapacity * GPU_BATCH_LOCAL_BYTES_PER_PARTIAL;
+    if (ubSize < ubRequirementBytes) {
+        return false;
+    }
 
-    const int64_t unalignedMergeLocalBytes = usedCoreNum * WORKSPACE_SLOT_BYTES;
+    plan.usedCoreNum = usedCoreNum;
+    plan.tileElements = MAX_TILE_ELEMENTS;
+    plan.userWorkspaceBytes = partialCount * WORKSPACE_SLOT_BYTES * WORKSPACE_REGIONS;
+    plan.ubRequirementBytes = ubRequirementBytes;
+    plan.tilingKey = GPU_ALIGNED_TILING_KEY;
+    return true;
+}
+
+ge::graphStatus BuildLegacyPlan(gert::TilingContext* context, int64_t totalElements, int64_t coreNum, int64_t ubSize,
+                                KernelPlan& plan)
+{
+    plan.usedCoreNum = std::min(std::max<int64_t>(1, totalElements / MAX_TILE_ELEMENTS), coreNum);
+    const int64_t unalignedMergeLocalBytes = plan.usedCoreNum * WORKSPACE_SLOT_BYTES;
     const int64_t mergeLocalBytes = (unalignedMergeLocalBytes / VECTOR_BYTES +
                                      (unalignedMergeLocalBytes % VECTOR_BYTES != 0)) *
                                     VECTOR_BYTES;
@@ -227,38 +291,57 @@ ge::graphStatus FillTiling(gert::TilingContext* context, int64_t totalElements, 
                 OP_LOGE(context, "UB is too small: available=%ld, fixed requirement=%ld", ubSize, fixedUbBytes),
                 return ge::GRAPH_FAILED);
     const int64_t bytesPerTileElement = INPUT_QUEUE_COUNT * DOUBLE_BUFFER * ELEMENT_BYTES;
-    int64_t tileElements = (ubSize - fixedUbBytes) / bytesPerTileElement;
-    tileElements = std::min(tileElements, MAX_TILE_ELEMENTS);
-    tileElements = tileElements / VECTOR_ELEMENTS * VECTOR_ELEMENTS;
-    OP_CHECK_IF(tileElements < VECTOR_ELEMENTS,
-                OP_LOGE(context, "UB cannot hold one float32 vector tile: tileElements=%ld", tileElements),
+    plan.tileElements = std::min((ubSize - fixedUbBytes) / bytesPerTileElement, MAX_TILE_ELEMENTS);
+    plan.tileElements = plan.tileElements / VECTOR_ELEMENTS * VECTOR_ELEMENTS;
+    OP_CHECK_IF(plan.tileElements < VECTOR_ELEMENTS,
+                OP_LOGE(context, "UB cannot hold one float32 vector tile: tileElements=%ld", plan.tileElements),
                 return ge::GRAPH_FAILED);
+    plan.userWorkspaceBytes = plan.usedCoreNum * WORKSPACE_SLOT_BYTES * WORKSPACE_REGIONS;
+    plan.ubRequirementBytes = fixedUbBytes + plan.tileElements * bytesPerTileElement;
+    plan.tilingKey = LEGACY_TILING_KEY;
+    return ge::GRAPH_SUCCESS;
+}
 
+ge::graphStatus WriteTilingResult(gert::TilingContext* context, int64_t totalElements, int64_t ubSize,
+                                  uint64_t systemWorkspaceSize, const KernelPlan& plan)
+{
     SquareSumAllTilingData* tilingData = context->GetTilingData<SquareSumAllTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tilingData);
     tilingData->totalElements = totalElements;
-    tilingData->usedCoreNum = usedCoreNum;
-    tilingData->baseCoreElements = totalElements / usedCoreNum;
-    tilingData->extraCoreCount = totalElements % usedCoreNum;
-    tilingData->tileElements = tileElements;
-    const uint64_t userWorkspaceSize = static_cast<uint64_t>(usedCoreNum * WORKSPACE_SLOT_BYTES * WORKSPACE_REGIONS);
+    tilingData->usedCoreNum = plan.usedCoreNum;
+    tilingData->baseCoreElements = totalElements / plan.usedCoreNum;
+    tilingData->extraCoreCount = totalElements % plan.usedCoreNum;
+    tilingData->tileElements = plan.tileElements;
+    const uint64_t userWorkspaceSize = static_cast<uint64_t>(plan.userWorkspaceBytes);
     OP_CHECK_IF(systemWorkspaceSize > std::numeric_limits<size_t>::max() - userWorkspaceSize,
                 OP_LOGE(context, "workspace size overflows size_t"), return ge::GRAPH_FAILED);
     size_t* workspaceSizes = context->GetWorkspaceSizes(WORKSPACE_COUNT);
     OP_CHECK_NULL_WITH_CONTEXT(context, workspaceSizes);
     workspaceSizes[0] = static_cast<size_t>(systemWorkspaceSize + userWorkspaceSize);
 
-    OP_CHECK_IF(context->SetBlockDim(static_cast<uint32_t>(usedCoreNum)) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "SetBlockDim failed for %ld cores", usedCoreNum), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(context->SetBlockDim(static_cast<uint32_t>(plan.usedCoreNum)) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "SetBlockDim failed for %ld cores", plan.usedCoreNum), return ge::GRAPH_FAILED);
     OP_CHECK_IF(context->SetScheduleMode(1) != ge::GRAPH_SUCCESS, OP_LOGE(context, "SetScheduleMode failed"),
                 return ge::GRAPH_FAILED);
-    OP_CHECK_IF(context->SetTilingKey(0) != ge::GRAPH_SUCCESS, OP_LOGE(context, "SetTilingKey failed"),
-                return ge::GRAPH_FAILED);
+    ASCENDC_TPL_SEL_PARAM(context, plan.tilingKey);
 
-    OP_LOGI(context, "SquareSumAll tiling: N=%ld, cores=%ld, base=%ld, extra=%ld, tile=%ld, ub=%ld, workspace=%zu",
-            totalElements, usedCoreNum, tilingData->baseCoreElements, tilingData->extraCoreCount, tileElements, ubSize,
-            workspaceSizes[0]);
+    OP_LOGI(context,
+            "SquareSumAll tiling: N=%ld, key=%lu, cores=%ld, base=%ld, extra=%ld, tile=%ld, ub=%ld, "
+            "ubRequirement=%ld, workspace=%zu",
+            totalElements, plan.tilingKey, plan.usedCoreNum, tilingData->baseCoreElements, tilingData->extraCoreCount,
+            plan.tileElements, ubSize, plan.ubRequirementBytes, workspaceSizes[0]);
     return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus FillTiling(gert::TilingContext* context, int64_t totalElements, int64_t coreNum, int64_t ubSize,
+                           uint64_t systemWorkspaceSize)
+{
+    KernelPlan plan;
+    if (!TryBuildGpuAlignedPlan(totalElements, coreNum, ubSize, plan)) {
+        OP_CHECK_IF(BuildLegacyPlan(context, totalElements, coreNum, ubSize, plan) != ge::GRAPH_SUCCESS,
+                    OP_LOGD(context->GetNodeName(), "legacy kernel plan failed"), return ge::GRAPH_FAILED);
+    }
+    return WriteTilingResult(context, totalElements, ubSize, systemWorkspaceSize, plan);
 }
 
 ge::graphStatus TilingForSquareSumAll(gert::TilingContext* context)

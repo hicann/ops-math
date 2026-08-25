@@ -80,11 +80,15 @@ def _reduce_one(x):
     # never has to warn about a read-only input array.
     tensor = torch.from_numpy(np.ascontiguousarray(x, dtype=np.float64))
     reduced = torch.sum(torch.square(tensor))
-    return reduced.to(torch.float32).numpy().reshape(1)
+    # Keep the high-precision reference in FP64.  In cross_check mode TTK promotes
+    # FP32 inputs to FP64 before invoking the golden; casting the result back to
+    # FP32 would quantize the reference onto the same grid as the NPU/GPU outputs
+    # and make scalar error ratios collapse to integer ULP ratios.
+    return reduced.numpy().reshape(1)
 
 
 def square_sum_all_golden(x1, x2, **kwargs):
-    """Compute both independent reductions in float64, then cast to FP32."""
+    """Compute and return both independent reductions in float64."""
     del kwargs
     return [_reduce_one(x1), _reduce_one(x2)]
 
@@ -98,10 +102,10 @@ class _Compose:
 
     ⚠️ 累加档位必须与【内核实现】一致，即 float32——不是与 golden 一致。
     内核在 float32 上做核内累加与跨核合并；竞品若像 golden 那样升 float64，它对
-    golden 的相对误差会趋近 0，而 cross_check 的比值分母有 1e-7 下限
-    （resolve/_safe_div），mare_ratio 会被放大成几个数量级，同一份正确内核被判
-    假红。这正是模板里"三方 compose 必须与算子实现同算法"那条铁律的场景。
-    输出 dtype 同样 cast 回 NPU 的 float32。
+    golden 的相对误差会趋近 0。f419709 后 cross_check 按 dtype 的 small_value
+    给比值分母夹底（FP32 为 2**-14）；这能消除旧版固定 1e-7 的一部分假红，但
+    标量输出仍会把误差比量化成少数 ULP 的比例。因此三方 compose 仍须和内核
+    处于同一精度档位。输出 dtype 同样 cast 回 NPU 的 float32。
     """
 
     def __init__(self, **kwargs):
@@ -133,6 +137,7 @@ class SquareSumAllTestSpec:
 # 【不存在】aclnn 通路：CMakeLists.txt 配置 ACLNNTYPE aclnn_exclude，算子无 op_api 目录，
 # 也不交付 docs/aclnnSquareSumAll.md，因此不注册 SquareSumAllAclnnSpec。
 # 【不存在】e2e 通路：strings libtorch_npu.so | grep -c aclnnSquareSumAll = 0
-# （对照组 aclnnAdd* 有命中，证明该判定方法有效；torch_npu 安装于 2026-07-30，晚于本算子入仓时间），
+# （对照组 aclnnAdd* 有命中，证明该判定方法有效；legacy SquareSumAll 动态实现于 2021-07-05 入仓，
+# 当前 torch_npu 安装于 2026-07-30，版本晚于算子既有接口），
 # torch 侧没有任何接口会执行本算子，因此不注册 SquareSumAllTorchSpec。
 # 上述两条不是漏写，勿反复重查。
