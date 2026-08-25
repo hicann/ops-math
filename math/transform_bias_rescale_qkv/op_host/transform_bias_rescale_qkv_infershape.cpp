@@ -41,14 +41,13 @@ static constexpr int OUTPUT_QKV_DIM3 = 3;
 using namespace ge;
 namespace ops {
 
-static ge::graphStatus InferShape4TransformBiasRescaleQkv(gert::InferShapeContext *context)
+static ge::graphStatus InferShape4TransformBiasRescaleQkv(gert::InferShapeContext* context)
 {
     if (context == nullptr) {
         OP_LOGE("InferShape4TransformBiasRescaleQkv", "Context is nullptr, check failed.");
         return GRAPH_FAILED;
     }
-    if (context->GetComputeNodeInputNum() != INPUT_NODE_NUM ||
-        context->GetComputeNodeOutputNum() != OUTPUT_NODE_NUM) {
+    if (context->GetComputeNodeInputNum() != INPUT_NODE_NUM || context->GetComputeNodeOutputNum() != OUTPUT_NODE_NUM) {
         return GRAPH_FAILED;
     }
 
@@ -57,6 +56,10 @@ static ge::graphStatus InferShape4TransformBiasRescaleQkv(gert::InferShapeContex
     auto* num_heads_ptr = attrs->GetAttrPointer<int>(INDEX_ATTR_NUM_HEADS);
     OP_CHECK_NULL_WITH_CONTEXT(context, num_heads_ptr);
     auto num_heads = *num_heads_ptr;
+    if (num_heads == 0) {
+        OP_LOGE("InferShape4TransformBiasRescaleQkv", "num_heads can not be 0, check failed.");
+        return GRAPH_FAILED;
+    }
 
     const gert::Shape* qkv_shape = context->GetInputShape(INDEX_INPUT_QKV);
     OP_CHECK_NULL_WITH_CONTEXT(context, qkv_shape);
