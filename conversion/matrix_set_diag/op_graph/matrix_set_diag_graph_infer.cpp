@@ -18,9 +18,8 @@ ge::graphStatus MatrixSetDiagInferDataTypeFunc(gert::InferDataTypeContext* conte
     auto inputDtype = context->GetInputDataType(0);
     OP_LOGD(context, "input dtype: %s", Ops::Base::ToString(inputDtype).c_str());
     auto diagDtype = context->GetInputDataType(1);
-    OP_CHECK_IF(
-        inputDtype != diagDtype, OP_LOGE(context->GetNodeName(), "input and diag datatype are not the same"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputDtype != diagDtype, OP_LOGE(context->GetNodeName(), "input and diag datatypes are not the same"),
+                return ge::GRAPH_FAILED);
 
     context->SetOutputDataType(0, inputDtype);
     OP_LOGD(context, "MatrixSetDiagInferDataTypeFunc end");

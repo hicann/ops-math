@@ -37,14 +37,10 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT64, op::DataType::DT_INT8,
     op::DataType::DT_INT32, op::DataType::DT_UINT8,   op::DataType::DT_BOOL,  op::DataType::DT_BF16};
 
-static inline int64_t GetPosDim(int64_t dim, int64_t dimNum)
-{
-    return dim >= 0 ? dim : dim + dimNum;
-}
+static inline int64_t GetPosDim(int64_t dim, int64_t dimNum) { return dim >= 0 ? dim : dim + dimNum; }
 
-inline static bool CheckNotNull(
-    const aclTensor* self, const aclIntArray* starts, const aclIntArray* ends, const aclIntArray* axes,
-    const aclIntArray* steps, aclTensor* out)
+inline static bool CheckNotNull(const aclTensor* self, const aclIntArray* starts, const aclIntArray* ends,
+                                const aclIntArray* axes, const aclIntArray* steps, aclTensor* out)
 {
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(out, return false);
@@ -67,7 +63,8 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
     OP_CHECK_DTYPE_NOT_MATCH(out, self->GetDataType(), return false);
 
     if (!CheckSocVersionIsSupportBf16() && (self->GetDataType() == op::DataType::DT_BF16)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input dtype of aclnnSliceV2 is not support bfloat16 in current socversion.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "Input dtype of aclnnSliceV2 is not supported bfloat16 in current socversion.");
         return false;
     }
 
@@ -86,16 +83,16 @@ static bool CheckAxesValid(const aclTensor* self, const aclIntArray* axes)
 
     for (uint64_t i = 0; i < axes->Size(); i++) {
         if (axes->operator[](i) >= selfDimNum || axes->operator[](i) < (-selfDimNum)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "Provided aclnnSliceV2 axes %ld not in the range of input tensor size %ld.",
-                axes->operator[](i), selfDimNum);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "Provided aclnnSliceV2 axes %ld not in the range of input tensor size %ld.", axes->operator[](i),
+                    selfDimNum);
             return false;
         }
         int64_t index = GetPosDim(axes->operator[](i), selfDimNum);
         // dim重复
         if (dimMask[index]) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "aclnnSliceV2 axes %ld appears multiple times in the list of dims.", index);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "aclnnSliceV2 axes %ld appears multiple times in the list of dims.",
+                    index);
             return false;
         }
 
@@ -105,19 +102,17 @@ static bool CheckAxesValid(const aclTensor* self, const aclIntArray* axes)
     return true;
 }
 
-static bool CheckArray(
-    const aclIntArray* starts, const aclIntArray* ends, const aclIntArray* axes, const aclIntArray* steps)
+static bool CheckArray(const aclIntArray* starts, const aclIntArray* ends, const aclIntArray* axes,
+                       const aclIntArray* steps)
 {
     if (starts->Size() != axes->Size()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_NULLPTR, "Expected aclnnSliceV2 starts.size() %lu to be equal to axes.size() %lu.",
-            starts->Size(), axes->Size());
+        OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "Expected aclnnSliceV2 starts.size() %lu to be equal to axes.size() %lu.",
+                starts->Size(), axes->Size());
         return false;
     }
     if (ends->Size() != axes->Size()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_NULLPTR, "Expected aclnnSliceV2 ends.size() %lu to be equal to axes.size() %lu.",
-            ends->Size(), axes->Size());
+        OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "Expected aclnnSliceV2 ends.size() %lu to be equal to axes.size() %lu.",
+                ends->Size(), axes->Size());
         return false;
     }
     for (uint64_t i = 0; i < steps->Size(); i++) {
@@ -149,9 +144,8 @@ static void CalculateValuesSliceLowerForSliceV2(const aclTensor* self, int64_t& 
     }
 }
 
-static bool CheckShape(
-    const aclTensor* self, const aclIntArray* starts, const aclIntArray* ends, const aclIntArray* axes,
-    const aclIntArray* steps, const aclTensor* out)
+static bool CheckShape(const aclTensor* self, const aclIntArray* starts, const aclIntArray* ends,
+                       const aclIntArray* axes, const aclIntArray* steps, const aclTensor* out)
 {
     auto sliceShape = self->GetViewShape();
     int64_t start, end, dim, step, sliceNum;
@@ -168,17 +162,15 @@ static bool CheckShape(
     auto outShape = out->GetViewShape();
     // 校验输出shape
     if (sliceShape != outShape) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Shape of aclnnSliceV2 out should be %s, but current is %s.",
-            op::ToString(sliceShape).GetString(), op::ToString(outShape).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of aclnnSliceV2 out should be %s, but current is %s.",
+                op::ToString(sliceShape).GetString(), op::ToString(outShape).GetString());
         return false;
     }
     return true;
 }
 
-inline static aclnnStatus CheckParams(
-    const aclTensor* self, const aclIntArray* starts, const aclIntArray* ends, const aclIntArray* axes,
-    const aclIntArray* steps, aclTensor* out)
+inline static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* starts, const aclIntArray* ends,
+                                      const aclIntArray* axes, const aclIntArray* steps, aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, starts, ends, axes, steps, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -201,9 +193,9 @@ inline static aclnnStatus CheckParams(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnSliceV2GetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* starts, const aclIntArray* ends, const aclIntArray* axes,
-    const aclIntArray* steps, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnSliceV2GetWorkspaceSize(const aclTensor* self, const aclIntArray* starts, const aclIntArray* ends,
+                                         const aclIntArray* axes, const aclIntArray* steps, aclTensor* out,
+                                         uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 

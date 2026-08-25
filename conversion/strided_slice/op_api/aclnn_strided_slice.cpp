@@ -34,8 +34,8 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_COMPLEX32, op::DataType::DT_COMPLEX64, op::DataType::DT_HIFLOAT8, op::DataType::DT_FLOAT8_E5M2,
     ge::DT_FLOAT8_E4M3FN};
 
-static inline bool CheckNotNull(
-    const aclTensor* self, const aclIntArray* begin, const aclIntArray* end, const aclIntArray* strides, aclTensor* out)
+static inline bool CheckNotNull(const aclTensor* self, const aclIntArray* begin, const aclIntArray* end,
+                                const aclIntArray* strides, aclTensor* out)
 {
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(begin, return false);
@@ -55,7 +55,7 @@ static bool CheckDtypeValid(const aclTensor* self, aclTensor* out)
         // 检查out和输入的数据类型是否一致
         OP_CHECK_DTYPE_NOT_SAME(self, out, return false);
     } else {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "aclnnStridedSlice only support ASCEND950.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "aclnnStridedSlice only supports ASCEND950.");
         return false;
     }
 
@@ -73,24 +73,21 @@ static bool CheckInputDims(const aclTensor* self)
 static bool CheckArray(const aclIntArray* begin, const aclIntArray* end, const aclIntArray* strides)
 {
     if (begin->Size() != end->Size()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Expected aclnnStridedSlice begin.size() %lu to be equal to end.size() %lu.",
-            begin->Size(), end->Size());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expected aclnnStridedSlice begin.size() %lu to be equal to end.size() %lu.",
+                begin->Size(), end->Size());
         return false;
     }
 
     if (end->Size() != strides->Size()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Expected aclnnStridedSlice end.size() %lu to be equal to strides.size() %lu.",
-            end->Size(), strides->Size());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expected aclnnStridedSlice end.size() %lu to be equal to strides.size() %lu.",
+                end->Size(), strides->Size());
         return false;
     }
 
     for (size_t i = 0; i < strides->Size(); i++) {
         if ((*strides)[i] == 0) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "Expected strides value must not be zero, but strides No.[%lu] value is zero.",
-                i);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "Expected strides value must not be zero, but strides No.[%lu] value is zero.", i);
             return false;
         }
     }
@@ -110,9 +107,8 @@ static bool CheckInputMask(const aclIntArray* strides, int64_t ellipsisMask, int
     for (size_t i = 0; i < strides->Size(); i++) {
         if ((shrinkAxisMask >> i) & 1) {
             if ((*strides)[i] <= 0) {
-                OP_LOGE(
-                    ACLNN_ERR_PARAM_INVALID,
-                    "Strides must be positive when shrinkAxisMask has bit set at dimension [%lu].", i);
+                OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                        "Strides must be positive when shrinkAxisMask has bit set at dimension [%lu].", i);
                 return false;
             }
         }
@@ -121,9 +117,8 @@ static bool CheckInputMask(const aclIntArray* strides, int64_t ellipsisMask, int
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclIntArray* begin, const aclIntArray* end, const aclIntArray* strides,
-    int64_t ellipsisMask, int64_t shrinkAxisMask, aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* begin, const aclIntArray* end,
+                               const aclIntArray* strides, int64_t ellipsisMask, int64_t shrinkAxisMask, aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, begin, end, strides, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -144,14 +139,14 @@ static aclnnStatus CheckParams(
 }
 
 // 第一段接口
-aclnnStatus aclnnStridedSliceGetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* begin, const aclIntArray* end, const aclIntArray* strides,
-    int64_t beginMask, int64_t endMask, int64_t ellipsisMask, int64_t newAxisMask, int64_t shrinkAxisMask,
-    aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnStridedSliceGetWorkspaceSize(const aclTensor* self, const aclIntArray* begin, const aclIntArray* end,
+                                              const aclIntArray* strides, int64_t beginMask, int64_t endMask,
+                                              int64_t ellipsisMask, int64_t newAxisMask, int64_t shrinkAxisMask,
+                                              aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
-    L2_DFX_PHASE_1(
-        aclnnStridedSlice,
-        DFX_IN(self, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask), DFX_OUT(out));
+    L2_DFX_PHASE_1(aclnnStridedSlice,
+                   DFX_IN(self, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask),
+                   DFX_OUT(out));
 
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -183,9 +178,9 @@ aclnnStatus aclnnStridedSliceGetWorkspaceSize(
         auto endTensor = uniqueExecutor.get()->ConvertToTensor(end, op::ToOpDataType(ACL_INT64));
         auto stridesTensor = uniqueExecutor.get()->ConvertToTensor(strides, op::ToOpDataType(ACL_INT64));
 
-        auto stridedsliceOut = l0op::StridedSlice(
-            selfReformat, beginTensor, endTensor, stridesTensor, beginMask, endMask, ellipsisMask, newAxisMask,
-            shrinkAxisMask, uniqueExecutor.get());
+        auto stridedsliceOut = l0op::StridedSlice(selfReformat, beginTensor, endTensor, stridesTensor, beginMask,
+                                                  endMask, ellipsisMask, newAxisMask, shrinkAxisMask,
+                                                  uniqueExecutor.get());
         CHECK_RET(stridedsliceOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
         // 检查输出Tensor out

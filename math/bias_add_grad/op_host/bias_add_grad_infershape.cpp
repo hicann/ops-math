@@ -41,13 +41,12 @@ static ge::graphStatus InferShape4BiasAddGrad(gert::InferShapeContext* context)
     auto it = std::find_if(
         kFormatMap.begin(), kFormatMap.end(),
         [&data_format](const std::pair<std::string, Format>& item) -> bool { return item.first == data_format; });
-    OP_CHECK_IF(
-        it == kFormatMap.end(), OP_LOGE(context->GetNodeName(), "data_format %s must in (NCHW, NHWC).", data_format),
-        return GRAPH_FAILED);
+    OP_CHECK_IF(it == kFormatMap.end(),
+                OP_LOGE(context->GetNodeName(), "data_format %s must be in (NCHW, NHWC).", data_format),
+                return GRAPH_FAILED);
     if (dim_num < DIM_SIZE2) {
-        OP_LOGE(
-            context->GetNodeName(),
-            "The bias add grad op dimension(%lu) must be greater than or equal to 2 when format is NCHW!", dim_num);
+        OP_LOGE(context->GetNodeName(),
+                "The bias add grad op dimension(%lu) must be greater than or equal to 2 when format is NCHW!", dim_num);
         return GRAPH_FAILED;
     }
     out_shape->SetDimNum(0);

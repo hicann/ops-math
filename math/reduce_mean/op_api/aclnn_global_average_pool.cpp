@@ -52,8 +52,8 @@ static const std::initializer_list<DataType>& GetDtypeSupportList()
     }
 }
 
-static const std::initializer_list<op::Format> FORMAT_SUPPORT_LIST = {
-    op::Format::FORMAT_ND, op::Format::FORMAT_NCHW, op::Format::FORMAT_NCDHW};
+static const std::initializer_list<op::Format> FORMAT_SUPPORT_LIST = {op::Format::FORMAT_ND, op::Format::FORMAT_NCHW,
+                                                                      op::Format::FORMAT_NCDHW};
 
 static bool CheckNotNull(const aclTensor* self, const aclTensor* out)
 {
@@ -90,7 +90,7 @@ static bool CheckFormatValid(const aclTensor* self, const aclTensor* out)
     if (findSelfFormat != FORMAT_SUPPORT_LIST.end() && findOutFormat != FORMAT_SUPPORT_LIST.end()) {
         return true;
     } else {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW and NCDHW.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND, NCHW and NCDHW.");
         return false;
     }
 }
@@ -136,8 +136,8 @@ static bool IsNonContiguousSupport(const aclTensor* self, const aclIntArray* dim
     return true;
 }
 
-aclnnStatus aclnnGlobalAveragePoolGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnGlobalAveragePoolGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                                   aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnGlobalAveragePool, DFX_IN(self), DFX_OUT(out));
 
@@ -158,9 +158,9 @@ aclnnStatus aclnnGlobalAveragePoolGetWorkspaceSize(
     const aclIntArray* dims = aclCreateIntArray(dimVector.data(), dimNum - 2);
 
     if (IsNonContiguousSupport(self, dims)) {
-        OP_LOGD("Enter NonContigous");
-        auto selfContiguous = uniqueExecutor.get()->CreateView(
-            self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
+        OP_LOGD("Enter NonContiguous");
+        auto selfContiguous = uniqueExecutor.get()->CreateView(self, self->GetViewShape(), self->GetStorageShape(),
+                                                               self->GetViewStrides(), self->GetViewOffset());
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto meanOpOut = l0op::ReduceMean(selfContiguous, dims, true, uniqueExecutor.get());
         CHECK_RET(meanOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -169,7 +169,7 @@ aclnnStatus aclnnGlobalAveragePoolGetWorkspaceSize(
         auto viewCopyResult = l0op::ViewCopy(meanOpOut, out, uniqueExecutor.get());
         CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
     } else {
-        OP_LOGD("Enter Contigous");
+        OP_LOGD("Enter Contiguous");
         // 固定写法，将输入self转换成连续的tensor
         auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -189,8 +189,8 @@ aclnnStatus aclnnGlobalAveragePoolGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnGlobalAveragePool(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+aclnnStatus aclnnGlobalAveragePool(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                   const aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnGlobalAveragePool);
     // 固定写法，调用框架能力，完成计算

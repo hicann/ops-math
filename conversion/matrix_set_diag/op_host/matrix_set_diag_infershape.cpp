@@ -34,19 +34,17 @@ ge::graphStatus MatrixSetDiagInferShapeFunc(gert::InferShapeContext* context)
 
     // check size
     size_t sizeIn = shapeIn->GetDimNum();
-    OP_CHECK_IF(
-        sizeIn < 2, OP_LOGE(context->GetNodeName(), "input shape must at least 2 dims."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(sizeIn < 2, OP_LOGE(context->GetNodeName(), "input shape must at least 2 dims."),
+                return ge::GRAPH_FAILED);
     size_t sizeDiag = shapeDiag->GetDimNum();
-    OP_CHECK_IF(
-        sizeDiag != sizeIn - 1, OP_LOGE(context->GetNodeName(), "diag dims must input dims-1"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(sizeDiag != sizeIn - 1, OP_LOGE(context->GetNodeName(), "diag dims must be input dims - 1"),
+                return ge::GRAPH_FAILED);
 
     int64_t smallDimInput = std::min(shapeIn->GetDim(sizeIn - 1), shapeIn->GetDim(sizeIn - 2));
     int64_t smallDimDiag = shapeDiag->GetDim(sizeDiag - 1);
     if (smallDimInput != ge::UNKNOWN_DIM && smallDimDiag != ge::UNKNOWN_DIM) {
-        OP_CHECK_IF(
-            smallDimInput != smallDimDiag, OP_LOGE(context->GetNodeName(), "diag check with input failed"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(smallDimInput != smallDimDiag, OP_LOGE(context->GetNodeName(), "diag check with input failed"),
+                    return ge::GRAPH_FAILED);
     }
 
     *shapeOut = *shapeIn;
@@ -57,9 +55,8 @@ ge::graphStatus MatrixSetDiagInferShapeFunc(gert::InferShapeContext* context)
             }
         } else {
             if (shapeDiag->GetDim(i) != ge::UNKNOWN_DIM) {
-                OP_CHECK_IF(
-                    shapeIn->GetDim(i) != shapeDiag->GetDim(i),
-                    OP_LOGE(context->GetNodeName(), "dim %zu not the same", i), return ge::GRAPH_FAILED);
+                OP_CHECK_IF(shapeIn->GetDim(i) != shapeDiag->GetDim(i),
+                            OP_LOGE(context->GetNodeName(), "dim %zu is not the same", i), return ge::GRAPH_FAILED);
             }
         }
     }

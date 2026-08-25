@@ -191,7 +191,7 @@ bool GlobalavgpoolPass::MeetRequirements(const std::unique_ptr<MatchResult>& mat
     auto status = match_result->GetCapturedTensor(CAPTURE_TENSOR_IDX_INPUT, matchedNode);
     OP_LOGD(FUSION_PASS_NAME.c_str(), "GetCapturedTensor returned: %d", status);
     if (status != SUCCESS) {
-        OP_LOGE_WITHOUT_REPORT(FUSION_PASS_NAME.c_str(), "Failed to GetCaptrue tensor");
+        OP_LOGE_WITHOUT_REPORT(FUSION_PASS_NAME.c_str(), "Failed to GetCapture tensor");
         return false;
     }
 

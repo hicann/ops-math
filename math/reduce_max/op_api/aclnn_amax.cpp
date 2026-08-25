@@ -120,8 +120,9 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 static void CheckFormat(const aclTensor* self)
 {
     op::Format format = self->GetStorageFormat();
-    if (format == Format::FORMAT_FRACTAL_NZ){
-        OP_LOGW("Format of inputs gets [%s],this format mat lead to precision failure",op::ToString(format).GetString());
+    if (format == Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("Format of inputs gets [%s], this format may lead to precision failure",
+                op::ToString(format).GetString());
     }
 }
 
@@ -140,15 +141,14 @@ static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim)
 
     for (size_t i = 0; i < dim->Size(); i++) {
         if (dim->operator[](i) >= selfDimNum || dim->operator[](i) < (-selfDimNum)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "Provided dim %ld must be in the range of [%ld, %ld].", dim->operator[](i),
-                -selfDimNum, selfDimNum - 1);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Provided dim %ld must be in the range of [%ld, %ld].", dim->operator[](i),
+                    -selfDimNum, selfDimNum - 1);
             return false;
         }
         uint64_t index = GetPosDim(dim->operator[](i), selfDimNum);
         // 非标量reduce的dim不能为0
         if (!isScalar && selfViewShape.GetDim(index) == 0) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expected reducution dim %lu to have non-zero size.", index);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expected reduction dim %lu to have non-zero size.", index);
             return false;
         }
         // dim重复
@@ -193,9 +193,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* dim, co
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnAmaxGetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* dim, bool keepDim, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnAmaxGetWorkspaceSize(const aclTensor* self, const aclIntArray* dim, bool keepDim, aclTensor* out,
+                                      uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAmax, DFX_IN(self, dim, keepDim), DFX_OUT(out));
     // 创建OpExecutor
@@ -233,8 +232,8 @@ aclnnStatus aclnnAmaxGetWorkspaceSize(
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 将输入self的数据类型转换成目标数据类型, bool 转为float, 其余保持原类型
-    op::DataType selfCastType =
-        (self->GetDataType() == op::DataType::DT_BOOL) ? op::DataType::DT_FLOAT : self->GetDataType();
+    op::DataType selfCastType = (self->GetDataType() == op::DataType::DT_BOOL) ? op::DataType::DT_FLOAT :
+                                                                                 self->GetDataType();
 
     auto selfCasted = l0op::Cast(selfContiguous, selfCastType, uniqueExecutor.get());
     CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);

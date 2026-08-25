@@ -20,14 +20,14 @@
 namespace {
 constexpr uint32_t kReduceAllInputNum = 1;
 constexpr uint32_t kReduceAllOutputNum = 1;
-const char *const kReduceAll = "ReduceAll";
-}
+const char* const kReduceAll = "ReduceAll";
+} // namespace
 
 namespace aicpu {
-uint32_t ReduceAllCpuKernel::GenDataNoAxis(const CpuKernelContext &ctx) const
+uint32_t ReduceAllCpuKernel::GenDataNoAxis(const CpuKernelContext& ctx) const
 {
-    auto x_data = reinterpret_cast<bool *>(ctx.Input(kFirstInputIndex)->GetData());
-    auto y_data = reinterpret_cast<bool *>(ctx.Output(kFirstOutputIndex)->GetData());
+    auto x_data = reinterpret_cast<bool*>(ctx.Input(kFirstInputIndex)->GetData());
+    auto y_data = reinterpret_cast<bool*>(ctx.Output(kFirstOutputIndex)->GetData());
     int64_t input_data_size = ctx.Input(kFirstInputIndex)->NumElements();
     bool output_y = true;
     for (int64_t i = 0; i < input_data_size; ++i) {
@@ -38,8 +38,8 @@ uint32_t ReduceAllCpuKernel::GenDataNoAxis(const CpuKernelContext &ctx) const
 }
 
 template <typename T>
-uint32_t ReduceAllCpuKernel::AxisCal(
-    T axis, const std::vector<int64_t> &data_dims, int64_t &head_dim, int64_t &end_dim) const
+uint32_t ReduceAllCpuKernel::AxisCal(T axis, const std::vector<int64_t>& data_dims, int64_t& head_dim,
+                                     int64_t& end_dim) const
 {
     bool axis_appear = false;
     size_t data_dims_size = data_dims.size();
@@ -56,8 +56,7 @@ uint32_t ReduceAllCpuKernel::AxisCal(
             end_dim *= data_dims[i];
         } else {
             if (data_dims[i] != 0 && head_dim > (INT64_MAX / data_dims[i])) {
-                KERNEL_LOG_ERROR(
-                    "Product is overflow. multiplier 1: %ld. multiplier 2: %ld.", head_dim, data_dims[i]);
+                KERNEL_LOG_ERROR("Product is overflow. multiplier 1: %ld. multiplier 2: %ld.", head_dim, data_dims[i]);
                 return KERNEL_STATUS_PARAM_INVALID;
             }
             head_dim *= data_dims[i];
@@ -67,7 +66,7 @@ uint32_t ReduceAllCpuKernel::AxisCal(
 }
 
 template <typename T>
-std::vector<int64_t> ReduceAllCpuKernel::GetOutputShape(const std::vector<int64_t> &input_shape, const T &axis)
+std::vector<int64_t> ReduceAllCpuKernel::GetOutputShape(const std::vector<int64_t>& input_shape, const T& axis)
 {
     std::vector<int64_t> output_shape;
     for (size_t i = 0; i < input_shape.size(); ++i) {
@@ -83,17 +82,16 @@ std::vector<int64_t> ReduceAllCpuKernel::GetOutputShape(const std::vector<int64_
 }
 
 template <typename T>
-uint32_t ReduceAllCpuKernel::AxesRankCheckAndReverse(
-    const CpuKernelContext &ctx, const T *axis_data, const int64_t &axes_num, std::map<T, int64_t> &axis_map,
-    int32_t &rank)
+uint32_t ReduceAllCpuKernel::AxesRankCheckAndReverse(const CpuKernelContext& ctx, const T* axis_data,
+                                                     const int64_t& axes_num, std::map<T, int64_t>& axis_map,
+                                                     int32_t& rank)
 {
     T axis_temp = 0;
     rank = static_cast<T>(rank);
     for (int64_t i = 0; i < axes_num; i++) {
         if (axis_data[i] < -rank || axis_data[i] > (rank - 1)) {
-            KERNEL_LOG_ERROR(
-                "[%s] the value of axes should be in [-%d, %d], axes is %ld", ctx.GetOpType().c_str(), rank, rank,
-                static_cast<int64_t>(axis_data[i]));
+            KERNEL_LOG_ERROR("[%s] the value of axes should be in [-%d, %d], axes is %ld", ctx.GetOpType().c_str(),
+                             rank, rank, static_cast<int64_t>(axis_data[i]));
             return KERNEL_STATUS_PARAM_INVALID;
         }
         if (axis_data[i] < 0) {
@@ -102,9 +100,8 @@ uint32_t ReduceAllCpuKernel::AxesRankCheckAndReverse(
             axis_temp = axis_data[i];
         }
         if (axis_map.find(axis_temp) != axis_map.end()) {
-            KERNEL_LOG_ERROR(
-                "[%s] invalid reduction arguments: axes contains duplicate dimension: %ld", ctx.GetOpType().c_str(),
-                static_cast<int64_t>(axis_temp));
+            KERNEL_LOG_ERROR("[%s] invalid reduction arguments: axes contains duplicate dimension: %ld",
+                             ctx.GetOpType().c_str(), static_cast<int64_t>(axis_temp));
             return KERNEL_STATUS_PARAM_INVALID;
         }
         axis_map.emplace(std::pair<T, int64_t>(axis_temp, i));
@@ -113,9 +110,8 @@ uint32_t ReduceAllCpuKernel::AxesRankCheckAndReverse(
 }
 
 template <typename T, typename T2>
-uint32_t ReduceAllCpuKernel::ReduceAllOneAxes(
-    const T *input_data, std::vector<int64_t> &input_dims, T *output_data, const int64_t &output_num,
-    std::vector<T2> &axes)
+uint32_t ReduceAllCpuKernel::ReduceAllOneAxes(const T* input_data, std::vector<int64_t>& input_dims, T* output_data,
+                                              const int64_t& output_num, std::vector<T2>& axes)
 {
     if (axes_idx_ >= axes.size()) {
         for (int64_t i = 0; i < output_num; i++) {
@@ -129,7 +125,7 @@ uint32_t ReduceAllCpuKernel::ReduceAllOneAxes(
     if (ret != KERNEL_STATUS_OK) {
         return KERNEL_STATUS_PARAM_INVALID;
     }
-    auto *output_data_temp = new (std::nothrow) T[head_dim * end_dim];
+    auto* output_data_temp = new (std::nothrow) T[head_dim * end_dim];
     KERNEL_CHECK_NULLPTR(output_data_temp, KERNEL_STATUS_INNER_ERROR, "apply memory failed.");
     bool tmp_x = true;
     bool tmp_y = true;
@@ -152,15 +148,15 @@ uint32_t ReduceAllCpuKernel::ReduceAllOneAxes(
 }
 
 template <typename T, typename T2>
-uint32_t ReduceAllCpuKernel::ReduceAllCompute(const CpuKernelContext &ctx)
+uint32_t ReduceAllCpuKernel::ReduceAllCompute(const CpuKernelContext& ctx)
 {
     axes_idx_ = 0;
-    Tensor *x = ctx.Input(kFirstInputIndex);
-    Tensor *axes = ctx.Input(kSecondInputIndex);
-    Tensor *y = ctx.Output(kFirstInputIndex);
+    Tensor* x = ctx.Input(kFirstInputIndex);
+    Tensor* axes = ctx.Input(kSecondInputIndex);
+    Tensor* y = ctx.Output(kFirstInputIndex);
 
-    auto *output_data = reinterpret_cast<T *>(y->GetData());
-    auto *keep_dims = ctx.GetAttr("keep_dims");
+    auto* output_data = reinterpret_cast<T*>(y->GetData());
+    auto* keep_dims = ctx.GetAttr("keep_dims");
     KERNEL_CHECK_NULLPTR(keep_dims, KERNEL_STATUS_PARAM_INVALID, "Get attr [keep_dims] failed.");
     keep_dims_ = keep_dims->GetBool();
     int64_t output_num = y->NumElements();
@@ -179,8 +175,8 @@ uint32_t ReduceAllCpuKernel::ReduceAllCompute(const CpuKernelContext &ctx)
         return GenDataNoAxis(ctx);
     }
 
-    auto *input_data = reinterpret_cast<T *>(x->GetData());
-    auto *axis_data = reinterpret_cast<T2 *>(axes->GetData());
+    auto* input_data = reinterpret_cast<T*>(x->GetData());
+    auto* axis_data = reinterpret_cast<T2*>(axes->GetData());
     int64_t axes_num = axes->GetTensorShape()->NumElements();
     std::vector<int64_t> input_dims = x->GetTensorShape()->GetDimSizes();
     int32_t rank = x->GetTensorShape()->GetDims();
@@ -201,31 +197,30 @@ uint32_t ReduceAllCpuKernel::ReduceAllCompute(const CpuKernelContext &ctx)
     return KERNEL_STATUS_OK;
 }
 
-uint32_t ReduceAllCpuKernel::ReduceAllCheck(const CpuKernelContext &ctx) const
+uint32_t ReduceAllCpuKernel::ReduceAllCheck(const CpuKernelContext& ctx) const
 {
-    auto *x = ctx.Input(kFirstInputIndex);
-    auto *axes = ctx.Input(kSecondInputIndex);
+    auto* x = ctx.Input(kFirstInputIndex);
+    auto* axes = ctx.Input(kSecondInputIndex);
     if (x != nullptr && x->GetData() != nullptr) {
-        KERNEL_CHECK_FALSE(
-            (x->GetDataType() == DT_BOOL), KERNEL_STATUS_PARAM_INVALID,
-            "Data type of x is not support, x data type is [%u].", static_cast<uint32_t>(x->GetDataType()));
+        KERNEL_CHECK_FALSE((x->GetDataType() == DT_BOOL), KERNEL_STATUS_PARAM_INVALID,
+                           "Data type of x is not supported, x data type is [%u].",
+                           static_cast<uint32_t>(x->GetDataType()));
     }
     if (axes != nullptr && axes->GetData() != nullptr) {
-        KERNEL_CHECK_FALSE(
-            (axes->GetDataType() == DT_INT32 || axes->GetDataType() == DT_INT64), KERNEL_STATUS_PARAM_INVALID,
-            "Data type of axis is not support, axis data type is [%u].",
-            static_cast<uint32_t>(axes->GetDataType()));
+        KERNEL_CHECK_FALSE((axes->GetDataType() == DT_INT32 || axes->GetDataType() == DT_INT64),
+                           KERNEL_STATUS_PARAM_INVALID, "Data type of axis is not supported, axis data type is [%u].",
+                           static_cast<uint32_t>(axes->GetDataType()));
     }
     return KERNEL_STATUS_OK;
 }
 
-uint32_t ReduceAllCpuKernel::Compute(CpuKernelContext &ctx)
+uint32_t ReduceAllCpuKernel::Compute(CpuKernelContext& ctx)
 {
     KERNEL_HANDLE_ERROR(NormalCheck(ctx, kReduceAllInputNum, kReduceAllOutputNum),
-        "[%s] check input and output failed.", kReduceAll);
+                        "[%s] check input and output failed.", kReduceAll);
     KERNEL_HANDLE_ERROR(ReduceAllCheck(ctx), "[%s] check params failed.", kReduceAll);
 
-    Tensor *axes = ctx.Input(kSecondInputIndex);
+    Tensor* axes = ctx.Input(kSecondInputIndex);
     if (axes == nullptr || axes->GetDataSize() == 0) {
         return ReduceAllCompute<bool, int32_t>(ctx);
     }
@@ -240,7 +235,7 @@ uint32_t ReduceAllCpuKernel::Compute(CpuKernelContext &ctx)
             ret = ReduceAllCompute<bool, int64_t>(ctx);
             break;
         default:
-            KERNEL_LOG_ERROR("Data type not support[%s].", DTypeStr(axes_data_type).c_str());
+            KERNEL_LOG_ERROR("Data type is not supported[%s].", DTypeStr(axes_data_type).c_str());
             return KERNEL_STATUS_PARAM_INVALID;
     }
 
@@ -251,4 +246,4 @@ uint32_t ReduceAllCpuKernel::Compute(CpuKernelContext &ctx)
 }
 
 REGISTER_CPU_KERNEL(kReduceAll, ReduceAllCpuKernel);
-}  // namespace aicpu
+} // namespace aicpu

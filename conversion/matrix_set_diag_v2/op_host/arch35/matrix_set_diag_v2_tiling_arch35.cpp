@@ -139,7 +139,7 @@ ge::graphStatus MatrixSetDiagV2Tiling::CheckDiag()
                     OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
                         context_->GetNodeName(), "input and diagonal",
                         Ops::Math::Join(inputShapeVal_.GetDim(i), diagShapeVal_.GetDim(i)),
-                        std::to_string(i) + "th axis of diagonal must be equal to same axis of input"),
+                        std::to_string(i) + "th axis of diagonal must be equal to the same axis of input"),
                     return ge::GRAPH_FAILED);
     }
     OP_CHECK_IF(

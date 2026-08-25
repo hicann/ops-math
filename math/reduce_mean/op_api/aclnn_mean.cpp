@@ -84,9 +84,8 @@ static bool CheckDtypeValid(const aclTensor* self, aclDataType dtype, aclTensor*
 
     // 检查dtype指定的数据类型是否支持
     if (!CheckType(op::ToOpDataType(dtype), supportList)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "type %s should be in dtype support list [%s].",
-            op::ToString(op::ToOpDataType(dtype)).GetString(), op::ToString(supportList).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "type %s should be in dtype support list [%s].",
+                op::ToString(op::ToOpDataType(dtype)).GetString(), op::ToString(supportList).GetString());
         return false;
     }
     OP_CHECK_DTYPE_NOT_SUPPORT(out, supportList, return false);
@@ -125,9 +124,8 @@ static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim)
     // 获取dim元素
     for (size_t i = 0; i < dim->Size(); i++) {
         if (dim->operator[](i) >= selfDimNum || dim->operator[](i) < (-selfDimNum)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "provided dim %ld must be in the range of [%ld, %ld].", dim->operator[](i),
-                -selfDimNum, selfDimNum - 1);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "provided dim %ld must be in the range of [%ld, %ld].", dim->operator[](i),
+                    -selfDimNum, selfDimNum - 1);
             return false;
         }
     }
@@ -231,16 +229,16 @@ static bool IsNonContiguousSupport(const aclTensor* self, DataType dtype, const 
     return true;
 }
 
-static void CheckFormat(const aclTensor* self) {
+static void CheckFormat(const aclTensor* self)
+{
     ge::Format selfStorageFormat = self->GetStorageFormat();
     if (selfStorageFormat == ge::Format::FORMAT_FRACTAL_NZ) {
         OP_LOGW("aclnnMean doesn't support format NZ.");
     }
 }
 
-aclnnStatus aclnnMeanGetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* dim, bool keepDim, aclDataType dtype, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnMeanGetWorkspaceSize(const aclTensor* self, const aclIntArray* dim, bool keepDim, aclDataType dtype,
+                                      aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnMean, DFX_IN(self, dim, keepDim, dtype), DFX_OUT(out));
     // 创建OpExecutor
@@ -253,7 +251,7 @@ aclnnStatus aclnnMeanGetWorkspaceSize(
 
     // 检查self的format是否支持
     CheckFormat(self);
-        
+
     // 算子的空tensor处理
     if (self->IsEmpty()) {
         // 空tensor填充NAN
@@ -264,9 +262,9 @@ aclnnStatus aclnnMeanGetWorkspaceSize(
     }
 
     if (IsNonContiguousSupport(self, op::ToOpDataType(dtype), dim)) {
-        OP_LOGD("Enter NonContigous");
-        auto selfContiguous = uniqueExecutor.get()->CreateView(
-            self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
+        OP_LOGD("Enter NonContiguous");
+        auto selfContiguous = uniqueExecutor.get()->CreateView(self, self->GetViewShape(), self->GetStorageShape(),
+                                                               self->GetViewStrides(), self->GetViewOffset());
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto meanOpOut = l0op::ReduceMean(selfContiguous, dim, keepDim, uniqueExecutor.get());
         CHECK_RET(meanOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -311,9 +309,9 @@ aclnnStatus aclnnMean(void* workspace, uint64_t workspaceSize, aclOpExecutor* ex
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnMeanV2GetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* dim, bool keepDim, bool noopWithEmptyAxes, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnMeanV2GetWorkspaceSize(const aclTensor* self, const aclIntArray* dim, bool keepDim,
+                                        bool noopWithEmptyAxes, aclTensor* out, uint64_t* workspaceSize,
+                                        aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnMeanV2, DFX_IN(self, dim, keepDim, noopWithEmptyAxes), DFX_OUT(out));
     // 创建OpExecutor
@@ -323,10 +321,10 @@ aclnnStatus aclnnMeanV2GetWorkspaceSize(
     // 参数检查
     auto ret = CheckParamsONNX(self, dim, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
-        
+
     // 检查self的format是否支持
     CheckFormat(self);
-        
+
     // 算子的空tensor处理
     if (self->IsEmpty()) {
         // 空tensor填充NAN
@@ -347,9 +345,9 @@ aclnnStatus aclnnMeanV2GetWorkspaceSize(
     }
 
     if (IsNonContiguousSupport(self, out->GetDataType(), dim)) {
-        OP_LOGD("Enter NonContigous");
-        auto selfContiguous = uniqueExecutor.get()->CreateView(
-            self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
+        OP_LOGD("Enter NonContiguous");
+        auto selfContiguous = uniqueExecutor.get()->CreateView(self, self->GetViewShape(), self->GetStorageShape(),
+                                                               self->GetViewStrides(), self->GetViewOffset());
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto meanOpOut = l0op::ReduceMean(selfContiguous, dim, keepDim, noopWithEmptyAxes, uniqueExecutor.get());
         CHECK_RET(meanOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -359,7 +357,7 @@ aclnnStatus aclnnMeanV2GetWorkspaceSize(
         auto viewCopyResult = l0op::ViewCopy(castMeanOut, out, uniqueExecutor.get());
         CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
     } else {
-        OP_LOGD("Enter Contigous");
+        OP_LOGD("Enter Contiguous");
         // 将输入self转换成连续的tensor
         auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);

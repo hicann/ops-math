@@ -90,7 +90,7 @@ ge::graphStatus ArgOpsTiling(gert::TilingContext* context)
 
 ge::graphStatus TilingPrepareForArgOpsAscendC(gert::TilingParseContext* context)
 {
-    OP_LOGD(context->GetNodeName(), "Entor TilingPrepare for ArgWithValue.");
+    OP_LOGD(context->GetNodeName(), "Enter TilingPrepare for ArgWithValue.");
     auto ci = context->GetCompiledInfo<ArgOpsCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, ci);
     auto platformInfo = context->GetPlatformInfo();

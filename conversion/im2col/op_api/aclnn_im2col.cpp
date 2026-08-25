@@ -34,8 +34,8 @@ static constexpr size_t ARRAY_SIZE = 2;
 static constexpr size_t PADDING_SIZE = 4;
 
 // 根据API定义，需要列出所能支持的所有dtype
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16,
+                                                                       op::DataType::DT_BF16};
 
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_REGBASE = {
     op::DataType::DT_INT8,  op::DataType::DT_UINT8,     op::DataType::DT_INT16,    op::DataType::DT_UINT16,
@@ -63,9 +63,8 @@ static inline auto div_rtn(T x, T y) -> T
 extern "C" {
 #endif
 
-static inline bool CheckNotNull(
-    const aclTensor* self, const aclIntArray* kernelSize, const aclIntArray* dilation, const aclIntArray* padding,
-    const aclIntArray* stride, const aclTensor* out)
+static inline bool CheckNotNull(const aclTensor* self, const aclIntArray* kernelSize, const aclIntArray* dilation,
+                                const aclIntArray* padding, const aclIntArray* stride, const aclTensor* out)
 {
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(kernelSize, return false);
@@ -80,9 +79,8 @@ static bool CheckInputDims(const aclTensor* self)
 {
     auto selfDimNum = self->GetViewShape().GetDimNum();
     if (selfDimNum != NEED_SQUEEZE && selfDimNum != NO_NEED_SQUEEZE) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Expected self dim [%zu] to be 3 or 4 but check failed.",
-            self->GetViewShape().GetDimNum());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expected self dim [%zu] to be 3 or 4 but check failed.",
+                self->GetViewShape().GetDimNum());
         return false;
     }
 
@@ -91,59 +89,54 @@ static bool CheckInputDims(const aclTensor* self)
     size_t index = selfDimNum == NO_NEED_SQUEEZE ? 1 : 0;
     for (size_t i = index; i < selfDimNum; i++) {
         if (selfShape.GetDim(i) <= 0) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "self'dims is invalid, self No.[%lu] dim is [%ld].", i + 1,
-                selfShape.GetDim(i));
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self's dims is invalid, self No.[%lu] dim is [%ld].", i + 1,
+                    selfShape.GetDim(i));
             return false;
         }
     }
     return true;
 }
 
-static bool CheckOutputDims(
-    const aclTensor* self, const aclIntArray* kernelSize, const aclIntArray* dilation, const aclIntArray* padding,
-    const aclIntArray* stride, const aclTensor* out)
+static bool CheckOutputDims(const aclTensor* self, const aclIntArray* kernelSize, const aclIntArray* dilation,
+                            const aclIntArray* padding, const aclIntArray* stride, const aclTensor* out)
 {
     bool isNeedSqueeze = (self->GetViewShape().GetDimNum() == NEED_SQUEEZE);
     int64_t inputHeight = isNeedSqueeze ? self->GetViewShape().GetDim(1) : self->GetViewShape().GetDim(2);
     int64_t inputWidth = isNeedSqueeze ? self->GetViewShape().GetDim(2) : self->GetViewShape().GetDim(3);
-    int64_t outputHeight =
-        div_rtn<int64_t>(
-            (inputHeight + 2 * (*padding)[0] - ((*dilation)[0] * ((*kernelSize)[0] - 1) + 1)), (*stride)[0]) +
-        1;
-    int64_t outputWidth =
-        div_rtn<int64_t>(
-            (inputWidth + 2 * (*padding)[1] - ((*dilation)[1] * ((*kernelSize)[1] - 1) + 1)), (*stride)[1]) +
-        1;
+    int64_t outputHeight = div_rtn<int64_t>(
+                               (inputHeight + 2 * (*padding)[0] - ((*dilation)[0] * ((*kernelSize)[0] - 1) + 1)),
+                               (*stride)[0]) +
+                           1;
+    int64_t outputWidth = div_rtn<int64_t>(
+                              (inputWidth + 2 * (*padding)[1] - ((*dilation)[1] * ((*kernelSize)[1] - 1) + 1)),
+                              (*stride)[1]) +
+                          1;
     if (outputHeight < 1 || outputWidth < 1) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "The shape (%ld, %ld) of the array calculated by other parameters "
-            "must be at least one.",
-            outputHeight, outputWidth);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "The shape (%ld, %ld) of the array calculated by other parameters "
+                "must be at least one.",
+                outputHeight, outputWidth);
         return false;
     }
-    const op::Shape outShape =
-        isNeedSqueeze ?
-            op::Shape(
-                {self->GetViewShape().GetDim(0) * (*kernelSize)[0] * (*kernelSize)[1], outputHeight * outputWidth}) :
-            op::Shape(
-                {self->GetViewShape().GetDim(0), self->GetViewShape().GetDim(1) * (*kernelSize)[0] * (*kernelSize)[1],
-                 outputHeight * outputWidth});
+    const op::Shape outShape = isNeedSqueeze ?
+                                   op::Shape({self->GetViewShape().GetDim(0) * (*kernelSize)[0] * (*kernelSize)[1],
+                                              outputHeight * outputWidth}) :
+                                   op::Shape({self->GetViewShape().GetDim(0),
+                                              self->GetViewShape().GetDim(1) * (*kernelSize)[0] * (*kernelSize)[1],
+                                              outputHeight * outputWidth});
     if (outShape != out->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Expect out shape [%s], but got: [%s].", op::ToString(outShape).GetString(),
-            op::ToString(out->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expect out shape [%s], but got: [%s].", op::ToString(outShape).GetString(),
+                op::ToString(out->GetViewShape()).GetString());
         return false;
     }
     return true;
 }
-static bool CheckArray(
-    const aclIntArray* kernelSize, const aclIntArray* dilation, const aclIntArray* padding, const aclIntArray* stride)
+static bool CheckArray(const aclIntArray* kernelSize, const aclIntArray* dilation, const aclIntArray* padding,
+                       const aclIntArray* stride)
 {
     if (kernelSize->Size() != ARRAY_SIZE) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "It is expected kernelSize equals to 2, but got size %lu.", kernelSize->Size());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "It is expected kernelSize equals to 2, but got size %lu.",
+                kernelSize->Size());
         return false;
     }
     if (dilation->Size() != ARRAY_SIZE) {
@@ -160,41 +153,37 @@ static bool CheckArray(
     }
     for (size_t i = 0; i < kernelSize->Size(); i++) {
         if ((*kernelSize)[i] <= 0) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID,
-                "It is expected kernelSize be greater than zero, "
-                "but kernelSize No.[%lu] dim is [%ld].",
-                i + 1, (*kernelSize)[i]);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "It is expected kernelSize be greater than zero, "
+                    "but kernelSize No.[%lu] dim is [%ld].",
+                    i + 1, (*kernelSize)[i]);
             return false;
         }
     }
     for (size_t i = 0; i < stride->Size(); i++) {
         if ((*stride)[i] <= 0) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID,
-                "It is expected stride be greater than zero, "
-                "but stride No.[%lu] dim is [%ld].",
-                i + 1, (*stride)[i]);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "It is expected stride be greater than zero, "
+                    "but stride No.[%lu] dim is [%ld].",
+                    i + 1, (*stride)[i]);
             return false;
         }
     }
     for (size_t i = 0; i < dilation->Size(); i++) {
         if ((*dilation)[i] <= 0) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID,
-                "It is expected dilation be greater than zero, "
-                "but dilation No.[%lu] dim is [%ld].",
-                i + 1, (*dilation)[i]);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "It is expected dilation be greater than zero, "
+                    "but dilation No.[%lu] dim is [%ld].",
+                    i + 1, (*dilation)[i]);
             return false;
         }
     }
     for (size_t i = 0; i < padding->Size(); i++) {
         if ((*padding)[i] < 0) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID,
-                "It is expected padding be greater than or equal to zero, "
-                "but padding No.[%lu] dim is [%ld].",
-                i + 1, (*padding)[i]);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "It is expected padding be greater than or equal to zero, "
+                    "but padding No.[%lu] dim is [%ld].",
+                    i + 1, (*padding)[i]);
             return false;
         }
     }
@@ -206,13 +195,12 @@ static void CheckFormat(const aclTensor* self)
     // 检查format，若是NZ格式，则添加警告
     if (self->GetStorageFormat() == Format::FORMAT_FRACTAL_NZ) {
         OP_LOGW("Format of self gets [%s], this format may lead to precision failure.",
-        op::ToString(self->GetStorageFormat()).GetString());
+                op::ToString(self->GetStorageFormat()).GetString());
     }
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclIntArray* kernelSize, const aclIntArray* dilation, const aclIntArray* padding,
-    const aclIntArray* stride, const aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* kernelSize, const aclIntArray* dilation,
+                               const aclIntArray* padding, const aclIntArray* stride, const aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, kernelSize, dilation, padding, stride, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -239,9 +227,10 @@ static aclnnStatus CheckParams(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnIm2colGetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* kernelSize, const aclIntArray* dilation, const aclIntArray* padding,
-    const aclIntArray* stride, const aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnIm2colGetWorkspaceSize(const aclTensor* self, const aclIntArray* kernelSize,
+                                        const aclIntArray* dilation, const aclIntArray* padding,
+                                        const aclIntArray* stride, const aclTensor* out, uint64_t* workspaceSize,
+                                        aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnIm2col, DFX_IN(self, kernelSize, dilation, padding, stride), DFX_OUT(out));
     // 固定写法，创建OpExecutor
@@ -276,12 +265,12 @@ aclnnStatus aclnnIm2colGetWorkspaceSize(
     auto im2colOut = l0op::Im2col(selfReFormat, kernelSize, dilation, newPadding, stride, uniqueExecutor.get());
     CHECK_RET(im2colOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    auto outSqueeze =
-        isNeedSqueeze ? l0op::SqueezeNd(im2colOut, static_cast<int64_t>(0), uniqueExecutor.get()) : im2colOut;
+    auto outSqueeze = isNeedSqueeze ? l0op::SqueezeNd(im2colOut, static_cast<int64_t>(0), uniqueExecutor.get()) :
+                                      im2colOut;
     CHECK_RET(outSqueeze != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    auto outView =
-        uniqueExecutor.get()->CreateView(outSqueeze, outSqueeze->GetViewShape(), outSqueeze->GetViewOffset());
+    auto outView = uniqueExecutor.get()->CreateView(outSqueeze, outSqueeze->GetViewShape(),
+                                                    outSqueeze->GetViewOffset());
     CHECK_RET(outView != nullptr, ACLNN_ERR_INNER_NULLPTR);
     auto outReFormat = l0op::ReFormat(outView, out->GetViewFormat());
     CHECK_RET(outReFormat != nullptr, ACLNN_ERR_INNER_NULLPTR);

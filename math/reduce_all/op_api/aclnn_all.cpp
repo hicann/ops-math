@@ -161,9 +161,8 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 static bool CheckFormat(const aclTensor* self)
 {
     if (op::IsPrivateFormat(self->GetStorageFormat())) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW, self [%s]",
-            ToString(self->GetStorageFormat()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND,NCHW,NHWC,HWCN,NDHWC,NCDHW, self [%s]",
+                ToString(self->GetStorageFormat()).GetString());
         return false;
     }
 
@@ -183,9 +182,8 @@ static bool CheckShape(const aclTensor* self, const aclTensor* out, const aclInt
     if (outShape == out->GetViewShape()) {
         return true;
     }
-    OP_LOGE(
-        ACLNN_ERR_PARAM_INVALID, "Expect out shape [%s], but got: [%s].", op::ToString(outShape).GetString(),
-        op::ToString(out->GetViewShape()).GetString());
+    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expect out shape [%s], but got: [%s].", op::ToString(outShape).GetString(),
+            op::ToString(out->GetViewShape()).GetString());
     return false;
 }
 
@@ -206,9 +204,9 @@ static bool CheckDim(const aclTensor* self, const aclIntArray* dim)
     bitset<DIM_BITS_LEN> dimMask = bitset<DIM_BITS_LEN>();
     for (size_t idx = 0; idx < dim->Size(); idx++) {
         if ((*dim)[idx] < -(input_dim_num) || (*dim)[idx] >= input_dim_num) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "Dimension out of range (expected to be in range of [-%ld, %ld], but got %ld)",
-                input_dim_num, input_dim_num - 1, (*dim)[idx]);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "Dimension out of range (expected to be in range of [-%ld, %ld], but got %ld)", input_dim_num,
+                    input_dim_num - 1, (*dim)[idx]);
             return false;
         }
         uint64_t index = GetPosDim((*dim)[idx], input_dim_num);
@@ -260,9 +258,8 @@ static const aclTensor* GetTensorWithValueTrue(aclTensor* out, aclOpExecutor* ex
     return viewCopyResult;
 }
 
-aclnnStatus aclnnAllGetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* dim, bool keepdim, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnAllGetWorkspaceSize(const aclTensor* self, const aclIntArray* dim, bool keepdim, aclTensor* out,
+                                     uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAll, DFX_IN(self, dim, keepdim), DFX_OUT(out));
 
@@ -293,8 +290,12 @@ aclnnStatus aclnnAllGetWorkspaceSize(
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     auto selfCasted = selfContiguous;
-    if (!((selfContiguous->GetDataType() == op::DataType::DT_FLOAT16 || selfContiguous->GetDataType() == op::DataType::DT_BF16 || selfContiguous->GetDataType() == op::DataType::DT_FLOAT) &&
-            (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B || GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510))) {
+    if (!((selfContiguous->GetDataType() == op::DataType::DT_FLOAT16 ||
+           selfContiguous->GetDataType() == op::DataType::DT_BF16 ||
+           selfContiguous->GetDataType() == op::DataType::DT_FLOAT) &&
+          (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+           GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
+           GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510))) {
         // 将输入self的数据类型转换成隐式数据类型，根据具体算子语义按需调用
         selfCasted = l0op::Cast(selfContiguous, DataType::DT_BOOL, uniqueExecutor.get());
         CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);

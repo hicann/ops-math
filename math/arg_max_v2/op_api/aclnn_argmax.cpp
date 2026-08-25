@@ -104,7 +104,7 @@ static void CheckFormat(const aclTensor* self)
 {
     op::Format format = self->GetStorageFormat();
     if (format == Format::FORMAT_FRACTAL_NZ) {
-        OP_LOGW("Format of inputs gets [%s],this format mat lead to precision failure",
+        OP_LOGW("Format of inputs gets [%s],this format may lead to precision failure",
                 op::ToString(format).GetString());
     }
 }

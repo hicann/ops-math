@@ -25,19 +25,17 @@ void SliceTiling::CalMaxSplitDim()
                            dimNum_ <= NUMBER_FOUR &&
                            (lastTwoInputDim_ - lastTwoOutputDim_) * lastOneInputDim_ * xDtypeSize_ <= MAX_UINT32_NUM &&
                            lastOneInputDim_ * lastTwoInputDim_ * lastThreeInputDim_ * xDtypeSize_ <= MAX_UINT32_NUM;
-    if (dimNum_ == NUMBER_TWO && lastOneOutputDim_ * xDtypeSize_ < VL_SIZE && 
-        lastTwoOutputDim_ == lastTwoInputDim_ &&
-        VL_SIZE * lastTwoInputDim_ < coreNum_ * ubSize_ / NUMBER_FOUR && 
+    if (dimNum_ == NUMBER_TWO && lastOneOutputDim_ * xDtypeSize_ < VL_SIZE && lastTwoOutputDim_ == lastTwoInputDim_ &&
+        VL_SIZE * lastTwoInputDim_ < coreNum_ * ubSize_ / NUMBER_FOUR &&
         (lastOneOutputDim_ != 1 || lastTwoOutputDim_ <= LAST_DIM_MIN_DATA_SIZE)) {
         // 针对2维，仅尾轴切分的小shape场景的性能特化模板
         // 尾轴输入大于等于1个VL长度或者尾轴输入小于1个VL长度，且尾轴为偏移0时，才进入本模板
         maxSplitDim_ = MAX_TWO_DIM_UB_SPLIT_AXIS_NUM;
-    } else if (
-        (lastOneInputDim_ * xDtypeSize_) % BLOCK_SIZE != 0 && lastOneInputDim_ * xDtypeSize_ <= VL_SIZE &&
-        (lastOneInputDim_ * lastTwoOutputDim_ * xDtypeSize_ >= VL_SIZE ||
-         lastOneInputDim_ * lastTwoOutputDim_ * xDtypeSize_ % BLOCK_SIZE == 0) &&
-        lastOneOutputDim_ * xDtypeSize_ >= RESERVE_LAST_DIM_SIZE && totalOutputSize_ > MIN_OUTPUT_SIZE &&
-        lastOneInputDim_ / lastOneOutputDim_ < DATA_COPY_SPARSITY_THRESHOLD && isUbinnerGather) {
+    } else if ((lastOneInputDim_ * xDtypeSize_) % BLOCK_SIZE != 0 && lastOneInputDim_ * xDtypeSize_ <= VL_SIZE &&
+               (lastOneInputDim_ * lastTwoOutputDim_ * xDtypeSize_ >= VL_SIZE ||
+                lastOneInputDim_ * lastTwoOutputDim_ * xDtypeSize_ % BLOCK_SIZE == 0) &&
+               lastOneOutputDim_ * xDtypeSize_ >= RESERVE_LAST_DIM_SIZE && totalOutputSize_ > MIN_OUTPUT_SIZE &&
+               lastOneInputDim_ / lastOneOutputDim_ < DATA_COPY_SPARSITY_THRESHOLD && isUbinnerGather) {
         // 输入的尾轴非block对齐
         // 输入尾轴<= 256B && 64B <= 输出尾轴 <= 256B
         // 当连续搬入的burstlen小于256B且非block对齐时，性能比compact模式更差
@@ -46,12 +44,11 @@ void SliceTiling::CalMaxSplitDim()
         isSliceGather_ = true;
     } else if (lastOneOutputDim_ * xDtypeSize_ >= RESERVE_LAST_DIM_SIZE) {
         maxSplitDim_ = MAX_MOV_ALIGN_V2_UB_SPLIT_AXIS_NUM;
-    } else if (
-        lastOneInputDim_ * xDtypeSize_ < RESERVE_LAST_DIM_SIZE &&
-        lastOneInputDim_ / lastOneOutputDim_ < DATA_SPARSITY_THRESHOLD &&
-        totalOutputSize_ / lastOneOutputDim_ * lastOneInputDim_ >
-            ubSize_ * lastOneInputDim_ / (lastOneOutputDim_ + lastOneInputDim_) * coreNum_ &&
-        xDtypeSize_ != 1 && isUbinnerGather) {
+    } else if (lastOneInputDim_ * xDtypeSize_ < RESERVE_LAST_DIM_SIZE &&
+               lastOneInputDim_ / lastOneOutputDim_ < DATA_SPARSITY_THRESHOLD &&
+               totalOutputSize_ / lastOneOutputDim_ * lastOneInputDim_ >
+                   ubSize_ * lastOneInputDim_ / (lastOneOutputDim_ + lastOneInputDim_) * coreNum_ &&
+               xDtypeSize_ != 1 && isUbinnerGather) {
         // b8 性能不稳定
         // 数据稀疏度越低，搬入的有效数据越少
         // 数据太小，一次搬入就处理完，vf计算完全不能被MTE掩掉的场景
@@ -76,10 +73,7 @@ void SliceTiling::SetTilingMode()
     }
 }
 
-void SliceTiling::SetTwoDimSmallShapeTilingMode()
-{
-    tilingKey_ = SLICE_KEY_TWO_DIM_SMALL_SHAPE;
-}
+void SliceTiling::SetTwoDimSmallShapeTilingMode() { tilingKey_ = SLICE_KEY_TWO_DIM_SMALL_SHAPE; }
 
 /*
 input
@@ -167,10 +161,10 @@ nburst = c.i
 void SliceTiling::SliceGatherUbSplitLastThreeDim()
 {
     mainMoveAlignV2Info_.blockCount = static_cast<uint16_t>(ubFactor_);
-    mainMoveAlignV2Info_.blockLen =
-        static_cast<uint32_t>(lastTwoOutputDim_ * lastOneInputDim_ * xDtypeSize_); // 每个blockLen之间会补pad
-    mainMoveAlignV2Info_.srcStride =
-        static_cast<uint32_t>((lastTwoInputDim_ - lastTwoOutputDim_) * lastOneInputDim_ * xDtypeSize_);
+    mainMoveAlignV2Info_.blockLen = static_cast<uint32_t>(lastTwoOutputDim_ * lastOneInputDim_ *
+                                                          xDtypeSize_); // 每个blockLen之间会补pad
+    mainMoveAlignV2Info_.srcStride = static_cast<uint32_t>((lastTwoInputDim_ - lastTwoOutputDim_) * lastOneInputDim_ *
+                                                           xDtypeSize_);
     mainMoveAlignV2Info_.dstStride = static_cast<uint32_t>(0);
 
     // out
@@ -187,16 +181,16 @@ loop1size = b.i
 void SliceTiling::SliceGatherUbSplitLastFourDim()
 {
     mainMoveAlignV2Info_.blockCount = static_cast<uint16_t>(lastThreeOutputDim_);
-    mainMoveAlignV2Info_.blockLen =
-        static_cast<uint32_t>(lastTwoOutputDim_ * lastOneInputDim_ * xDtypeSize_); // 每个blockLen之间会补pad
-    mainMoveAlignV2Info_.srcStride =
-        static_cast<uint32_t>((lastTwoInputDim_ - lastTwoOutputDim_) * lastOneInputDim_ * xDtypeSize_);
+    mainMoveAlignV2Info_.blockLen = static_cast<uint32_t>(lastTwoOutputDim_ * lastOneInputDim_ *
+                                                          xDtypeSize_); // 每个blockLen之间会补pad
+    mainMoveAlignV2Info_.srcStride = static_cast<uint32_t>((lastTwoInputDim_ - lastTwoOutputDim_) * lastOneInputDim_ *
+                                                           xDtypeSize_);
     mainMoveAlignV2Info_.dstStride = static_cast<uint32_t>(0);
     outBlockLen_ = static_cast<uint32_t>(lastTwoOutputDim_ * lastOneOutputDim_ * xDtypeSize_);
 
     int64_t loop1SrcStride = lastOneInputDim_ * lastTwoInputDim_ * lastThreeInputDim_ * xDtypeSize_;
-    int64_t loop1DstStride =
-        Ops::Base::CeilAlign(lastOneInputDim_ * lastTwoOutputDim_ * xDtypeSize_, BLOCK_SIZE) * lastThreeOutputDim_;
+    int64_t loop1DstStride = Ops::Base::CeilAlign(lastOneInputDim_ * lastTwoOutputDim_ * xDtypeSize_, BLOCK_SIZE) *
+                             lastThreeOutputDim_;
     mainMoveAlignV2Info_.loop1Size = static_cast<uint16_t>(ubFactor_);
     mainMoveAlignV2Info_.loop1SrcStride = static_cast<uint32_t>(loop1SrcStride); // repeat stride是头和头之间的间隔
     mainMoveAlignV2Info_.loop1DstStride = static_cast<uint16_t>(loop1DstStride);
@@ -304,8 +298,8 @@ void SliceTiling::FillSliceTilingData150()
     SetRowsStepsParamsFor150(sliceMoveAlignLast2DimTilingData_);
 
     auto tilingData = tilingContext_->GetTilingData<SliceMoveAlignLast2DimTilingData>();
-    errno_t ret = memcpy_s(
-        tilingData, tilingDataSize, reinterpret_cast<void*>(&sliceMoveAlignLast2DimTilingData_), tilingDataSize);
+    errno_t ret = memcpy_s(tilingData, tilingDataSize, reinterpret_cast<void*>(&sliceMoveAlignLast2DimTilingData_),
+                           tilingDataSize);
     if (ret != EOK) {
         OP_LOGE(tilingContext_->GetNodeName(), "memcpy_s failed, ret=%d", ret);
     }
@@ -346,8 +340,8 @@ void SliceTiling::FillSliceTilingData100()
     sliceMoveAlignTilingData_.ubOutLoopSteps = outLoopSteps_;
     SetMoveAlignParamsSlice(sliceMoveAlignTilingData_.moveAlignParams, mainMoveAlignV2Info_);
     auto tilingData = tilingContext_->GetTilingData<SliceMoveAlignTilingData>();
-    errno_t ret =
-        memcpy_s(tilingData, tilingDataSize, reinterpret_cast<void*>(&sliceMoveAlignTilingData_), tilingDataSize);
+    errno_t ret = memcpy_s(tilingData, tilingDataSize, reinterpret_cast<void*>(&sliceMoveAlignTilingData_),
+                           tilingDataSize);
     if (ret != EOK) {
         OP_LOGE(tilingContext_->GetNodeName(), "memcpy_s failed, ret=%d", ret);
     }
@@ -359,8 +353,8 @@ void SliceTiling::FillSliceTilingData101()
     OP_LOGD(tilingContext_->GetNodeName(), "Entering FillTilingData101.");
     FillSliceBaseTilingData(sliceMoveAlignLastDimTilingData_.sliceBaseTilingData);
     auto tilingData = tilingContext_->GetTilingData<SliceMoveAlignLastDimTilingData>();
-    errno_t ret = memcpy_s(
-        tilingData, tilingDataSize, reinterpret_cast<void*>(&sliceMoveAlignLastDimTilingData_), tilingDataSize);
+    errno_t ret = memcpy_s(tilingData, tilingDataSize, reinterpret_cast<void*>(&sliceMoveAlignLastDimTilingData_),
+                           tilingDataSize);
     if (ret != EOK) {
         OP_LOGE(tilingContext_->GetNodeName(), "memcpy_s failed, ret=%d", ret);
     }
@@ -397,8 +391,8 @@ void SliceTiling::FillSliceTilingData103()
         sliceNDDMALastDimTilingData_.nddmaLoopDstStride[i] = nddmaLoopDstStride_[i];
     }
     auto tilingData = tilingContext_->GetTilingData<SliceNDDMALastDimTilingData>();
-    errno_t ret =
-        memcpy_s(tilingData, tilingDataSize, reinterpret_cast<void*>(&sliceNDDMALastDimTilingData_), tilingDataSize);
+    errno_t ret = memcpy_s(tilingData, tilingDataSize, reinterpret_cast<void*>(&sliceNDDMALastDimTilingData_),
+                           tilingDataSize);
     if (ret != EOK) {
         OP_LOGE(tilingContext_->GetNodeName(), "memcpy_s failed, ret=%d", ret);
     }
@@ -417,8 +411,8 @@ void SliceTiling::FillSliceTilingData300()
 
     SetMoveAlignParamsSlice(sliceMoveAlignGatherTilingData_.moveAlignParams, mainMoveAlignV2Info_);
     auto tilingData = tilingContext_->GetTilingData<SliceMoveAlignGatherTilingData>();
-    errno_t ret =
-        memcpy_s(tilingData, tilingDataSize, reinterpret_cast<void*>(&sliceMoveAlignGatherTilingData_), tilingDataSize);
+    errno_t ret = memcpy_s(tilingData, tilingDataSize, reinterpret_cast<void*>(&sliceMoveAlignGatherTilingData_),
+                           tilingDataSize);
     if (ret != EOK) {
         OP_LOGE(tilingContext_->GetNodeName(), "memcpy_s failed, ret=%d", ret);
     }
@@ -440,8 +434,8 @@ void SliceTiling::FillSliceTilingData400()
     sliceTwoDimSmallSapeTilingData_.isBeginConst = isConstBegin;
 
     auto tilingData = tilingContext_->GetTilingData<SliceTwoDimSmallSapeTilingData>();
-    errno_t ret =
-        memcpy_s(tilingData, tilingDataSize, reinterpret_cast<void*>(&sliceTwoDimSmallSapeTilingData_), tilingDataSize);
+    errno_t ret = memcpy_s(tilingData, tilingDataSize, reinterpret_cast<void*>(&sliceTwoDimSmallSapeTilingData_),
+                           tilingDataSize);
     if (ret != EOK) {
         OP_LOGE(tilingContext_->GetNodeName(), "memcpy_s failed, ret=%d", ret);
     }
@@ -533,35 +527,33 @@ void SliceTiling::FillTilingData()
 void SliceTiling::PrintSliceTilingDataOther()
 {
     StridedSliceTilingData2& tilingData = sliceTilingData_.stridedSliceTilingData;
-    OP_LOGI(
-        tilingContext_->GetNodeName(),
-        "tilingData is ubSize:%ld, coreNum:%ld, realCoreNum:%ld, \
+    OP_LOGI(tilingContext_->GetNodeName(), "tilingData is ubSize:%ld, coreNum:%ld, realCoreNum:%ld, \
             ubIndex:%ld, ubFactor:%ld, ubTailFactor:%ld, ubTailTailFactor:%ld, \
             blkIndex:%ld, blkFactor:%ld, blkTailFactor:%ld, xDtypeSize:%ld, tilingKey:%ld, \
             isBeginConst:%d, begin:%s, end:%s, stride:%s, inputShape:%s, outputShape:%s, \
             rowsOffsetSteps:%s, inputSteps:%s, outputSteps:%s",
-        tilingData.ubSize, tilingData.coreNum, tilingData.realCoreNum, tilingData.ubIndex, tilingData.ubFactor,
-        tilingData.ubTailFactor, tilingData.ubTailTailFactor, tilingData.blkIndex, tilingData.blkFactor,
-        tilingData.blkTailFactor, tilingData.xDtypeSize, tilingData.tilingKey, tilingData.isBeginConst,
-        ArrayToStr(tilingData.begin, dimNum_).c_str(), ArrayToStr(end_, dimNum_).c_str(),
-        ArrayToStr(tilingData.strides, dimNum_).c_str(), ArrayToStr(inputShape_, dimNum_).c_str(),
-        ArrayToStr(tilingData.outputShape, dimNum_).c_str(), ArrayToStr(tilingData.rowsOffsetSteps, dimNum_).c_str(),
-        ArrayToStr(tilingData.inputSteps, dimNum_).c_str(), ArrayToStr(outputSteps_, dimNum_).c_str());
+            tilingData.ubSize, tilingData.coreNum, tilingData.realCoreNum, tilingData.ubIndex, tilingData.ubFactor,
+            tilingData.ubTailFactor, tilingData.ubTailTailFactor, tilingData.blkIndex, tilingData.blkFactor,
+            tilingData.blkTailFactor, tilingData.xDtypeSize, tilingData.tilingKey, tilingData.isBeginConst,
+            ArrayToStr(tilingData.begin, dimNum_).c_str(), ArrayToStr(end_, dimNum_).c_str(),
+            ArrayToStr(tilingData.strides, dimNum_).c_str(), ArrayToStr(inputShape_, dimNum_).c_str(),
+            ArrayToStr(tilingData.outputShape, dimNum_).c_str(),
+            ArrayToStr(tilingData.rowsOffsetSteps, dimNum_).c_str(), ArrayToStr(tilingData.inputSteps, dimNum_).c_str(),
+            ArrayToStr(outputSteps_, dimNum_).c_str());
 
-    OP_LOGI(
-        tilingContext_->GetNodeName(),
-        "tilingData is nddmaTotalNum:%ld nddmaLoopSize:%s, nddmaLoopSrcStride: %s, \
+    OP_LOGI(tilingContext_->GetNodeName(), "tilingData is nddmaTotalNum:%ld nddmaLoopSize:%s, nddmaLoopSrcStride: %s, \
             nddmaLoopDstStride: %s, moveAlignInfo: blockCount:%u blockLen:%u srcStride:%u dstStride:%u loop1Size:%u \
             loop2Size:%u loop1SrcStride:%u loop1DstStride:%u loop2SrcStride:%u loop2DstStride:%u outputShapeProd: %s \
             inputShapeProd: %s Tiling4StrideSlice ends.",
-        tilingData.nddmaTotalNum, ArrayToStr(tilingData.nddmaLoopSize, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
-        ArrayToStr(tilingData.nddmaLoopSrcStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
-        ArrayToStr(tilingData.nddmaLoopDstStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(), mainMoveAlignV2Info_.blockCount,
-        mainMoveAlignV2Info_.blockLen, mainMoveAlignV2Info_.srcStride, mainMoveAlignV2Info_.dstStride,
-        mainMoveAlignV2Info_.loop1Size, mainMoveAlignV2Info_.loop2Size, mainMoveAlignV2Info_.loop1SrcStride,
-        mainMoveAlignV2Info_.loop1DstStride, mainMoveAlignV2Info_.loop2SrcStride, mainMoveAlignV2Info_.loop2DstStride,
-        ArrayToStr(tilingData.outputShapeProd, MAX_SIMT_UB_SPLIT_AXIS_NUM).c_str(),
-        ArrayToStr(tilingData.inputShapeProd, MAX_SIMT_UB_SPLIT_AXIS_NUM).c_str());
+            tilingData.nddmaTotalNum, ArrayToStr(tilingData.nddmaLoopSize, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(tilingData.nddmaLoopSrcStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(tilingData.nddmaLoopDstStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
+            mainMoveAlignV2Info_.blockCount, mainMoveAlignV2Info_.blockLen, mainMoveAlignV2Info_.srcStride,
+            mainMoveAlignV2Info_.dstStride, mainMoveAlignV2Info_.loop1Size, mainMoveAlignV2Info_.loop2Size,
+            mainMoveAlignV2Info_.loop1SrcStride, mainMoveAlignV2Info_.loop1DstStride,
+            mainMoveAlignV2Info_.loop2SrcStride, mainMoveAlignV2Info_.loop2DstStride,
+            ArrayToStr(tilingData.outputShapeProd, MAX_SIMT_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(tilingData.inputShapeProd, MAX_SIMT_UB_SPLIT_AXIS_NUM).c_str());
 }
 
 void SliceTiling::PrintTilingData()
@@ -596,42 +588,38 @@ void SliceTiling::PrintTilingData()
 
 void SliceTiling::PrintSliceBaseTilingData(SliceBaseTilingData& tilingData)
 {
-    OP_LOGI(
-        tilingContext_->GetNodeName(),
-        "SliceBaseTilingData is ubSize:%d, realCoreNum:%d, \
+    OP_LOGI(tilingContext_->GetNodeName(), "SliceBaseTilingData is ubSize:%d, realCoreNum:%d, \
             ubIndex:%d, ubFactor:%d, ubTailFactor:%d, ubTailTailFactor:%d, \
             blkIndex:%d, blkFactor:%ld, blkTailFactor:%ld, \
             isBeginConst:%d, begin:%s, end:%s, inputShape:%s, outputShape:%s, \
             rowsOffsetSteps:%s, inputSteps:%s, outputSteps:%s, ubInLoopSteps:%ld",
-        tilingData.ubSize, tilingData.realCoreNum, tilingData.ubIndex, tilingData.ubFactor, tilingData.ubTailFactor,
-        tilingData.ubTailTailFactor, tilingData.blkIndex, tilingData.blkFactor, tilingData.blkTailFactor,
-        tilingData.isBeginConst, ArrayToStr(tilingData.begin, dimNum_).c_str(), ArrayToStr(end_, dimNum_).c_str(),
-        ArrayToStr(inputShape_, dimNum_).c_str(), ArrayToStr(tilingData.outputShape, dimNum_).c_str(),
-        ArrayToStr(tilingData.rowsOffsetSteps, dimNum_).c_str(), ArrayToStr(tilingData.inputSteps, dimNum_).c_str(),
-        ArrayToStr(outputSteps_, dimNum_).c_str(), tilingData.ubInLoopSteps);
+            tilingData.ubSize, tilingData.realCoreNum, tilingData.ubIndex, tilingData.ubFactor, tilingData.ubTailFactor,
+            tilingData.ubTailTailFactor, tilingData.blkIndex, tilingData.blkFactor, tilingData.blkTailFactor,
+            tilingData.isBeginConst, ArrayToStr(tilingData.begin, dimNum_).c_str(), ArrayToStr(end_, dimNum_).c_str(),
+            ArrayToStr(inputShape_, dimNum_).c_str(), ArrayToStr(tilingData.outputShape, dimNum_).c_str(),
+            ArrayToStr(tilingData.rowsOffsetSteps, dimNum_).c_str(), ArrayToStr(tilingData.inputSteps, dimNum_).c_str(),
+            ArrayToStr(outputSteps_, dimNum_).c_str(), tilingData.ubInLoopSteps);
 }
 
 void SliceTiling::PrintSliceTilingData150()
 {
-    OP_LOGI(
-        tilingContext_->GetNodeName(),
-        "SliceMoveAlignLast2DimTilingData is ubSize:%d, realCoreNum:%d, \
+    OP_LOGI(tilingContext_->GetNodeName(), "SliceMoveAlignLast2DimTilingData is ubSize:%d, realCoreNum:%d, \
             ubFactor:%d, ubTailFactor:%d, ubTailTailFactor:%d, \
             blkFactor:%ld, blkTailFactor:%ld, \
             isBeginConst:%d, begin:%s, end:%s, inputShape:%s, outputShape:%s, \
             inputSteps:%s, outputSteps:%s, ubInLoopSteps:%ld, ubOutLoopSteps:%ld, \
             moveAlignInfo: blockCount:%u blockLen:%u srcStride:%u dstStride:%u",
-        sliceMoveAlignLast2DimTilingData_.ubSize, sliceMoveAlignLast2DimTilingData_.realCoreNum,
-        sliceMoveAlignLast2DimTilingData_.ubFactor, sliceMoveAlignLast2DimTilingData_.ubTailFactor,
-        sliceMoveAlignLast2DimTilingData_.ubTailTailFactor, sliceMoveAlignLast2DimTilingData_.blkFactor,
-        sliceMoveAlignLast2DimTilingData_.blkTailFactor, sliceMoveAlignLast2DimTilingData_.isBeginConst,
-        ArrayToStr(sliceMoveAlignLast2DimTilingData_.begin, dimNum_).c_str(), ArrayToStr(end_, dimNum_).c_str(),
-        ArrayToStr(inputShape_, dimNum_).c_str(),
-        ArrayToStr(sliceMoveAlignLast2DimTilingData_.outputShape, dimNum_).c_str(),
-        ArrayToStr(sliceMoveAlignLast2DimTilingData_.inputSteps, dimNum_).c_str(),
-        ArrayToStr(outputSteps_, dimNum_).c_str(), sliceMoveAlignLast2DimTilingData_.ubInLoopSteps,
-        sliceMoveAlignLast2DimTilingData_.ubOutLoopSteps, mainMoveAlignV2Info_.blockCount,
-        mainMoveAlignV2Info_.blockLen, mainMoveAlignV2Info_.srcStride, mainMoveAlignV2Info_.dstStride);
+            sliceMoveAlignLast2DimTilingData_.ubSize, sliceMoveAlignLast2DimTilingData_.realCoreNum,
+            sliceMoveAlignLast2DimTilingData_.ubFactor, sliceMoveAlignLast2DimTilingData_.ubTailFactor,
+            sliceMoveAlignLast2DimTilingData_.ubTailTailFactor, sliceMoveAlignLast2DimTilingData_.blkFactor,
+            sliceMoveAlignLast2DimTilingData_.blkTailFactor, sliceMoveAlignLast2DimTilingData_.isBeginConst,
+            ArrayToStr(sliceMoveAlignLast2DimTilingData_.begin, dimNum_).c_str(), ArrayToStr(end_, dimNum_).c_str(),
+            ArrayToStr(inputShape_, dimNum_).c_str(),
+            ArrayToStr(sliceMoveAlignLast2DimTilingData_.outputShape, dimNum_).c_str(),
+            ArrayToStr(sliceMoveAlignLast2DimTilingData_.inputSteps, dimNum_).c_str(),
+            ArrayToStr(outputSteps_, dimNum_).c_str(), sliceMoveAlignLast2DimTilingData_.ubInLoopSteps,
+            sliceMoveAlignLast2DimTilingData_.ubOutLoopSteps, mainMoveAlignV2Info_.blockCount,
+            mainMoveAlignV2Info_.blockLen, mainMoveAlignV2Info_.srcStride, mainMoveAlignV2Info_.dstStride);
 }
 
 void SliceTiling::PrintSliceTilingData101()
@@ -644,72 +632,64 @@ void SliceTiling::PrintSliceTilingData100()
 {
     OP_LOGI(tilingContext_->GetNodeName(), "Printing SliceMoveAlignTilingData:");
     PrintSliceBaseTilingData(sliceMoveAlignTilingData_.sliceBaseTilingData);
-    OP_LOGI(
-        tilingContext_->GetNodeName(),
-        "SliceMoveAlignTilingData is ubOutLoopSteps:%ld, \
+    OP_LOGI(tilingContext_->GetNodeName(), "SliceMoveAlignTilingData is ubOutLoopSteps:%ld, \
     moveAlignInfo: blockCount:%u blockLen:%u srcStride:%u dstStride:%u loop1Size:%u \
     loop2Size:%u loop1SrcStride:%u loop1DstStride:%u loop2SrcStride:%u loop2DstStride:%u",
-        sliceMoveAlignTilingData_.ubOutLoopSteps, mainMoveAlignV2Info_.blockCount, mainMoveAlignV2Info_.blockLen,
-        mainMoveAlignV2Info_.srcStride, mainMoveAlignV2Info_.dstStride, mainMoveAlignV2Info_.loop1Size,
-        mainMoveAlignV2Info_.loop2Size, mainMoveAlignV2Info_.loop1SrcStride, mainMoveAlignV2Info_.loop1DstStride,
-        mainMoveAlignV2Info_.loop2SrcStride, mainMoveAlignV2Info_.loop2DstStride);
+            sliceMoveAlignTilingData_.ubOutLoopSteps, mainMoveAlignV2Info_.blockCount, mainMoveAlignV2Info_.blockLen,
+            mainMoveAlignV2Info_.srcStride, mainMoveAlignV2Info_.dstStride, mainMoveAlignV2Info_.loop1Size,
+            mainMoveAlignV2Info_.loop2Size, mainMoveAlignV2Info_.loop1SrcStride, mainMoveAlignV2Info_.loop1DstStride,
+            mainMoveAlignV2Info_.loop2SrcStride, mainMoveAlignV2Info_.loop2DstStride);
 }
 
 void SliceTiling::PrintSliceTilingData102()
 {
     OP_LOGI(tilingContext_->GetNodeName(), "Printing SliceNDDMATilingData:");
     PrintSliceBaseTilingData(sliceNDDMATilingData_.sliceBaseTilingData);
-    OP_LOGI(
-        tilingContext_->GetNodeName(),
-        "SliceNDDMATilingData is ubOutLoopSteps:%ld, \
+    OP_LOGI(tilingContext_->GetNodeName(), "SliceNDDMATilingData is ubOutLoopSteps:%ld, \
     nddmaTotalNum:%ld, nddmaLoopSize:%s, nddmaLoopSrcStride: %s, nddmaLoopDstStride: %s",
-        sliceNDDMATilingData_.ubOutLoopSteps, sliceNDDMATilingData_.nddmaTotalNum,
-        ArrayToStr(sliceNDDMATilingData_.nddmaLoopSize, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
-        ArrayToStr(sliceNDDMATilingData_.nddmaLoopSrcStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
-        ArrayToStr(sliceNDDMATilingData_.nddmaLoopDstStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str());
+            sliceNDDMATilingData_.ubOutLoopSteps, sliceNDDMATilingData_.nddmaTotalNum,
+            ArrayToStr(sliceNDDMATilingData_.nddmaLoopSize, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(sliceNDDMATilingData_.nddmaLoopSrcStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(sliceNDDMATilingData_.nddmaLoopDstStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str());
 }
 
 void SliceTiling::PrintSliceTilingData103()
 {
     OP_LOGI(tilingContext_->GetNodeName(), "Printing SliceNDDMALastDimTilingData:");
     PrintSliceBaseTilingData(sliceNDDMALastDimTilingData_.sliceBaseTilingData);
-    OP_LOGI(
-        tilingContext_->GetNodeName(), "SliceNDDMALastDimTilingData is nddmaLoopSrcStride: %s, nddmaLoopDstStride: %s",
-        ArrayToStr(sliceNDDMALastDimTilingData_.nddmaLoopSrcStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
-        ArrayToStr(sliceNDDMALastDimTilingData_.nddmaLoopDstStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str());
+    OP_LOGI(tilingContext_->GetNodeName(),
+            "SliceNDDMALastDimTilingData is nddmaLoopSrcStride: %s, nddmaLoopDstStride: %s",
+            ArrayToStr(sliceNDDMALastDimTilingData_.nddmaLoopSrcStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(sliceNDDMALastDimTilingData_.nddmaLoopDstStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str());
 }
 
 void SliceTiling::PrintSliceTilingData300()
 {
     OP_LOGI(tilingContext_->GetNodeName(), "Printing SliceMoveAlignGatherTilingData:");
     PrintSliceBaseTilingData(sliceMoveAlignGatherTilingData_.sliceBaseTilingData);
-    OP_LOGI(
-        tilingContext_->GetNodeName(),
-        "SliceMoveAlignGatherTilingData is ubOutLoopSteps:%ld, \
+    OP_LOGI(tilingContext_->GetNodeName(), "SliceMoveAlignGatherTilingData is ubOutLoopSteps:%ld, \
     ubSizeInput:%d, lastOneInputDim:%u, outBlockLen:%u, \
     moveAlignInfo: blockCount:%u blockLen:%u srcStride:%u dstStride:%u loop1Size:%u \
     loop2Size:%u loop1SrcStride:%u loop1DstStride:%u loop2SrcStride:%u loop2DstStride:%u",
-        sliceMoveAlignGatherTilingData_.ubOutLoopSteps, sliceMoveAlignGatherTilingData_.ubSizeInput,
-        sliceMoveAlignGatherTilingData_.lastOneInputDim, sliceMoveAlignGatherTilingData_.outBlockLen,
-        mainMoveAlignV2Info_.blockCount, mainMoveAlignV2Info_.blockLen, mainMoveAlignV2Info_.srcStride,
-        mainMoveAlignV2Info_.dstStride, mainMoveAlignV2Info_.loop1Size, mainMoveAlignV2Info_.loop2Size,
-        mainMoveAlignV2Info_.loop1SrcStride, mainMoveAlignV2Info_.loop1DstStride, mainMoveAlignV2Info_.loop2SrcStride,
-        mainMoveAlignV2Info_.loop2DstStride);
+            sliceMoveAlignGatherTilingData_.ubOutLoopSteps, sliceMoveAlignGatherTilingData_.ubSizeInput,
+            sliceMoveAlignGatherTilingData_.lastOneInputDim, sliceMoveAlignGatherTilingData_.outBlockLen,
+            mainMoveAlignV2Info_.blockCount, mainMoveAlignV2Info_.blockLen, mainMoveAlignV2Info_.srcStride,
+            mainMoveAlignV2Info_.dstStride, mainMoveAlignV2Info_.loop1Size, mainMoveAlignV2Info_.loop2Size,
+            mainMoveAlignV2Info_.loop1SrcStride, mainMoveAlignV2Info_.loop1DstStride,
+            mainMoveAlignV2Info_.loop2SrcStride, mainMoveAlignV2Info_.loop2DstStride);
 }
 
 void SliceTiling::PrintSliceTilingData400()
 {
     OP_LOGI(tilingContext_->GetNodeName(), "Printing SliceTwoDimSmallSapeTilingData:");
-    OP_LOGI(
-        tilingContext_->GetNodeName(),
-        "SliceTwoDimSmallSapeTilingData is realCoreNum:%d, \
+    OP_LOGI(tilingContext_->GetNodeName(), "SliceTwoDimSmallSapeTilingData is realCoreNum:%d, \
     mainCoreNum:%d, outBlockLen:%d, blkFactor:%d, lastOneInputDim:%ld, lastOneOutputDim:%ld, ubSize:%d, \
     lastOneDimOffset:%ld, isBeginConst:%d",
-        sliceTwoDimSmallSapeTilingData_.realCoreNum, sliceTwoDimSmallSapeTilingData_.mainCoreNum,
-        sliceTwoDimSmallSapeTilingData_.blockLen, sliceTwoDimSmallSapeTilingData_.blkFactor,
-        sliceTwoDimSmallSapeTilingData_.lastOneInputDim, sliceTwoDimSmallSapeTilingData_.lastOneOutputDim,
-        sliceTwoDimSmallSapeTilingData_.ubSize, sliceTwoDimSmallSapeTilingData_.lastOneDimOffset,
-        sliceTwoDimSmallSapeTilingData_.isBeginConst);
+            sliceTwoDimSmallSapeTilingData_.realCoreNum, sliceTwoDimSmallSapeTilingData_.mainCoreNum,
+            sliceTwoDimSmallSapeTilingData_.blockLen, sliceTwoDimSmallSapeTilingData_.blkFactor,
+            sliceTwoDimSmallSapeTilingData_.lastOneInputDim, sliceTwoDimSmallSapeTilingData_.lastOneOutputDim,
+            sliceTwoDimSmallSapeTilingData_.ubSize, sliceTwoDimSmallSapeTilingData_.lastOneDimOffset,
+            sliceTwoDimSmallSapeTilingData_.isBeginConst);
 }
 
 void SliceTiling::SetBlockDimAndTilingKey()
@@ -718,9 +698,8 @@ void SliceTiling::SetBlockDimAndTilingKey()
     tilingContext_->SetTilingKey(tilingKey_);
 }
 
-ge::graphStatus SliceTilingForAscendC(
-    gert::TilingContext* context, int64_t coreNum, int64_t ubSize, int64_t cacheLineSize, SliceParasRuntime2& param,
-    const ge::DataType dtype)
+ge::graphStatus SliceTilingForAscendC(gert::TilingContext* context, int64_t coreNum, int64_t ubSize,
+                                      int64_t cacheLineSize, SliceParasRuntime2& param, const ge::DataType dtype)
 {
     SliceTiling tilingImpl(context);
     SliceParametersRuntime2 sliceParam;
@@ -742,9 +721,9 @@ ge::graphStatus SliceTilingForAscendC(
 }
 
 template <typename T>
-static ge::graphStatus AssignInputValueOpt(
-    gert::TilingContext* context, size_t size, const gert::Tensor* tensor, gert::Shape& list_vector, bool isAscendc,
-    bool& isConst, const ge::DataType dtype)
+static ge::graphStatus AssignInputValueOpt(gert::TilingContext* context, size_t size, const gert::Tensor* tensor,
+                                           gert::Shape& list_vector, bool isAscendc, bool& isConst,
+                                           const ge::DataType dtype)
 {
     list_vector.SetDimNum(size);
     const T* value = tensor->GetData<T>();
@@ -757,9 +736,8 @@ static ge::graphStatus AssignInputValueOpt(
         return ge::GRAPH_SUCCESS;
     }
     if (value == nullptr) {
-        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
-                context->GetNodeName(), "value", "nullptr",
-                "When check input is const or not, const value cannot be nullptr");
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context->GetNodeName(), "value", "nullptr",
+                                               "When check input is const or not, const value cannot be nullptr");
         return ge::GRAPH_FAILED;
     }
     for (size_t i = 0; i < size; i++) {
@@ -767,9 +745,9 @@ static ge::graphStatus AssignInputValueOpt(
     }
     if (dtype == ge::DT_FLOAT4_E2M1 || dtype == ge::DT_FLOAT4_E1M2) {
         if (list_vector[size - 1] & 1) {
-            OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
-                    context->GetNodeName(), "offsets", Ops::Base::ToString(list_vector).c_str(),
-                    "Expected last dimension of offsets to be even for fp4 input.");
+            OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context->GetNodeName(), "offsets",
+                                                   Ops::Base::ToString(list_vector).c_str(),
+                                                   "Expected last dimension of offsets to be even for fp4 input.");
             return ge::GRAPH_FAILED;
         }
         list_vector[size - 1] /= SLICE_CONST2;
@@ -779,17 +757,15 @@ static ge::graphStatus AssignInputValueOpt(
 }
 
 template <typename T>
-static ge::graphStatus AssignInputValue(
-    gert::TilingContext* context, size_t size, const gert::Tensor* tensor, gert::Shape& list_vector,
-    const ge::DataType dtype)
+static ge::graphStatus AssignInputValue(gert::TilingContext* context, size_t size, const gert::Tensor* tensor,
+                                        gert::Shape& list_vector, const ge::DataType dtype)
 {
     int32_t dim_num = tensor->GetShapeSize();
     list_vector.SetDimNum(dim_num);
     const T* value = tensor->GetData<T>();
     if (value == nullptr) {
-        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
-                context->GetNodeName(), "value", "nullptr",
-                "When check input is const or not, const value cannot be nullptr");
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context->GetNodeName(), "value", "nullptr",
+                                               "When check input is const or not, const value cannot be nullptr");
         return ge::GRAPH_FAILED;
     }
     for (size_t i = 0; i < size; i++) {
@@ -797,9 +773,9 @@ static ge::graphStatus AssignInputValue(
     }
     if (dtype == ge::DT_FLOAT4_E2M1 || dtype == ge::DT_FLOAT4_E1M2) {
         if (list_vector[size - 1] & 1) {
-            OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
-                    context->GetNodeName(), "last dimension of size", Ops::Base::ToString(list_vector).c_str(),
-                    "Expected last dimension of size to be even for fp4 input");
+            OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context->GetNodeName(), "last dimension of size",
+                                                   Ops::Base::ToString(list_vector).c_str(),
+                                                   "Expected last dimension of size to be even for fp4 input");
             return ge::GRAPH_FAILED;
         }
         list_vector[size - 1] /= SLICE_CONST2;
@@ -807,17 +783,15 @@ static ge::graphStatus AssignInputValue(
     return ge::GRAPH_SUCCESS;
 }
 
-static bool CalcEndAndBeginList(
-    gert::Shape& list_end_vector, gert::Shape& list_begin_vector, const gert::Shape& shape_input, size_t size,
-    bool flag, bool is_begin_const)
+static bool CalcEndAndBeginList(gert::Shape& list_end_vector, gert::Shape& list_begin_vector,
+                                const gert::Shape& shape_input, size_t size, bool flag, bool is_begin_const)
 {
     if (flag) {
         for (size_t index = 0; index < size; index++) {
             if (list_end_vector[index] == -1) {
                 if (is_begin_const == false) {
-                    OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
-                            "Slice", "end", "-1",
-                            "End cannot be -1 while begin is not const.");
+                    OP_LOGE_FOR_INVALID_VALUES_WITH_REASON("Slice", "end", "-1",
+                                                           "End cannot be -1 while begin is not const.");
                     return false;
                 }
                 list_end_vector[index] = shape_input.GetDim(index) - list_begin_vector[index];
@@ -828,11 +802,10 @@ static bool CalcEndAndBeginList(
             if (list_begin_vector[i] < 0 || list_begin_vector[i] + list_end_vector[i] < list_begin_vector[i] ||
                 list_begin_vector[i] + list_end_vector[i] > shape_input.GetDim(i)) {
                 OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
-                            "Slice", "list_begin_vector, list_end_vector, shape_input", 
-                            "index: " + std::to_string(i) + ", begin: " + std::to_string(list_begin_vector[i]) +
-                            ", end: " + std::to_string(list_end_vector[i])  +
-                            ", input shape: " + std::to_string(shape_input.GetDim(i)),
-                            "Requirements: 0<=offsets[i]<= offsets[i]+size[i]<=input_shape[i].");
+                    "Slice", "list_begin_vector, list_end_vector, shape_input",
+                    "index: " + std::to_string(i) + ", begin: " + std::to_string(list_begin_vector[i]) + ", end: " +
+                        std::to_string(list_end_vector[i]) + ", input shape: " + std::to_string(shape_input.GetDim(i)),
+                    "Requirements: 0<=offsets[i]<= offsets[i]+size[i]<=input_shape[i].");
                 return false;
             }
         }
@@ -880,8 +853,8 @@ static void MakePerformanceParams(SliceParasRuntime2& parameters)
         perf_params.stride_list[perf_params.input.GetDimNum() - last_second] == 1) {
         const auto last_second_index = perf_params.input.GetDimNum() - last_second;
         perf_params.input[last_second_index] *= perf_params.input.GetDim(perf_params.input.GetDimNum() - 1);
-        perf_params.output_shape[last_second_index] *=
-            perf_params.output_shape.GetDim(perf_params.output_shape.GetDimNum() - 1);
+        perf_params.output_shape[last_second_index] *= perf_params.output_shape.GetDim(
+            perf_params.output_shape.GetDimNum() - 1);
         perf_params.begin_list[last_second_index] *= perf_params.input.GetDim(perf_params.input.GetDimNum() - 1);
         perf_params.end_list[last_second_index] *= perf_params.input.GetDim(perf_params.input.GetDimNum() - 1);
         perf_params.stride_list[last_second_index] = 1;
@@ -902,9 +875,8 @@ static ge::graphStatus Tiling4Slice(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
     const gert::Shape& in_shape = Ops::Base::EnsureNotScalar(context->GetInputShape(0)->GetStorageShape());
     if (compile_info->block_dim == 0) {
-        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
-                context->GetNodeName(), "core number", "0",
-                "The vale of core number cannot be 0.");
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context->GetNodeName(), "core number", "0",
+                                               "The value of core number cannot be 0.");
         return ge::GRAPH_FAILED;
     }
     // instantiate param
@@ -939,9 +911,9 @@ static ge::graphStatus Tiling4Slice(gert::TilingContext* context)
     ge::DataType inputDtype = shape_tensor_x->GetDataType();
     if (inputDtype == ge::DT_FLOAT4_E2M1 || inputDtype == ge::DT_FLOAT4_E1M2) {
         if (sliceparam.input[shape_size_offsets - 1] & 1) {
-            OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
-                context->GetNodeName(), "last dimension of input", Ops::Base::ToString(sliceparam.input).c_str(),
-                "Expected last dimension of input to be even for fp4 input.");
+            OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context->GetNodeName(), "last dimension of input",
+                                                   Ops::Base::ToString(sliceparam.input).c_str(),
+                                                   "Expected last dimension of input to be even for fp4 input.");
             return ge::GRAPH_FAILED;
         }
         sliceparam.input[shape_size_offsets - 1] /= SLICE_CONST2;
@@ -949,45 +921,42 @@ static ge::graphStatus Tiling4Slice(gert::TilingContext* context)
     ge::DataType offset_dtype = shape_tensor_offsets->GetDataType();
     if (offset_dtype == ge::DT_INT32) {
         // Get offset const val
-        OP_CHECK_IF(
-            AssignInputValueOpt<int32_t>(
-                context, shape_size_offsets, shape_tensor_offsets, sliceparam.begin_list, compile_info->isAscendc,
-                sliceparam.is_begin_const, inputDtype) != ge::GRAPH_SUCCESS,
-            OP_LOGE(context->GetNodeName(), "get offset fail, check input is const or not."), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(AssignInputValueOpt<int32_t>(context, shape_size_offsets, shape_tensor_offsets,
+                                                 sliceparam.begin_list, compile_info->isAscendc,
+                                                 sliceparam.is_begin_const, inputDtype) != ge::GRAPH_SUCCESS,
+                    OP_LOGE(context->GetNodeName(), "get offset fail, check input is const or not."),
+                    return ge::GRAPH_FAILED);
     } else {
         // Get offset const val
-        OP_CHECK_IF(
-            AssignInputValueOpt<int64_t>(
-                context, shape_size_offsets, shape_tensor_offsets, sliceparam.begin_list, compile_info->isAscendc,
-                sliceparam.is_begin_const, inputDtype) != ge::GRAPH_SUCCESS,
-            OP_LOGE(context->GetNodeName(), "get offset fail, check input is const or not."), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(AssignInputValueOpt<int64_t>(context, shape_size_offsets, shape_tensor_offsets,
+                                                 sliceparam.begin_list, compile_info->isAscendc,
+                                                 sliceparam.is_begin_const, inputDtype) != ge::GRAPH_SUCCESS,
+                    OP_LOGE(context->GetNodeName(), "get offset fail, check input is const or not."),
+                    return ge::GRAPH_FAILED);
     }
     ge::DataType sizeDtype = shape_tensor_size->GetDataType();
     if (sizeDtype == ge::DT_INT32) {
         // Get size const val
-        OP_CHECK_IF(
-            AssignInputValue<int32_t>(context, shape_size_size, shape_tensor_size, sliceparam.end_list, inputDtype) !=
-                ge::GRAPH_SUCCESS,
-            OP_LOGE(context->GetNodeName(), "get size fail, check input is const or not."), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(AssignInputValue<int32_t>(context, shape_size_size, shape_tensor_size, sliceparam.end_list,
+                                              inputDtype) != ge::GRAPH_SUCCESS,
+                    OP_LOGE(context->GetNodeName(), "get size fail, check input is const or not."),
+                    return ge::GRAPH_FAILED);
     } else {
         // Get size const val
-        OP_CHECK_IF(
-            AssignInputValue<int64_t>(context, shape_size_size, shape_tensor_size, sliceparam.end_list, inputDtype) !=
-                ge::GRAPH_SUCCESS,
-            OP_LOGE(context->GetNodeName(), "get size fail, check input is const or not."), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(AssignInputValue<int64_t>(context, shape_size_size, shape_tensor_size, sliceparam.end_list,
+                                              inputDtype) != ge::GRAPH_SUCCESS,
+                    OP_LOGE(context->GetNodeName(), "get size fail, check input is const or not."),
+                    return ge::GRAPH_FAILED);
     }
     // calc endlist
     bool end_list_flag = true;
-    bool isEndValid = CalcEndAndBeginList(
-        sliceparam.end_list, sliceparam.begin_list, sliceparam.input, shape_size_offsets, end_list_flag,
-        sliceparam.is_begin_const);
+    bool isEndValid = CalcEndAndBeginList(sliceparam.end_list, sliceparam.begin_list, sliceparam.input,
+                                          shape_size_offsets, end_list_flag, sliceparam.is_begin_const);
     bool begin_list_flag = false;
-    bool isBeginValid = CalcEndAndBeginList(
-        sliceparam.end_list, sliceparam.begin_list, sliceparam.input, shape_size_size, begin_list_flag,
-        sliceparam.is_begin_const);
-    OP_CHECK_IF(
-        (compile_info->isAscendc && (!isEndValid || !isBeginValid)), OP_LOGE("Slice", "CalcEndAndBeginList failed"),
-        return ge::GRAPH_FAILED);
+    bool isBeginValid = CalcEndAndBeginList(sliceparam.end_list, sliceparam.begin_list, sliceparam.input,
+                                            shape_size_size, begin_list_flag, sliceparam.is_begin_const);
+    OP_CHECK_IF((compile_info->isAscendc && (!isEndValid || !isBeginValid)),
+                OP_LOGE("Slice", "CalcEndAndBeginList failed"), return ge::GRAPH_FAILED);
 
     // in slice end_list is size values
     sliceparam.output_shape = sliceparam.end_list;
@@ -1003,8 +972,8 @@ static ge::graphStatus Tiling4Slice(gert::TilingContext* context)
     if (inputDtype == ge::DT_FLOAT4_E2M1 || inputDtype == ge::DT_FLOAT4_E1M2) {
         inputDtype = ge::DT_INT8;
     }
-    return SliceTilingForAscendC(
-        context, compile_info->block_dim, compile_info->ub_size, compile_info->cacheLineSize, sliceparam, inputDtype);
+    return SliceTilingForAscendC(context, compile_info->block_dim, compile_info->ub_size, compile_info->cacheLineSize,
+                                 sliceparam, inputDtype);
 }
 
 static ge::graphStatus TilingPrepare4Slice(gert::TilingParseContext* context)
@@ -1016,19 +985,18 @@ static ge::graphStatus TilingPrepare4Slice(gert::TilingParseContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->block_dim = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->block_dim <= 0), OP_LOGE(context->GetNodeName(), "block_dim invalid."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->block_dim <= 0), OP_LOGE(context->GetNodeName(), "block_dim invalid."),
+                return ge::GRAPH_FAILED);
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ub_size = static_cast<int64_t>(ubSize);
-    OP_CHECK_IF(
-        (compileInfo->ub_size <= 0), OP_LOGE(context->GetNodeName(), "ub size invalid."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->ub_size <= 0), OP_LOGE(context->GetNodeName(), "ub size invalid."),
+                return ge::GRAPH_FAILED);
 
     compileInfo->isAscendc = true;
     compileInfo->cacheLineSize = Ops::Base::GetCacheLineSize(context);
-    OP_CHECK_IF(
-        (compileInfo->cacheLineSize == static_cast<uint32_t>(0)),
-        OP_LOGE(context->GetNodeName(), "Failed to get cacheLineSize."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->cacheLineSize == static_cast<uint32_t>(0)),
+                OP_LOGE(context->GetNodeName(), "Failed to get cacheLineSize."), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 

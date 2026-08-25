@@ -65,8 +65,8 @@ static const std::initializer_list<op::DataType> SELF_DTYPE_SUPPORT_LIST_SUPPORT
     op::DataType::DT_INT8,   op::DataType::DT_UINT8,   op::DataType::DT_DOUBLE, op::DataType::DT_BOOL,
     op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> MASK_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_UINT8, op::DataType::DT_BOOL};
+static const std::initializer_list<op::DataType> MASK_DTYPE_SUPPORT_LIST = {op::DataType::DT_UINT8,
+                                                                            op::DataType::DT_BOOL};
 } // namespace ACLNN_MASKED_SELECT
 using namespace ACLNN_MASKED_SELECT;
 inline static bool CheckNotNull(const aclTensor* self, const aclTensor* mask, const aclTensor* out)
@@ -137,10 +137,9 @@ static bool CheckShape(const aclTensor* self, const aclTensor* mask, const aclTe
     OP_CHECK_WRONG_DIMENSION(y, 1, return false);
 
     if (!isOutSizeSameWithBroadcastShapeSize(y, broadcastShape)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The out shape size  is not same with broadcastShapeSize.");
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "y.shape: %ld, broadcastShape.shape: %ld.", y->GetViewShape().GetShapeSize(),
-            broadcastShape.GetShapeSize());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The out shape size  is not the same as broadcastShapeSize.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "y.shape: %ld, broadcastShape.shape: %ld.", y->GetViewShape().GetShapeSize(),
+                broadcastShape.GetShapeSize());
         return false;
     }
     return true;
@@ -166,24 +165,24 @@ static bool IsAiCoreSupport(const aclTensor* self)
 {
     if (IsRegBase()) {
         return CheckType(self->GetDataType(), SELF_DTYPE_SUPPORT_LIST_SUPPORT_REGBASE);
-    } else if (
-        GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-        GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) {
+    } else if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
+               GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) {
         return CheckType(self->GetDataType(), SELF_DTYPE_SUPPORT_LIST_SUPPORT_BF16);
     }
     return false;
 }
 
-static void CheckFormat(const aclTensor* self, const aclTensor* target){
-  ge::Format selfStorageFormat = self->GetStorageFormat();
-  ge::Format targetStorageFormat = target->GetStorageFormat();
-  if (selfStorageFormat != ge::Format::FORMAT_ND || targetStorageFormat != ge::Format::FORMAT_ND){
-    OP_LOGW("aclnnMaskedSelect only support format ND.");
-  }
+static void CheckFormat(const aclTensor* self, const aclTensor* target)
+{
+    ge::Format selfStorageFormat = self->GetStorageFormat();
+    ge::Format targetStorageFormat = target->GetStorageFormat();
+    if (selfStorageFormat != ge::Format::FORMAT_ND || targetStorageFormat != ge::Format::FORMAT_ND) {
+        OP_LOGW("aclnnMaskedSelect only supports format ND.");
+    }
 }
 
-aclnnStatus aclnnMaskedSelectGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* mask, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnMaskedSelectGetWorkspaceSize(const aclTensor* self, const aclTensor* mask, aclTensor* out,
+                                              uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
@@ -232,8 +231,8 @@ aclnnStatus aclnnMaskedSelectGetWorkspaceSize(
             op::Shape broadcastShape;
             if (BroadcastInferShape(self->GetViewShape(), mask->GetViewShape(), broadcastShape)) {
                 op::FVector<int64_t, op::MAX_DIM_NUM> broadcastDims = op::ToShapeVector(broadcastShape);
-                auto broadcastShapeArray =
-                    uniqueExecutor.get()->AllocIntArray(broadcastDims.data(), broadcastDims.size());
+                auto broadcastShapeArray = uniqueExecutor.get()->AllocIntArray(broadcastDims.data(),
+                                                                               broadcastDims.size());
                 CHECK_RET(broadcastShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
                 auto selfCastedAfterFormat = ResetFormatForRegBase(selfCasted, broadcastShapeArray);
                 selfBroadcast = l0op::BroadcastTo(selfCastedAfterFormat, broadcastShapeArray, uniqueExecutor.get());

@@ -223,7 +223,7 @@ aclnnStatus aclnnLogSumExpGetWorkspaceSize(const aclTensor* self, const aclIntAr
     // 检查Format
     if (op::IsPrivateFormat(self->GetStorageFormat())) {
         if (IsRegBase()) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW, self [%s]",
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND,NCHW,NHWC,HWCN,NDHWC,NCDHW, self [%s]",
                     ToString(self->GetStorageFormat()).GetString());
             return ACLNN_ERR_PARAM_INVALID;
         } else {

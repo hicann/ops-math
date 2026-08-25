@@ -28,7 +28,7 @@ static ge::graphStatus InferShape4SquareSumV1(gert::InferShapeContext* context)
     auto axis = attrs->GetAttrPointer<gert::ContinuousVector>(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, axis);
     auto axesSize = static_cast<int32_t>(axis->GetSize());
-    OP_CHECK_IF(axesSize < 0, OP_LOGE(context->GetNodeName(), "axes size must >= 0!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(axesSize < 0, OP_LOGE(context->GetNodeName(), "axes size must be >= 0!"), return ge::GRAPH_FAILED);
     auto axesData = const_cast<int64_t*>(static_cast<const int64_t*>(axis->GetData()));
 
     const bool* keepDims = attrs->GetAttrPointer<bool>(1);

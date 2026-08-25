@@ -214,7 +214,7 @@ static Status ParseOpToGraphReduceMean13(const Operator& op, Graph& graph)
         output_indexs.emplace_back(reducemean13, vector<std::size_t>{0});
         graph.SetInputs(inputs).SetOutputs(output_indexs);
     } else {
-        OP_LOGE(GetOpName(op).c_str(), "Input num or set attr is error");
+        OP_LOGE(GetOpName(op).c_str(), "Input num or set attr is invalid");
         return FAILED;
     }
     return SUCCESS;

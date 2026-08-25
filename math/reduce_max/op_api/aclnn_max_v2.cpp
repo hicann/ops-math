@@ -84,8 +84,8 @@ static inline uint64_t GetPosDim(int64_t dim, int64_t dimNum)
     return dim >= 0 ? dim : dim + dimNum;
 }
 
-static inline const aclIntArray* GetAllDims(
-    const aclTensor* self, const bool noopWithEmptyDims, aclOpExecutor* executor)
+static inline const aclIntArray* GetAllDims(const aclTensor* self, const bool noopWithEmptyDims,
+                                            aclOpExecutor* executor)
 {
     auto inputShape = self->GetViewShape();
     size_t inputDimNum = inputShape.GetDimNum();
@@ -98,9 +98,8 @@ static inline const aclIntArray* GetAllDims(
     return executor->AllocIntArray(dims.data(), dims.size());
 }
 
-static void reduce_maxInferShape(
-    const op::Shape& selfShape, const aclIntArray* dims, bool keepDims, const bool noopWithEmptyDims,
-    op::Shape& reduceShape)
+static void reduce_maxInferShape(const op::Shape& selfShape, const aclIntArray* dims, bool keepDims,
+                                 const bool noopWithEmptyDims, op::Shape& reduceShape)
 {
     bitset<MAX_MASK_LEN> dimMask = bitset<MAX_MASK_LEN>();
 
@@ -150,15 +149,14 @@ static bool CheckDimValid(const aclTensor* self, const aclIntArray* dims)
 
     for (size_t i = 0; i < dims->Size(); i++) {
         if (dims->operator[](i) >= selfDimNum || dims->operator[](i) < (-selfDimNum)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "Provided dims %ld must be in the range of [%ld, %ld].", dims->operator[](i),
-                -selfDimNum, selfDimNum - 1);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Provided dims %ld must be in the range of [%ld, %ld].",
+                    dims->operator[](i), -selfDimNum, selfDimNum - 1);
             return false;
         }
         uint64_t index = GetPosDim(dims->operator[](i), selfDimNum);
         // 非标量reduce的dims不能为0
         if (!isScalar && selfViewShape.GetDim(index) == 0) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expected reducution dims %lu to have non-zero size.", index);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expected reduction dims %lu to have non-zero size.", index);
             return false;
         }
         // dims重复
@@ -173,9 +171,8 @@ static bool CheckDimValid(const aclTensor* self, const aclIntArray* dims)
     return true;
 }
 
-static bool CheckShape(
-    const aclTensor* self, const aclIntArray* dims, const bool keepDims, const bool noopWithEmptyDims,
-    const aclTensor* out)
+static bool CheckShape(const aclTensor* self, const aclIntArray* dims, const bool keepDims,
+                       const bool noopWithEmptyDims, const aclTensor* out)
 {
     OP_CHECK_MAX_DIM(self, MAX_SUPPORT_DIMS_NUMS, return false);
     OP_CHECK_MAX_DIM(out, MAX_SUPPORT_DIMS_NUMS, return false);
@@ -187,9 +184,8 @@ static bool CheckShape(
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclIntArray* dims, const bool keepDims, const bool noopWithEmptyDims,
-    const aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* dims, const bool keepDims,
+                               const bool noopWithEmptyDims, const aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, dims, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -205,9 +201,9 @@ static aclnnStatus CheckParams(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnMaxV2GetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* dims, const bool keepDims, bool noopWithEmptyDims, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnMaxV2GetWorkspaceSize(const aclTensor* self, const aclIntArray* dims, const bool keepDims,
+                                       bool noopWithEmptyDims, aclTensor* out, uint64_t* workspaceSize,
+                                       aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnMaxV2, DFX_IN(self, dims, keepDims, noopWithEmptyDims), DFX_OUT(out));
     // 创建OpExecutor
@@ -245,8 +241,8 @@ aclnnStatus aclnnMaxV2GetWorkspaceSize(
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 将输入self的数据类型转换成目标数据类型, bool 转为float, 其余保持原类型
-    op::DataType selfCastType =
-        (self->GetDataType() == op::DataType::DT_BOOL) ? op::DataType::DT_FLOAT : self->GetDataType();
+    op::DataType selfCastType = (self->GetDataType() == op::DataType::DT_BOOL) ? op::DataType::DT_FLOAT :
+                                                                                 self->GetDataType();
 
     auto selfCasted = l0op::Cast(selfContiguous, selfCastType, uniqueExecutor.get());
     CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);

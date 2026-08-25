@@ -64,19 +64,19 @@ static bool CheckNotNull(const aclTensor* self, const aclIntArray* dims, const a
 static bool CheckDtypeValid(const aclTensor* self, const aclDataType dtype, const aclTensor* out)
 {
     // 检查self和out的数据类型是否在支持列表内
-    bool isAscend910BSocVersion =
-        (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase());
-    const std::initializer_list<op::DataType> CURRENT_DTYPE_SUPPORT_LIST =
-        isAscend910BSocVersion ? ASCEND910B_DTYPE_SUPPORT_LIST : ASCEND910_DTYPE_SUPPORT_LIST;
+    bool isAscend910BSocVersion = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+                                   GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase());
+    const std::initializer_list<op::DataType> CURRENT_DTYPE_SUPPORT_LIST = isAscend910BSocVersion ?
+                                                                               ASCEND910B_DTYPE_SUPPORT_LIST :
+                                                                               ASCEND910_DTYPE_SUPPORT_LIST;
 
     OP_CHECK_DTYPE_NOT_SUPPORT(self, CURRENT_DTYPE_SUPPORT_LIST, return false);
     OP_CHECK_DTYPE_NOT_SUPPORT(out, CURRENT_DTYPE_SUPPORT_LIST, return false);
     // 检查dtype指定的数据类型是否支持
     if (!CheckType(op::ToOpDataType(dtype), CURRENT_DTYPE_SUPPORT_LIST)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "type %s should be in dtype support list [%s].",
-            op::ToString(op::ToOpDataType(dtype)).GetString(), op::ToString(CURRENT_DTYPE_SUPPORT_LIST).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "type %s should be in dtype support list [%s].",
+                op::ToString(op::ToOpDataType(dtype)).GetString(),
+                op::ToString(CURRENT_DTYPE_SUPPORT_LIST).GetString());
         return false;
     }
     // 检查dtype数据类型与out是否一致
@@ -112,9 +112,8 @@ static bool CheckDimValid(const aclTensor* self, const aclIntArray* dims)
     for (size_t i = 0; i < dims->Size(); i++) {
         int64_t curDim = (*dims)[i];
         if (curDim >= selfDimNum || curDim < (-selfDimNum)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "Provided dim %ld must be in the range of [%ld, %ld].", curDim, -selfDimNum,
-                selfDimNum - 1);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Provided dim %ld must be in the range of [%ld, %ld].", curDim,
+                    -selfDimNum, selfDimNum - 1);
             return false;
         }
         uint64_t index = GetPosDim(curDim, selfDimNum);
@@ -130,8 +129,8 @@ static bool CheckDimValid(const aclTensor* self, const aclIntArray* dims)
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclIntArray* dims, const aclDataType dtype, const aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* dims, const aclDataType dtype,
+                               const aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, dims, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -190,16 +189,17 @@ static bool IsNonContiguousSupport(const aclTensor* self, const DataType promote
     return true;
 }
 
-static void CheckFormat(const aclTensor* self) {
+static void CheckFormat(const aclTensor* self)
+{
     ge::Format selfStorageFormat = self->GetStorageFormat();
     if (selfStorageFormat == ge::Format::FORMAT_FRACTAL_NZ) {
         OP_LOGW("aclnnReduceSum doesn't support format NZ.");
     }
 }
 
-aclnnStatus aclnnReduceSumGetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* dims, bool keepDims, aclDataType dtype, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnReduceSumGetWorkspaceSize(const aclTensor* self, const aclIntArray* dims, bool keepDims,
+                                           aclDataType dtype, aclTensor* out, uint64_t* workspaceSize,
+                                           aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnReduceSum, DFX_IN(self, dims, keepDims, dtype), DFX_OUT(out));
 
@@ -213,7 +213,7 @@ aclnnStatus aclnnReduceSumGetWorkspaceSize(
 
     // 检查self的format是否支持
     CheckFormat(self);
-        
+
     // 输入self为空tensor时，直接返回dtype类型的空tensor
     if (self->IsEmpty()) {
         ret = FillScalar(out, 0.0f, uniqueExecutor.get());
@@ -268,9 +268,9 @@ aclnnStatus aclnnReduceSumGetWorkspaceSize(
         promoteType = (reduceDims < maxDim) ? op::DataType::DT_FLOAT : op::DataType::DT_INT64;
     }
     if (IsNonContiguousSupport(self, promoteType, dims)) {
-        OP_LOGD("Enter NonContigous");
-        auto selfContiguous = uniqueExecutor.get()->CreateView(
-            self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
+        OP_LOGD("Enter NonContiguous");
+        auto selfContiguous = uniqueExecutor.get()->CreateView(self, self->GetViewShape(), self->GetStorageShape(),
+                                                               self->GetViewStrides(), self->GetViewOffset());
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
         // 调用ReduceSum算子kernel,将输入self的数据类型转换成指定的数据类型
         const aclTensor* reduceSumOut = nullptr;
@@ -281,7 +281,7 @@ aclnnStatus aclnnReduceSumGetWorkspaceSize(
         auto viewCopyResult = l0op::ViewCopy(reduceSumOut, out, uniqueExecutor.get());
         CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
     } else {
-        OP_LOGD("Enter Contigous");
+        OP_LOGD("Enter Contiguous");
         // 固定写法，将输入self转换成连续的tensor
         auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);

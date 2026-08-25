@@ -147,8 +147,7 @@ private:
     void ShowSIMTTilingData();
 };
 
-Im2ColTiling::~Im2ColTiling()
-{}
+Im2ColTiling::~Im2ColTiling() {}
 
 ge::graphStatus Im2ColTiling::DoTiling()
 {
@@ -168,9 +167,9 @@ ge::graphStatus Im2ColTiling::DoTiling()
     OP_CHECK_IF(ret == ge::GRAPH_FAILED, OP_LOGE(context_, "DoTiling failed"), return ge::GRAPH_FAILED);
 
     const uint64_t tilingKey = GET_TPL_TILING_KEY(inputFormat_, ubAxis_, isPadding_, isSIMT_, isBigShape_);
-    OP_LOGI(
-        context_->GetNodeName(), "tilingKey is %lu, inputFormat %d, ubAxis %d, isPadding %d, isSIMT %d, isBigShape %d",
-        tilingKey, inputFormat_, ubAxis_, isPadding_, isSIMT_, isBigShape_);
+    OP_LOGI(context_->GetNodeName(),
+            "tilingKey is %lu, inputFormat %d, ubAxis %d, isPadding %d, isSIMT %d, isBigShape %d", tilingKey,
+            inputFormat_, ubAxis_, isPadding_, isSIMT_, isBigShape_);
     context_->SetTilingKey(tilingKey);
     context_->SetBlockDim(realCoreNum_);
     size_t* workSpaceSize = context_->GetWorkspaceSizes(1);
@@ -187,55 +186,46 @@ inline T Im2ColTiling::AlignBlock(T elementCount)
 
 void Im2ColTiling::ShowBaseTilingData()
 {
-    OP_LOGI(
-        context_,
-        "input: N %ld, C %ld, H %ld, W %ld,"
-        " kernel (%ld, %ld), stride (%ld, %ld), dilation (%ld, %ld), pad (%ld, %ld, %ld, %ld)",
-        input_.N, input_.C, input_.H, input_.W, input_.hKernelSize, input_.wKernelSize, input_.hStride, input_.wStride,
-        input_.hDilation, input_.wDilation, input_.hPaddingBefore, input_.hPaddingAfter, input_.wPaddingBefore,
-        input_.wPaddingAfter);
+    OP_LOGI(context_,
+            "input: N %ld, C %ld, H %ld, W %ld,"
+            " kernel (%ld, %ld), stride (%ld, %ld), dilation (%ld, %ld), pad (%ld, %ld, %ld, %ld)",
+            input_.N, input_.C, input_.H, input_.W, input_.hKernelSize, input_.wKernelSize, input_.hStride,
+            input_.wStride, input_.hDilation, input_.wDilation, input_.hPaddingBefore, input_.hPaddingAfter,
+            input_.wPaddingBefore, input_.wPaddingAfter);
     // soc 信息
-    OP_LOGI(
-        context_, "soc info: ubSize %lu, coreNum %u, cacheLineSize %lu, ubBlockSize %lu ", ubSize_, coreNum_,
-        cacheLineSize_, ubBlockSize_);
+    OP_LOGI(context_, "soc info: ubSize %lu, coreNum %u, cacheLineSize %lu, ubBlockSize %lu ", ubSize_, coreNum_,
+            cacheLineSize_, ubBlockSize_);
     // 中间计算结果
-    OP_LOGI(
-        context_,
-        "middle data: convKernelNumInWidth %ld, convKernelNumInHeight %ld, convKernelNum %ld, convKernelSize %ld",
-        convKernelNumInWidth_, convKernelNumInHeight_, convKernelNum_, convKernelSize_);
+    OP_LOGI(context_,
+            "middle data: convKernelNumInWidth %ld, convKernelNumInHeight %ld, convKernelNum %ld, convKernelSize %ld",
+            convKernelNumInWidth_, convKernelNumInHeight_, convKernelNum_, convKernelSize_);
 }
 
 void Im2ColTiling::ShowNCHWTilingData()
 {
     ShowBaseTilingData();
     auto tilingData = context_->GetTilingData<Im2ColNCHWTilingData>();
-    OP_LOGI(
-        context_,
-        "tiling data: ubFactorH %d, ubFactorW %d, ubFactorNC %d, w4ubFactorW % d,"
-        " lines4ubFactorW % d, lines4ubFactorH % d",
-        tilingData->ubFactorH, tilingData->ubFactorW, tilingData->ubFactorNC, tilingData->w4ubFactorW,
-        tilingData->lines4ubFactorW, tilingData->lines4ubFactorH);
-    OP_LOGI(
-        context_, "\t: convKernelNumInWidth %ld, convKernelNumInHeight %ld", tilingData->convKernelNumInWidth,
-        tilingData->convKernelNumInHeight);
-    OP_LOGI(
-        context_, "\t: totalRectAngles %ld, rectAnglesPerCore %d, outHWrectAngles %d", tilingData->totalRectAngles,
-        tilingData->rectAnglesPerCore, tilingData->outHWrectAngles);
-    OP_LOGI(
-        context_, "\t: inputBufferSize %d, outputBufferSize %d", tilingData->inputBufferSize,
-        tilingData->outputBufferSize);
+    OP_LOGI(context_,
+            "tiling data: ubFactorH %d, ubFactorW %d, ubFactorNC %d, w4ubFactorW % d,"
+            " lines4ubFactorW % d, lines4ubFactorH % d",
+            tilingData->ubFactorH, tilingData->ubFactorW, tilingData->ubFactorNC, tilingData->w4ubFactorW,
+            tilingData->lines4ubFactorW, tilingData->lines4ubFactorH);
+    OP_LOGI(context_, "\t: convKernelNumInWidth %ld, convKernelNumInHeight %ld", tilingData->convKernelNumInWidth,
+            tilingData->convKernelNumInHeight);
+    OP_LOGI(context_, "\t: totalRectAngles %ld, rectAnglesPerCore %d, outHWrectAngles %d", tilingData->totalRectAngles,
+            tilingData->rectAnglesPerCore, tilingData->outHWrectAngles);
+    OP_LOGI(context_, "\t: inputBufferSize %d, outputBufferSize %d", tilingData->inputBufferSize,
+            tilingData->outputBufferSize);
 }
 
 void Im2ColTiling::ShowNHWCTilingData()
 {
     ShowBaseTilingData();
     auto tilingData = context_->GetTilingData<Im2ColNHWCTilingData>();
-    OP_LOGI(
-        context_, "tiling data: ubFactorC %d, ubFactorW %d, ubFactorH %d, ubFactorN %d", tilingData->ubFactorC,
-        tilingData->ubFactorW, tilingData->ubFactorH, tilingData->ubFactorN);
-    OP_LOGI(
-        context_, "\t: convKernelNumInWidth %ld, convKernelNumInHeight %ld", tilingData->convKernelNumInWidth,
-        tilingData->convKernelNumInHeight);
+    OP_LOGI(context_, "tiling data: ubFactorC %d, ubFactorW %d, ubFactorH %d, ubFactorN %d", tilingData->ubFactorC,
+            tilingData->ubFactorW, tilingData->ubFactorH, tilingData->ubFactorN);
+    OP_LOGI(context_, "\t: convKernelNumInWidth %ld, convKernelNumInHeight %ld", tilingData->convKernelNumInWidth,
+            tilingData->convKernelNumInHeight);
     OP_LOGI(context_, "\t: totalLines %ld, linesPerCore %d", tilingData->totalLines, tilingData->linesPerCore);
     OP_LOGI(context_, "\t: outputBufferSize %d", tilingData->outputBufferSize);
 }
@@ -244,13 +234,11 @@ void Im2ColTiling::ShowSIMTTilingData()
 {
     ShowBaseTilingData();
     auto tilingData = context_->GetTilingData<Im2ColSIMTTilingData>();
-    OP_LOGI(
-        context_, "tiling data: convKernelNumInHeight %ld, convKernelNumInWidth %ld", tilingData->convKernelNumInHeight,
-        tilingData->convKernelNumInWidth);
-    OP_LOGI(
-        context_, "\t: realCoreNum %ld, blockFactor %d, blockTailFactor: %u, mainCoreNum %d, threadNum %d",
-        tilingData->realCoreNum, tilingData->blockFactor, tilingData->blockTailFactor, tilingData->mainCoreNum,
-        tilingData->threadNum);
+    OP_LOGI(context_, "tiling data: convKernelNumInHeight %ld, convKernelNumInWidth %ld",
+            tilingData->convKernelNumInHeight, tilingData->convKernelNumInWidth);
+    OP_LOGI(context_, "\t: realCoreNum %ld, blockFactor %d, blockTailFactor: %u, mainCoreNum %d, threadNum %d",
+            tilingData->realCoreNum, tilingData->blockFactor, tilingData->blockTailFactor, tilingData->mainCoreNum,
+            tilingData->threadNum);
 }
 
 ge::graphStatus Im2ColTiling::CheckKSizes(const gert::RuntimeAttrs* attrs)
@@ -285,9 +273,8 @@ ge::graphStatus Im2ColTiling::CheckDilations(const gert::RuntimeAttrs* attrs)
     return ge::GRAPH_SUCCESS;
 }
 
-static int64_t CalcNeedPadding(
-    const int64_t inputSize, const int64_t effectSize, const int64_t stride, int64_t& paddingBefore,
-    int64_t& paddingAfter)
+static int64_t CalcNeedPadding(const int64_t inputSize, const int64_t effectSize, const int64_t stride,
+                               int64_t& paddingBefore, int64_t& paddingAfter)
 {
     int64_t outputSize = Ops::Base::CeilDiv(inputSize, stride);
     int64_t needPadding = std::max(0L, (outputSize - 1) * stride + effectSize - inputSize);
@@ -319,8 +306,8 @@ ge::graphStatus Im2ColTiling::CheckPadding(const gert::RuntimeAttrs* attrs)
         CalcNeedPadding(input_.W, effectW_, input_.wStride, input_.wPaddingBefore, input_.wPaddingAfter);
     } else {
         std::string reasonMsg = "The value of mode must be in [CALCULATED , SYMMETRIC and VALID].";
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "mode", std::string(mode).c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "mode", std::string(mode).c_str(),
+                                              reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -339,8 +326,8 @@ ge::graphStatus Im2ColTiling::ParamCheck()
     dSize_ = ge::GetSizeByDataType(inputDataType);
     if (dSize_ <= 0) {
         std::string reasonMsg = "The size of inputDataType must be greater than 0.";
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            context_->GetNodeName(), "inputDataType", std::to_string(dSize_).c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "inputDataType", std::to_string(dSize_).c_str(),
+                                              reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -351,8 +338,8 @@ ge::graphStatus Im2ColTiling::ParamCheck()
     // 获取 N/C/H/W
     auto storageShape = inputShape->GetStorageShape();
     inputFormat_ = inputValueDesc->GetStorageFormat();
-    auto ret = Ops::Math::GetImgDataDimsByNCHWOrder(
-        context_, "x", storageShape, inputFormat_, input_.N, input_.C, input_.H, input_.W);
+    auto ret = Ops::Math::GetImgDataDimsByNCHWOrder(context_, "x", storageShape, inputFormat_, input_.N, input_.C,
+                                                    input_.H, input_.W);
     OP_CHECK_IF(ret == ge::GRAPH_FAILED, OP_LOGE(context_, "Param check failed"), return ge::GRAPH_FAILED);
 
     // 校验属性值是否合法
@@ -366,8 +353,8 @@ ge::graphStatus Im2ColTiling::ParamCheck()
     OP_CHECK_IF(ret == ge::GRAPH_FAILED, OP_LOGE(context_, "Param check failed"), return ge::GRAPH_FAILED);
     ret = CheckPadding(attrs);
     OP_CHECK_IF(ret == ge::GRAPH_FAILED, OP_LOGE(context_, "Param check failed"), return ge::GRAPH_FAILED);
-    isPadding_ =
-        input_.hPaddingBefore > 0 || input_.hPaddingAfter > 0 || input_.wPaddingBefore > 0 || input_.wPaddingAfter > 0;
+    isPadding_ = input_.hPaddingBefore > 0 || input_.hPaddingAfter > 0 || input_.wPaddingBefore > 0 ||
+                 input_.wPaddingAfter > 0;
 
     OP_LOGI(context_, "effect HW is (%ld, %ld), padded HW is (%ld, %ld)", effectH_, effectW_, paddedH_, paddedW_);
     return ge::GRAPH_SUCCESS;
@@ -412,10 +399,11 @@ std::tuple<int32_t, int32_t> Im2ColTiling::NCHWCalcBufSize(int32_t validBufSize)
     // 当有需要考虑的左pad时，最大输入长度为 burstLen 拆分为左pad部分和剩余部分，两部分均block对齐
     // 则最大为对齐block后再加一个block： (ceil(burstLen / block) + 1) * block
     int64_t inputWRectOffset = rectW * input_.wStride;
-    int64_t lastLeftPadEnd =
-        input_.wPaddingBefore == 0 ? 0 : Ops::Base::FloorAlign(input_.wPaddingBefore, inputWRectOffset) + inputW;
-    int64_t alignBurstLen =
-        lastLeftPadEnd <= input_.wPaddingBefore ? AlignBlock(inputW) : AlignBlock(inputW + ubBlockElements_);
+    int64_t lastLeftPadEnd = input_.wPaddingBefore == 0 ?
+                                 0 :
+                                 Ops::Base::FloorAlign(input_.wPaddingBefore, inputWRectOffset) + inputW;
+    int64_t alignBurstLen = lastLeftPadEnd <= input_.wPaddingBefore ? AlignBlock(inputW) :
+                                                                      AlignBlock(inputW + ubBlockElements_);
     // 一行有几个分组
     int64_t groupCnt = groupW >= gatherVRegElements_ ?
                            1 :
@@ -536,8 +524,8 @@ bool Im2ColTiling::NCHWTryUnFullLoad(int32_t validBufSize)
     // 计算输出行数，输出的每一行需要Block对齐
     tilingData->ubFactorH = tilingData->outputBufferSize / dSize_ / AlignBlock(tilingData->ubFactorW);
     // 对齐out_h，防止跨NC
-    tilingData->ubFactorH =
-        static_cast<int32_t>(std::min(static_cast<int64_t>(tilingData->ubFactorH), convKernelSize_));
+    tilingData->ubFactorH = static_cast<int32_t>(
+        std::min(static_cast<int64_t>(tilingData->ubFactorH), convKernelSize_));
     int64_t rectCntH;
     if (tilingData->ubFactorH > groupH) {
         tilingData->ubFactorH = Ops::Base::FloorAlign(tilingData->ubFactorH, static_cast<int32_t>(groupH));
@@ -551,9 +539,9 @@ bool Im2ColTiling::NCHWTryUnFullLoad(int32_t validBufSize)
     // ceil(rect_h / out_h)
     tilingData->ubFactorNC = Ops::Base::CeilDiv(static_cast<int64_t>(tilingData->ubFactorH), convKernelSize_);
     // 输入一行的长度，截取到group大小来算
-    tilingData->w4ubFactorW = static_cast<int32_t>(NCHWCalcBurstLen(
-        std::min(static_cast<int64_t>(tilingData->ubFactorW), groupW),
-        std::min(static_cast<int64_t>(tilingData->ubFactorH), groupH)));
+    tilingData->w4ubFactorW = static_cast<int32_t>(
+        NCHWCalcBurstLen(std::min(static_cast<int64_t>(tilingData->ubFactorW), groupW),
+                         std::min(static_cast<int64_t>(tilingData->ubFactorH), groupH)));
     // ceil(rect_w / group_w)，跨几个group
     tilingData->lines4ubFactorW = Ops::Base::CeilDiv(static_cast<int64_t>(tilingData->ubFactorW), groupW);
     // ceil(rect_h / group_h)，跨几个group
@@ -587,8 +575,8 @@ ge::graphStatus Im2ColTiling::Tiling4NCHW()
     tilingData->convKernelNumInWidth = convKernelNumInWidth_;
     tilingData->convKernelNumInHeight = convKernelNumInHeight_;
     // 设置核数
-    tilingData->rectAnglesPerCore =
-        static_cast<int32_t>(Ops::Base::CeilDiv(tilingData->totalRectAngles, static_cast<int64_t>(coreNum_)));
+    tilingData->rectAnglesPerCore = static_cast<int32_t>(
+        Ops::Base::CeilDiv(tilingData->totalRectAngles, static_cast<int64_t>(coreNum_)));
     realCoreNum_ = static_cast<uint32_t>(
         Ops::Base::CeilDiv(tilingData->totalRectAngles, static_cast<int64_t>(tilingData->rectAnglesPerCore)));
 
@@ -612,23 +600,23 @@ void Im2ColTiling::NHWCSetTilingData(Im2ColNHWCTilingData* tilingData, const int
         Ops::Base::CeilDiv(tilingData->totalLines, static_cast<int64_t>(tilingData->linesPerCore)));
 
     // 5. 计算输出缓冲区大小（适配新维度：N×HW×K×C）
-    tilingData->outputBufferSize = static_cast<int64_t>(
-        tilingData->ubFactorN * tilingData->ubFactorH * tilingData->ubFactorW * tilingData->ubFactorC * dSize_ *
-        NHWC_BUFFER_NUM);
+    tilingData->outputBufferSize = static_cast<int64_t>(tilingData->ubFactorN * tilingData->ubFactorH *
+                                                        tilingData->ubFactorW * tilingData->ubFactorC * dSize_ *
+                                                        NHWC_BUFFER_NUM);
 }
 
 ge::graphStatus Im2ColTiling::Tiling4NHWC()
 {
     auto tilingData = context_->GetTilingData<Im2ColNHWCTilingData>();
     uint64_t UB_SIZE_LIMIT = std::min(ubSize_ / NHWC_BUFFER_NUM, NHWC_MIN_BUFFER_SIZE); // 64KB
-    auto remainingElem = static_cast<int64_t>(UB_SIZE_LIMIT / dSize_);                  // 剩余UB元素数，初始为最大值
+    auto remainingElem = static_cast<int64_t>(UB_SIZE_LIMIT / dSize_); // 剩余UB元素数，初始为最大值
 
     int64_t ubfactorAlign[4] = {1, convKernelNumInWidth_, input_.wKernelSize, ubBlockElements_}; // 0:N 1:W 2:Kw 3:C 32b
     int64_t ubfactor[4] = {1, 1, 1, 1}; // 对应索引：0=N 1=HW 2=Kw 3=C，初始全为1
     int64_t dimValuesAlign[4] = {input_.N, convKernelNum_, convKernelSize_, AlignBlock(input_.C)}; // 各维度判断条件
     size_t dim = std::size(dimValuesAlign);
-    int64_t ubAxises[4] = {
-        TPL_UB_AXIS_NHWC_N, TPL_UB_AXIS_NHWC_H, TPL_UB_AXIS_NHWC_W, TPL_UB_AXIS_NHWC_C}; // 各维度对应的ubAxis_值
+    int64_t ubAxises[4] = {TPL_UB_AXIS_NHWC_N, TPL_UB_AXIS_NHWC_H, TPL_UB_AXIS_NHWC_W,
+                           TPL_UB_AXIS_NHWC_C}; // 各维度对应的ubAxis_值
     tilingData->totalLines = 1;
 
     for (int i = dim - 1; i >= 0; i--) { //    3=C→2=Kw→1=HW→0=N
@@ -646,8 +634,8 @@ ge::graphStatus Im2ColTiling::Tiling4NHWC()
                 tilingData->totalLines = Ops::Base::CeilDiv(currDimValue, ubfactor[i]);
             } else {
                 ubfactor[i] = remainingElem;
-                tilingData->totalLines =
-                    Ops::Base::CeilDiv(currAlign, ubfactor[i]) * Ops::Base::CeilDiv(currDimValue, currAlign);
+                tilingData->totalLines = Ops::Base::CeilDiv(currAlign, ubfactor[i]) *
+                                         Ops::Base::CeilDiv(currDimValue, currAlign);
             }
             ubAxis_ = currUbAxis; // 替换为ubAxis_
             for (int j = 0; j < i; j++) {
@@ -690,8 +678,8 @@ ge::graphStatus Im2ColTiling::Tiling4SIMT()
     uint64_t cores = std::min(static_cast<uint64_t>(coreNum_), alignEleBlockCount);
     if (cores == 0) {
         std::string reasonMsg = "The value of realCoreNum cannot be 0.";
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "realCoreNum", std::to_string(cores).c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "realCoreNum", std::to_string(cores).c_str(),
+                                              reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     tilingData->realCoreNum = static_cast<uint64_t>(cores);
@@ -724,11 +712,11 @@ ge::graphStatus Im2ColTiling::Tiling4Format()
     if (inputFormat_ == ge::FORMAT_NHWC) {
         return Tiling4NHWC();
     }
-    std::string reasonMsg =
-        "When the shapeSize greater than MAX_SHAPE_SIZE_FOR_SIMT, the value of inputFormat must be in [NCHW and "
-        "NHWC].";
-    OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(
-        context_->GetNodeName(), "inputFormat", Ops::Base::ToString(inputFormat_).c_str(), reasonMsg.c_str());
+    std::string reasonMsg = "When the shapeSize is greater than MAX_SHAPE_SIZE_FOR_SIMT, the value of inputFormat must "
+                            "be in [NCHW and "
+                            "NHWC].";
+    OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(context_->GetNodeName(), "inputFormat",
+                                            Ops::Base::ToString(inputFormat_).c_str(), reasonMsg.c_str());
     return ge::GRAPH_FAILED;
 }
 
@@ -757,13 +745,12 @@ ge::graphStatus Im2ColTiling::InferOut()
     convKernelNumInWidth_ = (paddedW_ - effectW_) / input_.wStride + 1;
     convKernelNumInHeight_ = (paddedH_ - effectH_) / input_.hStride + 1;
     if (convKernelNumInWidth_ <= 0 || convKernelNumInHeight_ <= 0) {
-        std::string shapeMsg =
-            std::to_string(convKernelNumInWidth_) + "," + std::to_string(convKernelNumInHeight_);
-        std::string reasonMsg =
-            "The value of the calculated shape of the array of sliding blocks must be greater than 0.";
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "convKernelNumInWidth_ and convKernelNumInHeight_", shapeMsg.c_str(),
-            reasonMsg.c_str());
+        std::string shapeMsg = std::to_string(convKernelNumInWidth_) + "," + std::to_string(convKernelNumInHeight_);
+        std::string
+            reasonMsg = "The value of the calculated shape of the array of sliding blocks must be greater than 0.";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(),
+                                              "convKernelNumInWidth_ and convKernelNumInHeight_", shapeMsg.c_str(),
+                                              reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     convKernelNum_ = convKernelNumInWidth_ * convKernelNumInHeight_; // 输出W

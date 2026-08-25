@@ -92,8 +92,8 @@ ge::graphStatus MaskedSelectV3IsRegbaseSocVersionTiling::Init()
     dataType = tilingContext->GetInputDesc(0)->GetDataType();
     sizeOfDataType = ge::GetSizeByDataType(dataType);
     if (sizeOfDataType == 0u) {
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "x",
-            Ops::Base::ToString(dataType).c_str(), "The dtype size of x must be greater than 0");
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "x", Ops::Base::ToString(dataType).c_str(),
+                                              "The dtype size of x must be greater than 0");
         return ge::GRAPH_FAILED;
     }
     // 一个block存放的元素
@@ -103,7 +103,8 @@ ge::graphStatus MaskedSelectV3IsRegbaseSocVersionTiling::Init()
     totalLength = EnsureNotScalar(tilingContext->GetInputShape(0)->GetStorageShape()).GetShapeSize();
     if (totalLength == 0UL) {
         OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(tilingContext->GetNodeName(), "x",
-            std::to_string(totalLength).c_str(), "input shape_size must be greater than 0");
+                                                  std::to_string(totalLength).c_str(),
+                                                  "input shape_size must be greater than 0");
         return ge::GRAPH_FAILED;
     }
     totalLengthAlignedWithBlock = ((totalLength + alignNum - 1UL) / alignNum) * alignNum;
@@ -124,8 +125,7 @@ ge::graphStatus MaskedSelectV3IsRegbaseSocVersionTiling::Init()
     tilingKey = sizeOfDataType;
     tilingContext->SetTilingKey(tilingKey);
     OP_CHECK_IF(tilingContext->SetScheduleMode(1) != ge::GRAPH_SUCCESS,
-                OP_LOGE(tilingContext->GetNodeName(), "Failed to set ScheduleMode!"),
-                return ge::GRAPH_FAILED);
+                OP_LOGE(tilingContext->GetNodeName(), "Failed to set ScheduleMode!"), return ge::GRAPH_FAILED);
     // 切分流程
     formerNum = totalLength % numBlocks;
     if (formerNum == 0UL) {
@@ -162,7 +162,7 @@ ge::graphStatus MaskedSelectV3IsRegbaseSocVersionTiling::RunKernelTiling()
     if (!(storageShape0 == storageShape1)) {
         std::string shapesStr = Shape2String(storageShape0) + " and " + Shape2String(storageShape1);
         OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x, mask", shapesStr.c_str(),
-            "The shapes of x, mask must be the same");
+                                               "The shapes of x, mask must be the same");
         return ge::GRAPH_FAILED;
     }
     tiling.set_formerNum(formerNum);
@@ -184,8 +184,8 @@ ge::graphStatus MaskedSelectV3IsRegbaseSocVersionTiling::RunKernelTiling()
         1); // 通过框架获取workspace的指针，GetWorkspaces入参所需workspace的块数。当前限制使用一块。
     size_t usrSize = totalLengthAlignedWithBlock * sizeOfDataType + numBlocks * 64UL;
     OP_LOGD(tilingContext->GetNodeName(), "usrWorkspaceSize: %lu.", usrSize);
-    currentWorkspace[0] =
-        usrSize + sysWorkspaceSize; // 设置总的workspace的数值大小，总的workspace空间框架来申请并管理。
+    currentWorkspace[0] = usrSize +
+                          sysWorkspaceSize; // 设置总的workspace的数值大小，总的workspace空间框架来申请并管理。
     TilingDataPrint();
     OP_LOGD(tilingContext->GetNodeName(), "Tiling end.");
     return ge::GRAPH_SUCCESS;
@@ -212,7 +212,7 @@ ge::graphStatus TilingForMaskedSelectV3IsRegbaseSocVersion(gert::TilingContext* 
         return ge::GRAPH_FAILED;
     }
     if (tilingObject.Init() != ge::GRAPH_SUCCESS) {
-        OP_LOGE(context->GetNodeName(), "Init tiling object return failed.");
+        OP_LOGE(context->GetNodeName(), "Init tiling object returned failed.");
         return ge::GRAPH_FAILED;
     }
     return tilingObject.RunKernelTiling();

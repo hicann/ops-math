@@ -184,8 +184,8 @@ ge::graphStatus MaskedSelectV3Tiling::RunKernelTiling()
         1); // 通过框架获取workspace的指针，GetWorkspaces入参所需workspace的块数。当前限制使用一块。
     size_t usrSize = totalLengthAlignedWithBlock * sizeOfDataType + numBlocks * 64u;
     OP_LOGD(tilingContext->GetNodeName(), "usrWorkspaceSize: %lu.", usrSize);
-    currentWorkspace[0] =
-        usrSize + sysWorkspaceSize; // 设置总的workspace的数值大小，总的workspace空间框架来申请并管理。
+    currentWorkspace[0] = usrSize +
+                          sysWorkspaceSize; // 设置总的workspace的数值大小，总的workspace空间框架来申请并管理。
     TilingDataPrint();
     OP_LOGD(tilingContext->GetNodeName(), "Tiling end.");
     return ge::GRAPH_SUCCESS;
@@ -216,7 +216,7 @@ ge::graphStatus TilingForMaskedSelectV3(gert::TilingContext* context)
     }
     MaskedSelectV3Tiling tilingObject(context);
     if (tilingObject.Init() != ge::GRAPH_SUCCESS) {
-        OP_LOGE(context->GetNodeName(), "Init tiling object return failed.");
+        OP_LOGE(context->GetNodeName(), "Init tiling object returned failed.");
         return ge::GRAPH_FAILED;
     }
     return tilingObject.RunKernelTiling();

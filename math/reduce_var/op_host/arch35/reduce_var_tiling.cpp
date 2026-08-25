@@ -470,7 +470,7 @@ ge::graphStatus ReduceVarTiling::DoTilingMatchPattern(uint64_t* shape, int32_t s
         case Ops::Base::ReduceOpTmpl::CONST9:
             return ComputeTiling<Ops::Base::ReduceOpTmpl::__reducePattern::ARARARARA>(shape);
         default:
-            OP_LOGE(context_->GetNodeName(), "unsupport pattern");
+            OP_LOGE(context_->GetNodeName(), "unsupported pattern");
             return ge::GRAPH_FAILED;
     }
 }
@@ -1040,7 +1040,7 @@ ge::graphStatus ReduceVarTiling::ComputeTiling(uint64_t* shape)
     // 先计算cacheline切分, 再进行basicBlock_和resultBlock_的计算
     ComputeCacheLineBlockAndUnit<Pattern>(shape);
     OP_CHECK_IF((CalcBasicBlock<Pattern>() == ge::GRAPH_FAILED),
-                OP_LOGE(context_->GetNodeName(), "calc basic block failed, maybe unsupport ubsize"),
+                OP_LOGE(context_->GetNodeName(), "calc basic block failed, maybe unsupported ubsize"),
                 return ge::GRAPH_FAILED);
 
     ComputeUnitA<Pattern>(shape);

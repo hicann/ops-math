@@ -38,15 +38,14 @@ static constexpr size_t SUPPORTED_DIM_NUM = 4;
 static const std::map<char, size_t> NHWC_INPUT_IDX_MAP{{'N', 0}, {'H', 1}, {'W', 2}, {'C', 3}};
 static const std::map<char, size_t> NCHW_INPUT_IDX_MAP{{'N', 0}, {'C', 1}, {'H', 2}, {'W', 3}};
 
-static inline bool IsOutShapeInvalid(int64_t in, int64_t out)
-{
-    return (in > 0) && (out <= 0);
-}
+static inline bool IsOutShapeInvalid(int64_t in, int64_t out) { return (in > 0) && (out <= 0); }
 
-static ge::graphStatus InferShape4Im2colCalcOut(
-    gert::InferShapeContext* context, const gert::Shape* shapeIn, gert::Shape* shapeOut, const Format dataFormat,
-    const std::array<int64_t, 2>& ksizes, const std::array<int64_t, 2>& strides,
-    const std::array<int64_t, 2>& dilations, const std::string_view paddingMode)
+static ge::graphStatus InferShape4Im2colCalcOut(gert::InferShapeContext* context, const gert::Shape* shapeIn,
+                                                gert::Shape* shapeOut, const Format dataFormat,
+                                                const std::array<int64_t, 2>& ksizes,
+                                                const std::array<int64_t, 2>& strides,
+                                                const std::array<int64_t, 2>& dilations,
+                                                const std::string_view paddingMode)
 {
     auto [ret, shapeNCHW] = Ops::Math::GetImgDataDimsByNCHWOrder(context, "x", *shapeIn, dataFormat);
     OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "Get input shape failed"), return ret);
@@ -80,9 +79,8 @@ static ge::graphStatus InferShape4Im2colCalcOut(
 
     OP_CHECK_IF(
         (IsOutShapeInvalid(inH, outH) || IsOutShapeInvalid(inW, outW)),
-        OP_LOGE(
-            context, "The calculated shape of the array of sliding blocks is (%ld, %ld), which must be positive", outH,
-            outW),
+        OP_LOGE(context, "The calculated shape of the array of sliding blocks is (%ld, %ld), which must be positive",
+                outH, outW),
         return ge::GRAPH_FAILED);
 
     outC = (inC == -1) ? -1 : inC * kernelH * kernelW;
@@ -98,7 +96,7 @@ static ge::graphStatus InferShape4Im2colCalcOut(
 
 static graphStatus InferShape4Im2col(gert::InferShapeContext* context)
 {
-    OP_LOGD(context, "Im2col infershape funtion start!");
+    OP_LOGD(context, "Im2col infershape function start!");
     // Get input desc
     const gert::CompileTimeTensorDesc* tensorDescIn = context->GetInputDesc(X_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context, tensorDescIn);
@@ -133,9 +131,9 @@ static graphStatus InferShape4Im2col(gert::InferShapeContext* context)
     const char* attrPaddingMode = attrs->GetStr(ATTR_IDX_PADDING_MODE);
     OP_CHECK_NULL_WITH_CONTEXT(context, attrPaddingMode);
     const std::string_view paddingMode = std::string_view(attrPaddingMode);
-    OP_CHECK_IF(
-        paddingMode != "VALID" && paddingMode != "SAME" && paddingMode != "CALCULATED",
-        OP_LOGE(context, "The padding_mode only support VALID, SAME and CALCULATED."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(paddingMode != "VALID" && paddingMode != "SAME" && paddingMode != "CALCULATED",
+                OP_LOGE(context, "The padding_mode only supports VALID, SAME and CALCULATED."),
+                return ge::GRAPH_FAILED);
 
     // Get input shape
     const gert::Shape* shapeIn = context->GetInputShape(X_IDX);

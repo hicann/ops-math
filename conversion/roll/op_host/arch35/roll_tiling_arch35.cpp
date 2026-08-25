@@ -136,7 +136,7 @@ ge::graphStatus RollTilingClass::CheckAndGetInputParam()
     }
 
     totalEmelents_ = xShape.GetShapeSize();
-    OP_LOGD(context_, "total emelents is: %ld.", totalEmelents_);
+    OP_LOGD(context_, "total elements is: %ld.", totalEmelents_);
     dtypeSize_ = static_cast<int64_t>(ge::GetSizeByDataType(context_->GetInputDesc(INPUT_X_IDX)->GetDataType()));
     OP_LOGD(context_, "Input x dtype size is: %ld.", dtypeSize_);
 
@@ -611,8 +611,8 @@ void RollTilingClass::PrintTiling() const
         OP_LOGD(
             context_,
             "Roll tilingData->MoveParam: mte3Count = %ld, srcOffset[%ld] = %ld, blockCount[%ld] = %ld, blockLen[%ld] = "
-            "%ld"
-            "srcStride[%ld] = %ld, dstOffeset[%ld] = %ld",
+            "%ld, "
+            "srcStride[%ld] = %ld, dstOffset[%ld] = %ld",
             tilingData_->moveparam.mte3Count, i, tilingData_->moveparam.srcOffset[i], i,
             tilingData_->moveparam.blockCount[i], i, tilingData_->moveparam.blockLen[i], i,
             tilingData_->moveparam.srcStride[i], i, tilingData_->moveparam.dstOffset[i]);
@@ -639,7 +639,7 @@ ge::graphStatus RollTilingArch35(gert::TilingContext* context)
     const RollCompileInfoArch35* compile_info = reinterpret_cast<const RollCompileInfoArch35*>(
         context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
-    OP_LOGD(context->GetNodeName(), "runing regbase soc version tiling func");
+    OP_LOGD(context->GetNodeName(), "running regbase soc version tiling func");
     RollTilingClass tiling(context);
     return tiling.DoTiling();
 }

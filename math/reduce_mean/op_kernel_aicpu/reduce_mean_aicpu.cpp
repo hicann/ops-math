@@ -62,7 +62,7 @@ uint32_t ReduceMeanCpuKernel::Compute(CpuKernelContext& ctx)
         auto axes_data = static_cast<int64_t*>(axes_tensor->GetData());
         GetValueFromData<int64_t>(axes_data, axes_tensor->NumElements(), axes);
     } else {
-        KERNEL_LOG_ERROR("axes type[%d] not support, only support DT_INT32 or DT_INT64.", axes_type);
+        KERNEL_LOG_ERROR("axes type[%d] not supported, only supports DT_INT32 or DT_INT64.", axes_type);
         return KERNEL_STATUS_PARAM_INVALID;
     }
     auto input_dtype = ctx.Input(kXIdx)->GetDataType();
@@ -70,7 +70,7 @@ uint32_t ReduceMeanCpuKernel::Compute(CpuKernelContext& ctx)
     if (func != kreduce_mean_calls.end()) {
         return (func->second)(&ctx, axes);
     } else {
-        KERNEL_LOG_ERROR("input[0] type[%d] not support", input_dtype);
+        KERNEL_LOG_ERROR("input[0] type[%d] not supported", input_dtype);
         return KERNEL_STATUS_PARAM_INVALID;
     }
 }

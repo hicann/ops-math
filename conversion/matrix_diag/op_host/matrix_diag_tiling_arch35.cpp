@@ -62,8 +62,8 @@ std::string MatrixDiagTiling::PrintTilingData()
         tdStr += std::to_string(tilingDataLarge_.blockFactor) + ",";
         tdStr += std::to_string(tilingDataLarge_.blockTailFactor) + ",";
         tdStr += std::to_string(tilingDataLarge_.blockMainCount) + ",";
-    } else if (
-        tilingKey_ == ::MatrixDiagAsc::TILING_SCATTER_HIGH || tilingKey_ == ::MatrixDiagAsc::TILING_SCATTER_LOW) {
+    } else if (tilingKey_ == ::MatrixDiagAsc::TILING_SCATTER_HIGH ||
+               tilingKey_ == ::MatrixDiagAsc::TILING_SCATTER_LOW) {
         tdStr += std::to_string(tilingDataScatter_.realCoreNum) + ",";
         tdStr += std::to_string(tilingDataScatter_.batchSize) + ",";
         tdStr += std::to_string(tilingDataScatter_.nSize) + ",";
@@ -87,9 +87,8 @@ ge::graphStatus MatrixDiagTiling::SetTilingStruct(T& tilingSturct)
     OP_CHECK_NULL_WITH_CONTEXT(context_, ptrData);
     void* ptrStruct = static_cast<void*>(&tilingSturct);
     OP_CHECK_NULL_WITH_CONTEXT(context_, ptrStruct);
-    OP_CHECK_IF(
-        memcpy_s(ptrData, capSize, ptrStruct, sizeof(tilingSturct)) != 0,
-        OP_LOGE(context_->GetNodeName(), "Set tiling data is failed!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memcpy_s(ptrData, capSize, ptrStruct, sizeof(tilingSturct)) != 0,
+                OP_LOGE(context_->GetNodeName(), "Set tiling data failed!"), return ge::GRAPH_FAILED);
     ptrTD->SetDataSize(sizeof(tilingSturct));
     return ge::GRAPH_SUCCESS;
 }
@@ -98,27 +97,27 @@ ge::graphStatus MatrixDiagTiling::SetTilingData()
 {
     switch (tilingKey_) {
         case ::MatrixDiagAsc::TILING_PURE_COPY:
-            OP_CHECK_IF(
-                SetTilingStruct<::MatrixDiagAsc::MatrixDiagPureCopyTilingData>(tilingDataPureCopy_) !=
-                    ge::GRAPH_SUCCESS,
-                OP_LOGE(context_->GetNodeName(), "Set pure copy tiling struct is failed!"), return ge::GRAPH_FAILED);
+            OP_CHECK_IF(SetTilingStruct<::MatrixDiagAsc::MatrixDiagPureCopyTilingData>(tilingDataPureCopy_) !=
+                            ge::GRAPH_SUCCESS,
+                        OP_LOGE(context_->GetNodeName(), "Set pure copy tiling struct failed!"),
+                        return ge::GRAPH_FAILED);
             break;
         case ::MatrixDiagAsc::TILING_SIMT:
             OP_CHECK_IF(
                 SetTilingStruct<::MatrixDiagAsc::MatrixDiagSimtTilingData>(tilingDataSimt_) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context_->GetNodeName(), "Set simt tiling struct is failed!"), return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "Set simt tiling struct failed!"), return ge::GRAPH_FAILED);
             break;
         case ::MatrixDiagAsc::TILING_SCATTER_LARGE:
-            OP_CHECK_IF(
-                SetTilingStruct<::MatrixDiagAsc::MatrixDiagScatterLargeTilingData>(tilingDataLarge_) !=
-                    ge::GRAPH_SUCCESS,
-                OP_LOGE(context_->GetNodeName(), "Set scatterLarge tiling struct is failed!"), return ge::GRAPH_FAILED);
+            OP_CHECK_IF(SetTilingStruct<::MatrixDiagAsc::MatrixDiagScatterLargeTilingData>(tilingDataLarge_) !=
+                            ge::GRAPH_SUCCESS,
+                        OP_LOGE(context_->GetNodeName(), "Set scatterLarge tiling struct failed!"),
+                        return ge::GRAPH_FAILED);
             break;
         case ::MatrixDiagAsc::TILING_SCATTER_HIGH:
         case ::MatrixDiagAsc::TILING_SCATTER_LOW:
             OP_CHECK_IF(
                 SetTilingStruct<::MatrixDiagAsc::MatrixDiagScatterTilingData>(tilingDataScatter_) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context_->GetNodeName(), "Set scatterHigh tiling struct is failed!"), return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "Set scatterHigh tiling struct failed!"), return ge::GRAPH_FAILED);
             break;
         default:
             return ge::GRAPH_SUCCESS;
@@ -129,16 +128,13 @@ ge::graphStatus MatrixDiagTiling::SetTilingData()
 
 ge::graphStatus MatrixDiagTiling::WriteTilingData()
 {
-    OP_CHECK_IF(
-        context_->SetTilingKey(tilingKey_) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "Set tiling key is failed!"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        context_->SetBlockDim(static_cast<uint32_t>(compileInfo_->coreNum)) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "Set used core size is failed!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(context_->SetTilingKey(tilingKey_) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "Set tiling key failed!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(context_->SetBlockDim(static_cast<uint32_t>(compileInfo_->coreNum)) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "Set used core size failed!"), return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        SetTilingData() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "set tiling data failed!"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(SetTilingData() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "set tiling data failed!"),
+                return ge::GRAPH_FAILED);
     size_t totalWorkspaceSize = SYS_WORKSPACE_SIZE;
     size_t* ptrWS = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, ptrWS);
@@ -172,16 +168,16 @@ void MatrixDiagTiling::CalcScatterLowTilingData()
     int64_t coreNum = compileInfo_->coreNum;
     int64_t batchSize = fusedShape_[0];
     int64_t nSize = fusedShape_[1];
-    int64_t ubEleNum =
-        (xDtypeSize_ == 1) ? B8_MAX_SIZE / (nSize + 1) : (((ubSize_ - VL_LEN) / BASE_2) / (nSize + 1)) / xDtypeSize_;
+    int64_t ubEleNum = (xDtypeSize_ == 1) ? B8_MAX_SIZE / (nSize + 1) :
+                                            (((ubSize_ - VL_LEN) / BASE_2) / (nSize + 1)) / xDtypeSize_;
     tilingDataScatter_.batchUbFactor = ubEleNum / nSize;
     tilingDataScatter_.batchUbCount = Ops::Base::CeilDiv(batchSize, tilingDataScatter_.batchUbFactor);
     if (tilingDataScatter_.batchUbCount < coreNum) {
         tilingDataScatter_.batchUbFactor = Ops::Base::CeilDiv(batchSize, coreNum);
         tilingDataScatter_.batchUbCount = Ops::Base::CeilDiv(batchSize, tilingDataScatter_.batchUbFactor);
     }
-    tilingDataScatter_.batchUbTailFactor =
-        batchSize - (tilingDataScatter_.batchUbCount - 1) * tilingDataScatter_.batchUbFactor;
+    tilingDataScatter_.batchUbTailFactor = batchSize -
+                                           (tilingDataScatter_.batchUbCount - 1) * tilingDataScatter_.batchUbFactor;
     tilingDataScatter_.nSize = nSize;
     tilingDataScatter_.batchSize = batchSize;
     int64_t blockCount = std::min(tilingDataScatter_.batchUbCount, coreNum);
@@ -223,16 +219,16 @@ void MatrixDiagTiling::CalcScatterHighTilingData()
     int64_t batchSize = fusedShape_[0];
     int64_t nSize = fusedShape_[1];
     int64_t halfUbEleNum = (xDtypeSize_ == 1) ? B8_MAX_SIZE : (ubSize_ - VL_LEN) / BASE_2 / xDtypeSize_;
-    int64_t ubEleNum =
-        (xDtypeSize_ == 1) ? std::sqrt(B8_MAX_SIZE) : (std::sqrt(1 + BASE_4 * halfUbEleNum) - 1) / BASE_2;
+    int64_t ubEleNum = (xDtypeSize_ == 1) ? std::sqrt(B8_MAX_SIZE) :
+                                            (std::sqrt(1 + BASE_4 * halfUbEleNum) - 1) / BASE_2;
     tilingDataScatter_.batchUbFactor = ubEleNum / nSize;
     tilingDataScatter_.batchUbCount = Ops::Base::CeilDiv(batchSize, tilingDataScatter_.batchUbFactor);
-    tilingDataScatter_.batchUbTailFactor =
-        batchSize - (tilingDataScatter_.batchUbCount - 1) * tilingDataScatter_.batchUbFactor;
+    tilingDataScatter_.batchUbTailFactor = batchSize -
+                                           (tilingDataScatter_.batchUbCount - 1) * tilingDataScatter_.batchUbFactor;
     tilingDataScatter_.nSize = nSize;
     tilingDataScatter_.realCoreNum = std::min(tilingDataScatter_.batchUbCount, coreNum);
-    tilingDataScatter_.blockFactor =
-        Ops::Base::CeilDiv(tilingDataScatter_.batchUbCount, tilingDataScatter_.realCoreNum);
+    tilingDataScatter_.blockFactor = Ops::Base::CeilDiv(tilingDataScatter_.batchUbCount,
+                                                        tilingDataScatter_.realCoreNum);
     if (tilingDataScatter_.realCoreNum > 0) {
         tilingDataScatter_.blockMainCount = (tilingDataScatter_.batchUbCount % tilingDataScatter_.realCoreNum == 0) ?
                                                 tilingDataScatter_.realCoreNum :
@@ -258,12 +254,11 @@ void MatrixDiagTiling::SetBlockSplitInfo(int64_t batchBlockCnt, int64_t nBlockCn
 
     realCoreNum_ = mBlockCount_ * nBlockCount_;
 
-    OP_LOGI(
-        context_->GetNodeName(),
-        "Get block split TotalNum-BlockCnt-MainFactor-MainCnt-TailFactor, "
-        "Batch:%ld %ld %ld %ld %ld, N:%ld %ld %ld %ld %ld",
-        batchSize, mBlockCount_, mBlockFactor_, mBlockFactorCount_, mBlockFactorTail_, nSize, nBlockCount_,
-        nBlockFactor_, nBlockFactorCount_, nBlockFactorTail_);
+    OP_LOGI(context_->GetNodeName(),
+            "Get block split TotalNum-BlockCnt-MainFactor-MainCnt-TailFactor, "
+            "Batch:%ld %ld %ld %ld %ld, N:%ld %ld %ld %ld %ld",
+            batchSize, mBlockCount_, mBlockFactor_, mBlockFactorCount_, mBlockFactorTail_, nSize, nBlockCount_,
+            nBlockFactor_, nBlockFactorCount_, nBlockFactorTail_);
 }
 
 void MatrixDiagTiling::CalcPureCopyTilingData()
@@ -329,18 +324,16 @@ ge::graphStatus MatrixDiagTiling::GetInputShapeAndType()
     ge::DataType xDtype = xInputDesc->GetDataType();
     xDtypeSize_ = ge::GetSizeByDataType(xDtype);
     const gert::Shape& xInputShape = xInput->GetStorageShape();
-    OP_CHECK_IF(
-        xInputShape.GetDimNum() == 0,
-        OP_LOGE_FOR_INVALID_SHAPEDIM(
-            context_->GetNodeName(), "x", std::to_string(xInputShape.GetDimNum()).c_str(), "greater than 0"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(xInputShape.GetDimNum() == 0,
+                OP_LOGE_FOR_INVALID_SHAPEDIM(context_->GetNodeName(), "x",
+                                             std::to_string(xInputShape.GetDimNum()).c_str(), "greater than 0"),
+                return ge::GRAPH_FAILED);
     inputShape_ = xInputShape;
     FuseInputShape();
     OP_CHECK_IF(
         fusedShape_[0] == 0 || fusedShape_[1] == 0,
-        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
-            context_->GetNodeName(), "x", Ops::Base::ToString(inputShape_).c_str(),
-            "fused batch size and n size must both be non-zero"),
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "x", Ops::Base::ToString(inputShape_).c_str(),
+                                              "fused batch size and n size must both be non-zero"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -350,9 +343,8 @@ ge::graphStatus MatrixDiagTiling::DoTiling()
     compileInfo_ = reinterpret_cast<const MatrixDiagCompileInfo*>(context_->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfo_);
 
-    OP_CHECK_IF(
-        GetInputShapeAndType() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "Do tiling is failed!"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetInputShapeAndType() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "Do tiling failed!"),
+                return ge::GRAPH_FAILED);
     CalcTilingData();
     return WriteTilingData();
 }
@@ -360,10 +352,9 @@ ge::graphStatus MatrixDiagTiling::DoTiling()
 
 static ge::graphStatus Tiling4MatrixDiag(gert::TilingContext* context)
 {
-    OP_CHECK_IF(
-        context == nullptr,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("Tiling4MatrixDiag", "context", "nullptr", "must not be null"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(context == nullptr,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("Tiling4MatrixDiag", "context", "nullptr", "must not be null"),
+                return ge::GRAPH_FAILED);
 
     MatrixDiagAsc::MatrixDiagTiling op(context);
     return op.DoTiling();
@@ -380,38 +371,34 @@ static ge::graphStatus TilingPrepare4MatrixDiagAscendC(gert::TilingParseContext*
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
 
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->coreNum < 1),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context->GetNodeName(), "core num", std::to_string(compileInfo->coreNum).c_str(),
-            "must be greater than or equal to 1"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->coreNum < 1),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "core num",
+                                                      std::to_string(compileInfo->coreNum).c_str(),
+                                                      "must be greater than or equal to 1"),
+                return ge::GRAPH_FAILED);
 
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ubSize = static_cast<uint32_t>(ubSize);
-    OP_CHECK_IF(
-        (compileInfo->ubSize < 1),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context->GetNodeName(), "ub size", std::to_string(compileInfo->ubSize).c_str(),
-            "must be greater than or equal to 1"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->ubSize < 1),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ub size",
+                                                      std::to_string(compileInfo->ubSize).c_str(),
+                                                      "must be greater than or equal to 1"),
+                return ge::GRAPH_FAILED);
 
     compileInfo->clSize = Ops::Base::GetCacheLineSize(context);
-    OP_CHECK_IF(
-        (compileInfo->clSize < 1),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context->GetNodeName(), "cache line size", std::to_string(compileInfo->clSize).c_str(),
-            "must be greater than or equal to 1"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->clSize < 1),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "cache line size",
+                                                      std::to_string(compileInfo->clSize).c_str(),
+                                                      "must be greater than or equal to 1"),
+                return ge::GRAPH_FAILED);
 
     compileInfo->blockSize = Ops::Base::GetUbBlockSize(context);
-    OP_CHECK_IF(
-        (compileInfo->blockSize < 1),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context->GetNodeName(), "block size", std::to_string(compileInfo->blockSize).c_str(),
-            "must be greater than or equal to 1"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->blockSize < 1),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "block size",
+                                                      std::to_string(compileInfo->blockSize).c_str(),
+                                                      "must be greater than or equal to 1"),
+                return ge::GRAPH_FAILED);
 
     OP_LOGD(context->GetNodeName(), "Exit TilingPrepare4MatrixDiagAscendC.");
     return ge::GRAPH_SUCCESS;

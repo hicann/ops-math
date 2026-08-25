@@ -263,7 +263,7 @@ uint32_t StridedSliceCpuKernel::ParseIndexInput(const CpuKernelContext& ctx, uin
             break;
         }
         default:
-            KERNEL_LOG_ERROR("[%s] input[%u] data_tpye must be in {int32 int64}.", kStridedSlice, index);
+            KERNEL_LOG_ERROR("[%s] input[%u] data_type must be in {int32 int64}.", kStridedSlice, index);
             return KERNEL_STATUS_PARAM_INVALID;
     }
 

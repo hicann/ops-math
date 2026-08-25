@@ -50,43 +50,41 @@ static bool IsAiCoreSupport(const aclTensor* self)
 }
 
 // AICORE算子kernel
-static const aclTensor* ReduceMaxAiCore(
-    const aclTensor* self, const aclTensor* dimList, bool keepDim, bool noopWithEmptyDims, const aclTensor* maxOut,
-    aclOpExecutor* executor)
+static const aclTensor* ReduceMaxAiCore(const aclTensor* self, const aclTensor* dimList, bool keepDim,
+                                        bool noopWithEmptyDims, const aclTensor* maxOut, aclOpExecutor* executor)
 {
     L0_DFX(ReduceMaxAiCore, self, dimList, keepDim, noopWithEmptyDims, maxOut);
 
-    auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(
-        ReduceMax, OP_INPUT(self, dimList), OP_OUTPUT(maxOut), OP_ATTR(keepDim, noopWithEmptyDims));
-    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
-        retAicore != ACLNN_SUCCESS, return nullptr, "ReduceMax ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(ReduceMax, OP_INPUT(self, dimList), OP_OUTPUT(maxOut),
+                                                 OP_ATTR(keepDim, noopWithEmptyDims));
+    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
+                                         "ReduceMax ADD_TO_LAUNCHER_LIST_AICORE failed.");
 
     return maxOut;
 }
 
 // AICPU算子kernel
-static const aclTensor* ReduceMaxAiCpu(
-    const aclTensor* self, const aclTensor* dimList, bool keepDim, const aclTensor* maxOut, aclOpExecutor* executor)
+static const aclTensor* ReduceMaxAiCpu(const aclTensor* self, const aclTensor* dimList, bool keepDim,
+                                       const aclTensor* maxOut, aclOpExecutor* executor)
 {
     L0_DFX(ReduceMaxAiCpu, self, dimList, keepDim, maxOut);
 
     static internal::AicpuTaskSpace space("Max", ge::DEPEND_IN_SHAPE, true);
-    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(
-        ReduceMax, OP_ATTR_NAMES({"keep_dims", "Tidx"}), OP_INPUT(self, dimList), OP_OUTPUT(maxOut),
-        OP_ATTR(keepDim, dimList->GetDataType()));
+    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(ReduceMax, OP_ATTR_NAMES({"keep_dims", "Tidx"}), OP_INPUT(self, dimList),
+                                          OP_OUTPUT(maxOut), OP_ATTR(keepDim, dimList->GetDataType()));
     CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
     return maxOut;
 }
 
-const aclTensor* ReduceMax(
-    const aclTensor* self, const aclIntArray* dim, bool keepDim, bool noopWithEmptyDims, aclOpExecutor* executor)
+const aclTensor* ReduceMax(const aclTensor* self, const aclIntArray* dim, bool keepDim, bool noopWithEmptyDims,
+                           aclOpExecutor* executor)
 {
     auto dimList = executor->ConvertToTensor(dim, op::DataType::DT_INT64);
     auto maxOut = executor->AllocTensor(self->GetViewShape(), self->GetDataType());
 
     auto ret = INFER_SHAPE(ReduceMax, OP_INPUT(self, dimList), OP_OUTPUT(maxOut), OP_ATTR(keepDim, noopWithEmptyDims));
     if (ret != ACLNN_SUCCESS) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "ReduceMax infer shape faild.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "ReduceMax infer shape failed.");
         return nullptr;
     }
 

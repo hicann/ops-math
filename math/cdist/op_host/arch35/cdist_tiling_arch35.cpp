@@ -21,7 +21,8 @@
 #include "cdist_tiling_arch35.h"
 
 namespace optiling {
-ge::graphStatus CdistTiling::CheckParams() {
+ge::graphStatus CdistTiling::CheckParams()
+{
     OP_LOGD(tilingContext_->GetNodeName(), "Start CheckParams.");
     auto x1 = tilingContext_->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, x1);
@@ -40,38 +41,35 @@ ge::graphStatus CdistTiling::CheckParams() {
     x2Shape_ = x2Shape;
     yShape_ = yShape;
     int64_t dimNum = x1Shape_.GetDimNum();
-    OP_CHECK_IF(dimNum < MIN_DIM_LEN,
-                OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-                    tilingContext_->GetNodeName(), "x1", std::to_string(dimNum).c_str(),
-                    "Input only supports at least 2D tensors"),
-                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        dimNum < MIN_DIM_LEN,
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(tilingContext_->GetNodeName(), "x1", std::to_string(dimNum).c_str(),
+                                                 "Input only supports at least 2D tensors"),
+        return ge::GRAPH_FAILED);
     int64_t x2DimNum = x2Shape_.GetDimNum();
     if (x2DimNum != dimNum) {
-        std::string reasonMsg = "The dim num of x1 and x2 must be the same, x1 got: " +
-                                std::to_string(dimNum) + " ,x2 got: " + std::to_string(x2DimNum);
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-                    tilingContext_->GetNodeName(), "x2", std::to_string(x2DimNum).c_str(),
-                    reasonMsg.c_str());
+        std::string reasonMsg = "The dim num of x1 and x2 must be the same, x1 got: " + std::to_string(dimNum) +
+                                " ,x2 got: " + std::to_string(x2DimNum);
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(tilingContext_->GetNodeName(), "x2", std::to_string(x2DimNum).c_str(),
+                                                 reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     int64_t yDimNum = yShape_.GetDimNum();
     if (yDimNum != dimNum) {
-        std::string reasonMsg = "The dim num of input and output must be the same, x1 got: " +
-                                std::to_string(dimNum) + " ,y got: " + std::to_string(yDimNum);
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-            tilingContext_->GetNodeName(), "y", std::to_string(yDimNum).c_str(),
-            reasonMsg.c_str());
+        std::string reasonMsg = "The dim num of input and output must be the same, x1 got: " + std::to_string(dimNum) +
+                                " ,y got: " + std::to_string(yDimNum);
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(tilingContext_->GetNodeName(), "y", std::to_string(yDimNum).c_str(),
+                                                 reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     int64_t M1 = x1Shape_.GetDim(dimNum - 1);
     int64_t M2 = x2Shape_.GetDim(dimNum - 1);
     if (M1 != M2) {
-        std::string reasonMsg = "The last dim of x1 and x2 must be the same, x1 got: " +
-                                std::to_string(M1) + " ,x2 got: " + std::to_string(M2);
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-            tilingContext_->GetNodeName(), "x2", std::to_string(M2).c_str(),
-            reasonMsg.c_str());
-            return ge::GRAPH_FAILED;
+        std::string reasonMsg = "The last dim of x1 and x2 must be the same, x1 got: " + std::to_string(M1) +
+                                " ,x2 got: " + std::to_string(M2);
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(tilingContext_->GetNodeName(), "x2", std::to_string(M2).c_str(),
+                                                 reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
     }
     M_ = M1;
     P_ = x1Shape_.GetDim(dimNum - MIN_DIM_LEN);
@@ -80,10 +78,10 @@ ge::graphStatus CdistTiling::CheckParams() {
         std::string reasonMsg = "The last two dims of output are incorrect, output[-1] got: " +
                                 std::to_string(yShape_.GetDim(dimNum - 1)) +
                                 " ,output[-2] got: " + std::to_string(yShape_.GetDim(dimNum - MIN_DIM_LEN));
-        std:: string errDimMsg = "output[-1]: " + std::to_string(yShape_.GetDim(dimNum - 1)) +
-                                 " ,output[-2]: " + std::to_string(yShape_.GetDim(dimNum - MIN_DIM_LEN)); 
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-            tilingContext_->GetNodeName(), "y", errDimMsg.c_str(), reasonMsg.c_str());
+        std::string errDimMsg = "output[-1]: " + std::to_string(yShape_.GetDim(dimNum - 1)) +
+                                " ,output[-2]: " + std::to_string(yShape_.GetDim(dimNum - MIN_DIM_LEN));
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(tilingContext_->GetNodeName(), "y", errDimMsg.c_str(),
+                                                 reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     auto attrs = tilingContext_->GetAttrs();
@@ -93,15 +91,15 @@ ge::graphStatus CdistTiling::CheckParams() {
         const float* pAttr = attrs->GetAttrPointer<float>(0);
         tilingData_.p = pAttr == nullptr ? 2.0f : *pAttr;
         OP_CHECK_IF(tilingData_.p < 0,
-            OP_LOGE_WITH_INVALID_ATTR(tilingContext_->GetNodeName(), "p",
-                std::to_string(tilingData_.p).c_str(),
-                "greater than or equal to 0"),
-            return ge::GRAPH_FAILED);
+                    OP_LOGE_WITH_INVALID_ATTR(tilingContext_->GetNodeName(), "p", std::to_string(tilingData_.p).c_str(),
+                                              "greater than or equal to 0"),
+                    return ge::GRAPH_FAILED);
     }
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus CdistTiling::MergeBatchAxis() {
+ge::graphStatus CdistTiling::MergeBatchAxis()
+{
     OP_LOGD(tilingContext_->GetNodeName(), "Start MergeBatchAxis.");
     int64_t dimNum = x1Shape_.GetDimNum();
     B_ = 1;
@@ -113,11 +111,10 @@ ge::graphStatus CdistTiling::MergeBatchAxis() {
         yB *= yShape_.GetDim(i);
     }
     if (B_ != x2B || B_ != yB) {
-        std::string reasonMsg = "The batch of input and output must be the same, but x1 got: " +
-            std::to_string(B_) + ", x2 got: " + std::to_string(B_) + ", y got: " + std::to_string(yB);
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-            tilingContext_->GetNodeName(), "y", std::to_string(yB).c_str(),
-            reasonMsg.c_str());
+        std::string reasonMsg = "The batch of input and output must be the same, but x1 got: " + std::to_string(B_) +
+                                ", x2 got: " + std::to_string(B_) + ", y got: " + std::to_string(yB);
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(tilingContext_->GetNodeName(), "y", std::to_string(yB).c_str(),
+                                                 reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -133,8 +130,7 @@ void CdistTiling::DoSimtTiling()
         tilingData_.blockFactor = totalElements;
         tilingData_.blockTailFactor = totalElements;
         return;
-    }
-    else {
+    } else {
         int64_t minRequiredCores = Ops::Base::CeilDiv(totalElements, minPerCoreElement);
         int64_t usedCoreNum = std::min(coreNum_, minRequiredCores);
         if (usedCoreNum == 0) {
@@ -222,7 +218,7 @@ void CdistTiling::SetDefaultUbTiling()
 }
 
 void CdistTiling::ProcessDimension(const DimConfig& config, int64_t availableUbElements, int64_t& findUbTilingIdx)
-{   
+{
     findUbTilingIdx++;
     int64_t totalElements = config.calcTotalElements(config.baseValue);
     if (totalElements > availableUbElements) {
@@ -254,75 +250,50 @@ void CdistTiling::DoNormalUbTiling()
 
     std::vector<DimConfig> configs;
     if (dtypeSize_ == B4) {
-        configs = {
-            {&tilingData_.ubLoopNumM, &tilingData_.ubFactorM, &tilingData_.ubTailFactorM, M_,
-            [this, blockElements](int64_t i)
-                {
-                    int64_t iBlockAlign = Ops::Base::CeilAlign(i * dtypeSize_, BLOCK_BYTES) / dtypeSize_;
-                    return BUFFER_NUM * (iBlockAlign + iBlockAlign + blockElements) +
-                           blockElements;
-                }
-            },
-            {&tilingData_.ubLoopNumR, &tilingData_.ubFactorR, &tilingData_.ubTailFactorR, R0,
-            [this, MBlockAlign, blockElements](int64_t i)
-                {
-                    int64_t iBlockAlign = Ops::Base::CeilAlign(i * dtypeSize_, BLOCK_BYTES) / dtypeSize_;
-                    return BUFFER_NUM * (MBlockAlign + i * MBlockAlign + iBlockAlign) +
-                           blockElements;
-                }
-            },
-            {&tilingData_.ubLoopNumP, &tilingData_.ubFactorP, &tilingData_.ubTailFactorP, P0,
-            [this, MBlockAlign, R0BlockAlign, R0, blockElements](int64_t i)
-                {
-                    return BUFFER_NUM * (i * MBlockAlign + R0 * MBlockAlign + i * R0BlockAlign) +
-                           blockElements;
-                }
-            },
-            {&tilingData_.ubLoopNumB, &tilingData_.ubFactorB, &tilingData_.ubTailFactorB, B0,
-            [this, MBlockAlign, R0BlockAlign, R0, P0, blockElements](int64_t i)
-                {   
-                    return BUFFER_NUM * (i * P0 * MBlockAlign + i * R0 * MBlockAlign + i * P0 * R0BlockAlign) +
-                           blockElements;
-                }
-            }
-        };
+        configs = {{&tilingData_.ubLoopNumM, &tilingData_.ubFactorM, &tilingData_.ubTailFactorM, M_,
+                    [this, blockElements](int64_t i) {
+                        int64_t iBlockAlign = Ops::Base::CeilAlign(i * dtypeSize_, BLOCK_BYTES) / dtypeSize_;
+                        return BUFFER_NUM * (iBlockAlign + iBlockAlign + blockElements) + blockElements;
+                    }},
+                   {&tilingData_.ubLoopNumR, &tilingData_.ubFactorR, &tilingData_.ubTailFactorR, R0,
+                    [this, MBlockAlign, blockElements](int64_t i) {
+                        int64_t iBlockAlign = Ops::Base::CeilAlign(i * dtypeSize_, BLOCK_BYTES) / dtypeSize_;
+                        return BUFFER_NUM * (MBlockAlign + i * MBlockAlign + iBlockAlign) + blockElements;
+                    }},
+                   {&tilingData_.ubLoopNumP, &tilingData_.ubFactorP, &tilingData_.ubTailFactorP, P0,
+                    [this, MBlockAlign, R0BlockAlign, R0, blockElements](int64_t i) {
+                        return BUFFER_NUM * (i * MBlockAlign + R0 * MBlockAlign + i * R0BlockAlign) + blockElements;
+                    }},
+                   {&tilingData_.ubLoopNumB, &tilingData_.ubFactorB, &tilingData_.ubTailFactorB, B0,
+                    [this, MBlockAlign, R0BlockAlign, R0, P0, blockElements](int64_t i) {
+                        return BUFFER_NUM * (i * P0 * MBlockAlign + i * R0 * MBlockAlign + i * P0 * R0BlockAlign) +
+                               blockElements;
+                    }}};
     } else {
         configs = {
             {&tilingData_.ubLoopNumM, &tilingData_.ubFactorM, &tilingData_.ubTailFactorM, M_,
-            [this, blockElements](int64_t i)
-                {
-                    int64_t iBlockAlign = Ops::Base::CeilAlign(i * dtypeSize_, BLOCK_BYTES) / dtypeSize_;
-                    return BUFFER_NUM * (iBlockAlign + iBlockAlign + blockElements) +
-                           CAST_BUFFER_RATIO * (iBlockAlign + iBlockAlign + blockElements) +
-                           blockElements;
-                }
-            },
+             [this, blockElements](int64_t i) {
+                 int64_t iBlockAlign = Ops::Base::CeilAlign(i * dtypeSize_, BLOCK_BYTES) / dtypeSize_;
+                 return BUFFER_NUM * (iBlockAlign + iBlockAlign + blockElements) +
+                        CAST_BUFFER_RATIO * (iBlockAlign + iBlockAlign + blockElements) + blockElements;
+             }},
             {&tilingData_.ubLoopNumR, &tilingData_.ubFactorR, &tilingData_.ubTailFactorR, R0,
-            [this, MBlockAlign, blockElements](int64_t i)
-                {
-                    int64_t iBlockAlign = Ops::Base::CeilAlign(i * dtypeSize_, BLOCK_BYTES) / dtypeSize_;
-                    return BUFFER_NUM * (MBlockAlign + i * MBlockAlign + iBlockAlign) +
-                           CAST_BUFFER_RATIO * (MBlockAlign + i * MBlockAlign + iBlockAlign) +
-                           blockElements;
-                }
-            },
+             [this, MBlockAlign, blockElements](int64_t i) {
+                 int64_t iBlockAlign = Ops::Base::CeilAlign(i * dtypeSize_, BLOCK_BYTES) / dtypeSize_;
+                 return BUFFER_NUM * (MBlockAlign + i * MBlockAlign + iBlockAlign) +
+                        CAST_BUFFER_RATIO * (MBlockAlign + i * MBlockAlign + iBlockAlign) + blockElements;
+             }},
             {&tilingData_.ubLoopNumP, &tilingData_.ubFactorP, &tilingData_.ubTailFactorP, P0,
-            [this, MBlockAlign, R0BlockAlign, R0, blockElements](int64_t i)
-                {
-                    return BUFFER_NUM * (i * MBlockAlign + R0 * MBlockAlign + i * R0BlockAlign) +
-                           CAST_BUFFER_RATIO * (i * MBlockAlign + R0 * MBlockAlign + i * R0BlockAlign) +
-                           blockElements;
-                }
-            },
+             [this, MBlockAlign, R0BlockAlign, R0, blockElements](int64_t i) {
+                 return BUFFER_NUM * (i * MBlockAlign + R0 * MBlockAlign + i * R0BlockAlign) +
+                        CAST_BUFFER_RATIO * (i * MBlockAlign + R0 * MBlockAlign + i * R0BlockAlign) + blockElements;
+             }},
             {&tilingData_.ubLoopNumB, &tilingData_.ubFactorB, &tilingData_.ubTailFactorB, B0,
-            [this, MBlockAlign, R0BlockAlign, R0, P0, blockElements](int64_t i)
-                {   
-                    return BUFFER_NUM * (i * P0 * MBlockAlign + i * R0 * MBlockAlign + i * P0 * R0BlockAlign) +
-                           CAST_BUFFER_RATIO * (i * P0 * MBlockAlign + i * R0 * MBlockAlign + i * P0 * R0BlockAlign) +
-                           blockElements;
-                }
-            }
-        };
+             [this, MBlockAlign, R0BlockAlign, R0, P0, blockElements](int64_t i) {
+                 return BUFFER_NUM * (i * P0 * MBlockAlign + i * R0 * MBlockAlign + i * P0 * R0BlockAlign) +
+                        CAST_BUFFER_RATIO * (i * P0 * MBlockAlign + i * R0 * MBlockAlign + i * P0 * R0BlockAlign) +
+                        blockElements;
+             }}};
     }
 
     SetDefaultUbTiling();
@@ -357,7 +328,7 @@ void CdistTiling::DoNormalUbTiling()
 }
 
 void CdistTiling::DoNormalTiling()
-{   
+{
     OP_LOGD(tilingContext_->GetNodeName(), "Start DoNormalTiling.");
     DoNormalBlockTiling();
     tilingData_.realCoreNum = (tilingData_.blockMainNumB + tilingData_.blockTailNumB) *
@@ -382,17 +353,13 @@ ge::graphStatus CdistTiling::RunCdistTiling()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Start RunCdistTiling.");
     OP_CHECK_IF(CheckParams() != ge::GRAPH_SUCCESS,
-                OP_LOGE(tilingContext_->GetNodeName(),
-                "RunCdistTiling check params failed!"),
-                return ge::GRAPH_FAILED);
+                OP_LOGE(tilingContext_->GetNodeName(), "RunCdistTiling check params failed!"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(MergeBatchAxis() != ge::GRAPH_SUCCESS,
-                OP_LOGE(tilingContext_->GetNodeName(),
-                "RunCdistTiling merge batch axis failed!"),
+                OP_LOGE(tilingContext_->GetNodeName(), "RunCdistTiling merge batch axis failed!"),
                 return ge::GRAPH_FAILED);
     DoTiling();
     OP_CHECK_IF(SetTilingData() != ge::GRAPH_SUCCESS,
-                OP_LOGE(tilingContext_->GetNodeName(),
-                "RunCdistTiling failed to set tiling data!"),
+                OP_LOGE(tilingContext_->GetNodeName(), "RunCdistTiling failed to set tiling data!"),
                 return ge::GRAPH_FAILED);
     PrintTilingData();
     return ge::GRAPH_SUCCESS;
@@ -404,19 +371,17 @@ ge::graphStatus CdistTiling::Init()
     auto compileInfo = reinterpret_cast<const CdistCompileInfo*>(tilingContext_->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, compileInfo);
     coreNum_ = compileInfo->coreNum;
-    OP_CHECK_IF((coreNum_ <= 0),
-                OP_LOGE(tilingContext_->GetNodeName(), "Failed to get core num."),
+    OP_CHECK_IF((coreNum_ <= 0), OP_LOGE(tilingContext_->GetNodeName(), "Failed to get core num."),
                 return ge::GRAPH_FAILED);
     ubSize_ = compileInfo->ubSize;
-    OP_CHECK_IF((ubSize_ <= 0),
-                OP_LOGE(tilingContext_->GetNodeName(), "Failed to get ub size."),
+    OP_CHECK_IF((ubSize_ <= 0), OP_LOGE(tilingContext_->GetNodeName(), "Failed to get ub size."),
                 return ge::GRAPH_FAILED);
-    OP_LOGD(tilingContext_->GetNodeName(), "Init CdistTiling sucess.");
+    OP_LOGD(tilingContext_->GetNodeName(), "Init CdistTiling success.");
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus CdistTiling::SetTilingData()
-{   
+{
     OP_LOGD(tilingContext_->GetNodeName(), "Start SetTilingData.");
     tilingData_.B = B_;
     tilingData_.P = P_;
@@ -429,9 +394,8 @@ ge::graphStatus CdistTiling::SetTilingData()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, ptrData);
     void* ptrStruct = static_cast<void*>(&tilingData_);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, ptrStruct);
-    OP_CHECK_IF(
-        memcpy_s(ptrData, capSize, ptrStruct, sizeof(tilingData_)) != 0,
-        OP_LOGE(tilingContext_->GetNodeName(), "Set tiling data failed!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memcpy_s(ptrData, capSize, ptrStruct, sizeof(tilingData_)) != 0,
+                OP_LOGE(tilingContext_->GetNodeName(), "Set tiling data failed!"), return ge::GRAPH_FAILED);
     ptrTilingData->SetDataSize(sizeof(tilingData_));
 
     tilingContext_->SetBlockDim(tilingData_.realCoreNum);
@@ -447,29 +411,28 @@ void CdistTiling::PrintTilingData()
 {
     std::stringstream ss;
     ss << " realCoreNum: " << tilingData_.realCoreNum << " blockFactor: " << tilingData_.blockFactor
-       << " blockTailFactor: " << tilingData_.blockTailFactor << " B: " << tilingData_.B
-       << " P: " << tilingData_.P << " R: " << tilingData_.R << " M: " << tilingData_.M
-       << " blockMainNumB: " << tilingData_.blockMainNumB << " blockTailNumB: " << tilingData_.blockTailNumB
-       << " blockMainFactorB: " << tilingData_.blockMainFactorB << " blockTailFactorB: " << tilingData_.blockTailFactorB
-       << " blockMainNumP: " << tilingData_.blockMainNumP << " blockTailNumP: " << tilingData_.blockTailNumP
-       << " blockMainFactorP: " << tilingData_.blockMainFactorP << " blockTailFactorP: " << tilingData_.blockTailFactorP
-       << " blockMainNumR: " << tilingData_.blockMainNumR << " blockTailNumR: " << tilingData_.blockTailNumR
-       << " blockMainFactorR: " << tilingData_.blockMainFactorR << " blockTailFactorR: " << tilingData_.blockTailFactorR
-       << " ubLoopNumB: " << tilingData_.ubLoopNumB << " ubFactorB: " << tilingData_.ubFactorB
-       << " ubTailFactorB: " << tilingData_.ubTailFactorB << " ubLoopNumP: " << tilingData_.ubLoopNumP
-       << " ubFactorP: " << tilingData_.ubFactorP << " ubTailFactorP: " << tilingData_.ubTailFactorP
-       << " ubLoopNumR: " << tilingData_.ubLoopNumR << " ubFactorR: " << tilingData_.ubFactorR
-       << " ubTailFactorR: " << tilingData_.ubTailFactorR << " ubLoopNumM: " << tilingData_.ubLoopNumM
-       << " ubFactorM: " << tilingData_.ubFactorM << " ubTailFactorM: " << tilingData_.ubTailFactorM
-       << " p: " << tilingData_.p;
+       << " blockTailFactor: " << tilingData_.blockTailFactor << " B: " << tilingData_.B << " P: " << tilingData_.P
+       << " R: " << tilingData_.R << " M: " << tilingData_.M << " blockMainNumB: " << tilingData_.blockMainNumB
+       << " blockTailNumB: " << tilingData_.blockTailNumB << " blockMainFactorB: " << tilingData_.blockMainFactorB
+       << " blockTailFactorB: " << tilingData_.blockTailFactorB << " blockMainNumP: " << tilingData_.blockMainNumP
+       << " blockTailNumP: " << tilingData_.blockTailNumP << " blockMainFactorP: " << tilingData_.blockMainFactorP
+       << " blockTailFactorP: " << tilingData_.blockTailFactorP << " blockMainNumR: " << tilingData_.blockMainNumR
+       << " blockTailNumR: " << tilingData_.blockTailNumR << " blockMainFactorR: " << tilingData_.blockMainFactorR
+       << " blockTailFactorR: " << tilingData_.blockTailFactorR << " ubLoopNumB: " << tilingData_.ubLoopNumB
+       << " ubFactorB: " << tilingData_.ubFactorB << " ubTailFactorB: " << tilingData_.ubTailFactorB
+       << " ubLoopNumP: " << tilingData_.ubLoopNumP << " ubFactorP: " << tilingData_.ubFactorP
+       << " ubTailFactorP: " << tilingData_.ubTailFactorP << " ubLoopNumR: " << tilingData_.ubLoopNumR
+       << " ubFactorR: " << tilingData_.ubFactorR << " ubTailFactorR: " << tilingData_.ubTailFactorR
+       << " ubLoopNumM: " << tilingData_.ubLoopNumM << " ubFactorM: " << tilingData_.ubFactorM
+       << " ubTailFactorM: " << tilingData_.ubTailFactorM << " p: " << tilingData_.p;
     OP_LOGI(tilingContext_->GetNodeName(), "CdistTilingData: %s", ss.str().c_str());
 }
 
 static ge::graphStatus TilingParseForCdist([[maybe_unused]] gert::TilingParseContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Start TilingParseForCdist");
-    OP_CHECK_IF(
-        context == nullptr, OP_LOGE("TilingParseForCdist", "TilingParseContext is nullptr!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(context == nullptr, OP_LOGE("TilingParseForCdist", "TilingParseContext is nullptr!"),
+                return ge::GRAPH_FAILED);
     auto compileInfo = context->GetCompiledInfo<CdistCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     auto platformInfo = context->GetPlatformInfo();
@@ -477,15 +440,13 @@ static ge::graphStatus TilingParseForCdist([[maybe_unused]] gert::TilingParseCon
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
     OP_CHECK_IF((compileInfo->coreNum <= 0),
-                OP_LOGE(context->GetNodeName(),
-                "Get hardwareInfo failed, coreNum:%ld.", compileInfo->coreNum),
+                OP_LOGE(context->GetNodeName(), "Get hardwareInfo failed, coreNum:%ld.", compileInfo->coreNum),
                 return ge::GRAPH_FAILED);
     uint64_t ubSize;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ubSize = static_cast<int64_t>(ubSize);
     OP_CHECK_IF((compileInfo->ubSize <= 0),
-                OP_LOGE(context->GetNodeName(),
-                "Get hardwareInfo failed, ubSize:%ld.", compileInfo->ubSize),
+                OP_LOGE(context->GetNodeName(), "Get hardwareInfo failed, ubSize:%ld.", compileInfo->ubSize),
                 return ge::GRAPH_FAILED);
 
     OP_LOGD(context->GetNodeName(), "Get coreNum:%ld, ubSize:%ld.", compileInfo->coreNum, compileInfo->ubSize);

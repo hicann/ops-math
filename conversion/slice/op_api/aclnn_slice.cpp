@@ -47,7 +47,7 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
     OP_CHECK_DTYPE_NOT_MATCH(out, self->GetDataType(), return false);
 
     if (!CheckSocVersionIsSupportBf16() && (self->GetDataType() == op::DataType::DT_BF16)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input dtype of aclnnSlice is not support bfloat16 in current socversion.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input dtype of aclnnSlice does not support bfloat16 in current socversion.");
         return false;
     }
 
@@ -91,28 +91,26 @@ static bool CheckNotNull2TensorForSlice(const aclTensor* t0, const aclTensor* t1
     return true;
 }
 
-static bool CheckShape(
-    const aclTensor* self, int64_t dim, int64_t start, int64_t end, int64_t step, const aclTensor* out)
+static bool CheckShape(const aclTensor* self, int64_t dim, int64_t start, int64_t end, int64_t step,
+                       const aclTensor* out)
 {
     int64_t dimNum = self->GetViewShape().GetDimNum();
     // 校验输入的长度
     if (dimNum > MAX_DIM_LEN) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Expected aclnnSlice self len %ld to not be greater than %ld but check failed.",
-            dimNum, MAX_DIM_LEN);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "Expected aclnnSlice self len %ld to not be greater than %ld but check failed.", dimNum, MAX_DIM_LEN);
         return false;
     }
     if (dimNum <= 0) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Expected aclnnSlice self len %ld to not be less than one but check failed.",
-            dimNum);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expected aclnnSlice self len %ld to not be less than one but check failed.",
+                dimNum);
         return false;
     }
 
     if ((-dimNum > dim) || ((dimNum - 1) < dim)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_NULLPTR, "Expected aclnnSlice dim value %ld to be in range [%ld, %ld] but check failed.",
-            dim, -dimNum, dimNum - 1);
+        OP_LOGE(ACLNN_ERR_PARAM_NULLPTR,
+                "Expected aclnnSlice dim value %ld to be in range [%ld, %ld] but check failed.", dim, -dimNum,
+                dimNum - 1);
         return false;
     }
 
@@ -128,16 +126,15 @@ static bool CheckShape(
     auto outShape = out->GetViewShape();
     // 校验输出shape
     if (sliceShape != outShape) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
-            op::ToString(sliceShape).GetString(), op::ToString(outShape).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
+                op::ToString(sliceShape).GetString(), op::ToString(outShape).GetString());
         return false;
     }
     return true;
 }
 
-inline static aclnnStatus CheckParams(
-    const aclTensor* self, int64_t dim, int64_t start, int64_t end, int64_t step, aclTensor* out)
+inline static aclnnStatus CheckParams(const aclTensor* self, int64_t dim, int64_t start, int64_t end, int64_t step,
+                                      aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull2TensorForSlice(self, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -150,9 +147,8 @@ inline static aclnnStatus CheckParams(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnSliceGetWorkspaceSize(
-    const aclTensor* self, int64_t dim, int64_t start, int64_t end, int64_t step, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnSliceGetWorkspaceSize(const aclTensor* self, int64_t dim, int64_t start, int64_t end, int64_t step,
+                                       aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 

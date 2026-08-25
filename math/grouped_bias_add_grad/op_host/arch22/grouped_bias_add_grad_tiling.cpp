@@ -133,7 +133,7 @@ ge::graphStatus GroupedBiasAddGradTiling::CheckOutput()
     auto gradBiasdim0 = gradBiasOutputShape.GetDim(0);
     auto gradBiasdim1 = gradBiasOutputShape.GetDim(1);
     OP_CHECK_IF(((gradBiasdim0 != baseInfoOp_.dimG) || (gradBiasdim1 != baseInfoOp_.dimH)),
-                OP_LOGE(nodeName_, "the shape of grad_bias should be [%ld, %ld], bug got [%ld, %ld].", baseInfoOp_.dimG,
+                OP_LOGE(nodeName_, "the shape of grad_bias should be [%ld, %ld], but got [%ld, %ld].", baseInfoOp_.dimG,
                         baseInfoOp_.dimH, gradBiasdim0, gradBiasdim1),
                 return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;

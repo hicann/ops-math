@@ -285,7 +285,7 @@ uint32_t StridedSliceV2CpuKernel::DoStridedSliceV2(const CpuKernelContext& ctx, 
         STRIDED_SLICE_V2_CASE(DT_QUINT8, uint8_t)
         STRIDED_SLICE_V2_CASE(DT_QUINT16, uint16_t)
         default:
-            KERNEL_LOG_ERROR("%s kernel data type [%s] not support.", kStridedSliceV2, DTypeStr(data_type).c_str());
+            KERNEL_LOG_ERROR("%s kernel data type [%s] not supported.", kStridedSliceV2, DTypeStr(data_type).c_str());
             return KERNEL_STATUS_PARAM_INVALID;
     }
 #undef STRIDED_SLICE_V2_CASE

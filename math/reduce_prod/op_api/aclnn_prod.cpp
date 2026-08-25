@@ -56,9 +56,8 @@ static inline bool CheckNotNull(const aclTensor* self, const aclTensor* out)
 static inline bool CheckDtypeValid(const aclTensor* self, const aclDataType dtype, const aclTensor* out)
 {
     // 检查输入self的数据类型是否在ReduceProd算子的支持列表内
-    bool isASCEND910B =
-        (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase());
+    bool isASCEND910B = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+                         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase());
     if (isASCEND910B) {
         OP_CHECK_DTYPE_NOT_SUPPORT(self, ASCEND910B_DTYPE_SUPPORT_LIST, return false);
     } else {
@@ -85,23 +84,22 @@ static bool CheckDimValid(const aclTensor* self, int64_t dim, bool isCheckDim)
     auto selfViewShape = self->GetViewShape();
     auto selfDimNum = static_cast<int64_t>(selfViewShape.GetDimNum());
     // 检查指定dim是否在self的维度范围内
-    if (selfDimNum == 0){
+    if (selfDimNum == 0) {
         if (dim == 0 || dim == -1) {
             return true;
         }
     }
 
     if (dim >= selfDimNum || dim < (-selfDimNum)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Expected dim to be in range of [%ld, %ld], but got %ld.", -selfDimNum,
-            selfDimNum - 1, dim);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expected dim to be in range of [%ld, %ld], but got %ld.", -selfDimNum,
+                selfDimNum - 1, dim);
         return false;
     }
     return true;
 }
 
-static inline aclnnStatus CheckParams(
-    const aclTensor* self, int64_t dim, const aclDataType dtype, const aclTensor* out, bool isCheckDim)
+static inline aclnnStatus CheckParams(const aclTensor* self, int64_t dim, const aclDataType dtype, const aclTensor* out,
+                                      bool isCheckDim)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -121,10 +119,9 @@ static inline aclnnStatus CheckParams(
 static aclnnStatus FillScalar(aclTensor* out, float val, aclOpExecutor* executor)
 {
     if (!CheckType(out->GetDataType(), EMPTY_INPUT_DTYPE_SUPPORT_LIST)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "when input is empty tensor, out cann not be %s, should be in dtype support list %s.",
-            ToString(out->GetDataType()).GetString(), ToString(EMPTY_INPUT_DTYPE_SUPPORT_LIST).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "when input is empty tensor, out cannot be %s, should be in dtype support list %s.",
+                ToString(out->GetDataType()).GetString(), ToString(EMPTY_INPUT_DTYPE_SUPPORT_LIST).GetString());
         return ACLNN_ERR_PARAM_INVALID;
     }
     FVector<int64_t> shape;
@@ -148,9 +145,8 @@ static aclnnStatus FillScalar(aclTensor* out, float val, aclOpExecutor* executor
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ExecuteProd(
-    const aclTensor* self, const aclTensor* axes, bool keepDim, const aclDataType dtype, aclTensor* out,
-    aclOpExecutor* executor)
+static aclnnStatus ExecuteProd(const aclTensor* self, const aclTensor* axes, bool keepDim, const aclDataType dtype,
+                               aclTensor* out, aclOpExecutor* executor)
 {
     // 将输入tensor转换成连续的tensor
     auto selfContiguous = l0op::Contiguous(self, executor);
@@ -203,9 +199,8 @@ static aclnnStatus ExecuteProd(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnProdDimGetWorkspaceSize(
-    const aclTensor* self, int64_t dim, bool keepDim, const aclDataType dtype, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnProdDimGetWorkspaceSize(const aclTensor* self, int64_t dim, bool keepDim, const aclDataType dtype,
+                                         aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnProdDim, DFX_IN(self, dim, keepDim, dtype), DFX_OUT(out));
 
@@ -240,8 +235,8 @@ aclnnStatus aclnnProdDimGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnProdGetWorkspaceSize(
-    const aclTensor* self, const aclDataType dtype, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnProdGetWorkspaceSize(const aclTensor* self, const aclDataType dtype, aclTensor* out,
+                                      uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnProd, DFX_IN(self, dtype), DFX_OUT(out));
 

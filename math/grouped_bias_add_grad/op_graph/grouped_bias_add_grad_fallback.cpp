@@ -40,7 +40,7 @@ static graphStatus GroupedBiasAddGradHostExecFunc(OpExecuteContext* host_api_ctx
     auto api_ret = CANN_OPS_OPB_SYN_EXEC_ACLNN(host_api_ctx, aclnnGroupedBiasAddGradV2, grad_y, group_idx,
                                                *groupIdxType, output);
 
-    OP_CHECK_IF(api_ret != GRAPH_SUCCESS, OP_LOGE("aclnnfallback", "api_ret faild:%u", api_ret), return GRAPH_FAILED);
+    OP_CHECK_IF(api_ret != GRAPH_SUCCESS, OP_LOGE("aclnnfallback", "api_ret failed:%u", api_ret), return GRAPH_FAILED);
 
     OP_LOGD("aclnnFallback", "GroupedBiasAddGrad fallback end");
     return GRAPH_SUCCESS;
