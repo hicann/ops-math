@@ -387,7 +387,6 @@ static ge::graphStatus TilingForCast(gert::TilingContext* context)
 
     auto compileInfo = context->GetCompileInfo<CastCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
-    OP_LOGD("CastTiling", "Enter new CastTiling");
     return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 

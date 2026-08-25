@@ -96,9 +96,8 @@ static bool CheckDtypeValid(const aclTensor* self, const DataType dtype)
     bool isSupport = CheckType(dtype, supportList);
     // 检查参数dtype是否在Cast算子的输出数据类型支持列表内
     if (!isSupport) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "The param dtype not implemented for %s, should be in dtype support list %s.",
-            op::ToString(dtype).GetString(), op::ToString(supportList).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The param dtype not implemented for %s, should be in dtype support list %s.",
+                op::ToString(dtype).GetString(), op::ToString(supportList).GetString());
         return false;
     }
     return true;
@@ -124,14 +123,14 @@ static inline aclnnStatus CheckParams(const aclTensor* self, const DataType dtyp
 
     // 4. 如果为非支持数据格式，输出warning日志，为向前兼容暂不做校验拦截
     if (IsPrivateFormat(self->GetStorageFormat())) {
-        OP_LOGW("Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
+        OP_LOGW("Format only support ND, NCHW, NHWC, HWCN, NDHWC, NCDHW.");
     }
 
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnCastGetWorkspaceSize(
-    const aclTensor* self, const aclDataType dtype, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnCastGetWorkspaceSize(const aclTensor* self, const aclDataType dtype, aclTensor* out,
+                                      uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnCast, DFX_IN(self, dtype), DFX_OUT(out));
 

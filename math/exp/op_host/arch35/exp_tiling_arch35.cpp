@@ -28,7 +28,6 @@ const size_t ASCEND_WORKSPACE = 16777216; // 16 * 1024 * 1024
 
 ge::graphStatus ExpTiling::CalcInputDtype()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "ExpTiling CalcInputDtype enter.");
     auto inputDesc = tilingContext->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
     this->inputDtype = inputDesc->GetDataType();
@@ -42,7 +41,6 @@ ge::graphStatus ExpTiling::CalcInputDtype()
 
 ge::graphStatus ExpTiling::CheckShape() const
 {
-    OP_LOGD(tilingContext->GetNodeName(), "ExpTiling CheckShape enter.");
     auto expInputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, expInputStorageShape);
     const gert::Shape& expInputYShape = Ops::Base::EnsureNotScalar(expInputStorageShape->GetStorageShape());
@@ -118,7 +116,6 @@ ge::graphStatus ExpTiling::SetAttr()
 
 ge::graphStatus ExpTiling::RunTiling()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "ExpTiling RunTiling enter.");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
 
     OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
@@ -158,7 +155,9 @@ ge::graphStatus ExpTiling::RunTiling()
                                   ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed, output dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
                 return ge::GRAPH_FAILED);
 
     elewiseBaseTiling.SetScalar<float>(attrScale);
