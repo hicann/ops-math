@@ -28,8 +28,6 @@ const int64_t ASCEND_WORKSPACE = static_cast<int64_t>(16) * 1024 * 1024;
 
 ge::graphStatus Log1pTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling)
 {
-    OP_LOGD(tilingContext->GetNodeName(), "Log1pTiling SetTilingData enter.");
-
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = static_cast<size_t>(ASCEND_WORKSPACE);
@@ -43,7 +41,6 @@ ge::graphStatus Log1pTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseT
 
 ge::graphStatus Log1pTiling::CalcInputDtype()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "Log1pTiling CalcInputDtype enter.");
     auto inputDesc = tilingContext->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
     this->inputDtype = inputDesc->GetDataType();
@@ -57,7 +54,6 @@ ge::graphStatus Log1pTiling::CalcInputDtype()
 
 ge::graphStatus Log1pTiling::CheckShape() const
 {
-    OP_LOGD(tilingContext->GetNodeName(), "Log1pTiling CheckShape enter.");
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
     const gert::Shape& inputYShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
@@ -77,7 +73,6 @@ ge::graphStatus Log1pTiling::CheckShape() const
 
 ge::graphStatus Log1pTiling::CalcOutputDtype()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "Log1pTiling CalcOutputDtype enter.");
     auto outputDesc = tilingContext->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
@@ -93,7 +88,6 @@ ge::graphStatus Log1pTiling::CalcOutputDtype()
 
 ge::graphStatus Log1pTiling::RunTiling()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "Log1pTiling RunTiling enter.");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
                 return ge::GRAPH_FAILED);
@@ -118,7 +112,9 @@ ge::graphStatus Log1pTiling::RunTiling()
                                   ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed, output dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
                 return ge::GRAPH_FAILED);
 
     return SetTilingData(elewiseBaseTiling);

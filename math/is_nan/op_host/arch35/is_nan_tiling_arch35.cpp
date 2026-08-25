@@ -117,7 +117,9 @@ ge::graphStatus IsNanTiling::RunTiling()
                                   ge::TypeUtils::DataTypeToSerialString(this->inputDtype), "FLOAT16, BF16, FLOAT");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed, input dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str()),
                 return ge::GRAPH_FAILED);
 
     return SetTilingData();

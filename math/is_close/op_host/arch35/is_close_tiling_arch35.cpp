@@ -34,20 +34,11 @@ using namespace IsCloseOp;
 namespace optiling {
 static constexpr uint64_t IS_CLOSE_COMMON_TILING_PRIORITY = 0;
 
-bool IsCloseTiling::IsCapable()
-{
-    return true;
-}
+bool IsCloseTiling::IsCapable() { return true; }
 
-ge::graphStatus IsCloseTiling::GetPlatformInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus IsCloseTiling::GetPlatformInfo() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus IsCloseTiling::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus IsCloseTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus IsCloseTiling::DoOpTiling()
 {
@@ -75,34 +66,32 @@ ge::graphStatus IsCloseTiling::DoOpTiling()
 
     OP_CHECK_IF(
         x1DType != x2DType,
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            context_->GetNodeName(), "x1, x2",
-            std::string(ge::TypeUtils::DataTypeToSerialString(x1DType)) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(x2DType)),
-            "The dtypes of x1 and x2 must be the same"),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1, x2",
+                                               std::string(ge::TypeUtils::DataTypeToSerialString(x1DType)) + ", " +
+                                                   std::string(ge::TypeUtils::DataTypeToSerialString(x2DType)),
+                                               "The dtypes of x1 and x2 must be the same"),
         return ge::GRAPH_FAILED);
 
     OP_CHECK_IF(
         x1DType != ge::DT_FLOAT16 && x1DType != ge::DT_FLOAT && x1DType != ge::DT_INT32 && x1DType != ge::DT_BF16,
-        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1",
-            ge::TypeUtils::DataTypeToSerialString(x1DType),
-            "FLOAT16, FLOAT, INT32, BF16"),
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(x1DType),
+                                  "FLOAT16, FLOAT, INT32, BF16"),
         return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        rtol_ < 0 || atol_ < 0,
-        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
-            context_->GetNodeName(), "rtol, atol",
-            std::to_string(rtol_) + ", " + std::to_string(atol_),
-            "The values of rtol and atol must be greater than or equal to 0"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(rtol_ < 0 || atol_ < 0,
+                OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+                    context_->GetNodeName(), "rtol, atol", std::to_string(rtol_) + ", " + std::to_string(atol_),
+                    "The values of rtol and atol must be greater than or equal to 0"),
+                return ge::GRAPH_FAILED);
 
     if (x1DType == ge::DT_FLOAT16 && equalNan_ == false) {
         OP_LOGD(context_->GetNodeName(), "Data type is float16, equal_nan is false.");
         Ops::Base::BroadcastBaseTiling<IsCloseDag<Ops::Base::half>::OpDag> brcBaseTiling(context_);
         baseTilingResult = brcBaseTiling.DoTiling();
-        OP_CHECK_IF(
-            baseTilingResult == ge::GRAPH_FAILED,
-            OP_LOGE(context_->GetNodeName(), "broadcastBaseTiling doTiling failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                    OP_LOGE(context_->GetNodeName(), "broadcastBaseTiling doTiling failed, x1 dtype: %s.",
+                            ge::TypeUtils::DataTypeToSerialString(x1DType).c_str()),
+                    return ge::GRAPH_FAILED);
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), IS_CLOSE_TPL_NOT_EQUAL_NAN);
         brcBaseTiling.SetScalar<float>(rtol_);
         brcBaseTiling.SetScalar<float>(atol_);
@@ -110,9 +99,10 @@ ge::graphStatus IsCloseTiling::DoOpTiling()
         OP_LOGD(context_->GetNodeName(), "Data type is float, equal_nan is false.");
         Ops::Base::BroadcastBaseTiling<IsCloseDag<float>::OpDag> brcBaseTiling(context_);
         baseTilingResult = brcBaseTiling.DoTiling();
-        OP_CHECK_IF(
-            baseTilingResult == ge::GRAPH_FAILED,
-            OP_LOGE(context_->GetNodeName(), "broadcastBaseTiling doTiling failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                    OP_LOGE(context_->GetNodeName(), "broadcastBaseTiling doTiling failed, x1 dtype: %s.",
+                            ge::TypeUtils::DataTypeToSerialString(x1DType).c_str()),
+                    return ge::GRAPH_FAILED);
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), IS_CLOSE_TPL_NOT_EQUAL_NAN);
         brcBaseTiling.SetScalar<float>(rtol_);
         brcBaseTiling.SetScalar<float>(atol_);
@@ -120,9 +110,10 @@ ge::graphStatus IsCloseTiling::DoOpTiling()
         OP_LOGD(context_->GetNodeName(), "Data type is int32, equal_nan is false.");
         Ops::Base::BroadcastBaseTiling<IsCloseDag<int32_t>::OpDag> brcBaseTiling(context_);
         baseTilingResult = brcBaseTiling.DoTiling();
-        OP_CHECK_IF(
-            baseTilingResult == ge::GRAPH_FAILED,
-            OP_LOGE(context_->GetNodeName(), "broadcastBaseTiling doTiling failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                    OP_LOGE(context_->GetNodeName(), "broadcastBaseTiling doTiling failed, x1 dtype: %s.",
+                            ge::TypeUtils::DataTypeToSerialString(x1DType).c_str()),
+                    return ge::GRAPH_FAILED);
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), IS_CLOSE_TPL_NOT_EQUAL_NAN);
         brcBaseTiling.SetScalar<float>(rtol_);
         brcBaseTiling.SetScalar<float>(atol_);
@@ -130,9 +121,10 @@ ge::graphStatus IsCloseTiling::DoOpTiling()
         OP_LOGD(context_->GetNodeName(), "Data type is bfloat16, equal_nan is false.");
         Ops::Base::BroadcastBaseTiling<IsCloseDag<Ops::Base::bfloat16_t>::OpDag> brcBaseTiling(context_);
         baseTilingResult = brcBaseTiling.DoTiling();
-        OP_CHECK_IF(
-            baseTilingResult == ge::GRAPH_FAILED,
-            OP_LOGE(context_->GetNodeName(), "broadcastBaseTiling doTiling failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                    OP_LOGE(context_->GetNodeName(), "broadcastBaseTiling doTiling failed, x1 dtype: %s.",
+                            ge::TypeUtils::DataTypeToSerialString(x1DType).c_str()),
+                    return ge::GRAPH_FAILED);
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), IS_CLOSE_TPL_NOT_EQUAL_NAN);
         brcBaseTiling.SetScalar<float>(rtol_);
         brcBaseTiling.SetScalar<float>(atol_);
@@ -140,9 +132,10 @@ ge::graphStatus IsCloseTiling::DoOpTiling()
         OP_LOGD(context_->GetNodeName(), "Data type is float16, equal_nan is true.");
         Ops::Base::BroadcastBaseTiling<IsCloseEqualNanDag<Ops::Base::half>::OpDag> brcBaseTiling(context_);
         baseTilingResult = brcBaseTiling.DoTiling();
-        OP_CHECK_IF(
-            baseTilingResult == ge::GRAPH_FAILED,
-            OP_LOGE(context_->GetNodeName(), "broadcastBaseTiling doTiling failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                    OP_LOGE(context_->GetNodeName(), "broadcastBaseTiling doTiling failed, x1 dtype: %s.",
+                            ge::TypeUtils::DataTypeToSerialString(x1DType).c_str()),
+                    return ge::GRAPH_FAILED);
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), IS_CLOSE_TPL_EQUAL_NAN);
         brcBaseTiling.SetScalar<float>(rtol_);
         brcBaseTiling.SetScalar<float>(atol_);
@@ -150,9 +143,10 @@ ge::graphStatus IsCloseTiling::DoOpTiling()
         OP_LOGD(context_->GetNodeName(), "Data type is float, equal_nan is true.");
         Ops::Base::BroadcastBaseTiling<IsCloseEqualNanDag<float>::OpDag> brcBaseTiling(context_);
         baseTilingResult = brcBaseTiling.DoTiling();
-        OP_CHECK_IF(
-            baseTilingResult == ge::GRAPH_FAILED,
-            OP_LOGE(context_->GetNodeName(), "broadcastBaseTiling doTiling failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                    OP_LOGE(context_->GetNodeName(), "broadcastBaseTiling doTiling failed, x1 dtype: %s.",
+                            ge::TypeUtils::DataTypeToSerialString(x1DType).c_str()),
+                    return ge::GRAPH_FAILED);
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), IS_CLOSE_TPL_EQUAL_NAN);
         brcBaseTiling.SetScalar<float>(rtol_);
         brcBaseTiling.SetScalar<float>(atol_);
@@ -160,9 +154,10 @@ ge::graphStatus IsCloseTiling::DoOpTiling()
         OP_LOGD(context_->GetNodeName(), "Data type is int32, equal_nan is true.");
         Ops::Base::BroadcastBaseTiling<IsCloseEqualNanDag<int32_t>::OpDag> brcBaseTiling(context_);
         baseTilingResult = brcBaseTiling.DoTiling();
-        OP_CHECK_IF(
-            baseTilingResult == ge::GRAPH_FAILED,
-            OP_LOGE(context_->GetNodeName(), "broadcastBaseTiling doTiling failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                    OP_LOGE(context_->GetNodeName(), "broadcastBaseTiling doTiling failed, x1 dtype: %s.",
+                            ge::TypeUtils::DataTypeToSerialString(x1DType).c_str()),
+                    return ge::GRAPH_FAILED);
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), IS_CLOSE_TPL_EQUAL_NAN);
         brcBaseTiling.SetScalar<float>(rtol_);
         brcBaseTiling.SetScalar<float>(atol_);
@@ -170,39 +165,29 @@ ge::graphStatus IsCloseTiling::DoOpTiling()
         OP_LOGD(context_->GetNodeName(), "Data type is bfloat16, equal_nan is true.");
         Ops::Base::BroadcastBaseTiling<IsCloseEqualNanDag<Ops::Base::bfloat16_t>::OpDag> brcBaseTiling(context_);
         baseTilingResult = brcBaseTiling.DoTiling();
-        OP_CHECK_IF(
-            baseTilingResult == ge::GRAPH_FAILED,
-            OP_LOGE(context_->GetNodeName(), "broadcastBaseTiling doTiling failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                    OP_LOGE(context_->GetNodeName(), "broadcastBaseTiling doTiling failed, x1 dtype: %s.",
+                            ge::TypeUtils::DataTypeToSerialString(x1DType).c_str()),
+                    return ge::GRAPH_FAILED);
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), IS_CLOSE_TPL_EQUAL_NAN);
         brcBaseTiling.SetScalar<float>(rtol_);
         brcBaseTiling.SetScalar<float>(atol_);
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(x1DType), "FLOAT16, FLOAT, INT32, BF16");
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(x1DType),
+                                  "FLOAT16, FLOAT, INT32, BF16");
         return ge::GRAPH_FAILED;
     }
     OP_LOGD(context_->GetNodeName(), "[IsCloseTilingData] : tilingKey=%lu", tilingKey);
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus IsCloseTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus IsCloseTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t IsCloseTiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t IsCloseTiling::GetTilingKey() const { return tilingKey; }
 
-ge::graphStatus IsCloseTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus IsCloseTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus IsCloseTiling::PostTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus IsCloseTiling::PostTiling() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus Tiling4IsClose(gert::TilingContext* context)
 {
@@ -215,7 +200,6 @@ ge::graphStatus Tiling4IsClose(gert::TilingContext* context)
     auto compileInfo = reinterpret_cast<const Ops::Base::BroadcastCompileInfo*>(context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
-    OP_LOGD(context, "Enter ascendc Tiling4IsClose");
     IsCloseTiling tiling(context);
     return tiling.DoTiling();
 }
@@ -233,9 +217,7 @@ ge::graphStatus TilingPrepareForIsClose(gert::TilingParseContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_OPTILING(IsClose)
-    .Tiling(Tiling4IsClose)
-    .TilingParse<Ops::Base::BroadcastCompileInfo>(TilingPrepareForIsClose);
+IMPL_OP_OPTILING(IsClose).Tiling(Tiling4IsClose).TilingParse<Ops::Base::BroadcastCompileInfo>(TilingPrepareForIsClose);
 
 REGISTER_OPS_TILING_TEMPLATE(IsClose, IsCloseTiling, IS_CLOSE_COMMON_TILING_PRIORITY);
 } // namespace optiling
