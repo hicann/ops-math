@@ -224,6 +224,10 @@ aclnnStatus aclnnChunkCatGetWorkspaceSize(const aclTensorList* tensors, int64_t 
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "dim only support 0 now.");
         return ACLNN_ERR_PARAM_INVALID;
     }
+    if (numChunks <= 0) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "numChunks must be greater than 0.");
+        return ACLNN_ERR_PARAM_INVALID;
+    }
     if (tensors == nullptr) {
         OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "tensors is nullptr.");
         return ACLNN_ERR_PARAM_NULLPTR;

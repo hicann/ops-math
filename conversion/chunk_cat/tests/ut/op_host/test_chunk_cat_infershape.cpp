@@ -21,35 +21,27 @@
 
 class ChunkCatInfershapeTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "ChunkCatInfershapeTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "ChunkCatInfershapeTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "ChunkCatInfershapeTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "ChunkCatInfershapeTest TearDown" << std::endl; }
 };
 
 TEST_F(ChunkCatInfershapeTest, chunk_cat_infer_shape_fp16)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "ChunkCat",
-        {
-            {{{4, 16}, {4, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{4, 8}, {4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{4, 12}, {4, 12}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
-            {"num_chunks", Ops::Math::AnyValue::CreateFrom<int64_t>(4)},
-        },
-        {3}, {1}
-        );
+    gert::InfershapeContextPara infershapeContextPara("ChunkCat",
+                                                      {
+                                                          {{{4, 16}, {4, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{4, 8}, {4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{4, 12}, {4, 12}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+                                                          {"num_chunks", Ops::Math::AnyValue::CreateFrom<int64_t>(4)},
+                                                      },
+                                                      {3}, {1});
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {4, 36},
     };
@@ -58,23 +50,38 @@ TEST_F(ChunkCatInfershapeTest, chunk_cat_infer_shape_fp16)
 
 TEST_F(ChunkCatInfershapeTest, chunk_cat_infer_shape_fp16_1)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "ChunkCat",
-        {
-            {{{5, 2}, {5, 2}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{5, 3}, {5, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
-            {"num_chunks", Ops::Math::AnyValue::CreateFrom<int64_t>(5)},
-        },
-        {2}, {1}
-        );
+    gert::InfershapeContextPara infershapeContextPara("ChunkCat",
+                                                      {
+                                                          {{{5, 2}, {5, 2}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{5, 3}, {5, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+                                                          {"num_chunks", Ops::Math::AnyValue::CreateFrom<int64_t>(5)},
+                                                      },
+                                                      {2}, {1});
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {5, 5},
     };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(ChunkCatInfershapeTest, chunk_cat_infer_shape_invalid_num_chunks)
+{
+    gert::InfershapeContextPara infershapeContextPara("ChunkCat",
+                                                      {
+                                                          {{{5, 3}, {5, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+                                                          {"num_chunks", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+                                                      },
+                                                      {1}, {1});
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, {});
 }

@@ -99,7 +99,7 @@ aclnnStatus aclnnChunkCat(
       <td>numChunks（int64_t）</td>
       <td>输入</td>
       <td>需要切分块的数量。</td>
-      <td>-</td>
+      <td>必须大于0。</td>
       <td>INT64</td>
       <td>-</td>
       <td>-</td>
@@ -161,8 +161,8 @@ aclnnStatus aclnnChunkCat(
       <td>传入的tensors或out是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="5">161002</td>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
       <td>tensors列表中tensor的数据类型和数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
@@ -173,6 +173,9 @@ aclnnStatus aclnnChunkCat(
     </tr>
     <tr>
       <td>dim不为0。</td>
+    </tr>
+    <tr>
+      <td>numChunks小于等于0。</td>
     </tr>
   </tbody>
   </table>

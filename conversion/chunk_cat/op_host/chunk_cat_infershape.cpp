@@ -32,9 +32,9 @@ static ge::graphStatus InferShape4ChunkCat(gert::InferShapeContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
     const int64_t dim = *attrs->GetAttrPointer<int64_t>(0);
     const int64_t numChunks = *attrs->GetAttrPointer<int64_t>(1);
-    OP_CHECK_IF(dim != 0,
-        OP_LOGE(context->GetNodeName(), "dim only support 0 now"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(dim != 0, OP_LOGE(context->GetNodeName(), "dim only support 0 now."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(numChunks <= 0, OP_LOGE(context->GetNodeName(), "numChunks must be greater than 0."),
+                return ge::GRAPH_FAILED);
 
     auto outShape = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, outShape);
