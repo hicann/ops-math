@@ -67,6 +67,7 @@ private:
     __aicore__ inline bool IsProcessInvalid() const;
     __aicore__ inline uint32_t ComputeValidSegs(uint32_t batchId) const;
     __aicore__ inline void ProcessBatch(uint32_t batchId, uint32_t validSegs);
+    __aicore__ inline void LoadNonLastBatchWithNddma(uint64_t outerBaseOffset, uint64_t innerStart, uint32_t validSegs);
     __aicore__ inline void StoreBatch(int64_t segStart, uint32_t totalElems);
     __aicore__ inline void StoreNonLastBatch(uint64_t outerId, uint64_t innerStart, uint32_t validSegs,
                                              uint32_t totalElems);
@@ -155,6 +156,25 @@ __aicore__ inline uint32_t SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::Compute
 }
 
 template <typename T, typename OutIdxT, bool IsDescend>
+__aicore__ inline void SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::LoadNonLastBatchWithNddma(uint64_t outerBaseOffset,
+                                                                                               uint64_t innerStart,
+                                                                                               uint32_t validSegs)
+{
+    // Gather the strided GM [axis, inner] tile directly into dense UB [inner, axis]. This changes only the load
+    // engine: inputValues_ keeps its existing size and lifetime, with no new buffer or alias.
+    NdDmaLoopInfo<2> loopInfo{
+        {1, static_cast<uint64_t>(innerSize_)}, {segmentLen_, 1}, {validSegs, segmentLen_}, {0, 0}, {0, 0}};
+    NdDmaParams<T, 2> params{loopInfo, static_cast<T>(0)};
+    NdDmaDci();
+    static constexpr NdDmaConfig config;
+    DataCopy<T, 2, config>(this->inputValues_, inputXGm_[outerBaseOffset + innerStart], params);
+    // NDDMA/MTE2 produces inputValues_; the following RunTwoStageSort consumes it on the vector pipeline.
+    event_t eventIdMte2ToV = static_cast<event_t>(this->pipe_->FetchEventID(HardEvent::MTE2_V));
+    SetFlag<HardEvent::MTE2_V>(eventIdMte2ToV);
+    WaitFlag<HardEvent::MTE2_V>(eventIdMte2ToV);
+}
+
+template <typename T, typename OutIdxT, bool IsDescend>
 __aicore__ inline void SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::ProcessBatch(uint32_t batchId, uint32_t validSegs)
 {
     uint32_t totalElems = validSegs * segmentLen_;
@@ -168,8 +188,7 @@ __aicore__ inline void SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::ProcessBatc
         uint32_t innerTileId = batchId % innerLoopNum_;
         innerStart = static_cast<uint64_t>(innerTileId) * static_cast<uint64_t>(batchSize_);
         uint64_t outerBaseOffset = outerId * static_cast<uint64_t>(segmentLen_) * static_cast<uint64_t>(innerSize_);
-        Base::LoadNonLastBatch(inputXGm_, outerBaseOffset, innerStart, static_cast<uint64_t>(innerSize_), validSegs,
-                               totalElems);
+        LoadNonLastBatchWithNddma(outerBaseOffset, innerStart, validSegs);
     } else {
         Base::LoadContiguousBatch(inputXGm_, segStart * static_cast<int64_t>(segmentLen_), totalElems);
     }

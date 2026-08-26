@@ -51,6 +51,9 @@ static const std::initializer_list<op::DataType> ARCH3510_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT8,    op::DataType::DT_INT16,  op::DataType::DT_INT32,  op::DataType::DT_INT64,
     op::DataType::DT_UINT16,  op::DataType::DT_UINT32, op::DataType::DT_UINT64, op::DataType::DT_BOOL};
 static const int64_t DIM_MAX = 8;
+static constexpr int64_t SMALL_ROW_LARGE_OUTER_THRESHOLD = 1024;
+static constexpr int64_t WIDE_INTEGER_AXIS_THRESHOLD = 512;
+static constexpr int64_t LARGE_OUTPUT_BYTES_THRESHOLD = 1LL << 30;
 
 // parm判断
 static inline bool CheckNotNull(const aclTensor* self, const aclTensor* values, const aclTensor* indices)
@@ -262,17 +265,23 @@ static bool IsNoTransposeProfitable(const aclTensor* self, int64_t dim)
         innerSize *= selfShape[i];
     }
 
+    int64_t axisLen = selfShape[dim];
+    op::DataType dtype = self->GetDataType();
     int64_t dtypeSize = static_cast<int64_t>(op::TypeSize(self->GetDataType()));
-
-    // If each GM row copy is smaller than one block, no-transpose pays heavy per-row padding/gather overhead.
-    // With many outer slices, that fixed cost can dominate the transpose traffic saved by the no-transpose path.
     int64_t blockBytes = GetCurrentPlatformInfo().GetBlockSize();
-    constexpr int64_t SMALL_ROW_LARGE_OUTER_THRESHOLD = 1024;
     int64_t blockElems = Ops::Base::CeilDiv(blockBytes, dtypeSize);
+    // Tiny GM rows with many outer slices do not amortize the no-transpose gather/scatter overhead.
     if (innerSize < blockElems && outerSize >= SMALL_ROW_LARGE_OUTER_THRESHOLD) {
         return false;
     }
-    return true;
+    // Large-axis integer cases are outside the optimized two-stage range and favor the mature last-axis path.
+    if (op::IsIntegralType(dtype, true) && axisLen >= WIDE_INTEGER_AXIS_THRESHOLD) {
+        return false;
+    }
+    // aclnnSort returns both values and int64 indices. Large outputs favor the MTE transpose path over SIMT scatter.
+    int64_t outputElemBytes = dtypeSize + static_cast<int64_t>(sizeof(int64_t));
+    int64_t largeOutputElemThreshold = Ops::Base::CeilDiv(LARGE_OUTPUT_BYTES_THRESHOLD, outputElemBytes);
+    return selfShape.GetShapeSize() < largeOutputElemThreshold;
 }
 
 static bool UseNoTranspose(const aclTensor* self, int64_t dim)

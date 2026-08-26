@@ -327,14 +327,21 @@ void FillSmallAxisBatched(gert::TilingContext* context, SortKthTileInfo& sortTil
 {
     sortTileInfo.ubSize = sortTileInfo.ubSize - SIMT_UB; // reserve 32KB for SIMT kernel scratch
     sortTileInfo.numTileDataSize = static_cast<uint32_t>(sortTileInfo.lastAxis);
-    sortTileInfo.keyParams0 = plan.batchSize;                       // rows per batch
-    sortTileInfo.keyParams1 = plan.batchNum;                        // total batches
-    sortTileInfo.keyParams2 = plan.useRankInverse ? 1U : 0U;        // enable rank-inverse second pass
-    sortTileInfo.keyParams3 = sortTileInfo.isNonLastAxis ? 1U : 0U; // non-last axis flag
-    if (sortTileInfo.isNonLastAxis) {
-        // Recompute tile count for non-last axis: outerSize * batchSize tiles across all cores.
-        uint64_t tileCount64 = 0;
-        TryGetSortNonLastTileCount(sortTileInfo, plan.batchSize, sortTileInfo.innerLoopNum, tileCount64);
+    sortTileInfo.keyParams0 = plan.batchSize;                // rows per batch
+    sortTileInfo.keyParams1 = plan.batchNum;                 // total batches
+    sortTileInfo.keyParams2 = plan.useRankInverse ? 1U : 0U; // enable rank-inverse second pass
+    // A non-last axis whose trailing-dimension product is one is physically contiguous.
+    bool useNonLastLayout = sortTileInfo.isNonLastAxis && sortTileInfo.innerSize != 1;
+    sortTileInfo.keyParams3 = useNonLastLayout ? 1U : 0U; // non-last axis flag
+    sortTileInfo.keyParams4 = 0U;                         // grouped outer slices per batch
+    if (useNonLastLayout) {
+        if (plan.groupOuterSlices) {
+            sortTileInfo.keyParams4 = plan.batchSize / static_cast<uint32_t>(sortTileInfo.innerSize);
+            sortTileInfo.innerLoopNum = 1U;
+        } else {
+            uint64_t tileCount64 = 0;
+            TryGetSortNonLastTileCount(sortTileInfo, plan.batchSize, sortTileInfo.innerLoopNum, tileCount64);
+        }
     }
     sortTileInfo.coreNumNeed = plan.blockDim;
     sortTileInfo.tmpUbSize = plan.tmpUbSize;
@@ -463,15 +470,24 @@ bool TrySmallAxis(gert::TilingContext* context, SortKthTileInfo& sortTileInfo, u
         return true;
     }
     SmallAxisRoutePlan smallAxisRoutePlan;
-    bool selected = sortTileInfo.isNonLastAxis ? SelectNonLastSmallAxisRoute(sortTileInfo, smallAxisRoutePlan) :
-                                                 SelectSmallAxisRoute(sortTileInfo, smallAxisRoutePlan);
+    bool isPhysicallyContiguous = sortTileInfo.isNonLastAxis && sortTileInfo.innerSize == 1;
+    bool selected = false;
+    if (isPhysicallyContiguous) {
+        selected = SelectSmallAxisRoute(sortTileInfo, smallAxisRoutePlan);
+    } else if (sortTileInfo.isNonLastAxis) {
+        selected = SelectSortNonLastSmallAxisRoute(sortTileInfo, smallAxisRoutePlan);
+    } else {
+        selected = SelectSmallAxisRoute(sortTileInfo, smallAxisRoutePlan);
+    }
     if (!selected) {
         return false;
     }
     // Small-axis schedules also support non-last axes by batching adjacent inner positions.
     // Try them before the generic tile-local transpose path because they have lower setup cost.
     if (smallAxisRoutePlan.kind == SmallAxisRouteKind::TWO_STAGE) {
-        schId = SORT_SCHID_6;
+        // Keep sch6 for last-axis and physically contiguous innerSize==1 layouts. Strided non-last layouts use
+        // sch11 so their Sort-only batching and GM mapping cannot change the KthValue/last-axis binary.
+        schId = sortTileInfo.isNonLastAxis && sortTileInfo.innerSize != 1 ? SORT_SCHID_11 : SORT_SCHID_6;
     } else if (smallAxisRoutePlan.kind == SmallAxisRouteKind::INSERTION) {
         schId = SORT_SCHID_5;
     } else {
@@ -494,6 +510,22 @@ static bool TryAlignBytesToUint32(uint64_t bytes, uint32_t alignBytes, uint32_t&
     return true;
 }
 
+static bool AddBankRotationPadding(uint32_t blockBytes, uint32_t& rowBytes)
+{
+    // A merge row stride spanning a multiple of four 32-byte blocks repeatedly addresses the same bank groups.
+    // One allocated block of padding rotates successive row starts without changing the logical Sort length.
+    constexpr uint32_t bankConcentrationStrideBlocks = 4U;
+    uint32_t bankConcentrationGranularityBytes = bankConcentrationStrideBlocks * blockBytes;
+    if (rowBytes % bankConcentrationGranularityBytes != 0U) {
+        return true;
+    }
+    if (rowBytes > std::numeric_limits<uint32_t>::max() - blockBytes) {
+        return false;
+    }
+    rowBytes += blockBytes;
+    return true;
+}
+
 struct SortNonLastUbLayout {
     uint32_t inputRowBytes = 0;       // one row of input along inner axis
     uint32_t valueAxisBytes = 0;      // sort-axis value buffer per inner position
@@ -512,12 +544,16 @@ static bool ComputeSortNonLastUbLayout(const SortKthTileInfo& sortTileInfo, uint
         // must reserve at least sortCount * 8 bytes even for fp16/bf16 inputs.
         valueAxisRawBytes = std::max(valueAxisRawBytes, static_cast<uint64_t>(sortCount) * SORT_STRUCT_BYTES);
     }
-    return TryAlignBytesToUint32(static_cast<uint64_t>(innerChunk) * sortTileInfo.dtypeSize, align,
-                                 layout.inputRowBytes) &&
-           TryAlignBytesToUint32(valueAxisRawBytes, align, layout.valueAxisBytes) &&
-           TryAlignBytesToUint32(static_cast<uint64_t>(sortCount) * sizeof(uint32_t), align, layout.indexAxisBytes) &&
-           TryAlignBytesToUint32(static_cast<uint64_t>(innerChunk) * sortTileInfo.y2DtypeSize, align,
-                                 layout.outputIndexRowBytes);
+    if (!TryAlignBytesToUint32(static_cast<uint64_t>(innerChunk) * sortTileInfo.dtypeSize, align,
+                               layout.inputRowBytes) ||
+        !TryAlignBytesToUint32(valueAxisRawBytes, align, layout.valueAxisBytes) ||
+        !TryAlignBytesToUint32(static_cast<uint64_t>(sortCount) * sizeof(uint32_t), align, layout.indexAxisBytes) ||
+        !TryAlignBytesToUint32(static_cast<uint64_t>(innerChunk) * sortTileInfo.y2DtypeSize, align,
+                               layout.outputIndexRowBytes)) {
+        return false;
+    }
+    return !useMergeSort || (AddBankRotationPadding(align, layout.valueAxisBytes) &&
+                             AddBankRotationPadding(align, layout.indexAxisBytes));
 }
 
 // Estimate peak UB consumption for a non-last-axis small-axis sort candidate.

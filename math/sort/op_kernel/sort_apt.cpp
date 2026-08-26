@@ -25,6 +25,7 @@
 #include "arch35/sort_merge_intra_core.h"
 #include "arch35/sort_small_axis_insertion.h"
 #include "arch35/sort_small_axis_two_stage.h"
+#include "arch35/sort_non_last_small_axis_two_stage.h"
 #include "arch35/sort_axis_one_copy.h"
 #include "arch35/sort_non_last_small_axis.h"
 
@@ -107,6 +108,14 @@ __global__ __aicore__ void sort(GM_ADDR input, GM_ADDR sortedValues, GM_ADDR sor
     } else if constexpr (schId == SORT_SCHID_6) {
         LaunchSortKernel<Sort::SortSmallAxisTwoStage<DTYPE_X, DTYPE_Y2, isDescending>>(
             input, sortedValues, sortedIndices, sortWorkspace, &sortTilingData, &sortPipeline);
+    } else if constexpr (schId == SORT_SCHID_11) {
+        if (sortTilingData.keyParams4 != 0U) {
+            LaunchSortKernel<Sort::SortGroupedOuterSmallAxisTwoStage<DTYPE_X, DTYPE_Y2, isDescending>>(
+                input, sortedValues, sortedIndices, sortWorkspace, &sortTilingData, &sortPipeline);
+        } else {
+            LaunchSortKernel<Sort::SortSmallAxisTwoStage<DTYPE_X, DTYPE_Y2, isDescending>>(
+                input, sortedValues, sortedIndices, sortWorkspace, &sortTilingData, &sortPipeline);
+        }
     } else if constexpr (schId == SORT_SCHID_9 || schId == SORT_SCHID_10) {
         constexpr bool useMergeSort = (schId == SORT_SCHID_9);
         constexpr bool supportMergeSort = std::is_same_v<DTYPE_X, half> || std::is_same_v<DTYPE_X, float> ||

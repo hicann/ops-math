@@ -74,6 +74,8 @@ struct SmallAxisRoutePlan {
     uint32_t blockDim = 0;
     uint32_t tmpUbSize = 0;
     bool useRankInverse = false;
+    // A grouped batch contains only complete outer slices: batchSize == outerSlicesPerBatch * innerSize.
+    bool groupOuterSlices = false;
 };
 
 struct SmallAxisRule {
@@ -126,6 +128,8 @@ struct SortKthTileInfo {
     uint32_t blockUbSize = 0;
     uint32_t dtypeSize = 0;
     uint32_t y2DtypeSize = 0;
+    // Optional kernel-side final-index width; zero keeps the output dtype width.
+    uint32_t finalIdxUbElemBytes = 0;
     uint32_t maxCoreNum = 0;
     uint32_t numTileDataSize = 0;
     uint32_t sortLoopTimes = 0;
@@ -210,6 +214,7 @@ bool SearchNonLastSmallAxisPlan(
 
 bool SelectSmallAxisRoute(const SortKthTileInfo& info, SmallAxisRoutePlan& plan);
 bool SelectNonLastSmallAxisRoute(const SortKthTileInfo& info, SmallAxisRoutePlan& plan);
+bool SelectSortNonLastSmallAxisRoute(const SortKthTileInfo& info, SmallAxisRoutePlan& plan);
 
 // =============================================================================
 // Radix sort

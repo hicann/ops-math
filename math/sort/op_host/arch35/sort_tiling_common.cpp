@@ -275,8 +275,11 @@ bool SearchNonLastSmallAxisPlan(
     NonLastSmallAxisCandidate& best, SortKthTileInfo* selectedInfo)
 {
     constexpr uint32_t kMaxChunkCandidates = 6;
+    // Sort and KthValue share this layout. For FP32 Sort32, prepend 32/16 to the usual 8..1 candidates;
+    // estimateUb below still validates each candidate's aligned UB footprint and rejects one that does not fit.
+    bool useWideFp32Sort32 = info.dataType == ge::DT_FLOAT && info.lastAxis <= SORT32_SMALL_AXIS_THRESHOLD;
     for (uint32_t i = 0; i < kMaxChunkCandidates; ++i) {
-        uint32_t chunk = GetPreferredInnerChunk(info.dataType, i);
+        uint32_t chunk = useWideFp32Sort32 ? (32U >> i) : GetPreferredInnerChunk(info.dataType, i);
         if (chunk == 0U) {
             break;
         }
@@ -971,6 +974,51 @@ bool SearchTwoStageBatchPlan(uint32_t maxBatch, std::function<bool(uint32_t, Two
     return true;
 }
 
+// Sort-only non-last policy: prefer more active cores, then fewer batches per core, then fewer idle slots.
+// Last-axis Sort and KthValue keep SearchTwoStageBatchPlan so their established batching remains unchanged.
+static bool SearchTwoStageBatchPlanFillCores(uint32_t maxBatch, uint32_t targetBlockDim,
+                                             std::function<bool(uint32_t, TwoStageBatchPlan&)> tryCandidate,
+                                             TwoStageBatchPlan& result)
+{
+    if (maxBatch == 0U || targetBlockDim == 0U) {
+        return false;
+    }
+    TwoStageBatchPlan bestPlan;
+    bool hasBestPlan = false;
+    uint32_t bestActiveCore = 0U;
+    uint32_t bestBatchesPerCore = std::numeric_limits<uint32_t>::max();
+    uint64_t bestIdleSlots = std::numeric_limits<uint64_t>::max();
+    for (uint32_t candidate = maxBatch; candidate >= 1U; --candidate) {
+        TwoStageBatchPlan candidatePlan;
+        if (!tryCandidate(candidate, candidatePlan) || candidatePlan.batchNum == 0U || candidatePlan.blockDim == 0U) {
+            continue;
+        }
+        uint32_t batchesPerCore = Ops::Base::CeilDiv(candidatePlan.batchNum, candidatePlan.blockDim);
+        if (hasBestPlan && bestActiveCore == targetBlockDim && candidatePlan.blockDim == targetBlockDim &&
+            batchesPerCore > bestBatchesPerCore) {
+            // Decreasing the batch size can only increase the remaining batch count.
+            break;
+        }
+        uint64_t idleSlots = static_cast<uint64_t>(batchesPerCore) * candidatePlan.blockDim - candidatePlan.batchNum;
+        bool useCandidate = !hasBestPlan || candidatePlan.blockDim > bestActiveCore ||
+                            (candidatePlan.blockDim == bestActiveCore && batchesPerCore < bestBatchesPerCore) ||
+                            (candidatePlan.blockDim == bestActiveCore && batchesPerCore == bestBatchesPerCore &&
+                             idleSlots < bestIdleSlots);
+        if (useCandidate) {
+            bestPlan = candidatePlan;
+            hasBestPlan = true;
+            bestActiveCore = candidatePlan.blockDim;
+            bestBatchesPerCore = batchesPerCore;
+            bestIdleSlots = idleSlots;
+        }
+    }
+    if (!hasBestPlan) {
+        return false;
+    }
+    result = bestPlan;
+    return true;
+}
+
 uint32_t MaxTwoStageU16SafeBatch(uint32_t axisLen)
 {
     if (axisLen == 0U || axisLen > static_cast<uint32_t>(std::numeric_limits<uint16_t>::max())) {
@@ -1016,10 +1064,11 @@ uint64_t EstimateTwoStageUbBytes(const SortKthTileInfo& info, uint32_t totalElem
 {
     uint64_t valueRawBytes = 0U;
     uint64_t idxRawBytes = 0U;
-    uint64_t aliasRawBytes = 0U;
+    uint64_t finalIdxRawBytes = 0U;
+    uint32_t finalIdxElemBytes = info.finalIdxUbElemBytes == 0U ? info.y2DtypeSize : info.finalIdxUbElemBytes;
     if (ge::MulOverflow(totalElems, info.dtypeSize, valueRawBytes) ||
         ge::MulOverflow(totalElems, sizeof(uint32_t), idxRawBytes) ||
-        ge::MulOverflow(totalElems, info.y2DtypeSize, aliasRawBytes)) {
+        ge::MulOverflow(totalElems, finalIdxElemBytes, finalIdxRawBytes)) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("EstimateTwoStageUbBytes", "totalElems",
                                               std::to_string(totalElems).c_str(),
                                               "The value of totalElems must not cause raw byte size overflow.");
@@ -1027,20 +1076,20 @@ uint64_t EstimateTwoStageUbBytes(const SortKthTileInfo& info, uint32_t totalElem
     }
     uint64_t valueBytes = Ops::Base::CeilAlign<uint64_t>(valueRawBytes, info.blockUbSize);
     uint64_t idxBytes = Ops::Base::CeilAlign<uint64_t>(idxRawBytes, info.blockUbSize);
-    uint64_t aliasBytes = Ops::Base::CeilAlign<uint64_t>(aliasRawBytes, info.blockUbSize);
-    if (valueBytes == 0U || idxBytes == 0U || aliasBytes == 0U) {
+    uint64_t finalIdxBytes = Ops::Base::CeilAlign<uint64_t>(finalIdxRawBytes, info.blockUbSize);
+    if (valueBytes == 0U || idxBytes == 0U || finalIdxBytes == 0U) {
         return std::numeric_limits<uint64_t>::max();
     }
     uint32_t idxBufferCount = UseTwoStageRankInverse(static_cast<uint32_t>(info.lastAxis)) ? 2U : 3U;
     uint64_t totalBytes = 0U;
     uint64_t idxTotalBytes = 0U;
     if (ge::MulOverflow(valueBytes, 2U, totalBytes) || ge::MulOverflow(idxBytes, idxBufferCount, idxTotalBytes) ||
-        ge::AddOverflow(totalBytes, idxTotalBytes, totalBytes) || ge::AddOverflow(totalBytes, aliasBytes, totalBytes) ||
-        ge::AddOverflow(totalBytes, sortTmpUb, totalBytes)) {
+        ge::AddOverflow(totalBytes, idxTotalBytes, totalBytes) ||
+        ge::AddOverflow(totalBytes, finalIdxBytes, totalBytes) || ge::AddOverflow(totalBytes, sortTmpUb, totalBytes)) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
             "EstimateTwoStageUbBytes", "totalBytes",
             (std::to_string(valueBytes) + ", " + std::to_string(idxBytes) + ", " + std::to_string(idxBufferCount) +
-             ", " + std::to_string(aliasBytes) + ", " + std::to_string(sortTmpUb))
+             ", " + std::to_string(finalIdxBytes) + ", " + std::to_string(sortTmpUb))
                 .c_str(),
             "The value of totalBytes must not overflow.");
         return std::numeric_limits<uint64_t>::max();
@@ -1110,6 +1159,11 @@ template <typename ComputeBatchNumFn>
 static bool TrySmallAxisTwoStageBatchCandidate(const SortKthTileInfo& info, uint32_t candidate,
                                                ComputeBatchNumFn computeBatchNum, SmallAxisRoutePlan& plan)
 {
+    // Reject candidates unsupported by the batch mapping before querying Sort temporary UB.
+    plan.batchSize = candidate;
+    if (!computeBatchNum(candidate, plan.batchNum)) {
+        return false;
+    }
     uint32_t totalElems = 0;
     uint32_t tmpUbSize = 0;
     bool useRankInverse = false;
@@ -1118,10 +1172,6 @@ static bool TrySmallAxisTwoStageBatchCandidate(const SortKthTileInfo& info, uint
         return false;
     }
     if (totalBytes + SIMT_UB > info.ubSize) {
-        return false;
-    }
-    plan.batchSize = candidate;
-    if (!computeBatchNum(candidate, plan.batchNum)) {
         return false;
     }
     plan.blockDim = std::min(info.maxCoreNum, plan.batchNum);
@@ -1147,12 +1197,13 @@ static bool TrySmallAxisTwoStageBatchCandidate(const SortKthTileInfo& info, uint
 // batch² × axisLen must not exceed UINT16_MAX to avoid key overflow.
 // MaxTwoStageU16SafeBatch() computes the largest batch satisfying this constraint.
 //
-// After establishing the UB-derived upper bound, delegates to
-// SearchTwoStageBatchPlan() which picks the batch size that minimises
-// idle core slots while keeping the same per-core loop count.
+// After establishing the UB-derived upper bound, last-axis and KthValue routes
+// retain the original batching policy. Sort non-last routes may instead prefer
+// activating all available cores before minimising per-core loops and idle slots.
 template <typename ComputeBatchNumFn>
 static bool EstimateSmallAxisTwoStageBatching(const SortKthTileInfo& info, uint32_t batchSizeCap,
-                                              ComputeBatchNumFn computeBatchNum, SmallAxisRoutePlan& plan)
+                                              ComputeBatchNumFn computeBatchNum, bool preferFullCoreBatching,
+                                              SmallAxisRoutePlan& plan)
 {
     uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
     if (info.ubSize <= SIMT_UB || axisLen == 0U || batchSizeCap == 0U) {
@@ -1161,7 +1212,11 @@ static bool EstimateSmallAxisTwoStageBatching(const SortKthTileInfo& info, uint3
     bool useRankInverse = UseTwoStageRankInverse(axisLen);
     // rank-inverse path needs 2 index buffers; standard path needs 3 (see comment above)
     uint32_t idxBufferCount = useRankInverse ? 2U : 3U;
-    uint64_t minBytesPerElem = static_cast<uint64_t>(info.dtypeSize) * 2U + sizeof(uint32_t) * (idxBufferCount + 1U);
+    // Keep the legacy coarse lower bound for existing routes; sch11 supplies its explicit compact width.
+    uint32_t finalIdxElemBytes = info.finalIdxUbElemBytes == 0U ? static_cast<uint32_t>(sizeof(uint32_t)) :
+                                                                  info.finalIdxUbElemBytes;
+    uint64_t minBytesPerElem = static_cast<uint64_t>(info.dtypeSize) * 2U +
+                               static_cast<uint64_t>(sizeof(uint32_t)) * idxBufferCount + finalIdxElemBytes;
     uint64_t maxElemsByUb = (info.ubSize - SIMT_UB) / minBytesPerElem;
     uint64_t maxBatchByUb = maxElemsByUb / axisLen;
     uint32_t maxBatch = static_cast<uint32_t>(std::min<uint64_t>(static_cast<uint64_t>(batchSizeCap), maxBatchByUb));
@@ -1181,7 +1236,10 @@ static bool EstimateSmallAxisTwoStageBatching(const SortKthTileInfo& info, uint3
         p.tmpUbSize = candidatePlan.tmpUbSize;
         return true;
     };
-    if (!SearchTwoStageBatchPlan(maxBatch, tryCandidate, result)) {
+    bool foundPlan = preferFullCoreBatching ?
+                         SearchTwoStageBatchPlanFillCores(maxBatch, info.maxCoreNum, tryCandidate, result) :
+                         SearchTwoStageBatchPlan(maxBatch, tryCandidate, result);
+    if (!foundPlan) {
         return false;
     }
     plan.batchSize = result.batchSize;
@@ -1196,7 +1254,8 @@ static bool EstimateSmallAxisTwoStageBatching(const SortKthTileInfo& info, uint3
 // Small-axis route selection
 // =============================================================================
 static bool SelectSmallAxisRouteImpl(const SortKthTileInfo& info, uint32_t batchSizeCap,
-                                     std::function<bool(uint32_t, uint32_t&)> computeBatchNum, SmallAxisRoutePlan& plan)
+                                     std::function<bool(uint32_t, uint32_t&)> computeBatchNum,
+                                     bool preferFullCoreBatching, SmallAxisRoutePlan& plan)
 {
     uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
     if (axisLen <= 1U) {
@@ -1213,7 +1272,7 @@ static bool SelectSmallAxisRouteImpl(const SortKthTileInfo& info, uint32_t batch
     SmallAxisRoutePlan twoStagePlan;
     if (rule->twoStageMaxN > 0U && axisLen <= rule->twoStageMaxN && axisLen <= SMALL_AXIS_THRESHOLD &&
         fullCoreSegs >= LookupMinSegs(rule->twoStageTiers, axisLen) &&
-        EstimateSmallAxisTwoStageBatching(info, batchSizeCap, computeBatchNum, twoStagePlan)) {
+        EstimateSmallAxisTwoStageBatching(info, batchSizeCap, computeBatchNum, preferFullCoreBatching, twoStagePlan)) {
         plan = twoStagePlan;
         plan.kind = SmallAxisRouteKind::TWO_STAGE;
         return true;
@@ -1239,17 +1298,62 @@ bool SelectSmallAxisRoute(const SortKthTileInfo& info, SmallAxisRoutePlan& plan)
     auto computeBatchNum = [&info](uint32_t batchSize, uint32_t& batchNum) -> bool {
         return CeilDivUint32(static_cast<uint64_t>(info.unsortedDim), batchSize, batchNum);
     };
-    return SelectSmallAxisRouteImpl(info, fullCoreSegs, computeBatchNum, plan);
+    return SelectSmallAxisRouteImpl(info, fullCoreSegs, computeBatchNum, false, plan);
 }
 
-bool SelectNonLastSmallAxisRoute(const SortKthTileInfo& info, SmallAxisRoutePlan& plan)
+static bool SelectNonLastSmallAxisRouteImpl(const SortKthTileInfo& info, SmallAxisRoutePlan& plan,
+                                            bool enableSortNonLastOptimizations)
 {
+    uint32_t fullCoreSegs = 0U;
+    uint32_t innerSize = 0U;
+    if (enableSortNonLastOptimizations && info.outerSize > 1 && info.innerSize > 0 &&
+        static_cast<uint64_t>(info.innerSize) <= static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) &&
+        CeilDivUint32(static_cast<uint64_t>(info.unsortedDim), static_cast<uint64_t>(info.maxCoreNum), fullCoreSegs)) {
+        innerSize = static_cast<uint32_t>(info.innerSize);
+        // Group only when the target per-core work can hold at least two complete outer slices. Rounding the
+        // batch cap to an innerSize multiple preserves batchSize == outerSlicesPerBatch * innerSize, allowing the
+        // kernel to recover each segment's (outer, inner) coordinates without a partial outer slice.
+        if (innerSize <= fullCoreSegs / 2U) {
+            uint64_t groupedBatchCap64 = Ops::Base::CeilDiv(static_cast<uint64_t>(fullCoreSegs),
+                                                            static_cast<uint64_t>(innerSize)) *
+                                         innerSize;
+            uint32_t groupedBatchCap = static_cast<uint32_t>(
+                std::min<uint64_t>(groupedBatchCap64, static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())));
+            auto computeGroupedBatchNum = [&info, innerSize](uint32_t batchSize, uint32_t& batchNum) -> bool {
+                if (batchSize < innerSize * 2U || batchSize % innerSize != 0U) {
+                    return false;
+                }
+                return CeilDivUint32(static_cast<uint64_t>(info.outerSize), batchSize / innerSize, batchNum);
+            };
+            SmallAxisRoutePlan groupedPlan;
+            SortKthTileInfo groupedInfo = info;
+            // sch11 stores row-local indices as uint32_t in a dedicated UB buffer and converts only at GM writeback.
+            groupedInfo.finalIdxUbElemBytes = sizeof(uint32_t);
+            if (SelectSmallAxisRouteImpl(groupedInfo, groupedBatchCap, computeGroupedBatchNum, false, groupedPlan) &&
+                groupedPlan.kind == SmallAxisRouteKind::TWO_STAGE) {
+                groupedPlan.groupOuterSlices = true;
+                plan = groupedPlan;
+                return true;
+            }
+        }
+    }
+
     uint32_t batchSizeCap = static_cast<uint32_t>(
         std::min<int64_t>(info.innerSize, static_cast<int64_t>(std::numeric_limits<uint32_t>::max())));
     auto computeBatchNum = [&info](uint32_t batchSize, uint32_t& batchNum) -> bool {
         return ComputeNonLastBatchNum(info.outerSize, info.innerSize, batchSize, batchNum);
     };
-    return SelectSmallAxisRouteImpl(info, batchSizeCap, computeBatchNum, plan);
+    return SelectSmallAxisRouteImpl(info, batchSizeCap, computeBatchNum, enableSortNonLastOptimizations, plan);
+}
+
+bool SelectNonLastSmallAxisRoute(const SortKthTileInfo& info, SmallAxisRoutePlan& plan)
+{
+    return SelectNonLastSmallAxisRouteImpl(info, plan, false);
+}
+
+bool SelectSortNonLastSmallAxisRoute(const SortKthTileInfo& info, SmallAxisRoutePlan& plan)
+{
+    return SelectNonLastSmallAxisRouteImpl(info, plan, true);
 }
 
 } // namespace optiling

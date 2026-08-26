@@ -241,6 +241,42 @@ TEST_F(KthValueTilingTest, test_kthvalue_bf16_nonlast_axis1840_radix)
     EXPECT_EQ(tilingInfo.workspaceSizes[0], WORK_SPACE_SIZE);
 }
 
+TEST_F(KthValueTilingTest, test_kthvalue_fp32_nonlast_sort32_uses_wide_inner_tile)
+{
+    auto tilingContextPara = MakeKthValueTilingContext({{28, 26, 27, 29, 26}, {28, 26, 27, 29, 26}},
+                                                       {{1, 26, 27, 29, 26}, {1, 26, 27, 29, 26}},
+                                                       {{1, 26, 27, 29, 26}, {1, 26, 27, 29, 26}}, ge::DT_FLOAT, 14, 0);
+
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    EXPECT_EQ(tilingInfo.tilingKey, 265);
+    ASSERT_GE(tilingInfo.tilingDataSize, sizeof(KthValueTilingData));
+    const auto* tilingData = reinterpret_cast<const KthValueTilingData*>(tilingInfo.tilingData.get());
+    EXPECT_EQ(tilingData->innerChunk, 32);
+    EXPECT_EQ(tilingData->innerLoopNum, 16541);
+}
+
+TEST_F(KthValueTilingTest, test_kthvalue_twostage_stays_on_original_route)
+{
+    auto tilingContextPara = MakeKthValueTilingContext({{4096, 9}, {4096, 9}}, {{4096, 1}, {4096, 1}},
+                                                       {{4096, 1}, {4096, 1}}, ge::DT_FLOAT16, 5, 1);
+
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    EXPECT_EQ(tilingInfo.tilingKey, 262);
+    EXPECT_EQ(tilingInfo.blockNum, 64);
+    ASSERT_GE(tilingInfo.tilingDataSize, sizeof(KthValueTilingData));
+    const auto* tilingData = reinterpret_cast<const KthValueTilingData*>(tilingInfo.tilingData.get());
+    EXPECT_EQ(tilingData->numTileDataSize, 9);
+    EXPECT_EQ(tilingData->unsortedDimParallel, 64);
+    EXPECT_EQ(tilingData->sortLoopTimes, 64);
+    EXPECT_EQ(tilingData->keyParams0, 64);
+    EXPECT_EQ(tilingData->keyParams1, 64);
+    EXPECT_EQ(tilingData->keyParams2, 1);
+    EXPECT_EQ(tilingData->keyParams4, 0);
+    EXPECT_EQ(tilingData->innerChunk, 0);
+}
+
 TEST_F(KthValueTilingTest, test_kthvalue_radix_counter_range_boundary)
 {
     constexpr int64_t radixUint32ValueMax = 0x3fffffff;
