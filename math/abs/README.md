@@ -54,6 +54,7 @@ $$out_i=|input_i|$$
   </tbody></table>
 
 - Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
+- UINT8、BOOL类型，只有aclnn调用支持。
 
 ## 约束说明
 
