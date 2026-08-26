@@ -15,15 +15,9 @@
 
 class ReduceVar : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "ReduceVar SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "ReduceVar SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "ReduceVar TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "ReduceVar TearDown" << std::endl; }
 };
 
 static std::vector<int64_t> ToVector(const gert::Shape& shape)
@@ -36,12 +30,11 @@ static std::vector<int64_t> ToVector(const gert::Shape& shape)
     return shapeVec;
 }
 
-static void ExeTestCase(
-    std::vector<std::vector<int64_t>> expectResults,
-    const std::vector<gert::StorageShape>& inputShapes, // 存储所有输入StorageShape参数
-    const std::vector<ge::DataType>& dtypes,            // 存储所有DataType参数
-    gert::StorageShape& outStorageShape, std::vector<int64_t> dim, int64_t correction, bool keepdim, bool is_mean_out,
-    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
+static void ExeTestCase(std::vector<std::vector<int64_t>> expectResults,
+                        const std::vector<gert::StorageShape>& inputShapes, // 存储所有输入StorageShape参数
+                        const std::vector<ge::DataType>& dtypes,            // 存储所有DataType参数
+                        gert::StorageShape& outStorageShape, std::vector<int64_t> dim, int64_t correction, bool keepdim,
+                        bool is_mean_out, ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
 {
     // 从vector中取出对应参数（保持原顺序）
     const auto& x1StorageShape = inputShapes[0];
