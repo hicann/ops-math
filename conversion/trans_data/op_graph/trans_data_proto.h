@@ -16,8 +16,7 @@
 
 #include "graph/operator_reg.h"
 
-namespace ge
-{
+namespace ge {
 /**
 * @brief Do format transfer for various data format.
 * In general, the framework will insert it atomatically. \n
@@ -84,6 +83,7 @@ namespace ge
 | NCHW ====> FRACTAL_Z_C04    | float16, bfloat16                  | 16    | 1      |\n
 | FRACTAL_Z_C04 ====> NCHW    | float32                            | 16    | 1      |\n
 | ND <====> FRACTAL_NZ_C0_16  | float32, uint32, int32             | 16    | 1      |\n
+| ND ====> FRACTAL_NZ_C0_16   | int4, float4_e2m1                  | 16    | 1      |\n
 | ND <====> FRACTAL_NZ_C0_32  | float4_e2m1                        | 32    | 1      |\n
 | FRACTAL_NZ_C0_2 ====> ND    | float32, int32                     | 2     | 1      |\n
 | FRACTAL_NZ_C0_4 ====> ND    | float32, int32                     | 4     | 1      |\n
@@ -91,8 +91,8 @@ namespace ge
 *
 */
 REG_OP(TransData)
-    .INPUT(src, TensorType({TensorType::BasicType(), DT_FLOAT4_E1M2, DT_FLOAT4_E2M1}))
-    .OUTPUT(dst, TensorType({TensorType::BasicType(), DT_FLOAT4_E1M2, DT_FLOAT4_E2M1}))
+    .INPUT(src, TensorType({TensorType::BasicType(), DT_FLOAT4_E1M2, DT_FLOAT4_E2M1, DT_INT4}))
+    .OUTPUT(dst, TensorType({TensorType::BasicType(), DT_FLOAT4_E1M2, DT_FLOAT4_E2M1, DT_INT4}))
     .REQUIRED_ATTR(src_format, String)
     .REQUIRED_ATTR(dst_format, String)
     .ATTR(src_subformat, Int, 0)
