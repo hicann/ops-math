@@ -10,6 +10,7 @@
 
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
+#include "conversion/fill/op_api/fill.h"
 #include "diag_flat.h"
 #include "aclnn_diag_flat.h"
 #include "op_api/op_api_def.h"
@@ -37,9 +38,14 @@ static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = 
     op::DataType::DT_BOOL,    op::DataType::DT_COMPLEX64};
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT,     op::DataType::DT_INT64, op::DataType::DT_INT32,
-    op::DataType::DT_INT16,   op::DataType::DT_INT8,      op::DataType::DT_UINT8, op::DataType::DT_DOUBLE,
-    op::DataType::DT_BOOL,    op::DataType::DT_COMPLEX64, op::DataType::DT_BF16};
+    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_INT64,    op::DataType::DT_INT32,
+    op::DataType::DT_INT16,   op::DataType::DT_INT8,  op::DataType::DT_UINT8,    op::DataType::DT_DOUBLE,
+    op::DataType::DT_BOOL,    op::DataType::DT_BF16,  op::DataType::DT_COMPLEX64};
+
+static const std::initializer_list<op::DataType> EMPTY_INPUT_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_INT64,    op::DataType::DT_INT32,
+    op::DataType::DT_INT16,   op::DataType::DT_INT8,  op::DataType::DT_UINT8,    op::DataType::DT_DOUBLE,
+    op::DataType::DT_BOOL,    op::DataType::DT_BF16,  op::DataType::DT_COMPLEX64};
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
@@ -83,7 +89,7 @@ static void CheckFormat(const aclTensor* self)
     // 检查format，若是NZ格式，则添加警告
     if (self->GetStorageFormat() == Format::FORMAT_FRACTAL_NZ) {
         OP_LOGW("Format of self gets [%s], this format may lead to precision failure.",
-        op::ToString(self->GetStorageFormat()).GetString());
+                op::ToString(self->GetStorageFormat()).GetString());
     }
 }
 
@@ -103,8 +109,40 @@ static aclnnStatus CheckParams(const aclTensor* self, aclTensor* out)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnDiagFlatGetWorkspaceSize(
-    const aclTensor* self, int64_t diagonal, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus FillScalar(aclTensor* out, float val, aclOpExecutor* executor)
+{
+    OP_CHECK_DTYPE_NOT_SUPPORT(out, EMPTY_INPUT_DTYPE_SUPPORT_LIST, return ACLNN_ERR_PARAM_INVALID);
+    FVector<int64_t> shape;
+    size_t dimNum = out->GetViewShape().GetDimNum();
+    for (size_t idx = 0; idx < dimNum; idx++) {
+        int64_t tmpVal = out->GetViewShape().GetDim(idx);
+        shape.push_back(tmpVal);
+    }
+    auto dims = executor->ConvertToTensor(shape.data(), shape.size(), DataType::DT_INT64);
+    auto shapeArray = executor->AllocIntArray(shape.data(), shape.size());
+
+    op::DataType outDtype = out->GetDataType();
+    FVector<float> valVector = {val};
+    if (outDtype == op::DataType::DT_COMPLEX64) {
+        auto valTensor = executor->ConvertToTensor(valVector.data(), valVector.size(), DataType::DT_FLOAT);
+        auto fillOut = l0op::Fill(dims, valTensor, shapeArray, executor);
+        CHECK_RET(fillOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto castOut = l0op::Cast(fillOut, outDtype, executor);
+        CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto viewCopyResult = l0op::ViewCopy(castOut, out, executor);
+        CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    } else {
+        auto valTensor = executor->ConvertToTensor(valVector.data(), valVector.size(), outDtype);
+        auto fillOut = l0op::Fill(dims, valTensor, shapeArray, executor);
+        CHECK_RET(fillOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto viewCopyResult = l0op::ViewCopy(fillOut, out, executor);
+        CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    }
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus aclnnDiagFlatGetWorkspaceSize(const aclTensor* self, int64_t diagonal, aclTensor* out,
+                                          uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnDiagFlat, DFX_IN(self, diagonal), DFX_OUT(out));
     // 固定写法，创建OpExecutor
@@ -115,9 +153,15 @@ aclnnStatus aclnnDiagFlatGetWorkspaceSize(
     auto ret = CheckParams(self, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
-    // diagflat算子的空tensor在kernel中支持，对标竞品根据算子实际情况补充
     if (self->IsEmpty()) {
-        // 根据实际支持情况补充
+        if (std::abs(diagonal) > 0) {
+            ret = FillScalar(out, 0, uniqueExecutor.get());
+            if (ret == ACLNN_SUCCESS) {
+                *workspaceSize = uniqueExecutor->GetWorkspaceSize();
+                uniqueExecutor.ReleaseTo(executor);
+            }
+            return ret;
+        }
         *workspaceSize = 0;
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
