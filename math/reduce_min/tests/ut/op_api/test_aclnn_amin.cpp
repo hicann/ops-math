@@ -204,3 +204,45 @@ TEST_F(l2_amin_test, l2_amin_dim_invalid)
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_PARAM_INVALID);
 }
+
+TEST_F(l2_amin_test, l2_amin_scalar_input)
+{
+    auto selfDesc = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto dim = IntArrayDesc(vector<int64_t>{0});
+    bool keepDim = false;
+
+    auto ut = OP_API_UT(aclnnAmin, INPUT(selfDesc, dim, keepDim), OUTPUT(outDesc));
+
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+TEST_F(l2_amin_test, l2_amin_empty_dim)
+{
+    auto selfDesc = TensorDesc({2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({1, 1}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto dim = IntArrayDesc(vector<int64_t>{});
+    bool keepDim = true;
+
+    auto ut = OP_API_UT(aclnnAmin, INPUT(selfDesc, dim, keepDim), OUTPUT(outDesc));
+
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+TEST_F(l2_amin_test, l2_amin_duplicate_dim)
+{
+    auto selfDesc = TensorDesc({2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({1, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto dim = IntArrayDesc(vector<int64_t>{0, 0});
+    bool keepDim = true;
+
+    auto ut = OP_API_UT(aclnnAmin, INPUT(selfDesc, dim, keepDim), OUTPUT(outDesc));
+
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_PARAM_INVALID);
+}
