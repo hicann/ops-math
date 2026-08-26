@@ -21,6 +21,6 @@ if(UT_TEST_ALL OR OP_KERNEL_UT)
     AddOpTestCase(
         stateless_sample_multinomial
         "ascend950"
-        "-DDTYPE_X=float -DTestUtDefaultTilingStruct=RandomUnifiedSimtTilingDataStruct -I${KERNEL_STAGING_DIR}/stateless_sample_multinomial/arch35"
+        "-DDTYPE_X=float -DDTYPE_NORM_PROBS=float -DTestUtDefaultTilingStruct=RandomUnifiedSimtTilingDataStruct -I${KERNEL_STAGING_DIR}/stateless_sample_multinomial/arch35"
         "${stateless_sample_multinomial_tiling_files}")
 endif()

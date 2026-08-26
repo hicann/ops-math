@@ -13,19 +13,19 @@
 
 ## 功能说明
 
-- 算子功能：本算子是aclnnMultinomialGetWorkspaceSize接口构建计算流程时使用的内部服务算子，用于Ascend 950场景下的有放回多项分布采样路径。算子根据输入的累积分布和随机种子，从每个多项分布中抽取num_samples个样本，并将样本的类别索引存储到输出张量中。
+- 算子功能：本算子是`aclnnMultinomialGetWorkspaceSize`和`aclnnMultinomialTensorGetWorkspaceSize`接口构建计算流程时使用的内部服务算子，用于Ascend 950场景下的有放回多项分布采样路径。算子根据输入的累积分布和随机种子，从每个多项分布中抽取`num_samples`个样本，并将样本的类别索引存储到输出张量中。
 - 计算公式：
 
-  对于第d个分布的第j次抽样，生成随机数：
+  对于第$d$个分布的第$j$次抽样，生成随机数：
 
   $$
-  u_{d,j}\sim U(0, 1]
+  u_{d,j} \sim U(0, 1]
   $$
 
-  输出满足如下条件的最小类别索引k：
+  输出满足如下条件的最小类别索引$k$：
 
   $$
-  x_{d,k-1}<u_{d,j}\le x_{d,k}
+  x_{d,k-1} < u_{d,j} \le x_{d,k}
   $$
 
 ## 参数说明
@@ -50,6 +50,13 @@
       <td>x</td>
       <td>输入</td>
       <td>输入累积分布张量，shape为(C)或(N, C)，最后一维表示类别的累积概率。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>norm_probs</td>
+      <td>可选输入</td>
+      <td>归一化概率张量，形状和数据类型与x相同。传入时用于采样结果的零概率类别回退。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
@@ -85,14 +92,14 @@
 
 ## 约束说明
 
-1. x仅支持1维或2维，最后一维C表示类别数，C不能超过2^24。
-2. x需要表示有效的累积分布，最后一维应单调非递减。
-3. num_samples必须大于0。
-4. offset必须为4的倍数。
-5. aclnn接口中replacement为false时，num_samples不能大于C。
+1. `x`为一维或二维张量，最后一维为类别维，其长度不超过$2^{24}$。
+2. `norm_probs`为可选输入。传入时，其形状和数据类型与`x`一致，`x`为`norm_probs`沿最后一维计算累加和的结果；缺省时，通过比较`x`的相邻元素进行零概率类别回退。
+3. `num_samples`为正整数。
+4. `offset`为4的整数倍。
 
 ## 调用说明
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | aclnn接口 | [test_aclnn_multinomial](./examples/test_aclnn_multinomial.cpp) | 通过[aclnnMultinomial](./docs/aclnnMultinomial.md)接口构建计算流程时，内部调用StatelessSampleMultinomial服务算子。 |
+| aclnn接口 | [test_aclnn_multinomial_tensor](./examples/test_aclnn_multinomial_tensor.cpp) | 通过[aclnnMultinomialTensor](./docs/aclnnMultinomialTensor.md)接口构建计算流程时，内部调用StatelessSampleMultinomial服务算子。 |

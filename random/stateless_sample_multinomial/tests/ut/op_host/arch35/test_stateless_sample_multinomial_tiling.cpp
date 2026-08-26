@@ -21,15 +21,9 @@
 
 class StatelessSampleMultinomialTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "StatelessSampleMultinomialTilingTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "StatelessSampleMultinomialTilingTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "StatelessSampleMultinomialTilingTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "StatelessSampleMultinomialTilingTest TearDown" << std::endl; }
 };
 
 TEST_F(StatelessSampleMultinomialTilingTest, one_dim_float)
@@ -38,20 +32,20 @@ TEST_F(StatelessSampleMultinomialTilingTest, one_dim_float)
     int64_t seedValue = 12345;
     int64_t offsetValue = 0;
 
-    gert::TilingContextPara tilingContextPara(
-        "StatelessSampleMultinomial",
-        {
-            {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &seedValue},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &offsetValue},
-        },
-        {
-            {{{8}, {8}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {"num_samples", Ops::Math::AnyValue::CreateFrom<int64_t>(8)},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("StatelessSampleMultinomial",
+                                              {
+                                                  {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &seedValue},
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &offsetValue},
+                                              },
+                                              {
+                                                  {{{8}, {8}}, ge::DT_INT64, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {"num_samples", Ops::Math::AnyValue::CreateFrom<int64_t>(8)},
+                                              },
+                                              &compileInfo);
 
     uint64_t expectTilingKey = 100;
     std::vector<size_t> expectWorkspaces = {0};
@@ -64,20 +58,20 @@ TEST_F(StatelessSampleMultinomialTilingTest, two_dim_float16)
     int64_t seedValue = 7;
     int64_t offsetValue = 4;
 
-    gert::TilingContextPara tilingContextPara(
-        "StatelessSampleMultinomial",
-        {
-            {{{3, 10}, {3, 10}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &seedValue},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &offsetValue},
-        },
-        {
-            {{{3, 5}, {3, 5}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {"num_samples", Ops::Math::AnyValue::CreateFrom<int64_t>(5)},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("StatelessSampleMultinomial",
+                                              {
+                                                  {{{3, 10}, {3, 10}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{3, 10}, {3, 10}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &seedValue},
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &offsetValue},
+                                              },
+                                              {
+                                                  {{{3, 5}, {3, 5}}, ge::DT_INT64, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {"num_samples", Ops::Math::AnyValue::CreateFrom<int64_t>(5)},
+                                              },
+                                              &compileInfo);
 
     uint64_t expectTilingKey = 100;
     std::vector<size_t> expectWorkspaces = {0};
@@ -90,20 +84,20 @@ TEST_F(StatelessSampleMultinomialTilingTest, two_dim_bf16)
     int64_t seedValue = 99;
     int64_t offsetValue = 8;
 
-    gert::TilingContextPara tilingContextPara(
-        "StatelessSampleMultinomial",
-        {
-            {{{2, 64}, {2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &seedValue},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &offsetValue},
-        },
-        {
-            {{{2, 16}, {2, 16}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {"num_samples", Ops::Math::AnyValue::CreateFrom<int64_t>(16)},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("StatelessSampleMultinomial",
+                                              {
+                                                  {{{2, 64}, {2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{2, 64}, {2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &seedValue},
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &offsetValue},
+                                              },
+                                              {
+                                                  {{{2, 16}, {2, 16}}, ge::DT_INT64, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {"num_samples", Ops::Math::AnyValue::CreateFrom<int64_t>(16)},
+                                              },
+                                              &compileInfo);
 
     uint64_t expectTilingKey = 100;
     std::vector<size_t> expectWorkspaces = {0};
@@ -116,20 +110,20 @@ TEST_F(StatelessSampleMultinomialTilingTest, offset_multiple_of_four)
     int64_t seedValue = 1;
     int64_t offsetValue = 4;
 
-    gert::TilingContextPara tilingContextPara(
-        "StatelessSampleMultinomial",
-        {
-            {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &seedValue},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &offsetValue},
-        },
-        {
-            {{{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {"num_samples", Ops::Math::AnyValue::CreateFrom<int64_t>(4)},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("StatelessSampleMultinomial",
+                                              {
+                                                  {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &seedValue},
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &offsetValue},
+                                              },
+                                              {
+                                                  {{{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {"num_samples", Ops::Math::AnyValue::CreateFrom<int64_t>(4)},
+                                              },
+                                              &compileInfo);
 
     uint64_t expectTilingKey = 100;
     std::vector<size_t> expectWorkspaces = {0};

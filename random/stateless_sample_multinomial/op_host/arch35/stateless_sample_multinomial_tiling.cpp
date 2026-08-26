@@ -22,8 +22,9 @@
 namespace optiling {
 
 static constexpr uint16_t INPUT_IDX_X = 0;
-static constexpr uint16_t INPUT_IDX_SEED = 1;
-static constexpr uint16_t INPUT_IDX_OFFSET = 2;
+static constexpr uint16_t INPUT_IDX_NORM_PROBS = 1;
+static constexpr uint16_t INPUT_IDX_SEED = 2;
+static constexpr uint16_t INPUT_IDX_OFFSET = 3;
 static constexpr uint16_t OUTPUT_IDX_Y = 0;
 static constexpr int64_t DCACHE_SIZE = 128 * 1024;
 static constexpr int64_t CORE_ALIGN_SIZE = 256;
@@ -36,6 +37,8 @@ OpTilingConfig StatelessSampleMultinomialTiling::BuildOpConfig()
     config.inputCheckRules = {{INPUT_IDX_X, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {}, nullptr}},
                               {INPUT_IDX_SEED, {{ge::DT_INT64}, 1, {}, nullptr}},
                               {INPUT_IDX_OFFSET, {{ge::DT_INT64}, 1, {}, nullptr}}};
+    config.optionalInputCheckRules = {
+        {INPUT_IDX_NORM_PROBS, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {}, nullptr}}};
     config.outputCheckRules = {{OUTPUT_IDX_Y, {{ge::DT_INT64}, -1, {}, nullptr}}};
 
     config.getOutputSize = [](gert::TilingContext* ctx, int64_t& size) {
@@ -65,8 +68,32 @@ OpTilingConfig StatelessSampleMultinomialTiling::BuildOpConfig()
     return config;
 }
 
+ge::graphStatus StatelessSampleMultinomialTiling::CheckXRankAndNormProbsShape()
+{
+    auto xShapePtr = context_->GetInputShape(INPUT_IDX_X);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, xShapePtr);
+    const auto& xShape = xShapePtr->GetStorageShape();
+    auto xDimNum = xShape.GetDimNum();
+    OP_CHECK_IF(xDimNum != 1 && xDimNum != 2,
+                OP_LOGE(context_->GetNodeName(), "x must be 1D or 2D, but got %zuD", xDimNum), return ge::GRAPH_FAILED);
+
+    auto normProbsShapePtr = context_->GetOptionalInputShape(INPUT_IDX_NORM_PROBS);
+    if (normProbsShapePtr != nullptr) {
+        const auto& normProbsShape = normProbsShapePtr->GetStorageShape();
+        OP_CHECK_IF(normProbsShape != xShape,
+                    OP_LOGE(context_->GetNodeName(), "the shapes of x and norm_probs must be the same"),
+                    return ge::GRAPH_FAILED);
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
 ge::graphStatus StatelessSampleMultinomialTiling::UniqueProcess()
 {
+    auto ret = CheckXRankAndNormProbsShape();
+    if (ret != ge::GRAPH_SUCCESS) {
+        return ret;
+    }
+
     auto xShape = context_->GetInputShape(INPUT_IDX_X);
     if (xShape == nullptr) {
         return ge::GRAPH_FAILED;

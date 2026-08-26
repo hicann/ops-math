@@ -20,18 +20,25 @@
 namespace l0op {
 
 /**
- * @brief Generate multinomial samples with replacement using binary search on x.
+ * @brief Generate multinomial samples with replacement using binary search on a CDF.
  *        Fuses U(0,1] generation (Philox RNG) + binary search for direct index output.
- *        Handles zero-probability categories via backward walk (PyTorch CUDA compatible).
+ *        Uses normalized probabilities for zero-probability fallback when provided; otherwise falls back to
+ *        comparing adjacent CDF values.
  *        numDist and numCategories are derived from xTensor shape.
  *
- * @param xTensor Input tensor (DT_FLOAT, shape [numDist, numCategories] or [numCategories])
- * @param seedTensor    Seed tensor (INT64/UINT64, shape [1])
- * @param offsetTensor  Offset tensor (INT64/UINT64, shape [1])
+ * @param xTensor          CDF, shape [numDist, numCategories] or [numCategories]
+ * @param normProbsTensor  Optional normalized probabilities, with the same shape and dtype as xTensor
+ * @param seedTensor    Seed tensor (INT64, shape [1])
+ * @param offsetTensor  Offset tensor (INT64, shape [1])
  * @param numsamples    Number of samples per distribution
  * @param executor      Op executor
  * @return Output tensor with shape {numDist, numsamples}, dtype DT_INT64
  */
+const aclTensor* StatelessSampleMultinomial(const aclTensor* xTensor, const aclTensor* normProbsTensor,
+                                            const aclTensor* seedTensor, const aclTensor* offsetTensor,
+                                            int64_t numsamples, aclOpExecutor* executor);
+
+// Compatibility overload: uses adjacent CDF values when normalized probabilities are unavailable.
 const aclTensor* StatelessSampleMultinomial(const aclTensor* xTensor, const aclTensor* seedTensor,
                                             const aclTensor* offsetTensor, int64_t numsamples, aclOpExecutor* executor);
 

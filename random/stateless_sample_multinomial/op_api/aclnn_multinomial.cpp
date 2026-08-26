@@ -22,24 +22,19 @@
 #include "math/cumsum/op_api/cumsum.h"
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
 #include "random/dsa_random_uniform/op_host/op_api/dsa_random_uniform.h"
-#include "random/stateless_random_uniform_v2/op_api/stateless_random_uniform_v2.h"
 #include "conversion/concat_d/op_api/concat_d.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/reshape.h"
 #include "math/greater_equal/op_api/greater_equal.h"
 #include "conversion/view_copy/op_api/view_copy.h"
 #include "aclnn_kernels/contiguous.h"
-#include "aclnn/aclnn_base.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "op_api/aclnn_check.h"
 #include "opdev/common_types.h"
 #include "opdev/shape_utils.h"
-#include "opdev/data_type_utils.h"
-#include "opdev/format_utils.h"
 #include "opdev/op_dfx.h"
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
-#include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
 
 using namespace op;
@@ -60,29 +55,46 @@ static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE, op::DataType::DT_BF16};
 
-static inline bool CheckSocVersionGe910B(void)
-{
-    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
-    return curArch == NpuArch::DAV_2201 || IsRegBase(curArch);
-}
+static const std::initializer_list<op::DataType> ASCEND950_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE, op::DataType::DT_BF16};
+
+static inline bool IsArch22(NpuArch arch) { return arch == NpuArch::DAV_2201; }
+
+static inline bool IsArch35(NpuArch arch) { return arch == NpuArch::DAV_3510; }
 
 static bool UseAicpuPath(const aclTensor* self, int64_t selfSize)
 {
-    if (IsRegBase()) {
-        auto selfDtype = self->GetDataType();
+    const auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsArch35(curArch)) {
+        const auto selfDtype = self->GetDataType();
         return selfDtype != op::DataType::DT_FLOAT && selfDtype != op::DataType::DT_FLOAT16 &&
                selfDtype != op::DataType::DT_BF16;
     }
-    return !CheckSocVersionGe910B() || selfSize <= CPU_NPU_BOUNDARY;
+    if (IsArch22(curArch)) {
+        return selfSize <= CPU_NPU_BOUNDARY;
+    }
+    return true;
+}
+
+static bool ShouldCheckSeedOffsetDtype(int64_t selfSize)
+{
+    const auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsArch22(curArch)) {
+        return selfSize <= CPU_NPU_BOUNDARY;
+    }
+    return true;
 }
 
 static inline const std::initializer_list<op::DataType>& GetDtypeSupportList()
 {
-    if (CheckSocVersionGe910B()) {
-        return ASCEND910B_DTYPE_SUPPORT_LIST;
-    } else {
-        return ASCEND910_DTYPE_SUPPORT_LIST;
+    const auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsArch35(curArch)) {
+        return ASCEND950_DTYPE_SUPPORT_LIST;
     }
+    if (IsArch22(curArch)) {
+        return ASCEND910B_DTYPE_SUPPORT_LIST;
+    }
+    return ASCEND910_DTYPE_SUPPORT_LIST;
 }
 
 static bool CheckNotNull(const aclTensor* self, const aclTensor* out)
@@ -128,12 +140,8 @@ static bool CheckDtypeValidTensor(const aclTensor* self, const aclTensor* seedTe
     auto supportList = GetDtypeSupportList();
     OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
     if (!(self->IsEmpty())) {
-        const int64_t dimNum = static_cast<int64_t>(self->GetViewShape().GetDimNum());
-        int64_t selfSize = 1;
-        for (int64_t i = 0; i < dimNum; i++) {
-            selfSize *= self->GetViewShape().GetDim(i);
-        }
-        if (!CheckSocVersionGe910B() || selfSize <= CPU_NPU_BOUNDARY) {
+        const int64_t selfSize = self->GetViewShape().GetShapeSize();
+        if (ShouldCheckSeedOffsetDtype(selfSize)) {
             OP_CHECK_DTYPE_NOT_SUPPORT(seedTensor, {op::DataType::DT_INT64}, return false);
             OP_CHECK_DTYPE_NOT_SUPPORT(offsetTensor, {op::DataType::DT_INT64}, return false);
         }
@@ -311,17 +319,18 @@ static const aclTensor* Run950AicoreMultinomialWithReplacement(const aclTensor* 
     auto sumSelf = l0op::ReduceSumOp(selfContiguous, dimArray, true, executor);
     CHECK_RET(sumSelf != nullptr, nullptr);
 
-    auto divSumSelf = l0op::RealDiv(selfContiguous, sumSelf, executor);
-    CHECK_RET(divSumSelf != nullptr, nullptr);
+    auto normProbsTensor = l0op::RealDiv(selfContiguous, sumSelf, executor);
+    CHECK_RET(normProbsTensor != nullptr, nullptr);
 
     // Build CDF via cumulative sum
     const aclTensor* dimTensor = executor->ConvertToTensor(&lastDim, 1, DataType::DT_INT32);
     CHECK_RET(dimTensor != nullptr, nullptr);
-    auto cdfTensor = l0op::Cumsum(divSumSelf, dimTensor, executor);
-    CHECK_RET(cdfTensor != nullptr, nullptr);
+    auto xTensor = l0op::Cumsum(normProbsTensor, dimTensor, executor);
+    CHECK_RET(xTensor != nullptr, nullptr);
 
     // Launch fused RNG + binary search kernel, output is int64 indices directly
-    auto multinomialOut = l0op::StatelessSampleMultinomial(cdfTensor, seedTensor, offsetTensor, numsamples, executor);
+    auto multinomialOut = l0op::StatelessSampleMultinomial(xTensor, normProbsTensor, seedTensor, offsetTensor,
+                                                           numsamples, executor);
     CHECK_RET(multinomialOut != nullptr, nullptr);
     return multinomialOut;
 }
@@ -458,6 +467,7 @@ aclnnStatus aclnnMultinomialGetWorkspaceSize(const aclTensor* self, int64_t nums
     for (int64_t i = 0; i < dimNum; i++) {
         selfSize *= self->GetViewShape().GetDim(i);
     }
+    const auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
 
     auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_PARAM_NULLPTR);
@@ -467,7 +477,7 @@ aclnnStatus aclnnMultinomialGetWorkspaceSize(const aclTensor* self, int64_t nums
         multinomialOut = l0op::MultinomialWithReplacement(selfContiguous, numsamples, replacement, seed, offset,
                                                           uniqueExecutor.get());
     } else if (!replacement || numsamples == 1) {
-        if (IsRegBase()) {
+        if (IsArch35(curArch)) {
             // StatelessExponential takes tensor seed/offset; convert the scalar ones here.
             aclIntArray* seedList = uniqueExecutor->AllocIntArray(&seed, 1);
             CHECK_RET(seedList != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -493,7 +503,7 @@ aclnnStatus aclnnMultinomialGetWorkspaceSize(const aclTensor* self, int64_t nums
                                                          uniqueExecutor.get());
         }
     } else {
-        if (IsRegBase()) {
+        if (IsArch35(curArch)) {
             aclIntArray* seedList = uniqueExecutor->AllocIntArray(&seed, 1);
             CHECK_RET(seedList != nullptr, ACLNN_ERR_INNER_NULLPTR);
             auto seedTensor = uniqueExecutor->ConvertToTensor(seedList, op::DataType::DT_INT64);
@@ -563,6 +573,7 @@ aclnnStatus aclnnMultinomialTensorGetWorkspaceSize(const aclTensor* self, int64_
     for (int64_t i = 0; i < dimNum; i++) {
         selfSize *= self->GetViewShape().GetDim(i);
     }
+    const auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
 
     auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_PARAM_NULLPTR);
@@ -575,14 +586,7 @@ aclnnStatus aclnnMultinomialTensorGetWorkspaceSize(const aclTensor* self, int64_
         multinomialOut = l0op::MultinomialWithReplacementTensor(selfContiguous, numsamples, replacement, seedTensor,
                                                                 offsetAddOut, uniqueExecutor.get());
     } else if (!replacement || numsamples == 1) {
-        const aclTensor* randomUniform = nullptr;
-        if (!IsRegBase()) {
-            randomUniform = GetRandomUniformNoReplaceMentTensor(selfContiguous, seedTensor, offsetAddOut,
-                                                                uniqueExecutor.get());
-            CHECK_RET(randomUniform != nullptr, ACLNN_ERR_INNER_NULLPTR);
-            multinomialOut = RunMultinomialNoReplaceMent(selfContiguous, numsamples, randomUniform, out,
-                                                         uniqueExecutor.get());
-        } else {
+        if (IsArch35(curArch)) {
             auto expInput = uniqueExecutor->AllocTensor(selfContiguous->GetViewShape(), selfContiguous->GetDataType(),
                                                         selfContiguous->GetViewFormat());
             CHECK_RET(expInput != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -591,19 +595,23 @@ aclnnStatus aclnnMultinomialTensorGetWorkspaceSize(const aclTensor* self, int64_
             CHECK_RET(exp1Random != nullptr, ACLNN_ERR_PARAM_NULLPTR);
             multinomialOut = Run950AicoreMultinomialWithoutReplacement(selfContiguous, numsamples, exp1Random,
                                                                        uniqueExecutor.get());
+        } else {
+            auto randomUniform = GetRandomUniformNoReplaceMentTensor(selfContiguous, seedTensor, offsetAddOut,
+                                                                     uniqueExecutor.get());
+            CHECK_RET(randomUniform != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            multinomialOut = RunMultinomialNoReplaceMent(selfContiguous, numsamples, randomUniform, out,
+                                                         uniqueExecutor.get());
         }
     } else {
-        const aclTensor* randomUniform = nullptr;
-        if (!IsRegBase()) {
-            randomUniform = GetRandomUniformReplaceMentTensor(numsamples, seedTensor, offsetAddOut,
-                                                              uniqueExecutor.get());
+        if (IsArch35(curArch)) {
+            multinomialOut = Run950AicoreMultinomialWithReplacement(selfContiguous, numsamples, seedTensor,
+                                                                    offsetAddOut, uniqueExecutor.get());
+        } else {
+            auto randomUniform = GetRandomUniformReplaceMentTensor(numsamples, seedTensor, offsetAddOut,
+                                                                   uniqueExecutor.get());
             CHECK_RET(randomUniform != nullptr, ACLNN_ERR_INNER_NULLPTR);
             multinomialOut = RunMultinomialReplaceMent(selfContiguous, numsamples, randomUniform, out,
                                                        uniqueExecutor.get());
-        } else {
-            // RegBase: use the fused 950 AICore kernel directly (offsetAddOut already carries offsetTensor + offset).
-            multinomialOut = Run950AicoreMultinomialWithReplacement(selfContiguous, numsamples, seedTensor,
-                                                                    offsetAddOut, uniqueExecutor.get());
         }
     }
     CHECK_RET(multinomialOut != nullptr, ACLNN_ERR_PARAM_NULLPTR);

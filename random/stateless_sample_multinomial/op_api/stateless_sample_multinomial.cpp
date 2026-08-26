@@ -32,10 +32,11 @@ namespace l0op {
 
 OP_TYPE_REGISTER(StatelessSampleMultinomial);
 
-const aclTensor* StatelessSampleMultinomial(const aclTensor* xTensor, const aclTensor* seedTensor,
-                                            const aclTensor* offsetTensor, int64_t numsamples, aclOpExecutor* executor)
+const aclTensor* StatelessSampleMultinomial(const aclTensor* xTensor, const aclTensor* normProbsTensor,
+                                            const aclTensor* seedTensor, const aclTensor* offsetTensor,
+                                            int64_t numsamples, aclOpExecutor* executor)
 {
-    L0_DFX(StatelessSampleMultinomial, xTensor, seedTensor, offsetTensor);
+    L0_DFX(StatelessSampleMultinomial, xTensor, normProbsTensor, seedTensor, offsetTensor);
 
     auto outShape = xTensor->GetViewShape();
     auto dimNum = outShape.GetDimNum();
@@ -45,11 +46,17 @@ const aclTensor* StatelessSampleMultinomial(const aclTensor* xTensor, const aclT
     CHECK_RET(out != nullptr, nullptr);
 
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(StatelessSampleMultinomial, OP_ATTR_NAMES({"num_samples"}),
-                                           OP_INPUT(xTensor, seedTensor, offsetTensor), OP_OUTPUT(out),
+                                           OP_INPUT(xTensor, normProbsTensor, seedTensor, offsetTensor), OP_OUTPUT(out),
                                            OP_ATTR(numsamples));
     CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
 
     return out;
+}
+
+const aclTensor* StatelessSampleMultinomial(const aclTensor* xTensor, const aclTensor* seedTensor,
+                                            const aclTensor* offsetTensor, int64_t numsamples, aclOpExecutor* executor)
+{
+    return StatelessSampleMultinomial(xTensor, nullptr, seedTensor, offsetTensor, numsamples, executor);
 }
 
 } // namespace l0op

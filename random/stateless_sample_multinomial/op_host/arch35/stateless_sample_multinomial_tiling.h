@@ -24,13 +24,15 @@ namespace optiling {
 class StatelessSampleMultinomialTiling : public RandomTilingArch35 {
 public:
     explicit StatelessSampleMultinomialTiling(gert::TilingContext* context)
-        : RandomTilingArch35(context, BuildOpConfig()) {}
+        : RandomTilingArch35(context, BuildOpConfig())
+    {}
 
 protected:
     ge::graphStatus UniqueProcess() override;
 
 private:
     static OpTilingConfig BuildOpConfig();
+    ge::graphStatus CheckXRankAndNormProbsShape();
 };
 
 } // namespace optiling

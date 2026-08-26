@@ -14,23 +14,22 @@
 #include "tikicpulib.h"
 #include "../../../../random_common/op_kernel/arch35/random_unified_tiling_data_arch35.h"
 
-extern __global__ __aicore__ void stateless_sample_multinomial(
-    GM_ADDR x, GM_ADDR seed, GM_ADDR offset, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
+extern __global__ __aicore__ void stateless_sample_multinomial(GM_ADDR x, GM_ADDR normProbs, GM_ADDR seed,
+                                                               GM_ADDR offset, GM_ADDR y, GM_ADDR workspace,
+                                                               GM_ADDR tiling);
 
 namespace {
 using XType = DTYPE_X;
+using NormProbsType = DTYPE_NORM_PROBS;
 constexpr uint32_t kNumBlocks = 1;
 constexpr uint64_t kTilingKey = 100;
 constexpr int64_t kNumDist = 2;
 constexpr int64_t kNumCat = 4;
 constexpr int64_t kNumSamples = 8;
 constexpr int64_t kElementCount = kNumDist * kNumSamples;
-constexpr int64_t kCdfElementCount = kNumDist * kNumCat;
+constexpr int64_t kInputElementCount = kNumDist * kNumCat;
 
-inline size_t Align32(size_t size)
-{
-    return (size + 31U) / 32U * 32U;
-}
+inline size_t Align32(size_t size) { return (size + 31U) / 32U * 32U; }
 
 void FillTiling(RandomUnifiedSimtTilingDataStruct* tilingData, int64_t seed, int64_t offset)
 {
@@ -45,32 +44,43 @@ void FillTiling(RandomUnifiedSimtTilingDataStruct* tilingData, int64_t seed, int
     tilingData->splitBlockCount = 0;
 }
 
-void FillCdf(uint8_t* x)
+void FillX(uint8_t* xBuffer)
 {
-    auto* xData = reinterpret_cast<XType*>(x);
-    const float cdf[kCdfElementCount] = {
-        0.10f, 0.30f, 0.60f, 1.00f,
-        0.25f, 0.50f, 0.75f, 1.00f,
+    auto* xData = reinterpret_cast<XType*>(xBuffer);
+    const float x[kInputElementCount] = {
+        0.10f, 0.30f, 0.60f, 1.00f, 0.25f, 0.50f, 0.75f, 1.00f,
     };
-    for (int64_t i = 0; i < kCdfElementCount; ++i) {
-        xData[i] = static_cast<XType>(cdf[i]);
+    for (int64_t i = 0; i < kInputElementCount; ++i) {
+        xData[i] = static_cast<XType>(x[i]);
+    }
+}
+
+void FillNormProbs(uint8_t* normProbsBuffer)
+{
+    auto* normProbsData = reinterpret_cast<NormProbsType*>(normProbsBuffer);
+    const float normProbs[kInputElementCount] = {
+        0.10f, 0.20f, 0.30f, 0.40f, 0.25f, 0.25f, 0.25f, 0.25f,
+    };
+    for (int64_t i = 0; i < kInputElementCount; ++i) {
+        normProbsData[i] = static_cast<NormProbsType>(normProbs[i]);
     }
 }
 } // namespace
 
-class StatelessSampleMultinomialKernelTest : public testing::Test {
-};
+class StatelessSampleMultinomialKernelTest : public testing::Test {};
 
 TEST_F(StatelessSampleMultinomialKernelTest, smoke_output_in_category_range)
 {
-    auto* x = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(kCdfElementCount * sizeof(XType))));
+    auto* x = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(kInputElementCount * sizeof(XType))));
+    auto* normProbs = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(kInputElementCount * sizeof(NormProbsType))));
     auto* seed = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(sizeof(int64_t))));
     auto* offset = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(sizeof(int64_t))));
     auto* y = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(kElementCount * sizeof(int64_t))));
     auto* workspace = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(16 * 1024 * 1024)));
     auto* tiling = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(sizeof(RandomUnifiedSimtTilingDataStruct))));
 
-    FillCdf(x);
+    FillX(x);
+    FillNormProbs(normProbs);
     std::memset(y, 0xFF, kElementCount * sizeof(int64_t));
     *reinterpret_cast<int64_t*>(seed) = 42;
     *reinterpret_cast<int64_t*>(offset) = 0;
@@ -78,7 +88,7 @@ TEST_F(StatelessSampleMultinomialKernelTest, smoke_output_in_category_range)
 
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_SET_TILING_KEY(kTilingKey);
-    ICPU_RUN_KF(stateless_sample_multinomial, kNumBlocks, x, seed, offset, y, workspace, tiling);
+    ICPU_RUN_KF(stateless_sample_multinomial, kNumBlocks, x, normProbs, seed, offset, y, workspace, tiling);
 
     auto* yData = reinterpret_cast<int64_t*>(y);
     for (int64_t i = 0; i < kElementCount; ++i) {
@@ -87,6 +97,7 @@ TEST_F(StatelessSampleMultinomialKernelTest, smoke_output_in_category_range)
     }
 
     AscendC::GmFree(x);
+    AscendC::GmFree(normProbs);
     AscendC::GmFree(seed);
     AscendC::GmFree(offset);
     AscendC::GmFree(y);
@@ -96,7 +107,8 @@ TEST_F(StatelessSampleMultinomialKernelTest, smoke_output_in_category_range)
 
 TEST_F(StatelessSampleMultinomialKernelTest, determinism)
 {
-    auto* x = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(kCdfElementCount * sizeof(XType))));
+    auto* x = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(kInputElementCount * sizeof(XType))));
+    auto* normProbs = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(kInputElementCount * sizeof(NormProbsType))));
     auto* seed = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(sizeof(int64_t))));
     auto* offset = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(sizeof(int64_t))));
     auto* y1 = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(kElementCount * sizeof(int64_t))));
@@ -104,23 +116,25 @@ TEST_F(StatelessSampleMultinomialKernelTest, determinism)
     auto* workspace = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(16 * 1024 * 1024)));
     auto* tiling = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(sizeof(RandomUnifiedSimtTilingDataStruct))));
 
-    FillCdf(x);
+    FillX(x);
+    FillNormProbs(normProbs);
     *reinterpret_cast<int64_t*>(seed) = 12345;
     *reinterpret_cast<int64_t*>(offset) = 4;
     FillTiling(reinterpret_cast<RandomUnifiedSimtTilingDataStruct*>(tiling), 12345, 4);
 
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_SET_TILING_KEY(kTilingKey);
-    ICPU_RUN_KF(stateless_sample_multinomial, kNumBlocks, x, seed, offset, y1, workspace, tiling);
+    ICPU_RUN_KF(stateless_sample_multinomial, kNumBlocks, x, normProbs, seed, offset, y1, workspace, tiling);
 
     std::memset(y2, 0, kElementCount * sizeof(int64_t));
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_SET_TILING_KEY(kTilingKey);
-    ICPU_RUN_KF(stateless_sample_multinomial, kNumBlocks, x, seed, offset, y2, workspace, tiling);
+    ICPU_RUN_KF(stateless_sample_multinomial, kNumBlocks, x, normProbs, seed, offset, y2, workspace, tiling);
 
     EXPECT_EQ(std::memcmp(y1, y2, kElementCount * sizeof(int64_t)), 0);
 
     AscendC::GmFree(x);
+    AscendC::GmFree(normProbs);
     AscendC::GmFree(seed);
     AscendC::GmFree(offset);
     AscendC::GmFree(y1);
