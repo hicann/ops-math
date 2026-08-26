@@ -36,11 +36,14 @@ namespace ge {
  * Compatible with the TensorFlow operator AbsGrad.
  *
  */
+#ifndef OPS_PROTO_DEF_ABSGRAD
+#define OPS_PROTO_DEF_ABSGRAD
 REG_OP(AbsGrad)
     .INPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16}))
     .INPUT(dy, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16}))
     .OUTPUT(z, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16}))
     .OP_END_FACTORY_REG(AbsGrad)
+#endif // OPS_PROTO_DEF_ABSGRAD
 
 } // namespace ge
 #endif // OP_PROTO_ABS_GRAD_PROTO_H_

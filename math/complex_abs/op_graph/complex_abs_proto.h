@@ -36,10 +36,13 @@ namespace ge {
 * @par Third-party framework compatibility.
 * Compatible with tensorflow ComplexAbs operator.
 */
+#ifndef OPS_PROTO_DEF_COMPLEXABS
+#define OPS_PROTO_DEF_COMPLEXABS
 REG_OP(ComplexAbs)
     .INPUT(x, TensorType({DT_COMPLEX32, DT_COMPLEX64, DT_COMPLEX128}))
     .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE}))
     .ATTR(Tout, Type, DT_FLOAT)
     .OP_END_FACTORY_REG(ComplexAbs)
+#endif // OPS_PROTO_DEF_COMPLEXABS
 } // namespace ge
 #endif // OP_PROTO_COMPLEX_ABS_PROTO_H_
