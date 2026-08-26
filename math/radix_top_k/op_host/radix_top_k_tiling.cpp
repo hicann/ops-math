@@ -117,10 +117,7 @@ ge::graphStatus RadixTopKTiling::DoOpTiling()
 }
 
 // 4、计算高阶API的TilingData
-ge::graphStatus RadixTopKTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus RadixTopKTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
 // 5、计算TilingKey
 uint64_t RadixTopKTiling::GetTilingKey() const
@@ -129,7 +126,8 @@ uint64_t RadixTopKTiling::GetTilingKey() const
 
     const uint64_t tilingKey = GET_TPL_TILING_KEY(tilingData_.sorted, tilingData_.largest, isLargeShape_);
     OP_LOGD(opName_, "tilingKey is: [%lu]", tilingKey);
-    OP_LOGD(opName_, "sorted, largest, isLargeShape is: [%d, %d, %d]", tilingData_.sorted, tilingData_.largest, isLargeShape_);
+    OP_LOGD(opName_, "sorted, largest, isLargeShape is: [%d, %d, %d]", tilingData_.sorted, tilingData_.largest,
+            isLargeShape_);
 
     return tilingKey;
 }
@@ -142,10 +140,12 @@ ge::graphStatus RadixTopKTiling::GetWorkspaceSize()
         return ge::GRAPH_SUCCESS;
     }
     if (isLargeShape_) {
-        workspaceSize_ = (NUM_VALUE_2BIT * tilingData_.coreNum + tilingData_.coreNum +
-                          tilingData_.coreNum + WS_INT32_PER_TILE * tilingData_.totalTileNum) * sizeof(int32_t);
+        workspaceSize_ = (NUM_VALUE_2BIT * tilingData_.coreNum + tilingData_.coreNum + tilingData_.coreNum +
+                          WS_INT32_PER_TILE * tilingData_.totalTileNum) *
+                         sizeof(int32_t);
     } else {
-        workspaceSize_ = (NUM_VALUE_2BIT * tilingData_.coreNum + tilingData_.coreNum + tilingData_.coreNum) * sizeof(int32_t);
+        workspaceSize_ = (NUM_VALUE_2BIT * tilingData_.coreNum + tilingData_.coreNum + tilingData_.coreNum) *
+                         sizeof(int32_t);
     }
     return ge::GRAPH_SUCCESS;
 }
@@ -180,10 +180,7 @@ ge::graphStatus RadixTopKTiling::PostTiling()
     return ge::GRAPH_SUCCESS;
 }
 
-bool RadixTopKTiling::IsCapable()
-{
-    return true;
-}
+bool RadixTopKTiling::IsCapable() { return true; }
 
 void RadixTopKTiling::PrintTilingData()
 {
@@ -202,7 +199,7 @@ void RadixTopKTiling::PrintTilingData()
     OP_LOGD(opName_, "needWorkspace:    %d.", tilingData_.needWorkspace);
 }
 
-void RadixTopKTiling::CalcTileDistribution(const uint64_t &dataNum, const uint64_t &formerTileLen)
+void RadixTopKTiling::CalcTileDistribution(const uint64_t& dataNum, const uint64_t& formerTileLen)
 {
     uint64_t totalTileNum = Ops::Base::CeilDiv(dataNum, formerTileLen);
     uint64_t formerTileNum = Ops::Base::CeilDiv(totalTileNum, totalCoreNum_);
@@ -221,10 +218,9 @@ void RadixTopKTiling::CalcTileDistribution(const uint64_t &dataNum, const uint64
     tilingData_.tailTileLen = tailTileLen;
 }
 
-template<typename CheckUbFn>
-bool RadixTopKTiling::TryCalcTileDistribution(
-    const uint64_t &dataNum, uint64_t startTileLen,
-    uint64_t minTileLen, uint64_t step, CheckUbFn &&checkUb)
+template <typename CheckUbFn>
+bool RadixTopKTiling::TryCalcTileDistribution(const uint64_t& dataNum, uint64_t startTileLen, uint64_t minTileLen,
+                                              uint64_t step, CheckUbFn&& checkUb)
 {
     for (uint64_t tileLen = startTileLen; tileLen >= minTileLen; tileLen -= step) {
         if (checkUb(tileLen)) {
@@ -236,12 +232,12 @@ bool RadixTopKTiling::TryCalcTileDistribution(
     return false;
 }
 
-bool RadixTopKTiling::CalcLargeTilingParams(const uint64_t &dataNum)
+bool RadixTopKTiling::CalcLargeTilingParams(const uint64_t& dataNum)
 {
     uint64_t dataAlign = CACHE_LINE / xDtypeSize_;
     uint64_t minTileLen = dataAlign;
 
-    auto checkUb = [&](uint64_t tileLen) -> bool {
+    auto checkUb = [this](uint64_t tileLen) -> bool {
         uint64_t cmpMaskSize = tileLen / 8;
         uint64_t ubUsed = 16 * tileLen + cmpMaskSize + MAX_TILE_NUM_IN_UB * sizeof(int32_t) + BLOCK_SIZE;
         return ubUsed <= ubSize_;
@@ -250,22 +246,25 @@ bool RadixTopKTiling::CalcLargeTilingParams(const uint64_t &dataNum)
     return TryCalcTileDistribution(dataNum, LARGE_TILE_LEN, minTileLen, dataAlign, checkUb);
 }
 
-bool RadixTopKTiling::CalcTilingParams(const uint64_t &dataNum)
+bool RadixTopKTiling::CalcTilingParams(const uint64_t& dataNum)
 {
     uint64_t coreNum = totalCoreNum_;
     uint64_t dataAlign = CACHE_LINE / xDtypeSize_;
     uint64_t minTileLen = dataAlign;
 
-    auto checkUb = [&](uint64_t tileLen) -> bool {
-        if (tileLen == 0) return false;
+    auto checkUb = [this, dataNum, coreNum](uint64_t tileLen) -> bool {
+        if (tileLen == 0)
+            return false;
         uint64_t totalTn = (dataNum + tileLen - 1) / tileLen;
-        if (totalTn == 0) totalTn = 1;
+        if (totalTn == 0)
+            totalTn = 1;
         uint64_t tn = (totalTn + coreNum - 1) / coreNum;
         uint64_t tnAlign = Ops::Base::CeilAlign(tn, static_cast<uint64_t>(8));
         uint64_t tileHistSize = NUM_VALUE_2BIT * tnAlign * sizeof(int32_t);
         uint64_t cmpMaskSize = tileLen / 8;
         uint64_t tempBuf = (tileHistSize > cmpMaskSize) ? tileHistSize : cmpMaskSize;
-        uint64_t ubUsed = BUFFER_NUM_IN_OUT * sizeof(int32_t) * tileLen + NUM_VALUE_2BIT * tnAlign + tempBuf + BLOCK_SIZE;
+        uint64_t ubUsed = BUFFER_NUM_IN_OUT * sizeof(int32_t) * tileLen + NUM_VALUE_2BIT * tnAlign + tempBuf +
+                          BLOCK_SIZE;
         return ubUsed <= ubSize_;
     };
 
@@ -281,8 +280,7 @@ bool RadixTopKTiling::CalcTilingParams(const uint64_t &dataNum)
 void RadixTopKTiling::SetTilingData()
 {
     OP_LOGD(opName_, "RadixTopKTiling SetTilingData.");
-    RadixTopKTilingData* tilingData =
-        context_->GetTilingData<RadixTopKTilingData>();
+    RadixTopKTilingData* tilingData = context_->GetTilingData<RadixTopKTilingData>();
     tilingData->formerCoreNum = tilingData_.formerCoreNum;
     tilingData->tailCoreNum = tilingData_.tailCoreNum;
     tilingData->totalTileNum = tilingData_.totalTileNum;
@@ -305,10 +303,9 @@ static ge::graphStatus TilingRadixTopK(gert::TilingContext* context)
     OP_LOGD(context, "RadixTopKTiling start.");
     RadixTopK::RadixTopKTiling tilingOp(context);
     auto ret = tilingOp.DoTiling();
-    OP_CHECK_IF(
-        (ret == ge::GRAPH_FAILED), OP_LOGD(context, "RadixTopKTiling tiling failed!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((ret == ge::GRAPH_FAILED), OP_LOGD(context, "RadixTopKTiling tiling failed!"), return ge::GRAPH_FAILED);
     OP_LOGD(context, "RadixTopKTiling end.");
-        
+
     return ge::GRAPH_SUCCESS;
 }
 

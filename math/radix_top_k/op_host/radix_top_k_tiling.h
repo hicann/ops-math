@@ -24,8 +24,7 @@
 namespace optiling {
 namespace RadixTopK {
 
-class RadixTopKTiling : public Ops::Base::TilingBaseClass
-{
+class RadixTopKTiling : public Ops::Base::TilingBaseClass {
 public:
     explicit RadixTopKTiling(gert::TilingContext* context)
         : Ops::Base::TilingBaseClass(context), opName_(context->GetNodeName())
@@ -48,13 +47,13 @@ protected:
     // 7、保存Tiling数据
     ge::graphStatus PostTiling() override;
 
-    bool CalcLargeTilingParams(const uint64_t &dataNum);
-    bool CalcTilingParams(const uint64_t &dataNum);
+    bool CalcLargeTilingParams(const uint64_t& dataNum);
+    bool CalcTilingParams(const uint64_t& dataNum);
     void PrintTilingData();
 
-    template<typename CheckUbFn>
-    bool TryCalcTileDistribution(const uint64_t &dataNum, uint64_t startTileLen,
-        uint64_t minTileLen, uint64_t step, CheckUbFn &&checkUb);
+    template <typename CheckUbFn>
+    bool TryCalcTileDistribution(const uint64_t& dataNum, uint64_t startTileLen, uint64_t minTileLen, uint64_t step,
+                                 CheckUbFn&& checkUb);
 
 private:
     const std::string opName_;
@@ -64,10 +63,10 @@ private:
     uint32_t xDtypeSize_{0};
     uint64_t xAlign_{0};
     bool isLargeShape_{false};
-    RadixTopKTilingData tilingData_;
+    RadixTopKTilingData tilingData_{};
 
     void SetTilingData();
-    void CalcTileDistribution(const uint64_t &dataNum, const uint64_t &formerTileLen);
+    void CalcTileDistribution(const uint64_t& dataNum, const uint64_t& formerTileLen);
 };
 
 } // namespace RadixTopK

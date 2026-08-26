@@ -43,6 +43,9 @@ public:
         if (numBlocks > coreNum) {
             numBlocks = coreNum;
         }
+        if (numBlocks == 0) {
+            numBlocks = 1;
+        }
 
         uint32_t dataBlockSize = DATA_BLOCK * sizeof(T);
         uint32_t usableUbSize = uint32_t(ubSize - RESERVERD_UB_SIZE - sizeof(IsFiniteTilingData)) /
