@@ -52,7 +52,6 @@ REG_OP(TileWithAxis)
     .ATTR(axis, Int, 1)
     .REQUIRED_ATTR(tiles, Int)
     .OP_END_FACTORY_REG(TileWithAxis);
-
 #endif
 } // namespace ge
 
