@@ -12,6 +12,9 @@
 #include <iostream>
 #include "infershape_context_faker.h"
 #include "infershape_case_executor.h"
+#include "op_infer_datatype_context_builder.h"
+#include "op_infer_shape_range_context_builder.h"
+#include "base/registry/op_impl_space_registry_v2.h"
 
 class ReduceMinTest : public testing::Test {
 protected:
@@ -644,4 +647,47 @@ TEST_F(ReduceMinTest, ReduceMin_unknown_rank)
          gert::InfershapeContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))});
     std::vector<std::vector<int64_t>> expectOutputShape = {{-2}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(ReduceMinTest, ReduceMin_infer_datatype)
+{
+    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    ASSERT_NE(spaceRegistry, nullptr);
+    auto opImpl = spaceRegistry->GetOpImpl("ReduceMin");
+    ASSERT_NE(opImpl, nullptr);
+    ASSERT_NE(opImpl->infer_datatype, nullptr);
+
+    gert::OpInferDataTypeContextBuilder builder;
+    builder.OpType("ReduceMin").OpName("ReduceMin");
+    builder.IONum(2, 1);
+    builder.InputTensorDesc(0, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND);
+    builder.InputTensorDesc(1, ge::DT_INT32, ge::FORMAT_ND, ge::FORMAT_ND);
+    builder.OutputTensorDesc(0, ge::FORMAT_ND, ge::FORMAT_ND);
+    auto contextHolder = builder.Build();
+    auto* context = contextHolder.GetContext();
+    ASSERT_NE(context, nullptr);
+
+    auto ret = opImpl->infer_datatype(context);
+    EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
+    EXPECT_EQ(context->GetOutputDataType(0), ge::DT_FLOAT);
+}
+
+TEST_F(ReduceMinTest, ReduceMin_infer_shape_range)
+{
+    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    ASSERT_NE(spaceRegistry, nullptr);
+    auto opImpl = spaceRegistry->GetOpImpl("ReduceMin");
+    ASSERT_NE(opImpl, nullptr);
+    ASSERT_NE(opImpl->infer_shape_range, nullptr);
+
+    gert::OpInferShapeRangeContextBuilder builder;
+    builder.OpType("ReduceMin").OpName("ReduceMin");
+    builder.IONum(2, 1);
+    builder.OutputTensorDesc(0, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND);
+    auto contextHolder = builder.Build();
+    auto* context = contextHolder.GetContext();
+    ASSERT_NE(context, nullptr);
+
+    auto ret = opImpl->infer_shape_range(context);
+    EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
 }
