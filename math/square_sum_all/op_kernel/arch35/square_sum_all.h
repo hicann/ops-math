@@ -119,9 +119,9 @@ private:
     __aicore__ inline void ComputeTile(LocalTensor<float> x1Local, LocalTensor<float> x2Local,
                                        LocalTensor<float> resultLocal, uint32_t elementCount, bool isFirstTile)
     {
-        __local_mem__ float* x1Address = (__local_mem__ float*)x1Local.GetPhyAddr();
-        __local_mem__ float* x2Address = (__local_mem__ float*)x2Local.GetPhyAddr();
-        __local_mem__ float* resultAddress = (__local_mem__ float*)resultLocal.GetPhyAddr();
+        __ubuf__ float* x1Address = (__ubuf__ float*)x1Local.GetPhyAddr();
+        __ubuf__ float* x2Address = (__ubuf__ float*)x2Local.GetPhyAddr();
+        __ubuf__ float* resultAddress = (__ubuf__ float*)resultLocal.GetPhyAddr();
         const uint16_t fullVectorLoops = static_cast<uint16_t>(elementCount / VECTOR_ELEMENTS);
         uint32_t tailElements = elementCount % VECTOR_ELEMENTS;
 
@@ -209,8 +209,8 @@ private:
     __aicore__ inline void ReducePartials(LocalTensor<float> partialLocal, LocalTensor<float> finalLocal,
                                           uint32_t finalOffset)
     {
-        __local_mem__ float* partialAddress = (__local_mem__ float*)partialLocal.GetPhyAddr();
-        __local_mem__ float* finalAddress = (__local_mem__ float*)finalLocal.GetPhyAddr();
+        __ubuf__ float* partialAddress = (__ubuf__ float*)partialLocal.GetPhyAddr();
+        __ubuf__ float* finalAddress = (__ubuf__ float*)finalLocal.GetPhyAddr();
         const uint16_t partialElements = static_cast<uint16_t>(usedCoreNum_ * FLOATS_PER_BLOCK);
         const uint16_t fullVectorLoops = partialElements / VECTOR_ELEMENTS;
         uint32_t tailElements = partialElements % VECTOR_ELEMENTS;

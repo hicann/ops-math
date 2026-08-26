@@ -208,9 +208,9 @@ private:
                                                 LocalTensor<float> accumulatorLocal, int64_t batchCount,
                                                 bool firstChunk)
     {
-        __local_mem__ float* x1Address = (__local_mem__ float*)x1Local.GetPhyAddr();
-        __local_mem__ float* x2Address = (__local_mem__ float*)x2Local.GetPhyAddr();
-        __local_mem__ float* accumulatorAddress = (__local_mem__ float*)accumulatorLocal.GetPhyAddr();
+        __ubuf__ float* x1Address = (__ubuf__ float*)x1Local.GetPhyAddr();
+        __ubuf__ float* x2Address = (__ubuf__ float*)x2Local.GetPhyAddr();
+        __ubuf__ float* accumulatorAddress = (__ubuf__ float*)accumulatorLocal.GetPhyAddr();
         const uint16_t vectorBatchCount = static_cast<uint16_t>(batchCount);
         const int64_t accumulatorRegionElements = accumulatorRegionElements_;
         __VEC_SCOPE__
@@ -261,8 +261,8 @@ private:
     __aicore__ inline void FinalizeBatch(LocalTensor<float> accumulatorLocal, LocalTensor<float> resultLocal,
                                          int64_t batchCount)
     {
-        __local_mem__ float* accumulatorAddress = (__local_mem__ float*)accumulatorLocal.GetPhyAddr();
-        __local_mem__ float* resultAddress = (__local_mem__ float*)resultLocal.GetPhyAddr();
+        __ubuf__ float* accumulatorAddress = (__ubuf__ float*)accumulatorLocal.GetPhyAddr();
+        __ubuf__ float* resultAddress = (__ubuf__ float*)resultLocal.GetPhyAddr();
         const uint16_t vectorBatchCount = static_cast<uint16_t>(batchCount);
         const int64_t accumulatorRegionElements = accumulatorRegionElements_;
         const int64_t resultRegionElements = resultRegionElements_;
@@ -330,8 +330,8 @@ private:
     __aicore__ inline void ReducePackedPartials(LocalTensor<float> partialLocal, LocalTensor<float> finalLocal,
                                                 uint32_t finalOffset)
     {
-        __local_mem__ float* partialAddress = (__local_mem__ float*)partialLocal.GetPhyAddr();
-        __local_mem__ float* finalAddress = (__local_mem__ float*)finalLocal.GetPhyAddr();
+        __ubuf__ float* partialAddress = (__ubuf__ float*)partialLocal.GetPhyAddr();
+        __ubuf__ float* finalAddress = (__ubuf__ float*)finalLocal.GetPhyAddr();
         const uint16_t groupCount = static_cast<uint16_t>(CeilDiv(partialCount_, CUDA_BLOCK_ELEMENTS));
         __VEC_SCOPE__
         {
