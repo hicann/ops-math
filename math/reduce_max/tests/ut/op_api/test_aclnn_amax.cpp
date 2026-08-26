@@ -12,6 +12,7 @@
 #include "../../../op_api/aclnn_amax.h"
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/op_api_ut.h"
+#include "op_api_ut_common/array_desc.h"
 
 using namespace std;
 
@@ -196,6 +197,48 @@ TEST_F(l2_amax_test, l2_amax_dim_invalid)
     auto selfDesc = TensorDesc({2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
     auto outDesc = TensorDesc({1, 4}, ACL_FLOAT, ACL_FORMAT_ND);
     auto dim = IntArrayDesc(vector<int64_t>{2});
+    bool keepDim = true;
+
+    auto ut = OP_API_UT(aclnnAmax, INPUT(selfDesc, dim, keepDim), OUTPUT(outDesc));
+
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_PARAM_INVALID);
+}
+
+TEST_F(l2_amax_test, l2_amax_scalar_input)
+{
+    auto selfDesc = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto dim = IntArrayDesc(vector<int64_t>{0});
+    bool keepDim = false;
+
+    auto ut = OP_API_UT(aclnnAmax, INPUT(selfDesc, dim, keepDim), OUTPUT(outDesc));
+
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+TEST_F(l2_amax_test, l2_amax_empty_dim)
+{
+    auto selfDesc = TensorDesc({2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({1, 1}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto dim = IntArrayDesc(vector<int64_t>{});
+    bool keepDim = true;
+
+    auto ut = OP_API_UT(aclnnAmax, INPUT(selfDesc, dim, keepDim), OUTPUT(outDesc));
+
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+TEST_F(l2_amax_test, l2_amax_duplicate_dim)
+{
+    auto selfDesc = TensorDesc({2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({1, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto dim = IntArrayDesc(vector<int64_t>{0, 0});
     bool keepDim = true;
 
     auto ut = OP_API_UT(aclnnAmax, INPUT(selfDesc, dim, keepDim), OUTPUT(outDesc));
