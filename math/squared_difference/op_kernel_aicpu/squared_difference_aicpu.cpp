@@ -9,6 +9,7 @@
  */
 #include "squared_difference_aicpu.h"
 
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
 #include "utils/eigen_tensor.h"
 #include "utils/kernel_util.h"
@@ -37,8 +38,8 @@ const int64_t kParallelDataNumSameShapeMid = 35 * 1024;
 namespace aicpu {
 uint32_t SquaredDifferenceCpuKernel::Compute(CpuKernelContext& ctx)
 {
-    KERNEL_HANDLE_ERROR(
-        NormalCheck(ctx, kInputNum, kOutputNum), "SquaredDifference check input and output number failed.");
+    KERNEL_HANDLE_ERROR(NormalCheck(ctx, kInputNum, kOutputNum),
+                        "SquaredDifference check input and output number failed.");
     KERNEL_HANDLE_ERROR(SquaredDifferenceCheck(ctx), "SquaredDifference check params failed.");
     DataType data_type = ctx.Input(0)->GetDataType();
     switch (data_type) {
@@ -85,15 +86,13 @@ uint32_t SquaredDifferenceCpuKernel::SquaredDifferenceCheck(const CpuKernelConte
     KERNEL_CHECK_NULLPTR(output->GetData(), KERNEL_STATUS_PARAM_INVALID, "Get output data failed")
     DataType input0_type = input_0->GetDataType();
     DataType input1_type = input_1->GetDataType();
-    KERNEL_CHECK_FALSE(
-        (input0_type == input1_type), KERNEL_STATUS_PARAM_INVALID,
-        "The data type of input0 [%s] need be same with "
-        "input1 [%s].",
-        DTypeStr(input0_type).c_str(), DTypeStr(input1_type).c_str())
-    KERNEL_LOG_DEBUG(
-        "SquaredDifferenceCpuKernel[%s], input0: size[%lu];"
-        "input1: size[%lu], output: size[%lu].",
-        ctx.GetOpType().c_str(), input_0->GetDataSize(), input_1->GetDataSize(), output->GetDataSize());
+    KERNEL_CHECK_FALSE((input0_type == input1_type), KERNEL_STATUS_PARAM_INVALID,
+                       "The data type of input0 [%s] need be same with "
+                       "input1 [%s].",
+                       DTypeStr(input0_type).c_str(), DTypeStr(input1_type).c_str())
+    KERNEL_LOG_DEBUG("SquaredDifferenceCpuKernel[%s], input0: size[%lu];"
+                     "input1: size[%lu], output: size[%lu].",
+                     ctx.GetOpType().c_str(), input_0->GetDataSize(), input_1->GetDataSize(), output->GetDataSize());
 
     return KERNEL_STATUS_OK;
 }
@@ -104,8 +103,8 @@ uint32_t SquaredDifferenceCpuKernel::SquaredDifferenceCheck(const CpuKernelConte
 // 3. input2 is a 1D tensor with only one element or input2 is scalar
 // 4. the shapes of input1 and input2 are different
 template <typename T>
-void SquaredDifferenceCpuKernel::SpecialCompute(
-    BcastShapeType type, int64_t start, int64_t end, const T* input1, const T* input2, T* output)
+void SquaredDifferenceCpuKernel::SpecialCompute(BcastShapeType type, int64_t start, int64_t end, const T* input1,
+                                                const T* input2, T* output)
 {
     switch (type) {
         case BcastShapeType::SAME_SHAPE:
@@ -228,8 +227,8 @@ uint32_t SquaredDifferenceCpuKernel::SquaredDifferenceCompute(const CpuKernelCon
     auto input1_shape = input1_tensor->GetTensorShape()->GetDimSizes();
     int64_t input1_elements_nums = input1_tensor->NumElements();
 
-    bool is_no_need_bcast =
-        (input0_shape == input1_shape) || (input0_elements_nums == 1) || (input1_elements_nums == 1);
+    bool is_no_need_bcast = (input0_shape == input1_shape) || (input0_elements_nums == 1) ||
+                            (input1_elements_nums == 1);
     if (is_no_need_bcast) {
         return NoBcastCompute<T>(ctx);
     } else {
@@ -243,5 +242,5 @@ uint32_t SquaredDifferenceCpuKernel::SquaredDifferenceCompute(const CpuKernelCon
     }
 }
 
-REGISTER_CPU_KERNEL(kSquaredDifference, SquaredDifferenceCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kSquaredDifference, SquaredDifferenceCpuKernel);
 } // namespace aicpu

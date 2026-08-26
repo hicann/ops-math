@@ -12,6 +12,7 @@
 
 #include <complex>
 #include <unsupported/Eigen/CXX11/Tensor>
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
 #include "cpu_types.h"
 #include "log.h"
@@ -40,9 +41,9 @@ const char* const kSquare{"Square"};
 namespace aicpu {
 namespace detail {
 template <typename T>
-typename std::enable_if<
-    std::is_same<T, std::complex<std::float_t>>::value || std::is_same<T, std::complex<std::double_t>>::value,
-    void>::type inline ComputeKernel(T* input, T* output, int64_t begin, int64_t end)
+typename std::enable_if<std::is_same<T, std::complex<std::float_t>>::value ||
+                            std::is_same<T, std::complex<std::double_t>>::value,
+                        void>::type inline ComputeKernel(T* input, T* output, int64_t begin, int64_t end)
 {
     T* inner_input = input + begin;
     T* inner_output = output + begin;
@@ -56,8 +57,8 @@ typename std::enable_if<
 }
 
 template <typename T>
-typename std::enable_if<std::is_same<T, int32_t>::value || std::is_same<T, double_t>::value, void>::
-    type inline ComputeKernel(T* input, T* output, int64_t begin, int64_t end)
+typename std::enable_if<std::is_same<T, int32_t>::value || std::is_same<T, double_t>::value,
+                        void>::type inline ComputeKernel(T* input, T* output, int64_t begin, int64_t end)
 {
     int64_t length = end - begin;
     Eigen::TensorMap<Eigen::Tensor<T, 1>, Eigen::Aligned> tensor_x(input + begin, length);
@@ -66,9 +67,9 @@ typename std::enable_if<std::is_same<T, int32_t>::value || std::is_same<T, doubl
 }
 
 template <typename T>
-typename std::enable_if<
-    std::is_same<T, int64_t>::value || std::is_same<T, float_t>::value || std::is_same<T, Eigen::half>::value,
-    void>::type inline ComputeKernel(T* input, T* output, int64_t begin, int64_t end)
+typename std::enable_if<std::is_same<T, int64_t>::value || std::is_same<T, float_t>::value ||
+                            std::is_same<T, Eigen::half>::value,
+                        void>::type inline ComputeKernel(T* input, T* output, int64_t begin, int64_t end)
 {
     T* inner_input = input + begin;
     T* inner_output = output + begin;
@@ -124,9 +125,8 @@ inline std::uint32_t ComputeSquare(const CpuKernelContext& ctx, const int64_t pa
 inline std::uint32_t SquareExtraCheck(const CpuKernelContext& ctx)
 {
     if (ctx.Input(0)->GetDataType() != ctx.Output(0)->GetDataType()) {
-        KERNEL_LOG_ERROR(
-            "The data type of the input [%s] need be the same as the ouput [%s].",
-            DTypeStr(ctx.Input(0)->GetDataType()).c_str(), DTypeStr(ctx.Output(0)->GetDataType()).c_str());
+        KERNEL_LOG_ERROR("The data type of the input [%s] need be the same as the ouput [%s].",
+                         DTypeStr(ctx.Input(0)->GetDataType()).c_str(), DTypeStr(ctx.Output(0)->GetDataType()).c_str());
         return KERNEL_STATUS_PARAM_INVALID;
     }
     KERNEL_CHECK_NULLPTR(ctx.Input(0)->GetData(), KERNEL_STATUS_PARAM_INVALID, "Get input data failed.")
@@ -134,18 +134,16 @@ inline std::uint32_t SquareExtraCheck(const CpuKernelContext& ctx)
     std::vector<int64_t> input_dims = ctx.Input(0)->GetTensorShape()->GetDimSizes();
     std::vector<int64_t> output_dims = ctx.Output(0)->GetTensorShape()->GetDimSizes();
     if (input_dims.size() != output_dims.size()) {
-        KERNEL_LOG_ERROR(
-            "The data dim of the input size [%lu] need be the same as the output "
-            "size [%lu].",
-            input_dims.size(), output_dims.size());
+        KERNEL_LOG_ERROR("The data dim of the input size [%lu] need be the same as the output "
+                         "size [%lu].",
+                         input_dims.size(), output_dims.size());
         return KERNEL_STATUS_PARAM_INVALID;
     }
     for (size_t index = 0; index < input_dims.size(); index++) {
         if (input_dims[index] != output_dims[index]) {
-            KERNEL_LOG_ERROR(
-                "The data dim[%lu]=%ld of the input need be the same as the output "
-                "dim[%lu]=%ld.",
-                index, input_dims[index], index, output_dims[index]);
+            KERNEL_LOG_ERROR("The data dim[%lu]=%ld of the input need be the same as the output "
+                             "dim[%lu]=%ld.",
+                             index, input_dims[index], index, output_dims[index]);
             return KERNEL_STATUS_PARAM_INVALID;
         }
     }
@@ -187,5 +185,5 @@ std::uint32_t SquareCpuKernel::Compute(CpuKernelContext& ctx)
     return detail::SquareCheck(ctx) ? KERNEL_STATUS_PARAM_INVALID : detail::SquareCompute(ctx);
 }
 
-REGISTER_CPU_KERNEL(kSquare, SquareCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kSquare, SquareCpuKernel);
 } // namespace aicpu

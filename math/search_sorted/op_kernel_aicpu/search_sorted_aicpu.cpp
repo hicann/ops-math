@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "Eigen/Core"
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
 #include "cpu_types.h"
 #include "log.h"
@@ -258,5 +259,5 @@ uint32_t SearchSortedKernel::Compute(CpuKernelContext& ctx)
     return iter->second[output_dtype_](right_, sequence_t_, values_t_, sorter_t_, output_t_, ctx);
 }
 
-REGISTER_CPU_KERNEL(kSearchSorted, SearchSortedKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kSearchSorted, SearchSortedKernel);
 } // namespace aicpu
