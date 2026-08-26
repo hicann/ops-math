@@ -12,8 +12,8 @@
  * \file sparse_reshape_proto.h
  * \brief Operator registration for SparseReshape
  */
-#ifndef OPS_PROTO_DEF_SPARSERESHAPE
-#define OPS_PROTO_DEF_SPARSERESHAPE
+#ifndef OPS_PROTO_DEF_SPARSERESHAPE_H
+#define OPS_PROTO_DEF_SPARSERESHAPE_H
 
 #include "graph/operator_reg.h"
 
@@ -34,6 +34,8 @@ namespace ge {
  *@par Third-party framework compatibility
  *Compatible with the TensorFlow operator SparseReshape.
  */
+#ifndef OPS_PROTO_DEF_SPARSERESHAPE
+#define OPS_PROTO_DEF_SPARSERESHAPE
 REG_OP(SparseReshape)
     .INPUT(indices, TensorType({DT_INT32, DT_INT64}))
     .INPUT(shape, TensorType({DT_INT32, DT_INT64}))
@@ -41,5 +43,6 @@ REG_OP(SparseReshape)
     .OUTPUT(y_indices, TensorType({DT_INT32, DT_INT64}))
     .OUTPUT(y_shape, TensorType({DT_INT32, DT_INT64}))
     .OP_END_FACTORY_REG(SparseReshape)
+#endif
 } // namespace ge
-#endif // OPS_PROTO_DEF_SPARSERESHAPE
+#endif // OPS_PROTO_DEF_SPARSERESHAPE_H
