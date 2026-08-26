@@ -341,7 +341,7 @@ __aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallA
 template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
 __aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::Process()
 {
-    if (blockIdx_ > GetBlockNum()) {
+    if (blockIdx_ >= GetBlockNum()) {
         return;
     }
     for (int32_t i = 0; i < sortLoopTimes_; i++) {
