@@ -46,7 +46,8 @@ constexpr int64_t TENS_DIGITS = 10;
 constexpr int64_t HUNDREDS_DIGITS = 100;
 constexpr int64_t THOUSANDS_DIGITS = 1000;
 constexpr int64_t TEN_THOUSANDS_DIGITS = 10000;
-constexpr int64_t LEAST_ROWS = 64; // ub切分的最小行数
+constexpr uint64_t COMPACT_THRESHOLD = 4294967295ULL; // UINT32_MAX
+constexpr int64_t LEAST_ROWS = 64;                    // ub切分的最小行数
 constexpr int64_t LEAST_COLS = 256;
 constexpr bool ENABLE_DB = true;
 constexpr int64_t B64_BYTES = 8;
@@ -59,7 +60,11 @@ constexpr int64_t DIGIT_ONE = 1;
 constexpr int64_t DIGIT_THREE = 3;
 constexpr int64_t FP4_TO_B8_RATIO = 2; // 用于FP4到B8模板的转换 2个FP4= 1字节
 constexpr int64_t GATHER_MODE = 3;
-constexpr int64_t EVERY_CORE_THRESHOLD = 2048; // 2k
+constexpr int64_t ORIG_ARRAY_TILING_DATA = 0;       // 万位0: 原始有数组 (ConcatTilingData)
+constexpr int64_t ORIG_NO_ARRAY_TILING_DATA = 1;    // 万位1: 原始无数组 (ConcatTilingDataNoArray)
+constexpr int64_t COMPACT_NO_ARRAY_TILING_DATA = 2; // 万位2: compact无数组 (ConcatTilingDataNoArrayCompact)
+constexpr int64_t COMPACT_ARRAY_TILING_DATA = 3;    // 万位3: compact有数组 (ConcatTilingDataCompact)
+constexpr int64_t EVERY_CORE_THRESHOLD = 2048;      // 2k
 constexpr int64_t LEAST_BLOCK_BYTES = 512;
 constexpr int64_t PURE_COPY_COL_THRESHOLD_BASE = 256;
 constexpr int64_t PURE_COPY_COL_THRESHOLD_ALIGN = 1024;
@@ -68,6 +73,8 @@ constexpr int64_t BLOCK_THRESHOLD = 49152; // 48k
 constexpr double LARGE_TENSOR_RATIO_THRESHOLD = 0.9;
 constexpr int64_t PURE_COPY_NO_SPLIT_DIM1_TILINGKEY = 20001;
 constexpr int64_t PURE_COPY_SPLIT_DIM1_TILINGKEY = 20002;
+constexpr int64_t PURE_COPY_NO_SPLIT_DIM1_COMPACT_TILINGKEY = 20003;
+constexpr int64_t PURE_COPY_SPLIT_DIM1_COMPACT_TILINGKEY = 20004;
 constexpr int64_t SIMT_PER_CORE_THRESHOLD = 65536; // 64k
 constexpr int64_t SIMT_TILINGKEY_PREFIX = 30000;
 constexpr int64_t SIMT_COMPARE_THRESHOLD = 1024;
@@ -441,8 +448,8 @@ inline static bool IsEnablePureCopyTemplate(const ConcatTilingParam& param, int6
 inline static void GenTilingKey(ConcatTilingParam& param)
 {
     // tilingKey按5位设计：个位->字节数(1/2/4/8),十位->input shape相同/不相同(1/2)
-    // 百位->输入cat部分全对齐/不对齐/不对齐gather模板(1/2/3),千位->首轴cat/非首轴cat(1/2),万位->是否使用定制tilingData
-    // 0 表示空tensor
+    // 百位->输入cat部分全对齐/不对齐/不对齐gather模板(1/2/3),千位->首轴cat/非首轴cat(1/2),万位->tilingData类型
+    //   万位 0=原始有数组, 1=原始无数组, 2=compact无数组, 3=compact有数组
     if (param.isEmpty) {
         param.tilingKey = 0;
         return;
@@ -453,7 +460,6 @@ inline static void GenTilingKey(ConcatTilingParam& param)
     int64_t isCatDimAlign = isAllTensorAlign ? 1 : 2;
     int64_t dtypeSize = param.dtypeSize;
     if (IsEnableScatter(param)) {
-        // scatter b64降2个b32处理，但仍需新的tilingkey
         dtypeSize = param.orgDtypeSize;
     }
     if (IsEnableGather(param)) {
@@ -461,7 +467,23 @@ inline static void GenTilingKey(ConcatTilingParam& param)
     }
     int64_t isInputShapeSame = shapeSame ? 1 : 2;
     int64_t isFirstDim = DIGIT_TWO;
-    int64_t isUseSpcTilingData = param.blockSplitAxis == 0 ? 1 : 0;
+
+    // 判断是否可用 compact: 所有 tensor 的 dim1 < UINT32_MAX
+    bool canCompact = true;
+    for (const auto& dim1 : param.tensorListDim1) {
+        if (static_cast<uint64_t>(dim1) >= COMPACT_THRESHOLD) {
+            canCompact = false;
+            break;
+        }
+    }
+
+    int64_t isUseSpcTilingData;
+    if (param.blockSplitAxis == 0) {
+        isUseSpcTilingData = canCompact ? COMPACT_NO_ARRAY_TILING_DATA : ORIG_NO_ARRAY_TILING_DATA;
+    } else {
+        isUseSpcTilingData = canCompact ? COMPACT_ARRAY_TILING_DATA : ORIG_ARRAY_TILING_DATA;
+    }
+
     param.tilingKey = dtypeSize + isInputShapeSame * TENS_DIGITS + isCatDimAlign * HUNDREDS_DIGITS +
                       isFirstDim * THOUSANDS_DIGITS + isUseSpcTilingData * TEN_THOUSANDS_DIGITS;
 }
@@ -734,6 +756,95 @@ inline static void SetTilingData(T& tilingData, ConcatTilingParam& param)
         tilingData.arrays.set_strideList(strideList);
         std::copy(param.concatDimList.begin(), param.concatDimList.end(), strideList);
         tilingData.arrays.set_concatDimList(strideList);
+    }
+}
+
+// compact 版 SetTensorListTilingData
+inline static void SetTensorListTilingData(ConcatTilingDataCompact& tilingData, ConcatTilingParam& param)
+{
+    std::copy(param.endTensorIdx.begin(), param.endTensorIdx.end(), param.endIdxArr);
+    tilingData.arrays.set_endTensorIdx(param.endIdxArr);
+
+    for (size_t i = 0; i < param.endTensorOffset.size() && i < TILING_ARRAY_LENGTH; i++) {
+        param.endOffsetArrCompact[i] = static_cast<uint32_t>(param.endTensorOffset[i]);
+    }
+    tilingData.arrays.set_endTensorOffset(param.endOffsetArrCompact);
+}
+
+// compact 版 SetTilingData 特化
+template <>
+void SetTilingData<ConcatTilingDataCompact>(ConcatTilingDataCompact& tilingData, ConcatTilingParam& param)
+{
+    tilingData.set_ubSplitDim1(param.ubSplitDim1);
+    tilingData.set_dim(static_cast<int16_t>(param.dim));
+    tilingData.set_blockFactor(static_cast<int32_t>(param.blockFactor));
+    tilingData.set_tailBlockFactor(static_cast<int32_t>(param.tailBlockFactor));
+    tilingData.set_ubFactorDim0(static_cast<int32_t>(param.ubFactorDim0));
+    tilingData.set_ubFactorDim1(static_cast<int32_t>(param.ubFactorDim1));
+    tilingData.set_tailUbFactorDim0(static_cast<int32_t>(param.tailUbFactorDim0));
+    tilingData.set_tailUbFactorDim1(static_cast<int32_t>(param.tailUbFactorDim1));
+    tilingData.set_uoDim0(static_cast<int32_t>(param.uoDim0));
+    tilingData.set_uoDim1(static_cast<int32_t>(param.uoDim1));
+    tilingData.set_tensorNum(param.tensorNum);
+    tilingData.set_catDim1(param.catDim1);
+    tilingData.set_sameShapeTensorDim1(static_cast<int32_t>(param.sameShapeTensorDim1));
+    tilingData.set_isFP4Type(param.isFP4Type);
+    tilingData.set_bufferSize(static_cast<int32_t>(param.bufferSize));
+    tilingData.set_dtypeSize(static_cast<int16_t>(param.dtypeSize));
+
+    int64_t preLoadSize = std::min(TILING_PRELOAD_DIM1_LENGTH, static_cast<int64_t>(param.tensorListDim1.size()));
+    for (int64_t i = 0; i < preLoadSize; i++) {
+        param.preLoadDim1ArrCompact[i] = static_cast<uint32_t>(param.tensorListDim1[i]);
+    }
+    tilingData.arrays.set_preLoadDim1(param.preLoadDim1ArrCompact);
+    tilingData.set_isNonContiguous(static_cast<int16_t>(param.isNonContiguous ? 1 : 0));
+    if (param.isNonContiguous) {
+        for (size_t i = 0; i < std::min(param.strideList.size(), static_cast<size_t>(NON_CON_TENSOR_SIZE)); i++) {
+            param.strideListCompact[i] = static_cast<uint32_t>(param.strideList[i]);
+        }
+        tilingData.arrays.set_strideList(param.strideListCompact);
+        for (size_t i = 0; i < std::min(param.concatDimList.size(), static_cast<size_t>(NON_CON_TENSOR_SIZE)); i++) {
+            param.concatDimListCompact[i] = static_cast<uint32_t>(param.concatDimList[i]);
+        }
+        tilingData.arrays.set_concatDimList(param.concatDimListCompact);
+    }
+}
+
+template <>
+void SetTilingData<ConcatTilingDataNoArrayCompact>(ConcatTilingDataNoArrayCompact& tilingData, ConcatTilingParam& param)
+{
+    tilingData.set_ubSplitDim1(param.ubSplitDim1);
+    tilingData.set_dim(static_cast<int16_t>(param.dim));
+    tilingData.set_blockFactor(static_cast<int32_t>(param.blockFactor));
+    tilingData.set_tailBlockFactor(static_cast<int32_t>(param.tailBlockFactor));
+    tilingData.set_ubFactorDim0(static_cast<int32_t>(param.ubFactorDim0));
+    tilingData.set_ubFactorDim1(static_cast<int32_t>(param.ubFactorDim1));
+    tilingData.set_tailUbFactorDim0(static_cast<int32_t>(param.tailUbFactorDim0));
+    tilingData.set_tailUbFactorDim1(static_cast<int32_t>(param.tailUbFactorDim1));
+    tilingData.set_uoDim0(static_cast<int32_t>(param.uoDim0));
+    tilingData.set_uoDim1(static_cast<int32_t>(param.uoDim1));
+    tilingData.set_tensorNum(param.tensorNum);
+    tilingData.set_catDim1(param.catDim1);
+    tilingData.set_sameShapeTensorDim1(static_cast<int32_t>(param.sameShapeTensorDim1));
+    tilingData.set_isFP4Type(param.isFP4Type);
+    tilingData.set_bufferSize(static_cast<int32_t>(param.bufferSize));
+    tilingData.set_dtypeSize(static_cast<int16_t>(param.dtypeSize));
+
+    int64_t preLoadSize = std::min(TILING_PRELOAD_DIM1_LENGTH, static_cast<int64_t>(param.tensorListDim1.size()));
+    for (int64_t i = 0; i < preLoadSize; i++) {
+        param.preLoadDim1ArrCompact[i] = static_cast<uint32_t>(param.tensorListDim1[i]);
+    }
+    tilingData.arrays.set_preLoadDim1(param.preLoadDim1ArrCompact);
+    tilingData.set_isNonContiguous(static_cast<int16_t>(param.isNonContiguous ? 1 : 0));
+    if (param.isNonContiguous) {
+        for (size_t i = 0; i < std::min(param.strideList.size(), static_cast<size_t>(NON_CON_TENSOR_SIZE)); i++) {
+            param.strideListCompact[i] = static_cast<uint32_t>(param.strideList[i]);
+        }
+        tilingData.arrays.set_strideList(param.strideListCompact);
+        for (size_t i = 0; i < std::min(param.concatDimList.size(), static_cast<size_t>(NON_CON_TENSOR_SIZE)); i++) {
+            param.concatDimListCompact[i] = static_cast<uint32_t>(param.concatDimList[i]);
+        }
+        tilingData.arrays.set_concatDimList(param.concatDimListCompact);
     }
 }
 
@@ -1043,13 +1154,22 @@ static bool TilingForPureCopy(ConcatTilingParam& param)
             param.ubSize = param.ubSize / DIGIT_TWO;
         }
         param.bufferSize = param.ubSize / param.dtypeSize;
-        if (param.blockSplitAxis == 0) {
-            param.tilingKey = PURE_COPY_NO_SPLIT_DIM1_TILINGKEY;
-        } else {
-            param.tilingKey = PURE_COPY_SPLIT_DIM1_TILINGKEY;
+        // 判断是否可用 compact
+        bool canCompact = true;
+        for (const auto& dim1 : param.tensorListDim1) {
+            if (static_cast<uint64_t>(dim1) >= COMPACT_THRESHOLD) {
+                canCompact = false;
+                break;
+            }
         }
-        param.uoDim0 = rowsCutPart; // 行方向使用几个核
-        param.uoDim1 = colsCutPart; // 列方向使用几个核
+        if (param.blockSplitAxis == 0) {
+            param.tilingKey = canCompact ? PURE_COPY_NO_SPLIT_DIM1_COMPACT_TILINGKEY :
+                                           PURE_COPY_NO_SPLIT_DIM1_TILINGKEY;
+        } else {
+            param.tilingKey = canCompact ? PURE_COPY_SPLIT_DIM1_COMPACT_TILINGKEY : PURE_COPY_SPLIT_DIM1_TILINGKEY;
+        }
+        param.uoDim0 = rowsCutPart;
+        param.uoDim1 = colsCutPart;
         param.inputShapeSame = 0;
         GetTensorSameDim1(param);
     } else {
@@ -1215,17 +1335,36 @@ ge::graphStatus Tiling4PackToConcatForAscendC(gert::TilingContext* context)
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     currentWorkspace[0] = SYSTEM_WORKSPACE_SIZE;
     ge::graphStatus ret = ge::GRAPH_SUCCESS;
+    // 20001/20002 万位也是 2 但是原始版 PureCopy, 需排除; 20003/20004 是 compact PureCopy
+    bool isCompact = (param.tilingKey / TEN_THOUSANDS_DIGITS) >= 2 &&
+                     param.tilingKey != PURE_COPY_NO_SPLIT_DIM1_TILINGKEY &&
+                     param.tilingKey != PURE_COPY_SPLIT_DIM1_TILINGKEY;
     if (param.blockSplitAxis == 1) {
-        ConcatTilingData tilingData;
-        SetTilingData<ConcatTilingData>(tilingData, param);
-        SetTensorListTilingData(tilingData, param);
-        PrintTilingData(tilingData, param.tilingKey, param.usedCoreNum);
-        ret = ConcatSetTilingData<ConcatTilingData>(context, tilingData);
+        if (isCompact) {
+            ConcatTilingDataCompact tilingData;
+            SetTilingData<ConcatTilingDataCompact>(tilingData, param);
+            SetTensorListTilingData(tilingData, param);
+            PrintTilingData(tilingData, param.tilingKey, param.usedCoreNum);
+            ret = ConcatSetTilingData<ConcatTilingDataCompact>(context, tilingData);
+        } else {
+            ConcatTilingData tilingData;
+            SetTilingData<ConcatTilingData>(tilingData, param);
+            SetTensorListTilingData(tilingData, param);
+            PrintTilingData(tilingData, param.tilingKey, param.usedCoreNum);
+            ret = ConcatSetTilingData<ConcatTilingData>(context, tilingData);
+        }
     } else {
-        ConcatTilingDataNoArray tilingData;
-        SetTilingData<ConcatTilingDataNoArray>(tilingData, param);
-        PrintTilingData(tilingData, param.tilingKey, param.usedCoreNum);
-        ret = ConcatSetTilingData<ConcatTilingDataNoArray>(context, tilingData);
+        if (isCompact) {
+            ConcatTilingDataNoArrayCompact tilingData;
+            SetTilingData<ConcatTilingDataNoArrayCompact>(tilingData, param);
+            PrintTilingData(tilingData, param.tilingKey, param.usedCoreNum);
+            ret = ConcatSetTilingData<ConcatTilingDataNoArrayCompact>(context, tilingData);
+        } else {
+            ConcatTilingDataNoArray tilingData;
+            SetTilingData<ConcatTilingDataNoArray>(tilingData, param);
+            PrintTilingData(tilingData, param.tilingKey, param.usedCoreNum);
+            ret = ConcatSetTilingData<ConcatTilingDataNoArray>(context, tilingData);
+        }
     }
     OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context->GetNodeName(), "PackSetTilingData set tiling data fail."),
                 return ge::GRAPH_FAILED);
@@ -1439,17 +1578,36 @@ ge::graphStatus TilingCommon(gert::TilingContext* context, int64_t inputIdx, int
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     currentWorkspace[0] = SYSTEM_WORKSPACE_SIZE;
     ge::graphStatus ret = ge::GRAPH_SUCCESS;
+    // 20001/20002 万位也是 2 但是原始版 PureCopy, 需排除; 20003/20004 是 compact PureCopy
+    bool isCompact = (param.tilingKey / TEN_THOUSANDS_DIGITS) >= 2 &&
+                     param.tilingKey != PURE_COPY_NO_SPLIT_DIM1_TILINGKEY &&
+                     param.tilingKey != PURE_COPY_SPLIT_DIM1_TILINGKEY;
     if (param.blockSplitAxis == 1) {
-        ConcatTilingData tilingData;
-        SetTilingData<ConcatTilingData>(tilingData, param);
-        SetTensorListTilingData(tilingData, param);
-        PrintTilingData(tilingData, param.tilingKey, param.usedCoreNum);
-        ret = ConcatSetTilingData<ConcatTilingData>(context, tilingData);
+        if (isCompact) {
+            ConcatTilingDataCompact tilingData;
+            SetTilingData<ConcatTilingDataCompact>(tilingData, param);
+            SetTensorListTilingData(tilingData, param);
+            PrintTilingData(tilingData, param.tilingKey, param.usedCoreNum);
+            ret = ConcatSetTilingData<ConcatTilingDataCompact>(context, tilingData);
+        } else {
+            ConcatTilingData tilingData;
+            SetTilingData<ConcatTilingData>(tilingData, param);
+            SetTensorListTilingData(tilingData, param);
+            PrintTilingData(tilingData, param.tilingKey, param.usedCoreNum);
+            ret = ConcatSetTilingData<ConcatTilingData>(context, tilingData);
+        }
     } else {
-        ConcatTilingDataNoArray tilingData;
-        SetTilingData<ConcatTilingDataNoArray>(tilingData, param);
-        PrintTilingData(tilingData, param.tilingKey, param.usedCoreNum);
-        ret = ConcatSetTilingData<ConcatTilingDataNoArray>(context, tilingData);
+        if (isCompact) {
+            ConcatTilingDataNoArrayCompact tilingData;
+            SetTilingData<ConcatTilingDataNoArrayCompact>(tilingData, param);
+            PrintTilingData(tilingData, param.tilingKey, param.usedCoreNum);
+            ret = ConcatSetTilingData<ConcatTilingDataNoArrayCompact>(context, tilingData);
+        } else {
+            ConcatTilingDataNoArray tilingData;
+            SetTilingData<ConcatTilingDataNoArray>(tilingData, param);
+            PrintTilingData(tilingData, param.tilingKey, param.usedCoreNum);
+            ret = ConcatSetTilingData<ConcatTilingDataNoArray>(context, tilingData);
+        }
     }
     OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context->GetNodeName(), "ConcatSetTilingData set tiling data fail."),
                 return ge::GRAPH_FAILED);

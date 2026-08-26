@@ -76,7 +76,7 @@ template <typename T, typename TILINGDATA>
 __aicore__ inline void OneAxisConcatNoAlignCopy<T, TILINGDATA>::Init(GM_ADDR x, GM_ADDR dst)
 {
     blockIdx_ = GetBlockIdx();
-    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value) {
+    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value || IsSame<TILINGDATA, ConcatTilingDataCompact>::value) {
         int64_t colsUsedCoreNum = GetBlockNum() / tilingData_.uoDim0;
         if (blockIdx_ % colsUsedCoreNum != 0) {
             startTensorIdx_ = tilingData_.arrays.endTensorIdx[blockIdx_ % colsUsedCoreNum - 1];
@@ -89,7 +89,7 @@ __aicore__ inline void OneAxisConcatNoAlignCopy<T, TILINGDATA>::Init(GM_ADDR x, 
         startTensorIdx_ += 1;
         startTensorOffset_ = 0;
     }
-    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value) {
+    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value || IsSame<TILINGDATA, ConcatTilingDataCompact>::value) {
         rowsUsedCoreNum_ = tilingData_.uoDim0;
         colsUsedCoreNum_ = GetBlockNum() / rowsUsedCoreNum_;
         blockOffset_ = (blockIdx_ / colsUsedCoreNum_) * tilingData_.ubFactorDim0;
@@ -118,7 +118,7 @@ __aicore__ inline void OneAxisConcatNoAlignCopy<T, TILINGDATA>::Process()
     if (blockIdx_ >= GetBlockNum()) {
         return;
     }
-    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value) {
+    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value || IsSame<TILINGDATA, ConcatTilingDataCompact>::value) {
         ProcessBlockSplitDim1();
     } else {
         if (0 == tilingData_.ubSplitDim1) {

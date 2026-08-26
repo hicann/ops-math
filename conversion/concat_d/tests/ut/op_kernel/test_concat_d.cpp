@@ -56,6 +56,64 @@ struct ConcatTilingDataForSimt {
     ConcatTilingDataForSimtArrays arrays;
 };
 
+struct ConcatTilingDataArraysCompact {
+    int16_t endTensorIdx[72];
+    uint32_t endTensorOffset[72];
+    uint32_t preLoadDim1[2];
+    uint32_t strideList[32];
+    uint32_t concatDimList[32];
+};
+
+struct ConcatTilingDataCompact {
+    int16_t ubSplitDim1;
+    int16_t dim;
+    int16_t tensorNum;
+    int16_t dtypeSize;
+    int16_t isNonContiguous;
+    int16_t isFP4Type;
+    int32_t ubFactorDim0;
+    int32_t ubFactorDim1;
+    int32_t tailUbFactorDim0;
+    int32_t tailUbFactorDim1;
+    int32_t bufferSize;
+    int32_t dataPtrOffset;
+    int64_t blockFactor;
+    int64_t tailBlockFactor;
+    int64_t uoDim0;
+    int64_t uoDim1;
+    int64_t catDim1;
+    int64_t sameShapeTensorDim1;
+    ConcatTilingDataArraysCompact arrays;
+};
+
+struct ConcatTilingDataNoArrArraysCompact {
+    uint32_t preLoadDim1[2];
+    uint32_t strideList[32];
+    uint32_t concatDimList[32];
+};
+
+struct ConcatTilingDataNoArrayCompact {
+    int16_t ubSplitDim1;
+    int16_t dim;
+    int16_t tensorNum;
+    int16_t dtypeSize;
+    int16_t isNonContiguous;
+    int16_t isFP4Type;
+    int32_t ubFactorDim0;
+    int32_t ubFactorDim1;
+    int32_t tailUbFactorDim0;
+    int32_t tailUbFactorDim1;
+    int32_t bufferSize;
+    int32_t dataPtrOffset;
+    int64_t blockFactor;
+    int64_t tailBlockFactor;
+    int64_t uoDim0;
+    int64_t uoDim1;
+    int64_t catDim1;
+    int64_t sameShapeTensorDim1;
+    ConcatTilingDataNoArrArraysCompact arrays;
+};
+
 #include <algorithm>
 using std::min;
 
@@ -63,14 +121,8 @@ using std::min;
 
 class ConcatDTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "concat_d_test SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "concat_d_test TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "concat_d_test SetUp" << std::endl; }
+    static void TearDownTestCase() { std::cout << "concat_d_test TearDown" << std::endl; }
 };
 
 // ============================================================================

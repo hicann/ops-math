@@ -73,7 +73,7 @@ template <typename TILINGDATA>
 __aicore__ inline void OneAxisConcatPureCopy<TILINGDATA>::Init(GM_ADDR x, GM_ADDR dst)
 {
     blockIdx_ = GetBlockIdx();
-    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value) {
+    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value || IsSame<TILINGDATA, ConcatTilingDataCompact>::value) {
         rowsUsedCoreNum_ = tilingData_.uoDim0;
         colsUsedCoreNum_ = tilingData_.uoDim1;
         blockIdxInCol_ = blockIdx_ % colsUsedCoreNum_;
@@ -85,7 +85,8 @@ __aicore__ inline void OneAxisConcatPureCopy<TILINGDATA>::Init(GM_ADDR x, GM_ADD
         endTensorOffset_ = tilingData_.arrays.endTensorOffset[blockIdx_];
         endTensorIdx_ = tilingData_.arrays.endTensorIdx[blockIdx_];
     }
-    if constexpr (IsSame<TILINGDATA, ConcatTilingDataNoArray>::value) {
+    if constexpr (IsSame<TILINGDATA, ConcatTilingDataNoArray>::value ||
+                  IsSame<TILINGDATA, ConcatTilingDataNoArrayCompact>::value) {
         blockOffset_ = static_cast<int64_t>(blockIdx_) * tilingData_.ubFactorDim0;
         dstGlobal_.SetGlobalBuffer((__gm__ int8_t*)dst +
                                    tilingData_.catDim1 * tilingData_.dtypeSize * static_cast<int64_t>(blockOffset_));
@@ -100,7 +101,7 @@ __aicore__ inline void OneAxisConcatPureCopy<TILINGDATA>::Init(GM_ADDR x, GM_ADD
 
     inputList_ = ListTensorDesc(reinterpret_cast<__gm__ void*>(x));
     desc_.SetShapeAddr(&buf_[0]);
-    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value) {
+    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value || IsSame<TILINGDATA, ConcatTilingDataCompact>::value) {
         UpdateSplitInfo();
     }
 }
@@ -126,7 +127,7 @@ __aicore__ inline void OneAxisConcatPureCopy<TILINGDATA>::Process()
     if (blockIdx_ >= GetBlockNum()) {
         return;
     }
-    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value) {
+    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value || IsSame<TILINGDATA, ConcatTilingDataCompact>::value) {
         ProcessSplitDim1();
     } else {
         ProcessNoSplitDim1();

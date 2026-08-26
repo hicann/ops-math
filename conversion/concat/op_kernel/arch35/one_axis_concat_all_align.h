@@ -39,11 +39,11 @@ private:
     __aicore__ inline void SetCopyInparam(int64_t rows, int64_t cols, int64_t srcStride, int64_t dstStride);
     __aicore__ inline void CopyInSplitDim1(int64_t srcRowsOffset, int64_t rows, int64_t cols, SplitInfo& splitInfo);
     __aicore__ inline void ProcessBlockSplitDim0SplitDim1();
-    __aicore__ inline void ProcessBlockSplitDim0SplitDim1PerLoop(
-        int64_t loopIdxInCols, int64_t cols, int64_t loopSizeDim0, SplitInfo& splitInfo);
+    __aicore__ inline void ProcessBlockSplitDim0SplitDim1PerLoop(int64_t loopIdxInCols, int64_t cols,
+                                                                 int64_t loopSizeDim0, SplitInfo& splitInfo);
     __aicore__ inline void ProcessBlockSplitDim1();
-    __aicore__ inline void ProcessBlockSplitDim1PerLoop(
-        int64_t loopIdx, int64_t rows, int64_t cols, int64_t blockIdxInCol, SplitInfo& splitInfo);
+    __aicore__ inline void ProcessBlockSplitDim1PerLoop(int64_t loopIdx, int64_t rows, int64_t cols,
+                                                        int64_t blockIdxInCol, SplitInfo& splitInfo);
     __aicore__ inline void CalcSplitInfo(int64_t endIdx, int64_t endOffset, int64_t length, SplitInfo& splitInfo);
     __aicore__ inline int64_t GetTensorDim1(int64_t idx);
     __aicore__ inline void UpdateSplitInfo();
@@ -75,7 +75,7 @@ template <typename T, const bool SAMESHAPE, typename TILINGDATA>
 __aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::Init(GM_ADDR x, GM_ADDR dst)
 {
     blockIdx_ = GetBlockIdx();
-    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value) {
+    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value || IsSame<TILINGDATA, ConcatTilingDataCompact>::value) {
         int64_t colsUsedCoreNum = GetBlockNum() / tilingData_.uoDim0;
         if (blockIdx_ % colsUsedCoreNum != 0) {
             startTensorIdx_ = tilingData_.arrays.endTensorIdx[blockIdx_ - 1];
@@ -84,7 +84,8 @@ __aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::Init(GM_
         endTensorOffset_ = tilingData_.arrays.endTensorOffset[blockIdx_];
         endTensorIdx_ = tilingData_.arrays.endTensorIdx[blockIdx_];
     }
-    if constexpr (IsSame<TILINGDATA, ConcatTilingDataNoArray>::value) {
+    if constexpr (IsSame<TILINGDATA, ConcatTilingDataNoArray>::value ||
+                  IsSame<TILINGDATA, ConcatTilingDataNoArrayCompact>::value) {
         blockOffset_ = blockIdx_ * tilingData_.blockFactor * tilingData_.ubFactorDim0;
         dstGlobal_.SetGlobalBuffer((__gm__ T*)dst + tilingData_.catDim1 * blockOffset_);
     } else {
@@ -99,7 +100,7 @@ __aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::Init(GM_
 
     inputList_ = ListTensorDesc(reinterpret_cast<__gm__ void*>(x));
     desc_.SetShapeAddr(&buf_[0]);
-    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value) {
+    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value || IsSame<TILINGDATA, ConcatTilingDataCompact>::value) {
         UpdateSplitInfo();
     }
 }
@@ -114,8 +115,8 @@ __aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::UpdateSp
 }
 
 template <typename T, const bool SAMESHAPE, typename TILINGDATA>
-__aicore__ inline __gm__ T* OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::GetTensorAddr(
-    uint32_t index, int64_t offset)
+__aicore__ inline __gm__ T* OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::GetTensorAddr(uint32_t index,
+                                                                                           int64_t offset)
 {
     return inputList_.GetDataPtr<T>(index) + offset;
 }
@@ -126,7 +127,7 @@ __aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::Process(
     if (blockIdx_ >= GetBlockNum()) {
         return;
     }
-    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value) {
+    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value || IsSame<TILINGDATA, ConcatTilingDataCompact>::value) {
         ProcessBlockSplitDim1();
     } else {
         if (tilingData_.ubSplitDim1 == 0) {
@@ -150,9 +151,8 @@ __aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::ProcessB
     }
     if (blockIdx_ == GetBlockNum() - 1) {
         CopyInNoSplitDim1(loopSize * tilingData_.ubFactorDim0, tilingData_.tailUbFactorDim0, tilingData_.ubFactorDim1);
-        CopyOut(
-            loopSize * tilingData_.ubFactorDim0 * tilingData_.catDim1, tilingData_.tailUbFactorDim0,
-            tilingData_.ubFactorDim1);
+        CopyOut(loopSize * tilingData_.ubFactorDim0 * tilingData_.catDim1, tilingData_.tailUbFactorDim0,
+                tilingData_.ubFactorDim1);
     }
 }
 
@@ -171,8 +171,8 @@ __aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::ProcessB
     }
 
     CalcSplitInfo(tilingData_.tensorNum - 1, lastTensorDim1, tilingData_.tailUbFactorDim1, splitInfo);
-    ProcessBlockSplitDim0SplitDim1PerLoop(
-        tilingData_.uoDim1 - 1, tilingData_.tailUbFactorDim1, loopSizeDim0, splitInfo);
+    ProcessBlockSplitDim0SplitDim1PerLoop(tilingData_.uoDim1 - 1, tilingData_.tailUbFactorDim1, loopSizeDim0,
+                                          splitInfo);
 }
 
 template <typename T, const bool SAMESHAPE, typename TILINGDATA>
@@ -201,8 +201,9 @@ __aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::ProcessB
 }
 
 template <typename T, const bool SAMESHAPE, typename TILINGDATA>
-__aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::CalcSplitInfo(
-    int64_t endIdx, int64_t endOffset, int64_t length, SplitInfo& splitInfo)
+__aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::CalcSplitInfo(int64_t endIdx, int64_t endOffset,
+                                                                                      int64_t length,
+                                                                                      SplitInfo& splitInfo)
 {
     splitInfo.startIdx = splitInfo.endIdx;
     splitInfo.startOffset = splitInfo.endOffset;
@@ -238,9 +239,8 @@ __aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::ProcessB
 {
     for (int64_t i = 0; i < loopSizeDim0; i++) {
         CopyInSplitDim1(i * tilingData_.ubFactorDim0, tilingData_.ubFactorDim0, copyColsNum, splitInfo);
-        CopyOut(
-            i * tilingData_.ubFactorDim0 * tilingData_.catDim1 + loopIdxInCols * tilingData_.ubFactorDim1,
-            tilingData_.ubFactorDim0, copyColsNum);
+        CopyOut(i * tilingData_.ubFactorDim0 * tilingData_.catDim1 + loopIdxInCols * tilingData_.ubFactorDim1,
+                tilingData_.ubFactorDim0, copyColsNum);
     }
     if (blockIdx_ == GetBlockNum() - 1) {
         CopyInSplitDim1(loopSizeDim0 * tilingData_.ubFactorDim0, tilingData_.tailUbFactorDim0, copyColsNum, splitInfo);
@@ -260,8 +260,8 @@ __aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::ProcessB
 }
 
 template <typename T, const bool SAMESHAPE, typename TILINGDATA>
-__aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::CopyInNoSplitDim1(
-    int64_t srcRowsOffset, int64_t rows, int64_t cols)
+__aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::CopyInNoSplitDim1(int64_t srcRowsOffset,
+                                                                                          int64_t rows, int64_t cols)
 {
     int64_t curDim1Offset = 0;
     LocalTensor<T> srcLocal = inQueue_.AllocTensor<T>();
@@ -278,8 +278,9 @@ __aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::CopyInNo
 }
 
 template <typename T, const bool SAMESHAPE, typename TILINGDATA>
-__aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::CopyInSplitDim1(
-    int64_t srcRowsOffset, int64_t rows, int64_t cols, SplitInfo& splitInfo)
+__aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::CopyInSplitDim1(int64_t srcRowsOffset,
+                                                                                        int64_t rows, int64_t cols,
+                                                                                        SplitInfo& splitInfo)
 {
     int64_t curDim1Offset = 0;
     LocalTensor<T> srcLocal = inQueue_.AllocTensor<T>();
@@ -319,8 +320,9 @@ __aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::CopyInSp
 }
 
 template <typename T, const bool SAMESHAPE, typename TILINGDATA>
-__aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::SetCopyInparam(
-    int64_t rows, int64_t cols, int64_t srcStride, int64_t dstStride)
+__aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::SetCopyInparam(int64_t rows, int64_t cols,
+                                                                                       int64_t srcStride,
+                                                                                       int64_t dstStride)
 {
     copyInParam_.blockCount = rows;
     copyInParam_.blockLen = cols * sizeof(T);
@@ -329,8 +331,8 @@ __aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::SetCopyI
 }
 
 template <typename T, const bool SAMESHAPE, typename TILINGDATA>
-__aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::CopyOut(
-    int64_t dstOffset, int64_t rows, int64_t cols)
+__aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::CopyOut(int64_t dstOffset, int64_t rows,
+                                                                                int64_t cols)
 {
     LocalTensor<T> dstLocal = inQueue_.DeQue<T>();
     DataCopyExtParams copyOutParam{0, 0, 0, 0, 0};
@@ -351,7 +353,8 @@ __aicore__ inline int64_t OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::GetTe
         if (idx < PRELOAD_DIM1_SIZE) {
             return tilingData_.arrays.preLoadDim1[idx];
         }
-        int64_t dim1 = GetNonConDimSize<TILINGDATA, T>(tilingData_, idx, inputList_, desc_) * tilingData_.sameShapeTensorDim1;
+        int64_t dim1 = GetNonConDimSize<TILINGDATA, T>(tilingData_, idx, inputList_, desc_) *
+                       tilingData_.sameShapeTensorDim1;
         if (tilingData_.isFP4Type) {
             dim1 /= 2;
         }

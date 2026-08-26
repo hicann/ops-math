@@ -50,7 +50,7 @@ TILING_DATA_FIELD_DEF(int16_t, ubSplitDim1); // ub是否切分concat部分
 TILING_DATA_FIELD_DEF(int16_t, dim);         // 要连接的dim
 TILING_DATA_FIELD_DEF(int16_t, tensorNum);   // 输入的tensor数量
 TILING_DATA_FIELD_DEF(int16_t, dtypeSize);
-TILING_DATA_FIELD_DEF(int16_t, isNonContiguous); 
+TILING_DATA_FIELD_DEF(int16_t, isNonContiguous);
 TILING_DATA_FIELD_DEF(int32_t, ubFactorDim0); // dim0轴切分数据量
 TILING_DATA_FIELD_DEF(int32_t, ubFactorDim1); // dim1轴切分数据量
 TILING_DATA_FIELD_DEF(int32_t, tailUbFactorDim0);
@@ -80,7 +80,7 @@ TILING_DATA_FIELD_DEF(int16_t, ubSplitDim1); // ub是否切分concat部分
 TILING_DATA_FIELD_DEF(int16_t, dim);         // 要连接的dim
 TILING_DATA_FIELD_DEF(int16_t, tensorNum);   // 输入的tensor数量
 TILING_DATA_FIELD_DEF(int16_t, dtypeSize);
-TILING_DATA_FIELD_DEF(int16_t, isNonContiguous); 
+TILING_DATA_FIELD_DEF(int16_t, isNonContiguous);
 TILING_DATA_FIELD_DEF(int32_t, ubFactorDim0); // dim0轴切分数据量
 TILING_DATA_FIELD_DEF(int32_t, ubFactorDim1); // dim1轴切分数据量
 TILING_DATA_FIELD_DEF(int32_t, tailUbFactorDim0);
@@ -117,17 +117,123 @@ REGISTER_TILING_DATA_CLASS(Concat_12224, ConcatTilingDataNoArray)
 REGISTER_TILING_DATA_CLASS(Concat_12228, ConcatTilingDataNoArray)
 REGISTER_TILING_DATA_CLASS(Concat_20001, ConcatTilingDataNoArray)
 
+// compact 版本数组结构: endTensorOffset/preLoadDim1/strideList/concatDimList 改为 uint32
+BEGIN_TILING_DATA_DEF(ConcatTilingDataArraysCompact)
+TILING_DATA_FIELD_DEF_ARR(int16_t, TILING_ARRAY_LENGTH, endTensorIdx);
+TILING_DATA_FIELD_DEF_ARR(uint32_t, TILING_ARRAY_LENGTH, endTensorOffset);
+TILING_DATA_FIELD_DEF_ARR(uint32_t, TILING_PRELOAD_DIM1_LENGTH, preLoadDim1);
+TILING_DATA_FIELD_DEF_ARR(uint32_t, NON_CON_TENSOR_SIZE, strideList);
+TILING_DATA_FIELD_DEF_ARR(uint32_t, NON_CON_TENSOR_SIZE, concatDimList);
+END_TILING_DATA_DEF;
+REGISTER_TILING_DATA_CLASS(ConcatTilingDataArraysCompactOp, ConcatTilingDataArraysCompact)
+
+// compact 版本: blockFactor/tailBlockFactor/uoDim0/uoDim1/sameShapeTensorDim1 改 int32, catDim1 保留 int64
+// 准入: 所有 tensor 的 dim1 < UINT32_MAX(4294967295)
+BEGIN_TILING_DATA_DEF(ConcatTilingDataCompact)
+TILING_DATA_FIELD_DEF(int16_t, ubSplitDim1);
+TILING_DATA_FIELD_DEF(int16_t, dim);
+TILING_DATA_FIELD_DEF(int16_t, tensorNum);
+TILING_DATA_FIELD_DEF(int16_t, dtypeSize);
+TILING_DATA_FIELD_DEF(int16_t, isNonContiguous);
+TILING_DATA_FIELD_DEF(int16_t, isFP4Type);
+TILING_DATA_FIELD_DEF(int32_t, ubFactorDim0);
+TILING_DATA_FIELD_DEF(int32_t, ubFactorDim1);
+TILING_DATA_FIELD_DEF(int32_t, tailUbFactorDim0);
+TILING_DATA_FIELD_DEF(int32_t, tailUbFactorDim1);
+TILING_DATA_FIELD_DEF(int32_t, bufferSize);
+TILING_DATA_FIELD_DEF(int32_t, dataPtrOffset);
+TILING_DATA_FIELD_DEF(int64_t, blockFactor);
+TILING_DATA_FIELD_DEF(int64_t, tailBlockFactor);
+TILING_DATA_FIELD_DEF(int64_t, uoDim0);
+TILING_DATA_FIELD_DEF(int64_t, uoDim1);
+TILING_DATA_FIELD_DEF(int64_t, catDim1);
+TILING_DATA_FIELD_DEF(int64_t, sameShapeTensorDim1);
+TILING_DATA_FIELD_DEF_STRUCT(ConcatTilingDataArraysCompact, arrays);
+END_TILING_DATA_DEF;
+
+BEGIN_TILING_DATA_DEF(ConcatTilingDataNoArrArraysCompact)
+TILING_DATA_FIELD_DEF_ARR(uint32_t, TILING_PRELOAD_DIM1_LENGTH, preLoadDim1);
+TILING_DATA_FIELD_DEF_ARR(uint32_t, NON_CON_TENSOR_SIZE, strideList);
+TILING_DATA_FIELD_DEF_ARR(uint32_t, NON_CON_TENSOR_SIZE, concatDimList);
+END_TILING_DATA_DEF;
+REGISTER_TILING_DATA_CLASS(ConcatTilingDataNoArrArraysCompactOp, ConcatTilingDataNoArrArraysCompact)
+
+BEGIN_TILING_DATA_DEF(ConcatTilingDataNoArrayCompact)
+TILING_DATA_FIELD_DEF(int16_t, ubSplitDim1);
+TILING_DATA_FIELD_DEF(int16_t, dim);
+TILING_DATA_FIELD_DEF(int16_t, tensorNum);
+TILING_DATA_FIELD_DEF(int16_t, dtypeSize);
+TILING_DATA_FIELD_DEF(int16_t, isNonContiguous);
+TILING_DATA_FIELD_DEF(int16_t, isFP4Type);
+TILING_DATA_FIELD_DEF(int32_t, ubFactorDim0);
+TILING_DATA_FIELD_DEF(int32_t, ubFactorDim1);
+TILING_DATA_FIELD_DEF(int32_t, tailUbFactorDim0);
+TILING_DATA_FIELD_DEF(int32_t, tailUbFactorDim1);
+TILING_DATA_FIELD_DEF(int32_t, bufferSize);
+TILING_DATA_FIELD_DEF(int32_t, dataPtrOffset);
+TILING_DATA_FIELD_DEF(int64_t, blockFactor);
+TILING_DATA_FIELD_DEF(int64_t, tailBlockFactor);
+TILING_DATA_FIELD_DEF(int64_t, uoDim0);
+TILING_DATA_FIELD_DEF(int64_t, uoDim1);
+TILING_DATA_FIELD_DEF(int64_t, catDim1);
+TILING_DATA_FIELD_DEF(int64_t, sameShapeTensorDim1);
+TILING_DATA_FIELD_DEF_STRUCT(ConcatTilingDataNoArrArraysCompact, arrays);
+END_TILING_DATA_DEF;
+
+// compact tiling key 注册: 万位 2=compact_no_array, 3=compact_array
+REGISTER_TILING_DATA_CLASS(Concat_22111, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_22112, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_22114, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_22118, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_22121, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_22122, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_22124, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_22128, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_22211, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_22212, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_22214, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_22311, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_22312, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_22314, ConcatTilingDataNoArrayCompact)
+// 22221/22222/22224/22228 不需要 NoArrayCompact 注册: NALIGN_DIFF 是 blockSplitAxis==1, compact 用万位 3
+// NALIGN + shape不同 + blockSplitAxis==0 + canCompact 时, IsEnableScatter 回退 orgDtypeSize, 生成
+// 22221/22222/22224/22228
+REGISTER_TILING_DATA_CLASS(Concat_22221, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_22222, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_22224, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_22228, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_20003, ConcatTilingDataNoArrayCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32111, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32112, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32114, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32118, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32121, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32122, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32124, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32128, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32211, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32212, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32214, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32221, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32222, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32224, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32228, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32311, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32312, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_32314, ConcatTilingDataCompact)
+REGISTER_TILING_DATA_CLASS(Concat_20004, ConcatTilingDataCompact)
+
 BEGIN_TILING_DATA_DEF(ConcatTilingDataForSimtArrays)
 TILING_DATA_FIELD_DEF_ARR(int32_t, TILING_COLS_OFFSET_LENGTH, tensorColsOffset); // 每个tensor计算的数据偏移
 END_TILING_DATA_DEF;
 REGISTER_TILING_DATA_CLASS(ConcatTilingDataForSimtArraysOp, ConcatTilingDataForSimtArrays)
 
 BEGIN_TILING_DATA_DEF(ConcatTilingDataForSimt)
-TILING_DATA_FIELD_DEF(int32_t, tensorNumPerCore);                                // 每个核处理的tensor数目
-TILING_DATA_FIELD_DEF(int32_t, tensorNum);                                       // 输入数据的tensor总数量
-TILING_DATA_FIELD_DEF(int32_t, catDim0);                                         // 合轴后输出的0轴大小
-TILING_DATA_FIELD_DEF(int32_t, catDim1);                                         // 合轴后输出的1轴大小
-TILING_DATA_FIELD_DEF_STRUCT(ConcatTilingDataForSimtArrays, arrays);             // 每个tensor计算的数据偏移
+TILING_DATA_FIELD_DEF(int32_t, tensorNumPerCore);                    // 每个核处理的tensor数目
+TILING_DATA_FIELD_DEF(int32_t, tensorNum);                           // 输入数据的tensor总数量
+TILING_DATA_FIELD_DEF(int32_t, catDim0);                             // 合轴后输出的0轴大小
+TILING_DATA_FIELD_DEF(int32_t, catDim1);                             // 合轴后输出的1轴大小
+TILING_DATA_FIELD_DEF_STRUCT(ConcatTilingDataForSimtArrays, arrays); // 每个tensor计算的数据偏移
 END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(Concat_30001, ConcatTilingDataForSimt)
@@ -170,7 +276,7 @@ struct ConcatTilingParam {
     int32_t tensorNumPerCore{0};
     bool isEmpty{false};
     bool isNonContiguous{false};
-    int64_t strideDim{ 0 };
+    int64_t strideDim{0};
     std::vector<int16_t> startTensorIdx;
     std::vector<int16_t> endTensorIdx;
     std::vector<int64_t> startTensorOffset;
@@ -184,11 +290,18 @@ struct ConcatTilingParam {
     std::vector<int32_t> tensorColsOffset;
     std::vector<std::vector<int64_t>> tensorList;
     std::vector<std::vector<int64_t>> mergeTensorList;
-    std::vector<uint64_t> strideList{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
-    std::vector<uint64_t> concatDimList{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+    std::vector<uint64_t> strideList{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    std::vector<uint64_t> concatDimList{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
     int16_t endIdxArr[TILING_ARRAY_LENGTH]{0};
     int64_t endOffsetArr[TILING_ARRAY_LENGTH]{0};
     int64_t preLoadDim1Arr[TILING_PRELOAD_DIM1_LENGTH]{0};
+    // compact 版本专用数组 (uint32)
+    uint32_t endOffsetArrCompact[TILING_ARRAY_LENGTH]{0};
+    uint32_t preLoadDim1ArrCompact[TILING_PRELOAD_DIM1_LENGTH]{0};
+    uint32_t strideListCompact[NON_CON_TENSOR_SIZE]{0};
+    uint32_t concatDimListCompact[NON_CON_TENSOR_SIZE]{0};
 
     ConcatTilingParam()
         : startTensorIdx(TILING_ARRAY_LENGTH, 0),

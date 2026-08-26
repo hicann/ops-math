@@ -17,9 +17,16 @@
 #include "tikicpulib.h"
 
 // Stubs for SIMT built-ins used in one_axis_concat_simt.h (not executed in CPU sim)
-static inline unsigned int __umulhi(unsigned int x, unsigned int y) {
+static inline unsigned int __umulhi(unsigned int x, unsigned int y)
+{
     return static_cast<unsigned int>((static_cast<unsigned long long>(x) * y) >> 32);
 }
+
+struct ConcatTilingDataNoArrArrays {
+    int64_t preLoadDim1[2];
+    uint32_t strideList[32];
+    uint32_t concatDimList[32];
+};
 
 struct ConcatTilingDataNoArray {
     int16_t ubSplitDim1;
@@ -42,9 +49,11 @@ struct ConcatTilingDataNoArray {
     int64_t catDim1;
     int64_t sameShapeTensorDim1;
     int16_t isFP4Type;
-    int64_t preLoadDim1[2];
-    uint32_t strideList[32];
-    uint32_t concatDimList[32];
+    ConcatTilingDataNoArrArrays arrays;
+};
+
+struct ConcatTilingDataForSimtArrays {
+    int32_t tensorColsOffset[128];
 };
 
 struct ConcatTilingDataForSimt {
@@ -52,7 +61,65 @@ struct ConcatTilingDataForSimt {
     int32_t tensorNum;
     int32_t catDim0;
     int32_t catDim1;
-    int32_t tensorColsOffset[128];
+    ConcatTilingDataForSimtArrays arrays;
+};
+
+struct ConcatTilingDataArraysCompact {
+    int16_t endTensorIdx[72];
+    uint32_t endTensorOffset[72];
+    uint32_t preLoadDim1[2];
+    uint32_t strideList[32];
+    uint32_t concatDimList[32];
+};
+
+struct ConcatTilingDataCompact {
+    int16_t ubSplitDim1;
+    int16_t dim;
+    int16_t tensorNum;
+    int16_t dtypeSize;
+    int16_t isNonContiguous;
+    int16_t isFP4Type;
+    int32_t ubFactorDim0;
+    int32_t ubFactorDim1;
+    int32_t tailUbFactorDim0;
+    int32_t tailUbFactorDim1;
+    int32_t bufferSize;
+    int32_t dataPtrOffset;
+    int64_t blockFactor;
+    int64_t tailBlockFactor;
+    int64_t uoDim0;
+    int64_t uoDim1;
+    int64_t catDim1;
+    int64_t sameShapeTensorDim1;
+    ConcatTilingDataArraysCompact arrays;
+};
+
+struct ConcatTilingDataNoArrArraysCompact {
+    uint32_t preLoadDim1[2];
+    uint32_t strideList[32];
+    uint32_t concatDimList[32];
+};
+
+struct ConcatTilingDataNoArrayCompact {
+    int16_t ubSplitDim1;
+    int16_t dim;
+    int16_t tensorNum;
+    int16_t dtypeSize;
+    int16_t isNonContiguous;
+    int16_t isFP4Type;
+    int32_t ubFactorDim0;
+    int32_t ubFactorDim1;
+    int32_t tailUbFactorDim0;
+    int32_t tailUbFactorDim1;
+    int32_t bufferSize;
+    int32_t dataPtrOffset;
+    int64_t blockFactor;
+    int64_t tailBlockFactor;
+    int64_t uoDim0;
+    int64_t uoDim1;
+    int64_t catDim1;
+    int64_t sameShapeTensorDim1;
+    ConcatTilingDataNoArrArraysCompact arrays;
 };
 
 #include <algorithm>
@@ -62,14 +129,8 @@ using std::min;
 
 class PackTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "pack_test SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "pack_test TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "pack_test SetUp" << std::endl; }
+    static void TearDownTestCase() { std::cout << "pack_test TearDown" << std::endl; }
 };
 
 // ============================================================================
@@ -112,11 +173,11 @@ TEST_F(PackTest, test_pure_copy_split_dim1_float32)
     tilingData->catDim1 = OUT_DIM1;
     tilingData->sameShapeTensorDim1 = DIM1_PER_TENSOR;
     for (int i = 0; i < 2; i++) {
-        tilingData->preLoadDim1[i] = DIM1_PER_TENSOR;
+        tilingData->arrays.preLoadDim1[i] = DIM1_PER_TENSOR;
     }
     for (int i = 0; i < 32; i++) {
-        tilingData->strideList[i] = 0;
-        tilingData->concatDimList[i] = (i < TENSOR_NUM) ? DIM1_PER_TENSOR : 0;
+        tilingData->arrays.strideList[i] = 0;
+        tilingData->arrays.concatDimList[i] = (i < TENSOR_NUM) ? DIM1_PER_TENSOR : 0;
     }
 
     uint32_t numBlocks = 1;

@@ -78,7 +78,8 @@ template <typename T, typename U, typename TILINGDATA>
 __aicore__ inline void OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::Init(GM_ADDR x, GM_ADDR dst)
 {
     int64_t blockIdx = GetBlockIdx();
-    if constexpr (IsSame<TILINGDATA, ConcatTilingDataNoArray>::value) {
+    if constexpr (IsSame<TILINGDATA, ConcatTilingDataNoArray>::value ||
+                  IsSame<TILINGDATA, ConcatTilingDataNoArrayCompact>::value) {
         blockOffset_ = blockIdx * tilingData_.blockFactor * tilingData_.ubFactorDim0;
         dstGlobal_.SetGlobalBuffer((__gm__ T*)dst + blockOffset_ * tilingData_.catDim1);
     } else {
@@ -128,7 +129,7 @@ __aicore__ inline void OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::Process(
     if (GetBlockIdx() >= GetBlockNum()) {
         return;
     }
-    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value) {
+    if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value || IsSame<TILINGDATA, ConcatTilingDataCompact>::value) {
         ProcessBlockSplitDim1();
     } else {
         if (tilingData_.ubSplitDim1 == 1) {

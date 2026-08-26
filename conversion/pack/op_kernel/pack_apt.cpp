@@ -45,6 +45,30 @@
 #define SPLIT_CORE_DIM0_NOTFIRST_NALIGN_SAME_GATHER_BITWIDTH_4 12314
 #define PURE_COPY_NO_SPLIT_DIM1_TILINGKEY 20001
 #define PURE_COPY_SPLIT_DIM1_TILINGKEY 20002
+#define PURE_COPY_NO_SPLIT_DIM1_COMPACT_TILINGKEY 20003
+#define PURE_COPY_SPLIT_DIM1_COMPACT_TILINGKEY 20004
+
+// compact 版本 tiling key
+#define COMPACT_NOARRAY_ALIGN_SAME_1 22111
+#define COMPACT_NOARRAY_ALIGN_SAME_2 22112
+#define COMPACT_NOARRAY_ALIGN_SAME_4 22114
+#define COMPACT_NOARRAY_ALIGN_SAME_8 22118
+#define COMPACT_NOARRAY_NALIGN_SAME_COPY_1 22211
+#define COMPACT_NOARRAY_NALIGN_SAME_COPY_2 22212
+#define COMPACT_NOARRAY_NALIGN_SAME_COPY_4 22214
+#define COMPACT_NOARRAY_NALIGN_SAME_GATHER_1 22311
+#define COMPACT_NOARRAY_NALIGN_SAME_GATHER_2 22312
+#define COMPACT_NOARRAY_NALIGN_SAME_GATHER_4 22314
+#define COMPACT_ARRAY_ALIGN_SAME_1 32111
+#define COMPACT_ARRAY_ALIGN_SAME_2 32112
+#define COMPACT_ARRAY_ALIGN_SAME_4 32114
+#define COMPACT_ARRAY_ALIGN_SAME_8 32118
+#define COMPACT_ARRAY_NALIGN_SAME_COPY_1 32211
+#define COMPACT_ARRAY_NALIGN_SAME_COPY_2 32212
+#define COMPACT_ARRAY_NALIGN_SAME_COPY_4 32214
+#define COMPACT_ARRAY_NALIGN_SAME_GATHER_1 32311
+#define COMPACT_ARRAY_NALIGN_SAME_GATHER_2 32312
+#define COMPACT_ARRAY_NALIGN_SAME_GATHER_4 32314
 #define SIMT_TILINGKEY_1 30001
 #define SIMT_TILINGKEY_2 30002
 #define SIMT_TILINGKEY_4 30004
@@ -191,6 +215,116 @@ extern "C" __global__ __aicore__ void pack(GM_ADDR x, GM_ADDR y, GM_ADDR workspa
     } else if (TILING_KEY_IS(PURE_COPY_SPLIT_DIM1_TILINGKEY)) {
         GET_TILING_DATA_WITH_STRUCT(ConcatTilingData, tilingData, tiling);
         Concat::OneAxisConcatPureCopy<ConcatTilingData> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_NOARRAY_ALIGN_SAME_1)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataNoArrayCompact, tilingData, tiling);
+        Concat::OneAxisConcatAllAlign<int8_t, true, ConcatTilingDataNoArrayCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_NOARRAY_ALIGN_SAME_2)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataNoArrayCompact, tilingData, tiling);
+        Concat::OneAxisConcatAllAlign<int16_t, true, ConcatTilingDataNoArrayCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_NOARRAY_ALIGN_SAME_4)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataNoArrayCompact, tilingData, tiling);
+        Concat::OneAxisConcatAllAlign<int32_t, true, ConcatTilingDataNoArrayCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_NOARRAY_ALIGN_SAME_8)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataNoArrayCompact, tilingData, tiling);
+        Concat::OneAxisConcatAllAlign<int64_t, true, ConcatTilingDataNoArrayCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_NOARRAY_NALIGN_SAME_COPY_1)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataNoArrayCompact, tilingData, tiling);
+        Concat::OneAxisConcatNoAlignCopy<uint8_t, ConcatTilingDataNoArrayCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_NOARRAY_NALIGN_SAME_COPY_2)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataNoArrayCompact, tilingData, tiling);
+        Concat::OneAxisConcatNoAlignCopy<uint16_t, ConcatTilingDataNoArrayCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_NOARRAY_NALIGN_SAME_COPY_4)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataNoArrayCompact, tilingData, tiling);
+        Concat::OneAxisConcatNoAlignCopy<uint32_t, ConcatTilingDataNoArrayCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_NOARRAY_NALIGN_SAME_GATHER_1)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataNoArrayCompact, tilingData, tiling);
+        Concat::OneAxisConcatNoAlignGather<uint8_t, uint16_t, ConcatTilingDataNoArrayCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_NOARRAY_NALIGN_SAME_GATHER_2)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataNoArrayCompact, tilingData, tiling);
+        Concat::OneAxisConcatNoAlignGather<uint16_t, uint16_t, ConcatTilingDataNoArrayCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_NOARRAY_NALIGN_SAME_GATHER_4)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataNoArrayCompact, tilingData, tiling);
+        Concat::OneAxisConcatNoAlignGather<uint32_t, uint32_t, ConcatTilingDataNoArrayCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_ARRAY_ALIGN_SAME_1)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataCompact, tilingData, tiling);
+        Concat::OneAxisConcatAllAlign<int8_t, true, ConcatTilingDataCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_ARRAY_ALIGN_SAME_2)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataCompact, tilingData, tiling);
+        Concat::OneAxisConcatAllAlign<int16_t, true, ConcatTilingDataCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_ARRAY_ALIGN_SAME_4)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataCompact, tilingData, tiling);
+        Concat::OneAxisConcatAllAlign<int32_t, true, ConcatTilingDataCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_ARRAY_ALIGN_SAME_8)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataCompact, tilingData, tiling);
+        Concat::OneAxisConcatAllAlign<int64_t, true, ConcatTilingDataCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_ARRAY_NALIGN_SAME_COPY_1)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataCompact, tilingData, tiling);
+        Concat::OneAxisConcatNoAlignCopy<uint8_t, ConcatTilingDataCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_ARRAY_NALIGN_SAME_COPY_2)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataCompact, tilingData, tiling);
+        Concat::OneAxisConcatNoAlignCopy<uint16_t, ConcatTilingDataCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_ARRAY_NALIGN_SAME_COPY_4)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataCompact, tilingData, tiling);
+        Concat::OneAxisConcatNoAlignCopy<uint32_t, ConcatTilingDataCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_ARRAY_NALIGN_SAME_GATHER_1)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataCompact, tilingData, tiling);
+        Concat::OneAxisConcatNoAlignGather<uint8_t, uint16_t, ConcatTilingDataCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_ARRAY_NALIGN_SAME_GATHER_2)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataCompact, tilingData, tiling);
+        Concat::OneAxisConcatNoAlignGather<uint16_t, uint16_t, ConcatTilingDataCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(COMPACT_ARRAY_NALIGN_SAME_GATHER_4)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataCompact, tilingData, tiling);
+        Concat::OneAxisConcatNoAlignGather<uint32_t, uint32_t, ConcatTilingDataCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(PURE_COPY_NO_SPLIT_DIM1_COMPACT_TILINGKEY)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataNoArrayCompact, tilingData, tiling);
+        Concat::OneAxisConcatPureCopy<ConcatTilingDataNoArrayCompact> op(tilingData, pipe);
+        op.Init(x, y);
+        op.Process();
+    } else if (TILING_KEY_IS(PURE_COPY_SPLIT_DIM1_COMPACT_TILINGKEY)) {
+        GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataCompact, tilingData, tiling);
+        Concat::OneAxisConcatPureCopy<ConcatTilingDataCompact> op(tilingData, pipe);
         op.Init(x, y);
         op.Process();
     }
