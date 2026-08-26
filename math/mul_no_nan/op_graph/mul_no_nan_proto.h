@@ -38,11 +38,14 @@ namespace ge {
 * @par Third-party framework compatibility
 * Compatible with the TensorFlow operator MulNoNan (tf.math.multiply_no_nans).
 */
+#ifndef OPS_PROTO_DEF_MULNONAN
+#define OPS_PROTO_DEF_MULNONAN
 REG_OP(MulNoNan)
     .INPUT(x1, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT32, DT_BF16}))
     .INPUT(x2, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT32, DT_BF16}))
     .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT32, DT_BF16}))
     .OP_END_FACTORY_REG(MulNoNan)
+#endif // OPS_PROTO_DEF_MULNONAN
 
 } // namespace ge
 

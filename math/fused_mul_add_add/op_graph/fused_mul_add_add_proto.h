@@ -44,6 +44,8 @@ namespace ge {
 * Compatible with the graph fusion of Mul followed by two Add operators
 * (e.g. BatchMatmul + bias + residual patterns).
 */
+#ifndef OPS_PROTO_DEF_FUSEDMULADDADD
+#define OPS_PROTO_DEF_FUSEDMULADDADD
 REG_OP(FusedMulAddAdd)
     .INPUT(x1, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT32}))
     .INPUT(x2, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT32}))
@@ -51,6 +53,7 @@ REG_OP(FusedMulAddAdd)
     .INPUT(x4, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT32}))
     .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT32}))
     .OP_END_FACTORY_REG(FusedMulAddAdd)
+#endif // OPS_PROTO_DEF_FUSEDMULADDADD
 
 } // namespace ge
 

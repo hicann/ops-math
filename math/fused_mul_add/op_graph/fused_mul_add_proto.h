@@ -35,12 +35,15 @@ namespace ge {
 * @par Third-party framework compatibility
 * Compatible with TensorFlow/PyTorch graph fusion of Mul followed by Add.
 */
+#ifndef OPS_PROTO_DEF_FUSEDMULADD
+#define OPS_PROTO_DEF_FUSEDMULADD
 REG_OP(FusedMulAdd)
     .INPUT(x1, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT32}))
     .INPUT(x2, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT32}))
     .INPUT(x3, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT32}))
     .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT32}))
     .OP_END_FACTORY_REG(FusedMulAdd)
+#endif // OPS_PROTO_DEF_FUSEDMULADD
 
 } // namespace ge
 

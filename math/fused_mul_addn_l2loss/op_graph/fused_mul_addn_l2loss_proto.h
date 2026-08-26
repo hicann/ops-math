@@ -36,6 +36,8 @@ namespace ge {
 * @par Third-party framework compatibility
 * Compatible with the fused Mul + AddN + L2Loss subgraph.
 */
+#ifndef OPS_PROTO_DEF_FUSEDMULADDNL2LOSS
+#define OPS_PROTO_DEF_FUSEDMULADDNL2LOSS
 REG_OP(FusedMulAddNL2loss)
     .INPUT(x1, TensorType::NumberType())
     .INPUT(x2, TensorType::NumberType())
@@ -43,6 +45,7 @@ REG_OP(FusedMulAddNL2loss)
     .OUTPUT(y1, TensorType::NumberType())
     .OUTPUT(y2, TensorType::NumberType())
     .OP_END_FACTORY_REG(FusedMulAddNL2loss)
+#endif // OPS_PROTO_DEF_FUSEDMULADDNL2LOSS
 
 } // namespace ge
 

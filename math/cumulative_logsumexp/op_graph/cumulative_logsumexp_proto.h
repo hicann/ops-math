@@ -35,6 +35,8 @@ namespace ge {
  * @par Outputs:
  * y: A Tensor. Has the same type and shape as "x".
  */
+#ifndef OPS_PROTO_DEF_CUMULATIVELOGSUMEXP
+#define OPS_PROTO_DEF_CUMULATIVELOGSUMEXP
 REG_OP(CumulativeLogsumexp)
     .INPUT(x, TensorType({DT_FLOAT, DT_FLOAT16}))
     .INPUT(axis, TensorType({DT_INT32, DT_INT64, DT_INT16}))
@@ -42,6 +44,7 @@ REG_OP(CumulativeLogsumexp)
     .ATTR(exclusive, Bool, false)
     .ATTR(reverse, Bool, false)
     .OP_END_FACTORY_REG(CumulativeLogsumexp)
+#endif // OPS_PROTO_DEF_CUMULATIVELOGSUMEXP
 } // namespace ge
 
 #endif
