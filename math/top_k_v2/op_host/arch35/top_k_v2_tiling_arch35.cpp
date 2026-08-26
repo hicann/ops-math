@@ -49,7 +49,7 @@ uint32_t ComputeTopkRadixMoreCoreTileData(gert::TilingContext* context, TopKV2Ti
     uint32_t topkAcApiNeedBuffer = topkTilingData.get_topkAcApiTmpBufferSize();
 
     while (topkAcApiNeedBuffer + runTimeNeedSpace > computeNowTileSizeInfo.ubSizePlatForm) {
-        if (tileData < topkV2DataInfo::BIN_NUM) {
+        if (tileData <= topkV2DataInfo::BIN_NUM) {
             OP_LOGD("TopKV2TilingForAscendC", "tileData is less than BIN_NUM, cannot decrease further.");
             return 0U;
         }
