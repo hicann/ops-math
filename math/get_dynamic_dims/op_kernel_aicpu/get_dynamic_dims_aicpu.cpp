@@ -16,6 +16,7 @@
 
 #include "get_dynamic_dims_aicpu.h"
 
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_types.h"
 #include "log.h"
 #include "securec.h"
@@ -142,5 +143,5 @@ uint32_t GetDynamicDimsCpuKernel::GetInputShapes(const CpuKernelContext& ctx,
     return KERNEL_STATUS_OK;
 }
 
-REGISTER_CPU_KERNEL(kGetDynamicDims, GetDynamicDimsCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kGetDynamicDims, GetDynamicDimsCpuKernel);
 } // namespace aicpu

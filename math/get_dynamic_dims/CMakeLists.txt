@@ -8,4 +8,4 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ---------------------------------------------------------------------------------------------------------
 
-add_all_modules_sources(OPTYPE get_dynamic_dims ACLNNTYPE aclnn_exclude)
+add_all_modules_sources(OPTYPE get_dynamic_dims ACLNNTYPE aclnn_exclude HOSTCPU TRUE)
