@@ -46,7 +46,8 @@ ge::graphStatus LogicalNotTiling::RunTiling()
 
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     OP_CHECK_IF(elewiseBaseTiling.DoTiling<LogicalNotOp::LogicalNotDag<int8_t>::OpDag>(*tiling) != ge::GRAPH_SUCCESS,
-                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling DoTiling failed"), return ge::GRAPH_FAILED);
+                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling DoTiling failed, dtype: INT8."),
+                return ge::GRAPH_FAILED);
 
     // set workspace/tilingkey/blockdim
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);

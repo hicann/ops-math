@@ -63,8 +63,6 @@ private:
 
 ge::graphStatus RoundTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling)
 {
-    OP_LOGD(tilingContext->GetNodeName(), "RoundTiling SetTilingData enter.");
-
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = static_cast<size_t>(ASCEND_WORKSPACE);
@@ -184,7 +182,9 @@ ge::graphStatus RoundTiling::DoTilingF(bool decimalsNeg, bool decimalsNan, float
         }
     }
     OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
-                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTilingF failed"), return ge::GRAPH_FAILED);
+                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTilingF failed, output dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
+                return ge::GRAPH_FAILED);
     return SetTilingData(elewiseBaseTiling);
 }
 
@@ -227,14 +227,14 @@ ge::graphStatus RoundTiling::DoTilingI(int64_t decimals)
     }
 
     OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
-                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTilingInt failed"), return ge::GRAPH_FAILED);
+                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTilingInt failed, output dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
+                return ge::GRAPH_FAILED);
     return SetTilingData(elewiseBaseTiling);
 }
 
 ge::graphStatus RoundTiling::RunTiling()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "RoundTiling RunTiling enter.");
-
     OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input x dtype failed"),
                 return ge::GRAPH_FAILED);
     OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED,
@@ -291,7 +291,6 @@ static ge::graphStatus Tiling4Round(gert::TilingContext* context)
 
     auto compileInfo = context->GetCompileInfo<RoundCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
-    OP_LOGD(context->GetNodeName(), "Enter new Round.");
     RoundTiling baseOpTiling(context);
     return baseOpTiling.RunTiling();
 }

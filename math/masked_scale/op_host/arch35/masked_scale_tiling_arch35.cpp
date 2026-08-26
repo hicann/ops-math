@@ -47,7 +47,7 @@ const uint64_t TILING_KEY_X_HALF_MASK_FP32 = 41;
 const uint64_t TILING_KEY_X_BF16_MASK_FP32 = 42;
 const uint64_t TILING_KEY_X_FP32_MASK_FP32 = 43;
 
-MaskedScaleNs::MaskedScaleTilingData *maskedScaleTilingData = nullptr;
+MaskedScaleNs::MaskedScaleTilingData* maskedScaleTilingData = nullptr;
 
 static ge::graphStatus Tiling4DoTilingDag(gert::TilingContext* tilingContext, uint64_t tilingKey)
 {
@@ -95,57 +95,59 @@ static ge::graphStatus Tiling4DoTilingDag(gert::TilingContext* tilingContext, ui
     }
 }
 
-static ge::graphStatus Tiling4MaskedScale(gert::TilingContext *tilingContext)
+static ge::graphStatus Tiling4MaskedScale(gert::TilingContext* tilingContext)
 {
-  OP_LOGD(tilingContext->GetNodeName(), "Tiling4MaskedScale rt2.0 is running.");
-  auto xDesc = tilingContext->GetInputDesc(INPUT_X_IDX);
-  OP_CHECK_NULL_WITH_CONTEXT(tilingContext, xDesc);
-  auto maskDesc = tilingContext->GetInputDesc(INPUT_MASK_IDX);
-  OP_CHECK_NULL_WITH_CONTEXT(tilingContext, maskDesc);
-  auto xDtype = xDesc->GetDataType();
-  auto maskDtype = maskDesc->GetDataType();
-  uint64_t tilingKey = 0;
-  if (xDtype == ge::DT_FLOAT16) {
-    tilingKey += TILING_KEY_X_FP16;
-  } else if (xDtype == ge::DT_BF16) {
-    tilingKey += TILING_KEY_X_BF16;
-  } else if (xDtype == ge::DT_FLOAT) {
-    tilingKey += TILING_KEY_X_FP32;
-  } else {
-    OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "x", ge::TypeUtils::DataTypeToSerialString(xDtype), "FLOAT16, BF16, FLOAT");
-    return ge::GRAPH_FAILED;
-  }
-  if (maskDtype == ge::DT_UINT8) {
-    tilingKey += TILING_KEY_MASK_UINT8;
-  } else if (maskDtype == ge::DT_INT8) {
-    tilingKey += TILING_KEY_MASK_INT8;
-  } else if (maskDtype == ge::DT_FLOAT16) {
-    tilingKey += TILING_KEY_MASK_FP16;
-  } else if (maskDtype == ge::DT_FLOAT) {
-    tilingKey += TILING_KEY_MASK_FP32;
-  } else {
-    OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "mask", ge::TypeUtils::DataTypeToSerialString(maskDtype), "UINT8, INT8, FLOAT16, FLOAT");
-    return ge::GRAPH_FAILED;
-  }
+    OP_LOGD(tilingContext->GetNodeName(), "Tiling4MaskedScale rt2.0 is running.");
+    auto xDesc = tilingContext->GetInputDesc(INPUT_X_IDX);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, xDesc);
+    auto maskDesc = tilingContext->GetInputDesc(INPUT_MASK_IDX);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, maskDesc);
+    auto xDtype = xDesc->GetDataType();
+    auto maskDtype = maskDesc->GetDataType();
+    uint64_t tilingKey = 0;
+    if (xDtype == ge::DT_FLOAT16) {
+        tilingKey += TILING_KEY_X_FP16;
+    } else if (xDtype == ge::DT_BF16) {
+        tilingKey += TILING_KEY_X_BF16;
+    } else if (xDtype == ge::DT_FLOAT) {
+        tilingKey += TILING_KEY_X_FP32;
+    } else {
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "x", ge::TypeUtils::DataTypeToSerialString(xDtype),
+                                  "FLOAT16, BF16, FLOAT");
+        return ge::GRAPH_FAILED;
+    }
+    if (maskDtype == ge::DT_UINT8) {
+        tilingKey += TILING_KEY_MASK_UINT8;
+    } else if (maskDtype == ge::DT_INT8) {
+        tilingKey += TILING_KEY_MASK_INT8;
+    } else if (maskDtype == ge::DT_FLOAT16) {
+        tilingKey += TILING_KEY_MASK_FP16;
+    } else if (maskDtype == ge::DT_FLOAT) {
+        tilingKey += TILING_KEY_MASK_FP32;
+    } else {
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "mask",
+                                  ge::TypeUtils::DataTypeToSerialString(maskDtype), "UINT8, INT8, FLOAT16, FLOAT");
+        return ge::GRAPH_FAILED;
+    }
 
-OP_CHECK_IF(Tiling4DoTilingDag(tilingContext, tilingKey) != ge::GRAPH_SUCCESS,
-                   OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling DoTiling failed"),
-                   return ge::GRAPH_FAILED);
+    OP_CHECK_IF(Tiling4DoTilingDag(tilingContext, tilingKey) != ge::GRAPH_SUCCESS,
+                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling DoTiling failed, tilingKey: %lu.", tilingKey),
+                return ge::GRAPH_FAILED);
 
-  float scale = *tilingContext->GetAttrs()->GetAttrPointer<float>(VALUE_ATTR_IDX);
-  maskedScaleTilingData->scale = scale;
-  OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : scale=%f.", scale);
+    float scale = *tilingContext->GetAttrs()->GetAttrPointer<float>(VALUE_ATTR_IDX);
+    maskedScaleTilingData->scale = scale;
+    OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : scale=%f.", scale);
 
-  tilingContext->SetTilingKey(tilingKey);
-  OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu.", tilingKey);
-  tilingContext->SetBlockDim(maskedScaleTilingData->baseTiling.blockNum);
+    tilingContext->SetTilingKey(tilingKey);
+    OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu.", tilingKey);
+    tilingContext->SetBlockDim(maskedScaleTilingData->baseTiling.blockNum);
 
-  size_t sysWorkspaceSize = static_cast<size_t>(16) * 1024 * 1024;
-  size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
-  OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
-  currentWorkspace[0] = sysWorkspaceSize;
+    size_t sysWorkspaceSize = static_cast<size_t>(16) * 1024 * 1024;
+    size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
+    currentWorkspace[0] = sysWorkspaceSize;
 
-  return ge::GRAPH_SUCCESS;
+    return ge::GRAPH_SUCCESS;
 }
 
 static ge::graphStatus TilingPrepareForMaskedScale(gert::TilingParseContext* context)
@@ -160,6 +162,7 @@ static ge::graphStatus TilingPrepareForMaskedScale(gert::TilingParseContext* con
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_OPTILING(MaskedScale).Tiling(Tiling4MaskedScale)
-                             .TilingParse<MaskedScaleCompileInfo>(TilingPrepareForMaskedScale);
-}  // namespace optiling
+IMPL_OP_OPTILING(MaskedScale)
+    .Tiling(Tiling4MaskedScale)
+    .TilingParse<MaskedScaleCompileInfo>(TilingPrepareForMaskedScale);
+} // namespace optiling

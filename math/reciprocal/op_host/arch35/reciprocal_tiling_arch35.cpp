@@ -40,7 +40,6 @@ ge::graphStatus ReciprocalTiling::SetTilingData()
 
 ge::graphStatus ReciprocalTiling::CalcInputDtype()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "ReciprocalTiling CalcInputDtype enter.");
     auto inputDesc = tilingContext->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
     this->inputDtype = inputDesc->GetDataType();
@@ -55,7 +54,6 @@ ge::graphStatus ReciprocalTiling::CalcInputDtype()
 
 ge::graphStatus ReciprocalTiling::CheckShape() const
 {
-    OP_LOGD(tilingContext->GetNodeName(), "ReciprocalTiling CheckShape enter.");
     auto xStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, xStorageShape);
     const gert::Shape& inputXShape = Ops::Base::EnsureNotScalar(xStorageShape->GetStorageShape());
@@ -75,7 +73,6 @@ ge::graphStatus ReciprocalTiling::CheckShape() const
 
 ge::graphStatus ReciprocalTiling::CalcOutputDtype()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "ReciprocalTiling CalcOutputDtype enter.");
     auto outputDesc = tilingContext->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
@@ -96,7 +93,6 @@ ge::graphStatus ReciprocalTiling::CalcOutputDtype()
 
 ge::graphStatus ReciprocalTiling::RunTiling()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "ReciprocalTiling RunTiling enter.");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     tiling = tilingContext->GetTilingData<ReciprocalNs::ReciprocalTilingData>();
     OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
@@ -121,7 +117,9 @@ ge::graphStatus ReciprocalTiling::RunTiling()
                                   ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed, output dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
                 return ge::GRAPH_FAILED);
     SetTilingData();
     return ge::GRAPH_SUCCESS;

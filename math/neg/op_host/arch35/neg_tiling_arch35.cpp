@@ -149,7 +149,9 @@ ge::graphStatus NegTiling::RunTiling()
     }
 
     OP_CHECK_IF(status != ge::GRAPH_SUCCESS,
-                OP_LOGE(tilingContext->GetNodeName(), "ElewiseBaseTiling do tiling failed"), return ge::GRAPH_FAILED);
+                OP_LOGE(tilingContext->GetNodeName(), "ElewiseBaseTiling do tiling failed, output dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
+                return ge::GRAPH_FAILED);
 
     return SetTilingData(elewiseBaseTiling);
 }
@@ -165,7 +167,6 @@ ge::graphStatus NegTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTil
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = sysWorkspaceSize + usrWorkspaceSize;
-    OP_LOGD(tilingContext->GetNodeName(), "END Neg AscendC Tiling \n");
     return ge::GRAPH_SUCCESS;
 }
 
@@ -173,8 +174,6 @@ static ge::graphStatus TilingFuncNeg(gert::TilingContext* tilingContext)
 {
     auto compileInfo = tilingContext->GetCompileInfo<ElewiseCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, compileInfo);
-    // 走新的模板tiling
-    OP_LOGD(tilingContext->GetNodeName(), "START Neg AscendC Tiling \n");
     NegTiling NegTiling(tilingContext);
     return NegTiling.RunTiling();
 }

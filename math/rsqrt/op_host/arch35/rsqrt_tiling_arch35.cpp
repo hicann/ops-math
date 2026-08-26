@@ -33,7 +33,6 @@ const uint64_t RSQRT_KEY_FP32 = 103UL;
 
 ge::graphStatus RsqrtTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling)
 {
-    OP_LOGD(tilingContext->GetNodeName(), "RsqrtTiling SetTilingData enter.");
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tilingContext->GetRawTilingData());
 
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
@@ -112,7 +111,6 @@ ge::graphStatus RsqrtTiling::CalcOutputDtype()
 ge::graphStatus RsqrtTiling::RunTiling()
 {
     OP_CHECK_IF(tilingContext == nullptr, OP_LOGE("RunTiling", "Tiling context is null"), return ge::GRAPH_FAILED);
-    OP_LOGD(tilingContext->GetNodeName(), "RsqrtTiling RunTiling enter.");
     Ops::Base::ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     auto tiling = tilingContext->GetTilingData<EleBaseTilingData16B>();
     OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
@@ -134,7 +132,9 @@ ge::graphStatus RsqrtTiling::RunTiling()
                                   ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed, output dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
                 return ge::GRAPH_FAILED);
     baseTilingResult = SetTilingData(elewiseBaseTiling);
     return baseTilingResult;
@@ -159,8 +159,6 @@ static ge::graphStatus TilingForRsqrt(gert::TilingContext* tilingContextGen)
     OP_LOGD(tilingContextGen->GetNodeName(), "TilingForRsqrt is running.");
     auto compileInfo = tilingContextGen->GetCompileInfo<RsqrtCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
-    // 走新的模板tiling
-    OP_LOGD("RsqrtTiling", "Enter new RsqrtTiling");
     RsqrtTiling baseOpTiling(tilingContextGen);
     return baseOpTiling.RunTiling();
 }

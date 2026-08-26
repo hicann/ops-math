@@ -120,8 +120,6 @@ ge::graphStatus RsqrtGradTiling::CalcOutputDtype()
 
 ge::graphStatus RsqrtGradTiling::RunTiling()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "RsqrtGradTiling RunTiling enter.");
-
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
                 return ge::GRAPH_FAILED);
@@ -158,7 +156,9 @@ ge::graphStatus RsqrtGradTiling::RunTiling()
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(baseTilingResult != ge::GRAPH_SUCCESS,
-                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"), return ge::GRAPH_FAILED);
+                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed, output dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
+                return ge::GRAPH_FAILED);
 
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);

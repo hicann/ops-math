@@ -52,12 +52,12 @@ static bool CheckFormat(const aclTensor* self, const aclTensor* out)
 {
     // 格式不能是私有格式
     if (IsPrivateFormat(self->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND, NCHW, NHWC, HWCN, NDHWC, NCDHW.");
         return false;
     }
 
     if (IsPrivateFormat(out->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND, NCHW, NHWC, HWCN, NDHWC, NCDHW.");
         return false;
     }
 
@@ -81,8 +81,8 @@ inline static aclnnStatus CheckParamsRound(const aclTensor* self, const aclTenso
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnRoundGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnRoundGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                       aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnRound, DFX_IN(self), DFX_OUT(out));
 
@@ -127,23 +127,23 @@ aclnnStatus aclnnRound(void* workspace, uint64_t workspaceSize, aclOpExecutor* e
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceRoundGetWorkspaceSize(
-    const aclTensor* selfRef, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceRoundGetWorkspaceSize(const aclTensor* selfRef, uint64_t* workspaceSize,
+                                              aclOpExecutor** executor)
 {
     auto out = const_cast<aclTensor*>(selfRef);
     return aclnnRoundGetWorkspaceSize(selfRef, out, workspaceSize, executor);
 }
 
-aclnnStatus aclnnInplaceRound(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+aclnnStatus aclnnInplaceRound(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                              const aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnInplaceRound);
     // 固定写法，调用框架能力，完成计算
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-static aclnnStatus ExecRoundDecimalsGetWorkspaceSize(
-    const aclTensor* self, int64_t decimals, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus ExecRoundDecimalsGetWorkspaceSize(const aclTensor* self, int64_t decimals, aclTensor* out,
+                                                     uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     // 创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -178,15 +178,15 @@ static aclnnStatus ExecRoundDecimalsGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnRoundDecimalsGetWorkspaceSize(
-    const aclTensor* self, int64_t decimals, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnRoundDecimalsGetWorkspaceSize(const aclTensor* self, int64_t decimals, aclTensor* out,
+                                               uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnRoundDecimals, DFX_IN(self, decimals), DFX_OUT(out));
     return ExecRoundDecimalsGetWorkspaceSize(self, decimals, out, workspaceSize, executor);
 }
 
-aclnnStatus aclnnInplaceRoundDecimalsGetWorkspaceSize(
-    aclTensor* selfRef, int64_t decimals, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceRoundDecimalsGetWorkspaceSize(aclTensor* selfRef, int64_t decimals, uint64_t* workspaceSize,
+                                                      aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceRoundDecimals, DFX_IN(selfRef, decimals), DFX_OUT(selfRef));
     return ExecRoundDecimalsGetWorkspaceSize(selfRef, decimals, selfRef, workspaceSize, executor);
@@ -199,8 +199,8 @@ aclnnStatus aclnnRoundDecimals(void* workspace, uint64_t workspaceSize, aclOpExe
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceRoundDecimals(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnInplaceRoundDecimals(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                      aclrtStream stream)
 {
     // 固定写法，调用框架能力，完成计算
     L2_DFX_PHASE_2(aclnnInplaceRoundDecimals);
