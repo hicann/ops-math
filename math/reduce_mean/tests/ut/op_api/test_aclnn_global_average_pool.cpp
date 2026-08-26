@@ -22,15 +22,9 @@ using namespace std;
 
 class l2_global_average_pool_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "global_average_pool_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "global_average_pool_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "global_average_pool_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "global_average_pool_test TearDown" << endl; }
 };
 
 TEST_F(l2_global_average_pool_test, case_1)
@@ -133,8 +127,8 @@ TEST_F(l2_global_average_pool_test, case_8)
 TEST_F(l2_global_average_pool_test, case_9)
 {
     auto tensor_desc = TensorDesc({10, 24, 3, 5, 10, 22, 42, 30, 24}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2);
-    auto out_tensor_desc =
-        TensorDesc({10, 24, 1, 1, 1, 1, 1, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+    auto out_tensor_desc = TensorDesc({10, 24, 1, 1, 1, 1, 1, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND)
+                               .Precision(0.0001, 0.0001);
     auto ut = OP_API_UT(aclnnGlobalAveragePool, INPUT(tensor_desc), OUTPUT(out_tensor_desc));
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
