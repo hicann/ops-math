@@ -34,14 +34,12 @@ static ge::graphStatus Tiling4STFT(gert::TilingContext* context)
 static ge::graphStatus TilingPrepare4STFT(gert::TilingParseContext* context)
 {
     fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
-    OP_CHECK_IF(
-        (platformInfoPtr == nullptr), OP_LOGE(context->GetNodeName(), "platformInfoPtr is null"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((platformInfoPtr == nullptr), OP_LOGE(context->GetNodeName(), "platformInfoPtr is null"),
+                return ge::GRAPH_FAILED);
 
     auto compileInfoPtr = context->GetCompiledInfo<STFTCompileInfo>();
-    OP_CHECK_IF(
-        (compileInfoPtr == nullptr), OP_LOGE(context->GetNodeName(), "compileInfoPtr is null"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfoPtr == nullptr), OP_LOGE(context->GetNodeName(), "compileInfoPtr is null"),
+                return ge::GRAPH_FAILED);
 
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
     compileInfoPtr->coreNum = ascendcPlatform.GetCoreNum();
@@ -49,10 +47,6 @@ static ge::graphStatus TilingPrepare4STFT(gert::TilingParseContext* context)
     compileInfoPtr->aicCoreNum = ascendcPlatform.GetCoreNumAic();
     compileInfoPtr->sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, compileInfoPtr->ubSize);
-    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::L1, compileInfoPtr->l1Size);
-    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::L0_A, compileInfoPtr->l0ASize);
-    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::L0_B, compileInfoPtr->l0BSize);
-    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::L0_C, compileInfoPtr->l0CSize);
     return ge::GRAPH_SUCCESS;
 }
 

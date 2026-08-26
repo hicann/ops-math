@@ -46,22 +46,23 @@ public:
 
     __aicore__ inline STFTGeneralizedComplex(){};
 
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR window, GM_ADDR y, GM_ADDR workspace, STFTGeneralizedTilingData* tilingData, TPipe* pipeIn)
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR window, GM_ADDR y, GM_ADDR workspace,
+                                STFTGeneralizedTilingData* tilingData, TPipe* pipeIn)
     {
         pipe = pipeIn;
         tiling = tilingData;
 
         inputGm.SetGlobalBuffer(
-            (__gm__ T*)x, (uint64_t)tiling->batch *
-                              (((uint64_t)(tiling->inputSize + tiling->nfft) * COMPLEX_COEFFICIENT * sizeof(T) + BLOCK_SIZE - 1) /
-                              BLOCK_SIZE * BLOCK_SIZE / sizeof(T)));
+            (__gm__ T*)x,
+            (uint64_t)tiling->batch *
+                (((uint64_t)(tiling->inputSize + tiling->nfft) * COMPLEX_COEFFICIENT * sizeof(T) + BLOCK_SIZE - 1) /
+                 BLOCK_SIZE * BLOCK_SIZE / sizeof(T)));
         uint64_t splitWindowWorkspaceSize = (uint64_t)tiling->batch * tiling->matmulN * tiling->nfftAlign;
-        uint64_t splitWindowWorkspaceSizeAlign =
-            (((splitWindowWorkspaceSize * sizeof(T) * COMPLEX_COEFFICIENT + WORKSPACE_ALIGN_SIZE - 1) /
-              WORKSPACE_ALIGN_SIZE) *
-             WORKSPACE_ALIGN_SIZE) /
-            sizeof(T);
+        uint64_t splitWindowWorkspaceSizeAlign = (((splitWindowWorkspaceSize * sizeof(T) * COMPLEX_COEFFICIENT +
+                                                    WORKSPACE_ALIGN_SIZE - 1) /
+                                                   WORKSPACE_ALIGN_SIZE) *
+                                                  WORKSPACE_ALIGN_SIZE) /
+                                                 sizeof(T);
 
         splitRealWindowGm.SetGlobalBuffer((__gm__ T*)workspace, splitWindowWorkspaceSize);
         splitImagWindowGm.SetGlobalBuffer((__gm__ T*)workspace + splitWindowWorkspaceSize, splitWindowWorkspaceSize);
@@ -69,18 +70,18 @@ public:
         uint64_t matmulWorkspaceSize = (uint64_t)tiling->batch * tiling->matmulM * tiling->matmulN;
 
         aRealGm.SetGlobalBuffer((__gm__ T*)workspace + splitWindowWorkspaceSizeAlign, matmulWorkspaceSize);
-        aImagGm.SetGlobalBuffer(
-            (__gm__ T*)workspace + splitWindowWorkspaceSizeAlign + matmulWorkspaceSize, matmulWorkspaceSize);
+        aImagGm.SetGlobalBuffer((__gm__ T*)workspace + splitWindowWorkspaceSizeAlign + matmulWorkspaceSize,
+                                matmulWorkspaceSize);
         bRealGm.SetGlobalBuffer(
             (__gm__ T*)workspace + splitWindowWorkspaceSizeAlign + matmulWorkspaceSize * DOUBLE_BUFFER,
             matmulWorkspaceSize);
-        bImagGm.SetGlobalBuffer(
-            (__gm__ T*)workspace + splitWindowWorkspaceSizeAlign + matmulWorkspaceSize * 3, matmulWorkspaceSize);
-        outputGm.SetGlobalBuffer((__gm__ T*)y, (uint64_t)tiling->batch * tiling->matmulM * tiling->matmulN * DOUBLE_BUFFER);
+        bImagGm.SetGlobalBuffer((__gm__ T*)workspace + splitWindowWorkspaceSizeAlign + matmulWorkspaceSize * 3,
+                                matmulWorkspaceSize);
+        outputGm.SetGlobalBuffer((__gm__ T*)y,
+                                 (uint64_t)tiling->batch * tiling->matmulM * tiling->matmulN * DOUBLE_BUFFER);
         a1Global.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(window), (uint64_t)tiling->matmulM * tiling->nfftAlign);
-        a2Global.SetGlobalBuffer(
-            reinterpret_cast<__gm__ T*>(window) + (uint64_t)tiling->matmulM * tiling->nfftAlign,
-            (uint64_t)tiling->matmulM * tiling->nfftAlign);
+        a2Global.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(window) + (uint64_t)tiling->matmulM * tiling->nfftAlign,
+                                 (uint64_t)tiling->matmulM * tiling->nfftAlign);
 
         size_t ubAlignBufferSize = (tiling->nFactorUbFormer * COMPLEX_COEFFICIENT + REPEAT_NUM_FOR_FP32 - 1) /
                                    REPEAT_NUM_FOR_FP32 * REPEAT_NUM_FOR_FP32 * sizeof(T);
@@ -157,8 +158,8 @@ public:
                                   (int64_t)nOffset * tiling->hopLength * COMPLEX_COEFFICIENT;
             int64_t realSplitWindowOffset = ((int64_t)(bOffset + i) * tiling->matmulN + nOffset) * tiling->nfftAlign;
             int64_t imagSplitWindowOffset = realSplitWindowOffset;
-            int64_t outputOffset =
-                (((int64_t)(bOffset + i) * tiling->matmulM + mOffset) * tiling->matmulN + nOffset) * DOUBLE_BUFFER;
+            int64_t outputOffset = (((int64_t)(bOffset + i) * tiling->matmulM + mOffset) * tiling->matmulN + nOffset) *
+                                   DOUBLE_BUFFER;
             int64_t realOffset = (int64_t)(bOffset + i) * tiling->matmulM * tiling->matmulN +
                                  (int64_t)mOffset * tiling->matmulN +
                                  (int64_t)nIdx * mFactor * tiling->matmulNCoreFactor;
@@ -171,6 +172,15 @@ public:
             if (i == 0) {
                 GenerateGatherMask();
             }
+
+            // 等待SplitWindows的MTE3(UB->GM)写完splitWindow workspace后再启动Cube matmul,
+            // 避免matmul读到未写入的旧数据(首次为0)导致输出帧为0
+            {
+                event_t eventIdMTE3ToS = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_S));
+                SetFlag<HardEvent::MTE3_S>(eventIdMTE3ToS);
+                WaitFlag<HardEvent::MTE3_S>(eventIdMTE3ToS);
+            }
+
             StftMatmul(realSplitWindowOffset, imagSplitWindowOffset, a1Offset, a2Offset, realOffset, imagOffset);
             GatherRealAndImag(realOffset, imagOffset, outputOffset, mFactor, nFactor);
         }
@@ -226,8 +236,8 @@ private:
         mask = maskTemp.ReinterpretCast<uint32_t>();
     }
 
-    __aicore__ inline void GatherForSmallNFactorAlign(
-        int64_t realOffset, int64_t imagOffset, int64_t outputOffset, uint32_t mFactor, uint32_t nFactor)
+    __aicore__ inline void GatherForSmallNFactorAlign(int64_t realOffset, int64_t imagOffset, int64_t outputOffset,
+                                                      uint32_t mFactor, uint32_t nFactor)
     {
         int64_t complexCount = (int64_t)mFactor * nFactor * DOUBLE_BUFFER;
         int32_t ubCount = tiling->maskUBSize / sizeof(int32_t) / DOUBLE_BUFFER;
@@ -301,8 +311,8 @@ private:
         AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID1);
     }
 
-    __aicore__ inline void GatherForSmallNFactorNonAlign(
-        int64_t realOffset, int64_t imagOffset, int64_t outputOffset, uint32_t mFactor, uint32_t nFactor)
+    __aicore__ inline void GatherForSmallNFactorNonAlign(int64_t realOffset, int64_t imagOffset, int64_t outputOffset,
+                                                         uint32_t mFactor, uint32_t nFactor)
     {
         int32_t nFactorAlign = (nFactor * sizeof(T) + BLOCK_SIZE - 1) / BLOCK_SIZE * BLOCK_SIZE / sizeof(T);
         int64_t complexCount = (int64_t)mFactor * nFactorAlign * DOUBLE_BUFFER;
@@ -333,8 +343,8 @@ private:
             AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(event_id);
             int32_t loops = copyLen / sizeof(T) / nFactorAlign;
 
-            DataCopyExtParams copyParams{
-                static_cast<uint16_t>(loops), static_cast<uint32_t>(nFactor * sizeof(T)), 0, 0, 0};
+            DataCopyExtParams copyParams{static_cast<uint16_t>(loops), static_cast<uint32_t>(nFactor * sizeof(T)), 0, 0,
+                                         0};
             AscendC::DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
             DataCopyPad(aRealUB, aRealGm[realOffset], copyParams, padParams);
             DataCopyPad(aImagUB, aImagGm[imagOffset], copyParams, padParams);
@@ -364,11 +374,10 @@ private:
 
             uint32_t srcGap = (nFactorAlign - nFactor) * DOUBLE_BUFFER * sizeof(T) > BLOCK_SIZE ? 1 : 0;
 
-            DataCopyPad(
-                outputGm[outputOffset], complexUB,
-                {static_cast<uint16_t>(loops), static_cast<uint32_t>(nFactor * DOUBLE_BUFFER * sizeof(T)),
-                 static_cast<uint32_t>(srcGap),
-                 static_cast<uint32_t>(DOUBLE_BUFFER * (tiling->matmulN - nFactor) * sizeof(T)), 0});
+            DataCopyPad(outputGm[outputOffset], complexUB,
+                        {static_cast<uint16_t>(loops), static_cast<uint32_t>(nFactor * DOUBLE_BUFFER * sizeof(T)),
+                         static_cast<uint32_t>(srcGap),
+                         static_cast<uint32_t>(DOUBLE_BUFFER * (tiling->matmulN - nFactor) * sizeof(T)), 0});
 
             AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(event_id);
 
@@ -380,8 +389,8 @@ private:
         AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID1);
     }
 
-    __aicore__ inline void GatherForLargeNFactorAlign(
-        int64_t realOffset, int64_t imagOffset, int64_t outputOffset, uint32_t mFactor, uint32_t nFactor)
+    __aicore__ inline void GatherForLargeNFactorAlign(int64_t realOffset, int64_t imagOffset, int64_t outputOffset,
+                                                      uint32_t mFactor, uint32_t nFactor)
     {
         int32_t gatherCountPerLoop = tiling->maskUBSize / sizeof(int32_t);
         int32_t realCountPerLoop = gatherCountPerLoop / DOUBLE_BUFFER;
@@ -409,18 +418,14 @@ private:
                 int32_t nBlocks = (copyLen + BLOCK_SIZE - 1) / BLOCK_SIZE;
                 AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(event_id);
 
-                DataCopy(
-                    aRealUB, aRealGm[realOffset + i * realCountPerLoop + m * nFactor],
-                    {1, static_cast<uint16_t>(nBlocks), 0, 0});
-                DataCopy(
-                    aImagUB, aImagGm[imagOffset + i * imagCountPerLoop + m * nFactor],
-                    {1, static_cast<uint16_t>(nBlocks), 0, 0});
-                DataCopy(
-                    bRealUB, bRealGm[realOffset + i * realCountPerLoop + m * nFactor],
-                    {1, static_cast<uint16_t>(nBlocks), 0, 0});
-                DataCopy(
-                    bImagUB, bImagGm[imagOffset + i * imagCountPerLoop + m * nFactor],
-                    {1, static_cast<uint16_t>(nBlocks), 0, 0});
+                DataCopy(aRealUB, aRealGm[realOffset + i * realCountPerLoop + m * nFactor],
+                         {1, static_cast<uint16_t>(nBlocks), 0, 0});
+                DataCopy(aImagUB, aImagGm[imagOffset + i * imagCountPerLoop + m * nFactor],
+                         {1, static_cast<uint16_t>(nBlocks), 0, 0});
+                DataCopy(bRealUB, bRealGm[realOffset + i * realCountPerLoop + m * nFactor],
+                         {1, static_cast<uint16_t>(nBlocks), 0, 0});
+                DataCopy(bImagUB, bImagGm[imagOffset + i * imagCountPerLoop + m * nFactor],
+                         {1, static_cast<uint16_t>(nBlocks), 0, 0});
 
                 AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(event_id);
                 AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(event_id);
@@ -455,8 +460,8 @@ private:
         AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID1);
     }
 
-    __aicore__ inline void GatherForLargeNFactorNonAlign(
-        int64_t realOffset, int64_t imagOffset, int64_t outputOffset, uint32_t mFactor, uint32_t nFactor)
+    __aicore__ inline void GatherForLargeNFactorNonAlign(int64_t realOffset, int64_t imagOffset, int64_t outputOffset,
+                                                         uint32_t mFactor, uint32_t nFactor)
     {
         int32_t gatherCountPerLoop = tiling->maskUBSize / sizeof(int32_t);
         int32_t realCountPerLoop = gatherCountPerLoop / DOUBLE_BUFFER;
@@ -483,18 +488,14 @@ private:
                 int32_t nBlocks = (copyLen + BLOCK_SIZE - 1) / BLOCK_SIZE;
                 AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(event_id);
 
-                DataCopy(
-                    aRealUB, aRealGm[realOffset + i * realCountPerLoop + m * nFactor],
-                    {1, static_cast<uint16_t>(nBlocks), 0, 0});
-                DataCopy(
-                    aImagUB, aImagGm[imagOffset + i * imagCountPerLoop + m * nFactor],
-                    {1, static_cast<uint16_t>(nBlocks), 0, 0});
-                DataCopy(
-                    bRealUB, bRealGm[realOffset + i * realCountPerLoop + m * nFactor],
-                    {1, static_cast<uint16_t>(nBlocks), 0, 0});
-                DataCopy(
-                    bImagUB, bImagGm[imagOffset + i * imagCountPerLoop + m * nFactor],
-                    {1, static_cast<uint16_t>(nBlocks), 0, 0});
+                DataCopy(aRealUB, aRealGm[realOffset + i * realCountPerLoop + m * nFactor],
+                         {1, static_cast<uint16_t>(nBlocks), 0, 0});
+                DataCopy(aImagUB, aImagGm[imagOffset + i * imagCountPerLoop + m * nFactor],
+                         {1, static_cast<uint16_t>(nBlocks), 0, 0});
+                DataCopy(bRealUB, bRealGm[realOffset + i * realCountPerLoop + m * nFactor],
+                         {1, static_cast<uint16_t>(nBlocks), 0, 0});
+                DataCopy(bImagUB, bImagGm[imagOffset + i * imagCountPerLoop + m * nFactor],
+                         {1, static_cast<uint16_t>(nBlocks), 0, 0});
 
                 AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(event_id);
                 AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(event_id);
@@ -529,8 +530,8 @@ private:
         AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID1);
     }
 
-    __aicore__ inline void GatherRealAndImag(
-        int64_t realOffset, int64_t imagOffset, int64_t outputOffset, uint32_t mFactor, uint32_t nFactor)
+    __aicore__ inline void GatherRealAndImag(int64_t realOffset, int64_t imagOffset, int64_t outputOffset,
+                                             uint32_t mFactor, uint32_t nFactor)
     {
         int32_t ubCount = tiling->maskUBSize / sizeof(int32_t);
         if (nFactor * sizeof(T) % BLOCK_SIZE == 0) {
@@ -548,9 +549,8 @@ private:
         }
     }
 
-    __aicore__ inline void StftMatmul(
-        int64_t realSplitWindowOffset, int64_t imagSplitWindowOffset, int64_t a1Offset, int64_t a2Offset,
-        int64_t realOffset, int64_t imagOffset)
+    __aicore__ inline void StftMatmul(int64_t realSplitWindowOffset, int64_t imagSplitWindowOffset, int64_t a1Offset,
+                                      int64_t a2Offset, int64_t realOffset, int64_t imagOffset)
     {
         // AC
         mm.SetTensorA(a1Global[a1Offset]);
@@ -573,8 +573,8 @@ private:
         mm.IterateAll(bImagGm[imagOffset]);
     }
 
-    __aicore__ inline void SplitWindows(
-        int64_t inputOffset, int64_t realSplitWindowOffset, int64_t imagSplitWindowOffset, int64_t nFactor)
+    __aicore__ inline void SplitWindows(int64_t inputOffset, int64_t realSplitWindowOffset,
+                                        int64_t imagSplitWindowOffset, int64_t nFactor)
     {
         DataCopyPadParams padParams{false, 0, 0, 0};
         DataCopyParams intriParams1;
@@ -603,12 +603,10 @@ private:
         for (int32_t i = 0; i < nFactor; i++) {
             for (int32_t j = 0; j < tiling->nFactorUbLoop - 1; j++) {
                 LocalTensor<T> inputLocal = inCopy.template AllocTensor<T>();
-                DataCopyPad(
-                    inputLocal,
-                    inputGm
-                        [inputOffset + i * tiling->hopLength * COMPLEX_COEFFICIENT +
-                         j * tiling->nFactorUbFormer * COMPLEX_COEFFICIENT],
-                    intriParams1, padParams);
+                DataCopyPad(inputLocal,
+                            inputGm[inputOffset + i * tiling->hopLength * COMPLEX_COEFFICIENT +
+                                    j * tiling->nFactorUbFormer * COMPLEX_COEFFICIENT],
+                            intriParams1, padParams);
                 inCopy.EnQue(inputLocal);
                 SplitRealAndImag(tiling->nFactorUbFormer);
                 LocalTensor<T> realOutputLocal = realOutCopy.template DeQue<T>();
@@ -623,27 +621,21 @@ private:
                 imagOutCopy.FreeTensor(imagOutputLocal);
             }
             LocalTensor<T> inputLocal = inCopy.template AllocTensor<T>();
-            DataCopyPad(
-                inputLocal,
-                inputGm
-                    [inputOffset + i * tiling->hopLength * COMPLEX_COEFFICIENT +
-                     (tiling->nFactorUbLoop - 1) * tiling->nFactorUbFormer * COMPLEX_COEFFICIENT],
-                intriParams3, padParams);
+            DataCopyPad(inputLocal,
+                        inputGm[inputOffset + i * tiling->hopLength * COMPLEX_COEFFICIENT +
+                                (tiling->nFactorUbLoop - 1) * tiling->nFactorUbFormer * COMPLEX_COEFFICIENT],
+                        intriParams3, padParams);
             inCopy.EnQue(inputLocal);
             SplitRealAndImag(tiling->nFactorUbTail);
             LocalTensor<T> realOutputLocal = realOutCopy.template DeQue<T>();
             LocalTensor<T> imagOutputLocal = imagOutCopy.template DeQue<T>();
 
-            DataCopyPad(
-                splitRealWindowGm
-                    [realSplitWindowOffset + i * tiling->nfftAlign +
-                     (tiling->nFactorUbLoop - 1) * tiling->nFactorUbFormer],
-                realOutputLocal, intriParams4);
-            DataCopyPad(
-                splitImagWindowGm
-                    [imagSplitWindowOffset + i * tiling->nfftAlign +
-                     (tiling->nFactorUbLoop - 1) * tiling->nFactorUbFormer],
-                imagOutputLocal, intriParams4);
+            DataCopyPad(splitRealWindowGm[realSplitWindowOffset + i * tiling->nfftAlign +
+                                          (tiling->nFactorUbLoop - 1) * tiling->nFactorUbFormer],
+                        realOutputLocal, intriParams4);
+            DataCopyPad(splitImagWindowGm[imagSplitWindowOffset + i * tiling->nfftAlign +
+                                          (tiling->nFactorUbLoop - 1) * tiling->nFactorUbFormer],
+                        imagOutputLocal, intriParams4);
             realOutCopy.FreeTensor(realOutputLocal);
             imagOutCopy.FreeTensor(imagOutputLocal);
         }
@@ -658,12 +650,10 @@ private:
         uint64_t rsvdCnt = 0;
         uint16_t repeatTimes = (colNum * DOUBLE_BUFFER + REPEAT_NUM_FOR_FP32 - 1) / REPEAT_NUM_FOR_FP32;
 
-        GatherMask(
-            realOutputLocal, inputLocal, 1, false, 0, {1, repeatTimes, BLOCK_FOR_ONE_REPEAT, BLOCK_FOR_ONE_REPEAT},
-            rsvdCnt);
-        GatherMask(
-            imagOutputLocal, inputLocal, DOUBLE_BUFFER, false, 0,
-            {1, repeatTimes, BLOCK_FOR_ONE_REPEAT, BLOCK_FOR_ONE_REPEAT}, rsvdCnt);
+        GatherMask(realOutputLocal, inputLocal, 1, false, 0,
+                   {1, repeatTimes, BLOCK_FOR_ONE_REPEAT, BLOCK_FOR_ONE_REPEAT}, rsvdCnt);
+        GatherMask(imagOutputLocal, inputLocal, DOUBLE_BUFFER, false, 0,
+                   {1, repeatTimes, BLOCK_FOR_ONE_REPEAT, BLOCK_FOR_ONE_REPEAT}, rsvdCnt);
         realOutCopy.EnQue(realOutputLocal);
         imagOutCopy.EnQue(imagOutputLocal);
         inCopy.FreeTensor(inputLocal);

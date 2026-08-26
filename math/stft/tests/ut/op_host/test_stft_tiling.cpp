@@ -32,7 +32,7 @@ protected:
 
 TEST_F(STFTTiling, stft_tiling_001)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{2, 30000}, {2, 30000}};
     gert::StorageShape window_shape = {{201, 400}, {201, 400}};
     gert::StorageShape out_shape = {{2, 201, 188, 2}, {2, 201, 188, 2}};
@@ -65,7 +65,7 @@ TEST_F(STFTTiling, stft_tiling_001)
 
 TEST_F(STFTTiling, stft_tiling_002)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{2, 30000}, {2, 30000}};
     gert::StorageShape window_shape = {{201, 400}, {201, 400}};
     gert::StorageShape out_shape = {{2, 201, 188, 2}, {2, 201, 188, 2}};
@@ -98,7 +98,7 @@ TEST_F(STFTTiling, stft_tiling_002)
 
 TEST_F(STFTTiling, stft_tiling_003)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{2, 30000}, {2, 30000}};
     gert::StorageShape window_shape = {{201, 400}, {201, 400}};
     gert::StorageShape out_shape = {{2, 201, 188, 2}, {2, 201, 188, 2}};
@@ -131,7 +131,7 @@ TEST_F(STFTTiling, stft_tiling_003)
 
 TEST_F(STFTTiling, stft_tiling_004)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{2, 30000}, {2, 30000}};
     gert::StorageShape window_shape = {{201, 400}, {201, 400}};
     gert::StorageShape out_shape = {{2, 201, 188, 2}, {2, 201, 188, 2}};
@@ -164,7 +164,7 @@ TEST_F(STFTTiling, stft_tiling_004)
 
 TEST_F(STFTTiling, stft_tiling_005)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{2, 30000}, {2, 30000}};
     gert::StorageShape window_shape = {{201, 400}, {201, 400}};
     gert::StorageShape out_shape = {{2, 201, 188, 2}, {2, 201, 188, 2}};
@@ -203,7 +203,7 @@ TEST_F(STFTTiling, stft_tiling_005)
 
 TEST_F(STFTTiling, stft_tiling_006)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{2, 30000}, {2, 30000}};
     gert::StorageShape window_shape = {{201, 400}, {201, 400}};
     gert::StorageShape out_shape = {{2, 201, 188, 2}, {2, 201, 188, 2}};
@@ -242,7 +242,7 @@ TEST_F(STFTTiling, stft_tiling_006)
 
 TEST_F(STFTTiling, stft_tiling_007)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{2, 30000}, {2, 30000}};
     gert::StorageShape window_shape = {{201, 400}, {201, 400}};
     gert::StorageShape out_shape = {{2, 201, 188, 2}, {2, 201, 188, 2}};
@@ -281,7 +281,7 @@ TEST_F(STFTTiling, stft_tiling_007)
 
 TEST_F(STFTTiling, stft_tiling_008)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{2, 30000}, {2, 30000}};
     gert::StorageShape window_shape = {{201, 400}, {201, 400}};
     gert::StorageShape out_shape = {{2, 201, 188, 2}, {2, 201, 188, 2}};
@@ -314,7 +314,7 @@ TEST_F(STFTTiling, stft_tiling_008)
 
 TEST_F(STFTTiling, stft_tiling_009)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{2, 3, 2}, {2, 3, 2}};
     gert::StorageShape window_shape = {{201, 400}, {201, 400}};
     gert::StorageShape out_shape = {{2, 201, 188, 2}, {2, 201, 188, 2}};
@@ -347,7 +347,7 @@ TEST_F(STFTTiling, stft_tiling_009)
 
 TEST_F(STFTTiling, stft_tiling_010)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{2, 30000}, {2, 30000}};
     gert::StorageShape window_shape = {{201, 400}, {201, 400}};
     gert::StorageShape out_shape = {{2, 201, 188, 2}, {2, 201, 188, 2}};
@@ -380,7 +380,7 @@ TEST_F(STFTTiling, stft_tiling_010)
 
 TEST_F(STFTTiling, stft_tiling_011)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{2, 30000}, {2, 30000}};
     gert::StorageShape window_shape = {{201, 400}, {201, 400}};
     gert::StorageShape out_shape = {{2, 201, 188, 2}, {2, 201, 188, 2}};
@@ -413,7 +413,7 @@ TEST_F(STFTTiling, stft_tiling_011)
 
 TEST_F(STFTTiling, stft_tiling_012)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{25, 2029797}, {25, 2029797}};
     gert::StorageShape window_shape = {{201, 400}, {201, 400}};
     gert::StorageShape out_shape = {{2, 201, 188, 2}, {2, 201, 188, 2}};
@@ -446,7 +446,7 @@ TEST_F(STFTTiling, stft_tiling_012)
 
 TEST_F(STFTTiling, stft_tiling_013)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{23, 2029637}, {23, 2029637}};
     gert::StorageShape window_shape = {{201, 401}, {201, 401}};
     gert::StorageShape out_shape = {{2, 201, 188, 2}, {2, 201, 188, 2}};
@@ -479,7 +479,7 @@ TEST_F(STFTTiling, stft_tiling_013)
 
 TEST_F(STFTTiling, stft_tiling_014)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{40, 2029637}, {40, 2029637}};
     gert::StorageShape window_shape = {{201, 401}, {201, 401}};
     gert::StorageShape out_shape = {{2, 201, 188, 2}, {2, 201, 188, 2}};
@@ -512,7 +512,7 @@ TEST_F(STFTTiling, stft_tiling_014)
 
 TEST_F(STFTTiling, stft_tiling_015)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{2, 2029637}, {2, 2029637}};
     gert::StorageShape window_shape = {{200, 399}, {200, 399}};
     gert::StorageShape out_shape = {{2, 200, 187, 2}, {2, 200, 187, 2}};
@@ -551,7 +551,7 @@ TEST_F(STFTTiling, stft_tiling_015)
 
 TEST_F(STFTTiling, stft_tiling_016)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{2, 2028677}, {2, 2028677}};
     gert::StorageShape window_shape = {{200, 399}, {200, 399}};
     gert::StorageShape out_shape = {{2, 200, 187, 2}, {2, 200, 187, 2}};
@@ -589,7 +589,7 @@ TEST_F(STFTTiling, stft_tiling_016)
 
 TEST_F(STFTTiling, stft_tiling_017)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{2, 2028517}, {2, 2028517}};
     gert::StorageShape window_shape = {{200, 399}, {200, 399}};
     gert::StorageShape out_shape = {{2, 200, 187, 2}, {2, 200, 187, 2}};
@@ -627,7 +627,7 @@ TEST_F(STFTTiling, stft_tiling_017)
 
 TEST_F(STFTTiling, stft_tiling_018)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{30, 1861}, {30, 1861}};
     gert::StorageShape window_shape = {{768, 768}, {768, 768}};
     gert::StorageShape out_shape = {{30, 768, 34, 2}, {30, 768, 34, 2}};
@@ -666,7 +666,7 @@ TEST_F(STFTTiling, stft_tiling_018)
 
 TEST_F(STFTTiling, stft_tiling_019)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{19, 30000}, {19, 30000}};
     gert::StorageShape window_shape = {{201, 400}, {201, 400}};
     gert::StorageShape out_shape = {{19, 201, 188, 2}, {19, 201, 188, 2}};
@@ -699,7 +699,7 @@ TEST_F(STFTTiling, stft_tiling_019)
 
 TEST_F(STFTTiling, stft_tiling_020)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{30, 1861}, {30, 1861}};
     gert::StorageShape window_shape = {{768, 768}, {768, 768}};
     gert::StorageShape out_shape = {{30, 768, 34, 2}, {30, 768, 34, 2}};
@@ -738,7 +738,7 @@ TEST_F(STFTTiling, stft_tiling_020)
 
 TEST_F(STFTTiling, stft_tiling_021)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{30, 1861}, {30, 1861}};
     gert::StorageShape window_shape = {{768, 768}, {768, 768}};
     gert::StorageShape out_shape = {{30, 768, 34, 2}, {30, 768, 34, 2}};
@@ -777,7 +777,7 @@ TEST_F(STFTTiling, stft_tiling_021)
 
 TEST_F(STFTTiling, stft_tiling_022)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{1, 1}, {1, 1}};
     gert::StorageShape window_shape = {{1, 1}, {1, 1}};
     gert::StorageShape out_shape = {{1, 1, 1, 2}, {1, 1, 1, 2}};
@@ -815,7 +815,7 @@ TEST_F(STFTTiling, stft_tiling_022)
 
 TEST_F(STFTTiling, stft_tiling_023)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{1, 1}, {1, 1}};
     gert::StorageShape window_shape = {{1, 1}, {1, 1}};
     gert::StorageShape out_shape = {{1, 1, 1, 2}, {1, 1, 1, 2}};
@@ -853,7 +853,7 @@ TEST_F(STFTTiling, stft_tiling_023)
 
 TEST_F(STFTTiling, stft_tiling_024)
 {
-    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 524288, 65536, 65536, 131072, 0};
+    optiling::STFTCompileInfo compileInfo = {20, 40, 20, 196608, 0};
     gert::StorageShape input_shape = {{2, 1}, {2, 1}};
     gert::StorageShape window_shape = {{1, 1}, {1, 1}};
     gert::StorageShape out_shape = {{2, 1, 1, 2}, {2, 1, 1, 2}};

@@ -25,10 +25,6 @@ struct STFTCompileInfo {
     uint64_t aivCoreNum;
     uint64_t aicCoreNum;
     uint64_t ubSize;
-    uint64_t l1Size;
-    uint64_t l0ASize;
-    uint64_t l0BSize;
-    uint64_t l0CSize;
     uint64_t sysWorkspaceSize;
 };
 } // namespace optiling

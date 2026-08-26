@@ -30,18 +30,13 @@ ge::graphStatus STFTBaseTiling::GetPlatformInfo()
     auto platformPtr = context_->GetPlatformInfo();
     if (platformPtr == nullptr) {
         auto compileInfoPtr = reinterpret_cast<const STFTCompileInfo*>(context_->GetCompileInfo());
-        OP_CHECK_IF(
-            compileInfoPtr == nullptr, OP_LOGE(context_->GetNodeName(), "compile info is null"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_->GetNodeName(), "compile info is null"),
+                    return ge::GRAPH_FAILED);
         coreNum = compileInfoPtr->coreNum;
         aivCoreNum = compileInfoPtr->aivCoreNum;
         aicCoreNum = compileInfoPtr->aicCoreNum;
         sysWorkspaceSize = compileInfoPtr->sysWorkspaceSize;
         ubSize = compileInfoPtr->ubSize;
-        l1Size = compileInfoPtr->l1Size;
-        l0ASize = compileInfoPtr->l0ASize;
-        l0BSize = compileInfoPtr->l0BSize;
-        l0CSize = compileInfoPtr->l0CSize;
     } else {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformPtr);
         coreNum = ascendcPlatform.GetCoreNum();
@@ -50,25 +45,8 @@ ge::graphStatus STFTBaseTiling::GetPlatformInfo()
         sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
 
         uint64_t ubSizePlatform;
-        uint64_t l1SizePlatform;
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatform);
-        ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::L1, l1SizePlatform);
         ubSize = static_cast<int64_t>(ubSizePlatform);
-
-        ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::L1, l1SizePlatform);
-        l1Size = static_cast<int64_t>(l1SizePlatform);
-
-        uint64_t l0ASizePlatform;
-        ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, l0ASizePlatform);
-        l0ASize = static_cast<int64_t>(l0ASizePlatform);
-
-        uint64_t l0BSizePlatform;
-        ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, l0BSizePlatform);
-        l0BSize = static_cast<int64_t>(l0BSizePlatform);
-
-        uint64_t l0CSizePlatform;
-        ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, l0CSizePlatform);
-        l0CSize = static_cast<int64_t>(l0CSizePlatform);
     }
     return ge::GRAPH_SUCCESS;
 }

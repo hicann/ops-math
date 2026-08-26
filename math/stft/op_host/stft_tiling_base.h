@@ -20,7 +20,6 @@
 #include "tiling/tiling_api.h"
 #include "stft_tiling.h"
 
-
 namespace optiling {
 BEGIN_TILING_DATA_DEF(STFTPlanTilingData)
 TILING_DATA_FIELD_DEF(uint32_t, oneRowLen);
@@ -122,8 +121,7 @@ REGISTER_TILING_DATA_CLASS(STFT_3, STFTGeneralizedTilingData);
 
 class STFTBaseTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit STFTBaseTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit STFTBaseTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     ge::graphStatus GetPlatformInfo() override;
@@ -131,10 +129,6 @@ protected:
 
 protected:
     int64_t ubSize{0};
-    int64_t l1Size{0};
-    int64_t l0ASize{0};
-    int64_t l0BSize{0};
-    int64_t l0CSize{0};
     int64_t sysWorkspaceSize{0};
     int32_t batch{0};
     int32_t inputSize{0};

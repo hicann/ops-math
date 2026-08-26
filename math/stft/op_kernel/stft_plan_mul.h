@@ -28,8 +28,8 @@ template <typename T, int32_t bufferNum>
 class StftPlanMul {
 public:
     __aicore__ inline StftPlanMul(){};
-    __aicore__ inline void Init(
-        GM_ADDR plan, GM_ADDR window, GM_ADDR workspace, STFTPlanTilingData* tilingData, TPipe* pipeIn)
+    __aicore__ inline void Init(GM_ADDR plan, GM_ADDR window, GM_ADDR workspace, STFTPlanTilingData* tilingData,
+                                TPipe* pipeIn)
     {
         pipe = pipeIn;
         inTilingData = tilingData;
@@ -46,10 +46,11 @@ public:
                                    (int64_t)(blockIdx - inTilingData->tailBlockIdx) * tailRow * col;
                 row = tailRow;
             }
-            uint64_t splitWindowWorkspaceSize =
-                (((uint64_t)inTilingData->batch * inTilingData->matmulN * col * sizeof(T) + WORKSPACE_ALIGN_SIZE - 1) /
-                 WORKSPACE_ALIGN_SIZE) *
-                WORKSPACE_ALIGN_SIZE / sizeof(T);
+            uint64_t splitWindowWorkspaceSize = (((uint64_t)inTilingData->batch * inTilingData->matmulN * col *
+                                                      sizeof(T) +
+                                                  WORKSPACE_ALIGN_SIZE - 1) /
+                                                 WORKSPACE_ALIGN_SIZE) *
+                                                WORKSPACE_ALIGN_SIZE / sizeof(T);
             uint64_t matmulWorkspaceSize = (((uint64_t)inTilingData->batch * inTilingData->matmulN *
                                                  inTilingData->matmulM * IMAG_AND_REAL * sizeof(T) +
                                              WORKSPACE_ALIGN_SIZE - 1) /
@@ -87,6 +88,11 @@ public:
                 }
             }
             windowInQue.FreeTensor(windowInput);
+            // 等待MTE3(UB->GM)流水线全部完成，确保plan数据写入GM后，
+            // 后续主算子的Cube matmul再读取plan workspace，避免读到旧数据(首次为0)
+            event_t eventIdMTE3ToS = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_S));
+            SetFlag<HardEvent::MTE3_S>(eventIdMTE3ToS);
+            WaitFlag<HardEvent::MTE3_S>(eventIdMTE3ToS);
         }
     }
 

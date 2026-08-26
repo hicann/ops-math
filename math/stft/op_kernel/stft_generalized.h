@@ -38,9 +38,8 @@ public:
 
     __aicore__ inline STFTGeneralized(){};
 
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR plan, GM_ADDR window, GM_ADDR y, GM_ADDR workspace, STFTGeneralizedTilingData* tilingData,
-        TPipe* pipeIn)
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR plan, GM_ADDR window, GM_ADDR y, GM_ADDR workspace,
+                                STFTGeneralizedTilingData* tilingData, TPipe* pipeIn)
     {
         pipe = pipeIn;
         tiling = tilingData;
@@ -48,8 +47,9 @@ public:
             return;
         }
 
-        uint64_t inputGmSize = (uint64_t)tiling->batch * (((uint64_t)(tiling->inputSize + tiling->nfft) * sizeof(T) + BLOCK_SIZE - 1) /
-                               BLOCK_SIZE * BLOCK_SIZE / sizeof(T));
+        uint64_t inputGmSize = (uint64_t)tiling->batch *
+                               (((uint64_t)(tiling->inputSize + tiling->nfft) * sizeof(T) + BLOCK_SIZE - 1) /
+                                BLOCK_SIZE * BLOCK_SIZE / sizeof(T));
         inputGm.SetGlobalBuffer((__gm__ T*)x, inputGmSize);
 
         uint64_t splitWindowGmSize = (uint64_t)tiling->batch * tiling->matmulN * tiling->nfftAlign;
@@ -68,11 +68,11 @@ public:
         if (window == nullptr) {
             planGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(plan), realWindowSize * IMAG_AND_REAL);
         } else {
-            uint64_t matmulWorkspaceSize =
-                (((uint64_t)tiling->batch * tiling->matmulN * tiling->matmulM * sizeof(T) * IMAG_AND_REAL +
-                  WORKSPACE_ALIGN_SIZE - 1) /
-                 WORKSPACE_ALIGN_SIZE) *
-                WORKSPACE_ALIGN_SIZE / sizeof(T);
+            uint64_t matmulWorkspaceSize = (((uint64_t)tiling->batch * tiling->matmulN * tiling->matmulM * sizeof(T) *
+                                                 IMAG_AND_REAL +
+                                             WORKSPACE_ALIGN_SIZE - 1) /
+                                            WORKSPACE_ALIGN_SIZE) *
+                                           WORKSPACE_ALIGN_SIZE / sizeof(T);
             uint64_t planOffset = splitWindowWorkspaceSize + matmulWorkspaceSize;
             planGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(workspace) + planOffset, realWindowSize * IMAG_AND_REAL);
         }
@@ -91,8 +91,8 @@ public:
                     pipe->InitBuffer(outCopy, bufferNum, oneBufferSize);
                 } else {
                     uint32_t skipHopLength = tiling->splitWindowSkipNum * tiling->hopLength;
-                    uint32_t onceNInUB =
-                        (tiling->copyUBSize / sizeof(T) - tiling->nfftAlign) / (skipHopLength + tiling->nfftAlign);
+                    uint32_t onceNInUB = (tiling->copyUBSize / sizeof(T) - tiling->nfftAlign) /
+                                         (skipHopLength + tiling->nfftAlign);
                     uint32_t inputSize = (onceNInUB * skipHopLength + tiling->nfftAlign) * sizeof(T);
                     uint32_t outputSize = onceNInUB * tiling->nfftAlign * sizeof(T);
                     pipe->InitBuffer(inCopy, bufferNum, inputSize);
@@ -162,8 +162,8 @@ public:
             int64_t inputOffset = (int64_t)(bOffset + i) * (tiling->inputSize + tiling->nfft) +
                                   (int64_t)nOffset * tiling->hopLength;
             int64_t splitWindowOffset = ((int64_t)(bOffset + i) * tiling->matmulN + nOffset) * tiling->nfftAlign;
-            int64_t outputOffset =
-                (((int64_t)(bOffset + i) * tiling->matmulM + mOffset) * tiling->matmulN + nOffset) * IMAG_AND_REAL;
+            int64_t outputOffset = (((int64_t)(bOffset + i) * tiling->matmulM + mOffset) * tiling->matmulN + nOffset) *
+                                   IMAG_AND_REAL;
             int64_t realOffset = (int64_t)(bOffset + i) * tiling->matmulM * tiling->matmulN +
                                  (int64_t)mOffset * tiling->matmulN +
                                  (int64_t)nIdx * mFactor * tiling->matmulNCoreFactor;
@@ -177,6 +177,14 @@ public:
             SplitWindows(inputOffset, splitWindowOffset, nFactor);
             if (i == 0) {
                 GenerateGatherMask(nFactor);
+            }
+
+            // 等待SplitWindows的MTE3(UB->GM)写完splitWindow workspace后再启动Cube matmul,
+            // 避免matmul读到未写入的旧数据(首次为0)导致输出帧为0
+            {
+                event_t eventIdMTE3ToS = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_S));
+                SetFlag<HardEvent::MTE3_S>(eventIdMTE3ToS);
+                WaitFlag<HardEvent::MTE3_S>(eventIdMTE3ToS);
             }
 
             StftMatmul(splitWindowOffset, planOffset, matmulOutputOffset);
@@ -304,8 +312,8 @@ private:
         mask = maskTemp.ReinterpretCast<uint32_t>();
     }
 
-    __aicore__ inline void GatherRealAndImag(
-        int64_t matmulOffset, int64_t outputOffset, uint32_t mFactor, uint32_t nFactor)
+    __aicore__ inline void GatherRealAndImag(int64_t matmulOffset, int64_t outputOffset, uint32_t mFactor,
+                                             uint32_t nFactor)
     {
         uint32_t alignNum = BLOCK_SIZE / sizeof(T);
         uint32_t nAlign = (nFactor + alignNum - 1) / alignNum * alignNum;
@@ -337,8 +345,8 @@ private:
         }
     }
 
-    __aicore__ inline void GatherRealAndImagSmallN(
-        int64_t matmulOffset, int64_t outputOffset, uint32_t mFactor, uint32_t nFactor)
+    __aicore__ inline void GatherRealAndImagSmallN(int64_t matmulOffset, int64_t outputOffset, uint32_t mFactor,
+                                                   uint32_t nFactor)
     {
         uint32_t alignNum = BLOCK_SIZE / sizeof(T);
         uint32_t nAlign = (nFactor + alignNum - 1) / alignNum * alignNum;
@@ -366,8 +374,8 @@ private:
         copyOutParams.dstStride = IMAG_AND_REAL * (tiling->matmulN - nFactor) * sizeof(T);
         for (uint32_t i = 0; i < mQuotient; i++) {
             LocalTensor<T> inputLocal = gatherIn.template AllocTensor<T>();
-            DataCopyPad(
-                inputLocal, matmulOutputGm[matmulOffset + i * copyInGMOffsetCoef], copyInParams, dataCopyPadExtParams);
+            DataCopyPad(inputLocal, matmulOutputGm[matmulOffset + i * copyInGMOffsetCoef], copyInParams,
+                        dataCopyPadExtParams);
             gatherIn.EnQue(inputLocal);
             inputLocal = gatherIn.template DeQue<T>();
             LocalTensor<T> outputLocal = gatherOut.template AllocTensor<T>();
@@ -394,9 +402,8 @@ private:
             copyOutParamsRemainder.srcStride = (IMAG_AND_REAL * (nAlign - nFactor)) / alignNum;
             copyOutParamsRemainder.dstStride = IMAG_AND_REAL * (tiling->matmulN - nFactor) * sizeof(T);
             LocalTensor<T> inputLocal = gatherIn.template AllocTensor<T>();
-            DataCopyPad(
-                inputLocal, matmulOutputGm[matmulOffset + mQuotient * copyInGMOffsetCoef], copyInParamsRemainder,
-                dataCopyPadExtParams);
+            DataCopyPad(inputLocal, matmulOutputGm[matmulOffset + mQuotient * copyInGMOffsetCoef],
+                        copyInParamsRemainder, dataCopyPadExtParams);
             gatherIn.EnQue(inputLocal);
             inputLocal = gatherIn.template DeQue<T>();
             LocalTensor<T> outputLocal = gatherOut.template AllocTensor<T>();
@@ -413,8 +420,8 @@ private:
         }
     }
 
-    __aicore__ inline void GatherRealAndImagLargeN(
-        int64_t matmulOffset, int64_t outputOffset, uint32_t mFactor, uint32_t nFactor)
+    __aicore__ inline void GatherRealAndImagLargeN(int64_t matmulOffset, int64_t outputOffset, uint32_t mFactor,
+                                                   uint32_t nFactor)
     {
         uint32_t alignNum = REPEAT_SIZE / sizeof(T);
         uint32_t nAlignInUB = (maskCount / IMAG_AND_REAL) / alignNum * alignNum;
@@ -452,8 +459,8 @@ private:
             int64_t curOutputOffset = outputOffset + i * tiling->matmulN * IMAG_AND_REAL;
             for (int64_t j = 0; j < nQuotient; j++) {
                 LocalTensor<T> inputLocal = gatherIn.template AllocTensor<T>();
-                DataCopyPad(
-                    inputLocal, matmulOutputGm[curMatmulOffset + j * nAlignInUB], copyInParams, dataCopyPadExtParams);
+                DataCopyPad(inputLocal, matmulOutputGm[curMatmulOffset + j * nAlignInUB], copyInParams,
+                            dataCopyPadExtParams);
                 gatherIn.EnQue(inputLocal);
                 inputLocal = gatherIn.template DeQue<T>();
                 LocalTensor<T> outputLocal = gatherOut.template AllocTensor<T>();
@@ -470,9 +477,8 @@ private:
             }
             if (nRemainder > 0) {
                 LocalTensor<T> inputLocal = gatherIn.template AllocTensor<T>();
-                DataCopyPad(
-                    inputLocal, matmulOutputGm[curMatmulOffset + nQuotient * nAlignInUB], copyInParamsRemainder,
-                    dataCopyPadExtParams);
+                DataCopyPad(inputLocal, matmulOutputGm[curMatmulOffset + nQuotient * nAlignInUB], copyInParamsRemainder,
+                            dataCopyPadExtParams);
                 gatherIn.EnQue(inputLocal);
                 inputLocal = gatherIn.template DeQue<T>();
                 LocalTensor<T> outputLocal = gatherOut.template AllocTensor<T>();
@@ -484,9 +490,8 @@ private:
                 gatherOut.EnQue(outputLocal);
                 gatherIn.FreeTensor(inputLocal);
                 outputLocal = gatherOut.template DeQue<T>();
-                DataCopyPad(
-                    outputGm[curOutputOffset + nQuotient * nAlignInUB * IMAG_AND_REAL], outputLocal,
-                    copyOutParamsRemainder);
+                DataCopyPad(outputGm[curOutputOffset + nQuotient * nAlignInUB * IMAG_AND_REAL], outputLocal,
+                            copyOutParamsRemainder);
                 gatherOut.FreeTensor(outputLocal);
             }
         }
@@ -530,9 +535,8 @@ private:
                 copyInParam.blockCount = 1;
                 copyInParam.srcStride = 0;
                 copyInParam.dstStride = 0;
-                DataCopyPad(
-                    inputLocal, inputGm[inputOffset + i * tiling->hopLength + j * onceSkipInInputGM], copyInParam,
-                    dataCopyPadExtParams);
+                DataCopyPad(inputLocal, inputGm[inputOffset + i * tiling->hopLength + j * onceSkipInInputGM],
+                            copyInParam, dataCopyPadExtParams);
                 inCopy.EnQue(inputLocal);
                 inputLocal = inCopy.template DeQue<T>();
                 LocalTensor<T> outputLocal = outCopy.template AllocTensor<T>();
@@ -542,9 +546,8 @@ private:
                 outCopy.EnQue(outputLocal);
                 inCopy.FreeTensor(inputLocal);
                 outputLocal = outCopy.template DeQue<T>();
-                DataCopyPad(
-                    splitWindowGm[outputOffset + i * tiling->nfftAlign + j * onceSkipInOutputGm], outputLocal,
-                    copyOutParam);
+                DataCopyPad(splitWindowGm[outputOffset + i * tiling->nfftAlign + j * onceSkipInOutputGm], outputLocal,
+                            copyOutParam);
                 outCopy.FreeTensor(outputLocal);
             }
             if (splitRemainder > 0) {
@@ -560,9 +563,9 @@ private:
                 copyInParam.blockCount = 1;
                 copyInParam.srcStride = 0;
                 copyInParam.dstStride = 0;
-                DataCopyPad(
-                    inputLocal, inputGm[inputOffset + i * tiling->hopLength + splitQuotient * onceSkipInInputGM],
-                    copyInParam, dataCopyPadExtParams);
+                DataCopyPad(inputLocal,
+                            inputGm[inputOffset + i * tiling->hopLength + splitQuotient * onceSkipInInputGM],
+                            copyInParam, dataCopyPadExtParams);
                 inCopy.EnQue(inputLocal);
                 inputLocal = inCopy.template DeQue<T>();
                 LocalTensor<T> outputLocal = outCopy.template AllocTensor<T>();
@@ -572,9 +575,8 @@ private:
                 outCopy.EnQue(outputLocal);
                 inCopy.FreeTensor(inputLocal);
                 outputLocal = outCopy.template DeQue<T>();
-                DataCopyPad(
-                    splitWindowGm[outputOffset + i * tiling->nfftAlign + splitQuotient * onceSkipInOutputGm],
-                    outputLocal, copyOutParamRemainder);
+                DataCopyPad(splitWindowGm[outputOffset + i * tiling->nfftAlign + splitQuotient * onceSkipInOutputGm],
+                            outputLocal, copyOutParamRemainder);
                 outCopy.FreeTensor(outputLocal);
             }
         }
@@ -620,9 +622,8 @@ private:
             uint32_t splitRemainder = curSplitN % onceNInUB;
             for (int64_t j = 0; j < splitQuotient; j++) {
                 LocalTensor<T> inputLocal = inCopy.template AllocTensor<T>();
-                DataCopyPad(
-                    inputLocal, inputGm[inputOffset + i * tiling->hopLength + j * onceSkipInInputGM], copyInParams,
-                    dataCopyPadExtParams);
+                DataCopyPad(inputLocal, inputGm[inputOffset + i * tiling->hopLength + j * onceSkipInInputGM],
+                            copyInParams, dataCopyPadExtParams);
                 inCopy.EnQue(inputLocal);
                 inputLocal = inCopy.template DeQue<T>();
                 LocalTensor<T> outputLocal = outCopy.template AllocTensor<T>();
@@ -630,9 +631,8 @@ private:
                 outCopy.EnQue(outputLocal);
                 inCopy.FreeTensor(inputLocal);
                 outputLocal = outCopy.template DeQue<T>();
-                DataCopyPad(
-                    splitWindowGm[outputOffset + i * tiling->nfftAlign + j * onceSkipInOutputGm], outputLocal,
-                    copyOutParams);
+                DataCopyPad(splitWindowGm[outputOffset + i * tiling->nfftAlign + j * onceSkipInOutputGm], outputLocal,
+                            copyOutParams);
                 outCopy.FreeTensor(outputLocal);
             }
             if (splitRemainder > 0) {
@@ -647,9 +647,9 @@ private:
                 copyOutParamsRemainder.srcStride = 0;
                 copyOutParamsRemainder.dstStride = copyOutDstGap;
                 LocalTensor<T> inputLocal = inCopy.template AllocTensor<T>();
-                DataCopyPad(
-                    inputLocal, inputGm[inputOffset + i * tiling->hopLength + splitQuotient * onceSkipInInputGM],
-                    copyInParamsRemainder, dataCopyPadExtParams);
+                DataCopyPad(inputLocal,
+                            inputGm[inputOffset + i * tiling->hopLength + splitQuotient * onceSkipInInputGM],
+                            copyInParamsRemainder, dataCopyPadExtParams);
                 inCopy.EnQue(inputLocal);
                 inputLocal = inCopy.template DeQue<T>();
                 LocalTensor<T> outputLocal = outCopy.template AllocTensor<T>();
@@ -657,9 +657,8 @@ private:
                 outCopy.EnQue(outputLocal);
                 inCopy.FreeTensor(inputLocal);
                 outputLocal = outCopy.template DeQue<T>();
-                DataCopyPad(
-                    splitWindowGm[outputOffset + i * tiling->nfftAlign + splitQuotient * onceSkipInOutputGm],
-                    outputLocal, copyOutParamsRemainder);
+                DataCopyPad(splitWindowGm[outputOffset + i * tiling->nfftAlign + splitQuotient * onceSkipInOutputGm],
+                            outputLocal, copyOutParamsRemainder);
                 outCopy.FreeTensor(outputLocal);
             }
         }
@@ -674,15 +673,13 @@ private:
             for (int32_t i = 0; i < nFactor; i++) {
                 for (int32_t j = 0; j < loopCount; j++) {
                     LocalTensor<T> inputLocal = inCopy.template AllocTensor<T>();
-                    DataCopy(
-                        inputLocal, inputGm[inputOffset + i * tiling->hopLength + j * bufferSize / sizeof(T)],
-                        bufferSize / sizeof(T));
+                    DataCopy(inputLocal, inputGm[inputOffset + i * tiling->hopLength + j * bufferSize / sizeof(T)],
+                             bufferSize / sizeof(T));
                     event_t eventIdMTE2ToMTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
                     SetFlag<HardEvent::MTE2_MTE3>(eventIdMTE2ToMTE3);
                     WaitFlag<HardEvent::MTE2_MTE3>(eventIdMTE2ToMTE3);
-                    DataCopy(
-                        splitWindowGm[outputOffset + i * tiling->nfftAlign + j * bufferSize / sizeof(T)], inputLocal,
-                        bufferSize / sizeof(T));
+                    DataCopy(splitWindowGm[outputOffset + i * tiling->nfftAlign + j * bufferSize / sizeof(T)],
+                             inputLocal, bufferSize / sizeof(T));
                     event_t eventIdMTE3ToMTE2 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_MTE2));
                     SetFlag<HardEvent::MTE3_MTE2>(eventIdMTE3ToMTE2);
                     WaitFlag<HardEvent::MTE3_MTE2>(eventIdMTE3ToMTE2);
@@ -698,9 +695,9 @@ private:
                     copyParams.srcStride = 0;
                     copyParams.dstStride = 0;
                     LocalTensor<T> inputLocal = inCopy.template AllocTensor<T>();
-                    DataCopyPad(
-                        inputLocal, inputGm[inputOffset + i * tiling->hopLength + loopCount * bufferSize / sizeof(T)],
-                        copyParams, dataCopyPadExtParams);
+                    DataCopyPad(inputLocal,
+                                inputGm[inputOffset + i * tiling->hopLength + loopCount * bufferSize / sizeof(T)],
+                                copyParams, dataCopyPadExtParams);
                     event_t eventIdMTE2ToMTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
                     SetFlag<HardEvent::MTE2_MTE3>(eventIdMTE2ToMTE3);
                     WaitFlag<HardEvent::MTE2_MTE3>(eventIdMTE2ToMTE3);
@@ -717,9 +714,9 @@ private:
             int32_t total = 0;
             while (total < nFactor) {
                 LocalTensor<T> inputLocal = inCopy.template AllocTensor<T>();
-                int64_t inputLeft =
-                    ((int64_t)tiling->batch * (tiling->inputSize + tiling->nfft) - (int64_t)total * tiling->hopLength - inputOffset) *
-                    sizeof(T);
+                int64_t inputLeft = ((int64_t)tiling->batch * (tiling->inputSize + tiling->nfft) -
+                                     (int64_t)total * tiling->hopLength - inputOffset) *
+                                    sizeof(T);
                 int32_t copyLength = inputLeft > bufferSize ? bufferSize / sizeof(T) : inputLeft / sizeof(T);
                 DataCopyPadExtParams<T> dataCopyPadExtParams;
                 dataCopyPadExtParams.isPad = false;
@@ -728,8 +725,8 @@ private:
                 copyParams.blockLen = copyLength * sizeof(T);
                 copyParams.srcStride = 0;
                 copyParams.dstStride = 0;
-                DataCopyPad(
-                    inputLocal, inputGm[inputOffset + total * tiling->hopLength], copyParams, dataCopyPadExtParams);
+                DataCopyPad(inputLocal, inputGm[inputOffset + total * tiling->hopLength], copyParams,
+                            dataCopyPadExtParams);
                 inCopy.EnQue(inputLocal);
                 inputLocal = inCopy.template DeQue<T>();
                 LocalTensor<T> outputLocal = outCopy.template AllocTensor<T>();
