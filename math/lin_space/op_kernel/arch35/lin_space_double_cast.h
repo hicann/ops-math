@@ -128,8 +128,8 @@ __aicore__ inline void LinSpaceDoubleCast<C, S>::ComputeVf(const LocalTensor<S>&
     uint32_t vlSize = VL;
     float stepValue = step_;
     float firstValue = firstValue_;
-    __local_mem__ C* srcAddr = (__local_mem__ C*)srcUb.GetPhyAddr();
-    __local_mem__ S* dstAddr = (__local_mem__ S*)dstUb.GetPhyAddr();
+    __ubuf__ C* srcAddr = (__ubuf__ C*)srcUb.GetPhyAddr();
+    __ubuf__ S* dstAddr = (__ubuf__ S*)dstUb.GetPhyAddr();
     __VEC_SCOPE__
     {
         AscendC::Reg::RegTensor<C, AscendC::Reg::RegTraitNumOne> vregInput;
@@ -139,7 +139,7 @@ __aicore__ inline void LinSpaceDoubleCast<C, S>::ComputeVf(const LocalTensor<S>&
 
         for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
             mask = AscendC::Reg::UpdateMask<C, AscendC::Reg::RegTraitNumOne>(count);
-            AscendC::Reg::DataCopy(vregInput, (__ubuf__ C*)(srcAddr + loopIdx * vlSize));
+            AscendC::Reg::LoadAlign(vregInput, (__ubuf__ C*)(srcAddr + loopIdx * vlSize));
             AscendC::Reg::Adds(vregAdd, vregInput, offset, mask);
             AscendC::Reg::Duplicate(vregFloat, firstValue, mask);
             AscendC::Reg::Axpy(vregFloat, vregAdd, stepValue, mask);
