@@ -29,7 +29,6 @@ constexpr size_t SYS_WORKSPACE = 16777216; // 16M
 
 ge::graphStatus SqrtTiling::CalcInputDtype()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "SqrtTiling CalcInputDtype enter.");
     auto inputDesc = tilingContext->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
     this->inputDtype = inputDesc->GetDataType();
@@ -43,7 +42,6 @@ ge::graphStatus SqrtTiling::CalcInputDtype()
 
 ge::graphStatus SqrtTiling::CheckShape() const
 {
-    OP_LOGD(tilingContext->GetNodeName(), "SqrtTiling CheckShape enter.");
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
     const gert::Shape& inputYShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
@@ -63,7 +61,6 @@ ge::graphStatus SqrtTiling::CheckShape() const
 
 ge::graphStatus SqrtTiling::CalcOutputDtype()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "SqrtTiling CalcOutputDtype enter.");
     auto outputDesc = tilingContext->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
@@ -80,7 +77,6 @@ ge::graphStatus SqrtTiling::CalcOutputDtype()
 ge::graphStatus SqrtTiling::RunTiling()
 {
     auto tiling = tilingContext->GetTilingData<EleBaseTilingData16B>();
-    OP_LOGD(tilingContext->GetNodeName(), "SqrtTiling RunTiling enter.");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
                 return ge::GRAPH_FAILED);
@@ -104,7 +100,9 @@ ge::graphStatus SqrtTiling::RunTiling()
                                   ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed, output dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
                 return ge::GRAPH_FAILED);
 
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
@@ -128,7 +126,6 @@ static ge::graphStatus Tiling4Sqrt(gert::TilingContext* context)
 
     auto compileInfo = context->GetCompileInfo<SqrtCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
-    OP_LOGD("SqrtTiling", "Enter new SqrtTiling");
     SqrtTiling tiling(context);
     return tiling.RunTiling();
 }

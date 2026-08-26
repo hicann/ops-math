@@ -39,7 +39,6 @@ ge::graphStatus TanhTiling::SetTilingData()
 
 ge::graphStatus TanhTiling::CalcInputDtype()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "TanhTiling CalcInputDtype enter.");
     auto inputDesc = tilingContext->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
     this->inputDtype = inputDesc->GetDataType();
@@ -53,7 +52,6 @@ ge::graphStatus TanhTiling::CalcInputDtype()
 
 ge::graphStatus TanhTiling::CheckShape() const
 {
-    OP_LOGD(tilingContext->GetNodeName(), "TanhTiling CheckShape enter.");
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
     const gert::Shape& inputYShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
@@ -73,7 +71,6 @@ ge::graphStatus TanhTiling::CheckShape() const
 
 ge::graphStatus TanhTiling::CalcOutputDtype()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "TanhTiling CalcOutputDtype enter.");
     auto outputDesc = tilingContext->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
@@ -89,7 +86,6 @@ ge::graphStatus TanhTiling::CalcOutputDtype()
 
 ge::graphStatus TanhTiling::RunTiling()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "TanhTiling RunTiling enter.");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
                 return ge::GRAPH_FAILED);
@@ -114,7 +110,9 @@ ge::graphStatus TanhTiling::RunTiling()
                                   ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed, output dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
                 return ge::GRAPH_FAILED);
 
     return SetTilingData();

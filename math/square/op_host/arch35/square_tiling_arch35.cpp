@@ -152,7 +152,9 @@ ge::graphStatus SquareTiling::RunTiling()
                                   "FLOAT16, BF16, FLOAT, INT32, INT64");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(status == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
+    OP_CHECK_IF(status == ge::GRAPH_FAILED,
+                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed, output dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
                 return ge::GRAPH_FAILED);
 
     return SetTilingData(elewiseBaseTiling);

@@ -47,7 +47,6 @@ ge::graphStatus SignTiling::CalcOutputDtype()
 
 ge::graphStatus SignTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling)
 {
-    OP_LOGD(tilingContext->GetNodeName(), "SignTiling SetTilingData enter.");
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tilingContext->GetRawTilingData());
 
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
@@ -131,7 +130,6 @@ ge::graphStatus SignTiling::CheckOutputDtype() const
 
 ge::graphStatus SignTiling::RunTiling()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "SignTiling RunTiling enter.");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     auto tiling = tilingContext->GetTilingData<EleBaseTilingData16B>();
     // 获取tiling计算所需参数
@@ -170,7 +168,9 @@ ge::graphStatus SignTiling::RunTiling()
                                   "FLOAT16, BF16, FLOAT, INT32, INT64, INT8, INT16, UINT8, UINT16, UINT32, UINT64");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed, output dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
                 return ge::GRAPH_FAILED);
     baseTilingResult = SetTilingData(elewiseBaseTiling);
     return baseTilingResult;
@@ -183,7 +183,6 @@ static ge::graphStatus TilingForSign(gert::TilingContext* tilingContextGen)
     OP_LOGD(tilingContextGen->GetNodeName(), "TilingForSign is running.");
     auto compileInfo = reinterpret_cast<const ElewiseCompileInfo*>(tilingContextGen->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
-    OP_LOGD("SignTiling", "Enter new SignTiling");
     SignTiling baseOpTiling(tilingContextGen);
     return baseOpTiling.RunTiling();
 }

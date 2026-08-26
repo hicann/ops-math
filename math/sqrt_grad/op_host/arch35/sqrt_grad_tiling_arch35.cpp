@@ -53,8 +53,6 @@ private:
 
 void SqrtGradTiling::SetTilingData()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "SqrtGradTiling SetTilingData enter.");
-
     const uint64_t tilingKey = GET_TPL_TILING_KEY(static_cast<uint64_t>(tiling->basetiling.scheMode), dType);
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);
     tilingContext->SetTilingKey(tilingKey);
@@ -139,7 +137,6 @@ ge::graphStatus SqrtGradTiling::CalcOutputDtype()
 
 ge::graphStatus SqrtGradTiling::RunTiling()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "SqrtGradTiling RunTiling enter.");
     Ops::Base::ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     tiling = tilingContext->GetTilingData<SqrtGradTilingData>();
     OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
@@ -165,7 +162,9 @@ ge::graphStatus SqrtGradTiling::RunTiling()
                                   ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed, output dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
                 return ge::GRAPH_FAILED);
     SetTilingData();
 
